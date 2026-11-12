@@ -45,7 +45,7 @@ theorem tendsto_lintegral_enorm_sub_of_tendsto_Lp {α G ι : Type*} [MeasurableS
     ((Lp.ofExponentLEL ℝ G Fact.out).continuous.tendsto g).comp h
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at hL1
   refine hL1.congr fun i => ?_
-  rw [Lp.coeFn_ofExponentLEL, Lp.coeFn_ofExponentLEL, eLpNorm_one_eq_lintegral_enorm
+  rw [Lp.coeFn_ofExponentLEL, Lp.coeFn_ofExponentLEL, eLpNorm_one_eq_lintegral_eNorm
     ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))]
   simp only [Pi.sub_apply]
 

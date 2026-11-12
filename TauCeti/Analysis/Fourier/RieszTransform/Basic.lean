@@ -349,7 +349,7 @@ theorem exists_eLpNorm_rieszTransform_le [Nontrivial E] {p : ℝ≥0∞} (hp : 1
   refine Finset.sum_le_sum fun i _ ↦ ?_
   rw [eLpNorm_const_smul]
   have hv : ‖(⟪b i, v⟫ : ℂ)‖ₑ ≤ ‖v‖₊ := by
-    rw [enorm_eq_nnnorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm,
+    rw [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm,
       Complex.norm_real, Real.norm_eq_abs]
     exact (abs_real_inner_le_norm _ _).trans (by simp [b.orthonormal.1 i])
   calc ‖(⟪b i, v⟫ : ℂ)‖ₑ * eLpNorm (rieszTransform F (b i) f) p volume

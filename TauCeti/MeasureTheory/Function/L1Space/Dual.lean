@@ -83,7 +83,7 @@ theorem exists_toDual_eq [IsFiniteMeasure μ] (φ : StrongDual 𝕜 (Lp 𝕜 1 �
       have hσ₂ := σ.memLp_of_isFiniteMeasure 2 μ
       enorm_integral_mul_le_of_apply_eq φ hσ
         (hφ _ (hσ₂.toLp σ) (hσ.coeFn_toLp.trans hσ₂.coeFn_toLp.symm))
-  have hh : MemLp h ∞ μ := memLp_iff.2 (hbound.trans_lt enorm_lt_top)
+  have hh : MemLp h ∞ μ := memLp_iff.2 (hbound.trans_lt eNorm_lt_top)
   refine ⟨hh.toLp h, ContinuousLinearMap.ext fun f => ?_⟩
   -- Both functionals are continuous, and they agree on indicator functions.
   induction f using Lp.induction ENNReal.one_ne_top with
