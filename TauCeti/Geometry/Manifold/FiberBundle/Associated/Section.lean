@@ -97,17 +97,17 @@ noncomputable def contMDiffSectionEquiv :
       simp only [Homeomorph.symm_apply_apply, sectionFunction_smul]⟩
   invFun u := ⟨sectionEquiv.symm ⟨fun p ↦ u.1 (ManifoldTotalSpace.homeomorph G P p), u.2.2⟩, by
     apply (contMDiff_sectionFunction_iff (IB := IB) (IG := IG) (IF := IF) (n := n) _).1
-    simpa only [← sectionEquiv_apply, Equiv.apply_symm_apply, Homeomorph.apply_symm_apply]
+    simpa only [sectionFunction_sectionEquiv_symm, Homeomorph.apply_symm_apply]
       using u.2.1⟩
   left_inv s := by
     apply Subtype.ext
     apply sectionFunction_injective
     funext p
-    simp only [← sectionEquiv_apply, Equiv.apply_symm_apply, Homeomorph.symm_apply_apply]
+    simp only [sectionFunction_sectionEquiv_symm, Homeomorph.symm_apply_apply]
   right_inv u := by
     apply Subtype.ext
     funext p
-    simp only [← sectionEquiv_apply, Equiv.apply_symm_apply, Homeomorph.apply_symm_apply]
+    simp only [sectionFunction_sectionEquiv_symm, Homeomorph.apply_symm_apply]
 
 /-- The smooth correspondence is the same representing function on the manifold copy. -/
 @[simp]

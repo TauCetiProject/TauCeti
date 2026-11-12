@@ -47,6 +47,17 @@ theorem mk_sectionFunction (s : ∀ b, AssociatedBundle G P F b) {b : B} (p : P 
     mk G p (sectionFunction s ⟨b, p⟩) = s b :=
   (Equiv.ofBijective (mk G p) (mk_bijective p)).apply_symm_apply _
 
+/-- A value represents a section in a frame exactly when it reconstructs that section. -/
+theorem sectionFunction_eq_iff (s : ∀ b, AssociatedBundle G P F b) {b : B} (p : P b)
+    (v : F) : sectionFunction s ⟨b, p⟩ = v ↔ mk G p v = s b := by
+  rw [← (mk_bijective (G := G) (F := F) p).1.eq_iff, mk_sectionFunction, eq_comm]
+
+/-- A section constructed in a family of frames has the prescribed representing values. -/
+@[simp]
+theorem sectionFunction_mk (p : ∀ b, P b) (v : B → F) (b : B) :
+    sectionFunction (fun b ↦ mk G (p b) (v b)) ⟨b, p b⟩ = v b :=
+  (sectionFunction_eq_iff _ _ _).2 rfl
+
 /-- Changing frame acts by the inverse group element on the representing function. -/
 @[simp]
 theorem sectionFunction_smul (s : ∀ b, AssociatedBundle G P F b) {b : B} (p : P b) (g : G) :
@@ -90,6 +101,14 @@ noncomputable def sectionEquiv :
 theorem sectionEquiv_apply (s : ∀ b, AssociatedBundle G P F b) :
     (sectionEquiv s).1 = sectionFunction s :=
   (rfl)
+
+/-- The representing function of the inverse correspondence is the original function. -/
+@[simp]
+theorem sectionFunction_sectionEquiv_symm
+    (u : {u : TotalSpace G P → F // ∀ (b : B) (p : P b) (g : G),
+      u ⟨b, op g • p⟩ = g⁻¹ • u ⟨b, p⟩}) :
+    sectionFunction (sectionEquiv.symm u) = u.1 :=
+  congrArg Subtype.val (sectionEquiv.apply_symm_apply u)
 
 /-- The inverse section correspondence can be evaluated using any frame. -/
 theorem sectionEquiv_symm_apply
@@ -146,7 +165,7 @@ noncomputable def continuousSectionEquiv :
     fun _ p g ↦ sectionFunction_smul s.1 p g⟩
   invFun u := ⟨sectionEquiv.symm ⟨u.1, u.2⟩, by
     apply (continuous_sectionFunction_iff _).1
-    simpa only [← sectionEquiv_apply, Equiv.apply_symm_apply] using u.1.continuous⟩
+    simpa only [sectionFunction_sectionEquiv_symm] using u.1.continuous⟩
   left_inv s := Subtype.ext (sectionEquiv.symm_apply_apply s.1)
   right_inv u := by
     apply Subtype.ext
