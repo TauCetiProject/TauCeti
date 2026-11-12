@@ -84,7 +84,7 @@ theorem profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup G) (ℓ : Nat.P
           ← Subgroup.relIndex_ker H (QuotientGroup.mk' K.toSubgroup),
           QuotientGroup.ker_mk', QuotientGroup.ker_mk']
         exact Subgroup.relIndex_dvd_of_le_left _ inf_le_left
-      · exact H.padicValNat_index_map_mk'_anti ℓ inf_le_right
+      · exact Nat.cast_le.mpr <| H.padicValNat_index_map_mk'_anti ℓ inf_le_right
 
 /-- **Lagrange's theorem for profinite groups**: the supernatural order of the ambient group
 is the order of a subgroup times its supernatural index. -/
