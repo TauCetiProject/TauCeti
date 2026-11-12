@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Lie.Exponential.OneParameter
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Algebra.TypeTags
 import TauCeti.Geometry.Manifold.Immersion.Units
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
 /-!
