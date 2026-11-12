@@ -62,8 +62,9 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `TauCeti.Localization.map_integralClosure_adjoin_divBy_le`: that map carries `R[T/s]`, and its
   integral closure in the localisation, into `R'[T'/f(s)]` and its integral closure, as soon as
   `f` carries `R` into `R'` and `T` into `T'`.
-* `IsLocalization.Away.of_dvd_of_dvd_pow`: inverting `x` also localizes away from `g` when
-  `g ∣ x` and `x` divides a power of `g`.
+* `IsLocalization.Away.of_dvd_pow_of_dvd_pow` and
+  `IsLocalization.Away.iff_of_dvd_pow_of_dvd_pow`: inverting `x` or `g` gives the same localization
+  when each divides a power of the other.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
@@ -462,12 +463,12 @@ end TauCeti.Localization
 
 namespace IsLocalization.Away
 
-/-- Inverting `x` is also a localization away from `g` if `g` divides `x` and `x` divides
-some power of `g`. -/
-theorem of_dvd_of_dvd_pow {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
-    {x g : R} {n : ℕ} [IsLocalization.Away x A] (hxg : g ∣ x) (hgx : x ∣ g ^ n) :
+/-- Inverting `x` is also a localization away from `g` if each divides a power of the other. -/
+theorem of_dvd_pow_of_dvd_pow {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    {x g : R} {m n : ℕ} [IsLocalization.Away x A] (hxg : g ∣ x ^ m) (hgx : x ∣ g ^ n) :
     IsLocalization.Away g A := by
-  have hgA : IsUnit (algebraMap R A g) := IsLocalization.Away.isUnit_of_dvd x hxg
+  have hgA : IsUnit (algebraMap R A g) :=
+    (IsLocalization.Away.algebraMap_isUnit_iff (S := A) x).mpr ⟨m, hxg⟩
   let B := Localization.Away g
   have hxB : IsUnit (algebraMap R B x) :=
     (IsLocalization.Away.algebraMap_isUnit_iff (S := B) g).mpr ⟨n, hgx⟩
@@ -483,6 +484,13 @@ theorem of_dvd_of_dvd_pow {R A : Type*} [CommSemiring R] [CommSemiring A] [Algeb
   have : IsLocalization M B := IsLocalization.of_le (Submonoid.powers g) M le_sup_right hMB
   exact (IsLocalization.isLocalization_iff_of_isLocalization M (Submonoid.powers g) B).mp
     inferInstance
+
+/-- If each of `x` and `g` divides a power of the other, an `R`-algebra is a localization away
+from `x` if and only if it is a localization away from `g`. -/
+theorem iff_of_dvd_pow_of_dvd_pow {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    {x g : R} {m n : ℕ} (hxg : g ∣ x ^ m) (hgx : x ∣ g ^ n) :
+    IsLocalization.Away x A ↔ IsLocalization.Away g A :=
+  ⟨fun _ ↦ of_dvd_pow_of_dvd_pow hxg hgx, fun _ ↦ of_dvd_pow_of_dvd_pow hgx hxg⟩
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
 

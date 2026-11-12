@@ -170,7 +170,8 @@ theorem of_isLocalization_away_of_radical_eq_span {R A : Type*} [CommRing R] [Co
     h ▸ Ideal.le_radical (Ideal.mem_span_singleton_self x)
   obtain ⟨n, hn⟩ := (h ▸ Ideal.mem_span_singleton_self g : g ∈ (Ideal.span {x}).radical)
   have : IsLocalization.Away g A :=
-    IsLocalization.Away.of_dvd_of_dvd_pow hxg (Ideal.mem_span_singleton.mp hn)
+    IsLocalization.Away.of_dvd_pow_of_dvd_pow (pow_one x ▸ hxg)
+      (Ideal.mem_span_singleton.mp hn)
   have : IsReduced (R ⧸ Ideal.span {g}) :=
     (Ideal.isRadical_iff_quotient_reduced _).mp (h ▸ Ideal.radical_isRadical _)
   exact of_isLocalization_away hg
