@@ -11,34 +11,34 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
-# The operators `∂bar`, `∂bar + ξbar dzbar` and `∂` on functions over a complex curve
+# The operators `∂bar`, `∂` and `∂bar + ξbar dzbar` on functions over a planar domain
 
 On a complex normed space with multiplication by `i` as its almost complex structure, the
-operator `∂bar` on functions (`TauCeti.SmoothAlmostComplexStructure.dbarFunction`) is the
-conjugate Wirtinger derivative.
+operators `∂bar` and `∂` on functions (`TauCeti.SmoothAlmostComplexStructure.dbarFunction` and
+`TauCeti.SmoothAlmostComplexStructure.delFunction`) are the conjugate Wirtinger derivative and the
+Wirtinger derivative.
 
-On a complex curve `M`, a manifold modelled on `ℂ` with its complex structure, such as the plane
-or the unit disc, every tangent space is `ℂ`, and the operator `ξ ↦ ∂bar ξ + ξbar dzbar` is a real
-Cauchy–Riemann operator on the trivial line bundle. It is not complex linear: its antilinear
-zeroth-order part in the decomposition of McDuff–Salamon, Exercise C.1.7, is `ξ ↦ ξbar dzbar` and
-its complex linear part is `∂bar`. The operator `∂`, `∂ σ = (dσ)^{1,0}`, is not a real
-Cauchy–Riemann operator on a nonempty complex curve.
+On an open subset `U` of `ℂ`, such as the plane or the unit disc, with the coordinate `z` given by
+the inclusion, every tangent space is `ℂ` and the `(0,1)`-form `dzbar` is `v ↦ conj v`. The operator
+`ξ ↦ ∂bar ξ + ξbar dzbar` is a real Cauchy–Riemann operator on the trivial line bundle. On a
+nonempty `U` it is not complex linear: its antilinear zeroth-order part in the decomposition of
+McDuff–Salamon, Exercise C.1.7, is `ξ ↦ ξbar dzbar` and its complex linear part is `∂bar`. That
+`∂` is not a real Cauchy–Riemann operator is
+`TauCeti.SmoothAlmostComplexStructure.not_isRealCauchyRiemannOperator_delFunction`.
 
 ## Main declarations
 
-* `TauCeti.SmoothAlmostComplexStructure.dbarFunction_ofComplexManifold_self_apply`: on a complex
-  normed space with multiplication by `i`, `∂bar` is the conjugate Wirtinger derivative.
-* `TauCeti.conjSMulDzbar`: the zeroth-order term `ξ ↦ ξbar dzbar` on a complex curve.
+* `TauCeti.SmoothAlmostComplexStructure.dbarFunction_ofComplexManifold_self_apply`,
+  `TauCeti.SmoothAlmostComplexStructure.delFunction_ofComplexManifold_self_apply`: on a complex
+  normed space with multiplication by `i`, `∂bar` and `∂` are the Wirtinger derivatives.
+* `TauCeti.conjSMulDzbar`: the zeroth-order term `ξ ↦ ξbar dzbar` on an open subset of `ℂ`.
 * `TauCeti.isRealCauchyRiemannOperator_dbarFunction_add_conjSMulDzbar`: `∂bar + ξbar dzbar` is a
   real Cauchy–Riemann operator,
-  `TauCeti.not_isComplexLinearOperator_dbarFunction_add_conjSMulDzbar`: which is not complex
-  linear, and
+  `TauCeti.not_isComplexLinearOperator_dbarFunction_add_conjSMulDzbar`: which on a nonempty open
+  subset is not complex linear, and
   `TauCeti.antilinearPart_dbarFunction_add_conjSMulDzbar`,
   `TauCeti.sectionComplexLinearPart_dbarFunction_add_conjSMulDzbar`: whose antilinear part is
   `ξ ↦ ξbar dzbar` and whose complex linear part is `∂bar`.
-* `TauCeti.not_isRealCauchyRiemannOperator_delFunction`: `∂`
-  (`TauCeti.SmoothAlmostComplexStructure.delFunction`) on a nonempty complex curve is not a real
-  Cauchy–Riemann operator.
 
 ## References
 
@@ -57,88 +57,114 @@ namespace TauCeti
 
 open SmoothAlmostComplexStructure
 
+section ComplexNormedSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedAddCommGroup F]
+  [NormedSpace ℂ F]
+
 /-- On a complex normed space `E`, with multiplication by `i` as its almost complex structure,
 `∂bar` on functions is the conjugate Wirtinger derivative. -/
-theorem SmoothAlmostComplexStructure.dbarFunction_ofComplexManifold_self_apply
-    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedAddCommGroup F]
-    [NormedSpace ℂ F] (σ : E → F) (x v : E) :
+@[simp]
+theorem SmoothAlmostComplexStructure.dbarFunction_ofComplexManifold_self_apply (σ : E → F)
+    (x v : E) :
     (ofComplexManifold E E).dbarFunction σ x v = conjWirtingerDeriv σ x v := by
   rw [dbarFunction_apply, ofComplexManifold_apply, conjWirtingerDeriv_apply, mvfderiv_eq_fderiv,
     ← Complex.ofReal_ofNat, ← Complex.ofReal_inv, Complex.coe_smul]
+  -- `mvfderiv_eq_fderiv_apply` cannot rewrite here: its vector lives in the type synonym
+  -- `TangentSpace 𝓘(ℝ, E) x` of `E`, and composing with `fromTangentSpace`, the identity of `E`,
+  -- is the identity.
   rfl
 
-/-! ### The operators `∂bar + ξbar dzbar` and `∂` on a complex curve -/
+/-- On a complex normed space `E`, with multiplication by `i` as its almost complex structure,
+`∂` on functions is the Wirtinger derivative. -/
+@[simp]
+theorem SmoothAlmostComplexStructure.delFunction_ofComplexManifold_self_apply (σ : E → F)
+    (x v : E) :
+    (ofComplexManifold E E).delFunction σ x v = wirtingerDeriv σ x v := by
+  rw [delFunction_apply, ofComplexManifold_apply, wirtingerDeriv_apply, mvfderiv_eq_fderiv,
+    ← Complex.ofReal_ofNat, ← Complex.ofReal_inv, Complex.coe_smul]
+  -- As for `dbarFunction_ofComplexManifold_self_apply`, `fromTangentSpace` is the identity of `E`.
+  rfl
 
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ, ℂ) ∞ M]
+end ComplexNormedSpace
 
-/-- The zeroth-order term `ξ ↦ ξbar dzbar` at a point `x` of a complex curve, whose tangent
-spaces are `ℂ`: `(ξbar dzbar) (v) = conj ξ * conj v` (`TauCeti.conjSMulDzbar_apply`). -/
-def conjSMulDzbar (x : M) : ℂ →L[ℝ] TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] ℂ :=
+/-! ### The operator `∂bar + ξbar dzbar` on an open subset of `ℂ` -/
+
+variable {U : TopologicalSpace.Opens ℂ}
+
+/-- The zeroth-order term `ξ ↦ ξbar dzbar` at a point `x` of an open subset `U` of `ℂ`, for the
+coordinate `z` given by the inclusion of `U`, whose charts identify every tangent space of `U`
+with `ℂ`: `(ξbar dzbar) (v) = conj ξ * conj v` (`TauCeti.conjSMulDzbar_apply`). -/
+def conjSMulDzbar (x : U) : ℂ →L[ℝ] TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] ℂ :=
   (ContinuousLinearMap.compL ℝ ℂ ℂ ℂ Complex.conjCLE.toContinuousLinearMap).comp
     (ContinuousLinearMap.mul ℝ ℂ)
 
-omit [IsManifold 𝓘(ℂ, ℂ) ∞ M] in
 @[simp]
-theorem conjSMulDzbar_apply (x : M) (ξ v : ℂ) :
+theorem conjSMulDzbar_apply (x : U) (ξ v : ℂ) :
     conjSMulDzbar x ξ v = conj ξ * conj v :=
   map_mul (starRingEnd ℂ) ξ v
 
-omit [IsManifold 𝓘(ℂ, ℂ) ∞ M] in
 /-- The term `ξbar dzbar` is complex antilinear in `ξ`. -/
-theorem conjSMulDzbar_complex_I_smul (x : M) (ξ : ℂ) :
+theorem conjSMulDzbar_complex_I_smul (x : U) (ξ : ℂ) :
     conjSMulDzbar x (Complex.I • ξ) = -(Complex.I • conjSMulDzbar x ξ) := by
+  -- The tangent space `TangentSpace 𝓘(ℝ, ℂ) x` is a type synonym of `ℂ`, so the lemmas
+  -- `neg_apply` and `smul_apply` do not rewrite a functional applied to `v : ℂ`; the evaluations
+  -- are transported along `conjSMulDzbar_apply` instead.
   refine ContinuousLinearMap.ext fun (v : ℂ) ↦ (conjSMulDzbar_apply x _ v).trans
     (Eq.trans ?_ (congrArg (fun w : ℂ ↦ -(I • w)) (conjSMulDzbar_apply x ξ v)).symm)
   rw [smul_eq_mul, smul_eq_mul, map_mul, conj_I]
   ring
 
 /-- The term `ξbar dzbar` is a `(0,1)`-form. -/
-theorem isZeroOneForm_conjSMulDzbar (x : M) (ξ : ℂ) :
-    (ofComplexManifold ℂ M).IsZeroOneForm (V := Bundle.Trivial M ℂ) (conjSMulDzbar x ξ) := by
+theorem isZeroOneForm_conjSMulDzbar (x : U) (ξ : ℂ) :
+    (ofComplexManifold ℂ U).IsZeroOneForm (V := Bundle.Trivial U ℂ) (conjSMulDzbar x ξ) := by
   refine isZeroOneForm_iff.2 fun (v : ℂ) ↦ ?_
   rw [ofComplexManifold_apply]
+  -- As in `conjSMulDzbar_complex_I_smul`, the fibre `Bundle.Trivial U ℂ x` and the tangent space
+  -- are type synonyms of `ℂ`, so the evaluations are transported along `conjSMulDzbar_apply`.
   refine (conjSMulDzbar_apply x ξ _).trans
     (Eq.trans ?_ (congrArg (fun w : ℂ ↦ -(I • w)) (conjSMulDzbar_apply x ξ v)).symm)
   rw [smul_eq_mul, smul_eq_mul, map_mul, conj_I]
   ring
 
-/-- The operator `ξ ↦ ∂bar ξ + ξbar dzbar` on a complex curve is a real Cauchy–Riemann operator
-on the trivial line bundle. -/
+/-- The operator `ξ ↦ ∂bar ξ + ξbar dzbar` on an open subset of `ℂ` is a real Cauchy–Riemann
+operator on the trivial line bundle. -/
 theorem isRealCauchyRiemannOperator_dbarFunction_add_conjSMulDzbar :
-    IsRealCauchyRiemannOperator ℂ (ofComplexManifold ℂ M) (V := Bundle.Trivial M ℂ)
-      fun σ x ↦ (ofComplexManifold ℂ M).dbarFunction σ x + conjSMulDzbar x (σ x) :=
-  (ofComplexManifold ℂ M).isRealCauchyRiemannOperator_dbarFunction.add_zeroOrder
+    IsRealCauchyRiemannOperator ℂ (ofComplexManifold ℂ U) (V := Bundle.Trivial U ℂ)
+      fun σ x ↦ (ofComplexManifold ℂ U).dbarFunction σ x + conjSMulDzbar x (σ x) :=
+  (ofComplexManifold ℂ U).isRealCauchyRiemannOperator_dbarFunction.add_zeroOrder
     conjSMulDzbar isZeroOneForm_conjSMulDzbar
 
 /-- The complex linear part of `∂bar + ξbar dzbar` is `∂bar`. -/
 @[simp]
-theorem sectionComplexLinearPart_dbarFunction_add_conjSMulDzbar {σ : M → ℂ} {x : M}
-    (hσ : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) σ x) :
-    sectionComplexLinearPart (V := Bundle.Trivial M ℂ)
-      (fun σ x ↦ (ofComplexManifold ℂ M).dbarFunction σ x + conjSMulDzbar x (σ x)) σ x =
-      (ofComplexManifold ℂ M).dbarFunction σ x :=
-  sectionComplexLinearPart_eq_of_eq_add
-    (ofComplexManifold ℂ M).isComplexLinearOperator_dbarFunction conjSMulDzbar
-    conjSMulDzbar_complex_I_smul (fun _ _ _ ↦ rfl)
-    (by simpa only [mdifferentiableAt_section, Trivial.fiberBundle_trivializationAt',
-      Trivial.trivialization_apply] using hσ)
+theorem sectionComplexLinearPart_dbarFunction_add_conjSMulDzbar (σ : U → ℂ) (x : U) :
+    sectionComplexLinearPart (V := Bundle.Trivial U ℂ)
+      (fun σ x ↦ (ofComplexManifold ℂ U).dbarFunction σ x + conjSMulDzbar x (σ x)) σ x =
+      (ofComplexManifold ℂ U).dbarFunction σ x := by
+  rw [sectionComplexLinearPart_apply, dbarFunction_const_smul, Pi.smul_apply,
+    conjSMulDzbar_complex_I_smul]
+  simp only [smul_add, smul_neg, smul_smul Complex.I Complex.I, Complex.I_mul_I]
+  module
 
-/-- The operator `ξ ↦ ∂bar ξ + ξbar dzbar` on a nonempty complex curve is not complex linear. -/
-theorem not_isComplexLinearOperator_dbarFunction_add_conjSMulDzbar [Nonempty M] :
-    ¬IsComplexLinearOperator ℂ (V := Bundle.Trivial M ℂ)
-      fun σ x ↦ (ofComplexManifold ℂ M).dbarFunction σ x + conjSMulDzbar x (σ x) := by
+/-- The operator `ξ ↦ ∂bar ξ + ξbar dzbar` on a nonempty open subset of `ℂ` is not complex
+linear. -/
+theorem not_isComplexLinearOperator_dbarFunction_add_conjSMulDzbar [Nonempty U] :
+    ¬IsComplexLinearOperator ℂ (V := Bundle.Trivial U ℂ)
+      fun σ x ↦ (ofComplexManifold ℂ U).dbarFunction σ x + conjSMulDzbar x (σ x) := by
   -- Its complex linear part `∂bar` differs from it on the constant section `1`.
   intro h
-  obtain ⟨x⟩ := ‹Nonempty M›
-  have hσ : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (fun _ : M ↦ (1 : ℂ)) x :=
+  obtain ⟨x⟩ := ‹Nonempty U›
+  have hσ : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (fun _ : U ↦ (1 : ℂ)) x :=
     mdifferentiableAt_const
   -- A complex linear operator is its own complex linear part, which is `∂bar` here.
   have h₁ := (h.sectionComplexLinearPart_eq (by
     simpa only [mdifferentiableAt_section, Trivial.fiberBundle_trivializationAt',
       Trivial.trivialization_apply] using hσ)).symm.trans
-    (sectionComplexLinearPart_dbarFunction_add_conjSMulDzbar hσ)
+    (sectionComplexLinearPart_dbarFunction_add_conjSMulDzbar _ x)
   have h₂ : conjSMulDzbar x (1 : ℂ) = 0 := add_eq_left.1 h₁
-  have h₃ : conjSMulDzbar x (1 : ℂ) (1 : ℂ) = 0 := by rw [h₂]; rfl
+  have h₃ : conjSMulDzbar x (1 : ℂ) (1 : ℂ) = 0 := by
+    -- The zero functional on the type synonym `TangentSpace 𝓘(ℝ, ℂ) x` of `ℂ` evaluates to `0`.
+    rw [h₂]; rfl
   rw [conjSMulDzbar_apply, map_one, one_mul] at h₃
   exact one_ne_zero h₃
 
@@ -146,37 +172,11 @@ theorem not_isComplexLinearOperator_dbarFunction_add_conjSMulDzbar [Nonempty M] 
 McDuff–Salamon, Exercise C.1.7, is `ξ ↦ ξbar dzbar`. -/
 @[simp]
 theorem antilinearPart_dbarFunction_add_conjSMulDzbar
-    (hD : IsRealCauchyRiemannOperator ℂ (ofComplexManifold ℂ M) (V := Bundle.Trivial M ℂ)
-      fun σ x ↦ (ofComplexManifold ℂ M).dbarFunction σ x + conjSMulDzbar x (σ x))
-    (x : M) : hD.antilinearPart x = conjSMulDzbar x :=
+    (hD : IsRealCauchyRiemannOperator ℂ (ofComplexManifold ℂ U) (V := Bundle.Trivial U ℂ)
+      fun σ x ↦ (ofComplexManifold ℂ U).dbarFunction σ x + conjSMulDzbar x (σ x))
+    (x : U) : hD.antilinearPart x = conjSMulDzbar x :=
   hD.antilinearPart_eq_of_eq_add
-    (ofComplexManifold ℂ M).isComplexLinearOperator_dbarFunction conjSMulDzbar
+    (ofComplexManifold ℂ U).isComplexLinearOperator_dbarFunction conjSMulDzbar
     conjSMulDzbar_complex_I_smul (fun _ _ _ ↦ rfl) x
-
-/-- The operator `∂` on a nonempty complex curve is not a real Cauchy–Riemann operator. -/
-theorem not_isRealCauchyRiemannOperator_delFunction [Nonempty M] :
-    ¬IsRealCauchyRiemannOperator ℂ (ofComplexManifold ℂ M) (V := Bundle.Trivial M ℂ)
-      (ofComplexManifold ℂ M).delFunction := by
-  -- For the chart coordinate `z`, `∂ z` and `∂bar z` would both be `(0,1)`-forms, and so would
-  -- their sum `dz`, which is complex linear.
-  intro h
-  obtain ⟨x₀⟩ := ‹Nonempty M›
-  set z : M → ℂ := ⇑(extChartAt 𝓘(ℝ, ℂ) x₀)
-  have h₁ := isZeroOneForm_iff.1 (h.isZeroOneForm z x₀) (1 : ℂ)
-  have h₂ := isZeroOneForm_iff.1
-    ((ofComplexManifold ℂ M).isRealCauchyRiemannOperator_dbarFunction.isZeroOneForm z x₀) (1 : ℂ)
-  rw [ofComplexManifold_apply] at h₁ h₂
-  have h₁' : (ofComplexManifold ℂ M).delFunction z x₀ (I * 1) =
-      -(I * (ofComplexManifold ℂ M).delFunction z x₀ (1 : ℂ)) := h₁
-  have h₂' : (ofComplexManifold ℂ M).dbarFunction z x₀ (I * 1) =
-      -(I * (ofComplexManifold ℂ M).dbarFunction z x₀ (1 : ℂ)) := h₂
-  have h₃ (v : ℂ) : (ofComplexManifold ℂ M).delFunction z x₀ v +
-      (ofComplexManifold ℂ M).dbarFunction z x₀ v = v := by
-    rw [delFunction_apply, sub_add_cancel]
-    exact mvfderiv_apply_of_eventuallyEq_extChartAt .rfl v
-  have h₄ : I = -I := by
-    linear_combination -h₃ (I * 1) + h₁' + h₂' - I * h₃ 1
-  have h₅ := congrArg Complex.im h₄
-  norm_num at h₅
 
 end TauCeti
