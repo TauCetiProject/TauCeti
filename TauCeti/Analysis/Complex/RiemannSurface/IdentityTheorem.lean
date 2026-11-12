@@ -8,7 +8,7 @@ module
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Topology.LocallyConstant.Basic
-public import TauCeti.Geometry.Manifold.Complex.Chart.Basic
+public import TauCeti.Geometry.Manifold.Complex.Chart
 
 /-!
 # The identity theorem for Riemann surfaces

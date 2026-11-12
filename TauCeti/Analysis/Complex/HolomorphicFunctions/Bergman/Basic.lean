@@ -20,7 +20,7 @@ Its norm is the actual `L²` norm, rather than an auxiliary supremum norm. Value
 complete complex normed space; in particular, scalar values give the classical Bergman space.
 
 Evaluation of the holomorphic representative at a point of the open set is a continuous linear
-functional (`TauCeti.BergmanSpace.evalCLM`), by the local `L²` bound on compact subsets.
+map (`TauCeti.BergmanSpace.evalCLM`), by the local `L²` bound on compact subsets.
 
 These are the analytic Banach stages used for holomorphic Čech cochains in the finiteness
 argument for compact Riemann-surface cohomology. Sheaf/cochain comparison and the finiteness
@@ -181,7 +181,7 @@ theorem exists_norm_representative_le {K : Set ℂ} (hK : IsCompact K) (hKU : K 
     hr ((closedBall_subset_cthickening hx r).trans hrU)
 
 /-- Evaluation of the holomorphic representative at a point of the open set is a continuous
-linear functional on the Bergman space. -/
+linear map from the Bergman space to the values. -/
 def evalCLM {z : ℂ} (hz : z ∈ U) : bergmanSpace F U →L[ℂ] F :=
   LinearMap.mkContinuousOfExistsBound
     { toFun := fun u ↦ representative u z

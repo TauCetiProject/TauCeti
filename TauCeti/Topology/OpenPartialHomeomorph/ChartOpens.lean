@@ -10,18 +10,24 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import Mathlib.Topology.Sets.Opens
 
 /-!
-# Opens read in a chart and coordinate discs
+# Images of opens and preimages of balls under an open partial homeomorphism
 
-For an open partial homeomorphism `e : X → Y`, this file introduces two families of opens:
+When `e : X → Y` is a chart of a manifold, open sets of `X` inside the chart source are read as
+open sets of the model space `Y`, where function spaces such as Bergman spaces live; balls of a
+metric model space pull back to coordinate balls of `X`. This file records both operations as
+`Opens` and shows that they carry relatively compact inclusions, so that model-space function
+spaces can be indexed by them and nested covers by coordinate balls can be built.
 
-* `OpenPartialHomeomorph.chartRead`: the open `e (V ∩ e.source)` of `Y` read from an open `V` of
+* `OpenPartialHomeomorph.imageOpens`: the open `e '' (e.source ∩ V)` of `Y` for an open `V` of
   `X`, written as `e.target ∩ e.symm ⁻¹' V`. When `Y` is Hausdorff and `closure V'` is compact and
-  lies in `V ⊆ e.source`, the read open of `V'` has compact closure inside that of `V`
-  (`OpenPartialHomeomorph.isCompact_closure_chartRead_and_subset`).
-* `OpenPartialHomeomorph.chartDisc`: for a metric codomain, the coordinate disc
-  `e.source ∩ e ⁻¹' ball c r`. When `Y` is proper and `closedBall c r ⊆ e.target`, its closure is
-  compact and lies in every coordinate disc of larger radius
-  (`OpenPartialHomeomorph.isCompact_closure_chartDisc_and_subset`).
+  lies in `e.source`, `e.imageOpens V'` has compact closure
+  (`OpenPartialHomeomorph.isCompact_closure_imageOpens`), contained in `e.imageOpens V` whenever
+  `closure V' ⊆ V` (`OpenPartialHomeomorph.closure_imageOpens_subset`).
+* `OpenPartialHomeomorph.preimageBall`: for a pseudometric codomain, the coordinate ball
+  `e.source ∩ e ⁻¹' ball c r`, which is `e.symm.imageOpens (ball c r)`. When `X` is Hausdorff,
+  `Y` is proper and `closedBall c r ⊆ e.target`, its closure is compact
+  (`OpenPartialHomeomorph.isCompact_closure_preimageBall`) and lies in the coordinate ball of any
+  larger radius (`OpenPartialHomeomorph.closure_preimageBall_subset`).
 -/
 
 public noncomputable section
@@ -32,86 +38,103 @@ namespace OpenPartialHomeomorph
 
 variable {X : Type*} [TopologicalSpace X]
 
-/-! ### Opens read in a chart -/
+/-! ### Images of opens -/
 
-section Read
+section Image
 
 variable {Y : Type*} [TopologicalSpace Y]
 
-/-- The open `e (V ∩ e.source)` of the codomain, written as `e.target ∩ e.symm ⁻¹' V`. -/
-def chartRead (e : OpenPartialHomeomorph X Y) (V : Opens X) : Opens Y :=
+/-- The open `e '' (e.source ∩ V)` of the codomain, written as `e.target ∩ e.symm ⁻¹' V`. -/
+def imageOpens (e : OpenPartialHomeomorph X Y) (V : Opens X) : Opens Y :=
   ⟨e.target ∩ e.symm ⁻¹' V, e.isOpen_inter_preimage_symm V.isOpen⟩
 
 variable {e : OpenPartialHomeomorph X Y} {V V' : Opens X}
 
 @[simp]
-theorem coe_chartRead : (e.chartRead V : Set Y) = e.target ∩ e.symm ⁻¹' V := (rfl)
+theorem coe_imageOpens : (e.imageOpens V : Set Y) = e.target ∩ e.symm ⁻¹' V := (rfl)
 
 @[simp]
-theorem mem_chartRead {z : Y} : z ∈ e.chartRead V ↔ z ∈ e.target ∧ e.symm z ∈ V := Iff.rfl
+theorem mem_imageOpens {z : Y} : z ∈ e.imageOpens V ↔ z ∈ e.target ∧ e.symm z ∈ V := Iff.rfl
 
-theorem chartRead_mono (h : V ≤ V') : e.chartRead V ≤ e.chartRead V' :=
+theorem imageOpens_mono (h : V ≤ V') : e.imageOpens V ≤ e.imageOpens V' :=
   fun _ hz ↦ ⟨hz.1, h hz.2⟩
 
-/-- A point of `V ⊆ e.source` is read in the chart as a point of `e.chartRead V`. -/
-theorem map_mem_chartRead (hV : (V : Set X) ⊆ e.source) {x : X} (hx : x ∈ V) :
-    e x ∈ e.chartRead V :=
-  mem_chartRead.2 ⟨e.map_source (hV hx), by rwa [e.left_inv (hV hx)]⟩
+theorem imageOpens_subset_target : (e.imageOpens V : Set Y) ⊆ e.target :=
+  inter_subset_left
 
-/-- If `closure V'` is compact and lies in `V ⊆ e.source`, the open read from `V'` has compact
-closure inside the open read from `V`. -/
-theorem isCompact_closure_chartRead_and_subset [T2Space Y] (hV : (V : Set X) ⊆ e.source)
-    (hK : IsCompact (closure (V' : Set X))) (hKV : closure (V' : Set X) ⊆ V) :
-    IsCompact (closure (e.chartRead V' : Set Y)) ∧
-      closure (e.chartRead V' : Set Y) ⊆ e.chartRead V := by
-  have hKc : IsCompact (e '' closure (V' : Set X)) :=
-    hK.image_of_continuousOn (e.continuousOn.mono (hKV.trans hV))
-  have hcl : closure (e.chartRead V' : Set Y) ⊆ e '' closure (V' : Set X) :=
-    closure_minimal (fun z hz ↦ ⟨e.symm z, subset_closure hz.2, e.right_inv hz.1⟩) hKc.isClosed
-  refine ⟨hKc.of_isClosed_subset isClosed_closure hcl, hcl.trans ?_⟩
+/-- A point of `V` in the source of `e` maps to a point of `e.imageOpens V`. -/
+theorem map_mem_imageOpens {x : X} (hxe : x ∈ e.source) (hx : x ∈ V) :
+    e x ∈ e.imageOpens V :=
+  mem_imageOpens.2 ⟨e.map_source hxe, by rwa [e.left_inv hxe]⟩
+
+/-- If `closure V'` is compact and lies in `e.source`, the closure of `e.imageOpens V'` lies in the
+image of `closure V'`. -/
+theorem closure_imageOpens_subset_image [T2Space Y] (hK : IsCompact (closure (V' : Set X)))
+    (hKe : closure (V' : Set X) ⊆ e.source) :
+    closure (e.imageOpens V' : Set Y) ⊆ e '' closure (V' : Set X) :=
+  closure_minimal (fun z hz ↦ ⟨e.symm z, subset_closure hz.2, e.right_inv hz.1⟩)
+    (hK.image_of_continuousOn (e.continuousOn.mono hKe)).isClosed
+
+/-- If `closure V'` is compact and lies in `e.source`, `e.imageOpens V'` has compact closure. -/
+theorem isCompact_closure_imageOpens [T2Space Y] (hK : IsCompact (closure (V' : Set X)))
+    (hKe : closure (V' : Set X) ⊆ e.source) :
+    IsCompact (closure (e.imageOpens V' : Set Y)) :=
+  (hK.image_of_continuousOn (e.continuousOn.mono hKe)).closure_of_subset
+    fun _ hz ↦ ⟨_, subset_closure hz.2, e.right_inv hz.1⟩
+
+/-- If `closure V'` is compact and lies in `V` and in `e.source`, the closure of `e.imageOpens V'`
+lies in `e.imageOpens V`. -/
+theorem closure_imageOpens_subset [T2Space Y] (hK : IsCompact (closure (V' : Set X)))
+    (hKe : closure (V' : Set X) ⊆ e.source) (hKV : closure (V' : Set X) ⊆ V) :
+    closure (e.imageOpens V' : Set Y) ⊆ e.imageOpens V := by
+  refine (closure_imageOpens_subset_image hK hKe).trans ?_
   rintro _ ⟨x, hx, rfl⟩
-  exact map_mem_chartRead hV (hKV hx)
+  exact map_mem_imageOpens (hKe hx) (hKV hx)
 
-end Read
+end Image
 
-/-! ### Coordinate discs -/
+/-! ### Preimages of balls -/
 
-section Disc
+section Ball
 
 variable {Y : Type*} [PseudoMetricSpace Y] {e : OpenPartialHomeomorph X Y}
 
-/-- The coordinate disc `e.source ∩ e ⁻¹' ball c r`. -/
-def chartDisc (e : OpenPartialHomeomorph X Y) (c : Y) (r : ℝ) : Opens X :=
-  ⟨e.source ∩ e ⁻¹' Metric.ball c r, e.isOpen_inter_preimage Metric.isOpen_ball⟩
+/-- The coordinate ball `e.source ∩ e ⁻¹' ball c r`, the image of `ball c r` under `e.symm`. -/
+def preimageBall (e : OpenPartialHomeomorph X Y) (c : Y) (r : ℝ) : Opens X :=
+  e.symm.imageOpens ⟨Metric.ball c r, Metric.isOpen_ball⟩
 
 @[simp]
-theorem coe_chartDisc {c : Y} {r : ℝ} :
-    (e.chartDisc c r : Set X) = e.source ∩ e ⁻¹' Metric.ball c r := (rfl)
+theorem coe_preimageBall {c : Y} {r : ℝ} :
+    (e.preimageBall c r : Set X) = e.source ∩ e ⁻¹' Metric.ball c r := (rfl)
 
 @[simp]
-theorem mem_chartDisc {c : Y} {r : ℝ} {x : X} :
-    x ∈ e.chartDisc c r ↔ x ∈ e.source ∧ e x ∈ Metric.ball c r := Iff.rfl
+theorem mem_preimageBall {c : Y} {r : ℝ} {x : X} :
+    x ∈ e.preimageBall c r ↔ x ∈ e.source ∧ e x ∈ Metric.ball c r := Iff.rfl
 
-theorem chartDisc_subset_source {c : Y} {r : ℝ} : (e.chartDisc c r : Set X) ⊆ e.source :=
-  inter_subset_left
+theorem preimageBall_subset_source {c : Y} {r : ℝ} : (e.preimageBall c r : Set X) ⊆ e.source :=
+  e.symm.imageOpens_subset_target
 
-/-- If `closedBall c r` lies in the chart target, the coordinate disc of radius `r` has compact
-closure, contained in the coordinate disc of any larger radius. -/
-theorem isCompact_closure_chartDisc_and_subset [T2Space X] [ProperSpace Y] {c : Y}
-    {r s : ℝ}
+/-- If `closedBall c r` lies in the chart target, the coordinate ball of radius `r` has compact
+closure. -/
+theorem isCompact_closure_preimageBall [T2Space X] [ProperSpace Y] {c : Y} {r : ℝ}
+    (hr : Metric.closedBall c r ⊆ e.target) :
+    IsCompact (closure (e.preimageBall c r : Set X)) :=
+  e.symm.isCompact_closure_imageOpens
+    ((isCompact_closedBall c r).of_isClosed_subset isClosed_closure
+      Metric.closure_ball_subset_closedBall)
+    (Metric.closure_ball_subset_closedBall.trans hr)
+
+/-- If `closedBall c r` lies in the chart target, the closure of the coordinate ball of radius `r`
+lies in the coordinate ball of any larger radius. -/
+theorem closure_preimageBall_subset [T2Space X] [ProperSpace Y] {c : Y} {r s : ℝ}
     (hr : Metric.closedBall c r ⊆ e.target) (hrs : r < s) :
-    IsCompact (closure (e.chartDisc c r : Set X)) ∧
-      closure (e.chartDisc c r : Set X) ⊆ e.chartDisc c s := by
-  have hK : IsCompact (e.symm '' Metric.closedBall c r) :=
-    (isCompact_closedBall c r).image_of_continuousOn (e.continuousOn_symm.mono hr)
-  have hcl : closure (e.chartDisc c r : Set X) ⊆ e.symm '' Metric.closedBall c r :=
-    closure_minimal (fun x hx ↦ ⟨e x, Metric.ball_subset_closedBall hx.2, e.left_inv hx.1⟩)
-      hK.isClosed
-  refine ⟨hK.of_isClosed_subset isClosed_closure hcl, hcl.trans ?_⟩
-  rintro _ ⟨z, hz, rfl⟩
-  exact mem_chartDisc.2 ⟨e.map_target (hr hz), by
-    rw [e.right_inv (hr hz)]; exact Metric.closedBall_subset_ball hrs hz⟩
+    closure (e.preimageBall c r : Set X) ⊆ e.preimageBall c s :=
+  e.symm.closure_imageOpens_subset (V := ⟨Metric.ball c s, Metric.isOpen_ball⟩)
+    ((isCompact_closedBall c r).of_isClosed_subset isClosed_closure
+      Metric.closure_ball_subset_closedBall)
+    (Metric.closure_ball_subset_closedBall.trans hr)
+    (Metric.closure_ball_subset_closedBall.trans (Metric.closedBall_subset_ball hrs))
 
-end Disc
+end Ball
 
 end OpenPartialHomeomorph

@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.ComplexManifold
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Topology
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.Geometry.Manifold.Complex.Analytic
-public import TauCeti.Geometry.Manifold.Complex.Chart.Basic
+public import TauCeti.Geometry.Manifold.Complex.Chart
 public import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
