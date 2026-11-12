@@ -162,6 +162,20 @@ theorem baseSet_trivializationAt (b : B) :
     (trivializationAt F (AssociatedBundle G P F) b).baseSet = (trivializationAt G P b).baseSet := by
   rw [trivializationAt_eq_localTriv, associatedBundleCore_localTriv_baseSet]
 
+/-- On overlaps of preferred charts, the coordinate change of the associated bundle acts on `F` by
+the transition function of `P`. -/
+theorem coordChange_trivializationAt {b b' x : B} (hb : x ∈ (trivializationAt G P b).baseSet)
+    (hb' : x ∈ (trivializationAt G P b').baseSet) (v : F) :
+    (trivializationAt F (AssociatedBundle G P F) b).coordChange
+        (trivializationAt F (AssociatedBundle G P F) b') x v =
+      (trivializationAt G P b).coordChange (trivializationAt G P b') x 1 • v := by
+  rw [trivializationAt_eq_localTriv, trivializationAt_eq_localTriv, Trivialization.coordChange,
+    FiberBundleCore.localTriv_symm_apply, FiberBundleCore.localTriv_apply,
+    associatedBundleCore_indexAt, associatedBundleCore_coordChange,
+    associatedBundleCore_coordChange, smul_smul,
+    Trivialization.coordChange_one_mul_coordChange_one _ _ _ hb
+      (mem_baseSet_trivializationAt G P x) hb']
+
 variable (G) in
 /-- The class `[p, v]` in the associated bundle of a point `p` of the fibre of `P` over `b` and of
 `v : F`: the point over `b` with coordinate `(e p).2 • v` in the chart at `b`, where
@@ -228,6 +242,11 @@ theorem exists_mk {b : B} (v : AssociatedBundle G P F b) :
   let p := (FiberBundle.homeomorphAt G P b).symm 1
   obtain ⟨w, hw⟩ := (mk_bijective (F := F) p).2 v
   exact ⟨p, w, hw⟩
+
+/-- When the model fibre `F` is nonempty, every fibre of the associated bundle is nonempty. -/
+instance instNonempty [Nonempty F] (b : B) : Nonempty (AssociatedBundle G P F b) :=
+  let ⟨v⟩ := ‹Nonempty F›
+  ⟨mk G ((FiberBundle.homeomorphAt G P b).symm 1) v⟩
 
 /-! ### The quotient topology -/
 
