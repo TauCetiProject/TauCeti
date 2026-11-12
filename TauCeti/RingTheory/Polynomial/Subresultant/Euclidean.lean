@@ -129,7 +129,6 @@ needs no degree bound, as only its coefficients up to the left bound are read. -
 theorem _root_.Polynomial.subresultantCoeff_add_mul_left {p q a : R[X]} {m n j : ℕ}
     (hq : q.natDegree ≤ n) (ha : a.natDegree + n ≤ m) (k : ℕ) :
     subresultantCoeff (p + a * q) q m n j k = subresultantCoeff p q m n j k := by
-  have haq : (a * q).natDegree ≤ m := natDegree_mul_le.trans (by omega)
   have hp' : (p.reductum (m + 1)).natDegree ≤ m := Nat.lt_succ_iff.mp (natDegree_reductum_lt p m)
   have hcongr : ∀ i ≤ m, (p + a * q).coeff i = (p.reductum (m + 1) + a * q).coeff i := by
     intro i hi
