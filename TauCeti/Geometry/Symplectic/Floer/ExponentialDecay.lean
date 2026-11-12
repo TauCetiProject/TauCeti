@@ -804,8 +804,8 @@ theorem exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (hH : ContDiff �
   have hu₂ : ‖u (s, t) - x t‖ ≤ max C₂ 0 * Real.exp (-(min κ₁ κ₂ * s)) :=
     (hs₂ t).trans ((mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le).trans
       (mul_le_mul_of_nonneg_left he₂ (le_max_right _ _)))
-  have hM' : 0 ≤ M' := le_max_right _ _
-  have hLx : (0 : ℝ) ≤ Lx := Lx.coe_nonneg
+  have : 0 ≤ M' := le_max_right _ _
+  have : (0 : ℝ) ≤ Lx := Lx.coe_nonneg
   calc ‖D‖ ≤ ‖fderiv ℝ u (s, t) (1, 0)‖ +
         (M' * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖) := by
         rw [← hD₁]

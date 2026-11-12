@@ -460,7 +460,7 @@ theorem neg_mul_norm_fderiv_one_sub_sq_le_laplacian {a b c m : ℝ}
   simp only [Complex.coe_orthonormalBasisOneI, Fin.sum_univ_two, Fin.isValue,
     Matrix.cons_val_zero, Matrix.cons_val_one, hD, hsymm, hΔ]
   have hX := norm_nonneg (fderiv ℝ u z 1 - e₀)
-  have hm₀ : 0 ≤ m := (norm_nonneg _).trans hm
+  have : 0 ≤ m := (norm_nonneg _).trans hm
   nlinarith [mul_le_mul_of_nonneg_left hL hX,
     sq_nonneg (‖fderiv ℝ (fderiv ℝ u) z 1 I‖ - b * m * ‖fderiv ℝ u z 1 - e₀‖),
     sq_nonneg (‖fderiv ℝ (fderiv ℝ u) z 1 1‖ - 2 * a * b * m * ‖fderiv ℝ u z 1 - e₀‖)]

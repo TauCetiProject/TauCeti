@@ -623,8 +623,9 @@ cylindrical Floer data `J_t(x)` and `K = H_t dt` give coefficients `J(z, x)` and
 satisfy the hypotheses of the coordinate results above. A Floer solution `u` on `S × ℝ`, for an
 open set `S` of `s`-values, with `1`-periodic loops in `K`, becomes the `i`-periodic solution
 `v(z) = u(re z, fract (im z))` of `∂ₜv - X(z, v) i = J(z, v) (∂ₛv - X(z, v) 1)` on `re ⁻¹' S`, with
-image in `K`. Its derivative bounds that of `u`, with `∂ₛv(z) = ∂ₛu(re z, im z)`, and its energy `∫ ‖∂ₛv‖²` over `A ×ℂ [0, 1]` is the
-energy `∫ ‖∂ₛu‖²` of `u` over `A × [0, 1]` for every measurable `A ⊆ S`. -/
+image in `K`. Its derivative bounds that of `u`, with `∂ₛv(z) = ∂ₛu(re z, im z)`, and its energy
+`∫ ‖∂ₛv‖²` over `A ×ℂ [0, 1]` is the energy `∫ ‖∂ₛu‖²` of `u` over `A × [0, 1]` for every
+measurable `A ⊆ S`. -/
 private theorem exists_complexCoordinate (hH : ContDiff ℝ 3 (uncurry H)) (hHper : Periodic H 1)
     (hW : IsOpen W)
     (hJ : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
@@ -857,7 +858,7 @@ theorem exists_forall_ofReal_norm_fderiv_sq_le_mul_setLIntegral_floerEnergyDensi
       hWc hJc hXc hK hKWc hJsq hJτ hJI hXτ hXI
   -- A radius `r ≤ 1 / 2` below the gap `(b - a) / 4` with `16 A (1 + M')² r² ≤ 1`.
   set r : ℝ := min (min (1 / 2) ((b - a) / 4)) (1 / (4 * (1 + M') * (A + 1)))
-  have hM' : 0 ≤ M' := le_max_right _ _
+  have : 0 ≤ M' := le_max_right _ _
   have hr : 0 < r := lt_min (lt_min (by norm_num) (by linarith)) (by positivity)
   have hr2 : r ≤ 1 / 2 := (min_le_left _ _).trans (min_le_left _ _)
   have hrab : r ≤ (b - a) / 4 := (min_le_left _ _).trans (min_le_right _ _)

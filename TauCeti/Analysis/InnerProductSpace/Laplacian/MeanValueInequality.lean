@@ -290,11 +290,11 @@ theorem mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian
   set I := ∫ x in ball x₀ r, w x ∂μ
   set V := μ.real (ball (0 : E) 1)
   have hV : 0 < V := Metric.measureReal_ball_pos μ 0 one_pos
-  have hm : 0 ≤ m := measureReal_nonneg
+  have : 0 ≤ m := measureReal_nonneg
   have hI : 0 ≤ I := setIntegral_nonneg measurableSet_ball hw0
   -- Replacing `A` by `A' = max A 0` only weakens the hypotheses.
   set A' := max A 0 with hA'_def
-  have hA' : 0 ≤ A' := le_max_right _ _
+  have : 0 ≤ A' := le_max_right _ _
   have hΔ' : ∀ x ∈ ball x₀ r, -(A' * w x) ≤ Δ w x := fun x hx ↦
     le_trans (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _) (hw0 x hx))) (hΔ x hx)
   have hr' : 16 * A' * m ≤ V := by
