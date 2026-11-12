@@ -46,7 +46,7 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
   `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
   rescaled argument `c x` and its derivative bounds.
-* `TauCeti.one_add_norm_smul_sq_rpow_half_le`: on an annulus `c ≤ ‖ζ‖ ≤ d`, the bracket power
+* `TauCeti.one_add_norm_smul_sq_rpow_half_le`: on an annulus `0 < c ≤ ‖ζ‖ ≤ d`, the bracket power
   `(1 + ‖t ζ‖ ^ 2) ^ (u / 2)` is `O(t ^ u)` for `t ≥ 1`.
 * `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow`: composing
   on the left with a continuous linear map preserves bracket bounds on derivatives.
@@ -196,7 +196,7 @@ theorem exists_one_add_norm_smul_sq_rpow_le {c : ℝ} (hc : c ≠ 0) (r : ℝ) :
           Real.mul_rpow (lt_min one_pos hc2).le hx.le
       _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
 
-/-- On the annulus `c ≤ ‖ζ‖ ≤ d`, every power of the Japanese bracket of `t ζ` with `t ≥ 1` is
+/-- On the annulus `0 < c ≤ ‖ζ‖ ≤ d`, every power of the Japanese bracket of `t ζ` with `t ≥ 1` is
 at most a multiple of `t ^ u`: `(1 + ‖t ζ‖ ^ 2) ^ (u / 2) ≤ max ((c ^ 2) ^ (u / 2))
 ((1 + d ^ 2) ^ (u / 2)) t ^ u`. -/
 theorem one_add_norm_smul_sq_rpow_half_le {c d t : ℝ} (hc : 0 < c) (ht : 1 ≤ t) {ζ : E}

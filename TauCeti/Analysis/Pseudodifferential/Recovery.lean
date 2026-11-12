@@ -43,10 +43,11 @@ exact formula
 convergence. Peetre's inequality bounds the integrand by a multiple of
 `⟨2π η⟩ ^ |m| ‖𝓕 φ η‖` for `|ε| ≤ 1`, and `∫ 𝓕 φ = φ(0)` by Fourier inversion.
 
-For `ε = 1` the cut-off exponential is the wave packet `y ↦ exp(i ⟪y, ξ⟫) φ(y) v`, and removing
-its phase gives the identity `exp(-i ⟪x, ξ⟫) Op(a) (φ.cutoffExponential 1 ξ v) (x) =
-∫ exp(2πi ⟪η, x⟫) a(x, ξ + 2πη) (𝓕 φ η) v dη`
-(`TauCeti.exp_smul_quantizeSchwartzValue_cutoffExponential_one`).
+Removing the phase of the cut-off exponential gives the identity
+`exp(-i ⟪x, ξ⟫) Op(a) (φ.cutoffExponential ε ξ v) (x) =
+∫ exp(2πi ⟪ε η, x⟫) a(x, ξ + 2πε η) (𝓕 φ η) v dη`
+(`TauCeti.exp_smul_quantizeSchwartzValue_cutoffExponential`). For `ε = 1` the cut-off exponential
+is the wave packet `y ↦ exp(i ⟪y, ξ⟫) φ(y) v`.
 
 ## References
 
@@ -99,20 +100,24 @@ theorem quantizeSchwartzValue_cutoffExponential [CompleteSpace V] (a : E × E �
           ContinuousLinearMap.map_smul_of_tower, Circle.smul_def]
         rw [smul_comm (|ε ^ finrank ℝ E|) ((𝐞 _ : ℂ)), smul_smul, hscale, one_smul]
 
-/-- **Quantization of a wave packet.** For the wave packet `y ↦ exp(i ⟪y, ζ⟫) φ(y) v`, the
-quantization with the phase `exp(i ⟪x, ζ⟫)` removed is the integral
-`∫ exp(2πi ⟪η, x⟫) a(x, ζ + 2πη) (𝓕 φ η) v dη`. -/
-theorem exp_smul_quantizeSchwartzValue_cutoffExponential_one [CompleteSpace V]
-    (a : E × E → V →L[ℂ] W) (φ : 𝓢(E, ℂ)) (ζ : E) (v : V) (x : E) :
-    Complex.exp (-(⟪x, ζ⟫ * Complex.I)) • quantizeSchwartzValue a (φ.cutoffExponential 1 ζ v) x =
-      ∫ η, 𝐞 ⟪η, x⟫ • a (x, ζ + (2 * π) • η) (𝓕 φ η • v) := by
-  have hphase : Complex.exp (-(⟪x, ζ⟫ * Complex.I)) * 𝐞 ⟪(2 * π)⁻¹ • ζ, x⟫ = 1 := by
-    rw [real_inner_comm x, ← exp_inner_mul_I_eq_fourierChar, ← Complex.exp_add]
-    simp
-  rw [quantizeSchwartzValue_cutoffExponential a φ one_ne_zero, ← integral_smul]
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The phase `exp(-i ⟪x, ξ⟫)` cancels the phase `exp(2πi ⟪ξ / 2π, x⟫)`. -/
+private lemma exp_neg_mul_I_mul_fourierChar (x ξ : E) :
+    Complex.exp (-(⟪x, ξ⟫ * Complex.I)) * 𝐞 ⟪(2 * π)⁻¹ • ξ, x⟫ = 1 := by
+  rw [real_inner_comm x, ← exp_inner_mul_I_eq_fourierChar, ← Complex.exp_add]
+  simp
+
+/-- **Quantization of a cut-off exponential without its phase.** Removing the phase
+`exp(i ⟪x, ζ⟫)`, the quantization of the cut-off exponential `y ↦ exp(i ⟪y, ζ⟫) φ(ε y) v` is the
+integral `∫ exp(2πi ⟪ε η, x⟫) a(x, ζ + 2πε η) (𝓕 φ η) v dη`. -/
+theorem exp_smul_quantizeSchwartzValue_cutoffExponential [CompleteSpace V]
+    (a : E × E → V →L[ℂ] W) (φ : 𝓢(E, ℂ)) {ε : ℝ} (hε : ε ≠ 0) (ζ : E) (v : V) (x : E) :
+    Complex.exp (-(⟪x, ζ⟫ * Complex.I)) • quantizeSchwartzValue a (φ.cutoffExponential ε ζ v) x =
+      ∫ η, 𝐞 ⟪ε • η, x⟫ • a (x, ζ + (2 * π * ε) • η) (𝓕 φ η • v) := by
+  rw [quantizeSchwartzValue_cutoffExponential a φ hε, ← integral_smul]
   congr 1 with η
-  simp [inner_add_left, AddChar.map_add_eq_mul, Circle.smul_def, smul_smul, ← mul_assoc, hphase,
-    -mul_inv_rev]
+  simp [inner_add_left, AddChar.map_add_eq_mul, Circle.smul_def, smul_smul, ← mul_assoc,
+    exp_neg_mul_I_mul_fourierChar, -mul_inv_rev]
 
 /-! ### Recovery of the symbol -/
 
@@ -221,10 +226,7 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential
       simp_rw [Circle.smul_def]
       rw [integral_smul, (a (x, ξ)).integral_comp_comm hv, integral_smul_const, hint]
     -- The phase `exp(i ⟪x, ξ⟫)` cancels against `exp(-i ⟪x, ξ⟫)`.
-    have hphase : Complex.exp (-(⟪x, ξ⟫ * Complex.I)) * 𝐞 ⟪(2 * π)⁻¹ • ξ, x⟫ = 1 := by
-      rw [real_inner_comm x, ← exp_inner_mul_I_eq_fourierChar, ← Complex.exp_add]
-      simp
-    rw [hpull, Circle.smul_def, smul_smul, hphase, one_smul, map_smul]
+    rw [hpull, Circle.smul_def, smul_smul, exp_neg_mul_I_mul_fourierChar, one_smul, map_smul]
   rw [← hlim]
   refine ((tendsto_integral_cutoffExponential hmeas hcont hC φ v).mono_left
     nhdsWithin_le_nhds).const_smul _ |>.congr' ?_

@@ -35,18 +35,23 @@ If `Op(a)` is positive on the compactly supported Schwartz functions supported i
 these limits are nonnegative for every amplitude supported in `U`. Concentrating the amplitude
 near a point shows that the principal symbol is a positive operator on the fibre at every
 position of `U` and every frequency
-(`TauCeti.ClassicalSymbol.isPositive_coefficient_principal`). If `a` is moreover elliptic, then
-at nonzero frequencies the principal symbol is invertible, hence strictly positive
-(`TauCeti.ClassicalSymbol.isStrictlyPositive_coefficient_principal`). This is the positivity
+(`TauCeti.ClassicalSymbol.isPositive_coefficient_principal`). Where the principal symbol is
+moreover invertible, it is strictly positive
+(`TauCeti.ClassicalSymbol.isStrictlyPositive_coefficient_principal`); for an elliptic `a` this
+holds at every nonzero frequency
+(`TauCeti.ClassicalSymbol.IsElliptic.isStrictlyPositive_coefficient_principal`). This is the
+positivity
 under which the powers `σ(a)(x, ξ) ^ z` of the principal symbol of a positive elliptic operator
 are defined by the continuous functional calculus.
 
 The phase-free form of the wave packet quantization is the exact identity
 `exp(-i ⟪x, ζ⟫) Op(a) (y ↦ exp(i ⟪y, ζ⟫) φ(y) v) (x) = ∫ exp(2πi ⟪η, x⟫) a(x, ζ + 2πη) (𝓕 φ η) v dη`
-(`TauCeti.exp_smul_quantizeSchwartzValue_cutoffExponential_one`). After the rescaling by
+(`TauCeti.exp_smul_quantizeSchwartzValue_cutoffExponential` with `ε = 1`). After the rescaling by
 `t ^ (-m)` with `ζ = t ξ`, the integrand converges by
 `TauCeti.ClassicalSymbol.tendsto_rpow_neg_smul_coefficient_smul`, and Peetre's inequality
-dominates it uniformly for `t ≥ 1` and positions in a compact set.
+dominates it uniformly for `t ≥ 1` and positions in a compact set. For any symbol `a` this
+domination bounds the rescaled quantizations `t ^ (-m) Op(a) u_t (x)` uniformly
+(`TauCeti.Symbol.exists_norm_rpow_neg_smul_quantizeSchwartzValue_le`).
 
 ## References
 
@@ -64,10 +69,10 @@ noncomputable section
 
 namespace TauCeti
 
-namespace ClassicalSymbol
-
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
+
+namespace Symbol
 
 /-- At a nonzero frequency `ξ` and positions in a compact set, `t ^ (-m) ‖a(y, t ξ + 2πη)‖` is
 at most a multiple of `⟨2πη⟩ ^ |m|` for all `t ≥ 1`. -/
@@ -106,9 +111,9 @@ private lemma rpow_neg_smul_exp_smul_quantizeSchwartzValue_cutoffExponential [Co
         quantizeSchwartzValue a.coefficient (φ.cutoffExponential 1 (t • ξ) v) x =
       ∫ η, 𝐞 ⟪η, x⟫ • (t ^ (-m) • a.coefficient (x, t • ξ + (2 * π) • η))
         (𝓕 φ η • v) := by
-  rw [exp_smul_quantizeSchwartzValue_cutoffExponential_one, ← integral_smul]
+  rw [exp_smul_quantizeSchwartzValue_cutoffExponential _ φ one_ne_zero, ← integral_smul]
   congr 1 with η
-  rw [smul_apply, smul_comm]
+  rw [one_smul, mul_one, smul_apply, smul_comm]
 
 /-- The integrand of `rpow_neg_smul_exp_smul_quantizeSchwartzValue_cutoffExponential` is
 dominated by `B ‖v‖ ⟨2πη⟩ ^ |m| ‖𝓕 φ η‖` for `t ≥ 1`. -/
@@ -127,6 +132,34 @@ private lemma norm_integrand_le {a : Symbol n V W m} {K : Set (CoordinateSpace n
   rw [norm_smul (𝓕 φ η) v]
   ring
 
+/-- **High-frequency wave packets are bounded after rescaling.** For a symbol `a` of order `m`,
+a nonzero frequency `ξ`, a Schwartz amplitude `φ` and `v ∈ V`, the quantizations of the wave
+packets `u_t(y) = exp(i ⟪y, t ξ⟫) φ(y) v` satisfy `‖t ^ (-m) Op(a) u_t (x)‖ ≤ B` for all `t ≥ 1`
+and positions `x` in a compact set. -/
+theorem exists_norm_rpow_neg_smul_quantizeSchwartzValue_le [CompleteSpace V]
+    (a : Symbol n V W m) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) (φ : 𝓢(CoordinateSpace n, ℂ)) (v : V) :
+    ∃ B, ∀ x ∈ K, ∀ t : ℝ, 1 ≤ t →
+      ‖t ^ (-m) • quantizeSchwartzValue a.coefficient (φ.cutoffExponential 1 (t • ξ) v) x‖ ≤
+        B := by
+  obtain ⟨B, hB⟩ := exists_norm_rpow_neg_smul_coefficient_le a hK hξ
+  refine ⟨∫ η, B * ‖v‖ * ((1 + ‖(2 * π) • η‖ ^ 2) ^ (|m| / 2) * ‖𝓕 φ η‖), fun x hx t ht ↦ ?_⟩
+  have h : ‖t ^ (-m) • Complex.exp (-(⟪x, t • ξ⟫ * Complex.I)) •
+      quantizeSchwartzValue a.coefficient (φ.cutoffExponential 1 (t • ξ) v) x‖ ≤
+        ∫ η, B * ‖v‖ * ((1 + ‖(2 * π) • η‖ ^ 2) ^ (|m| / 2) * ‖𝓕 φ η‖) := by
+    rw [rpow_neg_smul_exp_smul_quantizeSchwartzValue_cutoffExponential]
+    exact norm_integral_le_of_norm_le
+      (((𝓕 φ).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |m|).const_mul _)
+      (.of_forall (norm_integrand_le hB hx ht φ v))
+  -- The phase `exp(-i ⟪x, t ξ⟫)` has norm one.
+  have hexp : ‖Complex.exp (-(⟪x, t • ξ⟫ * Complex.I))‖ = 1 := by
+    rw [← neg_mul, ← Complex.ofReal_neg, Complex.norm_exp_ofReal_mul_I]
+  rwa [smul_comm (t ^ (-m)), norm_smul, hexp, one_mul] at h
+
+end Symbol
+
+namespace ClassicalSymbol
+
 /-- **The principal symbol from high-frequency wave packets.** For a classical symbol `a` of order
 `m`, a nonzero frequency `ξ`, a Schwartz amplitude `φ` and `v ∈ V`, the wave packets
 `u_t(y) = exp(i ⟪y, t ξ⟫) φ(y) v` satisfy
@@ -138,7 +171,8 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential_atTop [CompleteSpace V] 
     Tendsto (fun t : ℝ ↦ t ^ (-m) • Complex.exp (-(⟪x, t • ξ⟫ * Complex.I)) •
         quantizeSchwartzValue a.toSymbol.coefficient (φ.cutoffExponential 1 (t • ξ) v) x)
       atTop (𝓝 (a.principal.coefficient (x, ξ) (φ x • v))) := by
-  obtain ⟨B, hB⟩ := exists_norm_rpow_neg_smul_coefficient_le a.toSymbol isCompact_singleton hξ
+  obtain ⟨B, hB⟩ :=
+    Symbol.exists_norm_rpow_neg_smul_coefficient_le a.toSymbol isCompact_singleton hξ
   set σ := a.principal.coefficient (x, ξ)
   -- Fourier inversion evaluates the limit integral.
   have hlim : ∫ η, 𝐞 ⟪η, x⟫ • σ (𝓕 φ η • v) = σ (φ x • v) := by
@@ -153,11 +187,11 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential_atTop [CompleteSpace V] 
           rw [Circle.smul_def, Circle.smul_def, ← map_smul, smul_smul, smul_eq_mul]
       _ = σ (φ x • v) := by rw [σ.integral_comp_comm hint, integral_smul_const, hF]
   rw [← hlim]
-  simp_rw [rpow_neg_smul_exp_smul_quantizeSchwartzValue_cutoffExponential]
+  simp_rw [Symbol.rpow_neg_smul_exp_smul_quantizeSchwartzValue_cutoffExponential]
   refine tendsto_integral_filter_of_dominated_convergence
     (fun η ↦ B * ‖v‖ * ((1 + ‖(2 * π) • η‖ ^ 2) ^ (|m| / 2) * ‖𝓕 φ η‖))
     (.of_forall fun t ↦ ?_) ((eventually_ge_atTop 1).mono fun t ht ↦
-      .of_forall (norm_integrand_le hB rfl ht φ v))
+      .of_forall (Symbol.norm_integrand_le hB rfl ht φ v))
     (((𝓕 φ).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |m|).const_mul _)
     (.of_forall fun η ↦ ?_)
   · have ha : Continuous fun η : CoordinateSpace n ↦
@@ -179,21 +213,6 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential_atTop [CompleteSpace V] 
     simp [smul_add, smul_smul, ht.ne']
   exact ((((ContinuousLinearMap.apply ℂ W (𝓕 φ η • v)).continuous.tendsto _).comp ha).const_smul
     (𝐞 ⟪η, x⟫))
-
-/-- For positions in a compact set and `t ≥ 1`, the rescaled phase-free quantizations of the
-wave packets of frequency `t ξ` are uniformly bounded. -/
-private lemma exists_norm_rpow_neg_smul_exp_smul_quantizeSchwartzValue_le [CompleteSpace V]
-    (a : Symbol n V W m) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) (φ : 𝓢(CoordinateSpace n, ℂ)) (v : V) :
-    ∃ B, ∀ x ∈ K, ∀ t : ℝ, 1 ≤ t →
-      ‖t ^ (-m) • Complex.exp (-(⟪x, t • ξ⟫ * Complex.I)) •
-        quantizeSchwartzValue a.coefficient (φ.cutoffExponential 1 (t • ξ) v) x‖ ≤ B := by
-  obtain ⟨B, hB⟩ := exists_norm_rpow_neg_smul_coefficient_le a hK hξ
-  refine ⟨∫ η, B * ‖v‖ * ((1 + ‖(2 * π) • η‖ ^ 2) ^ (|m| / 2) * ‖𝓕 φ η‖), fun x hx t ht ↦ ?_⟩
-  rw [rpow_neg_smul_exp_smul_quantizeSchwartzValue_cutoffExponential]
-  exact norm_integral_le_of_norm_le
-    (((𝓕 φ).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |m|).const_mul _)
-    (.of_forall (norm_integrand_le hB hx ht φ v))
 
 section Inner
 
@@ -228,7 +247,7 @@ theorem tendsto_integral_inner_quantizeSchwartzValue_cutoffExponential
     rw [map_smul, inner_smul_left, ← mul_assoc, Complex.mul_conj', Complex.real_smul,
       Complex.ofReal_pow]
   simp_rw [← integral_smul, hpair, ← hlim]
-  obtain ⟨B, hB⟩ := exists_norm_rpow_neg_smul_exp_smul_quantizeSchwartzValue_le a.toSymbol hφ hξ φ v
+  obtain ⟨B, hB⟩ := a.toSymbol.exists_norm_rpow_neg_smul_quantizeSchwartzValue_le hφ hξ φ v
   refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖φ x‖ * (B * ‖v‖))
     (.of_forall fun t ↦ ?_) ((eventually_ge_atTop 1).mono fun t ht ↦ .of_forall fun x ↦ ?_)
     (φ.integrable.norm.mul_const _) (.of_forall fun x ↦ ?_)
@@ -239,7 +258,12 @@ theorem tendsto_integral_inner_quantizeSchwartzValue_cutoffExponential
   · by_cases hx : x ∈ tsupport φ
     · rw [norm_mul]
       gcongr
-      exact (norm_inner_le_norm _ _).trans (by gcongr; exact hB x hx t ht)
+      refine (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
+      -- The phase `exp(-i ⟪x, t ξ⟫)` in `G t x` has norm one.
+      simp only [G]
+      rw [smul_comm (t ^ (-m)), norm_smul, ← neg_mul, ← Complex.ofReal_neg,
+        Complex.norm_exp_ofReal_mul_I, one_mul]
+      exact hB x hx t ht
     · simp only [image_eq_zero_of_notMem_tsupport hx, zero_mul, norm_zero]
       exact le_rfl
   · exact ((a.tendsto_quantizeSchwartzValue_cutoffExponential_atTop x hξ φ v).inner
@@ -266,7 +290,7 @@ theorem isPositive_coefficient_principal (a : ClassicalSymbol n H H m)
     a.principal.contDiffOn_coefficient.continuousOn.comp_continuous
       (continuous_id.prodMk continuous_const) fun _ ↦ hξ
   refine nonneg_of_forall_integral_sq_smul_nonneg (μ := volume) hU
-    ((hσ.clm_apply continuous_const).inner continuous_const) (fun ψ hψ hψc hψU ↦ ?_) hx
+    ((hσ.clm_apply continuous_const).inner continuous_const).continuousOn (fun ψ hψ hψc hψU ↦ ?_) hx
   -- Test on wave packets with the amplitude `ψ`, viewed as a complex Schwartz function.
   have hφ : HasCompactSupport (fun y ↦ (ψ y : ℂ)) := hψc.comp_left Complex.ofReal_zero
   set φ : 𝓢(CoordinateSpace n, ℂ) := hφ.toSchwartzMap (Complex.ofRealCLM.contDiff.comp hψ)
@@ -284,20 +308,37 @@ theorem isPositive_coefficient_principal (a : ClassicalSymbol n H H m)
   exact mul_nonneg (Complex.zero_le_real.2 (Real.rpow_pos_of_pos ht _).le)
     (ha _ (hφc.mono hsupp) ((closure_mono hsupp).trans hφU))
 
-/-- **A positive elliptic operator has a strictly positive principal symbol.** If moreover `a` is
-elliptic, then at every position of `U` and every nonzero frequency the principal symbol is
-invertible, hence strictly positive. -/
+/-- **A positive operator has a strictly positive principal symbol where it is invertible.** Let
+`a` be a classical symbol of order `m` with values in the endomorphisms of a complex Hilbert space
+`H`, and `U` an open set of positions. If `Op(a)` is positive on the compactly supported Schwartz
+functions supported in `U`, `0 ≤ ∫ ⟪Op(a) u (x), u (x)⟫ dx`, then its principal symbol
+`σ(a)(x, ξ)` is strictly positive at every `x ∈ U` and every frequency `ξ` where it is
+invertible. -/
 theorem isStrictlyPositive_coefficient_principal (a : ClassicalSymbol n H H m)
-    (he : a.IsElliptic) {U : Set (CoordinateSpace n)} (hU : IsOpen U)
+    {U : Set (CoordinateSpace n)} (hU : IsOpen U)
     (ha : ∀ u : 𝓢(CoordinateSpace n, H), HasCompactSupport u → tsupport u ⊆ U →
       0 ≤ ∫ x, ⟪quantizeSchwartzValue a.toSymbol.coefficient u x, u x⟫_ℂ)
-    {x : CoordinateSpace n} (hx : x ∈ U) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    {x : CoordinateSpace n} (hx : x ∈ U) {ξ : CoordinateSpace n}
+    (hinv : (a.principal.coefficient (x, ξ)).IsInvertible) :
     IsStrictlyPositive (a.principal.coefficient (x, ξ)) := by
-  obtain ⟨e, hee⟩ := isElliptic_iff.1 he x ξ hξ
+  obtain ⟨e, hee⟩ := hinv
   refine IsUnit.isStrictlyPositive ?_ (ContinuousLinearMap.nonneg_iff_isPositive.2
     (a.isPositive_coefficient_principal hU ha hx ξ))
   rw [← hee]
   exact e.toUnit.isUnit
+
+/-- **A positive elliptic operator has a strictly positive principal symbol.** Let `a` be an
+elliptic classical symbol of order `m` with values in the endomorphisms of a complex Hilbert space
+`H`, and `U` an open set of positions. If `0 ≤ ∫ ⟪Op(a) u (x), u (x)⟫ dx` for every compactly
+supported Schwartz function `u` supported in `U`, then its principal symbol `σ(a)(x, ξ)` is
+strictly positive at every `x ∈ U` and every nonzero frequency `ξ`. -/
+theorem IsElliptic.isStrictlyPositive_coefficient_principal {a : ClassicalSymbol n H H m}
+    (he : a.IsElliptic) {U : Set (CoordinateSpace n)} (hU : IsOpen U)
+    (ha : ∀ u : 𝓢(CoordinateSpace n, H), HasCompactSupport u → tsupport u ⊆ U →
+      0 ≤ ∫ x, ⟪quantizeSchwartzValue a.toSymbol.coefficient u x, u x⟫_ℂ)
+    {x : CoordinateSpace n} (hx : x ∈ U) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    IsStrictlyPositive (a.principal.coefficient (x, ξ)) :=
+  a.isStrictlyPositive_coefficient_principal hU ha hx (isElliptic_iff.1 he x ξ hξ)
 
 end Inner
 
