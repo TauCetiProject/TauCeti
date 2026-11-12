@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Complex-valued distributions on complex-valued test functions
@@ -146,17 +147,11 @@ theorem complexPairing_eq_integral [MeasurableSpace E] [OpensMeasurableSpace E]
   have hpart (L : ℂ →L[ℝ] ℝ) : tsupport (postcompCLM (𝕜 := ℝ) L φ) ⊆ U := by
     rw [postcompCLM_apply]
     exact (tsupport_comp_subset (map_zero L) φ).trans hφ
-  -- `f` is integrable on the compact support of a real test function supported in `U`, and the
-  -- test function is bounded.
+  -- `f` is integrable against a real test function supported in `U`.
   have hint (L : ℂ →L[ℝ] ℝ) :
-      MeasureTheory.Integrable (fun x => postcompCLM (𝕜 := ℝ) L φ x • f x) μ := by
-    set g := postcompCLM (𝕜 := ℝ) L φ
-    have hK : IsCompact (tsupport g) := g.hasCompactSupport
-    have hfK : MeasureTheory.IntegrableOn f (tsupport g) μ :=
-      hf.integrableOn_compact_subset (hpart L) hK
-    exact (MeasureTheory.integrableOn_iff_integrable_of_support_subset
-      ((Function.support_smul_subset_left _ _).trans (subset_tsupport g))).mp
-      (hfK.continuousOn_smul g.continuous.continuousOn hK)
+      MeasureTheory.Integrable (fun x => postcompCLM (𝕜 := ℝ) L φ x • f x) μ :=
+    hf.integrable_smul_left_of_hasCompactSupport (postcompCLM (𝕜 := ℝ) L φ).continuous
+      (postcompCLM (𝕜 := ℝ) L φ).hasCompactSupport (hpart L)
   rw [complexPairing_apply, hT _ (hpart reCLM), hT _ (hpart imCLM),
     ← MeasureTheory.integral_const_mul,
     ← MeasureTheory.integral_add (hint reCLM) ((hint imCLM).const_mul I)]
