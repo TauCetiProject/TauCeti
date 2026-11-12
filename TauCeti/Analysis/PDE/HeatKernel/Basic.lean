@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import Mathlib.Analysis.Fourier.Convolution
+import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -328,13 +328,8 @@ integral of `K_t ⋆ f` is `exp(-4π² t ‖ξ‖²) • 𝓕 f ξ`. -/
 theorem fourier_heatKernel_convolution {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
     [CompleteSpace F] {t : ℝ} (ht : 0 < t) {f : E → F} (hf : Integrable f) (ξ : E) :
     𝓕 (heatKernel t ⋆ f) ξ = exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) • 𝓕 f ξ := by
-  -- The real convolution is the complex one with the kernel viewed as complex valued.
-  have hKi : Integrable (fun x : E ↦ (heatKernel t x : ℂ)) := (integrable_heatKernel ht).ofReal
-  have hK : heatKernel t ⋆ f =
-      (fun x : E ↦ (heatKernel t x : ℂ)) ⋆[ContinuousLinearMap.lsmul ℂ ℂ] f := by
-    ext x
-    simp only [convolution_lsmul, Complex.coe_smul]
-  rw [hK, Real.fourier_smul_convolution_eq hKi hf, fourier_heatKernel ht, Complex.coe_smul]
+  rw [fourier_convolution_eq (integrable_heatKernel ht) hf, fourier_heatKernel ht,
+    Complex.coe_smul]
 
 /-- On `ℝ`, the heat kernel smoothing of a function supported in `[a, b]` is the Gaussian
 transform `x ↦ ∫ y in a..b, (4πt)^(-1/2) g y exp (-(x - y)² / (4t))`. -/

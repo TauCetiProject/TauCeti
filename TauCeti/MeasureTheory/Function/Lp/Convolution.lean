@@ -240,13 +240,16 @@ theorem convolutionLp_nonneg (hp : p ≠ ∞) {k : E → ℝ} (hk : 0 ≤ᵐ[μ]
     exact smul_nonneg hky hfy
   · rw [convolutionLp_of_not_integrable hp hki, _root_.zero_apply]
 
-/-- **Convolution multiplies integrals**: for an integrable kernel `k` and `f ∈ L¹`,
-`∫ k ⋆ f = (∫ k) • ∫ f`. -/
-theorem integral_convolutionLp [CompleteSpace F] (hp : (1 : ℝ≥0∞) ≠ ∞) {k : E → ℝ}
-    (hk : Integrable k μ) (f : Lp F 1 μ) :
-    ∫ x, convolutionLp hp k μ f x ∂μ = (∫ x, k x ∂μ) • ∫ x, f x ∂μ := by
-  have h := convolutionLp_ae_eq_convolution hp hk (Lp.memLp f)
-  rw [Lp.toLp_coeFn] at h
-  rw [integral_congr_ae h, integral_convolution _ hk (L1.integrable_coeFn f), lsmul_apply]
+/-- **Convolution multiplies integrals**: for `f ∈ L¹`, `∫ k ⋆ f = (∫ k) • ∫ f`. Both sides
+vanish when `k` is not integrable. -/
+theorem integral_convolutionLp [CompleteSpace F] (hp : (1 : ℝ≥0∞) ≠ ∞) (k : E → ℝ)
+    (f : Lp F 1 μ) : ∫ x, convolutionLp hp k μ f x ∂μ = (∫ x, k x ∂μ) • ∫ x, f x ∂μ := by
+  by_cases hk : Integrable k μ
+  · have h := convolutionLp_ae_eq_convolution hp hk (Lp.memLp f)
+    rw [Lp.toLp_coeFn] at h
+    rw [integral_congr_ae h, integral_convolution _ hk (L1.integrable_coeFn f), lsmul_apply]
+  · rw [convolutionLp_of_not_integrable hp hk, integral_undef hk, zero_smul, _root_.zero_apply,
+      integral_congr_ae (Lp.coeFn_zero F 1 μ)]
+    exact integral_zero E F
 
 end TauCeti

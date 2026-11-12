@@ -186,7 +186,7 @@ theorem integral_heatSemigroup (hp : (1 : ℝ≥0∞) ≠ ∞) (t : ℝ≥0)
   rcases eq_or_ne t 0 with rfl | ht
   · simp
   have ht' : 0 < (t : ℝ) := by positivity
-  rw [heatSemigroup_apply hp ht, integral_convolutionLp hp (integrable_heatKernel ht'),
+  rw [heatSemigroup_apply hp ht, integral_convolutionLp hp,
     integral_heatKernel ht', one_smul]
 
 /-- On nonnegative functions the heat semigroup preserves the `L¹` norm: for `0 ≤ f ∈ L¹`,

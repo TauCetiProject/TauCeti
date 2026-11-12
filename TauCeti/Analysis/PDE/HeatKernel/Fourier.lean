@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.LpSpace
 public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
-import TauCeti.Analysis.Fourier.LpSpace
-import TauCeti.MeasureTheory.Function.Lp.Operator.Multiplication
+import TauCeti.Analysis.Fourier.L2Multiplier
 
 /-!
 # The heat semigroup on `L²` as a Fourier multiplier
@@ -30,12 +29,10 @@ normalization `𝓕 f(ξ) = ∫ e^{-2πi⟪x, ξ⟫} f(x) dx`. The derivative of
 
 ## The argument
 
-For an integrable `f`, the Fourier integral of `K_t ⋆ f` is `exp(-4π² t ‖ξ‖²) • 𝓕 f ξ`
-(`TauCeti.fourier_heatKernel_convolution`). On Schwartz functions, which are integrable and
-square integrable, the `L²` Fourier transform is the Fourier integral
-(`MeasureTheory.Integrable.coeFn_fourier_toLp`), so the identity holds there. Both sides are
-continuous in `f ∈ L²`, the right-hand side being a bounded multiplication operator
-(`BoundedContinuousFunction.mulLp`), and Schwartz functions are dense in `L²`.
+For `t > 0` the heat semigroup is convolution with the integrable heat kernel `K_t`, and on `L²`
+convolution with an integrable kernel `k` is the Fourier multiplier with symbol `𝓕 k`
+(`TauCeti.coeFn_fourier_convolutionLp`). The symbol of `K_t` is `exp(-4π² t ‖ξ‖²)`
+(`TauCeti.fourier_heatKernel`).
 
 ## References
 
@@ -51,7 +48,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory Real
-open scoped BoundedContinuousFunction ENNReal NNReal FourierTransform Convolution
+open scoped ENNReal NNReal FourierTransform
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
@@ -66,43 +63,8 @@ theorem coeFn_fourier_heatSemigroup (hp : (2 : ℝ≥0∞) ≠ ∞) (t : ℝ≥0
   rcases eq_or_ne t 0 with rfl | ht
   · simp
   have ht' : 0 < (t : ℝ) := by positivity
-  -- The symbol, as a bounded continuous operator-valued function.
-  let m : E →ᵇ (F →L[ℂ] F) := .ofNormedAddCommGroup
-    (fun ξ ↦ (Real.exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℂ) • ContinuousLinearMap.id ℂ F)
-    (by fun_prop) 1 fun ξ ↦ by
-      calc _ ≤ ‖(Real.exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℂ)‖ * ‖ContinuousLinearMap.id ℂ F‖ :=
-            norm_smul_le _ _
-        _ ≤ 1 * 1 := by
-            gcongr
-            · rw [Complex.norm_real, Real.norm_of_nonneg (exp_pos _).le, exp_le_one_iff,
-                neg_nonpos]
-              positivity
-            · exact ContinuousLinearMap.norm_id_le
-        _ = 1 := one_mul 1
-  have hm (ξ : E) (v : F) : m ξ v = Real.exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) • v := by
-    rw [← Complex.coe_smul]
-    simp [m]
-  -- Both sides are continuous in `f`, and they agree on the dense set of Schwartz functions.
-  have key : (fun f : Lp F 2 (volume : Measure E) ↦
-      (𝓕 (heatSemigroup hp t f) : Lp F 2 (volume : Measure E))) =
-      fun f ↦ m.mulLp volume 2 hp (𝓕 f) := by
-    refine (SchwartzMap.denseRange_toLpCLM (F := F) (E := E) hp).equalizer (by fun_prop)
-      (by fun_prop) (funext fun φ ↦ ?_)
-    simp only [Function.comp_apply, SchwartzMap.toLpCLM_apply]
-    have hφ : MemLp (φ : E → F) 2 := φ.memLp 2
-    have hφL : φ.toLp 2 = hφ.toLp φ := Lp.ext ((φ.coeFn_toLp 2).trans hφ.coeFn_toLp.symm)
-    have hconv := heatSemigroup_ae_eq_convolution hp ht hφ
-    have hh₁ : Integrable (heatKernel t ⋆ (φ : E → F)) :=
-      (integrable_heatKernel ht').integrable_convolution _ φ.integrable
-    have hh₂ : MemLp (heatKernel t ⋆ (φ : E → F)) 2 := (Lp.memLp _).ae_eq hconv
-    have hS : heatSemigroup hp t (φ.toLp 2) = hh₂.toLp _ :=
-      Lp.ext (hφL ▸ hconv.trans hh₂.coeFn_toLp.symm)
-    symm
-    rw [BoundedContinuousFunction.mulLp_eq_iff, hS]
-    filter_upwards [φ.integrable.coeFn_fourier_toLp hφ, hh₁.coeFn_fourier_toLp hh₂]
-      with ξ hξ hhξ
-    rw [hm, hφL, hξ, hhξ, fourier_heatKernel_convolution ht' φ.integrable]
-  filter_upwards [congrFun key f ▸ m.coeFn_mulLp hp (𝓕 f)] with ξ hξ
-  rw [hξ, hm]
+  rw [heatSemigroup_apply hp ht]
+  filter_upwards [coeFn_fourier_convolutionLp hp (integrable_heatKernel ht') f] with ξ hξ
+  rw [hξ, fourier_heatKernel ht', Complex.coe_smul]
 
 end TauCeti
