@@ -63,7 +63,8 @@ The formal construction follows the boundary charts of a manifold modelled on th
 hyperplane and composed with the deletion of the vanishing coordinate, and the transition maps are
 shown to be smooth as transition maps of `M` precomposed with the insertion of a zero coordinate
 and followed by the deletion of a coordinate. Here the hyperplane may be any coordinate face of the
-quadrant rather than the zeroth coordinate of the half-space.
+quadrant rather than the zeroth coordinate of the half-space. As there, the restricted chart is
+`OpenPartialHomeomorph.subtypeCoord`, with the coordinate face as the slice.
 -/
 
 public section
@@ -81,72 +82,52 @@ variable {m : ℕ} {M : Type*} [TopologicalSpace M]
 
 variable {e : OpenPartialHomeomorph M (EuclideanQuadrant (m + 1))} {i : Fin (m + 1)}
 
-/-- A chart of `M` read on its face `i`, with the vanishing coordinate deleted. -/
-private def faceCoord (e : OpenPartialHomeomorph M (EuclideanQuadrant (m + 1))) (i : Fin (m + 1))
-    (p : {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0}) : EuclideanQuadrant m :=
-  ⟨euclideanQuadrantFaceProj i (e p).1, fun k ↦ by simpa using (e p).2 (i.succAbove k)⟩
+/-- Delete the coordinate `i` of a point of the quadrant: the retraction of the quadrant of
+dimension `m + 1` onto its face `z i = 0`, read in the quadrant of dimension `m`. -/
+private def faceRetract (i : Fin (m + 1)) (z : EuclideanQuadrant (m + 1)) : EuclideanQuadrant m :=
+  ⟨euclideanQuadrantFaceProj i z.1, fun k ↦ by simpa using z.2 (i.succAbove k)⟩
 
-private theorem modelWithCornersEuclideanQuadrant_faceCoord
-    (p : {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0}) :
-    (𝓡c m) (faceCoord e i p) = euclideanQuadrantFaceProj i (e.extend (𝓡c (m + 1)) p) := by
-  simp [faceCoord]
+private theorem modelWithCornersEuclideanQuadrant_faceRetract (z : EuclideanQuadrant (m + 1)) :
+    (𝓡c m) (faceRetract i z) = euclideanQuadrantFaceProj i ((𝓡c (m + 1)) z) := by
+  simp [faceRetract]
 
-private theorem faceInclusion_faceCoord
-    (p : {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0}) :
-    euclideanQuadrantFaceInclusion i (faceCoord e i p) = e p := by
+private theorem continuous_faceRetract : Continuous (faceRetract (m := m) i) :=
+  ((euclideanQuadrantFaceProj i).continuous.comp continuous_subtype_val).subtype_mk _
+
+private theorem faceRetract_faceInclusion :
+    LeftInvOn (faceRetract i) (euclideanQuadrantFaceInclusion i)
+      (euclideanQuadrantFaceInclusion i ⁻¹' e.target) := fun q _ ↦
+  Subtype.ext <| by simp [faceRetract]
+
+/-- A point of the face `z i = 0` which the chart `e` sees lies, through `e⁻¹`, on the face of `e`
+along `i`. -/
+private theorem symm_faceInclusion_mem {q : EuclideanQuadrant m}
+    (hq : euclideanQuadrantFaceInclusion i q ∈ e.target) :
+    e.symm (euclideanQuadrantFaceInclusion i q) ∈
+      {p | p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0} := by
+  refine ⟨e.map_target hq, ?_⟩
+  rw [OpenPartialHomeomorph.extend_coe, comp_apply, e.right_inv hq]
+  simp
+
+/-- A chart of `M` reads a point of its face along `i` on the face `z i = 0` of the quadrant. -/
+private theorem faceInclusion_faceRetract {p : M}
+    (hp : p ∈ {p | p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0}) :
+    euclideanQuadrantFaceInclusion i (faceRetract i (e p)) = e p := by
   apply Subtype.ext
   rw [coe_euclideanQuadrantFaceInclusion]
   exact euclideanQuadrantFaceParam_faceProj
-    (by simpa [OpenPartialHomeomorph.extend_coe] using p.2.2)
+    (by simpa [OpenPartialHomeomorph.extend_coe] using hp.2)
 
-private theorem continuous_faceCoord : Continuous (faceCoord e i) := by
-  refine ((euclideanQuadrantFaceProj i).continuous.comp ?_).subtype_mk _
-  exact continuous_subtype_val.comp
-    (e.continuousOn.comp_continuous continuous_subtype_val fun p ↦ p.2.1)
-
-/-- The range of `faceCoord` is the part of the face that the chart sees. -/
-private theorem range_faceCoord :
-    range (faceCoord e i) = euclideanQuadrantFaceInclusion i ⁻¹' e.target := by
-  ext q
-  constructor
-  · rintro ⟨p, rfl⟩
-    rw [mem_preimage, faceInclusion_faceCoord]
-    exact e.map_source p.2.1
-  · intro hq
-    have hp : e.symm (euclideanQuadrantFaceInclusion i q) ∈ e.source ∧
-        e.extend (𝓡c (m + 1)) (e.symm (euclideanQuadrantFaceInclusion i q)) i = 0 := by
-      refine ⟨e.map_target hq, ?_⟩
-      rw [OpenPartialHomeomorph.extend_coe, comp_apply, e.right_inv hq]
-      simp
-    refine ⟨⟨_, hp⟩, Subtype.ext ?_⟩
-    simp only [faceCoord]
-    rw [e.right_inv hq]
-    simp
-
-private theorem isOpenEmbedding_faceCoord : IsOpenEmbedding (faceCoord e i) := by
-  refine .of_continuous_injective_isOpenMap continuous_faceCoord (fun p p' h ↦ ?_) ?_
-  · have h' := congrArg (euclideanQuadrantFaceInclusion i) h
-    rw [faceInclusion_faceCoord, faceInclusion_faceCoord] at h'
-    exact Subtype.ext (e.injOn p.2.1 p'.2.1 h')
-  · intro V hV
-    obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.1 hV
-    -- The image of the piece over `O` is cut out by the target of `e` and the preimage of `O`
-    -- under its inverse.
-    have hset : faceCoord e i '' (Subtype.val ⁻¹' O) =
-        euclideanQuadrantFaceInclusion i ⁻¹' (e.target ∩ e.symm ⁻¹' O) := by
-      ext q
-      constructor
-      · rintro ⟨p, hpO, rfl⟩
-        rw [mem_preimage, faceInclusion_faceCoord]
-        exact ⟨e.map_source p.2.1, by rwa [mem_preimage, e.left_inv p.2.1]⟩
-      · rintro ⟨hq, hqO⟩
-        obtain ⟨p, hp⟩ : q ∈ range (faceCoord e i) := by rwa [range_faceCoord]
-        refine ⟨p, ?_, hp⟩
-        rw [mem_preimage, ← e.left_inv p.2.1, ← faceInclusion_faceCoord, hp]
-        exact hqO
-    rw [hset]
-    exact (e.isOpen_inter_preimage_symm hO).preimage
-      (continuous_euclideanQuadrantFaceInclusion i)
+/-- A chart of `M` restricted to its face along `i`, with the vanishing coordinate deleted. The
+point `p₀` of the face only witnesses that the face is nonempty. -/
+private def faceCoordChart (e : OpenPartialHomeomorph M (EuclideanQuadrant (m + 1)))
+    (i : Fin (m + 1)) (p₀ : {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0}) :
+    OpenPartialHomeomorph {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0}
+      (EuclideanQuadrant m) :=
+  e.subtypeCoord {p | p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0} ⟨p₀⟩
+    (euclideanQuadrantFaceInclusion i) (faceRetract i) symm_faceInclusion_mem
+    (fun _ ↦ faceInclusion_faceRetract) faceRetract_faceInclusion
+    (continuous_euclideanQuadrantFaceInclusion i) continuous_faceRetract.continuousOn
 
 /-! ### Face charts -/
 
@@ -161,7 +142,7 @@ def faceChart (he : e ∈ atlas (EuclideanQuadrant (m + 1)) M) (i : Fin (m + 1))
   haveI : Nonempty {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0} := ⟨p₀⟩
   ((isOpenEmbedding_faceSection (he := he)
       (hi := nonneg_of_mem_range_modelWithCornersEuclideanQuadrant i)).toOpenPartialHomeomorph
-      _).symm.trans (isOpenEmbedding_faceCoord.toOpenPartialHomeomorph _)
+      _).symm.trans (faceCoordChart e i p₀)
 
 variable {he : e ∈ atlas (EuclideanQuadrant (m + 1)) M}
   {p₀ : {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0}}
@@ -170,26 +151,29 @@ variable {he : e ∈ atlas (EuclideanQuadrant (m + 1)) M}
 theorem faceChart_source : (faceChart he i p₀).source =
     range (faceSection he (nonneg_of_mem_range_modelWithCornersEuclideanQuadrant i)) := by
   rw [faceChart, OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
-    IsOpenEmbedding.toOpenPartialHomeomorph_target,
-    IsOpenEmbedding.toOpenPartialHomeomorph_source, preimage_univ, inter_univ]
+    IsOpenEmbedding.toOpenPartialHomeomorph_target, inter_eq_left]
+  -- Every point of the face section lies over the source of `e`.
+  intro _ _
+  rw [mem_preimage, faceCoordChart, OpenPartialHomeomorph.subtypeCoord_source, mem_preimage]
+  exact (fun p : {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0} ↦ p.2.1) _
 
 /-- The target of a face chart is the preimage of the target of the chart of `M` under the
 inclusion of the quadrant onto the face `z i = 0`. -/
 theorem faceChart_target :
     (faceChart he i p₀).target = euclideanQuadrantFaceInclusion i ⁻¹' e.target := by
   rw [faceChart, OpenPartialHomeomorph.trans_target, OpenPartialHomeomorph.symm_target,
-    IsOpenEmbedding.toOpenPartialHomeomorph_target,
-    IsOpenEmbedding.toOpenPartialHomeomorph_source, preimage_univ, inter_univ, range_faceCoord]
+    IsOpenEmbedding.toOpenPartialHomeomorph_source, preimage_univ, inter_univ, faceCoordChart,
+    OpenPartialHomeomorph.subtypeCoord_target]
 
 private theorem faceChart_faceSection
     (p : {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0}) :
     faceChart he i p₀
         (faceSection he (nonneg_of_mem_range_modelWithCornersEuclideanQuadrant i) p) =
-      faceCoord e i p := by
+      faceRetract i (e p) := by
   have : Nonempty {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0} := ⟨p₀⟩
   simp only [faceChart, OpenPartialHomeomorph.coe_trans, comp_apply,
-    IsOpenEmbedding.toOpenPartialHomeomorph_apply,
-    IsOpenEmbedding.toOpenPartialHomeomorph_left_inv]
+    IsOpenEmbedding.toOpenPartialHomeomorph_left_inv, faceCoordChart]
+  exact e.subtypeCoord_apply {p | p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0} _ _ _ _ _ _ _ _ p
 
 /-- The inverse of a face chart reinserts a zero coordinate in slot `i` and applies the inverse
 of the chart of `M`. -/
@@ -197,14 +181,11 @@ theorem point_faceChart_symm {q : EuclideanQuadrant m}
     (hq : q ∈ (faceChart he i p₀).target) :
     ((faceChart he i p₀).symm q).point = e.symm (euclideanQuadrantFaceInclusion i q) := by
   have : Nonempty {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0} := ⟨p₀⟩
-  rw [faceChart_target, ← range_faceCoord] at hq
-  set p := (isOpenEmbedding_faceCoord (e := e) (i := i)).toOpenPartialHomeomorph _ |>.symm q
-  have hp : faceCoord e i p = q := IsOpenEmbedding.toOpenPartialHomeomorph_right_inv _ _ hq
-  have : ((faceChart he i p₀).symm q).point = p := by
-    simp only [faceChart, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-      OpenPartialHomeomorph.symm_symm, OpenPartialHomeomorph.coe_trans, comp_apply,
-      IsOpenEmbedding.toOpenPartialHomeomorph_apply, point_faceSection, p]
-  rw [this, ← hp, faceInclusion_faceCoord, e.left_inv p.2.1]
+  rw [faceChart_target] at hq
+  simp only [faceChart, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
+    OpenPartialHomeomorph.symm_symm, OpenPartialHomeomorph.coe_trans, comp_apply,
+    IsOpenEmbedding.toOpenPartialHomeomorph_apply, point_faceSection, faceCoordChart]
+  exact OpenPartialHomeomorph.coe_subtypeCoord_symm_apply _ _ _ _ _ _ _ _ _ _ hq
 
 /-- A face chart, extended to the model vector space, reads a point of the face section through
 the extended chart of `M` and deletes the coordinate `i`. -/
@@ -214,7 +195,8 @@ theorem extend_faceChart_faceSection
         (faceSection he (nonneg_of_mem_range_modelWithCornersEuclideanQuadrant i) p) =
       euclideanQuadrantFaceProj i (e.extend (𝓡c (m + 1)) p) := by
   rw [OpenPartialHomeomorph.extend_coe, comp_apply, faceChart_faceSection,
-    modelWithCornersEuclideanQuadrant_faceCoord]
+    modelWithCornersEuclideanQuadrant_faceRetract]
+  simp only [OpenPartialHomeomorph.extend_coe, comp_apply]
 
 /-- The target of an extended face chart is the preimage of the target of the extended chart of
 `M` under the insertion of a zero coordinate in slot `i`. -/
@@ -350,7 +332,7 @@ private theorem contDiffOn_faceChart_symm_trans [IsManifold (𝓡c (m + 1)) n M]
     obtain ⟨p', -, hp', hq⟩ := key q hy
     simp only [comp_apply, (𝓡c m).left_inv, OpenPartialHomeomorph.coe_trans, hq,
       faceChart_faceSection, modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam,
-      modelWithCornersEuclideanQuadrant_faceCoord, OpenPartialHomeomorph.extend_coe, ← hp']
+      modelWithCornersEuclideanQuadrant_faceRetract, OpenPartialHomeomorph.extend_coe, ← hp']
 
 /-- **The abstract boundary of a `C^n` manifold with corners is a `C^n` manifold with corners**,
 one dimension down: for `M` modelled on `𝓡c (m + 1)`, its abstract boundary is modelled on

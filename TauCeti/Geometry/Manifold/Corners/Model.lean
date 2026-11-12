@@ -111,13 +111,14 @@ theorem continuous_euclideanQuadrantFaceInclusion (i : Fin (m + 1)) :
 theorem modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam (i : Fin (m + 1))
     (q : EuclideanQuadrant m) :
     (𝓡c (m + 1)).symm (euclideanQuadrantFaceParam i ((𝓡c m) q)) =
-      euclideanQuadrantFaceInclusion i q :=
-  (𝓡c (m + 1)).left_inv (euclideanQuadrantFaceInclusion i q)
-
-end TauCeti
+      euclideanQuadrantFaceInclusion i q := by
+  rw [modelWithCornersEuclideanQuadrant_apply, ← coe_euclideanQuadrantFaceInclusion,
+    ← modelWithCornersEuclideanQuadrant_apply, ModelWithCorners.left_inv]
 
 /-- Every coordinate is nonnegative on the quadrant, so every coordinate gives faces. -/
-theorem ModelWithCorners.nonneg_of_mem_range_modelWithCornersEuclideanQuadrant {m : ℕ}
-    (i : Fin m) : ∀ z ∈ range (𝓡c m), 0 ≤ z i := by
+theorem nonneg_of_mem_range_modelWithCornersEuclideanQuadrant (i : Fin m) :
+    ∀ z ∈ range (𝓡c m), 0 ≤ z i := by
   rintro _ ⟨y, rfl⟩
   exact y.2 i
+
+end TauCeti
