@@ -33,7 +33,7 @@ origin.
 public section
 
 open Asymptotics Filter
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 noncomputable section
 
@@ -70,40 +70,33 @@ variable [CharZero 𝕂] [ContinuousSMul ℚ≥0 𝕂]
 /-- The radius of `logSeries` is at least one. -/
 theorem one_le_logSeries_radius : 1 ≤ (logSeries 𝕂 A).radius := by
   let c : ℕ → 𝕂 := fun n ↦ (-1 : 𝕂) ^ (n + 1) / n
-  have hratio : (fun n ↦ ‖c n.succ‖ / ‖c n‖) =
-      fun n : ℕ ↦ ‖(n : 𝕂) / ((n + 1 : ℕ) : 𝕂)‖ := by
-    funext n
-    by_cases hn : n = 0
-    · subst n
-      simp [c]
-    · simp only [c, norm_div, norm_pow, norm_neg, norm_one, one_pow,
-        Nat.cast_add, Nat.cast_one, Nat.succ_eq_add_one]
-      have hn𝕂 : (n : 𝕂) ≠ 0 := Nat.cast_ne_zero.mpr hn
-      have hnorm : ‖(n : 𝕂)‖ ≠ 0 := norm_ne_zero_iff.mpr hn𝕂
+  -- The ratio of consecutive coefficient norms is `‖n / (n + 1)‖`. For `n = 0` both sides are
+  -- zero, since `c 0 = (-1) / 0 = 0` by the division-by-zero convention.
+  have hratio (n : ℕ) : ‖c (n + 1)‖ / ‖c n‖ = ‖(n : 𝕂) / (n + 1)‖ := by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp [c]
+    · have hn𝕂 : (n : 𝕂) ≠ 0 := Nat.cast_ne_zero.mpr hn
+      simp only [c, norm_div, norm_pow, norm_neg, norm_one, one_pow, Nat.cast_add_one]
       field_simp
-  have hc : Tendsto (fun n ↦ ‖c n.succ‖ / ‖c n‖) atTop (nhds 1) := by
-    rw [hratio]
-    simpa only [Nat.cast_add, Nat.cast_one, norm_one] using
-      (tendsto_natCast_div_add_atTop (𝕜 := 𝕂) 1).norm
+  have hc : Tendsto (fun n ↦ ‖c (n + 1)‖ / ‖c n‖) atTop (𝓝 ((1 : ℝ≥0) : ℝ)) := by
+    simpa only [hratio, norm_one, NNReal.coe_one] using
+      (tendsto_natCast_div_add_atTop (1 : 𝕂)).norm
   simpa [logSeries_eq_ofScalars, c] using
-    (FormalMultilinearSeries.inv_le_ofScalars_radius_of_tendsto A c one_ne_zero hc)
+    FormalMultilinearSeries.inv_le_ofScalars_radius_of_tendsto A c one_ne_zero hc
 
 variable [CompleteSpace A]
 
 /-- The series for `log (1 + u)` is summable in the open unit ball. -/
 theorem logSeries_summable_of_norm_lt_one {u : A} (hu : ‖u‖ < 1) :
     Summable fun n : ℕ ↦ ((-1 : 𝕂) ^ (n + 1) / n) • u ^ n := by
-  have hed : edist u 0 < 1 := by
-    simpa only [edist_dist, dist_zero_right, ENNReal.ofReal_lt_one] using hu
-  simpa only [logSeries_apply_eq] using
-    (logSeries 𝕂 A).summable (hed.trans_le (one_le_logSeries_radius 𝕂 A))
+  simpa only [logSeries_apply_eq] using (logSeries 𝕂 A).summable
+    (Metric.eball_subset_eball (one_le_logSeries_radius 𝕂 A) (by simpa [← ofReal_norm] using hu))
 
 /-- `logSeries` represents `log` throughout the open unit ball about one. -/
 theorem log_hasFPowerSeriesOnBall :
     HasFPowerSeriesOnBall (log : A → A) (logSeries 𝕂 A) 1 1 := by
   have h := ((logSeries 𝕂 A).hasFPowerSeriesOnBall
-      (lt_of_lt_of_le zero_lt_one (one_le_logSeries_radius 𝕂 A))).mono zero_lt_one
-    (one_le_logSeries_radius 𝕂 A)
+    (one_pos.trans_le (one_le_logSeries_radius 𝕂 A))).mono one_pos (one_le_logSeries_radius 𝕂 A)
   rw [log_eq_logSeries_sum 𝕂]
   simpa only [zero_add] using h.comp_sub 1
 

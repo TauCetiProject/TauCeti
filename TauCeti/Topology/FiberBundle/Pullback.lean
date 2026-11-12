@@ -125,6 +125,15 @@ variable {F : Type*} {E : B → Type*} [TopologicalSpace B] [TopologicalSpace B'
   [TopologicalSpace (TotalSpace F E)] [∀ b, Nonempty (E b)] {K : Type*} [FunLike K B' B]
   [ContinuousMapClass K B' B]
 
+/-- The fibre coordinate in a pullback chart is the original chart's fibre coordinate at the
+canonical lift. -/
+theorem Bundle.Pullback.trivializationAt_snd [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+    (f : K) (x₀ : B') (z : TotalSpace F ((f : B' → B) *ᵖ E)) :
+    (trivializationAt F ((f : B' → B) *ᵖ E) x₀ z).2 =
+      (trivializationAt F E (f x₀) (Pullback.lift f z)).2 := by
+  simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
+    Trivialization.pullback_apply]
+
 /-- The coordinate change between the pullbacks of two trivializations, over a point `x` whose
 image `f x` lies in the base set of the first, is the coordinate change between the
 trivializations over `f x`. -/
