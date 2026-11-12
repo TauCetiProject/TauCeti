@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 /-!
-# Circles in punctured discs and half-annuli
+# Circles in punctured discs and half-annuli, and powers of circle maps
 
 ## Main results
 
@@ -19,6 +21,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
   diameter bounding the upper half-disc.
 * `TauCeti.circleMap_mem_halfAnnulus`: a point of a circle of radius `r ∈ [a, b]` at an angle in
   `[0, π]` lies in the closed upper half-annulus of radii `a` and `b`.
+* `TauCeti.contDiff_circleMap_zpow`: the integer powers `θ ↦ (R e^{iθ}) ^ k` are smooth.
 -/
 
 public section
@@ -60,5 +63,12 @@ theorem circleMap_mem_halfAnnulus (z₀ : ℂ) {a b r θ : ℝ} (ha : 0 ≤ a) (
   · simpa [abs_of_nonneg hr0] using hr.2
   · simpa [circleMap, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin] using
       mul_nonneg hr0 (Real.sin_nonneg_of_nonneg_of_le_pi hθ.1 hθ.2)
+
+/-- The integer powers `θ ↦ (R e^{iθ}) ^ k = R ^ k e^{ikθ}` of a circle about the origin are
+smooth. -/
+theorem contDiff_circleMap_zpow (R : ℝ) (k : ℤ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n fun θ ↦ circleMap 0 R θ ^ k := by
+  simp_rw [circleMap_zero_zpow]
+  exact (contDiff_circleMap 0 (R ^ k)).comp (contDiff_const.mul contDiff_id)
 
 end TauCeti
