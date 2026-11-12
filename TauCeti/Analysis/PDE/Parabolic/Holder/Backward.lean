@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
+public import TauCeti.Analysis.PDE.Parabolic.Holder.InitialData
 
 /-!
 # Backward parabolic operators and time reversal
@@ -171,11 +171,10 @@ the forward problem on `E × [T - b, T - a]` with the reversed coefficients `A �
 theorem bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff :
     Function.Bijective ((backwardParabolicOperatorL (ht := hab) hα A B C).prod
         (spatialTraceL ⟨b, right_mem_Icc.2 hab.le⟩)) ↔
-      Function.Bijective ((parabolicOperatorL (ht := ha ▸ hb ▸ sub_lt_sub_left hab T) hα
-          (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith A)
-          (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith B)
-          (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith C)).prod
-        (spatialTraceL ⟨a', left_mem_Icc.2 (ha ▸ hb ▸ sub_lt_sub_left hab T).le⟩)) := by
+      Function.Bijective (initialDataL (ht := ha ▸ hb ▸ sub_lt_sub_left hab T) hα
+        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith A)
+        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith B)
+        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith C)) := by
   set R := slabTimeReverse (E := E) T ha hb
   -- The data of the reversed problem are those of the backward problem transported by
   -- `Φ (g, h) = (-g ∘ R, h)`, a bijection with inverse `(g, h) ↦ (-g ∘ R⁻¹, h)`.
@@ -187,17 +186,18 @@ theorem bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff :
       ⟨fun gh ↦ (-HolderSpace.compLipschitzL _ R.symm.isometry.lipschitzWith gh.1, gh.2),
         fun gh ↦ ?_, fun gh ↦ ?_⟩ <;>
       ext <;> simp [hΦ]
-  have hcomp : ⇑((parabolicOperatorL (ht := ha ▸ hb ▸ sub_lt_sub_left hab T) hα
+  have hcomp : ⇑(initialDataL (ht := ha ▸ hb ▸ sub_lt_sub_left hab T) hα
         (HolderSpace.compLipschitzL _ R.isometry.lipschitzWith A)
         (HolderSpace.compLipschitzL _ R.isometry.lipschitzWith B)
-        (HolderSpace.compLipschitzL _ R.isometry.lipschitzWith C)).prod
-        (spatialTraceL ⟨a', left_mem_Icc.2 (ha ▸ hb ▸ sub_lt_sub_left hab T).le⟩)) ∘
+        (HolderSpace.compLipschitzL _ R.isometry.lipschitzWith C)) ∘
         timeReverseLIE T ha hb =
       Φ ∘ (backwardParabolicOperatorL (ht := hab) hα A B C).prod
         (spatialTraceL ⟨b, right_mem_Icc.2 hab.le⟩) := by
     funext u
-    simp only [Function.comp_apply, ContinuousLinearMap.prod_apply, spatialTraceL_apply, hΦ,
-      parabolicOperatorL_timeReverseLIE, spatialTrace_timeReverseLIE_left, R]
+    apply Prod.ext <;>
+      simp only [Function.comp_apply, ContinuousLinearMap.prod_apply, initialDataL_fst,
+        initialDataL_snd, spatialTraceL_apply, hΦ, parabolicOperatorL_timeReverseLIE,
+        spatialTrace_timeReverseLIE_left, R]
   rw [← Function.Bijective.of_comp_iff' hΦb, ← hcomp,
     Function.Bijective.of_comp_iff _ (timeReverseLIE T ha hb).bijective]
 

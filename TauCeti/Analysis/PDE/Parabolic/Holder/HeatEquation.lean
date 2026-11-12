@@ -50,16 +50,23 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {α T : ℝ≥0} {hT : (0 : ℝ) < T}
 
 /-- A local shortcut for the nested Hessian norm in the coefficient space. -/
-private local instance hessianNormedAddCommGroup : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) :=
+local instance hessianNormedAddCommGroup : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) :=
   inferInstance
 /-- A local shortcut for scalar operations on that Hessian space. -/
-private local instance hessianNormedSpace : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
+local instance hessianNormedSpace : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
 
 /-- The heat equation's forcing and initial trace as a bounded linear data operator. -/
 def heatInitialDataL (hα : α ≤ 1) (hT : (0 : ℝ) < T) :
     ParabolicC2HolderSpace α E F hT →L[ℝ]
       HolderSpace α (slab (E := E) 0 T) F × CkHolderSpace 2 α E F :=
   initialDataL hα (HolderSpace.const traceL) 0 0
+
+omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
+/-- The heat data operator specializes the general initial-data operator to the heat
+coefficients. -/
+theorem heatInitialDataL_eq_initialDataL (hα : α ≤ 1) (hT : (0 : ℝ) < T) :
+    heatInitialDataL (E := E) (F := F) hα hT =
+      initialDataL hα (HolderSpace.const (traceL (E := E) (F := F))) 0 0 := (rfl)
 
 omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- The first component is `∂ₜu - Δu`, with the recorded one-sided derivatives at endpoints. -/
@@ -219,14 +226,13 @@ theorem existsUnique_initialDataL_eq_of_near_heat (hα₀ : 0 < α) (hα₁ : α
     ∃! u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT,
       initialDataL hα₁.le A B C u = d := by
   have hheat := isInvertible_heatInitialDataL (ι := ι) (hT := hT) hα₀ hα₁
-  rw [heatInitialDataL] at hheat
+  rw [heatInitialDataL_eq_initialDataL] at hheat
   have hpert := isInvertible_initialDataL_of_mul_norm_sub_lt hα₁.le
     (A := HolderSpace.const traceL) (B := 0) (C := 0) hheat
     (M := ‖heatSolutionL hα₀ hα₁ hT‖)
-    (by rw [← heatInitialDataL, inverse_heatInitialDataL hα₀ hα₁])
+    (by rw [← heatInitialDataL_eq_initialDataL, inverse_heatInitialDataL hα₀ hα₁])
     (A' := A) (B' := B) (C' := C) (by simpa using hsmall)
-  exact ⟨(initialDataL hα₁.le A B C).inverse d, hpert.self_apply_inverse d,
-    fun u hu ↦ hpert.injective (hu.trans (hpert.self_apply_inverse d).symm)⟩
+  exact hpert.bijective.existsUnique d
 
 end Euclidean
 
