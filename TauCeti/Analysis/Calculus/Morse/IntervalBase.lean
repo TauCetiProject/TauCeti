@@ -37,8 +37,11 @@ The flow of the field on the invariant interval `[-1, 1]` is explicit:
 
 It fixes the critical points, preserves `[-1, 1]`, `[0, 1]` and `(0, 1)` and the order of points,
 and moves the time coordinate by `C s`. For `C > 0` every flow line in `(0, 1)` runs from `0` to
-`1`. The flow of the base acts coordinatewise on the ordered-triangle base
-`TauCeti.Analysis.Calculus.Morse.TriangleBase` of a composition of two continuations.
+`1`. Conversely, every trajectory from `0` to `1` is a time translate of `q`: a trajectory with
+backward limit in `[-1, 1]` cannot leave `[-1, 1]`, since outside it the field points back
+inward, and inside it the trajectories are the flow lines. The flow of the base acts
+coordinatewise on the ordered-triangle base `TauCeti.Analysis.Calculus.Morse.TriangleBase` of a
+composition of two continuations.
 
 The main results verify that this base is regular, in the sense needed to glue continuation
 moduli spaces over it. Along every trajectory `γ` from `0` to `1`, the linearized operator
@@ -74,6 +77,12 @@ bijective.
 * `TauCeti.intervalBaseOrbit_sq_eq_sigmoid`, `TauCeti.one_sub_intervalBaseOrbit_sq` and
   `TauCeti.intervalBaseFlow_eq_intervalBaseOrbit`: the trajectory `q` through the sigmoid, and
   every flow line through `(0, 1)` as a reparametrization of `q`.
+* `TauCeti.mem_Icc_of_isIntegralCurve_intervalBasePotential`: for `C > 0`, a trajectory whose
+  backward limit lies in `[-1, 1]` stays in `[-1, 1]`.
+* `TauCeti.exists_eq_intervalBaseOrbit_of_isIntegralCurve` and
+  `TauCeti.eq_const_of_isIntegralCurve_intervalBasePotential`: for `C > 0`, the trajectories from
+  `0` to `1` are the translates of `q`, and a trajectory with equal limits at both ends is
+  constant.
 * `TauCeti.index_trajectoryOperator_intervalBasePotential`,
   `TauCeti.exists_ker_trajectoryOperator_intervalBasePotential_eq_span`,
   `TauCeti.surjective_trajectoryOperator_intervalBasePotential` and
@@ -650,6 +659,141 @@ theorem intervalBaseFlow_eq_intervalBaseOrbit (C s : ℝ) {t : ℝ} (ht : t ∈ 
     intervalBaseFlow C s t = intervalBaseOrbit 1 (intervalBaseTimeCoordinate t + C * s) := by
   rw [← intervalBaseTimeCoordinate_intervalBaseFlow C s ht,
     intervalBaseOrbit_one_intervalBaseTimeCoordinate (intervalBaseFlow_mem_Ioo_zero_one C s ht)]
+
+/-! ### Trajectories with prescribed limits -/
+
+/-- A negative gradient trajectory of the base potential solves `γ' = C γ (1 - γ²)`. -/
+private theorem hasDerivAt_of_isIntegralCurve_intervalBasePotential {γ : ℝ → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ t ↦ -∇ (intervalBasePotential C) t)) (s : ℝ) :
+    HasDerivAt γ (C * γ s * (1 - γ s ^ 2)) s :=
+  (hγ s).congr_deriv (by simp only [gradient_intervalBasePotential]; ring)
+
+/-- For `C > 0`, a solution of `γ' = C γ (1 - γ²)` which is at most `1` at some time stays at most
+`1` afterwards: above `1` it decreases. -/
+private theorem le_one_of_hasDerivAt (hC : 0 < C) {γ : ℝ → ℝ}
+    (hγ : ∀ s, HasDerivAt γ (C * γ s * (1 - γ s ^ 2)) s) {s₀ s₁ : ℝ} (h₀ : γ s₀ ≤ 1)
+    (h : s₀ ≤ s₁) : γ s₁ ≤ 1 := by
+  by_contra! h₁
+  have hcont : Continuous γ := continuous_iff_continuousAt.2 fun s ↦ (hγ s).continuousAt
+  -- The last time `σ ≤ s₁` at which `γ ≤ 1`; after it, `γ > 1`.
+  set S := Icc s₀ s₁ ∩ {s | γ s ≤ 1}
+  have hS : IsCompact S := isCompact_Icc.inter_right (isClosed_le hcont continuous_const)
+  have hσ : sSup S ∈ S := hS.sSup_mem ⟨s₀, ⟨le_rfl, h⟩, h₀⟩
+  set σ := sSup S
+  have hσ₁ : σ < s₁ := hσ.1.2.lt_of_ne fun he ↦ h₁.not_ge (he ▸ hσ.2)
+  have habove : ∀ s ∈ Ioc σ s₁, 1 < γ s := fun s hs ↦ by
+    by_contra! hs'
+    exact hs.1.not_ge (le_csSup hS.bddAbove ⟨⟨hσ.1.1.trans hs.1.le, hs.2⟩, hs'⟩)
+  -- By the mean value theorem, `γ` decreases from `σ` to `s₁`, a contradiction.
+  obtain ⟨ξ, hξ, hslope⟩ := exists_hasDerivAt_eq_slope γ (fun s ↦ C * γ s * (1 - γ s ^ 2)) hσ₁
+    hcont.continuousOn fun s _ ↦ hγ s
+  have hγξ := habove ξ ⟨hξ.1, hξ.2.le⟩
+  have hneg : C * γ ξ * (1 - γ ξ ^ 2) < 0 :=
+    mul_neg_of_pos_of_neg (mul_pos hC (by linarith)) (by nlinarith)
+  have hσle : γ σ ≤ 1 := hσ.2
+  rw [hslope, div_neg_iff] at hneg
+  rcases hneg with ⟨-, h'⟩ | ⟨h', -⟩
+  · linarith
+  · linarith
+
+/-- For `C > 0`, a solution of `γ' = C γ (1 - γ²)` whose backward limit is at most `1` stays at
+most `1`. -/
+private theorem le_one_of_hasDerivAt_of_tendsto (hC : 0 < C) {γ : ℝ → ℝ}
+    (hγ : ∀ s, HasDerivAt γ (C * γ s * (1 - γ s ^ 2)) s) {a : ℝ}
+    (hlim : Tendsto γ atBot (𝓝 a)) (ha : a ≤ 1) (s : ℝ) : γ s ≤ 1 := by
+  by_contra! hs
+  by_cases h : ∃ s₀ ≤ s, γ s₀ ≤ 1
+  · obtain ⟨s₀, hs₀, h₀⟩ := h
+    exact hs.not_ge (le_one_of_hasDerivAt hC hγ h₀ hs₀)
+  -- Otherwise `γ > 1`, hence decreases, before `s`, so its backward limit exceeds `γ s > 1`.
+  push Not at h
+  have hanti : AntitoneOn γ (Iic s) := by
+    refine antitoneOn_of_deriv_nonpos (convex_Iic s)
+      (continuous_iff_continuousAt.2 fun s ↦ (hγ s).continuousAt).continuousOn
+      (fun x _ ↦ (hγ x).differentiableAt.differentiableWithinAt) fun x hx ↦ ?_
+    rw [interior_Iic] at hx
+    have hx1 := h x (le_of_lt hx)
+    rw [(hγ x).deriv]
+    exact (mul_neg_of_pos_of_neg (mul_pos hC (by linarith)) (by nlinarith)).le
+  have hle : γ s ≤ a := ge_of_tendsto hlim
+    (eventually_atBot.2 ⟨s, fun x hx ↦ hanti hx (le_refl s) hx⟩)
+  linarith
+
+/-- **Trapping of `[-1, 1]`.** For `C > 0`, a negative gradient trajectory of the base potential
+whose backward limit lies in `[-1, 1]` stays in `[-1, 1]`. -/
+theorem mem_Icc_of_isIntegralCurve_intervalBasePotential (hC : 0 < C) {γ : ℝ → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ t ↦ -∇ (intervalBasePotential C) t)) {a : ℝ}
+    (hlim : Tendsto γ atBot (𝓝 a)) (ha : a ∈ Icc (-1) 1) (s : ℝ) : γ s ∈ Icc (-1) 1 := by
+  have hd := hasDerivAt_of_isIntegralCurve_intervalBasePotential hγ
+  -- The field is odd, so `-γ` is again a solution.
+  have hd' : ∀ s, HasDerivAt (fun s ↦ -γ s) (C * -γ s * (1 - (-γ s) ^ 2)) s := fun s ↦
+    (hd s).neg.congr_deriv (by ring)
+  have h₁ := le_one_of_hasDerivAt_of_tendsto hC hd hlim ha.2 s
+  have h₂ := le_one_of_hasDerivAt_of_tendsto hC hd' hlim.neg (by linarith [ha.1]) s
+  exact ⟨by linarith, h₁⟩
+
+/-- The trajectory `q` at rate `C` is the unit-rate trajectory at time `C s`. -/
+theorem intervalBaseOrbit_eq_intervalBaseOrbit_one (C s : ℝ) :
+    intervalBaseOrbit C s = intervalBaseOrbit 1 (C * s) := by
+  simp only [intervalBaseOrbit_apply]
+  ring_nf
+
+/-- **The trajectories from `0` to `1` are the translates of `q`.** For `C > 0`, every negative
+gradient trajectory of the base potential tending to `0` at `-∞` and to `1` at `+∞` is
+`s ↦ q(s + τ)` for some `τ`. -/
+theorem exists_eq_intervalBaseOrbit_of_isIntegralCurve (hC : 0 < C) {γ : ℝ → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ t ↦ -∇ (intervalBasePotential C) t))
+    (h₀ : Tendsto γ atBot (𝓝 0)) (h₁ : Tendsto γ atTop (𝓝 1)) :
+    ∃ τ, γ = fun s ↦ intervalBaseOrbit C (s + τ) := by
+  have hmem := mem_Icc_of_isIntegralCurve_intervalBasePotential hC hγ h₀ ⟨by norm_num, by norm_num⟩
+  have hflow := eq_intervalBaseFlow_of_isIntegralCurve hγ hmem
+  rw [hflow] at h₀ h₁
+  -- The forward limit `sign (γ 0) = 1` and the backward limit `0` place `γ 0` in `(0, 1)`.
+  have hsign := tendsto_nhds_unique (tendsto_intervalBaseFlow_atTop_sign hC (γ 0)) h₁
+  have hpos : 0 < γ 0 := by
+    rcases lt_trichotomy (γ 0) 0 with h | h | h
+    · norm_num [sign_neg h] at hsign
+    · simp [h] at hsign
+    · exact h
+  have hbot := tendsto_nhds_unique (tendsto_intervalBaseFlow_atBot_ite hC (hmem 0)) h₀
+  have hlt : γ 0 < 1 := by
+    by_contra! h
+    have h1 : γ 0 = 1 := le_antisymm (hmem 0).2 h
+    rw [h1, ite_eq_right_iff.2 (by norm_num)] at hbot
+    norm_num at hbot
+  set τ := intervalBaseTimeCoordinate (γ 0) / C
+  have hq : intervalBaseOrbit C τ = γ 0 := by
+    rw [intervalBaseOrbit_eq_intervalBaseOrbit_one, mul_div_cancel₀ _ hC.ne',
+      intervalBaseOrbit_one_intervalBaseTimeCoordinate ⟨hpos, hlt⟩]
+  refine ⟨τ, funext fun s ↦ ?_⟩
+  rw [congrFun hflow s, ← hq, intervalBaseFlow_intervalBaseOrbit]
+
+/-- **Trajectories with equal limits are constant.** For `C > 0`, a negative gradient trajectory
+of the base potential tending to the same point `a ∈ [-1, 1]` at `-∞` and at `+∞` is constant. -/
+theorem eq_const_of_isIntegralCurve_intervalBasePotential (hC : 0 < C) {γ : ℝ → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ t ↦ -∇ (intervalBasePotential C) t)) {a : ℝ}
+    (ha : a ∈ Icc (-1) 1) (h₀ : Tendsto γ atBot (𝓝 a)) (h₁ : Tendsto γ atTop (𝓝 a)) :
+    γ = fun _ ↦ a := by
+  have hmem := mem_Icc_of_isIntegralCurve_intervalBasePotential hC hγ h₀ ha
+  have hflow := eq_intervalBaseFlow_of_isIntegralCurve hγ hmem
+  rw [hflow] at h₀ h₁ ⊢
+  have hbot := tendsto_nhds_unique (tendsto_intervalBaseFlow_atBot_ite hC (hmem 0)) h₀
+  have htop := tendsto_nhds_unique (tendsto_intervalBaseFlow_atTop_sign hC (γ 0)) h₁
+  split_ifs at hbot with hI
+  · -- In `(-1, 1)` the backward limit is `0`, and the forward limit `sign (γ 0) = 0` forces
+    -- `γ 0 = 0`.
+    subst hbot
+    have h0 : γ 0 = 0 := by
+      rcases lt_trichotomy (γ 0) 0 with h | h | h
+      · norm_num [sign_neg h] at htop
+      · exact h
+      · norm_num [sign_pos h] at htop
+    simp [h0]
+  · -- At `±1` the flow is stationary.
+    subst hbot
+    have h : γ 0 ∈ Icc (-1) 1 \ Ioo (-1) 1 := ⟨hmem 0, hI⟩
+    rw [Icc_sdiff_Ioo_same (by norm_num), mem_insert_iff, mem_singleton_iff] at h
+    rcases h with h | h <;> simp [h]
 
 /-! ### Regularity of the linearized operators -/
 
