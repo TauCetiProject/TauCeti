@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
-import Mathlib.AlgebraicGeometry.LimitsOver
+import TauCeti.AlgebraicGeometry.Scheme.AffinePoints
 
 /-!
 # Ordered positive-root multiplication as a scheme morphism
@@ -61,13 +61,12 @@ theorem comp_rootProduct (l : List (Fin t.numRoots))
     p ≫ D.rootProduct l = (l.attach.map fun γ =>
       p ≫ Pi.π (fun _ : {γ // γ ∈ l} => (AdditiveGroup.groupScheme ℤ).X) γ ≫
         (D.rootSubgroup γ.val).hom.hom).prod := by
-  exact ((yonedaMon.obj (Mon.mk D.groupScheme.X)).map p.op).hom.map_list_prod _ |>.trans
-    (congrArg List.prod ((List.map_map ..).trans
-      (List.map_congr_left fun γ _ => by
-        dsimp only [Function.comp_def, yonedaMon, yonedaMonObj, MonCat.ofHom]
-        exact (Category.assoc p
-          (Pi.π (fun _ : {γ // γ ∈ l} => (AdditiveGroup.groupScheme ℤ).X) γ)
-          (D.rootSubgroup γ.val).hom.hom).symm)))
+  unfold rootProduct
+  generalize l.attach = L
+  induction L with
+  | nil => simp only [List.map_nil, List.prod_nil, MonObj.comp_one]
+  | cons γ L ih =>
+    simp only [List.map_cons, List.prod_cons, MonObj.comp_mul, ih]
 
 /-- Ordered root multiplication on ring-valued points is the ordered product of the root
 homomorphisms with the same additive coordinates. -/
@@ -148,11 +147,9 @@ theorem mono_rootProduct_scChevalleyDatum (t : DynkinType) (ht : t.Valid)
   constructor
   intro S p q hpq
   apply Over.OverMorphism.ext
-  apply S.left.affineOpenCover.openCover.hom_ext
-  intro i
-  let A := S.left.affineOpenCover.X i
+  refine Scheme.hom_ext_of_forall_spec fun A a => ?_
   let u : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶ S :=
-    Over.homMk (S.left.affineOpenCover.f i) (specZIsTerminal.hom_ext _ _)
+    Over.homMk a (specZIsTerminal.hom_ext _ _)
   have h : u ≫ p = u ≫ q := rootProduct_spec_injective l hl hpos A
     (by simpa only [Category.assoc] using congrArg (u ≫ ·) hpq)
   exact congrArg (fun z => z.left) h
