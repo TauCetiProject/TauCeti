@@ -41,6 +41,8 @@ quantity being estimated.
   measurable set is the truncated integral.
 * `TauCeti.lintegral_rpow_le_of_forall_le`: a bound on `∫⁻ φ ^ q` for the measurable `φ ≤ G` with
   `∫⁻ φ ^ q` finite is a bound on `∫⁻ G ^ q`.
+* `TauCeti.measurable_rpow_mul_setLIntegral_lt`, `TauCeti.measurable_rpow_mul_setLIntegral_le`:
+  the weighted upper and lower truncated integrals of `f ^ q` are measurable in the height.
 -/
 
 public section
@@ -162,5 +164,29 @@ theorem lintegral_rpow_le_of_forall_le [SigmaFinite μ] {G : α → ℝ≥0∞} 
         simp_rw [ENNReal.rpow_inv_rpow hq.ne']
     _ ≤ C := lintegral_rpow_le_of_forall_le_of_measurable (hgm.pow_const _) hq
         (fun φ hφ hφg => h φ hφ fun x => (hφg x).trans (hgG' x))
+
+/-- The weighted upper truncated integral of `f ^ q` is measurable in the height: it is the product
+of a measurable function and a monotone or antitone one. -/
+theorem measurable_rpow_mul_setLIntegral_lt {f : α → ℝ≥0∞} {c : ℝ} (q s : ℝ) :
+    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) *
+      ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ := by
+  refine ((measurable_id.pow measurable_const).ennreal_ofReal).mul ?_
+  rcases le_total 0 c with hc | hc
+  · refine Antitone.measurable fun t₁ t₂ ht => lintegral_mono_set fun x hx => ?_
+    exact lt_of_le_of_lt (ENNReal.ofReal_le_ofReal (by nlinarith)) hx
+  · refine Monotone.measurable fun t₁ t₂ ht => lintegral_mono_set fun x hx => ?_
+    exact lt_of_le_of_lt (ENNReal.ofReal_le_ofReal (by nlinarith)) hx
+
+/-- The weighted lower truncated integral of `f ^ q` is measurable in the height: it is the product
+of a measurable function and a monotone or antitone one. -/
+theorem measurable_rpow_mul_setLIntegral_le {f : α → ℝ≥0∞} {c : ℝ} (q s : ℝ) :
+    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) *
+      ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ := by
+  refine ((measurable_id.pow measurable_const).ennreal_ofReal).mul ?_
+  rcases le_total 0 c with hc | hc
+  · refine Monotone.measurable fun t₁ t₂ ht => lintegral_mono_set fun x hx => ?_
+    exact le_trans hx (ENNReal.ofReal_le_ofReal (by nlinarith))
+  · refine Antitone.measurable fun t₁ t₂ ht => lintegral_mono_set fun x hx => ?_
+    exact le_trans hx (ENNReal.ofReal_le_ofReal (by nlinarith))
 
 end TauCeti

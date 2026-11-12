@@ -21,6 +21,9 @@ Restricting further to ideles that are local units on a finite set `S` gives
 `TauCeti.toIntegralIdealsAway`, a surjective homomorphism to
 `TauCeti.NumberFieldArithmetic.integralIdealsAway S`, with the same fibre criterion.
 
+An element of `K` lies in the fractional ideal of a finite idele `x` exactly when it is
+divisible by `x_v` in `𝒪_v` at every finite place `v`.
+
 The construction uses `FiniteAdeleRing.toFractionalIdeal` and Mathlib's
 `FractionalIdeal.le_one_iff_exists_coeIdeal`.
 
@@ -69,6 +72,30 @@ theorem toFractionalIdeal_le_one_iff (x : 𝔸ᶠ[R, K]ˣ) :
     rw [Units.val_zpow_eq_zpow_val, coe_unitOfPrime,
       ← Int.toNat_of_nonneg hv, zpow_natCast]
     exact pow_le_one' FractionalIdeal.coeIdeal_le_one _
+
+/-- **Membership in the fractional ideal of a finite idele.** An element `a` of `K` lies in the
+fractional ideal of `x` exactly when `x_v⁻¹ a` is integral at every finite place, that is, when
+the valuation of `a` at `v` is at most that of `x_v` for every `v`. -/
+theorem mem_toFractionalIdeal_iff (x : 𝔸ᶠ[R, K]ˣ) {a : K} :
+    a ∈ (toFractionalIdeal x : FractionalIdeal R⁰ K) ↔
+      ∀ v : HeightOneSpectrum R,
+        ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v * algebraMap K (v.adicCompletion K) a ∈
+          v.adicCompletionIntegers K := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · exact iff_of_true (FractionalIdeal.zero_mem _) fun v ↦ by simp
+  -- `a ∈ I` exactly when `(a) I⁻¹ ≤ 1`, and `(a) I⁻¹` is the fractional ideal of `a x⁻¹`.
+  set u := Units.mk0 a ha
+  have hle : (toPrincipalIdeal R K u : FractionalIdeal R⁰ K) ≤ toFractionalIdeal x ↔
+      ((toFractionalIdeal (unitEmbedding R K u * x⁻¹) : (FractionalIdeal R⁰ K)ˣ) :
+        FractionalIdeal R⁰ K) ≤ 1 := by
+    rw [map_mul, toFractionalIdeal_unitEmbedding, map_inv, Units.val_mul]
+    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+    · simpa using mul_le_mul_left h ((toFractionalIdeal x)⁻¹ : (FractionalIdeal R⁰ K)ˣ).1
+    · simpa [mul_assoc] using mul_le_mul_left h (toFractionalIdeal x : FractionalIdeal R⁰ K)
+  rw [← FractionalIdeal.spanSingleton_le_iff_mem, ← Units.val_mk0 ha, ← coe_toPrincipalIdeal,
+    hle, toFractionalIdeal_le_one_iff, mem_integralAdeles]
+  refine forall_congr' fun v ↦ ?_
+  simp [u, mul_comm, unitEmbedding_apply, algebraMap_adicCompletion]
 
 variable (R K) in
 /-- Finite ideles whose underlying adeles are integral at every finite place. -/

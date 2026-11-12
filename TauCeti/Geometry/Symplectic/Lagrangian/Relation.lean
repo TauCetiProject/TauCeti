@@ -27,6 +27,13 @@ eliminates its characteristic directions. Orthogonal complementation exchanges
 intersection and sum, so no transversality or dimension-of-intersection assumption
 is needed in this linear calculation.
 
+Transversality instead controls the excess of the composition: the directions `w` with
+`(0, w) ∈ L` and `(w, 0) ∈ K`, which the composite map kills. For isotropic relations, if the
+projections of `L` and `K` to the middle factor span it, there is no nonzero excess direction
+(`TauCeti.SymplecticForm.IsIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top`). For linear
+canonical relations the converse holds too
+(`TauCeti.SymplecticForm.IsLagrangian.map_snd_sup_map_fst_eq_top_iff`).
+
 ## References
 
 * A. Weinstein, *Symplectic categories*, Portugaliae Mathematica 67 (2010), 261–278.
@@ -122,5 +129,54 @@ theorem IsLagrangian.relComp [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
     exact add_right_cancel (h₁.trans h₂.symm)
   apply Submodule.mem_relComp.mpr
   exact ⟨a.1.2, hav ▸ ha.1, hau ▸ haw ▸ ha.2⟩
+
+/-! ### Transversality and excess -/
+
+/-- **Transverse composition has no excess.** If the projections of isotropic relations `L` and
+`K` to their common factor `W` span it, then no nonzero `w` has `(0, w) ∈ L` and `(w, 0) ∈ K`.
+Such `w` are the excess directions of the composition: matching pairs that the composite map
+sends to zero. -/
+theorem IsIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top
+    (hL : (ω₁.twistedProd ω₂).IsIsotropic L) (hK : (ω₂.twistedProd ω₃).IsIsotropic K)
+    (htr : L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤) {w : W}
+    (hwL : (0, w) ∈ L) (hwK : (w, 0) ∈ K) : w = 0 := by
+  refine ω₂.separatingRight w fun v ↦ ?_
+  obtain ⟨_, ⟨y, hy, rfl⟩, _, ⟨z, hz, rfl⟩, rfl⟩ :=
+    Submodule.mem_sup.mp (htr.symm ▸ Submodule.mem_top : v ∈ _)
+  have h₁ := (isIsotropic_iff.mp hL) y hy _ hwL
+  have h₂ := (isIsotropic_iff.mp hK) z hz _ hwK
+  simp only [twistedProd_apply, map_zero, zero_sub, sub_zero, neg_eq_zero] at h₁ h₂
+  simp [h₁, h₂]
+
+/-- **Relations without excess compose transversally.** If `L` and `K` are coisotropic relations
+and no nonzero `w` has `(0, w) ∈ L` and `(w, 0) ∈ K`, then the projections of `L` and `K` to
+their common finite-dimensional factor `W` span it. -/
+theorem IsCoisotropic.map_snd_sup_map_fst_eq_top [FiniteDimensional ℝ W]
+    (hL : (ω₁.twistedProd ω₂).IsCoisotropic L) (hK : (ω₂.twistedProd ω₃).IsCoisotropic K)
+    (h : ∀ w, (0, w) ∈ L → (w, 0) ∈ K → w = 0) :
+    L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤ := by
+  set S := L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U)
+  -- The symplectic complement of `S` consists of excess directions, so it vanishes.
+  suffices hS : ω₂.orthogonal S = ⊥ by
+    rw [← ω₂.orthogonal_orthogonal S, hS, orthogonal_bot]
+  refine (Submodule.eq_bot_iff _).mpr fun w hw ↦ h w ?_ ?_
+  · refine isCoisotropic_iff.mp hL _ (mem_orthogonal_iff.mpr fun y hy ↦ ?_)
+    have : ω₂ y.2 w = 0 := mem_orthogonal_iff.mp hw _
+      (Submodule.mem_sup_left (Submodule.mem_map_of_mem hy))
+    simp [twistedProd_apply, this]
+  · refine isCoisotropic_iff.mp hK _ (mem_orthogonal_iff.mpr fun z hz ↦ ?_)
+    have : ω₂ z.1 w = 0 := mem_orthogonal_iff.mp hw _
+      (Submodule.mem_sup_right (Submodule.mem_map_of_mem hz))
+    simp [twistedProd_apply, this]
+
+/-- For linear canonical relations, transversality of the composition and absence of excess are
+equivalent: the projections of `L` and `K` to `W` span it exactly when no nonzero `w` has
+`(0, w) ∈ L` and `(w, 0) ∈ K`. -/
+theorem IsLagrangian.map_snd_sup_map_fst_eq_top_iff [FiniteDimensional ℝ W]
+    (hL : (ω₁.twistedProd ω₂).IsLagrangian L) (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤ ↔
+      ∀ w, (0, w) ∈ L → (w, 0) ∈ K → w = 0 :=
+  ⟨fun htr _ ↦ hL.isIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top hK.isIsotropic htr,
+    hL.isCoisotropic.map_snd_sup_map_fst_eq_top hK.isCoisotropic⟩
 
 end TauCeti.SymplecticForm
