@@ -148,53 +148,36 @@ theorem single_mem_periodFiltration_iff (g : H) (r : R) :
     · simp
     · exact antitone_periodFiltration h (single_mem_periodFiltration _ _)
 
+/-- Over coefficients without additive torsion, a nonzero natural multiple of a series lies in a
+period neighbourhood of `0` exactly when the series does. -/
+theorem nsmul_mem_periodFiltration_iff [IsAddTorsionFree R] {n : ℕ} (hn : n ≠ 0) :
+    n • a ∈ periodFiltration R N C ↔ a ∈ periodFiltration R N C := by
+  simp only [mem_periodFiltration, coeff_smul, nsmul_eq_zero_iff_right hn]
+
+/-- Over coefficients without additive torsion, listing the `i`-th series of a family `c i` times
+leaves finitely many terms outside a period neighbourhood of `0` exactly when scaling the `i`-th
+series by `c i` does. -/
+theorem finite_notMem_periodFiltration_sigma_iff [IsAddTorsionFree R] {ι : Type*} (c : ι → ℕ)
+    (f : ι → NovikovSeries R H N) :
+    {x : (i : ι) × Fin (c i) | f x.1 ∉ periodFiltration R N C}.Finite ↔
+      {i : ι | c i • f i ∉ periodFiltration R N C}.Finite := by
+  have hc (i : ι) : c i • f i ∉ periodFiltration R N C ↔
+      c i ≠ 0 ∧ f i ∉ periodFiltration R N C := by
+    by_cases h0 : c i = 0
+    · simp [h0]
+    · rw [nsmul_mem_periodFiltration_iff h0, and_iff_right h0]
+  refine ⟨fun hA => (hA.image Sigma.fst).subset fun i hi => ?_, fun hB => ?_⟩
+  · obtain ⟨hci, hf⟩ := (hc i).1 hi
+    exact ⟨⟨i, ⟨0, Nat.pos_of_ne_zero hci⟩⟩, hf, rfl⟩
+  · refine (hB.biUnion fun i _ => Set.finite_range (Sigma.mk i)).subset fun x hx => ?_
+    exact Set.mem_biUnion ((hc x.1).2 ⟨(Fin.pos x.2).ne', hx⟩) ⟨x.2, rfl⟩
+
 variable (R N) in
 theorem iInf_periodFiltration : ⨅ C, periodFiltration R N C = ⊥ :=
   eq_bot_iff.2 fun _ ha =>
     eq_zero_of_forall_mem_periodFiltration fun C => AddSubgroup.mem_iInf.1 ha C
 
 end Filtration
-
-section FiltrationRat
-
-variable {ι K : Type*} [CommRing K] [Algebra ℚ K]
-
-/-- A nonzero natural multiple of a monomial with rational coefficient lies in a period
-neighbourhood of `0` exactly when the monomial does. -/
-theorem single_algebraMap_mul_mem_periodFiltration_iff (C : ℝ) (g : H) (q : ℚ) {n : ℕ}
-    (hn : n ≠ 0) :
-    (single g (algebraMap ℚ K (n * q)) : NovikovSeries K H N) ∈ periodFiltration K N C ↔
-      (single g (algebraMap ℚ K q) : NovikovSeries K H N) ∈ periodFiltration K N C := by
-  rw [single_mem_periodFiltration_iff, single_mem_periodFiltration_iff]
-  refine or_congr_left ⟨fun h0 => ?_, fun h0 => ?_⟩
-  · -- `q = n⁻¹ * (n * q)`, since `n` is invertible in `ℚ`
-    have hq : q = (n : ℚ)⁻¹ * (n * q) := (inv_mul_cancel_left₀ (by exact_mod_cast hn) q).symm
-    rw [hq, _root_.map_mul, h0, mul_zero]
-  · rw [_root_.map_mul, h0, mul_zero]
-
-/-- Listing each monomial `c p.1` times does not change which of the terms escape a period
-neighbourhood of `0` (up to finiteness): the repeated family has finitely many bad terms exactly
-when the family scaled by `c` does, since each fibre over `p` is finite. -/
-theorem finite_notMem_periodFiltration_sigma_iff (c : ι → ℕ) (C : ℝ) (g : ι × ℕ → H)
-    (q : ι × ℕ → ℚ) :
-    {x : (p : ι × ℕ) × Fin (c p.1) | (single (g x.1) (algebraMap ℚ K (q x.1)) :
-      NovikovSeries K H N) ∉ periodFiltration K N C}.Finite ↔
-    {p : ι × ℕ | (single (g p) (algebraMap ℚ K ((c p.1 : ℕ) * q p)) :
-      NovikovSeries K H N) ∉ periodFiltration K N C}.Finite := by
-  have hB (p : ι × ℕ) : (single (g p) (algebraMap ℚ K ((c p.1 : ℕ) * q p)) :
-      NovikovSeries K H N) ∉ periodFiltration K N C ↔
-      c p.1 ≠ 0 ∧ (single (g p) (algebraMap ℚ K (q p)) :
-        NovikovSeries K H N) ∉ periodFiltration K N C := by
-    by_cases h0 : c p.1 = 0
-    · simp [h0]
-    · rw [not_congr (single_algebraMap_mul_mem_periodFiltration_iff C _ _ h0), and_iff_right h0]
-  refine ⟨fun hA => (hA.image Sigma.fst).subset fun p hp => ?_, fun hB' => ?_⟩
-  · obtain ⟨hc, hT⟩ := (hB p).1 hp
-    exact ⟨⟨p, ⟨0, Nat.pos_of_ne_zero hc⟩⟩, hT, rfl⟩
-  · refine (hB'.biUnion fun p _ => Set.finite_range (Sigma.mk p)).subset fun x hx => ?_
-    exact Set.mem_biUnion ((hB x.1).2 ⟨(Fin.pos x.2).ne', hx⟩) ⟨x.2, rfl⟩
-
-end FiltrationRat
 
 section Topology
 

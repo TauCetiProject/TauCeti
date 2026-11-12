@@ -44,9 +44,11 @@ basis is the restriction of `a` to `K`, so the trace of `a` is `[H : K]` times t
   the basis vectors and the coefficients of the coordinates.
 * `TauCeti.NovikovSeries.finite_support_iff_forall_finite_support_cosetBasis_repr`: a series has
   finite support exactly when its coordinates do.
+* `TauCeti.NovikovSeries.linearIndependent_single_one`: for any subgroup `K` and coset
+  representatives `s`, the monomials `e^(s q)` are linearly independent over `Nov(R, K, N|K)`.
 * `TauCeti.NovikovSeries.finrank_eq_index`: over a nontrivial commutative ring, the natural-valued
   `Module.finrank` of `Nov(R, H, N)` over `Nov(R, K, N|K)` is the index `[H : K]` (both are `0` for
-  infinite index, by the convention for `Module.finrank` of an infinite-dimensional module).
+  infinite index, by the convention for `Module.finrank` of an infinite-rank module).
 * `TauCeti.NovikovSeries.trace_eq_index_smul_comap`: the trace of `a` is `[H : K]` times the
   restriction of `a` to `K`.
 
@@ -89,14 +91,14 @@ private theorem coeff_comap_subtype_single_neg_mul (g : H) (a : NovikovSeries R 
 
 end Restriction
 
-section Basis
+section Coordinates
 
-variable [CommSemiring R] [K.FiniteIndex] (s : H ⧸ K → H) (hs : ∀ q, (s q : H ⧸ K) = q)
+variable [CommSemiring R] (s : H ⧸ K → H)
 
-/-- The coordinates of a Novikov series on `H` in the coset decomposition along `K`: the
-coordinate at `q` is the restriction to `K` of `e^(-s q) a`. -/
-private def cosetEquiv :
-    NovikovSeries R H N ≃ₗ[NovikovSeries R K (N.comp K.subtype)]
+/-- The coordinates of a Novikov series on `H` along the cosets of `K`, for representatives `s`:
+the coordinate at `q` is the restriction to `K` of `e^(-s q) a`. -/
+private def cosetCoord :
+    NovikovSeries R H N →ₗ[NovikovSeries R K (N.comp K.subtype)]
       (H ⧸ K → NovikovSeries R K (N.comp K.subtype)) where
   toFun a q := comap K.subtype (exists_period_rescale_subtype K) (by simp)
     (single (-s q) 1 * a)
@@ -107,6 +109,49 @@ private def cosetEquiv :
     ext1 q
     dsimp only [RingHom.id_apply, Pi.smul_apply]
     rw [smul_eq_mul, Algebra.smul_def, mul_left_comm, comap_subtype_algebraMap_mul]
+
+private theorem cosetCoord_apply (a : NovikovSeries R H N) (q : H ⧸ K) :
+    cosetCoord K s a q = comap K.subtype (exists_period_rescale_subtype K)
+      (by simp) (single (-s q) 1 * a) :=
+  rfl
+
+variable {s} (hs : ∀ q, (s q : H ⧸ K) = q)
+include hs
+
+/-- If `s` picks a representative of each coset, the coordinates of `e^(s q) b` are `b` at `q`
+and `0` at the other cosets. -/
+private theorem cosetCoord_single_mul_algebraMap [DecidableEq (H ⧸ K)] (q : H ⧸ K)
+    (b : NovikovSeries R K (N.comp K.subtype)) :
+    cosetCoord K s (single (s q) 1 * algebraMap _ _ b) = Pi.single q b := by
+  ext1 p
+  rw [cosetCoord_apply, ← mul_assoc, single_mul_single, mul_one]
+  rcases eq_or_ne p q with rfl | hpq
+  · simp
+  · rw [Pi.single_eq_of_ne hpq, comap_subtype_single_mul_algebraMap_of_notMem]
+    exact fun hK => hpq (by rw [← hs p, ← hs q]; exact QuotientAddGroup.eq.2 hK)
+
+/-- If `s` picks a representative of each coset of `K`, the monomials `e^(s q)` are linearly
+independent over the Novikov series on `K`. -/
+theorem linearIndependent_single_one :
+    LinearIndependent (NovikovSeries R K (N.comp K.subtype))
+      fun q : H ⧸ K => (single (s q) 1 : NovikovSeries R H N) := by
+  classical
+  refine .of_comp (cosetCoord K s) ?_
+  convert Pi.linearIndependent_single_one (H ⧸ K) (NovikovSeries R K (N.comp K.subtype)) with q
+  simpa using cosetCoord_single_mul_algebraMap (R := R) (N := N) K hs q 1
+
+end Coordinates
+
+section Basis
+
+variable [CommSemiring R] [K.FiniteIndex] (s : H ⧸ K → H) (hs : ∀ q, (s q : H ⧸ K) = q)
+
+/-- The coordinates of a Novikov series on `H` in the coset decomposition along `K`: the
+coordinate at `q` is the restriction to `K` of `e^(-s q) a`. -/
+private def cosetEquiv :
+    NovikovSeries R H N ≃ₗ[NovikovSeries R K (N.comp K.subtype)]
+      (H ⧸ K → NovikovSeries R K (N.comp K.subtype)) where
+  __ := cosetCoord K s
   invFun c := ∑ᶠ q, single (s q) 1 * algebraMap _ _ (c q)
   left_inv a := by
     have := Fintype.ofFinite (H ⧸ K)
@@ -115,23 +160,19 @@ private def cosetEquiv :
     rw [finsum_eq_sum_of_fintype, coeff_sum, sum_eq_single (h : H ⧸ K)]
     · have hK : -s h + h ∈ K := QuotientAddGroup.eq.1 (hs h)
       rw [coeff_single_mul, ← AddSubgroup.coe_mk K _ hK, coeff_algebraMap_addSubgroup_coe,
-        coeff_comap_subtype_single_neg_mul]
+        LinearMap.toFun_eq_coe, cosetCoord_apply, coeff_comap_subtype_single_neg_mul]
       simp
     · intro q _ hq
       rw [coeff_single_mul, coeff_algebraMap_addSubgroup_of_notMem, mul_zero]
       exact fun hK => hq (by rw [← hs q]; exact QuotientAddGroup.eq.2 hK)
     · exact fun h => absurd (mem_univ _) h
   right_inv c := by
+    classical
     have := Fintype.ofFinite (H ⧸ K)
-    ext1 p
-    dsimp only
-    rw [finsum_eq_sum_of_fintype, mul_sum, map_sum, sum_eq_single p]
-    · rw [← mul_assoc, single_mul_single]
-      simp
-    · intro q _ hq
-      rw [← mul_assoc, single_mul_single, mul_one, comap_subtype_single_mul_algebraMap_of_notMem]
-      exact fun hK => hq (by rw [← hs p, ← hs q]; exact (QuotientAddGroup.eq.2 hK).symm)
-    · exact fun h => absurd (mem_univ _) h
+    change cosetCoord K s (∑ᶠ q, single (s q) 1 * algebraMap _ _ (c q)) = c
+    rw [finsum_eq_sum_of_fintype, map_sum]
+    simp_rw [cosetCoord_single_mul_algebraMap K hs]
+    exact univ_sum_single c
 
 private theorem cosetEquiv_apply (a : NovikovSeries R H N) (q : H ⧸ K) :
     cosetEquiv K s hs a q = comap K.subtype (exists_period_rescale_subtype K)
@@ -204,33 +245,14 @@ section Ring
 variable [CommRing R]
 
 /-- Over a nontrivial commutative ring, the natural-valued `Module.finrank` of the Novikov series
-on `H` over those on a subgroup `K` is the index of `K`. For infinite index both are `0`: the
-cosets give an infinite linearly independent family, so the module is not finite-dimensional, and
-`Module.finrank` is `0` by convention. -/
+on `H` over those on a subgroup `K` is the index of `K`. For infinite index, the module has
+infinite rank and both sides are `0` by convention. -/
 theorem finrank_eq_index [Nontrivial R] :
     Module.finrank (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) = K.index := by
   by_cases hK : K.index = 0
-  · rw [hK]
-    have := AddSubgroup.index_eq_zero_iff_infinite.1 hK
-    have hli : LinearIndependent (NovikovSeries R K (N.comp K.subtype))
-        fun q : H ⧸ K => (single (Quotient.out q) 1 : NovikovSeries R H N) := by
-      classical
-      refine linearIndependent_iff'.2 fun t c ht q hq => ?_
-      ext k
-      have hc (p : H ⧸ K) : (c p • (single (Quotient.out p) 1 : NovikovSeries R H N)).coeff
-          (Quotient.out q + k) = if p = q then (c q).coeff k else 0 := by
-        rw [Algebra.smul_def, mul_comm, coeff_single_mul, one_mul]
-        split_ifs with hpq
-        · subst hpq
-          rw [neg_add_cancel_left, coeff_algebraMap_addSubgroup_coe]
-        · refine coeff_algebraMap_addSubgroup_of_notMem _ fun hmem => hpq ?_
-          rw [← add_assoc, AddSubgroup.add_mem_cancel_right _ k.2] at hmem
-          rw [← Quotient.out_eq' p, ← Quotient.out_eq' q]
-          exact QuotientAddGroup.eq.2 hmem
-      have h := congrArg (fun a : NovikovSeries R H N => a.coeff (Quotient.out q + k)) ht
-      simp only [coeff_sum, coeff_zero, hc] at h
-      simpa [hq] using h
-    exact hli.finrank_eq_zero_of_infinite
+  · have := AddSubgroup.index_eq_zero_iff_infinite.1 hK
+    rw [hK, (linearIndependent_single_one (R := R) (N := N) K
+      QuotientAddGroup.out_eq').finrank_eq_zero_of_infinite]
   · have : K.FiniteIndex := ⟨hK⟩
     rw [Module.finrank_eq_nat_card_basis (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
       AddSubgroup.index_eq_card]

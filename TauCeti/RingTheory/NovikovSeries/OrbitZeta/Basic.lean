@@ -166,56 +166,31 @@ theorem orbitLog_mem_nonnegSubring (hγ : ∀ i, 0 ≤ N (γ i)) (ε : ι → �
     orbitLog K N γ ε ∈ nonnegSubring K N :=
   mem_nonnegSubring.2 (mem_periodFiltration.1 (orbitLog_mem_periodFiltration le_rfl hγ ε))
 
-/-- The orbit logarithm lies in the positive ideal when the periods have a positive lower bound. -/
-theorem orbitLog_mem_posIdeal {c : ℝ} (hc₀ : 0 < c) (hc : ∀ i, c ≤ N (γ i)) (ε : ι → ℕ → ℤ) :
-    (⟨orbitLog K N γ ε, orbitLog_mem_nonnegSubring (fun i => hc₀.le.trans (hc i)) ε⟩ :
+/-- The orbit logarithm lies in the positive ideal when all periods are positive: every term
+vanishes at the exponents of nonpositive period. -/
+theorem orbitLog_mem_posIdeal (hpos : ∀ i, 0 < N (γ i)) (ε : ι → ℕ → ℤ) :
+    (⟨orbitLog K N γ ε, orbitLog_mem_nonnegSubring (fun i => (hpos i).le) ε⟩ :
       nonnegSubring K N) ∈ posIdeal K N :=
-  mem_posIdeal.2 (exists_pos_mem_periodFiltration_iff.1
-    ⟨c, hc₀, orbitLog_mem_periodFiltration hc₀.le hc ε⟩)
+  mem_posIdeal.2 fun h hh => coeff_tsum_eq_zero fun p => mem_periodFiltration.1
+    (single_iterate_mem_periodFiltration (hpos p.1).le _ _) h (hh.trans_lt (hpos p.1))
 
 /-- The orbit zeta function is congruent to `1` above every positive lower bound of the periods.
 In particular its coefficients of nonpositive period are those of `1`. -/
 theorem orbitZeta_sub_one_mem_periodFiltration {c : ℝ} (hc₀ : 0 < c) (hc : ∀ i, c ≤ N (γ i))
     (ε : ι → ℕ → ℤ) : orbitZeta K N γ ε - 1 ∈ periodFiltration K N c := by
-  have hLpos := orbitLog_mem_posIdeal (K := K) hc₀ hc ε
+  have hLpos := orbitLog_mem_posIdeal (K := K) (fun i => hc₀.trans_le (hc i)) ε
   have h := (isTopologicallyNilpotent_of_mem_posIdeal' hLpos).exp_sub_one_mem
     (I := periodIdeal K N c) (mem_periodIdeal.2 (orbitLog_mem_periodFiltration hc₀.le hc ε))
   rw [orbitZeta_def, ← coe_exp_nonnegSubring ⟨orbitLog K N γ ε,
     orbitLog_mem_nonnegSubring (fun i => hc₀.le.trans (hc i)) ε⟩]
   simpa using h
 
-/-- Positive periods give a positive lower bound for the support of the orbit logarithm, with no
-finiteness assumption: if the terms are not summable the orbit logarithm is `0`, and if they are,
-only finitely many of them lie below any cutoff. -/
-private theorem exists_pos_orbitLog_mem_periodFiltration (hpos : ∀ i, 0 < N (γ i))
-    (ε : ι → ℕ → ℤ) : ∃ c > 0, orbitLog K N γ ε ∈ periodFiltration K N c := by
-  by_cases hs : Summable fun p : ι × ℕ => (single ((p.2 + 1) • γ p.1)
-      (algebraMap ℚ K ((ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ))) : NovikovSeries K H N)
-  · have hE := eventually_cofinite.1 (hasBasis_nhds_zero.tendsto_right_iff.1
-      hs.tendsto_cofinite_zero 1 trivial)
-    obtain ⟨c, hc₀, hc⟩ : ∃ c > 0, ∀ p ∈ hE.toFinset, c ≤ N (γ p.1) := by
-      rcases hE.toFinset.eq_empty_or_nonempty with h | h
-      · exact ⟨1, one_pos, fun p hp => by rw [h] at hp; exact absurd hp (Finset.notMem_empty _)⟩
-      · obtain ⟨p₀, -, hp₀⟩ := hE.toFinset.exists_min_image (fun p => N (γ p.1)) h
-        exact ⟨N (γ p₀.1), hpos _, hp₀⟩
-    refine ⟨min c 1, lt_min hc₀ one_pos, tsum_mem (isClosed_periodFiltration _) fun p => ?_⟩
-    by_cases hp : p ∈ hE.toFinset
-    · exact antitone_periodFiltration ((min_le_left _ _).trans (hc p hp))
-        (single_iterate_mem_periodFiltration (hpos p.1).le _ _)
-    · exact antitone_periodFiltration (min_le_right _ _) (by simpa using hp)
-  · exact ⟨1, one_pos, by rw [orbitLog, tsum_eq_zero_of_not_summable hs]; exact zero_mem _⟩
-
 /-- The orbit zeta function is a unit. -/
 theorem isUnit_orbitZeta (hpos : ∀ i, 0 < N (γ i)) (ε : ι → ℕ → ℤ) :
     IsUnit (orbitZeta K N γ ε) := by
-  obtain ⟨c, hc₀, hc⟩ := exists_pos_orbitLog_mem_periodFiltration (K := K) hpos ε
-  have hLpos : (⟨orbitLog K N γ ε, mem_nonnegSubring.2
-      (mem_periodFiltration.1 (antitone_periodFiltration hc₀.le hc))⟩ :
-        nonnegSubring K N) ∈ posIdeal K N :=
-    mem_posIdeal.2 (exists_pos_mem_periodFiltration_iff.1 ⟨c, hc₀, hc⟩)
-  rw [orbitZeta_def, ← coe_exp_nonnegSubring ⟨orbitLog K N γ ε, mem_nonnegSubring.2
-    (mem_periodFiltration.1 (antitone_periodFiltration hc₀.le hc))⟩,
-    ← coe_expMulEquiv_apply (K := K) (N := N) ⟨_, hLpos⟩]
+  rw [orbitZeta_def, ← coe_exp_nonnegSubring ⟨orbitLog K N γ ε,
+    orbitLog_mem_nonnegSubring (fun i => (hpos i).le) ε⟩,
+    ← coe_expMulEquiv_apply (K := K) (N := N) ⟨_, orbitLog_mem_posIdeal hpos ε⟩]
   exact (Units.isUnit _).map (nonnegSubring K N).subtype
 
 /-- The orbit logarithm of a single orbit whose iterates have signs `ε (k + 1) = ε 1 * σ ^ k` is
@@ -251,8 +226,7 @@ theorem orbitZeta_eq_eulerProduct (hpos : ∀ i, 0 < N (γ i))
     (hε : ∀ i k, ε i (k + 1) = ε i 1 * σ i ^ k) :
     orbitZeta K N γ ε =
       eulerProduct γ hpos (fun i => ((σ i : ℤ) : K)) (fun i => -(ε i 1 * σ i)) := by
-  obtain ⟨c, hc₀, hc⟩ := hfin.exists_gt_forall_le hpos
-  have hLpos := orbitLog_mem_posIdeal (K := K) hc₀ hc ε
+  have hLpos := orbitLog_mem_posIdeal (K := K) hpos ε
   -- `u i = 1 - σ i e^(γ i)` is a principal unit for the positive ideal; `ℓ i` is the multiple
   -- `-(ε i 1 * σ i) • log (u i)` of its logarithm.
   let u (i : ι) := unitsOneSubSingle (hpos i) ((σ i : ℤ) : K)
@@ -305,28 +279,36 @@ private theorem nsmul_single_algebraMap (n : ℕ) (h : H) (q : ℚ) :
       single h (algebraMap ℚ K (n * q)) := by
   rw [smul_single, nsmul_eq_mul, ← map_natCast (algebraMap ℚ K) n, ← _root_.map_mul]
 
+/-- Multiplying the integer numerator of a rational monomial by a natural number `c` multiplies the
+monomial by `c`. -/
+private theorem single_algebraMap_intCast_mul_div (h : H) (c : ℕ) (e : ℤ) (m : ℕ) :
+    (single h (algebraMap ℚ K (((c * e : ℤ) : ℚ) / m)) : NovikovSeries K H N) =
+      c • single h (algebraMap ℚ K ((e : ℚ) / m)) := by
+  rw [nsmul_single_algebraMap]
+  congr 2
+  push_cast
+  ring
+
 /-- Listing an orbit `c i` times does not change whether the terms of the orbit logarithm are
 summable: the terms of the repeated family are those of the original one, and a nonzero natural
-multiple of a monomial with rational coefficient lies in a period neighbourhood of `0` exactly
-when the monomial does. -/
+multiple of a series lies in a period neighbourhood of `0` exactly when the series does, since a
+`ℚ`-algebra has no additive torsion. -/
 private theorem summable_repeated_iff (ε : ι → ℕ → ℤ) (c : ι → ℕ) :
     (Summable fun x : (p : ι × ℕ) × Fin (c p.1) => (single ((x.1.2 + 1) • γ x.1.1)
       (algebraMap ℚ K ((ε x.1.1 (x.1.2 + 1) : ℚ) / (x.1.2 + 1 : ℕ))) : NovikovSeries K H N)) ↔
     Summable fun p : ι × ℕ => (single ((p.2 + 1) • γ p.1)
       (algebraMap ℚ K (((c p.1 * ε p.1 (p.2 + 1) : ℤ) : ℚ) / (p.2 + 1 : ℕ))) :
         NovikovSeries K H N) := by
-  have hq (p : ι × ℕ) : (((c p.1 * ε p.1 (p.2 + 1) : ℤ) : ℚ) / (p.2 + 1 : ℕ)) =
-      (c p.1 : ℕ) * ((ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ)) := by
-    push_cast
-    ring
-  simp only [hq]
+  have : HasUniqueDiv K := .of_module_rat K
+  simp only [single_algebraMap_intCast_mul_div]
   rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
     NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
     hasBasis_nhds_zero.tendsto_right_iff, hasBasis_nhds_zero.tendsto_right_iff]
   refine forall₂_congr fun C _ => ?_
   simp only [eventually_cofinite, SetLike.mem_coe]
-  exact finite_notMem_periodFiltration_sigma_iff (K := K) (N := N) c C (fun p => (p.2 + 1) • γ p.1)
-    fun p => (ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ)
+  exact finite_notMem_periodFiltration_sigma_iff (fun p : ι × ℕ => c p.1) fun p =>
+    (single ((p.2 + 1) • γ p.1) (algebraMap ℚ K ((ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ))) :
+      NovikovSeries K H N)
 
 /-- **Repeated orbits.** The orbit logarithm of the family in which the `i`-th orbit is listed
 `c i` times is the orbit logarithm of the original family with the signs of the `i`-th orbit
@@ -354,10 +336,7 @@ theorem orbitLog_sigma (ε : ι → ℕ → ℤ) (c : ι → ℕ) :
         (algebraMap ℚ K (((c p.1 * ε p.1 (p.2 + 1) : ℤ) : ℚ) / (p.2 + 1 : ℕ))) :
           NovikovSeries K H N) = ∑ _j : Fin (c p.1),
         single ((p.2 + 1) • γ p.1) (algebraMap ℚ K ((ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ))) := by
-      rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_single_algebraMap]
-      congr 2
-      push_cast
-      ring
+      rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, single_algebraMap_intCast_mul_div]
     rw [hc]
     exact hasSum_fintype _
   · rw [orbitLog, orbitLog, tsum_eq_zero_of_not_summable hs, tsum_eq_zero_of_not_summable]

@@ -60,6 +60,23 @@ namespace TauCeti
 
 namespace NovikovSeries
 
+section Ring
+
+variable {H K : Type*} [AddMonoid H] {N : H →+ ℝ} [Ring K] [Algebra ℚ K]
+
+/-- The exponential of a series of the nonnegative subring is the same whether it is computed in
+the nonnegative subring or in the Novikov ring. -/
+@[simp]
+theorem coe_exp_nonnegSubring (a : nonnegSubring K N) :
+    ((NormedSpace.exp a : nonnegSubring K N) : NovikovSeries K H N) =
+      NormedSpace.exp (a : NovikovSeries K H N) := by
+  rw [NormedSpace.exp_eq_tsum_rat (𝔸 := nonnegSubring K N),
+    NormedSpace.exp_eq_tsum_rat (𝔸 := NovikovSeries K H N)]
+  exact (isClosed_nonnegSubring.isClosedEmbedding_subtypeVal.map_tsum
+    (g := (nonnegSubring K N).subtype.toAddMonoidHom) _).trans (by simp)
+
+end Ring
+
 variable {H K : Type*} [AddCommMonoid H] {N : H →+ ℝ} [CommRing K] [Algebra ℚ K]
 
 variable (K N) in
@@ -83,17 +100,6 @@ theorem coe_expMulEquiv_symm_apply (u : (posIdeal K N).principalUnitGroup) :
     (((expMulEquiv K N).symm u).toAdd : nonnegSubring K N) =
       NormedSpace.log ((u : (nonnegSubring K N)ˣ) : nonnegSubring K N) :=
   Ideal.coe_expMulEquiv_symm_apply _ _ u
-
-/-- The exponential of a series of the nonnegative subring is the same whether it is computed in
-the nonnegative subring or in the Novikov ring. -/
-@[simp]
-theorem coe_exp_nonnegSubring (a : nonnegSubring K N) :
-    ((NormedSpace.exp a : nonnegSubring K N) : NovikovSeries K H N) =
-      NormedSpace.exp (a : NovikovSeries K H N) := by
-  rw [NormedSpace.exp_eq_tsum_rat (𝔸 := nonnegSubring K N),
-    NormedSpace.exp_eq_tsum_rat (𝔸 := NovikovSeries K H N)]
-  exact (isClosed_nonnegSubring.isClosedEmbedding_subtypeVal.map_tsum
-    (g := (nonnegSubring K N).subtype.toAddMonoidHom) _).trans (by simp)
 
 /-- A degree derivation differentiates the logarithm of a principal unit of the nonnegative
 subring logarithmically: `u * D (log u) = D u`, read in the Novikov series. -/
