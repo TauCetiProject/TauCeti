@@ -229,11 +229,23 @@ theorem arrowTensorBimoduleDifferential_smul_arrowTensorDerivation_ofArrow
 
 end Arrow
 
+end Main
+
 /-! ### The differential of the middle term and the chain maps -/
 
-section VertexDifferential
+section Vertex
 
-variable [Fintype Q]
+variable [Fintype Q] (wt : ∀ {a b : Q}, (a ⟶ b) → ℤ) (d : pathAlgebra k Q →ₗ[k] pathAlgebra k Q)
+
+/-- The grading sign `x ↦ (-1) ^ |x| x` of the grading by `wt`, in this file. -/
+local notation "σ" =>
+  InternalGrading.koszulTwist (InternalGrading.ofDecomposition (gradeBy k wt)) 1
+
+/-- A linear endomorphism of the path algebra, transported to the opposite algebra, in this
+file. -/
+local notation "op[" f "]" =>
+  LinearMap.comp (LinearEquiv.toLinearMap (opLinearEquiv k))
+    (LinearMap.comp f (LinearEquiv.toLinearMap (LinearEquiv.symm (opLinearEquiv k))))
 
 /-- **The differential of `kQ ⊗_{kQ₀} kQ`** for a differential graded path algebra `(kQ, d)`: the
 enveloping differential `x ⊗ y ↦ d x ⊗ y + (-1) ^ |x| x ⊗ d y` of the generator `∑ᵥ eᵥ ⊗ eᵥ` of
@@ -247,23 +259,7 @@ noncomputable def vertexTensorBimoduleDifferential :
   map_add' u u' := by ext; simp [add_mul]
   map_smul' c u := by ext; simp [smul_mul_assoc]
 
-end VertexDifferential
-
-end Main
-
-section Vertex
-
-variable [Fintype Q] {wt : ∀ {a b : Q}, (a ⟶ b) → ℤ} {d : pathAlgebra k Q →ₗ[k] pathAlgebra k Q}
-
-/-- The grading sign `x ↦ (-1) ^ |x| x` of the grading by `wt`, in this file. -/
-local notation "σ" =>
-  InternalGrading.koszulTwist (InternalGrading.ofDecomposition (gradeBy k wt)) 1
-
-/-- A linear endomorphism of the path algebra, transported to the opposite algebra, in this
-file. -/
-local notation "op[" f "]" =>
-  LinearMap.comp (LinearEquiv.toLinearMap (opLinearEquiv k))
-    (LinearMap.comp f (LinearEquiv.toLinearMap (LinearEquiv.symm (opLinearEquiv k))))
+variable {wt d}
 
 /-- The differential of `kQ ⊗_{kQ₀} kQ` is the enveloping differential in degree zero, cut down by
 the idempotent `∑ᵥ eᵥ ⊗ eᵥ`. -/
