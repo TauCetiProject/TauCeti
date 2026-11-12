@@ -60,6 +60,9 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   `TopPair.singularCohomologyπ_ofSubset_univ`: the map `Hⁿ(X, X) ⟶ Hⁿ(X)` vanishes.
 * `TopPair.isIso_singularCohomologyπ_of_isEmpty`: for an empty subspace, `Hⁿ(X, ∅) ⟶ Hⁿ(X)` is an
   isomorphism.
+* `TopCat.singularCohomologyComplRestrict`: the restriction `Hⁿ(X, X ∖ S) ⟶ Hⁿ(X, X ∖ T)` for
+  `S ⊆ T`, with its composition lemma
+  `TopCat.singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict`.
 
 ## References
 
@@ -479,3 +482,29 @@ lemma singularCohomologyπ_ofSubset_univ (X : TopCat.{w}) (n : ℕ) :
 end LongExactSequence
 
 end TopPair
+
+namespace TopCat
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+  (k : Type*) [Ring k] [Linear k C] (M : C) {X : TopCat.{w}}
+
+/-- The restriction `Hⁿ(X, X ∖ S) ⟶ Hⁿ(X, X ∖ T)` for `S ⊆ T`, induced by the identity of `X`. -/
+abbrev singularCohomologyComplRestrict {S T : Set X} (h : S ⊆ T) (n : ℕ) :
+    (TopPair.ofSubset Sᶜ).singularCohomology R k M n ⟶
+      (TopPair.ofSubset Tᶜ).singularCohomology R k M n :=
+  TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl h)) n
+
+variable {R k M}
+
+/-- Restricting from the complement of `S` to the complement of `T`, then to the complement of
+`Q`, is restricting from the complement of `S` to the complement of `Q`. -/
+@[simp]
+lemma singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict {S T Q : Set X}
+    (h : S ⊆ T) (h' : T ⊆ Q) (n : ℕ) (a : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    singularCohomologyComplRestrict R k M h' n (singularCohomologyComplRestrict R k M h n a) =
+      singularCohomologyComplRestrict R k M (h.trans h') n a := by
+  rw [← TopPair.singularCohomologyMap_comp_apply,
+    TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (mapsTo_id_compl (h.trans h'))
+      (Category.id_comp _)]
+
+end TopCat

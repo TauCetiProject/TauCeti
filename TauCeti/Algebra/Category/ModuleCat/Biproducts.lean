@@ -41,6 +41,10 @@ carries the biproduct inclusions to `LinearMap.inl` and `LinearMap.inr`.
 * `ModuleCat.inl_comp_biprodIsoProd_hom`, `ModuleCat.inr_comp_biprodIsoProd_hom`: under
   `ModuleCat.biprodIsoProd`, the binary biproduct inclusions are `LinearMap.inl` and
   `LinearMap.inr`.
+* `ModuleCat.biprod_inl_fst_apply`, `ModuleCat.biprod_inr_fst_apply`,
+  `ModuleCat.biprod_inl_snd_apply`, `ModuleCat.biprod_inr_snd_apply` and
+  `ModuleCat.biprod_inl_fst_add_inr_snd_apply`: the binary biproduct projections and inclusions on
+  elements.
 -/
 
 public section
@@ -129,5 +133,34 @@ theorem inr_comp_biprodIsoProd_hom :
     biprod.inr ≫ (biprodIsoProd M N).hom = ofHom (LinearMap.inr R M N) := by
   rw [← Iso.eq_comp_inv]
   apply biprod.hom_ext <;> ext x <;> simp
+
+variable {M N}
+
+@[simp]
+theorem biprod_inl_fst_apply (x : M) :
+    (biprod.fst : M ⊞ N ⟶ M) ((biprod.inl : M ⟶ M ⊞ N) x) = x := by
+  rw [← ConcreteCategory.comp_apply, biprod.inl_fst, id_apply]
+
+@[simp]
+theorem biprod_inr_fst_apply (y : N) :
+    (biprod.fst : M ⊞ N ⟶ M) ((biprod.inr : N ⟶ M ⊞ N) y) = 0 := by
+  simp [← ConcreteCategory.comp_apply]
+
+@[simp]
+theorem biprod_inl_snd_apply (x : M) :
+    (biprod.snd : M ⊞ N ⟶ N) ((biprod.inl : M ⟶ M ⊞ N) x) = 0 := by
+  simp [← ConcreteCategory.comp_apply]
+
+@[simp]
+theorem biprod_inr_snd_apply (y : N) :
+    (biprod.snd : M ⊞ N ⟶ N) ((biprod.inr : N ⟶ M ⊞ N) y) = y := by
+  rw [← ConcreteCategory.comp_apply, biprod.inr_snd, id_apply]
+
+/-- An element of a binary biproduct is the sum of the inclusions of its two components. -/
+theorem biprod_inl_fst_add_inr_snd_apply (x : ↑(M ⊞ N)) :
+    (biprod.inl : M ⟶ M ⊞ N) ((biprod.fst : M ⊞ N ⟶ M) x) +
+      (biprod.inr : N ⟶ M ⊞ N) ((biprod.snd : M ⊞ N ⟶ N) x) = x := by
+  simpa only [hom_add, LinearMap.add_apply, ConcreteCategory.comp_apply, id_apply] using
+    ConcreteCategory.congr_hom (biprod.total (X := M) (Y := N)) x
 
 end ModuleCat
