@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.GraphStep.ZeroAtInfty
 public import Mathlib.Analysis.ODE.Basic
-import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # The trajectory section of a vector field on Sobolev paths
@@ -173,13 +173,14 @@ theorem trajectorySection_eq_zero_iff (hV : LipschitzWith K V) (hγ : AEStrongly
 /-! ### The linearization -/
 
 omit [CompleteSpace F] in
-/-- The pointwise remainder of the trajectory section: if `V'` is the derivative of `V` on `s`,
-varies by less than `c` at scale `η`, and the ball of radius `r ≤ η` around `γ t + a₀ t` lies in
-`s`, then for `a₁`, `a₂` uniformly `r`-close to `a₀` the first-order remainder of `V` at time `t`
-is at most `c ‖a₁ t - a₂ t‖`. -/
-private theorem norm_sub_sub_le_of_norm_sub_lt {s : Set F} {V' : F → F →L[ℝ] F}
-    (hV' : ∀ x ∈ s, HasFDerivAt V (V' x) x) {c η r : ℝ}
-    (hη : ∀ x ∈ s, ∀ y ∈ s, dist x y < η → dist (V' x) (V' y) < c) (hr : r ≤ η)
+/-- The pointwise remainder of the trajectory section: if the first-order remainder of `V` against
+its derivative at the centre is at most `c` times the increment on balls of radius `r` inside `s`
+(`UniformContinuousOn.exists_pos_norm_image_sub_le_of_hasFDerivAt`), and the ball of radius `r`
+around `γ t + a₀ t` lies in `s`, then for `a₁`, `a₂` uniformly `r`-close to `a₀` the first-order
+remainder of `V` at time `t` is at most `c ‖a₁ t - a₂ t‖`. -/
+private theorem norm_sub_sub_le_of_norm_sub_lt {s : Set F} {V' : F → F →L[ℝ] F} {c η r : ℝ}
+    (hη : ∀ x₀ r, r ≤ η → ball x₀ r ⊆ s → ∀ x₁ ∈ ball x₀ r, ∀ x₂ ∈ ball x₀ r,
+      ‖V x₁ - V x₂ - V' x₀ (x₁ - x₂)‖ ≤ c * ‖x₁ - x₂‖) (hr : r ≤ η)
     {a₀ a₁ a₂ : C₀(ℝ, F)} {t : ℝ} (hs : ball (γ t + a₀ t) r ⊆ s) (h₁ : ‖a₁ - a₀‖ < r)
     (h₂ : ‖a₂ - a₀‖ < r) :
     ‖V (γ t + a₁ t) - V (γ t + a₂ t) - V' (γ t + a₀ t) (a₁ t - a₂ t)‖ ≤ c * ‖a₁ t - a₂ t‖ := by
@@ -187,13 +188,7 @@ private theorem norm_sub_sub_le_of_norm_sub_lt {s : Set F} {V' : F → F →L[�
     rw [mem_ball, dist_eq_norm, add_sub_add_left_eq_sub, ← sub_apply]
     exact (BoundedContinuousFunction.norm_coe_le_norm (a - a₀).toBCF t).trans_lt
       (by rwa [ZeroAtInftyContinuousMap.norm_toBCF_eq_norm])
-  have hz : γ t + a₀ t ∈ s := hs (mem_ball_self ((norm_nonneg _).trans_lt h₁))
-  have h := (convex_ball (γ t + a₀ t) r).norm_image_sub_le_of_norm_hasFDerivWithin_le'
-    (f := V) (φ := V' (γ t + a₀ t)) (fun x hx ↦ (hV' x (hs hx)).hasFDerivWithinAt)
-    (fun x hx ↦ by
-      rw [← dist_eq_norm]
-      exact (hη x (hs hx) _ hz ((mem_ball.1 hx).trans_le hr)).le)
-    (hmem a₂ h₂) (hmem a₁ h₁)
+  have h := hη _ r hr hs _ (hmem a₁ h₁) _ (hmem a₂ h₂)
   rwa [add_sub_add_left_eq_sub] at h
 
 /-- Paths close to `ξ₀` in `W^{1,p}` have continuous representatives uniformly close to that of
@@ -284,7 +279,7 @@ theorem hasStrictFDerivAt_trajectorySection (hV : LipschitzWith K V)
   rw [hasStrictFDerivAt_iff_isLittleO, Asymptotics.isLittleO_iff]
   intro c hc
   -- A modulus for `V'` at the scale `c`, and a radius `r` within which it applies.
-  obtain ⟨η, hη, hηc⟩ := Metric.uniformContinuousOn_iff.1 hV's c hc
+  obtain ⟨η, hη, hηc⟩ := hV's.exists_pos_norm_image_sub_le_of_hasFDerivAt hV' hc
   obtain ⟨r, hr0, hrη, hrδ⟩ : ∃ r, 0 < r ∧ r ≤ η ∧ r ≤ δ :=
     ⟨min η δ, lt_min hη hδ, min_le_left _ _, min_le_right _ _⟩
   -- Paths `r / 2`-close to `ξ₀` in `W^{1,p}` stay uniformly `r`-close to `ξ₀`, where the mean
@@ -293,7 +288,7 @@ theorem hasStrictFDerivAt_trajectorySection (hV : LipschitzWith K V)
   rintro ⟨ξ₁, ξ₂⟩ hξ
   rw [dist_eq_norm] at hξ
   exact norm_trajectorySection_sub_sub_le hV hγ hp hAL hc.le fun t ↦
-    norm_sub_sub_le_of_norm_sub_lt hV' hηc hrη ((ball_subset_ball hrδ).trans (hs t))
+    norm_sub_sub_le_of_norm_sub_lt hηc hrη ((ball_subset_ball hrδ).trans (hs t))
       (norm_toZeroAtInfty_sub_lt hp ((norm_fst_le _).trans_lt hξ))
       (norm_toZeroAtInfty_sub_lt hp ((norm_snd_le _).trans_lt hξ))
 
