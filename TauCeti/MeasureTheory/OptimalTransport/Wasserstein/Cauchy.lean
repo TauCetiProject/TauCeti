@@ -49,7 +49,7 @@ theorem wassersteinEDist_cauchyMeasure_same_scale {p : ℝ≥0∞} (hp : 1 ≤ p
   have h := wassersteinEDist_map_add_right_eq_enorm measurable_edist hp
     (cauchyMeasure m γ) (n - m)
   rw [Probability.cauchyMeasure_map_add_const, add_sub_cancel] at h
-  simpa [edist_eq_enorm_sub, enorm_sub_rev] using h
+  simpa [eDist_eq_eNorm_sub, eNorm_sub_rev] using h
 
 /-- Distinct scales force infinite Wasserstein distance, including at exponent `∞`.
 No moment condition is placed on either law. -/

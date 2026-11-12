@@ -447,10 +447,11 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSpac
 
 /-- Completeness of `V` is not an extra hypothesis: a finite-dimensional normed space over an
 `RCLike` field is already complete. As in
-`TauCeti/RepresentationTheory/Compact/Invariants.lean`, Mathlib keeps `FiniteDimensional.complete`
+`TauCeti/RepresentationTheory/Compact/Invariants.lean`, Mathlib keeps
+`FiniteDimensional.completeSpace`
 out of the global instance set, so it is installed here as a local instance. -/
 local instance instCompleteSpaceFinite : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 /- **The finite-group counting identity** `|G|⁻¹ ∑ g, χ_π g = dim V^G`, the specialization of
 `ContRepresentation.integral_character_eq_finrank_invariants` to a finite discrete group, and the
