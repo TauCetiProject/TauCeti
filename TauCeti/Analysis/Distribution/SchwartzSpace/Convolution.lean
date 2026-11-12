@@ -48,6 +48,8 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
   pointwise product is the convolution of the Fourier transforms.
 * `SchwartzMap.fourier_smulLeftCLM_apply`: the same for the product with a scalar Schwartz
   function, `𝓕 (φ • f) ξ = ∫ 𝓕 φ t • 𝓕 f (ξ - t) dt`.
+* `SchwartzMap.fourier_smulLeftCLM_sub_apply`: the Fourier transform of `y ↦ χ(x - y) u(y)` is a
+  twisted convolution of `𝓕 χ` with `𝓕 u`.
 
 ## References
 
@@ -56,7 +58,7 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 
 public section
 
-open scoped FourierTransform SchwartzMap ENNReal
+open scoped FourierTransform SchwartzMap ENNReal RealInnerProductSpace Real
 open FourierTransform ContinuousLinearMap MeasureTheory
 open scoped Convolution
 
@@ -206,6 +208,33 @@ theorem fourier_smulLeftCLM_apply (φ : 𝓢(E, ℂ)) (f : 𝓢(E, F)) (ξ : E) 
     rw [h, fourier_pairing_apply]
     simp only [lsmul_apply]
   · simp [fourier_eq_zero_of_not_completeSpace hF]
+
+/-- **The Fourier transform of a cut-off function.** The Fourier transform of the product
+`y ↦ χ(x - y) u(y)` is a twisted convolution of the Fourier transforms:
+`∫ 𝓕 χ(η) exp(2πi ⟪η, x⟫) 𝓕 u(ζ + η) dη`. This is the convolution theorem
+`SchwartzMap.fourier_smulLeftCLM_apply` for the Schwartz function `y ↦ χ(x - y)`. -/
+theorem fourier_smulLeftCLM_sub_apply (χ : 𝓢(E, ℂ)) (u : 𝓢(E, F)) (x ζ : E) :
+    𝓕 (smulLeftCLM F (fun y ↦ χ (x - y)) u) ζ =
+      ∫ η, 𝓕 χ η • (𝐞 ⟪η, x⟫ : ℂ) • 𝓕 u (ζ + η) := by
+  -- The cut-off `y ↦ χ(x - y)` as a Schwartz function; its Fourier transform is
+  -- `t ↦ exp(-2πi ⟪x, t⟫) 𝓕 χ(-t)`.
+  set ψ : 𝓢(E, ℂ) := compCLMOfAntilipschitz ℂ (g := fun y ↦ x - y) (K := 1) (by fun_prop)
+    (fun _ _ ↦ by simp [edist_sub_left]) χ
+  have hψx : (ψ : E → ℂ) = fun y ↦ χ (x - y) := rfl
+  have hψ (t : E) : 𝓕 ψ t = (𝐞 (-⟪x, t⟫) : ℂ) * 𝓕 χ (-t) := by
+    rw [fourier_coe, fourier_coe, Real.fourier_eq, Real.fourier_eq, ← integral_const_mul,
+      ← integral_sub_left_eq_self _ volume x]
+    refine integral_congr_ae (.of_forall fun z ↦ ?_)
+    simp only [hψx, sub_sub_cancel, Circle.smul_def, smul_eq_mul, ← mul_assoc,
+      ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
+    congr 3
+    simp only [inner_sub_left, inner_neg_right]
+    ring
+  rw [← hψx, fourier_smulLeftCLM_apply, ← integral_neg_eq_self]
+  refine integral_congr_ae (.of_forall fun η ↦ ?_)
+  dsimp only
+  rw [hψ, neg_neg, sub_neg_eq_add, inner_neg_right, neg_neg, real_inner_comm, mul_smul,
+    smul_comm]
 
 end Bilinear
 

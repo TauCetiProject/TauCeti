@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Fourier.LpSpace
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Calculus.Taylor.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
-import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -94,8 +93,6 @@ changes a symbol only by a smoothing remainder.
   `𝓕 χ` reproduces Taylor polynomials, so averaging the translates `η ↦ h (ξ - c • η)` changes
   `h ξ` only by a Taylor remainder of order `N + 1`.
 * `SchwartzMap.integral_fourierChar_mul_fourier`: Fourier inversion with the Fourier character.
-* `SchwartzMap.fourier_smulLeftCLM_sub_apply`: the Fourier transform of `y ↦ χ(x - y) u(y)` is a
-  twisted convolution of `𝓕 χ` with `𝓕 u`.
 
 ## References
 
@@ -576,33 +573,6 @@ theorem integral_fourierChar_mul_fourier (χ : 𝓢(E, ℂ)) (w : E) :
     rw [FourierTransform.fourierInv_fourier_eq]
   rw [← h, fourierInv_coe, Real.fourierInv_eq]
   simp only [Circle.smul_def, smul_eq_mul]
-
-/-- **The Fourier transform of a cut-off function.** The Fourier transform of the product
-`y ↦ χ(x - y) u(y)` is a twisted convolution of the Fourier transforms:
-`∫ 𝓕 χ(η) exp(2πi ⟪η, x⟫) 𝓕 u(ζ + η) dη`. This is the convolution theorem
-`SchwartzMap.fourier_smulLeftCLM_apply` for the Schwartz function `y ↦ χ(x - y)`. -/
-theorem fourier_smulLeftCLM_sub_apply (χ : 𝓢(E, ℂ)) (u : 𝓢(E, F)) (x ζ : E) :
-    𝓕 (smulLeftCLM F (fun y ↦ χ (x - y)) u) ζ =
-      ∫ η, 𝓕 χ η • (𝐞 ⟪η, x⟫ : ℂ) • 𝓕 u (ζ + η) := by
-  -- The cut-off `y ↦ χ(x - y)` as a Schwartz function; its Fourier transform is
-  -- `t ↦ exp(-2πi ⟪x, t⟫) 𝓕 χ(-t)`.
-  set ψ : 𝓢(E, ℂ) := compCLMOfAntilipschitz ℂ (g := fun y ↦ x - y) (K := 1) (by fun_prop)
-    (fun _ _ ↦ by simp [edist_sub_left]) χ
-  have hψx : (ψ : E → ℂ) = fun y ↦ χ (x - y) := rfl
-  have hψ (t : E) : 𝓕 ψ t = (𝐞 (-⟪x, t⟫) : ℂ) * 𝓕 χ (-t) := by
-    rw [fourier_coe, fourier_coe, Real.fourier_eq, Real.fourier_eq, ← integral_const_mul,
-      ← integral_sub_left_eq_self _ volume x]
-    refine integral_congr_ae (.of_forall fun z ↦ ?_)
-    simp only [hψx, sub_sub_cancel, Circle.smul_def, smul_eq_mul, ← mul_assoc,
-      ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
-    congr 3
-    simp only [inner_sub_left, inner_neg_right]
-    ring
-  rw [← hψx, fourier_smulLeftCLM_apply, ← integral_neg_eq_self]
-  refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  dsimp only
-  rw [hψ, neg_neg, sub_neg_eq_add, inner_neg_right, neg_neg, real_inner_comm, mul_smul,
-    smul_comm]
 
 end Cutoff
 
