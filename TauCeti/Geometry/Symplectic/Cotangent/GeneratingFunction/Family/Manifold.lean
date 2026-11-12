@@ -217,6 +217,11 @@ private theorem finrank_prod_sub_finrank_strongDual :
   rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq]
   omega
 
+/-- The fibre-critical set has half the dimension of `T*M`: `2 dim E = dim (E × E')`. -/
+private theorem two_mul_finrank_fin_eq_finrank_prod_strongDual :
+    2 * finrank ℝ (Fin (finrank ℝ E) → ℝ) = finrank ℝ (E × (E →L[ℝ] ℝ)) := by
+  rw [finrank_fin_fun, finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
+
 variable (hS : ContMDiff (I.prod 𝓘(ℝ, A)) 𝓘(ℝ) ∞ S)
   (hreg : IsRegularValue (I.prod 𝓘(ℝ, A)) 𝓘(ℝ, StrongDual ℝ A) (familyFiberDeriv S) 0)
 
@@ -256,7 +261,7 @@ theorem range_mfderiv_coe_familyCriticalSet (z : {x : M × A // familyFiberDeriv
       (mfderiv (I.prod 𝓘(ℝ, A)) 𝓘(ℝ, StrongDual ℝ A) (familyFiberDeriv S) z).ker :=
   range_mfderiv_coe_regularLevel _ hreg _ z
 
-/-- **The fibre-critical set is an exact Lagrangian.** The source projection
+/-- **The Liouville form pulls back to the differential of `S`.** The source projection
 `ι_S (q, a) = (q, d_q S)` of a smooth transverse generating family `S` pulls the Liouville form of
 `T*M` back along the inclusion of the fibre-critical set to the differential of the restriction
 of `S`. -/
@@ -281,7 +286,8 @@ theorem mpullback_generatingSource_comp_coe_liouvilleForm :
     mvfderiv_comp_apply_of_eq z hSz hjz rfl, hSz.mvfderiv_prod_eq_add_apply,
     mfderiv_comp_apply z mdifferentiableAt_fst hjz, mfderiv_fst]
   -- The auxiliary component of `dS` is the fibre derivative, which vanishes on the critical set.
-  have h0 : mvfderiv 𝓘(ℝ, A) (fun a ↦ S (z.1.1, a)) z.1.2 = 0 := z.2
+  have h0 : mvfderiv 𝓘(ℝ, A) (fun a ↦ S (z.1.1, a)) z.1.2 = 0 :=
+    (familyFiberDeriv_def S z.1).symm.trans z.2
   rw [h0]
   -- What remains is the base component of `dS`, which is the covector of the source projection.
   exact (DFunLike.congr_fun (generatingSource_snd (I := I) (S := S) z.1)
@@ -345,10 +351,10 @@ theorem isExactLagrangianMap_generatingSource_comp_coe :
   have := isManifold_familyCriticalSet hS hreg
   refine (SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_of_finrank
     symplecticForm_eq_neg_mextDerivₗ (contMDiff_generatingSource_comp_coe hS hreg)
-    (injective_mfderiv_generatingSource_comp_coe hS hreg) ?_).mpr
+    (injective_mfderiv_generatingSource_comp_coe hS hreg)
+    two_mul_finrank_fin_eq_finrank_prod_strongDual).mpr
     ⟨hS.comp (isSmoothEmbedding_coe_familyCriticalSet hS hreg).contMDiff,
       mpullback_generatingSource_comp_coe_liouvilleForm hS hreg⟩
-  rw [finrank_fin_fun, finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
 
 /-- **The fibre-critical set of a generating family is a Lagrangian immersion.** For a smooth
 transverse generating family `S` on `M × A`, with `M` boundaryless and `M` and `A`
@@ -365,7 +371,7 @@ theorem isLagrangianImmersion_generatingSource_comp_coe :
   ⟨(contMDiff_generatingSource_comp_coe hS hreg).isImmersion_of_injective_mfderiv (by simp)
       (injective_mfderiv_generatingSource_comp_coe hS hreg),
     (isExactLagrangianMap_generatingSource_comp_coe hS hreg).isLagrangianMap.isIsotropicMap,
-    by rw [finrank_fin_fun, finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]⟩
+    two_mul_finrank_fin_eq_finrank_prod_strongDual⟩
 
 end CriticalSet
 
