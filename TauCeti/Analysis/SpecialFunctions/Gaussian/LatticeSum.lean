@@ -99,6 +99,25 @@ theorem hasSum_gaussianLatticeSum (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
     HasSum (fun n : ℤ => rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2))) (gaussianLatticeSum c s) := by
   simpa [gaussianLatticeSum_def] using (summable_pow_mul_exp_neg_sub_sq 0 c hs).hasSum
 
+/-- A wider Gaussian bounds lattice terms uniformly over centres within distance `R` of `c`. -/
+private theorem exp_neg_sub_sq_le (n : ℤ) {c s x R : ℝ} (hs : s ≠ 0)
+    (hx : |x - c| ≤ R) :
+    rexp (-((n : ℝ) - x) ^ 2 / (2 * s ^ 2)) ≤
+      rexp (R ^ 2 / (2 * s ^ 2)) * rexp (-((n : ℝ) - c) ^ 2 / (4 * s ^ 2)) := by
+  have hs2 : 0 < s ^ 2 := sq_pos_of_ne_zero hs
+  have hx2 : (x - c) ^ 2 ≤ R ^ 2 := by
+    simpa only [sq_abs] using
+      (sq_le_sq₀ (abs_nonneg (x - c)) ((abs_nonneg _).trans hx)).mpr hx
+  have hquad : ((n : ℝ) - c) ^ 2 ≤ 2 * ((n : ℝ) - x) ^ 2 + 2 * R ^ 2 := by
+    nlinarith [sq_nonneg ((n : ℝ) - 2 * x + c)]
+  rw [← exp_add, exp_le_exp]
+  calc
+    -((n : ℝ) - x) ^ 2 / (2 * s ^ 2) =
+        (-2 * ((n : ℝ) - x) ^ 2) / (4 * s ^ 2) := by ring
+    _ ≤ (2 * R ^ 2 - ((n : ℝ) - c) ^ 2) / (4 * s ^ 2) :=
+      div_le_div_of_nonneg_right (by linarith) (by positivity)
+    _ = _ := by ring
+
 /-- The direct Gaussian lattice series converges uniformly in the centre on every bounded set,
 for each nonzero width. -/
 theorem hasSumUniformlyOn_gaussianLatticeSum {s : ℝ} (hs : s ≠ 0)
@@ -106,7 +125,7 @@ theorem hasSumUniformlyOn_gaussianLatticeSum {s : ℝ} (hs : s ≠ 0)
     HasSumUniformlyOn
       (fun n : ℤ => fun c : ℝ => rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2)))
       (fun c => gaussianLatticeSum c s) S := by
-  obtain ⟨R, hRpos, hR⟩ := hS.exists_pos_norm_le
+  obtain ⟨R, _, hR⟩ := hS.exists_pos_norm_le
   have hs2 : 0 < s ^ 2 := sq_pos_of_ne_zero hs
   -- A wider Gaussian supplies a summable majorant for every centre in S.
   have hu : Summable fun n : ℤ =>
@@ -115,19 +134,9 @@ theorem hasSumUniformlyOn_gaussianLatticeSum {s : ℝ} (hs : s ≠ 0)
       (mul_pos four_pos hs2)).mul_left (rexp (R ^ 2 / (2 * s ^ 2)))
   simp_rw [gaussianLatticeSum_def]
   refine .of_norm_le_summable hu fun n c hc => ?_
-  rw [norm_of_nonneg (exp_nonneg _), ← exp_add, exp_le_exp]
-  have hcR : c ^ 2 ≤ R ^ 2 := by
-    have h := hR c hc
-    rw [norm_eq_abs] at h
-    simpa only [sq_abs] using (sq_le_sq₀ (abs_nonneg c) hRpos.le).mpr h
-  have hquad : (n : ℝ) ^ 2 ≤ 2 * ((n : ℝ) - c) ^ 2 + 2 * R ^ 2 := by
-    nlinarith [sq_nonneg ((n : ℝ) - 2 * c)]
-  calc
-    -((n : ℝ) - c) ^ 2 / (2 * s ^ 2) =
-        (-2 * ((n : ℝ) - c) ^ 2) / (4 * s ^ 2) := by ring
-    _ ≤ (2 * R ^ 2 - (n : ℝ) ^ 2) / (4 * s ^ 2) :=
-      div_le_div_of_nonneg_right (by linarith) (by positivity)
-    _ = _ := by ring
+  rw [norm_of_nonneg (exp_nonneg _)]
+  simpa only [sub_zero] using
+    exp_neg_sub_sq_le n hs (c := 0) (by simpa only [sub_zero, norm_eq_abs] using hR c hc)
 
 /-- The direct Gaussian lattice series converges locally uniformly in the centre for every
 nonzero width. In particular, its partial sums converge uniformly on compact intervals. -/
@@ -233,7 +242,6 @@ private theorem norm_deriv_pow_mul_exp_neg_sub_sq_le (k : ℕ) (n : ℤ) {c s x 
       (|(n : ℝ)| ^ (k + 1) * rexp (-((n : ℝ) - c) ^ 2 / (4 * s ^ 2)) +
         (|c| + 1) * (|(n : ℝ)| ^ k * rexp (-((n : ℝ) - c) ^ 2 / (4 * s ^ 2)))) *
         (rexp (1 / (2 * s ^ 2)) / s ^ 2) := by
-  have hs2 : 0 < s ^ 2 := sq_pos_of_ne_zero hs
   have hxc : |x - c| < 1 := abs_sub_lt_iff.2 ⟨by linarith [hx.2], by linarith [hx.1]⟩
   have hnx : |(n : ℝ) - x| ≤ |(n : ℝ)| + (|c| + 1) := by
     calc |(n : ℝ) - x| ≤ |(n : ℝ)| + |x| := abs_sub _ _
@@ -242,11 +250,7 @@ private theorem norm_deriv_pow_mul_exp_neg_sub_sq_le (k : ℕ) (n : ℤ) {c s x 
         linarith [abs_sub_abs_le_abs_sub x c]
   have hexp : rexp (-((n : ℝ) - x) ^ 2 / (2 * s ^ 2)) ≤
       rexp (1 / (2 * s ^ 2)) * rexp (-((n : ℝ) - c) ^ 2 / (4 * s ^ 2)) := by
-    rw [← exp_add, exp_le_exp, div_add_div _ _ (by positivity) (by positivity),
-      div_le_div_iff₀ (by positivity) (by positivity)]
-    have : ((n : ℝ) - c) ^ 2 ≤ 2 * ((n : ℝ) - x) ^ 2 + 2 := by
-      nlinarith [abs_lt.1 hxc, sq_nonneg ((n : ℝ) - x + (x - c)), sq_nonneg ((n : ℝ) - x - (x - c))]
-    nlinarith [mul_pos hs2 hs2]
+    simpa only [one_pow] using exp_neg_sub_sq_le n hs hxc.le
   simp only [norm_mul, norm_div, norm_pow, norm_eq_abs, sq_abs, abs_exp]
   calc |(n : ℝ)| ^ k * (|(n : ℝ) - x| / s ^ 2 * rexp (-((n : ℝ) - x) ^ 2 / (2 * s ^ 2)))
       ≤ |(n : ℝ)| ^ k * ((|(n : ℝ)| + (|c| + 1)) / s ^ 2 *
