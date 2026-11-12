@@ -246,7 +246,7 @@ theorem natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero {b 
         algebraMap 𝒪[K] (SeparableClosure K) y = algebraMap K (SeparableClosure K) y :=
       IsScalarTower.algebraMap_apply 𝒪[K] K (SeparableClosure K) y
     obtain ⟨s, hs⟩ := TauCeti.HenselianRing.mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit
-      (hbu.map (Ideal.Quotient.mk 𝓂[K])) hcm (by rw [e, e]; exact hx)
+      hbu hcm (by rw [e, e]; exact hx)
     rw [IntermediateField.adjoin_simple_eq_bot_iff.mpr
       (by rw [IntermediateField.mem_bot, ← hs, e]; exact ⟨_, rfl⟩)]
     simp [addVal_eq_zero_iff.mpr hbu]

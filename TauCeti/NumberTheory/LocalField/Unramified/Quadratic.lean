@@ -94,7 +94,7 @@ private theorem residue_notMem_range_of_isUnit_discrim
   -- `ω = s` or `ω = T - s` lies in `𝒪[K]`.
   obtain ⟨s, hs⟩ := TauCeti.HenselianRing.mem_range_algebraMap_of_isUnit_discrim
     (I := 𝓂[K]) (b := -T) (c := N) (t := r)
-    (by simpa [neg_sq] using hω.map (Ideal.Quotient.mk 𝓂[K]))
+    (by simpa [neg_sq] using hω)
     ((residue_eq_zero_iff _).mp (by simpa [sub_eq_add_neg] using hres))
     (x := ω) (by simpa [sub_eq_add_neg] using hroot)
   refine coe_notMem_range_of_isUnit_discrim hω ⟨s, ?_⟩
