@@ -19,10 +19,7 @@ instance of the closed Riemann-Roch formula `ind_ℝ D = n χ(Σ) + 2 c₁(E)[Σ
 trivial bundle, `c₁ = 0`.
 
 The Euler characteristic side, `χ(ℂℙ¹) = 2` (`TauCeti.ProjectiveLine.eulerChar_eq_two`), is
-computed from the homeomorphism with the Riemann sphere `OnePoint ℂ`. The finite CW type of `ℂℙ¹`
-(`TauCeti.ProjectiveLine.finiteCWType`) is a theorem rather than a global instance and is used as a
-local instance here. Since `FiniteCWType` is a `Prop`, the statement below applies verbatim under
-any other instance.
+computed from the homeomorphism with the Riemann sphere `OnePoint ℂ`.
 
 ## Main declarations
 
@@ -45,8 +42,6 @@ open scoped LinearAlgebra.Projectivization
 namespace TauCeti
 
 namespace dolbeaultCohomology
-
-attribute [local instance] ProjectiveLine.finiteCWType
 
 /-- **The index of `∂bar` on the projective line is its Euler characteristic.** For complex
 functions over `ℂℙ¹`, `dim_ℝ H^(0,0) - dim_ℝ H^(0,1) = χ(ℂℙ¹)`: both sides are `2`
