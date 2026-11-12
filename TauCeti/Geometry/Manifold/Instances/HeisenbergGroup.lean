@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Heisenberg
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
-public import Mathlib.Geometry.Manifold.Diffeomorph
+public import TauCeti.Geometry.Manifold.PullbackGroupoid
 
 /-!
 # The canonical Heisenberg manifold and Lie group
@@ -15,13 +15,13 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 The Heisenberg carrier has global coordinates in `R × R × R`. Over a normed vector space,
 the coordinate homeomorphism is a diffeomorphism at every differentiability order. Over a normed
 algebra, the canonical Heisenberg group is analytic, with its usual polynomial multiplication
-and inversion. Over the real numbers, this structure supplies the native Lie algebra and
-exponential map. The global chart reduces smoothness of group-valued maps to smoothness of
-their three coordinate functions.
+and inversion. For finite-dimensional real coefficients, this structure supplies the Lie algebra
+and Lie-group exponential. The global chart reduces smoothness of group-valued maps to
+smoothness of their three coordinate functions.
 
 ## Main declarations
 
-* `TauCeti.HeisenbergGroup.instChartedSpace`, `chartAt_eq`: the global coordinate chart.
+* `TauCeti.HeisenbergGroup.instChartedSpace`: the pulled-back coordinate charts.
 * `TauCeti.HeisenbergGroup.instIsManifold`: the coordinate manifold.
 * `TauCeti.HeisenbergGroup.diffeomorphProd`: the coordinate diffeomorphism.
 * `TauCeti.HeisenbergGroup.contMDiff_iff`: coordinate criterion for smooth maps.
@@ -32,7 +32,8 @@ their three coordinate functions.
 
 * B. C. Hall, *Lie Groups, Lie Algebras, and Representations*, second edition, GTM 222
   (2015), Section 1.2.6, equation (1.13), for the real Heisenberg group.
-* Mathlib, `Geometry/Manifold/ContMDiff/Basic.lean`, for smooth open-embedding charts.
+* `Homeomorph.pullbackChartedSpace` and `Homeomorph.pullbackDiffeomorph` supply the
+  coordinate manifold and its smooth identification with the product.
 -/
 
 public noncomputable section
@@ -46,19 +47,9 @@ namespace TauCeti.HeisenbergGroup
 
 /-- The global coordinate chart on the canonical Heisenberg carrier. -/
 @[instance_reducible]
-instance instChartedSpace (R : Type v) [TopologicalSpace R] [Nonempty R] :
+instance instChartedSpace (R : Type v) [TopologicalSpace R] :
     ChartedSpace (R × R × R) (HeisenbergGroup R) :=
-  homeomorphProd.isOpenEmbedding.singletonChartedSpace
-
-/-- Every coordinate chart has the coordinate homeomorphism as its underlying map. -/
-theorem chartAt_eq {R : Type v} [TopologicalSpace R] [Nonempty R] (g : HeisenbergGroup R) :
-    ⇑(chartAt (R × R × R) g) = (homeomorphProd : HeisenbergGroup R → R × R × R) :=
-  homeomorphProd.isOpenEmbedding.singletonChartedSpace_chartAt_eq
-
-/-- The coordinate charts are defined on the whole Heisenberg carrier. -/
-theorem chartAt_source {R : Type v} [TopologicalSpace R] [Nonempty R] (g : HeisenbergGroup R) :
-    (chartAt (R × R × R) g).source = Set.univ := by
-  simp
+  homeomorphProd.pullbackChartedSpace
 
 variable {𝕜 : Type u} [NontriviallyNormedField 𝕜]
 
@@ -68,69 +59,49 @@ variable {R : Type v} [NormedAddCommGroup R] [NormedSpace 𝕜 R]
 
 /-- The coordinate manifold on the canonical Heisenberg carrier. -/
 instance instIsManifold {n : ℕ∞ω} :
-    IsManifold 𝓘(𝕜, R × R × R) n (HeisenbergGroup R) := by
-  exact homeomorphProd.isOpenEmbedding.isManifold_singleton
-
-/-- The Heisenberg coordinate map is smooth. -/
-theorem contMDiff_homeomorphProd {n : ℕ∞ω} :
-    ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R × R × R) n
-      (homeomorphProd : HeisenbergGroup R → R × R × R) := by
-  exact contMDiff_isOpenEmbedding homeomorphProd.isOpenEmbedding
-
-/-- The inverse Heisenberg coordinate map is smooth. -/
-theorem contMDiff_homeomorphProd_symm {n : ℕ∞ω} :
-    ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R × R × R) n
-      (homeomorphProd.symm : R × R × R → HeisenbergGroup R) := by
-  apply ContMDiff.of_comp_isOpenEmbedding homeomorphProd.isOpenEmbedding
-  rw [Homeomorph.self_comp_symm]
-  exact contMDiff_id
+    IsManifold 𝓘(𝕜, R × R × R) n (HeisenbergGroup R) :=
+  homeomorphProd.pullback_isManifold _ n
 
 /-- The coordinate diffeomorphism of the canonical Heisenberg carrier. -/
 def diffeomorphProd {n : ℕ∞ω} :
-    Diffeomorph 𝓘(𝕜, R × R × R) 𝓘(𝕜, R × R × R) (HeisenbergGroup R) (R × R × R) n where
-  toEquiv := homeomorphProd.toEquiv
-  contMDiff_toFun := contMDiff_homeomorphProd (n := n)
-  contMDiff_invFun := contMDiff_homeomorphProd_symm (n := n)
+    Diffeomorph 𝓘(𝕜, R × R × R) 𝓘(𝕜, R × R × R) (HeisenbergGroup R) (R × R × R) n :=
+  homeomorphProd.pullbackDiffeomorph _ n
 
 /-- The coordinate diffeomorphism sends an element to its three coordinates. -/
 @[simp]
 theorem diffeomorphProd_apply {n : ℕ∞ω} (g : HeisenbergGroup R) :
     diffeomorphProd (𝕜 := 𝕜) (n := n) g = (g.x, g.y, g.z) := by
-  unfold diffeomorphProd
-  -- The diffeomorphism constructor retains the homeomorphism's equivalence and underlying map.
-  exact homeomorphProd_apply g
+  simp only [diffeomorphProd, Homeomorph.coe_pullbackDiffeomorph, homeomorphProd_apply]
 
 /-- The inverse coordinate diffeomorphism forms an element from its coordinates. -/
 @[simp]
 theorem diffeomorphProd_symm_apply {n : ℕ∞ω} (a : R × R × R) :
     (diffeomorphProd (𝕜 := 𝕜) (n := n)).symm a = ⟨a.1, a.2.1, a.2.2⟩ := by
-  unfold diffeomorphProd
-  -- Both inverse coercions use the inverse map of the same coordinate equivalence.
-  exact homeomorphProd_symm_apply a
+  simp only [diffeomorphProd, Homeomorph.coe_pullbackDiffeomorph_symm, homeomorphProd_symm_apply]
 
 /-- The first Heisenberg coordinate is smooth. -/
 theorem contMDiff_x {n : ℕ∞ω} :
     ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (HeisenbergGroup.x : HeisenbergGroup R → R) := by
   have hp : ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (fun a : R × R × R => a.1) :=
     contDiff_fst.contMDiff
-  simpa only [Function.comp_def, homeomorphProd_apply] using
-    hp.comp (contMDiff_homeomorphProd (𝕜 := 𝕜) (R := R) (n := n))
+  simpa only [Function.comp_def, diffeomorphProd_apply] using
+    hp.comp (diffeomorphProd (𝕜 := 𝕜) (R := R) (n := n)).contMDiff
 
 /-- The second Heisenberg coordinate is smooth. -/
 theorem contMDiff_y {n : ℕ∞ω} :
     ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (HeisenbergGroup.y : HeisenbergGroup R → R) := by
   have hp : ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (fun a : R × R × R => a.2.1) :=
     (contDiff_fst.comp contDiff_snd).contMDiff
-  simpa only [Function.comp_def, homeomorphProd_apply] using
-    hp.comp (contMDiff_homeomorphProd (𝕜 := 𝕜) (R := R) (n := n))
+  simpa only [Function.comp_def, diffeomorphProd_apply] using
+    hp.comp (diffeomorphProd (𝕜 := 𝕜) (R := R) (n := n)).contMDiff
 
 /-- The central Heisenberg coordinate is smooth. -/
 theorem contMDiff_z {n : ℕ∞ω} :
     ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (HeisenbergGroup.z : HeisenbergGroup R → R) := by
   have hp : ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (fun a : R × R × R => a.2.2) :=
     (contDiff_snd.comp contDiff_snd).contMDiff
-  simpa only [Function.comp_def, homeomorphProd_apply] using
-    hp.comp (contMDiff_homeomorphProd (𝕜 := 𝕜) (R := R) (n := n))
+  simpa only [Function.comp_def, diffeomorphProd_apply] using
+    hp.comp (diffeomorphProd (𝕜 := 𝕜) (R := R) (n := n)).contMDiff
 
 /-- A map into the Heisenberg manifold is smooth exactly when its three coordinates are. -/
 theorem contMDiff_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -141,11 +112,8 @@ theorem contMDiff_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
       ContMDiff I 𝓘(𝕜, R) n (fun a ↦ (f a).x) ∧
         ContMDiff I 𝓘(𝕜, R) n (fun a ↦ (f a).y) ∧
           ContMDiff I 𝓘(𝕜, R) n (fun a ↦ (f a).z) := by
-  refine ⟨fun hf ↦ ⟨contMDiff_x.comp hf, contMDiff_y.comp hf, contMDiff_z.comp hf⟩, ?_⟩
-  rintro ⟨hx, hy, hz⟩
-  apply ContMDiff.of_comp_isOpenEmbedding homeomorphProd.isOpenEmbedding
-  simpa only [Function.comp_def, homeomorphProd_apply] using
-    hx.prodMk_space (hy.prodMk_space hz)
+  rw [← (diffeomorphProd (𝕜 := 𝕜) (R := R) (n := n)).contMDiff_diffeomorph_comp_iff le_rfl]
+  simp only [Function.comp_def, diffeomorphProd_apply, contMDiff_prod_module_iff]
 
 end Manifold
 
