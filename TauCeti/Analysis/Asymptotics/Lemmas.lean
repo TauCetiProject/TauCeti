@@ -175,8 +175,8 @@ theorem IsBigO.isBigO_principal_Ici {E F : Type*} [Norm E] [Norm F] {f : ℝ →
 
 /-- **A constant multiple of `ψ` that is `o(ψ)` vanishes.** If `ψ` is frequently nonzero along `l`
 and `ψ • c = o(ψ)` along `l`, then `c = 0`. -/
-theorem eq_zero_of_smul_isLittleO {α 𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] {l : Filter α} {ψ : α → 𝕜} {c : E} (hψ : ∃ᶠ x in l, ψ x ≠ 0)
+theorem eq_zero_of_smul_isLittleO {α 𝕜 E : Type*} [NormedAddCommGroup 𝕜] [NormedAddCommGroup E]
+    [SMul 𝕜 E] [NormSMulClass 𝕜 E] {l : Filter α} {ψ : α → 𝕜} {c : E} (hψ : ∃ᶠ x in l, ψ x ≠ 0)
     (h : (fun x => ψ x • c) =o[l] ψ) : c = 0 := by
   by_contra hc
   have hcpos : 0 < ‖c‖ := norm_pos_iff.mpr hc
