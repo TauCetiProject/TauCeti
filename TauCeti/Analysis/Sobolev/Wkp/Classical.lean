@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -18,7 +20,9 @@ representatives satisfy the integrability hypotheses of classical higher-order c
 Conversely, a function that is `Cᵏ` on the domain and whose classical derivatives through order
 `k` lie in `Lᵖ` represents an element of `W^{k,p}` (`TauCeti.Wkp.exists_value_ae_eq_of_contDiffOn`),
 whose norm is at most the sum of the `Lᵖ` seminorms of these derivatives
-(`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`).
+(`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`). On a domain in `ℝⁿ`, the weak
+Hessian of a `W^{2,p}` function with a `C²` representative `f` has entries `∂ᵢ∂ⱼf` almost
+everywhere (`TauCeti.Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn`).
 
 The weak-to-classical identification uses `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`; the norm
 comparison uses Mathlib's `norm_iteratedFDeriv_fderiv` and the Riesz isometry. These are the
@@ -315,5 +319,26 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (k : ℕ) {f : E → �
       hKU).memLp_restrict_of_subset_isCompact hK Omega.isOpen.measurableSet hΩK p
 
 end Sobolev
+
+section Euclidean
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+  [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)} {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- **The weak Hessian of a `C²` representative in coordinates.** If `u ∈ W^{2,p}(Ω)` on a domain
+`Ω ⊆ ℝⁿ` has a representative `f` that is `C²` on `Ω`, then the entries `(D²u eⱼ)ᵢ` of its weak
+Hessian are the second partial derivatives `∂ᵢ∂ⱼf` almost everywhere on `Ω`. -/
+theorem Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn (u : Wkp mu Omega p 2)
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : ContDiffOn ℝ 2 f Omega)
+    (hu : (value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] f) :
+    ∀ᵐ x ∂mu.restrict Omega, ∀ i j : ι,
+      iteratedGradient 1 u x (EuclideanSpace.single j 1) i =
+        fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  filter_upwards [iteratedGradient_ae_eq_of_contDiffOn 1 u hf hu,
+    ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ i j
+  rw [hx, iteratedGradientChain_succ, iteratedGradientChain_zero, fderiv_gradient,
+    hessianOperator_single_apply (hf.contDiffAt (Omega.isOpen.mem_nhds hxΩ))]
+
+end Euclidean
 
 end TauCeti

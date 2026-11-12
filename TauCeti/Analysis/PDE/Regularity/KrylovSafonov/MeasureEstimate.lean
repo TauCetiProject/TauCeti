@@ -15,6 +15,7 @@ import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
+import TauCeti.Topology.Frontier
 
 /-!
 # The basic measure estimate of Krylov and Safonov
@@ -255,24 +256,44 @@ private theorem sum_mul_fderiv_fderiv_mul_sub_sub_const (A : Matrix ι ι ℝ)
   ring
 
 omit [DecidableEq ι] in
-/-- **The comparison set.** If `v` is continuous on `closedBall c R` and at most `0` on the
-sphere, then `Ω' = B(c, R) ∩ {v > 0}` is open, `v` is continuous on its closure, and `v` is at most
-`0` on its frontier. -/
-private theorem comparison_set {R : ℝ} {c : EuclideanSpace ℝ ι} {v : EuclideanSpace ℝ ι → ℝ}
-    (hv : ContinuousOn v (closedBall c R)) (hbdry : ∀ z ∈ sphere c R, v z ≤ 0) :
-    IsOpen (ball c R ∩ v ⁻¹' Ioi 0) ∧ ContinuousOn v (closure (ball c R ∩ v ⁻¹' Ioi 0)) ∧
-      ∀ z ∈ frontier (ball c R ∩ v ⁻¹' Ioi 0), v z ≤ 0 := by
-  have hΩ' : IsOpen (ball c R ∩ v ⁻¹' Ioi 0) :=
-    (hv.mono ball_subset_closedBall).isOpen_inter_preimage isOpen_ball isOpen_Ioi
-  have hcl : closure (ball c R ∩ v ⁻¹' Ioi 0) ⊆ closedBall c R :=
-    (closure_mono inter_subset_left).trans closure_ball_subset_closedBall
-  refine ⟨hΩ', hv.mono hcl, fun z hz ↦ ?_⟩
-  -- On the frontier of `Ω'`, either `v = 0` inside the ball, or `z` lies on the sphere.
-  rw [frontier, hΩ'.interior_eq] at hz
-  by_cases hzb : z ∈ ball c R
-  · exact not_lt.1 fun h ↦ hz.2 ⟨hzb, h⟩
-  · exact hbdry z (mem_sphere.2 (le_antisymm (mem_closedBall.1 (hcl hz.1))
-      (not_lt.1 fun h ↦ hzb (mem_ball.2 h))))
+/-- The Krylov–Safonov barrier `(R⁻² ‖· - c‖² + θ²)^(-β)` is smooth. -/
+private theorem contDiff_barrier {R θ β : ℝ} (hθ : 0 < θ) (c : EuclideanSpace ℝ ι)
+    {k : WithTop ℕ∞} :
+    ContDiff ℝ k fun z : EuclideanSpace ℝ ι ↦ ((R ^ 2)⁻¹ * ‖z - c‖ ^ 2 + θ ^ 2) ^ (-β) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦
+    contDiffAt_rpow_mul_norm_sq_sub_add (by positivity) (by positivity) _
+
+/-- **A smooth function minus a strong function.** Let `u ∈ W^{2,p}(U)` have the representative
+`ū`, let `w` be `C²` and let `Ω ⊆ U` be open and bounded. Then `w - ū` represents an element `V` of
+`W^{2,p}(Ω)`, the restriction of `u` subtracted from the Sobolev function represented by `w`, whose
+weak Hessian is `∇²w - ∇²u` almost everywhere on `Ω`. -/
+private theorem exists_wkp_value_ae_eq_sub {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {U Ω : Opens (EuclideanSpace ℝ ι)} (hΩU : Ω ≤ U)
+    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (u : Wkp volume U p 2)
+    {ū w : EuclideanSpace ℝ ι → ℝ}
+    (hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict U] ū)
+    (hw : ContDiff ℝ 2 w) :
+    ∃ V : Wkp volume Ω p 2,
+      (Wkp.value 2 V : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] (fun y ↦ w y - ū y) ∧
+      ∀ᵐ y ∂volume.restrict Ω, ∀ i j : ι,
+        Wkp.iteratedGradient 1 V y (EuclideanSpace.single j 1) i =
+          fderiv ℝ (fderiv ℝ w) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) -
+            Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i := by
+  obtain ⟨W, hW⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := volume) (p := p)
+    (Omega := Ω) 2 isOpen_univ hw.contDiffOn hΩ.isCompact_closure subset_closure (subset_univ _)
+  refine ⟨W - Wkp.restrictL hΩU 2 u, ?_, ?_⟩
+  · rw [← Wkp.valueL_apply, map_sub, Wkp.valueL_apply, Wkp.valueL_apply]
+    filter_upwards [Lp.coeFn_sub (Wkp.value 2 W) (Wkp.value 2 (Wkp.restrictL hΩU 2 u)), hW,
+      Wkp.value_restrictL_ae hΩU 2 u, ae_restrict_of_ae_restrict_of_subset hΩU hū]
+      with y h1 h2 h3 h4
+    rw [h1, Pi.sub_apply, h2, h3, h4]
+  · rw [← Wkp.iteratedGradientL_apply, map_sub, Wkp.iteratedGradientL_apply,
+      Wkp.iteratedGradientL_apply]
+    filter_upwards [Lp.coeFn_sub (Wkp.iteratedGradient 1 W)
+        (Wkp.iteratedGradient 1 (Wkp.restrictL hΩU 2 u)),
+      Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn W hw.contDiffOn hW,
+      Wkp.iteratedGradient_restrictL_ae hΩU 1 u] with y h1 h2 h3 i j
+    rw [h1, Pi.sub_apply, sub_apply, PiLp.sub_apply, h2, h3]
 
 variable [Nonempty ι]
 
@@ -495,16 +516,21 @@ private theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball_of_volume_b
     congrFun hv y
   have hgG (y : EuclideanSpace ℝ ι) : g y = ((‖y - c‖ / R) ^ 2 + θ ^ 2) ^ (-β) := by
     simp only [g, div_pow, inv_mul_eq_div]
-  have hg2 (y : EuclideanSpace ℝ ι) : ContDiffAt ℝ 2 g y :=
-    contDiffAt_rpow_mul_norm_sq_sub_add (by positivity) (by positivity) β
   -- `v` is continuous on the closed ball and equals `-u ≤ 0` on the sphere, where `g` is constant.
   have hvc : ContinuousOn v (closedBall c R) :=
-    (((continuous_const.mul (contDiff_iff_contDiffAt.2 hg2).continuous).continuousOn.sub
+    (((continuous_const.mul (contDiff_barrier (k := 0) hθ c).continuous).continuousOn.sub
       hcont).sub continuousOn_const).congr fun y _ ↦ hvy y
   have hvs (z : EuclideanSpace ℝ ι) (hz : z ∈ sphere c R) : v z ≤ 0 := by
     rw [hvy, hgG, mem_sphere_iff_norm.1 hz, div_self hR.ne']
     linarith [hbdry z hz]
-  obtain ⟨hΩ', hvcl, hfront⟩ := comparison_set hvc hvs
+  -- `Ω' = B(c, R) ∩ {v > 0}` is open, `v` is continuous on its closure and `v ≤ 0` on its frontier.
+  have hΩ' : IsOpen (ball c R ∩ v ⁻¹' Ioi 0) :=
+    (hvc.mono ball_subset_closedBall).isOpen_inter_preimage isOpen_ball isOpen_Ioi
+  have hvcl : ContinuousOn v (closure (ball c R ∩ v ⁻¹' Ioi 0)) :=
+    hvc.mono ((closure_mono inter_subset_left).trans closure_ball_subset_closedBall)
+  have hfront (z : EuclideanSpace ℝ ι) (hz : z ∈ frontier (ball c R ∩ v ⁻¹' Ioi 0)) : v z ≤ 0 :=
+    le_of_mem_frontier_inter_preimage_Ioi isOpen_ball (hvc.mono ball_subset_closedBall)
+      (fun y hy ↦ hvs y (frontier_ball_subset_sphere hy)) hz
   -- The barrier has risen by `2 / A` at `x₀`, so `v x₀ ≥ 1`.
   have hgx₀ : (τ ^ 2 + θ ^ 2) ^ (-β) ≤ g x₀ := by
     have : ‖x₀ - c‖ / R ≤ τ := (div_le_iff₀ hR).2 (mem_ball_iff_norm.1 hx₀).le
@@ -570,10 +596,7 @@ theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball {κ θ τ : ℝ} (h
     exists_mul_volume_ball_le_volume_setOf_lt_inter_ball_of_volume_ball_le (ι := ι) hκ hθ hτ₀ hτ
   refine ⟨M, μ, ε₀, hM, hμ, hε₀, ?_⟩
   intro lam Lam R c a u f hR ha hLam hcont hu hbdry hsuper hf hx
-  have hg : ContDiff ℝ 2 fun z : EuclideanSpace ℝ ι ↦
-      ((R ^ 2)⁻¹ * ‖z - c‖ ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ)) :=
-    contDiff_iff_contDiffAt.2 fun _ ↦
-      contDiffAt_rpow_mul_norm_sq_sub_add (by positivity) (by positivity) _
+  have hg := contDiff_barrier (k := 2) (R := R) (β := Fintype.card ι * κ) hθ c
   -- Replace `a` by its symmetric part, which the Hessian of `u` cannot distinguish from `a`.
   refine H hR ha.coefficientSymmetricPart hLam (fun _ _ ↦ coefficientSymmetricPart_isSymm _)
     hcont hbdry hf rfl (fun Ω hΩR hΩ hvcl hfront x hx ↦ ?_) hx
@@ -620,55 +643,24 @@ theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball_of_wkp {p : ℝ≥0
   intro lam Lam R c a ū f u hR ha hLam hsymm hcont hū hbdry hsuper hf hx
   refine H hR ha hLam hsymm hcont hbdry hf rfl (fun Ω hΩR hΩ hvcl hfront x hx ↦ ?_) hx
   set g : EuclideanSpace ℝ ι → ℝ := fun z ↦
-    ((R ^ 2)⁻¹ * ‖z - c‖ ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ)) with hg_def
+    ((R ^ 2)⁻¹ * ‖z - c‖ ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ))
   set g₁ : ℝ := (1 ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ))
-  -- The smooth part `w = A g - A g₁` of the comparison function `v = w - ū`.
-  set w : EuclideanSpace ℝ ι → ℝ := fun z ↦ A * g z - A * g₁
-  have hg : ContDiff ℝ 2 g := contDiff_iff_contDiffAt.2 fun _ ↦
-    contDiffAt_rpow_mul_norm_sq_sub_add (by positivity) (by positivity) _
-  have hw : ContDiff ℝ 2 w := (contDiff_const.mul hg).sub contDiff_const
-  -- On `Ω`, the comparison function is the Sobolev function `W - u|_Ω`, where `W` represents `w`.
-  have hO : (⟨Ω, hΩ⟩ : Opens (EuclideanSpace ℝ ι)) ≤ ⟨ball c R, isOpen_ball⟩ := hΩR
-  obtain ⟨W, hW⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := volume) (p := p)
-    (Omega := ⟨Ω, hΩ⟩) 2 isOpen_univ (hw.contDiffOn.of_le (by norm_num))
-    (isCompact_closedBall c R) (hΩR.trans ball_subset_closedBall) (subset_univ _)
-  set V := W - Wkp.restrictL hO 2 u
+  have hg : ContDiff ℝ 2 g := contDiff_barrier hθ c
+  -- On `Ω`, the comparison function is `w - ū` for the smooth function `w = A g - A g₁`, whose
+  -- second derivative is `A` times that of `g`.
+  have hw : ContDiff ℝ 2 fun z ↦ A * g z - A * g₁ := (contDiff_const.mul hg).sub contDiff_const
+  have hw2 (y : EuclideanSpace ℝ ι) :
+      fderiv ℝ (fderiv ℝ fun z ↦ A * g z - A * g₁) y = A • fderiv ℝ (fderiv ℝ g) y := by
+    have hfd : fderiv ℝ (fun z ↦ A * g z - A * g₁) = A • fderiv ℝ g := funext fun z ↦ by
+      rw [Pi.smul_apply, fderiv_sub_const, fderiv_const_mul (hg.differentiable (by norm_num) z)]
+    rw [hfd, fderiv_const_smul ((hg.fderiv_right (m := 1) (by norm_num)).differentiable
+      (by norm_num) y)]
+  obtain ⟨V, hV, hHess⟩ := exists_wkp_value_ae_eq_sub (U := ⟨ball c R, isOpen_ball⟩)
+    (Ω := ⟨Ω, hΩ⟩) hΩR (isBounded_ball.subset hΩR) u hū hw
   have hΩu : ∀ᵐ y ∂volume.restrict Ω, y ∈ ball c R :=
     ae_restrict_of_forall_mem hΩ.measurableSet hΩR
-  have hV : (Wkp.value 2 V : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω]
-      fun y ↦ A * g y - ū y - A * g₁ := by
-    have hsub : Wkp.value 2 V = Wkp.value 2 W - Wkp.value 2 (Wkp.restrictL hO 2 u) := by
-      rw [← Wkp.valueL_apply, map_sub, Wkp.valueL_apply, Wkp.valueL_apply]
-    rw [hsub]
-    filter_upwards [Lp.coeFn_sub (Wkp.value 2 W) (Wkp.value 2 (Wkp.restrictL hO 2 u)), hW,
-      Wkp.value_restrictL_ae hO 2 u, ae_restrict_of_ae_restrict_of_subset hΩR hū] with y h1 h2 h3 h4
-    rw [h1, Pi.sub_apply, h2, h3, h4]
-    ring
-  -- The second derivative of `w = A g - A g₁` is `A` times that of `g`.
-  have hfd : fderiv ℝ w = A • fderiv ℝ g := funext fun z ↦ by
-    simp only [w, Pi.smul_apply]
-    rw [fderiv_sub_const, fderiv_const_mul (hg.differentiable (by norm_num) z)]
-  -- The weak Hessian of `V` is `A ∇²g - ∇²u` almost everywhere on `Ω`.
-  have hHess : ∀ᵐ y ∂volume.restrict Ω, ∀ i j : ι,
-      Wkp.iteratedGradient 1 V y (EuclideanSpace.single j 1) i =
-        A * fderiv ℝ (fderiv ℝ g) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) -
-          Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i := by
-    have hsub : ⇑(Wkp.iteratedGradient 1 V) =ᵐ[volume.restrict Ω]
-        ⇑(Wkp.iteratedGradient 1 W) - ⇑(Wkp.iteratedGradient 1 (Wkp.restrictL hO 2 u)) := by
-      rw [← Wkp.iteratedGradientL_apply 1 V, map_sub, Wkp.iteratedGradientL_apply,
-        Wkp.iteratedGradientL_apply]
-      exact Lp.coeFn_sub _ _
-    filter_upwards [hsub, Wkp.iteratedGradient_ae_eq_of_contDiffOn 1 W
-        (hw.contDiffOn.of_le (by norm_num)) hW,
-      Wkp.iteratedGradient_restrictL_ae hO 1 u] with y h1 h2 h3 i j
-    rw [h1, Pi.sub_apply, h2, h3, iteratedGradientChain_succ, iteratedGradientChain_zero,
-      fderiv_gradient, sub_apply, PiLp.sub_apply,
-      hessianOperator_single_apply hw.contDiffAt, hfd,
-      fderiv_const_smul ((hg.fderiv_right (m := 1) (by norm_num)).differentiable
-        (by norm_num) y)]
-    simp only [smul_apply, smul_eq_mul]
   refine volume_ball_le_setLIntegral_upperContactSet_of_wkp (Ω := ⟨Ω, hΩ⟩)
-    (isBounded_ball.subset hΩR) hp V hvcl hV ?_ ?_ hfront hx
+    (isBounded_ball.subset hΩR) hp V hvcl (hV.trans (.of_forall fun y ↦ by ring)) ?_ ?_ hfront hx
   · filter_upwards [ae_restrict_of_ae_restrict_of_subset upperContactSet_subset hΩu] with y hy
     exact ha.posDef hy (hsymm y hy)
   · filter_upwards [ae_restrict_of_ae_restrict_of_subset upperContactSet_subset
@@ -678,7 +670,8 @@ theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball_of_wkp {p : ℝ≥0
         A * ∑ i, ∑ j, a y i j * fderiv ℝ (fderiv ℝ g) y (EuclideanSpace.single i 1)
           (EuclideanSpace.single j 1) -
         ∑ i, ∑ j, a y i j * Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i := by
-      simp only [hy₂, Finset.mul_sum, ← Finset.sum_sub_distrib]
+      simp only [hy₂, hw2, smul_apply, smul_eq_mul, Finset.mul_sum,
+        ← Finset.sum_sub_distrib]
       exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
     linarith
 
