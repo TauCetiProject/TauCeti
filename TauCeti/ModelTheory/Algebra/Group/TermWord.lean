@@ -13,7 +13,9 @@ public import Mathlib.GroupTheory.FreeGroup.Reduce
 
 Terms in the group language with named coefficients denote words in the variables and
 coefficient names. A reduced word has a canonical left-associated term representative, and
-translating that term back to a word recovers the original group element. In every group,
+translating that term back to a word recovers the original group element. The correspondence is
+a bijection only up to the group axioms: the distinct terms `t * t⁻¹` and `1` denote the same
+word, so the word of a term does not determine the term. In every group,
 evaluation of a term agrees with evaluation of its word. This translates atomic equalities into
 word equations. Words in the variables alone likewise have canonical terms in the group language
 without coefficients, evaluating to the same group elements.
@@ -107,6 +109,24 @@ private theorem toWord_foldl (l : List ((X ⊕ A) × Bool))
     Term.ofWord (1 : FreeGroup (X ⊕ A)) = 1 := by
   classical
   simp [Term.ofWord]
+
+example (t : Language.group[[A]].Term X) : Term.toWord (t * t⁻¹) = 1 := by
+  simp
+
+/-- The canonical term of the word of `t * t⁻¹` is the identity term, which is a different term:
+translating a term to a word and back does not recover the term. -/
+theorem Term.ofWord_toWord_ne (t : Language.group[[A]].Term X) :
+    Term.ofWord (Term.toWord (t * t⁻¹)) ≠ t * t⁻¹ := by
+  simp only [Term.toWord_mul, Term.toWord_inv, mul_inv_cancel, Term.ofWord_one]
+  -- The identity term and a product have different head symbols, of arities zero and two.
+  intro h
+  cases h
+
+/-- Distinct terms can denote the same word: terms correspond to words only up to the group
+axioms. -/
+theorem Term.toWord_not_injective :
+    ¬ Function.Injective (Term.toWord : Language.group[[A]].Term X → FreeGroup (X ⊕ A)) :=
+  fun h => Term.ofWord_toWord_ne 1 (h (Term.toWord_ofWord _))
 
 private theorem coeff_funMap_one {G : Type*} [Group G] (c : A → G) (xs : Fin 0 → G) :
     letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
