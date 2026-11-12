@@ -114,23 +114,29 @@ theorem integral_norm_sq_add_mul_integral_norm_sq_le {g : X → ℝ} (hr : 0 < r
     ∫ x, ‖Dβ x‖ ^ 2 ∂μ + r / 16 * ∫ x, ‖β x‖ ^ 2 ∂μ ≤
       8 * c ^ 2 / r * (∫ x, ‖Dα x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ) := by
   have hg' : Integrable (fun x ↦ -g x / 2) μ := hg.neg.div_const 2
+  have hgDβ : Integrable (fun x ↦ -g x / 2 + ‖Dβ x‖ ^ 2) μ := hg'.add hDβ
   have hL : Integrable (fun x ↦ -g x / 2 + ‖Dβ x‖ ^ 2 + r / 16 * ‖β x‖ ^ 2) μ :=
-    (hg'.add hDβ).add (hβ.const_mul _)
+    hgDβ.add (hβ.const_mul _)
   have hR : Integrable (fun x ↦ 8 * c ^ 2 / r * (‖Dα x‖ ^ 2 + ‖α x‖ ^ 2)) μ :=
     (hDα.add hα).const_mul _
   have hint := integral_mono_ae hL hR <| by
     filter_upwards [hW] with x hx
     exact neg_div_two_add_sq_add_mul_sq_le hr hcr hx
-  have hsplitL : ∫ x, (-g x / 2 + ‖Dβ x‖ ^ 2 + r / 16 * ‖β x‖ ^ 2) ∂μ =
-      ∫ x, (-g x / 2 + ‖Dβ x‖ ^ 2) ∂μ + ∫ x, r / 16 * ‖β x‖ ^ 2 ∂μ :=
-    integral_add (hg'.add hDβ) (hβ.const_mul _)
-  have hsplitL' : ∫ x, (-g x / 2 + ‖Dβ x‖ ^ 2) ∂μ = ∫ x, -g x / 2 ∂μ + ∫ x, ‖Dβ x‖ ^ 2 ∂μ :=
-    integral_add hg' hDβ
-  have hsplitR : ∫ x, (‖Dα x‖ ^ 2 + ‖α x‖ ^ 2) ∂μ = ∫ x, ‖Dα x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ :=
-    integral_add hDα hα
-  rw [hsplitL, hsplitL', integral_div, integral_neg, hg0, integral_const_mul, integral_const_mul,
-    hsplitR] at hint
+  simp only [integral_add hgDβ (hβ.const_mul _), integral_add hg' hDβ,
+    integral_add hDα hα, integral_const_mul, integral_div, integral_neg, hg0] at hint
   linarith
+
+/-- Taking square roots in an `L²` bound: if `Z ≤ (K² / r) (T + T')`, then
+`√Z ≤ K r^(-1/2) (√T + √T')`. -/
+private theorem sqrt_le_div_sqrt_mul_add_sqrt {Z T T' K : ℝ} (hr : 0 < r) (hK : 0 ≤ K)
+    (hT : 0 ≤ T) (hT' : 0 ≤ T') (hZ : Z ≤ K ^ 2 / r * (T + T')) :
+    √Z ≤ K / √r * (√T + √T') := by
+  refine Real.sqrt_le_iff.2 ⟨by positivity, ?_⟩
+  rw [mul_pow, div_pow, Real.sq_sqrt hr.le]
+  have hsum : T + T' ≤ (√T + √T') ^ 2 := by
+    nlinarith [Real.sqrt_nonneg T, Real.sqrt_nonneg T', Real.sq_sqrt hT, Real.sq_sqrt hT']
+  calc Z ≤ K ^ 2 / r * (T + T') := hZ
+    _ ≤ K ^ 2 / r * (√T + √T') ^ 2 := by gcongr
 
 /-- **Taubes's `L²` bound on `β`, in norm form.** Under the hypotheses of
 `TauCeti.SeibergWitten.integral_norm_sq_add_mul_integral_norm_sq_le`,
@@ -152,30 +158,20 @@ theorem sqrt_integral_norm_sq_add_sqrt_mul_sqrt_integral_norm_sq_le {g : X → �
   have hQ : 0 ≤ Q := integral_nonneg fun x ↦ by positivity
   have hT₁ : 0 ≤ T₁ := integral_nonneg fun x ↦ by positivity
   have hT₂ : 0 ≤ T₂ := integral_nonneg fun x ↦ by positivity
-  have hsr := Real.sq_sqrt hr.le
-  have hsP := Real.sq_sqrt hP
-  have hsQ := Real.sq_sqrt hQ
-  have hsT₁ := Real.sq_sqrt hT₁
-  have hsT₂ := Real.sq_sqrt hT₂
-  -- Square both sides: `(√P + √r √Q)² ≤ 2 (P + r Q) ≤ 256 c² (T₁ + T₂) / r`.
+  -- `(√P + √r √Q)² ≤ 2 (P + r Q) ≤ 256 c² (T₁ + T₂) / r`.
   have hPQ : P + r * Q ≤ 128 * c ^ 2 / r * (T₁ + T₂) := by
     have : P ≤ 16 * P := by linarith
     have h16 : P + r * Q ≤ 16 * (P + r / 16 * Q) := by nlinarith
     calc P + r * Q ≤ 16 * (P + r / 16 * Q) := h16
       _ ≤ 16 * (8 * c ^ 2 / r * (T₁ + T₂)) := by gcongr
       _ = 128 * c ^ 2 / r * (T₁ + T₂) := by ring
-  have hT : T₁ + T₂ ≤ (√T₁ + √T₂) ^ 2 := by nlinarith [Real.sqrt_nonneg T₁, Real.sqrt_nonneg T₂]
-  have hrhs : 0 ≤ 16 * c / √r * (√T₁ + √T₂) := by positivity
-  refine (pow_le_pow_iff_left₀ (by positivity) hrhs two_ne_zero).1 ?_
-  have hlhs : (√P + √r * √Q) ^ 2 ≤ 2 * (P + r * Q) := by
-    nlinarith [sq_nonneg (√P - √r * √Q)]
-  have hmain : 2 * (P + r * Q) ≤ (16 * c / √r * (√T₁ + √T₂)) ^ 2 := by
-    rw [mul_pow, div_pow, hsr]
-    calc 2 * (P + r * Q) ≤ 2 * (128 * c ^ 2 / r * (T₁ + T₂)) := by gcongr
-      _ = 16 ^ 2 * c ^ 2 / r * (T₁ + T₂) := by ring
-      _ ≤ 16 ^ 2 * c ^ 2 / r * (√T₁ + √T₂) ^ 2 := by gcongr
-      _ = (16 * c) ^ 2 / r * (√T₁ + √T₂) ^ 2 := by ring
-  exact hlhs.trans hmain
+  have hsq : (√P + √r * √Q) ^ 2 ≤ 2 * (P + r * Q) := by
+    nlinarith [sq_nonneg (√P - √r * √Q), Real.sq_sqrt hr.le, Real.sq_sqrt hP, Real.sq_sqrt hQ]
+  rw [← Real.sqrt_sq (by positivity : 0 ≤ √P + √r * √Q)]
+  refine sqrt_le_div_sqrt_mul_add_sqrt hr (by positivity) hT₁ hT₂ ?_
+  calc (√P + √r * √Q) ^ 2 ≤ 2 * (P + r * Q) := hsq
+    _ ≤ 2 * (128 * c ^ 2 / r * (T₁ + T₂)) := by gcongr
+    _ = (16 * c) ^ 2 / r * (T₁ + T₂) := by ring
 
 /-- **Taubes's `L²` bound on `∂bar_a α`.** Suppose the `L²` bound on `β` of
 `TauCeti.SeibergWitten.integral_norm_sq_add_mul_integral_norm_sq_le` holds, the covariant
@@ -248,24 +244,11 @@ theorem sqrt_integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : X → F₃} {Db
   have hZ := integral_norm_sq_le_of_norm_le_mul_add_norm hr16 hcr hβ hDα hDβ hDα' hDbar
     hbound hsplit hdirac
   have hr : 0 < r := by linarith
-  set Z := ∫ x, ‖Dbar x‖ ^ 2 ∂μ
-  set T' := ∫ x, ‖Dα' x‖ ^ 2 ∂μ
-  set T₂ := ∫ x, ‖α x‖ ^ 2 ∂μ
-  have hZ0 : 0 ≤ Z := integral_nonneg fun x ↦ by positivity
-  have hT' : 0 ≤ T' := integral_nonneg fun x ↦ by positivity
-  have hT₂ : 0 ≤ T₂ := integral_nonneg fun x ↦ by positivity
-  have hsT' := Real.sq_sqrt hT'
-  have hsT₂ := Real.sq_sqrt hT₂
-  have hrhs : 0 ≤ 6 * c ^ 2 / √r * (√T' + √T₂) := by positivity
-  refine (pow_le_pow_iff_left₀ (Real.sqrt_nonneg _) hrhs two_ne_zero).1 ?_
-  have hT : T' + T₂ ≤ (√T' + √T₂) ^ 2 := by nlinarith [Real.sqrt_nonneg T', Real.sqrt_nonneg T₂]
-  rw [Real.sq_sqrt hZ0, mul_pow, div_pow, Real.sq_sqrt hr.le]
-  calc Z ≤ 32 * c ^ 4 / r * (T' + T₂) := hZ
-    _ ≤ 36 * c ^ 4 / r * (T' + T₂) := by
-        gcongr
-        linarith [pow_nonneg (sq_nonneg c) 2, show c ^ 4 = (c ^ 2) ^ 2 by ring]
-    _ ≤ 36 * c ^ 4 / r * (√T' + √T₂) ^ 2 := by gcongr
-    _ = (6 * c ^ 2) ^ 2 / r * (√T' + √T₂) ^ 2 := by ring
+  have hT' : 0 ≤ ∫ x, ‖Dα' x‖ ^ 2 ∂μ := integral_nonneg fun x ↦ by positivity
+  have hT₂ : 0 ≤ ∫ x, ‖α x‖ ^ 2 ∂μ := integral_nonneg fun x ↦ by positivity
+  refine sqrt_le_div_sqrt_mul_add_sqrt hr (by positivity) hT' hT₂ (hZ.trans ?_)
+  gcongr
+  nlinarith [pow_nonneg (sq_nonneg c) 2]
 
 section Manifold
 
