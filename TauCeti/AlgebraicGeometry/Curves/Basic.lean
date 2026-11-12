@@ -76,7 +76,7 @@ variable (k X) in
 point, while a curve has at least two. -/
 theorem IsCurveOver.not_isAffine [X.IsCurveOver k] : ¬ IsAffine X := fun _ ↦
   have := IsCurveOver.nontrivial k X
-  not_subsingleton X (subsingleton_of_isAffine_of_universallyClosed (X ↘ Spec (.of k)))
+  not_subsingleton X (X ↘ Spec (.of k)).subsingleton_of_isAffine_of_universallyClosed
 
 variable (k X) in
 /-- A curve over a field is a Noetherian scheme. -/
