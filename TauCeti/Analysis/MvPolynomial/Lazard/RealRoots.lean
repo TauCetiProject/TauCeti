@@ -63,8 +63,8 @@ theorem exists_analyticOnNhd_ordered_lazardEval_roots
   classical
   let q := MvPolynomial.optionEquivRight ℝ (Fin n)
     ((MvPolynomial.optionEquivLeft ℝ (Fin n)).symm p)
-  obtain ⟨ρ, hρ, Φ, c, hc, hΦ, hreal, hstar, u, v, hu, hunit, hv, hvunit,
-      R, hR, hfit, r, g, hr, hg, hfac, e, w, he, hw, hw0, hlocal, hroots⟩ :=
+  obtain ⟨ρ, hρ, Φ, c, _, _, _, _, u, v, hu, hunit, hv, hvunit,
+      R, hR, hfit, r, g, _, hg, hfac, e, w, _, hw, _, hlocal, hroots⟩ :=
     p.exists_complexification_isLazardEvaluator_lazardEval_roots hφ
       vLead vConst vDiscr hlead hconst hdiscr
   let z₀ : ι → ℂ := fun j ↦ (a j : ℂ)

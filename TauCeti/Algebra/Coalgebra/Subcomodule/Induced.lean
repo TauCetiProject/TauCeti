@@ -17,10 +17,6 @@ made under the flatness hypothesis on the coalgebra: flatness makes
 `N ⊗ C → M ⊗ C` injective for the subtype map of a subcomodule `N ≤ M`, so the ambient
 coaction has a unique lift to `N ⊗ C`.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap target "Comodules over a
-coalgebra/Hopf algebra": finite-dimensional subcomodules and categorical kernels need
-subcomodules to be usable as comodules in their own right.
-
 ## Main declarations
 
 * `TauCeti.Subcomodule.inducedCoact`: the coaction on the subtype of a subcomodule.

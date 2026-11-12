@@ -138,7 +138,7 @@ theorem psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
   clear_value g
   have hgp : g ∣ p := hg ▸ EuclideanDomain.gcd_dvd_left p q
   have hgq : g ∣ q := hg ▸ EuclideanDomain.gcd_dvd_right p q
-  set d := g.natDegree with hd
+  set d := g.natDegree
   rw [psc_def, Ne, ← Matrix.exists_mulVec_eq_zero_iff]
   rintro ⟨v, hv, hMv⟩
   -- The kernel vector encodes a relation `A * q + B * p` with no coefficients in degrees

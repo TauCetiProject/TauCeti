@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Unipotent.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
 
 /-!
 # Unipotence of represented weight-cocharacter subgroups
@@ -16,7 +17,7 @@ The dynamic subgroup `U(λ_w)(A)` consists of the matrices which are block trian
 weight filtration and induce the identity on its associated graded. The coordinate Hopf algebra
 `GeneralLinear.weightUnipotentCoordinateHopfAlgebra k w` represents this subgroup.
 
-This file proves that every point of that coordinate Hopf algebra over a same-universe perfect
+This file proves that every point of that coordinate Hopf algebra over a same-universe
 extension field is unipotent in the representation-theoretic sense. The defining Hopf ideal cuts
 out the dynamic unipotent subgroup, so the general quotient-point theorem applies.
 
@@ -26,7 +27,7 @@ description of its coordinate ring and are not asserted here.
 ## Main declarations
 
 * `TauCeti.GeneralLinear.Dynamic.isUnipotentPoint_weightUnipotentCoordinateHopfAlgebra`: every
-  perfect-extension-valued point of a represented weight-unipotent subgroup is unipotent.
+  extension-field-valued point of a represented weight-unipotent subgroup is unipotent.
 * `geometricallyUnipotentPointsCommHopfAlgProperty_weightUnipotentCoordinateHopfAlgebra`: the
   represented subgroup has geometrically unipotent points.
 
@@ -48,16 +49,19 @@ universe u
 
 variable {k : Type u} [Field k] {N : ℕ}
 
-/-- Every point of the weight-unipotent coordinate Hopf algebra over a perfect extension field is
+/-- Every point of the weight-unipotent coordinate Hopf algebra over an extension field is
 unipotent in every finite-dimensional representation. -/
 theorem isUnipotentPoint_weightUnipotentCoordinateHopfAlgebra
-    (w : Fin N → ℤ) (L : Type u) [Field L] [Algebra k L] [PerfectField L]
+    (w : Fin N → ℤ) (L : Type u) [Field L] [Algebra k L]
     (g : HopfAlgebra.points (R := k)
       (H := weightUnipotentCoordinateHopfAlgebra k w) (CommAlgCat.of k L)) :
     HopfAlgebra.IsUnipotentPoint g := by
+  let φ : L →ₐ[k] AlgebraicClosure L := IsScalarTower.toAlgHom k L (AlgebraicClosure L)
+  rw [← TauCeti.HopfAlgebra.isUnipotentPoint_toConv_comp_iff g φ]
   apply Cocharacter.isUnipotentPoint_quotient_of_le_unipotent
     (coordinateHopfAlgebra k N) (weightUnipotentDefiningHopfIdeal k w)
-    (weightCocharacter (R := k) w) L _ g
+    (weightCocharacter (R := k) w) (AlgebraicClosure L) _
+    (WithConv.toConv (φ.comp g.ofConv))
   intro p hp
   exact (mem_weightUnipotentDefiningPointsSubgroup_iff k w p).mp hp
 

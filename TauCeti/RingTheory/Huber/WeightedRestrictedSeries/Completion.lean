@@ -90,12 +90,12 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
 
 AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
 `2baa76f742bdb4fb8ee323fabba41203bd390e08` formalises restricted power series in
-`projects/AdicSpaces/Adic spaces/RestrictedPowerSeries.lean`. It was consulted and not
-ported: everything there is stated for the *uncompleted* restricted-series subring, which
-matches Wedhorn only for complete Hausdorff rings, whereas the roadmap — and this file —
-define `A⟨X₁,…,Xₖ⟩` through the separated completion, so that the object is the intended one
-for an arbitrary Tate ring. The two descriptions are identified, where they agree, by
-`TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv`. Nothing was copied.
+`projects/AdicSpaces/Adic spaces/RestrictedPowerSeries.lean`. It was consulted and not ported:
+everything there is stated for the *uncompleted* restricted-series subring, which matches Wedhorn
+only for complete Hausdorff rings, whereas this file defines `A⟨X₁,…,Xₖ⟩` through the separated
+completion, so that the object is the intended one for an arbitrary Tate ring. The two descriptions
+are identified, where they agree, by `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv`. Nothing
+was copied.
 
 ## References
 
@@ -171,8 +171,8 @@ ring map `φ : A → B` carrying each weight `T i` into `S i` induces `A⟨X⟩_
 
 This is the completion-level companion of `TauCeti.Huber.weightedMap`. The subring-level map is
 not enough on its own: `TauCeti.Huber.restrictedMvPowerSeriesCompletion` — the object
-`IsStronglyNoetherian` is stated over, and the one the roadmap writes `A⟨X₁,…,Xₖ⟩` — is a
-completion, so any statement natural in `A` has to live here. -/
+`IsStronglyNoetherian` is stated over, written `A⟨X₁,…,Xₖ⟩` — is a completion, so any statement
+natural in `A` has to live here. -/
 noncomputable def weightedMapCompletion (hφ : Continuous φ) (hT : IsWeightFamily T)
     (hS : IsWeightFamily S) (hTS : ∀ i, φ '' T i ⊆ S i) :
     UniformSpace.Completion (weightedRestrictedSubring T hT) →+*
