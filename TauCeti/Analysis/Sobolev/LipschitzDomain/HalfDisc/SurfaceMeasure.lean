@@ -82,7 +82,8 @@ theorem euclideanHausdorffMeasure_halfDiscFlatSegment (r : ℝ) :
 /-- **Continuous functions are determined by their values almost everywhere on the flat
 segment.** For `0 < r`, two functions continuous on the flat segment that agree almost everywhere
 for surface measure on it agree at every point of it. -/
-theorem eqOn_halfDiscFlatSegment_of_ae_eq {r : ℝ} (hr : 0 < r) {f g : WithLp 2 (ℝ × ℝ) → ℝ}
+theorem eqOn_halfDiscFlatSegment_of_ae_eq {Y : Type*} [TopologicalSpace Y] [T2Space Y] {r : ℝ}
+    (hr : 0 < r) {f g : WithLp 2 (ℝ × ℝ) → Y}
     (hf : ContinuousOn f (halfDiscFlatSegment r)) (hg : ContinuousOn g (halfDiscFlatSegment r))
     (hfg : f =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r)] g) :
     EqOn f g (halfDiscFlatSegment r) := by
