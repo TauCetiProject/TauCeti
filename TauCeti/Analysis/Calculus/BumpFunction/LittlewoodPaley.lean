@@ -46,6 +46,8 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
+* `ContDiffBump.exists_inhomogeneousLittlewoodPaley_one_pos`: on a nontrivial space the first
+  dyadic piece `ψ₁` is not identically zero.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces,
   also between the partitions of two bump functions.
 * `ContDiffBump.exists_sum_sq_inhomogeneousLittlewoodPaley_le`: `∑ⱼ ψⱼ ξ ²` is bounded uniformly
@@ -270,6 +272,19 @@ theorem inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le {j : ℕ} {ξ : E}
     (hξ : ‖ξ‖ ≤ 2 ^ j * φ.rIn) : φ.inhomogeneousLittlewoodPaley (j + 1) ξ = 0 := by
   rw [inhomogeneousLittlewoodPaley_succ]
   exact φ.littlewoodPaley_eq_zero_of_norm_le (by simpa using hξ)
+
+/-- On a nontrivial space the first dyadic piece `ψ₁` is not identically zero: at a point `ξ` with
+`‖ξ‖ = φ.rOut`, `ψ₁ ξ = φ (ξ / 2) - φ ξ = φ (ξ / 2) > 0`. -/
+theorem exists_inhomogeneousLittlewoodPaley_one_pos [Nontrivial E] :
+    ∃ ξ, 0 < φ.inhomogeneousLittlewoodPaley 1 ξ := by
+  obtain ⟨ξ, hξ⟩ := exists_norm_eq E φ.rOut_pos.le
+  refine ⟨ξ, ?_⟩
+  have h1 : φ ξ = 0 := φ.zero_of_le_dist (by rw [dist_zero_right, hξ])
+  rw [φ.inhomogeneousLittlewoodPaley_succ_apply 0 ξ]
+  simp only [zero_add, pow_one, pow_zero, inv_one, one_smul, h1, sub_zero]
+  refine φ.pos_of_mem_ball (mem_ball_zero_iff.2 ?_)
+  rw [norm_smul, norm_inv, Real.norm_two, hξ]
+  linarith [φ.rOut_pos]
 
 /-- The low-frequency piece `ψ₀` is supported in the closed ball of radius `φ.rOut`. -/
 theorem tsupport_inhomogeneousLittlewoodPaley_zero_subset :

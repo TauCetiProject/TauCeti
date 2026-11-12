@@ -75,35 +75,6 @@ theorem exists_littlewoodPaleyBlock_delta_eq (j : ℕ) (p : ℝ≥0∞) [Fact (1
 
 variable {φ}
 
-/-- On a nontrivial space, the first dyadic kernel `𝓕⁻ ψ₁` does not vanish almost everywhere: at a
-point `ξ` with `‖ξ‖ = φ.rOut`, `ψ₁ ξ = φ (ξ / 2) - φ ξ = φ (ξ / 2) > 0`. -/
-private theorem norm_pos_of_ae_eq_fourierInv_inhomogeneousLittlewoodPaley_one [Nontrivial E]
-    {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : Lp ℂ p (volume : Measure E)}
-    (hf : f =ᵐ[volume] 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) : 0 < ‖f‖ := by
-  set σ := φ.inhomogeneousLittlewoodPaleySchwartz 1
-  have hσ : (σ : E → ℂ) = _ := φ.coe_inhomogeneousLittlewoodPaleySchwartz 1
-  refine norm_pos_iff.2 fun hf0 ↦ ?_
-  -- `𝓕⁻ σ` is continuous and vanishes almost everywhere, hence it is `0`, and so is `σ`.
-  subst hf0
-  have hae : ((𝓕⁻ σ : 𝓢(E, ℂ)) : E → ℂ) =ᵐ[volume] 0 := by
-    filter_upwards [hf, Lp.coeFn_zero ℂ p (volume : Measure E)] with x hx h0
-    rw [SchwartzMap.fourierInv_coe, hσ, ← hx, h0]
-  have hσ0 : σ = 0 := by
-    have h : 𝓕⁻ σ = 0 := SchwartzMap.ext fun x ↦ congrFun
-      ((Continuous.ae_eq_iff_eq volume (𝓕⁻ σ).continuous continuous_zero).1 hae) x
-    simpa using congrArg (fun g : 𝓢(E, ℂ) ↦ (𝓕 g : 𝓢(E, ℂ))) h
-  obtain ⟨ξ, hξ⟩ := exists_norm_eq E φ.rOut_pos.le
-  have hpos : 0 < φ.inhomogeneousLittlewoodPaley 1 ξ := by
-    have h1 : φ ξ = 0 := φ.zero_of_le_dist (by rw [dist_zero_right, hξ])
-    rw [φ.inhomogeneousLittlewoodPaley_succ_apply 0 ξ]
-    simp only [zero_add, pow_one, pow_zero, inv_one, one_smul, h1, sub_zero]
-    refine φ.pos_of_mem_ball (mem_ball_zero_iff.2 ?_)
-    rw [norm_smul, norm_inv, Real.norm_two, hξ]
-    linarith [φ.rOut_pos]
-  have := congrFun hσ ξ
-  rw [hσ0, zero_apply] at this
-  exact hpos.ne' (Complex.ofReal_eq_zero.1 this.symm)
-
 /-- The weighted block norms of `δ₀` form, from `j = 1` on, a geometric sequence:
 `2^{(j+1)s} ‖Δ_{j+1} δ₀‖_p = (2^s ‖Δ₁ δ₀‖_p) (2^{s + n/p'})^j`. -/
 private theorem rpow_mul_norm_succ_eq {s : ℝ} {p : ℝ≥0∞}
@@ -136,7 +107,11 @@ theorem memBesov_delta_iff [Nontrivial E] {s : ℝ} {p q : ℝ≥0∞} [Fact (1 
     (delta (0 : E)).MemBesov φ s p q ↔
       s < -(finrank ℝ E * (1 - p.toReal⁻¹)) ∨ s = -(finrank ℝ E * (1 - p.toReal⁻¹)) ∧ q = ∞ := by
   choose f hf hfae using fun j ↦ exists_littlewoodPaleyBlock_delta_eq φ j p
-  have hc := norm_pos_of_ae_eq_fourierInv_inhomogeneousLittlewoodPaley_one (hfae 1)
+  have hc : 0 < ‖f 1‖ := by
+    refine ENNReal.toReal_pos ?_ (Lp.eLpNorm_ne_top _)
+    rw [eLpNorm_congr_ae (hfae 1)]
+    exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_one_ne_zero
+      (zero_lt_one.trans_le Fact.out).ne'
   rw [memBesov_iff_memℓp hf, ← memℓp_comp_add_one_iff]
   simp_rw [rpow_mul_norm_succ_eq hfae]
   set m : ℝ := finrank ℝ E * (1 - p.toReal⁻¹)

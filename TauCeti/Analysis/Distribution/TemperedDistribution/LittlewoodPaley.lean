@@ -71,7 +71,8 @@ blocks `Δⱼ u`.
 * `ContDiffBump.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: the dyadic kernels
   `𝓕⁻ ψⱼ`, `j ≥ 1`, all have the same `L¹` norm, and
   `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ`: their `Lʳ` norms grow like
-  `2^{j n (1 - 1/r)}`.
+  `2^{j n (1 - 1/r)}`; `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_one_ne_zero`:
+  the first one is nonzero in every `Lʳ`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
   `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le_of_le`: Bernstein's inequality
@@ -119,6 +120,27 @@ theorem eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) (r : ENNR
   simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
   exact TauCeti.eLpNorm_fourierInv_comp_inv_smul
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (pow_pos two_pos j) r
+
+open MeasureTheory in
+/-- **The first dyadic kernel is nonzero.** On a nontrivial space, `𝓕⁻ ψ₁` has nonzero `Lʳ` norm
+for every `r ≠ 0`: it is continuous, so vanishing almost everywhere would force `ψ₁ = 0`. -/
+theorem eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_one_ne_zero [Nontrivial E] {r : ENNReal}
+    (hr : r ≠ 0) :
+    eLpNorm (𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) r volume ≠ 0 := by
+  set σ := φ.inhomogeneousLittlewoodPaleySchwartz 1
+  have hσ : (σ : E → ℂ) = _ := φ.coe_inhomogeneousLittlewoodPaleySchwartz 1
+  rw [← hσ, ← SchwartzMap.fourierInv_coe]
+  intro h
+  -- `𝓕⁻ σ` is continuous and vanishes almost everywhere, hence it is `0`, and so is `σ`.
+  have hσ0 : σ = 0 := by
+    have h0 : 𝓕⁻ σ = 0 := SchwartzMap.ext fun x ↦ congrFun
+      ((Continuous.ae_eq_iff_eq volume (𝓕⁻ σ).continuous continuous_zero).1
+        ((eLpNorm_eq_zero_iff hr).1 h)) x
+    simpa using congrArg (fun g : 𝓢(E, ℂ) ↦ (𝓕 g : 𝓢(E, ℂ))) h0
+  obtain ⟨ξ, hξ⟩ := φ.exists_inhomogeneousLittlewoodPaley_one_pos
+  have := congrFun hσ ξ
+  rw [hσ0, zero_apply] at this
+  exact hξ.ne' (Complex.ofReal_eq_zero.1 this.symm)
 
 end ContDiffBump
 
