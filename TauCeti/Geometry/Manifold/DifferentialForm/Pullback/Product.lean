@@ -55,6 +55,8 @@ is pulled back from `Y`. The energy identity itself is not proved here.
   forms on `AddCircle p × M`.
 * `TauCeti.SmoothForm.exists_mpullback_snd_eq_iff_interior_eq_zero`: a smooth closed form on
   `AddCircle p × M` is pulled back from `M` exactly when `ι_{∂ₛ} α = 0`.
+* `TauCeti.SmoothForm.existsUnique_isClosed_and_mpullback_snd_eq`: the form on `M` is unique and
+  closed.
 
 ## References
 
@@ -237,6 +239,25 @@ theorem exists_mpullback_snd_eq_iff_interior_eq_zero
     -- The second projection of `(1, 0)` is `0`.
     rfl
   · rw [RoughForm.interior_zero_field, mpullback_zero]
+
+/-- A smooth closed form `α` on `AddCircle p × M` whose contraction with `∂ₛ = (1, 0)` vanishes is
+the pullback along the second projection of exactly one smooth form on `M`, and that form is
+closed. -/
+theorem existsUnique_isClosed_and_mpullback_snd_eq
+    {α : SmoothForm (𝓘(ℝ).prod I) (AddCircle p × M) F (k + 1)} (hα : α.IsClosed)
+    (hι : RoughForm.interior (I := 𝓘(ℝ).prod I) (M := AddCircle p × M) (F := F)
+      (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 = 0) :
+    ∃! β : SmoothForm I M F (k + 1), β.IsClosed ∧ mpullback Prod.snd contMDiff_snd β = α := by
+  refine ⟨_, ⟨hα.mpullback _ _, mpullback_snd_mpullback_prodMk_of_interior_eq_zero hα hι 0⟩, ?_⟩
+  rintro β ⟨-, rfl⟩
+  -- Restricting `pr₂^* β` to the slice `{0} × M` recovers `β`, since `pr₂ ∘ ι₀ = id`.
+  refine Subtype.ext ?_
+  have hι₀ : MDifferentiable I (𝓘(ℝ).prod I) (Prod.mk (0 : AddCircle p) : M → AddCircle p × M) :=
+    (contMDiff_const.prodMk contMDiff_id).mdifferentiable one_ne_zero
+  have hsnd : MDifferentiable (𝓘(ℝ).prod I) I (Prod.snd : AddCircle p × M → M) :=
+    contMDiff_snd.mdifferentiable one_ne_zero
+  rw [coe_mpullback, coe_mpullback]
+  exact (TauCeti.mpullback_id _).symm.trans (TauCeti.mpullback_comp (F := F) hι₀ hsnd β.1)
 
 end SmoothForm
 
