@@ -97,8 +97,8 @@ converge, and being integers they are eventually constant
   `α ∘ σ`.
 * `TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_eq_zero`: the charge of a disc on
   which `χ = 1` near `|α|²` vanishes.
-* `TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_congr_cutoff`: the charge does
-  not depend on the cutoff.
+* `TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_congr_cutoff`: the charge is the
+  same for any two cutoffs that are both `1` along the boundary circle.
 * `TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_eq_sum`: the charge is additive
   over finite families of disjoint subdiscs containing the zeros of `α ∘ σ`; the planar version
   is `TauCeti.SeibergWitten.integral_cutoffCurrent_closedBall_eq_sum`.
