@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AlgebraicSpace.Basic
+public import TauCeti.CategoryTheory.MorphismProperty.Representable
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatDescent
 public import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
@@ -18,12 +19,9 @@ separated monomorphisms of schemes.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.Spaces.presheaf_of_forall_exists_cover`: a morphism of presheaves
-  that is representable by schemes has a property `P` after every base change to a scheme as soon
-  as, for every base change, `P` holds after a further base change along a morphism of schemes
-  that `P` descends along.
-* `TauCeti.AlgebraicGeometry.Spaces.RepresentableDiagonal.monomorphisms_diag`: a representable
-  diagonal is representable by monomorphisms of schemes.
+* `TauCeti.AlgebraicGeometry.Spaces.EtaleAtlas.isPullback_diag_snd`: for an étale atlas
+  `a : h_U ⟶ F` with `R = U ×_F U`, the base change of the diagonal of `F` along
+  `(h_u ≫ a, h_v ≫ a)` is the base change of `R ⟶ U ⨯ U` along `(u, v)`.
 * `TauCeti.AlgebraicGeometry.Spaces.EtaleAtlas.locallyOfFiniteType_diag`: if `F` has representable
   diagonal and an étale atlas, its diagonal is representable by morphisms locally of finite type.
 * `TauCeti.AlgebraicGeometry.Spaces.IsAlgebraicSpace.diagonal_locallyQuasiFinite`: the diagonal of
@@ -35,8 +33,9 @@ For `a : h_U ⟶ F` an étale atlas and `R = U ×_F U`, the base change of the d
 `(h_u ≫ a, h_v ≫ a) : h_T ⟶ F ⨯ F` is the base change of `R ⟶ U ⨯ U` along `(u, v)`. The morphism
 `R ⟶ U ⨯ U` is locally of finite type since its composite with the second projection is étale.
 Every morphism `h_T ⟶ F ⨯ F` takes this form after base change along an étale surjective morphism
-`T' ⟶ T`, and being locally of finite type descends along such morphisms. A monomorphism locally
-of finite type is locally quasi-finite and separated.
+`T' ⟶ T`, and being locally of finite type descends along such morphisms
+(`CategoryTheory.MorphismProperty.relative_of_forall_exists_cover`). A monomorphism locally of
+finite type is locally quasi-finite and separated.
 
 ## References
 
@@ -53,91 +52,70 @@ open _root_.AlgebraicGeometry
 
 universe u
 
-/-- Let `f : X ⟶ Y` be a morphism of presheaves on schemes that is representable by schemes, and
-let `P` descend along `Q`. If for every morphism `g : h_T ⟶ Y` from a scheme there is a morphism
-`p : T' ⟶ T` satisfying `Q` such that the base change of `f` along `h_p ≫ g` satisfies `P`, then
-every base change of `f` to a scheme satisfies `P`. -/
-theorem presheaf_of_forall_exists_cover {P Q : MorphismProperty Scheme.{u}} [P.RespectsIso]
-    [P.DescendsAlong Q] {X Y : SchemePresheaf.{u}} {f : X ⟶ Y}
-    (hf : yoneda.relativelyRepresentable f)
-    (h : ∀ ⦃T : Scheme.{u}⦄ (g : yoneda.obj T ⟶ Y),
-      ∃ (T' : Scheme.{u}) (p : T' ⟶ T), Q p ∧ P (hf.snd (yoneda.map p ≫ g))) :
-    MorphismProperty.presheaf P f := by
-  refine MorphismProperty.relative_of_snd hf fun T g ↦ ?_
-  obtain ⟨T', p, hp, hP⟩ := h g
-  let k := hf.lift (hf.fst (yoneda.map p ≫ g)) (hf.snd (yoneda.map p ≫ g) ≫ p)
-    (by simpa using (hf.w (yoneda.map p ≫ g)))
-  have sq : IsPullback (yoneda.map k) (yoneda.map (hf.snd (yoneda.map p ≫ g)))
-      (yoneda.map (hf.snd g)) (yoneda.map p) :=
-    IsPullback.of_right (by simpa [k] using hf.isPullback (yoneda.map p ≫ g))
-      (by simp [k, ← Functor.map_comp]) (hf.isPullback g)
-  exact MorphismProperty.of_isPullback_of_descendsAlong (sq.of_map_of_faithful yoneda).flip hp hP
+variable {F : SchemePresheaf.{u}} {U : Scheme.{u}} {a : yoneda.obj U ⟶ F} {T : Scheme.{u}}
+  {G : yoneda.obj T ⟶ F ⨯ F} {u v : T ⟶ U}
 
-namespace RepresentableDiagonal
-
-variable {F : SchemePresheaf.{u}}
-
-/-- A representable diagonal is representable by monomorphisms of schemes. -/
-theorem monomorphisms_diag (hF : RepresentableDiagonal F) :
-    MorphismProperty.presheaf (MorphismProperty.monomorphisms Scheme.{u}) (diag F) :=
-  MorphismProperty.relative_of_snd (representableDiagonal_iff_diag.1 hF) fun _ g ↦ by
-    have := ((representableDiagonal_iff_diag.1 hF).isPullback g).mono_snd_of_mono
-    exact yoneda.mono_of_mono_map ‹_›
-
-end RepresentableDiagonal
+/-- If `G : h_T ⟶ F ⨯ F` has components `h_u ≫ a` and `h_v ≫ a`, then the two composites of the
+base change of the diagonal of `F` along `G` with `h_u ≫ a` and `h_v ≫ a` agree. -/
+theorem yoneda_map_diag_snd_comp_eq (hF : yoneda.relativelyRepresentable (diag F))
+    (hu : G ≫ prod.fst = yoneda.map u ≫ a) (hv : G ≫ prod.snd = yoneda.map v ≫ a) :
+    yoneda.map (hF.snd G ≫ u) ≫ a = yoneda.map (hF.snd G ≫ v) ≫ a := by
+  have e₁ := hF.w G =≫ prod.fst
+  have e₂ := hF.w G =≫ prod.snd
+  simp only [Category.assoc, diag, prod.lift_fst, prod.lift_snd, Category.comp_id, hu, hv] at e₁ e₂
+  simpa using e₁.symm.trans e₂
 
 namespace EtaleAtlas
 
-variable {F : SchemePresheaf.{u}} {U : Scheme.{u}} {a : yoneda.obj U ⟶ F}
-
-/-- For an étale atlas `a : h_U ⟶ F` and morphisms of schemes `u v : T ⟶ U`, the base change of a
-representable diagonal of `F` along `(h_u ≫ a, h_v ≫ a)` is locally of finite type. -/
-private theorem locallyOfFiniteType_diag_snd (hF : yoneda.relativelyRepresentable (diag F))
-    (ha : EtaleAtlas a) {T : Scheme.{u}} (u v : T ⟶ U) :
-    LocallyOfFiniteType (hF.snd (prod.lift (yoneda.map u ≫ a) (yoneda.map v ≫ a))) := by
-  have hr := ha.relativelyRepresentable
-  obtain ⟨G, hG⟩ : ∃ G, prod.lift (yoneda.map u ≫ a) (yoneda.map v ≫ a) = G := ⟨_, rfl⟩
-  rw [hG]
-  have ht₁ : hF.fst G = yoneda.map (hF.snd G) ≫ yoneda.map u ≫ a := by
-    simpa [← hG] using (hF.w G) =≫ prod.fst
-  have ht₂ : hF.fst G = yoneda.map (hF.snd G) ≫ yoneda.map v ≫ a := by
-    simpa [← hG] using (hF.w G) =≫ prod.snd
-  let φ : hF.pullback G ⟶ hr.pullback a := hr.lift (yoneda.map (hF.snd G ≫ u)) (hF.snd G ≫ v)
-    (by simpa using ht₁.symm.trans ht₂)
-  have hr₁ : φ ≫ hr.fst' a = hF.snd G ≫ u := by
-    apply yoneda.map_injective
-    simp [φ]
+/-- Let `a : h_U ⟶ F` be an étale atlas with `R = U ×_F U`, and let `G : h_T ⟶ F ⨯ F` have
+components `h_u ≫ a` and `h_v ≫ a`. Then the base change of the diagonal of `F` along `G` is the
+base change of `(fst, snd) : R ⟶ U ⨯ U` along `(u, v) : T ⟶ U ⨯ U`. -/
+theorem isPullback_diag_snd (hF : yoneda.relativelyRepresentable (diag F)) (ha : EtaleAtlas a)
+    (hu : G ≫ prod.fst = yoneda.map u ≫ a) (hv : G ≫ prod.snd = yoneda.map v ≫ a) :
+    IsPullback (ha.relativelyRepresentable.lift (yoneda.map (hF.snd G ≫ u)) (hF.snd G ≫ v)
+        (yoneda_map_diag_snd_comp_eq hF hu hv)) (hF.snd G)
+      (prod.lift (ha.relativelyRepresentable.fst' a) (ha.relativelyRepresentable.snd a))
+      (prod.lift u v) := by
+  set hr := ha.relativelyRepresentable
+  set φ := hr.lift (yoneda.map (hF.snd G ≫ u)) (hF.snd G ≫ v) (yoneda_map_diag_snd_comp_eq hF hu hv)
+  have hr₁ : φ ≫ hr.fst' a = hF.snd G ≫ u := yoneda.map_injective (by simp [φ])
   have hr₂ : φ ≫ hr.snd a = hF.snd G ≫ v := hr.lift_snd _ _ _
   have hra : yoneda.map (hr.fst' a) ≫ a = yoneda.map (hr.snd a) ≫ a := by
     simpa [Functor.relativelyRepresentable.map_fst'] using hr.w a
-  have sq : IsPullback φ (hF.snd G) (prod.lift (hr.fst' a) (hr.snd a)) (prod.lift u v) := by
-    refine ⟨⟨by ext <;> simp [hr₁, hr₂]⟩, ⟨PullbackCone.IsLimit.mk _
-      (fun c ↦ hF.lift (yoneda.map (c.snd ≫ u) ≫ a) c.snd ?_) (fun c ↦ ?_) (fun c ↦ ?_)
-      (fun c m _ hm₂ ↦ ?_)⟩⟩
-    · have e₁ : c.fst ≫ hr.fst' a = c.snd ≫ u := by simpa using c.condition =≫ prod.fst
-      have e₂ : c.fst ≫ hr.snd a = c.snd ≫ v := by simpa using c.condition =≫ prod.snd
-      have : yoneda.map c.snd ≫ yoneda.map u ≫ a = yoneda.map c.snd ≫ yoneda.map v ≫ a := by
-        rw [← Functor.map_comp_assoc, ← Functor.map_comp_assoc, ← e₁, ← e₂, Functor.map_comp,
-          Functor.map_comp, Category.assoc, Category.assoc, hra]
-      apply prod.hom_ext
-      · simp [← hG]
-      · simp [← hG, this]
-    · have e₁ : c.fst ≫ hr.fst' a = c.snd ≫ u := by simpa using c.condition =≫ prod.fst
-      have e₂ : c.fst ≫ hr.snd a = c.snd ≫ v := by simpa using c.condition =≫ prod.snd
-      apply hr.hom_ext'
-      · rw [Category.assoc, hr₁, ← Category.assoc, hF.lift_snd, e₁]
-      · rw [Category.assoc, hr₂, ← Category.assoc, hF.lift_snd, e₂]
-    · exact hF.lift_snd _ _ _
-    · apply hF.hom_ext
-      · rw [hF.lift_fst, ht₁, ← Functor.map_comp_assoc, ← Functor.map_comp_assoc,
-          hm₂]
-      · rw [hm₂, hF.lift_snd]
+  have he (c : PullbackCone (prod.lift (hr.fst' a) (hr.snd a)) (prod.lift u v)) :
+      c.fst ≫ hr.fst' a = c.snd ≫ u ∧ c.fst ≫ hr.snd a = c.snd ≫ v :=
+    ⟨by simpa using c.condition =≫ prod.fst, by simpa using c.condition =≫ prod.snd⟩
+  have ht₁ : hF.fst G = yoneda.map (hF.snd G) ≫ yoneda.map u ≫ a := by
+    simpa [hu] using hF.w G =≫ prod.fst
+  refine ⟨⟨by ext <;> simp [hr₁, hr₂]⟩, ⟨PullbackCone.IsLimit.mk _
+    (fun c ↦ hF.lift (yoneda.map (c.snd ≫ u) ≫ a) c.snd ?_) (fun c ↦ ?_) (fun c ↦ ?_)
+    (fun c m _ hm₂ ↦ ?_)⟩⟩
+  · have : yoneda.map (c.snd ≫ u) ≫ a = yoneda.map (c.snd ≫ v) ≫ a := by
+      simp only [← (he c).1, ← (he c).2, Functor.map_comp, Category.assoc, hra]
+    apply prod.hom_ext
+    · simp [hu]
+    · simpa [hv] using this
+  · apply hr.hom_ext'
+    · simp [hr₁, (he c).1]
+    · simp [hr₂, (he c).2]
+  · exact hF.lift_snd _ _ _
+  · apply hF.hom_ext
+    · rw [hF.lift_fst, ht₁]
+      simp only [← Functor.map_comp_assoc, reassoc_of% hm₂]
+    · simp [hm₂]
+
+/-- For an étale atlas `a : h_U ⟶ F` and `G : h_T ⟶ F ⨯ F` with components `h_u ≫ a` and
+`h_v ≫ a`, the base change of a representable diagonal of `F` along `G` is locally of finite
+type. -/
+theorem locallyOfFiniteType_diag_snd (hF : yoneda.relativelyRepresentable (diag F))
+    (ha : EtaleAtlas a) (hu : G ≫ prod.fst = yoneda.map u ≫ a)
+    (hv : G ≫ prod.snd = yoneda.map v ≫ a) : LocallyOfFiniteType (hF.snd G) := by
+  set hr := ha.relativelyRepresentable
   have : Etale (hr.snd a) := ha.etale_snd a
-  have : LocallyOfFiniteType (hr.snd a) := inferInstance
   have : LocallyOfFiniteType (prod.lift (hr.fst' a) (hr.snd a) ≫ prod.snd) := by
-    simpa using this
+    simpa using (inferInstance : LocallyOfFiniteType (hr.snd a))
   have := locallyOfFiniteType_of_comp (prod.lift (hr.fst' a) (hr.snd a)) prod.snd
-  exact MorphismProperty.of_isPullback sq this
+  exact MorphismProperty.of_isPullback (isPullback_diag_snd hF ha hu hv) this
 
 /-- If `F` has representable diagonal and an étale atlas, then its diagonal is representable by
 morphisms of schemes locally of finite type. -/
@@ -157,8 +135,8 @@ theorem locallyOfFiniteType_diag (hF : RepresentableDiagonal F) (ha : EtaleAtlas
       [IsZariskiLocalAtTarget P] ↦ (inferInstance :
         P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation)))
       @LocallyOfFiniteType
-  refine presheaf_of_forall_exists_cover (Q := @Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation)
-    hF fun T g ↦ ?_
+  refine MorphismProperty.relative_of_forall_exists_cover
+    (Q := @Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) hF fun T g ↦ ?_
   set hr := ha.relativelyRepresentable
   let x := g ≫ prod.fst
   let y := g ≫ prod.snd
@@ -169,14 +147,10 @@ theorem locallyOfFiniteType_diag (hF : RepresentableDiagonal F) (ha : EtaleAtlas
   have : Etale p₂ := ha.etale_snd _
   have : Surjective p₂ := ha.surjective_snd _
   refine ⟨_, p₂ ≫ p₁, ⟨⟨inferInstance, inferInstance⟩, inferInstance⟩, ?_⟩
-  have hg : yoneda.map (p₂ ≫ p₁) ≫ g = prod.lift (yoneda.map (p₂ ≫ hr.fst' x) ≫ a)
-      (yoneda.map (hr.fst' (yoneda.map p₁ ≫ y)) ≫ a) := by
-    apply prod.hom_ext
-    · simpa [x, Functor.relativelyRepresentable.map_fst', p₁] using
-        (yoneda.map p₂ ≫= hr.w x).symm
-    · simpa [y, Functor.relativelyRepresentable.map_fst', p₂] using (hr.w (yoneda.map p₁ ≫ y)).symm
-  rw [hg]
-  exact locallyOfFiniteType_diag_snd hF ha _ _
+  refine locallyOfFiniteType_diag_snd hF ha (u := p₂ ≫ hr.fst' x)
+    (v := hr.fst' (yoneda.map p₁ ≫ y)) ?_ ?_
+  · simpa [x, Functor.relativelyRepresentable.map_fst', p₁] using (yoneda.map p₂ ≫= hr.w x).symm
+  · simpa [y, Functor.relativelyRepresentable.map_fst', p₂] using (hr.w (yoneda.map p₁ ≫ y)).symm
 
 end EtaleAtlas
 
