@@ -108,30 +108,27 @@ theorem ordIndex_eq_mul_of_forall_ord_eq (w : _root_.Valuation F ℤᵐ⁰) {e :
     rw [hord f, Nat.cast_zero, zero_mul] at hf
     omega
   have he' : (0 : ℤ) < e := by exact_mod_cast Nat.pos_of_ne_zero he
-  by_cases hb : ordIndex w = 0
-  · rw [hb, mul_zero]
-    by_contra ha
-    have hm : 0 < ord w f := by
-      by_contra hle
-      have := hord f
-      nlinarith [he', Nat.pos_of_ne_zero ha]
-    have := ordIndex_pos_of_ord_pos w hm
-    omega
-  have hbpos : 0 < ordIndex w := Nat.pos_of_ne_zero hb
-  have h1 : ord v g = ((e * ordIndex w : ℕ) : ℤ) := by rw [hord g, hg, Nat.cast_mul]
-  have hebpos : 0 < e * ordIndex w := Nat.mul_pos (Nat.pos_of_ne_zero he) hbpos
-  refine le_antisymm (ordIndex_le v hebpos h1) ?_
-  have hapos : 0 < ordIndex v :=
-    ordIndex_pos_of_ord_pos v (f := g) (by rw [h1]; exact_mod_cast hebpos)
-  have hm : 0 < ord w f := by
-    by_contra hle
-    have h2 := hord f
-    have : (0 : ℤ) < ordIndex v := by exact_mod_cast hapos
-    nlinarith [he']
-  have h3 := ordIndex_le w (n := (ord w f).toNat) (by omega) (f := f) (by omega)
-  have h4 : ((e * (ord w f).toNat : ℕ) : ℤ) = ordIndex v := by
-    rw [Nat.cast_mul, Int.toNat_of_nonneg hm.le, ← hord f, hf]
-  exact (Nat.mul_le_mul_left e h3).trans (by exact_mod_cast h4.le)
+  have hfpos : 0 < ordIndex v → 0 < ord w f := fun ha ↦
+    pos_of_mul_pos_right (by rw [← hord f, hf]; exact_mod_cast ha) he'.le
+  have hgpos : 0 < ordIndex w → 0 < ord v g := fun hb ↦ by
+    rw [hord g, hg]; exact mul_pos he' (by exact_mod_cast hb)
+  refine le_antisymm ?_ ?_
+  · rcases Nat.eq_zero_or_pos (ordIndex w) with hb | hb
+    · rw [hb, mul_zero]
+      by_contra ha
+      exact absurd (ordIndex_pos_of_ord_pos w (hfpos (not_le.mp ha))) (by omega)
+    · exact ordIndex_le v (Nat.mul_pos (Nat.pos_of_ne_zero he) hb)
+        (by rw [hord g, hg, Nat.cast_mul])
+  · rcases Nat.eq_zero_or_pos (ordIndex v) with ha | ha
+    · rw [ha]
+      have : ordIndex w = 0 := by
+        by_contra hb
+        exact absurd (ordIndex_pos_of_ord_pos v (hgpos (Nat.pos_of_ne_zero hb))) (by omega)
+      simp [this]
+    · have hm := hfpos ha
+      refine (Nat.mul_le_mul_left e (ordIndex_le w (n := (ord w f).toNat) (by omega)
+        (f := f) (by omega))).trans ?_
+      rw [← Nat.cast_le (α := ℤ), Nat.cast_mul, Int.toNat_of_nonneg hm.le, ← hord f, hf]
 
 end Ring
 
