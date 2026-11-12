@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Martingale.Completion
 public import TauCeti.Probability.Martingale.CountableStopping
+public import TauCeti.Probability.Martingale.Local.Centering
 public import TauCeti.Probability.Martingale.Local.Dominated
 public import TauCeti.Probability.Process.CountableLevelLocalizer
 
@@ -19,13 +20,14 @@ space. Neither filtration needs completeness or right continuity. The conclusion
 actual stopping times of the smaller filtration, not just martingale versions of stopped paths.
 This allows constructions made with extra information to be used on the original filtration.
 
-Countable-range level localizers are constructed from the process in the smaller filtration.
-Initial-value cutoffs make their native stopped stages bounded, without any initial moment
-assumption. Countable-range stopping preserves native local martingales; boundedness then
+Centering at the initial value preserves native locality without any initial moment assumption.
+Countable-range level localizers constructed in the smaller filtration bound the centered
+stopped stages. Countable-range stopping preserves native local martingales; boundedness then
 makes these stages true martingales in the larger filtration, and their adaptedness gives the
-smaller-filtration martingale identities. A second theorem allows the larger filtration to
-live on the completed ambient space, using `ProbabilityTheory.Locally.martingale_completion_iff`
-to transfer the resulting raw localizers back unchanged.
+smaller-filtration martingale identities. The centering dictionary then restores the initial value.
+A second theorem allows the larger filtration to live on the completed ambient space, using
+`ProbabilityTheory.Locally.martingale_completion_iff` to transfer the resulting raw localizers
+back unchanged.
 
 ## References
 
@@ -52,76 +54,37 @@ theorem StronglyAdapted.locally_martingale_of_le (hX : StronglyAdapted ℱ X)
     (hlocal : Locally (fun Y ↦ Martingale Y 𝒢 P) 𝒢 X P) :
     Locally (fun Y ↦ Martingale Y ℱ P) ℱ X P := by
   classical
-  -- Construct countable-range level localizers using only the smaller filtration.
-  obtain ⟨η, hη, hcount, hmono, hbound⟩ :=
-    hX.exists_isLocalizingSequence_countable_range_level hc
-  -- Cutting off at time zero controls the full stages, even for nonintegrable initial data.
-  let A (n : ℕ) : Set Ω := {ω | ‖X 0 ω‖ ≤ (n : ℝ)}
-  have hA (n : ℕ) : MeasurableSet[ℱ 0] (A n) :=
-    (hX 0).norm.measurable measurableSet_Iic
-  let ρ (n : ℕ) : Ω → WithTop ℝ≥0 := (A n).piecewise (η n) (fun _ ↦ 0)
-  have hρ (n : ℕ) : IsStoppingTime ℱ (ρ n) :=
-    (hη.isStoppingTime n).piecewise_of_le (isStoppingTime_const ℱ 0)
-      (fun _ ↦ bot_le) (fun _ ↦ le_rfl) (hA n)
-  have hρcount (n : ℕ) : (range (ρ n)).Countable := by
-    apply ((hcount n).insert 0).mono
-    rintro _ ⟨ω, rfl⟩
-    by_cases hω : ω ∈ A n <;> simp [ρ, hω]
-  have hρmono (ω : Ω) : Monotone (ρ · ω) := by
-    intro i j hij
-    by_cases hi : ω ∈ A i
-    · have hj : ω ∈ A j :=
-        (hi : ‖X 0 ω‖ ≤ (i : ℝ)).trans (Nat.cast_le.mpr hij : (i : ℝ) ≤ (j : ℝ))
-      simpa only [ρ, piecewise_eq_of_mem _ _ _ hi, piecewise_eq_of_mem _ _ _ hj] using
-        hmono ω hij
-    · simp only [ρ, piecewise_eq_of_notMem _ _ _ hi]
-      exact bot_le
-  have hρlim : ∀ᵐ ω ∂P, Tendsto (ρ · ω) atTop (𝓝 ⊤) := by
-    filter_upwards [hη.tendsto_top] with ω hω
-    obtain ⟨N, hN⟩ := exists_nat_ge ‖X 0 ω‖
-    apply hω.congr'
-    filter_upwards [eventually_ge_atTop N] with n hn
-    exact (piecewise_eq_of_mem _ _ _ (hN.trans (Nat.cast_le.mpr hn))).symm
-  -- Countable ranges give literal raw adaptation; centered bounds give bounded full stages.
+  -- The centering dictionary handles arbitrary initial values without extra cutoffs here.
+  apply ((hX 0).locally_martingale_sub_initialValue_iff (P := P) (ℱ := ℱ) (X := X)).mp
+  let Y (t : ℝ≥0) (ω : Ω) := X t ω - X 0 ω
+  have hY : StronglyAdapted ℱ Y := fun t ↦ (hX t).sub ((hX 0).mono (ℱ.mono bot_le))
+  have hcY : ∀ᵐ ω ∂P, Continuous (Y · ω) :=
+    hc.mono fun ω hω ↦ hω.sub continuous_const
+  obtain ⟨η, hη, hcount, _, hbound⟩ :=
+    hY.exists_isLocalizingSequence_countable_range_level hcY
   let Z (n : ℕ) := MeasureTheory.stoppedProcess
-    (fun t ↦ {ω | 0 < ρ n ω}.indicator (X t)) (ρ n)
+    (fun t ↦ {ω | 0 < η n ω}.indicator (Y t)) (η n)
   have hZF (n : ℕ) : StronglyAdapted ℱ (Z n) := by
     simp only [Z, stoppedProcess_indicator_comm']
     intro t
-    exact ((hX.stoppedProcess_of_countable_range (hρ n) (hρcount n)) t).indicator
-      (ℱ.mono bot_le _ ((hρ n).measurableSet_gt 0))
-  have hZbound (n : ℕ) : ∀ᵐ ω ∂P, ∀ t, ‖Z n t ω‖ ≤ 2 * (n : ℝ) + 1 := by
+    exact ((hY.stoppedProcess_of_countable_range (hη.isStoppingTime n) (hcount n)) t).indicator
+      (ℱ.mono bot_le _ ((hη.isStoppingTime n).measurableSet_gt 0))
+  have hZbound (n : ℕ) : ∀ᵐ ω ∂P, ∀ t, ‖Z n t ω‖ ≤ (n : ℝ) + 1 := by
     filter_upwards [hbound] with ω hω t
-    simp only [Z, stoppedProcess_indicator_comm']
-    by_cases hn : ω ∈ A n
-    · rw [Set.indicator_apply]
-      split_ifs with hpos
-      · have heq : ρ n ω = η n ω := piecewise_eq_of_mem _ _ _ hn
-        have hs : MeasureTheory.stoppedProcess X (ρ n) t ω =
-            MeasureTheory.stoppedProcess X (η n) t ω := by
-          simp only [MeasureTheory.stoppedProcess, heq]
-        rw [hs]
-        calc
-          ‖MeasureTheory.stoppedProcess X (η n) t ω‖ ≤
-              ‖MeasureTheory.stoppedProcess X (η n) t ω - X 0 ω‖ + ‖X 0 ω‖ :=
-                norm_le_norm_sub_add _ _
-          _ ≤ ((n : ℝ) + 1) + (n : ℝ) := add_le_add ((hω n).2 t) hn
-          _ = 2 * (n : ℝ) + 1 := by ring
-      · simp only [norm_zero]
-        positivity
-    · have heq : ρ n ω = 0 := piecewise_eq_of_notMem _ _ _ hn
-      rw [Set.indicator_of_notMem (by
-        simp only [mem_ofPred_eq, heq, lt_self_iff_false, not_false_eq_true])]
-      simp only [norm_zero]
+    simp only [Z, stoppedProcess_indicator_comm', Set.indicator_apply]
+    split_ifs
+    · simpa only [Y, sub_self, sub_zero] using (hω n).2 t
+    · simp only [norm_zero]
       positivity
-  refine ⟨ρ, ⟨⟨hρ, hρlim⟩, Eventually.of_forall hρmono⟩, fun n ↦ ?_⟩
+  refine ⟨η, hη, fun n ↦ ?_⟩
   -- Upgrade in the larger filtration, then restrict the martingale test events.
-  have hρG : IsStoppingTime 𝒢 (ρ n) := fun t ↦ hFG t _ (hρ n t)
+  have hηG := (hη.isStoppingTime n).mono_filtration hFG
   have hZG : StronglyAdapted 𝒢 (Z n) := fun t ↦ (hZF n t).mono (hFG t)
   have hm : Martingale (Z n) 𝒢 P :=
     hZG.martingale_of_locally_martingale_of_bounded
-      (hlocal.martingale_stoppedProcess_indicator_of_countable_range hρG (hρcount n))
-      (fun _ ↦ ⟨2 * (n : ℝ) + 1, (hZbound n).mono fun ω hω t _ ↦ hω t⟩)
+      (hlocal.martingale_sub_initialValue.martingale_stoppedProcess_indicator_of_countable_range
+        hηG (hcount n))
+      (fun _ ↦ ⟨(n : ℝ) + 1, (hZbound n).mono fun ω hω t _ ↦ hω t⟩)
   exact ((hZF n).martingale_iff_setIntegral_eq (fun t ↦ hm.integrable t)).2
     (fun s t hst B hB ↦ hm.setIntegral_eq hst (hFG s _ hB))
 
@@ -135,11 +98,10 @@ theorem StronglyAdapted.locally_martingale_of_le_completion (hX : StronglyAdapte
     (hlocal : @Locally ℝ≥0 (NullMeasurableSpace Ω P) E _ _ _ _ _ _
       (fun Y ↦ Martingale Y 𝒢 P.completion) 𝒢 X P.completion) :
     Locally (fun Y ↦ Martingale Y ℱ P) ℱ X P := by
-  have : @IsFiniteMeasure (NullMeasurableSpace Ω P) _ P.completion :=
+  let : @IsFiniteMeasure (NullMeasurableSpace Ω P) _ P.completion :=
     ⟨lt_of_eq_of_lt (Measure.completion_apply P univ) (measure_lt_top P univ)⟩
   apply ProbabilityTheory.Locally.martingale_completion_iff.mp
-  exact @StronglyAdapted.locally_martingale_of_le (NullMeasurableSpace Ω P) E _
-    P.completion this _ _ _ (ℱ.monoAmbient le_eventuallyMeasurableSpace) 𝒢 X
+  exact StronglyAdapted.locally_martingale_of_le (P := P.completion) (𝒢 := 𝒢)
     ((stronglyAdapted_monoAmbient_iff _).mpr hX)
     (hc.filter_mono P.ae_completion.le) hFG hlocal
 
