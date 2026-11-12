@@ -46,7 +46,7 @@ functions.
 * `TauCeti.SobolevSection.existsUnique_continuous_ae_eq_coord`: an element of `W^{1,p}(V)`, for
   `p > 2`, has a unique continuous representative.
 * `TauCeti.SobolevSection.toSection`: that continuous section; it is linear in the element of
-  `W^{1,p}(V)` (`TauCeti.SobolevSection.toSection_add`, `TauCeti.SobolevSection.toSection_smul`).
+  `W^{1,p}(V)`, and `TauCeti.SobolevSection.toSectionₗ` packages it as a real-linear map.
 * `TauCeti.SobolevSection.exists_holderOnWith_coord_toSection`: its chart expressions are
   `(1 - 2 / p)`-Hölder on compact subsets of the chart images.
 
@@ -204,16 +204,6 @@ theorem eq_toSection (hp : 2 < p) {w : SobolevSection A volume p 1} {s : ∀ x, 
   (existsUnique_continuous_ae_eq_coord hp w).unique ⟨hs, hw⟩
     ⟨continuous_toSection hp w, chartValueL_ae_eq_coord_toSection hp w⟩
 
-/-- The continuous representative of `0` is the zero section. -/
-@[simp]
-theorem toSection_zero (hp : 2 < p) : toSection hp (0 : SobolevSection A volume p 1) = 0 := by
-  refine (eq_toSection hp ?_ fun i ↦ ?_).symm
-  · exact Trivialization.continuous_zeroSection ℝ (E := V) (F := F)
-  · rw [ZeroMemClass.coe_zero, map_zero]
-    filter_upwards [Lp.coeFn_zero F p _, ae_restrict_mem (A.image i).isOpen.measurableSet]
-      with y hy hyU
-    exact hy.trans (A.coord_zero i hyU).symm
-
 /-- Taking continuous representatives is additive. -/
 @[simp]
 theorem toSection_add (hp : 2 < p) (w v : SobolevSection A volume p 1) :
@@ -239,6 +229,34 @@ theorem toSection_smul (hp : 2 < p) (c : ℝ) (w : SobolevSection A volume p 1) 
       chartValueL_ae_eq_coord_toSection hp w i,
       ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy hw hyU
     rw [SetLike.val_smul, map_smul, hy, Pi.smul_apply, hw, A.coord_smul i _ _ hyU]
+
+/-- Taking continuous representatives, as a real-linear map from `W^{1,p}(V)` to sections. -/
+@[expose] def toSectionₗ (hp : 2 < p) : SobolevSection A volume p 1 →ₗ[ℝ] ∀ x, V x where
+  toFun := toSection hp
+  map_add' := toSection_add hp
+  map_smul' := toSection_smul hp
+
+@[simp]
+theorem toSectionₗ_apply (hp : 2 < p) (w : SobolevSection A volume p 1) :
+    toSectionₗ hp w = toSection hp w :=
+  rfl
+
+/-- The continuous representative of `0` is the zero section. -/
+@[simp]
+theorem toSection_zero (hp : 2 < p) : toSection hp (0 : SobolevSection A volume p 1) = 0 :=
+  map_zero (toSectionₗ hp)
+
+/-- Taking continuous representatives commutes with negation. -/
+@[simp]
+theorem toSection_neg (hp : 2 < p) (w : SobolevSection A volume p 1) :
+    toSection hp (-w) = -toSection hp w :=
+  map_neg (toSectionₗ hp) w
+
+/-- Taking continuous representatives commutes with subtraction. -/
+@[simp]
+theorem toSection_sub (hp : 2 < p) (w v : SobolevSection A volume p 1) :
+    toSection hp (w - v) = toSection hp w - toSection hp v :=
+  map_sub (toSectionₗ hp) w v
 
 /-- The chart expressions of the continuous representative are, on the chart images, the precise
 representatives of the chart expressions of any section whose coordinates are the chart data. -/
