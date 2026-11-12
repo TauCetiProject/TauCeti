@@ -118,9 +118,8 @@ noncomputable instance ProjectiveTensor.instNormedAddCommGroupOfFiniteDimensiona
 
 example {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] :
-    (ProjectiveTensor.instNormedAddCommGroupOfFiniteDimensionalLeft :
-      NormedAddCommGroup (ProjectiveTensor 𝕜 E F)) =
-      inferInstanceAs (NormedAddCommGroup (ProjectiveTensor 𝕜 E F)) := rfl
+    (inferInstance : NormedAddCommGroup (ProjectiveTensor 𝕜 E F)) =
+      ProjectiveTensor.instNormedAddCommGroupOfFiniteDimensionalLeft := rfl
 
 end NormedFiniteDimensional
 
@@ -164,24 +163,19 @@ private noncomputable def toOperatorInvOfBasis {ι : Type*} [Fintype ι]
     (ContinuousLinearMap.apply 𝕜 F (b i))
 
 private theorem toLinearMap_toOperator_congr (v : Module.Dual 𝕜 E ⊗[𝕜] F) :
-    (TensorProduct.toOperator (E := E) (F := F)
-      (_root_.TensorProduct.congr
-        (LinearMap.toContinuousLinearMap : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E)
-        (LinearEquiv.refl 𝕜 F) v)).toLinearMap =
-      dualTensorHom 𝕜 E F v := by
+    (TensorProduct.toOperator (_root_.TensorProduct.congr
+      (LinearMap.toContinuousLinearMap : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E)
+      (.refl 𝕜 F) v)).toLinearMap = dualTensorHom 𝕜 E F v := by
   induction v with
   | tmul φ y => ext x; simp
-  | add v₁ v₂ hv₁ hv₂ => simp [hv₁, hv₂]
+  | add _ _ hv₁ hv₂ => simp [hv₁, hv₂]
 
 private theorem toTensorProduct_toOperatorInvOfBasis {ι : Type*} [DecidableEq ι] [Fintype ι]
     (b : Module.Basis ι 𝕜 E) (T : E →L[𝕜] F) :
-    (toOperatorInvOfBasis b T).toTensorProduct =
-      _root_.TensorProduct.congr
-        (LinearMap.toContinuousLinearMap : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E)
-        (LinearEquiv.refl 𝕜 F)
-        ((dualTensorHomEquivOfBasis (N := F) b).symm T.toLinearMap) := by
-  rw [← linearEquiv_apply]
-  simp [toOperatorInvOfBasis, dualTensorHomEquivOfBasis]
+    (toOperatorInvOfBasis b T).toTensorProduct = _root_.TensorProduct.congr
+      (LinearMap.toContinuousLinearMap : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E) (.refl 𝕜 F)
+      ((dualTensorHomEquivOfBasis b).symm T.toLinearMap) := by
+  rw [← linearEquiv_apply]; simp [toOperatorInvOfBasis, dualTensorHomEquivOfBasis]
 
 variable (𝕜 E F) in
 /-- When `E` is a finite-dimensional normed space over a complete nontrivially normed field `𝕜`,

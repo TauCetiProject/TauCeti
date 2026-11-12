@@ -444,29 +444,24 @@ theorem bundleHomeomorph_symm_apply (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
     (p : TotalSpace F₂ E₂) : (bundleHomeomorph e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ :=
   (rfl)
 
+section
+
+variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x) (he : Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+  (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap))
+
 /-- The homeomorphism of total spaces induced by a family of fibrewise continuous linear
 equivalences whose underlying continuous linear maps form a continuous Hom-bundle section. -/
-def bundleHomeomorphOfHom (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
-    (he : Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
-      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap)) :
-    TotalSpace F₁ E₁ ≃ₜ TotalSpace F₂ E₂ :=
+def bundleHomeomorphOfHom : TotalSpace F₁ E₁ ≃ₜ TotalSpace F₂ E₂ :=
   bundleHomeomorph e
     (((continuous_hom_bundle_iff (fun x ↦ (e x).toContinuousLinearMap)).1 he).congr fun _ ↦ rfl)
 
-@[simp]
-theorem bundleHomeomorphOfHom_apply (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
-    (he : Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
-      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap))
-    (p : TotalSpace F₁ E₁) : bundleHomeomorphOfHom e he p = ⟨p.proj, e p.proj p.2⟩ :=
-  (rfl)
+@[simp] theorem bundleHomeomorphOfHom_apply (p : TotalSpace F₁ E₁) :
+    bundleHomeomorphOfHom e he p = ⟨p.proj, e p.proj p.2⟩ := (rfl)
 
-@[simp]
-theorem bundleHomeomorphOfHom_symm_apply (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
-    (he : Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
-      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap))
-    (p : TotalSpace F₂ E₂) :
-    (bundleHomeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ :=
-  (rfl)
+@[simp] theorem bundleHomeomorphOfHom_symm_apply (p : TotalSpace F₂ E₂) :
+    (bundleHomeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ := (rfl)
+
+end
 
 /-- A continuous fibrewise bijective linear map between vector bundles with a
 finite-dimensional model source is induced by a homeomorphism of total spaces. -/

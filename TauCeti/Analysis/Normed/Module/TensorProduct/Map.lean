@@ -30,8 +30,6 @@ On the dual of `E'`, the operator induced by `map f g u` is
 * `TauCeti.ProjectiveTensor.mapL` and `TauCeti.InjectiveTensor.mapL`: the operators induced by a
   pair of bounded operators, with `ProjectiveTensor.mapL` bundled bilinearly as
   `TauCeti.ProjectiveTensor.mapLBilinear`.
-* `TauCeti.ProjectiveTensor.congr`: the continuous linear equivalence of projective tensor products
-  induced by a pair of continuous linear equivalences.
 
 ## Main results
 
@@ -192,46 +190,6 @@ noncomputable def mapLBilinear :
 
 @[simp] theorem mapLBilinear_apply (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
     mapLBilinear 𝕜 E E' F F' f g = mapL f g := (rfl)
-
-theorem norm_mapLBilinear_apply_le (f : E →L[𝕜] E') : ‖mapLBilinear 𝕜 E E' F F' f‖ ≤ ‖f‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun g ↦ by simpa using norm_mapL_le f g
-
-/-- Continuous linear equivalences of both factors induce a continuous linear equivalence of
-projective tensor products. -/
-noncomputable def congr (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
-    ProjectiveTensor 𝕜 E F ≃L[𝕜] ProjectiveTensor 𝕜 E' F' :=
-  .equivOfInverse (mapL e.toContinuousLinearMap f.toContinuousLinearMap)
-    (mapL e.symm.toContinuousLinearMap f.symm.toContinuousLinearMap)
-    (fun u ↦ by simpa using DFunLike.congr_fun (mapL_comp e.symm.toContinuousLinearMap
-      e.toContinuousLinearMap f.symm.toContinuousLinearMap f.toContinuousLinearMap).symm u)
-    (fun u ↦ by simpa using DFunLike.congr_fun (mapL_comp e.toContinuousLinearMap
-      e.symm.toContinuousLinearMap f.toContinuousLinearMap f.symm.toContinuousLinearMap).symm u)
-
-@[simp] theorem congr_apply (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') (u : ProjectiveTensor 𝕜 E F) :
-    congr e f u = ⟨_root_.TensorProduct.map e.toLinearMap f.toLinearMap u.toTensorProduct⟩ := by
-  simp [congr]
-
-theorem congr_tmul (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') (x : E) (y : F) :
-    congr e f ⟨x ⊗ₜ y⟩ = ⟨e x ⊗ₜ f y⟩ := by simp
-
-@[simp] theorem toContinuousLinearMap_congr (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
-    (congr e f).toContinuousLinearMap = mapL e.toContinuousLinearMap f.toContinuousLinearMap :=
-  (rfl)
-
-@[simp] theorem congr_symm (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
-    (congr e f).symm = congr e.symm f.symm := (rfl)
-
-@[simp] theorem congr_refl :
-    congr (ContinuousLinearEquiv.refl 𝕜 E) (ContinuousLinearEquiv.refl 𝕜 F) =
-      ContinuousLinearEquiv.refl 𝕜 (ProjectiveTensor 𝕜 E F) :=
-  DFunLike.ext _ _ fun u ↦ DFunLike.congr_fun mapL_id u
-
-theorem congr_trans (e₁ : E ≃L[𝕜] E') (e₂ : E' ≃L[𝕜] E'')
-    (f₁ : F ≃L[𝕜] F') (f₂ : F' ≃L[𝕜] F'') :
-    (congr e₁ f₁).trans (congr e₂ f₂) = congr (e₁.trans e₂) (f₁.trans f₂) :=
-  DFunLike.ext _ _ fun u ↦ DFunLike.congr_fun (mapL_comp
-    e₂.toContinuousLinearMap e₁.toContinuousLinearMap
-    f₂.toContinuousLinearMap f₁.toContinuousLinearMap).symm u
 
 end ProjectiveTensor
 

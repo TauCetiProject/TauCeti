@@ -165,8 +165,7 @@ theorem bundleTensorLift_inCoordinates (Φ : ∀ x, E₁ x →L[𝕜] E₂ x →
       ProjectiveTensor.liftIsometry 𝕜 F₁ F₂ F₃ (ContinuousLinearMap.inCoordinates F₁ E₁
         (F₂ →L[𝕜] F₃) (fun y ↦ E₂ y →L[𝕜] E₃ y) a x a x (Φ x)) := by
   refine ProjectiveTensor.continuousLinearMap_ext fun v w ↦ ?_
-  have hx₁₂ : x ∈ (trivializationAt PF₁F₂ TE₁E₂ a).baseSet := by
-    rw [tensorProduct_trivializationAt_baseSet]; exact ⟨hx₁, hx₂⟩
+  have hx₁₂ : x ∈ (trivializationAt PF₁F₂ TE₁E₂ a).baseSet := by simpa using ⟨hx₁, hx₂⟩
   rw [ProjectiveTensor.liftIsometry_apply_tmul, inCoordinates_apply_eq₂ hx₁ hx₂ hx₃]
   simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
   rw [Trivialization.symmL_apply (R := 𝕜) _ hx₁₂,
@@ -176,8 +175,7 @@ theorem bundleTensorLift_inCoordinates (Φ : ∀ x, E₁ x →L[𝕜] E₂ x →
 
 /-- Around `a`, the coordinate expression of `bundleTensorLift Φ` agrees eventually with
 `ProjectiveTensor.liftIsometry` applied to the coordinate expression of `Φ`. -/
-theorem bundleTensorLift_inCoordinates_eventuallyEq (Φ : ∀ x, E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x)
-    (a : B) :
+theorem bundleTensorLift_inCoordinates_eventuallyEq (Φ : ∀ x, E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x) (a : B) :
     (fun x ↦ ContinuousLinearMap.inCoordinates PF₁F₂ TE₁E₂ F₃ E₃ a x a x
       (bundleTensorLift Φ x)) =ᶠ[𝓝 a]
       (ProjectiveTensor.liftIsometry 𝕜 F₁ F₂ F₃ ∘ fun x ↦ ContinuousLinearMap.inCoordinates F₁ E₁
@@ -227,10 +225,8 @@ theorem bundleTensorMap_inCoordinates (f : ∀ x, E₁ x →L[𝕜] E₁' x) (g 
       ProjectiveTensor.mapL (ContinuousLinearMap.inCoordinates F₁ E₁ F₁' E₁' a x a x (f x))
         (ContinuousLinearMap.inCoordinates F₂ E₂ F₂' E₂' a x a x (g x)) := by
   refine ProjectiveTensor.continuousLinearMap_ext fun v w ↦ ?_
-  have hx₁₂ : x ∈ (trivializationAt PF₁F₂ TE₁E₂ a).baseSet := by
-    rw [tensorProduct_trivializationAt_baseSet]; exact ⟨hx₁, hx₂⟩
-  have hx₁₂' : x ∈ (trivializationAt PF₁'F₂' TE₁'E₂' a).baseSet := by
-    rw [tensorProduct_trivializationAt_baseSet]; exact ⟨hx₁', hx₂'⟩
+  have hx₁₂ : x ∈ (trivializationAt PF₁F₂ TE₁E₂ a).baseSet := by simpa using ⟨hx₁, hx₂⟩
+  have hx₁₂' : x ∈ (trivializationAt PF₁'F₂' TE₁'E₂' a).baseSet := by simpa using ⟨hx₁', hx₂'⟩
   simp only [ProjectiveTensor.mapL_tmul, ContinuousLinearMap.inCoordinates,
     ContinuousLinearMap.comp_apply]
   rw [Trivialization.symmL_apply (R := 𝕜) _ hx₁₂,
@@ -250,14 +246,13 @@ theorem bundleTensorMap_inCoordinates_eventuallyEq {b : M → B}
         (ContinuousLinearMap.inCoordinates F₁ E₁ F₁' E₁' (b x₀) (b m) (b x₀) (b m) (f (b m)))
         (ContinuousLinearMap.inCoordinates F₂ E₂ F₂' E₂' (b x₀) (b m) (b x₀) (b m) (g (b m))) := by
   filter_upwards [hb.preimage_mem_nhdsWithin <| Filter.inter_mem
-    (Filter.inter_mem ((trivializationAt F₁ E₁ (b x₀)).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt ..))
-      ((trivializationAt F₁' E₁' (b x₀)).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt ..)))
-    (Filter.inter_mem ((trivializationAt F₂ E₂ (b x₀)).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt ..))
-      ((trivializationAt F₂' E₂' (b x₀)).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt ..)))] with m hm
+    (Filter.inter_mem
+      ((trivializationAt F₁ E₁ (b x₀)).open_baseSet.mem_nhds (mem_baseSet_trivializationAt ..))
+      ((trivializationAt F₁' E₁' (b x₀)).open_baseSet.mem_nhds (mem_baseSet_trivializationAt ..)))
+    (Filter.inter_mem
+      ((trivializationAt F₂ E₂ (b x₀)).open_baseSet.mem_nhds (mem_baseSet_trivializationAt ..))
+      ((trivializationAt F₂' E₂' (b x₀)).open_baseSet.mem_nhds (mem_baseSet_trivializationAt ..)))]
+    with m hm
   exact (bundleTensorMap_inCoordinates f g (b x₀) (b m) hm.1.1 hm.1.2 hm.2.1 hm.2.2).trans
     (ProjectiveTensor.mapLBilinear_apply _ _).symm
 
@@ -307,8 +302,7 @@ def bundleTensorCongrHomeomorph : TotalSpace PF₁F₂ TE₁E₂ ≃ₜ TotalSpa
       ((continuous_hom_bundle_iff (fun x ↦ (e₂ x).toContinuousLinearMap)).2 he₂)
 
 @[simp] theorem bundleTensorCongrHomeomorph_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
-    bundleTensorCongrHomeomorph e₁ e₂ he₁ he₂ p =
-      ⟨p.proj, bundleTensorCongr e₁ e₂ p.proj p.2⟩ := by
+    bundleTensorCongrHomeomorph e₁ e₂ he₁ he₂ p = ⟨p.proj, bundleTensorCongr e₁ e₂ p.proj p.2⟩ := by
   rw [bundleTensorCongrHomeomorph, bundleHomeomorphOfHom_apply]
 
 @[simp] theorem bundleTensorCongrHomeomorph_symm_apply (p : TotalSpace PF₁'F₂' TE₁'E₂') :
@@ -331,10 +325,8 @@ theorem bundleTensorCommEquiv_inCoordinates (a x : B) (hx₁ : x ∈ (trivializa
       (bundleTensorCommEquiv x).toContinuousLinearMap =
       (ProjectiveTensor.comm 𝕜 F₁ F₂).toLinearIsometry.toContinuousLinearMap := by
   refine ProjectiveTensor.continuousLinearMap_ext fun v w ↦ ?_
-  have hx₁₂ : x ∈ (trivializationAt PF₁F₂ TE₁E₂ a).baseSet := by
-    rw [tensorProduct_trivializationAt_baseSet]; exact ⟨hx₁, hx₂⟩
-  have hx₂₁ : x ∈ (trivializationAt PF₂F₁ TE₂E₁ a).baseSet := by
-    rw [tensorProduct_trivializationAt_baseSet]; exact ⟨hx₂, hx₁⟩
+  have hx₁₂ : x ∈ (trivializationAt PF₁F₂ TE₁E₂ a).baseSet := by simpa using ⟨hx₁, hx₂⟩
+  have hx₂₁ : x ∈ (trivializationAt PF₂F₁ TE₂E₁ a).baseSet := by simpa using ⟨hx₂, hx₁⟩
   simp only [LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
     ProjectiveTensor.comm_tmul, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
   rw [Trivialization.symmL_apply (R := 𝕜) _ hx₁₂,
@@ -357,9 +349,7 @@ theorem continuous_bundleTensorCommEquiv :
 
 variable (F₁ E₁ F₂ E₂) in
 /-- Canonical symmetry homeomorphism between the total spaces of `E₁ ⊗ E₂` and `E₂ ⊗ E₁`. -/
-def bundleTensorCommHomeomorph :
-    TotalSpace (ProjectiveTensor 𝕜 F₁ F₂) (fun x ↦ E₁ x ⊗[𝕜] E₂ x) ≃ₜ
-      TotalSpace (ProjectiveTensor 𝕜 F₂ F₁) (fun x ↦ E₂ x ⊗[𝕜] E₁ x) :=
+def bundleTensorCommHomeomorph : TotalSpace PF₁F₂ TE₁E₂ ≃ₜ TotalSpace PF₂F₁ TE₂E₁ :=
   bundleHomeomorphOfHom bundleTensorCommEquiv continuous_bundleTensorCommEquiv
 
 @[simp] theorem bundleTensorCommHomeomorph_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
@@ -398,15 +388,12 @@ theorem bundleTensorAssocEquiv_inCoordinates (a x : B)
   refine ProjectiveTensor.continuousLinearMap_ext fun ⟨uv⟩ w ↦ ?_
   induction uv using _root_.TensorProduct.inductionOn with
   | tmul u v =>
-      have hx₁₂ : x ∈ (trivializationAt PF₁F₂ TE₁E₂ a).baseSet := by
-        rw [tensorProduct_trivializationAt_baseSet]; exact ⟨hx₁, hx₂⟩
+      have hx₁₂ : x ∈ (trivializationAt PF₁F₂ TE₁E₂ a).baseSet := by simpa using ⟨hx₁, hx₂⟩
       have hx₂₃ : x ∈ (trivializationAt (ProjectiveTensor 𝕜 F₂ F₃)
-          (fun y ↦ E₂ y ⊗[𝕜] E₃ y) a).baseSet := by
-        rw [tensorProduct_trivializationAt_baseSet]; exact ⟨hx₂, hx₃⟩
-      have hx_l : x ∈ (trivializationAt PAssocL TAssocL a).baseSet := by
-        rw [tensorProduct_trivializationAt_baseSet]; exact ⟨hx₁₂, hx₃⟩
-      have hx_r : x ∈ (trivializationAt PAssocR TAssocR a).baseSet := by
-        rw [tensorProduct_trivializationAt_baseSet]; exact ⟨hx₁, hx₂₃⟩
+          (fun y ↦ E₂ y ⊗[𝕜] E₃ y) a).baseSet := by simpa using ⟨hx₂, hx₃⟩
+      have hx_l : x ∈ (trivializationAt PAssocL TAssocL a).baseSet :=
+        by simpa using ⟨⟨hx₁, hx₂⟩, hx₃⟩
+      have hx_r : x ∈ (trivializationAt PAssocR TAssocR a).baseSet := by simpa using ⟨hx₁, hx₂, hx₃⟩
       simp only [LinearIsometry.coe_toContinuousLinearMap,
         LinearIsometryEquiv.coe_toLinearIsometry, ProjectiveTensor.assoc_tmul,
         ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
@@ -439,11 +426,7 @@ theorem continuous_bundleTensorAssocEquiv :
 variable (F₁ E₁ F₂ E₂ F₃ E₃) in
 /-- Canonical associativity homeomorphism between the total spaces of `(E₁ ⊗ E₂) ⊗ E₃` and
 `E₁ ⊗ (E₂ ⊗ E₃)`. -/
-def bundleTensorAssocHomeomorph :
-    TotalSpace (ProjectiveTensor 𝕜 (ProjectiveTensor 𝕜 F₁ F₂) F₃)
-        (fun x ↦ (E₁ x ⊗[𝕜] E₂ x) ⊗[𝕜] E₃ x) ≃ₜ
-      TotalSpace (ProjectiveTensor 𝕜 F₁ (ProjectiveTensor 𝕜 F₂ F₃))
-        (fun x ↦ E₁ x ⊗[𝕜] (E₂ x ⊗[𝕜] E₃ x)) :=
+def bundleTensorAssocHomeomorph : TotalSpace PAssocL TAssocL ≃ₜ TotalSpace PAssocR TAssocR :=
   bundleHomeomorphOfHom bundleTensorAssocEquiv continuous_bundleTensorAssocEquiv
 
 @[simp] theorem bundleTensorAssocHomeomorph_apply (p : TotalSpace PAssocL TAssocL) :
@@ -471,12 +454,9 @@ theorem bundleDualTensorHom_inCoordinates (a x : B) (hx₁ : x ∈ (trivializati
     (hx₂ : x ∈ (trivializationAt F₂ E₂ a).baseSet) :
     ContinuousLinearMap.inCoordinates PDual TDual (F₁ →L[𝕜] F₂) LE₁E₂ a x a x
       (bundleDualTensorHom x) = ProjectiveTensor.toOperator 𝕜 F₁ F₂ := by
-  have hx_d : x ∈ (trivializationAt (StrongDual 𝕜 F₁) (fun y ↦ StrongDual 𝕜 (E₁ y)) a).baseSet :=
-    (mem_dual_trivializationAt_baseSet E₁ a).2 hx₁
-  have hx_tp : x ∈ (trivializationAt PDual TDual a).baseSet := by
-    rw [tensorProduct_trivializationAt_baseSet]; exact ⟨hx_d, hx₂⟩
-  have hx_hom : x ∈ (trivializationAt (F₁ →L[𝕜] F₂) LE₁E₂ a).baseSet := by
-    rw [hom_trivializationAt_baseSet]; exact ⟨hx₁, hx₂⟩
+  have hx_d := (mem_dual_trivializationAt_baseSet (𝕜 := 𝕜) E₁ a).2 hx₁
+  have hx_tp : x ∈ (trivializationAt PDual TDual a).baseSet := by simpa using ⟨hx₁, hx₂⟩
+  have hx_hom : x ∈ (trivializationAt (F₁ →L[𝕜] F₂) LE₁E₂ a).baseSet := by simpa using ⟨hx₁, hx₂⟩
   rw [ContinuousLinearMap.inCoordinates_eq hx_tp hx_hom]
   refine ProjectiveTensor.continuousLinearMap_ext fun φ w ↦ ContinuousLinearMap.ext fun v ↦ ?_
   simp only [ProjectiveTensor.toOperator_tmul, ContinuousLinearMap.smulRight_apply,
@@ -508,13 +488,8 @@ def bundleDualTensorHomEquiv (x : B) : (StrongDual 𝕜 (E₁ x) ⊗[𝕜] E₂ 
   have hinv : (bundleDualTensorHom (𝕜 := 𝕜) (E₁ := E₁) (E₂ := E₂) x).IsInvertible := by
     have hx₁ := mem_baseSet_trivializationAt F₁ E₁ x
     have hx₂ := mem_baseSet_trivializationAt F₂ E₂ x
-    have hx_d : x ∈ (trivializationAt (StrongDual 𝕜 F₁) (fun y ↦ StrongDual 𝕜 (E₁ y)) x).baseSet :=
-      (mem_dual_trivializationAt_baseSet E₁ x).2 hx₁
-    have hx_tp : x ∈ (trivializationAt (ProjectiveTensor 𝕜 (StrongDual 𝕜 F₁) F₂)
-        (fun y ↦ StrongDual 𝕜 (E₁ y) ⊗[𝕜] E₂ y) x).baseSet := by
-      rw [tensorProduct_trivializationAt_baseSet]; exact ⟨hx_d, hx₂⟩
-    have hx_hom : x ∈ (trivializationAt (F₁ →L[𝕜] F₂) (fun y ↦ E₁ y →L[𝕜] E₂ y) x).baseSet := by
-      rw [hom_trivializationAt_baseSet]; exact ⟨hx₁, hx₂⟩
+    have hx_tp : x ∈ (trivializationAt PDual TDual x).baseSet := by simpa using ⟨hx₁, hx₂⟩
+    have hx_hom : x ∈ (trivializationAt (F₁ →L[𝕜] F₂) LE₁E₂ x).baseSet := by simpa using ⟨hx₁, hx₂⟩
     refine (ContinuousLinearMap.isInvertible_inCoordinates_iff hx_tp hx_hom).1 ?_
     rw [bundleDualTensorHom_inCoordinates x x hx₁ hx₂,
       ← ProjectiveTensor.toOperatorEquiv_toContinuousLinearMap]
@@ -525,10 +500,6 @@ def bundleDualTensorHomEquiv (x : B) : (StrongDual 𝕜 (E₁ x) ⊗[𝕜] E₂ 
 @[simp] theorem bundleDualTensorHomEquiv_toContinuousLinearMap (x : B) :
     (bundleDualTensorHomEquiv 𝕜 F₁ F₂ (E₁ := E₁) (E₂ := E₂) x).toContinuousLinearMap =
       bundleDualTensorHom (𝕜 := 𝕜) x := (rfl)
-
-theorem bundleDualTensorHomEquiv_symm_toContinuousLinearMap (x : B) :
-    (bundleDualTensorHomEquiv 𝕜 F₁ F₂ (E₁ := E₁) (E₂ := E₂) x).symm.toContinuousLinearMap =
-      (bundleDualTensorHom (𝕜 := 𝕜) x).inverse := (rfl)
 
 @[simp] theorem bundleDualTensorHomEquiv_tmul (x : B) (φ : StrongDual 𝕜 (E₁ x)) (w : E₂ x) :
     bundleDualTensorHomEquiv 𝕜 F₁ F₂ (E₁ := E₁) (E₂ := E₂) x (φ ⊗ₜ[𝕜] w) = φ.smulRight w :=
@@ -542,10 +513,7 @@ theorem bundleDualTensorHomEquiv_symm_toContinuousLinearMap (x : B) :
 variable (F₁ E₁ F₂ E₂) in
 /-- Canonical homeomorphism between the total space of `StrongDual 𝕜 E₁ ⊗ E₂` and the total space
 of the Hom bundle `E₁ →L E₂`. -/
-def bundleDualTensorHomHomeomorph :
-    TotalSpace (ProjectiveTensor 𝕜 (StrongDual 𝕜 F₁) F₂)
-        (fun x ↦ StrongDual 𝕜 (E₁ x) ⊗[𝕜] E₂ x) ≃ₜ
-      TotalSpace (F₁ →L[𝕜] F₂) (fun x ↦ E₁ x →L[𝕜] E₂ x) :=
+def bundleDualTensorHomHomeomorph : TotalSpace PDual TDual ≃ₜ TotalSpace (F₁ →L[𝕜] F₂) LE₁E₂ :=
   have : ∀ x, ContinuousAdd (E₁ x →L[𝕜] E₂ x) := fun _ ↦ inferInstance
   bundleHomeomorph (bundleDualTensorHomEquiv 𝕜 F₁ F₂)
     (continuous_bundleDualTensorHom.congr fun _ ↦ rfl)

@@ -38,14 +38,10 @@ noncomputable section
 open Bundle FiberBundle Set Topology
 open scoped Bundle TensorProduct Topology
 
-namespace TauCeti
-
-section FiberTopology
+namespace TauCeti.TensorProduct
 
 variable {𝕜 M N : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
   [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
-
-namespace TensorProduct
 
 /-- Scoped default topology on `M ⊗[𝕜] N`, given by `moduleTopology 𝕜 (M ⊗[𝕜] N)`. -/
 scoped instance instTopologicalSpaceTensorProduct : TopologicalSpace (M ⊗[𝕜] N) :=
@@ -55,11 +51,7 @@ scoped instance instTopologicalSpaceTensorProduct : TopologicalSpace (M ⊗[𝕜
 topology. -/
 scoped instance instIsModuleTopologyTensorProduct : IsModuleTopology 𝕜 (M ⊗[𝕜] N) := ⟨rfl⟩
 
-end TensorProduct
-
-end FiberTopology
-
-end TauCeti
+end TauCeti.TensorProduct
 
 namespace TensorProduct
 
@@ -171,18 +163,14 @@ def tensorProduct : Pretrivialization PF₁F₂ (π PF₁F₂ TE₁E₂) where
   map_source' := fun ⟨_, _⟩ h ↦ ⟨h, mem_univ _⟩
   map_target' := fun ⟨_, _⟩ h ↦ h.1
   left_inv' := fun ⟨x, _⟩ ⟨h₁, h₂⟩ ↦ by
-    have h₁' : e₁.symmₗ 𝕜 x ∘ₗ e₁.linearMapAt 𝕜 x = LinearMap.id :=
-      LinearMap.ext (e₁.symmₗ_linearMapAt (R := 𝕜) h₁)
-    have h₂' : e₂.symmₗ 𝕜 x ∘ₗ e₂.linearMapAt 𝕜 x = LinearMap.id :=
-      LinearMap.ext (e₂.symmₗ_linearMapAt (R := 𝕜) h₂)
+    have h₁' : e₁.symmₗ 𝕜 x ∘ₗ e₁.linearMapAt 𝕜 x = .id := LinearMap.ext (e₁.symmₗ_linearMapAt h₁)
+    have h₂' : e₂.symmₗ 𝕜 x ∘ₗ e₂.linearMapAt 𝕜 x = .id := LinearMap.ext (e₂.symmₗ_linearMapAt h₂)
     simp only [← LinearMap.comp_apply, ← _root_.TensorProduct.map_comp, h₁', h₂',
       _root_.TensorProduct.map_id, LinearMap.id_apply]
   right_inv' := fun ⟨x, _⟩ ⟨⟨h₁, h₂⟩, _⟩ ↦ Prod.ext rfl <|
     (TauCeti.ProjectiveTensor.linearEquiv 𝕜 F₁ F₂).injective <| by
-      have h₁' : e₁.linearMapAt 𝕜 x ∘ₗ e₁.symmₗ 𝕜 x = LinearMap.id :=
-        LinearMap.ext (e₁.linearMapAt_symmₗ (R := 𝕜) h₁)
-      have h₂' : e₂.linearMapAt 𝕜 x ∘ₗ e₂.symmₗ 𝕜 x = LinearMap.id :=
-        LinearMap.ext (e₂.linearMapAt_symmₗ (R := 𝕜) h₂)
+      have h₁' : e₁.linearMapAt 𝕜 x ∘ₗ e₁.symmₗ 𝕜 x = .id := LinearMap.ext (e₁.linearMapAt_symmₗ h₁)
+      have h₂' : e₂.linearMapAt 𝕜 x ∘ₗ e₂.symmₗ 𝕜 x = .id := LinearMap.ext (e₂.linearMapAt_symmₗ h₂)
       simp only [TauCeti.ProjectiveTensor.linearEquiv_apply, ← LinearMap.comp_apply,
         ← _root_.TensorProduct.map_comp, h₁', h₂', _root_.TensorProduct.map_id, LinearMap.id_apply]
   open_target := (e₁.open_baseSet.inter e₂.open_baseSet).prod isOpen_univ
@@ -204,10 +192,6 @@ instance tensorProduct.isLinear : (Pretrivialization.tensorProduct 𝕜 e₁ e�
     { map_add := fun _ _ ↦ inj (by simp [tensorProduct_apply])
       map_smul := fun _ _ ↦ inj (by simp [tensorProduct_apply]) }
 
-theorem tensorProduct_symm_apply (p : B × PF₁F₂) :
-    (tensorProduct 𝕜 e₁ e₂).toPartialEquiv.symm p =
-      ⟨p.1, _root_.TensorProduct.map (e₁.symmₗ 𝕜 p.1) (e₂.symmₗ 𝕜 p.1) p.2.toTensorProduct⟩ := (rfl)
-
 theorem tensorProduct_symm_apply' {b : B} (hb : b ∈ e₁.baseSet ∩ e₂.baseSet) (u : PF₁F₂) :
     (tensorProduct 𝕜 e₁ e₂).symm b u =
       _root_.TensorProduct.map (e₁.symmₗ 𝕜 b) (e₂.symmₗ 𝕜 b) u.toTensorProduct := by
@@ -226,11 +210,9 @@ theorem tensorProductCoordChange_apply (b : B)
     tensorProduct_symm_apply' 𝕜 e₁ e₂ hb.1, TauCeti.ProjectiveTensor.linearEquiv_apply,
     TauCeti.ProjectiveTensor.linearEquiv_apply, ← LinearMap.comp_apply,
     ← _root_.TensorProduct.map_comp]
-  have h₁ : e₁'.linearMapAt 𝕜 b ∘ₗ e₁.symmₗ 𝕜 b =
-      (e₁.coordChangeL 𝕜 e₁' b : F₁ →L[𝕜] F₁).toLinearMap := by
+  have h₁ : e₁'.linearMapAt 𝕜 b ∘ₗ e₁.symmₗ 𝕜 b = (e₁.coordChangeL 𝕜 e₁' b : F₁ →L[𝕜] F₁) := by
     ext; simp [Trivialization.coordChangeL_apply, hb.1.1, hb.2.1]
-  have h₂ : e₂'.linearMapAt 𝕜 b ∘ₗ e₂.symmₗ 𝕜 b =
-      (e₂.coordChangeL 𝕜 e₂' b : F₂ →L[𝕜] F₂).toLinearMap := by
+  have h₂ : e₂'.linearMapAt 𝕜 b ∘ₗ e₂.symmₗ 𝕜 b = (e₂.coordChangeL 𝕜 e₂' b : F₂ →L[𝕜] F₂) := by
     ext; simp [Trivialization.coordChangeL_apply, hb.1.2, hb.2.2]
   rw [h₁, h₂]
 

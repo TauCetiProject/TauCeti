@@ -643,37 +643,28 @@ theorem toHomeomorph_bundleDiffeomorph :
 
 end
 
+section
+
+variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
+  (he : ContMDiff IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+    (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap))
+
 /-- The `C^n` diffeomorphism of total spaces induced by a family of fibrewise continuous linear
 equivalences whose underlying continuous linear maps form a `C^n` Hom-bundle section. -/
-def bundleDiffeomorphOfHom (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
-    (he : ContMDiff IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
-      (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ E₁ y →L[𝕜] E₂ y)
-        x (e x).toContinuousLinearMap)) :
+def bundleDiffeomorphOfHom :
     TotalSpace F₁ E₁ ≃ₘ^n⟮IB.prod 𝓘(𝕜, F₁), IB.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂ E₂ :=
   bundleDiffeomorph e
     (((contMDiff_hom_bundle_iff (IB := IB) (fun x ↦ (e x).toContinuousLinearMap)).1 he).congr
       fun _ ↦ rfl)
 
-section
+@[simp] theorem bundleDiffeomorphOfHom_apply (p : TotalSpace F₁ E₁) :
+    bundleDiffeomorphOfHom e he p = ⟨p.proj, e p.proj p.2⟩ := (rfl)
 
-variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
-  (he : ContMDiff IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
-    (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ E₁ y →L[𝕜] E₂ y)
-      x (e x).toContinuousLinearMap))
-
-@[simp]
-theorem bundleDiffeomorphOfHom_apply (p : TotalSpace F₁ E₁) :
-    bundleDiffeomorphOfHom e he p = ⟨p.proj, e p.proj p.2⟩ :=
-  (rfl)
-
-@[simp]
-theorem bundleDiffeomorphOfHom_symm_apply (p : TotalSpace F₂ E₂) :
-    (bundleDiffeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ :=
-  (rfl)
+@[simp] theorem bundleDiffeomorphOfHom_symm_apply (p : TotalSpace F₂ E₂) :
+    (bundleDiffeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ := (rfl)
 
 /-- The underlying homeomorphism of `bundleDiffeomorphOfHom` is `bundleHomeomorphOfHom`. -/
-@[simp]
-theorem toHomeomorph_bundleDiffeomorphOfHom :
+@[simp] theorem toHomeomorph_bundleDiffeomorphOfHom :
     (bundleDiffeomorphOfHom e he).toHomeomorph = bundleHomeomorphOfHom e he.continuous :=
   Homeomorph.ext fun p ↦ by simp
 
