@@ -259,21 +259,22 @@ theorem exists_empty_eq_V_iff :
 theorem V_eq_univ_of_subsingleton [Subsingleton H] (S : Set (GX G X)) : V ι S = Set.univ :=
   Set.eq_univ_of_forall fun _ => mem_V.2 fun _ _ => Subsingleton.elim _ _
 
-/-- Over a torsion-free group in which no coefficient survives, a system in one variable with a
-nontrivial solution is solved by every element: each equation is then a power of the variable. -/
-theorem V_eq_univ_of_mem_of_ne_one [IsMulTorsionFree H] [Unique X] (hι : ∀ g, ι g = 1) (hv : v ≠ 1)
-    (hvS : v ∈ V ι S) : V ι S = Set.univ := by
+/-- Over a torsion-free group in which no coefficient survives, a system in at most one variable
+with a nontrivial solution is solved by every tuple: each equation is then a power of the
+variable. -/
+theorem V_eq_univ_of_mem_of_ne_one [IsMulTorsionFree H] [Subsingleton X] (hι : ∀ g, ι g = 1)
+    (hvS : v ∈ V ι S) (hv : v ≠ 1) : V ι S = Set.univ := by
   obtain rfl : ι = 1 := MonoidHom.ext hι
+  obtain ⟨x₀, hx₀⟩ := Function.ne_iff.1 hv
   -- Every word evaluates to a fixed power of the value of the variable.
   have key (u : X → H) : eval (1 : G →* H) u =
-      (zpowersHom H (u default)).comp (eval 1 fun _ => Multiplicative.ofAdd 1) :=
+      (zpowersHom H (u x₀)).comp (eval 1 fun _ => Multiplicative.ofAdd 1) :=
     hom_ext (MonoidHom.ext fun g => by simp)
-      (FreeGroup.ext_hom _ _ fun x => by simp [Unique.eq_default x])
-  have hv' : v default ≠ 1 := fun h => hv (funext fun x => by rw [Unique.eq_default x, h]; rfl)
+      (FreeGroup.ext_hom _ _ fun x => by simp [Subsingleton.elim x x₀])
   refine Set.eq_univ_of_forall fun u => mem_V.2 fun s hs => ?_
   have h := mem_V.1 hvS s hs
   rw [key, MonoidHom.comp_apply, zpowersHom_apply,
-    IsMulTorsionFree.zpow_eq_one_iff_right hv'] at h
+    IsMulTorsionFree.zpow_eq_one_iff_right hx₀] at h
   rw [key, MonoidHom.comp_apply, zpowersHom_apply, h, zpow_zero]
 
 /-- In a commutative group an algebraic set is closed under `(u, v, w) ↦ u * v⁻¹ * w`, which

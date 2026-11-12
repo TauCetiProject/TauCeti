@@ -50,14 +50,12 @@ algebraic without the domain hypothesis.
 * `TauCeti.GroupAlgGeom.isClosed_iff_V`, `TauCeti.GroupAlgGeom.closure_eq_V_I`: over a domain
   with a nontrivial coefficient image, the closed sets are the algebraic sets and the closure of
   `Y` is `V_H(I_H(Y))`.
-* `TauCeti.GroupAlgGeom.isClosed_zariskiTopology_induction`: induction on closed sets, which are
-  generated from algebraic sets by finite unions and arbitrary intersections.
 * `TauCeti.GroupAlgGeom.closure_empty_eq_V_I_iff`: the closure of the empty set is `V_H(I_H(∅))`
   exactly when some coefficient survives in `H`.
 * `TauCeti.GroupAlgGeom.not_t1Space_zariskiTopology`,
   `TauCeti.GroupAlgGeom.closure_singleton_eq_univ_of_ne_one`: without surviving coefficients the
-  topology is not T1 as soon as some tuple is nontrivial, and in one variable over a torsion-free
-  group every nontrivial element is dense.
+  topology is not T1 as soon as some tuple is nontrivial, and in at most one variable over a
+  torsion-free group every nontrivial tuple is dense.
 * `TauCeti.GroupAlgGeom.discreteTopology_zariskiTopology`: the topology is discrete for
   surjective coefficients and finitely many tuples.
 
@@ -279,25 +277,6 @@ theorem V_I_eq_of_isIrreducible_of_isClosed {Y : Set (X → H)}
 
 /-! ### Sharpness of the hypotheses -/
 
-/-- Induction on Zariski closed sets: a property of algebraic sets and of the empty set that is
-preserved by binary unions and arbitrary intersections holds for every closed set. -/
-theorem isClosed_zariskiTopology_induction {p : Set (X → H) → Prop}
-    (hV : ∀ S : Set (GX G X), p (V ι S)) (hempty : p ∅) (hunion : ∀ A B, p A → p B → p (A ∪ B))
-    (hsInter : ∀ 𝒜 : Set (Set (X → H)), (∀ A ∈ 𝒜, p A) → p (⋂₀ 𝒜))
-    {C : Set (X → H)} (hC : @IsClosed (X → H) (zariskiTopology ι X) C) : p C := by
-  have key (U : Set (X → H))
-      (hU : TopologicalSpace.GenerateOpen {U | ∃ S : Set (GX G X), U = (V ι S)ᶜ} U) : p Uᶜ := by
-    induction hU with
-    | basic U hU =>
-      obtain ⟨S, rfl⟩ := hU
-      simpa using hV S
-    | univ => simpa using hempty
-    | inter U₁ U₂ _ _ ih₁ ih₂ => simpa [Set.compl_inter] using hunion _ _ ih₁ ih₂
-    | sUnion 𝒰 _ ih =>
-      rw [Set.compl_sUnion]
-      exact hsInter _ (by rintro _ ⟨U, hU, rfl⟩; exact ih U hU)
-  simpa using key Cᶜ hC.isOpen_compl
-
 /-- With surjective coefficients and finitely many tuples, for instance over a finite group in
 finitely many variables, every set of tuples is Zariski closed. -/
 theorem discreteTopology_zariskiTopology (hι : Function.Surjective ι) (X : Type*) [Finite (X → H)] :
@@ -321,11 +300,11 @@ theorem closure_empty_eq_V_I_iff :
 tuple. -/
 theorem one_mem_of_isClosed_of_nonempty (hι : ∀ g, ι g = 1) {C : Set (X → H)}
     (hC : @IsClosed (X → H) (zariskiTopology ι X) C) (hne : C.Nonempty) : (1 : X → H) ∈ C := by
-  refine isClosed_zariskiTopology_induction (p := fun C => C.Nonempty → (1 : X → H) ∈ C)
-    (fun S _ => one_mem_V hι S) (by simp) ?_ ?_ hC hne
-  · rintro A B hA hB ⟨x, hx | hx⟩
-    exacts [.inl (hA ⟨x, hx⟩), .inr (hB ⟨x, hx⟩)]
-  · exact fun 𝒜 h ⟨x, hx⟩ => Set.mem_sInter.2 fun A hA => h A hA ⟨x, hx A hA⟩
+  let := zariskiTopology ι X
+  obtain ⟨v, hv⟩ := hne
+  refine closure_minimal (Set.singleton_subset_iff.2 hv) hC ?_
+  rw [closure_eq_V_I_of_isIrreducible isIrreducible_singleton]
+  exact one_mem_V hι _
 
 /-- If no coefficient survives in `H`, no nontrivial tuple is a closed point, so the Zariski
 topology is not T1 as soon as there is such a tuple. -/
@@ -336,16 +315,13 @@ theorem not_t1Space_zariskiTopology (hι : ∀ g, ι g = 1) (X : Type*) [Nontriv
   exact hv.symm (one_mem_of_isClosed_of_nonempty hι
     (@isClosed_singleton _ (zariskiTopology ι X) h v) (Set.singleton_nonempty v))
 
-/-- Over a torsion-free group in which no coefficient survives, every nontrivial element is
-Zariski dense in the space of values of one variable. -/
-theorem closure_singleton_eq_univ_of_ne_one [IsMulTorsionFree H] [Unique X] (hι : ∀ g, ι g = 1)
-    {v : X → H} (hv : v ≠ 1) :
+/-- Over a torsion-free group in which no coefficient survives, every nontrivial tuple in at most
+one variable is Zariski dense. -/
+theorem closure_singleton_eq_univ_of_ne_one [IsMulTorsionFree H] [Subsingleton X]
+    (hι : ∀ g, ι g = 1) {v : X → H} (hv : v ≠ 1) :
     @closure (X → H) (zariskiTopology ι X) {v} = Set.univ := by
   let := zariskiTopology ι X
-  exact isClosed_zariskiTopology_induction (ι := ι) (p := fun C => v ∈ C → C = Set.univ)
-    (fun S => V_eq_univ_of_mem_of_ne_one hι hv) (by simp)
-    (fun A B hA hB h => by rcases h with h | h <;> simp [hA, hB, h])
-    (fun 𝒜 h hv => Set.sInter_eq_univ.2 fun A hA => h A hA (hv A hA))
-    isClosed_closure (subset_closure rfl)
+  rw [closure_eq_V_I_of_isIrreducible isIrreducible_singleton]
+  exact V_eq_univ_of_mem_of_ne_one hι (subset_V_I {v} rfl) hv
 
 end TauCeti.GroupAlgGeom
