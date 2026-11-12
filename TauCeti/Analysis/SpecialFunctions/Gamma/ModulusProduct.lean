@@ -156,7 +156,6 @@ theorem norm_Gamma_add_mul_I_le {x x' : ℝ} (hx : 0 < x) (hxx' : x ≤ x') (y :
     simp only [add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
       add_zero, neg_re, natCast_re] at hre
     exact hnot hu n hre
-  have hG := Real.Gamma_pos_of_pos hx
   have hG' := Real.Gamma_pos_of_pos hx'
   have hN := norm_pos_iff.mpr (hne hx)
   have hN' := norm_pos_iff.mpr (hne hx')
@@ -166,8 +165,7 @@ theorem norm_Gamma_add_mul_I_le {x x' : ℝ} (hx : 0 < x) (hxx' : x ≤ x') (y :
     refine le_of_tendsto_of_tendsto' (hasProd_Gamma_norm_quotient (hnot hx') y)
       (hasProd_Gamma_norm_quotient (hnot hx) y) fun s => ?_
     refine prod_le_prod₀ (fun k _ => by positivity) fun k _ => ?_
-    have hk : (0 : ℝ) ≤ k := Nat.cast_nonneg k
-    have h1 : (x + k) ^ 2 ≤ (x' + k) ^ 2 := by nlinarith
+    have h1 : (x + k) ^ 2 ≤ (x' + k) ^ 2 := by nlinarith [Nat.cast_nonneg (α := ℝ) k]
     gcongr
   rw [div_le_div_iff₀ (by positivity) (by positivity)] at hle
   have hsq : (‖Gamma ((x : ℂ) + y * I)‖ * Real.Gamma x') ^ 2 ≤
@@ -208,7 +206,6 @@ value at `y = 0` is `Γ(1)² = 1`. -/
 theorem norm_Gamma_one_add_mul_I_sq {y : ℝ} (hy : y ≠ 0) :
     ‖Gamma (1 + y * I)‖ ^ 2 = π * y / Real.sinh (π * y) := by
   have hy' : (y : ℂ) ≠ 0 := by exact_mod_cast hy
-  have hsinh : Real.sinh (π * y) ≠ 0 := Real.sinh_ne_zero.mpr (mul_ne_zero Real.pi_ne_zero hy)
   rw [add_comm, Gamma_add_one _ (mul_ne_zero hy' I_ne_zero), norm_mul, mul_pow,
     norm_Gamma_mul_I_sq hy, norm_mul, norm_I, mul_one, norm_real, Real.norm_eq_abs, sq_abs]
   field_simp
