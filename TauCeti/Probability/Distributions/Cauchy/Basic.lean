@@ -136,8 +136,7 @@ theorem contDiff_cauchyPDFReal (x₀ : ℝ) (γ : ℝ≥0) {n : WithTop ℕ∞} 
   rcases eq_or_ne γ 0 with rfl | hγ
   · rw [cauchyPDFReal_scale_zero]
     exact contDiff_const
-  · have hpos : (0 : ℝ) < γ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hγ)
-    have h : cauchyPDFReal x₀ γ = fun x ↦ Real.pi⁻¹ * γ * ((x - x₀) ^ 2 + (γ : ℝ) ^ 2)⁻¹ :=
+  · have h : cauchyPDFReal x₀ γ = fun x ↦ Real.pi⁻¹ * γ * ((x - x₀) ^ 2 + (γ : ℝ) ^ 2)⁻¹ :=
       funext (cauchyPDFReal_def x₀ γ)
     rw [h]
     exact contDiff_const.mul ((((contDiff_id.sub contDiff_const).pow 2).add contDiff_const).inv

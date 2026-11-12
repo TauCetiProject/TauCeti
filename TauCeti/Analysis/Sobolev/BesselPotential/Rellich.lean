@@ -285,7 +285,7 @@ private theorem fourierWeighted_comp_eq (φ : 𝓢(E, ℂ)) (h : r ≤ s) :
   -- On a Schwartz function `u`, `φ u` is the Schwartz function `φ • u`.
   have hφu : inclusion h (smulLeftCLM s φ (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)) =
       SchwartzMap.toBesselPotentialSpaceCLM r 2 (SchwartzMap.smulLeftCLM F (φ : E → ℂ) u) :=
-    ext (by simp [smulLeftCLM_toTemperedDistributionCLM_eq φ.hasTemperateGrowth])
+    ext (by simp [smulLeftCLM_toTemperedDistributionCLM_eq])
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hφu]
   refine (TauCeti.integralOperatorLp_eq_iff.2 ?_).symm
   filter_upwards [fourierWeighted_toBesselPotentialSpaceCLM r (SchwartzMap.smulLeftCLM F

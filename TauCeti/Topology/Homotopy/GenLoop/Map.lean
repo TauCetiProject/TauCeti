@@ -56,16 +56,13 @@ theorem map_const (f : C(X, Y)) (hf : f x = y) :
   intro t
   simp [hf]
 
--- Not `simp`: baking the basepoint proof `rfl` into the statement forces the target basepoint
--- to be `(ContinuousMap.const X y) x` rather than `y`, so `simp` cannot close even its own
--- statement. Use it as an explicit rewrite.
 /-- Postcomposition by a constant map yields the constant generalized loop. -/
-theorem map_continuousMap_const (y : Y) (p : Ω^ N X x) :
-    map (ContinuousMap.const X y) rfl p = (_root_.GenLoop.const : Ω^ N Y y) := by
+@[simp]
+theorem map_continuousMap_const (c : Y) (hc : ContinuousMap.const X c x = y) (p : Ω^ N X x) :
+    map (ContinuousMap.const X c) hc p = (_root_.GenLoop.const : Ω^ N Y y) := by
   apply _root_.GenLoop.ext
   intro t
-  rw [map_apply]
-  exact _root_.GenLoop.const_apply.symm
+  simpa using hc
 
 @[simp]
 theorem map_id (p : Ω^ N X x) :

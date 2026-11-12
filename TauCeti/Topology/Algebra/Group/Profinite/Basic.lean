@@ -220,10 +220,8 @@ theorem _root_.Subgroup.isOpen_of_index_sup_openNormalSubgroup_le {H : Subgroup 
     refine (Set.finite_Iic m).subset ?_
     rintro k ⟨N, -, rfl⟩
     exact hbound N
-  have hnonempty : (Set.univ : Set (OpenNormalSubgroup G)).Nonempty :=
-    ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }, Set.mem_univ _⟩
   obtain ⟨N₀, -, hmax⟩ :=
-    Set.Finite.exists_maximalFor' f Set.univ hfinite hnonempty
+    Set.Finite.exists_maximalFor' f Set.univ hfinite Set.univ_nonempty
   have hmax_le (N : OpenNormalSubgroup G) : f N ≤ f N₀ := by
     rcases le_total (f N) (f N₀) with hle | hle
     · exact hle

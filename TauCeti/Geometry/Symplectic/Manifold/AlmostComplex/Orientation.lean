@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 
@@ -21,7 +22,10 @@ The determinant is positive when `b` is positively oriented. Hence a top form th
 on every frame `(e, j e)` is nonnegative on every positively oriented basis
 (`TauCeti.SmoothAlmostComplexStructure.apply_basis_nonneg_of_forall_nonneg`). This is the
 pointwise input to the positivity of energy integrals `∫_C u^* ω` of pseudoholomorphic curves,
-whose densities `(u^* ω)(e, j e)` are nonnegative when `ω` tames the target structure.
+whose densities `(u^* ω)(e, j e)` are nonnegative when `ω` tames the target structure. Combined
+with the positivity of integration, a continuous compactly supported top form that is nonnegative on
+every frame `(e, j e)` and positive on one has positive integral
+(`TauCeti.SmoothAlmostComplexStructure.integralTopForm_pos_of_forall_nonneg`).
 
 ## References
 
@@ -69,6 +73,30 @@ theorem apply_basis_nonneg_of_forall_nonneg {c : C}
   · rw [hb₀]
     exact hη (b 0)
   · rw [hb, ho b₀ (by rw [hb₀]; simp)]
+
+/-- **Top forms positive on a complex frame have positive integral.** Let `j` be an almost complex
+structure on a surface `C`, oriented so that every frame `(e, j e)` is positive. A continuous,
+compactly supported top form `η` with `η (e, j e) ≥ 0` for every frame, and `η (e₀, j e₀) > 0` for
+one frame, has positive integral. -/
+theorem integralTopForm_pos_of_forall_nonneg
+    (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    {η : RoughForm I C ℝ 2} (hη : IsSmoothForm I 0 η)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) η))
+    (hnn : ∀ c e, 0 ≤ η c ![e, j c e]) {c₀ : C} {e₀ : TangentSpace I c₀}
+    (hpos : 0 < η c₀ ![e₀, j c₀ e₀]) : 0 < integralTopForm o η := by
+  have he₀ : e₀ ≠ 0 := by
+    rintro rfl
+    exact hpos.ne ((η c₀).map_coord_zero 0 rfl).symm
+  -- The positive frame `(e₀, j e₀)` at `c₀`.
+  set b₀ := basisOfLinearIndependentOfCardEqFinrank
+    ((j.almostComplexStructureAt c₀).linearIndependent_pair he₀)
+    (by simpa using (o.finrank_tangentSpace_eq c₀).symm)
+  have hb₀ : ⇑b₀ = ![e₀, j c₀ e₀] := by
+    rw [coe_basisOfLinearIndependentOfCardEqFinrank, almostComplexStructureAt_apply]
+  exact integralTopForm_pos o hη hc
+    (fun c b hb ↦ j.apply_basis_nonneg_of_forall_nonneg (ho c) (hnn c) b hb)
+    ⟨c₀, b₀, ho c₀ b₀ (by rw [hb₀]; simp), hb₀ ▸ hpos⟩
 
 end SmoothAlmostComplexStructure
 

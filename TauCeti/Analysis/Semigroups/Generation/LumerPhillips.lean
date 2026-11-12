@@ -72,8 +72,8 @@ theorem yosidaLimitSemigroup_generator (hA : IsMDissipative A)
   · intro x t ht
     have hx := hA.tendsto_yosidaLimit hdense ht (x : X)
     rwa [← hA.yosidaLimitSemigroup_realOperator_apply hdense ht (x : X)] at hx
-  · intro x T hT
-    exact (hA.tendstoUniformlyOn_exp_yosidaApproximation hdense (A x) hT).congr_right
+  · intro x T _
+    exact (hA.tendstoUniformlyOn_exp_yosidaApproximation hdense (A x)).congr_right
       fun u hu => (hA.yosidaLimitSemigroup_realOperator_apply hdense hu.1 (A x)).symm
   · refine fun _ => ⟨1, ?_⟩
     filter_upwards [eventually_gt_atTop (0 : ℝ)] with lambda hlambda u hu

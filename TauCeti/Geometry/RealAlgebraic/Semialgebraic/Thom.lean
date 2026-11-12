@@ -123,7 +123,7 @@ private theorem tarskiQuery_map_eval_eq_integralNormalization {P : (MvPolynomial
     simp only [← hmap, a, leadingCoeff, coeff_map, hdeg]
   have ha : MvPolynomial.eval x a ≠ 0 := hlc ▸ leadingCoeff_ne_zero.mpr hx
   rw [← integralNormalization_map _ _ ha, hmap,
-    tarskiQuery_integralNormalization hx fun z _ => ?_]
+    tarskiQuery_integralNormalization fun z _ => ?_]
   rw [hlc, eval_map, sign_eval₂_C_pow_mul_scaleRoots _ _ ha, eval_map]
 
 variable [IsRealClosed R]

@@ -52,7 +52,9 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
   data to be pairwise disjoint and to lie in the disc `‖w‖ ≤ 2 exp (2π)`.
 
 The pair-of-pants datum itself is the case of the inputs `0` and `1` with scales `1` and `-1`
-(`TauCeti.Floer.puncturedSpherePerturbation_eq_pairOfPantsPerturbation`).
+(`TauCeti.Floer.puncturedSpherePerturbation_eq_pairOfPantsPerturbation`), and with one input
+switched off it is the case of the single input end of the other input
+(`TauCeti.Floer.pairOfPantsPerturbation_update_zero_eq_puncturedSpherePerturbation`).
 
 ## References
 
@@ -84,7 +86,7 @@ variable {H : ℝ → M → ℝ} {c a : ℂ}
 `v ↦ K((w - c) / a)(v / a)` along the affine map `w ↦ c + a w` of the positive plane datum `K` of
 `H`, the pair-of-pants datum whose only nonzero Hamiltonian is `H`, at the input `0`. Its end lift
 is `z ↦ c + a φ₀(z)`, where `φ₀` is the end lift of the input `0`, and in the coordinates `(s, t)`
-of that end lift it is `β(s - 1) H(t) dt` (`inputEndPerturbation_cylindricalEndLift_of_pos`). -/
+of that end lift it is `β(s - 1) H(t) dt` (`inputEndPerturbation_cylindricalEndLift_apply`). -/
 def inputEndPerturbation (c a : ℂ) (H : ℝ → M → ℝ) (w : ℂ) (x : M) : ℂ →L[ℝ] ℝ :=
   (positivePlanePerturbation H ((w - c) / a) x).comp (ContinuousLinearMap.mul ℝ ℂ a⁻¹)
 
@@ -113,14 +115,48 @@ theorem inputEndPerturbation_eq_zero_of_le_norm_sub {w : ℂ}
     rw [norm_div, le_div_iff₀ (norm_pos_iff.2 ha)]
     linarith
 
-/-- **The input end datum on its end.** On the part `s > 0` of the moved end, the pullback of the
-datum along its end lift `z ↦ c + a φ₀(z)` is the continuation datum `β(s - 1) H(t) dt`. -/
-theorem inputEndPerturbation_cylindricalEndLift_of_pos (hH : Periodic H 1) (ha : a ≠ 0) {z : ℂ}
-    (hz : 0 < z.re) (x : M) (v : ℂ) :
+/-- At its center `c`, where the end coordinate takes the junk longitudinal value `0` (from
+`Complex.log 0 = 0`), the input end datum is `0`. -/
+@[simp]
+theorem inputEndPerturbation_self (c a : ℂ) (H : ℝ → M → ℝ) (x : M) :
+    inputEndPerturbation c a H c x = 0 := by
+  have h : (zero.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter zero
+  ext v
+  simp [inputEndPerturbation_apply, positivePlanePerturbation_def, h,
+    smoothTransition.zero_of_nonpos]
+
+/-- The input end datum of the zero Hamiltonian vanishes. -/
+@[simp]
+theorem inputEndPerturbation_zero (c a : ℂ) (w : ℂ) (x : M) :
+    inputEndPerturbation c a (0 : ℝ → M → ℝ) w x = 0 := by
+  ext v
+  simp [inputEndPerturbation_apply, positivePlanePerturbation_def]
+
+/-- **Pushing an input end forward along an affine map.** The pushforward
+`v ↦ K((w - c₀) / f)(v / f)` of the datum of the input end with center `c` and scale `a` along
+`w ↦ c₀ + f w` is the datum of the input end with center `c₀ + f c` and scale `f a`. -/
+theorem inputEndPerturbation_sub_div_comp (c₀ f c a : ℂ) (H : ℝ → M → ℝ) (w : ℂ) (x : M) :
+    (inputEndPerturbation c a H ((w - c₀) / f) x).comp (ContinuousLinearMap.mul ℝ ℂ f⁻¹) =
+      inputEndPerturbation (c₀ + f * c) (f * a) H w x := by
+  ext v
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp [inputEndPerturbation_apply]
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp [inputEndPerturbation_apply]
+  have hw : ((w - c₀) / f - c) / a = (w - (c₀ + f * c)) / (f * a) := by
+    field_simp
+    ring
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.mul_apply',
+    inputEndPerturbation_apply, hw, mul_inv, mul_assoc, mul_left_comm a⁻¹]
+
+/-- **The input end datum on its end.** The pullback of the datum along its end lift
+`z ↦ c + a φ₀(z)` is the continuation datum `β(s - 1) H(t) dt`. -/
+theorem inputEndPerturbation_cylindricalEndLift_apply (hH : Periodic H 1) (ha : a ≠ 0) (z : ℂ)
+    (x : M) (v : ℂ) :
     inputEndPerturbation c a H (c + a * zero.cylindricalEndLift z) x
         (a * (deriv zero.cylindricalEndLift z * v)) =
       v.im * (smoothTransition (z.re - 1) * H z.im x) := by
-  rw [inputEndPerturbation_add_mul ha, positivePlanePerturbation_cylindricalEndLift_of_pos hH hz]
+  rw [inputEndPerturbation_add_mul ha, positivePlanePerturbation_cylindricalEndLift_apply hH]
 
 end InputEnd
 
@@ -173,6 +209,18 @@ theorem puncturedSpherePerturbation_eq_pairOfPantsPerturbation (H : Puncture →
     Puncture.sum_univ]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   rw [h₀, h₁, negativePlanePerturbation_def, endSign_inf, neg_one_mul]
+
+/-- **A pair of pants with one input switched off has one input end.** With the Hamiltonian of the
+input `q` set to zero, the pair-of-pants datum is the datum of the single input end of the other
+input `r`, with center `c_r` and scale `2 b_r`, and of the output Hamiltonian. -/
+theorem pairOfPantsPerturbation_update_zero_eq_puncturedSpherePerturbation {q r : Puncture}
+    (hq : q ≠ inf) (hrq : r ≠ q) (hr : r ≠ inf) (H : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (update H q 0) =
+      puncturedSpherePerturbation ![r.endCenter] ![2 * r.endScale] ![H r] (H inf) := by
+  funext w x
+  rw [← puncturedSpherePerturbation_eq_pairOfPantsPerturbation, puncturedSpherePerturbation_def,
+    puncturedSpherePerturbation_def, Fin.sum_univ_two, Fin.sum_univ_one]
+  cases q <;> cases r <;> simp_all
 
 /-- **Off the input ends the datum is the output datum.** At a point outside the supports
 `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` of all the input end data, the datum is the negative plane
@@ -244,7 +292,7 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_of_pos
       Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
     nlinarith [norm_pos_iff.2 ha]
   rw [puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout hlt,
-    inputEndPerturbation_cylindricalEndLift_of_pos hH ha hz]
+    inputEndPerturbation_cylindricalEndLift_apply hH ha]
 
 /-- **The datum is `H i(t) dt` far out on each input end.** Under the hypotheses of
 `puncturedSpherePerturbation_cylindricalEndLift_of_pos`, on the part `s ≥ 2` of the input end `i`
@@ -275,7 +323,7 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
     gcongr
     nlinarith [Real.pi_pos]
   rw [puncturedSpherePerturbation_eq_negativePlanePerturbation fun i => ?_,
-    negativePlanePerturbation_cylindricalEndLift_of_neg hH (by linarith)]
+    negativePlanePerturbation_cylindricalEndLift_apply hH]
   have h := norm_sub_norm_le (inf.cylindricalEndLift z) (c i)
   nlinarith [hout i, norm_nonneg (a i), exp_neg_two_pi_lt_one]
 

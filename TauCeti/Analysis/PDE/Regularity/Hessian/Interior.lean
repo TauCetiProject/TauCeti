@@ -384,7 +384,7 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_ad
     fun {s t} hs hst htR {η} hη => by
       simpa only [finrank_euclideanSpace_fin] using
         hstepB u hs hst ((ball_subset_ball htR).trans hR) hη
-  have hΦ := sq_mul_le_of_forall_le (k := k) (h := h) (y := y) hR0 hz0
+  have hΦ := sq_mul_le_of_forall_le (k := k) (h := h) (y := y) hR0
     (by positivity : 0 ≤ C / lam * F) (by linarith : 1 ≤ K + Q) (by linarith : 0 ≤ cA + 1) hcB
     (by positivity : (0 : ℝ) ≤ n ^ 2) (fun _ => lpNorm_nonneg) (fun _ => lpNorm_nonneg)
     (fun σ hσ => hmono (Wkp.iteratedGradient 1 u) hσ.2.le) (fun σ hσ => hmono G hσ.2.le)
@@ -405,8 +405,6 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_ad
     generalize Λ / lam = u₁ at h1 ⊢
     generalize (β * R + γ * R ^ 2) / lam = u₂ at h2 ⊢
     generalize (C : ℝ) * n ^ 2 = m at hn2 ⊢
-    have hexp : (m + C + 1) * (1 + (u₁ + u₂)) =
-        m * u₁ + C * u₂ + 1 + (m + C + (C + 1) * u₁ + (m + 1) * u₂) := by ring
     linarith [mul_nonneg (by linarith : (0 : ℝ) ≤ C + 1) h1,
       mul_nonneg (by linarith : 0 ≤ m + 1) h2]
   set X := R ^ 2 / lam * F with hX
