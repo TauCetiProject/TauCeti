@@ -47,7 +47,7 @@ noncomputable def opNorm : UnitarilyInvariantSeminorm 𝕜 E F where
         (U : F →L[𝕜] F).comp ((LinearMap.toContinuousLinearMap A).comp (V : E →L[𝕜] E)) := by
       ext; simp
     simp only [Seminorm.comp_apply, coe_normSeminorm, LinearEquiv.coe_coe, h]
-    rcases subsingleton_or_nontrivial E with hE | hE
+    rcases subsingleton_or_nontrivial E with hE | _
     · simp [Subsingleton.elim (LinearMap.toContinuousLinearMap A) 0]
     · simp
 

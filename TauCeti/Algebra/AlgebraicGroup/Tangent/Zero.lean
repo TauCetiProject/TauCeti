@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
-import Mathlib.RingTheory.Ideal.IdempotentFG
+import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Connected
 import TauCeti.RingTheory.Ideal.Cotangent.Basic
 
 /-!
@@ -91,21 +91,8 @@ theorem augmentation_eq_bot_iff_finrank_lie_eq_zero
     have hidempotent : IsIdempotentElem (Bialgebra.AugmentationIdeal k H) :=
       (Ideal.cotangent_subsingleton_iff
         (I := Bialgebra.AugmentationIdeal k H)).mp hsubsingleton
-    obtain ⟨e, he, hspan⟩ :=
-      (Ideal.isIdempotentElem_iff_of_fg
-        (Bialgebra.AugmentationIdeal k H)
-        hfg).mp hidempotent
-    rcases he.eq_zero_or_eq_one_of_preconnectedSpace with hezero | heone
-    · have haugmentationIdeal : Bialgebra.AugmentationIdeal k H = ⊥ := by
-        simpa [hezero] using hspan
-      apply HopfIdeal.ext
-      intro x
-      rw [← mem_toIdeal, ← mem_toIdeal, augmentation_toIdeal, bot_toIdeal]
-      simpa only [Bialgebra.AugmentationIdeal, RingHom.ker_coe_toRingHom] using
-        SetLike.ext_iff.mp haugmentationIdeal x
-    · exfalso
-      apply RingHom.ker_ne_top (Bialgebra.counitAlgHom k H).toRingHom
-      simpa [Bialgebra.AugmentationIdeal, heone] using hspan
+    exact eq_bot_of_isIdempotentElem (augmentation k H) (by rwa [augmentation_toIdeal])
+      (by rwa [augmentation_toIdeal])
 
 end HopfIdeal
 

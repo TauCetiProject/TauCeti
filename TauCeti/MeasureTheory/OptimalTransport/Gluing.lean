@@ -81,9 +81,6 @@ and stating it this way keeps the theorems usable by any packaging of couplings 
   Chapter 1. Both state it for three Polish probability spaces; the versions here ask for a
   standard Borel structure on one outer space only — or, in the countable-middle version, for
   nothing at all on the outer spaces — and no normalisation of the plans.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, the design-validation milestone preceding
-  the arbitrary-carrier triangle inequality of Layer 1 — "finite coupling gluing with zero-mass
-  middle atoms explicit". `TauCeti.MeasureTheory.exists_glue_of_countable_middle` is that gluing.
 -/
 
 public section

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.CoefficientComparison
 public import TauCeti.Geometry.Symplectic.Floer.Grading
 public import TauCeti.RingTheory.NovikovModule.Bilinear
+public import TauCeti.RingTheory.NovikovModule.Commutativity
 public import TauCeti.RingTheory.NovikovModule.Associativity
 public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.RingTheory.NovikovModule.Topology
@@ -64,6 +65,20 @@ on the completed capped modules. This file proves:
   one-dimensional moduli spaces, then the product obeys `d (a ⋆ b) = d a ⋆ b + (-1)^e a ⋆ d b`
   for `a` of cochain degree `e`
   (`TauCeti.Floer.novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add`).
+* **Graded commutativity from the count identity.** Let `Q'` be the generating series of the
+  rigid pairs of pants with the two inputs exchanged, and `K` those of the rigid members of the
+  input-exchange family. If the series obey the identity
+  `Qᵢⱼₗ - (-1)^(e₁ e₂) Q'ⱼᵢₗ = ∑ₖ Kᵢⱼₖ D₀ₖₗ + ∑ₖ D₁ᵢₖ Kₖⱼₗ + (-1)^e₁ ∑ₖ D₂ⱼₖ Kᵢₖₗ` given by the
+  ends of the one-dimensional moduli spaces of the family, with `e₁ = n - μ₁(r₁ i)` and
+  `e₂ = n - μ₂(r₂ j)`, then
+  `a ⋆ b - (-1)^(e f) b ⋆' a = d₀ K(a, b) + K(d₁ a, b) + (-1)^e K(a, d₂ b)`
+  for `a` and `b` of cochain degrees `e` and `f`
+  (`novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_coefficientComparison`).
+  If moreover the classes counted by `K` satisfy the index condition of rigid members of the
+  family, whose Fredholm index at a fixed parameter is `-1`, then `K` lowers the cochain degree by
+  one, and for cocycles `a` and `b` the graded commutator is the coboundary of `K(a, b)`, so the
+  two products agree on cohomology up to the sign `(-1)^(e f)`
+  (`novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_mem_coboundaries`).
 * **The associativity homotopy from the count identity.** The rigid elements of the
   one-parameter family of four-punctured spheres between the two broken triple products are
   counted by generating series `K` indexed by three input orbits and an output orbit; their
@@ -314,6 +329,141 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add
   exact h
 
 end Leibniz
+
+section Commutativity
+
+variable [CommRing R] [Fintype ι₁] [Fintype ι₂] [Fintype ι₀] {F₁ : (Σ i, P₁ i) → ℝ}
+  {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+  (hF₂ : ∀ j γ (D : P₂ j), F₂ ⟨j, γ +ᵥ D⟩ = F₂ ⟨j, D⟩ - (-area ω c) γ)
+  (hF₀ : ∀ k γ (D : P₀ k), F₀ ⟨k, γ +ᵥ D⟩ = F₀ ⟨k, D⟩ - (-area ω c) γ)
+  {μ₁ : (Σ i, P₁ i) → ℤ} (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
+  {μ₂ : (Σ j, P₂ j) → ℤ} (hμ₂ : ∀ j γ (D : P₂ j), μ₂ ⟨j, γ +ᵥ D⟩ = degree ω c γ + μ₂ ⟨j, D⟩)
+  (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG) (Q' : ι₂ → ι₁ → ι₀ → NovikovSeries R G ωG)
+  (K : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG) (D₁ : ι₁ → ι₁ → NovikovSeries R G ωG)
+  (D₂ : ι₂ → ι₂ → NovikovSeries R G ωG) (D₀ : ι₀ → ι₀ → NovikovSeries R G ωG) (n : ℤ)
+
+include hμ₁ hμ₂ in
+/-- **Graded commutativity of class-indexed counts up to homotopy.** Let `Q` be the generating
+series of rigid pairs of pants between reference capped orbits, `Q'` those of the rigid pairs of
+pants with the two inputs exchanged, `K` those of the rigid members of the input-exchange family,
+and `D₁`, `D₂`, `D₀` those of rigid Floer cylinders of the two inputs and the output, all indexed by
+a common class group `G`. Suppose the series obey the identity
+
+`Qᵢⱼₗ - (-1)^(e₁ e₂) Q'ⱼᵢₗ = ∑ₖ Kᵢⱼₖ D₀ₖₗ + ∑ₖ D₁ᵢₖ Kₖⱼₗ + (-1)^e₁ ∑ₖ D₂ⱼₖ Kᵢₖₗ`
+
+in `G`-indexed series, where `e₁ = n - μ₁(r₁ i)` and `e₂ = n - μ₂(r₂ j)` are the cochain degrees
+of the reference caps. This is the count, class by class, of the ends of the one-dimensional moduli
+spaces of the input-exchange family between reference capped orbits. Then on the completed capped
+modules, graded by the cochain degrees `n - μ₁` and `n - μ₂`, the product, the product with
+exchanged inputs and the operation `K` of the family obey
+`a ⋆ b - (-1)^(e f) b ⋆' a = d₀ K(a, b) + K(d₁ a, b) + (-1)^e K(a, d₂ b)` for `a` of degree `e` and
+`b` of degree `f`. The signs are constant on the capped generators of each orbit, because recapping
+changes the degree by the even number `2 c₁(γ)`. -/
+theorem
+    novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_coefficientComparison
+    (hC : ∀ i j l, Q i j l -
+        negOnePowCast R ((n - μ₁ ⟨i, r₁ i⟩) * (n - μ₂ ⟨j, r₂ j⟩)) • Q' j i l =
+      ∑ k, K i j k * D₀ k l + ∑ k, D₁ i k * K k j l +
+        negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ k, D₂ j k * K i k l)
+    {e f : ℤ} {a : NovikovModule R F₁} {b : NovikovModule R F₂}
+    (ha : a ∈ gradeBy R F₁ (fun p => n - μ₁ p) e) (hb : b ∈ gradeBy R F₂ (fun p => n - μ₂ p) f) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
+          (fun i j k => coefficientComparison q hq (Q i j k)) a b -
+        negOnePowCast R (e * f) • novikovProductOfMatrix hF₂ hF₁ hF₀ r₂ r₁ r₀
+          (fun j i k => coefficientComparison q hq (Q' j i k)) b a =
+      novikovMapOfMatrix hF₀ hF₀ r₀ r₀ (fun k l => coefficientComparison q hq (D₀ k l))
+          (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
+            (fun i j k => coefficientComparison q hq (K i j k)) a b) +
+        novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
+          (fun i j k => coefficientComparison q hq (K i j k))
+          (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ (fun i k => coefficientComparison q hq (D₁ i k)) a) b +
+        negOnePowCast R e • novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
+          (fun i j k => coefficientComparison q hq (K i j k)) a
+          (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ (fun j k => coefficientComparison q hq (D₂ j k))
+            b) := by
+  -- Recapping changes the cochain degree by the even number `-2 c₁(γ)`.
+  refine novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix hF₁ hF₂ hF₀
+    r₁ r₂ r₀ _ _ _ _ _ _ (fun i γ D => ?_) (fun j γ D => ?_) (fun i j l => ?_) ha hb
+  · rw [hμ₁, show n - (degree ω c γ + μ₁ ⟨i, D⟩) - (n - μ₁ ⟨i, D⟩) = -degree ω c γ by ring]
+    exact (even_degree ω c γ).neg
+  · rw [hμ₂, show n - (degree ω c γ + μ₂ ⟨j, D⟩) - (n - μ₂ ⟨j, D⟩) = -degree ω c γ by ring]
+    exact (even_degree ω c γ).neg
+  · have h := congrArg (coefficientComparison q hq) (hC i j l)
+    simp only [map_sum, map_add, map_sub, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
+      Units.smul_def, map_zsmul] at h ⊢
+    exact h
+
+include hμ₁ hμ₂ in
+/-- **Graded commutativity of class-indexed counts on cohomology.** Under the identity of
+`novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_coefficientComparison`,
+suppose that every class counted by `K` satisfies the index condition
+`μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + μ₂(r₂) - n + 1` of rigid members of the input-exchange family, whose
+Fredholm index at a fixed parameter is `-1`, so that `K` lowers the cochain degree by one. Then
+for cocycles `a` and `b` of the cylinder differentials, of cochain degrees `e` and `f`, the graded
+commutator `a ⋆ b - (-1)^(e f) b ⋆' a` is the coboundary of `K(a, b)` in cochain degree `e + f`.
+The differentials are the ground-ring linear maps of the cylinder counts, for any potential bounds
+of their kernels. -/
+theorem novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_mem_coboundaries
+    {μ₀ : (Σ k, P₀ k) → ℤ} (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨k, D⟩)
+    (hK : ∀ i j k, ∀ A ∈ (K i j k).support,
+      μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + μ₂ ⟨j, r₂ j⟩ - n + 1)
+    (hC : ∀ i j l, Q i j l -
+        negOnePowCast R ((n - μ₁ ⟨i, r₁ i⟩) * (n - μ₂ ⟨j, r₂ j⟩)) • Q' j i l =
+      ∑ k, K i j k * D₀ k l + ∑ k, D₁ i k * K k j l +
+        negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ k, D₂ j k * K i k l)
+    {C₁ C₂ C₀ : ℝ}
+    (hδ₁ : ∀ p p',
+      mapKernelOfMatrix r₁ r₁ (fun i k => coefficientComparison q hq (D₁ i k)) p p' ≠ 0 →
+        F₁ p' ≤ F₁ p + C₁)
+    (hδ₂ : ∀ p p',
+      mapKernelOfMatrix r₂ r₂ (fun j k => coefficientComparison q hq (D₂ j k)) p p' ≠ 0 →
+        F₂ p' ≤ F₂ p + C₂)
+    (hδ₀ : ∀ p p',
+      mapKernelOfMatrix r₀ r₀ (fun k l => coefficientComparison q hq (D₀ k l)) p p' ≠ 0 →
+        F₀ p' ≤ F₀ p + C₀)
+    {e f : ℤ} {a : NovikovModule R F₁} {b : NovikovModule R F₂}
+    (ha : a ∈ (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _)).cocycles
+      (gradeBy R F₁ fun p => n - μ₁ p) e)
+    (hb : b ∈ (kernelMap hδ₂ (mapKernelOfMatrix_mem hF₂ r₂ r₂ _)).cocycles
+      (gradeBy R F₂ fun p => n - μ₂ p) f) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
+          (fun i j k => coefficientComparison q hq (Q i j k)) a b -
+        negOnePowCast R (e * f) • novikovProductOfMatrix hF₂ hF₁ hF₀ r₂ r₁ r₀
+          (fun j i k => coefficientComparison q hq (Q' j i k)) b a ∈
+      (kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀ r₀ r₀ _)).coboundaries
+        (gradeBy R F₀ fun p => n - μ₀ p) (e + f) := by
+  rw [LinearMap.mem_cocycles_iff] at ha hb
+  have hDa : novikovMapOfMatrix hF₁ hF₁ r₁ r₁ (fun i k => coefficientComparison q hq (D₁ i k)) a =
+      0 := by
+    rw [novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁]
+    exact ha.1
+  have hDb : novikovMapOfMatrix hF₂ hF₂ r₂ r₂ (fun j k => coefficientComparison q hq (D₂ j k)) b =
+      0 := by
+    rw [novikovMapOfMatrix_eq_kernelMap hF₂ hF₂ r₂ r₂ _ hδ₂]
+    exact hb.1
+  -- `K` is the product of rigid counts for the gradings `μ₀ - 1`, so `K(a, b)` has cochain
+  -- degree `e + f - 1`.
+  have hKab := novikovProductOfMatrix_coefficientComparison_mem_cochain_gradeBy r₁ r₂ r₀ q hq hF₁
+    hF₂ hF₀ hμ₁ hμ₂ (μ₀ := fun p => μ₀ p - 1) (fun k γ D => by rw [hμ₀]; ring) K
+    (fun i j k A hA => by linarith [hK i j k A hA]) ha.2 hb.2
+  have hdeg : ((fun x : ℤ => x - 1) ∘ fun p => n - (μ₀ p - 1)) = fun p => n - μ₀ p := by
+    funext p
+    simp only [Function.comp_apply]
+    ring
+  have hKab' := gradeBy_le_gradeBy_comp (R := R) (fun x : ℤ => x - 1) (e + f) hKab
+  rw [hdeg] at hKab'
+  refine LinearMap.mem_coboundaries_iff.2 ⟨_, hKab', ?_⟩
+  -- The Novikov module structures, for the vanishing of the products with `d₁ a = 0`, `d₂ b = 0`.
+  let := module (R := R) hF₁
+  let := module (R := R) hF₂
+  let := module (R := R) hF₀
+  rw [novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_coefficientComparison
+      r₁ r₂ r₀ q hq hF₁ hF₂ hF₀ hμ₁ hμ₂ Q Q' K D₁ D₂ D₀ n hC ha.2 hb.2,
+    hDa, hDb, map_zero, LinearMap.zero_apply, map_zero, smul_zero, add_zero, add_zero,
+    novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀]
+
+end Commutativity
 
 section Associativity
 
