@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Double
-public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 public import Mathlib.Algebra.Homology.HomotopyCategory.KInjective
 public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
@@ -49,7 +48,7 @@ public section
 
 namespace CochainComplex
 
-open CategoryTheory Limits Opposite
+open CategoryTheory Limits
 
 variable {C : Type*} [Category* C] [Abelian C]
 
@@ -65,14 +64,8 @@ theorem isKInjective_of_isLimit_fan {J : Type*}
     -- the evaluation functors preserve the limit, as each `eval q ⋙ coyoneda.obj (op Y)` is
     -- corepresentable and the coyoneda functors preserve limits
     let hc' (q : ℤ) : IsLimit ((HomologicalComplex.eval C _ q).mapCone c) :=
-      coyonedaJointlyReflectsLimits _ _ fun Y ↦ by
-        obtain ⟨Y⟩ := Y
-        have : PreservesLimit (Discrete.functor X)
-            (HomologicalComplex.eval C (ComplexShape.up ℤ) q ⋙ coyoneda.obj (op Y)) :=
-          preservesLimit_of_natIso _ (Functor.coreprW
-            (HomologicalComplex.eval C (ComplexShape.up ℤ) q ⋙ coyoneda.obj (op Y)))
-        exact isLimitOfPreserves
-          (HomologicalComplex.eval C (ComplexShape.up ℤ) q ⋙ coyoneda.obj (op Y)) hc
+      coyonedaJointlyReflectsLimits _ _ fun ⟨Y⟩ ↦
+        isLimitOfPreserves (HomologicalComplex.eval C _ q ⋙ coyoneda.obj ⟨Y⟩) hc
     let hom (p q : ℤ) : K.X p ⟶ c.pt.X q :=
       (hc' q).lift ⟨K.X p, Discrete.natTrans fun j ↦ (h j.as).hom p q⟩
     have hom_proj (p q : ℤ) (j : J) : hom p q ≫ (c.π.app ⟨j⟩).f q = (h j).hom p q :=
