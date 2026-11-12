@@ -30,7 +30,8 @@ for each of two minors into a fixed part and a moving part, `e₁ : t ≃ ι₁ 
 are more moving rows than the size `#t` of the minors, the signed sum of the products of the two
 minors over `σ` vanishes. Permutations that differ by a permutation of `κ₁` and one of `κ₂` give
 the same term, so the sum runs over a left transversal of the subgroup `Perm κ₁ × Perm κ₂` of
-`Perm (κ₁ ⊕ κ₂)`, for instance over the shuffles.
+`Perm (κ₁ ⊕ κ₂)`, for instance over the shuffles
+(`Equiv.Perm.isComplement_setOf_strictMono_sumCongrHom_range`).
 
 More generally, the two minors may have different sizes and be taken on columns `c ∘ j₁` and
 `c ∘ j₂`, for `j₁ : t₁ → t` and `j₂ : t₂ → t`, factoring through a common family `c : t → n`, for
@@ -101,7 +102,8 @@ variable [Fintype t] {ι₁ ι₂ κ₁ κ₂ : Type*} [Fintype κ₁] [Fintype 
 `c ∘ j₂`. The first minor has fixed rows `α` and the second fixed rows `β`, inserted along `e₁` and
 `e₂`; the moving rows `γ` are distributed over their remaining positions by `σ`. If there are more
 moving rows than `#t`, the signed sum of the products over a left transversal `T` of
-`Perm κ₁ × Perm κ₂` in `Perm (κ₁ ⊕ κ₂)` vanishes. -/
+`Perm κ₁ × Perm κ₂` in `Perm (κ₁ ⊕ κ₂)`, such as the shuffles
+(`Equiv.Perm.isComplement_setOf_strictMono_sumCongrHom_range`), vanishes. -/
 theorem sum_sign_smul_det_submatrix_comp_mul_det_submatrix_comp_eq_zero (A : Matrix m n R)
     (c : t → n) (j₁ : t₁ → t) (j₂ : t₂ → t) (e₁ : t₁ ≃ ι₁ ⊕ κ₁) (e₂ : t₂ ≃ ι₂ ⊕ κ₂) (α : ι₁ → m)
     (β : ι₂ → m) (γ : κ₁ ⊕ κ₂ → m) (hcard : Fintype.card t < Fintype.card κ₁ + Fintype.card κ₂)

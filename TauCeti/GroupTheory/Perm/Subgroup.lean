@@ -7,6 +7,9 @@ module
 
 public import Mathlib.GroupTheory.Complement
 public import Mathlib.GroupTheory.Perm.Subgroup
+public import Mathlib.Order.Sum.Order
+import Mathlib.Data.Finset.Sort
+import Mathlib.Order.WellFounded
 
 /-!
 # Subgroups of permutation groups
@@ -16,7 +19,13 @@ These formulas describe how the permutation associated by Mathlib's
 
 When `ι` has a single element, the transpositions `swap (inl default) x` of `ι ⊕ κ` form a left
 transversal of the subgroup `Perm ι × Perm κ`, the range of `Equiv.Perm.sumCongrHom`
-(`Equiv.Perm.isComplement_range_swap_inl_sumCongrHom_range`).
+(`Equiv.Perm.isComplement_range_swap_inl_sumCongrHom_range`). When `κ₁` and `κ₂` are finite linear
+orders, so do the shuffles, the permutations `σ` of `κ₁ ⊕ κ₂` that are increasing on each summand
+for the order induced by an injective map `f : κ₁ ⊕ κ₂ → L` to a linear order
+(`Equiv.Perm.isComplement_setOf_strictMono_sumCongrHom_range`), for instance for the lexicographic
+order (`Equiv.Perm.isComplement_setOf_strictMono_toLex_sumCongrHom_range`). The underlying fact is
+that exactly one permutation of a finite linear order sorts the values of an injective map
+(`Equiv.Perm.existsUnique_strictMono_comp`).
 -/
 
 public section
@@ -69,5 +78,67 @@ theorem isComplement_range_swap_inl_sumCongrHom_range (ι κ : Type*) [Unique ι
   have h : swap (.inl default) a (g (.inl default)) = .inl default := by
     simpa [Unique.eq_default (p default)] using congr($hpq (Sum.inl default)).symm
   simp [(swap_apply_eq_iff.mp h).trans (swap_apply_left _ _)]
+
+/-- Exactly one permutation of a finite linear order `α` sorts the values of an injective map
+`f : α → β` to a linear order, that is, makes `f ∘ p` strictly increasing. -/
+theorem existsUnique_strictMono_comp {α β : Type*} [LinearOrder α] [Finite α] [LinearOrder β]
+    {f : α → β} (hf : Function.Injective f) : ∃! p : Perm α, StrictMono (f ∘ p) := by
+  have := Fintype.ofFinite α
+  classical
+  -- The order isomorphism of `α` with the range of `f` gives the sorting permutation.
+  let o : α ≃o Set.range f := (Fintype.orderIsoFinOfCardEq α rfl).symm.trans
+    (Fintype.orderIsoFinOfCardEq (Set.range f) (Set.card_range_of_injective hf))
+  let p : Perm α := o.toEquiv.trans (Equiv.ofInjective f hf).symm
+  have hp : StrictMono (f ∘ p) := fun a b hab => by
+    simpa [p, Equiv.apply_ofInjective_symm hf] using o.strictMono hab
+  refine ⟨p, hp, fun q hq => Equiv.ext fun a => hf ?_⟩
+  -- Two sorting permutations give strictly increasing maps with the same range.
+  have hrange : Set.range (f ∘ q) = Set.range (f ∘ p) := by
+    rw [Set.range_comp, Set.range_comp, q.range_eq_univ, p.range_eq_univ]
+  exact congrFun ((StrictMono.range_inj_of_wellFoundedLT hq hp).1 hrange) a
+
+/-- The shuffles, the permutations of `κ₁ ⊕ κ₂` that are increasing on each summand for the order
+induced by an injective map `f` to a linear order, form a left transversal of
+`Perm κ₁ × Perm κ₂` in `Perm (κ₁ ⊕ κ₂)`. -/
+theorem isComplement_setOf_strictMono_sumCongrHom_range {κ₁ κ₂ L : Type*} [LinearOrder κ₁]
+    [Finite κ₁] [LinearOrder κ₂] [Finite κ₂] [LinearOrder L] {f : κ₁ ⊕ κ₂ → L}
+    (hf : Function.Injective f) :
+    Subgroup.IsComplement
+      {σ : Perm (κ₁ ⊕ κ₂) | StrictMono (f ∘ σ ∘ Sum.inl) ∧ StrictMono (f ∘ σ ∘ Sum.inr)}
+      (sumCongrHom κ₁ κ₂).range := by
+  rw [Subgroup.isComplement_iff_existsUnique_inv_mul_mem]
+  intro g
+  -- Sort the values of `f ∘ g` on each summand separately.
+  obtain ⟨p, hp, hpu⟩ := existsUnique_strictMono_comp (hf.comp (g.injective.comp Sum.inl_injective))
+  obtain ⟨q, hq, hqu⟩ := existsUnique_strictMono_comp (hf.comp (g.injective.comp Sum.inr_injective))
+  have hl (a : Perm κ₁) (b : Perm κ₂) :
+      f ∘ ⇑(g * sumCongr a b) ∘ Sum.inl = (f ∘ g ∘ Sum.inl) ∘ a := by
+    ext
+    simp
+  have hr (a : Perm κ₁) (b : Perm κ₂) :
+      f ∘ ⇑(g * sumCongr a b) ∘ Sum.inr = (f ∘ g ∘ Sum.inr) ∘ b := by
+    ext
+    simp
+  refine ⟨⟨g * sumCongr p q, by rw [Set.mem_ofPred_eq, hl, hr]; exact ⟨hp, hq⟩⟩,
+    ⟨(p⁻¹, q⁻¹), by simp⟩, ?_⟩
+  rintro ⟨t, ht⟩ ⟨⟨a, b⟩, hab⟩
+  -- A shuffle in the coset of `g` is `g * sumCongr a⁻¹ b⁻¹`, so `a⁻¹` and `b⁻¹` sort `f ∘ g`.
+  have ht' : t = g * sumCongr a⁻¹ b⁻¹ := by
+    rw [sumCongrHom_apply, eq_inv_mul_iff_mul_eq, ← eq_mul_inv_iff_mul_eq] at hab
+    simpa using hab
+  subst ht'
+  rw [Set.mem_ofPred_eq, hl, hr] at ht
+  ext1
+  simp only [hpu _ ht.1, hqu _ ht.2]
+
+/-- The `(κ₁, κ₂)`-shuffles, the permutations of `κ₁ ⊕ κ₂` that are increasing on each summand
+for the lexicographic order, form a left transversal of `Perm κ₁ × Perm κ₂` in
+`Perm (κ₁ ⊕ κ₂)`. -/
+theorem isComplement_setOf_strictMono_toLex_sumCongrHom_range (κ₁ κ₂ : Type*) [LinearOrder κ₁]
+    [Finite κ₁] [LinearOrder κ₂] [Finite κ₂] :
+    Subgroup.IsComplement
+      {σ : Perm (κ₁ ⊕ κ₂) | StrictMono (toLex ∘ σ ∘ Sum.inl) ∧ StrictMono (toLex ∘ σ ∘ Sum.inr)}
+      (sumCongrHom κ₁ κ₂).range :=
+  isComplement_setOf_strictMono_sumCongrHom_range toLex.injective
 
 end Equiv.Perm
