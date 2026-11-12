@@ -91,8 +91,7 @@ theorem logDeriv_Gammaℝ_ofReal {s : ℝ} (hs : 0 < s) :
     have : s = -(2 * n) := by exact_mod_cast hn
     have := n.cast_nonneg (α := ℝ)
     linarith
-  rw [logDeriv_Gammaℝ hpole, ← ofReal_ofNat 2, ← ofReal_div, digamma_ofReal, ofReal_sub,
-    ofReal_div, ofReal_div, ofReal_ofNat, ofReal_log pi_pos.le]
+  simp [logDeriv_Gammaℝ hpole, ← digamma_ofReal]
 
 /-- On the positive real axis, the logarithmic derivative of `Gammaℝ` is monotone, since real
 digamma is. -/

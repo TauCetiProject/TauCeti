@@ -174,12 +174,9 @@ theorem monotoneOn_digamma : MonotoneOn digamma (Ioi 0) := by
 
 /-- The value `ψ(1/2) = -γ - 2 log 2`. -/
 theorem digamma_one_half : digamma (1 / 2) = -eulerMascheroniConstant - 2 * log 2 := by
-  have h := Complex.digamma_one_half
-  rw [← Complex.ofReal_one, ← Complex.ofReal_ofNat 2, ← Complex.ofReal_div,
-    Complex.digamma_ofReal, ← Complex.ofReal_log zero_le_two] at h
   apply Complex.ofReal_injective
-  rw [h]
-  push_cast
+  push_cast [← Complex.digamma_ofReal, Complex.ofReal_log zero_le_two]
+  rw [Complex.digamma_one_half]
   ring
 
 /-- `ψ(1/2) = -γ - 2 log 2` is negative. -/
