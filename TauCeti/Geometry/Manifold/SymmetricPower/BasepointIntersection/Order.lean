@@ -220,30 +220,23 @@ theorem basepointIntersectionOrder_eq_analyticOrderAt_sub {s : Sym α n} (hf : C
     basepointIntersectionOrder z f w =
       analyticOrderAt (fun t => ℓ (symChartAt (K := ℂ) s (f t)) - b) w := by
   by_cases hz : f w ∈ Sym.basepointDivisor z
-  · -- The affine equation is nonzero: the divisor is a proper hyperplane in the chart.
-    have hℓ : ℓ ≠ 0 := by
-      rintro rfl
-      obtain ⟨ℓ', b', hℓ', hiff⟩ := exists_continuousLinearMap_ne_zero_mem_iff_symChartAt
-        (K := ℂ) z s ⟨f w, hs, hz⟩
-      have hb : (0 : ℂ) = b := by simpa using (hℓz _ hs).1 hz
-      have hconst : ∀ t ∈ (symChartAt (K := ℂ) s).target, ℓ' t = b' := fun t ht => by
-        have hx := (symChartAt (K := ℂ) s).map_target ht
-        have h1 := (hiff _ hx).1 ((hℓz _ hx).2
-          (by simpa [(symChartAt (K := ℂ) s).right_inv ht] using hb))
-        rwa [(symChartAt (K := ℂ) s).right_inv ht] at h1
-      have hopen := ℓ'.isOpenMap_of_ne_zero hℓ' _ (symChartAt (K := ℂ) s).open_target
-      have hsub : ℓ' '' (symChartAt (K := ℂ) s).target ⊆ {b'} := by
-        rintro _ ⟨t, ht, rfl⟩
-        exact hconst t ht
-      have hmem : b' ∈ ℓ' '' (symChartAt (K := ℂ) s).target :=
-        ⟨_, (symChartAt (K := ℂ) s).map_source hs, hconst _ ((symChartAt (K := ℂ) s).map_source hs)⟩
-      rw [Set.Subset.antisymm hsub (Set.singleton_subset_iff.2 hmem)] at hopen
-      exact not_isOpen_singleton b' hopen
-    refine basepointIntersectionOrder_eq_analyticOrderAt hf hs ha hz (H := fun c => ℓ c - b)
-      ((ℓ.analyticAt _).sub analyticAt_const)
-      (by rwa [fderiv_sub_const, ContinuousLinearMap.fderiv]) ?_
-    filter_upwards [(symChartAt (K := ℂ) s).open_source.mem_nhds hs] with x hx hxz
-    exact sub_eq_zero.2 ((hℓz x hx).1 hxz)
+  · -- Compare with a nonzero affine equation `ℓ' = b'` of the divisor in the chart.
+    obtain ⟨ℓ', b', hℓ', hiff⟩ := exists_continuousLinearMap_ne_zero_mem_iff_symChartAt
+      (K := ℂ) z s ⟨f w, hs, hz⟩
+    have hH : AnalyticAt ℂ (fun c => ℓ' c - b') (symChartAt (K := ℂ) s (f w)) :=
+      (ℓ'.analyticAt _).sub analyticAt_const
+    have hH' : fderiv ℂ (fun c => ℓ' c - b') (symChartAt (K := ℂ) s (f w)) ≠ 0 := by
+      rwa [fderiv_sub_const, ContinuousLinearMap.fderiv]
+    refine (basepointIntersectionOrder_eq_analyticOrderAt hf hs ha hz hH hH' ?_).trans
+      (hH.analyticOrderAt_comp_eq_analyticOrderAt_sub hH' ha ((hℓz _ hs).1 hz) ?_)
+    · filter_upwards [(symChartAt (K := ℂ) s).open_source.mem_nhds hs] with x hx hxz
+      exact sub_eq_zero.2 ((hiff x hx).1 hxz)
+    · filter_upwards [(symChartAt (K := ℂ) s).open_target.mem_nhds
+        ((symChartAt (K := ℂ) s).map_source hs)] with x hx hxb
+      have hx' := (symChartAt (K := ℂ) s).map_target hx
+      have h := (hiff _ hx').1 ((hℓz _ hx').2 (by rwa [(symChartAt (K := ℂ) s).right_inv hx]))
+      rw [(symChartAt (K := ℂ) s).right_inv hx] at h
+      exact sub_eq_zero.2 h
   · rw [basepointIntersectionOrder_eq_zero_of_notMem hz, eq_comm, analyticOrderAt_eq_zero]
     exact Or.inr fun h => hz ((hℓz _ hs).2 (sub_eq_zero.1 h))
 
