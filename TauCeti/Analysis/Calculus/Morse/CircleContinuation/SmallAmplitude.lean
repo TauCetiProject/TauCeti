@@ -156,9 +156,6 @@ private theorem hasDerivAt_endSolution {δ r₀ m c t : ℝ} (hm : sin (2 * (m -
   set Y := c * exp (4 * κ * baseTime t)
   have hY : 0 < 1 + Y ^ 2 := by positivity
   have hsq := sq_sqrt hY.le
-  have hb : 0 < t * (1 - t ^ 2) := by
-    have : t ^ 2 < 1 := by nlinarith
-    positivity
   -- Shift the angle by the critical point `m`, where `sin (2 (m - r₀)) = 0`.
   have hshift : 2 * (endSolution δ r₀ m c t - r₀) = 2 * arctan Y + 2 * (m - r₀) := by
     simp only [endSolution, Y]
