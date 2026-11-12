@@ -58,24 +58,25 @@ abbrev cokerTorsion (ℓ : ℕ) : AddSubgroup T.Coker :=
 noncomputable instance cokerTorsionModule (ℓ : ℕ) : Module (ZMod ℓ) (T.cokerTorsion ℓ) :=
   AddSubgroup.torsionBy.zmodModule
 
+/-- The `ℓ`-torsion subgroup of `Pic(T)` is a finitely generated abelian group, for every `ℓ`:
+it embeds into `Pic(T)`, which is finitely generated over the noetherian ring `ℤ`. -/
+private instance torsionModuleFiniteInt (ℓ : ℕ) : Module.Finite ℤ (T.torsion ℓ) :=
+  Module.Finite.of_injective (T.torsion ℓ).subtype.toIntLinearMap (T.torsion ℓ).subtype_injective
+
 /-- If `ℓ` is nonzero, then the `ℓ`-torsion subgroup of `Pic(T)` is finite.
 
 The ambient Picard group is finitely generated because it is a quotient of the finite free module
 of multidegrees.  Its `ℓ`-torsion subgroup is therefore a finitely generated torsion abelian group.
 -/
 theorem finite_torsion {ℓ : ℕ} (hℓ : ℓ ≠ 0) : Finite (T.torsion ℓ) := by
-  let _ : Module.Finite ℤ (T.torsion ℓ) := by
-    exact (inferInstance : Module.Finite ℤ (T.torsion ℓ).toIntSubmodule)
   apply Module.finite_of_fg_torsion
   exact Submodule.torsionBy_isTorsion_nonZeroDivisor (ℓ : ℤ) (by simp [hℓ])
 
 /-- The `ℓ`-torsion subgroup of `Pic(T)` is finitely generated over `ZMod ℓ`, for every `ℓ`:
 it is a finitely generated abelian group, as a subgroup of the finitely generated group `Pic(T)`.
 -/
-noncomputable instance torsionModuleFinite (ℓ : ℕ) : Module.Finite (ZMod ℓ) (T.torsion ℓ) := by
-  have : Module.Finite ℤ (T.torsion ℓ) :=
-    inferInstanceAs (Module.Finite ℤ (T.torsion ℓ).toIntSubmodule)
-  exact Module.Finite.of_restrictScalars_finite ℤ _ _
+noncomputable instance torsionModuleFinite (ℓ : ℕ) : Module.Finite (ZMod ℓ) (T.torsion ℓ) :=
+  Module.Finite.of_restrictScalars_finite ℤ _ _
 
 /-- The cardinality of prime torsion is the prime raised to its vector-space dimension. -/
 theorem natCard_torsion (ℓ : ℕ) [Fact ℓ.Prime] :
