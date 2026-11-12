@@ -159,9 +159,8 @@ theorem chartHolderNorm_add_le {f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯}
 @[simp]
 theorem chartHolderNorm_smul (c : 𝕜) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
     chartHolderNorm x K k hk α (c • f) = ‖c‖₊ * chartHolderNorm x K k hk α f := by
-  rw [chartHolderNorm, chartHolderNorm, coe_restrict_chartIteratedFDeriv_smul, nnHolderNorm,
-    nnHolderNorm, eHolderNorm_smul (Y := E [×k]→L[𝕜] F) c, ENNReal.toNNReal_mul,
-    ENNReal.toNNReal_coe]
+  simp only [chartHolderNorm, coe_restrict_chartIteratedFDeriv_smul, nnHolderNorm,
+    eHolderNorm_smul (Y := E [×k]→L[𝕜] F) c, ENNReal.toNNReal_mul, ENNReal.toNNReal_coe]
 
 /-- **Hölder estimate.** On a map whose coordinate derivative is Hölder, the Hölder seminorm
 bounds the oscillation of the `k`th coordinate derivative on `K`. -/
@@ -170,9 +169,8 @@ theorem MemChartHolder.norm_chartIteratedFDeriv_sub_le {f : C^n⟮I, M; 𝓘(�
     (hw : w ∈ K) :
     ‖chartIteratedFDeriv f x k hk z - chartIteratedFDeriv f x k hk w‖ ≤
       chartHolderNorm x K k hk α f * dist z w ^ (α : ℝ) := by
-  have h := hf.holderWith.dist_le (⟨z, hz⟩ : K) ⟨w, hw⟩
-  rw [dist_eq_norm] at h
-  exact h
+  simpa only [chartHolderNorm, dist_eq_norm, ContinuousMap.restrict_apply, Subtype.dist_eq] using
+    hf.holderWith.dist_le (⟨z, hz⟩ : K) ⟨w, hw⟩
 
 /-- **Hölder bounds pass to limits.** If the `k`th coordinate derivatives of `u m` converge
 pointwise on `K` to those of `g`, and from `N` on the differences `u N - u m` have Hölder
@@ -214,6 +212,27 @@ theorem mem_finiteAtlasHolderSubmodule_iff (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯)
   Iff.rfl
 
 end FiniteAtlas
+
+section Convergence
+
+variable {ι : Type*} [Fintype ι] {c : ι → M}
+  {K : ∀ i, TopologicalSpace.Compacts (extChartAt I (c i)).target} {k : ℕ} {hk : k ≤ n}
+
+/-- Convergence in the finite-atlas `C^k` seminorm gives pointwise convergence of the coordinate
+derivatives of order at most `k` on the pieces. -/
+theorem tendsto_chartIteratedFDeriv_of_tendsto_finiteAtlasSeminorm {β : Type*} {l : Filter β}
+    {u : β → C^n⟮I, M; 𝓘(𝕜, F), F⟯} {g : C^n⟮I, M; 𝓘(𝕜, F), F⟯}
+    (h : Tendsto (fun b ↦ finiteAtlasSeminorm c K k hk (u b - g)) l (𝓝 0)) (i : ι) {m : ℕ}
+    (hm : m ≤ k) {z : (extChartAt I (c i)).target} (hz : z ∈ K i) :
+    Tendsto (fun b ↦ chartIteratedFDeriv (u b) (c i) m ((Nat.cast_le.mpr hm).trans hk) z) l
+      (𝓝 (chartIteratedFDeriv g (c i) m ((Nat.cast_le.mpr hm).trans hk) z)) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun b ↦ ?_) h
+  have hb := (finiteAtlasSeminorm_le_iff c K k hk (u b - g) (apply_nonneg _ _)).mp le_rfl i m hm
+    z hz
+  rwa [chartIteratedFDeriv_sub, ContinuousMap.sub_apply] at hb
+
+end Convergence
 
 end ContMDiffMap
 
@@ -344,6 +363,29 @@ theorem norm_smul_eq (a : 𝕜) (f : A.CkHolderSpace k α F) : ‖a • f‖ = �
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [ContMDiffMap.chartHolderNorm_smul, NNReal.coe_mul, coe_nnnorm]
 
+/-- The `C^{k,α}` norm vanishes only at zero. -/
+protected theorem norm_eq_zero_iff (f : A.CkHolderSpace k α F) : ‖f‖ = 0 ↔ f = 0 := by
+  constructor
+  · intro h
+    have h0 : ContMDiffMap.finiteAtlasSeminorm A.center A.piece k le_rfl
+        (toContMDiffMap A k α F f) = 0 := by
+      have := Finset.sum_nonneg fun i (_ : i ∈ Finset.univ) ↦
+        (ContMDiffMap.chartHolderNorm (A.center i) (A.piece i) k le_rfl α
+          (toContMDiffMap A k α F f)).coe_nonneg
+      have := apply_nonneg (ContMDiffMap.finiteAtlasSeminorm (F := F) A.center A.piece k
+        le_rfl) (toContMDiffMap A k α F f)
+      rw [norm_def] at h
+      linarith
+    refine toContMDiffMap_injective ?_
+    rw [map_zero]
+    exact (ContMDiffMap.finiteAtlasSeminorm_eq_zero_iff
+      (fun y ↦ (A.interior_cover y).imp fun _ ⟨hy, hyK⟩ ↦ ⟨hy, interior_subset hyK⟩)
+      k le_rfl _).mp h0
+  · rintro rfl
+    rw [norm_def, map_zero, map_zero, zero_add]
+    exact Finset.sum_eq_zero fun i _ ↦ by
+      rw [ContMDiffMap.chartHolderNorm_zero, NNReal.coe_zero]
+
 /-- The normed group structure of the Hölder norm. -/
 noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (A.CkHolderSpace k α F) :=
   NormedAddCommGroup.ofCore (𝕜 := 𝕜)
@@ -364,27 +406,7 @@ noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (A.CkHolderSp
               (memChartHolder g i)
         linarith [map_add_le_add (ContMDiffMap.finiteAtlasSeminorm (F := F) A.center A.piece k
           le_rfl) (toContMDiffMap A k α F f) (toContMDiffMap A k α F g)]
-      norm_eq_zero_iff f := by
-        constructor
-        · intro h
-          have h0 : ContMDiffMap.finiteAtlasSeminorm A.center A.piece k le_rfl
-              (toContMDiffMap A k α F f) = 0 := by
-            have := Finset.sum_nonneg fun i (_ : i ∈ Finset.univ) ↦
-              (ContMDiffMap.chartHolderNorm (A.center i) (A.piece i) k le_rfl α
-                (toContMDiffMap A k α F f)).coe_nonneg
-            have := apply_nonneg (ContMDiffMap.finiteAtlasSeminorm (F := F) A.center A.piece k
-              le_rfl) (toContMDiffMap A k α F f)
-            rw [norm_def] at h
-            linarith
-          refine toContMDiffMap_injective ?_
-          rw [map_zero]
-          exact (ContMDiffMap.finiteAtlasSeminorm_eq_zero_iff
-            (fun y ↦ (A.interior_cover y).imp fun _ ⟨hy, hyK⟩ ↦ ⟨hy, interior_subset hyK⟩)
-            k le_rfl _).mp h0
-        · rintro rfl
-          rw [norm_def, map_zero, map_zero, zero_add]
-          exact Finset.sum_eq_zero fun i _ ↦ by
-            rw [ContMDiffMap.chartHolderNorm_zero, NNReal.coe_zero] }
+      norm_eq_zero_iff := CkHolderSpace.norm_eq_zero_iff }
 
 /-- The normed space structure of the Hölder norm. -/
 noncomputable instance instNormedSpace : NormedSpace 𝕜 (A.CkHolderSpace k α F) where
@@ -428,6 +450,22 @@ theorem norm_chartIteratedFDeriv_sub_le (f : A.CkHolderSpace k α F) (i : A.ι)
     (mul_le_mul_of_nonneg_right (chartHolderNorm_le_norm f i)
       (Real.rpow_nonneg dist_nonneg _))
 
+/-- A Cauchy sequence in `C^{k,α}(M, F)` has underlying `C^k` maps Cauchy for the finite-atlas
+`C^k` norm. -/
+theorem cauchySeq_toContMDiffMap {u : ℕ → A.CkHolderSpace k α F} (hu : CauchySeq u) :
+    letI := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := F) k A.interior_cover
+    CauchySeq fun n ↦ toContMDiffMap A k α F (u n) := by
+  let := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := F) k A.interior_cover
+  refine Metric.cauchySeq_iff.mpr fun ε hε ↦ ?_
+  obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hu ε hε
+  refine ⟨N, fun m hm n hn ↦ ?_⟩
+  have h := hN m hm n hn
+  rw [dist_eq_norm] at h ⊢
+  rw [ContMDiffMap.norm_finiteAtlas]
+  refine lt_of_le_of_lt ?_ h
+  rw [← map_sub]
+  exact finiteAtlasSeminorm_le_norm (u m - u n)
+
 section Complete
 
 variable [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E] [I.Boundaryless] [CompleteSpace F]
@@ -440,18 +478,7 @@ instance instCompleteSpace : CompleteSpace (A.CkHolderSpace k α F) := by
   have := ContMDiffMap.completeSpace_finiteAtlas (F := F) k A.interior_cover
   refine Metric.complete_of_cauchySeq_tendsto fun u hu ↦ ?_
   let v (n : ℕ) : C^k⟮I, M; 𝓘(𝕜, F), F⟯ := toContMDiffMap A k α F (u n)
-  -- The underlying `C^k` maps form a Cauchy sequence for the finite-atlas norm.
-  have hv : CauchySeq v := by
-    refine Metric.cauchySeq_iff.mpr fun ε hε ↦ ?_
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hu ε hε
-    refine ⟨N, fun m hm n hn ↦ ?_⟩
-    have h := hN m hm n hn
-    rw [dist_eq_norm] at h ⊢
-    rw [ContMDiffMap.norm_finiteAtlas]
-    refine lt_of_le_of_lt ?_ h
-    rw [← map_sub]
-    exact finiteAtlasSeminorm_le_norm (u m - u n)
-  obtain ⟨g, hg⟩ := cauchySeq_tendsto_of_complete hv
+  obtain ⟨g, hg⟩ := cauchySeq_tendsto_of_complete (cauchySeq_toContMDiffMap hu)
   have hg0 : Tendsto (fun n ↦ ContMDiffMap.finiteAtlasSeminorm A.center A.piece k le_rfl
       (v n - g)) atTop (𝓝 0) := by
     refine (tendsto_iff_norm_sub_tendsto_zero.mp hg).congr fun n ↦ ?_
@@ -459,12 +486,8 @@ instance instCompleteSpace : CompleteSpace (A.CkHolderSpace k α F) := by
   -- The `k`th coordinate derivatives converge pointwise on the pieces.
   have hpt (i : A.ι) (z) (hz : z ∈ (A.piece i : Set (extChartAt I (A.center i)).target)) :
       Tendsto (fun n ↦ ContMDiffMap.chartIteratedFDeriv (v n) (A.center i) k le_rfl z) atTop
-        (𝓝 (ContMDiffMap.chartIteratedFDeriv g (A.center i) k le_rfl z)) := by
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hg0
-    have h := (ContMDiffMap.finiteAtlasSeminorm_le_iff A.center A.piece k le_rfl (v n - g)
-      (apply_nonneg _ _)).mp le_rfl i k le_rfl z hz
-    rwa [ContMDiffMap.chartIteratedFDeriv_sub, ContinuousMap.sub_apply] at h
+        (𝓝 (ContMDiffMap.chartIteratedFDeriv g (A.center i) k le_rfl z)) :=
+    ContMDiffMap.tendsto_chartIteratedFDeriv_of_tendsto_finiteAtlasSeminorm hg0 i le_rfl hz
   -- A uniform bound `C` on the tail of the sequence bounds the Hölder seminorms of the
   -- difference with the limit.
   have hH (n : ℕ) (C : ℝ≥0) (hC : ∀ m ≥ n, ‖u n - u m‖ ≤ C) (i : A.ι) :
