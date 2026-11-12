@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -96,9 +98,20 @@ families of operators.
   norm of `Op(a)` are bounded by finitely many seminorms of the position derivatives of `a`,
   uniformly over the symbols vanishing outside a fixed compact set.
 * `TauCeti.Symbol.quantizeSobolev_add`, `TauCeti.Symbol.quantizeSobolev_smul`,
-  `TauCeti.Symbol.quantizeSobolev_sub`: linearity of `Op(a)` in the symbol.
+  `TauCeti.Symbol.quantizeSobolev_sub`, `TauCeti.Symbol.toDistr_quantizeSobolev_sub_apply`:
+  linearity of `Op(a)` in the symbol.
 * `TauCeti.Symbol.continuous_quantizeSobolev`: continuity in operator norm along continuous
   families of symbols vanishing outside a fixed compact set.
+* `TauCeti.Symbol.toDistr_quantizeSobolev_congr`: the operators for different Sobolev orders `s`
+  and different symbol orders `m` agree, as maps of tempered distributions, on symbols with the same
+  coefficient.
+* `TauCeti.Symbol.toDistr_quantizeSobolev_ofSpatial_smul_id`: for a Schwartz function `φ` such
+  that the symbol `φ(x) id` has compact spatial support, for instance a compactly supported `φ`
+  (`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_smul_id`), this symbol quantizes to
+  multiplication by `φ` (`BesselPotentialSpace.smulLeftCLM`).
+* `TauCeti.Symbol.IsSmoothing.exists_continuousLinearMap_toDistr_quantizeSobolev_eq`: a smoothing
+  symbol with compact spatial support quantizes, on every `H^t`, to a bounded operator
+  `H^r → H^s` for arbitrary orders `r` and `s`.
 
 ## References
 
@@ -622,6 +635,14 @@ theorem HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzVal
   exact ⟨sobolevFactor n m s * C₀, mul_nonneg (sobolevFactor_nonneg n m s) hC₀,
     ha.eLpNorm_smul_fourier_quantizeSchwartzValue_le hC₀ hdecay⟩
 
+/-- The symbol `φ(x) id` of multiplication by a compactly supported Schwartz function `φ` has
+compact spatial support. -/
+theorem hasCompactSpatialSupport_ofSpatial_smul_id {φ : 𝓢(CoordinateSpace n, ℂ)}
+    (hφ : HasCompactSupport φ) :
+    (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
+      ((φ.smooth ⊤).smul contDiff_const)).HasCompactSpatialSupport :=
+  (hasCompactSpatialSupport_ofSpatial_iff _).2 (hφ.mono fun x hx h ↦ hx (by simp [h]))
+
 end Quantization
 
 /-! ### The bounded operator on Bessel-potential spaces -/
@@ -863,6 +884,16 @@ theorem quantizeSobolev_sub {b : Symbol n V W m} (ha : a.HasCompactSpatialSuppor
   rw [eq_sub_iff_add_eq, ← quantizeSobolev_add hab hb (by rwa [sub_add_cancel]) s]
   exact quantizeSobolev_congr (sub_add_cancel a b) _ _ s
 
+/-- The tempered distribution of `Op(a - b) u` is the difference of those of `Op(a) u` and
+`Op(b) u`. -/
+theorem toDistr_quantizeSobolev_sub_apply {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) (hab : (a - b).HasCompactSpatialSupport) (s : ℝ)
+    (u : H^{s}(CoordinateSpace n, V)) :
+    ((a - b).quantizeSobolev hab s u).toDistr =
+      (a.quantizeSobolev ha s u).toDistr - (b.quantizeSobolev hb s u).toDistr := by
+  rw [quantizeSobolev_sub ha hb hab, _root_.sub_apply,
+    BesselPotentialSpace.toDistr_sub]
+
 /-- **Continuity in the symbol.** If `t ↦ a t` is a continuous family of symbols of order `m`
 that all vanish at positions outside a fixed compact set `K`, then `t ↦ Op(a t)` is continuous
 into the bounded operators `H^s → H^{s - m}` with the operator norm. -/
@@ -887,6 +918,87 @@ theorem continuous_quantizeSobolev {X : Type*} [TopologicalSpace X] {a : X → S
         ((withSeminorms.continuous_seminorm (K, α, [])).comp
           (hcont.sub continuous_const)).tendsto' t₀ 0 (by simp)
     simpa using h.const_mul C
+
+/-- On Schwartz functions the operators of two symbols with the same coefficient agree, so their
+Sobolev extensions agree on `H^s ⊆ H^t`, `t ≤ s`. -/
+private theorem toDistr_quantizeSobolev_inclusion {m' : ℝ} {b : Symbol n V W m'}
+    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) {s t : ℝ} (hts : t ≤ s)
+    (u : H^{s}(CoordinateSpace n, V)) :
+    (a.quantizeSobolev ha s u).toDistr =
+      (b.quantizeSobolev hb t (BesselPotentialSpace.inclusion hts u)).toDistr := by
+  have key : BesselPotentialSpace.inclusion (min_le_left (s - m) (t - m')) ∘L
+        a.quantizeSobolev ha s =
+      BesselPotentialSpace.inclusion (min_le_right (s - m) (t - m')) ∘L
+        b.quantizeSobolev hb t ∘L BesselPotentialSpace.inclusion hts := by
+    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
+      BesselPotentialSpace.ext ?_
+    ext φ
+    simp [hab]
+  simpa using congrArg (fun T ↦ (T u).toDistr) key
+
+/-- **Compatibility of the Sobolev extensions.** The operator `Op(a) : H^s → H^{s - m}` only
+depends on the coefficient of `a` and on the tempered distribution of its argument: symbols `a`
+and `b` of orders `m` and `m'` with the same coefficient give the same tempered distribution on
+`u ∈ H^s` and `v ∈ H^t` whenever `u` and `v` have the same tempered distribution. -/
+theorem toDistr_quantizeSobolev_congr {m' : ℝ} {b : Symbol n V W m'}
+    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) {s t : ℝ} {u : H^{s}(CoordinateSpace n, V)}
+    {v : H^{t}(CoordinateSpace n, V)} (huv : u.toDistr = v.toDistr) :
+    (a.quantizeSobolev ha s u).toDistr = (b.quantizeSobolev hb t v).toDistr := by
+  rcases le_total t s with h | h
+  · rw [toDistr_quantizeSobolev_inclusion hab ha hb h u]
+    congr 2
+    exact BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusion, huv])
+  · rw [toDistr_quantizeSobolev_inclusion hab.symm hb ha h v]
+    congr 2
+    exact BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusion, huv])
+
+/-- **Multiplication operators.** For a Schwartz function `φ` such that the symbol `φ(x) id` of
+order `0` has compact spatial support, for instance a compactly supported `φ`
+(`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_smul_id`), this symbol quantizes to
+multiplication by `φ` on `H^s`. -/
+theorem toDistr_quantizeSobolev_ofSpatial_smul_id (φ : 𝓢(CoordinateSpace n, ℂ))
+    (h : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
+      ((φ.smooth ⊤).smul contDiff_const)).HasCompactSpatialSupport)
+    (s : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    ((ofSpatial _ _).quantizeSobolev h s u).toDistr =
+      (BesselPotentialSpace.smulLeftCLM s φ u).toDistr := by
+  have key : (ofSpatial _ _).quantizeSobolev h s =
+      BesselPotentialSpace.inclusion (sub_zero s).le ∘L BesselPotentialSpace.smulLeftCLM s φ := by
+    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
+      BesselPotentialSpace.ext ?_
+    ext ψ
+    have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
+        ((φ.smooth ⊤).smul contDiff_const)).coefficient =
+          fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
+      funext (coefficient_ofSpatial _ _)
+    simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc,
+      ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
+      BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+      smulLeftCLM_apply_apply, SchwartzMap.coe_apply,
+      SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth, smul_eq_mul, mul_smul]
+    refine integral_congr_ae (.of_forall fun x ↦ ?_)
+    dsimp only
+    rw [quantizeSchwartzValue_comp_fst (fun x ↦ φ x • ContinuousLinearMap.id ℂ V),
+      _root_.smul_apply, ContinuousLinearMap.id_apply, smul_comm]
+  rw [key, ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion]
+
+/-- **Smoothing operators gain every number of derivatives.** A smoothing symbol `a` with
+compact spatial support quantizes to a bounded operator `T : H^r → H^s` for arbitrary real orders
+`r` and `s`: for every `v ∈ H^t` and `u ∈ H^r` with the same tempered distribution, `Op(a) v` and
+`T u` have the same tempered distribution. -/
+theorem IsSmoothing.exists_continuousLinearMap_toDistr_quantizeSobolev_eq (hsm : a.IsSmoothing)
+    (ha : a.HasCompactSpatialSupport) (r s : ℝ) :
+    ∃ T : H^{r}(CoordinateSpace n, V) →L[ℂ] H^{s}(CoordinateSpace n, W),
+      ∀ {t : ℝ} {v : H^{t}(CoordinateSpace n, V)} {u : H^{r}(CoordinateSpace n, V)},
+        v.toDistr = u.toDistr → (a.quantizeSobolev ha t v).toDistr = (T u).toDistr := by
+  obtain ⟨b, hb⟩ := isSmoothing_iff.mp hsm (r - s)
+  have hbK := ha.of_coefficient_eq hb
+  refine ⟨BesselPotentialSpace.inclusion (by rw [sub_sub_cancel]) ∘L b.quantizeSobolev hbK r,
+    fun huv ↦ ?_⟩
+  rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion]
+  exact toDistr_quantizeSobolev_congr hb.symm ha hbK huv
 
 end Sobolev
 

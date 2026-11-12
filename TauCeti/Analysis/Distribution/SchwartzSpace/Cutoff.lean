@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
 
 /-!
@@ -44,6 +45,8 @@ Altogether the `(k, n)` seminorm of the difference is `O(R⁻¹)`.
   `φ (2^{-N} ·) • f` by a `ContDiffBump` converge to `f`, for complex-valued multipliers.
 * Mathlib's `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
   `𝓢(E, F)` for finite-dimensional `E`.
+* `IsCompact.exists_schwartzMap_cutoff`: a compact subset `K` of an open set `U` has a compactly
+  supported Schwartz cutoff `χ : 𝓢(E, ℂ)` with support in `U` and equal to `1` near `K`.
 
 ## References
 
@@ -230,3 +233,20 @@ theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f 
 end Truncation
 
 end SchwartzMap
+
+/-- A compact subset `K` of an open set `U` of a finite-dimensional space has a compactly supported
+Schwartz cutoff, with topological support in `U` and equal to `1` on a neighbourhood of `K`. -/
+theorem IsCompact.exists_schwartzMap_cutoff [FiniteDimensional ℝ E] {K U : Set E}
+    (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ χ : 𝓢(E, ℂ), HasCompactSupport χ ∧ tsupport χ ⊆ U ∧ ∀ᶠ x in 𝓝ˢ K, χ x = 1 := by
+  obtain ⟨ψ, hψ, -, hψ1, hψc, hψU⟩ := hK.exists_contDiff_cutoff hU hKU
+  have hc : HasCompactSupport fun x ↦ (ψ x : ℂ) := hψc.comp_left Complex.ofReal_zero
+  have hd : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) := Complex.ofRealCLM.contDiff.comp hψ
+  have hχ : ⇑(hc.toSchwartzMap hd) = fun x ↦ (ψ x : ℂ) := funext (hc.toSchwartzMap_toFun hd)
+  refine ⟨hc.toSchwartzMap hd, by rwa [hχ], ?_, ?_⟩
+  · rw [hχ]
+    exact (tsupport_comp_subset Complex.ofReal_zero ψ).trans hψU
+  filter_upwards [subset_interior_iff_mem_nhdsSet.1 hψ1] with x hx
+  rw [Set.mem_preimage, Set.mem_singleton_iff] at hx
+  rw [hχ]
+  simp [hx]
