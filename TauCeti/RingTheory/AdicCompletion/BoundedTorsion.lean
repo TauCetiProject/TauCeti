@@ -16,12 +16,12 @@ its cokernel is killed by a fixed power. Consequently, if the parameter acts inj
 `range g` and its power torsion in `coker g` is bounded, completion preserves the kernel of a map
 `g : M →ₗ[R] N`. No Noetherianity or finite generation is assumed.
 
-For a complex `M → N → P`, regularity of the parameter on `P` identifies the parameter-power
-torsion in the cokernel of the first map with torsion in first cohomology. Thus an annihilating
-power for first cohomology supplies the boundedness hypothesis. This supplies the algebraic
-kernel step in comparing completed sections with compatible sections on infinitesimal
-neighbourhoods via a Čech complex. The sheaf comparison and the separate completeness of the
-section module are not asserted here.
+For a complex `M → N → P`, regularity of the parameter on the second map's range identifies
+parameter-power torsion in the cokernel of the first map with torsion in first cohomology.
+Thus an annihilating power for first cohomology supplies the boundedness hypothesis. This
+supplies the algebraic kernel step in comparing completed sections with compatible sections on
+infinitesimal neighbourhoods via a Čech complex. The sheaf comparison and the separate
+completeness of the section module are not asserted here.
 
 ## Main results
 
@@ -105,22 +105,22 @@ theorem map_span_singleton_exact_of_bounded_torsion {f : L →ₗ[R] M} {g : M �
   simpa only [map_comp, LinearMap.subtype_comp_rangeRestrict] using hc
 
 /-- In an exact sequence `L → M → N` extending to a complex `M → N → P`, completion
-preserves exactness at `M` if the parameter is regular on `N` and `P` and a fixed power kills
-`ker h / range g`. In a Čech complex the latter is the first-cohomology obstruction. -/
+preserves exactness at `M` if the parameter is regular on `range g` and `range h` and a fixed
+power kills `ker h / range g`. In a Čech complex the latter is the first-cohomology obstruction. -/
 theorem map_span_singleton_exact_of_annihilates_homology
     {f : L →ₗ[R] M} {g : M →ₗ[R] N} {h : N →ₗ[R] P}
     (hfg : Function.Exact f g) (hgh : h ∘ₗ g = 0)
-    (hrN : IsSMulRegular N r) (hrP : IsSMulRegular P r)
+    (hr : IsSMulRegular g.range r) (hrP : IsSMulRegular h.range r)
     (hkill : ∀ y ∈ LinearMap.ker h, r ^ k • y ∈ g.range) :
     Function.Exact (map (Ideal.span {r}) f) (map (Ideal.span {r}) g) := by
-  apply map_span_singleton_exact_of_bounded_torsion hfg (hrN.submodule g.range) (k := k)
+  apply map_span_singleton_exact_of_bounded_torsion hfg hr (k := k)
   intro x hx
   obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   obtain ⟨n, hn⟩ := hx
   rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hn ⊢
   apply hkill y
-  apply (hrP.pow n) (a₂ := 0)
-  simp only [smul_zero]
+  apply (isSMulRegular_submodule_iff_right_eq_zero_of_smul h.range (r ^ n)).mp
+    (hrP.pow n) (h y) (LinearMap.mem_range_self h y)
   obtain ⟨z, hz⟩ := hn
   rw [← map_smul, ← hz]
   exact LinearMap.congr_fun hgh z
@@ -156,7 +156,7 @@ noncomputable def kerAdicCompletionEquiv :
 
 /-- The kernel comparison followed by inclusion is the completion of the kernel inclusion. -/
 @[simp]
-theorem coe_kerAdicCompletionEquiv (x : AdicCompletion (Ideal.span {r}) g.ker) :
+theorem coe_kerAdicCompletionEquiv_apply (x : AdicCompletion (Ideal.span {r}) g.ker) :
     (g.kerAdicCompletionEquiv hr hbound x : AdicCompletion (Ideal.span {r}) M) =
       AdicCompletion.map (Ideal.span {r}) g.ker.subtype x :=
   (rfl)
@@ -168,6 +168,6 @@ theorem map_subtype_kerAdicCompletionEquiv_symm
     (x : (AdicCompletion.map (Ideal.span {r}) g).ker) :
     AdicCompletion.map (Ideal.span {r}) g.ker.subtype
         ((g.kerAdicCompletionEquiv hr hbound).symm x) = x := by
-  rw [← coe_kerAdicCompletionEquiv g hr hbound, LinearEquiv.apply_symm_apply]
+  rw [← coe_kerAdicCompletionEquiv_apply g hr hbound, LinearEquiv.apply_symm_apply]
 
 end LinearMap
