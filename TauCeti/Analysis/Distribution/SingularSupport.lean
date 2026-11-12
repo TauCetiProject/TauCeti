@@ -21,6 +21,9 @@ function `φ` supported in `U`. It is a relatively closed subset of `Ω` contain
 * `Distribution.singularSupport`: the singular support of a distribution.
 * `Distribution.isOpen_diff_singularSupport`: the singular support is closed in `Ω`.
 * `Distribution.singularSupport_subset_dsupport`: it lies in the support.
+* `Distribution.singularSupport_smul_subset`, `Distribution.singularSupport_smul`,
+  `Distribution.singularSupport_neg`, `Distribution.singularSupport_add_subset`,
+  `Distribution.singularSupport_sub_subset`: behaviour under the linear operations.
 * `Distribution.singularSupport_ofFun_eq_empty`: a function smooth on `Ω` has empty singular
   support.
 
@@ -88,6 +91,54 @@ theorem singularSupport_subset_dsupport (T : 𝓓'(Ω, F)) : T.singularSupport �
 theorem singularSupport_zero : (0 : 𝓓'(Ω, F)).singularSupport = ∅ := by
   refine subset_empty_iff.1 ((singularSupport_subset_dsupport 0).trans ?_)
   exact ((dsupport_eq_empty_iff _).2 rfl).subset
+
+/-- A scalar multiple of `T` is smooth wherever `T` is. -/
+theorem singularSupport_smul_subset {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F]
+    [SMulCommClass ℝ 𝕜 F] (c : 𝕜) (T : 𝓓'(Ω, F)) :
+    (c • T).singularSupport ⊆ T.singularSupport := by
+  refine fun x hx ↦ ⟨hx.1, fun ⟨U, hU, hxU, f, hf, hT⟩ ↦ hx.2 ⟨U, hU, hxU, c • f,
+    hf.const_smul c, fun φ hφ ↦ ?_⟩⟩
+  simp [hT φ hφ, smul_comm (φ _) c, integral_smul]
+
+/-- A nonzero scalar multiple of `T` has the same singular support as `T`. -/
+@[simp]
+theorem singularSupport_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F]
+    [SMulCommClass ℝ 𝕜 F] {c : 𝕜} (hc : c ≠ 0) (T : 𝓓'(Ω, F)) :
+    (c • T).singularSupport = T.singularSupport := by
+  refine (singularSupport_smul_subset c T).antisymm ?_
+  simpa [smul_smul, inv_mul_cancel₀ hc] using singularSupport_smul_subset c⁻¹ (c • T)
+
+/-- The negative of `T` has the same singular support as `T`. -/
+@[simp]
+theorem singularSupport_neg (T : 𝓓'(Ω, F)) : (-T).singularSupport = T.singularSupport := by
+  rw [← neg_one_smul ℝ T, singularSupport_smul (neg_ne_zero.2 one_ne_zero)]
+
+/-- The singular support of a sum lies in the union of the singular supports: near a point
+where `S = f` and `T = g` are smooth, `S + T` is the smooth function `f + g`. -/
+theorem singularSupport_add_subset (S T : 𝓓'(Ω, F)) :
+    (S + T).singularSupport ⊆ S.singularSupport ∪ T.singularSupport := by
+  intro x hx
+  by_contra h
+  rw [mem_union, not_or] at h
+  obtain ⟨U, hU, hxU, f, hf, hS⟩ := (notMem_singularSupport_iff hx.1).1 h.1
+  obtain ⟨V, hV, hxV, g, hg, hT⟩ := (notMem_singularSupport_iff hx.1).1 h.2
+  refine hx.2 ⟨U ∩ V, hU.inter hV, ⟨hxU, hxV⟩, f + g,
+    (hf.mono inter_subset_left).add (hg.mono inter_subset_right), fun φ hφ ↦ ?_⟩
+  have hint {u : E → F} {W : Set E} (hu : ContinuousOn u W) (hφW : tsupport φ ⊆ W) :
+      Integrable (fun y ↦ φ y • u y) :=
+    (integrableOn_iff_integrable_of_support_subset
+      ((Function.support_smul_subset_left _ _).trans (subset_tsupport φ))).1
+      ((φ.continuous.continuousOn.smul (hu.mono hφW)).integrableOn_compact
+        φ.hasCompactSupport)
+  rw [add_apply, hS φ (hφ.trans inter_subset_left),
+    hT φ (hφ.trans inter_subset_right), ← integral_add (hint hf.continuousOn
+      (hφ.trans inter_subset_left)) (hint hg.continuousOn (hφ.trans inter_subset_right))]
+  simp [smul_add]
+
+/-- The singular support of a difference lies in the union of the singular supports. -/
+theorem singularSupport_sub_subset (S T : 𝓓'(Ω, F)) :
+    (S - T).singularSupport ⊆ S.singularSupport ∪ T.singularSupport := by
+  simpa [sub_eq_add_neg] using singularSupport_add_subset S (-T)
 
 /-- A function smooth on `Ω` has empty singular support. -/
 theorem singularSupport_ofFun_eq_empty {f : E → F} (hf : ContDiffOn ℝ ∞ f Ω) :

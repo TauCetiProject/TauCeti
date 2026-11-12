@@ -53,8 +53,6 @@ of the wave front set of a complex distribution onto the base is exactly its sin
   support.
 * `Distribution.waveFrontSet_eq_empty_iff`: the wave front set is empty exactly when the singular
   support is.
-* `Distribution.singularSupport_neg`, `Distribution.singularSupport_smul`,
-  `Distribution.singularSupport_add_subset`: behaviour under the linear operations.
 * `Distribution.singularSupport_delta`: the singular support of the point mass at `x₀` is `{x₀}`.
 
 ## References
@@ -261,28 +259,6 @@ theorem fst_image_waveFrontSet (T : 𝓓'(Ω, ℂ)) :
 theorem waveFrontSet_eq_empty_iff {T : 𝓓'(Ω, ℂ)} :
     T.waveFrontSet = ∅ ↔ T.singularSupport = ∅ := by
   rw [← fst_image_waveFrontSet, image_eq_empty]
-
-/-- The negative of `T` has the same singular support as `T`. -/
-@[simp]
-theorem singularSupport_neg (T : 𝓓'(Ω, ℂ)) : (-T).singularSupport = T.singularSupport := by
-  rw [← fst_image_waveFrontSet, waveFrontSet_neg, fst_image_waveFrontSet]
-
-/-- A nonzero scalar multiple of `T` has the same singular support as `T`. -/
-@[simp]
-theorem singularSupport_smul {c : ℂ} (hc : c ≠ 0) (T : 𝓓'(Ω, ℂ)) :
-    (c • T).singularSupport = T.singularSupport := by
-  rw [← fst_image_waveFrontSet, waveFrontSet_smul hc, fst_image_waveFrontSet]
-
-/-- The singular support of a sum lies in the union of the singular supports. -/
-theorem singularSupport_add_subset (S T : 𝓓'(Ω, ℂ)) :
-    (S + T).singularSupport ⊆ S.singularSupport ∪ T.singularSupport := by
-  simp only [← fst_image_waveFrontSet, ← image_union]
-  exact image_mono (waveFrontSet_add_subset S T)
-
-/-- The singular support of a difference lies in the union of the singular supports. -/
-theorem singularSupport_sub_subset (S T : 𝓓'(Ω, ℂ)) :
-    (S - T).singularSupport ⊆ S.singularSupport ∪ T.singularSupport := by
-  simpa [sub_eq_add_neg] using singularSupport_add_subset S (-T)
 
 /-- The singular support of the complex point mass at `x₀ ∈ Ω` is `{x₀}`, for `E` nontrivial. -/
 theorem singularSupport_delta [Nontrivial E] {x₀ : E} (hx₀ : x₀ ∈ Ω) :
