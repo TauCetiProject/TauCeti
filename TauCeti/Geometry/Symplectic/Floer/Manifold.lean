@@ -82,11 +82,12 @@ form they recover the vector-space definitions.
   near which the perturbation is cylindrical; the vector-space case is
   `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
-* `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`,
+* `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_eq_symplecticFormAt`,
+  `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`,
   `SmoothTwoForm.continuous_hamiltonianCurvature_zero_left_comp` and
   `SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_zero_left`: for a perturbation
-  `K = K_t dt`, nonnegativity of the energy density on solutions, and continuity of the curvature
-  and of the energy density.
+  `K = K_t dt`, the energy density `ω(η, J η)` of a solution, with `η = ∂_t u - X_{K_t}(u)`, its
+  nonnegativity, and continuity of the curvature and of the energy density.
 * `SmoothTwoForm.tendsto_perturbedMFDeriv` and `SmoothTwoForm.continuousOn_floerEnergyDensity`:
   convergence of perturbed derivatives in the tangent bundle, and continuity of the energy density
   of a `C¹` map when the Hamiltonian vector fields are continuous into the tangent bundle.
@@ -372,6 +373,29 @@ theorem floerEnergyDensity_nonneg {J : AlmostComplexStructure (TangentSpace I (u
   simpa only [floerEnergyDensity_def, IsNondegenerate.symplecticFormAt_apply,
     ContinuousLinearMap.coe_coe] using
       h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
+
+/-- For a solution of the Floer equation `∂_s u + J η = 0` with `η = ∂_t u - X_{K_t}(u)`, for a
+perturbation `K = K_t dt` without `ds` component, the energy density at `z` is `ω(η, J η)`. -/
+theorem IsNondegenerate.floerEnergyDensity_zero_left_eq_symplecticFormAt
+    (hω : ω.IsNondegenerate) {J : AlmostComplexStructure (TangentSpace I (u z))}
+    (hfloer : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (Kt z) (u z)) = 0) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z =
+      hω.symplecticFormAt (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z))
+        (J (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+          ω.hamiltonianVectorField (Kt z) (u z))) := by
+  set η := mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)
+  have hs : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal = -J η :=
+    eq_neg_of_add_eq_zero_left hfloer
+  have hρ : ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z =
+      hω.symplecticFormAt (u z) (-J η) η := by
+    rw [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineImag,
+      perturbedMFDeriv_apply_stdComplexLineReal, hs, hamiltonianVectorField_const, Pi.zero_apply,
+      sub_zero, IsNondegenerate.symplecticFormAt_apply]
+  rw [hρ, ← (hω.symplecticFormAt (u z)).neg_eq (J η)]
+  simp
 
 /-- A solution of the Floer equation `∂_s u + J (∂_t u - X_{K_t}(u)) = 0` for a perturbation
 `K = K_t dt` without `ds` component has nonnegative energy density at `z` when `J` is tamed by `ω`
