@@ -327,7 +327,7 @@ private theorem log_norm_imaginary_bounds (t : ℝ) (ht : 0 < t) :
   have hInt := integrable_log_norm_imaginary t ht
   have hlow : ∀ᵐ (y : ℝ) ∂(semicircleReal (0 : ℝ) (1 : ℝ≥0)),
       Real.log t ≤ Real.log ‖(t : ℂ) * Complex.I - y‖ := by
-    filter_upwards [ae_mem_Icc_semicircleReal_zero_one] with y hy
+    filter_upwards with y
     apply Real.log_le_log (by linarith)
     have h := Complex.abs_im_le_norm ((t : ℂ) * Complex.I - (y : ℂ))
     have him : (((t : ℂ) * Complex.I - y).im) = t := by simp
@@ -506,7 +506,7 @@ private theorem tendsto_primitive_re_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) 
       fun ε ↦
         (-(x * A ε) / 2 + B ε / 2) -
           Real.log ‖semicircleResolventBoundary x ε‖ + (-1 / 2) := by
-    filter_upwards [self_mem_nhdsWithin] with ε hε
+    filter_upwards with ε
     let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
     let a : ℝ := (semicircleResolventBoundary x ε).re
     let b : ℝ := (semicircleResolventBoundary x ε).im

@@ -318,7 +318,6 @@ private theorem m_boundary_q_estimate {x ε : ℝ} (hx : x ∈ Icc (-2) 2)
   let a : ℝ := (semicircleResolventBoundary x ε).re
   let b : ℝ := (semicircleResolventBoundary x ε).im
   let q : ℝ := semicircleResolventBoundaryNormSq x ε
-  have hz : 0 < ((x : ℂ) + (ε : ℂ) * Complex.I).im := by simp [hε]
   have hids := m_boundary_identities x ε hε
   have hreal : a * (q + 1) = -x * q := by simpa [a, q] using hids.1
   have himag : b * (1 - q) = ε * q := by simpa [b, q] using hids.2
@@ -408,7 +407,8 @@ theorem tendsto_semicircleResolventBoundaryNormSq {x : ℝ} (hx : x ∈ Icc (-2)
   · have hδ : 0 < 1 - c := sub_pos.mpr hc
     filter_upwards [self_mem_nhdsWithin,
       mem_nhdsWithin_of_mem_nhds
-        (Iio_mem_nhds (by positivity : 0 < (1 - c) ^ 2 / 2))]
+        (Iio_mem_nhds (show (0 : ℝ) < (1 - c) ^ 2 / 2 from
+          div_pos (sq_pos_of_pos hδ) (by norm_num)))]
       with ε hε hεsmall
     let q : ℝ := semicircleResolventBoundaryNormSq x ε
     have hest := m_boundary_q_estimate hx hε
@@ -421,9 +421,9 @@ theorem tendsto_semicircleResolventBoundaryNormSq {x : ℝ} (hx : x ∈ Icc (-2)
       by_contra hn
       have hle : 1 - c ≤ 1 - q := le_of_not_gt hn
       have hsquare : (1 - c) ^ 2 ≤ (1 - q) ^ 2 := by
-        have hsum : 0 ≤ (1 - q) + (1 - c) := by linarith
+        have hsum : 0 ≤ (1 - q) + (1 - c) := by linarith [hqpos]
         nlinarith [mul_nonneg (sub_nonneg.mpr hle) hsum]
-      linarith
+      linarith [hsq]
     have hqgt : c < q := by linarith
     simpa [q] using hqgt
   · filter_upwards [self_mem_nhdsWithin] with ε hε
@@ -431,7 +431,7 @@ theorem tendsto_semicircleResolventBoundaryNormSq {x : ℝ} (hx : x ∈ Icc (-2)
     have hest := m_boundary_q_estimate hx hε
     have hqbound : q < 1 := by
       have hqpos : 0 < 1 - q := hest.1
-      linarith
+      linarith [hqpos]
     have hc1 : 1 < c := by linarith
     have : q < c := hqbound.trans hc1
     simpa [q] using this
@@ -458,7 +458,7 @@ theorem tendsto_semicircleResolventBoundary_re {x : ℝ} (hx : x ∈ Icc (-2) 2)
     have hformula : a = -x * q / (q + 1) := by
       have hqp : q + 1 ≠ 0 := by linarith
       field_simp [hqp]
-      nlinarith
+      nlinarith [hreal]
     simpa [A, F, Q, a, q] using hformula
   have hA := Filter.Tendsto.congr' (EventuallyEq.symm hEq) hF
   have hF1 : F 1 = -x / 2 := by dsimp [F]; ring
@@ -482,14 +482,14 @@ theorem tendsto_eps_mul_semicircleResolventBoundary_im {x : ℝ} (hx : x ∈ Icc
     have hest := m_boundary_q_estimate hx hε
     have hq_lt : q < 1 := by
       have hqpos : 0 < 1 - q := by simpa [q] using hest.1
-      linarith
+      linarith [hqpos]
     have hb : 0 < b := by
       simpa [b, semicircleResolventBoundary] using
         m_im_pos (by simpa [semicircleResolventBoundary] using hε)
     have hqdef : q = a ^ 2 + b ^ 2 := by
       dsimp [q, a, b, semicircleResolventBoundaryNormSq]
     have hb_sq : b ^ 2 ≤ 1 := by
-      nlinarith [sq_nonneg a, hqdef]
+      nlinarith [sq_nonneg a, hqdef, hq_lt]
     have hb_le : b ≤ 1 :=
       (sq_le_sq₀ hb.le (by norm_num : (0 : ℝ) ≤ 1)).1 (by simpa using hb_sq)
     simpa [b] using mul_le_mul_of_nonneg_left hb_le (le_of_lt hε)
