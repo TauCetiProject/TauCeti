@@ -272,7 +272,6 @@ private theorem exists_unstableFrame_eq_smul (hMS : hX.IsMorseSmale) (hf : IsMor
     (hv : hX.stableNormal φq y (hX.unstableFrame φp y v) = 0) :
     ∃ c : ℝ, hX.unstableFrame φp y v = c • X y := by
   have hne : p ≠ q := by rintro rfl; omega
-  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   have htr := hMS.span_mtangentConeAt_sup_eq_top hy
   have hXne : X y ≠ 0 := hX.ne_zero_of_mfderiv_ne_zero
     (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hy)
@@ -287,7 +286,7 @@ private theorem exists_unstableFrame_eq_smul (hMS : hX.IsMorseSmale) (hf : IsMor
   have hu₁ : u ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p) y) :=
     (Set.ext_iff.1 (hX.range_unstableFrame hφp hf hy.1) u).1 ⟨v, hu⟩
   have hu₂ : u ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet q) y) :=
-    (hX.stableNormal_eq_zero_iff hφq hdf hy.2 u).1 (hu ▸ hv)
+    (hX.stableNormal_eq_zero_iff hφq hy.2 u).1 (hu ▸ hv)
   have hu₃ : u ∈ Submodule.span ℝ
       (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y) := by
     rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr]
@@ -346,7 +345,6 @@ orientation-preserving map of `ℝ × Vq` fixing the second component. -/
 theorem trajectorySign_flow (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
     (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) (t : ℝ) :
     hX.trajectorySign φp φq op oq hpq (hX.flow t y) = hX.trajectorySign φp φq op oq hpq y := by
-  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   have hne : p ≠ q := by rintro rfl; omega
   have hy' : hX.flow t y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
     ⟨(Flow.apply_mem_unstableSet_iff _ t).2 hy.1, (Flow.apply_mem_stableSet_iff _ t).2 hy.2⟩
@@ -356,7 +354,7 @@ theorem trajectorySign_flow (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f
   set e := LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap hC
   set e' := LinearEquiv.ofBijective (hX.trajectoryComparison φp φq (hX.flow t y)).toLinearMap hC'
   obtain ⟨Tp, hTp⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hy.1).exists
-  obtain ⟨Tq, hTq⟩ := (hX.eventually_mem_linearForwardTimes hφq hdf hy.2).exists
+  obtain ⟨Tq, hTq⟩ := (hX.eventually_mem_linearForwardTimes hφq hy.2).exists
   -- The unstable frame is rescaled by `e^{-t}` and the normal coordinates by `e^{t}`, so the
   -- comparison maps at `y` and at `Φ_t y` have the same second component.
   have hcomp (v : {i // φp.weight i < 0} → ℝ) :

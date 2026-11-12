@@ -76,13 +76,13 @@ negative weight vanish, and its coordinates have size at most `C e^{-t}`. -/
 theorem exists_forall_norm_coord_flow_le_mul_exp (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {K : Set M} (hK : IsCompact K)
+    {K : Set M} (hK : IsCompact K)
     (hKs : K ⊆ hX.flow.stableSet x) :
     ∃ T C : ℝ, ∀ y ∈ K, ∀ t, T ≤ t → hX.flow t y ∈ φ.toChart.source ∧
       (∀ i, φ.weight i < 0 → φ.coord (φ.toChart (hX.flow t y)) i = 0) ∧
       ‖φ.coord (φ.toChart (hX.flow t y))‖ ≤ C * Real.exp (-t) := by
-  obtain ⟨ρ, hρ, hρs⟩ := hX.exists_forall_coord_flow_eq_exp_smul φ hφ hf
-  obtain ⟨ε, hε, hεs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
+  obtain ⟨ρ, hρ, hρs⟩ := hX.exists_forall_coord_flow_eq_exp_smul φ hφ
+  obtain ⟨ε, hε, hεs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
   -- The open cube `V` of radius `min ρ ε` around `x`, read in the chart.
   set δ := min ρ ε
   set V := φ.toChart.source ∩ φ.toChart ⁻¹' (φ.coord ⁻¹' Metric.ball 0 δ)
@@ -123,10 +123,10 @@ such that `f (flow t y) - f x ≤ C e^{-2t}` for every `y ∈ K` and `t ≥ T`. 
 theorem exists_forall_sub_le_mul_exp (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {K : Set M} (hK : IsCompact K)
+    {K : Set M} (hK : IsCompact K)
     (hKs : K ⊆ hX.flow.stableSet x) :
     ∃ T C : ℝ, ∀ y ∈ K, ∀ t, T ≤ t → f (hX.flow t y) - f x ≤ C * Real.exp (-2 * t) := by
-  obtain ⟨T, C, hTC⟩ := hX.exists_forall_norm_coord_flow_le_mul_exp φ hφ hf hK hKs
+  obtain ⟨T, C, hTC⟩ := hX.exists_forall_norm_coord_flow_le_mul_exp φ hφ hK hKs
   refine ⟨T, Module.finrank ℝ E / 2 * C ^ 2, fun y hy t ht ↦ ?_⟩
   obtain ⟨hmem, -, hle⟩ := hTC y hy t ht
   set z := φ.coord (φ.toChart (hX.flow t y))
@@ -148,16 +148,16 @@ theorem exists_forall_sub_le_mul_exp (φ : MorseChart E f x)
 /-- **Uniform convergence on compact parts of a stable set.** The orbits of the flow of an
 adapted pseudo-gradient from a compact subset `K` of the stable set `W^s(x)` converge to `x`
 uniformly on `K`: `flow t y → x` as `t → ∞`, uniformly in `y ∈ K`. -/
-theorem tendsto_flow_atTop_prod_principal (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {K : Set M}
+theorem tendsto_flow_atTop_prod_principal {K : Set M}
     (hK : IsCompact K) (hKs : K ⊆ hX.flow.stableSet x) :
     Tendsto (fun p : ℝ × M ↦ hX.flow p.1 p.2) (atTop ×ˢ 𝓟 K) (𝓝 x) := by
   rcases K.eq_empty_or_nonempty with rfl | ⟨y, hy⟩
   · simp
   -- A point with a converging orbit is a rest point, hence a critical point with a Morse chart.
-  have hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 := hX.mfderiv_eq_zero_of_forall_eq (hf x) fun t ↦ by
+  have hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 := hX.mfderiv_eq_zero_of_forall_eq fun t ↦ by
     rw [Flow.fixed_of_mem_stableSet (hKs hy) t]
   obtain ⟨φ, hφ⟩ := hX.exists_morseChart x hx
-  obtain ⟨T, C, hTC⟩ := hX.exists_forall_norm_coord_flow_le_mul_exp φ hφ hf hK hKs
+  obtain ⟨T, C, hTC⟩ := hX.exists_forall_norm_coord_flow_le_mul_exp φ hφ hK hKs
   intro U hU
   rw [mem_map]
   obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1 (φ.tendsto_toChart_symm_coord_symm_nhds_zero hU)
@@ -187,7 +187,7 @@ theorem exists_forall_norm_coord_flow_le_mul_exp_of_unstableSet (hf : IsMorse �
   have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
     ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl)
   obtain ⟨T, C, hTC⟩ := (hX.neg hf).exists_forall_norm_coord_flow_le_mul_exp (φ.neg hnd)
-    (φ.coord_mfderiv_neg hφ hnd) (hf.neg.contMDiff.mdifferentiable (by simp)) hK
+    (φ.coord_mfderiv_neg hφ hnd) hK
     (hX.unstableSet_eq_stableSet_neg hf x ▸ hKu)
   refine ⟨-T, C, fun y hy t ht ↦ ?_⟩
   have h := hTC y hy (-t) (by linarith)
@@ -206,7 +206,7 @@ theorem exists_forall_sub_le_mul_exp_of_unstableSet (hf : IsMorse 𝓘(ℝ, E) f
   have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
     ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl)
   obtain ⟨T, C, hTC⟩ := (hX.neg hf).exists_forall_sub_le_mul_exp (φ.neg hnd)
-    (φ.coord_mfderiv_neg hφ hnd) (hf.neg.contMDiff.mdifferentiable (by simp)) hK
+    (φ.coord_mfderiv_neg hφ hnd) hK
     (hX.unstableSet_eq_stableSet_neg hf x ▸ hKu)
   refine ⟨-T, C, fun y hy t ht ↦ ?_⟩
   have h := hTC y hy (-t) (by linarith)
@@ -220,8 +220,7 @@ orbits of the flow of an adapted pseudo-gradient from a compact subset `K` of th
 theorem tendsto_flow_atBot_prod_principal (hf : IsMorse 𝓘(ℝ, E) f) {K : Set M}
     (hK : IsCompact K) (hKu : K ⊆ hX.flow.unstableSet x) :
     Tendsto (fun p : ℝ × M ↦ hX.flow p.1 p.2) (atBot ×ˢ 𝓟 K) (𝓝 x) := by
-  have h := ((hX.neg hf).tendsto_flow_atTop_prod_principal
-    (hf.neg.contMDiff.mdifferentiable (by simp)) hK
+  have h := ((hX.neg hf).tendsto_flow_atTop_prod_principal hK
     (hX.unstableSet_eq_stableSet_neg hf x ▸ hKu)).comp
     (tendsto_neg_atBot_atTop.prodMap (tendsto_id (x := 𝓟 K)))
   refine h.congr fun p ↦ ?_

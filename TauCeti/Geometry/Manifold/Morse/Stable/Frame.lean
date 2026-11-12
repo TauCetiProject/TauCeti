@@ -249,9 +249,9 @@ theorem add_mem_linearBackwardTimes {y : M} {T s : ℝ} (hT : T ∈ hX.linearBac
 
 /-- Near `x`, the orbit of a point of `W^s(x)` eventually enters the part of the Morse chart where
 the flow stays linear: all large times are times of linear forward flow. -/
-theorem eventually_mem_linearForwardTimes (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {y : M}
+theorem eventually_mem_linearForwardTimes {y : M}
     (hy : y ∈ hX.flow.stableSet x) : ∀ᶠ T in atTop, T ∈ hX.linearForwardTimes φ y := by
-  obtain ⟨ε, hε, hloc⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
+  obtain ⟨ε, hε, hloc⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
   have hc : ContinuousAt (fun z ↦ ‖φ.coord (φ.toChart z)‖) x :=
     φ.continuous_coord.norm.continuousAt.comp (φ.toChart.continuousAt φ.mem_source)
@@ -307,12 +307,12 @@ theorem stableNormal_apply {y : M} {T : ℝ} (hT : T ∈ hX.linearForwardTimes �
 /-- **The normal coordinates vanish exactly on the tangent space of the stable manifold.** At a
 point `y` of `W^s(x)`, the normal coordinates of a tangent vector vanish exactly when it lies in
 the span of the tangent cone of `W^s(x)` at `y`. -/
-theorem stableNormal_eq_zero_iff (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {y : M}
+theorem stableNormal_eq_zero_iff {y : M}
     (hy : y ∈ hX.flow.stableSet x) (v : TangentSpace 𝓘(ℝ, E) y) :
     hX.stableNormal φ y v = 0 ↔
       v ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet x) y) := by
-  obtain ⟨D, hD, hxD, hDs, hslice⟩ := hX.exists_isSliceChart_stableSet_flow hf φ hφ
-  obtain ⟨T, hT, hTD⟩ := ((hX.eventually_mem_linearForwardTimes hφ hf hy).and
+  obtain ⟨D, hD, hxD, hDs, hslice⟩ := hX.exists_isSliceChart_stableSet_flow φ hφ
+  obtain ⟨T, hT, hTD⟩ := ((hX.eventually_mem_linearForwardTimes hφ hy).and
     ((Flow.mem_stableSet.1 hy).eventually (hD.mem_nhds hxD))).exists
   set q := (hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph (φ.toChart.restr D)
   have hq : q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
@@ -380,8 +380,7 @@ theorem eventually_mem_linearBackwardTimes (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
     (hX.mfderiv_eq_zero_of_mem_unstableSet hy)
   rw [hX.unstableSet_eq_stableSet_neg hf] at hy
   simpa only [linearForwardTimes_neg (hX := hX) hf h] using
-    (hX.neg hf).eventually_mem_linearForwardTimes (φ.coord_mfderiv_neg hφ h)
-      (hf.neg.contMDiff.mdifferentiable (by simp)) hy
+    (hX.neg hf).eventually_mem_linearForwardTimes (φ.coord_mfderiv_neg hφ h) hy
 
 /-- Waiting for a further time `s ≥ 0` backwards multiplies a vector of negative weight in the
 derivative of `φ ∘ Φ_{-T}` by `e^{-s}`. -/
@@ -469,10 +468,9 @@ theorem range_unstableFrame (hf : IsMorse 𝓘(ℝ, E) f) {y : M} (hy : y ∈ hX
   have h := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
     (hX.mfderiv_eq_zero_of_mem_unstableSet hy)
   have hφ' := φ.coord_mfderiv_neg hφ h
-  have hf' : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) (-f) := hf.neg.contMDiff.mdifferentiable (by simp)
   rw [hX.unstableSet_eq_stableSet_neg hf] at hy ⊢
   obtain ⟨D, hD, hxD, hDs, hslice⟩ :=
-    (hX.neg hf).exists_isSliceChart_stableSet_flow hf' (φ.neg h) hφ'
+    (hX.neg hf).exists_isSliceChart_stableSet_flow (φ.neg h) hφ'
   have hev := hX.eventually_mem_linearBackwardTimes hφ hf
     ((hX.unstableSet_eq_stableSet_neg hf x).symm ▸ hy)
   obtain ⟨T, hT, hTD⟩ := (hev.and ((Flow.mem_stableSet.1 hy).eventually (hD.mem_nhds hxD))).exists
