@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Topology.VectorBundle.GramSchmidt
 
+import TauCeti.Topology.VectorBundle.Section
+
 /-!
 # Orthonormal trivializations of Riemannian vector bundles
 
@@ -64,8 +66,10 @@ include hd in
 private theorem continuous_local_repr_symm :
     Continuous fun p : U × F ↦ TotalSpace.mk' F (p.1 : B)
       ((d p.1).repr.symm (c.repr p.2)) :=
-  (TauCeti.continuous_totalSpaceMk_repr_symm continuous_subtype_val d hd).comp
-    (continuous_fst.prodMk (c.repr.continuous.comp continuous_snd))
+  ((TauCeti.continuous_totalSpaceMk_equivFun_symm continuous_subtype_val (fun b ↦ (d b).toBasis)
+    (by simpa using hd)).comp (continuous_fst.prodMk
+      ((PiLp.continuous_ofLp 2 _).comp (c.repr.continuous.comp continuous_snd)))).congr
+    fun p ↦ by simp [OrthonormalBasis.coe_toBasis_repr]
 
 open scoped Classical in
 /-- A continuous local orthonormal basis defines a bundle chart whose fibre map sends that

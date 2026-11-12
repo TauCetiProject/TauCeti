@@ -11,11 +11,12 @@ public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 public import TauCeti.Topology.VectorBundle.SphereBundle
 import Mathlib.Analysis.Convex.Contractible
-import TauCeti.Analysis.Normed.Module.Ball.Retraction
+import TauCeti.Topology.CWComplex.Classical.OpenCells
 import TauCeti.Topology.FiberBundle.Separation
 import TauCeti.Topology.MetricSpace.Isometry.Basic
 import TauCeti.Topology.Separation.InvFunOn
 import TauCeti.Topology.VectorBundle.Contractible
+import TauCeti.Topology.VectorBundle.Section
 
 /-!
 # The cells of a disc bundle over a finite CW complex
@@ -37,16 +38,17 @@ built as follows. Mathlib's classical CW complexes parametrise an `n`-cell by th
 of `Fin n → ℝ` in the sup norm, and appending coordinates
 (`Fin.appendIsometryOfEq : (Fin q → ℝ) × (Fin r → ℝ) ≃ᵢ (Fin (q + r) → ℝ)`) splits that cube into
 the cube of the base cell, the first `q` coordinates, and the cube of the fibre, the last `r`.
-Precomposed with the radial retraction onto the closed ball, `χ` is a continuous map from the
-contractible space `Fin q → ℝ` to `X`, so `E` has a continuous orthonormal frame along it
-(`TauCeti.exists_continuous_orthonormalBasis_of_contractibleSpace`). A point `(x, w)` goes to the
-vector over `χ x` whose coordinates in this frame are the radial rescaling of `w` from the sup norm
-to the Euclidean norm (`ContinuousLinearEquiv.unitBallHomeomorph`), so that the fibre cube goes
-onto the unit disc of the fibre, its boundary onto the unit sphere, and the norm of the image is
-the Euclidean norm of the rescaled fibre coordinates (`TauCeti.norm_map_discBundleCellEquiv_symm`).
-The map is injective on the open cube, because `χ` is injective on the open ball, and the boundary
-of the cube goes over the boundary of the base cell or into the sphere bundle, both disjoint from
-the open cell; as the cube is compact, the inverse is continuous on the open cell
+Precomposed with the radial retraction onto the closed ball (`TauCeti.extendedCellMap`), `χ` is a
+continuous map from the contractible space `Fin q → ℝ` to `X`, so `E` has a continuous
+orthonormal frame along it (`TauCeti.exists_continuous_orthonormalBasis_of_contractibleSpace`). A
+point `(x, w)` goes to the vector over `χ x` whose coordinates in this frame are the radial
+rescaling of `w` from the sup norm to the Euclidean norm
+(`ContinuousLinearEquiv.unitBallHomeomorph`), so that the fibre cube goes onto the unit disc of
+the fibre, its boundary onto the unit sphere, and the norm of the image is the Euclidean norm of
+the rescaled fibre coordinates (`TauCeti.norm_map_discBundleCellEquiv_symm`). The map is injective
+on the open cube, because `χ` is injective on the open ball, and the boundary of the cube goes over
+the boundary of the base cell or into the sphere bundle, both disjoint from the open cell; as the
+cube is compact, the inverse is continuous on the open cell
 (`ContinuousOn.continuousOn_invFunOn_image_of_isCompact`). The frame is a choice, so the
 characteristic maps are not canonical, but their closed cells, open cells, boundaries, base points
 and norms are.
@@ -147,25 +149,16 @@ section Cell
 
 variable {q : ℕ} (i : cell C q)
 
-/-- The base of the disc-bundle cell over the cell `i`: its characteristic map, made continuous on
-all of `Fin q → ℝ` by first retracting radially onto the closed unit ball. -/
-private def cellBase : C(Fin q → ℝ, X) :=
-  ⟨fun x ↦ map q i (radialRetraction 1 x),
-    (continuousOn q i).comp_continuous (lipschitzWith_radialRetraction zero_le_one).continuous
-      fun x ↦ radialRetraction_mem_closedBall zero_le_one x⟩
-
-private theorem cellBase_of_mem {x : Fin q → ℝ} (hx : x ∈ closedBall 0 1) :
-    cellBase i x = map q i x := by
-  simp [cellBase, radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 hx)]
-
 variable (F E) in
 /-- A continuous orthonormal frame of `E` along the base of the disc-bundle cell over `i`. -/
-private def cellFrame : ∀ x, OrthonormalBasis (Fin (finrank ℝ F)) ℝ (E (cellBase i x)) :=
-  (exists_continuous_orthonormalBasis_of_contractibleSpace ℝ F E (cellBase i)).choose
+private def cellFrame :
+    ∀ x, OrthonormalBasis (Fin (finrank ℝ F)) ℝ (E (extendedCellMap q i x)) :=
+  (exists_continuous_orthonormalBasis_of_contractibleSpace ℝ F E (extendedCellMap q i)).choose
 
 private theorem continuous_cellFrame (j : Fin (finrank ℝ F)) :
-    Continuous fun x ↦ TotalSpace.mk' F (cellBase i x) (cellFrame F E i x j) :=
-  (exists_continuous_orthonormalBasis_of_contractibleSpace ℝ F E (cellBase i)).choose_spec j
+    Continuous fun x ↦ TotalSpace.mk' F (extendedCellMap q i x) (cellFrame F E i x j) :=
+  (exists_continuous_orthonormalBasis_of_contractibleSpace ℝ F E
+    (extendedCellMap q i)).choose_spec j
 
 /-- The radial homeomorphism from the sup norm of `Fin r → ℝ` to the Euclidean norm. -/
 private abbrev toEuclidean (r : ℕ) : (Fin r → ℝ) ≃ₜ EuclideanSpace ℝ (Fin r) :=
@@ -176,16 +169,18 @@ variable (F E) in
 `(x, w)` goes to the vector of `E` over the base point of `x` whose coordinates in the frame
 `cellFrame` are the radial rescaling of `w` to the Euclidean norm. -/
 private def cellProdMap (p : (Fin q → ℝ) × (Fin (finrank ℝ F) → ℝ)) : TotalSpace F E :=
-  ⟨cellBase i p.1, (cellFrame F E i p.1).repr.symm (toEuclidean _ p.2)⟩
+  ⟨extendedCellMap q i p.1, (cellFrame F E i p.1).repr.symm (toEuclidean _ p.2)⟩
 
 private theorem norm_cellProdMap (p : (Fin q → ℝ) × (Fin (finrank ℝ F) → ℝ)) :
     ‖(cellProdMap F E i p).2‖ = ‖toEuclidean _ p.2‖ :=
   (cellFrame F E i p.1).repr.symm.norm_map _
 
 private theorem continuous_cellProdMap : Continuous (cellProdMap F E i) :=
-  (continuous_totalSpaceMk_repr_symm (cellBase i).continuous (cellFrame F E i)
-    (continuous_cellFrame i)).comp
-    (continuous_fst.prodMk ((toEuclidean _).continuous.comp continuous_snd))
+  ((continuous_totalSpaceMk_equivFun_symm (extendedCellMap q i).continuous
+    (fun x ↦ (cellFrame F E i x).toBasis) (by simpa using continuous_cellFrame i)).comp
+    (continuous_fst.prodMk ((PiLp.continuous_ofLp 2 _).comp
+      ((toEuclidean _).continuous.comp continuous_snd)))).congr
+    fun p ↦ by simp [cellProdMap, OrthonormalBasis.coe_toBasis_repr]
 
 /-- The image under `cellProdMap` of a product `s ×ˢ t`, with `s` in the closed unit ball and `t`
 cut out by a condition `P` on the Euclidean norm: the vectors whose norm satisfies `P`, over the
@@ -197,10 +192,11 @@ private theorem image_cellProdMap_prod {s : Set (Fin q → ℝ)} (hs : s ⊆ clo
   constructor
   · rintro ⟨⟨x, w⟩, ⟨hx, hw⟩, rfl⟩
     exact ⟨by simpa only [mem_ofPred_eq, norm_cellProdMap] using (ht w).1 hw,
-      x, hx, (cellBase_of_mem i (hs hx)).symm⟩
+      x, hx, (extendedCellMap_of_norm_le q i (mem_closedBall_zero_iff.1 (hs hx))).symm⟩
   · obtain ⟨b, y⟩ := v
     rintro ⟨hy, x, hx, hxb⟩
-    obtain rfl : cellBase i x = b := (cellBase_of_mem i (hs hx)).trans hxb
+    obtain rfl : extendedCellMap q i x = b :=
+      (extendedCellMap_of_norm_le q i (mem_closedBall_zero_iff.1 (hs hx))).trans hxb
     refine ⟨(x, (toEuclidean _).symm ((cellFrame F E i x).repr y)), ⟨hx, (ht _).2 ?_⟩, ?_⟩
     · simpa only [Homeomorph.apply_symm_apply, LinearIsometryEquiv.norm_map, mem_ofPred_eq] using hy
     · simp [cellProdMap]
@@ -209,8 +205,8 @@ private theorem image_cellProdMap_prod {s : Set (Fin q → ℝ)} (hs : s ⊆ clo
 private theorem injOn_cellProdMap : InjOn (cellProdMap F E i) (ball 0 1 ×ˢ univ) := by
   rintro ⟨x, w⟩ ⟨hx, -⟩ ⟨x', w'⟩ ⟨hx', -⟩ h
   have hb : map q i x = map q i x' := by
-    rw [← cellBase_of_mem i (ball_subset_closedBall hx),
-      ← cellBase_of_mem i (ball_subset_closedBall hx')]
+    rw [← extendedCellMap_of_norm_le q i (mem_ball_zero_iff.1 hx).le,
+      ← extendedCellMap_of_norm_le q i (mem_ball_zero_iff.1 hx').le]
     exact congrArg TotalSpace.proj h
   obtain rfl : x = x' := (map q i).injOn (by rwa [source_eq]) (by rwa [source_eq]) hb
   have hw := TotalSpace.mk_inj.1 h
@@ -461,8 +457,8 @@ theorem proj_map_discBundleCellEquiv_symm {z : Fin n → ℝ} (hz : z ∈ closed
     (map (C := discBundle F E ∩ TotalSpace.proj ⁻¹' C) n ((discBundleCellEquiv n).symm c) z).proj =
       map c.1.1 c.2 ((Fin.appendIsometryOfEq c.1.2).symm z).1 := by
   rw [map_discBundleRelCWComplex]
-  exact cellBase_of_mem c.2 (mem_closedBall_zero_iff.2 ((norm_fst_le _).trans
-    ((norm_discBundleCellIsometry c z).trans_le (mem_closedBall_zero_iff.1 hz))))
+  exact extendedCellMap_of_norm_le c.1.1 c.2 ((norm_fst_le _).trans
+    ((norm_discBundleCellIsometry c z).trans_le (mem_closedBall_zero_iff.1 hz)))
 
 /-- The characteristic map of the cell of the disc bundle over a cell of `C` sends `z` to a vector
 whose norm is the Euclidean norm of the radial rescaling of the last `rank E` coordinates of `z`. -/

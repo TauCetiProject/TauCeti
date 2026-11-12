@@ -26,7 +26,9 @@ sections are continuous (`ContinuousAt.add_section`, `ContinuousAt.smul_section`
 multiples use `Continuous.smul_totalSpace`), and a function with
 closed support inside an open set multiplies a section continuous on that set into a globally
 continuous section (`ContinuousOn.smul_section_of_tsupport`). For global continuity of
-fibrewise sums along a varying base map from another space, use `Continuous.add_totalSpace`.
+fibrewise sums along a varying base map from another space, use `Continuous.add_totalSpace`;
+linear combinations of a continuous frame along such a map depend jointly continuously on the
+point and on the coefficients (`TauCeti.continuous_totalSpaceMk_equivFun_symm`).
 
 A linear trivialization reconstructs a section from arbitrary model coordinates by
 `Bundle.Trivialization.sectionFromCoordinates`, with the two coordinate inverse laws on its base
@@ -124,6 +126,35 @@ theorem Continuous.add_totalSpace
     (ht : Continuous (fun y ↦ TotalSpace.mk' F (b y) (t y))) :
     Continuous (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) :=
   continuous_iff_continuousAt.2 fun _ ↦ hs.continuousAt.add_totalSpace 𝕜 ht.continuousAt
+
+/-- Linear combinations of a continuous frame `u` of `E` along a continuous map `b` depend jointly
+continuously on the point and on the coefficients. -/
+theorem TauCeti.continuous_totalSpaceMk_equivFun_symm {ι : Type*} [Finite ι] (hb : Continuous b)
+    (u : ∀ y, Module.Basis ι 𝕜 (E (b y)))
+    (hu : ∀ i, Continuous fun y ↦ TotalSpace.mk' F (b y) (u y i)) :
+    Continuous fun p : Y × (ι → 𝕜) ↦ TotalSpace.mk' F (b p.1) ((u p.1).equivFun.symm p.2) := by
+  classical
+  have := Fintype.ofFinite ι
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  rw [FiberBundle.continuousAt_totalSpace]
+  refine ⟨(hb.comp continuous_fst).continuousAt, ?_⟩
+  let e := trivializationAt F E (b p.1)
+  have hmem : ∀ᶠ p' : Y × (ι → 𝕜) in 𝓝 p, b p'.1 ∈ e.baseSet :=
+    (hb.comp continuous_fst).continuousAt
+      (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (b p.1)))
+  have hc (i : ι) : ContinuousAt
+      (fun p' : Y × (ι → 𝕜) ↦ TotalSpace.mk' F (b p'.1) (u p'.1 i)) p :=
+    ((hu i).comp continuous_fst).continuousAt
+  have he (i : ι) := ((FiberBundle.continuousAt_totalSpace F _).1 (hc i)).2
+  have hsum : ContinuousAt
+      (fun p' : Y × (ι → 𝕜) ↦ ∑ i, p'.2 i • (e ⟨b p'.1, u p'.1 i⟩).2) p :=
+    tendsto_finsetSum Finset.univ fun i _ ↦
+      ((continuous_apply i).comp continuous_snd).continuousAt.smul (he i)
+  apply hsum.congr_of_eventuallyEq (hmem.mono fun p' hp' ↦ ?_)
+  dsimp only at e ⊢
+  simp only [← e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hp', ← map_smul, ← map_sum,
+    Module.Basis.equivFun_symm_apply]
+  exact (Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e hp' _).symm
 
 end MovingBase
 
