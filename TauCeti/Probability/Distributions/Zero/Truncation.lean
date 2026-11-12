@@ -10,6 +10,7 @@ public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.Cdf
 public import TauCeti.Probability.ConditionalProbability
 public import TauCeti.Probability.Distributions.Truncation
+import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.Probability.Distributions.Dirac
 
 /-!
@@ -34,7 +35,9 @@ of `ℕ` and the real cast:
 
 When `ν` is the point mass at zero, truncation removes all mass and the truncated law is zero, as
 `ProbabilityTheory.cond_compl_singleton_eq_zero_iff` records. The cumulative-mass, moment and
-variance formulas hold in that boundary case as well, with the convention `1 / 0 = 0`.
+variance formulas hold in that boundary case as well, with the convention `1 / 0 = 0`, and so does
+the quantile-rescaling formula, since the zero measure has quantile `0` at every level, as does the
+point mass at zero at level `1`. The cdf formulas assume that `ν` is not the point mass at zero.
 
 ## References
 
@@ -149,17 +152,9 @@ theorem quantile_map_natCast_cond_compl_zero {u : ℝ} (hu : u ∈ Ioo (0 : ℝ)
     ((ν[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u =
       (ν.map (Nat.cast : ℕ → ℝ)).quantile (ν.real {0} + u * (1 - ν.real {0})) := by
   by_cases h : ν {0} = 1
-  · -- `ν` is the point mass at zero: both sides are the quantile of a point mass or of zero
-    have hreal : ν.real {0} = 1 := by simp [measureReal_def, h]
-    have hcompl : ν {0}ᶜ = 0 := by rw [prob_compl_eq_one_sub (measurableSet_singleton 0), h]; simp
-    have hdirac : ν = Measure.dirac 0 := by
-      have hr := Measure.restrict_eq_self_of_ae_mem (μ := ν) (s := {0})
-        (ae_iff.2 hcompl)
-      simpa [Measure.restrict_singleton, h] using hr.symm
-    rw [cond_compl_singleton_eq_zero_iff.2 h, Measure.map_zero, Measure.quantile_zero, hreal,
-      sub_self, mul_zero, add_zero, hdirac, Measure.map_dirac (f := (Nat.cast : ℕ → ℝ)) 0,
-      Nat.cast_zero,
-      Measure.quantile_dirac 0 one_pos le_rfl]
+  · -- `ν` is the point mass at zero: both sides are the quantile of zero or of a point mass.
+    rw [cond_compl_singleton_eq_zero_iff.2 h, eq_dirac_of_measure_singleton_eq_one h]
+    simp [Measure.quantile_dirac]
   have hIic : (ν.map (Nat.cast : ℕ → ℝ)).real (Iic 0) = ν.real {0} := by
     rw [map_measureReal_apply (by fun_prop) measurableSet_Iic]
     congr 1

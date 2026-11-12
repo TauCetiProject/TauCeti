@@ -115,26 +115,13 @@ private theorem mgf_atomMixture_of_integrable (μ : Measure ℝ) (c : ℝ)
       (w : ℝ) * Real.exp (t * c) + (1 - (w : ℝ)) * mgf id μ t := by
   simpa [mgf] using μ.integral_atomMixture c w (fun x => Real.exp (t * x)) hμ
 
-/-- Away from the pure-atom endpoint, a function that is integrable for the atom is integrable for
-an atom mixture exactly when it is integrable for the base component. -/
-theorem integrable_atomMixture_iff {E : Type*} [NormedAddCommGroup E] (f : ℝ → E)
-    (μ : Measure ℝ) (c : ℝ) {w : unitInterval} (hw : w ≠ 1)
-    (hc : Integrable f (Measure.dirac c)) :
-    Integrable f (μ.atomMixture c w) ↔ Integrable f μ := by
-  have hwlt : (w : ℝ) < 1 := unitInterval.lt_one_iff_ne_one.mpr hw
-  have hcoeff : ENNReal.ofReal (1 - (w : ℝ)) ≠ 0 :=
-    ENNReal.ofReal_ne_zero_iff.mpr (sub_pos.mpr hwlt)
-  rw [Measure.atomMixture_def, integrable_add_measure,
-    integrable_smul_measure hcoeff ENNReal.ofReal_ne_top]
-  exact and_iff_right (hc.smul_measure (by simp))
-
 /-- Away from the pure-atom endpoint, an atom mixture has an exponential moment exactly when its
 base component does. -/
 theorem integrable_exp_mul_id_atomMixture_iff (μ : Measure ℝ) (c : ℝ)
     {w : unitInterval} (hw : w ≠ 1) (t : ℝ) :
     Integrable (fun x => Real.exp (t * x)) (μ.atomMixture c w) ↔
       Integrable (fun x => Real.exp (t * x)) μ :=
-  integrable_atomMixture_iff _ μ c hw (integrable_dirac (by simp))
+  μ.integrable_atomMixture_iff c hw
 
 /-- The exact exponential-integrability domain of an atom mixture.  A pure atom has every
 exponential moment; otherwise the domain is that of the base component. -/

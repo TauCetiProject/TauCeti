@@ -185,6 +185,16 @@ theorem Integrable.atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSi
 
 namespace MeasureTheory.Measure
 
+/-- Away from the pure-atom endpoint, a function is integrable for an atom mixture exactly when it
+is integrable for the base component: the atom itself never obstructs integrability. -/
+theorem integrable_atomMixture_iff {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+    [SeminormedAddGroup E] (μ : Measure α) (c : α) {w : unitInterval} (hw : w ≠ 1) {f : α → E} :
+    Integrable f (μ.atomMixture c w) ↔ Integrable f μ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ Integrable.atomMixture h c w⟩
+  rw [atomMixture_def] at h
+  exact (integrable_smul_measure (ENNReal.ofReal_ne_zero_iff.2 <| sub_pos.2 <|
+    unitInterval.lt_one_iff_ne_one.2 hw) ENNReal.ofReal_ne_top).1 h.right_of_add_measure
+
 /-- Integrating against an atom mixture gives the corresponding convex combination. -/
 theorem integral_atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]

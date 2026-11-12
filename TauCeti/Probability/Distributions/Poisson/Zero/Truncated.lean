@@ -24,7 +24,10 @@ positive count. This file specializes the generic zero-truncation formulas of
   `(1 - u) (1 - exp (-r))`.
 
 At rate zero the Poisson law is the point mass at zero and truncation removes all mass. The mass,
-mean and variance formulas cover this boundary too, with the convention `1 / 0 = 0`.
+mean and variance formulas cover this boundary too, with the convention `1 / 0 = 0`, and so does
+the quantile-rescaling formula `quantile_map_cast_poissonMeasure_cond_compl_zero`, since the zero
+measure has quantile `0` at every level. The cdf formulas and the least-index quantile
+characterization require `r ≠ 0`.
 
 ## References
 

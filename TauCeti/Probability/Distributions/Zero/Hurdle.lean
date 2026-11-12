@@ -26,7 +26,8 @@ Write `p₀ = ν.real {0}`. This file combines the zero-inflation formulas of
 * the nonzero natural moments `(1 - w) E[X ^ n] / (1 - p₀)` of the real cast, its mean and
   variance, and its exponential-integrability domain, which is all of `ℝ` at `w = 1` and otherwise
   that of `ν` (the moment and mean identities are stated for Bochner integrals, which are `0` when
-  the integrand is not integrable; they are the usual finite moments exactly when `ν` has them);
+  the integrand is not integrable; they are genuine finite moments at `w = 1`, where the hurdle law
+  is the point mass at zero, or when `ν` has them, and otherwise both sides vanish);
 * the cdf of the real cast and its quantile: zero up to the level `w`, and above it the quantile of
   `ν` at the level `p₀ + (u - w) / (1 - w) * (1 - p₀)`.
 
@@ -103,8 +104,9 @@ theorem integrableExpSet_id_map_natCast_cond_compl_zero_atomMixture_zero :
 
 /-- Every nonzero natural moment of the real cast of the hurdle law is the corresponding moment of
 `ν` rescaled by `(1 - w) / (1 - ν.real {0})`. This is an identity of Bochner integrals, which are
-`0` for a non-integrable integrand, so with no integrability hypothesis both sides vanish when `ν`
-has no `n`-th moment; under integrability it is the usual moment identity. -/
+`0` for a non-integrable integrand. It is the genuine moment identity at `w = 1`, where the hurdle
+law is the point mass at zero and both sides are `0`, or when `ν` has an `n`-th moment; when
+`w ≠ 1` and `ν` has no `n`-th moment, both sides vanish by non-integrability. -/
 theorem integral_pow_map_natCast_cond_compl_zero_atomMixture_zero {n : ℕ} (hn : n ≠ 0) :
     ∫ x, x ^ n ∂((ν[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ) =
       (1 - (w : ℝ)) * (∫ x, x ^ n ∂ν.map (Nat.cast : ℕ → ℝ)) / (1 - ν.real {0}) := by
@@ -116,7 +118,7 @@ theorem integral_pow_map_natCast_cond_compl_zero_atomMixture_zero {n : ℕ} (hn 
     · simp [hw, hn]
     refine integral_undef fun h ↦ hν ?_
     rw [← integrable_map_natCast_cond_compl_zero_iff ν]
-    exact (integrable_atomMixture_iff _ _ _ hw (integrable_dirac (by simp))).1 h
+    exact (integrable_atomMixture_iff _ _ hw).1 h
   rw [map_natCast_atomMixture_zero,
     integral_atomMixture _ _ _ _ (integrable_map_natCast_cond_compl_zero_iff ν |>.2 hν),
     integral_pow_map_natCast_cond_compl_zero ν hn, smul_eq_mul, smul_eq_mul, zero_pow hn,
@@ -124,8 +126,9 @@ theorem integral_pow_map_natCast_cond_compl_zero_atomMixture_zero {n : ℕ} (hn 
 
 /-- The mean of the real cast of the hurdle law is the mean of `ν` rescaled by
 `(1 - w) / (1 - ν.real {0})`. This is an identity of Bochner integrals, which are `0` for a
-non-integrable integrand, so both sides vanish when `ν` has no mean; under integrability it is the
-usual mean identity. -/
+non-integrable integrand. It is the genuine mean identity at `w = 1`, where the hurdle law is the
+point mass at zero and both sides are `0`, or when `ν` has a finite mean; when `w ≠ 1` and `ν` has
+no mean, both sides vanish by non-integrability. -/
 theorem integral_id_map_natCast_cond_compl_zero_atomMixture_zero :
     ∫ x, x ∂((ν[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ) =
       (1 - (w : ℝ)) * (∫ x, x ∂ν.map (Nat.cast : ℕ → ℝ)) / (1 - ν.real {0}) := by

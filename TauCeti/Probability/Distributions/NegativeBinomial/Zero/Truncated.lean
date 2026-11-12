@@ -27,7 +27,10 @@ zero:
 
 At the boundaries `r = 0` and `p = 1` the negative-binomial law is the point mass at zero and
 truncation removes all mass. The mass, mean and variance formulas cover these boundaries too, with
-the convention `1 / 0 = 0`.
+the convention `1 / 0 = 0`, and so does the quantile-rescaling formula
+`quantile_map_cast_negativeBinomialMeasure_cond_compl_zero`, since the zero measure has quantile
+`0` at every level. The cdf formulas and the least-index quantile characterization require
+`0 < r` and `p < 1`.
 
 ## References
 
