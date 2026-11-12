@@ -105,6 +105,12 @@ end H
 
 namespace NonabelianH1
 
+/-- The value over `U` of the quotient `s⁻¹ * s'` of two global sections of a sheaf of groups.
+This holds by definition: the group structure on global sections is the pointwise one. -/
+private lemma sections_inv_mul_coe {F : Sheaf J GrpCat.{w}}
+    (s s' : (F.obj ⋙ forget GrpCat).sections) (U : Cᵒᵖ) : (s⁻¹ * s').1 U = (s.1 U)⁻¹ * s'.1 U :=
+  rfl
+
 variable [HasSheafify J AddCommGrpCat.{w}] [HasExt.{w'} (Sheaf J AddCommGrpCat.{w})]
   [J.WEqualsLocallyBijective AddCommGrpCat.{w}]
 
@@ -116,10 +122,16 @@ variable {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS : S.ShortExact)
 sections of `S.X₃` have isomorphic torsors of lifts if and only if they have the same image under
 the connecting map `δ : H⁰(S.X₃) → H¹(S.X₁)`: both conditions say that they differ by a global
 section of `S.X₂`. -/
-theorem connecting_eq_connecting_iff_δ_eq_δ (x x' : H S.X₃ 0) :
-    connecting hS.isGroupExtension (H.zeroMulEquivSections S.X₃ (.ofAdd x)) =
-        connecting hS.isGroupExtension (H.zeroMulEquivSections S.X₃ (.ofAdd x')) ↔
-      H.δ hS 0 1 rfl x = H.δ hS 0 1 rfl x' := by
+theorem connecting_eq_connecting_iff_δ_eq_δ
+    (q q' : (((abelianSheafToGrpSheaf J).obj S.X₃).obj ⋙ forget GrpCat).sections) :
+    connecting hS.isGroupExtension q = connecting hS.isGroupExtension q' ↔
+      H.δ hS 0 1 rfl ((H.zeroMulEquivSections S.X₃).symm q).toAdd =
+        H.δ hS 0 1 rfl ((H.zeroMulEquivSections S.X₃).symm q').toAdd := by
+  obtain ⟨x, rfl⟩ :=
+    ((H.zeroMulEquivSections S.X₃).surjective.comp Multiplicative.ofAdd.surjective) q
+  obtain ⟨x', rfl⟩ :=
+    ((H.zeroMulEquivSections S.X₃).surjective.comp Multiplicative.ofAdd.surjective) q'
+  simp only [Function.comp_apply, MulEquiv.symm_apply_apply, toAdd_ofAdd]
   rw [connecting_eq_connecting_iff, eq_comm, ← sub_eq_zero, ← map_sub,
     H.exact_map_δ hS 0 1 rfl (x' - x)]
   refine ⟨fun ⟨c, hc⟩ ↦ ⟨((H.zeroMulEquivSections S.X₂).symm c).toAdd, ?_⟩,
@@ -127,12 +139,8 @@ theorem connecting_eq_connecting_iff_δ_eq_δ (x x' : H S.X₃ 0) :
   · refine Multiplicative.ofAdd.injective ((H.zeroMulEquivSections S.X₃).injective
       (Subtype.ext (funext fun U ↦ ?_)))
     rw [H.zeroMulEquivSections_map, ofAdd_toAdd, MulEquiv.apply_symm_apply, hc,
-      H.zeroMulEquivSections_sub]
-    exact ((GrpCat.sectionsπMonoidHom _ U).map_mul _ _).trans
-      (congrArg (· * _) ((GrpCat.sectionsπMonoidHom _ U).map_inv _))
-  · rw [← H.zeroMulEquivSections_map, hz, H.zeroMulEquivSections_sub]
-    exact (((GrpCat.sectionsπMonoidHom _ U).map_mul _ _).trans
-      (congrArg (· * _) ((GrpCat.sectionsπMonoidHom _ U).map_inv _))).symm
+      H.zeroMulEquivSections_sub, sections_inv_mul_coe]
+  · rw [← H.zeroMulEquivSections_map, hz, H.zeroMulEquivSections_sub, sections_inv_mul_coe]
 
 variable [Injective S.X₂]
 
@@ -153,14 +161,17 @@ private def toHOfInjective (y : NonabelianH1 ((abelianSheafToGrpSheaf J).obj S.X
 private lemma toHOfInjective_connecting (x : H S.X₃ 0) :
     toHOfInjective hS (connecting hS.isGroupExtension (H.zeroMulEquivSections S.X₃ (.ofAdd x))) =
       H.δ hS 0 1 rfl x :=
-  (connecting_eq_connecting_iff_δ_eq_δ hS _ _).1 (Function.surjInv_eq (surjective_connecting hS) _)
+  by
+  have h := (connecting_eq_connecting_iff_δ_eq_δ hS _ (H.zeroMulEquivSections S.X₃ (.ofAdd x))).1
+    (Function.surjInv_eq (surjective_connecting hS) _)
+  rwa [MulEquiv.symm_apply_apply, MulEquiv.symm_apply_apply, toAdd_ofAdd, toAdd_ofAdd] at h
 
 private lemma bijective_toHOfInjective : Function.Bijective (toHOfInjective hS) := by
   refine ⟨fun y y' h ↦ ?_, fun z ↦ ?_⟩
   · obtain ⟨x, rfl⟩ := surjective_connecting hS y
     obtain ⟨x', rfl⟩ := surjective_connecting hS y'
     rw [toHOfInjective_connecting, toHOfInjective_connecting] at h
-    exact (connecting_eq_connecting_iff_δ_eq_δ hS x x').2 h
+    exact (connecting_eq_connecting_iff_δ_eq_δ hS _ _).2 (by simpa using h)
   · -- `δ` is onto `H¹(S.X₁)` because `H¹(S.X₂)` vanishes.
     obtain ⟨x, rfl⟩ := H.δ_surjective hS 0 1 rfl inferInstance z
     exact ⟨_, toHOfInjective_connecting hS x⟩
@@ -168,6 +179,16 @@ private lemma bijective_toHOfInjective : Function.Bijective (toHOfInjective hS) 
 end
 
 variable [EnoughInjectives (Sheaf J AddCommGrpCat.{w})]
+
+omit [HasExt.{w'} (Sheaf J AddCommGrpCat.{w})] [J.WEqualsLocallyBijective AddCommGrpCat.{w}] in
+/-- The extension `0 → F → I → I / F → 0` of `F` by its chosen injective sheaf `I`, used to define
+`equivSheafH`. It is the short complex of the presentation
+`(Injective.exists_presentation F).choose`, since `Injective.under F` and `Injective.ι F` are by
+definition its object and morphism. -/
+private lemma shortExact_ι (F : Sheaf J AddCommGrpCat.{w}) :
+    (ShortComplex.mk (Injective.ι F) (Limits.cokernel.π (Injective.ι F))
+      (Limits.cokernel.condition _)).ShortExact :=
+  (Injective.exists_presentation F).choose.shortExact_shortComplex
 
 /-- The classes of torsors under an abelian sheaf `F` are in bijection with the sheaf cohomology
 `H¹(F)` (Stacks, Lemma 21.4.3 (03AJ)). The bijection is characterised by
@@ -177,22 +198,22 @@ torsor of lifts of a global section of `Q` goes to its image under the connectin
 construct it. -/
 def equivSheafH (F : Sheaf J AddCommGrpCat.{w}) :
     NonabelianH1 ((abelianSheafToGrpSheaf J).obj F) ≃ H F 1 :=
-  Equiv.ofBijective _
-    (bijective_toHOfInjective (Injective.exists_presentation F).choose.shortExact_shortComplex)
+  Equiv.ofBijective _ (bijective_toHOfInjective (shortExact_ι F))
 
 /-- For a short exact sequence `0 → S.X₁ → S.X₂ → S.X₃ → 0` of abelian sheaves, `equivSheafH`
-sends the class of the torsor of lifts of the global section of `S.X₃` given by `x ∈ H⁰(S.X₃)`
-to `δ x ∈ H¹(S.X₁)`. -/
+sends the class of the torsor of lifts of a global section `q` of `S.X₃` to `δ q ∈ H¹(S.X₁)`,
+viewing `q` as a class in `H⁰(S.X₃)`. -/
 @[simp]
 theorem equivSheafH_connecting {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS : S.ShortExact)
-    (x : H S.X₃ 0) :
-    equivSheafH S.X₁ (connecting hS.isGroupExtension (H.zeroMulEquivSections S.X₃ (.ofAdd x))) =
-      H.δ hS 0 1 rfl x := by
+    (q : (((abelianSheafToGrpSheaf J).obj S.X₃).obj ⋙ forget GrpCat).sections) :
+    equivSheafH S.X₁ (connecting hS.isGroupExtension q) =
+      H.δ hS 0 1 rfl ((H.zeroMulEquivSections S.X₃).symm q).toAdd := by
+  obtain ⟨x, rfl⟩ :=
+    ((H.zeroMulEquivSections S.X₃).surjective.comp Multiplicative.ofAdd.surjective) q
+  simp only [Function.comp_apply, MulEquiv.symm_apply_apply, toAdd_ofAdd]
   have := hS.mono_f
   have := hS.epi_g
-  let hS₀ : (ShortComplex.mk (Injective.ι S.X₁) (Limits.cokernel.π (Injective.ι S.X₁))
-      (Limits.cokernel.condition _)).ShortExact :=
-    (Injective.exists_presentation S.X₁).choose.shortExact_shortComplex
+  have hS₀ := shortExact_ι S.X₁
   -- Compare `S` with the extension `0 → S.X₁ → I → I / S.X₁ → 0` defining `equivSheafH`, through
   -- an extension `β : S.X₂ ⟶ I` of the embedding into the injective sheaf `I`.
   let β : S.X₂ ⟶ Injective.under S.X₁ := Injective.factorThru (Injective.ι S.X₁) S.f
@@ -218,13 +239,12 @@ theorem equivSheafH_symm_δ {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS :
     (x : H S.X₃ 0) :
     (equivSheafH S.X₁).symm (H.δ hS 0 1 rfl x) =
       connecting hS.isGroupExtension (H.zeroMulEquivSections S.X₃ (.ofAdd x)) :=
-  (equivSheafH S.X₁).symm_apply_eq.2 (equivSheafH_connecting hS x).symm
+  (equivSheafH S.X₁).symm_apply_eq.2 ((equivSheafH_connecting hS _).trans (by simp)).symm
 
 /-- `equivSheafH` sends the class of the trivial torsor to `0`. -/
 @[simp]
 theorem equivSheafH_one (F : Sheaf J AddCommGrpCat.{w}) : equivSheafH F 1 = 0 := by
-  have h := toHOfInjective_connecting
-    (Injective.exists_presentation F).choose.shortExact_shortComplex 0
+  have h := toHOfInjective_connecting (shortExact_ι F) 0
   rwa [ofAdd_zero, _root_.map_one, connecting_one, map_zero] at h
 
 /-- The inverse of `equivSheafH` sends `0` to the class of the trivial torsor. -/
