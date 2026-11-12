@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Perron.Barrier
 import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
+import TauCeti.Analysis.InnerProductSpace.Harmonic.RemovableSingularity
+import TauCeti.Analysis.InnerProductSpace.NormPow
 
 /-!
 # Regular boundary points
@@ -38,6 +41,18 @@ hence subharmonic (`ConvexOn.subharmonicOn`), so the comparison principle gives
 open sets on which the Dirichlet problem is solvable for all continuous data
 (`TauCeti.forall_mem_frontier_exists_isBarrier_iff`).
 
+**Isolated boundary points.** In dimension at least two, a point `ξ` around which `Ω` contains a
+punctured neighbourhood is not regular (`TauCeti.not_isBarrier_of_sdiff_singleton_subset`). A
+barrier `w` at `ξ` would be superharmonic and positive on a punctured ball about `ξ`, so by the
+comparison principle on punctured balls
+(`TauCeti.SubharmonicOn.le_of_le_sphere_of_isBoundedUnder`) it would stay above its positive
+minimum on a small sphere about `ξ`, contradicting `w ξ = 0` and continuity at `ξ`. Concretely,
+on the punctured ball `ball ξ r \ {ξ}`, whose boundary is `sphere ξ r ∪ {ξ}`, the continuous
+datum equal to `0` on the sphere and to `1` at `ξ` is not attained by any harmonic function
+(`TauCeti.not_exists_harmonicOnNhd_ball_sdiff_singleton`): the singularity at `ξ` is removable.
+In dimension one the isolated point is regular, with barrier `x ↦ ‖x - ξ‖`, which is affine on
+each side of `ξ` (`TauCeti.isBarrier_norm_sub_of_finrank_eq_one`).
+
 ## Main declarations
 
 * `TauCeti.IsBarrier.exists_isBarrier_of_inter`: a local barrier yields a barrier.
@@ -47,6 +62,12 @@ open sets on which the Dirichlet problem is solvable for all continuous data
 * `TauCeti.forall_mem_frontier_exists_isBarrier_iff`: **the Dirichlet problem on a bounded open
   set is solvable for all continuous boundary data exactly when every boundary point is
   regular.**
+* `TauCeti.not_isBarrier_of_sdiff_singleton_subset`: **in dimension at least two, an isolated
+  boundary point is irregular.**
+* `TauCeti.not_exists_harmonicOnNhd_ball_sdiff_singleton`: the Dirichlet problem on a punctured
+  ball cannot prescribe the value at the centre.
+* `TauCeti.isBarrier_norm_sub_of_finrank_eq_one`: in dimension one, isolated boundary points
+  are regular.
 
 ## References
 
@@ -169,5 +190,85 @@ theorem forall_mem_frontier_exists_isBarrier_iff (hΩ : IsOpen Ω) (hb : Bornolo
     fun h ξ hξ ↦ ?_⟩
   obtain ⟨u, hu, huc, hug⟩ := h (dist · ξ) (continuous_id.dist continuous_const).continuousOn
   exact ⟨u, hu.isBarrier hΩ hb huc hξ hug⟩
+
+/-! ### Isolated boundary points -/
+
+/-- **An isolated boundary point is irregular.** In dimension at least two, if `Ω` contains a
+punctured neighbourhood `s \ {ξ}` of `ξ`, then no function is a barrier at `ξ` relative to `Ω`.
+In particular a point of `frontier Ω` isolated in the complement of `Ω` is not regular. -/
+theorem not_isBarrier_of_sdiff_singleton_subset (hE : 2 ≤ Module.finrank ℝ E) {s : Set E}
+    (hs : s ∈ 𝓝 ξ) (hsΩ : s \ {ξ} ⊆ Ω) : ¬ IsBarrier Ω ξ w := by
+  intro hw
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (two_pos.trans_le hE)
+  obtain ⟨ρ, hρ, hρs⟩ := Metric.mem_nhds_iff.1 hs
+  set r := ρ / 2
+  have hr : 0 < r := half_pos hρ
+  have hΩr : closedBall ξ r \ {ξ} ⊆ closure Ω :=
+    ((sdiff_subset_sdiff_left ((closedBall_subset_ball (half_lt_self hρ)).trans hρs)).trans
+      hsΩ).trans subset_closure
+  -- `w` is positive on `Ω`, so `-w` is bounded above by `0` near `ξ`.
+  have hΩs : closure Ω ∈ 𝓝[≠] ξ :=
+    mem_nhdsWithin_iff_exists_mem_nhds_inter.2 ⟨s, hs, fun x hx ↦ subset_closure (hsΩ hx)⟩
+  have hbdd : IsBoundedUnder (· ≤ ·) (𝓝[≠] ξ) (-w) :=
+    ⟨0, eventually_map.2 <| by
+      filter_upwards [hΩs, self_mem_nhdsWithin] with x hx hxξ
+      exact neg_nonpos.2 (hw.pos x hx hxξ).le⟩
+  -- `w` has a positive minimum `m` on `sphere ξ r`.
+  have hsph : sphere ξ r ⊆ closure Ω := fun x hx ↦
+    hΩr ⟨sphere_subset_closedBall hx, ne_of_mem_sphere hx hr.ne'⟩
+  obtain ⟨m, hm, hmw⟩ := (isCompact_sphere ξ r).exists_forall_le' (hw.continuousOn.mono hsph)
+    fun x hx ↦ hw.pos x (hsph hx) (ne_of_mem_sphere hx hr.ne')
+  -- By the comparison principle on the punctured ball, `w ≥ m` there.
+  have hsub : ball ξ r \ {ξ} ⊆ Ω := fun x hx ↦
+    hsΩ ⟨hρs (ball_subset_ball (half_le_self hρ.le) hx.1), hx.2⟩
+  have hle := (hw.subharmonicOn_neg.mono hsub).le_of_le_sphere_of_isBoundedUnder hE
+    (hw.continuousOn.neg.mono hΩr) hbdd (harmonicOnNhd_const (-m)) continuousOn_const
+    fun x hx ↦ neg_le_neg (hmw x hx)
+  -- This contradicts `w ξ = 0` and the continuity of `w` at `ξ`.
+  have hξ : ξ ∈ closure Ω :=
+    isClosed_closure.mem_of_tendsto (tendsto_id.mono_left nhdsWithin_le_nhds) hΩs
+  have htend : Tendsto w (𝓝[≠] ξ) (𝓝 0) :=
+    hw.apply_self ▸ (hw.continuousOn ξ hξ).tendsto.mono_left (nhdsWithin_le_of_mem hΩs)
+  have hge : ∀ᶠ x in 𝓝[≠] ξ, m ≤ w x := by
+    filter_upwards [sdiff_mem_nhdsWithin_compl (closedBall_mem_nhds ξ hr) {ξ}] with x hx
+    simpa using hle x hx
+  exact hm.not_ge (ge_of_tendsto htend hge)
+
+/-- **The Dirichlet problem on a punctured ball.** In dimension at least two, no function harmonic
+on `ball ξ r \ {ξ}` and continuous on `closedBall ξ r` vanishes on `sphere ξ r` and equals `1` at
+`ξ`. The boundary of the punctured ball is `sphere ξ r ∪ {ξ}`, so this continuous boundary datum
+is not attained: the value at the isolated boundary point `ξ` cannot be prescribed. -/
+theorem not_exists_harmonicOnNhd_ball_sdiff_singleton (hE : 2 ≤ Module.finrank ℝ E) {r : ℝ}
+    (hr : 0 < r) :
+    ¬ ∃ u : E → ℝ, HarmonicOnNhd u (ball ξ r \ {ξ}) ∧ ContinuousOn u (closedBall ξ r) ∧
+      EqOn u 0 (sphere ξ r) ∧ u ξ = 1 := by
+  rintro ⟨u, hu, huc, hu0, huξ⟩
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (two_pos.trans_le hE)
+  have hcont : ContinuousAt u ξ := huc.continuousAt (closedBall_mem_nhds ξ hr)
+  -- `u` is bounded above near `ξ`, so by the comparison principle `u ≤ 0` on the punctured ball.
+  have hle := hu.subharmonicOn.le_of_le_sphere_of_isBoundedUnder hE (huc.mono sdiff_subset)
+    (hcont.tendsto.mono_left nhdsWithin_le_nhds).isBoundedUnder_le (harmonicOnNhd_const 0)
+    continuousOn_const fun x hx ↦ (hu0 hx).le
+  have hge : ∀ᶠ x in 𝓝[≠] ξ, u x ≤ 0 := by
+    filter_upwards [sdiff_mem_nhdsWithin_compl (closedBall_mem_nhds ξ hr) {ξ}] with x hx
+    exact hle x hx
+  have : u ξ ≤ 0 := le_of_tendsto (hcont.tendsto.mono_left nhdsWithin_le_nhds) hge
+  linarith
+
+/-- **In dimension one an isolated boundary point is regular.** On a one-dimensional space,
+`x ↦ ‖x - ξ‖` is affine on each side of `ξ`, hence harmonic away from `ξ`, and it is a barrier at
+`ξ` relative to every set not containing `ξ`. So the dimension hypothesis of
+`TauCeti.not_isBarrier_of_sdiff_singleton_subset` is necessary. -/
+theorem isBarrier_norm_sub_of_finrank_eq_one (hE : Module.finrank ℝ E = 1) (hξ : ξ ∉ Ω) :
+    IsBarrier Ω ξ fun x ↦ ‖x - ξ‖ := by
+  have hH : HarmonicOnNhd (fun x ↦ ‖x - ξ‖) Ω := fun x hx ↦ by
+    have h := harmonicAt_comp_add_right_iff (f := fun y : E ↦ ‖y‖ ^ (2 - Module.finrank ℝ E : ℝ))
+      (x := x) (a := -ξ)
+    have h₀ := harmonicAt_norm_rpow_two_sub_finrank (sub_ne_zero.2 (ne_of_mem_of_not_mem hx hξ))
+    simp only [← sub_eq_add_neg, hE, Nat.cast_one, show (2 : ℝ) - 1 = 1 by norm_num,
+      Real.rpow_one] at h h₀
+    exact h.2 h₀
+  exact ⟨hH.neg.subharmonicOn, (continuous_id.sub continuous_const).norm.continuousOn,
+    by simp, fun x _ hx ↦ norm_pos_iff.2 (sub_ne_zero.2 hx)⟩
 
 end TauCeti
