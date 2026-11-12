@@ -178,9 +178,6 @@ private theorem exists_mem_Icc_closedBall_div_four {κ : ℝ} (hκ : 0 < κ) :
   refine ⟨(2 * T)⁻¹, ε₀⁻¹, by positivity, inv_lt_one_of_one_lt₀ (by linarith), by positivity, ?_⟩
   intro lam Lam ρ m L F c a u f hρ hF ha hLam hcont hu heq hf hmem
   have hlam : 0 < lam := ha.pos
-  have hL : 0 ≤ L := by
-    have h := hmem c (mem_closedBall_self hρ.le)
-    linarith [h.1, h.2]
   have hρ4 : closedBall c (ρ / 4) ⊆ closedBall c ρ := closedBall_subset_closedBall (by linarith)
   by_cases hsmall : L ≤ 2 * T * ρ * F / (ε₀ * lam)
   · -- The oscillation is already controlled by the right-hand side.
@@ -220,7 +217,7 @@ private theorem exists_mem_Icc_closedBall_div_four {κ : ℝ} (hκ : 0 < κ) :
       funext x
       simp only [Pi.smul_apply, smul_eq_mul]
       exact posPart_eq_self.2 (by positivity)
-    rw [h1, eLpNorm_const_smul, eLpNorm_norm _ hfm, Real.enorm_eq_ofReal (by positivity)]
+    rw [h1, eLpNorm_const_smul, eLpNorm_norm _ hfm, Real.eNorm_eq_ofReal (by positivity)]
     calc ENNReal.ofReal ρ * (ENNReal.ofReal s⁻¹ * eLpNorm f (Fintype.card ι)
           (volume.restrict (ball c ρ))) ≤
           ENNReal.ofReal ρ * (ENNReal.ofReal s⁻¹ * ENNReal.ofReal F) := by gcongr
