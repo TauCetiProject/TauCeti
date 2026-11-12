@@ -91,7 +91,7 @@ theorem uniformIntegrable_of_lintegral_iSup_enorm_rpow_lt_top {α β ι : Type*}
   have hp_zero : p ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hp)
   have hp_pos : 0 < p.toReal := ENNReal.toReal_pos hp_zero hp_top
   let G : α → ℝ≥0∞ := fun x ↦ ⨆ i, ‖V i x‖ₑ
-  have hG : AEMeasurable G μ := AEMeasurable.iSup fun i ↦ (hV i).enorm
+  have hG : AEMeasurable G μ := AEMeasurable.iSup fun i ↦ (hV i).eNorm
   have hGi : ∫⁻ x, G x ^ p.toReal ∂μ < ∞ := by
     simpa only [G, ← ENNReal.iSup_rpow_of_pos hp_pos] using hfin
   have hfinite : ∀ᵐ x ∂μ, G x ≠ ∞ := by
