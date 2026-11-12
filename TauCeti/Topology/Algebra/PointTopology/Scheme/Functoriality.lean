@@ -65,8 +65,9 @@ theorem map_chartPoint (g : X ⟶ Y) (hg : g ≫ fY = fX)
   apply Subtype.ext
   simp
 
-/-- A point of `X` whose image in `Y` lies in an affine open chart `Spec C ⟶ Y` lies in an affine
-open chart `Spec A ⟶ X` mapping to it, through an algebra map `C → A`. -/
+/-- Over a local ring, a point of `X` whose image in `Y` lies in an affine open chart
+`Spec C ⟶ Y` lies in an affine open chart `Spec A ⟶ X` mapping to it through a `k`-algebra map
+`C →ₐ[k] A`. -/
 theorem exists_chartPoint_over [IsLocalRing R] (g : X ⟶ Y) (hg : g ≫ fY = fX)
     (C : CommAlgCat.{u} k) (iC : Spec (.of C) ⟶ Y) (hiC : iC ≫ fY = Spec.algebraMap k C)
     [IsOpenImmersion iC] (x : Points (R := R) fX)

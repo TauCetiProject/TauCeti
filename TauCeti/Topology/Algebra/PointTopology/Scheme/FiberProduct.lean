@@ -12,19 +12,22 @@ public import TauCeti.Topology.Algebra.PointTopology.Scheme.Functoriality
 /-!
 # Scheme-valued points of fibre products
 
-Let `X ⟶ Z ⟵ Y` be morphisms of schemes over `Spec k`. The universal property of the fibre
-product identifies the `R`-points of `X ×_Z Y` with the pairs of `R`-points of `X` and `Y` having
-the same image in `Z`, through the two projections
-(`TauCeti.SchemePointTopology.pullbackPointsEquiv`). Over a local topological ring with open
+Let `X ⟶ Z ⟵ Y` be morphisms of schemes over `Spec k`, and let `P` with projections
+`p₁ : P ⟶ X` and `p₂ : P ⟶ Y` be a fibre product, given as an `IsPullback` square. The universal
+property identifies the `R`-points of `P` with the pairs of `R`-points of `X` and `Y` having the
+same image in `Z`, through the two projections
+(`TauCeti.SchemePointTopology.pointsEquivOfIsPullback`). Over a local topological ring with open
 units and continuous inversion on the units, this bijection is a homeomorphism onto the subspace
-of compatible pairs (`TauCeti.SchemePointTopology.pullbackPointsHomeomorph`): the point functor
-preserves fibre products. No finiteness or separation assumptions are needed.
+of compatible pairs (`TauCeti.SchemePointTopology.pointsHomeomorphOfIsPullback`): the point functor
+preserves fibre products. No finiteness or separation assumptions are needed. The chosen fibre
+product `pullback g₁ g₂` is the special case `TauCeti.SchemePointTopology.pullbackPointsHomeomorph`,
+and a fibre product over the base itself has the product of the point spaces as its points
+(`TauCeti.SchemePointTopology.pointsProdHomeomorphOfIsPullback`).
 
-The projections act continuously on points. For the inverse, a compatible pair lies in the points
-of affine charts `Spec A ⟶ X` and `Spec B ⟶ Y` over an affine chart `Spec C ⟶ Z`, and then in
-the points of the affine chart `Spec (A ⊗[C] B) ⟶ X ×_Z Y`, an open immersion. On the open set of
-such pairs the inverse is the affine comparison
-`TauCeti.PointTopology.relativeTensorProductHomeomorph`, read in this chart.
+Affine charts `Spec A ⟶ X` and `Spec B ⟶ Y` over an affine chart `Spec C ⟶ Z` give an affine
+chart `Spec (A ⊗[C] B) ⟶ P` (`TauCeti.SchemePointTopology.tensorProductChart`), on whose points
+the inverse comparison is the affine comparison
+`TauCeti.PointTopology.relativeTensorProductHomeomorph`.
 
 ## References
 
@@ -44,65 +47,176 @@ universe u
 namespace TauCeti.SchemePointTopology
 
 variable {k R : Type u} [CommRing k] [CommRing R] [Algebra k R]
-  {X Y Z : Scheme.{u}} {fX : X ⟶ Spec (.of k)} {fY : Y ⟶ Spec (.of k)}
-  {fZ : Z ⟶ Spec (.of k)} (g₁ : X ⟶ Z) (g₂ : Y ⟶ Z) (hg₁ : g₁ ≫ fZ = fX) (hg₂ : g₂ ≫ fZ = fY)
+  {X Y Z P : Scheme.{u}} {fX : X ⟶ Spec (.of k)} {fY : Y ⟶ Spec (.of k)}
+  {fZ : Z ⟶ Spec (.of k)} {fP : P ⟶ Spec (.of k)} {g₁ : X ⟶ Z} {g₂ : Y ⟶ Z}
+  {p₁ : P ⟶ X} {p₂ : P ⟶ Y}
+  (hP : IsPullback p₁ p₂ g₁ g₂) (hp₁ : p₁ ≫ fX = fP) (hg₁ : g₁ ≫ fZ = fX) (hg₂ : g₂ ≫ fZ = fY)
 
 include hg₁ hg₂ in
-/-- The second projection of the fibre product is a morphism over the base. -/
-theorem pullback_snd_comp_eq : pullback.snd g₁ g₂ ≫ fY = pullback.fst g₁ g₂ ≫ fX := by
-  rw [← hg₁, ← hg₂, pullback.condition_assoc]
+/-- In a commutative square over `X ⟶ Z ⟵ Y`, the second projection is a morphism over the base
+whenever the first one is. -/
+theorem snd_comp_eq_of_commSq (h : CommSq p₁ p₂ g₁ g₂) (hp₁ : p₁ ≫ fX = fP) :
+    p₂ ≫ fY = fP := by
+  rw [← hp₁, ← hg₁, ← hg₂, h.w_assoc]
 
-/-- **Points of a fibre product.** The `R`-points of `X ×_Z Y` are the pairs of `R`-points of
-`X` and `Y` with the same image in `Z`, through the two projections. -/
-noncomputable def pullbackPointsEquiv :
-    Points (R := R) (pullback.fst g₁ g₂ ≫ fX) ≃
+/-- **Points of a fibre product.** The `R`-points of a fibre product `P` of `X ⟶ Z ⟵ Y` are the
+pairs of `R`-points of `X` and `Y` with the same image in `Z`, through the two projections. -/
+noncomputable def pointsEquivOfIsPullback :
+    Points (R := R) fP ≃
       {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2} where
-  toFun x := ⟨(map (pullback.fst g₁ g₂) rfl x,
-    map (pullback.snd g₁ g₂) (pullback_snd_comp_eq g₁ g₂ hg₁ hg₂) x),
-    Subtype.ext (by simp [pullback.condition])⟩
-  invFun p := ⟨pullback.lift p.1.1.val p.1.2.val (by simpa using congrArg Subtype.val p.2), by
-    simp [p.1.1.property]⟩
-  left_inv x := Subtype.ext (pullback.hom_ext (by simp) (by simp))
+  toFun x := ⟨(map p₁ hp₁ x, map p₂ (snd_comp_eq_of_commSq hg₁ hg₂ hP.toCommSq hp₁) x),
+    Subtype.ext (by simp [hP.w])⟩
+  invFun p := ⟨hP.lift p.1.1.val p.1.2.val (by simpa using congrArg Subtype.val p.2), by
+    rw [← hp₁, IsPullback.lift_fst_assoc, p.1.1.property]⟩
+  left_inv x := Subtype.ext (hP.hom_ext (by simp) (by simp))
   right_inv p := Subtype.ext (Prod.ext (Subtype.ext (by simp)) (Subtype.ext (by simp)))
 
-/-- The first component of the fibre-product comparison is the first projection. -/
+/-- The fibre-product comparison sends a point to its two projections. -/
 @[simp]
-theorem pullbackPointsEquiv_apply_fst (x : Points (R := R) (pullback.fst g₁ g₂ ≫ fX)) :
-    (pullbackPointsEquiv g₁ g₂ hg₁ hg₂ x).1.1 = map (pullback.fst g₁ g₂) rfl x :=
-  (rfl)
-
-/-- The second component of the fibre-product comparison is the second projection. -/
-@[simp]
-theorem pullbackPointsEquiv_apply_snd (x : Points (R := R) (pullback.fst g₁ g₂ ≫ fX)) :
-    (pullbackPointsEquiv g₁ g₂ hg₁ hg₂ x).1.2 =
-      map (pullback.snd g₁ g₂) (pullback_snd_comp_eq g₁ g₂ hg₁ hg₂) x :=
+theorem pointsEquivOfIsPullback_apply_coe (x : Points (R := R) fP) :
+    (pointsEquivOfIsPullback hP hp₁ hg₁ hg₂ x).1 =
+      (map p₁ hp₁ x, map p₂ (snd_comp_eq_of_commSq hg₁ hg₂ hP.toCommSq hp₁) x) :=
   (rfl)
 
 /-- The inverse fibre-product comparison is the morphism into the fibre product given by the
 universal property. -/
 @[simp]
-theorem pullbackPointsEquiv_symm_apply_val
+theorem pointsEquivOfIsPullback_symm_apply_val
     (p : {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2}) :
-    ((pullbackPointsEquiv g₁ g₂ hg₁ hg₂).symm p).val =
-      pullback.lift p.1.1.val p.1.2.val (by simpa using congrArg Subtype.val p.2) :=
+    ((pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm p).val =
+      hP.lift p.1.1.val p.1.2.val (by simpa using congrArg Subtype.val p.2) :=
   (rfl)
+
+/-- The first projection of the inverse fibre-product comparison is the first point of the
+pair. -/
+@[simp]
+theorem map_fst_pointsEquivOfIsPullback_symm (h : p₁ ≫ fX = fP)
+    (p : {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2}) :
+    map p₁ h ((pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm p) = p.1.1 :=
+  Subtype.ext (by simp)
+
+/-- The second projection of the inverse fibre-product comparison is the second point of the
+pair. -/
+@[simp]
+theorem map_snd_pointsEquivOfIsPullback_symm (h : p₂ ≫ fY = fP)
+    (p : {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2}) :
+    map p₂ h ((pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm p) = p.1.2 :=
+  Subtype.ext (by simp)
+
+include hP hp₁ hg₁ hg₂ in
+/-- The points of a fibre product, sent to their two projections, are exactly the pairs of points
+with the same image in `Z`. -/
+theorem range_prodMk_map_of_isPullback (hp₂ : p₂ ≫ fY = fP) :
+    Set.range (fun x : Points (R := R) fP ↦ (map p₁ hp₁ x, map p₂ hp₂ x)) =
+      {p | map g₁ hg₁ p.1 = map g₂ hg₂ p.2} := by
+  ext p
+  refine ⟨?_, fun hp ↦ ⟨(pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm ⟨p, hp⟩, by simp⟩⟩
+  rintro ⟨x, rfl⟩
+  exact (pointsEquivOfIsPullback hP hp₁ hg₁ hg₂ x).2
+
+section TensorProductChart
+
+variable {A B C : CommAlgCat.{u} k} [Algebra C A] [Algebra C B]
+  {iA : Spec (.of A) ⟶ X} {iB : Spec (.of B) ⟶ Y} {iC : Spec (.of C) ⟶ Z}
+  (hA : Spec.map (CommRingCat.ofHom (algebraMap C A)) ≫ iC = iA ≫ g₁)
+  (hB : Spec.map (CommRingCat.ofHom (algebraMap C B)) ≫ iC = iB ≫ g₂)
+
+/-- The affine chart `Spec (A ⊗[C] B) ⟶ P` of a fibre product `P` of `X ⟶ Z ⟵ Y`, built from
+affine charts `Spec A ⟶ X` and `Spec B ⟶ Y` lying over an affine chart `Spec C ⟶ Z`. -/
+noncomputable def tensorProductChart : Spec (.of (A ⊗[C] B)) ⟶ P :=
+  (pullbackSpecIso C A B).inv ≫ pullback.map _ _ _ _ iA iB iC hA hB ≫ hP.isoPullback.inv
+
+/-- The tensor-product chart of a fibre product of open charts is an open chart. -/
+instance [IsOpenImmersion iA] [IsOpenImmersion iB] [IsOpenImmersion iC] :
+    IsOpenImmersion (tensorProductChart hP hA hB) := by
+  unfold tensorProductChart
+  infer_instance
+
+/-- The first projection of the tensor-product chart is the chart of `X` on the left factor. -/
+@[reassoc (attr := simp)]
+theorem tensorProductChart_fst : tensorProductChart hP hA hB ≫ p₁ =
+    Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ iA := by
+  simp [tensorProductChart]
+
+/-- The second projection of the tensor-product chart is the chart of `Y` on the right factor. -/
+@[reassoc (attr := simp)]
+theorem tensorProductChart_snd : tensorProductChart hP hA hB ≫ p₂ = Spec.map (CommRingCat.ofHom
+    (Algebra.TensorProduct.includeRight (R := C) (A := A) (B := B)).toRingHom) ≫ iB := by
+  simp [tensorProductChart]
+
+variable [IsScalarTower k C A]
+
+include hp₁ in
+/-- The tensor-product chart is a morphism over the base. -/
+theorem tensorProductChart_comp (hiA : iA ≫ fX = Spec.algebraMap k A) :
+    tensorProductChart hP hA hB ≫ fP = Spec.algebraMap k (CommAlgCat.of k (A ⊗[C] B)) := by
+  rw [← hp₁, tensorProductChart_fst_assoc, hiA, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+    ← Algebra.TensorProduct.algebraMap_def]
+
+variable [IsScalarTower k C B]
+
+include hA hB in
+/-- Two chart points of `X` and `Y` over a monomorphic chart of `Z` have the same image in `Z`
+exactly when the two algebra maps agree on `C`. -/
+theorem map_chartPoint_eq_map_chartPoint_iff (hiA : iA ≫ fX = Spec.algebraMap k A)
+    (hiB : iB ≫ fY = Spec.algebraMap k B) (hiC : iC ≫ fZ = Spec.algebraMap k C) [Mono iC]
+    (a : A →ₐ[k] R) (b : B →ₐ[k] R) :
+    map g₁ hg₁ (chartPoint fX A iA hiA a) = map g₂ hg₂ (chartPoint fY B iB hiB b) ↔
+      a.comp (IsScalarTower.toAlgHom k C A) = b.comp (IsScalarTower.toAlgHom k C B) := by
+  have hA' : Spec.map (CommRingCat.ofHom (IsScalarTower.toAlgHom k C A).toRingHom) ≫ iC =
+      iA ≫ g₁ := by
+    rwa [AlgHom.toRingHom_eq_coe, IsScalarTower.coe_toAlgHom]
+  have hB' : Spec.map (CommRingCat.ofHom (IsScalarTower.toAlgHom k C B).toRingHom) ≫ iC =
+      iB ≫ g₂ := by
+    rwa [AlgHom.toRingHom_eq_coe, IsScalarTower.coe_toAlgHom]
+  rw [map_chartPoint, map_chartPoint]
+  simp only [← hA', ← hB']
+  rw [chartPoint_spec_map_comp fZ iC hiC, chartPoint_spec_map_comp fZ iC hiC]
+  exact (chartPoint_injective fZ C iC hiC).eq_iff
+
+/-- On compatible pairs of chart points, the inverse fibre-product comparison is the
+tensor-product chart applied to the lift of the two algebra maps to `A ⊗[C] B`. -/
+theorem pointsEquivOfIsPullback_symm_chartPoint (hiA : iA ≫ fX = Spec.algebraMap k A)
+    (hiB : iB ≫ fY = Spec.algebraMap k B) (hiC : iC ≫ fZ = Spec.algebraMap k C) [Mono iC]
+    (a : A →ₐ[k] R) (b : B →ₐ[k] R)
+    (h : map g₁ hg₁ (chartPoint fX A iA hiA a) = map g₂ hg₂ (chartPoint fY B iB hiB b)) :
+    (pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm
+        ⟨(chartPoint fX A iA hiA a, chartPoint fY B iB hiB b), h⟩ =
+      chartPoint fP (CommAlgCat.of k (A ⊗[C] B)) (tensorProductChart hP hA hB)
+        (tensorProductChart_comp hP hp₁ hA hB hiA) (a.tensorProductLift b
+          ((map_chartPoint_eq_map_chartPoint_iff hg₁ hg₂ hA hB hiA hiB hiC a b).1 h)) := by
+  apply Subtype.ext
+  simp only [pointsEquivOfIsPullback_symm_apply_val, chartPoint_val]
+  refine hP.hom_ext ?_ ?_
+  · rw [IsPullback.lift_fst, Category.assoc, tensorProductChart_fst, ← Category.assoc,
+      ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    refine congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ) ≫ iA) (RingHom.ext fun t ↦ ?_)
+    simp
+  · rw [IsPullback.lift_snd, Category.assoc, tensorProductChart_snd, ← Category.assoc,
+      ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    refine congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ) ≫ iB) (RingHom.ext fun t ↦ ?_)
+    simp
+
+end TensorProductChart
 
 section Topology
 
 variable [TopologicalSpace R] [IsLocalRing R] [IsOpenUnits R]
 
-/-- The fibre-product comparison is continuous: the projections act continuously on points. -/
-theorem continuous_pullbackPointsEquiv [ContinuousMul R] :
-    Continuous (pullbackPointsEquiv (R := R) g₁ g₂ hg₁ hg₂) :=
+/-- Over a local ring with a topology having continuous multiplication, open units and continuous
+inversion on the units, the fibre-product comparison of points is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_pointsEquivOfIsPullback [ContinuousMul R] :
+    Continuous (pointsEquivOfIsPullback (R := R) hP hp₁ hg₁ hg₂) :=
   ((continuous_map _ _).prodMk (continuous_map _ _)).subtype_mk _
 
 variable [IsTopologicalRing R]
 
-/-- The inverse fibre-product comparison is continuous: near a compatible pair it is read in an
-affine chart `Spec (A ⊗[C] B) ⟶ X ×_Z Y`, where it is the affine comparison
-`TauCeti.PointTopology.relativeTensorProductHomeomorph`. -/
-theorem continuous_pullbackPointsEquiv_symm :
-    Continuous (pullbackPointsEquiv (R := R) g₁ g₂ hg₁ hg₂).symm := by
+/-- Over a local topological ring with open units and continuous inversion on the units, the
+inverse fibre-product comparison of points is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_pointsEquivOfIsPullback_symm :
+    Continuous (pointsEquivOfIsPullback (R := R) hP hp₁ hg₁ hg₂).symm := by
   refine continuous_iff_continuousAt.2 fun ⟨⟨x, y⟩, hxy⟩ ↦ ?_
   -- Affine charts `Spec A ⟶ X` and `Spec B ⟶ Y` over an affine chart `Spec C ⟶ Z`.
   obtain ⟨C, iC, hiC, _, hz⟩ := exists_mem_range_chartPoint fZ (map g₁ hg₁ x)
@@ -113,89 +227,154 @@ theorem continuous_pullbackPointsEquiv_symm :
   let : Algebra C B := φB.toAlgebra
   have : IsScalarTower k C A := .of_algebraMap_eq fun r ↦ (φA.commutes r).symm
   have : IsScalarTower k C B := .of_algebraMap_eq fun r ↦ (φB.commutes r).symm
-  -- The affine chart `Spec (A ⊗[C] B) ⟶ X ×_Z Y`.
-  let j : Spec (.of (A ⊗[C] B)) ⟶ pullback g₁ g₂ := (pullbackSpecIso C A B).inv ≫
-    pullback.map _ _ _ _ iA iB iC hφA hφB
-  have : IsOpenImmersion j := by dsimp only [j]; infer_instance
-  have hj₁ : j ≫ pullback.fst g₁ g₂ =
-      Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ iA := by
-    simp [j]
-  have hj₂ : j ≫ pullback.snd g₁ g₂ = Spec.map (CommRingCat.ofHom
-      (Algebra.TensorProduct.includeRight (R := C) (A := A) (B := B)).toRingHom) ≫ iB := by
-    simp [j]
-  have hj : j ≫ pullback.fst g₁ g₂ ≫ fX =
-      Spec.algebraMap k (CommAlgCat.of k (A ⊗[C] B)) := by
-    rw [← Category.assoc, hj₁, Category.assoc, hiA, Spec.algebraMap, Spec.algebraMap,
-      ← Spec.map_comp]
-    rfl
-  -- Compatible pairs of chart points are compatible pairs of algebra maps.
-  have hcompat (q : (A →ₐ[k] R) × (B →ₐ[k] R)) :
-      map g₁ hg₁ (chartPoint fX A iA hiA q.1) = map g₂ hg₂ (chartPoint fY B iB hiB q.2) ↔
-        q.1.comp (IsScalarTower.toAlgHom k C A) = q.2.comp (IsScalarTower.toAlgHom k C B) := by
-    rw [map_chartPoint, map_chartPoint]
-    simp only [← hφA, ← hφB]
-    rw [chartPoint_spec_map_comp fZ iC hiC, chartPoint_spec_map_comp fZ iC hiC]
-    exact (chartPoint_injective fZ C iC hiC).eq_iff
+  have hA : Spec.map (CommRingCat.ofHom (algebraMap C A)) ≫ iC = iA ≫ g₁ := by
+    rwa [RingHom.algebraMap_toAlgebra]
+  have hB : Spec.map (CommRingCat.ofHom (algebraMap C B)) ≫ iC = iB ≫ g₂ := by
+    rwa [RingHom.algebraMap_toAlgebra]
   let S : Set (Points (R := R) fX × Points (R := R) fY) := {p | map g₁ hg₁ p.1 = map g₂ hg₂ p.2}
   let c := Prod.map (chartPoint (R := R) fX A iA hiA) (chartPoint (R := R) fY B iB hiB)
   have hc : IsOpenEmbedding (S.restrictPreimage c) :=
     ((isOpenEmbedding_chartPoint fX A iA hiA).prodMap
       (isOpenEmbedding_chartPoint fY B iB hiB)).restrictPreimage S
+  have hcompat := map_chartPoint_eq_map_chartPoint_iff (R := R) hg₁ hg₂ hA hB hiA hiB hiC
   let τ : c ⁻¹' S → {q : (A →ₐ[k] R) × (B →ₐ[k] R) //
       q.1.comp (IsScalarTower.toAlgHom k C A) = q.2.comp (IsScalarTower.toAlgHom k C B)} :=
-    fun q ↦ ⟨q.1, (hcompat q.1).1 q.2⟩
+    fun q ↦ ⟨q.1, (hcompat q.1.1 q.1.2).1 q.2⟩
   have hτ : Continuous τ := continuous_subtype_val.subtype_mk _
-  -- On compatible pairs of chart points, the inverse comparison is read in the chart `j`.
-  have key : (pullbackPointsEquiv (R := R) g₁ g₂ hg₁ hg₂).symm ∘ S.restrictPreimage c =
-      chartPoint _ (CommAlgCat.of k (A ⊗[C] B)) j hj ∘
-        (PointTopology.relativeTensorProductHomeomorph k C A B R).symm ∘ τ := by
+  -- On compatible pairs of chart points, the inverse comparison is read in the chart.
+  have key : (pointsEquivOfIsPullback (R := R) hP hp₁ hg₁ hg₂).symm ∘ S.restrictPreimage c =
+      chartPoint fP (CommAlgCat.of k (A ⊗[C] B)) (tensorProductChart hP hA hB)
+          (tensorProductChart_comp hP hp₁ hA hB hiA) ∘
+        ⇑(PointTopology.relativeTensorProductHomeomorph k C A B R).symm ∘ τ := by
     funext ⟨⟨a', b'⟩, hq⟩
-    apply Subtype.ext
-    simp only [Function.comp_apply, Set.restrictPreimage_mk, c, Prod.map_fst, Prod.map_snd,
-      pullbackPointsEquiv_symm_apply_val, chartPoint_val]
-    refine pullback.hom_ext ?_ ?_
-    · rw [pullback.lift_fst, Category.assoc, hj₁, ← Category.assoc, ← Spec.map_comp,
-        ← CommRingCat.ofHom_comp]
-      refine congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ) ≫ iA) (RingHom.ext fun t ↦ ?_)
-      simp [τ]
-    · rw [pullback.lift_snd, Category.assoc, hj₂, ← Category.assoc, ← Spec.map_comp,
-        ← CommRingCat.ofHom_comp]
-      refine congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ) ≫ iB) (RingHom.ext fun t ↦ ?_)
-      simp [τ]
-  have hmem : (⟨(chartPoint fX A iA hiA a, chartPoint fY B iB hiB b), hxy⟩ :
-      {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2}) =
-      S.restrictPreimage c ⟨(a, b), hxy⟩ :=
-    rfl
-  rw [hmem, ← hc.continuousAt_iff, key]
-  have h₁ := continuous_chartPoint (R := R) (pullback.fst g₁ g₂ ≫ fX)
-    (CommAlgCat.of k (A ⊗[C] B)) j hj
-  have h₂ := (PointTopology.relativeTensorProductHomeomorph k C A B R).symm.continuous.comp hτ
-  exact (h₁.comp h₂).continuousAt
+    simp only [Function.comp_apply, Set.restrictPreimage_mk, c, Prod.map_apply]
+    rw [pointsEquivOfIsPullback_symm_chartPoint hP hp₁ hg₁ hg₂ hA hB hiA hiB hiC]
+    congr 1
+    refine ((PointTopology.relativeTensorProductHomeomorph k C A B R).eq_symm_apply).2 ?_
+    ext <;> simp [τ]
+  have hmem : S.restrictPreimage c ⟨(a, b), hxy⟩ =
+      ⟨(chartPoint fX A iA hiA a, chartPoint fY B iB hiB b), hxy⟩ := by
+    simp [c]
+  rw [← hmem, ← hc.continuousAt_iff, key]
+  exact ((continuous_chartPoint _ _ _ _).comp
+    ((PointTopology.relativeTensorProductHomeomorph k C A B R).symm.continuous.comp
+      hτ)).continuousAt
 
 /-- **The point functor preserves fibre products.** Over a local topological ring with open units
-and continuous inversion on the units, the `R`-points of `X ×_Z Y` are homeomorphic, through the
-two projections, to the subspace of pairs of `R`-points of `X` and `Y` with the same image in
-`Z`. -/
-noncomputable def pullbackPointsHomeomorph :
-    Points (R := R) (pullback.fst g₁ g₂ ≫ fX) ≃ₜ
+and continuous inversion on the units, the `R`-points of a fibre product `P` of `X ⟶ Z ⟵ Y` are
+homeomorphic, through the two projections, to the subspace of pairs of `R`-points of `X` and `Y`
+with the same image in `Z`. -/
+noncomputable def pointsHomeomorphOfIsPullback :
+    Points (R := R) fP ≃ₜ
       {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2} where
-  toEquiv := pullbackPointsEquiv g₁ g₂ hg₁ hg₂
-  continuous_toFun := continuous_pullbackPointsEquiv g₁ g₂ hg₁ hg₂
-  continuous_invFun := continuous_pullbackPointsEquiv_symm g₁ g₂ hg₁ hg₂
+  toEquiv := pointsEquivOfIsPullback hP hp₁ hg₁ hg₂
+  continuous_toFun := continuous_pointsEquivOfIsPullback hP hp₁ hg₁ hg₂
+  continuous_invFun := continuous_pointsEquivOfIsPullback_symm hP hp₁ hg₁ hg₂
+
+/-- The fibre-product homeomorphism has the fibre-product comparison of points as its underlying
+equivalence. -/
+@[simp]
+theorem pointsHomeomorphOfIsPullback_toEquiv :
+    (pointsHomeomorphOfIsPullback (R := R) hP hp₁ hg₁ hg₂).toEquiv =
+      pointsEquivOfIsPullback hP hp₁ hg₁ hg₂ :=
+  (rfl)
 
 /-- The fibre-product homeomorphism is the fibre-product comparison of points. -/
 @[simp]
-theorem coe_pullbackPointsHomeomorph :
-    ⇑(pullbackPointsHomeomorph (R := R) g₁ g₂ hg₁ hg₂) = pullbackPointsEquiv g₁ g₂ hg₁ hg₂ :=
+theorem coe_pointsHomeomorphOfIsPullback :
+    ⇑(pointsHomeomorphOfIsPullback (R := R) hP hp₁ hg₁ hg₂) =
+      pointsEquivOfIsPullback hP hp₁ hg₁ hg₂ :=
   (rfl)
 
 /-- The inverse fibre-product homeomorphism is the inverse fibre-product comparison of points. -/
 @[simp]
-theorem coe_pullbackPointsHomeomorph_symm :
-    ⇑(pullbackPointsHomeomorph (R := R) g₁ g₂ hg₁ hg₂).symm =
-      (pullbackPointsEquiv g₁ g₂ hg₁ hg₂).symm :=
+theorem coe_pointsHomeomorphOfIsPullback_symm :
+    ⇑(pointsHomeomorphOfIsPullback (R := R) hP hp₁ hg₁ hg₂).symm =
+      (pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm :=
   (rfl)
 
+include hP hg₁ hg₂ in
+/-- Over a local topological ring with open units and continuous inversion on the units, the two
+projections embed the points of a fibre product in the product of the point spaces. -/
+theorem isEmbedding_prodMk_map_of_isPullback (hp₂ : p₂ ≫ fY = fP) :
+    IsEmbedding fun x : Points (R := R) fP ↦ (map p₁ hp₁ x, map p₂ hp₂ x) :=
+  IsEmbedding.subtypeVal.comp (pointsHomeomorphOfIsPullback hP hp₁ hg₁ hg₂).isEmbedding
+
+include hP hg₁ hg₂ in
+/-- If the points of `Z` form a Hausdorff space, for instance when `Z` is separated, the
+projections embed the points of a fibre product as a closed subspace of the product of the point
+spaces. -/
+theorem isClosedEmbedding_prodMk_map_of_isPullback [T2Space (Points (R := R) fZ)]
+    (hp₂ : p₂ ≫ fY = fP) :
+    IsClosedEmbedding fun x : Points (R := R) fP ↦ (map p₁ hp₁ x, map p₂ hp₂ x) := by
+  refine ⟨isEmbedding_prodMk_map_of_isPullback hP hp₁ hg₁ hg₂ hp₂, ?_⟩
+  rw [range_prodMk_map_of_isPullback hP hp₁ hg₁ hg₂]
+  exact isClosed_eq ((continuous_map _ _).comp continuous_fst)
+    ((continuous_map _ _).comp continuous_snd)
+
 end Topology
+
+section Pullback
+
+variable (g₁ g₂)
+
+/-- **Points of the fibre product.** The `R`-points of `pullback g₁ g₂` are the pairs of
+`R`-points of `X` and `Y` with the same image in `Z`, through the two projections. -/
+noncomputable abbrev pullbackPointsEquiv :
+    Points (R := R) (pullback.fst g₁ g₂ ≫ fX) ≃
+      {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2} :=
+  pointsEquivOfIsPullback (.of_hasPullback g₁ g₂) rfl hg₁ hg₂
+
+variable [TopologicalSpace R] [IsLocalRing R] [IsOpenUnits R] [IsTopologicalRing R]
+
+/-- Over a local topological ring with open units and continuous inversion on the units, the
+`R`-points of `pullback g₁ g₂` are homeomorphic, through the two projections, to the subspace of
+pairs of `R`-points of `X` and `Y` with the same image in `Z`. -/
+noncomputable abbrev pullbackPointsHomeomorph :
+    Points (R := R) (pullback.fst g₁ g₂ ≫ fX) ≃ₜ
+      {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2} :=
+  pointsHomeomorphOfIsPullback (.of_hasPullback g₁ g₂) rfl hg₁ hg₂
+
+end Pullback
+
+section Prod
+
+variable [TopologicalSpace R] [IsLocalRing R] [IsOpenUnits R] [IsTopologicalRing R]
+  (hXY : IsPullback p₁ p₂ fX fY)
+
+/-- **Points of a product.** Over a local topological ring with open units and continuous
+inversion on the units, the `R`-points of a fibre product `P` of `X` and `Y` over `Spec k` are
+homeomorphic, through the two projections, to the product of the `R`-points of `X` and `Y`. -/
+noncomputable def pointsProdHomeomorphOfIsPullback :
+    Points (R := R) fP ≃ₜ Points (R := R) fX × Points (R := R) fY :=
+  (pointsHomeomorphOfIsPullback hXY hp₁ (Category.comp_id fX) (Category.comp_id fY)).trans
+    { toEquiv := Equiv.subtypeUnivEquiv fun _ ↦ Subsingleton.elim _ _
+      continuous_toFun := continuous_subtype_val
+      continuous_invFun := continuous_id.subtype_mk _ }
+
+/-- The product homeomorphism sends a point to its two projections. -/
+@[simp]
+theorem pointsProdHomeomorphOfIsPullback_apply (x : Points (R := R) fP) :
+    pointsProdHomeomorphOfIsPullback hp₁ hXY x = (map p₁ hp₁ x,
+      map p₂ (snd_comp_eq_of_commSq (Category.comp_id fX) (Category.comp_id fY) hXY.toCommSq hp₁)
+        x) :=
+  (rfl)
+
+/-- The first projection of the inverse product homeomorphism is the first point of the pair. -/
+@[simp]
+theorem map_fst_pointsProdHomeomorphOfIsPullback_symm (h : p₁ ≫ fX = fP)
+    (p : Points (R := R) fX × Points (R := R) fY) :
+    map p₁ h ((pointsProdHomeomorphOfIsPullback hp₁ hXY).symm p) = p.1 :=
+  map_fst_pointsEquivOfIsPullback_symm hXY hp₁ _ _ h _
+
+/-- The second projection of the inverse product homeomorphism is the second point of the
+pair. -/
+@[simp]
+theorem map_snd_pointsProdHomeomorphOfIsPullback_symm (h : p₂ ≫ fY = fP)
+    (p : Points (R := R) fX × Points (R := R) fY) :
+    map p₂ h ((pointsProdHomeomorphOfIsPullback hp₁ hXY).symm p) = p.2 :=
+  map_snd_pointsEquivOfIsPullback_symm hXY hp₁ _ _ h _
+
+end Prod
 
 end TauCeti.SchemePointTopology

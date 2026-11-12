@@ -50,6 +50,10 @@ being a morphism over `Spec k`. -/
 abbrev Points :=
   {x : Spec (.of R) ⟶ X // x ≫ f = Spec.algebraMap k R}
 
+/-- The base `Spec k` has exactly one `R`-point over itself. -/
+instance : Subsingleton (Points (R := R) (𝟙 (Spec (.of k)))) :=
+  ⟨fun x y ↦ Subtype.ext (by simpa using x.property.trans y.property.symm)⟩
+
 section Map
 
 variable {Y : Scheme.{u}} {fX : X ⟶ Spec (.of k)} {fY : Y ⟶ Spec (.of k)}
