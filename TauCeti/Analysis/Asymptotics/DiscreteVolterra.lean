@@ -11,8 +11,8 @@ public import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Normed
-import Mathlib.Topology.Algebra.InfiniteSum.Real
 import Mathlib.Topology.Algebra.Order.Floor
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # Volterra summation equations with separable kernel bounds
@@ -47,11 +47,13 @@ and the unknown `h` in any Banach space over `𝕜`.
 * `TauCeti.discrete_volterra_solution_unique`: two solutions that are `O(P)` at infinity
   coincide.
 * `TauCeti.existsUnique_discrete_volterra_solution`: exactly one solution is `O(P)` at infinity.
-* `TauCeti.summable_discrete_volterra_of_isBigO`: for a sequence that is `O(P)` at infinity,
-  every series in the equation converges absolutely.
-* `Summable.tsum_Ioi_mul_pow_tsum_Ioi_le`: the estimate
-  `∑_{m > n} a m * (∑_{j > m} a j) ^ k ≤ (∑_{m > n} a m) ^ (k + 1) / (k + 1)` for a nonnegative
-  summable sequence `a`, which controls the iterates of the equation.
+* `TauCeti.summable_norm_discrete_volterra_of_isBigO`: for a sequence that is `O(P)` at
+  infinity, every series in the equation converges absolutely.
+* `TauCeti.summable_discrete_volterra_of_isBigO`: hence, in a Banach space, every series in the
+  equation is summable.
+
+The iterates of the equation are controlled by the estimate
+`Summable.tsum_Ioi_mul_pow_tsum_Ioi_le`.
 
 ## References
 
@@ -68,84 +70,6 @@ open Filter Set Asymptotics
 open scoped Nat
 
 namespace TauCeti
-
-/-- A sum over the natural numbers greater than `n` is the sum of the family shifted by
-`n + 1`. -/
-theorem tsum_Ioi_eq_tsum_nat_add {α : Type*} [AddCommMonoid α] [TopologicalSpace α]
-    (f : ℕ → α) (n : ℕ) : ∑' m : Ioi n, f m = ∑' j, f (j + (n + 1)) := by
-  have hrange : range (fun j : ℕ ↦ j + (n + 1)) = Ioi n := by
-    ext m
-    simp only [mem_range, mem_Ioi]
-    exact ⟨fun ⟨j, hj⟩ ↦ by omega, fun hm ↦ ⟨m - (n + 1), by omega⟩⟩
-  rw [← hrange, tsum_range f (add_left_injective (n + 1))]
-
-section Tail
-
-/-- The tail `∑_{m > n} f m` of a summable family splits off its first term `f (n + 1)`. -/
-theorem _root_.Summable.tsum_Ioi_eq_add {α : Type*} [AddCommGroup α] [TopologicalSpace α]
-    [IsTopologicalAddGroup α] [T2Space α] {f : ℕ → α} (hf : Summable f) (n : ℕ) :
-    ∑' m : Ioi n, f m = f (n + 1) + ∑' m : Ioi (n + 1), f m := by
-  rw [tsum_Ioi_eq_tsum_nat_add, tsum_Ioi_eq_tsum_nat_add,
-    ((summable_nat_add_iff (n + 1)).2 hf).tsum_eq_zero_add]
-  simp only [zero_add]
-  congr 1
-  exact tsum_congr fun j ↦ by congr 1; omega
-
-variable {a : ℕ → ℝ}
-
-/-- The tails `∑_{m > n} a m` of a nonnegative summable sequence decrease with `n`. -/
-private lemma tsum_Ioi_le_tsum_Ioi (ha : Summable a) (ha0 : ∀ m, 0 ≤ a m) {n m : ℕ}
-    (hnm : n ≤ m) : ∑' j : Ioi m, a j ≤ ∑' j : Ioi n, a j :=
-  have hsub : Ioi m ⊆ Ioi n := Ioi_subset_Ioi hnm
-  (ha.subtype _).tsum_le_tsum_of_inj (inclusion hsub) (inclusion_injective hsub)
-    (fun j _ ↦ ha0 j) (fun _ ↦ le_rfl) (ha.subtype _)
-
-/-- For a nonnegative summable sequence `a` with tails `Ψ n = ∑_{m > n} a m`,
-`∑_{m > n} a m * Ψ m ^ k ≤ Ψ n ^ (k + 1) / (k + 1)`. This is the discrete counterpart of
-`∫_x^∞ a(v) Ψ(v)^k dv = Ψ(x)^(k+1)/(k+1)` for `Ψ(x) = ∫_x^∞ a`. -/
-theorem _root_.Summable.tsum_Ioi_mul_pow_tsum_Ioi_le (ha : Summable a) (ha0 : ∀ m, 0 ≤ a m)
-    (n k : ℕ) :
-    ∑' m : Ioi n, a m * (∑' j : Ioi (m : ℕ), a j) ^ k ≤
-      (∑' m : Ioi n, a m) ^ (k + 1) / (k + 1) := by
-  obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : ℕ → ℝ, ∀ n, ∑' m : Ioi n, a m = Ψ n := ⟨_, fun _ ↦ rfl⟩
-  simp only [hΨ]
-  have hΨ0 : ∀ n, 0 ≤ Ψ n := fun n ↦ hΨ n ▸ tsum_nonneg fun m ↦ ha0 m
-  -- the tangent-line inequality `(k + 1) y x ^ k ≤ (x + y) ^ (k + 1) - x ^ (k + 1)`
-  have hpow : ∀ x y : ℝ, 0 ≤ x → 0 ≤ y →
-      (k + 1) * (y * x ^ k) ≤ (x + y) ^ (k + 1) - x ^ (k + 1) := by
-    intro x y hx hy
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      push_cast at ih ⊢
-      rw [pow_succ x k] at ih
-      rw [pow_succ (x + y) (k + 1), pow_succ x (k + 1), pow_succ x k]
-      have hk0 : (0 : ℝ) ≤ k + 1 := by positivity
-      nlinarith [mul_le_mul_of_nonneg_right ih (add_nonneg hx hy),
-        mul_nonneg hk0 (mul_nonneg (mul_nonneg hy hy) (pow_nonneg hx k))]
-  -- telescoping over the partial sums, using `Ψ (m - 1) = Ψ m + a m`
-  have hpartial : ∀ M, (k + 1) * ∑ j ∈ Finset.range M,
-      a (j + (n + 1)) * Ψ (j + (n + 1)) ^ k ≤ Ψ n ^ (k + 1) - Ψ (n + M) ^ (k + 1) := by
-    intro M
-    induction M with
-    | zero => simp
-    | succ M ih =>
-      have hsplit : Ψ (n + M) = Ψ (n + M + 1) + a (n + M + 1) := by
-        rw [← hΨ, ← hΨ, ha.tsum_Ioi_eq_add]
-        ring
-      have hstep := hpow (Ψ (n + M + 1)) (a (n + M + 1)) (hΨ0 _) (ha0 _)
-      rw [← hsplit] at hstep
-      rw [Finset.sum_range_succ, mul_add, show M + (n + 1) = n + M + 1 by omega,
-        show n + (M + 1) = n + M + 1 by omega]
-      linarith
-  have hk : (0 : ℝ) < k + 1 := by positivity
-  rw [tsum_Ioi_eq_tsum_nat_add (fun m ↦ a m * Ψ m ^ k)]
-  refine Real.tsum_le_of_sum_range_le (fun j ↦ mul_nonneg (ha0 _) (pow_nonneg (hΨ0 _) k))
-    fun M ↦ ?_
-  rw [le_div_iff₀ hk]
-  linarith [hpartial M, pow_nonneg (hΨ0 (n + M)) (k + 1)]
-
-end Tail
 
 variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {K : ℕ → ℕ → 𝕜} {J : ℕ → E} {ψ : ℕ → 𝕜} {P Q : ℕ → ℝ}
@@ -165,7 +89,7 @@ private lemma norm_tsum_smul_smul_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ 
   simp only [ha] at hψ hx ⊢
   have hS := hψ.tsum_Ioi_mul_pow_tsum_Ioi_le ha0 n k
   have hmono : ∀ m : Ioi n, ∑' j : Ioi (m : ℕ), a j ≤ ∑' j : Ioi n, a j :=
-    fun m ↦ tsum_Ioi_le_tsum_Ioi hψ ha0 m.2.le
+    fun m ↦ hψ.antitone_tsum_Ioi ha0 m.2.le
   obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : ℕ → ℝ, ∀ n, ∑' m : Ioi n, a m = Ψ n := ⟨_, fun _ ↦ rfl⟩
   simp only [hΨ] at hx hS hmono ⊢
   have hΨ0 : ∀ n, 0 ≤ Ψ n := fun n ↦ hΨ n ▸ tsum_nonneg fun m ↦ ha0 m
@@ -219,11 +143,10 @@ private lemma norm_picardTerm_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
         ≤ (∑' j : Ioi m, Q j * ‖J j‖) * (P m * ((∑' j : Ioi m, P j * Q j * ‖ψ j‖) ^ k / k !)) :=
           by rw [← mul_assoc]; exact ih m
       _ ≤ (∑' j : Ioi n, Q j * ‖J j‖) * (P m * ((∑' j : Ioi m, P j * Q j * ‖ψ j‖) ^ k / k !)) :=
-          mul_le_mul_of_nonneg_right (tsum_Ioi_le_tsum_Ioi hJ hb0 hm.le) (by positivity)
+          mul_le_mul_of_nonneg_right (hJ.antitone_tsum_Ioi hb0 hm.le) (by positivity)
       _ = _ := by ring
 
-/-- The double series `∑_{m > n} ∑_k K n m • ψ m • picardTerm K J ψ k m` converges
-absolutely. -/
+/-- The family `(m, k) ↦ K n m • ψ m • picardTerm K J ψ k m` on `Ioi n × ℕ` is summable. -/
 private lemma summable_uncurry_smul_smul_picardTerm (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
     (hK : ∀ n m, n < m → ‖K n m‖ ≤ P n * Q m) (hJ : Summable fun m ↦ Q m * ‖J m‖)
     (hψ : Summable fun m ↦ P m * Q m * ‖ψ m‖) [CompleteSpace E] (n : ℕ) :
@@ -247,13 +170,12 @@ private lemma summable_uncurry_smul_smul_picardTerm (hP : ∀ n, 0 ≤ P n) (hQ 
           mul_le_mul (hK n m hm) (mul_le_mul_of_nonneg_left
             (norm_picardTerm_le hP hQ hK hJ hψ k m) (norm_nonneg _))
             (by positivity) (mul_nonneg (hP n) (hQ m))
-      _ ≤ (P n * Q m) * (‖ψ m‖ * (Φ n * P m * (Ψ n ^ k / k !))) :=
-          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (mul_le_mul
-            (mul_le_mul_of_nonneg_right (tsum_Ioi_le_tsum_Ioi hJ hb0 hm.le) hPm)
-            (div_le_div_of_nonneg_right
-              (pow_le_pow_left₀ (hΨ0 m) (tsum_Ioi_le_tsum_Ioi hψ ha0 hm.le) k) (by positivity))
-            (by positivity) (by positivity))
-            (norm_nonneg _)) (mul_nonneg (hP n) (hQ m))
+      _ ≤ (P n * Q m) * (‖ψ m‖ * (Φ n * P m * (Ψ n ^ k / k !))) := by
+          have := hP n
+          have := hQ m
+          gcongr
+          · exact hJ.antitone_tsum_Ioi hb0 hm.le
+          · exact hψ.antitone_tsum_Ioi ha0 hm.le
       _ = Φ n * P n * (a m * (Ψ n ^ k / k !)) := by simp only [ha_def]; ring
   refine Summable.of_norm_bounded ?_ fun p ↦ hbound p.1 p.2
   exact ((hψ.subtype (· ∈ Ioi n)).mul_of_nonneg (Real.summable_pow_div_factorial (Ψ n))
@@ -274,18 +196,16 @@ private lemma isBigO_of_norm_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
   rw [Real.norm_of_nonneg (hP n)]
   refine (hh n).trans ?_
   rw [mul_assoc, mul_comm (P n)]
-  exact mul_le_mul_of_nonneg_right (mul_le_mul (tsum_Ioi_le_tsum_Ioi hJ hb0 (Nat.zero_le n))
-    (Real.exp_le_exp.2 (tsum_Ioi_le_tsum_Ioi hψ ha0 (Nat.zero_le n))) (Real.exp_pos _).le
+  exact mul_le_mul_of_nonneg_right (mul_le_mul (hJ.antitone_tsum_Ioi hb0 (Nat.zero_le n))
+    (Real.exp_le_exp.2 (hψ.antitone_tsum_Ioi ha0 (Nat.zero_le n))) (Real.exp_pos _).le
     (tsum_nonneg fun m ↦ hb0 m)) (hP n)
-
-variable [CompleteSpace E]
 
 /-- For a sequence `h` that is `O(P)` at infinity, every series of the summation equation
 `h n = ∑_{m > n} K n m • (J m + ψ m • h m)` converges absolutely. -/
-theorem summable_discrete_volterra_of_isBigO (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
+theorem summable_norm_discrete_volterra_of_isBigO (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
     (hK : ∀ n m, n < m → ‖K n m‖ ≤ P n * Q m) (hJ : Summable fun m ↦ Q m * ‖J m‖)
     (hψ : Summable fun m ↦ P m * Q m * ‖ψ m‖) {h : ℕ → E} (hh : h =O[atTop] P) (n : ℕ) :
-    Summable fun m : Ioi n ↦ K n m • (J m + ψ m • h m) := by
+    Summable fun m : Ioi n ↦ ‖K n m • (J m + ψ m • h m)‖ := by
   obtain ⟨C, hC⟩ := hh.bound
   have hev' : ∀ᶠ m in cofinite, ‖h m‖ ≤ max C 0 * P m := by
     rw [Nat.cofinite_eq_atTop]
@@ -298,7 +218,7 @@ theorem summable_discrete_volterra_of_isBigO (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m
       P n * (Q m * ‖J m‖ + max C 0 * (P m * Q m * ‖ψ m‖)))
     (((hJ.add (hψ.mul_left (max C 0))).subtype (· ∈ Ioi n)).mul_left (P n)) ?_
   filter_upwards [hev] with m hm
-  rw [norm_smul]
+  rw [norm_norm, norm_smul]
   calc ‖K n m‖ * ‖J m + ψ m • h m‖
       ≤ (P n * Q m) * (‖J m‖ + ‖ψ m‖ * (max C 0 * P m)) := by
         refine mul_le_mul (hK n m m.2) ((norm_add_le _ _).trans ?_) (norm_nonneg _)
@@ -307,12 +227,22 @@ theorem summable_discrete_volterra_of_isBigO (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m
         gcongr
     _ = P n * (Q m * ‖J m‖ + max C 0 * (P m * Q m * ‖ψ m‖)) := by ring
 
+variable [CompleteSpace E]
+
+/-- For a sequence `h` that is `O(P)` at infinity, every series of the summation equation
+`h n = ∑_{m > n} K n m • (J m + ψ m • h m)` is summable in the Banach space `E`. -/
+theorem summable_discrete_volterra_of_isBigO (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
+    (hK : ∀ n m, n < m → ‖K n m‖ ≤ P n * Q m) (hJ : Summable fun m ↦ Q m * ‖J m‖)
+    (hψ : Summable fun m ↦ P m * Q m * ‖ψ m‖) {h : ℕ → E} (hh : h =O[atTop] P) (n : ℕ) :
+    Summable fun m : Ioi n ↦ K n m • (J m + ψ m • h m) :=
+  (summable_norm_discrete_volterra_of_isBigO hP hQ hK hJ hψ hh n).of_norm
+
 /-- **Volterra summation equations, existence.** If `‖K n m‖ ≤ P n * Q m` for `n < m`, with
 `P, Q ≥ 0`, and the series `∑ Q ‖J‖` and `∑ P Q ‖ψ‖` converge, then the summation equation
 `h n = ∑_{m > n} K n m • (J m + ψ m • h m)` has a solution such that
 `‖h n‖ ≤ P n * Φ n * exp (Ψ n)`, where `Φ n = ∑_{m > n} Q m * ‖J m‖` and
-`Ψ n = ∑_{m > n} P m * Q m * ‖ψ m‖`. Its series converge absolutely, by
-`summable_discrete_volterra_of_isBigO`. -/
+`Ψ n = ∑_{m > n} P m * Q m * ‖ψ m‖`. By `existsUnique_discrete_volterra_solution`, it is the
+only solution that is `O(P)` at infinity. -/
 theorem exists_discrete_volterra_solution (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
     (hK : ∀ n m, n < m → ‖K n m‖ ≤ P n * Q m) (hJ : Summable fun m ↦ Q m * ‖J m‖)
     (hψ : Summable fun m ↦ P m * Q m * ‖ψ m‖) :

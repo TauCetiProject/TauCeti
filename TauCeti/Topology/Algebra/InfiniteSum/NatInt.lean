@@ -14,7 +14,8 @@ public import TauCeti.Topology.Algebra.InfiniteSum.Constructions
 # Reindexing infinite sums between the integers and natural numbers
 
 This file supplements Mathlib's results on infinite sums over `ℕ` and `ℤ` with a reindexing
-lemma for an integer-indexed family whose support is bounded below, with the splitting of a
+lemma for an integer-indexed family whose support is bounded below, with reindexing lemmas for
+the tails `∑_{m > n} f m` of a family indexed by the natural numbers, with the splitting of a
 summable integer-indexed family into its residue classes modulo `M`, and with the grouping of an
 integer-indexed sum, or of a product or sum indexed by the natural numbers, into blocks of `M`
 consecutive terms.
@@ -24,6 +25,9 @@ consecutive terms.
 * `TauCeti.hasSum_int_iff_natCast_sub`: reindex a family supported in `[-k, ∞)` by `n ↦ n - k`.
 * `TauCeti.hasSum_mul_zpow_natCast_sub_iff`: move an integer-power shift between the summands and
   their sum.
+* `TauCeti.tsum_Ioi_eq_tsum_nat_add`: the tail `∑_{m > n} f m` is the sum of the family shifted
+  by `n + 1`.
+* `Summable.tsum_Ioi_eq_add`: the tail `∑_{m > n} f m` splits off its first term `f (n + 1)`.
 * `TauCeti.tsum_int_eq_sum_fin_tsum`: a summable family on `ℤ` sums to the sum over the residues
   `r < M` of its sums over the classes `qM + r`.
 * `HasSum.sum_fin_mul_add`: a family on `ℤ` has the same sum as its sums over the blocks
@@ -85,7 +89,27 @@ theorem tsum_int_eq_sum_fin_tsum {E : Type*} [AddCommGroup E] [UniformSpace E]
   refine Summable.tsum_finsetSum fun r _ ↦ hf.comp_injective fun a b h ↦ ?_
   simpa [NeZero.ne M] using h
 
+/-- A sum over the natural numbers greater than `n` is the sum of the family shifted by
+`n + 1`. -/
+theorem tsum_Ioi_eq_tsum_nat_add {α : Type*} [AddCommMonoid α] [TopologicalSpace α]
+    (f : ℕ → α) (n : ℕ) : ∑' m : Set.Ioi n, f m = ∑' j, f (j + (n + 1)) := by
+  have hrange : Set.range (fun j : ℕ ↦ j + (n + 1)) = Set.Ioi n := by
+    ext m
+    simp only [Set.mem_range, Set.mem_Ioi]
+    exact ⟨fun ⟨j, hj⟩ ↦ by omega, fun hm ↦ ⟨m - (n + 1), by omega⟩⟩
+  rw [← hrange, tsum_range f (add_left_injective (n + 1))]
+
 end TauCeti
+
+/-- The tail `∑_{m > n} f m` of a summable family splits off its first term `f (n + 1)`. -/
+theorem Summable.tsum_Ioi_eq_add {α : Type*} [AddCommGroup α] [TopologicalSpace α]
+    [IsTopologicalAddGroup α] [T2Space α] {f : ℕ → α} (hf : Summable f) (n : ℕ) :
+    ∑' m : Set.Ioi n, f m = f (n + 1) + ∑' m : Set.Ioi (n + 1), f m := by
+  rw [TauCeti.tsum_Ioi_eq_tsum_nat_add, TauCeti.tsum_Ioi_eq_tsum_nat_add,
+    ((summable_nat_add_iff (n + 1)).2 hf).tsum_eq_zero_add]
+  simp only [zero_add]
+  congr 1
+  exact tsum_congr fun j ↦ by congr 1; omega
 
 /-- **A sum over the integers grouped into blocks of `M` consecutive terms**: if `f` has sum `s`,
 then so does the family of block sums `q ↦ ∑_{r < M} f (q * M + r)`. -/
