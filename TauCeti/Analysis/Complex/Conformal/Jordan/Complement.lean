@@ -77,7 +77,8 @@ theorem IsJordanCurve.exists_homeomorph_closedBall_filledHull (hC : IsJordanCurv
   obtain ⟨g, hgc, hgd, hgbij, hg0, e, he⟩ :=
     exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier_of_mem hJ.isOpen
       hJ.isConnected hJ.isBounded hJ.isJordanCurve_frontier hp
-  have hgS := bijOn_sphere_frontier hgc hgd (e.toEquiv.bijOn_of_coe_eq he).injOn hgbij
+  have hgS := bijOn_sphere_frontier hgc hgd
+    ((e.toEquiv.bijOn_of_coe_eq he).injOn.mono sphere_subset_closedBall) hgbij
   exact ⟨g, hgc, hgd, hgbij, hC.frontier_filledHull_sdiff ▸ hgS, hg0,
     e.trans (Homeomorph.setCongr hC.closure_filledHull_sdiff), he⟩
 
@@ -117,7 +118,7 @@ theorem IsJordanCurve.exists_homeomorph_compl_ball_compl_filledHull_sdiff (hC : 
   /- The extension `G` is a bijection of the closed disc onto `closure W`, and of the circle onto
   `frontier W`. -/
   have hGcl := E.toEquiv.bijOn_of_coe_eq hE
-  have hGS := bijOn_sphere_frontier hGc hGd hGcl.injOn hGbij
+  have hGS := bijOn_sphere_frontier hGc hGd (hGcl.injOn.mono sphere_subset_closedBall) hGbij
   rw [hC.frontier_insert_zero_image_inv_sub_compl_filledHull hp] at hGS
   have hG2 : BijOn G (ball 0 1 \ {0}) (W \ {0}) := by
     simpa only [hG0] using hGbij.sdiff_singleton (mem_ball_self one_pos)
