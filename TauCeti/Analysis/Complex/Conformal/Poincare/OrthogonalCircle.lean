@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Poincare.Betweenness
+import TauCeti.Analysis.Complex.Circle
 
 /-!
 # Poincaré geodesics are Euclidean circles orthogonal to the unit circle
@@ -482,9 +483,7 @@ the radial geodesic in direction `u` exactly when `conj u * z` is real, that is,
 the Euclidean diameter in direction `u`. -/
 theorem mem_range_radialGeodesic_iff (u : Circle) (z : PoincareDisc) :
     z ∈ Set.range (radialGeodesic u) ↔ (conj (u : ℂ) * (toUnitDisc z : ℂ)).im = 0 := by
-  have huu : (u : ℂ) * conj (u : ℂ) = 1 := by
-    rw [Complex.mul_conj, Complex.normSq_eq_norm_sq, Circle.norm_coe]
-    norm_num
+  have huu := Circle.coe_mul_conj u
   constructor
   · rintro ⟨t, rfl⟩
     rw [coe_radialGeodesic]

@@ -12,6 +12,7 @@ public import TauCeti.Topology.VectorBundle.IdempotentRange
 public import TauCeti.Topology.VectorBundle.SphereBundle
 import Mathlib.Data.ZMod.QuotientGroup
 import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.Analysis.Complex.Circle
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
@@ -71,6 +72,7 @@ noncomputable def mobiusProjection (θ : AddCircle p) : ℂ →L[ℝ] ℂ :=
     (AddCircle.toCircle θ : ℂ) • (conjCLE : ℂ ≃L[ℝ] ℂ).toContinuousLinearMap)
 
 /-- `mobiusProjection θ w = (w + z * conj w) / 2` for `z = toCircle θ`. -/
+@[simp]
 theorem mobiusProjection_apply (θ : AddCircle p) (w : ℂ) :
     mobiusProjection θ w = 2⁻¹ * (w + AddCircle.toCircle θ * conj w) := by
   simp [mobiusProjection, Complex.real_smul]
@@ -81,17 +83,13 @@ theorem continuous_mobiusProjection : Continuous (mobiusProjection (p := p)) := 
   unfold mobiusProjection
   fun_prop
 
-private theorem toCircle_mul_conj (θ : AddCircle p) :
-    (AddCircle.toCircle θ : ℂ) * conj (AddCircle.toCircle θ : ℂ) = 1 := by
-  rw [Complex.mul_conj, Circle.normSq_coe, Complex.ofReal_one]
-
 /-- `mobiusProjection θ` is a projection. -/
 theorem isIdempotentElem_mobiusProjection (θ : AddCircle p) :
     IsIdempotentElem (mobiusProjection θ) := by
   ext1 w
   simp only [mul_apply_eq_comp, mobiusProjection_apply, map_mul, map_add, map_inv₀,
     Complex.conj_conj, Complex.conj_ofNat]
-  linear_combination (2⁻¹ * 2⁻¹ * w) * toCircle_mul_conj θ
+  linear_combination (2⁻¹ * 2⁻¹ * w) * Circle.coe_mul_conj (AddCircle.toCircle θ)
 
 /-- The fibre over `θ` consists of the `v` with `z * conj v = v`, `z = toCircle θ`. -/
 theorem mem_range_mobiusProjection_iff {θ : AddCircle p} {v : ℂ} :
@@ -101,7 +99,7 @@ theorem mem_range_mobiusProjection_iff {θ : AddCircle p} {v : ℂ} :
   · rintro ⟨w, rfl⟩
     simp only [mobiusProjection_apply, map_mul, map_add, map_inv₀, Complex.conj_conj,
       Complex.conj_ofNat]
-    linear_combination (2⁻¹ * w) * toCircle_mul_conj θ
+    linear_combination (2⁻¹ * w) * Circle.coe_mul_conj (AddCircle.toCircle θ)
   · rw [mobiusProjection_apply, hv]
     ring
 
@@ -109,7 +107,7 @@ theorem mem_range_mobiusProjection_iff {θ : AddCircle p} {v : ℂ} :
 theorem toCircle_mem_range_mobiusProjection_two_zsmul (θ : AddCircle p) :
     (AddCircle.toCircle θ : ℂ) ∈ (mobiusProjection ((2 : ℤ) • θ)).range := by
   rw [mem_range_mobiusProjection_iff, AddCircle.toCircle_zsmul, zpow_two, Circle.coe_mul]
-  linear_combination (AddCircle.toCircle θ : ℂ) * toCircle_mul_conj θ
+  linear_combination (AddCircle.toCircle θ : ℂ) * Circle.coe_mul_conj (AddCircle.toCircle θ)
 
 /-- The fibre over `2 • θ` is spanned by `toCircle θ`. -/
 private theorem nonempty_continuousLinearEquiv_range_mobiusProjection_two_zsmul (θ : AddCircle p) :
@@ -123,7 +121,7 @@ private theorem nonempty_continuousLinearEquiv_range_mobiusProjection_two_zsmul 
   · obtain ⟨v, hv⟩ := v
     have hv' := mem_range_mobiusProjection_iff.1 hv
     rw [AddCircle.toCircle_zsmul, zpow_two, Circle.coe_mul] at hv'
-    have huu := toCircle_mul_conj θ
+    have huu := Circle.coe_mul_conj (AddCircle.toCircle θ)
     refine ⟨(v * conj (AddCircle.toCircle θ : ℂ)).re, Subtype.ext ?_⟩
     simp only [f, LinearMap.toSpanSingleton_apply, Submodule.coe_smul, Complex.real_smul]
     -- `v * conj u` is real for `u = toCircle θ`, since `u² * conj v = v`.
@@ -204,9 +202,7 @@ noncomputable def mobiusSphereHomeomorph : AddCircle p ≃ₜ sphereBundle ℝ (
       rw [AddCircle.toCircle_zsmul, hu, zpow_two, Circle.coe_mul]
       have hv : (AddCircle.toCircle v.1.proj : ℂ) * conj (u : ℂ) = u :=
         mem_range_mobiusProjection_iff.1 v.1.2.2
-      have huu : (u : ℂ) * conj (u : ℂ) = 1 := by
-        rw [Complex.mul_conj, Circle.normSq_coe, Complex.ofReal_one]
-      linear_combination -(u : ℂ) * hv + AddCircle.toCircle v.1.proj * huu
+      linear_combination -(u : ℂ) * hv + AddCircle.toCircle v.1.proj * Circle.coe_mul_conj u
     · exact congrArg Subtype.val hu
   continuous_toFun := by
     refine Continuous.subtype_mk (isEmbedding_totalSpace_mobiusLine.continuous_iff.2 ?_) _

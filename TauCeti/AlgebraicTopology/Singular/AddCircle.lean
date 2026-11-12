@@ -211,6 +211,7 @@ theorem firstHomologyEquiv_fundamentalClass : firstHomologyEquiv (fundamentalCla
   simpa [windingNumber] using windingNumber_zsmulLoop (p := p) 0 1
 
 /-- Every class in `H₁(S¹; ℤ)` is a multiple of the circuit class. -/
+@[simp]
 theorem firstHomologyEquiv_symm_apply (n : ℤ) :
     firstHomologyEquiv.symm n = n • fundamentalClass p := by
   rw [LinearEquiv.symm_apply_eq, map_zsmul, firstHomologyEquiv_fundamentalClass, smul_eq_mul,
@@ -222,9 +223,7 @@ theorem firstHomologyEquiv_singularHomologyMap_zsmul (n : ℤ)
     firstHomologyEquiv (ContinuousMap.singularHomologyMap ℤ 1
       ⟨fun θ : AddCircle p ↦ n • θ, continuous_zsmul n⟩ x) = n * firstHomologyEquiv x := by
   obtain ⟨m, rfl⟩ := firstHomologyEquiv.symm.surjective x
-  rw [firstHomologyEquiv_symm_apply, map_zsmul, singularHomologyMap_zsmul_fundamentalClass,
-    map_zsmul, map_zsmul, map_zsmul, firstHomologyEquiv_fundamentalClass, smul_eq_mul,
-    smul_eq_mul, smul_eq_mul, mul_one, mul_one, mul_comm]
+  simp [singularHomologyMap_zsmul_fundamentalClass, mul_comm]
 
 end FirstHomology
 
