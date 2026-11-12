@@ -15,22 +15,23 @@ import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
 # Sobolev representatives of smooth framed vortices
 
 The framed degree-`m` plane vortex fields of the Sobolev model form the affine space
-`A_m^s = x_ref + H^s(ℂ; iT*ℂ ⊕ ℂ)` (`TauCeti.Vortex.framedFieldSpace`), centered at a smooth
-reference pair equal to `(-i m dθ, (z / |z|)^m)` outside a disc. A smooth vortex with the
-degree-`m` end framing `α (z / |z|)^(-m) → 1` need not lie in `A_m^s`: its phase may approach the
-winding phase only like `1 / |z|`, which is not square integrable. This file shows that every
-such vortex is carried into `A_m^s`, for every order `s` at once, by a smooth framed gauge
-transformation (`TauCeti.Vortex.exists_framedGaugeGroup_forall_smul_mem_framedFieldSpace`). Since
-two fields of `A_m^k`, `k ≥ 2`, related by a smooth framed gauge are related by an element of
-the Sobolev gauge group `G_(k+1)` (`TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace_iff`),
-the smooth framed gauge orbits of smooth framed vortices are thereby compared with the
+`A_m^s = x_ref + (L² ∩ H^s)(ℂ; iT*ℂ ⊕ ℂ)` (`TauCeti.Vortex.framedFieldSpace`; this is
+`x_ref + H^s` for `s ≥ 0`), centered at a smooth reference pair equal to `(-i m dθ, (z / |z|)^m)`
+outside a disc. A smooth vortex with the degree-`m` end framing `α (z / |z|)^(-m) → 1` need not
+lie in `A_m^s`: its phase may approach the winding phase only like `1 / |z|`, which is not square
+integrable. This file shows that every such vortex is carried into `A_m^s`, for every order `s`
+at once, by a smooth framed gauge transformation
+(`TauCeti.Vortex.exists_framedGaugeGroup_forall_smul_mem_framedFieldSpace`). Since two fields
+of `A_m^k`, `k ≥ 2`, related by a smooth framed gauge are related by an element of the Sobolev
+gauge group `G_(k+1)` (`TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace_iff`), the smooth
+framed gauge orbits of smooth framed vortices are thereby compared with the
 `G_(k+1)`-orbits of vortices in `A_m^k`.
 
 The gauge is the one making the section `|α|` times the winding phase outside a compact set
 (`TauCeti.Vortex.exists_framedGaugeGroup_sectionValue_smul_eq`). For such an end-normalized
 vortex, the end trivialization by the inverse winding phase has the positive real section `|α|`,
 and the holomorphicity rows of the vortex equation then determine its connection from
-`ℓ = log |α|²`. Outside a large disc,
+`ℓ = log |α|²` (`TauCeti.Vortex.sub_referenceField_apply_eq`). Outside a large disc,
 
 `x - x_ref = (-∂_t ℓ / 2, ∂_s ℓ / 2, x_ref,₂ (exp (ℓ / 2) - 1), x_ref,₃ (exp (ℓ / 2) - 1))`
 
@@ -40,11 +41,11 @@ compactly supported, by the scalar equation `Δ log |α|² = (|α|² - 1) / 4`
 (`TauCeti.Vortex.laplacian_log_normSq_of_equation_eq_zero`). It is bounded and square integrable,
 since `|v| ≤ 2 (1 - |α|²)` and the modulus defect is integrable
 (`TauCeti.Vortex.integrable_one_sub_normSq`). Elliptic regularity for this semilinear equation
-(`TemperedDistribution.mem_realSobolevFunctions_of_laplacian_eq_mul_exp_sub_one_add`) puts `v`
-in every `H^s`, and then each coordinate of `x - x_ref` lies in `H^s`: the connection part as a
-derivative of `v`, and the section part because `H^s(ℂ)` is closed under `w ↦ exp (w / 2) - 1`
-for `s > 1` and under multiplication by the reference coefficients, which have bounded
-derivatives.
+(`TemperedDistribution.mem_realSobolevFunctions_add_two_of_laplacian_eq_mul_exp_sub_one_add`)
+puts `v` in every `H^s`, and then each coordinate of `x - x_ref` lies in `H^s`: the connection
+part as a derivative of `v`, and the section part because `H^s(ℂ)` is closed under
+`w ↦ exp (w / 2) - 1` for `s > 1` and under multiplication by the reference coefficients, which
+have bounded derivatives.
 
 ## Main results
 
@@ -52,7 +53,8 @@ derivatives.
   `|α| → 1` whose section is `|α|` times the winding phase outside a compact set lies in `A_m^s`
   for every `s`.
 * `TauCeti.Vortex.exists_framedGaugeGroup_forall_smul_mem_framedFieldSpace`: every smooth framed
-  degree-`m` vortex has a smooth framed gauge transform lying in `A_m^s` for every `s`.
+  degree-`m` vortex has a smooth framed gauge transform, normalized at its end, lying in `A_m^s`
+  for every `s`.
 
 ## References
 
@@ -72,103 +74,6 @@ open Complex Filter Metric MeasureTheory TemperedDistribution
 open scoped Topology ContDiff Laplacian
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ}
-
-/-- **The end trivialization of an end-normalized vortex.** At a point `z` outside the cutoff
-disc, near which the section of `x` is `|α|` times the winding phase, and at which `α ≠ 0` and
-the vortex equation holds, the difference between `x` and the reference field is determined by
-`ℓ = log |α|²`: its connection part is `(-∂_t ℓ / 2, ∂_s ℓ / 2)`, and its section part is the
-reference section times `|α| - 1`. -/
-private theorem sub_referenceField_apply_eq (f : ContDiffBump (0 : ℝ)) {z : ℂ}
-    (hrOut : f.rOut ≤ ‖z‖ ^ 2) (hx : ∀ i, DifferentiableAt ℝ (fun w ↦ x w i) z)
-    (hsol : equation x z = 0)
-    (hphase : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * windingPhase m w)
-    (hα : sectionValue x z ≠ 0) :
-    x z 0 - referenceField f m z 0 =
-        -fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z I / 2 ∧
-      x z 1 - referenceField f m z 1 =
-        fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z 1 / 2 ∧
-      x z 2 - referenceField f m z 2 = referenceField f m z 2 * (‖sectionValue x z‖ - 1) ∧
-      x z 3 - referenceField f m z 3 = referenceField f m z 3 * (‖sectionValue x z‖ - 1) := by
-  have hz₀ := ne_zero_of_rOut_le_norm_sq f hrOut
-  set u : ℂ → Circle := (windingPhase m)⁻¹
-  have hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z := by
-    simp only [u, Pi.inv_apply, Circle.coe_inv_eq_conj]
-    exact conjCLE.contDiff.contDiffAt.comp z (contDiffAt_windingPhase m hz₀)
-  have hud := hu.differentiableAt (by norm_num)
-  set y := gaugeTransform u x
-  have hsoly : equation y z = 0 := (equation_gaugeTransform_eq_zero_iff hu hx).2 hsol
-  have hRe (x' : ℂ → EuclideanSpace ℝ (Fin 4)) (w : ℂ) : (sectionValue x' w).re = 2 * x' w 2 := by
-    simp [sectionValue_apply]
-  have hIm (x' : ℂ → EuclideanSpace ℝ (Fin 4)) (w : ℂ) : (sectionValue x' w).im = 2 * x' w 3 := by
-    simp [sectionValue_apply]
-  -- The end trivialization `y` has the real section `|α|` near `z`.
-  have hsec : ∀ᶠ w in 𝓝 z, sectionValue y w = ‖sectionValue x w‖ :=
-    hphase.mono fun w hw ↦ sectionValue_gaugeTransform_inv_windingPhase hw
-  have hy3 : (fun w ↦ y w 3) =ᶠ[𝓝 z] fun _ ↦ (0 : ℝ) := hsec.mono fun w hw ↦ by
-    have h := congrArg Complex.im hw
-    rw [hIm, ofReal_im] at h
-    linarith
-  have hy2 : y z 2 = ‖sectionValue x z‖ / 2 := by
-    have h := congrArg Complex.re hsec.self_of_nhds
-    rw [hRe, ofReal_re] at h
-    linarith
-  have hy3z : y z 3 = 0 := hy3.self_of_nhds
-  have hdy3 : fderiv ℝ (fun w ↦ y w 3) z = 0 := by rw [hy3.fderiv_eq, fderiv_const_apply]
-  have hre : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z := reCLM.differentiableAt.comp z hud
-  have him : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z := imCLM.differentiableAt.comp z hud
-  have hp : DifferentiableAt ℝ (fun w ↦ y w 2) z := by
-    simp only [y, gaugeTransform_apply]
-    exact (hre.mul (hx 2)).sub (him.mul (hx 3))
-  have hq : DifferentiableAt ℝ (fun w ↦ y w 3) z := by
-    simp only [y, gaugeTransform_apply]
-    exact (him.mul (hx 2)).add (hre.mul (hx 3))
-  have hαy : y z 2 ^ 2 + y z 3 ^ 2 ≠ 0 := by
-    rw [hy2, hy3z]
-    positivity
-  -- `log |α|²` is gauge invariant.
-  have hℓ : (fun w ↦ Real.log (4 * (y w 2 ^ 2 + y w 3 ^ 2))) =
-      fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) := by
-    ext w
-    rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, sectionValue_gaugeTransform, norm_mul,
-      Circle.norm_coe, one_mul]
-  have h₁ : equation y z 1 = 0 := by rw [hsoly]; rfl
-  have h₂ : equation y z 2 = 0 := by rw [hsoly]; rfl
-  have hd1 := fderiv_log_normSq_apply_one hp hq hαy h₁ h₂
-  have hdI := fderiv_log_normSq_apply_I hp hq hαy h₁ h₂
-  rw [hℓ, hdy3, hy3z] at hd1 hdI
-  simp only [zero_apply, mul_zero, zero_mul, neg_zero, zero_div, zero_add,
-    zero_sub] at hd1 hdI
-  -- The reference field in the end trivialization is the vacuum.
-  have href := gaugeTransform_inv_windingPhase_referenceField f m hrOut
-  have href0 : referenceField f m z 0 - gaugeForm u z 1 = 0 := by
-    simpa [gaugeTransform_apply, vacuumField_apply, -gaugeForm_apply] using
-      congrArg (fun v : EuclideanSpace ℝ (Fin 4) ↦ v 0) href
-  have href1 : referenceField f m z 1 - gaugeForm u z I = 0 := by
-    simpa [gaugeTransform_apply, vacuumField_apply, -gaugeForm_apply] using
-      congrArg (fun v : EuclideanSpace ℝ (Fin 4) ↦ v 1) href
-  have hy0 : y z 0 = x z 0 - gaugeForm u z 1 := by simp [y, gaugeTransform_apply]
-  have hy1 : y z 1 = x z 1 - gaugeForm u z I := by simp [y, gaugeTransform_apply]
-  -- The section coordinates.
-  have hsx := hphase.self_of_nhds
-  have hrs : referenceSection f m z = windingPhase m z := by
-    rw [referenceSection_eq_phase f m hrOut, coe_windingPhase m hz₀]
-  have hx2 : x z 2 = ‖sectionValue x z‖ * (windingPhase m z : ℂ).re / 2 := by
-    have h := congrArg Complex.re hsx
-    rw [hRe, re_ofReal_mul] at h
-    linarith
-  have hx3 : x z 3 = ‖sectionValue x z‖ * (windingPhase m z : ℂ).im / 2 := by
-    have h := congrArg Complex.im hsx
-    rw [hIm, im_ofReal_mul] at h
-    linarith
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [hdI]
-    linarith
-  · rw [hd1]
-    linarith
-  · simp only [referenceField_apply, Fin.isValue, Matrix.cons_val, hrs, hx2]
-    ring
-  · simp only [referenceField_apply, Fin.isValue, Matrix.cons_val, hrs, hx3]
-    ring
 
 /-- **A Sobolev cutoff of `log |α|²`.** Let `x` be a smooth plane vortex with `|α| → 1` at
 infinity, and let `R ≥ 0` be such that `|α|² > 1 / 2` outside the disc of radius `R`. Then some
@@ -241,7 +146,7 @@ private theorem exists_forall_mem_realSobolevFunctions_eventuallyEq_log_normSq
       rw [Real.norm_eq_abs, Real.norm_eq_abs,
         abs_of_nonneg (show (0 : ℝ) ≤ 2 * (1 - n z) by linarith [hn1 z])]
       exact hvbound z)
-  have hvC (z : ℂ) : |v z| ≤ 2 := (hvbound z).trans (by linarith [hn0 z])
+  have hvC (z : ℂ) : v z ≤ 2 := (le_abs_self _).trans ((hvbound z).trans (by linarith [hn0 z]))
   -- `v` solves `Δv = (exp v - 1) / 4 + g` with `g` smooth and compactly supported.
   set g : ℂ → ℝ := fun z ↦ Δ v z - 1 / 4 * (Real.exp (v z) - 1) with hg_def
   have hgc : ContDiff ℝ ∞ g :=
@@ -259,16 +164,18 @@ private theorem exists_forall_mem_realSobolevFunctions_eventuallyEq_log_normSq
     have hvz : v z = ℓ z := (hvfar z hz').self_of_nhds
     simp only [g, hΔ, hvz, ℓ, Real.exp_log (by linarith : 0 < n z)]
     ring
-  have hvS : ∀ s, v ∈ realSobolevFunctions ℂ s 2 :=
-    mem_realSobolevFunctions_of_laplacian_eq_mul_exp_sub_one_add (c := 1 / 4)
-      (by rw [Complex.finrank_real_complex]; norm_num) (hv.of_le (by norm_cast)) hv2 hvC
-      (mem_realSobolevFunctions_of_hasCompactSupport hgc hgs) fun z ↦ by rw [hg_def]; ring
+  have hvS (s : ℝ) : v ∈ realSobolevFunctions ℂ s 2 := by
+    simpa only [sub_add_cancel] using
+      mem_realSobolevFunctions_add_two_of_laplacian_eq_mul_exp_sub_one_add (c := 1 / 4)
+        (by rw [Complex.finrank_real_complex]; norm_num) (hv.of_le (by norm_cast)) hv2 hvC
+        (mem_realSobolevFunctions_of_hasCompactSupport hgc hgs (s - 2))
+        fun z ↦ by rw [hg_def]; ring
   exact ⟨v, hv, hvS, hvfar⟩
 
 /-- **End-normalized vortices lie in every Sobolev field space.** Let `x` be a smooth plane
 vortex with `|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m`
 outside a compact set. Then `x` lies in the affine space `A_m^s` of framed degree-`m` fields for
-every order `s`: `x - x_ref ∈ H^s`. -/
+every order `s`: `x - x_ref ∈ L² ∩ H^s`. -/
 theorem mem_framedFieldSpace_of_eventually_sectionValue_eq (f : ContDiffBump (0 : ℝ))
     (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
@@ -345,8 +252,8 @@ theorem mem_framedFieldSpace_of_eventually_sectionValue_eq (f : ContDiffBump (0 
       push_cast
       linarith [le_max_right s 2]
     have he : (fun z ↦ Real.exp (v z / 2) - 1) ∈ realSobolevFunctions ℂ k 2 := by
-      simpa only [one_div_mul_eq_div] using
-        exp_mul_sub_one_mem_realSobolevFunctions hk2 (hvS k) (1 / 2)
+      simpa only [Pi.smul_apply, smul_eq_mul, one_div_mul_eq_div] using
+        exp_sub_one_mem_realSobolevFunctions hk2 (Submodule.smul_mem _ (1 / 2 : ℝ) (hvS k))
     exact realSobolevFunctions_mono (by norm_num) (by norm_num) ((le_max_left s 2).trans hk)
       (mul_mem_realSobolevFunctions_of_bounded_derivatives (by norm_num) (by norm_num) k
         (contDiff_euclidean.1 (contDiff_referenceField f m) i)
@@ -378,13 +285,15 @@ theorem mem_framedFieldSpace_of_eventually_sectionValue_eq (f : ContDiffBump (0 
 /-- **Every smooth framed vortex has a representative in every Sobolev field space.** A smooth
 plane vortex with the degree-`m` end framing `α (z / |z|)^(-m) → 1` is carried by a smooth framed
 gauge transformation into the affine space `A_m^s` of framed degree-`m` fields, for every order
-`s` at once. The gauge makes the section `|α|` times the winding phase outside a compact set. -/
+`s` at once, and the transformed section is `|α|` times the winding phase outside a compact set. -/
 theorem exists_framedGaugeGroup_forall_smul_mem_framedFieldSpace (f : ContDiffBump (0 : ℝ))
     (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
-    ∃ u : framedGaugeGroup, ∀ s, u • x ∈ framedFieldSpace f m s := by
+    ∃ u : framedGaugeGroup,
+      (∀ᶠ z in cocompact ℂ, sectionValue (u • x) z = ‖sectionValue (u • x) z‖ * windingPhase m z) ∧
+        ∀ s, u • x ∈ framedFieldSpace f m s := by
   obtain ⟨u, hu⟩ := exists_framedGaugeGroup_sectionValue_smul_eq hx hframe
-  refine ⟨u, fun s ↦ ?_⟩
+  refine ⟨u, hu, fun s ↦ ?_⟩
   have huc := ((mem_framedGaugeGroup _).1 u.property).1
   have hsol' (z : ℂ) : equation (u • x) z = 0 :=
     (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
