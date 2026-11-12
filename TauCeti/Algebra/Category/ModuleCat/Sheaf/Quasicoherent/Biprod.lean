@@ -335,12 +335,12 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} {R : S
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
 
 /-- The zero sheaf of modules is finitely presented. -/
-instance isFinitePresentation_containsZero [HasBinaryProducts C] :
+instance containsZero_isFinitePresentation [HasBinaryProducts C] :
     (isFinitePresentation R).ContainsZero where
   exists_zero := ⟨_, isZero_free PEmpty, inferInstance⟩
 
 /-- Finitely presented sheaves are closed under binary products, computed as direct sums. -/
-instance isFinitePresentation_isClosedUnderBinaryProducts [HasPullbacks C] :
+instance isClosedUnderBinaryProducts_isFinitePresentation [HasPullbacks C] :
     (isFinitePresentation R).IsClosedUnderBinaryProducts :=
   ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun A B hA hB ↦ by
     let := hA
@@ -348,7 +348,7 @@ instance isFinitePresentation_isClosedUnderBinaryProducts [HasPullbacks C] :
     exact isFinitePresentation_biprod
 
 /-- Finitely presented sheaves are closed under finite products. -/
-instance isFinitePresentation_isClosedUnderFiniteProducts [HasPullbacks C] [HasBinaryProducts C] :
+instance isClosedUnderFiniteProducts_isFinitePresentation [HasPullbacks C] [HasBinaryProducts C] :
     (isFinitePresentation R).IsClosedUnderFiniteProducts := .mk'
 
 end FiniteProducts

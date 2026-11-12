@@ -20,13 +20,16 @@ assumption is needed.
 
 This follows from `Scheme.Modules.isFinitePresentation_kernel_spec` by restriction to affine
 opens and descent of finite presentation. It applies to ambient scheme modules independently
-of the bundled category of finitely presented sheaves. The corresponding cokernel result is
-provided by `Scheme.Modules.isFinitePresentation_cokernel` in the restriction module.
+of the bundled category of finitely presented sheaves. This file proves
+`Scheme.Modules.isFinitePresentation_kernel` and
+`Scheme.Modules.isClosedUnderKernels_isFinitePresentation`.
 
-The finite-presentation object property contains zero and is closed under cokernels and finite
-products on every scheme, and under kernels on locally Noetherian schemes. The generic
-object-property instances therefore give an abelian full subcategory in the locally Noetherian
-case, whose inclusion preserves finite limits and finite colimits.
+The public import `TauCeti.AlgebraicGeometry.Modules.Restriction.FinitePresentation` supplies
+cokernel closure and, transitively through `Modules.Biprod`, zero and finite-product closure
+on every scheme. Together with kernel closure on locally Noetherian schemes, the public imports
+`TauCeti.CategoryTheory.ObjectProperty.Kernels` and `Mathlib.CategoryTheory.Abelian.Subcategory`
+supply the generic instances for an abelian full subcategory whose inclusion preserves finite
+limits and finite colimits.
 
 ## References
 
@@ -60,7 +63,7 @@ instance isFinitePresentation_kernel [IsLocallyNoetherian X] (f : M ⟶ N)
     (isFinitePresentation_kernel_spec (G.map (F.map f)))
 
 /-- Coherent sheaves on a locally Noetherian scheme are closed under ambient kernels. -/
-instance isFinitePresentation_isClosedUnderKernels (X : Scheme.{u}) [IsLocallyNoetherian X] :
+instance isClosedUnderKernels_isFinitePresentation (X : Scheme.{u}) [IsLocallyNoetherian X] :
     (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderKernels where
   kernels_le := by
     rintro _ ⟨f, k, hk, hM, hN⟩

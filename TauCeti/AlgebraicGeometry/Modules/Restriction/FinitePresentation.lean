@@ -120,7 +120,7 @@ instance isFinitePresentation_cokernel {X : Scheme.{u}} {M N : X.Modules} (f : M
     (isFinitePresentation_restrict hU.isoSpec.hom ((cokernel f).restrict hU.fromSpec))
 
 /-- Finitely presented sheaves are closed under ambient cokernels on every scheme. -/
-instance isFinitePresentation_isClosedUnderCokernels (X : Scheme.{u}) :
+instance isClosedUnderCokernels_isFinitePresentation (X : Scheme.{u}) :
     (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderCokernels where
   cokernels_le := by
     rintro _ ⟨f, c, hc, hM, hN⟩

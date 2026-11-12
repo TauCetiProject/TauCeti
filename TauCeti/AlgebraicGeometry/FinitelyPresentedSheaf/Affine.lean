@@ -18,11 +18,11 @@ additive equivalence `tildeEquiv` with `FGModuleCat R`. Its functors are `tildeF
 `globalSectionsFunctor`; the unit and counit equations identify their components with those
 of the tilde adjunction.
 
-The abelian structure and exact inclusion into all sheaves of modules follow from the generic
-object-property instances and the closure results in
-`TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian`. That module proves ambient
-kernel closure on locally Noetherian schemes and uses the existing cokernel result, which needs
-no Noetherian hypothesis.
+Importing `TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian` additionally supplies
+the abelian structure and exact inclusion into all sheaves of modules via generic object-property
+instances. It combines its kernel closure on locally Noetherian schemes with zero and product
+closure from `Modules.Biprod` and cokernel closure from `Modules.Restriction.FinitePresentation`.
+These abelian and exactness instances are not imported by this file.
 
 The construction follows Mathlib's `AlgebraicGeometry.tildeEquiv` and uses the finite-presentation
 comparison for tilde sheaves, rather than a new definition of coherence.
