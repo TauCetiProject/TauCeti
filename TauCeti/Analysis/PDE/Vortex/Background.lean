@@ -137,8 +137,6 @@ theorem abs_backgroundWeight_sub_backgroundWeight_le (f g : ℂ → ℂ) (z : �
     |backgroundWeight f z - backgroundWeight g z| ≤ ‖f z - g z‖ := by
   set a := ‖f z‖
   set b := ‖g z‖
-  have ha : 0 ≤ a := norm_nonneg _
-  have hb : 0 ≤ b := norm_nonneg _
   have hab : |a - b| ≤ ‖f z - g z‖ := abs_norm_sub_norm_le _ _
   have hden : 0 < (1 + a ^ 2) * (1 + b ^ 2) := by positivity
   have heq : backgroundWeight f z - backgroundWeight g z =

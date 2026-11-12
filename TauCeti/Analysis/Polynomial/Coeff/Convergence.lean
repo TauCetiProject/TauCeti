@@ -121,7 +121,6 @@ theorem exists_eventually_forall_mul_pow_le_norm_eval (hP₀ : P₀ ≠ 0)
   set a := ‖P₀.leadingCoeff‖
   have ha : 0 < a := norm_pos_iff.mpr (leadingCoeff_ne_zero.mpr hP₀)
   set S := ∑ k ∈ range N, (‖P₀.coeff k‖ + 1)
-  have hS : 0 ≤ S := sum_nonneg fun k _ ↦ by positivity
   refine ⟨a / 4, by positivity, max 1 (4 * S / a), le_max_left _ _, ?_⟩
   have hb : ∀ k ∈ range N, ∀ᶠ i in l, ‖(P i).coeff k‖ < ‖P₀.coeff k‖ + 1 := fun k _ ↦
     (hP k).norm.eventually (gt_mem_nhds (lt_add_one _))
@@ -243,7 +242,6 @@ theorem exists_eventually_forall_norm_derivative_eval_sq_le (hm : 0 < P₀.natDe
     (tendsto_coeff_derivative hP)
   refine ⟨(D * 2 ^ m / c) ^ 2 + (D * (1 + R) ^ m) ^ 2, ?_⟩
   filter_upwards [hb, hD] with i hi hDi z
-  have hP2 : 0 ≤ ‖(P i).eval z‖ ^ 2 := by positivity
   have hd := hDi z
   by_cases hz : R ≤ ‖z‖
   · -- Far out, `(1 + ‖z‖) ^ m ≤ 2 ^ m ‖z‖ ^ m ≤ (2 ^ m / c) ‖P i z‖`.
