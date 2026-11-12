@@ -10,6 +10,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The homogeneous Littlewood–Paley blocks of a tempered distribution
@@ -47,6 +48,12 @@ indices, and the blocks are bounded on every `Lᵖ`, `1 ≤ p ≤ ∞`, uniforml
   `\dot Δⱼ` with `2^j φ.rOut ≤ 2^N φ.rIn` only sees the inhomogeneous blocks `Δₖ`, `k ≤ N`.
 * `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le`: the blocks are
   bounded on `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j ∈ ℤ`.
+* `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_and_le`: weighted `Lᵖ` norms of
+  the blocks of one bump function are bounded by nearby weighted `Lᵖ` norms of the blocks of
+  another.
+* `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_nonpos`: if the
+  inhomogeneous blocks of `u` are `Lᵖ` functions, its blocks `\dot Δⱼ u`, `j ≤ 0`, are bounded in
+  `Lᵖ`.
 * `TemperedDistribution.forall_homogeneousLittlewoodPaleyBlock_eq_zero_iff`: all the blocks of `u`
   vanish exactly when `𝓕 u` vanishes away from the origin.
 * `TemperedDistribution.homogeneousLittlewoodPaleyBlock_volume_toTemperedDistribution`: the
@@ -197,6 +204,64 @@ theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] 
   rw [hσ_coe, hK] at hgf
   rw [hσ_coe] at hg
   exact ⟨g, hg, hgf⟩
+
+/-- **The blocks of another bump function.** If the homogeneous blocks `\dot Δₖ u` built from `φ`
+are `Lᵖ` functions `fₖ`, then the homogeneous blocks `\dot Δ'ⱼ u` built from `φ'` are `Lᵖ` functions
+`f'ⱼ`, with `2^{js} ‖f'ⱼ‖_p ≤ K ∑_{j - L ≤ k < j + L} 2^{ks} ‖fₖ‖_p`. The constants `K` and `L`
+depend only on `φ`, `φ'` and `s`. -/
+theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_le [CompleteSpace F]
+    (φ' : ContDiffBump (0 : E)) (s : ℝ) :
+    ∃ K : ℝ, ∃ L : ℕ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : 𝓢'(E, F)}
+      (f : ℤ → Lp F p (volume : Measure E)),
+      (∀ k, homogeneousLittlewoodPaleyBlock F φ k u = f k) →
+      ∃ f' : ℤ → Lp F p (volume : Measure E),
+        (∀ j, homogeneousLittlewoodPaleyBlock F φ' j u = f' j) ∧
+        ∀ j : ℤ, 2 ^ (s * j) * ‖f' j‖ ≤
+          K * ∑ k ∈ Finset.Ico (j - L) (j + L), 2 ^ (s * k) * ‖f k‖ := by
+  obtain ⟨L, hL⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico (F := F) φ φ'
+  obtain ⟨C, hC⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le (F := F) φ'
+  refine ⟨max C 0 * 2 ^ (|s| * L), L, by positivity, fun {p} _ {u} f hf ↦ ?_⟩
+  choose g hg hgC using fun j k ↦ hC (p := p) j (f k)
+  refine ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), g j k, fun j ↦ ?_, fun j ↦ ?_⟩
+  · rw [hL j u]
+    simp_rw [hf, hg]
+    exact (map_sum (Lp.toTemperedDistributionCLM F volume p) _ _).symm
+  · refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
+    rw [Finset.mul_sum, Finset.mul_sum]
+    refine Finset.sum_le_sum fun k hk ↦ ?_
+    calc 2 ^ (s * j) * ‖g j k‖ ≤ 2 ^ (|s| * L) * 2 ^ (s * k) * (max C 0 * ‖f k‖) := by
+          gcongr
+          · rw [Finset.mem_Ico] at hk
+            refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s
+              (abs_sub_le_iff.2 ⟨?_, ?_⟩)
+            all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
+          · exact (hgC j k).trans (by gcongr; exact le_max_left C 0)
+      _ = _ := by ring
+
+variable {φ} in
+/-- **The low-frequency homogeneous blocks are bounded in `Lᵖ`.** If the inhomogeneous blocks
+`Δₖ u` are `Lᵖ` functions `fₖ`, then there are `B` and `Lᵖ` functions `G j` with `\dot Δⱼ u = G j`
+and `‖G j‖_p ≤ B` for every `j ≤ 0`. They are blocks of the `Lᵖ` function `∑_{k ≤ N} Δₖ u`, for `N`
+with `φ.rOut ≤ 2^N φ.rIn`. -/
+theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_nonpos [CompleteSpace F]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : 𝓢'(E, F)} {f : ℕ → Lp F p (volume : Measure E)}
+    (hf : ∀ k, littlewoodPaleyBlock F φ k u = f k) :
+    ∃ B : ℝ, ∃ G : ℤ → Lp F p (volume : Measure E), ∀ j ≤ 0,
+      homogeneousLittlewoodPaleyBlock F φ j u = G j ∧ ‖G j‖ ≤ B := by
+  obtain ⟨C, hC⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) (one_lt_two (α := ℝ))
+  set S : Lp F p (volume : Measure E) := ∑ k ∈ Finset.range (N + 1), f k
+  choose G hG hGC using fun j : ℤ ↦ hC (p := p) j S
+  refine ⟨C * ‖S‖, G, fun j hj ↦ ⟨?_, hGC j⟩⟩
+  have hjN : (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ N * φ.rIn :=
+    calc (2 : ℝ) ^ j * φ.rOut ≤ 1 * φ.rOut :=
+          mul_le_mul_of_nonneg_right (zpow_le_one_of_nonpos₀ (one_le_two (α := ℝ)) hj)
+            φ.rOut_pos.le
+      _ ≤ 2 ^ N * φ.rIn := by rw [one_mul]; exact ((div_lt_iff₀ φ.rIn_pos).1 hN).le
+  rw [← homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range φ hjN, ← hG j]
+  congr 1
+  rw [Finset.sum_congr rfl fun k _ ↦ hf k]
+  exact (map_sum (Lp.toTemperedDistributionCLM F volume p) _ _).symm
 
 open Distribution
 

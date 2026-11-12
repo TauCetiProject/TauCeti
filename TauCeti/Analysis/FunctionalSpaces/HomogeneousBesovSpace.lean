@@ -10,7 +10,6 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Homogeneous Besov spaces
@@ -25,17 +24,19 @@ distribution `u` lies in the **homogeneous Besov space** `\dot B^s_{p,q}` when i
 
 In contrast with the inhomogeneous space `B^s_{p,q}` (`TemperedDistribution.MemBesov`), every dyadic
 frequency scale `2^j`, `j ∈ ℤ`, carries the weight `2^{js}`, so the quantity is homogeneous under
-dyadic dilations. It is only a seminorm on tempered distributions: the blocks vanish on the
-distributions whose Fourier transform is supported at the origin, the polynomials
+dyadic dilations. The membership predicate makes sense for every `q`. For `1 ≤ q` the quantity is
+only a seminorm on tempered distributions: the blocks vanish on the distributions whose Fourier
+transform is supported at the origin, the polynomials
 (`TemperedDistribution.forall_homogeneousLittlewoodPaleyBlock_eq_zero_iff`). So `\dot B^s_{p,q}` is
 a space of tempered distributions modulo polynomials.
 
 We realise this quotient without forming it. The weighted block sequence `(2^{js} \dot Δⱼ u)ⱼ` of
-`u` is an element of the normed space `ℓ^q(ℤ, Lᵖ)`, and the sequences arising this way form a
-submodule `TauCeti.homogeneousBesovSubmodule`. This submodule, with the norm of `ℓ^q(ℤ, Lᵖ)`, is the
-bundled space `TauCeti.HomogeneousBesovSpace`: two distributions have the same image exactly when
-their difference has Fourier transform supported at the origin
-(`TemperedDistribution.MemHomogeneousBesov.toHomogeneousBesovSpace_eq_iff`).
+`u` is an element of `ℓ^q(ℤ, Lᵖ)`, and the sequences arising this way form a submodule
+`TauCeti.homogeneousBesovSubmodule`. This submodule is the bundled space
+`TauCeti.HomogeneousBesovSpace`: two distributions have the same image exactly when their
+difference has Fourier transform supported at the origin
+(`TemperedDistribution.MemHomogeneousBesov.toHomogeneousBesovSpace_eq_iff`). For `1 ≤ q`,
+`ℓ^q(ℤ, Lᵖ)` is a normed space and the bundled space carries its norm, the homogeneous Besov norm.
 
 ## Main declarations
 
@@ -50,8 +51,8 @@ their difference has Fourier transform supported at the origin
 * `TemperedDistribution.MemBesov.memHomogeneousBesov`: for `s > 0`, `B^s_{p,q} ⊆ \dot B^s_{p,q}`.
 * `TauCeti.HomogeneousBesovSpace F φ s p q`: the bundled space, the weighted block sequences in
   `ℓ^q(ℤ, Lᵖ)`, and `TemperedDistribution.MemHomogeneousBesov.toHomogeneousBesovSpace`, the image
-  of a distribution in it, with its norm `norm_toHomogeneousBesovSpace_eq_tsum_rpow` (`q < ∞`)
-  and `norm_toHomogeneousBesovSpace_eq_ciSup` (`q = ∞`).
+  of a distribution in it, with, for `1 ≤ q`, its norm `norm_toHomogeneousBesovSpace_eq_tsum_rpow`
+  (`q < ∞`) and `norm_toHomogeneousBesovSpace_eq_ciSup` (`q = ∞`).
 
 ## References
 
@@ -150,39 +151,6 @@ theorem memHomogeneousBesov_of_isVanishingOn {u : 𝓢'(E, F)}
     (hu : IsVanishingOn (𝓕 u : 𝓢'(E, F)) {0}ᶜ) : u.MemHomogeneousBesov φ s p q :=
   ⟨0, fun j ↦ by simp [homogeneousLittlewoodPaleyBlock_eq_zero_of_isVanishingOn φ hu j]⟩
 
-/-- **The blocks of another bump function.** If the homogeneous blocks `\dot Δₖ u` built from `φ`
-are `Lᵖ` functions `fₖ`, then the homogeneous blocks `\dot Δ'ⱼ u` built from `φ'` are `Lᵖ` functions
-`f'ⱼ`, with `2^{js} ‖f'ⱼ‖_p ≤ K ∑_{j - L ≤ k < j + L} 2^{ks} ‖fₖ‖_p`. The constants `K` and `L`
-depend only on `φ`, `φ'` and `s`. -/
-private theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_le (φ φ' : ContDiffBump (0 : E))
-    (s : ℝ) :
-    ∃ K : ℝ, ∃ L : ℕ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : 𝓢'(E, F)}
-      (f : ℤ → Lp F p (volume : Measure E)),
-      (∀ k, homogeneousLittlewoodPaleyBlock F φ k u = f k) →
-      ∃ f' : ℤ → Lp F p (volume : Measure E),
-        (∀ j, homogeneousLittlewoodPaleyBlock F φ' j u = f' j) ∧
-        ∀ j : ℤ, 2 ^ (s * j) * ‖f' j‖ ≤
-          K * ∑ k ∈ Finset.Ico (j - L) (j + L), 2 ^ (s * k) * ‖f k‖ := by
-  obtain ⟨L, hL⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico (F := F) φ φ'
-  obtain ⟨C, hC⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le (F := F) φ'
-  refine ⟨max C 0 * 2 ^ (|s| * L), L, by positivity, fun {p} _ {u} f hf ↦ ?_⟩
-  choose g hg hgC using fun j k ↦ hC (p := p) j (f k)
-  refine ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), g j k, fun j ↦ ?_, fun j ↦ ?_⟩
-  · rw [hL j u]
-    simp_rw [hf, hg]
-    exact (map_sum (Lp.toTemperedDistributionCLM F volume p) _ _).symm
-  · refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
-    rw [Finset.mul_sum, Finset.mul_sum]
-    refine Finset.sum_le_sum fun k hk ↦ ?_
-    calc 2 ^ (s * j) * ‖g j k‖ ≤ 2 ^ (|s| * L) * 2 ^ (s * k) * (max C 0 * ‖f k‖) := by
-          gcongr
-          · rw [Finset.mem_Ico] at hk
-            refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s
-              (abs_sub_le_iff.2 ⟨?_, ?_⟩)
-            all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
-          · exact (hgC j k).trans (by gcongr; exact le_max_left C 0)
-      _ = _ := by ring
-
 /-- **Independence of the bump function.** A tempered distribution in the homogeneous Besov space
 `\dot B^s_{p,q}` built from the Littlewood–Paley cutoffs of `φ` lies in the homogeneous Besov space
 `\dot B^s_{p,q}` built from any other bump function `φ'`. -/
@@ -195,28 +163,6 @@ theorem MemHomogeneousBesov.of_bump {u : 𝓢'(E, F)} (hu : u.MemHomogeneousBeso
     fun j ↦ ?_⟩
   rw [Real.norm_of_nonneg (by positivity)]
   exact hle j
-
-/-- The low-frequency homogeneous blocks of `u ∈ B^s_{p,q}` are bounded in `Lᵖ`: there are `B` and
-`Lᵖ` functions `G j` with `\dot Δⱼ u = G j` and `‖G j‖_p ≤ B` for every `j ≤ 0`. They are blocks of
-the `Lᵖ` function `∑_{k ≤ N} Δₖ u`, for `N` with `φ.rOut ≤ 2^N φ.rIn`. -/
-private theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_nonpos {u : 𝓢'(E, F)}
-    {f : ℕ → Lp F p (volume : Measure E)} (hf : ∀ k, littlewoodPaleyBlock F φ k u = f k) :
-    ∃ B : ℝ, ∃ G : ℤ → Lp F p (volume : Measure E), ∀ j ≤ 0,
-      homogeneousLittlewoodPaleyBlock F φ j u = G j ∧ ‖G j‖ ≤ B := by
-  obtain ⟨C, hC⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) (one_lt_two (α := ℝ))
-  set S : Lp F p (volume : Measure E) := ∑ k ∈ Finset.range (N + 1), f k
-  choose G hG hGC using fun j : ℤ ↦ hC (p := p) j S
-  refine ⟨C * ‖S‖, G, fun j hj ↦ ⟨?_, hGC j⟩⟩
-  have hjN : (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ N * φ.rIn :=
-    calc (2 : ℝ) ^ j * φ.rOut ≤ 1 * φ.rOut :=
-          mul_le_mul_of_nonneg_right (zpow_le_one_of_nonpos₀ (one_le_two (α := ℝ)) hj)
-            φ.rOut_pos.le
-      _ ≤ 2 ^ N * φ.rIn := by rw [one_mul]; exact ((div_lt_iff₀ φ.rIn_pos).1 hN).le
-  rw [← homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range φ hjN, ← hG j]
-  congr 1
-  rw [Finset.sum_congr rfl fun k _ ↦ hf k]
-  exact (map_sum (Lp.toTemperedDistributionCLM F volume p) _ _).symm
 
 /-- **Inhomogeneous Besov spaces of positive order are homogeneous Besov spaces.** For `s > 0` and
 `q ≠ 0`, `B^s_{p,q} ⊆ \dot B^s_{p,q}`. The blocks `\dot Δⱼ`, `j ≥ 1`, are the inhomogeneous blocks
