@@ -94,7 +94,8 @@ theorem memWkpLoc_one_norm : MemWkpLoc p U 1 (fun z : ℂ => ‖z‖) :=
 /-- Every complex polynomial is in every local Sobolev class on every set. -/
 protected theorem _root_.Polynomial.memWkpLoc (P : Polynomial ℂ) (U : Set ℂ) (k : ℕ) :
     MemWkpLoc p U k (fun z => P.eval z) :=
-  P.differentiable.differentiableOn.memWkpLoc (Ω := ⊤) (subset_univ U) k
+  P.differentiable.differentiableOn.memWkpLoc (Ω := ⊤)
+    ((subset_univ U).trans_eq Opens.coe_top.symm) k
 
 /-! ### The norm is not in `W^{2,p}` for `p ≥ 2` -/
 
@@ -378,8 +379,8 @@ private theorem memWkpLoc_one_normDeriv (hp : p < 2) : MemWkpLoc p U 1 normDeriv
   simp [normDeriv]
 
 private theorem locallyIntegrable_normDeriv : LocallyIntegrable normDeriv volume := by
-  have h1 := measurable_unitRadialCoord 0 1
-  have hI := measurable_unitRadialCoord 0 Complex.I
+  have hm1 := measurable_unitRadialCoord 0 1
+  have hmI := measurable_unitRadialCoord 0 Complex.I
   refine (locallyIntegrable_const (2 : ℝ)).mono (by unfold normDeriv; fun_prop)
     (Eventually.of_forall fun z => ?_)
   have h1 := norm_unitRadialCoord_le le_rfl 1 z
@@ -738,6 +739,27 @@ theorem memWkpLoc_one_log_norm_iff {Ω : Opens ℂ} (h0 : (0 : ℂ) ∈ Ω) :
           rw [hnorm, Real.norm_of_nonneg (inv_nonneg.2 (norm_nonneg z))])
 /-! ### The even reflection fails at order two -/
 
+private theorem lipschitzWith_one_abs_re : LipschitzWith 1 fun z : ℂ => |z.re| :=
+  LipschitzWith.of_dist_le_mul fun a b => by
+    rw [NNReal.coe_one, one_mul, Real.dist_eq, dist_eq_norm]
+    exact (abs_abs_sub_abs_le_abs_sub _ _).trans (by simpa using Complex.abs_re_le_norm (a - b))
+
+private theorem fderiv_abs_re_apply_one_of_pos {z : ℂ} (hz : 0 < z.re) :
+    fderiv ℝ (fun z : ℂ => |z.re|) z 1 = 1 := by
+  have : (fun w : ℂ => |w.re|) =ᶠ[𝓝 z] fun w => Complex.reCLM w :=
+    eventuallyEq_of_mem ((Complex.continuous_re.isOpen_preimage _ isOpen_Ioi).mem_nhds
+      (mem_preimage.2 (mem_Ioi.2 hz))) fun w hw => abs_of_pos hw
+  rw [this.fderiv_eq, Complex.reCLM.fderiv]
+  simp
+
+private theorem fderiv_abs_re_apply_one_of_neg {z : ℂ} (hz : z.re < 0) :
+    fderiv ℝ (fun z : ℂ => |z.re|) z 1 = -1 := by
+  have : (fun w : ℂ => |w.re|) =ᶠ[𝓝 z] fun w => (-Complex.reCLM) w :=
+    eventuallyEq_of_mem ((Complex.continuous_re.isOpen_preimage _ isOpen_Iio).mem_nhds
+      (mem_preimage.2 (mem_Iio.2 hz))) fun w hw => abs_of_neg hw
+  rw [this.fderiv_eq, ContinuousLinearMap.fderiv]
+  simp
+
 /-- The even extension `z ↦ |Im z|` of the normal coordinate `Im z` is not in the local class
 `W^{2,p}` on any set whose interior meets the real axis, for any exponent: its first derivative
 jumps from `-Im` to `Im` across the axis, so its second derivative is a measure carried by the
@@ -759,23 +781,9 @@ theorem not_memWkpLoc_two_abs_im {z₀ : ℂ} (hz₀ : z₀ ∈ interior U) (him
     simp [hA, him]
   obtain ⟨-, D, hD, hD1⟩ := memWkpLoc_succ_iff.1 h'
   -- The weak derivative is the classical one, `± re`, off the imaginary axis.
-  have hlip : LipschitzWith 1 (fun z : ℂ => |z.re|) := LipschitzWith.of_dist_le_mul fun a b => by
-    rw [NNReal.coe_one, one_mul, Real.dist_eq, dist_eq_norm]
-    exact (abs_abs_sub_abs_le_abs_sub _ _).trans (by simpa using Complex.abs_re_le_norm (a - b))
   have hae := (ae_restrict_iff' (Opens.interior (ball (0 : ℂ) r)).isOpen.measurableSet).1
-    (hD.ae_eq hlip.locallyLipschitz.locallyLipschitzOn.hasWeakFDerivOn_fderiv)
-  have hpos : ∀ z : ℂ, 0 < z.re → fderiv ℝ (fun z : ℂ => |z.re|) z 1 = 1 := fun z hz => by
-    have : (fun w : ℂ => |w.re|) =ᶠ[𝓝 z] fun w => Complex.reCLM w :=
-      eventuallyEq_of_mem ((Complex.continuous_re.isOpen_preimage _ isOpen_Ioi).mem_nhds
-        (mem_preimage.2 (mem_Ioi.2 hz))) fun w hw => abs_of_pos hw
-    rw [this.fderiv_eq, Complex.reCLM.fderiv]
-    simp
-  have hneg : ∀ z : ℂ, z.re < 0 → fderiv ℝ (fun z : ℂ => |z.re|) z 1 = -1 := fun z hz => by
-    have : (fun w : ℂ => |w.re|) =ᶠ[𝓝 z] fun w => (-Complex.reCLM) w :=
-      eventuallyEq_of_mem ((Complex.continuous_re.isOpen_preimage _ isOpen_Iio).mem_nhds
-        (mem_preimage.2 (mem_Iio.2 hz))) fun w hw => abs_of_neg hw
-    rw [this.fderiv_eq, ContinuousLinearMap.fderiv]
-    simp
+    (hD.ae_eq
+      lipschitzWith_one_abs_re.locallyLipschitz.locallyLipschitzOn.hasWeakFDerivOn_fderiv)
   -- So `(D · 1 + 1) / 2` is the indicator of the right half-plane, which is not `W^{1,p}`.
   have hind : MemWkpLoc p (ball 0 r) 1 ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := by
     refine (((hD1.clm_comp (ContinuousLinearMap.apply ℝ ℝ (1 : ℂ))).add
@@ -786,9 +794,10 @@ theorem not_memWkpLoc_two_abs_im {z₀ : ℂ} (hz₀ : z₀ ∈ interior U) (him
     rw [Opens.coe_interior, isOpen_ball.interior_eq] at hz
     simp only [Pi.smul_apply, Pi.add_apply, ContinuousLinearMap.apply_apply, hz hzb, smul_eq_mul]
     rcases lt_or_gt_of_ne hz0 with h | h
-    · rw [hneg z h, indicator_of_notMem (s := {z : ℂ | 0 < z.re}) (not_lt.2 h.le)]
+    · rw [fderiv_abs_re_apply_one_of_neg h,
+        indicator_of_notMem (s := {z : ℂ | 0 < z.re}) (not_lt.2 h.le)]
       norm_num
-    · rw [hpos z h, indicator_of_mem (s := {z : ℂ | 0 < z.re}) h]
+    · rw [fderiv_abs_re_apply_one_of_pos h, indicator_of_mem (s := {z : ℂ | 0 < z.re}) h]
       norm_num
   exact not_memWkpLoc_indicator_re_pos (k := 0) (z₀ := 0)
     (by rw [isOpen_ball.interior_eq]; exact mem_ball_self hr) rfl hind
@@ -797,7 +806,7 @@ theorem not_memWkpLoc_two_abs_im {z₀ : ℂ} (hz₀ : z₀ ∈ interior U) (him
 /-- The order-one reflection across the real axis is the even reflection, and it does not extend
 the normal coordinate `u = Im z` from the upper half-disc to a `W^{2,p}` map on the unit disc, for
 any exponent: it gives `|Im z|`. -/
-theorem not_memWkpLoc_two_planarReflection_one_im :
+theorem not_memWkpLoc_two_planarReflection_higherReflectionCoeff_one_im :
     ¬ MemWkpLoc p (ball (0 : ℂ) 1) 2
       (planarReflection (higherReflectionCoeff 1) fun z => z.im) := by
   have h : planarReflection (higherReflectionCoeff 1) (fun z : ℂ => z.im) = fun z => |z.im| :=
@@ -807,10 +816,10 @@ theorem not_memWkpLoc_two_planarReflection_one_im :
 
 /-- The order-two reflection `u(s, -t) = -3 u(s, t) + 4 u(s, t / 2)` extends the normal coordinate
 `u = Im z` to itself, which is in every local Sobolev class on every set. -/
-theorem memWkpLoc_planarReflection_two_im (U : Set ℂ) (k : ℕ) :
+theorem memWkpLoc_planarReflection_higherReflectionCoeff_two_im (U : Set ℂ) (k : ℕ) :
     MemWkpLoc p U k (planarReflection (higherReflectionCoeff 2) fun z => z.im) := by
   rw [planarReflection_higherReflectionCoeff_two_im]
-  exact (Complex.imCLM.contDiff.contDiffOn : ContDiffOn ℝ k _ ((⊤ : Opens ℂ) : Set ℂ)).memWkpLoc
-    (subset_univ U)
+  exact ContDiffOn.memWkpLoc (Ω := ⊤) Complex.imCLM.contDiff.contDiffOn
+    ((subset_univ U).trans_eq Opens.coe_top.symm)
 
 end TauCeti
