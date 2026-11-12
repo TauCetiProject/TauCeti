@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
 public import TauCeti.AlgebraicGeometry.Descent.Contraction
+public import TauCeti.AlgebraicGeometry.Morphisms.Epi
 
 /-!
 # Descent of prestable maps along contractions of their source curves
@@ -148,7 +149,8 @@ theorem descend_eq {G : PrestableMap q n} (f : F ⟶ G) [Surjective f.curve.hom]
 an epimorphism of schemes. -/
 instance epi_toDescend : Epi (F.toDescend c hc hF) where
   left_cancellation g₁ g₂ e := by
-    have := c.hom.epi_of_surjective_of_mono_app fun U ↦ (hc U).mono_of_iso
+    have := c.hom.epi_of_surjective_of_app_injective fun U ↦
+      (ConcreteCategory.bijective_of_isIso _).1
     ext1
     ext1
     exact (cancel_epi c.hom).1 congr(($e).curve.hom)
