@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 
@@ -20,6 +20,10 @@ same connectivity as the original set. Such forests exist, even for infinite gra
 For finitely many vertices, the number of forest darts plus the number of components is
 the number of vertices. No connectedness or nonemptiness assumption is needed. The chosen
 darts, rather than their endpoint pairs, provide the forest coordinates used in cycle bases.
+
+Two vertices are joined in the simple support of a reversal-closed set of darts exactly when a
+path through those darts joins them. In particular, the simple support of an orientation has
+the connectivity of the graph.
 
 ## References
 
@@ -129,5 +133,70 @@ theorem IsSpanningForest.card_add_card_connectedComponent [Finite Γ.V]
     ((Γ.supportGraph F).connectedComponentEquivOfReachableEq hF.reachable_eq)
   have h := hF.isAcyclic.ncard_edgeSet_add_card_connectedComponent
   simpa only [Nat.card_coe_set_eq, ← hcard, hcomp] using h
+
+/-! ### Reachability in the simple support -/
+
+/-- The endpoints of a path are joined in the simple support of any set of darts containing the
+darts of the path. -/
+theorem Path.reachable_supportGraph {S : Set Γ.E} {a b : Γ.V} (p : Γ.Path a b)
+    (hp : ∀ e ∈ Path.darts Γ p, e ∈ S) : (Γ.supportGraph S).Reachable a b := by
+  induction p with
+  | nil => rfl
+  | @cons b c p e ih =>
+    refine (ih fun f hf => hp f (by simp [hf])).trans ?_
+    rcases eq_or_ne b c with rfl | hbc
+    · rfl
+    · exact SimpleGraph.Adj.reachable
+        ((Γ.supportGraph_adj S b c).mpr ⟨hbc, .inl ⟨e.1, hp e.1 (by simp), e.2⟩⟩)
+
+/-- Two vertices are joined in the simple support of a reversal-closed set of darts exactly when
+they are joined by a path through those darts. -/
+theorem reachable_supportGraph_iff {S : Set Γ.E} (hS : ∀ e ∈ S, Γ.rev e ∈ S) {a b : Γ.V} :
+    (Γ.supportGraph S).Reachable a b ↔ ∃ p : Γ.Path a b, ∀ e ∈ Path.darts Γ p, e ∈ S := by
+  refine ⟨fun h => ?_, fun ⟨p, hp⟩ => p.reachable_supportGraph hp⟩
+  replace h := (SimpleGraph.reachable_iff_reflTransGen a b).mp h
+  induction h with
+  | refl => exact ⟨.nil, by simp⟩
+  | tail _ hadj ih =>
+    obtain ⟨p, hp⟩ := ih
+    obtain ⟨e, he, rfl, rfl⟩ : ∃ e ∈ S, Γ.src e = _ ∧ Γ.tgt e = _ := by
+      obtain ⟨-, ⟨e, he, h₁, h₂⟩ | ⟨e, he, h₁, h₂⟩⟩ := (Γ.supportGraph_adj S _ _).mp hadj
+      · exact ⟨e, he, h₁, h₂⟩
+      · exact ⟨Γ.rev e, hS e he, by simpa using h₂, by simpa using h₁⟩
+    refine ⟨p.cons (Γ.dart e), ?_⟩
+    simp only [Path.darts_cons, List.mem_append, List.mem_singleton, dart_val]
+    rintro f (hf | rfl)
+    exacts [hp f hf, he]
+
+/-- The positive darts of a reversal-closed set of darts have the same simple support as the
+whole set. -/
+theorem IsOrientation.supportGraph_inter (hO : Γ.IsOrientation O) {S : Set Γ.E}
+    (hS : ∀ e ∈ S, Γ.rev e ∈ S) : Γ.supportGraph (S ∩ O) = Γ.supportGraph S := by
+  have key : ∀ x y, ∀ e ∈ S, x ≠ y → Γ.src e = x → Γ.tgt e = y →
+      (Γ.supportGraph (S ∩ O)).Adj x y := by
+    intro x y e he hne h₁ h₂
+    refine (Γ.supportGraph_adj _ x y).mpr ⟨hne, ?_⟩
+    by_cases heO : e ∈ O
+    · exact .inl ⟨e, ⟨he, heO⟩, h₁, h₂⟩
+    · exact .inr ⟨Γ.rev e, ⟨hS e he, (hO.mem_rev_iff Γ e).mpr heO⟩, by simpa using h₂,
+        by simpa using h₁⟩
+  refine le_antisymm (Γ.supportGraph_mono Set.inter_subset_left) fun x y hxy => ?_
+  obtain ⟨hne, ⟨e, he, h₁, h₂⟩ | ⟨e, he, h₁, h₂⟩⟩ := (Γ.supportGraph_adj S x y).mp hxy
+  · exact key x y e he hne h₁ h₂
+  · exact (key y x e he hne.symm h₁ h₂).symm
+
+/-- Two vertices are joined in the simple support of an orientation exactly when they are
+joined by a path of the graph. -/
+theorem IsOrientation.reachable_supportGraph_iff (hO : Γ.IsOrientation O) {a b : Γ.V} :
+    (Γ.supportGraph O).Reachable a b ↔ Nonempty (Γ.Path a b) := by
+  rw [← Set.univ_inter O, hO.supportGraph_inter fun _ _ => Set.mem_univ _,
+    SerreGraph.reachable_supportGraph_iff fun _ _ => Set.mem_univ _]
+  exact ⟨fun ⟨p, _⟩ => ⟨p⟩, fun ⟨p⟩ => ⟨p, fun _ _ => Set.mem_univ _⟩⟩
+
+/-- The simple support of an orientation is connected exactly when the graph is. -/
+theorem IsOrientation.connected_supportGraph_iff (hO : Γ.IsOrientation O) :
+    (Γ.supportGraph O).Connected ↔ Γ.Connected := by
+  simp only [SimpleGraph.connected_iff, SimpleGraph.Preconnected, hO.reachable_supportGraph_iff,
+    connected_iff, preconnected_iff, and_comm]
 
 end TauCeti.SerreGraph

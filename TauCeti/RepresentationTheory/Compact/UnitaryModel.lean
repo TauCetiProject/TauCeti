@@ -46,9 +46,9 @@ finite-dimensional continuous representations alone.
 ## Implementation notes
 
 The conjugating automorphism is not asked to be canonical:
-`TauCeti.exists_continuousLinearEquiv_inner_map_map` chooses an eigenbasis of the Gram operator,
-and only its existence is exported. Nothing downstream needs more, since the unitary structure it
-produces is unique up to a unitary equivalence anyway.
+`TauCeti.exists_continuousLinearEquiv_inner_map_map` exports only its existence. Nothing
+downstream needs more, since the unitary structure it produces is unique up to a unitary
+equivalence anyway.
 
 Finite dimensionality enters only through that standardization, which is proved by the spectral
 theorem; the Gram operator itself is built for an arbitrary Hilbert-space carrier.

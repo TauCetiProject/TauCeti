@@ -145,8 +145,6 @@ theorem zpow_natDenominator_mul_zpow_house_le_norm {z : ℂ} (hz : IsAlgebraic �
   set d := (minpoly ℚ z).natDegree
   have hd1 : 1 ≤ d := minpoly.natDegree_pos hz.isIntegral
   have hDne : Algebra.natDenominator z ≠ 0 := Algebra.natDenominator_ne_zero_of_isAlgebraic_rat hz
-  have hD : (0 : ℝ) < (Algebra.natDenominator z : ℝ) := by
-    exact_mod_cast Nat.pos_of_ne_zero hDne
   have hh : (0 : ℝ) < house z :=
     lt_of_lt_of_le (norm_pos_iff.mpr hz0) (norm_le_house hz)
   have hpow : (0 : ℝ) < (Algebra.natDenominator z : ℝ) ^ d * house z ^ (d - 1) := by

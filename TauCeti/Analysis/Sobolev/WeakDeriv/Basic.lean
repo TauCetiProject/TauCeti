@@ -29,7 +29,7 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 /-!
 # Weak derivatives on an open set
 
-Lane A of the PDE roadmap builds the Sobolev spaces `W^{k,p}(Ω)` of a domain out of *weak*
+The Sobolev spaces `W^{k,p}(Ω)` of a domain (`TauCeti.W1p`, `TauCeti.Wkp`) are built out of *weak*
 derivatives, rather than out of Mathlib's whole-space Bessel-potential scale. This file supplies
 the underlying differentiation notion: for an open set `Ω` in a real normed space `E`, a measure
 `μ` on `E`, functions `u, u' : E → F` and a direction `v : E`,
@@ -302,7 +302,7 @@ operator-valued function: it is a finite sum of its values on a basis, each loca
 definition. -/
 theorem HasWeakFDerivOn.locallyIntegrableOn_deriv [FiniteDimensional ℝ E] {U : E → E →L[ℝ] F}
     (h : HasWeakFDerivOn μ Ω u U) : LocallyIntegrableOn U Ω μ := by
-  obtain ⟨n, b, -⟩ : ∃ n, ∃ b : Module.Basis (Fin n) ℝ E, True :=
+  obtain ⟨n, b, -⟩ : ∃ n, ∃ _ : Module.Basis (Fin n) ℝ E, True :=
     ⟨_, Module.finBasis ℝ E, trivial⟩
   -- The `i`-th term `x ↦ (b.coord i).smulRight (U x (b i))` of the expansion of `U` in `b`.
   let g : Fin n → E → E →L[ℝ] F := fun i x =>
@@ -569,6 +569,20 @@ theorem HasWeakFDerivOn.clm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace
     [CompleteSpace G] {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) (L : F →L[ℝ] G) :
     HasWeakFDerivOn μ Ω (fun x => L (u x)) (fun x => L.comp (U x)) := fun v =>
   (h v).clm_comp L
+
+/-- **Weak derivatives of pairs.** The pair of two weakly differentiable maps is weakly
+differentiable, with the paired derivative. -/
+theorem HasWeakFDerivOn.prodMk {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : E → F} {g : E → G} {Df : E → E →L[ℝ] F} {Dg : E → E →L[ℝ] G}
+    (hf : HasWeakFDerivOn μ Ω f Df) (hg : HasWeakFDerivOn μ Ω g Dg) :
+    HasWeakFDerivOn μ Ω (fun x => (f x, g x)) fun x => (Df x).prod (Dg x) := by
+  have : CompleteSpace F := hf.completeSpace
+  have : CompleteSpace G := hg.completeSpace
+  have h := (hf.clm_comp (ContinuousLinearMap.inl ℝ F G)).add
+    (hg.clm_comp (ContinuousLinearMap.inr ℝ F G))
+  convert h using 1
+  · ext x <;> simp
+  · ext x v <;> simp
 
 omit [OpensMeasurableSpace E] in
 /-- In the direction `0` every locally integrable function has weak derivative `0`. -/

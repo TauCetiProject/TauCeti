@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 /-!
 # Homology in the category of homological complexes
 
-If a category with finite limits and finite colimits has homology, so does its category
+If a category with equalizers and coequalizers has homology, so does its category
 of homological complexes. The comparison between left and right homology is an
 isomorphism because it is an isomorphism after evaluation in every degree.
 
@@ -28,25 +28,22 @@ open CategoryTheory Limits
 namespace TauCeti.HomologicalComplex
 
 variable {C ι : Type*} [Category* C] [HasZeroMorphisms C]
-  [HasFiniteLimits C] [HasFiniteColimits C] [CategoryWithHomology C] (c : ComplexShape ι)
+  [HasEqualizers C] [HasCoequalizers C] [CategoryWithHomology C] (c : ComplexShape ι)
 
-/-- Homological complexes in a category with homology and finite limits and colimits
+/-- Homological complexes in a category with homology, equalizers and coequalizers
 again form a category with homology. This also applies to nonabelian categories. -/
 instance (priority := 100) categoryWithHomology :
-    CategoryWithHomology (HomologicalComplex C c) := by
-  constructor
-  intro S
-  let h₁ := S.leftHomologyData
-  let h₂ := S.rightHomologyData
-  let f := ShortComplex.leftRightHomologyComparison' h₁ h₂
-  have hf (i : ι) : IsIso (f.f i) := by
-    let F := HomologicalComplex.eval C c i
-    have hmap : F.map f = ShortComplex.leftRightHomologyComparison' (h₁.map F) (h₂.map F) :=
-      ShortComplex.map_leftRightHomologyComparison' F h₁ h₂
-    -- Evaluation of a complex morphism is its component by definition.
-    rw [show f.f i = F.map f from rfl, hmap]
-    exact ShortComplex.isIso_leftRightHomologyComparison' (h₁.map F) (h₂.map F)
-  have : IsIso f := HomologicalComplex.Hom.isIso_of_components f
-  exact ShortComplex.HasHomology.mk' (.ofIsIsoLeftRightHomologyComparison' h₁ h₂)
+    CategoryWithHomology (HomologicalComplex C c) where
+  hasHomology S := by
+    let h₁ := S.leftHomologyData
+    let h₂ := S.rightHomologyData
+    have (i : ι) : IsIso ((ShortComplex.leftRightHomologyComparison' h₁ h₂).f i) := by
+      -- Evaluation preserves kernels and cokernels, as these are computed degreewise.
+      have : (HomologicalComplex.eval C c i).PreservesHomology := {}
+      rw [← HomologicalComplex.eval_map, ShortComplex.map_leftRightHomologyComparison']
+      exact ShortComplex.isIso_leftRightHomologyComparison' _ _
+    have : IsIso (ShortComplex.leftRightHomologyComparison' h₁ h₂) :=
+      HomologicalComplex.Hom.isIso_of_components _
+    exact .mk' (.ofIsIsoLeftRightHomologyComparison' h₁ h₂)
 
 end TauCeti.HomologicalComplex

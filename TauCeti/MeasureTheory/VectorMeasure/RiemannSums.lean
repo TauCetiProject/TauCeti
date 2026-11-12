@@ -89,7 +89,6 @@ theorem tendsto_sum_tagged_Ioc {ι : Type*} {l : Filter ι} {a b : ℝ}
         (𝓝 (∫ᵛ x in Ioc a b, f x ∂[B; μ])) := by
   -- Uniform continuity controls the cell oscillations; finite variation sums their errors.
   let C := ‖B‖ * μ.variation.real (Ioc a b)
-  have hC : 0 ≤ C := by positivity
   have hfi : μ.IntegrableOn f (Ioc a b) := by
     apply (integrable_indicator_iff measurableSet_Ioc).1
     exact (MeasureTheory.integrable_indicator_iff measurableSet_Ioc).2

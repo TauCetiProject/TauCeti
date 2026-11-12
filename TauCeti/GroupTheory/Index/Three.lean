@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.Index
 import Mathlib.Data.Fin.VecNotation
-import Mathlib.Tactic.FinCases
 
 /-!
 # Index three from three covering cosets
@@ -41,27 +40,12 @@ If `2 • g ∉ H` and every `a` satisfies `a ∈ H`, `-g + a ∈ H` or `g + a �
 `H`, `g + H` or `-g + H`), then `H.index = 3`. -/]
 theorem index_eq_three_of_sq_notMem {g : G} (hg : g ^ 2 ∉ H)
     (h : ∀ a, a ∈ H ∨ g⁻¹ * a ∈ H ∨ g * a ∈ H) : H.index = 3 := by
+  have hg₁ : g ∉ H := fun hg₁ ↦ hg (H.pow_mem hg₁ 2)
   -- `1`, `g` and `g⁻¹` represent the three classes of `G ⧸ H`
   have hf : Function.Bijective ![((1 : G) : G ⧸ H), (g : G ⧸ H), ((g⁻¹ : G) : G ⧸ H)] := by
-    refine ⟨fun i j hij ↦ ?_, fun q ↦ ?_⟩
-    · have hg₁ : g ∉ H := fun hg₁ ↦ hg (H.pow_mem hg₁ 2)
-      have h01 : (1 : G)⁻¹ * g ∉ H := by rwa [inv_one, one_mul]
-      have h02 : (1 : G)⁻¹ * g⁻¹ ∉ H := by rwa [inv_one, one_mul, inv_mem_iff]
-      have h12 : g⁻¹ * g⁻¹ ∉ H := by rwa [← mul_inv_rev, inv_mem_iff, ← pow_two]
-      fin_cases i <;> fin_cases j
-      all_goals first
-        | rfl
-        | exact absurd (QuotientGroup.eq.1 hij) h01
-        | exact absurd (QuotientGroup.eq.1 hij) h02
-        | exact absurd (QuotientGroup.eq.1 hij) h12
-        | exact absurd (QuotientGroup.eq.1 hij.symm) h01
-        | exact absurd (QuotientGroup.eq.1 hij.symm) h02
-        | exact absurd (QuotientGroup.eq.1 hij.symm) h12
-    · obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective q
-      rcases h a with ha | ha | ha
-      · exact ⟨0, QuotientGroup.eq.2 (by rwa [inv_one, one_mul])⟩
-      · exact ⟨1, QuotientGroup.eq.2 ha⟩
-      · exact ⟨2, QuotientGroup.eq.2 (by rwa [inv_inv])⟩
-  rw [index, ← Nat.card_eq_of_bijective _ hf, Nat.card_eq_fintype_card, Fintype.card_fin]
+    refine ⟨?_, QuotientGroup.mk_surjective.forall.2 fun a ↦ ?_⟩
+    · simp [Function.Injective, Fin.forall_fin_succ, QuotientGroup.eq, ← pow_two, hg, hg₁]
+    · simpa [Fin.exists_fin_succ, QuotientGroup.eq] using h a
+  rw [index, ← Nat.card_eq_of_bijective _ hf, Nat.card_fin]
 
 end Subgroup

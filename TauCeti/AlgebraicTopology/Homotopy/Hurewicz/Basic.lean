@@ -681,6 +681,12 @@ lemma hurewiczHom_apply (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
     hurewiczHom R n a = hurewicz R n a.toMul :=
   (rfl)
 
+/-- The Hurewicz map sends the `k`-th power of a class to `k` times its Hurewicz class. -/
+@[simp]
+theorem hurewicz_pow (a : HomotopyGroup (Fin (n + 1)) X x) (k : ℕ) :
+    hurewicz R n (a ^ k) = k • hurewicz R n a := by
+  simpa using map_nsmul (hurewiczHom R n) k (Additive.ofMul a)
+
 /-- **The integral Hurewicz homomorphism** `πₙ₊₁(X, x) → Hₙ₊₁(X; ℤ)`, `[p] ↦ p_*[Iⁿ⁺¹]`: the
 Hurewicz homomorphism `HomotopyGroup.hurewiczHom` with integer coefficients, evaluated at
 `1 : ℤ`. -/

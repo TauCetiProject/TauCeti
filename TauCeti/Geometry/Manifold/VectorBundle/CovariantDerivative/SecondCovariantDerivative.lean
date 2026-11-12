@@ -260,9 +260,26 @@ theorem secondCovariantDerivative_add {τ : Π y : M, V y} (hσ : CMDiff ∞ (T%
   simp only [add_apply]
   abel
 
+/-- The second covariant derivative of the zero section is zero. -/
+@[simp]
+theorem secondCovariantDerivative_zero (x : M) :
+    cov.secondCovariantDerivative covT (0 : Π y : M, V y) x = 0 := by
+  have h0 : CMDiff ∞ (T% (0 : Π y : M, V y)) := contMDiff_zeroSection ℝ V
+  have := secondCovariantDerivative_add cov covT h0 h0 x
+  simpa using this
+
 /-- The second covariant derivative commutes with multiplication of the section by a constant. -/
-theorem secondCovariantDerivative_const_smul (c : ℝ) (hσ : CMDiff ∞ (T% σ)) (x : M) :
+@[simp]
+theorem secondCovariantDerivative_const_smul (c : ℝ) (x : M) :
     cov.secondCovariantDerivative covT (c • σ) x = c • cov.secondCovariantDerivative covT σ x := by
+  by_cases hσ : CMDiff ∞ (T% σ)
+  swap
+  · rcases eq_or_ne c 0 with rfl | hc
+    · simp
+    · have hcσ : ¬CMDiff ∞ (T% (c • σ)) := fun h ↦ hσ (by
+        simpa [smul_smul, inv_mul_cancel₀ hc] using h.const_smul_section (a := c⁻¹))
+      rw [secondCovariantDerivative_of_not_contMDiff cov covT hcσ,
+        secondCovariantDerivative_of_not_contMDiff cov covT hσ, smul_zero]
   refine ((eq_secondCovariantDerivative_iff cov covT hσ.const_smul_section x _).2
     fun Y hY u ↦ ?_).symm
   have hYσ := cov.contMDiff_apply hY hσ
@@ -274,13 +291,6 @@ theorem secondCovariantDerivative_const_smul (c : ℝ) (hσ : CMDiff ∞ (T% σ)
     hprod, cov.isCovariantDerivativeOnUniv.smul_const c (hYσ.mdifferentiable (by simp) x),
     cov.isCovariantDerivativeOnUniv.smul_const c (hσ.mdifferentiable (by simp) x)]
   simp only [smul_apply, smul_sub]
-
-/-- The second covariant derivative of the zero section is zero. -/
-@[simp]
-theorem secondCovariantDerivative_zero (x : M) :
-    cov.secondCovariantDerivative covT (0 : Π y : M, V y) x = 0 := by
-  simpa using secondCovariantDerivative_const_smul cov covT 0
-    (contMDiff_zeroSection ℝ V : CMDiff ∞ (T% (0 : Π y : M, V y))) x
 
 /-- **Leibniz rule for the second covariant derivative.** For smooth `f` and `σ` and a smooth
 vector field `Y`,

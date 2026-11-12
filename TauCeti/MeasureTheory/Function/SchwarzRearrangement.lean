@@ -256,6 +256,34 @@ theorem schwarzRearrangement_le_essSup (f : E → ℝ≥0∞) (x : E) :
   schwarzRearrangement_apply_zero μ f ▸
     schwarzRearrangement_le_of_norm_le μ f (by simp : ‖(0 : E)‖ ≤ ‖x‖)
 
+/-- **`L^∞` contraction of Schwarz rearrangement.** The extended distance between two Schwarz
+rearrangements is bounded everywhere by the essential supremum of the distance between the two
+functions. No measurability hypothesis is needed, and the measure is arbitrary. -/
+theorem edist_schwarzRearrangement_le_essSup (f g : E → ℝ≥0∞) (x : E) :
+    edist (schwarzRearrangement μ f x) (schwarzRearrangement μ g x) ≤
+      essSup (fun y ↦ edist (f y) (g y)) μ := by
+  set c := essSup (fun y ↦ edist (f y) (g y)) μ
+  have h := ENNReal.ae_le_essSup (μ := μ) fun y ↦ edist (f y) (g y)
+  -- If `f ≤ g + c` almost everywhere, then `f* ≤ g* + c`, by comparing superlevel sets.
+  have key : ∀ f g : E → ℝ≥0∞, (∀ᵐ y ∂μ, f y ≤ g y + c) →
+      schwarzRearrangement μ f x ≤ schwarzRearrangement μ g x + c := fun f g hfg ↦ by
+    refine le_of_forall_lt fun t ht ↦ ?_
+    rcases lt_or_ge t c with htc | hct
+    · exact htc.trans_le le_add_self
+    · rw [lt_schwarzRearrangement_iff μ] at ht
+      have hc : c ≠ ∞ := by
+        rintro hc
+        rw [hc, top_le_iff] at hct
+        subst hct
+        simp at ht
+      have hlt (u : ℝ≥0∞) : t < u + c ↔ t - c < u := (ENNReal.sub_lt_iff_lt_right hc hct).symm
+      rw [hlt]
+      exact (lt_schwarzRearrangement_iff μ).2 (ht.trans_le (measure_mono_ae (hfg.mono fun y hy hty ↦
+        (hlt (g y)).1 (hty.trans_le hy))))
+  exact (ENNReal.edist_le_iff_le_add_right _ _ _).2
+    ⟨key f g (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).1),
+      key g f (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).2)⟩
+
 end Measure
 
 section AddHaar
@@ -512,8 +540,7 @@ theorem lintegral_sub_rpow_schwarzRearrangement_le {f g : E → ℝ≥0∞} (hf 
   set G := hg.mk g
   have hF : Measurable F := hf.measurable_mk
   have hG : Measurable G := hg.measurable_mk
-  have hF' := measurable_schwarzRearrangement μ F
-  have hG' := measurable_schwarzRearrangement μ G
+  have _ := measurable_schwarzRearrangement μ G
   -- Write the power as a mixture of the hinges `f - g - r`, each of which contracts.
   simp_rw [rpow_eq_lintegral_mul_sub hp]
   rw [lintegral_lintegral_swap (by fun_prop)]
@@ -543,24 +570,6 @@ theorem lintegral_edist_rpow_schwarzRearrangement_le {f g : E → ℝ≥0∞} (h
   rw [lintegral_add_left (by fun_prop), lintegral_add_left' (by fun_prop)]
   exact add_le_add (lintegral_sub_rpow_schwarzRearrangement_le μ hf hg hp)
     (lintegral_sub_rpow_schwarzRearrangement_le μ hg hf hp)
-
-/-- **`L^∞` contraction of Schwarz rearrangement.** The extended distance between two Schwarz
-rearrangements is bounded everywhere by the essential supremum of the distance between the two
-functions. No measurability hypothesis is needed. -/
-theorem edist_schwarzRearrangement_le_essSup (f g : E → ℝ≥0∞) (x : E) :
-    edist (schwarzRearrangement μ f x) (schwarzRearrangement μ g x) ≤
-      essSup (fun y ↦ edist (f y) (g y)) μ := by
-  set c := essSup (fun y ↦ edist (f y) (g y)) μ
-  have h := ENNReal.ae_le_essSup (μ := μ) fun y ↦ edist (f y) (g y)
-  have hfg : schwarzRearrangement μ f ≤ fun x ↦ schwarzRearrangement μ g x + c := by
-    rw [← schwarzRearrangement_add_const]
-    exact schwarzRearrangement_mono_ae μ
-      (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).1)
-  have hgf : schwarzRearrangement μ g ≤ fun x ↦ schwarzRearrangement μ f x + c := by
-    rw [← schwarzRearrangement_add_const]
-    exact schwarzRearrangement_mono_ae μ
-      (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).2)
-  exact (ENNReal.edist_le_iff_le_add_right _ _ _).2 ⟨hfg x, hgf x⟩
 
 /-- **`Lᵖ` contraction of Schwarz rearrangement.** For every exponent `1 ≤ p ≤ ∞`, the `Lᵖ`
 seminorm of the extended distance between two nonnegative functions can only decrease under
