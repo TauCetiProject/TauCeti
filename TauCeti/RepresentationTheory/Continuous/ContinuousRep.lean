@@ -38,6 +38,10 @@ on which the action is an explicit continuous formula.
 * `TauCeti.ContinuousRep Γ A M`: a representation of `Γ` on `M` whose action is jointly
   continuous.
 * `TauCeti.ContinuousRep.toContRepresentation`: the underlying Mathlib `ContRepresentation`.
+* `TauCeti.ContinuousRep.subrepresentation`: restriction to an invariant submodule with the
+  subspace topology.
+* `TauCeti.ContinuousRep.quotient`: descent to the quotient by an invariant submodule with the
+  quotient topology.
 * `TauCeti.ContinuousRep.Iso`: equivariant continuous linear equivalences, with `refl`, `symm`
   and `trans`.
 * `TauCeti.ContinuousRep.ofCharacter`: the rank-one representation of a continuous character
