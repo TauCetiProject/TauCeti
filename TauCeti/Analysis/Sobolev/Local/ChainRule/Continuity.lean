@@ -64,20 +64,18 @@ variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddComm
 variable [CompleteSpace G]
 
 /-- **The `W^{1,p}` bound for composition with a `C¹` map.** Let `g` be `C¹` on an open set `W`
-and let `u` be continuous on a measurable set `K`, with `u(K) ⊆ W` and finite `W^{1,p}(K)` size.
-If `‖g ∘ u‖ ≤ C₀` and `‖Dg ∘ u‖ ≤ C₁` on `K`, then
-`‖g ∘ u‖_{W^{1,p}(K)} ≤ C₀ vol(K)^{1/p} + C₁ ‖u‖_{W^{1,p}(K)}`.
-
-The finiteness hypothesis on `u` is needed only when `C₁ = 0`. -/
+and let `u` be continuous on a measurable set `K`, with `u(K) ⊆ W`. If `‖g ∘ u‖ ≤ C₀` and
+`‖Dg ∘ u‖ ≤ C₁` on `K`, then `‖g ∘ u‖_{W^{1,p}(K)} ≤ C₀ vol(K)^{1/p} + C₁ ‖u‖_{W^{1,p}(K)}`,
+provided `u` has finite `W^{1,p}(K)` size in the case `C₁ = 0`. -/
 theorem eLpNormWkp_one_comp_le {u : ℂ → F} {g : F → G} {W : Set F} {C₀ C₁ : ℝ≥0}
-    (hK : MeasurableSet K) (hu : eLpNormWkp p K 1 u ≠ ∞) (huc : ContinuousOn u K)
+    (hK : MeasurableSet K) (hu : C₁ = 0 → eLpNormWkp p K 1 u ≠ ∞) (huc : ContinuousOn u K)
     (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W) (huW : MapsTo u K W)
     (hC₀ : ∀ z ∈ K, ‖g (u z)‖₊ ≤ C₀) (hC₁ : ∀ z ∈ K, ‖fderiv ℝ g (u z)‖₊ ≤ C₁) :
     eLpNormWkp p K 1 (fun z => g (u z)) ≤
       C₀ * volume K ^ p.toReal⁻¹ + C₁ * eLpNormWkp p K 1 u := by
   -- The weak derivative of `g ∘ u` on `interior K` is `Dg(u) ∘ Du`.
-  refine le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn ENNReal.coe_ne_top hu
-    fun D hD hDp => ?_
+  refine le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn ENNReal.coe_ne_top
+    (fun h => hu (ENNReal.coe_eq_zero.1 h)) fun D hD hDp => ?_
   rw [eLpNormWkp_zero] at hDp
   refine (eLpNormWkp_succ_le (hD.contDiffOn_comp (huc.mono interior_subset) hW hg
     (huW.mono_left interior_subset))).trans ?_
@@ -98,35 +96,36 @@ theorem eLpNormWkp_one_comp_le {u : ℂ → F} {g : F → G} {W : Set F} {C₀ C
 `W` and let `L ⊆ W` be compact. There are constants `C₀`, `C₁`, depending only on `g` on `L`
 (bounds for `‖g‖` and `‖Dg‖` there), such that
 `‖g ∘ u‖_{W^{1,p}(K)} ≤ C₀ vol(K)^{1/p} + C₁ ‖u‖_{W^{1,p}(K)}` for every exponent `p`, every
-measurable `K`, and every continuous `u` on `K` with `u(K) ⊆ L` and finite `W^{1,p}(K)` size. -/
+measurable `K`, and every continuous `u` on `K` with `u(K) ⊆ L`. -/
 theorem exists_eLpNormWkp_one_comp_le {g : F → G} {W L : Set F} (hW : IsOpen W)
     (hg : ContDiffOn ℝ 1 g W) (hL : IsCompact L) (hLW : L ⊆ W) :
     ∃ C₀ C₁ : ℝ≥0, ∀ (p : ℝ≥0∞) (K : Set ℂ) (u : ℂ → F), MeasurableSet K →
-      eLpNormWkp p K 1 u ≠ ∞ → ContinuousOn u K → MapsTo u K L →
+      ContinuousOn u K → MapsTo u K L →
         eLpNormWkp p K 1 (fun z => g (u z)) ≤
           C₀ * volume K ^ p.toReal⁻¹ + C₁ * eLpNormWkp p K 1 u := by
   obtain ⟨M₀, hM₀⟩ := hL.exists_bound_of_continuousOn (hg.continuousOn.mono hLW)
   obtain ⟨M₁, hM₁⟩ := hL.exists_bound_of_continuousOn
     ((hg.continuousOn_fderiv_of_isOpen hW le_rfl).mono hLW)
-  refine ⟨M₀.toNNReal, M₁.toNNReal, fun p K u hK hu huc huL =>
-    eLpNormWkp_one_comp_le hK hu huc hW hg (huL.mono_right hLW) (fun z hz => ?_)
-      fun z hz => ?_⟩
+  refine ⟨M₀.toNNReal, M₁.toNNReal + 1, fun p K u hK huc huL =>
+    eLpNormWkp_one_comp_le hK (fun h => absurd h (by positivity)) huc hW hg (huL.mono_right hLW)
+      (fun z hz => ?_) fun z hz => ?_⟩
   · rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact (hM₀ _ (huL hz)).trans (Real.le_coe_toNNReal M₀)
-  · rw [← NNReal.coe_le_coe, coe_nnNorm]
-    exact (hM₁ _ (huL hz)).trans (Real.le_coe_toNNReal M₁)
+  · rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_add, NNReal.coe_one]
+    exact (hM₁ _ (huL hz)).trans
+      ((Real.le_coe_toNNReal M₁).trans (le_add_of_nonneg_right zero_le_one))
 
 /-- **The `W^{1,p}` bound for a difference of compositions with a `C¹` map.** Let `g` be `C¹` on an
-open set `W`, let `v` and `u` be continuous on a measurable set `K` with `v(K), u(K) ⊆ W`, let `Du`
-be a weak derivative of `u` on `interior K`, and let `‖v - u‖_{W^{1,p}(K)}` be finite. If
-`‖Dg ∘ v‖ ≤ C` on `K`, then, with `A = ENNReal.LpAddConst p`,
+open set `W`, let `v` and `u` be continuous on a measurable set `K` with `v(K), u(K) ⊆ W`, and let
+`Du` be a weak derivative of `u` on `interior K`. If `‖Dg ∘ v‖ ≤ C` on `K`, then, with
+`A = ENNReal.LpAddConst p`,
 `‖g ∘ v - g ∘ u‖_{W^{1,p}(K)} ≤ ‖g ∘ v - g ∘ u‖_{Lᵖ(K)} + A ‖(Dg(v) - Dg(u)) ∘ Du‖_{Lᵖ(K)}
-+ A C ‖v - u‖_{W^{1,p}(K)}`. -/
++ A C ‖v - u‖_{W^{1,p}(K)}`, provided `‖v - u‖_{W^{1,p}(K)}` is finite in the case `C = 0`. -/
 theorem eLpNormWkp_one_comp_sub_le {v u : ℂ → F} {g : F → G} {W : Set F} {C : ℝ≥0}
     {Du : ℂ → ℂ →L[ℝ] F} (hK : MeasurableSet K) (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W)
     (hvc : ContinuousOn v K) (hvW : MapsTo v K W) (huc : ContinuousOn u K) (huW : MapsTo u K W)
     (hDu : HasWeakFDerivOn volume (Opens.interior K) u Du)
-    (hfin : eLpNormWkp p K 1 (v - u) ≠ ∞) (hC : ∀ z ∈ K, ‖fderiv ℝ g (v z)‖₊ ≤ C) :
+    (hfin : C = 0 → eLpNormWkp p K 1 (v - u) ≠ ∞) (hC : ∀ z ∈ K, ‖fderiv ℝ g (v z)‖₊ ≤ C) :
     eLpNormWkp p K 1 (g ∘ v - g ∘ u) ≤
       eLpNorm (g ∘ v - g ∘ u) p (volume.restrict K) +
         ENNReal.LpAddConst p *
@@ -134,7 +133,9 @@ theorem eLpNormWkp_one_comp_sub_le {v u : ℂ → F} {g : F → G} {W : Set F} {
             p (volume.restrict K) +
         ENNReal.LpAddConst p * C * eLpNormWkp p K 1 (v - u) := by
   refine le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn
-    (ENNReal.mul_ne_top (ENNReal.LpAddConst_lt_top p).ne ENNReal.coe_ne_top) hfin
+    (ENNReal.mul_ne_top (ENNReal.LpAddConst_lt_top p).ne ENNReal.coe_ne_top)
+    (fun h => hfin (ENNReal.coe_eq_zero.1 ((mul_eq_zero.1 h).resolve_left
+      (ENNReal.LpAddConst_ne_zero p))))
     fun D hD hDp => ?_
   rw [eLpNormWkp_zero] at hDp
   -- The weak derivative of `g ∘ v - g ∘ u` is `(Dg(v) - Dg(u)) ∘ Du + Dg(v) ∘ D`.
@@ -190,13 +191,13 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
     (fun y hy => hDgc.continuousAt (hW.mem_nhds (hu₀KW hy))) hunif
   -- `Dg ∘ u n` is eventually bounded on `K`.
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hDgc.comp hu₀c hu₀W)
-  have hbound : ∀ᶠ n in l, ∀ z ∈ K, ‖fderiv ℝ g (u n z)‖₊ ≤ (M + 1).toNNReal := by
+  have hbound : ∀ᶠ n in l, ∀ z ∈ K, ‖fderiv ℝ g (u n z)‖₊ ≤ M.toNNReal + 1 := by
     filter_upwards [Metric.tendstoUniformlyOn_iff.1 hDgu 1 one_pos] with n hn z hz
-    rw [← NNReal.coe_le_coe, coe_nnNorm]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_add, NNReal.coe_one]
     have h1 : dist (fderiv ℝ g (u n z)) (fderiv ℝ g (u₀ z)) ≤ 1 := by
       rw [dist_comm]; exact (hn z hz).le
-    exact ((norm_le_norm_add_const_of_dist_le h1).trans (by gcongr; exact hM z hz)).trans
-      (Real.le_coe_toNNReal _)
+    exact (norm_le_norm_add_const_of_dist_le h1).trans
+      (by gcongr; exact (hM z hz).trans (Real.le_coe_toNNReal M))
   -- A weak derivative of `u₀` with finite `Lᵖ(K)` norm.
   obtain ⟨Du, hDu, hDup⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hu₀
   rw [eLpNormWkp_zero] at hDup
@@ -205,10 +206,10 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
         ENNReal.LpAddConst p *
           eLpNorm (fun z => (fderiv ℝ g (u n z) - fderiv ℝ g (u₀ z)).comp (Du z))
             p (volume.restrict K) +
-        ENNReal.LpAddConst p * (M + 1).toNNReal * eLpNormWkp p K 1 (u n - u₀) := by
-    filter_upwards [huc, hmaps, hbound, hlim.eventually (gt_mem_nhds zero_lt_one)]
-      with n hnc hnW hnC hfin
-    exact eLpNormWkp_one_comp_sub_le hKm hW hg hnc hnW hu₀c hu₀W hDu hfin.ne_top hnC
+        ENNReal.LpAddConst p * (M.toNNReal + 1 : ℝ≥0) * eLpNormWkp p K 1 (u n - u₀) := by
+    filter_upwards [huc, hmaps, hbound] with n hnc hnW hnC
+    exact eLpNormWkp_one_comp_sub_le hKm hW hg hnc hnW hu₀c hu₀W hDu
+      (fun h => absurd h (by positivity)) hnC
   -- The three terms tend to `0`.
   have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK.measure_lt_top.ne
   have h1 : Tendsto (fun n => eLpNorm (g ∘ u n - g ∘ u₀) p (volume.restrict K)) l (𝓝 0) := by
@@ -235,7 +236,7 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
     exact (hn z hz).le
   have hA := (ENNReal.LpAddConst_lt_top p).ne
   have hsum := (h1.add (ENNReal.Tendsto.const_mul h2 (Or.inr hA))).add
-    (ENNReal.Tendsto.const_mul (a := ENNReal.LpAddConst p * (M + 1).toNNReal) hlim
+    (ENNReal.Tendsto.const_mul (a := ENNReal.LpAddConst p * (M.toNNReal + 1 : ℝ≥0)) hlim
       (Or.inr (ENNReal.mul_ne_top hA ENNReal.coe_ne_top)))
   simp only [mul_zero, add_zero] at hsum
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum

@@ -25,8 +25,8 @@ supplies its unfolding, its value through a given weak derivative on an open set
 in the set, invariance under almost-everywhere change, the triangle inequality and the
 operator-norm bound under a continuous linear map of the codomain. A finite `W^{k+1,p}(U)` size
 supplies a weak derivative of finite `W^{k,p}(U)` size, an upper bound of the form
-`a + c ‖f‖_{W^{k+1,p}(U)}` (for finite `c` and finite `‖f‖_{W^{k+1,p}(U)}`) may be checked through
-each weak derivative of `f` separately, and a member of `W^{k,p}_loc(U)` has finite
+`a + c ‖f‖_{W^{k+1,p}(U)}` (for finite `c`, with `‖f‖_{W^{k+1,p}(U)}` finite when `c = 0`) may be
+checked through each weak derivative of `f` separately, and a member of `W^{k,p}_loc(U)` has finite
 `W^{k,p}(K)` size on every compact `K ⊆ U`.
 
 ## References
@@ -89,17 +89,17 @@ theorem exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (h : eLpNormWkp p U (k 
   obtain ⟨hD, hlt⟩ := iInf_lt_iff.1 hD
   exact ⟨D, hD, hlt.ne⟩
 
-/-- Let `c ≠ ∞` and let `f` have finite `W^{k+1,p}(U)` norm. To bound `b` by
+/-- Let `c ≠ ∞`, and if `c = 0` let `f` have finite `W^{k+1,p}(U)` norm. To bound `b` by
 `a + c ‖f‖_{W^{k+1,p}(U)}` it suffices to bound it by `a + c (‖f‖_{Lᵖ(U)} + ‖D‖_{W^{k,p}(U)})`
 for every weak derivative `D` of `f` on `interior U` of finite `W^{k,p}(U)` norm. -/
 theorem le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn {a b c : ℝ≥0∞}
-    (hc : c ≠ ∞) (hf : eLpNormWkp p U (k + 1) f ≠ ∞)
+    (hc : c ≠ ∞) (hf : c = 0 → eLpNormWkp p U (k + 1) f ≠ ∞)
     (H : ∀ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D →
       eLpNormWkp p U k D ≠ ∞ →
         b ≤ a + c * (eLpNorm f p (volume.restrict U) + eLpNormWkp p U k D)) :
     b ≤ a + c * eLpNormWkp p U (k + 1) f := by
   rcases eq_or_ne c 0 with rfl | hc0
-  · obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
+  · obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (hf rfl)
     simpa using H D hD hDk
   calc b
       ≤ ⨅ (D : ℂ → ℂ →L[ℝ] F) (_ : HasWeakFDerivOn volume (Opens.interior U) f D),
