@@ -41,6 +41,7 @@ namespace TauCeti.Ring
 
 variable {R : Type u} [CommRing R] [IsDomain R]
 
+variable (R) in
 /-- **A quasi-finite extension domain of a Japanese domain is Japanese.** If `R ⊆ S` is an
 injective, finite-type and quasi-finite map of domains and `R` is Japanese, then `S` is Japanese.
 Stacks, Lemma 10.161.5 (032I), without its Noetherian hypothesis. -/
@@ -48,20 +49,18 @@ theorem IsJapanese.of_quasiFinite (S : Type v) [CommRing S] [IsDomain S] [Algebr
     [FaithfulSMul R S] [Algebra.FiniteType R S] [Algebra.QuasiFinite R S] [IsJapanese R] :
     IsJapanese S := by
   -- The elements `r` for which `S[1/r]` is a localization of a finite `R`-subalgebra of `S`.
-  let t : Set S := {s | ∃ S' : Subalgebra R S, S'.toSubmodule.FG ∧ ∃ r : S', r.1 = s ∧
-    Function.Bijective (Localization.awayMap S'.val.toRingHom r)}
+  let t : Set S := {s | ∃ S' : Subalgebra R S, S'.toSubmodule.FG ∧
+    ∃ r : S', S'.val.toRingHom r = s ∧ Function.Bijective (Localization.awayMap S'.val.toRingHom r)}
   refine IsJapanese.of_span_eq_top (t := t) ?_ ?_
   · -- Every maximal ideal avoids some element of `t`, by Zariski's main theorem.
     by_contra h
     obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ h
     obtain ⟨S', hS', r, hrm, hbij⟩ :=
       Algebra.QuasiFiniteAt.exists_fg_and_exists_notMem_and_awayMap_bijective (R := R) m
-    exact hrm (hle (Ideal.subset_span ⟨S', hS', r, rfl, hbij⟩))
+    exact hrm (by simpa using hle (Ideal.subset_span ⟨S', hS', r, rfl, hbij⟩))
   · rintro _ ⟨S', hS', r, rfl, hbij⟩ hdom
-    have : IsDomain (Localization.Away (S'.val.toRingHom r)) := hdom
     have : Module.Finite R S' := ⟨(Submodule.fg_top _).mpr hS'⟩
-    have : FaithfulSMul R S' := (faithfulSMul_iff_algebraMap_injective R S').mpr fun a b hab ↦
-      (FaithfulSMul.algebraMap_injective R S) (congrArg Subtype.val hab)
+    have : FaithfulSMul R S' := .tower_bot R S' S
     have : IsJapanese S' := of_finite R S'
     let e := RingEquiv.ofBijective _ hbij
     have : IsDomain (Localization.Away r) := e.toMulEquiv.isDomain
