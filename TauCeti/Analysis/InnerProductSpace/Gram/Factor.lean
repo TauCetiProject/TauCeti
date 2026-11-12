@@ -33,8 +33,8 @@ initial space the closure of the range of `A` and final space the closure of the
 its initial and final projections are the orthogonal projections onto these spaces. When `A` is
 a normal endomorphism, for instance self-adjoint, the initial space is `(ker T)ᗮ`. When `A` has
 dense range the factor is an isometry. Independently of the isometric case, the factor is `T A⁻¹`
-when `A` is invertible, for a normal endomorphism `A` the factor is the unique `V` with
-`V ∘L A = T` vanishing on `ker T`, and for an endomorphism `A` with `‖T x‖ ≤ ‖A x‖` the factor `U`
+when `A` is invertible, for a normal endomorphism `A`, any `V` with `V ∘L A = T` vanishing on
+`ker T` equals the factor, and for an endomorphism `A` with `‖T x‖ ≤ ‖A x‖` the factor `U`
 satisfies `‖T - U‖ ≤ ‖A - 1‖`.
 
 ## Main declarations
