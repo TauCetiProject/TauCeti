@@ -118,8 +118,7 @@ theorem index_eq_finrank_of_range_absoluteGaloisGroupExtend_eq_comap {L : Type*}
   rw [← shapiroOpenSubgroup_index, shapiroOpenSubgroup_toSubgroup, ← hσ,
     index_range_absoluteGaloisGroupExtend]
 
-/-- The Shapiro fixed field is fixed exactly by the preimage of `C`: the preimage is open, hence
-closed, and infinite Galois theory recovers a closed subgroup from its fixed field. -/
+/-- The Shapiro fixed field is fixed exactly by the preimage of `C`. -/
 theorem fixingSubgroup_shapiroField :
     (shapiroField F V C).fixingSubgroup = (shapiroOpenSubgroup F V C).toSubgroup := by
   rw [shapiroField_def]
