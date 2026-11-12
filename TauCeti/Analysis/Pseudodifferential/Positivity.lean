@@ -101,7 +101,6 @@ private lemma exists_norm_rpow_neg_smul_coefficient_le (a : Symbol n V W m)
       ‖t ^ (-m) • a.coefficient (y, t • ξ + (2 * π) • η)‖ ≤
         B * (1 + ‖(2 * π) • η‖ ^ 2) ^ (|m| / 2) := by
   obtain ⟨C, hC⟩ := a.exists_norm_coefficient_le K hK
-  have hr : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
   set M := max ((‖ξ‖ ^ 2) ^ (m / 2)) ((1 + ‖ξ‖ ^ 2) ^ (m / 2))
   refine ⟨C * 2 ^ (|m| / 2) * M, fun y hy t ht η ↦ ?_⟩
   have ht0 : 0 < t := one_pos.trans_le ht
