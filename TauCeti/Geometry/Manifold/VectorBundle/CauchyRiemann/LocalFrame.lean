@@ -71,7 +71,7 @@ variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
 
 namespace Manifold
 
-variable [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I] [FiniteDimensional ℝ F]
+variable [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I]
   {ι : Type*} [Fintype ι] (b : Basis ι ℝ F)
   {e : Trivialization F (TotalSpace.proj : TotalSpace F V → M)} [MemTrivializationAtlas e]
 
@@ -85,12 +85,10 @@ def frameCauchyRiemannOperator (b : Basis ι ℝ F)
     (σ : Π x : M, V x) (x : M) : TangentSpace I x →L[ℝ] V x :=
   j.zeroOnePart (frameCovariantDerivative I b e σ x)
 
-omit [FiniteDimensional ℝ F] in
 theorem frameCauchyRiemannOperator_apply :
     frameCauchyRiemannOperator j b e σ x = j.zeroOnePart (frameCovariantDerivative I b e σ x) :=
   (rfl)
 
-omit [FiniteDimensional ℝ F] in
 /-- The flat real Cauchy–Riemann operator of a frame is `∑ i, (∂bar σⁱ) ⊗ eᵢ`, where `σⁱ` are the
 real coefficients of `σ` in the frame. -/
 theorem frameCauchyRiemannOperator_eq_sum :
@@ -106,7 +104,6 @@ theorem frameCauchyRiemannOperator_eq_sum :
   rw [frameCauchyRiemannOperator_apply, h, zeroOnePart_sum]
   exact Finset.sum_congr rfl fun i _ ↦ zeroOnePart_smulRight _ _ x
 
-omit [FiniteDimensional ℝ F] in
 /-- The flat real Cauchy–Riemann operator of a frame takes values in `(0,1)`-forms. -/
 theorem isZeroOneForm_frameCauchyRiemannOperator :
     j.IsZeroOneForm (frameCauchyRiemannOperator j b e σ x) :=
