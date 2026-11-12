@@ -42,6 +42,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   multiplication by the matrix.
 * `Matrix.rank_eq_card_iff_mulVec_injective` characterizes full column rank by injectivity of
   matrix-vector multiplication.
+* `Matrix.finite_of_mulVec_surjective`: a matrix whose `mulVec` is surjective has finitely many
+  rows.
 * `Matrix.rank_left_factor_eq` and `Matrix.range_left_factor_eq`: an exact-rank
   factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_mul_eq_right_of_rank_eq_card`: left multiplication by a full-column-rank matrix
@@ -194,6 +196,18 @@ theorem rank_eq_card_iff_mulVec_injective (B : Matrix m n R) :
     linearIndependent_iff_card_eq_finrank_span, Set.finrank, eq_comm]
 
 end FullColumnRank
+
+section FiniteRows
+
+/-- If `A.mulVec` is surjective, then `A` has finitely many rows: a finite-dimensional space
+cannot surject onto the infinite-dimensional space `m → K`. -/
+theorem finite_of_mulVec_surjective {K : Type*} [Field K] {m n : Type*} [Fintype n]
+    (A : Matrix m n K) (h : Function.Surjective A.mulVec) : Finite m := by
+  have : Module.Finite K (m → K) := Module.Finite.of_surjective (mulVecLin A) h
+  classical
+  exact (Pi.linearIndependent_single_one m K).finite
+
+end FiniteRows
 
 section ExactRankFactorization
 

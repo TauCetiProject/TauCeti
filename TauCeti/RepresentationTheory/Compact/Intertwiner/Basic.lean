@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.RepresentationTheory.Compact.Averaging
 public import TauCeti.RepresentationTheory.Compact.MatrixCoefficient
 public import TauCeti.RepresentationTheory.Continuous.LinHom
+import TauCeti.RepresentationTheory.Continuous.Basic
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
@@ -71,13 +72,6 @@ open MeasureTheory
 open scoped InnerProductSpace
 
 namespace TauCeti
-
-/-- An action operator composed with the action of the inverse group element is the identity. -/
-private theorem comp_inv_self {𝕜 G W : Type*} [RCLike 𝕜] [Group G]
-    [NormedAddCommGroup W] [NormedSpace 𝕜 W] (ρ : ContRepresentation 𝕜 G W) (g : G) :
-    (ρ g).comp (ρ g⁻¹) = ContinuousLinearMap.id 𝕜 W := by
-  rw [← ContinuousLinearMap.mul_def, ← map_mul, mul_inv_cancel, map_one]
-  rfl
 
 /-- Conjugation `S ↦ ρ g⁻¹ ∘ S ∘ π g`, packaged as a continuous linear map on operators. It is the
 action operator at `g⁻¹` of the Hom representation of
@@ -225,7 +219,7 @@ theorem averageOperator_comp (T : V →L[𝕜] W) (g : G) : (averageOperator π 
       = (ContinuousLinearMap.id 𝕜 W).comp ((averageOperator π hπ ρ hρ T).comp (π g)) := by
         rw [ContinuousLinearMap.id_comp]
     _ = ((ρ g).comp (ρ g⁻¹)).comp ((averageOperator π hπ ρ hρ T).comp (π g)) := by
-        rw [comp_inv_self ρ g]
+        rw [ContRepresentation.comp_inv_self ρ g]
     _ = (ρ g).comp ((ρ g⁻¹).comp ((averageOperator π hπ ρ hρ T).comp (π g))) :=
         ContinuousLinearMap.comp_assoc _ _ _
     _ = (ρ g).comp (averageOperator π hπ ρ hρ T) := by rw [h]

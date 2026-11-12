@@ -17,9 +17,9 @@ attached to the prime discriminants dividing `fundamentalDiscriminant d`, and
 `candidateGenusFieldBase hd` is the copy of `K = ℚ(√d)` inside it. This file proves that, for such
 a `d` that is moreover not a rational square, every prime of `𝓞 K` is unramified in the candidate
 genus field: it is an unramified extension of `ℚ(√d)` at all finite places. This is the defining
-property of the genus field at the finite places, and the half of the genus-field identification
-the roadmap flags as the trap, since it is exactly where ramification at `2` and at the primes
-dividing `d` has to be controlled.
+property of the genus field at the finite places, and the delicate half of the genus-field
+identification, since it is exactly where ramification at `2` and at the primes dividing `d` has to
+be controlled.
 
 The work is done by the general criterion
 `TauCeti.Multiquadratic.isUnramifiedIn_of_forall_ramificationIdx_eq_two`: a subfield of a

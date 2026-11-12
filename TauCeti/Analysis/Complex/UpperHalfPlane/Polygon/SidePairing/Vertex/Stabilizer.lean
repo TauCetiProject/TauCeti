@@ -155,7 +155,7 @@ theorem orderOf_cycleMap_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.vertex 
     rintro rfl
     exact hN.not_gt hS1
   -- the direction just past `2π` lies inside the sectors of tile `M` and of the first tile
-  set ε := min (S (M + 1) - 2 * π) (S 1) / 2 with hε
+  set ε := min (S (M + 1) - 2 * π) (S 1) / 2
   have hε₀ : 0 < ε := half_pos (lt_min (by linarith) (hmono (by omega : 0 < 1)))
   have hεN : ε < S (M + 1) - 2 * π :=
     (half_lt_self (lt_min (by linarith) (hmono (by omega : 0 < 1)))).trans_le (min_le_left _ _)
@@ -176,7 +176,7 @@ theorem orderOf_cycleMap_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.vertex 
       ⟨by simpa [hS] using hmono (Nat.pos_of_ne_zero hM₀), by rwa [zero_add]⟩
       ⟨by positivity, by rw [zero_add]⟩).1 ?_
     exact hSM.trans Real.Angle.coe_two_pi.symm
-  exact σ.orderOf_cycleMap_mul_cycleAngleSum_of_sum_eq_two_pi hz hjM hsum
+  exact σ.orderOf_cycleMap_mul_cycleAngleSum_of_sum_eq_two_pi hjM hsum
 
 /-- At a finite vertex of a polygon with disjoint translated interiors, the cycle transformation
 has finite order. -/

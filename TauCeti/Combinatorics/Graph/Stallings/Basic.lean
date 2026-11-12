@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
 public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Tree
 public import TauCeti.Combinatorics.Quiver.PathWeight
 public import Mathlib.GroupTheory.FreeGroup.Basic
 public import Mathlib.GroupTheory.Finiteness
@@ -18,7 +19,8 @@ public import Mathlib.Algebra.Group.End
 A labelled Serre graph assigns inverse letters to reversed darts. Reading the labels of
 closed paths at a vertex gives a subgroup of the free group. Based label-preserving morphisms
 send the accepted subgroup into that of the target. Moving the base vertex along a path
-conjugates the accepted subgroup. Every accepted word also has a reduced-path witness.
+conjugates the accepted subgroup. Every accepted word also has a reduced-path witness, so a
+labelled graph without nonempty reduced closed paths accepts only the identity.
 A graph with finitely many darts accepts a finitely generated subgroup at every vertex.
 
 ## References
@@ -183,6 +185,15 @@ theorem mem_subgroup_iff_exists_reduced_path {a : S.graph.V} {g : FreeGroup α} 
     exact S.exists_reduced_path_read_eq p
   · rintro ⟨p, _, rfl⟩
     exact S.read_mem_subgroup p
+
+/-- A labelled graph whose underlying graph is acyclic accepts the trivial subgroup at every
+vertex: its only reduced closed paths are the empty ones. -/
+theorem subgroup_eq_bot_of_isAcyclic (h : S.graph.IsAcyclic) (a : S.graph.V) :
+    S.subgroup a = ⊥ := by
+  rw [eq_bot_iff]
+  intro g hg
+  obtain ⟨p, hp, rfl⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
+  simp [(S.graph.isAcyclic_iff.mp h) a p hp]
 
 /-- Moving the base vertex along a path conjugates the accepted subgroup by its label. -/
 theorem subgroup_conj {a b : S.graph.V} (p : S.graph.Path a b) :
