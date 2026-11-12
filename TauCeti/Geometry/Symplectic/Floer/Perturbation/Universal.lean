@@ -109,40 +109,24 @@ theorem alongCurve_floerOperator_add_smul_coefficients
       ω.hamiltonianVectorField (δKs z) (γ r) -
       J z (γ r) (ω.hamiltonianVectorField (δKt z) (γ r)) -
       r • Y z (γ r) (ω.hamiltonianVectorField (δKt z) (γ r))
+  -- Establish regularity of the fixed operator and the coefficient correction separately.
+  have hF := ω.differentiableAt_sectionCoord_floerOperator J Ks Kt hu hJ hXs hXt
   have hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ 0 :=
     (hu.comp 0 (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left z)).contMDiffAt).mdifferentiableAt
       (by norm_num)
   have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u 0 z)
-  -- Joint C² regularity supplies differentiability of both coordinate velocities.
+  -- Only the t-velocity is needed for the coefficient correction.
   have ht : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
       (fun p : ℝ × ℝ ↦ u p.1 (z.1, p.2)) (0, z.2) :=
     hu.comp (0, z.2) (contMDiff_iff_contDiff.mpr (by fun_prop :
       ContDiff ℝ 2 (fun p : ℝ × ℝ ↦ (p.1, (z.1, p.2))))).contMDiffAt
-  have hVt := (differentiableAt_sectionCoord_iff γ Vt hγ hbase).1
-    (ht.differentiableAt_sectionCoord_curveVelocity_snd
-      (f := fun r t ↦ u r (z.1, t)) hbase)
-  have hs : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
-      (fun p : ℝ × ℝ ↦ u p.1 (p.2, z.2)) (0, z.1) :=
-    hu.comp (0, z.1) (contMDiff_iff_contDiff.mpr (by fun_prop :
-      ContDiff ℝ 2 (fun p : ℝ × ℝ ↦ (p.1, (p.2, z.2))))).contMDiffAt
-  have hVs := (differentiableAt_sectionCoord_iff γ
-    (fun r ↦ curveVelocity I (fun s ↦ u r (s, z.2)) z.1) hγ hbase).1
-    (hs.differentiableAt_sectionCoord_curveVelocity_snd
-      (f := fun r s ↦ u r (s, z.2)) hbase)
+  have hVt := ht.mdifferentiableAt_curveVelocity_snd (f := fun r t ↦ u r (z.1, t))
   have hJγ := hJ.comp 0 hγ
   have hYγ := hY.comp 0 hγ
-  have hXsγ := hXs.comp 0 hγ
   have hXtγ := hXt.comp 0 hγ
   have hδXsγ := hδXs.comp 0 hγ
   have hδXtγ := hδXt.comp 0 hγ
-  have hΔs := hVs.sub_sectionAlong hXsγ
   have hΔt := hVt.sub_sectionAlong hXtγ
-  have hJΔt := hJγ.clm_bundle_apply hΔt
-  have hF : DifferentiableAt ℝ
-      (sectionCoord (F := E) γ (fun r ↦ ω.floerOperator J Ks Kt (u r) z) (γ 0)) 0 := by
-    simpa only [floerOperator_def, sectionCoord_add] using
-      (differentiableAt_sectionCoord γ _ hΔs hbase).add
-        (differentiableAt_sectionCoord γ _ hJΔt hbase)
   -- The correction W is differentiable in bundle coordinates; only its value at zero
   -- survives the product rule for r • W(r).
   have hA := differentiableAt_sectionCoord γ _ (hYγ.clm_bundle_apply hΔt) hbase
@@ -152,11 +136,13 @@ theorem alongCurve_floerOperator_add_smul_coefficients
   have hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ 0)) 0 := by
     simpa only [W, sectionCoord_sub, sectionCoord_smul] using!
       ((hA.sub hB).sub hC).sub (differentiableAt_id.smul hD)
+  -- Use the exact affine expansion, retaining the mixed quadratic term.
   have heq : (fun r ↦ ω.floerOperator (fun w x ↦ J w x + r • Y w x)
       (fun w ↦ Ks w + r • δKs w) (fun w ↦ Kt w + r • δKt w) (u r) z) =ᶠ[𝓝 0]
       (fun r ↦ ω.floerOperator J Ks Kt (u r) z + r • W r) :=
     hK.mono fun r hr ↦ ω.floerOperator_add_smul_coefficients J Y Ks Kt δKs δKt
       (u r) z hr.1 hr.2.1 hr.2.2.1 hr.2.2.2 r
+  -- Apply the sum and scalar product rules, then the fixed-coefficient map variation.
   rw [alongCurve_congr cov γ _ heq,
     alongCurve_add cov γ _ _ hF
       (by simpa only [sectionCoord_smul] using! differentiableAt_id.smul hW),
