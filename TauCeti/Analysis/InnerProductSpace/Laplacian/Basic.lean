@@ -215,12 +215,10 @@ theorem _root_.ContDiffAt.laplacian_fderiv {f : E → F} {x : E} (hf : ContDiffA
   have hDf : ContDiffAt ℝ 2 (fderiv ℝ f) x := hf.fderiv_right (m := 2) (by norm_num)
   have hD2 : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ f)) x :=
     (hDf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  -- Near `x`, the Laplacian of `f` is the trace of the second derivative.
-  have hΔ : Δ f =ᶠ[𝓝 x] fun y ↦ ∑ i, fderiv ℝ (fderiv ℝ f) y (b i) (b i) := by
-    filter_upwards [hDf.eventually (by simp)] with y hy
-    rw [laplacian_eq_traceL, traceL_apply]
+  -- The Laplacian of `f` is the trace of the second derivative.
+  have hΔ : Δ f =ᶠ[𝓝 x] fun y ↦ ∑ i, fderiv ℝ (fderiv ℝ f) y (b i) (b i) :=
+    .of_forall fun y ↦ by rw [laplacian_eq_traceL, traceL_apply]
   ext v
-  have hv : ContDiffAt ℝ 2 (fun y ↦ fderiv ℝ f y v) x := hDf.clm_apply contDiffAt_const
   have hl : Δ (fderiv ℝ f) x v = Δ (fun y ↦ fderiv ℝ f y v) x :=
     (hDf.laplacian_CLM_comp_left (l := ContinuousLinearMap.apply ℝ F v)).symm
   rw [hl, laplacian_eq_traceL, traceL_apply, hΔ.fderiv_eq,

@@ -103,7 +103,7 @@ theorem exists_contDiff_eventually_eventuallyEq [FiniteDimensional ℝ E] {n : �
     ∃ g : E → F, ContDiff ℝ n g ∧ ∀ᶠ x in cocompact E, g =ᶠ[𝓝 x] f := by
   obtain ⟨R, -, hR⟩ :=
     hasBasis_cobounded_norm.eventually_iff.mp (Metric.cobounded_eq_cocompact (α := E) ▸ hf)
-  set r := max R 0 + 1 with hr
+  set r := max R 0 + 1
   let b : ContDiffBump (0 : E) := ⟨r, r + 1, by positivity, by linarith⟩
   refine ⟨fun x ↦ (1 - b x) • f x, contDiff_iff_contDiffAt.2 fun x ↦ ?_, ?_⟩
   · by_cases hx : ‖x‖ < r
