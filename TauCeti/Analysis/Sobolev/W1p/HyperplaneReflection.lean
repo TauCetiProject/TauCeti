@@ -51,6 +51,8 @@ vanishes near `∂B` its extension by zero lies in `W^{1,p}_0(U ∩ H)`
   `φ - φ ∘ ρ` to `U ∩ H` has zero boundary values when `φ` does.
 * `TauCeti.W1p0.restrictSubCompHyperplaneReflectionL`: the bounded operator
   `φ ↦ (φ - φ ∘ ρ)|_{U ∩ H}` from `W^{1,p}_0(U)` to `W^{1,p}_0(U ∩ H)`.
+* `TauCeti.W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL`: integrating a
+  function `f` against `(φ - φ ∘ ρ)|_{U ∩ H}` is integrating its odd reflection against `φ`.
 -/
 
 public section
@@ -264,5 +266,76 @@ theorem W1p0.coe_restrictSubCompHyperplaneReflectionL (hp : p ≠ ⊤)
       W1p.restrictL (inf_le_left : U ⊓ H ≤ U)
         ((φ : W1p mu U p) - W1p.compHyperplaneReflectionL hp ν c hU φ) := by
   simp [W1p0.restrictSubCompHyperplaneReflectionL]
+
+/-- **Testing against the reflected difference.** Let `H = {x | c < ⟪x, ν⟫}` and let `U` be an
+open set mapped into itself by the reflection `ρ` in the hyperplane `∂H`. For `φ ∈ W^{1,p}_0(U)`,
+`p < ∞`, and `f ∈ L^q(U ∩ H)` with `1/q + 1/p = 1`, integrating `f` against the restriction of
+`φ - φ ∘ ρ` to `U ∩ H` is integrating the odd reflection `x ↦ 1_H f x - 1_H f (ρ x)` of `f`
+against `φ` on `U`:
+
+`∫_{U ∩ H} f (φ - φ ∘ ρ) = ∫_U (1_H f - 1_H f ∘ ρ) φ`.
+
+This turns a right-hand side `f` of an equation on `U ∩ H` into the right-hand side of the
+reflected equation on `U`. -/
+theorem W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL (hp : p ≠ ⊤)
+    (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c) U U)
+    {q : ENNReal} [q.HolderTriple p 1] {f : E → ℝ} (hf : MemLp f q (mu.restrict (U ⊓ H)))
+    (φ : W1p0 mu U p) :
+    ∫ x in U ⊓ H, f x * W1p.value
+        (W1p0.restrictSubCompHyperplaneReflectionL hp hH hU φ : W1p mu (U ⊓ H) p) x ∂mu =
+      ∫ x in U, ((H : Set E).indicator f x -
+        (H : Set E).indicator f (hyperplaneReflection ν c x)) *
+          W1p.value (φ : W1p mu U p) x ∂mu := by
+  set ρ := hyperplaneReflection ν c
+  set g := (H : Set E).indicator f
+  set v : E → ℝ := ⇑(W1p.value (φ : W1p mu U p))
+  have hρ : MeasurePreserving ρ (mu.restrict U) (mu.restrict U) :=
+    measurePreserving_restrict_hyperplaneReflection hU U.isOpen.measurableSet
+  have hHm : MeasurableSet (H : Set E) := H.isOpen.measurableSet
+  have hg : MemLp g q (mu.restrict U) := by
+    rw [memLp_indicator_iff_restrict hHm.nullMeasurableSet, Measure.restrict_restrict hHm,
+      inter_comm]
+    exact hf
+  have hv : MemLp v p (mu.restrict U) := Lp.memLp _
+  have hvρ : MemLp (v ∘ ρ) p (mu.restrict U) := hv.comp_measurePreserving hρ
+  -- The value of the reflected difference is `v - v ∘ ρ` on `U ∩ H`.
+  have hval : W1p.value
+      (W1p0.restrictSubCompHyperplaneReflectionL hp hH hU φ : W1p mu (U ⊓ H) p) =ᵐ[mu.restrict
+        (U ⊓ H : Opens E)] fun x => v x - v (ρ x) := by
+    have hU' : ∀ᵐ x ∂mu.restrict U, W1p.value ((φ : W1p mu U p) -
+        W1p.compHyperplaneReflectionL hp ν c hU (φ : W1p mu U p)) x = v x - v (ρ x) := by
+      filter_upwards [W1p.value_sub_ae (φ : W1p mu U p)
+          (W1p.compHyperplaneReflectionL hp ν c hU (φ : W1p mu U p)),
+        W1p.value_compHyperplaneReflectionL_ae hp hU (φ : W1p mu U p)] with x h1 h2
+      rw [h1, Pi.sub_apply, h2]
+    rw [W1p0.coe_restrictSubCompHyperplaneReflectionL]
+    filter_upwards [W1p.value_restrictL_ae (inf_le_left : U ⊓ H ≤ U)
+        ((φ : W1p mu U p) - W1p.compHyperplaneReflectionL hp ν c hU (φ : W1p mu U p)),
+      ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_left) hU'] with x h1 h2
+    rw [h1, h2]
+  have hgv : Integrable (fun x => g x * v x) (mu.restrict U) := hg.integrable_mul hv
+  -- Testing `g` against `v ∘ ρ` is testing `g ∘ ρ` against `v`, since `ρ` is an involution.
+  have hswap : ∫ x in U, g x * v (ρ x) ∂mu = ∫ x in U, g (ρ x) * v x ∂mu := by
+    have h := MeasurePreserving.integral_comp hρ ρ.toHomeomorph.measurableEmbedding
+      fun x => g (ρ x) * v x
+    simpa only [AffineIsometryEquiv.coe_toHomeomorph, ρ, hyperplaneReflection_hyperplaneReflection]
+      using h
+  calc ∫ x in U ⊓ H, f x * W1p.value
+          (W1p0.restrictSubCompHyperplaneReflectionL hp hH hU φ : W1p mu (U ⊓ H) p) x ∂mu
+      = ∫ x in U ⊓ H, f x * (v x - v (ρ x)) ∂mu := by
+        refine integral_congr_ae ?_
+        filter_upwards [hval] with x hx
+        rw [hx]
+    _ = ∫ x in U, g x * (v x - v (ρ x)) ∂mu := by
+        rw [← setIntegral_indicator hHm]
+        exact integral_congr_ae (ae_of_all _ fun x => indicator_mul_left _ _ _)
+    _ = ∫ x in U, g x * v x ∂mu - ∫ x in U, g (ρ x) * v x ∂mu := by
+        rw [← hswap, ← integral_sub (f := fun x => g x * v x) (g := fun x => g x * v (ρ x)) hgv
+          (hg.integrable_mul hvρ)]
+        simp_rw [mul_sub]
+    _ = ∫ x in U, (g x - g (ρ x)) * v x ∂mu := by
+        rw [← integral_sub (f := fun x => g x * v x) (g := fun x => g (ρ x) * v x) hgv
+          ((hg.comp_measurePreserving hρ).integrable_mul hv)]
+        simp_rw [sub_mul]
 
 end TauCeti
