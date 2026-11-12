@@ -22,7 +22,10 @@ construction of resolutions by attaching cells.
 
 More generally, the homology of any complex in a degree where both differentials vanish is the
 term in that degree (`HomologicalComplex.XIsoHomologyOfDEqZero`), so it is projective when that
-term is (`HomologicalComplex.projective_homology_of_d_eq_zero`).
+term is (`HomologicalComplex.projective_homology_of_d_eq_zero`).  These identifications are
+natural (`HomologicalComplex.XIsoHomologyOfDEqZero_hom_naturality`), so a quasi-isomorphism
+between complexes with zero differentials is an isomorphism
+(`HomologicalComplex.isIso_of_quasiIso_of_d_eq_zero`).
 -/
 
 public section
@@ -77,6 +80,31 @@ lemma projective_homology_of_d_eq_zero (K : HomologicalComplex C c) (i : ι) [K.
     [Projective (K.X i)] (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) :
     Projective (K.homology i) :=
   Projective.of_iso (K.XIsoHomologyOfDEqZero i h₁ h₂) inferInstance
+
+/-- The isomorphisms `XIsoHomologyOfDEqZero` are natural: in a degree where the differentials of
+both complexes vanish, a morphism of complexes is its induced map on homology. -/
+@[reassoc]
+lemma XIsoHomologyOfDEqZero_hom_naturality {K L : HomologicalComplex C c} (f : K ⟶ L) (i : ι)
+    [K.HasHomology i] [L.HasHomology i] (hK₁ : K.d (c.prev i) i = 0)
+    (hK₂ : K.d i (c.next i) = 0) (hL₁ : L.d (c.prev i) i = 0) (hL₂ : L.d i (c.next i) = 0) :
+    f.f i ≫ (L.XIsoHomologyOfDEqZero i hL₁ hL₂).hom =
+      (K.XIsoHomologyOfDEqZero i hK₁ hK₂).hom ≫ homologyMap f i := by
+  have : f.f i ≫ (L.iCyclesIso i (c.next i) rfl hL₂).inv =
+      (K.iCyclesIso i (c.next i) rfl hK₂).inv ≫ cyclesMap f i := by
+    simp [← cancel_mono (L.iCycles i)]
+  simp [reassoc_of% this]
+
+/-- A quasi-isomorphism between complexes with zero differentials is an isomorphism, since each
+of its components is the induced map on homology. -/
+lemma isIso_of_quasiIso_of_d_eq_zero {K L : HomologicalComplex C c} (f : K ⟶ L)
+    [∀ i, K.HasHomology i] [∀ i, L.HasHomology i] [QuasiIso f] (hK : ∀ i j, K.d i j = 0)
+    (hL : ∀ i j, L.d i j = 0) : IsIso f := by
+  have (i : ι) : IsIso (f.f i) := by
+    have h := XIsoHomologyOfDEqZero_hom_naturality f i (hK _ _) (hK _ _) (hL _ _) (hL _ _)
+    rw [← Iso.eq_comp_inv] at h
+    rw [h]
+    infer_instance
+  exact Hom.isIso_of_components f
 
 variable (K : HomologicalComplex C c) [∀ i, K.HasHomology i] {E : ι → C}
   (e : ∀ i, E i ⟶ K.cycles i)

@@ -19,10 +19,12 @@ right-continuous before a horizon `T`. This file shows that the running maxima
 `sup_{t ≤ T} exp (θ W_t - θ² t / 2)`  and  `sup_{t ≤ T} S_t ^ q`,
 
 of an exponential martingale and of a real power of a geometric Brownian motion
-`S_t = s exp ((μ - σ² / 2) t + σ W_t)`, `s ≥ 0`, have finite expectation, for every real `θ` and
-`q`. For `q > 0` this is a finite `q`-th moment of the running maximum `sup_{t ≤ T} S_t`; for
-`q < 0` and `s > 0` it is a finite `q`-th moment of the running minimum. (For `s = 0` and `q < 0`
-the bound holds only through the convention `0 ^ q = 0`.) For a function `V` of polynomial
+`S_t = s exp ((μ - σ² / 2) t + σ W_t)`, have finite expectation, for every real `θ`, `s` and
+`q`. For `s ≥ 0` and `q > 0` this is a finite `q`-th moment of the running maximum
+`sup_{t ≤ T} S_t`; for `q < 0` and `s > 0` it is a finite `q`-th moment of the running minimum.
+(For `s = 0` and `q < 0` the bound holds only through the convention `0 ^ q = 0`, and for `s < 0`
+and non-integer `q` only through Mathlib's convention for real powers of negative bases.) For a
+function `V` of polynomial
 growth, `|V(x, t)| ≤ A (1 + x ^ p)` with `p ≥ 0`, these bounds dominate `|V(S_t, t)|` uniformly in
 `t ≤ T` by an integrable random variable. This is the domination, and hence the uniform
 integrability, used to pass to the limit in stopped expectations `E[V(S_{t ∧ τ}, t ∧ τ)]` along
@@ -45,7 +47,7 @@ In the namespace `TauCeti.Probability`:
 * `IsFilteredPreBrownianReal.lintegral_iSup_exponentialMartingale_lt_top`:
   `E[sup_{t ≤ T} exp (θ W_t - θ² t / 2)] < ∞`.
 * `IsFilteredPreBrownianReal.lintegral_iSup_rpow_geometricBrownianMotion_lt_top`:
-  `E[sup_{t ≤ T} S_t ^ q] < ∞` for `s ≥ 0` and real `q`.
+  `E[sup_{t ≤ T} S_t ^ q] < ∞` for every initial value `s` and real `q`.
 * `IsFilteredPreBrownianReal.lintegral_iSup_geometricBrownianMotion_lt_top`:
   `E[sup_{t ≤ T} S_t] < ∞` for every initial value `s`.
 
@@ -92,19 +94,22 @@ theorem lintegral_iSup_exponentialMartingale_lt_top (hW : IsFilteredPreBrownianR
     simp [hW.integral_exponentialMartingale]
 
 /-- **The running maximum of a power of geometric Brownian motion is integrable.** If the paths
-of `W` are almost surely right-continuous before `T`, then for an initial value `s ≥ 0` and every
+of `W` are almost surely right-continuous before `T`, then for every initial value `s` and every
 real `q`, `E[sup_{t ≤ T} S_t ^ q] < ∞`, where `S_t = s exp ((μ - σ² / 2) t + σ W_t)`. -/
 theorem lintegral_iSup_rpow_geometricBrownianMotion_lt_top (hW : IsFilteredPreBrownianReal ℱ W P)
     {T : ℝ≥0} (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
-    {s : ℝ} (hs : 0 ≤ s) (μ σ q : ℝ) :
+    (s μ σ q : ℝ) :
     ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal (geometricBrownianMotion s μ σ W t ω ^ q) ∂P < ∞ := by
   -- `S_t ^ q = s ^ q exp (c t) Z^{qσ}_t`, and `exp (c t) ≤ exp (|c| T)` for `t ≤ T`.
   set c := q * μ + q * (q - 1) * σ ^ 2 / 2
-  refine lintegral_iSup_ofReal_lt_top_of_le_mul (by positivity) (C := s ^ q * exp (|c| * T))
+  refine lintegral_iSup_ofReal_lt_top_of_le_mul (by positivity) (C := |s ^ q| * exp (|c| * T))
     (fun ω t ht ↦ ?_) (hW.lintegral_iSup_exponentialMartingale_lt_top hcont (q * σ))
-  rw [rpow_geometricBrownianMotion hs]
-  gcongr
-  exacts [(exponentialMartingale_pos _ W t ω).le, le_abs_self c]
+  rw [rpow_geometricBrownianMotion]
+  have hexp : exp (c * t) ≤ exp (|c| * T) := by
+    gcongr
+    exact le_abs_self c
+  exact mul_le_mul_of_nonneg_right (mul_le_mul (le_abs_self _) hexp (exp_pos _).le (abs_nonneg _))
+    (exponentialMartingale_pos _ W t ω).le
 
 /-- **The running maximum of geometric Brownian motion is integrable.** If the paths of `W` are
 almost surely right-continuous before `T`, then `E[sup_{t ≤ T} S_t] < ∞`, where
@@ -113,12 +118,6 @@ theorem lintegral_iSup_geometricBrownianMotion_lt_top (hW : IsFilteredPreBrownia
     {T : ℝ≥0} (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
     (s μ σ : ℝ) :
     ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal (geometricBrownianMotion s μ σ W t ω) ∂P < ∞ := by
-  rcases le_or_gt 0 s with hs | hs
-  · simpa using hW.lintegral_iSup_rpow_geometricBrownianMotion_lt_top hcont hs μ σ 1
-  · -- For a negative initial value the process is negative and the integrand vanishes.
-    have h (t : ℝ≥0) (ω : Ω) : geometricBrownianMotion s μ σ W t ω ≤ 0 := by
-      rw [geometricBrownianMotion_def]
-      exact mul_nonpos_iff.2 (Or.inr ⟨hs.le, (exp_pos _).le⟩)
-    simp [ENNReal.ofReal_eq_zero.2 (h _ _)]
+  simpa using hW.lintegral_iSup_rpow_geometricBrownianMotion_lt_top hcont s μ σ 1
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

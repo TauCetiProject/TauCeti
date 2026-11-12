@@ -318,7 +318,7 @@ private theorem eq_map_const_of_isStrictSegal [X.IsStrictSegal] {n : ℕ}
         (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)).op s) := by
   refine Subtype.ext ((map_eq_of_isStrictSegal (joinVertex.map
     (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0 ≫ SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)))
-    mkOfSucc_last_comp_joinVertex_map mkOfSucc_castSucc_comp_joinVertex_map (s.1 : X _⦋n + 1⦌)
+    mkOfSucc_last_comp_joinVertex_map (s.1 : X _⦋n + 1⦌)
     ((mem_rightMappingSpace_iff _).1 s.2).1).symm.trans ?_)
   -- The simplicial operators of `Hom^R_X(x, y)` act on `X` through `joinVertex`.
   rw [Functor.map_comp]

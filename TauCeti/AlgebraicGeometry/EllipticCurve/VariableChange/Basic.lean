@@ -39,8 +39,7 @@ discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_tr
 Every change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal
 `(c₄, Δ)` cutting out the cuspidal locus (`span_variableChange_c₄_Δ`).
 
-The negation is the nontrivial automorphism in the `Aut (E, O)`
-milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
+The negation is the nontrivial automorphism in `Aut (E, O)`, proved in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean` to exhaust `Aut(E)` with the identity when
 `j(E) ∉ {0, 1728}`.
 
@@ -56,7 +55,7 @@ satisfies are polynomial. Only the nontriviality `negVariableChange_ne_one` need
 be elliptic over a nontrivial ring.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
-`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean` at the roadmap's pin
+`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean` at
 `bc2fe8ff7396` (FLT PR #1088), Apache 2.0, by Kevin Buzzard and Claude), generalised here from
 FLT's field-level statements to a commutative ring.
 -/

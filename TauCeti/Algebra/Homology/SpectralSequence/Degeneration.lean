@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.SpectralSequence.Basic
+public import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
 
 /-!
 # Vanishing and survival of objects on later pages of a spectral sequence
@@ -51,14 +51,11 @@ variable {C κ : Type*} [Category* C] [Abelian C] {c : ℤ → ComplexShape κ} 
   (E : SpectralSequence C c r₀)
 
 /-- **Zero objects stay zero.** If the object at `pq` vanishes on the page `r`, it vanishes on
-every later page `r' ≥ r`, since each page is the homology of the previous one. -/
+every later page `r' ≥ r`, since each page is the homology of the previous one. This is
+`CategoryTheory.SpectralSequence.prop_page_X_of_le` for the Serre class of zero objects. -/
 lemma isZero_page_X_of_le {r : ℤ} (hr : r₀ ≤ r) {pq : κ} (h : IsZero ((E.page r).X pq))
-    (r' : ℤ) (hrr' : r ≤ r') : IsZero ((E.page r' (hr.trans hrr')).X pq) := by
-  induction r', hrr' using Int.leInduction with
-  | base => exact h
-  | succ r' hrr' ih =>
-    exact (E.iso r' (r' + 1) pq rfl (hr.trans hrr')).isZero_iff.1
-      (((E.page r' (hr.trans hrr')).sc pq).isZero_homology_of_isZero_X₂ ih)
+    (r' : ℤ) (hrr' : r ≤ r') : IsZero ((E.page r' (hr.trans hrr')).X pq) :=
+  E.prop_page_X_of_le IsZero hr h r' hrr'
 
 /-- **Differentials into or out of zero objects vanish on later pages.** If the source or the
 target of a differential of the page `r' ≥ r` is zero on the page `r`, the differential is zero. -/

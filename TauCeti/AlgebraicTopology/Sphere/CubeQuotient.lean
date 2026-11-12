@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.AlgebraicTopology.Disk
+public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
@@ -60,6 +61,10 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
 * `GenLoop.toSphere` and `GenLoop.sphereEquiv`: generalized loops are pointed maps out of the
   sphere; `p` is the image of `TauCeti.sphereGenLoop` under `GenLoop.toSphere p`
   (`GenLoop.map_toSphere_sphereGenLoop`).
+* `GenLoop.injective_toSphere_iff` and `GenLoop.surjective_toSphere_iff`: `GenLoop.toSphere p` is
+  injective exactly when `p` identifies only boundary points, and surjective exactly when `p` is.
+* `TauCeti.exists_cubeToSphere_eq_of_ne`: `TauCeti.cubeToSphere` covers the sphere off the north
+  pole in every dimension, including `n = 0`.
 * `GenLoop.diskBoundaryMap`: the map `GenLoop.toSphere p` with its source written as
   Mathlib's sphere `TopCat.diskBoundary (n + 1)`, the attaching map of a cell killing `⟦p⟧`.
 * `GenLoop.diskMap`: a generalized loop `γ` of dimension `n` read on the disk `𝔻 n`, the map onto
@@ -352,6 +357,24 @@ theorem cubeToSphere_surjective [NeZero n] : Function.Surjective (cubeToSphere n
   (closedBallToSphere_surjective).comp <|
     Homeomorph.ulift.surjective.comp (diskHomeomorphCube.{0} n).symm.surjective
 
+/-- `TauCeti.cubeToSphere` covers the sphere off the north pole in every dimension. For `n = 0` the
+cube is a point, sent to the south pole, the only other point of the zero-sphere. -/
+theorem exists_cubeToSphere_eq_of_ne {s : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1}
+    (hs : s ≠ sphereNorthPole n) : ∃ y, cubeToSphere n y = s := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · -- A point of the zero-sphere other than the north pole is its antipode.
+    have key (t : sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) (ht : t ≠ sphereNorthPole 0) :
+        (t : EuclideanSpace ℝ (Fin 1)) = -(sphereNorthPole 0 : EuclideanSpace ℝ (Fin 1)) :=
+      (eq_or_eq_neg_of_norm_eq_of_finrank_eq_one finrank_euclideanSpace_fin
+        (by rw [norm_eq_of_mem_sphere, norm_eq_of_mem_sphere])).resolve_left
+        fun h ↦ ht (Subtype.ext h)
+    have h0 : cubeToSphere 0 0 ≠ sphereNorthPole 0 := by
+      rw [Ne, cubeToSphere_eq_sphereNorthPole_iff, Cube.boundary_eq_empty]
+      exact Set.notMem_empty _
+    exact ⟨0, Subtype.ext ((key _ h0).trans (key _ hs).symm)⟩
+  · have : NeZero n := ⟨hn.ne'⟩
+    exact cubeToSphere_surjective n s
+
 variable (n) in
 /-- `TauCeti.cubeToSphere` is a quotient map in positive dimension: it is a continuous surjection
 from the compact cube onto the Hausdorff sphere. -/
@@ -488,6 +511,26 @@ theorem toSphere_const : toSphere (const : Ω^ (Fin n) X x) = ContinuousMap.cons
   ext s
   obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
   simp [const_apply]
+
+/-- The pointed map `GenLoop.toSphere p` out of the sphere is injective exactly when the generalized
+loop `p` identifies only points of the boundary of the cube. -/
+theorem injective_toSphere_iff (p : Ω^ (Fin n) X x) :
+    Function.Injective (toSphere p) ↔
+      ∀ y z, p y = p z → y = z ∨ y ∈ Cube.boundary (Fin n) ∧ z ∈ Cube.boundary (Fin n) := by
+  refine ⟨fun h y z hyz ↦ ?_, fun h s s' hss' ↦ ?_⟩
+  · rw [← toSphere_cubeToSphere, ← toSphere_cubeToSphere] at hyz
+    exact cubeToSphere_eq_cubeToSphere_iff.1 (h hyz)
+  · obtain ⟨y, rfl⟩ := cubeToSphere_surjective n s
+    obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s'
+    rw [toSphere_cubeToSphere, toSphere_cubeToSphere] at hss'
+    exact cubeToSphere_eq_cubeToSphere_iff.2 (h y z hss')
+
+/-- The pointed map `GenLoop.toSphere p` out of the sphere is surjective exactly when the
+generalized loop `p` is. -/
+theorem surjective_toSphere_iff (p : Ω^ (Fin n) X x) :
+    Function.Surjective (toSphere p) ↔ Function.Surjective p := by
+  have h : ⇑(toSphere p) ∘ cubeToSphere n = p := funext (toSphere_cubeToSphere p)
+  rw [← h, (cubeToSphere_surjective n).of_comp_iff]
 
 variable (n X x) in
 /-- **Generalized loops are pointed maps out of the sphere.**  The bijection between generalized

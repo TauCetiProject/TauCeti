@@ -78,12 +78,12 @@ private def inclCastSucc (n : ℕ) (R : Type*) [Zero R] [One R] :
 
 private theorem projCastSucc_apply (a : Fin n) (b : Fin (n + 1)) :
     projCastSucc n R a b = if a.castSucc = b then 1 else 0 := by
-  rw [projCastSucc, Matrix.submatrix_apply, Matrix.one_apply]
+  rw [projCastSucc, submatrix_apply, Matrix.one_apply]
   rfl
 
 private theorem inclCastSucc_apply (a : Fin (n + 1)) (b : Fin n) :
     inclCastSucc n R a b = if a = b.castSucc then 1 else 0 := by
-  rw [inclCastSucc, Matrix.submatrix_apply, Matrix.one_apply]
+  rw [inclCastSucc, submatrix_apply, Matrix.one_apply]
   rfl
 
 /-! ### The two square matrices built from the annihilating vectors -/
@@ -98,22 +98,22 @@ private def colFrame (u : Fin (n + 1) → R) : Matrix (Fin (n + 1)) (Fin (n + 1)
 
 private theorem rowFrame_castSucc (w : Fin (n + 1) → R) (a : Fin n) (b : Fin (n + 1)) :
     rowFrame w a.castSucc b = (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) a.castSucc b := by
-  rw [rowFrame, Matrix.updateRow_ne (Fin.castSucc_lt_last a).ne]
+  rw [rowFrame, updateRow_ne (Fin.castSucc_lt_last a).ne]
 
 private theorem colFrame_castSucc (u : Fin (n + 1) → R) (a : Fin (n + 1)) (b : Fin n) :
     colFrame u a b.castSucc = (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) a b.castSucc := by
-  rw [colFrame, Matrix.updateCol_ne (Fin.castSucc_lt_last b).ne]
+  rw [colFrame, updateCol_ne (Fin.castSucc_lt_last b).ne]
 
 private theorem submatrix_rowFrame (w : Fin (n + 1) → R) :
     (rowFrame w).submatrix Fin.castSucc Fin.castSucc = 1 := by
   ext a b
-  rw [Matrix.submatrix_apply, rowFrame_castSucc]
+  rw [submatrix_apply, rowFrame_castSucc]
   simp [Matrix.one_apply]
 
 private theorem submatrix_colFrame (u : Fin (n + 1) → R) :
     (colFrame u).submatrix Fin.castSucc Fin.castSucc = 1 := by
   ext a b
-  rw [Matrix.submatrix_apply, colFrame_castSucc]
+  rw [submatrix_apply, colFrame_castSucc]
   simp [Matrix.one_apply]
 
 end ZeroOne
@@ -129,43 +129,43 @@ theorem submatrix_mul_of_mulVec_single (X Y : Matrix (Fin (n + 1)) (Fin (n + 1))
     (X * Y).submatrix Fin.castSucc Fin.castSucc =
       X.submatrix Fin.castSucc Fin.castSucc * Y.submatrix Fin.castSucc Fin.castSucc := by
   have hcol : X.col (Fin.last n) = Pi.single (Fin.last n) 1 := by
-    rw [← Matrix.mulVec_single_one]
+    rw [← mulVec_single_one]
     exact hX
   have hentry : ∀ i : Fin (n + 1),
       X i (Fin.last n) = (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) i :=
     fun i => congrFun hcol i
   ext u v
-  rw [Matrix.submatrix_apply, Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_castSucc, hentry,
+  rw [submatrix_apply, Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_castSucc, hentry,
     Pi.single_eq_of_ne (Fin.castSucc_lt_last u).ne, zero_mul, add_zero]
   rfl
 
 private theorem projCastSucc_mul {m : Type*} (A : Matrix (Fin (n + 1)) m R) :
     projCastSucc n R * A = A.submatrix Fin.castSucc id := by
-  have h := Matrix.one_submatrix_mul Fin.castSucc (Equiv.refl (Fin (n + 1))) A
+  have h := one_submatrix_mul Fin.castSucc (Equiv.refl (Fin (n + 1))) A
   simpa [projCastSucc] using h
 
 private theorem mul_inclCastSucc {m : Type*} (A : Matrix m (Fin (n + 1)) R) :
     A * inclCastSucc n R = A.submatrix id Fin.castSucc := by
-  have h := Matrix.mul_submatrix_one (Equiv.refl (Fin (n + 1))) Fin.castSucc A
+  have h := mul_submatrix_one (Equiv.refl (Fin (n + 1))) Fin.castSucc A
   simpa [inclCastSucc] using h
 
 private theorem projCastSucc_mul_mul_inclCastSucc (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
     projCastSucc n R * A * inclCastSucc n R = A.submatrix Fin.castSucc Fin.castSucc := by
   simpa only [projCastSucc, inclCastSucc] using
-    Matrix.submatrix_one_mul_mul_submatrix_one Fin.castSucc A
+    submatrix_one_mul_mul_submatrix_one Fin.castSucc A
 
 private theorem projCastSucc_mul_rowFrame (w : Fin (n + 1) → R) :
     projCastSucc n R * rowFrame w = projCastSucc n R := by
   rw [projCastSucc_mul]
   ext a b
-  rw [Matrix.submatrix_apply, rowFrame_castSucc]
+  rw [submatrix_apply, rowFrame_castSucc]
   rfl
 
 private theorem colFrame_mul_inclCastSucc (u : Fin (n + 1) → R) :
     colFrame u * inclCastSucc n R = inclCastSucc n R := by
   rw [mul_inclCastSucc]
   ext a b
-  rw [Matrix.submatrix_apply, colFrame_castSucc]
+  rw [submatrix_apply, colFrame_castSucc]
   rfl
 
 private theorem rowFrame_mul (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) {w : Fin (n + 1) → R}
@@ -175,7 +175,7 @@ private theorem rowFrame_mul (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) {w : Fin
   ext i k
   rcases eq_or_ne i (Fin.last n) with rfl | hi
   · have h1 : (rowFrame w * A) (Fin.last n) k = (w ᵥ* A) k := by
-      simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, rowFrame, Matrix.updateRow_self]
+      simp [Matrix.mul_apply, vecMul, dotProduct, rowFrame, updateRow_self]
     have h2 : ∀ j : Fin n, inclCastSucc n R (Fin.last n) j = 0 := fun j => by
       rw [inclCastSucc_apply]
       simp [(Fin.castSucc_lt_last j).ne']
@@ -187,7 +187,7 @@ private theorem rowFrame_mul (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) {w : Fin
       simp [Fin.castSucc_inj]
     rw [Matrix.mul_apply, Matrix.mul_apply]
     simp only [rowFrame_castSucc, h2, Matrix.one_apply, ite_mul, zero_mul, one_mul,
-      Finset.sum_ite_eq, Finset.mem_univ, ite_true, Matrix.submatrix_apply, id]
+      Finset.sum_ite_eq, Finset.mem_univ, ite_true, submatrix_apply, id]
 
 private theorem mul_colFrame (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) {u : Fin (n + 1) → R}
     (hu : A *ᵥ u = 0) :
@@ -196,7 +196,7 @@ private theorem mul_colFrame (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) {u : Fin
   ext i k
   rcases eq_or_ne k (Fin.last n) with rfl | hk
   · have h1 : (A * colFrame u) i (Fin.last n) = (A *ᵥ u) i := by
-      simp [Matrix.mul_apply, Matrix.mulVec, dotProduct, colFrame, Matrix.updateCol_self]
+      simp [Matrix.mul_apply, mulVec, dotProduct, colFrame, updateCol_self]
     have h2 : ∀ j : Fin n, projCastSucc n R j (Fin.last n) = 0 := fun j => by
       rw [projCastSucc_apply]
       simp [(Fin.castSucc_lt_last j).ne]
@@ -208,7 +208,7 @@ private theorem mul_colFrame (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) {u : Fin
       simp [Fin.castSucc_inj]
     rw [Matrix.mul_apply, Matrix.mul_apply]
     simp only [colFrame_castSucc, h2, Matrix.one_apply, mul_ite, mul_zero, mul_one,
-      Finset.sum_ite_eq', Finset.mem_univ, ite_true, Matrix.submatrix_apply, id]
+      Finset.sum_ite_eq', Finset.mem_univ, ite_true, submatrix_apply, id]
 
 end NonAssocSemiring
 
@@ -218,7 +218,7 @@ variable [CommRing R]
 theorem det_eq_mul_det_submatrix_castSucc_of_row (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     (h : ∀ j, j ≠ Fin.last n → A (Fin.last n) j = 0) :
     A.det = A (Fin.last n) (Fin.last n) * (A.submatrix Fin.castSucc Fin.castSucc).det := by
-  rw [Matrix.det_succ_row A (Fin.last n),
+  rw [det_succ_row A (Fin.last n),
     Finset.sum_eq_single (Fin.last n) (fun j _ hj => by rw [h j hj]; ring) (by simp)]
   rw [Fin.succAbove_last, Fin.val_last, Even.neg_one_pow ⟨n, rfl⟩, one_mul]
 
@@ -227,8 +227,8 @@ diagonal. -/
 theorem det_eq_mul_det_submatrix_castSucc_of_col (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     (h : ∀ i, i ≠ Fin.last n → A i (Fin.last n) = 0) :
     A.det = A (Fin.last n) (Fin.last n) * (A.submatrix Fin.castSucc Fin.castSucc).det := by
-  rw [← Matrix.det_transpose A, det_eq_mul_det_submatrix_castSucc_of_row Aᵀ h,
-    Matrix.transpose_apply, ← Matrix.transpose_submatrix, Matrix.det_transpose]
+  rw [← det_transpose A, det_eq_mul_det_submatrix_castSucc_of_row Aᵀ h,
+    transpose_apply, ← transpose_submatrix, det_transpose]
 
 /-- The determinant of a matrix whose last row is that of the identity is its corner minor. -/
 theorem det_eq_det_submatrix_castSucc_of_apply_last {A : Matrix (Fin (n + 1)) (Fin (n + 1)) R}
@@ -243,12 +243,12 @@ theorem det_updateCol_last_single (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
     (A.updateCol (Fin.last n) (Pi.single (Fin.last n) 1)).det =
       (A.submatrix Fin.castSucc Fin.castSucc).det := by
   rw [det_eq_mul_det_submatrix_castSucc_of_col _ fun i hi => by
-      rw [Matrix.updateCol_self, Pi.single_eq_of_ne hi],
-    Matrix.updateCol_self, Pi.single_eq_same, one_mul]
+      rw [updateCol_self, Pi.single_eq_of_ne hi],
+    updateCol_self, Pi.single_eq_same, one_mul]
   congr 1
   ext a b
-  rw [Matrix.submatrix_apply, Matrix.submatrix_apply,
-    Matrix.updateCol_ne (Fin.castSucc_lt_last b).ne]
+  rw [submatrix_apply, submatrix_apply,
+    updateCol_ne (Fin.castSucc_lt_last b).ne]
 
 /-- The determinant of a matrix `M - 1` whose last column has been replaced by
 `c • M.col (last) - e (last)`, in terms of the corner minor of `M - 1`. -/
@@ -264,20 +264,20 @@ theorem det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero
     simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Matrix.sub_apply, Matrix.one_apply,
       Pi.single_apply]
     split_ifs <;> ring
-  rw [hfun, Matrix.det_updateCol_add, Matrix.det_updateCol_smul, Matrix.det_updateCol_smul,
-    Matrix.updateCol_eq_self, hdet, Matrix.det_updateCol_last_single, mul_zero, zero_add]
+  rw [hfun, det_updateCol_add, det_updateCol_smul, det_updateCol_smul,
+    updateCol_eq_self, hdet, det_updateCol_last_single, mul_zero, zero_add]
 
 private theorem det_rowFrame (w : Fin (n + 1) → R) : (rowFrame w).det = w (Fin.last n) := by
-  rw [det_eq_mul_det_submatrix_castSucc_of_col _ ?_, submatrix_rowFrame, Matrix.det_one, mul_one,
-    rowFrame, Matrix.updateRow_self]
+  rw [det_eq_mul_det_submatrix_castSucc_of_col _ ?_, submatrix_rowFrame, det_one, mul_one,
+    rowFrame, updateRow_self]
   intro i hi
-  rw [rowFrame, Matrix.updateRow_ne hi, Matrix.one_apply_ne hi]
+  rw [rowFrame, updateRow_ne hi, one_apply_ne hi]
 
 private theorem det_colFrame (u : Fin (n + 1) → R) : (colFrame u).det = u (Fin.last n) := by
-  rw [det_eq_mul_det_submatrix_castSucc_of_row _ ?_, submatrix_colFrame, Matrix.det_one, mul_one,
-    colFrame, Matrix.updateCol_self]
+  rw [det_eq_mul_det_submatrix_castSucc_of_row _ ?_, submatrix_colFrame, det_one, mul_one,
+    colFrame, updateCol_self]
   intro j hj
-  rw [colFrame, Matrix.updateCol_ne hj, Matrix.one_apply_ne' hj]
+  rw [colFrame, updateCol_ne hj, one_apply_ne' hj]
 
 /-! ### Conjugation invariance of the corner minor -/
 
@@ -285,13 +285,13 @@ private theorem det_projCastSucc_mul_mul (N : Matrix (Fin (n + 1)) (Fin (n + 1))
     {w : Fin (n + 1) → R} (hwN : w ᵥ* N = w) (hw : IsUnit (w (Fin.last n))) :
     (projCastSucc n R * N * ((rowFrame w)⁻¹ * inclCastSucc n R)).det = N.det := by
   have hdet : IsUnit (rowFrame w).det := by rw [det_rowFrame]; exact hw
-  have hmul : rowFrame w * (rowFrame w)⁻¹ = 1 := Matrix.mul_nonsing_inv _ hdet
-  have hlast : rowFrame w (Fin.last n) = w := Matrix.updateRow_self
+  have hmul : rowFrame w * (rowFrame w)⁻¹ = 1 := mul_nonsing_inv _ hdet
+  have hlast : rowFrame w (Fin.last n) = w := updateRow_self
   have hrow : (rowFrame w * N * (rowFrame w)⁻¹) (Fin.last n) =
       (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (Fin.last n) := by
     have h1 : (rowFrame w * N) (Fin.last n) = rowFrame w (Fin.last n) := by
-      rw [Matrix.mul_apply_eq_vecMul, hlast, hwN]
-    rw [Matrix.mul_apply_eq_vecMul, h1, ← Matrix.mul_apply_eq_vecMul, hmul]
+      rw [mul_apply_eq_vecMul, hlast, hwN]
+    rw [mul_apply_eq_vecMul, h1, ← mul_apply_eq_vecMul, hmul]
   have hsub : (rowFrame w * N * (rowFrame w)⁻¹).submatrix Fin.castSucc Fin.castSucc =
       projCastSucc n R * N * ((rowFrame w)⁻¹ * inclCastSucc n R) := by
     rw [← projCastSucc_mul_mul_inclCastSucc]
@@ -301,37 +301,37 @@ private theorem det_projCastSucc_mul_mul (N : Matrix (Fin (n + 1)) (Fin (n + 1))
       _ = projCastSucc n R * N * ((rowFrame w)⁻¹ * inclCastSucc n R) := by
           rw [projCastSucc_mul_rowFrame, Matrix.mul_assoc]
   have hone : (rowFrame w).det * ((rowFrame w)⁻¹).det = 1 := by
-    rw [← Matrix.det_mul, hmul, Matrix.det_one]
+    rw [← det_mul, hmul, det_one]
   have hexp : (rowFrame w * N * (rowFrame w)⁻¹).det =
       (projCastSucc n R * N * ((rowFrame w)⁻¹ * inclCastSucc n R)).det := by
     rw [det_eq_mul_det_submatrix_castSucc_of_row _ fun j hj => by
-      rw [congrFun hrow j, Matrix.one_apply_ne' hj], hsub, congrFun hrow (Fin.last n),
-      Matrix.one_apply_eq, one_mul]
-  rw [← hexp, Matrix.det_mul, Matrix.det_mul]
+      rw [congrFun hrow j, one_apply_ne' hj], hsub, congrFun hrow (Fin.last n),
+      one_apply_eq, one_mul]
+  rw [← hexp, det_mul, det_mul]
   linear_combination N.det * hone
 
 private theorem det_mul_mul_inclCastSucc (M : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     {u : Fin (n + 1) → R} (hMu : M *ᵥ u = u) (hu : IsUnit (u (Fin.last n))) :
     (projCastSucc n R * (colFrame u)⁻¹ * M * inclCastSucc n R).det = M.det := by
   have hdet : IsUnit (colFrame u).det := by rw [det_colFrame]; exact hu
-  have hmul : (colFrame u)⁻¹ * colFrame u = 1 := Matrix.nonsing_inv_mul _ hdet
+  have hmul : (colFrame u)⁻¹ * colFrame u = 1 := nonsing_inv_mul _ hdet
   have hUe : colFrame u *ᵥ Pi.single (Fin.last n) 1 = u := by
-    rw [Matrix.mulVec_single_one]
+    rw [mulVec_single_one]
     funext i
-    rw [Matrix.col_apply, colFrame, Matrix.updateCol_self]
+    rw [col_apply, colFrame, updateCol_self]
   have hUinv : (colFrame u)⁻¹ *ᵥ u = Pi.single (Fin.last n) 1 := by
     have h : (colFrame u)⁻¹ *ᵥ (colFrame u *ᵥ Pi.single (Fin.last n) 1) =
         Pi.single (Fin.last n) 1 := by
-      rw [Matrix.mulVec_mulVec, hmul, Matrix.one_mulVec]
+      rw [mulVec_mulVec, hmul, one_mulVec]
     rwa [hUe] at h
   have key : ∀ i, ((colFrame u)⁻¹ * M * colFrame u) i (Fin.last n) =
       (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) i := by
     have hkey : ((colFrame u)⁻¹ * M * colFrame u) *ᵥ Pi.single (Fin.last n) 1 =
         Pi.single (Fin.last n) 1 := by
-      rw [← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec, hUe, hMu, hUinv]
+      rw [← mulVec_mulVec, ← mulVec_mulVec, hUe, hMu, hUinv]
     intro i
     have h := congrFun hkey i
-    rwa [Matrix.mulVec_single_one, Matrix.col_apply] at h
+    rwa [mulVec_single_one, col_apply] at h
   have hsub : ((colFrame u)⁻¹ * M * colFrame u).submatrix Fin.castSucc Fin.castSucc =
       projCastSucc n R * (colFrame u)⁻¹ * M * inclCastSucc n R := by
     rw [← projCastSucc_mul_mul_inclCastSucc]
@@ -341,12 +341,12 @@ private theorem det_mul_mul_inclCastSucc (M : Matrix (Fin (n + 1)) (Fin (n + 1))
       _ = projCastSucc n R * (colFrame u)⁻¹ * M * inclCastSucc n R := by
           rw [colFrame_mul_inclCastSucc]
   have hone : ((colFrame u)⁻¹).det * (colFrame u).det = 1 := by
-    rw [← Matrix.det_mul, hmul, Matrix.det_one]
+    rw [← det_mul, hmul, det_one]
   have hexp : ((colFrame u)⁻¹ * M * colFrame u).det =
       (projCastSucc n R * (colFrame u)⁻¹ * M * inclCastSucc n R).det := by
     rw [det_eq_mul_det_submatrix_castSucc_of_col _ fun i hi => by
       rw [key i, Pi.single_eq_of_ne hi], hsub, key (Fin.last n), Pi.single_eq_same, one_mul]
-  rw [← hexp, Matrix.det_mul, Matrix.det_mul]
+  rw [← hexp, det_mul, det_mul]
   linear_combination M.det * hone
 
 /-- **The corner minor is a conjugation invariant on doubly singular matrices.** If a square
@@ -360,26 +360,26 @@ theorem det_submatrix_castSucc_conj (A N : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     (hw : IsUnit (w (Fin.last n))) :
     ((N * A * N⁻¹).submatrix Fin.castSucc Fin.castSucc).det =
       (A.submatrix Fin.castSucc Fin.castSucc).det := by
-  have hNinv : N * N⁻¹ = 1 := Matrix.mul_nonsing_inv _ hN
-  have hNinv' : N⁻¹ * N = 1 := Matrix.nonsing_inv_mul _ hN
+  have hNinv : N * N⁻¹ = 1 := mul_nonsing_inv _ hN
+  have hNinv' : N⁻¹ * N = 1 := nonsing_inv_mul _ hN
   have hNinvu : N⁻¹ *ᵥ u = u := by
     conv_lhs => rw [← hNu]
-    rw [Matrix.mulVec_mulVec, hNinv', Matrix.one_mulVec]
+    rw [mulVec_mulVec, hNinv', one_mulVec]
   have hrowdet : IsUnit (rowFrame w).det := by rw [det_rowFrame]; exact hw
   have hcoldet : IsUnit (colFrame u).det := by rw [det_colFrame]; exact hu
-  have hGinv : (rowFrame w)⁻¹ * rowFrame w = 1 := Matrix.nonsing_inv_mul _ hrowdet
-  have hUinv : colFrame u * (colFrame u)⁻¹ = 1 := Matrix.mul_nonsing_inv _ hcoldet
+  have hGinv : (rowFrame w)⁻¹ * rowFrame w = 1 := nonsing_inv_mul _ hrowdet
+  have hUinv : colFrame u * (colFrame u)⁻¹ = 1 := mul_nonsing_inv _ hcoldet
   -- the canonical factorisation of `A` through the corner index type
   have hA1 : (rowFrame w)⁻¹ * inclCastSucc n R * (projCastSucc n R * A) = A := by
     calc (rowFrame w)⁻¹ * inclCastSucc n R * (projCastSucc n R * A)
         = (rowFrame w)⁻¹ * (inclCastSucc n R * (projCastSucc n R * A)) := by
           rw [Matrix.mul_assoc]
-      _ = A := by rw [← rowFrame_mul A hwA, ← Matrix.mul_assoc, hGinv, Matrix.one_mul]
+      _ = A := by rw [← rowFrame_mul A hwA, ← Matrix.mul_assoc, hGinv, one_mul]
   have hA2 : A * inclCastSucc n R * (projCastSucc n R * (colFrame u)⁻¹) = A := by
     calc A * inclCastSucc n R * (projCastSucc n R * (colFrame u)⁻¹)
         = A * inclCastSucc n R * projCastSucc n R * (colFrame u)⁻¹ :=
           (Matrix.mul_assoc _ _ _).symm
-      _ = A := by rw [← mul_colFrame A hAu, Matrix.mul_assoc, hUinv, Matrix.mul_one]
+      _ = A := by rw [← mul_colFrame A hAu, Matrix.mul_assoc, hUinv, mul_one]
   have hPA : projCastSucc n R * A =
       A.submatrix Fin.castSucc Fin.castSucc * (projCastSucc n R * (colFrame u)⁻¹) := by
     calc projCastSucc n R * A
@@ -396,9 +396,9 @@ theorem det_submatrix_castSucc_conj (A N : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     conv_lhs => rw [← hA1]
     rw [hPA]
     simp only [Matrix.mul_assoc]
-  rw [main, Matrix.det_mul, Matrix.det_mul,
+  rw [main, det_mul, det_mul,
     det_projCastSucc_mul_mul N hwN hw, det_mul_mul_inclCastSucc N⁻¹ hNinvu hu]
-  have hone : N.det * (N⁻¹).det = 1 := by rw [← Matrix.det_mul, hNinv, Matrix.det_one]
+  have hone : N.det * (N⁻¹).det = 1 := by rw [← det_mul, hNinv, det_one]
   linear_combination (A.submatrix Fin.castSucc Fin.castSucc).det * hone
 
 end Matrix

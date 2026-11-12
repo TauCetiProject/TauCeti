@@ -129,9 +129,9 @@ theorem exists_tendsto_eLpNorm_edist_of_tendsto_bound [CompleteSpace Z] (hp : 1 
   obtain ⟨N, hN⟩ := (ENNReal.tendsto_atTop_zero.1 hB) ε hε
   refine ⟨N, fun n hn ↦ (eLpNorm_ennreal_le_of_ae_tendsto (u := atTop)
     (fun m ↦ (hf n).edist (hf (φ m)))
-    (hlim.mono fun x hx ↦ tendsto_const_nhds.edist hx) ?_).trans (hN N le_rfl)⟩
-  filter_upwards [hφ.tendsto_atTop (eventually_ge_atTop N)] with m hm
-  exact h_cau N n (φ m) hn hm
+    (hlim.mono fun x hx ↦ tendsto_const_nhds.edist hx)
+    ((hφ.tendsto_atTop.eventually_ge_atTop N).frequently.mono fun m hm ↦
+      h_cau N n (φ m) hn hm)).trans (hN N le_rfl)⟩
 
 end PseudoEMetricSpace
 

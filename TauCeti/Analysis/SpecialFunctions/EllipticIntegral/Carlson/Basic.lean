@@ -371,7 +371,6 @@ private theorem carlsonRC_ofReal_eq_of_hasDerivAt {x y : ℝ} (hx : 0 ≤ x) (hy
 theorem carlsonRC_ofReal_eq_arccos {x y : ℝ} (hx : 0 ≤ x) (hxy : x < y) :
     carlsonRC x y = ((Real.arccos (√(x / y)) / √(y - x) : ℝ) : ℂ) := by
   have hy : 0 < y := hx.trans_lt hxy
-  have hc : 0 < √(y - x) := Real.sqrt_pos.mpr (by linarith)
   rw [carlsonRC_ofReal_eq_of_hasDerivAt hx hy
     (G := fun t => -(2 / √(y - x)) * Real.arccos (√((t + x) / (t + y)))) ?_ ?_ ?_]
   · simp only [zero_add]
@@ -401,8 +400,6 @@ theorem carlsonRC_ofReal_eq_arccos {x y : ℝ} (hx : 0 ≤ x) (hxy : x < y) :
       show 1 - (t + x) / (t + y) = (y - x) / (t + y) by field_simp; ring,
       Real.sqrt_div (by linarith : (0 : ℝ) ≤ y - x), Real.sqrt_div htx.le,
       show 1 * (t + y) - (t + x) * 1 = y - x by ring]
-    have hsx := Real.sqrt_pos.mpr htx
-    have hsy := Real.sqrt_pos.mpr hty
     field_simp
     rw [Real.sq_sqrt (by linarith), Real.sq_sqrt hty.le]
     ring
@@ -414,7 +411,6 @@ theorem carlsonRC_ofReal_eq_arccos {x y : ℝ} (hx : 0 ≤ x) (hxy : x < y) :
 `R_C(x, y) = arcosh (√(x / y)) / √(x - y)`. -/
 theorem carlsonRC_ofReal_eq_arcosh {x y : ℝ} (hy : 0 < y) (hyx : y < x) :
     carlsonRC x y = ((Real.arcosh (√(x / y)) / √(x - y) : ℝ) : ℂ) := by
-  have hc : 0 < √(x - y) := Real.sqrt_pos.mpr (by linarith)
   have hone (t : ℝ) (ht : 0 ≤ t) : 1 < √((t + x) / (t + y)) := by
     rw [Real.lt_sqrt zero_le_one, one_pow, one_lt_div (by linarith)]
     linarith
@@ -436,8 +432,6 @@ theorem carlsonRC_ofReal_eq_arcosh {x y : ℝ} (hy : 0 < y) (hyx : y < x) :
       show (t + x) / (t + y) - 1 = (x - y) / (t + y) by field_simp; ring,
       Real.sqrt_div (by linarith : (0 : ℝ) ≤ x - y), Real.sqrt_div htx.le,
       show 1 * (t + y) - (t + x) * 1 = -(x - y) by ring]
-    have hsx := Real.sqrt_pos.mpr htx
-    have hsy := Real.sqrt_pos.mpr hty
     field_simp
     rw [Real.sq_sqrt (by linarith), Real.sq_sqrt hty.le]
     ring

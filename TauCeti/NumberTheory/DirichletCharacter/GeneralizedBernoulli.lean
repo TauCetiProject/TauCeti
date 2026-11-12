@@ -45,6 +45,8 @@ terms used in Eisenstein series with character.
   of `B₁,χ` for a nontrivial character, and
   `DirichletCharacter.natCast_mul_generalizedBernoulli_one_of_dvd` computes it from the
   representatives modulo any multiple of the modulus.
+* `DirichletCharacter.generalizedBernoulli_eq_pow_mul_sum_bernoulli_eval` recomputes `Bₖ,χ` for
+  `k ≥ 2` from the representatives in `{0, …, N - 1}`, since `Bₖ(0) = Bₖ(1)`.
 * `DirichletCharacter.generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg` gives `Bₖ,χ = 0` when
   the parities of `χ` and `k` differ, except for `k = 1` at modulus one.
 
@@ -237,5 +239,29 @@ theorem generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg [NeZero N]
   have : HasUniqueDiv R := .of_module_rat R
   rw [generalizedBernoulli_def]
   exact mul_eq_zero_of_right _ hodd.sum_eq_zero
+
+/-- For `k ≥ 2`, `B_{k,χ}` equals `N^(k-1) ∑ₐ χ(a) B_k(a.val / N)`, computed with representatives in
+`{0, …, N-1}`. This is allowed because `B_k(0) = B_k(1)`. -/
+theorem generalizedBernoulli_eq_pow_mul_sum_bernoulli_eval [NeZero N]
+    (χ : DirichletCharacter R N) {k : ℕ} (hk : 2 ≤ k) :
+    χ.generalizedBernoulli k =
+      (N : R) ^ (k - 1) *
+        ∑ a : ZMod N, χ a * algebraMap ℚ R ((Polynomial.bernoulli k).eval ((a.val : ℚ) / N)) := by
+  classical
+  rw [generalizedBernoulli_def]
+  have hexp : (k : ℤ) - 1 = ((k - 1 : ℕ) : ℤ) := by omega
+  rw [hexp, zpow_natCast, map_pow, map_natCast]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro a _
+  congr 2
+  by_cases ha : a = 0
+  · subst a
+    simp only [ite_true, div_self (Nat.cast_ne_zero.mpr (NeZero.ne N) : (N : ℚ) ≠ 0),
+      ZMod.val_zero, Nat.cast_zero, zero_div]
+    have h1 := Polynomial.bernoulli_eval_one_add k 0
+    rw [add_zero, zero_pow (by omega : k - 1 ≠ 0), mul_zero, add_zero] at h1
+    simp [h1]
+  · simp [ha]
 
 end DirichletCharacter
