@@ -26,10 +26,12 @@ the regularity the variational equation of a general time-dependent flow
 (`CovariantDerivative.alongCurve_mfderiv_timeDependentFlowOf`) needs. The equation holds wherever
 the flow is defined; no completeness is assumed.
 
-Along a one-periodic orbit this is the equation of the linearized return map, which a unitary
-trivialization turns into the path of symplectic matrices whose Conley–Zehnder index grades the
-orbit in Hamiltonian Floer homology, and it is the equation compared with the asymptotic operator
-of the linearized Floer equation at the ends of a Floer cylinder.
+Along a one-periodic orbit this is the equation of the linearized return map. Neither closedness
+of `σ` nor any property of the orbit is assumed here. When `σ` is moreover closed, the flow
+preserves `σ`, so a unitary trivialization turns the linearized flow into a path of symplectic
+matrices; when the orbit is in addition nondegenerate, the Conley–Zehnder index of that path grades
+the orbit in Hamiltonian Floer homology, and the equation is the one compared with the asymptotic
+operator of the linearized Floer equation at the ends of a Floer cylinder.
 
 ## Main results
 
