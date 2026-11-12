@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
+public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Germ
 public import TauCeti.Analysis.Meromorphic.OrderFiltration
 public import Mathlib.LinearAlgebra.DFinsupp
-import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Data.DFinsupp.Basic
 
 /-!
 # Mittag-Leffler principal parts relative to a divisor
@@ -75,10 +76,8 @@ theorem mapOfLE_mk (h : D ≤ E) (x : X) (φ : meromorphicGerms ℂ (chartAt ℂ
     mapOfLE h x (Submodule.Quotient.mk φ) = Submodule.Quotient.mk φ :=
   (rfl)
 
-theorem mapOfLE_surjective (h : D ≤ E) (x : X) : Function.Surjective (mapOfLE h x) := by
-  intro μ
-  induction μ using Submodule.Quotient.induction_on with
-  | _ φ => exact ⟨Submodule.Quotient.mk φ, rfl⟩
+theorem mapOfLE_surjective (h : D ≤ E) (x : X) : Function.Surjective (mapOfLE h x) :=
+  Submodule.factor_surjective (meromorphicGerms.orderGE_antitone _ (neg_le_neg (h x)))
 
 end LocalPrincipalPart
 
@@ -121,40 +120,6 @@ namespace MeromorphicFunction
 
 variable [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X]
 
-/-- The **coordinate germ** of a meromorphic function at `x`: the germ of its finite part read
-in the preferred chart at `x`, as an algebra map to the field of meromorphic germs. -/
-def toChartGerm (x : X) : MeromorphicFunction X →ₐ[ℂ] meromorphicGerms ℂ (chartAt ℂ x x) where
-  toFun f := meromorphicGerms.mk (f.finitePart ∘ (chartAt ℂ x).symm)
-    ((meromorphicAt_def _ _).1 (f.meromorphicAt_finitePart x))
-  map_one' := by
-    rw [← meromorphicGerms.mk_one, meromorphicGerms.mk_eq_mk_iff, finitePart_one]
-    rfl
-  map_mul' f g := by
-    rw [← meromorphicGerms.mk_mul, meromorphicGerms.mk_eq_mk_iff]
-    exact (finitePart_mul_eventuallyEq f g x).comp_tendsto (tendsto_chartAt_symm_nhdsNE x)
-  map_zero' := by
-    rw [← meromorphicGerms.mk_zero, meromorphicGerms.mk_eq_mk_iff, finitePart_zero]
-    rfl
-  map_add' f g := by
-    rw [← meromorphicGerms.mk_add, meromorphicGerms.mk_eq_mk_iff]
-    exact (finitePart_add_eventuallyEq f g x).comp_tendsto (tendsto_chartAt_symm_nhdsNE x)
-  commutes' c := by
-    rw [← meromorphicGerms.mk_const, meromorphicGerms.mk_eq_mk_iff, finitePart_algebraMap]
-    rfl
-
-@[simp]
-theorem coe_toChartGerm (x : X) (f : MeromorphicFunction X) :
-    (toChartGerm x f : Germ (𝓝[≠] (chartAt ℂ x x)) ℂ) =
-      (f.finitePart ∘ (chartAt ℂ x).symm : ℂ → ℂ) :=
-  meromorphicGerms.coe_mk _ _
-
-/-- The coordinate germ has the order of the meromorphic function. -/
-@[simp]
-theorem order_toChartGerm (x : X) (f : MeromorphicFunction X) :
-    meromorphicGerms.order (toChartGerm x f) = order x f := by
-  rw [order_apply, meromorphicOrderAt_def, toChartGerm, AlgHom.coe_mk, RingHom.coe_mk,
-    MonoidHom.coe_mk, OneHom.coe_mk, meromorphicGerms.order_mk]
-
 /-- The principal part of `f` relative to `D` vanishes at `x` exactly when `f` satisfies the
 order bound of `𝒪_D` at `x`. -/
 theorem mk_toChartGerm_eq_zero_iff {D : WeilDivisor X} {x : X} {f : MeromorphicFunction X} :
@@ -184,31 +149,27 @@ theorem finite_setOf_not_neg_le_order (D : WeilDivisor X) (f : MeromorphicFuncti
 relative to a divisor `D`: at each point, the coordinate germ modulo the stalk of `𝒪_D`. Only
 the poles of `f` and the points of the support of `D` contribute. -/
 def principalParts (D : WeilDivisor X) : MeromorphicFunction X →ₗ[ℂ] PrincipalParts D where
-  toFun f :=
-    { toFun x := Submodule.Quotient.mk (toChartGerm x f)
-      support' := Trunc.mk ⟨(finite_setOf_not_neg_le_order D f).toFinset.val, fun x ↦ by
-        by_cases hx : ((-D x : ℤ) : WithTop ℤ) ≤ order x f
-        · exact Or.inr (mk_toChartGerm_eq_zero_iff.2 hx)
-        · exact Or.inl (by simpa using hx)⟩ }
+  toFun f := DFinsupp.ofSupportFinite (fun x ↦ Submodule.Quotient.mk (toChartGerm x f))
+    ((finite_setOf_not_neg_le_order D f).subset fun _ hx h ↦ hx (mk_toChartGerm_eq_zero_iff.2 h))
   map_add' f g := by
     ext x
-    simp only [map_add, Submodule.Quotient.mk_add, DFinsupp.coe_mk', DFinsupp.coe_add,
-      Pi.add_apply]
+    simp only [map_add, Submodule.Quotient.mk_add, DFinsupp.ofSupportFinite_apply,
+      DFinsupp.coe_add, Pi.add_apply]
   map_smul' c f := by
     ext x
-    simp only [map_smul, Submodule.Quotient.mk_smul, DFinsupp.coe_mk', DFinsupp.coe_smul,
-      Pi.smul_apply, RingHom.id_apply]
+    simp only [map_smul, Submodule.Quotient.mk_smul, DFinsupp.ofSupportFinite_apply,
+      DFinsupp.coe_smul, Pi.smul_apply, RingHom.id_apply]
 
 @[simp]
 theorem principalParts_apply (D : WeilDivisor X) (f : MeromorphicFunction X) (x : X) :
     principalParts D f x = Submodule.Quotient.mk (toChartGerm x f) :=
-  (rfl)
+  DFinsupp.ofSupportFinite_apply _ _ x
 
 /-- The principal part of `f` relative to `D` vanishes at `x` exactly when `f` satisfies the
 order bound of `𝒪_D` at `x`. -/
 theorem principalParts_apply_eq_zero_iff {D : WeilDivisor X} {f : MeromorphicFunction X}
-    {x : X} : principalParts D f x = 0 ↔ ((-D x : ℤ) : WithTop ℤ) ≤ order x f :=
-  mk_toChartGerm_eq_zero_iff
+    {x : X} : principalParts D f x = 0 ↔ ((-D x : ℤ) : WithTop ℤ) ≤ order x f := by
+  rw [principalParts_apply, mk_toChartGerm_eq_zero_iff]
 
 /-- Principal parts vanish away from the poles and the support of the divisor. -/
 theorem principalParts_apply_eq_zero {D : WeilDivisor X} {f : MeromorphicFunction X} {x : X}
@@ -219,7 +180,9 @@ theorem principalParts_apply_eq_zero {D : WeilDivisor X} {f : MeromorphicFunctio
 @[simp]
 theorem mapOfLE_principalParts {D E : WeilDivisor X} (h : D ≤ E) (f : MeromorphicFunction X) :
     PrincipalParts.mapOfLE h (principalParts D f) = principalParts E f :=
-  DFinsupp.ext fun _ ↦ rfl
+  DFinsupp.ext fun x ↦ by
+    rw [PrincipalParts.mapOfLE_apply, principalParts_apply, principalParts_apply,
+      LocalPrincipalPart.mapOfLE_mk]
 
 /-- **Left exactness of the Mittag-Leffler sequence.** The meromorphic functions with zero
 principal parts relative to `D` are exactly the global sections of `𝒪_D`:
