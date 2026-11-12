@@ -168,12 +168,6 @@ theorem spatialSlice_zero (μ : Measure (ℝ≥0 × V)) : spatialSlice μ 0 = μ
     simp
   rw [spatialSlice, hone, withDensity_one]
 
-/-- A measure on `ℝ≥0 × V` is finite as soon as its spatial slice at time `0`, which is its
-spatial marginal, is. -/
-theorem _root_.MeasureTheory.Measure.isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero
-    (μ : Measure (ℝ≥0 × V)) [IsFiniteMeasure (spatialSlice μ 0)] : IsFiniteMeasure μ :=
-  ⟨by rw [← Measure.snd_univ, ← spatialSlice_zero]; exact measure_lt_top _ _⟩
-
 /-- Every spatial slice of the zero measure is the zero measure. -/
 @[simp]
 theorem spatialSlice_zero_measure (t : ℝ≥0) :
@@ -240,10 +234,11 @@ slices. -/
 theorem Measure.ext_of_forall_spatialSlice_eq {μ ν : Measure (ℝ≥0 × V)} [IsFiniteMeasure μ]
     (hslice : ∀ t : ℝ≥0, spatialSlice μ t = spatialSlice ν t) : μ = ν := by
   -- The slice at time `0` is the spatial marginal, so `ν` is finite too.
-  have : IsFiniteMeasure (spatialSlice ν 0) := by
-    rw [← hslice 0]
+  have : IsFiniteMeasure (ν.map Prod.snd) := by
+    change IsFiniteMeasure ν.snd
+    rw [← spatialSlice_zero, ← hslice 0]
     infer_instance
-  have := Measure.isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero ν
+  have := Measure.isFiniteMeasure_of_map (f := Prod.snd) (μ := ν) measurable_snd.aemeasurable
   -- Step 1: Laplace determinacy on `ℝ≥0` identifies every measurable rectangle.
   have hrect : ∀ B : Set V, MeasurableSet B → ∀ A : Set ℝ≥0, MeasurableSet A →
       μ (A ×ˢ B) = ν (A ×ˢ B) := by
@@ -341,11 +336,13 @@ theorem representsLaplaceFourier_of_forall_spatialSlice_eq
     (hFcont : ∀ t : ℝ≥0, Continuous fun a => F (t, a))
     (h : ∀ t : ℝ≥0, spatialSlice μ t = bochnerMeasure fun a => F (t, a)) :
     RepresentsLaplaceFourier μ F := by
-  have : IsFiniteMeasure (spatialSlice μ 0) := by
-    rw [h 0]
+  have : IsFiniteMeasure (μ.map Prod.snd) := by
+    change IsFiniteMeasure μ.snd
+    rw [← spatialSlice_zero, h 0]
     infer_instance
-  refine representsLaplaceFourier_iff.mpr
-    ⟨Measure.isFiniteMeasure_of_isFiniteMeasure_spatialSlice_zero μ, fun x => ?_⟩
+  have : IsFiniteMeasure μ :=
+    Measure.isFiniteMeasure_of_map (f := Prod.snd) measurable_snd.aemeasurable
+  refine representsLaplaceFourier_iff.mpr ⟨this, fun x => ?_⟩
   rw [← Prod.mk.eta (p := x), ← integral_fourierAtom_spatialSlice, h x.1,
     integral_fourierAtom_bochnerMeasure (hFcont x.1) (hFpd x.1) x.2]
 
