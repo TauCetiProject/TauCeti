@@ -29,7 +29,7 @@ that is bounded on `L²` and orthogonal to the weak kernel.
   `mem_sobolevFields_natCast_add_one_of_gaugeFixedOperator_eq` show that a `C¹`, `L²` classical
   solution is smooth and gains one Sobolev derivative over `f`. So the weak and classical `L²`
   kernels coincide, and lie in every `H^k`.
-* `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields`:
+* `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields_add_one`:
   at a continuous vortex lying in `A_m^k` for every `k`, the weak right inverse `Q` of `L_x` maps
   `H^k` into `H^(k+1)` for every `k`. This is the vanishing of the cokernel of `L_x` on the
   Sobolev scale.
@@ -173,8 +173,9 @@ operator `Q` on `L²(ℂ; ℝ⁴)` such that
 * `Q` maps `H^k` into `H^(k+1)` for every `k`.
 
 In particular `L_x : H^(k+1) → H^k` is surjective in the weak sense for every `k`: the cokernel of
-`L_x` vanishes on the Sobolev scale. -/
-theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields
+`L_x` vanishes on the Sobolev scale. This extends to every `k` the case `k = 0`,
+`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields`. -/
+theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields_add_one
     (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ framedFieldSpace ρ m k)
     (hsol : ∀ z, equation x z = 0) :
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 volume,
@@ -205,7 +206,7 @@ theorem exists_contDiff_gaugeFixedOperator_eq_of_forall_mem_framedFieldSpace (hx
     ∃ y : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ y ∧ (∀ k : ℕ, y ∈ sobolevFields k) ∧
       ∀ z, gaugeFixedOperator x y z = f z := by
   obtain ⟨Q, hQ, -⟩ :=
-    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields
+    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields_add_one
       hx hmem hsol
   have hfL : MemLp f 2 volume := by simpa using hf 0
   obtain ⟨y, hy, -, hyk, heq⟩ := exists_contDiff_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq

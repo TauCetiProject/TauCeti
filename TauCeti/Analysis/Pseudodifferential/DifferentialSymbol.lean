@@ -67,7 +67,7 @@ theorem differentialSymbol_eq_sum_pow_mul (s : Finset ι) (v : ∀ i, Fin (k i) 
 @[simp]
 theorem differentialSymbol_empty (v : ∀ i, Fin (k i) → E)
     (b : ι → E → V →L[ℂ] W) : differentialSymbol ∅ v b = 0 := by
-  funext p
+  funext _
   simp [differentialSymbol]
 
 @[simp]
