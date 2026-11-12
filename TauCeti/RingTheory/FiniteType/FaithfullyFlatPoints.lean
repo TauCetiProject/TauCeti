@@ -37,9 +37,9 @@ prescribed point, which is a nontrivial finite-type `K`-algebra and therefore ha
 * The Stacks Project, Tag 00HQ, Lemma 10.39.16.
 * The Stacks Project, Tag 00FV, *Hilbert Nullstellensatz*.
 
-This is the algebraically-closed-point lifting prerequisite for Layer 5, "The unipotent radical",
-of the ReductiveGroups roadmap. It is the pointwise bridge needed to transfer unipotence from a
-finite-type affine group onto the scheme-theoretic image of a faithfully flat group morphism.
+This is the pointwise bridge needed to transfer unipotence from a finite-type affine group onto the
+scheme-theoretic image of a faithfully flat group morphism; its form for affine group morphisms is
+`TauCeti.CommHopfAlgCat.mapPointsFunctor_app_surjective_of_faithfullyFlat`.
 -/
 
 public section

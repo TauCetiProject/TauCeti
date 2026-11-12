@@ -16,8 +16,6 @@ public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.LocallyFinite
 
-import Mathlib.Topology.Algebra.Group.Basic
-
 /-!
 # Transfer instances for restricted and properly discontinuous actions
 
@@ -31,11 +29,11 @@ A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
 countable, and that the translates of a compact set under it form a locally finite family.
-Conversely, for a jointly continuous action of a `T₁` group with separately continuous
-multiplication, local finiteness of the translates of any nonempty set forces the group topology
-to be discrete. Likewise, a nonempty open set disjoint from all of its nontrivial translates
-forces the acting topological group to be discrete, and on such a set the orbit projection is an
-open embedding.
+Conversely, for a scalar action of a `T₁` topological space `G` with continuous orbit maps, local
+finiteness of the translates of any nonempty set forces the topology on `G` to be discrete.
+Likewise, a nonempty open set disjoint from all of its nontrivial translates forces the acting
+group, with any topology for which the orbit maps are continuous, to be discrete, and on such a
+set the orbit projection is an open embedding.
 
 ## Main results
 
@@ -57,14 +55,14 @@ open embedding.
   nonempty σ-compact space is countable.
 * `TauCeti.locallyFinite_smul_of_isCompact`: under a properly discontinuous action on a weakly
   locally compact space, the translates of a compact set form a locally finite family.
-* `TauCeti.discreteTopology_of_locallyFinite_smul`: if the translates of a nonempty set under a
-  continuous action are locally finite, then the acting group is discrete.
+* `TauCeti.discreteTopology_of_locallyFinite_smul`: if the translates of a nonempty set under an
+  action with continuous orbit maps are locally finite, then the acting group is discrete.
 * `TauCeti.isClosed_iUnion_smul_of_isCompact`: the union of the translates of a closed compact set
   under such an action of a group is closed.
 * `TauCeti.isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul`: the orbit projection is an
   open embedding on an open set disjoint from its nontrivial translates.
 * `TauCeti.discreteTopology_of_disjoint_smul`: the existence of a nonempty such open set makes the
-  acting topological group discrete.
+  acting group discrete.
 -/
 
 public section
@@ -182,60 +180,64 @@ section DiscreteTopology
 
 open Set
 
-variable {G X : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
-  [TopologicalSpace X] [MulAction G X] {U : Set X}
+variable {G X : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace X] [MulAction G X]
+  {U : Set X}
 
-/-- **Discreteness from a disjoint open translate.** If a topological group acts with continuous
+/-- **Discreteness from a disjoint open translate.** If a group with a topology acts with continuous
 orbit maps and some nonempty open set is disjoint from all of its translates by nonidentity
 elements, then the group is discrete. -/
 @[to_additive
-/-- **Discreteness from a disjoint open translate.** If a topological additive group acts with
+/-- **Discreteness from a disjoint open translate.** If an additive group with a topology acts with
 continuous orbit maps and some nonempty open set is disjoint from all of its translates by nonzero
 elements, then the group is discrete. -/]
 theorem discreteTopology_of_disjoint_smul (hcont : ∀ x : X, Continuous fun g : G ↦ g • x)
     (hU_open : IsOpen U) (hU_nonempty : U.Nonempty) (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) :
     DiscreteTopology G := by
-  apply discreteTopology_of_isOpen_singleton_one
-  -- The elements carrying a chosen point of `U` back into `U` form an open set equal to `{1}`.
+  refine discreteTopology_iff_isOpen_singleton.mpr fun g₀ ↦ ?_
+  -- The elements carrying `g₀⁻¹ • x` back into `U` form an open set equal to `{g₀}`.
   obtain ⟨x, hx⟩ := hU_nonempty
-  have hopen : IsOpen ((fun g : G ↦ g • x) ⁻¹' U) := hU_open.preimage (hcont x)
-  have heq : (fun g : G ↦ g • x) ⁻¹' U = {1} := by
+  have heq : (fun g : G ↦ g • g₀⁻¹ • x) ⁻¹' U = {g₀} := by
     ext g
     simp only [Set.mem_preimage, Set.mem_singleton_iff]
     constructor
     · intro hgx
       by_contra hg_ne
-      exact Set.disjoint_left.mp (hU g hg_ne) (Set.smul_mem_smul_set hx) hgx
+      have hne : g * g₀⁻¹ ≠ 1 := fun h ↦ hg_ne (mul_inv_eq_one.mp h)
+      exact Set.disjoint_left.mp (hU _ hne) (Set.smul_mem_smul_set hx) (by rwa [mul_smul])
     · rintro rfl
       simpa using hx
-  rwa [heq] at hopen
+  rw [← heq]
+  exact hU_open.preimage (hcont _)
 
-variable [ContinuousSMul G X] [T1Space G] {S : Set X}
+end DiscreteTopology
+
+section LocallyFiniteTranslates
+
+variable {G X : Type*} [TopologicalSpace G] [T1Space G] [TopologicalSpace X] [SMul G X]
+  {S : Set X}
 
 /-- **Local finiteness of the translates of a nonempty set forces the acting group to be
 discrete.**
 
-The set need not be open, closed, or compact, and the action need not be faithful. This is the
-discreteness criterion for a group whose translates of a fundamental polygon form a locally
-finite tessellation. -/
+The set need not be open, closed, or compact, and the action need not be faithful or a group
+action: only continuity of the orbit maps is used. This is the discreteness criterion for a group
+whose translates of a fundamental polygon form a locally finite tessellation. -/
 @[to_additive
 /-- **Local finiteness of the translates of a nonempty set forces the acting additive group to be
-discrete.** -/]
-theorem discreteTopology_of_locallyFinite_smul (hS : S.Nonempty)
-    (hlocal : LocallyFinite fun g : G ↦ g • S) : DiscreteTopology G := by
+discrete.** Only continuity of the orbit maps is used. -/]
+theorem discreteTopology_of_locallyFinite_smul (hcont : ∀ x : X, Continuous fun g : G ↦ g • x)
+    (hS : S.Nonempty) (hlocal : LocallyFinite fun g : G ↦ g • S) : DiscreteTopology G := by
   obtain ⟨x, hx⟩ := hS
-  obtain ⟨U, hU, hfinite⟩ := hlocal x
+  refine discreteTopology_iff_isOpen_singleton.mpr fun g₀ ↦ ?_
+  obtain ⟨U, hU, hfinite⟩ := hlocal (g₀ • x)
   let V : Set G := (fun g ↦ g • x) ⁻¹' U
-  have hV : V ∈ nhds (1 : G) := by
-    exact (continuous_smul.comp (continuous_id.prodMk continuous_const)).continuousAt
-      (by simpa only [Function.comp_apply, id_eq, one_smul] using hU)
+  have hV : V ∈ nhds g₀ := (hcont x).continuousAt hU
   have hVF : V ⊆ {g : G | (g • S ∩ U).Nonempty} := by
     intro g hg
     exact ⟨g • x, ⟨x, hx, rfl⟩, hg⟩
-  exact discreteTopology_of_isOpen_singleton_one <|
-    isOpen_singleton_of_finite_mem_nhds 1 (Filter.mem_of_superset hV hVF) hfinite
+  exact isOpen_singleton_of_finite_mem_nhds g₀ (Filter.mem_of_superset hV hVF) hfinite
 
-end DiscreteTopology
+end LocallyFiniteTranslates
 
 /-- A submonoid inherits continuity in the point from an ambient continuous action. -/
 @[to_additive
