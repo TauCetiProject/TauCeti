@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Algebra.Group.TermWord
-public import TauCeti.GroupTheory.FreeGroup.EqIneqSystem
+public import TauCeti.GroupTheory.FreeGroup.EqIneqSystem.Basic
 public import TauCeti.ModelTheory.Complexity
 
 /-!
