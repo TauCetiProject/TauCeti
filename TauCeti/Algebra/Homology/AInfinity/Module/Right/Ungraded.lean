@@ -55,8 +55,13 @@ Two constructions are developed.
   (`TauCeti.UngradedAInfinityRightModule.matrix`): `m_{n+1}(φ, F₁, …, Fₙ)` has `z`-component the
   sum, over the paths `x₀ → x₁ → ⋯ → xₙ = z` in `X`, of `m_{n+1}(φ x₀, F₁ x₀ x₁, …, Fₙ xₙ₋₁ xₙ)`
   (`TauCeti.UngradedAInfinityRightModule.matrixAct`). The composite terms concatenate paths and the
-  product terms insert a vertex into a path. For block upper-triangular matrices on `X ⊕ Y`, paths
-  never return from `Y` to `X`; this restricts the operations to `X` and to `Y`
+  product terms insert a vertex into a path. If no matrix has an entry into the range of an
+  embedding `Y → X` from outside it, the components of the operations on that range are those of
+  the matrix module of `Y` (`TauCeti.UngradedAInfinityRightModule.matrixAct_apply_of_injective`);
+  if no matrix has an entry out of the range, the same holds on row vectors supported on the range
+  (`TauCeti.UngradedAInfinityRightModule.matrixAct_apply_of_injective_of_forall_notMem_range`).
+  For block upper-triangular matrices on `X ⊕ Y`, paths never return from `Y` to `X`; this
+  restricts the operations to `X` and to `Y`
   (`TauCeti.UngradedAInfinityRightModule.matrixAct_apply_inl`,
   `TauCeti.UngradedAInfinityRightModule.matrixAct_sumElim_zero_apply_inr`), and a path from `X` to
   `Y` crosses the off-diagonal block exactly once
@@ -88,6 +93,9 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
   `TauCeti.UngradedAInfinityRightModule.matrixAct_eq_zero_of_lt`: the matrix operations vanish
   when those of `M` do, and along matrices whose nonzero entries strictly increase a bounded
   height.
+* `TauCeti.UngradedAInfinityRightModule.matrixAct_apply_of_injective` and
+  `TauCeti.UngradedAInfinityRightModule.matrixAct_apply_of_injective_of_forall_notMem_range`: the
+  matrix operations restrict along an embedding whose range no path enters, respectively leaves.
 * `TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`: along block
   upper-triangular matrices, paths from `X` to `Y` see the off-diagonal block exactly once.
 
@@ -494,6 +502,69 @@ section Block
 
 variable {X Y : Type*} [Fintype X] [DecidableEq X] [Fintype Y] [DecidableEq Y]
 
+/-- **Restricting the matrix module along an embedding.** Let `e : Y → X` be injective, and
+suppose that no matrix `Fᵢ` on `X` has a nonzero entry into the range of `e` from outside it. Then
+no path ending in the range of `e` leaves it, so the components of `m_{n+1}(φ, F₁, …, Fₙ)` at the
+points `e z` are those of the operation of the matrix module of `Y` on `φ ∘ e`, along the matrices
+`Pᵢ` that the `Fᵢ` restrict to. -/
+theorem matrixAct_apply_of_injective {n : ℕ} {e : Y → X} (he : Function.Injective e)
+    (F : Fin n → Matrix X X A) (P : Fin n → Matrix Y Y A)
+    (hP : ∀ l a b, F l (e a) (e b) = P l a b)
+    (hF : ∀ l a b, a ∉ Set.range e → F l a (e b) = 0) (φ : X → M) (z : Y) :
+    Mm.matrixAct X n F φ (e z) = Mm.matrixAct Y n P (φ ∘ e) z := by
+  rw [matrixAct_apply, matrixAct_apply]
+  refine (Fintype.sum_of_injective (fun y => e ∘ y)
+    (fun y y' h => funext fun k => he (congrFun h k)) _ _ (fun x hx => ?_)
+    fun y => by simp [he.eq_iff, hP]).symm
+  split_ifs with hz
+  · -- A path ending in the range of `e` and leaving it steps into the range from outside.
+    obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
+      by_contra! hne
+      have hmem (k : Fin (n + 1)) : x k ∈ Set.range e := by
+        induction k using Fin.reverseInduction with
+        | last => exact ⟨z, hz.symm⟩
+        | cast k ih =>
+          by_contra hk
+          obtain ⟨b, hb⟩ := ih
+          exact hne k (by rw [← hb]; exact hF k _ b hk)
+      exact hx ⟨fun k => (hmem k).choose, funext fun k => (hmem k).choose_spec⟩
+    rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply]
+  · rfl
+
+/-- **Restricting the matrix module along an embedding, on supported row vectors.** Let
+`e : Y → X` be injective, and suppose that no matrix `Fᵢ` on `X` has a nonzero entry from the range
+of `e` to outside it. Then a path starting in the range of `e` stays there, so on a row vector `φ`
+vanishing outside the range of `e`, the components of `m_{n+1}(φ, F₁, …, Fₙ)` at the points `e z`
+are those of the operation of the matrix module of `Y` on `φ ∘ e`, along the matrices `Pᵢ` that
+the `Fᵢ` restrict to. -/
+theorem matrixAct_apply_of_injective_of_forall_notMem_range {n : ℕ} {e : Y → X}
+    (he : Function.Injective e) (F : Fin n → Matrix X X A) (P : Fin n → Matrix Y Y A)
+    (hP : ∀ l a b, F l (e a) (e b) = P l a b)
+    (hF : ∀ l a b, b ∉ Set.range e → F l (e a) b = 0) {φ : X → M}
+    (hφ : ∀ a, a ∉ Set.range e → φ a = 0) (z : Y) :
+    Mm.matrixAct X n F φ (e z) = Mm.matrixAct Y n P (φ ∘ e) z := by
+  rw [matrixAct_apply, matrixAct_apply]
+  refine (Fintype.sum_of_injective (fun y => e ∘ y)
+    (fun y y' h => funext fun k => he (congrFun h k)) _ _ (fun x hx => ?_)
+    fun y => by simp [he.eq_iff, hP]).symm
+  split_ifs with hz
+  · by_cases hx0 : x 0 ∈ Set.range e
+    swap
+    · rw [hφ _ hx0, map_zero]
+    -- A path starting in the range of `e` and leaving it steps out of the range.
+    obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
+      by_contra! hne
+      have hmem (k : Fin (n + 1)) : x k ∈ Set.range e := by
+        induction k using Fin.induction with
+        | zero => exact hx0
+        | succ k ih =>
+          by_contra hk
+          obtain ⟨a, ha⟩ := ih
+          exact hne k (by rw [← ha]; exact hF k a _ hk)
+      exact hx ⟨fun k => (hmem k).choose, funext fun k => (hmem k).choose_spec⟩
+    rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply]
+  · rfl
+
 /-- **Restricting the matrix module to the first summand.** If no matrix `Fᵢ` on `X ⊕ Y` has a
 nonzero entry from `Y` to `X`, then no path ending in `X` passes through `Y`, so the
 `X`-components of `m_{n+1}(φ, F₁, …, Fₙ)` are those of the operation of the matrix module of `X`
@@ -501,27 +572,12 @@ on the `X`-components of `φ` and the `X × X` blocks of the `Fᵢ`. -/
 theorem matrixAct_apply_inl {n : ℕ} (F : Fin n → Matrix (X ⊕ Y) (X ⊕ Y) A)
     (hF : ∀ l a b, F l (Sum.inr a) (Sum.inl b) = 0) (φ : X ⊕ Y → M) (z : X) :
     Mm.matrixAct (X ⊕ Y) n F φ (Sum.inl z) =
-      Mm.matrixAct X n (fun l => (F l).toBlocks₁₁) (φ ∘ Sum.inl) z := by
-  rw [matrixAct_apply, matrixAct_apply]
-  refine (Fintype.sum_of_injective (fun x => Sum.inl ∘ x)
-    (fun x y h => funext fun k => Sum.inl_injective (congrFun h k)) _ _ (fun x hx => ?_)
-    fun x => by simp [Matrix.toBlocks₁₁]).symm
-  split_ifs with hz
-  · -- A path ending in `X` and meeting `Y` steps from `Y` to `X` somewhere.
-    obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
-      by_contra! hne
-      have hleft (k : Fin (n + 1)) : (x k).isLeft := by
-        induction k using Fin.reverseInduction with
-        | last => rw [hz]; rfl
-        | cast k ih =>
-          rcases hxk : x k.castSucc with a | b
-          · rfl
-          · rcases hxs : x k.succ with a' | b'
-            · exact absurd (by rw [hxk, hxs]; exact hF k b a') (hne k)
-            · rw [hxs] at ih; simp at ih
-      exact hx ⟨fun k => (x k).getLeft (hleft k), funext fun k => by simp⟩
-    rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply]
-  · rfl
+      Mm.matrixAct X n (fun l => (F l).toBlocks₁₁) (φ ∘ Sum.inl) z :=
+  Mm.matrixAct_apply_of_injective Sum.inl_injective F _ (fun _ _ _ => rfl)
+    (fun l a b ha => by
+      rcases a with a | a
+      · exact absurd ⟨a, rfl⟩ ha
+      · exact hF l a b) φ z
 
 /-- **Restricting the matrix module to the second summand.** If no matrix `Fᵢ` on `X ⊕ Y` has a
 nonzero entry from `Y` to `X`, then a path starting in `Y` stays in `Y`, so on row vectors
@@ -530,29 +586,17 @@ matrix module of `Y` along the `Y × Y` blocks of the `Fᵢ`. -/
 theorem matrixAct_sumElim_zero_apply_inr {n : ℕ} (F : Fin n → Matrix (X ⊕ Y) (X ⊕ Y) A)
     (hF : ∀ l a b, F l (Sum.inr a) (Sum.inl b) = 0) (ψ : Y → M) (z : Y) :
     Mm.matrixAct (X ⊕ Y) n F (Sum.elim 0 ψ) (Sum.inr z) =
-      Mm.matrixAct Y n (fun l => (F l).toBlocks₂₂) ψ z := by
-  rw [matrixAct_apply, matrixAct_apply]
-  refine (Fintype.sum_of_injective (fun x => Sum.inr ∘ x)
-    (fun x y h => funext fun k => Sum.inr_injective (congrFun h k)) _ _ (fun x hx => ?_)
-    fun x => by simp [Matrix.toBlocks₂₂]).symm
-  split_ifs with hz
-  · rcases hx0 : x 0 with a | b
-    · simp
-    -- A path starting in `Y` and meeting `X` steps from `Y` to `X` somewhere.
-    obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
-      by_contra! hne
-      have hright (k : Fin (n + 1)) : (x k).isRight := by
-        induction k using Fin.induction with
-        | zero => rw [hx0]; rfl
-        | succ k ih =>
-          rcases hxs : x k.succ with a' | b'
-          · rcases hxk : x k.castSucc with a | b''
-            · rw [hxk] at ih; simp at ih
-            · exact absurd (by rw [hxk, hxs]; exact hF k b'' a') (hne k)
-          · rfl
-      exact hx ⟨fun k => (x k).getRight (hright k), funext fun k => by simp⟩
-    rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply]
-  · rfl
+      Mm.matrixAct Y n (fun l => (F l).toBlocks₂₂) ψ z :=
+  Mm.matrixAct_apply_of_injective_of_forall_notMem_range Sum.inr_injective F _
+    (fun _ _ _ => rfl)
+    (fun l a b hb => by
+      rcases b with b | b
+      · exact hF l a b
+      · exact absurd ⟨b, rfl⟩ hb)
+    (fun a ha => by
+      rcases a with a | a
+      · rfl
+      · exact absurd ⟨a, rfl⟩ ha) z
 
 /-- **Inserting an off-diagonal block.** Let `δ` and `δ'` be matrices on `X` and `Y`, and `F`
 and `G` matrices from `X` to `Y`. On row vectors supported on `X`, the `Y`-components of

@@ -38,7 +38,7 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 ## Main declarations
 
 * `SchwartzMap.gaussian`: the Gaussian `x ↦ exp (-b ‖x‖²)`, `0 < b.re`, as a Schwartz function.
-* `SchwartzMap.gaussian_apply`: its values.
+* `SchwartzMap.gaussian_apply`, `SchwartzMap.coe_gaussian`: its values.
 * `SchwartzMap.fourierInv_gaussian`: its inverse Fourier transform
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
 -/
@@ -110,15 +110,18 @@ theorem gaussian_apply {b : ℂ} (hb : 0 < b.re) (x : V) :
     gaussian hb x = cexp (-b * ‖x‖ ^ 2) :=
   (rfl)
 
+/-- The Schwartz Gaussian, as a function, is `x ↦ exp (-b ‖x‖²)`. -/
+theorem coe_gaussian {b : ℂ} (hb : 0 < b.re) :
+    ((gaussian hb : 𝓢(V, ℂ)) : V → ℂ) = fun x ↦ cexp (-b * ‖x‖ ^ 2) :=
+  funext (gaussian_apply hb)
+
 /-- The inverse Fourier transform of the Schwartz Gaussian `exp (-b ‖ξ‖²)`, `0 < b.re`, on a
 real inner product space of dimension `n` is the Gaussian `(π / b)^(n/2) exp (-π² ‖x‖² / b)`. -/
 theorem fourierInv_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {b : ℂ}
     (hb : 0 < b.re) (x : V) :
     𝓕⁻ (gaussian hb : 𝓢(V, ℂ)) x =
       (Real.pi / b) ^ (Module.finrank ℝ V / 2 : ℂ) * cexp (-Real.pi ^ 2 * ‖x‖ ^ 2 / b) := by
-  rw [fourierInv_coe, Real.fourierInv_eq_fourier_neg]
-  have h : ((gaussian hb : 𝓢(V, ℂ)) : V → ℂ) = fun v ↦ cexp (-b * ‖v‖ ^ 2) :=
-    funext fun v ↦ gaussian_apply hb v
-  rw [h, fourier_gaussian_innerProductSpace hb, norm_neg]
+  rw [fourierInv_coe, Real.fourierInv_eq_fourier_neg, coe_gaussian,
+    fourier_gaussian_innerProductSpace hb, norm_neg]
 
 end SchwartzMap

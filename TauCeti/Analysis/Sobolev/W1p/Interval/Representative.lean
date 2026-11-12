@@ -232,8 +232,7 @@ theorem ae_hasDerivAt_intervalRepresentativeL (hab : a < b)
       (fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t)) (gradient u t) t := by
   have hw : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (value u) (gradient u) 1 := by
     simpa using (hasWeakFDerivOn u).hasWeakLineDerivOn (1 : ℝ)
-  exact hw.ae_hasDerivAt ((Lp.memLp _).integrable (by exact Fact.out))
-    (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
+  exact hw.ae_hasDerivAt (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
     (value_ae_eq_intervalRepresentativeL hab u) hab.le
 
 /-- The pair of endpoint values of a Sobolev class as a bounded linear trace. -/
