@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Parametrix
+public import TauCeti.Analysis.Pseudodifferential.Symbol.FormalComposition
 import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
@@ -17,9 +17,7 @@ of order `m` with values in `V →L[ℂ] W` that vanishes for positions outside 
 file shows that their composition symbol `a # b` (`TauCeti.Symbol.sharp`), whose quantization is
 `Op(a) ∘ Op(b)`, is again classical, of order `m' + m`, and computes its homogeneous terms. As a
 consequence, the commutator `a # b - b # a` of two classical symbols with commuting principal
-symbols is classical of order `m' + m - 1`, with an explicit leading term, and the formal left
-inverse of an elliptic classical symbol (`TauCeti.ClassicalSymbol.exists_sharpTerms_eq_left`)
-becomes a left parametrix of its quantization.
+symbols is classical of order `m' + m - 1`, with an explicit leading term.
 
 Each term `((-i)^k / k!) ∑_{|w| = k} ∂_ξ^w a ∘ ∂_x^w b` of the composition expansion is a
 classical symbol of order `m' + m - k` (`TauCeti.ClassicalSymbol.sharpTerm`), built from the
@@ -58,18 +56,13 @@ expansions,
 * `TauCeti.ClassicalSymbol.exists_inclusion_eq_sharpCommutator_of_scalar`: for scalar symbols the
   commutator has order `m' + m - 1` and principal symbol `-i {a_{m'}, b_m}`, with the Poisson
   bracket `{p, q} = ∑ⱼ (∂_{ξⱼ} p ∂_{xⱼ} q - ∂_{xⱼ} p ∂_{ξⱼ} q)`.
-* `TauCeti.ClassicalSymbol.exists_isSmoothing_sharp_sub_const` and
-  `TauCeti.ClassicalSymbol.exists_leftParametrix`: **the left parametrix.** An elliptic
-  classical symbol `a` of order `m` with compact spatial support has a classical symbol `q` of
-  order `-m`, with principal symbol `σ(a)⁻¹`, such that `q # a - 1` is smoothing, so that
-  `Op(q) (Op(a) u) = u + Op(r) u` for a smoothing symbol `r` and every Schwartz function `u`.
 
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Theorem 18.1.8 and
   the remarks following it.
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I,
-  (2.5)–(2.7) and §4.
+  (2.5)–(2.7).
 -/
 
 public section
@@ -77,7 +70,6 @@ public section
 noncomputable section
 
 open Finset
-open scoped SchwartzMap
 
 namespace TauCeti
 
@@ -296,6 +288,23 @@ theorem smul_sharp (c : ℂ) : (c • a).sharp b hb = c • a.sharp b hb :=
 theorem sharp_smul (c : ℂ) : a.sharp (c • b) (hb.smul c) = c • a.sharp b hb :=
   ext (Symbol.sharp_smul _ hb c)
 
+@[simp]
+theorem neg_sharp : (-a).sharp b hb = -a.sharp b hb :=
+  ext (Symbol.neg_sharp _ hb)
+
+@[simp]
+theorem sharp_neg : a.sharp (-b) hb.neg = -a.sharp b hb :=
+  ext (Symbol.sharp_neg _ hb)
+
+theorem sub_sharp (a₁ a₂ : ClassicalSymbol n W U m') :
+    (a₁ - a₂).sharp b hb = a₁.sharp b hb - a₂.sharp b hb :=
+  ext (Symbol.sub_sharp _ _ hb)
+
+theorem sharp_sub {b₁ b₂ : ClassicalSymbol n V W m} (hb₁ : b₁.toSymbol.HasCompactSpatialSupport)
+    (hb₂ : b₂.toSymbol.HasCompactSpatialSupport) :
+    a.sharp (b₁ - b₂) (hb₁.sub hb₂) = a.sharp b₁ hb₁ - a.sharp b₂ hb₂ :=
+  ext (Symbol.sharp_sub _ hb₁ hb₂)
+
 end Sharp
 
 /-! ### Commutators -/
@@ -404,73 +413,6 @@ theorem exists_inclusion_eq_sharpCommutator_of_scalar (a : ClassicalSymbol n ℂ
   simp only [hcomm ((b.principal.frequencyDeriv _).coefficient z)]
 
 end Commutator
-
-/-! ### The left parametrix of an elliptic classical symbol -/
-
-section Parametrix
-
-variable [CompleteSpace V] [CompleteSpace W] {a : ClassicalSymbol n V W m}
-
-/-- **The left parametrix, on symbols.** An elliptic classical symbol `a` of order `m` with
-compact spatial support has a classical left inverse modulo smoothing symbols: a classical
-symbol `q` of order `-m`, with principal symbol `σ(a)⁻¹`, such that `q # a - 1` is smoothing. -/
-theorem exists_isSmoothing_sharp_sub_const (ha : a.principal.IsElliptic)
-    (hs : a.toSymbol.HasCompactSpatialSupport) :
-    ∃ q : ClassicalSymbol n W V (-m), q.principal = a.principal.inverse ha ∧
-      (q.toSymbol.sharp a.toSymbol hs - Symbol.inclusion (neg_add_cancel m).symm.le
-        (Symbol.const (ContinuousLinearMap.id ℂ V))).IsSmoothing := by
-  obtain ⟨q, hq, h0, hsucc⟩ := a.exists_sharpTerms_eq_left ha
-  refine ⟨q, hq, ?_⟩
-  -- The terms of `q # a` are those of the cut-off identity `χ(ξ) id`.
-  set e := ofHomogeneous default
-    ((HomogeneousSymbol.id (CoordinateSpace n) (CoordinateSpace n) V).castDegree
-      (neg_add_cancel m).symm)
-  have hterm : (q.sharp a hs).term = e.term := funext fun k ↦ by
-    cases k with
-    | zero =>
-      ext1
-      rw [term_sharp, homogeneousSharpTerms_eq_sharpTerms, h0, ← coefficient_principal,
-        principal_ofHomogeneous]
-      simp
-    | succ k => rw [term_sharp, homogeneousSharpTerms_eq_sharpTerms, hsucc, term_ofHomogeneous_succ]
-  -- `χ(ξ) id` and `id` differ only at frequencies of norm less than `2`.
-  set d := e.toSymbol - Symbol.inclusion (neg_add_cancel m).symm.le
-    (Symbol.const (ContinuousLinearMap.id ℂ V))
-  have hd : ∀ x ξ, 2 ≤ ‖ξ‖ → d.coefficient (x, ξ) = 0 := fun x ξ hξ ↦ by
-    have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (by linarith)
-    simp [d, e, toSymbol_ofHomogeneous, coefficient_cutoffSymbol_of_two_le_norm _ _ hξ,
-      coefficient_id hξ0]
-  have h :=
-    (isSmoothing_toSymbol_sub_iff.2 hterm).add (Symbol.isSmoothing_of_coefficient_eq_zero 2 hd)
-  rwa [toSymbol_sharp, sub_add_sub_cancel] at h
-
-/-- **The left parametrix.** An elliptic classical symbol `a` of order `m` with compact spatial
-support has a classical symbol `q` of order `-m`, with principal symbol `σ(a)⁻¹`, and a smoothing
-symbol `r` such that `Op(q) (Op(a) u) = u + Op(r) u` for every Schwartz function `u`. -/
-theorem exists_leftParametrix (ha : a.principal.IsElliptic)
-    (hs : a.toSymbol.HasCompactSpatialSupport) :
-    ∃ q : ClassicalSymbol n W V (-m), q.principal = a.principal.inverse ha ∧
-      ∃ r : Symbol n V V (-m + m), r.IsSmoothing ∧ ∀ (u : 𝓢(CoordinateSpace n, V)) x,
-        quantizeSchwartzValue q.toSymbol.coefficient
-          ((hs.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
-            (a.toSymbol.contDiff_quantizeSchwartzValue u)) x =
-          u x + quantizeSchwartzValue r.coefficient u x := by
-  obtain ⟨q, hq, hr⟩ := exists_isSmoothing_sharp_sub_const ha hs
-  refine ⟨q, hq, _, hr, fun u x ↦ ?_⟩
-  set c := Symbol.inclusion (neg_add_cancel m).symm.le
-    (Symbol.const (ContinuousLinearMap.id ℂ V) : Symbol n V V 0)
-  have hc : (q.toSymbol.sharp a.toSymbol hs).coefficient =
-      c.coefficient + (q.toSymbol.sharp a.toSymbol hs - c).coefficient := by
-    simp
-  rw [← Symbol.quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hs, hc]
-  obtain ⟨C, -, hC⟩ := c.exists_bound_coefficient_slice x
-  obtain ⟨C', -, hC'⟩ := (q.toSymbol.sharp a.toSymbol hs - c).exists_bound_coefficient_slice x
-  rw [quantizeSchwartzValue_add_left (c.continuous_coefficient_slice x).aestronglyMeasurable hC
-    ((q.toSymbol.sharp a.toSymbol hs - c).continuous_coefficient_slice x).aestronglyMeasurable hC']
-  rw [show c.coefficient = fun _ ↦ ContinuousLinearMap.id ℂ V from funext fun _ ↦ by simp [c],
-    quantizeSchwartzValue_id]
-
-end Parametrix
 
 end ClassicalSymbol
 
