@@ -269,6 +269,7 @@ theorem IsRestricted.mem_subring : f ∈ IsRestricted.subring c ↔ f.IsRestrict
 
 /-- At the radius `0` every series is restricted, its weighted coefficient norms vanishing past
 degree `0`, so the restricted subring is the whole ring of power series. -/
+@[simp]
 theorem IsRestricted.subring_zero : IsRestricted.subring (R := R) 0 = ⊤ := by
   refine (Subring.eq_top_iff' _).mpr fun f ↦ ?_
   rw [IsRestricted.mem_subring, isRestricted_iff']
