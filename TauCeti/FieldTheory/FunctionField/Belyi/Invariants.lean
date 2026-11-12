@@ -34,20 +34,21 @@ without determining it.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.genus`: the genus of an isomorphism class.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.localData`: the local data `(e, f)` of a class over the
   marked place numbered `i`.
-* `TauCeti.AlgebraicBelyiPair.IsoClass.ramificationPartition`: the weighted ramification partition
-  of the degree of a class over the marked place numbered `i`.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.weightedRamificationPartition`: the weighted ramification
+  partition of the degree of a class over the marked place numbered `i`.
 
 ## Main results
 
-* `TauCeti.AlgebraicBelyiPair.genus_conj` and `TauCeti.AlgebraicBelyiPair.localData_conj`:
-  conjugating a pair keeps its genus and its local data over each marked place.
-* `TauCeti.AlgebraicBelyiPair.IsoClass.parts_ramificationPartition_of_isAlgClosed`: over an
-  algebraically closed field, the ramification partition of a class consists of the ramification
-  indices, one for each place above the marked place.
+* `TauCeti.AlgebraicBelyiPair.genus_conj`, `TauCeti.AlgebraicBelyiPair.localData_conj` and
+  `TauCeti.AlgebraicBelyiPair.parts_weightedRamificationPartition_conj`: conjugating a pair keeps
+  its genus, and its local data and weighted ramification partition over each marked place.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.parts_weightedRamificationPartition_of_isAlgClosed`: over
+  an algebraically closed field, the weighted ramification partition of a class consists of the
+  ramification indices, one for each place above the marked place.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.genus_smul`,
   `TauCeti.AlgebraicBelyiPair.IsoClass.localData_smul` and
-  `TauCeti.AlgebraicBelyiPair.IsoClass.parts_ramificationPartition_smul`: the Galois action on
-  isomorphism classes preserves the genus and the three ramification partitions.
+  `TauCeti.AlgebraicBelyiPair.IsoClass.parts_weightedRamificationPartition_smul`: the Galois
+  action on isomorphism classes preserves the genus and the three ramification partitions.
 
 ## References
 
@@ -82,6 +83,18 @@ theorem localData_conj (i : Fin 3) :
   Place.localData_markedPlace_of_mapRingEquiv σ (conjRingEquiv σ X)
     (conjRingEquiv_algebraMap_ratFunc σ X) i
 
+/-- **Conjugation preserves the weighted ramification partitions** of an algebraic Belyi pair. The
+two partitions are of the same number, by `TauCeti.AlgebraicBelyiPair.finrank_conj`, and have the
+same parts. -/
+@[simp]
+theorem parts_weightedRamificationPartition_conj (i : Fin 3) :
+    (Place.weightedRamificationPartition (k' := k') (F' := X.conj σ) k' (RatFunc k')
+        (IsFunctionField.ratFunc k') (Place.markedPlace k' i)).parts =
+      (Place.weightedRamificationPartition (k' := k) (F' := X) k (RatFunc k)
+        (IsFunctionField.ratFunc k) (Place.markedPlace k i)).parts := by
+  rw [Place.parts_weightedRamificationPartition, Place.parts_weightedRamificationPartition,
+    localData_conj]
+
 namespace IsoClass
 
 /-- The **genus** of an isomorphism class of algebraic Belyi pairs: the genus of the function
@@ -110,12 +123,13 @@ theorem localData_mk (i : Fin 3) :
       Place.localData (k' := k) (F' := X) k (RatFunc k) (Place.markedPlace k i) :=
   lift_mk _ _ X
 
-/-- The **ramification partition** of an isomorphism class `c` of algebraic Belyi pairs over the
-marked place numbered `i`: the partition of the degree of `c` in which the ramification index at
-each place above the marked place is repeated by its relative residue degree. Over an
+/-- The **weighted ramification partition** of an isomorphism class `c` of algebraic Belyi pairs
+over the marked place numbered `i`: the partition of the degree of `c` in which the ramification
+index at each place above the marked place is repeated by its relative residue degree. Over an
 algebraically closed field the residue degrees are `1`
-(`TauCeti.AlgebraicBelyiPair.IsoClass.parts_ramificationPartition_of_isAlgClosed`). -/
-noncomputable def ramificationPartition (c : IsoClass k) (i : Fin 3) : c.degree.Partition where
+(`TauCeti.AlgebraicBelyiPair.IsoClass.parts_weightedRamificationPartition_of_isAlgClosed`). -/
+noncomputable def weightedRamificationPartition (c : IsoClass k) (i : Fin 3) :
+    c.degree.Partition where
   parts := (c.localData i).bind fun ef ↦ Multiset.replicate ef.2 ef.1
   parts_pos := by
     induction c using ind with
@@ -130,29 +144,30 @@ noncomputable def ramificationPartition (c : IsoClass k) (i : Fin 3) : c.degree.
         ← Place.parts_weightedRamificationPartition (hF := IsFunctionField.ratFunc k), degree_mk]
       exact Nat.Partition.parts_sum _
 
-/-- The parts of the ramification partition are obtained by repeating each ramification index by
-its relative residue degree. -/
-theorem parts_ramificationPartition (c : IsoClass k) (i : Fin 3) :
-    (c.ramificationPartition i).parts =
+/-- The parts of the weighted ramification partition are obtained by repeating each ramification
+index by its relative residue degree. -/
+theorem parts_weightedRamificationPartition (c : IsoClass k) (i : Fin 3) :
+    (c.weightedRamificationPartition i).parts =
       (c.localData i).bind fun ef ↦ Multiset.replicate ef.2 ef.1 :=
   (rfl)
 
-/-- The ramification partition of the class of a pair is the weighted ramification partition of
-the pair. -/
+/-- The weighted ramification partition of the class of a pair is the weighted ramification
+partition of the pair. -/
 @[simp]
-theorem parts_ramificationPartition_mk (i : Fin 3) :
-    ((mk X).ramificationPartition i).parts =
+theorem parts_weightedRamificationPartition_mk (i : Fin 3) :
+    ((mk X).weightedRamificationPartition i).parts =
       (Place.weightedRamificationPartition (k' := k) (F' := X) k (RatFunc k)
         (IsFunctionField.ratFunc k) (Place.markedPlace k i)).parts := by
-  rw [parts_ramificationPartition, localData_mk, Place.parts_weightedRamificationPartition]
+  rw [parts_weightedRamificationPartition, localData_mk, Place.parts_weightedRamificationPartition]
 
-/-- Over an algebraically closed field, the ramification partition of a class over a marked place
-consists of the ramification indices at the places above it, one for each place. -/
-theorem parts_ramificationPartition_of_isAlgClosed [IsAlgClosed k] (c : IsoClass k) (i : Fin 3) :
-    (c.ramificationPartition i).parts = (c.localData i).map Prod.fst := by
+/-- Over an algebraically closed field, the weighted ramification partition of a class over a
+marked place consists of the ramification indices at the places above it, one for each place. -/
+theorem parts_weightedRamificationPartition_of_isAlgClosed [IsAlgClosed k] (c : IsoClass k)
+    (i : Fin 3) :
+    (c.weightedRamificationPartition i).parts = (c.localData i).map Prod.fst := by
   induction c using ind with
   | h X =>
-    rw [parts_ramificationPartition_mk, localData_mk,
+    rw [parts_weightedRamificationPartition_mk, localData_mk,
       Place.parts_weightedRamificationPartition_of_isAlgClosed]
 
 /-! ### Galois invariance -/
@@ -169,13 +184,14 @@ theorem localData_conj (c : IsoClass k) (i : Fin 3) : (c.conj σ).localData i = 
   induction c using ind with
   | h X => simp
 
-/-- **Conjugation preserves the ramification partitions** of an isomorphism class. The two
-partitions are of the same number, by `TauCeti.AlgebraicBelyiPair.IsoClass.degree_conj`, and have
-the same parts. -/
+/-- **Conjugation preserves the weighted ramification partitions** of an isomorphism class. The
+two partitions are of the same number, by `TauCeti.AlgebraicBelyiPair.IsoClass.degree_conj`, and
+have the same parts. -/
 @[simp]
-theorem parts_ramificationPartition_conj (c : IsoClass k) (i : Fin 3) :
-    ((c.conj σ).ramificationPartition i).parts = (c.ramificationPartition i).parts := by
-  rw [parts_ramificationPartition, parts_ramificationPartition, localData_conj]
+theorem parts_weightedRamificationPartition_conj (c : IsoClass k) (i : Fin 3) :
+    ((c.conj σ).weightedRamificationPartition i).parts =
+      (c.weightedRamificationPartition i).parts := by
+  rw [parts_weightedRamificationPartition, parts_weightedRamificationPartition, localData_conj]
 
 variable {G : Type*} [Group G] [MulSemiringAction G k]
 
@@ -191,11 +207,13 @@ theorem localData_smul (g : G) (c : IsoClass k) (i : Fin 3) :
     (g • c).localData i = c.localData i := by
   rw [smul_def, localData_conj]
 
-/-- **The Galois action preserves the ramification partitions** of an isomorphism class. -/
+/-- **The Galois action preserves the weighted ramification partitions** of an isomorphism
+class. -/
 @[simp]
-theorem parts_ramificationPartition_smul (g : G) (c : IsoClass k) (i : Fin 3) :
-    ((g • c).ramificationPartition i).parts = (c.ramificationPartition i).parts := by
-  rw [parts_ramificationPartition, parts_ramificationPartition, localData_smul]
+theorem parts_weightedRamificationPartition_smul (g : G) (c : IsoClass k) (i : Fin 3) :
+    ((g • c).weightedRamificationPartition i).parts =
+      (c.weightedRamificationPartition i).parts := by
+  rw [parts_weightedRamificationPartition, parts_weightedRamificationPartition, localData_smul]
 
 end IsoClass
 
