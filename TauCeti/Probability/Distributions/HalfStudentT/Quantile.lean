@@ -30,7 +30,7 @@ variable {ν s u x : ℝ}
 private theorem cdf_halfStudentTMeasure_eq_cdf_map_abs (hν : 0 < ν) (hs : 0 < s) (x : ℝ) :
     cdf (halfStudentTMeasure ν s) x = cdf ((studentTMeasure ν).map (|·|)) (x / s) := by
   let _ := isProbabilityMeasure_studentTMeasure hν
-  rw [halfStudentTMeasure_eq_map_abs hν hs]
+  rw [halfStudentTMeasure_eq_map_abs hs]
   simpa only [zero_add, sub_zero] using
     cdf_map_affine_of_pos (μ := (studentTMeasure ν).map (|·|)) (a := 0) hs x
 
@@ -38,7 +38,7 @@ private theorem quantile_halfStudentTMeasure_eq_quantile_map_abs (hν : 0 < ν) 
     (hu : u ∈ Ioo 0 1) :
     (halfStudentTMeasure ν s).quantile u = s * ((studentTMeasure ν).map (|·|)).quantile u := by
   let _ := isProbabilityMeasure_studentTMeasure hν
-  rw [halfStudentTMeasure_eq_map_abs hν hs]
+  rw [halfStudentTMeasure_eq_map_abs hs]
   simpa only [zero_add] using
     quantile_map_affine_pos (μ := (studentTMeasure ν).map (|·|)) (a := 0) hs hu.1 hu.2
 

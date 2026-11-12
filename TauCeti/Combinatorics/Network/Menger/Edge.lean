@@ -83,11 +83,14 @@ variable {V : Type u} {Q : V → V → Type v} {s t : V}
 /-- If every vertex of `C` has an arrow to every vertex outside `C`, then any finite set containing
 all arrows leaving `C` has at least `Nat.card V - 1` members, provided `C` and its complement are
 nonempty. -/
-theorem natCard_sub_one_le_card_of_completeCut [Finite V] {C : Set V} (hs : s ∈ C) (ht : t ∉ C)
+theorem natCard_sub_one_le_card_of_completeCut {C : Set V} (hs : s ∈ C) (ht : t ∉ C)
     (hC : ∀ u ∈ C, ∀ w ∉ C, Nonempty (Q u w)) {F : Finset (Σ x y, Q x y)}
     (hF : ∀ ⦃v w : V⦄ (e : Q v w), v ∈ C → w ∉ C → ⟨v, w, e⟩ ∈ F) :
     Nat.card V - 1 ≤ #F := by
   classical
+  rcases finite_or_infinite V with hV | hV
+  swap
+  · simp [Nat.card_eq_zero_of_infinite]
   let _ := Fintype.ofFinite V
   set D : Finset V := {v | v ∈ C}
   have hsub : D ×ˢ Dᶜ ⊆ ({a ∈ F | a.1 ∈ C ∧ a.2.1 ∉ C}).image fun a ↦ (a.1, a.2.1) := by

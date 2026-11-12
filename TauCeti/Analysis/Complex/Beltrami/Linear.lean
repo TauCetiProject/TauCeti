@@ -13,6 +13,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 import Mathlib.LinearAlgebra.Complex.Determinant
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Scalar Beltrami coordinates and the affine normalizer
@@ -22,6 +23,12 @@ plane. Its real determinant is `1 - ‖μ‖²`; hence the open unit disc is the
 component. The scalar coordinate of a tame almost complex structure is the value at one of its
 native Cayley transform. The general Cayley equivalence and its finite-regularity family
 calculus are reused rather than reconstructed.
+
+A real-linear map `A` intertwines a tame structure `J` with multiplication by `i` exactly when it
+is a complex multiple of the affine normalizer. For the differential of `f` at `z` this is the
+pointwise Beltrami equation `\bar∂f(z) = μ_J ∂f(z)`
+(`TauCeti.Beltrami.isComplexLinear_iff_conjWirtingerDeriv_eq`). The coefficient vanishes exactly
+at the standard structure (`TauCeti.Beltrami.coefficientEquiv_eq_zero_iff`).
 
 This is the pointwise normalization used before solving the variable-coefficient Beltrami
 equation. It does not construct isothermal charts or assume a solution of that equation.
@@ -335,6 +342,111 @@ theorem coefficientEquiv_std :
       stdComplexSymplecticForm_tames⟩).val = 0 := by
   rw [coefficientEquiv_apply, AlmostComplexStructure.cayley_self]
   rfl
+
+/-- The coefficient of a tame structure has squared norm different from one. -/
+private theorem normSq_coefficient_ne_one (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) :
+    Complex.normSq (coefficientEquiv ⟨J, hJ⟩).val ≠ 1 := by
+  simpa only [Complex.UnitDisc.coe_mk] using
+    (Complex.UnitDisc.normSq_lt_one (Complex.UnitDisc.mk _
+      (coefficientEquiv ⟨J, hJ⟩).property)).ne
+
+/-- A real-linear map intertwining `J` with `i` is a complex multiple of the affine normalizer of
+`J`, and conversely. -/
+private theorem isComplexLinear_iff_exists_eq_mul_linearMap (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) (A : ℂ →L[ℝ] ℂ) :
+    IsComplexLinear J.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+        A.toLinearMap ↔
+      ∃ β : ℂ, ∀ v, A v = β * linearMap (coefficientEquiv ⟨J, hJ⟩).val v := by
+  set μ := (coefficientEquiv ⟨J, hJ⟩).val
+  have hstd (w : ℂ) : AlmostComplexStructure.ofComplexModule ℂ w = I * w :=
+    AlmostComplexStructure.ofComplexModule_apply w
+  constructor
+  · intro hA
+    have hA' (v : ℂ) : A (J v) = I * A v := by
+      simpa [hstd] using hA.apply v
+    set e := linearEquiv μ (normSq_coefficient_ne_one J hJ)
+    have hJe (w : ℂ) : J (e.symm w) = e.symm (I * w) := by
+      apply e.injective
+      have he (x : ℂ) : e x = linearMap μ x := by simp [e]
+      rw [he, linearMap_intertwines J hJ (e.symm w), ← he, ContinuousLinearEquiv.apply_symm_apply,
+        ContinuousLinearEquiv.apply_symm_apply]
+    have hB (w : ℂ) : A (e.symm w) = w * A (e.symm 1) := by
+      -- `A ∘ e⁻¹` commutes with `I`, so it is complex linear.
+      let B := (A.toLinearMap.comp e.symm.toLinearEquiv.toLinearMap).complexOfMapISmul
+        fun v => by simpa [smul_eq_mul, hJe] using hA' (e.symm v)
+      simpa [B] using B.map_smul w 1
+    refine ⟨A (e.symm 1), fun v => ?_⟩
+    have := hB (e v)
+    rw [ContinuousLinearEquiv.symm_apply_apply] at this
+    rw [this, linearEquiv_apply, linearMap_apply]
+    ring
+  · rintro ⟨β, hβ⟩
+    apply isComplexLinear_of_apply
+    intro v
+    simp only [ContinuousLinearMap.coe_coe, hβ, hstd]
+    have h := linearMap_intertwines J hJ v
+    rw [h]
+    ring
+
+/-- **Pointwise Beltrami equation.** A real-linear map of the plane is complex linear from a tame
+structure `J` to `i` iff its antiholomorphic part is `μ_J` times its holomorphic part, in terms of
+the values `A 1` and `A i`: `A 1 + i A i = μ_J (A 1 - i A i)`. -/
+theorem isComplexLinear_iff_apply_one_add_I_mul_apply_I (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) (A : ℂ →L[ℝ] ℂ) :
+    IsComplexLinear J.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+        A.toLinearMap ↔
+      A 1 + I * A I = (coefficientEquiv ⟨J, hJ⟩).val * (A 1 - I * A I) := by
+  rw [isComplexLinear_iff_exists_eq_mul_linearMap J hJ]
+  set μ := (coefficientEquiv ⟨J, hJ⟩).val
+  constructor
+  · rintro ⟨β, hβ⟩
+    rw [hβ, hβ, linearMap_apply, linearMap_apply, map_one, Complex.conj_I]
+    ring_nf
+    rw [Complex.I_sq]
+    ring
+  · intro h
+    refine ⟨(2 : ℂ)⁻¹ * (A 1 - I * A I), fun v => ?_⟩
+    have hc : conj v = v.re - v.im * I := by
+      apply Complex.ext <;> simp
+    have hAv : A v = v.re * A 1 + v.im * A I := by
+      simpa only [ContinuousLinearMap.coe_coe, Complex.real_smul] using
+        A.toLinearMap.apply_eq_re_smul_one_add_im_smul_I v
+    rw [hAv, linearMap_apply, hc]
+    linear_combination (norm := (ring_nf; simp only [I_sq]; ring_nf))
+      ((2 : ℂ)⁻¹ * (↑v.re - ↑v.im * I)) * h + ((2 : ℂ)⁻¹ * (A 1 - I * A I)) * Complex.re_add_im v
+
+/-- **Pointwise Beltrami equation for a differential.** The real differential of `f` at `z` is
+complex linear from a tame structure `J` to `i` iff `\bar∂f(z) = μ_J ∂f(z)`. No
+differentiability is needed: both sides use the totalized derivative. -/
+theorem isComplexLinear_iff_conjWirtingerDeriv_eq (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) (f : ℂ → ℂ) (z : ℂ) :
+    IsComplexLinear J.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+        (fderiv ℝ f z).toLinearMap ↔
+      conjWirtingerDeriv f z 1 = (coefficientEquiv ⟨J, hJ⟩).val * wirtingerDeriv f z 1 := by
+  rw [isComplexLinear_iff_apply_one_add_I_mul_apply_I J hJ, wirtingerDeriv_apply,
+    conjWirtingerDeriv_apply]
+  simp only [smul_eq_mul, mul_one]
+  constructor
+  · intro h
+    rw [h]
+    ring
+  · intro h
+    linear_combination 2 * h
+
+/-- The scalar coefficient of a tame structure vanishes exactly at the standard structure. -/
+theorem coefficientEquiv_eq_zero_iff (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) :
+    (coefficientEquiv ⟨J, hJ⟩).val = 0 ↔ J = AlmostComplexStructure.ofComplexModule ℂ := by
+  constructor
+  · intro h
+    have h' : coefficientEquiv ⟨J, hJ⟩ =
+        coefficientEquiv ⟨AlmostComplexStructure.ofComplexModule ℂ,
+          stdComplexSymplecticForm_tames⟩ :=
+      Subtype.ext (h.trans coefficientEquiv_std.symm)
+    exact congrArg Subtype.val (coefficientEquiv.injective h')
+  · rintro rfl
+    exact coefficientEquiv_std
 
 /-- At coefficient one the affine map fails to be a local diffeomorphism at every point,
 not just to be globally injective. -/
