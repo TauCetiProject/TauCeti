@@ -189,29 +189,8 @@ theorem mem_weightSubcomodule {x : X} {v : V} :
 
 /-- With its inherited coaction, the `x`-weight subcomodule has pure weight `x`. -/
 theorem mem_weightSpace_weightSubcomodule (x : X) (n : weightSubcomodule V π hπ x) :
-    n ∈ weightSpace (weightSubcomodule V π hπ x) π x := by
-  rw [mem_weightSpace]
-  apply Module.Flat.rTensor_preserves_injective_linearMap (M := MonoidAlgebra R X)
-    (SMulMemClass.subtype (weightSubcomodule V π hπ x)) Subtype.val_injective
-  rw [LinearMap.rTensor_tmul, SMulMemClass.subtype_apply, ← mem_weightSpace.mp n.2,
-    ← Subcomodule.subtype_rTensor_coact _ n]
-  generalize Comodule.coact (R := R) (C := C) n = t
-  induction t using TensorProduct.inductionOn with
-  | add y z hy hz => simp only [map_add, hy, hz]
-  | tmul y c => simp
-
-/-- A weight vector of `V` lying in a subcomodule is a weight vector of that subcomodule. -/
-private theorem mem_weightSpace_of_mem_weightSpace_subcomodule (N : Subcomodule R C V) {x : X}
-    (n : N) (hn : (n : V) ∈ weightSpace V π x) : n ∈ weightSpace N π x := by
-  rw [mem_weightSpace]
-  apply Module.Flat.rTensor_preserves_injective_linearMap (M := MonoidAlgebra R X)
-    (SMulMemClass.subtype N) Subtype.val_injective
-  rw [LinearMap.rTensor_tmul, SMulMemClass.subtype_apply, ← mem_weightSpace.mp hn,
-    ← Subcomodule.subtype_rTensor_coact _ n]
-  generalize Comodule.coact (R := R) (C := C) n = t
-  induction t using TensorProduct.inductionOn with
-  | add y z hy hz => simp only [map_add, hy, hz]
-  | tmul y c => simp
+    n ∈ weightSpace (weightSubcomodule V π hπ x) π x :=
+  mem_weightSpace_of_mem_weightSpace_subcomodule _ n n.2
 
 end TauCeti.DiagonalizableGroup
 
