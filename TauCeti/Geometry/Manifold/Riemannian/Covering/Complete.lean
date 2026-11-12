@@ -5,46 +5,45 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Contractible
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Homotopy.Lifting
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Analysis.Convex.SimplyConnected
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.HopfRinow
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Geodesic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
-public import TauCeti.Geometry.Manifold.Topology
 
 /-!
 # Completeness lifts along Riemannian coverings
 
-Let `f : M → N` be a local Riemannian isometry between boundaryless Riemannian manifolds which is
+Let `f : M → N` be a local Riemannian isometry from a boundaryless Riemannian manifold which is
 moreover a topological covering map. If the geodesics of `N` leaving `f x` are defined for all
 time, then so are the geodesics of `M` leaving `x`. Indeed, let `v ∈ T_x M` and let `γ` be the
 all-time geodesic of `N` with initial data `(f x, df_x v)`. Since `ℝ` is simply connected and
 locally path connected, `γ` lifts uniquely through the covering `f` to a continuous curve `Γ`
-with `Γ 0 = x`. Since `f` is a local diffeomorphism (inverse function theorem), `Γ` is smooth,
+with `Γ 0 = x`. Since `f` is a local diffeomorphism (inverse function theorem), `Γ` is `C²`,
 and since `f` is a local isometry, `Γ` is a geodesic. Its initial velocity is sent by the
 injective differential `df_x` to `df_x v`, so it is `v`.
 
 Consequently, by the Hopf–Rinow theorem, if `N` is complete for its Riemannian distance then so
-is `M`, for any distance on `M` that is its Riemannian distance. For a connected Hausdorff `M`
+is `M`, for any distance on `M` that is its Riemannian distance. For a preconnected Hausdorff `M`
 this applies to the distance `TauCeti.MetricSpace.ofRiemannianMetric`, whose topology is the
 manifold topology. No completeness assumption is made on `M`. The main application is to a
 pullback metric `f^* g` along a smooth covering map with invertible differential.
 
 ## Main results
 
-* `TauCeti.IsLocalRiemannianIsometry.exists_isGeodesicCurveOnFrom_univ_of_isCoveringMap`: an
-  all-time geodesic of `N` lifts to an all-time geodesic of `M` with prescribed initial point.
+* `TauCeti.IsLocalRiemannianIsometry.exists_isGeodesicCurveOnFrom_of_isCoveringMap`: geodesics
+  on intervals lift with prescribed initial data; the all-time case is a corollary.
+* `TauCeti.IsLocalRiemannianIsometry.geodesicInterval_mfderiv_of_isCoveringMap`: corresponding
+  initial data have the same maximal geodesic interval.
 * `TauCeti.IsLocalRiemannianIsometry.isGeodesicallyCompleteAt_of_isCoveringMap`: geodesic
   completeness at `f x` lifts to geodesic completeness at `x`.
 * `TauCeti.IsLocalRiemannianIsometry.completeSpace_of_isCoveringMap`: metric completeness of `N`
   lifts to metric completeness of `M`.
 * `Bundle.ContMDiffRiemannianMetric.isGeodesicallyCompleteAt_pullback_of_isCoveringMap`: the
   pullback of a geodesically complete metric along a smooth covering is geodesically complete.
-* `Bundle.ContMDiffRiemannianMetric.completeSpace_pullback_of_isCoveringMap`: on a connected
+* `Bundle.ContMDiffRiemannianMetric.completeSpace_pullback_of_isCoveringMap`: on a preconnected
   cover, the Riemannian distance of the pullback of a geodesically complete metric is complete.
 
 ## References
@@ -70,71 +69,114 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 section Geodesic
 
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 2 N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
+  [BoundarylessManifold I M] {f : M → N}
+
+/-- A geodesic on an interval lifts through a Riemannian covering with prescribed initial data.
+The lifted curve agrees with the base curve after projection throughout the parameter set. -/
+theorem exists_isGeodesicCurveOnFrom_of_isCoveringMap
+    (hf : IsLocalRiemannianIsometry I J f) (hcov : IsCoveringMap f) {x : M}
+    {v : TangentSpace I x} {γ : ℝ → N} {s : Set ℝ} (hs : s.OrdConnected)
+    (hγ : IsGeodesicCurveOnFrom J γ s (f x) (mfderiv I J f x v)) :
+    ∃ Γ : ℝ → M, IsGeodesicCurveOnFrom I Γ s x v ∧ EqOn (f ∘ Γ) γ s := by
+  classical
+  have hconv : Convex ℝ s := hs.convex
+  have : SimplyConnectedSpace s := hconv.isSimplyConnected ⟨0, hγ.zero_mem⟩
+  have : LocallyPathConnectedSpace s := hconv.locallyPathConnectedSpace
+  obtain ⟨L, ⟨hL0, hL⟩, -⟩ := hcov.existsUnique_continuousMap_lifts
+    ⟨s.domRestrict γ, hγ.isGeodesicCurveOn.continuousOn.domRestrict⟩
+    ⟨0, hγ.zero_mem⟩ x hγ.base_eq.symm
+  let Γ : ℝ → M := fun t ↦ if ht : t ∈ s then L ⟨t, ht⟩ else x
+  have hΓL : s.domRestrict Γ = L := by
+    funext t
+    simp [Γ, Set.domRestrict]
+  have hΓ0 : Γ 0 = x := by
+    simpa [Γ, hγ.zero_mem] using hL0
+  have hΓc : ContinuousOn Γ s := by
+    rw [continuousOn_iff_continuous_domRestrict, hΓL]
+    exact L.continuous
+  have hΓγ : EqOn (f ∘ Γ) γ s := by
+    intro t ht
+    simpa [Γ, ht, Set.domRestrict] using congrFun hL ⟨t, ht⟩
+  have hΓ2 : ContMDiffOn 𝓘(ℝ) I 2 Γ s :=
+    ContMDiffOn.of_comp_isLocalDiffeomorph
+      (hf.isLocalDiffeomorph (n := 2) (by norm_num) (by simp)) hΓc
+      (hγ.isGeodesicCurveOn.contMDiffOn.congr hΓγ)
+  have hγ' : IsGeodesicCurveOnFrom J (f ∘ Γ) s (f x) (mfderiv I J f x v) := by
+    refine ⟨hγ.isGeodesicCurveOn.congr hΓγ, hγ.zero_mem, ?_⟩
+    calc
+      _ = TotalSpace.mk' F (γ 0) (curveVelocityWithin J γ s 0) := by
+        simpa only [tangentMapWithin_unit_eq_curveVelocityLiftWithin,
+          curveVelocityLiftWithin_apply] using
+          tangentMapWithin_congr (I := 𝓘(ℝ)) (I' := J) hΓγ
+            (TotalSpace.mk' ℝ 0 ((NormedSpace.fromTangentSpace (𝕜 := ℝ) 0).symm 1))
+            hγ.zero_mem
+      _ = _ := hγ.initial_eq
+  exact ⟨Γ, (hf.isGeodesicCurveOnFrom_comp_iff hΓ2 hΓ0).mp hγ', hΓγ⟩
+
+/-- An all-time geodesic lifts through a Riemannian covering with prescribed initial data. -/
+theorem exists_isGeodesicCurveOnFrom_univ_of_isCoveringMap
+    (hf : IsLocalRiemannianIsometry I J f) (hcov : IsCoveringMap f) {x : M}
+    {v : TangentSpace I x} {γ : ℝ → N}
+    (hγ : IsGeodesicCurveOnFrom J γ univ (f x) (mfderiv I J f x v)) :
+    ∃ Γ : ℝ → M, IsGeodesicCurveOnFrom I Γ univ x v ∧ f ∘ Γ = γ := by
+  obtain ⟨Γ, hΓ, hΓγ⟩ := hf.exists_isGeodesicCurveOnFrom_of_isCoveringMap
+    hcov ordConnected_univ hγ
+  exact ⟨Γ, hΓ, funext fun t ↦ hΓγ (mem_univ t)⟩
+
+end Geodesic
+
+section GeodesicCompleteness
+
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
-  {f : M → N}
+  [BoundarylessManifold I M] {f : M → N}
 
-/-- **Lifting all-time geodesics through a Riemannian covering.** If `f : M → N` is a local
-Riemannian isometry out of a boundaryless manifold and a covering map, every geodesic of `N`
-defined for all time and leaving `f x` with velocity `df_x v` is the image of a geodesic of `M`
-defined for all time and leaving `x` with velocity `v`. -/
-theorem exists_isGeodesicCurveOnFrom_univ_of_isCoveringMap [BoundarylessManifold I M]
-    (hf : IsLocalRiemannianIsometry I J f) (hcov : IsCoveringMap f) {x : M}
-    {v : TangentSpace I x} {γ : ℝ → N}
-    (hγ : IsGeodesicCurveOnFrom J γ univ (f x) (mfderiv I J f x v)) :
-    ∃ Γ : ℝ → M, IsGeodesicCurveOnFrom I Γ univ x v ∧ f ∘ Γ = γ := by
-  have hγc : Continuous γ := by
-    rw [← continuousOn_univ]
-    exact hγ.isGeodesicCurveOn.contMDiffOn.continuousOn
-  have hγ0 : γ 0 = f x := by
-    simpa using congrArg TotalSpace.proj hγ.initial_eq
-  obtain ⟨Γ, ⟨hΓ0, hΓ⟩, -⟩ :=
-    hcov.existsUnique_continuousMap_lifts ⟨γ, hγc⟩ 0 x hγ0.symm
-  have hΓγ : f ∘ Γ = γ := hΓ
-  have hΓ2 : ContMDiff 𝓘(ℝ) I 2 Γ := by
-    refine ContMDiff.of_comp_isLocalDiffeomorph
-      (hf.isLocalDiffeomorph (n := 2) (by norm_num) (by simp)) Γ.continuous ?_
-    rw [hΓγ, ← contMDiffOn_univ]
-    exact hγ.isGeodesicCurveOn.contMDiffOn
-  have hgeod : IsGeodesicCurveOn I Γ univ := by
-    rw [← hf.isGeodesicCurveOn_comp_iff hΓ2.contMDiffOn, hΓγ]
-    exact hγ.isGeodesicCurveOn
-  refine ⟨Γ, ⟨hgeod, mem_univ 0, ?_⟩, hΓγ⟩
-  have hlift := tangentMap_curveVelocityLiftWithin (hf.mdifferentiableAt (Γ 0))
-    (hgeod.mdifferentiableOn 0 (mem_univ 0))
-    (hgeod.uniqueDiffOn 0 (mem_univ 0)).uniqueMDiffWithinAt
-  rw [hΓγ, curveVelocityLiftWithin_apply, curveVelocityLiftWithin_apply, hγ.initial_eq] at hlift
-  have key : ∀ (y : M) (w : TangentSpace I y), y = x →
-      tangentMap I J f (TotalSpace.mk' E y w) =
-        TotalSpace.mk' F (f x) (mfderiv I J f x v) →
-      TotalSpace.mk' E y w = TotalSpace.mk' E x v := by
-    rintro y w rfl h
-    have h' : mfderiv I J f y w = mfderiv I J f y v := by
-      simpa [tangentMap] using h
-    rw [hf.mfderiv_injective y h']
-  exact key _ _ hΓ0 hlift
+/-- A Riemannian covering preserves the maximal interval for corresponding initial data. -/
+theorem geodesicInterval_mfderiv_of_isCoveringMap
+    (hf : IsLocalRiemannianIsometry I J f) (hcov : IsCoveringMap f) (x : M)
+    (v : TangentSpace I x) :
+    geodesicInterval J N (f x) (mfderiv I J f x v) = geodesicInterval I M x v := by
+  ext t
+  simp only [mem_geodesicInterval_iff]
+  constructor
+  · rintro ⟨γ, a, b, hγ, ht⟩
+    obtain ⟨Γ, hΓ, -⟩ := hf.exists_isGeodesicCurveOnFrom_of_isCoveringMap
+      hcov ordConnected_Ioo hγ
+    exact ⟨Γ, a, b, hΓ, ht⟩
+  · rintro ⟨γ, a, b, hγ, ht⟩
+    exact ⟨f ∘ γ, a, b, hf.isGeodesicCurveOnFrom_comp hγ, ht⟩
 
-variable [I.Boundaryless] [J.Boundaryless] [T2Space N]
+/-- Geodesic completeness at corresponding points is equivalent along a Riemannian covering. -/
+theorem isGeodesicallyCompleteAt_iff_of_isCoveringMap
+    (hf : IsLocalRiemannianIsometry I J f) (hcov : IsCoveringMap f) (x : M) :
+    IsGeodesicallyCompleteAt J N (f x) ↔ IsGeodesicallyCompleteAt I M x := by
+  rw [isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval,
+    isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval]
+  constructor
+  · intro h v
+    rw [← hf.geodesicInterval_mfderiv_of_isCoveringMap hcov]
+    exact h _
+  · intro h w
+    obtain ⟨v, rfl⟩ := hf.mfderiv_surjective x w
+    rw [hf.geodesicInterval_mfderiv_of_isCoveringMap hcov]
+    exact h v
 
-/-- **Geodesic completeness lifts along a Riemannian covering.** If `f : M → N` is a local
-Riemannian isometry between boundaryless manifolds and a covering map, and every geodesic of `N`
-leaving `f x` is defined for all time, then every geodesic of `M` leaving `x` is defined for all
-time. -/
+/-- **Geodesic completeness lifts along a Riemannian covering.** If every geodesic leaving
+`f x` is defined for all time, then every geodesic leaving `x` is defined for all time. -/
 theorem isGeodesicallyCompleteAt_of_isCoveringMap (hf : IsLocalRiemannianIsometry I J f)
     (hcov : IsCoveringMap f) {x : M} (h : IsGeodesicallyCompleteAt J N (f x)) :
-    IsGeodesicallyCompleteAt I M x := by
-  rw [isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval]
-  intro v
-  have hγ := isGeodesicCurveOnFrom_maximalGeodesic (I := J) (M := N) (f x) (mfderiv I J f x v)
-  rw [geodesicInterval_eq_preimage_expDomain, expDomain_eq_univ_iff.2 h, preimage_univ] at hγ
-  obtain ⟨Γ, hΓ, -⟩ := hf.exists_isGeodesicCurveOnFrom_univ_of_isCoveringMap hcov hγ
-  exact mem_geodesicInterval_iff.2 ⟨Γ, -2, 2,
-    hΓ.mono (uniqueDiffOn_Ioo _ _) (subset_univ _) ⟨by norm_num, by norm_num⟩,
-    by norm_num, by norm_num⟩
+    IsGeodesicallyCompleteAt I M x :=
+  (hf.isGeodesicallyCompleteAt_iff_of_isCoveringMap hcov x).mp h
 
 /-- **Geodesic completeness lifts along a Riemannian covering**, global form. -/
 theorem forall_isGeodesicallyCompleteAt_of_isCoveringMap (hf : IsLocalRiemannianIsometry I J f)
@@ -142,14 +184,14 @@ theorem forall_isGeodesicallyCompleteAt_of_isCoveringMap (hf : IsLocalRiemannian
     IsGeodesicallyCompleteAt I M x :=
   hf.isGeodesicallyCompleteAt_of_isCoveringMap hcov (h (f x))
 
-end Geodesic
+end GeodesicCompleteness
 
 section Metric
 
 variable {M : Type*} [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
-  {N : Type*} [MetricSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+  {N : Type*} [EMetricSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] [IsRiemannianManifold J N]
   [I.Boundaryless] [J.Boundaryless] {f : M → N}
@@ -179,7 +221,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
-  [I.Boundaryless] [J.Boundaryless] [T2Space N]
+  [BoundarylessManifold I M]
 
 /-- **Pullback metrics along coverings are geodesically complete.** Let `f : M → N` be a smooth
 covering map whose differential is everywhere invertible, and `g` a smooth Riemannian metric on
@@ -201,11 +243,10 @@ theorem isGeodesicallyCompleteAt_pullback_of_isCoveringMap
     ).isGeodesicallyCompleteAt_of_isCoveringMap hcov h
 
 /-- **Pullback metrics along coverings of complete manifolds are complete.** Let `f : M → N` be a
-smooth covering map out of a connected Hausdorff manifold whose differential is everywhere
+smooth covering map out of a preconnected Hausdorff manifold whose differential is everywhere
 invertible, and `g` a smooth Riemannian metric on `N` all of whose geodesics are defined for all
-time (equivalently, by the Hopf–Rinow theorem, `N` is complete on each connected component). Then
-`M` is complete for the Riemannian distance of the pullback metric `f^* g`. -/
-theorem completeSpace_pullback_of_isCoveringMap [T2Space M] [ConnectedSpace M]
+time. Then `M` is complete for the Riemannian distance of the pullback metric `f^* g`. -/
+theorem completeSpace_pullback_of_isCoveringMap [I.Boundaryless] [T2Space M] [PreconnectedSpace M]
     (g : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)) {f : M → N}
     (hf : ContMDiff I J (∞ + 1) f) (hinv : ∀ x, (mfderiv I J f x).IsInvertible)
     (hcov : IsCoveringMap f)
@@ -214,20 +255,20 @@ theorem completeSpace_pullback_of_isCoveringMap [T2Space M] [ConnectedSpace M]
     letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
       ⟨(g.pullback f hf fun x ↦ (hinv x).injective).toRiemannianMetric⟩
     letI : MetricSpace M :=
-      haveI := Manifold.t3Space M I
+      haveI := Manifold.locallyCompact_of_finiteDimensional (M := M) I
       haveI := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
         (F := E) (V := fun x : M ↦ TangentSpace I x)
       MetricSpace.ofRiemannianMetric I M
     CompleteSpace M := by
   let : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨(g.pullback f hf fun x ↦ (hinv x).injective).toRiemannianMetric⟩
-  have := Manifold.t3Space M I
+  have := Manifold.locallyCompact_of_finiteDimensional (M := M) I
   have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
     (F := E) (V := fun x : M ↦ TangentSpace I x)
   let : MetricSpace M := MetricSpace.ofRiemannianMetric I M
-  have : IsRiemannianManifold I M := ⟨fun _ _ ↦ rfl⟩
-  obtain ⟨x⟩ := ‹ConnectedSpace M›.toNonempty
-  exact (Manifold.completeSpace_iff_isGeodesicallyCompleteAt x).2
-    (g.isGeodesicallyCompleteAt_pullback_of_isCoveringMap hf hinv hcov (h (f x)))
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
+  · infer_instance
+  · exact (Manifold.completeSpace_iff_isGeodesicallyCompleteAt x).2
+      (g.isGeodesicallyCompleteAt_pullback_of_isCoveringMap hf hinv hcov (h (f x)))
 
 end Bundle.ContMDiffRiemannianMetric

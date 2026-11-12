@@ -26,6 +26,9 @@ maximal geodesic intervals and intertwines the exponential maps, `Φ ∘ exp_p =
 
 * `IsLocalRiemannianIsometry.isGeodesicCurveOn_comp`: local isometries preserve geodesics.
 * `IsLocalRiemannianIsometry.isGeodesicCurveOn_comp_iff`: reflection for `C²` source curves.
+* `IsLocalRiemannianIsometry.isGeodesicCurveOnFrom_comp` and
+  `IsLocalRiemannianIsometry.isGeodesicCurveOnFrom_comp_iff`: transport and reflection of initial
+  data, with reflection requiring the prescribed starting point.
 * `RiemannianIsometry.isGeodesicCurveOn_comp_iff`: an isometry preserves the geodesic equation
   on a parameter set.
 * `RiemannianIsometry.isGeodesicCurve_comp_iff`: the all-time specialization.
@@ -78,6 +81,38 @@ theorem isGeodesicCurveOn_comp_iff {f : M → N} (hf : IsLocalRiemannianIsometry
   refine ⟨fun h ↦ ⟨h.uniqueDiffOn, hγ, fun t ht ↦ ?_⟩, hf.isGeodesicCurveOn_comp⟩
   exact (hf.accelerationWithin_comp_eq_zero_iff h.uniqueDiffOn hγ ht).1
     (h.accelerationWithin_eq_zero t ht)
+
+/-- A local Riemannian isometry sends prescribed initial data through its differential. -/
+theorem isGeodesicCurveOnFrom_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
+    {γ : ℝ → M} {s : Set ℝ} {p : M} {v : TangentSpace I p}
+    (h : IsGeodesicCurveOnFrom I γ s p v) :
+    IsGeodesicCurveOnFrom J (f ∘ γ) s (f p) (mfderiv I J f p v) := by
+  have hp := h.base_eq
+  subst p
+  refine ⟨hf.isGeodesicCurveOn_comp h.isGeodesicCurveOn, h.zero_mem, ?_⟩
+  have hv := h.initial_eq
+  simp only [Function.comp_apply, TotalSpace.mk_inj] at hv ⊢
+  rw [curveVelocityWithin_map (hf.mdifferentiableAt _)
+    (h.isGeodesicCurveOn.uniqueDiffOn 0 h.zero_mem)
+    (h.isGeodesicCurveOn.mdifferentiableOn 0 h.zero_mem), hv]
+
+/-- A local Riemannian isometry reflects prescribed initial data for a `C²` curve starting at
+that point. The starting-point condition selects the sheet of the local isometry. -/
+theorem isGeodesicCurveOnFrom_comp_iff {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
+    {γ : ℝ → M} {s : Set ℝ} {p : M} {v : TangentSpace I p}
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s) (hp : γ 0 = p) :
+    IsGeodesicCurveOnFrom J (f ∘ γ) s (f p) (mfderiv I J f p v) ↔
+      IsGeodesicCurveOnFrom I γ s p v := by
+  subst p
+  refine ⟨fun h ↦ ?_, hf.isGeodesicCurveOnFrom_comp⟩
+  have hgeod := (hf.isGeodesicCurveOn_comp_iff hγ).mp h.isGeodesicCurveOn
+  refine ⟨hgeod, h.zero_mem, ?_⟩
+  have hv := h.initial_eq
+  simp only [Function.comp_apply, TotalSpace.mk_inj] at hv ⊢
+  apply hf.mfderiv_injective (γ 0)
+  rw [← curveVelocityWithin_map (hf.mdifferentiableAt _)
+    (hgeod.uniqueDiffOn 0 h.zero_mem) (hgeod.mdifferentiableOn 0 h.zero_mem)]
+  exact hv
 
 end IsLocalRiemannianIsometry
 
