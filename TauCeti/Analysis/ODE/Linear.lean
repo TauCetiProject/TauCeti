@@ -409,29 +409,18 @@ theorem exists_contDiff_deriv_eq_neg_apply {B : E →L[ℝ] E} {ω : ℝ} {v w :
   -- A periodic nonvanishing path is bounded away from `0`.
   have hper : Function.Periodic e (ω⁻¹ * (2 * Real.pi)) := fun s ↦ by
     simp only [he_def, Real.cos_periodic.const_mul ω s, Real.sin_periodic.const_mul ω s]
-  have hperT : Function.Periodic e |ω⁻¹ * (2 * Real.pi)| := by
-    rcases abs_choice (ω⁻¹ * (2 * Real.pi)) with h | h <;> rw [h]
-    exacts [hper, hper.neg]
-  have hT : 0 < |ω⁻¹ * (2 * Real.pi)| := abs_pos.2 (by positivity)
-  obtain ⟨s₀, -, hs₀⟩ := isCompact_Icc.exists_isMinOn (nonempty_Icc.2 hT.le)
-    (hcont.norm.continuousOn (s := Icc 0 |ω⁻¹ * (2 * Real.pi)|))
+  obtain ⟨_, ⟨s₀, rfl⟩, hs₀⟩ := ((hper.comp norm).compact_of_continuous (by positivity)
+    hcont.norm).exists_isLeast (range_nonempty _)
+  have hbd (s : ℝ) : ‖e s‖ ≤ ‖v‖ + ‖w‖ := by
+    refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul] <;>
+      exact mul_le_of_le_one_left (norm_nonneg _) (by simp [Real.abs_cos_le_one,
+        Real.abs_sin_le_one])
   refine ⟨e, ‖e s₀‖, (1 + ‖B‖) * (‖v‖ + ‖w‖), by fun_prop, norm_pos_iff.2 (hne s₀),
-    fun s ↦ ?_, fun s ↦ ?_, fun s ↦ ?_, fun s ↦ (hderiv s).deriv⟩
-  · obtain ⟨y, hy, hey⟩ := hperT.exists_mem_Ico₀ hT s
-    rw [hey]
-    exact hs₀ (Ico_subset_Icc_self hy)
-  · have h : ‖e s‖ ≤ ‖v‖ + ‖w‖ := by
-      refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul] <;>
-        exact mul_le_of_le_one_left (norm_nonneg _) (by simp [Real.abs_cos_le_one,
-          Real.abs_sin_le_one])
-    nlinarith [norm_nonneg B, norm_nonneg v, norm_nonneg w]
+    fun s ↦ hs₀ ⟨s, rfl⟩, fun s ↦ ?_, fun s ↦ ?_, fun s ↦ (hderiv s).deriv⟩
+  · nlinarith [hbd s, norm_nonneg B, norm_nonneg v, norm_nonneg w]
   · rw [(hderiv s).deriv, norm_neg]
-    have h : ‖e s‖ ≤ ‖v‖ + ‖w‖ := by
-      refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul] <;>
-        exact mul_le_of_le_one_left (norm_nonneg _) (by simp [Real.abs_cos_le_one,
-          Real.abs_sin_le_one])
     calc ‖B (e s)‖ ≤ ‖B‖ * ‖e s‖ := B.le_opNorm _
-      _ ≤ ‖B‖ * (‖v‖ + ‖w‖) := by gcongr
+      _ ≤ ‖B‖ * (‖v‖ + ‖w‖) := by gcongr; exact hbd s
       _ ≤ _ := by nlinarith [norm_nonneg v, norm_nonneg w]
 
 /-- Along a bounded solution `e` of `e' = -B e`, the defect `e' + A e = (A - B) e` tends to `0`
