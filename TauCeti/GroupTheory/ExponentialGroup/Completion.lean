@@ -78,13 +78,13 @@ an `A`-group `H` factors through `μ : G →* K` by a unique homomorphism `K →
 exponentiation. The `A`-groups `H` range over the universe `w`. -/
 def IsCompletion {K : Type uK} [Group K] [Pow K A] (μ : G →* K) : Prop :=
   ∀ (H : Type w) [Group H] [Pow H A] [IsExponentialGroup A H] (φ : G →* H),
-    ∃! ψ : PowMonoidHom A K H, ψ.toMonoidHom.comp μ = φ
+    ∃! ψ : ExponentialHom A K H, ψ.toMonoidHom.comp μ = φ
 
 variable {A}
 
 theorem isCompletion_iff {K : Type uK} [Group K] [Pow K A] {μ : G →* K} :
     IsCompletion.{w} A μ ↔ ∀ (H : Type w) [Group H] [Pow H A] [IsExponentialGroup A H]
-      (φ : G →* H), ∃! ψ : PowMonoidHom A K H, ψ.toMonoidHom.comp μ = φ :=
+      (φ : G →* H), ∃! ψ : ExponentialHom A K H, ψ.toMonoidHom.comp μ = φ :=
   Iff.rfl
 
 namespace IsCompletion
@@ -96,7 +96,7 @@ variable {K : Type uK} [Group K] [Pow K A] {μ : G →* K} {H : Type w} [Group H
 
 /-- The homomorphism commuting with exponentiation that extends `φ : G →* H` along an
 `A`-completion `μ : G →* K`. -/
-noncomputable def lift (h : IsCompletion.{w} A μ) (φ : G →* H) : PowMonoidHom A K H :=
+noncomputable def lift (h : IsCompletion.{w} A μ) (φ : G →* H) : ExponentialHom A K H :=
   (h H φ).exists.choose
 
 @[simp]
@@ -104,18 +104,18 @@ theorem lift_comp (h : IsCompletion.{w} A μ) (φ : G →* H) : (h.lift φ).toMo
   (h H φ).exists.choose_spec
 
 @[simp]
-theorem lift_apply (h : IsCompletion.{w} A μ) (φ : G →* H) (g : G) : h.lift φ (μ g) = φ g :=
+theorem lift_eq (h : IsCompletion.{w} A μ) (φ : G →* H) (g : G) : h.lift φ (μ g) = φ g :=
   DFunLike.congr_fun (h.lift_comp φ) g
 
 /-- Homomorphisms commuting with exponentiation, out of an `A`-completion `μ : G →* K`, are equal
 if they agree on the image of `μ`. -/
-theorem hom_ext (h : IsCompletion.{w} A μ) {ψ ψ' : PowMonoidHom A K H}
+theorem hom_ext (h : IsCompletion.{w} A μ) {ψ ψ' : ExponentialHom A K H}
     (hψ : ψ.toMonoidHom.comp μ = ψ'.toMonoidHom.comp μ) : ψ = ψ' :=
   (h H (ψ'.toMonoidHom.comp μ)).unique hψ rfl
 
 /-- The extension of `φ` along an `A`-completion is the only homomorphism commuting with
 exponentiation that restricts to `φ`. -/
-theorem eq_lift (h : IsCompletion.{w} A μ) {φ : G →* H} {ψ : PowMonoidHom A K H}
+theorem eq_lift (h : IsCompletion.{w} A μ) {φ : G →* H} {ψ : ExponentialHom A K H}
     (hψ : ψ.toMonoidHom.comp μ = φ) : ψ = h.lift φ :=
   h.hom_ext (hψ.trans (h.lift_comp φ).symm)
 
@@ -128,7 +128,7 @@ variable {K₁ K₂ : Type w} [Group K₁] [Group K₂] [Pow K₁ A] [Pow K₂ A
 
 @[simp]
 theorem lift_self [IsExponentialGroup A K₁] (h₁ : IsCompletion.{w} A μ₁) :
-    h₁.lift μ₁ = PowMonoidHom.id A K₁ :=
+    h₁.lift μ₁ = ExponentialHom.id A K₁ :=
   (h₁.eq_lift (by simp)).symm
 
 variable [IsExponentialGroup A K₁] [IsExponentialGroup A K₂]
@@ -136,30 +136,30 @@ variable [IsExponentialGroup A K₁] [IsExponentialGroup A K₂]
 /-- The extensions of two `A`-completions of one group along each other are mutually inverse. -/
 @[simp]
 theorem lift_comp_lift (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) :
-    (h₂.lift μ₁).comp (h₁.lift μ₂) = PowMonoidHom.id A K₁ :=
+    (h₂.lift μ₁).comp (h₁.lift μ₂) = ExponentialHom.id A K₁ :=
   h₁.hom_ext <| by simp [MonoidHom.comp_assoc]
 
 /-- Two `A`-completions of one group are isomorphic, by the isomorphism extending one along the
 other. -/
 noncomputable def mulEquiv (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) : K₁ ≃* K₂ :=
   (h₁.lift μ₂).toMonoidHom.toMulEquiv (h₂.lift μ₁).toMonoidHom
-    (by rw [← PowMonoidHom.toMonoidHom_comp, lift_comp_lift, PowMonoidHom.toMonoidHom_id])
-    (by rw [← PowMonoidHom.toMonoidHom_comp, lift_comp_lift, PowMonoidHom.toMonoidHom_id])
+    (by rw [← ExponentialHom.toMonoidHom_comp, lift_comp_lift, ExponentialHom.toMonoidHom_id])
+    (by rw [← ExponentialHom.toMonoidHom_comp, lift_comp_lift, ExponentialHom.toMonoidHom_id])
 
 theorem coe_mulEquiv (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) :
     ⇑(h₁.mulEquiv h₂) = h₁.lift μ₂ := by
   rfl
 
 @[simp]
-theorem symm_mulEquiv (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) :
+theorem mulEquiv_symm (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) :
     (h₁.mulEquiv h₂).symm = h₂.mulEquiv h₁ := by
   rfl
 
 /-- The comparison isomorphism of two `A`-completions commutes with the completion maps. -/
 @[simp]
-theorem mulEquiv_apply (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) (g : G) :
+theorem mulEquiv_eq (h₁ : IsCompletion.{w} A μ₁) (h₂ : IsCompletion.{w} A μ₂) (g : G) :
     h₁.mulEquiv h₂ (μ₁ g) = μ₂ g :=
-  h₁.lift_apply μ₂ g
+  h₁.lift_eq μ₂ g
 
 /-- The comparison isomorphism of two `A`-completions commutes with exponentiation. -/
 @[simp]
@@ -183,7 +183,7 @@ variable (A : Type uA) {G : Type uG} [Group G] [Pow G A]
 `Multiplicative A → G`, `ofAdd a ↦ g ^ a`; it commutes with exponentiation, where
 `Multiplicative A` carries `ofAdd a ^ b = ofAdd (b * a)`. -/
 def powHom [CommSemiring A] [IsExponentialGroup A G] (g : G) :
-    PowMonoidHom A (Multiplicative A) G where
+    ExponentialHom A (Multiplicative A) G where
   toFun x := g ^ x.toAdd
   map_one' := by rw [toAdd_one, IsExponentialGroup.pow_zero]
   map_mul' x y := by rw [toAdd_mul, IsExponentialGroup.pow_add]

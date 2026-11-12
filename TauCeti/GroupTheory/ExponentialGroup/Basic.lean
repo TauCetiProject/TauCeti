@@ -126,13 +126,13 @@ theorem pow_natCast (g : G) (n : ℕ) : g ^ (n : A) = g ^ n := by
   | succ n ih => rw [Nat.cast_succ, pow_add_one, ih, pow_succ]
 
 /-- The powers of one element commute. -/
-theorem commute_pow_pow (g : G) (a b : A) : Commute (g ^ a) (g ^ b) :=
+theorem commute_pow_pow_self (g : G) (a b : A) : Commute (g ^ a) (g ^ b) :=
   (commute_iff_eq _ _).2 <| by
     rw [← IsExponentialGroup.pow_add, ← IsExponentialGroup.pow_add, add_comm]
 
 /-- An element commutes with its powers. -/
 theorem commute_self_pow (g : G) (a : A) : Commute g (g ^ a) := by
-  simpa using commute_pow_pow g (1 : A) a
+  simpa using commute_pow_pow_self g (1 : A) a
 
 /-- An element commuting with `h` commutes with the powers of `h`. -/
 theorem commute_pow_right {g h : G} (hc : Commute g h) (a : A) : Commute g (h ^ a) := by
@@ -145,8 +145,7 @@ theorem commute_pow_left {g h : G} (hc : Commute g h) (a : A) : Commute (g ^ a) 
   (commute_pow_right hc.symm a).symm
 
 /-- Powers of commuting elements commute. -/
-theorem commute_pow_pow_of_commute {g h : G} (hc : Commute g h) (a b : A) :
-    Commute (g ^ a) (h ^ b) :=
+theorem commute_pow_pow {g h : G} (hc : Commute g h) (a b : A) : Commute (g ^ a) (h ^ b) :=
   commute_pow_right (commute_pow_left hc a) b
 
 /-- Centralizers are closed under exponentiation. -/
@@ -168,7 +167,7 @@ section CommSemiring
 variable {A G : Type*} [CommSemiring A] [Group G] [Pow G A] [IsExponentialGroup A G]
 
 /-- Over a commutative semiring, iterated powers may be taken in either order. -/
-theorem pow_pow_comm (g : G) (a b : A) : (g ^ a) ^ b = (g ^ b) ^ a := by
+protected theorem pow_right_comm (g : G) (a b : A) : (g ^ a) ^ b = (g ^ b) ^ a := by
   rw [← IsExponentialGroup.pow_mul, ← IsExponentialGroup.pow_mul, mul_comm]
 
 end CommSemiring
