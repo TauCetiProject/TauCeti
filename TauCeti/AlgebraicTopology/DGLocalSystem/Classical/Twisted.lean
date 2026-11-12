@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Classical.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.RankOne
+public import TauCeti.Algebra.Homology.DG.Twisted.Equivalence
 
 /-!
 # Twisted complexes of classical local systems

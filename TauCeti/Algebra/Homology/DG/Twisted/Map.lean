@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DG.Twisted.Equivalence
+public import TauCeti.Algebra.Homology.DG.Twisted.Homotopy
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Basic
 
 /-!
@@ -26,31 +26,16 @@ Proposition `prop:FotimesL-mL`.
 
 The same applies to the data comparing twisting cocycles. The image under `f` of a continuation
 cocycle `ν : mP → mQ` is a continuation cocycle `f ∘ mP → f ∘ mQ`
-(`TauCeti.ContinuationCocycle.map`), compatibly with the Kronecker cocycles and with composition,
-and the image of a parametrized cocycle is a parametrized cocycle between the images
-(`TauCeti.ParametrizedCocycle.map`). So homologous twisting cocycles have homologous images
-(`TauCeti.Homologous.map`). The identification of twisted complexes above is natural for this
-data: it carries the continuation map of `ν` on the twisted complexes of `f^* ℳ` to the
-continuation map of `f ∘ ν` on those of `ℳ`
-(`TauCeti.ContinuationCocycle.continuationHom_comp_twistedCochainComplexRestrictScalarsIso_hom`),
-and likewise for the homotopies of parametrized cocycles and the homotopy equivalences of
-homologous cocycles. This is what makes a comparison of twisted complexes through a morphism of
-DG algebras independent of the choices that the twisting cocycles depend on, up to the specified
-continuation maps.
+(`TauCeti.ContinuationCocycle.map`), and the image of a parametrized cocycle is a parametrized
+cocycle between the images (`TauCeti.ParametrizedCocycle.map`).
 
 ## Main definitions
 
 * `TauCeti.TwistingCocycle.map`: the image of a twisting cocycle under a DG algebra morphism.
-* `TauCeti.ContinuationCocycle.map`, `TauCeti.ParametrizedCocycle.map`, `TauCeti.Homologous.map`:
-  the images of continuation cocycles, parametrized cocycles and homologous pairs.
+* `TauCeti.ContinuationCocycle.map`, `TauCeti.ParametrizedCocycle.map`: the images of
+  continuation cocycles and parametrized cocycles.
 * `TauCeti.TwistingCocycle.twistedCochainComplexRestrictScalarsIso`: the isomorphism between the
   twisted complex of a restricted module and the twisted complex of the image cocycle.
-
-## Main results
-
-* `TauCeti.ContinuationCocycle.continuationHom_comp_twistedCochainComplexRestrictScalarsIso_hom`,
-  `TauCeti.ParametrizedCocycle.homotopy_hom_comp_twistedCochainComplexRestrictScalarsIso_hom_f`:
-  the identification of twisted complexes commutes with continuation maps and their homotopies.
 
 ## References
 
@@ -63,11 +48,11 @@ continuation maps.
 
 public section
 
-open CategoryTheory MulOpposite
+open MulOpposite
 
 namespace TauCeti
 
-universe uR uA uB uM uP uQ uS
+universe uR uA uB uM uP uQ
 
 variable {R : Type uR} {A : Type uA} {B : Type uB}
   [CommRing R] [Ring A] [Ring B] [Algebra R A] [Algebra R B]
@@ -119,9 +104,8 @@ end TwistingCocycle
 
 namespace ContinuationCocycle
 
-variable {Q : Type uQ} {S : Type uS} {indQ : Q → ℤ} {indS : S → ℤ} [Fintype P] [Fintype Q]
-  [Fintype S] {mP : TwistingCocycle 𝒜 dA P ind} {mQ : TwistingCocycle 𝒜 dA Q indQ}
-  {mS : TwistingCocycle 𝒜 dA S indS}
+variable {Q : Type uQ} {indQ : Q → ℤ} [Fintype P] [Fintype Q]
+  {mP : TwistingCocycle 𝒜 dA P ind} {mQ : TwistingCocycle 𝒜 dA Q indQ}
 
 /-- The **image of a continuation cocycle** `ν : mP → mQ` under a morphism `f` of differential
 graded algebras, a continuation cocycle `f ∘ mP → f ∘ mQ`. -/
@@ -137,21 +121,6 @@ def map (f : DGAlgHom hA hB) (ν : ContinuationCocycle mP mQ) :
 theorem map_ν (f : DGAlgHom hA hB) (ν : ContinuationCocycle mP mQ) (x : P) (y : Q) :
     (ν.map f).ν x y = f (ν.ν x y) :=
   (rfl)
-
-/-- The image of the Kronecker continuation cocycle is the Kronecker continuation cocycle. -/
-@[simp]
-theorem map_refl [DecidableEq P] (f : DGAlgHom hA hB) (m : TwistingCocycle 𝒜 dA P ind) :
-    (refl hA.map_one_eq_zero m).map f = refl hB.map_one_eq_zero (m.map f) := by
-  ext x y
-  simp only [map_ν, refl_ν, Matrix.one_apply, apply_ite f, map_one, map_zero]
-
-/-- The image of a composite of continuation cocycles is the composite of the images. -/
-@[simp]
-theorem map_comp (f : DGAlgHom hA hB) (ν₁ : ContinuationCocycle mP mQ)
-    (ν₂ : ContinuationCocycle mQ mS) :
-    (ν₁.comp hA ν₂).map f = (ν₁.map f).comp hB (ν₂.map f) := by
-  ext x y
-  simp only [map_ν, comp_ν, Matrix.mul_apply, Matrix.of_apply, map_sum, _root_.map_mul]
 
 end ContinuationCocycle
 
@@ -178,31 +147,6 @@ theorem map_h (f : DGAlgHom hA hB) (η : ParametrizedCocycle ν₀ ν₁) (x : P
   (rfl)
 
 end ParametrizedCocycle
-
-namespace Homologous
-
-variable {Q : Type uP} {indQ : Q → ℤ} [Fintype P] [Fintype Q] [DecidableEq P] [DecidableEq Q]
-  {mP : TwistingCocycle 𝒜 dA P ind} {mQ : TwistingCocycle 𝒜 dA Q indQ}
-
-/-- **Homologous twisting cocycles have homologous images** under a morphism `f` of differential
-graded algebras, through the images of the continuation and parametrized cocycles. -/
-def map (f : DGAlgHom hA hB) (H : Homologous hA mP mQ) : Homologous hB (mP.map f) (mQ.map f) where
-  ν := H.ν.map f
-  ν' := H.ν'.map f
-  homP := ContinuationCocycle.map_refl f mP ▸ ContinuationCocycle.map_comp f H.ν H.ν' ▸
-    H.homP.map f
-  homQ := ContinuationCocycle.map_refl f mQ ▸ ContinuationCocycle.map_comp f H.ν' H.ν ▸
-    H.homQ.map f
-
-@[simp]
-theorem map_ν (f : DGAlgHom hA hB) (H : Homologous hA mP mQ) : (H.map f).ν = H.ν.map f :=
-  (rfl)
-
-@[simp]
-theorem map_ν' (f : DGAlgHom hA hB) (H : Homologous hA mP mQ) : (H.map f).ν' = H.ν'.map f :=
-  (rfl)
-
-end Homologous
 
 section Restrict
 
@@ -238,33 +182,6 @@ theorem val_twistedDifferential_restrictScalars (g : P → DGRightModule.Restric
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [DGRightModule.RestrictScalars.linearEquiv_apply, DGRightModule.RestrictScalars.val_op_smul,
     val_koszulTwist_restrictScalars]
-
-/-- On underlying elements, the continuation map of a restricted module with the matrix `ν` is the
-continuation map of the original module with the matrix `f ∘ ν`. -/
-theorem restrictScalarsPiEquiv_continuationMap {Q : Type*} (ν : P → Q → A)
-    (g : P → DGRightModule.RestrictScalars f M) :
-    restrictScalarsPiEquiv (M := M) (P := Q) f (continuationMap R _ ν g) =
-      continuationMap R M (fun x y ↦ f (ν x y)) (restrictScalarsPiEquiv (M := M) (P := P) f g) := by
-  funext y
-  rw [restrictScalarsPiEquiv_apply, continuationMap_apply, continuationMap_apply,
-    ← DGRightModule.RestrictScalars.linearEquiv_apply, map_sum]
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  rw [DGRightModule.RestrictScalars.linearEquiv_apply, DGRightModule.RestrictScalars.val_op_smul,
-    restrictScalarsPiEquiv_apply]
-
-/-- On underlying elements, the homotopy map of a restricted module with the matrix `η` is the
-homotopy map of the original module with the matrix `f ∘ η`. -/
-theorem restrictScalarsPiEquiv_homotopyMap {Q : Type*} (η : P → Q → A)
-    (g : P → DGRightModule.RestrictScalars f M) :
-    restrictScalarsPiEquiv (M := M) (P := Q) f
-        (homotopyMap η (IsDGRightModule.restrictScalarsGrading (ℳ := ℳ) f) g) =
-      homotopyMap (fun x y ↦ f (η x y)) ℳ (restrictScalarsPiEquiv (M := M) (P := P) f g) := by
-  funext y
-  rw [restrictScalarsPiEquiv_apply, homotopyMap_apply, homotopyMap_apply,
-    ← DGRightModule.RestrictScalars.linearEquiv_apply, map_sum]
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  rw [DGRightModule.RestrictScalars.linearEquiv_apply, DGRightModule.RestrictScalars.val_op_smul,
-    val_koszulTwist_restrictScalars, restrictScalarsPiEquiv_apply]
 
 namespace TwistingCocycle
 
@@ -333,90 +250,6 @@ theorem twistedCochainComplexRestrictScalarsIso_inv_f_apply (n : ℤ)
     LinearEquiv.toModuleIso_inv, ModuleCat.hom_ofHom, LinearEquiv.coe_coe]
 
 end TwistingCocycle
-
-variable [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ]
-  (hM : IsDGRightModule hB ℳ dM) {Q : Type uP} {indQ : Q → ℤ} [Fintype Q]
-  {mP : TwistingCocycle 𝒜 dA P ind} {mQ : TwistingCocycle 𝒜 dA Q indQ}
-
-namespace ContinuationCocycle
-
-/-- **Continuation maps commute with restriction of scalars**: through the identifications
-`twistedCochainComplexRestrictScalarsIso` of the twisted complexes of a restricted module `f^* ℳ`
-with those of `ℳ` and the image cocycles, the continuation map of `ν` is the continuation map of
-its image `f ∘ ν`. -/
-@[reassoc]
-theorem continuationHom_comp_twistedCochainComplexRestrictScalarsIso_hom
-    (ν : ContinuationCocycle mP mQ) :
-    ν.continuationHom (hM.restrictScalars f) ≫
-        (mQ.twistedCochainComplexRestrictScalarsIso f hM).hom =
-      (mP.twistedCochainComplexRestrictScalarsIso f hM).hom ≫ (ν.map f).continuationHom hM := by
-  refine HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext (LinearMap.ext fun g ↦ ?_)
-  apply (twistedCochainComplexXEquiv (mQ.map f).mem_graded (mQ.map f).twisting hM n).injective
-  apply Subtype.ext
-  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-    TwistingCocycle.twistedCochainComplexRestrictScalarsIso_hom_f_apply,
-    TwistingCocycle.twistedCochainComplexXEquiv_restrictScalarsXEquiv, continuationHom_f_apply]
-  exact restrictScalarsPiEquiv_continuationMap f ν.ν _
-
-end ContinuationCocycle
-
-namespace ParametrizedCocycle
-
-variable {ν₀ ν₁ : ContinuationCocycle mP mQ}
-
-/-- **Homotopies of parametrized cocycles commute with restriction of scalars**: through the
-identifications `twistedCochainComplexRestrictScalarsIso`, the homotopy of `η` between the
-continuation maps of `ν₀` and `ν₁` on the twisted complexes of `f^* ℳ` is the homotopy of its
-image `f ∘ η` on the twisted complexes of `ℳ`. -/
-@[reassoc]
-theorem homotopy_hom_comp_twistedCochainComplexRestrictScalarsIso_hom_f
-    (η : ParametrizedCocycle ν₀ ν₁) (i j : ℤ) :
-    (η.homotopy (hM.restrictScalars f)).hom i j ≫
-        (mQ.twistedCochainComplexRestrictScalarsIso f hM).hom.f j =
-      (mP.twistedCochainComplexRestrictScalarsIso f hM).hom.f i ≫
-        ((η.map f).homotopy hM).hom i j := by
-  by_cases hij : j + 1 = i
-  · subst hij
-    refine ModuleCat.hom_ext (LinearMap.ext fun g ↦ ?_)
-    apply (twistedCochainComplexXEquiv (mQ.map f).mem_graded (mQ.map f).twisting hM j).injective
-    apply Subtype.ext
-    simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
-      TwistingCocycle.twistedCochainComplexRestrictScalarsIso_hom_f_apply,
-      TwistingCocycle.twistedCochainComplexXEquiv_restrictScalarsXEquiv, homotopy_hom_apply]
-    exact restrictScalarsPiEquiv_homotopyMap f η.h _
-  · rw [homotopy_hom_eq_zero _ _ hij, homotopy_hom_eq_zero _ _ hij, Limits.zero_comp,
-      Limits.comp_zero]
-
-end ParametrizedCocycle
-
-namespace Homologous
-
-variable [DecidableEq P] [DecidableEq Q]
-
-/-- The homotopy equivalence of homologous twisting cocycles commutes with restriction of scalars:
-through the identifications `twistedCochainComplexRestrictScalarsIso`, the homotopy equivalence of
-`H` on the twisted complexes of `f^* ℳ` is that of its image `H.map f` on those of `ℳ`. -/
-@[reassoc]
-theorem homotopyEquiv_hom_comp_twistedCochainComplexRestrictScalarsIso_hom
-    (H : Homologous hA mP mQ) :
-    (H.homotopyEquiv (hM.restrictScalars f)).hom ≫
-        (mQ.twistedCochainComplexRestrictScalarsIso f hM).hom =
-      (mP.twistedCochainComplexRestrictScalarsIso f hM).hom ≫ ((H.map f).homotopyEquiv hM).hom := by
-  rw [homotopyEquiv_hom, homotopyEquiv_hom, map_ν,
-    ContinuationCocycle.continuationHom_comp_twistedCochainComplexRestrictScalarsIso_hom]
-
-/-- The inverse of the homotopy equivalence of homologous twisting cocycles commutes with
-restriction of scalars. -/
-@[reassoc]
-theorem homotopyEquiv_inv_comp_twistedCochainComplexRestrictScalarsIso_hom
-    (H : Homologous hA mP mQ) :
-    (H.homotopyEquiv (hM.restrictScalars f)).inv ≫
-        (mP.twistedCochainComplexRestrictScalarsIso f hM).hom =
-      (mQ.twistedCochainComplexRestrictScalarsIso f hM).hom ≫ ((H.map f).homotopyEquiv hM).inv := by
-  rw [homotopyEquiv_inv, homotopyEquiv_inv, map_ν',
-    ContinuationCocycle.continuationHom_comp_twistedCochainComplexRestrictScalarsIso_hom]
-
-end Homologous
 
 end Restrict
 
