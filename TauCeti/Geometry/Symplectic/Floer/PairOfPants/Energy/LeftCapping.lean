@@ -57,7 +57,9 @@ capped datum is the input-exchange datum, whose component on the end at `0` is s
 the signed longitudinal coordinate of that end is at most `1`. The annulus lies inside the
 truncation with recentred output end once `R ≥ L - 1`, so the energy plus the integrated curvature
 over that truncation is the same for both data
-(`SymplecticForm.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn`). The capped
+(`SymplecticForm.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn`), while
+outside that truncation the curvature of `K_c` vanishes on `S`
+(`SymplecticForm.hamiltonianCurvature_cappedExchangePerturbation_eq_zero`). The capped
 truncation adds to it the disc about `0` cut out by the circle `s = R` of the end at `0`, where the
 capped datum vanishes and the energy is the symplectic area. By Stokes' formula
 (`SymplecticForm.integral_fderiv_apply_preimage_ball_eq_neg_loopArea`) this area cancels the loop
@@ -90,7 +92,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-- For `L > 2`, `0 ≤ c ≤ 1` and `R ≥ max (L - 1) 2`, the curvature of the member `c` of the
 capped family vanishes on `S = ℂ ∖ {0, 1}` outside the truncation with recentred output end, where
 the capped datum is the input-exchange datum with `H_0` replaced by `0`. -/
-private theorem hamiltonianCurvature_cappedExchangePerturbation_eq_zero (ω : SymplecticForm V)
+theorem hamiltonianCurvature_cappedExchangePerturbation_eq_zero (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hL : 2 < L)
     (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {R : ℝ} (hR : L - 1 ≤ R) (hR₂ : 2 ≤ R) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
