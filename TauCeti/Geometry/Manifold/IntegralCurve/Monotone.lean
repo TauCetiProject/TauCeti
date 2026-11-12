@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.Deriv.LevelCrossing
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Topology.LocallyConstant.Preconnected
 
 /-!
 # Monotonicity of functions along integral curves
@@ -140,17 +141,12 @@ theorem apply_eq_of_mfderiv_apply_eq_zero {F H' N : Type*} [NormedAddCommGroup F
     calc (mfderiv I J g (γ u)).comp ((1 : ℝ →L[ℝ] ℝ).smulRight (v (γ u))) r
         = mfderiv I J g (γ u) (r • v (γ u)) := rfl
       _ = 0 := by rw [map_smul, hvg u hu, smul_zero]
-  -- So `g ∘ γ` is locally constant on the open set `s`, hence constant on its preconnected
-  -- subtype.
+  -- So `g ∘ γ` is locally constant on the open set `s`, hence constant on the preconnected `s`.
   have hloc (u : ℝ) (hu : u ∈ s) : (g ∘ γ) =ᶠ[𝓝 u] fun _ ↦ (g ∘ γ) u :=
     MDifferentiableOn.eventuallyEq_const_of_mfderiv_eq_zero
       (fun w hw ↦ (hd w hw).1.mdifferentiableWithinAt) hs (fun w hw ↦ (hd w hw).2) hu
-  have hlc : IsLocallyConstant (s.domRestrict (g ∘ γ)) := by
-    rw [IsLocallyConstant.iff_eventually_eq]
-    rintro ⟨u, hu⟩
-    exact (continuous_subtype_val.tendsto (⟨u, hu⟩ : s)).eventually (hloc u hu)
-  have : PreconnectedSpace s := Subtype.preconnectedSpace hs'
-  exact hlc.apply_eq_of_preconnectedSpace ⟨t, ht⟩ ⟨t₀, ht₀⟩
+  exact hs'.apply_eq_of_eventually_eq (fun u hu ↦ (hloc u hu).filter_mono nhdsWithin_le_nhds)
+    ht ht₀
 
 variable {s : Set ℝ} {c a b : ℝ}
 
