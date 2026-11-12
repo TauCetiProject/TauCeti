@@ -408,7 +408,6 @@ theorem inputEndLift_mem_puncturedSphereTruncation
   have he₁ : Real.exp (-(2 * π * z.re)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith)
   have heR : Real.exp (-(2 * π * R)) ≤ Real.exp (-(2 * π * z.re)) :=
     Real.exp_le_exp.2 (by nlinarith)
-  have heR₁ : Real.exp (-(2 * π * R)) ≤ 1 := heR.trans he₁
   have hwi : ‖w - c i‖ ≤ ‖a i‖ / 2 := by
     rw [hn]
     nlinarith [norm_nonneg (a i)]
@@ -447,7 +446,6 @@ theorem exists_inputEndLift_eq {c a w : ℂ} (ha : a ≠ 0) {R : ℝ}
     (hw₁ : ‖w - c‖ ≤ ‖a‖ * Real.exp (-(2 * π)) / 2) :
     ∃ z : ℂ, (z.re ∈ Icc 1 R ∧ z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2)) ∧
       c + a * zero.cylindricalEndLift z = w := by
-  have hπ := Real.pi_pos
   have hna := norm_pos_iff.2 ha
   set w' := (w - c) / a
   have hw' : ‖w'‖ = ‖w - c‖ / ‖a‖ := norm_div _ _
@@ -477,7 +475,6 @@ theorem exists_cylindricalEndLift_inf_eq {w : ℂ} {R : ℝ} (hR : 0 ≤ R)
     (hw₀ : 2 * Real.exp (2 * π) ≤ ‖w‖) (hw₁ : ‖w‖ ≤ 2 * Real.exp (2 * π * R)) :
     ∃ z : ℂ, (z.re ∈ Icc (-R) (-1) ∧ z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2)) ∧
       inf.cylindricalEndLift z = w := by
-  have hπ := Real.pi_pos
   have hw0 : 0 < ‖w‖ := lt_of_lt_of_le (by positivity) hw₀
   have hw : w ≠ inf.endCenter := by
     rw [endCenter_inf]
