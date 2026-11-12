@@ -324,7 +324,8 @@ private theorem lift_dartWord (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) (e : Γ.E
   have h1 : (edge T e : π₁Tree 𝔸 T) = 1 := by
     rcases hO e with h | h
     · exact edge_eq_one (by simpa [h] using he)
-    · simpa using edge_eq_one (𝔸 := 𝔸) (show Γ.rev e ∈ T by simpa [h] using hr)
+    · have hrT : Γ.rev e ∈ T := by simpa [h] using hr
+      simpa using edge_eq_one (𝔸 := 𝔸) hrT
   simp [dartWord_of_notMem he hr, h1]
 
 variable (𝔸 T O) in
