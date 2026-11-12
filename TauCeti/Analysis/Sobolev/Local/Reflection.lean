@@ -54,7 +54,8 @@ statement.
   extends to a map in `W^{k,p}_loc(Ω)` when the node dilations map the lower part of `Ω` into `Ω`;
   the cases of discs centred on the real axis and of the whole plane are
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball` and
-  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_univ`.
+  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_univ`. Local `Lᵖ` membership extends
+  in the same way, `TauCeti.MemLpLoc.planarReflection` and `TauCeti.MemLpLoc.planarReflection_ball`.
 * `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ {0 ≤ im})` norm, with the
   constant `TauCeti.higherReflectionBound k p` for the Vandermonde weights. The same bound for weak
   derivatives of every order is in `TauCeti.Analysis.Sobolev.Local.Reflection.Bound`.
@@ -732,6 +733,13 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_ball {p : ℝ≥0∞} (
     MemWkpLoc p (Metric.ball (x : ℂ) r) k (TauCeti.planarReflection (higherReflectionCoeff k) u) :=
   MemWkpLoc.planarReflection_higherReflectionCoeff (Ω := ⟨_, Metric.isOpen_ball⟩) hp
     (fun _ hz _ j => imDilation_higherReflectionNode_mem_ball x r j hz) hu
+
+/-- The reflection of a locally `Lᵖ` map on a half-disc centred on the real axis is locally `Lᵖ`
+on the disc, for any weights. -/
+theorem MemLpLoc.planarReflection_ball {p : ℝ≥0∞} (x r : ℝ) {u : ℂ → F}
+    (hu : MemLpLoc p (Metric.ball (x : ℂ) r ∩ {z | 0 ≤ z.im}) u) (d : Fin k → ℝ) :
+    MemLpLoc p (Metric.ball (x : ℂ) r) (TauCeti.planarReflection d u) :=
+  hu.planarReflection (fun _ hz _ j => imDilation_higherReflectionNode_mem_ball x r j hz) d
 
 /-- **Extension from the closed half-plane to the plane.** -/
 theorem MemWkpLoc.planarReflection_higherReflectionCoeff_univ {p : ℝ≥0∞} (hp : 1 ≤ p)

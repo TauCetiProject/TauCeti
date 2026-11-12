@@ -27,7 +27,8 @@ rather than scalar jets.
 These predicates concern actual functions; almost-everywhere changes do not affect membership.
 They impose no global integrability condition on the possibly unbounded domain.
 
-This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
+This file supplies restriction to arbitrary subsets (also combined with a change of the function
+off the subset), linearity, continuous-linear composition,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
 supported in the domain), pairing, decreasing the integrability exponent, and decreasing the
 derivative order. On an open set, local `Lᵖ` membership is detected on the open subsets with
@@ -328,6 +329,13 @@ theorem MemWkpLoc.congr_ae (hf : MemWkpLoc p U k f)
     obtain ⟨hp, D, hD, hk⟩ := hf
     exact ⟨hp.congr_ae hfg, D,
       hD.congr_ae (ae_mono (Measure.restrict_mono_set volume interior_subset) hfg), hk⟩
+
+/-- Restricting to a measurable subset preserves the local Sobolev class of any function agreeing
+with the original one on that subset. -/
+theorem MemWkpLoc.congr_mono (hf : MemWkpLoc p U k f) (hV : MeasurableSet V)
+    (hgf : Set.EqOn g f V) (hVU : V ⊆ U) : MemWkpLoc p V k g :=
+  (hf.mono hVU).congr_ae <| by
+    filter_upwards [ae_restrict_mem hV] with z hz using (hgf hz).symm
 
 /-- Decreasing the integrability exponent preserves each local derivative order. -/
 theorem MemWkpLoc.mono_exponent (hf : MemWkpLoc p U k f) (hqp : q ≤ p) :

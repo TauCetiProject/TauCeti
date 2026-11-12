@@ -30,6 +30,8 @@ elliptic bootstrapping, and lets membership in coordinates be assembled from cha
   `U` is membership on `U ∩ O i` for every member of an open cover `O` of `U`.
 * `TauCeti.memLpLoc_iSup_iff` and `TauCeti.memWkpLoc_iSup_iff`: the sheaf property for open
   covers of an open set.
+* `TauCeti.inter_setOf_im_nonneg_induction`: a local property holds on `Ω ∩ {0 ≤ im}` once it
+  holds on the open subsets of `Ω ∩ {0 < im}` and on the half-discs centred on the real axis.
 
 For positive order the codomain is assumed complete: an empty cover carries no weak
 derivative to supply the completeness that the weak-derivative predicate demands.
@@ -89,6 +91,27 @@ theorem memLpLoc_iSup_iff {ι : Type*} (V : ι → Opens ℂ) :
     MemLpLoc p (⨆ i, V i : Opens ℂ) f ↔ ∀ i, MemLpLoc p (V i) f := by
   rw [memLpLoc_iff_forall_inter V (by simp)]
   simp only [Opens.coe_iSup, inter_eq_right.2 (subset_iUnion (fun i => (V i : Set ℂ)) _)]
+
+/-- **Induction on half-discs.** A property `P` of subsets of `ℂ` holds on `Ω ∩ {0 ≤ im}` if it
+can be checked on relative neighbourhoods of each point, and holds on the open subsets of
+`Ω ∩ {0 < im}` and on the half-discs `ball x r ∩ {0 ≤ im}` centred on the real axis inside `Ω`.
+For instance `P` may be `MemLpLoc p · f`, by `TauCeti.memLpLoc_iff_locally`, or
+`MemWkpLoc p · k f`, by `TauCeti.memWkpLoc_iff_locally`. -/
+theorem inter_setOf_im_nonneg_induction {Ω : Opens ℂ} (P : Set ℂ → Prop)
+    (hP : ∀ {U : Set ℂ}, (∀ z ∈ U, ∃ V ∈ 𝓝[U] z, P V) → P U)
+    (hint : ∀ V : Opens ℂ, (V : Set ℂ) ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} → P V)
+    (hbd : ∀ x r : ℝ, ball (x : ℂ) r ⊆ Ω → P (ball (x : ℂ) r ∩ {z | 0 ≤ z.im})) :
+    P ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
+  refine hP fun z hz => ?_
+  simp only [mem_inter_iff, mem_ofPred_eq] at hz
+  rcases hz.2.lt_or_eq with hz0 | hz0
+  · exact ⟨Ω.upperHalf, mem_nhdsWithin_of_mem_nhds (Ω.upperHalf.isOpen.mem_nhds
+      (Opens.mem_upperHalf.2 ⟨hz.1, hz0⟩)), hint _ ((Opens.coe_upperHalf Ω).trans_subset
+        (inter_subset_inter_right _ (ofPred_subset_ofPred.2 fun _ => le_of_lt)))⟩
+  · have hzx : ((z.re : ℝ) : ℂ) = z := Complex.ext (by simp) (by simp [hz0])
+    obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen _ (hzx.symm ▸ hz.1)
+    exact ⟨ball (z.re : ℂ) r ∩ {z | 0 ≤ z.im}, mem_nhdsWithin.2 ⟨ball (z.re : ℂ) r, isOpen_ball,
+      hzx ▸ mem_ball_self hr, fun w hw => ⟨hw.1, hw.2.2⟩⟩, hbd z.re r hrΩ⟩
 
 variable [NormedSpace ℝ F]
 
