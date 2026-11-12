@@ -180,7 +180,7 @@ normed space, which is transported to a Euclidean space. -/
 theorem HasWeakConjWirtingerDerivOn.memWkpLoc_one (hp : 1 < p) (hp_top : p ≠ ⊤) {Ω : Opens ℂ}
     {u f : ℂ → F} (hu : MemLpLoc p Ω u) (hf : MemLpLoc p Ω f)
     (h : HasWeakConjWirtingerDerivOn volume Ω u f) : MemWkpLoc p Ω 1 u := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   let e : F ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ F)) :=
     ContinuousLinearEquiv.ofFinrankEq (by simp)
   have hu' : MemLpLoc p Ω (fun z => e (u z)) := by
