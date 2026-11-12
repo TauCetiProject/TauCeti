@@ -35,11 +35,12 @@ Without any domain hypothesis, the closure of an irreducible set `Y` is still th
 The hypotheses of these statements are sharp. The empty set is always closed, but it is algebraic,
 and it is the solution set of its own ideal, only when some coefficient survives in `H`; a trivial
 group is a domain over itself for which both statements fail. When no coefficient survives, every
-nonempty closed set contains the trivial tuple, so the topology is not T1, and over a torsion-free
-group every nontrivial value of a single variable is dense. With surjective coefficients and
-finitely many tuples the topology is discrete. Finite sets of coefficient tuples are always
-closed, while in a commutative group two tuples with different squares never form an algebraic
-set, so closed sets need not be algebraic without the domain hypothesis.
+nonempty closed set contains the trivial tuple, so the topology is not T1 as soon as some tuple is
+nontrivial, and over a torsion-free group every nontrivial value of a single variable is dense in
+the space of values of that variable. With surjective coefficients and finitely many tuples the
+topology is discrete. Finite sets of coefficient tuples are always closed, while in a commutative
+group two tuples with different squares never form an algebraic set, so closed sets need not be
+algebraic without the domain hypothesis.
 
 ## Main results
 
@@ -55,7 +56,8 @@ set, so closed sets need not be algebraic without the domain hypothesis.
   exactly when some coefficient survives in `H`.
 * `TauCeti.GroupAlgGeom.not_t1Space_zariskiTopology`,
   `TauCeti.GroupAlgGeom.closure_singleton_eq_univ_of_ne_one`: without surviving coefficients the
-  topology is not T1, and nontrivial elements of a torsion-free group are dense.
+  topology is not T1 as soon as some tuple is nontrivial, and in one variable over a torsion-free
+  group every nontrivial element is dense.
 * `TauCeti.GroupAlgGeom.discreteTopology_zariskiTopology`: the topology is discrete for
   surjective coefficients and finitely many tuples.
 
