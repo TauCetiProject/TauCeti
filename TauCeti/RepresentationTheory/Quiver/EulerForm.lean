@@ -293,12 +293,27 @@ public theorem titsPolarForm_single_single (i j : Q) :
   · rw [ite_eq_right hij, ite_eq_right hij.symm]
     ring
 
+/-- The entries of the Gram matrix of the polarized Tits form: `2` on the diagonal minus the
+number of arrows between the two vertices, in both directions. -/
+public theorem toMatrix_titsPolarForm_apply (i j : Q) :
+    (titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q) i j =
+      (if i = j then (2 : ℤ) else 0) - (Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i)) := by
+  rw [LinearMap.BilinForm.toMatrix_apply, Pi.basisFun_apply, Pi.basisFun_apply,
+    titsPolarForm_single_single, mul_ite, mul_one, mul_zero]
+
 /-- A loopless vertex has `⟨αᵢ, αᵢ⟩ = 2` for the polarized Tits form: the normalization that
 makes the simple reflection at `i` an involution. -/
 public theorem titsPolarForm_single_self_of_isEmpty {i : Q} (h : IsEmpty (i ⟶ i)) :
     titsPolarForm Q (Pi.single i 1) (Pi.single i 1) = 2 := by
   rw [titsPolarForm_single_single, Fintype.card_eq_zero_iff.mpr h]
   simp
+
+/-- **The Gram matrix of the polarized Tits form computes twice the Tits form**:
+`d ⬝ᵥ B *ᵥ d = 2 q(d)` for `B = 2I - (A + Aᵀ)`. -/
+public theorem dotProduct_toMatrix_titsPolarForm_mulVec_self (d : Q → ℤ) :
+    d ⬝ᵥ ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).mulVec d = 2 * titsForm Q d := by
+  rw [LinearMap.BilinForm.dotProduct_toMatrix_mulVec, Pi.basisFun_equivFun,
+    LinearEquiv.refl_symm, LinearEquiv.refl_apply, titsPolarForm_def, titsForm_def, two_mul]
 
 /-- **The Tits form is positive definite exactly when the Gram matrix `2·I - (A + Aᵀ)` of its
 polarization is**, the matrix being taken in the simple dimension vectors, as computed by
