@@ -125,6 +125,18 @@ theorem mem_ofFacets_of_mem {ι : Type*} {T : Set (Finset ι)}
     t ∈ ofFacets T hcover :=
   mem_ofFacets.mpr ⟨hne, t, ht, subset_rfl⟩
 
+/-- A generated complex lies in a complex exactly when every nonempty generator is a face. -/
+@[simp]
+theorem ofFacets_le_iff {ι : Type*} {T : Set (Finset ι)}
+    {hcover : ∀ v, ∃ t ∈ T, v ∈ t} {K : _root_.AbstractSimplicialComplex ι} :
+    ofFacets T hcover ≤ K ↔ ∀ t ∈ T, t.Nonempty → t ∈ K := by
+  constructor
+  · intro h t ht hne
+    exact h (mem_ofFacets_of_mem ht hne)
+  · intro h σ hσ
+    obtain ⟨hne, t, ht, hσt⟩ := mem_ofFacets.mp hσ
+    exact (K.isRelLowerSet_faces (h t ht (hne.mono hσt))).2 hσt hne
+
 /-- A finite set belongs to the full abstract simplicial complex exactly when it is nonempty. -/
 theorem mem_top_iff {ι : Type*} {σ : Finset ι} :
     σ ∈ (⊤ : _root_.AbstractSimplicialComplex ι) ↔ σ.Nonempty :=
