@@ -25,18 +25,19 @@ crossed product.
 
 The key identity is the integral formula
 `∫ i_A(f(s)) i_G(s) y dμ(s) = f * y` for `f` compactly supported and `y` in the full crossed
-product, a Bochner integral in the full crossed product.
+product, `FullCrossedProduct.integral_coefficientMultiplier_mul_groupMultiplier_fst`.
 
 No unit, separability or σ-finiteness is assumed, and the Hilbert space may lie in any universe.
 
 ## Main declarations
 
-* `TauCeti.CStarAction.FullCrossedProduct.integral_coefficientMultiplier_mul_groupMultiplier_fst`:
-  the integral formula above.
 * `NonUnitalStarAlgHom.toCovariantRepresentation`: the covariant pair of a nondegenerate
   representation of the full crossed product.
 * `NonUnitalStarAlgHom.integratedFull_toCovariantRepresentation`: its integrated form is the
   given representation.
+* `TauCeti.CStarAction.CovariantRepresentation.toCovariantRepresentation_integratedFull`: a
+  covariant pair with nondegenerate coefficient representation is recovered from its integrated
+  form.
 * `NonUnitalStarAlgHom.IsNondegenerate.existsUnique_covariantRepresentation_integratedFull`: every
   nondegenerate representation is the integrated form of a unique covariant pair with
   nondegenerate coefficient representation.
@@ -54,62 +55,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped CStarAlgebra MultiplierAlgebra
-
-namespace TauCeti.CStarAction.FullCrossedProduct
-
-universe u v
-
-variable {G : Type u} {A : Type v} [Group G] [TopologicalSpace G] [MeasurableSpace G]
-  [NonUnitalCStarAlgebra A] {α : CStarAction G A} {μ : Measure G}
-  [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsHaarMeasure]
-
-/-- The integrand `s ↦ i_A(f(s)) i_G(s) y` of the integral formula is continuous. -/
-private theorem continuous_coefficientMultiplier_mul_groupMultiplier_fst
-    (f : ConvolutionAlgebra α μ) (y : FullCrossedProduct α μ) :
-    Continuous fun s => (coefficientMultiplier α μ (f.ofConv s) *
-      (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y := by
-  simp only [DoubleCentralizer.mul_fst, mul_apply_eq_comp]
-  have hfst : Continuous fun m : 𝓜(ℂ, FullCrossedProduct α μ) => m.fst :=
-    DoubleCentralizer.isUniformEmbedding_toProdMulOpposite.uniformContinuous.continuous.fst
-  exact (hfst.comp ((map_continuous (coefficientMultiplier α μ)).comp
-    f.ofConv.continuous)).clm_apply (continuous_groupMultiplier_fst_apply y)
-
-/-- The integrand `s ↦ i_A(f(s)) i_G(s) y` of the integral formula is integrable. -/
-private theorem integrable_coefficientMultiplier_mul_groupMultiplier_fst
-    (f : ConvolutionAlgebra α μ) (y : FullCrossedProduct α μ) :
-    Integrable (fun s => (coefficientMultiplier α μ (f.ofConv s) *
-      (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y) μ := by
-  refine (continuous_coefficientMultiplier_mul_groupMultiplier_fst f y
-    ).integrable_of_hasCompactSupport (f.ofConv.hasCompactSupport.mono fun s hs hzero => hs ?_)
-  simp [hzero]
-
-/-- An element of the twisted convolution algebra acts on the full crossed product as the
-integral of its canonical multipliers: `∫ i_A(f(s)) i_G(s) y dμ(s) = f * y`. -/
-theorem integral_coefficientMultiplier_mul_groupMultiplier_fst (f : ConvolutionAlgebra α μ)
-    (y : FullCrossedProduct α μ) :
-    ∫ s, (coefficientMultiplier α μ (f.ofConv s) *
-      (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y ∂μ = of α μ f * y := by
-  have hint := integrable_coefficientMultiplier_mul_groupMultiplier_fst f y
-  set F : G → FullCrossedProduct α μ := fun s => (coefficientMultiplier α μ (f.ofConv s) *
-    (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y
-  rw [← sub_eq_zero, ← norm_le_zero_iff, norm_le_iff]
-  intro H _ _ _ P
-  -- Every integrated form takes the same value at both sides.
-  suffices h : P.integratedFull μ (∫ s, F s ∂μ) = P.integratedFull μ (of α μ f * y) by
-    rw [map_sub, h, sub_self, norm_zero]
-  let Φ : FullCrossedProduct α μ →L[ℂ] (H →L[ℂ] H) := ⟨P.integratedFull μ, map_continuous _⟩
-  have hΦ : ∫ s, P.integratedFull μ (F s) ∂μ = P.integratedFull μ (∫ s, F s ∂μ) :=
-    Φ.integral_comp_comm hint
-  have hΦint : Integrable (fun s => P.integratedFull μ (F s)) μ := Φ.integrable_comp hint
-  rw [← hΦ]
-  ext ξ
-  rw [ContinuousLinearMap.integral_apply hΦint, map_mul, CovariantRepresentation.integratedFull_of,
-    CovariantRepresentation.integratedStarAlgHom_apply, mul_apply_eq_comp,
-    CovariantRepresentation.integratedOperator_apply]
-  simp [F, DoubleCentralizer.mul_fst]
-
-end TauCeti.CStarAction.FullCrossedProduct
+open scoped CStarAlgebra CompactlySupported MultiplierAlgebra
 
 namespace NonUnitalStarAlgHom
 
@@ -120,17 +66,7 @@ universe u v
 variable {G : Type u} {A : Type v} [Group G] [TopologicalSpace G] [MeasurableSpace G]
   [NonUnitalCStarAlgebra A] {α : CStarAction G A} {μ : Measure G}
   [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsHaarMeasure]
-
-/-- The canonical unitary multipliers have norm at most one. -/
-private theorem norm_groupMultiplier_le (r : G) :
-    ‖(groupMultiplier α μ r : 𝓜(ℂ, FullCrossedProduct α μ))‖ ≤ 1 := by
-  rcases subsingleton_or_nontrivial 𝓜(ℂ, FullCrossedProduct α μ) with h | h
-  · simp [Subsingleton.elim (groupMultiplier α μ r : 𝓜(ℂ, FullCrossedProduct α μ)) 0]
-  · exact (CStarRing.norm_coe_unitary _).le
-
-section
-
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   (L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (hL : L.IsNondegenerate)
 
 /-- The covariant pair `(L' ∘ i_A, L' ∘ i_G)` of a nondegenerate representation `L` of the full
@@ -144,7 +80,9 @@ def toCovariantRepresentation : CovariantRepresentation α H where
     Unitary.map_mem (L.multiplierExtension hL) (groupMultiplier α μ r).2
   continuous_orbit ξ := continuous_multiplierExtension_apply hL
     (u := fun r => (groupMultiplier α μ r : 𝓜(ℂ, FullCrossedProduct α μ)))
-    continuous_groupMultiplier_fst_apply norm_groupMultiplier_le ξ
+    continuous_groupMultiplier_fst_apply (fun r => by
+      simpa using (CStarRing.norm_coe_unitary_mul (groupMultiplier α μ r) 1).trans_le
+        (IsStarProjection.one _).norm_le) ξ
   covariance r a ξ := by
     have h := congr(L.multiplierExtension hL $(groupMultiplier_mul_coefficientMultiplier r a) ξ)
     rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp] at h
@@ -173,31 +111,45 @@ theorem integratedFull_toCovariantRepresentation :
     (L.toCovariantRepresentation hL).integratedFull μ = L := by
   refine starAlgHom_ext <| NonUnitalStarAlgHom.ext fun f => ?_
   refine hL.ext fun y => ContinuousLinearMap.ext fun ξ => ?_
-  have hint := integrable_coefficientMultiplier_mul_groupMultiplier_fst f y
-  set F : G → FullCrossedProduct α μ := fun s => (coefficientMultiplier α μ (f.ofConv s) *
-    (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y
-  let Φ : FullCrossedProduct α μ →L[ℂ] (H →L[ℂ] H) := ⟨L, map_continuous L⟩
-  have hΦ : ∫ s, L (F s) ∂μ = L (∫ s, F s ∂μ) := Φ.integral_comp_comm hint
-  have hΦint : Integrable (fun s => L (F s)) μ := Φ.integrable_comp hint
-  rw [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.comp_apply, ← map_mul,
-    ← integral_coefficientMultiplier_mul_groupMultiplier_fst, ← hΦ, mul_apply_eq_comp,
-    ContinuousLinearMap.integral_apply hΦint, CovariantRepresentation.integratedFull_of,
-    CovariantRepresentation.integratedStarAlgHom_apply,
-    CovariantRepresentation.integratedOperator_apply]
-  simp [F, DoubleCentralizer.mul_fst]
-
-end
-
-variable {H : Type (max u v)} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  (L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (hL : L.IsNondegenerate)
+  let Φ : FullCrossedProduct α μ →L[ℂ] H := (ContinuousLinearMap.apply ℂ H ξ).comp
+    { toLinearMap := (L : _ →ₗ[ℂ] (H →L[ℂ] H)), cont := map_continuous _ }
+  have hΦ (x) : Φ x = L x ξ := rfl
+  rw [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.comp_apply, ← map_mul, ← hΦ,
+    ← integral_coefficientMultiplier_mul_groupMultiplier_fst,
+    ← Φ.integral_comp_comm (integrable_coefficientMultiplier_mul_groupMultiplier_fst f y),
+    mul_apply_eq_comp, CovariantRepresentation.integratedFull_of_apply]
+  simp [hΦ, DoubleCentralizer.mul_fst]
 
 /-- The coefficient representation of the covariant pair of a nondegenerate representation of the
 full crossed product is nondegenerate. -/
+@[simp]
 theorem isNondegenerate_toCovariantRepresentation_coefficient :
     (L.toCovariantRepresentation hL).coefficient.IsNondegenerate := by
   rw [← CovariantRepresentation.isNondegenerate_integratedFull_iff (μ := μ),
     integratedFull_toCovariantRepresentation]
   exact hL
+
+/-- On compactly supported functions, the integrated form of the covariant pair of a nondegenerate
+representation `L` of the full crossed product is `L`. -/
+@[simp]
+theorem integratedOperator_toCovariantRepresentation (f : C_c(G, A)) :
+    (L.toCovariantRepresentation hL).integratedOperator μ f =
+      L (of α μ (ConvolutionAlgebra.toConv f)) := by
+  simpa only [CovariantRepresentation.integratedFull_of,
+    CovariantRepresentation.integratedStarAlgHom_apply, ConvolutionAlgebra.ofConv_toConv] using
+    congr($(integratedFull_toCovariantRepresentation L hL)
+      (of α μ (ConvolutionAlgebra.toConv f)))
+
+/-- The covariant pair of a nondegenerate representation `L` of the full crossed product is the
+unique covariant pair with nondegenerate coefficient representation whose integrated form is
+`L`. -/
+theorem eq_toCovariantRepresentation_iff {P : CovariantRepresentation α H} :
+    P = L.toCovariantRepresentation hL ↔
+      P.coefficient.IsNondegenerate ∧ P.integratedFull μ = L :=
+  ⟨fun h => h ▸ ⟨isNondegenerate_toCovariantRepresentation_coefficient L hL,
+      integratedFull_toCovariantRepresentation L hL⟩,
+    fun h => CovariantRepresentation.ext_integratedFull μ h.1
+      (h.2.trans (integratedFull_toCovariantRepresentation L hL).symm)⟩
 
 /-- Every nondegenerate representation of the full crossed product is the extended integrated
 form of a unique covariant pair whose coefficient representation is nondegenerate (Williams,
@@ -206,10 +158,25 @@ theorem IsNondegenerate.existsUnique_covariantRepresentation_integratedFull
     {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hL : L.IsNondegenerate) :
     ∃! P : CovariantRepresentation α H,
       P.coefficient.IsNondegenerate ∧ P.integratedFull μ = L :=
-  ⟨L.toCovariantRepresentation hL,
-    ⟨isNondegenerate_toCovariantRepresentation_coefficient L hL,
-      integratedFull_toCovariantRepresentation L hL⟩,
-    fun _ hP => CovariantRepresentation.ext_integratedFull μ hP.1
-      (hP.2.trans (integratedFull_toCovariantRepresentation L hL).symm)⟩
+  ⟨L.toCovariantRepresentation hL, (eq_toCovariantRepresentation_iff L hL).1 rfl,
+    fun _ => (eq_toCovariantRepresentation_iff L hL).2⟩
 
 end NonUnitalStarAlgHom
+
+namespace TauCeti.CStarAction.CovariantRepresentation
+
+variable {G : Type*} {A : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
+  [NonUnitalCStarAlgebra A] {α : CStarAction G A} {μ : Measure G}
+  [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsHaarMeasure]
+  {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+
+/-- A covariant pair with nondegenerate coefficient representation is the covariant pair of its
+integrated form. -/
+@[simp]
+theorem toCovariantRepresentation_integratedFull (P : CovariantRepresentation α H)
+    (hP : (P.integratedFull μ).IsNondegenerate) :
+    (P.integratedFull μ).toCovariantRepresentation hP = P :=
+  ((NonUnitalStarAlgHom.eq_toCovariantRepresentation_iff _ hP).2
+    ⟨(isNondegenerate_integratedFull_iff μ P).1 hP, rfl⟩).symm
+
+end TauCeti.CStarAction.CovariantRepresentation
