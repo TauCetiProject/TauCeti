@@ -365,17 +365,19 @@ variable {K U V W : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 
 /-- Recasting the index type of the subspace orientation recasts that of the induced one. -/
 theorem shortExact_reindex_finCongr_left {a' : ℕ} (e : a = a') (o : Orientation K U (Fin a))
-    (p : Orientation K W (Fin c)) (ha : finrank K U = a) (hc : finrank K W = c) :
-    shortExact hf hfg hg (reindex K U (finCongr e) o) p (ha.trans e) hc =
-      reindex K V (finCongr (congrArg (· + c) e)) (shortExact hf hfg hg o p ha hc) := by
+    (p : Orientation K W (Fin c)) (ha : finrank K U = a') (hc : finrank K W = c) :
+    shortExact hf hfg hg (reindex K U (finCongr e) o) p ha hc =
+      reindex K V (finCongr (congrArg (· + c) e))
+        (shortExact hf hfg hg o p (ha.trans e.symm) hc) := by
   subst e
   simp [finCongr_refl, reindex_refl]
 
 /-- Recasting the index type of the quotient orientation recasts that of the induced one. -/
 theorem shortExact_reindex_finCongr_right {c' : ℕ} (e : c = c') (o : Orientation K U (Fin a))
-    (p : Orientation K W (Fin c)) (ha : finrank K U = a) (hc : finrank K W = c) :
-    shortExact hf hfg hg o (reindex K W (finCongr e) p) ha (hc.trans e) =
-      reindex K V (finCongr (congrArg (a + ·) e)) (shortExact hf hfg hg o p ha hc) := by
+    (p : Orientation K W (Fin c)) (ha : finrank K U = a) (hc : finrank K W = c') :
+    shortExact hf hfg hg o (reindex K W (finCongr e) p) ha hc =
+      reindex K V (finCongr (congrArg (a + ·) e))
+        (shortExact hf hfg hg o p ha (hc.trans e.symm)) := by
   subst e
   simp [finCongr_refl, reindex_refl]
 
@@ -408,16 +410,19 @@ theorem shortExact_shortExact (hf' : Function.Injective f') (hfg' : Function.Exa
     shortExact hf hfg hg (shortExact hf' hfg' hg' o p ha hb) q hab hc =
       reindex K V (finCongr (add_assoc a b c).symm)
         (shortExact (f := f ∘ₗ f') (g := h.prod g) (LinearMap.injective_comp hf hf')
-          (hfg'.comp_prod hfg hhf) (hfg.surjective_prod hg' hg hhf) o (prod p q hb hc) ha
-          (by rw [finrank_prod, hb, hc])) := by
+          (hfg'.comp_prod hfg hhf)
+          (LinearMap.surjective_prod_of_comp_eq_zero hfg.linearMap_comp_eq_zero (hhf ▸ hg') hg)
+          o (prod p q hb hc) ha (by rw [finrank_prod, hb, hc])) := by
   set eU := finBasisOfFinrankEq K U' ha
   set eB := finBasisOfFinrankEq K B hb
   set eA := finBasisOfFinrankEq K A hc
   suffices key : shortExact hf hfg hg (shortExact hf' hfg' hg' eU.orientation eB.orientation ha hb)
       eA.orientation hab hc = reindex K V (finCongr (add_assoc a b c).symm)
         (shortExact (f := f ∘ₗ f') (g := h.prod g) (LinearMap.injective_comp hf hf')
-          (hfg'.comp_prod hfg hhf) (hfg.surjective_prod hg' hg hhf) eU.orientation
-          (prod eB.orientation eA.orientation hb hc) ha (by rw [finrank_prod, hb, hc])) by
+          (hfg'.comp_prod hfg hhf)
+          (LinearMap.surjective_prod_of_comp_eq_zero hfg.linearMap_comp_eq_zero (hhf ▸ hg') hg)
+          eU.orientation (prod eB.orientation eA.orientation hb hc) ha
+          (by rw [finrank_prod, hb, hc])) by
     rcases eU.orientation_eq_or_eq_neg o with rfl | rfl <;>
     rcases eB.orientation_eq_or_eq_neg p with rfl | rfl <;>
     rcases eA.orientation_eq_or_eq_neg q with rfl | rfl <;>
@@ -426,7 +431,8 @@ theorem shortExact_shortExact (hf' : Function.Injective f') (hfg' : Function.Exa
   -- Lifts of the basis of `A` are chosen in the kernel of `h`, so that the subspace-first basis
   -- of the tower is also subspace-first for `0 → U' → V → B × A → 0`.
   choose tB htB using fun j ↦ hg' (eB j)
-  choose tA htA using fun i ↦ hfg.surjective_prod hg' hg hhf (0, eA i)
+  choose tA htA using fun i ↦
+    LinearMap.surjective_prod_of_comp_eq_zero hfg.linearMap_comp_eq_zero (hhf ▸ hg') hg (0, eA i)
   have htA₂ (i : Fin c) : g (tA i) = eA i := congrArg Prod.snd (htA i)
   set BU := (Basis.ofExactLift hf' hfg' eU eB tB htB).reindex finSumFinEquiv
   have hU : shortExact hf' hfg' hg' eU.orientation eB.orientation ha hb = BU.orientation :=
@@ -455,6 +461,62 @@ theorem shortExact_shortExact (hf' : Function.Injective f') (hfg' : Function.Exa
       simp [BV, BU, this, Basis.prod_apply, htA]
 
 end Tower
+
+/-! ### Exchanging the two stages of a tower -/
+
+section Exchange
+
+variable {K U₁' U₁ V₁ U₂' U₂ V₂ A B : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [AddCommGroup U₁'] [Module K U₁'] [AddCommGroup U₁] [Module K U₁] [AddCommGroup V₁]
+  [Module K V₁] [AddCommGroup U₂'] [Module K U₂'] [AddCommGroup U₂] [Module K U₂]
+  [AddCommGroup V₂] [Module K V₂] [AddCommGroup A] [Module K A] [AddCommGroup B] [Module K B]
+  [FiniteDimensional K U₁'] [FiniteDimensional K U₁] [FiniteDimensional K U₂']
+  [FiniteDimensional K U₂] [FiniteDimensional K A] [FiniteDimensional K B]
+  {f₁' : U₁' →ₗ[K] U₁} {g₁' : U₁ →ₗ[K] B} {f₁ : U₁ →ₗ[K] V₁} {g₁ : V₁ →ₗ[K] A} {h₁ : V₁ →ₗ[K] B}
+  {f₂' : U₂' →ₗ[K] U₂} {g₂' : U₂ →ₗ[K] A} {f₂ : U₂ →ₗ[K] V₂} {g₂ : V₂ →ₗ[K] B} {h₂ : V₂ →ₗ[K] A}
+  {r a b : ℕ}
+
+/-- **Exchanging the two stages of a tower.** Suppose a subspace is cut out of `V₁` in two stages,
+first by `g₁ : V₁ → A` and then by `g₁' : U₁ → B` (with `h₁` extending `g₁'`), and that a linear
+equivalence `V₁ ≃ V₂` carries it onto a subspace of `V₂` cut out in the opposite order, first by a
+map to `B` and then by a map to `A`, compatibly with both quotient maps. Then the equivalence
+carries the orientation induced by the first tower to `(-1) ^ (dim A · dim B)` times the one
+induced by the second tower: the two quotients are exchanged. -/
+theorem map_shortExact_shortExact (hf₁' : Function.Injective f₁')
+    (hfg₁' : Function.Exact f₁' g₁') (hg₁' : Function.Surjective g₁')
+    (hf₁ : Function.Injective f₁) (hfg₁ : Function.Exact f₁ g₁) (hg₁ : Function.Surjective g₁)
+    (hh₁ : h₁ ∘ₗ f₁ = g₁') (hf₂' : Function.Injective f₂') (hfg₂' : Function.Exact f₂' g₂')
+    (hg₂' : Function.Surjective g₂') (hf₂ : Function.Injective f₂)
+    (hfg₂ : Function.Exact f₂ g₂) (hg₂ : Function.Surjective g₂) (hh₂ : h₂ ∘ₗ f₂ = g₂')
+    (e : U₁' ≃ₗ[K] U₂') (eV : V₁ ≃ₗ[K] V₂) (hι : ∀ x, f₂ (f₂' (e x)) = eV (f₁ (f₁' x)))
+    (hA : ∀ v, h₂ (eV v) = g₁ v) (hB : ∀ v, g₂ (eV v) = h₁ v)
+    (o : Orientation K U₁' (Fin r)) (pA : Orientation K A (Fin a))
+    (pB : Orientation K B (Fin b)) (hr : finrank K U₁' = r) (ha : finrank K A = a)
+    (hb : finrank K B = b) (hrb : finrank K U₁ = r + b) (hra : finrank K U₂ = r + a) :
+    map (Fin (r + b + a)) eV
+        (shortExact hf₁ hfg₁ hg₁ (shortExact hf₁' hfg₁' hg₁' o pB hr hb) pA hrb ha) =
+      (-1 : Kˣ) ^ (a * b) • reindex K V₂ (finCongr (add_right_comm r a b))
+        (shortExact hf₂ hfg₂ hg₂ (shortExact hf₂' hfg₂' hg₂' (map (Fin r) e o) pA
+          (e.finrank_eq.symm.trans hr) ha) pB hra hb) := by
+  -- Collapse both towers to single short exact sequences, and transport the first one along `eV`,
+  -- which carries its quotient `B × A` to the quotient `A × B` of the second.
+  rw [shortExact_shortExact hf₁' hfg₁' hg₁' hf₁ hfg₁ hg₁ hh₁,
+    shortExact_shortExact hf₂' hfg₂' hg₂' hf₂ hfg₂ hg₂ hh₂, map_reindex,
+    map_shortExact (f := f₁ ∘ₗ f₁') (g := h₁.prod g₁) (LinearMap.injective_comp hf₁ hf₁')
+      (hfg₁'.comp_prod hfg₁ hh₁)
+      (LinearMap.surjective_prod_of_comp_eq_zero hfg₁.linearMap_comp_eq_zero (hh₁ ▸ hg₁') hg₁) hr
+      (by rw [finrank_prod, hb, ha]) (f' := f₂ ∘ₗ f₂') (g' := h₂.prod g₂)
+      (LinearMap.injective_comp hf₂ hf₂')
+      (hfg₂'.comp_prod hfg₂ hh₂)
+      (LinearMap.surjective_prod_of_comp_eq_zero hfg₂.linearMap_comp_eq_zero (hh₂ ▸ hg₂') hg₂)
+      e eV (LinearEquiv.prodComm K B A) (LinearMap.ext hι)
+      (LinearMap.ext fun v ↦ Prod.ext (hA v) (hB v)),
+    map_prodComm_prod, shortExact_units_smul_right,
+    shortExact_reindex_finCongr_right, mul_comm b a]
+  -- Normalize the reindexings.
+  simp only [reindex_units_smul, reindex_finCongr_reindex_finCongr]
+
+end Exchange
 
 /-! ### Products with a further factor -/
 
@@ -492,50 +554,18 @@ theorem shortExact_prodMap_id (o : Orientation K U (Fin a)) (oz : Orientation K 
           (by rw [hfg.finrank_eq_add hf hg, ha, hc]) hz) := by
   -- Both sides are towers over `V × Z`, after writing the product orientations of `U × Z` and of
   -- `V × Z` as subspace-first orientations of `U → U × Z → Z` and `V → V × Z → Z`. The two
-  -- towers differ by the exchange of the quotient factors `Z` and `W`.
-  have h₁ : LinearMap.snd K V Z ∘ₗ f.prodMap LinearMap.id = LinearMap.snd K U Z := by
-    ext <;> simp
-  have h₂ : (g ∘ₗ LinearMap.fst K V Z) ∘ₗ LinearMap.inl K V Z = g := by
-    ext; simp
-  have hT₁ := shortExact_shortExact LinearMap.inl_injective Function.Exact.inl_snd
-    LinearMap.snd_surjective (f := f.prodMap LinearMap.id) (g := g ∘ₗ LinearMap.fst K V Z)
-    (LinearMap.injective_prodMap hf Function.injective_id) hfg.prodMap_id_comp_fst
-    (LinearMap.surjective_comp hg LinearMap.fst_surjective) h₁ o oz p ha hz hc
-    (by rw [finrank_prod, ha, hz])
-  have hT₂ := shortExact_shortExact hf hfg hg LinearMap.inl_injective Function.Exact.inl_snd
-    LinearMap.snd_surjective h₂ o p oz ha hc hz (by rw [hfg.finrank_eq_add hf hg, ha, hc])
-  rw [shortExact_inl_snd] at hT₁ hT₂
-  rw [hT₁, hT₂]
-  have h₃ : (f.prodMap LinearMap.id ∘ₗ LinearMap.inl K U Z) ∘ₗ (LinearEquiv.refl K U).toLinearMap =
-      (LinearEquiv.refl K (V × Z)).toLinearMap ∘ₗ (LinearMap.inl K V Z ∘ₗ f) :=
-    LinearMap.ext fun _ ↦ rfl
-  have h₄ : (LinearMap.snd K V Z).prod (g ∘ₗ LinearMap.fst K V Z) ∘ₗ
-        (LinearEquiv.refl K (V × Z)).toLinearMap =
-      (LinearEquiv.prodComm K W Z).toLinearMap ∘ₗ
-        (g ∘ₗ LinearMap.fst K V Z).prod (LinearMap.snd K V Z) := by
-    ext <;> simp
-  have hnat := map_shortExact (f := LinearMap.inl K V Z ∘ₗ f)
-    (g := (g ∘ₗ LinearMap.fst K V Z).prod (LinearMap.snd K V Z))
-    (LinearMap.injective_comp LinearMap.inl_injective hf) (hfg.comp_prod Function.Exact.inl_snd h₂)
-    (Function.Exact.inl_snd.surjective_prod hg LinearMap.snd_surjective h₂)
-    ha (by rw [finrank_prod, hc, hz])
-    (f' := f.prodMap LinearMap.id ∘ₗ LinearMap.inl K U Z)
-    (g' := (LinearMap.snd K V Z).prod (g ∘ₗ LinearMap.fst K V Z))
-    (LinearMap.injective_comp (LinearMap.injective_prodMap hf Function.injective_id)
-      LinearMap.inl_injective)
-    (Function.Exact.inl_snd.comp_prod hfg.prodMap_id_comp_fst h₁)
-    (hfg.prodMap_id_comp_fst.surjective_prod LinearMap.snd_surjective
-      (LinearMap.surjective_comp hg LinearMap.fst_surjective) h₁)
-    (LinearEquiv.refl K U) (LinearEquiv.refl K (V × Z)) (LinearEquiv.prodComm K W Z) h₃ h₄
-    o (prod p oz hc hz)
-  simp only [Orientation.map_refl, Equiv.refl_apply] at hnat
-  rw [map_prodComm_prod, shortExact_units_smul_right,
-    shortExact_reindex_finCongr_right (hc := by rw [finrank_prod, hz, hc])] at hnat
-  rw [hnat]
-  -- Exchanging `Z` and `W` twice contributes no sign.
-  have hsign : (-1 : Kˣ) ^ (z * c) * (-1) ^ (c * z) = 1 := by
-    rw [← pow_add, ← mul_comm z c, ← two_mul, pow_mul, neg_one_sq, one_pow]
-  simp only [reindex_units_smul, smul_smul, hsign, one_smul, reindex_finCongr_reindex_finCongr]
+  -- towers differ by the exchange of the quotient factors `Z` and `W`, which costs
+  -- `(-1) ^ (c * z)` by `map_shortExact_shortExact`.
+  have E := map_shortExact_shortExact LinearMap.inl_injective Function.Exact.inl_snd
+    LinearMap.snd_surjective (LinearMap.injective_prodMap hf Function.injective_id)
+    hfg.prodMap_id_comp_fst (LinearMap.surjective_comp hg LinearMap.fst_surjective)
+    (h₁ := LinearMap.snd K V Z) (by ext <;> simp) hf hfg hg LinearMap.inl_injective
+    Function.Exact.inl_snd LinearMap.snd_surjective (h₂ := g ∘ₗ LinearMap.fst K V Z)
+    (by ext; simp) (LinearEquiv.refl K U) (LinearEquiv.refl K (V × Z)) (fun _ ↦ by simp)
+    (fun _ ↦ rfl) (fun _ ↦ rfl) o p oz ha hc hz (by rw [finrank_prod, ha, hz])
+    (by rw [hfg.finrank_eq_add hf hg, ha, hc])
+  simp only [Orientation.map_refl, Equiv.refl_apply, shortExact_inl_snd] at E
+  rw [E, mul_comm]
 
 /-- **A further factor before the subspace.** For a short exact sequence `0 → U → V → W → 0` and a
 space `Z`, orient `Z × V` through `0 → Z × U → Z × V → W → 0` from `[Z][U]` and `[W]`. This is the
@@ -589,59 +619,5 @@ theorem shortExact_id_prodMap (oz : Orientation K Z (Fin z)) (o : Orientation K 
     simp [B, BV, this, Basis.prod_apply, ht]
 
 end Factor
-
-/-! ### Exchanging the two stages of a tower -/
-
-section Exchange
-
-variable {K U₁' U₁ V₁ U₂' U₂ V₂ A B : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-  [AddCommGroup U₁'] [Module K U₁'] [AddCommGroup U₁] [Module K U₁] [AddCommGroup V₁]
-  [Module K V₁] [AddCommGroup U₂'] [Module K U₂'] [AddCommGroup U₂] [Module K U₂]
-  [AddCommGroup V₂] [Module K V₂] [AddCommGroup A] [Module K A] [AddCommGroup B] [Module K B]
-  [FiniteDimensional K U₁'] [FiniteDimensional K U₁] [FiniteDimensional K U₂']
-  [FiniteDimensional K U₂] [FiniteDimensional K A] [FiniteDimensional K B]
-  {f₁' : U₁' →ₗ[K] U₁} {g₁' : U₁ →ₗ[K] B} {f₁ : U₁ →ₗ[K] V₁} {g₁ : V₁ →ₗ[K] A} {h₁ : V₁ →ₗ[K] B}
-  {f₂' : U₂' →ₗ[K] U₂} {g₂' : U₂ →ₗ[K] A} {f₂ : U₂ →ₗ[K] V₂} {g₂ : V₂ →ₗ[K] B} {h₂ : V₂ →ₗ[K] A}
-  {r a b : ℕ}
-
-/-- **Exchanging the two stages of a tower.** Suppose a subspace is cut out of `V₁` in two stages,
-first by `g₁ : V₁ → A` and then by `g₁' : U₁ → B` (with `h₁` extending `g₁'`), and that a linear
-equivalence `V₁ ≃ V₂` carries it onto a subspace of `V₂` cut out in the opposite order, first by a
-map to `B` and then by a map to `A`, compatibly with both quotient maps. Then the equivalence
-carries the orientation induced by the first tower to `(-1) ^ (dim A · dim B)` times the one
-induced by the second tower: the two quotients are exchanged. -/
-theorem map_shortExact_shortExact (hf₁' : Function.Injective f₁')
-    (hfg₁' : Function.Exact f₁' g₁') (hg₁' : Function.Surjective g₁')
-    (hf₁ : Function.Injective f₁) (hfg₁ : Function.Exact f₁ g₁) (hg₁ : Function.Surjective g₁)
-    (hh₁ : h₁ ∘ₗ f₁ = g₁') (hf₂' : Function.Injective f₂') (hfg₂' : Function.Exact f₂' g₂')
-    (hg₂' : Function.Surjective g₂') (hf₂ : Function.Injective f₂)
-    (hfg₂ : Function.Exact f₂ g₂) (hg₂ : Function.Surjective g₂) (hh₂ : h₂ ∘ₗ f₂ = g₂')
-    (e : U₁' ≃ₗ[K] U₂') (eV : V₁ ≃ₗ[K] V₂) (hι : ∀ x, f₂ (f₂' (e x)) = eV (f₁ (f₁' x)))
-    (hA : ∀ v, h₂ (eV v) = g₁ v) (hB : ∀ v, g₂ (eV v) = h₁ v)
-    (o : Orientation K U₁' (Fin r)) (pA : Orientation K A (Fin a))
-    (pB : Orientation K B (Fin b)) (hr : finrank K U₁' = r) (ha : finrank K A = a)
-    (hb : finrank K B = b) (hrb : finrank K U₁ = r + b) (hra : finrank K U₂ = r + a) :
-    map (Fin (r + b + a)) eV
-        (shortExact hf₁ hfg₁ hg₁ (shortExact hf₁' hfg₁' hg₁' o pB hr hb) pA hrb ha) =
-      (-1 : Kˣ) ^ (a * b) • reindex K V₂ (finCongr (add_right_comm r a b))
-        (shortExact hf₂ hfg₂ hg₂ (shortExact hf₂' hfg₂' hg₂' (map (Fin r) e o) pA
-          (e.finrank_eq.symm.trans hr) ha) pB hra hb) := by
-  -- Collapse both towers to single short exact sequences, and transport the first one along `eV`,
-  -- which carries its quotient `B × A` to the quotient `A × B` of the second.
-  rw [shortExact_shortExact hf₁' hfg₁' hg₁' hf₁ hfg₁ hg₁ hh₁,
-    shortExact_shortExact hf₂' hfg₂' hg₂' hf₂ hfg₂ hg₂ hh₂, map_reindex,
-    map_shortExact (f := f₁ ∘ₗ f₁') (g := h₁.prod g₁) (LinearMap.injective_comp hf₁ hf₁')
-      (hfg₁'.comp_prod hfg₁ hh₁) (hfg₁.surjective_prod hg₁' hg₁ hh₁) hr
-      (by rw [finrank_prod, hb, ha]) (f' := f₂ ∘ₗ f₂') (g' := h₂.prod g₂)
-      (LinearMap.injective_comp hf₂ hf₂')
-      (hfg₂'.comp_prod hfg₂ hh₂)
-      (hfg₂.surjective_prod hg₂' hg₂ hh₂) e eV (LinearEquiv.prodComm K B A) (LinearMap.ext hι)
-      (LinearMap.ext fun v ↦ Prod.ext (hA v) (hB v)),
-    map_prodComm_prod, shortExact_units_smul_right,
-    shortExact_reindex_finCongr_right (hc := by rw [finrank_prod, ha, hb]), mul_comm b a]
-  -- Normalize the reindexings.
-  simp only [reindex_units_smul, reindex_finCongr_reindex_finCongr]
-
-end Exchange
 
 end Orientation

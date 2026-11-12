@@ -14,8 +14,8 @@ public import Mathlib.LinearAlgebra.Prod
 
 This file records elementary constructions and consequences for exact pairs of linear maps,
 including the exactness of `U' → V → B × A` built from two exact stages `U' → U → B` and
-`U → V → A` (`Function.Exact.comp_prod`, with `Function.Exact.surjective_prod`), the exactness of
-products with an identity factor (`Function.Exact.prodMap_id_comp_fst`,
+`U → V → A` (`Function.Exact.comp_prod`, with `LinearMap.surjective_prod_of_comp_eq_zero`), the
+exactness of products with an identity factor (`Function.Exact.prodMap_id_comp_fst`,
 `Function.Exact.id_prodMap_comp_snd`), the left exactness of `Hom` over a noncommutative ring
 (`Function.Exact.lcomp_of_surjective`), the generators and relations of an extension
 (`Function.Exact.surjective_coprod`, `TauCeti.ker_coprod_eq_map_prod_top`), the horseshoe step
@@ -97,19 +97,19 @@ theorem _root_.Function.Exact.comp_prod {R U' U V B A : Type*} [Semiring R] [Add
   · rintro ⟨u', rfl⟩
     exact ⟨by simp [hhf', hfg'.apply_apply_eq_zero], hfg.apply_apply_eq_zero _⟩
 
-/-- If `U → V → A` is exact with `g : V → A` onto, and `h : V → B` restricts along `f` to a
-surjection `g' : U → B`, then `v ↦ (h v, g v)` maps `V` onto `B × A`. -/
-theorem _root_.Function.Exact.surjective_prod {R U V B A : Type*} [Semiring R] [AddCommMonoid U]
-    [AddCommMonoid V] [AddCommGroup B] [AddCommMonoid A] [Module R U] [Module R V] [Module R B]
-    [Module R A] {g' : U →ₗ[R] B} {f : U →ₗ[R] V} {g : V →ₗ[R] A} {h : V →ₗ[R] B}
-    (hfg : Function.Exact f g) (hg' : Function.Surjective g') (hg : Function.Surjective g)
-    (hhf : h ∘ₗ f = g') : Function.Surjective (h.prod g) := by
+/-- If `g ∘ f = 0` for `f : U → V` and `g : V → A` with `g` onto, and `h : V → B` restricts along
+`f` to a surjection `h ∘ f : U → B`, then `v ↦ (h v, g v)` maps `V` onto `B × A`. -/
+theorem _root_.LinearMap.surjective_prod_of_comp_eq_zero {R U V B A : Type*} [Semiring R]
+    [AddCommMonoid U] [AddCommMonoid V] [AddCommGroup B] [AddCommMonoid A] [Module R U]
+    [Module R V] [Module R B] [Module R A] {f : U →ₗ[R] V} {g : V →ₗ[R] A} {h : V →ₗ[R] B}
+    (hgf : g ∘ₗ f = 0) (hhf : Function.Surjective (h ∘ₗ f)) (hg : Function.Surjective g) :
+    Function.Surjective (h.prod g) := by
   rintro ⟨x, y⟩
   obtain ⟨v, rfl⟩ := hg y
-  obtain ⟨u, hu⟩ := hg' (x - h v)
+  obtain ⟨u, hu⟩ := hhf (x - h v)
   refine ⟨v + f u, ?_⟩
-  rw [LinearMap.prod_apply, Function.prod, map_add, map_add, hfg.apply_apply_eq_zero, add_zero,
-    ← LinearMap.comp_apply, hhf, hu, add_sub_cancel]
+  rw [LinearMap.prod_apply, Function.prod, map_add, map_add, ← LinearMap.comp_apply g,
+    hgf, LinearMap.zero_apply, add_zero, ← LinearMap.comp_apply h, hu, add_sub_cancel]
 
 /-- If `U → V → W` is exact, then so is `U × Z → V × Z → W`, with maps `f × id` and `g ∘ fst`. -/
 theorem _root_.Function.Exact.prodMap_id_comp_fst {R U V W Z : Type*} [Semiring R]
