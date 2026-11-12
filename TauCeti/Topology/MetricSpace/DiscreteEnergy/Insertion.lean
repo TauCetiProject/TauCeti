@@ -156,7 +156,7 @@ theorem discreteEnergyInsert_apply {t : Fin (n + 2) → ℝ} (ht : StrictMono t)
   · exact (overlap i k hik hj (insertionBlock_spec r h0 hlast j)).symm
 
 /-- Inserting endpoint-compatible curves retains the specified coarse vertex. -/
-theorem discreteEnergyInsert_apply_selection {t : Fin (n + 2) → ℝ} (ht : StrictMono t)
+theorem discreteEnergyInsert_comp_apply {t : Fin (n + 2) → ℝ} (ht : StrictMono t)
     (r : Fin (m + 2) ↪o Fin (n + 2)) (h0 : r 0 = 0)
     (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1))
     (x : Fin (m + 2) → M) (γ : Fin (m + 1) → ℝ → M)
@@ -178,7 +178,7 @@ theorem discreteEnergyInsert_comp {t : Fin (n + 2) → ℝ} (ht : StrictMono t)
     (hsource : ∀ i, γ i 0 = x i.castSucc) (htarget : ∀ i, γ i 1 = x i.succ) :
     discreteEnergyInsert t r h0 hlast γ ∘ r = x := by
   funext j
-  exact discreteEnergyInsert_apply_selection ht r h0 hlast x γ hsource htarget j
+  exact discreteEnergyInsert_comp_apply ht r h0 hlast x γ hsource htarget j
 
 /-- Reattaching the fixed endpoints to the inserted interior vertices recovers the full
 inserted tuple. This equation lets callers use insertion without unfolding its construction. -/
@@ -210,7 +210,7 @@ theorem discreteEnergyForget_discreteEnergyInsert {t : Fin (n + 2) → ℝ} (ht 
   funext j
   rw [discreteEnergyForget_apply, cons_snoc_discreteEnergyInsert ht r h0 hlast
     (by simpa using hsource 0) (by simpa using htarget (Fin.last m)),
-    discreteEnergyInsert_apply_selection ht r h0 hlast _ γ hsource htarget]
+    discreteEnergyInsert_comp_apply ht r h0 hlast _ γ hsource htarget]
   simp
 
 section Metric
