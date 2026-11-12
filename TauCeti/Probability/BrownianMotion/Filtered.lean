@@ -136,6 +136,13 @@ theorem hasLaw_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s �
   ext
   simp [Real.nndist_eq, hst]
 
+/-- Every natural power of a pre-Brownian evaluation is square integrable. -/
+theorem memLp_pow_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) (n : ℕ) :
+    MemLp (fun ω ↦ B t ω ^ n) 2 P := by
+  simpa only [Function.comp_def, Polynomial.eval_X_pow] using
+    (hB.hasLaw_eval t).memLp_comp (TauCeti.memLp_two_eval_gaussianReal 0 t
+      (Polynomial.X ^ n))
+
 /-- Every natural power of a pre-Brownian increment is integrable, in either time order. -/
 theorem integrable_pow_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) (n : ℕ) :
     Integrable (fun ω ↦ (B t ω - B s ω) ^ n) P := by
