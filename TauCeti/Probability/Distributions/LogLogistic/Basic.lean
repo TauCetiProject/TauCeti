@@ -263,8 +263,6 @@ private lemma ofReal_abs_exp_mul_logLogisticPDF (ha : 0 < a) (hb : 0 < b) (y : �
     rw [Real.exp_sub, Real.exp_log ha]
     field_simp
   rw [hexp_y, ← hE]
-  have h1 := Real.exp_pos (y - Real.log a)
-  have h2 := Real.exp_pos ((y - Real.log a) * (b - 1))
   field_simp
   ring
 
@@ -356,7 +354,7 @@ theorem one_sub_cdf_logLogisticMeasure (ha : 0 < a) (hb : 0 < b) (hx : 0 ≤ x) 
   rw [cdf_logLogisticMeasure_eq ha hb]
   rcases hx.eq_or_lt with rfl | hx
   · simp [Real.zero_rpow hb.ne']
-  · have hz := Real.rpow_pos_of_pos (div_pos hx ha) b
+  · have _ := Real.rpow_pos_of_pos (div_pos hx ha) b
     rw [ite_eq_right hx.not_ge, Real.rpow_neg (div_pos hx ha).le]
     field_simp
     ring
@@ -366,7 +364,6 @@ the survival function is `(b / a) * (x / a) ^ (b - 1) / (1 + (x / a) ^ b)`. -/
 theorem logLogisticPDFReal_div_one_sub_cdf (ha : 0 < a) (hb : 0 < b) (hx : 0 < x) :
     logLogisticPDFReal a b x / (1 - cdf (logLogisticMeasure a b) x) =
       (b / a) * (x / a) ^ (b - 1) / (1 + (x / a) ^ b) := by
-  have hz := Real.rpow_pos_of_pos (div_pos hx ha) b
   rw [one_sub_cdf_logLogisticMeasure ha hb hx.le, logLogisticPDFReal_of_pos ha hb hx]
   field_simp
 

@@ -50,7 +50,7 @@ theorem differentExponent_tower :
   let _ : ValuativeExtension K M := ValuativeExtension.trans K L M
   let _ : IsScalarTower 𝒪[K] 𝒪[L] 𝒪[M] :=
     IsScalarTower.of_algebraMap_eq fun x ↦ Subtype.ext (by
-      simp only [coe_algebraMap_integerRing]
+      simp only [Valuation.HasExtension.val_algebraMap]
       exact (IsScalarTower.algebraMap_apply K L M (x : K)))
   let _ : Module.Finite 𝒪[K] 𝒪[L] := integerRingModuleFinite K L
   let _ : Module.Finite 𝒪[L] 𝒪[M] := integerRingModuleFinite L M

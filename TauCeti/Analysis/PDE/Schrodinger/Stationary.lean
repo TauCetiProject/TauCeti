@@ -156,7 +156,7 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq [Nontri
     have hφ2 : MemLp φ 2 volume := φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport
     have hDc : Continuous fun z ↦ ‖fderiv ℝ φ z‖ ^ 2 :=
       (φ.contDiff.continuous_fderiv (by norm_num)).norm.pow 2
-    have hD : Integrable (fun z ↦ ‖fderiv ℝ φ z‖ ^ 2) volume :=
+    have _ : Integrable (fun z ↦ ‖fderiv ℝ φ z‖ ^ 2) volume :=
       hDc.integrable_of_hasCompactSupport
         ((φ.hasCompactSupport.fderiv (𝕜 := ℝ)).comp_left (g := fun L ↦ ‖L‖ ^ 2) (by simp))
     have hPφ : Integrable (fun z ↦ P z * φ z ^ 2) volume :=

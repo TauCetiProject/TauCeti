@@ -27,9 +27,8 @@ points in `K`:
 `∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atTop (𝓝 p)`.
 
 This is the statement that makes the moduli spaces of the Morse complex — the trajectories running
-from one critical point to another — well defined objects at all, and it is where Lane M of the
-analytic Heegaard Floer roadmap turns the dynamical facts of
-`TauCeti/Analysis/Calculus/Morse/GradientFlow.lean` into the beginnings of a chain complex.
+from one critical point to another — well defined objects at all. It builds on the dynamical
+facts of `TauCeti/Analysis/Calculus/Morse/GradientFlow.lean`.
 
 Some hypothesis beyond compactness is needed to pin the limit down. For a merely smooth `f` a
 negative gradient trajectory can spiral forever towards a circle of critical points, its ω-limit
@@ -81,8 +80,6 @@ and a map into a compact set with a unique cluster point converges to it
 * M. Audin, M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014, Chapter 2.
 * S. Łojasiewicz, *Ensembles semi-analytiques*, IHÉS, 1965, for the gradient inequality that
   replaces the finiteness hypothesis used here when `f` is analytic.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section

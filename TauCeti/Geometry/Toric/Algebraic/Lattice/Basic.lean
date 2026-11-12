@@ -93,7 +93,6 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N �
 
 /-- An additive map `i : N →+ V` from a finite free `ℤ`-module into a real vector space is an
 *integral lattice* when it exhibits `V` as the extension of scalars of `N` from `ℤ` to `ℝ`. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 structure IsIntegralLattice (i : N →+ V) : Prop where
   /-- The module of integral vectors is free. -/
   free : Module.Free ℤ N

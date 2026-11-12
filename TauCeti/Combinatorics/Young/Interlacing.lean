@@ -69,8 +69,6 @@ way keeps every type non-dependent, so the resulting sum decomposition
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 2.2.
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 6, "branching rules".
 -/
 
 public section

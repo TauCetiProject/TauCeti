@@ -63,8 +63,7 @@ theorem sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut (S : Fi
   have partner : ∀ D ∈ T, ∀ E ∈ S, (f D).IsRecut (f E) →
       E ∈ T ∧ (f E).IsRecut (f D) ∧ w E = w D ∧ E ≠ D := by
     intro D hD E hE h
-    obtain ⟨hDS, hdisj⟩ := Finset.mem_filter.mp hD
-    have hone := ((f D).hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left hdisj
+    obtain ⟨hDS, _⟩ := Finset.mem_filter.mp hD
     obtain ⟨hfirst, hsecond⟩ := hempty D hDS
     have hsymm := h.symm hfirst hsecond
     refine ⟨Finset.mem_filter.mpr ⟨hE, (f E).not_hasDisjointSides_of_hasOneCommonSide
