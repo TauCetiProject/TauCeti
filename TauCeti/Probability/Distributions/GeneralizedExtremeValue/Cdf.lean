@@ -144,13 +144,13 @@ theorem cdf_generalizedExtremeValueMeasure_eq (hs : 0 < s) (hξ : ξ ≠ 0) (m x
     rcases lt_or_gt_of_ne hξ with hξ | hξ
     · rw [ite_eq_right (not_lt.mpr hξ.le)]
       have hpre : generalizedExtremeValueMap m s ξ ⁻¹' Iic x =ᵐ[expMeasure 1] univ := by
-        filter_upwards [ae_pos_expMeasure 1] with e he
+        filter_upwards [ae_pos_expMeasure 1] with e _
         simp only [mem_preimage, mem_Iic, mem_univ, iff_true]
         exact generalizedExtremeValueMap_le_of_shape_neg_of_nonpos hs hξ hx
       rw [measure_congr hpre, measure_univ, ENNReal.toReal_one]
     · rw [ite_eq_left hξ]
       have hpre : generalizedExtremeValueMap m s ξ ⁻¹' Iic x =ᵐ[expMeasure 1] ∅ := by
-        filter_upwards [ae_pos_expMeasure 1] with e he
+        filter_upwards [ae_pos_expMeasure 1] with e _
         simp only [mem_preimage, mem_Iic, mem_empty_iff_false, iff_false]
         exact not_generalizedExtremeValueMap_le_of_shape_pos_of_nonpos hs hξ hx
       rw [measure_congr hpre, measure_empty, ENNReal.toReal_zero]
