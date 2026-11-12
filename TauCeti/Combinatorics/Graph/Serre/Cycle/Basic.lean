@@ -286,22 +286,19 @@ theorem eq_zero_of_incidenceBoundary_eq_zero
     (hc : Γ.incidenceBoundary O R c = 0) (hs : ∀ e ∈ c.support, e.val ∈ F) :
     c = 0 := by
   classical
-  let i : {e : O // e.val ∈ F} → F := fun e ↦ ⟨e.1.1, e.2⟩
-  have hi : Function.Injective i := fun a b h ↦
-    Subtype.ext (Subtype.ext (by simpa [i] using congrArg Subtype.val h))
-  let b := Finsupp.comapDomain (Subtype.val : {e : O // e.val ∈ F} → O) c
-    Subtype.val_injective.injOn
-  have hb : Finsupp.mapDomain Subtype.val b = c := by
-    apply Finsupp.mapDomain_comapDomain _ Subtype.val_injective c
+  let b := Finsupp.comapDomain (Set.inclusion (Set.inter_subset_left : O ∩ F ⊆ O)) c
+    (Set.inclusion_injective _).injOn
+  have hb : Finsupp.mapDomain (Set.inclusion (Set.inter_subset_left : O ∩ F ⊆ O)) b = c := by
+    apply Finsupp.mapDomain_comapDomain _ (Set.inclusion_injective _) c
     intro e he
-    exact ⟨⟨e, hs e he⟩, rfl⟩
-  have hboundary : Γ.incidenceBoundary F R (Finsupp.mapDomain i b) = 0 := by
-    rw [← hc]
-    conv_rhs => rw [← hb]
-    simp only [incidenceBoundary, Finsupp.linearCombination_mapDomain]
-    rfl
+    exact ⟨⟨e.1, e.2, hs e he⟩, rfl⟩
+  have hboundary : Γ.incidenceBoundary F R
+      (Finsupp.mapDomain (Set.inclusion (Set.inter_subset_right : O ∩ F ⊆ F)) b) = 0 := by
+    rw [incidenceBoundary_mapDomain_inclusion, ← incidenceBoundary_mapDomain_inclusion
+      (Set.inter_subset_left : O ∩ F ⊆ O), hb, hc]
   have hbzero : b = 0 :=
-    Finsupp.mapDomain_injective hi (by simpa using hinj (hboundary.trans (map_zero _).symm))
+    Finsupp.mapDomain_injective (Set.inclusion_injective _)
+      (by simpa using hinj (hboundary.trans (map_zero _).symm))
   rw [← hb, hbzero, Finsupp.mapDomain_zero]
 
 /-- If the boundary is injective on a dart subset, chains in any ambient dart set are
