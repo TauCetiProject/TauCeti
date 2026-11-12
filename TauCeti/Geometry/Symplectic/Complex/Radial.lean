@@ -5,18 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import TauCeti.Analysis.InnerProductSpace.Radial
 public import TauCeti.Geometry.Symplectic.Complex.Line
 
 /-!
 # Radial maps of the complex line and the standard area form
 
-A *radial map* of a real inner product space `E` is a map `x ↦ g(‖x‖²) • x` for a real function
-`g`. Where `g` is differentiable at `s = ‖z‖²`, its derivative at `z` is
-`v ↦ g(s) v + 2 g'(s) ⟪z, v⟫ z` (`TauCeti.hasFDerivAt_smul_self_of_hasDerivAt_sq_norm`).
-
-On the complex line this derivative scales the standard area form
-`ω(v, w) = v.re * w.im - v.im * w.re` (`TauCeti.stdComplexSymplecticForm`) by the constant factor
+A *radial map* of the complex line is a map `x ↦ g(‖x‖²) • x` for a real function `g`. Where `g`
+is differentiable at `s = ‖z‖²`, its derivative at `z` is `v ↦ g(s) v + 2 g'(s) ⟪z, v⟫ z`
+(`TauCeti.hasFDerivAt_smul_self_of_hasDerivAt_sq_norm`, for any real inner product space). This
+derivative scales the standard area form `ω(v, w) = v.re * w.im - v.im * w.re`
+(`TauCeti.stdComplexSymplecticForm`) by the constant factor
 
 `g(s) (g(s) + 2 s g'(s))`
 
@@ -30,7 +29,6 @@ in a disc coordinate: the factor above is the area density that such a map pulls
 
 ## Main results
 
-* `TauCeti.hasFDerivAt_smul_self_of_hasDerivAt_sq_norm`: the derivative of a radial map.
 * `TauCeti.stdComplexSymplecticForm_smul_add_inner_smul`: the area scaling of
   `v ↦ a v + b ⟪z, v⟫ z`.
 * `TauCeti.stdComplexSymplecticForm_fderiv_smul_self`: a radial map of `ℂ` scales the standard
@@ -42,20 +40,6 @@ public section
 open RealInnerProductSpace
 
 namespace TauCeti
-
-/-- **The derivative of a radial map.** If `g` is differentiable at `‖z‖²`, the map
-`x ↦ g(‖x‖²) • x` has derivative `v ↦ g(‖z‖²) v + 2 g'(‖z‖²) ⟪z, v⟫ z` at `z`. -/
-theorem hasFDerivAt_smul_self_of_hasDerivAt_sq_norm {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] {g : ℝ → ℝ} {g' : ℝ} {z : E} (hg : HasDerivAt g g' (‖z‖ ^ 2)) :
-    HasFDerivAt (fun x : E ↦ g (‖x‖ ^ 2) • x)
-      (g (‖z‖ ^ 2) • ContinuousLinearMap.id ℝ E + (2 * g') • (innerSL ℝ z).smulRight z) z := by
-  have hn : HasFDerivAt (fun x : E ↦ g (‖x‖ ^ 2)) (g' • (2 • innerSL ℝ z)) z :=
-    hg.comp_hasFDerivAt z (hasStrictFDerivAt_norm_sq z).hasFDerivAt
-  refine (hn.smul (hasFDerivAt_id z)).congr_fderiv ?_
-  ext v
-  simp only [add_apply, smul_apply, ContinuousLinearMap.id_apply,
-    ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, id_eq, smul_smul]
-  ring_nf
 
 /-- **Area scaling of `v ↦ a v + b ⟪z, v⟫ z`.** On the complex line, the real-linear map
 `v ↦ a v + b ⟪z, v⟫ z` scales the standard area form by `a (a + b ‖z‖²)`. -/
