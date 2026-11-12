@@ -80,7 +80,7 @@ theorem sq_mul_le_sum_of_forall_sections [Finite V] (E : Finset (V × V))
 nonnegative within-cluster penalties vanishing on equal labels. The infima range over all
 assignments; neither finiteness of the label type nor attainment of the infimum is required.
 The statement includes `q = 0`, empty graphs and empty vertex types. -/
-theorem ciInf_sum_pairwise_replicate [Fintype V] [Nonempty A] (E : Finset (V × V))
+theorem ciInf_add_sum_sum_sum_eq_sq_mul_ciInf_sum [Fintype V] [Nonempty A] (E : Finset (V × V))
     (hE : ∀ e ∈ E, e.1 ≠ e.2) (w : (V × V) → A → A → ℝ)
     (hw : ∀ e ∈ E, ∀ a b, 0 ≤ w e a b)
     (z : V → A → A → ℝ) (hz : ∀ v a b, 0 ≤ z v a b) (hz_diag : ∀ v a, z v a a = 0)
