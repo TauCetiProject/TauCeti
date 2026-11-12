@@ -169,7 +169,7 @@ theorem tendstoInMeasure_sum_eval_mul_sq_sub (hB : IsFilteredPreBrownianReal ℱ
           exact hu.1
         · rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ hu0]
           exact hu.2)
-    have hr := hreal.tendsto_sum_tagged_smul_sub
+    have hr := hreal.tendsto_sum_tagged_sub_smul
       (τ := fun k i ↦ (t k i : ℝ)) (ξ := fun k i ↦ (t k i : ℝ))
       (fun k i hi j hj hij ↦ by exact_mod_cast ht k hi hj hij)
       (fun k ↦ by exact_mod_cast ha k) (fun k ↦ by exact_mod_cast hb k)

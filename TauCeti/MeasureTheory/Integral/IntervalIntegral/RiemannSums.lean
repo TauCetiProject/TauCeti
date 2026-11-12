@@ -27,7 +27,7 @@ open scoped Topology
 
 /-- Tagged Riemann sums for a continuous function converge to its interval integral.
 Only the portion of each grid through its final endpoint needs to be ordered. -/
-theorem ContinuousOn.tendsto_sum_tagged_smul_sub
+theorem ContinuousOn.tendsto_sum_tagged_sub_smul
     {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     {f : ℝ → E} {a b : ℝ} (hf : ContinuousOn f (Icc a b))
     {l : Filter ι} {n : ι → ℕ} {τ ξ : ι → ℕ → ℝ}
