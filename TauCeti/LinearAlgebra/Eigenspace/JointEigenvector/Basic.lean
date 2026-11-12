@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-import TauCeti.Data.Nat.Cast.Card
+import TauCeti.SetTheory.Cardinal.Finite
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.LinearAlgebra.Eigenspace.Pi
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple

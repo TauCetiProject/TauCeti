@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Data.Nat.Cast.Card
+import TauCeti.SetTheory.Cardinal.Finite
 public import TauCeti.RepresentationTheory.CharacterTable.Pairing
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Dimension.Finite

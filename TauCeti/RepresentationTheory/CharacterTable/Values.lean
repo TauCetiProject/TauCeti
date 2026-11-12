@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.End.FiniteOrder
-public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 public import Mathlib.RepresentationTheory.Character
