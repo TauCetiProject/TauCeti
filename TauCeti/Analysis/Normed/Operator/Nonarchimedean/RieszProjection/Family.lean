@@ -11,15 +11,15 @@ import TauCeti.Algebra.Ring.Commute
 /-!
 # Simultaneous Riesz splittings at finitely many zeros
 
-Riesz projectors at scalars whose differences are units are orthogonal. Consequently a
-finite family of such zeros cuts out a single finite projective spectral summand. Its
-Fredholm factor is the product of the individual factors, and the Fredholm series splits
-as this product times the series on the common complement. Over a field the separation
-condition is just distinctness; over a coefficient ring it is stronger.
+Using the orthogonality of unit-separated Riesz projectors from
+`TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Basic`, this file combines
+finitely many spectral summands into a single finite projective block. At good zeros,
+its Fredholm factor is the product of the individual normalised linear factors. The
+Fredholm series splits as this product times the series on the common complement,
+and the complementary factor is a unit at every selected parameter.
 
-The orthogonality assertion uses only the nilpotence bounds of the projectors, not a
-multiplicity hypothesis on the Fredholm series. Good-zero orders are needed only to
-identify the factors. Empty families and projectors of order zero are included.
+Over a field the separation condition is just distinctness; over a coefficient ring
+it is stronger. Empty families and projectors of order zero are included.
 
 ## References
 
@@ -89,14 +89,7 @@ theorem IsRowCompact.isUnit_evalAt_charPowerSeries_complement_sum_of_isRieszProj
       (Commute.one_right (1 - a i • u)) hCS
   have hw' : (hE i hi).inverse * (1 - S) * (1 - a i • u) = 1 - S := by
     rw [mul_assoc, ← hCS'.eq, ← mul_assoc, (hE i hi).inverse_mul_one_sub_smul, hremove]
-  have hunit := he.isUnit_add_mul_one_sub
-    (A := C₀(I, R) →L[R] C₀(I, R)) hw hw'
-  apply (hu.comp_clm (1 - S)).isUnit_evalAt_charPowerSeries_of_isUnit_one_sub_smul
-  convert hunit using 1
-  ext x : 1
-  simp only [sub_apply, one_apply_eq_self, smul_apply, mul_apply_eq_comp, add_apply,
-    comp_apply, map_sub]
-  module
+  exact hu.isUnit_evalAt_charPowerSeries_complement_of_inverse he hw hw'
 
 /-- The Fredholm factor on a finite union of separated good-zero summands is the product
 of the corresponding normalised linear factors, with their good-zero orders. -/

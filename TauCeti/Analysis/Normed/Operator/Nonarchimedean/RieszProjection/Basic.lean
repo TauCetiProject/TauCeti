@@ -281,7 +281,9 @@ theorem disjoint_range {F : M →L[R] M} {b : R} {k : ℕ}
   have hd := Polynomial.disjoint_ker_aeval_of_isCoprime u.toLinearMap hpq
   simpa [← toLinearMap_aeval, Algebra.algebraMap_eq_smul_one] using hd
 
-/-- Riesz projectors at parameters separated by a unit annihilate each other. -/
+/-- Riesz projectors at parameters separated by a unit annihilate each other.
+Only their nilpotence bounds are used; these need not be exact multiplicities of zeros
+of a Fredholm series. -/
 theorem mul_eq_zero {F : M →L[R] M} {b : R} {k : ℕ}
     (hE : IsRieszProjection u a h E) (hF : IsRieszProjection u b k F)
     (hab : IsUnit (a - b)) : E * F = 0 := by

@@ -50,6 +50,24 @@ open scoped ZeroAtInfty TauCeti.RingOpNorm
 
 namespace ContinuousLinearMap
 
+/-- The complementary Fredholm factor of an idempotent is a unit at `a` if `1 - a • u`
+admits a two-sided inverse modulo that idempotent. No commutation hypothesis is needed
+in addition to the inverse identities. -/
+theorem IsRowCompact.isUnit_evalAt_charPowerSeries_complement_of_inverse
+    {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
+    [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
+    [IsUltrametricDist R] [CompleteSpace R]
+    {u P w : C₀(I, R) →L[R] C₀(I, R)} {a : R} (hu : u.IsRowCompact)
+    (hP : IsIdempotentElem P) (hw : (1 - a • u) * w = 1 - P)
+    (hw' : w * (1 - a • u) = 1 - P) :
+    IsUnit ((u * (1 - P)).matrixCoeff.charPowerSeries.evalAt a) := by
+  apply (hu.comp_clm (1 - P)).isUnit_evalAt_charPowerSeries_of_isUnit_one_sub_smul
+  have hunit := hP.isUnit_add_mul_one_sub (A := C₀(I, R) →L[R] C₀(I, R)) hw hw'
+  convert hunit using 1
+  ext x : 1
+  simp only [sub_apply, one_apply_eq_self, smul_apply, mul_apply_eq_comp, add_apply, comp_apply]
+  abel
+
 namespace IsRieszProjection
 
 section Ring
@@ -63,15 +81,9 @@ variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
 This retains the unit assertion over coefficient rings with zero divisors. -/
 theorem isUnit_evalAt_charPowerSeries_complement (hE : IsRieszProjection u a h E)
     (hu : u.IsRowCompact) :
-    IsUnit ((u * (1 - E)).matrixCoeff.charPowerSeries.evalAt a) := by
-  apply (hu.comp_clm (1 - E)).isUnit_evalAt_charPowerSeries_of_isUnit_one_sub_smul
-  have hunit := _root_.IsIdempotentElem.isUnit_add_mul_one_sub
-    (A := C₀(I, R) →L[R] C₀(I, R)) hE.isIdempotentElem
+    IsUnit ((u * (1 - E)).matrixCoeff.charPowerSeries.evalAt a) :=
+  hu.isUnit_evalAt_charPowerSeries_complement_of_inverse hE.isIdempotentElem
     hE.one_sub_smul_mul_inverse hE.inverse_mul_one_sub_smul
-  convert hunit using 1
-  ext x : 1
-  simp only [sub_apply, one_apply_eq_self, smul_apply, mul_apply_eq_comp, add_apply, comp_apply]
-  abel
 
 /-- The Fredholm factor on the finite Riesz summand inherits the good zero of the Fredholm series,
 with the same order, because the complementary factor is a unit there. -/
