@@ -35,11 +35,6 @@ tangent-space exponential.
 * `exists_injOn_mulInvariantExp_modelSpace`: exponential is injective near zero.
 * `TauCeti.exists_contMDiffMap_eventually_apply_lieExp_eq`: every smooth germ on the Lie algebra
   at zero is the pullback along `lieExp` of a globally smooth function on the group.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The exponential map".
 -/
 public section
 open Filter Function Manifold
