@@ -128,7 +128,7 @@ theorem residuePairing_eq_sum (μ : PrincipalParts D) (ω : differentialSections
     exact (DFinsupp.mem_support_iff.1 hx) (hS x h)
   rw [residuePairing, DFinsupp.lsum_apply_apply, DFinsupp.sumAddHom_apply,
     DFinsupp.sum_of_support_subset hsub fun _ _ ↦ map_zero _, LinearMap.sum_apply]
-  rfl
+  simp only [LinearMap.toAddMonoidHom_coe]
 
 /-- On a principal part supported at one point, the residue pairing is the local residue
 pairing at that point. -/

@@ -57,6 +57,12 @@ def toChartGerm (x : X) : MeromorphicFunction X →ₐ[ℂ] meromorphicGerms ℂ
     rw [← meromorphicGerms.mk_const, meromorphicGerms.mk_eq_mk_iff, finitePart_algebraMap]
     rfl
 
+/-- The coordinate germ is the germ of the finite part read in the preferred chart. -/
+theorem toChartGerm_apply (x : X) (f : MeromorphicFunction X) :
+    toChartGerm x f = meromorphicGerms.mk (f.finitePart ∘ (chartAt ℂ x).symm)
+      ((meromorphicAt_def _ _).1 (f.meromorphicAt_finitePart x)) :=
+  (rfl)
+
 @[simp]
 theorem coe_toChartGerm (x : X) (f : MeromorphicFunction X) :
     (toChartGerm x f : Germ (𝓝[≠] (chartAt ℂ x x)) ℂ) =
@@ -67,7 +73,6 @@ theorem coe_toChartGerm (x : X) (f : MeromorphicFunction X) :
 @[simp]
 theorem order_toChartGerm (x : X) (f : MeromorphicFunction X) :
     meromorphicGerms.order (toChartGerm x f) = order x f := by
-  rw [order_apply, meromorphicOrderAt_def, toChartGerm, AlgHom.coe_mk, RingHom.coe_mk,
-    MonoidHom.coe_mk, OneHom.coe_mk, meromorphicGerms.order_mk]
+  rw [order_apply, meromorphicOrderAt_def, toChartGerm_apply, meromorphicGerms.order_mk]
 
 end TauCeti.RiemannSurface.MeromorphicFunction

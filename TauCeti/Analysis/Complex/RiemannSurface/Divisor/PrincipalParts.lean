@@ -105,7 +105,7 @@ theorem mapOfLE_refl : mapOfLE (le_refl D) = LinearMap.id := by
   ext μ x : 2
   rw [mapOfLE_apply, LinearMap.id_apply]
   induction μ x using Submodule.Quotient.induction_on with
-  | _ φ => rfl
+  | _ φ => rw [LocalPrincipalPart.mapOfLE_mk]
 
 @[simp]
 theorem mapOfLE_comp (hDE : D ≤ E) (hEF : E ≤ F) :
@@ -113,7 +113,7 @@ theorem mapOfLE_comp (hDE : D ≤ E) (hEF : E ≤ F) :
   ext μ x : 2
   simp only [LinearMap.comp_apply, mapOfLE_apply]
   induction μ x using Submodule.Quotient.induction_on with
-  | _ φ => rfl
+  | _ φ => simp only [LocalPrincipalPart.mapOfLE_mk]
 
 end PrincipalParts
 

@@ -53,6 +53,12 @@ def toChartGerm (x : X) : differentialSections D ⊤ →ₗ[ℂ] meromorphicGerm
     congr 1
     rw [map_smul, OneForm.coeff_const_smul]
 
+/-- The coordinate germ is the germ of the coefficient in the preferred chart. -/
+theorem toChartGerm_apply (x : X) (s : differentialSections D ⊤) :
+    toChartGerm D x s = meromorphicGerms.mk ((toOneForm D s).coeff (chartAt ℂ x))
+      ((OneForm.meromorphicAt_def _ _).1 (isDifferentialSectionAt_toOneForm s x).meromorphicAt) :=
+  (rfl)
+
 @[simp]
 theorem coe_toChartGerm (x : X) (s : differentialSections D ⊤) :
     (toChartGerm D x s : Germ (𝓝[≠] (chartAt ℂ x x)) ℂ) =
@@ -63,8 +69,7 @@ theorem coe_toChartGerm (x : X) (s : differentialSections D ⊤) :
 @[simp]
 theorem order_toChartGerm (x : X) (s : differentialSections D ⊤) :
     meromorphicGerms.order (toChartGerm D x s) = (toOneForm D s).order x := by
-  simp only [toChartGerm, LinearMap.coe_mk, AddHom.coe_mk, meromorphicGerms.order_mk,
-    OneForm.order_def]
+  rw [toChartGerm_apply, meromorphicGerms.order_mk, OneForm.order_def]
 
 /-- The coordinate germ of a section of `Ω_D` satisfies the order bound of `Ω_D`. -/
 theorem toChartGerm_mem_orderGE (x : X) (s : differentialSections D ⊤) :
