@@ -618,11 +618,10 @@ theorem range_evalGHom (hv : v ∈ V ι S) :
 vanishing at `v` vanishes on all of `V_H(S)`, that is, when `v` is a generic point of `V_H(S)`. -/
 theorem evalGHom_injective_iff (hv : v ∈ V ι S) :
     Function.Injective (evalGHom v hv) ↔ I ι {v} ≤ Rad ι S := by
-  refine ⟨fun h w hw => (QuotientGroup.eq_one_iff w).1 (h ?_), fun h => ?_⟩
-  · simpa using hw
-  refine (injective_iff_map_eq_one _).2 fun q hq => ?_
-  induction q using QuotientGroup.induction_on with
-  | H w => exact (QuotientGroup.eq_one_iff w).2 (h (by simpa using hq))
+  have hle : Rad ι S ≤ (eval ι v).ker := fun w hw => MonoidHom.mem_ker.2 (mem_Rad.1 hw v hv)
+  have hI : I ι {v} = (eval ι v).ker := by simp [I_eq_iInf_ker]
+  rw [hI]
+  exact (QuotientGroup.injective_lift_iff _ _ hle).trans (le_antisymm_iff.trans (and_iff_right hle))
 
 /-- If `v` is the only solution of `S`, evaluation at `v` is injective on the coordinate group.
 Together with `range_evalGHom`, this identifies the coordinate group of the point `v` with the
