@@ -43,9 +43,12 @@ complex of injective objects exactly when its morphism to zero has the right lif
 with respect to the small monomorphic quasi-isomorphisms
 (`CochainComplex.exists_rlp_monoQuasiIsoOfCardinalLT_iff_of_isZero`).
 
-In the injective model structure on unbounded complexes these morphisms play the role of
-generating trivial cofibrations: the small object argument applied to them is the standard route
-to a monomorphic quasi-isomorphism from any complex into a K-injective complex of injectives.
+The class `monoQuasiIsoOfCardinalLT κ` need not be `w`-small. The theorem
+`CochainComplex.exists_isSmall_rlp_eq` supplies a `w`-small family of monomorphic
+quasi-isomorphisms with the same right lifting property as all monomorphic quasi-isomorphisms.
+In the injective model structure on unbounded complexes, this family serves as generating
+trivial cofibrations. Applying the small object argument to this family gives a monomorphic
+quasi-isomorphism from any complex into a K-injective complex of injectives.
 
 The key step enlarges a proper subcomplex `A` of a complex `M` with acyclic quotient `M / A`.
 A nonzero acyclic subcomplex `N` of `M / A` with terms of bounded size exists by
