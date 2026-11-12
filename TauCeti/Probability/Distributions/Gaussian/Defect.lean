@@ -47,7 +47,7 @@ theorem map_add_defect_stdGaussian (D : F →L[ℝ] E) (hD : ‖D‖ ≤ 1) :
       (D.comp (.fst ℝ F E) + (CFC.sqrt (1 - D ∘L D.adjoint)).comp (.snd ℝ F E)) =
       stdGaussian E := by
   have hdefect : 0 ≤ (1 : E →L[ℝ] E) - D ∘L D.adjoint :=
-    sub_nonneg.mpr (D.self_comp_adjoint_le_one hD)
+    sub_nonneg.mpr (D.self_comp_adjoint_le_one_iff.mpr hD)
   let S : E →L[ℝ] E := CFC.sqrt (1 - D ∘L D.adjoint)
   have hS : IsSelfAdjoint S :=
     (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg (1 - D ∘L D.adjoint))).isSelfAdjoint

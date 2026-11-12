@@ -19,7 +19,7 @@ are proved for an arbitrary table.
 Thus the minuscule coordinate lattice is an admissible lattice for the explicit Serre-generator
 Kostant form. Its weights span the full type-`E₇` character lattice by
 `TauCeti.DynkinType.span_range_e7MinusculeWeight_eq_top`. These are the lattice inputs needed for
-the full-weight type-`E₇` Chevalley--Demazure carrier in Layer 9 of the ReductiveGroups roadmap.
+the full-weight type-`E₇` Chevalley--Demazure carrier.
 
 ## Main declarations
 

@@ -56,7 +56,7 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
   [StarRing R] [ContinuousStar R]
 
-private local instance : CompleteSpace R := FiniteDimensional.complete ℝ R
+private local instance : CompleteSpace R := FiniteDimensional.completeSpace ℝ R
 
 local notation "𝕂" => unitarySubgroup Rˣ
 local notation "𝔩" => LieSubalgebra.toSubmodule
@@ -126,13 +126,10 @@ private theorem exists_nativeStructure :
                contMDiff_toUnits := hinc
                isImmersion_toUnits := hi
                lieGroup := ?_ }⟩
-  have hφsymm : (φ.symm : 𝕂 → unitary R) = unitarySubgroupUnitsEquiv := by
-    funext u
-    simp only [φ, Homeomorph.coe_pullbackDiffeomorph_symm, Homeomorph.symm_symm, e,
-      TauCeti.unitarySubgroupUnitsHomeomorph_apply]
-  let f : 𝕂 ≃* unitary R := unitarySubgroupUnitsEquiv
-  exact IsLocalDiffeomorph.lieGroup f.toMonoidHom
-    (hφsymm ▸ φ.symm.isLocalDiffeomorph) f.surjective
+  let f := ContinuousMulEquiv.mk' e.symm fun x y ↦ by
+    simpa only [e, TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply] using
+      map_mul unitarySubgroupUnitsEquiv.symm x y
+  exact f.lieGroup_pullbackChartedSpace (I := 𝓘(ℝ, 𝔩)) (n := ∞)
 
 /-- The native atlas of the unitary group, induced by its closed embedding into the units. -/
 instance instChartedSpace : ChartedSpace 𝔩 (unitary R) :=

@@ -90,7 +90,7 @@ theorem Wkp.norm_ofTestFunctionₗ_monoCLM (hsub : Omega ≤ Omega') (k : ℕ)
         (p := p) 0 (TestFunction.monoCLM ℝ phi)),
         ← Wkp.value_zero (Wkp.ofTestFunctionₗ (mu := mu) (p := p) 0 phi),
         Wkp.value_ofTestFunctionₗ, Wkp.value_ofTestFunctionₗ]
-      rw [← toReal_enorm, ← toReal_enorm,
+      rw [← toReal_eNorm, ← toReal_eNorm,
         enorm_testFunctionLp_eq_eLpNorm, enorm_testFunctionLp_eq_eLpNorm,
         TestFunction.monoCLM_apply]
       simp [hsub]

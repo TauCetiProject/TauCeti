@@ -514,7 +514,6 @@ private theorem integrable_matrixBilinearForm_gradient_terms
   have hψ' := hψ.continuous
   have hφ' := φ.continuous
   have hgψ := ContDiff.continuous_gradient hψ (by simp)
-  have hgφ := ContDiff.continuous_gradient φ.contDiff (by simp)
   have hBn : Continuous fun x => ‖matrixBilinearForm (a x)‖ :=
     Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) hBc
   have hcs := hasCompactSupport_of_forall_eq_zero_cutoff (a := a) hψc
@@ -571,9 +570,6 @@ private theorem integrable_value_terms (hM : ∀ x, ‖matrixBilinearForm (a x)�
   have hψ' := hψ.continuous
   have hφ' := φ.continuous
   have hgψ := ContDiff.continuous_gradient hψ (by simp)
-  have hgφ := ContDiff.continuous_gradient φ.contDiff (by simp)
-  have hBn : Continuous fun x => ‖matrixBilinearForm (a x)‖ :=
-    Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) hBc
   obtain ⟨C, hC⟩ := exists_norm_divMatrixGradient_le hM hK hψ hψc
   obtain ⟨Cφ, hCφ⟩ := hφ'.bounded_above_of_compact_support φ.hasCompactSupport
   have hcs := hasCompactSupport_of_forall_eq_zero_cutoff (a := a) hψc

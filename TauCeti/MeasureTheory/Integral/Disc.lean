@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Topology.MetricSpace.Annulus
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -41,10 +42,7 @@ theorem ContinuousOn.smul_integral_comp_circleMap [CompleteSpace F]
     (hf : ContinuousOn f {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) (ha : 0 ≤ a) :
     ContinuousOn (fun r ↦ r • ∫ θ in -π..π, f (circleMap z₀ r θ)) (Icc a b) := by
   let A := {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
-  have hcompact : IsCompact A := (isCompact_closedBall z₀ b).of_isClosed_subset
-    ((isClosed_le continuous_const (continuous_id.sub continuous_const).norm).inter
-      (isClosed_le (continuous_id.sub continuous_const).norm continuous_const))
-    (fun z hz ↦ by simpa only [mem_closedBall, dist_eq_norm] using hz.2)
+  have hcompact : IsCompact A := TauCeti.isCompact_setOf_le_norm_sub_le z₀ a b
   obtain ⟨C, hC⟩ := hcompact.exists_bound_of_continuousOn hf
   have hmem (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) : circleMap z₀ r θ ∈ A := by
     simpa only [A, mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
@@ -121,7 +119,7 @@ theorem hasDerivAt_integral_ball {f : ℂ → F} {z₀ : ℂ} {R r : ℝ}
       exact and_comm
     have hpolar := TauCeti.integral_annulus_eq_integral_circleMap ha.le ht.1.le
       ((hf.mono hsub).mono (fun z hz ↦ ⟨hz.1, hz.2.trans ht.2.le⟩))
-    rw [hA, setIntegral_congr_set (ae_eq_set_sdiff hclosed Filter.EventuallyEq.rfl),
+    rw [hA, setIntegral_congr_set (ae_eq_set_sdiff hclosed Filter.EventuallyEqSet.rfl),
       setIntegral_sdiff measurableSet_ball (hint.mono_set (ball_subset_ball
         (ht.2.trans hbR).le)) (ball_subset_ball ht.1.le)] at hpolar
     dsimp only [G]

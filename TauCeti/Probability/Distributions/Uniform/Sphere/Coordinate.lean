@@ -170,8 +170,6 @@ theorem map_sq_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v :
     (uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫ ^ 2) =
       (betaMeasure (1 / 2) (((Module.finrank ℝ E : ℝ) - 1) / 2)).map
         (fun x ↦ ‖v‖ ^ 2 * x) := by
-  have ha : 0 < ((Module.finrank ℝ E : ℝ) - 1) / 2 :=
-    div_pos (sub_pos.mpr (by exact_mod_cast (lt_of_lt_of_le (by norm_num : 1 < 2) hd))) two_pos
   calc
     _ = ((uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫)).map
         (fun y ↦ y ^ 2) := by
@@ -185,7 +183,7 @@ theorem map_sq_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v :
       ext x
       simp only [Function.comp_apply]
       ring
-    _ = _ := by rw [betaMeasure_map_centered_sq ha]
+    _ = _ := by rw [betaMeasure_map_centered_sq]
 
 /-- In dimension at least two, a nonzero real linear observable of a uniform sphere point
 has the symmetric incomplete Beta cdf in the affine coordinate of its support interval. -/

@@ -22,7 +22,10 @@ checking only that it vanishes when the first two arguments agree. This is how t
 Chevalley–Eilenberg differential, defined degree by degree through its interior products, is
 shown to be alternating. The file also records that alternating maps are determined by their
 interior products (`AlternatingMap.curryLeft_injective`) and that interior products anticommute
-(`AlternatingMap.curryLeft_curryLeft_eq_neg`).
+(`AlternatingMap.curryLeft_curryLeft_eq_neg`). If `ι_x f = 0`, then `f` vanishes on every family
+with `x` in some slot (`AlternatingMap.map_eq_zero_of_curryLeft_eq_zero`) and does not see the
+components of its arguments along `x` (`AlternatingMap.map_add_smul_of_curryLeft_eq_zero`): this
+is how a form whose contraction with a vector field vanishes descends along that field.
 -/
 
 public section
@@ -99,6 +102,43 @@ theorem uncurryLeft_curryLeft (f : M [⋀^Fin (n + 2)]→ₗ[R] N) :
   ext v
   rw [uncurryLeft_apply, curryLeft_apply_apply]
   exact congrArg f (cons_self_tail v)
+
+/-- If the interior product `ι_x f` vanishes, then `f` vanishes on every family of vectors with
+`x` in some slot, not only in the first one. -/
+theorem map_eq_zero_of_curryLeft_eq_zero {f : M [⋀^Fin (n + 1)]→ₗ[R] N} {x : M}
+    (hx : f.curryLeft x = 0) {v : Fin (n + 1) → M} {j : Fin (n + 1)} (hv : v j = x) :
+    f v = 0 := by
+  -- Evaluating `ι_x f = 0` on the tail of `w` gives `f w = 0` when `x` is the first entry.
+  have hfront (w : Fin (n + 1) → M) (hw : w 0 = x) : f w = 0 := by
+    simpa [curryLeft_apply_apply, Matrix.vecCons, ← hw] using congr(($hx) (tail w))
+  rcases eq_or_ne j 0 with rfl | hj
+  · exact hfront v hv
+  · have h := f.map_swap_add v hj.symm
+    rwa [hfront (v ∘ Equiv.swap 0 j) (by simpa using hv), zero_add] at h
+
+/-- If the interior product `ι_x f` vanishes, then `f` does not see the components of its
+arguments along `x`: `f (v₀ + a₀ x, …, vₙ + aₙ x) = f (v₀, …, vₙ)`. -/
+theorem map_add_smul_of_curryLeft_eq_zero {f : M [⋀^Fin (n + 1)]→ₗ[R] N} {x : M}
+    (hx : f.curryLeft x = 0) (v : Fin (n + 1) → M) (a : Fin (n + 1) → R) :
+    f (fun i ↦ v i + a i • x) = f v := by
+  classical
+  -- Every slot outside `s` holds a multiple of `x`, so if some slot lies outside `s` the term
+  -- vanishes.
+  have hterm (s : Finset (Fin (n + 1))) (hs : s ≠ Finset.univ) :
+      f (s.piecewise v fun i ↦ a i • x) = 0 := by
+    obtain ⟨j, hj⟩ := not_forall.1 (mt Finset.eq_univ_of_forall hs)
+    have hupd : s.piecewise v (fun i ↦ a i • x) =
+        Function.update (s.piecewise v fun i ↦ a i • x) j (a j • x) := by
+      simp [hj]
+    rw [hupd, f.map_update_smul,
+      map_eq_zero_of_curryLeft_eq_zero hx (Function.update_self _ _ _), smul_zero]
+  -- Expand `f (v + a • x)` over the subsets of the slots: only the term with `v` in every slot
+  -- survives.
+  calc f (fun i ↦ v i + a i • x) = ∑ s : Finset (Fin (n + 1)), f (s.piecewise v fun i ↦ a i • x) :=
+        f.map_add_univ v fun i ↦ a i • x
+    _ = f v := by
+      rw [Finset.sum_eq_single Finset.univ (fun s _ hs ↦ hterm s hs) (by simp)]
+      simp
 
 end CommSemiring
 

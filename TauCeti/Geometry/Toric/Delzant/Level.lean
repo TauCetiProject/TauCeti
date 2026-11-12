@@ -65,7 +65,8 @@ reduction needs.
 
 * `TauCeti.Toric.delzantMomentMap c`: the moment map `Σ_j (½ |z_j|² + c_j) e_j^*` of the action of
   `(ℝ / 2πℤ)^ι` on `ℂ^ι` by `z_j ↦ exp(-i θ_j) z_j`.
-* `TauCeti.Toric.delzantLevel i u c`: the zero level `Z` of the moment map of the kernel torus.
+* `TauCeti.Toric.delzantLevel i u c`: the zero level `Z` of the moment map of the kernel torus,
+  with the action `z_j ↦ exp(-i θ_j) z_j` of `(ℝ / 2πℤ)^ι` by `TauCeti.torusRotation`.
 * `TauCeti.Toric.IsDelzant.delzantLevelChartedSpace`: the implicit-function atlas of `Z`, modelled
   on `Fin (d + n) → ℝ`.
 
@@ -171,6 +172,14 @@ theorem delzantMomentMap_weightRotation (θ : ι → ℝ)
     delzantMomentMap c (weightRotation θ x) = delzantMomentMap c x := by
   simp [delzantMomentMap]
 
+/-- The moment map is invariant under the rotation torus. -/
+@[simp]
+theorem delzantMomentMap_torusRotation (θ : ι → AddCircle (2 * π))
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    delzantMomentMap c (torusRotation θ x) = delzantMomentMap c x := by
+  ext t
+  simp only [delzantMomentMap_apply, torusRotation_apply_normSq]
+
 /-- **The moment map equation.** The Hamiltonian vector field of the component `⟨μ, t⟩` is the
 generator of the rotation `z_j ↦ exp(-i t_j) z_j`. -/
 theorem hamiltonianVectorField_delzantMomentMap (t : ι → ℝ)
@@ -207,6 +216,31 @@ theorem weightRotation_mem_delzantLevel_iff (θ : ι → ℝ)
     {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι} :
     weightRotation θ x ∈ delzantLevel i u c ↔ x ∈ delzantLevel i u c := by
   simp [mem_delzantLevel]
+
+/-- The level is invariant under the rotation torus. -/
+@[simp]
+theorem torusRotation_mem_delzantLevel_iff (θ : ι → AddCircle (2 * π))
+    {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι} :
+    torusRotation θ x ∈ delzantLevel i u c ↔ x ∈ delzantLevel i u c := by
+  simp [mem_delzantLevel]
+
+/-- The action `z_j ↦ exp(-i θ_j) z_j` of the torus `(ℝ / 2πℤ)^ι` on the level `Z`. -/
+instance : AddAction (ι → AddCircle (2 * π)) (delzantLevel i u c) where
+  -- The underlying point of `θ +ᵥ x` is `torusRotation θ x` by definition, so the action laws
+  -- are those of `torusRotation` evaluated at `x`.
+  vadd θ x := ⟨torusRotation θ x, (torusRotation_mem_delzantLevel_iff θ).2 x.2⟩
+  zero_vadd x := Subtype.ext (DFunLike.congr_fun torusRotation_zero x.1)
+  add_vadd θ θ' x := Subtype.ext (DFunLike.congr_fun (torusRotation_add θ θ') x.1)
+
+@[simp]
+theorem coe_vadd_delzantLevel (θ : ι → AddCircle (2 * π)) (x : delzantLevel i u c) :
+    ((θ +ᵥ x : delzantLevel i u c) : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) =
+      torusRotation θ x :=
+  (rfl)
+
+instance : ContinuousVAdd (ι → AddCircle (2 * π)) (delzantLevel i u c) :=
+  ⟨continuous_induced_rng.2 (continuous_torusRotation.comp
+    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))⟩
 
 /-- A point at which `μ = β_ℝ^* y` for some `y ∈ V*` lies on the level. -/
 theorem mem_delzantLevel_of_forall_eq {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι}
@@ -357,21 +391,13 @@ theorem weightRotation_neg_eq_self_iff {x : EuclideanSpace ℝ ι × EuclideanSp
     (hx : x ∈ delzantLevel i u c) {t : ι → ℝ}
     (ht : (fun j ↦ (t j : AddCircle (2 * π))) ∈ (facetTorusHom i u (2 * π)).ker) :
     weightRotation (-t) x = x ↔ (fun j ↦ (t j : AddCircle (2 * π))) = 0 := by
-  rw [weightRotation_apply_eq_self_iff]
+  rw [weightRotation_neg_apply_eq_self_iff]
   constructor
   · intro h
     obtain ⟨v, hv, hvx⟩ := hΔ.exists_isSmoothVertex_of_mem_delzantLevel hx
-    refine eq_zero_of_mem_ker_facetTorusHom hi (isSmoothVertex_def.1 hv) ht fun j hj ↦ ?_
-    obtain ⟨k, hk⟩ := h j (hvx j hj)
-    rw [AddCircle.coe_eq_zero_iff]
-    refine ⟨-k, ?_⟩
-    rw [zsmul_eq_mul]
-    simp only [Pi.neg_apply] at hk
-    push_cast
-    linarith
-  · intro h j _
-    obtain ⟨k, hk⟩ := (AddCircle.coe_eq_zero_iff (2 * π)).1 (congrFun h j)
-    exact ⟨-k, by simp only [Pi.neg_apply, ← hk, zsmul_eq_mul]; push_cast; ring⟩
+    exact eq_zero_of_mem_ker_facetTorusHom hi (isSmoothVertex_def.1 hv) ht fun j hj ↦
+      h j (hvx j hj)
+  · exact fun h j _ ↦ congrFun h j
 
 include hi in
 /-- **The infinitesimal action of the kernel torus is free on the level.** For `t` in the Lie
