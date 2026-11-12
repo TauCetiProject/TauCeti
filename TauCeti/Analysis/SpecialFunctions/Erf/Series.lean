@@ -35,15 +35,15 @@ Laplace-type integrals without losing integrability near the origin.
   positive-term series `exp(x²) erf x = ∑_{n ≥ 0} x^{2n + 1} / Γ(n + 3 / 2)` and its
   double-factorial form `erf x = (2 / √π) exp(-x²) ∑_{n ≥ 0} 2^n x^{2n + 1} / (2n + 1)‼`
   (DLMF 7.6.2).
-* `TauCeti.Real.hasSum_pow_div_Gamma_half_add_one`,
-  `TauCeti.Real.tsum_pow_div_Gamma_half_add_one`:
+* `TauCeti.Real.hasSum_pow_div_Gamma_div_two_add_one`,
+  `TauCeti.Real.tsum_pow_div_Gamma_div_two_add_one`:
   `∑_{m ≥ 0} x^m / Γ(m / 2 + 1) = exp(x²) (1 + erf x)` for all `x : ℝ` (DLMF 7.6.3).
-* `Real.summable_pow_div_Gamma_half_add_one`, `Real.tsum_pow_div_Gamma_half_add_one_pos`,
-  `Real.tsum_pow_div_Gamma_half_add_one_lt_two_mul_exp`: summability, strict positivity, and the
+* `Real.summable_pow_div_Gamma_div_two_add_one`, `Real.tsum_pow_div_Gamma_div_two_add_one_pos`,
+  `Real.tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp`: summability, strict positivity, and the
   sharp polynomial-free Gaussian upper bound `0 < ∑_{m ≥ 0} x^m / Γ(m / 2 + 1) < 2 exp(x²)` on all
   of `ℝ`.
-* `Real.tsum_pow_add_div_Gamma_half_add_one_lt_two_mul_exp`,
-  `Real.tsum_pow_add_two_mul_div_Gamma_half_add_one_le`: for `0 ≤ x`, shifted tails of the
+* `Real.tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp`,
+  `Real.tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le`: for all `x : ℝ`, shifted tails of the
   half-Gamma series satisfy both the uniform polynomial-free bound `< 2 exp(x²)` and the
   vanishing-order factorial bound `≤ 2 x^{2L} / L! * exp(x²)`.
 
@@ -112,24 +112,17 @@ theorem hasSum_erf (x : ℝ) :
     HasSum (fun n : ℕ => 2 / √π * ((-1) ^ n * x ^ (2 * n + 1) / (n ! * (2 * n + 1))))
       (erf x) := by
   have ha : ∀ n : ℕ, (1 / 2 : ℂ) ≠ -n := fun n h => by
-    have hre := congrArg Complex.re h
-    simp only [one_div, inv_re, re_ofNat, normSq_ofNat, div_self_mul_self', neg_re,
-      natCast_re] at hre
-    linarith [Nat.cast_nonneg (α := ℝ) n]
+    have h2 : (2 * (n : ℂ) + 1) = 0 := by linear_combination 2 * h
+    exact absurd h2 (by exact_mod_cast Nat.succ_ne_zero (2 * n))
   have h := (Complex.hasSum_tricomiIncompleteGamma_of_ne_neg_natCast ha ((x : ℂ) ^ 2)).mul_left
     (x : ℂ)
   rw [← ofReal_erf_eq_mul_tricomiIncompleteGamma x] at h
   have hΓ : Complex.Gamma (1 / 2) = (√π : ℂ) := by
-    have hcast : (1 / 2 : ℂ) = ((1 / 2 : ℝ) : ℂ) := by push_cast; rfl
+    have hcast : (1 / 2 : ℂ) = ((1 / 2 : ℝ) : ℂ) := by norm_num
     rw [hcast, Complex.Gamma_ofReal, Real.Gamma_one_half_eq]
   have hπ : (√π : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (by positivity)
   refine Complex.hasSum_ofReal.mp (h.congr_fun fun n => ?_)
-  have hn : (2 * (n : ℂ) + 1) ≠ 0 := by
-    intro h0
-    have hre := congrArg Complex.re h0
-    simp only [mul_re, re_ofNat, natCast_re, im_ofNat, natCast_im, mul_zero, sub_zero, add_re,
-      one_re, zero_re] at hre
-    linarith [Nat.cast_nonneg (α := ℝ) n]
+  have hn : (2 * (n : ℂ) + 1) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero (2 * n)
   have h12 : (1 / 2 : ℂ) + n = (2 * (n : ℂ) + 1) / 2 := by ring
   have hnf : ((n ! : ℂ)) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
   rw [hΓ, h12]
@@ -158,7 +151,7 @@ theorem hasSum_pow_two_mul_add_one_div_Gamma_add_three_halves (x : ℝ) :
       ((rexp (x ^ 2) * erf x : ℝ) : ℂ) := by
     rw [mul_assoc, ← ofReal_erf_eq_mul_tricomiIncompleteGamma x]
     push_cast
-    rfl
+    ring
   rw [hsum] at h
   refine Complex.hasSum_ofReal.mp (h.congr_fun fun n => (?_ : _ = _).symm)
   have harg : (1 / 2 : ℂ) + n + 1 = (((n : ℝ) + 3 / 2 : ℝ) : ℂ) := by push_cast; ring
@@ -204,7 +197,7 @@ theorem erf_eq_mul_exp_neg_sq_mul_tsum (x : ℝ) :
 
 /-- The half-Gamma series (Mittag-Leffler `E_{1/2}` series, DLMF 7.6.3 on the imaginary axis):
 `∑_{m ≥ 0} x^m / Γ(m / 2 + 1) = exp(x²) (1 + erf x) = exp(x²) erfc(-x)` for all `x : ℝ`. -/
-theorem hasSum_pow_div_Gamma_half_add_one (x : ℝ) :
+theorem hasSum_pow_div_Gamma_div_two_add_one (x : ℝ) :
     HasSum (fun m : ℕ => x ^ m / Real.Gamma ((m : ℝ) / 2 + 1))
       (rexp (x ^ 2) * (1 + erf x)) := by
   have heven : HasSum (fun k : ℕ => x ^ (2 * k) / Real.Gamma ((↑(2 * k) : ℝ) / 2 + 1))
@@ -225,88 +218,92 @@ theorem hasSum_pow_div_Gamma_half_add_one (x : ℝ) :
 
 /-- Closed form for the `tsum` of the half-Gamma series (DLMF 7.6.3):
 `∑_{m ≥ 0} x^m / Γ(m / 2 + 1) = exp(x²) (1 + erf x)` for all `x : ℝ`. -/
-theorem tsum_pow_div_Gamma_half_add_one (x : ℝ) :
+theorem tsum_pow_div_Gamma_div_two_add_one (x : ℝ) :
     (∑' m : ℕ, x ^ m / Real.Gamma ((m : ℝ) / 2 + 1)) = rexp (x ^ 2) * (1 + erf x) :=
-  (hasSum_pow_div_Gamma_half_add_one x).tsum_eq
+  (hasSum_pow_div_Gamma_div_two_add_one x).tsum_eq
 
 end TauCeti.Real
 
 namespace Real
 
 /-- The half-Gamma series `∑_{m ≥ 0} x^m / Γ(m / 2 + 1)` is summable for every `x : ℝ`. -/
-theorem summable_pow_div_Gamma_half_add_one (x : ℝ) :
+theorem summable_pow_div_Gamma_div_two_add_one (x : ℝ) :
     Summable fun m : ℕ => x ^ m / Real.Gamma ((m : ℝ) / 2 + 1) :=
-  (TauCeti.Real.hasSum_pow_div_Gamma_half_add_one x).summable
+  (TauCeti.Real.hasSum_pow_div_Gamma_div_two_add_one x).summable
 
 /-- The half-Gamma series `∑_{m ≥ 0} x^m / Γ(m / 2 + 1)` is strictly positive for every `x : ℝ`
 (including negative `x`, where the series alternates). -/
-theorem tsum_pow_div_Gamma_half_add_one_pos (x : ℝ) :
+theorem tsum_pow_div_Gamma_div_two_add_one_pos (x : ℝ) :
     0 < ∑' m : ℕ, x ^ m / Real.Gamma ((m : ℝ) / 2 + 1) := by
-  rw [TauCeti.Real.tsum_pow_div_Gamma_half_add_one]
+  rw [TauCeti.Real.tsum_pow_div_Gamma_div_two_add_one]
   have h1 : 0 < 1 + TauCeti.Real.erf x := by linarith [TauCeti.Real.neg_one_lt_erf x]
   positivity
 
 /-- Sharp polynomial-free Gaussian majorant for the half-Gamma series:
 `∑_{m ≥ 0} x^m / Γ(m / 2 + 1) < 2 exp(x²)` for every `x : ℝ`. -/
-theorem tsum_pow_div_Gamma_half_add_one_lt_two_mul_exp (x : ℝ) :
+theorem tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp (x : ℝ) :
     (∑' m : ℕ, x ^ m / Real.Gamma ((m : ℝ) / 2 + 1)) < 2 * rexp (x ^ 2) := by
-  rw [TauCeti.Real.tsum_pow_div_Gamma_half_add_one]
+  rw [TauCeti.Real.tsum_pow_div_Gamma_div_two_add_one]
   have h1 : 1 + TauCeti.Real.erf x < 2 := by linarith [TauCeti.Real.erf_lt_one x]
   nlinarith [Real.exp_pos (x ^ 2)]
 
-/-- For `0 ≤ x`, every shifted tail of the half-Gamma series obeys the same polynomial-free
-Gaussian majorant `< 2 exp(x²)` as the full series. -/
-theorem tsum_pow_add_div_Gamma_half_add_one_lt_two_mul_exp {x : ℝ} (hx : 0 ≤ x) (M : ℕ) :
+/-- Every shifted tail of the half-Gamma series obeys the same polynomial-free Gaussian majorant
+`< 2 exp(x²)` as the full series, for every `x : ℝ` and shift `M : ℕ`. -/
+theorem tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp (x : ℝ) (M : ℕ) :
     (∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) < 2 * rexp (x ^ 2) := by
-  have hsplit := (summable_pow_div_Gamma_half_add_one x).sum_add_tsum_nat_add M
-  have hpref : 0 ≤ ∑ m ∈ Finset.range M, x ^ m / Real.Gamma ((m : ℝ) / 2 + 1) :=
-    Finset.sum_nonneg fun m _ => div_nonneg (pow_nonneg hx m)
+  have hle : (∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) ≤
+      ∑' k : ℕ, |x| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) :=
+    ((summable_nat_add_iff M).2 (summable_pow_div_Gamma_div_two_add_one x)).tsum_le_tsum
+      (fun k => div_le_div_of_nonneg_right (abs_pow x (k + M) ▸ le_abs_self _)
+        (Real.Gamma_pos_of_pos (by positivity)).le)
+      ((summable_nat_add_iff M).2 (summable_pow_div_Gamma_div_two_add_one |x|))
+  have hsplit := (summable_pow_div_Gamma_div_two_add_one |x|).sum_add_tsum_nat_add M
+  have hpref : 0 ≤ ∑ m ∈ Finset.range M, |x| ^ m / Real.Gamma ((m : ℝ) / 2 + 1) :=
+    Finset.sum_nonneg fun m _ => div_nonneg (by positivity)
       (Real.Gamma_pos_of_pos (by positivity)).le
-  linarith [tsum_pow_div_Gamma_half_add_one_lt_two_mul_exp x]
+  have hexp := tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp |x|
+  rw [sq_abs] at hexp
+  linarith
 
-/-- For `0 ≤ x` and `L : ℕ`, the `2L`-shifted tail of the half-Gamma series is bounded by
+/-- For every `x : ℝ` and `L : ℕ`, the `2L`-shifted tail of the half-Gamma series is bounded by
 `2 x^{2L} / L! * exp(x²)`, combining `O(x^{2L})` vanishing at `x = 0` with factorial decay in `L`
 and Gaussian growth at infinity. -/
-theorem tsum_pow_add_two_mul_div_Gamma_half_add_one_le {x : ℝ} (hx : 0 ≤ x) (L : ℕ) :
+theorem tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le (x : ℝ) (L : ℕ) :
     (∑' k : ℕ, x ^ (k + 2 * L) / Real.Gamma ((↑(k + 2 * L) : ℝ) / 2 + 1)) ≤
       2 * x ^ (2 * L) / L ! * rexp (x ^ 2) := by
+  have : 0 ≤ x ^ (2 * L) := by rw [pow_mul]; positivity
   have hterm : ∀ k : ℕ,
       x ^ (k + 2 * L) / Real.Gamma ((↑(k + 2 * L) : ℝ) / 2 + 1) ≤
-        x ^ (2 * L) / L ! * (x ^ k / Real.Gamma ((k : ℝ) / 2 + 1)) := fun k => by
-    have hs : (1 : ℝ) ≤ ((((k : ℝ) / 2 + 1 : ℝ) : ℂ)).re := by
-      rw [Complex.ofReal_re]
-      linarith [Nat.cast_nonneg (α := ℝ) k]
-    have hG := Complex.norm_inv_Gamma_add_natCast_le hs L
-    have harg : (((k : ℝ) / 2 + 1 : ℝ) : ℂ) + (L : ℂ) =
-        (((↑(k + 2 * L) : ℝ) / 2 + 1 : ℝ) : ℂ) := by
-      push_cast
-      ring
-    have hpos1 : 0 < Real.Gamma ((k : ℝ) / 2 + 1) := Real.Gamma_pos_of_pos (by positivity)
-    have hpos2 : 0 < Real.Gamma ((↑(k + 2 * L) : ℝ) / 2 + 1) :=
-      Real.Gamma_pos_of_pos (by positivity)
-    rw [harg, Complex.Gamma_ofReal, Complex.Gamma_ofReal, ← Complex.ofReal_inv,
-      ← Complex.ofReal_inv, Complex.norm_real, Complex.norm_real,
-      Real.norm_of_nonneg (inv_nonneg.mpr hpos2.le),
-      Real.norm_of_nonneg (inv_nonneg.mpr hpos1.le)] at hG
+        x ^ (2 * L) / L ! * (|x| ^ k / Real.Gamma ((k : ℝ) / 2 + 1)) := fun k => by
+    have hs : (1 : ℝ) ≤ (k : ℝ) / 2 + 1 := by linarith [Nat.cast_nonneg (α := ℝ) k]
+    have harg : (↑(k + 2 * L) : ℝ) / 2 + 1 = (k : ℝ) / 2 + 1 + L := by push_cast; ring
+    have hG : (Real.Gamma ((↑(k + 2 * L) : ℝ) / 2 + 1))⁻¹ ≤
+        (Real.Gamma ((k : ℝ) / 2 + 1))⁻¹ / L ! :=
+      harg ▸ Real.inv_Gamma_add_natCast_le hs L
     calc x ^ (k + 2 * L) / Real.Gamma ((↑(k + 2 * L) : ℝ) / 2 + 1)
-        = (x ^ (2 * L) * x ^ k) * (Real.Gamma ((↑(k + 2 * L) : ℝ) / 2 + 1))⁻¹ := by
-            rw [pow_add, mul_comm (x ^ k), div_eq_mul_inv]
-      _ ≤ (x ^ (2 * L) * x ^ k) * ((Real.Gamma ((k : ℝ) / 2 + 1))⁻¹ / L !) := by
+        ≤ |x| ^ (k + 2 * L) / Real.Gamma ((↑(k + 2 * L) : ℝ) / 2 + 1) :=
+            div_le_div_of_nonneg_right (abs_pow x (k + 2 * L) ▸ le_abs_self _)
+              (Real.Gamma_pos_of_pos (by positivity)).le
+      _ = (|x| ^ (2 * L) * |x| ^ k) * (Real.Gamma ((↑(k + 2 * L) : ℝ) / 2 + 1))⁻¹ := by
+            rw [pow_add, mul_comm (|x| ^ k), div_eq_mul_inv]
+      _ ≤ (|x| ^ (2 * L) * |x| ^ k) * ((Real.Gamma ((k : ℝ) / 2 + 1))⁻¹ / L !) := by
             gcongr
-      _ = x ^ (2 * L) / L ! * (x ^ k / Real.Gamma ((k : ℝ) / 2 + 1)) := by ring
+      _ = x ^ (2 * L) / L ! * (|x| ^ k / Real.Gamma ((k : ℝ) / 2 + 1)) := by
+            rw [pow_mul |x|, sq_abs, ← pow_mul]
+            ring
   have hsum_tail : Summable fun k : ℕ =>
       x ^ (k + 2 * L) / Real.Gamma ((↑(k + 2 * L) : ℝ) / 2 + 1) :=
-    (summable_nat_add_iff (2 * L)).2 (summable_pow_div_Gamma_half_add_one x)
+    (summable_nat_add_iff (2 * L)).2 (summable_pow_div_Gamma_div_two_add_one x)
   have hsum_maj : Summable fun k : ℕ =>
-      x ^ (2 * L) / L ! * (x ^ k / Real.Gamma ((k : ℝ) / 2 + 1)) :=
-    (summable_pow_div_Gamma_half_add_one x).mul_left (x ^ (2 * L) / L !)
+      x ^ (2 * L) / L ! * (|x| ^ k / Real.Gamma ((k : ℝ) / 2 + 1)) :=
+    (summable_pow_div_Gamma_div_two_add_one |x|).mul_left (x ^ (2 * L) / L !)
   calc (∑' k : ℕ, x ^ (k + 2 * L) / Real.Gamma ((↑(k + 2 * L) : ℝ) / 2 + 1))
-      ≤ ∑' k : ℕ, x ^ (2 * L) / L ! * (x ^ k / Real.Gamma ((k : ℝ) / 2 + 1)) :=
+      ≤ ∑' k : ℕ, x ^ (2 * L) / L ! * (|x| ^ k / Real.Gamma ((k : ℝ) / 2 + 1)) :=
           hsum_tail.tsum_le_tsum hterm hsum_maj
-    _ = x ^ (2 * L) / L ! * ∑' k : ℕ, x ^ k / Real.Gamma ((k : ℝ) / 2 + 1) := tsum_mul_left
-    _ ≤ x ^ (2 * L) / L ! * (2 * rexp (x ^ 2)) := by
+    _ = x ^ (2 * L) / L ! * ∑' k : ℕ, |x| ^ k / Real.Gamma ((k : ℝ) / 2 + 1) := tsum_mul_left
+    _ ≤ x ^ (2 * L) / L ! * (2 * rexp (|x| ^ 2)) := by
           gcongr
-          exact (tsum_pow_div_Gamma_half_add_one_lt_two_mul_exp x).le
-    _ = 2 * x ^ (2 * L) / L ! * rexp (x ^ 2) := by ring
+          exact (tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp |x|).le
+    _ = 2 * x ^ (2 * L) / L ! * rexp (x ^ 2) := by rw [sq_abs]; ring
 
 end Real

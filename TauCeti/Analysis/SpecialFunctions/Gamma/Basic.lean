@@ -51,6 +51,8 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
+* `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, giving factorial
+  decay of the reciprocal Gamma function along natural-number shifts on `[1, ∞)`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
@@ -221,6 +223,24 @@ theorem tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop {a b : ℝ} (hab :
   · refine Eventually.of_forall fun n => ?_
     simp only [Pi.div_apply]
     rw [show (n : ℝ) + 1 + (a - 1) = n + a by ring, show (n : ℝ) + 1 + (b - 1) = n + b by ring]
+
+/-- On `[1, ∞)`, the reciprocal Gamma function decays factorially along natural-number shifts:
+`(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!`, the real counterpart of `Complex.norm_inv_Gamma_add_natCast_le`. -/
+theorem inv_Gamma_add_natCast_le {s : ℝ} (hs : 1 ≤ s) (k : ℕ) :
+    (Gamma (s + k))⁻¹ ≤ (Gamma s)⁻¹ / k ! := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hk : ((k + 1 : ℕ) : ℝ) ≤ s + k := by push_cast; linarith
+    have : 0 < Gamma (s + (k + 1 : ℕ)) := Gamma_pos_of_pos (by positivity)
+    have hrec : (Gamma (s + k))⁻¹ = (s + k) * (Gamma (s + (k + 1 : ℕ)))⁻¹ := by
+      rw [Nat.cast_succ, ← add_assoc, Gamma_add_one (by positivity), mul_inv,
+        mul_inv_cancel_left₀ (by positivity)]
+    rw [Nat.factorial_succ, Nat.cast_mul, le_div_iff₀ (by positivity)]
+    calc (Gamma (s + (k + 1 : ℕ)))⁻¹ * ((k + 1 : ℕ) * k !)
+        ≤ (Gamma (s + (k + 1 : ℕ)))⁻¹ * ((s + k) * k !) := by gcongr
+      _ = (Gamma (s + k))⁻¹ * k ! := by rw [hrec]; ring
+      _ ≤ (Gamma s)⁻¹ := (le_div_iff₀ (by positivity)).1 ih
 
 end Real
 
