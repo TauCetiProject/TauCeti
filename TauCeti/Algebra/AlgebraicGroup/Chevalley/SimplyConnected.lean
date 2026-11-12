@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.Lattice
 
 /-!
@@ -146,6 +147,15 @@ theorem scChevalleyDatum_coordinateWeight :
   ext j i
   have h := congrFun ((t.scChevalleyDatum ht).sum_coordinateWeight_smul j) i
   simpa [Pi.single_apply] using h
+
+/-- For the full-weight datum, restriction from the full weight lattice is the identity on torus
+parameters. -/
+@[simp]
+theorem scChevalleyDatum_fullWeightTorusRestriction {A : Type v} [CommRing A]
+    (s : Fin t.rank → Aˣ) : (t.scChevalleyDatum ht).fullWeightTorusRestriction A s = s := by
+  funext i
+  rw [ChevalleyDatum.fullWeightTorusRestriction_apply, coe_scChevalleyDatum_weightLatticeBasis,
+    torusCharacter_single, zpow_one]
 
 /-! ## The simply connected Chevalley group scheme -/
 

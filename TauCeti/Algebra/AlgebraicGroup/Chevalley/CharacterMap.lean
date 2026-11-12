@@ -96,13 +96,15 @@ theorem map_simpleCorootPoints_eq_simpleCorootPoints_pow (f : D.points A →* E.
           (Multiplicative.ofAdd (((c⁻¹ : Aˣ) : A) * u ^ e))) (s : Aˣ) :
     f (D.simpleCorootPoints i A s) = E.simpleCorootPoints j A (s ^ e) := by
   have hn := D.map_weylElement_eq_weylElement_mul_pow E f c he hpos hneg
-  -- Both Steinberg elements are coroot values times the common element `nⱼ(1)`.
-  have hw (a : Aˣ) : E.weylElement (t.simpleIndex ht j) A a =
-      E.simpleCorootPoints j A a * E.weylElement (t.simpleIndex ht j) A 1 := by
-    rw [simpleCorootPoints_eq_weylElement_mul_inv, inv_mul_cancel_right]
-  rw [simpleCorootPoints_eq_weylElement_mul_inv, map_mul, map_inv, hn, hn, one_pow, mul_one,
-    hw (c * s ^ e), hw c, mul_inv_rev, mul_assoc, mul_inv_cancel_left, ← map_inv, ← map_mul,
-    mul_inv_cancel_comm]
+  -- Since `hⱼ(a) = nⱼ(a) nⱼ(1)⁻¹`, the quotient `nⱼ(a) nⱼ(b)⁻¹` is the coroot value `hⱼ(a / b)`.
+  have hw (a b : Aˣ) : E.weylElement (t.simpleIndex ht j) A a *
+      (E.weylElement (t.simpleIndex ht j) A b)⁻¹ = E.simpleCorootPoints j A (a / b) := by
+    rw [map_div, simpleCorootPoints_eq_weylElement_mul_inv,
+      simpleCorootPoints_eq_weylElement_mul_inv]
+    rw [div_eq_mul_inv]
+    group
+  rw [simpleCorootPoints_eq_weylElement_mul_inv, map_mul, map_inv, hn, hn, one_pow, mul_one, hw,
+    mul_div_cancel_left]
 
 variable {D E}
 
@@ -172,15 +174,6 @@ open ChevalleyDatum
 universe v
 
 variable {t : DynkinType} {ht : t.Valid} {A : Type v} [CommRing A]
-
-/-- For the full-weight datum, restriction from the full weight lattice is the identity on torus
-parameters. -/
-@[simp]
-theorem scChevalleyDatum_fullWeightTorusRestriction (s : Fin t.rank → Aˣ) :
-    (t.scChevalleyDatum ht).fullWeightTorusRestriction A s = s := by
-  funext i
-  rw [fullWeightTorusRestriction_apply, coe_scChevalleyDatum_weightLatticeBasis,
-    torusCharacter_single, zpow_one]
 
 /-- **The character map on `G_sc(t)` of an endomorphism given on the simple root subgroups.** If
 an endomorphism of the points of `G_sc(t)` sends `x_{±αᵢ}(u)` to `x_{±α_{σ i}}(cᵢ^{±1} u ^ eᵢ)`,

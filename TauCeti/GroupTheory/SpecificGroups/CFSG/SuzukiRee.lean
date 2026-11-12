@@ -49,7 +49,9 @@ four branch equations are simp lemmas rather than the selector body being expose
   `TauCeti.SuzukiReeIndex.exponent_eq_one_iff` and
   `TauCeti.SuzukiReeIndex.exponent_eq_characteristic_iff` compute and characterize the two
   exponents, and `TauCeti.SuzukiReeIndex.exponent_mul_exponent_lengthPerm` multiplies the two
-  exponents of a length-exchanged pair to the characteristic.
+  exponents of a length-exchanged pair to the characteristic. By
+  `TauCeti.SuzukiReeIndex.neg_one_pow_exponent`, raising `-1` to an exponent fixes it in the
+  defining exponential characteristic.
 The permutation, the exponents, and their branch equations are the Suzuki--Ree numbered-data part
 of milestone I0 in `TauCetiRoadmap/CFSGStatement/README.md`. The exponent convention follows Carter,
 *Simple Groups of Lie Type*. The permutations and numbering follow Bourbaki, *Lie Groups and Lie
@@ -231,6 +233,15 @@ theorem exponent_eq_one_or_eq_characteristic (e : SuzukiReeIndex) (i : Fin e.1.r
   by_cases hi : e.1.dynkinType.IsLongSimpleRoot i
   · exact Or.inl (exponent_of_isLongSimpleRoot e i hi)
   · exact Or.inr (exponent_of_not_isLongSimpleRoot e i hi)
+
+/-- The parameter exponent of the exceptional isogeny is odd as a power map: `-1` is raised to
+itself. At a long node the exponent is `1`, and at a short one it is the characteristic. -/
+theorem neg_one_pow_exponent (e : SuzukiReeIndex) {A : Type*} [CommRing A]
+    [ExpChar A e.1.characteristic] (i : Fin e.1.rank) : (-1 : A) ^ e.exponent i = -1 := by
+  by_cases hi : e.1.dynkinType.IsLongSimpleRoot i
+  · rw [exponent_of_isLongSimpleRoot e i hi, pow_one]
+  · rw [exponent_of_not_isLongSimpleRoot e i hi]
+    exact neg_one_pow_expChar A e.1.characteristic
 
 /-! ### The length permutation is an involution transposing the Cartan matrix -/
 

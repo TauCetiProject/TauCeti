@@ -52,14 +52,6 @@ universe v
 
 variable (d : SuzukiReeIndex) {A : Type v} [CommRing A] [ExpChar A d.1.characteristic]
 
-/-- The parameter exponent of the exceptional isogeny is odd as a power map: `-1` is raised to
-itself. At a long node the exponent is `1`, and at a short one it is the characteristic. -/
-theorem neg_one_pow_exponent (i : Fin d.1.rank) : (-1 : A) ^ d.exponent i = -1 := by
-  by_cases hi : d.1.dynkinType.IsLongSimpleRoot i
-  · rw [exponent_of_isLongSimpleRoot d i hi, pow_one]
-  · rw [exponent_of_not_isLongSimpleRoot d i hi]
-    exact neg_one_pow_expChar A d.1.characteristic
-
 /-- **Character compatibility of the exceptional isogeny.** An endomorphism of the points of the
 simply connected Chevalley group of a Suzuki--Ree index which sends `x_{±αᵢ}(u)` to
 `x_{±α_{σ i}}(cᵢ^{±1} u ^ eᵢ)`, for the length permutation `σ` and the exponents `eᵢ` of the index,
