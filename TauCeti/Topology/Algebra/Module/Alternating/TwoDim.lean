@@ -4,31 +4,21 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
 module
-public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
+public import TauCeti.LinearAlgebra.Alternating.Uncurry.Fin
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 /-!
 # Alternating area and conormals in dimension two
 
-If a linear functional annihilates a tangent vector, contracting an alternating area form
-with two other vectors changes by the same factor as their values under that functional.
-This identity proves that an induced boundary orientation is independent of the inward field.
+In dimension two, if `L u = 0`, then an alternating area form `A` satisfies
+`A ![W', u] * L W = A ![W, u] * L W'` for all `W, W'`, including when either
+functional value vanishes. This is the linear-algebra input for showing that an induced
+boundary orientation does not depend on the choice of inward transverse vector.
 No compatibility between the topology and the module structure is required.
 -/
 
 public section
 namespace ContinuousAlternatingMap
-
-/-- The complementary basis vector gives the exact coordinate face sign. -/
-theorem apply_pair_basis_rev {R E : Type*} [CommRing R] [TopologicalSpace R]
-    [AddCommGroup E] [Module R E] [TopologicalSpace E] (A : E [⋀^Fin 2]→L[R] R)
-    (B : Module.Basis (Fin 2) R E) (i : Fin 2) (w : E) :
-    A ![w, B i.rev] = (-1 : R) ^ i.val * (B.repr w) i * A B := by
-  rw [apply_eq_det_mul A B]
-  congr 1
-  rw [Module.Basis.det_apply, Matrix.det_fin_two]
-  simp only [Module.Basis.toMatrix_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one]
-  fin_cases i <;> simp [Module.Basis.repr_self]
 
 variable {𝕜 E : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [AddCommGroup E] [Module 𝕜 E]
   [TopologicalSpace E]
@@ -61,12 +51,18 @@ private theorem apply_pair_mul_apply_eq_of_ne_zero (hE : Module.finrank 𝕜 E =
     conv_lhs => rw [hrepr]
     rw [map_add, map_smul, map_smul, hLu, smul_zero, zero_add, smul_eq_mul]
   have hA (w : E) : A ![w, u] = -((B.repr w) 1 * A B) := by
-    simpa [hB0] using A.apply_pair_basis_rev B 1 w
+    have hremove : (1 : Fin 2).removeNth (B : Fin 2 → E) = ![u] := by
+      ext i
+      fin_cases i
+      simpa [Fin.removeNth] using hB0
+    simpa [hremove] using A.toAlternatingMap.map_vecCons_removeNth_basis B w 1
   have hW : B.repr W 1 = 1 := by rw [← hB1, Module.Basis.repr_self, Finsupp.single_eq_same]
   rw [hL, hA, hA, hW]
   ring
 
-/-- Area contractions and conormal values have the same ratio. -/
+/-- In dimension two, if `L u = 0`, then
+`A ![W', u] * L W = A ![W, u] * L W'` for all `W, W'`.
+This cross-multiplied proportionality identity also holds when functional values vanish. -/
 theorem apply_pair_mul_apply_eq (hE : Module.finrank 𝕜 E = 2)
     (A : E [⋀^Fin 2]→L[𝕜] 𝕜) (L : E →L[𝕜] 𝕜) {u W W' : E} (hLu : L u = 0) :
     A ![W', u] * L W = A ![W, u] * L W' := by
