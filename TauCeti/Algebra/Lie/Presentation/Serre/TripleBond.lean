@@ -8,15 +8,20 @@ module
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.Algebra.Lie.Sl2.Weyl.Automorphism
 import TauCeti.Algebra.Lie.Sl2.Weyl.WeightOne
-import TauCeti.Algebra.Lie.Sl2.Weyl.WeightThree
+public import TauCeti.Algebra.Lie.Sl2.Weyl.WeightThree
 
 /-!
-# The triple-bond braid relation for Serre operators
+# Triple-bond Weyl normalization and the braid relation for Serre operators
 
 The pinned Weyl units of a nilpotent rational Serre system satisfy the length-six
 braid relation at a triple bond. The result is equality of units in the associative
 algebra, not just equality of their conjugation actions. It can therefore be restricted
 to an admissible lattice and extended to arbitrary coefficient rings.
+
+At a directed Cartan entry minus three, conjugation carries the raising generator
+to one sixth of its third raising bracket and the lowering generator to minus one
+sixth of its third lowering bracket. These normalization identities divide by six
+only in the rational algebra, not in a value ring of positive characteristic.
 
 The calculation follows the long-root string in the rank-two subsystem: the five-letter
 word starting and ending at the short node fixes both long-node root operators.
@@ -169,9 +174,42 @@ end Lie
 section Associative
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+attribute [local instance] HasUniqueDiv.of_module_rat
 
 variable {B A : Type*} [Ring A] [Algebra ℚ A]
   {CM : Matrix B B ℤ} {H E F : B → A}
+
+/-- At a directed Cartan entry minus three, the pinned Weyl unit carries the raising
+generator to one sixth of its third raising bracket. -/
+theorem weylUnit_conj_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
+    {i j : B} (hii : CM i i = 2) (hij : CM i j = -3)
+    (hE : IsNilpotent (E i)) (hF : IsNilpotent (F i)) :
+    (weylUnit hE hF : A) * E j * ↑(weylUnit hE hF)⁻¹ =
+      (6⁻¹ : ℚ) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆ := by
+  have hweight : ⁅H i, E j⁆ = (-3 : ℚ) • E j := by
+    simpa [hij] using hs.lie_H_E_smul i j
+  by_cases hH : H i = 0
+  · simp [hs.E_eq_zero_of_H_eq_zero hH (by omega : CM i j ≠ 0)]
+  have ht := hs.isSl2Triple hii hH
+  have hne : j ≠ i := ne_of_apply_ne (CM i) (by omega)
+  have hlower : ⁅F i, E j⁆ = 0 := by
+    rw [← lie_skew, hs.lie_E_F_of_ne j i hne, neg_zero]
+  exact ht.weylUnit_conj_of_weight_neg_three hE hF hweight hlower
+
+/-- At a directed Cartan entry minus three, the pinned Weyl unit carries the lowering
+generator to minus one sixth of its third lowering bracket. -/
+theorem weylUnit_conj_F_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
+    {i j : B} (hii : CM i i = 2) (hij : CM i j = -3)
+    (hE : IsNilpotent (E i)) (hF : IsNilpotent (F i)) :
+    (weylUnit hE hF : A) * F j * ↑(weylUnit hE hF)⁻¹ =
+      -(6⁻¹ : ℚ) • ⁅F i, ⁅F i, ⁅F i, F j⁆⁆⁆ := by
+  have hweight : ⁅H i, F j⁆ = (3 : ℚ) • F j := by
+    simpa [hij] using hs.lie_H_F_smul i j
+  by_cases hH : H i = 0
+  · simp [hs.F_eq_zero_of_H_eq_zero hH (by omega : CM i j ≠ 0)]
+  have ht := hs.isSl2Triple hii hH
+  have hne : i ≠ j := ne_of_apply_ne (CM i) (by omega)
+  exact ht.weylUnit_conj_of_weight_three hE hF hweight (hs.lie_E_F_of_ne i j hne)
 
 /-- At a triple bond, the pinned Weyl units satisfy the length-six braid relation.
 Only the four root operators at the two nodes need be nilpotent. -/
