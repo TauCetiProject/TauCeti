@@ -124,7 +124,6 @@ private theorem formallyUnramified_localization_atPrime {π : A} (hπ : Irreduci
   have hBS (r : B₀) : algebraMap B S (algebraMap B₀ B r) = algebraMap C S (algebraMap B₀ C r) :=
     Localization.localRingHom_to_map m P _ rfl r
   have hinjB := IsLocalization.injective B m.primeCompl_le_nonZeroDivisors
-  have hinjS := IsLocalization.injective S P.primeCompl_le_nonZeroDivisors
   have : FaithfulSMul B S := by
     refine (faithfulSMul_iff_algebraMap_injective B S).mpr ((injective_iff_map_eq_zero _).mpr ?_)
     intro x hx
@@ -233,8 +232,8 @@ theorem IsTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root (h : IsTamelyRamifiedWRT
   have hgen : K⟮AdjoinSimple.gen K α⟯ = ⊤ :=
     _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α
   have := IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
-    hπ hn0 hαK hgen
-  have hdegree := IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible hπ hn0 hαK hgen
+    hπ hαK hgen
+  have hdegree := IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible hπ hαK hgen
   have : FiniteDimensional K K⟮α⟯ :=
     Module.finite_of_finrank_pos (hdegree ▸ Nat.pos_of_ne_zero hn0)
   have : IsFractionRing (integralClosure A K⟮α⟯) K⟮α⟯ :=
@@ -363,9 +362,6 @@ theorem isTamelyRamifiedWRT_iff_exists_kummer [IsAlgClosed Ω] {π : A} (hπ : I
     rwa [one_mul]
   rintro ⟨n, hn, α, hα, hDVR, hL⟩
   -- Conversely `K(α)` is a tame Kummer extension, so `L(α)`, and hence `L`, is tame.
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    simp at hn
   let := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
   have : IsScalarTower A L Ω := .of_algebraMap_eq fun a ↦ by
     simp [IsScalarTower.algebraMap_apply A K Ω, IsScalarTower.algebraMap_apply A K L,
@@ -379,7 +375,7 @@ theorem isTamelyRamifiedWRT_iff_exists_kummer [IsAlgClosed Ω] {π : A} (hπ : I
     Subtype.ext (by simpa [IsScalarTower.algebraMap_apply A K K⟮α⟯,
       IsScalarTower.algebraMap_apply A K Ω] using hα)
   have hK₁ : IsTamelyRamifiedWRT A K⟮α⟯ :=
-    (IsDiscreteValuationRing.isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible hπ hn0 hαK
+    (IsDiscreteValuationRing.isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible hπ hαK
       (_root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α)).mpr hn
   exact (hK₁.trans hL.isTamelyRamifiedWRT).tower_bot K
 
