@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.Iterated
+public import TauCeti.Analysis.Holder.Iterated.Basic
 import TauCeti.Analysis.Holder.Leibniz
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps

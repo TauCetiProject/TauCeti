@@ -11,8 +11,8 @@ public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.Calculus.UniformLimitsDeriv
-import TauCeti.Analysis.Holder.Inclusion
+import TauCeti.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Analysis.Holder.Iterated.Jet
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -26,11 +26,12 @@ differentiable, whose iterated Fréchet derivatives through order `k` are bounde
 `‖f‖ = ∑_{i ≤ k} sup_{x ∈ Ω} ‖D^i f x‖ + [D^k f]_{α, Ω}`.
 
 It is a Banach space when `F` is. Both the suprema and the Hölder seminorm are taken over all of
-`Ω`, so this is the space of maps with globally finite `C^{k,α}` norm, the norm that Gilbarg and
-Trudinger write `‖·‖_{C^{k,α}(closure Ω)}`. When `Ω` is the whole space, its defining conditions
-are those of the space `TauCeti.CkHolderSpace` of bounded `C^{k,α}` maps. It is the carrier in
-which Schauder theory on a domain is set up, for instance the method of continuity for the
-Dirichlet problem in `C^{2,α}(closure Ω)`.
+`Ω`, so this is the space of maps on `Ω` with globally finite `C^{k,α}` norm. Nothing here
+extends an element or its derivatives to the boundary of `Ω`: identifying this space with the
+space `C^{k,α}(closure Ω)` of Gilbarg and Trudinger, whose norm is the same expression, requires
+continuous extension of the lower derivatives to `closure Ω`, which needs further assumptions on
+`Ω`. When `Ω` is the whole space, its defining conditions are those of the space
+`TauCeti.CkHolderSpace` of bounded `C^{k,α}` maps.
 
 Since the Hölder seminorm compares values at points of `Ω` that may be far apart within `Ω`, a map
 can be smooth with all derivatives bounded on `Ω` and still fail to be Hölder on `Ω`: on
@@ -140,40 +141,7 @@ namespace CkHolderOnSpace
 
 variable {k α Ω F}
 
-variable (k α Ω F) in
-/-- The ambient jet space of `C^{k,α}(Ω)`: bounded continuous derivative fields on `Ω` of orders
-below `k`, with the `ℓ¹` norm, together with a bounded Hölder field of order `k`. -/
-private abbrev Jet := WithLp 1
-  ((PiLp 1 fun i : Fin k ↦ Ω →ᵇ (E [×i]→L[ℝ] F)) × HolderSpace α Ω (E [×k]→L[ℝ] F))
-
-/-- The derivative field of order `i ≤ k` of a jet; this is the map `field` in the definition of
-`CkHolderOnSpace`. -/
-private def fieldL (i : Fin (k + 1)) : Jet k α Ω F →L[ℝ] (Ω →ᵇ (E [×i]→L[ℝ] F)) :=
-  Fin.lastCases (motive := fun i : Fin (k + 1) ↦ Jet k α Ω F →L[ℝ] (Ω →ᵇ (E [×i]→L[ℝ] F)))
-    (HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
-    (fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)) i
-
-private theorem fieldL_castSucc (j : Fin k) (J : Jet k α Ω F) :
-    fieldL j.castSucc J = J.ofLp.1 j :=
-  congrArg (· J) (Fin.lastCases_castSucc (motive := fun i : Fin (k + 1) ↦
-    Jet k α Ω F →L[ℝ] (Ω →ᵇ (E [×i]→L[ℝ] F))) j)
-
-private theorem fieldL_last (J : Jet k α Ω F) :
-    fieldL (Fin.last k) J = J.ofLp.2.toBoundedContinuousFunction :=
-  (congrArg (· J) (Fin.lastCases_last (motive := fun i : Fin (k + 1) ↦
-    Jet k α Ω F →L[ℝ] (Ω →ᵇ (E [×i]→L[ℝ] F)))
-    (last := HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
-    (cast := fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)))).trans (by simp)
-
-variable (E F) in
-/-- Left currying of `(j + 1)`-multilinear maps, as a continuous linear map. -/
-private def curryLeftL (j : ℕ) : (E [×j + 1]→L[ℝ] F) →L[ℝ] E →L[ℝ] (E [×j]→L[ℝ] F) :=
-  (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F).toContinuousLinearEquiv
-
-private theorem curryLeftL_apply (j : ℕ) (g : E [×j + 1]→L[ℝ] F) :
-    curryLeftL E F j g = g.curryLeft := by
-  ext x v
-  simp [curryLeftL]
+open HolderJet
 
 /-- The extension by zero of a map on `Ω` to the whole space. Only its germs at points of `Ω`
 matter below. -/
@@ -201,7 +169,7 @@ private theorem extend_eventuallyEq {G : Type*} [Zero G] {g : Ω → G} {h : E �
 
 /-- The derivative identities of a jet: each field below order `k` has the next field, curried on
 the left, as its Fréchet derivative at every point of `Ω`. -/
-private def IsJetGraph (J : Jet k α Ω F) : Prop :=
+private def IsJetGraph (J : HolderJet k α Ω E F) : Prop :=
   ∀ (j : Fin k) (x : Ω), HasFDerivAt (extend (fieldL j.castSucc J : Ω → E [×j]→L[ℝ] F))
     (curryLeftL E F j (fieldL j.succ J x)) (x : E)
 
@@ -209,21 +177,21 @@ private def IsJetGraph (J : Jet k α Ω F) : Prop :=
 carrier of `CkHolderOnSpace` states the identities through its local `field`, which is `fieldL`,
 through `Function.extend`, which is `extend`, and through `continuousMultilinearCurryLeftEquiv`,
 whose underlying continuous linear map is `curryLeftL`. -/
-private def equivSubtype : CkHolderOnSpace k α Ω F ≃ {J : Jet k α Ω F // IsJetGraph J} :=
+private def equivSubtype : CkHolderOnSpace k α Ω F ≃ {J : HolderJet k α Ω E F // IsJetGraph J} :=
   Equiv.refl _
 
 /-- The underlying jet of an element. -/
-private def toJet (f : CkHolderOnSpace k α Ω F) : Jet k α Ω F := (equivSubtype f).1
+private def toJet (f : CkHolderOnSpace k α Ω F) : HolderJet k α Ω E F := (equivSubtype f).1
 
 /-- An element from a jet satisfying the derivative identities. -/
-private def mk (J : Jet k α Ω F) (hJ : IsJetGraph J) : CkHolderOnSpace k α Ω F :=
+private def mk (J : HolderJet k α Ω E F) (hJ : IsJetGraph J) : CkHolderOnSpace k α Ω F :=
   equivSubtype.symm ⟨J, hJ⟩
 
 private theorem toJet_injective :
     Function.Injective (toJet (k := k) (α := α) (Ω := Ω) (F := F)) :=
   fun _ _ h ↦ equivSubtype.injective (Subtype.ext h)
 
-private theorem toJet_mk (J : Jet k α Ω F) (hJ) : toJet (mk J hJ) = J := by
+private theorem toJet_mk (J : HolderJet k α Ω E F) (hJ) : toJet (mk J hJ) = J := by
   rw [toJet, mk, Equiv.apply_symm_apply]
 
 private theorem hasFDerivAt_fieldL (f : CkHolderOnSpace k α Ω F) (j : Fin k) (x : Ω) :
@@ -244,7 +212,7 @@ private theorem norm_toJet (f : CkHolderOnSpace k α Ω F) : ‖toJet f‖ = ‖
 
 /-- The underlying jet, as a continuous linear map: the inclusion of the submodule
 `CkHolderOnSpace` into the jet space. -/
-private def toJetL : CkHolderOnSpace k α Ω F →L[ℝ] Jet k α Ω F := by
+private def toJetL : CkHolderOnSpace k α Ω F →L[ℝ] HolderJet k α Ω E F := by
   unfold CkHolderOnSpace
   exact Submodule.subtypeL _
 
@@ -349,6 +317,14 @@ theorem toFun_eq_coe (f : CkHolderOnSpace k α Ω F) : f.toFun = ⇑f :=
 @[ext]
 theorem ext {f g : CkHolderOnSpace k α Ω F} (h : ∀ x, f x = g x) : f = g :=
   DFunLike.ext f g h
+
+/-- The order-zero derivative field takes the values of the underlying map. -/
+-- Not a simp lemma: `simp` rewrites the order `↑0` to `0` inside the type of the multilinear map,
+-- so the left-hand side is not in simp normal form.
+theorem iteratedFDeriv_zero_apply (f : CkHolderOnSpace k α Ω F) (x : Ω) (m : Fin 0 → E) :
+    f.iteratedFDeriv 0 x m = f x := by
+  rw [Subsingleton.elim m 0]
+  rfl
 
 /-- The recorded derivative fields are the iterated Fréchet derivatives within `Ω` of every map
 `g : E → F` which agrees with the element on `Ω`. -/
@@ -509,7 +485,7 @@ theorem coe_smul (c : ℝ) (f : CkHolderOnSpace k α Ω F) : ⇑(c • f) = c �
 derivatives through order `k` and `α`-Hölder `k`-th derivative on `Ω`. -/
 private def jetOf (g : E → F) (hg : ContDiffOn ℝ k g Ω)
     (hbdd : ∀ i ≤ k, ∃ C, ∀ x ∈ Ω, ‖iteratedFDerivWithin ℝ i g Ω x‖ ≤ C)
-    (hholder : ∃ C, HolderOnWith C α (iteratedFDerivWithin ℝ k g Ω) Ω) : Jet k α Ω F :=
+    (hholder : ∃ C, HolderOnWith C α (iteratedFDerivWithin ℝ k g Ω) Ω) : HolderJet k α Ω E F :=
   have hcont (i : ℕ) (hi : i ≤ k) : Continuous ((Ω : Set E).domRestrict
       (iteratedFDerivWithin ℝ i g Ω)) :=
     continuousOn_iff_continuous_domRestrict.1
@@ -610,51 +586,20 @@ private theorem norm_iteratedFDerivWithin_extend_le (f : CkHolderOnSpace k α Ω
 
 /-! ### Completeness -/
 
-/-- The derivative identity on `Ω`, read through the extension by zero, is closed under uniform
-convergence of bounded continuous value and derivative fields on `Ω`. -/
-private theorem isClosed_setOf_hasFDerivAt_extend {Y Z : Type*} [NormedAddCommGroup Y]
-    [NormedSpace ℝ Y] [PseudoMetricSpace Z] (L : Z → E →L[ℝ] Y) (hL : UniformContinuous L) :
-    IsClosed {J : (Ω →ᵇ Y) × (Ω →ᵇ Z) |
-      ∀ x : Ω, HasFDerivAt (extend (J.1 : Ω → Y)) (L (J.2 x)) (x : E)} := by
-  rw [← isSeqClosed_iff_isClosed]
-  intro J j hJ hjlim x
-  have hv := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
-    ((continuous_fst.tendsto j).comp hjlim)
-  have hd := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
-    ((continuous_snd.tendsto j).comp hjlim)
-  have h := hasFDerivAt_of_tendstoUniformlyOn (l := atTop) (s := (Ω : Set E)) Ω.isOpen
-    (f := fun n ↦ extend ((J n).1 : Ω → Y)) (f' := fun n ↦ extend (L ∘ ((J n).2 : Ω → Z)))
-    (g := extend (j.1 : Ω → Y)) (g' := extend (L ∘ (j.2 : Ω → Z))) ?_ ?_ ?_ x.2
-  · rwa [extend_coe, Function.comp_apply] at h
-  · rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe]
-    convert hL.comp_tendstoUniformly hd using 1
-    · funext n y
-      simp [extend_coe]
-    · funext y
-      simp [extend_coe]
-  · intro n y hy
-    have := hJ n ⟨y, hy⟩
-    rwa [← Function.comp_apply (f := L), ← extend_coe (L ∘ ((J n).2 : Ω → Z)) ⟨y, hy⟩] at this
-  · intro y hy
-    have h₁ : (fun n ↦ extend ((J n).1 : Ω → Y) y) = fun n ↦ (J n).1 ⟨y, hy⟩ :=
-      funext fun n ↦ extend_coe _ ⟨y, hy⟩
-    rw [h₁, show extend (j.1 : Ω → Y) y = j.1 ⟨y, hy⟩ from extend_coe _ ⟨y, hy⟩]
-    exact hv.tendsto_at ⟨y, hy⟩
-
 /-- The derivative identities are closed under uniform convergence of the fields. -/
-private theorem isClosed_isJetGraph : IsClosed {J : Jet k α Ω F | IsJetGraph J} := by
-  have hset : {J : Jet k α Ω F | IsJetGraph J} =
-      ⋂ j : Fin k, (fun J : Jet k α Ω F ↦ (fieldL j.castSucc J, fieldL j.succ J)) ⁻¹'
+private theorem isClosed_isJetGraph : IsClosed {J : HolderJet k α Ω E F | IsJetGraph J} := by
+  have hset : {J : HolderJet k α Ω E F | IsJetGraph J} =
+      ⋂ j : Fin k, (fun J : HolderJet k α Ω E F ↦ (fieldL j.castSucc J, fieldL j.succ J)) ⁻¹'
         {J | ∀ x : Ω, HasFDerivAt (extend (J.1 : Ω → E [×j]→L[ℝ] F))
           (curryLeftL E F j (J.2 x)) (x : E)} := by
     ext J
     simp [IsJetGraph]
   rw [hset]
   exact isClosed_iInter fun j ↦
-    (isClosed_setOf_hasFDerivAt_extend (curryLeftL E F j)
+    (isClosed_setOf_hasFDerivAt_extend_comp Ω.isOpen 0 (curryLeftL E F j)
       (curryLeftL E F j).uniformContinuous).preimage
-      ((fieldL (k := k) (α := α) (Ω := Ω) (F := F) _).continuous.prodMk
-        (fieldL (k := k) (α := α) (Ω := Ω) (F := F) _).continuous)
+      ((fieldL (k := k) (α := α) (X := Ω) (E := E) (F := F) _).continuous.prodMk
+        (fieldL (k := k) (α := α) (X := Ω) (E := E) (F := F) _).continuous)
 
 /-- `C^{k,α}(Ω, F)` is a Banach space when `F` is. -/
 instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderOnSpace k α Ω F) := by
