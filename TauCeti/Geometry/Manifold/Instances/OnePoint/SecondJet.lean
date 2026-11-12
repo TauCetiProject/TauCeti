@@ -11,8 +11,8 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Calculus.IteratedDeriv.FaaDiBruno
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Deriv
 
 /-!
 # Second jets of Möbius transformations
@@ -22,7 +22,8 @@ derivatives of Möbius transformations of the projective line `OnePoint 𝕜`, r
 charts (`writtenInExtChartAt`), and shows that a Möbius transformation is determined by its value,
 derivative and second derivative at `0`. The derivative of the chart expression on `𝕜` is the
 derivative `mfderiv` on the tangent vector `1` used for the first-jet coordinates in
-`TauCeti.Geometry.Manifold.Instances.OnePoint.FirstJet` (`OnePoint.mfderiv_apply_eq_of_hasDerivAt`).
+`TauCeti.Geometry.Manifold.Instances.OnePoint.FirstJet`
+(`MDifferentiableAt.mfderiv_apply_one_eq_deriv_writtenInExtChartAt`).
 
 * At a finite point `z` with finite image, the second derivative of
   `z ↦ (a z + b) / (c z + d)` is `-2 c (a d - b c) / (c z + d) ^ 3`
@@ -31,9 +32,11 @@ derivative `mfderiv` on the tangent vector `1` used for the first-jet coordinate
   `g'(h x) h'(x)` (`OnePoint.deriv_writtenInExtChartAt_mul_smul`), while its second derivative is
   `g''(h x) h'(x) ^ 2 + g'(h x) h''(x)`
   (`OnePoint.iteratedDeriv_two_writtenInExtChartAt_mul_smul`), so second jets do not transform
-  linearly. Taking for `h` an element fixing `x`, these laws say how the jet at `x` changes under a
-  Möbius reparametrization of the source fixing `x`; taking for `g` an element fixing `h • x`, how
-  it changes under a Möbius reparametrization of the target.
+  linearly. These are the chain rules in charts of `TauCeti.Manifold.deriv_writtenInExtChartAt_comp`
+  and `TauCeti.Manifold.iteratedDeriv_two_writtenInExtChartAt_comp`, applied to Möbius
+  transformations. Taking for `h` an element fixing `x`, these laws say how the jet at `x`
+  changes under a Möbius reparametrization of the source fixing `x`; taking for `g` an element
+  fixing `h • x`, how it changes under a Möbius reparametrization of the target.
 * **Second-jet coordinates.** In characteristic different from two, for every point `p`, every
   nonzero `v` and every `w`, exactly one element of `PGL(2, 𝕜)` sends `0` to `p` and has, in the
   affine chart at `0` and the preferred chart at `p`, derivative `v` and second derivative `w` at
@@ -93,21 +96,11 @@ private theorem deriv_writtenInExtChartAt_smul_coe_eventuallyEq (g : GL (Fin 2) 
     deriv (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) fun x ↦ g • x) =ᶠ[𝓝 z]
       fun w ↦ (g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * w + g 1 1) ^ 2 := by
   have hq : Continuous fun w : 𝕜 ↦ g 1 0 * w + g 1 1 := by fun_prop
-  have hgz : g • (z : OnePoint 𝕜) =
-      (((g 0 0 * z + g 0 1) / (g 1 0 * z + g 1 1) : 𝕜) : OnePoint 𝕜) := by
-    rw [smul_some_eq_ite, ite_eq_right_iff.2 fun h ↦ absurd h hz]
-  -- Near `z`, the transformation read in the affine charts is `w ↦ (a w + b) / (c w + d)`.
-  have hloc : writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) (fun x ↦ g • x) =ᶠ[𝓝 z]
-      fun w ↦ (g 0 0 * w + g 0 1) / (g 1 0 * w + g 1 1) := by
-    filter_upwards [hq.continuousAt.eventually_ne hz] with w hw
-    simp [writtenInExtChartAt, hgz, smul_some_eq_ite, hw]
-  filter_upwards [hloc.deriv, hq.continuousAt.eventually_ne hz] with w hw hw0
-  have hp : HasDerivAt (fun w : 𝕜 ↦ g 0 0 * w + g 0 1) (g 0 0) w := by
-    simpa using ((hasDerivAt_id w).const_mul (g 0 0)).add_const (g 0 1)
-  have hq' : HasDerivAt (fun w : 𝕜 ↦ g 1 0 * w + g 1 1) (g 1 0) w := by
-    simpa using ((hasDerivAt_id w).const_mul (g 1 0)).add_const (g 1 1)
-  rw [hw, (hp.fun_div hq' hw0).deriv, det_fin_two]
-  ring
+  -- Near each such `w`, the chart expressions at `z` and at `w` are the same rational function.
+  filter_upwards [(writtenInExtChartAt_smul_coe_eventuallyEq g hz).eventually_nhds,
+    hq.continuousAt.eventually_ne hz] with w hw hw0
+  rw [(EventuallyEq.trans hw (writtenInExtChartAt_smul_coe_eventuallyEq g hw0).symm).deriv_eq,
+    (hasDerivAt_writtenInExtChartAt_smul_coe g hw0).deriv]
 
 /-- **The second derivative of a Möbius transformation.** At a finite point `z` that is not a
 pole, `z ↦ (a z + b) / (c z + d)` has second derivative `-2 c (a d - b c) / (c z + d) ^ 3`, read
@@ -131,48 +124,15 @@ namespace OnePoint
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
 
-/-- A Möbius transformation, read in the preferred charts at a point and at its image, is analytic
-at that point. -/
-private theorem contDiffAt_writtenInExtChartAt_pgl_smul (g : PGL(2, 𝕜)) (x : OnePoint 𝕜) :
-    ContDiffAt 𝕜 2 (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x fun y ↦ g • y) (extChartAt 𝓘(𝕜) x x) := by
-  have h := ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ω) g).of_le le_top x).of_le
-    (show ((2 : ℕ∞) : WithTop ℕ∞) ≤ ω from le_top)
-  rw [contMDiffAt_iff] at h
-  simpa [contDiffWithinAt_univ] using h.2
+/-- A Möbius transformation of `PGL(2, 𝕜)` is `C^n` for every `n`. -/
+private theorem contMDiffAt_pgl_smul {n : WithTop ℕ∞} (g : PGL(2, 𝕜)) (x : OnePoint 𝕜) :
+    ContMDiffAt 𝓘(𝕜) 𝓘(𝕜) n (fun y ↦ g • y) x :=
+  (contMDiff_const_smul (I := 𝓘(𝕜)) (n := ω) g).of_le le_top x
 
-/-- The derivative of a Möbius transformation on the tangent vector `1`, read in the preferred
-charts, is the derivative of its chart expression. -/
-private theorem mfderiv_pgl_smul_one (g : PGL(2, 𝕜)) (x : OnePoint 𝕜) :
-    (mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun y ↦ g • y) x (1 : 𝕜) : 𝕜) =
-      deriv (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x fun y ↦ g • y) (extChartAt 𝓘(𝕜) x x) := by
-  have hd := ((contDiffAt_writtenInExtChartAt_pgl_smul g x).differentiableAt
-    two_ne_zero).hasDerivAt
-  simp only [extChartAt_coe, modelWithCornersSelf_coe] at hd ⊢
-  rw [mfderiv_apply_eq_of_hasDerivAt
-    ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ω) g).mdifferentiable (by simp) x) ?_ hd, mul_one]
-  exact Eventually.of_forall fun y ↦ by simp [writtenInExtChartAt]
-
-/-- In charts, a product of Möbius transformations is the composition of their chart expressions
-near the chart coordinate of `x`. -/
-private theorem writtenInExtChartAt_mul_smul_eventuallyEq (g h : PGL(2, 𝕜)) (x : OnePoint 𝕜) :
-    writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x (fun y ↦ (g * h) • y) =ᶠ[𝓝 (extChartAt 𝓘(𝕜) x x)]
-      writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (h • x) (fun y ↦ g • y) ∘
-        writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x fun y ↦ h • y := by
-  have hcomp : (fun y : OnePoint 𝕜 ↦ (g * h) • y) = (fun y ↦ g • y) ∘ fun y ↦ h • y :=
-    funext fun y ↦ mul_smul g h y
-  have := writtenInExtChartAt_comp (I := 𝓘(𝕜)) (I' := 𝓘(𝕜)) (I'' := 𝓘(𝕜)) (s := univ)
-    (g := fun y ↦ g • y)
-    ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ω) h).continuous.continuousWithinAt (x := x))
-  rw [hcomp]
-  simpa only [preimage_univ, univ_inter, modelWithCornersSelf_coe, range_id, nhdsWithin_univ]
-    using this
-
-/-- The chart expression of a Möbius transformation `h` at `x` sends the chart coordinate of `x`
-to that of `h • x`. -/
-private theorem writtenInExtChartAt_pgl_smul_extChartAt (h : PGL(2, 𝕜)) (x : OnePoint 𝕜) :
-    writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x (fun y ↦ h • y) (extChartAt 𝓘(𝕜) x x) =
-      extChartAt 𝓘(𝕜) (h • x) (h • x) := by
-  simp [writtenInExtChartAt]
+omit [ProperSpace 𝕜] in
+private theorem pgl_mul_smul_eq_comp (g h : PGL(2, 𝕜)) :
+    (fun y : OnePoint 𝕜 ↦ (g * h) • y) = (fun y ↦ g • y) ∘ fun y ↦ h • y :=
+  funext fun y ↦ mul_smul g h y
 
 /-- **The chain rule for Möbius transformations.** Read in the preferred charts, the derivative
 of `g * h` at `x` is `g'(h x) h'(x)`. -/
@@ -181,11 +141,10 @@ theorem deriv_writtenInExtChartAt_mul_smul (g h : PGL(2, 𝕜)) (x : OnePoint �
       deriv (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (h • x) fun y ↦ g • y)
           (extChartAt 𝓘(𝕜) (h • x) (h • x)) *
         deriv (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x fun y ↦ h • y) (extChartAt 𝓘(𝕜) x x) := by
-  have hg := contDiffAt_writtenInExtChartAt_pgl_smul g (h • x)
-  rw [← writtenInExtChartAt_pgl_smul_extChartAt h x] at hg ⊢
-  rw [(writtenInExtChartAt_mul_smul_eventuallyEq g h x).deriv_eq,
-    deriv_comp _ (hg.differentiableAt two_ne_zero)
-      ((contDiffAt_writtenInExtChartAt_pgl_smul h x).differentiableAt two_ne_zero)]
+  rw [pgl_mul_smul_eq_comp]
+  exact TauCeti.Manifold.deriv_writtenInExtChartAt_comp
+    ((contMDiffAt_pgl_smul (n := 1) g _).mdifferentiableAt one_ne_zero)
+    ((contMDiffAt_pgl_smul (n := 1) h x).mdifferentiableAt one_ne_zero)
 
 /-- **The second-order chain rule for Möbius transformations.** Read in the preferred charts, the
 second derivative of `g * h` at `x` is `g''(h x) h'(x) ^ 2 + g'(h x) h''(x)`. -/
@@ -199,10 +158,15 @@ theorem iteratedDeriv_two_writtenInExtChartAt_mul_smul (g h : PGL(2, 𝕜)) (x :
             (extChartAt 𝓘(𝕜) (h • x) (h • x)) *
           iteratedDeriv 2 (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x fun y ↦ h • y)
             (extChartAt 𝓘(𝕜) x x) := by
-  have hg := contDiffAt_writtenInExtChartAt_pgl_smul g (h • x)
-  rw [← writtenInExtChartAt_pgl_smul_extChartAt h x] at hg ⊢
-  rw [(writtenInExtChartAt_mul_smul_eventuallyEq g h x).iteratedDeriv_eq,
-    iteratedDeriv_comp_two hg (contDiffAt_writtenInExtChartAt_pgl_smul h x)]
+  rw [pgl_mul_smul_eq_comp]
+  exact TauCeti.Manifold.iteratedDeriv_two_writtenInExtChartAt_comp (contMDiffAt_pgl_smul g _)
+    (contMDiffAt_pgl_smul h x)
+
+omit [DecidableEq 𝕜] in
+/-- The affine chart at `0` sends `0` to `0`. -/
+private theorem extChartAt_coe_zero_self :
+    extChartAt 𝓘(𝕜) ((0 : 𝕜) : OnePoint 𝕜) ((0 : 𝕜) : OnePoint 𝕜) = 0 := by
+  simp
 
 /-- The Möbius transformation `z ↦ a z / (c z + 1)`, which fixes `0`. -/
 private noncomputable def stabZero (a : 𝕜ˣ) (c : 𝕜) : PGL(2, 𝕜) :=
@@ -265,9 +229,9 @@ private theorem jets_mul_stabZero (g : PGL(2, 𝕜)) (a : 𝕜ˣ) (c : 𝕜) :
   have hd := deriv_writtenInExtChartAt_mul_smul g (stabZero a c) ((0 : 𝕜) : OnePoint 𝕜)
   have hdd := iteratedDeriv_two_writtenInExtChartAt_mul_smul g (stabZero a c)
     ((0 : 𝕜) : OnePoint 𝕜)
-  have e0 : extChartAt 𝓘(𝕜) ((0 : 𝕜) : OnePoint 𝕜) ((0 : 𝕜) : OnePoint 𝕜) = 0 := by simp
-  rw [h0, e0, deriv_stabZero_smul_zero] at hd
-  rw [h0, e0, deriv_stabZero_smul_zero, iteratedDeriv_two_stabZero_smul_zero] at hdd
+  rw [h0, extChartAt_coe_zero_self, deriv_stabZero_smul_zero] at hd
+  rw [h0, extChartAt_coe_zero_self, deriv_stabZero_smul_zero,
+    iteratedDeriv_two_stabZero_smul_zero] at hdd
   exact ⟨by rw [mul_smul, h0], hd, hdd⟩
 
 /-- **Second-jet coordinates of `PGL(2, 𝕜)`.** In characteristic different from two, for a point
@@ -291,9 +255,9 @@ theorem existsUnique_pgl_smul_zero_deriv_iteratedDeriv_eq [NeZero (2 : 𝕜)] (p
   obtain ⟨w₁, hw₁e⟩ : ∃ w₁, iteratedDeriv 2 (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜)
       ((0 : 𝕜) : OnePoint 𝕜) fun y ↦ g₁ • y) 0 = w₁ := ⟨_, rfl⟩
   have hv₁ : v₁ ≠ 0 := by
-    have := mfderiv_pgl_smul_one g₁ ((0 : 𝕜) : OnePoint 𝕜)
-    have e0 : extChartAt 𝓘(𝕜) ((0 : 𝕜) : OnePoint 𝕜) ((0 : 𝕜) : OnePoint 𝕜) = 0 := by simp
-    rw [e0, hv₁e] at this
+    have := ((contMDiffAt_pgl_smul (n := 1) g₁ ((0 : 𝕜) : OnePoint 𝕜)).mdifferentiableAt
+      one_ne_zero).mfderiv_apply_one_eq_deriv_writtenInExtChartAt
+    rw [extChartAt_coe_zero_self, hv₁e] at this
     rw [← this]
     exact mfderiv_pgl_smul_ne_zero g₁ _ one_ne_zero
   have h2 : (2 : 𝕜) ≠ 0 := two_ne_zero
