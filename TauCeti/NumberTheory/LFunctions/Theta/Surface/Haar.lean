@@ -22,7 +22,8 @@ the measures of that decomposition:
   `TauCeti.multHaar = dt / t` of `(0, ∞)`; it is Lebesgue measure on the positive orthant with
   density `∏_w y_w⁻¹` (`archHaar_eq_withDensity`), and it is invariant under the dilations
   `y ↦ c y`, `c > 0` (`map_archHaar_smul`), as well as independent positive dilations
-  (`map_archHaar_mul_left`) and coordinatewise inversion (`map_archHaar_inv`).
+  (`map_archHaar_mul_left`), coordinatewise inversion (`map_archHaar_inv`) and the action of the
+  units (`map_archHaar_unitScale`).
 * `surfaceHaar K` is the measure `d*x` on `S` induced by the product-over-places normalization of
   `dy / y`: the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in `A`
   and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite, and a bounded set of parameters
@@ -128,6 +129,15 @@ theorem map_archHaar_inv : (archHaar K).map Inv.inv = archHaar K := by
     exact Pi.inv_apply y w
   rw [hinv, archHaar, pi_map_pi fun _ ↦ measurable_inv.aemeasurable]
   simp_rw [map_multHaar_inv]
+
+/-- The action `y_w ↦ |u|_w² y_w` of a unit on the parameters is an independent positive
+dilation at each place, so it preserves `dy / y`. -/
+theorem map_archHaar_unitScale (u : (𝓞 K)ˣ) : (archHaar K).map (unitScale u) = archHaar K := by
+  have hscale : unitScale u = ((fun w : InfinitePlace K ↦ w (u : K) ^ 2) * ·) := by
+    ext y w
+    simp [unitScale_apply]
+  rw [hscale]
+  exact map_archHaar_mul_left fun w ↦ pow_pos (pos_iff.mpr (by simp)) 2
 
 /-! ### The Haar measure of the norm-one hypersurface -/
 

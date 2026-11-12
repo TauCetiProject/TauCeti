@@ -37,6 +37,8 @@ transported to the mixed space along the injective embedding.
   `N 𝔞` in the lattice of `I`.
 * `NumberField.mixedEmbedding.covolume_idealLattice_mul_mk0`: the covolume of the lattice of
   `I * 𝔞` is `N 𝔞` times the covolume of the lattice of `I`.
+* `NumberField.mixedEmbedding.norm_ne_zero_of_mem_idealLattice`: the nonzero points of an ideal
+  lattice have nonzero norm.
 * `Ideal.mixedBasisElem_mem`, `Ideal.linearIndependent_mixedBasisElem`,
   `Ideal.span_int_mixedBasisElem`: `Ideal.mixedBasisElem` lies in `IsLocalization.coeSubmodule K I`,
   is `ℤ`-linearly independent, and spans `IsLocalization.coeSubmodule K I` over `ℤ`.
@@ -99,6 +101,13 @@ theorem covolume_idealLattice_mul_mk0 (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (�
     FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm]
   push_cast
   ring
+
+/-- A nonzero point of an ideal lattice has nonzero norm: it is the image of a nonzero element of
+`K`, whose norm `|N(a)|` does not vanish. -/
+theorem norm_ne_zero_of_mem_idealLattice {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ} {x : mixedSpace K}
+    (hx : x ∈ idealLattice K I) (h0 : x ≠ 0) : mixedEmbedding.norm x ≠ 0 := by
+  obtain ⟨a, -, rfl⟩ := (mem_idealLattice K I).mp hx
+  exact fun h ↦ h0 ((norm_eq_zero_iff' (mem_range_self a)).mp h)
 
 end NumberField.mixedEmbedding
 
