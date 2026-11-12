@@ -96,7 +96,6 @@ theorem isRestricted_iff_isRestricted_one {f : MvPowerSeries (Fin n) R} :
 end Predicate
 
 variable {n : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
-  [NonarchimedeanRing R]
 
 /-- The trivial-weight Huber subring is Mathlib's subring of unit-radius restricted series.
 This is an equality of subrings; their topological structures are compared separately below. -/
@@ -317,7 +316,6 @@ have the same underlying power series and the same topology. -/
 variable (u : Fin n → Rˣ) (hu : ∀ i, IsNormMulUnit (u i : R)) {c : Fin n → ℝ}
   (hc : ∀ i, ‖(u i : R)‖ * c i = 1)
 
-omit [NonarchimedeanRing R] in
 include hu hc in
 /-- **Unit weights encode radii.** A series is restricted for the weights `Tᵢ = {u i}` exactly
 when it is restricted at the radii `c`. -/
