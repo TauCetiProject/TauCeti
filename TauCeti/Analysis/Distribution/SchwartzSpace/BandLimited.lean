@@ -349,7 +349,7 @@ theorem exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset {ι : Ty
   swap
   · refine ⟨0, le_rfl, fun σ _ _ _ _ _ _ ↦ ?_⟩
     simp [fourierInv_eq_zero_of_not_completeSpace hH]
-  obtain ⟨C₁, hC₁, hC₁'⟩ := exists_setIntegral_norm_fourierInv_le_of_support_subset (H := H) b hN
+  obtain ⟨C₁, _, hC₁'⟩ := exists_setIntegral_norm_fourierInv_le_of_support_subset (H := H) b hN
   obtain ⟨C₂, hC₂, hC₂'⟩ :=
     exists_integral_norm_fourierInv_add_sub_le_of_support_subset (H := H) b hN
   refine ⟨max (2 * C₁) C₂, hC₂.trans (le_max_right _ _), fun σ t A ht hσ hσk h ↦ ?_⟩
