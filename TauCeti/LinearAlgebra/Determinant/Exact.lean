@@ -303,6 +303,21 @@ variable {A' B' C' D' : Type*} [AddCommGroup A'] [Module K A'] [AddCommGroup B']
   (hfg' : Function.Exact f' g') (hgh' : Function.Exact g' h') (hh' : Function.Surjective h')
   (eA : A ≃ₗ[K] A') (eB : B ≃ₗ[K] B') (eC : C ≃ₗ[K] C') (eD : D ≃ₗ[K] D')
 
+omit [FiniteDimensional K A] [FiniteDimensional K C] in
+/-- An isomorphism `e` sends an element of `det B` that is the exterior product of an appended
+family `Fin.append p v` to the exterior product of the appended images of the two parts,
+renumbered along `Fin.cast`. -/
+private theorem coe_detLineCongr_eq_ιMulti_append (e : B ≃ₗ[K] B') {x : detLine K B}
+    {m k m' k' : ℕ} {p : Fin m → B} {v : Fin k → B} {p' : Fin m' → B'} {v' : Fin k' → B'}
+    (hx : (x : ExteriorAlgebra K B) = ExteriorAlgebra.ιMulti K _ (Fin.append p v))
+    (hm : m' = m) (hk : k' = k) (hp : p' = e ∘ p ∘ Fin.cast hm) (hv : v' = e ∘ v ∘ Fin.cast hk) :
+    (e.detLineCongr x : ExteriorAlgebra K B') = ExteriorAlgebra.ιMulti K _ (Fin.append p' v') := by
+  subst hp hv
+  rw [LinearEquiv.coe_detLineCongr, hx, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
+    ← ExteriorAlgebra.ιMulti_mul_ιMulti, map_mul, ExteriorAlgebra.map_apply_ιMulti,
+    ExteriorAlgebra.map_apply_ιMulti, ← Function.comp_assoc, ExteriorAlgebra.ιMulti_comp_cast,
+    ← Function.comp_assoc, ExteriorAlgebra.ιMulti_comp_cast, LinearEquiv.coe_coe]
+
 include hf hfg hgh hh hf' hfg' hgh' hh' in
 /-- **Naturality of the four-term isomorphism.** An isomorphism of four-term exact sequences,
 given by isomorphisms `eA`, `eB`, `eC` and `eD` commuting with the maps of the two sequences,
@@ -343,23 +358,17 @@ theorem detLineFourTermEquiv_congr (hfA : f' ∘ₗ eA.toLinearMap = eB.toLinear
   set u' := eA ∘ u ∘ Fin.cast eA.finrank_eq.symm
   set v' := eB ∘ v ∘ Fin.cast hr
   set z' := eC ∘ z ∘ Fin.cast eD.finrank_eq.symm
-  have hfu : ⇑f' ∘ (⇑eA ∘ u) = ⇑eB ∘ (⇑f ∘ u) := funext fun i ↦ LinearMap.congr_fun hfA (u i)
-  have hgv : ⇑g' ∘ (⇑eB ∘ v) = ⇑eC ∘ (⇑g ∘ v) := funext fun i ↦ LinearMap.congr_fun hgB (v i)
+  have hfu : ⇑f' ∘ ⇑eA = ⇑eB ∘ ⇑f := funext (LinearMap.congr_fun hfA)
+  have hgv : ⇑g' ∘ ⇑eB = ⇑eC ∘ ⇑g := funext (LinearMap.congr_fun hgB)
   have hhz : ⇑h' ∘ (⇑eC ∘ z) = ⇑eD ∘ (⇑h ∘ z) := funext fun i ↦ LinearMap.congr_fun hhC (z i)
   have hβ' : (eB.detLineCongr β : ExteriorAlgebra K B') =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (f' ∘ u') v') := by
-    rw [LinearEquiv.coe_detLineCongr, hβ, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
-      ← ExteriorAlgebra.ιMulti_mul_ιMulti, map_mul, ExteriorAlgebra.map_apply_ιMulti,
-      ExteriorAlgebra.map_apply_ιMulti]
-    simp only [u', v', ← Function.comp_assoc, ExteriorAlgebra.ιMulti_comp_cast]
-    simp only [Function.comp_assoc, hfu, LinearEquiv.coe_coe]
+      ExteriorAlgebra.ιMulti K _ (Fin.append (f' ∘ u') v') :=
+    coe_detLineCongr_eq_ιMulti_append eB hβ eA.finrank_eq.symm hr
+      (by simp only [u', ← Function.comp_assoc, hfu]) rfl
   have hγ' : (eC.detLineCongr γ : ExteriorAlgebra K C') =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (g' ∘ v') z') := by
-    rw [LinearEquiv.coe_detLineCongr, hγ, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
-      ← ExteriorAlgebra.ιMulti_mul_ιMulti, map_mul, ExteriorAlgebra.map_apply_ιMulti,
-      ExteriorAlgebra.map_apply_ιMulti]
-    simp only [v', z', ← Function.comp_assoc, ExteriorAlgebra.ιMulti_comp_cast]
-    simp only [Function.comp_assoc, hgv, LinearEquiv.coe_coe]
+      ExteriorAlgebra.ιMulti K _ (Fin.append (g' ∘ v') z') :=
+    coe_detLineCongr_eq_ιMulti_append eC hγ hr eD.finrank_eq.symm
+      (by simp only [v', ← Function.comp_assoc, hgv]) rfl
   have hξ' : (ξ ∘ₗ eD.detLineCongr.symm.toLinearMap) (exteriorPower.ιMulti K _ (h' ∘ z')) = 1 := by
     have : h' ∘ z' = eD ∘ (h ∘ z) ∘ Fin.cast eD.finrank_eq.symm := by
       simp only [z', ← Function.comp_assoc, hhz]
@@ -385,7 +394,10 @@ theorem detLineFourTermEquiv_congr (hfA : f' ∘ₗ eA.toLinearMap = eB.toLinear
     detLineFourTermEquiv_tmul_eq_smul_tmul hf hfg hgh hh u v z hβ hγ φ hξ, map_smul,
     TensorProduct.congr_tmul, LinearEquiv.detLineCongr_ιMulti, LinearEquiv.dualMap_apply,
     LinearEquiv.symm_apply_apply]
-  rfl
+  -- The exterior products agree since `u'` is `eA ∘ u ∘ Fin.cast _`; compare the functionals
+  -- pointwise.
+  exact congrArg (φ γ • ·) (congrArg (_ ⊗ₜ ·)
+    (LinearMap.ext fun x ↦ (LinearEquiv.dualMap_apply _ ξ x).symm))
 
 end Naturality
 

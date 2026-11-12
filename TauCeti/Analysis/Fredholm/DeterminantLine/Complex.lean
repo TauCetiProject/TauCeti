@@ -44,7 +44,7 @@ has even real dimension.
 Complex kernel charts exist near every complex-linear Fredholm operator, by
 `ContinuousLinearMap.IsFredholm.exists_stabilization_kernel_coordinates` over `ℂ`, and they are
 kernel charts of the underlying real operators
-(`ContinuousLinearMap.IsInvertible.restrictScalars_prod_coprod`). Since the transitions between
+(`ContinuousLinearMap.IsInvertible.restrictScalars`). Since the transitions between
 kernel charts are continuous and nowhere zero
 (`ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul`), over a preconnected
 parameter space the complex orientations of a continuous family of complex-linear operators are
@@ -85,7 +85,9 @@ variable {E F : Type*} [AddCommGroup E] [Module ℂ E] [Module ℝ E] [IsScalarT
 /-- The complex kernel of `T`, with its real structure, as the kernel of `T.restrictScalars ℝ`.
 This is `LinearMap.kerRestrictScalarsEquiv`, whose target is the kernel of
 `(T : E →ₗ[ℂ] F).restrictScalars ℝ`; that is the linear map underlying `T.restrictScalars ℝ` by
-definition (`ContinuousLinearMap.coe_restrictScalars`). -/
+definition (`ContinuousLinearMap.coe_restrictScalars`). Restating its type matters: with the
+kernel of `(T : E →ₗ[ℂ] F).restrictScalars ℝ` as target, instance search does not find the real
+finite-dimensionality of the kernel of `T.restrictScalars ℝ`. -/
 private def kerEquiv : T.ker ≃ₗ[ℝ] (T.restrictScalars ℝ).ker :=
   (T : E →ₗ[ℂ] F).kerRestrictScalarsEquiv ℝ
 
@@ -102,7 +104,9 @@ private theorem cokerEquiv_mk (y : F) :
   LinearMap.cokerRestrictScalarsEquiv_mk ℝ (T : E →ₗ[ℂ] F) y
 
 /-- Complex positivity of an element of the determinant line of `T.restrictScalars ℝ`, read in the
-complex kernel and cokernel of `T`. -/
+complex kernel and cokernel of `T`. This is `LinearMap.isComplexPositiveDetLine_iff`, with
+`LinearMap.detLineRestrictScalarsEquiv`, whose body is not exposed here, computed on pure tensors
+and with the kernel and cokernel retyped through `kerEquiv` and `cokerEquiv`. -/
 private theorem isComplexPositiveDetLine_iff_congr
     {z : (T.restrictScalars ℝ : E →ₗ[ℝ] F).detLine} :
     (T : E →ₗ[ℂ] F).IsComplexPositiveDetLine z ↔
@@ -133,41 +137,39 @@ variable {E Λ F : Type*} [AddCommGroup E] [Module ℂ E] [Module ℝ E] [IsScal
 complex-linear and `D₂ : Λ →L[ℂ] F` a stabilization by a finite-dimensional complex space with
 `D₁.coprod D₂` onto. The normalized identification `ContinuousLinearMap.detLineStabilizationEquiv`
 of `det (ker (D₁.coprod D₂)) ⊗ (det Λ)^*` with the determinant line of `D₁`, formed for the
-underlying real operators, sends complex positive elements to complex positive elements, read in
-the complex kernel and cokernel of `D₁`. Here `eB` identifies the complex kernel of
-`D₁.coprod D₂` with the real one. -/
-private theorem isComplexPositiveTMulDual_detLineStabilizationEquiv
+underlying real operators, sends complex positive elements to complex positive elements. Here
+`eB` identifies the complex kernel of `D₁.coprod D₂` with the real one. -/
+private theorem isComplexPositiveDetLine_detLineStabilizationEquiv
     (h : Function.Surjective ((D₁.restrictScalars ℝ).coprod (D₂.restrictScalars ℝ)))
     (eB : (D₁.coprod D₂).ker ≃ₗ[ℝ] ((D₁.restrictScalars ℝ).coprod (D₂.restrictScalars ℝ)).ker)
     (heB : ∀ x, (eB x : E × Λ) = x)
     {t : detLine ℝ (D₁.coprod D₂).ker ⊗[ℝ] Dual ℝ (detLine ℝ Λ)}
     (ht : IsComplexPositiveTMulDual t) :
-    IsComplexPositiveTMulDual (TensorProduct.congr (kerEquiv D₁).symm.detLineCongr
-      (cokerEquiv D₁).symm.detLineCongr.dualMap
-        (detLineStabilizationEquiv (D₁.restrictScalars ℝ) (D₂.restrictScalars ℝ) h
-          (LinearEquiv.rTensor _ eB.detLineCongr t))) := by
+    (D₁ : E →ₗ[ℂ] F).IsComplexPositiveDetLine
+      (detLineStabilizationEquiv (D₁.restrictScalars ℝ) (D₂.restrictScalars ℝ) h
+        (LinearEquiv.rTensor _ eB.detLineCongr t)) := by
   have : FiniteDimensional ℝ D₁.ker := (kerEquiv D₁).symm.finiteDimensional
   have heven : Even (finrank ℝ (F ⧸ (D₁.restrictScalars ℝ).range) * finrank ℝ Λ) := by
     rw [finrank_real_eq_two_mul_finrank_complex (V := Λ)]
     exact (even_two_mul _).mul_left _
+  refine (isComplexPositiveDetLine_iff_congr D₁).2 ?_
   rw [detLineStabilizationEquiv_apply, heven.neg_one_pow, one_smul, detLineCoprodEquiv_def]
   -- The exact sequence of the complex operators, with real scalars, and that of the real ones
   -- are isomorphic through the identifications of complex and real kernels and cokernels.
-  exact isComplexPositiveTMulDual_detLineFourTermEquiv_of_congr (kerCoprodHom_injective D₁ D₂)
+  refine isComplexPositiveTMulDual_detLineFourTermEquiv_of_congr (kerCoprodHom_injective D₁ D₂)
     (exact_kerCoprodHom_parameterProj D₁ D₂) (exact_parameterProj_parameterToCoker D₁ D₂)
     ((parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 h) _ _ _ _
     (f := (kerCoprodHom D₁ D₂ : D₁.ker →ₗ[ℂ] (D₁.coprod D₂).ker))
     (g := (parameterProj D₁ D₂ : (D₁.coprod D₂).ker →ₗ[ℂ] Λ)) (h := parameterToCoker D₁ D₂)
-    (kerEquiv D₁) eB (cokerEquiv D₁).symm
-    (LinearMap.ext fun x ↦ Subtype.ext (by
+    (kerEquiv D₁) eB (cokerEquiv D₁).symm ?_ ?_ ?_ ht
+  · exact LinearMap.ext fun x ↦ Subtype.ext (by
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, ContinuousLinearMap.coe_coe,
-        LinearMap.restrictScalars_apply, kerCoprodHom_apply, heB, coe_kerEquiv_apply]))
-    (LinearMap.ext fun x ↦ by simp [parameterProj_apply, heB])
-    (LinearMap.ext fun l ↦ by
-      rw [LinearMap.comp_apply, eq_comm, LinearEquiv.coe_coe, LinearEquiv.symm_apply_eq,
-        LinearMap.restrictScalars_apply, parameterToCoker_apply, parameterToCoker_apply,
-        Submodule.mkQ_apply, Submodule.mkQ_apply, cokerEquiv_mk]
-      rfl) ht
+        LinearMap.restrictScalars_apply, kerCoprodHom_apply, heB, coe_kerEquiv_apply])
+  · exact LinearMap.ext fun x ↦ by simp [parameterProj_apply, heB]
+  · refine LinearMap.ext fun l ↦ ?_
+    rw [LinearMap.comp_apply, eq_comm, LinearEquiv.coe_coe, LinearEquiv.symm_apply_eq,
+      LinearMap.restrictScalars_apply, parameterToCoker_apply, parameterToCoker_apply,
+      Submodule.mkQ_apply, Submodule.mkQ_apply, cokerEquiv_mk, coe_restrictScalars']
 
 end Stabilization
 
@@ -181,16 +183,6 @@ variable {E Λ F G : Type*} [AddCommGroup E] [Module ℂ E] [Module ℝ E] [IsSc
   [TopologicalSpace F] [ContinuousAdd F] [AddCommGroup G] [Module ℂ G] [Module ℝ G]
   [IsScalarTower ℝ ℂ G] [TopologicalSpace G]
   {T : E →L[ℂ] F} {D₂ : Λ →L[ℂ] F} {q : E × Λ →L[ℂ] G}
-
-/-- A complex kernel chart `(D₂, q)` of `T` is also a kernel chart of the underlying real
-operators. -/
-theorem IsInvertible.restrictScalars_prod_coprod (h : ((T.coprod D₂).prod q).IsInvertible) :
-    (((T.restrictScalars ℝ).coprod (D₂.restrictScalars ℝ)).prod
-      (q.restrictScalars ℝ)).IsInvertible :=
-  -- The real restriction of the complex pair is the pair of real restrictions, by definition of
-  -- `ContinuousLinearMap.restrictScalars`, `ContinuousLinearMap.coprod` and
-  -- `ContinuousLinearMap.prod`.
-  h.restrictScalars (R := ℝ)
 
 -- Real finite-dimensionality follows from the complex one through the scalar tower, but
 -- `ContinuousLinearMap.detLineChartEquiv` over `ℝ` takes it as an instance argument.
@@ -233,7 +225,6 @@ theorem isComplexPositiveTMulDual_detLineChartEquiv_iff
   let eqC : (T.coprod D₂).ker ≃ₗ[ℂ] G :=
     .ofBijective (eq.toLinearMap.complexOfMapISmul heqI) (by simpa using eq.bijective)
   have heqC : eqC.restrictScalars ℝ = eq := LinearEquiv.ext fun _ ↦ by simp [eqC]
-  rw [isComplexPositiveDetLine_iff_congr]
   -- Write `z` through the normalized stabilization isomorphism.
   obtain ⟨t, rfl⟩ : ∃ t, detLineStabilizationEquiv (T.restrictScalars ℝ) (D₂.restrictScalars ℝ)
       hs (LinearEquiv.rTensor _ eB.detLineCongr t) = z :=
@@ -245,16 +236,13 @@ theorem isComplexPositiveTMulDual_detLineChartEquiv_iff
         (D₂.restrictScalars ℝ) hs (LinearEquiv.rTensor _ eB.detLineCongr t)) =
       TensorProduct.congr (LinearEquiv.detLineCongr (eqC.restrictScalars ℝ))
         (LinearEquiv.detLineCongr ((LinearEquiv.refl ℂ Λ).symm.restrictScalars ℝ)).dualMap t := by
-    have hrefl : (LinearEquiv.refl ℂ Λ).symm.restrictScalars ℝ = LinearEquiv.refl ℝ Λ := rfl
-    rw [detLineChartEquiv_detLineStabilizationEquiv, heqC, hrefl, LinearEquiv.detLineCongr_refl]
-    induction t using TensorProduct.inductionOn with
-    | tmul x φ =>
-      rw [LinearEquiv.rTensor_tmul, LinearEquiv.rTensor_tmul, TensorProduct.congr_tmul,
-        ← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans]
-      rfl
-    | add t₁ t₂ h₁ h₂ => simp only [LinearEquiv.map_add, h₁, h₂]
+    have hrefl : (LinearEquiv.refl ℂ Λ).symm.restrictScalars ℝ = LinearEquiv.refl ℝ Λ :=
+      LinearEquiv.ext fun _ ↦ by simp
+    rw [detLineChartEquiv_detLineStabilizationEquiv, heqC, hrefl, LinearEquiv.detLineCongr_refl,
+      LinearEquiv.dualMap_refl, ← LinearEquiv.rTensor_trans_apply,
+      ← LinearEquiv.detLineCongr_trans, LinearEquiv.rTensor]
   rw [hchart, isComplexPositiveTMulDual_congr_detLineCongr_iff]
-  refine ⟨fun ht ↦ isComplexPositiveTMulDual_detLineStabilizationEquiv hs eB heB ht,
+  refine ⟨fun ht ↦ isComplexPositiveDetLine_detLineStabilizationEquiv hs eB heB ht,
     fun hz ↦ ?_⟩
   -- Conversely, compare `t` with a complex positive element `t₀`, whose image is complex
   -- positive too, so that the two images differ by a positive factor.
@@ -262,11 +250,9 @@ theorem isComplexPositiveTMulDual_detLineChartEquiv_iff
   have : FiniteDimensional ℂ (T.coprod D₂).ker := LinearEquiv.finiteDimensional eqC.symm
   obtain ⟨t₀, ht₀⟩ := exists_isComplexPositiveTMulDual (E := (T.coprod D₂).ker) (F := Λ)
   obtain ⟨c, hc, hct⟩ :=
-    (isComplexPositiveTMulDual_detLineStabilizationEquiv hs eB heB ht₀).exists_pos_smul_eq hz
+    (isComplexPositiveDetLine_detLineStabilizationEquiv hs eB heB ht₀).exists_pos_smul_eq hz
   let L := (LinearEquiv.rTensor _ eB.detLineCongr).trans
-    ((detLineStabilizationEquiv (T.restrictScalars ℝ) (D₂.restrictScalars ℝ) hs).trans
-      (TensorProduct.congr (kerEquiv T).symm.detLineCongr
-        (cokerEquiv T).symm.detLineCongr.dualMap))
+    (detLineStabilizationEquiv (T.restrictScalars ℝ) (D₂.restrictScalars ℝ) hs)
   have htt₀ : t = c • t₀ := L.injective (by rw [LinearEquiv.map_smul]; exact hct)
   exact htt₀ ▸ ht₀.smul hc
 
@@ -303,7 +289,10 @@ theorem exists_forall_isComplexPositiveDetLine_detLineChartEquiv_eq_smul (hT : C
   · exact ⟨0, fun x ↦ isEmptyElim x⟩
   have hTℝ : Continuous fun x ↦ (T x).restrictScalars ℝ :=
     (restrictScalarsIsometry ℂ E F ℝ ℝ).continuous.comp hT
-  have h' (x : X) := (h x).restrictScalars_prod_coprod
+  -- Complex kernel charts are kernel charts of the underlying real operators.
+  have h' (x : X) : ((((T x).restrictScalars ℝ).coprod (D₂.restrictScalars ℝ)).prod
+      (q.restrictScalars ℝ)).IsInvertible :=
+    (h x).restrictScalars
   -- The elements read as a fixed complex positive `t₀` in the complex chart are complex positive.
   obtain ⟨t₀, ht₀⟩ := exists_isComplexPositiveTMulDual (E := G) (F := Λ)
   have hz₀ (x : X) : (T x : E →ₗ[ℂ] F).IsComplexPositiveDetLine

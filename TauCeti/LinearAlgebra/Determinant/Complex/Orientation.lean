@@ -43,8 +43,9 @@ complex vector spaces and complex-linear maps:
 * for an exact sequence `0 → A → B → C → D → 0`, the isomorphism
   `det B ⊗ (det C)^* ≃ det A ⊗ (det D)^*` (`TauCeti.detLineFourTermEquiv`) maps complex positive
   elements to complex positive elements
-  (`TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv`), also when the sequence is only
-  isomorphic to a complex one through real isomorphisms
+  (`TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv`), also when the sequence is
+  isomorphic to the real restriction of a complex one through real isomorphisms of the first,
+  second and fourth terms and the identity of the third
   (`TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv_of_congr`).
 
 No sign corrections enter, because complex vector spaces have even real dimension. The second
@@ -746,21 +747,16 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv_of_congr
     IsComplexPositiveTMulDual (TensorProduct.congr eA.symm.detLineCongr eD.detLineCongr.dualMap
       (detLineFourTermEquiv hf' hfg' hgh' hh' (LinearEquiv.rTensor _ eB.detLineCongr t))) := by
   have key := detLineFourTermEquiv_congr hf hfg hgh hh hf' hfg' hgh' hh' eA eB
-    (LinearEquiv.refl ℝ C) eD hfA (by rw [hgB]; rfl) (by rw [hhD]; rfl) t
-  have hX : LinearEquiv.rTensor _ eB.detLineCongr t = TensorProduct.congr eB.detLineCongr
-      (LinearEquiv.refl ℝ C).detLineCongr.symm.dualMap t := by
-    clear key ht
-    induction t using TensorProduct.inductionOn with
-    | tmul x φ => simp
-    | add t₁ t₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-  rw [hX, key]
-  convert isComplexPositiveTMulDual_detLineFourTermEquiv hf hfg hgh hh ht using 1
-  generalize detLineFourTermEquiv hf hfg hgh hh t = s
-  induction s using TensorProduct.inductionOn with
-  | tmul x φ =>
-    rw [TensorProduct.congr_tmul, TensorProduct.congr_tmul, ← LinearEquiv.detLineCongr_symm,
-      LinearEquiv.symm_apply_apply, ← LinearEquiv.dualMap_symm, LinearEquiv.apply_symm_apply]
-  | add s₁ s₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+    (LinearEquiv.refl ℝ C) eD hfA (by rw [hgB, LinearEquiv.refl_toLinearMap, LinearMap.id_comp])
+    (by rw [hhD, LinearEquiv.refl_toLinearMap, LinearMap.comp_id]) t
+  have hX : LinearEquiv.rTensor _ eB.detLineCongr = TensorProduct.congr eB.detLineCongr
+      (LinearEquiv.refl ℝ C).detLineCongr.symm.dualMap := by
+    rw [LinearEquiv.detLineCongr_refl, LinearEquiv.refl_symm, LinearEquiv.dualMap_refl,
+      LinearEquiv.rTensor]
+  rw [hX, key, TensorProduct.congr_congr, ← LinearEquiv.detLineCongr_symm,
+    ← LinearEquiv.dualMap_symm, LinearEquiv.self_trans_symm, LinearEquiv.symm_trans_self,
+    TensorProduct.congr_refl_refl, LinearEquiv.refl_apply]
+  exact isComplexPositiveTMulDual_detLineFourTermEquiv hf hfg hgh hh ht
 
 end FourTerm
 
