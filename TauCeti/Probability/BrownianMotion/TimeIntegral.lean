@@ -287,6 +287,26 @@ theorem norm_sum_leftRiemannError_sq_le (hB : IsPreBrownianReal B P)
     _ = ((t n : ℝ) - t 0) * δ ^ 2 := by
       rw [← Finset.sum_mul, Finset.sum_range_sub (fun i => (t i : ℝ))]
 
+/-- The quadrature mesh bound only requires monotonicity up to the last grid date. -/
+theorem norm_sum_leftRiemannError_sq_le_of_monotoneOn (hB : IsPreBrownianReal B P)
+    {t : ℕ → ℝ≥0} {n : ℕ} (ht : MonotoneOn t (Set.Iic n)) {δ : ℝ}
+    (hmesh : ∀ i < n, (t (i + 1) : ℝ) - t i ≤ δ) :
+    ‖∑ i ∈ Finset.range n, hB.leftRiemannError (t i) (t (i + 1))‖ ^ 2 ≤
+      ((t n : ℝ) - t 0) * δ ^ 2 / 3 := by
+  -- Extend the finite grid constantly after its last date.
+  let s (i : ℕ) := t (min i n)
+  have hs : Monotone s := fun i j hij ↦ ht (Set.mem_Iic.mpr (min_le_right _ _))
+    (Set.mem_Iic.mpr (min_le_right _ _)) (min_le_min_right n hij)
+  have heq : (∑ i ∈ Finset.range n, hB.leftRiemannError (s i) (s (i + 1))) =
+      ∑ i ∈ Finset.range n, hB.leftRiemannError (t i) (t (i + 1)) := by
+    apply Finset.sum_congr rfl
+    intro i hi
+    simp only [s, min_eq_left (Finset.mem_range.mp hi).le,
+      min_eq_left (Nat.succ_le_of_lt (Finset.mem_range.mp hi))]
+  have hm (i : ℕ) (hi : i < n) : (s (i + 1) : ℝ) - s i ≤ δ := by
+    simpa only [s, min_eq_left hi.le, min_eq_left (Nat.succ_le_of_lt hi)] using hmesh i hi
+  simpa only [heq, s, min_self, Nat.zero_min] using hB.norm_sum_leftRiemannError_sq_le s hs n hm
+
 /-- On the equal grid with `n` cells, the exact squared quadrature error is `T³/(3n²)`.
 For `n = 0` both sides are zero, using division by zero in the formula. -/
 theorem norm_sum_leftRiemannError_sq_equidistant (hB : IsPreBrownianReal B P)

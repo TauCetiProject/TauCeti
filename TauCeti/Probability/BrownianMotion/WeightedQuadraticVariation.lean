@@ -24,7 +24,8 @@ The summands are orthogonal, not generally independent: the later height may dep
 all earlier increments. Specializing to `Hᵢ = B(tᵢ)` gives the centered quadratic error
 in the partition proof of the cubic Itô formula. A mesh bound then gives mean-square
 convergence to zero. Empty grids and repeated dates are allowed. Only the filtered
-pre-Brownian laws are used; path continuity and usual filtration conditions are unnecessary.
+pre-Brownian laws are used for general heights; the Brownian-height specialization needs
+only pre-Brownian laws. Path continuity and usual filtration conditions are unnecessary.
 
 ## References
 
@@ -189,3 +190,58 @@ theorem tendsto_integral_sq_sum_eval_mul_sq_sub_sub
   exact fun a ↦ hB.integral_sq_sum_eval_mul_sq_sub_sub_le (ht a) (hT a) (hδ a) (hmesh a)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
+
+namespace ProbabilityTheory.IsPreBrownianReal
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
+
+/-- Centered quadratic sums with Brownian heights are square integrable on every finite grid. -/
+theorem memLp_sum_eval_mul_sq_sub_sub (hB : IsPreBrownianReal B P)
+    (t : ℕ → ℝ≥0) (n : ℕ) :
+    MemLp (fun ω ↦ ∑ i ∈ range n, B (t i) ω *
+      ((B (t (i + 1)) ω - B (t i) ω) ^ 2 - ((t (i + 1) : ℝ) - t i))) 2 P := by
+  have := (hB.hasLaw_eval 0).isProbabilityMeasure
+  let : ENNReal.HolderTriple 4 4 2 := .of_toReal (by norm_num [Real.holderTriple_iff])
+  apply memLp_finsetSum
+  intro i _
+  have hs : MemLp (fun ω ↦ (B (t (i + 1)) ω - B (t i) ω) ^ 2) 4 P := by
+    have h := ((hB.hasLaw_sub (t (i + 1)) (t i)).memLp
+      (memLp_id_gaussianReal' 8 (by norm_num))).norm_rpow_div 2
+    have he : (4 : ENNReal) = 8 / 2 :=
+      (ENNReal.eq_div_iff (by norm_num) (by norm_num)).2 (by norm_num)
+    simpa only [← he, ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs,
+      sq_abs, Pi.sub_apply] using h
+  exact ((hB.hasLaw_eval (t i)).memLp (memLp_id_gaussianReal' 4 (by norm_num))).fun_mul
+    (hs.sub (memLp_const _))
+
+/-- The Brownian-height quadratic mesh bound does not require a prescribed filtration. -/
+theorem integral_sq_sum_eval_mul_sq_sub_sub_le (hB : IsPreBrownianReal B P)
+    {t : ℕ → ℝ≥0} {n : ℕ} (ht : MonotoneOn t (Set.Iic n)) {δ : ℝ}
+    (hδ : 0 ≤ δ) (hmesh : ∀ i < n, (t (i + 1) : ℝ) - t i ≤ δ) :
+    (∫ ω, (∑ i ∈ range n, B (t i) ω *
+      ((B (t (i + 1)) ω - B (t i) ω) ^ 2 - ((t (i + 1) : ℝ) - t i))) ^ 2 ∂P) ≤
+      2 * (t n : ℝ) ^ 2 * δ := by
+  -- Apply the filtered estimate to a measurable modification and its natural filtration.
+  let W (s : ℝ≥0) := (hB.aemeasurable s).mk (B s)
+  have hW : IsPreBrownianReal W P := hB.congr fun s ↦ (hB.aemeasurable s).ae_eq_mk
+  have hF := hW.isFilteredPreBrownianReal_natural
+    (fun s ↦ (hB.aemeasurable s).measurable_mk.stronglyMeasurable)
+  have heq : (fun ω ↦ ∑ i ∈ range n, B (t i) ω *
+      ((B (t (i + 1)) ω - B (t i) ω) ^ 2 - ((t (i + 1) : ℝ) - t i))) =ᵐ[P]
+      (fun ω ↦ ∑ i ∈ range n, W (t i) ω *
+      ((W (t (i + 1)) ω - W (t i) ω) ^ 2 - ((t (i + 1) : ℝ) - t i))) := by
+    simpa only [Finset.sum_fn, Pi.mul_apply, Pi.sub_apply, Pi.pow_apply] using
+      (eventuallyEq_sum (s := range n) fun i _ ↦
+        ((hB.aemeasurable (t i)).ae_eq_mk.mul
+          ((((hB.aemeasurable (t (i + 1))).ae_eq_mk.sub
+            (hB.aemeasurable (t i)).ae_eq_mk).pow_const 2).sub
+              (EventuallyEq.refl _ (fun _ : Ω ↦ (t (i + 1) : ℝ) - t i)))))
+  calc
+    _ = ∫ ω, (∑ i ∈ range n, W (t i) ω *
+        ((W (t (i + 1)) ω - W (t i) ω) ^ 2 - ((t (i + 1) : ℝ) - t i))) ^ 2 ∂P := by
+      apply integral_congr_ae
+      filter_upwards [heq] with ω hω
+      rw [hω]
+    _ ≤ _ := hF.integral_sq_sum_eval_mul_sq_sub_sub_le ht le_rfl hδ hmesh
+
+end ProbabilityTheory.IsPreBrownianReal

@@ -50,7 +50,7 @@ produce a new Brownian motion.
 public section
 
 open MeasureTheory ProbabilityTheory
-open scoped NNReal
+open scoped NNReal ENNReal
 
 namespace TauCeti.Probability
 
@@ -136,12 +136,20 @@ theorem hasLaw_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s �
   ext
   simp [Real.nndist_eq, hst]
 
-/-- Every natural power of a pre-Brownian evaluation is square integrable. -/
-theorem memLp_pow_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) (n : ℕ) :
-    MemLp (fun ω ↦ B t ω ^ n) 2 P := by
-  simpa only [Function.comp_def, Polynomial.eval_X_pow] using
-    (hB.hasLaw_eval t).memLp_comp (TauCeti.memLp_two_eval_gaussianReal 0 t
-      (Polynomial.X ^ n))
+/-- Every natural power of a pre-Brownian evaluation belongs to every finite `Lᵖ`. -/
+theorem memLp_pow_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) (n : ℕ)
+    {p : ℝ≥0∞} (hp : p ≠ ∞) : MemLp (fun ω ↦ B t ω ^ n) p P := by
+  have := (hB.hasLaw_eval t).isProbabilityMeasure
+  rcases eq_or_ne n 0 with rfl | hn
+  · simpa only [pow_zero] using (memLp_const (1 : ℝ) : MemLp _ p P)
+  have h := ((hB.hasLaw_eval t).memLp
+    (memLp_id_gaussianReal' (p * n) (ENNReal.mul_ne_top hp (by simp)))).norm_rpow_div n
+  have hm : AEStronglyMeasurable (fun ω ↦ B t ω ^ n) P :=
+    (hB.aemeasurable t).aestronglyMeasurable.pow n
+  apply (memLp_norm_iff hm).mp
+  have hn0 : (n : ℝ≥0∞) ≠ 0 := by exact_mod_cast hn
+  simpa only [ENNReal.mul_div_cancel_right hn0 (by simp),
+    ENNReal.toReal_natCast, Real.rpow_natCast, norm_pow] using h
 
 /-- Every natural power of a pre-Brownian increment is integrable, in either time order. -/
 theorem integrable_pow_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) (n : ℕ) :
