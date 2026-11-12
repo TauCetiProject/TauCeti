@@ -259,8 +259,9 @@ theorem finrank_quotient_span_root_X_pow_pow [Nontrivial R] {n p : ℕ} (hp : p 
     obtain ⟨r, rfl⟩ := mk_surjective d
     rw [← map_mul, mk_eq_mk] at hd
     simpa using dvd_add ((pow_dvd_pow X hp).trans hd) (dvd_mul_right (X ^ p) r)
-  have hsurj : Function.Surjective φ :=
-    map_surjective Function.surjective_id (by simpa using pow_dvd_pow X hp)
+  have hsurj : Function.Surjective φ := by
+    simp only [φ, algHomOfDvd, coe_mapAlgHom]
+    exact map_surjective Function.surjective_id (by simpa using pow_dvd_pow X hp)
   rw [← (Ideal.quotientEquivAlgOfEq R hker).toLinearEquiv.finrank_eq,
     (Ideal.quotientKerAlgEquivOfSurjective hsurj).toLinearEquiv.finrank_eq,
     (powerBasis' (monic_X_pow p)).finrank, powerBasis'_dim, natDegree_X_pow]
