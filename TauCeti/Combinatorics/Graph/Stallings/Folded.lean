@@ -14,8 +14,9 @@ public import Mathlib.GroupTheory.FreeGroup.Reduce
 
 A labelled graph is folded when the label and initial vertex determine a dart. This makes
 the word and endpoints determine a path and ensures that a reduced path has a freely reduced
-label. Over a finite alphabet, a folded graph with finitely many vertices has finitely many
-darts. These are the local facts behind the Stallings subgroup criterion.
+label. Consequently a freely reduced word is accepted at a vertex exactly when it labels a
+closed path there (`StallingsGraph.mem_subgroup_iff_folded`). Over a finite alphabet, a folded
+graph with finitely many vertices has finitely many darts.
 
 ## References
 
@@ -157,6 +158,27 @@ theorem IsFolded.path_eq_of_read_eq (hS : S.IsFolded)
   simpa only [IsFolded.toWord_read_eq_word S hS p hp,
     IsFolded.toWord_read_eq_word S hS q hq] using
     congrArg FreeGroup.toWord h
+
+/-- In a folded graph, a free-group element is accepted at a vertex exactly when its reduced
+word is the label of a closed path at that vertex. -/
+theorem IsFolded.mem_subgroup_iff_exists_word_eq_toWord [DecidableEq α] (hS : S.IsFolded)
+    {a : S.graph.V} {g : FreeGroup α} :
+    g ∈ S.subgroup a ↔ ∃ p : S.graph.Path a a, S.word p = g.toWord := by
+  constructor
+  · intro hg
+    obtain ⟨p, hp, rfl⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
+    exact ⟨p, (hS.toWord_read_eq_word S p hp).symm⟩
+  · rintro ⟨p, hp⟩
+    exact S.mem_subgroup_iff.mpr ⟨p, by rw [S.read_eq_mk_word, hp, FreeGroup.mk_toWord]⟩
+
+/-- In a folded graph, a freely reduced word represents an element accepted at a vertex exactly
+when it is the label of a closed path at that vertex. By `IsFolded.path_eq_of_word_eq` such a
+path is unique. -/
+theorem mem_subgroup_iff_folded (hS : S.IsFolded) {a : S.graph.V} {w : List (α × Bool)}
+    (hw : FreeGroup.IsReduced w) :
+    FreeGroup.mk w ∈ S.subgroup a ↔ ∃ p : S.graph.Path a a, S.word p = w := by
+  classical
+  rw [hS.mem_subgroup_iff_exists_word_eq_toWord, FreeGroup.toWord_mk, hw.reduce_eq]
 
 /-- Paths with the same initial vertex and free-group reading have the same terminal vertex
 in a folded graph, even when the paths are not reduced. -/
