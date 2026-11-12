@@ -42,7 +42,10 @@ shows that its differential at `z` vanishes exactly when `(ν j - r) z j = 0` fo
 `r` is the value at `z`. This happens exactly when every nonzero `z j` has `ν j = w k`, which
 forces `z = 0` when no `ν j` equals `w k`. The second derivative at the origin is
 `2 ∑ j, (ν j - w k) ⟪v j, v' j⟫`. Each coordinate of `𝕜` contributes a `dim_ℝ 𝕜`-dimensional
-block of the same sign to its inertia.
+block of the same sign to its inertia. More generally, at any critical point `z` of the model,
+`1 + ∑ j, ‖z j‖ ^ 2` times its second derivative is `2 ∑ j, (ν j - w k) ⟪v j, v' j⟫`, whose
+kernel consists of the vectors supported on the coordinates `j` with `ν j = w k`. For repeated
+weights this makes the moment function Morse–Bott.
 
 ## Main declarations
 
@@ -52,6 +55,9 @@ block of the same sign to its inertia.
   points are the eigenlines of the diagonal form.
 * `TauCeti.criticalPoints_projectiveMomentFunction`: for distinct weights its critical points are
   the coordinate points `[eₖ]`.
+* `TauCeti.ProjectiveMomentChart.one_add_sum_mul_fderiv_fderiv_model_apply` and
+  `TauCeti.ProjectiveMomentChart.fderiv_fderiv_model_apply_eq_zero_iff`: the Hessian of the chart
+  model at an arbitrary critical point, and its kernel.
 * `TauCeti.isMorse_projectiveMomentFunction`: for distinct weights it is a Morse function.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_projectiveMomentFunction_iff` and
   `TauCeti.isMorse_projectiveMomentFunction_iff`: `[eₖ]` is nondegenerate exactly when `w k` is a
@@ -245,12 +251,14 @@ theorem fderiv_model_eq_zero_iff {a : ℝ} {ν : Fin n → ℝ} (hν : ∀ j, ν
   rw [fderiv_model_eq_zero_iff_forall]
   exact ⟨fun h ↦ funext fun j ↦ (h j).resolve_right (hν j), by rintro rfl j; exact Or.inl rfl⟩
 
-/-- The second derivative of the chart model at the origin is twice the weighted inner product with
-the weights `ν j - a`. -/
-private theorem fderiv_fderiv_model_zero (a : ℝ) (ν : Fin n → ℝ) :
-    fderiv ℝ (fderiv ℝ (model 𝕜 a ν)) 0 = 2 • weightedInner 𝕜 (fun j ↦ ν j - a) := by
-  ext v w
-  have hD : ContDiffAt ℝ 2 (fun z : Fin n → 𝕜 ↦ 1 + weightedNormSq 1 z) 0 :=
+/-- Clearing the denominator of the model at a critical point `z`: `(1 + ∑ ‖z j‖ ^ 2)` times the
+second derivative of the model at `z` is twice the weighted inner product with the weights
+`ν j - a`. -/
+private theorem one_add_weightedNormSq_one_mul_fderiv_fderiv_model {a : ℝ} {ν : Fin n → ℝ}
+    {z : Fin n → 𝕜} (hz : ∀ j, z j = 0 ∨ ν j = a) (v w : Fin n → 𝕜) :
+    (1 + weightedNormSq 1 z) * fderiv ℝ (fderiv ℝ (model 𝕜 a ν)) z v w =
+      2 * weightedInner 𝕜 (fun j ↦ ν j - a) v w := by
+  have hD : ContDiffAt ℝ 2 (fun z : Fin n → 𝕜 ↦ 1 + weightedNormSq 1 z) z :=
     (contDiff_const.add (contDiff_weightedNormSq 1)).contDiffAt
   have hmul := fderiv_fderiv_mul_apply hD (contDiff_model (𝕜 := 𝕜) a ν).contDiffAt v w
   rw [one_add_weightedNormSq_one_mul_model_eq] at hmul
@@ -260,15 +268,55 @@ private theorem fderiv_fderiv_model_zero (a : ℝ) (ν : Fin n → ℝ) :
   have hD' : fderiv ℝ (fun z : Fin n → 𝕜 ↦ 1 + weightedNormSq 1 z) = ⇑(2 • weightedInner 𝕜 1) := by
     ext z : 1
     rw [fderiv_const_add, fderiv_weightedNormSq]
-  rw [hN, hD', fderiv_model_zero] at hmul
+  rw [hN, hD', fderiv_model_eq_zero_iff_forall.2 hz, model_eq_of_forall hz] at hmul
   have hsum : ∑ j, (ν j - a) * ⟪v j, w j⟫ = ∑ j, ν j * ⟪v j, w j⟫ - a * ∑ j, ⟪v j, w j⟫ := by
     rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
     simp [sub_mul]
-  simp only [smul_apply, nsmul_eq_mul, Nat.cast_ofNat, map_zero, zero_apply, model_zero,
-    mul_zero, add_zero, weightedInner_apply, weightedNormSq_zero, ContinuousLinearMap.fderiv,
-    Pi.one_apply, one_mul] at hmul ⊢
+  simp only [smul_apply, nsmul_eq_mul, Nat.cast_ofNat, zero_apply, mul_zero, add_zero,
+    weightedInner_apply, ContinuousLinearMap.fderiv, Pi.one_apply, one_mul] at hmul ⊢
   rw [hsum]
   linarith
+
+/-- The second derivative of the chart model at the origin is twice the weighted inner product with
+the weights `ν j - a`. -/
+private theorem fderiv_fderiv_model_zero (a : ℝ) (ν : Fin n → ℝ) :
+    fderiv ℝ (fderiv ℝ (model 𝕜 a ν)) 0 = 2 • weightedInner 𝕜 (fun j ↦ ν j - a) := by
+  ext v w
+  simpa [weightedNormSq_zero] using
+    one_add_weightedNormSq_one_mul_fderiv_fderiv_model (a := a) (ν := ν) (z := (0 : Fin n → 𝕜))
+      (fun _ ↦ Or.inl rfl) v w
+
+/-- **The Hessian of the chart model at a critical point.** If every nonzero coordinate `z j`
+carries the weight `ν j = a`, then `1 + ∑ j, ‖z j‖ ^ 2` times the second derivative of the model at
+`z` is the bilinear form `(v, w) ↦ 2 * ∑ j, (ν j - a) * ⟪v j, w j⟫`. -/
+theorem one_add_sum_mul_fderiv_fderiv_model_apply {a : ℝ} {ν : Fin n → ℝ} {z : Fin n → 𝕜}
+    (hz : ∀ j, z j = 0 ∨ ν j = a) (v w : Fin n → 𝕜) :
+    (1 + ∑ j, ‖z j‖ ^ 2) * fderiv ℝ (fderiv ℝ (model 𝕜 a ν)) z v w =
+      2 * ∑ j, (ν j - a) * ⟪v j, w j⟫ := by
+  simpa [weightedNormSq, weightedInner_apply] using
+    one_add_weightedNormSq_one_mul_fderiv_fderiv_model hz v w
+
+/-- **The kernel of the Hessian of the chart model at a critical point.** If every nonzero
+coordinate `z j` carries the weight `ν j = a`, a vector `v` lies in the kernel of the second
+derivative of the model at `z` exactly when its coordinates `v j` of weight `ν j ≠ a` vanish. -/
+theorem fderiv_fderiv_model_apply_eq_zero_iff {a : ℝ} {ν : Fin n → ℝ} {z : Fin n → 𝕜}
+    (hz : ∀ j, z j = 0 ∨ ν j = a) (v : Fin n → 𝕜) :
+    fderiv ℝ (fderiv ℝ (model 𝕜 a ν)) z v = 0 ↔ ∀ j, ν j ≠ a → v j = 0 := by
+  have hpos := one_add_weightedNormSq_one_pos z
+  refine ⟨fun hv j hj ↦ ?_, fun hv ↦ ContinuousLinearMap.ext fun w ↦ ?_⟩
+  · have h := one_add_weightedNormSq_one_mul_fderiv_fderiv_model hz v (Pi.single j (v j))
+    rw [hv, zero_apply, mul_zero, weightedInner_single, real_inner_self_eq_norm_sq] at h
+    simpa [sub_ne_zero.mpr hj] using h
+  · have h := one_add_weightedNormSq_one_mul_fderiv_fderiv_model hz v w
+    have hsum : weightedInner 𝕜 (fun j ↦ ν j - a) v w = 0 := by
+      rw [weightedInner_apply]
+      refine Finset.sum_eq_zero fun j _ ↦ ?_
+      by_cases hj : ν j = a
+      · simp [hj]
+      · simp [hv j hj]
+    rw [hsum, mul_zero] at h
+    exact (mul_eq_zero.mp h).resolve_left hpos.ne'
+
 /-- The Hessian quadratic form of the chart model at the origin is
 `v ↦ 2 * ∑ j, (ν j - a) * ‖v j‖ ^ 2`. -/
 theorem hessianQuadraticForm_model_zero (a : ℝ) (ν : Fin n → ℝ) (v : Fin n → 𝕜) :
@@ -380,7 +428,9 @@ theorem projectiveMomentFunction_mk_single (w : Fin (n + 1) → ℝ) (k : Fin (n
   rw [← affineChart_symm_zero, ← comp_apply (f := projectiveMomentFunction 𝕜 w),
     projectiveMomentFunction_comp_affineChart_symm, model_zero]
 
-private theorem projectiveMomentFunction_comp_extend_symm (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
+/-- In the extended affine chart at the coordinate `k`, for the real model, the moment function
+with weights `w` is the chart model with `a = w k` and `ν = w ∘ k.succAbove`. -/
+theorem projectiveMomentFunction_comp_extend_symm (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
     projectiveMomentFunction 𝕜 w ∘ ((affineOpenPartialHomeomorph k).extend 𝓘(ℝ, Fin n → 𝕜)).symm =
       model 𝕜 (w k) (w ∘ k.succAbove) := by
   ext z
