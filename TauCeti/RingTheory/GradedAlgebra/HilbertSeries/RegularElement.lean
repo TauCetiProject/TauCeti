@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.GradedAlgebra.Basic
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Quotient
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
@@ -30,6 +30,11 @@ of a quotient by a homogeneous regular sequence, in particular a coinvariant alg
 presented by homogeneous basic invariants. The quotient pieces are the images of the
 original graded pieces under the quotient map.
 
+Homogeneity of `f` alone gives exactness: in each degree `d + n` the kernel of the quotient
+map is the set of multiples of `f` from degree `n` (below degree `d` the quotient map is
+bijective). Regularity of `f` is what makes multiplication by `f` injective, so that this exact
+sequence becomes a short exact sequence and yields the dimension identity.
+
 ## Main results
 
 * `finrank_quotientPiece_span_singleton_add`: the dimension identity in degrees at least `d`.
@@ -40,11 +45,6 @@ original graded pieces under the quotient map.
 
 * R. P. Stanley, *Invariants of finite groups and their applications to combinatorics*,
   Bull. Amer. Math. Soc. (N.S.) **1** (1979), §3.
-
-Homogeneity of `f` alone gives exactness: in each degree the kernel of the quotient map is
-the set of multiples of `f` from the appropriate lower degree. Regularity of `f` is what makes
-multiplication by `f` injective, so that this exact sequence becomes a short exact sequence
-and yields the dimension identity.
 -/
 
 public section
