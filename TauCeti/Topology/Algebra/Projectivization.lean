@@ -94,7 +94,7 @@ variable {W : Type*} [AddCommGroup W] [Module K W] [TopologicalSpace W]
 
 /-- A continuous linear equivalence `V ≃L[K] W` induces a homeomorphism `ℙ K V ≃ₜ ℙ K W`, sending
 the line spanned by `v` to the line spanned by `e v`. -/
-@[expose] def _root_.ContinuousLinearEquiv.mapProjectivization (e : V ≃L[K] W) :
+def _root_.ContinuousLinearEquiv.mapProjectivization (e : V ≃L[K] W) :
     ℙ K V ≃ₜ ℙ K W where
   toFun := map (e : V →ₗ[K] W) e.injective
   invFun := map (e.symm : W →ₗ[K] V) e.symm.injective
@@ -108,12 +108,12 @@ the line spanned by `v` to the line spanned by `e v`. -/
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_mk (e : V ≃L[K] W) (v : V) (hv : v ≠ 0) :
     e.mapProjectivization (mk K v hv) = mk K (e v) ((map_ne_zero_iff e e.injective).2 hv) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.symm_mapProjectivization (e : V ≃L[K] W) :
     e.mapProjectivization.symm = e.symm.mapProjectivization :=
-  rfl
+  (rfl)
 
 end MapProjectivization
 
