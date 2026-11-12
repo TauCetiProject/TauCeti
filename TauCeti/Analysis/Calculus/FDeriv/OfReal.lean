@@ -25,7 +25,6 @@ sides vanish when `f` is not differentiable at `x`.
 
 * `TauCeti.fderiv_ofReal_comp_apply`: the real derivative of `y ↦ (f y : ℂ)` is the
   complexification of the real derivative of `f`.
-* `HasFDerivAt.ofReal_comp`: `y ↦ (f y : ℂ)` has the complexified derivative of `f`.
 * `DifferentiableAt.ofReal_comp`, `TauCeti.norm_fderiv_ofReal_comp_le`: `y ↦ (f y : ℂ)` is
   differentiable where `f` is, and its real derivative has norm at most `‖Df(x)‖`.
 * `ContDiffAt.hasFDerivAt_fderiv_ofReal_comp_apply`: at a `C²` point of `f`, the complexified
@@ -44,20 +43,15 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- If a real function `f` has derivative `f'` at `x`, then `y ↦ (f y : ℂ)` has the
-complexified derivative `ofRealCLM ∘ f'` at `x`. -/
-theorem _root_.HasFDerivAt.ofReal_comp {f : E → ℝ} {f' : E →L[ℝ] ℝ} {x : E}
-    (hf : HasFDerivAt f f' x) :
-    HasFDerivAt (fun y ↦ (f y : ℂ)) (ofRealCLM.comp f') x :=
-  ofRealCLM.hasFDerivAt.comp x hf
-
 /-- Composing a real function with the inclusion `ℝ → ℂ` does not change its real derivative.
 No differentiability is assumed: both sides vanish when `f` is not differentiable at `x`. -/
 @[simp]
 theorem fderiv_ofReal_comp_apply (f : E → ℝ) (x v : E) :
     fderiv ℝ (fun y ↦ (f y : ℂ)) x v = fderiv ℝ f x v := by
   by_cases hf : DifferentiableAt ℝ f x
-  · simp [hf.hasFDerivAt.ofReal_comp.fderiv]
+  · have h : HasFDerivAt (fun y ↦ (f y : ℂ)) (ofRealCLM.comp (fderiv ℝ f x)) x :=
+      ofRealCLM.hasFDerivAt.comp x hf.hasFDerivAt
+    simp [h.fderiv]
   · have hf' : ¬DifferentiableAt ℝ (fun y ↦ (f y : ℂ)) x := fun h ↦ by
       have hre := reCLM.differentiableAt.comp x h
       exact hf (by simpa [Function.comp_def] using hre)
@@ -83,7 +77,7 @@ theorem _root_.ContDiffAt.hasFDerivAt_fderiv_ofReal_comp_apply {f : E → ℝ} {
     HasFDerivAt (fun y ↦ fderiv ℝ (fun z ↦ (f z : ℂ)) y u)
       (ofRealCLM.comp ((fderiv ℝ (fderiv ℝ f) x).flip u)) x := by
   simpa only [fderiv_ofReal_comp_apply, Function.comp_def, ofRealCLM_apply] using
-    (hf.hasFDerivAt_fderiv_apply le_rfl u).ofReal_comp
+    ofRealCLM.hasFDerivAt.comp x (hf.hasFDerivAt_fderiv_apply le_rfl u)
 
 /-- For real functions `f, g` differentiable at `x`, the real derivative of `f + i g` is
 `Df + i Dg`. -/

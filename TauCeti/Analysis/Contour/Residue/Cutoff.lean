@@ -14,11 +14,12 @@ import TauCeti.MeasureTheory.Integral.Circle.Integral
 # The residue as the integral of a cutoff against a meromorphic function
 
 Let `f` be meromorphic at a point `z₀` of the open disc `|z - c| < R` and holomorphic at every
-other point of the closed disc `|z - c| ≤ R`, and let `χ` be a real function, `C¹` on the closed
-disc, equal to `1` near `z₀` and vanishing on the circle `|z - c| = R`. The `1`-form `(1 - χ) f dz`
-is then `C¹` on the whole closed disc (`TauCeti.Contour.contDiffAt_one_sub_mul_smul_dzForm`), it
-agrees with `f dz` on the boundary circle, and away from `z₀` its exterior derivative is
-`-dχ ∧ f dz`, since `f dz` is closed (`TauCeti.Contour.extDeriv_one_sub_mul_smul_dzForm_apply`).
+other point of the closed disc `|z - c| ≤ R`, and let `χ` be a real function, `C¹` at every point
+of the closed disc, equal to `1` near `z₀` and vanishing on the circle `|z - c| = R`. The `1`-form
+`(1 - χ) f dz` is then `C¹` at every point of the closed disc
+(`TauCeti.Contour.contDiffAt_one_sub_mul_smul_dzForm`), it agrees with `f dz` on the boundary
+circle, and away from `z₀` its exterior derivative is `-dχ ∧ f dz`, since `f dz` is closed
+(`TauCeti.Contour.extDeriv_one_sub_mul_smul_dzForm_apply`).
 Stokes' formula on the disc (`TauCeti.integral_extDeriv_closedBall`) together with the residue
 theorem on a circle gives
 `∫_{|z - c| ≤ R} d((1 - χ) f dz) = ∮_{|z - c| = R} f dz = 2πi · Res_{z₀} f`
@@ -74,9 +75,9 @@ theorem contDiffAt_one_sub_mul_smul_dzForm {n : WithTop ℕ∞} (hχ : ContDiffA
 
 /-- **The residue as the integral of the exterior derivative of a cutoff `1`-form.** Let `f` be
 meromorphic at a point `z₀` of the open disc of radius `R` about `c` and holomorphic at every other
-point of the closed disc, and let `χ` be a real function, `C¹` on the closed disc, equal to `1`
-near `z₀` and vanishing on the boundary circle. Then the integral of `d((1 - χ) f dz)` over the disc
-is `2πi · Res_{z₀} f`. -/
+point of the closed disc, and let `χ` be a real function, `C¹` at every point of the closed disc,
+equal to `1` near `z₀` and vanishing on the boundary circle. Then the integral of
+`d((1 - χ) f dz)` over the disc is `2πi · Res_{z₀} f`. -/
 theorem integral_extDeriv_one_sub_mul_smul_dzForm_closedBall_eq_residue (hz₀ : z₀ ∈ ball c R)
     (hf : MeromorphicAt f z₀) (hfa : ∀ z ∈ closedBall c R, z ≠ z₀ → AnalyticAt ℂ f z)
     (hχ : ∀ z ∈ closedBall c R, ContDiffAt ℝ 1 χ z) (hχz₀ : χ =ᶠ[𝓝 z₀] 1)
@@ -92,17 +93,18 @@ theorem integral_extDeriv_one_sub_mul_smul_dzForm_closedBall_eq_residue (hz₀ :
     · exact .inr (hzz₀ ▸ hχz₀)
     · exact .inl ((hfa z hz hzz₀).contDiffAt.restrict_scalars ℝ)
   rw [integral_extDeriv_closedBall hR hω, ← circleIntegral_eq_residue hz₀ hf hfa,
-    circleIntegral_eq_intervalIntegral_add_two_pi f c R (-π), show -π + 2 * π = π by ring]
+    ← integral_neg_pi_pi_eq_circleIntegral]
   refine intervalIntegral.integral_congr fun θ _ ↦ ?_
   simp [hχR _ (circleMap_mem_sphere c hR θ), mul_comm]
 
-/-- The exterior derivative of the cutoff `1`-form `(1 - χ) f dz` on the standard frame is
-`-f · (i ∂ₓχ - ∂_yχ)` at a point `z` where `χ` is real differentiable and either `f` is complex
-differentiable (so `f dz` is closed at `z`) or `χ = 1` near `z` (so both sides vanish). -/
+/-- The exterior derivative of the cutoff `1`-form `(1 - χ) f dz` on a pair of vectors is
+`d((1 - χ) f dz)(v, w) = -f · (w dχ(v) - v dχ(w))` at a point `z` where `χ` is real
+differentiable and either `f` is complex differentiable (so `f dz` is closed at `z`) or `χ = 1`
+near `z` (so both sides vanish). -/
 theorem extDeriv_one_sub_mul_smul_dzForm_apply (hχ : DifferentiableAt ℝ χ z)
-    (hf : DifferentiableAt ℂ f z ∨ χ =ᶠ[𝓝 z] 1) :
-    extDeriv (fun y ↦ (((1 - χ y : ℝ) : ℂ) * f y) • dzForm) z ![1, I] =
-      -(f z * (I * fderiv ℝ χ z 1 - fderiv ℝ χ z I)) := by
+    (hf : DifferentiableAt ℂ f z ∨ χ =ᶠ[𝓝 z] 1) (v w : ℂ) :
+    extDeriv (fun y ↦ (((1 - χ y : ℝ) : ℂ) * f y) • dzForm) z ![v, w] =
+      -(f z * (w * fderiv ℝ χ z v - v * fderiv ℝ χ z w)) := by
   rcases hf with hf | hχz
   · have hω : (fun y ↦ (((1 - χ y : ℝ) : ℂ) * f y) • dzForm) =
         (fun y ↦ 1 - χ y) • fun y ↦ f y • dzForm := by
@@ -136,6 +138,7 @@ theorem integral_mul_fderiv_sub_fderiv_closedBall_eq_neg_residue (hz₀ : z₀ �
     by_cases hzz₀ : z = z₀
     · exact .inr (hzz₀ ▸ hχz₀)
     · exact .inl (hfa z hz hzz₀).differentiableAt
-  rw [extDeriv_one_sub_mul_smul_dzForm_apply ((hχ z hz).differentiableAt one_ne_zero) hfz, neg_neg]
+  rw [extDeriv_one_sub_mul_smul_dzForm_apply ((hχ z hz).differentiableAt one_ne_zero) hfz 1 I,
+    one_mul, neg_neg]
 
 end TauCeti.Contour
