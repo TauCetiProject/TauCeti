@@ -436,6 +436,9 @@ theorem exists_isPullbackTrivialization_of_boundary {Z : Type*} [TopologicalSpac
       ⟨{ toFun := fun q ↦ f (q.2.1, fun i ↦ σ q.1 * q.2.2 i)
          map_zero_left := fun p ↦ by simp
          map_one_left := fun p ↦ hf _ _ ⟨Classical.arbitrary N, Or.inl (by simp)⟩ }⟩
+  -- The coercion of `ContinuousMap.const _ y` is `fun _ ↦ y` by definition. Rewriting it with
+  -- `ContinuousMap.coe_const` is not possible, since it occurs in the type of `Φ`, so `Φ`, `h₁` and
+  -- `h₂` are used as they are, as a pullback trivialization with fibre `E y`.
   exact ⟨Φ, h₁, h₂⟩
 
 /-- The pullback of `E` to the cube along a based sphere `γ : Ω^ N Y y` has a pullback

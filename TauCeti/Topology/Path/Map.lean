@@ -35,6 +35,7 @@ theorem map'_coe (γ : Path x y) {f : X → Y} (h : ContinuousOn f (Set.range γ
 
 /-- The image of a concatenation of paths along a map continuous on its range is the concatenation
 of the images. -/
+@[simp]
 theorem map'_trans (γ : Path x y) (γ' : Path y z) {f : X → Y}
     (h : ContinuousOn f (Set.range (γ.trans γ'))) :
     (γ.trans γ').map' h =

@@ -10,6 +10,8 @@ public import TauCeti.Topology.VectorBundle.HomotopyInvariance
 public import TauCeti.Topology.Circle.Degree
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Topology.Homotopy.Cube.SquareBoundary
+import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
 import TauCeti.Topology.Path.Map
 
 /-!
@@ -54,7 +56,6 @@ first Chern class in cohomology, nor treat surfaces other than spheres.
 
 ## Main definitions
 
-* `TauCeti.squareBoundaryLoop`: the counterclockwise boundary loop of the square.
 * `TauCeti.clutchingFunction`: the clutching function over the square of an identification
   `TauCeti.IsPullbackTrivialization` of the pulled-back bundle with the trivial bundle with fibre
   `E x`.
@@ -86,97 +87,58 @@ open scoped unitInterval Topology.Homotopy
 
 namespace TauCeti
 
-/-! ### The boundary loop of the square -/
+/-! ### The halves of the square -/
 
-/-- The bottom edge `y 1 = 0` of the square, from `0` to `![1, 0]`. -/
-private def squareEdge₀ : Path (0 : I^Fin 2) ![1, 0] where
-  toFun t := ![t, 0]
-  source' := by ext i; fin_cases i <;> rfl
-  target' := rfl
+/-- The first half of the square meets the bottom edge in its first half. -/
+private theorem firstHalf_squareEdge₀ (t : I) :
+    Cube.firstHalf 0 (squareEdge₀ t) = squareEdge₀ (projIcc 0 1 zero_le_one ((t : ℝ) / 2)) := by
+  ext j; fin_cases j <;> simp [Cube.firstHalf_apply]
 
-/-- The right edge `y 0 = 1` of the square, from `![1, 0]` to `![1, 1]`. -/
-private def squareEdge₁ : Path (![1, 0] : I^Fin 2) ![1, 1] where
-  toFun t := ![1, t]
-  source' := rfl
-  target' := rfl
+/-- The second half of the square meets the bottom edge in its second half. -/
+private theorem secondHalf_squareEdge₀ (t : I) :
+    Cube.secondHalf 0 (squareEdge₀ t) =
+      squareEdge₀ (projIcc 0 1 zero_le_one (((t : ℝ) + 1) / 2)) := by
+  ext j; fin_cases j <;> simp [Cube.secondHalf_apply]
 
-/-- The top edge `y 1 = 1` of the square, from `![1, 1]` to `![0, 1]`. -/
-private def squareEdge₂ : Path (![1, 1] : I^Fin 2) ![0, 1] where
-  toFun t := ![σ t, 1]
-  source' := by simp
-  target' := by simp
+/-- The first half of the square meets the top edge in its second half. -/
+private theorem firstHalf_squareEdge₂ (t : I) :
+    Cube.firstHalf 0 (squareEdge₂ t) =
+      squareEdge₂ (σ (projIcc 0 1 zero_le_one ((σ t : ℝ) / 2))) := by
+  ext j; fin_cases j <;> simp [Cube.firstHalf_apply]
 
-/-- The left edge `y 0 = 0` of the square, from `![0, 1]` to `0`. -/
-private def squareEdge₃ : Path (![0, 1] : I^Fin 2) 0 where
-  toFun t := ![0, σ t]
-  source' := by simp
-  target' := by ext i; fin_cases i <;> simp
+/-- The second half of the square meets the top edge in its first half. -/
+private theorem secondHalf_squareEdge₂ (t : I) :
+    Cube.secondHalf 0 (squareEdge₂ t) =
+      squareEdge₂ (σ (projIcc 0 1 zero_le_one (((σ t : ℝ) + 1) / 2))) := by
+  ext j; fin_cases j <;> simp [Cube.secondHalf_apply]
 
-/-- The loop running once around the boundary of the square `I^(Fin 2)`, counterclockwise for
-the orientation in which coordinate `0` comes first: from the corner `0` along the edge
-`y 1 = 0`, then up the edge `y 0 = 1`, back along the edge `y 1 = 1` and down the edge `y 0 = 0`. -/
-def squareBoundaryLoop : Path (0 : I^Fin 2) 0 :=
-  squareEdge₀.trans <| squareEdge₁.trans <| squareEdge₂.trans squareEdge₃
+/-- The left edge of the first half of the square is the left edge of the square. -/
+private theorem firstHalf_squareEdge₃ (t : I) :
+    Cube.firstHalf 0 (squareEdge₃ t) = squareEdge₃ t := by
+  ext j; fin_cases j <;> simp [Cube.firstHalf_apply]
 
-/-- The boundary loop of the square runs along the boundary. -/
-theorem squareBoundaryLoop_mem_boundary (t : I) :
-    squareBoundaryLoop t ∈ Cube.boundary (Fin 2) := by
-  have h := mem_range_self (f := squareBoundaryLoop) t
-  rw [squareBoundaryLoop, Path.trans_range, Path.trans_range, Path.trans_range] at h
-  rcases h with ⟨r, hr⟩ | ⟨r, hr⟩ | ⟨r, hr⟩ | ⟨r, hr⟩ <;> rw [squareBoundaryLoop, ← hr]
-  · exact ⟨1, Or.inl rfl⟩
-  · exact ⟨0, Or.inr rfl⟩
-  · exact ⟨1, Or.inr rfl⟩
-  · exact ⟨0, Or.inl rfl⟩
+/-- The right edge of the second half of the square is the right edge of the square. -/
+private theorem secondHalf_squareEdge₁ (t : I) :
+    Cube.secondHalf 0 (squareEdge₁ t) = squareEdge₁ t := by
+  ext j; fin_cases j <;> simp [Cube.secondHalf_apply]
 
-/-- The map of the square onto its left half `y 0 ≤ 1 / 2`, halving the coordinate `0`. -/
-private def leftHalf (y : I^Fin 2) : I^Fin 2 :=
-  ![Set.projIcc 0 1 zero_le_one ((y 0 : ℝ) / 2), y 1]
+/-- The left edge of the second half of the square is the seam, the right edge of the first half,
+traversed backwards. -/
+private theorem secondHalf_squareEdge₃ (t : I) :
+    Cube.secondHalf 0 (squareEdge₃ t) = Cube.firstHalf 0 (squareEdge₁ (σ t)) := by
+  ext j; fin_cases j <;> simp [Cube.firstHalf_apply, Cube.secondHalf_apply]
 
-/-- The map of the square onto its right half `1 / 2 ≤ y 0`. -/
-private def rightHalf (y : I^Fin 2) : I^Fin 2 :=
-  ![Set.projIcc 0 1 zero_le_one (((y 0 : ℝ) + 1) / 2), y 1]
-
-private theorem continuous_leftHalf : Continuous leftHalf := by
-  unfold leftHalf
-  fun_prop
-
-private theorem continuous_rightHalf : Continuous rightHalf := by
-  unfold rightHalf
-  fun_prop
-
-/-- The concatenation `transAt 0 q p` of based spheres along the coordinate `0` restricts to `q` on
-the left half of the square. -/
-private theorem transAt_leftHalf {X : Type*} [TopologicalSpace X] {x : X} (q p : Ω^ (Fin 2) X x)
-    (y : I^Fin 2) : GenLoop.transAt 0 q p (leftHalf y) = q y := by
-  have hy : ((y 0 : ℝ) / 2) ∈ Icc (0 : ℝ) 1 := ⟨by linarith [(y 0).2.1], by linarith [(y 0).2.2]⟩
-  simp only [GenLoop.transAt, GenLoop.coe_copy]
-  split_ifs with h
-  · congr 1
-    ext j
-    fin_cases j <;> simp [leftHalf, Set.projIcc_of_mem _ hy,
-      show 2 * ((y 0 : ℝ) / 2) = y 0 by ring, Set.projIcc_of_mem _ (y 0).2]
-  · simp [leftHalf, Set.projIcc_of_mem _ hy] at h
-    linarith [(y 0).2.2]
-
-/-- The concatenation `transAt 0 q p` of based spheres along the coordinate `0` restricts to `p` on
-the right half of the square. -/
-private theorem transAt_rightHalf {X : Type*} [TopologicalSpace X] {x : X} (q p : Ω^ (Fin 2) X x)
-    (y : I^Fin 2) : GenLoop.transAt 0 q p (rightHalf y) = p y := by
-  have hy : (((y 0 : ℝ) + 1) / 2) ∈ Icc (0 : ℝ) 1 :=
-    ⟨by linarith [(y 0).2.1], by linarith [(y 0).2.2]⟩
-  simp only [GenLoop.transAt, GenLoop.coe_copy]
-  split_ifs with h
-  · -- On the seam `y 0 = 0` both sides take the base point value.
-    simp only [rightHalf, Matrix.cons_val_zero, Set.projIcc_of_mem _ hy] at h
-    have h0 : (y 0 : ℝ) = 0 := le_antisymm (by linarith) (y 0).2.1
-    rw [GenLoop.boundary p y ⟨0, Or.inl (Subtype.ext h0)⟩]
-    refine GenLoop.boundary q _ ⟨0, Or.inr ?_⟩
-    simp [rightHalf, h0, Set.projIcc_of_mem _ (show (2⁻¹ : ℝ) ∈ Icc 0 1 by norm_num)]
-  · congr 1
-    ext j
-    fin_cases j <;> simp [rightHalf, Set.projIcc_of_mem _ hy,
-      show 2 * (((y 0 : ℝ) + 1) / 2) - 1 = y 0 by ring, Set.projIcc_of_mem _ (y 0).2]
+/-- A map `H` to the circle which is continuous on a set `U` sweeps, along a path `u` in `U` that
+reparametrizes a path `v` in `U` by `r`, the angle `θ (r 1) - θ (r 0)` for every continuous lift
+`θ` of `H` along `v`. -/
+private theorem angleChange_map'_eq_sub_of_reparam {Y : Type*} [TopologicalSpace Y]
+    {H : Y → Circle} {U : Set Y} (hH : ContinuousOn H U) {a b c d : Y} {u : Path a b}
+    {v : Path c d} (hu : ∀ t, u t ∈ U) (hv : ∀ t, v t ∈ U) {θ : I → ℝ} (hθ : Continuous θ)
+    (hθv : ∀ s, Circle.exp (θ s) = v.map' (hH.mono (range_subset_iff.2 hv)) s) {r : I → I}
+    (hr : Continuous r) (h : ∀ t, u t = v (r t)) :
+    Circle.angleChange (u.map' (hH.mono (range_subset_iff.2 hu))) = θ (r 1) - θ (r 0) :=
+  Circle.angleChange_eq_sub_of_reparam _ _ hθ hθv hr fun t ↦ by
+    simp only [Path.map'_coe, comp_apply, h]
 
 /-! ### The clutching number -/
 
@@ -241,8 +203,8 @@ private theorem degree_eq_zero_of_continuous {A : (I^Fin 2) → F →L[ℂ] F} (
   refine (Circle.degree_eq_of_homotopy δ (Path.refl (A 0).detPhase) G
     (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)).trans (Circle.degree_refl _)
   · simp only [G, ContinuousMap.coe_mk, unitInterval.symm_zero, one_mul, hδ]
-  · simp only [G, ContinuousMap.coe_mk, unitInterval.symm_one, zero_mul, Path.refl_apply]
-    rfl
+  · simp only [G, ContinuousMap.coe_mk, unitInterval.symm_one, zero_mul, Path.refl_apply,
+      ← Pi.zero_def]
   · simp only [G, ContinuousMap.coe_mk, Path.source, Path.target]
 
 variable [FiniteDimensional ℂ F]
@@ -380,6 +342,24 @@ theorem clutchingChernNumber_eq_of_homotopic {γ₀ γ₁ : Ω^ (Fin 2) X x}
   exact Circle.degree_eq_of_homotopy _ _ G (fun _ ↦ rfl) (fun _ ↦ rfl) fun s ↦ by
     simp only [G, ContinuousMap.coe_mk, Path.source, Path.target]
 
+/-- The clutching Chern number of a based sphere `q` which factors as `γ ∘ g` through a based
+sphere `γ` may be computed from the restriction along `g` of a pullback trivialization of `γ`. -/
+private theorem clutchingChernNumber_eq_degree_comp (γ q : Ω^ (Fin 2) X x)
+    {Φ : ∀ y, E (γ y) ≃L[ℂ] E x} (hΦ : IsPullbackTrivialization F γ x Φ)
+    {g : (I^Fin 2) → I^Fin 2} (hg : Continuous g) (hq : ∀ y, γ (g y) = q y) {c : Circle}
+    (δ : Path c c)
+    (hδ : ∀ t, (δ t : ℂ) = (clutchingFunction F γ Φ (g (squareBoundaryLoop t))).det /
+      ‖(clutchingFunction F γ Φ (g (squareBoundaryLoop t))).det‖) :
+    clutchingChernNumber F E q = Circle.degree δ := by
+  have h := clutchingChernNumber_eq_degree (F := F) (E := E) (GenLoop.copy q (γ ∘ g) (funext hq))
+    (Φ := fun y ↦ Φ (g y)) (hΦ.comp hg) δ fun t ↦ by
+      rw [hδ]
+      -- `GenLoop.copy q (γ ∘ g) _` coerces to `γ ∘ g` by definition, which is what makes
+      -- `fun y ↦ Φ (g y)` a family over it; its clutching function at `y` is by definition that of
+      -- `γ` at `g y`.
+      rfl
+  rwa [GenLoop.copy_eq] at h
+
 /-- **Additivity.** The clutching Chern number of the concatenation `transAt 0 q p` of two based
 spheres along the coordinate `0` is the sum of their clutching Chern numbers. The boundary loops
 of the two halves of the square traverse the seam `y 0 = 1 / 2` in opposite directions, so the
@@ -410,107 +390,76 @@ theorem clutchingChernNumber_transAt (q p : Ω^ (Fin 2) X x) :
         ‖(clutchingFunction F γ Φ (c t)).det‖ := by
     rw [Path.map'_coe, comp_apply, ContinuousLinearMap.coe_detPhase
       (det_clutchingFunction_ne_zero Φ (hc t))]
-  have hb {y : I^Fin 2} (hy : y ∈ Cube.boundary (Fin 2)) : y ∈ U := memU (GenLoop.boundary γ y hy)
-  have hl {y : I^Fin 2} (hy : y ∈ Cube.boundary (Fin 2)) : leftHalf y ∈ U :=
-    memU ((transAt_leftHalf q p y).trans (GenLoop.boundary q y hy))
-  have hr {y : I^Fin 2} (hy : y ∈ Cube.boundary (Fin 2)) : rightHalf y ∈ U :=
-    memU ((transAt_rightHalf q p y).trans (GenLoop.boundary p y hy))
-  have hβ (t : I) := squareBoundaryLoop_mem_boundary t
-  have hβL (t : I) : squareBoundaryLoop.map continuous_leftHalf t ∈ U := by
+  -- Paths along the boundary of the square and their images in the two halves lie in `U`.
+  have hb {a b : I^Fin 2} {c : Path a b} (hc : ∀ t, c t ∈ Cube.boundary (Fin 2)) (t : I) :
+      c t ∈ U :=
+    memU (GenLoop.boundary γ _ (hc t))
+  have hl {a b : I^Fin 2} {c : Path a b} (hc : ∀ t, c t ∈ Cube.boundary (Fin 2)) (t : I) :
+      c.map (Cube.continuous_firstHalf 0) t ∈ U := by
     rw [Path.map_coe, comp_apply]
-    exact hl (hβ t)
-  have hβR (t : I) : squareBoundaryLoop.map continuous_rightHalf t ∈ U := by
+    exact memU ((GenLoop.transAt_firstHalf 0 q p _).trans (GenLoop.boundary q _ (hc t)))
+  have hr {a b : I^Fin 2} {c : Path a b} (hc : ∀ t, c t ∈ Cube.boundary (Fin 2)) (t : I) :
+      c.map (Cube.continuous_secondHalf 0) t ∈ U := by
     rw [Path.map_coe, comp_apply]
-    exact hr (hβ t)
+    exact memU ((GenLoop.transAt_secondHalf 0 q p _).trans (GenLoop.boundary p _ (hc t)))
+  have hβ := squareBoundaryLoop_mem_boundary
   -- The three clutching numbers as degrees of loops of phases.
-  have hγ : clutchingChernNumber F E γ =
-      Circle.degree (squareBoundaryLoop.map' (hm fun t ↦ hb (hβ t))) :=
-    clutchingChernNumber_eq_degree γ hΦ _ (hHc fun t ↦ hb (hβ t))
+  have hγ : clutchingChernNumber F E γ = Circle.degree (squareBoundaryLoop.map' (hm (hb hβ))) :=
+    clutchingChernNumber_eq_degree γ hΦ _ (hHc (hb hβ))
   have hq : clutchingChernNumber F E q =
-      Circle.degree ((squareBoundaryLoop.map continuous_leftHalf).map' (hm hβL)) := by
-    have h := clutchingChernNumber_eq_degree (F := F) (E := E)
-      (GenLoop.copy q (γ ∘ leftHalf) (funext (transAt_leftHalf q p)))
-      (Φ := fun y ↦ Φ (leftHalf y)) (hΦ.comp continuous_leftHalf)
-      ((squareBoundaryLoop.map continuous_leftHalf).map' (hm hβL)) fun t ↦ by
-        rw [hHc hβL, Path.map_coe, comp_apply]
-        rfl
-    rwa [GenLoop.copy_eq] at h
+      Circle.degree ((squareBoundaryLoop.map (Cube.continuous_firstHalf 0)).map' (hm (hl hβ))) :=
+    clutchingChernNumber_eq_degree_comp γ q hΦ (Cube.continuous_firstHalf 0)
+      (GenLoop.transAt_firstHalf 0 q p) _ fun t ↦ by rw [hHc (hl hβ), Path.map_coe, comp_apply]
   have hp : clutchingChernNumber F E p =
-      Circle.degree ((squareBoundaryLoop.map continuous_rightHalf).map' (hm hβR)) := by
-    have h := clutchingChernNumber_eq_degree (F := F) (E := E)
-      (GenLoop.copy p (γ ∘ rightHalf) (funext (transAt_rightHalf q p)))
-      (Φ := fun y ↦ Φ (rightHalf y)) (hΦ.comp continuous_rightHalf)
-      ((squareBoundaryLoop.map continuous_rightHalf).map' (hm hβR)) fun t ↦ by
-        rw [hHc hβR, Path.map_coe, comp_apply]
-        rfl
-    rwa [GenLoop.copy_eq] at h
-  -- The edges of the square and the seam, with continuous lifts of the phase along them.
-  have he₀ (t : I) : squareEdge₀ t ∈ Cube.boundary (Fin 2) := ⟨1, Or.inl rfl⟩
-  have he₁ (t : I) : squareEdge₁ t ∈ Cube.boundary (Fin 2) := ⟨0, Or.inr rfl⟩
-  have he₂ (t : I) : squareEdge₂ t ∈ Cube.boundary (Fin 2) := ⟨1, Or.inr rfl⟩
-  have he₃ (t : I) : squareEdge₃ t ∈ Cube.boundary (Fin 2) := ⟨0, Or.inl rfl⟩
-  obtain ⟨θB, hθB⟩ := Circle.exists_lift (squareEdge₀.map' (hm fun t ↦ hb (he₀ t)))
-  obtain ⟨θR, hθR⟩ := Circle.exists_lift (squareEdge₁.map' (hm fun t ↦ hb (he₁ t)))
-  obtain ⟨θT, hθT⟩ := Circle.exists_lift (squareEdge₂.map' (hm fun t ↦ hb (he₂ t)))
-  obtain ⟨θL, hθL⟩ := Circle.exists_lift (squareEdge₃.map' (hm fun t ↦ hb (he₃ t)))
+      Circle.degree ((squareBoundaryLoop.map (Cube.continuous_secondHalf 0)).map' (hm (hr hβ))) :=
+    clutchingChernNumber_eq_degree_comp γ p hΦ (Cube.continuous_secondHalf 0)
+      (GenLoop.transAt_secondHalf 0 q p) _ fun t ↦ by rw [hHc (hr hβ), Path.map_coe, comp_apply]
+  -- Continuous lifts of the phase along the edges of the square and the seam.
+  obtain ⟨θB, hθB⟩ := Circle.exists_lift (squareEdge₀.map' (hm (hb squareEdge₀_mem_boundary)))
+  obtain ⟨θR, hθR⟩ := Circle.exists_lift (squareEdge₁.map' (hm (hb squareEdge₁_mem_boundary)))
+  obtain ⟨θT, hθT⟩ := Circle.exists_lift (squareEdge₂.map' (hm (hb squareEdge₂_mem_boundary)))
+  obtain ⟨θL, hθL⟩ := Circle.exists_lift (squareEdge₃.map' (hm (hb squareEdge₃_mem_boundary)))
   obtain ⟨θS, hθS⟩ := Circle.exists_lift
-    ((squareEdge₁.map continuous_leftHalf).map' (hm fun t ↦ hl (he₁ t)))
+    ((squareEdge₁.map (Cube.continuous_firstHalf 0)).map' (hm (hl squareEdge₁_mem_boundary)))
   -- The angle swept along each piece, read off from the lifts along the edges and the seam.
-  have hpt {a b c d : I^Fin 2} {u : Path a b} {v : Path c d} (hu : ∀ t, u t ∈ U)
-      (hv : ∀ t, v t ∈ U) {r : I → I} (h : ∀ t, u t = v (r t)) (t : I) :
-      u.map' (hm hu) t = v.map' (hm hv) (r t) := by
-    simp only [Path.map'_coe, comp_apply, h]
   have F₀ := Circle.angleChange_eq_sub _ θB.continuous hθB
   have F₁ := Circle.angleChange_eq_sub _ θR.continuous hθR
   have F₂ := Circle.angleChange_eq_sub _ θT.continuous hθT
   have F₃ := Circle.angleChange_eq_sub _ θL.continuous hθL
   have L₁ := Circle.angleChange_eq_sub _ θS.continuous hθS
-  have L₀ := Circle.angleChange_eq_sub_of_reparam
-    ((squareEdge₀.map continuous_leftHalf).map' (hm fun t ↦ hl (he₀ t))) _ θB.continuous hθB
-    (r := fun t ↦ Set.projIcc 0 1 zero_le_one ((t : ℝ) / 2)) (by fun_prop)
-    (hpt (fun t ↦ hl (he₀ t)) (fun t ↦ hb (he₀ t)) fun t ↦ by
-      rw [Path.map_coe, comp_apply]
-      ext j; fin_cases j <;> simp [leftHalf, squareEdge₀])
-  have R₀ := Circle.angleChange_eq_sub_of_reparam
-    ((squareEdge₀.map continuous_rightHalf).map' (hm fun t ↦ hr (he₀ t))) _ θB.continuous hθB
-    (r := fun t ↦ Set.projIcc 0 1 zero_le_one (((t : ℝ) + 1) / 2)) (by fun_prop)
-    (hpt (fun t ↦ hr (he₀ t)) (fun t ↦ hb (he₀ t)) fun t ↦ by
-      rw [Path.map_coe, comp_apply]
-      ext j; fin_cases j <;> simp [rightHalf, squareEdge₀])
-  have L₂ := Circle.angleChange_eq_sub_of_reparam
-    ((squareEdge₂.map continuous_leftHalf).map' (hm fun t ↦ hl (he₂ t))) _ θT.continuous hθT
-    (r := fun t ↦ σ (Set.projIcc 0 1 zero_le_one ((σ t : ℝ) / 2))) (by fun_prop)
-    (hpt (fun t ↦ hl (he₂ t)) (fun t ↦ hb (he₂ t)) fun t ↦ by
-      rw [Path.map_coe, comp_apply]
-      ext j; fin_cases j <;> simp [leftHalf, squareEdge₂])
-  have R₂ := Circle.angleChange_eq_sub_of_reparam
-    ((squareEdge₂.map continuous_rightHalf).map' (hm fun t ↦ hr (he₂ t))) _ θT.continuous hθT
-    (r := fun t ↦ σ (Set.projIcc 0 1 zero_le_one (((σ t : ℝ) + 1) / 2))) (by fun_prop)
-    (hpt (fun t ↦ hr (he₂ t)) (fun t ↦ hb (he₂ t)) fun t ↦ by
-      rw [Path.map_coe, comp_apply]
-      ext j; fin_cases j <;> simp [rightHalf, squareEdge₂])
-  have L₃ := Circle.angleChange_eq_sub_of_reparam
-    ((squareEdge₃.map continuous_leftHalf).map' (hm fun t ↦ hl (he₃ t))) _ θL.continuous hθL
-    (r := id) continuous_id (hpt (fun t ↦ hl (he₃ t)) (fun t ↦ hb (he₃ t)) fun t ↦ by
-      rw [Path.map_coe, comp_apply]
-      ext j; fin_cases j <;> simp [leftHalf, squareEdge₃])
-  have R₁ := Circle.angleChange_eq_sub_of_reparam
-    ((squareEdge₁.map continuous_rightHalf).map' (hm fun t ↦ hr (he₁ t))) _ θR.continuous hθR
-    (r := id) continuous_id (hpt (fun t ↦ hr (he₁ t)) (fun t ↦ hb (he₁ t)) fun t ↦ by
-      rw [Path.map_coe, comp_apply]
-      ext j; fin_cases j <;> simp [rightHalf, squareEdge₁])
-  have R₃ := Circle.angleChange_eq_sub_of_reparam
-    ((squareEdge₃.map continuous_rightHalf).map' (hm fun t ↦ hr (he₃ t))) _ θS.continuous hθS
-    (r := σ) unitInterval.continuous_symm
-    (hpt (fun t ↦ hr (he₃ t)) (fun t ↦ hl (he₁ t)) fun t ↦ by
-      rw [Path.map_coe, Path.map_coe, comp_apply, comp_apply]
-      ext j; fin_cases j <;> simp [leftHalf, rightHalf, squareEdge₁, squareEdge₃])
+  have L₀ := angleChange_map'_eq_sub_of_reparam hH (hl squareEdge₀_mem_boundary)
+    (hb squareEdge₀_mem_boundary) θB.continuous hθB
+    (r := fun t ↦ projIcc 0 1 zero_le_one ((t : ℝ) / 2)) (by fun_prop) fun t ↦ by
+      rw [Path.map_coe, comp_apply, firstHalf_squareEdge₀]
+  have R₀ := angleChange_map'_eq_sub_of_reparam hH (hr squareEdge₀_mem_boundary)
+    (hb squareEdge₀_mem_boundary) θB.continuous hθB
+    (r := fun t ↦ projIcc 0 1 zero_le_one (((t : ℝ) + 1) / 2)) (by fun_prop) fun t ↦ by
+      rw [Path.map_coe, comp_apply, secondHalf_squareEdge₀]
+  have L₂ := angleChange_map'_eq_sub_of_reparam hH (hl squareEdge₂_mem_boundary)
+    (hb squareEdge₂_mem_boundary) θT.continuous hθT
+    (r := fun t ↦ σ (projIcc 0 1 zero_le_one ((σ t : ℝ) / 2))) (by fun_prop) fun t ↦ by
+      rw [Path.map_coe, comp_apply, firstHalf_squareEdge₂]
+  have R₂ := angleChange_map'_eq_sub_of_reparam hH (hr squareEdge₂_mem_boundary)
+    (hb squareEdge₂_mem_boundary) θT.continuous hθT
+    (r := fun t ↦ σ (projIcc 0 1 zero_le_one (((σ t : ℝ) + 1) / 2))) (by fun_prop) fun t ↦ by
+      rw [Path.map_coe, comp_apply, secondHalf_squareEdge₂]
+  have L₃ := angleChange_map'_eq_sub_of_reparam hH (hl squareEdge₃_mem_boundary)
+    (hb squareEdge₃_mem_boundary) θL.continuous hθL (r := id) continuous_id fun t ↦ by
+      rw [Path.map_coe, comp_apply, firstHalf_squareEdge₃, id]
+  have R₁ := angleChange_map'_eq_sub_of_reparam hH (hr squareEdge₁_mem_boundary)
+    (hb squareEdge₁_mem_boundary) θR.continuous hθR (r := id) continuous_id fun t ↦ by
+      rw [Path.map_coe, comp_apply, secondHalf_squareEdge₁, id]
+  have R₃ := angleChange_map'_eq_sub_of_reparam hH (hr squareEdge₃_mem_boundary)
+    (hl squareEdge₁_mem_boundary) θS.continuous hθS (r := σ) unitInterval.continuous_symm
+    fun t ↦ by rw [Path.map_coe, Path.map_coe, comp_apply, comp_apply, secondHalf_squareEdge₃]
   -- Each boundary loop is a concatenation of four pieces. The angles along the seam cancel, and
   -- the halves of the bottom and top edges add up.
-  have key : Circle.angleChange (squareBoundaryLoop.map' (hm fun t ↦ hb (hβ t))) =
-      Circle.angleChange ((squareBoundaryLoop.map continuous_leftHalf).map' (hm hβL)) +
-        Circle.angleChange ((squareBoundaryLoop.map continuous_rightHalf).map' (hm hβR)) := by
-    simp only [squareBoundaryLoop, Path.map_trans, Path.map'_trans, Circle.angleChange_trans]
+  have key : Circle.angleChange (squareBoundaryLoop.map' (hm (hb hβ))) =
+      Circle.angleChange
+          ((squareBoundaryLoop.map (Cube.continuous_firstHalf 0)).map' (hm (hl hβ))) +
+        Circle.angleChange
+          ((squareBoundaryLoop.map (Cube.continuous_secondHalf 0)).map' (hm (hr hβ))) := by
+    simp only [squareBoundaryLoop_def, Path.map_trans, Path.map'_trans, Circle.angleChange_trans]
     rw [F₀, F₁, F₂, F₃, L₀, L₁, L₂, L₃, R₀, R₁, R₂, R₃]
     norm_num [unitInterval.symm_zero, unitInterval.symm_one]
     ring

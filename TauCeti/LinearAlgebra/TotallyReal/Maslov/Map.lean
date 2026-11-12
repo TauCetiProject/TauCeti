@@ -19,7 +19,7 @@ Let `Λ` be a loop of maximal totally real subspaces of a finite-dimensional com
 
 where `deg (det B)` is the winding number of the loop of determinants, read as the degree of the
 circle loop `t ↦ det (B t) / ‖det (B t)‖` of normalized determinants
-(`ContinuousLinearEquiv.normalizedDet`, `TauCeti.TotallyRealLoop.maslovIndex_map`). The reason is
+(`ContinuousLinearMap.detPhase`, `TauCeti.TotallyRealLoop.maslovIndex_map`). The reason is
 that the Maslov phase
 `ρ(L₀, A L₀) = det A / conj (det A)` is multiplicative and that `z / conj z = (z / ‖z‖) ^ 2`
 for `z ≠ 0`. In particular a constant automorphism does not change the Maslov index
@@ -55,6 +55,14 @@ public section
 open scoped ComplexConjugate unitInterval
 
 namespace TauCeti
+
+/-- The determinant of an automorphism is its modulus times its determinant phase. -/
+private theorem det_eq_norm_mul_detPhase {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (A : E ≃L[ℂ] E) :
+    LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) =
+      ‖LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E)‖ * ((A : E →L[ℂ] E).detPhase : ℂ) := by
+  rw [← A.toLinearMap_toContinuousLinearMap]
+  exact (A : E →L[ℂ] E).det_eq_norm_mul_detPhase
 
 namespace TotallyRealLoop
 
@@ -95,8 +103,8 @@ complex-linear automorphism does not change its Maslov index. -/
 @[simp]
 theorem maslovIndex_map_const (A : E ≃L[ℂ] E) :
     (Λ.map (fun _ => A) continuous_const rfl).maslovIndex = Λ.maslovIndex := by
-  rw [Λ.maslovIndex_map _ _ _ (Path.refl A.normalizedDet) fun _ => A.det_eq_norm_mul_normalizedDet,
-    Circle.degree_refl, mul_zero, add_zero]
+  rw [Λ.maslovIndex_map _ _ _ (Path.refl (A : E →L[ℂ] E).detPhase)
+    fun _ => det_eq_norm_mul_detPhase A, Circle.degree_refl, mul_zero, add_zero]
 
 /-- **Homotopy invariance in the frame.** If `B` is a free homotopy of loops of complex-linear
 automorphisms, `B (s, 0) = B (s, 1)` for every `s`, then moving a loop of maximal totally real
@@ -106,14 +114,17 @@ theorem maslovIndex_map_eq_of_homotopy (B : I × I → E ≃L[ℂ] E)
     (Λ.map (fun t => B (0, t)) (hB.comp (Continuous.prodMk_right 0)) (hB01 0)).maslovIndex =
       (Λ.map (fun t => B (1, t)) (hB.comp (Continuous.prodMk_right 1)) (hB01 1)).maslovIndex := by
   -- The free homotopy of loops of normalized determinants.
-  let F : C(I × I, Circle) := ⟨fun p => (B p).normalizedDet, hB.normalizedDet⟩
+  let F : C(I × I, Circle) := ⟨fun p => (B p : E →L[ℂ] E).detPhase,
+    ContinuousLinearMap.continuous_detPhase hB fun p => by
+      rw [ContinuousLinearMap.det, (B p).toLinearMap_toContinuousLinearMap]
+      exact (B p).toLinearEquiv.isUnit_det'.ne_zero⟩
   let γ (s : I) : Path (F (s, 0)) (F (s, 0)) :=
     { toFun := fun t => F (s, t)
       continuous_toFun := by fun_prop
       source' := rfl
       target' := by simp only [F, ContinuousMap.coe_mk, hB01 s] }
-  rw [Λ.maslovIndex_map _ _ _ (γ 0) fun t => (B (0, t)).det_eq_norm_mul_normalizedDet,
-    Λ.maslovIndex_map _ _ _ (γ 1) fun t => (B (1, t)).det_eq_norm_mul_normalizedDet,
+  rw [Λ.maslovIndex_map _ _ _ (γ 0) fun t => det_eq_norm_mul_detPhase (B (0, t)),
+    Λ.maslovIndex_map _ _ _ (γ 1) fun t => det_eq_norm_mul_detPhase (B (1, t)),
     Circle.degree_eq_of_homotopy (γ 0) (γ 1) F (fun _ => rfl) (fun _ => rfl)
       fun s => (γ s).target'.symm]
 
