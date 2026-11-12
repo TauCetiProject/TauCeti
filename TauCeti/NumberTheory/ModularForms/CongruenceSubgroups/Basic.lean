@@ -66,8 +66,6 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.mem_Gamma0_iff_dvd`: `Γ₀(N)` membership read as the integer divisibility
   `(N : ℤ) ∣ A 1 0` rather than as a `ZMod N` congruence, for a proof that wants to name the
   quotient. Valid at every level, `N = 0` included.
-* `CongruenceSubgroup.mem_Gamma0_zero_iff`: `Γ₀(0)` is cut out by the vanishing of the
-  lower-left entry.
 * `CongruenceSubgroup.exists_eq_mul_mul_of_mem_Gamma0`: a matrix in `Γ₀(L)` has lower-left
   entry `M²c`, with `N ∣ Mc`, whenever `NM ∣ L` and `M² ∣ L`.
 * `CongruenceSubgroup.mem_Gamma1_iff`: `Γ₁(N)` is cut out inside `Γ₀(N)` by the
@@ -209,10 +207,6 @@ as a congruence in `ZMod N`; this is the same fact with the congruence already d
 It holds at every level, `N = 0` included, where both sides say `A 1 0 = 0`. -/
 theorem mem_Gamma0_iff_dvd {N : ℕ} {A : SL(2, ℤ)} : A ∈ Gamma0 N ↔ (N : ℤ) ∣ A 1 0 :=
   Gamma0_mem.trans (ZMod.intCast_zmod_eq_zero_iff_dvd _ N)
-
-/-- At level `0`, membership in `Γ₀(0)` just says that the lower-left entry vanishes. -/
-theorem mem_Gamma0_zero_iff {A : SL(2, ℤ)} : A ∈ Gamma0 0 ↔ A 1 0 = 0 := by
-  simp
 
 /-- A matrix of `Γ₀(L)`, for `N * M ∣ L` and `M * M ∣ L`, has lower-left entry `M * M * c` with
 `N ∣ M * c`.

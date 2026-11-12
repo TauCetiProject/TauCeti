@@ -361,13 +361,13 @@ private lemma IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_of_eq_zero (hN : 
       M * (γ : Matrix (Fin 2) (Fin 2) ℤ) = (δ : Matrix (Fin 2) (Fin 2) ℤ) * M ∧
       (γ : Matrix (Fin 2) (Fin 2) ℤ) * M = M * (δ : Matrix (Fin 2) (Fin 2) ℤ) := by
   subst hN
-  have h10 : γ 1 0 = 0 := mem_Gamma0_zero_iff.mp hγ
+  have h10 : γ 1 0 = 0 := by simpa using mem_Gamma0_iff_dvd.mp hγ
   have hdet : γ 1 1 * γ 0 0 - 0 * 0 = 1 := by
     have := Matrix.SpecialLinearGroup.det_coe γ
     rw [Matrix.det_fin_two, h10] at this
     linear_combination this
   refine ⟨⟨!![γ 1 1, 0; 0, γ 0 0], by rwa [Matrix.det_fin_two_of]⟩,
-    mem_Gamma0_zero_iff.mpr (by simp), ?_, ?_⟩ <;>
+    mem_Gamma0_iff_dvd.mpr (by simp), ?_, ?_⟩ <;>
   · rw [h.eq_of_eq_zero rfl rfl]
     ext i j
     fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, h10, mul_comm]
