@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Support
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The singular support of a distribution
