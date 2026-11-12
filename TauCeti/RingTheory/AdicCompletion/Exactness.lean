@@ -19,8 +19,8 @@ For a principal ideal `(r)`, bounded `r`-power torsion in the last term of a sho
 sequence supplies this shift. The modules need not be finite and the ring need not be
 Noetherian. The torsion-free last-term criteria are the special case of shift zero.
 Surjectivity on the right is already supplied by `AdicCompletion.map_surjective`.
-In particular, completion commutes with kernels of maps into an `r`-torsion-free module
-when the cokernel has bounded `r`-power torsion.
+In particular, completion commutes with kernels of maps whose target and cokernel
+have bounded `r`-power torsion.
 
 These comparisons are used when completing complexes of sections: bounded torsion in the
 next cohomology group controls the discrepancy between reduction of a kernel and the kernel
@@ -34,6 +34,33 @@ by `TauCeti.RingTheory.QuotSMulTop`; no new completion carrier is introduced.
 -/
 
 public section
+
+namespace Ideal
+
+/-- Ideal-linear reduction is Mathlib's `reduceModIdeal`. -/
+theorem mapQSMulTop_eq_reduceModIdeal {R : Type*} [CommRing R]
+    {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    (I : Ideal R) (f : M →ₗ[R] N) : I.mapQSMulTop f = f.reduceModIdeal I := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with | H m =>
+    simp only [mapQSMulTop_mk, LinearMap.reduceModIdeal_apply]
+
+end Ideal
+
+namespace LinearMap
+
+/-- Injectivity modulo an ideal bounds the induced filtration by the ideal filtration. -/
+theorem comap_smul_top_le_of_reduceModIdeal_injective {R : Type*} [CommRing R]
+    {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    {I : Ideal R} {f : M →ₗ[R] N} (hf : Function.Injective (f.reduceModIdeal I)) :
+    (I • (⊤ : Submodule R N)).comap f ≤ I • (⊤ : Submodule R M) := by
+  intro x hx
+  apply (Submodule.Quotient.mk_eq_zero _).mp
+  apply hf
+  rw [reduceModIdeal_apply, map_zero]
+  exact (Submodule.Quotient.mk_eq_zero _).mpr (Submodule.mem_comap.mp hx)
+
+end LinearMap
 
 namespace AdicCompletion
 
@@ -76,8 +103,9 @@ theorem map_exact_of_comap_pow_smul_top_le {k : ℕ}
   have hpre (n : ℕ) : ∃ a : M,
       Submodule.Quotient.mk (p := I ^ (n + k) • (⊤ : Submodule R N)) (f a) =
         y.val (n + k) := by
-    have hz : g.reduceModIdeal (I ^ (n + k)) (y.val (n + k)) = 0 :=
-      congrArg (fun z ↦ z.val (n + k)) hy
+    have hz : g.reduceModIdeal (I ^ (n + k)) (y.val (n + k)) = 0 := by
+      simpa only [map_val_apply, val_zero, Pi.zero_apply]
+        using congrArg (fun z ↦ z.val (n + k)) hy
     rw [← Ideal.mapQSMulTop_eq_reduceModIdeal] at hz
     obtain ⟨a, ha⟩ := (Ideal.mapQSMulTop_exact (I ^ (n + k)) hfg hg _).mp hz
     obtain ⟨a, rfl⟩ := Submodule.Quotient.mk_surjective _ a
@@ -107,12 +135,8 @@ theorem map_injective_of_reduceModIdeal_injective
     (hf : ∀ n : ℕ, Function.Injective (f.reduceModIdeal (I ^ n))) :
     Function.Injective (map I f) := by
   apply map_injective_of_comap_pow_smul_top_le (k := 0)
-  intro n x hx
-  have hfx : f x ∈ I ^ n • (⊤ : Submodule R N) := hx
-  apply (Submodule.Quotient.mk_eq_zero _).mp
-  apply hf n
-  rw [LinearMap.reduceModIdeal_apply, _root_.map_zero]
-  exact (Submodule.Quotient.mk_eq_zero _).mpr hfx
+  simpa only [Nat.add_zero] using
+    fun n ↦ LinearMap.comap_smul_top_le_of_reduceModIdeal_injective (hf n)
 
 /-- Completion preserves a right exact sequence if its first map is injective modulo every
 power of the defining ideal. No finiteness hypothesis is needed. -/
@@ -121,12 +145,8 @@ theorem map_exact_of_reduceModIdeal_injective
     (hf : ∀ n : ℕ, Function.Injective (f.reduceModIdeal (I ^ n))) :
     Function.Exact (map I f) (map I g) := by
   apply map_exact_of_comap_pow_smul_top_le (k := 0) hfg hg
-  intro n x hx
-  have hfx : f x ∈ I ^ n • (⊤ : Submodule R N) := hx
-  apply (Submodule.Quotient.mk_eq_zero _).mp
-  apply hf n
-  rw [LinearMap.reduceModIdeal_apply, _root_.map_zero]
-  exact (Submodule.Quotient.mk_eq_zero _).mpr hfx
+  simpa only [Nat.add_zero] using
+    fun n ↦ LinearMap.comap_smul_top_le_of_reduceModIdeal_injective (hf n)
 
 end AdicCompletion
 
@@ -210,19 +230,19 @@ theorem map_span_singleton_exact_of_isSMulRegular
   map_span_singleton_exact_of_bounded_torsion (k := 0) hfg hg
     fun n x h ↦ by simpa using (hr.pow n).right_eq_zero_of_smul h
 
-/-- Principal-adic completion preserves exactness of the kernel sequence for a map into an
-`r`-torsion-free module with bounded `r`-power torsion in its cokernel. Every element in the
-kernel of the completed map comes from the completion of the original kernel. -/
-theorem map_span_singleton_exact_ker_subtype_of_bounded_torsion
-    (hr : IsSMulRegular N r)
+/-- Principal-adic completion preserves exactness of the kernel sequence for a map whose
+range and cokernel have bounded `r`-power torsion. Every element in the kernel of the
+completed map comes from the completion of the original kernel. -/
+theorem map_span_singleton_exact_ker_subtype_of_bounded_torsion {j : ℕ}
+    (htorsRange : ∀ (n : ℕ) (x : f.range), r ^ n • x = 0 → r ^ j • x = 0)
     (htors : ∀ (n : ℕ) (x : N ⧸ f.range), r ^ n • x = 0 → r ^ k • x = 0) :
     Function.Exact (map (Ideal.span {r}) f.ker.subtype) (map (Ideal.span {r}) f) := by
   have hinj := map_span_singleton_injective_of_bounded_torsion f.range.injective_subtype
     (LinearMap.exact_subtype_mkQ f.range) htors
   have hex : Function.Exact f.ker.subtype f.rangeRestrict :=
     LinearMap.exact_iff.mpr (by simp)
-  have he := map_span_singleton_exact_of_isSMulRegular hex f.surjective_rangeRestrict
-    (hr.submodule f.range)
+  have he := map_span_singleton_exact_of_bounded_torsion hex f.surjective_rangeRestrict
+    htorsRange
   rw [← f.subtype_comp_rangeRestrict, ← map_comp]
   exact hinj.comp_exact_iff_exact.mpr he
 
