@@ -45,11 +45,8 @@ open scoped NNReal
 variable {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {t₀ t₁ : ℝ} {ht : t₀ < t₁}
 
-/-- Shortcut for the nested Hessian norm in the coefficient space, as in `Operator.lean`. -/
-local instance hessianNormedAddCommGroup : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) :=
-  inferInstance
-/-- Shortcut for scalar operations on the nested Hessian space. -/
-local instance hessianNormedSpace : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
+attribute [local instance] instNormedAddCommGroupContinuousLinearMapRealId
+  instNormedSpaceRealContinuousLinearMapId
 
 /-- The forcing and initial spatial trace of a parabolic Hölder function, in that order. -/
 def initialDataL (hα : α ≤ 1)

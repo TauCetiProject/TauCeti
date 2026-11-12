@@ -49,11 +49,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {α T : ℝ≥0} {hT : (0 : ℝ) < T}
 
-/-- A local shortcut for the nested Hessian norm in the coefficient space. -/
-local instance hessianNormedAddCommGroup : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) :=
-  inferInstance
-/-- A local shortcut for scalar operations on that Hessian space. -/
-local instance hessianNormedSpace : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
+attribute [local instance] instNormedAddCommGroupContinuousLinearMapRealId
+  instNormedSpaceRealContinuousLinearMapId
 
 /-- The heat equation's forcing and initial trace as a bounded linear data operator. -/
 def heatInitialDataL (hα : α ≤ 1) (hT : (0 : ℝ) < T) :
@@ -121,14 +118,6 @@ theorem heatInitialDataL_heatSolutionL (hα₀ : 0 < α) (hα₁ : α < 1)
 section Euclidean
 
 variable {ι : Type*} [Fintype ι]
-
-/-- Shortcut for the Hessian norm in Euclidean coefficient fields. The general shortcut above
-cannot infer the spatial and target spaces when they occur only inside the coefficient type. -/
-local instance euclideanHessianNormedAddCommGroup :
-    NormedAddCommGroup (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
-/-- Shortcut for scalar operations on Euclidean Hessians, for the same coefficient elaboration. -/
-local instance euclideanHessianNormedSpace :
-    NormedSpace ℝ (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
 
 variable [DecidableEq ι] in
 /-- The coordinate identity identifies the first data component with the existing Euclidean
@@ -204,11 +193,12 @@ theorem isInvertible_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1) :
 theorem inverse_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1) :
     (heatInitialDataL (E := EuclideanSpace ℝ ι) (F := ℝ) hα₁.le hT).inverse =
       heatSolutionL hα₀ hα₁ hT := by
-  apply ContinuousLinearMap.ext
-  intro d
-  apply heatInitialDataL_injective hα₁.le
-  rw [(isInvertible_heatInitialDataL hα₀ hα₁).self_apply_inverse,
-    heatInitialDataL_heatSolutionL]
+  have hforward : (heatInitialDataCLE (ι := ι) hα₀ hα₁ hT).toContinuousLinearMap =
+      heatInitialDataL hα₁.le hT := by
+    ext1 u
+    exact heatInitialDataCLE_apply hα₀ hα₁ u
+  rw [← hforward, ContinuousLinearMap.inverse_equiv]
+  exact ContinuousLinearMap.ext (heatInitialDataCLE_symm_apply hα₀ hα₁)
 
 /-- **The Cauchy problem near the heat operator.** If the coefficient distance to the heat
 operator is small against the heat solution norm, every Hölder forcing and order-two initial
