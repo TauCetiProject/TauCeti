@@ -26,7 +26,7 @@ finite pattern `F` in `W_G` is the finite homomorphism density of `F` in `G`,
 
 which is `homDensity_finiteGraphGraphon`. That is what makes the graphon theory an extension of the
 finite theory rather than a parallel one: every finite graph sits in the graphon world with its
-densities unchanged, and the sampling and mixture layers read a sampled finite graph back as a
+densities unchanged, and the sampling and mixture results read a sampled finite graph back as a
 point of the graphon space along this map.
 
 ## Why the definition goes through `ℕ`
@@ -68,10 +68,6 @@ and measurability is a composition through the countable discrete space `ℕ × 
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 acceptance ("a finite graph as a
-  step graphon") and Layer 7 / *Worked examples* ("finite-graph compatibility
-  `t(F, W_G) = hom(F,G)/|V(G)|^{|V(F)|}`). The signatures `finiteGraphGraphon` and
-  `homDensity_finiteGraphGraphon` follow `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §7.1.
 -/
 

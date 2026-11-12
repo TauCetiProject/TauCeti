@@ -243,7 +243,6 @@ theorem volume_lt_maximalFunction_le_mul_volume_lt_dyadicMaximalFunction [Nonemp
     obtain ⟨r, hr, hlt⟩ := lt_maximalFunction_iff.1 hx
     -- A scale `2ᵏ` with `r ≤ 2ᵏ < 2r`.
     obtain ⟨j, hj1, hj2⟩ := exists_mem_Ioc_zpow hr one_lt_two
-    have hk1 : r ≤ 2 ^ (j + 1) := hj2
     have hk2 : (2 : ℝ) ^ (j + 1) < 2 * r := by
       rw [zpow_add_one₀ two_ne_zero]
       linarith

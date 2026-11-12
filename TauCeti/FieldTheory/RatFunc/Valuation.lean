@@ -28,7 +28,6 @@ theorem ratFunc_pow_ne_X {K : Type*} [Field K] {n : ℕ} (hn : 1 < n)
   have h := congrArg (RatFunc.inftyValuation K).ord hb
   rw [Valuation.ord_pow] at h
   simp only [Valuation.ord_def, RatFunc.inftyValuation.X, WithZero.log_exp] at h
-  have hnZ : (1 : ℤ) < n := by exact_mod_cast hn
   have hd : (n : ℤ) ∣ (-1 : ℤ) := ⟨_, h.symm⟩
   have := Int.le_of_dvd (by omega : (0 : ℤ) < 1) (dvd_neg.mp hd)
   omega

@@ -97,13 +97,9 @@ needs neither, being a bilinearity argument over an arbitrary commutative ring.
 The `sl (Fin 2) R` results are stated for an arbitrary pair `i ≠ j` of indices in `Fin 2`, not just
 for `(0, 1)`: the opposite pair gives the opposite triple `(-h, f, e)`, and both are standard.
 
-## References
-
-This is the concrete input to Layer 0 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose worked `sl₂` is
-*"`LieAlgebra.SpecialLinear.sl (Fin 2) K` with its standard triple"*, and whose classification
-targets carry the hypothesis `htop : t.toLieSubalgebra K = ⊤` that
-`TauCeti.toLieSubalgebra_isSl2Triple_single_eq_top` discharges for that model.
+The `sl₂` classification theorems carry the hypothesis `htop : t.toLieSubalgebra K = ⊤`, which
+`TauCeti.toLieSubalgebra_isSl2Triple_single_eq_top` discharges for the standard triple of
+`sl (Fin 2) R`.
 -/
 
 public section

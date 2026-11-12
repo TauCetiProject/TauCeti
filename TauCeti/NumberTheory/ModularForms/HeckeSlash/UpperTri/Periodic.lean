@@ -190,11 +190,13 @@ level and no explicit power enters the statement. A form invariant under a congr
 containing `T` — every `Γ₁(M)` — meets the hypothesis; `HeckeSlash/Degeneracy.lean` is the
 consumer. -/
 @[grind =]
-theorem heckeSlashUpperTri_slash_scaleRep_comm (hd : 0 < d)
+theorem heckeSlashUpperTri_slash_scaleRep_comm
     (hdp : Nat.Coprime d p) {f : ℍ → ℂ}
     (hT : f ∣[k] (mapGL ℚ ModularGroup.T : GL (Fin 2) ℚ) = f) :
     heckeSlashUpperTri k p (f ∣[k] (scaleRep d : GL (Fin 2) ℚ)) =
       heckeSlashUpperTri k p f ∣[k] (scaleRep d : GL (Fin 2) ℚ) := by
+  rcases Nat.eq_zero_or_pos d with rfl | hd
+  · simp [scaleRep_zero, SlashAction.slash_one]
   have hTpow (q : ℕ) : f ∣[k] (mapGL ℚ (ModularGroup.T ^ q) : GL (Fin 2) ℚ) = f := by
     rw [ModularForm.rat_slash_mapGL, map_pow, ← zpow_natCast]
     exact slash_zpow_eq_self_of_slash_eq k f (by rwa [ModularForm.rat_slash_mapGL] at hT) q

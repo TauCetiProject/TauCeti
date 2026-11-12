@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 import Mathlib.Data.Nat.Choose.Dvd
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.Topology.Algebra.Group.Heisenberg
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.ContinuousDual
 
@@ -547,6 +548,17 @@ theorem nondegenerate_degreeOneForm_gradedMap_iff (e : freeProP p X ≃ₜ* free
     rw [LinearMap.compl₁₂_apply, LinearMap.BilinForm.congr_apply, LinearEquiv.symm_symm]
     rfl
   rw [h, LinearMap.BilinForm.nondegenerate_congr_iff]
+
+/-- In odd rank a nondegenerate degree-one form is not alternating, since a nondegenerate
+alternating form lives on an even-dimensional space (the continuous dual has dimension `Nat.card X`
+by `TauCeti.freeProP.dualBasis`). -/
+theorem not_isAlt_degreeOneForm_of_odd_card (ρ : gradedPiece p (freeProP p X) 1)
+    (hnd : (degreeOneForm ρ).Nondegenerate) (hn : Odd (Nat.card X)) :
+    ¬ (degreeOneForm ρ).IsAlt := fun h ↦ by
+  have : Finite X := Nat.finite_of_card_ne_zero hn.pos.ne'
+  have := LinearMap.BilinForm.IsAlt.even_finrank h hnd
+  rw [Module.finrank_eq_nat_card_basis (dualBasis p X)] at this
+  exact (Nat.not_even_iff_odd.2 hn) this
 
 end Form
 
