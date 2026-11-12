@@ -7,15 +7,18 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
-public import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+public import Mathlib.Geometry.Manifold.BumpFunction
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.OpenPos
 
 /-!
 # The fundamental lemma for bundle-valued variations
 
-A continuous field of real covectors on a smooth vector bundle is determined on an
-open set by its integrals against smooth sections compactly supported in that set.
-The measure must be locally finite and charge every nonempty open set. In particular,
+A continuous field of real covectors on a `C^n` real vector bundle, `n ≤ ∞`, over a
+finite-dimensional Hausdorff smooth manifold is determined on an open set by its
+integrals against `C^n` sections compactly supported in that set. The measure must
+make open sets measurable, be finite on compact sets, and charge every nonempty
+open set. No σ-compactness assumption is needed. In particular,
 this applies after choosing a positive smooth density to represent a density-valued
 source by an ordinary covector field. No metric or trivialization of the vector
 bundle is chosen.
@@ -26,11 +29,11 @@ The statements concern continuous sources along fields, not functions on jet spa
 turning uniqueness along every field into a jet identity additionally needs local
 realization of jets.
 
-The proof uses Mathlib's scalar distribution theorem
-`IsOpen.ae_eq_zero_of_integral_contMDiff_smul_eq_zero`, the full-support upgrade
-`Measure.eqOn_open_of_ae_eq`, and `FiberBundle.exists_contMDiff_section_eq` to test
-every fibre vector. Compact support is the native `ContMDiffSection.tsupport`, not
-the support of the map into the total space.
+The proof uses Mathlib's
+`Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero` and smooth bump
+functions, together with `ContMDiffSection.evalLinearMap_surjective` to test every
+fibre vector. Compact support is the native `ContMDiffSection.tsupport`, not the
+support of the map into the total space.
 
 ## References
 
@@ -40,7 +43,7 @@ the support of the map into the total space.
 
 public section
 
-open Bundle MeasureTheory Set
+open Bundle Filter MeasureTheory Set
 open scoped ContDiff Manifold Topology
 
 namespace ContMDiffSection
@@ -53,9 +56,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] {n : ℕ∞ω}
 
-/-- Pairing a continuous covector field with a smooth section supported in its
+/-- Pairing a continuous covector field with a `C^n` section supported in an open
 continuity domain gives a continuous scalar function on the whole base. -/
-theorem continuous_covector_apply (s : Cₛ^n⟮I; F, V⟯)
+theorem continuous_clm_apply_of_tsupport_subset (s : Cₛ^n⟮I; F, V⟯)
     {η : ∀ x, V x →L[ℝ] ℝ} {U : Set M} (hU : IsOpen U)
     (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U))
     (hsU : s.tsupport ⊆ U) : Continuous (fun x ↦ η x (s x)) := by
@@ -63,85 +66,96 @@ theorem continuous_covector_apply (s : Cₛ^n⟮I; F, V⟯)
     hη.comp s.contMDiff.continuous.continuousOn (fun _ hx ↦ hx)
   have ht : _root_.tsupport (fun x ↦ η x (s x)) ⊆ s.tsupport := by
     apply closure_minimal _ s.isClosed_tsupport
-    intro x hx
-    by_contra hxs
-    exact hx (by simp [s.eq_zero_of_notMem_tsupport hxs])
-  exact continuous_of_tsupport fun x hx ↦ hc.continuousAt (hU.mem_nhds (hsU (ht hx)))
+    exact Function.support_subset_iff'.2 fun x hx ↦ by
+      simp [s.eq_zero_of_notMem_tsupport hx]
+  exact hc.continuous_of_tsupport_subset hU (ht.trans hsU)
 
-/-- A continuous covector field pairs integrably with every smooth section compactly
-supported inside its continuity domain, for any locally finite Borel measure. -/
-theorem integrable_covector_apply [R1Space M] [MeasurableSpace M] [BorelSpace M]
-    {μ : Measure M} [IsLocallyFiniteMeasure μ] (s : Cₛ^n⟮I; F, V⟯)
+/-- A continuous covector field pairs integrably with every `C^n` section compactly
+supported inside an open continuity domain, for any measure finite on compact sets
+that makes open sets measurable. -/
+theorem integrable_clm_apply_of_tsupport_subset [MeasurableSpace M] [OpensMeasurableSpace M]
+    {μ : Measure M} [IsFiniteMeasureOnCompacts μ] (s : Cₛ^n⟮I; F, V⟯)
     {η : ∀ x, V x →L[ℝ] ℝ} {U : Set M} (hU : IsOpen U)
     (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U))
     (hsc : IsCompact s.tsupport) (hsU : s.tsupport ⊆ U) :
     Integrable (fun x ↦ η x (s x)) μ := by
-  apply (s.continuous_covector_apply hU hη hsU).integrable_of_hasCompactSupport
-  apply HasCompactSupport.of_support_subset_isCompact hsc
-  intro x hx
-  by_contra hxs
-  exact hx (by simp [s.eq_zero_of_notMem_tsupport hxs])
+  apply (s.continuous_clm_apply_of_tsupport_subset hU hη hsU).integrable_of_hasCompactSupport
+  exact HasCompactSupport.intro' hsc s.isClosed_tsupport fun x hx ↦ by
+    simp [s.eq_zero_of_notMem_tsupport hx]
 
 end ContMDiffSection
 
-namespace TauCeti
+namespace IsOpen
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
-  [IsManifold I ∞ M] [SigmaCompactSpace M] [MeasurableSpace M] [BorelSpace M]
+  [IsManifold I ∞ M] [MeasurableSpace M] [OpensMeasurableSpace M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
-  {μ : Measure M} [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  {n : ℕ∞ω} [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
+  {μ : Measure M} [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure]
 
 /-- **The bundle fundamental lemma.** A continuous covector field whose integral
-pairing with every smooth compactly supported variation in an open set is zero
+pairing with every `C^n` compactly supported variation in an open set is zero
 vanishes pointwise there. Full support of the measure is essential to the
 pointwise conclusion. The bundle and its fibres need not be trivial or nonzero. -/
-theorem covector_eq_zero_of_integral_section_eq_zero {η : ∀ x, V x →L[ℝ] ℝ}
+theorem eq_zero_of_integral_clm_apply_contMDiffSection_eq_zero {η : ∀ x, V x →L[ℝ] ℝ}
     {U : Set M} (hU : IsOpen U)
     (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U))
-    (h : ∀ s : Cₛ^∞⟮I; F, V⟯, IsCompact s.tsupport → s.tsupport ⊆ U →
+    (h : ∀ s : Cₛ^n⟮I; F, V⟯, IsCompact s.tsupport → s.tsupport ⊆ U →
       ∫ x, η x (s x) ∂μ = 0) : ∀ x ∈ U, η x = 0 := by
-  have hs (s : Cₛ^∞⟮I; F, V⟯) : EqOn (fun x ↦ η x (s x)) 0 U := by
+  have hs (s : Cₛ^n⟮I; F, V⟯) {x : M} (hx : x ∈ U) : η x (s x) ≤ 0 := by
+    by_contra! hpos
     have hc : ContinuousOn (fun x ↦ η x (s x)) U :=
       hη.comp s.contMDiff.continuous.continuousOn (fun _ hx ↦ hx)
-    have hae := hU.ae_eq_zero_of_integral_contMDiff_smul_eq_zero I
-      (hc.locallyIntegrableOn (μ := μ) hU.measurableSet) (fun g hg hgc hgU ↦ ?_)
-    · exact Measure.eqOn_open_of_ae_eq ((ae_restrict_iff' hU.measurableSet).2 hae)
-        hU hc continuousOn_const
-    · let g' : C^∞⟮I, M; ℝ⟯ := ⟨g, hg⟩
-      have ht := ContMDiffSection.tsupport_smul_function_subset g' s
-      have hg' : ⇑g' = g := ContMDiffMap.coeFn_mk g hg
-      simpa only [ContMDiffSection.smul_apply, map_smul, smul_eq_mul, hg'] using
-        h (g' • s)
-          (ContMDiffSection.mem_compactlySupported.mp
-            (ContMDiffSection.smul_function_mem_compactlySupported_of_hasCompactSupport g' hgc s))
-          (ht.trans (inter_subset_left.trans hgU))
+    obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
+      (inter_mem (hU.mem_nhds hx)
+        ((hc.continuousAt (hU.mem_nhds hx)).preimage_mem_nhds (Ioi_mem_nhds hpos)))
+    let g : C^n⟮I, M; ℝ⟯ := ⟨ρ, ρ.contMDiff.of_le ENat.LEInfty.out⟩
+    have ht := ContMDiffSection.tsupport_smul_function_subset g s
+    have hsc := ContMDiffSection.mem_compactlySupported.mp
+      (ContMDiffSection.smul_function_mem_compactlySupported_of_hasCompactSupport
+        g ρ.hasCompactSupport s)
+    have hsU : (g • s).tsupport ⊆ U := ht.trans (inter_subset_left.trans
+      (hρ.trans inter_subset_left))
+    have hgs (y : M) : (g • s) y = ρ y • s y := ContMDiffSection.smul_apply g s y
+    have hcont := (g • s).continuous_clm_apply_of_tsupport_subset hU hη hsU
+    have hp := hcont.integral_pos_of_hasCompactSupport_nonneg_ne_zero (μ := μ)
+        (HasCompactSupport.intro' hsc (g • s).isClosed_tsupport fun y hy ↦ by
+          simp [(g • s).eq_zero_of_notMem_tsupport hy])
+        (fun y ↦ ?_) (x := x) (by simpa only [hgs, ρ.eq_one, one_smul] using hpos.ne')
+    · exact (h (g • s) hsc hsU ▸ hp).false
+    · by_cases hy : y ∈ tsupport ρ
+      · simpa only [Pi.zero_apply, hgs, map_smul, smul_eq_mul] using
+          mul_nonneg (ρ.nonneg (x := y)) (hρ hy).2.le
+      · simp only [Pi.zero_apply, hgs, image_eq_zero_of_notMem_tsupport hy,
+          zero_smul, map_zero, le_refl]
   intro x hx
   ext v
-  obtain ⟨s, hsmooth, hsv⟩ := FiberBundle.exists_contMDiff_section_eq I F ∞ v
-  simpa only [ContMDiffSection.coeFn_mk, hsv, Pi.zero_apply, zero_apply] using
-    hs ⟨s, hsmooth⟩ hx
+  obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) (V := V) n x v
+  simp only [ContMDiffSection.evalLinearMap_apply, zero_apply]
+  apply le_antisymm (hs s hx)
+  simpa using hs (-s) hx
 
-/-- Two continuous covector fields with equal integral pairings against all smooth
+/-- Two continuous covector fields with equal integral pairings against all `C^n`
 variations compactly supported in an open set coincide there. Integrability of the
 two pairings follows from continuity and compact support, rather than being an
 extra premise about formal integral values. -/
-theorem covector_eq_of_integral_section_eq {η ζ : ∀ x, V x →L[ℝ] ℝ}
+theorem eq_of_integral_clm_apply_contMDiffSection_eq {η ζ : ∀ x, V x →L[ℝ] ℝ}
     {U : Set M} (hU : IsOpen U)
     (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U))
     (hζ : ContinuousOn (fun p : TotalSpace F V ↦ ζ p.proj p.snd) ((π F V) ⁻¹' U))
-    (h : ∀ s : Cₛ^∞⟮I; F, V⟯, IsCompact s.tsupport → s.tsupport ⊆ U →
+    (h : ∀ s : Cₛ^n⟮I; F, V⟯, IsCompact s.tsupport → s.tsupport ⊆ U →
       ∫ x, η x (s x) ∂μ = ∫ x, ζ x (s x) ∂μ) : ∀ x ∈ U, η x = ζ x := by
-  have hz := covector_eq_zero_of_integral_section_eq_zero (I := I) (μ := μ)
-    (η := fun x ↦ η x - ζ x) hU (hη.sub hζ) (fun s hsc hsU ↦ ?_)
+  have hz := hU.eq_zero_of_integral_clm_apply_contMDiffSection_eq_zero (I := I) (n := n) (μ := μ)
+    (η := fun x ↦ η x - ζ x) (hη.sub hζ) (fun s hsc hsU ↦ ?_)
   · intro x hx
     exact sub_eq_zero.mp (hz x hx)
   · simp only [sub_apply]
-    rw [integral_sub (s.integrable_covector_apply hU hη hsc hsU)
-      (s.integrable_covector_apply hU hζ hsc hsU), h s hsc hsU, sub_self]
+    rw [integral_sub (s.integrable_clm_apply_of_tsupport_subset hU hη hsc hsU)
+      (s.integrable_clm_apply_of_tsupport_subset hU hζ hsc hsU), h s hsc hsU, sub_self]
 
-end TauCeti
+end IsOpen
