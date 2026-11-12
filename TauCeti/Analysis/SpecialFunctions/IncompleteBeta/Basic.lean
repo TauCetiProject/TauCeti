@@ -467,7 +467,7 @@ theorem inverseRegularizedIncompleteBeta_eq_zero
 /-- Outside the positive shape parameters, the inverse regularized incomplete beta function is
 identically zero. -/
 @[simp]
-theorem inverseRegularizedIncompleteBeta_of_not_pos (h : ¬(0 < a ∧ 0 < b)) :
+theorem inverseRegularizedIncompleteBeta_eq_zero_of_not_pos (h : ¬(0 < a ∧ 0 < b)) :
     inverseRegularizedIncompleteBeta a b = 0 :=
   funext fun _ => inverseRegularizedIncompleteBeta_eq_zero fun h' => h ⟨h'.1, h'.2.1⟩
 
@@ -556,7 +556,7 @@ theorem continuousAt_inverseRegularizedIncompleteBeta (a b : ℝ)
     (hu : u ∈ Ioo (0 : ℝ) 1) : ContinuousAt (inverseRegularizedIncompleteBeta a b) u := by
   by_cases hab : 0 < a ∧ 0 < b
   swap
-  · rw [inverseRegularizedIncompleteBeta_of_not_pos hab]
+  · rw [inverseRegularizedIncompleteBeta_eq_zero_of_not_pos hab]
     exact continuousAt_const
   obtain ⟨ha, hb⟩ := hab
   refine (strictMonoOn_inverseRegularizedIncompleteBeta ha hb).continuousAt_of_image_mem_nhds
@@ -593,7 +593,7 @@ theorem tendsto_inverseRegularizedIncompleteBeta_zero (a b : ℝ) :
     Tendsto (inverseRegularizedIncompleteBeta a b) (𝓝[>] 0) (𝓝 0) := by
   by_cases hab : 0 < a ∧ 0 < b
   swap
-  · rw [inverseRegularizedIncompleteBeta_of_not_pos hab]
+  · rw [inverseRegularizedIncompleteBeta_eq_zero_of_not_pos hab]
     exact tendsto_const_nhds
   obtain ⟨ha, hb⟩ := hab
   rw [Metric.tendsto_nhds]
