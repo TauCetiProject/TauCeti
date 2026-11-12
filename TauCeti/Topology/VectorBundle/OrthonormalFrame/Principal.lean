@@ -30,25 +30,25 @@ homeomorphism, the topology of pointwise convergence of frames. Each fibre carri
 topology. The model fibre `F` is a parameter of `Fiber` because the topology of the total space of
 `E`, and hence of the frames, is read through it.
 
-Every equivariant trivialization of the frame bundle (such as
-`Bundle.Trivialization.orthonormalFrameBundle`, the trivialization by a Gram–Schmidt local frame)
-transports to an equivariant trivialization of `Fiber 𝕜 F E V`
-(`Bundle.Trivialization.fiberTrivialization`). The fibre bundle structure
-(`TauCeti.OrthonormalFrameBundle.instFiberBundleFiber`) takes as atlas all equivariant
-trivializations, with preferred trivialization at `x` the Gram–Schmidt trivialization over the
-preferred trivialization of `E` at `x`, so it is a principal bundle
-(`TauCeti.OrthonormalFrameBundle.instPrincipalBundleFiber`). Its division map sends two frames
-`φ, ψ` of `E b` to the unitary transformation `φ⁻¹ ∘ ψ`
-(`TauCeti.OrthonormalFrameBundle.division_eq`). The dimension condition is supplied as an instance
-`Fact (Module.finrank 𝕜 V = Module.finrank 𝕜 F)`, which holds by instance when `V = F`
-(`TauCeti.instFactFinrankEqSelf`).
+Every trivialization of the frame bundle transports to a trivialization of `Fiber 𝕜 F E V`
+(`Bundle.Trivialization.orthonormalFrameBundleFiber`), which is equivariant exactly when the
+original one is equivariant over its base set. In particular the trivializations by Gram–Schmidt
+local frames (`Bundle.Trivialization.orthonormalFrameBundle`) give equivariant trivializations. The
+fibre bundle structure (`TauCeti.OrthonormalFrameBundle.instFiberBundleFiber`) takes as atlas the
+Gram–Schmidt trivializations over the trivializations in the atlas of `E`, with preferred
+trivialization at `x` the one over the preferred trivialization of `E` at `x`, so it is a principal
+bundle (`TauCeti.OrthonormalFrameBundle.instPrincipalBundleFiber`). The division map of any
+principal bundle structure on `Fiber 𝕜 F E V` sends two frames `φ, ψ` of `E b` to the unitary
+transformation `φ⁻¹ ∘ ψ` (`TauCeti.OrthonormalFrameBundle.division_eq`). The dimension condition
+is supplied as an instance `Fact (Module.finrank 𝕜 V = Module.finrank 𝕜 F)`, which holds by
+instance when `V = F` (`TauCeti.instFactFinrankEqSelf`).
 
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameBundle.Fiber 𝕜 F E V b`: the orthonormal frames of `E b` modelled on `V`.
 * `TauCeti.OrthonormalFrameBundle.totalSpaceHomeomorph`: the total space of `Fiber 𝕜 F E V` is
   homeomorphic to `OrthonormalFrameBundle 𝕜 F E V`.
-* `Bundle.Trivialization.fiberTrivialization`: a trivialization of the frame bundle as a
+* `Bundle.Trivialization.orthonormalFrameBundleFiber`: a trivialization of the frame bundle as a
   trivialization of `Fiber 𝕜 F E V`.
 * `TauCeti.OrthonormalFrameBundle.instFiberBundleFiber`,
   `TauCeti.OrthonormalFrameBundle.instPrincipalBundleFiber`: `Fiber 𝕜 F E V` is a principal bundle
@@ -56,8 +56,9 @@ preferred trivialization of `E` at `x`, so it is a principal bundle
 
 ## Main results
 
-* `Bundle.Trivialization.isEquivariant_fiberTrivialization`: equivariant trivializations
-  of the frame bundle give equivariant trivializations of `Fiber 𝕜 F E V`.
+* `Bundle.Trivialization.isEquivariant_orthonormalFrameBundleFiber_iff`: a trivialization of the
+  frame bundle gives an equivariant trivialization of `Fiber 𝕜 F E V` exactly when it is
+  equivariant over its base set.
 * `TauCeti.OrthonormalFrameBundle.division_eq`: the division map is `φ⁻¹ ∘ ψ`.
 
 ## References
@@ -160,9 +161,17 @@ theorem totalSpaceEquiv_symm_apply (p : OrthonormalFrameBundle 𝕜 F E V) :
 
 /-- The identification of the total space with the frame bundle intertwines the right actions of
 the unitary group. -/
-theorem totalSpaceEquiv_smul (g : (unitary (V →L[𝕜] V))ᵐᵒᵖ) {b : B} (φ : Fiber 𝕜 F E V b) :
-    totalSpaceEquiv (⟨b, g • φ⟩ : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) =
-      g • totalSpaceEquiv ⟨b, φ⟩ :=
+theorem totalSpaceEquiv_smul (g : (unitary (V →L[𝕜] V))ᵐᵒᵖ)
+    (p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :
+    totalSpaceEquiv (g • p) = g • totalSpaceEquiv p :=
+  (rfl)
+
+/-- The inverse identification of the frame bundle with the total space intertwines the right
+actions of the unitary group. -/
+theorem totalSpaceEquiv_symm_smul (g : (unitary (V →L[𝕜] V))ᵐᵒᵖ)
+    (p : OrthonormalFrameBundle 𝕜 F E V) :
+    totalSpaceEquiv.symm (g • p) =
+      (g • totalSpaceEquiv.symm p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :=
   (rfl)
 
 variable [TopologicalSpace (TotalSpace F E)]
@@ -207,7 +216,7 @@ variable [CompleteSpace V] [TopologicalSpace (TotalSpace F E)] [TopologicalSpace
 
 /-- A trivialization of the orthonormal frame bundle, as a trivialization of `Fiber 𝕜 F E V`: it
 reads a frame `φ` of `E b` as `t ⟨b, φ⟩`. -/
-def fiberTrivialization
+def orthonormalFrameBundleFiber
     (t : Trivialization (unitary (V →L[𝕜] V)) (proj : OrthonormalFrameBundle 𝕜 F E V → B)) :
     Trivialization (unitary (V →L[𝕜] V)) (π (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :=
   t.compHomeomorph totalSpaceHomeomorph
@@ -215,27 +224,41 @@ def fiberTrivialization
 variable (t : Trivialization (unitary (V →L[𝕜] V)) (proj : OrthonormalFrameBundle 𝕜 F E V → B))
 
 @[simp]
-theorem fiberTrivialization_apply (p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :
-    fiberTrivialization t p = t (totalSpaceEquiv p) :=
+theorem orthonormalFrameBundleFiber_apply
+    (p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :
+    orthonormalFrameBundleFiber t p = t (totalSpaceEquiv p) :=
   (rfl)
 
 @[simp]
-theorem fiberTrivialization_symm_apply (q : B × unitary (V →L[𝕜] V)) :
-    (fiberTrivialization t).toOpenPartialHomeomorph.symm q =
+theorem orthonormalFrameBundleFiber_symm_apply (q : B × unitary (V →L[𝕜] V)) :
+    (orthonormalFrameBundleFiber t).toOpenPartialHomeomorph.symm q =
       totalSpaceEquiv.symm (t.toOpenPartialHomeomorph.symm q) :=
   (rfl)
 
 @[simp]
-theorem baseSet_fiberTrivialization : (fiberTrivialization t).baseSet = t.baseSet :=
+theorem baseSet_orthonormalFrameBundleFiber : (orthonormalFrameBundleFiber t).baseSet = t.baseSet :=
   (rfl)
 
-/-- A trivialization of the frame bundle that is equivariant for the right action of the unitary
-group gives an equivariant trivialization of `Fiber 𝕜 F E V`. -/
-theorem isEquivariant_fiberTrivialization
-    (ht : ∀ (g : unitary (V →L[𝕜] V)) (p : OrthonormalFrameBundle 𝕜 F E V),
-      t (op g • p) = ((t p).1, (t p).2 * g)) :
-    (fiberTrivialization t).IsEquivariant where
-  snd_apply_smul _ _ φ g := congrArg Prod.snd (ht g (totalSpaceEquiv ⟨_, φ⟩))
+/-- A trivialization of the frame bundle gives an equivariant trivialization of `Fiber 𝕜 F E V`
+exactly when, over its base set, it intertwines the right action of the unitary group on frames
+with right multiplication on the fibre coordinate. -/
+theorem isEquivariant_orthonormalFrameBundleFiber_iff :
+    (orthonormalFrameBundleFiber t).IsEquivariant ↔
+      ∀ p : OrthonormalFrameBundle 𝕜 F E V, p.proj ∈ t.baseSet →
+        ∀ g : unitary (V →L[𝕜] V), (t (op g • p)).2 = (t p).2 * g :=
+  ⟨fun h p hp g ↦ h.snd_apply_smul p.proj hp (.ofFrame p.frame) g,
+    fun h ↦ ⟨fun b hb φ g ↦ h (totalSpaceEquiv ⟨b, φ⟩) hb g⟩⟩
+
+/-- The Gram–Schmidt trivialization of the frame bundle over a linear trivialization of `E` gives
+an equivariant trivialization of `Fiber 𝕜 F E V`. -/
+instance isEquivariant_orthonormalFrameBundleFiber_orthonormalFrameBundle [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] [FiberBundle F E] [VectorBundle 𝕜 F E] [ContinuousFiberNorm F E]
+    [FiniteDimensional 𝕜 V] (e : Trivialization F (π F E)) [e.IsLinear 𝕜] {ι : Type*} [Fintype ι]
+    [LinearOrder ι] [LocallyFiniteOrderBot ι] (c : Module.Basis ι 𝕜 F)
+    (b : OrthonormalBasis ι 𝕜 V) :
+    (orthonormalFrameBundleFiber (e.orthonormalFrameBundle c b)).IsEquivariant :=
+  (isEquivariant_orthonormalFrameBundleFiber_iff _).2 fun p _ g ↦
+    congrArg Prod.snd (e.orthonormalFrameBundle_smul c b g p)
 
 end Bundle.Trivialization
 
@@ -254,7 +277,15 @@ frame bundle over the preferred trivialization of `E` at `x`, for the standard o
 def trivializationAtFiber (h : Module.finrank 𝕜 V = Module.finrank 𝕜 F) (x : B) :
     Trivialization (unitary (V →L[𝕜] V)) (π (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :=
   ((trivializationAt F E x).orthonormalFrameBundle
-    (Module.finBasisOfFinrankEq 𝕜 F h.symm) (stdOrthonormalBasis 𝕜 V)).fiberTrivialization
+    (Module.finBasisOfFinrankEq 𝕜 F h.symm) (stdOrthonormalBasis 𝕜 V)).orthonormalFrameBundleFiber
+
+/-- The preferred trivialization of `Fiber 𝕜 F E V` at `x` transports the Gram–Schmidt
+trivialization of the frame bundle over the preferred trivialization of `E` at `x`. -/
+theorem trivializationAtFiber_def (h : Module.finrank 𝕜 V = Module.finrank 𝕜 F) (x : B) :
+    trivializationAtFiber 𝕜 F E V h x =
+      ((trivializationAt F E x).orthonormalFrameBundle (Module.finBasisOfFinrankEq 𝕜 F h.symm)
+        (stdOrthonormalBasis 𝕜 V)).orthonormalFrameBundleFiber :=
+  (rfl)
 
 @[simp]
 theorem trivializationAtFiber_apply (h : Module.finrank 𝕜 V = Module.finrank 𝕜 F) (x : B)
@@ -277,39 +308,63 @@ theorem baseSet_trivializationAtFiber (h : Module.finrank 𝕜 V = Module.finran
     (trivializationAtFiber 𝕜 F E V h x).baseSet = (trivializationAt F E x).baseSet :=
   Trivialization.baseSet_orthonormalFrameBundle _ _ _
 
-theorem isEquivariant_trivializationAtFiber (h : Module.finrank 𝕜 V = Module.finrank 𝕜 F)
+instance isEquivariant_trivializationAtFiber (h : Module.finrank 𝕜 V = Module.finrank 𝕜 F)
     (x : B) : (trivializationAtFiber 𝕜 F E V h x).IsEquivariant :=
-  Trivialization.isEquivariant_fiberTrivialization _
-    (Trivialization.orthonormalFrameBundle_smul _ _ _)
+  Trivialization.isEquivariant_orthonormalFrameBundleFiber_orthonormalFrameBundle _ _ _
 
 variable [hV : Fact (Module.finrank 𝕜 V = Module.finrank 𝕜 F)]
 
 /-- When `V` has the dimension of the finite-dimensional model fibre `F`, the orthonormal frames
-`Fiber 𝕜 F E V` form a fibre bundle with fibre the unitary group of `V`. Its atlas consists of all
-trivializations equivariant for the right action of the unitary group, and its preferred
-trivialization at `x` is `trivializationAtFiber`, the Gram–Schmidt trivialization over the
-preferred trivialization of `E` at `x`. -/
+`Fiber 𝕜 F E V` form a fibre bundle with fibre the unitary group of `V`. Its atlas consists of the
+Gram–Schmidt trivializations over the trivializations in the atlas of `E`, for all bases of `F` and
+orthonormal bases of `V` indexed by `Fin (Module.finrank 𝕜 V)`, and its preferred trivialization at
+`x` is `trivializationAtFiber`, the one over the preferred trivialization of `E` at `x`. -/
 instance instFiberBundleFiber : FiberBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) where
   totalSpaceMk_isInducing' _ := ⟨rfl⟩
-  trivializationAtlas' := {t | t.IsEquivariant}
+  trivializationAtlas' :=
+    {t | ∃ (e : Trivialization F (π F E)) (_ : MemTrivializationAtlas e)
+      (c : Module.Basis (Fin (Module.finrank 𝕜 V)) 𝕜 F)
+      (b : OrthonormalBasis (Fin (Module.finrank 𝕜 V)) 𝕜 V),
+      t = (e.orthonormalFrameBundle c b).orthonormalFrameBundleFiber}
   trivializationAt' := trivializationAtFiber 𝕜 F E V hV.out
   mem_baseSet_trivializationAt' x :=
     (baseSet_trivializationAtFiber (E := E) hV.out x).symm ▸ mem_baseSet_trivializationAt F E x
-  trivialization_mem_atlas' x := isEquivariant_trivializationAtFiber hV.out x
+  trivialization_mem_atlas' x :=
+    ⟨trivializationAt F E x, inferInstance, _, _, trivializationAtFiber_def hV.out x⟩
 
 theorem trivializationAt_fiber (x : B) :
     trivializationAt (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) x =
       trivializationAtFiber 𝕜 F E V hV.out x :=
   rfl
 
+/-- The preferred trivialization of `Fiber 𝕜 F E V` at `x` has the base set of the preferred
+trivialization of `E` at `x`. -/
+@[simp]
+theorem baseSet_trivializationAt_fiber (x : B) :
+    (trivializationAt (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) x).baseSet =
+      (trivializationAt F E x).baseSet :=
+  baseSet_trivializationAtFiber hV.out x
+
 /-- When `V` has the dimension of the finite-dimensional model fibre `F`, the orthonormal frames
 `Fiber 𝕜 F E V` form a principal bundle with structure group the unitary group of `V`, acting on
 the right by precomposition. -/
-instance instPrincipalBundleFiber : PrincipalBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) :=
-  ⟨fun _ h ↦ h.out⟩
+instance instPrincipalBundleFiber : PrincipalBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) where
+  isEquivariant_trivialization' _ ht := by
+    obtain ⟨e, _, c, b, rfl⟩ := ht.out
+    infer_instance
 
-/-- The division map of the orthonormal frame bundle sends two frames `φ, ψ` of `E b` to the
-unitary transformation `φ⁻¹ ∘ ψ` of `V`. -/
+end Principal
+
+section Division
+
+variable [CompleteSpace V] [TopologicalSpace B]
+  [TopologicalSpace (TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V))]
+  [∀ b, TopologicalSpace (Fiber 𝕜 F E V b)] [FiberBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)]
+  [PrincipalBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)]
+
+/-- For any principal bundle structure on the orthonormal frames, such as
+`TauCeti.OrthonormalFrameBundle.instPrincipalBundleFiber`, the division map sends two frames
+`φ, ψ` of `E b` to the unitary transformation `φ⁻¹ ∘ ψ` of `V`. -/
 theorem division_eq {b : B} (φ ψ : Fiber 𝕜 F E V b) :
     PrincipalBundle.division (unitary (V →L[𝕜] V)) φ ψ =
       Unitary.linearIsometryEquiv.symm (ψ.frame.trans φ.frame.symm) := by
@@ -317,7 +372,7 @@ theorem division_eq {b : B} (φ ψ : Fiber 𝕜 F E V b) :
   ext v
   simp
 
-end Principal
+end Division
 
 end TauCeti.OrthonormalFrameBundle
 
@@ -331,11 +386,15 @@ variable [CompleteSpace V] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [Fact (Module.finrank 𝕜 V = Module.finrank 𝕜 F)]
 
 /-- A trivialization belongs to the atlas of the orthonormal frame bundle `Fiber 𝕜 F E V` exactly
-when it is equivariant. -/
+when it is the Gram–Schmidt trivialization over a trivialization in the atlas of `E`. -/
 @[simp]
-theorem memTrivializationAtlas_fiber_iff
+theorem memTrivializationAtlas_orthonormalFrameBundleFiber_iff
     (t : Trivialization (unitary (V →L[𝕜] V)) (π (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V))) :
-    MemTrivializationAtlas t ↔ t.IsEquivariant :=
+    MemTrivializationAtlas t ↔
+      ∃ (e : Trivialization F (π F E)) (_ : MemTrivializationAtlas e)
+        (c : Module.Basis (Fin (Module.finrank 𝕜 V)) 𝕜 F)
+        (b : OrthonormalBasis (Fin (Module.finrank 𝕜 V)) 𝕜 V),
+        t = (e.orthonormalFrameBundle c b).orthonormalFrameBundleFiber :=
   ⟨fun h ↦ h.out, fun h ↦ ⟨h⟩⟩
 
 end Bundle.Trivialization
