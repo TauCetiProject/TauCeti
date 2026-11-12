@@ -27,10 +27,9 @@ coset actions) can build on one shared vocabulary. Finally it defines the degree
 double coset, the number of left cosets in its decomposition, together with its
 relative-index form, since that count is read straight off `DecompQuotient`.
 
-The coset vocabulary is vendored from the in-review mathlib4 PR
-[#41253](https://github.com/leanprover-community/mathlib4/pull/41253) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete it when that stack
-merges. The degree section is instead ported from the AINTLIB `LeanModularForms` project
+The coset vocabulary is vendored from mathlib4 PR
+[#41253](https://github.com/leanprover-community/mathlib4/pull/41253) (Chris Birkbeck). The
+degree section is instead ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/AbstractHeckeRing/Degree.lean`, Chris Birkbeck,
 <https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>).
 

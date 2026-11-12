@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
+public import TauCeti.Analysis.Normed.Algebra.Spectrum
+import TauCeti.Topology.Algebra.Indicator
 
 /-!
 # Star projections from the continuous functional calculus
@@ -21,6 +24,10 @@ When `a` is self-adjoint and invertible, `0` is not in its spectrum, so the spec
 `P₊ = cfc ((Ioi 0).indicator 1) a` and `P₋ = cfc ((Iio 0).indicator 1) a` onto the positive and
 negative parts of the spectrum are complementary, `P₊ + P₋ = 1`.
 
+In a complete normed algebra with an isometric functional calculus, such as a C⋆-algebra, the
+spectral projector `cfc (Ω.indicator 1) a` depends continuously on the self-adjoint element `a`
+wherever the spectrum of `a` avoids the frontier of `Ω`.
+
 ## Main results
 
 * `TauCeti.isStarProjection_cfc` — `cfc f a` is a star projection when `f` is idempotent-valued on
@@ -30,7 +37,9 @@ negative parts of the spectrum are complementary, `P₊ + P₋ = 1`.
 * `IsUnit.continuousOn_indicator_spectrum` — at an invertible element, the indicator of a set
   whose frontier is contained in `{0}` is continuous on the spectrum;
 * `TauCeti.cfc_indicator_Ioi_add_cfc_indicator_Iio` — for invertible self-adjoint `a`, the
-  positive and negative spectral projectors add up to `1`.
+  positive and negative spectral projectors add up to `1`;
+* `IsSelfAdjoint.continuousWithinAt_cfc_indicator` — the spectral projector depends continuously
+  on the self-adjoint element when the frontier of the set avoids the spectrum.
 -/
 
 public section
@@ -45,7 +54,7 @@ variable {A : Type*} [Ring A] [StarRing A] [TopologicalSpace A] [Algebra ℝ A]
 theorem isStarProjection_cfc {f : ℝ → ℝ} {a : A}
     (hf : ∀ t ∈ spectrum ℝ a, IsIdempotentElem (f t)) : IsStarProjection (cfc f a) := by
   by_cases h : IsSelfAdjoint a ∧ ContinuousOn f (spectrum ℝ a)
-  · obtain ⟨ha, hcont⟩ := h
+  · obtain ⟨_, hcont⟩ := h
     refine ⟨?_, cfc_predicate f a⟩
     rw [IsIdempotentElem, ← cfc_mul f f a]
     exact cfc_congr hf
@@ -87,3 +96,29 @@ theorem cfc_indicator_Ioi_add_cfc_indicator_Iio {a : A} (ha : IsUnit a)
   · simp [indicator_of_notMem, indicator_of_mem, hx, hx.not_gt]
 
 end TauCeti
+
+section Continuity
+
+open Filter Set Topology
+
+variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A]
+  [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint] [ContinuousStar A] [CompleteSpace A]
+
+/-- The spectral projector for a set `Ω` depends continuously on the self-adjoint element at an
+element whose spectrum avoids the frontier of `Ω`. -/
+theorem IsSelfAdjoint.continuousWithinAt_cfc_indicator {a : A} (ha : IsSelfAdjoint a)
+    {Ω : Set ℝ} (hΩ : Disjoint (frontier Ω) (spectrum ℝ a)) :
+    ContinuousWithinAt (cfc (Ω.indicator (1 : ℝ → ℝ))) {b | IsSelfAdjoint b} a := by
+  set t := {b : A | IsSelfAdjoint b ∧ spectrum ℝ b ⊆ (frontier Ω)ᶜ}
+  have hcont : ContinuousOn (cfc (Ω.indicator (1 : ℝ → ℝ))) t :=
+    ContinuousOn.cfc_of_mem_nhdsSet (a := id) _
+      (isClosed_frontier.isOpen_compl.mem_nhdsSet.2 (iUnion₂_subset fun b hb ↦ hb.2))
+      continuousOn_id (fun b hb ↦ hb.1)
+      (continuousOn_const.continuousOn_indicator_of_disjoint_frontier disjoint_compl_right)
+  refine (hcont.continuousWithinAt ⟨ha, hΩ.subset_compl_left⟩).mono_of_mem_nhdsWithin ?_
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (spectrum.eventually_disjoint_of_isClosed isClosed_frontier hΩ)]
+    with b hb hb'
+  exact ⟨hb, hb'.subset_compl_left⟩
+
+end Continuity

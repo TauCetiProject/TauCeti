@@ -132,6 +132,13 @@ theorem norm_id_compHolder₂_apply_le (f : HolderSpace α X (F →L[ℝ] G)) (g
   (norm_compHolder₂_apply_le _ f g).trans (mul_le_mul_of_nonneg_right
     (mul_le_of_le_one_left (norm_nonneg f) ContinuousLinearMap.norm_id_le) (norm_nonneg g))
 
+/-- A scalar Hölder function times a constant vector is bounded by the product of their norms. -/
+theorem norm_lsmul_compHolder₂_const_le (f : HolderSpace α X ℝ) (c : F) :
+    ‖(ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ f (HolderSpace.const c)‖ ≤ ‖f‖ * ‖c‖ :=
+  (norm_compHolder₂_apply_le _ f _).trans (mul_le_mul
+    (mul_le_of_le_one_left (norm_nonneg f) ContinuousLinearMap.opNorm_lsmul_le)
+    (HolderSpace.norm_const_le c) (norm_nonneg _) (norm_nonneg f))
+
 /-- If `g` vanishes off a set `s` on which `‖f‖ ≤ δ`, then `f` enters the norm of the product only
 through `δ` and its Hölder seminorm: `‖B (f, g)‖ ≤ ‖B‖ (δ ‖g‖ + [f]_α ‖g‖_∞)`. This is the
 estimate for freezing a coefficient field on the support of a localized function. -/
