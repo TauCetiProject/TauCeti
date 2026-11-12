@@ -25,7 +25,7 @@ functor of a monoidal category, often written `Aut_⊗(𝟭_C)`, is commutative,
 centre `CategoryTheory.CatCenter C` of all natural endomorphisms of `𝟭 C`. It is the group
 acting on the pivotal structures of a rigid monoidal category.
 
-A natural transformation between lax monoidal functors that is an isomorphism at the tensor unit
+A natural transformation between lax monoidal functors that is an epimorphism at the tensor unit
 and compatible with the tensorators is already monoidal: compatibility with the unit comparisons
 follows (`CategoryTheory.NatTrans.IsMonoidal.of_tensor`).
 -/
@@ -92,20 +92,21 @@ variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
 variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
 
 /-- **The unit condition follows from the tensor condition.** A natural transformation `τ` between
-lax monoidal functors that is an isomorphism at the tensor unit and compatible with the
+lax monoidal functors that is an epimorphism at the tensor unit and compatible with the
 tensorators is monoidal. -/
 theorem of_tensor {F G : C ⥤ D} [F.LaxMonoidal] [G.LaxMonoidal] (τ : F ⟶ G)
-    [IsIso (τ.app (𝟙_ C))]
+    [Epi (τ.app (𝟙_ C))]
     (h : ∀ X Y, μ F X Y ≫ τ.app (X ⊗ Y) = (τ.app X ⊗ₘ τ.app Y) ≫ μ G X Y) :
     τ.IsMonoidal where
   unit := by
     -- `G.obj (𝟙_ C)` is a monoid in `D` with multiplication
     -- `μ G (𝟙_ C) (𝟙_ C) ≫ G.map (λ_ (𝟙_ C)).hom` and unit `ε G`. Transporting the left
-    -- unitality of `F` along the isomorphism `τ.app (𝟙_ C)` makes `ε F ≫ τ.app (𝟙_ C)` a left
+    -- unitality of `F` along the epimorphism `τ.app (𝟙_ C)` makes `ε F ≫ τ.app (𝟙_ C)` a left
     -- unit for this multiplication (`hl`), while `ε G` is a right unit (`hr`) because the two
     -- unitors of `𝟙_ C` agree; a left unit and a right unit of a multiplication are equal.
     have hl : (ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) ≫ μ G (𝟙_ C) (𝟙_ C) ≫
         G.map (λ_ (𝟙_ C)).hom = (λ_ (G.obj (𝟙_ C))).hom := by
+      have : Epi (𝟙_ D ◁ τ.app (𝟙_ C)) := by rw [id_whiskerLeft]; infer_instance
       rw [← cancel_epi (𝟙_ D ◁ τ.app (𝟙_ C))]
       have e : 𝟙_ D ◁ τ.app (𝟙_ C) ≫ (ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) =
           ε F ▷ F.obj (𝟙_ C) ≫ (τ.app (𝟙_ C) ⊗ₘ τ.app (𝟙_ C)) := by
