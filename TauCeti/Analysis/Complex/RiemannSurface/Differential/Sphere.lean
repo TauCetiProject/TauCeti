@@ -15,7 +15,9 @@ import TauCeti.Analysis.Complex.RiemannSurface.RationalFunction
 
 The differential `dz` of the affine coordinate on `OnePoint ℂ` has no zeros or poles at
 finite points and has a double pole at infinity. In the coordinate `w = 1/z` it is
-`-w⁻² dw`. Thus its divisor is `-2[∞]`, an explicit canonical divisor of degree `-2`.
+`-w⁻² dw`, an instance of the transformation law `ω = -g(1/w) / w² dw` for a `1`-form
+`ω = g(z) dz` (`TauCeti.RiemannSurface.OneForm.coeff_invChart_eq_neg_inv_sq_mul`). Thus its
+divisor is `-2[∞]`, an explicit canonical divisor of degree `-2`.
 This is the sphere contribution in the canonical-divisor form of Riemann–Hurwitz.
 
 The sphere has no nonzero holomorphic `1`-form
@@ -54,12 +56,48 @@ def sphereCoordinateDifferential : OneForm (OnePoint ℂ) :=
 theorem coeff_sphereCoordinateDifferential_affineChart :
     sphereCoordinateDifferential.coeff affineChart = fun _ => 1 := by
   funext z
-  have he : affineChart ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 (OnePoint ℂ) := by
-    simpa only [chartAt_coe] using
-      (IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℂ)) (n := 1) (z : OnePoint ℂ))
+  have he := affineChart_mem_maximalAtlas (𝕜 := ℂ) (n := 1)
   rw [sphereCoordinateDifferential, OneForm.coeff_mvfderiv he (by simp)
     (mdifferentiableAt_of_mem_maximalAtlas he (by simp))]
   simp [comp_def]
+
+/-- **The transformation law between the two charts of the sphere.** If `ω = g(z) dz` in the
+affine chart, then `ω = -g(1/w) / w² dw` in the inverted chart, at every `w ≠ 0`. -/
+theorem OneForm.coeff_invChart_eq_neg_inv_sq_mul (ω : OneForm (OnePoint ℂ)) {w : ℂ}
+    (hw : w ≠ 0) : ω.coeff invChart w = -(w ^ 2)⁻¹ * ω.coeff affineChart w⁻¹ := by
+  have hw' : w⁻¹ ≠ 0 := inv_ne_zero hw
+  have h := ω.coeff_eq_coeff_mul_deriv affineChart_mem_maximalAtlas invChart_mem_maximalAtlas
+    (y := ((w⁻¹ : ℂ) : OnePoint ℂ)) (by simp)
+    (by simpa using fun h ↦ hw' (coe_injective h))
+  rw [invChart_coe, inv_inv, affineChart_coe, affineChart_comp_invChart_symm, deriv_inv] at h
+  rw [h, mul_comm]
+
+/-- The coefficient of an everywhere meromorphic `1`-form in the inverted chart is meromorphic. -/
+theorem OneForm.meromorphicAt_coeff_invChart {ω : OneForm (OnePoint ℂ)}
+    (hω : ∀ x, ω.MeromorphicAt x) (w : ℂ) : _root_.MeromorphicAt (ω.coeff invChart) w := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simpa only [meromorphicAt_def, chartAt_infty, invChart_infty] using hω ∞
+  · have hsrc : ((w⁻¹ : ℂ) : OnePoint ℂ) ∈ invChart.source := by
+      simpa using fun h ↦ inv_ne_zero hw (coe_injective h)
+    simpa only [invChart_coe, inv_inv] using
+      (meromorphicAt_iff_of_mem_maximalAtlas invChart_mem_maximalAtlas hsrc).1 (hω _)
+
+/-- Off the support of the divisor, the coefficient in the affine chart has no pole. -/
+theorem OneForm.meromorphicOrderAt_coeff_affineChart_nonneg {ω : OneForm (OnePoint ℂ)}
+    (hω : ∀ x, ω.MeromorphicAt x) {z : ℂ} (hz : (z : OnePoint ℂ) ∉ ω.divisor.support) :
+    0 ≤ _root_.meromorphicOrderAt (ω.coeff affineChart) z := by
+  simpa only [order_def, chartAt_coe, affineChart_coe] using order_nonneg_of_notMem_support hω hz
+
+/-- Off the support of the divisor, the coefficient in the inverted chart has no pole at a nonzero
+point. -/
+theorem OneForm.meromorphicOrderAt_coeff_invChart_nonneg {ω : OneForm (OnePoint ℂ)}
+    (hω : ∀ x, ω.MeromorphicAt x) {w : ℂ} (hw : w ≠ 0)
+    (hwS : ((w⁻¹ : ℂ) : OnePoint ℂ) ∉ ω.divisor.support) :
+    0 ≤ _root_.meromorphicOrderAt (ω.coeff invChart) w := by
+  have hsrc : ((w⁻¹ : ℂ) : OnePoint ℂ) ∈ invChart.source := by
+    simpa using fun h ↦ inv_ne_zero hw (coe_injective h)
+  have := order_nonneg_of_notMem_support hω hwS
+  rwa [order_eq_of_mem_maximalAtlas invChart_mem_maximalAtlas hsrc, invChart_coe, inv_inv] at this
 
 /-- The differential `dz` is holomorphic at every finite point of the sphere. -/
 theorem holomorphicAt_sphereCoordinateDifferential_coe (z : ℂ) :
@@ -123,20 +161,6 @@ theorem degree_divisor_sphereCoordinateDifferential :
     WeilDivisor.degree sphereCoordinateDifferential.divisor = -2 := by
   simp [divisor_sphereCoordinateDifferential, degree_ofPoint]
 
-/-- In the inverted coordinate `w`, the coefficient of a `1`-form at `w ≠ 0` is its affine
-coefficient at `1/w` times `-w⁻²`. -/
-private theorem coeff_invChart_of_ne_zero (η : OneForm (OnePoint ℂ)) {w : ℂ} (hw : w ≠ 0) :
-    η.coeff invChart w = η.coeff affineChart w⁻¹ * -(w ^ 2)⁻¹ := by
-  have haff : affineChart ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 (OnePoint ℂ) := by
-    simpa only [chartAt_coe] using
-      (IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℂ)) (n := 1) ((0 : ℂ) : OnePoint ℂ))
-  have hinv : invChart ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 (OnePoint ℂ) := by
-    simpa only [chartAt_infty] using
-      (IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℂ)) (n := 1) (∞ : OnePoint ℂ))
-  have h := OneForm.coeff_eq_coeff_mul_deriv η haff hinv (y := ((w⁻¹ : ℂ) : OnePoint ℂ))
-    (by simp) (by simpa using hw)
-  rwa [affineChart_comp_invChart_symm, invChart_coe, inv_inv, affineChart_coe, deriv_inv] at h
-
 /-- **The sphere has no nonzero holomorphic `1`-form.** A holomorphic `η = f dz` has entire
 coefficient `f` with `f(z) = -g(1/z) z⁻²` for the holomorphic coefficient `g` at infinity, so `f`
 tends to zero at infinity and vanishes by Liouville's theorem. -/
@@ -157,7 +181,7 @@ theorem holomorphicOneForms_onePoint_eq_bot : holomorphicOneForms (OnePoint ℂ)
   have hfg : ∀ᶠ z in cocompact ℂ, -(g z⁻¹ * z⁻¹ ^ 2) = f z := by
     filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
     have hz : z ≠ 0 := hz
-    simp only [g, f, coeff_invChart_of_ne_zero η (inv_ne_zero hz), inv_inv]
+    simp only [g, f, OneForm.coeff_invChart_eq_neg_inv_sq_mul η (inv_ne_zero hz), inv_inv]
     field_simp
   have hinv : Tendsto (fun z : ℂ ↦ z⁻¹) (cocompact ℂ) (𝓝 0) := by
     rw [← Metric.cobounded_eq_cocompact]
