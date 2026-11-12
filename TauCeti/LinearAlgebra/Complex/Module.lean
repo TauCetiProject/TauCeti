@@ -48,8 +48,8 @@ The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `
 half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
 
 A vector lies in the real span of a complex basis exactly when its coordinates are real
-(`Module.Basis.mem_span_range_real_iff`). In particular, the real span of the standard basis of
-`ι → ℂ` is `ℝ^ι`, the vectors with real entries (`TauCeti.mem_span_range_basisFun_iff`).
+(`Module.Basis.mem_span_real_range_iff`). In particular, the real span of the standard basis of
+`ι → ℂ` is `ℝ^ι`, the vectors with real entries (`TauCeti.mem_span_real_range_basisFun_iff`).
 -/
 
 public section
@@ -165,7 +165,7 @@ end Complex
 namespace Module.Basis
 
 /-- A vector lies in the real span of a complex basis exactly when its coordinates are real. -/
-theorem mem_span_range_real_iff {ι M : Type*} [AddCommGroup M] [Module ℝ M] [Module ℂ M]
+theorem mem_span_real_range_iff {ι M : Type*} [AddCommGroup M] [Module ℝ M] [Module ℂ M]
     [IsScalarTower ℝ ℂ M] (b : Basis ι ℂ M) (m : M) :
     m ∈ Submodule.span ℝ (Set.range b) ↔ ∀ i, (b.repr m i).im = 0 := by
   rw [b.mem_span_iff_repr_mem ℝ]
@@ -186,9 +186,9 @@ theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A
   module
 
 /-- The real span of the standard basis of `ι → ℂ` is `ℝ^ι`, the vectors with real entries. -/
-theorem mem_span_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → ℂ) :
+theorem mem_span_real_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → ℂ) :
     w ∈ Submodule.span ℝ (Set.range (Pi.basisFun ℂ ι)) ↔ ∀ i, (w i).im = 0 := by
-  simp [(Pi.basisFun ℂ ι).mem_span_range_real_iff]
+  simp [(Pi.basisFun ℂ ι).mem_span_real_range_iff]
 
 end TauCeti
 
