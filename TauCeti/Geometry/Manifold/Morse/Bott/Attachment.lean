@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Topology.ContinuousMap.ApplyProdMk
 import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
@@ -34,16 +35,17 @@ part `{s + 2t ≤ 2ε}` of the tube is compact, then `M_{c+ε}` strong deformati
 (`TauCeti.exists_sublevel_union_negativeDiscBundle_deformation`). The tube may have several
 components, for instance one for each critical submanifold on the level.
 
-The proof is Milnor's. The function `F = f - μ(s + 2t)`, lowered on the tube by a smooth
-nonincreasing cutoff `μ` equal to `2ε` on `(-∞, ε]` and to `0` on `[2ε, ∞)`, has the same sublevel
-`{F ≤ c + ε} = M_{c+ε}` and no critical points in the band `F⁻¹[c - ε, c + ε]`: off the tube it is
-`f` near the band, along a vector killed by `ds` its derivative is `(1 - 2μ') dt ≠ 0` where
-`t ≠ 0`, and where `t = 0` it lies below `c - ε`. So `M_{c+ε}` deformation retracts onto
-`{F ≤ c - ε}` (`TauCeti.exists_sublevelDeformation`). This sublevel in turn retracts onto `M_{c-ε}`
-with the disc bundle attached: at time `τ` the retraction scales the positive directions of a
-point by `(1 - τ) min 1 √((s - ε) / t) + τ`, which only lowers `F`. The scaling factor jumps where
-`t = 0`, but there `φ` does not move the point at any time, and since `[0, 1]` is compact the
-deformation is still continuous.
+The proof is Milnor's, adapting the argument of `TauCeti.exists_sublevel_union_cells_deformation`,
+the chart version for isolated nondegenerate critical points. The function `F = f - μ(s + 2t)`,
+lowered on the tube by a smooth nonincreasing cutoff `μ` equal to `2ε` on `(-∞, ε]` and to `0` on
+`[2ε, ∞)`, has the same sublevel `{F ≤ c + ε} = M_{c+ε}` and no critical points in the band
+`F⁻¹[c - ε, c + ε]`: off the tube it is `f` near the band, along a vector killed by `ds` its
+derivative is `(1 - 2μ') dt ≠ 0` where `t ≠ 0`, and where `t = 0` it lies below `c - ε`. So
+`M_{c+ε}` deformation retracts onto `{F ≤ c - ε}` (`TauCeti.exists_sublevelDeformation`). This
+sublevel in turn retracts onto `M_{c-ε}` with the disc bundle attached: at time `τ` the retraction
+scales the positive directions of a point by `(1 - τ) min 1 √((s - ε) / t) + τ`, which only lowers
+`F`. The scaling factor jumps where `t = 0`, but there `φ` does not move the point at any time, and
+since `[0, 1]` is compact the deformation is still continuous.
 
 ## Main results
 
@@ -208,36 +210,22 @@ private theorem continuous_tubeRetraction (hW : IsOpen W) (hs : ContinuousOn s W
       fun q ↦ (φ (retractionScale s t ε q.1.1 q.1.2, w q) : M) :=
     funext fun q ↦ tubeRetraction_of_mem (x := (q.1.2 : M)) q.1.1 q.2
   rw [heq]
-  set q₀ : U := ⟨p₀, hp₀⟩
-  by_cases ht₀ : t p₀.2 = 0
-  · -- Where `t = 0`, `φ` fixes the point at all times; the tube lemma over the compact `[0, 1]`
-    -- bounds the scaled points of nearby points, whatever the scaling factor.
-    have hfix₀ (τ : unitInterval) : φ (τ, w q₀) = w q₀ := hφ₀ τ (w q₀) ht₀
-    rw [ContinuousAt, show (φ (retractionScale s t ε q₀.1.1 q₀.1.2, w q₀) : M) = p₀.2 from
-      congrArg Subtype.val (hfix₀ _)]
-    refine fun N hN ↦ ?_
-    have hN' : Subtype.val ⁻¹' N ∈ 𝓝 (w q₀) := continuousAt_subtype_val.preimage_mem_nhds hN
-    have hP : ∀ τ ∈ (univ : Set unitInterval),
-        ∀ᶠ z : W × unitInterval in 𝓝 (w q₀, τ), φ (z.2, z.1) ∈ Subtype.val ⁻¹' N := by
-      intro τ _
-      have hc := (φ.continuous.comp continuous_swap).continuousAt (x := (w q₀, τ))
-      exact hc.preimage_mem_nhds (by simpa [hfix₀] using hN')
-    exact Filter.mem_map.2 (mem_of_superset (hw.continuousAt.preimage_mem_nhds
-      (isCompact_univ.eventually_forall_of_forall_eventually
-        (P := fun y τ ↦ φ (τ, y) ∈ Subtype.val ⁻¹' N) hP)) fun q hq ↦ hq _ (mem_univ _))
-  · -- Where `t ≠ 0`, the scaling factor is continuous.
-    have hst (g : M → ℝ) (hg : ContinuousOn g W) :
-        ContinuousAt (fun q : U ↦ g q.1.2) q₀ :=
-      ContinuousAt.comp (f := fun q : U ↦ ((q.1.2 : X) : M)) (hg.continuousAt (hW.mem_nhds hp₀))
-        (hval.comp continuous_subtype_val).continuousAt
-    have hκ : ContinuousAt (fun q : U ↦ retractionScale s t ε q.1.1 q.1.2) q₀ := by
-      refine ContinuousAt.codRestrict (f := fun q : U ↦ (1 - (q.1.1 : ℝ)) *
-        min 1 √((s q.1.2 - ε) / t q.1.2) + q.1.1) (fun q ↦ (retractionScale s t ε _ _).2) ?_
-      have hτ : Continuous fun q : U ↦ (q.1.1 : ℝ) :=
-        continuous_subtype_val.comp (continuous_fst.comp continuous_subtype_val)
-      exact ((continuous_const.sub hτ).continuousAt.mul (continuousAt_const.min
-        (((hst s hs).sub continuousAt_const).div (hst t ht) ht₀).sqrt)).add hτ.continuousAt
-    exact (continuous_subtype_val.comp φ.continuous).continuousAt.comp (hκ.prodMk hw.continuousAt)
+  -- Where `t ≠ 0`, the scaling factor is continuous; where `t = 0`, `φ` fixes the point at all
+  -- times, so the tube lemma over the compact `[0, 1]` applies whatever the scaling factor.
+  have hst (g : M → ℝ) (hg : ContinuousOn g W) (q : U) :
+      ContinuousAt (fun p : U ↦ g p.1.2) q :=
+    ContinuousAt.comp (f := fun q : U ↦ ((q.1.2 : X) : M)) (hg.continuousAt (hW.mem_nhds q.2))
+      (hval.comp continuous_subtype_val).continuousAt
+  have hκ (q : U) (hq : w q ∉ {y : W | t y = 0}) :
+      ContinuousAt (fun p : U ↦ retractionScale s t ε p.1.1 p.1.2) q := by
+    refine ContinuousAt.codRestrict (f := fun q : U ↦ (1 - (q.1.1 : ℝ)) *
+      min 1 √((s q.1.2 - ε) / t q.1.2) + q.1.1) (fun q ↦ (retractionScale s t ε _ _).2) ?_
+    have hτ : Continuous fun q : U ↦ (q.1.1 : ℝ) :=
+      continuous_subtype_val.comp (continuous_fst.comp continuous_subtype_val)
+    exact ((continuous_const.sub hτ).continuousAt.mul (continuousAt_const.min
+      (((hst s hs q).sub continuousAt_const).div (hst t ht q) hq).sqrt)).add hτ.continuousAt
+  exact (continuous_subtype_val.comp (φ.continuous_apply_prodMk_of_fixed
+    (A := {y : W | t y = 0}) (fun τ y hy ↦ hφ₀ τ y hy) hw hκ)).continuousAt
 
 include hφs hφt hφ₁ hφ₀ in
 /-- **Milnor's retraction onto the lower sublevel with the negative disc bundle attached.** Let
