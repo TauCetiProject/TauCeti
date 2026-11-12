@@ -72,20 +72,19 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
-  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
-  [ContMDiffSMul I I' ∞ G M]
-
-attribute [local instance] lieGroupOne
-attribute [local instance] contMDiffSMulOneOfInfty
-
 /-! ### The differential of the orbit map -/
 
-omit [CompleteSpace E] [CompleteSpace E'] [IsManifold I' ∞ M] in
+section Differential
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [ContMDiffMul I 1 G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [MulAction G M]
+  [ContMDiffSMul I I' 1 G M]
+
 /-- The derivative at `g` of the orbit map of `x` is that of the orbit map of `g • x` at the
 identity, precomposed with the derivative of right translation by `g⁻¹`. -/
 theorem mfderiv_smul_const_apply (g : G) (x : M) (v : TangentSpace I g) :
@@ -96,6 +95,19 @@ theorem mfderiv_smul_const_apply (g : G) (x : M) (v : TangentSpace I g) :
   rw [hfun]
   exact mfderiv_comp_apply_of_eq g (ContMDiffSMul.mdifferentiableAt_smul_const (g • x) 1)
     (mdifferentiableAt_mul_right (a := g⁻¹)) (mul_inv_cancel g) v
+
+end Differential
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M]
+
+attribute [local instance] lieGroupOne
+attribute [local instance] contMDiffSMulOneOfInfty
 
 /-- **The image of the differential of the orbit map** at `g` is the orbit tangent space at
 `g • x`, spanned by the values of the fundamental vector fields. -/
