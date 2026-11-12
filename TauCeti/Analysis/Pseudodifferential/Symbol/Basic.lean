@@ -266,7 +266,7 @@ theorem IsUniform.exists_norm_iteratedFDeriv_le {a : Symbol n V W m} (ha : a.IsU
         ‖iteratedFDeriv ℝ p (fun η ↦ a.coefficient (x, η)) ξ‖ ≤ C := by
   choose B hB0 hB using isUniform_iff.1 ha
   have hB' : ∀ α β x ξ, ‖mixedDeriv α β a.coefficient x ξ‖ ≤ B α β := fun α β x ξ ↦ by
-    have hβ : (0 : ℝ) ≤ β.length := Nat.cast_nonneg _
+    have _ : (0 : ℝ) ≤ β.length := Nat.cast_nonneg _
     refine (hB α β x ξ).trans (mul_le_of_le_one_right (hB0 α β)
       (Real.rpow_le_one_of_one_le_of_nonpos ?_ (by linarith)))
     nlinarith [sq_nonneg ‖ξ‖]
@@ -317,7 +317,7 @@ instance : Zero (Symbol n V W m) where
   zero :=
     { coefficient := 0
       contDiff_coefficient := contDiff_const
-      exists_bound := fun _ _ α β => ⟨0, le_rfl, fun x ξ => by simp⟩ }
+      exists_bound := fun _ _ α β => ⟨0, le_rfl, fun x _ => by simp⟩ }
 
 instance : Add (Symbol n V W m) where
   add a b :=
@@ -701,7 +701,6 @@ theorem exists_norm_coefficient_add_sub_le (a : Symbol n V W m)
   have hv : ‖v‖ ≤ (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by
     rw [← Real.sqrt_eq_rpow]
     exact Real.le_sqrt_of_sq_le (by linarith)
-  have hB0 : 0 ≤ B := by positivity
   have hsplit : (1 + ‖v‖ ^ 2) ^ ((|m - 1| + 1) / 2) =
       (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) * (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by
     rw [← Real.rpow_add (by positivity)]
@@ -1377,6 +1376,13 @@ def map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) 
 theorem coefficient_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
     (p : CoordinateSpace n × CoordinateSpace n) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
   (rfl)
+
+/-- The coefficient of the symbol transported by conjugation `T ↦ e₂ ∘ T ∘ e₁⁻¹` along
+isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'` is the conjugated coefficient. -/
+theorem coefficient_map_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W') (a : Symbol n V W m) :
+    (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient =
+      fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
+  funext fun p ↦ by simp
 
 theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
     (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by

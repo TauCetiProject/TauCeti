@@ -418,7 +418,7 @@ theorem isZero_singularHomology_thomPairOver_biUnion {ι : Type*} (s : Finset ι
   classical
   induction s using Finset.induction_on generalizing W n with
   | empty => simpa using isZero_singularHomology_thomPairOver_empty R n
-  | insert a s ha ih =>
+  | insert a s _ ih =>
     rw [Finset.set_biUnion_insert]
     obtain ⟨e, _, he⟩ := hWe a (Finset.mem_insert_self a s)
     refine isZero_singularHomology_thomPairOver_union R (hWo a (Finset.mem_insert_self a s))
@@ -522,7 +522,7 @@ theorem singularCohomology_thomPairOver_biUnion_ext {ι : Type*} (s : Finset ι)
     refine (ModuleCat.subsingleton_of_isZero ?_).elim u v
     refine TopPair.isZero_singularCohomology_of_isZero_singularHomology _ R' M' _ fun j _ ↦ ?_
     simpa using isZero_singularHomology_thomPairOver_empty (E := E) R' j
-  | insert a s ha ih =>
+  | insert a s _ ih =>
     revert u v
     rw [Finset.set_biUnion_insert]
     intro u v h
