@@ -185,9 +185,8 @@ private theorem exists_norm_le_isConstrainedSolution_relabel_encode_iff {X : Typ
   have hC := constraintOfList_map_prodMap (Encodable.encode_injective (α := X)) l
   constructor
   · rintro ⟨v, hv, hs⟩
-    have h := hs.of_relabel
-    rw [show constraintOfList _ ∘ Encodable.encode = constraintOfList l from funext hC] at h
-    exact ⟨v ∘ Encodable.encode, fun x => hv _, h⟩
+    refine ⟨v ∘ Encodable.encode, fun x => hv _, ?_⟩
+    simpa only [Function.comp_def, hC] using hs.of_relabel
   · rintro ⟨v, hv, hs⟩
     refine ⟨fun n => (Encodable.decode₂ X n).elim 1 v, fun n => ?_,
       IsSolution.isConstrainedSolution ?_ fun n => ?_⟩
