@@ -118,11 +118,12 @@ noncomputable def extQuotientSMulTopEquivDual (he : CompleteOrthogonalIdempotent
   let S := ModuleCat.of A ((Ideal.span {e j} : Ideal A) ⧸
     Ring.jacobson A • (⊤ : Submodule A (Ideal.span {e j} : Ideal A)))
   -- `Ext` is a `k`-module through the `k`-module structure that `ModuleCat` puts on `S`, which
-  -- is not definitionally the quotient-module structure; pass the former explicitly.
+  -- is not definitionally the quotient-module structure; make the former the local instance.
+  letI : Module k S := ModuleCat.Algebra.instModuleCarrier
+  haveI := ModuleCat.Algebra.instIsScalarTowerCarrier (S₀ := k) (M := S)
   exact (Submodule.radicalLayerHomEquivExt.{u, u, u} (k := k) (P := P)
       (Ring.jacobson A • (⊤ : Submodule A P)) (Ring.jacobson_smul_top_le A P) S).symm ≪≫ₗ
-    he.linearMapEquivDual (N := S) (instN := ModuleCat.Algebra.instModuleCarrier)
-      (towerN := ModuleCat.Algebra.instIsScalarTowerCarrier) hquot
+    he.linearMapEquivDual (N := S) hquot
       (Module.isTorsionBySet_quotient_ideal_smul _ _)
       (Module.isTorsionBySet_quotient_ideal_smul _ _) j (he.smul_quotient_smul_top_eq_self hquot j)
       _ (mk_spanSingletonGenerator_ne_zero hjJ) exists_smul_mk_spanSingletonGenerator_eq ≪≫ₗ
