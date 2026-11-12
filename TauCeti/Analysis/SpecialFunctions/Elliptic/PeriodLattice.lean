@@ -99,6 +99,13 @@ theorem exists_periodPair_lattice_eq_periodLattice :
     ∃ L : PeriodPair, L.lattice = E.periodLattice :=
   ⟨E.exists_periodPair_variableChange_smul_eq.choose, by rw [periodLattice]⟩
 
+/-- The period lattice of a complex elliptic curve is discrete, so `ℂ / E.periodLattice` is a
+complex torus. -/
+instance : DiscreteTopology E.periodLattice := by
+  obtain ⟨L, hL⟩ := E.exists_periodPair_lattice_eq_periodLattice
+  rw [← hL]
+  infer_instance
+
 /-- The period lattice of the Weierstrass curve of `Λ` is `Λ`. -/
 @[simp]
 theorem _root_.PeriodPair.periodLattice_weierstrassCurve (L : PeriodPair) :
