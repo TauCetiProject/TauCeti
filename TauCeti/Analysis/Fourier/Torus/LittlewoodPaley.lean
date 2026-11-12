@@ -287,7 +287,7 @@ theorem exists_tsum_norm_sq_littlewoodPaleyBlock_le :
 theorem exists_norm_sq_le_mul_tsum_norm_sq_littlewoodPaleyBlock :
     ∃ C : ℝ, ∀ f : L²(UnitAddTorus d),
       ‖f‖ ^ 2 ≤ C * ∑' j, ‖littlewoodPaleyBlock φ j f‖ ^ 2 := by
-  obtain ⟨L, hL0, hL⟩ := φ.exists_one_le_mul_sum_sq_inhomogeneousLittlewoodPaley
+  obtain ⟨L, -, hL⟩ := φ.exists_one_le_mul_sum_sq_inhomogeneousLittlewoodPaley
   obtain ⟨M, hM⟩ := φ.exists_sum_sq_inhomogeneousLittlewoodPaley_le
   refine ⟨L, fun f ↦ ?_⟩
   have hparseval := hasSum_norm_sq_mFourierCoeff f
