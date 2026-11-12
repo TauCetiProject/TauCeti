@@ -698,7 +698,7 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall
     (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)) contMDiff_const hHs
   -- On the truncation, this is the energy identity of the pair of pants with zero inputs.
   have hT := hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hHi hHsi
-    hu.contMDiffOn hR
+    isOpen_univ (subset_univ _) hu.contMDiffOn hR
   rw [pairOfPantsPerturbation_single_inf, Fintype.sum_eq_single inf fun r hr => by
     simp [Pi.single_eq_of_ne hr]] at hT
   simp only [Pi.single_eq_same, endSign_inf, neg_one_mul, Complex.ofReal_neg] at hT
@@ -818,7 +818,8 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
   have huS : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal :=
     hu.mono fun z hz => (mem_thricePuncturedSphereReal_iff.1 hz).1
   -- On the truncation, this is the energy identity of the pair of pants with one input.
-  have hT := hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hHi hHsi huS hR
+  have hT := hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hHi hHsi
+    isOpen_thricePuncturedSphereReal (preimage_truncation_subset_thricePuncturedSphereReal R) huS hR
   rw [pairOfPantsPerturbation_single_zero, Fintype.sum_eq_single zero fun r hr => by
     simp [Pi.single_eq_of_ne hr]] at hT
   simp only [Pi.single_eq_same, endSign_zero, one_mul] at hT
