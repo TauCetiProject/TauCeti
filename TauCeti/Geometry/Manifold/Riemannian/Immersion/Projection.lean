@@ -58,9 +58,7 @@ variable
   {f : M → N} {W : (x : M) → TangentSpace J (f x)} {x : M}
 
 /-- Tangential projections form a `C^n` endomorphism field at a point where the differential
-is injective. Only the ambient manifold needs a metric; its model need not be finite-dimensional.
-Equivalently this is a regular section of the pullback endomorphism bundle, via
-`Bundle.Pullback.contMDiff_hom_section_iff`. -/
+is injective. Only the ambient manifold needs a metric; its model need not be finite-dimensional. -/
 theorem ContMDiffAt.starProjection_range_mfderiv
     (hf : ContMDiffAt I J (n + 1) f x)
     (hinj : Function.Injective (mfderiv I J f x)) :
@@ -94,7 +92,8 @@ theorem ContMDiffAt.starProjection_range_mfderiv
     inferInstance
   have hg (i) : ContMDiffAt I (J.prod 𝓘(ℝ, F)) n
       (fun y ↦ TotalSpace.mk' F (f y) (g i y)) x :=
-    ContMDiffAt.gramSchmidtNormed_bundle (hmetric := hmetric) (b := f) (v := v) hv hli i
+    ContMDiffAt.gramSchmidtNormed_bundle (hmetric := hmetric) (b := f) (v := v) i
+      (fun j _ ↦ hv j) (hli.linearIndepOn _)
   -- Pin the target norm too, so reducibility of TangentSpace does not select the model norm.
   have hs := ContMDiffAt.sum_sectionAlong Finset.univ _ (hf.of_le le_self_add)
     (fun i _ ↦ (hg i).rankOne_bundle (hmetric := hmetric)

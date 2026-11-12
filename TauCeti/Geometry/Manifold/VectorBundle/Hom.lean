@@ -319,12 +319,10 @@ theorem contMDiff_id_endomorphism
     [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)] :
     ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₁)) n
       (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₁)
-        (E := fun x ↦ V x →L[𝕜] V x) x (ContinuousLinearMap.id 𝕜 (V x))) := by
-  apply contMDiff_hom_bundle_of_inCoordinates_eq_const
+        (E := fun x ↦ V x →L[𝕜] V x) x (ContinuousLinearMap.id 𝕜 (V x))) :=
+  contMDiff_hom_bundle_of_inCoordinates_eq_const
     (c := fun _ ↦ ContinuousLinearMap.id 𝕜 F₁)
-  intro a x hx _
-  ext v
-  simp [ContinuousLinearMap.inCoordinates, hx]
+    fun _ _ hx _ ↦ ContinuousLinearMap.inCoordinates_id hx
 
 end ConstantCoordinates
 

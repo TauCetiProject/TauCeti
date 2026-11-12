@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
-import Mathlib.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Dual
 
 /-!
 # Rank-one maps out of a Riemannian bundle
@@ -18,8 +18,8 @@ map, as a field in the Hom bundle from `V` to `W`. Neither bundle needs finite r
 Taking `W = V`, this provides smooth matrix units from orthonormal local frames, with the
 native Hom-bundle topology.
 
-The construction is Mathlib's `InnerProductSpace.rankOne`; smoothness uses the
-bundle inner product and the total-space criterion for smooth homomorphisms.
+The construction is Mathlib's `InnerProductSpace.rankOne`; smoothness follows by
+metric duality and the coordinate criterion for smooth Hom-bundle fields.
 -/
 
 public section
@@ -42,11 +42,44 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {EB HB B : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
   [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
   [TopologicalSpace B] [ChartedSpace HB B]
-  {b : B → M} {σ : Π y : B, W (b y)} {τ : Π y : B, V (b y)} {x : B}
+  {b : B → M} {σ : Π y : B, W (b y)} {τ : Π y : B, V (b y)} {s : Set B} {x : B}
 
 /-- Rank-one maps `v ↦ ⟪τ, v⟫ • σ` formed from `C^n` fields in `W` and the Riemannian
-bundle `V` along a common base map form a `C^n` Hom-bundle field at the same point.
+bundle `V` along a common base map form a `C^n` Hom-bundle field within the same set.
 No finite-dimensionality or smooth-transition assumption is needed. -/
+theorem ContMDiffWithinAt.rankOne_bundle
+    (hσ : ContMDiffWithinAt IB (I.prod 𝓘(ℝ, F')) n
+      (fun y ↦ TotalSpace.mk' F' (b y) (σ y)) s x)
+    (hτ : ContMDiffWithinAt IB (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (τ y)) s x) :
+    ContMDiffWithinAt IB (I.prod 𝓘(ℝ, F →L[ℝ] F')) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] F') (E := fun y ↦ V y →L[ℝ] W y) (b y)
+        (rankOne ℝ (σ y) (τ y))) s x := by
+  -- Form the metric-dual covector, then tensor it with the target field in coordinates.
+  have hb := (contMDiffWithinAt_totalSpace_iff.mp hτ).1
+  have hdual := hτ.innerSL_bundle
+  have hdual' := (contMDiffWithinAt_hom_bundle _).mp hdual
+  have hσ' := (contMDiffWithinAt_totalSpace_iff.mp hσ).2
+  rw [contMDiffWithinAt_hom_bundle]
+  refine ⟨hb, ?_⟩
+  have hp := ((ContinuousLinearMap.smulRightL ℝ F F').contDiff.comp_contMDiffWithinAt
+    hdual'.2).clm_apply hσ'
+  refine hp.congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [hb.continuousWithinAt.preimage_mem_nhdsWithin
+      ((trivializationAt F' W (b x)).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt F' W (b x)))] with y hy
+    -- Expose preimage membership so the coordinate evaluation lemma can consume it directly.
+    change b y ∈ (trivializationAt F' W (b x)).baseSet at hy
+    ext v
+    simp [ContinuousLinearMap.inCoordinates, rankOne_apply,
+      Trivialization.coe_linearMapAt_of_mem _ hy]
+  · ext v
+    simp [ContinuousLinearMap.inCoordinates, rankOne_apply,
+      Trivialization.coe_linearMapAt_of_mem _
+        (FiberBundle.mem_baseSet_trivializationAt F' W (b x))]
+
+/-- Rank-one maps formed from `C^n` fields along a common base map form a `C^n`
+Hom-bundle field at the same point. -/
 theorem ContMDiffAt.rankOne_bundle
     (hσ : ContMDiffAt IB (I.prod 𝓘(ℝ, F')) n
       (fun y ↦ TotalSpace.mk' F' (b y) (σ y)) x)
@@ -54,34 +87,31 @@ theorem ContMDiffAt.rankOne_bundle
       (fun y ↦ TotalSpace.mk' F (b y) (τ y)) x) :
     ContMDiffAt IB (I.prod 𝓘(ℝ, F →L[ℝ] F')) n
       (fun y ↦ TotalSpace.mk' (F →L[ℝ] F') (E := fun y ↦ V y →L[ℝ] W y) (b y)
-        (rankOne ℝ (σ y) (τ y))) x := by
-  -- First form the metric-dual covector, then tensor it with the target field in coordinates.
-  obtain ⟨g, hg, heq⟩ := hmetric.exists_contMDiff
-  have hb := (contMDiffAt_totalSpace_iff.mp hτ).1
-  have hdual : ContMDiffAt IB (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) n
-      (fun y ↦ TotalSpace.mk' (F →L[ℝ] ℝ)
-        (E := fun z ↦ V z →L[ℝ] ℝ) (b y) (innerSL ℝ (τ y))) x := by
-    have hmetric_eq (y : M) : g y = innerSL ℝ := by
-      ext u w
-      exact (heq y u w).symm
-    have h := ContMDiffAt.clm_bundle_apply (ϕ := fun y ↦ g (b y))
-      (F₂ := F →L[ℝ] ℝ) (E₂ := fun z ↦ V z →L[ℝ] ℝ)
-      ((hg (b x)).comp x hb) hτ
-    simpa only [Function.comp_def, hmetric_eq] using h
-  have hdual' := (contMDiffAt_hom_bundle _).mp hdual
-  have hσ' := (contMDiffAt_totalSpace_iff.mp hσ).2
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨hb, ?_⟩
-  have hp := ((ContinuousLinearMap.smulRightL ℝ F F').contDiff.comp_contMDiffAt
-    hdual'.2).clm_apply hσ'
-  refine hp.congr_of_eventuallyEq ?_
-  filter_upwards [hb.continuousAt.preimage_mem_nhds
-    ((trivializationAt F' W (b x)).open_baseSet.mem_nhds
-      (FiberBundle.mem_baseSet_trivializationAt F' W (b x)))] with y hy
-  -- Expose preimage membership so the coordinate evaluation lemma can consume it directly.
-  change b y ∈ (trivializationAt F' W (b x)).baseSet at hy
-  ext v
-  simp [ContinuousLinearMap.inCoordinates, rankOne_apply,
-    Trivialization.coe_linearMapAt_of_mem _ hy]
+        (rankOne ℝ (σ y) (τ y))) x :=
+  ContMDiffWithinAt.rankOne_bundle hσ hτ
+
+/-- Rank-one maps formed from `C^n` fields along a common base map form a `C^n`
+Hom-bundle field on the same set. -/
+theorem ContMDiffOn.rankOne_bundle
+    (hσ : ContMDiffOn IB (I.prod 𝓘(ℝ, F')) n
+      (fun y ↦ TotalSpace.mk' F' (b y) (σ y)) s)
+    (hτ : ContMDiffOn IB (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (τ y)) s) :
+    ContMDiffOn IB (I.prod 𝓘(ℝ, F →L[ℝ] F')) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] F') (E := fun y ↦ V y →L[ℝ] W y) (b y)
+        (rankOne ℝ (σ y) (τ y))) s :=
+  fun x hx ↦ (hσ x hx).rankOne_bundle (hτ x hx)
+
+/-- Rank-one maps formed from `C^n` fields along a common base map form a `C^n`
+Hom-bundle field. -/
+theorem ContMDiff.rankOne_bundle
+    (hσ : ContMDiff IB (I.prod 𝓘(ℝ, F')) n
+      (fun y ↦ TotalSpace.mk' F' (b y) (σ y)))
+    (hτ : ContMDiff IB (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (τ y))) :
+    ContMDiff IB (I.prod 𝓘(ℝ, F →L[ℝ] F')) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] F') (E := fun y ↦ V y →L[ℝ] W y) (b y)
+        (rankOne ℝ (σ y) (τ y))) :=
+  fun x ↦ (hσ x).rankOne_bundle (hτ x)
 
 end

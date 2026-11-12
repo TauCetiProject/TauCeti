@@ -124,9 +124,9 @@ theorem contMDiffOn_normalOrthonormalFrame (h : IsNormalDomain I M p U)
   have hi : LinearIndependent ℝ (fun j ↦ v j q) :=
     h.linearIndependent_normalCoordinateField b.orthonormal.linearIndependent hq
   apply ContMDiffAt.contMDiffWithinAt
-  apply ContMDiffAt.gramSchmidtNormed_bundle (I := I) (F := E) (v := v) (j := i)
-  · exact hv
-  · exact hi
+  apply ContMDiffAt.gramSchmidtNormed_bundle (I := I) (F := E) (v := v) i
+  · exact fun j _ ↦ hv j
+  · exact hi.linearIndepOn _
 
 /-- Normal orthonormal frame sections form a smooth local frame in Mathlib's sense. -/
 theorem isLocalFrameOn_normalOrthonormalFrame (h : IsNormalDomain I M p U)
