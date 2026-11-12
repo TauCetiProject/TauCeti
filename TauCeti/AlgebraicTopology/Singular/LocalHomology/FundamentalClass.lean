@@ -624,7 +624,7 @@ variable {M E E₁ : Type} [TopologicalSpace M] [T2Space M] [CompactSpace M]
 theorem fundamentalClass_congrModel (h : finrank ℝ E₁ = finrank ℝ E) :
     (congrModel h o).fundamentalClass (h.trans hn) = o.fundamentalClass hn :=
   o.eq_fundamentalClass hn fun x ↦ by
-    rw [localHomologyRestriction_singularHomologyπ_fundamentalClass, congrModel_apply]
+    rw [singularHomologyToLocalHomology_fundamentalClass, congrModel_apply]
 
 end CongrModel
 
