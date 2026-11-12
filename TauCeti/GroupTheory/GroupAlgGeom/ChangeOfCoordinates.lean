@@ -160,7 +160,7 @@ variable (φ : GX G X ≃* GX G Y) (hφ : ∀ g, φ (inl g) = inl g)
 `S` and the solutions of its image `φ S`: a solution `v` of `S` goes to the point with
 coordinates the values at `v` of the words `φ⁻¹ y`. -/
 noncomputable def imageEquivV (S : Set (GX G X)) : V ι S ≃ V ι (φ '' S) :=
-  (coordinateChangeEquivV ι (GHom.ofMulEquiv φ.symm (φ.symm_apply_coeff hφ))
+  (coordinateChangeEquivV ι (GHom.ofMulEquiv φ.symm fun g => φ.symm_apply_eq.2 (hφ g).symm)
     (GHom.ofMulEquiv_bijective _ _) S).trans <| Set.equivOfEq <| by
       rw [GHom.coe_ofMulEquiv]
       exact congrArg (V ι) (φ.toEquiv.image_eq_preimage_symm S).symm

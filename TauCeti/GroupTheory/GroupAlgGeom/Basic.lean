@@ -187,15 +187,11 @@ theorem ofMulEquiv_bijective (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g) :
     Function.Bijective (ofMulEquiv e he) := by
   simpa using e.bijective
 
-/-- The inverse of an isomorphism commuting with the coefficient maps commutes with them. -/
-theorem _root_.MulEquiv.symm_apply_coeff (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g) (g : G) :
-    e.symm (ιK g) = ιH g := by
-  simp [MulEquiv.symm_apply_eq, he]
-
 @[simp]
 theorem symmOfBijective_ofMulEquiv (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g)
     (h : Function.Bijective (ofMulEquiv e he)) :
-    (ofMulEquiv e he).symmOfBijective h = ofMulEquiv e.symm (e.symm_apply_coeff he) := by
+    (ofMulEquiv e he).symmOfBijective h =
+      ofMulEquiv e.symm fun g => e.symm_apply_eq.2 (he g).symm := by
   ext x
   apply h.1
   simp
@@ -316,11 +312,12 @@ theorem GX.gHom_ext {φ ψ : GHom (inl : G →* GX G X) ι}
     (h : ∀ x, φ (inr (FreeGroup.of x)) = ψ (inr (FreeGroup.of x))) : φ = ψ :=
   (homEquiv ι).injective (funext h)
 
-/-- Two isomorphisms out of `G[X]` agreeing on the coefficients and on the variables are
+/-- Two homomorphisms out of `G[X]` agreeing on the coefficients and on the variables are
 equal. -/
-theorem GX.mulEquiv_ext {φ ψ : GX G X ≃* H} (hinl : ∀ g, φ (inl g) = ψ (inl g))
+theorem GX.ext_hom {M F : Type*} [Monoid M] [FunLike F (GX G X) M]
+    [MonoidHomClass F (GX G X) M] {φ ψ : F} (hinl : ∀ g, φ (inl g) = ψ (inl g))
     (hinr : ∀ x, φ (inr (FreeGroup.of x)) = ψ (inr (FreeGroup.of x))) : φ = ψ :=
-  MulEquiv.toMonoidHom_injective <|
+  DFunLike.ext _ _ <| DFunLike.congr_fun (f := (φ : GX G X →* M)) (g := ψ) <|
     hom_ext (MonoidHom.ext hinl) (FreeGroup.ext_hom _ _ hinr)
 
 variable {ι v}
