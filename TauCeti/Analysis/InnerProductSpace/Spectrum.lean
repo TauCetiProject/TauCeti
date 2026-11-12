@@ -66,6 +66,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 * `LinearMap.IsSymmetric.negativeSpectralSubspace` and
   `LinearMap.IsSymmetric.positiveSpectralSubspace`: the negative and positive halves of the
   finite-dimensional spectral splitting.
+* `LinearMap.IsSymmetric.exists_pos_forall_le_eigenvalues`: some `α > 0` lies below all the
+  positive eigenvalues.
 * `LinearMap.IsSymmetric.eigenvalues_rev_of_anticommute`: if an invertible operator anticommutes
   with `T`, the `i`-th largest eigenvalue of `T` is minus its `i`-th smallest.
 * `finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute`, in the
@@ -396,6 +398,27 @@ theorem map_positiveSpectralSubspace_le (hT : T.IsSymmetric)
     Submodule.map T (hT.positiveSpectralSubspace hn) ≤ hT.positiveSpectralSubspace hn := by
   rw [positiveSpectralSubspace]
   exact hT.map_eigenvectorSpan_le hn _
+
+/-- **A positive lower bound for the positive eigenvalues.** Some `α > 0` lies below all the
+positive eigenvalues of a symmetric operator on a finite-dimensional space. -/
+theorem exists_pos_forall_le_eigenvalues (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) :
+    ∃ α > 0, ∀ i, 0 < hT.eigenvalues hn i → α ≤ hT.eigenvalues hn i := by
+  classical
+  -- The least of `1` and the positive eigenvalues.
+  let c : Fin n → ℝ := fun i ↦ if 0 < hT.eigenvalues hn i then hT.eigenvalues hn i else 1
+  let s : Finset ℝ := insert 1 (Finset.univ.image c)
+  have hs : s.Nonempty := Finset.insert_nonempty _ _
+  refine ⟨s.min' hs, (Finset.lt_min'_iff s hs).2 fun y hy ↦ ?_, fun i hi ↦ ?_⟩
+  · rcases Finset.mem_insert.1 hy with rfl | hy
+    · exact one_pos
+    · obtain ⟨i, -, rfl⟩ := Finset.mem_image.1 hy
+      dsimp only [c]
+      split_ifs with h
+      · exact h
+      · exact one_pos
+  · have := s.min'_le (c i)
+      (Finset.mem_insert_of_mem (Finset.mem_image_of_mem c (Finset.mem_univ i)))
+    simpa [c, hi] using this
 
 /-- The negative and positive spectral subspaces are disjoint. -/
 theorem disjoint_negativeSpectralSubspace_positiveSpectralSubspace

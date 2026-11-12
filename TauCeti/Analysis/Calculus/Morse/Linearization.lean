@@ -45,6 +45,7 @@ results that identify the operator as the derivative of the gradient and prove s
 
 * `TauCeti.hessianOperator`: the Riesz-represented Hessian as an endomorphism of the Hilbert space.
 * `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
+* `TauCeti.hessianOperator_neg`: the Hessian operator of `-f` is the negative of that of `f`.
 * `OrthonormalBasis.toMatrix_hessianOperator_apply` and `OrthonormalBasis.det_hessianOperator`:
   its entries and its determinant in an orthonormal basis.
 * `TauCeti.hessianOperator_single_apply`: for a `C²` function on `ℝⁿ`, its entries in the
@@ -112,6 +113,13 @@ def hessianOperator (f : E → ℝ) (x : E) : E →L[ℝ] E :=
 both sides use Mathlib's totalized derivatives. -/
 theorem fderiv_gradient (f : E → ℝ) (x : E) : fderiv ℝ (∇ f) x = hessianOperator f x := by
   rw [hessianOperator, iteratedGradientChain_succ, iteratedGradientChain_zero]
+
+/-- The Hessian operator of `-f` is the negative of that of `f`. -/
+@[simp]
+theorem hessianOperator_neg (f : E → ℝ) (x : E) :
+    hessianOperator (-f) x = -hessianOperator f x := by
+  have h : ∇ (-f) = -∇ f := funext fun _ ↦ gradient_neg
+  rw [← fderiv_gradient, ← fderiv_gradient, h, fderiv_neg]
 
 /-- The Riesz formula for the Hessian operator: it is the endomorphism that the inner product
 associates with the second derivative of `f`, viewed as a bilinear form. -/
