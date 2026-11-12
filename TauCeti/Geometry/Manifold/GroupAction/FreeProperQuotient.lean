@@ -28,11 +28,11 @@ diffeomorphism at each of its points. Then:
 
 * `Φ` identifies `G × U` with the open invariant set `Φ (G × U)`, and the map
   `ψ s = ⟦σ s⟧ : U → M ⧸ G` is injective (`MulAction.injOn_smul_univ_prod_iff`) and open, since
-  `ψ '' O` is the image of the open set `Φ (G × O)` under the open orbit projection. So `ψ` is an
-  open partial homeomorphism `TauCeti.sliceOrbitPartialHomeomorph` with source `U`.
+  `ψ '' O` is the image of the open invariant set `Φ (G × O)` under the orbit projection. So `ψ`
+  is an open partial homeomorphism `TauCeti.sliceOrbitOpenPartialHomeomorph` with source `U`.
 * For two slice tubes the change of orbit charts `ψ₂⁻¹ ∘ ψ₁` is, near each point of its domain,
   `s ↦ pr₂ (Φ₂⁻¹ (σ₁ s))`, so it is smooth
-  (`TauCeti.contMDiffOn_sliceOrbitPartialHomeomorph_symm_comp`).
+  (`TauCeti.contMDiffOn_sliceOrbitOpenPartialHomeomorph_symm_comp`).
 * On `Φ (G × U)` the orbit projection is `z ↦ ψ (pr₂ (Φ⁻¹ z))`, and `⟦·⟧ ∘ Φ = ψ ∘ pr₂`.
 
 Slice tubes exist through every point of a free proper action
@@ -51,7 +51,7 @@ discrete groups acting properly discontinuously already carry the pushed-forward
 
 ## Main definitions
 
-* `TauCeti.sliceOrbitPartialHomeomorph`: the orbit chart `s ↦ ⟦σ s⟧` of a slice tube.
+* `TauCeti.sliceOrbitOpenPartialHomeomorph`: the orbit chart `s ↦ ⟦σ s⟧` of a slice tube.
 * `TauCeti.freeProperChartedSpace`: the charts on the orbit space of a free proper action given by
   inverses of orbit charts of chosen slice tubes.
 
@@ -59,11 +59,13 @@ discrete groups acting properly discontinuously already carry the pushed-forward
 
 * `IsLocalDiffeomorphAt.exists_sliceTube`: a transverse slice through a free point of a proper
   action can be shrunk to a slice tube.
-* `TauCeti.contMDiffOn_sliceOrbitPartialHomeomorph_symm_comp`: orbit charts of slice tubes are
+* `TauCeti.contMDiffOn_sliceOrbitOpenPartialHomeomorph_symm_comp`: orbit charts of slice tubes are
   smoothly compatible.
 * `TauCeti.isManifold_freeProperChartedSpace`: the orbit space of a free proper action is a smooth
   manifold.
 * `TauCeti.isSubmersion_quotientMk_freeProperChartedSpace`: the orbit projection is a submersion.
+* `TauCeti.contMDiff_iff_contMDiff_comp_quotientMk_freeProperChartedSpace`: a map out of the orbit
+  space is smooth if and only if its composite with the orbit projection is.
 * `TauCeti.exists_freeProperQuotient_isSubmersion`: the quotient manifold theorem.
 
 ## References
@@ -94,18 +96,18 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {K : Type*} [TopologicalSpace K] {J : ModelWithCorners ℝ F K}
   {S : Type*} [TopologicalSpace S] [ChartedSpace K S]
-  {σ : S → M} {U : Set S}
+  {σ : S → M} {U : Set S} {n : ℕ∞ω}
 
 /-- **Slice tubes from transverse slices.** If the slice map `(g, s) ↦ g • σ s` of a proper action
 is a local diffeomorphism at `(1, s₀)` and `σ s₀` has trivial stabilizer, then for some open
 neighbourhood `U` of `s₀` the slice map is injective on the tube `G × U` and a local
 diffeomorphism at each point of it. -/
-theorem _root_.IsLocalDiffeomorphAt.exists_sliceTube [LieGroup I ∞ G] [ContMDiffSMul I I' ∞ G M]
+theorem _root_.IsLocalDiffeomorphAt.exists_sliceTube [LieGroup I n G] [ContMDiffSMul I I' n G M]
     [ProperSMul G M] {s₀ : S}
-    (h : IsLocalDiffeomorphAt (I.prod J) I' ∞ (fun p : G × S ↦ p.1 • σ p.2) (1, s₀))
+    (h : IsLocalDiffeomorphAt (I.prod J) I' n (fun p : G × S ↦ p.1 • σ p.2) (1, s₀))
     (hfree : stabilizer G (σ s₀) = ⊥) :
     ∃ U : Set S, IsOpen U ∧ s₀ ∈ U ∧ InjOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U) ∧
-      IsLocalDiffeomorphOn (I.prod J) I' ∞ (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U) := by
+      IsLocalDiffeomorphOn (I.prod J) I' n (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U) := by
   have hσ : ContinuousAt σ s₀ := by
     have hcont := h.contMDiffAt.continuousAt.comp
       (f := fun s : S ↦ ((1 : G), s)) (continuous_const.prodMk continuous_id).continuousAt
@@ -138,21 +140,21 @@ theorem quotientMk_slice_snd_invFunOn [Nonempty S] {z : M}
 /-- On the image of a slice tube, the slice coordinate `pr₂ (Φ⁻¹ z)` of a point `z` is smooth. -/
 theorem contMDiffOn_snd_invFunOn_slice [Nonempty S] (hU : IsOpen U)
     (hinj : InjOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U))
-    (hΦ : IsLocalDiffeomorphOn (I.prod J) I' ∞ (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)) :
-    ContMDiffOn I' J ∞ (fun z ↦ (invFunOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U) z).2)
+    (hΦ : IsLocalDiffeomorphOn (I.prod J) I' n (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)) :
+    ContMDiffOn I' J n (fun z ↦ (invFunOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U) z).2)
       ((fun p : G × S ↦ p.1 • σ p.2) '' (univ ×ˢ U)) :=
   contMDiff_snd.comp_contMDiffOn (hΦ.contMDiffOn_invFunOn (isOpen_univ.prod hU) hinj)
 
 /-- The image of a slice tube is open. -/
 theorem isOpen_image_slice (hU : IsOpen U)
-    (hΦ : IsLocalDiffeomorphOn (I.prod J) I' ∞ (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)) :
+    (hΦ : IsLocalDiffeomorphOn (I.prod J) I' n (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)) :
     IsOpen ((fun p : G × S ↦ p.1 • σ p.2) '' (univ ×ˢ U)) :=
   hΦ.isLocalHomeomorphOn.isOpen_image (isOpen_univ.prod hU)
 
 /-- For a slice tube, the image of an open subset `O` of `U` under `s ↦ ⟦σ s⟧` is open: it is the
-image under the open orbit projection of the open set `Φ (G × O)`. -/
-theorem isOpen_image_quotientMk_slice [ContinuousConstSMul G M]
-    (hΦ : IsLocalDiffeomorphOn (I.prod J) I' ∞ (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U))
+image under the orbit projection of the open invariant set `Φ (G × O)`. -/
+theorem isOpen_image_quotientMk_slice
+    (hΦ : IsLocalDiffeomorphOn (I.prod J) I' n (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U))
     {O : Set S} (hO : IsOpen O) (hOU : O ⊆ U) :
     IsOpen ((fun s ↦ Quotient.mk (orbitRel G M) (σ s)) '' O) := by
   have himage : (fun s ↦ Quotient.mk (orbitRel G M) (σ s)) '' O =
@@ -163,18 +165,22 @@ theorem isOpen_image_quotientMk_slice [ContinuousConstSMul G M]
       exact ⟨σ s, ⟨(1, s), ⟨mem_univ _, hs⟩, one_smul G (σ s)⟩, rfl⟩
     · rintro ⟨_, ⟨⟨g, s⟩, ⟨-, hs⟩, rfl⟩, rfl⟩
       exact ⟨s, hs, (Quotient.sound (orbitRel_apply.mpr (mem_orbit _ g))).symm⟩
-  rw [himage]
-  refine isOpenMap_quotient_mk'_mul _ ?_
-  exact isOpen_image_slice hO fun p ↦ hΦ ⟨p, ⟨p.2.1, hOU p.2.2⟩⟩
+  rw [himage, ← isQuotientMap_quotient_mk'.isOpen_preimage]
+  -- `Φ (G × O)` is invariant, so it is the full preimage of its image in the orbit space.
+  convert isOpen_image_slice hO fun p ↦ hΦ ⟨p, ⟨p.2.1, hOU p.2.2⟩⟩ using 1
+  refine Subset.antisymm ?_ (subset_preimage_image _ _)
+  rintro z ⟨_, ⟨⟨g, s⟩, ⟨-, hs⟩, rfl⟩, hz⟩
+  obtain ⟨h, hh⟩ := orbitRel_apply.mp (Quotient.exact hz.symm)
+  exact ⟨(h * g, s), ⟨mem_univ _, hs⟩, (mul_smul h g (σ s)).trans hh⟩
 
-variable [ContMDiffSMul I I' ∞ G M] [Nonempty S]
+variable [Nonempty S]
 
 variable (σ) in
 /-- **The orbit chart of a slice tube.** For a slice tube `(σ, U)`, the map `s ↦ ⟦σ s⟧` is an open
 partial homeomorphism from the slice manifold to the orbit space, with source `U`. -/
-def sliceOrbitPartialHomeomorph (hU : IsOpen U)
+def sliceOrbitOpenPartialHomeomorph (hU : IsOpen U)
     (hinj : InjOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U))
-    (hΦ : IsLocalDiffeomorphOn (I.prod J) I' ∞ (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)) :
+    (hΦ : IsLocalDiffeomorphOn (I.prod J) I' n (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)) :
     OpenPartialHomeomorph S (orbitRel.Quotient G M) :=
   OpenPartialHomeomorph.ofContinuousOpenRestrict
     ((injOn_quotientMk_slice hinj).toPartialEquiv _ U)
@@ -184,8 +190,6 @@ def sliceOrbitPartialHomeomorph (hU : IsOpen U)
         (continuous_const.prodMk continuous_id).continuousOn (fun s hs ↦ ⟨mem_univ _, hs⟩)
         |>.congr fun s _ ↦ (one_smul G (σ s)).symm)
     (by
-      have : ContinuousConstSMul G M :=
-        (ContMDiffSMul.continuousSMul (I := I) (I' := I') ∞).continuousConstSMul
       intro O hO
       rw [domRestrict_eq, image_comp]
       exact isOpen_image_quotientMk_slice hΦ (hU.isOpenMap_subtype_val O hO)
@@ -193,71 +197,71 @@ def sliceOrbitPartialHomeomorph (hU : IsOpen U)
     hU
 
 variable {hU : IsOpen U} {hinj : InjOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)}
-  {hΦ : IsLocalDiffeomorphOn (I.prod J) I' ∞ (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)}
+  {hΦ : IsLocalDiffeomorphOn (I.prod J) I' n (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)}
 
 /-- The orbit chart of a slice tube sends `s` to the orbit of `σ s`. -/
 @[simp]
-theorem sliceOrbitPartialHomeomorph_apply (s : S) :
-    sliceOrbitPartialHomeomorph σ hU hinj hΦ s = Quotient.mk (orbitRel G M) (σ s) := (rfl)
+theorem sliceOrbitOpenPartialHomeomorph_apply (s : S) :
+    sliceOrbitOpenPartialHomeomorph σ hU hinj hΦ s = Quotient.mk (orbitRel G M) (σ s) := (rfl)
 
 /-- The orbit chart of a slice tube is defined on the slice parameters `U` of the tube. -/
 @[simp]
-theorem sliceOrbitPartialHomeomorph_source :
-    (sliceOrbitPartialHomeomorph σ hU hinj hΦ).source = U :=
+theorem sliceOrbitOpenPartialHomeomorph_source :
+    (sliceOrbitOpenPartialHomeomorph σ hU hinj hΦ).source = U :=
   (rfl)
 
 /-- The orbit chart of a slice tube takes values in the orbits through the slice. -/
 @[simp]
-theorem sliceOrbitPartialHomeomorph_target :
-    (sliceOrbitPartialHomeomorph σ hU hinj hΦ).target =
+theorem sliceOrbitOpenPartialHomeomorph_target :
+    (sliceOrbitOpenPartialHomeomorph σ hU hinj hΦ).target =
       (fun s ↦ Quotient.mk (orbitRel G M) (σ s)) '' U :=
   (rfl)
 
 /-- On the image of a slice tube, the inverse orbit chart of the orbit of `z` is the slice
 coordinate `pr₂ (Φ⁻¹ z)`. -/
-theorem sliceOrbitPartialHomeomorph_symm_quotientMk {z : M}
+theorem sliceOrbitOpenPartialHomeomorph_symm_quotientMk {z : M}
     (hz : z ∈ (fun p : G × S ↦ p.1 • σ p.2) '' (univ ×ˢ U)) :
-    (sliceOrbitPartialHomeomorph σ hU hinj hΦ).symm (Quotient.mk (orbitRel G M) z) =
+    (sliceOrbitOpenPartialHomeomorph σ hU hinj hΦ).symm (Quotient.mk (orbitRel G M) z) =
       (invFunOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U) z).2 := by
   have hmem : (invFunOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U) z).2 ∈ U :=
     (invFunOn_mem (f := fun p : G × S ↦ p.1 • σ p.2) hz).2
-  rw [← quotientMk_slice_snd_invFunOn hz, ← sliceOrbitPartialHomeomorph_apply (hU := hU)
+  rw [← quotientMk_slice_snd_invFunOn hz, ← sliceOrbitOpenPartialHomeomorph_apply (hU := hU)
     (hinj := hinj) (hΦ := hΦ)]
-  exact (sliceOrbitPartialHomeomorph σ hU hinj hΦ).left_inv hmem
+  exact (sliceOrbitOpenPartialHomeomorph σ hU hinj hΦ).left_inv hmem
 
 variable {S₂ : Type*} [TopologicalSpace S₂] [ChartedSpace K S₂] [Nonempty S₂]
   {σ₂ : S₂ → M} {U₂ : Set S₂} {hU₂ : IsOpen U₂}
   {hinj₂ : InjOn (fun p : G × S₂ ↦ p.1 • σ₂ p.2) (univ ×ˢ U₂)}
-  {hΦ₂ : IsLocalDiffeomorphOn (I.prod J) I' ∞ (fun p : G × S₂ ↦ p.1 • σ₂ p.2) (univ ×ˢ U₂)}
+  {hΦ₂ : IsLocalDiffeomorphOn (I.prod J) I' n (fun p : G × S₂ ↦ p.1 • σ₂ p.2) (univ ×ˢ U₂)}
 
 /-- **Orbit charts of slice tubes are smoothly compatible.** For two slice tubes, the change of
 orbit charts `ψ₂⁻¹ ∘ ψ₁` is smooth on its domain: near each point it is
 `s ↦ pr₂ (Φ₂⁻¹ (σ₁ s))`. -/
-theorem contMDiffOn_sliceOrbitPartialHomeomorph_symm_comp :
-    ContMDiffOn J J ∞
-      ((sliceOrbitPartialHomeomorph σ₂ hU₂ hinj₂ hΦ₂).symm ∘
-        sliceOrbitPartialHomeomorph σ hU hinj hΦ)
-      ((sliceOrbitPartialHomeomorph σ hU hinj hΦ).trans
-        (sliceOrbitPartialHomeomorph σ₂ hU₂ hinj₂ hΦ₂).symm).source := by
+theorem contMDiffOn_sliceOrbitOpenPartialHomeomorph_symm_comp :
+    ContMDiffOn J J n
+      ((sliceOrbitOpenPartialHomeomorph σ₂ hU₂ hinj₂ hΦ₂).symm ∘
+        sliceOrbitOpenPartialHomeomorph σ hU hinj hΦ)
+      ((sliceOrbitOpenPartialHomeomorph σ hU hinj hΦ).trans
+        (sliceOrbitOpenPartialHomeomorph σ₂ hU₂ hinj₂ hΦ₂).symm).source := by
   set Φ₂ := fun p : G × S₂ ↦ p.1 • σ₂ p.2
   rintro s ⟨hs, hs₂⟩
-  simp only [mem_preimage, OpenPartialHomeomorph.symm_source, sliceOrbitPartialHomeomorph_target]
-    at hs₂
+  simp only [mem_preimage, OpenPartialHomeomorph.symm_source,
+    sliceOrbitOpenPartialHomeomorph_target] at hs₂
   -- The orbit of `σ s` meets the second slice, so `σ s` lies in the image of the second tube.
   obtain ⟨w, hw, hws⟩ := hs₂
   obtain ⟨g, hg⟩ := orbitRel_apply.mp (Quotient.exact hws.symm)
   have hσs : σ s ∈ Φ₂ '' (univ ×ˢ U₂) := ⟨(g, w), ⟨mem_univ _, hw⟩, hg⟩
   -- The first slice is smooth at `s`.
-  have hσ : ContMDiffAt J I' ∞ σ s := by
+  have hσ : ContMDiffAt J I' n σ s := by
     have hcomp := (hΦ ⟨(1, s), ⟨mem_univ _, hs⟩⟩).contMDiffAt.comp s
       (contMDiffAt_const.prodMk contMDiffAt_id)
     simpa only [comp_def, one_smul] using hcomp
   have hopen := (isOpen_image_slice hU₂ hΦ₂).mem_nhds hσs
-  have hsmooth : ContMDiffAt J J ∞ (fun s' ↦ (invFunOn Φ₂ (univ ×ˢ U₂) (σ s')).2) s :=
+  have hsmooth : ContMDiffAt J J n (fun s' ↦ (invFunOn Φ₂ (univ ×ˢ U₂) (σ s')).2) s :=
     ((contMDiffOn_snd_invFunOn_slice hU₂ hinj₂ hΦ₂).contMDiffAt hopen).comp s hσ
   refine (hsmooth.congr_of_eventuallyEq ?_).contMDiffWithinAt
   filter_upwards [hσ.continuousAt.preimage_mem_nhds hopen] with s' hs'
-  exact sliceOrbitPartialHomeomorph_symm_quotientMk hs'
+  exact sliceOrbitOpenPartialHomeomorph_symm_quotientMk hs'
 
 end SliceTube
 
@@ -300,13 +304,13 @@ theorem exists_sliceTube_of_stabilizer_eq_bot {x : M} (hx : stabilizer G x = ⊥
       IsCompl ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) W :=
     Submodule.exists_isCompl _
   have hdim : Module.finrank ℝ F = Module.finrank ℝ W := by
-    have h₁ := Submodule.finrank_add_eq_of_isCompl hW
-    rw [InfinitesimalAction.finrank_orbitTangent_of_isotropy_eq_bot _ _ hloc] at h₁
-    -- The Lie algebra of `G` is the model space `E`.
-    have h₂ : Module.finrank ℝ (GroupLieAlgebra I G) = Module.finrank ℝ E := rfl
-    have h₃ : Module.finrank ℝ (TangentSpace I' x) = Module.finrank ℝ E' := rfl
-    rw [Module.finrank_fin_fun, ← h₃, ← h₁, h₂, Nat.add_sub_cancel_left]
-    rfl
+    have h₁ : Module.finrank ℝ E + Module.finrank ℝ W = Module.finrank ℝ E' := by
+      have h := Submodule.finrank_add_eq_of_isCompl hW
+      rw [InfinitesimalAction.finrank_orbitTangent_of_isotropy_eq_bot _ _ hloc] at h
+      -- By definition, the Lie algebra of `G` is the model space `E` and `T_x M` is `E'`.
+      exact h
+    rw [Module.finrank_fin_fun]
+    omega
   let e : F ≃L[ℝ] W := ContinuousLinearEquiv.ofFinrankEq hdim
   -- The chart slice `v ↦ φ⁻¹ (φ x + L v)`, where `L` parametrizes `W` by `F`.
   set φ := extChartAt I' x
@@ -322,81 +326,102 @@ theorem exists_sliceTube_of_stabilizer_eq_bot {x : M} (hx : stabilizer G x = ⊥
   obtain ⟨U, hU, h0, hinj, hΦ⟩ := h₁.exists_sliceTube (by rwa [hσ₀])
   exact ⟨σ, U, hσ₀, hU, h0, hinj, hΦ⟩
 
-variable (I I') in
+section IsCancelSMul
+
+variable [IsCancelSMul G M]
+
+variable (I G I') in
 /-- The orbit chart at `x` of a free proper action: the inverse of the orbit chart of a chosen slice
 tube through `x`, parametrized by `ℝ^(dim M - dim G)`. -/
-def freeProperSliceChart (hfree : ∀ x : M, stabilizer G x = ⊥) (x : M) :
+def freeProperSliceChart (x : M) :
     OpenPartialHomeomorph (orbitRel.Quotient G M)
       (Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ) :=
-  have h := exists_sliceTube_of_stabilizer_eq_bot (I := I) (I' := I') (hfree x)
-  (sliceOrbitPartialHomeomorph h.choose h.choose_spec.choose_spec.2.1
+  have h := exists_sliceTube_of_stabilizer_eq_bot (I := I) (I' := I')
+    (IsCancelSMul.stabilizer_eq_bot (G := G) x)
+  (sliceOrbitOpenPartialHomeomorph h.choose h.choose_spec.choose_spec.2.1
     h.choose_spec.choose_spec.2.2.2.1 h.choose_spec.choose_spec.2.2.2.2).symm
 
 /-- Every orbit chart of a free proper action is the inverse of the orbit chart of a slice tube
 whose slice passes through the base point. -/
-theorem exists_freeProperSliceChart_eq (hfree : ∀ x : M, stabilizer G x = ⊥) (x : M) :
+theorem exists_freeProperSliceChart_eq (x : M) :
     ∃ (σ : (Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ) → M)
       (U : Set (Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ)) (hU : IsOpen U)
       (hinj : InjOn (fun p : G × _ ↦ p.1 • σ p.2) (univ ×ˢ U))
       (hΦ : IsLocalDiffeomorphOn (I.prod 𝓘(ℝ, Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ))
         I' ∞ (fun p : G × _ ↦ p.1 • σ p.2) (univ ×ˢ U)),
       σ 0 = x ∧ 0 ∈ U ∧
-        freeProperSliceChart I I' hfree x = (sliceOrbitPartialHomeomorph σ hU hinj hΦ).symm := by
-  have h := exists_sliceTube_of_stabilizer_eq_bot (I := I) (I' := I') (hfree x)
+        freeProperSliceChart I G I' x = (sliceOrbitOpenPartialHomeomorph σ hU hinj hΦ).symm := by
+  have h := exists_sliceTube_of_stabilizer_eq_bot (I := I) (I' := I')
+    (IsCancelSMul.stabilizer_eq_bot (G := G) x)
   exact ⟨h.choose, h.choose_spec.choose, h.choose_spec.choose_spec.2.1,
     h.choose_spec.choose_spec.2.2.2.1, h.choose_spec.choose_spec.2.2.2.2,
     h.choose_spec.choose_spec.1, h.choose_spec.choose_spec.2.2.1, rfl⟩
 
-variable (I I') in
+variable (I G I' M) in
 /-- **The charts of the orbit space of a free proper action.** The chart at an orbit `q` is the
 orbit chart `TauCeti.freeProperSliceChart` at the representative `q.out`; the atlas consists of
 the orbit charts at all points. This is not an instance: see the module docstring. -/
 @[instance_reducible]
-def freeProperChartedSpace (hfree : ∀ x : M, stabilizer G x = ⊥) :
+def freeProperChartedSpace :
     ChartedSpace (Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ) (orbitRel.Quotient G M) where
-  atlas := range (freeProperSliceChart I I' hfree)
-  chartAt q := freeProperSliceChart I I' hfree q.out
+  atlas := range (freeProperSliceChart I G I')
+  chartAt q := freeProperSliceChart I G I' q.out
   mem_chart_source q := by
     obtain ⟨σ, U, hU, hinj, hΦ, hσ₀, h0, heq⟩ :=
-      exists_freeProperSliceChart_eq (I := I) (I' := I') hfree q.out
-    rw [heq, OpenPartialHomeomorph.symm_source, sliceOrbitPartialHomeomorph_target]
+      exists_freeProperSliceChart_eq (I := I) (G := G) (I' := I') q.out
+    rw [heq, OpenPartialHomeomorph.symm_source, sliceOrbitOpenPartialHomeomorph_target]
     exact ⟨0, h0, by simp only [hσ₀, Quotient.out_eq]⟩
   chart_mem_atlas q := mem_range_self _
 
+/-- The chart of `TauCeti.freeProperChartedSpace` at an orbit `q` is the orbit chart at its
+representative `q.out`. -/
+theorem chartAt_freeProperChartedSpace (q : orbitRel.Quotient G M) :
+    letI := freeProperChartedSpace I G I' M
+    chartAt (Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ) q =
+      freeProperSliceChart I G I' q.out :=
+  (rfl)
+
+/-- The atlas of `TauCeti.freeProperChartedSpace` consists of the orbit charts at all points. -/
+theorem atlas_freeProperChartedSpace :
+    letI := freeProperChartedSpace I G I' M
+    atlas (Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ) (orbitRel.Quotient G M) =
+      range (freeProperSliceChart I G I') :=
+  (rfl)
+
 /-- **The orbit space of a free proper action is a smooth manifold**, for the charts of
 `TauCeti.freeProperChartedSpace`. -/
-theorem isManifold_freeProperChartedSpace (hfree : ∀ x : M, stabilizer G x = ⊥) :
-    letI := freeProperChartedSpace I I' hfree
+theorem isManifold_freeProperChartedSpace :
+    letI := freeProperChartedSpace I G I' M
     IsManifold 𝓘(ℝ, Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ) ∞
       (orbitRel.Quotient G M) := by
-  let := freeProperChartedSpace I I' hfree
+  let := freeProperChartedSpace I G I' M
   refine isManifold_of_contDiffOn _ _ _ ?_
   rintro _ _ ⟨x, rfl⟩ ⟨y, rfl⟩
   obtain ⟨σ, U, hU, hinj, hΦ, -, -, hx⟩ :=
-    exists_freeProperSliceChart_eq (I := I) (I' := I') hfree x
+    exists_freeProperSliceChart_eq (I := I) (G := G) (I' := I') x
   obtain ⟨σ₂, U₂, hU₂, hinj₂, hΦ₂, -, -, hy⟩ :=
-    exists_freeProperSliceChart_eq (I := I) (I' := I') hfree y
+    exists_freeProperSliceChart_eq (I := I) (G := G) (I' := I') y
   rw [hx, hy, OpenPartialHomeomorph.symm_symm]
   simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, CompTriple.comp_eq,
     preimage_id_eq, id_eq, range_id, inter_univ]
-  exact contMDiffOn_iff_contDiffOn.mp contMDiffOn_sliceOrbitPartialHomeomorph_symm_comp
+  exact contMDiffOn_iff_contDiffOn.mp contMDiffOn_sliceOrbitOpenPartialHomeomorph_symm_comp
 
 /-- **The orbit projection of a free proper action is a submersion**, for the manifold structure of
 `TauCeti.freeProperChartedSpace`. -/
-theorem isSubmersion_quotientMk_freeProperChartedSpace (hfree : ∀ x : M, stabilizer G x = ⊥) :
-    letI := freeProperChartedSpace I I' hfree
+theorem isSubmersion_quotientMk_freeProperChartedSpace :
+    letI := freeProperChartedSpace I G I' M
     IsSubmersion I' 𝓘(ℝ, Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ) ∞
       (Quotient.mk (orbitRel G M)) := by
-  let := freeProperChartedSpace I I' hfree
-  have := isManifold_freeProperChartedSpace (I := I) (I' := I') hfree
+  let := freeProperChartedSpace I G I' M
+  have := isManifold_freeProperChartedSpace (I := I) (G := G) (I' := I') (M := M)
   set F := Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ
   -- Near `y`, read the projection through the slice tube of the chart at the orbit of `y`.
   have key : ∀ y : M, ContMDiffAt I' 𝓘(ℝ, F) ∞ (Quotient.mk (orbitRel G M)) y ∧
       Surjective (mfderiv I' 𝓘(ℝ, F) (Quotient.mk (orbitRel G M)) y) := by
     intro y
     obtain ⟨σ, U, hU, hinj, hΦ, hσ₀, h0, heq⟩ :=
-      exists_freeProperSliceChart_eq (I := I) (I' := I') hfree (Quotient.mk (orbitRel G M) y).out
-    set ψ := sliceOrbitPartialHomeomorph σ hU hinj hΦ
+      exists_freeProperSliceChart_eq (I := I) (G := G) (I' := I') (Quotient.mk (orbitRel G M) y).out
+    set ψ := sliceOrbitOpenPartialHomeomorph σ hU hinj hΦ
     set Φ := fun p : G × F ↦ p.1 • σ p.2
     have hψ : ψ.symm ∈ atlas F (orbitRel.Quotient G M) := ⟨_, heq⟩
     -- The orbit chart `ψ` is a local diffeomorphism on `U`, as the inverse of a chart.
@@ -439,6 +464,45 @@ theorem isSubmersion_quotientMk_freeProperChartedSpace (hfree : ∀ x : M, stabi
   exact (ContMDiff.isSubmersionOfComplement_of_surjective_mfderiv (fun y ↦ (key y).1)
     (by simp) fun y ↦ (key y).2).isSubmersion
 
+/-- **Smooth maps out of the orbit space of a free proper action.** For `n ≤ ∞`, a map `f` out of
+the orbit space is `C^n` for the charts of `TauCeti.freeProperChartedSpace` if and only if
+`f ∘ ⟦·⟧` is `C^n` on `M`. -/
+theorem contMDiff_iff_contMDiff_comp_quotientMk_freeProperChartedSpace
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N] {n : ℕ∞ω} (hn : n ≤ ∞)
+    {f : orbitRel.Quotient G M → N} :
+    letI := freeProperChartedSpace I G I' M
+    ContMDiff 𝓘(ℝ, Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ) I'' n f ↔
+      ContMDiff I' I'' n (f ∘ Quotient.mk (orbitRel G M)) := by
+  let := freeProperChartedSpace I G I' M
+  have := isManifold_freeProperChartedSpace (I := I) (G := G) (I' := I') (M := M)
+  set F := Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ
+  refine ⟨fun hf ↦ hf.comp ((isSubmersion_quotientMk_freeProperChartedSpace (I := I) (G := G)
+    (I' := I') (M := M)).contMDiff.of_le hn), fun hf q ↦ ?_⟩
+  -- Near `q`, `f` is `f ∘ ⟦·⟧ ∘ σ ∘ ψ⁻¹` for the slice tube `(σ, U)` of the chart `ψ⁻¹` at `q`.
+  obtain ⟨σ, U, hU, hinj, hΦ, -, -, heq⟩ :=
+    exists_freeProperSliceChart_eq (I := I) (G := G) (I' := I') q.out
+  set ψ := sliceOrbitOpenPartialHomeomorph σ hU hinj hΦ
+  have : IsManifold 𝓘(ℝ, F) n (orbitRel.Quotient G M) := IsManifold.of_le hn
+  have hψ : ContMDiffOn 𝓘(ℝ, F) 𝓘(ℝ, F) n ψ.symm ψ.symm.source :=
+    contMDiffOn_of_mem_maximalAtlas (IsManifold.subset_maximalAtlas ⟨_, heq⟩)
+  have hσ : ContMDiffOn 𝓘(ℝ, F) I' n σ U := fun s hs ↦ by
+    have hcomp := ((hΦ ⟨(1, s), ⟨mem_univ _, hs⟩⟩).contMDiffAt.of_le hn).comp s
+      (contMDiffAt_const.prodMk contMDiffAt_id)
+    simp only [comp_def, one_smul] at hcomp
+    exact hcomp.contMDiffWithinAt
+  have hq : q ∈ ψ.symm.source := by
+    rw [← heq]
+    exact mem_chart_source F q
+  have hopen := ψ.symm.open_source.mem_nhds hq
+  refine ((hf.comp_contMDiffOn (hσ.comp hψ fun _ h ↦ ψ.map_target h)).contMDiffAt
+    hopen).congr_of_eventuallyEq ?_
+  filter_upwards [hopen] with q' hq'
+  exact congrArg f (ψ.right_inv hq').symm
+
+end IsCancelSMul
+
 variable (I) in
 include I in
 /-- **The quotient manifold theorem for free proper actions.** Let a finite-dimensional real Lie
@@ -452,10 +516,9 @@ theorem exists_freeProperQuotient_isSubmersion (hfree : ∀ (g : G) (x : M), g �
           (orbitRel.Quotient G M) ∧
         IsSubmersion I' 𝓘(ℝ, Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ) ∞
           (Quotient.mk (orbitRel G M)) := by
-  have hstab : ∀ x : M, stabilizer G x = ⊥ := fun x ↦
-    (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ hfree g x hg
-  exact ⟨freeProperChartedSpace I I' hstab, isManifold_freeProperChartedSpace hstab,
-    isSubmersion_quotientMk_freeProperChartedSpace hstab⟩
+  have := isCancelSMul_iff_eq_one_of_smul_eq.mpr hfree
+  exact ⟨freeProperChartedSpace I G I' M, isManifold_freeProperChartedSpace,
+    isSubmersion_quotientMk_freeProperChartedSpace⟩
 
 end Quotient
 
