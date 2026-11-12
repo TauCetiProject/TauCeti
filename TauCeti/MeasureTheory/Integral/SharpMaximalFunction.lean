@@ -9,6 +9,8 @@ public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 
 /-!
@@ -597,18 +599,6 @@ open scoped NNReal
 variable {ι : Type*} [Fintype ι] [Nonempty ι] {F : Type*} [NormedAddCommGroup F]
   [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- The coordinate map `ℝⁿ → EuclideanSpace ℝ ι` maps the sup-distance ball `ball c r` into the
-Euclidean ball of radius `√n r` about the image of `c`. -/
-private theorem toLp_mem_ball_sqrt_card_mul {c z : ι → ℝ} {r : ℝ} (hz : z ∈ ball c r) :
-    WithLp.toLp 2 z ∈ ball (WithLp.toLp 2 c) (√(Fintype.card ι) * r) := by
-  rw [mem_ball] at hz ⊢
-  have h := (PiLp.lipschitzWith_toLp 2 (fun _ : ι => ℝ)).dist_le_mul z c
-  have hc : (((Fintype.card ι : ℝ≥0) ^ (1 / (2 : ℝ≥0∞)).toReal : ℝ≥0) : ℝ) =
-      √(Fintype.card ι) := by
-    simp [Real.sqrt_eq_rpow]
-  rw [hc] at h
-  exact h.trans_lt (mul_lt_mul_of_pos_left hz (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)))
-
 /-- The ratio of the volume of the Euclidean ball of radius `√n r` to that of the sup-distance ball
 of radius `r` does not depend on `r`. -/
 private theorem volume_ball_sqrt_card_mul_div_volume_ball (c : ι → ℝ) (c' : EuclideanSpace ℝ ι)
@@ -641,10 +631,8 @@ private theorem sharpMaximalFunction_comp_toLp_le {f : EuclideanSpace ℝ ι →
   have hTS : T ⁻¹' S = ball c r := by
     ext z
     rw [Set.mem_preimage, Set.mem_preimage, WithLp.ofLp_toLp]
-  have hSB : S ⊆ B := fun x hx => by
-    simpa [B, T] using toLp_mem_ball_sqrt_card_mul (Set.mem_preimage.1 hx)
-  have hB0 : volume B ≠ 0 := (measure_ball_pos _ _
-    (mul_pos (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)) hr)).ne'
+  have hSB : S ⊆ B := by simpa using PiLp.preimage_ofLp_ball_subset_ball (T c) r
+  have hB0 : volume B ≠ 0 := (measure_ball_pos _ _ (mul_pos EuclideanSpace.sqrt_card_pos hr)).ne'
   have hBtop : volume B ≠ ∞ := measure_ball_lt_top.ne
   have hQ : volume (ball c r) = volume S := by rw [← hTS, hT.measure_preimage hS.nullMeasurableSet]
   -- Compare with the oscillation about the Euclidean average `f_B`.
@@ -668,7 +656,7 @@ private theorem sharpMaximalFunction_comp_toLp_le {f : EuclideanSpace ℝ ι →
         rw [volume_ball_sqrt_card_mul_div_volume_ball c (T c) hr]
         gcongr
         exact setLAverage_enorm_sub_setAverage_le_sharpMaximalFunction volume f
-          (toLp_mem_ball_sqrt_card_mul hy)
+          (PiLp.preimage_ofLp_ball_subset_ball (T c) r (by simpa using hy))
 
 /-- **The Fefferman–Stein inequality for Euclidean balls.** For `1 < p < ∞` there is a constant
 `C`, depending only on `ι` and `p`, such that every integrable `f` on `EuclideanSpace ℝ ι`,

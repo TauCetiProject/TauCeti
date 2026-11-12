@@ -103,50 +103,6 @@ private theorem ofReal_setAverage_norm_rpow {h : X → F} {k : ℝ} (hk : 0 ≤ 
   refine lintegral_congr fun x => ?_
   rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hk, ofReal_norm]
 
-/-- The average of `‖h‖²` read in `ℝ≥0∞`. -/
-private theorem ofReal_setAverage_norm_sq {h : X → F}
-    (hi : IntegrableOn (fun x => ‖h x‖ ^ 2) s μ) :
-    ENNReal.ofReal (⨍ x in s, ‖h x‖ ^ 2 ∂μ) = ⨍⁻ x in s, ‖h x‖ₑ ^ 2 ∂μ := by
-  rw [ofReal_setAverage hi (ae_of_all _ fun x => by positivity), setLAverage_eq]
-  congr 1
-  refine lintegral_congr fun x => ?_
-  rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-
-/-- The square mean deviation of `h` from its average is at most four times the mean square of
-`h`. -/
-private theorem setLAverage_enorm_sub_setAverage_sq_le [NormedSpace ℝ F] (hs₀ : μ s ≠ 0)
-    (hs : μ s ≠ ∞) (h : X → F) :
-    ⨍⁻ x in s, ‖h x - ⨍ y in s, h y ∂μ‖ₑ ^ 2 ∂μ ≤ 4 * ⨍⁻ x in s, ‖h x‖ₑ ^ 2 ∂μ := by
-  set m := ⨍ y in s, h y ∂μ
-  set ν : Measure X := (μ s)⁻¹ • μ.restrict s
-  have hν : ν univ = 1 := by
-    simp only [ν, smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter,
-      smul_eq_mul]
-    exact ENNReal.inv_mul_cancel hs₀ hs
-  -- `‖m‖ₑ² ≤ (⨍⁻ ‖h‖ₑ)² ≤ ⨍⁻ ‖h‖ₑ²` by Jensen's inequality.
-  have hm : ‖m‖ₑ ^ 2 ≤ ⨍⁻ x in s, ‖h x‖ₑ ^ 2 ∂μ := by
-    have h1 := enorm_setAverage_le_setLAverage μ h s
-    have h2 := rpow_laverage_le_laverage_rpow (μ := μ.restrict s) (u := fun x => ‖h x‖ₑ)
-      one_le_two
-    simp only [ENNReal.rpow_two] at h2
-    exact (pow_le_pow_left₀ zero_le h1 2).trans h2
-  have hpt : ∀ x, ‖h x - m‖ₑ ^ 2 ≤ 2 * ‖h x‖ₑ ^ 2 + 2 * ‖m‖ₑ ^ 2 := fun x => by
-    have h1 : ‖h x - m‖ₑ ≤ ‖h x‖ₑ + ‖m‖ₑ := enorm_sub_le
-    have h2 := ENNReal.rpow_add_le_mul_rpow_add_rpow ‖h x‖ₑ ‖m‖ₑ one_le_two
-    simp only [ENNReal.rpow_two] at h2
-    norm_num at h2
-    calc ‖h x - m‖ₑ ^ 2 ≤ (‖h x‖ₑ + ‖m‖ₑ) ^ 2 := pow_le_pow_left₀ zero_le h1 2
-      _ ≤ 2 * (‖h x‖ₑ ^ 2 + ‖m‖ₑ ^ 2) := h2
-      _ = 2 * ‖h x‖ₑ ^ 2 + 2 * ‖m‖ₑ ^ 2 := mul_add _ _ _
-  calc ⨍⁻ x in s, ‖h x - m‖ₑ ^ 2 ∂μ ≤ ⨍⁻ x in s, (2 * ‖h x‖ₑ ^ 2 + 2 * ‖m‖ₑ ^ 2) ∂μ :=
-        lintegral_mono hpt
-    _ = 2 * ⨍⁻ x in s, ‖h x‖ₑ ^ 2 ∂μ + 2 * ‖m‖ₑ ^ 2 := by
-        simp only [setLAverage_eq']
-        rw [lintegral_add_right _ measurable_const, lintegral_const_mul' 2 _ ENNReal.ofNat_ne_top,
-          lintegral_const, hν, mul_one]
-    _ ≤ 2 * ⨍⁻ x in s, ‖h x‖ₑ ^ 2 ∂μ + 2 * ⨍⁻ x in s, ‖h x‖ₑ ^ 2 ∂μ := by gcongr
-    _ = 4 * ⨍⁻ x in s, ‖h x‖ₑ ^ 2 ∂μ := by rw [← add_mul]; norm_num
-
 end Averages
 
 namespace PDE
@@ -224,7 +180,6 @@ private theorem sq_setLAverage_enorm_gradient_sub_le
   have hq0 : 0 < q := hq.pos
   have hq'0 : 0 < q' := hq.symm.pos
   have hD : 0 ≤ D := by positivity
-  have hB0 : volume (ball c r) ≠ 0 := (measure_ball_pos _ _ hr).ne'
   have hBt : volume (ball c r) ≠ ∞ := measure_ball_lt_top.ne
   have : IsFiniteMeasure (volume.restrict (ball c r)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
@@ -262,18 +217,32 @@ private theorem sq_setLAverage_enorm_gradient_sub_le
       MemLp h 2 (volume.restrict (ball c t)) →
         IntegrableOn (fun y => ‖h y‖ ^ 2) (ball c t) := fun h t hh =>
     hh.integrable_norm_pow two_ne_zero
+  have hsq : ∀ (h : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) (t : ℝ),
+      MemLp h 2 (volume.restrict (ball c t)) →
+        ENNReal.ofReal (⨍ y in ball c t, ‖h y‖ ^ 2) = ⨍⁻ y in ball c t, ‖h y‖ₑ ^ 2 :=
+    fun h t hh => by
+      simpa only [Real.rpow_two, ENNReal.rpow_two] using
+        ofReal_setAverage_norm_rpow zero_le_two (by simpa only [Real.rpow_two] using hint2 h t hh)
   have hO : ∀ t, 0 < t → ENNReal.ofReal (⨍ y in ball c t, ‖g y - ⨍ z in ball c t, g z‖ ^ 2) =
       ⨍⁻ y in ball c t, ‖g y - ⨍ z in ball c t, g z‖ₑ ^ 2 := fun t _ => by
     have : IsFiniteMeasure (volume.restrict (ball c t)) :=
       isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-    exact ofReal_setAverage_norm_sq (hint2 _ t ((hg2 t).sub (memLp_const _)))
+    exact hsq _ t ((hg2 t).sub (memLp_const _))
   have hE1 : ENNReal.ofReal (⨍ y in ball c r, ‖g y - ⨍ z in ball c r, g z‖ ^ 2) ≤
       4 * (2 ^ (n + 1) * M₁) := by
-    rw [hO r hr]
-    exact (setLAverage_enorm_sub_setAverage_sq_le hB0 hBt g).trans
-      (by gcongr; exact setLAverage_le_two_pow_mul_maximalFunction _ hxr)
+    have hreal : ⨍ y in ball c r, ‖g y - ⨍ z in ball c r, g z‖ ^ 2 ≤
+        4 * ⨍ y in ball c r, ‖g y‖ ^ 2 := by
+      simp only [setAverage_eq, smul_eq_mul]
+      rw [mul_left_comm]
+      gcongr
+      simpa [setAverage_eq] using setIntegral_norm_sub_setAverage_sq_le hBt
+        ((hg2 r).integrable one_le_two) (c := 0) (by simpa using hint2 g r (hg2 r))
+    refine (ENNReal.ofReal_le_ofReal hreal).trans ?_
+    rw [ENNReal.ofReal_mul (by norm_num), hsq g r (hg2 r), ENNReal.ofReal_ofNat]
+    gcongr
+    exact setLAverage_le_two_pow_mul_maximalFunction _ hxr
   have hE2 : ENNReal.ofReal (⨍ y in ball c r, ‖G y‖ ^ 2) ≤ 2 ^ (n + 1) * M₂ := by
-    rw [ofReal_setAverage_norm_sq (hint2 G r hG2)]
+    rw [hsq G r hG2]
     exact setLAverage_le_two_pow_mul_maximalFunction _ hxr
   have hE3 : ENNReal.ofReal ((⨍ y in ball c r, ‖g y‖ ^ (2 * q)) ^ q⁻¹) ≤
       (2 ^ (n + 1) * M₃) ^ q⁻¹ := by
