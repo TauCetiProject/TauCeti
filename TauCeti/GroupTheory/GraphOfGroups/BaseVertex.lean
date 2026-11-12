@@ -36,7 +36,8 @@ of the image of `p`, `x ↦ p⁻¹ x p`.
   `π₁.mulEquivOfPath_congr`: change of base vertex is functorial in homotopy classes of paths.
 * `TauCeti.GraphOfGroups.π₁.mulEquivOfPath_eq_conj`: along a closed path it is an inner
   automorphism.
-* `TauCeti.GraphOfGroups.π₁.mulEquivOfPath_vertexHom`: its effect on `π₁.vertexHom`.
+* `TauCeti.GraphOfGroups.π₁.mulEquivOfPath_comp_vertexHom`, `π₁.mulEquivOfPath_vertexHom`: its
+  effect on `π₁.vertexHom`.
 * `TauCeti.GraphOfGroups.π₁.map_mulEquivOfPath_map_vertexHom`: it carries the image of a
   subgroup of a vertex group to a conjugate of its image.
 * `TauCeti.GraphOfGroups.π₁.nonempty_mulEquiv_of_preconnected`: over a preconnected graph,
@@ -109,9 +110,21 @@ def mulEquivOfPath (p : 𝔸.Path ⟨a⟩ ⟨b⟩) : π₁ 𝔸 a ≃* π₁ �
   conjHom_mk p q
 
 /-- The inverse of the change of base vertex along `p` is the change along `p⁻¹`. -/
-@[simp] theorem mulEquivOfPath_symm (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+theorem mulEquivOfPath_symm (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
     (mulEquivOfPath p).symm = mulEquivOfPath p.reverse :=
   MulEquiv.ext fun _ ↦ rfl
+
+@[simp] theorem mulEquivOfPath_symm_mk (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (q : 𝔸.Path ⟨b⟩ ⟨b⟩) :
+    (mulEquivOfPath p).symm (mk q) = mk ((p.comp q).comp p.reverse) := by
+  simp [mulEquivOfPath_symm]
+
+@[simp] theorem mulEquivOfPath_reverse_apply_apply (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (x : π₁ 𝔸 a) :
+    mulEquivOfPath p.reverse (mulEquivOfPath p x) = x :=
+  (mulEquivOfPath p).symm_apply_apply x
+
+@[simp] theorem mulEquivOfPath_apply_reverse_apply (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (x : π₁ 𝔸 b) :
+    mulEquivOfPath p (mulEquivOfPath p.reverse x) = x :=
+  (mulEquivOfPath p).apply_symm_apply x
 
 /-- The change of base vertex along the empty path is the identity. -/
 @[simp] theorem mulEquivOfPath_nil :
@@ -140,6 +153,20 @@ conjugate along `p⁻¹ q`. -/
   simp only [vertexHom_apply, mulEquivOfPath_mk, Quiver.Path.reverse_comp,
     Quiver.Path.reverse_reverse, Quiver.Path.comp_assoc]
 
+@[simp] theorem mulEquivOfPath_comp_vertexHom (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (q : 𝔸.Path ⟨a⟩ ⟨c⟩) :
+    (mulEquivOfPath p : π₁ 𝔸 a →* π₁ 𝔸 b).comp (vertexHom q) = vertexHom (p.reverse.comp q) :=
+  MonoidHom.ext (mulEquivOfPath_vertexHom p q)
+
+/-- The inverse of the change of base vertex along `p` sends the conjugate of `g ∈ A_c` along a
+path `q` from `b` to its conjugate along `p q`. -/
+@[simp] theorem mulEquivOfPath_symm_vertexHom (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (q : 𝔸.Path ⟨b⟩ ⟨c⟩)
+    (g : 𝔸.vertexGroup c) : (mulEquivOfPath p).symm (vertexHom q g) = vertexHom (p.comp q) g := by
+  simp [mulEquivOfPath_symm]
+
+@[simp] theorem mulEquivOfPath_symm_comp_vertexHom (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (q : 𝔸.Path ⟨b⟩ ⟨c⟩) :
+    ((mulEquivOfPath p).symm : π₁ 𝔸 b →* π₁ 𝔸 a).comp (vertexHom q) = vertexHom (p.comp q) :=
+  MonoidHom.ext (mulEquivOfPath_symm_vertexHom p q)
+
 /-- The change of base vertex along `p` carries the image of a subgroup `H` of a vertex group
 `A_c` along a path `q` from `a` to a conjugate of its image along any path `r` from `b`: the
 conjugate by the class of `p⁻¹ q r⁻¹`. With `H = ⊤` this is the image of the vertex group, and
@@ -149,16 +176,20 @@ theorem map_mulEquivOfPath_map_vertexHom (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (q : �
     (H.map (vertexHom q)).map (mulEquivOfPath p : π₁ 𝔸 a →* π₁ 𝔸 b) =
       (H.map (vertexHom r)).map
         (MulAut.conj (mk ((p.reverse.comp q).comp r.reverse)) : π₁ 𝔸 b →* π₁ 𝔸 b) := by
-  rw [Subgroup.map_map, ← map_vertexHom_eq_map_conj]
-  congr 1
-  ext g
-  simp
+  rw [Subgroup.map_map, mulEquivOfPath_comp_vertexHom, map_vertexHom_eq_map_conj r]
 
 /-- Reading letters in `π₁(𝔸, T)` turns the change of base vertex along `p` into conjugation by
 the inverse of the image of `p`, `x ↦ p⁻¹ x p`. -/
 @[simp] theorem toπ₁Tree_mulEquivOfPath (T : Set Γ.E) (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (x : π₁ 𝔸 a) :
     toπ₁Tree 𝔸 b T (mulEquivOfPath p x) = (p.toπ₁Tree T)⁻¹ * toπ₁Tree 𝔸 a T x * p.toπ₁Tree T :=
   induction_on x fun q ↦ by simp [mul_assoc]
+
+/-- Reading letters in `π₁(𝔸, T)` turns the inverse of the change of base vertex along `p` into
+conjugation by the image of `p`, `x ↦ p x p⁻¹`. -/
+@[simp] theorem toπ₁Tree_mulEquivOfPath_symm (T : Set Γ.E) (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (x : π₁ 𝔸 b) :
+    toπ₁Tree 𝔸 a T ((mulEquivOfPath p).symm x) =
+      p.toπ₁Tree T * toπ₁Tree 𝔸 b T x * (p.toπ₁Tree T)⁻¹ := by
+  simp [mulEquivOfPath_symm]
 
 end π₁
 

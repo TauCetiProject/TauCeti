@@ -49,8 +49,9 @@ Over a graph without edges `π₁(𝔸, a)` is the vertex group `A_a`.
 
 * `TauCeti.GraphOfGroups.π₁.mk_eq_mk_iff`: closed paths give the same element of `π₁(𝔸, a)`
   exactly when they are homotopic.
-* `TauCeti.GraphOfGroups.π₁.map_vertexHom_eq_map_conj`: the images of a subgroup of `A_b` along
-  two paths from `a` to `b` are conjugate in `π₁(𝔸, a)`.
+* `TauCeti.GraphOfGroups.π₁.vertexHom_eq_conj_comp`, `π₁.map_vertexHom_eq_map_conj`: the
+  conjugations of `A_b` into `π₁(𝔸, a)` along two paths from `a` to `b` differ by an inner
+  automorphism, so the images of a subgroup of `A_b` along them are conjugate.
 * `TauCeti.GraphOfGroups.Path.nonempty_of_preconnected`: over a preconnected graph any two
   vertices are joined by an `𝔸`-path.
 * `TauCeti.GraphOfGroups.π₁.toπ₁Tree_vertexHom`: the image of `p g p⁻¹` in `π₁(𝔸, T)`.
@@ -354,18 +355,30 @@ theorem vertexHom_comp_apply (s : 𝔸.Path ⟨a⟩ ⟨a⟩) (q : 𝔸.Path ⟨a
   simp only [vertexHom_apply, ← mk_reverse, ← mk_comp, Quiver.Path.reverse_comp,
     Quiver.Path.comp_assoc]
 
+/-- Prefixing a closed path `s` to the path along which `A_b` is conjugated into `π₁(𝔸, a)`
+composes the conjugation with the inner automorphism by the class of `s`. -/
+theorem vertexHom_comp (s : 𝔸.Path ⟨a⟩ ⟨a⟩) (q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    vertexHom (s.comp q) = (MulAut.conj (mk s) : π₁ 𝔸 a →* π₁ 𝔸 a).comp (vertexHom q) :=
+  MonoidHom.ext (vertexHom_comp_apply s q)
+
+/-- The conjugations of `A_b` into `π₁(𝔸, a)` along two paths `q` and `r` from `a` to `b` differ
+by the inner automorphism by the class of `r q⁻¹`. -/
+theorem vertexHom_eq_conj_comp (q r : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    vertexHom r =
+      (MulAut.conj (mk (r.comp q.reverse)) : π₁ 𝔸 a →* π₁ 𝔸 a).comp (vertexHom q) := by
+  rw [← vertexHom_comp]
+  exact vertexHom_congr (by simpa using (Path.Homotopic.comp_reverse_comp_comp r q .nil).symm)
+
+theorem vertexHom_eq_conj_comp_apply (q r : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b) :
+    vertexHom r g = mk (r.comp q.reverse) * vertexHom q g * (mk (r.comp q.reverse))⁻¹ :=
+  DFunLike.congr_fun (vertexHom_eq_conj_comp q r) g
+
 /-- The images in `π₁(𝔸, a)` of a subgroup `H` of a vertex group `A_b` along two paths `q` and
 `r` from `a` to `b` are conjugate, by the class of `r q⁻¹`. -/
 theorem map_vertexHom_eq_map_conj (q r : 𝔸.Path ⟨a⟩ ⟨b⟩) (H : Subgroup (𝔸.vertexGroup b)) :
     H.map (vertexHom r) =
       (H.map (vertexHom q)).map (MulAut.conj (mk (r.comp q.reverse)) : π₁ 𝔸 a →* π₁ 𝔸 a) := by
-  have hr : vertexHom r = vertexHom ((r.comp q.reverse).comp q) :=
-    vertexHom_congr (by simpa using (Path.Homotopic.comp_reverse_comp_comp r q .nil).symm)
-  rw [hr, Subgroup.map_map]
-  congr 1
-  ext g
-  rw [vertexHom_comp_apply]
-  simp
+  rw [vertexHom_eq_conj_comp q r, Subgroup.map_map]
 
 end π₁
 
