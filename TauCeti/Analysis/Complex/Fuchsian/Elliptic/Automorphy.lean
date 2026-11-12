@@ -451,7 +451,6 @@ theorem differentialFrame_smul (j : ℕ) (q : stabilizer Γ z) {g : SL(2, ℝ)}
     (hg : (g : PSL(2, ℝ)) = ((q : Γ) : PSL(2, ℝ))) {τ : ℍ} (hτ : τ ∈ ball z ε) :
     ψ.differentialFrame j (g • τ) =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ (2 * (j : ℤ)) * ψ.differentialFrame j τ := by
-  have hτ' : τ ∈ stabilizerBall Γ z ε := (mem_stabilizerBall Γ z ε).2 (mem_ball.mp hτ)
   -- the local quotient coordinate is invariant under `g` near `τ`
   have hinv : (fun t : ℂ ↦ ψ.quotientCoordinateOnComplex
       (((g : PSL(2, ℝ)) • ofComplex t : ℍ) : ℂ)) =ᶠ[nhds (τ : ℂ)]
@@ -522,7 +521,7 @@ private theorem automorphyUntwist_differentialFrame_mul (j : ℕ) {u : ℂ}
     ψ.automorphyUntwist (2 * j) (ψ.differentialFrame j) u * deriv ψ.pointOf u ^ j =
       (ψ.pointOf u - conj (z : ℂ)) ^ (2 * j) * (Nat.card (stabilizer Γ z) : ℂ) ^ j *
         u ^ (j * (Nat.card (stabilizer Γ z) - 1)) := by
-  set m := Nat.card (stabilizer Γ z) with hm
+  set m := Nat.card (stabilizer Γ z)
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
   have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
   have hWP : ψ.quotientCoordinateOnComplex ∘ ψ.pointOf =ᶠ[nhds (ψ.coordinate τ)]
@@ -547,7 +546,7 @@ function `u ↦ (τ - conj z) ^ (2 * j) * (dw / dτ) ^ j` has order `j * (m - 1)
 theorem analyticOrderAt_automorphyUntwist_differentialFrame (j : ℕ) :
     analyticOrderAt (ψ.automorphyUntwist (2 * j) (ψ.differentialFrame j)) 0 =
       (j * (Nat.card (stabilizer Γ z) - 1) : ℕ) := by
-  set m := Nat.card (stabilizer Γ z) with hm
+  set m := Nat.card (stabilizer Γ z)
   have hT := ψ.isOpen_target
   have h0 := ψ.zero_mem_target
   -- the factors other than the power of `u` are analytic and do not vanish at `0`
@@ -593,7 +592,7 @@ theorem analyticOrderAt_automorphyDescent_differentialFrame {j : ℕ}
     (hr : r < Nat.card (stabilizer Γ z)) :
     analyticOrderAt (ψ.automorphyDescent (2 * j) r (ψ.differentialFrame j)) 0 =
       (j * (Nat.card (stabilizer Γ z) - 1) / Nat.card (stabilizer Γ z) : ℕ) := by
-  set m := Nat.card (stabilizer Γ z) with hm
+  set m := Nat.card (stabilizer Γ z)
   have hf : ∀ g ∈ Γ', g • z = z → ∀ τ ∈ ball z ε, ψ.differentialFrame j (g • τ) =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ (2 * (j : ℤ)) * ψ.differentialFrame j τ := by
     intro g hg hgz τ hτ
