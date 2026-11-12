@@ -96,47 +96,58 @@ theorem _root_.MeasureTheory.Adapted.measurable_gridExponential (hW : Adapted �
   have h₀ := (hW (τ j)).mono (ℱ.mono (hτ (by omega : j ≤ n))) le_rfl
   exact (hθj.mul (h₁.sub h₀)).sub ((hθj.pow_const 2).mul_const _ |>.div_const 2)
 
+/-- A normalized Brownian exponential increment with a bounded left-measurable height
+preserves integrability and has conditional mean equal to its left-measurable multiplier. -/
+theorem IsFilteredPreBrownianReal.integrable_mul_exp_sub_and_condExp
+    (hW : IsFilteredPreBrownianReal ℱ W P) {u v : ℝ≥0} (huv : u ≤ v)
+    {a X : Ω → ℝ} (ha : Measurable[ℱ u] a) (hK : ∀ᵐ ω ∂P, |a ω| ≤ K)
+    (hX : Measurable[ℱ u] X) (hi : Integrable X P) :
+    Integrable (fun ω ↦ X ω *
+      exp (a ω * (W v ω - W u ω) - a ω ^ 2 * ((v : ℝ) - u) / 2)) P ∧
+      P[(fun ω ↦ X ω *
+        exp (a ω * (W v ω - W u ω) - a ω ^ 2 * ((v : ℝ) - u) / 2)) | ℱ u] =ᵐ[P] X := by
+  let d : ℝ := (v : ℝ) - u
+  have hd : 0 ≤ d := sub_nonneg.mpr (NNReal.coe_le_coe.mpr huv)
+  let Y := fun ω ↦ X ω * exp (-(a ω ^ 2 * d / 2))
+  have hYm : Measurable[ℱ u] Y :=
+    hX.mul ((ha.pow_const 2 |>.mul_const d |>.div_const 2).neg.exp)
+  have ham : Measurable a := ha.mono (ℱ.le _) le_rfl
+  have hYi : Integrable Y P := hi.mul_bdd (by fun_prop) (c := 1) (by
+    filter_upwards [] with ω
+    simpa only [norm_eq_abs, abs_exp, exp_le_one_iff] using
+      neg_nonpos.mpr (div_nonneg (mul_nonneg (sq_nonneg _) hd) (by positivity)))
+  have hZ : Measurable (fun ω ↦ W v ω - W u ω) :=
+    hW.adapted.measurable.sub hW.adapted.measurable
+  have hind := hW.indep_sub huv
+  have hlaw := hW.hasLaw_sub_of_le huv
+  have heq : (fun ω ↦ Y ω * exp (a ω * (W v ω - W u ω))) =
+      (fun ω ↦ X ω * exp (a ω * (W v ω - W u ω) - a ω ^ 2 * ((v : ℝ) - u) / 2)) := by
+    funext ω
+    dsimp only [Y, d]
+    rw [mul_assoc, ← exp_add]
+    congr 2
+    ring
+  refine ⟨heq ▸ integrable_mul_exp_of_indep_gaussian (ℱ.le _) hYm ha hZ hind hlaw hYi hK, ?_⟩
+  have hc := condExp_mul_exp_of_indep_gaussian (ℱ.le _) hYm ha hZ hind hlaw hYi hK
+  simp only [zero_mul, zero_add] at hc
+  rw [heq] at hc
+  filter_upwards [hc] with ω hω
+  rw [hω, NNReal.coe_sub huv]
+  dsimp only [Y, d]
+  rw [mul_assoc, ← exp_add]
+  have hz : -(a ω ^ 2 * ((v : ℝ) - u) / 2) +
+      ((v : ℝ) - u) * a ω ^ 2 / 2 = 0 := by ring
+  rw [hz, exp_zero, mul_one]
+
 private theorem gridExponential_step (hW : IsFilteredPreBrownianReal ℱ W P)
     (hτ : Monotone τ) (hθ : ∀ j, Measurable[ℱ (τ j)] (θ j))
     (hK : ∀ j, ∀ᵐ ω ∂P, |θ j ω| ≤ K) (n : ℕ)
     (hi : Integrable (gridExponential τ θ W n) P) :
     Integrable (gridExponential τ θ W (n + 1)) P ∧
       P[gridExponential τ θ W (n + 1) | ℱ (τ n)] =ᵐ[P] gridExponential τ θ W n := by
-  let d : ℝ := (τ (n + 1) : ℝ) - τ n
-  have hd : 0 ≤ d := sub_nonneg.mpr (NNReal.coe_le_coe.mpr (hτ (Nat.le_succ n)))
-  let X := fun ω ↦ gridExponential τ θ W n ω * exp (-(θ n ω ^ 2 * d / 2))
-  have hXm : Measurable[ℱ (τ n)] X :=
-    (hW.adapted.measurable_gridExponential hτ hθ n).mul
-      (((hθ n).pow_const 2 |>.mul_const d |>.div_const 2).neg.exp)
-  have hθa : Measurable (θ n) := (hθ n).mono (ℱ.le _) le_rfl
-  have hXi : Integrable X P := hi.mul_bdd (by fun_prop) (c := 1) (by
-      filter_upwards [] with ω
-      simpa only [norm_eq_abs, abs_exp, exp_le_one_iff] using
-        neg_nonpos.mpr (div_nonneg (mul_nonneg (sq_nonneg _) hd) (by positivity)))
-  have hY : Measurable (fun ω ↦ W (τ (n + 1)) ω - W (τ n) ω) :=
-    hW.adapted.measurable.sub hW.adapted.measurable
-  have hind := hW.indep_sub (hτ (Nat.le_succ n))
-  have hlaw := hW.hasLaw_sub_of_le (hτ (Nat.le_succ n))
-  have heq : (fun ω ↦ X ω * exp (θ n ω * (W (τ (n + 1)) ω - W (τ n) ω))) =
-      gridExponential τ θ W (n + 1) := by
-    funext ω
-    rw [gridExponential_succ]
-    dsimp only [X, d]
-    rw [mul_assoc, ← exp_add]
-    congr 2
-    ring
-  refine ⟨heq ▸ integrable_mul_exp_of_indep_gaussian (ℱ.le _) hXm (hθ n) hY hind hlaw hXi
-    (hK n), ?_⟩
-  have hc := condExp_mul_exp_of_indep_gaussian (ℱ.le _) hXm (hθ n) hY hind hlaw hXi (hK n)
-  simp only [zero_mul, zero_add] at hc
-  rw [heq] at hc
-  filter_upwards [hc] with ω hω
-  rw [hω, NNReal.coe_sub (hτ (Nat.le_succ n))]
-  dsimp only [X]
-  rw [mul_assoc, ← exp_add]
-  have hz : -(θ n ω ^ 2 * d / 2) +
-      ((τ (n + 1) : ℝ) - τ n) * θ n ω ^ 2 / 2 = 0 := by dsimp [d]; ring
-  rw [hz, exp_zero, mul_one]
+  simpa only [← gridExponential_succ] using
+    hW.integrable_mul_exp_sub_and_condExp (hτ (Nat.le_succ n)) (hθ n) (hK n)
+      (hW.adapted.measurable_gridExponential hτ hθ n) hi
 
 /-- A uniform height bound controls the square by the likelihood with doubled heights,
 with a factor depending only on elapsed time rather than the grid length. -/

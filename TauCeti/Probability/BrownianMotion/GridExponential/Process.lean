@@ -42,43 +42,43 @@ variable {Ω : Type*}
 and their half-energy normalization are clipped at that observation time. -/
 def gridExponentialProcess (τ : ℕ → ℝ≥0) (θ : ℕ → Ω → ℝ)
     (W : ℝ≥0 → Ω → ℝ) (n : ℕ) (t : ℝ≥0) (ω : Ω) : ℝ :=
-  exp (∑ j ∈ range n, (θ j ω * (W (min t (τ (j + 1))) ω - W (min t (τ j)) ω) -
-    θ j ω ^ 2 * ((min t (τ (j + 1)) : ℝ≥0) - min t (τ j)) / 2))
+  gridExponential (fun j ↦ min t (τ j)) θ W n ω
 
 theorem gridExponentialProcess_def (τ : ℕ → ℝ≥0) (θ : ℕ → Ω → ℝ)
     (W : ℝ≥0 → Ω → ℝ) (n : ℕ) (t : ℝ≥0) (ω : Ω) :
     gridExponentialProcess τ θ W n t ω =
       exp (∑ j ∈ range n, (θ j ω * (W (min t (τ (j + 1))) ω - W (min t (τ j)) ω) -
-        θ j ω ^ 2 * ((min t (τ (j + 1)) : ℝ≥0) - min t (τ j)) / 2)) := (rfl)
+        θ j ω ^ 2 * ((min t (τ (j + 1)) : ℝ≥0) - min t (τ j)) / 2)) :=
+  gridExponential_def (fun j ↦ min t (τ j)) θ W n ω
 
 /-- An empty grid gives the unit process. -/
 @[simp]
 theorem gridExponentialProcess_zero (τ : ℕ → ℝ≥0) (θ : ℕ → Ω → ℝ)
     (W : ℝ≥0 → Ω → ℝ) : gridExponentialProcess τ θ W 0 = 1 := by
-  ext t ω
-  simp [gridExponentialProcess_def]
+  funext t
+  exact gridExponential_zero _ θ W
 
 /-- Zero heights give the unit density process. -/
 @[simp]
 theorem gridExponentialProcess_zero_height (τ : ℕ → ℝ≥0)
     (W : ℝ≥0 → Ω → ℝ) (n : ℕ) : gridExponentialProcess τ 0 W n = 1 := by
-  ext t ω
-  simp [gridExponentialProcess_def]
+  funext t
+  exact gridExponential_zero_height _ W n
 
 /-- Every elementary density is strictly positive. -/
 theorem gridExponentialProcess_pos (τ : ℕ → ℝ≥0) (θ : ℕ → Ω → ℝ)
     (W : ℝ≥0 → Ω → ℝ) (n : ℕ) (t : ℝ≥0) (ω : Ω) :
-    0 < gridExponentialProcess τ θ W n t ω := exp_pos _
+    0 < gridExponentialProcess τ θ W n t ω := gridExponential_pos _ θ W n ω
 
 /-- Before the first trading date, the likelihood equals one. -/
-theorem gridExponentialProcess_of_le {τ : ℕ → ℝ≥0} (hτ : Monotone τ)
+theorem gridExponentialProcess_eq_one_of_le {τ : ℕ → ℝ≥0} (hτ : Monotone τ)
     (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ) (n : ℕ) {t : ℝ≥0} (ht : t ≤ τ 0) :
     gridExponentialProcess τ θ W n t = 1 := by
   ext ω
   simp [gridExponentialProcess_def, min_eq_left (ht.trans (hτ (Nat.zero_le _)))]
 
 /-- After the last trading date, the likelihood is the sampled grid likelihood. -/
-theorem gridExponentialProcess_of_ge {τ : ℕ → ℝ≥0} (hτ : Monotone τ)
+theorem gridExponentialProcess_eq_gridExponential_of_ge {τ : ℕ → ℝ≥0} (hτ : Monotone τ)
     (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ) (n : ℕ) {t : ℝ≥0} (ht : τ n ≤ t) :
     gridExponentialProcess τ θ W n t = gridExponential τ θ W n := by
   ext ω
@@ -92,10 +92,11 @@ theorem gridExponentialProcess_of_ge {τ : ℕ → ℝ≥0} (hτ : Monotone τ)
 
 /-- The elementary density starts at one, including a nonzero first trading date. -/
 @[simp]
-theorem gridExponentialProcess_start {τ : ℕ → ℝ≥0} (hτ : Monotone τ)
+theorem gridExponentialProcess_start (τ : ℕ → ℝ≥0)
     (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ) (n : ℕ) :
-    gridExponentialProcess τ θ W n 0 = 1 :=
-  gridExponentialProcess_of_le hτ θ W n (zero_le (a := τ 0))
+    gridExponentialProcess τ θ W n 0 = 1 := by
+  ext ω
+  simp [gridExponentialProcess_def]
 
 private def stepExponential (a : Ω → ℝ) (W : ℝ≥0 → Ω → ℝ)
     (u t : ℝ≥0) (ω : Ω) : ℝ :=
@@ -113,24 +114,7 @@ private theorem integrable_mul_stepExponential (hW : IsFilteredPreBrownianReal �
     (ha : Measurable[ℱ u] a) (hK : ∀ᵐ ω ∂P, |a ω| ≤ K)
     (hX : Measurable[ℱ u] X) (hXi : Integrable X P) (t : ℝ≥0) :
     Integrable (X * stepExponential a W u t) P := by
-  let d : ℝ := (max u t : ℝ≥0) - u
-  let Y := fun ω ↦ X ω * exp (-(a ω ^ 2 * d / 2))
-  have hd : 0 ≤ d := sub_nonneg.mpr (NNReal.coe_le_coe.mpr (le_max_left _ _))
-  have hYm : Measurable[ℱ u] Y :=
-    hX.mul ((ha.pow_const 2 |>.mul_const d |>.div_const 2).neg.exp)
-  have ham : Measurable a := ha.mono (ℱ.le _) le_rfl
-  have hYi : Integrable Y P := hXi.mul_bdd (by fun_prop) (c := 1) (by
-    filter_upwards [] with ω
-    simpa only [norm_eq_abs, abs_exp, exp_le_one_iff] using
-      neg_nonpos.mpr (div_nonneg (mul_nonneg (sq_nonneg _) hd) (by positivity)))
-  have hi := integrable_mul_exp_of_indep_gaussian (ℱ.le _) hYm ha
-    (hW.adapted.measurable.sub hW.adapted.measurable)
-    (hW.indep_sub (le_max_left u t)) (hW.hasLaw_sub_of_le (le_max_left u t)) hYi hK
-  convert hi using 1
-  ext ω
-  simp only [Pi.mul_apply, Pi.sub_apply, stepExponential, Y, d, mul_assoc, ← exp_add]
-  congr 2
-  ring
+  exact (hW.integrable_mul_exp_sub_and_condExp (le_max_left u t) ha hK hX hXi).1
 
 private theorem stronglyMeasurable_stepExponential (hW : Adapted ℱ W)
     (ha : Measurable[ℱ u] a) (t : ℝ≥0) :
@@ -153,37 +137,17 @@ private theorem condExp_stepExponential_of_le (hW : IsFilteredPreBrownianReal �
   have hi : Integrable (stepExponential a W u s) P := by
     simpa only [one_mul] using
       integrable_mul_stepExponential (X := 1) hW ha hK measurable_const (integrable_const 1) s
-  let d : ℝ := (t : ℝ) - s
-  let Y := fun ω ↦ stepExponential a W u s ω * exp (-(a ω ^ 2 * d / 2))
-  have has := ha.mono (ℱ.mono hus) le_rfl
-  have hYm : Measurable[ℱ s] Y :=
-    (stronglyMeasurable_stepExponential hW.adapted ha s).measurable.mul
-      ((has.pow_const 2 |>.mul_const d |>.div_const 2).neg.exp)
-  have hd : 0 ≤ d := sub_nonneg.mpr (NNReal.coe_le_coe.mpr hst)
-  have ham : Measurable a := ha.mono (ℱ.le _) le_rfl
-  have hYi : Integrable Y P := hi.mul_bdd (by fun_prop) (c := 1) (by
-    filter_upwards [] with ω
-    simpa only [norm_eq_abs, abs_exp, exp_le_one_iff] using
-      neg_nonpos.mpr (div_nonneg (mul_nonneg (sq_nonneg _) hd) (by positivity)))
-  have hc := condExp_mul_exp_of_indep_gaussian (ℱ.le _) hYm has
-    (hW.adapted.measurable.sub hW.adapted.measurable)
-    (hW.indep_sub hst) (hW.hasLaw_sub_of_le hst) hYi hK
-  have heq : (fun ω ↦ Y ω * exp (a ω * (W t ω - W s ω))) =
+  have hc := (hW.integrable_mul_exp_sub_and_condExp hst
+    (ha.mono (ℱ.mono hus) le_rfl) hK
+    (stronglyMeasurable_stepExponential hW.adapted ha s).measurable hi).2
+  have heq : (fun ω ↦ stepExponential a W u s ω *
+      exp (a ω * (W t ω - W s ω) - a ω ^ 2 * ((t : ℝ) - s) / 2)) =
       stepExponential a W u t := by
     ext ω
-    simp only [Y, stepExponential, max_eq_right hus, max_eq_right (hus.trans hst),
-      ← exp_add]
+    simp only [stepExponential, max_eq_right hus, max_eq_right (hus.trans hst), ← exp_add]
     congr 1
-    dsimp [d]
     ring
-  simp only [Pi.sub_apply] at hc
-  rw [heq] at hc
-  filter_upwards [hc] with ω hω
-  rw [hω, zero_mul, zero_add, NNReal.coe_sub hst]
-  dsimp only [Y, d]
-  rw [mul_assoc, ← exp_add]
-  simp [show -(a ω ^ 2 * ((t : ℝ) - s) / 2) +
-    ((t : ℝ) - s) * a ω ^ 2 / 2 = 0 by ring]
+  rwa [heq] at hc
 
 private theorem martingale_stepExponential (hW : IsFilteredPreBrownianReal ℱ W P)
     (ha : Measurable[ℱ u] a) (hK : ∀ᵐ ω ∂P, |a ω| ≤ K) :
@@ -213,7 +177,7 @@ theorem gridExponentialProcess_succ (τ : ℕ → ℝ≥0) (θ : ℕ → Ω → 
     gridExponentialProcess τ θ W (n + 1) t ω = gridExponentialProcess τ θ W n t ω *
       exp (θ n ω * (W (min t (τ (n + 1))) ω - W (min t (τ n)) ω) -
         θ n ω ^ 2 * ((min t (τ (n + 1)) : ℝ≥0) - min t (τ n)) / 2) := by
-  rw [gridExponentialProcess_def, gridExponentialProcess_def, sum_range_succ, exp_add]
+  exact gridExponential_succ (fun j ↦ min t (τ j)) θ W n ω
 
 private theorem stepExponential_min_eq {u v : ℝ≥0} (huv : u ≤ v)
     (a : Ω → ℝ) (W : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
@@ -239,7 +203,7 @@ private theorem gridExponentialProcess_succ_eq_add {τ : ℕ → ℝ≥0} (hτ :
     ext ω
     rw [Pi.add_apply, Pi.mul_apply, Pi.sub_apply, hzero, Pi.one_apply, sub_self,
       mul_zero, add_zero, gridExponentialProcess_succ, ← hstep ω, hzero, Pi.one_apply, mul_one]
-  · have hfreeze := gridExponentialProcess_of_ge hτ θ W n (le_of_not_ge htn)
+  · have hfreeze := gridExponentialProcess_eq_gridExponential_of_ge hτ θ W n (le_of_not_ge htn)
     ext ω
     rw [Pi.add_apply, Pi.mul_apply, Pi.sub_apply, Pi.one_apply,
       gridExponentialProcess_succ, ← hstep ω, hfreeze]
@@ -287,7 +251,19 @@ theorem IsFilteredPreBrownianReal.integral_gridExponentialProcess
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   have h := (hW.martingale_gridExponentialProcess hτ hθ hK n).setIntegral_eq
     (zero_le (a := t)) MeasurableSet.univ
-  simpa [gridExponentialProcess_start hτ] using h.symm
+  simpa using h.symm
+
+/-- At every observation time, the elementary density is the conditional expectation
+of the terminal grid likelihood. -/
+theorem IsFilteredPreBrownianReal.gridExponentialProcess_ae_eq_condExp
+    (hW : IsFilteredPreBrownianReal ℱ W P) {τ : ℕ → ℝ≥0} {θ : ℕ → Ω → ℝ}
+    (hτ : Monotone τ) (hθ : ∀ j, Measurable[ℱ (τ j)] (θ j))
+    (hK : ∀ j, ∀ᵐ ω ∂P, |θ j ω| ≤ K) (n : ℕ) (t : ℝ≥0) :
+    gridExponentialProcess τ θ W n t =ᵐ[P] P[gridExponential τ θ W n | ℱ t] := by
+  have hc := (hW.martingale_gridExponentialProcess hτ hθ hK n).condExp_ae_eq
+    (le_max_left t (τ n))
+  rw [gridExponentialProcess_eq_gridExponential_of_ge hτ θ W n (le_max_right t (τ n))] at hc
+  exact hc.symm
 
 /-- Elementary density values are square-integrable at every observation time. -/
 theorem IsFilteredPreBrownianReal.memLp_two_gridExponentialProcess
@@ -295,11 +271,8 @@ theorem IsFilteredPreBrownianReal.memLp_two_gridExponentialProcess
     (hτ : Monotone τ) (hθ : ∀ j, Measurable[ℱ (τ j)] (θ j))
     (hK : ∀ j, ∀ᵐ ω ∂P, |θ j ω| ≤ K) (n : ℕ) (t : ℝ≥0) :
     MemLp (gridExponentialProcess τ θ W n t) 2 P := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hc := (hW.martingale_gridExponentialProcess hτ hθ hK n).condExp_ae_eq
-    (le_max_left t (τ n))
-  rw [gridExponentialProcess_of_ge hτ θ W n (le_max_right t (τ n))] at hc
-  exact ((hW.memLp_two_gridExponential hτ hθ hK n).condExp (by norm_num)).ae_eq hc
+  exact ((hW.memLp_two_gridExponential hτ hθ hK n).condExp (by norm_num)).ae_eq
+    (hW.gridExponentialProcess_ae_eq_condExp hτ hθ hK n t).symm
 
 /-- The second-moment bound is uniform over observation times and depends on elapsed
 trading time, not the number of grid intervals. -/
@@ -310,9 +283,7 @@ theorem IsFilteredPreBrownianReal.integral_sq_gridExponentialProcess_le
     ∫ ω, gridExponentialProcess τ θ W n t ω ^ 2 ∂P ≤
       exp (K ^ 2 * ((τ n : ℝ) - τ 0)) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hc := (hW.martingale_gridExponentialProcess hτ hθ hK n).condExp_ae_eq
-    (le_max_left t (τ n))
-  rw [gridExponentialProcess_of_ge hτ θ W n (le_max_right t (τ n))] at hc
+  have hc := (hW.gridExponentialProcess_ae_eq_condExp hτ hθ hK n t).symm
   have hi := (hW.memLp_two_gridExponential hτ hθ hK n).integrable_norm_rpow
     (by norm_num) (by norm_num)
   have hb := integral_norm_condExp_rpow_le (m := ℱ t) (by norm_num : (1 : ℝ) ≤ 2) hi
