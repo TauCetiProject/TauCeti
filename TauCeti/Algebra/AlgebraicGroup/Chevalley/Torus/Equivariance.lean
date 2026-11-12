@@ -46,14 +46,8 @@ noncomputable def rootGeneratedTorusAction :
     (Fin t.rank → Aˣ) →* MulAut
       (Subgroup.closure (⋃ γ : Fin t.numRoots, Set.range (D.rootSubgroupPoints γ A))) :=
   (Subgroup.closure _).normalizerMonoidHom.comp
-    ((D.torusPoints A).codRestrict _ (by
-      intro s
-      apply ((Subgroup.le_normalizer_closure_iff (H := (D.torusPoints A).range)).mpr ?_)
-        ⟨s, rfl⟩
-      rintro _ ⟨v, rfl⟩ _ hx
-      obtain ⟨γ, u, rfl⟩ := Set.mem_iUnion.mp hx
-      rw [← ofAdd_toAdd u, D.torusPoints_conj_rootSubgroupPoints]
-      exact Subgroup.subset_closure (Set.mem_iUnion.mpr ⟨γ, _, rfl⟩)))
+    ((D.torusPoints A).codRestrict _
+      (fun s => D.range_torusPoints_le_normalizer_rootGenerated A ⟨s, rfl⟩))
 
 /-- The torus action is conjugation in the original group of datum points. -/
 @[simp]
@@ -97,14 +91,24 @@ theorem comp_rootGeneratedTorusAction (h : E.weightLattice ≤ D.weightLattice)
       Subgroup.subset_closure (Set.mem_iUnion.mpr ⟨γ, u, rfl⟩)⟩ :=
     Subtype.ext hu.symm
   rw [hx', ← ofAdd_toAdd u]
-  -- A root belongs to both lattices, so restriction preserves its evaluation.
-  have hchar : torusCharacter (D.torusRestriction E h s) (E.coordinateRoot γ) =
-      torusCharacter s (D.coordinateRoot γ) := by
-    simpa only [coordinateRoot_def, Submodule.inclusion_apply] using
-      D.torusCharacter_torusRestriction E h s
-        ⟨(t.simplyConnectedRootDatum ht).root γ, E.root_mem_weightLattice γ⟩
   simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     rootGeneratedTorusAction_rootSubgroupPoints, hf, MulAut.conj_apply,
-    E.torusPoints_conj_rootSubgroupPoints, hchar]
+    E.torusPoints_conj_rootSubgroupPoints, D.torusCharacter_torusRestriction_coordinateRoot E h]
+
+/-- Pointwise torus equivariance of an elementary comparison matching root parameters. -/
+theorem map_rootGeneratedTorusAction (h : E.weightLattice ≤ D.weightLattice)
+    (f : Subgroup.closure (⋃ γ : Fin t.numRoots, Set.range (D.rootSubgroupPoints γ A)) →*
+      E.points A)
+    (hf : ∀ (γ : Fin t.numRoots) (u : Multiplicative A),
+      f ⟨D.rootSubgroupPoints γ A u,
+        Subgroup.subset_closure (Set.mem_iUnion.mpr ⟨γ, u, rfl⟩)⟩ =
+          E.rootSubgroupPoints γ A u)
+    (s : Fin t.rank → Aˣ)
+    (g : Subgroup.closure (⋃ γ : Fin t.numRoots, Set.range (D.rootSubgroupPoints γ A))) :
+    f (D.rootGeneratedTorusAction A s g) =
+      E.torusPoints A (D.torusRestriction E h s) * f g *
+        (E.torusPoints A (D.torusRestriction E h s))⁻¹ := by
+  simpa only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
+    DFunLike.congr_fun (D.comp_rootGeneratedTorusAction E A h f hf s) g
 
 end TauCeti.DynkinType.ChevalleyDatum
