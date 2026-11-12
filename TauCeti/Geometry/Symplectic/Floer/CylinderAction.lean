@@ -11,7 +11,9 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Action
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.Rectangle
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # The energy of Floer cylinders in a manifold and the action of their loops
@@ -115,6 +117,23 @@ These are the manifold-target, capped-action versions of the estimates of
 `(z, y) ↦ G z (u y)` on `ℝ² × ℝ²`, so no integrability hypothesis is needed. The existence,
 compactness and counting of continuation cylinders are not treated here.
 
+**The whole cylinder.** All of the above concern a rectangle `[a, b] × [0, 1]`. Letting
+`a → -∞` and `b → ∞` gives the identity for a solution asymptotic to loops `x₀` at `s = -∞` and
+`x₁` at `s = ∞`. For a perturbation `K = K_s ds + K_t dt` with `K_s(s, 1) = K_s(s, 0)`, equal to
+bounded `H₀(t) dt` for `s ≤ -c` and `H₁(t) dt` for `s ≥ c`, and a `C¹` map `u`, `1`-periodic in
+`t`, whose energy, area and curvature densities are integrable over the strip `ℝ × [0, 1]`,
+
+`∫ E = ∫ u^*ω + ∫₀¹ H₁(t, x₁(t)) dt - ∫₀¹ H₀(t, x₀(t)) dt - ∫ R_K(u)`
+
+(`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_univ_prod`), as soon as the
+loops `u(a i, ·)` and `u(b i, ·)` converge pointwise to `x₀` and `x₁` along some `a i → -∞` and
+`b i → ∞`, for instance along sequences. For a Floer cylinder, `K = H_t dt`, the curvature term
+vanishes (`IsNondegenerate.integral_floerEnergyDensity_cylindrical_univ_prod`), and
+nonnegativity of the energy gives `∫₀¹ H(t, x₀(t)) dt ≤ ∫ u^*ω + ∫₀¹ H(t, x₁(t)) dt`
+(`IsNondegenerate.intervalIntegral_le_integral_add_intervalIntegral_of_cylindrical`): the capped
+action increases from the negative to the positive asymptotic orbit, with the cap glued along
+the whole cylinder.
+
 ## Main results
 
 * `TauCeti.Floer.neg_setIntegral_fderiv_linearHomotopy_le`: the integrated curvature of a linear
@@ -124,6 +143,8 @@ compactness and counting of continuation cylinders are not treated here.
   map over `[a, b] × [0, 1]` for a perturbation `K = G_z dt`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical`: the energy of a
   map over `[a, b] × [0, 1]` for a cylindrical perturbation.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_univ_prod`: the energy of a
+  map over the whole cylinder, with the Hamiltonian terms at its asymptotic loops.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub`: the energy
   of a cylinder is the drop of the capped action, for any nondegenerate form.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_integral`:
@@ -727,6 +748,172 @@ theorem
     Floer.continuationHomotopy_eq_left_of_nonpos ha,
     Floer.continuationHomotopy_eq_right_of_one_le hb,
     smoothTransition.zero_of_nonpos ha, smoothTransition.one_of_one_le hb] using h
+
+/-! ### The energy over the whole cylinder -/
+
+section WholeCylinder
+
+open Filter Topology
+
+variable {ι : Type*} {Ks Kt : ℝ × ℝ → M → ℝ}
+
+/-- **The energy identity over the whole cylinder.** Let `ω` be a nondegenerate two-form on a
+finite-dimensional manifold, such as a closed symplectic manifold, and let `K = K_s ds + K_t dt` be
+a `C¹` perturbation with `K_s(s, 1) = K_s(s, 0)` which is cylindrical on the two ends: `K_t = H₀`
+for `s ≤ -c` and `K_t = H₁` for `s ≥ c`, with `H₀` and `H₁` bounded. Let `u` be a `C¹` map with
+`u(s, 1) = u(s, 0)`, whose energy density, symplectic area density and curvature are integrable
+over the strip `ℝ × [0, 1]`. If along a countably generated filter `a i → -∞` and `b i → ∞`, and
+the loops `u(a i, ·)` and `u(b i, ·)` converge pointwise to loops `x₀` and `x₁`, then
+
+`∫ E = ∫ u^*ω + ∫₀¹ H₁(t, x₁(t)) dt - ∫₀¹ H₀(t, x₀(t)) dt - ∫ R_K(u)`
+
+over the strip. This is the energy identity of a Floer cylinder asymptotic to `x₀` and `x₁`:
+the boundary term `∫_∂ K(u)` is evaluated at the two asymptotic loops. The loops need only
+converge along sequences, as they do at the ends of a finite-energy Floer cylinder before
+nondegeneracy is used. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_univ_prod (hω : ω.IsNondegenerate)
+    (hKs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks))
+    (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt))
+    (hKs₁ : ∀ s, Ks (s, 1) = Ks (s, 0)) {H₀ H₁ : ℝ → M → ℝ} {c : ℝ}
+    (hK₀ : ∀ z : ℝ × ℝ, z.1 ≤ -c → Kt z = H₀ z.2) (hK₁ : ∀ z : ℝ × ℝ, c ≤ z.1 → Kt z = H₁ z.2)
+    {B₀ B₁ : ℝ} (hB₀ : ∀ t x, |H₀ t x| ≤ B₀) (hB₁ : ∀ t x, |H₁ t x| ≤ B₁)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (hper : ∀ s, u (s, 1) = u (s, 0))
+    {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated] {a b : ι → ℝ} (ha : Tendsto a l atBot)
+    (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
+    (hx₀ : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x₀ t)))
+    (hx₁ : ∀ t, Tendsto (fun i ↦ u (b i, t)) l (𝓝 (x₁ t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity Ks Kt u) (univ ×ˢ Icc 0 1))
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) (univ ×ˢ Icc 0 1))
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) (univ ×ˢ Icc 0 1)) :
+    ∫ z in univ ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z =
+      (∫ z in univ ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∫ t in 0..1, H₁ t (x₁ t)) - (∫ t in 0..1, H₀ t (x₀ t)) -
+        ∫ z in univ ×ˢ Icc 0 1, ω.hamiltonianCurvature Ks Kt z (u z) := by
+  -- The end Hamiltonians are restrictions of `K_t`, hence continuous.
+  have hH₀c : Continuous (uncurry H₀) :=
+    (hKt.continuous.comp (by fun_prop : Continuous fun p : ℝ × M ↦ ((-c, p.1), p.2))).congr
+      fun p ↦ by simp [hK₀ (-c, p.1) le_rfl, uncurry_def]
+  have hH₁c : Continuous (uncurry H₁) :=
+    (hKt.continuous.comp (by fun_prop : Continuous fun p : ℝ × M ↦ ((c, p.1), p.2))).congr
+      fun p ↦ by simp [hK₁ (c, p.1) le_rfl, uncurry_def]
+  -- Along converging loops, the Hamiltonian terms converge by dominated convergence.
+  have hloop {H : ℝ → M → ℝ} (hHc : Continuous (uncurry H)) {B : ℝ} (hB : ∀ t x, |H t x| ≤ B)
+      {d : ι → ℝ} {x : ℝ → M} (hx : ∀ t, Tendsto (fun i ↦ u (d i, t)) l (𝓝 (x t))) :
+      Tendsto (fun i ↦ ∫ t in 0..1, H t (u (d i, t))) l (𝓝 (∫ t in 0..1, H t (x t))) :=
+    intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ B)
+      (Eventually.of_forall fun i ↦ (hHc.comp (continuous_id.prodMk
+        (hu.continuous.comp (continuous_const.prodMk continuous_id)))).aestronglyMeasurable)
+      (Eventually.of_forall fun i ↦ ae_of_all _ fun t _ ↦
+        (Real.norm_eq_abs _).trans_le (hB _ _))
+      intervalIntegrable_const
+      (ae_of_all _ fun t _ ↦ (hHc.tendsto (t, x t)).comp (tendsto_const_nhds.prodMk_nhds (hx t)))
+  -- Far out on the ends, the identity holds on the rectangle `[a i, b i] × [0, 1]`.
+  have hrect : ∀ᶠ i in l, ∫ z in Icc (a i) (b i) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z =
+      (∫ z in Icc (a i) (b i) ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∫ t in 0..1, H₁ t (u (b i, t))) - (∫ t in 0..1, H₀ t (u (a i, t))) -
+        ∫ z in Icc (a i) (b i) ×ˢ Icc 0 1, ω.hamiltonianCurvature Ks Kt z (u z) := by
+    filter_upwards [ha.eventually_le_atBot (-|c|), hb.eventually_ge_atTop |c|] with i hai hbi
+    have hai' : a i ≤ -c := hai.trans (neg_le_neg (le_abs_self c))
+    have hbi' : c ≤ b i := (le_abs_self c).trans hbi
+    have hsub : Icc (a i) (b i) ×ˢ Icc (0 : ℝ) 1 ⊆ univ ×ˢ Icc 0 1 :=
+      prod_mono (subset_univ _) le_rfl
+    have hR' : Icc (a i) (b i) ×ˢ Icc (0 : ℝ) 1 = Icc (a i, 0) (b i, 1) := Icc_prod_Icc _ _ _ _
+    have h := hω.integral_floerEnergyDensity isOpen_univ hu.contMDiffOn hKs.contMDiffOn
+      hKt.contMDiffOn (Prod.mk_le_mk.2 ⟨by linarith [abs_nonneg c], zero_le_one⟩)
+      (subset_univ _) (hR' ▸ hE.mono_set hsub) (hR' ▸ hR.mono_set hsub)
+    rw [← hR'] at h
+    rw [h]
+    -- The `ds` terms along the circles `t = 0` and `t = 1` cancel by periodicity, and the `dt`
+    -- terms along `s = b i` and `s = a i` are those of `H₁` and `H₀`.
+    have hs : ∫ s in a i..b i, Ks (s, 1) (u (s, 1)) = ∫ s in a i..b i, Ks (s, 0) (u (s, 0)) := by
+      simp only [hKs₁, hper]
+    have hbt : ∫ t in (0 : ℝ)..1, Kt (b i, t) (u (b i, t)) = ∫ t in (0 : ℝ)..1, H₁ t (u (b i, t)) :=
+      intervalIntegral.integral_congr fun t _ ↦ by simp only [hK₁ (b i, t) hbi']
+    have hat : ∫ t in (0 : ℝ)..1, Kt (a i, t) (u (a i, t)) = ∫ t in (0 : ℝ)..1, H₀ t (u (a i, t)) :=
+      intervalIntegral.integral_congr fun t _ ↦ by simp only [hK₀ (a i, t) hai']
+    rw [hs, hbt, hat]
+    ring
+  -- Both sides are limits of the two sides of the rectangle identity.
+  refine tendsto_nhds_unique (tendsto_setIntegral_Icc_prod ha hb measurableSet_Icc hE) ?_
+  refine ((((tendsto_setIntegral_Icc_prod ha hb measurableSet_Icc hA).add
+    (hloop hH₁c hB₁ hx₁)).sub (hloop hH₀c hB₀ hx₀)).sub
+    (tendsto_setIntegral_Icc_prod ha hb measurableSet_Icc hR)).congr' ?_
+  filter_upwards [hrect] with i hi
+  exact hi.symm
+
+/-- **The energy identity of a Floer cylinder over the whole cylinder.** For the cylindrical
+perturbation `K = H_t dt` of a bounded `C¹` Hamiltonian, under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_univ_prod`, the curvature vanishes and
+the energy of `u` over the strip `ℝ × [0, 1]` is its symplectic area plus the Hamiltonian terms of
+the asymptotic loops:
+
+`∫ E = ∫ u^*ω + ∫₀¹ H(t, x₁(t)) dt - ∫₀¹ H(t, x₀(t)) dt`. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical_univ_prod
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) {B : ℝ}
+    (hB : ∀ t x, |H t x| ≤ B) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hper : ∀ s, u (s, 1) = u (s, 0)) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
+    {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
+    (hx₀ : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x₀ t)))
+    (hx₁ : ∀ t, Tendsto (fun i ↦ u (b i, t)) l (𝓝 (x₁ t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) (univ ×ˢ Icc 0 1))
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) (univ ×ˢ Icc 0 1)) :
+    ∫ z in univ ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
+      (∫ z in univ ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∫ t in 0..1, H t (x₁ t)) - ∫ t in 0..1, H t (x₀ t) := by
+  have h := hω.integral_floerEnergyDensity_univ_prod (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2)
+    (c := 0) contMDiff_const (Floer.contMDiff_uncurry_comp_snd hH) (fun _ ↦ rfl)
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hB hB hu hper ha hb hx₀ hx₁ hE hA
+    (by simp only [hamiltonianCurvature_cylindrical]; exact integrableOn_zero)
+  simpa only [hamiltonianCurvature_cylindrical, integral_zero, sub_zero] using h
+
+/-- **The action of the asymptotic loops along a Floer cylinder.** Under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical_univ_prod`, if `u` solves
+the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on the strip for almost complex structures
+`J z` on `T_{u z} M` tamed by `ω`, then its energy is nonnegative, so
+
+`∫₀¹ H(t, x₀(t)) dt ≤ ∫ u^*ω + ∫₀¹ H(t, x₁(t)) dt`.
+
+For a disc `D` bounding `x₀`, this says that the capped action `∫ D^*ω + ∫₀¹ H(t, x₀(t)) dt` of the
+output is at most that of the input capped by `D` glued to `u`: the action increases along Floer
+cylinders, from the negative end to the positive end. -/
+theorem IsNondegenerate.intervalIntegral_le_integral_add_intervalIntegral_of_cylindrical
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) {B : ℝ}
+    (hB : ∀ t x, |H t x| ≤ B) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hper : ∀ s, u (s, 1) = u (s, 0)) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
+    {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
+    (hx₀ : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x₀ t)))
+    (hx₁ : ∀ t, Tendsto (fun i ↦ u (b i, t)) l (𝓝 (x₁ t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) (univ ×ˢ Icc 0 1))
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) (univ ×ˢ Icc 0 1))
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, IsComplexLinearMap
+      (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z).toLinearMap) :
+    ∫ t in 0..1, H t (x₀ t) ≤
+      (∫ z in univ ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ∫ t in 0..1, H t (x₁ t) := by
+  have hpos := setIntegral_nonneg (μ := volume) (MeasurableSet.univ.prod measurableSet_Icc)
+    fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  rw [hω.integral_floerEnergyDensity_cylindrical_univ_prod hH hB hu hper ha hb hx₀ hx₁ hE hA]
+    at hpos
+  linarith
+
+end WholeCylinder
 
 end Energy
 

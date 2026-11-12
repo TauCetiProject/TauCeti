@@ -22,6 +22,10 @@ closure arguments for improper integrals.
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
 ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`).
 
+The integrals of a function integrable on a strip `ℝ × T` over the rectangles `[a i, b i] × T`
+converge to its integral over the strip as `a i → -∞` and `b i → ∞`
+(`TauCeti.tendsto_setIntegral_Icc_prod`).
+
 If nonnegative functions `f` and `g` satisfy `∫_{φ i} f ≤ ∫_{φ i} g + e i` along an exhaustion `φ`
 with errors `e i → 0`, and `g` is integrable, then `f` is integrable with `∫ f ≤ ∫ g`
 (`MeasureTheory.AECover.integrable_and_integral_le_of_setIntegral_le_add`). For the truncations
@@ -141,6 +145,23 @@ end MeasureTheory.AECover
 namespace TauCeti
 
 open MeasureTheory
+
+/-- **Integrals over a strip are limits over its truncations.** Let `T` be measurable and `f`
+integrable on the strip `ℝ × T`. If `a i → -∞` and `b i → ∞` along a countably generated filter,
+the integrals of `f` over the rectangles `[a i, b i] × T` converge to its integral over the
+strip. -/
+theorem tendsto_setIntegral_Icc_prod {ι β F : Type*} [MeasurableSpace β] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {μ : Measure (ℝ × β)} {l : Filter ι} [l.IsCountablyGenerated]
+    {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {T : Set β}
+    (hT : MeasurableSet T) {f : ℝ × β → F} (hf : IntegrableOn f (univ ×ˢ T) μ) :
+    Tendsto (fun i ↦ ∫ z in Icc (a i) (b i) ×ˢ T, f z ∂μ) l (𝓝 (∫ z in univ ×ˢ T, f z ∂μ)) := by
+  have hφ : AECover (μ.restrict (univ ×ˢ T)) l fun i ↦ Icc (a i) (b i) ×ˢ T :=
+    aecover_restrict_of_ae_imp (MeasurableSet.univ.prod hT) (ae_of_all _ fun z hz ↦
+      ((ha.eventually_le_atBot z.1).and (hb.eventually_ge_atTop z.1)).mono fun _ h ↦
+        ⟨⟨h.1, h.2⟩, hz.2⟩) fun _ ↦ measurableSet_Icc.prod hT
+  refine (hφ.integral_tendsto_of_countably_generated hf).congr fun i ↦ ?_
+  rw [Measure.restrict_restrict (measurableSet_Icc.prod hT),
+    inter_eq_left.2 (prod_mono (subset_univ _) subset_rfl)]
 
 /-- **Integral bounds over a strip from its truncations.** Let `T ⊆ ℝ` be measurable, and let `f`
 and `g` be nonnegative on the strip `ℝ × T`, with `g` integrable there and `f` integrable on each
