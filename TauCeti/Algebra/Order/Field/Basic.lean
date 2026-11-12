@@ -44,8 +44,9 @@ absorption bound `C (K₀ + N) ≤ 2 C (1 + γ) (K + N)` from `K₀ + N = K + γ
 `H ≤ C (K₀ + N)` and `2 C β e H ≤ H / 2`, together with the bookkeeping bound
 `C (M + N P + N) ≤ C (1 + P) (M + N)` for nonnegative `C`, `M` and `P`.
 
-It records that `a / ((b - a) b) ≤ 2 a / b²` for `0 ≤ a` and `2 a < b`, the form in which a
-kernel estimate `a / ((b - a) b)` outside a disc of radius `a` becomes an inverse-square bound.
+It records that `(b - a)⁻¹ ≤ 2 / b` for `0 < b` and `2 a < b`, and that
+`a / ((b - a) b) ≤ 2 a / b²` for `0 ≤ a` and `2 a < b`, the form in which a kernel estimate
+`a / ((b - a) b)` outside a disc of radius `a` becomes an inverse-square bound.
 
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
@@ -94,6 +95,7 @@ elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each recip
   `0 < 1 + ∑ i ∈ s, (x i)⁻¹` and `(x j)⁻¹ ≤ 1 + ∑ i ∈ s, (x i)⁻¹` for `j ∈ s`.
 * `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
   `0 ≤ ε`, `0 < K` and `a + b ≤ K`.
+* `TauCeti.inv_sub_le_two_div`: `(b - a)⁻¹ ≤ 2 / b` for `0 < b` and `2 a < b`.
 * `TauCeti.div_sub_mul_le_two_mul_div_sq`: `a / ((b - a) b) ≤ 2 a / b²` for `0 ≤ a` and
   `2 a < b`.
 * `TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow`: `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) *
@@ -296,6 +298,12 @@ theorem div_mul_add_mul_div_le_half {α : Type*} [Field α] [LinearOrder α]
     _ ≤ ε / (2 * K) * K :=
         mul_le_mul_of_nonneg_left (by linarith) (by positivity)
     _ = ε / 2 := by field_simp
+
+/-- Beyond twice `a`, where `b - a ≥ b / 2`, the inverse `(b - a)⁻¹` is at most `2 / b`. -/
+theorem inv_sub_le_two_div {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b : α} (hb : 0 < b) (h : 2 * a < b) : (b - a)⁻¹ ≤ 2 / b := by
+  rw [inv_le_iff_one_le_mul₀ (by linarith), div_mul_eq_mul_div, le_div_iff₀ hb]
+  linarith
 
 /-- Beyond twice `a ≥ 0`, where `b - a ≥ b / 2`, the quotient `a / ((b - a) b)` is at most
 `2 a / b²`. -/

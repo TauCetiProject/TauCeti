@@ -109,10 +109,10 @@ theorem MemLp.integrable_rpow {X : Type*} [MeasurableSpace X] {μ : Measure X} {
 
 /-- An integrable function times a multiplier bounded on a set containing its support is
 integrable. -/
-theorem Integrable.smul_of_support_subset {α 𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] [MeasurableSpace α] {μ : Measure α} {f : α → E} {g : α → 𝕜} {s : Set α}
-    {K : ℝ} (hf : Integrable f μ) (hsupp : Function.support f ⊆ s)
-    (hg : AEStronglyMeasurable g μ) (hK : ∀ x ∈ s, ‖g x‖ ≤ K) :
+theorem Integrable.smul_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
+    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [MeasurableSpace α]
+    {μ : Measure α} {f : α → E} {g : α → 𝕜} {s : Set α} {K : ℝ} (hf : Integrable f μ)
+    (hsupp : Function.support f ⊆ s) (hg : AEStronglyMeasurable g μ) (hK : ∀ x ∈ s, ‖g x‖ ≤ K) :
     Integrable (fun x ↦ g x • f x) μ :=
   (hf.norm.const_mul K).mono' (hg.smul hf.1)
     (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))

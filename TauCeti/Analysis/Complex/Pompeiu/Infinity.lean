@@ -14,9 +14,9 @@ import Mathlib.Analysis.Asymptotics.Lemmas
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Normed.Field.Inversion
-import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # The Cauchy transform at infinity
@@ -116,12 +116,11 @@ theorem cauchyTransform_sub_inv_smul_isBigO (hf : Integrable f)
 theorem norm_deriv_cauchyTransform_le (hf : Integrable f) (hsupp : support f ⊆ closedBall c r)
     (hw : (r : ℝ) < ‖w - c‖) :
     ‖deriv (cauchyTransform f) w‖ ≤ π⁻¹ * (((‖w - c‖ - r) ^ 2)⁻¹ * ∫ z, ‖f z‖) := by
-  have hw' := notMem_tsupport_of_support_subset_closedBall hsupp hw
+  have hw' := notMem_tsupport_of_support_subset_closedBall hsupp (by rwa [dist_eq_norm])
   rw [(hasDerivAt_cauchyTransform_of_notMem_tsupport hf hw').deriv, norm_neg, norm_pi_inv_smul]
   gcongr
-  refine norm_integral_smul_le_of_support_subset hf hsupp fun z hz ↦ ?_
-  rw [← inv_pow, norm_pow, ← inv_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) (norm_inv_sub_le_of_mem_closedBall hz hw) 2
+  exact norm_integral_smul_le_of_support_subset hf hsupp fun z hz ↦
+    norm_inv_sub_pow_le_of_mem_closedBall hz hw 2
 
 /-- The derivative of the Cauchy transform at infinity, with the exact kernel constant. -/
 theorem norm_deriv_cauchyTransform_add_inv_sq_smul_le (hf : Integrable f)
@@ -129,11 +128,10 @@ theorem norm_deriv_cauchyTransform_add_inv_sq_smul_le (hf : Integrable f)
     ‖deriv (cauchyTransform f) w + ((w - c) ^ 2)⁻¹ • ((Real.pi : ℂ)⁻¹ • ∫ z, f z)‖ ≤
       π⁻¹ * (r / ((‖w - c‖ - r) * ‖w - c‖) * ((‖w - c‖ - r)⁻¹ + ‖w - c‖⁻¹) *
         ∫ z, ‖f z‖) := by
-  have hw' := notMem_tsupport_of_support_subset_closedBall hsupp hw
+  have hw' := notMem_tsupport_of_support_subset_closedBall hsupp (by rwa [dist_eq_norm])
   have hint : Integrable fun z ↦ ((w - z) ^ 2)⁻¹ • f z :=
-    hf.smul_of_support_subset hsupp (by fun_prop) fun z hz ↦ by
-      rw [norm_inv, norm_pow, ← inv_pow, ← norm_inv]
-      exact pow_le_pow_left₀ (by positivity) (norm_inv_sub_le_of_mem_closedBall hz hw) 2
+    hf.smul_of_support_subset hsupp (by fun_prop) fun z hz ↦
+      norm_inv_sub_pow_le_of_mem_closedBall hz hw 2
   have heq : deriv (cauchyTransform f) w + ((w - c) ^ 2)⁻¹ • ((Real.pi : ℂ)⁻¹ • ∫ z, f z) =
       -((Real.pi : ℂ)⁻¹ • ∫ z, (((w - z) ^ 2)⁻¹ - ((w - c) ^ 2)⁻¹) • f z) := by
     simp_rw [sub_smul]
@@ -164,9 +162,7 @@ theorem norm_deriv_cauchyTransform_add_inv_sq_smul_le_of_two_mul_lt (hf : Integr
       6 * r / ‖w - c‖ ^ 3 := by
     have h1 := div_sub_mul_le_two_mul_div_sq r.coe_nonneg hw
     have h2 : (‖w - c‖ - r)⁻¹ + ‖w - c‖⁻¹ ≤ 3 / ‖w - c‖ := by
-      have : (‖w - c‖ - r)⁻¹ ≤ 2 / ‖w - c‖ := by
-        rw [inv_le_iff_one_le_mul₀ hδ0, div_mul_eq_mul_div, le_div_iff₀ hρ]
-        linarith
+      have := inv_sub_le_two_div hρ hw
       have h3 : (3 : ℝ) / ‖w - c‖ = 2 / ‖w - c‖ + ‖w - c‖⁻¹ := by ring
       linarith
     calc (r : ℝ) / ((‖w - c‖ - r) * ‖w - c‖) * ((‖w - c‖ - r)⁻¹ + ‖w - c‖⁻¹)
@@ -293,7 +289,7 @@ theorem memLp_wirtingerDeriv_cauchyTransform_compl_ball [CompleteSpace F] (hf : 
     MemLp (fun w ↦ wirtingerDeriv (cauchyTransform f) w 1) p (volume.restrict (ball c R)ᶜ) := by
   refine (memLp_congr_ae ?_).mpr (memLp_deriv_cauchyTransform_compl_ball hf hsupp hR hp)
   filter_upwards [ae_restrict_mem measurableSet_ball.compl] with w hw
-  have hRw : R ≤ ‖w - c‖ := by simpa [mem_ball, dist_eq_norm] using hw
+  have hRw : R ≤ dist w c := by simpa [mem_ball] using hw
   exact wirtingerDeriv_cauchyTransform_apply_one_of_notMem_tsupport hf
     (notMem_tsupport_of_support_subset_closedBall hsupp (hR.trans_le hRw))
 

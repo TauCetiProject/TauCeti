@@ -26,8 +26,9 @@ inversion of a set by `0` commutes with closures, and turns an open set with bou
 into an open set.
 
 On a closed ball `closedBall c r` not containing `w`, the inversion `z ↦ (w - z)⁻¹` about `w` is
-bounded by `(‖w - c‖ - r)⁻¹` and stays within `r / ((‖w - c‖ - r) ‖w - c‖)` of its value at the
-centre. These are the kernel estimates that describe a Cauchy-type integral far from its data.
+bounded by `(‖w - c‖ - r)⁻¹`, so its `n`-th power is bounded by `((‖w - c‖ - r) ^ n)⁻¹`, and
+it stays within `r / ((‖w - c‖ - r) ‖w - c‖)` of its value at the centre. These are the kernel
+estimates that describe a Cauchy-type integral far from its data.
 
 ## Main results
 
@@ -53,9 +54,10 @@ centre. These are the kernel estimates that describe a Cauchy-type integral far 
   inverted frontier as frontier.
 * `TauCeti.mapsTo_inv_ball_diff_singleton_compl_closedBall`: the inversion maps the punctured ball
   of radius `R⁻¹` about `0` outside the closed ball of radius `R`.
-* `TauCeti.norm_inv_sub_le_of_mem_closedBall` and
-  `TauCeti.norm_inv_sub_sub_inv_sub_le_of_mem_closedBall`: on a closed ball `closedBall c r` not
-  containing `w`, `‖(w - z)⁻¹‖ ≤ (‖w - c‖ - r)⁻¹` and
+* `TauCeti.norm_inv_sub_le_of_mem_closedBall`, `TauCeti.norm_inv_sub_pow_le_of_mem_closedBall`
+  and `TauCeti.norm_inv_sub_sub_inv_sub_le_of_mem_closedBall`: on a closed ball `closedBall c r`
+  not containing `w`, `‖(w - z)⁻¹‖ ≤ (‖w - c‖ - r)⁻¹`,
+  `‖((w - z) ^ n)⁻¹‖ ≤ ((‖w - c‖ - r) ^ n)⁻¹` and
   `‖(w - z)⁻¹ - (w - c)⁻¹‖ ≤ r / ((‖w - c‖ - r) ‖w - c‖)`.
 -/
 
@@ -152,6 +154,13 @@ theorem norm_inv_sub_le_of_mem_closedBall {c w z : 𝕜} {r : ℝ} (hz : z ∈ c
   rw [norm_inv]
   exact inv_anti₀ (sub_pos.mpr hw)
     (by linarith [norm_sub_le_norm_sub_add_norm_sub w z c, mem_closedBall_iff_norm.mp hz])
+
+/-- On a closed ball `closedBall c r` not containing `w`, the powers of the inversion about `w`
+are bounded: `‖((w - z) ^ n)⁻¹‖ ≤ ((‖w - c‖ - r) ^ n)⁻¹`. -/
+theorem norm_inv_sub_pow_le_of_mem_closedBall {c w z : 𝕜} {r : ℝ} (hz : z ∈ closedBall c r)
+    (hw : r < ‖w - c‖) (n : ℕ) : ‖((w - z) ^ n)⁻¹‖ ≤ ((‖w - c‖ - r) ^ n)⁻¹ := by
+  rw [← inv_pow, norm_pow, ← inv_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) (norm_inv_sub_le_of_mem_closedBall hz hw) n
 
 /-- On a closed ball `closedBall c r` not containing `w`, the inversion about `w` differs from its
 value at the centre by at most `r / ((‖w - c‖ - r) ‖w - c‖)`. -/

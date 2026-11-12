@@ -27,8 +27,6 @@ normed spaces:
   multiple `a • v`, with `|a| * (2 * K) ≤ ‖v‖`, still has norm at least half of `|a| * ‖v‖`.
 * `TauCeti.norm_smul_le_mul_norm_of_support_subset`: a multiplier bounded by `K` on a set
   containing the support of `f` gives `‖g • f‖ ≤ K ‖f‖` everywhere.
-* `TauCeti.notMem_tsupport_of_support_subset_closedBall`: a point outside a closed ball
-  containing the support of `f` lies outside its closed support.
 * `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
   diameter.
 -/
@@ -93,14 +91,6 @@ theorem norm_smul_le_mul_norm_of_support_subset {α A E : Type*} [SeminormedAddG
   · simp [hx]
   · exact (norm_smul_le _ _).trans
       (mul_le_mul_of_nonneg_right (hK x (hsupp hx)) (norm_nonneg _))
-
-/-- A point outside a closed ball containing the support of `f` lies outside its closed
-support. -/
-theorem notMem_tsupport_of_support_subset_closedBall {E β : Type*}
-    [SeminormedAddCommGroup E] [Zero β] {f : E → β} {c w : E} {r : ℝ}
-    (hsupp : Function.support f ⊆ Metric.closedBall c r) (hw : r < ‖w - c‖) :
-    w ∉ tsupport f := fun h ↦
-  (mem_closedBall_iff_norm.mp (closure_minimal hsupp Metric.isClosed_closedBall h)).not_gt hw
 
 end TauCeti
 

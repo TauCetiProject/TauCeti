@@ -83,11 +83,10 @@ integrable `f` it is holomorphic off the closed support `tsupport f`, with compl
   `\bar∂ (∫ (w - z)⁻¹ • f z) = π f`.
 * `HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_zero`: holomorphy where `f`
   vanishes.
-* `HasCompactSupport.contDiff_cauchyTransform`,
-  `HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport` and
+* `HasCompactSupport.contDiff_cauchyTransform` and
   `HasCompactSupport.tendsto_cauchyTransform_cobounded`: the normalized transform of compactly
-  supported smooth data is smooth and holomorphic off `tsupport f`, and that of compactly
-  supported integrable data tends to `0` at infinity.
+  supported smooth data is smooth, and that of compactly supported integrable data tends to `0`
+  at infinity.
 
 ## References
 
@@ -601,15 +600,6 @@ section Regularity
 open Bornology
 
 variable {c : ℂ → F}
-
-omit [CompleteSpace F] in
-/-- The Cauchy transform of a compactly supported `C¹` map is holomorphic off the support of the
-map. -/
-theorem _root_.HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport
-    (hc : HasCompactSupport c) (hs : ContDiff ℝ 1 c) {w : ℂ} (hw : w ∉ tsupport c) :
-    DifferentiableAt ℂ (cauchyTransform c) w :=
-  (hasDerivAt_cauchyTransform_of_notMem_tsupport
-    (hs.continuous.integrable_of_hasCompactSupport hc) hw).differentiableAt
 
 omit [CompleteSpace F] in
 /-- The Cauchy transform of a compactly supported integrable map tends to `0` at infinity. -/
