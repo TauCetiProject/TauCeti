@@ -75,7 +75,6 @@ theorem exists_littlewoodPaleyBlock_eq_and_rpow_mul_norm_le_of_holderWith
           2 ^ ((α : ℝ) * j) * ‖g‖ ≤ C * (‖f‖ + H) := by
   obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
   set M := ∫ y, ‖y‖ ^ (α : ℝ) * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖
-  have hM : 0 ≤ M := integral_nonneg fun _ ↦ by positivity
   refine ⟨|C₀| + 2 ^ (α : ℝ) * M, by positivity, fun f H hf j ↦ ?_⟩
   have hfH : ‖f‖ ≤ ‖f‖ + H := le_add_of_nonneg_right H.coe_nonneg
   have hHf : (H : ℝ) ≤ ‖f‖ + H := le_add_of_nonneg_left (norm_nonneg f)
