@@ -120,7 +120,7 @@ private theorem newtonianKernel_convolution_eq_zero_of_not_integrable
     rfl
   rw [convolution_lsmul_swap]
   refine integral_undef fun hg => hf ?_
-  rcases eq_or_ne n 0 with rfl | hn0
+  rcases eq_or_ne n 0 with rfl | -
   · have hR0 : R < 0 := by simpa [Subsingleton.elim x 0] using hx
     have : f = 0 := funext fun y => by_contra fun hy =>
       (norm_nonneg y).not_gt ((mem_closedBall_zero_iff.1 (hR hy)).trans_lt hR0)
