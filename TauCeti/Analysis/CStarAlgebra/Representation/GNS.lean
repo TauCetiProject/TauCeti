@@ -101,14 +101,12 @@ theorem norm_le_iff_forall_isNondegenerate {a : A} {c : ℝ} (hc : 0 ≤ c) :
   have hx_nonneg : 0 ≤ a * star a := by simp
   have hx_norm : ‖a * star a‖ = ‖a‖ ^ 2 := by rw [CStarRing.norm_self_mul_star, sq]
   obtain ⟨ω, -, hω1, hω2⟩ := exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq hx_nonneg
-  let f : A →ₚ[ℂ] ℂ := ω
+  let f := ω.toPositiveLinearMap
   have hζ : ‖f.toGNS (star a)‖ = ‖a‖ := by
-    rw [f.norm_toGNS, star_star, show f (a * star a) = ω (a * star a) from rfl, hω1, hx_norm,
-      Complex.norm_of_nonneg (sq_nonneg ‖a‖), Real.sqrt_sq (norm_nonneg a)]
+    simp [f, PositiveLinearMap.preGNS_norm_def', hω1, hx_norm, Real.sqrt_sq (norm_nonneg a)]
   have hρζ : ‖f.gnsNonUnitalStarAlgHom a (f.toGNS (star a))‖ = ‖a‖ * ‖a‖ := by
-    rw [f.gnsNonUnitalStarAlgHom_toGNS, f.norm_toGNS, hx_nonneg.isSelfAdjoint.star_eq,
-      show f (a * star a * (a * star a)) = ω (a * star a * (a * star a)) from rfl, hω2, hx_norm,
-      norm_pow, Complex.norm_of_nonneg (sq_nonneg ‖a‖), Real.sqrt_sq (sq_nonneg ‖a‖), sq]
+    simp [f, PositiveLinearMap.preGNS_norm_def', hx_nonneg.isSelfAdjoint.star_eq, hω2,
+      CStarRing.norm_self_mul_star, Real.sqrt_sq (mul_self_nonneg ‖a‖)]
   refine le_of_mul_le_mul_right ?_ (norm_pos_iff.2 ha0)
   rw [← hρζ, ← hζ]
   exact ((f.gnsNonUnitalStarAlgHom a).le_opNorm _).trans <| mul_le_mul_of_nonneg_right

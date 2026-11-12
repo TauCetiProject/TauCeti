@@ -125,9 +125,9 @@ by the Bochner integral `∫ r, (i_A(f(r)) i_G(r)).snd x ∂μ`. -/
 theorem mul_of_eq_integral (f : ConvolutionAlgebra α μ) (x : FullCrossedProduct α μ) :
     x * of α μ f =
       ∫ r, (coefficientMultiplier α μ (f.ofConv r) * groupMultiplier α μ r).snd x ∂μ := by
-  rw [show x * of α μ f = ((of α μ f : 𝓜(ℂ, FullCrossedProduct α μ))).snd x by simp,
-    ← covariantMultiplierHom_integratedStarAlgHom,
-    CovariantMultiplierHom.integratedStarAlgHom_apply,
+  have hsnd : x * of α μ f = (of α μ f : 𝓜(ℂ, FullCrossedProduct α μ)).snd x := by simp
+  rw [hsnd, ← covariantMultiplierHom_integratedStarAlgHom]
+  simp only [CovariantMultiplierHom.integratedStarAlgHom_apply,
     CovariantMultiplierHom.integratedMultiplier_snd_apply, covariantMultiplierHom_coefficient,
     covariantMultiplierHom_group]
 
@@ -336,9 +336,10 @@ theorem eq_integratedFull_iff {P : CovariantRepresentation α H}
   · rintro rfl
     exact ⟨P.multiplierExtension_integratedFull_coefficientMultiplier μ hL,
       P.multiplierExtension_integratedFull_groupMultiplier μ hL⟩
-  · rw [← integratedFull_disintegrate hL, show disintegrate L hL = P from
-      CovariantRepresentation.ext (NonUnitalStarAlgHom.ext fun a => by simpa using hA a)
-        (DFunLike.ext _ _ fun r => by simpa using hG r)]
+  · have hdis : disintegrate L hL = P :=
+      CovariantRepresentation.ext (NonUnitalStarAlgHom.ext fun a => by simp [hA])
+        (DFunLike.ext _ _ fun r => by simp [hG])
+    rw [← integratedFull_disintegrate hL, hdis]
 
 end ArbitraryUniverse
 
@@ -497,9 +498,10 @@ theorem eq_integratedFull_iff {M : CovariantMultiplierHom α B}
   · rintro rfl
     exact ⟨M.extendToMultiplier_integratedFull_coefficientMultiplier μ hΦ,
       M.extendToMultiplier_integratedFull_groupMultiplier μ hΦ⟩
-  · rw [← integratedFull_disintegrateMultiplier hΦ, show disintegrateMultiplier Φ hΦ = M from
-      CovariantMultiplierHom.ext (NonUnitalStarAlgHom.ext fun a => by simpa using hA a)
-        (MonoidHom.ext fun r => Subtype.ext <| by simpa using hG r)]
+  · have hdis : disintegrateMultiplier Φ hΦ = M :=
+      CovariantMultiplierHom.ext (NonUnitalStarAlgHom.ext fun a => by simp [hA])
+        (MonoidHom.ext fun r => Subtype.ext <| by simp [hG])
+    rw [← integratedFull_disintegrateMultiplier hΦ, hdis]
 
 /-- Integrating the canonical covariant multiplier homomorphism `(i_A, i_G)` of `A ⋊_α G` yields
 the canonical embedding `A ⋊_α G →⋆ₙₐ[ℂ] 𝓜(ℂ, A ⋊_α G)`. -/

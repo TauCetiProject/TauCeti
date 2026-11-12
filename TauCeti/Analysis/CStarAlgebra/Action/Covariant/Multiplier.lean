@@ -377,12 +377,7 @@ theorem extendToMultiplier_integratedMultiplier {ψ : B →⋆ₙₐ[ℂ] 𝓜(�
     (hψ : ψ.IsMultiplierNondegenerate) (f : C_c(G, A)) :
     ψ.extendToMultiplier hψ (M.integratedMultiplier μ f) = (M.map hψ).integratedMultiplier μ f := by
   refine DoubleCentralizer.eq_iff_forall_multiplierExtension_eq.2 fun H _ _ _ π hπ => ?_
-  rw [show π.multiplierExtension hπ (ψ.extendToMultiplier hψ (M.integratedMultiplier μ f)) =
-      ((π.multiplierExtension hπ).toNonUnitalStarAlgHom.comp ψ).multiplierExtension
-        (hπ.multiplierExtension_comp hψ) (M.integratedMultiplier μ f) from
-      DFunLike.congr_fun
-        (NonUnitalStarAlgHom.multiplierExtension_comp_extendToMultiplier hπ hψ).symm
-        (M.integratedMultiplier μ f),
+  rw [← StarAlgHom.comp_apply, ← NonUnitalStarAlgHom.multiplierExtension_comp_extendToMultiplier,
     M.multiplierExtension_integratedMultiplier, (M.map hψ).multiplierExtension_integratedMultiplier,
     M.toCovariantRepresentation_map]
 
