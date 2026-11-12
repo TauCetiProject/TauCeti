@@ -187,13 +187,6 @@ theorem eq_of_path_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) {a b : 
   | nil => rfl
   | cons _ e ih => exact ih.trans (e.2.1.symm.trans ((h e.1).trans e.2.2))
 
-/-- Two vertices of a Serre graph lie in the same strongly connected component exactly when a
-path joins them: paths can be reversed. -/
-theorem stronglyConnectedComponent_mk_eq_mk_iff {a b : Γ.V} :
-    Quiver.StronglyConnectedComponent.mk a = Quiver.StronglyConnectedComponent.mk b ↔
-      Nonempty (Γ.Path a b) :=
-  Quiver.StronglyConnectedComponent.mk_eq_mk.trans ⟨And.left, fun ⟨p⟩ => ⟨⟨p⟩, ⟨p.reverse⟩⟩⟩
-
 /-- A Serre graph is connected when it is nonempty and path-connected. -/
 def Connected : Prop := Nonempty Γ.V ∧ Γ.Preconnected
 

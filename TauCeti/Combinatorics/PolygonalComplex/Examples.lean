@@ -158,15 +158,19 @@ theorem boundaryDarts_disc : disc.boundaryDarts = Set.univ :=
     (linkDegree_polygon (α := Unit) [((), true)] (List.cons_ne_nil _ _) e).trans <| by
       obtain ⟨⟨⟩, _ | _⟩ := e <;> decide
 
+/-- The disc has a boundary vertex. -/
+instance : Nonempty disc.boundary.V :=
+  ⟨disc.boundary.src ⟨((), true), boundaryDarts_disc ▸ Set.mem_univ _⟩⟩
+
+/-- The disc has at most one boundary vertex, since it has a single vertex. -/
+instance : Subsingleton disc.boundary.V :=
+  -- The one-skeleton of the disc is the one-petal rose, whose vertex type is `Unique`; it is
+  -- named explicitly because `disc` is a plain definition.
+  ⟨fun x y => Subtype.ext (Subsingleton.elim (α := (SerreGraph.rose Unit).V) x.1 y.1)⟩
+
 /-- The disc has a single boundary component: its boundary graph is one loop at its vertex. -/
-theorem card_boundaryComponent_disc : Nat.card disc.BoundaryComponent = 1 := by
-  have : Subsingleton disc.graph.V := inferInstanceAs (Subsingleton PUnit)
-  have : Subsingleton disc.boundary.V := inferInstanceAs (Subsingleton disc.BoundaryVertex)
-  have : Subsingleton disc.BoundaryComponent :=
-    Quiver.StronglyConnectedComponent.mk_surjective.subsingleton
-  have : Nonempty disc.BoundaryComponent :=
-    ⟨disc.boundaryClass ⟨((), true), boundaryDarts_disc ▸ Set.mem_univ _⟩⟩
-  exact Nat.card_of_subsingleton (Classical.arbitrary _)
+theorem card_boundaryComponent_disc : Nat.card disc.BoundaryComponent = 1 :=
+  Nat.card_eq_one_iff_unique.2 ⟨inferInstance, inferInstance⟩
 
 /-! ### The torus -/
 
@@ -207,7 +211,7 @@ theorem boundaryDarts_torus : torus.boundaryDarts = ∅ :=
       fin_cases i <;> cases b <;> decide
 
 /-- The torus has no boundary component. -/
-theorem isEmpty_boundaryComponent_torus : IsEmpty torus.BoundaryComponent :=
+instance isEmpty_boundaryComponent_torus : IsEmpty torus.BoundaryComponent :=
   torus.isEmpty_boundaryComponent_iff.2 boundaryDarts_torus
 
 /-- The torus is orientable: with its face kept as given, the two sides along each edge traverse
@@ -244,7 +248,7 @@ theorem boundaryDarts_projectivePlane : projectivePlane.boundaryDarts = ∅ :=
       obtain ⟨⟨⟩, _ | _⟩ := e <;> decide
 
 /-- The projective plane has no boundary component. -/
-theorem isEmpty_boundaryComponent_projectivePlane : IsEmpty projectivePlane.BoundaryComponent :=
+instance isEmpty_boundaryComponent_projectivePlane : IsEmpty projectivePlane.BoundaryComponent :=
   projectivePlane.isEmpty_boundaryComponent_iff.2 boundaryDarts_projectivePlane
 
 /-- The projective plane is not orientable: its two sides traverse the same dart, and orienting
@@ -301,7 +305,7 @@ theorem boundaryDarts_sphere : sphere.boundaryDarts = ∅ :=
     cases e <;> decide
 
 /-- The sphere has no boundary component. -/
-theorem isEmpty_boundaryComponent_sphere : IsEmpty sphere.BoundaryComponent :=
+instance isEmpty_boundaryComponent_sphere : IsEmpty sphere.BoundaryComponent :=
   sphere.isEmpty_boundaryComponent_iff.2 boundaryDarts_sphere
 
 end SurfaceModel

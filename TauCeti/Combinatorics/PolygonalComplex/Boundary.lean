@@ -15,7 +15,8 @@ The boundary darts of a polygonal surface model are the darts whose edge lies on
 side. A vertex is a *boundary vertex* (`SurfaceModel.BoundaryVertex`) when some boundary dart
 starts at it; the other vertices are the inner vertices. The boundary vertices and the boundary
 darts form a Serre graph, the *boundary graph* `SurfaceModel.boundary` of the model: reversal
-preserves boundary darts, and both ends of a boundary dart are boundary vertices.
+preserves boundary darts, and both ends of a boundary dart are boundary vertices. It is a subgraph
+of the one-skeleton, through the inclusion `SurfaceModel.boundaryInclusion`.
 
 Since the link of a boundary vertex is an interval, whose two ends are the boundary germs at that
 vertex, the boundary graph is 2-regular: exactly two of its darts start at each of its vertices
@@ -32,6 +33,8 @@ component exactly when it has no boundary dart.
 
 * `TauCeti.SurfaceModel.BoundaryVertex`: the vertices at which a boundary dart starts.
 * `TauCeti.SurfaceModel.boundary`: the Serre graph of boundary vertices and boundary darts.
+* `TauCeti.SurfaceModel.boundaryInclusion`: the inclusion of the boundary graph into the
+  one-skeleton.
 * `TauCeti.SurfaceModel.BoundaryComponent`: the path components of the boundary graph.
 * `TauCeti.SurfaceModel.boundaryClass`: the boundary component of a boundary dart.
 
@@ -95,6 +98,23 @@ variable {S}
 
 variable (S)
 
+/-- The inclusion of the boundary graph into the one-skeleton of the model. -/
+@[expose] def boundaryInclusion : S.boundary.Hom S.graph where
+  mapV := Subtype.val
+  mapE := Subtype.val
+  map_src _ := rfl
+  map_rev _ := rfl
+
+@[simp] theorem boundaryInclusion_mapV (x : S.boundary.V) :
+    S.boundaryInclusion.mapV x = x.1 := (rfl)
+
+@[simp] theorem boundaryInclusion_mapE (e : S.boundary.E) :
+    S.boundaryInclusion.mapE e = e.1 := (rfl)
+
+/-- The inclusion of the boundary graph is injective on darts. -/
+theorem boundaryInclusion_mapE_injective : Function.Injective S.boundaryInclusion.mapE :=
+  Subtype.val_injective
+
 /-- The boundary graph has finitely many vertices. -/
 instance : Finite S.boundary.V := inferInstanceAs (Finite S.BoundaryVertex)
 
@@ -155,12 +175,12 @@ joins their sources. -/
 theorem boundaryClass_eq_boundaryClass_iff {e e' : S.boundary.E} :
     S.boundaryClass e = S.boundaryClass e' ↔
       Nonempty (S.boundary.Path (S.boundary.src e) (S.boundary.src e')) :=
-  S.boundary.stronglyConnectedComponent_mk_eq_mk_iff
+  StronglyConnectedComponent.mk_eq_mk_iff_nonempty_path
 
 /-- A boundary dart lies in the boundary component of its target. -/
 theorem boundaryClass_eq_mk_tgt (e : S.boundary.E) :
     S.boundaryClass e = StronglyConnectedComponent.mk (S.boundary.tgt e) :=
-  S.boundary.stronglyConnectedComponent_mk_eq_mk_iff.2 ⟨(S.boundary.dart e).toPath⟩
+  StronglyConnectedComponent.mk_eq_mk_iff_nonempty_path.2 ⟨(S.boundary.dart e).toPath⟩
 
 /-- A boundary dart and its reverse lie in the same boundary component. -/
 @[simp] theorem boundaryClass_rev (e : S.boundary.E) :
@@ -180,10 +200,8 @@ theorem boundaryClass_surjective : Function.Surjective S.boundaryClass :=
   StronglyConnectedComponent.mk_surjective.comp S.boundary_src_surjective
 
 /-- A surface model has no boundary component exactly when it has no boundary dart. -/
-theorem isEmpty_boundaryComponent_iff : IsEmpty S.BoundaryComponent ↔ S.boundaryDarts = ∅ := by
-  rw [← S.isEmpty_boundary_V_iff]
-  exact ⟨fun _ => Function.isEmpty StronglyConnectedComponent.mk,
-    fun h => ⟨fun C => (StronglyConnectedComponent.mk_surjective C).elim fun x _ => h.false x⟩⟩
+theorem isEmpty_boundaryComponent_iff : IsEmpty S.BoundaryComponent ↔ S.boundaryDarts = ∅ :=
+  Quiver.isEmpty_stronglyConnectedComponent_iff.trans S.isEmpty_boundary_V_iff
 
 end SurfaceModel
 
