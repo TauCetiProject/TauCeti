@@ -97,6 +97,14 @@ private lemma map_stageCWComplex (k n : ℕ)
   letI := (hι k).relCWComplex (C := (univ : Set (F.obj k))) (D := ∅) image_univ (image_empty _)
   map_replaceMap (C := (range (c.ι.app k) : Set c.pt)) (D := ∅) _ _ _ n i
 
+/-- The characteristic map in the colimit of the cell of a stage corresponding to a cell `i` of
+`F.obj k` is `TauCeti.stageMap` of `i`. -/
+private lemma map_stageCWComplex_symm (k n : ℕ) (i : cell (univ : Set (F.obj k)) n) :
+    @map _ _ _ ∅ (@CWComplex.instRelCWComplex _ _ _ (stageCWComplex hι k)) n
+        ((stageCellEquiv hι k n).symm i) =
+      stageMap hι k n i := by
+  rw [map_stageCWComplex, Equiv.apply_symm_apply]
+
 variable (ι : ∀ k n, cell (univ : Set (F.obj k)) n → cell (univ : Set (F.obj (k + 1))) n)
 
 /-- The maps `ι k n` on the cells of the stages in the colimit. -/
@@ -207,8 +215,7 @@ theorem coe_map_sequentialColimitCWComplexCellEquiv_symm_inl {n : ℕ}
   simp only [sequentialColimitCWComplexCellEquiv, Equiv.symm_trans_apply, Equiv.apply_symm_apply]
   rw [map_cwSubcomplexTowerUnionCellEquiv_symm]
   exact congrArg (fun e : PartialEquiv (Fin n → ℝ) c.pt ↦ id ∘ ⇑e)
-    ((map_stageCWComplex hι 0 n ((stageCellEquiv hι 0 n).symm i)).trans
-      (congrArg (stageMap hι 0 n) ((stageCellEquiv hι 0 n).apply_symm_apply i)))
+    (map_stageCWComplex_symm hι 0 n i)
 
 /-- The characteristic map of an `n`-cell of the stage `k + 1` which does not come from the
 stage `k`, as a cell of the colimit, is its characteristic map followed by the map to the
@@ -226,7 +233,6 @@ theorem coe_map_sequentialColimitCWComplexCellEquiv_symm_inr {n k : ℕ} (i : �
   simp only [sequentialColimitCWComplexCellEquiv, Equiv.symm_trans_apply, Equiv.apply_symm_apply]
   rw [map_cwSubcomplexTowerUnionCellEquiv_symm]
   exact congrArg (fun e : PartialEquiv (Fin n → ℝ) c.pt ↦ id ∘ ⇑e)
-    ((map_stageCWComplex hι (k + 1) n ((stageCellEquiv hι (k + 1) n).symm i)).trans
-      (congrArg (stageMap hι (k + 1) n) ((stageCellEquiv hι (k + 1) n).apply_symm_apply i)))
+    (map_stageCWComplex_symm hι (k + 1) n i)
 
 end TauCeti
