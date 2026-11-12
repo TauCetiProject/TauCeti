@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.Topology.Algebra.IsUniformGroup.Defs
+public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.Huber.Uniform
 import Mathlib.Topology.Baire.CompleteMetrizable
 import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
@@ -27,6 +28,9 @@ Tate rings are exactly the perfect complete Tate rings.
 
 * `TauCeti.Huber.isOpenMap_frobenius`: Frobenius is an open map.
 * `TauCeti.Huber.IsUniform.of_perfectRing`: `R` is uniform.
+* `TauCeti.Huber.IsRingOfIntegralElements.perfectRing`: every ring of integral elements of a
+  perfect ring is perfect; `TauCeti.Huber.Pair.instPerfectRingPlus` is the instance for the plus
+  ring of a Huber pair.
 * `RingHom.perfectRing_topologicalClosure_range`: the closure of a perfect ring's image in `R`
   is perfect; no topology on the source or continuity of the homomorphism is required.
 
@@ -138,6 +142,28 @@ theorem IsUniform.of_perfectRing (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRi
   calc ((hϖu.unit⁻¹ ^ (c + 1) : Rˣ) : R) * (ϖ ^ c * (ϖ * x))
       = ((hϖu.unit⁻¹ : Rˣ) * ϖ) ^ (c + 1) * x := by rw [Units.val_pow_eq_pow_val]; ring
     _ = x := by rw [hϖu.val_inv_mul, one_pow, one_mul]
+
+section Plus
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] (p : ℕ) [NeZero p] [PerfectRing A p]
+
+/-- **A ring of integral elements of a perfect ring is perfect.** The `p`-th root of an element of
+`A⁺` has a positive power in `A⁺`, so it lies in `A⁺`. -/
+theorem IsRingOfIntegralElements.perfectRing [NonarchimedeanRing A] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) : PerfectRing Aplus p := by
+  have hA := PerfectRing.bijective_frobenius (R := A) (p := p)
+  refine ⟨⟨fun x y hxy ↦ Subtype.ext (hA.injective ?_), fun x ↦ ?_⟩⟩
+  · simpa using congrArg Subtype.val hxy
+  · obtain ⟨y, hy⟩ := hA.surjective x
+    have hy : y ^ p = x := hy
+    exact ⟨⟨y, h.mem_of_pow_mem (Nat.pos_of_ne_zero (NeZero.ne p)) (hy ▸ x.2)⟩, Subtype.ext hy⟩
+
+/-- The plus ring of a Huber pair on a perfect ring is perfect. -/
+instance Pair.instPerfectRingPlus [IsTopologicalRing A] [IsHuberRing A] (P : Pair A) :
+    PerfectRing P.plus p :=
+  P.isRingOfIntegralElements.perfectRing p
+
+end Plus
 
 end TauCeti.Huber
 

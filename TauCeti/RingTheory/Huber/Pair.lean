@@ -35,6 +35,8 @@ than selected by a typeclass.
   every ring of integral elements.
 * `TauCeti.Huber.IsRingOfIntegralElements.mem_of_pow_mem`: `A⁺` contains every element some
   positive power of which lies in `A⁺`.
+* `TauCeti.Huber.IsRingOfIntegralElements.exists_isPseudoUniformizer`: in a Tate ring, `A⁺`
+  contains a pseudouniformiser.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
   ring of integral elements onto a ring of integral elements.
 * `TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`, `TauCeti.Huber.Pair.powerBounded`:
@@ -126,6 +128,13 @@ theorem IsRingOfIntegralElements.mem_of_pow_mem [NonarchimedeanRing A] {Aplus : 
     a ∈ Aplus :=
   have := h.isIntegrallyClosedIn
   Subring.mem_of_pow_mem_of_isIntegrallyClosedIn hn ha
+
+/-- A ring of integral elements of a Tate ring contains a pseudouniformiser of the ambient ring. -/
+theorem IsRingOfIntegralElements.exists_isPseudoUniformizer [IsTopologicalRing A]
+    [IsTateRing A] {Aplus : Subring A} (h : IsRingOfIntegralElements Aplus) :
+    ∃ ϖ : Aplus, IsPseudoUniformizer (ϖ : A) :=
+  have ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  ⟨⟨ϖ, h.mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent⟩, hϖ⟩
 
 /-- An isomorphism of topological rings carries a ring of integral elements onto a ring of
 integral elements. -/
