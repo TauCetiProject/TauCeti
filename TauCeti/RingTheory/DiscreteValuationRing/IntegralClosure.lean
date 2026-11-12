@@ -18,10 +18,11 @@ and no normality of the field extension, is needed. Completeness of integral clo
 separately in `TauCeti/RingTheory/AdicCompletion/IntegralClosure.lean`.
 
 These results provide integer rings for ramification theory over complete discretely valued
-fields with arbitrary residue fields. Finiteness, freeness and rank are already supplied by
-Mathlib's `IsIntegralClosure.finite`, `IsIntegralClosure.module_free` and
-`IsIntegralClosure.rank`; the additional step here is locality. A domain integral over a
-henselian local ring is local, and a local Dedekind domain that is not a field is a DVR.
+fields with arbitrary residue fields. When `L / K` is separable (`Algebra.IsSeparable K L`),
+finiteness, freeness and rank are already supplied by Mathlib's `IsIntegralClosure.finite`,
+`IsIntegralClosure.module_free` and `IsIntegralClosure.rank`; the additional step here is locality.
+A domain integral over a henselian local ring is local, and a local Dedekind domain that is not a
+field is a DVR.
 Krull–Akizuki supplies Dedekindness even without separability.
 
 `TauCeti.IsIntegralClosure.isDiscreteValuationRing` allows any model of the integral closure
