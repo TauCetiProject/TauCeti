@@ -125,7 +125,6 @@ theorem lintegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mu
             ∫⁻ x in ball c r, ‖contraction (A - a x) (Wkp.iteratedGradient 1 u x)‖ₑ ^ 2) := by
   set H := Wkp.iteratedGradient 1 u
   set D : ℝ := 2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)
-  have hD : 0 ≤ D := by positivity
   have hr : 0 < r := hρ.trans_le hρr
   have hρΩ : ball c ρ ⊆ Omega := (ball_subset_ball hρr).trans hball
   have hH : MemLp H 2 (volume.restrict Omega) := Lp.memLp _
@@ -168,7 +167,7 @@ theorem lintegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mu
       _ = _ := by rw [ENNReal.ofReal_mul (by norm_num), h0, ENNReal.ofReal_ofNat]
   have herr : AEMeasurable (fun x => ‖err x‖ₑ ^ 2) (volume.restrict (ball c r)) := by
     exact (aestronglyMeasurable_contraction (aestronglyMeasurable_const.sub ha)
-      hHr.aestronglyMeasurable).enorm.pow_const 2
+      hHr.aestronglyMeasurable).eNorm.pow_const 2
   have hgr : ENNReal.ofReal (∫ x in ball c r, (f x + err x) ^ 2) ≤
       2 * ((∫⁻ x in ball c r, ‖f x‖ₑ ^ 2) + ∫⁻ x in ball c r, ‖err x‖ₑ ^ 2) := by
     have h := hconv hg subset_rfl measure_ball_lt_top.ne 0
@@ -177,7 +176,7 @@ theorem lintegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mu
     refine lintegral_mono fun x => ?_
     have h2 := ENNReal.rpow_add_le_mul_rpow_add_rpow ‖f x‖ₑ ‖err x‖ₑ (p := 2) one_le_two
     norm_num at h2
-    calc ‖f x + err x‖ₑ ^ 2 ≤ (‖f x‖ₑ + ‖err x‖ₑ) ^ 2 := by gcongr; exact enorm_add_le _ _
+    calc ‖f x + err x‖ₑ ^ 2 ≤ (‖f x‖ₑ + ‖err x‖ₑ) ^ 2 := by gcongr; exact eNorm_add_le _ _
       _ ≤ _ := by exact_mod_cast h2
   -- Assemble.
   rw [← hψρ]
@@ -239,7 +238,6 @@ private theorem setLAverage_enorm_contraction_sq_le {X : Type*} [MeasurableSpace
   set ν : Measure X := (μ s)⁻¹ • μ.restrict s
   have hν : ν ≪ μ.restrict s := Measure.smul_absolutelyContinuous
   have ht' : 1 < t' := htt.symm.lt
-  have ht0 : 0 < t := htt.pos
   -- Pointwise: `‖err‖ₑ² ≤ v² ‖H‖ₑ²`, since `H = 0` off `S`.
   have hpt : ∀ᵐ x ∂ν, ‖contraction (A - a x) (H x)‖ₑ ^ 2 ≤ v x ^ 2 * ‖H x‖ₑ ^ 2 := by
     filter_upwards [hν.ae_le hsupp] with x hx
@@ -258,7 +256,7 @@ private theorem setLAverage_enorm_contraction_sq_le {X : Type*} [MeasurableSpace
       fun _ _ => Finset.sum_nonneg fun _ _ => abs_nonneg _]
     refine Finset.sum_congr rfl fun i _ => ?_
     rw [ENNReal.ofReal_sum_of_nonneg (f := fun j => |A i j - a x i j|) fun _ _ => abs_nonneg _]
-    exact Finset.sum_congr rfl fun j _ => Real.enorm_eq_ofReal_abs _
+    exact Finset.sum_congr rfl fun j _ => Real.eNorm_eq_ofReal_abs _
   have hvm : AEMeasurable v ν := ((hw.indicator hS)).mono_ac hν
   have hHm : AEMeasurable (fun x => ‖H x‖ₑ) ν := hH.mono_ac hν
   have hv2 : ∀ᵐ x ∂ν, (v x ^ 2) ^ t' ≤ ENNReal.ofReal W ^ (2 * t' - 1) * v x := by
@@ -341,7 +339,6 @@ private theorem sq_setLAverage_enorm_iteratedGradient_sub_le
   set M₃ := maximalFunction volume (fun y => ‖H y‖ₑ ^ (2 * t)) x
   set W : ℝ := 2 * (n + 1) ^ 2 * Lam
   have hκ0 : 0 < κ := zero_lt_one.trans_le hκ
-  have hr : 0 < r := mul_pos hκ0 hρ
   have hρr : ρ ≤ r := le_mul_of_one_le_left hρ.le hκ
   have hxc : dist x c ≤ r := (mem_ball.1 hx).le.trans hρr
   have hLam : 0 ≤ Lam := hell.upper_nonneg
@@ -369,14 +366,12 @@ private theorem sq_setLAverage_enorm_iteratedGradient_sub_le
       ENNReal.mul_div_mul_left _ _ hk0 ENNReal.ofReal_ne_top]
   -- Jensen's inequality on `B_ρ`.
   have hjensen : (⨍⁻ y in ball c ρ, ‖H y - Hρ‖ₑ) ^ 2 ≤ ⨍⁻ y in ball c ρ, ‖H y - Hρ‖ₑ ^ 2 := by
-    have hu : AEMeasurable (fun y => ‖H y - Hρ‖ₑ) (volume.restrict (ball c ρ)) :=
-      (hHm.sub aestronglyMeasurable_const).enorm.restrict
-    have h := rpow_laverage_le_laverage_rpow hu one_le_two
-    simpa only [ENNReal.rpow_two] using h
+    simpa only [ENNReal.rpow_two] using rpow_laverage_le_laverage_rpow
+      (u := fun y => ‖H y - Hρ‖ₑ) (μ := volume.restrict (ball c ρ)) one_le_two
   -- The maximal function bounds on `B_r`.
   have hmax : ∀ g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ≥0∞,
       ⨍⁻ y in ball c r, g y ≤ 2 ^ (n + 1) * maximalFunction volume g x := fun g => by
-    simpa only [finrank_euclideanSpace, Fintype.card_fin, enorm_eq_self] using
+    simpa only [finrank_euclideanSpace, Fintype.card_fin, eNorm_eq_self] using
       setLAverage_ball_le_two_pow_mul_maximalFunction volume g hxc
   -- The coefficient error on `B_r`.
   have hW : ∀ y, ∑ i, ∑ j, |A i j - a y i j| ≤ W := fun y => by
@@ -390,9 +385,9 @@ private theorem sq_setLAverage_enorm_iteratedGradient_sub_le
       (volume.restrict (ball c r)) := by
     refine Finset.aemeasurable_fun_sum _ fun i _ => Finset.aemeasurable_fun_sum _ fun j _ => ?_
     exact (aestronglyMeasurable_const.sub
-      ((continuous_id.matrix_elem i j).comp_aestronglyMeasurable ha)).enorm.restrict
+      ((continuous_id.matrix_elem i j).comp_aestronglyMeasurable ha)).eNorm.restrict
   have herr := setLAverage_enorm_contraction_sq_le (μ := volume) (s := ball c r)
-    (ae_of_all _ hW) hS hwm hHm.enorm.restrict hsupp htt
+    (ae_of_all _ hW) hS hwm hHm.eNorm.restrict hsupp htt
   have herr' : ⨍⁻ y in ball c r, ‖contraction (A - a y) (H y)‖ₑ ^ 2 ≤
       (ENNReal.ofReal W ^ (2 * t' - 1) * ENNReal.ofReal δ) ^ (1 / t') *
         (2 ^ (n + 1) * M₃) ^ (1 / t) := by
@@ -484,7 +479,7 @@ private theorem exists_setAverage_deviation_le {a : EuclideanSpace ℝ (Fin (n +
     (measure_ball_pos _ _ hs).ne' measure_ball_lt_top.ne hint univ, ?_⟩
   have hmeas : ∀ i j, AEMeasurable (fun y => ‖(Matrix.of fun i j => ⨍ x in ball c' s, a x i j) i j -
       a y i j‖ₑ) (volume.restrict (ball c' s)) := fun i j =>
-    (aestronglyMeasurable_const.sub (hentry i j)).enorm.restrict
+    (aestronglyMeasurable_const.sub (hentry i j)).eNorm.restrict
   have hmeas' : ∀ i j, AEMeasurable
       (fun y => ‖(Matrix.of fun i j => ⨍ x in ball c' s, a x i j) i j - a y i j‖ₑ)
       ((volume (ball c' s))⁻¹ • volume.restrict (ball c' s)) := fun i j =>
@@ -496,7 +491,7 @@ private theorem exists_setAverage_deviation_le {a : EuclideanSpace ℝ (Fin (n +
         ‖(Matrix.of fun i j => ⨍ x in ball c' s, a x i j) i j - a y i j‖ₑ
       ≤ ∑ _i : Fin (n + 1), ∑ _j : Fin (n + 1), ENNReal.ofReal γ := by
         refine Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => ?_
-        simp_rw [Matrix.of_apply, enorm_sub_rev (⨍ x in ball c' s, a x i j)]
+        simp_rw [Matrix.of_apply, eNorm_sub_rev (⨍ x in ball c' s, a x i j)]
         exact (setLAverage_enorm_sub_setAverage_le_vmoModulus _ volume c' hsR).trans (hvmo i j)
     _ = ENNReal.ofReal ((n + 1) ^ 2 * γ) := by
         rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity)]
@@ -597,7 +592,6 @@ private theorem lintegral_rpow_le_of_sq_le_maximalFunction {E : Type*} [NormedAd
   have hr : 1 < r := by simp only [r]; linarith
   have hrt : 1 < r / t := by rw [one_lt_div (by linarith)]; simp only [r]; linarith
   have hr0 : 0 ≤ r := by linarith
-  have ht0 : 0 < t := by linarith
   set M₁ := maximalFunction μ h₁
   set M₂ := maximalFunction μ h₂
   set M₃ := maximalFunction μ h₃
@@ -609,7 +603,7 @@ private theorem lintegral_rpow_le_of_sq_le_maximalFunction {E : Type*} [NormedAd
       ∫⁻ x, maximalFunction μ h x ^ e ∂μ ≤
         ENNReal.ofReal (2 * e * 2 ^ (e - 1) / (e - 1)) * 4 ^ Module.finrank ℝ E *
           ∫⁻ x, h x ^ e ∂μ := fun {h} hh {e} he => by
-    simpa only [enorm_eq_self] using lintegral_rpow_maximalFunction_le μ (f := h) hh he
+    simpa only [eNorm_eq_self] using lintegral_rpow_maximalFunction_le μ (f := h) hh he
   -- Pointwise: `g^q = (g²)^r ≤ 2^(r-1) (2^(r-1) ((α₁ M₁)^r + (α₂ M₂)^r) + (α₃ M₃^(1/t))^r)`.
   have hpt : ∀ x, g x ^ q ≤ 2 ^ (r - 1) * (2 ^ (r - 1) *
       (α₁ ^ r * M₁ x ^ r + α₂ ^ r * M₂ x ^ r) + α₃ ^ r * M₃ x ^ (r / t)) := fun x => by
@@ -704,7 +698,6 @@ private theorem lintegral_enorm_iteratedGradient_rpow_le
   set H := Wkp.iteratedGradient 1 u
   have hHm : AEStronglyMeasurable H volume := hint.aestronglyMeasurable
   have hfm : AEStronglyMeasurable f volume := aestronglyMeasurable_of_sum_mul_inner_eq ha hHm heq
-  have ht0 : 0 < t := by linarith
   have hsq : ∀ (y : ℝ≥0∞) (e : ℝ), e * (q / e) = q → (y ^ e) ^ (q / e) = y ^ q :=
     fun y e he => by rw [← ENNReal.rpow_mul, he]
   have h2 : ∀ y : ℝ≥0∞, (y ^ 2) ^ (q / 2) = y ^ q := fun y => by
@@ -716,7 +709,7 @@ private theorem lintegral_enorm_iteratedGradient_rpow_le
   have hbound := lintegral_rpow_le_of_sq_le_maximalFunction (g := fun x =>
       sharpMaximalFunction volume H x) volume
     (h₁ := fun y => ‖H y‖ₑ ^ 2) (h₂ := fun y => ‖f y‖ₑ ^ 2) (h₃ := fun y => ‖H y‖ₑ ^ (2 * t))
-    (hHm.enorm.pow_const 2) (hfm.enorm.pow_const 2) (hHm.enorm.pow_const _) ht htq
+    (hHm.eNorm.pow_const 2) (hfm.eNorm.pow_const 2) (hHm.eNorm.pow_const _) ht htq
     (sq_sharpMaximalFunction_iteratedGradient_le ha hell hR hγ hvmo z u hsupp heq hκ
       (Real.HolderConjugate.conjExponent ht))
   simp only [h2, h3] at hbound
@@ -817,8 +810,8 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_vmoModulus_le 
     exact bot_le
   rw [ENNReal.coe_toNNReal (ENNReal.rpow_ne_top_of_nonneg (by positivity)
       (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hK₂)),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hHm,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hHm,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top
       (aestronglyMeasurable_of_sum_mul_inner_eq ha hHm heq),
     ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← hq_def]
   refine ENNReal.rpow_le_rpow ?_ (by positivity)
@@ -835,7 +828,7 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_vmoModulus_le 
     · rw [indicator_of_notMem hxz, hx hxz]
   set I := ∫⁻ x, ‖H x‖ₑ ^ q
   set J := ∫⁻ x, ‖f x‖ₑ ^ q
-  have hI : I ≠ ∞ := (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp0 hp_top
+  have hI : I ≠ ∞ := (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hp_top
     hHp.eLpNorm_lt_top).ne
   have key := lintegral_enorm_iteratedGradient_rpow_le ha hell hR hγ.le hvmo z u hsupp heq hint
     hκ ht htq (hFS H hint)

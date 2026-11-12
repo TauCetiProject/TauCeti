@@ -137,12 +137,12 @@ theorem enorm_contraction_le (M : Matrix (Fin n) (Fin n) ℝ)
     ‖contraction M H‖ₑ ≤ (∑ i, ∑ j, ‖M i j‖ₑ) * ‖H‖ₑ := by
   have h1 : ∀ k : Fin n, ‖EuclideanSpace.single k (1 : ℝ)‖ = 1 := fun k => by simp
   rw [contraction_apply, Finset.sum_mul]
-  refine (enorm_sum_le _ _).trans (Finset.sum_le_sum fun i _ => ?_)
+  refine (eNorm_sum_le _ _).trans (Finset.sum_le_sum fun i _ => ?_)
   rw [Finset.sum_mul]
-  refine (enorm_sum_le _ _).trans (Finset.sum_le_sum fun j _ => ?_)
-  rw [enorm_mul]
+  refine (eNorm_sum_le _ _).trans (Finset.sum_le_sum fun j _ => ?_)
+  rw [eNorm_mul]
   gcongr
-  rw [enorm_le_iff_norm_le, Real.norm_eq_abs]
+  rw [eNorm_le_iff_norm_le, Real.norm_eq_abs]
   refine (abs_real_inner_le_norm _ _).trans ?_
   rw [h1, mul_one]
   exact (H.le_opNorm_of_le (h1 i).le).trans_eq (mul_one _)
