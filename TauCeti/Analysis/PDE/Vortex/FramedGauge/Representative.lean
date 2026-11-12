@@ -301,7 +301,7 @@ theorem exists_framedGaugeGroup_forall_smul_mem_framedFieldSpace (f : ContDiffBu
   have hlim : Tendsto (fun z ↦ 4 * ((u • x) z 2 ^ 2 + (u • x) z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
     refine (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe).congr fun z ↦ ?_
     rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, framedGaugeGroup_smul,
-      sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
+      norm_sectionValue_gaugeTransform]
   exact mem_framedFieldSpace_of_eventually_sectionValue_eq f (contDiff_gaugeTransform huc hx)
     hsol' hlim hu s
 

@@ -253,10 +253,9 @@ theorem sub_referenceField_apply_eq (f : ContDiffBump (0 : ℝ)) {z : ℂ}
   have hℓ : (fun w ↦ Real.log (4 * (y w 2 ^ 2 + y w 3 ^ 2))) =
       fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) := by
     ext w
-    rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, sectionValue_gaugeTransform, norm_mul,
-      Circle.norm_coe, one_mul]
-  have h₁ : equation y z 1 = 0 := by rw [hsoly]; rfl
-  have h₂ : equation y z 2 = 0 := by rw [hsoly]; rfl
+    rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, norm_sectionValue_gaugeTransform]
+  have h₁ : equation y z 1 = 0 := by simp [hsoly]
+  have h₂ : equation y z 2 = 0 := by simp [hsoly]
   have hd1 := fderiv_log_normSq_apply_one hp hq hαy h₁ h₂
   have hdI := fderiv_log_normSq_apply_I hp hq hαy h₁ h₂
   rw [hℓ, hdy3, hy3z] at hd1 hdI
@@ -455,7 +454,7 @@ theorem exists_framedGaugeGroup_sectionValue_smul_eq (hx : ContDiff ℝ ∞ x)
   have hnorm : ‖sectionValue x z * conj (windingPhase m z : ℂ)‖ = ‖sectionValue x z‖ := by
     rw [norm_mul, Complex.norm_conj, Circle.norm_coe, mul_one]
   rw [hnorm] at hz
-  rw [framedGaugeGroup_smul, sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul,
+  rw [framedGaugeGroup_smul, norm_sectionValue_gaugeTransform, sectionValue_gaugeTransform,
     ← hz, mul_assoc, mul_assoc, hconj, mul_one]
 
 /-- **A framed representative converging exponentially to the reference field.** Every smooth
@@ -481,7 +480,7 @@ theorem exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp (hx : Co
   have hlim : Tendsto (fun z ↦ 4 * ((u • x) z 2 ^ 2 + (u • x) z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
     refine (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe).congr fun z ↦ ?_
     rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, framedGaugeGroup_smul,
-      sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
+      norm_sectionValue_gaugeTransform]
   exact exists_norm_sub_referenceField_le_mul_exp (hcd 0).continuous (hcd 1).continuous
     ((hcd 2).of_le (by norm_cast)) ((hcd 3).of_le (by norm_cast)) hsol' hlim hu f hc
 

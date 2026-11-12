@@ -75,8 +75,8 @@ field `amplitudeField u f` is `x`, then `exp(u) |f| = |α_x|`. -/
 theorem exp_mul_norm_eq_norm_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {u : ℂ → ℝ}
     {f : ℂ → ℂ} {g : framedGaugeGroup} (hx : g • amplitudeField u f = x) (z : ℂ) :
     Real.exp (u z) * ‖f z‖ = ‖sectionValue x z‖ := by
-  rw [← hx, framedGaugeGroup_smul, sectionValue_gaugeTransform, norm_mul, Circle.norm_coe,
-    one_mul, sectionValue_amplitudeField, norm_mul, norm_real, Real.norm_eq_abs,
+  rw [← hx, framedGaugeGroup_smul, norm_sectionValue_gaugeTransform,
+    sectionValue_amplitudeField, norm_mul, norm_real, Real.norm_eq_abs,
     abs_of_pos (Real.exp_pos _)]
 
 /-- **Uniqueness of the amplitude.** If `f` vanishes only on a set with dense complement, two
