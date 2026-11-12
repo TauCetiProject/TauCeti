@@ -68,7 +68,8 @@ theorem det_smul_one_add_smulRight (hM : 0 < Module.finrank R M) (a : R) (φ : M
   classical
   let b := Module.Free.chooseBasis R M
   have hdot : b.repr u ⬝ᵥ (φ ∘ b) = φ u := by
-    simp_rw [dotProduct, Function.comp_apply, ← smul_eq_mul, ← map_smul, ← map_sum, b.sum_repr]
+    conv_rhs => rw [← b.sum_repr u, map_sum]
+    simp [dotProduct]
   rw [← det_toMatrix b, map_add, map_smul, toMatrix_one, toMatrix_smulRight]
   set V := Matrix.vecMulVec (b.repr u) (φ ∘ b)
   -- `det (a • 1 + V)` is, up to the sign `(-1) ^ n`, the characteristic polynomial of `V` at `-a`.
@@ -76,14 +77,15 @@ theorem det_smul_one_add_smulRight (hM : 0 < Module.finrank R M) (a : R) (φ : M
   rw [Matrix.charpoly_vecMulVec, hdot] at h
   have hdet : (a • (1 : Matrix _ _ R) + V).det =
       (-1) ^ Fintype.card (Module.Free.ChooseBasisIndex R M) * (Matrix.scalar _ (-a) - V).det := by
-    rw [← Matrix.det_neg, neg_sub, Matrix.scalar_apply, ← Matrix.smul_one_eq_diagonal, neg_smul,
-      sub_neg_eq_add, add_comm]
+    rw [← Matrix.det_neg]
+    congr 1
+    simp [Matrix.smul_one_eq_diagonal, add_comm, sub_eq_add_neg]
   rw [hdet, ← h, ← Module.finrank_eq_card_chooseBasisIndex]
   obtain ⟨k, hk⟩ : ∃ k, Module.finrank R M = k + 1 := ⟨_, (Nat.succ_pred_eq_of_pos hM).symm⟩
   rw [hk]
   simp only [Polynomial.eval_sub, Polynomial.eval_pow, Polynomial.eval_X, Polynomial.eval_smul,
     smul_eq_mul, add_tsub_cancel_right]
-  have hsq : ((-1 : R) ^ k) ^ 2 = 1 := by rw [← pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
+  have hsq : ((-1 : R) ^ k) ^ 2 = 1 := by simp [← pow_mul]
   rw [neg_pow, neg_pow a k, pow_succ]
   linear_combination (a ^ k * (a + φ u)) * hsq
 

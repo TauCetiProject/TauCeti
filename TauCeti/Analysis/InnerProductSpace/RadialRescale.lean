@@ -16,8 +16,10 @@ import TauCeti.LinearAlgebra.Determinant.RankOne
 # Radial rescalings of a real inner product space
 
 For a *radial profile* `b : ℝ → ℝ`, the radial rescaling `TauCeti.radialRescale b` of a real
-inner product space `E` is `ρ x = b ‖x‖ • x`: it moves each point along its ray from the origin,
+normed space `E` is `ρ x = b ‖x‖ • x`: it moves each point along its ray from the origin,
 to `b r` times its position at radius `r = ‖x‖`. Only the values of `b` on `[0, ∞)` matter.
+The support conditions, the derivative at the origin and non-injectivity hold in any real normed
+space; the derivative away from the origin, smoothness and the Jacobian use an inner product.
 
 Away from the origin, at a radius where `b` is differentiable, the derivative of `ρ` is
 `b r • id + (b' r / r) • ⟪x, ·⟫ x`: multiplication by `b r` on the orthogonal complement of `x` and
@@ -69,9 +71,11 @@ open scoped Topology ContDiff
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {b : ℝ → ℝ} {x : E}
+section NormedSpace
 
-/-- The radial rescaling `x ↦ b ‖x‖ • x` of a real inner product space with radial profile
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {b : ℝ → ℝ} {x : E}
+
+/-- The radial rescaling `x ↦ b ‖x‖ • x` of a real normed space with radial profile
 `b : ℝ → ℝ`. Only the values of `b` on `[0, ∞)` matter. -/
 noncomputable def radialRescale (b : ℝ → ℝ) (x : E) : E := b ‖x‖ • x
 
@@ -128,15 +132,6 @@ theorem not_injective_radialRescale [Nontrivial E] {δ : ℝ} (hδ : 0 < δ) (h 
   refine hv0 (hinj ?_)
   rw [radialRescale_zero, radialRescale_of_eq_zero (hv ▸ h)]
 
-/-- Away from the origin, the derivative of `x ↦ b ‖x‖ • x` is
-`b ‖x‖ • id + (b' / ‖x‖) • ⟪x, ·⟫ x`, where `b'` is the derivative of `b` at `‖x‖`. -/
-theorem hasFDerivAt_radialRescale {b' : ℝ} (hx : x ≠ 0) (hb : HasDerivAt b b' ‖x‖) :
-    HasFDerivAt (radialRescale b)
-      (b ‖x‖ • ContinuousLinearMap.id ℝ E + ((b' / ‖x‖) • innerSL ℝ x).smulRight x) x := by
-  have h := (hb.comp_hasFDerivAt x (hasFDerivAt_norm_of_ne hx)).smul (hasFDerivAt_id x)
-  rw [smul_smul, ← div_eq_mul_inv] at h
-  exact h
-
 /-- At the origin, the derivative of `x ↦ b ‖x‖ • x` is multiplication by `b 0`, as soon as `b` is
 right-continuous at `0`. -/
 theorem hasFDerivAt_radialRescale_zero (hb : ContinuousWithinAt b (Ici 0) 0) :
@@ -150,11 +145,6 @@ theorem hasFDerivAt_radialRescale_zero (hb : ContinuousWithinAt b (Ici 0) 0) :
   · simp [radialRescale_apply, sub_smul]
   · simp
 
-/-- Away from the origin, the radial rescaling is `C^n` wherever its profile is. -/
-theorem contDiffAt_radialRescale {n : WithTop ℕ∞} (hx : x ≠ 0) (hb : ContDiffAt ℝ n b ‖x‖) :
-    ContDiffAt ℝ n (radialRescale b) x :=
-  (hb.comp x (contDiffAt_norm ℝ hx)).smul contDiffAt_id
-
 /-- A profile vanishing near `0` (on the right) gives a rescaling vanishing near the origin. -/
 theorem radialRescale_eventuallyEq_zero (h0 : b =ᶠ[𝓝[≥] 0] 0) :
     radialRescale b =ᶠ[𝓝 (0 : E)] 0 := by
@@ -162,6 +152,26 @@ theorem radialRescale_eventuallyEq_zero (h0 : b =ᶠ[𝓝[≥] 0] 0) :
     simpa using tendsto_norm_sub_self_nhdsGE (0 : E)
   filter_upwards [this.eventually h0] with y hy
   exact radialRescale_of_eq_zero hy
+
+end NormedSpace
+
+section InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {b : ℝ → ℝ} {x : E}
+
+/-- Away from the origin, the derivative of `x ↦ b ‖x‖ • x` is
+`b ‖x‖ • id + (b' / ‖x‖) • ⟪x, ·⟫ x`, where `b'` is the derivative of `b` at `‖x‖`. -/
+theorem hasFDerivAt_radialRescale {b' : ℝ} (hx : x ≠ 0) (hb : HasDerivAt b b' ‖x‖) :
+    HasFDerivAt (radialRescale b)
+      (b ‖x‖ • ContinuousLinearMap.id ℝ E + ((b' / ‖x‖) • innerSL ℝ x).smulRight x) x := by
+  have h := (hb.comp_hasFDerivAt x (hasFDerivAt_norm_of_ne hx)).smul (hasFDerivAt_id x)
+  rw [smul_smul, ← div_eq_mul_inv] at h
+  exact h
+
+/-- Away from the origin, the radial rescaling is `C^n` wherever its profile is. -/
+theorem contDiffAt_radialRescale {n : WithTop ℕ∞} (hx : x ≠ 0) (hb : ContDiffAt ℝ n b ‖x‖) :
+    ContDiffAt ℝ n (radialRescale b) x :=
+  (hb.comp x (contDiffAt_norm ℝ hx)).smul contDiffAt_id
 
 /-- A profile that is `C^n` on `(0, ∞)` and vanishes near `0` gives a `C^n` radial rescaling. -/
 theorem contDiff_radialRescale {n : WithTop ℕ∞} (hb : ContDiffOn ℝ n b (Ioi 0))
@@ -204,7 +214,7 @@ theorem det_fderiv_radialRescale_nonneg [FiniteDimensional ℝ E]
   have hd : HasDerivAt b (deriv b ‖x‖) ‖x‖ :=
     ((hb ‖x‖ hr).differentiableAt (Ioi_mem_nhds hr)).hasDerivAt
   have hb' : 0 ≤ deriv b ‖x‖ := by
-    rw [← derivWithin_of_isOpen isOpen_Ioi (show ‖x‖ ∈ Ioi (0 : ℝ) from hr)]
+    rw [← derivWithin_of_isOpen isOpen_Ioi (mem_Ioi.mpr hr)]
     exact hmono.derivWithin_nonneg
   -- `b` vanishes at some radius in `(0, ‖x‖)`, so monotonicity gives `0 ≤ b ‖x‖`.
   have hbx : 0 ≤ b ‖x‖ := by
@@ -245,5 +255,7 @@ theorem exists_radialRescale [FiniteDimensional ℝ E] {δ R : ℝ} (hδ : 0 < �
     mapsTo_radialRescale_ball habs,
     det_fderiv_radialRescale_nonneg (hb.differentiable (by simp)).differentiableOn h0
       (hmono.monotoneOn _)⟩
+
+end InnerProductSpace
 
 end TauCeti
