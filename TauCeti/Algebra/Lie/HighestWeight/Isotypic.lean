@@ -33,7 +33,7 @@ reducibility theorem into a usable decomposition tool.
 Each statement is proved twice over. The general form takes the copy of `L(lam)` as a parameter: an
 irreducible module carrying a highest weight vector of weight `lam` is unique up to equivalence
 (`TauCeti.nonempty_lieModuleEquiv_iff_eq_of_isHighestWeightVector`), so an equivalence with an
-arbitrary such module says exactly "a copy of `L(lam)`". The form the roadmap pins fixes the
+arbitrary such module says exactly "a copy of `L(lam)`". The second form fixes the
 carrier to be `TauCeti.irreducibleQuotient b lam`, with nothing quantified over: that quotient is
 irreducible and carries a highest weight vector of weight `lam`
 (`TauCeti.isHighestWeightVector_irreducibleQuotientGenerator`).
@@ -57,7 +57,7 @@ weight vector of an arbitrary finite-dimensional module is that statement applie
 which is again a highest weight module by
 `TauCeti.lieSpan_singleton_eq_top_of_lieSpan_eq`. The rank-one precedent is
 `TauCeti.isIrreducible_lieSpan_singleton`, which says the same for a primitive vector of an `sl₂`
-triple spanning `L`; that one is proved by the elementary weight-string argument of Layer 0, since
+triple spanning `L`; that one is proved by the elementary `sl₂` weight-string argument, since
 Weyl's theorem is not yet available where it is used.
 
 For the single-weight criterion, every irreducible Lie submodule of a finite-dimensional module
@@ -85,10 +85,6 @@ dictionary, `LieModule.isotypicComponent_eq_top_iff`.
   which reads the conclusion off the weight hypothesis alone.
 
 ## References
-
-This supplies the milestone "a highest weight vector generates a copy of `L(λ)`, and the
-single-weight criterion" of the decomposition toolkit in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §§6.3, 20.3.
 -/

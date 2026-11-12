@@ -97,7 +97,8 @@ source of the enclosure hypothesis `Conformal/Crosscut/Inside.lean` consumes.
 ## Main results
 
 * `TauCeti.HasContinuousLogOn` — the predicate, with `TauCeti.hasContinuousLogOn_iff` exposing it,
-  and its closure properties `TauCeti.HasContinuousLogOn.mul`, `.inv`, `.div`, `.mono`, `.congr`.
+  and its closure properties `TauCeti.HasContinuousLogOn.mul`, `.inv`, `.div`, `.pow`, `.mono`,
+  `.congr`.
 * `TauCeti.hasContinuousLogOn_of_mapsTo_slitPlane` — a function landing in the slit plane has the
   principal logarithm.
 * `TauCeti.eq_of_isPreconnected_of_forall_exp_eq_one` — a preconnected set of logarithms of `1` is
@@ -193,6 +194,13 @@ theorem HasContinuousLogOn.inv (h : HasContinuousLogOn g S) :
 theorem HasContinuousLogOn.div (h : HasContinuousLogOn g S) (h' : HasContinuousLogOn g' S) :
     HasContinuousLogOn (fun x => g x / g' x) S :=
   (h.mul h'.inv).congr fun x _ => (div_eq_mul_inv (g x) (g' x)).symm
+
+/-- **Logarithms scale under powers.** -/
+theorem HasContinuousLogOn.pow (h : HasContinuousLogOn g S) (k : ℕ) :
+    HasContinuousLogOn (fun x => g x ^ k) S := by
+  obtain ⟨u, hc, hu⟩ := h
+  exact ⟨fun x => k * u x, continuousOn_const.mul hc, fun x hx => by
+    simp only [Complex.exp_nat_mul, hu hx]⟩
 
 /-- **A function landing in the slit plane has the principal logarithm.** This is the only source
 of logarithms that does not come from another logarithm, and everything below is built on it. -/

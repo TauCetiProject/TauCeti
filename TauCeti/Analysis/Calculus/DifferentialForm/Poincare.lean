@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.MeasureTheory.Constructions.UnitInterval

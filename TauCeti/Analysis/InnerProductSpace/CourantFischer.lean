@@ -190,7 +190,6 @@ theorem exists_unit_vector_re_inner_le_eigenvalue
   -- Dimension counting: `finrank V + finrank W > finrank E`, so `V ⊓ W ≠ ⊥`.
   have hsum : finrank 𝕜 V + finrank 𝕜 W = n + 1 := by
     rw [hV, hWdim]
-    have hk : (k : ℕ) < n := k.2
     omega
   have hinf : V ⊓ W ≠ ⊥ :=
     Submodule.inf_ne_bot_of_finrank_lt (by omega)
@@ -266,7 +265,7 @@ theorem eigenvalues_eq_iSup_iInf_re_inner
   have hn0 : 0 < n := k.pos
   -- Uniform Rayleigh lower bound: every unit vector has quadratic form at least
   -- the smallest eigenvalue; this bounds every inner infimum below.
-  set m : Fin n := ⟨n - 1, by omega⟩ with hm
+  set m : Fin n := ⟨n - 1, by omega⟩
   have hray : ∀ x : E, ‖x‖ = 1 →
       hT.eigenvalues hn m ≤ RCLike.re ⟪T x, x⟫_𝕜 := by
     intro x hx
@@ -344,7 +343,7 @@ theorem eigenvalues_eq_of_eigenbasis
     have hWdim : finrank 𝕜 W = n - (k : ℕ) := by
       rw [hW, w.finrank_spanIndices, Fin.card_Ici]
     have hinf : V ⊓ W ≠ ⊥ :=
-      Submodule.inf_ne_bot_of_finrank_lt (by have hk : (k : ℕ) < n := k.2; omega)
+      Submodule.inf_ne_bot_of_finrank_lt (by have _ : (k : ℕ) < n := k.2; omega)
     obtain ⟨z, hz, hz0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hinf
     obtain ⟨hzV, hzW⟩ := Submodule.mem_inf.mp hz
     have hz0' : ‖z‖ ≠ 0 := norm_ne_zero_iff.mpr hz0

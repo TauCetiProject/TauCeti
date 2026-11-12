@@ -72,7 +72,6 @@ restated through `Matrix.PosSemidef`.
 
 * W. Rudin, *Fourier Analysis on Groups* (1962), Theorem 1.4.3.
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, §4.2, Lemma 4.8.
-* Roadmap: TauCetiRoadmap/OneParameterSemigroups/README.md, Part C (Bochner milestone).
 -/
 
 public section
@@ -688,8 +687,6 @@ private theorem integral_norm_fourierIntegral_gaussian_eq_one {t : ℝ} (ht : 0 
   have hg_pd : Matrix.PosSemidef
       fun a b : V => Complex.exp (-(t * ‖a - b‖ ^ 2 : ℝ)) :=
     posSemidef_cexp_neg_mul_sq_norm ht.le
-  have hg_int : Integrable fun x : V => Complex.exp (-(t * ‖x‖ ^ 2 : ℝ)) :=
-    integrable_cexp_neg_mul_sq_norm ht
   have hg_cont : Continuous fun x : V => Complex.exp (-(t * ‖x‖ ^ 2 : ℝ)) :=
     continuous_cexp_neg_mul_sq_norm t
   have hft_int := integrable_fourierIntegral_gaussian (V := V) ht

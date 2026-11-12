@@ -48,7 +48,7 @@ theorem exists_mul_eq_of_isUnit_det_submatrix (A : Matrix m n R) {ρ : ℕ} (e�
     ∃ (L : Matrix m (Fin ρ) R) (M : Matrix (Fin ρ) n R) (L' : Matrix (Fin ρ) m R)
       (M' : Matrix n (Fin ρ) R), IsSplitFactorization A L M L' M' := by
   classical
-  set B := A.submatrix e₁ e₂ with hBdef
+  set B := A.submatrix e₁ e₂
   let := invertibleOfIsUnitDet B hB
   refine ⟨A.submatrix id e₂ * B⁻¹, A.submatrix e₁ id, (1 : Matrix m m R).submatrix e₁ id,
     (1 : Matrix n n R).submatrix id e₂ * B⁻¹, ?_, ?_, ?_⟩
@@ -68,7 +68,7 @@ theorem exists_mul_eq_of_isUnit_det_submatrix (A : Matrix m n R) {ρ : ℕ} (e�
         exact det_zero_of_row_eq hne (by ext k; exact congrArg (fun x ↦ A x _) huv)
     have hN' : N = fromBlocks B (A.submatrix e₁ fun _ : Fin 1 ↦ j)
         (A.submatrix (fun _ : Fin 1 ↦ i) e₂) (of fun _ _ : Fin 1 ↦ A i j) := by
-      ext (a | a) (b | b) <;> simp [N, B]
+      ext (a | a) (b | _) <;> simp [N, B]
     rw [hN', det_fromBlocks₁₁, det_unique (n := Fin 1)] at hN
     have h2 := ((isUnit_det_of_invertible B).mul_right_eq_zero).1 hN
     rw [Matrix.sub_apply, sub_eq_zero, invOf_eq_nonsing_inv] at h2
