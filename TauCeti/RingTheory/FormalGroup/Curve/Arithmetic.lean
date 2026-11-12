@@ -15,7 +15,9 @@ For the additive formal group, forgetting a curve preserves addition of power se
 For any commutative formal group, multiplication by an invertible natural number is an
 additive automorphism of curves. Its inverse supplies division by that number even when the
 formal group law does not give a scalar action of the coefficient ring. These arithmetic maps
-support normalized Cartier operators on curves.
+support normalized Cartier operators on curves. Verschiebung `Vₙ` (the substitution of `X^n`
+for the curve parameter `X`) is injective for every nonzero index `n`, without commutativity of
+the formal group law or a unit assumption on the index.
 -/
 
 public section
@@ -44,7 +46,8 @@ section CurveDivision
 
 variable (F : FormalGroup R) [F.IsComm]
 
-/-- Multiplication by an invertible natural number is an automorphism of the group of curves. -/
+/-- Multiplication by an invertible natural number is an automorphism of the group of curves
+on a commutative formal group law. -/
 noncomputable def nsmulCurveEquiv (n : ℕ) (hunit : IsUnit (n : R)) : F.Curve ≃+ F.Curve :=
   ((F.nsmulHom n).toIso (by simpa using hunit)).curveEquiv
 
@@ -52,6 +55,12 @@ noncomputable def nsmulCurveEquiv (n : ℕ) (hunit : IsUnit (n : R)) : F.Curve �
 theorem nsmulCurveEquiv_apply (n : ℕ) (hunit : IsUnit (n : R)) (γ : F.Curve) :
     F.nsmulCurveEquiv n hunit γ = n • γ := by
   simp [nsmulCurveEquiv]
+
+@[simp]
+theorem nsmulCurveEquiv_one (hunit : IsUnit ((1 : ℕ) : R)) :
+    F.nsmulCurveEquiv 1 hunit = AddEquiv.refl F.Curve := by
+  ext γ
+  simp
 
 @[simp]
 theorem nsmul_nsmulCurveEquiv_symm (n : ℕ) (hunit : IsUnit (n : R)) (γ : F.Curve) :
@@ -63,8 +72,8 @@ theorem nsmulCurveEquiv_symm_nsmul (n : ℕ) (hunit : IsUnit (n : R)) (γ : F.Cu
     (F.nsmulCurveEquiv n hunit).symm (n • γ) = γ := by
   simpa only [nsmulCurveEquiv_apply] using (F.nsmulCurveEquiv n hunit).symm_apply_apply γ
 
-/-- An additive map between groups of curves commutes with division by an invertible natural
-number. The source and target coefficient rings may differ. -/
+/-- An additive map between groups of curves on commutative formal group laws commutes with
+division by an invertible natural number. The source and target coefficient rings may differ. -/
 theorem map_nsmulCurveEquiv_symm {G : FormalGroup S} [G.IsComm]
     (f : F.Curve →+ G.Curve) (n : ℕ) (hR : IsUnit (n : R)) (hS : IsUnit (n : S))
     (γ : F.Curve) :
