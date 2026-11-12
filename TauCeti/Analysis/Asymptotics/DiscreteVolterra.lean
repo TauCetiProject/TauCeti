@@ -47,6 +47,8 @@ and the unknown `h` in any Banach space over `𝕜`.
 * `TauCeti.discrete_volterra_solution_unique`: two solutions that are `O(P)` at infinity
   coincide.
 * `TauCeti.existsUnique_discrete_volterra_solution`: exactly one solution is `O(P)` at infinity.
+* `TauCeti.norm_discrete_volterra_solution_le`: every solution that is `O(P)` at infinity
+  satisfies the bound `‖h n‖ ≤ P n * Φ n * exp (Ψ n)`.
 * `TauCeti.summable_norm_discrete_volterra_of_isBigO`: for a sequence that is `O(P)` at
   infinity, every series in the equation converges absolutely.
 * `TauCeti.summable_discrete_volterra_of_isBigO`: hence, in a Banach space, every series in the
@@ -74,6 +76,28 @@ namespace TauCeti
 variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {K : ℕ → ℕ → 𝕜} {J : ℕ → E} {ψ : ℕ → 𝕜} {P Q : ℕ → ℝ}
 
+omit [NormedSpace 𝕜 E] in
+/-- The weights `Q m * ‖J m‖` of the forcing series are nonnegative. -/
+private lemma forcing_weight_nonneg (hQ : ∀ m, 0 ≤ Q m) (m : ℕ) : 0 ≤ Q m * ‖J m‖ :=
+  mul_nonneg (hQ m) (norm_nonneg _)
+
+/-- The weights `P m * Q m * ‖ψ m‖` of the coefficient series are nonnegative. -/
+private lemma coeff_weight_nonneg (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m) (m : ℕ) :
+    0 ≤ P m * Q m * ‖ψ m‖ :=
+  mul_nonneg (mul_nonneg (hP m) (hQ m)) (norm_nonneg _)
+
+/-- The separable kernel bound applied to a vector: `‖K n m • y‖ ≤ P n * (Q m * ‖y‖)`. -/
+private lemma norm_kernel_smul_le (hK : ∀ n m, n < m → ‖K n m‖ ≤ P n * Q m) {n m : ℕ}
+    (hnm : n < m) (y : E) : ‖K n m • y‖ ≤ P n * (Q m * ‖y‖) := by
+  rw [norm_smul, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (hK n m hnm) (norm_nonneg _)
+
+/-- The separable kernel bound applied to `ψ m • y`:
+`‖K n m • ψ m • y‖ ≤ P n * (Q m * ‖ψ m‖ * ‖y‖)`. -/
+private lemma norm_kernel_smul_smul_le (hK : ∀ n m, n < m → ‖K n m‖ ≤ P n * Q m) {n m : ℕ}
+    (hnm : n < m) (y : E) : ‖K n m • ψ m • y‖ ≤ P n * (Q m * ‖ψ m‖ * ‖y‖) :=
+  (norm_kernel_smul_le hK hnm _).trans_eq (by rw [norm_smul, mul_assoc])
+
 /-- One step of the iteration: if `‖x m‖ ≤ c * P m * Ψ m ^ k / k!` for every `m > n`, then
 `‖∑_{m > n} K n m • ψ m • x m‖ ≤ c * P n * Ψ n ^ (k + 1) / (k + 1)!`. -/
 private lemma norm_tsum_smul_smul_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
@@ -84,26 +108,18 @@ private lemma norm_tsum_smul_smul_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ 
     ‖∑' m : Ioi n, K n m • ψ m • x m‖ ≤
       c * P n * (∑' m : Ioi n, P m * Q m * ‖ψ m‖) ^ (k + 1) / (k + 1)! := by
   obtain ⟨a, ha⟩ : ∃ a : ℕ → ℝ, ∀ m, P m * Q m * ‖ψ m‖ = a m := ⟨_, fun _ ↦ rfl⟩
-  have ha0 : ∀ m, 0 ≤ a m := fun m ↦
-    ha m ▸ mul_nonneg (mul_nonneg (hP m) (hQ m)) (norm_nonneg _)
+  have ha0 : ∀ m, 0 ≤ a m := fun m ↦ ha m ▸ coeff_weight_nonneg hP hQ m
   simp only [ha] at hψ hx ⊢
   have hS := hψ.tsum_Ioi_mul_pow_tsum_Ioi_le ha0 n k
-  have hmono : ∀ m : Ioi n, ∑' j : Ioi (m : ℕ), a j ≤ ∑' j : Ioi n, a j :=
-    fun m ↦ hψ.antitone_tsum_Ioi ha0 m.2.le
+  have hg : Summable fun m : Ioi n ↦ a m * (∑' j : Ioi (m : ℕ), a j) ^ k :=
+    (hψ.mul_pow_tsum_Ioi ha0 k).subtype _
   obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : ℕ → ℝ, ∀ n, ∑' m : Ioi n, a m = Ψ n := ⟨_, fun _ ↦ rfl⟩
-  simp only [hΨ] at hx hS hmono ⊢
-  have hΨ0 : ∀ n, 0 ≤ Ψ n := fun n ↦ hΨ n ▸ tsum_nonneg fun m ↦ ha0 m
-  have hg : Summable fun m : Ioi n ↦ a m * Ψ m ^ k :=
-    ((hψ.subtype (· ∈ Ioi n)).mul_right (Ψ n ^ k)).of_nonneg_of_le
-      (fun m ↦ mul_nonneg (ha0 m) (pow_nonneg (hΨ0 m) k)) fun m ↦
-        mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (hΨ0 m) (hmono m) k) (ha0 m)
-  have hbound : ∀ m : Ioi n, ‖K n m • ψ m • x m‖ ≤ c * P n / k ! * (a m * Ψ m ^ k) := by
-    intro m
-    rw [norm_smul, norm_smul]
-    calc ‖K n m‖ * (‖ψ m‖ * ‖x m‖)
-        ≤ (P n * Q m) * (‖ψ m‖ * (c * P m * Ψ m ^ k / k !)) :=
-          mul_le_mul (hK n m m.2) (mul_le_mul_of_nonneg_left (hx m m.2) (norm_nonneg _))
-            (by positivity) (mul_nonneg (hP n) (hQ m))
+  simp only [hΨ] at hx hS hg ⊢
+  have hbound : ∀ m : Ioi n, ‖K n m • ψ m • x m‖ ≤ c * P n / k ! * (a m * Ψ m ^ k) := fun m ↦
+    calc ‖K n m • ψ m • x m‖
+        ≤ P n * (Q m * ‖ψ m‖ * (c * P m * Ψ m ^ k / k !)) :=
+          (norm_kernel_smul_smul_le hK m.2 _).trans (mul_le_mul_of_nonneg_left
+            (mul_le_mul_of_nonneg_left (hx m m.2) (mul_nonneg (hQ m) (norm_nonneg _))) (hP n))
       _ = c * P n / k ! * (a m * Ψ m ^ k) := by rw [← ha]; ring
   have hc' : 0 ≤ c * P n / k ! := by have := hP n; positivity
   refine (tsum_of_norm_bounded (hg.hasSum.mul_left (c * P n / k !)) hbound).trans ?_
@@ -124,26 +140,24 @@ private lemma norm_picardTerm_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
     (hψ : Summable fun m ↦ P m * Q m * ‖ψ m‖) (k n : ℕ) :
     ‖picardTerm K J ψ k n‖ ≤ (∑' m : Ioi n, Q m * ‖J m‖) * P n *
       ((∑' m : Ioi n, P m * Q m * ‖ψ m‖) ^ k / k !) := by
-  have hb0 : ∀ m, 0 ≤ Q m * ‖J m‖ := fun m ↦ mul_nonneg (hQ m) (norm_nonneg _)
   induction k generalizing n with
   | zero =>
-    have hbound : ∀ m : Ioi n, ‖K n m • J m‖ ≤ P n * (Q m * ‖J m‖) := fun m ↦ by
-      rw [norm_smul, ← mul_assoc]
-      exact mul_le_mul_of_nonneg_right (hK n m m.2) (norm_nonneg _)
     simpa [picardTerm, mul_comm] using
-      tsum_of_norm_bounded ((hJ.subtype (· ∈ Ioi n)).hasSum.mul_left (P n)) hbound
+      tsum_of_norm_bounded ((hJ.subtype (· ∈ Ioi n)).hasSum.mul_left (P n))
+        fun m : Ioi n ↦ norm_kernel_smul_le hK m.2 (J m)
   | succ k ih =>
     rw [picardTerm, mul_div_assoc']
-    refine norm_tsum_smul_smul_le hP hQ hK hψ (tsum_nonneg fun m : Ioi n ↦ hb0 m) n k
-      fun m hm ↦ ?_
+    refine norm_tsum_smul_smul_le hP hQ hK hψ
+      (tsum_nonneg fun m : Ioi n ↦ forcing_weight_nonneg hQ m) n k fun m hm ↦ ?_
     have hPm := hP m
     have hΨm : 0 ≤ ∑' j : Ioi m, P j * Q j * ‖ψ j‖ :=
-      tsum_nonneg fun j ↦ mul_nonneg (mul_nonneg (hP j) (hQ j)) (norm_nonneg _)
+      tsum_nonneg fun j ↦ coeff_weight_nonneg hP hQ j
     calc ‖picardTerm K J ψ k m‖
         ≤ (∑' j : Ioi m, Q j * ‖J j‖) * (P m * ((∑' j : Ioi m, P j * Q j * ‖ψ j‖) ^ k / k !)) :=
           by rw [← mul_assoc]; exact ih m
       _ ≤ (∑' j : Ioi n, Q j * ‖J j‖) * (P m * ((∑' j : Ioi m, P j * Q j * ‖ψ j‖) ^ k / k !)) :=
-          mul_le_mul_of_nonneg_right (hJ.antitone_tsum_Ioi hb0 hm.le) (by positivity)
+          mul_le_mul_of_nonneg_right (hJ.antitone_tsum_Ioi (forcing_weight_nonneg hQ) hm.le)
+            (by positivity)
       _ = _ := by ring
 
 /-- The family `(m, k) ↦ K n m • ψ m • picardTerm K J ψ k m` on `Ioi n × ℕ` is summable. -/
@@ -154,9 +168,8 @@ private lemma summable_uncurry_smul_smul_picardTerm (hP : ∀ n, 0 ≤ P n) (hQ 
   set Φ : ℕ → ℝ := fun n ↦ ∑' m : Ioi n, Q m * ‖J m‖
   set Ψ : ℕ → ℝ := fun n ↦ ∑' m : Ioi n, P m * Q m * ‖ψ m‖
   set a : ℕ → ℝ := fun m ↦ P m * Q m * ‖ψ m‖ with ha_def
-  have hb0 : ∀ m, 0 ≤ Q m * ‖J m‖ := fun m ↦ mul_nonneg (hQ m) (norm_nonneg _)
-  have ha0 : ∀ m, 0 ≤ a m := fun m ↦ mul_nonneg (mul_nonneg (hP m) (hQ m)) (norm_nonneg _)
-  have hΦ0 : ∀ n, 0 ≤ Φ n := fun n ↦ tsum_nonneg fun m ↦ hb0 m
+  have ha0 : ∀ m, 0 ≤ a m := coeff_weight_nonneg hP hQ
+  have hΦ0 : ∀ n, 0 ≤ Φ n := fun n ↦ tsum_nonneg fun m ↦ forcing_weight_nonneg hQ m
   have hΨ0 : ∀ n, 0 ≤ Ψ n := fun n ↦ tsum_nonneg fun m ↦ ha0 m
   have hbound : ∀ (m : Ioi n) (k : ℕ), ‖K n m • ψ m • picardTerm K J ψ k m‖ ≤
       Φ n * P n * (a m * (Ψ n ^ k / k !)) := fun m k ↦ by
@@ -164,17 +177,15 @@ private lemma summable_uncurry_smul_smul_picardTerm (hP : ∀ n, 0 ≤ P n) (hQ 
     have hPm := hP m
     have := hΦ0 n
     have := hΨ0 m
-    rw [norm_smul, norm_smul]
-    calc ‖K n m‖ * (‖ψ m‖ * ‖picardTerm K J ψ k m‖)
-        ≤ (P n * Q m) * (‖ψ m‖ * (Φ m * P m * (Ψ m ^ k / k !))) :=
-          mul_le_mul (hK n m hm) (mul_le_mul_of_nonneg_left
-            (norm_picardTerm_le hP hQ hK hJ hψ k m) (norm_nonneg _))
-            (by positivity) (mul_nonneg (hP n) (hQ m))
-      _ ≤ (P n * Q m) * (‖ψ m‖ * (Φ n * P m * (Ψ n ^ k / k !))) := by
-          have := hP n
-          have := hQ m
+    have := hP n
+    have hQψ : 0 ≤ Q m * ‖ψ m‖ := mul_nonneg (hQ m) (norm_nonneg _)
+    calc ‖K n m • ψ m • picardTerm K J ψ k m‖
+        ≤ P n * (Q m * ‖ψ m‖ * (Φ m * P m * (Ψ m ^ k / k !))) :=
+          (norm_kernel_smul_smul_le hK hm _).trans (mul_le_mul_of_nonneg_left
+            (mul_le_mul_of_nonneg_left (norm_picardTerm_le hP hQ hK hJ hψ k m) hQψ) (hP n))
+      _ ≤ P n * (Q m * ‖ψ m‖ * (Φ n * P m * (Ψ n ^ k / k !))) := by
           gcongr
-          · exact hJ.antitone_tsum_Ioi hb0 hm.le
+          · exact hJ.antitone_tsum_Ioi (forcing_weight_nonneg hQ) hm.le
           · exact hψ.antitone_tsum_Ioi ha0 hm.le
       _ = Φ n * P n * (a m * (Ψ n ^ k / k !)) := by simp only [ha_def]; ring
   refine Summable.of_norm_bounded ?_ fun p ↦ hbound p.1 p.2
@@ -188,17 +199,15 @@ private lemma isBigO_of_norm_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
     {h : ℕ → E} (hh : ∀ n, ‖h n‖ ≤ P n * (∑' m : Ioi n, Q m * ‖J m‖) *
       Real.exp (∑' m : Ioi n, P m * Q m * ‖ψ m‖)) :
     h =O[atTop] P := by
-  have hb0 : ∀ m, 0 ≤ Q m * ‖J m‖ := fun m ↦ mul_nonneg (hQ m) (norm_nonneg _)
-  have ha0 : ∀ m, 0 ≤ P m * Q m * ‖ψ m‖ := fun m ↦
-    mul_nonneg (mul_nonneg (hP m) (hQ m)) (norm_nonneg _)
+  have hb0 : ∀ m, 0 ≤ Q m * ‖J m‖ := forcing_weight_nonneg hQ
   refine IsBigO.of_bound ((∑' m : Ioi 0, Q m * ‖J m‖) *
     Real.exp (∑' m : Ioi 0, P m * Q m * ‖ψ m‖)) (Eventually.of_forall fun n ↦ ?_)
   rw [Real.norm_of_nonneg (hP n)]
   refine (hh n).trans ?_
   rw [mul_assoc, mul_comm (P n)]
   exact mul_le_mul_of_nonneg_right (mul_le_mul (hJ.antitone_tsum_Ioi hb0 (Nat.zero_le n))
-    (Real.exp_le_exp.2 (hψ.antitone_tsum_Ioi ha0 (Nat.zero_le n))) (Real.exp_pos _).le
-    (tsum_nonneg fun m ↦ hb0 m)) (hP n)
+    (Real.exp_le_exp.2 (hψ.antitone_tsum_Ioi (coeff_weight_nonneg hP hQ) (Nat.zero_le n)))
+    (Real.exp_pos _).le (tsum_nonneg fun m ↦ hb0 m)) (hP n)
 
 /-- For a sequence `h` that is `O(P)` at infinity, every series of the summation equation
 `h n = ∑_{m > n} K n m • (J m + ψ m • h m)` converges absolutely. -/
@@ -218,11 +227,11 @@ theorem summable_norm_discrete_volterra_of_isBigO (hP : ∀ n, 0 ≤ P n) (hQ : 
       P n * (Q m * ‖J m‖ + max C 0 * (P m * Q m * ‖ψ m‖)))
     (((hJ.add (hψ.mul_left (max C 0))).subtype (· ∈ Ioi n)).mul_left (P n)) ?_
   filter_upwards [hev] with m hm
-  rw [norm_norm, norm_smul]
-  calc ‖K n m‖ * ‖J m + ψ m • h m‖
-      ≤ (P n * Q m) * (‖J m‖ + ‖ψ m‖ * (max C 0 * P m)) := by
-        refine mul_le_mul (hK n m m.2) ((norm_add_le _ _).trans ?_) (norm_nonneg _)
-          (mul_nonneg (hP n) (hQ m))
+  rw [norm_norm]
+  calc ‖K n m • (J m + ψ m • h m)‖
+      ≤ P n * (Q m * (‖J m‖ + ‖ψ m‖ * (max C 0 * P m))) := by
+        refine (norm_kernel_smul_le hK m.2 _).trans (mul_le_mul_of_nonneg_left
+          (mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans ?_) (hQ m)) (hP n))
         rw [norm_smul]
         gcongr
     _ = P n * (Q m * ‖J m‖ + max C 0 * (P m * Q m * ‖ψ m‖)) := by ring
@@ -266,9 +275,8 @@ theorem exists_discrete_volterra_solution (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0
   refine ⟨h, fun n ↦ ?_, hh⟩
   -- split the series into its `J`-part and its `h`-part
   have hKJ : Summable fun m : Ioi n ↦ K n m • J m :=
-    ((hJ.subtype (· ∈ Ioi n)).mul_left (P n)).of_norm_bounded fun m ↦ by
-      rw [Function.comp_apply, norm_smul, ← mul_assoc]
-      exact mul_le_mul_of_nonneg_right (hK n m m.2) (norm_nonneg _)
+    ((hJ.subtype (· ∈ Ioi n)).mul_left (P n)).of_norm_bounded fun m ↦
+      norm_kernel_smul_le hK m.2 (J m)
   have hsum := summable_discrete_volterra_of_isBigO hP hQ hK hJ hψ
     (isBigO_of_norm_le hP hQ hJ hψ hh) n
   simp only [smul_add] at hsum ⊢
@@ -336,6 +344,22 @@ theorem discrete_volterra_solution_unique (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0
       rw [ih m (by have := m.2; simp only [mem_Ioi] at this; omega), smul_zero, smul_zero]
   funext n
   exact sub_eq_zero.1 (hdown N n (by omega))
+
+/-- **Volterra summation equations, bound.** Under the hypotheses of
+`exists_discrete_volterra_solution`, every solution of the summation equation
+`h n = ∑_{m > n} K n m • (J m + ψ m • h m)` that is `O(P)` at infinity satisfies
+`‖h n‖ ≤ P n * Φ n * exp (Ψ n)`, where `Φ n = ∑_{m > n} Q m * ‖J m‖` and
+`Ψ n = ∑_{m > n} P m * Q m * ‖ψ m‖`. -/
+theorem norm_discrete_volterra_solution_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
+    (hK : ∀ n m, n < m → ‖K n m‖ ≤ P n * Q m) (hJ : Summable fun m ↦ Q m * ‖J m‖)
+    (hψ : Summable fun m ↦ P m * Q m * ‖ψ m‖) {h : ℕ → E}
+    (h_eq : ∀ n, h n = ∑' m : Ioi n, K n m • (J m + ψ m • h m)) (h_isBigO : h =O[atTop] P)
+    (n : ℕ) :
+    ‖h n‖ ≤ P n * (∑' m : Ioi n, Q m * ‖J m‖) * Real.exp (∑' m : Ioi n, P m * Q m * ‖ψ m‖) := by
+  obtain ⟨h₀, h₀_eq, h₀_le⟩ := exists_discrete_volterra_solution hP hQ hK hJ hψ
+  rw [discrete_volterra_solution_unique hP hQ hK hJ hψ h_eq h₀_eq h_isBigO
+    (isBigO_of_norm_le hP hQ hJ hψ h₀_le)]
+  exact h₀_le n
 
 /-- **Volterra summation equations.** Under the hypotheses of
 `exists_discrete_volterra_solution`, the summation equation

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
+import Mathlib.Algebra.Order.Ring.Pow
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
@@ -36,6 +37,8 @@ analogue of the power-rule integral identity for tails.
   `∑ n, c n * a n` summable.
 * `Summable.antitone_tsum_Ioi`: the tails `∑_{m > n} a m` of a nonnegative summable sequence
   decrease with `n`.
+* `Summable.mul_pow_tsum_Ioi`: the sequence `a m * (∑_{j > m} a j) ^ k` is summable for a
+  nonnegative summable sequence `a`.
 * `Summable.tsum_Ioi_mul_pow_tsum_Ioi_le`: the estimate
   `∑_{m > n} a m * (∑_{j > m} a j) ^ k ≤ (∑_{m > n} a m) ^ (k + 1) / (k + 1)` for a nonnegative
   summable sequence `a`, the discrete counterpart of `∫_x^∞ a Ψ ^ k = Ψ x ^ (k + 1) / (k + 1)` for
@@ -134,6 +137,17 @@ theorem Summable.antitone_tsum_Ioi (ha : Summable a) (ha0 : ∀ m, 0 ≤ a m) :
   (ha.subtype _).tsum_le_tsum_of_inj (Set.inclusion hsub) (Set.inclusion_injective hsub)
     (fun j _ ↦ ha0 j) (fun _ ↦ le_rfl) (ha.subtype _)
 
+/-- For a nonnegative summable sequence `a` with tails `Ψ m = ∑_{j > m} a j`, the sequence
+`a m * Ψ m ^ k` is summable. -/
+theorem Summable.mul_pow_tsum_Ioi (ha : Summable a) (ha0 : ∀ m, 0 ≤ a m) (k : ℕ) :
+    Summable fun m ↦ a m * (∑' j : Set.Ioi m, a j) ^ k := by
+  have hΨ0 : ∀ m : ℕ, 0 ≤ ∑' j : Set.Ioi m, a j := fun m ↦ tsum_nonneg fun j ↦ ha0 j
+  refine (ha.mul_right ((∑' j : Set.Ioi 0, a j) ^ k)).of_nonneg_of_le
+    (fun m ↦ mul_nonneg (ha0 m) (pow_nonneg (hΨ0 m) k)) fun m ↦ ?_
+  have hle : ∑' j : Set.Ioi m, a j ≤ ∑' j : Set.Ioi 0, a j :=
+    ha.antitone_tsum_Ioi ha0 (Nat.zero_le m)
+  exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (hΨ0 m) hle k) (ha0 m)
+
 /-- For a nonnegative summable sequence `a` with tails `Ψ n = ∑_{m > n} a m`,
 `∑_{m > n} a m * Ψ m ^ k ≤ Ψ n ^ (k + 1) / (k + 1)`. This is the discrete counterpart of
 `∫_x^∞ a(v) Ψ(v)^k dv = Ψ(x)^(k+1)/(k+1)` for `Ψ(x) = ∫_x^∞ a`. -/
@@ -144,19 +158,6 @@ theorem Summable.tsum_Ioi_mul_pow_tsum_Ioi_le (ha : Summable a) (ha0 : ∀ m, 0 
   obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : ℕ → ℝ, ∀ n, ∑' m : Set.Ioi n, a m = Ψ n := ⟨_, fun _ ↦ rfl⟩
   simp only [hΨ]
   have hΨ0 : ∀ n, 0 ≤ Ψ n := fun n ↦ hΨ n ▸ tsum_nonneg fun m ↦ ha0 m
-  -- the tangent-line inequality `(k + 1) y x ^ k ≤ (x + y) ^ (k + 1) - x ^ (k + 1)`
-  have hpow : ∀ x y : ℝ, 0 ≤ x → 0 ≤ y →
-      (k + 1) * (y * x ^ k) ≤ (x + y) ^ (k + 1) - x ^ (k + 1) := by
-    intro x y hx hy
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      push_cast at ih ⊢
-      rw [pow_succ x k] at ih
-      rw [pow_succ (x + y) (k + 1), pow_succ x (k + 1), pow_succ x k]
-      have hk0 : (0 : ℝ) ≤ k + 1 := by positivity
-      nlinarith [mul_le_mul_of_nonneg_right ih (add_nonneg hx hy),
-        mul_nonneg hk0 (mul_nonneg (mul_nonneg hy hy) (pow_nonneg hx k))]
   -- telescoping over the partial sums, using `Ψ (m - 1) = Ψ m + a m`
   have hpartial : ∀ M, (k + 1) * ∑ j ∈ range M,
       a (j + (n + 1)) * Ψ (j + (n + 1)) ^ k ≤ Ψ n ^ (k + 1) - Ψ (n + M) ^ (k + 1) := by
@@ -167,8 +168,11 @@ theorem Summable.tsum_Ioi_mul_pow_tsum_Ioi_le (ha : Summable a) (ha0 : ∀ m, 0 
       have hsplit : Ψ (n + M) = Ψ (n + M + 1) + a (n + M + 1) := by
         rw [← hΨ, ← hΨ, ha.tsum_Ioi_eq_add]
         ring
-      have hstep := hpow (Ψ (n + M + 1)) (a (n + M + 1)) (hΨ0 _) (ha0 _)
-      rw [← hsplit] at hstep
+      -- Bernoulli's inequality `x ^ (k + 1) + (k + 1) x ^ k y ≤ (x + y) ^ (k + 1)`
+      have hstep := pow_add_mul_le_add_pow (hΨ0 (n + M + 1))
+        (by linarith [hΨ0 (n + M + 1), ha0 (n + M + 1)]) (k + 1)
+      rw [← hsplit, Nat.add_sub_cancel] at hstep
+      push_cast at hstep
       rw [sum_range_succ, mul_add, show M + (n + 1) = n + M + 1 by omega,
         show n + (M + 1) = n + M + 1 by omega]
       linarith
