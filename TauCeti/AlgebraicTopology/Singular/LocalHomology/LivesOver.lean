@@ -35,6 +35,14 @@ needed for the statements below.
   (`TauCeti.LivesOverFundamentalClass.of_homologyMap`). With `σ = p` and `p' = id`, a class lives
   over the fundamental class as soon as its image in `Hₖ(M)` does
   (`TauCeti.LivesOverFundamentalClass.of_homologyMap_proj`).
+* **Sections.** For a section `s` of `p`, the localization of `s_* β` is the image under `s` of
+  the localization of `β`. So a class `α` with `p_* α = 0` that lives over the fundamental class
+  keeps doing so after subtracting any class `s_* β`
+  (`TauCeti.LivesOverFundamentalClass.sub_homologyMap_section`), and some class lives over the
+  fundamental class modulo the classes `s_* β` exactly when some class with `p_* α = 0` lives over
+  it (`TauCeti.exists_forall_livesOverFundamentalClass_sub_iff`). For the evaluation fibration
+  `Map(S², Q) → Q` and its section by constant spheres, this is the step from Definition 6.11 to
+  the class used in the proof of Theorem 6.12 of the source.
 * **The trivial fibration.** For the identity of a compact oriented `n`-manifold `M` and integer
   coefficients, the localization of `Hₙ(M)` at a point is the map to the local homology
   `Hₙ(M, M ∖ {b})`, and the multiple `d • [M]` of the fundamental class lives over the
@@ -182,6 +190,58 @@ theorem LivesOverFundamentalClass.of_homologyMap_proj [TopologicalSpace M] (p : 
       ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) :
     LivesOverFundamentalClass R p b α :=
   hα.of_homologyMap R p (Function.id_comp _)
+
+/-- **Classes over a section.** Let `s` be a section of `p : E → M`. If `α ∈ Hₖ(E)` lives over
+the fundamental class at `b` and `p_* α = 0`, then `α - s_* β` lives over the fundamental class
+at `b` for every `β ∈ Hₖ(M)`: the localization of `s_* β` is the image under `s` of the
+localization of `β = p_* s_* β`, which is the image under `p` of the localization of `α`, hence
+zero. -/
+theorem LivesOverFundamentalClass.sub_homologyMap_section [TopologicalSpace M] (p : C(E, M))
+    (s : C(M, E)) (hs : p.comp s = ContinuousMap.id M) {b : M} {k : ℕ}
+    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)}
+    (hα₀ : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α = 0)
+    (hα : LivesOverFundamentalClass R p b α)
+    (β : ((TopCat.toSSet.obj (TopCat.of M)).homology R k : ModuleCat.{w} Λ)) :
+    LivesOverFundamentalClass R p b
+      (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom β) := by
+  have hs' : (p ∘ s : M → M) = id := congrArg DFunLike.coe hs
+  have hps : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom
+      ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom β) = β := by
+    rw [← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← CategoryTheory.Functor.map_comp,
+      ← TopCat.ofHom_comp,
+      hs, TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id, ModuleCat.id_apply]
+  intro h
+  rw [map_sub, sub_eq_zero] at h
+  -- The localization of `β` at the point `b` of `M` vanishes.
+  have hβ : (fiberLocalization R id b k).hom β = 0 := by
+    rw [← hps, ← ModuleCat.comp_apply,
+      homologyMap_comp_fiberLocalization R p (Function.id_comp _) b k, ModuleCat.comp_apply, ← h,
+      ← ModuleCat.comp_apply, ← homologyMap_comp_fiberLocalization R p (Function.id_comp _) b k,
+      ModuleCat.comp_apply, hα₀, map_zero]
+  apply hα
+  rw [h, ← ModuleCat.comp_apply, homologyMap_comp_fiberLocalization R s hs' b k,
+    ModuleCat.comp_apply, hβ, map_zero]
+
+/-- **Classes over a section, up to the section.** Let `s` be a section of `p : E → M`. Some
+`α ∈ Hₖ(E)` keeps living over the fundamental class at `b` after subtracting any class `s_* β`,
+`β ∈ Hₖ(M)`, exactly when some `α' ∈ Hₖ(E)` with `p_* α' = 0` lives over the fundamental class at
+`b`. Given `α`, the class `α' = α - s_* p_* α` works; conversely `α'` itself keeps living over the
+fundamental class (`TauCeti.LivesOverFundamentalClass.sub_homologyMap_section`). -/
+theorem exists_forall_livesOverFundamentalClass_sub_iff [TopologicalSpace M] (p : C(E, M))
+    (s : C(M, E)) (hs : p.comp s = ContinuousMap.id M) (b : M) (k : ℕ) :
+    (∃ α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ),
+      ∀ β : ((TopCat.toSSet.obj (TopCat.of M)).homology R k : ModuleCat.{w} Λ),
+        LivesOverFundamentalClass R p b
+          (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom β)) ↔
+      ∃ α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ),
+        (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α = 0 ∧
+          LivesOverFundamentalClass R p b α := by
+  refine ⟨fun ⟨α, hα⟩ ↦
+    ⟨_, ?_, hα ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)⟩,
+    fun ⟨α, hα₀, hα⟩ ↦ ⟨α, hα.sub_homologyMap_section R p s hs hα₀⟩⟩
+  rw [map_sub, ← ModuleCat.comp_apply (SSet.homologyMap _ R k), ← SSet.homologyMap_comp,
+    ← CategoryTheory.Functor.map_comp, ← TopCat.ofHom_comp, hs, TopCat.ofHom_id,
+    CategoryTheory.Functor.map_id, SSet.homologyMap_id, ModuleCat.id_apply, sub_self]
 
 end LivesOver
 
