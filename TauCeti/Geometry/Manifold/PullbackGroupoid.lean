@@ -186,6 +186,7 @@ theorem pullback_isManifold (e : N ≃ₜ M) [manifoldM : IsManifold I n M] :
     letI := e.pullbackChartedSpace (H := H)
     IsManifold I n N :=
   letI := e.pullbackChartedSpace (H := H)
+  letI : HasGroupoid M (contDiffGroupoid n I) := manifoldM.toHasGroupoid
   haveI := e.pullback_hasGroupoid (contDiffGroupoid n I)
   { }
 
