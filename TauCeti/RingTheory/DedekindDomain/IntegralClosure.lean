@@ -35,7 +35,7 @@ closure. The ring `C` need not be assumed to be a domain: its map into the field
 Krull–Akizuki gives Noetherianity without separability, but does not assert that the integral
 closure is a finite `A`-module. That stronger conclusion requires additional hypotheses on the
 base ring or extension. For example, Mathlib proves module finiteness for separable extensions
-when `A` is integrally closed, and `TauCeti.IsIntegralClosure.finite_adjoin_of_transcendental`
+when `A` is integrally closed, and `TauCeti.IsIntegralClosure.finite_adjoin`
 proves it over a polynomial subalgebra of a function field without separability.
 
 ## References

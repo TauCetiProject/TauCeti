@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Matrix.Block
 
 /-!
-# Products and idempotents of block matrices
+# Products, powers and idempotents of block matrices
 
 The difference of the two products of block matrices can be computed block by block.
 `Matrix.fromBlocks_mul_sub_mul` records this calculation without requiring an associative
@@ -24,8 +24,14 @@ block matrix `!![1 - e, a; b, 1 - f]` is an involution conjugating `e ⊕ 0` to 
 equivalent idempotents, such as those presenting isomorphic projective modules, become conjugate
 after stabilization.
 
+For an upper two-block matrix, the diagonal blocks of its powers are the powers of the diagonal
+blocks. Its off-diagonal block is the finite convolution of the powers of the two diagonal
+blocks with the original off-diagonal block. This holds over semirings, including zeroth powers
+and empty blocks.
+
 ## Main results
 
+* `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
 * `Matrix.fromBlocks_mul_sub_mul`: the four blocks of a difference of products.
 * `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁`: the direct sum of idempotent matrices is
   idempotent.
@@ -38,6 +44,36 @@ after stabilization.
 * B. Blackadar, *K-Theory for Operator Algebras*, Chapter III, §4.
 * J. Rosenberg, *Algebraic K-Theory and Its Applications*, Chapter 1.
 -/
+
+namespace Matrix
+
+/-- The power of an upper two-block matrix, with its off-diagonal block given by the finite
+convolution of the two diagonal-block powers. -/
+public theorem fromBlocks_zero₂₁_pow {R m n : Type*} [Semiring R]
+    [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] (A : Matrix m m R) (B : Matrix m n R)
+    (D : Matrix n n R) (k : ℕ) :
+    fromBlocks A B 0 D ^ k = fromBlocks (A ^ k)
+      (∑ i ∈ Finset.range k, A ^ i * B * D ^ (k - 1 - i)) 0 (D ^ k) := by
+  induction k with
+  | zero =>
+    ext (i | i) (j | j) <;> simp [Matrix.one_apply]
+  | succ k ih =>
+    rw [pow_succ, ih, fromBlocks_multiply]
+    simp only [Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add, ← pow_succ]
+    congr 1
+    rw [Matrix.sum_mul, Finset.sum_range_succ]
+    simp only [Nat.add_sub_cancel, Nat.sub_self, pow_zero, Matrix.mul_one]
+    rw [add_comm]
+    congr 1
+    apply Finset.sum_congr rfl
+    intro i hi
+    have hidx : k - 1 - i + 1 = k - i := by
+      have := Finset.mem_range.mp hi
+      omega
+    rw [Matrix.mul_assoc, ← pow_succ, hidx]
+
+end Matrix
 
 /-- The difference of the two products of block matrices, computed in each block. -/
 public theorem Matrix.fromBlocks_mul_sub_mul {m n R : Type*} [Fintype m] [Fintype n]

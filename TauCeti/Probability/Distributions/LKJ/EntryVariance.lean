@@ -80,7 +80,7 @@ private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
   let _ := coordinate_probability hη ij
   have hsq : ∫ x, x ^ 2 ∂coordinateLaw η ij = 1 / (2 * a + 1) := by
     have h := integral_id_betaMeasure (by norm_num : (0 : ℝ) < 1 / 2) ha
-    rw [← betaMeasure_map_centered_sq ha,
+    rw [← betaMeasure_map_centered_sq,
       integral_map (by fun_prop) (by fun_prop)] at h
     rw [integral_map (by fun_prop) (by fun_prop)]
     convert h using 1
@@ -158,7 +158,7 @@ private theorem residual_moment_product (hη : 0 < η) (i k : Fin p) (hk : k ≤
     refine ⟨⟨(i, j), ?_⟩, ?_, rfl⟩
     · exact (Fin.mk_lt_mk.mpr hnk).trans_le hk
     · exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, rfl, hnk⟩
-  · intro ij hij
+  · intro ij _
     have ht := twice_shape_add_one (η := η) ij
     have hn : 2 * lkjPartialCorrelationShape p η ij = D - ij.1.2.val - 1 := by
       dsimp only [D]

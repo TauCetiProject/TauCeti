@@ -8,8 +8,14 @@ module
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecificLimits.DecayIteration
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.MeasureTheory.Function.EssSup
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -43,6 +49,11 @@ and the iteration lemma `TauCeti.exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_m
 this into a power law with exponent `min (2 - n/r) (α₀/2)`. The precise representative then
 converts the power law into a Hölder bound, as for the homogeneous equation.
 
+Applied on small balls, this gives continuity of weak solutions whose right-hand side is only
+locally in `Lʳ`, tested against test functions; this is the form in which semilinear equations,
+whose right-hand side depends on the solution, are met. On a general finite-dimensional inner
+product space the Laplacian case follows by orthonormal coordinates.
+
 ## Main declarations
 
 All in the namespace `TauCeti.PDE`.
@@ -57,6 +68,11 @@ All in the namespace `TauCeti.PDE`.
 * `exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp`: the interior oscillation estimate.
 * `exists_holderOnWith_preciseRepresentative_of_memLp`: **De Giorgi's theorem with a right-hand
   side**, the Hölder continuity of the precise representative.
+* `continuousOn_preciseRepresentative_of_forall_memLp`: for a weak solution with a right-hand
+  side in `Lʳ` on compact subsets of `Ω`, `r ≥ 2` and `r > n/2`, the precise representative is
+  continuous on `Ω`.
+* `exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq`: the same for Poisson's equation
+  `-Δu = f` on an open subset of a finite-dimensional real inner product space.
 
 ## References
 
@@ -188,7 +204,6 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
   obtain ⟨D₀, hD₀, hbound⟩ :=
     exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam) (Lam := Lam)
   set ω := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
-  have hω : 0 < ω := Metric.measureReal_ball_pos mu 0 one_pos
   refine ⟨max (√2 * D₀) ((√2 * D₀ * √ω + 1) * K), lt_max_of_lt_left (by positivity), ?_⟩
   intro Omega a f u x₀ R h ha hf hu hR hball
   set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ R, isOpen_ball⟩
@@ -198,48 +213,14 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
   -- De Giorgi's bound for the homogeneous part `g` on `B(x₀, R/2)`.
   have hgbound := hbound (Omega := B) (h.mono_set hball)
     (ha.mono_measure (Measure.restrict_mono hball le_rfl)) hg hR (subset_refl _)
-  -- `∫_B g² ≤ 2 ∫_B u² + 2 W² |B|`, since `g² ≤ 2 u² + 2 (u - g)²`.
+  -- `‖g‖_{L²(B)} ≤ √2 ‖u‖_{L²(B)} + √2 W |B|^(1/2)`.
   have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hu2 : Integrable (fun x => W1p.value u x ^ 2) (mu.restrict (ball x₀ R)) :=
-    ((Lp.memLp (W1p.value u)).integrable_sq).mono_measure (Measure.restrict_mono hball le_rfl)
-  have hg2 : ∫ x in ball x₀ R, W1p.value g x ^ 2 ∂mu ≤
-      2 * ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu + 2 * W ^ 2 * mu.real (ball x₀ R) := by
-    have hrhs : ∫ x in ball x₀ R, (2 * W1p.value u x ^ 2 + 2 * W ^ 2) ∂mu =
-        2 * ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu + 2 * W ^ 2 * mu.real (ball x₀ R) := by
-      rw [integral_add (hu2.const_mul 2) (integrable_const _), integral_const_mul, integral_const,
-        smul_eq_mul, measureReal_restrict_apply_univ]
-      ring
-    rw [← hrhs]
-    refine integral_mono_of_nonneg (Eventually.of_forall fun _ => sq_nonneg _)
-      ((hu2.const_mul 2).add (integrable_const _)) ?_
-    filter_upwards [hug] with x hx
-    have habs : |W1p.value u x - W1p.value g x| ^ 2 ≤ W ^ 2 :=
-      pow_le_pow_left₀ (abs_nonneg _) hx 2
-    rw [sq_abs] at habs
-    nlinarith [sq_nonneg (W1p.value u x + (W1p.value u x - W1p.value g x))]
-  have hsqrt : √(∫ x in ball x₀ R, W1p.value g x ^ 2 ∂mu) ≤
-      √2 * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) + √2 * W * √ω * R ^ (n / 2) := by
-    have hball_meas : mu.real (ball x₀ R) = R ^ n * ω := by
-      rw [Measure.addHaar_real_ball_of_pos _ _ hR, finrank_euclideanSpace, ← Real.rpow_natCast]
-    have hRn : √(R ^ n * ω) = R ^ (n / 2) * √ω := by
-      rw [Real.sqrt_mul (by positivity), Real.sqrt_eq_rpow, ← Real.rpow_mul hR.le]
-      ring_nf
-    calc √(∫ x in ball x₀ R, W1p.value g x ^ 2 ∂mu)
-        ≤ √(2 * ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu + 2 * W ^ 2 * mu.real (ball x₀ R)) :=
-          Real.sqrt_le_sqrt hg2
-      _ ≤ √(2 * ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) +
-            √(2 * W ^ 2 * mu.real (ball x₀ R)) := by
-          have hA : 0 ≤ 2 * ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu :=
-            mul_nonneg zero_le_two (integral_nonneg fun _ => sq_nonneg _)
-          have hB : 0 ≤ 2 * W ^ 2 * mu.real (ball x₀ R) := by positivity
-          refine (Real.sqrt_le_sqrt ?_).trans_eq (Real.sqrt_sq (by positivity))
-          nlinarith [Real.sq_sqrt hA, Real.sq_sqrt hB, Real.sqrt_nonneg (2 * W ^ 2 *
-            mu.real (ball x₀ R)), Real.sqrt_nonneg (2 * ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)]
-      _ = _ := by
-        rw [Real.sqrt_mul (by norm_num), hball_meas, Real.sqrt_mul (by positivity),
-          Real.sqrt_mul (by norm_num), Real.sqrt_sq hW, hRn]
-        ring
+  have hsqrt := TauCeti.MeasureTheory.sqrt_integral_sq_le_of_ae_abs_sub_le hW
+    (((Lp.memLp (W1p.value u)).integrable_sq).mono_measure (Measure.restrict_mono hball le_rfl))
+    (hug.mono fun x hx => hx)
+  rw [measureReal_restrict_apply_univ, Measure.sqrt_addHaar_real_ball mu x₀ hR] at hsqrt
+  rw [finrank_euclideanSpace] at hsqrt
   -- Combine: `|u| ≤ |g| + W`.
   have hR' : R ^ (-n / 2) * R ^ (n / 2) = 1 := by
     rw [← Real.rpow_add hR, neg_div, neg_add_cancel, Real.rpow_zero]
@@ -247,14 +228,13 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
     (ball_subset_ball (half_le_self hR.le)) hug] with x hx hxu
   set Q := R ^ (-n / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
   set P := R ^ (2 - n / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam
-  have hQ : 0 ≤ Q := by positivity
   have hP : 0 ≤ P := by have := h.pos; positivity
   have hWP : W = K * P := by simp only [W, P]; ring
   calc |W1p.value u x| ≤ |W1p.value g x| + |W1p.value u x - W1p.value g x| := by
         simpa using abs_add_le (W1p.value g x) (W1p.value u x - W1p.value g x)
     _ ≤ D₀ * R ^ (-n / 2) * √(∫ x in ball x₀ R, W1p.value g x ^ 2 ∂mu) + W := add_le_add hx hxu
     _ ≤ D₀ * R ^ (-n / 2) * (√2 * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) +
-          √2 * W * √ω * R ^ (n / 2)) + W := by gcongr
+          √2 * W * (R ^ (n / 2) * √ω)) + W := by gcongr
     _ = √2 * D₀ * Q + (√2 * D₀ * √ω + 1) * K * P := by
         rw [hWP]
         linear_combination (√2 * D₀ * K * P * √ω) * hR'
@@ -335,7 +315,6 @@ theorem exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
   have hsρ1 : C₀ * (s / ρ) ^ α₀ ≤ C₀ :=
     mul_le_of_le_one_right hC₀.le
       (Real.rpow_le_one (by positivity) ((div_le_one hρ).2 hsρ) hα₀.le)
-  have hC₀s : 0 ≤ C₀ * (s / ρ) ^ α₀ := by positivity
   calc _ ≤ C₀ * (s / ρ) ^ α₀ * (m₁ + W - (m - W)) + 2 * W := hosc
     _ = C₀ * (s / ρ) ^ α₀ * (m₁ - m) + (2 * (C₀ * (s / ρ) ^ α₀) + 2) * W := by ring
     _ ≤ C₀ * (s / ρ) ^ α₀ * (m₁ - m) + (2 * C₀ + 2) * W := by gcongr
@@ -372,131 +351,77 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
       hr hrn
   obtain ⟨D, hD, hloc⟩ :=
     exists_ae_abs_value_le_mul_add_of_memLp (mu := mu) (lam := lam) (Lam := Lam) hr hrn
-  -- The exponent `γ = 2 - n/r` of the right-hand side term, and the Hölder exponent
-  -- `β = min γ (α₀/2) < α₀`.
+  -- The exponent `γ = 2 - n/r` of the right-hand side term.
   obtain ⟨γ, hγdef⟩ : ∃ γ : ℝ, γ = 2 - (Fintype.card ι : ℝ) / r := ⟨_, rfl⟩
   have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
-  have hγ : 0 < γ := by
-    have : (Fintype.card ι : ℝ) / r < 2 := by rw [div_lt_iff₀ hr0]; linarith only [hrn]
-    linarith only [this, hγdef]
-  obtain ⟨β, hβdef⟩ : ∃ β : ℝ, β = min γ (α₀ / 2) := ⟨_, rfl⟩
-  have hβ : 0 < β := hβdef ▸ lt_min hγ (half_pos hα₀)
-  have hβγ : β ≤ γ := hβdef ▸ min_le_left _ _
-  have hβα : β < α₀ := hβdef ▸ (min_le_right _ _).trans_lt (half_lt_self hα₀)
-  obtain ⟨ε₀, C₁, hε₀, hC₁, hiter⟩ :=
-    exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add hC₀.le hβα hβα
-  refine ⟨β, C₁ * 2 ^ β * (2 * D + K), hβ, hβα.le.trans hα₀1, by positivity, ?_⟩
+  have hγ : 0 < γ := hγdef ▸ sub_pos.2 ((div_lt_iff₀ hr0).2 (by linarith only [hrn]))
+  obtain ⟨β, C, hβ, hβα, hC, hiter⟩ := exists_le_mul_rpow_of_essOsc_step hα₀ hC₀.le hK.le hD.le hγ
+  refine ⟨β, C, hβ, hβα.le.trans hα₀1, hC, ?_⟩
   intro Omega a f u x₀ R s h ha hf hu hs hsR hball
   rw [← hγdef]
   have hR : 0 < R := by linarith only [hs, hsR]
-  obtain ⟨R₁, hR₁def⟩ : ∃ R₁ : ℝ, R₁ = R / 2 := ⟨_, rfl⟩
-  rw [← hR₁def] at hsR
-  have hR₁ : 0 < R₁ := hR₁def ▸ half_pos hR
-  have hR₁R : R₁ ≤ R := hR₁def ▸ half_le_self hR.le
   have hlam := h.pos
   obtain ⟨F, hFdef⟩ : ∃ F : ℝ, F = (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam :=
     ⟨_, rfl⟩
-  have hF : 0 ≤ F := by rw [hFdef]; positivity
   obtain ⟨Q, hQdef⟩ : ∃ Q : ℝ,
       Q = R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) :=
     ⟨_, rfl⟩
-  have hQ : 0 ≤ Q := by rw [hQdef]; positivity
-  -- Local boundedness: `|u| ≤ M₀` on `B(x₀, R₁)`.
+  -- Local boundedness: `|u| ≤ M₀` on `B(x₀, R/2)`.
   obtain ⟨M₀, hM₀def⟩ : ∃ M₀ : ℝ, M₀ = D * (Q + R ^ γ * F) := ⟨_, rfl⟩
-  have hM : ∀ᵐ x ∂mu.restrict (ball x₀ R₁), |W1p.value u x| ≤ M₀ := by
-    filter_upwards [hR₁def ▸ hloc h ha hf hu hR hball] with x hx
-    refine hx.trans_eq ?_
-    rw [hM₀def, hQdef, hFdef, hγdef]
-    ring
-  clear hloc
-  -- The essential oscillation `φ ρ` of `u` on `B(x₀, ρ)`: nonnegative and monotone for
-  -- `ρ ≤ R₁`, where `u` is essentially bounded.
+  have hM : ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), |W1p.value u x| ≤ M₀ := by
+    filter_upwards [hloc h ha hf hu hR hball] with x hx
+    exact hx.trans_eq (by rw [hM₀def, hQdef, hFdef, hγdef]; ring)
+  -- The essential oscillation `φ ρ` of `u` on `B(x₀, ρ)`.
   obtain ⟨φ, hφdef⟩ : ∃ φ : ℝ → ℝ, φ = fun ρ => essSup (W1p.value u : EuclideanSpace ℝ ι → ℝ)
       (mu.restrict (ball x₀ ρ)) - essInf (W1p.value u : EuclideanSpace ℝ ι → ℝ)
         (mu.restrict (ball x₀ ρ)) := ⟨_, rfl⟩
-  have hne : ∀ ρ, 0 < ρ → (ae (mu.restrict (ball x₀ ρ))).NeBot := fun ρ hρ =>
-    ae_restrict_neBot.2 (measure_ball_pos mu x₀ hρ).ne'
-  have hMρ : ∀ ρ, ρ ≤ R₁ → ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value u x| ≤ M₀ :=
+  have hMρ : ∀ ρ, ρ ≤ R / 2 → ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value u x| ≤ M₀ :=
     fun ρ hρ => ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρ) hM
-  have hbdd₁ : ∀ ρ, ρ ≤ R₁ → IsBoundedUnder (· ≤ ·) (ae (mu.restrict (ball x₀ ρ)))
-      (W1p.value u : EuclideanSpace ℝ ι → ℝ) := fun ρ hρ =>
-    isBoundedUnder_of_eventually_le (a := M₀) ((hMρ ρ hρ).mono fun _ hx => (abs_le.1 hx).2)
-  have hbdd₂ : ∀ ρ, ρ ≤ R₁ → IsBoundedUnder (· ≥ ·) (ae (mu.restrict (ball x₀ ρ)))
-      (W1p.value u : EuclideanSpace ℝ ι → ℝ) := fun ρ hρ =>
-    isBoundedUnder_of_eventually_ge (a := -M₀) ((hMρ ρ hρ).mono fun _ hx => (abs_le.1 hx).1)
-  have hφ0 : ∀ ρ ∈ Ioc 0 R₁, 0 ≤ φ ρ := fun ρ hρ => by
-    have := hne ρ hρ.1
-    rw [hφdef]
-    exact sub_nonneg.2 (liminf_le_limsup (hbdd₁ ρ hρ.2) (hbdd₂ ρ hρ.2))
-  have hmono : MonotoneOn φ (Ioc 0 R₁) := fun ρ hρ ρ' hρ' hρρ' => by
-    have := hne ρ hρ.1
-    rw [hφdef]
-    exact essSup_sub_essInf_mono_measure (Measure.absolutelyContinuous_of_le
-      (Measure.restrict_mono (ball_subset_ball hρρ') le_rfl)) (hbdd₁ ρ' hρ'.2) (hbdd₂ ρ' hρ'.2)
-  -- One comparison step: `φ s ≤ C₀ (s/ρ)^α₀ φ ρ + B ρ^β` for `s ≤ ρ ≤ R₁`.
-  obtain ⟨B, hBdef⟩ : ∃ B : ℝ, B = K * F * R₁ ^ (γ - β) := ⟨_, rfl⟩
-  have hB : 0 ≤ B := by rw [hBdef]; positivity
-  have hstep : ∀ s ρ, 0 < s → s ≤ ρ → ρ ≤ R₁ →
-      φ s ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ + B * ρ ^ β := by
+  obtain ⟨hφ0, hmono, hφR₁⟩ := essSup_sub_essInf_nonneg_monotoneOn_ball (mu := mu) x₀
+    (φ := φ)
+    (fun ρ => by rw [hφdef]) (half_pos hR) hM
+  -- One comparison step: `φ s ≤ C₀ (s/ρ)^α₀ φ ρ + K ρ^γ F` for `s ≤ ρ ≤ R / 2`.
+  have hstep : ∀ s ρ, 0 < s → s ≤ ρ → ρ ≤ R / 2 →
+      φ s ≤ C₀ * (s / ρ) ^ α₀ * φ ρ + K * ρ ^ γ * F := by
     intro s ρ hs hsρ hρR₁
     have hρ : 0 < ρ := hs.trans_le hsρ
-    have hρR : ball x₀ ρ ⊆ ball x₀ R := ball_subset_ball (hρR₁.trans hR₁R)
-    have hfρ : (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam ≤ F := by
-      rw [hFdef]
-      refine div_le_div_of_nonneg_right ?_ hlam.le
-      exact ENNReal.toReal_mono hf.eLpNorm_ne_top
-        (eLpNorm_mono_measure _ (Measure.restrict_mono hρR le_rfl))
-    have hργ : ρ ^ γ ≤ R₁ ^ (γ - β) * ρ ^ β := by
-      calc ρ ^ γ = ρ ^ (γ - β) * ρ ^ β := by rw [← Real.rpow_add hρ, sub_add_cancel]
-        _ ≤ R₁ ^ (γ - β) * ρ ^ β := by gcongr
-    have hoscρ : φ s ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ +
-        K * ρ ^ γ * ((eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam) := by
-      simpa only [hφdef, hγdef, add_zero, mul_div_assoc] using
-        hosc h ha (hf.mono_measure (Measure.restrict_mono hρR le_rfl)) hu hs hsρ
-          (hρR.trans hball) (hMρ ρ hρR₁)
-    calc φ s ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ +
-          K * ρ ^ γ * ((eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam) := hoscρ
-      _ ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ + K * (R₁ ^ (γ - β) * ρ ^ β) * F := by gcongr
-      _ = C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ + B * ρ ^ β := by rw [hBdef]; ring
-  clear hosc
-  -- Iterate, and bound the oscillation on `B(x₀, R₁)` by local boundedness.
-  have hfin := hiter hB hε₀.le hmono hφ0 hstep s R₁ hs hsR le_rfl
-  have hφR₁ : φ R₁ ≤ 2 * M₀ := by
-    have := hne R₁ hR₁
-    rw [hφdef]
-    refine essSup_sub_essInf_le (m := -M₀) ?_
-    filter_upwards [hM] with x hx
-    rw [abs_le] at hx
-    exact ⟨hx.1, by linarith only [hx.2]⟩
-  have hsβ : B * s ^ β = K * F * R₁ ^ γ * (s / R₁) ^ β := by
-    rw [hBdef, Real.div_rpow hs.le hR₁.le, Real.rpow_sub hR₁]
-    field_simp
-  have hR₁γ : R₁ ^ γ ≤ R ^ γ := Real.rpow_le_rpow hR₁.le hR₁R hγ.le
-  have hsR₁ : (s / R₁) ^ β = 2 ^ β * (s / R) ^ β := by
-    rw [← Real.mul_rpow (by norm_num) (by positivity), hR₁def]
-    congr 1
-    field_simp
-  have hM₀ : 0 ≤ M₀ := by rw [hM₀def]; positivity
-  have hφs : φ s ≤ C₁ * 2 ^ β * (2 * D + K) * (s / R) ^ β * (Q + R ^ γ * F) :=
-  calc φ s ≤ C₁ * ((s / R₁) ^ β * φ R₁ + B * s ^ β) := hfin
-    _ ≤ C₁ * ((s / R₁) ^ β * (2 * M₀) + K * F * R ^ γ * (s / R₁) ^ β) := by
-        rw [hsβ]
-        gcongr
-    _ = C₁ * 2 ^ β * (s / R) ^ β * (2 * D * (Q + R ^ γ * F) + K * (R ^ γ * F)) := by
-        rw [hsR₁, hM₀def]
-        ring
-    _ ≤ C₁ * 2 ^ β * (s / R) ^ β * ((2 * D + K) * (Q + R ^ γ * F)) := by
-        gcongr
-        nlinarith only [mul_nonneg hK.le hQ]
-    _ = _ := by ring
-  refine ⟨essInf (W1p.value u : EuclideanSpace ℝ ι → ℝ) (mu.restrict (ball x₀ s)), ?_⟩
-  filter_upwards [ae_le_essSup (hbdd₁ s hsR), ae_essInf_le (hbdd₂ s hsR)] with x hx₁ hx₂
-  refine ⟨hx₂, ?_⟩
+    have hρR : ball x₀ ρ ⊆ ball x₀ R := ball_subset_ball (hρR₁.trans (half_le_self hR.le))
+    have hfρ : (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam ≤ F := hFdef ▸
+      div_le_div_of_nonneg_right
+        (lpNorm_mono_measure hf (Measure.restrict_mono hρR le_rfl)) hlam.le
+    calc φ s ≤ C₀ * (s / ρ) ^ α₀ * φ ρ +
+          K * ρ ^ γ * ((eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam) := by
+          simpa only [hφdef, hγdef, add_zero, mul_div_assoc] using
+            hosc h ha (hf.mono_measure (Measure.restrict_mono hρR le_rfl)) hu hs hsρ
+              (hρR.trans hball) (hMρ ρ hρR₁)
+      _ ≤ _ := by gcongr
+  have hφs := hiter hs hsR (by rw [hQdef]; positivity) (by rw [hFdef]; positivity) hmono hφ0
+    (hM₀def ▸ hφR₁) hstep
+  obtain ⟨hb₁, hb₂⟩ :=
+    isBoundedUnder_le_abs.mp (isBoundedUnder_of_eventually_le (hMρ s hsR))
   rw [← hQdef, mul_div_assoc, ← hFdef]
   rw [hφdef] at hφs
-  linarith only [hφs, hx₁]
+  refine ⟨essInf (W1p.value u : EuclideanSpace ℝ ι → ℝ) (mu.restrict (ball x₀ s)), ?_⟩
+  filter_upwards [ae_le_essSup hb₁, ae_essInf_le hb₂] with x hx₁ hx₂
+  exact ⟨hx₂, by linarith only [hφs, hx₁]⟩
 
 /-! ### Hölder continuity -/
+
+omit [DecidableEq ι] in
+/-- The scaled norms `R^(-n/2) ‖u‖_{L²} + R^(2 - n/r) ‖f‖_{Lʳ} / λ` of `u` and `f` on a ball
+inside `Ω` are at most those on `Ω`. -/
+private theorem scaled_norm_ball_le {Omega : Opens (EuclideanSpace ℝ ι)}
+    {f : EuclideanSpace ℝ ι → ℝ} {u : W1p mu Omega 2} {lam R : ℝ} {r : ℝ≥0}
+    {x : EuclideanSpace ℝ ι} (hlam : 0 < lam) (hR : 0 ≤ R) (hf : MemLp f r (mu.restrict Omega))
+    (hball : ball x R ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in ball x R, W1p.value u y ^ 2 ∂mu) +
+        R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x R))).toReal / lam ≤
+      R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu) +
+        R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict Omega)).toReal / lam := by
+  gcongr
+  · exact ae_of_all _ fun y => sq_nonneg _
+  · exact (Lp.memLp (W1p.value u)).integrable_sq
+  · exact hf.eLpNorm_ne_top
 
 /-- **De Giorgi's theorem with a right-hand side.** Let `n ≥ 1` be the dimension and let `r > 1`
 with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, `n`, `r` and the
@@ -547,21 +472,12 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
         R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict Omega)).toReal / lam :=
     ⟨_, rfl⟩
   have hN0 : 0 ≤ N := by rw [hNdef]; positivity
-  have hN : ∀ x ∈ K, R ^ (-(Fintype.card ι : ℝ) / 2) *
-      √(∫ y in ball x R, W1p.value u y ^ 2 ∂mu) + R ^ (2 - (Fintype.card ι : ℝ) / r) *
-        (eLpNorm f r (mu.restrict (ball x R))).toReal / lam ≤ N := fun x hx => by
-    rw [hNdef]
-    gcongr
-    · exact ae_of_all _ fun y => sq_nonneg _
-    · exact (Lp.memLp (W1p.value u)).integrable_sq
-    · exact hball x hx
-    · exact hf.eLpNorm_ne_top
-    · exact hball x hx
+  have hN := fun x (hx : x ∈ K) =>
+    (scaled_norm_ball_le (mu := mu) (u := u) hlam hR.le hf (hball x hx)).trans_eq hNdef.symm
   have hfx : ∀ x ∈ K, MemLp f r (mu.restrict (ball x R)) := fun x hx =>
     hf.mono_measure (Measure.restrict_mono (hball x hx) le_rfl)
-  have hint : ∀ x ∈ K, IntegrableAtFilter (W1p.value u) (𝓝 x) mu := fun x hx => by
-    simpa [nhdsWithin_eq_nhds.2 (Omega.isOpen.mem_nhds (hKΩ hx))] using
-      (W1p.hasWeakFDerivOn u).locallyIntegrableOn x (hKΩ hx)
+  have hint : ∀ x ∈ K, IntegrableAtFilter (W1p.value u) (𝓝 x) mu := fun x hx =>
+    W1p.integrableAtFilter_value_of_mem u (hKΩ hx)
   obtain ⟨C, hC⟩ : ∃ C : ℝ≥0, (C : ℝ) = C₀ * N / R ^ (α : ℝ) / 2 := ⟨⟨_, by positivity⟩, rfl⟩
   obtain ⟨M, hM⟩ : ∃ M : ℝ≥0, (M : ℝ) = D * N := ⟨⟨_, by positivity⟩, rfl⟩
   obtain ⟨ρ, hρ⟩ : ∃ ρ : ℝ≥0, (ρ : ℝ) = R / 2 := ⟨⟨_, by positivity⟩, rfl⟩
@@ -571,36 +487,135 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
   · -- Oscillation: `u` lies in an interval of length `L ≤ 2 C s^α` on `B(x, s)`.
     rw [hρ] at hsR
     obtain ⟨m', hm'⟩ := hosc h ha (hfx x hx) hu hs hsR (hball x hx)
-    have hL : C₀ * (s / R) ^ (α : ℝ) * (R ^ (-(Fintype.card ι : ℝ) / 2) *
-        √(∫ y in ball x R, W1p.value u y ^ 2 ∂mu) + R ^ (2 - (Fintype.card ι : ℝ) / r) *
-          (eLpNorm f r (mu.restrict (ball x R))).toReal / lam) ≤ 2 * (C * s ^ (α : ℝ)) :=
-      calc _ ≤ C₀ * (s / R) ^ (α : ℝ) * N := by gcongr; exact hN x hx
-        _ = 2 * (C * s ^ (α : ℝ)) := by rw [hC, Real.div_rpow hs.le hR.le]; field_simp
+    have hL := Real.mul_rpow_div_mul_le_two_mul (α := (α : ℝ)) hC₀.le hs.le hR (hN x hx) hC
     refine ⟨m' + C * s ^ (α : ℝ), ?_⟩
     filter_upwards [hm'] with y hy
-    rw [mem_closedBall, Real.dist_eq, abs_le]
-    constructor <;> linarith [hy.1, hy.2]
+    rw [Real.closedBall_eq_Icc]
+    exact ⟨by linarith [hy.1], by linarith [hy.2]⟩
   · -- Boundedness: `|u| ≤ D N` on `B(x, R/2)`, by local boundedness.
     rw [hρ]
     filter_upwards [hbound h ha (hfx x hx) hu hR (hball x hx)] with y hy
     rw [Real.norm_eq_abs, hM]
     exact hy.trans (mul_le_mul_of_nonneg_left (hN x hx) hD.le)
   · -- The constant: `2 C = C₀ N R^(-α)` and `2 M / ρ^α = 2^(1+α) D N R^(-α) ≤ 4 D N R^(-α)`.
-    have h2α : (2 : ℝ) ^ (α : ℝ) ≤ 2 := by
-      simpa using Real.rpow_le_rpow_of_exponent_le one_le_two hα1
-    rw [← hNdef, Real.le_toNNReal_iff_coe_le (by positivity)]
-    push_cast
-    rw [hC, hM, hρ, Real.div_rpow hR.le zero_le_two, Real.rpow_neg hR.le]
-    refine max_le ?_ ?_
-    · calc 2 * (C₀ * N / R ^ (α : ℝ) / 2) = C₀ * (R ^ (α : ℝ))⁻¹ * N := by field_simp
-        _ ≤ _ := by gcongr; exact le_max_left _ _
-    · calc 2 * (D * N) / (R ^ (α : ℝ) / 2 ^ (α : ℝ))
-          = 2 * 2 ^ (α : ℝ) * D * (R ^ (α : ℝ))⁻¹ * N := by field_simp
-        _ ≤ 2 * 2 * D * (R ^ (α : ℝ))⁻¹ * N := by gcongr
-        _ ≤ _ := by
-          rw [show (2 : ℝ) * 2 * D = 4 * D by ring]
-          gcongr
-          exact le_max_right _ _
+    rw [← hNdef]
+    exact NNReal.max_two_mul_le_toNNReal hα1 hR hC₀.le hD.le hN0 hC hM hρ
+
+/-! ### Continuity for a locally integrable right-hand side -/
+
+open scoped Distributions
+
+/-- **Continuity of weak solutions with a locally integrable right-hand side.** Let `n ≥ 1` be the
+dimension and let `r ≥ 2` with `r > n/2`. Let `a` be measurable and uniformly elliptic on `Ω`, and
+let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f` against test functions, `a(u, φ) = ∫_Ω f φ`, where `f`
+lies in `Lʳ` on every compact subset of `Ω`. Then the precise representative of `u`, which agrees
+with `u` almost everywhere on `Ω` (`TauCeti.W1p.ae_eq_preciseRepresentative`), is continuous on
+`Ω`.
+
+No integrability of `f` on all of `Ω` is assumed. On each ball `B` whose closure lies in `Ω`, the
+equation holds against all of `H¹₀(B)` (`TauCeti.PDE.forall_energyFormH1_restrictL_eq_setIntegral`,
+which uses `f ∈ L²(B)`), and De Giorgi's theorem with a right-hand side,
+`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp`, makes the restriction of `u`
+Hölder continuous on the concentric ball of half the radius. -/
+theorem continuousOn_preciseRepresentative_of_forall_memLp [Nonempty ι] {lam Lam : ℝ}
+    {r : ℝ≥0} (hr : 2 ≤ r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
+    {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {f : EuclideanSpace ℝ ι → ℝ} {u : W1p mu Omega 2}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hf : ∀ K, IsCompact K → K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      MemLp f r (mu.restrict K))
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, f x * φ x ∂mu) :
+    ContinuousOn (preciseRepresentative mu (W1p.value u)) Omega := by
+  obtain ⟨α, C, hα, -, -, hhol⟩ := exists_holderOnWith_preciseRepresentative_of_memLp
+    (mu := mu) (lam := lam) (Lam := Lam) (lt_of_lt_of_le one_lt_two hr) hrn
+  intro x hx
+  -- Work on a ball `B = B(x, ε)` whose closure lies in `Ω`.
+  obtain ⟨ε, hε, hεΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
+  let B : Opens (EuclideanSpace ℝ ι) := ⟨ball x ε, isOpen_ball⟩
+  have hBΩ : B ≤ Omega := ball_subset_closedBall.trans hεΩ
+  have : IsFiniteMeasure (mu.restrict B) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hfB : MemLp f r (mu.restrict B) := (hf _ (isCompact_closedBall x ε) hεΩ).mono_measure
+    (Measure.restrict_mono ball_subset_closedBall le_rfl)
+  have hB : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) a lam Lam := h.mono_set hBΩ
+  have haB : AEStronglyMeasurable a (mu.restrict B) :=
+    ha.mono_measure (Measure.restrict_mono hBΩ le_rfl)
+  have huB := forall_energyFormH1_restrictL_eq_setIntegral hBΩ
+    (memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0) hB.upper_nonneg
+      haB aestronglyMeasurable_const aestronglyMeasurable_const
+      (fun _ hy eta xi => hB.upper_bound hy eta xi) (fun _ _ => by simp) (fun _ _ => by simp))
+    hu (hfB.mono_exponent (by exact_mod_cast hr))
+  -- De Giorgi's theorem on `B`, on the closed ball of radius `ε / 2`.
+  have hK : cthickening (ε / 4) (closedBall x (ε / 2)) ⊆ (B : Set (EuclideanSpace ℝ ι)) := by
+    rw [cthickening_closedBall (by positivity) (by positivity)]
+    exact closedBall_subset_ball (by linarith)
+  have hcont : ContinuousAt (preciseRepresentative mu (W1p.value (W1p.restrictL hBΩ u))) x :=
+    ((hhol hB haB hfB huB (by positivity) hK).continuousOn hα).continuousAt
+      (closedBall_mem_nhds x (by positivity))
+  -- Near `x`, the precise representatives of `u` and of its restriction to `B` agree.
+  have heq : preciseRepresentative mu (W1p.value (W1p.restrictL hBΩ u)) =ᶠ[𝓝 x]
+      preciseRepresentative mu (W1p.value u) := by
+    filter_upwards [isOpen_ball.mem_nhds (mem_ball_self hε)] with y hy
+    exact preciseRepresentative_congr_ae_nhds (isOpen_ball.mem_nhds hy)
+      (W1p.value_restrictL_ae hBΩ u)
+  exact (hcont.congr heq).continuousWithinAt
+
+open InnerProductSpace in
+open scoped Gradient InnerProductSpace in
+/-- **Continuity of weak solutions of Poisson's equation.** Let `E` be a real inner product space
+of finite dimension `n ≥ 1` with its volume, and let `r ≥ 2` with `r > n/2`. If `u ∈ H¹(Ω)` solves
+`-Δu = f` weakly, `∫_Ω ⟪∇u, ∇φ⟫ = ∫_Ω f φ` for every test function `φ` on `Ω`, where `f` lies in
+`Lʳ` on every compact subset of `Ω`, then `u` agrees almost everywhere on `Ω` with a function that
+is continuous on `Ω`.
+
+This is the case `a = 1` of `TauCeti.PDE.continuousOn_preciseRepresentative_of_forall_memLp`,
+transported to `E` through the coordinates of an orthonormal basis. -/
+theorem exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] [Nontrivial E] {r : ℝ≥0} (hr : 2 ≤ r) (hrn : (finrank ℝ E : ℝ) < 2 * r)
+    {Omega : Opens E} {f : E → ℝ} {u : W1p volume Omega 2}
+    (hf : ∀ K, IsCompact K → K ⊆ (Omega : Set E) → MemLp f r (volume.restrict K))
+    (hu : ∀ φ : 𝓓(Omega, ℝ),
+      ∫ x in Omega, ⟪W1p.gradient u x, ∇ (φ : E → ℝ) x⟫_ℝ = ∫ x in Omega, f x * φ x) :
+    ∃ g : E → ℝ, ContinuousOn g Omega ∧ W1p.value u =ᵐ[volume.restrict Omega] g := by
+  set n := finrank ℝ E
+  have : Nonempty (Fin n) := ⟨⟨0, Module.finrank_pos⟩⟩
+  -- Orthonormal coordinates `e : E ≃ ℝⁿ`, with inverse `g`, and `Ω' = e(Ω)`.
+  let e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) := (stdOrthonormalBasis ℝ E).repr
+  let g : EuclideanSpace ℝ (Fin n) ≃ᵃⁱ[ℝ] E := e.symm.toAffineIsometryEquiv
+  have heg : ∀ x, g (e x) = x := fun x => by simp [g]
+  let Ω' : Opens (EuclideanSpace ℝ (Fin n)) := ⟨g ⁻¹' Omega, Omega.isOpen.preimage g.continuous⟩
+  have hΩ : (Omega : Set E) = e ⁻¹' Ω' := by ext x; simp [Ω', heg]
+  have hg : MeasurePreserving g volume volume := by
+    simpa [g] using e.symm.measurePreserving
+  set u' := W1p.compAffineIsometryEquivL g (U := Ω') rfl u
+  have hf' : ∀ K, IsCompact K → K ⊆ (Ω' : Set (EuclideanSpace ℝ (Fin n))) →
+      MemLp (f ∘ g) r (volume.restrict K) := fun _ hK hKΩ =>
+    g.toHomeomorph.memLp_comp_restrict_of_forall_isCompact hg hf hK hKΩ
+  have hu' : ∀ φ' : 𝓓(Ω', ℝ), energyFormH1 (fun _ => (1 : Matrix (Fin n) (Fin n) ℝ)) 0 0 u'
+      (W1p.ofTestFunctionₗ volume Ω' 2 φ') = ∫ y in Ω', (f ∘ g) y * φ' y := by
+    -- The weak equation on `Ω'` is the one on `Ω` read in the coordinates `g`.
+    intro φ'
+    rw [energyFormH1_one_zero_zero_eq_inner, L2.inner_def]
+    refine (integral_congr_ae ?_).trans
+      (W1p.setIntegral_inner_gradient_compAffineIsometryEquivL_eq_setIntegral_mul e.symm rfl u hu
+        φ')
+    filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) (Omega := Ω') 2 φ'] with y hφy
+    rw [W1p.gradient_ofTestFunctionₗ, hφy]
+  have hw := continuousOn_preciseRepresentative_of_forall_memLp (mu := volume)
+    (a := fun _ => 1) (f := f ∘ g) (u := u') hr (by simpa [n] using hrn)
+    (uniformlyEllipticOn_const_one_one _) aestronglyMeasurable_const hf' hu'
+  set w := preciseRepresentative volume (W1p.value u' : EuclideanSpace ℝ (Fin n) → ℝ)
+  have huw : W1p.value u' =ᵐ[volume.restrict Ω'] w := W1p.ae_eq_preciseRepresentative u'
+  refine ⟨w ∘ e, hw.comp e.continuous.continuousOn fun x hx => by rwa [hΩ] at hx, ?_⟩
+  -- Pull the identity `u ∘ g = w` on `Ω'` back along `e`.
+  have hres : MeasurePreserving e (volume.restrict Omega) (volume.restrict Ω') := by
+    rw [hΩ]
+    exact e.measurePreserving.restrict_preimage Ω'.isOpen.measurableSet
+  filter_upwards [hres.quasiMeasurePreserving.ae_eq_comp
+    ((W1p.value_compAffineIsometryEquivL_ae g (U := Ω') rfl u).symm.trans huw)] with x hx
+  simpa [heg] using hx
 
 end PDE
 

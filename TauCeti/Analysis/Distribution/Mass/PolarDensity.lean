@@ -15,7 +15,7 @@ import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.OrderZero
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
-import TauCeti.MeasureTheory.Function.AEEqOfLIntegral
+import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Basic
 
 /-!
 # The polar decomposition of a current of locally finite mass
@@ -149,7 +149,7 @@ private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
     refine TauCeti.ae_enorm_le_of_forall_enorm_integral_apply_le hgint
       (Measure.measurable_rnDeriv _ _)
       (fun K hK => ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
-      fun U hU φ hφU hφ => ?_
+      fun U _ φ hφU hφ => ?_
     rw [Measure.setLIntegral_rnDeriv hlam, ← hrep, massMeasure_preimage_coe hT U.isOpen]
     exact enorm_le_localMass hφU hφ
   -- Normalize `g` by `k`.

@@ -35,7 +35,7 @@ attaching curve `αᵢ` of a Heegaard diagram, `Γ` locally parametrizes the tor
 points because attaching curves are pairwise disjoint. Thus, after supplying those local
 parametrizations, the result gives the tangent-space criterion needed for the tori in the
 holomorphic-disk boundary conditions of Ozsváth–Szabó. Their embedded, closed-torus result is
-`TauCeti.Sym.piHomeomorph`.
+`Sym.piHomeomorph`.
 
 ## Main declarations
 
@@ -97,7 +97,7 @@ private theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
   have hq : Nonempty (∀ i, Sym ↥(V i) 1) := ⟨fun i => Sym.ofFn fun _ => ⟨p i, hpV i⟩⟩
   -- the chart `C` with one block per point reads a nearby tuple as its negated coordinates
   set C := symOpenPartialHomeomorph (fun i => chartAt ℂ (p i)) V (fun _ => 1) hm hVo hVsub
-    hVdisj e hq with hC
+    hVdisj e hq
   have hC_apply : ∀ᶠ w in 𝓝 p, Sym.ofFn w ∈ C.source ∧
       C (Sym.ofFn w) = -fun j => chartAt ℂ (p j) (w j) :=
     eventually_mem_source_symOpenPartialHomeomorph_ofFn (K := ℂ) hVo hpV hVsub hVdisj hm hq

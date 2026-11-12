@@ -14,6 +14,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bian
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # Killing vector fields
@@ -114,15 +115,15 @@ theorem IsKillingField.add {X' : Π x : M, TangentSpace I x} (h : IsKillingField
       mlieBracket_add_left hX hX', mlieBracket_add_left hX hX', inner_add_left, inner_add_right]
     ring
 
+omit [CompleteSpace E] in
 /-- A constant multiple of a Killing field is a Killing field. -/
 theorem IsKillingField.const_smul (h : IsKillingField I X) (c : ℝ) :
     IsKillingField I (c • X) where
   contMDiff := h.contMDiff.const_smul_section
   mvfderiv_inner Y Z hY hZ x := by
-    have hX := h.contMDiff.mdifferentiable (by simp) x
-    rw [Pi.smul_apply, map_smul, h.mvfderiv_inner hY hZ x, mlieBracket_const_smul_left hX,
-      mlieBracket_const_smul_left hX, inner_smul_left, inner_smul_right, smul_eq_mul,
-      RCLike.conj_to_real]
+    rw [Pi.smul_apply, map_smul, h.mvfderiv_inner hY hZ x,
+      VectorField.mlieBracket_const_smul_left_field, VectorField.mlieBracket_const_smul_left_field,
+      inner_smul_left, inner_smul_right, smul_eq_mul, RCLike.conj_to_real]
     ring
 
 end LinearCombination
@@ -334,9 +335,9 @@ private theorem IsKillingField.inner_alongCurveWithin_alongCurveWithin_eq
       simp only [W, V, hpull hX hr, A]
       exact hskew _ _ _
   -- Differentiate both sides with the metric product rule along `γ`.
-  have hleft := hcov.hasDerivWithinAt_inner_alongCurveWithin (hs t ht) (hγd t ht) hWcoord
+  have hleft := hcov.hasDerivWithinAt_inner_alongCurveWithin (hγd t ht) hWcoord
     (hcoord hZ)
-  have hright := (hcov.hasDerivWithinAt_inner_alongCurveWithin (hs t ht) (hγd t ht) hγ'coord
+  have hright := (hcov.hasDerivWithinAt_inner_alongCurveWithin (hγd t ht) hγ'coord
     (hcoord hA)).neg
   have hderiv := (hs t ht).eq_deriv _ (hleft.congr_of_mem (fun r hr ↦ (heqOn hr).symm) ht)
     hright

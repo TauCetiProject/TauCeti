@@ -67,7 +67,6 @@ partial-correlation interval. -/
 theorem abs_partialCorrelationCholeskyEntryFactor_le_one (i k : Fin p)
     (ij : strictLowerTriangle p) {x : ℝ} (hx : |x| ≤ 1) :
     |partialCorrelationCholeskyEntryFactor i k ij x| ≤ 1 := by
-  have hs : 0 ≤ 1 - x ^ 2 := sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).mpr hx)
   have hs' : Real.sqrt (1 - x ^ 2) ≤ 1 := by
     rw [Real.sqrt_le_one]
     nlinarith [sq_nonneg x]

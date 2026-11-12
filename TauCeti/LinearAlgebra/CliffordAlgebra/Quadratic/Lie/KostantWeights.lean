@@ -242,8 +242,6 @@ theorem eq_weylVector_of_isHighestWeightVector_kostant_of_casimirScalar_eq
     (hcas : casimirScalar base lam =
       casimirScalar base (weylVector (IsKilling.rootSystem H) base)) :
     lam = weylVector (IsKilling.rootSystem H) base := by
-  -- `TauCeti.isDominantIntegral_weylVector` fixes the instance `invertibleTwo`.
-  obtain rfl : ‹Invertible (2 : K)› = invertibleTwo := Subsingleton.elim _ _
   by_contra hne
   obtain ⟨S, hS, hlam⟩ := exists_eq_weylVector_sub_sum_kostant_of_forall_lie_eq_smul base
     hv.ne_zero hv.lie_eq_smul
@@ -252,8 +250,8 @@ theorem eq_weylVector_of_isHighestWeightVector_kostant_of_casimirScalar_eq
     rw [DFunLike.coe_injective hlam, sub_sub_cancel]
     exact sum_mem fun a ha ↦ root_mem_posRootCone_of_mem_posRoots _ base
       ((mem_posRootsFinset _ base a).1 (hS ha))
-  exact (isDominantIntegral_weylVector (b := base)
+  exact (hv.isDominantIntegral
     |>.casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
-      hv.isDominantIntegral hcone hne) hcas.symm
+      hcone hne) hcas.symm
 
 end CliffordAlgebra

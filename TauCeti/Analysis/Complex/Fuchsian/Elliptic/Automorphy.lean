@@ -46,6 +46,11 @@ the elements of `Γ'` fixing `z`. Precisely:
   `automorphyUntwist ψ k f`, the function `u ↦ (τ - conj z) ^ k * f τ` of the coordinate `u` of
   `τ`, as `ord₀ (automorphyUntwist ψ k f) = r + ord₀ (automorphyDescent ψ k r f) * m`
   (`Subgroup.LinearizingCoordinate.analyticOrderAt_automorphyUntwist`);
+* the frames of the disc coordinates at `z` and at `h • z`, for `h ∈ SL(2, ℝ)`, differ by a
+  nonzero constant after transport by `h` in weight `k`
+  (`Subgroup.LinearizingCoordinate.automorphyFrame_discCoordinate_smul`): this is the transition
+  function between the trivializations in the charts of `Γ \ ℍ` centred at two points of the same
+  orbit, constant also at an elliptic orbit, where for `r ≠ 0` both frames vanish;
 * in even weight `k = 2 * j` the frame is compared with the frame `(dw) ^ j` of the `j`-th power
   of the sheaf of differentials, whose weight-`k` function is
   `differentialFrame ψ j τ = (dw / dτ) ^ j`: this is a local section
@@ -91,6 +96,8 @@ Diamond–Shurman §3.5.
 * `Subgroup.LinearizingCoordinate.automorphyUntwist` and
   `Subgroup.LinearizingCoordinate.analyticOrderAt_automorphyUntwist`: the untwisted local section
   and the relation between its order and that of the coefficient.
+* `Subgroup.LinearizingCoordinate.automorphyFrame_discCoordinate_smul`: the transport of the frame
+  of the disc coordinate along `SL(2, ℝ)`.
 * `Subgroup.LinearizingCoordinate.differentialFrame` and
   `Subgroup.LinearizingCoordinate.analyticOrderAt_automorphyDescent_differentialFrame`: the
   weight-`2 * j` function of `(dw) ^ j` and the order `j * (m - 1) / m` of its coefficient with
@@ -444,10 +451,6 @@ theorem differentialFrame_smul (j : ℕ) (q : stabilizer Γ z) {g : SL(2, ℝ)}
     (hg : (g : PSL(2, ℝ)) = ((q : Γ) : PSL(2, ℝ))) {τ : ℍ} (hτ : τ ∈ ball z ε) :
     ψ.differentialFrame j (g • τ) =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ (2 * (j : ℤ)) * ψ.differentialFrame j τ := by
-  have hτ' : τ ∈ stabilizerBall Γ z ε := (mem_stabilizerBall Γ z ε).2 (mem_ball.mp hτ)
-  have hgτ : g • τ ∈ ball z ε := by
-    rw [← coe_smul_stabilizerBall_of_coe_eq q hg ⟨τ, hτ'⟩]
-    exact mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 (q • ⟨τ, hτ'⟩ : stabilizerBall Γ z ε).2)
   -- the local quotient coordinate is invariant under `g` near `τ`
   have hinv : (fun t : ℂ ↦ ψ.quotientCoordinateOnComplex
       (((g : PSL(2, ℝ)) • ofComplex t : ℍ) : ℂ)) =ᶠ[nhds (τ : ℂ)]
@@ -461,8 +464,7 @@ theorem differentialFrame_smul (j : ℕ) (q : stabilizer Γ z) {g : SL(2, ℝ)}
       ← ψ.quotientCoordinateOnComplex_coe ⟨σ, hσ'⟩] at h
     rw [ofComplex_apply, pslMk_smul]
     exact h
-  have hderiv := Matrix.ProjectiveSpecialLinearGroup.deriv_smul_mul_smulDeriv_of_eventuallyEq _
-    hinv (by rw [pslMk_smul]; exact ψ.differentiableAt_quotientCoordinateOnComplex hgτ)
+  have hderiv := Matrix.ProjectiveSpecialLinearGroup.deriv_smul_mul_smulDeriv_of_eventuallyEq _ hinv
   rw [pslMk_smul, Matrix.SpecialLinearGroup.smulDeriv_coe] at hderiv
   rw [differentialFrame_eq_deriv, differentialFrame_eq_deriv, ← hderiv, zpow_mul,
     zpow_ofNat, zpow_natCast, ← mul_pow, mul_left_comm,
@@ -519,7 +521,7 @@ private theorem automorphyUntwist_differentialFrame_mul (j : ℕ) {u : ℂ}
     ψ.automorphyUntwist (2 * j) (ψ.differentialFrame j) u * deriv ψ.pointOf u ^ j =
       (ψ.pointOf u - conj (z : ℂ)) ^ (2 * j) * (Nat.card (stabilizer Γ z) : ℂ) ^ j *
         u ^ (j * (Nat.card (stabilizer Γ z) - 1)) := by
-  set m := Nat.card (stabilizer Γ z) with hm
+  set m := Nat.card (stabilizer Γ z)
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
   have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
   have hWP : ψ.quotientCoordinateOnComplex ∘ ψ.pointOf =ᶠ[nhds (ψ.coordinate τ)]
@@ -544,7 +546,7 @@ function `u ↦ (τ - conj z) ^ (2 * j) * (dw / dτ) ^ j` has order `j * (m - 1)
 theorem analyticOrderAt_automorphyUntwist_differentialFrame (j : ℕ) :
     analyticOrderAt (ψ.automorphyUntwist (2 * j) (ψ.differentialFrame j)) 0 =
       (j * (Nat.card (stabilizer Γ z) - 1) : ℕ) := by
-  set m := Nat.card (stabilizer Γ z) with hm
+  set m := Nat.card (stabilizer Γ z)
   have hT := ψ.isOpen_target
   have h0 := ψ.zero_mem_target
   -- the factors other than the power of `u` are analytic and do not vanish at `0`
@@ -590,7 +592,7 @@ theorem analyticOrderAt_automorphyDescent_differentialFrame {j : ℕ}
     (hr : r < Nat.card (stabilizer Γ z)) :
     analyticOrderAt (ψ.automorphyDescent (2 * j) r (ψ.differentialFrame j)) 0 =
       (j * (Nat.card (stabilizer Γ z) - 1) / Nat.card (stabilizer Γ z) : ℕ) := by
-  set m := Nat.card (stabilizer Γ z) with hm
+  set m := Nat.card (stabilizer Γ z)
   have hf : ∀ g ∈ Γ', g • z = z → ∀ τ ∈ ball z ε, ψ.differentialFrame j (g • τ) =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ (2 * (j : ℤ)) * ψ.differentialFrame j τ := by
     intro g hg hgz τ hτ
@@ -608,6 +610,46 @@ theorem analyticOrderAt_automorphyDescent_differentialFrame {j : ℕ}
   | coe n =>
     have h' : j * (m - 1) = r + n * m := by exact_mod_cast h
     rw [h', Nat.add_mul_div_right _ _ Nat.card_pos, Nat.div_eq_of_lt hr, zero_add]
+
+/-! ### Transport of the frame of the disc coordinate along `SL(2, ℝ)` -/
+
+/-- The frame of the disc coordinate, as a function on the upper half-plane:
+`τ ↦ (τ - conj z) ^ (-k) * discCoordinate z τ ^ r`. -/
+@[simp]
+theorem automorphyFrame_discCoordinate (hε : 0 < ε) (k : ℤ) (r : ℕ) (τ : stabilizerBall Γ z ε) :
+    automorphyFrame (discCoordinate hε) k r τ =
+      (((τ : ℍ) : ℂ) - conj (z : ℂ)) ^ (-k) * UpperHalfPlane.discCoordinate z τ ^ r := by
+  rw [automorphyFrame_def, coordinate_discCoordinate]
+
+/-- **The transition function between the frames of the disc coordinates at `z` and at `h • z`
+is constant.** Let `h ∈ SL(2, ℝ)`, and let `τ` be a point of the invariant disc of radius `ε`
+about `z` whose image `h • τ` is the point `τ'` of the invariant disc of radius `ε'` about
+`h • z`.
+Then the frame of the disc coordinate at `h • z`, read at `τ'`, is the weight-`k` automorphy factor
+`denom h τ ^ k` times the frame of the disc coordinate at `z`, read at `τ`, times the nonzero
+constant `conj (denom h z) ^ k * (conj (denom h z) / denom h z) ^ r`.
+
+When `h` lifts an element of `Γ`, the charts `Subgroup.stabilizerBallQuotientChart` centred at
+`z` and at `h • z` are charts about the same point of `Γ \ ℍ`, and this constant is the transition
+function between the trivializations of the weight-`k` automorphy sheaf by their frames: the
+quotient of the frame at `h • z`, transported by `h` in weight `k`, by the frame at `z`. -/
+theorem automorphyFrame_discCoordinate_smul (hε : 0 < ε) {ε' : ℝ} (hε' : 0 < ε') (h : SL(2, ℝ))
+    [Finite (stabilizer Γ (h • z))] (k : ℤ) (r : ℕ) (τ : stabilizerBall Γ z ε)
+    (τ' : stabilizerBall Γ (h • z) ε') (hτ : (τ' : ℍ) = h • (τ : ℍ)) :
+    automorphyFrame (discCoordinate hε') k r τ' =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ h) τ ^ k *
+        (conj (denom (Matrix.SpecialLinearGroup.mapGL ℝ h) z) ^ k *
+          (conj (denom (Matrix.SpecialLinearGroup.mapGL ℝ h) z) /
+            denom (Matrix.SpecialLinearGroup.mapGL ℝ h) z) ^ r) *
+        automorphyFrame (discCoordinate hε) k r τ := by
+  set G := Matrix.SpecialLinearGroup.mapGL ℝ h
+  have hdet : 0 < G.det.val := by simp [G]
+  have hG : ∀ σ : ℍ, h • σ = G • σ := fun σ ↦ (Matrix.SpecialLinearGroup.mapGL_smul h σ).symm
+  rw [automorphyFrame_discCoordinate, automorphyFrame_discCoordinate, hτ, hG, hG,
+    UpperHalfPlane.discCoordinate_smul hdet, coe_smul_sub_conj_smul hdet]
+  simp only [G, Matrix.SpecialLinearGroup.det_mapGL, Units.val_one, Complex.ofReal_one, one_mul]
+  rw [div_eq_mul_inv, mul_zpow, mul_inv, mul_zpow, inv_zpow', inv_zpow', neg_neg, mul_pow]
+  ring
 
 end LinearizingCoordinate
 

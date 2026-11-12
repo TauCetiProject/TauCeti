@@ -232,7 +232,6 @@ the square of a unit. -/
 theorem exists_eq_neg_one_pow_mul_five_pow_mul_sq (u : ℤ_[2]ˣ) :
     ∃ w : ℤ_[2]ˣ, (u : ℤ_[2]) = (-1) ^ (serreEps u).val * 5 ^ (serreOmega u).val * w ^ 2 := by
   set r : ℤ_[2] := (-1) ^ (serreEps u).val * 5 ^ (serreOmega u).val
-  have hr : IsUnit r := ((isUnit_neg_one.pow _).mul (isUnit_five_padicInt.pow _))
   have key : ∀ x : ZMod (2 ^ 3), x * x = 1 →
       x = (-1) ^ (if x = 3 ∨ x = 7 then (1 : ZMod 2) else 0).val *
         5 ^ (if x = 3 ∨ x = 5 then (1 : ZMod 2) else 0).val := by
