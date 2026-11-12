@@ -32,10 +32,11 @@ then apply to scalar solutions:
   `σ` of every similarity factorization `f = Φ σ` at `z₀`
   (`TauCeti.isTheta_pow_of_eventually_eq_pow_mul`).
 
-The comparison of exponents needs no hypothesis on the equation: a power factorization
-`f w = (w - z₀) ^ m * v w` at a zero `z₀`, with `v` continuous and nonzero at `z₀`, is itself a
-similarity factorization with `Φ = v • id` and `σ = (· - z₀) ^ m`, and the analytic order of the
-holomorphic factor does not depend on the factorization
+The comparison of exponents needs no hypothesis on the equation, so it lives with the other
+consequences of a factorization in `TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation`: a
+power factorization `f w = (w - z₀) ^ m * v w` at a zero `z₀`, with `v` continuous and nonzero at
+`z₀`, is itself a similarity factorization with `Φ = v • id` and `σ = (· - z₀) ^ m`, and the
+analytic order of the holomorphic factor does not depend on the factorization
 (`TauCeti.analyticOrderAt_eq_of_eventually_eq_clm_apply`).
 
 ## References
@@ -82,33 +83,5 @@ theorem eqOn_zero_of_conjWirtingerDeriv_apply_one_eq_mul_of_forall_isBigO (hk : 
   eqOn_zero_of_hasSimilarityFactorizationAt_of_forall_isBigO hU hUc hf.continuousOn
     (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_conjWirtingerDeriv_apply_one_eq_mul hk hU ha
       hf heq hz) hz₀ h₀
-
-/-- **Orders of zeros** from a power factorization. Let `z₀` be a zero of `f : ℂ → ℂ` with a
-power factorization `f w = (w - z₀) ^ m * v w` near `z₀`, with `v` continuous and nonzero at `z₀`,
-such as the one of `TauCeti.exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul` for
-a solution of `bar∂ f = a f` not vanishing near `z₀`. Then `m` is positive, `‖f w‖` is comparable
-to `‖w - z₀‖ ^ m` near `z₀`, and `m` is the analytic order at `z₀` of the holomorphic factor `σ` of
-every similarity factorization `f = Φ σ` near `z₀`. -/
-theorem isTheta_pow_of_eventually_eq_pow_mul (hf₀ : f z₀ = 0) {m : ℕ} {v : ℂ → ℂ}
-    (hv : ContinuousAt v z₀) (hv₀ : v z₀ ≠ 0) (hfv : ∀ᶠ w in 𝓝 z₀, f w = (w - z₀) ^ m * v w) :
-    0 < m ∧ (f =Θ[𝓝 z₀] fun w ↦ (w - z₀) ^ m) ∧
-      ∀ (Φ : ℂ → ℂ →L[ℝ] ℂ) (σ : ℂ → ℂ), ContinuousAt Φ z₀ → IsUnit (Φ z₀) →
-        AnalyticAt ℂ σ z₀ → (∀ᶠ w in 𝓝 z₀, f w = Φ w (σ w)) → analyticOrderAt σ z₀ = m := by
-  -- the power factorization is itself a similarity factorization, with holomorphic factor
-  -- `(· - z₀) ^ m` of order `m`
-  have hΦ : ContinuousAt (fun w ↦ v w • ContinuousLinearMap.id ℝ ℂ) z₀ :=
-    hv.smul continuousAt_const
-  have hΦ₀ := ContinuousLinearMap.isUnit_smul_id_of_ne_zero (R := ℝ) (M := ℂ) hv₀
-  have hσ : AnalyticAt ℂ (fun w ↦ (w - z₀) ^ m) z₀ := by fun_prop
-  have hfΦ : ∀ᶠ w in 𝓝 z₀, f w = (v w • ContinuousLinearMap.id ℝ ℂ) ((w - z₀) ^ m) := by
-    filter_upwards [hfv] with w hw
-    simp [hw, mul_comm]
-  have hm : analyticOrderAt (fun w ↦ (w - z₀) ^ m) z₀ = m :=
-    (hσ.analyticOrderAt_eq_natCast_iff_isTheta).2 (isTheta_refl _ _)
-  refine ⟨Nat.pos_of_ne_zero fun h0 ↦ hv₀ ?_,
-    (analyticOrderAt_eq_natCast_iff_isTheta_of_eventually_eq_clm_apply hΦ hΦ₀ hσ hfΦ).1 hm,
-    fun Φ' σ' hΦ' hΦ'₀ hσ' hfΦ' ↦
-      (analyticOrderAt_eq_of_eventually_eq_clm_apply hΦ' hΦ'₀ hσ' hfΦ' hΦ hΦ₀ hσ hfΦ).trans hm⟩
-  simpa [h0, hf₀] using hfv.self_of_nhds.symm
 
 end TauCeti
