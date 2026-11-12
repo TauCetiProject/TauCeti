@@ -69,7 +69,6 @@ theorem integrable_rpow_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) (q : �
 theorem integral_rpow_logLogisticMeasure (ha : 0 < a) (hq : |q| < b) :
     ∫ x, x ^ q ∂logLogisticMeasure a b =
       a ^ q * Real.Gamma (1 + q / b) * Real.Gamma (1 - q / b) := by
-  have hb : 0 < b := (abs_nonneg q).trans_lt hq
   have hq' := abs_lt.mp hq
   have hmem : q ∈ Ioo (-1 / b⁻¹) (1 / b⁻¹) := by
     rw [div_inv_eq_mul, neg_one_mul, one_div, inv_inv]
