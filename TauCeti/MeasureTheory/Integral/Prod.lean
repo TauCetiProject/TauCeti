@@ -175,22 +175,44 @@ theorem exists_ae_eq_const_of_ae_prod_eq [SFinite ν] {δ : Type*} {f : α → �
 
 /-- **A rectangle bound for an integral against a product of conditional laws.** If `f` is bounded
 by `b` on `s ×ˢ t`, then its lower Lebesgue integral against the product of the laws of `μ` and `ν`
-conditioned on `s` and on `t` is at most `b`: conditioning confines each coordinate to its own set
-almost surely, so the bound holds almost everywhere on the product. The sets need only be
-null-measurable, and their measures may be zero or infinite: either case makes the corresponding
-conditional measure zero. -/
-theorem lintegral_cond_prod_le {s : Set α} {t : Set β} (hs : NullMeasurableSet s μ)
-    (ht : NullMeasurableSet t ν) {f : α × β → ℝ≥0∞} {b : ℝ≥0∞}
+conditioned on `s` and on `t` is at most `b`. The sets need not be measurable, and their measures
+may be zero or infinite: either case makes the corresponding conditional measure zero. Arbitrary
+conditioning sets need not carry full conditional measure in the almost-everywhere sense, so the
+bound is on the lower integral and not an almost-everywhere bound for `f` itself. -/
+theorem lintegral_cond_prod_le {s : Set α} {t : Set β} {f : α × β → ℝ≥0∞} {b : ℝ≥0∞}
     (hf : ∀ x ∈ s, ∀ y ∈ t, f (x, y) ≤ b) :
     ∫⁻ z, f z ∂((μ[|s]).prod (ν[|t])) ≤ b := by
   rcases eq_zero_or_isProbabilityMeasure (μ := μ[|s]) with hμ | hμ
   · simp [hμ]
   rcases eq_zero_or_isProbabilityMeasure (μ := ν[|t]) with hν | hν
   · simp [hν]
+  -- Pass to a measurable minorant `g ≤ f` with the same integral: the set `{b < g}` is measurable,
+  -- and each of its sections at a point of `s` misses `t`, hence is null for the conditional law
+  -- of `ν`, so the set is null for the product.
+  obtain ⟨g, hgm, hgf, hg⟩ := exists_measurable_le_lintegral_eq (μ := (μ[|s]).prod (ν[|t])) f
+  rw [hg]
   refine lintegral_le_const ?_
-  filter_upwards [ae_of_ae_fst (ν := ν[|t]) (ProbabilityTheory.ae_cond_mem₀ hs),
-    ae_of_ae_snd (μ := μ[|s]) (ProbabilityTheory.ae_cond_mem₀ ht)] with ⟨x, y⟩ hx hy
-  exact hf x hx y hy
+  have hA : MeasurableSet {z : α × β | b < g z} := measurableSet_lt measurable_const hgm
+  have hsec : ∀ x ∈ s, ν[|t] (Prod.mk x ⁻¹' {z : α × β | b < g z}) = 0 := fun x hx => by
+    have hm : MeasurableSet (Prod.mk x ⁻¹' {z : α × β | b < g z}) := measurable_prodMk_left hA
+    rw [ProbabilityTheory.cond, smul_apply, Measure.restrict_apply hm]
+    have : Prod.mk x ⁻¹' {z : α × β | b < g z} ∩ t = ∅ := Set.eq_empty_of_forall_notMem fun y hy =>
+      absurd (hy.1.trans_le ((hgf _).trans (hf x hx y hy.2))) (lt_irrefl _)
+    rw [this]
+    simp
+  have hφ : Measurable fun x => ν[|t] (Prod.mk x ⁻¹' {z : α × β | b < g z}) :=
+    measurable_measure_prodMk_left hA
+  have hB : MeasurableSet {x | ν[|t] (Prod.mk x ⁻¹' {z : α × β | b < g z}) ≠ 0} :=
+    hφ (measurableSet_singleton (0 : ℝ≥0∞)).compl
+  have hnull : (μ[|s]) {x | ν[|t] (Prod.mk x ⁻¹' {z : α × β | b < g z}) ≠ 0} = 0 := by
+    rw [ProbabilityTheory.cond, smul_apply, Measure.restrict_apply hB]
+    have : {x | ν[|t] (Prod.mk x ⁻¹' {z : α × β | b < g z}) ≠ 0} ∩ s = ∅ :=
+      Set.eq_empty_of_forall_notMem fun x hx => hx.1 (hsec x hx.2)
+    rw [this]
+    simp
+  have hprod : ((μ[|s]).prod (ν[|t])) {z : α × β | b < g z} = 0 :=
+    (Measure.measure_prod_null hA).2 hnull
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1 hprod] with z hz using not_lt.1 hz
 
 /-- **The Dynkin (π-λ) step for Bochner integrals on a product space.** A function whose integral
 vanishes on every measurable rectangle has vanishing integral on every measurable set.
@@ -232,25 +254,5 @@ theorem integrable_prod_restrict_of_continuous [TopologicalSpace α] [Topologica
   refine IntegrableOn.of_forall_sdiff_eq_zero (hG.continuousOn.integrableOn_compact (hK.prod hD))
     (MeasurableSet.univ.prod hD.measurableSet) fun q hq ↦ ?_
   exact hGK q.1 q.2 hq.1.2 fun h ↦ hq.2 ⟨h, hq.1.2⟩
-
-/-- The weighted upper truncated integral of `f ^ q` is measurable in the height. -/
-theorem measurable_rpow_mul_setLIntegral_lt {f : α → ℝ≥0∞} {c : ℝ} [SFinite μ]
-    (hf : Measurable f) (q s : ℝ) :
-    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) *
-      ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ :=
-  ((measurable_id.pow measurable_const).ennreal_ofReal).mul
-    (measurable_setLIntegral_of_measurableSet (R := fun t x => ENNReal.ofReal (c * t) < f x)
-      (measurableSet_lt ((measurable_fst.const_mul c).ennreal_ofReal) (hf.comp measurable_snd))
-      (hf.pow_const q).aemeasurable)
-
-/-- The weighted lower truncated integral of `f ^ q` is measurable in the height. -/
-theorem measurable_rpow_mul_setLIntegral_le {f : α → ℝ≥0∞} {c : ℝ} [SFinite μ]
-    (hf : Measurable f) (q s : ℝ) :
-    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) *
-      ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ :=
-  ((measurable_id.pow measurable_const).ennreal_ofReal).mul
-    (measurable_setLIntegral_of_measurableSet (R := fun t x => f x ≤ ENNReal.ofReal (c * t))
-      (measurableSet_le (hf.comp measurable_snd) ((measurable_fst.const_mul c).ennreal_ofReal))
-      (hf.pow_const q).aemeasurable)
 
 end TauCeti

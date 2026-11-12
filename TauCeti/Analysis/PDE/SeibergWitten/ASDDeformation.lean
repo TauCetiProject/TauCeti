@@ -338,7 +338,7 @@ theorem asdDeformationOperator_commutator_eq_deformationSymbol (a : SmoothForm I
   · rw [asdDeformationOperator_wedge_sub_fst_apply, deformationSymbol_apply_fst,
       ← hξ, ← hv, alternatingFormInner_alternatingFormEquiv, inner_ιMulti_ιMulti,
       Matrix.det_fin_one]
-    simp [ξ, v]
+    simp only [Matrix.of_apply, Matrix.cons_val_fin_one, ξ, v]
   · rw [coe_asdDeformationOperator_wedge_sub_snd, Submodule.coe_smul, Pi.smul_apply, map_smul,
       SmoothForm.alternatingFormEquiv_symm_selfDualPart, hzv, smul_smul, ← div_eq_mul_inv,
       deformationSymbol_apply_snd]

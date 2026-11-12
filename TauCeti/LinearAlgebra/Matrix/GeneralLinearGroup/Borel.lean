@@ -78,11 +78,9 @@ q + 1`, the number of points of the projective line.
 
 ## Implementation notes
 
-The name follows the `GL2` prefix that
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md` uses for this family of objects
-(`GL2Borel`, `GL2PrincipalSeries`, `GL2Steinberg`, `GL2NonSplitTorus`), rather than being placed in
-the `Matrix.GeneralLinearGroup` namespace; the statements are the roadmap's, with `[Field F]
-[Fintype F]` weakened to `[CommRing R]` wherever the result does not count.
+The name follows the `GL2` prefix shared by this family of objects (`TauCeti.GL2Borel`,
+`TauCeti.GL2PrincipalSeries`, `TauCeti.GL2Steinberg`, `TauCeti.GL2NonSplitTorus`), rather than being
+placed in the `Matrix.GeneralLinearGroup` namespace.
 
 The subgroup is the `Fin 2` specialization of `TauCeti.upperTriangularGroup`. Its public membership
 lemma is nevertheless stated as the concrete condition `g 1 0 = 0`, because that is what the
@@ -91,10 +89,7 @@ general upper-triangular predicate.
 
 ## References
 
-This supplies the Borel subgroup of Layer 9 ("the representation theory of `GL₂(𝔽_q)`") of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`, whose `GL2Borel` is the subgroup
-defined here, together with the index `q + 1` that its principal-series dimension count needs. See
-also W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
+* W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
 -/
 
 public section

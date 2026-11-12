@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.MFDeriv.Translation
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -117,8 +118,12 @@ form they recover the vector-space definitions.
   symplectic area, the integrated curvature and the curvature allowance under changes of domain
   coordinates.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
-  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`: translations of the domain
-  translate the curvature and preserve the curvature allowance along a map.
+  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`,
+  `SmoothTwoForm.perturbedMFDeriv_comp_add_right`,
+  `SmoothTwoForm.floerEnergyDensity_comp_add_right`,
+  `SmoothTwoForm.floerEnergyDensity_cylindrical_comp_add_right`: translations of the domain
+  translate the curvature, the perturbed derivative and the energy density, and preserve the
+  curvature allowance along a map.
 
 ## References
 
@@ -222,6 +227,17 @@ theorem isComplexLinearMap_perturbedMFDeriv_iff (ω : SmoothTwoForm I M)
     rw [add_eq_zero_iff_eq_neg] at h
     rw [h, map_neg, AlmostComplexStructure.apply_apply, neg_neg]
 
+/-- **The perturbed derivative of a translate.** The perturbed derivative of `w ↦ u (w + v)` for
+the translated data `w ↦ K (w + v)` at `z` is the perturbed derivative of `u` for `K` at `z + v`. -/
+theorem perturbedMFDeriv_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (v z : ℝ × ℝ) :
+    ω.perturbedMFDeriv (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.perturbedMFDeriv Ks Kt u (z + v) := by
+  refine ContinuousLinearMap.ext fun a ↦ ?_
+  rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, mfderiv_comp_add_right]
+  -- The two sides differ only in how the tangent spaces at `u (z + v)` are written.
+  rfl
+
 /-- The symplectic area density of `du - X_K` for a manifold target. -/
 def floerEnergyDensity (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
     (u : ℝ × ℝ → M) (z : ℝ × ℝ) : ℝ :=
@@ -244,6 +260,22 @@ theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) 
       SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def]
+
+/-- Translating a map and its perturbation data by `v` translates the Floer energy density by
+`v`. -/
+theorem floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (v z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.floerEnergyDensity Ks Kt u (z + v) := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_comp_add_right]
+
+/-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
+`(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
+theorem floerEnergyDensity_cylindrical_comp_add_right (ω : SmoothTwoForm I M) (H : ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (c : ℝ) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) z =
+      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (z + (c, 0)) := by
+  simpa using ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (c, 0) z
 
 section Continuity
 
@@ -879,7 +911,7 @@ private theorem IsNondegenerate.floerEnergyDensity_eq_of_forall_notMem_eq_zero
 /-- **The energy identity for compactly supported perturbation data, for a manifold target.**
 Let the perturbation data `K = K_s ds + K_t dt` vanish outside a compact set `C` of the domain,
 and let `u` and `K` be `C¹` over an open neighbourhood `U` of `C`, for a nondegenerate two-form on
-a finite-dimensional manifold. Then for every measurable set `D ⊇ C` over which the energy density
+a finite-dimensional manifold. Then for every set `D ⊇ C` over which the energy density
 and the curvature `R_K(u)` are integrable, the energy over `D` is the symplectic area `∫_D u^* ω`
 minus the integral of `R_K(u)`: the exterior derivative `d(K(u))` is compactly supported, so the
 boundary term of the energy identity vanishes. Closedness of the two-form is not used. -/
@@ -889,7 +921,7 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero
     (hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks) (U ×ˢ univ))
     (hKt : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt) (U ×ˢ univ))
     (hC : IsCompact C) (hCU : C ⊆ U) (hKsC : ∀ z ∉ C, Ks z = 0) (hKtC : ∀ z ∉ C, Kt z = 0)
-    (hD : MeasurableSet D) (hCD : C ⊆ D)
+    (hCD : C ⊆ D)
     (hE : IntegrableOn (ω.floerEnergyDensity Ks Kt u) D)
     (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) D) :
     ∫ z in D, ω.floerEnergyDensity Ks Kt u z =
@@ -930,14 +962,14 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero
   have harea : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) D := by
-    refine ((hE.sub hdi.integrableOn).add hR).congr_fun (fun z _ ↦ ?_) hD
+    refine ((hE.sub hdi.integrableOn).add hR).congr (Filter.Eventually.of_forall fun z ↦ ?_)
     simp only [Pi.add_apply, Pi.sub_apply, hpt z, hd]
     ring
   have hsum : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) + d z) D :=
     harea.add hdi.integrableOn
-  rw [setIntegral_congr_fun hD fun z _ ↦ hpt z, integral_sub hsum hR,
+  rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_sub hsum hR,
     integral_add harea hdi.integrableOn, hdD, add_zero]
 
 /-- **Integrability of the energy density, for a manifold target.** Let `u` and the perturbation
@@ -1183,7 +1215,7 @@ theorem setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero (ω : Symplectic
     (contMDiffOn_iff_contDiffOn.mpr hu)
     (contMDiffOn_prod_modelWithCornersSelf_iff.mpr (contMDiffOn_iff_contDiffOn.mpr hKs))
     (contMDiffOn_prod_modelWithCornersSelf_iff.mpr (contMDiffOn_iff_contDiffOn.mpr hKt))
-    hC hCU hKsC hKtC hD hCD
+    hC hCU hKsC hKtC hCD
     (hE' ▸ hE) (hR' ▸ hR)
   simpa only [hE', hR', eval₂_constSmooth_mfderiv_stdComplexLine] using h
 
