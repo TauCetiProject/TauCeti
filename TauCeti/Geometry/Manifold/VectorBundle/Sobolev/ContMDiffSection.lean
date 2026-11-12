@@ -95,6 +95,14 @@ def ofContMDiffSection : Cₛ^k⟮𝓘(ℝ, E); F, V⟯ →ₗ[ℝ] SobolevSecti
       map_smul' := ContMDiffSection.coe_smul }
     (exists_value_ae_eq_coord A μ p k)
 
+/-- The chart data in chart `i` of the Sobolev section of a `Cᵏ` section `s` are the chart
+coordinates `A.coord i s`, almost everywhere on the image of the chart. -/
+theorem chartValueL_ofContMDiffSection_ae (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n) :
+    A.sectionChartData.chartValueL μ p k i (ofContMDiffSection A μ p k s)
+      =ᵐ[μ.restrict (A.image i)] A.coord i s :=
+  (A.sectionChartData.chartValueL_ofComponents_ae μ p k _ _ s i).trans
+    (A.sectionChartData_coord_ae_eq μ i s)
+
 /-- **Norm bound.** The norm of the Sobolev section of a `Cᵏ` section `s` is at most the sum, over
 all charts `i` and basis vectors `j`, of the `Lᵖ` norms on `A.image i` of the classical derivatives
 of orders `0` through `k` of the components of `A.coord i s`. -/
