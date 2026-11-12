@@ -11,6 +11,7 @@ public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.RingTheory.Spectrum.Prime.Topology
 import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.Finsupp.Supported
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 import TauCeti.RingTheory.FittingIdeal.BaseChange
 
@@ -123,15 +124,9 @@ theorem upperSemicontinuous_finrank_fiber_homology [Module.Finite R M₂]
   -- `M₃` is a retract of the free module `M₃ →₀ R`, and `g` takes values in a finite free summand
   obtain ⟨s, hs⟩ := (Module.projective_def' (R := R) (P := M₃)).mp inferInstance
   obtain ⟨π, hπ⟩ : ∃ π : (M₃ →₀ R) →ₗ[R] M₃, π ∘ₗ s = .id := ⟨_, hs⟩
-  obtain ⟨T, hT⟩ := Module.Finite.fg_top (R := R) (M := M₂)
-  let S : Finset M₃ := T.biUnion fun x ↦ (s (g x)).support
-  have hrange : ∀ x, s (g x) ∈ Finsupp.supported R R (S : Set M₃) := fun x ↦ by
-    have hx : x ∈ Submodule.span R (T : Set M₂) := by rw [hT]; trivial
-    refine (Submodule.span_le.mpr ?_ :
-      Submodule.span R ((s ∘ₗ g) '' (T : Set M₂)) ≤ Finsupp.supported R R (S : Set M₃))
-      (Submodule.apply_mem_span_image_of_mem_span (s ∘ₗ g) hx)
-    rintro _ ⟨y, hy, rfl⟩
-    exact (Finsupp.mem_supported R _).mpr fun i hi ↦ Finset.mem_biUnion.mpr ⟨y, hy, hi⟩
+  obtain ⟨S, hS⟩ := (s ∘ₗ g).exists_finset_support_subset
+  have hrange : ∀ x, s (g x) ∈ Finsupp.supported R R (S : Set M₃) := fun x ↦
+    (Finsupp.mem_supported R _).mpr (hS x)
   let L := Finsupp.supported R R (S : Set M₃)
   have : Module.Finite R L :=
     Module.Finite.equiv (Finsupp.supportedEquivFinsupp (M := R) (R := R) (S : Set M₃)).symm
