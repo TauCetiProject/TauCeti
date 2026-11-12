@@ -225,15 +225,11 @@ theorem integralTopForm_wedge_self_eq_of_sub_mem_exactForms
     (hφ : φ ∈ compactlySupportedClosedForms I M k)
     (hψ : ψ ∈ compactlySupportedClosedForms I M k) (hψφ : ψ - φ ∈ exactForms I M k) :
     integralTopForm o (RoughForm.wedge ψ.1 ψ.1) = integralTopForm o (RoughForm.wedge φ.1 φ.1) := by
-  -- Forms of even degree commute: `φ ∧ ψ = ψ ∧ φ`.
-  have hcomm : SmoothForm.wedge φ ψ = SmoothForm.wedge ψ φ := by
-    refine Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)
-    rw [SmoothForm.wedge_comm, (hk.mul_right k).neg_one_pow, one_smul]
-    simp
-  -- Hence `ψ ∧ ψ - φ ∧ φ = (ψ - φ) ∧ ψ + (ψ - φ) ∧ φ`, which is compactly supported exact.
+  -- Forms of even degree commute, so `ψ ∧ ψ - φ ∧ φ = (ψ - φ) ∧ ψ + (ψ - φ) ∧ φ`, which is
+  -- compactly supported exact.
   have hsub : SmoothForm.wedge ψ ψ - SmoothForm.wedge φ φ =
       SmoothForm.wedge (ψ - φ) ψ + SmoothForm.wedge (ψ - φ) φ := by
-    simp only [map_sub, LinearMap.sub_apply, hcomm]
+    simp only [map_sub, LinearMap.sub_apply, SmoothForm.wedge_comm_of_even hk φ ψ]
     abel
   have hmk := (compactlySupportedDeRhamCohomology.mk_eq_mk_iff I (k + k)
     ⟨_, SmoothForm.wedge_mem_compactlySupportedClosedForms

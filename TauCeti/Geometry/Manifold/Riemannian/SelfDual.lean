@@ -91,9 +91,9 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
 * `TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_add`,
   `TauCeti.SmoothForm.integralTopForm_wedge_self`: `∫_M |α|² vol = ∫_M |α⁺|² vol + ∫_M |α⁻|² vol`
   and `∫_M α ∧ α = ∫_M |α⁺|² vol - ∫_M |α⁻|² vol` for a compactly supported form.
-* `integralTopForm_inner_selfDualPart_sub_inner_antiSelfDualPart_eq_of_sub_mem_exactForms`:
-  `∫_M |ψ⁺|² vol - ∫_M |ψ⁻|² vol` is unchanged when an exact form is added to a compactly
-  supported closed form `ψ`.
+* `integralTopForm_inner_selfDualPart_sub_inner_antiSelfDualPart_eq_of_sub_mem_exactForms`
+  (in the namespace `TauCeti.SmoothForm`): `∫_M |ψ⁺|² vol - ∫_M |ψ⁻|² vol` agrees for compactly
+  supported closed forms `φ`, `ψ` whose difference is exact.
 * `TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_two_mul_sub`: the
   energy of such a form is twice its self-dual energy, minus the invariant of its class.
 * `TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart`: a compactly
@@ -787,7 +787,8 @@ theorem integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart (hk : Even 
     o hk (zero_mem _)
     ((mem_compactlySupportedClosedForms I).mpr ⟨hc, exactForms_le_closedForms I k hβ⟩)
     (by rwa [sub_zero])
-  simpa [sub_eq_zero] using h
+  simpa only [coe_selfDualPart, coe_antiSelfDualPart, map_zero, ZeroMemClass.coe_zero,
+    Pi.zero_apply, LinearMap.zero_apply, zero_smul, sub_self, sub_eq_zero] using h
 
 /-- On an oriented boundaryless Riemannian manifold of dimension `k + k` with `k` even, a compactly
 supported exact `k`-form whose self-dual part vanishes is zero. In particular on a
