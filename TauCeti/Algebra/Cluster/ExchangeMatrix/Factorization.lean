@@ -115,6 +115,15 @@ theorem matrixMutationRight_submatrix [DecidableEq K'] {row' : K' ↪ I'} {f : I
   ext i j
   simp only [matrixMutationRight_apply, submatrix_apply, Matrix.one_apply, hg.eq_iff, h]
 
+/-- The opposite sign after matrix mutation gives back the original left factor. -/
+@[simp]
+theorem matrixMutationLeft_matrixMutation_neg (row : K ↪ I) (B : Matrix I K ℤ)
+    (k : K) (ε : ℤ) :
+    matrixMutationLeft row (matrixMutation row B k) k (-ε) =
+      matrixMutationLeft row B k ε := by
+  ext i j
+  simp [matrixMutationLeft_apply, matrixMutation_apply_col]
+
 section Products
 
 variable [Fintype I] [Fintype K]
