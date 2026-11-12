@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Module.Submodule.Ker
 public import TauCeti.LinearAlgebra.Quotient.Prod
+import TauCeti.LinearAlgebra.Dimension.Prod
 
 /-!
 # The homology of a square-zero linear endomorphism
@@ -286,20 +287,18 @@ variable {N : Type*} [AddCommGroup N] [Module S N] (e : N →ₗ[S] N)
 noncomputable def homologyProdEquiv (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) :
     (d.prodMap e).homology (by rw [prodMap_comp, hd, he]; ext <;> simp) ≃ₗ[S]
       d.homology hd × e.homology he := by
-  let E : ker (d.prodMap e) ≃ₗ[S] ker d × ker e :=
-    (LinearEquiv.ofEq _ _ (ker_prodMap d e)).trans ((ker d).prodEquiv (ker e))
   refine (Submodule.Quotient.equiv (d.prodMap e).boundariesInKer
-    (d.boundariesInKer.prod e.boundariesInKer) E ?_).trans
+    (d.boundariesInKer.prod e.boundariesInKer) (kerProdMapEquiv d e) ?_).trans
       (Submodule.quotientProdEquiv _ _)
   ext z
   rw [Submodule.mem_map]
   constructor
   · rintro ⟨w, hw, rfl⟩
     obtain ⟨v, hv⟩ := (mem_boundariesInKer _).mp hw
-    exact ⟨⟨v.1, congrArg Prod.fst hv⟩, ⟨v.2, congrArg Prod.snd hv⟩⟩
+    exact ⟨⟨v.1, by simpa using congrArg Prod.fst hv⟩, ⟨v.2, by simpa using congrArg Prod.snd hv⟩⟩
   · rintro ⟨⟨u, hu⟩, ⟨v, hv⟩⟩
-    refine ⟨E.symm z, ?_, E.apply_symm_apply z⟩
-    exact ⟨(u, v), Prod.ext hu hv⟩
+    refine ⟨(kerProdMapEquiv d e).symm z, ?_, (kerProdMapEquiv d e).apply_symm_apply z⟩
+    exact ⟨(u, v), Prod.ext (by simpa using hu) (by simpa using hv)⟩
 
 /-- The product-homology equivalence sends a cycle class to its two component classes. -/
 @[simp]
@@ -308,7 +307,9 @@ theorem homologyProdEquiv_mk (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
     d.homologyProdEquiv e hd he (Submodule.Quotient.mk z) =
       (Submodule.Quotient.mk ⟨z.1.1, congrArg Prod.fst (mem_ker.mp z.2)⟩,
         Submodule.Quotient.mk ⟨z.1.2, congrArg Prod.snd (mem_ker.mp z.2)⟩) := by
-  simp [homologyProdEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+  simp only [homologyProdEquiv, LinearEquiv.trans_apply, Submodule.Quotient.equiv_apply,
+    Submodule.mapQ_apply, Submodule.quotientProdEquiv_apply_mk]
+  congr 2 <;> ext <;> simp
 
 /-- The inverse product-homology equivalence sends two cycle classes to their product class. -/
 @[simp]

@@ -41,10 +41,10 @@ of `(f ⊕ g) ⊕ h` into `f ⊕ (g ⊕ h)` costs no sign
 isomorphisms with `det f ⊗ det g ⊗ det h` agree. Associativity and the exchange law together
 compare the determinant line of a direct sum of finitely many operators with the tensor product of
 their determinant lines under every reordering of the summands; when all indices are even, as for
-the complex-linear operators attached to the components of a configuration of pseudoholomorphic
-curves, no reordering introduces a sign. This is the direct-sum law through which orientations of
-the determinant lines of Fredholm operators, and so of moduli spaces cut out by them, are compared
-for split operators.
+the real Cauchy–Riemann operators attached to the components of a configuration of
+pseudoholomorphic curves (their principal symbols are complex-linear), no reordering introduces a
+sign. This is the direct-sum law through which orientations of the determinant lines of Fredholm
+operators, and so of moduli spaces cut out by them, are compared for split operators.
 
 ## Main declarations
 
@@ -58,7 +58,7 @@ for split operators.
   multiplication in the exterior algebra.
 * `TauCeti.detLineCongr_prodAssoc_detLineProdEquiv`: regrouping the factors costs no sign.
 * `LinearMap.detLineProdMapEquiv_detLineCongr_prodComm`: exchanging the summands costs
-  `(-1) ^ (ind f * ind g)`, and nothing when `ind f` is even
+  `(-1) ^ (ind f * ind g)`, and nothing when `ind f * ind g` is even
   (`LinearMap.detLineProdMapEquiv_detLineCongr_prodComm_of_even`).
 * `LinearMap.detLineProdMapEquiv_detLineCongr_prodAssoc`: regrouping the summands costs no sign.
 
@@ -276,24 +276,15 @@ private theorem detLineCongr_detLineKerProdMap_symm_assoc
   -- The four inclusions of the kernel factors agree after regrouping.
   have h₁ : e.toLinearMap ∘ₗ κ₂.symm.toLinearMap ∘ₗ LinearMap.inl K _ _ ∘ₗ κ₁.symm.toLinearMap ∘ₗ
       LinearMap.inl K _ _ = κ₄.symm.toLinearMap ∘ₗ LinearMap.inl K _ _ := by
-    ext x
-    · simp [κ₁, κ₂, κ₄, he]
-    · simp [κ₁, κ₂, κ₄, he]
-    · simp [κ₁, κ₂, κ₄, he]
+    ext x <;> simp [κ₁, κ₂, κ₄, he]
   have h₂ : e.toLinearMap ∘ₗ κ₂.symm.toLinearMap ∘ₗ LinearMap.inl K _ _ ∘ₗ κ₁.symm.toLinearMap ∘ₗ
       LinearMap.inr K _ _ = κ₄.symm.toLinearMap ∘ₗ LinearMap.inr K _ _ ∘ₗ
         κ₃.symm.toLinearMap ∘ₗ LinearMap.inl K _ _ := by
-    ext x
-    · simp [κ₁, κ₂, κ₃, κ₄, he]
-    · simp [κ₁, κ₂, κ₃, κ₄, he]
-    · simp [κ₁, κ₂, κ₃, κ₄, he]
+    ext x <;> simp [κ₁, κ₂, κ₃, κ₄, he]
   have h₃ : e.toLinearMap ∘ₗ κ₂.symm.toLinearMap ∘ₗ LinearMap.inr K _ _ =
       κ₄.symm.toLinearMap ∘ₗ LinearMap.inr K _ _ ∘ₗ κ₃.symm.toLinearMap ∘ₗ
         LinearMap.inr K _ _ := by
-    ext x
-    · simp [κ₂, κ₃, κ₄, he]
-    · simp [κ₂, κ₃, κ₄, he]
-    · simp [κ₂, κ₃, κ₄, he]
+    ext x <;> simp [κ₂, κ₃, κ₄, he]
   refine Subtype.ext ?_
   simp only [detLineKerProdMap, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
     LinearEquiv.detLineCongr_symm, LinearEquiv.coe_detLineCongr,
@@ -328,7 +319,7 @@ private theorem coe_detLineCokerProdMap_tmul (y : Fin (finrank K (N ⧸ range f)
     LinearEquiv.coe_detLineCongr, coe_detLineProdEquiv_tmul, ExteriorAlgebra.map_apply_ιMulti]
   congr 1
   funext i
-  induction i using Fin.addCases <;> simp [LinearEquiv.symm_apply_eq]
+  induction i using Fin.addCases <;> simp
 
 /-- Exchanging the summands of the cokernel: if
 `e : coker (f.prodMap g) ≃ coker (g.prodMap f)` swaps the two components, the cokernel factors
@@ -409,32 +400,19 @@ private theorem detLineCongr_detLineCokerProdMap_assoc
       LinearMap.inl K _ _ ∘ₗ (cokerProdMapEquiv f g).symm.toLinearMap ∘ₗ LinearMap.inl K _ _ =
         (cokerProdMapEquiv f (g.prodMap h)).symm.toLinearMap ∘ₗ LinearMap.inl K _ _ := by
     ext x
-    have e₁ := cokerProdMapEquiv_symm_apply_mk f g x 0
-    have e₂ := cokerProdMapEquiv_symm_apply_mk (f.prodMap g) h (x, 0) 0
-    have e₄ := cokerProdMapEquiv_symm_apply_mk f (g.prodMap h) x 0
-    simp only [Submodule.Quotient.mk_zero] at e₁ e₂ e₄
-    simp [e₁, e₂, e₄, he, Prod.mk_zero_zero]
+    simp [he, Prod.mk_zero_zero]
   have h₂ : e.toLinearMap ∘ₗ (cokerProdMapEquiv (f.prodMap g) h).symm.toLinearMap ∘ₗ
       LinearMap.inl K _ _ ∘ₗ (cokerProdMapEquiv f g).symm.toLinearMap ∘ₗ LinearMap.inr K _ _ =
         (cokerProdMapEquiv f (g.prodMap h)).symm.toLinearMap ∘ₗ LinearMap.inr K _ _ ∘ₗ
           (cokerProdMapEquiv g h).symm.toLinearMap ∘ₗ LinearMap.inl K _ _ := by
     ext y
-    have e₁ := cokerProdMapEquiv_symm_apply_mk f g 0 y
-    have e₂ := cokerProdMapEquiv_symm_apply_mk (f.prodMap g) h (0, y) 0
-    have e₃ := cokerProdMapEquiv_symm_apply_mk g h y 0
-    have e₄ := cokerProdMapEquiv_symm_apply_mk f (g.prodMap h) 0 (y, 0)
-    simp only [Submodule.Quotient.mk_zero] at e₁ e₂ e₃ e₄
-    simp [e₁, e₂, e₃, e₄, he]
+    simp [he]
   have h₃ : e.toLinearMap ∘ₗ (cokerProdMapEquiv (f.prodMap g) h).symm.toLinearMap ∘ₗ
       LinearMap.inr K _ _ =
         (cokerProdMapEquiv f (g.prodMap h)).symm.toLinearMap ∘ₗ LinearMap.inr K _ _ ∘ₗ
           (cokerProdMapEquiv g h).symm.toLinearMap ∘ₗ LinearMap.inr K _ _ := by
     ext z
-    have e₂ := cokerProdMapEquiv_symm_apply_mk (f.prodMap g) h 0 z
-    have e₃ := cokerProdMapEquiv_symm_apply_mk g h 0 z
-    have e₄ := cokerProdMapEquiv_symm_apply_mk f (g.prodMap h) 0 (0, z)
-    simp only [Submodule.Quotient.mk_zero] at e₂ e₃ e₄
-    simp [e₂, e₃, e₄, he]
+    simp [he]
   simp only [detLineCokerProdMap, LinearEquiv.trans_apply, LinearEquiv.detLineCongr_symm]
   refine Subtype.ext ?_
   simp only [LinearEquiv.coe_detLineCongr, coe_detLineProdEquiv_tmul_eq_map_mul_map,
@@ -573,16 +551,18 @@ theorem detLineProdMapEquiv_detLineCongr_prodComm (x : (f.prodMap g).detLine) :
         (a + b) * (c + d) + b * c = b * d + (d * a + a * c) + 2 * (b * c) by intros; ring,
       pow_add (-1 : K) _ (2 * _), pow_mul (-1 : K) 2, neg_one_sq, one_pow, mul_one]
 
-/-- **Exchanging a summand of even index** costs no sign: if `ind f` is even, the swaps
-`M × M' ≃ M' × M` and `N × N' ≃ N' × N` carry `LinearMap.detLineProdMapEquiv f g` to
-`LinearMap.detLineProdMapEquiv g f` followed by the exchange of the tensor factors. This applies
-in particular to complex-linear operators, whose real index is even. -/
+/-- **Exchanging a summand of even index** costs no sign: if `ind f * ind g` is even, in
+particular if one of `ind f` and `ind g` is even, the swaps `M × M' ≃ M' × M` and
+`N × N' ≃ N' × N` carry `LinearMap.detLineProdMapEquiv f g` to `LinearMap.detLineProdMapEquiv g f`
+followed by the exchange of the tensor factors. This applies in particular to complex-linear
+operators, whose real index is even. -/
 theorem detLineProdMapEquiv_detLineCongr_prodComm_of_even
-    (hf : Even (finrank K (ker f) + finrank K (N ⧸ range f))) (x : (f.prodMap g).detLine) :
+    (hfg : Even ((finrank K (ker f) + finrank K (N ⧸ range f)) *
+      (finrank K (ker g) + finrank K (N' ⧸ range g)))) (x : (f.prodMap g).detLine) :
     detLineProdMapEquiv g f ((f.prodMap g).detLineCongr (LinearEquiv.prodComm K M M')
         (LinearEquiv.prodComm K N N') (by ext <;> simp) x) =
       TensorProduct.comm K _ _ (detLineProdMapEquiv f g x) := by
-  rw [detLineProdMapEquiv_detLineCongr_prodComm, (hf.mul_right _).neg_one_pow, one_smul]
+  rw [detLineProdMapEquiv_detLineCongr_prodComm, hfg.neg_one_pow, one_smul]
 
 /-- `LinearMap.detLineProdMapEquiv` on the elements read off from pure tensors of kernel lines and
 of dual cokernel lines through `detLineKerProdMap` and `detLineCokerProdMap`. -/
@@ -639,7 +619,8 @@ private theorem detLineProdMapEquiv_detLineCongr_prodAssoc_tmul
       (-1) ^ (finrank K ((N × N') ⧸ range (f.prodMap g)) * finrank K (ker h)) *
         (-1) ^ (finrank K (N ⧸ range f) * finrank K (ker g)) := by
     rw [finrank_ker_prodMap, finrank_quotient_range_prodMap, ← pow_add, ← pow_add]
-    ring_nf
+    congr 1
+    ring
   simp only [hsign]
 
 /-- **Regrouping the summands of a direct sum** costs no sign. The regroupings
@@ -649,9 +630,9 @@ determinant lines (`LinearMap.detLineCongr`). Followed by the direct sum isomorp
 `det (f ⊕ (g ⊕ h)) ≃ det f ⊗ det (g ⊕ h) ≃ det f ⊗ (det g ⊗ det h)`, it agrees with
 `det ((f ⊕ g) ⊕ h) ≃ det (f ⊕ g) ⊗ det h ≃ (det f ⊗ det g) ⊗ det h` followed by the
 regrouping of the tensor factors. The Koszul signs of the two composites,
-`(-1) ^ ((dim coker f + dim coker g) * dim ker h + dim coker f * dim ker g)` and
-`(-1) ^ (dim coker f * (dim ker g + dim ker h) + dim coker g * dim ker h)`, coincide. Together with
-the exchange law `LinearMap.detLineProdMapEquiv_detLineCongr_prodComm`, this compares the
+`(-1) ^ (dim coker f * (dim ker g + dim ker h) + dim coker g * dim ker h)` and
+`(-1) ^ ((dim coker f + dim coker g) * dim ker h + dim coker f * dim ker g)`, coincide. Together
+with the exchange law `LinearMap.detLineProdMapEquiv_detLineCongr_prodComm`, this compares the
 determinant line of a direct sum of finitely many operators with the tensor product of their
 determinant lines under every reordering of the summands. -/
 theorem detLineProdMapEquiv_detLineCongr_prodAssoc (x : ((f.prodMap g).prodMap h).detLine) :

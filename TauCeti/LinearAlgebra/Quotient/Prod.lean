@@ -103,6 +103,16 @@ theorem cokerProdMapEquiv_symm_apply_mk (x : N) (y : N') :
       Submodule.Quotient.mk (x, y) := by
   rw [LinearEquiv.symm_apply_eq, cokerProdMapEquiv_apply_mk]
 
+@[simp]
+theorem cokerProdMapEquiv_symm_apply_mk_zero (x : N) :
+    (cokerProdMapEquiv f g).symm (Submodule.Quotient.mk x, 0) = Submodule.Quotient.mk (x, 0) := by
+  rw [← Submodule.Quotient.mk_zero, cokerProdMapEquiv_symm_apply_mk]
+
+@[simp]
+theorem cokerProdMapEquiv_symm_apply_zero_mk (y : N') :
+    (cokerProdMapEquiv f g).symm (0, Submodule.Quotient.mk y) = Submodule.Quotient.mk (0, y) := by
+  rw [← Submodule.Quotient.mk_zero, cokerProdMapEquiv_symm_apply_mk]
+
 /-- The cokernel of `f.prodMap g` is finite when those of `f` and `g` are. -/
 instance finite_quotient_range_prodMap [Module.Finite R (N ⧸ range f)]
     [Module.Finite R (N' ⧸ range g)] : Module.Finite R ((N × N') ⧸ range (f.prodMap g)) :=
