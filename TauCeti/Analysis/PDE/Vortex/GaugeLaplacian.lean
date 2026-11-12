@@ -22,9 +22,9 @@ gauge action `d₀ = TauCeti.Vortex.gaugeDirection x` and its formal adjoint
 
 (`TauCeti.Vortex.gaugeAdjoint_gaugeDirection`), a Schrödinger operator. Accordingly `u` is a weak
 solution of `d₀* d₀ u = g`, that is `∫ u · d₀* d₀ φ = ∫ g φ` for every compactly supported smooth
-`φ`, exactly when it is a weak solution of `-Δu + (p² + q²) u = g` in the sense of
-`TauCeti.PDE.IsWeakSolutionSchrodinger`
-(`TauCeti.Vortex.isWeakSolutionSchrodinger_iff_forall_integral_mul_gaugeAdjoint_gaugeDirection_eq`).
+`φ`, exactly when `∫ u (-Δφ + (p² + q²) φ) = ∫ g φ` for every such `φ`
+(`TauCeti.Vortex.integral_mul_gaugeAdjoint_gaugeDirection`), so the results of
+`TauCeti.Analysis.PDE.Schrodinger.Stationary` apply.
 
 The potential `p² + q²` vanishes at the zeros of `α`, but for a continuous field of the affine
 space `A_m^s = x_m + H^s`, `s > 1`, it tends to `1 / 4` at infinity
@@ -32,20 +32,23 @@ space `A_m^s = x_m + H^s`, `s > 1`, it tends to `1 / 4` at infinity
 Laplacian is then an isomorphism from `H^(j+2)(ℂ)` onto `H^j(ℂ)` whenever `x ∈ A_m^k` with
 `j ≤ k` and `k ≥ 2`.
 
-* Uniqueness (`TauCeti.Vortex.ae_eq_of_isWeakSolutionSchrodinger`): two weak solutions in `L²(ℂ)`
-  agree almost everywhere, by the coercivity of the gauge Laplacian on `H¹(ℂ)`
-  (`TauCeti.PDE.IsWeakSolutionSchrodinger.ae_eq`).
-* Regularity (`TauCeti.Vortex.mem_realSobolevFunctions_of_isWeakSolutionSchrodinger`): a weak
-  solution in `L²(ℂ)` with `g ∈ H^j(ℂ)` lies in `H^(j+2)(ℂ)`. The first step only uses that the
+* Uniqueness (`TauCeti.Vortex.ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq`): two weak
+  solutions in `L²(ℂ)` agree almost everywhere, by the coercivity of the gauge Laplacian on
+  `H¹(ℂ)` (`TauCeti.ae_eq_of_integral_mul_neg_laplacian_add_mul_eq`).
+* Regularity
+  (`TauCeti.Vortex.mem_realSobolevFunctions_of_integral_mul_gaugeAdjoint_gaugeDirection_eq`): a
+  weak solution in `L²(ℂ)` with `g ∈ H^j(ℂ)` lies in `H^(j+2)(ℂ)`. The first step only uses that the
   potential is bounded. After that, multiplication by the coordinates `p, q` of a field of `A_m^k`
   preserves `H^n(ℂ)` for `1 < n ≤ k`
   (`TauCeti.Vortex.mul_mem_realSobolevFunctions_of_mem_framedFieldSpace`), so the potential term
   is as regular as the solution, and the resolvent of the Laplacian gains two derivatives at each
-  step (`TauCeti.PDE.IsWeakSolutionSchrodinger.mem_realSobolevFunctions_add_two`).
-* Existence (`TauCeti.Vortex.exists_mem_realSobolevFunctions_isWeakSolutionSchrodinger`): for
-  every `g ∈ H^j(ℂ)` there is a weak solution `u ∈ H^(j+2)(ℂ)`, by the Lax–Milgram theorem
-  (`TauCeti.PDE.exists_mem_realSobolevFunctions_isWeakSolutionSchrodinger`) and the regularity
-  above.
+  step (`TauCeti.mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq`).
+* Existence
+  (`TauCeti.Vortex.exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq`):
+  for every `g ∈ H^j(ℂ)` there is a weak solution `u ∈ H^(j+2)(ℂ)`, by the existence of an `H²`
+  weak solution of the Schrödinger equation
+  (`TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`) and the
+  regularity above.
 
 For `j = k - 1` this is the invertibility of `d₀* d₀ : H^(k+1)(ℂ) → H^(k-1)(ℂ)` at a field
 `x₀ ∈ A_m^k`, the linearization at the identity of the Coulomb gauge condition
@@ -100,47 +103,54 @@ private theorem potential_bounds {s : ℝ} (hs : 1 < s) (hx : x ∈ framedFieldS
     rw [Real.norm_eq_abs, abs_of_nonneg h0]
     exact le_max_of_le_right (by linarith)
 
-/-- **The gauge Laplacian is a Schrödinger operator.** A function `u` is a weak solution of
-`d₀* d₀ u = g` at the field `x`, that is `∫ u · d₀* d₀ φ = ∫ g φ` for every compactly supported
-smooth `φ`, exactly when it is a weak solution of `-Δu + (p² + q²) u = g`. -/
-theorem isWeakSolutionSchrodinger_iff_forall_integral_mul_gaugeAdjoint_gaugeDirection_eq
-    {u g : ℂ → ℝ} :
-    PDE.IsWeakSolutionSchrodinger (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) u g ↔
-      ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
-        ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z := by
-  rw [PDE.isWeakSolutionSchrodinger_iff]
-  refine forall_congr' fun φ ↦ forall_congr' fun hφ ↦ forall_congr' fun _ ↦ ?_
-  refine Eq.congr_left (integral_congr_ae (Eventually.of_forall fun z ↦ ?_))
-  beta_reduce
-  rw [gaugeAdjoint_gaugeDirection x ((hφ.of_le (by simp)).contDiffAt)]
+/-- **The gauge Laplacian is a Schrödinger operator.** Testing a function `u` against the gauge
+Laplacian `d₀* d₀ φ` of a `C²` function `φ` is testing it against `-Δφ + (p² + q²) φ`. -/
+theorem integral_mul_gaugeAdjoint_gaugeDirection {u φ : ℂ → ℝ} (hφ : ContDiff ℝ 2 φ) :
+    ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z =
+      ∫ z, u z * (-Δ φ z + (x z 2 ^ 2 + x z 3 ^ 2) * φ z) :=
+  integral_congr_ae (Eventually.of_forall fun z ↦ by
+    simp only [gaugeAdjoint_gaugeDirection x hφ.contDiffAt])
 
-/-- **Uniqueness for the gauge Laplacian.** At a continuous field of `A_m^s`, `s > 1`, two weak
-solutions `u₁, u₂ ∈ L²(ℂ)` of `d₀* d₀ u = g`, for the same `g`, agree almost everywhere. -/
-theorem ae_eq_of_isWeakSolutionSchrodinger {s : ℝ} (hs : 1 < s) (hx : x ∈ framedFieldSpace f m s)
-    (hcont : Continuous x) {u₁ u₂ g : ℂ → ℝ}
-    (heq₁ : PDE.IsWeakSolutionSchrodinger (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) u₁ g)
-    (heq₂ : PDE.IsWeakSolutionSchrodinger (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) u₂ g)
-    (hu₁ : MemLp u₁ 2 (volume : Measure ℂ)) (hu₂ : MemLp u₂ 2 (volume : Measure ℂ)) :
+/-- **Uniqueness for the gauge Laplacian.** At a continuous field of `A_m^s`, `s > 1`, two
+functions `u₁, u₂ ∈ L²(ℂ)` with `d₀* d₀ u₁ = d₀* d₀ u₂ = g` weakly, that is
+`∫ uᵢ · d₀* d₀ φ = ∫ g φ` for every compactly supported smooth `φ`, agree almost everywhere. -/
+theorem ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq {s : ℝ} (hs : 1 < s)
+    (hx : x ∈ framedFieldSpace f m s) (hcont : Continuous x) {u₁ u₂ g : ℂ → ℝ}
+    (hu₁ : MemLp u₁ 2 (volume : Measure ℂ)) (hu₂ : MemLp u₂ 2 (volume : Measure ℂ))
+    (hw₁ : ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      ∫ z, u₁ z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z)
+    (hw₂ : ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      ∫ z, u₂ z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z) :
     u₁ =ᵐ[volume] u₂ := by
   obtain ⟨hV, R, hR⟩ := potential_bounds hs hx hcont
-  exact heq₁.ae_eq heq₂ hV (ae_of_all _ fun z ↦ by positivity) (by norm_num : (0 : ℝ) < 1 / 8)
-    (ae_of_all _ hR) hu₁ hu₂
+  exact ae_eq_of_integral_mul_neg_laplacian_add_mul_eq hV (ae_of_all _ fun z ↦ by positivity)
+    (by norm_num : (0 : ℝ) < 1 / 8) (ae_of_all _ hR) hu₁ hu₂
+    (fun φ hφ hc ↦ by rw [← integral_mul_gaugeAdjoint_gaugeDirection (hφ.of_le (by simp)),
+      hw₁ φ hφ hc])
+    (fun φ hφ hc ↦ by rw [← integral_mul_gaugeAdjoint_gaugeDirection (hφ.of_le (by simp)),
+      hw₂ φ hφ hc])
 
 /-- **Elliptic regularity for the gauge Laplacian.** Let `x` be a continuous field of `A_m^k`,
-`k ≥ 2`, and `j ≤ k`. A weak solution `u ∈ L²(ℂ)` of `d₀* d₀ u = g` with `g ∈ H^j(ℂ)` lies in
-`H^(j+2)(ℂ)`. -/
-theorem mem_realSobolevFunctions_of_isWeakSolutionSchrodinger {k j : ℕ} (hk : 1 < k)
-    (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) {u g : ℂ → ℝ}
-    (heq : PDE.IsWeakSolutionSchrodinger (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) u g)
-    (hu : MemLp u 2 (volume : Measure ℂ)) (hg : g ∈ realSobolevFunctions ℂ j 2) :
+`k ≥ 2`, and `j ≤ k`. A function `u ∈ L²(ℂ)` with `d₀* d₀ u = g` weakly, for some
+`g ∈ H^j(ℂ)`, lies in `H^(j+2)(ℂ)`. -/
+theorem mem_realSobolevFunctions_of_integral_mul_gaugeAdjoint_gaugeDirection_eq {k j : ℕ}
+    (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x)
+    {u g : ℂ → ℝ} (hu : MemLp u 2 (volume : Measure ℂ)) (hg : g ∈ realSobolevFunctions ℂ j 2)
+    (hweak : ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z) :
     u ∈ realSobolevFunctions ℂ (j + 2) 2 := by
   obtain ⟨hV, -⟩ := potential_bounds (by exact_mod_cast hk) hx hcont
+  -- The weak equation of the Schrödinger operator `-Δ + (p² + q²)`.
+  have heq (φ : ℂ → ℝ) (hφ : ContDiff ℝ ∞ φ) (hc : HasCompactSupport φ) :
+      ∫ z, u z * (-Δ φ z + (x z 2 ^ 2 + x z 3 ^ 2) * φ z) = ∫ z, g z * φ z := by
+    rw [← integral_mul_gaugeAdjoint_gaugeDirection (hφ.of_le (by simp)), hweak φ hφ hc]
   -- Bootstrap: `u ∈ H^(n+2)` for every `n ≤ j`.
   suffices h : ∀ n ≤ j, u ∈ realSobolevFunctions ℂ ((n : ℝ) + 2) 2 from h j le_rfl
   intro n hn
   induction n with
   | zero =>
-    simpa using heq.mem_realSobolevFunctions_two hV hu (memLp_of_mem_realSobolevFunctions hg)
+    simpa using mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq hV hu
+      (memLp_of_mem_realSobolevFunctions hg) heq
   | succ n ih =>
     have hu' := ih (by omega)
     -- The potential term `(p² + q²) u` is as regular as `u`, measured at the order
@@ -169,22 +179,28 @@ theorem mem_realSobolevFunctions_of_isWeakSolutionSchrodinger {k j : ℕ} (hk : 
       realSobolevFunctions_mono (by norm_num) (by norm_num) (by push_cast; linarith) hu'
     have hgn : g ∈ realSobolevFunctions ℂ ((n + 1 : ℕ) : ℝ) 2 :=
       realSobolevFunctions_mono (by norm_num) (by norm_num) (by exact_mod_cast hn) hg
-    exact_mod_cast heq.mem_realSobolevFunctions_add_two hun hVu hgn
+    exact_mod_cast mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq hun
+      hVu hgn heq
 
 /-- **The gauge Laplacian is onto `H^j(ℂ)`.** Let `x` be a continuous field of `A_m^k`, `k ≥ 2`,
-and `j ≤ k`. For every `g ∈ H^j(ℂ)` the equation `d₀* d₀ u = g` has a weak solution
-`u ∈ H^(j+2)(ℂ)`. By `TauCeti.Vortex.ae_eq_of_isWeakSolutionSchrodinger` it is unique up to null
+and `j ≤ k`. For every `g ∈ H^j(ℂ)` there is `u ∈ H^(j+2)(ℂ)` with `d₀* d₀ u = g` weakly:
+`∫ u · d₀* d₀ φ = ∫ g φ` for every compactly supported `C²` function `φ`. By
+`TauCeti.Vortex.ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq` it is unique up to null
 sets, even among weak solutions in `L²(ℂ)`. -/
-theorem exists_mem_realSobolevFunctions_isWeakSolutionSchrodinger {k j : ℕ} (hk : 1 < k)
-    (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) {g : ℂ → ℝ}
-    (hg : g ∈ realSobolevFunctions ℂ j 2) :
-    ∃ u ∈ realSobolevFunctions ℂ (j + 2) 2,
-      PDE.IsWeakSolutionSchrodinger (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) u g := by
+theorem exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq {k j : ℕ}
+    (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x)
+    {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ j 2) :
+    ∃ u ∈ realSobolevFunctions ℂ (j + 2) 2, ∀ φ : ℂ → ℝ, ContDiff ℝ 2 φ → HasCompactSupport φ →
+      ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z := by
   obtain ⟨hV, R, hR⟩ := potential_bounds (by exact_mod_cast hk) hx hcont
-  obtain ⟨u, hu, heq⟩ := PDE.exists_mem_realSobolevFunctions_isWeakSolutionSchrodinger hV
-    (ae_of_all _ fun z ↦ by positivity) (by norm_num : (0 : ℝ) < 1 / 8) (ae_of_all _ hR)
+  obtain ⟨u, hu, heq⟩ := exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq
+    hV (ae_of_all _ fun z ↦ by positivity) (by norm_num : (0 : ℝ) < 1 / 8) (ae_of_all _ hR)
     (memLp_of_mem_realSobolevFunctions hg)
-  exact ⟨u, mem_realSobolevFunctions_of_isWeakSolutionSchrodinger hk hjk hx hcont heq
-    (memLp_of_mem_realSobolevFunctions hu) hg, heq⟩
+  have hweak (φ : ℂ → ℝ) (hφ : ContDiff ℝ 2 φ) (hc : HasCompactSupport φ) :
+      ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z := by
+    rw [integral_mul_gaugeAdjoint_gaugeDirection hφ, heq φ hφ hc]
+  exact ⟨u, mem_realSobolevFunctions_of_integral_mul_gaugeAdjoint_gaugeDirection_eq hk hjk hx
+    hcont (memLp_of_mem_realSobolevFunctions hu) hg fun φ hφ hc ↦ hweak φ (hφ.of_le (by simp)) hc,
+    hweak⟩
 
 end TauCeti.Vortex
