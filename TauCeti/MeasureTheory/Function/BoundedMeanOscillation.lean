@@ -54,6 +54,8 @@ easy half of Sarason's characterization.
   bounded mean oscillation.
 * `TauCeti.bmoSeminorm_eq_iSup_sharpMaximalFunction`: the seminorm is the supremum of `f^#`.
 * `TauCeti.bmoSeminorm_le_two_mul_eLpNorm_top` and `MeasureTheory.MemLp.memBMO`: `L^∞ ⊆ BMO`.
+* `LipschitzWith.bmoSeminorm_comp_le`: composing with a `K`-Lipschitz map multiplies the
+  seminorm by at most `2 K`.
 * `TauCeti.bmoSeminorm_eq_zero_iff`: the seminorm vanishes exactly on a.e. constant functions.
 * `TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`: translation and
   dilation invariance, and `TauCeti.vmoModulus_comp_add_right`: translation invariance of the VMO
@@ -190,6 +192,40 @@ theorem bmoSeminorm_le_two_mul_eLpNorm_top (f : X → F) (μ : Measure X) :
   refine (laverage_le_essSup _).trans (essSup_le_of_ae_le _ (hae.mono fun y hy => ?_))
   rw [two_mul]
   exact enorm_sub_le.trans (add_le_add hy havg)
+
+/-- Composing with a `K`-Lipschitz map multiplies the BMO seminorm by at most `2 K`: on each ball
+`B`, the mean oscillation of `φ ∘ f` is at most twice its mean deviation from `φ f_B`, and
+`‖φ (f y) - φ f_B‖ ≤ K ‖f y - f_B‖`. For instance, truncations `max (-N) (min f N)` of a real `f`
+have BMO seminorm at most `2 ‖f‖_{BMO}`. -/
+theorem _root_.LipschitzWith.bmoSeminorm_comp_le [ProperSpace X] [IsFiniteMeasureOnCompacts μ]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {φ : F → G}
+    {K : ℝ≥0} (hφ : LipschitzWith K φ) (hf : LocallyIntegrable f μ) :
+    bmoSeminorm (φ ∘ f) μ ≤ 2 * K * bmoSeminorm f μ := by
+  refine bmoSeminorm_le fun c r => ?_
+  set B := ball c r
+  have hB : IntegrableOn f B μ :=
+    (hf.integrableOn_isCompact (isCompact_closedBall c r)).mono_set ball_subset_closedBall
+  -- `‖φ (f y)‖ ≤ ‖φ 0‖ + K ‖f y‖`, so `φ ∘ f` is integrable on `B` as well.
+  have hφB : IntegrableOn (φ ∘ f) B μ := by
+    refine Integrable.mono' (g := fun y => ‖φ 0‖ + K * ‖f y‖)
+      ((integrableOn_const measure_ball_lt_top.ne).add
+      (hB.norm.const_mul K)) (hφ.continuous.comp_aestronglyMeasurable hB.aestronglyMeasurable)
+      (.of_forall fun y => ?_)
+    have h := hφ.dist_le_mul (f y) 0
+    rw [dist_eq_norm, dist_eq_norm, sub_zero] at h
+    exact (norm_le_norm_add_norm_sub' (φ (f y)) (φ 0)).trans (by linarith)
+  calc ⨍⁻ y in B, ‖(φ ∘ f) y - ⨍ z in B, (φ ∘ f) z ∂μ‖ₑ ∂μ
+      ≤ 2 * ⨍⁻ y in B, ‖φ (f y) - φ (⨍ z in B, f z ∂μ)‖ₑ ∂μ :=
+        setLAverage_enorm_sub_setAverage_le hφB _
+    _ ≤ 2 * ⨍⁻ y in B, K * ‖f y - ⨍ z in B, f z ∂μ‖ₑ ∂μ := by
+        gcongr
+        refine .of_forall fun y => ?_
+        simpa only [edist_eq_enorm_sub] using hφ.edist_le_mul (f y) (⨍ z in B, f z ∂μ)
+    _ = 2 * K * ⨍⁻ y in B, ‖f y - ⨍ z in B, f z ∂μ‖ₑ ∂μ := by
+        rw [laverage_const_mul ENNReal.coe_ne_top, mul_assoc]
+    _ ≤ 2 * K * bmoSeminorm f μ := by
+        gcongr
+        exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c r
 
 /-! ### Functions of bounded mean oscillation -/
 

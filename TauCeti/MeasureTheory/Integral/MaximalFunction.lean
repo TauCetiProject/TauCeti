@@ -134,6 +134,8 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   everywhere.
 * `TauCeti.lintegral_rpow_maximalFunction_le`, `TauCeti.eLpNorm_maximalFunction_le`: the
   **strong type `(p, p)` maximal inequality** for `1 < p < ∞`, with an explicit constant.
+* `TauCeti.eLpNorm_maximalFunction_rpow_rpow_inv_le`: the maximal function
+  `M_q f = (M (‖f‖ₑ ^ q)) ^ (1 / q)` is bounded on `Lᵖ` for `0 < q < p < ∞`.
 * `TauCeti.mul_setLIntegral_lt_maximalFunction_le`,
   `TauCeti.lintegral_rpow_maximalFunction_mul_le`: the **weighted maximal inequality** of
   Fefferman and Stein, of weak type `(1, 1)` and of strong type `(p, p)` for `1 < p < ∞`.
@@ -542,6 +544,38 @@ theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsA
         simpa only [enorm_eq_self] using lintegral_rpow_maximalFunction_le μ hf hpr
     _ = (ENNReal.ofReal (2 * p.toReal * 2 ^ (p.toReal - 1) / (p.toReal - 1)) *
           4 ^ finrank ℝ E) ^ (1 / p.toReal) * (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
+        ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
+    _ ≤ _ := by gcongr
+
+/-- **The maximal inequality for `M_q f = (M (‖f‖ₑ ^ q)) ^ (1 / q)`.** For `0 < q < p < ∞`, the
+strong type `(p / q, p / q)` bound applied to `‖f‖ₑ ^ q` bounds `M_q` on `Lᵖ`:
+
+`‖M_q f‖_p ≤ (C_{p / q} 4ⁿ) ^ (1 / p) ‖f‖_p`, where `C_s = 2 s 2^(s - 1) / (s - 1)`. -/
+theorem eLpNorm_maximalFunction_rpow_rpow_inv_le [TopologicalSpace F] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {f : E → F} (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) {q p : ℝ}
+    (hq : 0 < q) (hqp : q < p) :
+    eLpNorm (fun x => maximalFunction μ (fun y => ‖f y‖ₑ ^ q) x ^ q⁻¹) (ENNReal.ofReal p) μ ≤
+      (ENNReal.ofReal (2 * (p / q) * 2 ^ (p / q - 1) / (p / q - 1)) * 4 ^ finrank ℝ E) ^
+        (1 / p) * eLpNorm f (ENNReal.ofReal p) μ := by
+  have hp : 0 < p := hq.trans hqp
+  have hp0 : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp).ne'
+  have hpR : (ENNReal.ofReal p).toReal = p := ENNReal.toReal_ofReal hp.le
+  -- `f` itself need not be a.e. strongly measurable; if it is not, its `Lᵖ` seminorm is `∞`.
+  have hfle : (∫⁻ x, ‖f x‖ₑ ^ p ∂μ) ^ (1 / p) ≤ eLpNorm f (ENNReal.ofReal p) μ := by
+    by_cases hfm : AEStronglyMeasurable f μ
+    · rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 ENNReal.ofReal_ne_top hfm, hpR]
+    · simp [eLpNorm_of_not_aestronglyMeasurable hfm]
+  have hM := lintegral_rpow_maximalFunction_le μ (f := fun y => ‖f y‖ₑ ^ q) (hf.pow_const q)
+    ((one_lt_div hq).2 hqp)
+  simp only [enorm_eq_self, ← ENNReal.rpow_mul, mul_div_cancel₀ p hq.ne'] at hM
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 ENNReal.ofReal_ne_top
+    ((measurable_maximalFunction μ _).pow_const _).aestronglyMeasurable, hpR]
+  simp only [enorm_eq_self, ← ENNReal.rpow_mul, inv_mul_eq_div]
+  calc (∫⁻ x, maximalFunction μ (fun y => ‖f y‖ₑ ^ q) x ^ (p / q) ∂μ) ^ (1 / p)
+      ≤ (ENNReal.ofReal (2 * (p / q) * 2 ^ (p / q - 1) / (p / q - 1)) * 4 ^ finrank ℝ E *
+          ∫⁻ x, ‖f x‖ₑ ^ p ∂μ) ^ (1 / p) := ENNReal.rpow_le_rpow hM (by positivity)
+    _ = (ENNReal.ofReal (2 * (p / q) * 2 ^ (p / q - 1) / (p / q - 1)) * 4 ^ finrank ℝ E) ^
+          (1 / p) * (∫⁻ x, ‖f x‖ₑ ^ p ∂μ) ^ (1 / p) :=
         ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
     _ ≤ _ := by gcongr
 
