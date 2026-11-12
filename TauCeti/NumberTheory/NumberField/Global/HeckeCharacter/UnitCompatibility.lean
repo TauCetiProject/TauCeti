@@ -56,7 +56,7 @@ private theorem coe_infiniteComponent_real (χ : HeckeCharacter K) (n : Algebrai
     rw [ContinuousMulEquiv.apply_symm_apply]
     apply Units.ext
     exact (continuousMulEquivRealOfIsReal_apply w.2 _).trans
-      (by simp [InfinitePlace.Completion.algebraMap_apply])
+      (by simp [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply])
   rw [htransport, realComponent_eq, coe_realUnitsCharacter_apply,
     hn]
   simp only [ContinuousInfinityType.add_realExponent, Pi.add_apply,
@@ -86,7 +86,7 @@ private theorem coe_infiniteComponent_complex (χ : HeckeCharacter K)
     rw [ContinuousMulEquiv.apply_symm_apply]
     apply Units.ext
     exact (continuousMulEquivComplexOfIsComplex_apply w.2 _).trans
-      (by simp [InfinitePlace.Completion.algebraMap_apply])
+      (by simp [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply])
   rw [htransport, complexComponent_eq, hn]
   simp only [ContinuousInfinityType.add_complexExponent, Pi.add_apply,
     AlgebraicInfinityType.toContinuous_complexExponent,

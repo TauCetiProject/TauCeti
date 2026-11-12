@@ -135,10 +135,18 @@ theorem infiniteArtinAt_layer (w : InfinitePlace K)
         AbsoluteGaloisGroup w.Completion ⧸ V.toSubgroup) =
       ((⟨_, hmem⟩ : (ofOpenNormal V).ground) : (ofOpenNormal V).Gal) := by
     rw [MulEquiv.symm_apply_eq, galOfOpenNormalEquiv_mk]
-  rw [← groundEquivOfOpenNormal_unitsLevelEquiv w.Completion V x,
-    ← ClassFormation.abelianizationRestrict_absoluteArtinMap,
-    (infiniteClassFormation w).absoluteArtinMap_eq_of_mk_eq_fieldArtinMap x σ hσ,
-    abelianizationRestrict_mk V ⟨_, hmem⟩, hsymm]
+  have habs := (infiniteClassFormation w).absoluteArtinMap_eq_of_mk_eq_fieldArtinMap x σ hσ
+  have hground := groundEquivOfOpenNormal_unitsLevelEquiv w.Completion V x
+  calc
+    _ = abelianizationRestrict V ((infiniteClassFormation w).absoluteArtinMap _) :=
+      (congrArg ((infiniteClassFormation w).artinMap (ofOpenNormal V)) hground.symm).trans
+        ((infiniteClassFormation w).abelianizationRestrict_absoluteArtinMap V _).symm
+    _ = abelianizationRestrict V (Additive.ofMul
+        ((absoluteGaloisGroupRestrictEquiv w.Completion σ : AbsoluteGaloisGroup w.Completion) :
+          TopologicalAbelianization (AbsoluteGaloisGroup w.Completion))) :=
+      congrArg (abelianizationRestrict V) habs
+    _ = _ := (abelianizationRestrict_mk V ⟨_, hmem⟩).trans
+      (congrArg (fun g ↦ Additive.ofMul (Group.Abelianization.of g)) hsymm.symm)
 
 /-- **The archimedean character formula** `χ(Art_w x) = inv_w(x ∪ δχ)`. If `σ` represents
 `Art_w(x)`, then for every character `χ` of the abelianized Galois group of a layer
@@ -165,8 +173,8 @@ private theorem artinMap_eq_zero_of_infiniteArtinAt_eq_one (w : InfinitePlace K)
     (hx : infiniteArtinAt w x = 1) :
     (infiniteClassFormation w).artinMap (ofOpenNormal V)
       (localGroundEquiv w.Completion V (Additive.ofMul x)) = 0 := by
-  rw [infiniteArtinAt_layer w V x 1 (by rw [hx, QuotientGroup.mk_one]), map_one,
-    QuotientGroup.mk_one, map_one, map_one, ofMul_one]
+  exact (infiniteArtinAt_layer w V x 1 (by rw [hx, QuotientGroup.mk_one])).trans
+    (by simp only [map_one, QuotientGroup.mk_one, ofMul_one])
 
 /-- **The archimedean Artin map is trivial at a complex place**: the absolute Galois group of
 `K_w ≅ ℂ` is trivial. -/
@@ -291,7 +299,7 @@ end Real
 
 section Norm
 
-open scoped NumberField.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 variable {L : Type} [Field L] [Algebra K L]
 

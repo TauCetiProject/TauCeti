@@ -150,7 +150,7 @@ theorem units_map_ringEquivRealOfIsReal_algebraMap (w : {w : InfinitePlace K // 
     (b : Kˣ) :
     Units.map (Completion.ringEquivRealOfIsReal w.2 : w.1.Completion →* ℝ)
       (Units.map (algebraMap K w.1.Completion).toMonoidHom b) = unitAtRealPlace w b :=
-  Units.ext (by simp)
+  Units.ext (by simp [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply])
 
 /-- At a real place `w`, the Hilbert symbol of the images of two global units in the completion
 `K_w` is the real Hilbert symbol of their images under the real embedding at `w`. -/

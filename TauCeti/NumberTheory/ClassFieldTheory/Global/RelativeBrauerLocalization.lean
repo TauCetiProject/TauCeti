@@ -163,7 +163,7 @@ end Finite
 section Infinite
 
 open NumberField.InfinitePlace GlobalNumberFields
-open scoped NumberField.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 variable (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v]
 
@@ -179,7 +179,8 @@ private def unitsToInfiniteDecompositionUnits :
       -- State that equality explicitly so the public completion comparison applies.
       change algebraMap L w.Completion ((d : L ≃ₐ[K] L) ((Additive.toMul a : Lˣ) : L)) =
         (decompositionHom v w d) (algebraMap L w.Completion ((Additive.toMul a : Lˣ) : L))
-      simpa only [InfinitePlace.Completion.algebraMap_apply] using
+      simpa only [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
+        Algebra.algebraMap_self_apply] using
         (decompositionHom_algebraMap (v := v) d ((Additive.toMul a : Lˣ) : L)).symm
 
 omit [NumberField K] [NumberField L] in

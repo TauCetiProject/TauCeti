@@ -456,7 +456,7 @@ theorem unitEmbedding_mem_ideleCongrOneSubgroup_iff {𝔪 : Modulus K} {x : Kˣ}
         InfinitePlace.embedding_of_isReal w.2 (x : K) := by
     intro w
     rw [InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-    simp
+    simp [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply]
   simp only [mem_ideleCongrOneSubgroup_iff, valued_ideleFiniteCoord_unitEmbedding_sub_one, hinf,
     isCongrOne_iff]
 
