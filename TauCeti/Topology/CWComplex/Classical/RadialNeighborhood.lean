@@ -217,6 +217,18 @@ lemma map_mem_radialNeighborhood_iff {n : ℕ} (j : cell C n) {y : Fin n → ℝ
     exact (map_mem_radialNeighborhood_iff_of_norm_eq_one A j
       (norm_inv_norm_smul_of_half_le h2.le)).1 h
 
+/-- On a closed cell outside `A`, a point lies in the radial neighborhood exactly when it lies in
+the outer half of the cell and its radial projection lies in the radial neighborhood. -/
+private lemma map_mem_radialNeighborhood_iff_of_norm_le {n : ℕ} {j : cell C n} (hj : j ∉ A.I n)
+    {y : Fin n → ℝ} (hy : ‖y‖ ≤ 1) :
+    map n j y ∈ A.radialNeighborhood ↔
+      2⁻¹ < ‖y‖ ∧ map n j (‖y‖⁻¹ • y) ∈ A.radialNeighborhood := by
+  rcases hy.lt_or_eq with hy | hy
+  · rw [map_mem_radialNeighborhood_iff A j hy, or_iff_right hj]
+  · -- On the unit sphere the radial projection is the identity.
+    rw [hy, inv_one, one_smul]
+    exact ⟨fun h ↦ ⟨by norm_num, h⟩, fun h ↦ h.2⟩
+
 /-- **A subcomplex lies in its radial neighborhood.** -/
 lemma subset_radialNeighborhood : (A : Set X) ⊆ A.radialNeighborhood := by
   rw [← A.union]
@@ -338,14 +350,8 @@ private lemma continuous_mem_radialNeighborhood_map (n : ℕ) (j : cell C n) :
     have hfs : f y ∈ (skeletonLT C (n : ℕ∞) : Set X) := map_inv_norm_smul_mem_skeletonLT j h2.le
     exact (Set.ext_iff.1 hVN ⟨f y, hfs⟩)
   simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage]
-  rcases (mem_closedBall_zero_iff.1 y.2).lt_or_eq with hy | hy
-  · rw [map_mem_radialNeighborhood_iff A j hy, or_iff_right hj]
-    exact ⟨fun ⟨h2, h⟩ ↦ ⟨h2, (hfy h2).2 h⟩, fun ⟨h2, h⟩ ↦ ⟨h2, (hfy h2).1 h⟩⟩
-  · -- On the unit sphere the radial projection is the identity.
-    have h2 : 2⁻¹ < ‖(y : Fin n → ℝ)‖ := by rw [hy]; norm_num
-    have hfy' : f y = map n j y := by simp [f, hy]
-    rw [← hfy', ← hfy h2]
-    exact ⟨fun h ↦ ⟨h2, h⟩, fun h ↦ h.2⟩
+  rw [map_mem_radialNeighborhood_iff_of_norm_le A hj (mem_closedBall_zero_iff.1 y.2)]
+  exact and_congr_right fun h2 ↦ (hfy h2).symm
 
 /-- **The radial neighborhood of a subcomplex is open in the complex.** -/
 theorem isOpen_radialNeighborhood : IsOpen ((↑) ⁻¹' A.radialNeighborhood : Set C) := by
@@ -403,15 +409,9 @@ private lemma stage_mem {m : ℕ} (s : I) {x : X} (hx : x ∈ A.radialNeighborho
   · obtain ⟨j, hj, y, hy, rfl⟩ := h
     have hy1 : ‖y‖ < 1 := mem_ball_zero_iff.1 hy
     obtain ⟨h2, hp⟩ := ((map_mem_radialNeighborhood_iff A j hy1).1 hx).resolve_left hj
-    rw [stage_map A hj s hy1.le]
-    have hle := norm_le_norm_radialPush (r := 2⁻¹) (by norm_num) (by norm_num) s hy1.le
-    rcases (norm_radialPush_le_one (r := 2⁻¹) s hy1.le).lt_or_eq with h1 | h1
-    · rw [map_mem_radialNeighborhood_iff A j h1, inv_norm_smul_radialPush (by norm_num) h2.le s]
-      exact .inr ⟨h2.trans_le hle, hp⟩
-    · -- The push reached the unit sphere: the point is its own radial projection.
-      have := inv_norm_smul_radialPush (by norm_num) h2.le s
-      rw [h1, inv_one, one_smul] at this
-      rwa [this]
+    rw [stage_map A hj s hy1.le, map_mem_radialNeighborhood_iff_of_norm_le A hj
+      (norm_radialPush_le_one s hy1.le), inv_norm_smul_radialPush (by norm_num) h2.le s]
+    exact ⟨h2.trans_le (norm_le_norm_radialPush (by norm_num) (by norm_num) s hy1.le), hp⟩
   · push Not at h
     rwa [stage_of_forall_notMem A h]
 
@@ -620,6 +620,26 @@ lemma radialDeformation_map_of_ge {n : ℕ} {j : cell C n} (hj : j ∉ A.I n) {t
       stage_map A hj _ hy, stageTime_of_ge ht, radialPush_one_of_le_norm (by norm_num) hy2,
       ← radialDeformation_eq A t (map_inv_norm_smul_mem_skeletonLT j hy2)]
 
+/-- If the radial deformation is continuous along the closed cells of dimension below `n`, at the
+points of the radial neighborhood, it is continuous on the radial neighborhood in
+`skeletonLT C n`. -/
+private lemma continuousOn_radialDeformation_skeletonLT {n : ℕ}
+    (ih : ∀ m < n, ∀ j : cell C m, ContinuousOn
+      (fun p : I × closedBall (0 : Fin m → ℝ) 1 ↦ radialDeformation A p.1 (map m j p.2))
+      {p | map m j p.2 ∈ A.radialNeighborhood}) :
+    ContinuousOn (fun p : I × X ↦ radialDeformation A p.1 p.2)
+      (univ ×ˢ (A.radialNeighborhood ∩ (skeletonLT C (n : ℕ∞) : Set X))) := by
+  refine continuousOn_prod_of_continuousOn_map (C := (skeletonLT C (n : ℕ∞) : Set X))
+    inter_subset_right ?_ (fun m ⟨i, hi⟩ ↦ (ih m (by
+      simpa only [RelCWComplex.skeletonLT_I, mem_ofPred_eq, Nat.cast_lt] using hi) i).mono
+        fun p hp ↦ hp.1) ?_
+  · convert (isOpen_radialNeighborhood A).preimage (continuous_subtype_val.subtype_mk
+      fun x : (skeletonLT C (n : ℕ∞) : Set X) ↦ (skeletonLT C n).subset_complex x.2) using 1
+    ext x
+    exact ⟨fun h ↦ h.1, fun h ↦ ⟨h, x.2⟩⟩
+  · refine (continuous_subtype_val.comp continuous_snd).continuousOn.congr fun p _ ↦ ?_
+    exact radialDeformation_of_mem A _ (A.base_subset p.2.2)
+
 /-- **Continuity of the radial deformation along the closed cells**, at the points of the radial
 neighborhood. The proof is by induction on the dimension: on a cell outside `A` the deformation is
 the radial push until the point reaches the frontier, and from then on it is the deformation of
@@ -630,19 +650,6 @@ private lemma continuousOn_radialDeformation_map (n : ℕ) (j : cell C n) :
       {p | map n j p.2 ∈ A.radialNeighborhood} := by
   induction n using Nat.strong_induction_on with
   | _ n ih =>
-  -- By induction, the deformation is continuous on the radial neighborhood in `skeletonLT C n`.
-  have hskel : ContinuousOn (fun p : I × X ↦ radialDeformation A p.1 p.2)
-      (univ ×ˢ (A.radialNeighborhood ∩ (skeletonLT C (n : ℕ∞) : Set X))) := by
-    refine continuousOn_prod_of_continuousOn_map (C := (skeletonLT C (n : ℕ∞) : Set X))
-      inter_subset_right ?_ (fun m ⟨i, hi⟩ ↦ (ih m (by
-        simpa only [RelCWComplex.skeletonLT_I, mem_ofPred_eq, Nat.cast_lt] using hi) i).mono
-          fun p hp ↦ hp.1) ?_
-    · convert (isOpen_radialNeighborhood A).preimage (continuous_subtype_val.subtype_mk
-        fun x : (skeletonLT C (n : ℕ∞) : Set X) ↦ (skeletonLT C n).subset_complex x.2) using 1
-      ext x
-      exact ⟨fun h ↦ h.1, fun h ↦ ⟨h, x.2⟩⟩
-    · refine (continuous_subtype_val.comp continuous_snd).continuousOn.congr fun p _ ↦ ?_
-      exact radialDeformation_of_mem A _ (A.base_subset p.2.2)
   by_cases hj : j ∈ A.I n
   · -- A closed cell of `A` is fixed.
     refine ((continuousOn n j).comp_continuous (continuous_subtype_val.comp continuous_snd)
@@ -651,12 +658,8 @@ private lemma continuousOn_radialDeformation_map (n : ℕ) (j : cell C n) :
   -- The points of the radial neighborhood lie in the outer half of the cell, and their radial
   -- projections in the radial neighborhood.
   have hS : ∀ p ∈ {p : I × closedBall (0 : Fin n → ℝ) 1 | map n j p.2 ∈ A.radialNeighborhood},
-      2⁻¹ < ‖(p.2 : Fin n → ℝ)‖ ∧ map n j (‖(p.2 : Fin n → ℝ)‖⁻¹ • p.2) ∈ A.radialNeighborhood := by
-    intro p hp
-    rcases (mem_closedBall_zero_iff.1 p.2.2).lt_or_eq with h | h
-    · exact ((map_mem_radialNeighborhood_iff A j h).1 hp).resolve_left hj
-    · refine ⟨by rw [h]; norm_num, ?_⟩
-      rwa [h, inv_one, one_smul]
+      2⁻¹ < ‖(p.2 : Fin n → ℝ)‖ ∧ map n j (‖(p.2 : Fin n → ℝ)‖⁻¹ • p.2) ∈ A.radialNeighborhood :=
+    fun p ↦ (map_mem_radialNeighborhood_iff_of_norm_le A hj (mem_closedBall_zero_iff.1 p.2.2)).1
   cases n with
   | zero =>
     -- There is no outer half in dimension `0`.
@@ -694,7 +697,8 @@ private lemma continuousOn_radialDeformation_map (n : ℕ) (j : cell C n) :
     exact continuous_radialPush (E := Fin (m + 1) → ℝ) (by norm_num) |>.comp
       ((continuous_stageTime (m + 1)).comp continuous_fst |>.prodMk
         (continuous_subtype_val.comp continuous_snd))
-  · refine hskel.comp (continuous_fst.continuousOn.prodMk ?_) fun p hp ↦
+  · refine (continuousOn_radialDeformation_skeletonLT A ih).comp
+      (continuous_fst.continuousOn.prodMk ?_) fun p hp ↦
       ⟨mem_univ _, (hS p hp.1).2, map_inv_norm_smul_mem_skeletonLT j (hS p hp.1).1.le⟩
     exact (continuousOn_map_inv_norm_smul (m + 1) j).comp continuous_snd.continuousOn
       fun p hp ↦ (hS p hp.1).1
