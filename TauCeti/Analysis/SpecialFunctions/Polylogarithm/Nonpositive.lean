@@ -6,6 +6,7 @@ Authors: Tau Ceti
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
+public import TauCeti.RingTheory.Polynomial.Eulerian
 public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import Mathlib.Topology.Algebra.Polynomial
 
@@ -31,44 +32,6 @@ public section
 open Polynomial Filter Topology
 
 namespace TauCeti
-
-/-- The Eulerian polynomial `Aᵣ = eulerianPolynomial r`, with `A₀ = 1`.
-It is the reduced factor after factoring out `z` in
-`Li₋ᵣ(z) = z Aᵣ(z) / (1 - z)^(r+1)`. -/
-noncomputable def eulerianPolynomial : ℕ → ℤ[X]
-  | 0 => 1
-  | r + 1 => (1 + C (r : ℤ) * X) * eulerianPolynomial r +
-      X * (1 - X) * (eulerianPolynomial r).derivative
-
-/-- The zeroth Eulerian polynomial is 1. -/
-@[simp] theorem eulerianPolynomial_zero : eulerianPolynomial 0 = 1 := (rfl)
-
-/-- The Eulerian polynomial recurrence induced by Euler differentiation. -/
-theorem eulerianPolynomial_succ (r : ℕ) :
-    eulerianPolynomial (r + 1) = (1 + C (r : ℤ) * X) * eulerianPolynomial r +
-      X * (1 - X) * (eulerianPolynomial r).derivative := (rfl)
-
-/-- The first Eulerian polynomial is also 1. -/
-@[simp] theorem eulerianPolynomial_one : eulerianPolynomial 1 = 1 := by
-  simp [eulerianPolynomial_succ]
-
-/-- The second Eulerian polynomial is `1 + X`. -/
-@[simp] theorem eulerianPolynomial_two : eulerianPolynomial 2 = 1 + X := by
-  simp [eulerianPolynomial_succ]
-
-/-- Evaluation at the pole is a factorial, so the reduced factor cannot cancel the pole. -/
-@[simp] theorem eulerianPolynomial_eval_one (r : ℕ) :
-    (eulerianPolynomial r).eval 1 = (r.factorial : ℤ) := by
-  induction r with
-  | zero => simp
-  | succ r ih =>
-    simp [eulerianPolynomial_succ, ih, Nat.factorial_succ, add_comm]
-
-/-- No Eulerian polynomial vanishes at 1. -/
-theorem eulerianPolynomial_eval_one_ne_zero (r : ℕ) :
-    (eulerianPolynomial r).eval 1 ≠ 0 := by
-  rw [eulerianPolynomial_eval_one]
-  exact_mod_cast Nat.factorial_ne_zero r
 
 namespace Polylog
 
