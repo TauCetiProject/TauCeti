@@ -307,12 +307,34 @@ theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) 
   rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
     ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
 
-/-- A strictly positive operator on a real Hilbert space is positive definite. -/
-theorem _root_.IsStrictlyPositive.inner_pos_left {T : X →L[ℝ] X} (hT : IsStrictlyPositive T)
-    {x : X} (hx : x ≠ 0) : 0 < ⟪T x, x⟫_ℝ := by
-  rw [← inner_sqrt_apply_sqrt_apply_eq_inner hT.nonneg]
-  refine real_inner_self_pos.mpr fun h0 ↦ hx ?_
-  exact (isUnit_iff_bijective.mp hT.isUnit_cfcSqrt).1 (h0.trans (map_zero _).symm)
+open scoped ComplexOrder in
+/-- A strictly positive operator on an inner product space is positive definite. -/
+theorem _root_.IsStrictlyPositive.inner_pos_left {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] {T : E →L[𝕜] E} (hT : IsStrictlyPositive T) {x : E} (hx : x ≠ 0) :
+    0 < ⟪T x, x⟫_𝕜 := by
+  have hT' := nonneg_iff_isPositive.mp hT.nonneg
+  refine (hT'.inner_nonneg_left x).lt_of_ne fun h0 ↦ hx ?_
+  -- Expanding `re ⟪T (x - t • T x), x - t • T x⟫ ≥ 0` in the real parameter `t` forces `T x = 0`.
+  have hc : 0 ≤ RCLike.re ⟪T (T x), T x⟫_𝕜 := hT'.re_inner_nonneg_left _
+  have key (t : ℝ) : 0 ≤ t ^ 2 * RCLike.re ⟪T (T x), T x⟫_𝕜 - 2 * t * ‖T x‖ ^ 2 := by
+    have := hT'.re_inner_nonneg_left (x - (t : 𝕜) • T x)
+    have hs : ⟪T (T x), x⟫_𝕜 = ⟪T x, T x⟫_𝕜 := hT'.isSymmetric (T x) x
+    simp only [map_sub, map_smul, inner_sub_left, inner_sub_right, inner_smul_left,
+      inner_smul_right, ← h0, hs, RCLike.conj_ofReal, inner_self_eq_norm_sq_to_K] at this
+    simp only [map_zero, map_sub, RCLike.re_ofReal_mul, ← RCLike.ofReal_pow,
+      RCLike.ofReal_re] at this
+    linear_combination this
+  have ha : ‖T x‖ ^ 2 = 0 := by
+    have := key (‖T x‖ ^ 2 / (RCLike.re ⟪T (T x), T x⟫_𝕜 + 1))
+    have hp : 0 < RCLike.re ⟪T (T x), T x⟫_𝕜 + 1 := by linarith
+    field_simp at this
+    nlinarith [sq_nonneg (‖T x‖ ^ 2), pow_two_nonneg ‖T x‖]
+  -- `T` is invertible, so `T x = 0` gives `x = 0`.
+  obtain ⟨u, hu⟩ := hT.isUnit
+  have hTx : (u : E →L[𝕜] E) x = 0 := by simpa [hu] using ha
+  have := congr(($(u.inv_mul) : E →L[𝕜] E) x)
+  rw [mul_apply_eq_comp, hTx, map_zero, one_apply_eq_self] at this
+  exact this.symm
 
 /-- Negative real powers of a positive real Hilbert space operator above the identity are
 contractions in operator norm. -/
