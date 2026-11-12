@@ -238,7 +238,7 @@ theorem exists_measurable_maximalFunction_eq {κ : Type*} [Countable κ] {f : κ
   refine ⟨fun i => (hf i).mk _, fun i => (hf i).measurable_mk, fun i x =>
     maximalFunction_congr_ae ?_, ae_all_iff.2 fun i => (hf i).ae_eq_mk⟩
   filter_upwards [(hf i).ae_eq_mk] with y hy
-  rw [hy, enorm_eq_self]
+  rw [hy, eNorm_eq_self]
 
 /-- The `L^∞` endpoint of the maximal inequality: the maximal function of `f` is bounded by the
 essential supremum of `‖f‖`, with constant `1`. -/
