@@ -53,6 +53,7 @@ coboundaries the inner derivations `a ↦ a m - m a`.
   coboundaries.
 * `TauCeti.mem_hochschildBimoduleCocycles_zero_iff`: the degree-zero cocycles are the central
   elements.
+* `TauCeti.mem_hochschildBimoduleCocycles_one_iff`: the degree-one cocycles are the derivations.
 * `TauCeti.mem_hochschildBimoduleCoboundaries_one_iff`,
   `TauCeti.hochschildBimoduleCohomology.mk_one_eq_zero_iff`: a degree-one cochain is a coboundary
   exactly when it is an inner derivation.
@@ -139,6 +140,14 @@ theorem mem_hochschildBimoduleCocycles_zero_iff (m : M) :
     MultilinearMap.constOfIsEmpty R (fun _ : Fin 0 ↦ A) m ∈ hochschildBimoduleCocycles R A M 0 ↔
       ∀ x : A, x • m = op x • m := by
   rw [mem_hochschildBimoduleCocycles_iff, hochschildBimoduleCoboundary_constOfIsEmpty_eq_zero_iff]
+
+variable {R A M} in
+/-- A degree-one cochain is a cocycle exactly when it is a derivation, satisfying the Leibniz rule
+`f (x y) = x • f y + f x • y`. -/
+theorem mem_hochschildBimoduleCocycles_one_iff (f : A →ₗ[R] M) :
+    MultilinearMap.ofSubsingleton R A M 0 f ∈ hochschildBimoduleCocycles R A M 1 ↔
+      ∀ x y : A, f (x * y) = x • f y + op y • f x := by
+  rw [mem_hochschildBimoduleCocycles_iff, hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff]
 
 variable {R A M} in
 /-- A degree-one cochain is a coboundary exactly when it is an inner derivation
@@ -305,6 +314,15 @@ theorem desc_mk (n : ℕ) (f : hochschildBimoduleCocycles R A M n →ₗ[R] N)
     (ψ : hochschildBimoduleCocycles R A M n) :
     desc n f hf (mk R A M n ψ) = f ψ :=
   LinearMap.equivOfSurjective_apply _ _
+
+/-- The descended map composed with the class map is the original map. -/
+@[simp]
+theorem desc_comp_mk (n : ℕ) (f : hochschildBimoduleCocycles R A M n →ₗ[R] N)
+    (hf : ∀ ψ : hochschildBimoduleCocycles R A M n,
+      (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) ∈ hochschildBimoduleCoboundaries R A M n →
+        f ψ = 0) :
+    desc n f hf ∘ₗ mk R A M n = f :=
+  LinearMap.ext (desc_mk n f hf)
 
 variable (R A M) in
 /-- A degree-one cocycle has zero class exactly when it is an inner derivation. -/
