@@ -44,7 +44,7 @@ in `t + t⁻¹ - 2`, over the original coefficient ring. -/
 theorem exists_polynomial_eval₂_eq_alexander {g : ℕ} (V : Matrix ι ι R)
     (h : Fintype.card ι = 2 * g) :
     ∃ q : R[X], Polynomial.eval₂ C (T 1 + T (-1) - 2) q = alexander V :=
-  exists_eval₂_add_T_neg_sub_two (invert_alexander V h)
+  (invert_eq_self_iff_exists_eval₂_sub_two _).mp (invert_alexander V h)
 
 /-- An even-size matrix has an even Conway polynomial: substituting `z = s⁻¹ - s`
 in `q(z²)` gives its normalized Alexander polynomial at `t = s²`.

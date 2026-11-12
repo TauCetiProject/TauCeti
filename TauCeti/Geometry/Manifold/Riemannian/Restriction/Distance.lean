@@ -20,10 +20,20 @@ than `r` stays in `B(p, r)`, so it is a curve in `U` of the same length. No comp
 connectedness of `U` or of `M` is used; distances and radii are extended, so points in different
 components may be at infinite distance.
 
+Consequently, if `B(p, R) ⊆ U` and `r < R`, the closed ball of radius `r` about `p` for the
+Riemannian distance of `U` is the ambient closed ball of radius `r`, and one is compact exactly
+when the other is. This lets arguments that need compact closed balls, such as the continuation
+of geodesics, run in `U` under a compactness hypothesis on a ball of `M`.
+
 ## Main results
 
 * `TopologicalSpace.Opens.riemannianEDist_open_eq_edist_of_eball_subset`: the distance of `U` from
   `p` is the ambient distance on an ambient ball around `p` contained in `U`.
+* `TopologicalSpace.Opens.image_val_setOfPred_riemannianEDist_open_le`: if `B(p, R) ⊆ U` and
+  `r < R`, the points of `U` at distance at most `r` from `p` in `U` form the ambient closed ball
+  of radius `r`.
+* `TopologicalSpace.Opens.isCompact_setOfPred_riemannianEDist_open_le_iff`: that set is compact
+  if and only if the ambient closed ball of radius `r` is.
 * `TopologicalSpace.Opens.eventually_riemannianEDist_open_eq_edist`: the distance of `U` from `p`
   is the ambient distance near `p`.
 * `TopologicalSpace.Opens.exists_eball_riemannianEDist_open_eq_edist`: the distance of `U` is the
@@ -74,6 +84,39 @@ theorem riemannianEDist_open_eq_edist_of_eball_subset (U : Opens M) (p q : U) {r
       (hηlen.trans_lt (lt_of_lt_of_le hlen (min_le_left _ _)))
   · rw [IsRiemannianManifold.out (I := I) (M := M)]
     exact U.riemannianEDist_le_riemannianEDist_subtype p q
+
+/-- If the ambient ball `B(p, R)` lies in the open set `U` and `r < R`, then the Riemannian
+distance of `U` between `p` and `q` is at most `r` if and only if `d(p, q) ≤ r`. -/
+theorem riemannianEDist_open_le_iff_edist_le (U : Opens M) (p q : U) {r R : ℝ≥0∞}
+    (hball : Metric.eball (p : M) R ⊆ U) (hr : r < R) :
+    riemannianEDist I p q ≤ r ↔ edist (p : M) q ≤ r := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [IsRiemannianManifold.out (I := I) (M := M)]
+    exact (U.riemannianEDist_le_riemannianEDist_subtype p q).trans h
+  · rwa [U.riemannianEDist_open_eq_edist_of_eball_subset p q hball (h.trans_lt hr)]
+
+/-- If the ambient ball `B(p, R)` lies in the open set `U` and `r < R`, then the points of `U` at
+Riemannian distance at most `r` from `p` in `U` form the ambient closed ball of radius `r` about
+`p`. -/
+theorem image_val_setOfPred_riemannianEDist_open_le (U : Opens M) (p : U) {r R : ℝ≥0∞}
+    (hball : Metric.eball (p : M) R ⊆ U) (hr : r < R) :
+    Subtype.val '' {q : U | riemannianEDist I p q ≤ r} = Metric.closedEBall (p : M) r := by
+  ext x
+  refine ⟨?_, fun hx ↦ ?_⟩
+  · rintro ⟨q, hq, rfl⟩
+    exact Metric.mem_closedEBall'.mpr
+      ((U.riemannianEDist_open_le_iff_edist_le p q hball hr).mp hq)
+  · rw [Metric.mem_closedEBall'] at hx
+    exact ⟨⟨x, hball (Metric.mem_eball'.mpr (hx.trans_lt hr))⟩,
+      (U.riemannianEDist_open_le_iff_edist_le p _ hball hr).mpr hx, rfl⟩
+
+/-- If the ambient ball `B(p, R)` lies in the open set `U` and `r < R`, then the set of points of
+`U` at Riemannian distance at most `r` from `p` in `U` is compact if and only if the ambient closed
+ball of radius `r` about `p` is compact. No completeness of `U` is used. -/
+theorem isCompact_setOfPred_riemannianEDist_open_le_iff (U : Opens M) (p : U) {r R : ℝ≥0∞}
+    (hball : Metric.eball (p : M) R ⊆ U) (hr : r < R) :
+    IsCompact {q : U | riemannianEDist I p q ≤ r} ↔ IsCompact (Metric.closedEBall (p : M) r) := by
+  rw [Subtype.isCompact_iff, U.image_val_setOfPred_riemannianEDist_open_le p hball hr]
 
 /-- Near each point `p` of an open set `U`, the Riemannian distance of `U` from `p` is the ambient
 distance, even when `U` is not complete. -/

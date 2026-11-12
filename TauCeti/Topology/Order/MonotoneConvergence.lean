@@ -30,22 +30,30 @@ open Filter Set Topology
 
 namespace TauCeti
 
-variable {ι α : Type*} [Preorder ι] [IsDirectedOrder ι] [TopologicalSpace α] {f : ι → α} {a : ι}
+variable {ι α : Type*} [Preorder ι] [TopologicalSpace α] {f : ι → α} {a : ι}
 
 /-- **Monotone convergence on a half-line.** A function monotone and bounded above on `[a, ∞)`
 tends at infinity to its supremum over `[a, ∞)`. -/
 theorem tendsto_atTop_ciSup_of_monotoneOn_Ici [ConditionallyCompletePartialOrderSup α]
     [SupConvergenceClass α] (hf : MonotoneOn f (Ici a)) (hbdd : BddAbove (f '' Ici a)) :
-    Tendsto f atTop (𝓝 (⨆ t : Ici a, f t)) :=
-  tendsto_comp_val_Ici_atTop.mp <|
-    tendsto_atTop_ciSup (fun s t hst ↦ hf s.2 t.2 hst) (by rwa [← image_eq_range])
+    Tendsto f atTop (𝓝 (⨆ t : Ici a, f t)) := by
+  by_cases h : (atTop : Filter ι).NeBot
+  · have := (atTop_neBot_iff.1 h).2
+    exact tendsto_comp_val_Ici_atTop.mp <|
+      tendsto_atTop_ciSup (fun s t hst ↦ hf s.2 t.2 hst) (by rwa [← image_eq_range])
+  · rw [not_neBot.1 h]
+    exact tendsto_bot
 
 /-- **Antitone convergence on a half-line.** A function antitone and bounded below on `[a, ∞)`
 tends at infinity to its infimum over `[a, ∞)`. -/
 theorem tendsto_atTop_ciInf_of_antitoneOn_Ici [ConditionallyCompletePartialOrderInf α]
     [InfConvergenceClass α] (hf : AntitoneOn f (Ici a)) (hbdd : BddBelow (f '' Ici a)) :
-    Tendsto f atTop (𝓝 (⨅ t : Ici a, f t)) :=
-  tendsto_comp_val_Ici_atTop.mp <|
-    tendsto_atTop_ciInf (fun s t hst ↦ hf s.2 t.2 hst) (by rwa [← image_eq_range])
+    Tendsto f atTop (𝓝 (⨅ t : Ici a, f t)) := by
+  by_cases h : (atTop : Filter ι).NeBot
+  · have := (atTop_neBot_iff.1 h).2
+    exact tendsto_comp_val_Ici_atTop.mp <|
+      tendsto_atTop_ciInf (fun s t hst ↦ hf s.2 t.2 hst) (by rwa [← image_eq_range])
+  · rw [not_neBot.1 h]
+    exact tendsto_bot
 
 end TauCeti

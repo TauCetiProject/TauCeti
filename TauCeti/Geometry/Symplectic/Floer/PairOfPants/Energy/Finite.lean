@@ -102,7 +102,7 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
       stdComplexLineReal ζ = fun _ ↦ 0 := by
     funext x
     rw [perturbationPullback_endChart, equivRealProdCLM_symm_stdComplexLineReal,
-      pairOfPantsEndComponent_one_of_pos (hH q) hpos]
+      pairOfPantsEndComponent_one_of_pos hpos]
   have hKt : perturbationPullback (endChart q)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -167,9 +167,8 @@ private theorem monotoneOn_endSign_mul_hamiltonianAction (ω : SymplecticForm V)
         u (endChart q ζ) : ℝ × ℝ →ₗ[ℝ] V)) :
     MonotoneOn (fun R ↦ q.endSign * ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
       (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) (Ici 2) := by
-  intro R₁ hR₁ R₂ hR₂ hR
+  intro R₁ hR₁ R₂ _ hR
   have hR₁' : (2 : ℝ) ≤ R₁ := hR₁
-  have hR₂' : (2 : ℝ) ≤ R₂ := hR₂
   have hle := ω.monotoneOn_hamiltonianAction_endChart hH hHs hu hJ hfloer
   simp only [← endChart_mk]
   rcases endSign_eq_one_or_eq_neg_one q with h | h

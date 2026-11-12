@@ -54,7 +54,7 @@ private lemma changeOrder_absorption (o₁ o₂ : LinearOrder ι) :
   by_cases hb : Function.Injective b
   · let σ := @Tuple.sort _ _ o₂ b
     have hσ : Function.Injective (b ∘ σ) := hb.comp σ.injective
-    have hsort := @Tuple.comp_sort_eq_comp_sort_of_range_eq ι o₁ _ (b ∘ σ) b hσ hb
+    have hsort := @Tuple.comp_sort_eq_comp_sort_of_range_eq ι o₁ _ (b ∘ σ) b hσ
       (σ.surjective.range_comp b)
     -- Multiplicativity of inversion signs makes sorting in either order compatible.
     have hsign₁ := @Finset.neg_one_pow_card_inversions_comp _ _ ι _ _ o₁ ℤ _ _

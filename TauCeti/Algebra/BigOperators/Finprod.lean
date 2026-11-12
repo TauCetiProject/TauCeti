@@ -286,8 +286,8 @@ theorem prod_le_finprod_of_one_le₀ (s : Finset ι) (hf : HasFiniteMulSupport f
     (hf₀ : ∀ i ∈ s, 0 ≤ f i) (hf₁ : ∀ i ∉ s, 1 ≤ f i) : ∏ i ∈ s, f i ≤ ∏ᶠ i, f i := by
   classical
   rw [finprod_eq_finsetProd_of_mulSupport_subset f (s := s ∪ hf.toFinset)
-    fun i hi ↦ Finset.mem_union_right s (hf.mem_toFinset.mpr hi)]
-  exact Finset.prod_le_prod_of_subset_of_one_le₀ Finset.subset_union_left hf₀
+    fun i hi ↦ mem_union_right s (hf.mem_toFinset.mpr hi)]
+  exact prod_le_prod_of_subset_of_one_le₀ subset_union_left hf₀
     fun i _ hi ↦ hf₁ i hi
 
 omit [ZeroLEOneClass M₀] in
@@ -298,12 +298,12 @@ theorem finprod_le_prod_of_le_one₀ (s : Finset ι) (hf : HasFiniteMulSupport f
     (hf₀ : ∀ i, 0 ≤ f i) (hf₁ : ∀ i ∉ s, f i ≤ 1) : ∏ᶠ i, f i ≤ ∏ i ∈ s, f i := by
   classical
   rw [finprod_eq_finsetProd_of_mulSupport_subset f (s := s ∪ hf.toFinset)
-    fun i hi ↦ Finset.mem_union_right s (hf.mem_toFinset.mpr hi)]
+    fun i hi ↦ mem_union_right s (hf.mem_toFinset.mpr hi)]
   by_cases hsub : hf.toFinset ⊆ s
-  · rw [Finset.union_eq_left.mpr hsub]
-  · obtain ⟨i, -, his⟩ := Finset.not_subset.mp hsub
+  · rw [union_eq_left.mpr hsub]
+  · obtain ⟨i, -, his⟩ := not_subset.mp hsub
     have : ZeroLEOneClass M₀ := ⟨(hf₀ i).trans (hf₁ i his)⟩
-    exact Finset.prod_le_prod_of_subset_of_le_one₀ Finset.subset_union_left (fun i _ ↦ hf₀ i)
+    exact prod_le_prod_of_subset_of_le_one₀ subset_union_left (fun i _ ↦ hf₀ i)
       fun i _ hi ↦ hf₁ i hi
 
 end OrderedWithZero
