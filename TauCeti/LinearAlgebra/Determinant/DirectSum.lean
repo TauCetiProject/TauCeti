@@ -219,8 +219,7 @@ variable [FiniteDimensional K (ker f)] [FiniteDimensional K (ker g)]
 private def detLineKerProdMap :
     TauCeti.detLine K (ker (f.prodMap g)) ≃ₗ[K]
       TauCeti.detLine K (ker f) ⊗[K] TauCeti.detLine K (ker g) :=
-  ((LinearEquiv.ofEq _ _ (ker_prodMap f g)).trans (Submodule.prodEquiv _ _)).detLineCongr.trans
-    (detLineProdEquiv K _ _).symm
+  (kerProdMapEquiv f g).detLineCongr.trans (detLineProdEquiv K _ _).symm
 
 /-- `detLineKerProdMap` sends the wedge product of the vectors `(uᵢ, 0)` followed by the vectors
 `(0, wⱼ)` to `(u₁ ∧ ⋯ ∧ uₐ) ⊗ (w₁ ∧ ⋯ ∧ w_b)`. -/
@@ -249,8 +248,8 @@ private theorem detLineKerProdMap_detLineCongr (e : ker (f.prodMap g) ≃ₗ[K] 
   rw [LinearEquiv.apply_symm_apply]
   simp only [detLineKerProdMap, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
     LinearEquiv.trans_apply, LinearEquiv.detLineCongr_symm, LinearEquiv.symm_apply_eq]
-  set κ := (LinearEquiv.ofEq _ _ (ker_prodMap f g)).trans (Submodule.prodEquiv (ker f) (ker g))
-  set κ' := (LinearEquiv.ofEq _ _ (ker_prodMap g f)).trans (Submodule.prodEquiv (ker g) (ker f))
+  set κ := kerProdMapEquiv f g
+  set κ' := kerProdMapEquiv g f
   -- Read through `κ` and `κ'`, the exchange `e` is the swap of `ker f × ker g`.
   have hswap : κ.symm.trans (e.trans κ') = LinearEquiv.prodComm K (ker f) (ker g) := by
     ext x <;> simp [κ, κ', he]
@@ -270,12 +269,10 @@ private theorem detLineCongr_detLineKerProdMap_symm_assoc
     e.detLineCongr ((detLineKerProdMap (f.prodMap g) h).symm
         ((detLineKerProdMap f g).symm (a ⊗ₜ b) ⊗ₜ c)) =
       (detLineKerProdMap f (g.prodMap h)).symm (a ⊗ₜ (detLineKerProdMap g h).symm (b ⊗ₜ c)) := by
-  set κ₁ := (LinearEquiv.ofEq _ _ (ker_prodMap f g)).trans (Submodule.prodEquiv (ker f) (ker g))
-  set κ₂ := (LinearEquiv.ofEq _ _ (ker_prodMap (f.prodMap g) h)).trans
-    (Submodule.prodEquiv (ker (f.prodMap g)) (ker h))
-  set κ₃ := (LinearEquiv.ofEq _ _ (ker_prodMap g h)).trans (Submodule.prodEquiv (ker g) (ker h))
-  set κ₄ := (LinearEquiv.ofEq _ _ (ker_prodMap f (g.prodMap h))).trans
-    (Submodule.prodEquiv (ker f) (ker (g.prodMap h)))
+  set κ₁ := kerProdMapEquiv f g
+  set κ₂ := kerProdMapEquiv (f.prodMap g) h
+  set κ₃ := kerProdMapEquiv g h
+  set κ₄ := kerProdMapEquiv f (g.prodMap h)
   -- The four inclusions of the kernel factors agree after regrouping.
   have h₁ : e.toLinearMap ∘ₗ κ₂.symm.toLinearMap ∘ₗ LinearMap.inl K _ _ ∘ₗ κ₁.symm.toLinearMap ∘ₗ
       LinearMap.inl K _ _ = κ₄.symm.toLinearMap ∘ₗ LinearMap.inl K _ _ := by
@@ -316,9 +313,7 @@ through `coker (f.prodMap g) = coker f × coker g`. -/
 private def detLineCokerProdMap :
     TauCeti.detLine K (N ⧸ range f) ⊗[K] TauCeti.detLine K (N' ⧸ range g) ≃ₗ[K]
       TauCeti.detLine K ((N × N') ⧸ range (f.prodMap g)) :=
-  (detLineProdEquiv K _ _).trans
-    ((Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans
-      (Submodule.quotientProdEquiv _ _)).detLineCongr.symm
+  (detLineProdEquiv K _ _).trans (cokerProdMapEquiv f g).detLineCongr.symm
 
 /-- `detLineCokerProdMap` sends `[y₁] ∧ ⋯ ∧ [yₐ] ⊗ [y'₁] ∧ ⋯ ∧ [y'_b]` to the wedge product of the
 classes of `(yᵢ, 0)` followed by those of `(0, y'ⱼ)`. -/
@@ -347,26 +342,17 @@ private theorem detLineCongr_detLineCokerProdMap
         detLineCokerProdMap g f (TensorProduct.comm K _ _ t) := by
   -- Unfold both cokernel isomorphisms.
   simp only [detLineCokerProdMap, LinearEquiv.trans_apply, LinearEquiv.detLineCongr_symm]
-  set κ := (Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans
-    (Submodule.quotientProdEquiv (range f) (range g))
-  set κ' := (Submodule.quotEquivOfEq _ _ (range_prodMap g f)).trans
-    (Submodule.quotientProdEquiv (range g) (range f))
-  have hκ (a : N) (b : N') : κ.symm ((range f).mkQ a, (range g).mkQ b) =
-      (range (f.prodMap g)).mkQ (a, b) := by
-    rw [LinearEquiv.symm_apply_eq]
-    simp [κ]
-  have hκ' (a : N') (b : N) : κ'.symm ((range g).mkQ a, (range f).mkQ b) =
-      (range (g.prodMap f)).mkQ (a, b) := by
-    rw [LinearEquiv.symm_apply_eq]
-    simp [κ']
-  -- Read through `κ` and `κ'`, the exchange `e` is the swap of `coker f × coker g`.
-  have hswap : κ.symm.trans e =
-      (LinearEquiv.prodComm K (N ⧸ range f) (N' ⧸ range g)).trans κ'.symm := by
+  -- Read through the cokernel isomorphisms, the exchange `e` is the swap of
+  -- `coker f × coker g`.
+  have hswap : (cokerProdMapEquiv f g).symm.trans e =
+      (LinearEquiv.prodComm K (N ⧸ range f) (N' ⧸ range g)).trans
+        (cokerProdMapEquiv g f).symm := by
     ext ⟨a, b⟩
     induction a using Submodule.Quotient.induction_on
     induction b using Submodule.Quotient.induction_on
-    simp only [LinearEquiv.trans_apply, LinearEquiv.prodComm_apply, Prod.swap_prod_mk]
-    rw [← Submodule.mkQ_apply, ← Submodule.mkQ_apply, hκ, he, hκ', Prod.swap_prod_mk]
+    simp only [LinearEquiv.trans_apply, LinearEquiv.prodComm_apply, Prod.swap_prod_mk,
+      cokerProdMapEquiv_symm_apply_mk]
+    rw [← Submodule.mkQ_apply, he, Prod.swap_prod_mk, Submodule.mkQ_apply]
   rw [← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans, hswap]
   simp only [LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply,
     detLineCongr_prodComm_detLineProdEquiv, map_smul]
@@ -417,54 +403,37 @@ private theorem detLineCongr_detLineCokerProdMap_assoc
     (c : TauCeti.detLine K (N'' ⧸ range h)) :
     e.detLineCongr (detLineCokerProdMap (f.prodMap g) h (detLineCokerProdMap f g (a ⊗ₜ b) ⊗ₜ c)) =
       detLineCokerProdMap f (g.prodMap h) (a ⊗ₜ detLineCokerProdMap g h (b ⊗ₜ c)) := by
-  set κ₁ := (Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans
-    (Submodule.quotientProdEquiv (range f) (range g))
-  set κ₂ := (Submodule.quotEquivOfEq _ _ (range_prodMap (f.prodMap g) h)).trans
-    (Submodule.quotientProdEquiv (range (f.prodMap g)) (range h))
-  set κ₃ := (Submodule.quotEquivOfEq _ _ (range_prodMap g h)).trans
-    (Submodule.quotientProdEquiv (range g) (range h))
-  set κ₄ := (Submodule.quotEquivOfEq _ _ (range_prodMap f (g.prodMap h))).trans
-    (Submodule.quotientProdEquiv (range f) (range (g.prodMap h)))
-  have hκ₁ (x : N) (y : N') : κ₁.symm ((range f).mkQ x, (range g).mkQ y) =
-      (range (f.prodMap g)).mkQ (x, y) := by
-    rw [LinearEquiv.symm_apply_eq]; simp [κ₁]
-  have hκ₂ (x : N × N') (y : N'') : κ₂.symm ((range (f.prodMap g)).mkQ x, (range h).mkQ y) =
-      (range ((f.prodMap g).prodMap h)).mkQ (x, y) := by
-    rw [LinearEquiv.symm_apply_eq]; simp [κ₂]
-  have hκ₃ (x : N') (y : N'') : κ₃.symm ((range g).mkQ x, (range h).mkQ y) =
-      (range (g.prodMap h)).mkQ (x, y) := by
-    rw [LinearEquiv.symm_apply_eq]; simp [κ₃]
-  have hκ₄ (x : N) (y : N' × N'') : κ₄.symm ((range f).mkQ x, (range (g.prodMap h)).mkQ y) =
-      (range (f.prodMap (g.prodMap h))).mkQ (x, y) := by
-    rw [LinearEquiv.symm_apply_eq]; simp [κ₄]
   simp only [Submodule.mkQ_apply] at he
   -- The four inclusions of the cokernel factors agree after regrouping.
-  have h₁ : e.toLinearMap ∘ₗ κ₂.symm.toLinearMap ∘ₗ LinearMap.inl K _ _ ∘ₗ κ₁.symm.toLinearMap ∘ₗ
-      LinearMap.inl K _ _ = κ₄.symm.toLinearMap ∘ₗ LinearMap.inl K _ _ := by
+  have h₁ : e.toLinearMap ∘ₗ (cokerProdMapEquiv (f.prodMap g) h).symm.toLinearMap ∘ₗ
+      LinearMap.inl K _ _ ∘ₗ (cokerProdMapEquiv f g).symm.toLinearMap ∘ₗ LinearMap.inl K _ _ =
+        (cokerProdMapEquiv f (g.prodMap h)).symm.toLinearMap ∘ₗ LinearMap.inl K _ _ := by
     ext x
-    have e₁ := hκ₁ x 0
-    have e₂ := hκ₂ (x, 0) 0
-    have e₄ := hκ₄ x 0
-    simp only [Submodule.mkQ_apply, Submodule.Quotient.mk_zero] at e₁ e₂ e₄
+    have e₁ := cokerProdMapEquiv_symm_apply_mk f g x 0
+    have e₂ := cokerProdMapEquiv_symm_apply_mk (f.prodMap g) h (x, 0) 0
+    have e₄ := cokerProdMapEquiv_symm_apply_mk f (g.prodMap h) x 0
+    simp only [Submodule.Quotient.mk_zero] at e₁ e₂ e₄
     simp [e₁, e₂, e₄, he, Prod.mk_zero_zero]
-  have h₂ : e.toLinearMap ∘ₗ κ₂.symm.toLinearMap ∘ₗ LinearMap.inl K _ _ ∘ₗ κ₁.symm.toLinearMap ∘ₗ
-      LinearMap.inr K _ _ = κ₄.symm.toLinearMap ∘ₗ LinearMap.inr K _ _ ∘ₗ
-        κ₃.symm.toLinearMap ∘ₗ LinearMap.inl K _ _ := by
+  have h₂ : e.toLinearMap ∘ₗ (cokerProdMapEquiv (f.prodMap g) h).symm.toLinearMap ∘ₗ
+      LinearMap.inl K _ _ ∘ₗ (cokerProdMapEquiv f g).symm.toLinearMap ∘ₗ LinearMap.inr K _ _ =
+        (cokerProdMapEquiv f (g.prodMap h)).symm.toLinearMap ∘ₗ LinearMap.inr K _ _ ∘ₗ
+          (cokerProdMapEquiv g h).symm.toLinearMap ∘ₗ LinearMap.inl K _ _ := by
     ext y
-    have e₁ := hκ₁ 0 y
-    have e₂ := hκ₂ (0, y) 0
-    have e₃ := hκ₃ y 0
-    have e₄ := hκ₄ 0 (y, 0)
-    simp only [Submodule.mkQ_apply, Submodule.Quotient.mk_zero] at e₁ e₂ e₃ e₄
+    have e₁ := cokerProdMapEquiv_symm_apply_mk f g 0 y
+    have e₂ := cokerProdMapEquiv_symm_apply_mk (f.prodMap g) h (0, y) 0
+    have e₃ := cokerProdMapEquiv_symm_apply_mk g h y 0
+    have e₄ := cokerProdMapEquiv_symm_apply_mk f (g.prodMap h) 0 (y, 0)
+    simp only [Submodule.Quotient.mk_zero] at e₁ e₂ e₃ e₄
     simp [e₁, e₂, e₃, e₄, he]
-  have h₃ : e.toLinearMap ∘ₗ κ₂.symm.toLinearMap ∘ₗ LinearMap.inr K _ _ =
-      κ₄.symm.toLinearMap ∘ₗ LinearMap.inr K _ _ ∘ₗ κ₃.symm.toLinearMap ∘ₗ
-        LinearMap.inr K _ _ := by
+  have h₃ : e.toLinearMap ∘ₗ (cokerProdMapEquiv (f.prodMap g) h).symm.toLinearMap ∘ₗ
+      LinearMap.inr K _ _ =
+        (cokerProdMapEquiv f (g.prodMap h)).symm.toLinearMap ∘ₗ LinearMap.inr K _ _ ∘ₗ
+          (cokerProdMapEquiv g h).symm.toLinearMap ∘ₗ LinearMap.inr K _ _ := by
     ext z
-    have e₂ := hκ₂ 0 z
-    have e₃ := hκ₃ 0 z
-    have e₄ := hκ₄ 0 (0, z)
-    simp only [Submodule.mkQ_apply, Submodule.Quotient.mk_zero] at e₂ e₃ e₄
+    have e₂ := cokerProdMapEquiv_symm_apply_mk (f.prodMap g) h 0 z
+    have e₃ := cokerProdMapEquiv_symm_apply_mk g h 0 z
+    have e₄ := cokerProdMapEquiv_symm_apply_mk f (g.prodMap h) 0 (0, z)
+    simp only [Submodule.Quotient.mk_zero] at e₂ e₃ e₄
     simp [e₂, e₃, e₄, he]
   simp only [detLineCokerProdMap, LinearEquiv.trans_apply, LinearEquiv.detLineCongr_symm]
   refine Subtype.ext ?_

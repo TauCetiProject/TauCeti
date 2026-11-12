@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Finite
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # Quotients by products of submodules
@@ -24,9 +24,10 @@ equivalence, which is the form module-theoretic consumers need. There is no subm
 
 * `Submodule.quotientProdEquiv`: `(M × N) ⧸ p.prod q ≃ₗ (M ⧸ p) × (N ⧸ q)`.
 * `Submodule.finrank_quotient_prod`: the ranks of the quotients add.
-* `LinearMap.finrank_quotient_range_prodMap`: the cokernel of `f.prodMap g` has dimension
-  `dim coker f + dim coker g`, and is finite-dimensional when those of `f` and `g` are
-  (`LinearMap.finiteDimensional_quotient_range_prodMap`).
+* `LinearMap.cokerProdMapEquiv`: the cokernel of `f.prodMap g` is `coker f × coker g`.
+* `LinearMap.finrank_quotient_range_prodMap`: the cokernel of `f.prodMap g` has rank
+  `rank coker f + rank coker g`, and is finite when those of `f` and `g` are
+  (`LinearMap.finite_quotient_range_prodMap`).
 
 ## Implementation notes
 
@@ -82,22 +83,38 @@ end Submodule
 
 namespace LinearMap
 
-variable {K : Type*} [Field K] {M N M' N' : Type*} [AddCommGroup M] [Module K M]
-  [AddCommGroup N] [Module K N] [AddCommGroup M'] [Module K M'] [AddCommGroup N'] [Module K N']
-  (f : M →ₗ[K] N) (g : M' →ₗ[K] N')
-  [FiniteDimensional K (N ⧸ range f)] [FiniteDimensional K (N' ⧸ range g)]
+variable {R : Type*} [Ring R] {M N M' N' : Type*} [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
+  (f : M →ₗ[R] N) (g : M' →ₗ[R] N')
 
-/-- The cokernel of `f.prodMap g` is finite-dimensional when those of `f` and `g` are. -/
-instance finiteDimensional_quotient_range_prodMap :
-    FiniteDimensional K ((N × N') ⧸ range (f.prodMap g)) :=
-  ((Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans
-    (Submodule.quotientProdEquiv (range f) (range g))).symm.finiteDimensional
+/-- The cokernel of `f.prodMap g` is the product of the cokernels of `f` and `g`. -/
+def cokerProdMapEquiv : ((N × N') ⧸ range (f.prodMap g)) ≃ₗ[R] (N ⧸ range f) × (N' ⧸ range g) :=
+  (Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans (Submodule.quotientProdEquiv _ _)
 
-/-- The cokernel of `f.prodMap g` has dimension `dim coker f + dim coker g`. -/
-theorem finrank_quotient_range_prodMap :
-    Module.finrank K ((N × N') ⧸ range (f.prodMap g)) =
-      Module.finrank K (N ⧸ range f) + Module.finrank K (N' ⧸ range g) := by
-  rw [((Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans
-    (Submodule.quotientProdEquiv (range f) (range g))).finrank_eq, Module.finrank_prod]
+@[simp]
+theorem cokerProdMapEquiv_apply_mk (x : N × N') :
+    cokerProdMapEquiv f g (Submodule.Quotient.mk x) =
+      (Submodule.Quotient.mk x.1, Submodule.Quotient.mk x.2) := by
+  simp [cokerProdMapEquiv]
+
+@[simp]
+theorem cokerProdMapEquiv_symm_apply_mk (x : N) (y : N') :
+    (cokerProdMapEquiv f g).symm (Submodule.Quotient.mk x, Submodule.Quotient.mk y) =
+      Submodule.Quotient.mk (x, y) := by
+  rw [LinearEquiv.symm_apply_eq, cokerProdMapEquiv_apply_mk]
+
+/-- The cokernel of `f.prodMap g` is finite when those of `f` and `g` are. -/
+instance finite_quotient_range_prodMap [Module.Finite R (N ⧸ range f)]
+    [Module.Finite R (N' ⧸ range g)] : Module.Finite R ((N × N') ⧸ range (f.prodMap g)) :=
+  .equiv (cokerProdMapEquiv f g).symm
+
+/-- The cokernel of `f.prodMap g` has rank `rank coker f + rank coker g`. -/
+theorem finrank_quotient_range_prodMap [StrongRankCondition R] [Module.Free R (N ⧸ range f)]
+    [Module.Free R (N' ⧸ range g)] [Module.Finite R (N ⧸ range f)]
+    [Module.Finite R (N' ⧸ range g)] :
+    Module.finrank R ((N × N') ⧸ range (f.prodMap g)) =
+      Module.finrank R (N ⧸ range f) + Module.finrank R (N' ⧸ range g) := by
+  rw [range_prodMap]
+  exact Submodule.finrank_quotient_prod _ _
 
 end LinearMap
