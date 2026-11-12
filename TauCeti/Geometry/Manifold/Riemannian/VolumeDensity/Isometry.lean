@@ -231,8 +231,7 @@ theorem riemannianVolume_image_of_inner_mfderiv [HereditarilyLindelofSpace M] [L
     riemannianVolume_apply_of_subset (α := Φ x) hmaps.image_subset,
     riemannianVolume_apply_of_subset (α := x) (huV.trans inter_subset_left)]
   exact chartRiemannianVolume_image_of_inner_mfderiv (hι.measurableSet_image' htV)
-    (himage u hus (hι.measurableSet_image' htV)) (hinj.mono hus) (huV.trans inter_subset_left)
-    hmaps (fun y hy ↦ hΦ y (hus hy)) (fun y hy ↦ hinner y (hus hy))
+    (hinj.mono hus) (huV.trans inter_subset_left) hmaps fun y hy ↦ hinner y (hus hy)
 
 /-- **Isometry invariance of the Riemannian volume.** A homeomorphism whose tangent maps preserve
 the Riemannian inner products carries the Riemannian volume of `M` to the Riemannian volume of
