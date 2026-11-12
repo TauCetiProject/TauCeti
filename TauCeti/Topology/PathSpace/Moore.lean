@@ -545,6 +545,12 @@ theorem map_map (g : C(Y, Z)) (f : C(X, Y)) (γ : MoorePath X) :
     (γ.map f).map g = γ.map (g.comp f) :=
   (rfl)
 
+/-- The image of a Moore path under a constant map is the constant path of the same length. -/
+@[simp]
+theorem map_const (y : Y) (γ : MoorePath X) :
+    γ.map (.const X y) = constOfLength y γ.length :=
+  (rfl)
+
 @[fun_prop]
 theorem continuous_map (f : C(X, Y)) : Continuous (map f : MoorePath X → MoorePath Y) :=
   continuous_iff.2 ⟨continuous_length, f.continuous.comp continuous_eval⟩
@@ -800,6 +806,13 @@ theorem toMoorePath_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
 @[simp]
 theorem length_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
     (map f hf γ).length = γ.length :=
+  (rfl)
+
+/-- The Moore loop map of the constant map at the base point sends a loop to the constant loop of
+the same length. -/
+@[simp]
+theorem map_const_apply (hy : ContinuousMap.const X y x = y) (γ : MooreLoopSpace X x) :
+    map (.const X y) hy γ = constOfLength y γ.length :=
   (rfl)
 
 @[simp]

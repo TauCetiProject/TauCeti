@@ -97,14 +97,6 @@ theorem homotopicRel_comp_map_id {Z : Type*} [TopologicalSpace Z] {z : Z} {s : C
     rfl
   simpa only [hcomp, hid] using homotopicRel_map h hrs (ContinuousMap.id_apply x)
 
-/-- The map sending a Moore loop to the constant loop at the base point of the same length is the
-Moore loop map of the constant map. -/
-private theorem map_const_eq :
-    (map (ContinuousMap.const X x) (ContinuousMap.const_apply x x) :
-      C(MooreLoopSpace X x, MooreLoopSpace X x)) =
-      ⟨fun γ ↦ constOfLength x γ.length, by fun_prop⟩ :=
-  ContinuousMap.ext fun γ ↦ ext <| MoorePath.ext (by simp) fun t ↦ by simp
-
 /-- **The constant loops shrink to the unit.** Sending a Moore loop to the constant loop at the
 base point of the same length is homotopic, relative to the unit, to the constant map at the unit:
 the length shrinks linearly to zero. -/
@@ -132,8 +124,12 @@ theorem homotopicRel_id_const_one
       C(MooreLoopSpace X x, MooreLoopSpace X x)) = ContinuousMap.id _ := by
     rw [map_id]
     rfl
+  have hconst : (map (ContinuousMap.const X x) (ContinuousMap.const_apply x x) :
+      C(MooreLoopSpace X x, MooreLoopSpace X x)) =
+      ⟨fun γ ↦ constOfLength x γ.length, by fun_prop⟩ :=
+    ContinuousMap.ext (map_const_apply _)
   have h₁ := homotopicRel_map h (ContinuousMap.id_apply x) (ContinuousMap.const_apply x x)
-  rw [hid, map_const_eq] at h₁
+  rw [hid, hconst] at h₁
   exact h₁.trans homotopicRel_constOfLength_const_one
 
 /-- **The Moore loop space of a space contracting onto its base point is contractible**, when the
