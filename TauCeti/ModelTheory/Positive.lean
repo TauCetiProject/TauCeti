@@ -35,8 +35,8 @@ translation along a language homomorphism and quantifying all bound variables.
 * `FirstOrder.Language.BoundedFormula.IsPositive.realize_of_subsingleton`: in an algebraic
   language every positive formula holds in a one-element structure.
 * `FirstOrder.Language.BoundedFormula.IsPositive.exists_isPrenex_and_isPositive_and_theoryIff`:
-  every positive formula is equivalent to a positive formula in prenex form, that is, to a string
-  of quantifiers in front of a positive quantifier-free formula.
+  every positive formula is equivalent over any theory to a positive formula in prenex form, that
+  is, to a string of quantifiers in front of a positive quantifier-free formula.
 * `FirstOrder.Language.BoundedFormula.IsPositive.induction_on_isQF` and
   `FirstOrder.Language.BoundedFormula.IsPrenex.induction_on_isPositive`: induction principles
   for positive quantifier-free formulas and for positive prenex formulas.
@@ -348,6 +348,8 @@ end Preservation
 
 section Prenex
 
+variable {T : L.Theory}
+
 /-- Combining a positive quantifier-free formula with a positive prenex formula by a binary
 connective that commutes with quantifiers on the right yields a positive prenex formula. -/
 private theorem exists_isPrenex_and_isPositive_and_theoryIff_of_isQF
@@ -356,12 +358,12 @@ private theorem exists_isPrenex_and_isPositive_and_theoryIff_of_isQF
     (hpos : ∀ {k} {φ ψ : L.BoundedFormula α k},
       φ.IsPositive → ψ.IsPositive → (op φ ψ).IsPositive)
     (hall : ∀ {k} (φ : L.BoundedFormula α k) (ψ : L.BoundedFormula α (k + 1)),
-      op φ ψ.all ⇔[∅] (op (φ.liftAt 1 k) ψ).all)
+      op φ ψ.all ⇔[T] (op (φ.liftAt 1 k) ψ).all)
     (hex : ∀ {k} (φ : L.BoundedFormula α k) (ψ : L.BoundedFormula α (k + 1)),
-      op φ ψ.ex ⇔[∅] (op (φ.liftAt 1 k) ψ).ex)
+      op φ ψ.ex ⇔[T] (op (φ.liftAt 1 k) ψ).ex)
     {φ ψ : L.BoundedFormula α n} (hφq : φ.IsQF) (hφ : φ.IsPositive) (hψp : ψ.IsPrenex)
     (hψ : ψ.IsPositive) :
-    ∃ θ : L.BoundedFormula α n, θ.IsPrenex ∧ θ.IsPositive ∧ (op φ ψ ⇔[∅] θ) := by
+    ∃ θ : L.BoundedFormula α n, θ.IsPrenex ∧ θ.IsPositive ∧ (op φ ψ ⇔[T] θ) := by
   induction hψp with
   | of_isQF h => exact ⟨_, (hqf hφq h).isPrenex, hpos hφ hψ, .refl _⟩
   | all _ ih =>
@@ -379,16 +381,16 @@ private theorem exists_isPrenex_and_isPositive_and_theoryIff_of_isPrenex
     (hpos : ∀ {k} {φ ψ : L.BoundedFormula α k},
       φ.IsPositive → ψ.IsPositive → (op φ ψ).IsPositive)
     (hall : ∀ {k} (φ : L.BoundedFormula α k) (ψ : L.BoundedFormula α (k + 1)),
-      op φ ψ.all ⇔[∅] (op (φ.liftAt 1 k) ψ).all)
+      op φ ψ.all ⇔[T] (op (φ.liftAt 1 k) ψ).all)
     (hex : ∀ {k} (φ : L.BoundedFormula α k) (ψ : L.BoundedFormula α (k + 1)),
-      op φ ψ.ex ⇔[∅] (op (φ.liftAt 1 k) ψ).ex)
+      op φ ψ.ex ⇔[T] (op (φ.liftAt 1 k) ψ).ex)
     (hall' : ∀ {k} (φ : L.BoundedFormula α (k + 1)) (ψ : L.BoundedFormula α k),
-      op φ.all ψ ⇔[∅] (op φ (ψ.liftAt 1 k)).all)
+      op φ.all ψ ⇔[T] (op φ (ψ.liftAt 1 k)).all)
     (hex' : ∀ {k} (φ : L.BoundedFormula α (k + 1)) (ψ : L.BoundedFormula α k),
-      op φ.ex ψ ⇔[∅] (op φ (ψ.liftAt 1 k)).ex)
+      op φ.ex ψ ⇔[T] (op φ (ψ.liftAt 1 k)).ex)
     {φ ψ : L.BoundedFormula α n} (hφp : φ.IsPrenex) (hφ : φ.IsPositive) (hψp : ψ.IsPrenex)
     (hψ : ψ.IsPositive) :
-    ∃ θ : L.BoundedFormula α n, θ.IsPrenex ∧ θ.IsPositive ∧ (op φ ψ ⇔[∅] θ) := by
+    ∃ θ : L.BoundedFormula α n, θ.IsPrenex ∧ θ.IsPositive ∧ (op φ ψ ⇔[T] θ) := by
   induction hφp with
   | of_isQF h =>
     exact exists_isPrenex_and_isPositive_and_theoryIff_of_isQF hqf hpos hall hex h hφ hψp hψ
@@ -399,11 +401,11 @@ private theorem exists_isPrenex_and_isPositive_and_theoryIff_of_isPrenex
     obtain ⟨θ, h₁, h₂, h₃⟩ := ih (isPositive_ex_iff.1 hφ) hψp.liftAt hψ.liftAt
     exact ⟨θ.ex, h₁.ex, h₂.ex, (hex' _ _).trans h₃.ex⟩
 
-/-- Every positive formula is equivalent to a positive formula in prenex form: a string of
-quantifiers in front of a positive quantifier-free formula. -/
+/-- Every positive formula is equivalent over any theory to a positive formula in prenex form: a
+string of quantifiers in front of a positive quantifier-free formula. -/
 theorem IsPositive.exists_isPrenex_and_isPositive_and_theoryIff {φ : L.BoundedFormula α n}
     (hφ : φ.IsPositive) :
-    ∃ ψ : L.BoundedFormula α n, ψ.IsPrenex ∧ ψ.IsPositive ∧ (φ ⇔[∅] ψ) := by
+    ∃ ψ : L.BoundedFormula α n, ψ.IsPrenex ∧ ψ.IsPositive ∧ (φ ⇔[T] ψ) := by
   induction hφ with
   | of_isAtomic h => exact ⟨_, h.isPrenex, h.isPositive, .refl _⟩
   | inf _ _ ih₁ ih₂ =>
