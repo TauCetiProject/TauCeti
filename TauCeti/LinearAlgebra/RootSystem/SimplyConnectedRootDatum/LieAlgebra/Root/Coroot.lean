@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.System
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CartanLattice
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Reflection
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
 
 /-!
@@ -18,7 +18,7 @@ vectors specified by the simply connected root datum. Consequently its binomial 
 belong to the simple-generator Kostant form. These are the Cartan inputs for the rank-one
 root-word identities at nonsimple roots.
 
-`TauCeti.DynkinType.chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul` identifies
+`TauCeti.DynkinType.chevalleyWeylElement_eq_kostantTorusPoints_mul` identifies
 `x_α(s) x_{-α}(-s⁻¹) x_α(s)` with the coroot value times the same word at `s = 1`,
 for every root on a Kostant-stable weight lattice over every commutative value ring.
 The torus used here is the full-weight parametrization; the theorem
@@ -76,9 +76,9 @@ variable (hnil : ∀ i, IsNilpotent
   (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))))
 
 include hM hnil in
-/-- Admissibility for all root vectors and the single Cartan vector of any chosen coroot follows
-from admissibility for the simple-generator Kostant form. -/
-theorem kostantForm_chevalleySystem_coroot_apply_mem (α : Fin t.numRoots)
+/-- The Kostant form of all root vectors and a chosen Killing coroot preserves any subgroup
+stable under the simple-generator form when the simple root generators act nilpotently. -/
+private theorem kostantForm_chevalleySystem_coroot_apply_mem (α : Fin t.numRoots)
     {u : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht)}
     (hu : u ∈ kostantForm (t.chevalleySystem ht)
       (fun _ : Unit => ((coroot (t.rootEquiv ht α : LieModule.Weight ℚ
@@ -120,17 +120,13 @@ private theorem rootSubgroupParam_coroot_eq (α γ : Fin t.numRoots) (A : CommAl
 variable {η : Type*} (b : Module.Basis η ℤ M) (wt : η → Fin t.rank → ℤ)
 variable (hwt : ∀ j, IsCartanWeightVector (t.lieBasis ht).h ρ (wt j) (b j : V))
 
-include hwt in
-private theorem root_operators_and_torus_eq_of_coroot_apply_eq_zero (α : Fin t.numRoots)
+private theorem root_operators_eq_of_coroot_apply_eq_zero (α : Fin t.numRoots)
     (hH : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
       ((coroot (t.rootEquiv ht α : LieModule.Weight ℚ (t.cartanSubalgebra ht)
-        (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht)) = 0)
-    (A : CommAlgCat ℤ) (s : Aˣ) :
+        (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht)) = 0) :
     ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht α)) = 0 ∧
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht
-        ((t.simplyConnectedRootDatum ht).reflectionPerm α α))) = 0 ∧
-      kostantTorusPoints M b wt A
-        (fun i => s ^ (t.simplyConnectedRootDatum ht).coroot α i) = 1 := by
+        ((t.simplyConnectedRootDatum ht).reflectionPerm α α))) = 0 := by
   -- The sl₂ bracket relations force both root operators to vanish.
   let φ := ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
   have he := congrArg φ ((t.isSl2Triple_chevalleySystem ht α).lie_h_e_smul ℚ)
@@ -138,37 +134,20 @@ private theorem root_operators_and_torus_eq_of_coroot_apply_eq_zero (α : Fin t.
   simp only [LieHom.map_lie, map_smul, map_neg] at he hf
   simp only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply] at he hf
   rw [hH, zero_lie] at he hf
-  refine ⟨(smul_eq_zero.mp he.symm).resolve_left (by norm_num), ?_, ?_⟩
-  · have hf' := neg_eq_zero.mp hf.symm
-    exact (smul_eq_zero.mp hf').resolve_left (by norm_num)
-  · -- The weight equation on each nonzero basis vector makes the torus exponent zero.
-    have hW (j : η) : (∑ i, (t.simplyConnectedRootDatum ht).coroot α i * wt j i : ℤ) = 0 := by
-      have hj := apply_ι_coroot_rootEquiv_of_isCartanWeightVector ρ (hwt j) α
-      rw [hH, LinearMap.zero_apply] at hj
-      have hb : (b j : V) ≠ 0 := fun hz => b.ne_zero j (Subtype.ext hz)
-      have hz := (smul_eq_zero.mp hj.symm).resolve_right hb
-      exact_mod_cast hz
-    refine Units.ext (Module.Basis.ext (b.baseChange A) fun j => ?_)
-    simp only [Module.Basis.baseChange_apply, kostantTorusPoints_tmul_basis, torusCharacter_def,
-      ← zpow_mul, Finset.prod_zpow_eq_zpow_sum, hW, zpow_zero, Units.val_one, one_mul,
-      one_apply_eq_self]
+  refine ⟨(smul_eq_zero.mp he.symm).resolve_left (by norm_num), ?_⟩
+  have hf' := neg_eq_zero.mp hf.symm
+  exact (smul_eq_zero.mp hf').resolve_left (by norm_num)
 
 include hwt in
 /-- Chevalley's rank-one identity at every numbered root. The torus parameter is the native
 coroot, including at nonsimple roots. No faithfulness of the representation is required.
 The coefficient ring may have arbitrary characteristic and may be nonreduced. -/
-theorem chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul (α : Fin t.numRoots)
+theorem chevalleyWeylElement_eq_kostantTorusPoints_mul (α : Fin t.numRoots)
     (A : CommAlgCat ℤ) (s : Aˣ) :
-    chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd (s : A)) *
-        chevalleyRootSubgroup ρ M hM hnil
-          ((t.simplyConnectedRootDatum ht).reflectionPerm α α) A
-          (Multiplicative.ofAdd (-((s⁻¹ : Aˣ) : A))) *
-        chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd (s : A)) =
+    chevalleyWeylElement ρ M hM hnil α A s =
       kostantTorusPoints M b wt A (fun i => s ^ (t.simplyConnectedRootDatum ht).coroot α i) *
-        (chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd 1) *
-          chevalleyRootSubgroup ρ M hM hnil
-            ((t.simplyConnectedRootDatum ht).reflectionPerm α α) A (Multiplicative.ofAdd (-1)) *
-          chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd 1)) := by
+        chevalleyWeylElement ρ M hM hnil α A 1 := by
+  simp only [chevalleyWeylElement_def, inv_one, Units.val_one]
   let H : Unit → t.lieAlgebra ht := fun _ =>
     ((coroot (t.rootEquiv ht α : LieModule.Weight ℚ (t.cartanSubalgebra ht)
       (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht)
@@ -189,13 +168,23 @@ theorem chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul (α : Fin t.numR
       kostantTorusPoints M b wt A (fun i => s ^ (t.simplyConnectedRootDatum ht).coroot α i) := by
     refine Units.ext (Module.Basis.ext (b.baseChange A) fun j => ?_)
     simp only [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis,
-      kostantTorusPoints_tmul_basis, W, torusCharacter_def, ← zpow_mul,
-      Finset.prod_zpow_eq_zpow_sum]
+      kostantTorusPoints_tmul_basis, W, torusCharacter_zpow]
   by_cases hH : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (H ())) = 0
-  · obtain ⟨he0, hf0, htorus_one⟩ :=
-      root_operators_and_torus_eq_of_coroot_apply_eq_zero ρ M b wt hwt α hH A s
+  · obtain ⟨he0, hf0⟩ := root_operators_eq_of_coroot_apply_eq_zero ρ α hH
+    -- The weight equation on each nonzero basis vector makes the coroot weight zero.
+    have hW (j : η) : W j () = 0 := by
+      have hj := ((isCartanWeightVector_iff H ρ).mp (hw j)) ()
+      rw [hH, LinearMap.zero_apply] at hj
+      have hb : (b j : V) ≠ 0 := fun hz => b.ne_zero j (Subtype.ext hz)
+      have hz := (smul_eq_zero.mp hj.symm).resolve_right hb
+      exact_mod_cast hz
+    have htorus_one : kostantCoordinateCocharacter M b W A () s = 1 := by
+      refine Units.ext (Module.Basis.ext (b.baseChange A) fun j => ?_)
+      simp only [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis,
+        hW, zpow_zero, Units.val_one, one_mul, one_apply_eq_self]
+    rw [← htorus, htorus_one]
     simp only [chevalleyRootSubgroup_eq_one_of_apply_eq_zero ρ M hM hnil α he0,
-      chevalleyRootSubgroup_eq_one_of_apply_eq_zero ρ M hM hnil _ hf0, htorus_one, mul_one]
+      chevalleyRootSubgroup_eq_one_of_apply_eq_zero ρ M hM hnil _ hf0, mul_one]
   · have hT := (t.isSl2Triple_chevalleySystem ht α).map
       (ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) hH
     have h := kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
