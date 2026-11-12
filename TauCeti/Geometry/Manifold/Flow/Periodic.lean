@@ -277,6 +277,7 @@ theorem periodicSolutionsEquivFixedPoints_symm_apply (hT : Periodic X T) (hT0 : 
       timeDependentFlowOf X s t x :=
   (rfl)
 
+omit [CompleteSpace E] in
 /-- **The derivative of the flow over one more period.** Let `X` be a `T`-periodic jointly `C¹`
 field on a finite-dimensional manifold, `T ≠ 0`, and let `x` be a fixed point of the return map
 `φ_{s, s + T}`. Then the flow from `(s, x)` exists for all time, and its derivative at time `t + T`
@@ -313,6 +314,7 @@ theorem mfderiv_timeDependentFlowOf_add_period_apply [FiniteDimensional ℝ E] (
     rfl
   exact hcast _ hfix.eq
 
+omit [CompleteSpace E] in
 /-- **Periodic solutions of the linearized flow.** If `X` is `T`-periodic, `T ≠ 0`, `x` is a fixed
 point of the return map `φ_{s, s + T}`, and `v` is fixed by its derivative, then
 `t ↦ dφ_{s, t} v` along the periodic orbit of `x` is `T`-periodic. -/
