@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 
@@ -14,7 +13,9 @@ public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 
 On a complex normed space `V`, multiplication by `i` is the smooth structure
 `SmoothAlmostComplexStructure.ofComplexManifold V V`, so it is a structure of every regularity
-`ℓ`. Its chart expression is the constant map `i`, as for every constant structure.
+`ℓ`. Its chart expression is the constant map `i`
+(`SmoothAlmostComplexStructure.inChart_ofComplexManifold_self`, beside the structure in
+`TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure`).
 
 The identity endomorphism is never an almost complex structure: `id ∘ id = id`, while
 `-id ≠ id` on a nontrivial real vector space
@@ -25,8 +26,6 @@ squares to `-1` on the unit disc but is not the field of any structure: the squa
 
 ## Main declarations
 
-* `SmoothAlmostComplexStructure.inChart_ofComplexManifold_self`: the chart expression of the
-  structure `i` is constant.
 * `ContMDiffAlmostComplexStructure.cutoffSection`,
   `ContMDiffAlmostComplexStructure.not_exists_toEndomorphism_eq_cutoffSection`: the cut-off
   section and its rejection.
@@ -38,18 +37,6 @@ open Bundle Metric
 open scoped ContDiff Manifold
 
 namespace TauCeti
-
-namespace SmoothAlmostComplexStructure
-
-/-- On a complex normed space `V`, for example `ℂⁿ`, the chart expression of multiplication
-by `i` is constantly multiplication by `i`. Via `toContMDiff`, this is a structure of every
-regularity with the same chart expression (`toContMDiff_inChart`). -/
-theorem inChart_ofComplexManifold_self {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-    (x z : V) :
-    (ofComplexManifold V V).inChart x z = Complex.I • ContinuousLinearMap.id ℝ V := by
-  rw [inChart_modelWithCornersSelf, toEndomorphism_ofComplexManifold]
-
-end SmoothAlmostComplexStructure
 
 namespace ContMDiffAlmostComplexStructure
 
