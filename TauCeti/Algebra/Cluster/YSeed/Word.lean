@@ -11,13 +11,11 @@ public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word
 /-!
 # Mutation words and reachable Y-seeds
 
-A word acts in reading order. Reversal undoes the action, and adjacent equal directions
-cancel even inside a longer word. Coefficient specialization, matrix projection and
-simultaneous relabelling transport the word action using `List.foldl_hom`.
-
-Reachability is an equivalence relation, and its class is unchanged on replacing the
-initial seed by any reachable seed. These statements concern Y-seeds only: no Laurent chart,
-classical cluster variable, or exchange-graph identification is asserted here.
+Finite mutation words index chart-free Y-patterns from an initial seed. Their reversible
+action defines mutation classes independently of the initial seed chosen in a class.
+Specializing coefficients along a semifield homomorphism transports the entire pattern,
+as do matrix projection and simultaneous relabelling. Words act in reading order,
+and adjacent equal directions cancel even inside a longer word.
 
 ## References
 
@@ -53,47 +51,43 @@ theorem mutationWord_append (s : YSeed K P) (u v : List K) :
   List.foldl_append
 
 /-- A consecutive pair of equal letters can be cancelled anywhere in a word. -/
-theorem mutationWord_cancel (s : YSeed K P) (u v : List K) (k : K) :
-    s.mutationWord (u ++ k :: k :: v) = s.mutationWord (u ++ v) := by
-  simp
+theorem mutationWord_append_cons_cons_self (s : YSeed K P) (u v : List K) (k : K) :
+    s.mutationWord (u ++ k :: k :: v) = s.mutationWord (u ++ v) :=
+  foldl_append_cons_cons_of_involutive mutation (mutation_involutive k) u v s
 
 /-- The reversed word recovers the initial seed. -/
 @[simp]
-theorem mutationWord_reverse (s : YSeed K P) (w : List K) :
+theorem mutationWord_mutationWord_reverse (s : YSeed K P) (w : List K) :
     (s.mutationWord w).mutationWord w.reverse = s :=
   foldl_reverse_foldl_of_involutive mutation mutation_involutive w s
 
+/-- A reversed word also gives a right inverse to the Y-seed action. -/
+@[simp]
+theorem mutationWord_reverse_mutationWord (s : YSeed K P) (w : List K) :
+    (s.mutationWord w.reverse).mutationWord w = s :=
+  foldl_foldl_reverse_of_involutive mutation mutation_involutive w s
+
 /-- Each word acts by a bijection, with inverse given by the reversed word. -/
-def mutationWordEquiv (w : List K) : YSeed K P ≃ YSeed K P where
-  toFun s := s.mutationWord w
-  invFun s := s.mutationWord w.reverse
-  left_inv s := s.mutationWord_reverse w
-  right_inv s := by simpa using s.mutationWord_reverse w.reverse
+def mutationWordEquiv (w : List K) : YSeed K P ≃ YSeed K P :=
+  foldlEquiv mutation mutation_involutive w
 
 @[simp]
 theorem mutationWordEquiv_apply (w : List K) (s : YSeed K P) :
-    mutationWordEquiv w s = s.mutationWord w := (rfl)
+    mutationWordEquiv w s = s.mutationWord w := foldlEquiv_apply _ _ _ _
 
 @[simp]
 theorem mutationWordEquiv_symm (w : List K) :
-    (mutationWordEquiv (P := P) w).symm = mutationWordEquiv w.reverse := by
-  apply Equiv.ext
-  intro s
-  rfl
+    (mutationWordEquiv (P := P) w).symm = mutationWordEquiv w.reverse :=
+  foldlEquiv_symm _ _ _
 
 @[simp]
 theorem mutationWordEquiv_nil :
-    mutationWordEquiv (K := K) (P := P) [] = Equiv.refl (YSeed K P) := by
-  apply Equiv.ext
-  intro s
-  rfl
+    mutationWordEquiv (K := K) (P := P) [] = Equiv.refl (YSeed K P) := foldlEquiv_nil _ _
 
 /-- Concatenation of words corresponds to composition of their seed equivalences. -/
 theorem mutationWordEquiv_append (u v : List K) :
-    mutationWordEquiv (P := P) (u ++ v) = (mutationWordEquiv u).trans (mutationWordEquiv v) := by
-  apply Equiv.ext
-  intro s
-  exact s.mutationWord_append u v
+    mutationWordEquiv (P := P) (u ++ v) = (mutationWordEquiv u).trans (mutationWordEquiv v) :=
+  foldlEquiv_append _ _ _ _
 
 /-- Forgetting coefficients commutes with the word action. -/
 @[simp]
@@ -118,56 +112,77 @@ theorem reindex_mutationWord [DecidableEq K'] (e : K ≃ K') (s : YSeed K P) (w 
 
 /-! ### Reachability -/
 
-/-- A Y-seed is reachable from another if a finite mutation word takes one to the other. -/
-def Reachable (s t : YSeed K P) : Prop := ∃ w : List K, s.mutationWord w = t
+/-- `Reachable s t` means that `t` is obtained from `s` by a finite mutation word. -/
+def Reachable (s t : YSeed K P) : Prop := FoldReachable mutation s t
+
+/-- Reachability is equivalent to existence of a word taking the initial seed to the target. -/
+theorem reachable_def {s t : YSeed K P} :
+    Reachable s t ↔ ∃ w : List K, s.mutationWord w = t := foldReachable_def
 
 /-- Applying a word always gives a reachable seed. -/
 theorem reachable_mutationWord (s : YSeed K P) (w : List K) :
-    Reachable s (s.mutationWord w) := ⟨w, rfl⟩
+    Reachable s (s.mutationWord w) := foldReachable_def.mpr ⟨w, rfl⟩
 
-/-- Every seed is reachable by the empty word. -/
-@[refl]
-theorem Reachable.refl (s : YSeed K P) : Reachable s s := ⟨[], rfl⟩
+/-- A single mutation gives a reachable seed. -/
+theorem reachable_mutation (s : YSeed K P) (k : K) : Reachable s (s.mutation k) :=
+  foldReachable_def.mpr ⟨[k], rfl⟩
 
-/-- Reverse a witnessing word to reverse reachability. -/
+/-- Every Y-seed is reachable from itself. -/
+@[refl, simp]
+theorem Reachable.refl (s : YSeed K P) : Reachable s s := FoldReachable.refl s
+
+/-- Reachability of Y-seeds is symmetric. -/
 @[symm]
-theorem Reachable.symm {s t : YSeed K P} (h : Reachable s t) : Reachable t s := by
-  obtain ⟨w, rfl⟩ := h
-  exact ⟨w.reverse, s.mutationWord_reverse w⟩
+theorem Reachable.symm {s t : YSeed K P} (h : Reachable s t) : Reachable t s :=
+  FoldReachable.symm mutation_involutive h
 
-/-- Concatenate witnessing words to compose reachability. -/
+/-- Reachability of Y-seeds is transitive. -/
 @[trans]
 theorem Reachable.trans {s t u : YSeed K P} (h : Reachable s t) (h' : Reachable t u) :
-    Reachable s u := by
-  obtain ⟨w, rfl⟩ := h
-  obtain ⟨v, rfl⟩ := h'
-  exact ⟨w ++ v, s.mutationWord_append w v⟩
+    Reachable s u := FoldReachable.trans h h'
 
 /-- Mutation reachability is an equivalence relation. -/
 theorem reachable_equivalence : Equivalence (Reachable (K := K) (P := P)) :=
-  ⟨Reachable.refl, Reachable.symm, Reachable.trans⟩
+  FoldReachable.equivalence mutation_involutive
 
 /-- Replacing the initial seed by any reachable seed leaves its reachable class unchanged. -/
 theorem Reachable.reachable_iff {s t u : YSeed K P} (h : Reachable s t) :
-    Reachable t u ↔ Reachable s u :=
-  ⟨h.trans, h.symm.trans⟩
+    Reachable t u ↔ Reachable s u := FoldReachable.reachable_iff mutation_involutive h
+
+/-- Mutation words on the initial seed do not alter its mutation class. -/
+@[simp]
+theorem reachable_mutationWord_left_iff (s t : YSeed K P) (w : List K) :
+    Reachable (s.mutationWord w) t ↔ Reachable s t :=
+  (reachable_mutationWord s w).reachable_iff
+
+/-- Mutation words on the target seed do not alter its mutation class. -/
+@[simp]
+theorem reachable_mutationWord_right_iff (s t : YSeed K P) (w : List K) :
+    Reachable s (t.mutationWord w) ↔ Reachable s t :=
+  ⟨fun h ↦ h.trans (reachable_mutationWord t w).symm,
+    fun h ↦ h.trans (reachable_mutationWord t w)⟩
+
+/-- A mutation of the initial seed does not alter its mutation class. -/
+@[simp]
+theorem reachable_mutation_left_iff (s t : YSeed K P) (k : K) :
+    Reachable (s.mutation k) t ↔ Reachable s t := by
+  simpa using reachable_mutationWord_left_iff s t [k]
+
+/-- A mutation of the target seed does not alter its mutation class. -/
+@[simp]
+theorem reachable_mutation_right_iff (s t : YSeed K P) (k : K) :
+    Reachable s (t.mutation k) ↔ Reachable s t := by
+  simpa using reachable_mutationWord_right_iff s t [k]
 
 /-- Specialization takes reachable seeds to reachable seeds, without injectivity assumptions. -/
 theorem Reachable.map {s t : YSeed K P} (h : Reachable s t)
-    (f : CoefficientSemifieldHom P Q) : Reachable (s.map f) (t.map f) := by
-  obtain ⟨w, rfl⟩ := h
-  exact ⟨w, (s.map_mutationWord f w).symm⟩
+    (f : CoefficientSemifieldHom P Q) : Reachable (s.map f) (t.map f) :=
+  FoldReachable.map h (fun s ↦ s.map f) id (fun s k ↦ s.map_mutation f k)
 
 /-- Relabelling preserves and reflects reachability. -/
 @[simp]
 theorem reachable_reindex_iff [DecidableEq K'] (e : K ≃ K') (s t : YSeed K P) :
-    Reachable (reindex e s) (reindex e t) ↔ Reachable s t := by
-  constructor
-  · rintro ⟨w, hw⟩
-    refine ⟨w.map e.symm, ?_⟩
-    apply (reindex (P := P) e).injective
-    simpa [reindex_mutationWord, List.map_map] using hw
-  · rintro ⟨w, rfl⟩
-    exact ⟨w.map e, (reindex_mutationWord e s w).symm⟩
+    Reachable (reindex e s) (reindex e t) ↔ Reachable s t :=
+  FoldReachable.equiv_iff (reindex e) e (fun s k ↦ (s.mutation_reindex e k).symm) s t
 
 end TauCeti.YSeed
