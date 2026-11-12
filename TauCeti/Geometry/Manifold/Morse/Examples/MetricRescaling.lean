@@ -83,7 +83,7 @@ theorem scaledLineMetric_inner (hc : 0 < c) (x v w : ℝ) :
 
 /-- For the metric `scaledLineMetric`, a tangent vector has length `√c` times its length as a
 real number. -/
-private theorem enorm_scaledLineMetric (hc : 0 < c) (x : ℝ) (v : TangentSpace 𝓘(ℝ, ℝ) x) :
+private theorem eNorm_scaledLineMetric (hc : 0 < c) (x : ℝ) (v : TangentSpace 𝓘(ℝ, ℝ) x) :
     let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
       ⟨(scaledLineMetric hc).toRiemannianMetric⟩
     ‖v‖ₑ = ENNReal.ofReal √c * ‖NormedSpace.fromTangentSpace x v‖ₑ := by
@@ -177,10 +177,10 @@ theorem riemannianEDist_scaledLineMetric (hc : 0 < c) (x y : ℝ) :
       ?_
     rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc]
     have hd (t : ℝ) : ‖mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) γ t 1‖ₑ = ENNReal.ofReal (√c * |x - y|) := by
-      rw [enorm_scaledLineMetric hc, mfderiv_eq_fderiv]
+      rw [eNorm_scaledLineMetric hc, mfderiv_eq_fderiv]
       -- The tangent vector `1` at `t` is the real number `1`.
       have h1 : |NormedSpace.fromTangentSpace (𝕜 := ℝ) t 1| = 1 := abs_one
-      simp [γ, Real.enorm_eq_ofReal_abs, abs_sub_comm, h1]
+      simp [γ, Real.eNorm_eq_ofReal_abs, abs_sub_comm, h1]
     simp_rw [hd]
     simp
   · -- The map `y ↦ √c y` preserves the length of tangent vectors, so it does not increase
@@ -192,9 +192,9 @@ theorem riemannianEDist_scaledLineMetric (hc : 0 < c) (x y : ℝ) :
       exact h
     · have hf : fderiv ℝ (fun y : ℝ ↦ √c * y) z = ContinuousLinearMap.toSpanSingleton ℝ √c := by
         simpa using ((hasDerivAt_id z).const_mul √c).hasFDerivAt.fderiv
-      rw [enorm_scaledLineMetric hc, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, hf,
-        ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, enorm_mul, ENNReal.coe_one,
-        one_mul, mul_comm, Real.enorm_of_nonneg (Real.sqrt_nonneg _)]
+      rw [eNorm_scaledLineMetric hc, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, hf,
+        ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, eNorm_mul, ENNReal.coe_one,
+        one_mul, mul_comm, Real.eNorm_of_nonneg (Real.sqrt_nonneg _)]
       -- The two sides differ only in the coercion of `NormedSpace.fromTangentSpace z`.
       exact le_rfl
 
@@ -261,7 +261,7 @@ theorem pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric (hc :
   set g : ℝ → ℝ := fun τ ↦ √c * |x₀| * (2 / c) * Real.exp (-(2 / c * τ))
   have hd (τ : ℝ) : ‖mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun τ ↦ x₀ * Real.exp (-(2 / c * τ))) τ 1‖ₑ =
       ENNReal.ofReal (g τ) := by
-    rw [enorm_scaledLineMetric hc, mfderiv_eq_fderiv,
+    rw [eNorm_scaledLineMetric hc, mfderiv_eq_fderiv,
       (hasDerivAt_mul_exp_neg_two_div_mul x₀ c τ).hasFDerivAt.fderiv]
     -- The tangent vector `1` at `τ` is the real number `1`.
     have h1 : NormedSpace.fromTangentSpace (𝕜 := ℝ) τ 1 = 1 := rfl
