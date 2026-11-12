@@ -43,7 +43,7 @@ sphere. At the points of the upper contact set of `v` where its gradient is smal
 `M / diam B`, `M = max v`, the supporting affine functions are nonnegative on `B`
 (`TauCeti.PDE.norm_mul_le_sub_of_forall_le_add_inner`), which bounds the gradient of `v` by
 `v / (R - ‖· - c‖)`; that part of the contact set suffices for the Aleksandrov measure estimate
-(`TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_hessianOperator_inter`). Expanding
+(`TauCeti.PDE.addHaar_ball_le_lintegral_inter_preimage_abs_det_hessianOperator`). Expanding
 `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼ(η u)` (`TauCeti.PDE.sum_mul_fderiv_fderiv_mul`) then gives, there,
 
 `-∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv ≤ f⁻ + K Λ R⁻² s^m u ≤ f⁻ + K Λ R⁻² M^(m / (m + 2)) (u⁺)^(2 / (m + 2))`,
@@ -380,15 +380,15 @@ private theorem le_mul_add_of_cutoff_mul_le {lam Lam R M : ℝ} {c x₀ : Euclid
   -- `‖∇v‖ < M / diam B`, with `λ I` in place of the coefficients and `G = f⁻ + K' (u⁺)^q`.
   set G : EuclideanSpace ℝ ι → ℝ := fun y ↦ (f y)⁻ + K' * (u y)⁺ ^ q
   have hG0 (y : EuclideanSpace ℝ ι) : 0 ≤ G y := by positivity
-  set Γ := upperContactSet v B ∩ {y | ‖∇ v y‖ < (v x₀ - 0) / diam B}
+  set Γ := upperContactSet v B ∩ ∇ v ⁻¹' ball 0 ((v x₀ - 0) / diam B)
   have hΓB : Γ ⊆ B := inter_subset_left.trans upperContactSet_subset
   have hΓm : MeasurableSet Γ :=
-    measurableSet_upperContactSet_inter_setOf_norm_gradient_lt isOpen_ball
-      (hv2.of_le (by norm_num)) _
+    (measurableSet_upperContactSet isOpen_ball (hv2.of_le (by norm_num))).inter
+      (measurable_gradient v measurableSet_ball)
   have hpt (y : EuclideanSpace ℝ ι) (hy : y ∈ Γ) : ENNReal.ofReal |(hessianOperator v y).det| ≤
       ENNReal.ofReal (((-G y)⁻ / N) ^ N / (lam • (1 : Matrix ι ι ℝ)).det) := by
     have hyM : ‖∇ v y‖ * diam B ≤ M := by
-      have h : ‖∇ v y‖ < (v x₀ - 0) / diam B := hy.2
+      have h : ‖∇ v y‖ < (v x₀ - 0) / diam B := mem_ball_zero_iff.1 hy.2
       rw [lt_div_iff₀ (by rw [hdiam]; positivity), sub_zero] at h
       exact hM ▸ h.le
     refine ENNReal.ofReal_le_ofReal ?_
@@ -396,8 +396,9 @@ private theorem le_mul_add_of_cutoff_mul_le {lam Lam R M : ℝ} {c x₀ : Euclid
     exact abs_det_hessianOperator_cutoff_mul_le m ha hu hsub hx₀ hmax hM hy.1 hyM
   have hkey : volume (ball (0 : EuclideanSpace ℝ ι) ((v x₀ - 0) / diam B)) ≤
       ∫⁻ y in B, ENNReal.ofReal (((-G y)⁻ / N) ^ N / (lam • (1 : Matrix ι ι ℝ)).det) :=
-    (addHaar_ball_le_lintegral_abs_det_hessianOperator_inter volume isBounded_ball isOpen_ball
-      hvcont hv2 hfront hx₀).trans ((setLIntegral_mono' hΓm hpt).trans (lintegral_mono_set hΓB))
+    (addHaar_ball_le_lintegral_inter_preimage_abs_det_hessianOperator volume isBounded_ball
+      isOpen_ball hvcont hv2 hfront hx₀ le_rfl).trans
+      ((setLIntegral_mono' hΓm hpt).trans (lintegral_mono_set hΓB))
   -- `G ∈ Lⁿ(B)`: `u⁺` and `(u⁺)^q` are continuous on the compact `closedBall c R ⊇ B`.
   have hposc : ContinuousOn (fun y ↦ (u y)⁺) (closedBall c R) :=
     continuous_posPart.comp_continuousOn hcont
