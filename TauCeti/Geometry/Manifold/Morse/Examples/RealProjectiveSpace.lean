@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
-import Mathlib.Analysis.Convex.Contractible
 
 /-!
 # The critical-band spectral sequence of real projective space
@@ -41,10 +40,6 @@ the maximum, the integral homology groups `H₀`, `H₁` and `H₂` of `ℝℙ²
 
 ## Main results
 
-* `TauCeti.isCriticalBandCut_projectiveMomentFunction_natCast`: the half-integers form a
-  critical-band cut.
-* `TauCeti.contractibleSpace_sublevel_projectiveMomentFunction_natCast`: the sublevels
-  `{f ≤ c}`, `0 ≤ c < 1`, are contractible.
 * `TauCeti.nonempty_realProjectiveMomentSpectralSequence_page_two_X_iso` and
   `TauCeti.isZero_realProjectiveMomentSpectralSequence_page_two_X`: the first page.
 * `TauCeti.mono_realProjectiveMomentSpectralSequence_page_two_d`,
@@ -76,102 +71,6 @@ namespace TauCeti
 
 variable {N : ℕ}
 
-/-- The standard weights `0, 1, …, N` are pairwise distinct. -/
-private theorem injective_natCast_fin : Function.Injective fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ) :=
-  Nat.cast_injective.comp Fin.val_injective
-
-/-- A natural number in the band `[q - 1/2, q + 1/2]` is `q`. -/
-private theorem natCast_eq_of_mem_Icc {k : ℕ} {q : ℤ}
-    (h : (k : ℝ) ∈ Icc ((q : ℝ) - 1 / 2) (((q + 1 : ℤ) : ℝ) - 1 / 2)) : (k : ℤ) = q := by
-  obtain ⟨h₁, h₂⟩ := h
-  push_cast at h₂
-  have h₁' : q - 1 < (k : ℤ) := by exact_mod_cast (show (q : ℝ) - 1 < k by linarith)
-  have h₂' : (k : ℤ) < q + 1 := by exact_mod_cast (show (k : ℝ) < q + 1 by linarith)
-  omega
-
-/-- **The half-integer cut.** For the moment function `[v] ↦ (∑ i, i vᵢ²) / ∑ i, vᵢ²` on
-`ℝℙᴺ`, whose critical points are the coordinate points `[eₖ]` with values `k`, the half-integers
-`q - 1/2` form a critical-band cut: the band between `q - 1/2` and `q + 1/2` is compact and its only
-possible critical value is `q`. -/
-theorem isCriticalBandCut_projectiveMomentFunction_natCast :
-    IsCriticalBandCut 𝓘(ℝ, Fin N → ℝ)
-      (projectiveMomentFunction ℝ fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ))
-      fun q : ℤ ↦ (q : ℝ) - 1 / 2 := by
-  refine ⟨fun q ↦ ⟨(isClosed_Icc.preimage
-    (contMDiff_projectiveMomentFunction (r := 0) _).continuous).isCompact, q, ?_, ?_⟩⟩
-  · push_cast
-    constructor <;> linarith
-  rintro x hx ⟨h₁, h₂⟩
-  rw [criticalPoints_projectiveMomentFunction injective_natCast_fin] at hx
-  obtain ⟨k, rfl⟩ := hx
-  rw [projectiveMomentFunction_mk_single] at h₁ h₂ ⊢
-  exact_mod_cast natCast_eq_of_mem_Icc ⟨h₁, h₂⟩
-
-/-- A point outside the affine open `v₀ ≠ 0` has value at least `1`. -/
-private theorem one_le_projectiveMomentFunction_natCast {x : ℙ ℝ (Fin (N + 1) → ℝ)}
-    (hx : x ∉ affineOpen 0) :
-    1 ≤ projectiveMomentFunction ℝ (fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) x := by
-  induction x using ind with | h v hv =>
-  rw [mk_mem_affineOpen_iff, not_not] at hx
-  rw [projectiveMomentFunction_mk, one_le_div (by
-    obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
-    exact Finset.sum_pos' (fun j _ ↦ by positivity)
-      ⟨i, Finset.mem_univ _, by simpa using sq_pos_of_ne_zero hi⟩)]
-  refine Finset.sum_le_sum fun i _ ↦ ?_
-  rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨j, rfl⟩
-  · simp [hx]
-  · exact le_mul_of_one_le_left (by positivity) (by simp)
-
-/-- **The sublevels below the saddle are contractible.** For `0 ≤ c < 1`, the sublevel
-`{f ≤ c}` of the moment function `f [v] = (∑ i, i vᵢ²) / ∑ i, vᵢ²` on `ℝℙᴺ` lies in the affine
-open `v₀ ≠ 0`, where it is star-convex about the minimum `[e₀]`. -/
-theorem contractibleSpace_sublevel_projectiveMomentFunction_natCast {c : ℝ} (hc₀ : 0 ≤ c)
-    (hc : c < 1) :
-    ContractibleSpace
-      {x | projectiveMomentFunction ℝ (fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) x ≤ c} := by
-  set f := projectiveMomentFunction ℝ fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)
-  set e := affineOpenPartialHomeomorph (K := ℝ) (n := N) 0
-  have hsub : {x | f x ≤ c} ⊆ e.source := fun x hx ↦ by
-    by_contra h
-    exact absurd ((one_le_projectiveMomentFunction_natCast (by simpa [e] using h)).trans hx)
-      (not_le.2 hc)
-  have himage : e '' {x | f x ≤ c} = {z | f ((affineChart 0).symm z) ≤ c} := by
-    rw [e.image_eq_target_inter_inv_preimage hsub]
-    simp [e]
-  -- In the chart, `f` reads `(∑ⱼ (j + 1) zⱼ²) / (1 + ∑ⱼ zⱼ²)`, which decreases along rays
-  -- towards the origin.
-  have hstar : StarConvex ℝ 0 {z | f ((affineChart 0).symm z) ≤ c} := by
-    intro z hz a b ha hb hab
-    simp only [mem_ofPred_eq, smul_zero, zero_add] at hz ⊢
-    rw [← Function.comp_apply (f := f), projectiveMomentFunction_comp_affineChart_symm,
-      ProjectiveMomentChart.model_apply] at hz ⊢
-    refine le_trans ?_ hz
-    simp only [Pi.smul_apply, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, Function.comp_apply,
-      Fin.val_zero, Nat.cast_zero, zero_add] at hz ⊢
-    have hA : 0 ≤ ∑ j : Fin N, ((Fin.succAbove 0 j : ℕ) : ℝ) * z j ^ 2 :=
-      Finset.sum_nonneg fun j _ ↦ by positivity
-    have hB : 0 ≤ ∑ j : Fin N, z j ^ 2 := Finset.sum_nonneg fun j _ ↦ by positivity
-    have hb1 : b ^ 2 ≤ 1 := by nlinarith
-    rw [← Finset.mul_sum, show ∑ j : Fin N, ((Fin.succAbove 0 j : ℕ) : ℝ) * (b ^ 2 * z j ^ 2) =
-      b ^ 2 * ∑ j : Fin N, ((Fin.succAbove 0 j : ℕ) : ℝ) * z j ^ 2 by
-        rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun j _ ↦ by ring,
-      div_le_div_iff₀ (by positivity) (by positivity)]
-    nlinarith [mul_nonneg hA hB, sq_nonneg b]
-  have hne : {z | f ((affineChart (K := ℝ) (n := N) 0).symm z) ≤ c}.Nonempty :=
-    ⟨0, by
-      rw [mem_ofPred_eq, affineChart_symm_zero]
-      simp only [f]
-      rw [projectiveMomentFunction_mk_single]
-      simpa using hc₀⟩
-  have := hstar.contractibleSpace hne
-  exact (e.homeomorphOfImageSubsetSource hsub himage).contractibleSpace
-
-/-- The coordinate point `[eₖ]` has Morse index `k`. -/
-private theorem manifoldMorseIndex_projectiveMomentFunction_natCast_real (k : Fin (N + 1)) :
-    manifoldMorseIndex 𝓘(ℝ, Fin N → ℝ) (projectiveMomentFunction ℝ fun i ↦ ((i : ℕ) : ℝ))
-      (mk ℝ (Pi.single k 1) (by simp)) = k := by
-  rw [manifoldMorseIndex_projectiveMomentFunction_natCast, Module.finrank_self, one_mul]
-
 /-- The critical points with value in the band `(q - 1/2, q + 1/2]` and of Morse index `k` form a
 singleton when `k = q ≤ N`. -/
 private noncomputable abbrev uniqueBand (k : ℕ) (hk : k ≤ N) :
@@ -189,10 +88,10 @@ private noncomputable abbrev uniqueBand (k : ℕ) (hk : k ≤ N) :
     manifoldMorseIndex_projectiveMomentFunction_natCast_real _⟩
   uniq := by
     rintro ⟨⟨x, hx, hfx⟩, -⟩
-    rw [criticalPoints_projectiveMomentFunction injective_natCast_fin] at hx
-    obtain ⟨j, rfl⟩ := hx
-    rw [mem_preimage, projectiveMomentFunction_mk_single] at hfx
-    have hj : (j : ℕ) = k := by exact_mod_cast natCast_eq_of_mem_Icc (Ioc_subset_Icc_self hfx)
+    obtain ⟨j, hj, rfl⟩ :=
+      exists_eq_mk_single_of_mem_criticalPoints_projectiveMomentFunction_natCast hx
+        (Ioc_subset_Icc_self hfx)
+    replace hj : (j : ℕ) = k := by exact_mod_cast hj
     rcases j with ⟨j, hjN⟩
     simp only at hj
     subst hj
@@ -211,7 +110,7 @@ coefficients in `R`. Its first page (numbered `2`) has at `(p, q)` the relative 
 noncomputable abbrev realProjectiveMomentSpectralSequence :=
   filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) R
     ((sublevel_mono (projectiveMomentFunction ℝ fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ))).comp
-      (isCriticalBandCut_projectiveMomentFunction_natCast (N := N)).monotone)
+      (isCriticalBandCut_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := N)).monotone)
 
 variable {N}
 
@@ -222,8 +121,8 @@ theorem nonempty_realProjectiveMomentSpectralSequence_page_two_X_iso (k : ℕ) (
     Nonempty (((realProjectiveMomentSpectralSequence N R).page 2).X
       ((-(2 * k : ℤ), (k : ℤ)) : ℤ × ℤ) ≅ R) := by
   have hf := isMorse_projectiveMomentFunction (𝕜 := ℝ)
-    (w := fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) injective_natCast_fin
-  have ha := isCriticalBandCut_projectiveMomentFunction_natCast (N := N)
+    (w := fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) (Nat.cast_injective.comp Fin.val_injective)
+  have ha := isCriticalBandCut_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := N)
   obtain ⟨e⟩ := hf.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma R ha.monotone
     (ha.isCriticalBand k) (-(2 * k : ℤ), (k : ℤ)) rfl k (by push_cast; ring)
   have := uniqueBand k hk
@@ -236,34 +135,22 @@ theorem isZero_realProjectiveMomentSpectralSequence_page_two_X (pq : ℤ × ℤ)
     (h : ∀ k : ℕ, k ≤ N → pq ≠ (-(2 * k : ℤ), (k : ℤ))) :
     IsZero (((realProjectiveMomentSpectralSequence N R).page 2).X pq) := by
   have hf := isMorse_projectiveMomentFunction (𝕜 := ℝ)
-    (w := fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) injective_natCast_fin
-  have ha := isCriticalBandCut_projectiveMomentFunction_natCast (N := N)
+    (w := fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) (Nat.cast_injective.comp Fin.val_injective)
+  have ha := isCriticalBandCut_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := N)
   rcases lt_or_ge 0 (pq.1 + pq.2) with hpos | hle
   · exact isZero_filteredSpaceSpectralSequence_page_two_X R _ pq hpos
   obtain ⟨n, hn⟩ := Int.exists_eq_neg_ofNat hle
   refine hf.isZero_filteredSpaceSpectralSequence_page_two_X R ha.monotone (ha.isCriticalBand _)
     pq rfl n hn fun x hx hfx hidx ↦ ?_
-  rw [criticalPoints_projectiveMomentFunction injective_natCast_fin] at hx
-  obtain ⟨j, rfl⟩ := hx
-  rw [projectiveMomentFunction_mk_single] at hfx
+  obtain ⟨j, hj, rfl⟩ :=
+    exists_eq_mk_single_of_mem_criticalPoints_projectiveMomentFunction_natCast hx
+      (Ioc_subset_Icc_self hfx)
   rw [manifoldMorseIndex_projectiveMomentFunction_natCast_real] at hidx
-  have hj := natCast_eq_of_mem_Icc (Ioc_subset_Icc_self hfx)
   refine h j (by omega) (Prod.ext ?_ hj.symm)
   simp only
   omega
 
 end SpectralSequence
-
-/-- The moment function with the standard weights is at most `N`. -/
-private theorem projectiveMomentFunction_natCast_le (x : ℙ ℝ (Fin (N + 1) → ℝ)) :
-    projectiveMomentFunction ℝ (fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) x ≤ N := by
-  induction x using ind with | h v hv =>
-  rw [projectiveMomentFunction_mk, div_le_iff₀ (by
-    obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
-    exact Finset.sum_pos' (fun j _ ↦ by positivity)
-      ⟨i, Finset.mem_univ _, by simpa using sq_pos_of_ne_zero hi⟩), Finset.mul_sum]
-  exact Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right
-    (by exact_mod_cast Nat.lt_succ_iff.1 i.2) (by positivity)
 
 section Plane
 
@@ -276,17 +163,19 @@ private abbrev filt : ℤ → Set (TopCat.of (ℙ ℝ (Fin 3 → ℝ))) :=
 
 /-- The critical-band filtration of `ℝℙ²` is increasing. -/
 private theorem monotone_filt : Monotone filt :=
-  (sublevel_mono _).comp (isCriticalBandCut_projectiveMomentFunction_natCast (N := 2)).monotone
+  (sublevel_mono _).comp
+    (isCriticalBandCut_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := 2)).monotone
 
 /-- The disc `{f ≤ 1/2}` around the minimum is contractible. -/
 private theorem contractibleSpace_filt_one : ContractibleSpace (filt 1) :=
-  contractibleSpace_sublevel_projectiveMomentFunction_natCast (N := 2)
+  contractibleSpace_sublevel_projectiveMomentFunction_natCast (n := 2)
     (c := ((1 : ℤ) : ℝ) - 1 / 2) (by norm_num) (by norm_num)
 
 /-- The last stage `{f ≤ 5/2}` of the filtration is all of `ℝℙ²`. -/
 private def filtThreeHomeomorph : filt 3 ≃ₜ RealProjectiveSpace 2 :=
   (Homeomorph.setCongr (eq_univ_of_forall fun x ↦
-      (projectiveMomentFunction_natCast_le (N := 2) x).trans (by norm_num))).trans
+      (projectiveMomentFunction_le (c := 2) (fun i ↦ by exact_mod_cast Nat.le_of_lt_succ i.2)
+        x).trans (by norm_num))).trans
     ((Homeomorph.Set.univ _).trans (RealProjectiveSpace.homeomorphProjectivization 2).symm)
 
 /-- The homology of the pair `({f ≤ 5/2}, {f ≤ 1/2})` is the homology of `ℝℙ²` in positive
