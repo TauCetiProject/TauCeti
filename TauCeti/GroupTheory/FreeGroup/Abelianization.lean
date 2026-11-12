@@ -29,9 +29,9 @@ namespace IsFreeGroup
 
 /-- The abelianization of a free group is torsion-free. -/
 instance instIsMulTorsionFreeAbelianization {G : Type*} [Group G] [IsFreeGroup G] :
-    IsMulTorsionFree (Abelianization G) :=
-  -- `FreeAbelianGroup α` is defined as `Additive (Abelianization (FreeGroup α))`.
-  have : IsMulTorsionFree (Abelianization (FreeGroup (Generators G))) :=
+    IsMulTorsionFree (Group.Abelianization G) :=
+  -- `FreeAbelianGroup α` is defined as `Additive (Group.Abelianization (FreeGroup α))`.
+  have : IsMulTorsionFree (Group.Abelianization (FreeGroup (Generators G))) :=
     inferInstanceAs (IsMulTorsionFree (Multiplicative (FreeAbelianGroup _)))
   (toFreeGroup G).abelianizationCongr.injective.isMulTorsionFree
     (toFreeGroup G).abelianizationCongr.toMonoidHom

@@ -85,7 +85,7 @@ theorem isVaught : IsVaught G := by
     ext
     simp [Subtype.ext_iff]
   have hc := isMulCommutative_iff.1 (isMulCommutative_of_sq_mul_sq_mul_sq_eq_one hH (Subtype.ext h))
-  have hcomm : ∀ {g k : G} (hg : g ∈ H) (hk : k ∈ H), Commute g k := fun hg hk =>
+  have hcomm : ∀ {g k : G}, g ∈ H → k ∈ H → Commute g k := fun hg hk =>
     (commute_iff_eq _ _).2 (by simpa using congrArg Subtype.val (hc ⟨_, hg⟩ ⟨_, hk⟩))
   exact ⟨hcomm hx hy, hcomm hx hz, hcomm hy hz⟩
 

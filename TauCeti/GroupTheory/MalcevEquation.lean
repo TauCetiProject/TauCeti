@@ -118,13 +118,13 @@ theorem pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_mem_center {a b c : G}
 /-- In a group with torsion-free abelianization, every homomorphism to the dihedral group of order
 `8` sends a solution of `x ^ 2 * y ^ 2 * z ^ 2 = 1` to pairwise commuting elements. -/
 theorem pairwise_commute_map_dihedralGroup_four_of_sq_mul_sq_mul_sq_eq_one
-    [IsMulTorsionFree (Abelianization G)] {x y z : G} (h : x ^ 2 * y ^ 2 * z ^ 2 = 1)
+    [IsMulTorsionFree (Group.Abelianization G)] {x y z : G} (h : x ^ 2 * y ^ 2 * z ^ 2 = 1)
     (π : G →* DihedralGroup 4) : ({π x, π y, π z} : Set (DihedralGroup 4)).Pairwise Commute := by
-  have h2 : Abelianization.of (x * y * z) ^ 2 = 1 := by
-    rw [← map_one Abelianization.of, ← h]
+  have h2 : Group.Abelianization.of (x * y * z) ^ 2 = 1 := by
+    rw [← map_one Group.Abelianization.of, ← h]
     simp [mul_pow]
   have hk : x * y * z ∈ commutator G :=
-    Abelianization.of_eq_one_iff.1 ((pow_eq_one_iff_left two_ne_zero).1 h2)
+    Group.Abelianization.of_eq_one_iff.1 ((pow_eq_one_iff_left two_ne_zero).1 h2)
   have hc : π (x * y * z) ∈ Subgroup.center (DihedralGroup 4) := by
     have := Subgroup.mem_map_of_mem π hk
     rw [map_commutator_eq] at this
