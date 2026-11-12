@@ -9,20 +9,20 @@ public import TauCeti.Analysis.Calculus.Morse.ZeroSectionChart
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.ProdBall
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Ball
 
 /-!
 # The parametric Morse lemma along the zero section over a manifold
 
-Let `S` be a boundaryless manifold, `E` a finite-dimensional real vector space and `F (b, v)` a
-real function on `S × E`, `C^{n+2}` near the zero section `S × {0}` over an open set `U` of `S`,
-whose zero section is critical in the fibres, with invertible vertical Hessians
-`H_b = D²(F (b, ·))(0)` for `b ∈ U`. This file shows that the canonical parametric Morse
-coordinate `TauCeti.parametricMorseCoord F (b, v)` of `TauCeti.Analysis.Calculus.Morse.Parametric`
-is a fibre coordinate on a neighbourhood of the whole zero section over `U`: the map
-`(b, v) ↦ (b, parametricMorseCoord F (b, v))` is a single `C^n` partial diffeomorphism of `S × E`,
-preserving the base in both directions, in which `F` is its vertical Hessian quadratic form,
-`F (b, v) = F (b, 0) + ½ H_b (ψ (b, v)).2 (ψ (b, v)).2`
+Let `1 ≤ n ≤ ∞`, let `S` be a finite-dimensional boundaryless `C^{n+2}` manifold, `E` a
+finite-dimensional real normed space and `F (b, v)` a real function on `S × E`, `C^{n+2}` near the
+zero section `S × {0}` over an open set `U` of `S`, whose zero section is critical in the
+fibres, with invertible vertical Hessians `H_b = D²(F (b, ·))(0)` for `b ∈ U`. This file shows
+that the canonical parametric Morse coordinate `TauCeti.parametricMorseCoord F (b, v)` of
+`TauCeti.Analysis.Calculus.Morse.Parametric` is a fibre coordinate on a neighbourhood of the whole
+zero section over `U`: the map `(b, v) ↦ (b, parametricMorseCoord F (b, v))` is a single `C^n`
+partial diffeomorphism of `S × E`, preserving the base in both directions, in which `F` is its
+vertical Hessian quadratic form, `F (b, v) = F (b, 0) + ½ H_b (ψ (b, v)).2 (ψ (b, v)).2`
 (`TauCeti.exists_partialDiffeomorph_parametricMorseCoord`). Its source contains the zero section
 over `U` and meets each fibre in a set star-convex about `0`.
 
@@ -35,11 +35,12 @@ section are therefore the chart normal forms of
 They are all restrictions of the one map `(b, v) ↦ (b, parametricMorseCoord F (b, v))`, and their
 sources contain products of open sets of `S` with balls about `0`. Over each base point these balls
 are nested, so the map is injective on their union and glues to a single partial diffeomorphism
-(`TauCeti.exists_partialDiffeomorph_eq_of_biUnion_prod_ball`).
+(`TauCeti.exists_partialDiffeomorph_source_eq_biUnion_prod_ball`).
 
-Families of this form arise along a Morse–Bott critical submanifold `S`, from a function read in
-normal coordinates. The canonical coordinate is then defined along the whole of `S` at once, with
-no choice of charts of `S`.
+Families of this form arise along a Morse–Bott critical submanifold, from a function read in
+normal coordinates once the normal spaces over an open set `S` of it are presented inside a
+product `S × E`, for instance by a trivialization of the normal bundle over `S`. The canonical
+coordinate is then defined along the whole of `S` at once, with no choice of charts of `S`.
 
 ## Main declarations
 
@@ -206,8 +207,9 @@ private theorem exists_partialDiffeomorph_parametricMorseCoord_prod_ball (hW : I
 
 /-- **The parametric Morse lemma along the zero section over a manifold.** Let `F (b, v)` be
 `C^{n+2}`, with `1 ≤ n ≤ ∞`, on an open set `W` of `S × E` containing the zero section over an
-open set `U` of the boundaryless manifold `S`, with critical zero section and invertible vertical
-Hessian `H_b` at every `(b, 0)`, `b ∈ U`. Then there is a single `C^n` partial diffeomorphism `ψ`
+open set `U` of the finite-dimensional boundaryless `C^{n+2}` manifold `S`, with `E` a
+finite-dimensional real normed space, with critical zero section and invertible vertical Hessian
+`H_b` at every `(b, 0)`, `b ∈ U`. Then there is a single `C^n` partial diffeomorphism `ψ`
 of `S × E`, with source in `W` containing the whole zero section over `U` and meeting each fibre in
 a set star-convex about `0`, which is given on its source by the canonical parametric Morse
 coordinate, `ψ (b, v) = (b, parametricMorseCoord F (b, v))`, preserves the base in both
@@ -233,9 +235,9 @@ theorem exists_partialDiffeomorph_parametricMorseCoord (hW : IsOpen W)
     ⟨(Diffeomorph.refl (I.prod 𝓘(ℝ, E)) (S × E) n).toPartialDiffeomorph⟩
   choose! V r e hV hbV hr hVe hVW hΦe hnf using hloc
   -- These local partial diffeomorphisms glue along the nested balls of their sources.
-  obtain ⟨ψ, hψsource, hψ⟩ := exists_partialDiffeomorph_eq_of_biUnion_prod_ball
-    (Φ := fun z : S × E ↦ (z.1, parametricMorseCoord F z)) (fun _ ↦ rfl) hV hVe
-    fun b hb z hz ↦ (hΦe b hb z hz).symm
+  obtain ⟨ψ, hψsource, hψ⟩ := exists_partialDiffeomorph_source_eq_biUnion_prod_ball
+    (Φ := fun z : S × E ↦ (z.1, parametricMorseCoord F z)) (fun _ _ ↦ rfl) hV hVe
+    fun b hb z hz ↦ (hΦe b hb z (hVe b hb hz)).symm
   have hmem {z : S × E} : z ∈ ψ.source ↔ ∃ b ∈ U, z ∈ V b ×ˢ Metric.ball 0 (r b) := by
     simp only [hψsource, mem_iUnion, exists_prop]
   refine ⟨ψ, fun z hz ↦ ?_, fun b hb ↦ ?_, fun z hz t ht ↦ ?_, fun z _ ↦ by rw [hψ],

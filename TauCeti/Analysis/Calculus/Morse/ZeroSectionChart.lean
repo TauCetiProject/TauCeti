@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.Parametric
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.ProdBall
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Ball
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
@@ -27,7 +27,7 @@ a neighbourhood of the whole zero section over `U`, in which `F` is its vertical
 form (`TauCeti.exists_parametricMorseCoord_chart`). The family need only be `C^{n+2}` on an open set
 containing the zero section over `U`. The source of the chart is a union of products of open sets of
 the base with balls about `0`; over each base point these balls are nested, so the chart is
-injective (`TauCeti.exists_partialDiffeomorph_eq_of_biUnion_prod_ball`).
+injective (`TauCeti.exists_partialDiffeomorph_source_eq_biUnion_prod_ball`).
 
 ## Main declarations
 
@@ -124,9 +124,9 @@ theorem exists_parametricMorseCoord_chart (hW : IsOpen W) (hF : ContDiffOn ℝ (
     ⟨(Diffeomorph.refl 𝓘(ℝ, P × E) (P × E) n).toPartialDiffeomorph⟩
   choose! U₀ r Θ hU₀ hbU₀ hr hΘsource hsubW hΘeq hnf using hloc
   -- These local partial diffeomorphisms glue along the nested balls of their sources.
-  obtain ⟨Ψ, hΨsource, hΨ⟩ := exists_partialDiffeomorph_eq_of_biUnion_prod_ball
-    (Φ := fun z : P × E ↦ (z.1, parametricMorseCoord F z)) (fun _ ↦ rfl) hU₀
-    (fun b hb ↦ (hΘsource b hb).ge) fun b hb z hz ↦ (hΘeq b hb z (hΘsource b hb ▸ hz)).symm
+  obtain ⟨Ψ, hΨsource, hΨ⟩ := exists_partialDiffeomorph_source_eq_biUnion_prod_ball
+    (Φ := fun z : P × E ↦ (z.1, parametricMorseCoord F z)) (fun _ _ ↦ rfl) hU₀
+    (fun b hb ↦ (hΘsource b hb).ge) fun b hb z hz ↦ (hΘeq b hb z hz).symm
   have hmem {z : P × E} : z ∈ Ψ.source ↔ ∃ b ∈ U, z ∈ U₀ b ×ˢ Metric.ball 0 (r b) := by
     simp only [hΨsource, mem_iUnion, exists_prop]
   let ψ := Ψ.toOpenPartialHomeomorph
