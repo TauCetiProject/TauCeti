@@ -71,12 +71,8 @@ argument, so what appears directly is the *conjugate* of the matrix coefficient
 
 ## References
 
-This is the `nonzero_eigenspace_finite_dim_continuous_rep` step of Layer 5 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-which asks for each nonzero eigenspace to be finite-dimensional and translation invariant, "so it
-carries a continuous finite-dimensional representation whose functions lie in `𝓡(G)`". Combined
-with an approximate identity it gives the uniform density of `𝓡(G)` in `C(G)`, the analytic core
-of the Peter-Weyl theorem.
+Combined with an approximate identity this gives the uniform density of `𝓡(G)` in `C(G)`
+(`TauCeti.dense_representativeSubmodule`), the analytic core of the Peter-Weyl theorem.
 
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, 2nd ed., CRC (2016), §5.2.
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapters 3-4.
