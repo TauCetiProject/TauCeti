@@ -47,7 +47,8 @@ subcomplex with the singular cohomology of `X` (`TauCeti.smallSingularCohomology
   `SSet.mayerVietorisCochainδ`: the maps of its long exact cohomology sequence, exact by
   `SSet.mayerVietorisCochain_exact₁`, `SSet.mayerVietorisCochain_exact₂` and
   `SSet.mayerVietorisCochain_exact₃`, with connecting morphism natural in maps of pushout squares
-  (`SSet.mayerVietorisCochainδ_naturality`); the other two maps are natural as well
+  (`SSet.mayerVietorisCochainδ_naturality`) and depending only on the maps of the square
+  (`SSet.mayerVietorisCochainδ_congr`); the other two maps are natural as well
   (`SSet.mayerVietorisCochainToBiprod_naturality`,
   `SSet.mayerVietorisCochainFromBiprod_naturality`).
 * `TauCeti.smallSingularCohomologyIso`: restricting cochains to the chains subordinate to an open
@@ -287,6 +288,17 @@ lemma mayerVietorisCochainδ_naturality (sq' : IsPushout t' l' r' b') [Mono t']
       comm₁₂ := by apply biprod.hom_ext <;> simp [← cochainComplexMap_comp, hr, hb]
       comm₂₃ := by apply biprod.hom_ext' <;> simp [← cochainComplexMap_comp, ht, hl] }
   exact HomologicalComplex.HomologySequence.δ_naturality ψ _ _ n m (by simpa)
+
+/-- The cochain Mayer–Vietoris connecting morphism of a pushout square of simplicial sets only
+depends on its maps. -/
+lemma mayerVietorisCochainδ_congr {t₀ : X₁ ⟶ X₂} {l₀ : X₁ ⟶ X₃} {r₀ : X₂ ⟶ X₄} {b₀ : X₃ ⟶ X₄}
+    (sq₀ : IsPushout t₀ l₀ r₀ b₀) (ht : t = t₀) (hl : l = l₀) (hr : r = r₀) (hb : b = b₀)
+    (n m : ℕ) (h : n + 1 = m := by lia) :
+    mayerVietorisCochainδ R k M sq n m h =
+      haveI : Mono t₀ := ht ▸ inferInstance
+      mayerVietorisCochainδ R k M sq₀ n m h := by
+  subst ht hl hr hb
+  rfl
 
 end SSet
 

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.FiveLemma
+public import TauCeti.Algebra.DirectSum.Exact
+public import TauCeti.Algebra.DirectSum.Prod
 public import TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.Product
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.AbsoluteCup
 
@@ -21,18 +23,24 @@ is
 (`TopCat.lerayHirsch`), with the source of the Leray–Hirsch map of a product
 `TopCat.lerayHirschProd`: for the projection `X × F ⟶ X` and the pullbacks of a family of classes
 on `F` the two agree (`TopCat.lerayHirsch_fst`). The Leray–Hirsch theorem asserts that it is
-bijective for a locally trivial bundle whose classes `e` restrict to a basis of the cohomology of
-every fibre. The map is natural in maps of spaces over a map of bases
+bijective for a locally trivial bundle with fibre `F` whose classes `e d` restrict to a basis of
+`Hᵈ` of every fibre, under finiteness hypotheses on the fibre: in Hatcher's statement, `Hᵈ(F; k)`
+is a finitely generated free `k`-module for every `d`; in the product case
+`TopCat.lerayHirschProd_bijective` below, the homology of `F` is projective in every degree and
+finitely generated in degrees at most `n`. The map is natural in maps of spaces over a map of bases
 (`TopCat.lerayHirsch_lof_naturality`), so its bijectivity is invariant under homeomorphisms over
 homeomorphisms (`TopCat.bijective_lerayHirsch_iff_of_isIso`).
 
 The main result is the **Mayer–Vietoris gluing step** (`TopCat.bijective_lerayHirsch_union`): for
 open subsets `U` and `V` of `B`, if the Leray–Hirsch maps of the restrictions of `p` over `U`, `V`
 and `U ∩ V`, with the restricted classes (`TopCat.lerayHirschRestrict`), are bijective in degrees
-`m ≤ n`, then so is the Leray–Hirsch map of the restriction of `p` over `U ∪ V`. Together with the
-product case `TopCat.lerayHirschProd_bijective`, induction over a finite cover of `B` by open sets
-over which `p` is trivial, with trivializations carrying the classes `e` to pullbacks of classes of
-the fibre, then gives the Leray–Hirsch theorem over a base with such a finite cover. This finite
+`m ≤ n`, then so is the Leray–Hirsch map of the restriction of `p` over `U ∪ V`. Let the fibre `F`
+satisfy the hypotheses of the product case `TopCat.lerayHirschProd_bijective` (homology projective
+in every degree and finitely generated in degrees at most `n`), and let `B` have a finite cover by
+open sets over which `p` is trivial, with trivializations carrying the classes `e d` to the
+pullbacks of a basis `b d` of `Hᵈ(F; k)` for every `d`. Then the product case, together with this
+gluing step by induction over the finite cover, gives the bijectivity of the Leray–Hirsch map in
+degrees at most `n`. This finite
 open cover route is the classical one; for arbitrary bases one instead inducts over cells and
 skeleta of a CW approximation.
 
@@ -203,93 +211,6 @@ abbrev lerayHirschRestrict (S : Set B) (n : ℕ) :=
 
 end Restrict
 
-/-! ### Linear algebra for the five lemma -/
-
-section LinearAlgebra
-
-/-- An exact short complex of modules gives exact linear maps between modules identified with its
-terms. -/
-private lemma function_exact_of_linearEquiv {S : ShortComplex (ModuleCat.{w} k)} (hS : S.Exact)
-    {X₁ X₂ X₃ : Type w} [AddCommGroup X₁] [Module k X₁] [AddCommGroup X₂] [Module k X₂]
-    [AddCommGroup X₃] [Module k X₃] (F : X₁ →ₗ[k] X₂) (G : X₂ →ₗ[k] X₃) (e₁ : S.X₁ ≃ₗ[k] X₁)
-    (e₂ : S.X₂ ≃ₗ[k] X₂) (e₃ : S.X₃ ≃ₗ[k] X₃) (h₁ : ∀ x, e₂ (S.f x) = F (e₁ x))
-    (h₂ : ∀ x, e₃ (S.g x) = G (e₂ x)) : Function.Exact F G := by
-  intro y
-  constructor
-  · intro hy
-    have : S.g (e₂.symm y) = 0 := e₃.injective (by rw [h₂, e₂.apply_symm_apply, hy, map_zero])
-    obtain ⟨x, hx⟩ := (ShortComplex.moduleCat_exact_iff S).1 hS _ this
-    exact ⟨e₁ x, by rw [← h₁, hx, e₂.apply_symm_apply]⟩
-  · rintro ⟨x, rfl⟩
-    obtain ⟨x, rfl⟩ := e₁.surjective x
-    rw [← h₁, ← h₂, S.moduleCat_zero_apply, map_zero]
-
-/-- An element of a biproduct of modules is the sum of the images of its two components. -/
-private lemma biprod_apply_eq {B₁ B₂ : ModuleCat.{w} k} (x : ↑(B₁ ⊞ B₂)) :
-    x = (biprod.inl : B₁ ⟶ B₁ ⊞ B₂) ((biprod.fst : B₁ ⊞ B₂ ⟶ B₁) x) +
-      (biprod.inr : B₂ ⟶ B₁ ⊞ B₂) ((biprod.snd : B₁ ⊞ B₂ ⟶ B₂) x) := by
-  exact (congrArg (fun φ : B₁ ⊞ B₂ ⟶ B₁ ⊞ B₂ ↦ φ x) (biprod.total (X := B₁) (Y := B₂))).symm
-
-variable {J : Type w} {A B C : J → Type w} [∀ j, AddCommGroup (A j)]
-  [∀ j, Module k (A j)] [∀ j, AddCommGroup (B j)] [∀ j, Module k (B j)]
-  [∀ j, AddCommGroup (C j)] [∀ j, Module k (C j)]
-
-/-- A direct sum of exact sequences is exact. -/
-private lemma exact_lmap (f : ∀ j, A j →ₗ[k] B j) (g : ∀ j, B j →ₗ[k] C j)
-    (h : ∀ j, Function.Exact (f j) (g j)) :
-    Function.Exact (DirectSum.lmap f) (DirectSum.lmap g) := by
-  rw [LinearMap.exact_iff, DirectSum.ker_lmap, DirectSum.range_lmap]
-  simp only [fun j ↦ (LinearMap.exact_iff.1 (h j))]
-
-/-- The map `⨁ⱼ (Aⱼ × Bⱼ) ⟶ (⨁ⱼ Aⱼ) × (⨁ⱼ Bⱼ)`. -/
-private def splitSum :
-    (⨁ j, A j × B j) →ₗ[k] (⨁ j, A j) × (⨁ j, B j) :=
-  (DirectSum.lmap fun j ↦ LinearMap.fst k (A j) (B j)).prod
-    (DirectSum.lmap fun j ↦ LinearMap.snd k (A j) (B j))
-
-private lemma bijective_splitSum : Function.Bijective (splitSum (k := k) (A := A) (B := B)) := by
-  constructor
-  · intro x y hxy
-    have h₁ : DirectSum.lmap (fun j ↦ LinearMap.fst k (A j) (B j)) x =
-        DirectSum.lmap (fun j ↦ LinearMap.fst k (A j) (B j)) y := congrArg Prod.fst hxy
-    have h₂ : DirectSum.lmap (fun j ↦ LinearMap.snd k (A j) (B j)) x =
-        DirectSum.lmap (fun j ↦ LinearMap.snd k (A j) (B j)) y := congrArg Prod.snd hxy
-    ext j : 1
-    have h₁j := DFunLike.congr_fun h₁ j
-    have h₂j := DFunLike.congr_fun h₂ j
-    rw [DirectSum.lmap_apply, DirectSum.lmap_apply] at h₁j h₂j
-    exact Prod.ext h₁j h₂j
-  · rintro ⟨y, z⟩
-    refine ⟨DirectSum.lmap (fun j ↦ LinearMap.inl k (A j) (B j)) y +
-      DirectSum.lmap (fun j ↦ LinearMap.inr k (A j) (B j)) z, ?_⟩
-    refine Prod.ext ?_ ?_ <;> ext j : 1 <;> simp [splitSum]
-
-/-- The pair of maps `⨁ⱼ (Aⱼ × Bⱼ) ⟶ P × Q` given by maps `⨁ⱼ Aⱼ ⟶ P` and `⨁ⱼ Bⱼ ⟶ Q`. -/
-private def pairMap {P Q : Type w} [AddCommGroup P] [Module k P] [AddCommGroup Q] [Module k Q]
-    (φ : (⨁ j, A j) →ₗ[k] P) (ψ : (⨁ j, B j) →ₗ[k] Q) : (⨁ j, A j × B j) →ₗ[k] P × Q :=
-  φ.prodMap ψ ∘ₗ splitSum
-
-private lemma surjective_pairMap {P Q : Type w} [AddCommGroup P] [Module k P] [AddCommGroup Q]
-    [Module k Q] {φ : (⨁ j, A j) →ₗ[k] P} {ψ : (⨁ j, B j) →ₗ[k] Q} (hφ : Function.Surjective φ)
-    (hψ : Function.Surjective ψ) : Function.Surjective (pairMap φ ψ) := by
-  rw [pairMap, LinearMap.coe_comp]
-  exact (Function.Surjective.prodMap hφ hψ).comp bijective_splitSum.2
-
-private lemma bijective_pairMap {P Q : Type w} [AddCommGroup P] [Module k P] [AddCommGroup Q]
-    [Module k Q] {φ : (⨁ j, A j) →ₗ[k] P} {ψ : (⨁ j, B j) →ₗ[k] Q} (hφ : Function.Bijective φ)
-    (hψ : Function.Bijective ψ) : Function.Bijective (pairMap φ ψ) := by
-  rw [pairMap, LinearMap.coe_comp]
-  exact (Function.Bijective.prodMap hφ hψ).comp bijective_splitSum
-
-private lemma pairMap_lof [DecidableEq J] {P Q : Type w} [AddCommGroup P] [Module k P]
-    [AddCommGroup Q] [Module k Q] (φ : (⨁ j, A j) →ₗ[k] P) (ψ : (⨁ j, B j) →ₗ[k] Q) (j : J)
-    (y : A j) (z : B j) :
-    pairMap φ ψ (DirectSum.lof k J (fun j ↦ A j × B j) j (y, z)) =
-      (φ (DirectSum.lof k J A j y), ψ (DirectSum.lof k J B j z)) := by
-  simp [pairMap, splitSum]
-
-end LinearAlgebra
-
 /-! ### The Mayer–Vietoris sequence as exact sequences of modules -/
 
 section MayerVietoris
@@ -320,8 +241,7 @@ private lemma biprodIsoProd_toBiprod (q : ℕ)
     (x : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
     (ModuleCat.biprodIsoProd _ _).toLinearEquiv
       (singularCohomologyMayerVietorisToBiprod _ k _ U V q x) = mvRes k U V q x := by
-  change (ModuleCat.biprodIsoProd _ _).hom _ = _
-  rw [ModuleCat.biprodIsoProd_hom_apply]
+  rw [Iso.toLinearEquiv_apply, ModuleCat.biprodIsoProd_hom_apply]
   refine Prod.ext ?_ ?_
   · exact (ConcreteCategory.comp_apply _ _ x).symm.trans
       (by rw [singularCohomologyMayerVietorisToBiprod_fst]; rfl)
@@ -335,12 +255,10 @@ private lemma fromBiprod_apply (q : ℕ)
       (of V).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)) :
     singularCohomologyMayerVietorisFromBiprod _ k _ U V q x =
       mvDiff k U V q ((ModuleCat.biprodIsoProd _ _).toLinearEquiv x) := by
-  conv_lhs => rw [biprod_apply_eq x]
-  change _ = mvDiff k U V q ((ModuleCat.biprodIsoProd _ _).hom x)
-  rw [map_add, ← ConcreteCategory.comp_apply biprod.inl,
-    ← ConcreteCategory.comp_apply biprod.inr, inl_singularCohomologyMayerVietorisFromBiprod,
-    inr_singularCohomologyMayerVietorisFromBiprod, ModuleCat.biprodIsoProd_hom_apply]
-  rfl
+  have h : singularCohomologyMayerVietorisFromBiprod _ k _ U V q =
+      (ModuleCat.biprodIsoProd _ _).hom ≫ ModuleCat.ofHom (mvDiff k U V q) := by
+    apply biprod.hom_ext' <;> refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_) <;> simp
+  rw [h, Iso.toLinearEquiv_apply, ConcreteCategory.comp_apply, ModuleCat.ofHom_apply]
 
 variable {U V} (hU : IsOpen U) (hV : IsOpen V) (hUV : U ∪ V = Set.univ)
 
@@ -352,21 +270,28 @@ private abbrev mvδ (q : ℕ) :
 
 include hU hV hUV in
 private lemma exact_mvRes_mvDiff (q : ℕ) : Function.Exact (mvRes k U V q) (mvDiff k U V q) :=
-  function_exact_of_linearEquiv (singularCohomologyMayerVietoris_exact₂ _ k _ hU hV hUV q) _ _
-    (LinearEquiv.refl k _) (ModuleCat.biprodIsoProd _ _).toLinearEquiv (LinearEquiv.refl k _)
-    (biprodIsoProd_toBiprod k U V q) (fromBiprod_apply k U V q)
+  Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := LinearEquiv.refl k _)
+    (e₂ := (ModuleCat.biprodIsoProd _ _).toLinearEquiv) (e₃ := LinearEquiv.refl k _)
+    (LinearMap.ext fun x ↦ (biprodIsoProd_toBiprod k U V q x).symm)
+    (LinearMap.ext fun x ↦ (fromBiprod_apply k U V q x).symm)
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      (singularCohomologyMayerVietoris_exact₂ _ k _ hU hV hUV q))
 
 private lemma exact_mvDiff_mvδ (q : ℕ) :
     Function.Exact (mvDiff k U V q) (mvδ k hU hV hUV q) :=
-  function_exact_of_linearEquiv (singularCohomologyMayerVietoris_exact₃ _ k _ hU hV hUV q (q + 1))
-    _ _ (ModuleCat.biprodIsoProd _ _).toLinearEquiv (LinearEquiv.refl k _) (LinearEquiv.refl k _)
-    (fromBiprod_apply k U V q) (fun x ↦ rfl)
+  Function.Exact.of_ladder_linearEquiv_of_exact
+    (e₁ := (ModuleCat.biprodIsoProd _ _).toLinearEquiv) (e₂ := LinearEquiv.refl k _)
+    (e₃ := LinearEquiv.refl k _) (LinearMap.ext fun x ↦ (fromBiprod_apply k U V q x).symm) rfl
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      (singularCohomologyMayerVietoris_exact₃ _ k _ hU hV hUV q (q + 1)))
 
 private lemma exact_mvδ_mvRes (q : ℕ) :
     Function.Exact (mvδ k hU hV hUV q) (mvRes k U V (q + 1)) :=
-  function_exact_of_linearEquiv (singularCohomologyMayerVietoris_exact₁ _ k _ hU hV hUV q (q + 1))
-    _ _ (LinearEquiv.refl k _) (LinearEquiv.refl k _) (ModuleCat.biprodIsoProd _ _).toLinearEquiv
-    (fun x ↦ rfl) (biprodIsoProd_toBiprod k U V (q + 1))
+  Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := LinearEquiv.refl k _)
+    (e₂ := LinearEquiv.refl k _) (e₃ := (ModuleCat.biprodIsoProd _ _).toLinearEquiv) rfl
+    (LinearMap.ext fun x ↦ (biprodIsoProd_toBiprod k U V (q + 1) x).symm)
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      (singularCohomologyMayerVietoris_exact₁ _ k _ hU hV hUV q (q + 1)))
 
 include hU hV hUV in
 private lemma injective_mvRes_zero : Function.Injective (mvRes k U V 0) := by
@@ -506,14 +431,43 @@ private abbrev mvDiffPre (m : ℕ) :
     (-(TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion
       (Set.preimage_mono (f := p) (Set.inter_subset_right (s := U) (t := V))))) m).hom)
 
+variable (U V) in
+/-- The Leray–Hirsch maps over `U` and over `V` together, as a map out of
+`⨁_{d + q = m} ⨁_{i : ι d} (H^q(U) × H^q(V))`. -/
+private def lerayHirschPair (m : ℕ) :=
+  (lerayHirschRestrict p e U m).prodMap (lerayHirschRestrict p e V m) ∘ₗ
+    (DirectSum.lequivProd k _ _).toLinearMap
+
+variable (U V) in
+private lemma lerayHirschPair_lof (m d q : ℕ) (h : d + q = m) (i : ι d)
+    (y : (of U).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)
+    (z : (of V).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
+    lerayHirschPair p e U V m (DirectSum.lof k (Idx ι m) _ ⟨⟨(d, q), h⟩, i⟩ (y, z)) =
+      (lerayHirschRestrict p e U m (DirectSum.lof k (Idx ι m) _ ⟨⟨(d, q), h⟩, i⟩ y),
+        lerayHirschRestrict p e V m (DirectSum.lof k (Idx ι m) _ ⟨⟨(d, q), h⟩, i⟩ z)) := by
+  simp only [lerayHirschPair, LinearMap.comp_apply, LinearEquiv.coe_coe, DirectSum.lequivProd_lof,
+    LinearMap.prodMap_apply]
+
+private lemma bijective_lerayHirschPair {m : ℕ}
+    (hU' : Function.Bijective (lerayHirschRestrict p e U m))
+    (hV' : Function.Bijective (lerayHirschRestrict p e V m)) :
+    Function.Bijective (lerayHirschPair p e U V m) :=
+  (hU'.prodMap hV').comp (DirectSum.lequivProd k _ _).bijective
+
+private lemma surjective_lerayHirschPair {m : ℕ}
+    (hU' : Function.Surjective (lerayHirschRestrict p e U m))
+    (hV' : Function.Surjective (lerayHirschRestrict p e V m)) :
+    Function.Surjective (lerayHirschPair p e U V m) :=
+  (hU'.prodMap hV').comp (DirectSum.lequivProd k _ _).surjective
+
 /-- The Leray–Hirsch maps commute with the differences of restrictions to `U ∩ V`. -/
-private lemma mvDiffPre_comp_pairMap (m : ℕ) :
-    mvDiffPre p m ∘ₗ pairMap (lerayHirschRestrict p e U m) (lerayHirschRestrict p e V m) =
+private lemma mvDiffPre_comp_lerayHirschPair (m : ℕ) :
+    mvDiffPre p m ∘ₗ lerayHirschPair p e U V m =
       lerayHirschRestrict p e (U ∩ V) m ∘ₗ
         DirectSum.lmap fun j : Idx ι m ↦ mvDiff k U V j.1.1.2 := by
   refine DirectSum.linearMap_ext k fun ⟨⟨⟨d, q⟩, h⟩, i⟩ ↦ LinearMap.ext fun ⟨y, z⟩ ↦ ?_
   rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    pairMap_lof, DirectSum.lmap_lof, LinearMap.coprod_apply, LinearMap.coprod_apply,
+    lerayHirschPair_lof, DirectSum.lmap_lof, LinearMap.coprod_apply, LinearMap.coprod_apply,
     LinearMap.neg_apply, LinearMap.neg_apply]
   dsimp only
   rw [map_add, map_neg, map_add, map_neg, lerayHirschRestrict_lof_inclusion,
@@ -522,12 +476,11 @@ private lemma mvDiffPre_comp_pairMap (m : ℕ) :
 /-- The Leray–Hirsch maps commute with the restrictions to `U` and `V`. -/
 private lemma mvRes_comp_lerayHirsch (m : ℕ) :
     mvRes k (p ⁻¹' U) (p ⁻¹' V) m ∘ₗ lerayHirsch p m e =
-      pairMap (lerayHirschRestrict p e U m) (lerayHirschRestrict p e V m) ∘ₗ
-        DirectSum.lmap fun j : Idx ι m ↦ mvRes k U V j.1.1.2 := by
+      lerayHirschPair p e U V m ∘ₗ DirectSum.lmap fun j : Idx ι m ↦ mvRes k U V j.1.1.2 := by
   refine DirectSum.linearMap_ext k fun ⟨⟨⟨d, q⟩, h⟩, i⟩ ↦ LinearMap.ext fun a ↦ ?_
   rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
     DirectSum.lmap_lof, LinearMap.prod_apply, LinearMap.prod_apply, Function.prod, Function.prod,
-    pairMap_lof, lerayHirschRestrict_lof_subtypeVal, lerayHirschRestrict_lof_subtypeVal]
+    lerayHirschPair_lof, lerayHirschRestrict_lof_subtypeVal, lerayHirschRestrict_lof_subtypeVal]
 
 variable (hU : IsOpen U) (hV : IsOpen V) (hUV : U ∪ V = Set.univ)
 
@@ -614,19 +567,19 @@ private lemma bijective_lerayHirsch_succ (l : ℕ)
     (DirectSum.lmap fun j : Idx ι (l + 1) ↦ mvDiff k U V j.1.1.2)
     (mvDiffPre p l) (mvδPre p hU hV hUV l) (mvRes k (p ⁻¹' U) (p ⁻¹' V) (l + 1))
     (mvDiffPre p (l + 1))
-    (pairMap (lerayHirschRestrict p e U l) (lerayHirschRestrict p e V l))
+    (lerayHirschPair p e U V l)
     (lerayHirschRestrict p e (U ∩ V) l) (lerayHirsch p (l + 1) e)
-    (pairMap (lerayHirschRestrict p e U (l + 1)) (lerayHirschRestrict p e V (l + 1)))
+    (lerayHirschPair p e U V (l + 1))
     (lerayHirschRestrict p e (U ∩ V) (l + 1))
-    (mvDiffPre_comp_pairMap p e l) (mvδPre_comp_lerayHirschRestrict p e hU hV hUV l)
-    (mvRes_comp_lerayHirsch p e (l + 1)) (mvDiffPre_comp_pairMap p e (l + 1))
+    (mvDiffPre_comp_lerayHirschPair p e l) (mvδPre_comp_lerayHirschRestrict p e hU hV hUV l)
+    (mvRes_comp_lerayHirsch p e (l + 1)) (mvDiffPre_comp_lerayHirschPair p e (l + 1))
     ((reindex_injective l).comp_exact_iff_exact.2
-      (exact_lmap _ _ fun j ↦ exact_mvDiff_mvδ k hU hV hUV _))
+      (DirectSum.exact_lmap_iff.2 fun j ↦ exact_mvDiff_mvδ k hU hV hUV _))
     (exact_reindex_lmap_mvRes hU hV hUV l)
-    (exact_lmap _ _ fun j ↦ exact_mvRes_mvDiff k hU hV hUV _)
+    (DirectSum.exact_lmap_iff.2 fun j ↦ exact_mvRes_mvDiff k hU hV hUV _)
     (exact_mvDiff_mvδ k hU' hV' hUV' l) (exact_mvδ_mvRes k hU' hV' hUV' l)
     (exact_mvRes_mvDiff k hU' hV' hUV' (l + 1))
-    (surjective_pairMap hU₁ hV₁) hUV₁ (bijective_pairMap hU₂ hV₂) hUV₂
+    (surjective_lerayHirschPair p e hU₁ hV₁) hUV₁ (bijective_lerayHirschPair p e hU₂ hV₂) hUV₂
 
 include hU hV hUV in
 /-- The gluing step in degree `0`, by the four lemmas. -/
@@ -643,7 +596,7 @@ private lemma bijective_lerayHirsch_zero
       obtain rfl : q = 0 := by omega
       exact injective_mvRes_zero k hU hV hUV
   have hc := mvRes_comp_lerayHirsch (ι := ι) p e (U := U) (V := V) 0
-  refine ⟨fun x y hxy ↦ hres ((bijective_pairMap hU₀ hV₀).1 ?_), ?_⟩
+  refine ⟨fun x y hxy ↦ hres ((bijective_lerayHirschPair p e hU₀ hV₀).1 ?_), ?_⟩
   · rw [← LinearMap.comp_apply, ← LinearMap.comp_apply, ← hc, LinearMap.comp_apply,
       LinearMap.comp_apply, hxy]
   · exact LinearMap.surjective_of_surjective_of_surjective_of_injective
@@ -651,12 +604,12 @@ private lemma bijective_lerayHirsch_zero
       (DirectSum.lmap fun j : Idx ι 0 ↦ mvDiff k U V j.1.1.2)
       (0 : PUnit.{w + 1} →ₗ[k] _) (mvRes k (p ⁻¹' U) (p ⁻¹' V) 0) (mvDiffPre p 0)
       0 (lerayHirsch p 0 e)
-      (pairMap (lerayHirschRestrict p e U 0) (lerayHirschRestrict p e V 0))
-      (lerayHirschRestrict p e (U ∩ V) 0) (by ext; simp) hc (mvDiffPre_comp_pairMap p e 0)
-      (exact_lmap _ _ fun j ↦ exact_mvRes_mvDiff k hU hV hUV _)
+      (lerayHirschPair p e U V 0)
+      (lerayHirschRestrict p e (U ∩ V) 0) (by ext; simp) hc (mvDiffPre_comp_lerayHirschPair p e 0)
+      (DirectSum.exact_lmap_iff.2 fun j ↦ exact_mvRes_mvDiff k hU hV hUV _)
       ((LinearMap.exact_zero_iff_injective _ _).2 (injective_mvRes_zero k hU' hV' hUV'))
       (exact_mvRes_mvDiff k hU' hV' hUV' 0) (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩)
-      (bijective_pairMap hU₀ hV₀).2 hUV₀
+      (bijective_lerayHirschPair p e hU₀ hV₀).2 hUV₀
 
 end Gluing
 
@@ -690,18 +643,14 @@ private lemma bijective_lerayHirschRestrict_restrict_iff {W S : Set B} (hSW : S 
       (fun d i ↦ TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (p ⁻¹' W))) d
         (e d i)) ((↑) ⁻¹' S : Set ↥W) m) ↔
       Function.Bijective (lerayHirschRestrict p e S m) := by
-  let f : of ↥((ofHom (p.hom.restrictPreimage W)) ⁻¹' ((↑) ⁻¹' S : Set ↥W)) ⟶ of ↥(p ⁻¹' S) :=
-    ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩,
-      (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _⟩
-  let f' : of ↥(p ⁻¹' S) ⟶ of ↥((ofHom (p.hom.restrictPreimage W)) ⁻¹' ((↑) ⁻¹' S : Set ↥W)) :=
-    ofHom ⟨fun y ↦ ⟨⟨y.1, hSW y.2⟩, y.2⟩, (continuous_subtype_val.subtype_mk _).subtype_mk _⟩
-  let g : of ↥((↑) ⁻¹' S : Set ↥W) ⟶ of ↥S :=
-    ofHom ⟨fun x ↦ ⟨x.1, x.2⟩, (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _⟩
-  let g' : of ↥S ⟶ of ↥((↑) ⁻¹' S : Set ↥W) :=
-    ofHom ⟨fun y ↦ ⟨⟨y.1, hSW y.2⟩, y.2⟩, (continuous_subtype_val.subtype_mk _).subtype_mk _⟩
-  have : IsIso f := ⟨f', by ext; rfl, by ext; rfl⟩
-  have : IsIso g := ⟨g', by ext; rfl, by ext; rfl⟩
-  exact bijective_lerayHirsch_iff_of_isIso f g (by ext; rfl) fun d i ↦ by
+  have hS : S ⊆ Set.range ((↑) : W → B) := by rwa [Subtype.range_coe]
+  have hpS : p ⁻¹' S ⊆ Set.range ((↑) : p ⁻¹' W → E) := by
+    rw [Subtype.range_coe]
+    exact Set.preimage_mono hSW
+  exact bijective_lerayHirsch_iff_of_isIso
+    (isoOfHomeo (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hpS)).hom
+    (isoOfHomeo (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hS)).hom
+    (by ext; rfl) fun d i ↦ by
     rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
       ← TopCat.singularCohomologyMap_comp, ← TopCat.singularCohomologyMap_comp]
     rfl
