@@ -176,8 +176,7 @@ def adaptedMetric : RiemannianMetric fun s ↦ i.NormalSpace s hn where
     refine (hb.image (LinearMap.toContinuousLinearMap e.symm.toLinearMap)).subset ?_
     intro v hv
     refine ⟨e v, ?_, by simp⟩
-    change h.adaptedFormCoord hn g s (e v) (e v) < 1
-    rw [adaptedFormCoord_apply, LinearEquiv.symm_apply_apply]
+    rw [Set.mem_ofPred_eq, adaptedFormCoord_apply, LinearEquiv.symm_apply_apply]
     simpa using hv
 
 /-- The adapted metric is `(Hess (v⁺, w⁺) - Hess (v⁻, w⁻)) / 2`, with `v⁻ = P v` and
@@ -303,9 +302,7 @@ theorem negativeNormalProjection_adaptedMetric (s : S) :
     simpa using h.negativeNormalProjection_apply_mem hn (h.adaptedMetric hn g) v
   have h₂ : v - P' v ∈ h.positiveNormalSpace hn g s := by
     simpa using h.sub_negativeNormalProjection_apply_mem hn (h.adaptedMetric hn g) v
-  conv_rhs => rw [← add_sub_cancel (P' v) v]
-  rw [map_add, h.negativeNormalProjection_apply_of_mem hn g h₁,
-    (h.negativeNormalProjection_apply_eq_zero_iff hn g).mpr h₂, add_zero]
+  exact (h.negativeNormalProjection_apply_eq_of_mem hn g h₁ h₂).symm
 
 end Pointwise
 
@@ -373,7 +370,8 @@ theorem contMDiff_adaptedMetric (h : i.IsNondegenerateCriticalSubmanifold f) (hk
         ← e.symmₗ_apply (R := ℝ) hs, ← e.symmₗ_apply (R := ℝ) hs, ← map_sub]
     have hQe (x y : P) : h.normalHessian hn s (e.symm s x) (e.symm s y) = Q s x y :=
       (hQs s hs x y).1
-    rw [adaptedMetric_inner, ← (hps s hs).2.2.2.2.2, ← (hps s hs).2.2.2.2.2, hsub, hsub, hQe, hQe]
+    obtain ⟨-, -, -, -, -, hpe⟩ := hps s hs
+    rw [adaptedMetric_inner, ← hpe, ← hpe, hsub, hsub, hQe, hQe]
     simp only [φ, smul_apply, sub_apply,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply, smul_eq_mul]
     ring

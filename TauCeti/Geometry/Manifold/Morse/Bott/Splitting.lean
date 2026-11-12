@@ -250,6 +250,15 @@ theorem negativeNormalProjection_apply_eq_zero_iff {s : S} {v : i.NormalSpace s 
     h.negativeNormalProjection hn g s v = 0 ↔ v ∈ h.positiveNormalSpace hn g s :=
   Submodule.projection_apply_eq_zero_iff _
 
+/-- The projection of `v` is the unique `x` in the negative normal space with `v - x` in the
+positive normal space. -/
+theorem negativeNormalProjection_apply_eq_of_mem {s : S} {v x : i.NormalSpace s hn}
+    (hx : x ∈ h.negativeNormalSpace hn g s) (hvx : v - x ∈ h.positiveNormalSpace hn g s) :
+    h.negativeNormalProjection hn g s v = x := by
+  conv_lhs => rw [← add_sub_cancel x v]
+  rw [map_add, h.negativeNormalProjection_apply_of_mem hn g hx,
+    (h.negativeNormalProjection_apply_eq_zero_iff hn g).mpr hvx, add_zero]
+
 /-- **The normal Hessian splits along the negative and positive normal spaces**: it is the sum of
 its values on the negative components and on the positive components, the cross terms vanishing
 by `IsCriticalSubmanifold.normalHessian_eq_zero_of_mem_negativeNormalSpace`. -/
@@ -285,9 +294,8 @@ the negative normal space for `g'` along the positive normal space for `g'`. -/
 @[simp]
 theorem coe_negativeNormalSpaceEquiv_apply {s : S} (v : h.negativeNormalSpace hn g s) :
     (h.negativeNormalSpaceEquiv hn g g' s v : i.NormalSpace s hn) =
-      (h.negativeNormalSpace hn g' s).projection (h.positiveNormalSpace hn g' s)
-        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s) v := by
-  rw [negativeNormalSpaceEquiv, LinearEquiv.trans_apply,
+      h.negativeNormalProjection hn g' s v := by
+  rw [negativeNormalProjection_def, negativeNormalSpaceEquiv, LinearEquiv.trans_apply,
     ← LinearEquiv.coe_toLinearMap (Submodule.quotientEquivOfIsCompl _ _ _).symm,
     Submodule.toLinearMap_symm_quotientEquivOfIsCompl, LinearMap.comp_apply, Submodule.mkQ_apply,
     Submodule.quotientEquivOfIsCompl_apply_mk, Submodule.coe_projectionOnto_apply,
@@ -298,7 +306,7 @@ theorem coe_negativeNormalSpaceEquiv_apply {s : S} (v : h.negativeNormalSpace hn
 theorem negativeNormalSpaceEquiv_self (s : S) :
     h.negativeNormalSpaceEquiv hn g g s = LinearEquiv.refl ℝ _ := by
   ext v
-  simp [Submodule.projection_apply_of_mem_left _ v.2]
+  simp [h.negativeNormalProjection_apply_of_mem hn g v.2]
 
 /-- **The positive normal spaces for two fibre metrics are isomorphic.** The positive normal
 space relative to `g` is identified with the positive normal space relative to `g'` by projecting

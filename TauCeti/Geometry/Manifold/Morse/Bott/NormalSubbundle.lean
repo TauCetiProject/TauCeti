@@ -160,9 +160,7 @@ theorem exists_contMDiffOn_negativeNormalSpace_eq_map
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, ← mul_apply_eq_comp,
       hidem.eq, sub_self]
   rw [← e.symmₗ_apply (R := ℝ) hs, ← e.symmₗ_apply (R := ℝ) hs]
-  conv_rhs => rw [← add_sub_cancel (p s u) u]
-  rw [map_add, map_add, h.negativeNormalProjection_apply_of_mem hn _ h₁,
-    (h.negativeNormalProjection_apply_eq_zero_iff hn _).mpr h₂, add_zero]
+  exact (h.negativeNormalProjection_apply_eq_of_mem hn _ h₁ (by rwa [← map_sub])).symm
 
 /-- **The negative normal bundle of a Morse–Bott submanifold.** Let `i` be a nondegenerate
 critical submanifold of `f`, with `f` of class `C^{k+2}` along it and `i` of class `C^{k+1}`, and
@@ -200,10 +198,10 @@ theorem hasLocalContMDiffSubbundleFrames_negativeNormalSpace
   obtain ⟨U, hUe, hU, hs₀U, X, hX, hXk⟩ :=
     (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).exists_isSubbundleFrameOn_map_symmₗ
       (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).open_baseSet subset_rfl hp
-      (fun s hs ↦ (hps s hs).2.2.2.1.trans (hr s))
+      (fun s hs ↦ by obtain ⟨-, -, -, hrank, -⟩ := hps s hs; exact hrank.trans (hr s))
       (mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀)
-  exact ⟨U, hU, hs₀U, X, ⟨hX.continuousOn, hX.linearIndependent,
-    fun hy ↦ (hX.span_eq hy).trans (hps _ (hUe hy)).2.1.symm⟩, hXk⟩
+  exact ⟨U, hU, hs₀U, X, ⟨hX.continuousOn, hX.linearIndependent, fun hy ↦ by
+    obtain ⟨-, hneg, -⟩ := hps _ (hUe hy); exact (hX.span_eq hy).trans hneg.symm⟩, hXk⟩
 
 /-- **The positive normal bundle of a Morse–Bott submanifold.** Let `i` be a nondegenerate
 critical submanifold of `f`, with `f` of class `C^{k+2}` along it and `i` of class `C^{k+1}`, and
@@ -241,7 +239,8 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace
   -- The kernel of a projection `p` is the range of the complementary projection `1 - p`.
   have hker (s : S) (hs : s ∈ (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).baseSet) :
       (1 - p s).range = (p s).ker := by
-    have hP : IsIdempotentElem (p s : P →ₗ[ℝ] P) := congr(($((hps s hs).1) : P →ₗ[ℝ] P))
+    obtain ⟨hidem, -⟩ := hps s hs
+    have hP : IsIdempotentElem (p s : P →ₗ[ℝ] P) := congr(($hidem : P →ₗ[ℝ] P))
     rw [LinearMap.IsIdempotentElem.ker_eq_range_one_sub hP,
       ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_one]
   obtain ⟨U, hUe, hU, hs₀U, X, hX, hXk⟩ :=
@@ -249,10 +248,11 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace
       (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).open_baseSet subset_rfl
       (A := fun s ↦ 1 - p s) ((contDiff_const.sub contDiff_id :
         ContDiff ℝ k fun A : P →L[ℝ] P ↦ 1 - A).contMDiff.comp_contMDiffOn hp)
-      (fun s hs ↦ (hker s hs ▸ (hps s hs).2.2.2.2.1).trans (hr s))
+      (fun s hs ↦ by
+        obtain ⟨-, -, -, -, hnull, -⟩ := hps s hs; exact (hker s hs ▸ hnull).trans (hr s))
       (mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀)
-  exact ⟨U, hU, hs₀U, X, ⟨hX.continuousOn, hX.linearIndependent, fun hy ↦
-    (hX.span_eq hy).trans (by rw [hker _ (hUe hy), (hps _ (hUe hy)).2.2.1])⟩, hXk⟩
+  exact ⟨U, hU, hs₀U, X, ⟨hX.continuousOn, hX.linearIndependent, fun hy ↦ by
+    obtain ⟨-, -, hpos, -⟩ := hps _ (hUe hy); rw [hX.span_eq hy, hker _ (hUe hy), hpos]⟩, hXk⟩
 
 /-- **The negative normal bundle of a connected Morse–Bott submanifold.** On a connected
 critical submanifold the Morse index is constant, so the negative normal spaces relative to a
@@ -345,8 +345,9 @@ theorem contMDiff_projection_negativeNormalSpace
   refine (hpw.clm_apply he).congr_of_eventuallyEq ?_
   filter_upwards [(FiberBundle.continuous_proj P _).continuousAt.preimage_mem_nhds
     (e.open_baseSet.mem_nhds hw₀)] with w hw
+  obtain ⟨-, -, -, -, -, hpe⟩ := hps w.proj hw
   have hy : w.2 = e.symm w.proj (e w).2 := (e.symm_proj_apply w hw).symm
-  rw [hy, ← (hps w.proj hw).2.2.2.2.2]
+  rw [hy, ← hpe]
   exact congr_arg Prod.snd (e.apply_mk_symm hw _)
 
 /-- Projecting the normal bundle onto the positive normal bundle relative to a `C^k` fibre metric,
@@ -457,8 +458,7 @@ theorem exists_bundleDiffeomorph_negativeNormalSpace
       ((contMDiff_projection_negativeNormalSpace hn h hk hf hdim g').comp
         hV.contMDiff_totalSpace_inclusion v) fun _ ↦
           h.negativeNormalProjection_apply_mem hn _ _).congr_of_eventuallyEq
-      (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by
-        simp [negativeNormalProjection_def])
+      (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by simp)
   exact ⟨bundleDiffeomorph (fun s ↦ (h.negativeNormalSpaceEquiv hn g.toRiemannianMetric
     g'.toRiemannianMetric s).toContinuousLinearEquiv) hΦ, fun v ↦ by simp⟩
 
