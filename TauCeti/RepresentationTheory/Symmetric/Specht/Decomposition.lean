@@ -93,9 +93,9 @@ Schur-Weyl decomposition is stated in
 * `Representation.exists_ne_zero_range_asAlgebraHom_youngSymmetrizer_of_character_eq` and
   `Representation.finrank_eq_finrank_spechtModule_of_character_eq`: such an `M` has a nonzero vector
   in `c_μ M` and dimension `f^μ`.
-* `Representation.spanSingletonHomEquivRange_youngSymmetrizer_symm_injective` and
-  `Representation.spanSingletonHomEquivRange_youngSymmetrizer_symm_bijective_of_finrank_eq`: the
-  intertwining map `k[S_d] c_μ → M` attached to a nonzero vector of `c_μ M` is injective, and
+* `Representation.spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_injective` and
+  `Representation.spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_bijective_of_finrank_eq`:
+  the intertwining map `k[S_d] c_μ → M` attached to a nonzero vector of `c_μ M` is injective, and
   bijective when `M` has dimension `f^μ`.
 
 ## References
@@ -311,7 +311,7 @@ theorem finrank_eq_finrank_spechtModule_of_character_eq [FiniteDimensional k M] 
 injective.** It sends `r c_μ` to `r w` (`Representation.spanSingletonHomEquivRange`). Since `c_μ`
 acts on `w` as the unit `κ`, the image `r w` is a unit multiple of `(r c_μ) · w`, the image of the
 summand `r c_μ ⊗ w` under the injective evaluation map `Representation.youngSymmetrizerEval`. -/
-theorem spanSingletonHomEquivRange_youngSymmetrizer_symm_injective [FiniteDimensional k M]
+theorem spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_injective [FiniteDimensional k M]
     {μ : d.Partition} {κ : k} (hκ : IsUnit κ)
     (ha : μ.youngSymmetrizer k * μ.youngSymmetrizer k = κ • μ.youngSymmetrizer k)
     {w : LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k))} (hw : w ≠ 0) :
@@ -338,15 +338,15 @@ theorem spanSingletonHomEquivRange_youngSymmetrizer_symm_injective [FiniteDimens
 /-- **The intertwining map `k[S_d] c_μ → M` attached to a nonzero vector of `c_μ M` is bijective
 when `M` has dimension `f^μ`.** If `M` has the dimension `f^μ` of the Specht module, then for
 every nonzero vector `w` of `c_μ M` the injective intertwining map `k[S_d] c_μ → M` attached to
-`w` (`Representation.spanSingletonHomEquivRange_youngSymmetrizer_symm_injective`) is bijective,
-both sides having dimension `f^μ`. -/
-theorem spanSingletonHomEquivRange_youngSymmetrizer_symm_bijective_of_finrank_eq
+`w` (`Representation.spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_injective`) is
+bijective, both sides having dimension `f^μ`. -/
+theorem spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_bijective_of_finrank_eq
     [FiniteDimensional k M] {μ : d.Partition}
     (hM : finrank k M = finrank ℚ (spechtModule (R := ℚ) μ)) {κ : k} (hκ : IsUnit κ)
     (ha : μ.youngSymmetrizer k * μ.youngSymmetrizer k = κ • μ.youngSymmetrizer k)
     {w : LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k))} (hw : w ≠ 0) :
     Function.Bijective ((spanSingletonHomEquivRange ρ hκ ha).symm w) := by
-  have hinj := ρ.spanSingletonHomEquivRange_youngSymmetrizer_symm_injective hκ ha hw
+  have hinj := ρ.spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_injective hκ ha hw
   have hdim : finrank k (Ideal.span {μ.youngSymmetrizer k} :
       Ideal (MonoidAlgebra k (Equiv.Perm (Fin d)))) = finrank k M := by
     rw [Nat.Partition.finrank_span_youngSymmetrizer, hM]
@@ -366,7 +366,7 @@ noncomputable def spanYoungSymmetrizerEquivOfFinrankEq [FiniteDimensional k M]
       (Ideal.span {μ.youngSymmetrizer k} : Ideal (MonoidAlgebra k (Equiv.Perm (Fin d))))).Equiv ρ :=
   ((spanSingletonHomEquivRange ρ (μ.isUnit_algebraMap_factorial_div_finrank_spechtModule k)
     (μ.youngSymmetrizer_mul_self k)).symm w).ofBijective
-    (ρ.spanSingletonHomEquivRange_youngSymmetrizer_symm_bijective_of_finrank_eq hM _ _ hw)
+    (ρ.spanSingletonHomEquivRange_youngSymmetrizer_symm_apply_bijective_of_finrank_eq hM _ _ hw)
 
 /-- The equivalence `Representation.spanYoungSymmetrizerEquivOfFinrankEq` sends `r c_μ` to
 `r w`. -/
