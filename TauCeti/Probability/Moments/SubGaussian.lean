@@ -280,7 +280,7 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
   have hS : HasSubgaussianMGF S (∑ i, a2 i * c i) μ := by
     exact HasSubgaussianMGF.sum_of_iIndepFun hY_indep
       (c := fun i ↦ a2 i * c i) (s := Finset.univ) (by
-        intro i hi
+        intro i _
         exact hY i)
   have hset : {ω | t ≤ |S ω|} =
       {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := by
@@ -304,7 +304,7 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
       ∑ i, (a i) ^ 2 * (c i : ℝ) := by
     rw [NNReal.coe_sum]
     apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     rw [NNReal.coe_mul]
     rfl
   simpa only [hproxy] using hbound

@@ -84,10 +84,7 @@ lemma diskBoundary_singularHomologyMap_zero_isIso {n : ℕ} (hn : 2 ≤ n) :
 /-- The degree-zero relative homology of a positive-dimensional disk and its boundary vanishes. -/
 lemma isZero_singularHomology_diskBoundaryPair_zero {n : ℕ} (hn : 1 ≤ n) :
     IsZero ((diskBoundaryPair n).singularHomology R 0) := by
-  have : Nonempty (diskBoundaryPair.{w} n).snd := by
-    -- Unfolding `TopCat.diskBoundary` exposes its metric-sphere carrier.
-    change Nonempty (ULift (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1))
-    exact ⟨⟨EuclideanSpace.single ⟨0, hn⟩ 1, by simp⟩⟩
+  have : Nonempty (diskBoundaryPair.{w} n).snd := nonempty_diskBoundary_iff.2 (by omega)
   exact TopPair.isZero_singularHomology_zero _ R
 
 section HigherDegrees

@@ -46,7 +46,7 @@ theorem Isometry.tendstoUniformly_of_distortion_and_pointwise [CompactSpace A]
     (isCompact_univ : IsCompact (univ : Set A)).finite_cover_balls hsmall
   have hnet : ∀ᶠ k in l, ∀ z ∈ s, dist (e z) (f k z) < ε / 5 := by
     apply hs.eventually_all.mpr
-    intro z hz
+    intro z _
     have h := (Metric.tendsto_nhds.mp (hpoint z)) (ε / 5) hsmall
     simpa only [dist_comm] using h
   filter_upwards [hnet, hdist (ε / 5) hsmall] with k hk hkd x
