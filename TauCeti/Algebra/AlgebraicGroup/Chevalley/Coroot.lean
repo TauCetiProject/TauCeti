@@ -121,13 +121,12 @@ theorem torusPoints_fullWeightTorusRestriction_eq_prod_simpleCorootPoints
     (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
     D.torusPoints A (D.fullWeightTorusRestriction A s) =
       (List.ofFn fun i => D.simpleCorootPoints i A (s i)).prod := by
-  have hs : s = (List.ofFn fun i => Pi.mulSingle i (s i)).prod := by
-    rw [List.prod_ofFn, Finset.univ_prod_mulSingle]
-  conv_lhs => rw [hs]
-  rw [← MonoidHom.comp_apply, map_list_prod, List.map_ofFn]
-  refine congrArg _ (congrArg _ (funext fun i => ?_))
-  rw [Function.comp_apply, MonoidHom.comp_apply, simpleCorootPoints_eq_torusPoints,
-    simpleCorootParameter_eq_fullWeightTorusRestriction]
+  have hp : D.fullWeightTorusRestriction A s =
+      (List.ofFn fun i => D.simpleCorootParameter i A (s i)).prod := by
+    ext j
+    simp [List.prod_ofFn, fullWeightTorusRestriction_apply, torusCharacter_def]
+  rw [hp, map_list_prod]
+  simp only [List.map_ofFn, Function.comp_def, simpleCorootPoints_eq_torusPoints]
 
 /-- On a weight vector, the simple coroot acts by its weight's `i`-th coordinate. -/
 @[simp]
