@@ -38,7 +38,11 @@ class ControlBatches(unittest.TestCase):
         self.assertNotIn("--labels-only", reconcile["run"])
         for name in ("zulip-healthcheck.yml", "zulip-pr-backfill.yml"):
             self.assertFalse((ROOT / ".github/workflows" / name).exists())
-        self.assertFalse((ROOT / "scripts/pr_status/zulip.py").exists())
+        tracked = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", "scripts/pr_status/zulip.py"],
+            cwd=ROOT, capture_output=True, text=True,
+        )
+        self.assertNotEqual(tracked.returncode, 0, "the PR-posting entrypoint must not be tracked")
 
     def test_admission_has_no_actions_execution_or_sweep_wake(self):
         for name in ("auto-merge.yml", "merge-sweep.yml", "queue-release.yml"):
