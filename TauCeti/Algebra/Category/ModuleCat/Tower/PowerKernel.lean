@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.ProZero
-public import Mathlib.RingTheory.Noetherian.Defs
 
 /-!
 # Towers of kernels of powers
