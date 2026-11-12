@@ -271,7 +271,7 @@ def sobolevFields (s : ℝ) : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))
     simp
   zero_mem' i := by
     convert zero_mem (realSobolevFunctions ℂ s 2) using 1
-    ext z
+    ext _
     simp
   smul_mem' c y h i := by
     convert Submodule.smul_mem _ c (h i) using 1

@@ -10,6 +10,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
+import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.MeasureTheory.Integral.NormRpow
 
@@ -23,8 +24,8 @@ measure, and let `u(x) = ‖x‖ ^ γ`. Away from the origin its classical Hessi
 
 (`TauCeti.iteratedGradientChain_one_norm_rpow_apply`), of size comparable to `‖x‖ ^ (γ - 2)`.
 For `n + γ > 2` this Hessian is locally integrable, and it is the weak derivative of the gradient
-of `u` across the origin (`TauCeti.hasWeakFDerivOn_gradient_norm_rpow`); for `γ > 0` the gradient
-is the weak derivative of `u` (`TauCeti.hasWeakFDerivOn_norm_rpow`). Consequently, for
+of `u` across the origin (`TauCeti.hasWeakFDerivOn_gradient_norm_rpow`), while the gradient is the
+weak derivative of `u` itself (`TauCeti.hasWeakFDerivOn_norm_rpow`). Consequently, for
 `0 < γ < 2` and `n + γ > 2`, on a bounded open set containing the origin,
 
 `u ∈ W^{2,p}` exactly when `p < n / (2 - γ)`
@@ -288,27 +289,19 @@ private theorem hasWeakFDerivOn_gradField (hγ : γ ≤ 2) (hn : 2 < finrank ℝ
 
 /-! ### Weak derivatives across the origin -/
 
-/-- **The weak gradient of a norm power.** For `γ > 0`, on every open set, the classical gradient
-of `‖x‖ ^ γ` is its weak gradient: the function is continuous, and its gradient, of size
-`γ ‖x‖ ^ (γ - 1)`, is locally integrable across the origin. -/
-theorem hasWeakFDerivOn_norm_rpow [Nontrivial E] (hγ : 0 < γ) (Ω : Opens E) :
+/-- For `γ > 0`, the classical gradient of `‖x‖ ^ γ` is its weak gradient on every open set; this
+restates `TauCeti.hasWeakFDerivOn_norm_rpow` in terms of the gradient. -/
+private theorem hasWeakFDerivOn_norm_rpow_innerSL_gradient [Nontrivial E] (hγ : 0 < γ)
+    (Ω : Opens E) :
     HasWeakFDerivOn μ Ω (fun y : E => ‖y‖ ^ γ)
       (fun x => innerSL ℝ (∇ (fun y : E => ‖y‖ ^ γ) x)) := by
-  have hs : -(finrank ℝ E : ℝ) < γ - 1 := by
+  have hs : 1 - (finrank ℝ E : ℝ) < γ := by
     have : (1 : ℝ) ≤ finrank ℝ E := by exact_mod_cast finrank_pos (R := ℝ) (M := E)
     linarith
-  refine hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
-    (continuous_norm.rpow_const fun _ => Or.inr hγ.le).continuousOn
-    (LocallyIntegrable.locallyIntegrableOn ?_ _) fun x hx => ?_
-  · refine ((locallyIntegrable_norm_sub_rpow (mu := μ) hs 0).smul |γ|).mono
-      ((innerSL ℝ).continuous.comp_aestronglyMeasurable
-        (measurable_gradient _).aestronglyMeasurable) ?_
-    filter_upwards [compl_mem_ae_iff.2 (measure_singleton (μ := μ) (0 : E))] with x hx
-    rw [innerSL_apply_norm, norm_gradient_norm_rpow hx, Pi.smul_apply, zero_sub, norm_neg,
-      smul_eq_mul, Real.norm_of_nonneg (by positivity)]
-  · refine (hasFDerivAt_norm_rpow_of_ne γ hx.2).congr_fderiv ?_
-    ext v
-    simp [gradient_norm_rpow hx.2]
+  refine (hasWeakFDerivOn_norm_rpow hs Ω).congr_ae_deriv ?_
+  filter_upwards [ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton (μ := μ) (0 : E)))]
+    with x hx
+  rw [gradient_norm_rpow hx, map_smul]
 
 /-- **The weak Hessian of a norm power.** Let `n + γ > 2`, where `n` is the dimension. On every
 open set, the classical Hessian of `‖x‖ ^ γ`, of size comparable to `‖x‖ ^ (γ - 2)`, is the weak
@@ -356,7 +349,7 @@ theorem Wkp.iteratedGradient_one_ae_eq_norm_rpow (hγ0 : 0 < γ) (hn : 2 < finra
   have h1 := (Wkp.hasWeakFDerivOn_value (Wkp.lowerOrder 1 w)).congr_ae hv
   have hg : (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 w) : E → E) =ᵐ[μ.restrict Ω]
       ∇ fun y : E => ‖y‖ ^ γ := by
-    filter_upwards [h1.ae_eq (hasWeakFDerivOn_norm_rpow hγ0 Ω)] with x hx
+    filter_upwards [h1.ae_eq (hasWeakFDerivOn_norm_rpow_innerSL_gradient hγ0 Ω)] with x hx
     exact ext_inner_right ℝ fun v => by simpa using congrArg (· v) hx
   exact ((Wkp.hasWeakFDerivOn_iteratedGradient 0 w).congr_ae hg).ae_eq
     (hasWeakFDerivOn_gradient_norm_rpow hn Ω)
@@ -475,7 +468,7 @@ private theorem exists_wkp_two_value_ae_eq_norm_rpow (hγ0 : 0 < γ) (hγ : γ <
         exact norm_hessField_le hx le_rfl hγ.le)
       (by nlinarith)
   have h1 : HasWeakFDerivOn μ Ω hu.toLp (fun x => innerSL ℝ (⇑hg.toLp x)) :=
-    ((hasWeakFDerivOn_norm_rpow hγ0 Ω).congr_ae hu.coeFn_toLp.symm).congr_ae_deriv
+    ((hasWeakFDerivOn_norm_rpow_innerSL_gradient hγ0 Ω).congr_ae hu.coeFn_toLp.symm).congr_ae_deriv
       (hg.coeFn_toLp.mono fun x hx => by simp only [hx])
   obtain ⟨v, hv, hgv⟩ : ∃ v : Wkp μ Ω p 1,
       W1p.value v = hu.toLp ∧ Wkp.iteratedGradient 0 v = hg.toLp :=

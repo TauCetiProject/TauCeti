@@ -63,6 +63,11 @@ def Path.darts {a b : Γ.V} (p : Γ.Path a b) : List Γ.E :=
   | nil => simp
   | cons p e ih => simp [ih]
 
+/-- A path of positive length traverses a dart. -/
+theorem Path.darts_ne_nil {a b : Γ.V} {p : Γ.Path a b} (h : 0 < p.length) :
+    Path.darts Γ p ≠ [] := fun h0 => by
+  simp [← Path.length_darts, h0] at h
+
 /-- A traversed dart separates a path into a prefix, that dart, and a suffix. -/
 theorem Path.exists_eq_cons_comp_of_mem_darts {a b : Γ.V} (p : Γ.Path a b)
     {e : Γ.E} (he : e ∈ Path.darts Γ p) :
