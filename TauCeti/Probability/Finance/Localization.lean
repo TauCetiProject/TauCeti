@@ -20,11 +20,11 @@ moments of negative orders as well. Mean-square convergence also implies `L¹` c
 the probability space.
 
 The intermediate uniform-integrability result allows a countable family of different sampled
-prices with a common growth bound. The linear-growth `L¹` result additionally permits a zero
-initial stock price. The times need not be stopping times or even measurable: only the sampled
-values must be almost everywhere strongly measurable. Continuity is required only at the
-terminal spot/time pair. No stochastic integral or martingale property is inferred from these
-moment and continuity assumptions.
+prices with a common growth bound. The linear-growth uniform-integrability result additionally
+permits a zero initial stock price. The times need not be stopping times or even measurable:
+only the sampled values must be almost everywhere strongly measurable. Continuity is required
+only at the terminal spot/time pair. No stochastic integral or martingale property is inferred
+from these moment and continuity assumptions.
 
 The maximal-moment inputs are
 `IsFilteredPreBrownianReal.lintegral_iSup_geometricBrownianMotion_lt_top` and
