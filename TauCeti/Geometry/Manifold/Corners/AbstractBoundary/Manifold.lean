@@ -191,7 +191,8 @@ theorem extend_faceChart_target :
   constructor
   · rintro ⟨hy, q, rfl⟩
     rw [(𝓡c m).left_inv] at hy
-    rw [modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam]
+    rw [modelWithCornersEuclideanQuadrant_apply,
+      modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam]
     exact ⟨hy, euclideanQuadrantFaceInclusion i q, coe_euclideanQuadrantFaceInclusion i q⟩
   · rintro ⟨hy, hyr⟩
     -- A vector whose zero extension lies in the quadrant lies in the quadrant.
@@ -199,7 +200,8 @@ theorem extend_faceChart_target :
       rw [range_modelWithCornersEuclideanQuadrant] at hyr ⊢
       intro k
       simpa using hyr (i.succAbove k)
-    rw [modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam] at hy
+    rw [modelWithCornersEuclideanQuadrant_apply,
+      modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam] at hy
     exact ⟨by rwa [(𝓡c m).left_inv], q, rfl⟩
 
 /-- On its target, the inverse of an extended face chart lands over the point of `M` obtained by
@@ -213,6 +215,7 @@ theorem point_extend_faceChart_symm {y : EuclideanSpace ℝ (Fin m)}
   rw [mem_preimage, (𝓡c m).left_inv] at hy
   rw [OpenPartialHomeomorph.extend_coe_symm, comp_apply, (𝓡c m).left_inv,
     point_faceChart_symm hy, OpenPartialHomeomorph.extend_coe_symm, comp_apply,
+    modelWithCornersEuclideanQuadrant_apply,
     modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam]
 
 /-! ### The manifold structure -/
@@ -306,7 +309,8 @@ private theorem contDiffOn_faceChart_symm_trans [IsManifold (𝓡c (m + 1)) n M]
     rw [mem_preimage, (𝓡c m).left_inv] at hy
     obtain ⟨p', hq, hp', -⟩ := key q hy
     refine ⟨?_, euclideanQuadrantFaceInclusion i q, coe_euclideanQuadrantFaceInclusion i q⟩
-    rw [mem_preimage, modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam]
+    rw [mem_preimage, modelWithCornersEuclideanQuadrant_apply,
+      modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam]
     refine ⟨hq, ?_⟩
     simp only [mem_preimage, OpenPartialHomeomorph.symm_symm, ← hp']
     exact p'.2.1
@@ -314,9 +318,10 @@ private theorem contDiffOn_faceChart_symm_trans [IsManifold (𝓡c (m + 1)) n M]
     rw [mem_preimage, (𝓡c m).left_inv] at hy
     obtain ⟨p', -, hp', hq⟩ := key q hy
     simp only [comp_apply, (𝓡c m).left_inv, OpenPartialHomeomorph.coe_trans, hq,
-      faceChart_faceSection, modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam,
-      modelWithCornersEuclideanQuadrant_euclideanQuadrantFaceRetract,
-      OpenPartialHomeomorph.extend_coe, ← hp']
+      faceChart_faceSection, modelWithCornersEuclideanQuadrant_euclideanQuadrantFaceRetract,
+      OpenPartialHomeomorph.extend_coe]
+    rw [modelWithCornersEuclideanQuadrant_apply m (p := q),
+      modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam, ← hp']
 
 /-- **The abstract boundary of a `C^n` manifold with corners is a `C^n` manifold with corners**,
 one dimension down: for `M` modelled on `𝓡c (m + 1)`, its abstract boundary is modelled on

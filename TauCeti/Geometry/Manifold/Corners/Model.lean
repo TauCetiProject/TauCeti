@@ -143,12 +143,13 @@ theorem modelWithCornersEuclideanQuadrant_euclideanQuadrantFaceRetract (i : Fin 
   simp
 
 /-- Reinserting the zero coordinate commutes with the model embeddings. -/
+@[simp]
 theorem modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam (i : Fin (m + 1))
     (q : EuclideanQuadrant m) :
-    (𝓡c (m + 1)).symm (euclideanQuadrantFaceParam i ((𝓡c m) q)) =
+    (𝓡c (m + 1)).symm (euclideanQuadrantFaceParam i q.1) =
       euclideanQuadrantFaceInclusion i q := by
-  rw [modelWithCornersEuclideanQuadrant_apply, ← coe_euclideanQuadrantFaceInclusion,
-    ← modelWithCornersEuclideanQuadrant_apply, ModelWithCorners.left_inv]
+  rw [← coe_euclideanQuadrantFaceInclusion, ← modelWithCornersEuclideanQuadrant_apply,
+    ModelWithCorners.left_inv]
 
 /-- Every coordinate is nonnegative on the quadrant, so every coordinate gives faces. -/
 theorem nonneg_of_mem_range_modelWithCornersEuclideanQuadrant (i : Fin m) :
