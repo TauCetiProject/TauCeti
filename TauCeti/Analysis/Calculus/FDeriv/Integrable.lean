@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.FDeriv.Const
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
-import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
 # Integrability of the applied derivative and of derivative energy densities
@@ -30,7 +32,9 @@ integrable when it vanishes off a compact set on which `c` and `A` are continuou
 not be continuous elsewhere.
 
 Integrability of the squared norm of the derivative implies integrability of the squared norm of
-the derivative applied to any fixed vector.
+the derivative applied to any fixed vector. Conversely, for a map out of an `RCLike` field that
+satisfies a Cauchy--Riemann equation `∂ₜu = A (∂ₛu)` with `‖A‖` bounded, integrability of the
+squared norm of the real-direction derivative `∂ₛu` implies integrability of `‖du‖²`.
 
 On a Euclidean product `ℝ × V`, the derivative of such a function in a fixed direction is also
 integrable on the product of a half-line with `V`.
@@ -47,6 +51,8 @@ integrable on the product of a half-line with `V`.
   in two directions.
 * `TauCeti.integrable_norm_fderiv_apply_sq`: integrability of `‖fderiv 𝕜 u z v‖ ^ 2` from
   integrability of `‖fderiv 𝕜 u z‖ ^ 2`.
+* `TauCeti.integrableOn_norm_fderiv_sq_of_apply_I_eq`: integrability of `‖fderiv ℝ u z‖ ^ 2` from
+  integrability of `‖fderiv ℝ u z 1‖ ^ 2` under a Cauchy--Riemann equation.
 * `TauCeti.integrable_fderiv_apply_prod`: the directional derivative of a compactly supported
   `C¹` function on `ℝ × V` is integrable on the product of `Ioi a` with `V`.
 -/
@@ -151,6 +157,30 @@ theorem integrable_norm_fderiv_apply_sq [CompleteSpace F] {ν : Measure E} {u : 
   exact (fderiv 𝕜 u z).le_opNorm v
 
 end Energy
+
+section CauchyRiemann
+
+variable {K : Type*} [RCLike K] [MeasurableSpace K] [OpensMeasurableSpace K] {G : Type*}
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+
+/-- **Energy from the real-direction energy.** If `u : K → G` out of an `RCLike` field satisfies the
+Cauchy--Riemann equation `∂ₜu = A z (∂ₛu)` on a measurable set `s`, with `‖A z‖ ≤ M` there, and
+`‖∂ₛu‖²` is integrable on `s`, then so is `‖du‖²`: it is bounded by `(1 + M)² ‖∂ₛu‖²`. -/
+theorem integrableOn_norm_fderiv_sq_of_apply_I_eq {ν : Measure K} {u : K → G}
+    {A : K → G →L[ℝ] G} {M : ℝ} {s : Set K} (hs : MeasurableSet s)
+    (hCR : ∀ z ∈ s, fderiv ℝ u z RCLike.I = A z (fderiv ℝ u z 1)) (hA : ∀ z ∈ s, ‖A z‖ ≤ M)
+    (h : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) s ν) :
+    IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) s ν := by
+  borelize (K →L[ℝ] G)
+  refine (h.const_mul ((1 + M) ^ 2)).mono'
+    ((measurable_fderiv ℝ u).norm.pow_const 2).aestronglyMeasurable
+    ((ae_restrict_iff' hs).2 (.of_forall fun z hz ↦ ?_))
+  rw [norm_pow, norm_norm, ← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _)
+    ((fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hA z hz) le_rfl) 2
+
+end CauchyRiemann
+
 section Prod
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]

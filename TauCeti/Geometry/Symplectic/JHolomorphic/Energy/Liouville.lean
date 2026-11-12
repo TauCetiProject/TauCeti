@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Convergence
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
+import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Compactness
 import TauCeti.Analysis.RCLike.OperatorNorm
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -17,26 +18,28 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 # Finite-energy pseudoholomorphic planes in a symplectic vector space, and no bubbling
 
 Let `(V, ω)` be a symplectic vector space whose inner product is a compatible metric
-`⟪v, w⟫ = ω(v, J₀ w)`, and let `J : V → (V →L[ℝ] V)` be uniformly tamed by `ω` along the image of
-a curve `u : ℂ → V` solving the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu`. The symplectic form
-of `V` is exact, and the energy `E(r)` of `u` on the disc of radius `r` about a point obeys the
-power law `E(r) ≤ E(b) (r / b)^α`, `α = 2c / (1 + M)²`, for `r ≤ b`
-(`TauCeti.SymplecticForm.integral_norm_fderiv_one_sq_ball_le_rpow`), with no extension of `u`
-across the centre needed. This file draws the two consequences for the bubbling analysis of
+`⟪v, w⟫ = ω(v, J₀ w)`, and let `J : V → (V →L[ℝ] V)` be uniformly tamed by `ω`, with taming
+constant `c > 0`, and uniformly bounded, `‖J(u)‖ ≤ M`, along the image of a curve `u : ℂ → V`
+solving the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu`. The symplectic form of `V` is exact, and
+the energy `E(r)` of `u` on the disc of radius `r` about a point obeys the power law
+`E(r) ≤ E(b) (r / b)^α`, with exponent `α = 2c / (1 + M)²` built from these two constants, for
+`r ≤ b` (`TauCeti.SymplecticForm.integral_norm_fderiv_one_sq_ball_le_rpow`), with no extension
+of `u` across the centre needed. This file draws the two consequences for the bubbling analysis of
 Gromov compactness.
 
 * **Liouville theorem.** If `u` has finite energy on the whole plane, possibly punctured at one
   point, then letting `b → ∞` in the power law gives `E(r) = 0` for every `r`, so `u` is
   constant (`TauCeti.SymplecticForm.apply_eq_apply_of_integrable_of_ne`,
   `TauCeti.SymplecticForm.apply_eq_apply_of_integrable`). Thus a symplectic vector space
-  contains no nonconstant finite-energy pseudoholomorphic planes, spheres or cylinders, which are
-  the planes punctured at the origin.
-* **No bubbling.** If `ω` tames `J` uniformly on a compact set `K`, the power law makes the
-  energy of small discs uniformly small among curves with image in `K` and bounded energy
+  contains no nonconstant finite-energy pseudoholomorphic planes or cylinders (the plane
+  punctured at the origin); a sphere restricts to such a plane off one point.
+* **No bubbling.** If `ω` tames `J` uniformly on a set `K` on which `‖J‖ ≤ M`, the power law
+  makes the energy of small discs uniformly small among curves with image in `K` and bounded energy
   (`TauCeti.SymplecticForm.exists_pos_lt_forall_setIntegral_norm_fderiv_one_sq_ball_lt`). For a
-  `C²` structure `J` on a neighbourhood of `K`, the small-energy mean-value inequality therefore
-  applies on these discs, and the derivative at the centre of a disc of radius `ρ` is bounded in
-  terms of `ρ` and the energy alone
+  `C²` structure `J` on a neighbourhood of a compact `K`, the small-energy Lipschitz bound
+  `TauCeti.exists_pos_forall_lipschitzOnWith_of_small_energy` therefore applies on these discs,
+  and the derivative at the centre of a disc of radius `ρ` is bounded in terms of `ρ` and the
+  energy alone
   (`TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_setIntegral_le`). For a sequence of
   curves of bounded energy with image in `K` no energy concentrates at any point, and the
   compactness theorem `TauCeti.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`
@@ -188,7 +191,7 @@ section NoBubbling
 variable {W K : Set V}
 
 /-- The power law `E(r) ≤ E(b) (r / b)^α` on discs about the centre of a disc `B_ρ(z)`, for a
-curve with image in a compact set on which `ω` tames `J` with constant `c` and `‖J‖ ≤ M`. -/
+curve with image in a set on which `ω` tames `J` with constant `c` and `‖J‖ ≤ M`. -/
 private theorem setIntegral_ball_le_rpow_of_mapsTo
     (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) (hc : 0 < c)
     (htame : ∀ x ∈ K, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J x v)) (hM : ∀ x ∈ K, ‖J x‖ ≤ M)
@@ -200,34 +203,25 @@ private theorem setIntegral_ball_le_rpow_of_mapsTo
     ∫ y in ball z r, ‖fderiv ℝ u y 1‖ ^ 2 ≤
       (∫ y in ball z b, ‖fderiv ℝ u y 1‖ ^ 2) * (r / b) ^ (2 * c / (1 + M) ^ 2) := by
   -- By the Cauchy--Riemann equation `‖du‖ ≤ (1 + M) ‖∂ₛu‖`, so the full energy is finite.
-  have hcont : ContinuousOn (fun y ↦ ‖fderiv ℝ u y‖ ^ 2) (ball z ρ) :=
-    (hu.continuousOn_fderiv_of_isOpen isOpen_ball one_le_two).norm.pow 2
-  have henergy : IntegrableOn (fun y ↦ ‖fderiv ℝ u y‖ ^ 2) (ball z ρ) := by
-    refine Integrable.mono' (hint.const_mul ((1 + M) ^ 2))
-      (hcont.aestronglyMeasurable measurableSet_ball) ?_
-    refine (ae_restrict_iff' measurableSet_ball).2 (Eventually.of_forall fun y hy ↦ ?_)
-    rw [Real.norm_of_nonneg (sq_nonneg _), ← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _)
-      ((fderiv ℝ u y).norm_le_of_apply_I_eq (hCR y hy) (hM _ (huK hy)) le_rfl) 2
   exact ω.integral_norm_fderiv_one_sq_ball_le_rpow hg hc (hu.mono sdiff_subset)
     (fun y hy ↦ hCR y hy.1) (fun y hy ↦ htame _ (huK hy.1)) (fun y hy ↦ hM _ (huK hy.1))
-    henergy hr hrb hb
+    (integrableOn_norm_fderiv_sq_of_apply_I_eq measurableSet_ball hCR
+      (fun y hy ↦ hM _ (huK hy)) hint) hr hrb hb
 
-/-- **No energy concentration.** Let `ω` tame `J` with constant `c > 0` on a compact set `K` on
-which `J` is continuous. For every radius `ρ > 0`, energy bound `E` and threshold `δ > 0` there is
+/-- **No energy concentration.** Let `ω` tame `J` with constant `c > 0` on a set `K` on which
+`‖J‖ ≤ M`. For every radius `ρ > 0`, energy bound `E` and threshold `δ > 0` there is
 a radius `0 < r < ρ` such that every `C²` solution of `∂ₜu = J(u) ∂ₛu` on a disc `B_ρ(z)` with
 image in `K` and energy at most `E` on it has energy less than `δ` on `B_r(z)`. -/
 theorem exists_pos_lt_forall_setIntegral_norm_fderiv_one_sq_ball_lt
-    (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) (hK : IsCompact K) (hJ : ContinuousOn J K) (hc : 0 < c)
+    (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) (hM : ∀ x ∈ K, ‖J x‖ ≤ M) (hc : 0 < c)
     (htame : ∀ x ∈ K, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J x v)) {ρ : ℝ} (hρ : 0 < ρ) (E : ℝ) {δ : ℝ}
     (hδ : 0 < δ) :
     ∃ r, 0 < r ∧ r < ρ ∧ ∀ ⦃u : ℂ → V⦄ ⦃z : ℂ⦄, ContDiffOn ℝ 2 u (ball z ρ) →
       (∀ y ∈ ball z ρ, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1)) → MapsTo u (ball z ρ) K →
       IntegrableOn (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) (ball z ρ) →
       ∫ y in ball z ρ, ‖fderiv ℝ u y 1‖ ^ 2 ≤ E → ∫ y in ball z r, ‖fderiv ℝ u y 1‖ ^ 2 < δ := by
-  obtain ⟨a, ha⟩ := hK.exists_bound_of_continuousOn hJ
-  have hM : ∀ x ∈ K, ‖J x‖ ≤ max a 0 := fun x hx ↦ (ha x hx).trans (le_max_left _ _)
-  set α := 2 * c / (1 + max a 0) ^ 2
+  have hM' : ∀ x ∈ K, ‖J x‖ ≤ max M 0 := fun x hx ↦ (hM x hx).trans (le_max_left _ _)
+  set α := 2 * c / (1 + max M 0) ^ 2
   have hα : 0 < α := by positivity
   -- The power law with outer radius `ρ / 2` bounds the energy of `B_r(z)` by
   -- `max E 0 (2 r / ρ)^α`, which tends to zero with `r`.
@@ -241,7 +235,7 @@ theorem exists_pos_lt_forall_setIntegral_norm_fderiv_one_sq_ball_lt
   have hball : ∫ y in ball z (ρ / 2), ‖fderiv ℝ u y 1‖ ^ 2 ≤ max E 0 :=
     (setIntegral_mono_set hint (Eventually.of_forall fun _ ↦ sq_nonneg _)
       (ball_subset_ball (half_lt_self hρ).le).eventuallyLE).trans (hE.trans (le_max_left _ _))
-  exact ((setIntegral_ball_le_rpow_of_mapsTo hg hc htame hM hu hCR huK hint hr hrb
+  exact ((setIntegral_ball_le_rpow_of_mapsTo hg hc htame hM' hu hCR huK hint hr hrb
     (half_lt_self hρ)).trans (mul_le_mul_of_nonneg_right hball
       (Real.rpow_nonneg (by positivity) _))).trans_lt hrδ
 
@@ -259,28 +253,19 @@ theorem exists_forall_norm_fderiv_le_of_setIntegral_le
       (∀ y ∈ ball z ρ, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1)) → MapsTo u (ball z ρ) K →
       IntegrableOn (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) (ball z ρ) →
       ∫ y in ball z ρ, ‖fderiv ℝ u y 1‖ ^ 2 ≤ E → ‖fderiv ℝ u z‖ ≤ C := by
-  obtain ⟨δ, hδ, hmean⟩ :=
-    TauCeti.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
-      hW hJ hK hKW hJsq
+  obtain ⟨δ, hδ, hLip⟩ :=
+    TauCeti.exists_pos_forall_lipschitzOnWith_of_small_energy hW hJ hK hKW hJsq
   obtain ⟨a, ha⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
-  have hM : ∀ x ∈ K, ‖J x‖ ≤ max a 0 := fun x hx ↦ (ha x hx).trans (le_max_left _ _)
-  -- A radius `r < ρ` on which the energy is smaller than the mean-value threshold `δ`.
-  obtain ⟨r, hr, hrρ, hsmall⟩ := exists_pos_lt_forall_setIntegral_norm_fderiv_one_sq_ball_lt hg hK
-    (hJ.continuousOn.mono hKW) hc htame hρ E hδ
-  refine ⟨(1 + max a 0) * √(8 * δ / (Real.pi * r ^ 2)), fun u z hu hCR huK hint hE ↦ ?_⟩
-  have hsmall := hsmall (hu.of_le (by norm_num)) hCR huK hint hE
-  -- The mean-value inequality on `B_r(z)` bounds `∂ₛu(z)`, and the equation bounds `du(z)`.
-  have hDu := hu.continuousOn_fderiv_of_isOpen isOpen_ball (by norm_num)
-  have hmv := hmean hr.le (hu.mono (ball_subset_ball hrρ.le))
-    ((hDu.clm_apply continuousOn_const).mono (closedBall_subset_ball hrρ))
-    (fun y hy ↦ hCR y (ball_subset_ball hrρ.le hy)) (fun y hy ↦ huK (ball_subset_ball hrρ.le hy))
-    hsmall
-  have hsq : ‖fderiv ℝ u z 1‖ ^ 2 ≤ 8 * δ / (Real.pi * r ^ 2) := by
-    rw [le_div_iff₀ (by positivity)]
-    nlinarith
-  have hz : z ∈ ball z ρ := mem_ball_self hρ
-  exact (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hM _ (huK hz))
-    (by simpa using Real.abs_le_sqrt hsq)
+  -- A radius `r < ρ` on which the energy is smaller than the small-energy threshold `δ`.
+  obtain ⟨r, hr, hrρ, hsmall⟩ :=
+    exists_pos_lt_forall_setIntegral_norm_fderiv_one_sq_ball_lt hg ha hc htame hρ E hδ
+  obtain ⟨C, hC⟩ := hLip r hr
+  refine ⟨C, fun u z hu hCR huK hint hE ↦ ?_⟩
+  -- The small-energy Lipschitz bound on `B_{r/2}(z)` bounds `du(z)`.
+  have hsub : ball z r ⊆ ball z ρ := ball_subset_ball hrρ.le
+  exact norm_fderiv_le_of_lipschitzOn ℝ (closedBall_mem_nhds z (half_pos hr))
+    (hC z u (hu.mono hsub) (fun y hy ↦ hCR y (hsub hy)) (huK.mono_left hsub)
+      (hint.mono_set hsub) (hsmall (hu.of_le (by norm_num)) hCR huK hint hE))
 
 /-- **Gromov compactness without bubbling in a symplectic vector space.** Let `J` be `C²` on an
 open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`, and let `ω` tame `J` on `K`
@@ -304,13 +289,14 @@ theorem exists_tendstoLocallyUniformlyOn_subseq
   obtain ⟨δ, hδ, hconv⟩ :=
     TauCeti.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset hW hJ hK hKW hJsq
   obtain ⟨φ, Z, v, hφ, hZΩ, -, hconc, hbound, hv, hvK, hlim⟩ := hconv hΩ hu hCR huK hint hE
+  obtain ⟨a, ha⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
   -- At a bubbling point `z`, energy `δ` would concentrate in every small disc about `z`, but the
   -- energy of small discs is uniformly smaller than `δ`.
   have hZ : Z = ∅ := by
     refine Finset.eq_empty_of_forall_notMem fun z hz ↦ ?_
     obtain ⟨ρ, hρ, hρΩ⟩ := Metric.isOpen_iff.1 hΩ z (hZΩ hz)
-    obtain ⟨r, hr, hrρ, hsmall⟩ := exists_pos_lt_forall_setIntegral_norm_fderiv_one_sq_ball_lt hg
-      hK (hJ.continuousOn.mono hKW) hc htame hρ E hδ
+    obtain ⟨r, hr, hrρ, hsmall⟩ :=
+      exists_pos_lt_forall_setIntegral_norm_fderiv_one_sq_ball_lt hg ha hc htame hρ E hδ
     obtain ⟨n, hn⟩ := (hconc z hz r hr).exists
     rw [inter_eq_left.2 ((ball_subset_ball hrρ.le).trans hρΩ)] at hn
     exact (hsmall (((hu (φ n)).mono hρΩ).of_le (by norm_num)) (fun y hy ↦ hCR _ y (hρΩ hy))
