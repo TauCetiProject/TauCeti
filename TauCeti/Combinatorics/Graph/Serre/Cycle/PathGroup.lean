@@ -368,7 +368,7 @@ tree to the class of its tree loop. -/
 @[simp] theorem abelianizationEquivCycle_symm_cycleBasis (hO : Γ.IsOrientation O)
     (e : ↥(O \ (T.darts ∩ O))) :
     (T.abelianizationEquivCycle v hO).symm ((T.isSpanningForest hO).cycleBasis ℤ e) =
-      Additive.ofMul (Abelianization.of (T.loop v e.1)) := by
+      Additive.ofMul (Group.Abelianization.of (T.loop v e.1)) := by
   simpa using T.abelianizationEquivCycle_symm_cycleClass v hO (T.loop v e.1)
 
 end SpanningTree
