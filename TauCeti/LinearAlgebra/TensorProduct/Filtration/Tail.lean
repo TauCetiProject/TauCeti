@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorProduct.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Map
 public import Mathlib.RingTheory.FilteredAlgebra.Basic
 
 /-!
@@ -22,6 +22,9 @@ This is the decreasing filtration used for completed tensor products. It is dist
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `2f6cbcc81315ba2d32fd3e4bfc4c592476cf5471`,
 `Mei/LinearAlgebra/TensorProduct/Filtration.lean` (Apache 2.0).
+The map and factor-exchange results adapt the ideal-family results in
+`Mei/RingTheory/FilteredAlgebra/TensorProduct/Basic.lean` at commit
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7`, generalized here to arbitrary submodule families.
 -/
 
 public section
@@ -103,5 +106,41 @@ instance tensorFiltrationTail_isFiltration :
   mono _ _ h := tensorFiltrationTail_antitone F G h
   is_le h := tensorFiltrationTail_antitone F G (Nat.succ_le_of_lt h)
   is_sup P n h := h (OrderDual.toDual (n.ofDual + 1)) (by exact Nat.lt_succ_self _)
+
+/-- Tensoring linear maps preserving the factor families preserves total-degree tails. -/
+theorem tensorFiltrationTail_le_comap_map {M' N' : Type*}
+    [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
+    (F' : ℕ → Submodule R M') (G' : ℕ → Submodule R N')
+    (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+    (hf : ∀ a, F a ≤ (F' a).comap f) (hg : ∀ b, G b ≤ (G' b).comap g) (n : ℕ) :
+    tensorFiltrationTail F G n ≤
+      (tensorFiltrationTail F' G' n).comap (TensorProduct.map f g) := by
+  refine (tensorFiltrationTail_le_iff F G).mpr fun a b hab x hx y hy => ?_
+  simpa only [Submodule.mem_comap, TensorProduct.map_tmul] using
+    tmul_mem_tensorFiltrationTail F' G' hab (hf a hx) (hg b hy)
+
+/-- Exchanging the factors preserves total-degree tails. -/
+theorem comm_mem_tensorFiltrationTail (n : ℕ) {x : M ⊗[R] N}
+    (hx : x ∈ tensorFiltrationTail F G n) :
+    TensorProduct.comm R M N x ∈ tensorFiltrationTail G F n := by
+  have h : tensorFiltrationTail F G n ≤
+      (tensorFiltrationTail G F n).comap (TensorProduct.comm R M N).toLinearMap := by
+    refine (tensorFiltrationTail_le_iff F G).mpr fun a b hab x hx y hy => ?_
+    simpa only [Submodule.mem_comap, LinearEquiv.coe_coe, TensorProduct.comm_tmul] using
+      tmul_mem_tensorFiltrationTail G F (by omega) hy hx
+  exact h hx
+
+/-- Factor exchange identifies the total-degree tails exactly. -/
+@[simp]
+theorem tensorFiltrationTail_comap_comm (n : ℕ) :
+    (tensorFiltrationTail G F n).comap (TensorProduct.comm R M N).toLinearMap =
+      tensorFiltrationTail F G n := by
+  ext x
+  constructor
+  · intro hx
+    have h := comm_mem_tensorFiltrationTail G F n hx
+    rw [← TensorProduct.comm_symm R M N] at h
+    simpa only [LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] using h
+  · exact comm_mem_tensorFiltrationTail F G n
 
 end TauCeti

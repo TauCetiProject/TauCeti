@@ -38,6 +38,8 @@ This advances Deliverable A, Layer 1 of
   left-invariant vector field of `X` to that of `Ad_{g⁻¹} X`.
 * `TauCeti.Lie.adjointContinuousLinearMap_lie`: the differential preserves the Lie bracket.
 * `TauCeti.Lie.tangentAd_mul`: the tangent adjoint automorphism respects group multiplication.
+* `TauCeti.Lie.adjointContinuousLinearMap_eq_id`: the adjoint action of a commutative Lie group is
+  trivial.
 * `MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap`: a homomorphism intertwines the
   adjoint actions of its differential at the identity, `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`.
 
@@ -106,6 +108,20 @@ theorem adjointContinuousLinearMap_one :
     (fun f : TauCeti.Diff I G 1 ↦ (f : G → G))
     (map_one (conj (I := I) (n := 1)))
   simpa only [conj_apply, Diffeomorph.coe_one] using h
+
+/-- **The adjoint action of a commutative Lie group is trivial.** Conjugation by `g` is the
+identity map of a commutative group, so its differential `Ad_g` at the identity is the identity. -/
+@[simp]
+theorem adjointContinuousLinearMap_eq_id [IsMulCommutative G] (g : G) :
+    adjointContinuousLinearMap (I := I) g = ContinuousLinearMap.id 𝕜 (GroupLieAlgebra I G) := by
+  rw [← adjointContinuousLinearMap_one (I := I) (G := G), adjointContinuousLinearMap,
+    adjointContinuousLinearMap, adjointContinuousLinearEquiv_coe,
+    adjointContinuousLinearEquiv_coe]
+  -- Both sides are differentials at `1` of conjugations, and conjugation by `g` is conjugation by
+  -- `1` in a commutative group.
+  congr 2
+  ext x
+  simp [mul_comm' g x]
 
 @[simp]
 theorem adjointContinuousLinearMap_mul (g h : G) :

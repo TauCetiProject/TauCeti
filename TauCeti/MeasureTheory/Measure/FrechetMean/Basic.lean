@@ -195,7 +195,7 @@ theorem frechetRadius_le_add [OpensMeasurableSpace X] (x₀ x₁ : X) :
   calc
     eLpNorm (fun y ↦ edist x₁ y) p μ ≤
         eLpNorm ((fun _ : X ↦ edist x₁ x₀) + fun y ↦ edist x₀ y) p μ :=
-      eLpNorm_mono_enorm hmeas fun y ↦ by simpa using edist_triangle x₁ x₀ y
+      eLpNorm_mono_eNorm hmeas fun y ↦ by simpa using edist_triangle x₁ x₀ y
     _ ≤ eLpNorm (fun _ : X ↦ edist x₁ x₀) p μ +
         eLpNorm (fun y ↦ edist x₀ y) p μ :=
       eLpNorm_add_le hp
@@ -213,7 +213,7 @@ theorem edist_le_frechetRadius_add (x₀ x₁ : X) :
   calc
     eLpNorm (fun _ : X ↦ edist x₀ x₁) p μ ≤
         eLpNorm ((fun y ↦ edist x₀ y) + fun y ↦ edist x₁ y) p μ :=
-      eLpNorm_mono_enorm hmeas fun y ↦ by
+      eLpNorm_mono_eNorm hmeas fun y ↦ by
         simpa [edist_comm y x₁] using edist_triangle x₀ y x₁
     _ ≤ eLpNorm (fun y ↦ edist x₀ y) p μ +
         eLpNorm (fun y ↦ edist x₁ y) p μ :=

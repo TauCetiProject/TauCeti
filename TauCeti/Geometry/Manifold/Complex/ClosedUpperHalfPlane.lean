@@ -128,6 +128,25 @@ theorem range_closedUpperHalfPlaneModel :
   rw [h]
   exact Subtype.range_coe_subtype
 
+/-- The part of the extended target of a chart into the closed upper half-plane lying over an
+open set is relatively open in the closed upper half-plane: it is `Ω ∩ {z | 0 ≤ z.im}` for an
+open `Ω ⊆ ℂ`. -/
+theorem _root_.OpenPartialHomeomorph.exists_isOpen_extend_target_inter_preimage {X : Type*}
+    [TopologicalSpace X] (φ : OpenPartialHomeomorph X ClosedUpperHalfPlane) {W : Set X}
+    (hW : IsOpen W) :
+    ∃ Ω : Set ℂ, IsOpen Ω ∧ (φ.extend closedUpperHalfPlaneModel).target ∩
+      (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' W = Ω ∩ {z | 0 ≤ z.im} := by
+  have hcont : ContinuousOn (φ.symm ∘ closedUpperHalfPlaneModel.symm)
+      (closedUpperHalfPlaneModel.symm ⁻¹' φ.target) :=
+    φ.continuousOn_symm.comp closedUpperHalfPlaneModel.continuous_symm.continuousOn
+      fun _ hz ↦ hz
+  refine ⟨_, hcont.isOpen_inter_preimage
+    (φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm) hW, ?_⟩
+  ext z
+  simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.extend_coe_symm,
+    range_closedUpperHalfPlaneModel, mem_inter_iff, mem_preimage, mem_ofPred_eq]
+  tauto
+
 /-- The manifold interior of the model consists exactly of points with positive imaginary part. -/
 @[simp]
 theorem closedUpperHalfPlaneModel_isInteriorPoint_iff (z : ClosedUpperHalfPlane) :
