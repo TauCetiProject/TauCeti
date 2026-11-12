@@ -61,6 +61,8 @@ theory of symmetric operators in `TauCeti.Analysis.InnerProductSpace.PointSpectr
 
 public section
 
+open scoped Pointwise
+
 noncomputable section
 
 open Module Set

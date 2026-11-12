@@ -64,6 +64,8 @@ The comparison of weight spaces rests on
 
 public section
 
+open scoped Pointwise
+
 open LieAlgebra LieSubalgebra Matrix
 
 namespace TauCeti

@@ -77,6 +77,8 @@ Peter-Weyl theorem requires.
 
 public section
 
+open scoped Pointwise
+
 open Filter MeasureTheory Set
 open scoped ComplexOrder Topology
 

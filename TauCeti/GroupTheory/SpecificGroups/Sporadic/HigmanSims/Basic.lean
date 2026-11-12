@@ -39,6 +39,8 @@ finiteness, or simplicity of the presented group is asserted.
 
 public section
 
+open scoped Pointwise
+
 open scoped commutatorElement
 
 namespace TauCeti.Sporadic

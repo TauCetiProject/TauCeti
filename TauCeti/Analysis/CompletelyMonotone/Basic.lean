@@ -87,6 +87,8 @@ point `0`); on the open half-line it agrees with the ordinary iterated derivativ
 
 public section
 
+open scoped Pointwise
+
 open Set Filter
 open scoped ContDiff Topology
 

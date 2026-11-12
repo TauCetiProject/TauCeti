@@ -38,6 +38,8 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
 
 public section
 
+open scoped Pointwise
+
 open MeasureTheory Set
 
 namespace MeasureTheory.Measure
@@ -118,7 +120,7 @@ theorem eq_of_map_sq_eq_of_map_neg_eq_self (μ ν : Measure ℝ)
     have hneg : ρ (s ∩ Iio 0) = ρ (-s ∩ Ioi 0) := by
       rw [← Measure.measure_neg (μ := ρ) (s ∩ Iio 0), inter_neg, neg_Iio, neg_zero]
     have hdiff : s \ Ioi 0 = (s ∩ {0}) ∪ (s ∩ Iio 0) := by
-      rw [sdiff_eq, compl_Ioi, ← Iio_union_right, inter_union_distrib_left, union_comm]
+      rw [Set.sdiff_eq, compl_Ioi, ← Iio_union_right, inter_union_distrib_left, union_comm]
     rw [← measure_inter_add_sdiff s (measurableSet_Ioi (a := (0 : ℝ))), hdiff,
       measure_union ((disjoint_singleton_left.2 self_notMem_Iio).mono inter_subset_right
         inter_subset_right) (hs.inter measurableSet_Iio), hneg]

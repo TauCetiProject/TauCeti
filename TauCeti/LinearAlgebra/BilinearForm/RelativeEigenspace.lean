@@ -40,6 +40,8 @@ definite they meet only in `0`. The spectral theory over finite-dimensional real
 
 public section
 
+open scoped Pointwise
+
 open Set
 
 namespace LinearMap.BilinForm

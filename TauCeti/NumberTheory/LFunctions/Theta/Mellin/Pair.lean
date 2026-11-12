@@ -47,6 +47,8 @@ partial zeta function of the class of `𝔞⁻¹`; this file does not make that 
 
 public section
 
+open scoped Pointwise
+
 noncomputable section
 
 open Filter MeasureTheory NumberField NumberField.InfinitePlace NumberField.mixedEmbedding

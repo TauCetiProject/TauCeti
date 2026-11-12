@@ -74,6 +74,8 @@ none of this assumes σ-finiteness.
 
 public section
 
+open scoped Pointwise
+
 open MeasureTheory
 open scoped NNReal ENNReal
 

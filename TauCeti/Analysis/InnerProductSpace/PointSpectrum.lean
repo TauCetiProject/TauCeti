@@ -134,6 +134,8 @@ spectrum from that of its orthogonal complement.
 
 public section
 
+open scoped Pointwise
+
 open Module.End
 open scoped InnerProductSpace
 
