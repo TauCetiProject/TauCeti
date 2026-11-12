@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Group.Measure
-public import TauCeti.MeasureTheory.Constructions.BorelSpace.Metrizable
+public import TauCeti.MeasureTheory.Constructions.Baire.Metrizable
 public import TauCeti.Topology.Algebra.Group.KakutaniKodaira
 import Mathlib.Topology.UrysohnsLemma
 import TauCeti.MeasureTheory.Group.ModularCharacter
@@ -28,14 +28,16 @@ Even when `G` is neither metrizable nor second countable, its measure theory red
    normal subgroup `K` with metrizable second-countable quotient `G ⧸ K` and sets `A' i ⊆ B' i` in
    `borel (G ⧸ K)` satisfying `μ (π ⁻¹' (B' i \ A' i)) = 0`.
 2. **Haar completion regularity** (Fremlin §443M): because `borel (G ⧸ K)` pulls back into the
-   Baire σ-algebra `⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance`, every Borel (or
+   Baire σ-algebra `TauCeti.baire G` (`Continuous.comap_borel_le_baire`), every Borel (or
    `μ`-null-measurable) set `E ⊆ G` is sandwiched between two Baire sets whose difference has
    `μ`-measure zero, and therefore differs from a Baire set by a subset of a Baire `μ`-null set.
+   Unlike `MeasureTheory.NullMeasurableSet.exists_baire_ae_eq`, this supplies a Baire-measurable
+   null envelope for the error and requires neither `[T2Space G]` nor `[μ.OuterRegular]`.
 3. **Quotient factorization of `AEStronglyMeasurable` functions**: every `μ`-almost everywhere
    strongly measurable function `f : G → β` into a metrizable space agrees outside `π ⁻¹' Z'`
    (`Z' ∈ borel (G ⧸ K)`, `μ (π ⁻¹' Z') = 0`) with `g ∘ π` for a `borel (G ⧸ K)`-strongly
-   measurable map `g : G ⧸ K → β`, and is consequently `AEStronglyMeasurable` with respect to the
-   Baire σ-algebra on `G`.
+   measurable map `g : G ⧸ K → β`, and is consequently `AEStronglyMeasurable` with respect to
+   `TauCeti.baire G`.
 
 The key step is a right-`K` saturation lemma for open sets: if `U ⊆ G` is open and `A' ⊆ G ⧸ K` is
 a Borel set with `π ⁻¹' A' ⊆ U` and `μ (U \ π ⁻¹' A') = 0`, then for every `k ∈ K` the right
@@ -51,17 +53,17 @@ zero; inner regularity and σ-finiteness then yield `μ (π ⁻¹' ((π '' U) \ 
 * `MeasureTheory.NullMeasurableSet.exists_compact_normal_subgroup_quotient_borel_sandwich` and
   `MeasurableSet.exists_compact_normal_subgroup_quotient_borel_sandwich`: single-set quotient Borel
   sandwiching.
-* `MeasureTheory.NullMeasurableSet.exists_mem_iSup_comap_continuousMap_sandwich` and
-  `MeasurableSet.exists_mem_iSup_comap_continuousMap_sandwich`: Haar completion regularity in
-  sandwich form.
-* `MeasureTheory.NullMeasurableSet.exists_mem_iSup_comap_continuousMap_symmDiff_subset_null` and
-  `MeasurableSet.exists_mem_iSup_comap_continuousMap_symmDiff_subset_null`: Haar completion
-  regularity in symmetric-difference form (Fremlin §443M).
+* `MeasureTheory.NullMeasurableSet.exists_baire_sandwich` and
+  `MeasurableSet.exists_baire_sandwich`: Haar completion regularity in sandwich form.
+* `MeasureTheory.NullMeasurableSet.exists_baire_symmDiff_subset_null` and
+  `MeasurableSet.exists_baire_symmDiff_subset_null`: Haar completion regularity in
+  symmetric-difference form (Fremlin §443M).
 * `MeasureTheory.AEStronglyMeasurable.exists_compact_normal_subgroup_quotient_eq_off_null`:
   factorization of `AEStronglyMeasurable` functions outside a pullback Haar-null set through a
   metrizable second-countable quotient `G ⧸ K`.
-* `MeasureTheory.AEStronglyMeasurable.aestronglyMeasurable_iSup_comap_continuousMap`: every
-  `AEStronglyMeasurable` function into a metrizable space is Baire a.e. strongly measurable.
+* `MeasureTheory.AEStronglyMeasurable.aestronglyMeasurable_baire`: every
+  `AEStronglyMeasurable` function into a metrizable space is a.e. strongly measurable with respect
+  to `TauCeti.baire G`.
 
 ## References
 
@@ -82,12 +84,12 @@ section BorelHelpers
 
 /-- Construct a simple function on an abstract measurable space `Q` from a finite list of values
 `l : List β` and corresponding measurable sets `A : β → Set Q`. -/
-private noncomputable def liftSimpleList {Q β : Type*} [mQ : MeasurableSpace Q] (A : β → Set Q)
+private noncomputable def liftSimpleList {Q β : Type*} [MeasurableSpace Q] (A : β → Set Q)
     (hA : ∀ b, MeasurableSet (A b)) (b₀ : β) : List β → SimpleFunc Q β
   | [] => SimpleFunc.const Q b₀
   | b :: bs => SimpleFunc.piecewise (A b) (hA b) (SimpleFunc.const Q b) (liftSimpleList A hA b₀ bs)
 
-private theorem liftSimpleList_apply_of_unique {Q β : Type*} [mQ : MeasurableSpace Q]
+private theorem liftSimpleList_apply_of_unique {Q β : Type*} [MeasurableSpace Q]
     {A : β → Set Q} (hA : ∀ b, MeasurableSet (A b)) (b₀ : β) {l : List β} {q : Q} {v : β}
     (hv : v ∈ l) (hqv : q ∈ A v) (huniq : ∀ b ∈ l, q ∈ A b → b = v) :
     liftSimpleList A hA b₀ l q = v := by
@@ -513,53 +515,42 @@ theorem _root_.MeasurableSet.exists_compact_normal_subgroup_quotient_borel_sandw
   hE.nullMeasurableSet.exists_compact_normal_subgroup_quotient_borel_sandwich
 
 /-- **Haar completion regularity** (sandwich form): every `μ`-null-measurable set `E` on a
-σ-compact locally compact group `G` is sandwiched between two sets `A ⊆ E ⊆ B` in the Baire
-σ-algebra `⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance` with `μ (B \ A) = 0`. -/
-theorem NullMeasurableSet.exists_mem_iSup_comap_continuousMap_sandwich {E : Set G}
+σ-compact locally compact group `G` is sandwiched between two Baire sets `A ⊆ E ⊆ B` in
+`TauCeti.baire G` with `μ (B \ A) = 0`. -/
+theorem NullMeasurableSet.exists_baire_sandwich {E : Set G}
     (hE : NullMeasurableSet E μ) :
-    ∃ A B : Set G,
-      MeasurableSet[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance] A ∧
-      MeasurableSet[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance] B ∧
+    ∃ A B : Set G, MeasurableSet[TauCeti.baire G] A ∧ MeasurableSet[TauCeti.baire G] B ∧
       A ⊆ E ∧ E ⊆ B ∧ μ (B \ A) = 0 := by
   obtain ⟨K, _, _, _, _, _, A', B', hA', hB', _, hpreA', hpreB', hnull⟩ :=
     hE.exists_compact_normal_subgroup_quotient_borel_sandwich
-  have hle :=
-    (QuotientGroup.continuous_mk (N := K)).comap_borel_le_iSup_comap_continuousMap
+  have hle := (QuotientGroup.continuous_mk (N := K)).comap_borel_le_baire
   exact ⟨QuotientGroup.mk ⁻¹' A', QuotientGroup.mk ⁻¹' B',
     hle _ ⟨A', hA', rfl⟩, hle _ ⟨B', hB', rfl⟩, hpreA', hpreB', hnull⟩
 
 /-- **Haar completion regularity** (sandwich form) for Borel sets. -/
-theorem _root_.MeasurableSet.exists_mem_iSup_comap_continuousMap_sandwich {E : Set G}
-    (hE : MeasurableSet E) :
-    ∃ A B : Set G,
-      MeasurableSet[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance] A ∧
-      MeasurableSet[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance] B ∧
+theorem _root_.MeasurableSet.exists_baire_sandwich {E : Set G} (hE : MeasurableSet E) :
+    ∃ A B : Set G, MeasurableSet[TauCeti.baire G] A ∧ MeasurableSet[TauCeti.baire G] B ∧
       A ⊆ E ∧ E ⊆ B ∧ μ (B \ A) = 0 :=
-  hE.nullMeasurableSet.exists_mem_iSup_comap_continuousMap_sandwich
+  hE.nullMeasurableSet.exists_baire_sandwich
 
 /-- **Haar completion regularity** (Fremlin §443M): every `μ`-null-measurable set `E` on a
 σ-compact locally compact group `G` differs from a Baire set `A` by a subset of a Baire `μ`-null
-set `N`, where the Baire σ-algebra is generated by `C(G, ℝ)`. -/
-theorem NullMeasurableSet.exists_mem_iSup_comap_continuousMap_symmDiff_subset_null {E : Set G}
+set `N` in `TauCeti.baire G`. -/
+theorem NullMeasurableSet.exists_baire_symmDiff_subset_null {E : Set G}
     (hE : NullMeasurableSet E μ) :
-    ∃ A N : Set G,
-      MeasurableSet[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance] A ∧
-      MeasurableSet[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance] N ∧
+    ∃ A N : Set G, MeasurableSet[TauCeti.baire G] A ∧ MeasurableSet[TauCeti.baire G] N ∧
       E ∆ A ⊆ N ∧ μ N = 0 := by
-  obtain ⟨A, B, hA, hB, hAE, hEB, hnull⟩ := hE.exists_mem_iSup_comap_continuousMap_sandwich
+  obtain ⟨A, B, hA, hB, hAE, hEB, hnull⟩ := hE.exists_baire_sandwich
   refine ⟨A, B \ A, hA, hB.diff hA, ?_, hnull⟩
   rintro x (⟨hxE, hxA⟩ | ⟨hxA, hxE⟩)
   · exact ⟨hEB hxE, hxA⟩
   · exact False.elim (hxE (hAE hxA))
 
 /-- **Haar completion regularity** (Fremlin §443M) for Borel sets. -/
-theorem _root_.MeasurableSet.exists_mem_iSup_comap_continuousMap_symmDiff_subset_null {E : Set G}
-    (hE : MeasurableSet E) :
-    ∃ A N : Set G,
-      MeasurableSet[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance] A ∧
-      MeasurableSet[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance] N ∧
+theorem _root_.MeasurableSet.exists_baire_symmDiff_subset_null {E : Set G} (hE : MeasurableSet E) :
+    ∃ A N : Set G, MeasurableSet[TauCeti.baire G] A ∧ MeasurableSet[TauCeti.baire G] N ∧
       E ∆ A ⊆ N ∧ μ N = 0 :=
-  hE.nullMeasurableSet.exists_mem_iSup_comap_continuousMap_symmDiff_subset_null
+  hE.nullMeasurableSet.exists_baire_symmDiff_subset_null
 
 /-- **Quotient factorization of `AEStronglyMeasurable` functions**: every `μ`-a.e. strongly
 measurable function `f : G → β` into a metrizable space agrees outside `π ⁻¹' Z'` (`Z'` Borel in
@@ -612,19 +603,17 @@ theorem AEStronglyMeasurable.exists_compact_normal_subgroup_quotient_eq_off_null
   rw [hfx, hg_eq x hxZ']
 
 /-- Every `μ`-a.e. strongly measurable function from a σ-compact locally compact group `G` into a
-metrizable space is `AEStronglyMeasurable` with respect to the Baire σ-algebra
-`⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance`. -/
-theorem AEStronglyMeasurable.aestronglyMeasurable_iSup_comap_continuousMap {β : Type*}
+metrizable space is `AEStronglyMeasurable` with respect to the Baire σ-algebra `TauCeti.baire G`. -/
+theorem AEStronglyMeasurable.aestronglyMeasurable_baire {β : Type*}
     [TopologicalSpace β] [MetrizableSpace β] {f : G → β} (hf : AEStronglyMeasurable f μ) :
-    AEStronglyMeasurable[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance] f μ := by
+    AEStronglyMeasurable[TauCeti.baire G] f μ := by
   obtain ⟨K, _, _, _, _, _, g, Z', hg, _, hZ'_null, hfg⟩ :=
     hf.exists_compact_normal_subgroup_quotient_eq_off_null
   have hcomap : MeasurableSpace.comap (QuotientGroup.mk : G → G ⧸ K) (borel (G ⧸ K)) ≤
-      ⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance :=
-    (QuotientGroup.continuous_mk (N := K)).comap_borel_le_iSup_comap_continuousMap
+      TauCeti.baire G :=
+    (QuotientGroup.continuous_mk (N := K)).comap_borel_le_baire
   have hg_baire :
-      StronglyMeasurable[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance]
-        (g ∘ (QuotientGroup.mk : G → G ⧸ K)) :=
+      StronglyMeasurable[TauCeti.baire G] (g ∘ (QuotientGroup.mk : G → G ⧸ K)) :=
     (hg.comp_measurable (@Measurable.of_comap_le G (G ⧸ K)
       (MeasurableSpace.comap (QuotientGroup.mk : G → G ⧸ K) (borel (G ⧸ K))) (borel (G ⧸ K)) _
       le_rfl)).mono hcomap

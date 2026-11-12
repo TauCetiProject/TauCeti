@@ -9,19 +9,22 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Holder.Normed
 
+import Mathlib.Analysis.Normed.Module.Completion
 import TauCeti.MeasureTheory.Function.Lp.BallAverage
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Global Hölder functions in `Lᵖ`
 
 This file proves that a globally Hölder function with finite `Lᵖ` norm is bounded and bundles it
-as an element of the global Hölder Banach space. The pointwise estimate compares the function with
-its average on a ball: Hölder continuity controls the difference from the average, while
-Hölder's inequality controls the average itself.
+as an element of the global Hölder normed space (a Banach space when the target is complete). The
+pointwise estimate compares the function with its average on a ball: Hölder continuity controls the
+difference from the average, while Hölder's inequality controls the average itself.
 
 ## Main declarations
 
 * `HolderWith.enorm_le_add_eLpNorm`: a global Hölder function in `Lᵖ` has a pointwise bound.
+* `HolderWith.norm_le_add_eLpNorm_toReal`: the same bound for the real-valued norm.
 * `HolderWith.toHolderSpace`: bundle a global Hölder `Lᵖ` function in `TauCeti.HolderSpace`.
 * `HolderWith.norm_toHolderSpace_le`: the resulting Hölder-space norm estimate.
 -/
@@ -37,14 +40,13 @@ open scoped ENNReal NNReal BoundedContinuousFunction
 open TauCeti
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [BorelSpace E]
-  [ProperSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  [ProperSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {g : E → F} {C α : ℝ≥0} {p : ℝ≥0∞}
 
-/-- A globally Hölder function with finite `Lᵖ` norm is pointwise bounded. At any positive
-scale `r`, the bound is its Hölder constant times `r^α`, plus the `Lᵖ` norm multiplied by
-the inverse `p`-th power of the volume of the radius-`r` ball. -/
-theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p ≠ ∞)
-    (hgLp : MemLp g p mu) {r : ℝ} (hr : 0 < r) (x : E) :
+/-- The case of `HolderWith.enorm_le_add_eLpNorm` with a complete target, where the function is
+compared with its average on a ball. -/
+private theorem enorm_le_add_eLpNorm_of_completeSpace [CompleteSpace F] (hg : HolderWith C α g)
+    (hp : 1 ≤ p) (hp' : p ≠ ∞) (hgLp : MemLp g p mu) {r : ℝ} (hr : 0 < r) (x : E) :
     ‖g x‖ₑ ≤ C * ENNReal.ofReal r ^ (α : ℝ) +
       mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu := by
   have hdev : ‖ballAverage mu r g x - g x‖ₑ ≤ C * ENNReal.ofReal r ^ (α : ℝ) := by
@@ -83,7 +85,48 @@ theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p �
       add_le_add (by rw [edist_comm]; simpa only [edist_eq_enorm_sub] using hdev)
         (enorm_ballAverage_le hp hp' x)
 
-/-- A global Hölder function in `Lᵖ`, bundled as an element of the Hölder Banach space. -/
+/-- A globally Hölder function with finite `Lᵖ` norm is pointwise bounded. At any positive
+scale `r`, the bound is its Hölder constant times `r^α`, plus the `Lᵖ` norm multiplied by
+the reciprocal `p`-th root of the volume of the radius-`r` ball. -/
+theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    (hgLp : MemLp g p mu) {r : ℝ} (hr : 0 < r) (x : E) :
+    ‖g x‖ₑ ≤ C * ENNReal.ofReal r ^ (α : ℝ) +
+      mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu := by
+  -- Pass to the completion of `F`, which changes neither the Hölder constant, nor the `Lᵖ` norm,
+  -- nor the pointwise norms.
+  let e : F → UniformSpace.Completion F := (↑)
+  have hge : HolderWith C α (e ∘ g) :=
+    Isometry.comp_holderWith UniformSpace.Completion.coe_isometry hg
+  have hgeLp : MemLp (e ∘ g) p mu :=
+    hgLp.of_le ((UniformSpace.Completion.continuous_coe F).comp_aestronglyMeasurable
+      hgLp.aestronglyMeasurable)
+      (.of_forall fun y ↦ (UniformSpace.Completion.norm_coe (g y)).le)
+  have hnorm : eLpNorm (e ∘ g) p mu = eLpNorm g p mu :=
+    eLpNorm_congr_enorm_ae hgeLp.aestronglyMeasurable hgLp.aestronglyMeasurable
+      (.of_forall fun y ↦ UniformSpace.Completion.enorm_coe (g y))
+  simpa only [Function.comp_apply, e, UniformSpace.Completion.enorm_coe, hnorm] using
+    enorm_le_add_eLpNorm_of_completeSpace hge hp hp' hgeLp hr x
+
+/-- Real-valued form of `HolderWith.enorm_le_add_eLpNorm`: a globally Hölder function with finite
+`Lᵖ` norm is pointwise bounded by its Hölder constant times `r ^ α` plus its `Lᵖ` norm times the
+reciprocal `p`-th root of the volume of the radius-`r` ball. -/
+theorem norm_le_add_eLpNorm_toReal (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    (hgLp : MemLp g p mu) {r : ℝ} (hr : 0 < r) (x : E) :
+    ‖g x‖ ≤ C * r ^ (α : ℝ) +
+      (mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹)).toReal * (eLpNorm g p mu).toReal := by
+  have hvol : mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos mu 0 hr).ne' measure_ball_lt_top.ne
+  have hx := hg.enorm_le_add_eLpNorm hp hp' hgLp hr x
+  have hfin : (C : ℝ≥0∞) * ENNReal.ofReal r ^ (α : ℝ) +
+      mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu ≠ ∞ := by
+    finiteness
+  have hx' := (ENNReal.toReal_le_toReal enorm_ne_top hfin).2 hx
+  rw [ENNReal.toReal_add (by finiteness) (ENNReal.mul_ne_top hvol hgLp.eLpNorm_ne_top),
+    ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, ← ENNReal.toReal_rpow,
+    ENNReal.toReal_ofReal hr.le] at hx'
+  simpa only [toReal_enorm] using hx'
+
+/-- A global Hölder function in `Lᵖ`, bundled as an element of the Hölder normed space. -/
 def toHolderSpace (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p) (hp' : p ≠ ∞)
     (hgLp : MemLp g p mu) : TauCeti.HolderSpace α E F := by
   let R : ℝ≥0∞ := C + mu (ball (0 : E) 1) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu

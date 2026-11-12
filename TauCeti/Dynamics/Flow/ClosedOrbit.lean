@@ -64,6 +64,8 @@ iterates.
   multiples of the minimal period.
 * `Flow.minimalPeriod_pos_iff`: the minimal period is positive exactly at periodic points which are
   not rest points.
+* `Flow.exists_periods_eq_zmultiples_inv`: if `1` is a period of a point which is not a rest
+  point, its periods are the multiples of `1 / n` for some `n ≥ 1`.
 * `Flow.ClosedOrbit.ext`: a closed orbit is determined by its image and its period.
 * `Flow.ClosedOrbit.multiplicity_mul_minimalPeriod`: the period is the multiplicity times the
   minimal period.
@@ -186,15 +188,31 @@ theorem apply_eq_self_iff_exists_zsmul [T1Space α] (hx : ∃ t, ϕ t x ≠ x) :
     ϕ t x = x ↔ ∃ n : ℤ, n • ϕ.minimalPeriod x = t := by
   rw [← mem_periods, ϕ.periods_eq_zmultiples_minimalPeriod hx, AddSubgroup.mem_zmultiples_iff]
 
+/-- The minimal period is a return time, with no separation assumption on the space. It may be
+zero, in which case the statement is trivial: this happens when the positive periods have no
+minimum (the periods are dense) or when there are none. -/
 @[simp]
-theorem apply_minimalPeriod [T1Space α] (x : α) : ϕ (ϕ.minimalPeriod x) x = x := by
-  by_cases hx : ∃ t, ϕ t x ≠ x
-  · have : ϕ.minimalPeriod x ∈ ϕ.periods x := by
-      rw [ϕ.periods_eq_zmultiples_minimalPeriod hx]
-      exact AddSubgroup.mem_zmultiples _
-    exact ϕ.mem_periods.1 this
-  · simp only [not_exists, not_not] at hx
-    exact hx _
+theorem apply_minimalPeriod (x : α) : ϕ (ϕ.minimalPeriod x) x = x := by
+  by_cases hbot : ϕ.periods x = ⊥
+  · have : {t | t ∈ ϕ.periods x ∧ 0 < t} = ∅ := by
+      ext t
+      simp only [hbot, AddSubgroup.mem_bot, mem_empty_iff_false, iff_false]
+      rintro ⟨rfl, h⟩
+      exact h.false
+    rw [minimalPeriod, this, Real.sInf_empty]
+    exact ϕ.mem_periods.1 (zero_mem _)
+  by_cases hleast : ∃ a, IsLeast {t | t ∈ ϕ.periods x ∧ 0 < t} a
+  · obtain ⟨a, ha⟩ := hleast
+    rw [minimalPeriod, ha.csInf_eq]
+    exact ϕ.mem_periods.1 ha.1.1
+  -- Without a least positive period the periods are dense, so the infimum is `0`.
+  have hdense := AddSubgroup.dense_of_no_min _ hbot hleast
+  have h0 : ϕ.minimalPeriod x = 0 := by
+    refine le_antisymm (le_of_forall_pos_le_add fun ε hε ↦ ?_) (ϕ.minimalPeriod_nonneg x)
+    obtain ⟨t, ht, ht₀, htε⟩ := hdense.exists_between hε
+    exact (ϕ.minimalPeriod_le (ϕ.mem_periods.1 ht) ht₀).trans (by linarith)
+  rw [h0]
+  exact ϕ.mem_periods.1 (zero_mem _)
 
 /-- The minimal period is positive exactly at periodic points which are not rest points. -/
 theorem minimalPeriod_pos_iff [T1Space α] :
@@ -206,6 +224,18 @@ theorem minimalPeriod_pos_iff [T1Space α] :
   obtain ⟨n, rfl⟩ := (ϕ.apply_eq_self_iff_exists_zsmul hx).1 ht
   refine (ϕ.minimalPeriod_nonneg x).lt_of_ne fun h ↦ ht₀ ?_
   rw [← h, smul_zero]
+
+/-- If `1` is a period of a point `x` which is not a rest point, then the periods of `x` are the
+integer multiples of `1 / n` for some `n ≥ 1`. -/
+theorem exists_periods_eq_zmultiples_inv [T1Space α] (h₁ : ϕ 1 x = x) (hx : ∃ t, ϕ t x ≠ x) :
+    ∃ n : ℕ, 0 < n ∧ ϕ.periods x = AddSubgroup.zmultiples ((n : ℝ)⁻¹) := by
+  -- The period `1` is an integer multiple `k • p` of the minimal period `p`, with `k ≥ 1`.
+  obtain ⟨k, hk⟩ := (ϕ.apply_eq_self_iff_exists_zsmul hx).1 h₁
+  rw [zsmul_eq_mul] at hk
+  have hk₀ : (0 : ℝ) < k := pos_of_mul_pos_left (hk ▸ one_pos) (ϕ.minimalPeriod_nonneg x)
+  lift k to ℕ using (by exact_mod_cast hk₀.le)
+  have hp : ϕ.minimalPeriod x = (k : ℝ)⁻¹ := eq_inv_of_mul_eq_one_right (by exact_mod_cast hk)
+  exact ⟨k, by exact_mod_cast hk₀, by rw [ϕ.periods_eq_zmultiples_minimalPeriod hx, hp]⟩
 
 /-! ### Periodic trajectories and closed orbits -/
 

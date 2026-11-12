@@ -66,10 +66,8 @@ nonnegativity is stated with the scoped `ComplexOrder` instance on an `RCLike` f
 
 ## References
 
-This is `approx_identity_exists` from Layer 5 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), the last input to the
-uniform density of the matrix coefficients in `C(G)` that the roadmap's non-circular route to the
-Peter-Weyl theorem requires.
+This is the approximate-identity half of the uniform density of the matrix coefficients in `C(G)`
+(`TauCeti.dense_representativeSubmodule`), the analytic core of the Peter-Weyl theorem.
 
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, 2nd ed., CRC (2016), Chapter 5.
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 2.

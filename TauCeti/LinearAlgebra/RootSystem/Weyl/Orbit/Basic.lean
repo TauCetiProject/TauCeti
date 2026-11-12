@@ -17,7 +17,7 @@ file proves that covering statement, at the level of root indices, and draws the
 concerns lengths: a root-positive form takes on the roots exactly the values it takes on the simple
 roots.
 
-The proof is the lowering argument of Layer 1, packaged by Mathlib as
+The proof is the lowering argument, packaged by Mathlib as
 `RootPairing.Base.induction_reflect`: reflecting a positive root in a suitable simple root
 decreases its height, and reflection in a root sends that root to its negative, so induction on
 height reaches a simple root from anywhere.
@@ -26,6 +26,8 @@ height reaches a simple root from anywhere.
 
 * `TauCeti.exists_mem_support_weylGroupToPerm_eq`: **every root index is the image of a simple root
   index under the Weyl group.**
+* `RootPairing.Base.induction_simple_reflect`: a property of root indices holding at the simple
+  roots and preserved by the simple reflections holds at every root.
 * `RootPairing.RootPositiveForm.rootLength_weylGroupToPerm`: root length is a Weyl-group
   invariant, with `RootPairing.RootPositiveForm.rootLength_reflectionPerm` the special case
   of a single reflection.
@@ -35,10 +37,9 @@ height reaches a simple root from anywhere.
 
 ## References
 
-This file shows that the simple-root Weyl orbits cover all roots, as part of Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4-6*, Ch. VI §1.5, and Humphreys, *Introduction to Lie Algebras and
-Representation Theory*, §10.3, where the same statement is proved by the same induction.
+See Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §1.5, and Humphreys,
+*Introduction to Lie Algebras and Representation Theory*, §10.3, where the same statement is proved
+by the same induction.
 -/
 
 public section
@@ -67,6 +68,32 @@ theorem exists_mem_support_weylGroupToPerm_eq [CharZero R] [Finite ι] [IsDomain
       RootPairing.weylGroupToPerm_ofIdx_mul_apply P w k i⟩
   exact b.induction_reflect j (fun k hk ↦ step k k hk) (fun i hi ↦ ⟨i, hi, 1, by simp⟩)
     fun x k hx _ ↦ step k x hx
+
+/-- **Simple reflections carry the simple roots onto every root.** A property of root indices
+that holds at the simple roots of a base and is preserved by the reflection in each simple root
+holds at every root index.
+
+Unlike `RootPairing.Base.induction_reflect`, closure under negation is not asked for: the negative
+of a simple root `αᵢ` is its reflection `sᵢ αᵢ`, so the simple reflections already reach the
+negative roots. -/
+theorem _root_.RootPairing.Base.induction_simple_reflect [CharZero R] [Finite ι] [IsDomain R]
+    [P.IsCrystallographic] [P.IsReduced] (b : P.Base) (i : ι) {p : ι → Prop}
+    (h₁ : ∀ i ∈ b.support, p i)
+    (h₂ : ∀ i j, p i → j ∈ b.support → p (P.reflectionPerm j i)) :
+    p i := by
+  -- induct on a root and its negative together, since `induction_reflect` needs negation
+  refine (b.induction_reflect i (p := fun k ↦ p k ∧ p (P.reflectionPerm k k))
+    (fun k hk ↦ ?_) (fun k hk ↦ ⟨h₁ k hk, h₂ k k (h₁ k hk) hk⟩)
+    (fun k j hk hj ↦ ⟨h₂ k j hk.1 hj, ?_⟩)).1
+  · have hkk : P.reflectionPerm (P.reflectionPerm k k) (P.reflectionPerm k k) = k :=
+      ((P.root_eq_neg_iff).mp (by simp [P.root_reflectionPerm])).symm
+    rw [hkk]
+    exact hk.symm
+  · have hneg : P.reflectionPerm (P.reflectionPerm j k) (P.reflectionPerm j k) =
+        P.reflectionPerm j (P.reflectionPerm k k) :=
+      ((P.root_eq_neg_iff).mp (by simp [P.root_reflectionPerm])).symm
+    rw [hneg]
+    exact h₂ _ j hk.2 hj
 
 section
 

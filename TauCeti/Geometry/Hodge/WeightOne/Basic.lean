@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.IZPow
+public import TauCeti.Basic.Complex.IZPow
 public import TauCeti.Geometry.Hodge.WeilOperator
 public import TauCeti.Geometry.Symplectic.Complex.Projection
 public import TauCeti.LinearAlgebra.Eigenspace.Transport

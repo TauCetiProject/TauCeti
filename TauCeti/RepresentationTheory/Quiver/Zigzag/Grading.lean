@@ -47,8 +47,7 @@ structure, and it computes the concrete pieces.
 * `TauCeti.mem_zigzagGrade_iff`: a graded piece consists of the classes of the homogeneous
   elements of its degree.
 * `TauCeti.isInternal_zigzagGrade`: **the quotient is the internal direct sum of its graded
-  pieces**, the comparison of the direct-sum graded algebra with the ungraded quotient asked for
-  by the roadmap.
+  pieces**, the comparison of the direct-sum graded algebra with the ungraded quotient.
 * `TauCeti.zigzagGrade_zero_eq_span_range_vertexIdempotent`,
   `TauCeti.zigzagGrade_one_eq_span_range_ofArrow` and
   `TauCeti.zigzagGrade_two_eq_span_range_zigzagVolume`: the concrete pieces, spanned by the
@@ -63,11 +62,7 @@ structure, and it computes the concrete pieces.
 
 ## References
 
-This is the grading clause of Layer 0 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, which
-asks for the relation ideal to be homogeneous for the path-length grading and for the induced
-nonnegative grading on the quotient to be compared with the ungraded quotient rather than
-postulated as an unrelated graded copy. See Huerfano--Khovanov, *A category for the adjoint
-representation*, Section 3.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3.
 -/
 
 public section
@@ -175,9 +170,8 @@ theorem nonisolatedZigzagQuotientEquiv_mem_zigzagGrade_iff
     exact zigzagMk_mem_zigzagGrade k H ((pathAlgebraEquiv_mem_grade_iff k e).mpr hy)
 
 /-- **The quotient is the internal direct sum of its graded pieces**: this is the comparison of
-the direct-sum graded algebra with the ungraded quotient asked for by the roadmap, in the
-internal sense in which the pieces are submodules of the quotient itself rather than a separate
-graded copy. -/
+the direct-sum graded algebra with the ungraded quotient, in the internal sense in which the pieces
+are submodules of the quotient itself rather than a separate graded copy. -/
 theorem isInternal_zigzagGrade :
     DirectSum.IsInternal (zigzagGrade k G) :=
   TauCeti.GradedAlgebra.isInternal_quotientPiece (grade k (DoubledQuiver G))
@@ -205,9 +199,9 @@ theorem zigzagGrade_zero_eq_span_range_vertexIdempotent :
         (Set.range fun i : V => zigzagMk k G (vertexIdempotent k (vertex G i))) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 0)
-      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (DoubledQuiver G)) ?_ hw
+      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (DoubledQuiver G))).2 ?_ hw
     rintro z ⟨v, rfl⟩
     rw [← zigzagMk_apply k G]
     exact Submodule.subset_span ⟨(vertexEquiv G).symm v, by simp⟩
@@ -222,9 +216,9 @@ theorem zigzagGrade_one_eq_span_range_ofArrow :
         zigzagMk k G (ofArrow (arrow G d.adj))) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 1)
-      (PathAlgebra.grade_one_eq_span_range_ofArrow) ?_ hw
+      (PathAlgebra.grade_one_eq_span_range_ofArrow)).2 ?_ hw
     rintro z ⟨⟨a, b, e⟩, rfl⟩
     rw [← zigzagMk_apply k G]
     obtain ⟨i, rfl⟩ : ∃ i, a = vertex G i :=
@@ -247,9 +241,9 @@ theorem zigzagGrade_two_eq_span_range_zigzagVolume :
       Submodule.span k (Set.range fun i : V => zigzagVolume k G i) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 2)
-      (PathAlgebra.grade_eq_span_image_basis k (DoubledQuiver G) 2) ?_ hw
+      (PathAlgebra.grade_eq_span_image_basis k (DoubledQuiver G) 2)).2 ?_ hw
     rintro z ⟨t, ht, rfl⟩
     rw [← zigzagMk_apply k G]
     simp only [coe_pathAlgebraBasis]
@@ -285,9 +279,8 @@ theorem zigzagGrade_eq_bot_of_three_le {n : ℕ} (hn : 3 ≤ n) : zigzagGrade k 
     simp only [coe_pathAlgebraBasis]
     exact TwoSidedIdeal.mem_asIdeal.mpr
       (mem_zigzagIdeal_of_isZigzagRelator k G (IsZigzagRelator.long_path t (hn.trans ht'.symm.le)))
-  refine TauCeti.GradedAlgebra.quotientPiece_eq_bot_of_le (grade k (DoubledQuiver G))
-    (zigzagIdeal k G).asIdeal fun y hy => ?_
-  exact hle hy
+  exact (TauCeti.GradedAlgebra.quotientPiece_eq_bot_iff (grade k (DoubledQuiver G))
+    (zigzagIdeal k G).asIdeal).2 fun _ hy => hle hy
 
 /-! ### Integer-indexed grading -/
 
@@ -310,7 +303,7 @@ theorem zigzagIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
 /-- **The integer extension of the path-length grading is an internal direct sum**: the pieces
 in nonnegative degrees are those of `TauCeti.zigzagGrade`, and those in negative degrees vanish. -/
 theorem isInternal_zigzagIntegerGrade : DirectSum.IsInternal (zigzagIntegerGrade k G) :=
-  Graded.isInternal_extendByZero (isInternal_zigzagGrade k G)
+  Graded.isInternal_extendByZero_iff.2 (isInternal_zigzagGrade k G)
 
 /-- **The zigzag relation quotient is an integer-graded algebra** for the path-length grading
 indexed by `ℤ`, extended by zero in negative degrees. -/

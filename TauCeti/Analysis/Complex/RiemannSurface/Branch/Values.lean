@@ -7,13 +7,14 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Ramification
 import TauCeti.Analysis.Complex.RiemannSurface.OpenMapping
+import TauCeti.Data.Set.Restrict
 public import Mathlib.Topology.Covering.Basic
 
 /-!
 # Coverings away from branch values
 
-For a finite holomorphic map of connected Riemann surfaces, the branch values are the images
-of the points of local multiplicity greater than one. With compact source this is a finite
+For a finite holomorphic map of Riemann surfaces with connected target, the branch values are the
+images of the points of local multiplicity greater than one. With compact source this is a finite
 closed set, and the map is a covering over its complement. Every fibre of this covering has
 cardinality equal to the analytic degree of the map. Conversely, a branch value cannot admit
 an evenly covered neighbourhood: a local homeomorphism has local multiplicity one. Local
@@ -78,7 +79,7 @@ theorem mem_branchValues_iff (f : FiniteHolomorphicMap X Y) (y : Y) :
     y ∈ f.branchValues ↔ ∃ x, f x = y ∧ 1 < localMultiplicity f x := by
   simp [branchValues, and_comm]
 
-variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] [PreconnectedSpace X]
+variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
 /-- Away from branch values, every point of the fibre has local multiplicity one. -/
 -- Simplify nonmembership before `mem_branchValues_iff` rewrites the inner membership.
@@ -117,12 +118,12 @@ theorem finite_branchValues (f : FiniteHolomorphicMap X Y) : f.branchValues.Fini
   f.finite_setOf_one_lt_localMultiplicity.image f
 
 /-- The branch values form a closed set. -/
-theorem isClosed_branchValues [T1Space Y] (f : FiniteHolomorphicMap X Y) :
-    IsClosed f.branchValues :=
+theorem isClosed_branchValues (f : FiniteHolomorphicMap X Y) : IsClosed f.branchValues :=
+  have : T1Space Y := 𝓘(ℂ).t1Space Y
   f.finite_branchValues.isClosed
 
 /-- The complement of the branch values is open. -/
-theorem isOpen_branchValues_compl [T1Space Y] (f : FiniteHolomorphicMap X Y) :
+theorem isOpen_branchValues_compl (f : FiniteHolomorphicMap X Y) :
     IsOpen f.branchValuesᶜ :=
   f.isClosed_branchValues.isOpen_compl
 
@@ -175,13 +176,13 @@ cardinality equal to the analytic degree of the original map. -/
 theorem ncard_fiber_restrictPreimage_compl (f : FiniteHolomorphicMap X Y) {S : Set Y}
     (hS : f.branchValues ⊆ S) (y : ↥Sᶜ) :
     ((Sᶜ.restrictPreimage f) ⁻¹' {y}).ncard = degree f := by
-  rw [← Set.ncard_image_of_injective _ Subtype.val_injective,
-    Set.image_val_preimage_restrictPreimage, Set.image_singleton,
+  rw [Set.ncard_preimage_restrictPreimage, Set.image_singleton,
     Set.ncard_eq_toFinset_card _ (f.finite_fiber y)]
   exact (f.card_fiber_eq_degree_iff y).2 fun hy ↦ y.property (hS hy)
 
+omit [T2Space X] in
 /-- **Branch values of a composite**: for finite holomorphic maps `f : X → Y` and `g : Y → Z`,
-with `X` compact and connected and `Y` connected, the branch values of `g ∘ f` are the images
+with `X` compact and `Y` connected, the branch values of `g ∘ f` are the images
 under `g` of the branch values of `f` together with the branch values of `g`. -/
 theorem branchValues_comp {Z : Type*} [TopologicalSpace Z] [ChartedSpace ℂ Z]
     [IsManifold 𝓘(ℂ) 1 Z] (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :

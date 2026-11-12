@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Integrable
 
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Geometry.Symplectic.Manifold.Opens
 
 /-!
@@ -46,6 +47,8 @@ completely integrable system there (`TauCeti.isIntegrableSystem_centralForceEner
   orbits `X_H = (L / (m ‖q‖²)) X_L`.
 * `TauCeti.image_centralForceEnergyMomentum_setOf_not_isRegularPoint`: the critical values.
 * `TauCeti.puncturedPhaseSpace`: the open set `{(q, p) | q ≠ 0}`.
+* `TauCeti.poissonBracket_centralForceEnergyMomentum_comp_subtypeVal`: `H` and `L` Poisson-commute
+  on every open set avoiding the collision set.
 * `TauCeti.isIntegrableSystem_centralForceEnergyMomentum`: `(H, L)` is a completely integrable
   system on the punctured phase space.
 
@@ -96,6 +99,14 @@ theorem centralForceEnergyMomentum_one (m : ℝ) (U : ℝ → ℝ) (x : V × V) 
     centralForceEnergyMomentum b m U x 1 = angularMomentum (b 0) (b 1) x :=
   (rfl)
 
+/-- Two states have the same image under the energy–momentum map exactly when they have the same
+energy and the same angular momentum. -/
+theorem centralForceEnergyMomentum_eq_iff {m : ℝ} {U : ℝ → ℝ} {x y : V × V} :
+    centralForceEnergyMomentum b m U x = centralForceEnergyMomentum b m U y ↔
+      centralForceHamiltonian m U x = centralForceHamiltonian m U y ∧
+        angularMomentum (b 0) (b 1) x = angularMomentum (b 0) (b 1) y := by
+  simp [funext_iff, Fin.forall_fin_two]
+
 /-- Away from the collision set, the derivative of the energy–momentum map has the two rows
 `dH = ((U'(‖q‖) / ‖q‖) q, p / m)` and `dL = (⟪p, b₁⟫ b₀ - ⟪p, b₀⟫ b₁, ⟪q, b₀⟫ b₁ - ⟪q, b₁⟫ b₀)`,
 written as pairs of partial gradients. -/
@@ -126,12 +137,9 @@ private theorem smul_eq_smul_of_circular {m U' : ℝ} {q p : V} (hq : q ≠ 0)
         (⟪q, b 0⟫_ℝ • b 1 - ⟪q, b 1⟫_ℝ • b 0) := by
   have hb : ∀ i j, ⟪b i, b j⟫_ℝ = if i = j then 1 else 0 := orthonormal_iff_ite.1 b.orthonormal
   have hr : ‖q‖ ≠ 0 := norm_ne_zero_iff.2 hq
-  have hc (q p : V) : ⟪q, p⟫_ℝ = ⟪q, b 0⟫_ℝ * ⟪p, b 0⟫_ℝ + ⟪q, b 1⟫_ℝ * ⟪p, b 1⟫_ℝ := by
-    rw [← b.sum_inner_mul_inner q p, Fin.sum_univ_two, real_inner_comm (b 0) p,
-      real_inner_comm (b 1) p]
-  have hqq := hc q q
+  have hqq := b.real_inner_fin_two q q
   rw [real_inner_self_eq_norm_sq] at hqq
-  have hqp := (hc q p).symm.trans h0
+  have hqp := (b.real_inner_fin_two q p).symm.trans h0
   set L := angularMomentum (b 0) (b 1) (q, p) with hL
   rw [angularMomentum_apply] at hL
   -- In the plane, `p ⊥ q` forces `‖q‖² p = L (-q₁, q₀)`.
@@ -146,6 +154,62 @@ private theorem smul_eq_smul_of_circular {m U' : ℝ} {q p : V} (hq : q ≠ 0)
   · linear_combination L * m⁻¹ * hp₀
   · linear_combination m⁻¹ * hp₀
   · linear_combination m⁻¹ * hp₁
+
+/-- The reverse direction of `isRegularPoint_centralForceEnergyMomentum_iff`: off the collision set,
+a vanishing combination `s dH + t dL` forces `s = t = 0` unless `⟪q, p⟫ = 0` and
+`U' = L² / (m ‖q‖³)`. -/
+private theorem eq_zero_of_smul_add_smul_eq_zero {m U' : ℝ} (hm : m ≠ 0) {q p : V} (hq : q ≠ 0)
+    (hnc : ¬(⟪q, p⟫_ℝ = 0 ∧ U' = angularMomentum (b 0) (b 1) (q, p) ^ 2 / (m * ‖q‖ ^ 3)))
+    {s t : ℝ}
+    (hst : s • ⇑((innerSL ℝ ((U' / ‖q‖) • q)).coprod (innerSL ℝ (m⁻¹ • p))) +
+      t • ⇑((innerSL ℝ (⟪p, b 1⟫_ℝ • b 0 - ⟪p, b 0⟫_ℝ • b 1)).coprod
+        (innerSL ℝ (⟪q, b 0⟫_ℝ • b 1 - ⟪q, b 1⟫_ℝ • b 0))) = 0) :
+    s = 0 ∧ t = 0 := by
+  have hb : ∀ i j, ⟪b i, b j⟫_ℝ = if i = j then 1 else 0 :=
+    orthonormal_iff_ite.1 b.orthonormal
+  have hr : ‖q‖ ≠ 0 := norm_ne_zero_iff.2 hq
+  have hqp := b.real_inner_fin_two q p
+  have hqq := b.real_inner_fin_two q q
+  rw [real_inner_self_eq_norm_sq] at hqq
+  set L := angularMomentum (b 0) (b 1) (q, p) with hL
+  rw [angularMomentum_apply] at hL
+  set q₀ := ⟪q, b 0⟫_ℝ with hq₀
+  set q₁ := ⟪q, b 1⟫_ℝ with hq₁
+  set p₀ := ⟪p, b 0⟫_ℝ with hp₀
+  set p₁ := ⟪p, b 1⟫_ℝ with hp₁
+  set r := ‖q‖
+  have e (v w : V) := congrFun hst (v, w)
+  have e₁ := e (b 0) 0
+  have e₂ := e (b 1) 0
+  have e₃ := e 0 (b 0)
+  have e₄ := e 0 (b 1)
+  simp [hb, ← hq₀, ← hq₁, ← hp₀, ← hp₁] at e₁ e₂ e₃ e₄
+  field_simp at e₁ e₂ e₃ e₄
+  rcases eq_or_ne s 0 with rfl | hs
+  · -- With `s = 0`, the last two equations say `t q = 0`.
+    have h : t ^ 2 * r ^ 2 * m = 0 := by
+      rw [hqq]
+      linear_combination (t * q₀) * e₄ - (t * q₁) * e₃
+    exact ⟨rfl, pow_eq_zero_iff two_ne_zero |>.1 <| (mul_eq_zero.1 <|
+      (mul_eq_zero.1 h).resolve_right hm).resolve_right (pow_ne_zero 2 hr)⟩
+  · -- With `s ≠ 0`, the momentum is perpendicular to `q` and `s r U' = -t L`,
+    -- `s L = -m t r²`, which together say `U'(r) = L² / (m r³)`.
+    refine (hnc ⟨?_, ?_⟩).elim
+    · have h : s * ⟪q, p⟫_ℝ = 0 := by
+        rw [hqp]
+        linear_combination q₀ * e₃ + q₁ * e₄
+      exact (mul_eq_zero.1 h).resolve_left hs
+    · have hA : s * r * U' + t * L = 0 := by
+        refine (mul_eq_zero.1 (?_ : r * (s * r * U' + t * L) = 0)).resolve_left hr
+        rw [hL]
+        linear_combination q₀ * e₁ + q₁ * e₂ + s * U' * hqq
+      have hB : s * L + m * t * r ^ 2 = 0 := by
+        rw [hL]
+        linear_combination q₀ * e₄ - q₁ * e₃ + m * t * hqq
+      rw [eq_div_iff (mul_ne_zero hm (pow_ne_zero 3 hr))]
+      have h : s ^ 2 * (U' * (m * r ^ 3) - L ^ 2) = 0 := by
+        linear_combination m * r ^ 2 * s * hA - s * L * hB
+      exact sub_eq_zero.1 ((mul_eq_zero.1 h).resolve_left (pow_ne_zero 2 hs))
 
 /-- **The critical points of a planar central force.** At a point `(q, p)` off the collision set
 `q = 0`, the differentials of the energy `H` and of the angular momentum `L` are linearly dependent
@@ -179,55 +243,7 @@ theorem isRegularPoint_centralForceEnergyMomentum_iff {m : ℝ} (hm : m ≠ 0) {
       simp
       ring
     exact one_ne_zero h1
-  · -- Evaluate a vanishing combination `s dH + t dL` on the four basis vectors.
-    have hb : ∀ i j, ⟪b i, b j⟫_ℝ = if i = j then 1 else 0 :=
-      orthonormal_iff_ite.1 b.orthonormal
-    have hr : ‖q‖ ≠ 0 := norm_ne_zero_iff.2 hq
-    have hc (q p : V) : ⟪q, p⟫_ℝ = ⟪q, b 0⟫_ℝ * ⟪p, b 0⟫_ℝ + ⟪q, b 1⟫_ℝ * ⟪p, b 1⟫_ℝ := by
-      rw [← b.sum_inner_mul_inner q p, Fin.sum_univ_two, real_inner_comm (b 0) p,
-        real_inner_comm (b 1) p]
-    have hqp := hc q p
-    have hqq := hc q q
-    rw [real_inner_self_eq_norm_sq] at hqq
-    set L := angularMomentum (b 0) (b 1) (q, p) with hL
-    rw [angularMomentum_apply] at hL
-    set q₀ := ⟪q, b 0⟫_ℝ with hq₀
-    set q₁ := ⟪q, b 1⟫_ℝ with hq₁
-    set p₀ := ⟪p, b 0⟫_ℝ with hp₀
-    set p₁ := ⟪p, b 1⟫_ℝ with hp₁
-    set r := ‖q‖
-    have e (v w : V) := congrFun hst (v, w)
-    have e₁ := e (b 0) 0
-    have e₂ := e (b 1) 0
-    have e₃ := e 0 (b 0)
-    have e₄ := e 0 (b 1)
-    simp [hb, ← hq₀, ← hq₁, ← hp₀, ← hp₁] at e₁ e₂ e₃ e₄
-    field_simp at e₁ e₂ e₃ e₄
-    rcases eq_or_ne s 0 with rfl | hs
-    · -- With `s = 0`, the last two equations say `t q = 0`.
-      have h : t ^ 2 * r ^ 2 * m = 0 := by
-        rw [hqq]
-        linear_combination (t * q₀) * e₄ - (t * q₁) * e₃
-      exact ⟨rfl, pow_eq_zero_iff two_ne_zero |>.1 <| (mul_eq_zero.1 <|
-        (mul_eq_zero.1 h).resolve_right hm).resolve_right (pow_ne_zero 2 hr)⟩
-    · -- With `s ≠ 0`, the momentum is perpendicular to `q` and `s r U' = -t L`,
-      -- `s L = -m t r²`, which together say `U'(r) = L² / (m r³)`.
-      refine (hnc ⟨?_, ?_⟩).elim
-      · have h : s * ⟪q, p⟫_ℝ = 0 := by
-          rw [hqp]
-          linear_combination q₀ * e₃ + q₁ * e₄
-        exact (mul_eq_zero.1 h).resolve_left hs
-      · have hA : s * r * U' + t * L = 0 := by
-          refine (mul_eq_zero.1 (?_ : r * (s * r * U' + t * L) = 0)).resolve_left hr
-          rw [hL]
-          linear_combination q₀ * e₁ + q₁ * e₂ + s * U' * hqq
-        have hB : s * L + m * t * r ^ 2 = 0 := by
-          rw [hL]
-          linear_combination q₀ * e₄ - q₁ * e₃ + m * t * hqq
-        rw [eq_div_iff (mul_ne_zero hm (pow_ne_zero 3 hr))]
-        have h : s ^ 2 * (U' * (m * r ^ 3) - L ^ 2) = 0 := by
-          linear_combination m * r ^ 2 * s * hA - s * L * hB
-        exact sub_eq_zero.1 ((mul_eq_zero.1 h).resolve_left (pow_ne_zero 2 hs))
+  · exact eq_zero_of_smul_add_smul_eq_zero b hm hq hnc hst
 
 /-- **Circular orbits are relative equilibria.** At a point `(q, p)` with `⟪q, p⟫ = 0` and
 `U'(‖q‖) = L² / (m ‖q‖³)`, the Hamiltonian vector field of the energy is the Hamiltonian vector
@@ -336,6 +352,44 @@ theorem dense_setOf_inner_ne_zero :
   filter_upwards [self_mem_nhdsWithin] with ε hε
   simpa [g, inner_add_right, inner_smul_right, h, hq'] using hε
 
+/-- **The energy and the angular momentum Poisson-commute off the collision set.** On every open
+set of `V × V` avoiding the collision set `q = 0`, with the restriction of the standard symplectic
+form, the components of the energy–momentum map of a potential differentiable on `(0, ∞)`
+Poisson-commute. -/
+theorem poissonBracket_centralForceEnergyMomentum_comp_subtypeVal [FiniteDimensional ℝ V]
+    {m : ℝ} {U : ℝ → ℝ} (hU : DifferentiableOn ℝ U (Ioi 0)) {W : TopologicalSpace.Opens (V × V)}
+    (hW : ∀ x ∈ W, x.1 ≠ 0) (i j : Fin 2) (x : W) :
+    SmoothTwoForm.poissonBracket
+      (SmoothForm.mpullback (Subtype.val : W → V × V) contMDiff_subtype_val
+        (stdSymplecticForm (V := V)).constSmooth)
+      (fun y ↦ (centralForceEnergyMomentum b m U ∘ Subtype.val) y i)
+      (fun y ↦ (centralForceEnergyMomentum b m U ∘ Subtype.val) y j) x = 0 := by
+  have hq : (x : V × V).1 ≠ 0 := hW x x.2
+  have hU' : HasDerivAt U (deriv U ‖(x : V × V).1‖) ‖(x : V × V).1‖ :=
+    (hU.differentiableAt (Ioi_mem_nhds (norm_pos_iff.2 hq))).hasDerivAt
+  have hdiff (k : Fin 2) :
+      MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ) (fun y ↦ centralForceEnergyMomentum b m U y k) x :=
+    (differentiableAt_pi.1
+      (hasFDerivAt_centralForceEnergyMomentum b hU' hq).differentiableAt k).mdifferentiableAt
+  -- Each component of `F ∘ Subtype.val` is the corresponding component of `F` composed with
+  -- `Subtype.val`, by definition of composition.
+  have hcomp (k : Fin 2) : (fun y : W ↦ (centralForceEnergyMomentum b m U ∘ Subtype.val) y k) =
+      (fun y ↦ centralForceEnergyMomentum b m U y k) ∘ Subtype.val := rfl
+  -- The bracket is computed on `V × V`, where `{H, L} = 0`.
+  rw [hcomp, hcomp,
+    ((SymplecticForm.isNondegenerate_constSmooth _).mpullback_subtype_val _).poissonBracket_comp
+      (SymplecticForm.isNondegenerate_constSmooth _) contMDiff_subtype_val rfl
+      (isRegularPoint_iff.1 (isRegularPoint_subtype_val x))
+      (hdiff i) (hdiff j),
+    SymplecticForm.poissonBracket_constSmooth]
+  have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum (m := m)
+    (U := U) (x := (x : V × V)) (b 0) (b 1)
+  fin_cases i <;> fin_cases j
+  · exact SymplecticForm.poissonBracket_self _ _ _
+  · exact h
+  · simpa [← SymplecticForm.neg_poissonBracket _ (centralForceHamiltonian m U)] using h
+  · exact SymplecticForm.poissonBracket_self _ _ _
+
 /-- **Planar central forces are completely integrable.** On the punctured phase space
 `{(q, p) | q ≠ 0}` of the plane, with the restriction of the standard symplectic form, the energy
 `H = ‖p‖² / (2m) + U(‖q‖)` of a potential `U` smooth on `(0, ∞)` and the angular momentum
@@ -349,46 +403,17 @@ theorem isIntegrableSystem_centralForceEnergyMomentum [FiniteDimensional ℝ V] 
       (centralForceEnergyMomentum b m U ∘ Subtype.val) := by
   have hF (x : puncturedPhaseSpace V) := contDiffAt_centralForceEnergyMomentum b (m := m)
     (hU.contDiffAt (Ioi_mem_nhds (norm_pos_iff.2 x.2))) x.2
-  have hval (x : puncturedPhaseSpace V) :
-      IsRegularPoint 𝓘(ℝ, V × V) 𝓘(ℝ, V × V) (Subtype.val : puncturedPhaseSpace V → V × V) x := by
-    rw [isRegularPoint_iff, Manifold.mfderiv_subtype_val]
-    exact (Manifold.tangentSpaceOpenEquiv x).surjective
-  have hFd (x : puncturedPhaseSpace V) :
-      MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ, Fin 2 → ℝ) (centralForceEnergyMomentum b m U) x :=
-    ((hF x).differentiableAt (by simp)).mdifferentiableAt
-  have hdiff (x : puncturedPhaseSpace V) (i : Fin 2) :
-      MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ) (fun y ↦ centralForceEnergyMomentum b m U y i) x :=
-    ((contDiffAt_pi.1 (hF x) i).differentiableAt (by simp)).mdifferentiableAt
-  refine ⟨fun x ↦ (hF x).contMDiffAt.comp x (contMDiff_subtype_val x), fun i j x ↦ ?_, ?_, ?_⟩
-  · -- The bracket is computed on `V × V`, where `{H, L} = 0`.
-    have hr : 0 < ‖(x : V × V).1‖ := norm_pos_iff.2 x.2
-    have hU' : HasDerivAt U (deriv U ‖(x : V × V).1‖) ‖(x : V × V).1‖ :=
-      ((hU.differentiableOn (by simp)).differentiableAt (Ioi_mem_nhds hr)).hasDerivAt
-    -- Each component of `F ∘ Subtype.val` is the corresponding component of `F` composed with
-    -- `Subtype.val`, by definition of composition.
-    have hcomp (k : Fin 2) : (fun y : puncturedPhaseSpace V ↦
-        (centralForceEnergyMomentum b m U ∘ Subtype.val) y k) =
-          (fun y ↦ centralForceEnergyMomentum b m U y k) ∘ Subtype.val := rfl
-    rw [hcomp, hcomp,
-      ((SymplecticForm.isNondegenerate_constSmooth _).mpullback_subtype_val _).poissonBracket_comp
-        (SymplecticForm.isNondegenerate_constSmooth _) contMDiff_subtype_val rfl
-        (isRegularPoint_iff.1 (hval x)) (hdiff x i) (hdiff x j),
-      SymplecticForm.poissonBracket_constSmooth]
-    have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum (m := m)
-      hU' x.2 (b 0) (b 1)
-    fin_cases i <;> fin_cases j
-    · exact SymplecticForm.poissonBracket_self _ _ _
-    · exact h
-    · simpa [← SymplecticForm.neg_poissonBracket _ (centralForceHamiltonian m U)] using h
-    · exact SymplecticForm.poissonBracket_self _ _ _
+  refine ⟨fun x ↦ (hF x).contMDiffAt.comp x (contMDiff_subtype_val x),
+    poissonBracket_centralForceEnergyMomentum_comp_subtypeVal b (hU.differentiableOn (by simp))
+      (fun _ hx ↦ hx), ?_, ?_⟩
   · -- Points with nonzero radial momentum are regular, and they are dense.
     refine Dense.mono (s₁ := {x : puncturedPhaseSpace V | ⟪(x : V × V).1, (x : V × V).2⟫_ℝ ≠ 0})
       (fun x hx ↦ ?_) ?_
     · have hr : 0 < ‖(x : V × V).1‖ := norm_pos_iff.2 x.2
       have hU' : HasDerivAt U (deriv U ‖(x : V × V).1‖) ‖(x : V × V).1‖ :=
         ((hU.differentiableOn (by simp)).differentiableAt (Ioi_mem_nhds hr)).hasDerivAt
-      refine (isRegularPoint_centralForceEnergyMomentum_iff b hm hU' x.2).2 ?_ |>.comp (hval x)
-        (hFd x) (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
+      refine (isRegularPoint_centralForceEnergyMomentum_iff b hm hU' x.2).2 ?_ |>.comp
+        (isRegularPoint_subtype_val x)
       exact fun h ↦ hx h.1
     · exact dense_setOf_inner_ne_zero
   · rw [Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis]

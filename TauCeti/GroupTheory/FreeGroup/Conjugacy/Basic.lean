@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Algebra.Group.Conj
+public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.FreeGroup.Reduce
 
 import Mathlib.Tactic.Group
@@ -32,6 +33,9 @@ rotations of each other.
   exactly when they are rotations of each other.
 * `FreeGroup.isConj_iff_isRotated_reduceCyclically`: the conjugacy criterion for elements of a
   free group.
+* `FreeGroup.length_reduceCyclically_toWord_le_norm_of_isConj` and
+  `FreeGroup.norm_inv_mk_conjugator_mul_mul`: the cyclic reduction has the least length in the
+  conjugacy class.
 
 The explicit cyclic-reduction conjugator uses Mathlib's
 `FreeGroup.reduceCyclically.conj_conjugator_reduceCyclically` from
@@ -227,11 +231,33 @@ theorem isConj_iff_isRotated_reduceCyclically [DecidableEq α] {x y : FreeGroup 
   exact ((isConj_mk_reduceCyclically x.toWord).symm.trans h).trans
     (isConj_mk_reduceCyclically y.toWord)
 
-/-- For any letters `a` and `b`, the elements `a b` and `a b⁻¹` of a free group are not
+/-- Conjugate elements of a free group have cyclic reductions of the same length. -/
+theorem length_reduceCyclically_toWord_eq_of_isConj [DecidableEq α] {x y : FreeGroup α}
+    (h : IsConj x y) :
+    (reduceCyclically x.toWord).length = (reduceCyclically y.toWord).length :=
+  (isConj_iff_isRotated_reduceCyclically.mp h).perm.length_eq
+
+/-- The cyclic reduction of an element of a free group is at most as long as each of its
+conjugates. -/
+theorem length_reduceCyclically_toWord_le_norm_of_isConj [DecidableEq α] {x y : FreeGroup α}
+    (h : IsConj x y) : (reduceCyclically x.toWord).length ≤ norm y :=
+  (length_reduceCyclically_toWord_eq_of_isConj h).trans_le (length_reduceCyclically_le y.toWord)
+
+/-- Conjugating an element of a free group by its cyclic-reduction conjugator gives an element
+whose length is that of the cyclic reduction, the least length in the conjugacy class. -/
+theorem norm_inv_mk_conjugator_mul_mul [DecidableEq α] (x : FreeGroup α) :
+    norm ((mk (reduceCyclically.conjugator x.toWord))⁻¹ * x *
+      mk (reduceCyclically.conjugator x.toWord)) = (reduceCyclically x.toWord).length := by
+  have h := mk_conjugator_mul_mk_reduceCyclically x.toWord
+  rw [mk_toWord] at h
+  rw [mul_assoc, ← eq_inv_mul_iff_mul_eq.mpr (mul_inv_eq_iff_eq_mul.mp h), norm, toWord_mk,
+    (reduceCyclically.isCyclicallyReduced isReduced_toWord).isReduced.reduce_eq]
+
+/-- For any letters `a`, `b`, `c` and `d`, the elements `a b` and `c d⁻¹` of a free group are not
 conjugate: the homomorphism to `Multiplicative ℤ` sending every generator to `ofAdd 1` maps them
-to `ofAdd 2` and `ofAdd 0`. -/
-theorem not_isConj_of_mul_of_of_mul_inv_of (a b : α) :
-    ¬IsConj (of a * of b) (of a * (of b)⁻¹) := by
+to `ofAdd 2` and `ofAdd 0`. In particular `a b` and `a b⁻¹` are not conjugate. -/
+theorem not_isConj_of_mul_of_of_mul_inv_of (a b c d : α) :
+    ¬IsConj (of a * of b) (of c * (of d)⁻¹) := by
   intro h
   have := (FreeGroup.lift fun _ => Multiplicative.ofAdd (1 : ℤ)).map_isConj h
   rw [isConj_iff_eq] at this

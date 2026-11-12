@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Dagger.IntegralWashnitzer
+public import TauCeti.RingTheory.Dagger.IntegralWashnitzer.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
 import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.RingTheory.Polynomial.Basic
@@ -147,9 +147,11 @@ by integral Weierstrass division, the quotient by that series is a finite `K°�
 private theorem fg_of_isDistinguished_mem [IsNoetherianRing Wint] {I : Ideal Wint'} {g : Wint'}
     (hgI : g ∈ I) {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (restrictedOptionEquiv (toTate _ K (toWashnitzerAlgebra _ K g)) : PowerSeries Tate))
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K (toWashnitzerAlgebra _ K g)) :
+        PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (restrictedOptionEquiv (toTate _ K (toWashnitzerAlgebra _ K g)) : PowerSeries Tate)))
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K (toWashnitzerAlgebra _ K g)) :
+        PowerSeries Tate)))
     (hg1 : ‖toWashnitzerAlgebra _ K g‖ = 1) : I.FG := by
   let : Algebra Wint Wint' := (intOptionC (σ := σ) (K := K)).toAlgebra
   let J : Ideal Wint' := Ideal.span {g}
@@ -243,7 +245,7 @@ private theorem isNoetherianRing_of_forall_fg {π : K} (hπ1 : ‖π‖ < 1)
   obtain ⟨b, hbI', hb⟩ := Set.not_subset.1 hk
   have hb1 : ‖ι b‖ = 1 := by
     refine (norm_toWashnitzerAlgebra_le_one b).antisymm (not_lt.1 fun hlt ↦ hb ?_)
-    exact mem_span_algebraMap_iff_norm_le.2 ((washnitzerAlgebra.norm_le_iff (norm_nonneg _)).2
+    exact mem_span_algebraMap_iff_norm_le.2 ((washnitzerAlgebra.norm_le_iff).2
       fun t ↦ hπ _ ((washnitzerAlgebra.norm_coeff_le _ t).trans_lt hlt))
   rw [hIk]
   exact (Submodule.fg_span_singleton _).mul (h _ b hbI' hb1)

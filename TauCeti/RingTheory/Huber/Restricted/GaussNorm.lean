@@ -12,6 +12,8 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.UnitWeight
 public import TauCeti.RingTheory.MvPowerSeries.Rescale
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
+
 /-!
 # The Gauss norm topology on restricted multivariate series
 
@@ -33,7 +35,9 @@ Gauss-normed ring at the radii `c`, again with the same topology. Radii that are
 norms of multiplicative units of `R` are not reached by such singleton weights.
 
 Over a nontrivially normed field the Gauss-normed algebra is itself a Tate ring, at any positive
-polyradii: a constant of norm strictly between `0` and `1` is a pseudouniformiser.
+polyradii: a constant of norm strictly between `0` and `1` is a pseudouniformiser. At unit radius
+its Gauss unit ball is its power-bounded subring, so transporting across the topological ring
+comparison identifies the power-bounded subring of `K⟨X₁, …, Xₙ⟩` with `K°⟨X₁, …, Xₙ⟩`.
 For an ultrametric normed algebra `A` over such a field, the structure map `A → A⟨X⟩ ⧸ I` to a
 quotient of the unit-radius algebra is then adic for the quotient topology.
 
@@ -58,13 +62,15 @@ type or norm is introduced here.
   directions.
 * `TauCeti.Huber.IsTateRing.isRestricted_subring`: over a nontrivially normed field with an
   ultrametric norm, the Gauss-normed algebra of restricted series is a Tate ring.
+* `TauCeti.Huber.weightedSubring_powerBoundedSubring_eq`: over a nontrivially normed ultrametric
+  field `K`, the power-bounded subring of `K⟨X₁, …, Xₙ⟩` is `K°⟨X₁, …, Xₙ⟩`.
 * `TauCeti.MvPowerSeries.isAdicHom_algebraMap_isRestrictedSubring_quotient`: for an ultrametric
   normed algebra `A` over a nontrivially normed field, the structure map `A → A⟨X⟩ ⧸ I` is adic
   for the quotient topology.
 
 ## References
 
-* Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.1.1 and §5.2.1.
+* Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.1.1, §5.1.3, and §5.2.1.
 * T. Wedhorn, *Adic Spaces*, §5.6, for the restricted-series topology.
 -/
 
@@ -90,7 +96,6 @@ theorem isRestricted_iff_isRestricted_one {f : MvPowerSeries (Fin n) R} :
 end Predicate
 
 variable {n : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
-  [NonarchimedeanRing R]
 
 /-- The trivial-weight Huber subring is Mathlib's subring of unit-radius restricted series.
 This is an equality of subrings; their topological structures are compared separately below. -/
@@ -178,7 +183,7 @@ theorem continuous_restrictedMvPowerSeriesGaussEquiv :
   let U := IsUltrametricDist.ball_openAddSubgroup R (half_pos hε)
   filter_upwards [(hasBasis_nhds_zero_weightedTopology
     (k := n) (A := R) isWeightFamily_one_weight).mem_of_mem (i := U) trivial] with f hf
-  refine lt_of_le_of_lt ((MvPowerSeries.norm_le_iff (half_pos hε).le).mpr ?_)
+  refine lt_of_le_of_lt (MvPowerSeries.norm_le_iff.mpr ?_)
     (half_lt_self hε)
   intro ν
   have h := mem_weightedNhd.mp hf ν
@@ -311,7 +316,6 @@ have the same underlying power series and the same topology. -/
 variable (u : Fin n → Rˣ) (hu : ∀ i, IsNormMulUnit (u i : R)) {c : Fin n → ℝ}
   (hc : ∀ i, ‖(u i : R)‖ * c i = 1)
 
-omit [NonarchimedeanRing R] in
 include hu hc in
 /-- **Unit weights encode radii.** A series is restricted for the weights `Tᵢ = {u i}` exactly
 when it is restricted at the radii `c`. -/
@@ -382,7 +386,7 @@ theorem continuous_weightedRestrictedGaussAlgEquiv :
   let U := IsUltrametricDist.ball_openAddSubgroup R (half_pos hε)
   filter_upwards [(hasBasis_nhds_zero_weightedTopology (isWeightFamily_units u)).mem_of_mem
     (i := U) trivial] with f hf
-  refine lt_of_le_of_lt ((MvPowerSeries.norm_le_iff (half_pos hε).le).mpr fun ν ↦ ?_)
+  refine lt_of_le_of_lt (MvPowerSeries.norm_le_iff.mpr fun ν ↦ ?_)
     (half_lt_self hε)
   have h := (mem_weightedNhd_units_iff u).mp hf ν
   rw [coe_weightedRestrictedGaussAlgEquiv,
@@ -423,6 +427,23 @@ instance IsTateRing.isRestricted_subring :
   refine IsTateRing.of_isUnit_norm_lt_one
     ((isUnit_iff_ne_zero.mpr (norm_pos_iff.mp h0)).map (algebraMap K _)) ?_
   rwa [norm_algebraMap']
+
+/-- Over a nontrivially normed ultrametric field `K`, the power-bounded subring of `K⟨X₁, …, Xₙ⟩`
+is the subring `K°⟨X₁, …, Xₙ⟩` of series with power-bounded coefficients. -/
+theorem weightedSubring_powerBoundedSubring_eq (n : ℕ) :
+    weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
+        (powerBoundedSubring K) =
+      powerBoundedSubring
+        (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) := by
+  ext f
+  rw [mem_weightedSubring, mem_weightedNhd, mem_powerBoundedSubring,
+    ← isPowerBounded_ringEquiv_iff restrictedMvPowerSeriesGaussEquiv
+      continuous_restrictedMvPowerSeriesGaussEquiv
+      continuous_restrictedMvPowerSeriesGaussEquiv_symm,
+    ← mem_powerBoundedSubring, TauCeti.MvPowerSeries.powerBoundedSubring_eq_unitClosedBall,
+    TauCeti.MvPowerSeries.mem_unitClosedBall_iff]
+  simp only [weightMul_one_weight, Subring.mem_toAddSubgroup, mem_powerBoundedSubring,
+    isPowerBounded_iff_norm_le_one, coe_restrictedMvPowerSeriesGaussEquiv]
 
 end Tate
 

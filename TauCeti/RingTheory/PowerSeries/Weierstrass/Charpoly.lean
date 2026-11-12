@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Torsion.Finite
 public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.RingTheory.PowerBasis
 public import Mathlib.RingTheory.PowerSeries.WeierstrassPreparation
+public import Mathlib.RingTheory.QuotSMulTop
 
 import TauCeti.RingTheory.AdjoinRoot.Minpoly
 import TauCeti.RingTheory.PowerBasis
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # Multiplication by `X` on a quotient of a power series ring
@@ -24,7 +27,9 @@ file transports that structure to `A⟦X⟧ ⧸ (g)`:
 * `A⟦X⟧ ⧸ (g)` is free of rank `deg f` over `A`, with power basis the classes of
   `1, X, …, X ^ (deg f - 1)`;
 * the minimal polynomial over `A` of the class of `X` is `f`;
-* multiplication by `X` on `A⟦X⟧ ⧸ (g)` has characteristic polynomial `f`.
+* multiplication by `X` on `A⟦X⟧ ⧸ (g)` has characteristic polynomial `f`;
+* for `a : A`, the quotient `A⟦X⟧ ⧸ (a, g)` is `(A ⧸ (a)) ^ deg f`, the reduction modulo `a` of
+  the free module `A⟦X⟧ ⧸ (g)`.
 
 Over a complete local ring and for a series `g` whose reduction modulo the maximal ideal is
 nonzero, the factorization is Mathlib's `PowerSeries.weierstrassDistinguished`, so multiplication
@@ -42,6 +47,12 @@ factor of `g`, and `T` acts on it with characteristic polynomial that distinguis
 ## Main results
 
 * `PowerSeries.IsWeierstrassFactorizationAt.finrank_quotient`: `A⟦X⟧ ⧸ (g)` has rank `deg f`.
+* `PowerSeries.IsWeierstrassFactorizationAt.finite_of_isTorsionBy`: a finite `A⟦X⟧`-module
+  killed by `g` is finite over `A`, by restriction of scalars from `A⟦X⟧ ⧸ (g)`.
+* `PowerSeries.IsWeierstrassFactorizationAt.infinite_quotient`: over an infinite ring,
+  `A⟦X⟧ ⧸ (g)` is infinite when `deg f > 0`.
+* `PowerSeries.IsWeierstrassFactorizationAt.natCard_quotSMulTop_quotient_span_C`: for `a : A`, the
+  quotient `A⟦X⟧ ⧸ (a, g)` has `#(A ⧸ (a)) ^ deg f` elements.
 * `PowerSeries.IsWeierstrassFactorizationAt.minpoly_mk_X`: the minimal polynomial of the class of
   `X` is `f`.
 * `PowerSeries.IsWeierstrassFactorizationAt.charpoly_lmul_mk_X`: multiplication by `X` on
@@ -113,11 +124,40 @@ theorem free_quotient : Module.Free A (A⟦X⟧ ⧸ Ideal.span {g}) :=
 theorem finite_quotient : Module.Finite A (A⟦X⟧ ⧸ Ideal.span {g}) :=
   H.powerBasis.finite
 
+/-- A finite power-series module killed by a series admitting a Weierstrass factorization is
+finite over the coefficient ring. -/
+theorem finite_of_isTorsionBy {M : Type*} [AddCommGroup M] [Module A⟦X⟧ M]
+    [Module A M] [IsScalarTower A A⟦X⟧ M] [Module.Finite A⟦X⟧ M]
+    (hgM : Module.IsTorsionBy A⟦X⟧ M g) : Module.Finite A M := by
+  have := H.finite_quotient
+  exact hgM.finite_of_finite_quotient (A := A)
+
 /-- For a Weierstrass factorization `g = f * h` over a nontrivial ring, the quotient `A⟦X⟧ ⧸ (g)`
 is free of rank the degree of `f`. -/
 theorem finrank_quotient [Nontrivial A] :
     Module.finrank A (A⟦X⟧ ⧸ Ideal.span {g}) = f.natDegree :=
   H.powerBasis.finrank
+
+/-- For a Weierstrass factorization `g = f * h` over an infinite ring with `deg f > 0`, the
+quotient `A⟦X⟧ ⧸ (g)` is infinite, being free of positive rank over `A`. -/
+theorem infinite_quotient [Infinite A] (hf : 0 < f.natDegree) :
+    Infinite (A⟦X⟧ ⧸ Ideal.span {g}) := by
+  have := H.free_quotient
+  have := Module.nontrivial_of_finrank_pos (R := A) (H.finrank_quotient.symm ▸ hf)
+  exact Module.Free.infinite A _
+
+/-- For a Weierstrass factorization `g = f * h` and any `a : A`, the quotient of `A⟦X⟧ ⧸ (a)` by
+`g` is `A⟦X⟧ ⧸ (a, g) ≃ (A ⧸ (a)) ^ deg f`, so it has `#(A ⧸ (a)) ^ deg f` elements. -/
+theorem natCard_quotSMulTop_quotient_span_C (a : A) :
+    Nat.card (QuotSMulTop g (A⟦X⟧ ⧸ Ideal.span {C a})) =
+      Nat.card (A ⧸ Ideal.span {a}) ^ f.natDegree := by
+  have := H.free_quotient
+  have := H.finite_quotient
+  nontriviality A
+  -- `A⟦X⟧ ⧸ (a, g)` is the reduction modulo `a` of the free `A`-module `A⟦X⟧ ⧸ (g)`.
+  rw [Nat.card_congr (QuotSMulTop.quotSpanSingletonComm g (C a)).toEquiv,
+    ← algebraMap_eq (R := A), Nat.card_congr (QuotSMulTop.restrictScalarsEquiv a).toEquiv,
+    QuotSMulTop.natCard_eq_pow_finrank, H.finrank_quotient]
 
 /-- For a Weierstrass factorization `g = f * h`, the minimal polynomial over `A` of the class of
 `X` in `A⟦X⟧ ⧸ (g)` is the distinguished polynomial `f`. -/

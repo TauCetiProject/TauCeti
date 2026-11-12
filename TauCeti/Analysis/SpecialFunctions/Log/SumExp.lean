@@ -38,8 +38,8 @@ theorem log_sum_exp_eq_add_log_sum_exp_sub (s : Finset ι) (hs : s.Nonempty)
 
 /-- Subtracting the maximum makes each exponential at most one. -/
 theorem exp_sub_sup'_le_one (s : Finset ι) (hs : s.Nonempty) (f : ι → ℝ)
-    {i : ι} (hi : i ∈ s) : exp (f i - s.sup' hs f) ≤ 1 := by
-  exact exp_le_one_iff.mpr (sub_nonpos.mpr (le_sup' f hi))
+    {i : ι} (hi : i ∈ s) : exp (f i - s.sup' hs f) ≤ 1 :=
+  exp_le_one_iff.mpr (sub_nonpos.mpr (le_sup' f hi))
 
 /-- The sum of exponentials shifted by their maximum is at most the number of terms. -/
 theorem sum_exp_sub_sup'_le_card (s : Finset ι) (hs : s.Nonempty) (f : ι → ℝ) :
@@ -51,9 +51,6 @@ has exponential one. -/
 theorem one_le_sum_exp_sub_sup' (s : Finset ι) (hs : s.Nonempty) (f : ι → ℝ) :
     1 ≤ ∑ i ∈ s, exp (f i - s.sup' hs f) := by
   obtain ⟨i, hi, hmax⟩ := s.exists_mem_eq_sup' hs f
-  calc
-    1 = exp (f i - s.sup' hs f) := by rw [hmax, sub_self, exp_zero]
-    _ ≤ ∑ j ∈ s, exp (f j - s.sup' hs f) :=
-      single_le_sum (fun j _ ↦ exp_nonneg (f j - s.sup' hs f)) hi
+  simpa [hmax] using single_le_sum (fun j _ ↦ exp_nonneg (f j - s.sup' hs f)) hi
 
 end Finset

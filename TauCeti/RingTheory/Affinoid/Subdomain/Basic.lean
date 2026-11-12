@@ -159,7 +159,7 @@ noncomputable def quotientPowAlgEquiv {x : MaximalSpectrum A} (hx : x ∈ U) (n 
     (A ⧸ x.asIdeal ^ n) ≃ₐ[K] B ⧸ (x.asIdeal ^ n).map φ :=
   -- The only maximal ideal containing a power of `𝔪ₓ` is `𝔪ₓ`; no maximal ideal contains `𝔪ₓ⁰`.
   h.quotientAlgEquiv hA fun y hy ↦ by
-    rcases Nat.eq_zero_or_pos n with rfl | hn
+    rcases Nat.eq_zero_or_pos n with rfl | _
     · exact absurd (by simpa using hy) y.isMaximal.ne_top
     · rwa [← MaximalSpectrum.ext (x.isMaximal.eq_of_le y.isMaximal.ne_top
         (Ideal.IsPrime.le_of_pow_le hy))]
@@ -300,6 +300,27 @@ theorem comp (hA : IsAffinoidAlgebra K A) {φ' : B →ₐ[K] C} {V : Set (Maxima
     refine ⟨h'.lift hD _ hχ, by beta_reduce; rw [← AlgHom.comp_assoc, h'.lift_comp, h.lift_comp],
       fun θ hθ ↦ h'.eq_lift hD _ hχ (h.eq_lift hD ψ hψU ?_)⟩
     rwa [AlgHom.comp_assoc]
+
+/-- If both a map and its composite represent affinoid subdomains, the second map represents
+an affinoid subdomain of the first coordinate algebra, with the expected underlying set. -/
+theorem of_comp {χ : B →ₐ[K] C} {V : Set (MaximalSpectrum A)}
+    (hχ : IsAffinoidSubdomainMap (χ.comp φ) V) :
+    IsAffinoidSubdomainMap χ (h.isAffinoidAlgebra.maximalSpectrumComap φ ⁻¹' V) where
+  isAffinoidAlgebra := hχ.isAffinoidAlgebra
+  range_maximalSpectrumComap_subset := by
+    rintro _ ⟨z, rfl⟩
+    have hz := hχ.range_maximalSpectrumComap_subset ⟨z, rfl⟩
+    rwa [IsAffinoidAlgebra.maximalSpectrumComap_comp h.isAffinoidAlgebra
+      hχ.isAffinoidAlgebra] at hz
+  existsUnique_algHom {D} _ _ hD ψ hψ := by
+    have hψV : Set.range (hD.maximalSpectrumComap (ψ.comp φ)) ⊆ V := by
+      rw [IsAffinoidAlgebra.maximalSpectrumComap_comp h.isAffinoidAlgebra hD, Set.range_comp]
+      exact Set.image_subset_iff.mpr hψ
+    obtain ⟨δ, hδ, huniq⟩ := hχ.existsUnique_algHom hD (ψ.comp φ) hψV
+    refine ⟨δ, h.algHom_ext hD ?_, fun δ' hδ' ↦ huniq δ' ?_⟩
+    · simpa only [AlgHom.comp_assoc] using hδ
+    · simpa only [AlgHom.comp_assoc] using
+        congrArg (fun f : B →ₐ[K] D ↦ f.comp φ) hδ'
 
 end IsAffinoidSubdomainMap
 

@@ -66,16 +66,8 @@ private theorem exists_isotropic_extension {B : BilinForm k M} (hB : B.IsAlt)
   have : Module.Finite k O := O.finite
   let K := N.comap O.subtype
   let Q := O ⧸ K.toSubmodule
-  have hK : K.toSubmodule ≠ ⊤ := by
-    intro htop
-    apply heq
-    apply le_antisymm hN
-    intro m hm
-    have hmO : m ∈ O := by
-      rwa [← Subcomodule.mem_toSubmodule, Subcomodule.orthogonal_toSubmodule]
-    have : (⟨m, hmO⟩ : O) ∈ K.toSubmodule := htop ▸ Submodule.mem_top
-    simpa only [K, Subcomodule.mem_toSubmodule, Subcomodule.mem_comap,
-      Subcomodule.subtype_apply] using this
+  have hK : K.toSubmodule ≠ ⊤ :=
+    Subcomodule.comap_orthogonal_subtype_toSubmodule_ne_top hinv N hN heq
   have : Nontrivial Q := Submodule.Quotient.nontrivial_iff.mpr hK
   -- Pull the eigenline back, then include it in the original representation.
   obtain ⟨q, c, hq, -, hcoact⟩ :=

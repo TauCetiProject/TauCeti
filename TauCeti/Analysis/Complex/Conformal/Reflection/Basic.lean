@@ -35,6 +35,11 @@ the later Morera-based reflection theorem: the reflected branch is continuous on
 sets, and the explicit Schwarz-reflection extension is continuous across the real axis when
 the boundary values are real.
 
+`starSchwarzReflection` is the same extension for functions valued in any additive monoid with a
+`star` operation, whose fixed points play the role of the real values: it is `ξ z` on the closed
+upper half-plane and `star (ξ (conj z))` below it, and it agrees with `schwarzReflection` for
+scalar functions. It is the reflection used by the weak Schwarz reflection principle.
+
 The last section turns conjugation symmetry into a statement about limits at a real point: a
 holomorphic function on a punctured disc about a real point which commutes with conjugation has a
 two-sided limit there as soon as it has one along the upper half-plane.  Symmetry transports the
@@ -484,20 +489,71 @@ conjugate of the derivative of the original function at the conjugate point. -/
     _ = (starRingEnd ℂ) (deriv f ((starRingEnd ℂ) z)) := by
       simpa only [Function.comp_def] using congrFun deriv_conj_conj z
 
+/-! ### Reflection of vector-valued functions -/
+
+section StarSchwarzReflection
+
+variable {F : Type*} [Star F] {ξ : ℂ → F}
+
+/-- Schwarz reflection across the real axis with respect to the real structure `star` of the
+coefficients: `ξ z` on the closed upper half-plane and `star (ξ (conj z))` below it. -/
+noncomputable def starSchwarzReflection (ξ : ℂ → F) (z : ℂ) : F :=
+  if 0 ≤ z.im then ξ z else star (ξ (conj z))
+
+@[simp]
+theorem starSchwarzReflection_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) :
+    starSchwarzReflection ξ z = ξ z := ite_eq_left_iff.2 fun h ↦ (h hz).elim
+
+@[simp]
+theorem starSchwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
+    starSchwarzReflection ξ z = star (ξ (conj z)) := ite_eq_right_iff.2 fun h ↦ (hz.not_ge h).elim
+
+/-- For scalar functions the reflection is the classical Schwarz reflection. -/
+theorem starSchwarzReflection_eq_schwarzReflection (f : ℂ → ℂ) :
+    starSchwarzReflection f = schwarzReflection f := by
+  ext z
+  rw [schwarzReflection_def, starSchwarzReflection, Complex.star_def]
+
+@[simp]
+theorem starSchwarzReflection_zero {F : Type*} [AddMonoid F] [StarAddMonoid F] :
+    starSchwarzReflection (0 : ℂ → F) = 0 := by
+  ext z
+  simp [starSchwarzReflection]
+
+/-- Off the real axis the reflection is conjugation-symmetric. -/
+theorem starSchwarzReflection_conj {F : Type*} [InvolutiveStar F] {ξ : ℂ → F} {z : ℂ}
+    (hz : z.im ≠ 0) :
+    starSchwarzReflection ξ (conj z) = star (starSchwarzReflection ξ z) := by
+  rcases hz.lt_or_gt with hz | hz
+  · rw [starSchwarzReflection_of_im_nonneg (by simpa using hz.le),
+      starSchwarzReflection_of_im_neg hz, star_star]
+  · rw [starSchwarzReflection_of_im_neg (by simpa using hz),
+      starSchwarzReflection_of_im_nonneg hz.le, conj_conj]
+
+/-- **Check.** The reflection of the identity, which is real on the real axis, is the identity. -/
+theorem starSchwarzReflection_id : starSchwarzReflection (id : ℂ → ℂ) = id := by
+  ext1 z
+  by_cases hz : 0 ≤ z.im
+  · simp [starSchwarzReflection_of_im_nonneg hz]
+  · simp [starSchwarzReflection_of_im_neg (not_le.1 hz)]
+
+end StarSchwarzReflection
+
 section RealPoint
 
 open Topology
 
-/-- **A conjugation-symmetric holomorphic function has a two-sided limit at a real point as soon
-as it has one from above.**  If `g` is holomorphic on a punctured disc about a real point `x`,
-commutes with conjugation, and tends to `c` along the open upper half-plane, then it tends to `c`
-along the whole punctured neighbourhood of `x`.  In particular `c` is then real. -/
-theorem tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos {g : ℂ → ℂ} {x : ℝ} {c : ℂ} {r : ℝ}
+/-- Local boundedness at a real point of a function that is holomorphic on a punctured disc around
+`x`, commutes with complex conjugation there, and tends to `c` as `z → x` from the open upper
+half-plane: some punctured neighbourhood of `x` on which `‖g z‖ ≤ ‖c‖ + 1`.  This bound is what
+`tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos` uses to remove the singularity at `x`. -/
+private theorem exists_norm_le_of_tendsto_nhdsWithin_im_pos
+    {g : ℂ → ℂ} {x : ℝ} {c : ℂ} {r : ℝ}
     (hr : 0 < r) (hg : DifferentiableOn ℂ g (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
     (hconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
       g ((starRingEnd ℂ) z) = (starRingEnd ℂ) (g z))
     (hlim : Tendsto g (𝓝[{z : ℂ | 0 < z.im}] (x : ℂ)) (𝓝 c)) :
-    Tendsto g (𝓝[≠] (x : ℂ)) (𝓝 c) := by
+    ∃ δ > 0, ∀ z : ℂ, dist z (x : ℂ) < δ → z ≠ (x : ℂ) → ‖g z‖ ≤ ‖c‖ + 1 := by
   have hopen : IsOpen (Metric.ball (x : ℂ) r \ {(x : ℂ)}) :=
     Metric.isOpen_ball.sdiff isClosed_singleton
   obtain ⟨δ₀, hδ₀, hδ⟩ := Metric.tendsto_nhdsWithin_nhds.mp hlim 1 one_pos
@@ -537,6 +593,21 @@ theorem tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos {g : ℂ → ℂ} {x : ℝ} 
           ≤ dist (z + (t : ℂ) * Complex.I) z + dist z (x : ℂ) := dist_triangle _ _ _
         _ < δ := by rw [hstep, abs_of_pos ht]; linarith [Set.mem_Iio.mp ht2]
     · exact hup z hz him
+  exact ⟨δ, hδpos, hbound⟩
+
+/-- **A conjugation-symmetric holomorphic function has a two-sided limit at a real point as soon
+as it has one from above.**  If `g` is holomorphic on a punctured disc about a real point `x`,
+commutes with conjugation, and tends to `c` along the open upper half-plane, then it tends to `c`
+along the whole punctured neighbourhood of `x`.  In particular `c` is then real. -/
+theorem tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos {g : ℂ → ℂ} {x : ℝ} {c : ℂ} {r : ℝ}
+    (hr : 0 < r) (hg : DifferentiableOn ℂ g (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
+    (hconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
+      g ((starRingEnd ℂ) z) = (starRingEnd ℂ) (g z))
+    (hlim : Tendsto g (𝓝[{z : ℂ | 0 < z.im}] (x : ℂ)) (𝓝 c)) :
+    Tendsto g (𝓝[≠] (x : ℂ)) (𝓝 c) := by
+  have hopen : IsOpen (Metric.ball (x : ℂ) r \ {(x : ℂ)}) :=
+    Metric.isOpen_ball.sdiff isClosed_singleton
+  obtain ⟨δ, hδpos, hbound⟩ := exists_norm_le_of_tendsto_nhdsWithin_im_pos hr hg hconj hlim
   have hdiff : ∀ᶠ z in 𝓝[≠] (x : ℂ), DifferentiableAt ℂ g z := by
     filter_upwards [mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds (x : ℂ) hr),
       self_mem_nhdsWithin] with z hz hzx

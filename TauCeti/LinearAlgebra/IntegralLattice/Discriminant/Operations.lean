@@ -45,7 +45,6 @@ group is unchanged, while both its bilinear and quadratic forms are negated.
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layers 2 and 3.
 -/
 
 public section
@@ -85,7 +84,7 @@ theorem mem_dualCarrier_orthogonalSum (L : IntegralLattice V) (M : IntegralLatti
       simpa using h
   · rintro ⟨hx, hy⟩ z hz
     rw [orthogonalSum_carrier, Submodule.mem_prod] at hz
-    rw [orthogonalSum_form, orthogonalSumForm_apply]
+    rw [orthogonalSum_form, LinearMap.BilinForm.prod_apply]
     exact Submodule.add_mem _ (hx z.1 hz.1) (hy z.2 hz.2)
 
 /-- The dual carrier of an orthogonal sum is the product of the two dual carriers. -/
@@ -191,7 +190,7 @@ noncomputable def discriminantBilinearIsometryOrthogonalSum
           (L.orthogonalSum M).discriminantPairing
             (Submodule.Quotient.mk x) (Submodule.Quotient.mk y)
         rw [discriminantPairing_mk, discriminantPairing_mk, discriminantPairing_mk,
-          orthogonalSum_form, orthogonalSumForm_apply,
+          orthogonalSum_form, LinearMap.BilinForm.prod_apply,
           orthogonalSumDualCarrierEquiv_apply]
         rw [L.orthogonalSumDualCarrierEquiv_apply M y, ← AddCircle.coe_add]
 
@@ -254,7 +253,7 @@ noncomputable def discriminantQuadraticIsometryOrthogonalSum
           (Submodule.Quotient.mk (L.orthogonalSumDualCarrierEquiv M x).2) =
         (L.orthogonalSum M).discriminantQuadraticMap _ (Submodule.Quotient.mk x)
       rw [discriminantQuadraticMap_mk, discriminantQuadraticMap_mk,
-        discriminantQuadraticMap_mk, orthogonalSum_form, orthogonalSumForm_apply,
+        discriminantQuadraticMap_mk, orthogonalSum_form, LinearMap.BilinForm.prod_apply,
         orthogonalSumDualCarrierEquiv_apply]
       rw [← AddCircle.coe_add]
       congr 1

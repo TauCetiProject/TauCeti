@@ -6,18 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.RingTheory.Valuation.SpanPow
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedHomeomorph
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.RingTheory.Huber.AdicHom.Basic
+import TauCeti.RingTheory.Huber.AdicHom.Localization
 public import TauCeti.RingTheory.Huber.Continuous.Coarsen
 import TauCeti.RingTheory.Huber.Continuous.PowerBounded
+import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.RingTheory.Huber.OpenIdeal
 public import TauCeti.RingTheory.Valuation.Microbial
-import TauCeti.RingTheory.Huber.LocalizationTopology.WeightedEvaluation
-import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 
 /-!
 # Analytic points and the analytic locus of `Spa(A, A⁺)`
@@ -46,6 +46,9 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
 * `TauCeti.ValuationSpectrum.isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp` :
   **Wedhorn Remark 7.40(1)**, over a Huber ring a point is analytic exactly when some
   topologically nilpotent element is outside its support.
+* `TauCeti.ValuationSpectrum.IsContinuous.supp_eq_of_specializes` : generizations of analytic
+  points are vertical: a continuous point that specializes to an analytic point has the same
+  support.
 * `TauCeti.ValuationSpectrum.isOpen_val_preimage_spaAnalytic` : the analytic locus is open.
 * `TauCeti.ValuationSpectrum.isCompact_val_preimage_spaAnalytic` : **Wedhorn Remark 7.40(2)**,
   the analytic locus is quasi-compact; with the previous result, open and quasi-compact.
@@ -56,6 +59,9 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
   adic spectrum containing it.
 * `TauCeti.ValuationSpectrum.spaAnalytic_eq_biUnion_rationalSubset` : generators of an ideal of
   definition give a finite rational cover of the analytic locus.
+* `TauCeti.ValuationSpectrum.exists_mem_rationalSubset_isTopologicallyNilpotent_of_mem_spaAnalytic`:
+  every analytic point lies in a rational subset with open numerator ideal and topologically
+  nilpotent denominator.
 * `TauCeti.ValuationSpectrum.isTateRing_completion_locTopology_of_mem_generators` : the completed
   coordinate ring of each chart in that cover is Tate.
 * `TauCeti.ValuationSpectrum.IsAnalyticPoint.comap` : the pullback of an analytic point along an
@@ -183,6 +189,34 @@ theorem isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp [IsHuber
       (inferInstance : v.supp.IsPrime).isRadical]
   exact Set.not_subset
 
+/-- **Generizations of analytic points are vertical.** A continuous point `x` of `Spv A` that
+specializes to an analytic point `x'` has the same support. -/
+theorem IsContinuous.supp_eq_of_specializes [IsHuberRing A] {x x' : Spv A} (hx : x.IsContinuous)
+    (hx' : IsAnalyticPoint x') (h : x ⤳ x') : x.supp = x'.supp := by
+  obtain ⟨t, ht, htx'⟩ :=
+    (isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp x').mp hx'
+  refine le_antisymm (fun a ha ↦ ?_) (fun a ha ↦ ?_)
+  · -- an element vanishing at `x` vanishes at its specialization
+    rw [mem_supp_iff] at ha ⊢
+    by_contra hax'
+    exact ((mem_basicOpen_iff _ _ _).mp (h.mem_open (isOpen_basicOpen a a)
+      ((mem_basicOpen_iff _ _ _).mpr ⟨x'.toValuativeRel.vle_refl a, hax'⟩))).2 ha
+  · -- `x'(a) = 0 ≤ x'(tⁿ) ≠ 0` gives `x(a) ≤ x(t)ⁿ` for all `n`, so `x(a) = 0` by continuity
+    rw [mem_supp_iff] at ha ⊢
+    by_contra hax
+    have hpos : x.valuation 0 < x.valuation a := by
+      rwa [valuation_lt_iff]
+    obtain ⟨n, hn⟩ := exists_pow_lt_of_isTopologicallyNilpotent (v := x.valuation)
+      ((Valuation.isContinuous_def.mp ((ValuationSpectrum.isContinuous_def x).mp hx) a).mem_nhds
+        hpos) ht
+    have htn : ¬ x'.toValuativeRel.vle (t ^ n) 0 := fun htn ↦
+      htx' ((inferInstance : x'.supp.IsPrime).mem_of_pow_mem n ((mem_supp_iff _ _).mpr htn))
+    have hle := ((mem_basicOpen_iff _ _ _).mp (h.mem_open (isOpen_basicOpen a (t ^ n))
+      ((mem_basicOpen_iff _ _ _).mpr
+        ⟨x'.toValuativeRel.vle_trans ha (@ValuativeRel.zero_vle A _ x'.toValuativeRel _), htn⟩))).1
+    rw [← valuation_le_iff, map_pow] at hle
+    exact hle.not_gt hn
+
 /-- An analytic point supplies an element of an ideal of definition which is outside its
 support. Unlike an arbitrary element of the extended ideal, this witness is topologically
 nilpotent because it comes from the ring of definition itself. -/
@@ -279,6 +313,7 @@ theorem isOpen_val_preimage_spaAnalytic (P : PairOfDefinition A) (Aplus : Subrin
   rw [hset]
   exact isOpen_biUnion fun a _ ↦ (isOpen_basicOpen a a).preimage continuous_subtype_val
 
+omit [IsTopologicalRing A] in
 /-- A rational subset whose denominator belongs to the extended ideal of definition consists of
 analytic points. -/
 theorem rationalSubset_subset_spaAnalytic_of_mem_extendedIdealOfDefinition
@@ -287,9 +322,13 @@ theorem rationalSubset_subset_spaAnalytic_of_mem_extendedIdealOfDefinition
     rationalSubset Aplus T s ⊆ spaAnalytic Aplus := by
   intro v hv
   have hmem := (mem_rationalSubset_iff Aplus T s v).mp hv
-  refine (mem_spaAnalytic_iff Aplus v).mpr ⟨hmem.1, ?_⟩
-  rw [isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp P]
-  exact ⟨s, hs, fun hsupp ↦ hmem.2.2 ((mem_supp_iff v s).mp hsupp)⟩
+  refine (mem_spaAnalytic_iff Aplus v).mpr ⟨hmem.1, fun hopen ↦ ?_⟩
+  obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp (hopen.mem_nhds v.supp.zero_mem)
+  have hle : P.extendedIdealOfDefinition ^ n ≤ v.supp := by
+    rw [P.extendedIdealOfDefinition_pow]
+    exact Ideal.span_le.mpr hn
+  exact hmem.2.2 ((mem_supp_iff v s).mp
+    ((inferInstance : v.supp.IsPrime).mem_of_pow_mem n (hle (Ideal.pow_mem_pow hs n))))
 
 open scoped Classical in
 /-- **A finite rational cover of the analytic locus.** If `T` generates the extended ideal of
@@ -350,6 +389,23 @@ theorem spaAnalytic_eq_biUnion_rationalSubset (P : PairOfDefinition A) (Aplus : 
     have hg' : (g : A) ∈ T := by
       simpa only [T] using Finset.mem_image.mpr ⟨g, hg, rfl⟩
     exact Set.subset_iUnion₂_of_subset (g : A) hg' Set.Subset.rfl
+
+/-- **Every analytic point lies in a rational subset with topologically nilpotent denominator**:
+from a finite generating set `G` of an ideal of definition, an analytic point `v ∈ Spa(A, A⁺)_a`
+lies in a chart `R(G/g)` with `g ∈ G`, whose numerator ideal is the open extended ideal of
+definition and whose denominator `g` is topologically nilpotent. -/
+theorem exists_mem_rationalSubset_isTopologicallyNilpotent_of_mem_spaAnalytic
+    (P : PairOfDefinition A) (Aplus : Subring A) {v : Spv A} (hv : v ∈ spaAnalytic Aplus) :
+    ∃ (T : Finset A) (g : A), IsOpen (Ideal.span (T : Set A) : Set A) ∧
+      v ∈ rationalSubset Aplus T g ∧ IsTopologicallyNilpotent g := by
+  classical
+  obtain ⟨G, hG⟩ := P.fg_idealOfDefinition
+  rw [spaAnalytic_eq_biUnion_rationalSubset P Aplus G hG] at hv
+  obtain ⟨g, hg, hvg⟩ := Set.mem_iUnion₂.mp hv
+  exact ⟨G.image ((↑) : P.ringOfDefinition → A), g,
+    P.span_image_eq_extendedIdealOfDefinition G hG ▸ P.isOpen_extendedIdealOfDefinition, hvg,
+    P.isTopologicallyNilpotent_of_mem_idealOfDefinition
+      (hG ▸ Ideal.subset_span (Finset.mem_coe.mpr hg))⟩
 
 open scoped Classical in
 /-- Every set in the standard analytic cover is a member of the rational basis: its numerator
@@ -443,8 +499,7 @@ rational subset of `Spa(A, A⁺)`, where `A⁺` contains the ring of definition 
 `isTateRing_completion_locTopology_of_mem_generators`. -/
 theorem rationalSubset_subset_spaAnalytic_of_isTateRing (P : PairOfDefinition A)
     {Aplus : Subring A} (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A) (S : Type*)
-    [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
-    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
+    [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
@@ -463,12 +518,9 @@ theorem rationalSubset_subset_spaAnalytic_of_isTateRing (P : PairOfDefinition A)
     simp only [Function.comp_apply, w, Homeomorph.apply_symm_apply] at h
     rw [← spaComapLoc_val, ← h]
   have hw : IsAnalyticPoint w.1 := isAnalyticPoint_of_isTateRing w.1
-  -- adding the denominator to the numerators keeps the ideal open
-  have hT' : IsOpen (Ideal.span (insert s (T : Set A)) : Set A) :=
-    Submodule.isOpen_mono (Ideal.span_mono (Set.subset_insert _ _)) hT
   refine ⟨hvspa, ?_⟩
   rw [hvw]
-  exact hw.comap (isTopologicallyFiniteType_toCompletionLoc P T s S hden hT').isAdicHom
+  exact hw.comap (PairOfDefinition.isAdicHom_toCompletionLoc P T s S hden)
 
 end TopologicalRing
 

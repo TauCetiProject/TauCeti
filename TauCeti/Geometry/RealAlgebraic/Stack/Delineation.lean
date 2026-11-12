@@ -35,7 +35,7 @@ algebraic decomposition by one dimension.
 
 Over a nonempty base the ordered list of root functions of a delineation is the increasing
 enumeration of the real roots of the nonzero members, so a delineation is unique. Delineations
-restrict along continuous maps of bases.
+restrict along continuous maps of bases and reindex along surjections of polynomial labels.
 
 The main theorem `TauCeti.nonempty_delineation` constructs a delineation over a preconnected base
 from invariant algebraic data: if the coefficients of every member are continuous, every member is
@@ -62,6 +62,7 @@ For a family obtained from polynomials `f` in `n + 1` variables by singling out 
 * `TauCeti.Delineation.instSubsingleton`: over a nonempty base a family has at most one
   delineation.
 * `TauCeti.Delineation.comp`: restriction of a delineation along a continuous map of bases.
+* `TauCeti.Delineation.reindex`: reindexing a delineation along a surjection of polynomial labels.
 * `TauCeti.nonempty_delineation`: existence of a delineation over a preconnected base from
   constant degrees, numbers of distinct complex roots and pairwise gcd degrees.
 * `TauCeti.exists_delineation_of_isRoot_iff`: an ordered continuous enumeration of the real roots
@@ -252,6 +253,17 @@ theorem range_root (x : X) :
   obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
   exact ⟨k, (D.multiplicity_pos_iff x).1 hk⟩
 
+/-- The shared distinct root set of a finite family is exactly the image of the ordered
+root list of its delineation. Nullified members contribute no roots. -/
+theorem biUnion_roots_toFinset_eq [Fintype ι] (x : X) :
+    Finset.univ.biUnion (fun k ↦ (P k x).roots.toFinset) =
+      Finset.univ.image (fun i ↦ D.root i x) := by
+  classical
+  ext t
+  simp only [Finset.mem_biUnion, Finset.mem_univ, true_and, Multiset.mem_toFinset,
+    mem_roots', Finset.mem_image]
+  exact (Set.ext_iff.1 (D.range_root x) t).symm
+
 /-- Over a nonempty base a family of real polynomials has at most one delineation: the root
 functions are the increasing enumeration of the real roots of the nonzero members, and the
 multiplicities are their root multiplicities. -/
@@ -275,6 +287,44 @@ instance instSubsingleton [Nonempty X] : Subsingleton (Delineation P) where
       (((hr y).range_inj_of_wellFoundedLT (hr' y)).1 (hrange y)) i
     obtain rfl : m = m' := funext fun k ↦ funext fun i ↦ (hm k i x).symm.trans (hm' k i x)
     rfl
+
+/-- Reindex a delineation along a surjection of polynomial labels. Surjectivity ensures that
+every section still has positive multiplicity in some member of the reindexed family. -/
+def reindex {κ : Type*} (f : κ → ι) (hf : Surjective f) :
+    Delineation fun k x ↦ P (f k) x where
+  count := D.count
+  root := D.root
+  continuous_root := D.continuous_root
+  strictMono_root := D.strictMono_root
+  multiplicity k := D.multiplicity (f k)
+  rootMultiplicity_root k := D.rootMultiplicity_root (f k)
+  exists_root_eq k := D.exists_root_eq (f k)
+  exists_multiplicity_pos i := by
+    obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
+    obtain ⟨l, rfl⟩ := hf k
+    exact ⟨l, hk⟩
+  eq_zero_or_ne_zero k := D.eq_zero_or_ne_zero (f k)
+  natDegree_eq k := D.natDegree_eq (f k)
+  signInvariant_sectionSet k := D.signInvariant_sectionSet (f k)
+  signInvariant_sectorSet k := D.signInvariant_sectorSet (f k)
+
+/-- Reindexing polynomial labels preserves the number of sections. -/
+@[simp]
+theorem reindex_count {κ : Type*} (f : κ → ι) (hf : Surjective f) :
+    (D.reindex f hf).count = D.count := (rfl)
+
+/-- Reindexing polynomial labels preserves the ordered root functions. -/
+@[simp]
+theorem reindex_root {κ : Type*} (f : κ → ι) (hf : Surjective f)
+    (i : Fin (D.reindex f hf).count) (x : X) :
+    (D.reindex f hf).root i x = D.root (Fin.cast (D.reindex_count f hf) i) x := (rfl)
+
+/-- Reindexing pulls back the multiplicities along the map of polynomial labels. -/
+@[simp]
+theorem reindex_multiplicity {κ : Type*} (f : κ → ι) (hf : Surjective f) (k : κ)
+    (i : Fin (D.reindex f hf).count) :
+    (D.reindex f hf).multiplicity k i =
+      D.multiplicity (f k) (Fin.cast (D.reindex_count f hf) i) := (rfl)
 
 /-- Restriction of a delineation along a continuous map of bases. -/
 def comp (f : Y → X) (hf : Continuous f) : Delineation fun k y ↦ P k (f y) where
@@ -351,18 +401,21 @@ theorem nonempty_delineation [Finite ι] [PreconnectedSpace X]
   obtain ⟨⟨k, hk⟩, hki⟩ := (hroot x₀ (r x₀ i)).2 ⟨i, rfl⟩
   exact ⟨k, (rootMultiplicity_pos (hk x₀)).2 hki⟩
 
-/-- **Delineation from an ordered root enumeration.** Let `F x` be nowhere-zero real polynomials
+/-- **Delineation from an ordered root enumeration.** Let `F x` be real polynomials
 of constant degree whose coefficients depend continuously on a parameter `x` in a preconnected
 space. If continuous, pointwise strictly increasing functions `θ i` enumerate the real roots of
 every `F x`, each with a multiplicity independent of `x`, then the `θ i` are the root functions
 of a delineation of `F`. -/
 theorem exists_delineation_of_isRoot_iff [PreconnectedSpace X] {F : X → ℝ[X]} {k : ℕ}
-    {θ : Fin k → X → ℝ} (hcoeff : ∀ j, Continuous fun x ↦ (F x).coeff j) (hF : ∀ x, F x ≠ 0)
+    {θ : Fin k → X → ℝ} (hcoeff : ∀ j, Continuous fun x ↦ (F x).coeff j)
     (hdeg : ∀ x y, (F x).natDegree = (F y).natDegree) (hθ : ∀ i, Continuous (θ i))
     (hmono : ∀ x, StrictMono fun i ↦ θ i x) (hroots : ∀ x t, (F x).IsRoot t ↔ ∃ i, θ i x = t)
     (hmult : ∀ i x y, (F x).rootMultiplicity (θ i x) = (F y).rootMultiplicity (θ i y)) :
     ∃ D : Delineation fun (_ : Unit) x ↦ F x, ∀ i, ∃ j, D.root i = θ j := by
   classical
+  -- a zero polynomial would have every real number as a root, but there are finitely many `θ i`
+  have hF (x : X) : F x ≠ 0 := fun hx ↦
+    not_surjective_finite_infinite (fun i ↦ θ i x) fun t ↦ (hroots x t).1 (by simp [hx])
   -- over an empty base the multiplicities are unconstrained, and `1` is a valid choice
   let m (i : Fin k) : ℕ := if h : Nonempty X then (F h.some).rootMultiplicity (θ i h.some) else 1
   have hm (i : Fin k) (x : X) : (F x).rootMultiplicity (θ i x) = m i := by
@@ -379,7 +432,7 @@ theorem exists_delineation_of_isRoot_iff [PreconnectedSpace X] {F : X → ℝ[X]
 
 open Filter Metric Topology in
 /-- **Local delineation from local root data.** Let `F b` be real polynomials over a real
-normed space, nonzero and of constant degree near `b₀`, whose coefficients are continuous near
+normed space, of constant degree near `b₀`, whose coefficients are continuous near
 `b₀`. Suppose that on a neighborhood `U` of `b₀`, continuous and pointwise strictly increasing
 functions `s i` enumerate the real roots of `F b`, with multiplicities independent of `b`. Then
 on some ball around `b₀` inside `U` the restrictions of the `s i` are the root functions of a
@@ -387,13 +440,16 @@ delineation of `F`. -/
 theorem exists_delineation_ball_of_isRoot_iff {B : Type*} [NormedAddCommGroup B]
     [NormedSpace ℝ B] {F : B → ℝ[X]} {b₀ : B} {d k : ℕ} {s : Fin k → B → ℝ} {U : Set B}
     (hcoeff : ∀ᶠ b in 𝓝 b₀, ∀ j, ContinuousAt (fun b ↦ (F b).coeff j) b)
-    (hF : ∀ᶠ b in 𝓝 b₀, F b ≠ 0) (hdeg : ∀ᶠ b in 𝓝 b₀, (F b).natDegree = d)
+    (hdeg : ∀ᶠ b in 𝓝 b₀, (F b).natDegree = d)
     (hU : U ∈ 𝓝 b₀) (hs : ∀ i, ContinuousOn (s i) U)
     (hmono : ∀ b ∈ U, StrictMono fun i ↦ s i b)
     (hroots : ∀ b ∈ U, ∀ t, (F b).IsRoot t ↔ ∃ i, s i b = t)
     (hmult : ∀ b ∈ U, ∀ i, (F b).rootMultiplicity (s i b) = (F b₀).rootMultiplicity (s i b₀)) :
     ∃ ε > 0, ball b₀ ε ⊆ U ∧ ∃ D : Delineation (fun (_ : Unit) (b : ball b₀ ε) ↦ F b),
       ∀ i, ∃ j, ∀ b : ball b₀ ε, D.root i b = s j b := by
+  -- a zero polynomial would have every real number as a root, but there are finitely many `s i`
+  have hF : ∀ᶠ b in 𝓝 b₀, F b ≠ 0 := (Filter.Eventually.mono hU) fun b hb hx ↦
+    not_surjective_finite_infinite (fun i ↦ s i b) fun t ↦ (hroots b hb t).1 (by simp [hx])
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.1
     (Filter.Eventually.and hU (hcoeff.and (hF.and hdeg)))
   have hVU : ball b₀ ε ⊆ U := fun b hb ↦ (hball hb).1
@@ -402,7 +458,7 @@ theorem exists_delineation_ball_of_isRoot_iff {B : Type*} [NormedAddCommGroup B]
   obtain ⟨D, hD⟩ := exists_delineation_of_isRoot_iff (θ := fun i (b : ball b₀ ε) ↦ s i b)
     (fun j ↦ continuous_iff_continuousAt.2 fun b ↦
       ((hball b.2).2.1 j).comp continuous_subtype_val.continuousAt)
-    (fun b ↦ (hball b.2).2.2.1) (fun b c ↦ (hball b.2).2.2.2.trans (hball c.2).2.2.2.symm)
+    (fun b c ↦ (hball b.2).2.2.2.trans (hball c.2).2.2.2.symm)
     (fun i ↦ ((hs i).mono hVU).domRestrict) (fun b ↦ hmono b (hVU b.2))
     (fun b ↦ hroots b (hVU b.2))
     fun i b c ↦ (hmult b (hVU b.2) i).trans (hmult c (hVU c.2) i).symm

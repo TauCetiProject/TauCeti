@@ -35,14 +35,14 @@ For every squarefree `d` which is not a rational square,
 `isNarrowGenusField_candidateGenusField` assembles the already-established finite-prime
 ramification and maximality theorems. Thus the prime-discriminant compositum is the narrow genus
 field in both signatures. This supplies the field side needed for the real quadratic narrow
-`2`-rank formula in Layer 3 of the Multiquadratic roadmap; identifying its relative Galois group
-with the elementary-two quotient of the narrow class group remains downstream.
+`2`-rank formula; its relative Galois group is identified with the elementary-two quotient of the
+narrow class group by `autCandidateGenusFieldEquivNarrowElementaryTwoQuotient`.
 
 ## Provenance
 
 The universal-property packaging and uniqueness argument are the finite-place counterparts of the
 everywhere-unramified `IsGenusField` developed in TauCeti pull request #5041. This file supplies
-the narrow variant which the roadmap requires separately for real quadratic fields.
+the narrow variant, which differs from the ordinary one only for real quadratic fields.
 
 ## References
 
@@ -112,7 +112,7 @@ theorem exists_algEquiv_apply_eq (hL : IsNarrowGenusField d L y)
   have hminpoly {N : Type u} [Field N] [NumberField N] {w : N}
       (hN : IsNarrowGenusField d N w) :
       minpoly ℚ w = Polynomial.X ^ 2 - Polynomial.C ((d : ℤ) : ℚ) := by
-    apply TauCeti.Algebra.minpoly_eq_X_sq_sub_C_of_sq_eq_of_natDegree_eq_two
+    refine TauCeti.Algebra.minpoly_eq_X_pow_sub_C_of_pow_eq_of_natDegree_eq two_ne_zero ?_ ?_
     · rw [hN.root_sq, IsScalarTower.algebraMap_apply ℤ ℚ N]
       norm_num
     · rw [← IntermediateField.adjoin.finrank (Algebra.IsIntegral.isIntegral w)]

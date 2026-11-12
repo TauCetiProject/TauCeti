@@ -7,20 +7,21 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
+import TauCeti.Geometry.Manifold.Immersion.Basic
 
 /-!
 # Bundled smooth embeddings
 
 Mathlib provides the predicate `Manifold.IsSmoothEmbedding I J n f`, saying that a map between
 manifolds is a `C^n` immersion and a topological embedding, but it does not bundle maps satisfying
-that predicate. This file adds the small bundled type needed by the geometric-topology roadmap's
-first-class geometric knot/link presentations: a smooth presentation is a smooth embedding of the
-circle into an ambient manifold, and later files should traffic in the embedding as data rather
-than in a bare function plus detached hypotheses.
+that predicate. This file adds that small bundled type, in which geometric knot and link
+presentations are phrased: a smooth presentation is a smooth embedding of the circle into an
+ambient manifold, and it is handled as data rather than as a bare function plus detached
+hypotheses.
 
-The file deliberately stays at the general manifold level. The roadmap's circle presentations are
-special cases of this type, while the same bundled smooth embeddings are also the right inputs for
-later tubular-neighbourhood and surgery interfaces.
+The file deliberately stays at the general manifold level. Smooth knot presentations, embeddings
+of the circle, are special cases of this type, while the same bundled smooth embeddings are also
+the inputs of the tubular-neighbourhood and surgery constructions.
 
 ## Main definitions
 
@@ -36,10 +37,13 @@ later tubular-neighbourhood and surgery interfaces.
 
 ## Main results
 
+* `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`: smoothness can be tested after composition
+  with a smooth embedding, without a separate continuity hypothesis.
 * `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`: the slice `x ↦ (x, c)` of a product
   `M × M'` is a smooth embedding when the preferred chart of `M'` at `c` sends `c` to `0`.
 * `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
   smooth embedding.
+* `Manifold.IsSmoothEmbedding.of_le`: lowering the regularity order preserves smooth embeddings.
 
 The construction is a thin wrapper around Mathlib's
 `Manifold.IsSmoothEmbedding` API, especially `IsSmoothEmbedding.id`, `of_opens`, `prodMap`,
@@ -47,8 +51,6 @@ The construction is a thin wrapper around Mathlib's
 -/
 
 public section
-
-namespace TauCeti
 
 open scoped Manifold ContDiff
 open Topology
@@ -67,6 +69,20 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace G M']
   {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
   {n : ℕ∞ω}
+
+namespace Manifold.IsSmoothEmbedding
+
+/-- A map into a smoothly embedded manifold is smooth if and only if its composite with
+the embedding is smooth. No separate continuity assumption is needed. -/
+theorem contMDiff_iff_comp {f : M → N} {φ : N → N'}
+    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
+    ContMDiff I J n f ↔ ContMDiff I J' n (φ ∘ f) := by
+  rw [ContMDiff.iff_comp_isImmersion hφ.isImmersion]
+  exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuous_iff.2 h.continuous, h⟩⟩
+
+end Manifold.IsSmoothEmbedding
+
+namespace TauCeti
 
 /-- A bundled `C^n` smooth embedding between manifolds.
 
@@ -140,19 +156,6 @@ theorem isImmersion (f : SmoothEmbedding I J n M N) : Manifold.IsImmersion I J n
 /-- A bundled smooth embedding is a topological embedding. -/
 theorem isEmbedding (f : SmoothEmbedding I J n M N) : IsEmbedding f :=
   f.isSmoothEmbedding.isEmbedding
-
-/-- The coordinate differential of an embedding remains split-injective on the overlap
-of its tangent charts, including for infinite-dimensional models. -/
-theorem hasLeftInverse_inTangentCoordinates_mfderiv [IsManifold I 1 M] [IsManifold J 1 N]
-    (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
-    (hy : f x ∈ (chartAt H' (f x₀)).source) :
-    (inTangentCoordinates I J _root_.id (f : M → N)
-      (mfderiv I J (f : M → N)) x₀ x).HasLeftInverse := by
-  rw [inTangentCoordinates,
-    ContinuousLinearMap.inCoordinates_eq (by simpa using hx) (by simpa using hy)]
-  exact ((isDiffImmersionAt_iff.mp (f.isImmersion.isDiffImmersionAt hn x)).comp
-    (ContinuousLinearEquiv.hasLeftInverse _)).continuousLinearEquivalence_comp
 
 /-- Bundle a map satisfying Mathlib's smooth-embedding predicate as a smooth embedding. -/
 def ofIsSmoothEmbedding (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) :
@@ -305,5 +308,11 @@ theorem _root_.Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap {f : M → 
     Manifold.IsSmoothEmbedding I J n f :=
   ⟨hf, (Topology.IsClosedEmbedding.of_continuous_injective_isClosedMap hp.continuous hinj
     hp.isClosedMap).isEmbedding⟩
+
+/-- Lowering the regularity order preserves smooth embeddings. -/
+theorem _root_.Manifold.IsSmoothEmbedding.of_le {m : ℕ∞ω} {f : M → N}
+    (h : Manifold.IsSmoothEmbedding I J m f) (hnm : n ≤ m) :
+    Manifold.IsSmoothEmbedding I J n f :=
+  ⟨h.isImmersion.of_le hnm, h.isEmbedding⟩
 
 end TauCeti

@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Perm
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Tactic.Group
 public import TauCeti.GroupTheory.Perm.Centralizer
+import TauCeti.GroupTheory.GroupAction.Closure
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
@@ -63,9 +64,6 @@ same order. The reverse convention is common in the literature and in databases 
 -/
 
 open Equiv
-
--- The signatures and proof outlines below follow the formal prototype `Suggested.lean` of the
--- Tau Ceti `BelyiMaps` roadmap.
 
 public section
 
@@ -573,7 +571,7 @@ theorem card_automorphismGroup_dvd
     (ht : MulAction.IsPretransitive t.monodromyGroup (Fin n)) :
     Nat.card t.automorphismGroup ∣ n := by
   rw [automorphismGroup_eq_centralizer_monodromyGroup (t := t)]
-  simpa only [Fintype.card_fin] using Subgroup.card_centralizer_dvd t.monodromyGroup ht
+  simpa only [Nat.card_fin] using Subgroup.card_centralizer_dvd ht
 
 /-! ### Images under representations of the monodromy group -/
 

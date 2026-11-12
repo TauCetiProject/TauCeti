@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.SymplecticGroup
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
@@ -62,6 +63,9 @@ symplectic coordinate Hopf algebra and group scheme live in
   `TauCeti.GLSymplecticFin.mulEquivGLSymplectic` identifying the two presentations. The
   `Fin`-indexed form is what the symplectic coordinate Hopf algebra cuts out of `GLₘ₊ₘ`, whose
   coordinate ring is `Fin`-indexed.
+* `TauCeti.nondegenerate_JFin`: the transported alternating form is nondegenerate.
+
+* `TauCeti.GLSymplecticFin.det_eq_one`: a `Fin`-indexed symplectic matrix has determinant one.
 * `TauCeti.GLSymplecticFin.positiveLongRootTransvectionHom` and
   `negativeLongRootTransvectionHom`: the two families of long-root one-parameter subgroups.
 * `TauCeti.GLSymplecticFin.differenceShortRootHom`, `positiveSumShortRootHom`, and
@@ -151,6 +155,19 @@ theorem ofSymplecticGroup_mem (S : Matrix.symplecticGroup l R) :
     ofSymplecticGroup l R S ∈ GLSymplectic l R := by
   simpa only [mem_iff_mem_symplecticGroup, coe_ofSymplecticGroup] using S.2
 
+/-- The canonical inclusion of the matrix symplectic group has range `GLSymplectic`. -/
+@[simp]
+theorem range_ofSymplecticGroup :
+    (ofSymplecticGroup l R).range = GLSymplectic l R := by
+  ext A
+  rw [MonoidHom.mem_range, mem_iff_mem_symplecticGroup]
+  constructor
+  · rintro ⟨X, rfl⟩
+    simpa only [coe_ofSymplecticGroup] using X.property
+  · intro hA
+    exact ⟨⟨(A : Matrix (l ⊕ l) (l ⊕ l) R), hA⟩,
+      Units.ext (coe_ofSymplecticGroup l R _)⟩
+
 /-- **The symplectic subgroup of the general linear group is Mathlib's symplectic group.** The
 two carriers agree because a symplectic matrix is invertible in Mathlib's symplectic group, so the
 equivalence is the identity on underlying matrices; its content is that the two group structures
@@ -224,6 +241,18 @@ theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) :
 
 end Map
 
+/-- The inverse algebraic equivalence sends a symplectic matrix to its canonical unit. -/
+@[simp]
+theorem coe_mulEquivSymplecticGroup_symm_apply (A : Matrix.symplecticGroup l R) :
+    ((mulEquivSymplecticGroup l R).symm A : GL (l ⊕ l) R) =
+      ofSymplecticGroup l R A := by
+  apply Units.ext
+  have h := coe_mulEquivSymplecticGroup l R
+    ((mulEquivSymplecticGroup l R).symm A)
+  rw [MulEquiv.apply_symm_apply] at h
+  simpa only [coe_ofSymplecticGroup] using h.symm
+
+
 end GLSymplectic
 
 /-! ### The `Fin`-indexed presentation
@@ -266,6 +295,14 @@ theorem JFin_submatrix :
 theorem JFin_eq_submatrix :
     JFin m R = (J (Fin m) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm :=
   (rfl)
+
+variable {m R} in
+/-- **The standard alternating form is nondegenerate**: `J` is invertible, its determinant being
+that of Mathlib's `Matrix.J`. -/
+theorem nondegenerate_JFin : (JFin m R).Nondegenerate :=
+  .of_det_mem_nonZeroDivisors <| by
+    rw [JFin_eq_submatrix, det_submatrix_equiv_self]
+    exact (isUnit_det_J _ _).mem_nonZeroDivisors
 
 /-- The transported alternating form of `Sp₄`, written out. -/
 theorem JFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by
@@ -322,38 +359,6 @@ theorem dotProduct_JFin_mulVec_eq_neg (u w : Fin (m + m) → R) :
     w ⬝ᵥ (JFin m R *ᵥ u) = -(u ⬝ᵥ (JFin m R *ᵥ w)) := by
   rw [Matrix.dotProduct_mulVec, dotProduct_comm, ← Matrix.vecMul_transpose, JFin_transpose,
     Matrix.vecMul_neg, dotProduct_neg, neg_neg]
-
-section CommRing
-
-variable {m R}
-
-/-- A nonzero vector has nonzero pairing with some vector in the standard symplectic space. -/
-theorem exists_dotProduct_JFin_mulVec_ne_zero {x : Fin (m + m) → R} (hx : x ≠ 0) :
-    ∃ z, z ⬝ᵥ (JFin m R *ᵥ x) ≠ 0 := by
-  have hJx : JFin m R *ᵥ x ≠ 0 := by
-    intro h
-    have hh := congrArg (fun v => JFin m R *ᵥ v) h
-    rw [mulVec_mulVec, JFin_mul_self] at hh
-    simp only [neg_mulVec, one_mulVec, mulVec_zero, neg_eq_zero] at hh
-    exact hx hh
-  obtain ⟨i, hi⟩ := Function.ne_iff.mp hJx
-  exact ⟨Pi.single i 1, by simpa using hi⟩
-
-/-- Two nonzero vectors have a common vector pairing nontrivially with both, over any
-commutative ring. In particular, this includes the field with two elements. -/
-theorem exists_dotProduct_JFin_mulVec_ne_zero_pair {x y : Fin (m + m) → R}
-    (hx : x ≠ 0) (hy : y ≠ 0) :
-    ∃ z, z ⬝ᵥ (JFin m R *ᵥ x) ≠ 0 ∧ z ⬝ᵥ (JFin m R *ᵥ y) ≠ 0 := by
-  obtain ⟨v, hv⟩ := exists_dotProduct_JFin_mulVec_ne_zero hx
-  obtain ⟨w, hw⟩ := exists_dotProduct_JFin_mulVec_ne_zero hy
-  by_cases hvy : v ⬝ᵥ (JFin m R *ᵥ y) = 0
-  · by_cases hwx : w ⬝ᵥ (JFin m R *ᵥ x) = 0
-    · exact ⟨v + w, by simpa [add_dotProduct, hwx] using hv,
-        by simpa [add_dotProduct, hvy] using hw⟩
-    · exact ⟨w, hwx, hw⟩
-  · exact ⟨v, hv, hvy⟩
-
-end CommRing
 
 /-- The transported alternating form is a unit, with inverse its negative. -/
 theorem isUnit_JFin : IsUnit (JFin m R) :=
@@ -483,6 +488,18 @@ theorem coe_mulEquivGLSymplectic (M : GLSymplecticFin m R) :
     ((mulEquivGLSymplectic m R M : GLSymplectic (Fin m) R) : GL (Fin m ⊕ Fin m) R) =
       Equiv.reindexGL finSumFinEquiv.symm R (M : GL (Fin (m + m)) R) := by
   simp [mulEquivGLSymplectic]
+
+variable {m R} in
+/-- **A `Fin`-indexed symplectic matrix has determinant one.** So the determinant denominators
+of rational functions on `GL (m + m)` disappear when they are restricted to the symplectic
+group. -/
+theorem det_eq_one (M : GLSymplecticFin m R) :
+    ((M : GL (Fin (m + m)) R) : Matrix (Fin (m + m)) (Fin (m + m)) R).det = 1 := by
+  -- Reindex along `finSumFinEquiv`, which preserves the determinant, and apply Mathlib's
+  -- `SymplecticGroup.det_eq_one` in sum coordinates.
+  have h := GLSymplectic.mem_iff_mem_symplecticGroup.mp (mulEquivGLSymplectic m R M).2
+  rw [coe_mulEquivGLSymplectic, Equiv.coe_reindexGL, Equiv.symm_symm] at h
+  rw [← SymplecticGroup.det_eq_one h, Matrix.det_submatrix_equiv_self]
 
 /-- A ring morphism carries `Fin`-indexed symplectic matrices to symplectic matrices. -/
 def map {S : Type*} [CommRing S] (f : R →+* S) :

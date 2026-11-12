@@ -43,6 +43,7 @@ travel.
 
 * `TauCeti.IsPerfectMatching f`: the permutation `f` is an involution with no fixed point.
 * `TauCeti.PerfectMatching α`: the type of perfect matchings of `α`.
+* `TauCeti.PerfectMatching.ofInvolutive`: the perfect matching from a fixed-point-free involution.
 * `TauCeti.PerfectMatching.congr`: transporting a perfect matching along an equivalence.
 * `TauCeti.PerfectMatching.reconnect`: cutting two arcs and joining their ends the other way.
 * `TauCeti.PerfectMatching.restrict`: the perfect matching induced on the complement of an arc.
@@ -75,11 +76,6 @@ travel.
   two orbits to the product with `T`. When `T` and the matching attain the Euler bound
   `Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le`, so does the reconnected matching
   (`TauCeti.PerfectMatching.orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq`).
-
-## References
-
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9.
 -/
 
 public section
@@ -95,7 +91,7 @@ variable {α : Type u} {β : Type v} {γ : Type w}
 /-- A permutation of `α` is a **perfect matching** when it is an involution with no fixed
 point, so that it pairs off the elements of `α`. -/
 def IsPerfectMatching (f : Equiv.Perm α) : Prop :=
-  (∀ a, f (f a) = a) ∧ ∀ a, f a ≠ a
+  Function.Involutive f ∧ ∀ a, f a ≠ a
 
 /-- A permutation is a perfect matching exactly when it is an involution with no fixed
 point. -/
@@ -143,6 +139,18 @@ def mk (f : Equiv.Perm α) (hinv : ∀ a, f (f a) = a) (hne : ∀ a, f a ≠ a) 
 @[simp]
 theorem val_mk (f : Equiv.Perm α) (hinv : ∀ a, f (f a) = a) (hne : ∀ a, f a ≠ a) :
     (mk f hinv hne).val = f := (rfl)
+
+/-- A fixed-point-free involution gives a perfect matching. -/
+def ofInvolutive {f : α → α} (hinv : Function.Involutive f) (hne : ∀ a, f a ≠ a) :
+    PerfectMatching α :=
+  .mk (hinv.toPerm _) (fun a ↦ by rw [Function.Involutive.coe_toPerm]; exact hinv a)
+    (fun a h ↦ hne a (by rwa [Function.Involutive.coe_toPerm] at h))
+
+@[simp]
+theorem ofInvolutive_apply {f : α → α} (hinv : Function.Involutive f) (hne : ∀ a, f a ≠ a)
+    (a : α) :
+    (ofInvolutive hinv hne).val a = f a := by
+  simp [ofInvolutive]
 
 variable {a b : α} {D : PerfectMatching α}
 
@@ -333,8 +341,9 @@ section Congr
 without fixed points. -/
 theorem isPerfectMatching_permCongr (e : α ≃ β) {f : Equiv.Perm α} (hf : IsPerfectMatching f) :
     IsPerfectMatching (e.permCongr f) := by
-  refine ⟨fun b => by simp [hf.1], fun b hb => hf.2 (e.symm b) ?_⟩
-  simpa using congrArg e.symm hb
+  refine ⟨fun b ↦ ?_, fun b hb ↦ hf.2 (e.symm b) ?_⟩
+  · simpa using congrArg e (hf.1 (e.symm b))
+  · simpa using congrArg e.symm hb
 
 /-- A permutation is a perfect matching exactly when its transport along an equivalence is. -/
 theorem isPerfectMatching_permCongr_iff (e : α ≃ β) {f : Equiv.Perm α} :
@@ -633,21 +642,24 @@ theorem IsPerfectMatching.sign_eq [Fintype α] [DecidableEq α] {f : Equiv.Perm 
   rw [Equiv.Perm.sign_of_pow_two_eq_one hsq, hfix, Nat.sub_zero]
 
 /-- **A perfect matching has half as many orbits as points**: its orbits are its pairs. -/
-theorem IsPerfectMatching.two_mul_orbitCount [Finite α] {f : Equiv.Perm α}
+theorem IsPerfectMatching.two_mul_orbitCount {f : Equiv.Perm α}
     (hf : IsPerfectMatching f) : 2 * orbitCount f = Nat.card α := by
   classical
-  have := Fintype.ofFinite α
-  have hsupp : f.support = Finset.univ :=
-    Finset.eq_univ_of_forall fun a => Equiv.Perm.mem_support.mpr (hf.2 a)
-  have hsq : f ^ 2 = 1 := Equiv.ext fun a => by simp [sq, hf.1 a]
-  -- Every orbit of `f` is a pair: `f` has no fixed points, and its cycles have length `2`.
-  have hpair : ∀ k ∈ f.partition.parts, k = 2 := fun k hk => by
-    rw [Equiv.Perm.parts_partition, Equiv.Perm.cycleType_of_pow_prime_eq_one hsq] at hk
-    exact Multiset.eq_of_mem_replicate (by simpa [hsupp] using hk)
-  rw [f.orbitCount_eq_card_parts_partition, Nat.card_eq_fintype_card]
-  refine .trans ?_ f.partition.parts_sum
-  rw [Multiset.eq_replicate_of_mem hpair]
-  simp [mul_comm]
+  cases finite_or_infinite α
+  · have := Fintype.ofFinite α
+    have hsupp : f.support = Finset.univ :=
+      Finset.eq_univ_of_forall fun a => Equiv.Perm.mem_support.mpr (hf.2 a)
+    have hsq : f ^ 2 = 1 := Equiv.ext fun a => by simp [sq, hf.1 a]
+    -- Every orbit of `f` is a pair: `f` has no fixed points, and its cycles have length `2`.
+    have hpair : ∀ k ∈ f.partition.parts, k = 2 := fun k hk => by
+      rw [Equiv.Perm.parts_partition, Equiv.Perm.cycleType_of_pow_prime_eq_one hsq] at hk
+      exact Multiset.eq_of_mem_replicate (by simpa [hsupp] using hk)
+    rw [f.orbitCount_eq_card_parts_partition, Nat.card_eq_fintype_card]
+    refine .trans ?_ f.partition.parts_sum
+    rw [Multiset.eq_replicate_of_mem hpair]
+    simp [mul_comm]
+  · have := Equiv.Perm.infinite_quotient_sameCycle_of_involutive hf.1
+    simp [orbitCount_def, Nat.card_eq_zero_of_infinite]
 
 end Parity
 
@@ -721,7 +733,7 @@ theorem IsPerfectMatching.isPerfectMatching_cycleReversal (hf : IsPerfectMatchin
 
 /-- **Each class of the equivalence relation generated by two perfect matchings contains exactly
 two cycles of their product**, so there are half as many classes as cycles. -/
-theorem IsPerfectMatching.two_mul_card_quotient_eqvGen [Finite α] (hf : IsPerfectMatching f)
+theorem IsPerfectMatching.two_mul_card_quotient_eqvGen (hf : IsPerfectMatching f)
     (hg : IsPerfectMatching g) :
     2 * Nat.card (Quotient (Relation.EqvGen.setoid fun a b ↦ b = g a ∨ b = f a)) =
       orbitCount (f * g) := by
@@ -731,7 +743,7 @@ theorem IsPerfectMatching.two_mul_card_quotient_eqvGen [Finite α] (hf : IsPerfe
 
 /-- **A product of two perfect matchings has an even number of orbits**: each class of the
 equivalence relation the two matchings generate contains exactly two of them. -/
-theorem IsPerfectMatching.even_orbitCount_mul [Finite α] (hf : IsPerfectMatching f)
+theorem IsPerfectMatching.even_orbitCount_mul (hf : IsPerfectMatching f)
     (hg : IsPerfectMatching g) : Even (orbitCount (f * g)) :=
   ⟨_, (hf.two_mul_card_quotient_eqvGen hg).symm.trans (two_mul _)⟩
 
@@ -770,15 +782,17 @@ theorem orbitCount_mul_reconnect (D : PerfectMatching α) {T : Perm α} {a : α}
 Euler bound `Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le`, and let `T` exchange `a`
 with `T a ≠ a`, a vertex of degree two. Reconnecting `D` so that it joins `a` to `T a` detaches
 this vertex as a loop of its own, joining the two arcs that ended there; the bound is attained
-again. -/
+again. When `T a = a` there is nothing to reconnect and the statement is the hypothesis. -/
 theorem orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
-    (D : PerfectMatching α) {T : Perm α} {a : α} (hT : T (T a) = a) (ha : T a ≠ a)
+    (D : PerfectMatching α) {T : Perm α} {a : α} (hT : T (T a) = a)
     (h : orbitCount T + orbitCount D.val + orbitCount (D.val * T) =
       Nat.card α + 2 * Nat.card (MulAction.orbitRel.Quotient (Subgroup.closure {T, D.val}) α)) :
     orbitCount T + orbitCount (D.reconnect a (T a)).val +
         orbitCount ((D.reconnect a (T a)).val * T) =
       Nat.card α + 2 * Nat.card (MulAction.orbitRel.Quotient
         (Subgroup.closure {T, (D.reconnect a (T a)).val}) α) := by
+  by_cases ha : T a = a
+  · rwa [ha, reconnect_self]
   by_cases hD : D.val a = T a
   · rwa [← hD, reconnect_partner]
   have hbound := T.orbitCount_add_orbitCount_add_orbitCount_mul_le (D.reconnect a (T a)).val

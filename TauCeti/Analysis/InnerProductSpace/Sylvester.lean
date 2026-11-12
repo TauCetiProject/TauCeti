@@ -25,8 +25,8 @@ the form of `A` is at least `c + g` and that of `B` at most `c`, then `g ‖X‖
 reverse orientation follows in the same way. The proof evaluates the equation on unit vectors `v`
 with `‖X v‖` close to `‖X‖`. For such `v`, the Cauchy–Schwarz inequality for the positive
 semidefinite form `‖X‖² ⟪·, ·⟫ - ⟪X ·, X ·⟫`
-(`ContinuousLinearMap.sq_opNorm_sq_mul_re_inner_sub_re_inner_le`) makes `re ⟪X (B v), X v⟫` close
-to `‖X‖² re ⟪B v, v⟫`.
+(`ContinuousLinearMap.sq_mul_re_inner_sub_re_inner_sq_le_of_opNorm_le`) makes `re ⟪X (B v), X v⟫`
+close to `‖X‖² re ⟪B v, v⟫`.
 
 When `A` is symmetric, the equation diagonalises on eigenvectors: if `A u = α u` and `B v = β v`
 with `α` real and `β : 𝕜`, then `⟪u, (A X - X B) v⟫ = (α - β) ⟪u, X v⟫`. Only `E` needs an
@@ -142,7 +142,7 @@ theorem add_mul_norm_le_norm_comp_add_comp {α β : ℝ}
     have hYv : RCLike.re ⟪Y v, X v⟫_𝕜 =
         RCLike.re ⟪A (X v), X v⟫_𝕜 + RCLike.re ⟪X (B v), X v⟫_𝕜 := by
       simp [Y, inner_add_left]
-    have hCS := X.sq_opNorm_sq_mul_re_inner_sub_re_inner_le (B v) v
+    have hCS := X.sq_mul_re_inner_sub_re_inner_sq_le_of_opNorm_le le_rfl (B v) v
     rw [hv, one_pow, mul_one] at hCS
     have hD : ‖X‖ ^ 2 * RCLike.re ⟪B v, v⟫_𝕜 - RCLike.re ⟪X (B v), X v⟫_𝕜 ≤
         ‖B‖ * ‖X‖ * √(‖X‖ ^ 2 - ‖X v‖ ^ 2) := by
@@ -252,6 +252,22 @@ theorem inner_sylvester_apply_eigenvectorBasis (hA : (A : E →ₗ[𝕜] E).IsSy
   simpa only [RCLike.ofReal_sub] using
     inner_sylvester_apply_of_apply_eq_smul hA X (hA.apply_eigenvectorBasis hn i)
       (hB.apply_eigenvectorBasis hm j)
+
+/-- **The solved form of the Sylvester equation in eigenbases.** For symmetric `A` and `B`, the
+matrix coefficient `Xᵢⱼ = ⟪uᵢ, X vⱼ⟫` is `(αᵢ - βⱼ)⁻¹` times the coefficient `Cᵢⱼ` of
+`C = A X - X B`, provided `αᵢ ≠ βⱼ`. -/
+theorem inner_eigenvectorBasis_apply_eq_inv_mul_inner_sylvester_apply
+    (hA : (A : E →ₗ[𝕜] E).IsSymmetric) (hB : (B : F →ₗ[𝕜] F).IsSymmetric)
+    (hn : finrank 𝕜 E = n) (hm : finrank 𝕜 F = m) (X : F →L[𝕜] E) (i : Fin n) (j : Fin m)
+    (hij : hA.eigenvalues hn i - hB.eigenvalues hm j ≠ 0) :
+    ⟪hA.eigenvectorBasis hn i, X (hB.eigenvectorBasis hm j)⟫_𝕜 =
+      ((hA.eigenvalues hn i - hB.eigenvalues hm j)⁻¹ : ℝ) *
+        ⟪hA.eigenvectorBasis hn i, A.sylvester B X (hB.eigenvectorBasis hm j)⟫_𝕜 := by
+  have hij' : ((hA.eigenvalues hn i - hB.eigenvalues hm j : ℝ) : 𝕜) ≠ 0 :=
+    RCLike.ofReal_ne_zero.mpr hij
+  rw [inner_sylvester_apply_eigenvectorBasis hA hB hn hm X i j]
+  push_cast at hij' ⊢
+  field_simp
 
 /-- **Uniqueness for the Sylvester equation.** In finite dimension, if `A` and `B` are symmetric and
 no real eigenvalue of `A` is an eigenvalue of `B`, the Sylvester operator `X ↦ A X - X B` is

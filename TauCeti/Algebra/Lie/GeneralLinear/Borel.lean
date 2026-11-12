@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Lie.GeneralLinear.RootSpace
 public import TauCeti.LinearAlgebra.Matrix.Triangular
 public import Mathlib.Algebra.Lie.Nilpotent
 public import Mathlib.Algebra.Lie.Solvable
+-- Private: `fin_cases` is used only inside proofs.
+import Mathlib.Tactic.FinCases
 
 /-!
 # The standard Borel subalgebra of `gl n R`, and the two nilpotent triangles
@@ -482,6 +484,15 @@ theorem exists_mem_strictLowerTriangular_add_mem_upperTriangular (A : Matrix n n
     exact fun h => absurd hij (not_le.mpr h)
   · simp [hij]
 
+/-- **A strictly lower triangular `3 × 3` matrix is the combination of `E₁₀`, `E₂₁` and `E₂₀`
+with its entries as coefficients**; these three lowering matrix units span `𝔫⁻` for `n = Fin 3`. -/
+theorem eq_smul_single_add_smul_single_add_smul_single_of_mem_strictLowerTriangular
+    {Λ : Matrix (Fin 3) (Fin 3) R} (hΛ : Λ ∈ strictLowerTriangular R (Fin 3)) :
+    Λ = Λ 1 0 • single 1 0 1 + Λ 2 1 • single 2 1 1 + Λ 2 0 • single 2 0 1 := by
+  have h := mem_strictLowerTriangular_iff.mp hΛ
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [h]
+
 /-! ### Nilpotence and solvability -/
 
 /-- Over every commutative ring, the strictly upper triangular matrix Lie algebra is
@@ -492,7 +503,7 @@ instance isNilpotent_strictUpperTriangular :
   -- The k-th filtration term vanishes at distances at most k above the diagonal.
   let F (k : ℕ) : Submodule R (strictUpperTriangular R n) :=
     { carrier := {A | ∀ i j, (e j : ℕ) < (e i : ℕ) + k + 1 → (A : Matrix n n R) i j = 0}
-      zero_mem' := by intro i j hij; rfl
+      zero_mem' := by intro i j _; rfl
       add_mem' := by intro A B hA hB i j hij; simp [hA i j hij, hB i j hij]
       smul_mem' := by intro c A hA i j hij; simp [hA i j hij] }
   have hbracket (k) (A B : strictUpperTriangular R n) (hB : B ∈ F k) :

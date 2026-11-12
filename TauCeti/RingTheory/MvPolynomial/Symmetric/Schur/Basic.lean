@@ -69,6 +69,8 @@ involution, and it lives downstream in
   tableaux.
 * `TauCeti.diagramSchurPoly_eq_zero_iff` and `TauCeti.schurPoly_eq_zero_iff`: a Schur polynomial
   vanishes exactly for a shape taller than its alphabet.
+* `TauCeti.sum_nsmul_diagramSchurPoly_eq_sum_colLen_le`: a sum of Schur polynomials over the
+  partitions of `n` only sees the partitions with at most `N` rows.
 * `TauCeti.isHomogeneous_diagramSchurPoly` and `TauCeti.isHomogeneous_schurPoly`: a Schur
   polynomial is homogeneous of degree the number of cells of its shape.
 
@@ -77,8 +79,6 @@ involution, and it lives downstream in
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 2.2.
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
   Section 5.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7.
 -/
 
 public section
@@ -277,7 +277,7 @@ theorem mapDomain_rowLenWeight (h : μ.colLen 0 ≤ N) :
 
 /-- For a shape taller than the alphabet the row-length exponent records only the rows the
 alphabet reaches, so its degree falls short of the number of cells. -/
-private theorem degree_rowLenWeight_lt (h : N < μ.colLen 0) :
+theorem degree_rowLenWeight_lt (h : N < μ.colLen 0) :
     (rowLenWeight N μ).degree < μ.card := by
   rw [Finsupp.degree_eq_sum]
   simp only [rowLenWeight_apply]
@@ -356,6 +356,17 @@ theorem coeff_diagramSchurPoly_ofPartition_eq_zero_of_not_dominates (hd : ¬ μ.
     rw [card_ofPartition]
     exact ((degree_rowLenWeight_lt h).trans_eq (card_ofPartition ν)).ne
 
+/-- A sum of Schur polynomials in the alphabet `Fin N` over the partitions of `n` only sees the
+partitions with at most `N` rows: the Schur polynomials of the others vanish. -/
+theorem sum_nsmul_diagramSchurPoly_eq_sum_colLen_le (c : n.Partition → ℕ) :
+    ∑ ν, c ν • diagramSchurPoly N R (ofPartition ν) =
+      ∑ ν : {ν : n.Partition // (ofPartition ν).colLen 0 ≤ N},
+        c ν.1 • diagramSchurPoly N R (ofPartition ν.1) := by
+  rw [← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ N,
+    Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ N} => _) fun ν => by
+      rw [diagramSchurPoly_eq_zero_of_lt_colLen (not_le.mp ν.2), smul_zero],
+    add_zero]
+
 end Partition
 
 section Alphabet
@@ -391,6 +402,13 @@ theorem schurPoly_eq_rename (μ : n.Partition) :
 `Fintype.equivFin σ`: the image of `TauCeti.rowLenWeight` of the Young diagram of `ν`. -/
 noncomputable def partWeight (σ : Type*) [Fintype σ] {n : ℕ} (ν : n.Partition) : σ →₀ ℕ :=
   Finsupp.mapDomain (Fintype.equivFin σ).symm (rowLenWeight (Fintype.card σ) (ofPartition ν))
+
+/-- `TauCeti.partWeight σ ν` is the image of `TauCeti.rowLenWeight` of the Young diagram of `ν`
+under the reindexing `(Fintype.equivFin σ).symm`. -/
+theorem partWeight_eq_mapDomain (ν : n.Partition) :
+    partWeight σ ν = Finsupp.mapDomain (Fintype.equivFin σ).symm
+      (rowLenWeight (Fintype.card σ) (ofPartition ν)) := by
+  rw [partWeight]
 
 @[simp]
 theorem partWeight_apply (ν : n.Partition) (x : σ) :

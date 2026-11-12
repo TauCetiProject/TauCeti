@@ -52,8 +52,6 @@ restrictions of the correspondence they cut out live in
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.4.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 4.
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean` (`intermediateOrderIsoSubgroup`).
 -/
 
 public section
@@ -88,7 +86,7 @@ its order isomorphism between submodules of a subtype and ambient submodules bel
 `Submodule.comapMkQRelIso`, `Submodule.mapIic`, and `AddSubgroup.toIntSubmodule`. -/
 def intermediateCarrierOrderIsoDiscriminantSubgroup :
     L.IntermediateCarrier ≃o AddSubgroup L.DiscriminantGroup :=
-  (TauCeti.iccOrderIsoQuotientOfMapEq L.carrierInDual
+  (Submodule.iccOrderIsoQuotientOfMapEq L.carrierInDual
     L.map_carrierInDual_subtype).trans
     AddSubgroup.toIntSubmodule.symm
 
@@ -109,7 +107,7 @@ the embedded carrier, read as an additive subgroup. -/
 private theorem intermediateCarrierOrderIsoDiscriminantSubgroup_eq_toAddSubgroup
     (M : L.IntermediateCarrier) :
     L.intermediateCarrierOrderIsoDiscriminantSubgroup M =
-      (TauCeti.iccOrderIsoQuotientOfMapEq L.carrierInDual
+      (Submodule.iccOrderIsoQuotientOfMapEq L.carrierInDual
         L.map_carrierInDual_subtype M).toAddSubgroup := by
   rw [intermediateCarrierOrderIsoDiscriminantSubgroup, OrderIso.trans_apply,
     AddSubgroup.toIntSubmodule_symm]
@@ -124,7 +122,7 @@ theorem mk_mem_discriminantSubgroup_iff (M : L.IntermediateCarrier)
   rw [← L.intermediateCarrierOrderIsoDiscriminantSubgroup_apply,
     L.intermediateCarrierOrderIsoDiscriminantSubgroup_eq_toAddSubgroup,
     Submodule.mem_toAddSubgroup]
-  exact TauCeti.mk_mem_iccOrderIsoQuotientOfMapEq_iff _ _ M x
+  exact Submodule.mk_mem_iccOrderIsoQuotientOfMapEq_iff _ _ M x
 
 /-- The intermediate carrier `L_H` obtained as the inverse image in `Lᵛ` of a subgroup of the
 discriminant group. -/

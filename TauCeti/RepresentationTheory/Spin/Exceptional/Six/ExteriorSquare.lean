@@ -145,13 +145,13 @@ theorem spinSixWedgeForm_invariant (g : Matrix.SpecialLinearGroup (Fin 4) K) :
 /-- The exterior-square action of `SL₄(K)` lands in the isometry group of the wedge form. -/
 noncomputable def spinSixSpecialLinearToIsometryGroup :
     Matrix.SpecialLinearGroup (Fin 4) K →*
-      BilinForm.isometryGroup (spinSixWedgeForm K) :=
+      (spinSixWedgeForm K).isometryGroup :=
   ((LinearMap.GeneralLinearGroup.generalLinearEquiv K
       (⋀[K]^2 (Fin 4 → K))).toMonoidHom.comp
         ((stdSLRep K 4).exteriorPower 2).asGroupHom).codRestrict
-    (BilinForm.isometryGroup (spinSixWedgeForm K))
+    ((spinSixWedgeForm K).isometryGroup)
     (fun g ↦ by
-      rw [BilinForm.mem_isometryGroup]
+      rw [LinearMap.BilinForm.mem_isometryGroup]
       simpa only [MonoidHom.coe_comp, Function.comp_apply, MulEquiv.coe_toMonoidHom,
         Representation.asGroupHom_apply,
         LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap] using

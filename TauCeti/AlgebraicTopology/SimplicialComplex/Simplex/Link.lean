@@ -12,10 +12,10 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 # Links and stars in abstract simplices
 
 This file computes the closed star, link, and deletion constructions on the standard abstract
-simplex and its boundary.  These formulas are the standard-model calculations used by the
-recursive link condition for combinatorial manifolds in layer 11 of the geometric-topology
-roadmap.  In particular, the link of a subset in a simplex is the simplex on the complementary
-vertices, while the link in the boundary is the boundary of that complementary simplex.
+simplex and its boundary.  These formulas are the standard-model calculations used by the link
+condition for combinatorial manifolds (`CombinatorialManifold.Basic`).  In particular, the link of
+a subset in a simplex is the simplex on the complementary vertices, while the link in the
+boundary is the boundary of that complementary simplex.
 
 The constructions use `PreAbstractSimplicialComplex`, since taking a link changes the vertices
 that occur.  The formulas follow Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*,
@@ -94,6 +94,25 @@ theorem deletion_simplex_self : deletion (simplex V) V = simplexBoundary V := by
     exact ⟨hρ, fun hρV => hVρ hρV.symm.subset⟩
   · rintro ⟨hρ, hρV⟩
     exact ⟨hρ, fun hVρ => hρV (Subset.antisymm (mem_simplex.mp hρ).2 hVρ)⟩
+
+/-- The boundary of the closed star of a face with void link is its simplex boundary.
+In particular, this computes the boundary of the closed star of a maximal face. -/
+@[simp]
+theorem closedStar_inf_deletion_eq_simplexBoundary_of_link_eq_bot
+    {K : PreAbstractSimplicialComplex ι} (hσ : σ ∈ K) (hlink : link K σ = ⊥) :
+    closedStar K σ ⊓ deletion K σ = simplexBoundary σ := by
+  rw [closedStar_eq_simplex_of_link_eq_bot hσ hlink]
+  refine SetLike.ext fun ρ => ?_
+  rw [mem_inf, mem_deletion, mem_simplexBoundary]
+  constructor
+  · rintro ⟨hρ, -, hnot⟩
+    exact ⟨(mem_simplex.mp hρ).1,
+      Finset.ssubset_iff_subset_ne.mpr ⟨(mem_simplex.mp hρ).2,
+        fun heq => hnot heq.symm.subset⟩⟩
+  · rintro ⟨hne, hproper⟩
+    exact ⟨mem_simplex.mpr ⟨hne, hproper.subset⟩,
+      (K.isRelLowerSet_faces hσ).2 hproper.subset hne,
+      fun hsub => hproper.ne (Finset.Subset.antisymm hproper.subset hsub)⟩
 
 /-- A set `ρ` lies in the closed star of `σ` in the boundary of the simplex on `V` exactly when
 `ρ` is nonempty and `ρ ∪ σ` is a proper subset of `V`. -/

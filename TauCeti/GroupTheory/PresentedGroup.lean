@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PresentedGroup
+import Mathlib.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
-# Evaluation of signed words in presented groups
+# Words and changes of relators in presented groups
 
 A signed word is a list of pairs `(x, b)`, with `true` denoting a generator and `false` its
 inverse. This file gives the product formula for the image of such a word under the quotient map
 to a presented group. The corresponding formulas for free groups are in
 `TauCeti.GroupTheory.FreeGroup.Basic`.
+
+Equality of the normal closures of two relator sets gives a canonical isomorphism of the
+presented groups, preserving the image of every word.
 
 ## Main results
 
@@ -24,6 +28,50 @@ to a presented group. The corresponding formulas for free groups are in
 public section
 
 namespace PresentedGroup
+
+/-- Lifting the canonical generators is the quotient map on every free-group element. -/
+@[simp]
+theorem lift_of_eq_mk {α : Type*} {rels : Set (FreeGroup α)} (x : FreeGroup α) :
+    FreeGroup.lift (of : α → PresentedGroup rels) x = mk rels x :=
+  (FreeGroup.lift_unique (mk rels) (fun _ => rfl)).symm
+
+/-- The induced homomorphism evaluates a presented word by the free-group lift. -/
+@[simp]
+theorem toGroup_mk {α G : Type*} [Group G] {f : α → G} {rels : Set (FreeGroup α)}
+    (h : ∀ r ∈ rels, FreeGroup.lift f r = 1) (x : FreeGroup α) :
+    toGroup h (mk rels x) = FreeGroup.lift f x := (rfl)
+
+/-- Relator sets with the same normal closure present canonically isomorphic groups. -/
+def equivOfNormalClosureEq {α : Type*} {S T : Set (FreeGroup α)}
+    (h : Subgroup.normalClosure S = Subgroup.normalClosure T) :
+    PresentedGroup S ≃* PresentedGroup T where
+  toFun := QuotientGroup.quotientMulEquivOfEq h
+  invFun := (QuotientGroup.quotientMulEquivOfEq h).symm
+  left_inv := (QuotientGroup.quotientMulEquivOfEq h).left_inv
+  right_inv := (QuotientGroup.quotientMulEquivOfEq h).right_inv
+  map_mul' := (QuotientGroup.quotientMulEquivOfEq h).map_mul
+
+/-- The canonical change of relators preserves every word. -/
+@[simp]
+theorem equivOfNormalClosureEq_mk {α : Type*} {S T : Set (FreeGroup α)}
+    (h : Subgroup.normalClosure S = Subgroup.normalClosure T) (w : FreeGroup α) :
+    equivOfNormalClosureEq h (mk S w) = mk T w :=
+  QuotientGroup.quotientMulEquivOfEq_mk h w
+
+/-- The inverse change of relators also preserves every word. -/
+@[simp]
+theorem equivOfNormalClosureEq_symm_mk {α : Type*} {S T : Set (FreeGroup α)}
+    (h : Subgroup.normalClosure S = Subgroup.normalClosure T) (w : FreeGroup α) :
+    (equivOfNormalClosureEq h).symm (mk T w) = mk S w := by
+  apply (equivOfNormalClosureEq h).injective
+  simp
+
+/-- Relabeling generators relabels every word by the induced free-group isomorphism. -/
+@[simp]
+theorem equivPresentedGroup_mk {α β : Type*} (S : Set (FreeGroup α)) (e : α ≃ β)
+    (w : FreeGroup α) :
+    equivPresentedGroup S e (mk S w) = mk _ (FreeGroup.freeGroupCongr e w) :=
+  (rfl)
 
 /-- The image of a word in a presented group is the product of the images of its signed
 letters. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.FourierMultiplier
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Hessian
 import TauCeti.Analysis.Distribution.SchwartzSpace.Prod
@@ -64,9 +65,9 @@ against the tensor product `U(t, x) = ψ(t / R) u(x)` (`SchwartzMap.prodSMul`) o
 profile `ψ` with `u`. For `v, w ∈ ℝⁿ`, `∂_{(0, v)} ∂_{(0, w)} U = ψ(· / R) ⊗ ∂_v ∂_w u` and
 `ΔU = ψ(· / R) ⊗ Δu + R⁻² ψ''(· / R) ⊗ u`. The `Lᵖ` norm of a tensor product is the product of the
 norms (`TauCeti.eLpNorm_prod_smul`), and the dilation `ψ(· / R)` multiplies `‖ψ‖_p` and `‖ψ''‖_p`
-by the same factor (`TauCeti.eLpNorm_comp_inv_smul`). Dividing by it and letting `R → ∞` leaves the
-estimate in `ℝⁿ`. This gives the planar case `n = 2`, where the Newtonian kernel is logarithmic
-and the kernel representation above is not available, and the case `n = 1`.
+by the same factor (`MeasureTheory.Measure.eLpNorm_comp_inv_smul`). Dividing by it and letting
+`R → ∞` leaves the estimate in `ℝⁿ`. This gives the planar case `n = 2`, where the Newtonian
+kernel is logarithmic and the kernel representation above is not available, and the case `n = 1`.
 
 The full Hessian is controlled through an orthonormal basis `(eᵢ)`: the norm of a bilinear map
 `M` is at most `∑ᵢⱼ ‖M(eᵢ, eⱼ)‖`
@@ -258,11 +259,11 @@ private theorem eLpNorm_lineDerivOp_lineDerivOp_le_of_succ (v w : EuclideanSpace
     have h0 := congrFun ((ψ.continuous.ae_eq_iff_eq volume continuous_zero).1 h) 0
     simp [ψ, φ.one_of_mem_closedBall (Metric.mem_closedBall_self zero_le_one)] at h0
   have hψtop : eLpNorm (⇑ψ) p volume ≠ ∞ := (ψ.eLpNorm_lt_top p).ne
-  set A := eLpNorm (⇑ψ) p volume with hA
-  set B := eLpNorm (⇑(∂_{(1 : ℝ)} (∂_{(1 : ℝ)} ψ) : 𝓢(ℝ, ℝ))) p volume with hB
-  set a := eLpNorm (⇑(∂_{v} (∂_{w} u) : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume with ha
-  set b := eLpNorm (⇑(Δ u : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume with hb
-  set c := eLpNorm (⇑u) p volume with hc
+  set A := eLpNorm (⇑ψ) p volume
+  set B := eLpNorm (⇑(∂_{(1 : ℝ)} (∂_{(1 : ℝ)} ψ) : 𝓢(ℝ, ℝ))) p volume
+  set a := eLpNorm (⇑(∂_{v} (∂_{w} u) : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume
+  set b := eLpNorm (⇑(Δ u : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume
+  set c := eLpNorm (⇑u) p volume
   have hBc : B * c ≠ ∞ :=
     ENNReal.mul_ne_top ((∂_{(1 : ℝ)} (∂_{(1 : ℝ)} ψ)).eLpNorm_lt_top p).ne (u.eLpNorm_lt_top p).ne
   have hR (R : ℝ) (hR : 0 < R) : A * a ≤ C * (A * b) + C * (‖R⁻¹ * R⁻¹‖ₑ * (B * c)) := by
@@ -272,7 +273,7 @@ private theorem eLpNorm_lineDerivOp_lineDerivOp_le_of_succ (v w : EuclideanSpace
     set S := ENNReal.ofReal (R ^ ((Module.finrank ℝ ℝ : ℝ) / p.toReal))
     have hD_norm (f : 𝓢(ℝ, ℝ)) : eLpNorm (⇑(D f)) p volume = S * eLpNorm (⇑f) p volume := by
       have h : ⇑(D f) = fun t => f (R⁻¹ • t) := funext fun t => by simp [D, δ, mul_comm]
-      rw [h, eLpNorm_comp_inv_smul volume f hR p]
+      rw [h, Measure.eLpNorm_comp_inv_smul volume f hR.ne' p, abs_of_pos hR]
     have hD_deriv (f : 𝓢(ℝ, ℝ)) : ∂_{(1 : ℝ)} (D f) = R⁻¹ • D (∂_{(1 : ℝ)} f) := by
       have h : δ 1 = R⁻¹ • (1 : ℝ) := by simp [δ]
       rw [lineDerivOp_compCLMOfContinuousLinearEquiv, ← map_smul, h,
@@ -329,12 +330,9 @@ theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le (hn : 3 ≤ n)
     have hT : adjoint (Lp.fourierMultiplierCLM F (hessianSymbolLp v w)) =
         Lp.fourierMultiplierCLM F (hessianSymbolLp v w) := by
       rw [Lp.adjoint_fourierMultiplierCLM, star_hessianSymbolLp]
-    have hre : ∀ f g : Lp F 2 (volume : Measure (EuclideanSpace ℝ (Fin n))),
-        inner ℝ f g = Complex.re (inner ℂ f g) := fun f g => by
-      rw [L2.inner_def, L2.inner_def]
-      exact integral_re (L2.integrable_inner (𝕜 := ℂ) f g)
     exact ((eq_adjoint_iff _ _).2 fun f g => by
-      rw [hre, hre, coe_restrictScalars', ← adjoint_inner_right, hT]).symm
+      rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner, coe_restrictScalars',
+        ← adjoint_inner_right, hT]).symm
   -- The kernel satisfies the size and smoothness estimates with exponent `δ = 1`.
   have hfin : (Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ) = n := by
     rw [finrank_euclideanSpace_fin]

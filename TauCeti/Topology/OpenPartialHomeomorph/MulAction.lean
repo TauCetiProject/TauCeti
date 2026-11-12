@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
 
@@ -22,7 +23,10 @@ behind the chain-rule computation of the derivative representation at a fixed po
 
 `OpenPartialHomeomorph.restrInvariant` restricts a chart to the largest invariant open subset
 of its source for a finite monoid action. An equivariant chart with invariant source also has
-invariant target and equivariant inverse (`OpenPartialHomeomorph.symm_map_smul_of_map_smul`).
+invariant target and equivariant inverse (`OpenPartialHomeomorph.symm_map_smul_of_map_smul`), and
+invariant restriction preserves equivariance (`OpenPartialHomeomorph.restrInvariant_map_smul`).
+For a jointly continuous action, the pairs `(w, g)` for which `χ (g • χ.symm w)` is defined form
+an open set (`OpenPartialHomeomorph.isOpen_setOf_mem_target_smul_symm_mem_source`).
 -/
 
 public section
@@ -73,6 +77,22 @@ theorem symm_map_smul_of_map_smul {M : Type*} [SMul M X] [SMul M E]
   calc
     e.symm (g • z) = e.symm (e (g • e.symm z)) := by rw [hg.2, e.right_inv hz]
     _ = g • e.symm z := e.left_inv hg.1
+
+/-- Under a jointly continuous action, the pairs `(w, g)` for which the action of `g` is defined
+in the coordinates of a partial homeomorphism `e`, that is `w ∈ e.target` and
+`g • e.symm w ∈ e.source`, form an open set. -/
+theorem isOpen_setOf_mem_target_smul_symm_mem_source {M Y : Type*} [SMul M X]
+    [TopologicalSpace M] [TopologicalSpace Y] [ContinuousSMul M X]
+    (e : OpenPartialHomeomorph X Y) :
+    IsOpen {p : Y × M | p.1 ∈ e.target ∧ p.2 • e.symm p.1 ∈ e.source} := by
+  have hc : ContinuousOn (fun p : Y × M ↦ (p.2, e.symm p.1)) (e.target ×ˢ Set.univ) :=
+    continuous_snd.continuousOn.prodMk
+      (e.continuousOn_symm.comp continuous_fst.continuousOn fun p hp ↦ hp.1)
+  have h := (continuous_smul.comp_continuousOn hc).isOpen_inter_preimage
+    (e.open_target.prod isOpen_univ) e.open_source
+  convert h using 1
+  ext p
+  simp
 
 section InvariantRestriction
 
@@ -147,6 +167,15 @@ theorem smul_mem_restrInvariant_source [Finite G] [ContinuousConstSMul G X]
   rw [mem_restrInvariant_source_iff] at hx ⊢
   intro h
   simpa [mul_smul] using hx (h * g)
+
+/-- A chart that is equivariant on its source stays equivariant after invariant restriction, whose
+source is invariant. -/
+theorem restrInvariant_map_smul [Finite G] [ContinuousConstSMul G X] [SMul G Y]
+    {e : OpenPartialHomeomorph X Y}
+    (hf : ∀ (g : G) (x : X), x ∈ e.source → e (g • x) = g • e x) {x : X}
+    (hx : x ∈ (e.restrInvariant G).source) (g : G) :
+    g • x ∈ (e.restrInvariant G).source ∧ e.restrInvariant G (g • x) = g • e.restrInvariant G x :=
+  ⟨smul_mem_restrInvariant_source e hx g, hf g x (restrInvariant_source_subset e hx)⟩
 
 end InvariantRestriction
 

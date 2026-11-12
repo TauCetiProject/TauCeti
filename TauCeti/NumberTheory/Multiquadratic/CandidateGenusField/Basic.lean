@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Constructi
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Factorization
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 
+import TauCeti.Algebra.Squarefree
+
 /-!
 # The candidate genus field of `ℚ(√d)`
 
@@ -45,6 +47,8 @@ F. Lemmermeyer, *Reciprocity Laws*.
 
 * `TauCeti.Multiquadratic.genusPrimeDiscriminants_eq`: the chosen factor finset is equal to every
   prime-discriminant factorization satisfying the defining conditions.
+* `TauCeti.Multiquadratic.genusPrimeDiscriminants_eq_empty_of_isSquare`: the factor finset is empty
+  when `d` is a rational square (that is, `d = 1`).
 * `TauCeti.Multiquadratic.candidateGenusFieldGen_ne_zero`: every chosen generator is nonzero.
 * `TauCeti.Multiquadratic.candidateGenusField_le_iff`: its universal property — it is below an
   intermediate field iff that field contains every chosen root.
@@ -82,6 +86,17 @@ theorem genusPrimeDiscriminants_eq {d : ℤ} (hd : Squarefree d) {s : Finset ℤ
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d) : genusPrimeDiscriminants hd = s := by
   obtain ⟨hgenus, _, hgenusProd⟩ := genusPrimeDiscriminants_spec hd
   exact finset_primeDiscriminant_eq_of_prod_eq hgenus hs (hgenusProd.trans hprod.symm)
+
+/-- A squarefree integer that is a rational square is `1`, and then the prime-discriminant
+factorization of its fundamental discriminant is empty. -/
+@[simp]
+theorem genusPrimeDiscriminants_eq_empty_of_isSquare {d : ℤ} (hd : Squarefree d)
+    (hsq : IsSquare (((d : ℤ) : ℚ))) : genusPrimeDiscriminants hd = ∅ := by
+  have hd1 : d = 1 := by
+    by_contra h
+    exact not_isSquare_intCast_of_squarefree_of_ne_one hd h hsq
+  subst hd1
+  exact genusPrimeDiscriminants_eq hd (by simp) (by simp)
 
 /-- A chosen complex square root of the radicand of each prime discriminant in
 `genusPrimeDiscriminants hd` (available since `ℂ` is algebraically closed). -/
@@ -163,9 +178,9 @@ candidate genus field *of `ℚ(√d)`*; it specializes the square-class containm
 `CandidateGenusField.Construction` to the chosen factorization and roots. -/
 theorem exists_mem_candidateGenusField_sq_eq {d : ℤ} (hd : Squarefree d) :
     ∃ x ∈ candidateGenusField hd, x ^ 2 = algebraMap ℚ ℂ ((d : ℤ) : ℚ) := by
-  obtain ⟨hs, _, hprod⟩ := genusPrimeDiscriminants_spec hd
+  obtain ⟨_, _, hprod⟩ := genusPrimeDiscriminants_spec hd
   simpa only [candidateGenusField] using
-    exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq hs hprod (genusFieldRoot hd)
+    exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq hprod (genusFieldRoot hd)
       (fun P => by simp)
 
 end TauCeti.Multiquadratic

@@ -12,9 +12,9 @@ public import Mathlib.RingTheory.Polynomial.Wronskian
 public import TauCeti.Algebra.Polynomial.Derivative
 public import TauCeti.RingTheory.Derivation.Wronskian.Basic
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
-import Mathlib.LinearAlgebra.Vandermonde
 import Mathlib.RingTheory.Polynomial.Pochhammer
 import TauCeti.LinearAlgebra.Matrix.Polynomial
+import TauCeti.LinearAlgebra.Vandermonde
 
 /-!
 # The Wronskian of a family of polynomials built from Hasse derivatives
@@ -168,15 +168,8 @@ theorem hasseWronskian_ne_zero_of_injective_natDegree [IsDomain R] [CharZero R]
       simp [A, hcoeff, coeff_eq_zero_of_natDegree_lt hn]
   -- The matrix of top coefficients is a Vandermonde matrix in the degrees, up to scaling the
   -- columns by the leading coefficients.
-  have hV : (of fun k l : Fin m ↦ (descPochhammer R k).eval ((g l).natDegree : R)).det ≠ 0 := by
-    have hv := det_vandermonde_ne_zero_iff.mpr
-      (Nat.cast_injective.comp hinj : Function.Injective fun l ↦ ((g l).natDegree : R))
-    rw [det_eval_matrixOfPolynomials_eq_det_vandermonde _ (fun k : Fin m ↦ descPochhammer R k)
-      (fun k ↦ descPochhammer_natDegree R k) (fun k ↦ monic_descPochhammer R k),
-      ← det_transpose] at hv
-    convert hv using 2
-    ext1 k l
-    simp only [of_apply, transpose_apply, Function.comp_apply]
+  have hV : (of fun k l : Fin m ↦ (descPochhammer R k).eval ((g l).natDegree : R)).det ≠ 0 :=
+    TauCeti.det_descPochhammer_eval_ne_zero (Nat.cast_injective.comp hinj)
   have htop : A.det.coeff (∑ l, (g l).natDegree) ≠ 0 := by
     rw [coeff_det_sum_eq_of_natDegree_le A _ hdeg]
     convert mul_ne_zero (prod_ne_zero_iff.mpr fun l _ ↦ leadingCoeff_ne_zero.mpr (hg l)) hV

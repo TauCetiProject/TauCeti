@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+public import TauCeti.Geometry.Manifold.Distribution.Horizontal
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
@@ -21,6 +22,9 @@ For a contact form, the differential carries the Reeb field of the pulled-back f
 original Reeb field. Thus a strict contact diffeomorphism intertwines the Reeb fields, rather
 than merely preserving the contact hyperplanes. No compactness or completeness is needed for
 these statements, which concern vector fields rather than their global flows.
+
+A smooth map is horizontal for the kernel of a one-form exactly when it pulls the form back to
+zero (`TauCeti.SmoothForm.isHorizontalMap_kerDistribution_iff_mpullback_eq_zero`).
 
 The pointwise theorem applies to rough one-forms of class `C¹` at the image point and to
 maps of class `C²` there. All exterior derivatives and pullbacks use the
@@ -112,6 +116,26 @@ theorem kerDistribution_mpullback (f : M → N) (hf : ContMDiff I J ∞ f)
     rfl
   rw [hv]
 
+/-- **Horizontality is the vanishing of the pullback.** A smooth map is horizontal for the kernel
+of a one-form `α` exactly when it pulls `α` back to zero. -/
+theorem isHorizontalMap_kerDistribution_iff_mpullback_eq_zero {f : M → N}
+    (α : SmoothForm J N ℝ 1) (hf : ContMDiff I J ∞ f) :
+    IsHorizontalMap I α.kerDistribution f ↔ mpullback f hf α = 0 := by
+  have h (x : M) : (mpullback f hf α).1 x = 0 ↔
+      LinearMap.range (mfderiv I J f x).toLinearMap ≤ α.kerDistribution (f x) := by
+    rw [LinearMap.range_le_iff_comap, ← kerDistribution_mpullback f hf α x, kerDistribution_eq_ker,
+      RoughForm.ker_eq_top_iff]
+  simp only [isHorizontalMap_iff_range_mfderiv_le, ← h, Subtype.ext_iff, funext_iff,
+    ZeroMemClass.coe_zero, Pi.zero_apply]
+
+/-- A smooth map horizontal for the kernel of a one-form `α` also pulls back `dα` to zero. -/
+theorem mpullback_mextDerivₗ_eq_zero_of_isHorizontalMap {f : M → N}
+    {α : SmoothForm J N ℝ 1} (hf : ContMDiff I J ∞ f)
+    (hfα : IsHorizontalMap I α.kerDistribution f) :
+    mpullback f hf (mextDerivₗ J 1 α) = 0 := by
+  rw [← mextDerivₗ_mpullback, (isHorizontalMap_kerDistribution_iff_mpullback_eq_zero α hf).1 hfα,
+    map_zero]
+
 /-- Pullback by a smooth map with bijective differentials preserves contactness. -/
 theorem IsContactForm.mpullback {α : SmoothForm J N ℝ 1} (hα : α.IsContactForm)
     (f : M → N) (hf : ContMDiff I J ∞ f)
@@ -147,15 +171,34 @@ theorem _root_.Diffeomorph.isContactForm_mpullback_iff (e : M ≃ₘ⟮I, J⟯ N
   SmoothForm.isContactForm_mpullback_iff e.contMDiff
     (fun _ ↦ (e.isInvertible_mfderiv (by simp)).bijective) e.surjective α
 
+/-- If the pullback of a one-form along a smooth map `f : M → N` is a contact form and `M` is
+nonempty, then the model space of `M` is finite-dimensional whenever that of `N` is. -/
+theorem finiteDimensional_of_isContactForm_mpullback [FiniteDimensional ℝ F]
+    {α : SmoothForm J N ℝ 1} {f : M → N} (hf : ContMDiff I J ∞ f)
+    (hα : (mpullback f hf α).IsContactForm) (x : M) : FiniteDimensional ℝ E := by
+  -- The differential of `f` is injective: a vector it kills lies in the kernel of the pullback
+  -- and pairs to zero with everything under its exterior derivative.
+  have hinj : Function.Injective (mfderiv I J f x) := by
+    rw [injective_iff_map_eq_zero]
+    intro w hw
+    refine (isContactForm_iff.1 hα x).2 w ?_ fun w' _ ↦ ?_
+    · rw [mpullback_apply_one, hw, ← degreeOneEquiv_coe_apply, map_zero]
+    · rw [mextDeriv_mpullback_apply_two, hw]
+      exact (mextDeriv α.1 (f x)).map_coord_zero 0 rfl
+  exact Module.Finite.of_injective (mfderiv I J f x : E →L[ℝ] F).toLinearMap hinj
+
 /-- The differential of a smooth map with bijective differentials carries the Reeb field of
 the pulled-back contact form to the original Reeb field. -/
 theorem IsContactForm.mfderiv_reebVectorField_mpullback
-    [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+    [FiniteDimensional ℝ E]
     {α : SmoothForm J N ℝ 1} (hα : α.IsContactForm)
     (f : M → N) (hf : ContMDiff I J ∞ f)
     (hdf : ∀ x, Function.Bijective (mfderiv I J f x)) (x : M) :
     mfderiv I J f x ((SmoothForm.mpullback f hf α).reebVectorField x) =
       α.reebVectorField (f x) := by
+  have : FiniteDimensional ℝ F := LinearEquiv.finiteDimensional
+    (LinearEquiv.ofBijective (mfderiv I J f x).toLinearMap (hdf x) :
+      TangentSpace I x ≃ₗ[ℝ] TangentSpace J (f x))
   have hβ := hα.mpullback f hf hdf
   apply hα.eq_reebVectorField_iff.mpr
   constructor

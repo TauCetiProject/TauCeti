@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Character
 public import TauCeti.LinearAlgebra.PiTensorProduct.Map
 public import TauCeti.LinearAlgebra.TensorPower.Basic
 public import TauCeti.RepresentationTheory.FDRep.Basic
+public import TauCeti.RepresentationTheory.Tensor.Pi.Basic
 
 /-!
 # Tensor powers of representations
@@ -46,16 +47,17 @@ section CommSemiring
 
 variable [CommSemiring R] [Monoid G] [AddCommMonoid M] [Module R M]
 
-/-- The diagonal action of `G` on the `d`-fold tensor power of a representation. -/
+/-- The diagonal action of `G` on the `d`-fold tensor power of a representation: the tensor
+product `Representation.piTensorProduct` of `d` copies of `ρ`. -/
 noncomputable def tensorPower (ρ : Representation R G M) (d : ℕ) :
     Representation R G (⨂[R]^d M) :=
-  PiTensorProduct.mapMonoidHom.comp (MonoidHom.pi fun _ : Fin d => ρ)
+  piTensorProduct fun _ : Fin d => ρ
 
 /-- The tensor-power action applies the original action in every tensor factor. -/
 @[simp]
 theorem tensorPower_apply (ρ : Representation R G M) (d : ℕ) (g : G) :
-    ρ.tensorPower d g = PiTensorProduct.map fun _ : Fin d => ρ g := by
-  rfl
+    ρ.tensorPower d g = PiTensorProduct.map fun _ : Fin d => ρ g :=
+  piTensorProduct_apply _ g
 
 /-- The action on the zero-fold tensor power is the identity.
 
@@ -70,10 +72,8 @@ representations to the tensor power indexed by their sum. -/
 noncomputable def tensorPowerAddEquiv (ρ : Representation R G M) (d e : ℕ) :
     ((ρ.tensorPower d).tprod (ρ.tensorPower e)).Equiv (ρ.tensorPower (d + e)) :=
   .mk TensorPower.mulEquiv fun g => by
-    have h : Fin.append (fun _ : Fin d => ρ g) (fun _ : Fin e => ρ g) = fun _ => ρ g :=
-      Fin.append_castAdd_natAdd (f := fun _ : Fin (d + e) => ρ g)
-    simpa only [tprod_apply, tensorPower_apply, h] using
-      TauCeti.TensorPower.mulEquiv_comp_map (fun _ : Fin d => ρ g) (fun _ : Fin e => ρ g)
+    simpa only [tprod_apply, tensorPower_apply] using
+      TauCeti.TensorPower.mulEquiv_comp_map_const d e (ρ g)
 
 end CommSemiring
 

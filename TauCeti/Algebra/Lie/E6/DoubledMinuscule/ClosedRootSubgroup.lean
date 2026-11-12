@@ -53,13 +53,11 @@ a pinned Chevalley--Demazure group scheme, or that the `E₆` diagram symmetry a
   `TauCeti/Algebra/Lie/E6/Minuscule/ClosedRootSubgroup.lean`, the same argument on the
   `27`-dimensional minuscule carrier.
 
-## Roadmap
+## Applications
 
 This supplies the closed-root-subgroup component of a pinning for the explicit full-weight
-doubled type-`E₆` carrier, in the "Pinnings" and "Root subgroup maps" targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. That carrier is the one the graph-twisted family
-`²E₆(q)` of milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` needs, the `E₆` diagram
-symmetry not acting on the `27`-dimensional one.
+doubled type-`E₆` carrier. That carrier is the one the graph-twisted family `²E₆(q)` needs, the
+`E₆` diagram symmetry not acting on the `27`-dimensional one.
 -/
 
 public section
@@ -165,6 +163,18 @@ theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin 6 ⊕ Fin 6) :
     mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
     ← mkQuotient_comp_rootSubgroupIntegralCoordinateMap] at h
   exact Function.Surjective.of_comp h
+
+/-- Surjectivity of each numbered root-subgroup coordinate map persists under arbitrary
+commutative base change, in the transported quotient presentation. -/
+theorem rootSubgroupToBaseChangeCoordinateMap_surjective
+    (A : Type*) [CommRing A] (k : Fin 6 ⊕ Fin 6) :
+    Function.Surjective (rootSubgroupToBaseChangeCoordinateMap A k).hom := by
+  rw [← baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap A k]
+  exact (AdditiveGroup.gaScalarTensorBialgEquiv (k := ℤ) (K := A)).surjective.comp
+    ((CommHopfAlgCat.baseChangeMap_surjective (K := A)
+      (rootSubgroupIntegralCoordinateMap k)
+      (rootSubgroupIntegralCoordinateMap_surjective k)).comp
+      (ConcreteCategory.bijective_of_isIso (baseChangeCoordinateIso A).hom).2)
 
 /-- **Every numbered root-subgroup map into the doubled type-`E₆` minuscule carrier is a closed
 immersion.** Its scheme-theoretic image is therefore a closed copy of `𝔾ₐ`, as a pinning requires

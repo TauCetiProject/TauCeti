@@ -94,7 +94,7 @@ theorem smooth_coordinateHopfAlgebra :
     smoothCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
   let : ∀ j, Algebra.IsGeometricallyReduced k (generatorCodomain k j) := by
     rintro (i | ⟨⟩)
-    · exact isGeometricallyReduced_of_smooth k _
+    · exact inferInstance
     · exact (DiagonalizableGroup.geometricallyReduced_coordinateRing k
         (SplitTorus.characterGroup (Fin 4))).isGeometricallyReduced
   exact
@@ -106,7 +106,7 @@ theorem geometricallyConnected_coordinateHopfAlgebra :
     geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
   apply geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
     (generator k)
-  rintro (i | ⟨⟩)
+  rintro (_ | ⟨⟩)
   · exact AdditiveGroup.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k
   · exact DiagonalizableGroup.geometricallyConnected_coordinateRing k
       (SplitTorus.characterGroup (Fin 4))

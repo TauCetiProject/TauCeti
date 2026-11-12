@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv
+public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import TauCeti.Topology.Homotopy.HurewiczFibration.PathPullback
 public import TauCeti.Topology.Homotopy.MappingPath.LiftingFunction
 public import TauCeti.Topology.Homotopy.OpenBoxLifting
@@ -92,7 +92,7 @@ theorem transport_refl_homotopic (b : B) :
   have h : ∀ y, Γ (y, 0) = p (f y) := fun y ↦ (y.2 : p y.1 = b).symm
   obtain ⟨K, hK₀, hK₁, hK⟩ := Λ.isHurewiczFibration.{u}.exists_homotopy_endpoints
     Γ (Λ.liftFamily f _ h) ⟨fun z ↦ z.1.1, by fun_prop⟩
-    (Λ.apply_liftFamily f _ h) (fun y t ↦ (y.2 : p y.1 = b)) (fun y ↦ Λ.liftFamily_zero f _ h y)
+    (Λ.apply_liftFamily f _ h) (fun y _ ↦ (y.2 : p y.1 = b)) (fun y ↦ Λ.liftFamily_zero f _ h y)
   exact ContinuousMap.homotopic_of_fiber _ _ K
     (fun y ↦ (hK₀ y).trans (Λ.liftFamily_comp_snd_one f _ h y y rfl)) hK₁ hK
 

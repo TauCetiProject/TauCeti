@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.LocalProperties.Projective
 public import Mathlib.RingTheory.Localization.Finiteness
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.RingTheory.AdicCompletion.Pi
+public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Subring.Torsion
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
@@ -29,7 +30,6 @@ inverting only the nonzero elements of `𝒪[K]`.
 
 ## Main results
 
-* `TauCeti.integerRingHasFiniteQuotients`: `𝒪[K]` has finite quotients by nonzero ideals.
 * `TauCeti.integerRingModuleFinite`: `𝒪[L]` is a finite `𝒪[K]`-module.
 * `TauCeti.integerRingModuleFree`: `𝒪[L]` is a free `𝒪[K]`-module.
 * `TauCeti.isLocalization_integerRing`: `L` is the localization of `𝒪[L]` at the image of the
@@ -57,17 +57,6 @@ namespace TauCeti
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-
-/-- **The ring of integers of a nonarchimedean local field has finite quotients**: a nonzero ideal
-of the discrete valuation ring `𝒪[K]` contains a power of `𝓂[K]`, and the residue field of `K` is
-finite. -/
-instance integerRingHasFiniteQuotients : Ring.HasFiniteQuotients 𝒪[K] where
-  finiteQuotient {I} hI := by
-    obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-    obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
-    rw [IsLocalRing.finite_quotient_iff]
-    exact ⟨n, by rw [hn, (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ,
-      Ideal.span_singleton_pow]⟩
 
 /-- The reduction `𝒪[L] / 𝓂[K] 𝒪[L]` is finite: `𝓂[K] 𝒪[L]` is a nonzero ideal of `𝒪[L]`, which
 has finite quotients. -/
@@ -138,9 +127,9 @@ theorem isLocalization_integerRing :
     obtain ⟨a, ha, hax⟩ := exists_algebraMap_mul_mem_integerRing K L x
     refine ⟨⟨⟨_, hax⟩, ⟨_, a, mem_nonZeroDivisors_of_ne_zero ha, rfl⟩⟩, ?_⟩
     -- `algebraMap 𝒪[L] L` is the subring coercion; `change` exposes it so that
-    -- `coe_algebraMap_integerRing` applies.
+    -- `Valuation.HasExtension.val_algebraMap` applies.
     change x * ((algebraMap 𝒪[K] 𝒪[L] a : 𝒪[L]) : L) = algebraMap K L a * x
-    rw [coe_algebraMap_integerRing, mul_comm]
+    rw [Valuation.HasExtension.val_algebraMap, mul_comm]
   exists_of_eq {x y} h := ⟨1, by simpa using Subtype.ext h⟩
 
 /-- The rank of `𝒪[L]` as a free `𝒪[K]`-module is the degree `[L : K]`. -/

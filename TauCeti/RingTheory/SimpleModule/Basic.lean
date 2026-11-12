@@ -9,15 +9,15 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
-# Simple and semisimple modules: multiplication by `n`, products, linear maps, idempotents
+# Simple and semisimple modules: commuting scalars, products, linear maps, idempotents
 
 Mathlib closes `IsSemisimpleModule` under submodules, quotients, `Finsupp`, and finite dependent
 products `Π i, M i`. The dependent product covers a binary product only when both factors lie in
 the same universe, since the family `M : ι → Type u` is universe-monomorphic; this file supplies
 the binary case with the two factors in unrelated universes.
 
-For a **simple** module it records that a natural number either kills no nonzero element or kills
-every element.
+For a **simple** module it records that a scalar commuting with `R`, such as a natural number,
+either kills no nonzero element or kills every element.
 
 It also records which elements a linear map from a semisimple module can connect: some
 `R`-linear map sends `w : M` to `x : N` exactly when every scalar killing `w` kills `x`. The target
@@ -31,9 +31,11 @@ idempotents.
 
 ## Main results
 
-* `TauCeti.forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero`: in a simple module, a natural number
-  killing one nonzero element kills every element.
+* `TauCeti.forall_smul_eq_zero_of_ne_zero_of_smul_eq_zero`: in a simple module, a scalar commuting
+  with `R` that kills one nonzero element kills every element.
 * `IsSemisimpleModule.prod`: a product of two semisimple modules is semisimple.
+* `LinearMap.exists_isIdempotentElem_comp_eq_disjoint_ker`: a linear map out of a semisimple
+  module is unchanged by an idempotent endomorphism whose range meets the kernel trivially.
 * `IsSemisimpleModule.exists_apply_eq_iff`: a linear map from a semisimple module
   sends `w` to `x` if and only if the torsion ideal of `w` is contained in that of `x`.
 * `IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff`: over a semisimple ring,
@@ -48,11 +50,14 @@ variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N]
 
 section SimpleModule
 
-/-- **In a simple module a natural number that kills one nonzero element kills every element.** -/
-theorem forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero [IsSimpleModule R M] {n : ℕ} {m₀ : M}
-    (hm₀ : m₀ ≠ 0) (h : n • m₀ = 0) (m : M) : n • m = 0 := by
+/-- **In a simple module a commuting scalar that kills one nonzero element kills every element.**
+The scalar `c` may act through any action commuting with the `R`-action: a natural number or an
+integer, an element of the center of `R`, or an `R`-linear endomorphism of `M`. -/
+theorem forall_smul_eq_zero_of_ne_zero_of_smul_eq_zero {S : Type*} [SMul S M]
+    [SMulCommClass R S M] [IsSimpleModule R M] {c : S} {m₀ : M} (hm₀ : m₀ ≠ 0) (h : c • m₀ = 0)
+    (m : M) : c • m = 0 := by
   obtain ⟨r, rfl⟩ := _root_.IsSimpleModule.toSpanSingleton_surjective R hm₀ m
-  simp only [LinearMap.toSpanSingleton_apply, ← smul_comm r n, h, smul_zero]
+  simp only [LinearMap.toSpanSingleton_apply, ← smul_comm r c, h, smul_zero]
 
 end SimpleModule
 
@@ -66,6 +71,20 @@ instance _root_.IsSemisimpleModule.prod [IsSemisimpleModule R M] [IsSemisimpleMo
     (IsSemisimpleModule.range (LinearMap.inr R M N))
   rw [LinearMap.sup_range_inl_inr] at hsup
   exact .congr Submodule.topEquiv.symm
+
+/-- **A semisimple module has an idempotent endomorphism cutting out a complement of a kernel.**
+For a linear map `q` out of a semisimple module `M`, there is an idempotent `e` with `q ∘ e = q`
+whose range meets `ker q` only in `0`: the projection onto a complement of `ker q`. -/
+theorem _root_.LinearMap.exists_isIdempotentElem_comp_eq_disjoint_ker [IsSemisimpleModule R M]
+    (q : M →ₗ[R] N) :
+    ∃ e : Module.End R M, IsIdempotentElem e ∧ q ∘ₗ e = q ∧
+      Disjoint (LinearMap.range e) (LinearMap.ker q) := by
+  obtain ⟨C, hC⟩ := exists_isCompl (LinearMap.ker q)
+  refine ⟨C.projection (LinearMap.ker q) hC.symm, Submodule.isIdempotentElem_projection _,
+    LinearMap.ext fun x ↦ ?_, by rw [Submodule.range_projection]; exact hC.symm.disjoint⟩
+  have hker := LinearMap.mem_ker.mp (Submodule.sub_projection_mem hC.symm x)
+  rw [map_sub, sub_eq_zero] at hker
+  exact hker.symm
 
 /-- **Linear maps from a semisimple module with a prescribed value.** Some `R`-linear map from
 the semisimple module `M` to an arbitrary module `N` sends `w` to `x` exactly when every scalar

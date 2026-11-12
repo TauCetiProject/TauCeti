@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Analysis.Calculus.TangentCone.TransverseDisc
 public import TauCeti.Analysis.Calculus.TransverseIntersection
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Tangent cones of subsets of a manifold, and transverse intersections
@@ -57,6 +57,10 @@ at `y`.
   cone of every set the curve stays in.
 * `TauCeti.image_mtangentConeAt_eq_tangentConeAt`: read in another chart, the tangent cone is
   carried onto the tangent cone in that chart by the derivative of the transition map.
+* `TauCeti.tangentConeAt_preimage_symm_eq`: read in a chart that flattens a set onto a closed
+  subspace `L`, the tangent cone of the set is `L`.
+* `TauCeti.map_mtangentConeAt_eq_zero`: a linear map that vanishes on a set read in a chart kills
+  its tangent cone carried into that chart.
 * `TauCeti.IsSliceChart.finrank_span_mtangentConeAt`: the tangent space of a flattened set has the
   dimension of the model subspace.
 * `TauCeti.exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top`: a transverse intersection
@@ -198,6 +202,46 @@ theorem image_mtangentConeAt_eq_tangentConeAt (hy : y ∈ q.source) {A : E ≃L[
     image_tangentConeAt_eq_tangentConeAt_preimage_symm hy' hA, hey, ← tangentConeAt_inter_nhds ht,
     hs, tangentConeAt_inter_nhds ht]
 
+omit [ChartedSpace E M] [IsManifold 𝓘(𝕜, E) n M] in
+/-- If a chart `q` flattens `s` onto a closed subspace `L`, the tangent cone of `s` read in `q` at
+a point `y` of `s` is `L`. -/
+theorem tangentConeAt_preimage_symm_eq (hs : IsSliceChart q (L : Set E) s)
+    (hL : IsClosed (L : Set E)) (hy : y ∈ q.source) (hys : y ∈ s) :
+    tangentConeAt 𝕜 (q.symm ⁻¹' s) (q y) = L := by
+  have ht : q.target ∈ 𝓝 (q y) := q.open_target.mem_nhds (q.map_source hy)
+  have hset : q.symm ⁻¹' s ∩ q.target = (L : Set E) ∩ q.target := by
+    ext w
+    refine and_congr_left fun hw ↦ ?_
+    rw [mem_preimage, isSliceChart_iff.1 hs _ (q.map_target hw), q.right_inv hw, SetLike.mem_coe]
+  rw [← tangentConeAt_inter_nhds ht, hset, tangentConeAt_inter_nhds ht,
+    L.tangentConeAt_eq hL ((isSliceChart_iff.1 hs y hy).1 hys)]
+
+omit [IsManifold 𝓘(𝕜, E) n M] in
+/-- If `P ∘ q` vanishes on `s` near a point `y` of `s`, then `P` kills the tangent cone of `s`
+at `y`, carried into the chart `q` by the derivative `A` of the transition map. -/
+theorem map_mtangentConeAt_eq_zero {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {P : E →L[𝕜] G} {A : E ≃L[𝕜] E}
+    (hA : HasFDerivAt ((chartAt E y).symm.trans q) (A : E →L[𝕜] E) (chartAt E y y))
+    (hy : y ∈ q.source) (hys : y ∈ s) (hsP : ∀ᶠ w in 𝓝 y, w ∈ s → P (q w) = 0) {u : E}
+    (hu : u ∈ mtangentConeAt 𝓘(𝕜, E) s y) :
+    P (A u) = 0 := by
+  have hu' : A u ∈ tangentConeAt 𝕜 (q.symm ⁻¹' s) (q y) :=
+    image_mtangentConeAt_eq_tangentConeAt hy hA ▸ mem_image_of_mem _ hu
+  -- Near `q y`, the image of `s` in the chart lies in `ker P`.
+  have hN : {w | (q.symm w ∈ s → P (q (q.symm w)) = 0) ∧ w ∈ q.target} ∈ 𝓝 (q y) := by
+    have hlim : Tendsto q.symm (𝓝 (q y)) (𝓝 y) := by
+      have h := (q.continuousAt_symm (q.map_source hy)).tendsto
+      rwa [q.left_inv hy] at h
+    exact (hlim.eventually hsP).and (q.open_target.mem_nhds (q.map_source hy))
+  have hsub : q.symm ⁻¹' s ∩ {w | (q.symm w ∈ s → P (q (q.symm w)) = 0) ∧ w ∈ q.target} ⊆
+      (LinearMap.ker (P : E →ₗ[𝕜] G) : Set E) := by
+    rintro w ⟨hw, hw₁, hw₂⟩
+    simpa [q.right_inv hw₂] using hw₁ hw
+  have hqy : q y ∈ LinearMap.ker (P : E →ₗ[𝕜] G) := by simpa using hsP.self_of_nhds hys
+  rw [← tangentConeAt_inter_nhds hN] at hu'
+  have h := tangentConeAt_mono hsub hu'
+  rwa [Submodule.tangentConeAt_eq _ P.isClosed_ker hqy] at h
+
 omit [IsManifold 𝓘(𝕜, E) n M] in
 /-- A chart `q` of the maximal atlas that flattens `s` onto `L`, read in another chart `p` of the
 maximal atlas around a point `y` of its source: the transition map from `p` to `q` is a `C^n` chart
@@ -241,6 +285,36 @@ theorem IsSliceChart.finrank_span_mtangentConeAt (hn : n ≠ 0)
   rw [mtangentConeAt_eq_tangentConeAt_chartAt]
   exact he.finrank_span_tangentConeAt hL hy' (chartAt_self_mem_preimage hys) hA
 
+/-- **Sets flattened by one chart onto spanning subspaces are transverse.** If a single chart `q`
+of the maximal atlas flattens `s₁` onto a closed subspace `L₁` and `s₂` onto a closed subspace
+`L₂` near a common point `y`, and `L₁` and `L₂` span the model space, then the tangent spaces of
+`s₁` and `s₂` at `y` span the model space. -/
+theorem IsSliceChart.span_mtangentConeAt_sup_eq_top (hn : n ≠ 0)
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) {L₁ L₂ : Submodule 𝕜 E} {s₁ s₂ : Set M}
+    (h₁ : IsSliceChart q (L₁ : Set E) s₁) (h₂ : IsSliceChart q (L₂ : Set E) s₂)
+    (hL₁ : IsClosed (L₁ : Set E)) (hL₂ : IsClosed (L₂ : Set E)) (hy : y ∈ q.source)
+    (hy₁ : y ∈ s₁) (hy₂ : y ∈ s₂) (hL : L₁ ⊔ L₂ = ⊤) :
+    Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊔
+      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) = ⊤ := by
+  have hy' : chartAt E y y ∈ ((chartAt E y).symm.trans q).source := by
+    simp [hy, mem_chart_source]
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn (IsManifold.chart_mem_maximalAtlas y) hq hy'
+  -- The inverse of the derivative of the transition map carries each `Lᵢ` onto the tangent cone.
+  have key {L : Submodule 𝕜 E} {s : Set M} (hs : IsSliceChart q (L : Set E) s)
+      (hLc : IsClosed (L : Set E)) (hys : y ∈ s) :
+      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y) =
+        L.map (A.symm : E →ₗ[𝕜] E) := by
+    have himg := image_mtangentConeAt_eq_tangentConeAt (s := s) hy hA
+    rw [tangentConeAt_preimage_symm_eq hs hLc hy hys] at himg
+    have hT : mtangentConeAt 𝓘(𝕜, E) s y = ((L.map (A.symm : E →ₗ[𝕜] E) : Submodule 𝕜 E) :
+        Set E) := by
+      rw [Submodule.map_coe, ← himg]
+      exact (A.symm_image_image _).symm
+    rw [hT, Submodule.span_eq]
+  rw [key h₁ hL₁ hy₁, key h₂ hL₂ hy₂, ← Submodule.map_sup, hL, Submodule.map_top,
+    LinearMap.range_eq_top]
+  exact A.symm.surjective
+
 end SliceChart
 
 section Transverse
@@ -259,7 +333,7 @@ theorem exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
     (hq₁ : q₁ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
     (hq₂ : q₂ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
     (h₁ : IsSliceChart q₁ (L₁ : Set E) s₁) (h₂ : IsSliceChart q₂ (L₂ : Set E) s₂)
-    (hy₁ : y ∈ q₁.source) (hy₂ : y ∈ q₂.source) (hys₁ : y ∈ s₁) (hys₂ : y ∈ s₂)
+    (hy₁ : y ∈ q₁.source) (hy₂ : y ∈ q₂.source)
     (htr : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊔
       Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) = ⊤)
     (hL₁ : L₁.ClosedComplemented) (hL₂ : L₂.ClosedComplemented)
@@ -272,7 +346,7 @@ theorem exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
   obtain ⟨hy₂', hc₂, hcs₂, he₂⟩ := isSliceChart_chartAt_symm_trans hq₂ h₂ hy₂
   rw [mtangentConeAt_eq_tangentConeAt_chartAt, mtangentConeAt_eq_tangentConeAt_chartAt] at htr hI ⊢
   obtain ⟨e, hye, hC, hCs, he⟩ := exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top hn
-    he₁ he₂ hy₁' hy₂' (chartAt_self_mem_preimage hys₁) (chartAt_self_mem_preimage hys₂) hc₁ hc₂
+    he₁ he₂ hy₁' hy₂' hc₁ hc₂
     ((hcs₁ _ (OpenPartialHomeomorph.map_source _ hy₁')).differentiableAt hn)
     ((hcs₂ _ (OpenPartialHomeomorph.map_source _ hy₂')).differentiableAt hn) htr
     hL₁ hL₂ hI
@@ -317,7 +391,7 @@ theorem span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
     (hq₁ : q₁ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
     (hq₂ : q₂ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
     (h₁ : IsSliceChart q₁ (L₁ : Set E) s₁) (h₂ : IsSliceChart q₂ (L₂ : Set E) s₂)
-    (hy₁ : y ∈ q₁.source) (hy₂ : y ∈ q₂.source) (hys₁ : y ∈ s₁) (hys₂ : y ∈ s₂)
+    (hy₁ : y ∈ q₁.source) (hy₂ : y ∈ q₂.source)
     (htr : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊔
       Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) = ⊤)
     (hL₁ : L₁.ClosedComplemented) (hL₂ : L₂.ClosedComplemented)
@@ -326,8 +400,13 @@ theorem span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
     Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) (s₁ ∩ s₂) y) =
       Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊓
         Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) := by
-  rw [mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top hn hq₁ hq₂ h₁ h₂ hy₁ hy₂ hys₁ hys₂
-    htr hL₁ hL₂ hI, Submodule.span_eq]
+  obtain ⟨hy₁', hc₁, hcs₁, he₁⟩ := isSliceChart_chartAt_symm_trans hq₁ h₁ hy₁
+  obtain ⟨hy₂', hc₂, hcs₂, he₂⟩ := isSliceChart_chartAt_symm_trans hq₂ h₂ hy₂
+  simp only [mtangentConeAt_eq_tangentConeAt_chartAt, preimage_inter] at htr hI ⊢
+  exact span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top hn he₁ he₂ hy₁' hy₂' hc₁ hc₂
+    ((hcs₁ _ (OpenPartialHomeomorph.map_source _ hy₁')).differentiableAt hn)
+    ((hcs₂ _ (OpenPartialHomeomorph.map_source _ hy₂')).differentiableAt hn) htr
+    hL₁ hL₂ hI
 
 end Transverse
 
@@ -361,12 +440,10 @@ private theorem level_chartAt_symm (hn : n ≠ 0) (hU : IsOpen U) (hyU : y ∈ U
     (hg.comp (contMDiffOn_chart_symm.mono inter_subset_left) fun z hz ↦ hz.2).contDiffOn
   have hC : ∀ z ∈ e.target ∩ e.symm ⁻¹' U, ContDiffAt 𝕜 n (fun z ↦ g (e.symm z) - c) z :=
     fun z hz ↦ ((hgc.contDiffAt (hU'.mem_nhds hz)).sub contDiffAt_const)
-  have hd : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) g y :=
-    (hg.contMDiffAt (hU.mem_nhds hyU)).mdifferentiableAt hn
   have hstrict := (hC _ hyU').hasStrictFDerivAt_fderiv hn
   rw [fderiv_sub_const] at hstrict
   refine ⟨?_, by simp [hyy, hgy], hU', hyU', hC, ?_⟩
-  · rw [← MDifferentiableAt.fderiv_comp_chartAt_symm hd]
+  · rw [← TauCeti.fderiv_comp_chartAt_symm]
     exact hstrict
   · ext z
     simp [sub_eq_zero]
@@ -374,14 +451,14 @@ private theorem level_chartAt_symm (hn : n ≠ 0) (hU : IsOpen U) (hyU : y ∈ U
 variable [CompleteSpace E] [CompleteSpace F]
 
 /-- **Cutting by a transverse regular level set.** Let a chart `q` of the maximal atlas flatten
-`s` onto a linear subspace near a point `y` of `s`, and let `g : M → F` be `C^n` (`n ≠ 0`) near
+`s` onto a linear subspace near a point `y`, and let `g : M → F` be `C^n` (`n ≠ 0`) near
 `y`, with `g y = c` and surjective differential at `y`. If the tangent space of `s` at `y` and the
 kernel of the differential of `g` at `y` span the model space, then a chart of the maximal atlas
 flattens `s ∩ g⁻¹ {c}` near `y` onto the intersection of the tangent space of `s` with that
 kernel. The model subspace, the kernel and that intersection must be complemented. -/
 theorem exists_isSliceChart_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top (hn : n ≠ 0)
     (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hs : IsSliceChart q (L : Set E) s)
-    (hy : y ∈ q.source) (hys : y ∈ s) (hU : IsOpen U) (hyU : y ∈ U)
+    (hy : y ∈ q.source) (hU : IsOpen U) (hyU : y ∈ U)
     (hg : ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, F) n g U) (hgy : g y = c)
     (hg' : (mvfderiv 𝓘(𝕜, E) g y).range = ⊤)
     (htr : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y) ⊔ (mvfderiv 𝓘(𝕜, E) g y).ker = ⊤)
@@ -395,8 +472,7 @@ theorem exists_isSliceChart_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top
   obtain ⟨hy', hc, hcs, he⟩ := isSliceChart_chartAt_symm_trans hq hs hy
   obtain ⟨hG, hGy, hU', hyU', hC, hpre⟩ := level_chartAt_symm (s := s) hn hU hyU hg hgy
   rw [mtangentConeAt_eq_tangentConeAt_chartAt] at htr hI ⊢
-  obtain ⟨e, hye, hC, hCs, he⟩ := exists_isSliceChart_inter_preimage_zero hn he hy'
-    (chartAt_self_mem_preimage hys) hc
+  obtain ⟨e, hye, hC, hCs, he⟩ := exists_isSliceChart_inter_preimage_zero hn he hy' hc
     ((hcs _ (OpenPartialHomeomorph.map_source _ hy')).differentiableAt hn) hG hg' hGy hU' hyU' hC
     htr hL hker hI
   -- The chart is the preferred chart at `y` followed by the flattening chart `e` of the model.
@@ -439,7 +515,7 @@ space of `s ∩ g⁻¹ {c}` at `y`, expressed as the span of its tangent cone, i
 the tangent space of `s` at `y` with the kernel of the differential of `g` at `y`. -/
 theorem span_mtangentConeAt_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top (hn : n ≠ 0)
     (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hs : IsSliceChart q (L : Set E) s)
-    (hy : y ∈ q.source) (hys : y ∈ s) (hU : IsOpen U) (hyU : y ∈ U)
+    (hy : y ∈ q.source) (hU : IsOpen U) (hyU : y ∈ U)
     (hg : ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, F) n g U) (hgy : g y = c)
     (hg' : (mvfderiv 𝓘(𝕜, E) g y).range = ⊤)
     (htr : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y) ⊔ (mvfderiv 𝓘(𝕜, E) g y).ker = ⊤)
@@ -448,15 +524,20 @@ theorem span_mtangentConeAt_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top
       (mvfderiv 𝓘(𝕜, E) g y).ker).ClosedComplemented) :
     Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) (s ∩ g ⁻¹' {c}) y) =
       Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y) ⊓ (mvfderiv 𝓘(𝕜, E) g y).ker := by
-  rw [mtangentConeAt_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top hn hq hs hy hys hU hyU hg
-    hgy hg' htr hL hker hI, Submodule.span_eq]
+  obtain ⟨hy', hc, hcs, he⟩ := isSliceChart_chartAt_symm_trans hq hs hy
+  obtain ⟨hG, hGy, hU', hyU', hC, hpre⟩ := level_chartAt_symm (s := s) hn hU hyU hg hgy
+  rw [mtangentConeAt_eq_tangentConeAt_chartAt] at htr hI
+  rw [mtangentConeAt_eq_tangentConeAt_chartAt, mtangentConeAt_eq_tangentConeAt_chartAt, hpre]
+  exact span_tangentConeAt_inter_preimage_zero hn he hy' hc
+    ((hcs _ (OpenPartialHomeomorph.map_source _ hy')).differentiableAt hn) hG hg' hGy hU' hyU' hC
+    htr hL hker hI
 
 end Level
 
 section TransverseChart
 
 variable {𝕜 E M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [TopologicalSpace M] [ChartedSpace E M] {n : ℕ∞ω} [IsManifold 𝓘(𝕜, E) n M]
+  [TopologicalSpace M] [ChartedSpace E M] {n : ℕ∞ω}
   {p : OpenPartialHomeomorph M E} {s₁ s₂ : Set M} {y : M}
 
 /-- **Transversality read in a chart.** If the tangent spaces of `s₁` and `s₂` at `y` span the
@@ -470,7 +551,9 @@ theorem span_tangentConeAt_sup_eq_top_of_span_mtangentConeAt_sup_eq_top (hn : n 
       Submodule.span 𝕜 (tangentConeAt 𝕜 (p.symm ⁻¹' s₂) (p y)) = ⊤ := by
   have hy' : chartAt E y y ∈ ((chartAt E y).symm.trans p).source := by
     simp [hy, mem_chart_source]
-  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn (IsManifold.chart_mem_maximalAtlas y) hp hy'
+  -- The transition map from the preferred chart is a `C^n` change of coordinates of the model
+  -- space, since `p` is in the maximal atlas.
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans_of_mem_atlas hn (chart_mem_atlas E y) hp hy'
   have h := congrArg (Submodule.map (A : E →ₗ[𝕜] E)) htr
   rw [Submodule.map_sup, ← Submodule.span_image, ← Submodule.span_image, Submodule.map_top,
     LinearMap.range_eq_top_of_surjective _ A.surjective] at h
@@ -482,7 +565,7 @@ section TransverseDisc
 
 variable {𝕜 E G M : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G] [TopologicalSpace M]
-  [ChartedSpace E M] {n : ℕ∞ω} [IsManifold 𝓘(𝕜, E) n M] {p q : OpenPartialHomeomorph M E}
+  [ChartedSpace E M] {n : ℕ∞ω} {p q : OpenPartialHomeomorph M E}
   {L : Submodule 𝕜 E} {s₁ s₂ : Set M} {y : M}
 
 /-- **A transverse disc in a flattened set.** Let a chart `q` of the maximal atlas flatten `s₁` onto

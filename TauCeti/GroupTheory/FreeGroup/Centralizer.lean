@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.FreeGroup.Commuting
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
+import TauCeti.Algebra.Group.Subgroup.Centralizer
 
 /-!
 # Centralizers in free groups
@@ -18,13 +19,16 @@ nontrivial central element is commutative, and, since subgroups of free groups a
 centralizer of a nontrivial element of a free group is therefore abelian, hence cyclic.
 
 These are the facts from which maximal roots of elements of a free group are built, in
-`TauCeti.GroupTheory.FreeGroup.MaximalRoot`. Free groups are also shown to have unique roots for
-a fixed nonzero exponent, transporting Mathlib's instance for `FreeGroup α` along a free basis.
+`TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic`. Free groups are also shown to have unique
+roots for a fixed nonzero exponent, transporting Mathlib's instance for `FreeGroup α` along a
+free basis.
 
 ## Main results
 
 * `FreeGroup.mem_zpowers_of_of_commute`: an element commuting with a generator `of a` is a power
   of `of a`.
+* `FreeGroup.centralizer_singleton_of`: the centralizer of a generator `of a` is the cyclic
+  subgroup it generates.
 * `FreeGroup.center_eq_bot_of_nontrivial`: the centre of a free group on at least two generators
   is trivial.
 * `IsFreeGroup.commute_of_commute`: in a free group, two elements commuting with a common
@@ -60,6 +64,12 @@ theorem mem_zpowers_of_of_commute {a : α} {z : FreeGroup α} (h : Commute z (of
   have hra : r = of a ^ n := by rw [hr, ← zpow_mul, hn, zpow_one]
   rw [hra, ← zpow_mul]
   exact Subgroup.zpow_mem_zpowers _ _
+
+/-- The centralizer of a generator `of a` of a free group is the cyclic subgroup it generates. -/
+theorem centralizer_singleton_of (a : α) : Subgroup.centralizer {of a} = Subgroup.zpowers (of a) :=
+  le_antisymm
+    (fun _ hz => mem_zpowers_of_of_commute (Subgroup.mem_centralizer_singleton_iff.1 hz))
+    (Subgroup.zpowers_le_centralizer_singleton _)
 
 /-- The centre of a free group on at least two generators is trivial. -/
 theorem center_eq_bot_of_nontrivial [Nontrivial α] : Subgroup.center (FreeGroup α) = ⊥ := by

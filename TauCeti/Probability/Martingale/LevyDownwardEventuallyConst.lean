@@ -10,11 +10,9 @@ public import TauCeti.Probability.Martingale.Convergence
 /-!
 # Lévy's downward theorem on an eventually constant filtration
 
-This file is the Exchangeability-roadmap worked example
-(`TauCetiRoadmap/Exchangeability/README.md`, "Worked examples"): *the Lévy downward theorem
-specializes correctly to an eventually constant decreasing filtration*. It is a consistency
-test of the flagship Layer-4 result `MeasureTheory.tendsto_ae_condExp_iInf`, not a de Finetti
-example.
+This file is a worked example: *the Lévy downward theorem specializes correctly to an eventually
+constant decreasing filtration*. It is a consistency test of the Lévy downward theorem
+`MeasureTheory.tendsto_ae_condExp_iInf`.
 
 Fix an antitone filtration `𝔽 : ℕ → MeasurableSpace Ω` that is constant from some index `N`
 on, `𝔽 n = 𝔽 N` for `n ≥ N`. Two independent computations must agree:

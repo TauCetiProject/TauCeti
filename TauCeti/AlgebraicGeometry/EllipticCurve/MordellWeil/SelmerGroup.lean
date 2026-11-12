@@ -61,8 +61,8 @@ file independent of that finiteness proof.
 ## Provenance
 
 Adapted from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`), `EllipticCurves/SelmerGroup.lean`,
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
+`EllipticCurves/SelmerGroup.lean`,
 its `SelmerGroup` section — declarations `selmerGroup₂`, `mem_selmerGroup₂_iff`,
 `range_μ_le_selmerGroup₂`, `card_range_μ` and `pow_rank_le_card_of_range_μ_le`.
 
@@ -129,7 +129,7 @@ theorem card_range_μ [AddGroup.FG W.Point] :
     Nat.card (μ (W := W)).range =
       2 ^ finrank ℤ W.Point * Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker := by
   rw [← Subgroup.index_ker (μ (W := W)), ker_μ_eq, AddSubgroup.index_toSubgroup,
-    AddSubgroup.index_range_nsmul_of_fg _ two_ne_zero]
+    AddSubgroup.index_range_nsmul_of_fg _ _]
 
 open scoped Classical in
 /-- **The rank bound from a 2-Selmer group**: any subgroup of `W.M` that is finite and contains

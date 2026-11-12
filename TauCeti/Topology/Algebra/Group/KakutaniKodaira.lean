@@ -12,7 +12,7 @@ import Mathlib.Topology.UniformSpace.HeineCantor
 import Mathlib.Topology.UniformSpace.Separation
 import TauCeti.Topology.Algebra.Group.Basic
 import TauCeti.Topology.Algebra.Group.Pointwise
-import TauCeti.Topology.Algebra.Group.Quotient.Basic
+import TauCeti.Topology.Algebra.Group.SigmaCompact
 
 /-!
 # The Kakutani–Kodaira theorem for σ-compact locally compact groups
@@ -182,7 +182,7 @@ theorem exists_compact_normal_subgroup_quotient_metrizable {ι : Type*} [Countab
       MetrizableSpace (G ⧸ K) ∧ SecondCountableTopology (G ⧸ K) := by
   -- Reduce an arbitrary countable index type `ι` to `ℕ`.
   have hseq : ∃ U' : ℕ → Set G, (∀ n, U' n ∈ 𝓝 (1 : G)) ∧ ⋂ n, U' n ⊆ ⋂ i, U i := by
-    rcases isEmpty_or_nonempty ι with hι | hι
+    rcases isEmpty_or_nonempty ι with _ | _
     · exact ⟨fun _ ↦ univ, fun _ ↦ univ_mem, by simp⟩
     · obtain ⟨e, he⟩ := exists_surjective_nat ι
       refine ⟨fun n ↦ U (e n), fun n ↦ hU (e n), fun x hx ↦ mem_iInter.mpr fun i ↦ ?_⟩

@@ -64,18 +64,17 @@ once.
 
 ## Provenance
 
-Independently reconstructed; no formalization is vendored. The `ContourIntegration` roadmap
-designates the AINTLIB `LeanModularForms` development
-([github.com/CBirkbeck/AINTLIB](https://github.com/CBirkbeck/AINTLIB), Apache-2.0) as the existing
-source for this area, and assigns `LeanModularForms/ForMathlib/HungerbuhlerWasem/Crossing.lean` to
-"Prop 2.2 / sector geometry". That file was consulted and carries no excise-and-cap construction:
-at revision `340875a` it is the per-pole principal-value composition (`HasCauchyPV.add`,
-`HasCauchyPV.finset_sum`, `cpv_polarPart_at_pole_under_conditions`) together with the crossing
-angle-compatibility lemmas, and the surgered curve `\tilde{Λ}` is never built there either. The
-one place AINTLIB names this excision, `ForMathlib/ExitTime.lean`, constructs only the exit-time
-parameters bounding the window (`firstExitTimeLeft`, `firstExitTimeRight`), not the spliced curve.
-So the definitions and proofs below are new, assembled from Tau Ceti's existing winding-number API
-for reparametrisation and circles.
+Independently reconstructed; no formalization is vendored. The AINTLIB `LeanModularForms`
+development ([github.com/CBirkbeck/AINTLIB](https://github.com/CBirkbeck/AINTLIB), Apache-2.0) is
+the existing source for this area. Its file covering crossings,
+`LeanModularForms/ForMathlib/HungerbuhlerWasem/Crossing.lean`, was consulted and carries no
+excise-and-cap construction: at revision `340875a` it is the per-pole principal-value composition
+(`HasCauchyPV.add`, `HasCauchyPV.finset_sum`, `cpv_polarPart_at_pole_under_conditions`) together
+with the crossing angle-compatibility lemmas, and the surgered curve `\tilde{Λ}` is never built
+there either. The one place AINTLIB names this excision, `ForMathlib/ExitTime.lean`, constructs only
+the exit-time parameters bounding the window (`firstExitTimeLeft`, `firstExitTimeRight`), not the
+spliced curve. So the definitions and proofs below are new, assembled from Tau Ceti's existing
+winding-number API for reparametrisation and circles.
 
 ## References
 
@@ -160,8 +159,7 @@ theorem windingNumber_circleCap (hr : r ≠ 0) (hlu : l ≠ u) (θ θ' : ℝ) :
   have hdiff : ∀ x : ℝ, DifferentiableAt ℝ (circleMap s r) x := differentiable_circleMap s r
   have hderiv : ∀ S : Set ℝ, ContinuousOn (deriv (circleMap s r)) S := by
     intro S
-    rw [funext (deriv_circleMap s r)]
-    exact ((continuous_circleMap 0 r).mul continuous_const).continuousOn
+    exact (Complex.continuous_deriv_circleMap s r).continuousOn
   have hleft : (θ' - θ) / (u - l) * l + (θ - (θ' - θ) / (u - l) * l) = θ := by ring
   have hright : (θ' - θ) / (u - l) * u + (θ - (θ' - θ) / (u - l) * l) = θ' := by
     field_simp
@@ -243,31 +241,40 @@ theorem exciseCrossing_ne_center (hr : r ≠ 0) (θ θ' : ℝ)
   · rw [exciseCrossing_of_notMem hw]
     exact havoid t ht fun h => hw (Ioo_subset_Icc_self h)
 
+/-- Continuity of the excised curve, by gluing the three closed pieces: the original curve to the
+left of the window, the circular cap inside it, and the original curve to the right. -/
+private theorem exciseCrossing_continuousOn (hγ : IsPiecewiseC1On γ a b) (hal : a < l)
+    (hlu : l < u) (hub : u < b) (hθ : γ l = circleMap s r θ) (hθ' : γ u = circleMap s r θ') :
+    ContinuousOn (TauCeti.Contour.exciseCrossing γ s r l u θ θ') (uIcc a b) := by
+  have hab : a ≤ b := by linarith
+  have hIcc : uIcc a b = Icc a b := uIcc_of_le hab
+  have hleft := exciseCrossing_eqOn_Iic hlu.le hθ θ'
+  have hright := exciseCrossing_eqOn_Ici hlu θ hθ'
+  have hmid := exciseCrossing_eqOn_Icc γ s r l u θ θ'
+  have hγ_cont : ContinuousOn γ (Icc a b) := hIcc ▸ hγ.continuousOn
+  have h₁ : ContinuousOn (TauCeti.Contour.exciseCrossing γ s r l u θ θ') (Icc a l) :=
+    (hγ_cont.mono (Icc_subset_Icc_right (by linarith))).congr
+      fun x hx => hleft (mem_Iic.mpr hx.2)
+  have h₂ : ContinuousOn (TauCeti.Contour.exciseCrossing γ s r l u θ θ') (Icc l u) :=
+    ((contDiff_circleCap s r l u θ θ').continuous.continuousOn).congr fun x hx => hmid hx
+  have h₃ : ContinuousOn (TauCeti.Contour.exciseCrossing γ s r l u θ θ') (Icc u b) :=
+    (hγ_cont.mono (Icc_subset_Icc_left (by linarith))).congr
+      fun x hx => hright (mem_Ici.mpr hx.1)
+  rw [hIcc, ← Icc_union_Icc_eq_Icc (by linarith : a ≤ u) (by linarith : u ≤ b),
+    ← Icc_union_Icc_eq_Icc (by linarith : a ≤ l) hlu.le]
+  exact ((h₁.union_of_isClosed h₂ isClosed_Icc isClosed_Icc).union_of_isClosed h₃
+    (isClosed_Icc.union isClosed_Icc) isClosed_Icc)
+
 /-- **The excised curve is piecewise `C¹`.** The two window endpoints join a piecewise-`C¹` curve to
 a smooth arc, so they are the only new breakpoints. -/
 theorem _root_.TauCeti.IsPiecewiseC1On.exciseCrossing (hγ : IsPiecewiseC1On γ a b) (hal : a < l)
     (hlu : l < u) (hub : u < b) (hθ : γ l = circleMap s r θ) (hθ' : γ u = circleMap s r θ') :
     IsPiecewiseC1On (TauCeti.Contour.exciseCrossing γ s r l u θ θ') a b := by
   have hab : a ≤ b := by linarith
-  have hIcc : uIcc a b = Icc a b := uIcc_of_le hab
   have hleft := exciseCrossing_eqOn_Iic hlu.le hθ θ'
   have hright := exciseCrossing_eqOn_Ici hlu θ hθ'
   have hmid := exciseCrossing_eqOn_Icc γ s r l u θ θ'
-  -- continuity, by gluing the three closed pieces
-  have hcont : ContinuousOn (TauCeti.Contour.exciseCrossing γ s r l u θ θ') (uIcc a b) := by
-    have hγ_cont : ContinuousOn γ (Icc a b) := hIcc ▸ hγ.continuousOn
-    have h₁ : ContinuousOn (TauCeti.Contour.exciseCrossing γ s r l u θ θ') (Icc a l) :=
-      (hγ_cont.mono (Icc_subset_Icc_right (by linarith))).congr
-        fun x hx => hleft (mem_Iic.mpr hx.2)
-    have h₂ : ContinuousOn (TauCeti.Contour.exciseCrossing γ s r l u θ θ') (Icc l u) :=
-      ((contDiff_circleCap s r l u θ θ').continuous.continuousOn).congr fun x hx => hmid hx
-    have h₃ : ContinuousOn (TauCeti.Contour.exciseCrossing γ s r l u θ θ') (Icc u b) :=
-      (hγ_cont.mono (Icc_subset_Icc_left (by linarith))).congr
-        fun x hx => hright (mem_Ici.mpr hx.1)
-    rw [hIcc, ← Icc_union_Icc_eq_Icc (by linarith : a ≤ u) (by linarith : u ≤ b),
-      ← Icc_union_Icc_eq_Icc (by linarith : a ≤ l) hlu.le]
-    exact ((h₁.union_of_isClosed h₂ isClosed_Icc isClosed_Icc).union_of_isClosed h₃
-      (isClosed_Icc.union isClosed_Icc) isClosed_Icc)
+  have hcont := exciseCrossing_continuousOn hγ hal hlu hub hθ hθ'
   obtain ⟨p, hp, hC1⟩ := hγ.exists_breakpoints
   refine IsPiecewiseC1On.of_breakpoints hcont (insert l (insert u p)) ?_ ?_
   · have hmin : min a b = a := min_eq_left hab

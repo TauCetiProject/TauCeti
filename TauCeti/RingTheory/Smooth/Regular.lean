@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Smooth.Flat
 public import Mathlib.RingTheory.Smooth.StandardSmoothOfFree
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 public import TauCeti.RingTheory.RegularLocalRing.Flat
+import TauCeti.RingTheory.EssentialFiniteness
 
 /-!
 # Smooth algebras over regular rings are regular
@@ -32,6 +33,8 @@ regularity ascends by `TauCeti.IsRegularLocalRing.of_flat_of_formallyUnramified`
 * `TauCeti.isRegularLocalRing_localization_of_isSmoothAt`: the localization of a finitely
   presented algebra over a regular ring at a prime where it is smooth is a regular local ring;
 * `TauCeti.IsRegularRing.of_smooth`: a smooth algebra over a regular ring is a regular ring.
+* `TauCeti.IsRegularLocalRing.of_formallySmooth`: a local algebra, essentially of finite type and
+  formally smooth over a regular ring, is a regular local ring.
 
 ## References
 
@@ -98,5 +101,20 @@ theorem isRegularLocalRing_localization_of_isSmoothAt [IsRegularRing R]
 theorem IsRegularRing.of_smooth [IsRegularRing R] [Algebra.Smooth R S] : IsRegularRing S where
   __ := Algebra.FiniteType.isNoetherianRing R S
   isRegularLocalRing_localization q _ := isRegularLocalRing_localization_of_isSmoothAt (R := R) q
+
+/-- A local algebra, essentially of finite type and formally smooth over a regular ring, is a
+regular local ring: it is the localization at a prime of a finitely presented algebra which is
+smooth at that prime. -/
+theorem IsRegularLocalRing.of_formallySmooth [IsRegularRing R] [IsLocalRing S]
+    [Algebra.EssFiniteType R S] [Algebra.FormallySmooth R S] : IsRegularLocalRing S := by
+  let T := Algebra.EssFiniteType.subalgebra R S
+  have : Algebra.FinitePresentation R T := Algebra.FinitePresentation.of_finiteType.mp inferInstance
+  -- `S` is the localization of `T` at the prime `q = 𝔪_S ∩ T`.
+  let q := (IsLocalRing.maximalIdeal S).comap (algebraMap T S)
+  have := Algebra.EssFiniteType.isLocalization_atPrime_subalgebra R S
+  let e : Localization.AtPrime q ≃ₐ[T] S := IsLocalization.algEquiv q.primeCompl _ _
+  have : Algebra.IsSmoothAt R q := Algebra.FormallySmooth.of_equiv (e.restrictScalars R).symm
+  have := isRegularLocalRing_localization_of_isSmoothAt (R := R) q
+  exact .of_ringEquiv e.toRingEquiv
 
 end TauCeti

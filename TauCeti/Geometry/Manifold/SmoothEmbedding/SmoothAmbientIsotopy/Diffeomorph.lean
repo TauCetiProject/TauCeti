@@ -21,9 +21,6 @@ Both statements are the specializations to bundled embeddings, and to a diffeomo
 for arbitrary bundled smooth maps; only the identification of the composite with the corresponding
 reindexing operation is done here.
 
-These are the compatibility results needed by Layer 4 of the GeometricTopology roadmap, in the
-milestone “equivalence in each presentation.”
-
 ## Main results
 
 * `TauCeti.SmoothEmbedding.smoothAmbientIsotopic_transDiffeomorph_final`: transport along the final
@@ -38,7 +35,7 @@ noncomputable section
 
 namespace TauCeti
 
-open scoped Manifold ContDiff
+open scoped _root_.Manifold ContDiff
 
 namespace SmoothEmbedding
 

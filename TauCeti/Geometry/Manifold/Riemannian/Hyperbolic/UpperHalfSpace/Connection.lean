@@ -108,7 +108,7 @@ omit [FiniteDimensional ℝ E] in
       contDiffAt_const).mdifferentiableAt one_ne_zero)
     (contMDiff_coe.of_le (show (2 : ℕ∞ω) ≤ ω from le_top) x) (by simp)
   rw [← h]
-  simp only [mpullback, TauCeti.mlieBracket_const_model_space, map_zero]
+  simp only [mpullback, mlieBracket_const_model_space, map_zero]
 
 omit [FiniteDimensional ℝ E] in
 private theorem mvfderiv_inner_constantField (u v w : P) (x : UpperHalfSpace E) :
@@ -228,8 +228,8 @@ value and the second input `u` is the direction of differentiation. -/
   have hc := TauCeti.Manifold.covariantDerivative_eq_add_christoffelForm b
     (cov.isCovariantDerivativeOn (s := e.baseSet)) hx (mdifferentiableAt_constantField v x)
   rw [frameCovariantDerivative_constantField b x v, zero_add] at hc
-  have hmap := TauCeti.Manifold.christoffelMap_apply b
-    (cov.isCovariantDerivativeOn (s := e.baseSet)) hx v u
+  have hmap := TauCeti.Manifold.christoffelMap_apply (x := x) b
+    (cov.isCovariantDerivativeOn (s := e.baseSet)) v u
   have he (a : P) : e.symmL ℝ x a = constantField a x := by
     exact (eventually_symmL_eq_constantField x).self_of_nhds a
   rw [he v, he u, ← hc] at hmap

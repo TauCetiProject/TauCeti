@@ -13,7 +13,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.PointConjugation
 
 Suppose a rational point `g` normalizes a homomorphism `D(X) → G`, with inverse conjugation
 inducing the automorphism `w` of the character group `X`. In every rational representation of
-`G`, the action of `g` carries the weight space of `x` onto that of `w x`.
+`G`, the action of `g` carries the weight space of `x` onto that of `w x`, giving a linear
+equivalence between them (`TauCeti.DiagonalizableGroup.weightSpaceEquivOfNormalizes`).
 
 Normalization is expressed by an equality of coordinate morphisms valid over every value
 algebra, including nonreduced ones. No smoothness, reducedness, finite type, or field
@@ -54,25 +55,6 @@ theorem basePointsRepresentation_mem_weightSpace
   rw [← hg] at hw
   simpa only [AlgEquiv.coe_toAlgHom, MonoidAlgebra.domCongr_single, one_mul] using hw
 
-/-- The normalization equation for inverse conjugation also gives its inverse equation. -/
-private theorem inverse_normalization
-    (π : H →ₐc[R] MonoidAlgebra R X) (g : WithConv (H →ₐ[R] R)) (w : X ≃* X)
-    (hg : π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
-      (MonoidAlgebra.domCongr R R w).toAlgHom.comp π.toAlgHom) :
-    π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g) =
-      (MonoidAlgebra.domCongr R R w.symm).toAlgHom.comp π.toAlgHom := by
-  apply AlgHom.ext
-  intro h
-  have hc := AlgHom.congr_fun (HopfAlgebra.pointConjugationAlgHom_mul g g⁻¹) h
-  simp only [mul_inv_cancel, HopfAlgebra.pointConjugationAlgHom_one,
-    AlgHom.id_apply, AlgHom.comp_apply] at hc
-  have he := AlgHom.congr_fun hg (HopfAlgebra.pointConjugationAlgHom g h)
-  simp only [AlgHom.comp_apply] at he
-  rw [← hc] at he
-  apply (MonoidAlgebra.domCongr R R w).injective
-  simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ← MonoidAlgebra.domCongr_symm,
-    AlgEquiv.apply_symm_apply] using he.symm
-
 /-- A normalizing point carries a weight space onto the permuted weight space. -/
 theorem map_weightSpace_basePointsRepresentation
     (π : H →ₐc[R] MonoidAlgebra R X) (g : WithConv (H →ₐ[R] R)) (w : X ≃* X)
@@ -87,10 +69,33 @@ theorem map_weightSpace_basePointsRepresentation
     apply Submodule.mem_map.mpr
     refine ⟨Comodule.basePointsRepresentation (H := H) V g⁻¹ v, ?_, ?_⟩
     · have hv' := basePointsRepresentation_mem_weightSpace π g⁻¹ w.symm
-          (by simpa only [inv_inv] using inverse_normalization π g w hg) hv
+          (by simpa only [inv_inv, MonoidAlgebra.domCongr_symm] using
+            HopfAlgebra.comp_pointConjugationAlgHom_eq_symm_comp π.toAlgHom g _ hg) hv
       rw [MulEquiv.symm_apply_apply] at hv'
       exact hv'
     · exact Representation.self_inv_apply _ g v
+
+/-- **A normalizing point identifies the weight space of `x` with that of `w x`**, by its action
+on the representation. -/
+noncomputable def weightSpaceEquivOfNormalizes
+    (π : H →ₐc[R] MonoidAlgebra R X) (g : WithConv (H →ₐ[R] R)) (w : X ≃* X)
+    (hg : π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
+      (MonoidAlgebra.domCongr R R w).toAlgHom.comp π.toAlgHom) (x : X) :
+    weightSpace V π.toCoalgHom x ≃ₗ[R] weightSpace V π.toCoalgHom (w x) :=
+  (Submodule.equivMapOfInjective _
+      (Representation.apply_bijective (Comodule.basePointsRepresentation (H := H) V) g).1 _).trans
+    (LinearEquiv.ofEq _ _ (map_weightSpace_basePointsRepresentation π g w hg x))
+
+/-- The identification of weight spaces is the action of the normalizing point. -/
+@[simp]
+theorem coe_weightSpaceEquivOfNormalizes_apply
+    (π : H →ₐc[R] MonoidAlgebra R X) (g : WithConv (H →ₐ[R] R)) (w : X ≃* X)
+    (hg : π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
+      (MonoidAlgebra.domCongr R R w).toAlgHom.comp π.toAlgHom) (x : X)
+    (v : weightSpace V π.toCoalgHom x) :
+    (weightSpaceEquivOfNormalizes π g w hg x v : V) =
+      Comodule.basePointsRepresentation (H := H) V g v :=
+  (rfl)
 
 /-- Normalization preserves whether a weight space is nonzero. -/
 theorem weightSpace_apply_ne_bot_iff

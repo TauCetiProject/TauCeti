@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 
 /-!
 # Smooth bundles of continuous alternating maps
@@ -19,6 +20,11 @@ Mathlib's `Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap` prov
 same construction over characteristic-zero fields, together with the fibre-coordinate
 regularity criteria such as `contMDiffAt_continuousAlternatingMap_bundle`. The results here
 remove the characteristic-zero assumption.
+
+A family of alternating maps of two vectors whose values are given by a `C^n` section of the
+bundle of bilinear maps is itself a `C^n` section of the alternating-map bundle
+(`TauCeti.contMDiffAt_continuousAlternatingMap_bundle_of_bilinear`). This lets a two-form be
+built from a smooth bilinear tensor field without repeating a coordinate computation.
 
 The coordinate-change proof follows Floris van Doorn's smooth Hom-bundle construction
 in `Mathlib.Geometry.Manifold.VectorBundle.Hom`, using the topological alternating-map
@@ -149,5 +155,44 @@ instance instIsContMDiffContinuousAlternatingMapVectorPrebundle :
     exact (not_le_of_gt (WithTop.coe_lt_top (⊤ : ℕ∞))) hle |>.elim)
 
 end FiniteOrder
+
+section Bilinear
+
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
+  [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
+
+/-- A family of alternating maps of two vectors whose values are given by a `C^n` section of
+the bundle of bilinear maps is a `C^n` section of the alternating-map bundle. -/
+theorem contMDiffAt_continuousAlternatingMap_bundle_of_bilinear
+    {α : ∀ x, E₁ x [⋀^Fin 2]→L[𝕜] E₂ x} {β : ∀ x, E₁ x →L[𝕜] E₁ x →L[𝕜] E₂ x} {x₀ : B}
+    (hβ : ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₁ →L[𝕜] F₂)) n
+      (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₁ →L[𝕜] F₂)
+        (E := fun x ↦ E₁ x →L[𝕜] E₁ x →L[𝕜] E₂ x) x (β x)) x₀)
+    (hα : ∀ x v, α x v = β x (v 0) (v 1)) :
+    ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁ [⋀^Fin 2]→L[𝕜] F₂)) n
+      (fun x ↦ TotalSpace.mk' (F₁ [⋀^Fin 2]→L[𝕜] F₂)
+        (E := fun x ↦ E₁ x [⋀^Fin 2]→L[𝕜] E₂ x) x (α x)) x₀ := by
+  rw [contMDiffAt_continuousAlternatingMap_bundle]
+  refine ⟨contMDiffAt_id, contMDiffAt_continuousAlternatingMap_apply.2 fun v ↦ ?_⟩
+  let e := FiberBundle.trivializationAt F₁ E₁ x₀
+  have he : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F₁ E₁ x₀
+  have hs (i : Fin 2) : ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁)) n
+      (fun y ↦ TotalSpace.mk' F₁ y (e.symm y (v i))) x₀ := by
+    rw [contMDiffAt_section]
+    refine (contMDiffAt_const (c := v i)).congr_of_eventuallyEq ?_
+    filter_upwards [e.open_baseSet.mem_nhds he] with y hy
+    exact congr(Prod.snd $(e.apply_mk_symm hy (v i)))
+  have hc := (contMDiffAt_totalSpace.1 ((hβ.clm_bundle_apply (hs 0)).clm_bundle_apply (hs 1))).2
+  refine hc.congr_of_eventuallyEq ?_
+  let e' := FiberBundle.trivializationAt F₂ E₂ x₀
+  have he' : x₀ ∈ e'.baseSet := FiberBundle.mem_baseSet_trivializationAt F₂ E₂ x₀
+  filter_upwards [e.open_baseSet.mem_nhds he, e'.open_baseSet.mem_nhds he'] with y hy hy'
+  simp only [ContinuousAlternatingMap.inCoordinates,
+    ContinuousLinearMap.compContinuousAlternatingMap_coe,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, hα, Function.comp_apply]
+  rw [Trivialization.symmL_apply _ hy, Trivialization.symmL_apply _ hy]
+  exact e'.continuousLinearMapAt_apply_of_mem 𝕜 hy' _
+
+end Bilinear
 
 end TauCeti
