@@ -1303,7 +1303,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_image_of_perturbationPullbac
   -- The half-open rectangle and the closed one differ by a null set.
   have hae : Icc a₁ b₁ ×ˢ Ico t₀ t₁ =ᵐ[volume] Icc ((a₁, t₀) : ℝ × ℝ) (b₁, t₁) := by
     rw [Icc_prod_eq, Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) Ico_ae_eq_Icc
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc
   simp only [setIntegral_congr_set hae]
   have hIccU : Icc ((a₁, t₀) : ℝ × ℝ) (b₁, t₁) ⊆ U := by
     rw [Icc_prod_eq]
