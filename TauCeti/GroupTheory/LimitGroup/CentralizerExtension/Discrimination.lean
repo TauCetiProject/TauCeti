@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
 public import TauCeti.GroupTheory.LimitGroup.ResiduallyFree
-public import TauCeti.GroupTheory.PushoutI.Reduced
 public import Mathlib.Data.Matrix.Mul
 import TauCeti.Data.Matrix.DotProduct
 
@@ -96,7 +95,8 @@ private theorem retraction_pushoutI_of_true (k : Fin n → ℤ)
     (p : centralizer {u} × (Fin n → Multiplicative ℤ)) :
     retraction k (Monoid.PushoutI.of (φ := centralizerExtMap u n) true p) =
       p.1 * u ^ (k ⬝ᵥ fun i => (p.2 i).toAdd) := by
-  rw [pushoutI_of_true, map_mul, retraction_of, retraction_zpowersPiHom]
+  obtain ⟨c, v⟩ := p
+  rw [← ofProd_def, ofProd_apply, map_mul, retraction_of, retraction_zpowersPiHom]
 
 /-- The data fed to the big powers property by a list of letters of `G(u, ℤⁿ)`: a leading factor,
 and for every letter `(c, v)` of `C_G(u) × ℤⁿ` its exponent vector `v` together with the separator
@@ -183,17 +183,6 @@ private theorem isChain_bpData_snd {L : List (Σ b, CentralizerExtFactor u n b)}
         exact fun h => ha (by simpa using mul_mem (inv_mem p.1.2) h)
       · exact absurd (List.isChain_cons_cons.1 hc).1 (by simp)
 
-/-- The normal form for the amalgam `G(u, ℤⁿ)`: every element is `h * a₁ * ⋯ * aᵣ` with `h ∈ G`
-and letters `aⱼ` alternately in the two factors, none of them in `C_G(u)`. -/
-private theorem exists_eq_of_mul_prod (x : CentralizerExt u n) :
-    ∃ (h : G) (L : List (Σ b, CentralizerExtFactor u n b)),
-      L.IsChain (fun l l' => l.1 ≠ l'.1) ∧ (∀ l ∈ L, l.2 ∉ (centralizerExtMap u n l.1).range) ∧
-      x = of h * (L.map fun l => Monoid.PushoutI.of (φ := centralizerExtMap u n) l.1 l.2).prod := by
-  obtain ⟨h, L, hc, hred, rfl⟩ :=
-    Monoid.PushoutI.exists_eq_base_mul_list_prod (centralizerExtMap_injective u n) x
-  exact ⟨h, L, hc, hred, by
-    rw [← Monoid.PushoutI.of_apply_eq_base _ false, centralizerExtMap_false, coe_subtype, of_def]⟩
-
 /-- A product of letters of the factor `G` lies in `G`. -/
 private theorem prod_mem_range_of {L : List (Σ b, CentralizerExtFactor u n b)}
     (hL : ∀ l ∈ L, l.1 = false) :
@@ -212,7 +201,7 @@ theorem exists_finset_forall_retraction_smul_ne_one (hBP : IsBP G) (hG : IsCSA G
     ∃ V : Finset (Fin n → ℤ), (∀ v ∈ V, v ≠ 0) ∧ ∀ w : Fin n → ℤ, (∀ v ∈ V, w ⬝ᵥ v ≠ 0) →
       ∃ N : ℕ, ∀ m : ℕ, N ≤ m → retraction ((m : ℤ) • w) x ≠ 1 := by
   classical
-  obtain ⟨h, L, hc, hred, rfl⟩ := exists_eq_of_mul_prod x
+  obtain ⟨h, L, hc, hred, -, rfl⟩ := exists_eq_of_mul_list_prod x
   have hρ (k : Fin n → ℤ) : retraction k (of h * (L.map fun l =>
       Monoid.PushoutI.of (φ := centralizerExtMap u n) l.1 l.2).prod) =
       h * (bpData L).1 * ((bpData L).2.map fun q => u ^ (k ⬝ᵥ q.1) * q.2).prod := by
