@@ -14,9 +14,9 @@ public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 /-!
 # Inner automorphisms act trivially on continuous cohomology
 
-Let `G` be a locally compact topological group, `X` a smooth discrete topological representation
-of `G`, and let `g : G`. The compatible pair consisting of the inner automorphism
-`x ↦ g⁻¹ * x * g` of `G` and the
+Let `G` be a locally compact topological group, `X` a topological representation of `G`
+(without smoothness or discreteness assumptions), and let `g : G`. The compatible pair consisting
+of the inner automorphism `x ↦ g⁻¹ * x * g` of `G` and the
 action `X.ρ g` of `g` on the coefficients induces an endomorphism of `Hⁿ(G, X)`, the conjugation
 map `g_*` of Neukirch–Schmidt–Wingberg (Chapter I, §5). This file proves that it is the identity
 in every degree (`TauCeti.ContinuousCohomology.map_eq_id_of_inner`), for Mathlib's canonical
