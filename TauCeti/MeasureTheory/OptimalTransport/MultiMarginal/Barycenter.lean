@@ -470,7 +470,7 @@ theorem iInf_sum_mul_wassersteinEDist_rpow_eq (hp : 1 ≤ p) (hw : ∑ j, w j = 
     have hγ : Measure.IsMultiCoupling (Measure.pi μ) μ := Measure.isMultiCoupling_pi μ
     have hd : IsProbabilityMeasure (Measure.dirac x₀) := inferInstance
     simp only [ENNReal.toReal_top, ENNReal.rpow_zero, mul_one, hsum]
-    refine le_antisymm (le_iInf₂ fun γ hγ ↦ ?_) (le_iInf₂ fun ν hν ↦ ?_)
+    refine le_antisymm (le_iInf₂ fun γ hγ ↦ ?_) (le_iInf₂ fun ν _ ↦ ?_)
     · have := hγ.isProbabilityMeasure j₀
       refine (iInf₂_le (Measure.dirac x₀) hd).trans_eq ?_
       simp
