@@ -91,12 +91,6 @@ lemma boundaryPairsMap_comp {u' : P₂ ⟶ P₃} {v' : K₂ ⟶ K₃}
       boundaryPairsMap huv n ≫ boundaryPairsMap huv' n :=
   pullback.hom_ext (by simp [cyclesMap_comp]) (by simp)
 
-omit [Abelian C] in
-@[reassoc]
-private lemma map_comp_app {E : C ⥤ C} (p : E ⟶ 𝟭 C) {X Y : C} (h : X ⟶ Y) :
-    E.map h ≫ p.app Y = p.app X ≫ h := by
-  simp
-
 private def cellComplexMap (E : C ⥤ C) (huv : u ≫ f₂ = f₁ ≫ v) :
     graded (.up ℤ) (fun n ↦ E.obj (boundaryPairs f₁ n)) ⟶
       graded (.up ℤ) (fun n ↦ E.obj (boundaryPairs f₂ n)) where
@@ -109,7 +103,7 @@ private lemma attachingMap_comm (E : C ⥤ C) (p : E ⟶ 𝟭 C) (huv : u ≫ f�
   ext n
   dsimp [cellComplexMap]
   simp only [Category.assoc]
-  rw [← cyclesMap_i, ← boundaryPairsMap_fst_assoc huv n, map_comp_app_assoc]
+  rw [← cyclesMap_i, ← boundaryPairsMap_fst_assoc huv n, p.naturality_assoc, Functor.id_map]
 
 private def attachStepMap (E : C ⥤ C) (p : E ⟶ 𝟭 C) (huv : u ≫ f₂ = f₁ ≫ v) :
     mappingCone (attachingMap f₁ fun n ↦ p.app (boundaryPairs f₁ n)) ⟶
@@ -131,7 +125,8 @@ private lemma attachStepMap_comp_attachDesc (E : C ⥤ C) (p : E ⟶ 𝟭 C) (hu
       mappingCone.inl_v_desc_f, mappingCone.inl_v_desc_f_assoc, cellComplexMap]
     dsimp [boundaryPrimitive]
     simp only [Category.assoc]
-    rw [map_comp_app_assoc, boundaryPairsMap_snd_assoc huv (q + 1), XIsoOfEq_hom_naturality]
+    rw [p.naturality_assoc, Functor.id_map, boundaryPairsMap_snd_assoc huv (q + 1),
+      XIsoOfEq_hom_naturality]
   · simp only [attachStepMap, comp_f, mappingCone.inr_f_map_f_assoc]
     have h₁ := HomologicalComplex.congr_hom
       (inr_attachDesc f₂ fun n ↦ p.app (boundaryPairs f₂ n)) q
@@ -144,27 +139,28 @@ private lemma inr_attachStepMap (E : C ⥤ C) (p : E ⟶ 𝟭 C) (huv : u ≫ f�
     mappingCone.inr (attachingMap f₁ fun n ↦ p.app (boundaryPairs f₁ n)) ≫
       attachStepMap E p huv =
         u ≫ mappingCone.inr (attachingMap f₂ fun n ↦ p.app (boundaryPairs f₂ n)) := by
-  ext q
-  exact mappingCone.inr_f_map_f _ _ _ _ _ q
+  simp [attachStepMap, mappingCone.map]
 
 private lemma attachStepMap_id (E : C ⥤ C) (p : E ⟶ 𝟭 C) (f : P₁ ⟶ K₁) :
     attachStepMap E p (u := 𝟙 P₁) (v := 𝟙 K₁) (by simp) =
       𝟙 (mappingCone (attachingMap f fun n ↦ p.app (boundaryPairs f n))) := by
-  ext q
-  apply mappingCone.ext_from _ (q + 1) q rfl <;>
-    simp [attachStepMap, cellComplexMap]
+  dsimp only [attachStepMap]
+  rw [← mappingCone.map_id]
+  congr 1
+  ext n
+  simp [cellComplexMap]
 
 private lemma attachStepMap_comp (E : C ⥤ C) (p : E ⟶ 𝟭 C) {u' : P₂ ⟶ P₃} {v' : K₂ ⟶ K₃}
     (huv : u ≫ f₂ = f₁ ≫ v) (huv' : u' ≫ f₃ = f₂ ≫ v') :
     attachStepMap E p (u := u ≫ u') (v := v ≫ v')
         (by rw [Category.assoc, huv', ← Category.assoc, huv, Category.assoc]) =
       attachStepMap E p huv ≫ attachStepMap E p huv' := by
-  ext q
-  apply mappingCone.ext_from _ (q + 1) q rfl
-  · simp only [attachStepMap, comp_f, mappingCone.inl_v_map_f, mappingCone.inl_v_map_f_assoc,
-      cellComplexMap]
-    rw [boundaryPairsMap_comp huv huv' (q + 1), Functor.map_comp, Category.assoc]
-  · simp [attachStepMap]
+  dsimp only [attachStepMap]
+  rw [← mappingCone.map_comp]
+  congr 1
+  ext n
+  dsimp [cellComplexMap]
+  rw [boundaryPairsMap_comp huv huv', E.map_comp]
 
 end StepMap
 
@@ -178,7 +174,7 @@ private def stageMapAux {K L : CochainComplex C ℤ} (g : K ⟶ L) :
   | 0 => ⟨{ f := fun n ↦ E.map (cyclesMap g n), comm' := fun _ _ _ ↦ by dsimp [stage]; simp }, by
       ext n
       dsimp [stage]
-      rw [map_comp_app_assoc, cyclesMap_i, Category.assoc]⟩
+      rw [p.naturality_assoc, Functor.id_map, cyclesMap_i, Category.assoc]⟩
   | k + 1 => ⟨attachStepMap E p (stageMapAux g k).2,
       attachStepMap_comp_attachDesc E p (stageMapAux g k).2⟩
 
@@ -254,8 +250,8 @@ lemma sequenceMap_comp {K L M : CochainComplex C ℤ} (g₁ : K ⟶ L) (g₂ : L
 
 /-- The functor sending a cochain complex `K` to its cell-attachment sequence
 `kFlatResolution.sequence E.obj p.app K`. -/
--- Expose so that `((sequenceFunctor E p).obj K)` computes to `sequence E.obj p.app K`.
-@[expose]
+-- Expose and mark `implicit_reducible` so `(sequenceFunctor E p).obj K` unifies with `sequence`.
+@[expose, implicit_reducible]
 def sequenceFunctor : CochainComplex C ℤ ⥤ (ℕ ⥤ CochainComplex C ℤ) where
   obj K := sequence E.obj p.app K
   map g := sequenceMap E p g
@@ -276,18 +272,16 @@ section Colimit
 
 variable [HasColimitsOfShape ℕ C]
 
-/-- The functorial K-flat resolution `CochainComplex C ℤ ⥤ CochainComplex C ℤ` associated to a
-functor `E : C ⥤ C` and a natural transformation `p : E ⟶ 𝟭 C`. -/
--- Expose so that `(functor E p).obj K` computes to `kFlatResolution E.obj p.app K`.
-@[expose]
-def functor : CochainComplex C ℤ ⥤ CochainComplex C ℤ where
-  obj K := kFlatResolution E.obj p.app K
-  map g := colimMap (sequenceMap E p g)
-  map_id K := colimit.hom_ext fun k ↦ by
-    rw [ι_colimMap, sequenceMap_id, NatTrans.id_app, Category.id_comp, Category.comp_id]
-  map_comp g₁ g₂ := colimit.hom_ext fun k ↦ by
-    rw [ι_colimMap, ι_colimMap_assoc, ι_colimMap, sequenceMap_comp, NatTrans.comp_app,
-      Category.assoc]
+/-- The functor `CochainComplex C ℤ ⥤ CochainComplex C ℤ` sending each complex `K` to the
+cell-attachment colimit `kFlatResolution E.obj p.app K` associated to `E : C ⥤ C` and
+`p : E ⟶ 𝟭 C`. When `C` is monoidal preadditive with exact countable coproducts and sequential
+colimits commuting with tensoring and every `E.obj X` is flat, its values are K-flat; when
+moreover each `p.app X` is an epimorphism and sequential colimits are exact, `πNatTrans E p` is a
+componentwise quasi-isomorphism. -/
+-- Expose and mark `implicit_reducible` so `(functor E p).obj K` unifies with `kFlatResolution`.
+@[expose, implicit_reducible]
+def functor : CochainComplex C ℤ ⥤ CochainComplex C ℤ :=
+  sequenceFunctor E p ⋙ colim
 
 /-- On objects, `kFlatResolution.functor E p` agrees with `kFlatResolution E.obj p.app`. -/
 @[simp]
@@ -297,26 +291,39 @@ lemma functor_obj (K : CochainComplex C ℤ) :
 
 /-- On morphisms, `kFlatResolution.functor E p` intertwines the colimit injections with
 `stageMap`. -/
-@[simp, reassoc]
+@[reassoc (attr := simp)]
 lemma ι_functor_map {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
     colimit.ι (sequence E.obj p.app K) k ≫ (functor E p).map g =
       stageMap E p g k ≫ colimit.ι (sequence E.obj p.app L) k :=
   ι_colimMap (sequenceMap E p g) k
 
-/-- The resolution morphisms `kFlatResolution.π` assemble into a natural transformation
+/-- The comparison morphisms `kFlatResolution.π` assemble into a natural transformation
 `kFlatResolution.functor E p ⟶ 𝟭 (CochainComplex C ℤ)`. -/
 def πNatTrans : functor E p ⟶ 𝟭 (CochainComplex C ℤ) where
   app K := π E.obj p.app K
-  naturality {K L} g := colimit.hom_ext fun k ↦ by
-    dsimp [functor]
-    rw [ι_colimMap_assoc, sequenceMap_app, ι_π, ι_π_assoc]
-    exact stageMap_comp_snd E p g k
+  naturality {K L} g := colimit.hom_ext (F := sequence E.obj p.app K) fun k ↦
+    (ι_functor_map_assoc E p g k (π E.obj p.app L)).trans <| (Category.assoc _ _ _).trans <|
+      (congrArg (stageMap E p g k ≫ ·) (ι_π E.obj p.app L k)).trans <|
+        (stageMap_comp_snd E p g k).trans (ι_π_assoc E.obj p.app K k g).symm
 
 /-- Each component of `πNatTrans E p` is `kFlatResolution.π E.obj p.app`. -/
 @[simp]
 lemma πNatTrans_app (K : CochainComplex C ℤ) :
     (πNatTrans E p).app K = π E.obj p.app K :=
   (rfl)
+
+/-- Naturality of `kFlatResolution.π` with respect to `kFlatResolution.functor E p`. -/
+@[reassoc (attr := simp)]
+lemma functor_map_π {K L : CochainComplex C ℤ} (g : K ⟶ L) :
+    (functor E p).map g ≫ π E.obj p.app L = π E.obj p.app K ≫ g :=
+  (πNatTrans E p).naturality g
+
+/-- When sequential colimits in `C` are exact and every `p.app X` is an epimorphism, each component
+of `kFlatResolution.πNatTrans E p` belongs to `quasiIso C (.up ℤ)`. -/
+lemma mem_quasiIso_πNatTrans_app [HasExactColimitsOfShape ℕ C] [∀ X : C, Epi (p.app X)]
+    (K : CochainComplex C ℤ) :
+    quasiIso C (.up ℤ) ((πNatTrans E p).app K) :=
+  (mem_quasiIso_iff _).2 (inferInstanceAs (QuasiIso (π E.obj p.app K)))
 
 end Colimit
 
@@ -402,50 +409,36 @@ lemma kFlatResolution.liftFunctor_map_hom {K L : CochainComplex C ℤ} (g : K �
     ((kFlatResolution.liftFunctor E p).map g).hom = (kFlatResolution.functor E p).map g :=
   (rfl)
 
-/-- The resolution counit `kFlatResolution.liftFunctor E p ⋙ (kFlatLocalizerMorphism C).functor ⟶
-𝟭 (CochainComplex C ℤ)`. -/
-def kFlatResolution.liftπ :
-    kFlatResolution.liftFunctor E p ⋙ (kFlatLocalizerMorphism C).functor ⟶
-      𝟭 (CochainComplex C ℤ) where
-  app K := kFlatResolution.π E.obj p.app K
-  naturality := (kFlatResolution.πNatTrans E p).naturality
-
-/-- Each component of `kFlatResolution.liftπ E p` is `kFlatResolution.π E.obj p.app`. -/
-@[simp]
-lemma kFlatResolution.liftπ_app (K : CochainComplex C ℤ) :
-    (kFlatResolution.liftπ E p).app K = kFlatResolution.π E.obj p.app K :=
-  (rfl)
-
 variable [∀ X : C, Epi (p.app X)]
-
-/-- Each component of `kFlatResolution.liftπ E p` is a quasi-isomorphism. -/
-lemma kFlatResolution.mem_quasiIso_liftπ_app (K : CochainComplex C ℤ) :
-    quasiIso C (.up ℤ) ((kFlatResolution.liftπ E p).app K) :=
-  (mem_quasiIso_iff _).2 (inferInstanceAs (QuasiIso (kFlatResolution.π E.obj p.app K)))
 
 include E p
 
-/-- In an abelian monoidal category with exact countable coproducts and sequential colimits
-commuting with tensoring, a functorial flat epimorphic cover makes `kFlatLocalizerMorphism C` a
-localized equivalence. -/
+/-- In an abelian monoidal preadditive category with exact countable coproducts and sequential
+colimits commuting with tensoring, a functorial flat epimorphic cover makes
+`kFlatLocalizerMorphism C` a localized equivalence. -/
 theorem isLocalizedEquivalence_kFlatLocalizerMorphism :
     (kFlatLocalizerMorphism C).IsLocalizedEquivalence :=
   (kFlatLocalizerMorphism C).isLocalizedEquivalence_of_functorial_left_resolutions
-    (kFlatResolution.liftπ E p) (kFlatResolution.mem_quasiIso_liftπ_app E p) rfl
+    (ρ := kFlatResolution.liftFunctor E p)
+    (kFlatResolution.πNatTrans E p) (kFlatResolution.mem_quasiIso_πNatTrans_app E p) rfl
 
-/-- Under a functorial flat epimorphic cover, every morphism in `CochainComplex C ℤ` admits a
-left resolution by a morphism of K-flat complexes. -/
+/-- In an abelian monoidal preadditive category with exact countable coproducts and sequential
+colimits commuting with tensoring, a functorial flat epimorphic cover gives every morphism in
+`CochainComplex C ℤ` a left resolution by a morphism of K-flat complexes. -/
 theorem hasLeftResolutions_arrow_kFlatLocalizerMorphism :
     (kFlatLocalizerMorphism C).arrow.HasLeftResolutions :=
   (kFlatLocalizerMorphism C).hasLeftResolutions_arrow_of_functorial_resolutions
-    (kFlatResolution.liftπ E p) (kFlatResolution.mem_quasiIso_liftπ_app E p)
+    (ρ := kFlatResolution.liftFunctor E p)
+    (kFlatResolution.πNatTrans E p) (kFlatResolution.mem_quasiIso_πNatTrans_app E p)
 
-/-- Under a functorial flat epimorphic cover, the category of K-flat left resolutions of any
-cochain complex `K` is connected. -/
+/-- In an abelian monoidal preadditive category with exact countable coproducts and sequential
+colimits commuting with tensoring, a functorial flat epimorphic cover makes the category of K-flat
+left resolutions of any cochain complex `K` connected. -/
 theorem isConnected_leftResolution_kFlatLocalizerMorphism (K : CochainComplex C ℤ) :
     IsConnected ((kFlatLocalizerMorphism C).LeftResolution K) :=
   (kFlatLocalizerMorphism C).isConnected_leftResolution_of_functorial_resolutions
-    (kFlatResolution.liftπ E p) (kFlatResolution.mem_quasiIso_liftπ_app E p) rfl K
+    (ρ := kFlatResolution.liftFunctor E p)
+    (kFlatResolution.πNatTrans E p) (kFlatResolution.mem_quasiIso_πNatTrans_app E p) rfl K
 
 /-- **The K-flat left derivability structure.** Let `C` be an abelian monoidal preadditive
 category in which countable coproducts and sequential colimits are exact and commute with
@@ -456,7 +449,8 @@ structure with respect to quasi-isomorphisms. -/
 theorem isLeftDerivabilityStructure_kFlatLocalizerMorphism :
     (kFlatLocalizerMorphism C).IsLeftDerivabilityStructure :=
   (kFlatLocalizerMorphism C).isLeftDerivabilityStructure_of_functorial_resolutions
-    (kFlatResolution.liftπ E p) (kFlatResolution.mem_quasiIso_liftπ_app E p) rfl
+    (ρ := kFlatResolution.liftFunctor E p)
+    (kFlatResolution.πNatTrans E p) (kFlatResolution.mem_quasiIso_πNatTrans_app E p) rfl
 
 end WithCover
 

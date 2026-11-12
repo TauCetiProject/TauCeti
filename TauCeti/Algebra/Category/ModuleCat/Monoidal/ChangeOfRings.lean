@@ -16,10 +16,12 @@ braiding on module categories.
 
 For a morphism `f : A →+* P` and a `P`-module `M`, tensoring an extension of scalars with `M`
 over `P` is tensoring with `M` over `A`: `M ⊗[P] (P ⊗[A] X) ≅ M ⊗[A] X`, naturally in the
-`A`-module `X` (`ModuleCat.extendScalarsCompTensorLeftIso`). Taking `M = P` identifies
-`extendScalars f ⋙ restrictScalars f` with `tensorLeft ((restrictScalars f).obj (of P P))`
-(`ModuleCat.extendScalarsCompRestrictScalarsIso`). This computes `Tor` over `A` by a
+`A`-module `X` (`ModuleCat.extendScalarsCompTensorLeftIso`). This computes `Tor` over `A` by a
 projective resolution over `P` after a flat extension of scalars.
+
+Taking `M = P` identifies `extendScalars f ⋙ restrictScalars f` with
+`tensorLeft ((restrictScalars f).obj (of P P))` (`ModuleCat.extendScalarsCompRestrictScalarsIso`),
+reducing homology and quasi-isomorphism preservation of scalar extension to left tensoring by `P`.
 -/
 
 public section
@@ -108,13 +110,27 @@ theorem extendScalarsCompRestrictScalarsIso_hom_app_tmul (X : ModuleCat.{u} A) (
         (restrictScalars f).obj (of P P) ⊗ X) → _)
         ((extendScalarsCompRestrictScalarsIso f).hom.app X) (s ⊗ₜ[A, f] x) =
       TensorProduct.tmul A (M := (restrictScalars f).obj (of P P)) (N := X) s x := by
-  dsimp [extendScalarsCompRestrictScalarsIso]
-  change (Hom.hom ((extendScalarsCompTensorLeftIso f (of P P)).hom.app X))
-    (TensorProduct.tmul P (M := of P P) (N := (extendScalars f).obj X) (1 : P) (s ⊗ₜ[A, f] x)) = _
-  rw [extendScalarsCompTensorLeftIso_hom_app_tmul]
-  exact congrArg
-    (fun p : P ↦ TensorProduct.tmul A (M := (restrictScalars f).obj (of P P)) (N := X) p x)
-    (mul_one s)
+  let y : (restrictScalars f).obj ((extendScalars f).obj X) := s ⊗ₜ[A, f] x
+  let g₁ := (restrictScalars f).map (λ_ ((extendScalars f).obj X)).inv
+  let g₂ := (extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} P))).hom.app X
+  have happ : (extendScalarsCompRestrictScalarsIso f).hom.app X = g₁ ≫ g₂ := by
+    simp only [extendScalarsCompRestrictScalarsIso, Iso.trans_hom, Functor.isoWhiskerLeft_hom,
+      Functor.isoWhiskerRight_hom, Iso.symm_hom, NatTrans.comp_app, Functor.whiskerLeft_app,
+      Functor.whiskerRight_app, Functor.leftUnitor_inv_app, leftUnitorNatIso_inv_app,
+      Category.id_comp, g₁, g₂]
+  have hunit : Hom.hom g₁ y =
+      TensorProduct.tmul P (M := 𝟙_ (ModuleCat.{u} P)) (N := (extendScalars f).obj X)
+        (1 : 𝟙_ (ModuleCat.{u} P)) (s ⊗ₜ[A, f] x) :=
+    (restrictScalars.map_apply f (λ_ ((extendScalars f).obj X)).inv y).trans
+      (MonoidalCategory.leftUnitor_inv_apply (M := (extendScalars f).obj X) (s ⊗ₜ[A, f] x))
+  exact (congrArg (fun g ↦ Hom.hom g y) happ).trans <|
+    (ModuleCat.comp_apply g₁ g₂ y).trans <|
+      (congrArg (Hom.hom g₂) hunit).trans <|
+        (extendScalarsCompTensorLeftIso_hom_app_tmul f (𝟙_ (ModuleCat.{u} P)) X
+          (1 : 𝟙_ (ModuleCat.{u} P)) s x).trans <|
+          congrArg
+            (fun p : P ↦ TensorProduct.tmul A (M := (restrictScalars f).obj (of P P)) (N := X) p x)
+            (mul_one s)
 
 /-- The inverse of `extendScalarsCompRestrictScalarsIso` sends `s ⊗ x` to `s ⊗ x`. -/
 @[simp]
@@ -126,9 +142,8 @@ theorem extendScalarsCompRestrictScalarsIso_inv_app_tmul
         (TensorProduct.tmul A (M := (restrictScalars f).obj (of P P)) (N := X) s x) =
       (s : P) ⊗ₜ[A, f] x := by
   let e := (extendScalarsCompRestrictScalarsIso f).app X
-  rw [← extendScalarsCompRestrictScalarsIso_hom_app_tmul (f := f) X (s : P) x]
-  change (Hom.hom (e.hom ≫ e.inv)) ((s : P) ⊗ₜ[A, f] x) = _
-  rw [e.hom_inv_id]
-  rfl
+  exact (congrArg (Hom.hom e.inv)
+    (extendScalarsCompRestrictScalarsIso_hom_app_tmul f X (s : P) x).symm).trans
+    (ModuleCat.inv_hom_apply e ((s : P) ⊗ₜ[A, f] x))
 
 end ModuleCat
