@@ -432,7 +432,7 @@ theorem monotoneOn_setIntegral_ball_inter_normalHalfSpace_norm_sub_sq
       ‖f x - WithLp.toLp 2
         ((⨍ y in ball x₀ s ∩ (normalHalfSpace (E := E) a : Set _), f y).fst, 0)‖ ^ 2)
       (Ioc 0 R) := by
-  intro s hs s' hs' hss'
+  intro s _ s' hs' hss'
   have hsub : ball x₀ s ∩ (normalHalfSpace (E := E) a : Set _) ⊆
       ball x₀ s' ∩ (normalHalfSpace (E := E) a : Set _) :=
     inter_subset_inter_left _ (ball_subset_ball hss')
