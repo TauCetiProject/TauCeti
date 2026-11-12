@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.Wkp
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Localizations of Sobolev sections over surfaces

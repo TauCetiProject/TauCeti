@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
-import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
+import TauCeti.Geometry.Manifold.Sobolev.ChartTransition
 import TauCeti.Analysis.Sobolev.Local.Examples
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Analysis.Sobolev.Local.SmoothCoefficients
@@ -42,8 +41,6 @@ to order one. The pieces are glued over the charts of `A` by the locality of the
 
 ## Main results
 
-* `TauCeti.MemWkpLoc.comp_symm_trans_of_mem_maximalAtlas`: changes of chart preserve the local
-  classes of order at most one.
 * `TauCeti.MemWkpLoc.trivialization_comp_chart_symm`: changes of chart and trivialization
   preserve the local classes of order at most one of the expressions of a section.
 * `TauCeti.SobolevSection.memWkpLoc_trivialization_comp_chart_symm`: the expressions of an element
@@ -77,36 +74,7 @@ namespace TauCeti
 open FiniteBundleAtlas
 
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M]
-
-section ChangeOfChart
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} {k : ℕ}
-
-/-- **Changes of chart preserve the local classes of order at most one.** For charts `φ` and `ψ`
-of the maximal `C¹` atlas of `M` and a map `u` in `MemWkpLoc p U k` with `k ≤ 1`, the map
-`u ∘ ψ ∘ φ.symm` lies in the local class on the set of points of the source of the chart transition
-`φ.symm.trans ψ` that it maps into `U`. -/
-theorem MemWkpLoc.comp_symm_trans_of_mem_maximalAtlas (hk : k ≤ 1)
-    {φ ψ : OpenPartialHomeomorph M ℂ} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 M)
-    (hψ : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 M) {U : Set ℂ} {u : ℂ → F}
-    (hu : MemWkpLoc p U k u) :
-    MemWkpLoc p ((φ.symm.trans ψ).source ∩ φ.symm.trans ψ ⁻¹' U) k
-      (fun y ↦ u (ψ (φ.symm y))) := by
-  -- The chart transition has an invertible derivative on its source.
-  have hdet : ∀ y ∈ (φ.symm.trans ψ).source ∩ φ.symm.trans ψ ⁻¹' U,
-      (fderiv ℝ (φ.symm.trans ψ) y).det ≠ 0 := fun y hy ↦ by
-    obtain ⟨L, hL⟩ := exists_hasFDerivAt_symm_trans one_ne_zero hφ hψ hy.1
-    rw [hL.fderiv]
-    exact L.toLinearEquiv.isUnit_det'.ne_zero
-  -- As a function, the chart transition is `ψ ∘ φ.symm` (`OpenPartialHomeomorph.coe_trans`).
-  simpa only [OpenPartialHomeomorph.coe_trans, Function.comp_apply] using
-    hu.comp_contDiffOn_diffeo hk (φ.symm.trans ψ).open_source
-      (contDiffOn_symm_trans_of_mem_maximalAtlas hφ hψ)
-      ((φ.symm.trans ψ).injOn.mono inter_subset_left) hdet inter_subset_left fun y hy ↦ hy.2
-
-end ChangeOfChart
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
   [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   {p : ℝ≥0∞} {k : ℕ}
@@ -173,7 +141,7 @@ theorem memWkpLoc_trivialization_comp_chart_symm (hk : k ≤ 1) (w : SobolevSect
     exact mem_iUnion.2 ⟨i, hy.1, ⟨hy.2, A.dom_subset_baseSet i hi⟩,
       A.dom_subset_chart_source i hi, A.mem_image.2 ⟨_, hi, rfl⟩⟩
   · have h := memWkpLoc_coord w hs i
-    rw [show A.coord i s = _ from funext (A.coord_def i s)] at h
+    rw [funext (A.coord_def i s)] at h
     exact (h.trivialization_comp_chart_symm hk hφ
       (IsManifold.chart_mem_maximalAtlas _) e (A.triv i) (A.image i).isOpen).mono
       inter_subset_right
@@ -205,7 +173,7 @@ theorem exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm (hk : k �
   refine (memWkpLoc_iff_forall_inter O fun y hy ↦ ?_).2 fun j ↦ ?_
   · obtain ⟨j, hj⟩ := hcover ((A.chart i).symm y)
     exact mem_iUnion.2 ⟨j, hy.1, ⟨hy.2, hj.2.1⟩, hj.1, hj.2.2⟩
-  · rw [show A.coord i s = _ from funext (A.coord_def i s)]
+  · rw [funext (A.coord_def i s)]
     exact ((hs j).trivialization_comp_chart_symm hk (IsManifold.chart_mem_maximalAtlas _) (hφ j)
       (A.triv i) (e j) (hU j)).mono inter_subset_right
 
