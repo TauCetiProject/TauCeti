@@ -39,7 +39,9 @@ continuous map into the subspace, `TopPair.liftSnd`, because the subspace is emb
 
 The product `TopPair.prodRight P Y = (X × Y, A × Y)` of a pair `P = (X, A)` with a space `Y` has
 the embedding `P.map ▷ Y`. For the pair of a subset `A ⊆ X` it is the pair of the preimage of `A`
-under the first projection (`TopPair.ofSubsetProdRightIso`).
+under the first projection (`TopPair.ofSubsetProdRightIso`). Swapping the factors identifies the
+product `TopPair.prodLeft P Y = (Y × X, Y × A)` with the same pair of a preimage
+(`TopPair.prodLeftSwapIso`).
 
 For subsets `A ⊆ X` and `B ⊆ Y`, the preimages `A × Y` and `X × B` of `A` and `B` under the
 projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product of pairs. Each is open
@@ -412,6 +414,43 @@ lemma ofSubsetProdRightIso_inv_fst_apply {X : TopCat.{u}} (A : Set X) (Y : TopCa
     (x : X × Y) : Hom.fst (ofSubsetProdRightIso A Y).inv x = x := (rfl)
 
 end prodRight
+
+section prodLeftSwap
+
+open MonoidalCategory
+
+/-- Swapping the factors identifies the product `Y × (X, A)` of a space `Y` with a pair
+`P = (X, A)` with the pair `(X × Y, A × Y)` of the preimage of `A` under the first projection of
+`X × Y`. -/
+noncomputable def prodLeftSwapIso (P : TopPair.{u}) (Y : TopCat.{u}) :
+    P.prodLeft Y ≅
+      ofSubset (X := TopCat.of (P.fst × Y)) ((ContinuousMap.fst : C(P.fst × Y, P.fst)) ⁻¹'
+        Set.range P.map) where
+  hom := TopPair.ofHom
+    (TopCat.isoOfHomeo (X := Y ⊗ P.fst) (Y := TopCat.of (P.fst × Y)) (Homeomorph.prodComm _ _)).hom
+    (TopCat.ofHom ⟨fun z ↦ ⟨(P.map z.2, z.1), z.2, rfl⟩, by fun_prop⟩) (by ext; rfl)
+  inv := TopPair.ofHom
+    (TopCat.isoOfHomeo (X := Y ⊗ P.fst) (Y := TopCat.of (P.fst × Y)) (Homeomorph.prodComm _ _)).inv
+    (TopCat.ofHom ⟨fun x ↦ (x.1.2, P.liftSnd
+      ⟨fun x : (ContinuousMap.fst : C(P.fst × Y, P.fst)) ⁻¹' Set.range P.map ↦ x.1.1,
+        continuous_fst.comp continuous_subtype_val⟩
+      (fun x ↦ x.2) x), by fun_prop⟩)
+    (by
+      ext x
+      exact Prod.ext rfl (map_liftSnd _ _ x))
+  hom_inv_id := hom_ext_of_fst _ (by ext; rfl)
+  inv_hom_id := hom_ext_of_fst _ (by ext; rfl)
+
+@[simp]
+lemma prodLeftSwapIso_hom_fst_apply (P : TopPair.{u}) (Y : TopCat.{u})
+    (x : (Y ⊗ P.fst : TopCat.{u})) :
+    Hom.fst (prodLeftSwapIso P Y).hom x = (x.2, x.1) := (rfl)
+
+@[simp]
+lemma prodLeftSwapIso_inv_fst_apply (P : TopPair.{u}) (Y : TopCat.{u}) (x : P.fst × Y) :
+    Hom.fst (prodLeftSwapIso P Y).inv x = ((x.2, x.1) : Y × P.fst) := (rfl)
+
+end prodLeftSwap
 
 end TopPair
 

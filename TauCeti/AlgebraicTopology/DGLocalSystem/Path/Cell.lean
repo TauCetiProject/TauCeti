@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cub
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.FiberHomotopy
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Relative
 public import TauCeti.Topology.PathSpace.Moore.Pullback
+import TauCeti.Algebra.Homology.Single.Projective
 
 /-!
 # The relative chains of the path fibration over a cell
@@ -52,8 +53,6 @@ assembles the cells of a CW complex, are not treated here.
 
 ## Main definitions
 
-* `TauCeti.MoorePathPullback.loopTrivialization`: the trivialization `(ω, d) ↦ ω ⋆ τ d`, with the
-  loop first.
 * `TauCeti.MoorePathPullback.preimagePair`: the pair `(f*P_b X, f*P_b X|_A)` over a pair
   `(D, A)`.
 * `TauCeti.MoorePathPullback.loopTrivializationPairHom`: the trivialization as a map of pairs
@@ -63,8 +62,6 @@ assembles the cells of a CW complex, are not treated here.
 
 ## Main results
 
-* `TauCeti.MoorePathPullback.loopTrivialization_mul`: the trivialization is equivariant for
-  concatenation of loops in front.
 * `TauCeti.MoorePathPullback.quasiIso_cubicalChainComplexMap_loopTrivializationPairHom`: the
   trivialization is a quasi-isomorphism on relative chains.
 * `TauCeti.MoorePathPullback.quasiIso_cellChainMap`: the relative-cell comparison is a
@@ -91,32 +88,6 @@ open CategoryTheory MonoidalCategory
 namespace TauCeti.MoorePathPullback
 
 universe u
-
-/-! ### The trivialization with the loop first -/
-
-section Trivialization
-
-variable {D X : Type*} [TopologicalSpace D] [TopologicalSpace X] {f : C(D, X)} {b : X}
-  (τ : C(D, MoorePath X)) (h₀ : ∀ d, (τ d).source = b) (h₁ : ∀ d, (τ d).target = f d)
-
-/-- The trivialization `Ω_b X × D ⟶ f*P_b X`, `(ω, d) ↦ ω ⋆ τ d`, of the pulled-back based path
-fibration, with the loop as the first factor. It is `TauCeti.MoorePathPullback.trivializationMap`
-with the factors swapped. -/
-def loopTrivialization : C(MooreLoopSpace X b × D, MoorePathPullback f b) :=
-  (trivializationMap τ h₀ h₁).comp ContinuousMap.prodSwap
-
-@[simp]
-theorem loopTrivialization_apply (ω : MooreLoopSpace X b) (d : D) :
-    loopTrivialization τ h₀ h₁ (ω, d) = trivializationMap τ h₀ h₁ (d, ω) :=
-  (rfl)
-
-/-- The trivialization is equivariant: concatenating a loop in front of the loop factor
-concatenates it in front of the path. -/
-theorem loopTrivialization_mul (ω η : MooreLoopSpace X b) (d : D) :
-    loopTrivialization τ h₀ h₁ (ω * η, d) = ω • loopTrivialization τ h₀ h₁ (η, d) :=
-  trivializationMap_mul τ h₀ h₁ d ω η
-
-end Trivialization
 
 /-! ### The trivialization as a map of pairs -/
 
@@ -148,53 +119,29 @@ theorem loopTrivializationPairHom_fst :
       TopCat.ofHom (loopTrivialization τ h₀ h₁) :=
   (rfl)
 
-/-- Swapping the factors identifies `Ω_b X × (D, A)` with the pair `(D × Ω_b X, A × Ω_b X)` of
-the preimage of `A`. -/
-private def swapPairHom :
-    P.prodLeft (TopCat.of (MooreLoopSpace X b)) ⟶
-      TopPair.ofSubset (X := TopCat.of (P.fst × MooreLoopSpace X b))
-        ((ContinuousMap.fst : C(P.fst × MooreLoopSpace X b, P.fst)) ⁻¹' Set.range P.map) :=
-  TopPair.ofHom (TopCat.isoOfHomeo (X := TopCat.of (MooreLoopSpace X b) ⊗ P.fst)
-      (Y := TopCat.of (P.fst × MooreLoopSpace X b)) (Homeomorph.prodComm _ _)).hom
-    (TopCat.ofHom ⟨fun z ↦ ⟨(P.map z.2, z.1), z.2, rfl⟩,
-      ((P.map.hom.continuous.comp continuous_snd).prodMk continuous_fst).subtype_mk _⟩)
-    (by ext; rfl)
-
-private instance isIso_swapPairHom : IsIso (swapPairHom P (b := b)) := by
-  have : IsIso (TopPair.Hom.fst (swapPairHom P (b := b))) :=
-    inferInstanceAs (IsIso (TopCat.isoOfHomeo (X := TopCat.of (MooreLoopSpace X b) ⊗ P.fst)
-      (Y := TopCat.of (P.fst × MooreLoopSpace X b)) (Homeomorph.prodComm _ _)).hom)
-  refine TopPair.isIso_of_isIso_fst_of_surjective_snd _ ?_
-  rintro ⟨⟨d, ω⟩, a, ha⟩
-  exact ⟨(ω, a), Subtype.ext (Prod.ext ha rfl)⟩
-
 /-- The loop-first trivialization is the swap followed by the trivialization of
 `TauCeti.MoorePathPullback.fiberHomotopyEquiv`. -/
-private theorem swapPairHom_comp_preimagePairMap :
-    swapPairHom P ≫ (fiberHomotopyEquiv τ h₀ h₁).preimagePairMap (Set.range P.map) =
+private theorem prodLeftSwapIso_hom_comp_preimagePairMap :
+    (P.prodLeftSwapIso (TopCat.of (MooreLoopSpace X b))).hom ≫
+        (fiberHomotopyEquiv τ h₀ h₁).preimagePairMap (Set.range P.map) =
       loopTrivializationPairHom P τ h₀ h₁ :=
   TopPair.hom_ext_of_fst _ (by
     rw [TopPair.Hom.fst_comp, FiberHomotopyEquiv.preimagePairMap_fst, fiberHomotopyEquiv_toFun]
-    -- both sides are `trivializationMap τ h₀ h₁ ∘ prodSwap`, by definition of
-    -- `loopTrivialization`
-    rfl)
+    ext x
+    -- both sides are `trivializationMap τ h₀ h₁ (x.2, x.1)`
+    exact (congrArg (trivializationMap τ h₀ h₁) (TopPair.prodLeftSwapIso_hom_fst_apply _ _ x)).trans
+      (loopTrivialization_apply τ h₀ h₁ x.1 x.2).symm)
 
 /-- The trivialization `Ω_b X × (D, A) ⟶ (f*P_b X, f*P_b X|_A)` induces a quasi-isomorphism of
 relative normalized cubical chains: it is a homeomorphism of pairs followed by a fibre homotopy
 equivalence over `D`. -/
 instance quasiIso_cubicalChainComplexMap_loopTrivializationPairHom (R : Type u) [Ring R] :
     QuasiIso (TopPair.cubicalChainComplexMap R (loopTrivializationPairHom P τ h₀ h₁)) := by
-  have : IsIso (TopPair.cubicalChainComplexMap R (swapPairHom P (b := b))) :=
-    ⟨TopPair.cubicalChainComplexMap R (inv (swapPairHom P)), by
-      rw [← TopPair.cubicalChainComplexMap_comp, IsIso.hom_inv_id,
-        TopPair.cubicalChainComplexMap_id], by
-      rw [← TopPair.cubicalChainComplexMap_comp, IsIso.inv_hom_id,
-        TopPair.cubicalChainComplexMap_id]⟩
   have : QuasiIso (TopPair.cubicalChainComplexMap R
       ((fiberHomotopyEquiv τ h₀ h₁).preimagePairMap (Set.range P.map))) := by
     rw [← FiberHomotopyEquiv.relativeCubicalChainHomotopyEquiv_hom]
     infer_instance
-  rw [← swapPairHom_comp_preimagePairMap, TopPair.cubicalChainComplexMap_comp]
+  rw [← prodLeftSwapIso_hom_comp_preimagePairMap, TopPair.cubicalChainComplexMap_comp]
   infer_instance
 
 end Pair
@@ -271,30 +218,8 @@ from `b` to `f d`, the chain map `N(Ω_b X) ⊗ k[m + 1] ⟶ N(f*P_b X, f*P_b X|
 commutative ring `k`. -/
 theorem quasiIso_whiskerLeft_cubeBoundaryPairSingleHom_comp_cellChainMap :
     QuasiIso ((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b)) ◁
-      cubeBoundaryPairSingleHom k m ≫ cellChainMap (cubeBoundaryPair.{0} (m + 1)) τ h₀ h₁ k) := by
-  have (p : ℕ) : Module.Projective k
-      (((HomologicalComplex.single (ModuleCat.{0} k) (ComplexShape.down ℕ) (m + 1)).obj
-        (ModuleCat.of k k)).X p) := by
-    by_cases hp : p = m + 1
-    · subst hp
-      exact .of_equiv (R := k) (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) (m + 1)
-        (ModuleCat.of k k)).symm.toLinearEquiv
-    · have := ModuleCat.subsingleton_of_isZero
-        (HomologicalComplex.isZero_single_obj_X (ComplexShape.down ℕ) (m + 1)
-          (ModuleCat.of k k) p hp)
-      infer_instance
-  have (p : ℕ) : Module.Projective k
-      (((HomologicalComplex.single (ModuleCat.{0} k) (ComplexShape.down ℕ) (m + 1)).obj
-        (ModuleCat.of k k)).homology p) := by
-    by_cases hp : p = m + 1
-    · subst hp
-      exact .of_equiv (R := k) (HomologicalComplex.singleObjHomologySelfIso (ComplexShape.down ℕ)
-        (m + 1) (ModuleCat.of k k)).symm.toLinearEquiv
-    · have := ModuleCat.subsingleton_of_isZero
-        (HomologicalComplex.isZero_single_obj_homology (ComplexShape.down ℕ) (m + 1)
-          (ModuleCat.of k k) p hp)
-      infer_instance
-  exact quasiIso_whiskerLeft_comp_cellChainMap _ τ h₀ h₁ k (cubeBoundaryPairSingleHom k m)
+      cubeBoundaryPairSingleHom k m ≫ cellChainMap (cubeBoundaryPair.{0} (m + 1)) τ h₀ h₁ k) :=
+  quasiIso_whiskerLeft_comp_cellChainMap _ τ h₀ h₁ k (cubeBoundaryPairSingleHom k m)
 
 end Cube
 

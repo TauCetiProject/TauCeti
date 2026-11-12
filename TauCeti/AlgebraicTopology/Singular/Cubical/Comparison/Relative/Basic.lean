@@ -37,7 +37,8 @@ relative homotopy invariance of cubical homology is transported from the simplic
 ## Main definitions
 
 * `TopPair.cubicalChainComplex k P`: the relative normalized cubical chain complex of a pair.
-* `TopPair.cubicalChainComplexMap k f`: the chain map induced by a map of pairs.
+* `TopPair.cubicalChainComplexMap k f`: the chain map induced by a map of pairs, an isomorphism
+  when `f` is (`TopPair.isIso_cubicalChainComplexMap`).
 * `TopPair.IsCubicalRepresentative k c μ`: a normalized cubical chain of the ambient space is a
   relative cycle with relative class `μ`; every class has one
   (`TopPair.exists_isCubicalRepresentative`).
@@ -231,6 +232,13 @@ theorem cubicalChainComplexMap_id (P : TopPair.{u}) :
 theorem cubicalChainComplexMap_comp {P P' P'' : TopPair.{u}} (f : P ⟶ P') (g : P' ⟶ P'') :
     cubicalChainComplexMap k (f ≫ g) = cubicalChainComplexMap k f ≫ cubicalChainComplexMap k g :=
   coequalizer.hom_ext (by simp)
+
+/-- An isomorphism of pairs induces an isomorphism of relative normalized cubical chains. -/
+instance isIso_cubicalChainComplexMap {P P' : TopPair.{u}} (f : P ⟶ P') [IsIso f] :
+    IsIso (cubicalChainComplexMap k f) :=
+  ⟨cubicalChainComplexMap k (inv f), by
+    rw [← cubicalChainComplexMap_comp, IsIso.hom_inv_id, cubicalChainComplexMap_id], by
+    rw [← cubicalChainComplexMap_comp, IsIso.inv_hom_id, cubicalChainComplexMap_id]⟩
 
 /-! ### Singular cubes as relative chains -/
 
