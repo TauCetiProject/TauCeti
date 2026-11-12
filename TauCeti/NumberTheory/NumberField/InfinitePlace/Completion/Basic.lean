@@ -71,8 +71,8 @@ theorem completionNormalizedAbsValue_apply (w : InfinitePlace K) (x : w.Completi
 @[simp↓]
 theorem Completion.norm_algebraMap (w : InfinitePlace K) (x : K) :
     ‖algebraMap K w.Completion x‖ = w x := by
-  rw [Completion.algebraMap_apply]
-  exact Completion.norm_coe w (WithAbs.toAbs w.1 x)
+  simp only [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
+    Algebra.algebraMap_self_apply, AbsoluteValue.Completion.norm_coe, InfinitePlace.coe_apply]
 
 /-- Two continuous maps out of an archimedean completion `K_w` into a Hausdorff space agree once
 they agree on `K`. -/
@@ -80,9 +80,11 @@ theorem Completion.funext_of_continuous {w : InfinitePlace K} {B : Type*} [Topol
     [T2Space B] {f g : w.Completion → B} (hf : Continuous f) (hg : Continuous g)
     (h : ∀ x : K, f (algebraMap K w.Completion x) = g (algebraMap K w.Completion x)) : f = g := by
   funext a
-  induction a using Completion.induction_on with
+  induction a using AbsoluteValue.Completion.induction_on with
   | hp => exact isClosed_eq hf hg
-  | ih a => simpa only [Completion.algebraMap_apply, WithAbs.toAbs_ofAbs] using h a.ofAbs
+  | ih a =>
+    simpa only [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
+      Algebra.algebraMap_self_apply, WithAbs.toAbs_ofAbs] using h a.ofAbs
 
 /-- On the dense copy of `K`, the infinite completion value is the normalized
 infinite-place value. -/

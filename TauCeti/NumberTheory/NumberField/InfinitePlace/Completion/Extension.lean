@@ -42,7 +42,7 @@ public section
 noncomputable section
 
 open NumberField
-open scoped NumberField.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace NumberField.InfinitePlace
 
@@ -66,43 +66,33 @@ theorem _root_.NumberField.LiesOver.completionMap_comp
     {M : Type*} [Field M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
     {v : InfinitePlace K} {w : InfinitePlace L} {u : InfinitePlace M}
     [w.LiesOver v] [u.LiesOver w] :
-    (LiesOver.completionMap w u).comp
-        (LiesOver.completionMap v w) =
-      @LiesOver.completionMap K M _ _ _ v u (InfinitePlace.LiesOver.trans u w v) := by
+    (AbsoluteValue.Completion.map w.1 u.1).comp
+        (AbsoluteValue.Completion.map v.1 w.1) =
+      @AbsoluteValue.Completion.map K _ v.1 M _ _ u.1
+        (InfinitePlace.LiesOver.trans u w v) := by
   let _ : u.LiesOver v := InfinitePlace.LiesOver.trans u w v
   apply DFunLike.coe_injective
-  apply (InfinitePlace.Completion.denseRange_coe v).equalizer
-    ((LiesOver.continuous_completionMap w u).comp (LiesOver.continuous_completionMap v w))
-    (LiesOver.continuous_completionMap v u)
+  apply (AbsoluteValue.Completion.denseRange_coe v.1).equalizer
+    ((AbsoluteValue.Completion.continuous_map w.1 u.1).comp
+      (AbsoluteValue.Completion.continuous_map v.1 w.1))
+    (AbsoluteValue.Completion.continuous_map v.1 u.1)
   funext x
-  simp [Function.comp_apply, LiesOver.completionMap_coe,
-    WithAbs.algebraMap_left_apply, WithAbs.algebraMap_right_apply,
+  simp [Function.comp_apply, AbsoluteValue.Completion.map_coe, WithAbs.map_apply,
     ← IsScalarTower.algebraMap_apply]
 
 /-- Extension of archimedean completions preserves the ordinary norm. -/
 @[simp]
 theorem Completion.norm_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
-    ‖LiesOver.completionMap v w x‖ = ‖x‖ := by
-  -- `completionMap` has an unexposed body, so use its public continuity and coercion lemmas
-  -- to transport Mathlib's norm preservation from the dense base field.
-  induction x using InfinitePlace.Completion.induction_on with
-  | hp =>
-    exact isClosed_eq
-      (continuous_norm.comp (LiesOver.continuous_completionMap v w))
-      continuous_norm
-  | ih y =>
-    rw [LiesOver.completionMap_coe]
-    simpa only [InfinitePlace.Completion.norm_coe, WithAbs.norm_eq_apply_ofAbs,
-      WithAbs.equiv_apply, InfinitePlace.coe_apply] using
-      (InfinitePlace.LiesOver.isometry_algebraMap w v).norm_map_of_map_zero (map_zero _) y
+    ‖AbsoluteValue.Completion.map v.1 w.1 x‖ = ‖x‖ :=
+  (AbsoluteValue.Completion.isometry_map v.1 w.1).norm_map_of_map_zero (map_zero _) x
 
 /-- Under extension of archimedean completions the normalized absolute value is raised to the
 local degree. This includes the real-to-complex case and the value at zero. -/
 @[simp↓]
 theorem completionNormalizedAbsValue_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
-    completionNormalizedAbsValue w (LiesOver.completionMap v w x) =
+    completionNormalizedAbsValue w (AbsoluteValue.Completion.map v.1 w.1 x) =
       completionNormalizedAbsValue v x ^ Module.finrank v.Completion w.Completion := by
   rw [completionNormalizedAbsValue_apply, Completion.norm_completionMap,
     completionNormalizedAbsValue_apply, ← pow_mul, InfinitePlace.mult_mul_finrank]
@@ -117,14 +107,14 @@ normalized absolute value at `v` raised to the global degree. -/
 theorem prod_completionNormalizedAbsValue_completionMap
     (v : InfinitePlace K) (x : v.Completion) :
     ∏ w : {w : InfinitePlace L // w.LiesOver v}, completionNormalizedAbsValue w.1
-        (@LiesOver.completionMap K L _ _ _ v w.1 w.2 x) =
+        (@AbsoluteValue.Completion.map K _ v.1 L _ _ w.1.1 w.2 x) =
       completionNormalizedAbsValue v x ^ Module.finrank K L := by
   classical
   have : CharZero K := (algebraMap K L).charZero
   have : NumberField K := NumberField.of_tower ℚ L K
   have h (w : {w : InfinitePlace L // w.LiesOver v}) :
       completionNormalizedAbsValue w.1
-        (@LiesOver.completionMap K L _ _ _ v w.1 w.2 x) =
+        (@AbsoluteValue.Completion.map K _ v.1 L _ _ w.1.1 w.2 x) =
         completionNormalizedAbsValue v x ^ v.inertiaDeg w.1 := by
     let := w.2
     rw [completionNormalizedAbsValue_completionMap,
