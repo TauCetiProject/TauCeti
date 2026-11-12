@@ -236,46 +236,7 @@ end Field
 
 section Multiplicity
 
-variable {k} [Field k]
-
-/-- A character with values `c` at the class representatives `1, (01), (01)(23), (012), (0123)`
-takes at each element the value of `c` at its class. -/
-private theorem character_eq_of_rep_eq {V : Type*} [AddCommGroup V] [Module k V]
-    {ρ : Representation k (Perm (Fin 4)) V} (c : Fin 5 → ℤ)
-    (h : ∀ j, ρ.character (symmetricGroupFourClassData.rep j) =
-      (c (j.cast numClasses_symmetricGroupFourClassData) : k))
-    (g : Perm (Fin 4)) :
-    ρ.character g = (c ((symmetricGroupFourClassData.index g).cast
-      numClasses_symmetricGroupFourClassData) : k) := by
-  obtain ⟨τ, hτ⟩ := isConj_iff.mp (symmetricGroupFourClassData.isConj_rep_index g)
-  conv_lhs => rw [← hτ]
-  rw [Representation.char_conj, h]
-
-variable [CharZero k]
-
-/-- The Hom-dimension between two representations of `S₄` whose characters take the integer
-values `a` and `b` at the class representatives, read off from the pairing of `a` and `b`. -/
-private theorem finrank_intertwiningMap_of_rep_eq {V W : Type*} [AddCommGroup V] [Module k V]
-    [FiniteDimensional k V] [AddCommGroup W] [Module k W] [FiniteDimensional k W]
-    {ρ : Representation k (Perm (Fin 4)) V} {σ : Representation k (Perm (Fin 4)) W}
-    (a b : Fin 5 → ℤ) (n : ℕ)
-    (hρ : ∀ j, ρ.character (symmetricGroupFourClassData.rep j) =
-      (a (j.cast numClasses_symmetricGroupFourClassData) : k))
-    (hσ : ∀ j, σ.character (symmetricGroupFourClassData.rep j) =
-      (b (j.cast numClasses_symmetricGroupFourClassData) : k))
-    (hab : ∑ g : Perm (Fin 4),
-      b ((symmetricGroupFourClassData.index g).cast numClasses_symmetricGroupFourClassData) *
-        a ((symmetricGroupFourClassData.index g⁻¹).cast numClasses_symmetricGroupFourClassData) =
-      24 * n) :
-    Module.finrank k (ρ.IntertwiningMap σ) = n := by
-  let : Invertible (Nat.card (Perm (Fin 4)) : k) := invertibleOfNonzero (by
-    rw [Nat.card_perm, Nat.card_fin]; norm_num)
-  apply Nat.cast_injective (R := k)
-  rw [← Representation.card_inv_mul_sum_char_mul_char_eq_finrank]
-  simp_rw [character_eq_of_rep_eq b hσ, character_eq_of_rep_eq a hρ, ← Int.cast_mul]
-  rw [← Int.cast_sum, hab, Nat.card_perm, Nat.card_fin]
-  push_cast
-  ring
+variable {k} [Field k] [CharZero k]
 
 /-- **The multiplicities in the vertex representation** `k[X] ≃ 1 ⊕ sgn ⊕ V₄ ⊕ (sgn ⊗ V₄)`: a
 representation whose character is the row `i` of `TauCeti.symmetricGroupFourCharacterTable`
@@ -288,7 +249,7 @@ theorem finrank_intertwiningMap_cubeVertexRepresentation {V : Type*} [AddCommGro
         k)) :
     Module.finrank k (ρ.IntertwiningMap (cubeVertexRepresentation k)) =
       (![1, 1, 0, 1, 1] : Fin 5 → ℕ) i := by
-  refine finrank_intertwiningMap_of_rep_eq
+  refine finrank_intertwiningMap_of_character_symmetricGroupFourClassData_rep
     (fun j ↦ symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
       (j.cast numClasses_symmetricGroupFourClassData.symm))
     ![8, 0, 0, 2, 0] _ (fun j ↦ by simpa using hρ j) (fun j ↦ ?_) ?_
@@ -309,7 +270,7 @@ theorem finrank_intertwiningMap_cubeEdgeRepresentation {V : Type*} [AddCommGroup
         k)) :
     Module.finrank k (ρ.IntertwiningMap (cubeEdgeRepresentation k)) =
       (![1, 0, 1, 2, 1] : Fin 5 → ℕ) i := by
-  refine finrank_intertwiningMap_of_rep_eq
+  refine finrank_intertwiningMap_of_character_symmetricGroupFourClassData_rep
     (fun j ↦ symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
       (j.cast numClasses_symmetricGroupFourClassData.symm))
     ![12, 2, 0, 0, 0] _ (fun j ↦ by simpa using hρ j) (fun j ↦ ?_) ?_
@@ -322,8 +283,11 @@ theorem finrank_intertwiningMap_cubeEdgeRepresentation {V : Type*} [AddCommGroup
 variable (k) in
 /-- **The standard representation occurs twice in the edge representation**: the space of
 intertwiners `V₄ → k[Y]` is two-dimensional. Character pairings give this dimension, not two
-particular copies of `V₄`; a basis of this space does, through
-`Module.Basis.isotypicComponentEquiv`. -/
+particular copies of `V₄`. Over an algebraically closed field a basis of this space does:
+transported along `Representation.IntertwiningMap.equivLinearMapAsModule` to the `k[S₄]`-linear
+maps of
+`TauCeti.finrank_linearMap_standardRepresentation_cubeEdgeRepresentation`, it splits the
+`V₄`-isotypic component through `Module.Basis.isotypicComponentEquiv`. -/
 theorem finrank_intertwiningMap_standardRepresentation_cubeEdgeRepresentation :
     Module.finrank k
       ((standardRepresentation k (Fin 4)).IntertwiningMap (cubeEdgeRepresentation k)) = 2 :=
@@ -340,9 +304,9 @@ open scoped MonoidAlgebra
 variable [Field k] [CharZero k]
 
 /-- **The multiplicity space of `V₄` in `k[Y]` is two-dimensional**, as a space of
-`k[S₄]`-linear maps between the group-algebra modules. A basis `b` of it, such as
-`Module.finBasisOfFinrankEq`, splits the `V₄`-isotypic component of `k[Y]` as `V₄ ⊕ V₄`,
-`(v₀, v₁) ↦ b 0 v₀ + b 1 v₁`, through `Module.Basis.isotypicComponentEquiv`. -/
+`k[S₄]`-linear maps between the group-algebra modules. Over an algebraically closed field a basis
+`b` of it, such as `Module.finBasisOfFinrankEq`, splits the `V₄`-isotypic component of `k[Y]` as
+`V₄ ⊕ V₄`, `(v₀, v₁) ↦ b 0 v₀ + b 1 v₁`, through `Module.Basis.isotypicComponentEquiv`. -/
 theorem finrank_linearMap_standardRepresentation_cubeEdgeRepresentation :
     Module.finrank k ((standardRepresentation k (Fin 4)).asModule →ₗ[k[Perm (Fin 4)]]
       (cubeEdgeRepresentation k).asModule) = 2 := by

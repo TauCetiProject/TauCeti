@@ -17,6 +17,8 @@ numbered class.
 
 ## Main results
 
+* `TauCeti.ClassData.character_rep_index`: a character takes at each element its value at the
+  representative of the class of that element.
 * `TauCeti.ClassData.character_eq_of_rep`: two characters agreeing at the class representatives
   of `d` are equal.
 -/
@@ -28,6 +30,15 @@ namespace TauCeti.ClassData
 variable {k G V W : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V] [AddCommGroup W]
   [Module k W]
 
+/-- A character takes at each element `g` its value at the representative `d.rep (d.index g)`
+of the class of `g`, since characters are class functions. -/
+theorem character_rep_index [DecidableRel (IsConj : G → G → Prop)] (d : ClassData G)
+    (ρ : Representation k G V) (g : G) :
+    ρ.character (d.rep (d.index g)) = ρ.character g := by
+  obtain ⟨τ, hτ⟩ := isConj_iff.mp (d.isConj_rep_index g)
+  conv_rhs => rw [← hτ]
+  rw [Representation.char_conj]
+
 /-- **Characters are determined at the class representatives** of class data `d`: characters are
 class functions and every element is conjugate to some `d.rep i`. -/
 theorem character_eq_of_rep (d : ClassData G) {ρ : Representation k G V}
@@ -35,7 +46,6 @@ theorem character_eq_of_rep (d : ClassData G) {ρ : Representation k G V}
     ρ.character = ρ'.character := by
   classical
   funext g
-  obtain ⟨τ, hτ⟩ := isConj_iff.mp (d.isConj_rep_index g)
-  rw [← hτ, Representation.char_conj, Representation.char_conj, h]
+  rw [← d.character_rep_index ρ, ← d.character_rep_index ρ', h]
 
 end TauCeti.ClassData
