@@ -27,6 +27,8 @@ open) be applied to compact convex pieces of a chart.
   homeomorphism from a Hausdorff space maps compact subsets of its target to closed sets.
 * `OpenPartialHomeomorph.isClosed_image_of_closure_subset_target`: the image of a closed subset
   of the source is closed if its closure stays inside the target, without a compactness assumption.
+* `OpenPartialHomeomorph.sourceRestrict`: the restriction of an open partial homeomorphism to its
+  source, as a continuous map.
 -/
 
 public section
@@ -57,5 +59,21 @@ theorem isClosed_image_of_closure_subset_target {s : Set X} (hs : IsClosed s)
   have ht := hclosure hy
   have hsymm : e.symm y ∈ closure s := (himage.symm.closure ht).mpr hy
   exact ⟨e.symm y, hs.closure_subset hsymm, e.right_inv ht⟩
+
+theorem mem_refl_source (x : X) : x ∈ (OpenPartialHomeomorph.refl X).source :=
+  mem_univ x
+
+/-- The restriction of an open partial homeomorphism to its source, as a continuous map. -/
+@[expose] def sourceRestrict : C(e.source, Y) :=
+  ⟨e.source.domRestrict e, e.continuousOn.domRestrict⟩
+
+@[simp]
+theorem sourceRestrict_apply (x : e.source) : e.sourceRestrict x = e x :=
+  rfl
+
+/-- A point of the source is the only point of the source that `e` sends to its image. -/
+theorem sourceRestrict_preimage {a : X} (ha : a ∈ e.source) :
+    e.sourceRestrict ⁻¹' {e a} ⊆ ContinuousMap.subtypeVal e.source ⁻¹' {a} :=
+  fun x hx ↦ e.injOn x.2 ha hx
 
 end OpenPartialHomeomorph

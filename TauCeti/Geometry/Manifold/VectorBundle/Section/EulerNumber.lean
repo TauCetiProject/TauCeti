@@ -85,6 +85,39 @@ variable {X M : Type} [NormedAddCommGroup X] [InnerProductSpace ℝ X] [FiniteDi
   (oM : Manifold.Orientation 𝓘(ℝ, X) M (Fin (n + 1))) {s : ∀ x, E x}
   (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
 
+omit [T2Space M] in
+include hF in
+/-- **An isolating neighbourhood of a zero in local coordinates.** Let `z` be a zero of `s`, `e` a
+trivialization of `E` at `z`, and `φ` a chart of `M` at `z` with values in `F`. If the section, read
+in these coordinates as `y ↦ (e (s (φ⁻¹ y))).2`, has at `φ z` a derivative `A` bounded below, then
+`z` has an open neighbourhood inside the base set of `e` and the source of `φ`, containing no other
+zero of `s`, on which `e` reads the orientation of every fibre as at `z`. These are the
+neighbourhood hypotheses of
+`TauCeti.VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt`. -/
+private theorem exists_isolating_nhds_of_hasFDerivAt (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] [e.IsLinear ℝ] (φ : OpenPartialHomeomorph M F) {z : M}
+    (hze : z ∈ e.baseSet) (hzφ : z ∈ φ.source) (hz : s z = 0) {A : F →L[ℝ] F}
+    (hA : HasFDerivAt (fun y ↦ (e (TotalSpace.mk' F (φ.symm y) (s (φ.symm y)))).2) A (φ z))
+    (hAC : ∃ C, AntilipschitzWith C A) :
+    ∃ U, IsOpen U ∧ z ∈ U ∧ (∀ x ∈ U, s x = 0 → x = z) ∧ ∃ hUe : U ⊆ e.baseSet,
+      U ⊆ φ.source ∧ ∀ x (hx : x ∈ U), e.mapOrientation (Fin (n + 1)) (hUe hx) (o x) =
+        e.mapOrientation (Fin (n + 1)) hze (o z) := by
+  have hf0 : (e (TotalSpace.mk' F (φ.symm (φ z)) (s (φ.symm (φ z))))).2 = 0 := by
+    rw [φ.left_inv hzφ, hz]
+    exact congrArg Prod.snd (e.zeroSection ℝ hze)
+  obtain ⟨V, hV, hVo, hzV⟩ := eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1
+    (hA.eventually_ne (c := (e (TotalSpace.mk' F (φ.symm (φ z)) (s (φ.symm (φ z))))).2) hAC))
+  obtain ⟨W, hW, hWo, hzW⟩ := eventually_nhds_iff.1
+    (o.eventually_mapOrientation_eq (by simp [hF]) e hze)
+  refine ⟨(φ.source ∩ φ ⁻¹' V) ∩ (e.baseSet ∩ W),
+    (φ.isOpen_inter_preimage hVo).inter (e.open_baseSet.inter hWo), ⟨⟨hzφ, hzV⟩, hze, hzW⟩,
+    ?_, fun x hx ↦ hx.2.1, fun x hx ↦ hx.1.1, fun x hx ↦ hW x hx.2.2 hx.2.1⟩
+  intro x hx hx0
+  by_contra hxz
+  apply hV (φ x) hx.1.2 fun h ↦ hxz (φ.injOn hx.1.1 hzφ h)
+  rw [hf0, φ.left_inv hx.1.1, hx0]
+  exact congrArg Prod.snd (e.zeroSection ℝ hx.2.1)
+
 /-- **The local index at an orientation-preserving transverse zero is `1`.** Let `z` be a zero of
 a section `s` of an oriented bundle `E` of rank `n + 1` over a manifold oriented by `oM`, at which
 `s` is differentiable with invertible linearization `D : T_z M ≃ E_z`. If `D` carries the
@@ -108,8 +141,11 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
       (chartAt X z z) := by
     have h₁ := (TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm.1
       hg).hasFDerivAt
-    rw [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm] at h₁
-    erw [continuousLinearMapAt_comp_sectionLinearization continuousAt_id hze hg hz]
+    -- The linearization lemma is stated for a base map, here `id`, so it reads the trivialization
+    -- at `id z`; `id_eq` puts it at `z`.
+    have hlin := continuousLinearMapAt_comp_sectionLinearization continuousAt_id hze hg hz
+    simp only [id_eq] at hlin
+    rw [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, ← hlin] at h₁
     simp only [extChartAt, OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
       modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_def, id] at h₁
     exact h₁
@@ -125,7 +161,9 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
     have h₂ := hgc.comp (φ z) Λ.symm.hasFDerivAt
     convert h₂ using 1
     · ext v
-      rfl
+      rw [OpenPartialHomeomorph.transHomeomorph_symm_apply,
+        ContinuousLinearEquiv.coe_symm_toHomeomorph, Function.comp_apply, Function.comp_apply,
+        Function.comp_apply]
     ext v
     -- The composite passes through `TangentSpace 𝓘(ℝ, X) z`, which is `X` only after unfolding,
     -- so its topology instance differs syntactically from that of `X` and
@@ -135,30 +173,9 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
       (sectionLinearization (F := F) 𝓘(ℝ, X) id s z (Λ.symm v))
     rw [← hD, ← e.coe_continuousLinearEquivAt_eq hze]
     exact (Λ.apply_symm_apply v).symm
-  have hf0 : (e (TotalSpace.mk' F (φ.symm (φ z)) (s (φ.symm (φ z))))).2 = 0 := by
-    rw [φ.left_inv hzφ, hz]
-    exact congrArg Prod.snd (e.zeroSection ℝ hze)
   -- An isolating neighbourhood of `z` on which `e` reads the fibre orientations as at `z`.
-  have hne : ∀ᶠ y in 𝓝[≠] (φ z), (e (TotalSpace.mk' F (φ.symm y) (s (φ.symm y)))).2 ≠
-      (e (TotalSpace.mk' F (φ.symm (φ z)) (s (φ.symm (φ z))))).2 :=
-    hA.eventually_ne ⟨1, by simpa using AntilipschitzWith.id⟩
-  obtain ⟨V, hV, hVo, hzV⟩ := eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 hne)
-  obtain ⟨W, hW, hWo, hzW⟩ := eventually_nhds_iff.1
-    (o.eventually_mapOrientation_eq (by simp [hF]) e hze)
-  set U := (φ.source ∩ φ ⁻¹' V) ∩ (e.baseSet ∩ W)
-  have hUo : IsOpen U := (φ.isOpen_inter_preimage hVo).inter (e.open_baseSet.inter hWo)
-  have hzU : z ∈ U := ⟨⟨hzφ, hzV⟩, hze, hzW⟩
-  have hUe : U ⊆ e.baseSet := fun x hx ↦ hx.2.1
-  have hUφ : U ⊆ φ.source := fun x hx ↦ hx.1.1
-  have hUz : ∀ x ∈ U, s x = 0 → x = z := by
-    intro x hx hx0
-    by_contra hxz
-    have hne : φ x ≠ φ z := fun h ↦ hxz (φ.injOn hx.1.1 hzφ h)
-    apply hV (φ x) hx.1.2 hne
-    rw [hf0, φ.left_inv hx.1.1, hx0]
-    exact congrArg Prod.snd (e.zeroSection ℝ (hUe hx))
-  have ho' : ∀ x (hx : x ∈ U), e.mapOrientation (Fin (n + 1)) (hUe hx) (o x) =
-      e.mapOrientation (Fin (n + 1)) hze (o z) := fun x hx ↦ hW x hx.2.2 (hUe hx)
+  obtain ⟨U, hUo, hzU, hUz, hUe, hUφ, ho'⟩ := exists_isolating_nhds_of_hasFDerivAt o hF e φ hze hzφ
+    hz hA ⟨1, by simpa using AntilipschitzWith.id⟩
   -- The chart `φ` reads the homological orientation of `oM` at `z` as the local orientation
   -- selected by the orientation that `e` reads on the fibres.
   have hmap : (oM.orientationAt z).map _ Λ.toLinearEquiv =

@@ -75,6 +75,8 @@ noncomputable section
 
 open CategoryTheory Limits Metric Module Set Topology
 open scoped Manifold
+open OpenPartialHomeomorph (mem_refl_source sourceRestrict sourceRestrict_apply
+  sourceRestrict_preimage)
 
 universe w v u
 
@@ -84,11 +86,6 @@ section Model
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-omit [NormedSpace ℝ E] in
-private theorem mem_refl_source (p : E) : p ∈ (OpenPartialHomeomorph.refl E).source := by
-  rw [OpenPartialHomeomorph.refl_source]
-  exact mem_univ p
 
 /-- Radial projection about a point `p` of `K`, on the complement of `K`. -/
 private def complRadial {K : Set E} {p : E} (hp : p ∈ K) : C((Kᶜ : Set E), sphere (0 : E) 1) :=
@@ -158,14 +155,6 @@ section ChartPullback
 variable {M : Type w} [TopologicalSpace M] [T1Space M]
   {E : Type w} [TopologicalSpace E] [T1Space E] (φ : OpenPartialHomeomorph M E)
 
-/-- The restriction of a chart to its source, as a continuous map. -/
-private def sourceRestrict : C(φ.source, E) :=
-  ⟨φ.source.domRestrict φ, φ.continuousOn.domRestrict⟩
-
-omit [T1Space M] [T1Space E] in
-private theorem sourceRestrict_apply (z : φ.source) : sourceRestrict φ z = φ z :=
-  (rfl)
-
 omit [T1Space M] [T1Space E] in
 /-- The source of `φ` meets the preimage of a subset `K` of its target in the preimage of
 `φ.symm '' K`. -/
@@ -173,11 +162,6 @@ private theorem sourceRestrict_preimage_eq {K : Set E} (hKφ : K ⊆ φ.target) 
     sourceRestrict φ ⁻¹' K = ContinuousMap.subtypeVal φ.source ⁻¹' (φ.symm '' K) := by
   ext z
   simp [φ.symm_image_eq_source_inter_preimage hKφ, sourceRestrict_apply, z.2]
-
-omit [T1Space M] [T1Space E] in
-private theorem sourceRestrict_preimage {a : M} (ha : a ∈ φ.source) :
-    sourceRestrict φ ⁻¹' {φ a} ⊆ ContinuousMap.subtypeVal φ.source ⁻¹' {a} :=
-  fun x hx ↦ φ.injOn x.2 ha hx
 
 end ChartPullback
 
