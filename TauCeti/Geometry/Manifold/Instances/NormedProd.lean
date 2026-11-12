@@ -24,8 +24,8 @@ definitionally equal, to `𝓘(𝕜, E).prod 𝓘(𝕜, E')` (`modelWithCornersS
 
 The file transports the basic calculus of products along that equality: smoothness of the product
 (`TauCeti.isManifold_prodNormedChartedSpace`), its extended charts and maximal atlas, the
-derivatives of the projections, the components of the derivative of a map into `E × E'`, product
-vector fields and their integral curves, and the tangent spaces of products of sets: the span of
+derivatives of the projections and of maps that factor through them, product vector fields and
+their integral curves, and the tangent spaces of products of sets: the span of
 the tangent cone of `A ×ˢ B` contains the product of the spans of the tangent cones of `A` and `B`
 (`TauCeti.span_mtangentConeAt_prod_le_prodNormed`).
 
@@ -160,30 +160,6 @@ theorem mfderiv_comp_snd_apply_prodNormed {F' : Type*} [NormedAddCommGroup F']
   -- The composite with `ContinuousLinearMap.snd` evaluates to the second component.
   rfl
 
-/-- The first component of the derivative of a map `F : M × N → E × E'` is the derivative of its
-first component. -/
-theorem fst_mfderiv_apply_prodNormed {F : M × N → E × E'} {z : M × N}
-    (hF : MDifferentiableAt 𝓘(𝕜, E × E') 𝓘(𝕜, E × E') F z) (u : E × E') :
-    (mfderiv 𝓘(𝕜, E × E') 𝓘(𝕜, E × E') F z u).1 =
-      mfderiv 𝓘(𝕜, E × E') 𝓘(𝕜, E) (fun z ↦ (F z).1) z u := by
-  rw [show (fun z ↦ (F z).1) = (ContinuousLinearMap.fst 𝕜 E E') ∘ F from rfl,
-    mfderiv_comp z (ContinuousLinearMap.fst 𝕜 E E').mdifferentiableAt hF,
-    ContinuousLinearMap.mfderiv_eq]
-  -- The composite with `ContinuousLinearMap.fst` evaluates to the first component.
-  rfl
-
-/-- The second component of the derivative of a map `F : M × N → E × E'` is the derivative of
-its second component. -/
-theorem snd_mfderiv_apply_prodNormed {F : M × N → E × E'} {z : M × N}
-    (hF : MDifferentiableAt 𝓘(𝕜, E × E') 𝓘(𝕜, E × E') F z) (u : E × E') :
-    (mfderiv 𝓘(𝕜, E × E') 𝓘(𝕜, E × E') F z u).2 =
-      mfderiv 𝓘(𝕜, E × E') 𝓘(𝕜, E') (fun z ↦ (F z).2) z u := by
-  rw [show (fun z ↦ (F z).2) = (ContinuousLinearMap.snd 𝕜 E E') ∘ F from rfl,
-    mfderiv_comp z (ContinuousLinearMap.snd 𝕜 E E').mdifferentiableAt hF,
-    ContinuousLinearMap.mfderiv_eq]
-  -- The composite with `ContinuousLinearMap.snd` evaluates to the second component.
-  rfl
-
 /-- A product of vector fields of class `C^n` on `M` and `N` is a vector field of class `C^n` on
 `M × N`, for the model `𝓘(𝕜, E × E')`. -/
 theorem contMDiff_prodMk_vectorField_prodNormed {n : WithTop ℕ∞}
@@ -196,20 +172,27 @@ theorem contMDiff_prodMk_vectorField_prodNormed {n : WithTop ℕ∞}
       (fun z : M × N ↦ (⟨z, ((X z.1, Y z.2) : E × E')⟩ : TangentBundle 𝓘(𝕜, E × E') (M × N))) :=
   contMDiff_prodMk_vectorField_of_eq modelWithCornersSelf_prod hX hY
 
+/-- The preimage of `A ×ˢ B` under the inverse of the extended chart of `M × N` at `z` is the
+product of the preimages of `A` and `B` under the inverses of the extended charts at `z.1` and
+`z.2`. -/
+private theorem extChartAt_prodNormed_symm_preimage_prod_inter_range (A : Set M) (B : Set N)
+    (z : M × N) :
+    (extChartAt 𝓘(𝕜, E × E') z).symm ⁻¹' (A ×ˢ B) ∩ range 𝓘(𝕜, E × E') =
+      ((extChartAt 𝓘(𝕜, E) z.1).symm ⁻¹' A ∩ range 𝓘(𝕜, E)) ×ˢ
+        ((extChartAt 𝓘(𝕜, E') z.2).symm ⁻¹' B ∩ range 𝓘(𝕜, E')) := by
+  rw [extChartAt_prodNormed]
+  ext v
+  simp only [mem_inter_iff, mem_preimage, PartialEquiv.prod_coe_symm, mem_prod,
+    modelWithCornersSelf_coe, range_id, mem_univ, and_true]
+
 /-- The tangent cone of `A ×ˢ B` at `z`, read in the chart of `M × N`, contains the tangent cone of
 `A` at `z.1` in the first factor. -/
 theorem inl_image_mtangentConeAt_subset_prodNormed {A : Set M} {B : Set N}
     {z : M × N} (hB : z.2 ∈ B) :
     ContinuousLinearMap.inl 𝕜 E E' '' mtangentConeAt 𝓘(𝕜, E) A z.1 ⊆
       mtangentConeAt 𝓘(𝕜, E × E') (A ×ˢ B) z := by
-  have hs : (extChartAt 𝓘(𝕜, E × E') z).symm ⁻¹' (A ×ˢ B) ∩ range 𝓘(𝕜, E × E') =
-      ((extChartAt 𝓘(𝕜, E) z.1).symm ⁻¹' A ∩ range 𝓘(𝕜, E)) ×ˢ
-        ((extChartAt 𝓘(𝕜, E') z.2).symm ⁻¹' B ∩ range 𝓘(𝕜, E')) := by
-    rw [extChartAt_prodNormed]
-    ext v
-    simp only [mem_inter_iff, mem_preimage, PartialEquiv.prod_coe_symm, mem_prod,
-      modelWithCornersSelf_coe, range_id, mem_univ, and_true]
-  rw [mtangentConeAt_def, mtangentConeAt_def, hs, extChartAt_prodNormed]
+  rw [mtangentConeAt_def, mtangentConeAt_def, extChartAt_prodNormed_symm_preimage_prod_inter_range,
+    extChartAt_prodNormed]
   exact subset_tangentConeAt_prod_left (subset_closure ⟨by simpa using hB, by simp⟩)
 
 /-- The tangent cone of `A ×ˢ B` at `z`, read in the chart of `M × N`, contains the tangent cone of
@@ -218,14 +201,8 @@ theorem inr_image_mtangentConeAt_subset_prodNormed {A : Set M} {B : Set N}
     {z : M × N} (hA : z.1 ∈ A) :
     ContinuousLinearMap.inr 𝕜 E E' '' mtangentConeAt 𝓘(𝕜, E') B z.2 ⊆
       mtangentConeAt 𝓘(𝕜, E × E') (A ×ˢ B) z := by
-  have hs : (extChartAt 𝓘(𝕜, E × E') z).symm ⁻¹' (A ×ˢ B) ∩ range 𝓘(𝕜, E × E') =
-      ((extChartAt 𝓘(𝕜, E) z.1).symm ⁻¹' A ∩ range 𝓘(𝕜, E)) ×ˢ
-        ((extChartAt 𝓘(𝕜, E') z.2).symm ⁻¹' B ∩ range 𝓘(𝕜, E')) := by
-    rw [extChartAt_prodNormed]
-    ext v
-    simp only [mem_inter_iff, mem_preimage, PartialEquiv.prod_coe_symm, mem_prod,
-      modelWithCornersSelf_coe, range_id, mem_univ, and_true]
-  rw [mtangentConeAt_def, mtangentConeAt_def, hs, extChartAt_prodNormed]
+  rw [mtangentConeAt_def, mtangentConeAt_def, extChartAt_prodNormed_symm_preimage_prod_inter_range,
+    extChartAt_prodNormed]
   exact subset_tangentConeAt_prod_right (subset_closure ⟨by simpa using hA, by simp⟩)
 
 /-- The span of the tangent cone of `A ×ˢ B` at `z`, read in the chart of `M × N`, contains the

@@ -31,10 +31,6 @@ reads linearly in these coordinates.
 ## Main declarations
 
 * `TauCeti.MorseChart.prod`: the product of Morse charts, a Morse chart of the separated sum.
-* `TauCeti.mvfderiv_comp_fst_add_comp_snd_apply_prodNormed`: the differential of the
-  separated sum is the sum of the differentials of the summands.
-* `TauCeti.criticalPoints_comp_fst_add_comp_snd_prodNormed`: the critical points of the separated
-  sum are the pairs of critical points.
 * `TauCeti.IsAdaptedPseudoGradient.prod`: the product field is adapted to the separated sum.
 * `TauCeti.IsAdaptedPseudoGradient.flow_prod`: its flow is the product of the flows.
 * `TauCeti.IsAdaptedPseudoGradient.stableSet_prod` and
@@ -60,113 +56,6 @@ variable {E E' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N] [ChartedSpace E' N]
   {f : M → ℝ} {g : N → ℝ}
-
-/-! ### The separated sum read on `E × E'` -/
-
-section SeparatedSum
-
-private theorem manifoldMorseIndex_comp_fst_add_comp_snd_of_eq [FiniteDimensional ℝ E]
-    [FiniteDimensional ℝ E'] {I : ModelWithCorners ℝ (E × E') (E × E')}
-    (hI : I = 𝓘(ℝ, E).prod 𝓘(ℝ, E')) {x : M} {y : N}
-    (hf : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
-    (hg : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E') g y) :
-    manifoldMorseIndex I (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) =
-      manifoldMorseIndex 𝓘(ℝ, E) f x + manifoldMorseIndex 𝓘(ℝ, E') g y := by
-  subst hI; exact hf.manifoldMorseIndex_comp_fst_add_comp_snd hg
-
-private theorem isMorse_comp_fst_add_comp_snd_of_eq {I : ModelWithCorners ℝ (E × E') (E × E')}
-    (hI : I = 𝓘(ℝ, E).prod 𝓘(ℝ, E')) (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMorse 𝓘(ℝ, E') g) :
-    IsMorse I (f ∘ Prod.fst + g ∘ Prod.snd) := by
-  subst hI; exact hf.comp_fst_add_comp_snd hg
-
-/-- At a pair of nondegenerate critical points, the Morse index of the separated sum, for the
-model `𝓘(ℝ, E × E')`, is the sum of the two Morse indices. -/
-theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_comp_snd_prodNormed
-    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] {x : M} {y : N}
-    (hf : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
-    (hg : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E') g y) :
-    manifoldMorseIndex 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) =
-      manifoldMorseIndex 𝓘(ℝ, E) f x + manifoldMorseIndex 𝓘(ℝ, E') g y :=
-  manifoldMorseIndex_comp_fst_add_comp_snd_of_eq modelWithCornersSelf_prod hf hg
-
-/-- The separated sum of two Morse functions is a Morse function for the model `𝓘(ℝ, E × E')`. -/
-theorem IsMorse.comp_fst_add_comp_snd_prodNormed (hf : IsMorse 𝓘(ℝ, E) f)
-    (hg : IsMorse 𝓘(ℝ, E') g) : IsMorse 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) :=
-  isMorse_comp_fst_add_comp_snd_of_eq modelWithCornersSelf_prod hf hg
-
-/-- **The differential of a separated sum** is the sum of the differentials of the summands. -/
-theorem mvfderiv_comp_fst_add_comp_snd_apply_prodNormed {z : M × N}
-    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f z.1) (hg : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g z.2)
-    (u : E × E') :
-    mvfderiv 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) z u =
-      mvfderiv 𝓘(ℝ, E) f z.1 u.1 + mvfderiv 𝓘(ℝ, E') g z.2 u.2 := by
-  have h₁ := hasMFDerivAt_fst_prodNormed (𝕜 := ℝ) (E := E) (E' := E') (M := M)
-    (N := N) z
-  have h₂ := hasMFDerivAt_snd_prodNormed (𝕜 := ℝ) (E := E) (E' := E') (M := M)
-    (N := N) z
-  have e₁ : mvfderiv 𝓘(ℝ, E × E') (f ∘ Prod.fst) z u = mvfderiv 𝓘(ℝ, E) f z.1 u.1 := by
-    refine (mvfderiv_comp_apply z hf h₁.mdifferentiableAt u).trans ?_
-    rw [h₁.mfderiv]
-    -- `ContinuousLinearMap.fst` evaluates to the first component.
-    rfl
-  have e₂ : mvfderiv 𝓘(ℝ, E × E') (g ∘ Prod.snd) z u = mvfderiv 𝓘(ℝ, E') g z.2 u.2 := by
-    refine (mvfderiv_comp_apply z hg h₂.mdifferentiableAt u).trans ?_
-    rw [h₂.mfderiv]
-    -- `ContinuousLinearMap.snd` evaluates to the second component.
-    rfl
-  rw [mvfderiv_add (F := ℝ) (hf.comp z h₁.mdifferentiableAt) (hg.comp z h₂.mdifferentiableAt),
-    ← e₁, ← e₂]
-  rfl
-
-/-- **The critical points of a separated sum are the pairs of critical points**, for the model
-`𝓘(ℝ, E × E')`. -/
-theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_prodNormed {z : M × N}
-    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f z.1) (hg : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g z.2) :
-    mvfderiv 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) z = 0 ↔
-      mvfderiv 𝓘(ℝ, E) f z.1 = 0 ∧ mvfderiv 𝓘(ℝ, E') g z.2 = 0 := by
-  constructor
-  · intro h
-    refine ⟨ContinuousLinearMap.ext fun v ↦ ?_, ContinuousLinearMap.ext fun w ↦ ?_⟩
-    · have hv := congr($h ((v, 0) : E × E'))
-      have h0 : mvfderiv 𝓘(ℝ, E') g z.2 (0 : E') = 0 := map_zero _
-      rw [mvfderiv_comp_fst_add_comp_snd_apply_prodNormed hf hg] at hv
-      dsimp only at hv
-      rw [h0, add_zero] at hv
-      -- The zero map evaluates to `0`.
-      exact hv.trans rfl
-    · have hw := congr($h ((0, w) : E × E'))
-      have h0 : mvfderiv 𝓘(ℝ, E) f z.1 (0 : E) = 0 := map_zero _
-      rw [mvfderiv_comp_fst_add_comp_snd_apply_prodNormed hf hg] at hw
-      dsimp only at hw
-      rw [h0, zero_add] at hw
-      -- The zero map evaluates to `0`.
-      exact hw.trans rfl
-  · rintro ⟨h₁, h₂⟩
-    ext u
-    rw [mvfderiv_comp_fst_add_comp_snd_apply_prodNormed hf hg u, h₁, h₂]
-    -- The zero maps evaluate to `0`.
-    exact add_zero (0 : ℝ)
-
-/-- The form of `TauCeti.mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_prodNormed` for
-the manifold derivative `mfderiv`, in which adapted pseudo-gradients are stated. -/
-theorem mfderiv_comp_fst_add_comp_snd_eq_zero_iff_prodNormed {z : M × N}
-    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f z.1) (hg : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g z.2) :
-    mfderiv 𝓘(ℝ, E × E') 𝓘(ℝ) (f ∘ Prod.fst + g ∘ Prod.snd) z = 0 ↔
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z.1 = 0 ∧ mfderiv 𝓘(ℝ, E') 𝓘(ℝ) g z.2 = 0 := by
-  simp only [← mvfderiv_eq_zero_iff]
-  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_prodNormed hf hg
-
-/-- **The critical set of a separated sum** is the product of the critical sets, for the model
-`𝓘(ℝ, E × E')`. -/
-theorem criticalPoints_comp_fst_add_comp_snd_prodNormed (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
-    (hg : MDifferentiable 𝓘(ℝ, E') 𝓘(ℝ) g) :
-    criticalPoints 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) =
-      criticalPoints 𝓘(ℝ, E) f ×ˢ criticalPoints 𝓘(ℝ, E') g := by
-  ext z
-  simp only [mem_criticalPoints, mem_prod]
-  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_prodNormed (hf z.1) (hg z.2)
-
-end SeparatedSum
 
 /-! ### Products of Morse charts -/
 
@@ -221,7 +110,11 @@ noncomputable def prod (φ : MorseChart E f x) (ψ : MorseChart E' g y)
     simp only [Pi.add_apply, Function.comp_apply]
     rw [φ.eq_quadratic _ hz₁, ψ.eq_quadratic _ hz₂, ← (prodIndexEquiv E E').symm.sum_comp,
       Fintype.sum_sum_type]
-    simp
+    simp only [Equiv.apply_symm_apply, Sum.elim_inl, Sum.elim_inr,
+      OpenPartialHomeomorph.prod_apply, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply,
+      LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply,
+      LinearEquiv.sumArrowLequivProdArrow_symm_apply_inl,
+      LinearEquiv.sumArrowLequivProdArrow_symm_apply_inr]
     ring
 
 variable (φ : MorseChart E f x) (ψ : MorseChart E' g y)
@@ -238,8 +131,11 @@ the second. -/
 @[simp]
 theorem prod_coord_apply (v : E × E') (i : Fin (Module.finrank ℝ (E × E'))) :
     (φ.prod ψ hf hg).coord v i = Sum.elim (φ.coord v.1) (ψ.coord v.2) (prodIndexEquiv E E' i) := by
-  rw [prod]
-  rfl
+  simp only [prod, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply,
+    LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply]
+  cases prodIndexEquiv E E' i with
+  | inl a => exact LinearEquiv.sumArrowLequivProdArrow_symm_apply_inl _ _ a
+  | inr b => exact LinearEquiv.sumArrowLequivProdArrow_symm_apply_inr _ _ b
 
 /-- The weights of a product of Morse charts are those of the first chart followed by those of the
 second. -/
@@ -260,16 +156,15 @@ variable [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E') ∞ N] [Finit
 
 /-- **Products of adapted pseudo-gradients.** If `X` is adapted to the Morse function `f` and `Y`
 to the Morse function `g`, the product field `(x, y) ↦ (X x, Y y)` is adapted to the separated sum
-`f ∘ Prod.fst + g ∘ Prod.snd`. Away from the critical points, `d(f + g)(X, Y) = df(X) + dg(Y)` is
-negative since both terms are nonpositive and one is negative; at a critical point `(x, y)`, the
-product of the Morse charts at `x` and `y` in which `X` and `Y` are linear is a Morse chart in which
-the product field is linear. -/
+`f ∘ Prod.fst + g ∘ Prod.snd`. -/
 theorem prod (hX : IsAdaptedPseudoGradient f X) (hY : IsAdaptedPseudoGradient g Y)
     (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMorse 𝓘(ℝ, E') g) :
     IsAdaptedPseudoGradient (f ∘ Prod.fst + g ∘ Prod.snd)
       (fun z : M × N ↦ ((X z.1, Y z.2) : TangentSpace 𝓘(ℝ, E × E') z)) where
   contMDiff := contMDiff_prodMk_vectorField_prodNormed hX.contMDiff hY.contMDiff
   mvfderiv_apply_lt_zero z hz := by
+    -- Away from the critical points, `d(f + g)(X, Y) = df(X) + dg(Y)` is negative, since both
+    -- terms are nonpositive and one is negative.
     have hf₁ := hf.contMDiff.mdifferentiable (by simp) z.1
     have hg₂ := hg.contMDiff.mdifferentiable (by simp) z.2
     rw [Ne, mfderiv_comp_fst_add_comp_snd_eq_zero_iff_prodNormed hf₁ hg₂,
@@ -289,6 +184,8 @@ theorem prod (hX : IsAdaptedPseudoGradient f X) (hY : IsAdaptedPseudoGradient g 
     obtain ⟨ψ, hψ⟩ := hY.exists_morseChart z.2 hz₂
     have hnf := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hz₁
     have hng := hg.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hz₂
+    -- The product of the Morse charts at `z.1` and `z.2` in which `X` and `Y` are linear is a Morse
+    -- chart in which the product field is linear.
     refine ⟨φ.prod ψ hnf hng, fun w hw ↦ ?_⟩
     obtain ⟨hw₁, hw₂⟩ := hw
     have hP := (φ.prod ψ hnf hng).mdifferentiableAt_toChart (y := w) ⟨hw₁, hw₂⟩
@@ -297,11 +194,11 @@ theorem prod (hX : IsAdaptedPseudoGradient f X) (hY : IsAdaptedPseudoGradient g 
         ((X w.1, Y w.2) : E × E') =
         (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart w.1 (X w.1),
           mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') ψ.toChart w.2 (Y w.2)) := by
-      refine Prod.ext ?_ ?_
-      · rw [fst_mfderiv_apply_prodNormed hP]
-        exact mfderiv_comp_fst_apply_prodNormed (φ.mdifferentiableAt_toChart hw₁) _
-      · rw [snd_mfderiv_apply_prodNormed hP]
-        exact mfderiv_comp_snd_apply_prodNormed (ψ.mdifferentiableAt_toChart hw₂) _
+      -- For maps into a normed space, `mvfderiv` is `mfderiv` read in the target, by definition.
+      refine Prod.ext (((ContinuousLinearMap.fst ℝ E E').mvfderiv_comp_apply hP _).symm.trans ?_)
+        (((ContinuousLinearMap.snd ℝ E E').mvfderiv_comp_apply hP _).symm.trans ?_)
+      · exact mfderiv_comp_fst_apply_prodNormed (φ.mdifferentiableAt_toChart hw₁) _
+      · exact mfderiv_comp_snd_apply_prodNormed (ψ.mdifferentiableAt_toChart hw₂) _
     rw [hd]
     funext i
     simp only [MorseChart.prod_weight, MorseChart.prod_coord_apply, MorseChart.prod_toChart,
@@ -318,6 +215,7 @@ variable [CompactSpace M] [T2Space M] [CompactSpace N] [T2Space N]
   (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMorse 𝓘(ℝ, E') g)
 
 /-- **The flow of the product pseudo-gradient is the product of the flows.** -/
+@[simp]
 theorem flow_prod (t : ℝ) (z : M × N) :
     (hX.prod hY hf hg).flow t z = (hX.flow t z.1, hY.flow t z.2) := by
   have hγ := isMIntegralCurve_prodMk_prodNormed (hX.isMIntegralCurve_flow z.1)
@@ -332,6 +230,7 @@ theorem flow_prod (t : ℝ) (z : M × N) :
 
 /-- The stable set of `p` for the product pseudo-gradient is the product of the stable sets of its
 components. -/
+@[simp]
 theorem stableSet_prod (p : M × N) :
     (hX.prod hY hf hg).flow.stableSet p = hX.flow.stableSet p.1 ×ˢ hY.flow.stableSet p.2 := by
   ext z
@@ -339,6 +238,7 @@ theorem stableSet_prod (p : M × N) :
 
 /-- The unstable set of `p` for the product pseudo-gradient is the product of the unstable sets of
 its components. -/
+@[simp]
 theorem unstableSet_prod (p : M × N) :
     (hX.prod hY hf hg).flow.unstableSet p =
       hX.flow.unstableSet p.1 ×ˢ hY.flow.unstableSet p.2 := by

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Prod
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 import TauCeti.Analysis.Calculus.Morse.Boundary.Square
 import TauCeti.Analysis.Calculus.Morse.Stable
+import TauCeti.LinearAlgebra.DirectSum.Finsupp
 
 /-!
 # The mod-two Morse complex of a separated sum
@@ -330,36 +331,6 @@ theorem morseChainSeparatedSumEquiv_single (p : MorseCriticalPoint f) (q : Morse
       Finsupp.single p a ⊗ₜ Finsupp.single q 1 := by
   simp [morseChainSeparatedSumEquiv, finsuppTensorFinsupp'_symm_single_eq_tmul_single_one]
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- Pairing a chain of `f` with a fixed critical point of `g` corresponds to its tensor product
-with that critical point. -/
-private theorem morseChainSeparatedSumEquiv_mapDomain_left (q : MorseCriticalPoint g)
-    (c : MorseChain f) :
-    morseChainSeparatedSumEquiv f g
-        (Finsupp.mapDomain (fun p' ↦ (MorseCriticalPoint.separatedSumEquiv f g).symm (p', q))
-          c) =
-      c ⊗ₜ Finsupp.single q 1 := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c₁ c₂ h₁ h₂ => rw [Finsupp.mapDomain_add, map_add, h₁, h₂, TensorProduct.add_tmul]
-  | single p' b => rw [Finsupp.mapDomain_single, morseChainSeparatedSumEquiv_single]
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- Pairing a fixed critical point of `f` with a chain of `g` corresponds to its tensor product
-with that critical point. -/
-private theorem morseChainSeparatedSumEquiv_mapDomain_right (p : MorseCriticalPoint f)
-    (c : MorseChain g) :
-    morseChainSeparatedSumEquiv f g
-        (Finsupp.mapDomain (fun q' ↦ (MorseCriticalPoint.separatedSumEquiv f g).symm (p, q'))
-          c) =
-      Finsupp.single p 1 ⊗ₜ c := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c₁ c₂ h₁ h₂ => rw [Finsupp.mapDomain_add, map_add, h₁, h₂, TensorProduct.tmul_add]
-  | single q' b =>
-    rw [Finsupp.mapDomain_single, morseChainSeparatedSumEquiv_single, ← mul_one b,
-      ← smul_eq_mul, ← Finsupp.smul_single, ← Finsupp.smul_single, TensorProduct.smul_tmul]
-
 /-- **The Künneth formula for the mod-two Morse complex.** Under the identification of the mod-two
 Morse chains of the separated sum with the tensor product of the chains of `f` and of `g`, the
 Morse boundary of the separated sum is `∂ ⊗ 1 + 1 ⊗ ∂`. -/
@@ -371,17 +342,12 @@ theorem morseChainSeparatedSumEquiv_comp_morseBoundary (hhs : ContDiff ℝ 2 (se
       ((morseBoundary hfs hf hM hcf htf).rTensor (MorseChain g) +
           (morseBoundary hgs hg hN hcg htg).lTensor (MorseChain f)) ∘ₗ
         (morseChainSeparatedSumEquiv f g).toLinearMap := by
-  refine Finsupp.lhom_ext fun P a ↦ ?_
-  obtain ⟨⟨p, q⟩, rfl⟩ := (MorseCriticalPoint.separatedSumEquiv f g).symm.surjective P
-  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    morseBoundary_separatedSum_single hfs hf hM hcf htf hgs hg hN hcg htg hh hhs hMh hch hth,
-    map_add, morseChainSeparatedSumEquiv_mapDomain_left,
-    morseChainSeparatedSumEquiv_mapDomain_right,
-    morseChainSeparatedSumEquiv_single, LinearMap.add_apply, LinearMap.rTensor_tmul,
-    LinearMap.lTensor_tmul]
-  congr 1
-  rw [← mul_one a, ← smul_eq_mul, ← Finsupp.smul_single, ← Finsupp.smul_single, map_smul,
-    TensorProduct.smul_tmul]
+  classical
+  refine domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor _
+    fun p p' q q' ↦ ?_
+  simp only [morseBoundary_single, morseBoundaryOnGenerator_apply, one_smul]
+  exact morseBoundaryCoeff_separatedSum hfs hf hM hcf htf hgs hg hN hcg htg hh hhs hMh hch hth
+    p p' q q'
 
 end Boundary
 

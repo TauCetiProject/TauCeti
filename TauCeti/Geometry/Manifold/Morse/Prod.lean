@@ -8,9 +8,12 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Analysis.Calculus.Morse.Prod
+public import TauCeti.Geometry.Manifold.Instances.NormedProd
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Morse functions on a product manifold
@@ -30,6 +33,11 @@ boundary nor openness hypotheses, because `IsMorseOn` tests criticality in the p
 where a function which is Morse on a set has a differentiable coordinate expression at every point
 of the set.
 
+When `M` and `N` are charted on normed spaces `E` and `E'`, the last section reads `M × N` on the
+normed space `E × E'` (`TauCeti.prodNormedChartedSpace`), with the model `𝓘(ℝ, E × E')`, in which
+the Morse complex is stated, and transports these statements to it along
+`modelWithCornersSelf_prod`.
+
 ## Main declarations
 
 * `TauCeti.isManifoldNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff` and
@@ -44,6 +52,10 @@ of the set.
 * `TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_comp_snd`: the
   Morse index of the separated sum is the sum of the indices.
+* `TauCeti.mvfderiv_comp_fst_add_comp_snd_apply_prodNormed`,
+  `TauCeti.criticalPoints_comp_fst_add_comp_snd_prodNormed` and
+  `TauCeti.IsMorse.comp_fst_add_comp_snd_prodNormed`: the differential, the critical set and the
+  Morse property of the separated sum for the model `𝓘(ℝ, E × E')`.
 
 ## References
 
@@ -177,6 +189,110 @@ theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_com
   TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd
     ((isManifoldNondegenerateCriticalPoint_iff I).1 hf).contDiffAt
     ((isManifoldNondegenerateCriticalPoint_iff I').1 hg).contDiffAt
+
+end TauCeti
+
+/-! ### The separated sum read on `E × E'`
+
+When `M` and `N` are charted on normed spaces `E` and `E'`, the product `M × N` can also be read
+on the normed space `E × E'` (`TauCeti.prodNormedChartedSpace`), with the model `𝓘(ℝ, E × E')`.
+This model equals `𝓘(ℝ, E).prod 𝓘(ℝ, E')` only propositionally (`modelWithCornersSelf_prod`), so
+each statement below is proved for a model `I` equal to the product model, which `subst` replaces
+by the product model, and then specialized to `𝓘(ℝ, E × E')`. -/
+
+namespace TauCeti
+
+attribute [local instance 10] prodNormedChartedSpace
+
+variable {E E' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N] [ChartedSpace E' N]
+  {f : M → ℝ} {g : N → ℝ}
+
+section Transport
+
+variable {I : ModelWithCorners ℝ (E × E') (E × E')}
+
+private theorem manifoldMorseIndex_comp_fst_add_comp_snd_of_eq [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ E'] (hI : I = 𝓘(ℝ, E).prod 𝓘(ℝ, E')) {x : M} {y : N}
+    (hf : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (hg : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E') g y) :
+    manifoldMorseIndex I (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) =
+      manifoldMorseIndex 𝓘(ℝ, E) f x + manifoldMorseIndex 𝓘(ℝ, E') g y := by
+  subst hI; exact hf.manifoldMorseIndex_comp_fst_add_comp_snd hg
+
+private theorem isMorse_comp_fst_add_comp_snd_of_eq (hI : I = 𝓘(ℝ, E).prod 𝓘(ℝ, E'))
+    (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMorse 𝓘(ℝ, E') g) :
+    IsMorse I (f ∘ Prod.fst + g ∘ Prod.snd) := by
+  subst hI; exact hf.comp_fst_add_comp_snd hg
+
+private theorem mvfderiv_comp_fst_add_comp_snd_apply_of_eq (hI : I = 𝓘(ℝ, E).prod 𝓘(ℝ, E'))
+    {z : M × N} (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f z.1)
+    (hg : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g z.2) (u : E × E') :
+    mvfderiv I (f ∘ Prod.fst + g ∘ Prod.snd) z u =
+      mvfderiv 𝓘(ℝ, E) f z.1 u.1 + mvfderiv 𝓘(ℝ, E') g z.2 u.2 := by
+  subst hI
+  rw [mvfderiv_add (hf.comp z mdifferentiableAt_fst) (hg.comp z mdifferentiableAt_snd)]
+  exact congr($(mvfderiv_comp_fst_apply f z u) + $(mvfderiv_comp_snd_apply g z u))
+
+private theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_of_eq
+    (hI : I = 𝓘(ℝ, E).prod 𝓘(ℝ, E')) {z : M × N} (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f z.1)
+    (hg : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g z.2) :
+    mvfderiv I (f ∘ Prod.fst + g ∘ Prod.snd) z = 0 ↔
+      mvfderiv 𝓘(ℝ, E) f z.1 = 0 ∧ mvfderiv 𝓘(ℝ, E') g z.2 = 0 := by
+  subst hI; exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg
+
+end Transport
+
+/-- At a pair of nondegenerate critical points, the Morse index of the separated sum, for the
+model `𝓘(ℝ, E × E')`, is the sum of the two Morse indices. -/
+theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_comp_snd_prodNormed
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] {x : M} {y : N}
+    (hf : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (hg : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E') g y) :
+    manifoldMorseIndex 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) =
+      manifoldMorseIndex 𝓘(ℝ, E) f x + manifoldMorseIndex 𝓘(ℝ, E') g y :=
+  manifoldMorseIndex_comp_fst_add_comp_snd_of_eq modelWithCornersSelf_prod hf hg
+
+/-- The separated sum of two Morse functions is a Morse function for the model `𝓘(ℝ, E × E')`. -/
+theorem IsMorse.comp_fst_add_comp_snd_prodNormed (hf : IsMorse 𝓘(ℝ, E) f)
+    (hg : IsMorse 𝓘(ℝ, E') g) : IsMorse 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) :=
+  isMorse_comp_fst_add_comp_snd_of_eq modelWithCornersSelf_prod hf hg
+
+/-- **The differential of a separated sum** is the sum of the differentials of the summands. -/
+theorem mvfderiv_comp_fst_add_comp_snd_apply_prodNormed {z : M × N}
+    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f z.1) (hg : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g z.2)
+    (u : E × E') :
+    mvfderiv 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) z u =
+      mvfderiv 𝓘(ℝ, E) f z.1 u.1 + mvfderiv 𝓘(ℝ, E') g z.2 u.2 :=
+  mvfderiv_comp_fst_add_comp_snd_apply_of_eq modelWithCornersSelf_prod hf hg u
+
+/-- **The critical points of a separated sum are the pairs of critical points**, for the model
+`𝓘(ℝ, E × E')`. -/
+theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_prodNormed {z : M × N}
+    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f z.1) (hg : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g z.2) :
+    mvfderiv 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) z = 0 ↔
+      mvfderiv 𝓘(ℝ, E) f z.1 = 0 ∧ mvfderiv 𝓘(ℝ, E') g z.2 = 0 :=
+  mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_of_eq modelWithCornersSelf_prod hf hg
+
+/-- The form of `TauCeti.mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_prodNormed` for
+the manifold derivative `mfderiv`, in which adapted pseudo-gradients are stated. -/
+theorem mfderiv_comp_fst_add_comp_snd_eq_zero_iff_prodNormed {z : M × N}
+    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f z.1) (hg : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g z.2) :
+    mfderiv 𝓘(ℝ, E × E') 𝓘(ℝ) (f ∘ Prod.fst + g ∘ Prod.snd) z = 0 ↔
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z.1 = 0 ∧ mfderiv 𝓘(ℝ, E') 𝓘(ℝ) g z.2 = 0 := by
+  simp only [← mvfderiv_eq_zero_iff]
+  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_prodNormed hf hg
+
+/-- **The critical set of a separated sum** is the product of the critical sets, for the model
+`𝓘(ℝ, E × E')`. -/
+theorem criticalPoints_comp_fst_add_comp_snd_prodNormed (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+    (hg : MDifferentiable 𝓘(ℝ, E') 𝓘(ℝ) g) :
+    criticalPoints 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) =
+      criticalPoints 𝓘(ℝ, E) f ×ˢ criticalPoints 𝓘(ℝ, E') g := by
+  ext z
+  simp only [mem_criticalPoints, mem_prod]
+  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_prodNormed (hf z.1) (hg z.2)
 
 end TauCeti
 
