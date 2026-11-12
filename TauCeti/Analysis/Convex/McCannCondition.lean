@@ -139,9 +139,10 @@ theorem pow_mul_apply_div_pow_le (hn : n ≠ 0) (hU0 : U 0 = 0)
     linarith
 
 /-- **McCann's inequality at a positive operator.** Let `U 0 = 0` and let `φ(s) = sⁿ U(s⁻ⁿ)` be
-convex and nonincreasing on `(0, ∞)`, where `n` is the dimension of `E`. (In dimension `0` every
-determinant is `1` and the inequality is an equality.) For a positive operator
-`A` on `E`, write `Jₛ = det ((1 - s) • 1 + s • A)`. For `0 < t < 1` and `r ≥ 0`,
+convex and nonincreasing on `(0, ∞)`, where `n = finrank ℝ E`. (If `finrank ℝ E = 0`, so `E` is
+zero- or infinite-dimensional, `LinearMap.det` is `1` by convention, every determinant is `1` and
+the inequality is an equality.) For a positive operator `A` on `E`, write
+`Jₛ = det ((1 - s) • 1 + s • A)`. For `0 ≤ t < 1` and `r ≥ 0`,
 `Jₜ U(r / Jₜ) ≤ (1 - t) U(r) + t J₁ U(r / J₁)` when `J₁ ≠ 0`, and
 `Jₜ U(r / Jₜ) ≤ (1 - t) U(r) + t L r` when `J₁ = 0`, provided `L` then bounds `φ` above. The
 concavity of `s ↦ Jₛ^{1/n}` is Minkowski's determinant inequality. -/
@@ -150,14 +151,14 @@ theorem _root_.ContinuousLinearMap.IsPositive.det_mul_apply_div_det_le {E : Type
     (hU0 : U 0 = 0)
     (hc : ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹)
     (ha : AntitoneOn (fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹) (Ioi 0))
-    {r t L : ℝ} (hr : 0 ≤ r) (ht₀ : 0 < t) (ht₁ : t < 1)
+    {r t L : ℝ} (hr : 0 ≤ r) (ht₀ : 0 ≤ t) (ht₁ : t < 1)
     (hL : A.det = 0 → 0 < r →
       ∀ s ∈ Ioi (0 : ℝ), s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹ ≤ L) :
     ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det *
         U (r / ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det) ≤
       (1 - t) * U r + t * (if A.det = 0 then L * r else A.det * U (r / A.det)) := by
   rcases Nat.eq_zero_or_pos (finrank ℝ E) with h0 | hpos
-  · -- In dimension `0` every determinant is `1`, and both sides equal `U r`.
+  · -- If `finrank ℝ E = 0`, every determinant is `1`, and both sides equal `U r`.
     have hdet (B : E →L[ℝ] E) : B.det = 1 := LinearMap.det_eq_one_of_finrank_eq_zero h0 _
     simp only [hdet, one_mul, div_one, one_ne_zero, ite_false]
     exact (by ring : U r = (1 - t) * U r + t * U r).le
@@ -167,15 +168,15 @@ theorem _root_.ContinuousLinearMap.IsPositive.det_mul_apply_div_det_le {E : Type
   have hn' : (n : ℝ)⁻¹ ≠ 0 := inv_ne_zero (Nat.cast_ne_zero.2 hn)
   have hA' := (ContinuousLinearMap.isPositive_toLinearMap_iff _).2 hA
   have hJ : 0 < ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det :=
-    hA.det_one_sub_smul_id_add_smul_pos ht₀.le ht₁
+    hA.det_one_sub_smul_id_add_smul_pos ht₀ ht₁
   have hJ₁ : 0 ≤ A.det := hA'.det_nonneg
   -- Minkowski's determinant inequality: `s ↦ det ((1 - s) • 1 + s • A) ^ (1 / n)` is concave.
   have hle : 1 - t + t * A.det ^ (n⁻¹ : ℝ) ≤
       ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det ^ (n⁻¹ : ℝ) := by
     have := LinearMap.concaveOn_det_rpow.2 ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2
-      ContinuousLinearMap.isPositive_id) hA' (sub_nonneg.2 ht₁.le) ht₀.le (sub_add_cancel 1 t)
+      ContinuousLinearMap.isPositive_id) hA' (sub_nonneg.2 ht₁.le) ht₀ (sub_add_cancel 1 t)
     simpa [ContinuousLinearMap.det, smul_eq_mul] using this
-  have key := pow_mul_apply_div_pow_le hn hU0 hc ha (r := r) (L := L) hr ⟨ht₀.le, ht₁.le⟩
+  have key := pow_mul_apply_div_pow_le hn hU0 hc ha (r := r) (L := L) hr ⟨ht₀, ht₁.le⟩
     (Real.rpow_pos_of_pos hJ _) (Real.rpow_nonneg hJ₁ _) hle
     fun ha₁ => hL ((Real.rpow_eq_zero hJ₁ hn').1 ha₁)
   rw [Real.rpow_inv_natCast_pow hJ.le hn, Real.rpow_inv_natCast_pow hJ₁ hn] at key
@@ -236,14 +237,14 @@ theorem convexOn_pow_mul_neg_mul_rpow_neg (hn : (n : ℝ) ≤ N) :
     (div_le_one_of_le₀ hn (n.cast_nonneg.trans hn))).subset
     Ioi_subset_Ici_self (convex_Ioi 0)).neg).congr fun _ hs => (pow_mul_neg_mul_rpow_neg_eq hs).symm
 
-/-- **The Rényi integrand satisfies the monotonicity half of McCann's condition.** For `0 < N`,
+/-- **The Rényi integrand satisfies the monotonicity half of McCann's condition.** For `0 ≤ N`,
 the function `φ(s) = sⁿ U(s⁻ⁿ) = -s^{n/N}` of `U(r) = -r · r^{-1/N}` is nonincreasing on
 `(0, ∞)`. -/
-theorem antitoneOn_pow_mul_neg_mul_rpow_neg (hN : 0 < N) :
+theorem antitoneOn_pow_mul_neg_mul_rpow_neg (hN : 0 ≤ N) :
     AntitoneOn (fun s : ℝ => s ^ n * -((s ^ n)⁻¹ * ((s ^ n)⁻¹) ^ (-N⁻¹))) (Ioi 0) := by
   intro x hx y hy hxy
   simp only [pow_mul_neg_mul_rpow_neg_eq hx, pow_mul_neg_mul_rpow_neg_eq hy, neg_le_neg_iff]
-  exact Real.rpow_le_rpow (le_of_lt hx) hxy (div_nonneg n.cast_nonneg hN.le)
+  exact Real.rpow_le_rpow (le_of_lt hx) hxy (div_nonneg n.cast_nonneg hN)
 
 end Renyi
 
