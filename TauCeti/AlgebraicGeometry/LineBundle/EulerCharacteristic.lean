@@ -18,6 +18,9 @@ depends on its class in the Picard group `LineBundleClass X`.
 
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.eulerCharBelow_eq_of_mk_eq`: invertible sheaves with
   the same class in the Picard group have the same truncated Euler characteristic.
+* `TauCeti.AlgebraicGeometry.LineBundleClass.eulerCharBelow`: the truncated Euler characteristic
+  descended to line-bundle classes, with `LineBundleClass.eulerCharBelow_mk` and
+  `LineBundleClass.eulerCharBelow_one`.
 -/
 
 public section
@@ -39,3 +42,28 @@ lemma eulerCharBelow_eq_of_mk_eq {L L' : InvertibleSheaf X}
   exact Scheme.Modules.eulerCharBelow_congr k e n
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf
+
+namespace TauCeti.AlgebraicGeometry.LineBundleClass
+
+universe u
+
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+
+/-- The truncated Euler characteristic `Σ_{i<n} (−1)ⁱ dim_k Hⁱ` of a line-bundle class, descended
+from `Scheme.Modules.eulerCharBelow`. -/
+noncomputable def eulerCharBelow (a : LineBundleClass X) (n : ℕ) : ℤ :=
+  lift (fun L ↦ Scheme.Modules.eulerCharBelow k X L.obj n)
+    (fun _ _ h ↦ InvertibleSheaf.eulerCharBelow_eq_of_mk_eq k (mk_eq_mk_iff.2 h) n) a
+
+@[simp]
+lemma eulerCharBelow_mk (L : InvertibleSheaf X) (n : ℕ) :
+    eulerCharBelow k (mk L) n = Scheme.Modules.eulerCharBelow k X L.obj n :=
+  lift_mk L
+
+@[simp]
+lemma eulerCharBelow_one (n : ℕ) :
+    eulerCharBelow k (1 : LineBundleClass X) n =
+      Scheme.Modules.eulerCharBelow k X (InvertibleSheaf.trivial X).obj n := by
+  rw [← mk_trivial, eulerCharBelow_mk]
+
+end TauCeti.AlgebraicGeometry.LineBundleClass
