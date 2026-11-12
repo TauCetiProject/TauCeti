@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct
+import TauCeti.LinearAlgebra.TensorProduct.Intersection
 
 /-!
 # The external product block of two operators
@@ -39,6 +40,22 @@ and similarly for the product in the other order. In particular, if `A†A = AA�
 `σ_P(ξ)` and `σ_Q(η)` of two operators normalized so that `σ_P* σ_P = σ_P σ_P* = ‖ξ‖²` and
 likewise for `σ_Q`, the external product therefore satisfies `A* A = A A* = ‖ξ‖² + ‖η‖²`.
 
+The kernel of the block is given by a Künneth formula, with no completeness assumption:
+
+`ker (externalProductBlock A B) ≃ (ker A ⊗ ker B) × (ker A† ⊗ ker B†)`.
+
+If `externalProductBlock A B (x, y) = 0`, then `(A ⊗ 1) x = (1 ⊗ B†) y` and
+`(1 ⊗ B) x = -(A† ⊗ 1) y`, and pairing these with `(A ⊗ 1) x` and `(1 ⊗ B) x` gives
+`‖(A ⊗ 1) x‖² + ‖(1 ⊗ B) x‖² = 0`, because `A ⊗ 1` and `1 ⊗ B` commute. So `x` lies in the common
+kernel of `A ⊗ 1` and `1 ⊗ B`, which is `ker A ⊗ ker B` since every vector space is flat
+(`LinearMap.ker_rTensor_inf_ker_lTensor`), and likewise for `y`. Since the adjoint of the block is
+`externalProductBlock A† (-B)`, its kernel, the cokernel of the block when the range is closed, is
+`(ker A† ⊗ ker B) × (ker A ⊗ ker B†)`. With `a, a', b, b'` the dimensions of `ker A`, `ker A†`,
+`ker B` and `ker B†`, the two kernels have dimensions `a b + a' b'` and `a' b + a b'`, and so
+the difference is `(a - a') (b - b')`: the index is multiplicative. These are the kernel and
+cokernel identifications of the product of two elliptic operators in Atiyah–Singer §9, applied
+here to the block on algebraic tensor products, for instance to the symbols.
+
 ## Main declarations
 
 * `ContinuousLinearMap.externalProductBlock`: the block operator above.
@@ -49,6 +66,15 @@ likewise for `σ_Q`, the external product therefore satisfies `A* A = A A* = ‖
 * `ContinuousLinearMap.adjoint_externalProductBlock_comp_self_of_eq_smul`,
   `ContinuousLinearMap.externalProductBlock_comp_adjoint_of_eq_smul` and
   `ContinuousLinearMap.norm_externalProductBlock_apply_sq_of_eq_smul`: the scalar case.
+* `ContinuousLinearMap.externalProductBlock_eq_zero_iff`,
+  `ContinuousLinearMap.adjoint_externalProductBlock_eq_zero_iff`: the kernels of the block and of
+  its adjoint.
+* `ContinuousLinearMap.kerExternalProductBlockEquiv`: the Künneth isomorphism
+  `(ker A ⊗ ker B) × (ker A† ⊗ ker B†) ≃ ker (externalProductBlock A B)`.
+* `ContinuousLinearMap.finrank_ker_externalProductBlock`,
+  `ContinuousLinearMap.finrank_ker_adjoint_externalProductBlock` and
+  `ContinuousLinearMap.finrank_ker_sub_finrank_ker_adjoint_externalProductBlock`: the dimensions
+  of the two kernels and the multiplicativity of their difference.
 * `ContinuousLinearMap.norm_externalProductBlock_le`: `‖externalProductBlock A B‖ ≤ 2 (‖A‖ + ‖B‖)`.
   Together with `ContinuousLinearMap.externalProductBlock_add` and
   `ContinuousLinearMap.externalProductBlock_ofReal_smul`, this makes the block a bounded real-linear
@@ -181,6 +207,121 @@ theorem externalProductBlock_adjoint_neg_apply_externalProductBlock (A : V₀ �
       rTensor_lTensor_apply_comm A B]
     abel
 
+section Kernel
+
+/-- **The kernel of the external product block.** `externalProductBlock A B` kills `(x, y)` exactly
+when `A ⊗ 1` and `1 ⊗ B` both kill `x` and `A† ⊗ 1` and `1 ⊗ B†` both kill `y`. The tensor
+products need not be complete. -/
+theorem externalProductBlock_eq_zero_iff {A : V₀ →L[𝕜] V₁} {B : W₀ →L[𝕜] W₁}
+    {w : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))} :
+    externalProductBlock A B w = 0 ↔
+      (A.rTensor W₀ w.fst = 0 ∧ B.lTensor V₀ w.fst = 0) ∧
+        A.adjoint.rTensor W₁ w.snd = 0 ∧ B.adjoint.lTensor V₁ w.snd = 0 := by
+  refine ⟨fun h ↦ ?_, fun ⟨⟨h₁, h₂⟩, h₃, h₄⟩ ↦ WithLp.ofLp_injective 2 <| Prod.ext
+    (by simp [h₁, h₄]) (by simp [h₂, h₃])⟩
+  have h₁ : A.rTensor W₀ w.fst = B.adjoint.lTensor V₁ w.snd := by
+    simpa [sub_eq_zero] using congrArg (fun z ↦ z.fst) h
+  have h₂ : B.lTensor V₀ w.fst = -A.adjoint.rTensor W₁ w.snd := by
+    simpa [add_eq_zero_iff_eq_neg] using congrArg (fun z ↦ z.snd) h
+  -- Pairing `h₁` with `(A ⊗ 1) x` and `h₂` with `(1 ⊗ B) x` gives the same cross term
+  -- `⟪(1 ⊗ B) (A ⊗ 1) x, y⟫` with opposite signs, since `A ⊗ 1` and `1 ⊗ B` commute.
+  have hsum : ‖A.rTensor W₀ w.fst‖ ^ 2 + ‖B.lTensor V₀ w.fst‖ ^ 2 = 0 := by
+    have e₁ : inner 𝕜 (A.rTensor W₀ w.fst) (A.rTensor W₀ w.fst) =
+        inner 𝕜 (B.lTensor V₁ (A.rTensor W₀ w.fst)) w.snd :=
+      (congrArg (inner 𝕜 _) h₁).trans (adjoint_lTensor_inner_right B _ _)
+    have e₂ : inner 𝕜 (B.lTensor V₀ w.fst) (B.lTensor V₀ w.fst) =
+        -inner 𝕜 (B.lTensor V₁ (A.rTensor W₀ w.fst)) w.snd := by
+      rw [congrArg (inner 𝕜 _) h₂, inner_neg_right, adjoint_rTensor_inner_right,
+        rTensor_lTensor_apply_comm]
+    have : ((‖A.rTensor W₀ w.fst‖ ^ 2 + ‖B.lTensor V₀ w.fst‖ ^ 2 : ℝ) : 𝕜) = 0 := by
+      rw [RCLike.ofReal_add, RCLike.ofReal_pow, RCLike.ofReal_pow, ← inner_self_eq_norm_sq_to_K,
+        ← inner_self_eq_norm_sq_to_K, e₁, e₂, add_neg_cancel]
+    exact_mod_cast this
+  obtain ⟨hA, hB⟩ := (add_eq_zero_iff_of_nonneg (by positivity) (by positivity)).1 hsum
+  rw [sq_eq_zero_iff, norm_eq_zero] at hA hB
+  exact ⟨⟨hA, hB⟩, by rwa [hB, eq_comm, neg_eq_zero] at h₂, by rwa [hA, eq_comm] at h₁⟩
+
+/-- The inclusion `(ker A ⊗ ker B) × (ker A† ⊗ ker B†) → (V₀ ⊗ W₀) × (V₁ ⊗ W₁)`, whose range is
+the kernel of the external product block. -/
+private noncomputable def kerTensorInclusion (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁) :
+    ((LinearMap.ker (A : V₀ →ₗ[𝕜] V₁) ⊗[𝕜] LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) ×
+        (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀) ⊗[𝕜]
+          LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) →ₗ[𝕜]
+      WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁)) :=
+  (WithLp.linearEquiv 2 𝕜 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))).symm.toLinearMap ∘ₗ
+    (TensorProduct.mapIncl (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁))
+      (LinearMap.ker (B : W₀ →ₗ[𝕜] W₁))).prodMap
+      (TensorProduct.mapIncl (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀))
+        (LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀)))
+
+private theorem kerTensorInclusion_apply (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
+    (st : (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁) ⊗[𝕜] LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) ×
+      (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀) ⊗[𝕜] LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) :
+    kerTensorInclusion A B st =
+      WithLp.toLp 2 (TensorProduct.mapIncl _ _ st.1, TensorProduct.mapIncl _ _ st.2) :=
+  rfl
+
+private theorem injective_kerTensorInclusion (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁) :
+    Function.Injective (kerTensorInclusion A B) := by
+  intro st st' h
+  rw [kerTensorInclusion_apply, kerTensorInclusion_apply] at h
+  have h' := congrArg WithLp.ofLp h
+  simp only [Prod.mk.injEq] at h'
+  exact Prod.ext ((TensorProduct.mapInclIsometry _ _).injective h'.1)
+    ((TensorProduct.mapInclIsometry _ _).injective h'.2)
+
+private theorem range_kerTensorInclusion (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁) :
+    LinearMap.range (kerTensorInclusion A B) = LinearMap.ker (externalProductBlock A B :
+        WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))) := by
+  ext w
+  -- Each component condition is membership in the common kernel of `f ⊗ 1` and `1 ⊗ g`.
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, externalProductBlock_eq_zero_iff]
+  simp only [rTensor_apply, lTensor_apply, ← LinearMap.mem_ker, ← Submodule.mem_inf,
+    LinearMap.ker_rTensor_inf_ker_lTensor]
+  constructor
+  · rintro ⟨st, rfl⟩
+    simp [kerTensorInclusion_apply]
+  · rintro ⟨⟨s, hs⟩, ⟨t, ht⟩⟩
+    exact ⟨(s, t), WithLp.ofLp_injective 2 <| Prod.ext hs ht⟩
+
+/-- **The Künneth isomorphism for the kernel of the external product block**:
+`(ker A ⊗ ker B) × (ker A† ⊗ ker B†) ≃ ker (externalProductBlock A B)`, given by the inclusions of
+the tensor products of the kernels. The tensor products need not be complete. -/
+noncomputable def kerExternalProductBlockEquiv (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁) :
+    ((LinearMap.ker (A : V₀ →ₗ[𝕜] V₁) ⊗[𝕜] LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) ×
+        (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀) ⊗[𝕜]
+          LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) ≃ₗ[𝕜]
+      LinearMap.ker (externalProductBlock A B :
+        WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))) :=
+  (LinearEquiv.ofInjective _ (injective_kerTensorInclusion A B)).trans
+    (LinearEquiv.ofEq _ _ (range_kerTensorInclusion A B))
+
+@[simp]
+theorem coe_kerExternalProductBlockEquiv_apply (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
+    (st : (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁) ⊗[𝕜] LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) ×
+      (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀) ⊗[𝕜] LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) :
+    (kerExternalProductBlockEquiv A B st : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))) =
+      WithLp.toLp 2 (TensorProduct.mapIncl _ _ st.1, TensorProduct.mapIncl _ _ st.2) := by
+  simp [kerExternalProductBlockEquiv, kerTensorInclusion_apply]
+
+/-- The dimension of the kernel of the external product block is
+`dim ker A · dim ker B + dim ker A† · dim ker B†`. -/
+theorem finrank_ker_externalProductBlock (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
+    [FiniteDimensional 𝕜 (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁))]
+    [FiniteDimensional 𝕜 (LinearMap.ker (B : W₀ →ₗ[𝕜] W₁))]
+    [FiniteDimensional 𝕜 (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀))]
+    [FiniteDimensional 𝕜 (LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))] :
+    Module.finrank 𝕜 (LinearMap.ker (externalProductBlock A B :
+        WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁)))) =
+      Module.finrank 𝕜 (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁)) *
+          Module.finrank 𝕜 (LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) +
+        Module.finrank 𝕜 (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀)) *
+          Module.finrank 𝕜 (LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀)) := by
+  rw [← (kerExternalProductBlockEquiv A B).finrank_eq, Module.finrank_prod,
+    Module.finrank_tensorProduct, Module.finrank_tensorProduct]
+
+end Kernel
+
 section Adjoint
 
 variable [CompleteSpace (V₀ ⊗[𝕜] W₀)] [CompleteSpace (V₁ ⊗[𝕜] W₁)]
@@ -218,6 +359,63 @@ theorem externalProductBlock_apply_adjoint_externalProductBlock (A : V₀ →L[�
   have h := externalProductBlock_adjoint_neg_apply_externalProductBlock A.adjoint (-B) w
   simp only [adjoint_adjoint, neg_neg, map_neg, comp_neg, neg_comp, neg_neg] at h
   rw [adjoint_externalProductBlock, h]
+
+/-- **The kernel of the adjoint of the external product block**, which is its cokernel when the
+range is closed: `(externalProductBlock A B)†` kills `(x, y)` exactly when `A† ⊗ 1` and `1 ⊗ B`
+both kill `x` and `A ⊗ 1` and `1 ⊗ B†` both kill `y`. -/
+theorem adjoint_externalProductBlock_eq_zero_iff {A : V₀ →L[𝕜] V₁} {B : W₀ →L[𝕜] W₁}
+    {w : WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))} :
+    (externalProductBlock A B).adjoint w = 0 ↔
+      (A.adjoint.rTensor W₀ w.fst = 0 ∧ B.lTensor V₁ w.fst = 0) ∧
+        A.rTensor W₁ w.snd = 0 ∧ B.adjoint.lTensor V₀ w.snd = 0 := by
+  simp [adjoint_externalProductBlock, externalProductBlock_eq_zero_iff]
+
+/-- The dimension of the kernel of the adjoint of the external product block is
+`dim ker A† · dim ker B + dim ker A · dim ker B†`. -/
+theorem finrank_ker_adjoint_externalProductBlock (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
+    [FiniteDimensional 𝕜 (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁))]
+    [FiniteDimensional 𝕜 (LinearMap.ker (B : W₀ →ₗ[𝕜] W₁))]
+    [FiniteDimensional 𝕜 (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀))]
+    [FiniteDimensional 𝕜 (LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))] :
+    Module.finrank 𝕜 (LinearMap.ker ((externalProductBlock A B).adjoint :
+        WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁)))) =
+      Module.finrank 𝕜 (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀)) *
+          Module.finrank 𝕜 (LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) +
+        Module.finrank 𝕜 (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁)) *
+          Module.finrank 𝕜 (LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀)) := by
+  have hB : LinearMap.ker ((-B : W₀ →L[𝕜] W₁) : W₀ →ₗ[𝕜] W₁) = LinearMap.ker (B : W₀ →ₗ[𝕜] W₁) := by
+    ext; simp
+  have hB' : LinearMap.ker ((-B : W₀ →L[𝕜] W₁).adjoint : W₁ →ₗ[𝕜] W₀) =
+      LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀) := by
+    ext; simp
+  have : FiniteDimensional 𝕜 (LinearMap.ker ((-B : W₀ →L[𝕜] W₁) : W₀ →ₗ[𝕜] W₁)) := by
+    rw [hB]; infer_instance
+  have : FiniteDimensional 𝕜 (LinearMap.ker ((-B : W₀ →L[𝕜] W₁).adjoint : W₁ →ₗ[𝕜] W₀)) := by
+    rw [hB']; infer_instance
+  have : FiniteDimensional 𝕜 (LinearMap.ker (A.adjoint.adjoint : V₀ →ₗ[𝕜] V₁)) := by
+    rw [adjoint_adjoint]; infer_instance
+  rw [adjoint_externalProductBlock, finrank_ker_externalProductBlock, hB, hB', adjoint_adjoint]
+
+/-- **Multiplicativity of the index for the external product block.** The dimension of the kernel
+minus the dimension of the kernel of the adjoint, which is the index when the range is closed, is
+the product of the corresponding differences for `A` and `B`. -/
+theorem finrank_ker_sub_finrank_ker_adjoint_externalProductBlock (A : V₀ →L[𝕜] V₁)
+    (B : W₀ →L[𝕜] W₁) [FiniteDimensional 𝕜 (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁))]
+    [FiniteDimensional 𝕜 (LinearMap.ker (B : W₀ →ₗ[𝕜] W₁))]
+    [FiniteDimensional 𝕜 (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀))]
+    [FiniteDimensional 𝕜 (LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))] :
+    (Module.finrank 𝕜 (LinearMap.ker (externalProductBlock A B :
+        WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁)))) :
+        ℤ) -
+      Module.finrank 𝕜 (LinearMap.ker ((externalProductBlock A B).adjoint :
+        WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁)))) =
+      ((Module.finrank 𝕜 (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁)) : ℤ) -
+          Module.finrank 𝕜 (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀))) *
+        ((Module.finrank 𝕜 (LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) : ℤ) -
+          Module.finrank 𝕜 (LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) := by
+  rw [finrank_ker_externalProductBlock, finrank_ker_adjoint_externalProductBlock]
+  push_cast
+  ring
 
 variable {A : V₀ →L[𝕜] V₁} {B : W₀ →L[𝕜] W₁}
 
