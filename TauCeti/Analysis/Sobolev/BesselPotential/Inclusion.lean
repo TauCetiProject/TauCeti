@@ -29,7 +29,9 @@ common compact support, are statements about this map.
 
 * `BesselPotentialSpace.inclusion`: the inclusion `H^s(E, F) →L[ℂ] H^r(E, F)` for `r ≤ s`.
 * `BesselPotentialSpace.toDistr_inclusion`: it does not change the tempered distribution.
-* `BesselPotentialSpace.norm_inclusion_le`: its operator norm is at most `1`.
+* `BesselPotentialSpace.norm_inclusion_le`: its operator norm is at most `1`, and
+  `BesselPotentialSpace.norm_le_of_toDistr_eq`: an element of `H^r` with the tempered distribution
+  of `u ∈ H^s` has norm at most `‖u‖`.
 * `BesselPotentialSpace.inclusion_self`, `BesselPotentialSpace.inclusion_inclusion`: the inclusion
   of a space into itself is the identity, and inclusions compose.
 * `BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM`: it is the identity on Schwartz
@@ -118,6 +120,13 @@ theorem norm_inclusion_le (h : r ≤ s) : ‖(inclusion h : H^{s}(E, F) →L[ℂ
 /-- The inclusion `H^s ⊆ H^r` does not increase norms. -/
 theorem norm_inclusion_apply_le (h : r ≤ s) (u : H^{s}(E, F)) : ‖inclusion h u‖ ≤ ‖u‖ := by
   simpa only [one_mul] using (inclusion h).le_of_opNorm_le (norm_inclusion_le h) u
+
+/-- An element of `H^r` with the tempered distribution of `u ∈ H^s`, `r ≤ s`, is the image of `u`
+under the inclusion, so its norm is at most `‖u‖`. -/
+theorem norm_le_of_toDistr_eq (h : r ≤ s) {u : H^{s}(E, F)} {v : H^{r}(E, F)}
+    (huv : u.toDistr = v.toDistr) : ‖v‖ ≤ ‖u‖ := by
+  obtain rfl : v = inclusion h u := ext (by rw [toDistr_inclusion, huv])
+  exact norm_inclusion_apply_le h u
 
 /-- The inclusion of `H^s` into itself is the identity. -/
 @[simp]
