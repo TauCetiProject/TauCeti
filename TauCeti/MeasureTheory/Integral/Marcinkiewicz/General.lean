@@ -167,7 +167,6 @@ private theorem lintegral_mul_setLIntegral_le_le_of_measurable [SFinite μ] (hf 
     ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
         ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ ≤
       ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) * ∫⁻ x, f x ^ (q + (s + 1)) ∂μ := by
-  have hs1 : s + 1 < 0 := by linarith
   have hR : MeasurableSet {z : ℝ × α | f z.2 ≤ ENNReal.ofReal (c * z.1)} :=
     measurableSet_le (hf.comp measurable_snd) ((measurable_fst.const_mul c).ennreal_ofReal)
   rw [lintegral_mul_setLIntegral_eq (κ := volume.restrict (Ioi (0 : ℝ)))
