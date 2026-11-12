@@ -493,8 +493,8 @@ private theorem sum_sq_div_two_le (u : ℂ → EuclideanSpace ℝ (Fin 4)) {z : 
     rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
   rw [hN] at hV ⊢
   rw [energyIntegrand, gaugeFixedGradientDensity_def, Fin.sum_univ_four]
-  have hK := norm_nonneg (covariantDerivative x z 1)
-  nlinarith [sq_nonneg (fderiv ℝ (fun w ↦ u w 2) z 1 - 2 * (x z 0 * u z 3)),
+  nlinarith [norm_nonneg (covariantDerivative x z 1),
+    sq_nonneg (fderiv ℝ (fun w ↦ u w 2) z 1 - 2 * (x z 0 * u z 3)),
     sq_nonneg (fderiv ℝ (fun w ↦ u w 2) z I - 2 * (x z 1 * u z 3)),
     sq_nonneg (fderiv ℝ (fun w ↦ u w 3) z 1 + 2 * (x z 0 * u z 2)),
     sq_nonneg (fderiv ℝ (fun w ↦ u w 3) z I + 2 * (x z 1 * u z 2)),
