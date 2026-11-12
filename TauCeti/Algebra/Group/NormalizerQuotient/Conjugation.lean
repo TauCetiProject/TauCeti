@@ -10,9 +10,11 @@ public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
 /-!
 # Transporting normalizer quotients along group isomorphisms
 
-The universal-covers roadmap uses the algebraic quotient `N(H) / H` as the deck group of the
-cover attached to a subgroup `H`. When subgroups are transported by a basepoint change or by
-an isomorphism of covers, the corresponding normalizer quotients have to be identified.
+In covering space theory, the deck group of the connected cover attached to a subgroup `H` of the
+fundamental group is the algebraic quotient `N(H) / H`. The unpointed correspondence between covers
+and subgroups identifies subgroups only up to conjugacy, so when subgroups are transported by a
+basepoint change or by an isomorphism of covers, the corresponding normalizer quotients have to be
+identified.
 
 This file records the generic group-theoretic transport: a multiplicative equivalence
 `e : G ≃* K` carries `N(H)` to `N(e(H))`, and therefore induces a multiplicative equivalence
@@ -26,13 +28,6 @@ This file records the generic group-theoretic transport: a multiplicative equiva
   quotients.
 * Representative formulas, including compatibility with composition, inverse, and identity
   equivalences on representatives.
-
-## References
-
-This is the algebraic conjugacy bookkeeping needed by
-`TauCetiRoadmap/UniversalCovers/README.md`, Stage 2, item 8: the unpointed cover
-correspondence identifies subgroups only up to conjugacy, and the deck group of the cover
-attached to `H` is `N(H) / H`.
 -/
 
 public section

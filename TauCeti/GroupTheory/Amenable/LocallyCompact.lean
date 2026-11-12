@@ -198,7 +198,6 @@ theorem IsLeftInvariant.integral_mul_apply_convolutionUCB {m : Mean G} (hm : m.I
       _ = (|a| + |b|) * ‖φ‖ * δ := by ring
   refine sub_eq_zero.1 (abs_nonpos_iff.1 (le_of_forall_pos_le_add fun ε hε => ?_))
   set C := (|a| + |b|) * ‖φ‖
-  have hC : 0 ≤ C := by positivity
   refine (key (ε / (C + 1)) (by positivity)).trans ?_
   rw [zero_add, mul_div_assoc', div_le_iff₀ (by positivity)]
   nlinarith

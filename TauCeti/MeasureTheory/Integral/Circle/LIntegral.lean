@@ -73,10 +73,10 @@ Nothing here is analytic: `g` is an arbitrary measurable weight, and the two inp
 polar-coordinate change of variables and Hölder's inequality. The analytic use is
 `TauCeti/Analysis/Complex/Conformal/LengthArea.lean`, which takes `g` to be `‖deriv f‖ₑ` cut off
 outside a set `s`, so that `circleLIntegral g ζ ρ` becomes the arc length of the image of a circular
-arc under a holomorphic `f` and `∫⁻ z, g z ^ 2` its Dirichlet integral, hence the area of the image;
-that file is the layer **L5** input of `TauCetiRoadmap/ConformalMapping/README.md`. Stating the
-estimates for a weight keeps them available to any other length-versus-area argument — the plane
-integral on the right need not be an area and the circle integral on the left need not be a length.
+arc under a holomorphic `f` and `∫⁻ z, g z ^ 2` its Dirichlet integral, hence the area of the
+image. Stating the estimates for a weight keeps them available to any other length-versus-area
+argument — the plane integral on the right need not be an area and the circle integral on the left
+need not be a length.
 
 ## Main definitions and results
 
@@ -194,8 +194,8 @@ theorem circleLIntegral_zero (ζ : ℂ) (ρ : ℝ) : circleLIntegral 0 ζ ρ = 0
   simp [circleLIntegral_def]
 
 /-- **The circle integral is additive in the weight**, as soon as one summand has an a.e.
-measurable angular trace along the circle at hand; as in `TauCeti.circleLIntegral_sq_le`, nothing
-is assumed of either weight off that circle. Some such hypothesis is needed, a lower integral being
+measurable angular trace along the circle at hand; nothing is assumed of either weight off that
+circle. Some such hypothesis is needed, a lower integral being
 only superadditive in general. It is the hypothesis of `MeasureTheory.lintegral_add_left'`, which
 is why — like that lemma, and unlike its `Measurable` counterpart — this is not a `simp` lemma. -/
 theorem circleLIntegral_add {h : ℂ → ℝ≥0∞} (ζ : ℂ) (ρ : ℝ)
@@ -287,8 +287,7 @@ theorem lintegral_Ioc_lintegral_Ioi_circleMap_eq_lintegral (hg : Measurable g) (
 
 /-- Cauchy–Schwarz in the angular variable: the square of the angular integral is at most `2 π`,
 the length of the angular interval, times the angular integral of the square. -/
-private theorem sq_lintegral_angle_le
-    (hg : AEMeasurable (fun θ => g (circleMap ζ ρ θ)) (volume.restrict (Ioo (-π) π))) :
+private theorem sq_lintegral_angle_le :
     (∫⁻ θ in Ioo (-π) π, g (circleMap ζ ρ θ)) ^ 2 ≤
       ENNReal.ofReal (2 * π) * ∫⁻ θ in Ioo (-π) π, g (circleMap ζ ρ θ) ^ 2 := by
   have hvol : (volume.restrict (Ioo (-π) π)) Set.univ = ENNReal.ofReal (2 * π) := by
@@ -299,17 +298,16 @@ private theorem sq_lintegral_angle_le
     norm_num
   have hexp : (2 : ℝ) - 1 = 1 := by norm_num
   have h := rpow_lintegral_le_measure_univ_rpow_mul (μ := volume.restrict (Ioo (-π) π))
-    (u := fun θ => g (circleMap ζ ρ θ)) hg (r := 2) one_le_two
+    (u := fun θ => g (circleMap ζ ρ θ)) (r := 2) one_le_two
   rw [hvol, hexp, ENNReal.rpow_one] at h
   simpa only [hpow] using h
 
 /-- **Cauchy–Schwarz on a circle.** The square of the circle integral of `g` is at most
 `2 π ρ` — for `ρ > 0` the circumference of the circle — times the circle integral of `g ^ 2`.
 
-Only the angular trace of `g` along the circle at hand need be measurable; nothing is assumed of
-`g` off that circle. Both sides vanish for a nonpositive radius, so no positivity is assumed. -/
-theorem circleLIntegral_sq_le (ζ : ℂ) (ρ : ℝ)
-    (hg : AEMeasurable (fun θ => g (circleMap ζ ρ θ)) (volume.restrict (Ioo (-π) π))) :
+No measurability of `g` is assumed, since Hölder's inequality for lower integrals needs none. Both
+sides vanish for a nonpositive radius, so no positivity is assumed. -/
+theorem circleLIntegral_sq_le (ζ : ℂ) (ρ : ℝ) :
     circleLIntegral g ζ ρ ^ 2 ≤
       ENNReal.ofReal (2 * π * ρ) * circleLIntegral (fun z => g z ^ 2) ζ ρ := by
   rcases le_or_gt ρ 0 with hρ | _
@@ -320,7 +318,7 @@ theorem circleLIntegral_sq_le (ζ : ℂ) (ρ : ℝ)
       ≤ ENNReal.ofReal ρ ^ 2 *
           (ENNReal.ofReal (2 * π) * ∫⁻ θ in Ioo (-π) π, g (circleMap ζ ρ θ) ^ 2) := by
         gcongr
-        exact sq_lintegral_angle_le hg
+        exact sq_lintegral_angle_le
     _ = ENNReal.ofReal (2 * π) * ENNReal.ofReal ρ *
           (ENNReal.ofReal ρ * ∫⁻ θ in Ioo (-π) π, g (circleMap ζ ρ θ) ^ 2) := by ring
 
@@ -340,8 +338,7 @@ theorem lintegral_circleLIntegral_sq_div_le_lintegral_sq (hg : Measurable g) (ζ
     have hρpos : (0 : ℝ) < ρ := hρ
     have hρ0 : ENNReal.ofReal ρ ≠ 0 := (ENNReal.ofReal_pos.mpr hρpos).ne'
     rw [ENNReal.div_le_iff hρ0 ENNReal.ofReal_ne_top]
-    refine (circleLIntegral_sq_le ζ ρ
-      (hg.comp (measurable_circleMap ζ ρ)).aemeasurable).trans (le_of_eq ?_)
+    refine (circleLIntegral_sq_le ζ ρ).trans (le_of_eq ?_)
     rw [ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 2 * π)]
     ring
   calc ∫⁻ ρ in Ioi (0 : ℝ), circleLIntegral g ζ ρ ^ 2 / ENNReal.ofReal ρ
@@ -555,7 +552,7 @@ theorem norm_integral_apply_apply_circleMap_le {V G : Type*} [NormedAddCommGroup
       integral_of_not_completeSpace hG, norm_zero]
     exact mul_nonneg (norm_nonneg B) (intervalIntegral.integral_nonneg
       (by linarith [Real.pi_pos]) fun _ _ => by positivity)
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   have hc : ContDiff ℝ 1 (fun θ ↦ u (circleMap z₀ r θ)) :=
     contDiff_iff_contDiffAt.mpr fun θ ↦
       (hu θ).comp θ (contDiff_circleMap z₀ r).contDiffAt
@@ -585,7 +582,7 @@ theorem ofReal_integral_norm_deriv_comp_circleMap_sq_le {V : Type*}
       ENNReal.ofReal ρ * circleLIntegral g ζ ρ := by
   rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos]),
     integral_Ioc_eq_integral_Ioo, circleLIntegral_def, ← mul_assoc]
-  refine (Real.ofReal_le_enorm _).trans ((enorm_integral_le_lintegral_enorm _).trans ?_)
+  refine (Real.ofReal_le_eNorm _).trans ((eNorm_integral_le_lintegral_eNorm _).trans ?_)
   rw [← lintegral_const_mul' _ _ (ENNReal.mul_ne_top
     ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top)]
   refine setLIntegral_mono' measurableSet_Ioo fun θ _ => ?_
@@ -596,7 +593,7 @@ theorem ofReal_integral_norm_deriv_comp_circleMap_sq_le {V : Type*}
     rw [hd]
     simpa [norm_mul, norm_circleMap_zero, abs_of_pos hρ] using
       (fderiv ℝ u (circleMap ζ ρ θ)).le_opNorm (circleMap 0 ρ θ * Complex.I)
-  rw [Real.enorm_of_nonneg (sq_nonneg _)]
+  rw [Real.eNorm_of_nonneg (sq_nonneg _)]
   calc ENNReal.ofReal (‖deriv (fun θ ↦ u (circleMap ζ ρ θ)) θ‖ ^ 2)
       ≤ ENNReal.ofReal ((‖fderiv ℝ u (circleMap ζ ρ θ)‖ * ρ) ^ 2) := by
         gcongr

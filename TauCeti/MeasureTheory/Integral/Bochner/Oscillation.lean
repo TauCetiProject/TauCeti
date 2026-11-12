@@ -87,7 +87,7 @@ theorem dense_and_dist_lt_of_oscillation {E : Type*} [PseudoMetricSpace E] {a b 
     have hαβ : (x - δ) ⊔ a < (x + δ) ⊓ b :=
       sup_lt_iff.2 ⟨lt_inf_iff.2 ⟨by linarith, by linarith [hx.2]⟩,
         lt_inf_iff.2 ⟨by linarith [hx.1], hab⟩⟩
-    obtain ⟨s', hs'K, hs'⟩ := hosc _ _ le_sup_right hαβ inf_le_right
+    obtain ⟨s', _, hs'⟩ := hosc _ _ le_sup_right hαβ inf_le_right
     have hclose (t : ℝ) (ht : t ∈ S) (hd : dist t x < δ) : dist (f t) (f s') < ε / 2 := by
       rw [Real.dist_eq, abs_lt] at hd
       have htK : t ∈ S ∩ Ioo ((x - δ) ⊔ a) ((x + δ) ⊓ b) :=

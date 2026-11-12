@@ -22,12 +22,15 @@ A language homomorphism `g : L →ᴸ L'` acts on the infinitary formulas of `L`
 When an `L'`-structure on `M` expands an `L`-structure along `g` (`g.IsExpansionOn M`), the image
 of a formula is realized exactly when the formula is. Every passage between languages, such as
 adding constants or restricting to the symbols a formula mentions, transfers truth through this
-result.
+result. An injective language map acts injectively, and a language equivalence acts by an
+equivalence of formula types, so that translating along it loses no formula.
 
 ## Main definitions
 
 * `FirstOrder.Language.LHom.onBoundedFormulaInf`: the action of a language homomorphism on
   infinitary formulas.
+* `FirstOrder.Language.LEquiv.onBoundedFormulaInf`: the equivalence of formula types induced by a
+  language equivalence.
 
 ## Main results
 
@@ -43,6 +46,8 @@ result.
   of finitary formulas, with relabelling and weakening of bound-variable slots, and with
   transport along a coding of carriers; along the way it commutes with `⊥`, `⊤`, negation,
   existential quantification and the coded connectives `iInfAlong` and `iSupAlong`.
+* `FirstOrder.Language.LHom.Injective.onBoundedFormulaInf_injective`: an injective language map
+  acts injectively on infinitary formulas.
 * `FirstOrder.Language.LEquiv.realize_onBoundedFormulaInf`: realization is preserved by
   translation along a language equivalence, the target structure being the reduct along the
   inverse map.
@@ -54,8 +59,9 @@ result.
   `InfinitaryLogic/Lomega1omega/Operations.lean`.
 * Divergences from that source: the action is defined at every carrier `ι` rather than at `ℕ`,
   between languages in arbitrary universes rather than a common one, and as a method of the
-  language homomorphism named after Mathlib's finitary `LHom.onBoundedFormula`; the functor laws
-  are new.
+  language homomorphism named after Mathlib's finitary `LHom.onBoundedFormula`; the functor laws,
+  injectivity and the equivalence along a language equivalence, which follows Mathlib's finitary
+  `LEquiv.onBoundedFormula`, are new.
 -/
 
 public section
@@ -287,11 +293,85 @@ theorem onBoundedFormulaInf_reindex {κ : Type*} (g : L →ᴸ L') (c : TauCeti.
   | iSup φs ih => simp [ih]
   | iInf φs ih => simp [ih]
 
+/-- **Injectivity along an injective map.** An injective language map acts injectively on
+infinitary formulas. -/
+theorem Injective.onBoundedFormulaInf_injective {g : L →ᴸ L'} (hg : g.Injective) {n : ℕ} :
+    Function.Injective (g.onBoundedFormulaInf : L.BoundedFormulaInf ι α n → _) := by
+  intro φ ψ h
+  induction φ with
+  | falsum =>
+    cases ψ with
+    | falsum => rfl
+    | _ => simp at h
+  | equal t₁ t₂ =>
+    cases ψ with
+    | equal t₁' t₂' =>
+      simp only [onBoundedFormulaInf_equal, BoundedFormulaInf.equal.injEq] at h
+      rw [hg.onTerm_injective h.1, hg.onTerm_injective h.2]
+    | _ => simp at h
+  | rel R ts =>
+    cases ψ with
+    | rel R' ts' =>
+      simp only [onBoundedFormulaInf_rel, BoundedFormulaInf.rel.injEq] at h
+      obtain ⟨rfl, hR, hts⟩ := h
+      rw [hg.onRelation (eq_of_heq hR)]
+      exact congrArg _ (funext fun i => hg.onTerm_injective (congrFun (eq_of_heq hts) i))
+    | _ => simp at h
+  | imp φ₁ φ₂ ih₁ ih₂ =>
+    cases ψ with
+    | imp ψ₁ ψ₂ =>
+      simp only [onBoundedFormulaInf_imp, BoundedFormulaInf.imp.injEq] at h
+      rw [ih₁ h.1, ih₂ h.2]
+    | _ => simp at h
+  | all φ ih =>
+    cases ψ with
+    | all ψ => rw [ih (BoundedFormulaInf.all.inj h)]
+    | _ => simp at h
+  | iSup φs ih =>
+    cases ψ with
+    | iSup ψs =>
+      exact congrArg _ (funext fun i => ih i (congrFun (BoundedFormulaInf.iSup.inj h) i))
+    | _ => simp at h
+  | iInf φs ih =>
+    cases ψ with
+    | iInf ψs =>
+      exact congrArg _ (funext fun i => ih i (congrFun (BoundedFormulaInf.iInf.inj h) i))
+    | _ => simp at h
+
 end LHom
 
 namespace LEquiv
 
 variable {L : Language.{u, v}} {L' : Language.{u', v'}} {ι : Type uι} {α : Type uα}
+
+/-- A language equivalence acts on infinitary formulas by an equivalence, whose inverse is the
+action of the inverse map. This is the infinitary form of Mathlib's `LEquiv.onBoundedFormula`. -/
+def onBoundedFormulaInf (e : L ≃ᴸ L') {n : ℕ} :
+    L.BoundedFormulaInf ι α n ≃ L'.BoundedFormulaInf ι α n where
+  toFun := e.toLHom.onBoundedFormulaInf
+  invFun := e.invLHom.onBoundedFormulaInf
+  left_inv φ := by
+    rw [← LHom.comp_onBoundedFormulaInf, e.left_inv, LHom.id_onBoundedFormulaInf]
+  right_inv φ := by
+    rw [← LHom.comp_onBoundedFormulaInf, e.right_inv, LHom.id_onBoundedFormulaInf]
+
+/-- The action of a language equivalence is the action of its forward map. -/
+@[simp]
+theorem onBoundedFormulaInf_apply (e : L ≃ᴸ L') {n : ℕ} (φ : L.BoundedFormulaInf ι α n) :
+    e.onBoundedFormulaInf φ = e.toLHom.onBoundedFormulaInf φ :=
+  (rfl)
+
+/-- The inverse of the action of a language equivalence is the action of its inverse map. -/
+@[simp]
+theorem onBoundedFormulaInf_symm_apply (e : L ≃ᴸ L') {n : ℕ} (φ : L'.BoundedFormulaInf ι α n) :
+    e.onBoundedFormulaInf.symm φ = e.invLHom.onBoundedFormulaInf φ :=
+  (rfl)
+
+/-- The inverse of the action of a language equivalence is the action of its inverse. -/
+theorem onBoundedFormulaInf_symm (e : L ≃ᴸ L') {n : ℕ} :
+    (e.onBoundedFormulaInf.symm : L'.BoundedFormulaInf ι α n ≃ L.BoundedFormulaInf ι α n) =
+      e.symm.onBoundedFormulaInf :=
+  (rfl)
 
 /-- **Realization along a language equivalence.** An `L`-structure, reinterpreted as an
 `L'`-structure along the inverse map, realizes the translation of an infinitary formula exactly

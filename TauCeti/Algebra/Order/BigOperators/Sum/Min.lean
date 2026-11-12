@@ -6,11 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
+public import Mathlib.Algebra.Order.Sub.Basic
 public import Mathlib.Data.Finset.Lattice.Fold
 public import Mathlib.Data.Nat.Find
 
 /-!
-# Finite sums of truncations of natural numbers
+# Finite sums of truncations
+
+In a canonically ordered additive monoid with ordered subtraction, a finite family `f` splits
+against a second family `g` into the part `min (f x) (g x)` matched by `g` and the excess
+`f x - g x` above `g`, so the sums of these two parts add up to the sum of `f`.
 
 For a finite family `c` of natural numbers, the truncated sums `∑ l, min k (c l)` count the boxes
 in the first `k` columns of the Young diagram with rows `c l`. Their second differences count
@@ -19,6 +24,7 @@ the members of the family in a range: for `p < q`, the combination of the trunca
 
 ## Main results
 
+* `Finset.sum_min_add_sum_tsub`: the matched part and the excess add up to the total.
 * `Finset.sum_min_add_sum_min_eq`: the second-difference identity for truncated sums.
 * `Finset.exists_ne_forall_sum_min_lt`: if the sum of a family `a` is at most that of a family
   `b` and, for some `k`, the column count of `b` is strictly smaller than that of `a`, then two
@@ -32,6 +38,12 @@ public section
 namespace Finset
 
 variable {α ι κ : Type*}
+
+/-- The mass of `f` matched by `g` and the mass of `f` above `g` add up to `f`. -/
+theorem sum_min_add_sum_tsub {M : Type*} [AddCommMonoid M] [LinearOrder M]
+    [CanonicallyOrderedAdd M] [Sub M] [OrderedSub M] (s : Finset ι) (f g : ι → M) :
+    ∑ x ∈ s, min (f x) (g x) + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, f x := by
+  simp_rw [← sum_add_distrib, add_comm (min _ _), tsub_add_min]
 
 /-- For `p < q`, the second differences of the truncated sums `∑ l, min k (c l)` at `p` and `q`
 count the members of the family `c` strictly between `p` and `q`. -/

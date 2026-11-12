@@ -39,6 +39,8 @@ unital only up to reparametrization, so the homotopies here are reparametrizatio
   `Path.Homotopic.Quotient.cast_map_trans_refl_prod`: concatenating every loop of a loop of loops
   with the constant loop does not change its class.
 * `Path.prependHomotopyEquiv α z`: `Path y z ≃ₕ Path x z`, with inverse prepending `α.symm`.
+* `Path.joined_prependHomotopyEquiv_refl`: prepending `α` to the constant path lands in the path
+  component of `α`.
 
 ## References
 
@@ -94,8 +96,8 @@ does not change the homotopy class of `L`: `reparamHomotopy` acts on all loops a
 the constant loop. -/
 theorem Homotopic.cast_map_reparam (L : Path (Path.refl x) (Path.refl x)) {f : I → I}
     (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) :
-    ((L.map (continuous_reparam hf hf₀ hf₁)).cast (Path.refl_reparam hf hf₀ hf₁).symm
-      (Path.refl_reparam hf hf₀ hf₁).symm).Homotopic L :=
+    ((L.map (continuous_reparam hf hf₀ hf₁)).cast (refl_reparam hf hf₀ hf₁).symm
+      (refl_reparam hf hf₀ hf₁).symm).Homotopic L :=
   Homotopic.symm ⟨{
     toFun p := reparamHomotopy f hf hf₀ hf₁ (p.1, L p.2)
     continuous_toFun := (reparamHomotopy f hf hf₀ hf₁).continuous.comp
@@ -120,41 +122,41 @@ theorem Homotopic.cast_map_reparam (L : Path (Path.refl x) (Path.refl x)) {f : I
 does not change its homotopy class. -/
 @[simp]
 theorem Homotopic.Quotient.cast_map_trans_prod_refl
-    (L : Path.Homotopic.Quotient (Path.refl x) (Path.refl x)) :
-    ((Path.Homotopic.prod L (Path.Homotopic.Quotient.refl (Path.refl x))).map
-      ⟨fun ρ : Path x x × Path x x => ρ.1.trans ρ.2, Path.continuous_trans⟩).cast
-        Path.refl_trans_refl.symm Path.refl_trans_refl.symm = L := by
-  induction L using Path.Homotopic.Quotient.ind with
+    (L : Homotopic.Quotient (Path.refl x) (Path.refl x)) :
+    ((Homotopic.prod L (Homotopic.Quotient.refl (Path.refl x))).map
+      ⟨fun ρ : Path x x × Path x x => ρ.1.trans ρ.2, continuous_trans⟩).cast
+        refl_trans_refl.symm refl_trans_refl.symm = L := by
+  induction L using Homotopic.Quotient.ind with
   | mk L =>
-    rw [← Path.Homotopic.Quotient.mk_refl, Path.Homotopic.prod_lift,
-      ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_cast]
-    refine Path.Homotopic.Quotient.eq.2 ?_
-    convert Path.Homotopic.cast_map_reparam L
+    rw [← Homotopic.Quotient.mk_refl, Homotopic.prod_lift,
+      ← Homotopic.Quotient.mk_map, ← Homotopic.Quotient.mk_cast]
+    refine Homotopic.Quotient.eq.2 ?_
+    convert Homotopic.cast_map_reparam L
       (f := fun t =>
-        ⟨Path.Homotopy.transReflReparamAux t, Path.Homotopy.transReflReparamAux_mem_I t⟩)
-      (by fun_prop) (Subtype.ext Path.Homotopy.transReflReparamAux_zero)
-      (Subtype.ext Path.Homotopy.transReflReparamAux_one) using 1
+        ⟨Homotopy.transReflReparamAux t, Homotopy.transReflReparamAux_mem_I t⟩)
+      (by fun_prop) (Subtype.ext Homotopy.transReflReparamAux_zero)
+      (Subtype.ext Homotopy.transReflReparamAux_one) using 1
     ext s : 2
-    exact Path.Homotopy.trans_refl_reparam (L s)
+    exact Homotopy.trans_refl_reparam (L s)
 
 /-- Concatenating the constant loop with every loop of a loop of loops `L` at the constant loop
 does not change its homotopy class. -/
 @[simp]
 theorem Homotopic.Quotient.cast_map_trans_refl_prod
-    (L : Path.Homotopic.Quotient (Path.refl x) (Path.refl x)) :
-    ((Path.Homotopic.prod (Path.Homotopic.Quotient.refl (Path.refl x)) L).map
-      ⟨fun ρ : Path x x × Path x x => ρ.1.trans ρ.2, Path.continuous_trans⟩).cast
-        Path.refl_trans_refl.symm Path.refl_trans_refl.symm = L := by
-  induction L using Path.Homotopic.Quotient.ind with
+    (L : Homotopic.Quotient (Path.refl x) (Path.refl x)) :
+    ((Homotopic.prod (Homotopic.Quotient.refl (Path.refl x)) L).map
+      ⟨fun ρ : Path x x × Path x x => ρ.1.trans ρ.2, continuous_trans⟩).cast
+        refl_trans_refl.symm refl_trans_refl.symm = L := by
+  induction L using Homotopic.Quotient.ind with
   | mk L =>
-    rw [← Path.Homotopic.Quotient.mk_refl, Path.Homotopic.prod_lift,
-      ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_cast]
-    refine Path.Homotopic.Quotient.eq.2 ?_
-    convert Path.Homotopic.cast_map_reparam L
+    rw [← Homotopic.Quotient.mk_refl, Homotopic.prod_lift,
+      ← Homotopic.Quotient.mk_map, ← Homotopic.Quotient.mk_cast]
+    refine Homotopic.Quotient.eq.2 ?_
+    convert Homotopic.cast_map_reparam L
       (f := fun t => Set.projIcc 0 1 zero_le_one (2 * (t : ℝ) - 1))
       (by fun_prop) (Subtype.ext (by norm_num)) (Subtype.ext (by norm_num)) using 1
     ext s : 2
-    exact Path.refl_trans_eq_reparam (L s)
+    exact refl_trans_eq_reparam (L s)
 
 /-! ### Prepending a path -/
 
@@ -184,7 +186,7 @@ theorem homotopic_prepend_comp_prepend (p : Path w x) (q : Path x y) (z : X) :
 
 /-- Prepending depends only on the path-homotopy class of the prepended path. -/
 theorem Homotopic.prepend {p p' : Path x y} (h : p.Homotopic p') (z : X) :
-    (Path.prepend p z).Homotopic (Path.prepend p' z) := by
+    (prepend p z).Homotopic (prepend p' z) := by
   obtain ⟨F⟩ := h
   have hF : Continuous F.eval := continuous_uncurry_iff.mp F.continuous
   exact ⟨{
@@ -218,5 +220,13 @@ theorem prependHomotopyEquiv_apply (α : Path x y) (γ : Path y z) :
 @[simp]
 theorem prependHomotopyEquiv_symm_apply (α : Path x y) (γ : Path x z) :
     (prependHomotopyEquiv α z).symm γ = α.symm.trans γ := (rfl)
+
+/-- Prepending `α` to the constant path gives a path joined to `α` in the path space, through
+the reparametrization of `α.trans (refl y)` back to `α`. -/
+theorem joined_prependHomotopyEquiv_refl (α : Path x y) :
+    Joined (prependHomotopyEquiv α y (refl y)) α := by
+  rw [prependHomotopyEquiv_apply, Homotopy.trans_refl_reparam]
+  exact ⟨((reparamHomotopy _ (by fun_prop) (Subtype.ext Homotopy.transReflReparamAux_zero)
+    (Subtype.ext Homotopy.transReflReparamAux_one)).evalAt α).symm⟩
 
 end Path

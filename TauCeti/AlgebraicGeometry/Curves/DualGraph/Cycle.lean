@@ -69,7 +69,6 @@ theorem valence_cycle (v : ZMod r) : (cycle r).valence v = 2 := by
 theorem arithmeticGenus_cycle : (cycle r).arithmeticGenus = 1 := by
   have h := (cycle r).arithmeticGenus_add_card_vertex
   simp only [sum_const_zero, zero_add] at h
-  have hcard : Fintype.card (cycle r).Vertex = Fintype.card (cycle r).Edge := rfl
   omega
 
 /-- Every vertex of a cycle has log-canonical degree zero. -/

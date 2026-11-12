@@ -158,14 +158,15 @@ theorem HasGaloisLabel.exists_isRoot_specialize_quinticF20Spec_iff (h : HasGaloi
   rw [← isSolvable_gal_iff_exists_isRoot_specialize_quinticF20Spec hf h.separable h.irreducible
     h.natDegree_eq hres, h.isSolvable_iff_five]
 
-/-- **The first row of the quintic table: `5T5`.** Away from characteristic `2`, an irreducible
-monic quintic whose discriminant is not a square and whose `F₂₀` resolvent has no root in the base
-field has the full symmetric group on its five roots. -/
+/-- **The first row of the quintic table: `5T5`.** An irreducible monic quintic whose
+discriminant is not a square (so the characteristic is not `2`) and whose `F₂₀` resolvent has no
+root in the base field has the full symmetric group on its five roots. -/
 theorem hasGaloisLabel_five_four_of_not_isSquare_discr_of_forall_not_isRoot (hf : f.Monic)
-    (hchar : ringChar F ≠ 2) (hirr : Irreducible f) (hdeg : f.natDegree = 5)
+    (hirr : Irreducible f) (hdeg : f.natDegree = 5)
     (hdisc : ¬ IsSquare f.discr)
     (hroot : ∀ a : F, ¬ (quinticF20Spec.specialize F f).IsRoot a) :
     HasGaloisLabel f (⟨4, by simp⟩ : TransitiveGroupIndex 5) := by
+  have hchar : ringChar F ≠ 2 := fun h => hdisc (isSquare_discr_of_char_two h)
   have hsep : f.Separable := hf.discr_ne_zero_iff.mp fun h0 => hdisc ⟨0, by simp [h0]⟩
   obtain ⟨j, hj, -⟩ := existsUnique_hasGaloisLabel_five hsep hirr hdeg
   have hsol : ¬ (j : ℕ) < 3 := fun hlt =>
@@ -193,14 +194,16 @@ theorem hasGaloisLabel_five_three_of_isSquare_discr_of_forall_not_isRoot (hf : f
   have : j = ⟨3, by simp⟩ := Fin.ext hval
   exact this ▸ hj
 
-/-- **The third row of the quintic table: `5T3`.** Away from characteristic `2`, an irreducible
-monic quintic whose discriminant is not a square and whose separable `F₂₀` resolvent has a root in
-the base field has the Frobenius group of order twenty on its five roots. -/
+/-- **The third row of the quintic table: `5T3`.** An irreducible monic quintic whose
+discriminant is not a square (so the characteristic is not `2`) and whose separable `F₂₀`
+resolvent has a root in the base field has the Frobenius group of order twenty on its five
+roots. -/
 theorem hasGaloisLabel_five_two_of_not_isSquare_discr_of_isRoot (hf : f.Monic)
-    (hchar : ringChar F ≠ 2) (hirr : Irreducible f) (hdeg : f.natDegree = 5)
+    (hirr : Irreducible f) (hdeg : f.natDegree = 5)
     (hdisc : ¬ IsSquare f.discr) (hres : ResolventSeparationEvidence quinticF20Spec f) {a : F}
     (ha : (quinticF20Spec.specialize F f).IsRoot a) :
     HasGaloisLabel f (⟨2, by simp⟩ : TransitiveGroupIndex 5) := by
+  have hchar : ringChar F ≠ 2 := fun h => hdisc (isSquare_discr_of_char_two h)
   have hsep : f.Separable := hf.discr_ne_zero_iff.mp fun h0 => hdisc ⟨0, by simp [h0]⟩
   obtain ⟨j, hj, -⟩ := existsUnique_hasGaloisLabel_five hsep hirr hdeg
   have hsol := (hj.exists_isRoot_specialize_quinticF20Spec_iff hf hres).mp ⟨a, ha⟩
