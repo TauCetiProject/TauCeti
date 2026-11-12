@@ -28,22 +28,21 @@ two.
   converge to the marking of `S` in the space of marked groups. So `G` is a limit group when it
   is finitely generated, hence fully residually free.
 
-This inclusion of universal theories already characterizes full residual freeness. The reverse
-inclusion holds as well, with the free group chosen according to three cases, because universal
-sentences pass to subgroups:
+Among finitely generated groups, this inclusion of universal theories already characterizes full
+residual freeness. The reverse inclusion holds as well, with the free group chosen according to
+three cases:
 
-* a nonabelian residually free group contains a free group of rank two, so a nonabelian fully
-  residually free group has the universal theory of `F₂`;
-* a nontrivial torsion-free abelian group contains `ℤ`, and each of its finitely generated
-  subgroups is a free abelian group of finite rank, hence discriminated by `ℤ`; as a universal
-  sentence holds in a group as soon as it holds in its finitely generated subgroups, such a group
-  has the universal theory of `ℤ`;
+* a nonabelian residually free group contains a free group of rank two, and universal sentences
+  pass to subgroups, so a nonabelian fully residually free group has the universal theory of `F₂`;
+* a fully residually free group is torsion-free, and a nontrivial torsion-free abelian group has
+  the universal theory of `ℤ` (see `TauCeti.GroupTheory.GroupAlgGeom.UniversalTheory`);
 * a trivial group is the free group of rank zero.
 
-Hence a fully residually free group has the universal theory of a free group of rank at most two,
-and a finitely generated group is fully residually free if and only if it has the universal
-theory of a free group of finite rank, which is the equivalence of conditions (3) and (5) in
-Theorem 1.1 of Champetier and Guirardel; the three cases are their Theorem 5.1.
+Hence a fully residually free group has the universal theory of a free group of rank at most two.
+A finitely generated group is therefore fully residually free, or equivalently a limit group, if
+and only if it has the universal theory of a free group of finite rank: these are the
+equivalences of conditions (5), respectively (1), with (3) in Theorem 1.1 of Champetier and
+Guirardel. The three cases are their Theorem 5.1.
 
 ## Main results
 
@@ -56,15 +55,19 @@ Theorem 1.1 of Champetier and Guirardel; the three cases are their Theorem 5.1.
   fully residually free if and only if it satisfies every universal sentence true in `F₂`.
 * `TauCeti.LimitGroup.isLimitGroup_iff_forall_isUniversal`: the same characterization of limit
   groups.
-* `TauCeti.LimitGroup.IsFullyResiduallyFree.realize_iff_freeGroup_of_not_isMulCommutative`: a
-  nonabelian fully residually free group has the universal theory of `F₂`.
-* `TauCeti.LimitGroup.realize_iff_multiplicative_int_of_isMulTorsionFree`: a nontrivial
-  torsion-free abelian group has the universal theory of `ℤ`.
-* `TauCeti.LimitGroup.IsFullyResiduallyFree.exists_forall_realize_iff_freeGroup`: a fully
-  residually free group has the universal theory of a free group of rank at most two.
-* `TauCeti.LimitGroup.isFullyResiduallyFree_iff_exists_forall_realize_iff`: a finitely generated
-  group is fully residually free if and only if it has the universal theory of a free group of
-  finite rank.
+* `TauCeti.LimitGroup.IsResiduallyFree.realize_freeGroup_of_isUniversal`: a universal sentence
+  that holds in a nonabelian residually free group holds in `F₂`.
+* `IsFullyResiduallyFree.realize_iff_freeGroup_of_not_isMulCommutative_of_isUniversal`, in
+  `TauCeti.LimitGroup`: a nonabelian fully residually free group has the universal theory of
+  `F₂`.
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.exists_forall_isUniversal_realize_iff_freeGroup`: a
+  fully residually free group has the universal theory of a free group of rank at most two.
+* `TauCeti.LimitGroup.isFullyResiduallyFree_iff_exists_forall_isUniversal_realize_iff_freeGroup`:
+  a finitely generated group is fully residually free if and only if it has the universal theory
+  of a free group of finite rank.
+* `TauCeti.LimitGroup.isLimitGroup_iff_exists_forall_isUniversal_realize_iff_freeGroup`: a group
+  is a limit group if and only if it is finitely generated and has the universal theory of a free
+  group of finite rank.
 
 ## References
 
@@ -90,7 +93,7 @@ holds in the free group of rank two. -/
 theorem IsFullyResiduallyFree.realize_of_isUniversal (h : IsFullyResiduallyFree G)
     {σ : Language.group.Sentence} (hσ : σ.IsUniversal) (hF : FreeGroup (Fin 2) ⊨ σ) :
     G ⊨ σ :=
-  (isFullyResiduallyFree_iff_isDiscriminatedBy.1 h).realize_group_of_isUniversal hσ hF
+  (isFullyResiduallyFree_iff_isDiscriminatedBy.1 h).realize_of_isUniversal hσ hF
 
 /-- If every universal sentence of the group language that holds in a free group `F` holds in
 `G`, then every finite tuple of `G` marks a limit of markings of free groups. -/
@@ -136,70 +139,64 @@ theorem isFullyResiduallyFree_iff_forall_isUniversal [Group.FG G] :
       ∀ σ : Language.group.Sentence, σ.IsUniversal → FreeGroup (Fin 2) ⊨ σ → G ⊨ σ :=
   ⟨fun h _ hσ hF => h.realize_of_isUniversal hσ hF, isFullyResiduallyFree_of_forall_isUniversal⟩
 
-/-- A nonabelian residually free group contains a free group of rank two, so every universal
-sentence of the group language that holds in it holds in the free group of rank two. -/
+/-- Every universal sentence of the group language that holds in a nonabelian residually free
+group also holds in the free group of rank two. -/
 theorem IsResiduallyFree.realize_freeGroup_of_isUniversal (h : IsResiduallyFree G)
     (hG : ¬IsMulCommutative G) {σ : Language.group.Sentence} (hσ : σ.IsUniversal) (hGσ : G ⊨ σ) :
     FreeGroup (Fin 2) ⊨ σ := by
   obtain ⟨a, b, hab⟩ : ∃ a b : G, ¬Commute a b := by
     by_contra! hc
     exact hG ⟨⟨hc⟩⟩
+  -- The two noncommuting elements generate a free subgroup of rank two.
   exact (FreeGroup.lift ![a, b]).realize_of_isUniversal_of_injective
     (h.injective_lift_of_not_commute hab) hσ hGσ
 
 /-- A nonabelian fully residually free group has the universal theory of the free group of rank
 two. -/
-theorem IsFullyResiduallyFree.realize_iff_freeGroup_of_not_isMulCommutative
+theorem IsFullyResiduallyFree.realize_iff_freeGroup_of_not_isMulCommutative_of_isUniversal
     (h : IsFullyResiduallyFree G) (hG : ¬IsMulCommutative G) {σ : Language.group.Sentence}
     (hσ : σ.IsUniversal) : G ⊨ σ ↔ FreeGroup (Fin 2) ⊨ σ :=
   ⟨h.isResiduallyFree.realize_freeGroup_of_isUniversal hG hσ, h.realize_of_isUniversal hσ⟩
 
-/-- A nontrivial torsion-free abelian group has the universal theory of the infinite cyclic group
-`ℤ`: it contains `ℤ`, and each of its finitely generated subgroups is a free abelian group of
-finite rank, hence discriminated by `ℤ`. -/
-theorem realize_iff_multiplicative_int_of_isMulTorsionFree [IsMulCommutative G]
-    [IsMulTorsionFree G] [Nontrivial G] {σ : Language.group.Sentence} (hσ : σ.IsUniversal) :
-    G ⊨ σ ↔ Multiplicative ℤ ⊨ σ := by
-  classical
-  refine ⟨fun hG => ?_, fun hZ => group.realize_of_isUniversal_of_forall_closure hσ fun S => ?_⟩
-  · obtain ⟨g, hg⟩ := exists_ne (1 : G)
-    exact (zpowersHom G g).realize_of_isUniversal_of_injective
-      (injective_zpow_iff_not_isOfFinOrder.2 (not_isOfFinOrder_of_isMulTorsionFree hg)) hσ hG
-  · obtain ⟨k, -, ⟨e⟩⟩ := Subgroup.exists_mulEquiv_closure_of_pairwise_commute
-      (s := S) fun a _ b _ _ => mul_comm' a b
-    exact (e.realize_sentence_iff σ).2
-      ((isDiscriminatedBy_multiplicative_pi_int (Fin k)).realize_group_of_isUniversal hσ hZ)
-
 /-- **The universal theory of a fully residually free group.** A fully residually free group has
-the universal theory of a free group: of the trivial group if it is trivial, of `ℤ` if it is
-abelian and nontrivial, and of the free group of rank two if it is not abelian. -/
-theorem IsFullyResiduallyFree.exists_forall_realize_iff_freeGroup (h : IsFullyResiduallyFree G) :
-    ∃ n : ℕ, ∀ σ : Language.group.Sentence, σ.IsUniversal →
-      (G ⊨ σ ↔ FreeGroup (Fin n) ⊨ σ) := by
+the universal theory of a free group of rank at most two. -/
+theorem IsFullyResiduallyFree.exists_forall_isUniversal_realize_iff_freeGroup
+    (h : IsFullyResiduallyFree G) :
+    ∃ n ≤ 2, ∀ σ : Language.group.Sentence, σ.IsUniversal → (G ⊨ σ ↔ FreeGroup (Fin n) ⊨ σ) := by
   by_cases hG : IsMulCommutative G
   · rcases subsingleton_or_nontrivial G with _ | _
     · have := uniqueOfSubsingleton (1 : G)
-      exact ⟨0, fun σ _ => (MulEquiv.ofUnique : G ≃* FreeGroup (Fin 0)).realize_sentence_iff σ⟩
+      exact ⟨0, zero_le_two, fun σ _ =>
+        (MulEquiv.ofUnique : G ≃* FreeGroup (Fin 0)).realize_sentence_iff σ⟩
     · have := h.isResiduallyFree.isMulTorsionFree
-      exact ⟨1, fun σ hσ => (realize_iff_multiplicative_int_of_isMulTorsionFree hσ).trans
-        ((FreeGroup.mulEquivIntOfUnique (α := Fin 1)).realize_sentence_iff σ).symm⟩
-  · exact ⟨2, fun σ hσ => h.realize_iff_freeGroup_of_not_isMulCommutative hG hσ⟩
+      exact ⟨1, one_le_two, fun σ hσ =>
+        (realize_iff_multiplicative_int_of_isMulCommutative_of_isMulTorsionFree_of_isUniversal
+          hσ).trans ((FreeGroup.mulEquivIntOfUnique (α := Fin 1)).realize_sentence_iff σ).symm⟩
+  · exact ⟨2, le_rfl, fun σ hσ =>
+      h.realize_iff_freeGroup_of_not_isMulCommutative_of_isUniversal hG hσ⟩
 
 /-- A finitely generated group is fully residually free if and only if it has the universal
 theory of a free group of finite rank (Champetier and Guirardel, Theorem 1.1). -/
-theorem isFullyResiduallyFree_iff_exists_forall_realize_iff [Group.FG G] :
+theorem isFullyResiduallyFree_iff_exists_forall_isUniversal_realize_iff_freeGroup [Group.FG G] :
     IsFullyResiduallyFree G ↔ ∃ n : ℕ, ∀ σ : Language.group.Sentence, σ.IsUniversal →
       (G ⊨ σ ↔ FreeGroup (Fin n) ⊨ σ) :=
-  ⟨fun h => h.exists_forall_realize_iff_freeGroup, fun ⟨_, hn⟩ =>
-    isFullyResiduallyFree_of_forall_isUniversal fun σ hσ => (hn σ hσ).2⟩
+  ⟨fun h => h.exists_forall_isUniversal_realize_iff_freeGroup.imp fun _ => And.right,
+    fun ⟨_, hn⟩ => isFullyResiduallyFree_of_forall_isUniversal fun σ hσ => (hn σ hσ).2⟩
 
 /-- A group is a limit group if and only if it is finitely generated and satisfies every universal
 sentence of the group language that holds in the free group of rank two. -/
 theorem isLimitGroup_iff_forall_isUniversal :
     IsLimitGroup G ↔ Group.FG G ∧
-      ∀ σ : Language.group.Sentence, σ.IsUniversal → FreeGroup (Fin 2) ⊨ σ → G ⊨ σ := by
-  rw [isLimitGroup_iff_isFullyResiduallyFree]
-  exact ⟨fun ⟨_, h⟩ => ⟨‹_›, isFullyResiduallyFree_iff_forall_isUniversal.1 h⟩,
-    fun ⟨_, h⟩ => ⟨‹_›, isFullyResiduallyFree_iff_forall_isUniversal.2 h⟩⟩
+      ∀ σ : Language.group.Sentence, σ.IsUniversal → FreeGroup (Fin 2) ⊨ σ → G ⊨ σ :=
+  isLimitGroup_iff_isFullyResiduallyFree.trans <| and_congr_right fun _ =>
+    isFullyResiduallyFree_iff_forall_isUniversal
+
+/-- A group is a limit group if and only if it is finitely generated and has the universal theory
+of a free group of finite rank (Champetier and Guirardel, Theorem 1.1). -/
+theorem isLimitGroup_iff_exists_forall_isUniversal_realize_iff_freeGroup :
+    IsLimitGroup G ↔ Group.FG G ∧ ∃ n : ℕ, ∀ σ : Language.group.Sentence, σ.IsUniversal →
+      (G ⊨ σ ↔ FreeGroup (Fin n) ⊨ σ) :=
+  isLimitGroup_iff_isFullyResiduallyFree.trans <| and_congr_right fun _ =>
+    isFullyResiduallyFree_iff_exists_forall_isUniversal_realize_iff_freeGroup
 
 end TauCeti.LimitGroup

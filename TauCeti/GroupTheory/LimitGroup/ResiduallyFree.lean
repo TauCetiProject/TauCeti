@@ -10,7 +10,6 @@ public import TauCeti.GroupTheory.FreeGroup.CSA
 public import TauCeti.GroupTheory.FreeGroup.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Domain
-import TauCeti.Data.Matrix.DotProduct
 import TauCeti.GroupTheory.FreeGroup.MaximalExponent
 
 /-!
@@ -76,8 +75,6 @@ consecutive entries nontrivial.
   groups are domains.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isBP`: fully residually free groups have the big
   powers property.
-* `TauCeti.LimitGroup.isDiscriminatedBy_multiplicative_pi_int`: every power `ℤ^ι` of `ℤ` is
-  discriminated by `ℤ`.
 * `TauCeti.LimitGroup.isFullyResiduallyFree_multiplicative_pi_int`: every power `ℤ^ι` of `ℤ`, in
   particular `ℤⁿ`, is fully residually free.
 * `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_int`: `F₂ × ℤ` is residually free
@@ -311,29 +308,6 @@ theorem isFullyResiduallyFree_multiplicative_int : IsFullyResiduallyFree (Multip
   (isFullyResiduallyFree_of_isFreeGroup (G := FreeGroup Unit)).of_injective
     (f := FreeGroup.mulEquivIntOfUnique.symm.toMonoidHom)
     FreeGroup.mulEquivIntOfUnique.symm.injective
-
-/-- A power `ℤ^ι` of the infinite cyclic group is discriminated by `ℤ`, with trivial
-coefficients: finitely many nonzero vectors are nonzero on a finite set `J` of coordinates, and
-some integer linear form in the coordinates of `J` vanishes on none of them. -/
-theorem isDiscriminatedBy_multiplicative_pi_int (ι : Type*) :
-    IsDiscriminatedBy (1 : Unit →* Multiplicative (ι → ℤ)) (1 : Unit →* Multiplicative ℤ) := by
-  classical
-  rw [isDiscriminatedBy_def]
-  intro s hs
-  -- A coordinate at which each element of `s` is nonzero.
-  have hi (g : s) : ∃ i, (g : Multiplicative (ι → ℤ)).toAdd i ≠ 0 :=
-    Function.ne_iff.1 fun h => hs g g.2 (toAdd_eq_zero.1 h)
-  choose i hi using hi
-  let J : Finset ι := Finset.univ.image i
-  let r : Multiplicative (ι → ℤ) → J → ℤ := fun g j => g.toAdd j
-  obtain ⟨w, hw⟩ := (s.image r).exists_forall_dotProduct_ne_zero <| by
-    simp only [Finset.forall_mem_image]
-    exact fun g hg h => hi ⟨g, hg⟩ (congrFun h ⟨i ⟨g, hg⟩, by simp [J]⟩)
-  let φ : Multiplicative (ι → ℤ) →* Multiplicative ℤ :=
-    AddMonoidHom.toMultiplicative
-      (AddMonoidHom.mk' (fun v => dotProduct w fun j : J => v j) fun _ _ => dotProduct_add w _ _)
-  exact ⟨⟨φ, fun _ => by simp⟩, fun g hg h =>
-    hw _ (Finset.mem_image_of_mem r hg) (by simpa [φ, r] using h)⟩
 
 /-- Every power `ℤ^ι` of the infinite cyclic group, in particular the free abelian group `ℤⁿ` of
 rank `n`, is fully residually free. -/

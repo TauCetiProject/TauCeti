@@ -27,8 +27,9 @@ interface needed to turn group formulas into equations in words.
 A model of the group theory yields a group whose operations recover the symbol interpretations.
 The multiplicative monoid `ℕ` is not a model, however inversion is interpreted.
 Group homomorphisms, including those preserving named coefficients, induce language homomorphisms.
-Injective group homomorphisms induce language embeddings and group isomorphisms induce language
-isomorphisms, so isomorphic groups satisfy the same sentences.
+Injective group homomorphisms, including those preserving named coefficients, induce language
+embeddings, and group isomorphisms induce language isomorphisms, so isomorphic groups satisfy the
+same sentences.
 Including group-language terms into the coefficient language preserves the group operations.
 The coefficient sentence `a * b = b * a` holds exactly when the coefficients of `a` and `b`
 commute, so it is false in the free group on two letters and true in `ℤ²`, with the bases as
@@ -468,20 +469,21 @@ def coeffGroupLanguageHom (φ : G →* H) (c : A → G) (d : A → H)
       | succ n => exact isEmptyElim f
   · exact fun r => isEmptyElim r
 
+/-- The canonical language homomorphism has the underlying function of the original group
+homomorphism. -/
+@[simp] theorem coe_groupLanguageHom (φ : G →* H) : ⇑(groupLanguageHom φ) = φ := (rfl)
+
 /-- The canonical language homomorphism acts as the original group homomorphism. -/
-@[simp] theorem groupLanguageHom_apply (φ : G →* H) (x : G) :
-    groupLanguageHom φ x = φ x := by
-  -- Unfold the bundled homomorphism to expose its underlying monoid homomorphism.
-  change φ x = φ x
-  rfl
+theorem groupLanguageHom_apply (φ : G →* H) (x : G) : groupLanguageHom φ x = φ x := (rfl)
+
+/-- The coefficient language homomorphism has the underlying function of the original group
+homomorphism. -/
+@[simp] theorem coe_coeffGroupLanguageHom (φ : G →* H) (c : A → G) (d : A → H)
+    (hc : ∀ a, φ (c a) = d a) : ⇑(coeffGroupLanguageHom φ c d hc) = φ := (rfl)
 
 /-- The coefficient language homomorphism acts as the original group homomorphism. -/
-@[simp] theorem coeffGroupLanguageHom_apply (φ : G →* H) (c : A → G) (d : A → H)
-    (hc : ∀ a, φ (c a) = d a) (x : G) :
-    coeffGroupLanguageHom φ c d hc x = φ x := by
-  -- Unfold the bundled homomorphism to expose its underlying monoid homomorphism.
-  change φ x = φ x
-  rfl
+theorem coeffGroupLanguageHom_apply (φ : G →* H) (c : A → G) (d : A → H)
+    (hc : ∀ a, φ (c a) = d a) (x : G) : coeffGroupLanguageHom φ c d hc x = φ x := (rfl)
 
 /-- An injective group homomorphism is an embedding of canonical group-language structures. -/
 def groupLanguageEmbedding (φ : G →* H) (hφ : Function.Injective φ) :
@@ -493,39 +495,72 @@ def groupLanguageEmbedding (φ : G →* H) (hφ : Function.Injective φ) :
     intro n r
     cases r
 
+/-- The canonical language embedding has the underlying function of the original group
+homomorphism. -/
+@[simp] theorem coe_groupLanguageEmbedding (φ : G →* H) (hφ : Function.Injective φ) :
+    ⇑(groupLanguageEmbedding φ hφ) = φ := (rfl)
+
 /-- The canonical language embedding acts as the original group homomorphism. -/
-@[simp] theorem groupLanguageEmbedding_apply (φ : G →* H) (hφ : Function.Injective φ) (x : G) :
+theorem groupLanguageEmbedding_apply (φ : G →* H) (hφ : Function.Injective φ) (x : G) :
     groupLanguageEmbedding φ hφ x = φ x := (rfl)
+
+/-- The language homomorphism underlying the canonical language embedding of `φ` is the
+canonical language homomorphism of `φ`. -/
+@[simp] theorem groupLanguageEmbedding_toHom (φ : G →* H) (hφ : Function.Injective φ) :
+    (groupLanguageEmbedding φ hφ).toHom = groupLanguageHom φ := (rfl)
+
+/-- The canonical language embedding of the identity is the identity embedding. -/
+@[simp] theorem groupLanguageEmbedding_id :
+    groupLanguageEmbedding (MonoidHom.id G) Function.injective_id =
+      Language.Embedding.refl Language.group G :=
+  Language.Embedding.ext fun _ => rfl
+
+/-- The canonical language embedding of a composite is the composite of the canonical language
+embeddings. -/
+@[simp] theorem groupLanguageEmbedding_comp {K : Type*} [Group K] (ψ : H →* K) (φ : G →* H)
+    (hψ : Function.Injective ψ) (hφ : Function.Injective φ) :
+    groupLanguageEmbedding (ψ.comp φ) (hψ.comp hφ) =
+      (groupLanguageEmbedding ψ hψ).comp (groupLanguageEmbedding φ hφ) :=
+  Language.Embedding.ext fun _ => rfl
+
+/-- An injective group homomorphism carrying the coefficient map `c` to `d` is an embedding of
+structures of the group language with constants `A`, named in `G` by `c` and in `H` by `d`. -/
+def coeffGroupLanguageEmbedding (φ : G →* H) (hφ : Function.Injective φ) (c : A → G)
+    (d : A → H) (hc : ∀ a, φ (c a) = d a) :
+    @Language.Embedding Language.group[[A]] G H
+      (@Language.withConstantsStructure Language.group G (structureOfGroup G) A
+        (Language.constantsOn.structure c))
+      (@Language.withConstantsStructure Language.group H (structureOfGroup H) A
+        (Language.constantsOn.structure d)) :=
+  letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+  letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure d
+  { toFun := φ
+    inj' := hφ
+    map_fun' := (coeffGroupLanguageHom φ c d hc).map_fun'
+    map_rel' := fun r => r.elim (fun r => nomatch r) (fun r => nomatch r) }
+
+/-- The coefficient language embedding has the underlying function of the original group
+homomorphism. -/
+@[simp] theorem coe_coeffGroupLanguageEmbedding (φ : G →* H) (hφ : Function.Injective φ)
+    (c : A → G) (d : A → H) (hc : ∀ a, φ (c a) = d a) :
+    ⇑(coeffGroupLanguageEmbedding φ hφ c d hc) = φ := (rfl)
+
+/-- The coefficient language embedding acts as the original group homomorphism. -/
+theorem coeffGroupLanguageEmbedding_apply (φ : G →* H) (hφ : Function.Injective φ) (c : A → G)
+    (d : A → H) (hc : ∀ a, φ (c a) = d a) (x : G) :
+    coeffGroupLanguageEmbedding φ hφ c d hc x = φ x := (rfl)
+
+/-- The language homomorphism underlying the coefficient language embedding of `φ` is the
+coefficient language homomorphism of `φ`. -/
+@[simp] theorem coeffGroupLanguageEmbedding_toHom (φ : G →* H) (hφ : Function.Injective φ)
+    (c : A → G) (d : A → H) (hc : ∀ a, φ (c a) = d a) :
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure d
+    (coeffGroupLanguageEmbedding φ hφ c d hc).toHom = coeffGroupLanguageHom φ c d hc := (rfl)
 
 end Homomorphisms
 
 end MonoidHom
-
-namespace MulEquiv
-
-open FirstOrder
-
-variable {G H : Type*} [Group G] [Group H]
-
-attribute [local instance] TauCeti.Group.structureOfGroup
-
-/-- A group isomorphism is an isomorphism of canonical group-language structures. -/
-def groupLanguageEquiv (e : G ≃* H) : G ≃[Language.group] H where
-  toEquiv := e.toEquiv
-  map_fun' := (MonoidHom.groupLanguageHom e.toMonoidHom).map_fun'
-  map_rel' := by
-    intro n r
-    cases r
-
-/-- The canonical language isomorphism acts as the original group isomorphism. -/
-@[simp] theorem groupLanguageEquiv_apply (e : G ≃* H) (x : G) :
-    e.groupLanguageEquiv x = e x := (rfl)
-
-/-- Isomorphic groups satisfy the same sentences of the group language. -/
-theorem realize_sentence_iff (e : G ≃* H) (σ : Language.group.Sentence) : G ⊨ σ ↔ H ⊨ σ :=
-  Language.StrongHomClass.realize_sentence e.groupLanguageEquiv σ
-
-end MulEquiv
 
 namespace TauCeti
 
@@ -663,6 +698,51 @@ variable {G H A : Type*} [Group G] [Group H]
 
 attribute [local instance] structureOfGroup
 
+/-- A group isomorphism is an isomorphism of canonical group-language structures. -/
+def groupLanguageEquiv (e : G ≃* H) : G ≃[Language.group] H where
+  toEquiv := e.toEquiv
+  map_fun' := (MonoidHom.groupLanguageHom e.toMonoidHom).map_fun'
+  map_rel' := by
+    intro n r
+    cases r
+
+/-- The canonical language isomorphism has the underlying function of the original group
+isomorphism. -/
+@[simp] theorem coe_groupLanguageEquiv (e : G ≃* H) : ⇑e.groupLanguageEquiv = e := (rfl)
+
+/-- The canonical language isomorphism acts as the original group isomorphism. -/
+theorem groupLanguageEquiv_apply (e : G ≃* H) (x : G) : e.groupLanguageEquiv x = e x := (rfl)
+
+/-- The inverse of the canonical language isomorphism of `e` is that of the inverse of `e`. -/
+@[simp] theorem groupLanguageEquiv_symm (e : G ≃* H) :
+    e.groupLanguageEquiv.symm = e.symm.groupLanguageEquiv := (rfl)
+
+/-- The canonical language isomorphism of the identity is the identity isomorphism. -/
+@[simp] theorem groupLanguageEquiv_refl :
+    (MulEquiv.refl G).groupLanguageEquiv = Language.Equiv.refl Language.group G :=
+  Language.Equiv.ext fun _ => rfl
+
+/-- The canonical language isomorphism of a composite is the composite of the canonical language
+isomorphisms. -/
+@[simp] theorem groupLanguageEquiv_trans {K : Type*} [Group K] (e : G ≃* H) (e' : H ≃* K) :
+    (e.trans e').groupLanguageEquiv = e'.groupLanguageEquiv.comp e.groupLanguageEquiv :=
+  Language.Equiv.ext fun _ => rfl
+
+/-- The language embedding underlying the canonical language isomorphism of `e` is the canonical
+language embedding of `e`. -/
+@[simp] theorem groupLanguageEquiv_toEmbedding (e : G ≃* H) :
+    e.groupLanguageEquiv.toEmbedding = MonoidHom.groupLanguageEmbedding (e : G →* H) e.injective :=
+  (rfl)
+
+/-- The language homomorphism underlying the canonical language isomorphism of `e` is the
+canonical language homomorphism of `e`. -/
+@[simp] theorem groupLanguageEquiv_toHom (e : G ≃* H) :
+    e.groupLanguageEquiv.toHom = MonoidHom.groupLanguageHom (e : G →* H) := (rfl)
+
+/-- Isomorphic groups satisfy the same sentences of the group language. -/
+theorem realize_sentence_iff (e : G ≃* H) (σ : Language.group.Sentence) : G ⊨ σ ↔ H ⊨ σ :=
+  Language.StrongHomClass.realize_sentence e.groupLanguageEquiv σ
+
 /-- A group isomorphism carrying the coefficient map `c` to `d` is an isomorphism of structures
 of the group language with constants `A`, named in `G` by `c` and in `H` by `d`. -/
 def coeffGroupLanguageEquiv (e : G ≃* H) (c : A → G) (d : A → H) (hc : ∀ a, e (c a) = d a) :
@@ -678,8 +758,13 @@ def coeffGroupLanguageEquiv (e : G ≃* H) (c : A → G) (d : A → H) (hc : ∀
     map_fun' := (MonoidHom.coeffGroupLanguageHom e.toMonoidHom c d hc).map_fun'
     map_rel' := fun r => r.elim (fun r => nomatch r) (fun r => nomatch r) }
 
+/-- The coefficient language isomorphism has the underlying function of the original group
+isomorphism. -/
+@[simp] theorem coe_coeffGroupLanguageEquiv (e : G ≃* H) (c : A → G) (d : A → H)
+    (hc : ∀ a, e (c a) = d a) : ⇑(e.coeffGroupLanguageEquiv c d hc) = e := (rfl)
+
 /-- The coefficient language isomorphism acts as the original group isomorphism. -/
-@[simp] theorem coeffGroupLanguageEquiv_apply (e : G ≃* H) (c : A → G) (d : A → H)
+theorem coeffGroupLanguageEquiv_apply (e : G ≃* H) (c : A → G) (d : A → H)
     (hc : ∀ a, e (c a) = d a) (x : G) : e.coeffGroupLanguageEquiv c d hc x = e x := (rfl)
 
 /-- The inverse of the coefficient language isomorphism is that of the inverse group
@@ -699,6 +784,15 @@ coefficient language homomorphism of `e`. -/
     letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure d
     (e.coeffGroupLanguageEquiv c d hc).toHom =
       MonoidHom.coeffGroupLanguageHom (e : G →* H) c d hc := (rfl)
+
+/-- The language embedding underlying the coefficient language isomorphism of `e` is the
+coefficient language embedding of `e`. -/
+@[simp] theorem coeffGroupLanguageEquiv_toEmbedding (e : G ≃* H) (c : A → G) (d : A → H)
+    (hc : ∀ a, e (c a) = d a) :
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure d
+    (e.coeffGroupLanguageEquiv c d hc).toEmbedding =
+      MonoidHom.coeffGroupLanguageEmbedding (e : G →* H) e.injective c d hc := (rfl)
 
 /-- Groups related by an isomorphism carrying the coefficient map `c` to `d` are elementarily
 equivalent in the group language with constants `A`, named by `c` and `d`. -/
