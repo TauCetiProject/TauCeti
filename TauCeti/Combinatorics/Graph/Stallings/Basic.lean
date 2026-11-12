@@ -21,7 +21,8 @@ closed paths at a vertex gives a subgroup of the free group. Based label-preserv
 send the accepted subgroup into that of the target. Moving the base vertex along a path
 conjugates the accepted subgroup. Every accepted word also has a reduced-path witness, so a
 labelled graph without nonempty reduced closed paths accepts only the identity.
-A graph with finitely many darts accepts a finitely generated subgroup at every vertex.
+A path whose label is a freely reduced word is reduced. A graph with finitely many darts
+accepts a finitely generated subgroup at every vertex.
 
 ## References
 
@@ -128,6 +129,23 @@ def subgroup (a : S.graph.V) : Subgroup (FreeGroup α) where
 
 theorem read_mem_subgroup {a : S.graph.V} (p : S.graph.Path a a) :
     S.read p ∈ S.subgroup a := ⟨p, rfl⟩
+
+/-- A path whose label word is freely reduced is a reduced path, in any labelled graph:
+a dart followed by its reverse reads a letter followed by its inverse. -/
+theorem isReduced_of_isReduced_word {a b : S.graph.V} (p : S.graph.Path a b)
+    (hp : FreeGroup.IsReduced (S.word p)) : SerreGraph.Path.IsReduced S.graph p := by
+  induction p with
+  | nil => exact SerreGraph.Path.isReduced_nil S.graph a
+  | cons p e ih =>
+    cases p with
+    | nil => exact SerreGraph.Path.isReduced_toPath S.graph e
+    | cons p f =>
+      simp only [word_cons, List.append_assoc, List.singleton_append,
+        FreeGroup.IsReduced, List.isChain_append_cons_cons, List.isChain_singleton,
+        and_true] at hp
+      refine (SerreGraph.Path.isReduced_cons_cons S.graph p f e).mpr ⟨ih ?_, fun he => ?_⟩
+      · simpa only [word_cons, FreeGroup.IsReduced] using hp.1
+      · simpa [he, S.label_rev] using hp.2
 
 /-- Every path has a reduced path with the same endpoints and free-group reading. -/
 theorem exists_reduced_path_read_eq
