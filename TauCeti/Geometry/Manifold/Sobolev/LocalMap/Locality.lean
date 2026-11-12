@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Sobolev.LocalMap
 import TauCeti.Analysis.Sobolev.Local.Locality
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Locality of local Sobolev maps from a Riemann surface
@@ -18,9 +19,6 @@ exactly when it holds on each of them.
 
 ## Main results
 
-* `OpenPartialHomeomorph.target_inter_preimage_symm_mem_nhdsWithin`: a relative neighbourhood of
-  a point of `s` pulls back, along the inverse of a chart, to a relative neighbourhood in the
-  chart domain over `s`.
 * `TauCeti.memWkpLocMapOn_iff_locally`: the class is local on the surface.
 * `TauCeti.memWkpLocMapOn_iSup_iff`: the sheaf property for open covers.
 
@@ -28,7 +26,8 @@ exactly when it holds on each of them.
 
 Continuity glues by `continuousOn_of_locally_continuousOn`. For a holomorphic chart `φ` and a
 chart `ψ` of `M`, the coordinate domain over `s` is covered by the coordinate domains over the
-relative neighbourhoods, which are relative neighbourhoods of its points; the planar class glues
+relative neighbourhoods, which are relative neighbourhoods of its points
+(`OpenPartialHomeomorph.target_inter_preimage_symm_mem_nhdsWithin`); the planar class glues
 by `TauCeti.memWkpLoc_iff_locally`. The target space `F` of the charts of `M` is assumed complete,
 as for the planar locality theorem.
 -/
@@ -37,20 +36,6 @@ public section
 
 open Set Filter TopologicalSpace
 open scoped Manifold Topology
-
-/-- **Chart domains of relative neighbourhoods.** Along the inverse of an open partial
-homeomorphism `φ`, a neighbourhood `t` of `φ.symm z` within `s` pulls back to a neighbourhood of
-`z` within the part of the target of `φ` lying over `s ∩ A`. -/
-theorem OpenPartialHomeomorph.target_inter_preimage_symm_mem_nhdsWithin {Y Z : Type*}
-    [TopologicalSpace Y] [TopologicalSpace Z] (φ : OpenPartialHomeomorph Y Z) {s t A : Set Y}
-    {z : Z} (hz : z ∈ φ.target ∩ φ.symm ⁻¹' (s ∩ A)) (ht : t ∈ 𝓝[s] φ.symm z) :
-    φ.target ∩ φ.symm ⁻¹' (t ∩ A) ∈ 𝓝[φ.target ∩ φ.symm ⁻¹' (s ∩ A)] z := by
-  have hcont : ContinuousWithinAt φ.symm (φ.target ∩ φ.symm ⁻¹' (s ∩ A)) z :=
-    (φ.continuousOn_symm z hz.1).mono inter_subset_left
-  have hpre : φ.symm ⁻¹' t ∈ 𝓝[φ.target ∩ φ.symm ⁻¹' (s ∩ A)] z :=
-    hcont.tendsto_nhdsWithin (fun w hw ↦ hw.2.1) ht
-  filter_upwards [self_mem_nhdsWithin, hpre] with w hw hwt
-  exact ⟨hw.1, hwt, hw.2.2⟩
 
 namespace TauCeti
 

@@ -15,9 +15,9 @@ import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Locality
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Weak pseudoholomorphic maps from a Riemann surface
@@ -50,13 +50,13 @@ value on `∂ₛ`, since `ν` is complex antilinear.
   is Tau Ceti's `IsPseudoholomorphicOn` for `j` and `J`. In particular holomorphic maps into a
   complex manifold solve the equation for its structure
   (`MDifferentiableOn.isWeakPseudoholomorphicOn`).
-* `TauCeti.ContMDiffAlmostComplexStructure.contDiffOn_chartPushforward`: a `C^ℓ` almost complex
-  structure pushed forward along a chart of `M` is `C^ℓ` on the chart target.
+* `TauCeti.isWeakPseudoholomorphicOn_const`: constant maps solve the homogeneous equation for
+  every `J`.
 * Checks on `X = M = ℂ`: the identity is a solution for the structure `i`
   (`TauCeti.isWeakPseudoholomorphicOn_id_complex`) and conjugation is not
-  (`TauCeti.not_isWeakPseudoholomorphicOn_conj`); constant maps solve the homogeneous equation for
-  every `J` (`TauCeti.isWeakPseudoholomorphicOn_const`) and, on `X = ℂ`, the inhomogeneous one
-  exactly when `ν(z, u₀)` vanishes for almost every `z`
+  (`TauCeti.not_isWeakPseudoholomorphicOn_conj`).
+* Check on `X = ℂ`, for any `M`: a constant map with value `u₀` solves the inhomogeneous equation
+  exactly when `ν(z, u₀)` vanishes on `∂ₛ` for almost every `z`
   (`TauCeti.isWeakPseudoholomorphicOn_const_iff_complex`).
 
 ## Implementation notes
@@ -83,70 +83,6 @@ open scoped Manifold ContDiff Topology ComplexConjugate TauCeti.ComplexManifold
 noncomputable section
 
 namespace TauCeti
-
-/-! ### Almost complex structures pushed forward along charts -/
-
-namespace ContMDiffAlmostComplexStructure
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M] {ℓ : ℕ∞}
-
-/-- **Regularity of a pushed-forward structure.** A `C^ℓ` almost complex structure pushed forward
-along a chart `ψ` of the maximal smooth atlas is `C^ℓ` on the target of `ψ`. Near each point it is
-the pullback of the structure read in the chart at the corresponding point of `M`, by the smooth
-transition map. -/
-theorem contDiffOn_chartPushforward (J : ContMDiffAlmostComplexStructure 𝓘(ℝ, E) ℓ M)
-    {ψ : OpenPartialHomeomorph M E} (hψ : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) :
-    ContDiffOn ℝ ℓ (J.chartPushforward ψ) ψ.target := by
-  refine contDiffOn_of_locally_contDiffOn fun p₀ hp₀ ↦ ?_
-  set x := ψ.symm p₀
-  set e := ψ.symm.trans (chartAt E x)
-  have hχ : chartAt E x ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
-    IsManifold.chart_mem_maximalAtlas x
-  have hes : e.source = ψ.target ∩ ψ.symm ⁻¹' (chartAt E x).source := by
-    simp [e]
-  have hp₀e : p₀ ∈ e.source := by
-    rw [hes]
-    exact ⟨hp₀, mem_chart_source E x⟩
-  have he : ContDiffOn ℝ ∞ e e.source := fun p hp ↦
-    (contDiffAt_symm_trans_of_mem_maximalAtlas hψ hχ hp).contDiffWithinAt
-  have hesymm : ContDiffOn ℝ ∞ e.symm e.target := fun p hp ↦
-    (contDiffAt_symm_trans_symm_of_mem_maximalAtlas hψ hχ hp).contDiffWithinAt
-  have htgt : e.target ⊆ (extChartAt 𝓘(ℝ, E) x).target := fun q hq ↦ by
-    simpa [e, OpenPartialHomeomorph.trans_target] using hq.1
-  have hpull : ContDiffOn ℝ ℓ (e.pullbackEnd (J.inChart x)) e.source :=
-    e.contDiffOn_pullbackEnd he hesymm ((J.contDiffOn_inChart x).mono htgt)
-      (by exact_mod_cast le_top)
-  refine ⟨e.source, e.open_source, hp₀e, (hpull.congr fun p hp ↦ ?_).mono inter_subset_right⟩
-  have hp' : p ∈ ψ.target ∧ ψ.symm p ∈ (chartAt E x).source := by
-    rw [hes] at hp
-    exact hp
-  have hdiff : DifferentiableAt ℝ e p :=
-    (contDiffAt_symm_trans_of_mem_maximalAtlas hψ hχ hp).differentiableAt (by simp)
-  have hdiffs : DifferentiableAt ℝ e.symm (e p) :=
-    (contDiffAt_symm_trans_symm_of_mem_maximalAtlas hψ hχ (e.map_source hp)).differentiableAt
-      (by simp)
-  refine J.chartPushforward_eq_pullbackEnd_inChart x ψ e (htgt (e.map_source hp)) ?_ ?_ hdiff
-    hdiffs
-  · filter_upwards [(chartAt E x).open_source.mem_nhds hp'.2] with y hy
-    simp [e, (chartAt E x).left_inv hy]
-  · filter_upwards [e.open_source.mem_nhds hp] with q hq
-    rw [hes] at hq
-    simp [e, (chartAt E x).left_inv hq.2]
-
-/-- Along the identity chart of a normed space, the pushed-forward structure is the structure
-itself. -/
-@[simp]
-theorem chartPushforward_refl {ℓ : ℕ∞} (J : ContMDiffAlmostComplexStructure 𝓘(ℝ, E) ℓ E) :
-    J.chartPushforward (OpenPartialHomeomorph.refl E) = fun p ↦ J.toEndomorphism p := by
-  funext p
-  ext w
-  rw [chartPushforward_apply]
-  change mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) id p (J p (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) id p w)) = _
-  rw [mfderiv_id]
-  rfl
-
-end ContMDiffAlmostComplexStructure
 
 /-! ### The predicate -/
 
@@ -209,6 +145,50 @@ theorem InhomogeneousTerm.chartTerm_zero (φ : OpenPartialHomeomorph X ℂ)
     ContMDiffSection.coe_zero, Pi.zero_apply]
   -- The zero map sends `∂ₛ` to zero, which is pushed forward to zero.
   exact (congrArg ((2 : ℝ) • ·) (map_zero _)).trans (smul_zero _)
+
+/-- An inhomogeneous term read in charts vanishes at the value `ψ y` exactly when the term at
+`(φ⁻¹ z, y)` vanishes on `∂ₛ`. -/
+theorem InhomogeneousTerm.chartTerm_apply_eq_zero_iff (ν : InhomogeneousTerm j J)
+    (φ : OpenPartialHomeomorph X ℂ) {ψ : OpenPartialHomeomorph M E}
+    (hψ : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) {y : M} (hy : y ∈ ψ.source) (z : ℂ) :
+    ν.chartTerm φ ψ z (ψ y) = 0 ↔
+      ν.val.tangentHom (φ.symm z, y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z (1 : ℂ)) = 0 := by
+  -- The chart derivative is injective, with left inverse the derivative of `ψ.symm`.
+  have hψ1 : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (by simp) hψ
+  have hinv := ψ.mfderiv_symm_apply_mfderiv_apply hy
+    (mdifferentiableAt_of_mem_maximalAtlas hψ1 hy)
+    (mdifferentiableAt_symm_of_mem_maximalAtlas hψ1 (ψ.map_source hy))
+  rw [chartTerm_apply, ψ.left_inv hy]
+  set c : ℂ := mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z (1 : ℂ)
+  set v : E := ν.val.tangentHom (φ.symm z, y) c
+  -- The tangent space `TangentSpace 𝓘(ℝ, E) (ψ y)` is `E` by definition; state the goal in `E`.
+  change (2 : ℝ) • (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) ψ y v : E) = 0 ↔ v = 0
+  rw [smul_eq_zero, or_iff_right two_ne_zero]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; exact map_zero _⟩
+  rw [← hinv v, h]
+  exact map_zero _
+
+/-- On a Riemann surface, an inhomogeneous term vanishes at a point exactly when it vanishes on
+`∂ₛ = 1` there. -/
+theorem InhomogeneousTerm.tangentHom_eq_zero_iff_apply_one_eq_zero
+    (ν : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) J)
+    (q : X × M) : ν.val.tangentHom q = 0 ↔ ν.val.tangentHom q (1 : ℂ) = 0 := by
+  -- The tangent space of `X` at `q.1` is `ℂ`, where `1` and `i` span over `ℝ`.
+  have key : ∀ L : ℂ →L[ℝ] E, L 1 = 0 → L I = 0 → L = 0 := fun L h1 hI ↦ by
+    ext a
+    have ha : a = a.re • (1 : ℂ) + a.im • I := by simp
+    rw [zero_apply, ha, map_add, map_smul, map_smul, h1, hI, smul_zero, smul_zero, add_zero]
+  refine ⟨fun h ↦ by rw [h]; rfl, fun h ↦ key _ h ?_⟩
+  -- By complex antilinearity, the value on `∂ₜ = j ∂ₛ = i` is `-J` applied to the value on `1`.
+  have hj1 : ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) q.1 (1 : ℂ) =
+      I := by
+    simp [SmoothAlmostComplexStructure.ofComplexManifold_apply]
+    -- The two sides are `I` in `TangentSpace 𝓘(ℝ, ℂ) q.1` and in `ℂ`, equal by definition.
+    rfl
+  have hI := ν.tangentHom_apply_j q (1 : ℂ)
+  rw [hj1, h, map_zero, neg_zero] at hI
+  exact hI
 
 variable (J) in
 /-- **Weak pseudoholomorphic maps.** For a domain-dependent almost complex structure `J` on `M`,
@@ -309,16 +289,6 @@ end Locality
 
 section Comparison
 
-omit [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- A smooth chart is differentiable on its source and its inverse on its target. -/
-private theorem mdifferentiableAt_chart {ψ : OpenPartialHomeomorph M E}
-    (hψ : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) {y : M} (hy : y ∈ ψ.source) :
-    MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) ψ y ∧ MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) ψ.symm (ψ y) :=
-  ⟨((contMDiffOn_of_mem_maximalAtlas hψ).contMDiffAt
-      (ψ.open_source.mem_nhds hy)).mdifferentiableAt (by simp),
-    ((contMDiffOn_symm_of_mem_maximalAtlas hψ).contMDiffAt
-      (ψ.open_target.mem_nhds (ψ.map_source hy))).mdifferentiableAt (by simp)⟩
-
 /-- **The equation at a point, read in a chart of `M`.** For a map `g` from the plane into `M`,
 differentiable at `z` with `g z` in the source of a chart `ψ`, the coordinate equation
 `∂ₛ(ψ ∘ g) + ψ_* J ∂ₜ(ψ ∘ g) = 0` at `z` says that the derivative of `g` at `z` intertwines
@@ -330,7 +300,10 @@ private theorem fderiv_chart_comp_add_eq_zero_iff
     fderiv ℝ (ψ ∘ g) z 1 + J₀.chartPushforward ψ ((ψ ∘ g) z) (fderiv ℝ (ψ ∘ g) z I) = 0 ↔
       ∀ w : ℂ, mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, E) g z (I * w) =
         J₀ (g z) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, E) g z w) := by
-  obtain ⟨hψd, hψsd⟩ := mdifferentiableAt_chart hψ hgz
+  have hψ1 : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (by simp) hψ
+  have hψd := mdifferentiableAt_of_mem_maximalAtlas hψ1 hgz
+  have hψsd := mdifferentiableAt_symm_of_mem_maximalAtlas hψ1 (ψ.map_source hgz)
   have hD : ∀ w, fderiv ℝ (ψ ∘ g) z w =
       mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) ψ (g z) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, E) g z w) := fun w ↦ by
     have h := mfderiv_comp z hψd hg
@@ -351,56 +324,70 @@ private theorem fderiv_chart_comp_add_eq_zero_iff
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
   rw [← hinv (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, E) g z (I * w)), h, hinv]
 
+omit [IsManifold 𝓘(ℂ) ∞ X] in
+/-- The inverse of a holomorphic chart is real `C¹` on its target. -/
+private theorem contMDiffOn_symm_of_mem_maximalAtlas_complex {φ : OpenPartialHomeomorph X ℂ}
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) :
+    ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 φ.symm φ.target :=
+  contMDiffOn_symm_of_mem_maximalAtlas
+    (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero _ one_ne_zero hφ)
+
 variable [CompleteSpace E]
+
+/-- **The comparison in one pair of charts.** For the zero inhomogeneous term, a smooth structure
+`J₀` independent of the domain point and a map `u` of class `C¹` on an open set `s`, the weak
+equation in a holomorphic chart `φ` and a smooth chart `ψ` says that the derivative of `u ∘ φ⁻¹`
+intertwines multiplication by `i` with `J₀` at every point of the coordinate domain. -/
+private theorem isWeakCauchyRiemannOn_chart_iff (J₀ : SmoothAlmostComplexStructure 𝓘(ℝ, E) M)
+    (hs : IsOpen s) (hu : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, E) 1 u s) {φ : OpenPartialHomeomorph X ℂ}
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) {ψ : OpenPartialHomeomorph M E}
+    (hψ : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) :
+    IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
+        ((ContMDiffAlmostComplexStructureFamily.const (J₀.toContMDiff ℓ)).chartField φ ψ)
+        ((0 : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff
+          ℓ) (ContMDiffAlmostComplexStructureFamily.const (J₀.toContMDiff ℓ))).chartTerm φ ψ)
+        (ψ ∘ u ∘ φ.symm) ↔
+      ∀ z ∈ φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source), ∀ w : ℂ,
+        mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, E) (u ∘ φ.symm) z (I * w) =
+          J₀ (u (φ.symm z)) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, E) (u ∘ φ.symm) z w) := by
+  have hD : IsOpen (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
+    φ.isOpen_inter_preimage_symm (hu.continuousOn.isOpen_inter_preimage hs ψ.open_source)
+  have hg : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, E) 1 (u ∘ φ.symm)
+      (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
+    hu.comp ((contMDiffOn_symm_of_mem_maximalAtlas_complex hφ).mono inter_subset_left)
+      fun _ hz ↦ hz.2.1
+  have hf : ContDiffOn ℝ 1 (ψ ∘ u ∘ φ.symm) (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
+    contMDiffOn_iff_contDiffOn.mp
+      (((contMDiffOn_of_mem_maximalAtlas hψ).of_le (by exact_mod_cast le_top)).comp hg
+        fun _ hz ↦ hz.2.2)
+  have hJ : ContinuousOn (fun z ↦ (J₀.toContMDiff ℓ).chartPushforward ψ ((ψ ∘ u ∘ φ.symm) z))
+      (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
+    ((J₀.toContMDiff ℓ).contDiffOn_chartPushforward hψ).continuousOn.comp hf.continuousOn
+      fun _ hz ↦ ψ.map_source hz.2.2
+  rw [ContMDiffAlmostComplexStructureFamily.chartField_const, InhomogeneousTerm.chartTerm_zero]
+  -- For `C¹` maps the weak equation is the pointwise one, which the chart reading translates.
+  refine (isWeakCauchyRiemannOn_iff_of_contDiffOn (Ω := ⟨_, hD⟩) hf hJ
+    continuousOn_const).trans (forall₂_congr fun z hz ↦ ?_)
+  have hgz : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, E) (u ∘ φ.symm) z :=
+    (hg.contMDiffAt (hD.mem_nhds hz)).mdifferentiableAt one_ne_zero
+  simpa only [SmoothAlmostComplexStructure.toContMDiff_apply, Function.comp_apply] using
+    fderiv_chart_comp_add_eq_zero_iff (J₀.toContMDiff ℓ) hψ hgz hz.2.2
 
 /-- **Comparison with `IsPseudoholomorphicOn`.** For the zero inhomogeneous term, a smooth almost
 complex structure `J₀` on `M` regarded as a domain-independent family, and a map `u` of class `C¹`
 on an open set `s`, the weak pseudoholomorphic equation for any exponent is pseudoholomorphy of
-`u` on `s` for the structure `j` of `X` and `J₀`. In charts this is the planar `C¹` comparison
-`isWeakCauchyRiemannOn_iff_of_contDiffOn`; the derivative of a chart intertwines `J₀` with its
-pushforward, and holomorphic charts of `X` intertwine `j` with multiplication by `i`. -/
+`u` on `s` for the structure `j` of `X` and `J₀`. -/
 theorem isWeakPseudoholomorphicOn_iff_isPseudoholomorphicOn
     (J₀ : SmoothAlmostComplexStructure 𝓘(ℝ, E) M) (hs : IsOpen s)
     (hu : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, E) 1 u s) :
     IsWeakPseudoholomorphicOn (ContMDiffAlmostComplexStructureFamily.const (J₀.toContMDiff ℓ)) 0
         p u s ↔
       IsPseudoholomorphicOn (SmoothAlmostComplexStructure.ofComplexManifold ℂ X) J₀ u s := by
-  have key : ∀ φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X, ∀ ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M,
-      (IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
-          ((ContMDiffAlmostComplexStructureFamily.const (J₀.toContMDiff ℓ)).chartField φ ψ)
-          ((0 : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff
-            ℓ) (ContMDiffAlmostComplexStructureFamily.const (J₀.toContMDiff ℓ))).chartTerm φ ψ)
-          (ψ ∘ u ∘ φ.symm) ↔
-        ∀ z ∈ φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source), ∀ w : ℂ,
-          mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, E) (u ∘ φ.symm) z (I * w) =
-            J₀ (u (φ.symm z)) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, E) (u ∘ φ.symm) z w)) := by
-    intro φ hφ ψ hψ
-    have hD : IsOpen (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
-      φ.isOpen_inter_preimage_symm (hu.continuousOn.isOpen_inter_preimage hs ψ.open_source)
-    have hφ' : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 φ.symm φ.target :=
-      contMDiffOn_symm_of_mem_maximalAtlas
-        (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero _ one_ne_zero hφ)
-    have hg : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, E) 1 (u ∘ φ.symm)
-        (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
-      hu.comp (hφ'.mono inter_subset_left) fun _ hz ↦ hz.2.1
-    have hf : ContDiffOn ℝ 1 (ψ ∘ u ∘ φ.symm) (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
-      contMDiffOn_iff_contDiffOn.mp
-        (((contMDiffOn_of_mem_maximalAtlas hψ).of_le (by exact_mod_cast le_top)).comp hg
-          fun _ hz ↦ hz.2.2)
-    have hJ : ContinuousOn (fun z ↦ (J₀.toContMDiff ℓ).chartPushforward ψ ((ψ ∘ u ∘ φ.symm) z))
-        (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
-      ((J₀.toContMDiff ℓ).contDiffOn_chartPushforward hψ).continuousOn.comp hf.continuousOn
-        fun _ hz ↦ ψ.map_source hz.2.2
-    rw [ContMDiffAlmostComplexStructureFamily.chartField_const,
-      InhomogeneousTerm.chartTerm_zero]
-    refine (isWeakCauchyRiemannOn_iff_of_contDiffOn (Ω := ⟨_, hD⟩) hf hJ
-      continuousOn_const).trans (forall₂_congr fun z hz ↦ ?_)
-    have hgz : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, E) (u ∘ φ.symm) z :=
-      (hg.contMDiffAt (hD.mem_nhds hz)).mdifferentiableAt one_ne_zero
-    simpa only [SmoothAlmostComplexStructure.toContMDiff_apply, Function.comp_apply] using
-      fderiv_chart_comp_add_eq_zero_iff (J₀.toContMDiff ℓ) hψ hgz hz.2.2
+  -- Holomorphic charts of `X` intertwine `j` with multiplication by `i`, so in each pair of
+  -- charts both conditions are `isWeakCauchyRiemannOn_chart_iff`.
   constructor
-  · refine fun h ↦ isPseudoholomorphicOn_iff.2 fun x hx ↦ ?_
+  · -- Read the equation in the charts at `x` and `u x`, and transport it back along `φ`.
+    refine fun h ↦ isPseudoholomorphicOn_iff.2 fun x hx ↦ ?_
     set φ := chartAt ℂ x
     set ψ := chartAt E (u x)
     have hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X := IsManifold.chart_mem_maximalAtlas x
@@ -410,32 +397,29 @@ theorem isWeakPseudoholomorphicOn_iff_isPseudoholomorphicOn
       refine ⟨φ.map_source hxφ, ?_⟩
       rw [mem_preimage, φ.left_inv hxφ]
       exact ⟨hx, mem_chart_source E (u x)⟩
-    have hcr := (key φ hφ ψ hψ).1 (h.isWeakCauchyRiemannOn_chart hφ hψ) _ hz
-    have hφs : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 φ.symm φ.target :=
-      contMDiffOn_symm_of_mem_maximalAtlas
-        (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero _ one_ne_zero hφ)
+    have hcr := (isWeakCauchyRiemannOn_chart_iff J₀ hs hu hφ hψ).1
+      (h.isWeakCauchyRiemannOn_chart hφ hψ) _ hz
     have hgd : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, E) (u ∘ φ.symm) (φ x) := by
       refine ((hu.contMDiffAt (hs.mem_nhds ?_)).comp (φ x)
-        (hφs.contMDiffAt (φ.open_target.mem_nhds hz.1))).mdifferentiableAt one_ne_zero
+        ((contMDiffOn_symm_of_mem_maximalAtlas_complex hφ).contMDiffAt
+          (φ.open_target.mem_nhds hz.1))).mdifferentiableAt one_ne_zero
       rw [φ.left_inv hxφ]
       exact hx
     have hg : IsPseudoholomorphicAt (SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ) J₀
         (u ∘ φ.symm) (φ x) := by
       refine isPseudoholomorphicAt_iff_mfderiv.2 ⟨hgd, fun (w : ℂ) ↦ ?_⟩
-      have hj : SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ (φ x) w = (I * w : ℂ) :=
-        (SmoothAlmostComplexStructure.ofComplexManifold_apply (φ x) w).trans
-          (smul_eq_mul (α := ℂ) I w)
-      exact (congrArg _ hj).trans (hcr w)
+      rw [SmoothAlmostComplexStructure.ofComplexManifold_apply, smul_eq_mul]
+      exact hcr w
     have hφx : IsPseudoholomorphicAt (SmoothAlmostComplexStructure.ofComplexManifold ℂ X)
         (SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ) φ x :=
-      isPseudoholomorphicAt_ofComplexManifold_iff.2
-        (((contMDiffOn_of_mem_maximalAtlas hφ).contMDiffAt
-          (φ.open_source.mem_nhds hxφ)).mdifferentiableAt one_ne_zero)
+      isPseudoholomorphicAt_ofComplexManifold_iff.2 (mdifferentiableAt_of_mem_maximalAtlas hφ hxφ)
     refine ((hg.comp hφx).congr_of_eventuallyEq ?_).isPseudoholomorphicWithinAt
     filter_upwards [φ.open_source.mem_nhds hxφ] with y hy
     simp only [Function.comp_apply, φ.left_inv hy]
-  · intro h
-    refine ⟨hu.memWkpLocMapOn le_rfl hs, fun φ hφ ψ hψ ↦ (key φ hφ ψ hψ).2 fun z hz w ↦ ?_⟩
+  · -- Compose with the holomorphic inverse chart and read the derivative condition in charts.
+    intro h
+    refine ⟨hu.memWkpLocMapOn le_rfl hs, fun φ hφ ψ hψ ↦
+      (isWeakCauchyRiemannOn_chart_iff J₀ hs hu hφ hψ).2 fun z hz w ↦ ?_⟩
     have hx : IsPseudoholomorphicAt (SmoothAlmostComplexStructure.ofComplexManifold ℂ X) J₀ u
         (φ.symm z) :=
       (isPseudoholomorphicOn_iff.1 h _ hz.2.1).isPseudoholomorphicAt_of_mem_nhds
@@ -443,8 +427,7 @@ theorem isWeakPseudoholomorphicOn_iff_isPseudoholomorphicOn
     have hφs : IsPseudoholomorphicAt (SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ)
         (SmoothAlmostComplexStructure.ofComplexManifold ℂ X) φ.symm z :=
       isPseudoholomorphicAt_ofComplexManifold_iff.2
-        (((contMDiffOn_symm_of_mem_maximalAtlas hφ).contMDiffAt
-          (φ.open_target.mem_nhds hz.1)).mdifferentiableAt one_ne_zero)
+        (mdifferentiableAt_symm_of_mem_maximalAtlas hφ hz.1)
     have := (hx.comp hφs).mfderiv_apply_commute w
     rwa [SmoothAlmostComplexStructure.ofComplexManifold_apply, smul_eq_mul] at this
 
@@ -468,48 +451,6 @@ end Comparison
 
 section Constant
 
-/-- An inhomogeneous term read in charts vanishes at the value `ψ y` exactly when the term at
-`(φ⁻¹ z, y)` vanishes on `∂ₛ`, since the chart derivative is injective. -/
-private theorem InhomogeneousTerm.chartTerm_apply_eq_zero_iff (ν : InhomogeneousTerm j J)
-    (φ : OpenPartialHomeomorph X ℂ) {ψ : OpenPartialHomeomorph M E}
-    (hψ : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) {y : M} (hy : y ∈ ψ.source) (z : ℂ) :
-    ν.chartTerm φ ψ z (ψ y) = 0 ↔
-      ν.val.tangentHom (φ.symm z, y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z (1 : ℂ)) = 0 := by
-  obtain ⟨hψd, hψsd⟩ := mdifferentiableAt_chart hψ hy
-  have hinv := ψ.mfderiv_symm_apply_mfderiv_apply hy hψd hψsd
-  rw [chartTerm_apply, ψ.left_inv hy]
-  set c : ℂ := mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z (1 : ℂ)
-  set v : E := ν.val.tangentHom (φ.symm z, y) c
-  change (2 : ℝ) • (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) ψ y v : E) = 0 ↔ v = 0
-  rw [smul_eq_zero, or_iff_right two_ne_zero]
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; exact map_zero _⟩
-  rw [← hinv v, h]
-  exact map_zero _
-
-/-- On a Riemann surface, an inhomogeneous term vanishing on `∂ₛ = 1` vanishes, since it is
-complex antilinear. -/
-private theorem InhomogeneousTerm.tangentHom_eq_zero_of_apply_one
-    (ν : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) J)
-    {q : X × M} (h : ν.val.tangentHom q (1 : ℂ) = 0) (a : ℂ) : ν.val.tangentHom q a = 0 := by
-  let L : ℂ →L[ℝ] E := ν.val.tangentHom q
-  have h1 : L 1 = 0 := h
-  have hj1 : ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) q.1 (1 : ℂ) =
-      (I : ℂ) :=
-    (SmoothAlmostComplexStructure.toContMDiff_apply _ _ _ _).trans
-      ((SmoothAlmostComplexStructure.ofComplexManifold_apply (E := ℂ) q.1 1).trans
-        ((smul_eq_mul (α := ℂ) I 1).trans (mul_one I)))
-  have hI : L I = 0 := by
-    have hj : L (((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) q.1 (1 : ℂ)) =
-        -J.tangentEndomorphism q (L 1) :=
-      ν.tangentHom_apply_j q _
-    rw [hj1, h1] at hj
-    rw [hj]
-    exact neg_eq_zero.2 (map_zero _)
-  have ha : a = a.re • (1 : ℂ) + a.im • I := by
-    apply Complex.ext <;> simp
-  change L a = 0
-  rw [ha, map_add, map_smul, map_smul, h1, hI, smul_zero, smul_zero, add_zero]
-
 variable [CompleteSpace E]
 
 /-- **Constant maps solve the homogeneous equation** for every domain-dependent structure. -/
@@ -525,23 +466,6 @@ end Constant
 
 section Plane
 
-/-- The identity chart of the plane is a holomorphic chart. -/
-private theorem refl_mem_maximalAtlas_complex :
-    OpenPartialHomeomorph.refl ℂ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 ℂ := by
-  simpa using IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℂ)) (n := 1) (0 : ℂ)
-
-/-- The identity chart of a normed space is a smooth chart. -/
-private theorem refl_mem_maximalAtlas_real :
-    OpenPartialHomeomorph.refl E ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ E := by
-  simpa using IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, E)) (n := ∞) (0 : E)
-
-/-- The derivative of the inverse of the identity chart is the identity. -/
-private theorem mfderiv_refl_symm_apply (z w : ℂ) :
-    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (OpenPartialHomeomorph.refl ℂ).symm z w = w := by
-  change mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) id z w = w
-  rw [mfderiv_id]
-  rfl
-
 /-- **The identity solves the equation** on `X = M = ℂ` for the structure `i` and `ν = 0`. -/
 theorem isWeakPseudoholomorphicOn_id_complex {s : Set ℂ} (hs : IsOpen s) :
     IsWeakPseudoholomorphicOn (ContMDiffAlmostComplexStructureFamily.const
@@ -550,15 +474,15 @@ theorem isWeakPseudoholomorphicOn_id_complex {s : Set ℂ} (hs : IsOpen s) :
     (isPseudoholomorphicOn_id _ s)
 
 /-- **Conjugation does not solve the equation** on `X = M = ℂ` for the structure `i` and `ν = 0`,
-on any nonempty open set. In the identity charts this is the planar verdict
-`not_isWeakCauchyRiemannOn_conj`. -/
+on any nonempty open set. -/
 theorem not_isWeakPseudoholomorphicOn_conj {s : Set ℂ} (hs : IsOpen s) (hne : s.Nonempty) :
     ¬IsWeakPseudoholomorphicOn (ContMDiffAlmostComplexStructureFamily.const
       ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ)) 0 p
         conj s := by
   intro h
-  have h' := h.isWeakCauchyRiemannOn_chart refl_mem_maximalAtlas_complex
-    refl_mem_maximalAtlas_real
+  -- Read the equation in the identity charts, where it is the planar weak equation.
+  have h' := h.isWeakCauchyRiemannOn_chart (StructureGroupoid.id_mem_maximalAtlas _)
+    (StructureGroupoid.id_mem_maximalAtlas _)
   have hD : (OpenPartialHomeomorph.refl ℂ).target ∩ (OpenPartialHomeomorph.refl ℂ).symm ⁻¹'
       (s ∩ conj ⁻¹' (OpenPartialHomeomorph.refl ℂ).source) = s := by
     simp
@@ -577,8 +501,7 @@ variable [CompleteSpace E]
 
 /-- **Constant maps and the inhomogeneous equation.** On `X = ℂ`, a constant map with value `y`
 is weakly pseudoholomorphic on an open set `s` exactly when the inhomogeneous term at `(z, y)`
-vanishes on `∂ₛ` for almost every `z ∈ s`. In a holomorphic chart `φ` the term is read at
-`φ⁻¹ z`; the exceptional points form the image under `φ` of a null set, which is null. -/
+vanishes on `∂ₛ` for almost every `z ∈ s`. -/
 theorem isWeakPseudoholomorphicOn_const_iff_complex
     {J : ContMDiffAlmostComplexStructureFamily 𝓘(ℝ, E) M 𝓘(ℝ, ℂ) ℂ ℓ}
     {ν : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ) J}
@@ -591,20 +514,25 @@ theorem isWeakPseudoholomorphicOn_const_iff_complex
       IsManifold.chart_mem_maximalAtlas y
     have hy : y ∈ (chartAt E y).source := mem_chart_source E y
     have h' := (isWeakCauchyRiemannOn_const_iff (chartAt E y y)).1
-      (h.isWeakCauchyRiemannOn_chart refl_mem_maximalAtlas_complex hψ)
+      (h.isWeakCauchyRiemannOn_chart (StructureGroupoid.id_mem_maximalAtlas _) hψ)
     have hD : (OpenPartialHomeomorph.refl ℂ).target ∩ (OpenPartialHomeomorph.refl ℂ).symm ⁻¹'
         (s ∩ (fun _ : ℂ ↦ y) ⁻¹' (chartAt E y).source) = s := by
       simp [hy]
     rw [hD, hs.interior_eq] at h'
     filter_upwards [h'] with z hz
     have := (InhomogeneousTerm.chartTerm_apply_eq_zero_iff ν _ hψ hy z).1 hz
-    rwa [mfderiv_refl_symm_apply] at this
+    rw [OpenPartialHomeomorph.refl_symm, OpenPartialHomeomorph.refl_apply, id_eq,
+      mfderiv_id] at this
+    -- The identity of the tangent space at `z` sends `1` to `1`.
+    exact this
   · intro hae
     refine ⟨contMDiffOn_const.memWkpLocMapOn (n := 1) le_rfl hs, fun φ hφ ψ hψ ↦ ?_⟩
     have hD : IsOpen (φ.target ∩ φ.symm ⁻¹' (s ∩ (fun _ : ℂ ↦ y) ⁻¹' ψ.source)) :=
       φ.isOpen_inter_preimage_symm (continuousOn_const.isOpen_inter_preimage hs ψ.open_source)
     refine (isWeakCauchyRiemannOn_const_iff (ψ y)).2 ?_
     rw [hD.interior_eq]
+    -- In a holomorphic chart `φ` the term is read at `φ⁻¹ z`; the exceptional points form the
+    -- image under `φ` of a null set, which is null.
     have hN : volume {x | x ∈ s ∧ ν.val.tangentHom (x, y) (1 : ℂ) ≠ 0} = 0 := by
       refine measure_mono_null (fun x hx ↦ ?_)
         (ae_iff.1 ((ae_restrict_iff' hs.measurableSet).1 hae))
@@ -617,7 +545,7 @@ theorem isWeakPseudoholomorphicOn_const_iff_complex
     refine (ae_restrict_iff' hD.measurableSet).2 ?_
     filter_upwards [measure_eq_zero_iff_ae_notMem.1 himg] with z hz hzD
     refine (InhomogeneousTerm.chartTerm_apply_eq_zero_iff ν φ hψ hzD.2.2 z).2
-      (InhomogeneousTerm.tangentHom_eq_zero_of_apply_one ν ?_ _)
+      (DFunLike.congr_fun ((ν.tangentHom_eq_zero_iff_apply_one_eq_zero _).2 ?_) _)
     by_contra hne
     exact hz ⟨φ.symm z, ⟨⟨hzD.2.1, hne⟩, φ.map_target hzD.1⟩, φ.right_inv hzD.1⟩
 

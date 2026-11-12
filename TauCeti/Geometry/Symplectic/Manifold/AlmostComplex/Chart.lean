@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Topology.VectorBundle.Coordinates
 
@@ -42,6 +43,9 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
   `mfderiv_comp_toEndomorphism` and `chartPushforward_eq_pullbackEnd_inChart`: it squares to `-1`,
   the chart derivative intertwines it with `J`, and it is a pullback of `J` read in the extended
   chart.
+* `ContMDiffAlmostComplexStructure.contDiffOn_chartPushforward`: on a manifold modelled on a
+  normed space, the structure pushed forward along a chart of the maximal smooth atlas is `C^n`
+  on the chart target.
 
 * `TauCeti.SmoothAlmostComplexStructure.inChart`: the almost complex structure read in a chart.
 * `TauCeti.SmoothAlmostComplexStructure.chartPushforward`: the smooth structure pushed forward
@@ -543,6 +547,70 @@ theorem fderivWithin_inChart_apply_apply (v w : E) :
   exact eq_neg_of_add_eq_zero_right hvw
 
 end SmoothAlmostComplexStructure
+
+/-! ### Pushforward along charts of manifolds modelled on a normed space -/
+
+namespace ContMDiffAlmostComplexStructure
+
+variable {F N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace N]
+  [ChartedSpace F N] [IsManifold 𝓘(ℝ, F) ∞ N] {n : ℕ∞}
+
+/-- **Regularity of a pushed-forward structure.** A `C^n` almost complex structure pushed forward
+along a chart `ψ` of the maximal smooth atlas is `C^n` on the target of `ψ`. -/
+theorem contDiffOn_chartPushforward (J : ContMDiffAlmostComplexStructure 𝓘(ℝ, F) n N)
+    {ψ : OpenPartialHomeomorph N F} (hψ : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, F) ∞ N) :
+    ContDiffOn ℝ n (J.chartPushforward ψ) ψ.target := by
+  -- Near each point it is the pullback of the structure read in the chart at the corresponding
+  -- point of `N`, by the smooth transition map `e`.
+  refine contDiffOn_of_locally_contDiffOn fun p₀ hp₀ ↦ ?_
+  set x := ψ.symm p₀
+  set e := ψ.symm.trans (chartAt F x)
+  have hχ : chartAt F x ∈ IsManifold.maximalAtlas 𝓘(ℝ, F) ∞ N :=
+    IsManifold.chart_mem_maximalAtlas x
+  have hes : e.source = ψ.target ∩ ψ.symm ⁻¹' (chartAt F x).source := by
+    simp [e]
+  have hp₀e : p₀ ∈ e.source := by
+    rw [hes]
+    exact ⟨hp₀, mem_chart_source F x⟩
+  have he : ContDiffOn ℝ ∞ e e.source := fun p hp ↦
+    (contDiffAt_symm_trans_of_mem_maximalAtlas hψ hχ hp).contDiffWithinAt
+  have hesymm : ContDiffOn ℝ ∞ e.symm e.target := fun p hp ↦
+    (contDiffAt_symm_trans_symm_of_mem_maximalAtlas hψ hχ hp).contDiffWithinAt
+  have htgt : e.target ⊆ (extChartAt 𝓘(ℝ, F) x).target := fun q hq ↦ by
+    simpa [e, OpenPartialHomeomorph.trans_target] using hq.1
+  have hpull : ContDiffOn ℝ n (e.pullbackEnd (J.inChart x)) e.source :=
+    e.contDiffOn_pullbackEnd he hesymm ((J.contDiffOn_inChart x).mono htgt)
+      (by exact_mod_cast le_top)
+  refine ⟨e.source, e.open_source, hp₀e, (hpull.congr fun p hp ↦ ?_).mono Set.inter_subset_right⟩
+  have hp' : p ∈ ψ.target ∧ ψ.symm p ∈ (chartAt F x).source := by
+    rw [hes] at hp
+    exact hp
+  have hdiff : DifferentiableAt ℝ e p :=
+    (contDiffAt_symm_trans_of_mem_maximalAtlas hψ hχ hp).differentiableAt (by simp)
+  have hdiffs : DifferentiableAt ℝ e.symm (e p) :=
+    (contDiffAt_symm_trans_symm_of_mem_maximalAtlas hψ hχ (e.map_source hp)).differentiableAt
+      (by simp)
+  refine J.chartPushforward_eq_pullbackEnd_inChart x ψ e (htgt (e.map_source hp)) ?_ ?_ hdiff
+    hdiffs
+  · filter_upwards [(chartAt F x).open_source.mem_nhds hp'.2] with y hy
+    simp [e, (chartAt F x).left_inv hy]
+  · filter_upwards [e.open_source.mem_nhds hp] with q hq
+    rw [hes] at hq
+    simp [e, (chartAt F x).left_inv hq.2]
+
+/-- Along the identity chart of a normed space, the pushed-forward structure is the structure
+itself. -/
+@[simp]
+theorem chartPushforward_refl (J : ContMDiffAlmostComplexStructure 𝓘(ℝ, F) n F) :
+    J.chartPushforward (OpenPartialHomeomorph.refl F) = fun p ↦ J.toEndomorphism p := by
+  funext p
+  ext w
+  rw [chartPushforward_apply, OpenPartialHomeomorph.refl_symm, OpenPartialHomeomorph.refl_apply,
+    id_eq, mfderiv_id]
+  -- Both identity maps are the identity of `F`, read on tangent spaces of a normed space.
+  rfl
+
+end ContMDiffAlmostComplexStructure
 
 end TauCeti
 
