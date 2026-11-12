@@ -82,7 +82,7 @@ theorem not_isComplete_subgroupGraph_closure_pair_conj {a b : α} (hab : a ≠ b
     simp [ws, FreeGroup.of, inv_mk, invRev, eq_comm]
   obtain ⟨f⟩ := nonempty_iso_subgroupGraph (stallingsGraph_isFolded ws) (stallingsGraph_isCore ws)
   intro h
-  have := (f.isComplete_iff.mpr (hH ▸ h)).finiteIndex_subgroup
+  have := (f.isComplete_iff.mpr (hH ▸ h)).finiteIndex_subgroup (stallingsGraph ws).base
   exact Subgroup.finiteIndex_iff.mp (hH ▸ this) (index_closure_pair_conj_eq_zero hab)
 
 end TauCeti.Examples.StallingsFiniteIndex

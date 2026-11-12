@@ -16,7 +16,8 @@ finitely many vertices and is complete, and then the index of `H` is the number 
 of `Γ(H)`. More generally the same holds for every folded graph all of whose vertices are
 reachable from its base vertex and the subgroup it accepts, and the index of the subgroup
 accepted by a connected folded complete graph is its number of vertices, finite or not. A
-complete graph with finitely many vertices accepts a subgroup of finite index.
+complete graph with finitely many vertices accepts a subgroup of finite index at each of its
+vertices.
 
 The comparison is made in the coset graph. A based morphism from a complete graph to a coset
 graph is surjective on vertices, so the vertices of a connected folded complete graph
@@ -62,20 +63,20 @@ theorem IsComplete.index_subgroup (hS : S.IsComplete) (hfold : S.IsFolded)
   exact (Nat.card_congr (Equiv.ofBijective _
     ⟨(f.injective_cosetGraph hfold hreach).1, hS.surjective_mapV_cosetGraph f⟩)).symm
 
-/-- A complete graph with finitely many vertices accepts a subgroup of finite index, whether
-or not all its vertices are reachable from the base vertex. -/
-theorem IsComplete.finiteIndex_subgroup [Finite S.graph.V] (hS : S.IsComplete) :
-    (S.subgroup S.base).FiniteIndex := by
-  choose b p hp using hS.exists_path_read S.base
+/-- A complete graph with finitely many vertices accepts a subgroup of finite index at each of
+its vertices; no connectedness is needed. -/
+theorem IsComplete.finiteIndex_subgroup [Finite S.graph.V] (hS : S.IsComplete) (a : S.graph.V) :
+    (S.subgroup a).FiniteIndex := by
+  choose b p hp using hS.exists_path_read a
   have hread : ∀ g c (hc : b g = c), S.read (hc ▸ p g) = g := by
     rintro g c rfl
     exact hp g
-  have key : ∀ g g', b g = b g' → g * g'⁻¹ ∈ S.subgroup S.base := by
+  have key : ∀ g g', b g = b g' → g * g'⁻¹ ∈ S.subgroup a := by
     intro g g' h
     have := S.read_mem_subgroup ((h ▸ p g).comp (p g').reverse)
     rwa [read_comp, read_reverse, hread, hp] at this
   refine Subgroup.finiteIndex_iff_finite_quotient.mpr (Finite.of_injective
-    (fun q : FreeGroup α ⧸ S.subgroup S.base => b q.out⁻¹) fun q r h => ?_)
+    (fun q : FreeGroup α ⧸ S.subgroup a => b q.out⁻¹) fun q r h => ?_)
   rw [← QuotientGroup.out_eq' q, ← QuotientGroup.out_eq' r]
   exact QuotientGroup.eq.mpr (by simpa using key _ _ h)
 
@@ -202,7 +203,7 @@ vertex has finite index if and only if the graph has finitely many vertices and 
 theorem finiteIndex_subgroup_iff (hfold : S.IsFolded)
     (hreach : ∀ v : S.graph.V, Nonempty (S.graph.Path S.base v)) :
     (S.subgroup S.base).FiniteIndex ↔ Finite S.graph.V ∧ S.IsComplete := by
-  refine ⟨fun h => ?_, fun ⟨_, hS⟩ => hS.finiteIndex_subgroup⟩
+  refine ⟨fun h => ?_, fun ⟨_, hS⟩ => hS.finiteIndex_subgroup S.base⟩
   obtain ⟨f⟩ := nonempty_iso_cosetGraph hfold hreach
   have : Finite (FreeGroup α ⧸ S.subgroup S.base) := Subgroup.finiteIndex_iff_finite_quotient.mp h
   exact ⟨Finite.of_equiv _ f.vertexEquiv.symm,
