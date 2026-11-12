@@ -13,6 +13,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import TauCeti.Geometry.Manifold.Morse.Bott.Index
 import TauCeti.Geometry.Manifold.Morse.Bott.NegativeNormal
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -564,29 +565,13 @@ theorem contMDiff_normalMetricChange
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  have : IsManifold I (k + 1) M := .of_le (n := k + 2) (by gcongr; exact one_le_two)
-  let := i.normalSpaceContMDiffVectorBundle hn hk hdim
   -- The change of metric is the sum of the composites of the projections for `g₀` and for `g₁`
   -- (`normalMetricChange_apply`), and each projection is a `C^k` map of total spaces.
-  intro w₀
-  have hA := Bundle.contMDiffAt_totalSpace_iff.mp
-    ((contMDiff_projection_negativeNormalSpace hn h hk hf hdim g₁).comp
-      (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g₀) w₀)
-  have hB := Bundle.contMDiffAt_totalSpace_iff.mp
-    ((contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₁).comp
-      (contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₀) w₀)
-  rw [Bundle.contMDiffAt_totalSpace_iff]
-  refine ⟨hA.1, ?_⟩
-  have hw₀ := mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) w₀.proj
-  refine (hA.2.add hB.2).congr_of_eventuallyEq ?_
-  filter_upwards [(FiberBundle.continuous_proj P _).continuousAt.preimage_mem_nhds
-    ((trivializationAt P _ w₀.proj).open_baseSet.mem_nhds hw₀)] with w hw
-  -- In the trivialization, the fibre coordinate is linear on the fibre over `w.proj`.
-  have hlin (x : i.NormalSpace w.proj hn) :
-      (trivializationAt P (fun s ↦ i.NormalSpace s hn) w₀.proj ⟨w.proj, x⟩).2 =
-        (trivializationAt P (fun s ↦ i.NormalSpace s hn) w₀.proj).linearMapAt ℝ w.proj x := by
-    rw [Trivialization.coe_linearMapAt_of_mem _ hw]
-  simp only [comp_apply, Pi.add_apply, TotalSpace.mk', hlin, normalMetricChange_apply, map_add]
+  have hA := (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g₁).comp
+    (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g₀)
+  have hB := (contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₁).comp
+    (contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₀)
+  exact (hA.add_sectionAlong hB).congr fun v ↦ by rw [normalMetricChange_apply]
 
 /-- **The change of fibre metric as a `C^k` automorphism of the normal bundle.** For two `C^k`
 fibre metrics `g₀` and `g₁` on the normal bundle, this is the `C^k` diffeomorphism of the total
