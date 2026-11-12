@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.Morse.Prod
 
 /-!
 # Morse–Bott critical submanifolds and the normal Hessian
@@ -59,6 +60,8 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
   zero, Morse–Bott means Morse.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd`: the model example, the
   slice `M × {0}` for `(x, v) ↦ q v` with `q` nondegenerate at `0`.
+* `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd_iff`: conversely, the slice
+  is Morse–Bott only when `q` is nondegenerate at `0`.
 
 ## References
 
@@ -440,6 +443,39 @@ theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ}
     refine ⟨v.1, ?_⟩
     rw [coe_ofIsSmoothEmbedding, hD]
     exact Prod.ext rfl hv₂.symm
+
+/-- **The model Morse–Bott function, characterized.** For a nonempty `M` and a finite-dimensional
+`V`, the slice `M × {0}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v` exactly
+when `q` has a nondegenerate critical point at `0`. -/
+theorem isNondegenerateCriticalSubmanifold_comp_snd_iff [FiniteDimensional ℝ V] [Nonempty M]
+    {q : V → ℝ} (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, (0 : V)))) :
+    (ofIsSmoothEmbedding _ h).IsNondegenerateCriticalSubmanifold (q ∘ Prod.snd) ↔
+      IsNondegenerateCriticalPoint q 0 := by
+  refine ⟨fun hq ↦ ?_, fun hq ↦ isNondegenerateCriticalSubmanifold_comp_snd hq h⟩
+  obtain ⟨x⟩ := ‹Nonempty M›
+  -- `q` is the restriction of `q ∘ Prod.snd` to the vertical slice `{x} × V`.
+  have hq₂ : ContDiffAt ℝ 2 q 0 := by
+    have hc := hq.contMDiffAt x
+    rw [ofIsSmoothEmbedding_apply] at hc
+    exact contMDiffAt_iff_contDiffAt.1
+      (hc.comp (0 : V) (contMDiffAt_const.prodMk contMDiffAt_id))
+  have hcrit := hq.mem_criticalPoints x
+  rw [ofIsSmoothEmbedding_apply, criticalPoints_comp_snd, mem_prod] at hcrit
+  refine ⟨hq₂, mem_criticalPoints_iff_fderiv_eq_zero.1 hcrit.2,
+    ContinuousLinearMap.isInvertible_of_injective <|
+      (injective_iff_map_eq_zero _).2 fun w hw ↦ ?_⟩
+  -- For `w` in the kernel of the Hessian of `q` at `0`, the vector `(0, w)` lies in the kernel of
+  -- the critical Hessian at `(x, 0)`, so it is tangent to the slice, which forces `w = 0`.
+  have hker : criticalHessian (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, 0) ((0 : E), w) = 0 :=
+    ContinuousLinearMap.ext fun u ↦
+      (criticalHessian_comp_snd_apply (I := I) hq₂ x _ u).trans congr($hw u.2)
+  have hD : mfderiv I (I.prod 𝓘(ℝ, V)) (fun y : M ↦ (y, (0 : V))) x =
+      (ContinuousLinearMap.id ℝ _).prod 0 :=
+    ((hasMFDerivAt_id x).prodMk (hasMFDerivAt_const (0 : V) x)).mfderiv
+  have hrange := hq.ker_criticalHessian_le x
+  rw [ofIsSmoothEmbedding_apply, coe_ofIsSmoothEmbedding, hD] at hrange
+  obtain ⟨u, hu⟩ := hrange (LinearMap.mem_ker.2 hker)
+  exact (congrArg Prod.snd hu).symm
 
 end Prod
 
