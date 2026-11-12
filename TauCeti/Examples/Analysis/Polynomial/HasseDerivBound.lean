@@ -15,8 +15,7 @@ public import TauCeti.Analysis.Polynomial.HasseDerivBound
 For `f = X²` the binomial bound on `‖D^[1] f (2)‖ = 4` is `choose 1 1 + choose 2 1 · 2 = 5`; at the
 point `10` it is `21` against the true value `20`, while the coarse bound is `3 · 4 · 100 = 1200`.
 For `k = 3 > 2` the binomial sum is empty. For `f = 1 + X + X²` at `1` the binomial bound `3` is an
-equality and the coarse bound is `12`. For `F = Z W` the product-binomial bound on
-`∂_Z^[1] F (2, 3) = 3` is `choose 1 1 · 2⁰ · 3¹ = 3`.
+equality and the coarse bound is `12`.
 
 The confluent Vandermonde matrix for the nodes `(0, 1)` with multiplicities `(2, 1)` has rows
 `[1, 0, 0]`, `[0, 1, 0]`, `[1, 1, 1]`. With the per-node bounds `(0, 1)` its second row is bounded
@@ -43,23 +42,23 @@ example : (hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 2 = 4 := by
   rw [← monomial_one_right_eq_X_pow, hasseDeriv_monomial]; norm_num
 
 example : ‖(hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 2‖ ≤ 5 := by
-  refine (norm_hasseDeriv_eval_le (d := 2) (H := 1) (A := 2) (natDegree_X_pow_le 2)
+  refine (norm_eval_hasseDeriv_le (d := 2) (H := 1) (A := 2) (natDegree_X_pow_le 2)
     (fun j _ ↦ norm_coeff_X_sq_le j) (by simp) 1).trans_eq ?_
-  rw [show Icc 1 2 = {1, 2} by rfl]; norm_num
+  rw [show Icc 1 2 = {1, 2} by ext; simp; omega]; norm_num
 
 example : ‖(hasseDeriv 3 (X ^ 2 : ℂ[X])).eval 2‖ ≤ 0 := by
-  refine (norm_hasseDeriv_eval_le (d := 2) (H := 1) (A := 2) (natDegree_X_pow_le 2)
+  refine (norm_eval_hasseDeriv_le (d := 2) (H := 1) (A := 2) (natDegree_X_pow_le 2)
     (fun j _ ↦ norm_coeff_X_sq_le j) (by simp) 3).trans_eq ?_
   simp
 
 example : ‖(1 + X + X ^ 2 : ℂ[X]).eval 1‖ ≤ 3 := by
-  have := norm_hasseDeriv_eval_le (f := (1 + X + X ^ 2 : ℂ[X])) (d := 2) (H := 1) (A := 1)
+  have := norm_eval_hasseDeriv_le (f := (1 + X + X ^ 2 : ℂ[X])) (d := 2) (H := 1) (A := 1)
     (by compute_degree!) (fun j _ ↦ norm_coeff_one_add_X_add_X_sq_le j) (a := 1) (by simp) 0
-  rw [show Icc 0 2 = {0, 1, 2} by rfl] at this
+  rw [show Icc 0 2 = {0, 1, 2} by ext; simp; omega] at this
   simpa using this
 
 example : ‖(1 + X + X ^ 2 : ℂ[X]).eval 1‖ ≤ 12 := by
-  have := norm_hasseDeriv_eval_le_coarse (f := (1 + X + X ^ 2 : ℂ[X])) (d := 2) (H := 1) (A := 1)
+  have := norm_eval_hasseDeriv_le_coarse (f := (1 + X + X ^ 2 : ℂ[X])) (d := 2) (H := 1) (A := 1)
     (by compute_degree!) (fun j _ ↦ norm_coeff_one_add_X_add_X_sq_le j) (a := 1) (by simp) 0
   norm_num at this ⊢
 
@@ -67,12 +66,12 @@ example : ‖(hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 10‖ = 20 := by
   rw [← monomial_one_right_eq_X_pow, hasseDeriv_monomial]; norm_num
 
 example : ‖(hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 10‖ ≤ 21 := by
-  refine (norm_hasseDeriv_eval_le (d := 2) (H := 1) (A := 10) (natDegree_X_pow_le 2)
+  refine (norm_eval_hasseDeriv_le (d := 2) (H := 1) (A := 10) (natDegree_X_pow_le 2)
     (fun j _ ↦ norm_coeff_X_sq_le j) (by simp) 1).trans_eq ?_
-  rw [show Icc 1 2 = {1, 2} by rfl]; norm_num
+  rw [show Icc 1 2 = {1, 2} by ext; simp; omega]; norm_num
 
 example : ‖(hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 10‖ ≤ 1200 := by
-  refine (norm_hasseDeriv_eval_le_coarse (d := 2) (H := 1) (A := 10) (natDegree_X_pow_le 2)
+  refine (norm_eval_hasseDeriv_le_coarse (d := 2) (H := 1) (A := 10) (natDegree_X_pow_le 2)
     (fun j _ ↦ norm_coeff_X_sq_le j) (by simp) 1).trans_eq ?_
   norm_num
 
@@ -96,22 +95,5 @@ example : ∑ c, ‖confluentVandermonde 2 c‖ ^ 2 ≤ 3 :=
   (sum_sq_norm_jet_entry_le (a := (![0, 0, 1] : Fin 3 → ℂ)) (k := ![0, 1, 0])
     (e := fun c : Fin 3 ↦ (c : ℕ)) (fun _ _ ↦ rfl) (A := fun _ ↦ 1)
     (fun r ↦ by fin_cases r <;> simp) 2).trans_eq <| by simp
-
-end TauCeti.HasseDerivBoundExample
-
-namespace TauCeti.HasseDerivBoundExample
-
-open MvPolynomial
-
-example : ‖eval ![(2 : ℂ), 3] (hasseDeriv (Finsupp.single 0 1) (X 0 * X 1))‖ ≤ 3 := by
-  have hF : (X 0 * X 1 : MvPolynomial (Fin 2) ℂ) ∈
-      restrictSupport ℂ (({Finsupp.single 0 1 + Finsupp.single 1 1} : Finset (Fin 2 →₀ ℕ)) :
-        Set (Fin 2 →₀ ℕ)) := by
-    rw [X, X, monomial_mul_monomial, one_mul, mem_restrictSupport_iff]
-    exact support_monomial_subset.trans (by simp)
-  refine (norm_eval_hasseDeriv_le hF (H := 1) (fun μ hμ ↦ ?_) (A := ![2, 3])
-    (fun s ↦ by fin_cases s <;> simp) _).trans_eq ?_
-  · rw [mem_singleton.1 hμ, X, X, monomial_mul_monomial, one_mul, coeff_monomial]; simp
-  · simp [Fin.prod_univ_two]
 
 end TauCeti.HasseDerivBoundExample
