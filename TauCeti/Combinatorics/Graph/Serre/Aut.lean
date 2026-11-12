@@ -19,10 +19,11 @@ vertices and on the darts. A group action on a Serre graph is then a homomorphis
 group, as in Serre's *Trees*.
 
 An automorphism translates a path to a path of the same length through the translated darts,
-reduced exactly when the original path is. Hence automorphisms preserve distances, and the `n`-th
-power of an automorphism moves a vertex by at most `n` times as much as the automorphism. In an
-acyclic graph an automorphism fixing two vertices fixes every dart of the reduced path between
-them, so the fixed vertices of an automorphism form a convex set.
+reduced exactly when the original path is; translation of paths commutes with concatenation and
+reversal and is compatible with the group law. Hence automorphisms preserve distances, and the
+`n`-th power of an automorphism moves a vertex by at most `|n|` times as much as the
+automorphism. In an acyclic graph an automorphism fixing two vertices fixes every dart of the
+reduced path between them, so the fixed vertices of an automorphism form a convex set.
 
 The segment carries the automorphism exchanging its two vertices; it maps the edge to its
 reverse, which is the kind of inversion excluded from actions on trees.
@@ -112,7 +113,7 @@ theorem smul_dart_def (φ : Γ.Aut) (e : Γ.E) : φ • e = φ.equivE e := (rfl)
   rw [tgt, rev_smul, src_smul, src_rev]
 
 /-- The graph morphism underlying an automorphism. -/
-def toHom (φ : Γ.Aut) : Γ.Hom Γ where
+@[expose] def toHom (φ : Γ.Aut) : Γ.Hom Γ where
   mapV v := φ • v
   mapE e := φ • e
   map_src := src_smul φ
@@ -130,6 +131,38 @@ theorem toHom_mapE_injective (φ : Γ.Aut) : Function.Injective φ.toHom.mapE :=
 /-- The translate of a path by an automorphism: the path through the translates of its darts. -/
 def smulPath (φ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) : Γ.Path (φ • a) (φ • b) :=
   φ.toHom.toPrefunctor.mapPath p
+
+/-- The translate of a path is its image under the graph morphism underlying the automorphism. -/
+theorem smulPath_def (φ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
+    φ.smulPath p = φ.toHom.toPrefunctor.mapPath p := (rfl)
+
+/-- The translate of the empty path is empty. -/
+@[simp] theorem smulPath_nil (φ : Γ.Aut) (a : Γ.V) :
+    φ.smulPath (Quiver.Path.nil : Γ.Path a a) = Quiver.Path.nil := (rfl)
+
+/-- The translate of a concatenation is the concatenation of the translates. -/
+@[simp] theorem smulPath_comp (φ : Γ.Aut) {a b c : Γ.V} (p : Γ.Path a b) (q : Γ.Path b c) :
+    φ.smulPath (p.comp q) = (φ.smulPath p).comp (φ.smulPath q) :=
+  Prefunctor.mapPath_comp _ p q
+
+/-- The translate of a reversed path is the reverse of the translate. -/
+@[simp] theorem smulPath_reverse (φ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
+    φ.smulPath p.reverse = (φ.smulPath p).reverse :=
+  Prefunctor.mapPath_reverse _ p
+
+/-- The translate of a path passes through the translates of its vertices. -/
+@[simp] theorem vertices_smulPath (φ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
+    (φ.smulPath p).vertices = p.vertices.map (φ • ·) :=
+  Prefunctor.vertices_mapPath _ p
+
+/-- The identity automorphism translates every path to itself. -/
+@[simp] theorem one_smulPath {a b : Γ.V} (p : Γ.Path a b) : (1 : Γ.Aut).smulPath p = p :=
+  Prefunctor.mapPath_id p
+
+/-- Translating by a product of automorphisms is translating by each factor in turn. -/
+theorem mul_smulPath (φ ψ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
+    (φ * ψ).smulPath p = φ.smulPath (ψ.smulPath p) :=
+  Prefunctor.mapPath_comp_apply ψ.toHom.toPrefunctor φ.toHom.toPrefunctor p
 
 /-- The translate of a path traverses the translates of its darts. -/
 @[simp] theorem darts_smulPath (φ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
@@ -177,6 +210,17 @@ theorem dist_pow_smul_le (φ : Γ.Aut) {v : Γ.V} (h : Nonempty (Γ.Path v (φ �
       rw [pow_succ, mul_smul, Nat.succ_mul]
       exact ⟨⟨q.comp ((φ ^ n).smulPath p)⟩, by omega⟩
   exact (key n).2
+
+/-- The `n`-th power of an automorphism, for an integer `n`, moves a vertex by at most `|n|` times
+as much as the automorphism, provided that the vertex is joined to its image. -/
+theorem dist_zpow_smul_le (φ : Γ.Aut) {v : Γ.V} (h : Nonempty (Γ.Path v (φ • v))) (n : ℤ) :
+    Γ.dist v (φ ^ n • v) ≤ n.natAbs * Γ.dist v (φ • v) := by
+  obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n
+  · rw [zpow_natCast, Int.natAbs_natCast]
+    exact φ.dist_pow_smul_le h k
+  · rw [zpow_neg, zpow_natCast, Int.natAbs_neg, Int.natAbs_natCast, ← dist_smul (φ ^ k),
+      smul_inv_smul, dist_comm]
+    exact φ.dist_pow_smul_le h k
 
 /-! ### Fixed points in acyclic graphs -/
 

@@ -55,9 +55,9 @@ theorem dist_le_natAbs {c : ℤ → Γ.V} (h : ∀ n, Nonempty (Γ.Path (c n) (c
     rw [dist_comm]
     exact (key n k).2.trans (by omega)
 
-/-- For `m : ℤ` and `k : ℕ`, the vertices `c m` and `c (m + k)` of a geodesic line `c` are joined
-by a path of length `k` all of whose darts join vertices of the line. -/
-theorem exists_path_length_eq_of_dist_eq_natAbs {c : ℤ → Γ.V}
+/-- Along a geodesic line `c`, the vertices `c m` and `c (m + k)` are joined by a path of length
+`k` all of whose darts join vertices of the line. -/
+private theorem exists_path_length_eq_add_of_dist_eq_natAbs {c : ℤ → Γ.V}
     (hc : ∀ m n, Γ.dist (c m) (c n) = (m - n).natAbs) (m : ℤ) (k : ℕ) :
     ∃ p : Γ.Path (c m) (c (m + k)), p.length = k ∧
       ∀ e ∈ Path.darts Γ p, Γ.src e ∈ Set.range c ∧ Γ.tgt e ∈ Set.range c := by
@@ -76,26 +76,33 @@ theorem exists_path_length_eq_of_dist_eq_natAbs {c : ℤ → Γ.V}
     · exact hpc f hf
     · exact ⟨hs ▸ Set.mem_range_self _, ht ▸ Set.mem_range_self _⟩
 
+/-- Two vertices `c m` and `c n` of a geodesic line `c` are joined by a path of length `|m - n|`
+all of whose darts join vertices of the line. -/
+theorem exists_path_length_eq_of_dist_eq_natAbs {c : ℤ → Γ.V}
+    (hc : ∀ m n, Γ.dist (c m) (c n) = (m - n).natAbs) (m n : ℤ) :
+    ∃ p : Γ.Path (c m) (c n), p.length = (m - n).natAbs ∧
+      ∀ e ∈ Path.darts Γ p, Γ.src e ∈ Set.range c ∧ Γ.tgt e ∈ Set.range c := by
+  rcases le_total m n with hmn | hmn
+  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = m + k := ⟨(n - m).toNat, by omega⟩
+    obtain ⟨p, hp, hpc⟩ := exists_path_length_eq_add_of_dist_eq_natAbs hc m k
+    exact ⟨p, by omega, hpc⟩
+  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, m = n + k := ⟨(m - n).toNat, by omega⟩
+    obtain ⟨p, hp, hpc⟩ := exists_path_length_eq_add_of_dist_eq_natAbs hc n k
+    refine ⟨p.reverse, by rw [Quiver.Path.length_reverse]; omega, fun e he => ?_⟩
+    rw [Path.darts_reverse, List.mem_map] at he
+    obtain ⟨f, hf, rfl⟩ := he
+    rw [src_rev, tgt_rev]
+    exact (hpc f (List.mem_reverse.mp hf)).symm
+
 /-- In an acyclic graph, the vertices of a geodesic line form a convex set. -/
 theorem IsAcyclic.isConvex_range_of_dist_eq_natAbs (h : Γ.IsAcyclic) {c : ℤ → Γ.V}
     (hc : ∀ m n, Γ.dist (c m) (c n) = (m - n).natAbs) : Γ.IsConvex (Set.range c) := by
   -- A reduced path between two vertices of the line is the shortest path along the line.
-  have key : ∀ m n : ℤ, m ≤ n → ∀ p : Γ.Path (c m) (c n), Path.IsReduced Γ p →
-      ∀ e ∈ Path.darts Γ p, Γ.src e ∈ Set.range c ∧ Γ.tgt e ∈ Set.range c := by
-    intro m n hmn p hp
-    obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = m + k := ⟨(n - m).toNat, by omega⟩
-    obtain ⟨q, hq, hqc⟩ := exists_path_length_eq_of_dist_eq_natAbs hc m k
-    rw [h.eq_of_isReduced hp (Path.isReduced_of_length_le_dist (by rw [hq, hc]; omega))]
-    exact hqc
   refine isConvex_iff.mpr ?_
   rintro _ ⟨m, rfl⟩ _ ⟨n, rfl⟩ p hp e he
-  rcases le_total m n with hmn | hmn
-  · exact (key m n hmn p hp e he).1
-  · have he' : Γ.rev e ∈ Path.darts Γ p.reverse := by
-      rw [Path.darts_reverse]
-      exact List.mem_map.mpr ⟨e, List.mem_reverse.mpr he, rfl⟩
-    simpa only [tgt_rev] using
-      (key n m hmn p.reverse ((Path.isReduced_reverse Γ p).mpr hp) (Γ.rev e) he').2
+  obtain ⟨q, hq, hqc⟩ := exists_path_length_eq_of_dist_eq_natAbs hc m n
+  rw [h.eq_of_isReduced hp (Path.isReduced_of_length_le_dist (by rw [hq, hc]))] at he
+  exact (hqc e he).1
 
 /-- A geodesic line contained in another geodesic line has the same vertices. -/
 theorem range_eq_of_range_subset_of_dist_eq_natAbs {c c' : ℤ → Γ.V}

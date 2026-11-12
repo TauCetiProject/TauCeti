@@ -121,6 +121,45 @@ darts. -/
 def smulPath (g : G) {a b : T.V} (p : T.Path a b) : T.Path (g • a) (g • b) :=
   (T.action g).smulPath p
 
+/-- The translate of a path by `g` is its translate by the automorphism by which `g` acts. -/
+theorem smulPath_def (g : G) {a b : T.V} (p : T.Path a b) :
+    smulPath g p = (T.action g).smulPath p := (rfl)
+
+/-- The translate of the empty path is empty. -/
+@[simp] theorem smulPath_nil (g : G) (a : T.V) :
+    smulPath g (Quiver.Path.nil : T.Path a a) = Quiver.Path.nil :=
+  Aut.smulPath_nil (T.action g) a
+
+/-- The translate of a concatenation is the concatenation of the translates. -/
+@[simp] theorem smulPath_comp (g : G) {a b c : T.V} (p : T.Path a b) (q : T.Path b c) :
+    smulPath g (p.comp q) = (smulPath g p).comp (smulPath g q) :=
+  Aut.smulPath_comp (T.action g) p q
+
+/-- The translate of a reversed path is the reverse of the translate. -/
+@[simp] theorem smulPath_reverse (g : G) {a b : T.V} (p : T.Path a b) :
+    smulPath g p.reverse = (smulPath g p).reverse :=
+  Aut.smulPath_reverse (T.action g) p
+
+/-- The translate of a path passes through the translates of its vertices. -/
+@[simp] theorem vertices_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    (smulPath g p).vertices = p.vertices.map (g • ·) :=
+  Aut.vertices_smulPath (T.action g) p
+
+/-- The identity translates every path to itself. -/
+theorem one_smulPath {a b : T.V} (p : T.Path a b) :
+    smulPath (1 : G) p = p.cast (one_smul G a).symm (one_smul G b).symm := by
+  rw [Quiver.Path.eq_cast_iff_heq]
+  exact (congr_arg_heq (fun φ : T.Aut => φ.smulPath p) (map_one T.action)).trans
+    (heq_of_eq (Aut.one_smulPath p))
+
+/-- Translating by a product is translating by each factor in turn. -/
+theorem mul_smulPath (g h : G) {a b : T.V} (p : T.Path a b) :
+    smulPath (g * h) p = (smulPath g (smulPath h p)).cast (mul_smul g h a).symm
+      (mul_smul g h b).symm := by
+  rw [Quiver.Path.eq_cast_iff_heq]
+  exact (congr_arg_heq (fun φ : T.Aut => φ.smulPath p) (map_mul T.action g h)).trans
+    (heq_of_eq (Aut.mul_smulPath _ _ p))
+
 /-- The translate of a path traverses the translates of its darts. -/
 @[simp] theorem darts_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
     Path.darts T.toSerreGraph (smulPath g p) = (Path.darts T.toSerreGraph p).map (g • ·) :=
@@ -148,12 +187,8 @@ theorem dist_pow_smul_le (g : G) (v : T.V) (n : ℕ) :
 element. -/
 theorem dist_zpow_smul_le (g : G) (v : T.V) (n : ℤ) :
     T.dist v (g ^ n • v) ≤ n.natAbs * T.dist v (g • v) := by
-  obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n
-  · rw [zpow_natCast, Int.natAbs_natCast]
-    exact T.dist_pow_smul_le g v k
-  · rw [zpow_neg, zpow_natCast, Int.natAbs_neg, Int.natAbs_natCast, ← T.dist_smul (g ^ k),
-      smul_inv_smul, dist_comm]
-    exact T.dist_pow_smul_le g v k
+  rw [smul_vertex_def, smul_vertex_def, map_zpow]
+  exact Aut.dist_zpow_smul_le (T.action g) (T.nonempty_path _ _) n
 
 /-- A vertex `v` is moved by at most the displacement of another vertex `a` plus twice the
 distance between them. -/
@@ -242,10 +277,14 @@ theorem IsHyperbolic.ne_one {g : G} (hg : T.IsHyperbolic g) : g ≠ 1 := by
     T.IsEllipticSubgroup (Subgroup.zpowers g) ↔ T.IsElliptic g := by
   simp only [isEllipticSubgroup_iff, Subgroup.zpowers_le, mem_stabilizer_iff, isElliptic_iff]
 
-/-- The powers of an elliptic element are elliptic. -/
+/-- The integer powers of an elliptic element are elliptic. -/
 theorem IsElliptic.zpow {g : G} (hg : T.IsElliptic g) (n : ℤ) : T.IsElliptic (g ^ n) := by
   obtain ⟨v, hv⟩ := isEllipticSubgroup_zpowers_iff.mpr hg
   exact ⟨v, hv (Subgroup.zpow_mem_zpowers g n)⟩
+
+/-- The natural powers of an elliptic element are elliptic. -/
+theorem IsElliptic.pow {g : G} (hg : T.IsElliptic g) (n : ℕ) : T.IsElliptic (g ^ n) := by
+  simpa only [zpow_natCast] using hg.zpow n
 
 /-- Elements of an elliptic subgroup are elliptic. -/
 theorem IsEllipticSubgroup.isElliptic {H : Subgroup G} (hH : T.IsEllipticSubgroup H) {g : G}

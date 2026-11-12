@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.GTree.FixedPoint
 public import TauCeti.GroupTheory.GTree.Line
 public import TauCeti.Combinatorics.Graph.Serre.GeodesicLine
+public import TauCeti.Algebra.Group.Action.Pow
 
 /-!
 # The axis of a hyperbolic automorphism of a tree
@@ -29,7 +30,8 @@ vertices fixed by `g` in case `g` fixes `a`. Then the geodesic from `v` to `a`, 
 `a` to `g • a` and the translate of the first one, reversed, form a geodesic from `v` to `g • v`,
 so that `d(v, g v) = d(a, g a) + 2 d(v, a)`.
 
-Consequently `ℓ(gⁿ) = |n| ℓ(g)`, and a nonzero power of a hyperbolic element has the same axis.
+Consequently `ℓ(gⁿ) = |n| ℓ(g)`, so that `gⁿ` is hyperbolic exactly when `g` is and `n ≠ 0`, and a
+nonzero power of a hyperbolic element has the same axis.
 
 ## Main declarations
 
@@ -51,8 +53,9 @@ Consequently `ℓ(gⁿ) = |n| ℓ(g)`, and a nonzero power of a hyperbolic eleme
   hyperbolic; `TauCeti.GTree.translationLength_eq_natAbs_of_smul_eq_add`: `ℓ(g) = |t|` for every
   amount `t`.
 * `TauCeti.GTree.dist_smul_eq_translationLength_add`: `d(v, g v) = ℓ(g) + 2 d(v, axis)`.
-* `TauCeti.GTree.translationLength_zpow`, `TauCeti.GTree.IsHyperbolic.axis_zpow`: `ℓ(gⁿ) =
-  |n| ℓ(g)`, and `gⁿ` has the axis of `g` when `g` is hyperbolic and `n ≠ 0`.
+* `TauCeti.GTree.translationLength_zpow`, `TauCeti.GTree.isHyperbolic_zpow_iff`,
+  `TauCeti.GTree.IsHyperbolic.axis_zpow`: `ℓ(gⁿ) = |n| ℓ(g)`, `gⁿ` is hyperbolic exactly when `g`
+  is and `n ≠ 0`, and `gⁿ` then has the axis of `g`.
 * `TauCeti.GTree.line_axis`: on the line, every vertex lies on the axis of every translation.
 
 ## References
@@ -382,11 +385,8 @@ private theorem dist_eq_natAbs_of_smul_eq_add_translationLength {g : G} {c : ℤ
     (hstep : ∀ n, T.dist (c n) (c (n + 1)) ≤ 1) (m n : ℤ) :
     T.dist (c m) (c n) = (m - n).natAbs := by
   have hup := dist_le_natAbs (fun _ => T.nonempty_path _ _) hstep
-  have hpow : ∀ (k : ℕ) (n : ℤ), c (n + (k * T.translationLength g : ℕ)) = g ^ k • c n := by
-    intro k n
-    induction k with
-    | zero => simp
-    | succ k ih => rw [Nat.succ_mul, Nat.cast_add, ← add_assoc, hg, ih, pow_succ', mul_smul]
+  have hpow (k : ℕ) (n : ℤ) : c (n + (k * T.translationLength g : ℕ)) = g ^ k • c n := by
+    rw [pow_smul_eq_add_nsmul (fun n => (hg n).symm), nsmul_eq_mul, Nat.cast_mul]
   -- It suffices to treat `m ≤ n`; translate both vertices to nonnegative indices and compare
   -- with the distance from `c 0` to its image under a large power of `g`.
   wlog hmn : m ≤ n generalizing m n
@@ -486,30 +486,14 @@ theorem dist_smul_eq_translationLength_add (g : G) (v : T.V) :
 
 /-! ### Translation lengths and characteristic sets of powers -/
 
-/-- If `g` translates a family of vertices indexed by the integers by `t`, then `gᵏ` translates it
-by `k t`. -/
-private theorem zpow_smul_eq_add_mul {g : G} {c : ℤ → T.V} {t : ℤ}
-    (hg : ∀ n, g • c n = c (n + t)) (k n : ℤ) : g ^ k • c n = c (n + k * t) := by
-  induction k using Int.induction_on generalizing n with
-  | zero => simp
-  | succ k ih =>
-    rw [zpow_add_one, mul_smul, hg, ih, add_mul, one_mul]
-    congr 1
-    omega
-  | pred k ih =>
-    have h : g⁻¹ • c n = c (n - t) := inv_smul_eq_iff.mpr (by rw [hg, sub_add_cancel])
-    rw [zpow_sub_one, mul_smul, h, ih, sub_mul, one_mul]
-    congr 1
-    omega
-
 /-- The `n`-th power of `g`, for an integer `n`, has translation length `|n| ℓ(g)`. -/
 @[simp] theorem translationLength_zpow (g : G) (n : ℤ) :
     T.translationLength (g ^ n) = n.natAbs * T.translationLength g := by
   by_cases hg : T.IsHyperbolic g
   · obtain ⟨x, hx⟩ := T.axis_nonempty g
     obtain ⟨c, -, hc, hgc, -⟩ := hg.exists_range_eq_axis hx
-    rw [translationLength_eq_natAbs_of_smul_eq_add hc (zpow_smul_eq_add_mul hgc n),
-      Int.natAbs_mul, Int.natAbs_natCast]
+    rw [translationLength_eq_natAbs_of_smul_eq_add hc (zpow_smul_eq_add_zsmul hgc n),
+      smul_eq_mul, Int.natAbs_mul, Int.natAbs_natCast]
   · have hg := not_isHyperbolic_iff.mp hg
     rw [translationLength_eq_zero_iff.mpr hg, translationLength_eq_zero_iff.mpr (hg.zpow n),
       mul_zero]
@@ -519,26 +503,40 @@ private theorem zpow_smul_eq_add_mul {g : G} {c : ℤ → T.V} {t : ℤ}
     T.translationLength (g ^ n) = n * T.translationLength g := by
   rw [← zpow_natCast, translationLength_zpow, Int.natAbs_natCast]
 
-/-- A nonzero integer power of `g` is elliptic exactly when `g` is. -/
-theorem isElliptic_zpow_iff {g : G} {n : ℤ} (hn : n ≠ 0) :
-    T.IsElliptic (g ^ n) ↔ T.IsElliptic g := by
+/-- An integer power of `g` is elliptic exactly when `g` is elliptic or the exponent is zero. -/
+@[simp] theorem isElliptic_zpow_iff {g : G} {n : ℤ} :
+    T.IsElliptic (g ^ n) ↔ T.IsElliptic g ∨ n = 0 := by
   rw [← translationLength_eq_zero_iff, ← translationLength_eq_zero_iff, translationLength_zpow,
-    Nat.mul_eq_zero, Int.natAbs_eq_zero, or_iff_right hn]
+    Nat.mul_eq_zero, Int.natAbs_eq_zero, or_comm]
 
-/-- A nonzero power of `g` is elliptic exactly when `g` is. -/
-theorem isElliptic_pow_iff {g : G} {n : ℕ} (hn : n ≠ 0) :
-    T.IsElliptic (g ^ n) ↔ T.IsElliptic g := by
-  simpa only [zpow_natCast] using isElliptic_zpow_iff (T := T) (g := g) (Int.natCast_ne_zero.mpr hn)
+/-- A power of `g` is elliptic exactly when `g` is elliptic or the exponent is zero. -/
+@[simp] theorem isElliptic_pow_iff {g : G} {n : ℕ} :
+    T.IsElliptic (g ^ n) ↔ T.IsElliptic g ∨ n = 0 := by
+  rw [← translationLength_eq_zero_iff, ← translationLength_eq_zero_iff, translationLength_pow,
+    Nat.mul_eq_zero, or_comm]
 
-/-- A nonzero integer power of `g` is hyperbolic exactly when `g` is. -/
-theorem isHyperbolic_zpow_iff {g : G} {n : ℤ} (hn : n ≠ 0) :
-    T.IsHyperbolic (g ^ n) ↔ T.IsHyperbolic g := by
-  rw [← not_iff_not, not_isHyperbolic_iff, not_isHyperbolic_iff, isElliptic_zpow_iff hn]
+/-- An integer power of `g` is hyperbolic exactly when `g` is hyperbolic and the exponent is
+nonzero. -/
+@[simp] theorem isHyperbolic_zpow_iff {g : G} {n : ℤ} :
+    T.IsHyperbolic (g ^ n) ↔ T.IsHyperbolic g ∧ n ≠ 0 := by
+  rw [← not_iff_not, not_isHyperbolic_iff, isElliptic_zpow_iff, not_and_or, not_isHyperbolic_iff,
+    not_ne_iff]
 
-/-- A nonzero power of `g` is hyperbolic exactly when `g` is. -/
-theorem isHyperbolic_pow_iff {g : G} {n : ℕ} (hn : n ≠ 0) :
-    T.IsHyperbolic (g ^ n) ↔ T.IsHyperbolic g := by
-  rw [← not_iff_not, not_isHyperbolic_iff, not_isHyperbolic_iff, isElliptic_pow_iff hn]
+/-- A power of `g` is hyperbolic exactly when `g` is hyperbolic and the exponent is nonzero. -/
+@[simp] theorem isHyperbolic_pow_iff {g : G} {n : ℕ} :
+    T.IsHyperbolic (g ^ n) ↔ T.IsHyperbolic g ∧ n ≠ 0 := by
+  rw [← not_iff_not, not_isHyperbolic_iff, isElliptic_pow_iff, not_and_or, not_isHyperbolic_iff,
+    not_ne_iff]
+
+/-- A nonzero integer power of a hyperbolic element is hyperbolic. -/
+theorem IsHyperbolic.zpow {g : G} (hg : T.IsHyperbolic g) {n : ℤ} (hn : n ≠ 0) :
+    T.IsHyperbolic (g ^ n) :=
+  isHyperbolic_zpow_iff.mpr ⟨hg, hn⟩
+
+/-- A nonzero power of a hyperbolic element is hyperbolic. -/
+theorem IsHyperbolic.pow {g : G} (hg : T.IsHyperbolic g) {n : ℕ} (hn : n ≠ 0) :
+    T.IsHyperbolic (g ^ n) :=
+  isHyperbolic_pow_iff.mpr ⟨hg, hn⟩
 
 variable (T) in
 /-- The characteristic set of `g` is contained in that of every integer power of `g`. -/
@@ -556,8 +554,8 @@ theorem IsHyperbolic.axis_zpow {g : G} (hg : T.IsHyperbolic g) {n : ℤ} (hn : n
   obtain ⟨x, hx⟩ := T.axis_nonempty g
   obtain ⟨c, -, hc, hgc, hrange⟩ := hg.exists_range_eq_axis hx
   have hℓ := translationLength_pos_iff.mpr hg
-  rw [axis_eq_range_of_smul_eq_add hc (mul_ne_zero hn (by omega)) (zpow_smul_eq_add_mul hgc n),
-    hrange]
+  rw [axis_eq_range_of_smul_eq_add hc (smul_ne_zero hn (by omega))
+    (zpow_smul_eq_add_zsmul hgc n), hrange]
 
 /-- A nonzero power of a hyperbolic element has the same axis. -/
 theorem IsHyperbolic.axis_pow {g : G} (hg : T.IsHyperbolic g) {n : ℕ} (hn : n ≠ 0) :
