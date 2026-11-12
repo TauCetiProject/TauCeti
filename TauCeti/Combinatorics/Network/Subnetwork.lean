@@ -94,7 +94,7 @@ theorem reachable_of_nonempty_arrowWalk (S : N.Subnetwork) {x y : ↥S.vertexSet
   obtain ⟨p⟩ := h
   induction p with
   | nil => exact ReachableWithout.refl S.arrowSetᶜ _
-  | cons p e ih => exact ih.tail e.1 (by simpa using e.2)
+  | cons _ e ih => exact ih.tail e.1 (by simpa using e.2)
 
 /-- Reachability between selected ambient vertices lifts to a directed walk in the subnetwork. -/
 theorem nonempty_arrowWalk_of_reachable (S : N.Subnetwork) {x y : V}

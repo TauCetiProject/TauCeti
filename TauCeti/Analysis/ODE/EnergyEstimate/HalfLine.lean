@@ -116,8 +116,8 @@ theorem memLp_restrict_Ici_of_eventually_inner_nonneg (hA : Tendsto A atTop (�
   have hwc : Continuous w := continuous_iff_continuousAt.2 fun s ↦ (hw s).continuousAt
   obtain ⟨T, hT⟩ := eventually_atTop.1 ((eventually_forall_ge_atTop.2
     ((tendsto_iff_norm_sub_tendsto_zero.1 hA).eventually (eventually_le_nhds (half_pos hα)))).and
-    ((eventually_forall_ge_atTop.2 hV).and (eventually_ge_atTop a)))
-  obtain ⟨hAB, hVT, haT⟩ := hT T le_rfl
+    (eventually_forall_ge_atTop.2 hV))
+  obtain ⟨hAB, hVT⟩ := hT T le_rfl
   have hsq : Continuous fun s ↦ ‖w s‖ ^ 2 := hwc.norm.pow 2
   -- On `(T, ∞)` the integrals of `‖w‖²` are bounded by `V(T) / α²`.
   have hIoi : IntegrableOn (fun s ↦ ‖w s‖ ^ 2) (Ioi T) := by

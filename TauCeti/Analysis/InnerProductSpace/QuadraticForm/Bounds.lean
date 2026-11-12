@@ -15,6 +15,10 @@ Scalar-generic lower and upper bounds for the real part of the quadratic form
 of a bounded operator, restricted to a subspace.  These predicates are useful
 well beyond Davis--Kahan perturbation theory.
 
+The predicates, their monotonicity and the form of a real scalar operator only need a
+seminormed inner product space; the comparison with Mathlib's `IsPositive` uses the normed
+setting in which that predicate is defined.
+
 A single-vector perturbation estimate complements them: the form stays nonnegative at a vector
 close, relative to its norm, to one at which it is coercive
 (`ContinuousLinearMap.re_inner_apply_nonneg_of_norm_sub_le`).
@@ -34,11 +38,14 @@ public section
 open scoped InnerProductSpace
 
 variable {𝕜 E : Type*} [RCLike 𝕜]
-variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 /-! Form-bound predicates extend the `ContinuousLinearMap` API and support
 dot notation on bounded operators. -/
 namespace ContinuousLinearMap
+
+section Seminormed
+
+variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 /-- Lower quadratic-form bound on a subspace. -/
 def LowerFormBoundOn (A : E →L[𝕜] E) (U : Submodule 𝕜 E) (c : ℝ) : Prop :=
@@ -91,6 +98,12 @@ theorem UpperFormBoundOn.mono_subspace {A : E →L[𝕜] E} {U U' : Submodule �
   (upperFormBoundOn_iff A U' c).2 fun x hx =>
     (upperFormBoundOn_iff A U c).1 h x (hU hx)
 
+end Seminormed
+
+section Normed
+
+variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
 /-- Positivity implies the zero lower form bound on the whole space. -/
 theorem IsPositive.lowerFormBoundOn_top {A : E →L[𝕜] E} (hA : A.IsPositive) :
     A.LowerFormBoundOn ⊤ 0 :=
@@ -106,7 +119,11 @@ theorem isPositive_of_lowerFormBoundOn_top {A : E →L[𝕜] E} (hsym : A.IsSymm
     simpa [ContinuousLinearMap.reApplyInnerSelf] using
       (lowerFormBoundOn_iff A ⊤ 0).1 h x Submodule.mem_top⟩
 
+end Normed
+
 section RealScalar
+
+variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 attribute [local instance] realAlgebra realIsScalarTower
 
@@ -118,6 +135,10 @@ attribute [local instance] realAlgebra realIsScalarTower
   simp [inner_smul_left, RCLike.algebraMap_eq_ofReal]
 
 end RealScalar
+
+section Perturbation
+
+variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 /-- The form `re ⟪B v, v⟫` stays nonnegative under a small relative perturbation of a vector `u`
 on which it is coercive: if `c ‖u‖ ^ 2 ≤ re ⟪B u, u⟫` and `‖u - v‖ ≤ δ ‖v‖` with `δ ≤ 1 / 2` and
@@ -150,5 +171,7 @@ theorem re_inner_apply_nonneg_of_norm_sub_le {B : E →L[𝕜] E} {c δ : ℝ} (
     mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hun 2) hc
   have h₆ := mul_le_mul_of_nonneg_right hδ₂ (sq_nonneg ‖v‖)
   nlinarith
+
+end Perturbation
 
 end ContinuousLinearMap

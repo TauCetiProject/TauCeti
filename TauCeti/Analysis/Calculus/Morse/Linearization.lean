@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import TauCeti.Analysis.Calculus.IteratedGradient
+public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Calculus.Morse.Basic
 -- Private: symmetry of the second derivative, strict differentiability, and the
 -- gradient/Fréchet-derivative norm comparison are used only in proofs below.

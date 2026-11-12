@@ -188,7 +188,7 @@ theorem eventually_forall_mem_span_tangentConeAt_inner_nonneg {H : Type*} [Norme
     (heC : ∀ z ∈ e.source, ContDiffAt ℝ 1 e z) (heCs : ∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z)
     {c : ℝ} (hc : 0 < c) (hL : ∀ u ∈ L, c * ‖u‖ ^ 2 ≤ ⟪B u, u⟫) :
     ∀ᶠ z in 𝓝 x, z ∈ S → ∀ v ∈ Submodule.span ℝ (tangentConeAt ℝ S z), 0 ≤ ⟪B v, v⟫ := by
-  set δ : ℝ := min (1 / 2) (c / (12 * (‖B‖ + 1))) with hδ
+  set δ : ℝ := min (1 / 2) (c / (12 * (‖B‖ + 1)))
   have hδpos : 0 < δ := lt_min (by norm_num) (by positivity)
   have hδ₂ : ‖B‖ * δ ≤ c / 12 := by
     have h : δ ≤ c / (12 * (‖B‖ + 1)) := min_le_right _ _

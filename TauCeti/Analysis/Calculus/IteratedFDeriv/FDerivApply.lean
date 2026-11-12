@@ -172,7 +172,7 @@ theorem HasCompactSupport.exists_norm_iteratedFDeriv_prod_right_sub_sub_le
     funext x
     have hn : ((-h, 0) : P × E) = -(h, 0) := by simp
     simp only [R, hn, sub_neg_eq_add, Prod.mk_add_mk, add_zero, map_neg, ← sub_eq_add_neg]
-  rw [hslice, _root_.ContDiff.iteratedFDeriv_prod_right hR i le_rfl]
+  rw [hslice, hR.contDiffAt.iteratedFDeriv_prod_right i le_rfl]
   refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
   have hprod : ∏ _ : Fin i, ‖ContinuousLinearMap.inr ℝ P E‖ ≤ 1 := by
     rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]

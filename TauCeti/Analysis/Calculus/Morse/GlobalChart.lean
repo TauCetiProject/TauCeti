@@ -131,8 +131,9 @@ theorem eventually_forall_dist_le_of_mem_unstableSet (h : IsNondegenerateCritica
   exact (hφ.dist_le_of_mem_unstableSet hz (fun _ ↦ hd _) hd.continuous.continuousAt hc.le hgrad
     (mem_ball.1 hzb).le hzf ht).trans hρr
 
-variable [CompleteSpace E] {K : ℝ≥0}
+variable {K : ℝ≥0}
 
+variable [CompleteSpace E] in
 omit [FiniteDimensional ℝ E] in
 /-- Transport of a straightening chart along the negative-gradient flow. Let `S` be an invariant
 set cut out on the source of a `C^n` chart `q` with `C^n` inverse by `q w ∈ L`. If the trajectory
