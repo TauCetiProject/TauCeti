@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.QuadraticVariation
-public import TauCeti.Analysis.Calculus.QuadraticSums
+public import TauCeti.Analysis.QuadraticSums.EndpointChange
 
 /-!
 # Endpoint independence for weighted Brownian quadratic sums
