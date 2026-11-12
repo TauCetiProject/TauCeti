@@ -22,8 +22,8 @@ of Galois groups in the upper numbering:
 * **Finite level** (`normResidue_map_unitFiltration`): for every finite Galois extension `L/K` of
   nonarchimedean local fields and every `n : ℕ`, the composite
   `Kˣ → Kˣ ⧸ N_{L/K}(Lˣ) ≃* Gal(L/K)^ab` maps `U(K, n)` onto the image of the upper ramification
-  group `Gal(L/K)^n` in `Gal(L/K)^ab`. When `L/K` is abelian, pulling back along `Abelianization.of`
-  identifies the image of `U(K, n)` directly with `Gal(L/K)^n`
+  group `Gal(L/K)^n` in `Gal(L/K)^ab`. When `L/K` is abelian, pulling back along
+  `Group.Abelianization.of` identifies the image of `U(K, n)` directly with `Gal(L/K)^n`
   (`comap_abelianization_of_normResidue_map_unitFiltration`).
 * **Maximal abelian extension**
   (`map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitFiltration`): reading
@@ -46,7 +46,7 @@ At `n = 0`, `U(K, 0) = 𝒪[K]ˣ` and `G_K^0 = inertiaSubgroup K`, recovering
 * `normResidue_map_unitFiltration`: finite local reciprocity maps `U(K, n)` onto the image of
   `Gal(L/K)^n` in `Gal(L/K)^ab` for any finite Galois extension `L/K`.
 * `comap_abelianization_of_normResidue_map_unitFiltration`: when `Gal(L/K)` is commutative,
-  pulling back along `Abelianization.of` recovers `Gal(L/K)^n`.
+  pulling back along `Group.Abelianization.of` recovers `Gal(L/K)^n`.
 * `normResidue_mk_mem_map_upperRamificationGroup_iff`: the norm residue symbol of `x ∈ Kˣ` lies in
   the image of `Gal(L/K)^n` exactly when `x ∈ U(K, n) ⊔ N_{L/K}(Lˣ)`.
 * `map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitFiltration`: in
@@ -75,20 +75,20 @@ namespace TauCeti.ClassFieldTheory
 section Finite
 
 /-- Every subgroup `N` of `Gal(L/K)^ab` cuts out an abelian Galois subextension `F = L^H` (where
-`H = N.comap Abelianization.of`), and `N` contains the norm-residue image of `U(K, n)` precisely
-when `N` contains the image of `Gal(L/K)^n`. -/
+`H = N.comap Group.Abelianization.of`), and `N` contains the norm-residue image of `U(K, n)`
+precisely when `N` contains the image of `Gal(L/K)^n`. -/
 private theorem map_normResidue_unitFiltration_le_iff
     (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
     (L : Type*) [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
     [Algebra K L] [ValuativeExtension K L] [Module.Finite K L] [IsGalois K L]
-    (n : ℕ) (N : Subgroup (Abelianization Gal(L/K))) :
+    (n : ℕ) (N : Subgroup (Group.Abelianization Gal(L/K))) :
     (unitFiltration K n).map
         ((normResidue K L).toMonoidHom.comp (QuotientGroup.mk' (normGroup K L))) ≤ N ↔
       (upperRamificationGroup K L
-          ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩).map Abelianization.of ≤ N := by
-  let H : Subgroup Gal(L/K) := N.comap Abelianization.of
+          ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩).map Group.Abelianization.of ≤ N := by
+  let H : Subgroup Gal(L/K) := N.comap Group.Abelianization.of
   have hcomm_le : commutator Gal(L/K) ≤ H := by
-    rw [← Abelianization.ker_of]
+    rw [← Group.Abelianization.ker_of]
     intro σ hσ
     rw [Subgroup.mem_comap, MonoidHom.mem_ker.1 hσ]
     exact one_mem N
@@ -114,10 +114,10 @@ private theorem map_normResidue_unitFiltration_le_iff
     let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
     obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (artinMap K u)
     set σ : Gal(L/K) := ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K τ)
-    have hnr : normResidue K L (u : Kˣ ⧸ normGroup K L) = Abelianization.of σ := by
+    have hnr : normResidue K L (u : Kˣ ⧸ normGroup K L) = Group.Abelianization.of σ := by
       rw [normResidue_mk K L ι, artinMap_restrict K L ι u τ hτ, toMul_ofMul]
     rw [Subgroup.mem_comap, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
-      MulEquiv.coe_toMonoidHom, hnr, ← Subgroup.mem_comap (f := Abelianization.of),
+      MulEquiv.coe_toMonoidHom, hnr, ← Subgroup.mem_comap (f := Group.Abelianization.of),
       ← abelianization_of_restrictNormalHom_fixedField_eq_one_iff H σ,
       ← IntermediateField.restrictNormalHom_val, AlgHom.restrictNormalHom_restrictNormalHom,
       ← ofMul_eq_zero, ← artinMap_restrict K F (ι.comp F.val) u τ hτ, localArtinMap_eq_zero_iff]
@@ -138,14 +138,14 @@ theorem normResidue_map_unitFiltration
     (unitFiltration K n).map
         ((normResidue K L).toMonoidHom.comp (QuotientGroup.mk' (normGroup K L))) =
       (LocalFieldsRamification.upperRamificationGroup K L
-          ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩).map Abelianization.of :=
+          ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩).map Group.Abelianization.of :=
   le_antisymm
     ((map_normResidue_unitFiltration_le_iff K L n _).2 le_rfl)
     ((map_normResidue_unitFiltration_le_iff K L n _).1 le_rfl)
 
 open scoped IsMulCommutative in
 /-- **Abelian form of `normResidue_map_unitFiltration`.** When `Gal(L/K)` is commutative, pulling
-back the norm-residue image of `U(K, n)` along the bijection `Abelianization.of` recovers
+back the norm-residue image of `U(K, n)` along the bijection `Group.Abelianization.of` recovers
 `Gal(L/K)^n` itself. -/
 theorem comap_abelianization_of_normResidue_map_unitFiltration
     (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
@@ -154,11 +154,11 @@ theorem comap_abelianization_of_normResidue_map_unitFiltration
     [IsMulCommutative (L ≃ₐ[K] L)] (n : ℕ) :
     ((unitFiltration K n).map
         ((normResidue K L).toMonoidHom.comp (QuotientGroup.mk' (normGroup K L)))).comap
-        Abelianization.of =
+        Group.Abelianization.of =
       LocalFieldsRamification.upperRamificationGroup K L
         ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ := by
   rw [normResidue_map_unitFiltration,
-    Subgroup.comap_map_eq_self_of_injective Abelianization.of_injective]
+    Subgroup.comap_map_eq_self_of_injective Group.Abelianization.of_injective]
 
 /-- **Elementwise criterion for membership in the abelianized upper ramification group.** For a
 finite Galois extension `L/K` of nonarchimedean local fields, the norm residue symbol of `x ∈ Kˣ`
@@ -171,7 +171,7 @@ theorem normResidue_mk_mem_map_upperRamificationGroup_iff
     (n : ℕ) (x : Kˣ) :
     normResidue K L (x : Kˣ ⧸ normGroup K L) ∈
         (LocalFieldsRamification.upperRamificationGroup K L
-            ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩).map Abelianization.of ↔
+            ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩).map Group.Abelianization.of ↔
       x ∈ unitFiltration K n ⊔ normGroup K L := by
   rw [← normResidue_map_unitFiltration K L n, ← Subgroup.map_map, Subgroup.mem_map_equiv,
     MulEquiv.symm_apply_apply, ← QuotientGroup.mk'_apply, ← Subgroup.mem_comap,
@@ -202,14 +202,14 @@ private theorem exists_mem_unitFiltration_restrictNormalHom_eq (n : ℕ)
   have := finiteIntermediateField_isNonarchimedeanLocalField K Kab M.toIntermediateField
   have := finiteIntermediateField_valuativeExtension K Kab M.toIntermediateField
   have hmem :
-      Abelianization.of (AlgEquiv.restrictNormalHom M.toIntermediateField τ) ∈
+      Group.Abelianization.of (AlgEquiv.restrictNormalHom M.toIntermediateField τ) ∈
         (upperRamificationGroup K M.toIntermediateField
-            ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩).map Abelianization.of :=
+            ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩).map Group.Abelianization.of :=
     ⟨AlgEquiv.restrictNormalHom M.toIntermediateField τ,
       by rwa [finiteGaloisUpperRamificationGroup_def] at hτM, rfl⟩
   rw [← normResidue_map_unitFiltration K M.toIntermediateField n] at hmem
   obtain ⟨u, hu, hu_eq⟩ := hmem
-  exact ⟨u, hu, Abelianization.of_injective
+  exact ⟨u, hu, Group.Abelianization.of_injective
     ((abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap K
       M.toIntermediateField u).trans hu_eq)⟩
 
@@ -238,7 +238,7 @@ theorem map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitF
     have := finiteIntermediateField_isNonarchimedeanLocalField K Kab M.toIntermediateField
     have := finiteIntermediateField_valuativeExtension K Kab M.toIntermediateField
     rw [Subgroup.mem_comap, finiteGaloisUpperRamificationGroup_def,
-      ← Subgroup.mem_map_iff_mem Abelianization.of_injective,
+      ← Subgroup.mem_map_iff_mem Group.Abelianization.of_injective,
       ← normResidue_map_unitFiltration K M.toIntermediateField n]
     exact ⟨u, hu,
       (abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap K

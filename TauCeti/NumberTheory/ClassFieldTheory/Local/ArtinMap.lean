@@ -172,7 +172,7 @@ computes `normResidue K M x`. -/
 theorem abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap
     (M : IntermediateField K (maximalAbelianExtension K (AlgebraicClosure K)))
     [FiniteDimensional K M] (x : Kˣ) :
-    Abelianization.of
+    Group.Abelianization.of
         (AlgEquiv.restrictNormalHom M
           (topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
             (artinMap K x))) =
