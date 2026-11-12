@@ -130,7 +130,7 @@ theorem tendsto_putPrice_spot_atTop (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
       (tendsto_neg_atTop_atBot.comp (tendsto_dMinus_spot_atTop hσ hK hτ))).const_mul
       (K * exp (-r * τ))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h ?_ ?_
-  · filter_upwards [eventually_gt_atTop 0] with x hx
+  · filter_upwards [eventually_gt_atTop 0] with x _
     exact putPrice_nonneg hσ hK hτ
   · filter_upwards [eventually_ge_atTop 0] with x hx
     exact putPrice_le_mul_cdf hx
