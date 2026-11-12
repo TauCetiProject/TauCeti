@@ -30,7 +30,7 @@ The potential `p² + q²` vanishes at the zeros of `α`, but for a continuous fi
 space `A_m^s = x_m + H^s`, `s > 1`, it tends to `1 / 4` at infinity
 (`TauCeti.Vortex.tendsto_normSq_of_mem_framedFieldSpace`). This file proves that the gauge
 Laplacian is then an isomorphism from `H^(j+2)(ℂ)` onto `H^j(ℂ)` whenever `x ∈ A_m^k` with
-`j < k` and `k ≥ 2`.
+`j ≤ k` and `k ≥ 2`.
 
 * Uniqueness (`TauCeti.Vortex.ae_eq_of_isWeakSolutionSchrodinger`): two weak solutions in `L²(ℂ)`
   agree almost everywhere, by the coercivity of the gauge Laplacian on `H¹(ℂ)`
@@ -93,7 +93,8 @@ private theorem potential_bounds {s : ℝ} (hs : 1 < s) (hx : x ∈ framedFieldS
     (Eventually.of_forall fun z ↦ ?_)
   by_cases hz : z ∈ closedBall (0 : ℂ) R
   · exact (hC z hz).trans (le_max_left _ _)
-  · have h := hR (show z ∈ {w : ℂ | R ≤ ‖w‖} from (lt_of_not_ge (by simpa using hz)).le)
+  · have hzR : R ≤ ‖z‖ := (lt_of_not_ge (by simpa using hz)).le
+    have h := hR hzR
     simp only [Set.mem_ofPred_eq] at h
     have h0 : 0 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by positivity
     rw [Real.norm_eq_abs, abs_of_nonneg h0]
@@ -126,10 +127,10 @@ theorem ae_eq_of_isWeakSolutionSchrodinger {s : ℝ} (hs : 1 < s) (hx : x ∈ fr
     (ae_of_all _ hR) hu₁ hu₂
 
 /-- **Elliptic regularity for the gauge Laplacian.** Let `x` be a continuous field of `A_m^k`,
-`k ≥ 2`, and `j < k`. A weak solution `u ∈ L²(ℂ)` of `d₀* d₀ u = g` with `g ∈ H^j(ℂ)` lies in
+`k ≥ 2`, and `j ≤ k`. A weak solution `u ∈ L²(ℂ)` of `d₀* d₀ u = g` with `g ∈ H^j(ℂ)` lies in
 `H^(j+2)(ℂ)`. -/
 theorem mem_realSobolevFunctions_of_isWeakSolutionSchrodinger {k j : ℕ} (hk : 1 < k)
-    (hjk : j < k) (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) {u g : ℂ → ℝ}
+    (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) {u g : ℂ → ℝ}
     (heq : PDE.IsWeakSolutionSchrodinger (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) u g)
     (hu : MemLp u 2 (volume : Measure ℂ)) (hg : g ∈ realSobolevFunctions ℂ j 2) :
     u ∈ realSobolevFunctions ℂ (j + 2) 2 := by
@@ -142,24 +143,28 @@ theorem mem_realSobolevFunctions_of_isWeakSolutionSchrodinger {k j : ℕ} (hk : 
     simpa using heq.mem_realSobolevFunctions_two hV hu (memLp_of_mem_realSobolevFunctions hg)
   | succ n ih =>
     have hu' := ih (by omega)
-    -- The potential term `(p² + q²) u` is as regular as `u`.
-    have hn2 : 1 < n + 2 := by omega
-    have hxn : x ∈ framedFieldSpace f m ((n + 2 : ℕ) : ℝ) :=
-      framedFieldSpace_mono f m (by exact_mod_cast (by omega : n + 2 ≤ k)) hx
-    have huN : u ∈ realSobolevFunctions ℂ ((n + 2 : ℕ) : ℝ) 2 := by exact_mod_cast hu'
+    -- The potential term `(p² + q²) u` is as regular as `u`, measured at the order
+    -- `N = min (n + 2) k`, which satisfies `1 < N`, `n + 1 ≤ N` and `N ≤ k`.
+    obtain ⟨N, hN⟩ : ∃ N, N = min (n + 2) k := ⟨_, rfl⟩
+    have hN2 : 1 < N := by omega
+    have hxN : x ∈ framedFieldSpace f m (N : ℝ) :=
+      framedFieldSpace_mono f m (by exact_mod_cast (by omega : N ≤ k)) hx
+    have huN : u ∈ realSobolevFunctions ℂ (N : ℝ) 2 :=
+      realSobolevFunctions_mono (by norm_num) (by norm_num)
+        (by exact_mod_cast (by omega : N ≤ n + 2)) hu'
     have hVu : (fun z ↦ (x z 2 ^ 2 + x z 3 ^ 2) * u z) ∈
         realSobolevFunctions ℂ ((n + 1 : ℕ) : ℝ) 2 := by
-      have h2 := mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn2 hxn 2
-        (mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn2 hxn 2 huN)
-      have h3 := mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn2 hxn 3
-        (mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn2 hxn 3 huN)
-      have hsum : (fun z ↦ (x z 2 ^ 2 + x z 3 ^ 2) * u z) ∈
-          realSobolevFunctions ℂ ((n + 2 : ℕ) : ℝ) 2 := by
+      have h2 := mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hN2 hxN 2
+        (mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hN2 hxN 2 huN)
+      have h3 := mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hN2 hxN 3
+        (mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hN2 hxN 3 huN)
+      have hsum : (fun z ↦ (x z 2 ^ 2 + x z 3 ^ 2) * u z) ∈ realSobolevFunctions ℂ (N : ℝ) 2 := by
         convert add_mem h2 h3 using 1
         ext z
         simp only [Pi.add_apply]
         ring
-      exact realSobolevFunctions_mono (by norm_num) (by norm_num) (by push_cast; linarith) hsum
+      exact realSobolevFunctions_mono (by norm_num) (by norm_num)
+        (by exact_mod_cast (by omega : n + 1 ≤ N)) hsum
     have hun : u ∈ realSobolevFunctions ℂ ((n + 1 : ℕ) : ℝ) 2 :=
       realSobolevFunctions_mono (by norm_num) (by norm_num) (by push_cast; linarith) hu'
     have hgn : g ∈ realSobolevFunctions ℂ ((n + 1 : ℕ) : ℝ) 2 :=
@@ -167,11 +172,11 @@ theorem mem_realSobolevFunctions_of_isWeakSolutionSchrodinger {k j : ℕ} (hk : 
     exact_mod_cast heq.mem_realSobolevFunctions_add_two hun hVu hgn
 
 /-- **The gauge Laplacian is onto `H^j(ℂ)`.** Let `x` be a continuous field of `A_m^k`, `k ≥ 2`,
-and `j < k`. For every `g ∈ H^j(ℂ)` the equation `d₀* d₀ u = g` has a weak solution
+and `j ≤ k`. For every `g ∈ H^j(ℂ)` the equation `d₀* d₀ u = g` has a weak solution
 `u ∈ H^(j+2)(ℂ)`. By `TauCeti.Vortex.ae_eq_of_isWeakSolutionSchrodinger` it is unique up to null
 sets, even among weak solutions in `L²(ℂ)`. -/
 theorem exists_mem_realSobolevFunctions_isWeakSolutionSchrodinger {k j : ℕ} (hk : 1 < k)
-    (hjk : j < k) (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) {g : ℂ → ℝ}
+    (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) {g : ℂ → ℝ}
     (hg : g ∈ realSobolevFunctions ℂ j 2) :
     ∃ u ∈ realSobolevFunctions ℂ (j + 2) 2,
       PDE.IsWeakSolutionSchrodinger (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) u g := by

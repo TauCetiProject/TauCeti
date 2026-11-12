@@ -32,8 +32,9 @@ outside a ball. This file proves that for every `g ∈ L²(E)` the stationary Sc
 
 for every compactly supported smooth `φ`.
 
-The potential may vanish on a large set inside the ball, so `-Δ + V` is not a perturbation of
-`-Δ + c` for a constant `c > 0`, and the Laplacian alone has no spectral gap on the whole space.
+The potential may vanish on a large set inside the ball, so it need not have a uniform positive
+lower bound and coercivity cannot be read off from such a bound; the Laplacian alone has no
+spectral gap on the whole space.
 The Poincaré inequality for Schrödinger forms
 (`TauCeti.exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq`)
 restores the gap: after passing from compactly supported smooth functions to all of
@@ -400,14 +401,6 @@ private theorem schrodingerForm_eq_forcing (hV : MemLp V ∞ (volume : Measure E
   exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ).mono
     fun x hx ↦ by simp only [hx])
 
-/-- A real `H¹` function is the value of an element of `W^{1,2}(E)`. -/
-private theorem exists_w1p_value_ae_eq {f : E → ℝ} (hf : f ∈ realSobolevFunctions E 1 2) :
-    ∃ w : W1p (volume : Measure E) ⊤ 2, (W1p.value w : E → ℝ) =ᵐ[volume] f := by
-  obtain ⟨u, hu, hs⟩ := mem_realSobolevFunctions.1 hf
-  obtain ⟨w, hw⟩ := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq (by norm_num) (by norm_num) 1
-    u).1 (by exact_mod_cast hs)
-  exact ⟨Wkp.firstOrder 0 w, by rw [Wkp.value_firstOrder]; exact hw.trans hu⟩
-
 /-- **Weak solutions in `L²(E)` lie in `H²(E)`.** For an essentially bounded `V` and
 `g ∈ L²(E)`, every weak solution `f ∈ L²(E)` of `-Δf + V f = g` lies in `H²(E)`. -/
 theorem IsWeakSolutionSchrodinger.mem_realSobolevFunctions_two {V f g : E → ℝ}
@@ -464,8 +457,8 @@ theorem IsWeakSolutionSchrodinger.ae_eq {f₁ f₂ g : E → ℝ} (heq₁ : IsWe
   -- It lies in `H²(E) ⊆ H¹(E)`, so it is the value of some `w ∈ W^{1,2}(E)`.
   have h2 := hd.mem_realSobolevFunctions_two hV (hf₁.sub hf₂)
     (MemLp.zero : MemLp (0 : E → ℝ) 2 volume)
-  obtain ⟨w, hw⟩ := exists_w1p_value_ae_eq
-    (realSobolevFunctions_mono (by norm_num) (by norm_num) (by norm_num) h2)
+  obtain ⟨w, hw⟩ :=
+    exists_w1p_value_ae_eq_of_mem_realSobolevFunctions (by norm_num) (by norm_num) (by norm_num) h2
   -- Coercivity forces `w = 0`.
   have hw0 : schrodingerForm hV w w = 0 := by
     have h := schrodingerForm_eq_forcing hV (MemLp.zero : MemLp (0 : E → ℝ) 2 volume)
