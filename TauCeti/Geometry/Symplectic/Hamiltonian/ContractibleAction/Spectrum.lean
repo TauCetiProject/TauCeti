@@ -195,7 +195,7 @@ theorem contractibleActionSpectrum_smul_eq (h : σ.IsNondegenerate) (hω : IsWea
   have hω₀ : IsSmoothForm I 0 σ.1 := σ.isSmoothForm.of_le (by simp)
   have haction (x : M) :
       contractibleLoopAction σ.1 (fun _ ↦ s • F) (fun _ ↦ x) = -(s * F x) := by
-    simp [hω.contractibleLoopAction_const hω₀]
+    simp [IsWeaklyExact.contractibleLoopAction_const hω₀ hω]
   rw [contractibleActionSpectrum_eq_image hω]
   ext a
   constructor
