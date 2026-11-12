@@ -29,6 +29,8 @@ the transposed diagonal by `TauCeti.NatChainComplex.cup_koszulBraidingHom`.
 * `TopCat.singularCup_gradedComm`: graded commutativity for braided coefficient data.
 * `TopCat.singularCup_gradedComm_tensorUnit`: graded commutativity for a commutative pairing on
   cohomology with unit coefficient object.
+* `TopCat.singularCup_left_comm_tensorUnit`: `b ⌣ (a ⌣ c) = (-1)^(p * q) a ⌣ (b ⌣ c)` for a
+  commutative and associative pairing, combining graded commutativity with associativity.
 
 ## References
 
@@ -84,5 +86,23 @@ theorem singularCup_gradedComm_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing
       ((-1 : ℤ) ^ (p * q)) • X.singularCup k (λ_ _).inv μ p q n h a b :=
   singularCup_gradedComm X k (by
     rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, unitors_inv_equal]) hμ h a b
+
+/-- **Left commutativity of the cup product with commutative coefficients**: for coefficients in an
+object `M` with a commutative and associative pairing `μ : M ⊗ M ⟶ M`, the cup product along the
+left unitor of the unit object satisfies `b ⌣ (a ⌣ c) = (-1)^(p * q) a ⌣ (b ⌣ c)` for `a` of
+degree `p` and `b` of degree `q`. -/
+theorem singularCup_left_comm_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] {μ : M ⊗ M ⟶ M} (hμ : (β_ M M).hom ≫ μ = μ)
+    (hμ' : μ ▷ M ≫ μ = (α_ M M M).hom ≫ M ◁ μ ≫ μ) {p q r m m' n : ℕ} (hm : q + r = m)
+    (hn : p + m = n) (hm' : p + r = m') (hn' : q + m' = n) (a : X.singularCohomology (𝟙_ C) k M p)
+    (b : X.singularCohomology (𝟙_ C) k M q) (c : X.singularCohomology (𝟙_ C) k M r) :
+    X.singularCup k (λ_ _).inv μ q m' n hn' b (X.singularCup k (λ_ _).inv μ p r m' hm' a c) =
+      ((-1 : ℤ) ^ (p * q)) •
+        X.singularCup k (λ_ _).inv μ p m n hn a (X.singularCup k (λ_ _).inv μ q r m hm b c) := by
+  have hu : (λ_ (𝟙_ C)).inv ≫ (λ_ (𝟙_ C)).inv ▷ _ ≫ (α_ _ _ _).hom =
+      (λ_ _).inv ≫ _ ◁ (λ_ _).inv := by monoidal
+  rw [← singularCup_assoc X k hu hμ' rfl (by omega) hm' hn',
+    singularCup_gradedComm_tensorUnit X k hμ (add_comm p q), map_zsmul, LinearMap.smul_apply,
+    singularCup_assoc X k hu hμ' (add_comm p q) (by omega) hm hn]
 
 end TopCat

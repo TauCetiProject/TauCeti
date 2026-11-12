@@ -293,19 +293,6 @@ end Coefficients
 
 section Cup
 
-/-- The cup square of the generator `θ` of `Hᵈ⁺¹(Sᵈ⁺¹; k)` vanishes, since
-`H²ᵈ⁺²(Sᵈ⁺¹; k) = 0`. -/
-theorem singularCup_singularCohomologyTopCatSphereGenerator_self (d : ℕ) :
-    (TopCat.sphere.{w} (d + 1)).singularCup k (λ_ _).inv (λ_ _).hom (d + 1) (d + 1)
-      (d + 1 + (d + 1)) rfl (TauCeti.singularCohomologyTopCatSphereGenerator k d)
-      (TauCeti.singularCohomologyTopCatSphereGenerator k d) = 0 := by
-  have hz : IsZero ((TopCat.sphere.{w} (d + 1)).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
-      (𝟙_ (ModuleCat.{w} k)) (d + 1 + (d + 1))) := by
-    rw [show d + 1 + (d + 1) = 2 * d + 1 + 1 by omega]
-    exact TauCeti.isZero_singularCohomology_topCatSphere_of_ne k _ (d + 1) (2 * d + 1) (by omega)
-  have := ModuleCat.subsingleton_of_isZero hz
-  exact Subsingleton.elim _ _
-
 /-- **The cup product on `Sᵈ⁺¹ × Y` in the slant decomposition**: with coefficients in a
 commutative ring `k`, write classes of `Sᵈ⁺¹ × Y` as `(b, c) = pr₂^* b + pr₁^* θ ⌣ pr₂^* c` through
 `TopCat.singularCohomologySphereProdSlantEquiv`. Then for `b ∈ Hᵖ⁺ᵈ⁺¹(Y)`, `c ∈ Hᵖ(Y)`,
@@ -343,7 +330,7 @@ theorem singularCohomologySphereProdSlantEquiv_singularCup {d : ℕ}
     (singularCup_singularCohomologyTopCatSphereGenerator_self d) _ _ _ _
 
 /-- **The cup product on `Sᵈ⁺¹ × Y` for a compact manifold `Y`**: if `Y` is a compact manifold of
-dimension `n` and the cup product lands above degree `n + d + 1`, its component pulled back from
+dimension `n` and the cup product lands above degree `n`, its component pulled back from
 `Y` vanishes, so in the slant decomposition
 `(b, c) ⌣ (b', c') = (0, c ⌣ b' + (-1)^((d + 1)(p + d + 1)) b ⌣ c')`. Here `k` is a commutative
 ring over which every module has projective dimension at most one, such as `ℤ` or a field. For a

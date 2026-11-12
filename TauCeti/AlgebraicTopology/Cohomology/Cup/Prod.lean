@@ -18,7 +18,8 @@ the cross products `a × c`, and they multiply by the **interchange law**
 `(pr₁^* a ⌣ pr₂^* c) ⌣ (pr₁^* a' ⌣ pr₂^* c') = (-1)^(q p') pr₁^* (a ⌣ a') ⌣ pr₂^* (c ⌣ c')`
 
 for `c ∈ H^q(Y)` and `a' ∈ H^p'(X)` (`TopCat.singularCup_fst_snd_singularCup_fst_snd`), the sign
-coming from moving `pr₂^* c` past `pr₁^* a'` by graded commutativity.
+coming from moving `pr₂^* c` past `pr₁^* a'` by graded commutativity
+(`TopCat.singularCup_left_comm_tensorUnit`).
 
 When `X` is a sphere `Sᵈ⁺¹` and `a = a'` is the generator `θ` of `Hᵈ⁺¹(Sᵈ⁺¹)`, every class of
 `X × Y` has the form `pr₂^* b + pr₁^* a ⌣ pr₂^* c`
@@ -80,13 +81,11 @@ theorem singularCup_fst_snd_singularCup_fst_snd {p q p' q' m m' r s n : ℕ} (hm
       (α_ _ _ _).hom ≫ _ ◁ (λ_ _).hom ≫ (λ_ _).hom := by monoidal
   have hβ : (β_ (𝟙_ (ModuleCat.{w} k)) _).hom ≫ (λ_ _).hom = (λ_ _).hom := by
     simp [unitors_inv_equal]
+  -- reassociate, move `pr₂^* c` past `pr₁^* a'` by left commutativity, and reassociate back
   rw [← singularCup_naturality, ← singularCup_naturality,
-    singularCup_assoc _ k hu hμ hm hn (by omega : q + m' = q + m') (by omega),
-    ← singularCup_assoc _ k hu hμ (rfl : q + p' = q + p') (by omega) hm' (rfl : q + m' = _),
-    singularCup_gradedComm_tensorUnit _ k hβ (add_comm p' q), map_zsmul,
-    LinearMap.smul_apply, map_zsmul,
-    singularCup_assoc _ k hu hμ (add_comm p' q) (by omega) hs (by omega),
-    ← singularCup_assoc _ k hu hμ hr hrs (by omega : p' + s = q + m') (by omega), mul_comm]
+    singularCup_assoc _ k hu hμ hm hn rfl (by omega),
+    singularCup_left_comm_tensorUnit _ k hβ hμ hs (by omega) hm' rfl, map_zsmul,
+    ← singularCup_assoc _ k hu hμ hr hrs (by omega) (by omega), mul_comm]
 
 variable {X Y}
 
@@ -140,13 +139,11 @@ theorem singularCup_singularCohomologyMap_snd_add_singularCup {p q q' m m' n s :
     (TopCat.singularCohomologyMap (snd X Y) m' b')
   rw [singularCup_naturality] at h₂
   -- `pr₂^* b ⌣ (pr₁^* a ⌣ pr₂^* c') = (-1)^(p m) pr₁^* a ⌣ pr₂^* (b ⌣ c')`
-  have h₃ := (X ⊗ Y).singularCup_assoc k hu hμ (rfl : m + p = m + p) (by omega) hm' hn
-    (TopCat.singularCohomologyMap (snd X Y) m b) (TopCat.singularCohomologyMap (fst X Y) p a)
+  have h₃ := (X ⊗ Y).singularCup_left_comm_tensorUnit k hβ hμ (by omega : m + q' = s) hs hm' hn
+    (TopCat.singularCohomologyMap (fst X Y) p a) (TopCat.singularCohomologyMap (snd X Y) m b)
     (TopCat.singularCohomologyMap (snd X Y) q' c')
-  rw [singularCup_gradedComm_tensorUnit _ k hβ (add_comm p m), map_zsmul, LinearMap.smul_apply,
-    singularCup_assoc _ k hu hμ (add_comm p m) (by omega) (by omega : m + q' = s) hs,
-    singularCup_naturality] at h₃
-  simp only [map_add, LinearMap.add_apply, map_zsmul, singularCup_naturality, h₁, ← h₂, ← h₃]
+  rw [singularCup_naturality] at h₃
+  simp only [map_add, LinearMap.add_apply, map_zsmul, singularCup_naturality, h₁, ← h₂, h₃]
   abel
 
 end TopCat
