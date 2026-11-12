@@ -25,8 +25,8 @@ elementary-2 quotients are linearly equivalent and their 2-ranks agree.
 
 The underlying construction is the general `TauCeti.ElementaryTwoQuotient`. This file specializes
 it to the finite group `NarrowClassGroup K`, records its induced map to
-`TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 K)`, and exposes the rank statements used by the
-genus-field milestone of `TauCetiRoadmap/Multiquadratic/README.md`.
+`TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 K)`, and exposes the rank statements used in genus
+theory.
 
 ## Main definitions and results
 

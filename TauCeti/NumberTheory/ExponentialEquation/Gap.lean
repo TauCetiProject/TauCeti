@@ -218,7 +218,6 @@ theorem div_mul_rpow_le_sub_of_mem_factoredNumbers {S : Finset ℕ} (hS : ∀ p 
     {x y : ℕ} (hx : x ∈ Nat.factoredNumbers S) (hy : y ∈ Nat.factoredNumbers S) (hxy : x < y) :
     (y : ℝ) / ((exp 1 / log 2) ^ C * log y ^ C) ≤ y - x := by
   have hy1 : (1 : ℝ) ≤ y := by exact_mod_cast (show 1 ≤ y by omega)
-  have hlog2 : 0 < log 2 := log_pos one_lt_two
   convert mul_rpow_neg_le_sub_of_mem_factoredNumbers hS hC hLB hx hy hxy using 1
   rw [div_eq_mul_inv, ← mul_rpow (by positivity) (log_nonneg hy1), ← rpow_neg (by positivity),
     div_mul_comm, mul_comm (exp 1)]

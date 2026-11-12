@@ -169,11 +169,7 @@ private theorem isEquivalent_Gamma_natCast_add_one_add_of_pos {s : ℝ} (hs : 0 
     rwa [div_self hΓ] at this
   refine hlim.congr' ?_
   filter_upwards [eventually_ne_atTop 0] with n hn
-  have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
   have hprod := prod_range_add_mul_Gamma hs (n + 1)
-  have hpos : 0 < ∏ j ∈ Finset.range (n + 1), (s + j) :=
-    Finset.prod_pos fun j _ => by positivity
-  have hfac : (0 : ℝ) < n ! := by exact_mod_cast Nat.factorial_pos n
   rw [Pi.div_apply, GammaSeq, show (n : ℝ) + 1 + s = s + ((n + 1 : ℕ) : ℝ) by push_cast; ring,
     ← hprod]
   field_simp
