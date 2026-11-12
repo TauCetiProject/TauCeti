@@ -239,10 +239,10 @@ instance : Mul (AnnularRing p) where
     rw [DiscreteConvolution.addRingConvolution_eq_tsum_neg_add]
     simpa only [neg_add_eq_sub] using norm_tsum_coeff_mul_coeff_le x y m⟩
 
-theorem coeff_one (m : ℤ) : (1 : AnnularRing p).coeff m = if m = 0 then 1 else 0 :=
+@[simp] theorem coeff_one (m : ℤ) : (1 : AnnularRing p).coeff m = if m = 0 then 1 else 0 :=
   Pi.single_apply 0 1 m
 
-@[simp] theorem coeff_one_zero : (1 : AnnularRing p).coeff 0 = 1 :=
+theorem coeff_one_zero : (1 : AnnularRing p).coeff 0 = 1 :=
   (coeff_one 0).trans (ite_eq_left rfl)
 
 theorem natCast_def (n : ℕ) : (n : AnnularRing p) = (n : ℤ_[p]) • 1 := (rfl)
@@ -269,7 +269,7 @@ theorem addConvolutionExists_coeff (x y : AnnularRing p) :
 /-- The double convolution series of three coefficient families converges when indexed, as in
 `DiscreteConvolution.addRingConvolution_assoc`, by pairs `((k, c), (a, b))` with `k + c = n` and
 `a + b = k`. -/
-theorem summable_sigma_addFiber_coeff_mul_coeff_mul_coeff (x y z : AnnularRing p) (n : ℤ) :
+private theorem summable_sigma_addFiber_coeff_mul_coeff_mul_coeff (x y z : AnnularRing p) (n : ℤ) :
     Summable fun σ : Σ q : DiscreteConvolution.addFiber n, DiscreteConvolution.addFiber q.1.1 ↦
       x.coeff σ.2.1.1 * y.coeff σ.2.1.2 * z.coeff σ.1.1.2 := by
   -- Such a pair is determined by `(a, b)`, since `c = n - a - b`.
@@ -299,9 +299,11 @@ instance : CommRing (AnnularRing p) where
   one := 1
   natCast := Nat.cast
   intCast := Int.cast
-  mul_assoc x y z := AnnularRing.ext <|
-    DiscreteConvolution.addRingConvolution_assoc (addConvolutionExists_coeff x y)
-      (addConvolutionExists_coeff y z) (summable_sigma_addFiber_coeff_mul_coeff_mul_coeff x y z)
+  -- The tactic block keeps the private summability lemma out of the exposed instance body.
+  mul_assoc x y z := by
+    exact AnnularRing.ext <| DiscreteConvolution.addRingConvolution_assoc
+      (addConvolutionExists_coeff x y) (addConvolutionExists_coeff y z)
+      (summable_sigma_addFiber_coeff_mul_coeff_mul_coeff x y z)
   one_mul x := AnnularRing.ext <| DiscreteConvolution.single_addRingConvolution x.coeff
   mul_one x := AnnularRing.ext <| DiscreteConvolution.addRingConvolution_single x.coeff
   zero_mul x := AnnularRing.ext <| DiscreteConvolution.zero_addRingConvolution x.coeff
@@ -327,13 +329,17 @@ instance : Algebra ℤ_[p] (AnnularRing p) :=
     (algebraMap ℤ_[p] (AnnularRing p) c).coeff m = if m = 0 then c else 0 := by
   simp [Algebra.algebraMap_eq_smul_one, coeff_one]
 
-theorem coeff_natCast (n : ℕ) (m : ℤ) :
+@[simp] theorem coeff_natCast (n : ℕ) (m : ℤ) :
     (n : AnnularRing p).coeff m = if m = 0 then (n : ℤ_[p]) else 0 := by
   simp [natCast_def, coeff_one]
 
-theorem coeff_intCast (n : ℤ) (m : ℤ) :
+@[simp] theorem coeff_intCast (n : ℤ) (m : ℤ) :
     (n : AnnularRing p).coeff m = if m = 0 then (n : ℤ_[p]) else 0 := by
   simp [intCast_def, coeff_one]
+
+@[simp] theorem coeff_ofNat (n : ℕ) [n.AtLeastTwo] (m : ℤ) :
+    (ofNat(n) : AnnularRing p).coeff m = if m = 0 then ofNat(n) else 0 :=
+  coeff_natCast n m
 
 instance : Nontrivial (AnnularRing p) :=
   ⟨⟨0, 1, fun h ↦ by simpa using congr_arg (coeff · 0) h⟩⟩
@@ -390,11 +396,15 @@ theorem coeff_U_pow (n : ℕ) (m : ℤ) :
     · rw [ite_eq_right (show ¬m + 1 = -(n : ℤ) by omega), ite_eq_right hm, mul_zero]
 
 /-- The defining relation `T U = p` of the annular coefficient ring. -/
-theorem T_mul_U : (T : AnnularRing p) * U = (p : AnnularRing p) := by
+@[simp] theorem T_mul_U : (T : AnnularRing p) * U = (p : AnnularRing p) := by
   ext m : 2
   rw [coeff_T_mul, coeff_U, coeff_natCast]
   congr 1
   simp only [sub_eq_neg_self]
+
+/-- The defining relation in the form `U T = p`. -/
+@[simp] theorem U_mul_T : (U : AnnularRing p) * T = (p : AnnularRing p) := by
+  rw [mul_comm, T_mul_U]
 
 /-- In the annular coefficient ring, `p = T U`, so the ideal `(p, T)` equals `(T)`. -/
 theorem span_p_T_eq_span_T : Ideal.span {(p : AnnularRing p), T} = Ideal.span {T} := by
