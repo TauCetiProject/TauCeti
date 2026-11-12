@@ -29,8 +29,7 @@ namespace Ideal.Quotient
 
 variable {R : Type*} [Ring R] {I : Ideal R} [I.IsTwoSided]
 
-/-- **A nonzero ideal has a nonzero representative for every residue class.**  A representative
-that happens to vanish can be corrected by a nonzero element of the ideal. -/
+/-- Modulo a nonzero ideal, every residue class is the class of a nonzero element. -/
 theorem exists_ne_zero_mk_eq (hI : I ≠ ⊥) (y : R ⧸ I) : ∃ a ≠ (0 : R), mk I a = y := by
   obtain ⟨a, rfl⟩ := mk_surjective y
   obtain ⟨m, hm, hm0⟩ := (Submodule.ne_bot_iff I).mp hI

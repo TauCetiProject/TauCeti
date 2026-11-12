@@ -219,7 +219,7 @@ private theorem ihomCompForgetIsoApp_pre {M' : _root_.SheafOfModules.{u} (ringCa
   let iC := forget (ringCatSheaf R) ⋙
     PresheafOfModules.restrictScalars (𝟙 (ringCatSheaf R).obj)
   let _ : iC.LaxMonoidal := adj.rightAdjointLaxMonoidal
-  have hnat := congrArg (fun S ↦ S.natTrans.app N)
+  have hnat := congrArg (fun S ↦ S.app N)
     (Functor.ihomComparison_whiskerLeft (F := iC) f)
   dsimp only [TwoSquare.whiskerBottom, TwoSquare.whiskerTop,
     Functor.whiskerLeft_app, Functor.whiskerRight_app, NatTrans.comp_app] at hnat

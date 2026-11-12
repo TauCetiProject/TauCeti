@@ -14,8 +14,11 @@ public import TauCeti.Algebra.Homology.SpectralObject.Abutment
 Let `F : ℤ → Subobject K` be an increasing filtration of a cochain complex `K`. The abutment
 `H^n(⊥ ≤ ⊤)` of the spectral object of `F` is the cohomology `H^n(K)`
 (`CochainComplex.filtrationAbutmentIso`), filtered by the images of the cohomology of the
-subcomplexes `F_q` (`Abelian.SpectralObject.abutmentFiltration`), whose graded pieces are the
-limit objects `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` (`Abelian.SpectralObject.EInftyIsoCokernel`).
+subcomplexes `F_q` (`Abelian.SpectralObject.abutmentFiltration`): through `filtrationAbutmentIso`,
+the `q`th piece is the image of the map `H^n(F_q) ⟶ H^n(K)` induced by the inclusion
+(`CochainComplex.toFiltrationAbutmentFiltration_comp_filtrationAbutmentIso_hom`). The graded
+pieces of this filtration are the limit objects `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)`
+(`Abelian.SpectralObject.EInftyIsoCokernel`).
 
 For a finite filtration (`F_a = ⊥` and `F_b = ⊤`) the spectral sequence converges strongly: the
 filtration of `H^n(K)` vanishes at `a` and is everything at `b`
@@ -27,6 +30,10 @@ graded piece `F_{q+1} H^{p+q} / F_q H^{p+q}` on every page `r` with `q - r + 2 �
 ## Main results
 
 * `CochainComplex.filtrationAbutmentIso`: the abutment is `H^n(K)`.
+* `CochainComplex.toFiltrationAbutmentFiltration`: the epimorphism from `H^n(F_q)` onto the `q`th
+  piece of the filtration of the abutment, and
+  `CochainComplex.toFiltrationAbutmentFiltration_comp_filtrationAbutmentIso_hom`: the filtration
+  of the abutment is the image filtration of `H^n(K)`.
 * `CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite`: strong convergence for a
   finite filtration.
 -/
@@ -43,11 +50,55 @@ variable {C : Type*} [Category* C] [Abelian C] {K : CochainComplex C ℤ} (F : �
 /-- The abutment `H^n(⊥ ≤ ⊤)` of the spectral object of a filtration of `K` is `H^n(K)`. -/
 noncomputable def filtrationAbutmentIso (n : ℤ) :
     (spectralObject (filtrationFunctor F hF)).abutment n ≅ K.homology n :=
-  spectralObjectHIsoCokernel _ _ n ≪≫ (HomologicalComplex.homologyFunctor C _ n).mapIso
-    (cokernelIsoOfEq (filtrationFunctor_map_bot_top F hF) ≪≫ cokernelZeroIsoTarget ≪≫
+  spectralObjectHIsoCokernel _ _ n ≪≫ HomologicalComplex.homologyMapIso
+    (cokernelIsoOfEq (filtrationFunctor_map_bot F hF ⊤) ≪≫ cokernelZeroIsoTarget ≪≫
       filtrationFunctorObjIso F hF ⊤ ≪≫
       eqToIso (congrArg (fun S : Subobject K => (S : CochainComplex C ℤ))
-        (filtrationEInt_top F)) ≪≫ asIso (⊤ : Subobject K).arrow)
+        (filtrationEInt_top F)) ≪≫ asIso (⊤ : Subobject K).arrow) n
+
+/-- The isomorphism `filtrationAbutmentIso` is induced by the map from the cokernel of
+`F_⊥ ⟶ K`, which is zero, to `K`. -/
+lemma filtrationAbutmentIso_hom (n : ℤ) :
+    (filtrationAbutmentIso F hF n).hom = (spectralObjectHIsoCokernel _ _ n).hom ≫
+      HomologicalComplex.homologyMap (cokernel.desc _ (filtrationFunctorArrow F hF ⊤)
+        (by rw [filtrationFunctor_map_bot, zero_comp])) n := by
+  rw [filtrationAbutmentIso, Iso.trans_hom, HomologicalComplex.homologyMapIso_hom]
+  congr 2
+  refine coequalizer.hom_ext ?_
+  simp [cokernelZeroIsoTarget_hom]
+
+/-- The map from `H^n(F_q)` onto the `q`th piece `opZ^n(⊥ ≤ q, q ≤ ⊤)` of the filtration of the
+abutment. Through `filtrationAbutmentIso`, the latter is embedded in `H^n(K)` as the image of the
+map induced by the inclusion `F_q ⟶ K`
+(`CochainComplex.toFiltrationAbutmentFiltration_comp_filtrationAbutmentIso_hom`). -/
+noncomputable def toFiltrationAbutmentFiltration (q n : ℤ) :
+    (F q : CochainComplex C ℤ).homology n ⟶
+      (spectralObject (filtrationFunctor F hF)).abutmentFiltration q n :=
+  HomologicalComplex.homologyMap (eqToHom (filtrationFunctor_obj_coe F hF q).symm ≫
+      cokernel.π ((filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ q)))) n ≫
+    (spectralObjectHIsoCokernel _ _ n).inv ≫ (spectralObject _).pOpcycles _ _ n
+
+instance (q n : ℤ) : Epi (toFiltrationAbutmentFiltration F hF q n) := by
+  have := cokernel.π_of_zero (filtrationFunctor_map_bot F hF q)
+  dsimp only [toFiltrationAbutmentFiltration]
+  infer_instance
+
+/-- **The filtration of the abutment is the image filtration.** Through `filtrationAbutmentIso`,
+the `q`th piece of the filtration of the abutment is the image of the map
+`H^n(F_q) ⟶ H^n(K)` induced by the inclusion of the subcomplex `F_q`: this map factors as the
+epimorphism `toFiltrationAbutmentFiltration` followed by the embedding of the `q`th piece. -/
+@[reassoc (attr := simp)]
+lemma toFiltrationAbutmentFiltration_comp_filtrationAbutmentIso_hom (q n : ℤ) :
+    toFiltrationAbutmentFiltration F hF q n ≫
+        (spectralObject (filtrationFunctor F hF)).abutmentFiltrationι q n ≫
+          (filtrationAbutmentIso F hF n).hom =
+      HomologicalComplex.homologyMap (F q).arrow n := by
+  simp only [toFiltrationAbutmentFiltration, filtrationAbutmentIso_hom, Category.assoc,
+    Abelian.SpectralObject.pOpcycles_abutmentFiltrationι_assoc,
+    spectralObject_H_map_comp_spectralObjectHIsoCokernel_hom_assoc, Iso.inv_hom_id_assoc,
+    ← HomologicalComplex.homologyMap_comp]
+  congr 1
+  simp
 
 /-- The `a`th piece of the filtration of `H^n(K)` vanishes when `F_a = ⊥`. -/
 lemma isZero_filtrationAbutmentFiltration {a : ℤ} (ha : F a = ⊥) (n : ℤ) :

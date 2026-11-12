@@ -53,6 +53,9 @@ variables between globally minimal equations: they are exactly those defined ove
 * `WeierstrassCurve.IsGlobalMinimal.exists_baseChange_eq_of_smul_eq`: conversely, a change of
   variables between two globally minimal equations of an elliptic curve is defined over `O`, its
   scaling factor being a unit of `O` (Silverman, *AEC*, VIII.8).
+* `WeierstrassCurve.not_isGlobalMinimal_of_smul_eq`: hence an equation carried to a globally
+  minimal one by a change of variables whose scaling factor is not a unit of `O` is not globally
+  minimal.
 
 The predicates are unexposed. Their interface is the `simp` lemmas `isGlobalMinimal_iff` and
 `isSemiGlobalMinimal_iff` together with the introduction and elimination lemmas
@@ -280,6 +283,16 @@ theorem IsGlobalMinimal.exists_baseChange_eq_of_smul_eq {W₁ W₂ : Weierstrass
     (D.u : K) (Units.ne_zero _) hloc
   have := (isIntegrallyClosed_iff_isIntegrallyClosedIn K).mp (inferInstance : IsIntegrallyClosed O)
   exact VariableChange.exists_baseChange_eq_of_smul_eq O D hD u₀ hu₀
+
+/-- **An equation carried to a globally minimal equation by a change of variables whose scaling
+factor does not come from a unit of `O` is not globally minimal**: between globally minimal
+equations every change of variables is defined over `O`
+(`IsGlobalMinimal.exists_baseChange_eq_of_smul_eq`). -/
+theorem not_isGlobalMinimal_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic]
+    [W₂.IsElliptic] (h₂ : IsGlobalMinimal O W₂) (D : VariableChange K) (hD : D • W₁ = W₂)
+    (hu : ∀ u : Oˣ, algebraMap O K u ≠ D.u) : ¬ IsGlobalMinimal O W₁ := fun h₁ ↦ by
+  obtain ⟨C₀, rfl⟩ := h₁.exists_baseChange_eq_of_smul_eq h₂ D hD
+  exact hu C₀.u rfl
 
 end WeierstrassCurve
 

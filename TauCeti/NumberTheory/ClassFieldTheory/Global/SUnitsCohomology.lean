@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SIdeles
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.PlacePermutation.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.FiniteGeneration
 import Mathlib.NumberTheory.NumberField.ClassNumber
-import TauCeti.NumberTheory.NumberField.Units.SUnit
+import TauCeti.NumberTheory.NumberField.Units.SUnit.Basic
 
 /-!
 # Tate cohomology of `S`-units
@@ -81,6 +81,7 @@ section Finiteness
 
 variable [Finite S]
 
+omit [NumberField K] in
 /-- The integral representation on the `S`-units of `L` is finitely generated when `S` is
 finite. -/
 theorem moduleFinite_sUnitsRep : Module.Finite ℤ (sUnitsRep L S) := by

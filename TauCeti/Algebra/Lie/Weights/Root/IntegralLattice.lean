@@ -152,7 +152,7 @@ end IsSl2System
 /-- The finite root--coroot span is a free `ℤ`-module. -/
 noncomputable instance instModuleFreeRootCorootSpan (x : Weight K H L → L) :
     Module.Free ℤ (rootCorootSpan x) := by
-  let _ : IsAddTorsionFree L := by
+  let _ : HasUniqueDiv L := by
     constructor
     intro n hn a b hab
     apply smul_right_injective L (Nat.cast_ne_zero.mpr hn : (n : K) ≠ 0)

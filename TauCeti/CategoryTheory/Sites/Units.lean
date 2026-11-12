@@ -19,7 +19,8 @@ can be used with kernels and cokernels in the abelian category of sheaves of abe
 
 The construction is pointwise: the units functor is a right adjoint and therefore preserves the
 limits in the sheaf condition. Thus a sheaf of commutative rings `F` gives a sheaf whose sections
-over `U` are `Additive (F(U)ˣ)`.
+over `U` are `Additive (F(U)ˣ)`. The universe of the rings of sections is independent of
+the object and morphism universes of the site.
 
 The sections and the restriction maps of the resulting sheaf are computed by
 `additiveUnitsFunctor_obj_obj` and `additiveUnitsFunctor_obj_map_apply`.
@@ -34,7 +35,7 @@ public section
 
 open CategoryTheory
 
-universe u v
+universe u v w
 
 namespace CommRingCat
 
@@ -50,23 +51,23 @@ variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
 
 /-- Taking the units of a sheaf of commutative rings, written additively. -/
 noncomputable abbrev additiveUnitsFunctor :
-    Sheaf J CommRingCat.{u} ⥤ Sheaf J AddCommGrpCat.{u} :=
+    Sheaf J CommRingCat.{w} ⥤ Sheaf J AddCommGrpCat.{w} :=
   sheafCompose J CommRingCat.additiveUnits
 
 /-- The sections of the additive units sheaf are the units of the original ring of sections. -/
 @[simp]
-lemma additiveUnitsFunctor_obj_obj (F : Sheaf J CommRingCat.{u}) (U : Cᵒᵖ) :
+lemma additiveUnitsFunctor_obj_obj (F : Sheaf J CommRingCat.{w}) (U : Cᵒᵖ) :
     ((additiveUnitsFunctor J).obj F).obj.obj U =
-      AddCommGrpCat.of (Additive ((F.obj.obj U : CommRingCat.{u})ˣ)) :=
+      AddCommGrpCat.of (Additive ((F.obj.obj U : CommRingCat.{w})ˣ)) :=
   rfl
 
 /-- A morphism of additive units sheaves acts by applying the original ring morphism to a unit. -/
 @[simp]
-lemma additiveUnitsFunctor_map_app_apply {F G : Sheaf J CommRingCat.{u}} (f : F ⟶ G)
-    (U : Cᵒᵖ) (x : Additive ((F.obj.obj U : CommRingCat.{u})ˣ)) :
+lemma additiveUnitsFunctor_map_app_apply {F G : Sheaf J CommRingCat.{w}} (f : F ⟶ G)
+    (U : Cᵒᵖ) (x : Additive ((F.obj.obj U : CommRingCat.{w})ˣ)) :
     (@AddCommGrpCat.Hom.hom
-      (AddCommGrpCat.of (Additive ((F.obj.obj U : CommRingCat.{u})ˣ)))
-      (AddCommGrpCat.of (Additive ((G.obj.obj U : CommRingCat.{u})ˣ)))
+      (AddCommGrpCat.of (Additive ((F.obj.obj U : CommRingCat.{w})ˣ)))
+      (AddCommGrpCat.of (Additive ((G.obj.obj U : CommRingCat.{w})ˣ)))
       (((additiveUnitsFunctor J).map f).hom.app U)) x =
       Additive.ofMul (Units.map (f.hom.app U).hom.toMonoidHom (Additive.toMul x)) :=
   rfl
@@ -74,11 +75,11 @@ lemma additiveUnitsFunctor_map_app_apply {F G : Sheaf J CommRingCat.{u}} (f : F 
 /-- Restricting a section of the additive units sheaf applies the restriction map of the
 underlying sheaf of rings to the underlying unit. -/
 @[simp]
-lemma additiveUnitsFunctor_obj_map_apply (F : Sheaf J CommRingCat.{u}) {U V : Cᵒᵖ} (i : U ⟶ V)
-    (x : Additive ((F.obj.obj U : CommRingCat.{u})ˣ)) :
+lemma additiveUnitsFunctor_obj_map_apply (F : Sheaf J CommRingCat.{w}) {U V : Cᵒᵖ} (i : U ⟶ V)
+    (x : Additive ((F.obj.obj U : CommRingCat.{w})ˣ)) :
     (@AddCommGrpCat.Hom.hom
-      (AddCommGrpCat.of (Additive ((F.obj.obj U : CommRingCat.{u})ˣ)))
-      (AddCommGrpCat.of (Additive ((F.obj.obj V : CommRingCat.{u})ˣ)))
+      (AddCommGrpCat.of (Additive ((F.obj.obj U : CommRingCat.{w})ˣ)))
+      (AddCommGrpCat.of (Additive ((F.obj.obj V : CommRingCat.{w})ˣ)))
       (((additiveUnitsFunctor J).obj F).obj.map i)) x =
       Additive.ofMul (Units.map (F.obj.map i).hom.toMonoidHom (Additive.toMul x)) :=
   rfl

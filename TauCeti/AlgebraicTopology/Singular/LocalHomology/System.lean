@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Glue
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
+public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # The local homology system of a manifold
@@ -34,6 +35,11 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomology R S k`: the relative singular homology `Hₖ(M, M ∖ S)`.
 * `TauCeti.localHomologyRestriction`: for `S ⊆ T`, the map `Hₖ(M, M ∖ T) ⟶ Hₖ(M, M ∖ S)`
   induced by the identity of `M`.
+* `TauCeti.singularHomologyToLocalHomology`: with module coefficients, the map
+  `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`.
+* `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
+  `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
+  the identity, and is compatible with restriction on both sides.
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
 * `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
   chart, star-convex about one of its points, to that point is an isomorphism.
@@ -136,6 +142,109 @@ private lemma localHomologyRestriction_comp_inv_comp {S T : Set M} (hST : S ⊆ 
 
 end Restriction
 
+section SingularHomology
+
+variable {M : Type w} [TopologicalSpace M] {Λ : Type*} [Ring Λ] (N : ModuleCat.{w} Λ)
+
+/-- The map `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from the singular homology of `M` to its local
+homology at `x`: the quotient map to `Hₖ(M, M ∖ M; N)` followed by restriction to `{x}`. -/
+def singularHomologyToLocalHomology (x : M) (k : ℕ) :
+    ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ) →ₗ[Λ]
+      (localHomology N ({x} : Set M) k : ModuleCat.{w} Λ) :=
+  ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ (C := ModuleCat.{w} Λ) N k ≫
+    localHomologyRestriction N (subset_univ {x}) k).hom
+
+theorem singularHomologyToLocalHomology_apply (x : M) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)) :
+    singularHomologyToLocalHomology N x k μ =
+      localHomologyRestriction N (subset_univ {x}) k
+        (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+          (C := ModuleCat.{w} Λ) N k).hom μ) :=
+  (rfl)
+
+end SingularHomology
+
+section Map
+
+variable {M N P : Type w} [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P]
+  (j : C(M, N))
+
+/-- For a continuous map `j : M → N` and sets `S ⊆ M`, `T ⊆ N` with `j ⁻¹' T ⊆ S`, the map
+`Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` of local homology induced by the map of pairs
+`j : (M, M ∖ S) ⟶ (N, N ∖ T)`. -/
+def localHomologyMap {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (k : ℕ) :
+    localHomology R S k ⟶ localHomology R T k :=
+  TopPair.singularHomologyMap
+    (TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of N) (B := Sᶜ) (B' := Tᶜ)
+      (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) R k
+
+lemma localHomologyMap_def {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (k : ℕ) :
+    localHomologyMap R j h k =
+      TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of N) (B := Sᶜ) (B' := Tᶜ)
+          (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) R k :=
+  (rfl)
+
+/-- Equal continuous maps induce equal maps of local homology, with the preimage hypothesis
+transported along the equality. -/
+lemma localHomologyMap_congr {j₁ j₂ : C(M, N)} (hj : j₁ = j₂) {S : Set M} {T : Set N}
+    (h : j₁ ⁻¹' T ⊆ S) (k : ℕ) :
+    localHomologyMap R j₁ h k = localHomologyMap R j₂ (hj ▸ h) k := by
+  subst hj
+  rfl
+
+/-- The map of local homology induced by the identity is the restriction map. -/
+@[simp]
+lemma localHomologyMap_id {S T : Set M} (h : ContinuousMap.id M ⁻¹' T ⊆ S) (k : ℕ) :
+    localHomologyMap R (ContinuousMap.id M) h k = localHomologyRestriction R h k := by
+  rw [localHomologyMap, localHomologyRestriction_def]
+  exact congrArg (TopPair.singularHomologyMap · R k) (TopPair.hom_ext_of_fst _ (rfl))
+
+/-- The maps of local homology are functorial. -/
+@[reassoc (attr := simp)]
+lemma localHomologyMap_comp (j' : C(N, P)) {S : Set M} {T : Set N} {W : Set P}
+    (h : j ⁻¹' T ⊆ S) (h' : j' ⁻¹' W ⊆ T) (k : ℕ) :
+    localHomologyMap R j h k ≫ localHomologyMap R j' h' k =
+      localHomologyMap R (j'.comp j) ((preimage_mono h').trans h) k := by
+  rw [localHomologyMap, localHomologyMap, localHomologyMap, ← TopPair.singularHomologyMap_comp]
+  exact congrArg (TopPair.singularHomologyMap · R k)
+    (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (rfl))
+
+/-- Restricting before the map of local homology is the map from the larger set. -/
+@[reassoc (attr := simp)]
+lemma localHomologyRestriction_comp_localHomologyMap {S S' : Set M} {T : Set N} (hS : S ⊆ S')
+    (h : j ⁻¹' T ⊆ S) (k : ℕ) :
+    localHomologyRestriction R hS k ≫ localHomologyMap R j h k =
+      localHomologyMap R j (h.trans hS) k := by
+  rw [localHomologyRestriction_def, localHomologyMap, localHomologyMap,
+    ← TopPair.singularHomologyMap_comp]
+  exact congrArg (TopPair.singularHomologyMap · R k)
+    (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.id_comp _))
+
+/-- Restricting after the map of local homology is the map to the smaller set. -/
+@[reassoc (attr := simp)]
+lemma localHomologyMap_comp_localHomologyRestriction {S : Set M} {T T' : Set N} (hT : T ⊆ T')
+    (h : j ⁻¹' T' ⊆ S) (k : ℕ) :
+    localHomologyMap R j h k ≫ localHomologyRestriction R hT k =
+      localHomologyMap R j ((preimage_mono hT).trans h) k := by
+  rw [localHomologyRestriction_def, localHomologyMap, localHomologyMap,
+    ← TopPair.singularHomologyMap_comp]
+  exact congrArg (TopPair.singularHomologyMap · R k)
+    (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _))
+
+/-- **Homotopy invariance of the maps of local homology.** Maps `j₀, j₁ : M → N` joined by a
+homotopy that never sends a point outside `S` into `T` induce the same map
+`Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)`. -/
+theorem localHomologyMap_eq_of_homotopy {j₀ j₁ : C(M, N)} (F : j₀.Homotopy j₁) {S : Set M}
+    {T : Set N} (hF : ∀ (τ : unitInterval) (y : M), y ∉ S → F (τ, y) ∉ T)
+    (h₀ : j₀ ⁻¹' T ⊆ S) (h₁ : j₁ ⁻¹' T ⊆ S) (k : ℕ) :
+    localHomologyMap R j₀ h₀ k = localHomologyMap R j₁ h₁ k :=
+  (TopPair.ofSubsetHomotopy (g₀ := TopCat.ofHom j₀) (g₁ := TopCat.ofHom j₁)
+    (B := (Sᶜ : Set (TopCat.of M))) (B' := (Tᶜ : Set (TopCat.of N))) F
+    fun τ y hy ↦ hF τ y hy).congr_singularHomologyMap R k
+
+end Map
+
 section Chart
 
 variable {M : Type w} [TopologicalSpace M] {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -149,7 +258,31 @@ theorem isIso_localHomologyRestriction_symm_image [T2Space M] (φ : OpenPartialH
     IsIso (localHomologyRestriction R
       (singleton_subset_iff.2 ⟨φ x, hxK, φ.left_inv hx⟩ : {x} ⊆ φ.symm '' K) k) :=
   isIso_singularHomologyMap_compl_of_chart R φ hx hK hxK hKc.isBounded
-    hKc.isClosed (hKc.image_of_continuousOn (φ.continuousOn_symm.mono hKφ)).isClosed hKφ k
+    hKc.isClosed (φ.isClosed_image_symm_of_isCompact hKc hKφ) hKφ k
+
+/-- **Every point of a manifold has a compact neighbourhood along which local homology is
+constant.** If `M` is a Hausdorff space modelled on a finite-dimensional real normed space, every
+`x ∈ M` has a compact neighbourhood `B`, the image under a chart of a closed ball, such that the
+restriction `Hₖ(M, M ∖ B) ⟶ Hₖ(M, M ∖ {y})` is an isomorphism for every `y ∈ B`. -/
+theorem exists_isCompact_mem_nhds_isIso_localHomologyRestriction [T2Space M] [ChartedSpace E M]
+    [FiniteDimensional ℝ E] (x : M) (k : ℕ) :
+    ∃ B ∈ 𝓝 x, IsCompact B ∧
+      ∀ y (hy : y ∈ B), IsIso (localHomologyRestriction R (singleton_subset_iff.2 hy) k) := by
+  let φ := chartAt E x
+  obtain ⟨ε, hε, hεφ⟩ := isOpen_iff.1 φ.open_target (φ x) (mem_chart_target E x)
+  have hKφ : closedBall (φ x) (ε / 2) ⊆ φ.target :=
+    (closedBall_subset_ball (half_lt_self hε)).trans hεφ
+  have hKc : IsCompact (closedBall (φ x) (ε / 2)) := isCompact_closedBall _ _
+  refine ⟨φ.symm '' closedBall (φ x) (ε / 2), ?_,
+    hKc.image_of_continuousOn (φ.continuousOn_symm.mono hKφ), ?_⟩
+  · have h := φ.symm.image_mem_nhds (mem_chart_target E x)
+      (closedBall_mem_nhds (φ x) (half_pos hε))
+    rwa [φ.left_inv (mem_chart_source E x)] at h
+  · rintro y ⟨w, hw, rfl⟩
+    have hw' : w ∈ φ.target := hKφ hw
+    have hw'' : φ (φ.symm w) ∈ closedBall (φ x) (ε / 2) := by rwa [φ.right_inv hw']
+    exact isIso_localHomologyRestriction_symm_image R φ ((convex_closedBall _ _).starConvex hw'')
+      hKc hKφ (φ.map_target hw') hw'' k
 
 /-- An open, bounded, convex subset of the target of a chart whose closure also lies in the
 target. These patches index the cover over which the local homology system is glued. -/
@@ -451,6 +584,46 @@ theorem eq_localHomologyTransport (k : ℕ)
     exact (hpatch P (γ.map continuous_subtype_val) fun s ↦ (γ s).2).trans
       (P.localHomologyTransport_mk R (γ.map continuous_subtype_val) (fun s ↦ (γ s).2) k).symm
   exact eq_of_heq (Functor.hcongr_hom hG f)
+
+/-- **Restrictions of a global class are parallel.** The restrictions
+`Hₖ(M, M ∖ M) ⟶ Hₖ(M, M ∖ {x})` to the points of `M` are compatible with the transport of local
+homology along every path class, in every degree. -/
+@[reassoc (attr := simp)]
+theorem localHomologyRestriction_univ_comp_localHomologyTransport (k : ℕ)
+    {x y : FundamentalGroupoid M} (f : x ⟶ y) :
+    localHomologyRestriction R (subset_univ {x.as}) k ≫ localHomologyTransport R M E k f =
+      localHomologyRestriction R (subset_univ {y.as}) k := by
+  -- Along a path in the domain of a patch, compare through the closed image of the patch.
+  have hpatch (P : Patch M E) {a b : M} (γ : Path a b) (hγ : ∀ s, γ s ∈ P.domain) :
+      localHomologyRestriction R (subset_univ {a}) k ≫
+        localHomologyTransport R M E k
+          (Path.Homotopic.Quotient.mk γ : FundamentalGroupoid.mk a ⟶ FundamentalGroupoid.mk b) =
+        localHomologyRestriction R (subset_univ {b}) k := by
+    have ha : a ∈ P.domain := γ.source ▸ hγ 0
+    rw [P.localHomologyTransport_mk R γ hγ k,
+      ← localHomologyRestriction_comp R (P.singleton_subset_closedImage ha) (subset_univ _),
+      ← P.iso_hom R ha, Category.assoc, Iso.hom_inv_id_assoc]
+    simp [Patch.iso_hom]
+  -- The path classes along which the restrictions are compatible form a subgroupoid.
+  let S : Subgroupoid (FundamentalGroupoid M) :=
+    { arrows c d := {f | localHomologyRestriction R (subset_univ {c.as}) k ≫
+        localHomologyTransport R M E k f = localHomologyRestriction R (subset_univ {d.as}) k}
+      inv {c d f} hf := by
+        rw [Set.mem_ofPred_eq, ← hf]
+        simp [← localHomologyTransport_comp]
+      mul {c d e f} hf {g} hg := by
+        rw [Set.mem_ofPred_eq, localHomologyTransport_comp, ← Category.assoc, hf, hg] }
+  -- It contains the classes of paths inside the domains of patches, so it is everything.
+  have hS : S = ⊤ := by
+    rw [eq_top_iff, ← FundamentalGroupoid.iSup_im_map_subtypeVal_eq_top
+      (U := Patch.domain (M := M) (E := E)) Patch.exists_domain_mem_nhds]
+    refine iSup_le fun P ↦ ?_
+    rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
+    rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -
+    induction g using Path.Homotopic.Quotient.ind with | mk γ =>
+    exact hpatch P (γ.map continuous_subtype_val) fun s ↦ (γ s).2
+  have hf : f ∈ S.arrows x y := hS ▸ trivial
+  exact hf
 
 end Chart
 

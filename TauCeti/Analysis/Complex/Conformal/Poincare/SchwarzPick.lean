@@ -11,15 +11,13 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzPick.Rigidity
 /-!
 # Schwarz–Pick for the metric space `PoincareDisc`
 
-Layer **L2** of the conformal-mapping roadmap (`TauCetiRoadmap/ConformalMapping/README.md`) asks
-for two things at once: the Schwarz–Pick theorem, and the hyperbolic (Poincaré) metric on the
-disc. Both are on `main`, but they meet only at the level of the scalar function
-`TauCeti.hyperbolicDist`: `TauCeti.hyperbolicDist_map_le` says a holomorphic self-map of
-`Metric.ball (0 : ℂ) 1` does not increase `hyperbolicDist`, while the metric space carrying that
-distance is the type synonym `TauCeti.PoincareDisc` of `Conformal/Poincare/MetricSpace.lean`. This
-file states Schwarz–Pick *for that metric space*, so that the theorem becomes a statement in the
-vocabulary of `Metric` — `LipschitzWith 1` and `Isometry` — that a metric-geometry consumer can use
-without unfolding the distance.
+The Schwarz–Pick theorem and the hyperbolic (Poincaré) metric on the disc meet outside this file
+only at the level of the scalar function `TauCeti.hyperbolicDist`: `TauCeti.hyperbolicDist_map_le`
+says a holomorphic self-map of `Metric.ball (0 : ℂ) 1` does not increase `hyperbolicDist`, while the
+metric space carrying that distance is the type synonym `TauCeti.PoincareDisc` of
+`Conformal/Poincare/MetricSpace.lean`. This file states Schwarz–Pick *for that metric space*, so
+that the theorem becomes a statement in the vocabulary of `Metric` — `LipschitzWith 1` and
+`Isometry` — that a metric-geometry consumer can use without unfolding the distance.
 
 The shape is the one `Conformal/Poincare/Isometry/Classification.lean` already uses for the
 isometries: a self-map `F : PoincareDisc → PoincareDisc` is related to a scalar map `f : ℂ → ℂ` by
@@ -68,21 +66,9 @@ read in the metric.
 
 ## Generality
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes the scalar
-target `ℂ` for every theorem added in layers L0–L6, the scalar map `f` is a map of `ℂ`. The domain
-is the unit disc rather than a general disc because `PoincareDisc` is the unit disc; the
-hyperbolic metric of a domain biholomorphic to it is a separate transport question and is not
-touched here.
-
-## Coordination with upstream Mathlib
-
-Mathlib has no Poincaré metric on the disc — its hyperbolic material lives on `UpperHalfPlane` —
-so it has no metric form of Schwarz–Pick either, and this file is new Lean formalization rather
-than a temporary shim. Its scalar inputs are the L2 material of `Conformal/Hyperbolic/Distance.lean`
-and `Conformal/SchwarzPick/Rigidity.lean`, which are coordinated with the in-progress
-human-curated Riemann-mapping effort
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505); should a
-human-curated Poincaré metric land upstream, this file is to be refactored onto it.
+The scalar map `f` is a map of `ℂ`. The domain is the unit disc rather than a general disc because
+`PoincareDisc` is the unit disc; the hyperbolic metric of a domain biholomorphic to it is a separate
+transport question and is not touched here.
 
 ## References
 

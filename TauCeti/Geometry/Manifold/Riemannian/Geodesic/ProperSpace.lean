@@ -62,10 +62,10 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [MetricSpace M] [ChartedSpace H M]
 
-variable [FiniteDimensional ℝ E] [I.Boundaryless]
+variable [FiniteDimensional ℝ E]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsRiemannianManifold I M]
+  {p : M} {r : ℝ}
 
 /-! ### Closed balls as images of tangent balls
 
@@ -75,17 +75,6 @@ The results with a minimizing hypothesis assume that every point `q` of the clos
 assertion (f) of the Hopf–Rinow theorem at the base point `p`, read on the initial velocities of
 the minimizing geodesics. -/
 
-/-- The exponential map sends the closed tangent ball of radius `r` into the closed ball of
-radius `r` about the base point. -/
-theorem image_riemannianExp_closedBall_subset (p : M) (r : ℝ) :
-    riemannianExp I M p '' closedBall 0 r ⊆ closedBall p r := by
-  rintro _ ⟨v, hv, rfl⟩
-  rw [mem_closedBall, dist_comm]
-  exact (dist_riemannianExp_le p v).trans (mem_closedBall_zero_iff.1 hv)
-
-variable {p : M} {r : ℝ}
-
-omit [I.Boundaryless] [IsRiemannianManifold I M] in
 /-- If every point of the closed ball of radius `r` about `p` is reached from `p` by a minimizing
 initial velocity, that ball is contained in the image under `exp_p` of the closed tangent ball of
 radius `r`. -/
@@ -96,6 +85,16 @@ theorem closedBall_subset_image_riemannianExp
   intro q hq
   obtain ⟨v, hvq, hv⟩ := hmin q hq
   exact ⟨v, mem_closedBall_zero_iff.2 (hv.trans (dist_comm p q ▸ mem_closedBall.1 hq)), hvq⟩
+
+variable [I.Boundaryless] [IsRiemannianManifold I M]
+
+/-- The exponential map sends the closed tangent ball of radius `r` into the closed ball of
+radius `r` about the base point. -/
+theorem image_riemannianExp_closedBall_subset (p : M) (r : ℝ) :
+    riemannianExp I M p '' closedBall 0 r ⊆ closedBall p r := by
+  rintro _ ⟨v, hv, rfl⟩
+  rw [mem_closedBall, dist_comm]
+  exact (dist_riemannianExp_le p v).trans (mem_closedBall_zero_iff.1 hv)
 
 /-- **Closed balls are exponential images of tangent balls.**  If every point of the closed ball
 of radius `r` about `p` is reached from `p` by a minimizing initial velocity, that ball is the

@@ -6,17 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
-public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
 # The dimension of an internal direct sum
 
-A vector space that is the internal direct sum of a finite family of finite-dimensional subspaces
-has the sum of their dimensions, `TauCeti.finrank_eq_sum_finrank_of_isInternal`. Finiteness is
-asked of the summands rather than of the ambient space: the two are equivalent here, and the
-former is the form available at a call site that only knows its summands.
+A module that is the internal direct sum of a finite family of finite free submodules has the sum
+of their ranks, `TauCeti.finrank_eq_sum_finrank_of_isInternal`. Finiteness is asked of the
+summands rather than of the ambient module: the former is the form available at a call site that
+only knows its summands. Over a division ring every summand is free, so this is the familiar
+dimension count for vector spaces.
+
+`TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep` is the same count for an independent family
+whose supremum need not be the whole module.
 
 `TauCeti.finsum_finrank_eq_finrank_of_isInternal` is the same count for a decomposition indexed by
 an arbitrary type in which all but finitely many summands vanish, written with `finsum`. A graded
@@ -24,77 +27,63 @@ decomposition is usually indexed by `ℤ` even when only finitely many degrees o
 form such a decomposition meets.
 
 Mathlib has `Module.finrank_directSum` for the *external* direct sum `⨁ i, M i` and
-`DirectSum.IsInternal` for an internal decomposition, but not the dimension count that combining
-them gives; the bridge is the canonical isomorphism
-`LinearEquiv.ofBijective (DirectSum.coeLinearMap V)` an internal decomposition provides.
+`DirectSum.IsInternal` for an internal decomposition, but not the rank count that combining
+them gives; the bridge is the canonical map `DirectSum.coeLinearMap V`, an isomorphism onto `M`
+for an internal decomposition and injective with range `⨆ i, V i` for an independent family.
 -/
 
 public section
 
 namespace TauCeti
 
-open scoped DirectSum
+open Module (finrank)
 
-/-- **The dimensions of the summands of an internal direct sum add up.** -/
-theorem finrank_eq_sum_finrank_of_isInternal {K M ι : Type*} [DivisionRing K] [AddCommGroup M]
-    [Module K M] [Fintype ι] [DecidableEq ι] {V : ι → Submodule K M}
-    [∀ i, Module.Finite K (V i)] (h : DirectSum.IsInternal V) :
-    Module.finrank K M = ∑ i, Module.finrank K (V i) := by
+variable {R M ι : Type*}
+
+section Semiring
+
+variable [Semiring R] [StrongRankCondition R] [AddCommMonoid M] [Module R M]
+  {V : ι → Submodule R M} [∀ i, Module.Free R (V i)] [∀ i, Module.Finite R (V i)]
+
+/-- **The ranks of the summands of an internal direct sum add up.** -/
+theorem finrank_eq_sum_finrank_of_isInternal [Fintype ι] [DecidableEq ι]
+    (h : DirectSum.IsInternal V) : finrank R M = ∑ i, finrank R (V i) := by
   rw [← (LinearEquiv.ofBijective (DirectSum.coeLinearMap V) h).finrank_eq,
     Module.finrank_directSum]
 
-/-- **The dimension of an independent finite sum of subspaces is the sum of their dimensions.**
-Unlike `TauCeti.finrank_eq_sum_finrank_of_isInternal`, the ambient module here is the supremum of
-the given family rather than an independently supplied module. -/
-theorem finrank_iSup_eq_sum_finrank_of_iSupIndep {K M ι : Type*} [DivisionRing K]
-    [AddCommGroup M] [Module K M] [Fintype ι] {V : ι → Submodule K M}
-    [∀ i, Module.Finite K (V i)] (h : iSupIndep V) :
-    Module.finrank K ((⨆ i, V i) : Submodule K M) = ∑ i, Module.finrank K (V i) := by
-  classical
-  let S : Submodule K M := ⨆ i, V i
-  have hV : ∀ i, V i ≤ S := fun i ↦ le_iSup V i
-  let e : Submodule K S ≃o Set.Iic S := S.mapIic
-  have he : (e ∘ fun i ↦ (V i).comap S.subtype) = fun i ↦ ⟨V i, hV i⟩ := by
-    funext i
-    apply Subtype.ext
-    simp only [Function.comp_apply, e, Submodule.coe_mapIic_apply]
-    rw [Submodule.map_comap_subtype, inf_of_le_right (hV i)]
-  have hindep : iSupIndep fun i ↦ (V i).comap S.subtype := by
-    rw [← iSupIndep_map_orderIso_iff e, he]
-    exact iSupIndep.of_coe_Iic_comp h
-  have hint : DirectSum.IsInternal fun i ↦ (V i).comap S.subtype := by
-    refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hindep ?_
-    apply e.injective
-    calc
-      e (⨆ i, (V i).comap S.subtype) = ⨆ i, e ((V i).comap S.subtype) := e.map_iSup _
-      _ = ⨆ i, ⟨V i, hV i⟩ := congrArg iSup he
-      _ = ⟨S, Set.mem_Iic.mpr le_rfl⟩ := Subtype.ext (by simp [S])
-      _ = e ⊤ := e.map_top.symm
-  rw [finrank_eq_sum_finrank_of_isInternal hint]
-  exact Finset.sum_congr rfl fun i _ ↦
-    (Submodule.comapSubtypeEquivOfLe (hV i)).finrank_eq
+end Semiring
 
-/-- **The dimensions of the summands of an internal direct sum add up**, for a decomposition
-indexed by an arbitrary type in which only finitely many summands are nonzero. -/
-theorem finsum_finrank_eq_finrank_of_isInternal {K M ι : Type*} [DivisionRing K] [AddCommGroup M]
-    [Module K M] [DecidableEq ι] {V : ι → Submodule K M} [∀ i, Module.Finite K (V i)]
-    (h : DirectSum.IsInternal V) (hV : {i | V i ≠ ⊥}.Finite) :
-    ∑ᶠ i, Module.finrank K (V i) = Module.finrank K M := by
-  obtain ⟨hindep, htop⟩ := (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top V).1 h
-  have hbot : ∀ i ∉ hV.toFinset, V i = ⊥ := by
-    intro i hi
-    simpa using hV.mem_toFinset.not.1 hi
-  have hsub : DirectSum.IsInternal fun i : (hV.toFinset : Finset ι) ↦ V i := by
-    refine (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).2
-      ⟨hindep.comp Subtype.val_injective, top_unique ?_⟩
-    rw [← htop]
-    refine iSup_le fun i ↦ ?_
-    by_cases hi : i ∈ hV.toFinset
-    · exact le_iSup (fun j : (hV.toFinset : Finset ι) ↦ V j) ⟨i, hi⟩
-    · simp [hbot i hi]
-  have hsupport : (Function.support fun i ↦ Module.finrank K (V i)) ⊆ hV.toFinset :=
-    fun i hi ↦ hV.mem_toFinset.2 fun hb ↦ hi (by simp [hb])
-  rw [finsum_eq_sum_of_support_subset _ hsupport, finrank_eq_sum_finrank_of_isInternal hsub]
-  exact (Finset.sum_coe_sort _ _).symm
+section Ring
+
+variable [Ring R] [StrongRankCondition R] [AddCommGroup M] [Module R M]
+  {V : ι → Submodule R M} [∀ i, Module.Free R (V i)] [∀ i, Module.Finite R (V i)]
+
+/-- **The rank of the supremum of an independent finite family of submodules is the sum of their
+ranks.** Unlike `TauCeti.finrank_eq_sum_finrank_of_isInternal`, the ambient module here is the
+supremum of the given family rather than an independently supplied module. -/
+theorem finrank_iSup_eq_sum_finrank_of_iSupIndep [Fintype ι] (h : iSupIndep V) :
+    finrank R ↥(⨆ i, V i) = ∑ i, finrank R (V i) := by
+  classical
+  -- `DirectSum.coeLinearMap V` is by definition `DFinsupp.lsum` of the inclusions, whose
+  -- injectivity is `iSupIndep.dfinsupp_lsum_injective`; Mathlib's
+  -- `DirectSum.IsInternal.submodule_iSupIndep` uses the same identification.
+  rw [← DirectSum.range_coeLinearMap,
+    LinearMap.finrank_range_of_inj (f := DirectSum.coeLinearMap V) h.dfinsupp_lsum_injective,
+    Module.finrank_directSum]
+
+/-- **The ranks of the summands of an internal direct sum add up**, for a decomposition indexed by
+an arbitrary type in which only finitely many summands are nonzero. -/
+theorem finsum_finrank_eq_finrank_of_isInternal [DecidableEq ι] (h : DirectSum.IsInternal V)
+    (hV : {i | V i ≠ ⊥}.Finite) : ∑ᶠ i, finrank R (V i) = finrank R M := by
+  have := hV.fintype
+  have hsupport : (Function.support fun i ↦ finrank R (V i)) ⊆ hV.toFinset :=
+    Function.support_subset_iff'.2 fun i hi ↦
+      have := Submodule.subsingleton_iff_eq_bot.2 (by simpa using hi)
+      Module.finrank_zero_of_subsingleton
+  rw [finsum_eq_sum_of_support_subset _ hsupport, ← Finset.sum_coe_sort,
+    finrank_eq_sum_finrank_of_isInternal (DirectSum.isInternal_ne_bot_iff.mpr h)]
+  exact Fintype.sum_equiv hV.subtypeEquivToFinset.symm _ _ fun _ ↦ rfl
+
+end Ring
 
 end TauCeti

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.SemisimpleQuotient
-import TauCeti.RingTheory.Jacobson.MulOpposite
+import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # The radical of a bound quiver algebra

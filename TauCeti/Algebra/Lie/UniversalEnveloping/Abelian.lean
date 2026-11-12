@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
@@ -62,6 +63,9 @@ in the Harish-Chandra projection from the center of `U(L)` to `S(H)`.
 * `TauCeti.UniversalEnvelopingAlgebra.isSymmetricAlgebra_ι` and
   `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv`: **`ι : L → U(L)` exhibits `U(L)` as
   the symmetric algebra of `L`**, with the resulting algebra isomorphism `S(L) ≃ₐ[R] U(L)`.
+* `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_symm_mem_wordFiltration_iff` and
+  `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_symm_mem_wordFiltrationPrevious_iff`:
+  the comparison matches the PBW filtration of `U(L)` with the degree filtration of `S(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.mvPolynomialEquiv`: for a basis of `L`, the identification of
   `U(L)` with a polynomial algebra.
 * `TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_isLieAbelian`: `ι` is injective, with no
@@ -202,13 +206,46 @@ theorem symmetricAlgebraEquiv_symm_ι' (x : L) :
       SymmetricAlgebra.ι R L x := by
   simpa using symmetricAlgebraEquiv_symm_ι R L x
 
+/-- **The comparison isomorphism matches the two filtrations by word length**: an element of `U(L)`
+has PBW filtration degree at most `k` exactly when its image in `S(L)` has degree at most `k`, the
+degree filtration of `S(L)` being the word filtration of its generator map. -/
+@[simp]
+theorem symmetricAlgebraEquiv_symm_mem_wordFiltration_iff {k : ℕ} {u : U} :
+    (symmetricAlgebraEquiv R L).symm u ∈ TauCeti.Algebra.wordFiltration (SymmetricAlgebra.ι R L) k ↔
+      u ∈ pbwFiltration R L k := by
+  rw [pbwFiltration_def]
+  refine ⟨fun hu ↦ ?_, fun hu ↦ ?_⟩
+  · simpa using TauCeti.Algebra.map_mem_wordFiltration (SymmetricAlgebra.ι R L)
+      (symmetricAlgebraEquiv R L).toAlgHom (_root_.UniversalEnvelopingAlgebra.ι R).toLinearMap
+      (fun m ↦ by
+        simpa using TauCeti.Algebra.apply_mem_wordFiltration_one
+          (_root_.UniversalEnvelopingAlgebra.ι R).toLinearMap m) hu
+  · exact TauCeti.Algebra.map_mem_wordFiltration (_root_.UniversalEnvelopingAlgebra.ι R).toLinearMap
+      (symmetricAlgebraEquiv R L).symm.toAlgHom (SymmetricAlgebra.ι R L)
+      (fun m ↦ by
+        simpa [symmetricAlgebraEquiv_symm_ι] using
+          TauCeti.Algebra.apply_mem_wordFiltration_one (SymmetricAlgebra.ι R L) m) hu
+
+/-- The comparison isomorphism matches the steps preceding degree `k` of the PBW filtration of
+`U(L)` and of the degree filtration of `S(L)`. -/
+@[simp]
+theorem symmetricAlgebraEquiv_symm_mem_wordFiltrationPrevious_iff {k : ℕ} {u : U} :
+    (symmetricAlgebraEquiv R L).symm u ∈
+        TauCeti.Algebra.wordFiltrationPrevious (SymmetricAlgebra.ι R L) k ↔
+      u ∈ pbwFiltrationPrevious R L k := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    rw [TauCeti.Algebra.wordFiltrationPrevious_succ, pbwFiltrationPrevious_succ,
+      symmetricAlgebraEquiv_symm_mem_wordFiltration_iff]
+
 /-- **The canonical map of an abelian Lie algebra into its enveloping algebra is injective.** Under
 the comparison it is the canonical map `L → S(L)`, which is injective for every module. For a
 general Lie algebra injectivity is instead a corollary of the Poincaré--Birkhoff--Witt theorem,
 which over a commutative ring needs `L` to be free (or at least projective) as an `R`-module. -/
 theorem ι_injective_of_isLieAbelian :
     Function.Injective (_root_.UniversalEnvelopingAlgebra.ι R : L → U) := fun x y h ↦
-  TauCeti.SymmetricAlgebra.ι_injective R L <| by
+  SymmetricAlgebra.ι_injective R L <| by
     rw [← symmetricAlgebraEquiv_symm_ι R L x, ← symmetricAlgebraEquiv_symm_ι R L y, h]
 
 /-- The enveloping algebra of an abelian Lie algebra which is free as a module is free as a

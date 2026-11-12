@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Algebra.MonoidAlgebra.Module
+public import Mathlib.GroupTheory.Torsion
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 
 /-!
 # Basic facts about monoid algebras
@@ -21,11 +23,23 @@ none of the further theory built on it.
   between the basis element at `g` and the unit is nonzero when `g ≠ 1`.
 * `MonoidAlgebra.coeff_one_mul_comm`: the coefficient at the identity of `xy` equals
   that of `yx` in a group algebra over a commutative semiring.
+* `MonoidAlgebra.coeff_one_mul_of_coeff_mem`: the coefficient at the identity is multiplicative
+  on elements whose other coefficients lie in a square-zero ideal, with additive version
+  `AddMonoidAlgebra.coeff_zero_mul_of_coeff_mem`.
 * The `IsMulCommutative (MonoidAlgebra R M)` instance: the monoid algebra of a commutative
   magma over a commutative semiring is commutative, as a mixin on the existing ring structure.
 * `TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
   when its coefficients lie in `I`, and `TauCeti.MonoidAlgebra.mapRingHom_eq_zero_iff`: the kernel
   of the coefficientwise map along `f : R →+* S` is `ker f • R[M]`.
+* The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
+  `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
+  Mathlib.
+* The `Finite (MonoidAlgebra R M)` instance: `R[M]` is finite when `R` and `M` are.
+* `TauCeti.MonoidAlgebra.isIntegral_of_isMulTorsion`: the monoid algebra of a commutative torsion
+  monoid is integral over its coefficient ring.
+* `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
+  `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
+  conjugates the indices of the coefficients.
 
 ## References
 
@@ -103,6 +117,20 @@ theorem mapRingHom_eq_zero_iff [Monoid M] {S : Type*} [Semiring S] (f : R →+* 
   rw [mem_ideal_smul_top_iff, ← MonoidAlgebra.coeff_inj]
   simp [Finsupp.ext_iff, MonoidAlgebra.coeff_mapRingHom]
 
+/-- **The monoid algebra of a commutative torsion monoid is integral over its coefficients.**
+Every basis element `single g 1` with `g ^ n = 1` is a root of the monic polynomial `X ^ n - 1`. -/
+theorem isIntegral_of_isMulTorsion {R G : Type*} [CommRing R] [CommMonoid G] (hG : IsMulTorsion G) :
+    Algebra.IsIntegral R (MonoidAlgebra R G) := by
+  refine ⟨fun x ↦ ?_⟩
+  induction x using MonoidAlgebra.induction_on with
+  | of m =>
+    obtain ⟨n, hn, hnm⟩ := isOfFinOrder_iff_pow_eq_one.1 (hG m)
+    refine IsIntegral.of_pow hn ?_
+    rw [← map_pow, hnm, map_one]
+    exact isIntegral_one
+  | add x y hx hy => exact hx.add hy
+  | smul r x hx => exact hx.smul r
+
 end MonoidAlgebra
 
 end TauCeti
@@ -123,5 +151,87 @@ theorem coeff_one_mul_comm (x y : MonoidAlgebra R G) :
   | smul r y hy =>
       simpa only [mul_smul_comm, smul_mul_assoc, MonoidAlgebra.coeff_smul,
         Finsupp.smul_apply] using congrArg (r • ·) hy
+
+/-- If all coefficients away from the identity of two elements of `R[M]` lie in a square-zero
+ideal, the coefficient at the identity of their product is the product of their coefficients at
+the identity. Thus the identity coefficient is multiplicative on the elements of `R[M]` that are
+constant modulo such an ideal. -/
+@[to_additive (dont_translate := R) coeff_zero_mul_of_coeff_mem
+/-- If all coefficients away from zero of two elements of `R[M]` lie in a square-zero ideal, the
+coefficient at zero of their product is the product of their coefficients at zero. Thus the zero
+coefficient is multiplicative on the elements of `R[M]` that are constant modulo such an ideal;
+for Laurent polynomials this is the constant coefficient. -/]
+theorem coeff_one_mul_of_coeff_mem {R M : Type*} [CommSemiring R] [Monoid M] {I : Ideal R}
+    (hI : I ^ 2 = ⊥) {x y : MonoidAlgebra R M} (hx : ∀ m ≠ 1, x.coeff m ∈ I)
+    (hy : ∀ m ≠ 1, y.coeff m ∈ I) :
+    (x * y).coeff 1 = x.coeff 1 * y.coeff 1 := by
+  classical
+  have hzero {m n : M} (hm : m ≠ 1) (hn : n ≠ 1) : x.coeff m * y.coeff n = 0 := by
+    have hmem : x.coeff m * y.coeff n ∈ I ^ 2 := pow_two I ▸ Ideal.mul_mem_mul (hx m hm) (hy n hn)
+    simpa [hI] using hmem
+  rw [MonoidAlgebra.coeff_mul, Finsupp.sum_eq_single 1, Finsupp.sum_eq_single 1]
+  · simp
+  · intro n _ hn
+    simp [hn]
+  · simp
+  · intro m _ hm
+    refine Finset.sum_eq_zero fun n _ ↦ ?_
+    dsimp only
+    split_ifs with hmn
+    · exact hzero hm fun hn ↦ hm (by simpa [hn] using hmn)
+    · rfl
+  · simp
+
+section TorsionFree
+
+variable {R M : Type*} [Semiring R]
+
+/-- A monoid algebra over a semiring without additive torsion has no additive torsion. -/
+@[to_additive
+/-- An additive monoid algebra over a semiring without additive torsion has no additive
+torsion. -/]
+instance instIsAddTorsionFree [IsAddTorsionFree R] : IsAddTorsionFree (MonoidAlgebra R M) :=
+  Function.Injective.isAddTorsionFree (coeffAddEquiv : MonoidAlgebra R M ≃+ _).toAddMonoidHom
+    coeffAddEquiv.injective
+
+/-- A monoid algebra over a semiring with unique division by positive integers has unique
+division by positive integers. -/
+@[to_additive
+/-- An additive monoid algebra over a semiring with unique division by positive integers has
+unique division by positive integers. -/]
+instance instHasUniqueDiv [HasUniqueDiv R] : HasUniqueDiv (MonoidAlgebra R M) :=
+  Function.Injective.hasUniqueDiv (coeffAddEquiv : MonoidAlgebra R M ≃+ _).toAddMonoidHom
+    coeffAddEquiv.injective
+
+end TorsionFree
+
+/-- A monoid algebra over a finite semiring is finite when the monoid is. -/
+@[to_additive
+/-- An additive monoid algebra over a finite semiring is finite when the additive monoid is. -/]
+instance instFinite {R M : Type*} [Semiring R] [Finite R] [Finite M] :
+    Finite (MonoidAlgebra R M) :=
+  .of_injective (fun x ↦ ⇑x.coeff) (DFunLike.coe_injective.comp coeff_injective)
+
+/-- The basis element `single g 1` of a group algebra, as a unit with inverse `single g⁻¹ 1`. -/
+noncomputable def singleOneUnit (g : G) : (MonoidAlgebra R G)ˣ :=
+  Units.map (of R G) (toUnits g)
+
+@[simp]
+theorem coe_singleOneUnit (g : G) :
+    ((singleOneUnit (R := R) g : (MonoidAlgebra R G)ˣ) : MonoidAlgebra R G) = single g 1 := by
+  rfl
+
+@[simp]
+theorem coe_inv_singleOneUnit (g : G) :
+    (((singleOneUnit (R := R) g)⁻¹ : (MonoidAlgebra R G)ˣ) : MonoidAlgebra R G) =
+      single g⁻¹ 1 := by
+  rfl
+
+omit [CommSemiring R] in
+/-- Conjugating by a basis element conjugates the indices of the coefficients:
+`(g x g⁻¹)_h = x_{g⁻¹ h g}`. -/
+theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebra R G) :
+    (single g (1 : R) * x * single g⁻¹ 1).coeff h = x.coeff (g⁻¹ * h * g) := by
+  simp [mul_assoc]
 
 end MonoidAlgebra

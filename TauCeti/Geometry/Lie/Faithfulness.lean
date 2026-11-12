@@ -35,7 +35,7 @@ noncomputable section
 open Filter
 open scoped ContDiff Topology
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -55,10 +55,8 @@ theorem lieMap_injective
         LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G') := by
   intro φ ψ h
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   have hnear : φ =ᶠ[𝓝 (1 : G)] ψ :=
     (eventually_lieExp_lieLog (I := I) (G := G)).mono fun g hg => by
       rw [← hg, map_lieExp, map_lieExp, h]
-  apply DFunLike.coe_injective
-  exact congrArg (fun f : G →* G' => (f : G → G'))
-    (MonoidHom.eq_of_eventuallyEq_one hnear)
+  exact MonoidHomClass.eq_of_eventuallyEq_one hnear

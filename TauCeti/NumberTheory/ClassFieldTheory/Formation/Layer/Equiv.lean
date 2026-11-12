@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Layer.Hom
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 
 /-!
@@ -24,31 +24,35 @@ finite Galois extension of `L` is a layer both of the formation of `L` and of th
 Conjugation of a layer by an element of `G` is another example
 (`NormalLayer.conjugateLayerEquiv`).
 
-Everything a layer carries is transported by such an isomorphism: ordinary and Tate cohomology in
-the coefficient module (`LayerEquiv.cohomologyIso`, `LayerEquiv.tateCohomologyIso`), Tate
-cohomology with trivial integral coefficients (`LayerEquiv.trivialTateCohomologyIso`), the ground
-level (`LayerEquiv.groundEquiv`) and the norm quotient (`LayerEquiv.normQuotientEquiv`), and the
+A layer isomorphism is in particular a layer morphism (`LayerEquiv.toLayerHom`), so everything a
+layer morphism acts on is transported by it, and here the transports are isomorphisms: ordinary
+and Tate cohomology in the coefficient module (`LayerEquiv.cohomologyIso`,
+`LayerEquiv.tateCohomologyIso`), the ground level (`LayerEquiv.groundEquiv`) and the norm quotient
+(`LayerEquiv.normQuotientEquiv`). Tate cohomology with trivial integral coefficients is
+transported by the isomorphism `LayerHom.trivialTateCohomologyIso` of the underlying morphism. The
 transports are compatible with the norm, with cup product, and with the low-degree
 identifications of Tate cohomology.
 
 If `F` and `F'` carry class formations whose invariant maps correspond under the isomorphism of
 `H²`, then the isomorphism carries the fundamental class to the fundamental class
 (`ClassFormation.fundamentalClass_layerEquiv`), so Tate's isomorphism, the Nakayama map, Artin
-reciprocity and the Artin map are all transported
-(`ClassFormation.tateIso_layerEquiv`, `ClassFormation.nakayamaNegTwo_layerEquiv`,
-`ClassFormation.artinEquiv_layerEquiv`, `ClassFormation.artinMap_layerEquiv`). This is how the
-Artin map of one class formation is read as an Artin map of another: for a finite extension of
-local fields it identifies the local Artin map of the extension with an abstract Artin map of the
-formation of the base, once the two invariant maps are compared.
+reciprocity and the Artin map are all transported by the statements for the underlying layer
+morphism (`ClassFormation.tateIso_layerHom`, `ClassFormation.nakayamaNegTwo_layerHom`,
+`ClassFormation.artinEquiv_layerHom`, `ClassFormation.artinMap_layerHom`). The last is restated for
+layer isomorphisms as `ClassFormation.artinMap_layerEquiv`. This is how the Artin map of one class
+formation is read as an Artin map of another: for a finite extension of local fields it identifies
+the local Artin map of the extension with an abstract Artin map of the formation of the base, once
+the two invariant maps are compared.
 
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.LayerEquiv`: an isomorphism between a layer of one formation and a
   layer of another.
+* `TauCeti.ClassFieldTheory.LayerEquiv.toLayerHom`: the layer morphism underlying a layer
+  isomorphism.
 * `TauCeti.ClassFieldTheory.LayerEquiv.cohomologyIso`,
-  `TauCeti.ClassFieldTheory.LayerEquiv.tateCohomologyIso`,
-  `TauCeti.ClassFieldTheory.LayerEquiv.trivialTateCohomologyIso`: the induced isomorphisms of
-  ordinary cohomology, of Tate cohomology, and of Tate cohomology with trivial coefficients.
+  `TauCeti.ClassFieldTheory.LayerEquiv.tateCohomologyIso`: the induced isomorphisms of ordinary
+  and of Tate cohomology.
 * `TauCeti.ClassFieldTheory.LayerEquiv.groundEquiv`,
   `TauCeti.ClassFieldTheory.LayerEquiv.normQuotientEquiv`: the induced isomorphisms of ground
   levels and of norm quotients.
@@ -58,8 +62,6 @@ formation of the base, once the two invariant maps are compared.
 ## Main statements
 
 * `TauCeti.ClassFieldTheory.LayerEquiv.norm_coeffEquiv`: the isomorphism commutes with the norms.
-* `TauCeti.ClassFieldTheory.cupClass_layerEquiv`: cup product with a degree-two class
-  is transported.
 * `TauCeti.ClassFieldTheory.ClassFormation.fundamentalClass_layerEquiv`: an isomorphism matching
   the invariant maps matches the fundamental classes.
 * `TauCeti.ClassFieldTheory.ClassFormation.artinMap_layerEquiv`: it then carries the Artin symbol
@@ -108,11 +110,23 @@ theorem coeffEquiv_rep_apply (γ : L.Gal) (x : F.level L.top) :
     E.coeffEquiv ((L.rep F).ρ γ x) = (L'.rep F').ρ (E.galEquiv γ) (E.coeffEquiv x) :=
   E.isIntertwiningMap.isIntertwining γ x
 
-include E in
-/-- Isomorphic layers have the same degree. -/
-theorem degree_eq : L'.degree = L.degree := by
-  rw [NormalLayer.degree_eq_natCard_gal, NormalLayer.degree_eq_natCard_gal,
-    Nat.card_congr E.galEquiv.toEquiv]
+/-- The **layer morphism underlying a layer isomorphism**: the same isomorphism of Galois groups,
+with the coefficient isomorphism regarded as a homomorphism. -/
+def toLayerHom : LayerHom F L F' L' where
+  galEquiv := E.galEquiv
+  coeffMap := E.coeffEquiv
+  isIntertwiningMap := E.isIntertwiningMap
+
+/-- The Galois-group isomorphism of the underlying layer morphism is that of the isomorphism. -/
+@[simp]
+theorem toLayerHom_galEquiv : E.toLayerHom.galEquiv = E.galEquiv :=
+  (rfl)
+
+/-- The coefficient homomorphism of the underlying layer morphism is the coefficient
+isomorphism. -/
+@[simp]
+theorem toLayerHom_coeffMap : E.toLayerHom.coeffMap = (E.coeffEquiv : F.level L.top →ₗ[ℤ] _) :=
+  (rfl)
 
 /-! ### Cohomology -/
 
@@ -129,77 +143,34 @@ theorem cohomologyIso_def (n : ℕ) :
       (fun γ ↦ LinearMap.ext fun x ↦ E.coeffEquiv_rep_apply γ x) n :=
   (rfl)
 
+/-- The isomorphism of ordinary cohomology induced by a layer isomorphism is the map induced by its
+underlying layer morphism. -/
+@[simp]
+theorem cohomologyIso_hom (n : ℕ) : (E.cohomologyIso n).hom = E.toLayerHom.cohomologyMap n := by
+  rw [cohomologyIso_def, groupCohomology.mapIso_hom, LayerHom.cohomologyMap_def]
+  exact groupCohomology.map_congr rfl
+    (Representation.IsIntertwiningMap.ofRes_hom_toLinearMap E.toLayerHom.isIntertwiningMap).symm n
+
 /-- The image of the class of a cocycle `c` under the isomorphism of second cohomology induced by a
 layer isomorphism `E` is the class of the cocycle
 `(γ, δ) ↦ E.coeffEquiv (c (E.galEquiv.symm γ, E.galEquiv.symm δ))`. -/
 theorem exists_cohomologyIso_hom_H2π (c : cocycles₂ (L.rep F)) :
     ∃ c' : cocycles₂ (L'.rep F'), (E.cohomologyIso 2).hom (H2π _ c) = H2π _ c' ∧
       ∀ γ δ : L'.Gal, c' (γ, δ) = E.coeffEquiv (c (E.galEquiv.symm γ, E.galEquiv.symm δ)) := by
-  rw [cohomologyIso_def, groupCohomology.mapIso_hom,
-    groupCohomology.H2π_comp_map_apply]
-  exact ⟨_, rfl, fun γ δ => rfl⟩
+  rw [cohomologyIso_hom]
+  exact E.toLayerHom.exists_cohomologyMap_H2π c
 
 /-- The isomorphism `H^r(U/V, A^V) ≅ H^r(U'/V', A'^{V'})` of Tate cohomology induced by a layer
 isomorphism, in every integer degree. -/
 def tateCohomologyIso (r : ℤ) : L.TateH F r ≅ L'.TateH F' r :=
   TateCohomology.mapIso E.isIntertwiningMap r
 
-/-- The isomorphism of Tate cohomology induced by a layer isomorphism is the Tate map of its
-compatible pair. -/
-theorem tateCohomologyIso_hom (r : ℤ) :
-    (E.tateCohomologyIso r).hom = TateCohomology.map E.isIntertwiningMap r :=
-  TateCohomology.mapIso_hom _ r
-
-/-- **In positive degrees the Tate and ordinary transports agree**, through the identifications
-`tateHIsoH` of the two layers. -/
-theorem tateCohomologyIso_hom_tateHIsoH_inv (n : ℕ) [NeZero n] (u : L.H F n) :
-    (E.tateCohomologyIso n).hom ((L.tateHIsoH F n).inv u) =
-      (L'.tateHIsoH F' n).inv ((E.cohomologyIso n).hom u) := by
-  refine (ModuleCat.mono_iff_injective (L'.tateHIsoH F' n).hom).1 inferInstance ?_
-  rw [Iso.inv_hom_id_apply, tateCohomologyIso_hom, NormalLayer.tateHIsoH_def,
-    NormalLayer.tateHIsoH_def]
-  -- The Tate map of the pair is, in positive degrees, the change-of-group map of ordinary
-  -- cohomology along `galEquiv.symm`, which is how `cohomologyIso` is defined.
-  have hm : (TateCohomology.isoGroupCohomology n).hom.app (L'.rep F')
-      (TateCohomology.map E.isIntertwiningMap n
-        (((TateCohomology.isoGroupCohomology n).app (L.rep F)).inv u)) =
-      groupCohomology.map (E.galEquiv.symm : L'.Gal →* L.Gal)
-        (Representation.IsIntertwiningMap.ofRes E.isIntertwiningMap)
-        n ((TateCohomology.isoGroupCohomology n).hom.app (L.rep F)
-          (((TateCohomology.isoGroupCohomology n).app (L.rep F)).inv u)) :=
-    ConcreteCategory.congr_hom (TateCohomology.map_comp_isoGroupCohomology_hom
-      E.isIntertwiningMap n) _
-  refine hm.trans <| (congrArg _ (((TateCohomology.isoGroupCohomology n).app
-    (L.rep F)).inv_hom_id_apply u)).trans ?_
-  rw [cohomologyIso, groupCohomology.mapIso_hom]
-  congr 3
-  ext x
-  simp
-
-/-- The isomorphism `H^r(U/V, ℤ) ≅ H^r(U'/V', ℤ)` of Tate cohomology with trivial integral
-coefficients induced by the isomorphism of Galois groups. -/
-def trivialTateCohomologyIso (r : ℤ) : L.TrivialTateH r ≅ L'.TrivialTateH r :=
-  TateCohomology.mapIso (e := E.galEquiv)
-    (Rep.isIntertwiningMap_trivial ℤ (E.galEquiv : L.Gal →* L'.Gal)) r
-
-/-- The transport of Tate cohomology with trivial coefficients is the Tate map of the pair formed
-by the isomorphism of Galois groups and the identity of `ℤ`. -/
-theorem trivialTateCohomologyIso_hom (r : ℤ) :
-    (E.trivialTateCohomologyIso r).hom =
-      TateCohomology.map (e := E.galEquiv)
-        (Rep.isIntertwiningMap_trivial ℤ (E.galEquiv : L.Gal →* L'.Gal)) r :=
-  TateCohomology.mapIso_hom _ r
-
-/-- **In degree `-2` the transport is the induced isomorphism of abelianized Galois groups**,
-under the identifications `H^{-2}(U/V, ℤ) ≃ (U/V)^ab` of the two layers. -/
+/-- The isomorphism of Tate cohomology induced by a layer isomorphism is the map induced by its
+underlying layer morphism. -/
 @[simp]
-theorem tateHMinusTwoEquivAbelianization_trivialTateCohomologyIso_apply
-    (x : L.TrivialTateH (-2)) :
-    L'.tateHMinusTwoEquivAbelianization ((E.trivialTateCohomologyIso (-2)).hom x) =
-      E.galEquiv.abelianizationCongr.toAdditive (L.tateHMinusTwoEquivAbelianization x) := by
-  rw [trivialTateCohomologyIso_hom, NormalLayer.tateHMinusTwoEquivAbelianization_apply,
-    NormalLayer.tateHMinusTwoEquivAbelianization_apply, map_neg, neg_inj]
-  exact TateCohomology.HNegTwoAddEquivAbelianization_map _ x
+theorem tateCohomologyIso_hom (r : ℤ) :
+    (E.tateCohomologyIso r).hom = E.toLayerHom.tateCohomologyMap r :=
+  (TateCohomology.mapIso_hom _ r).trans (E.toLayerHom.tateCohomologyMap_def r).symm
 
 /-! ### The ground level and the norm -/
 
@@ -264,18 +235,20 @@ theorem groundEquiv_symm_apply_coe (b : F'.level L'.ground) :
   exact congrArg (fun y ↦ ((E.coeffEquiv.symm y : F.level L.top) : F.toRep.V))
     (Subtype.ext (L'.groundLevelEquiv_symm_apply_coe F' b))
 
+-- `dsimp% only` on the left-hand side, as explained in the implementation notes of
+-- `Formation/Basic.lean`.
+/-- On ground levels, the underlying layer morphism acts as the isomorphism of ground levels. -/
+@[simp]
+theorem toLayerHom_groundMap (a : F.level L.ground) :
+    (dsimp% only (E.toLayerHom.groundMap a)) = E.groundEquiv a :=
+  Subtype.ext (by rw [LayerHom.groundMap_apply_coe, groundEquiv_apply_coe, toLayerHom_coeffMap,
+    LinearEquiv.coe_coe])
+
 /-- **A layer isomorphism commutes with the norms** `N_{U/V}` and `N_{U'/V'}`. -/
 theorem norm_coeffEquiv (x : F.level L.top) :
     L'.norm F' (E.coeffEquiv x) = E.groundEquiv (L.norm F x) := by
-  refine Subtype.ext ?_
-  rw [groundEquiv_apply_coe, NormalLayer.norm_apply_coe]
-  have hx : Submodule.inclusion (L.level_ground_le_level_top F) (L.norm F x) =
-      (L.rep F).ρ.norm x :=
-    Subtype.ext (by simp [Representation.norm])
-  have hn := LinearMap.congr_fun (Representation.IsIntertwiningMap.comp_norm E.isIntertwiningMap) x
-  rw [LinearMap.comp_apply, LinearMap.comp_apply] at hn
-  rw [hx, ← LinearEquiv.coe_coe, hn]
-  simp [Representation.norm]
+  rw [← toLayerHom_groundMap]
+  exact E.toLayerHom.norm_coeffMap x
 
 /-- A layer isomorphism carries the norm subgroup of `L` onto the norm subgroup of `L'`. -/
 theorem map_normSubgroup_groundEquiv :
@@ -312,35 +285,22 @@ theorem normQuotientEquiv_symm_mk (b : F'.level L'.ground) :
       Submodule.Quotient.mk (E.groundEquiv.symm b) := by
   simp [normQuotientEquiv]
 
+/-- On norm quotients, the underlying layer morphism acts as the isomorphism of norm quotients. -/
+@[simp]
+theorem toLayerHom_normQuotientMap (y : L.NormQuotient F) :
+    E.toLayerHom.normQuotientMap y = E.normQuotientEquiv y := by
+  induction y using Submodule.Quotient.induction_on with
+  | H a => rw [LayerHom.normQuotientMap_mk, normQuotientEquiv_mk, toLayerHom_groundMap]
+
 /-- **In degree zero the Tate transport is the transport of norm quotients**, through the
 identifications `tateHZeroEquivNormQuotient` of the two layers. -/
 theorem tateHZeroEquivNormQuotient_tateCohomologyIso_apply (x : L.TateH F 0) :
     L'.tateHZeroEquivNormQuotient F' ((E.tateCohomologyIso 0).hom x) =
       E.normQuotientEquiv (L.tateHZeroEquivNormQuotient F x) := by
-  induction x using TateCohomology.H0_induction_on with
-  | h y =>
-    rw [tateCohomologyIso_hom, TauCeti.TateCohomology.H0π_comp_map_apply]
-    simp [groundEquiv, invariantsEquiv]
+  rw [tateCohomologyIso_hom, E.toLayerHom.tateHZeroEquivNormQuotient_tateCohomologyMap_apply,
+    toLayerHom_normQuotientMap]
 
 end LayerEquiv
-
-/-- **Cup product with a degree-two class is transported by a layer isomorphism**: the image of
-`x ∪ u` is the cup product of the images of `x` and of `u`, in every degree. -/
-@[simp]
-theorem cupClass_layerEquiv {F : Formation G} {L : NormalLayer G} {F' : Formation G'}
-    {L' : NormalLayer G'} (E : LayerEquiv F L F' L') (u : L.H F 2) (r : ℤ)
-    (x : L.TrivialTateH r) :
-    (E.tateCohomologyIso (r + 2)).hom (cupClass F L u r x) =
-      cupClass F' L' ((E.cohomologyIso 2).hom u) r ((E.trivialTateCohomologyIso r).hom x) := by
-  have hφ := E.isIntertwiningMap
-  have h₀ := Rep.isIntertwiningMap_trivial (R := ℤ) ℤ (E.galEquiv : L.Gal →* L'.Gal)
-  -- The pair commutes with the left unitors `ℤ ⊗ A^V ≅ A^V`.
-  have hl := TateCohomology.tateCohomologyFunctor_map_comp_map (h₀.tensor hφ) hφ
-    (λ_ (L.rep F)).hom (λ_ (L'.rep F')).hom (TensorProduct.ext' fun n c ↦ by simp) (r + 2)
-  simp only [cupClass_apply, ← E.tateCohomologyIso_hom_tateHIsoH_inv 2,
-    LayerEquiv.trivialTateCohomologyIso_hom, LayerEquiv.tateCohomologyIso_hom]
-  rw [← ModuleCat.comp_apply, hl, ModuleCat.comp_apply]
-  exact congrArg _ (TateCohomology.map_cup h₀ hφ r 2 (r + 2) _ x _)
 
 /-! ### Conjugation -/
 
@@ -370,38 +330,8 @@ variable {F : Formation G} {L : NormalLayer G} {F' : Formation G'} {L' : NormalL
 theorem fundamentalClass_layerEquiv
     (hinv : ∀ x, cf'.inv L' ((E.cohomologyIso 2).hom x) = cf.inv L x) :
     (E.cohomologyIso 2).hom (cf.fundamentalClass L) = cf'.fundamentalClass L' := by
-  rw [eq_fundamentalClass_iff, hinv, inv_fundamentalClass, E.degree_eq]
-
-/-- **Tate's isomorphism is transported by a layer isomorphism matching the invariant maps**: the
-image of `x ∪ u_{U/V}` is the cup product of the image of `x` with `u_{U'/V'}`. -/
-theorem tateIso_layerEquiv
-    (hinv : ∀ x, cf'.inv L' ((E.cohomologyIso 2).hom x) = cf.inv L x) (r : ℤ)
-    (x : L.TrivialTateH r) :
-    (E.tateCohomologyIso (r + 2)).hom (cf.tateIso L r x) =
-      cf'.tateIso L' r ((E.trivialTateCohomologyIso r).hom x) := by
-  simp only [tateIso_apply, cupFundamentalClass_apply, cupClass_layerEquiv,
-    fundamentalClass_layerEquiv cf cf' E hinv]
-
-/-- **The Nakayama map is transported by a layer isomorphism matching the invariant maps.** -/
-theorem nakayamaNegTwo_layerEquiv
-    (hinv : ∀ x, cf'.inv L' ((E.cohomologyIso 2).hom x) = cf.inv L x)
-    (σ : Additive (Abelianization L.Gal)) :
-    cf'.nakayamaNegTwo L' (E.galEquiv.abelianizationCongr.toAdditive σ) =
-      E.normQuotientEquiv (cf.nakayamaNegTwo L σ) := by
-  obtain ⟨x, rfl⟩ := L.tateHMinusTwoEquivAbelianization.surjective σ
-  rw [nakayamaNegTwo_apply, nakayamaNegTwo_apply, AddEquiv.symm_apply_apply,
-    ← E.tateHMinusTwoEquivAbelianization_trivialTateCohomologyIso_apply x,
-    AddEquiv.symm_apply_apply, ← tateIso_apply, ← tateIso_apply,
-    ← tateIso_layerEquiv cf cf' E hinv (-2) x]
-  exact E.tateHZeroEquivNormQuotient_tateCohomologyIso_apply _
-
-/-- **Artin reciprocity is transported by a layer isomorphism matching the invariant maps.** -/
-theorem artinEquiv_layerEquiv
-    (hinv : ∀ x, cf'.inv L' ((E.cohomologyIso 2).hom x) = cf.inv L x) (y : L.NormQuotient F) :
-    cf'.artinEquiv L' (E.normQuotientEquiv y) =
-      E.galEquiv.abelianizationCongr.toAdditive (cf.artinEquiv L y) := by
-  rw [← nakayamaNegTwo_artinEquiv cf L y, ← nakayamaNegTwo_layerEquiv cf cf' E hinv,
-    artinEquiv_nakayamaNegTwo, nakayamaNegTwo_artinEquiv]
+  simp only [LayerEquiv.cohomologyIso_hom] at hinv ⊢
+  exact fundamentalClass_layerHom cf cf' E.toLayerHom hinv
 
 /-- **The Artin map is transported by a layer isomorphism matching the invariant maps**: the Artin
 symbol in `L'` of the image of `a` is the image under `(U/V)^ab ≃ (U'/V')^ab` of the Artin symbol
@@ -410,8 +340,9 @@ theorem artinMap_layerEquiv
     (hinv : ∀ x, cf'.inv L' ((E.cohomologyIso 2).hom x) = cf.inv L x) (a : F.level L.ground) :
     cf'.artinMap L' (E.groundEquiv a) =
       E.galEquiv.abelianizationCongr.toAdditive (cf.artinMap L a) := by
-  rw [artinMap_apply, artinMap_apply, ← artinEquiv_layerEquiv cf cf' E hinv]
-  simp
+  have hu := fundamentalClass_layerEquiv cf cf' E hinv
+  rw [LayerEquiv.cohomologyIso_hom] at hu
+  simpa using artinMap_layerHom cf cf' E.toLayerHom hu a
 
 end ClassFormation
 

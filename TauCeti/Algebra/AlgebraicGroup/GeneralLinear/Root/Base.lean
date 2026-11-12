@@ -325,7 +325,7 @@ private theorem diagonalRootIndexOfNe_isPos_of_lt (n : ℕ) (i j : Fin (n + 1))
     (hij : i < j) :
     (diagonalRootBase.{u} n).IsPos (diagonalRootIndexOfNe i j hij.ne) := by
   induction hdist : j.val - i.val using Nat.strong_induction_on generalizing i j with
-  | h d ih =>
+  | ind d ih =>
       by_cases hadj : i.val + 1 = j.val
       · let a : Fin n := ⟨i.val, by omega⟩
         have hidx : diagonalRootIndexOfNe i j hij.ne = diagonalSimpleRootIndex n a := by

@@ -86,6 +86,17 @@ theorem matrixCoefficient_def (φ : M →ₗ[R] R) (m : M) :
         (TensorProduct.map φ LinearMap.id (coact (R := R) (C := C) (M := M) m)) :=
   rfl
 
+/-- Pairing a matrix coefficient with a coalgebra functional is evaluation on the
+corresponding contraction of the coaction. -/
+theorem _root_.LinearMap.apply_matrixCoefficient (f : Module.Dual R C)
+    (φ : Module.Dual R M) (m : M) :
+    f (matrixCoefficient (R := R) (C := C) φ m) =
+      φ (coactComponent (R := R) (C := C) f m) := by
+  rw [matrixCoefficient_def, coactComponent_apply]
+  induction coact (R := R) (C := C) m with
+  | tmul x c => simp [mul_comm]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 @[simp]
 theorem matrixCoefficient_zero (φ : M →ₗ[R] R) :
     matrixCoefficient (R := R) (C := C) φ 0 = 0 :=

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Abelian
 public import Mathlib.FieldTheory.Galois.Infinite
+public import Mathlib.NumberTheory.NumberField.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbelianLayer
 
@@ -46,6 +47,8 @@ of the layer with `Gal(L/E)` (`NormalLayer.galEquivOfFixedField`).
   `V` is `V`.
 * `TauCeti.ClassFieldTheory.fixingOpenNormalSubgroup_classField`: the bundled open normal subgroup
   cut out by the class field of `V` is `V`.
+* `TauCeti.ClassFieldTheory.classField_fixingOpenNormalSubgroup`: conversely, the class field of
+  the open normal subgroup fixing a finite Galois extension `L/F` is the image of `L` in `Fˢ`.
 * `TauCeti.ClassFieldTheory.classField_le_classField_iff`: `classField F W ≤ classField F V` if
   and only if `V ≤ W`.
 * `TauCeti.ClassFieldTheory.exists_classField_eq_iff`: the class fields are exactly the finite
@@ -54,6 +57,8 @@ of the layer with `Gal(L/E)` (`NormalLayer.galEquivOfFixedField`).
   of `V`.
 * `TauCeti.ClassFieldTheory.isAbelianGalois_classField_iff`: the class field of `V` is abelian
   over `F` if and only if `V` is an abelian layer.
+* `TauCeti.ClassFieldTheory.isAbelianClassFieldLayer_fixingOpenNormalSubgroup`: the open normal
+  subgroup fixing a finite abelian extension of `F` is an abelian layer.
 * `TauCeti.ClassFieldTheory.NormalLayer.isGalois_of_fixedField`: the fixed field of the top
   subgroup of a layer is Galois over the fixed field of its ground subgroup.
 
@@ -102,7 +107,7 @@ This turns a class-field correspondence that preserves the order on subgroups in
 order-reversing correspondence on fields. -/
 theorem classField_le_classField_iff (V W : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
     classField F W ≤ classField F V ↔ V ≤ W :=
-  (le_iff_le V.toSubgroup (classField F W)).trans <| by
+  (le_fixedField_iff_le_fixingSubgroup V.toSubgroup (classField F W)).trans <| by
     rw [fixingSubgroup_classField]
     exact Iff.rfl
 
@@ -123,14 +128,20 @@ theorem classField_eq_bot_iff {V : OpenNormalSubgroup (AbsoluteGaloisGroup F)} :
 /-- The class field of `V` is finite over `F`, because `V` is open. -/
 instance finiteDimensional_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
     FiniteDimensional F (classField F V) :=
-  (InfiniteGalois.isOpen_iff_finite (classField F V)).1
-    (by simpa only [fixingSubgroup_classField] using V.isOpen')
+  -- `classField F V` is defined as the fixed field of `V`.
+  finiteDimensional_fixedField_toSubgroup V.toOpenSubgroup
 
 /-- The class field of `V` is Galois over `F`, because `V` is normal. -/
 instance isGalois_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
     IsGalois F (classField F V) :=
   (InfiniteGalois.normal_iff_isGalois (classField F V)).1
     (by simpa only [fixingSubgroup_classField] using V.isNormal')
+
+/-- The class field of an open normal subgroup of `G_F` is a number field when `F` is, being a
+finite extension of `F`. -/
+instance numberField_classField [NumberField F] (V : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
+    NumberField (classField F V) :=
+  .of_module_finite F _
 
 /-- Cutting out the class field of `V` and then taking the open normal subgroup that fixes it
 recovers `V`. -/
@@ -142,6 +153,14 @@ theorem fixingOpenNormalSubgroup_classField (V : OpenNormalSubgroup (AbsoluteGal
   change (fixingOpenNormalSubgroup F (classField F V)).toSubgroup = V.toSubgroup
   rw [fixingOpenNormalSubgroup_toSubgroup (classField F V).val,
     IntermediateField.fieldRange_val, fixingSubgroup_classField]
+
+/-- **The class field of the subgroup fixing a finite Galois extension `L/F` is `L`**, embedded in
+`Fˢ` by any `F`-embedding `ι`. -/
+theorem classField_fixingOpenNormalSubgroup {L : Type*} [Field L] [Algebra F L]
+    [FiniteDimensional F L] [IsGalois F L] (ι : L →ₐ[F] SeparableClosure F) :
+    classField F (fixingOpenNormalSubgroup F L) = ι.fieldRange := by
+  rw [classField, fixingOpenNormalSubgroup_toSubgroup ι,
+    InfiniteGalois.fixedField_fixingSubgroup]
 
 /-- **The class fields are exactly the finite Galois subextensions of `Fˢ`.** -/
 theorem exists_classField_eq_iff (L : IntermediateField F (SeparableClosure F)) :
@@ -224,8 +243,18 @@ theorem isAbelianGalois_classField_iff {V : OpenNormalSubgroup (AbsoluteGaloisGr
     IsAbelianGalois F (classField F V) ↔ V.IsAbelianClassFieldLayer := by
   rw [V.isAbelianClassFieldLayer_iff_isMulCommutative]
   let e := (galClassFieldEquiv V).trans (NormalLayer.galOfOpenNormalEquiv V)
-  exact ⟨fun h ↦ e.surjective.isMulCommutative h.toIsMulCommutative,
-    fun h ↦ { toIsMulCommutative := e.symm.surjective.isMulCommutative h }⟩
+  exact ⟨fun h ↦ have := h.toIsMulCommutative; e.surjective.isMulCommutative,
+    fun _ ↦ { toIsMulCommutative := e.symm.surjective.isMulCommutative }⟩
+
+/-- The open normal subgroup of `G_F` fixing a finite abelian extension `L/F` is an abelian
+layer. -/
+theorem isAbelianClassFieldLayer_fixingOpenNormalSubgroup {L : Type*} [Field L] [Algebra F L]
+    [FiniteDimensional F L] [IsAbelianGalois F L] :
+    (fixingOpenNormalSubgroup F L).IsAbelianClassFieldLayer := by
+  let ι : L →ₐ[F] SeparableClosure F := IsSepClosed.lift
+  have : IsAbelianGalois F ι.fieldRange := .of_algHom (AlgEquiv.ofInjectiveField ι).symm.toAlgHom
+  rw [← isAbelianGalois_classField_iff, classField_fixingOpenNormalSubgroup ι]
+  infer_instance
 
 end Layer
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Conjugation
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 import TauCeti.Algebra.Coalgebra.Comodule.Weight.Decomposition
@@ -173,12 +174,11 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
   have hkey : toConv ((π : coordinateHopfAlgebra k n →ₐ[k] Q).comp
       (HopfAlgebra.pointConjugationAlgHom g)) = diagonalTorusPoints τ := by
     apply (pointsMulEquiv (R := k) (A := Q) n).injective
-    rw [HopfAlgebra.comp_pointConjugationAlgHom, map_mul, map_mul, map_inv,
-      pointsMulEquiv_mapValue, pointsMulEquiv_diagonalTorusPoints]
+    rw [pointsMulEquiv_toConv_comp_pointConjugationAlgHom, pointsMulEquiv_diagonalTorusPoints]
     have hτ : diagonalTorusCoordinates (SplitTorus.pointsMulEquiv τ) = t := by
       funext i
       rw [diagonalTorusCoordinates_apply, MulEquiv.apply_symm_apply]
-    rw [hτ, MulEquiv.apply_symm_apply, map_inv, inv_inv, mul_assoc, inv_mul_eq_iff_eq_mul]
+    rw [hτ, map_inv, inv_inv, mul_assoc, inv_mul_eq_iff_eq_mul]
     exact hmat
   refine ⟨g⁻¹, ?_⟩
   have hle : diagonalTorusDefiningIdeal k n ≤ I.conjugate g := by
@@ -188,7 +188,7 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
     have h := congrArg (fun f ↦ f.ofConv x) hkey
     refine h.trans ?_
     rw [← mapPointsFunctor_diagonalTorusCoordinateMap_app (A := CommAlgCat.of k Q),
-      CommHopfAlgCat.mapPointsFunctor_app_apply_apply, hx, map_zero]
+      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply, hx, map_zero]
   simpa using HopfIdeal.conjugate_mono g⁻¹ hle
 
 /-- **Split maximal tori of `GLₙ` are conjugate to the diagonal torus.** A maximal torus of `GLₙ`

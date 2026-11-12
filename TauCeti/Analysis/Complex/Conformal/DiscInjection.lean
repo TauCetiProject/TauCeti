@@ -33,7 +33,7 @@ holomorphic logarithm branch `L`, not from Mathlib's continuous root branch. The
 Inverting, `z ↦ (r/2) / (h z + w₀)` is holomorphic, injective, and bounded by `1/2`. Halving `r`
 is what makes the bound **strict**, landing in the open disc rather than its closure.
 
-## Attribution and upstream coordination
+## Attribution
 
 Two pieces of prior Mathlib work stand behind this file, both © Yury Kudryashov.
 
@@ -52,17 +52,12 @@ holomorphic upgrade of Mathlib's continuous *logarithm* branch
 continuous root API `Complex.exists_continuousOn_pow_eq` is not used. The existence half of this
 step is therefore Mathlib's; the sibling file `BranchLogRoot.lean` records that debt in detail.
 
-The Riemann mapping theorem is also being formalized upstream at
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), which proves the
-L0–L3 prerequisites internally as private lemmas. This declaration is an explicitly **temporary
-shim**: delete it and refactor downstream consumers onto the exported Mathlib version once it lands.
-
 ## Main statements
 
 * `TauCeti.exists_differentiableOn_injOn_mapsTo_unitBall` — the nonempty-family step.
 * `TauCeti.exists_differentiableOn_injOn_mapsTo_unitBall_apply_eq_zero` — the same step for the
-  **normalized** family, whose members fix a chosen base point. This is the form the roadmap's
-  maximization argument consumes.
+  **normalized** family, whose members fix a chosen base point. This is the form the maximization
+  argument of the Riemann mapping theorem consumes.
 -/
 
 public section
@@ -161,14 +156,14 @@ theorem exists_differentiableOn_injOn_mapsTo_unitBall {U : Set ℂ}
       abs_of_pos hrhalf, div_lt_one hpos]
     linarith
 
-/-- **The normalized competing family is nonempty.** The roadmap's maximization step ranges over
-injective holomorphic maps `U → 𝔻` that *fix a chosen base point* `z₀`, so the nonemptiness it needs
-is this one, not the bare version above.
+/-- **The normalized competing family is nonempty.** The maximization step ranges over injective
+holomorphic maps `U → 𝔻` that *fix a chosen base point* `z₀`, so the nonemptiness it needs is this
+one, not the bare version above.
 
 The normalization is the textbook one: post-compose with the disc automorphism centred at
-`c = f z₀`, `w ↦ (w - c) / (1 - conj c * w)`. That is the L2 disc-automorphism API of this roadmap,
-already available here as `TauCeti.unitDiscMoebius` and its scalar formula, so this step consumes
-it rather than substituting a weaker correction:
+`c = f z₀`, `w ↦ (w - c) / (1 - conj c * w)`. That is the disc-automorphism API
+`TauCeti.unitDiscMoebius` and its scalar formula, so this step consumes it rather than substituting
+a weaker correction:
 
 * holomorphy — `TauCeti.differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one`;
 * self-map of `𝔻` — `TauCeti.mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one`;

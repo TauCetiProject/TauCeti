@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic
+public import TauCeti.LinearAlgebra.Submodule.CompleteFiltration
 
 /-!
 # Completed tensor coalgebras
@@ -18,7 +19,8 @@ coordinates, including the empty blocks. This is a completed coalgebra, not an o
 
 Finite tensor words embed by `DFinsupp.coeFnLinearMap R`. Their coproduct agrees with the
 completed one after projecting to each bidegree. The length filtration is separated, and
-compatible finite truncations determine a unique completed word. Thus the product permits
+compatible finite truncations determine a unique completed word, so the length filtration is
+complete and separated (`isCompleteFiltration_filtration`). Thus the product permits
 infinite length support whereas `TensorWords` is the direct-sum coalgebra.
 
 The length-completion convention follows J.-L. Loday and B. Vallette, *Algebraic Operads*,
@@ -160,6 +162,21 @@ theorem truncate_truncate (n m : ℕ) (x : CompletedTensorWords R M) :
   simp only [truncate_apply, lt_min_iff]
   split_ifs <;> simp_all
 
+/-- Truncation keeps a single tensor-length summand exactly when it is below the cutoff. -/
+@[simp]
+theorem truncate_of (n k : ℕ) (z : TensorPower R k M) :
+    truncate R M n (TensorWords.of R M k z) =
+      if k < n then TensorWords.of R M k z else 0 := by
+  ext j
+  rw [truncate_apply]
+  by_cases hkj : k = j
+  · subst j
+    split_ifs <;> rfl
+  · have hz : TensorWords.of R M k z j = 0 :=
+      (TensorWords.component_apply R M j _).symm.trans
+        (TensorWords.component_of_of_ne R M hkj z)
+    split_ifs <;> simp [hz]
+
 /-- The descending length filtration consists of words whose components below `n` vanish. -/
 def filtration (n : ℕ) : Submodule R (CompletedTensorWords R M) :=
   ⨅ k : Fin n, LinearMap.ker (LinearMap.proj k.val)
@@ -245,3 +262,13 @@ end AddCommGroup
 
 end CompletedTensorWords
 end TauCeti
+
+namespace TauCeti.CompletedTensorWords
+
+variable (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The tensor-length filtration of completed tensor words is complete and separated. -/
+theorem isCompleteFiltration_filtration : IsCompleteFiltration (filtration R M) :=
+  isCompleteFiltration_pi id _ fun n x ↦ mem_filtration R M x n
+
+end TauCeti.CompletedTensorWords

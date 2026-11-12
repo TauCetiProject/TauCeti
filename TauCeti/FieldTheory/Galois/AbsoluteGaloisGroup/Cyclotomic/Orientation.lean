@@ -81,7 +81,7 @@ primitive `p`-th root of unity, the continuous cyclotomic character
 `absoluteGaloisGroupProP p K`. -/
 noncomputable def cyclotomicOrientation (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
     absoluteGaloisGroupProP p K →ₜ* ℤ_[p]ˣ :=
-  ContinuousMonoidHom.quotientLift _ (continuousLocalCyclotomicCharacter p K) fun g hg ↦ by
+  ContinuousMonoidHom.quotientLift (continuousLocalCyclotomicCharacter p K) _ fun g hg ↦ by
     -- The two kernels agree, since the bundled character has the values of the plain one.
     simpa using proPKernel_le_ker_localCyclotomicCharacter p K hmu hg
 

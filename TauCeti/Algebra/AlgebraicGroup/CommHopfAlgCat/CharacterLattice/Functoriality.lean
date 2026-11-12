@@ -52,13 +52,13 @@ variable {k : Type u} [Field k]
 groups by scalar extension and restriction to group-like elements. -/
 noncomputable def geometricCharacterMap {H K : _root_.CommHopfAlgCat.{u} k} (f : H ⟶ K) :
     geometricCharacterGroup H →* geometricCharacterGroup K :=
-  TauCeti.GroupLike.map (baseChangeMap (K := AlgebraicClosure k) f).hom
+  (baseChangeMap (K := AlgebraicClosure k) f).hom.mapGroupLike
 
-/-- The geometric character map is the group-like map of the base-changed morphism. -/
-theorem geometricCharacterMap_eq_groupLikeMap {H K : _root_.CommHopfAlgCat.{u} k}
+/-- The geometric character map is `BialgHom.mapGroupLike` of the base-changed morphism. -/
+theorem geometricCharacterMap_eq_mapGroupLike {H K : _root_.CommHopfAlgCat.{u} k}
     (f : H ⟶ K) :
     geometricCharacterMap f =
-      TauCeti.GroupLike.map (baseChangeMap (K := AlgebraicClosure k) f).hom :=
+      (baseChangeMap (K := AlgebraicClosure k) f).hom.mapGroupLike :=
   by rw [geometricCharacterMap]
 
 /-- The value underlying the image of a geometric character is obtained by applying the
@@ -68,7 +68,7 @@ theorem val_geometricCharacterMap {H K : _root_.CommHopfAlgCat.{u} k} (f : H ⟶
     (x : geometricCharacterGroup H) :
     (geometricCharacterMap f x).val =
       (baseChangeMap (K := AlgebraicClosure k) f).hom x.val := by
-  rw [geometricCharacterMap, TauCeti.GroupLike.val_map]
+  rw [geometricCharacterMap, BialgHom.val_mapGroupLike]
 
 /-- The map on geometric characters commutes with the absolute-Galois action. -/
 @[simp]
@@ -76,7 +76,7 @@ theorem geometricCharacterMap_smul {H K : _root_.CommHopfAlgCat.{u} k} (f : H �
     (sigma : Field.absoluteGaloisGroup k) (x : geometricCharacterGroup H) :
     geometricCharacterMap f (sigma • x) = sigma • geometricCharacterMap f x :=
   -- Expose the algebra equivalence behind Mathlib's opaque absolute-Galois-group wrapper.
-  ScalarAut.groupLikeMap_smul f.hom
+  f.hom.mapGroupLike_baseChangeMap_smul
     (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from sigma) x
 
 /-- Mapping geometric characters along an identity morphism is the identity. -/
@@ -92,7 +92,7 @@ theorem geometricCharacterMap_id (H : _root_.CommHopfAlgCat.{u} k) :
     simpa only [_root_.BialgHom.id_apply] using
       _root_.CommHopfAlgCat.id_apply (baseChange (K := AlgebraicClosure k) H) x
   simp only [geometricCharacterMap]
-  rw [h, TauCeti.GroupLike.map_id]
+  rw [h, BialgHom.mapGroupLike_id]
 
 /-- Mapping geometric characters respects composition of Hopf-algebra morphisms. -/
 @[simp]
@@ -106,7 +106,7 @@ theorem geometricCharacterMap_comp {H K L : _root_.CommHopfAlgCat.{u} k}
       ((baseChangeFunctor (K := AlgebraicClosure k)).map_comp f g)).trans
         (_root_.CommHopfAlgCat.hom_comp _ _)
   simp only [geometricCharacterMap]
-  rw [h, TauCeti.GroupLike.map_comp]
+  rw [h, BialgHom.mapGroupLike_comp]
 
 /-- The integral-linear map on additive geometric character groups induced by a Hopf-algebra
 morphism. -/

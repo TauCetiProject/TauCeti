@@ -11,15 +11,15 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 /-!
 # Measurability of pointwise PDE energy integrands
 
-The weak-form lane of the PDE roadmap is stated for bounded measurable coefficients.  Before the
-pointwise jet integrand
+The weak formulation of a divergence-form equation is stated for bounded measurable
+coefficients.  Before the pointwise jet integrand
 `x ↦ energyIntegrand (a x) (b x) (c x)` can be integrated over a domain, it must be available as a
 strongly measurable field of continuous bilinear forms, and its scalar evaluations on measurable
 jet fields must be a.e. strongly measurable.
 
 This file supplies that finite-dimensional bookkeeping.  It does not introduce a bundled
 bounded-measurable-coefficient predicate; coefficient regularity remains stated inline,
-following the roadmap and Mathlib style.
+following Mathlib style.
 
 ## Main declarations
 
@@ -29,6 +29,8 @@ following the roadmap and Mathlib style.
   `aestronglyMeasurable_energyIntegrand_apply`, and
   `aestronglyMeasurable_energyIntegrand_apply₂`: scalar evaluations on fixed or measurable jet
   fields are measurable.
+* `aestronglyMeasurable_matrixBilinearForm_apply`: the principal part `a(x)(η(x), ξ(x))` on
+  measurable vector fields is measurable.
 -/
 
 public section
@@ -113,6 +115,17 @@ lemma aestronglyMeasurable_energyIntegrand_apply₂ {a : α → Matrix n n ℝ}
     exact (continuous_fst.clm_apply (continuous_fst.comp continuous_snd)).clm_apply
       (continuous_snd.comp continuous_snd)
   exact hcont.comp_aestronglyMeasurable (hform.prodMk (hU.prodMk hV))
+
+/-- An a.e. strongly measurable field of matrix bilinear forms gives an a.e. strongly measurable
+scalar field `x ↦ a(x)(η(x), ξ(x))` on a.e. strongly measurable vector fields `η`, `ξ`. -/
+lemma aestronglyMeasurable_matrixBilinearForm_apply {a : α → Matrix n n ℝ}
+    {η ξ : α → EuclideanSpace ℝ n}
+    (ha : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) μ)
+    (hη : AEStronglyMeasurable η μ) (hξ : AEStronglyMeasurable ξ μ) :
+    AEStronglyMeasurable (fun x => matrixBilinearForm (a x) (η x) (ξ x)) μ := by
+  have hc : Continuous fun q : (EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ) ×
+      EuclideanSpace ℝ n × EuclideanSpace ℝ n => q.1 q.2.1 q.2.2 := by fun_prop
+  exact hc.comp_aestronglyMeasurable (ha.prodMk (hη.prodMk hξ))
 
 end PDE
 

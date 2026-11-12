@@ -315,7 +315,7 @@ noncomputable def envelopingDerivationHom :
     intro D E
     refine derivation_ext R L fun x => ?_
     rw [envelopingDerivation_ι, LieSubalgebra.coe_bracket, Ring.lie_def,
-      LinearMap.sub_apply, Module.End.mul_apply, Module.End.mul_apply,
+      LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
       envelopingDerivation_ι, envelopingDerivation_ι, envelopingDerivation_ι,
       envelopingDerivation_ι, LieDerivation.lie_apply, map_sub]
 

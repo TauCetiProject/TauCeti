@@ -35,6 +35,8 @@ fields and global functions over a field.
 * `comp_eq_comp_iff_of_section`: two sections agree at a point of the base with values in a
   field exactly when they take the same value at its underlying point; the general statement is
   `hom_ext_of_isIso_residueFieldMap`.
+* `eq_comp_comp_iff_of_section`: a field-valued point of `X` factors through a section exactly
+  when its underlying point lies on the section.
 * `isClosed_singleton_of_section`: over `Spec K`, the section gives a closed point of `X`.
 * `appTop_bijective_of_section`: if moreover `X` is integral and universally closed over `Spec K`,
   a `K`-rational point forces the global functions of `X` to be the constants, that is,
@@ -52,7 +54,8 @@ No external mathematics is vendored; the proofs reuse Mathlib's `Scheme.Hom.resi
 `Scheme.residueFieldCongr` and `Scheme.Hom.residueDegree` API, `CategoryTheory.asIso` and
 `CategoryTheory.Iso.inv_ext` for the isomorphism, Mathlib's `Scheme.descResidueField`,
 `Scheme.stalkClosedPointTo` and `Scheme.residue_descResidueField` for the rational-point
-evaluation map, and Tau Ceti's `residueDegree_comp` and `residueDegree_eq_one_iff`.
+evaluation map, and Tau Ceti's `Scheme.Hom.residueDegree_comp` and
+`Scheme.Hom.residueDegree_eq_one_iff`.
 -/
 
 public section
@@ -85,7 +88,7 @@ lemma section_apply (hs : s ≫ f = 𝟙 S) (y : S) : f (s y) = y :=
 `κ(y) → κ(s y) → κ(y)` compose to the identity of `κ(y)`. -/
 private lemma residueDegree_mul_residueDegree_of_section (hs : s ≫ f = 𝟙 S) (y : S) :
     f.residueDegree (s y) * s.residueDegree y = 1 := by
-  rw [← residueDegree_comp s f y, hs, Scheme.Hom.residueDegree_id]
+  rw [← s.residueDegree_comp f y, hs, Scheme.Hom.residueDegree_id]
 
 /-- The residue degree of `f` at a point in the image of a section is one.
 
@@ -112,19 +115,20 @@ theorem residueDegree_section_eq_one (hs : s ≫ f = 𝟙 S) (y : S) :
 section of `f : X ⟶ S`, the residue degree of `f ≫ g` agrees with that of `g : S ⟶ Z`. -/
 theorem residueDegree_comp_of_section (hs : s ≫ f = 𝟙 S) (g : S ⟶ Z) (y : S) :
     (f ≫ g).residueDegree (s y) = g.residueDegree y := by
-  rw [residueDegree_comp, residueDegree_eq_one_of_section hs, Nat.mul_one, section_apply hs]
+  rw [Scheme.Hom.residueDegree_comp, residueDegree_eq_one_of_section hs, Nat.mul_one,
+    section_apply hs]
 
 /-! ### Residue fields at a section -/
 
 /-- The residue-field map of `f` at a point in the image of a section is bijective. -/
 theorem residueFieldMap_bijective_of_section (hs : s ≫ f = 𝟙 S) (y : S) :
     Function.Bijective (f.residueFieldMap (s y)) :=
-  (residueDegree_eq_one_iff f (s y)).mp (residueDegree_eq_one_of_section hs y)
+  (f.residueDegree_eq_one_iff (s y)).mp (residueDegree_eq_one_of_section hs y)
 
 /-- The residue-field map of a section is bijective at every point of the base. -/
 theorem residueFieldMap_section_bijective (hs : s ≫ f = 𝟙 S) (y : S) :
     Function.Bijective (s.residueFieldMap y) :=
-  (residueDegree_eq_one_iff s y).mp (residueDegree_section_eq_one hs y)
+  (s.residueDegree_eq_one_iff y).mp (residueDegree_section_eq_one hs y)
 
 /-- The residue-field map of `f` at a point in the image of a section is an isomorphism. -/
 lemma isIso_residueFieldMap_of_section (hs : s ≫ f = 𝟙 S) (y : S) :
@@ -211,6 +215,24 @@ theorem comp_eq_comp_iff_of_section {s₁ s₂ : S ⟶ X} (h₁ : s₁ ≫ f = �
   have : IsIso (f.residueFieldMap ((t ≫ s₁) (IsLocalRing.closedPoint K))) :=
     isIso_residueFieldMap_of_section h₁ _
   exact hom_ext_of_isIso_residueFieldMap (f := f) (by simp [h₁, h₂]) h
+
+/-- **Field-valued points on a section.** A point `a` of `X` with values in a field `K` factors
+through the section `s` of `f : X ⟶ S`, as `a = (a ≫ f) ≫ s`, if and only if its underlying point
+`a p` lies on `s`, that is, `a p = s (f (a p))`: the section induces an isomorphism of residue
+fields there. -/
+theorem eq_comp_comp_iff_of_section (hs : s ≫ f = 𝟙 S) {K : Type u} [Field K]
+    (a : Spec (.of K) ⟶ X) (p : Spec (.of K)) : a = (a ≫ f) ≫ s ↔ a p = s (f (a p)) := by
+  obtain rfl : p = IsLocalRing.closedPoint K := Subsingleton.elim _ _
+  refine ⟨fun h ↦ congrArg (fun b : Spec (.of K) ⟶ X ↦ b (IsLocalRing.closedPoint K)) h,
+    fun h ↦ ?_⟩
+  have : IsIso (f.residueFieldMap (a (IsLocalRing.closedPoint K))) := by
+    -- the residue field map at a point of the section is an isomorphism; the point is
+    -- generalized since the type of `f.residueFieldMap y` depends on `y`
+    have key : ∀ y, y = s (f (a (IsLocalRing.closedPoint K))) → IsIso (f.residueFieldMap y) := by
+      rintro _ rfl
+      exact isIso_residueFieldMap_of_section hs _
+    exact key _ h
+  exact hom_ext_of_isIso_residueFieldMap (f := f) (by simp [hs]) h
 
 /-! ### Stalk evaluation over a local ring -/
 

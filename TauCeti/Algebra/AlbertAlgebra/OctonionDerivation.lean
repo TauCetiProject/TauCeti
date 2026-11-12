@@ -83,8 +83,8 @@ that the Leibniz rule on the diagonal consumes.
 ## References
 
 * `TauCeti/Algebra/Octonion/Derivation.lean`, which supplies both octonion inputs, and
-  `TauCeti/Algebra/AlbertAlgebra/Derivation.lean`, which studies `Der H₃(𝕆)` from the other side,
-  through the Peirce calculus of the diagonal frame.
+  `TauCeti/Algebra/AlbertAlgebra/Derivation/Basic.lean`, which studies `Der H₃(𝕆)` from the other
+  side, through the Peirce calculus of the diagonal frame.
 * T. A. Springer and F. D. Veldkamp, *Octonions, Jordan Algebras and Exceptional Groups*, §5.3,
   where `Der H₃(𝕆)` is decomposed as `Der 𝕆` plus the traceless anti-Hermitian matrices; only the
   first summand, and so only the bound `14 ≤ finrank`, is built here.

@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.FiniteStability
 public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.Product
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 
 /-!
 # Products of finite-type commutative Hopf algebras
@@ -24,8 +26,13 @@ morphisms in `FiniteTypeCommHopfAlgCat`. The points of the finite-type product a
 with pairs of points by the existing product-points equivalence from
 `TauCeti.Algebra.AlgebraicGroup.Product`.
 
-This is a finite-type wrapper for the ReductiveGroups roadmap Layer 0 product/functor-of-points
-infrastructure: affine group schemes of finite type should remain finite type under products.
+The coordinate inclusions are injective over any commutative base ring, since the counit
+projections retract them. Over a field,
+`HopfIdeal.eq_augmentation_of_comap_includeLeft_of_comap_includeRight` shows that a closed
+subgroup of a product is trivial when both projection images are trivial, by identifying its
+Hopf ideal with the augmentation ideal.
+
+Affine group schemes of finite type remain finite type under products.
 -/
 
 public section
@@ -82,6 +89,28 @@ theorem includeRight_apply (H K : FiniteTypeCommHopfAlgCat.{u, v} R) (k : K) :
     toBialgHom (includeRight H K) k = (1 : H) ⊗ₜ[R] k :=
   Bialgebra.TensorProduct.includeRight_apply k
 
+/-- The left coordinate inclusion is injective over any commutative base ring: applying
+the counit to the right tensor factor gives a retraction. -/
+theorem includeLeft_injective (H K : FiniteTypeCommHopfAlgCat.{u, v} R) :
+    Function.Injective (toBialgHom (includeLeft H K)) := by
+  apply Function.LeftInverse.injective
+    (g := Bialgebra.TensorProduct.projectLeft (R := R) (H₁ := H) (H₂ := K))
+  intro x
+  exact DFunLike.congr_fun
+    (Bialgebra.TensorProduct.projectLeft_comp_includeLeft
+      (R := R) (H₁ := H) (H₂ := K)) x
+
+/-- The right coordinate inclusion is injective over any commutative base ring: applying
+the counit to the left tensor factor gives a retraction. -/
+theorem includeRight_injective (H K : FiniteTypeCommHopfAlgCat.{u, v} R) :
+    Function.Injective (toBialgHom (includeRight H K)) := by
+  apply Function.LeftInverse.injective
+    (g := Bialgebra.TensorProduct.projectRight (R := R) (H₁ := H) (H₂ := K))
+  intro x
+  exact DFunLike.congr_fun
+    (Bialgebra.TensorProduct.projectRight_comp_includeRight
+      (R := R) (H₁ := H) (H₂ := K)) x
+
 variable (A : CommAlgCat.{w} R)
 
 /-- The product-points equivalence for the finite-type tensor-product object. -/
@@ -99,7 +128,8 @@ theorem pointsMulEquiv_fst
       (((pointsFunctor (R := R)).map (includeLeft H K).op).app A f) := by
   apply WithConv.ofConv_injective
   ext h
-  rw [pointsMulEquiv, AffineGroup.Product.pointsMulEquiv_apply]
+  rw [pointsMulEquiv, AffineGroup.Product.pointsMulEquiv_apply,
+    BialgHom.mapDomain_apply_apply]
   exact (pointsFunctor_map_app_apply_apply (R := R) (φ := (includeLeft H K).op) A f h).symm
 
 /-- The second component of `pointsMulEquiv` is induced by the right coordinate inclusion. -/
@@ -111,7 +141,8 @@ theorem pointsMulEquiv_snd
       (((pointsFunctor (R := R)).map (includeRight H K).op).app A f) := by
   apply WithConv.ofConv_injective
   ext k
-  rw [pointsMulEquiv, AffineGroup.Product.pointsMulEquiv_apply]
+  rw [pointsMulEquiv, AffineGroup.Product.pointsMulEquiv_apply,
+    BialgHom.mapDomain_apply_apply]
   exact (pointsFunctor_map_app_apply_apply (R := R) (φ := (includeRight H K).op) A f k).symm
 
 /-- The inverse of `pointsMulEquiv` is Mathlib's tensor-product product map. -/
@@ -159,30 +190,52 @@ theorem mapValue_pointsMulEquiv_symm_apply (H K : FiniteTypeCommHopfAlgCat.{u, v
         (AlgHom.mapValue (H := H) φ p.1, AlgHom.mapValue (H := K) φ p.2) :=
   AffineGroup.Product.mapValue_pointsMulEquiv_symm_apply (R := R) (H₁ := H) (H₂ := K) φ p
 
-/-- On pure tensors, naturality of the inverse product-points map evaluates post-composition by
-`φ` as applying `φ` to the product of the two factor values. -/
-theorem mapValue_pointsMulEquiv_symm_apply_tmul (H K : FiniteTypeCommHopfAlgCat.{u, v} R)
-    (φ : A →ₐ[R] B)
-    (p : HopfAlgebra.points (R := R) (H := H) A × HopfAlgebra.points (R := R) (H := K) A)
-    (x : H) (y : K) :
-    (AlgHom.mapValue (H := tensorProduct H K) φ ((pointsMulEquiv A H K).symm p)).ofConv
-        (x ⊗ₜ[R] y) =
-      φ (p.1.ofConv x * p.2.ofConv y) :=
-  AffineGroup.Product.mapValue_pointsMulEquiv_symm_apply_tmul
-    (R := R) (H₁ := H) (H₂ := K) φ p x y
-
-/-- On pure tensors, assembling after post-composing both factor points by `φ` multiplies the
-two post-composed factor values. -/
-theorem pointsMulEquiv_symm_mapValue_apply_tmul (H K : FiniteTypeCommHopfAlgCat.{u, v} R)
-    (φ : A →ₐ[R] B)
-    (p : HopfAlgebra.points (R := R) (H := H) A × HopfAlgebra.points (R := R) (H := K) A)
-    (x : H) (y : K) :
-    ((pointsMulEquiv B H K).symm
-        (AlgHom.mapValue (H := H) φ p.1, AlgHom.mapValue (H := K) φ p.2)).ofConv (x ⊗ₜ[R] y) =
-      φ (p.1.ofConv x) * φ (p.2.ofConv y) :=
-  AffineGroup.Product.pointsMulEquiv_symm_mapValue_apply_tmul
-    (R := R) (H₁ := H) (H₂ := K) φ p x y
-
 end FiniteTypeCommHopfAlgCat
+
+namespace HopfIdeal
+
+variable {k : Type u} [Field k]
+
+/-- A closed subgroup of a direct product is trivial if both projection images are trivial.
+Equivalently, a Hopf ideal whose inverse images along both coordinate inclusions are the
+augmentation ideals is itself the augmentation ideal. -/
+theorem eq_augmentation_of_comap_includeLeft_of_comap_includeRight
+    {H K : FiniteTypeCommHopfAlgCat.{u, v} k}
+    (I : HopfIdeal k (FiniteTypeCommHopfAlgCat.tensorProduct H K))
+    (hH : I.comap (FiniteTypeCommHopfAlgCat.toBialgHom
+      (FiniteTypeCommHopfAlgCat.includeLeft H K)) = augmentation k H)
+    (hK : I.comap (FiniteTypeCommHopfAlgCat.toBialgHom
+      (FiniteTypeCommHopfAlgCat.includeRight H K)) = augmentation k K) :
+    I = augmentation k (FiniteTypeCommHopfAlgCat.tensorProduct H K) := by
+  let P := FiniteTypeCommHopfAlgCat.tensorProduct H K
+  let Q := FiniteTypeCommHopfAlgCat.quotient P I
+  let q := (CommHopfAlgCat.mkQuotient P.obj I).hom.toAlgHom
+  have hqH (x : H) : q (x ⊗ₜ[k] (1 : K)) = algebraMap k Q (Coalgebra.counit x) := by
+    exact AlgHom.apply_eq_counit_of_augmentation_le_ker
+      (q.comp Algebra.TensorProduct.includeLeft) (fun x hx ↦ by
+        have hx' := mem_comap.mp (hH ▸ mem_toIdeal.mp hx)
+        rw [FiniteTypeCommHopfAlgCat.includeLeft_apply] at hx'
+        exact (CommHopfAlgCat.mkQuotient_eq_zero_iff P.obj I _).mpr hx') x
+  have hqK (y : K) : q ((1 : H) ⊗ₜ[k] y) = algebraMap k Q (Coalgebra.counit y) := by
+    exact AlgHom.apply_eq_counit_of_augmentation_le_ker
+      (q.comp Algebra.TensorProduct.includeRight) (fun y hy ↦ by
+        have hy' := mem_comap.mp (hK ▸ mem_toIdeal.mp hy)
+        rw [FiniteTypeCommHopfAlgCat.includeRight_apply] at hy'
+        exact (CommHopfAlgCat.mkQuotient_eq_zero_iff P.obj I _).mpr hy') y
+  have hq : q = (Algebra.ofId k Q).comp (Bialgebra.counitAlgHom k P) := by
+    apply Algebra.TensorProduct.ext
+    · ext x
+      simpa [P, Bialgebra.counitAlgHom_apply, TensorProduct.counit_tmul] using hqH x
+    · ext y
+      simpa [P, Bialgebra.counitAlgHom_apply, TensorProduct.counit_tmul] using hqK y
+  apply le_antisymm (le_augmentation k P I)
+  intro x hx
+  apply (CommHopfAlgCat.mkQuotient_eq_zero_iff P.obj I x).mp
+  have hx0 := (mem_augmentation k P).mp hx
+  have h := DFunLike.congr_fun hq x
+  simpa only [q, AlgHom.comp_apply, Algebra.ofId_apply, Bialgebra.counitAlgHom_apply,
+    BialgHom.coe_toAlgHom, hx0, map_zero] using h
+
+end HopfIdeal
 
 end TauCeti

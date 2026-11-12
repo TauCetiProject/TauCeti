@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
 /-!
 # A number field is discrete in its adele ring
@@ -53,7 +54,10 @@ theorem eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles {x : K}
     x = 0 := by
   obtain ⟨a, rfl⟩ := (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff (R := 𝓞 K) x).mp hfin
   have hlt (w : InfinitePlace K) : w (algebraMap (𝓞 K) K a) < 1 :=
-    (InfinitePlace.Completion.norm_coe w _).symm.trans_lt (hinf w)
+    by
+    simpa only [NumberField.AdeleRing.algebraMap_fst_apply,
+      InfiniteAdeleRing.algebraMap_apply, InfinitePlace.Completion.algebraMap_apply,
+      InfinitePlace.Completion.norm_coe, WithAbs.ofAbs_toAbs, WithAbs.equiv_apply] using hinf w
   by_contra ha
   obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
   exact (hlt w).not_ge <| InfinitePlace.one_le_of_lt_one (by simpa using ha) fun z _ ↦ hlt z
@@ -77,7 +81,11 @@ instance discreteTopology_principalSubgroup :
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain rfl : x = 0 := (AdeleRing.algebraMap_injective (𝓞 K) K).eq_iff.mp <| by
       simpa using congrArg Subtype.val h
-    exact ⟨fun w ↦ (InfinitePlace.Completion.norm_coe w _).trans_lt (by simp),
+    exact ⟨fun w ↦ by
+      -- The diagonal adele's coordinate is definitionally this field algebra map;
+      -- expose that coordinate so simplification can use `map_zero` and `norm_zero`.
+      change ‖(algebraMap K w.Completion) 0‖ < 1
+      simp,
       (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff (R := 𝓞 K) 0).mpr ⟨0, map_zero _⟩⟩
   · obtain rfl := eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles h.1 h.2
     simp

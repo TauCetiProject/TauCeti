@@ -18,12 +18,15 @@ This file provides operations on an existing group extension.
   kernel term.
 * `GroupExtension.relabelKer`: relabels the kernel term of a group extension.
 * `GroupExtension.relabelQuotient`: relabels the quotient term of a group extension.
+* `GroupExtension.relabel`: relabels both the kernel and quotient terms of a group extension.
 * `GroupExtension.Section.monoidHomComp`: transports a section along a homomorphism of extensions
   over the identity of the quotient group.
 * `GroupExtension.surjective_of_comp_inl_eq`: a homomorphism of extensions over the identity of
   the quotient group is surjective as soon as it is surjective on the kernel terms.
 
-The constructions are mirrored for additive groups by `to_additive`.
+The relabelling and homomorphism constructions are mirrored for additive groups by `to_additive`.
+Central extensions also admit character twists, preserved by equivalences of extensions. When the
+kernel is commutative, twisting is multiplicative in the character (`characterTwist_mul`).
 -/
 
 public section
@@ -33,6 +36,17 @@ universe u v w
 namespace GroupExtension
 
 variable {N : Type u} {E : Type v} {G : Type w} [Group N] [Group E] [Group G]
+
+/-- Evaluating the underlying section of a splitting agrees with evaluating the splitting. -/
+@[simp]
+theorem Splitting.toSection_apply {S : GroupExtension N E G} (s : S.Splitting) (g : G) :
+    s.toSection g = s g := (rfl)
+
+/-- Inclusion of the kernel intertwines the specified action with conjugation by `s`. -/
+theorem Splitting.inl_smul {S : GroupExtension N E G} [SMul G N] (s : S.Splitting)
+    (hact : ∀ g n, g • n = S.conjAct (s g) n) (g : G) (n : N) :
+    S.inl (g • n) = s g * S.inl n * (s g)⁻¹ := by
+  rw [hact, GroupExtension.inl_conjAct_comm]
 
 /-- Every fiber of the projection in a group extension has the cardinality of its kernel term. -/
 @[to_additive
@@ -102,6 +116,33 @@ theorem relabelQuotient_rightHom (S : GroupExtension N E G) {G' : Type*} [Group 
     (S.relabelQuotient e).rightHom = e.toMonoidHom.comp S.rightHom :=
   (rfl)
 
+/-- Relabel both the kernel and quotient terms of a group extension along multiplicative
+equivalences. The middle group is unchanged. -/
+@[to_additive
+  /-- Relabel both the kernel and quotient terms of an additive group extension along additive
+  equivalences. The middle group is unchanged. -/]
+def relabel (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') : GroupExtension N' E G' :=
+  (S.relabelKer eN).relabelQuotient eG
+
+/-- The inclusion of a relabelled extension is the original inclusion after the kernel
+equivalence. -/
+@[to_additive (attr := simp) /-- The inclusion of a relabelled additive extension is the original
+inclusion after the kernel equivalence. -/]
+theorem relabel_inl (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') :
+    (S.relabel eN eG).inl = S.inl.comp eN.toMonoidHom :=
+  (rfl)
+
+/-- The projection of a relabelled extension is the quotient equivalence after the original
+projection. -/
+@[to_additive (attr := simp) /-- The projection of a relabelled additive extension is the quotient
+equivalence after the original projection. -/]
+theorem relabel_rightHom (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') :
+    (S.relabel eN eG).rightHom = eG.toMonoidHom.comp S.rightHom :=
+  (rfl)
+
 /-- Relabelling the quotient does not change conjugation on the kernel. -/
 @[simp]
 theorem _root_.TauCeti.GroupExtension.relabelQuotient_conjAct {S : GroupExtension N E G}
@@ -161,5 +202,100 @@ theorem surjective_of_comp_inl_eq (f : N →* N') (hf : Function.Surjective f) (
   rw [map_mul, ← MonoidHom.comp_apply φ S.inl, hinl, MonoidHom.comp_apply, hn, mul_inv_cancel_left]
 
 end Hom
+
+section Central
+
+variable (S : GroupExtension N E G) (hcentral : S.inl.range ≤ Subgroup.center E)
+
+/-- The automorphism obtained by multiplying each element by its character value. -/
+def characterTwist (χ : G →* N) : MulAut E where
+  toFun e := S.inl (χ (S.rightHom e)) * e
+  invFun e := S.inl (χ (S.rightHom e))⁻¹ * e
+  left_inv e := by simp
+  right_inv e := by simp
+  map_mul' e f := by
+    simp only [map_mul]
+    -- the kernel element `S.inl (χ (S.rightHom f))` is central, so it commutes past `e`
+    exact ((hcentral ⟨χ (S.rightHom f), rfl⟩).comm e).mul_mul_mul_comm _ _
+
+@[simp]
+theorem characterTwist_apply (χ : G →* N) (e : E) :
+    characterTwist S hcentral χ e = S.inl (χ (S.rightHom e)) * e :=
+  (rfl)
+
+@[simp]
+theorem characterTwist_symm_apply (χ : G →* N) (e : E) :
+    (characterTwist S hcentral χ).symm e = S.inl (χ (S.rightHom e))⁻¹ * e :=
+  (rfl)
+
+theorem characterTwist_inl (χ : G →* N) (n : N) :
+    characterTwist S hcentral χ (S.inl n) = S.inl n := by
+  simp
+
+theorem rightHom_characterTwist (χ : G →* N) (e : E) :
+    S.rightHom (characterTwist S hcentral χ e) = S.rightHom e := by
+  simp
+
+@[simp]
+theorem characterTwist_one : characterTwist S hcentral 1 = 1 := by
+  ext e
+  simp
+
+end Central
+
+section CommCentral
+
+variable {M : Type*} [CommGroup M] (S : GroupExtension M E G)
+  (hcentral : S.inl.range ≤ Subgroup.center E)
+
+/-- Twisting by a product of characters composes the two twists. -/
+@[simp]
+theorem characterTwist_mul (χ ψ : G →* M) :
+    characterTwist S hcentral (χ * ψ) =
+      characterTwist S hcentral χ * characterTwist S hcentral ψ := by
+  ext e
+  simp [mul_assoc]
+
+@[simp]
+theorem characterTwist_inv (χ : G →* M) :
+    characterTwist S hcentral χ⁻¹ = (characterTwist S hcentral χ)⁻¹ := by
+  rw [eq_inv_iff_mul_eq_one, ← characterTwist_mul, inv_mul_cancel, characterTwist_one]
+
+end CommCentral
+
+namespace Equiv
+
+variable {E' : Type*} [Group E'] {S : GroupExtension N E G} {S' : GroupExtension N E' G}
+
+/-- An equivalence of extensions preserves centrality of the included kernel. -/
+@[to_additive
+  /-- An equivalence of additive extensions preserves centrality of the included kernel. -/]
+theorem inl_range_le_center (F : S.Equiv S') (hcentral : S.inl.range ≤ Subgroup.center E) :
+    S'.inl.range ≤ Subgroup.center E' := by
+  rintro _ ⟨n, rfl⟩
+  rw [← F.map_inl]
+  exact MulEquivClass.apply_mem_center F (hcentral ⟨n, rfl⟩)
+
+@[to_additive (attr := simp)]
+theorem symm_apply_apply (F : S.Equiv S') (e : E) : F.symm (F e) = e :=
+  F.toMulEquiv.symm_apply_apply e
+
+@[to_additive (attr := simp)]
+theorem apply_symm_apply (F : S.Equiv S') (e : E') : F (F.symm e) = e :=
+  F.toMulEquiv.apply_symm_apply e
+
+@[to_additive (attr := simp)]
+theorem symm_symm (F : S.Equiv S') : F.symm.symm = F :=
+  rfl
+
+/-- Transport through an extension equivalence preserves each character twist. -/
+theorem mulAutCongr_characterTwist (F : S.Equiv S') (hcentral : S.inl.range ≤ Subgroup.center E)
+    (χ : G →* N) :
+    MulAut.congr F.toMulEquiv (characterTwist S hcentral χ) =
+      characterTwist S' (F.inl_range_le_center hcentral) χ := by
+  ext e
+  simp [MulAut.congr_apply, MulEquiv.trans_apply]
+
+end Equiv
 
 end GroupExtension

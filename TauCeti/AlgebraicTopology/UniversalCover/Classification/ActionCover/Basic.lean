@@ -51,9 +51,7 @@ prepends the *inverse* loop class, the inverse cancels against the exchange
 ## References
 
 This is the object half of the essential surjectivity of monodromy on *all* covering spaces,
-the disconnected case of `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2, item 8, which asks
-for covers to be classified by functors out of the fundamental groupoid. It consumes the
-based-path universal cover adapted from Kim Morrison's
+connected or not. It consumes the based-path universal cover adapted from Kim Morrison's
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292) and Mathlib's
 quotient-covering-map interface due to Junyan Xu.
 -/
@@ -166,12 +164,13 @@ private theorem actionCoverFiberTransport_apply_coe
 private theorem actionCoverFiberTransport_apply_monodromy (g : FundamentalGroup X x₀)
     (e : ⇑(actionCoveringSpace x₀ A).proj ⁻¹' {x₀}) :
     actionCoverFiberTransport x₀ A
-        ((actionCoveringSpace x₀ A).isCoveringMap_proj.monodromy g e) =
-      (isCoveringMap_actionCoverProj x₀ A).monodromy g (actionCoverFiberTransport x₀ A e) := by
+        ((actionCoveringSpace x₀ A).isCoveringMap_proj.monodromy g.toPath e) =
+      (isCoveringMap_actionCoverProj x₀ A).monodromy g.toPath
+        (actionCoverFiberTransport x₀ A e) := by
   have hmonodromy := IsCoveringMap.fiberMap_monodromy
     (actionCoveringSpace x₀ A).isCoveringMap_proj (isCoveringMap_actionCoverProj x₀ A)
     (actionCoverTotalSpaceHomeomorph x₀ A)
-    (funext (actionCoverProj_actionCoverTotalSpaceHomeomorph x₀ A)) g e
+    (funext (actionCoverProj_actionCoverTotalSpaceHomeomorph x₀ A)) g.toPath e
   have hfiberMap (e' : ⇑(actionCoveringSpace x₀ A).proj ⁻¹' {x₀}) :
       Function.fiberMap (actionCoverTotalSpaceHomeomorph x₀ A : C(_, _))
           (funext (actionCoverProj_actionCoverTotalSpaceHomeomorph x₀ A)) x₀ e' =
@@ -198,7 +197,7 @@ theorem actionCoverFiberEquiv_apply_coe (a : A) :
 the cover attached to `A` is the action of that loop class on `A`. -/
 @[simp]
 theorem monodromy_actionCoverFiberEquiv (g : FundamentalGroup X x₀) (a : A) :
-    (isCoveringMap_actionCoverProj x₀ A).monodromy g (actionCoverFiberEquiv x₀ A a) =
+    (isCoveringMap_actionCoverProj x₀ A).monodromy g.toPath (actionCoverFiberEquiv x₀ A a) =
       actionCoverFiberEquiv x₀ A (g • a) := by
   -- Attaching the label `a` is a map of covering spaces over `X`, so it intertwines monodromy.
   let ι : C(UniversalCover x₀, ActionCover x₀ A) :=
@@ -206,7 +205,7 @@ theorem monodromy_actionCoverFiberEquiv (g : FundamentalGroup X x₀) (a : A) :
       continuous_quotient_mk'.comp (continuous_id.prodMk continuous_const)⟩
   have hcomp : actionCoverProj x₀ A ∘ ι = proj := funext fun e => actionCoverProj_mk x₀ A e a
   have key := IsCoveringMap.fiberMap_monodromy (isCoveringMap x₀)
-    (isCoveringMap_actionCoverProj x₀ A) ι hcomp g (basepointLift x₀)
+    (isCoveringMap_actionCoverProj x₀ A) ι hcomp g.toPath (basepointLift x₀)
   have hbase : actionCoverFiberEquiv x₀ A a =
       Function.fiberMap ι hcomp x₀ (basepointLift x₀) :=
     Subtype.ext ((actionCoverFiberEquiv_apply_coe x₀ A a).trans
@@ -217,7 +216,7 @@ theorem monodromy_actionCoverFiberEquiv (g : FundamentalGroup X x₀) (a : A) :
   -- The application lemmas expose the maps, but leave coercions from the two fibre subtypes.
   -- This reduction records exactly their underlying points before rewriting quotient classes.
   change BalancedProduct.mk (FundamentalGroup X x₀)
-      ((isCoveringMap x₀).monodromy g (basepointLift x₀) : UniversalCover x₀) a =
+      ((isCoveringMap x₀).monodromy g.toPath (basepointLift x₀) : UniversalCover x₀) a =
     BalancedProduct.mk (FundamentalGroup X x₀) (basepointLift x₀ : UniversalCover x₀) (g • a)
   rw [monodromy_basepointLift, BalancedProduct.mk_smul_left, inv_inv]
 
@@ -231,7 +230,7 @@ attached to `A` agrees with the given action of the fundamental group on `A`. -/
 theorem actionCoveringSpaceFiberEquiv_apply_monodromy (g : FundamentalGroup X x₀)
     (e : ⇑(actionCoveringSpace x₀ A).proj ⁻¹' {x₀}) :
     actionCoveringSpaceFiberEquiv x₀ A
-        ((actionCoveringSpace x₀ A).isCoveringMap_proj.monodromy g e) =
+        ((actionCoveringSpace x₀ A).isCoveringMap_proj.monodromy g.toPath e) =
       g • actionCoveringSpaceFiberEquiv x₀ A e := by
   obtain ⟨a, ha⟩ := (actionCoverFiberEquiv x₀ A).surjective (actionCoverFiberTransport x₀ A e)
   rw [actionCoveringSpaceFiberEquiv, Equiv.trans_apply, Equiv.trans_apply,

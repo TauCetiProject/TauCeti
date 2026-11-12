@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.Algebra.MonoidAlgebra.CharacterTwist
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 
 /-!
@@ -59,6 +60,8 @@ representation need neither.
   irreducible**, and conversely.
 * `Representation.char_charTwist`: the trace character of the twist is `χ` times the character
   of `ρ`.
+* `Representation.asAlgebraHom_charTwist`: on the group algebra, the twist acts through the
+  algebra automorphism `MonoidAlgebra.charTwist χ` of `k[G]`.
 
 ## References
 
@@ -88,7 +91,7 @@ def charTwist (χ : G →* kˣ) (ρ : Representation k G V) : Representation k G
   map_one' := by simp
   map_mul' g h := by
     ext v
-    simp only [map_mul, Units.val_mul, Module.End.mul_apply, LinearMap.smul_apply, map_smul,
+    simp only [map_mul, Units.val_mul, mul_apply_eq_comp, LinearMap.smul_apply, map_smul,
       smul_smul, mul_comm]
 
 @[simp]
@@ -119,6 +122,12 @@ theorem charTwist_trivial (χ : G →* kˣ) :
     charTwist χ (trivial k G k) = ofLinearCharacter χ :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by
     simp [ofLinearCharacter_apply, smul_eq_mul]
+
+/-- On the group algebra, the twist of `ρ` by `χ` acts through the twist of `k[G]` by `χ`: an
+element `x : k[G]` acts on `charTwist χ ρ` as `MonoidAlgebra.charTwist χ x` acts on `ρ`. -/
+theorem asAlgebraHom_charTwist (χ : G →* kˣ) (ρ : Representation k G V) :
+    (charTwist χ ρ).asAlgebraHom = ρ.asAlgebraHom.comp (MonoidAlgebra.charTwist χ).toAlgHom :=
+  MonoidAlgebra.algHom_ext (fun g ↦ by simp) (AlgHom.ext fun a ↦ by simp)
 
 /-- A submodule stable under `ρ` is stable under any twist of `ρ`. -/
 theorem charTwist_apply_mem_of_apply_mem {χ : G →* kˣ} {ρ : Representation k G V}
@@ -189,6 +198,12 @@ theorem tprodEquivCharTwist_tmul (x : k) (v : V) :
     tprodEquivCharTwist χ ρ (x ⊗ₜ[k] v) = x • v :=
   (rfl)
 
+/-- The inverse of `Representation.tprodEquivCharTwist` puts the line `1` in front. -/
+@[simp]
+theorem tprodEquivCharTwist_symm_apply (v : V) :
+    (tprodEquivCharTwist χ ρ).symm v = (1 : k) ⊗ₜ[k] v :=
+  (rfl)
+
 /-- **`TensorProduct.rid` carries the action of `ρ ⊗ (ofLinearCharacter χ)` to the action of `ρ`
 rescaled by `χ`.**  This is the mirror of `Representation.lid_ofLinearCharacter_tprod_apply` for a
 line on the right, and the equivariance datum behind
@@ -220,6 +235,13 @@ theorem toLinearMap_tprodOfLinearCharacterEquivCharTwist :
 @[simp]
 theorem tprodOfLinearCharacterEquivCharTwist_tmul (v : V) (x : k) :
     tprodOfLinearCharacterEquivCharTwist χ ρ (v ⊗ₜ[k] x) = x • v :=
+  (rfl)
+
+/-- The inverse of `Representation.tprodOfLinearCharacterEquivCharTwist` tensors with `1` on the
+right. -/
+@[simp]
+theorem tprodOfLinearCharacterEquivCharTwist_symm_apply (v : V) :
+    (tprodOfLinearCharacterEquivCharTwist χ ρ).symm v = v ⊗ₜ[k] (1 : k) :=
   (rfl)
 
 end CommSemiring

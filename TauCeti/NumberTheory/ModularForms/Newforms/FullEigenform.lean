@@ -40,6 +40,8 @@ of `f` (`Newform.eq_qExpansion_coeff_one_smul_of_forall_prime_heckeTCuspNat_eq_s
   prime `p`, the primes dividing the level (where `T_p = U_p`) included.
 * `HeckeRing.GL2.Newform.toEigenform_eigenvalue_eq_qExpansion_coeff`: the eigenvalue of a newform
   at every positive index is its Fourier coefficient there.
+* `HeckeRing.GL2.Newform.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_qExpansion_coeff_smul`:
+  `T_n f = a_n(f) • f` in `S_k(N, χ)` at every positive index `n`.
 
 ## Provenance
 
@@ -104,10 +106,10 @@ theorem heckeUCuspNat_eq_qExpansion_coeff_smul (f : Newform N k) {p : ℕ} (hp :
     have hq' := f.isEigen ⟨q, hq.pos⟩ hqN
     simp only [PNat.mk_coe] at hq'
     -- the `Γ₀(N)` Hecke ring is commutative, so `T_q` commutes with `U_p = T_p`
-    rw [hG, ← Module.End.mul_apply, ← map_mul,
+    rw [hG, ← mul_apply_eq_comp, ← map_mul,
       HeckeCosetModule.mul_comm_of_antiInvolution ℤ (atkinLehnerAntiInvolution N)
         (atkinLehnerAntiInvolution_onHeckeCoset_eq_self N),
-      map_mul, Module.End.mul_apply, hq', map_smul]
+      map_mul, mul_apply_eq_comp, hq', map_smul]
   have hc := f.eq_qExpansion_coeff_one_smul_of_forall_prime_heckeTCuspNat_eq_smul G.2 hGeig
   rw [hGcoe] at hc
   -- the scalar is `a_p(f)`: the first coefficient of `U_p f`
@@ -154,6 +156,25 @@ theorem toEigenform_eigenvalue_eq_qExpansion_coeff (f : Newform N k) (n : ℕ+) 
   have h := f.toEigenform.qExpansion_coeff_eq_eigenvalue f.toEigenform_qExpansion_coeff_one n
   rw [toEigenform_toCuspForm] at h
   exact h.symm
+
+/-- **`Tₙ f = aₙ(f) • f` in `S_k(N, χ)` at every positive index `n`**, the indices sharing a
+factor with the level included: the eigenvector equation of `Newform.toEigenform`, read on the
+newform `f` itself. -/
+theorem heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_qExpansion_coeff_smul (f : Newform N k)
+    (n : ℕ+) :
+    heckeRingHomCuspCharSpace k f.χ (heckeTCompositeGamma0 N n) ⟨f.toCuspForm, f.mem_charSpace⟩ =
+      (qExpansion 1 f.toCuspForm).coeff n • ⟨f.toCuspForm, f.mem_charSpace⟩ := by
+  rw [← toEigenform_eigenvalue_eq_qExpansion_coeff]
+  -- transport the eigenvector equation along `toEigenform_χ` and `toEigenform_toCuspForm`
+  have key : ∀ {χ : (ZMod N)ˣ →* ℂˣ} {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+      (hF : F ∈ cuspFormCharSpace k χ), χ = f.χ → F = f.toCuspForm →
+      heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) ⟨F, hF⟩ =
+        f.toEigenform.eigenvalue n • ⟨F, hF⟩ →
+      heckeRingHomCuspCharSpace k f.χ (heckeTCompositeGamma0 N n) ⟨f.toCuspForm, f.mem_charSpace⟩ =
+        f.toEigenform.eigenvalue n • ⟨f.toCuspForm, f.mem_charSpace⟩ := by
+    rintro χ F hF rfl rfl h
+    exact h
+  exact key _ f.toEigenform_χ f.toEigenform_toCuspForm (f.toEigenform.isEigen n)
 
 /-- **`Tₚ f = aₚ(f) • f` at every prime `p`**, whether or not `p` divides the level: the good
 eigensystem of `f` and the bad-prime equation `Newform.heckeUCuspNat_eq_qExpansion_coeff_smul`

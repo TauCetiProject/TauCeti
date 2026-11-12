@@ -19,9 +19,9 @@ of `π` itself.
 
 There is no canonical conjugation on an abstract inner product space, so the construction takes an
 orthonormal basis `e` as data and conjugates each action operator by the coordinatewise conjugation
-`TauCeti.conjugation` of that basis, using `TauCeti.conjCLM`. Different bases give conjugates that
-are isomorphic representations, so the choice is immaterial for the uses downstream, which only
-need one conjugate to exist.
+`OrthonormalBasis.conjugation` of that basis, using `OrthonormalBasis.conjCLM`. Different bases
+give conjugates that are isomorphic representations, so the choice is immaterial for the uses
+downstream, which only need one conjugate to exist.
 
 ## Main definitions
 
@@ -42,7 +42,7 @@ The mathematical development follows Daniel Bump, *Lie Groups*, second edition, 
 
 public section
 
-open TauCeti ContRepresentation
+open ContRepresentation
 
 open scoped InnerProductSpace
 
@@ -55,7 +55,7 @@ variable {𝕜 ι G V : Type*} [RCLike 𝕜] [Fintype ι] [Monoid G] [Topologica
 action operators are conjugated entrywise in that basis. -/
 noncomputable def conjugate (π : ContRepresentation 𝕜 G V) : ContRepresentation 𝕜 G V :=
   .ofMonoidHom
-    { toFun g := conjCLM e (π g)
+    { toFun g := e.conjCLM (π g)
       map_one' := by simp
       map_mul' g h := by rw [map_mul, conjCLM_mul] }
 
@@ -64,7 +64,7 @@ variable (π : ContRepresentation 𝕜 G V)
 omit [TopologicalSpace G] in
 /-- The action operators of the conjugate representation. -/
 @[simp]
-theorem conjugate_apply (g : G) : conjugate e π g = conjCLM e (π g) :=
+theorem conjugate_apply (g : G) : conjugate e π g = e.conjCLM (π g) :=
   (rfl)
 
 omit [TopologicalSpace G] in
@@ -76,7 +76,7 @@ theorem conjugate_conjugate : conjugate e (conjugate e π) = π :=
 
 /-- The conjugate of a continuous representation has a continuous operator-valued action. -/
 theorem continuous_conjugate (hπ : Continuous π) : Continuous (conjugate e π) :=
-  (lipschitzWith_one_conjCLM e).continuous.comp hπ
+  e.conjCLM.continuous.comp hπ
 
 omit [TopologicalSpace G] in
 /-- The conjugate of a unitary representation is unitary. -/
@@ -90,7 +90,7 @@ coefficients stable under the involution of `C(G, 𝕜)`. -/
 theorem star_matrixCoeff_eq_matrixCoeff_conjugate (hπ : Continuous π) (v w : V) :
     star (matrixCoeff π hπ v w) =
       matrixCoeff (conjugate e π) (continuous_conjugate e π hπ)
-        (conjugation e v) (conjugation e w) := by
+        (e.conjugation v) (e.conjugation w) := by
   ext g
   simp [inner_conjugation_conjugation, RCLike.star_def]
 

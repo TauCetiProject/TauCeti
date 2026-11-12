@@ -67,11 +67,9 @@ The group of node permutations that the construction consumes is
 
 ## References
 
-The diagram automorphism attached to a symmetry of a pinned root datum is Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`: "Pinnings ... This is what makes 'the' graph
-automorphism well defined, so it is data, not a property", and it is the "isomorphism of root data"
-that the isomorphism theorem for pinned groups there lifts to a group scheme. Its consumer is
-milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`, the graph-twisted Steinberg maps. See
+The pinning is what makes the graph automorphism attached to a diagram symmetry well defined, so
+it is data rather than a property. It is the isomorphism of root data that the isomorphism theorem
+for pinned groups lifts to a group scheme, and it enters the graph-twisted Steinberg maps. See
 R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15, and
 N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §4.
 -/
@@ -293,6 +291,49 @@ weight map, so it permutes the simple coroots by `σ⁻¹`. -/
     (diagramAut ht hσ).toHom.coweightMap = (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap :=
   (rfl)
 
+/-- The actual coweight equivalence is precomposition by the node permutation. -/
+theorem diagramAut_coweightEquiv (hσ : σ ∈ t.diagramSymmetry) :
+    RootPairing.Equiv.coweightEquiv (diagramAut ht hσ) =
+      LinearEquiv.funCongrLeft ℤ ℤ σ := by
+  ext v i
+  simp only [RootPairing.Equiv.coweightEquiv_apply, diagramAut_coweightMap,
+    LinearEquiv.coe_coe]
+
+/-- The native transpose action precomposes cocharacter coordinates by the node permutation. -/
+@[simp]
+theorem diagramAut_coweightEquiv_apply (hσ : σ ∈ t.diagramSymmetry)
+    (v : Fin t.rank → ℤ) (i : Fin t.rank) :
+    RootPairing.Equiv.coweightEquiv (diagramAut ht hσ) v i = v (σ i) := by
+  rw [diagramAut_coweightEquiv]
+  rfl
+
+/-- The inverse native map is the forward action on simple-coroot coordinates. -/
+@[simp]
+theorem diagramAut_coweightEquiv_symm_apply (hσ : σ ∈ t.diagramSymmetry)
+    (v : Fin t.rank → ℤ) (i : Fin t.rank) :
+    (RootPairing.Equiv.coweightEquiv (diagramAut ht hσ)).symm v i = v (σ.symm i) := by
+  rw [diagramAut_coweightEquiv]
+  rfl
+
+/-- The native transpose map sends a simple coroot to the inverse-permuted simple coroot. -/
+theorem diagramAut_coweightEquiv_coroot (hσ : σ ∈ t.diagramSymmetry) (j : Fin t.rank) :
+    RootPairing.Equiv.coweightEquiv (diagramAut ht hσ)
+        ((t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht j)) =
+      (t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht (σ.symm j)) := by
+  ext i
+  simp only [diagramAut_coweightEquiv_apply, coroot_simpleIndex, Pi.single_apply]
+  congr 1
+  exact propext σ.eq_symm_apply.symm
+
+/-- The inverse native coweight map sends each simple coroot forward by the node permutation. -/
+theorem diagramAut_coweightEquiv_symm_coroot (hσ : σ ∈ t.diagramSymmetry) (j : Fin t.rank) :
+    (RootPairing.Equiv.coweightEquiv (diagramAut ht hσ)).symm
+        ((t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht j)) =
+      (t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht (σ j)) := by
+  apply (RootPairing.Equiv.coweightEquiv (diagramAut ht hσ)).injective
+  rw [LinearEquiv.apply_symm_apply, diagramAut_coweightEquiv_coroot,
+    Equiv.symm_apply_apply]
+
 /-- **An automorphism of the pinned datum is the diagram automorphism as soon as its weight map is**
 the coordinate permutation, since an automorphism of a root pairing is determined by that map. -/
 theorem eq_diagramAut {g : (t.simplyConnectedRootDatum ht).Aut} (hσ : σ ∈ t.diagramSymmetry)
@@ -374,6 +415,13 @@ automorphism. -/
 @[simp] theorem diagramAut_inv (hσ : σ ∈ t.diagramSymmetry) :
     diagramAut ht (t.diagramSymmetry.inv_mem hσ) = (diagramAut ht hσ)⁻¹ :=
   map_inv (diagramAutHom ht) ⟨σ, hσ⟩
+
+/-- The weight map of the inverse diagram automorphism is precomposition with the node permutation
+itself, so it permutes the fundamental weights by `σ⁻¹`. This is the pullback of characters along a
+pinned automorphism moving the simple root subgroups by `σ`. -/
+@[simp] theorem diagramAut_inv_weightMap (hσ : σ ∈ t.diagramSymmetry) :
+    (diagramAut ht hσ)⁻¹.toHom.weightMap = (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap := by
+  rw [← diagramAut_inv, diagramAut_weightMap, Equiv.Perm.inv_def, Equiv.symm_symm]
 
 /-- **A node permutation of finite order induces an automorphism satisfying the same relation.**
 This is the source of `γ ^ 2 = 1` for the order-two diagram symmetries of `Aₙ`, `Dₙ` and `E₆`, and

@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Basic
+public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.OffDiagonal
+public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Superlevel
 public import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
@@ -20,7 +24,9 @@ Marcinkiewicz interpolation theorem in the case of two finite endpoints; the cas
 Source and target exponents agree at both endpoints here: the hypotheses are weak type
 `(p₀, p₀)` and `(p₁, p₁)`, and the conclusion is strong type `(p, p)`. The off-diagonal theorem,
 which interpolates weak type `(p₀, q₀)` and `(p₁, q₁)` with `pᵢ ≤ qᵢ` into strong type `(p, q)`
-along the line `1 / q = (1 - θ) / q₀ + θ / q₁`, is not proved here.
+along the line `1 / q = (1 - θ) / q₀ + θ / q₁`, is
+`TauCeti.lintegral_rpow_le_of_rpow_mul_meas_lt_le_rpow` in
+`TauCeti.MeasureTheory.Integral.Marcinkiewicz.OffDiagonal`.
 
 ## The statements proved here
 
@@ -45,22 +51,19 @@ available for optimizing the total constant.
 
 ## The proof
 
-The layer cake formula (`TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`) converts the
-left-hand side into an integral in the height variable `t`. Multiplied by `t ^ (p - 1)`, the two
-terms of the hypothesis become the two truncated double integrals
+Both statements are the diagonal case `qᵢ = pᵢ`, `γ = 1` of their off-diagonal counterparts in
+`TauCeti.MeasureTheory.Integral.Marcinkiewicz.OffDiagonal`: the distributional estimate is
+`TauCeti.lintegral_rpow_le_of_meas_ofReal_lt_le_rpow` and the truncation argument is
+`TauCeti.meas_ofReal_lt_le_add_setLIntegral_rpow` at the level `c * t`. With these exponents the
+outer powers `qᵢ / pᵢ` are `1`, the height `c * t ^ γ` is `c * t`, and the constants
+`q c ^ (qᵢ (pᵢ - p) / pᵢ) / |q - qᵢ|` become `p c ^ (pᵢ - p) / |p - pᵢ|`.
 
-`∫⁻ t in (0, ∞), t ^ (p - p₀ - 1) * ∫⁻ x in {‖f‖ > c * t}, ‖f‖ ^ p₀ ∂μ`  and
-`∫⁻ t in (0, ∞), t ^ (p - p₁ - 1) * ∫⁻ x in {‖f‖ ≤ c * t}, ‖f‖ ^ p₁ ∂μ`.
-
-Tonelli's theorem exchanges the two integrations in each, and for a fixed `x` the inner integral
-in `t` is elementary: over the region where `c * t` stays below `‖f x‖` it is
-`TauCeti.lintegral_indicator_ofReal_rpow_Ioi`, which converges because `p₀ < p`, and over the
-complementary region it is `TauCeti.lintegral_indicator_le_ofReal_rpow_Ioi`, which converges
-because `p < p₁`. Both reassemble into a multiple of `‖f x‖ ^ p`.
-
-Tonelli's theorem needs `μ` to be s-finite, but the statement does not: both sides ignore the part
-of `μ` outside `{f > 0}`, and once `∫⁻ f ^ p ∂μ` is finite that part is σ-finite, by
-`TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`.
+The layer cake formula, Minkowski's integral inequality and the elementary integrals in the height
+variable `t` all enter through the off-diagonal estimate. For a fixed `x`, the integral in `t` over
+the region where `c * t` stays below `‖f x‖` converges because `p₀ < p`, and the integral over its
+complement converges because `p < p₁`. The two weighted truncated double integrals of the diagonal
+case are also available on their own: `TauCeti.lintegral_mul_setLIntegral_lt` evaluates the upper
+one and `TauCeti.lintegral_mul_setLIntegral_le_le` bounds the lower one.
 
 ## Bounded linear operators
 
@@ -164,22 +167,6 @@ private theorem lintegral_mul_setLIntegral_le_le_of_measurable [SFinite μ] (hf 
     ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
         ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ ≤
       ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) * ∫⁻ x, f x ^ (q + (s + 1)) ∂μ := by
-  have hs1 : s + 1 < 0 := by linarith
-  -- The pointwise step, which is an equality away from the two extreme values.
-  have hmul : ∀ z : ℝ≥0∞, z ^ (s + 1) * z ^ q ≤ z ^ (q + (s + 1)) := by
-    intro z
-    rcases eq_or_ne z 0 with rfl | hz0
-    · by_cases hq : 0 < q
-      · rw [ENNReal.zero_rpow_of_pos hq, mul_zero]
-        exact zero_le
-      · have hsum : q + (s + 1) < 0 := by linarith
-        rw [ENNReal.zero_rpow_of_neg hsum]
-        exact le_top
-    rcases eq_or_ne z ∞ with rfl | hztop
-    · rw [ENNReal.top_rpow_of_neg hs1, zero_mul]
-      exact zero_le
-    · conv_rhs => rw [ENNReal.rpow_add _ _ hz0 hztop]
-      exact le_of_eq (mul_comm _ _)
   have hR : MeasurableSet {z : ℝ × α | f z.2 ≤ ENNReal.ofReal (c * z.1)} :=
     measurableSet_le (hf.comp measurable_snd) ((measurable_fst.const_mul c).ennreal_ofReal)
   rw [lintegral_mul_setLIntegral_eq (κ := volume.restrict (Ioi (0 : ℝ)))
@@ -189,7 +176,7 @@ private theorem lintegral_mul_setLIntegral_le_le_of_measurable [SFinite μ] (hf 
     ← lintegral_const_mul _ (hf.pow_const _)]
   refine lintegral_mono fun x => ?_
   rw [lintegral_indicator_le_ofReal_rpow_Ioi hs hc (f x), mul_assoc]
-  exact mul_le_mul_right (hmul (f x)) _
+  exact mul_le_mul_right ((ENNReal.le_rpow_add (f x) (s + 1) q).trans_eq (by rw [add_comm])) _
 
 /-- **The weighted mass of the part of `f` below the height `c * t`.** For `s < -1` the weight
 `t ^ s` is integrable at infinity, and the double integral of the lower truncations of `f ^ q`
@@ -229,184 +216,6 @@ theorem lintegral_mul_setLIntegral_le_le [SFinite μ] (hf : AEMeasurable f μ) (
       exact congrArg (ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) * ·)
         (lintegral_congr_ae (hfg.fun_comp fun z => z ^ (q + (s + 1)))).symm
 
-/-- The interpolation estimate for a measurable `f` and an s-finite `μ`, which is the generality
-in which Tonelli's theorem is available; both hypotheses are removed below. -/
-private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable_of_sFinite [SFinite μ]
-    (hf : Measurable f) (hu : AEMeasurable u ν) (hp₀ : 0 < p₀) (hlt₀ : p₀ < p) (hlt₁ : p < p₁)
-    (hc : 0 < c)
-    (h : ∀ t : ℝ, 0 < t → ν {y | ENNReal.ofReal t < u y} ≤
-      A₀ * ENNReal.ofReal (t ^ (-p₀)) * ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ +
-        A₁ * ENNReal.ofReal (t ^ (-p₁)) *
-          ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ) :
-    ∫⁻ y, u y ^ p ∂ν ≤
-      (ENNReal.ofReal (p * c ^ (p₀ - p) / (p - p₀)) * A₀ +
-        ENNReal.ofReal (p * c ^ (p₁ - p) / (p₁ - p)) * A₁) * ∫⁻ x, f x ^ p ∂μ := by
-  have hp : (0 : ℝ) < p := hp₀.trans hlt₀
-  have hR₀ : MeasurableSet {z : ℝ × α | ENNReal.ofReal (c * z.1) < f z.2} :=
-    measurableSet_lt ((measurable_fst.const_mul c).ennreal_ofReal) (hf.comp measurable_snd)
-  have hR₁ : MeasurableSet {z : ℝ × α | f z.2 ≤ ENNReal.ofReal (c * z.1)} :=
-    measurableSet_le (hf.comp measurable_snd) ((measurable_fst.const_mul c).ennreal_ofReal)
-  have hI₀ : Measurable fun t => ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ :=
-    measurable_setLIntegral_of_measurableSet (R := fun t x => ENNReal.ofReal (c * t) < f x) hR₀
-      (hf.pow_const p₀).aemeasurable
-  have hI₁ : Measurable fun t => ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ :=
-    measurable_setLIntegral_of_measurableSet (R := fun t x => f x ≤ ENNReal.ofReal (c * t)) hR₁
-      (hf.pow_const p₁).aemeasurable
-  have hw₀ : Measurable fun t : ℝ => ENNReal.ofReal (t ^ (p - p₀ - 1)) :=
-    (measurable_id.pow measurable_const).ennreal_ofReal
-  have hw₁ : Measurable fun t : ℝ => ENNReal.ofReal (t ^ (p - p₁ - 1)) :=
-    (measurable_id.pow measurable_const).ennreal_ofReal
-  -- Multiplying the hypothesis by `t ^ (p - 1)` absorbs the two negative powers of the height
-  -- into the two weights of the truncated integrals.
-  have hkey : ∀ t ∈ Ioi (0 : ℝ),
-      ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1)) ≤
-        A₀ * (ENNReal.ofReal (t ^ (p - p₀ - 1)) *
-            ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ) +
-          A₁ * (ENNReal.ofReal (t ^ (p - p₁ - 1)) *
-            ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ) := by
-    intro t ht
-    have ht' : (0 : ℝ) < t := ht
-    have hpow : ∀ r : ℝ, ENNReal.ofReal (t ^ (-r)) * ENNReal.ofReal (t ^ (p - 1)) =
-        ENNReal.ofReal (t ^ (p - r - 1)) := by
-      intro r
-      rw [← ENNReal.ofReal_mul (Real.rpow_nonneg ht'.le _), ← Real.rpow_add ht']
-      congr 2
-      ring
-    calc ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1))
-        ≤ (A₀ * ENNReal.ofReal (t ^ (-p₀)) *
-              ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ +
-            A₁ * ENNReal.ofReal (t ^ (-p₁)) *
-              ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ) *
-            ENNReal.ofReal (t ^ (p - 1)) := mul_le_mul_left (h t ht') _
-      _ = A₀ * (ENNReal.ofReal (t ^ (-p₀)) * ENNReal.ofReal (t ^ (p - 1))) *
-              ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ +
-            A₁ * (ENNReal.ofReal (t ^ (-p₁)) * ENNReal.ofReal (t ^ (p - 1))) *
-              ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ := by ring
-      _ = _ := by rw [hpow p₀, hpow p₁]; ring
-  -- The two truncated double integrals, evaluated by the two halves of the truncation estimate.
-  have hlow : ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ (p - p₀ - 1)) *
-      ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ ≤
-      ENNReal.ofReal (c ^ (p₀ - p) / (p - p₀)) * ∫⁻ x, f x ^ p ∂μ := by
-    have hmain := (lintegral_mul_setLIntegral_lt (μ := μ) (f := f) (q := p₀)
-      (s := p - p₀ - 1) (c := c) hf.aemeasurable hp₀.le (by linarith) hc).le
-    have hneg : -(p - p₀) = p₀ - p := by ring
-    have hden : p - p₀ - 1 + 1 = p - p₀ := by ring
-    have hexp : p₀ + (p - p₀) = p := by ring
-    simpa only [hden, hneg, hexp] using hmain
-  have hhigh : ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ (p - p₁ - 1)) *
-      ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ ≤
-      ENNReal.ofReal (c ^ (p₁ - p) / (p₁ - p)) * ∫⁻ x, f x ^ p ∂μ := by
-    have hmain := lintegral_mul_setLIntegral_le_le (μ := μ) (f := f) (q := p₁)
-      (s := p - p₁ - 1) (c := c) hf.aemeasurable (by linarith) hc
-    have hnorm : -(p - p₁ - 1 + 1) = p₁ - p := by ring
-    have hexp : p₁ + (p - p₁ - 1 + 1) = p := by ring
-    simpa only [hnorm, hexp] using hmain
-  have hg₀ : Measurable fun t : ℝ => ENNReal.ofReal (t ^ (p - p₀ - 1)) *
-      ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ := hw₀.mul hI₀
-  have hg₁ : Measurable fun t : ℝ => ENNReal.ofReal (t ^ (p - p₁ - 1)) *
-      ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ := hw₁.mul hI₁
-  have hm₀ : Measurable fun t : ℝ => A₀ * (ENNReal.ofReal (t ^ (p - p₀ - 1)) *
-      ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ) := measurable_const.mul hg₀
-  rw [lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν hu hp]
-  calc ENNReal.ofReal p *
-        ∫⁻ t in Ioi (0 : ℝ), ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1))
-      ≤ ENNReal.ofReal p * ∫⁻ t in Ioi (0 : ℝ),
-          (A₀ * (ENNReal.ofReal (t ^ (p - p₀ - 1)) *
-              ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ) +
-            A₁ * (ENNReal.ofReal (t ^ (p - p₁ - 1)) *
-              ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ)) := by
-        refine mul_le_mul_right (lintegral_mono_ae ?_) _
-        filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht using hkey t ht
-    _ = ENNReal.ofReal p *
-          ((A₀ * ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ (p - p₀ - 1)) *
-              ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ) +
-            (A₁ * ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ (p - p₁ - 1)) *
-              ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ)) := by
-        rw [lintegral_add_left hm₀, lintegral_const_mul _ hg₀, lintegral_const_mul _ hg₁]
-    _ ≤ ENNReal.ofReal p *
-          ((A₀ * (ENNReal.ofReal (c ^ (p₀ - p) / (p - p₀)) * ∫⁻ x, f x ^ p ∂μ)) +
-            (A₁ * (ENNReal.ofReal (c ^ (p₁ - p) / (p₁ - p)) * ∫⁻ x, f x ^ p ∂μ))) :=
-        mul_le_mul_right
-          (add_le_add (mul_le_mul_right hlow _) (mul_le_mul_right hhigh _)) _
-    _ = _ := by
-        have hcoef₀ : p * c ^ (p₀ - p) / (p - p₀) =
-            p * (c ^ (p₀ - p) / (p - p₀)) := by ring
-        have hcoef₁ : p * c ^ (p₁ - p) / (p₁ - p) =
-            p * (c ^ (p₁ - p) / (p₁ - p)) := by ring
-        rw [hcoef₀, hcoef₁]
-        rw [ENNReal.ofReal_mul hp.le, ENNReal.ofReal_mul hp.le]
-        ring
-
-/-- The interpolation estimate for a measurable `f` and an arbitrary measure `μ`.
-
-Only the part of `μ` carried by `{f > 0}` enters either side, and once `f` has finite `L^p` norm
-that part is σ-finite by `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`. So the
-s-finite case applies to `μ` restricted to `{f > 0}`, after the two degenerate cases — two
-vanishing endpoint constants and an infinite right-hand side — are disposed of. -/
-private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable
-    (hf : Measurable f) (hu : AEMeasurable u ν) (hp₀ : 0 < p₀) (hlt₀ : p₀ < p) (hlt₁ : p < p₁)
-    (hc : 0 < c)
-    (h : ∀ t : ℝ, 0 < t → ν {y | ENNReal.ofReal t < u y} ≤
-      A₀ * ENNReal.ofReal (t ^ (-p₀)) * ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ +
-        A₁ * ENNReal.ofReal (t ^ (-p₁)) *
-          ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ) :
-    ∫⁻ y, u y ^ p ∂ν ≤
-      (ENNReal.ofReal (p * c ^ (p₀ - p) / (p - p₀)) * A₀ +
-        ENNReal.ofReal (p * c ^ (p₁ - p) / (p₁ - p)) * A₁) * ∫⁻ x, f x ^ p ∂μ := by
-  have hp : (0 : ℝ) < p := hp₀.trans hlt₀
-  have hp₁ : (0 : ℝ) < p₁ := hp.trans hlt₁
-  have hK₀ : (0 : ℝ) < p * c ^ (p₀ - p) / (p - p₀) := by
-    positivity
-  have hK₁ : (0 : ℝ) < p * c ^ (p₁ - p) / (p₁ - p) := by
-    positivity
-  rcases eq_or_ne (ENNReal.ofReal (p * c ^ (p₀ - p) / (p - p₀)) * A₀ +
-      ENNReal.ofReal (p * c ^ (p₁ - p) / (p₁ - p)) * A₁) 0 with hA | hA
-  · -- Both endpoint constants vanish, and the hypothesis already forces `u` to vanish.
-    obtain ⟨hz₀, hz₁⟩ := add_eq_zero.1 hA
-    have hA₀ : A₀ = 0 :=
-      (mul_eq_zero.1 hz₀).resolve_left (ENNReal.ofReal_pos.2 hK₀).ne'
-    have hA₁ : A₁ = 0 :=
-      (mul_eq_zero.1 hz₁).resolve_left (ENNReal.ofReal_pos.2 hK₁).ne'
-    have hzero := lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable_of_sFinite
-      (μ := (0 : Measure α)) (A₀ := A₀) (A₁ := A₁) hf hu hp₀ hlt₀ hlt₁ hc
-      fun t ht => by simpa [hA₀, hA₁] using h t ht
-    simpa [hA] using hzero
-  rcases eq_or_ne (∫⁻ x, f x ^ p ∂μ) ∞ with htop | htop
-  · -- The right-hand side is infinite.
-    rw [htop, ENNReal.mul_top hA]
-    exact le_top
-  -- `μ` restricted to `{f > 0}` is σ-finite, so in particular s-finite.
-  have hσ : SigmaFinite (μ.restrict {x | 0 < f x}) :=
-    sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top hf.aemeasurable hp htop
-  have hpos : MeasurableSet {x | 0 < f x} := measurableSet_lt measurable_const hf
-  -- A positive power of `f` vanishes off `{f > 0}`, so no truncated integral sees the complement.
-  have key : ∀ r : ℝ, 0 < r → ∀ S : Set α,
-      ∫⁻ x in S ∩ {x | 0 < f x}, f x ^ r ∂μ = ∫⁻ x in S, f x ^ r ∂μ := by
-    intro r hr S
-    have hsupp : Function.support (fun x => f x ^ r) ⊆ {x | 0 < f x} := by
-      refine Function.support_subset_iff'.2 fun x hx => ?_
-      have hx0 : f x = 0 := by simpa [Set.mem_ofPred, nonpos_iff_eq_zero] using hx
-      simp [hx0, ENNReal.zero_rpow_of_pos hr]
-    rw [Set.inter_comm, ← Measure.restrict_restrict hpos]
-    exact setLIntegral_eq_of_support_subset hsupp
-  have e₀ : ∀ t : ℝ, ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀
-        ∂(μ.restrict {x | 0 < f x}) =
-      ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ := fun t => by
-    rw [Measure.restrict_restrict (measurableSet_lt measurable_const hf)]
-    exact key p₀ hp₀ _
-  have e₁ : ∀ t : ℝ, ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁
-        ∂(μ.restrict {x | 0 < f x}) =
-      ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ := fun t => by
-    rw [Measure.restrict_restrict (measurableSet_le hf measurable_const)]
-    exact key p₁ hp₁ _
-  have ep : ∫⁻ x, f x ^ p ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x, f x ^ p ∂μ := by
-    have := key p hp Set.univ
-    rwa [Set.univ_inter, Measure.restrict_univ] at this
-  have hmain := lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable_of_sFinite
-    (μ := μ.restrict {x | 0 < f x}) hf hu hp₀ hlt₀ hlt₁ hc fun t ht => by
-      rw [e₀ t, e₁ t]; exact h t ht
-  rwa [ep] at hmain
-
 /-- **Marcinkiewicz interpolation between two finite exponents**, in distributional form.
 
 Suppose that for every height `t > 0` the superlevel set `{u > t}` obeys the two-sided bound
@@ -433,30 +242,15 @@ theorem lintegral_rpow_le_of_meas_ofReal_lt_le
     ∫⁻ y, u y ^ p ∂ν ≤
       (ENNReal.ofReal (p * c ^ (p₀ - p) / (p - p₀)) * A₀ +
         ENNReal.ofReal (p * c ^ (p₁ - p) / (p₁ - p)) * A₁) * ∫⁻ x, f x ^ p ∂μ := by
-  have hae := hf.ae_eq_mk
-  have hpow : ∀ r : ℝ, (fun x => f x ^ r) =ᵐ[μ] fun x => hf.mk f x ^ r := fun r =>
-    hae.mono fun x hx => congrArg (fun z : ℝ≥0∞ => z ^ r) hx
-  have hset₀ : ∀ a : ℝ≥0∞, ∫⁻ x in {x | a < f x}, f x ^ p₀ ∂μ =
-      ∫⁻ x in {x | a < hf.mk f x}, hf.mk f x ^ p₀ ∂μ := by
-    intro a
-    have hsets : {x | a < f x} =ᵐ[μ] {x | a < hf.mk f x} := by
-      filter_upwards [hae] with x hx
-      exact congrArg (fun z : ℝ≥0∞ => a < z) hx
-    rw [Measure.restrict_congr_set hsets]
-    exact lintegral_congr_ae (ae_restrict_of_ae (hpow p₀))
-  have hset₁ : ∀ a : ℝ≥0∞, ∫⁻ x in {x | f x ≤ a}, f x ^ p₁ ∂μ =
-      ∫⁻ x in {x | hf.mk f x ≤ a}, hf.mk f x ^ p₁ ∂μ := by
-    intro a
-    have hsets : {x | f x ≤ a} =ᵐ[μ] {x | hf.mk f x ≤ a} := by
-      filter_upwards [hae] with x hx
-      exact congrArg (fun z : ℝ≥0∞ => z ≤ a) hx
-    rw [Measure.restrict_congr_set hsets]
-    exact lintegral_congr_ae (ae_restrict_of_ae (hpow p₁))
-  rw [lintegral_congr_ae (hpow p)]
-  refine lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable hf.measurable_mk hu hp₀ hlt₀ hlt₁ hc
-    fun t ht => ?_
-  rw [← hset₀, ← hset₁]
-  exact h t ht
+  have hp₁ : 0 < p₁ := hp₀.trans (hlt₀.trans hlt₁)
+  have key := lintegral_rpow_le_of_meas_ofReal_lt_le_rpow (q₀ := p₀) (q₁ := p₁) (γ := 1) hf hu
+    hp₀ hlt₀ hlt₁ le_rfl le_rfl (by rw [div_one, mul_div_cancel_left₀ _ hp₀.ne'])
+    (by rw [div_one, mul_div_cancel_left₀ _ hp₁.ne']) hc fun t ht => by
+      simpa only [Real.rpow_one, div_self hp₀.ne', div_self hp₁.ne', ENNReal.rpow_one] using h t ht
+  rw [mul_div_cancel_left₀ _ hp₀.ne', mul_div_cancel_left₀ _ hp₁.ne', abs_of_pos (sub_pos.2 hlt₀),
+    abs_of_neg (sub_neg.2 hlt₁), neg_sub, div_self hp₀.ne', div_self hp₁.ne', ENNReal.rpow_one,
+    ← add_mul] at key
+  exact key
 
 section Operator
 
@@ -489,93 +283,11 @@ theorem meas_ofReal_lt_le_add_setLIntegral (hv : AEMeasurable v μ) (ht : 0 < t)
           ∫⁻ x in {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ}, ‖v x‖ₑ ^ p₀ ∂μ +
         A₁ * ENNReal.ofReal (e ^ (-p₁)) * ENNReal.ofReal (t ^ (-p₁)) *
           ∫⁻ x in {x | ‖v x‖ₑ ≤ ENNReal.ofReal (c * t)}, ‖v x‖ₑ ^ p₁ ∂μ := by
-  set g : α → G := hv.mk v with _
-  have hvg : v =ᵐ[μ] g := hv.ae_eq_mk
-  have hgmeas : Measurable g := hv.measurable_mk
-  set S : Set α := {x | ENNReal.ofReal (c * t) < ‖g x‖ₑ} with hSdef
-  have hSmeas : MeasurableSet S := measurableSet_lt measurable_const hgmeas.enorm
-  set g₁ : α → G := S.indicator v with hg₁def
-  set g₂ : α → G := Sᶜ.indicator v with hg₂def
-  have hg₁meas : AEMeasurable g₁ μ := hv.indicator hSmeas
-  have hg₂meas : AEMeasurable g₂ μ := hv.indicator hSmeas.compl
-  have hTv : T v ≤ᵐ[ν] T g₁ + T g₂ := by
-    have hsplit : g₁ + g₂ = v := by rw [hg₁def, hg₂def, Set.indicator_self_add_compl]
-    rw [← hsplit]
-    exact hadd g₁ g₂ hg₁meas hg₂meas
-  -- The superlevel set of `T v` splits between the two pieces.
-  have hincl : {y | ENNReal.ofReal t < T v y} ≤ᵐ[ν]
-      {y | ENNReal.ofReal (d * t) < T g₁ y} ∪ {y | ENNReal.ofReal (e * t) < T g₂ y} := by
-    filter_upwards [hTv] with y hsum hy
-    rcases lt_or_ge (ENNReal.ofReal (d * t)) (T g₁ y) with h₁ | h₁
-    · exact Or.inl (Set.mem_ofPred.2 h₁)
-    rcases lt_or_ge (ENNReal.ofReal (e * t)) (T g₂ y) with h₂ | h₂
-    · exact Or.inr (Set.mem_ofPred.2 h₂)
-    have hy' : ENNReal.ofReal t < T v y := hy
-    have hle : T v y ≤ ENNReal.ofReal t :=
-      calc T v y ≤ ENNReal.ofReal (d * t) + ENNReal.ofReal (e * t) :=
-            hsum.trans (add_le_add h₁ h₂)
-        _ = ENNReal.ofReal (d * t + e * t) :=
-            (ENNReal.ofReal_add (by positivity) (by positivity)).symm
-        _ ≤ ENNReal.ofReal t := ENNReal.ofReal_le_ofReal (by nlinarith)
-    exact absurd (hy'.trans_le hle) (lt_irrefl _)
-  -- Each weak-type bound turns into a bound on the measure of a superlevel set.
-  have hdiv : ∀ (r q : ℝ) (B : ℝ≥0∞) (w : α → G) (_ : AEMeasurable w μ) (_ : 0 < q),
-      (∀ (h : α → G), AEMeasurable h μ → ∀ r' : ℝ≥0∞,
-        r' ^ q * ν {y | r' < T h y} ≤ B * ∫⁻ x, ‖h x‖ₑ ^ q ∂μ) → 0 < r →
-      ν {y | ENNReal.ofReal r < T w y} ≤
-        B * ENNReal.ofReal (r ^ (-q)) * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ := by
-    intro r q B w hw hq hweak hr
-    have hpos : (0 : ℝ≥0∞) < ENNReal.ofReal r ^ q :=
-      ENNReal.rpow_pos (ENNReal.ofReal_pos.2 hr) ENNReal.ofReal_ne_top
-    have htop : ENNReal.ofReal r ^ q ≠ ∞ :=
-      ENNReal.rpow_ne_top_of_nonneg hq.le ENNReal.ofReal_ne_top
-    have hinv : (ENNReal.ofReal r ^ q)⁻¹ = ENNReal.ofReal (r ^ (-q)) := by
-      rw [← ENNReal.rpow_neg, ENNReal.ofReal_rpow_of_pos hr]
-    calc ν {y | ENNReal.ofReal r < T w y}
-        = (ENNReal.ofReal r ^ q)⁻¹ *
-            (ENNReal.ofReal r ^ q * ν {y | ENNReal.ofReal r < T w y}) := by
-          rw [← mul_assoc, ENNReal.inv_mul_cancel hpos.ne' htop, one_mul]
-      _ ≤ (ENNReal.ofReal r ^ q)⁻¹ * (B * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ) :=
-          mul_le_mul_right (hweak w hw _) _
-      _ = B * ENNReal.ofReal (r ^ (-q)) * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ := by rw [hinv]; ring
-  -- The truncated pieces have the truncated integrals of `v` as their norms.
-  have hint : ∀ (q : ℝ), 0 < q → ∀ (R : Set α), MeasurableSet R →
-      ∫⁻ x, ‖R.indicator v x‖ₑ ^ q ∂μ = ∫⁻ x in R, ‖v x‖ₑ ^ q ∂μ := by
-    intro q hq R hR
-    rw [← lintegral_indicator hR]
-    refine lintegral_congr fun x => ?_
-    by_cases hx : x ∈ R
-    · rw [Set.indicator_of_mem hx, Set.indicator_of_mem hx]
-    · rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem hx, enorm_zero,
-        ENNReal.zero_rpow_of_pos hq]
-  have henorm : (fun x => ‖v x‖ₑ) =ᵐ[μ] fun x => ‖g x‖ₑ := hvg.mono fun _ hx => congrArg enorm hx
-  have hS₀ : ∫⁻ x in S, ‖v x‖ₑ ^ p₀ ∂μ =
-      ∫⁻ x in {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ}, ‖v x‖ₑ ^ p₀ ∂μ := by
-    have hsets : {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ} =ᵐ[μ] S := by
-      filter_upwards [henorm] with x hx
-      exact congrArg (fun z : ℝ≥0∞ => ENNReal.ofReal (c * t) < z) hx
-    rw [Measure.restrict_congr_set hsets]
-  have hS₁ : ∫⁻ x in Sᶜ, ‖v x‖ₑ ^ p₁ ∂μ =
-      ∫⁻ x in {x | ‖v x‖ₑ ≤ ENNReal.ofReal (c * t)}, ‖v x‖ₑ ^ p₁ ∂μ := by
-    have hsets : {x | ‖v x‖ₑ ≤ ENNReal.ofReal (c * t)} =ᵐ[μ] Sᶜ := by
-      filter_upwards [henorm] with x hx
-      simp only [hSdef, Set.mem_compl_iff, Set.mem_ofPred, not_lt, hx]
-    rw [Measure.restrict_congr_set hsets]
-  calc ν {y | ENNReal.ofReal t < T v y}
-      ≤ ν ({y | ENNReal.ofReal (d * t) < T g₁ y} ∪ {y | ENNReal.ofReal (e * t) < T g₂ y}) :=
-        measure_mono_ae hincl
-    _ ≤ ν {y | ENNReal.ofReal (d * t) < T g₁ y} + ν {y | ENNReal.ofReal (e * t) < T g₂ y} :=
-        measure_union_le _ _
-    _ ≤ A₀ * ENNReal.ofReal ((d * t) ^ (-p₀)) * ∫⁻ x, ‖g₁ x‖ₑ ^ p₀ ∂μ +
-          A₁ * ENNReal.ofReal ((e * t) ^ (-p₁)) * ∫⁻ x, ‖g₂ x‖ₑ ^ p₁ ∂μ :=
-        add_le_add (hdiv _ _ _ _ hg₁meas hp₀ hweak₀ (by positivity))
-          (hdiv _ _ _ _ hg₂meas hp₁ hweak₁ (by positivity))
-    _ = _ := by
-        rw [hint p₀ hp₀ S hSmeas, hint p₁ hp₁ Sᶜ hSmeas.compl, hS₀, hS₁,
-          Real.mul_rpow hd.le ht.le, Real.mul_rpow he.le ht.le,
-          ENNReal.ofReal_mul (Real.rpow_nonneg hd.le _),
-          ENNReal.ofReal_mul (Real.rpow_nonneg he.le _)]
-        ring
+  simpa only [div_self hp₀.ne', div_self hp₁.ne', ENNReal.rpow_one] using
+    meas_ofReal_lt_le_add_setLIntegral_rpow (q₀ := p₀) (q₁ := p₁) hv ht hp₀ hp₁ hd he hde
+      (ENNReal.ofReal (c * t)) hadd
+      (fun g hg r => by simpa only [div_self hp₀.ne', ENNReal.rpow_one] using hweak₀ g hg r)
+      (fun g hg r => by simpa only [div_self hp₁.ne', ENNReal.rpow_one] using hweak₁ g hg r)
 
 /-- **Marcinkiewicz interpolation at operator level**, between two finite exponents.
 
@@ -595,7 +307,7 @@ theorem lintegral_rpow_le_of_rpow_mul_meas_lt_le (hv : AEMeasurable v μ)
       (ENNReal.ofReal (p * c ^ (p₀ - p) / (p - p₀)) * (A₀ * ENNReal.ofReal (d ^ (-p₀))) +
         ENNReal.ofReal (p * c ^ (p₁ - p) / (p₁ - p)) * (A₁ * ENNReal.ofReal (e ^ (-p₁)))) *
         ∫⁻ x, ‖v x‖ₑ ^ p ∂μ :=
-  lintegral_rpow_le_of_meas_ofReal_lt_le hv.enorm hTv hp₀ hlt₀ hlt₁ hc fun _t ht =>
+  lintegral_rpow_le_of_meas_ofReal_lt_le hv.eNorm hTv hp₀ hlt₀ hlt₁ hc fun _t ht =>
     meas_ofReal_lt_le_add_setLIntegral hv ht hp₀ (hp₀.trans (hlt₀.trans hlt₁)) hd he hde hadd
       hweak₀ hweak₁
 
@@ -632,7 +344,7 @@ private theorem meas_lt_enorm_le_add_setLIntegral (T : Lp E p₁ μ →L[𝕜] L
   have hp₁0 : p₁ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p₁)).ne'
   have hq₁ : 0 < p₁.toReal := ENNReal.toReal_pos hp₁0 hp₁
   set S := {x | s < ‖f x‖ₑ}
-  have hS : MeasurableSet S := measurableSet_lt measurable_const (Lp.stronglyMeasurable f).enorm
+  have hS : MeasurableSet S := measurableSet_lt measurable_const (Lp.stronglyMeasurable f).eNorm
   have hm₁ := (Lp.memLp f).indicator hS.nullMeasurableSet
   have hm₂ := (Lp.memLp f).indicator hS.compl.nullMeasurableSet
   set f₁ := hm₁.toLp (S.indicator f)
@@ -643,38 +355,21 @@ private theorem meas_lt_enorm_le_add_setLIntegral (T : Lp E p₁ μ →L[𝕜] L
     refine Lp.ext ?_
     filter_upwards [Lp.coeFn_add f₁ f₂, hm₁.coeFn_toLp, hm₂.coeFn_toLp] with x hx h₁ h₂
     rw [hx, Pi.add_apply, h₁, h₂, indicator_self_add_compl_apply]
-  -- The `q`-th power integral of a truncation of `f` is a truncated integral of `‖f‖ ^ q`.
-  have hint {R : Set α} (hR : MeasurableSet R) {g : α → E} (hg : g =ᵐ[μ] R.indicator f)
-      {q : ℝ} (hq : 0 < q) : ∫⁻ x, ‖g x‖ₑ ^ q ∂μ = ∫⁻ x in R, ‖f x‖ₑ ^ q ∂μ := by
-    rw [← lintegral_indicator hR]
-    refine lintegral_congr_ae ?_
-    filter_upwards [hg] with x hx
-    by_cases hxR : x ∈ R <;> simp [hx, hxR, ENNReal.zero_rpow_of_pos hq]
-  -- A bound on `(s / 2) ^ q * ν X` bounds `ν X`.
-  have hs2 : s / 2 ≠ 0 := ENNReal.div_ne_zero.2 ⟨hs, ENNReal.ofNat_ne_top⟩
-  have hs2' : s / 2 ≠ ∞ := ENNReal.div_ne_top hs' two_ne_zero
-  have hdiv {q : ℝ} (hq : 0 < q) {X : Set β} {B : ℝ≥0∞} (h : (s / 2) ^ q * ν X ≤ B) :
-      ν X ≤ 2 ^ q * (s ^ q)⁻¹ * B := by
-    rw [ENNReal.mul_le_iff_le_inv (ENNReal.rpow_pos (pos_iff_ne_zero.2 hs2) hs2').ne'
-      (ENNReal.rpow_ne_top_of_nonneg hq.le hs2')] at h
-    convert h using 2
-    rw [ENNReal.div_rpow_of_nonneg _ _ hq.le, ENNReal.inv_div
-      (Or.inl (ENNReal.rpow_ne_top_of_nonneg hq.le ENNReal.ofNat_ne_top))
-      (Or.inl (ENNReal.rpow_pos two_pos ENNReal.ofNat_ne_top).ne'), div_eq_mul_inv]
   -- The part of `f` above the height `s`, through the weak-type bound.
   have h₁ : ν {y | s / 2 < ‖T f₁ y‖ₑ} ≤
       2 ^ p₀.toReal * (s ^ p₀.toReal)⁻¹ * (A * ∫⁻ x in S, ‖f x‖ₑ ^ p₀.toReal ∂μ) := by
-    refine hdiv hq₀ ?_
-    rw [← hint hS hm₁.coeFn_toLp hq₀]
+    refine ENNReal.le_two_rpow_mul_inv_rpow_mul hs hs' ?_
+    rw [← lintegral_enorm_rpow_eq_setLIntegral hS hm₁.coeFn_toLp hq₀]
     exact hweak f₁ (s / 2)
   -- The part of `f` below the height `s`, through Chebyshev's inequality and the `L^{p₁}` bound.
   have h₂ : ν {y | s / 2 ≤ ‖T f₂ y‖ₑ} ≤
       2 ^ p₁.toReal * (s ^ p₁.toReal)⁻¹ *
         (‖T‖ₑ ^ p₁.toReal * ∫⁻ x in Sᶜ, ‖f x‖ₑ ^ p₁.toReal ∂μ) := by
-    refine hdiv hq₁ ((mul_meas_ge_le_pow_eLpNorm' (μ := ν) hp₁0 hp₁ _).trans ?_)
-    rw [← Lp.enorm_def, ← hint hS.compl hm₂.coeFn_toLp hq₁,
-      lintegral_rpow_enorm_eq_rpow_eLpNorm' hq₁, ← eLpNorm_eq_eLpNorm' hp₁0 hp₁
-        (Lp.aestronglyMeasurable _), ← Lp.enorm_def, ← ENNReal.mul_rpow_of_nonneg _ _ hq₁.le]
+    refine ENNReal.le_two_rpow_mul_inv_rpow_mul hs hs'
+      ((mul_meas_ge_le_pow_eLpNorm' (μ := ν) hp₁0 hp₁ _).trans ?_)
+    rw [← Lp.eNorm_def, ← lintegral_enorm_rpow_eq_setLIntegral hS.compl hm₂.coeFn_toLp hq₁,
+      lintegral_rpow_eNorm_eq_rpow_eLpNorm' hq₁, ← eLpNorm_eq_eLpNorm' hp₁0 hp₁
+        (Lp.aestronglyMeasurable _), ← Lp.eNorm_def, ← ENNReal.mul_rpow_of_nonneg _ _ hq₁.le]
     exact ENNReal.rpow_le_rpow (T.le_opENorm _) hq₁.le
   have hSc : Sᶜ = {x | ‖f x‖ₑ ≤ s} := by
     ext x
@@ -687,7 +382,7 @@ private theorem meas_lt_enorm_le_add_setLIntegral (T : Lp E p₁ μ →L[𝕜] L
     simp only [mem_union, mem_ofPred_eq, not_or, not_lt, not_le] at hnot hlt
     refine (hlt.trans_le ?_).false
     rw [hTf, hy, Pi.add_apply, ← ENNReal.add_halves s]
-    exact (enorm_add_le _ _).trans (add_le_add hnot.1 hnot.2.le)
+    exact (eNorm_add_le _ _).trans (add_le_add hnot.1 hnot.2.le)
   calc ν {y | s < ‖T f y‖ₑ}
       ≤ ν {y | s / 2 < ‖T f₁ y‖ₑ} + ν {y | s / 2 ≤ ‖T f₂ y‖ₑ} :=
         (measure_mono_ae hsub).trans (measure_union_le _ _)
@@ -722,8 +417,8 @@ theorem eLpNorm_le_of_rpow_mul_meas_lt_le (T : Lp E p₁ μ →L[𝕜] Lp F p₁
   have hlt₀' : p₀.toReal < p.toReal := ENNReal.toReal_strict_mono hp_top hlt₀
   have hlt₁' : p.toReal < p₁.toReal := ENNReal.toReal_strict_mono hp₁ hlt₁
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp_top
-  have key := lintegral_rpow_le_of_meas_ofReal_lt_le (Lp.aestronglyMeasurable f).enorm
-    (Lp.aestronglyMeasurable (T f)).enorm (ENNReal.toReal_pos hp₀.ne' hp₀') hlt₀' hlt₁' one_pos
+  have key := lintegral_rpow_le_of_meas_ofReal_lt_le (Lp.aestronglyMeasurable f).eNorm
+    (Lp.aestronglyMeasurable (T f)).eNorm (ENNReal.toReal_pos hp₀.ne' hp₀') hlt₀' hlt₁' one_pos
     (A₀ := 2 ^ p₀.toReal * A) (A₁ := 2 ^ p₁.toReal * ‖T‖ₑ ^ p₁.toReal) fun t ht => by
       have hinv (q : ℝ) : ENNReal.ofReal (t ^ (-q)) = (ENNReal.ofReal t ^ q)⁻¹ := by
         rw [← ENNReal.ofReal_rpow_of_pos ht, ENNReal.rpow_neg]
@@ -732,8 +427,8 @@ theorem eLpNorm_le_of_rpow_mul_meas_lt_le (T : Lp E p₁ μ →L[𝕜] Lp F p₁
         (ENNReal.ofReal_pos.2 ht).ne' ENNReal.ofReal_ne_top).trans_eq ?_
       ring
   simp only [Real.one_rpow, mul_one] at key
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
     ← ENNReal.mul_rpow_of_nonneg _ _ (one_div_nonneg.2 hq.le)]
   exact ENNReal.rpow_le_rpow key (one_div_nonneg.2 hq.le)
 

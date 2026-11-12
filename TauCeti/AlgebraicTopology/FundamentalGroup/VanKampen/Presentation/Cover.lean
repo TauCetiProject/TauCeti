@@ -125,6 +125,7 @@ lemma vanKampenCoverRelations_le_ker :
   -- default transparency is needed to match the free-product factor formula.
   erw [MonoidHom.comp_apply, MonoidHom.comp_apply, vanKampenWideLift_of,
     MonoidHom.comp_apply, MonoidHom.comp_apply, vanKampenWideLift_of]
+  obtain ⟨g⟩ := g
   induction g using Path.Homotopic.Quotient.ind with
   | mk γ => rfl
 
@@ -185,10 +186,10 @@ lemma vanKampenCoverQuotientEquiv_symm_map (hCover : ∀ y, ∃ i, U i ∈ 𝓝 
     (hTriple : ∀ i j k, IsPathConnected (U i ∩ U j ∩ U k)) (i : ι)
     (g : FundamentalGroup (U i) ⟨x, hx i⟩) :
     (vanKampenCoverQuotientEquiv (U := U) (x := x) (hx := hx) hCover hTriple).symm
-        (Path.Homotopic.Quotient.map g (ContinuousMap.subtypeVal (U i))) =
+        (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hx i⟩ g) =
       QuotientGroup.mk (Monoid.CoprodI.of (M := fun i ↦ FundamentalGroup (U i) ⟨x, hx i⟩) g) := by
   apply (MulEquiv.symm_apply_eq _).2
   rw [vanKampenCoverQuotientEquiv_mk (U := U) (x := x) (hx := hx),
-    vanKampenWideLift_of, FundamentalGroup.map_apply]
+    vanKampenWideLift_of]
 
 end TauCeti

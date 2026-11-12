@@ -149,8 +149,8 @@ private theorem exists_pow_nsmul_H2_eq_zero (hℓ : IsUnit (ℓ : K))
     rw [← InfiniteGalois.isOpen_iff_finite, hE]
     exact hV
   -- The canonical structure of nonarchimedean local field on `E`.
-  let _ := finiteExtensionValuativeRel K E
-  let _ := finiteExtensionNormedFieldTopology K E
+  let _ := algebraicExtensionValuativeRel K E
+  let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
   have hℓE : IsUnit (ℓ : E) := map_natCast (algebraMap K E) ℓ ▸ hℓ.map (algebraMap K E)
   have hfin := finite_pPowerRootsOfUnity (p := ℓ) hℓE.ne_zero
@@ -196,14 +196,13 @@ theorem primaryComponent_h3_int_eq_bot_of_isOpen (hℓ : IsUnit (ℓ : K))
         (U.isClosed_of_isOpen hU)
   have : Subsingleton (continuousCohomology 3 (ofDiscreteModule ℤ U (ULift (ZMod (ℓ ^ m))))) :=
     cohomologicalDimensionLE_iff.1 hcd _
-      (isPPrimaryTorsion_of_natCard_eq_pow (by rw [Nat.card_ulift, Nat.card_zmod])) 3 (by norm_num)
+      (IsAddPGroup.of_card (by rw [Nat.card_ulift, Nat.card_zmod])) 3 (by norm_num)
   have h := primaryComponent_continuousCohomology_int_eq_bot U ℓ m 2 fun k y ↦ ?_
   · have hZ : ofDiscreteModule ℤ U (ULift.{0} ℤ) =
         TopRep.of (ContRepresentation.trivial ℤ U (ULift.{0} ℤ)) :=
       -- `ofDiscreteModule` is `TopRep.of` of the representation `g ↦ (g • ·)`, and the action of
       -- `integralAction` is trivial by definition
-      congrArg TopRep.of (DFunLike.ext _ _ fun g ↦ ContinuousLinearMap.ext fun x ↦
-        (ofDiscreteModule_ρ_apply_apply g x).trans (ContRepresentation.trivial_apply g x).symm)
+      rfl
     rw [← hZ]
     exact h
   · -- transport the bound along `U ≃ₜ* V`

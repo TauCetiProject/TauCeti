@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.Topology.Algebra.Group.Shear
 
 /-!
 # The structure of the multiplicative group of a local field
@@ -39,7 +40,9 @@ such as the count of its power classes, to the group of principal units `U(K,1)`
 * `TauCeti.normalizedValuation_comp_zpowersHom`: a uniformizer splits the normalized valuation.
 * `TauCeti.instSigmaCompactSpaceUnits`: `Kˣ` is σ-compact.
 * `TauCeti.existsUnique_eq_zpow_mul`: every `x : Kˣ` is uniquely `ϖ ^ n * u` with `u ∈ U(K,0)`.
-* `TauCeti.coe_unitsEquivIntProd_apply_snd_eq_mul`: how the splitting changes with the uniformizer.
+* `TauCeti.coe_unitsEquivIntProd_apply_snd_eq_mul` and `TauCeti.unitsEquivIntProd_trans_prodShear`:
+  how the splitting changes with the uniformizer; the splittings attached to `ϖ` and `ϖ'` differ
+  by the shear `(n, u) ↦ (n, (ϖ ϖ'⁻¹) ^ n u)` of `ℤ × U(K,0)`.
 * `TauCeti.unitFiltration_zero_sup_zpowers_eq_top`: `U(K,0)` and a uniformizer generate `Kˣ`.
 * `TauCeti.unitFiltration_sup_zpowers_inf_unitFiltration_zero` and
   `TauCeti.index_unitFiltration_sup_zpowers`: the subgroup `U(K,i) · ϖ ^ ℤ` meets `U(K,0)` in
@@ -194,6 +197,18 @@ theorem mul_inv_mem_unitFiltration_zero {ϖ' : Kˣ} (hϖ : normalizedValuation K
     (hϖ' : normalizedValuation K ϖ' = .ofAdd 1) : ϖ * ϖ'⁻¹ ∈ unitFiltration K 0 := by
   rw [← ker_normalizedValuation, MonoidHom.mem_ker, map_mul, map_inv, hϖ, hϖ', mul_inv_cancel]
 
+/-- **The splittings attached to two uniformizers differ by a shear.** For uniformizers `ϖ` and
+`ϖ'`, the splitting `Kˣ ≃ₜ* ℤ × U(K,0)` attached to `ϖ'` is the one attached to `ϖ` followed by
+the shear `(n, u) ↦ (n, c ^ n * u)` by the unit `c = ϖ ϖ'⁻¹ ∈ U(K,0)`. -/
+theorem unitsEquivIntProd_trans_prodShear {ϖ' : Kˣ} (hϖ : normalizedValuation K ϖ = .ofAdd 1)
+    (hϖ' : normalizedValuation K ϖ' = .ofAdd 1) :
+    (unitsEquivIntProd K ϖ hϖ).trans (MonoidHom.prodShear
+      (zpowersHom _ ⟨ϖ * ϖ'⁻¹, mul_inv_mem_unitFiltration_zero hϖ hϖ'⟩)
+        continuous_of_discreteTopology) =
+      unitsEquivIntProd K ϖ' hϖ' :=
+  ContinuousMulEquiv.ext fun x ↦ Prod.ext (by simp) <| Subtype.ext <| by
+    simp [coe_unitsEquivIntProd_apply_snd_eq_mul hϖ hϖ' x, mul_comm]
+
 /-! ### The subgroups `U(K,i) · ϖ ^ ℤ` -/
 
 /-- Membership in `U(K,i) · ϖ ^ ℤ` for a uniformizer `ϖ`: `x` lies in it exactly when its unit
@@ -216,20 +231,28 @@ theorem unitFiltration_zero_sup_zpowers_eq_top (hϖ : normalizedValuation K ϖ =
   eq_top_iff.mpr fun x _ ↦
     (mem_unitFiltration_sup_zpowers_iff hϖ).mpr (mul_zpow_neg_mem_unitFiltration_zero hϖ x)
 
-/-- For a uniformizer `ϖ`, the units of `𝒪[K]` lying in `U(K,i) · ϖ ^ ℤ` are those of `U(K,i)`. -/
+/-- For `ϖ` of nonzero valuation (for instance a uniformizer), the units of `𝒪[K]` lying in
+`U(K,i) · ϖ ^ ℤ` are those of `U(K,i)`. -/
 theorem unitFiltration_sup_zpowers_inf_unitFiltration_zero
-    (hϖ : normalizedValuation K ϖ = .ofAdd 1) (i : ℕ) :
+    (hϖ : normalizedValuation K ϖ ≠ 1) (i : ℕ) :
     (unitFiltration K i ⊔ Subgroup.zpowers ϖ) ⊓ unitFiltration K 0 = unitFiltration K i := by
   refine le_antisymm (fun x ⟨hx, hx0⟩ ↦ ?_)
     (le_inf le_sup_left (unitFiltration_antitone (Nat.zero_le i)))
-  have hv : normalizedValuation K x = 1 := by
-    rwa [← MonoidHom.mem_ker, ker_normalizedValuation]
-  simpa [hv] using (mem_unitFiltration_sup_zpowers_iff hϖ).mp hx
+  obtain ⟨u, hu, _, ⟨k, rfl⟩, rfl⟩ := Subgroup.mem_sup.mp hx
+  have hu0 : normalizedValuation K u = 1 := by
+    rw [← MonoidHom.mem_ker, ker_normalizedValuation]
+    exact unitFiltration_antitone (Nat.zero_le i) hu
+  have hx0' : normalizedValuation K (u * ϖ ^ k) = 1 := by
+    rw [← MonoidHom.mem_ker, ker_normalizedValuation]
+    exact hx0
+  rw [map_mul, hu0, one_mul, map_zpow] at hx0'
+  have hk : k = 0 := (IsMulTorsionFree.zpow_eq_one_iff_right hϖ).mp hx0'
+  simpa [hk] using hu
 
-/-- For a uniformizer `ϖ`, a step `U(K,j)` lies in `U(K,i) · ϖ ^ ℤ` exactly when it lies in
-`U(K,i)`. -/
+/-- For `ϖ` of nonzero valuation (for instance a uniformizer), a step `U(K,j)` lies in
+`U(K,i) · ϖ ^ ℤ` exactly when it lies in `U(K,i)`. -/
 theorem unitFiltration_le_unitFiltration_sup_zpowers_iff
-    (hϖ : normalizedValuation K ϖ = .ofAdd 1) {i j : ℕ} :
+    (hϖ : normalizedValuation K ϖ ≠ 1) {i j : ℕ} :
     unitFiltration K j ≤ unitFiltration K i ⊔ Subgroup.zpowers ϖ ↔
       unitFiltration K j ≤ unitFiltration K i := by
   conv_rhs => rw [← unitFiltration_sup_zpowers_inf_unitFiltration_zero hϖ i]
@@ -247,7 +270,8 @@ theorem index_unitFiltration_sup_zpowers (hϖ : normalizedValuation K ϖ = .ofAd
         _, mul_zpow_neg_mem_unitFiltration_zero hϖ x, by
           rw [← mul_assoc, mul_right_comm, ← zpow_add, add_neg_cancel, zpow_zero, one_mul]⟩
   rw [← Subgroup.relIndex_top_right, ← htop, Subgroup.relIndex_sup_left,
-    ← Subgroup.inf_relIndex_right, unitFiltration_sup_zpowers_inf_unitFiltration_zero hϖ]
+    ← Subgroup.inf_relIndex_right,
+    unitFiltration_sup_zpowers_inf_unitFiltration_zero (by simp [hϖ])]
 
 end Uniformizer
 

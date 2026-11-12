@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.Duality
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.TransportMatrix
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Basic
+import Mathlib.Topology.MetricSpace.Lipschitz
 
 /-!
 # Finite Gromov–Wasserstein objectives
@@ -76,6 +77,22 @@ private theorem TransportMatrix.edist_rpow_mul_mul_ne_top {μ : PMF ι} {ν : PM
     edist (ωX (i, i')) (ωY (j, j')) ^ r * A i j * A i' j' ≠ ∞ :=
   ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hr (edist_ne_top _ _))
     (A.apply_ne_top _ _)) (A.apply_ne_top _ _)
+
+open Set in
+/-- Clipping a scalar kernel to an interval containing the target kernel decreases its
+finite distortion objective. No feasibility condition beyond nonnegative entries is needed. -/
+theorem gromovWassersteinObjective_projIcc_le {p a b : ℝ} (hp : 0 ≤ p) (hab : a ≤ b)
+    (ω : ι × ι → ℝ) (η : κ × κ → ℝ) (hη : ∀ q, η q ∈ Icc a b)
+    {f : ι × κ → ℝ} (hf : ∀ q, 0 ≤ f q) :
+    gromovWassersteinObjective p (fun q ↦ (projIcc a b hab (ω q) : ℝ)) η f ≤
+      gromovWassersteinObjective p ω η f := by
+  simp_rw [gromovWassersteinObjective_def]
+  refine Finset.sum_le_sum fun q _ ↦ Finset.sum_le_sum fun q' _ ↦ ?_
+  apply mul_le_mul_of_nonneg_right _ (hf q')
+  apply mul_le_mul_of_nonneg_right _ (hf q)
+  apply Real.rpow_le_rpow dist_nonneg _ hp
+  simpa only [one_mul, NNReal.coe_one, Subtype.dist_eq, projIcc_of_mem hab (hη _)] using
+    (LipschitzWith.projIcc hab).dist_le_mul (ω (q.1, q'.1)) (η (q.2, q'.2))
 
 end Objective
 

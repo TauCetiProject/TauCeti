@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Sort
+public import TauCeti.Data.Finsupp.Multiset
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Evaluation
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Ordered
 
@@ -25,6 +26,8 @@ modules; the enveloping algebra need not be commutative.
 
 * `Module.Basis.pbwBasis`: the ordered monomial basis of the enveloping algebra.
 * `Module.Basis.pbwBasis_eq_prod_pow`: its value as the increasing product of generator powers.
+* `Module.Basis.mem_pbwFiltration_iff_pbwBasis_repr`: the basis is adapted to the PBW filtration,
+  which in degree `k` is spanned by the basis vectors of total degree at most `k`.
 * `Module.Basis.pbwEquiv`: the linear equivalence with multivariate polynomials.
 
 ## References
@@ -106,6 +109,37 @@ theorem pbwBasis_apply (n : ι →₀ ℕ) :
 theorem pbwBasis_zero : b.pbwBasis 0 = 1 := by
   rw [pbwBasis_apply_aux, pbwBasisMonomial_zero]
 
+/-- The ordered PBW monomials of word length at most `k` are exactly the PBW basis vectors whose
+exponent vectors have total degree at most `k`. -/
+theorem orderedPBWMonomials_eq_image_pbwBasis (k : ℕ) :
+    orderedPBWMonomials R L b k = b.pbwBasis '' {n | n.degree ≤ k} := by
+  ext a
+  rw [mem_orderedPBWMonomials_iff]
+  constructor
+  · rintro ⟨word, hword, hk, rfl⟩
+    refine ⟨Multiset.toFinsupp (word : Multiset ι), ?_, ?_⟩
+    · rw [Set.mem_ofPred_eq, ← Finsupp.card_toMultiset_eq_degree,
+        Multiset.toFinsupp_toMultiset]
+      exact hk
+    · rw [pbwBasis_apply_aux, b.pbwBasisMonomial_toFinsupp hword]
+  · rintro ⟨n, hn, rfl⟩
+    refine ⟨_, Multiset.pairwise_sort _ _, ?_, (b.pbwBasis_apply n).symm⟩
+    rwa [Multiset.length_sort, Finsupp.card_toMultiset_eq_degree]
+
+/-- **The PBW basis is adapted to the PBW filtration.** Filtration degree `k` is spanned by the PBW
+basis vectors of total degree at most `k`. -/
+theorem span_image_pbwBasis_eq_pbwFiltration (k : ℕ) :
+    Submodule.span R (b.pbwBasis '' {n | n.degree ≤ k}) = pbwFiltration R L k := by
+  rw [← orderedPBWMonomials_eq_image_pbwBasis b, span_orderedPBWMonomials_eq_pbwFiltration R L (⇑b)
+    b.span_eq]
+
+/-- An element has PBW filtration degree at most `k` exactly when its PBW coordinates are
+supported on exponent vectors of total degree at most `k`. -/
+theorem mem_pbwFiltration_iff_pbwBasis_repr {k : ℕ} {a : U} :
+    a ∈ pbwFiltration R L k ↔ ∀ n ∈ (b.pbwBasis.repr a).support, n.degree ≤ k := by
+  rw [← span_image_pbwBasis_eq_pbwFiltration b, Basis.mem_span_image]
+  simp [Set.subset_def]
+
 /-- PBW evaluation sends each ordered basis vector to the corresponding polynomial monomial. -/
 @[simp]
 theorem pbwEval_pbwBasis (n : ι →₀ ℕ) : b.pbwEval (b.pbwBasis n) = monomial n 1 := by
@@ -176,6 +210,34 @@ theorem pbwBasis_eq_prod_pow (n : ι →₀ ℕ) :
         simp only [List.map_cons, List.prod_cons, List.map_replicate, List.prod_replicate,
           Function.comp_apply]
   rw [← hprod, ← b.pbwBasisMonomial_toFinsupp hword, hmult, pbwBasis_apply_aux]
+
+/-- For a basis indexed by `Fin n`, the PBW vector is the product of generator powers in
+index order, including the factors with exponent zero. -/
+theorem pbwBasis_eq_prod_pow_fin {n : ℕ} (b : Basis (Fin n) R L) (c : Fin n → ℕ) :
+    b.pbwBasis (Finsupp.equivFunOnFinite.symm c) =
+      ((List.finRange n).map fun i ↦ _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ c i).prod := by
+  classical
+  let d : Fin n →₀ ℕ := Finsupp.equivFunOnFinite.symm c
+  have hsort : ((List.finRange n).filter fun i ↦ i ∈ d.support) =
+      d.support.sort (· ≤ ·) := by
+    apply ((List.sortedLT_finRange n).pairwise.filter _).eq_of_mem_iff
+      d.support.sortedLT_sort.pairwise
+    simp
+  have hprod (l : List (Fin n)) :
+      ((l.filter fun i ↦ i ∈ d.support).map fun i ↦
+        _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ d i).prod =
+      (l.map fun i ↦ _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ d i).prod := by
+    induction l with
+    | nil => simp
+    | cons i l ih =>
+        by_cases hi : i ∈ d.support
+        · simp only [List.filter_cons, hi, decide_true, ite_true, List.map_cons,
+            List.prod_cons, ih]
+        · simp only [List.filter_cons, hi, decide_false, Bool.false_eq_true, ite_false,
+            List.map_cons, List.prod_cons, Finsupp.notMem_support_iff.mp hi, pow_zero,
+            one_mul, ih]
+  rw [pbwBasis_eq_prod_pow, ← hsort, hprod]
+  simp only [d, Finsupp.coe_equivFunOnFinite_symm]
 
 @[simp]
 theorem pbwBasis_single (i : ι) (k : ℕ) :

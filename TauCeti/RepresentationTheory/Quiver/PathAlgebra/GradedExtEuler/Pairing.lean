@@ -48,7 +48,10 @@ open CategoryTheory LaurentPolynomial
 universe u v w
 
 variable (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q]
-  [Finite Q] [Module.Finite k (pathAlgebra k Q)]
+
+section Finite
+
+variable [Finite Q] [Module.Finite k (pathAlgebra k Q)]
   [HasExt.{max u v w} (GradedModuleCat.{max u v w} (integerGrade k Q))]
 
 /-- Every pair of finite graded modules over a finite-dimensional path algebra is graded
@@ -56,25 +59,16 @@ Euler-admissible. Both cohomological and internal finiteness follow from the fir
 resolutions and graded composition series. -/
 theorem isGradedEulerAdmissibleOn_gradedFiniteModules :
     IsGradedEulerAdmissibleOn (k := k) (e := GradedModuleCat.shift (integerGrade k Q))
-      (gradedFiniteModules (integerGrade k Q)) (gradedFiniteModules (integerGrade k Q)) where
-  isGradedEulerAdmissible X Y hX hY := by
-    let _ := integerGradedAlgebra k Q
-    have : Module.Finite (pathAlgebra k Q) X := gradedFiniteModules_iff.mp hX
-    have : Module.Finite (pathAlgebra k Q) Y := gradedFiniteModules_iff.mp hY
-    have : Module.Finite k X := Module.Finite.trans (pathAlgebra k Q) X
-    have : Module.Finite k Y := Module.Finite.trans (pathAlgebra k Q) Y
-    have : ∀ i j : Q, Finite (i ⟶ j) :=
-      finite_hom_of_module_finite_pathAlgebra k Q inferInstance
-    refine isGradedEulerAdmissible_of_finite_of_forall_simple _ Y (fun S hS hs ↦ ?_) X
-    have : Module.Finite k S := hS
-    have : Module.Finite (pathAlgebra k Q) S :=
-      Module.Finite.of_restrictScalars_finite k (pathAlgebra k Q) S
-    obtain ⟨i, d, ⟨e⟩⟩ :=
-      (isExhaustiveGradedSimpleFamily_iff _).mp
-        (isExhaustiveGradedSimpleFamily_gradedVertexSimple k Q)
-        ⟨S, gradedFiniteModules_iff.mpr inferInstance⟩ hs
-    exact ((isGradedEulerAdmissible_gradedVertexSimple k Q i Y).shiftObj d).of_iso k
-      e.symm (Iso.refl Y)
+      (gradedFiniteModules (integerGrade k Q)) (gradedFiniteModules (integerGrade k Q)) := by
+  let _ := integerGradedAlgebra k Q
+  have : ∀ i j : Q, Finite (i ⟶ j) :=
+    finite_hom_of_module_finite_pathAlgebra k Q inferInstance
+  refine (isGradedEulerAdmissibleOn_gradedFiniteModules_iff
+    (isExhaustiveGradedSimpleFamily_gradedVertexSimple k Q)).2 fun i j ↦ ?_
+  have : Module.Finite (pathAlgebra k Q) (gradedVertexSimple k Q j) :=
+    gradedFiniteModules_iff.1 (gradedFiniteModules_gradedVertexSimple k Q j)
+  have : Module.Finite k (gradedVertexSimple k Q j) := Module.Finite.trans (pathAlgebra k Q) _
+  exact isGradedEulerAdmissible_gradedVertexSimple k Q i _
 
 /-- The categorical q-Euler form on `G₀^gr(mod kQ)`, q-antilinear in the first argument
 and q-linear in the second. Admissibility is proved for every finite graded module pair. -/
@@ -118,9 +112,13 @@ theorem gradedExtEulerForm_basis (i j : Q) :
     gradedExtEulerForm_of_of]
   exact gradedExtEuler_gradedVertexSimple_gradedVertexSimple k Q i j _
 
-variable [Fintype Q]
+end Finite
 
-omit [DecidableEq Q] in
+section Fintype
+
+variable [Fintype Q] [Module.Finite k (pathAlgebra k Q)]
+  [HasExt.{max u v w} (GradedModuleCat.{max u v w} (integerGrade k Q))]
+
 /-- **The graded Ringel formula on Grothendieck classes.** The vertex coordinates are the
 idempotent graded dimensions, and the source coordinates are conjugated by `q ↦ q⁻¹`. -/
 theorem gradedExtEulerForm_eq_sum
@@ -150,7 +148,6 @@ theorem gradedExtEulerForm_eq_sum
       AlgEquiv.coe_toRingEquiv]
     ring
 
-omit [DecidableEq Q] in
 /-- **The graded Ringel formula for finite-dimensional graded modules.** The coordinate at
 vertex `i` is the graded dimension of the image of its vertex idempotent. The formula holds
 for any admissibility witness, without choosing a composition series or support bounds. -/
@@ -179,5 +176,7 @@ theorem gradedExtEuler_eq_sum_smulGradedDimension
     rw [gradedVertexSimpleClassBasis_repr_apply]
     exact gradedIdempotentCoordinate_of _ _ _
   simpa only [hcoord] using hval
+
+end Fintype
 
 end TauCeti.PathAlgebra

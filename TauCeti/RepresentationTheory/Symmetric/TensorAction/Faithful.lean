@@ -36,13 +36,6 @@ functions `Fin d → Fin n`, on which a permutation acts by precomposition with 
   injective if and only if `d ≤ n`.
 * `TauCeti.permTensorAction_injective_iff`: the permutation representation itself is faithful if
   and only if `2 ≤ n` or `d ≤ 1`.
-
-## References
-
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 8, “The double centralizer (image-level)”: the faithfulness refinement recording that the
-  symmetric-group image is faithful once the dimension is at least the tensor degree, and that the
-  group algebra maps on as a proper quotient otherwise.
 -/
 
 public section
@@ -183,7 +176,7 @@ theorem permTensorAction_eq_one_of_le_one (h : n ≤ 1) (σ : Equiv.Perm (Fin d)
     permTensorAction R n d σ = 1 := by
   have : Subsingleton (Fin n) := Fin.subsingleton_iff_le_one.mpr h
   refine (tensorPowerBasis R n d).ext fun f => ?_
-  rw [permTensorAction_tensorPowerBasis, Module.End.one_apply]
+  rw [permTensorAction_tensorPowerBasis, one_apply_eq_self]
   exact congrArg _ (funext fun i => Subsingleton.elim _ _)
 
 /-- With at least two coordinate directions the permutation action on `(Rⁿ)^{⊗d}` is faithful:

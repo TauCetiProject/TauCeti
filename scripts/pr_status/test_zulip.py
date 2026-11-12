@@ -27,9 +27,9 @@ class ReviewEmoji(unittest.TestCase):
         self.assertIsNone(self.emoji())
         self.assertIsNone(self.emoji(review="running"))
 
-    def test_live_review_marker_is_eyes(self):
-        self.assertEqual(self.emoji(inprogress=True), "eyes")
-        self.assertEqual(self.emoji(review="running", inprogress=True), "eyes")
+    def test_obsolete_marker_does_not_add_a_reaction(self):
+        self.assertIsNone(self.emoji(inprogress=True))
+        self.assertIsNone(self.emoji(review="running", inprogress=True))
 
     def test_completed_blocking_review_is_writing(self):
         self.assertEqual(self.emoji(review="changes"), "writing")

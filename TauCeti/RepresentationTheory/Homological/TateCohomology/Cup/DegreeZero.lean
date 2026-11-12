@@ -73,7 +73,7 @@ theorem map_tensorInvariant_eq_zero (M : Rep k G) {y : N.ρ.invariants}
   obtain ⟨z, hz⟩ := hy
   refine map_eq_zero_of_hom_apply_eq_sum _ ((TensorProduct.mk k M.V N.V).flip z) (fun m ↦ ?_) n
   simp [← hz, Representation.norm, Representation.tprod_apply, TensorProduct.tmul_sum,
-    ← Module.End.mul_apply, ← map_mul]
+    ← mul_apply_eq_comp, ← map_mul]
 
 variable (M N) in
 /-- **The Tate cup product with a degree-zero class**,

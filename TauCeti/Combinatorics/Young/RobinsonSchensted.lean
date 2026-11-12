@@ -31,7 +31,8 @@ bijection between permutations and pairs of standard tableaux of the same shape.
 ## Main definitions
 
 * `List.IsLatticeWord`: a lattice word, in which every prefix contains each letter `i` at least as
-  often as `i + 1`.
+  often as `i + 1`; a weakly increasing word is one as soon as the word itself satisfies these
+  inequalities (`List.isLatticeWord_of_pairwise_le`).
 * `TauCeti.robinsonSchensted`: the insertion tableau and the recording word of a word.
 * `TauCeti.robinsonSchenstedEquiv`: the Robinson--Schensted correspondence, as a bijection.
 
@@ -81,6 +82,22 @@ theorem IsLatticeWord.of_prefix {r s : List ℕ} (h : r.IsLatticeWord) (hs : s <
 theorem IsLatticeWord.count_succ_le {r : List ℕ} (h : r.IsLatticeWord) (i : ℕ) :
     r.count (i + 1) ≤ r.count i :=
   h r (prefix_refl r) i
+
+/-- A weakly increasing word is a lattice word as soon as it contains each letter `i` at least as
+often as the letter `i + 1`: a prefix that already contains an `i + 1` contains every `i` of the
+word. -/
+theorem isLatticeWord_of_pairwise_le {r : List ℕ} (hr : r.Pairwise (· ≤ ·))
+    (hc : ∀ i, r.count (i + 1) ≤ r.count i) : r.IsLatticeWord := by
+  rintro p ⟨s, rfl⟩ i
+  by_cases hp : i + 1 ∈ p
+  · have hs : i ∉ s := fun hi => by
+      have := (pairwise_append.mp hr).2.2 _ hp _ hi
+      omega
+    have := hc i
+    rw [count_append, count_append, count_eq_zero_of_not_mem hs] at this
+    omega
+  · rw [count_eq_zero_of_not_mem hp]
+    exact Nat.zero_le _
 
 /-- A word ending in the letter `k` is a lattice word exactly when the rest of it is a lattice
 word which, if `k = i + 1`, contains `k` strictly fewer times than `i`. -/
@@ -153,6 +170,28 @@ theorem length_robinsonSchensted_snd (w : List α) :
   induction w using reverseRecOn with
   | nil => simp
   | append_singleton w x ih => simp [ih]
+
+/-- The recording word of a word extends the recording word of each of its prefixes. -/
+theorem robinsonSchensted_snd_prefix_append (u v : List α) :
+    (robinsonSchensted u).2 <+: (robinsonSchensted (u ++ v)).2 := by
+  induction v using reverseRecOn with
+  | nil => simp
+  | append_singleton v x ih =>
+    rw [← append_assoc, robinsonSchensted_append_singleton]
+    exact ih.trans (prefix_append _ _)
+
+/-- The `i`-th letter of the recording word is the row of the new cell when the `i`-th letter
+is inserted into the insertion tableau of the preceding letters. -/
+theorem getElem_robinsonSchensted_snd (w : List α) (i : ℕ)
+    (hi : i < (robinsonSchensted w).2.length) :
+    (robinsonSchensted w).2[i] =
+      rowInsertIndex (w[i]'(by simpa using hi)) (robinsonSchensted (w.take i)).1 := by
+  have hiw : i < w.length := by simpa using hi
+  have hw : w = w.take i ++ [w[i]] ++ w.drop (i + 1) := by simp
+  have hpre := robinsonSchensted_snd_prefix_append (w.take i ++ [w[i]]) (w.drop (i + 1))
+  rw [← hw, robinsonSchensted_append_singleton] at hpre
+  rw [← hpre.getElem (by simp [hiw.le])]
+  simp [hiw.le]
 
 /-- **The shape of the insertion tableau is the content of the recording word**: row `i` of the
 insertion tableau has as many cells as the recording word has letters `i`. -/

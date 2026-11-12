@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.GeckConstruction.Semisimple
+public import TauCeti.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.RingTheory.DividedPowers.Associative
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Module
@@ -48,10 +49,41 @@ noncomputable section
 public section
 
 variable {ι M N : Type*} [AddCommGroup M] [Module ℚ M] [AddCommGroup N] [Module ℚ N]
-  {P : RootPairing ι ℚ M N} [P.IsCrystallographic] [P.IsReduced] {b : P.Base}
-  [Fintype ι] [DecidableEq ι]
+  {P : RootPairing ι ℚ M N} {b : P.Base} [Fintype ι]
 
-omit [P.IsReduced] in
+private lemma omega_mulVec_apply (x : b.support ⊕ ι → ℚ) (q : b.support ⊕ ι) :
+    let _i := P.indexNeg
+    (ω b *ᵥ x) q = match q with
+      | Sum.inl q => x (.inl q)
+      | Sum.inr q => x (.inr (-q)) := by
+  classical
+  let _i := P.indexNeg
+  rcases q with q | q
+  · simp [ω, Matrix.mulVec, dotProduct, Matrix.one_apply]
+  · simp only [ω, Matrix.mulVec, dotProduct, Fintype.sum_sum_type,
+      Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂, Matrix.zero_apply, zero_mul,
+      Finset.sum_const_zero, zero_add, Matrix.of_apply, ite_mul, one_mul]
+    have hiff (a : ι) : q = -a ↔ a = -q := by
+      rw [eq_comm, neg_eq_iff_eq_neg]
+    simp_rw [hiff]
+    simp
+
+variable [DecidableEq ι]
+
+private lemma omega_mulVec_single (j : b.support ⊕ ι) :
+    let _i := P.indexNeg
+    ω b *ᵥ Pi.single j 1 = match j with
+      | Sum.inl j => Pi.single (.inl j) 1
+      | Sum.inr j => Pi.single (.inr (-j)) 1 := by
+  classical
+  let _i := P.indexNeg
+  ext q
+  rw [omega_mulVec_apply]
+  rcases j with j | j <;> rcases q with q | q <;>
+    simp [Pi.single_apply, -indexNeg_neg, neg_eq_iff_eq_neg]
+
+variable [P.IsCrystallographic]
+
 private lemma e_mulVec_v_eq_zero (s : b.support) {j : ι} (hj : P.root j + P.root s ≠ 0)
     (hroot : P.root s + P.root j ∉ range P.root) :
     e s *ᵥ v b j = 0 := by
@@ -67,6 +99,48 @@ private lemma e_mulVec_v_eq_zero (s : b.support) {j : ι} (hj : P.root j + P.roo
   · have hk : P.root k ≠ P.root s + P.root j := fun hk => hroot ⟨k, hk⟩
     simp [e, v, hk]
 
+private lemma dividedPower_f_eq_omega_mul_dividedPower_e_mul_omega (s : b.support) (n : ℕ) :
+    TauCeti.Associative.dividedPower n (f s) =
+      ω b * TauCeti.Associative.dividedPower n (e s) * ω b := by
+  have hp : ω b * f s ^ n = e s ^ n * ω b := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+        rw [pow_succ, pow_succ, ← mul_assoc, ih, mul_assoc, ω_mul_f, ← mul_assoc]
+  rw [TauCeti.Associative.dividedPower_def, TauCeti.Associative.dividedPower_def]
+  calc
+    (n.factorial : ℚ)⁻¹ • f s ^ n =
+        (n.factorial : ℚ)⁻¹ • (ω b * (ω b * f s ^ n)) := by
+          rw [← mul_assoc, ω_mul_ω, one_mul]
+    _ = (n.factorial : ℚ)⁻¹ • (ω b * (e s ^ n * ω b)) := by rw [hp]
+    _ = ω b * ((n.factorial : ℚ)⁻¹ • e s ^ n) * ω b := by
+      rw [← smul_mul_assoc, ← mul_assoc, smul_mul_assoc, ← mul_smul_comm]
+
+variable [P.IsReduced]
+
+omit [P.IsReduced] in
+/-- The raising operator kills the root vector of `k = j + n • s` if `k ≠ -s` and
+`j + (n + 1) • s` is not a root. -/
+private lemma e_mulVec_v_eq_zero_of_notMem_range_add (s : b.support) {j k : ι} {n : ℕ}
+    (hks : let _i := P.indexNeg; k ≠ -s) (hkroot : P.root k = P.root j + n • P.root s)
+    (hmem : P.root j + (n + 1) • P.root s ∉ range P.root) :
+    e s *ᵥ v b k = 0 := by
+  have : HasUniqueDiv M := .of_isTorsionFree ℚ M
+  let _i := P.indexNeg
+  have hzero : P.root k + P.root s ≠ 0 := by
+    intro h
+    apply hks
+    apply P.root.injective
+    rw [indexNeg_neg, root_reflectionPerm, reflection_apply_self]
+    exact eq_neg_of_add_eq_zero_left h
+  have hroot : P.root s + P.root k ∉ range P.root := by
+    rintro ⟨q, hq⟩
+    apply hmem
+    refine ⟨q, ?_⟩
+    rw [hq, hkroot]
+    module
+  rw [e_mulVec_v_eq_zero s hzero hroot]
+
 private lemma e_pow_mulVec_v_eq_zero_or_exists (s : b.support) {j : ι}
     (hj : let _i := P.indexNeg; j ≠ -s) (n : ℕ) :
     (e s ^ n) *ᵥ v b j = 0 ∨
@@ -75,7 +149,7 @@ private lemma e_pow_mulVec_v_eq_zero_or_exists (s : b.support) {j : ι}
         (e s ^ n) *ᵥ v b j =
           ((P.chainBotCoeff s j + 1).ascFactorial n : ℚ) • v b k := by
   have : Module.IsReflexive ℚ M := .of_isPerfPair P.toLinearMap
-  have : IsAddTorsionFree M := .of_isTorsionFree ℚ M
+  have : HasUniqueDiv M := .of_isTorsionFree ℚ M
   let _i := P.indexNeg
   -- Keep the root index and its coefficient in the induction invariant: the successor step needs
   -- both dependent witnesses, so splitting it off would merely restate the whole invariant.
@@ -90,19 +164,7 @@ private lemma e_pow_mulVec_v_eq_zero_or_exists (s : b.support) {j : ι}
       · left
         rw [pow_succ', ← Matrix.mulVec_mulVec, h0, Matrix.mulVec_zero]
       -- The ordinary root-string formula excludes the exceptional string through `-s`.
-      have hks : k ≠ -s := by
-        rintro rfl
-        replace hkroot : P.root (-j) = (n + 1) • P.root s := by
-          simp only [indexNeg_neg, root_reflectionPerm, reflection_apply_self,
-            neg_eq_iff_add_eq_zero, add_smul, one_smul] at hkroot ⊢
-          rw [← hkroot]
-          module
-        rcases n.eq_zero_or_pos with rfl | hn
-        · apply hj
-          rw [zero_add, one_smul, EmbeddingLike.apply_eq_iff_eq] at hkroot
-          simp [← hkroot, -indexNeg_neg]
-        · have _i : (n + 1).AtLeastTwo := ⟨by omega⟩
-          exact P.nsmul_notMem_range_root (n := n + 1) (i := s) ⟨-j, hkroot⟩
+      have hks := P.ne_neg_of_root_eq_add_nsmul s hj hkroot
       rw [pow_succ', ← Matrix.mulVec_mulVec, hkpow, Matrix.mulVec_smul]
       by_cases hmem : P.root j + (n + 1) • P.root s ∈ range P.root
       -- If the next root exists, advance its index and the rising-factorial coefficient together.
@@ -133,22 +195,10 @@ private lemma e_pow_mulVec_v_eq_zero_or_exists (s : b.support) {j : ι}
         module
       -- Otherwise the raising operator kills the current root vector.
       · left
-        have hzero : P.root k + P.root s ≠ 0 := by
-          intro h
-          apply hks
-          apply P.root.injective
-          rw [indexNeg_neg, root_reflectionPerm, reflection_apply_self]
-          exact eq_neg_of_add_eq_zero_left h
-        have hroot : P.root s + P.root k ∉ range P.root := by
-          rintro ⟨q, hq⟩
-          apply hmem
-          refine ⟨q, ?_⟩
-          rw [hq, hkroot]
-          module
-        rw [e_mulVec_v_eq_zero s hzero hroot, smul_zero]
+        rw [e_mulVec_v_eq_zero_of_notMem_range_add s hks hkroot hmem, smul_zero]
 
 private lemma e_mulVec_v_self_eq_zero (s : b.support) : e s *ᵥ v b s = 0 := by
-  have : IsAddTorsionFree M := .of_isTorsionFree ℚ M
+  have : HasUniqueDiv M := .of_isTorsionFree ℚ M
   have hzero : P.root s + P.root s ≠ 0 := by
     intro h
     apply P.ne_zero s
@@ -258,55 +308,6 @@ private theorem exists_intCast_dividedPower_e_mulVec_single (s : b.support) (n :
           field_simp
         rw [hcoeff]
         exact hv ((P.chainBotCoeff s j + n).choose n) k q
-
-omit [P.IsReduced] in
-private lemma dividedPower_f_eq_omega_mul_dividedPower_e_mul_omega (s : b.support) (n : ℕ) :
-    TauCeti.Associative.dividedPower n (f s) =
-      ω b * TauCeti.Associative.dividedPower n (e s) * ω b := by
-  have hp : ω b * f s ^ n = e s ^ n * ω b := by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-        rw [pow_succ, pow_succ, ← mul_assoc, ih, mul_assoc, ω_mul_f, ← mul_assoc]
-  rw [TauCeti.Associative.dividedPower_def, TauCeti.Associative.dividedPower_def]
-  calc
-    (n.factorial : ℚ)⁻¹ • f s ^ n =
-        (n.factorial : ℚ)⁻¹ • (ω b * (ω b * f s ^ n)) := by
-          rw [← mul_assoc, ω_mul_ω, one_mul]
-    _ = (n.factorial : ℚ)⁻¹ • (ω b * (e s ^ n * ω b)) := by rw [hp]
-    _ = ω b * ((n.factorial : ℚ)⁻¹ • e s ^ n) * ω b := by
-      rw [← smul_mul_assoc, ← mul_assoc, smul_mul_assoc, ← mul_smul_comm]
-
-omit [P.IsCrystallographic] [P.IsReduced] [DecidableEq ι] in
-private lemma omega_mulVec_apply (x : b.support ⊕ ι → ℚ) (q : b.support ⊕ ι) :
-    let _i := P.indexNeg
-    (ω b *ᵥ x) q = match q with
-      | Sum.inl q => x (.inl q)
-      | Sum.inr q => x (.inr (-q)) := by
-  classical
-  let _i := P.indexNeg
-  rcases q with q | q
-  · simp [ω, Matrix.mulVec, dotProduct, Matrix.one_apply]
-  · simp only [ω, Matrix.mulVec, dotProduct, Fintype.sum_sum_type,
-      Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂, Matrix.zero_apply, zero_mul,
-      Finset.sum_const_zero, zero_add, Matrix.of_apply, ite_mul, one_mul]
-    have hiff (a : ι) : q = -a ↔ a = -q := by
-      rw [eq_comm, neg_eq_iff_eq_neg]
-    simp_rw [hiff]
-    simp
-
-omit [P.IsCrystallographic] [P.IsReduced] in
-private lemma omega_mulVec_single (j : b.support ⊕ ι) :
-    let _i := P.indexNeg
-    ω b *ᵥ Pi.single j 1 = match j with
-      | Sum.inl j => Pi.single (.inl j) 1
-      | Sum.inr j => Pi.single (.inr (-j)) 1 := by
-  classical
-  let _i := P.indexNeg
-  ext q
-  rw [omega_mulVec_apply]
-  rcases j with j | j <;> rcases q with q | q <;>
-    simp [Pi.single_apply, -indexNeg_neg, neg_eq_iff_eq_neg]
 
 private theorem exists_intCast_dividedPower_f_mulVec_single (s : b.support) (n : ℕ)
     (j q : b.support ⊕ ι) :

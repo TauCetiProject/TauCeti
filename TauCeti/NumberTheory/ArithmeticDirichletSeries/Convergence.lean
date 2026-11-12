@@ -109,7 +109,7 @@ This is the family `NumberField.Set.primeIdealZetaSum` sums, so it is the summab
 consumers need in order to denote a genuine sum rather than the `tsum` junk value. -/
 theorem summable_absNorm_rpow_subtype_of_one_lt (S : Set (HeightOneSpectrum (𝓞 K))) {s : ℝ}
     (hs : 1 < s) : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) :=
-  (summable_absNorm_rpow_primes_of_one_lt hs).subtype S
+  (summable_absNorm_rpow_primes_of_one_lt hs).subtype (· ∈ S)
 
 end TauCeti
 

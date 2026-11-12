@@ -107,7 +107,8 @@ theorem isRoot_cyclotomic_iff_forall_isPrimitiveRoot (hn : IsUnit (n : R)) {ζ :
   · have : NeZero (n : R ⧸ p) := ⟨by simpa using (hn.map (Ideal.Quotient.mk p)).ne_zero⟩
     refine isRoot_cyclotomic_iff.mp ?_
     rw [← map_cyclotomic n (Ideal.Quotient.mk p)]
-    exact IsRoot.map ((isRoot_cyclotomic_iff_isUnit_pow_sub_one hn).mpr ⟨h₁, h⟩)
+    exact IsRoot.map (Ideal.Quotient.mk p)
+      ((isRoot_cyclotomic_iff_isUnit_pow_sub_one hn).mpr ⟨h₁, h⟩)
   · -- Otherwise `ζ ^ d = 1` modulo some maximal ideal, contradicting primitivity there.
     by_contra hu
     obtain ⟨m, hm, hmem⟩ := exists_max_ideal_of_mem_nonunits hu

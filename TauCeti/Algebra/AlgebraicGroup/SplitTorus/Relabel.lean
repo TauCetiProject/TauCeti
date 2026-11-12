@@ -73,6 +73,13 @@ theorem characterRelabel_ofAdd (τ : Equiv.Perm sigma) (f : sigma →₀ ℤ) :
     characterRelabel τ (Multiplicative.ofAdd f) =
       Multiplicative.ofAdd (Finsupp.equivMapDomain τ f) := (rfl)
 
+/-- Relabelling sends a multiple of the coordinate character of `a` to the same multiple of the
+coordinate character of `τ a`. -/
+theorem characterRelabel_ofAdd_single (τ : Equiv.Perm sigma) (a : sigma) (n : ℤ) :
+    characterRelabel τ (Multiplicative.ofAdd (Finsupp.single a n)) =
+      Multiplicative.ofAdd (Finsupp.single (τ a) n) := by
+  rw [characterRelabel_ofAdd, Finsupp.equivMapDomain_single]
+
 /-- Relabelling is multiplicative in the permutation. -/
 @[simp]
 theorem characterRelabel_comp (τ ν : Equiv.Perm sigma) :
@@ -111,8 +118,8 @@ noncomputable def characterRelabelHom (τ : Equiv.Perm sigma) :
 
 /-- The underlying monoid homomorphism of `characterRelabelHom`. -/
 @[simp]
-theorem toMonoidHom_characterRelabelHom (τ : Equiv.Perm sigma) :
-    FGCommGrpCat.toMonoidHom (characterRelabelHom τ) =
+theorem hom_hom_characterRelabelHom (τ : Equiv.Perm sigma) :
+    (characterRelabelHom τ).hom.hom =
       characterRelabel τ :=
   (rfl)
 
@@ -122,8 +129,8 @@ theorem characterRelabelHom_comp (τ ν : Equiv.Perm sigma) :
     characterRelabelHom ν ≫ characterRelabelHom τ =
       characterRelabelHom (sigma := sigma) (τ * ν) := by
   apply FGCommGrpCat.hom_ext
-  rw [FGCommGrpCat.toMonoidHom_comp, toMonoidHom_characterRelabelHom,
-    toMonoidHom_characterRelabelHom, toMonoidHom_characterRelabelHom,
+  rw [FGCommGrpCat.hom_hom_comp, hom_hom_characterRelabelHom,
+    hom_hom_characterRelabelHom, hom_hom_characterRelabelHom,
     characterRelabel_comp]
 
 /-- Relabelling of character groups by the identity permutation is the identity. -/
@@ -131,8 +138,8 @@ theorem characterRelabelHom_comp (τ ν : Equiv.Perm sigma) :
 theorem characterRelabelHom_one :
     characterRelabelHom (sigma := sigma) 1 = CategoryStruct.id _ := by
   apply FGCommGrpCat.hom_ext
-  rw [toMonoidHom_characterRelabelHom, characterRelabel_one,
-    FGCommGrpCat.toMonoidHom_id]
+  rw [hom_hom_characterRelabelHom, characterRelabel_one,
+    FGCommGrpCat.hom_hom_id]
 
 section CoordinateRing
 
@@ -165,8 +172,7 @@ theorem pointsMulEquiv_mapDomain_relabelCoordinateMap
     WithConv.ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
     hom_relabelCoordinateMap]
   rw [MonoidAlgebra.mapDomainBialgHom_single]
-  have h := characterRelabel_ofAdd τ (Finsupp.single i (1 : ℤ))
-  rw [Finsupp.equivMapDomain_single] at h
+  have h := characterRelabel_ofAdd_single τ i 1
   exact congrArg (fun x => p.ofConv (MonoidAlgebra.single x 1)) h
 
 /-- Coordinate relabelling is multiplicative in the permutation. -/
@@ -232,17 +238,17 @@ noncomputable instance isIso_relabel (τ : Equiv.Perm sigma) :
 
 /-- The relabelling automorphism of the split torus, bundled as an isomorphism. -/
 noncomputable def relabelIso (τ : Equiv.Perm sigma) : Aut (groupScheme R sigma) :=
-  asIso (relabel R τ)
+  .of (asIso (relabel R τ))
 
 @[simp]
 theorem relabelIso_hom (τ : Equiv.Perm sigma) :
-    (relabelIso (sigma := sigma) R τ).hom = relabel R τ :=
+    (relabelIso (sigma := sigma) R τ).asIso.hom = relabel R τ :=
   by simp [relabelIso]
 
 /-- The inverse of the bundled relabelling is relabelling by the inverse permutation. -/
 @[simp]
 theorem relabelIso_inv (τ : Equiv.Perm sigma) :
-    (relabelIso (sigma := sigma) R τ).inv = relabel R τ⁻¹ := by
+    (relabelIso (sigma := sigma) R τ).asIso.inv = relabel R τ⁻¹ := by
   rw [relabelIso, asIso_inv]
   symm
   apply IsIso.eq_inv_of_hom_inv_id
@@ -252,15 +258,17 @@ theorem relabelIso_inv (τ : Equiv.Perm sigma) :
 @[simp]
 theorem relabelIso_mul (τ ν : Equiv.Perm sigma) :
     relabelIso (sigma := sigma) R (τ * ν) = relabelIso R ν * relabelIso R τ := by
+  apply Aut.ext
   apply Iso.ext
-  rw [relabelIso_hom, CategoryTheory.Aut.Aut_mul_def]
+  rw [relabelIso_hom, Aut.mul_asIso]
   -- The `hom` of `Iso.trans` is its categorical composite by definition.
-  change relabel R (τ * ν) = (relabelIso R τ).hom ≫ (relabelIso R ν).hom
+  change relabel R (τ * ν) = (relabelIso R τ).asIso.hom ≫ (relabelIso R ν).asIso.hom
   rw [relabelIso_hom, relabelIso_hom, relabel_comp]
 
 /-- Bundled relabelling by the identity permutation is the identity automorphism. -/
 @[simp]
 theorem relabelIso_one : relabelIso (sigma := sigma) R 1 = 1 := by
+  apply Aut.ext
   apply Iso.ext
   rw [relabelIso_hom, relabel_one]
   rfl
@@ -269,7 +277,7 @@ theorem relabelIso_one : relabelIso (sigma := sigma) R 1 = 1 := by
 permutation power. -/
 @[simp]
 theorem relabelIso_pow_hom (τ : Equiv.Perm sigma) (m : ℕ) :
-    ((relabelIso (sigma := sigma) R τ) ^ m).hom = relabel R (τ ^ m) := by
+    ((relabelIso (sigma := sigma) R τ) ^ m).asIso.hom = relabel R (τ ^ m) := by
   induction m with
   | zero =>
       rw [pow_zero, pow_zero, relabel_one]
@@ -277,7 +285,7 @@ theorem relabelIso_pow_hom (τ : Equiv.Perm sigma) (m : ℕ) :
   | succ m ih =>
       rw [pow_succ]
       -- Powers in `Aut` reduce definitionally to reverse categorical composition on homs.
-      change relabel R τ ≫ ((relabelIso R τ) ^ m).hom = _
+      change relabel R τ ≫ ((relabelIso R τ) ^ m).asIso.hom = _
       rw [ih, relabel_comp, ← pow_succ']
 
 /-- On scheme-valued points, relabelling sends a coordinate tuple `d` to `d ∘ τ`. -/
@@ -291,17 +299,8 @@ theorem schemePointsMulEquiv_relabel {A : Type u} [CommRing A] [Algebra R A]
       schemePointsMulEquiv p (τ i) := by
   rw [relabel, schemePointsMulEquiv_eq_freeAbelianCharEquiv,
     schemePointsMulEquiv_eq_freeAbelianCharEquiv,
-    DiagonalizableGroup.schemePointsMulEquiv_groupSchemeMap,
-    toMonoidHom_characterRelabelHom, freeAbelianCharEquiv_apply,
-    MonoidHom.comp_apply]
-  let chi := DiagonalizableGroup.schemePointsMulEquiv
-    (R := R) (A := A) (characterGroup sigma) p
-  -- The point-coordinate equivalence evaluates basis characters only after unfolding its
-  -- presentation through the free abelian character equivalence.
-  change chi (characterRelabel τ (Multiplicative.ofAdd (Finsupp.single i 1))) =
-    chi (Multiplicative.ofAdd (Finsupp.single (τ i) 1))
-  rw [characterRelabel_ofAdd, Finsupp.equivMapDomain_single]
-  rfl
+    DiagonalizableGroup.schemePointsMulEquiv_groupSchemeMap]
+  simp
 
 /-- The group-scheme relabelling is the spectrum of the coordinate relabelling, read across the
 canonical presentation of the split torus. -/

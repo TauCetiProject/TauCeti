@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.LaurentFunctions
 -- `TauCeti.diagGL`, the diagonal embedding of the torus points, and `TauCeti.det_diagGL`.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- `TauCeti.Matrix.GeneralLinearGroup.rationalFunctions`, restricted along `diagGL` below.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.Basic
 
 /-!
 # Restricting a rational function on `GL n R` to the diagonal torus
@@ -34,8 +34,6 @@ characters are linearly independent and a weight can therefore be read off an ex
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3, "The maximal torus and weight spaces".
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 -/
 
@@ -103,7 +101,8 @@ theorem comp_diagGL_mem_laurentFunctions {f : GL (Fin n) R → R}
       have := hP (diagGL t)
       rwa [← Matrix.GeneralLinearGroup.val_det_apply, det_diagGL] at this
     have hu : (((∏ j, t j : Rˣ) ^ (-(m : ℤ)) : Rˣ) : R) * ((∏ i, t i : Rˣ) : R) ^ m = 1 := by
-      rw [← Units.val_pow_eq_pow_val, ← Units.val_mul, ← zpow_natCast (∏ i, t i) m, ← zpow_add]
+      rw [← Units.val_pow_eq_pow_val, ← Units.val_mul, ← zpow_natCast (∏ i, t i) m,
+        ← _root_.zpow_add]
       simp
     rw [← hd, weightCharHom_const, ← mul_assoc, hu, one_mul]
   have hfun : (fun t : Fin n → Rˣ ↦ f (diagGL t))

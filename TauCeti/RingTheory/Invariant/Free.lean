@@ -12,7 +12,14 @@ public import Mathlib.RingTheory.Unramified.Finite
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
+-- Public: `tensorToPi_baseChange` is stated with `baseChangeTensorAlgEquiv`, the right-factor
+-- action on `A' ⊗[R] A` and `Algebra.TensorProduct.piRightHom`.
+public import TauCeti.Algebra.TensorProduct.BaseChange
+public import Mathlib.RingTheory.TensorProduct.Pi
+import TauCeti.Algebra.Group.Action.MulDistribMulAction
 import TauCeti.RingTheory.Invariant.Basic
+import TauCeti.RingTheory.FiniteType.PointSeparation
 
 /-!
 # Free actions of finite groups on rings
@@ -46,6 +53,11 @@ these elements over all `g ≠ 1` maps to the indicator function of `1`. Writing
 `R → A` is injective the coefficients `∑ g, g • (yᵢ * b)` have unique, hence `R`-linear,
 preimages in `R`, so the identity is a finite dual basis of `A` over `R` and `A` is projective.
 
+The map `tensorToPi` and its elementary identities also apply to monoid actions on commutative
+semirings. The freeness criterion, bijectivity, module finiteness and projectivity allow a
+commutative semiring as the base, while the algebra carrying the action is a commutative ring.
+The invariant tensor identity `mul_tmul_eq_tmul_mul` also allows a noncommutative semiring target.
+
 ## Main definitions
 
 * `TauCeti.MulSemiringAction.tensorToPi R A G`: the `A`-algebra map
@@ -53,6 +65,10 @@ preimages in `R`, so the identity is a finite dual basis of `A` over `R` and `A`
 
 ## Main results
 
+* `TauCeti.MulSemiringAction.tensorToPi_baseChange`: `tensorToPi` commutes with base change, for
+  `G` acting on `A' ⊗[R] A` through the right factor.
+* `TauCeti.MulSemiringAction.bijective_tensorToPi_baseChange_iff`: for a finite monoid and a
+  faithfully flat `R → A'`, `tensorToPi` for `A' ⊗[R] A` is bijective exactly when it is for `A`.
 * `TauCeti.MulSemiringAction.tensorToPi_surjective_iff`: `tensorToPi` is surjective exactly when
   the action is free.
 * `TauCeti.MulSemiringAction.tensorToPi_bijective`: for a free action with invariant ring `R`,
@@ -62,6 +78,14 @@ preimages in `R`, so the identity is a finite dual basis of `A` over `R` and `A`
   a finite `R`-module, and if `R → A` is injective it is projective and faithfully flat.
 * `TauCeti.MulSemiringAction.formallyUnramified`, `TauCeti.MulSemiringAction.etale`: `A` is
   formally unramified over `R`, and étale if `R → A` is injective.
+* `TauCeti.MulSemiringAction.sum_smul_sum_smul_smul`: the dual basis identity
+  `n = ∑ i, xᵢ • ∑ g, g • (yᵢ • n)` for a module with semilinear action.
+* `TauCeti.MulSemiringAction.exists_sum_smul_eq_one`: for a free action on a commutative ring,
+  some element has trace `∑ g, g • c = 1`.
+* `RingHom.sum_mul_sum_smul`: pairing a dual basis of `tensorToPi` with traces, after a map
+  equivariant along `π : G' → G`, sums the translates by the kernel of `π`.
+* `TauCeti.MulSemiringAction.span_range_smul_sub_eq_top_iff`: on a finite-type algebra over a
+  field, freeness of `g` means that `g` fixes no point valued in an algebraically closed field.
 
 ## References
 
@@ -76,11 +100,14 @@ open TensorProduct
 
 namespace TauCeti.MulSemiringAction
 
-variable (R A G : Type*) [CommRing R] [CommRing A] [Algebra R A] [Group G]
+section Semiring
+
+variable (R A G : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A] [Monoid G]
   [MulSemiringAction G A] [SMulCommClass G R A]
 
-/-- The `A`-algebra map `A ⊗[R] A → (G → A)` sending `a ⊗ b` to `g ↦ a * g • b`. When `G` is
-finite, on spectra it is the morphism from the disjoint union of `|G|` copies of `Spec A` to
+/-- The `A`-algebra map `A ⊗[R] A → (G → A)` sending `a ⊗ b` to `g ↦ a * g • b`.
+It is defined for monoid actions on commutative semirings. When `A` and `R` are rings and `G` is
+a finite group, on spectra it is the morphism from the disjoint union of `|G|` copies of `Spec A` to
 `Spec A ×_{Spec R} Spec A` whose `g`-th component is the identity on the first factor and the
 automorphism of `Spec A` induced by `g` on the second. -/
 noncomputable def tensorToPi : A ⊗[R] A →ₐ[A] (G → A) :=
@@ -107,6 +134,95 @@ theorem tensorToPi_map_toAlgHom (k : G) (z : A ⊗[R] A) (g : G) :
   induction z using TensorProduct.inductionOn with
   | tmul a b => simp [mul_smul]
   | add x y hx hy => simp [hx, hy]
+
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
+/-- `tensorToPi` commutes with base change along `R → A'`, with `G` acting on `A' ⊗[R] A`
+through the right factor: read through `A' ⊗[R] (A ⊗[R] A) ≃ (A' ⊗[R] A) ⊗[A'] (A' ⊗[R] A)`,
+the map `tensorToPi` for `A' ⊗[R] A` is `id ⊗ tensorToPi R A G` followed by
+`A' ⊗[R] (G → A) → (G → A' ⊗[R] A)`. -/
+theorem tensorToPi_baseChange (A' : Type*) [CommSemiring A'] [Algebra R A']
+    (z : A' ⊗[R] (A ⊗[R] A)) :
+    tensorToPi A' (A' ⊗[R] A) G
+        (TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv R A' A A z) =
+      Algebra.TensorProduct.piRightHom R A' A' (fun _ : G ↦ A)
+        (Algebra.TensorProduct.map (AlgHom.id A' A') ((tensorToPi R A G).restrictScalars R) z) := by
+  induction z using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul a w =>
+    induction w using TensorProduct.inductionOn with
+    | add x y hx hy => simp only [tmul_add, map_add, hx, hy]
+    | tmul b b' =>
+      funext g
+      simp [Algebra.TensorProduct.piRightHom, TensorProduct.piRightHom_tmul]
+
+end Semiring
+
+section FaithfullyFlat
+
+variable {R A G : Type*} [CommRing R] [CommRing A] [Algebra R A] [Monoid G] [Finite G]
+  [MulSemiringAction G A] [SMulCommClass G R A]
+
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
+/-- Bijectivity of `tensorToPi` descends along a faithfully flat extension of the base: for
+`R → A'` faithfully flat, the map for `A' ⊗[R] A` is bijective exactly when the map for `A` is. -/
+theorem bijective_tensorToPi_baseChange_iff (A' : Type*) [CommRing A'] [Algebra R A']
+    [Module.FaithfullyFlat R A'] :
+    Function.Bijective (tensorToPi A' (A' ⊗[R] A) G) ↔
+      Function.Bijective (tensorToPi R A G) := by
+  classical
+  have := Fintype.ofFinite G
+  let γ : A ⊗[R] A →ₗ[R] (G → A) := ((tensorToPi R A G).restrictScalars R).toLinearMap
+  let e := TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv R A' A A
+  let π := Algebra.TensorProduct.piRight R A' A' fun _ : G ↦ A
+  -- Read through `e` and `π`, the map `tensorToPi` for `A' ⊗[R] A` is `id ⊗ γ`.
+  have hcomp : ⇑(tensorToPi A' (A' ⊗[R] A) G) ∘ ⇑e = ⇑π ∘ ⇑(γ.lTensor A') := by
+    funext z
+    rw [Function.comp_apply, Function.comp_apply, tensorToPi_baseChange]
+    induction z using TensorProduct.inductionOn with
+    | add x y hx hy => simp only [map_add, hx, hy]
+    | tmul a w =>
+      simp [π, γ, Algebra.TensorProduct.piRightHom, TensorProduct.piRightHom_tmul]
+  rw [← Function.Bijective.of_comp_iff _ e.bijective, hcomp,
+    Function.Bijective.of_comp_iff' π.bijective,
+    Module.FaithfullyFlat.lTensor_bijective_iff_bijective]
+  simp [γ]
+
+end FaithfullyFlat
+
+section InvariantTensor
+
+variable {R A G : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Group G]
+  [MulSemiringAction G A] [Algebra.IsInvariant R A G]
+
+/-- An invariant element of `A` passes through the tensor product over the invariant ring. -/
+theorem mul_tmul_eq_tmul_mul {c : A} (hc : ∀ g : G, g • c = c) (a b : A) :
+    (a * c) ⊗ₜ[R] b = a ⊗ₜ[R] (c * b) := by
+  obtain ⟨r, rfl⟩ := Algebra.IsInvariant.isInvariant (A := R) (G := G) c hc
+  rw [← Algebra.commutes, ← Algebra.smul_def, ← Algebra.smul_def, smul_tmul]
+
+end InvariantTensor
+
+section DualBasis
+
+variable {A G N : Type*} [Semiring A] [Monoid G] [MulSemiringAction G A] [AddCommMonoid N]
+  [Module A N] [DistribMulAction G N] [SMulDistribClass G A N]
+
+/-- The dual basis identity `n = ∑ i, xᵢ • ∑ g, g • (yᵢ • n)` for an `A`-module with semilinear
+action, where `∑ i, xᵢ * g • yᵢ` is the indicator function of `1`. -/
+theorem sum_smul_sum_smul_smul [Fintype G] [DecidableEq G] {S : Finset (A × A)}
+    (hS : ∀ g : G, ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → A) g) (n : N) :
+    ∑ p ∈ S, p.1 • ∑ g : G, g • (p.2 • n) = n := by
+  simp only [Finset.smul_sum, smul_distrib_smul, smul_smul]
+  rw [Finset.sum_comm]
+  simp only [← Finset.sum_smul, hS]
+  simp [Pi.single_apply]
+
+end DualBasis
+
+section Ring
+
+variable {R A G : Type*} [CommSemiring R] [CommRing A] [Algebra R A] [Group G]
+  [MulSemiringAction G A] [SMulCommClass G R A]
 
 /-- If `g • a - a` generate the unit ideal, some element of `A ⊗[R] A` has components `1` at the
 identity and `0` at `g`. -/
@@ -185,7 +301,7 @@ theorem tensorToPi_surjective_iff [Finite G] :
 
 /-- The finite family attached to a preimage of the indicator function of `1` under
 `tensorToPi`. -/
-private theorem exists_finset_sum_mul_smul [DecidableEq G] {u : A ⊗[R] A}
+theorem exists_finset_sum_mul_smul [DecidableEq G] {u : A ⊗[R] A}
     (hu : tensorToPi R A G u = Pi.single 1 1) :
     ∃ S : Finset (A × A), ∀ g : G, ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → A) g := by
   obtain ⟨S, rfl⟩ := TensorProduct.exists_finset u
@@ -195,29 +311,11 @@ private theorem exists_finset_sum_mul_smul [DecidableEq G] {u : A ⊗[R] A}
 private theorem sum_sum_smul_mul [Fintype G] [DecidableEq G] {S : Finset (A × A)}
     (hS : ∀ g : G, ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → A) g) (b : A) :
     ∑ p ∈ S, (∑ g : G, g • (p.2 * b)) * p.1 = b := by
-  have h (g : G) : ∑ p ∈ S, g • (p.2 * b) * p.1 = (Pi.single 1 1 : G → A) g * g • b := by
-    rw [← hS g, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun p _ ↦ ?_
-    rw [smul_mul']
-    ring
-  calc ∑ p ∈ S, (∑ g : G, g • (p.2 * b)) * p.1
-      = ∑ g : G, ∑ p ∈ S, g • (p.2 * b) * p.1 := by
-        simp only [Finset.sum_mul]
-        exact Finset.sum_comm
-    _ = b := by
-        simp only [h]
-        simp [Pi.single_apply]
+  simpa only [smul_eq_mul, mul_comm (Prod.fst _)] using sum_smul_sum_smul_smul hS b
 
 section Invariant
 
 variable [Algebra.IsInvariant R A G]
-
-omit [SMulCommClass G R A] in
-/-- An invariant element of `A` passes through the tensor product over the invariant ring. -/
-theorem mul_tmul_eq_tmul_mul {c : A} (hc : ∀ g : G, g • c = c) (a b : A) :
-    (a * c) ⊗ₜ[R] b = a ⊗ₜ[R] (c * b) := by
-  obtain ⟨r, rfl⟩ := Algebra.IsInvariant.isInvariant (A := R) (G := G) c hc
-  rw [mul_comm a, ← Algebra.smul_def, ← Algebra.smul_def, smul_tmul]
 
 /-- The inverse of `tensorToPi`, written in terms of the dual basis. -/
 private theorem sum_tmul_eq [Fintype G] [DecidableEq G] {S : Finset (A × A)}
@@ -251,13 +349,15 @@ theorem tensorToPi_bijective [Finite G]
   rw [← sum_tmul_eq hS z, hz]
   simp
 
-/-- For a free action of a finite group with invariant ring `R`, `A` is a finite `R`-module. -/
+omit [SMulCommClass G R A] in
+/-- For a free action of a finite group, `A` is a finite `R`-module whenever every fixed point of
+`A` lies in the image of `R`; no compatibility of the action with `R` is assumed. -/
 theorem moduleFinite [Finite G]
     (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun a : A ↦ g • a - a) = ⊤) :
     Module.Finite R A := by
   classical
   have := Fintype.ofFinite G
-  obtain ⟨u, hu⟩ := exists_tensorToPi_eq_single (R := R) hG
+  obtain ⟨u, hu⟩ := exists_tensorToPi_eq_single (R := FixedPoints.subring A G) hG
   obtain ⟨S, hS⟩ := exists_finset_sum_mul_smul hu
   refine ⟨⟨S.image Prod.fst, eq_top_iff.mpr fun b _ ↦ ?_⟩⟩
   rw [← sum_sum_smul_mul hS b]
@@ -275,22 +375,20 @@ theorem projective [Finite G] [FaithfulSMul R A]
   have := Fintype.ofFinite G
   obtain ⟨u, hu⟩ := exists_tensorToPi_eq_single (R := R) hG
   obtain ⟨S, hS⟩ := exists_finset_sum_mul_smul hu
-  -- The coordinate `b ↦ ∑ g, g • (y * b)` of the dual basis, as an `R`-linear map `A → R`.
-  choose φ hφ using fun y b : A ↦
-    Algebra.IsInvariant.isInvariant (A := R) _ (smul_sum_smul (G := G) · (y * b))
-  have inj := FaithfulSMul.algebraMap_injective R A
-  let f (y : A) : A →ₗ[R] R :=
-    { toFun := φ y
-      map_add' b b' := inj <| by simp [hφ, mul_add, Finset.sum_add_distrib]
-      map_smul' r b := inj <| by
-        simp only [hφ, mul_smul_comm, smul_comm _ r, ← Finset.smul_sum]
-        simp only [RingHom.id_apply, smul_eq_mul, map_mul, hφ, Algebra.smul_def] }
-  refine .of_split (LinearMap.pi fun p : S ↦ f p.1.2)
+  refine .of_split (LinearMap.pi fun p : S ↦ traceCoord G p.1.2)
     (Fintype.linearCombination R fun p : S ↦ p.1.1) (LinearMap.ext fun b ↦ ?_)
   simp only [LinearMap.comp_apply, Fintype.linearCombination_apply, LinearMap.pi_apply,
-    LinearMap.id_apply, Algebra.smul_def]
-  simp only [f, LinearMap.coe_mk, AddHom.coe_mk, hφ]
+    LinearMap.id_apply, Algebra.smul_def, algebraMap_traceCoord]
   exact (Finset.sum_coe_sort S _).trans (sum_sum_smul_mul hS b)
+
+end Invariant
+
+end Ring
+
+section InvariantRing
+
+variable {R A G : Type*} [CommRing R] [CommRing A] [Algebra R A] [Group G]
+  [MulSemiringAction G A] [SMulCommClass G R A] [Algebra.IsInvariant R A G]
 
 /-- For a free action of a finite group with invariant ring `R`, if `R → A` is injective then `A`
 is a faithfully flat `R`-module. -/
@@ -333,6 +431,94 @@ theorem etale [Finite G] [FaithfulSMul R A]
   have := Module.finitePresentation_of_projective R A
   exact .of_formallyUnramified_of_flat
 
-end Invariant
+end InvariantRing
+
+section Trace
+
+variable {A G : Type*} [CommRing A] [Group G] [MulSemiringAction G A]
+
+/-- For a free action of a finite group on a commutative ring, some element has trace
+`∑ g, g • c` equal to `1`. Equivalently, the trace to the fixed subring is surjective. -/
+theorem exists_sum_smul_eq_one [Fintype G]
+    (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun a : A ↦ g • a - a) = ⊤) :
+    ∃ c : A, ∑ g : G, g • c = 1 := by
+  classical
+  let R := FixedPoints.subring A G
+  obtain ⟨u, hu⟩ := exists_tensorToPi_eq_single (R := R) hG
+  obtain ⟨S, hS⟩ := exists_finset_sum_mul_smul hu
+  -- The traces lying in `R` form an ideal of `R`; its extension to `A` contains
+  -- `1 = ∑ i, xᵢ * ∑ g, g • yᵢ`, so integrality of `A` over `R` makes it the unit ideal.
+  let t : A →ₗ[R] A := ∑ g : G, (MulSemiringAction.toAlgHom R A g).toLinearMap
+  let I : Ideal R := (LinearMap.range t).comap (Algebra.linearMap R A)
+  have hone : ∑ p ∈ S, p.1 * ∑ g : G, g • p.2 = 1 := by
+    simp only [Finset.mul_sum]
+    rw [Finset.sum_comm]
+    simp [hS]
+  have hI : I = ⊤ := by
+    have := Algebra.IsInvariant.isIntegral R A G
+    refine (Ideal.map_eq_top_iff (algebraMap R A) (FaithfulSMul.algebraMap_injective R A)
+      fun a ↦ Algebra.IsIntegral.isIntegral a).mp ?_
+    rw [Ideal.eq_top_iff_one, ← hone]
+    refine Ideal.sum_mem _ fun p _ ↦ Ideal.mul_mem_left _ _ ?_
+    obtain ⟨r, hr⟩ :=
+      Algebra.IsInvariant.isInvariant (A := R) _ (smul_sum_smul (G := G) · p.2)
+    rw [← hr]
+    exact Ideal.mem_map_of_mem _ ⟨p.2, by simp [t, hr]⟩
+  have h1 : (1 : R) ∈ I := by simp [hI]
+  obtain ⟨c, hc⟩ := h1
+  exact ⟨c, by simpa [t] using hc⟩
+
+/-- Let `(xᵢ, yᵢ)` be a finite family with `∑ i, xᵢ * g • yᵢ` equal to `1` at `g = 1` and `0`
+elsewhere, as for a preimage of the indicator function of `1` under `tensorToPi`. After a ring map
+`f : A → C` equivariant along `π : G' → G`, pairing the `xᵢ` with the traces of `yᵢ * c` gives the
+sum of the translates of `c` by the kernel of `π`. -/
+theorem _root_.RingHom.sum_mul_sum_smul [DecidableEq G] {G' C : Type*} [Group G'] [Fintype G']
+    [CommRing C] [MulSemiringAction G' C] (f : A →+* C) (π : G' →* G)
+    (hπ : ∀ (g : G') (a : A), g • f a = f (π g • a))
+    {S : Finset (A × A)} (hS : ∀ g : G, ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → A) g)
+    (c : C) :
+    ∑ p ∈ S, f p.1 * ∑ g : G', g • (f p.2 * c) = ∑ g : G', if π g = 1 then g • c else 0 := by
+  calc ∑ p ∈ S, f p.1 * ∑ g : G', g • (f p.2 * c)
+      = ∑ g : G', f (∑ p ∈ S, p.1 * π g • p.2) * g • c := by
+        simp only [Finset.mul_sum, smul_mul', hπ, map_sum, map_mul, Finset.sum_mul]
+        rw [Finset.sum_comm]
+        simp only [mul_assoc]
+    _ = ∑ g : G', if π g = 1 then g • c else 0 := by
+        refine Finset.sum_congr rfl fun g _ ↦ ?_
+        rw [hS, Pi.single_apply]
+        split_ifs <;> simp
+
+end Trace
+
+section Points
+
+variable {A G : Type*} [CommRing A] [Monoid G] [MulSemiringAction G A]
+variable {k K : Type*} [Field k] [Field K] [IsAlgClosed K] [Algebra k K]
+  [Algebra k A] [Algebra.FiniteType k A] [SMulCommClass G k A]
+
+/-- On a finite-type algebra over a field, the elements `g • a - a` generate the unit ideal
+exactly when `g` fixes no point valued in an algebraically closed extension field. Thus freeness
+in the sense of `tensorToPi_surjective_iff` can be tested on geometric points. -/
+theorem span_range_smul_sub_eq_top_iff (g : G) :
+    Ideal.span (Set.range fun a : A ↦ g • a - a) = ⊤ ↔
+      ∀ x : A →ₐ[k] K, x.comp (MulSemiringAction.toAlgHom k A g) ≠ x := by
+  constructor
+  · intro h x hx
+    have hle : Ideal.span (Set.range fun a : A ↦ g • a - a) ≤ RingHom.ker x.toRingHom := by
+      rw [Ideal.span_le]
+      rintro _ ⟨a, rfl⟩
+      simpa [sub_eq_zero] using DFunLike.congr_fun hx a
+    rw [h] at hle
+    simpa using hle (Submodule.mem_top (x := (1 : A)))
+  · intro h
+    by_contra hne
+    obtain ⟨x, hle, -⟩ := exists_algHom_apply_ne_zero_of_notMem_radical (k := k) (K := K)
+      (Ideal.span (Set.range fun a : A ↦ g • a - a)) (x := 1)
+      fun h1 ↦ hne (Ideal.radical_eq_top.mp ((Ideal.eq_top_iff_one _).mpr h1))
+    refine h x (AlgHom.ext fun a ↦ ?_)
+    have ha : x (g • a - a) = 0 := hle (Ideal.subset_span ⟨a, rfl⟩)
+    simpa [sub_eq_zero] using ha
+
+end Points
 
 end TauCeti.MulSemiringAction

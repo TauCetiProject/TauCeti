@@ -5,21 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.AEEqFun
+public import Mathlib.MeasureTheory.Function.Holder
+public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+public import TauCeti.Probability.Ergodic.FixedSpace
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 
 /-!
-# The Koopman Markov operator on measurable-function germs
+# The Koopman Markov operator on measurable germs and `L∞`
 
-This file supplies the algebraic part of the generic Koopman lane in the Exchangeability roadmap.
 For a measure-preserving endomorphism `T`, composition `g ↦ g ∘ T` is bundled as a real-linear
-operator on almost-everywhere measurable real-valued functions.  It preserves one and
+operator on almost-everywhere measurable real-valued functions. It preserves one and
 multiplication, is positive and monotone, and its powers are composition with the corresponding
 iterates of `T`.
 
-Mathlib already provides the underlying operation as `AEEqFun.compMeasurePreserving`, as well as
-a norm-preserving additive composition map on `Lᵖ`, which is an isometry when `1 ≤ p`.  Unlike
-that `Lᵖ` composition map, the Koopman operator here is also multiplicative.  The later `L∞` API
-can restrict this operator to essentially bounded germs.
+On `L∞`, the class `1` is the constant-one element for an arbitrary measure, while Mathlib's
+heterogeneous Hölder action supplies pointwise multiplication. Mathlib's existing composition
+isometry preserves these operations. Its positivity, monotonicity, and fixed-point
+characterization hold on general `Lᵖ` and are supplied by `TauCeti.Probability.Ergodic.FixedSpace`.
+
+Mathlib provides the underlying composition maps as `AEEqFun.compMeasurePreserving` and
+`Lp.compMeasurePreservingₗᵢ`. The only new construction here is their Markov-operator interface.
 -/
 
 public section
@@ -27,6 +32,7 @@ public section
 noncomputable section
 
 open MeasureTheory
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -120,6 +126,34 @@ theorem koopmanMarkov_eq_self_iff (T : Ω → Ω) (hT : MeasurePreserving T μ �
       (Filter.Eventually.of_forall fun ω => congrArg (fun q : Ω →ₘ[μ] ℝ => q ω) h)
   · intro h
     exact AEEqFun.ext ((coeFn_koopmanMarkov T hT g).trans h)
+
+/-! ## The `L∞` Markov laws -/
+
+/-- Composition by a measure-preserving map preserves the constant-one element of `L∞`. -/
+@[simp]
+theorem compMeasurePreservingLInfty_one (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
+    Lp.compMeasurePreserving T hT (1 : Lp ℝ ∞ μ) = 1 := by
+  apply Lp.ext
+  have honeT := hT.quasiMeasurePreserving.tendsto_ae (Lp.coeFn_one (E := ℝ) (μ := μ))
+  filter_upwards [Lp.coeFn_compMeasurePreserving (1 : Lp ℝ ∞ μ) hT, honeT,
+    Lp.coeFn_one (E := ℝ) (μ := μ)] with ω hop honeT hone
+  rw [hop, Function.comp_apply, honeT, hone, Pi.one_apply, Pi.one_apply]
+
+/-- Composition by a measure-preserving map preserves pointwise products in `L∞`. -/
+theorem compMeasurePreservingLInfty_mul (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
+    (f g : Lp ℝ ∞ μ) :
+    Lp.compMeasurePreservingₗᵢ ℝ T hT (f * g) =
+      Lp.compMeasurePreservingₗᵢ ℝ T hT f * Lp.compMeasurePreservingₗᵢ ℝ T hT g := by
+  rw [Lp.compMeasurePreservingₗᵢ_apply, Lp.compMeasurePreservingₗᵢ_apply,
+    Lp.compMeasurePreservingₗᵢ_apply]
+  apply Lp.ext
+  have hmulT := hT.quasiMeasurePreserving.tendsto_ae (Lp.coeFn_mul f g)
+  filter_upwards [Lp.coeFn_compMeasurePreserving (f * g) hT, hmulT,
+    Lp.coeFn_mul (Lp.compMeasurePreserving T hT f) (Lp.compMeasurePreserving T hT g),
+    Lp.coeFn_compMeasurePreserving f hT, Lp.coeFn_compMeasurePreserving g hT]
+    with ω hlhs hmul hrhs hf hg
+  rw [hlhs, Function.comp_apply, hmul, hrhs]
+  simp only [Pi.mul_apply, hf, hg, Function.comp_apply]
 
 end Probability
 

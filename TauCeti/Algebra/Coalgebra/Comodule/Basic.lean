@@ -101,43 +101,51 @@ theorem lTensor_counit_coact (m : M) :
     Coalgebra.counit.lTensor M (coact (R := R) (C := C) (M := M) m) = m ⊗ₜ[R] 1 :=
   LinearMap.congr_fun (Comodule.lTensor_counit_comp_coact (R := R) (C := C) (M := M)) m
 
+/-- Coassociativity of the coaction with the inverse associator, evaluated at a vector. -/
+@[simp]
+theorem coassoc_symm_apply (m : M) :
+    (TensorProduct.assoc R M C C).symm
+        (Coalgebra.comul.lTensor M (coact (R := R) (C := C) (M := M) m)) =
+      (coact (R := R) (C := C) (M := M)).rTensor C (coact m) := by
+  rw [(TensorProduct.assoc R M C C).symm_apply_eq, coassoc_apply]
+
+/-- Coassociativity of the coaction with the inverse associator, as an equality of linear
+maps. -/
+@[simp]
+theorem coact_coassoc_symm :
+    (TensorProduct.assoc R M C C).symm ∘ₗ Coalgebra.comul.lTensor M ∘ₗ
+        coact (R := R) (C := C) (M := M) =
+      (coact (R := R) (C := C) (M := M)).rTensor C ∘ₗ coact (R := R) (C := C) (M := M) :=
+  LinearMap.ext coassoc_symm_apply
+
+/-- Contracting the coaction against the counit recovers the vector. -/
+theorem rid_lTensor_counit_coact (m : M) :
+    TensorProduct.rid R M (Coalgebra.counit.lTensor M (coact (R := R) (C := C) (M := M) m)) =
+      m := by
+  rw [lTensor_counit_coact, TensorProduct.rid_tmul, one_smul]
+
+/-- The coaction is injective: contracting against the counit is a left inverse. -/
+theorem coact_injective : Function.Injective (coact (R := R) (C := C) (M := M)) :=
+  Function.LeftInverse.injective
+    (g := fun t ↦ TensorProduct.rid R M (Coalgebra.counit.lTensor M t)) rid_lTensor_counit_coact
+
+/-- Two vectors have the same coaction exactly when they are equal. -/
+@[simp]
+theorem coact_inj {m n : M} :
+    coact (R := R) (C := C) (M := M) m = coact n ↔ m = n :=
+  coact_injective.eq_iff
+
+/-- The coaction of a vector vanishes exactly when the vector is zero. -/
+@[simp]
+theorem coact_eq_zero {m : M} : coact (R := R) (C := C) (M := M) m = 0 ↔ m = 0 :=
+  (coact (R := R) (C := C) (M := M)).map_eq_zero_iff coact_injective
+
+/-- The coaction vanishes exactly on a subsingleton module. -/
+theorem coact_eq_zero_iff : coact (R := R) (C := C) (M := M) = 0 ↔ Subsingleton M := by
+  refine ⟨fun h ↦ ⟨fun m n ↦ ?_⟩, fun _ ↦ Subsingleton.elim _ _⟩
+  rw [← coact_inj (R := R) (C := C), h, LinearMap.zero_apply, LinearMap.zero_apply]
+
 /-! ## Components selected by linear functionals -/
-
-/-- Pair two linear functionals on the factors of a tensor square. -/
-noncomputable def pairCoeff (phi psi : C →ₗ[R] R) : C ⊗[R] C →ₗ[R] R :=
-  (TensorProduct.rid R R).toLinearMap ∘ₗ TensorProduct.map phi psi
-
-omit [Coalgebra R C] in
-@[simp]
-theorem pairCoeff_tmul (phi psi : C →ₗ[R] R) (c d : C) :
-    pairCoeff (R := R) phi psi (c ⊗ₜ[R] d) = phi c * psi d := by
-  simp [pairCoeff, smul_eq_mul, mul_comm]
-
-/-- Apply a pair of linear functionals to the two coalgebra factors of a threefold tensor. -/
-noncomputable def tensorPairComponent (phi psi : C →ₗ[R] R) :
-    M ⊗[R] (C ⊗[R] C) →ₗ[R] M :=
-  (TensorProduct.rid R M).toLinearMap ∘ₗ (pairCoeff (R := R) phi psi).lTensor M
-
-omit [Coalgebra R C] [Comodule R C M] in
-@[simp]
-theorem tensorPairComponent_tmul (phi psi : C →ₗ[R] R) (m : M) (t : C ⊗[R] C) :
-    tensorPairComponent (R := R) (M := M) phi psi (m ⊗ₜ[R] t) =
-      pairCoeff (R := R) phi psi t • m := by
-  simp [tensorPairComponent]
-
-omit [Coalgebra R C] [Comodule R C M] in
-/-- Applying two tensor components successively is applying their pair after reassociation. -/
-theorem tensorComponent_comp_tensorComponent (phi psi : C →ₗ[R] R) :
-    _root_.LinearMap.tensorComponent (R := R) (M := M) phi ∘ₗ
-        _root_.LinearMap.tensorComponent (R := R) (M := M ⊗[R] C) psi =
-      tensorPairComponent (R := R) (M := M) phi psi ∘ₗ
-        (TensorProduct.assoc R M C C).toLinearMap := by
-  refine TensorProduct.ext_threefold fun m c d => ?_
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-    TensorProduct.assoc_tmul, tensorPairComponent_tmul, pairCoeff_tmul,
-    _root_.LinearMap.tensorComponent_tmul,
-    map_smul, smul_smul]
-  rw [mul_comm]
 
 /-- Taking a tensor component commutes with a coaction on the other factor. -/
 theorem coact_comp_tensorComponent (phi : C →ₗ[R] R) :
@@ -158,31 +166,42 @@ theorem coactComponent_apply (phi : C →ₗ[R] R) (m : M) :
       _root_.LinearMap.tensorComponent (R := R) (M := M) phi (coact m) :=
   by rw [coactComponent, LinearMap.coe_comp, Function.comp_apply]
 
+/-- The coaction of a component: `ρ (∑ m₀ φ(m₁)) = ∑ m₀ ⊗ m₁ φ(m₂)`, that is, the coaction
+followed by the right contraction of the comultiplication with `φ`. -/
+theorem coact_coactComponent (phi : C →ₗ[R] R) (m : M) :
+    coact (coactComponent (R := R) (C := C) (M := M) phi m) =
+      (_root_.LinearMap.tensorComponent phi ∘ₗ Coalgebra.comul).lTensor M (coact m) := by
+  rw [coactComponent_apply, ← _root_.LinearMap.tensorComponent_rTensor,
+    ← coassoc_symm_apply, _root_.LinearMap.tensorComponent_assoc_symm,
+    LinearMap.lTensor_comp_apply]
+
+/-- A component applied to the first factor of a coaction: `∑ m₀ φ(m₁) ⊗ m₂`, that is, the
+coaction followed by the left contraction of the comultiplication with `φ`. -/
+theorem rTensor_coactComponent_coact (phi : C →ₗ[R] R) (m : M) :
+    (coactComponent (R := R) (C := C) (M := M) phi).rTensor C (coact m) =
+      (TensorProduct.lid R C ∘ₗ phi.rTensor C ∘ₗ Coalgebra.comul).lTensor M (coact m) := by
+  rw [coactComponent, LinearMap.rTensor_comp_apply,
+    ← coassoc_symm_apply, _root_.LinearMap.rTensor_tensorComponent_assoc_symm,
+    ← LinearMap.lTensor_comp_apply, LinearMap.comp_assoc]
+
 /-- Coassociativity read off by two linear functionals on the coalgebra. -/
 theorem coactComponent_coactComponent (phi psi : C →ₗ[R] R) (m : M) :
     coactComponent (R := R) (C := C) (M := M) phi
         (coactComponent (R := R) (C := C) (M := M) psi m) =
-      tensorPairComponent (R := R) (M := M) phi psi
-        (Coalgebra.comul.lTensor M (coact m)) := by
+      coactComponent (R := R) (C := C) (M := M)
+        (phi ∘ₗ _root_.LinearMap.tensorComponent psi ∘ₗ Coalgebra.comul) m := by
   have hcoact := congr($(coact_comp_tensorComponent (R := R) (C := C) (M := M) psi)
     (coact (R := R) (C := C) (M := M) m))
-  simp only [LinearMap.coe_comp, Function.comp_apply] at hcoact
-  have hpair := congr($(tensorComponent_comp_tensorComponent
-    (R := R) (C := C) (M := M) phi psi)
+  simp only [LinearMap.comp_apply] at hcoact
+  have hpair := congr($(_root_.LinearMap.tensorComponent_comp_tensorComponent
+    (R := R) (M := M) phi psi)
       ((coact (R := R) (C := C) (M := M)).rTensor C (coact m)))
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe] at hpair
-  rw [coactComponent_apply, coactComponent_apply, hcoact, hpair, coassoc_apply]
-
-omit [Comodule R C M] in
-/-- Contracting a pair component after comultiplication uses the corresponding contraction of
-the two coefficient functionals. -/
-theorem tensorPairComponent_comp_lTensor_comul {phi psi theta : C →ₗ[R] R}
-    (h : pairCoeff (R := R) phi psi ∘ₗ Coalgebra.comul = theta) :
-    tensorPairComponent (R := R) (M := M) phi psi ∘ₗ Coalgebra.comul.lTensor M =
-      _root_.LinearMap.tensorComponent (R := R) (M := M) theta := by
-  rw [tensorPairComponent, LinearMap.comp_assoc, ← LinearMap.lTensor_comp, h]
-  refine TensorProduct.ext' fun m c ↦ ?_
-  simp
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hpair
+  rw [coactComponent_apply, coactComponent_apply, hcoact, hpair, coassoc_apply,
+    coactComponent_apply]
+  simpa only [LinearMap.id_apply, LinearMap.lTensor_def, LinearMap.comp_assoc] using
+    _root_.LinearMap.tensorComponent_map (phi ∘ₗ _root_.LinearMap.tensorComponent psi)
+      LinearMap.id Coalgebra.comul (coact (R := R) (C := C) m)
 
 variable (R C) in
 /-- The regular right comodule of a coalgebra over itself, with coaction given by the
@@ -223,6 +242,11 @@ instance funLike : FunLike (Hom R C M N) M N where
     cases hlin
     rfl
 
+/-- Comodule morphisms are linear maps, so Mathlib's generic linearity lemmas apply. -/
+instance instLinearMapClass : LinearMapClass (Hom R C M N) R M N where
+  map_add f := f.toLinearMap.map_add
+  map_smulₛₗ f := f.toLinearMap.map_smul
+
 /-- See Note [custom simps projection]. -/
 def Simps.apply (f : Hom R C M N) : M → N :=
   f
@@ -237,6 +261,11 @@ theorem coe_mk {f : M →ₗ[R] N} (h) : ((⟨f, h⟩ : Hom R C M N) : M → N) 
 theorem coe_toLinearMap (f : Hom R C M N) : ⇑f.toLinearMap = f :=
   rfl
 
+/-- Coercing a comodule morphism to a linear map gives its underlying linear map. -/
+@[simp]
+theorem ofClass_eq_toLinearMap (f : Hom R C M N) : (f : M →ₗ[R] N) = f.toLinearMap :=
+  rfl
+
 /-- A comodule morphism is determined by its underlying linear map. -/
 theorem toLinearMap_injective :
     Function.Injective (Hom.toLinearMap : Hom R C M N → M →ₗ[R] N) := by
@@ -246,12 +275,8 @@ theorem toLinearMap_injective :
 
 /-- Two comodule morphisms are equal when their underlying functions are equal. -/
 @[ext]
-theorem ext {f g : Hom R C M N} (h : ∀ m, f m = g m) : f = g := by
-  have hlin : f.toLinearMap = g.toLinearMap := LinearMap.ext fun m => h m
-  cases f
-  cases g
-  cases hlin
-  rfl
+theorem ext {f g : Hom R C M N} (h : ∀ m, f m = g m) : f = g :=
+  DFunLike.ext f g h
 
 /-- A comodule morphism commutes with coactions, as an equality of linear maps. -/
 @[simp]

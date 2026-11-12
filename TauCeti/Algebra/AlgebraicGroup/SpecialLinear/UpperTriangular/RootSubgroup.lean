@@ -88,7 +88,7 @@ theorem definingHopfIdeal_le_ker_rootSubgroupCoordinateMap (hij : i < j) :
   let f := toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
   have hmem := rootSubgroupPoints_mem R hij f
   rw [← SpecialLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app,
-    CommHopfAlgCat.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hmem
   intro x hx
   exact hmem x hx
@@ -107,7 +107,11 @@ theorem definingHopfIdeal_le_ker_rootSubgroupCoordinateMap_iff [Nontrivial R] (h
   have hcomp : toConv (f.ofConv.comp
       (SpecialLinear.rootSubgroupCoordinateMap (R := R) hij).hom) =
       SpecialLinear.rootSubgroupPoints hij f :=
-    SpecialLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app hij (CommAlgCat.of R R) f
+    by
+      have he := SpecialLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app hij
+        (CommAlgCat.of R R) f
+      erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at he
+      exact he
   have hmem : SpecialLinear.rootSubgroupPoints hij f ∈
       CommHopfAlgCat.quotientPointsSubgroup (SpecialLinear.coordinateHopfAlgebra R n)
         (definingHopfIdeal R n) (CommAlgCat.of R R) := by
@@ -152,8 +156,8 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (hij : i < j)
       (SpecialLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n) (CommAlgCat.of R A)
       (toConv (f.ofConv.comp (rootSubgroupCoordinateMap R hij).hom)) =
       toConv (f.ofConv.comp (SpecialLinear.rootSubgroupCoordinateMap (R := R) hij.ne).hom) := by
-    rw [← CommHopfAlgCat.mapPointsFunctor_app_apply (rootSubgroupCoordinateMap R hij),
-      ← CommHopfAlgCat.mapPointsFunctor_app_apply
+    rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (rootSubgroupCoordinateMap R hij),
+      ← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
         (SpecialLinear.rootSubgroupCoordinateMap (R := R) hij.ne)]
     exact (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
         (definingHopfIdeal R n) (rootSubgroupCoordinateMap R hij)
@@ -165,9 +169,12 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (hij : i < j)
       (SpecialLinear.rootSubgroupCoordinateMap (R := R) hij.ne).hom.toAlgHom) =
       SpecialLinear.rootSubgroupPoints hij.ne
         (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))) :=
-    SpecialLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app hij.ne
-      (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R))
-      (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))
+    by
+      have he := SpecialLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app hij.ne
+        (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R))
+        (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))
+      erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at he
+      exact he
   rw [AlgHom.id_comp] at hgeneric
   have hmatrix :
       (SpecialLinear.pointsMulEquiv (R := R) (A := AdditiveGroup.coordinateHopfAlgebra R) n)

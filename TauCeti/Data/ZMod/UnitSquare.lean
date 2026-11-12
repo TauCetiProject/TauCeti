@@ -19,6 +19,10 @@ In particular, an integer congruent to one modulo eight gives a unit square at e
 positive dyadic exponent. The variant `5 - 4r`, for a unit `r`, provides the rotation
 coefficient for pairs of odd cyclic dyadic forms.
 
+For any modulus divisible by sixteen, the kernel of reduction to half the modulus
+consists of squares (`ZMod.isSquare_of_cast_half_eq_one`). This also applies when the
+modulus has odd factors and gives the dyadic conductor bound for quadratic characters.
+
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §93.
@@ -31,6 +35,30 @@ public section
 namespace ZMod
 
 variable {k : ℕ}
+
+/-- If sixteen divides the modulus, every residue that becomes one modulo half the
+modulus is a square. The modulus may be zero, in which case the hypothesis forces `x = 1`. -/
+theorem isSquare_of_cast_half_eq_one {N : ℕ} (x : ZMod N) (hN : 16 ∣ N)
+    (hx : (x.cast : ZMod (N / 2)) = 1) : IsSquare x := by
+  obtain ⟨m, rfl⟩ := hN
+  obtain ⟨a, rfl⟩ := ZMod.intCast_surjective x
+  have hhalf : 16 * m / 2 = 8 * m := by omega
+  have hd : 8 * m ∣ 16 * m := ⟨2, by omega⟩
+  have ha : (a : ZMod (8 * m)) = 1 := by
+    rw [hhalf] at hx
+    simpa only [ZMod.cast_intCast hd] using hx
+  have ht : (8 * (m : ℤ)) ∣ a - 1 := by
+    have := (ZMod.intCast_zmod_eq_zero_iff_dvd (a - 1) (8 * m)).mp
+      (by simpa using sub_eq_zero.mpr ha)
+    simpa using this
+  obtain ⟨t, ht⟩ := ht
+  have ht' := congrArg (fun z : ℤ ↦ (z : ZMod (16 * m))) ht
+  push_cast at ht'
+  have hz : (16 : ZMod (16 * m)) * m = 0 := by
+    simpa only [Nat.cast_mul, Nat.cast_ofNat] using ZMod.natCast_self (16 * m)
+  -- Squaring `1 + 4mt` gives `1 + 8mt`: its remaining term is a multiple of `16m`.
+  refine (isSquare_iff_exists_sq _).mpr ⟨1 + 4 * (m : ZMod (16 * m)) * t, ?_⟩
+  linear_combination ht' - (m * (t : ZMod (16 * m)) ^ 2) * hz
 
 /-- Every residue `1 + 8a` modulo `2^{k+1}` is the square of a unit. -/
 theorem exists_unit_sq_eq_one_add_eight_mul (a : ZMod (2 ^ (k + 1))) :

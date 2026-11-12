@@ -124,7 +124,7 @@ by the `d`-th power of the Abel map at the graph of the base point, that is, to 
 lemma abelJacobiMapOfDegree_app_apply (d : ℕ) {T : (Over S)ᵒᵖ}
     (D : (relativeEffectiveCartierDegreeSubfunctor f d).toFunctor.obj T) :
     ConcreteCategory.hom (C := Type (u + 1))
-      (X := uliftFunctor.{u + 1}.obj ((relativeEffectiveCartierDegreeSubfunctor f d).obj T))
+      (X := ULift.{u + 1} ((relativeEffectiveCartierDegreeSubfunctor f d).obj T))
       (Y := ToType ((relativePicardPresheaf f).obj T)) ((abelJacobiMapOfDegree f hx₀ d).app T)
       (ULift.up D) =
       (abelMap f).app T (ULift.up D.1) /
@@ -150,7 +150,7 @@ divisor, and `𝒪(∅) = 𝒪`. -/
 lemma abelJacobiMapOfDegree_zero_app {T : (Over S)ᵒᵖ}
     (D : (relativeEffectiveCartierDegreeSubfunctor f 0).toFunctor.obj T) :
     ConcreteCategory.hom (C := Type (u + 1))
-      (X := uliftFunctor.{u + 1}.obj ((relativeEffectiveCartierDegreeSubfunctor f 0).obj T))
+      (X := ULift.{u + 1} ((relativeEffectiveCartierDegreeSubfunctor f 0).obj T))
       (Y := ToType ((relativePicardPresheaf f).obj T)) ((abelJacobiMapOfDegree f hx₀ 0).app T)
       (ULift.up D) = 1 := by
   rw [abelJacobiMapOfDegree_app_apply, pow_zero, div_one]
@@ -172,7 +172,7 @@ lemma graphDivisor_basePoint_pow_mem_relativeEffectiveCartierDegreeSubfunctor_ob
 `𝒪(d • x₀_T - d • x₀_T) = 𝒪`. -/
 lemma abelJacobiMapOfDegree_app_pow_basePoint (d : ℕ) (T : (Over S)ᵒᵖ) :
     ConcreteCategory.hom (C := Type (u + 1))
-      (X := uliftFunctor.{u + 1}.obj ((relativeEffectiveCartierDegreeSubfunctor f d).obj T))
+      (X := ULift.{u + 1} ((relativeEffectiveCartierDegreeSubfunctor f d).obj T))
       (Y := ToType ((relativePicardPresheaf f).obj T)) ((abelJacobiMapOfDegree f hx₀ d).app T)
         (ULift.up ⟨(graphDivisor f).app T (basePoint hx₀ T.unop) ^ d,
           graphDivisor_basePoint_pow_mem_relativeEffectiveCartierDegreeSubfunctor_obj

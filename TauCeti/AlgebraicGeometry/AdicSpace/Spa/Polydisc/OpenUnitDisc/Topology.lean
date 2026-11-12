@@ -57,7 +57,7 @@ local notation "T" => weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily
 local notation "C" => weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight
 
 /-- The `n`-th rational subset `|T|^(n+1) ≤ |c| ≠ 0` of the closed unit disc. -/
-def discExhaustion (c : K) (n : ℕ) : Set (closedPolydisc 1 K) :=
+noncomputable def discExhaustion (c : K) (n : ℕ) : Set (closedPolydisc 1 K) :=
   Subtype.val ⁻¹' basicOpen (T ^ (n + 1)) (C c)
 
 /-- Membership in an exhaustion disc is the defining valuation inequality and nonvanishing. -/
@@ -109,7 +109,7 @@ theorem monotone_discExhaustion (c : K) : Monotone (discExhaustion c) := by
 
 /-- The union of the rational subsets `|T|^(n+1) ≤ |c| ≠ 0`. For a pseudouniformiser `c`,
 this is the underlying open unit disc; the definition allows arbitrary scalars. -/
-def discExhaustionUnion (c : K) : Set (closedPolydisc 1 K) := ⋃ n, discExhaustion c n
+noncomputable def discExhaustionUnion (c : K) : Set (closedPolydisc 1 K) := ⋃ n, discExhaustion c n
 
 /-- The exhaustion union is the union of its rational subsets. -/
 theorem discExhaustionUnion_eq_iUnion (c : K) :
@@ -179,8 +179,8 @@ theorem gaussPoint_mem_discExhaustion_iff {r : ℝ} (hr₀ : 0 < r) (hr₁ : r �
     (c : K) (n : ℕ) :
     gaussPoint hr₀ hr₁ ∈ discExhaustion c n ↔ r ^ (n + 1) ≤ ‖c‖ ∧ c ≠ 0 := by
   simp only [mem_discExhaustion, gaussPoint_vle_iff, map_pow, map_zero,
-    closedDiscGaussValuation_weightedC, nonpos_iff_eq_zero, nnnorm_eq_zero,
-    ← NNReal.coe_le_coe, NNReal.coe_pow, coe_closedDiscGaussValuation_weightedX, coe_nnnorm]
+    closedDiscGaussValuation_weightedC, nonpos_iff_eq_zero, nnNorm_eq_zero,
+    ← NNReal.coe_le_coe, NNReal.coe_pow, coe_closedDiscGaussValuation_weightedX, coe_nnNorm]
 
 end NontriviallyNormedField
 

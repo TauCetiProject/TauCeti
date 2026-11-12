@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Geometry
 public import TauCeti.MeasureTheory.Group.DirichletDomain.Basic
+import Mathlib.Topology.Connected.Clopen
 
 /-!
 # Geodesic convexity of Dirichlet domains
@@ -16,9 +17,17 @@ for each translate of the centre different from the centre itself, the correspon
 perpendicular bisector bounds the distance dominance region. Constraints coming from the
 stabilizer are automatically satisfied and are omitted from this intersection.
 
+Finitely many of these distance inequalities can be traded for finitely many closed half-planes
+(`UpperHalfPlane.exists_finset_iInter_dist_le_eq_iInter_closure_leftHalfPlane`).
+
 Consequently the domain contains the geodesic segment between any two of its points. Neither
 this convexity nor the half-plane description requires discreteness or a trivial stabilizer.
 They provide the geometric description of the Dirichlet domain needed to construct its sides.
+
+`UpperHalfPlane.dirichletDomain_eq_iInter_of_inter_eq` gives a globalization criterion:
+inequalities agreeing with the domain on an open neighbourhood of the whole domain
+define it globally. This applies when a bounded core and finitely many cusp ends cover the
+domain. The proof uses geodesic convexity and Mathlib's `IsClopen.eq_univ` on a segment.
 
 ## References
 
@@ -69,5 +78,63 @@ theorem ordConnected_preimage_geodesicLine_dirichletDomain {k : PSL(2, ℝ)} {p 
     rw [preimage_iInter]
     exact ordConnected_iInter fun _ ↦
       ordConnected_preimage_geodesicLine_closure_leftHalfPlane k _
+
+variable {G}
+
+/-- Finitely many distance inequalities `dist z p ≤ dist z (g • p)` define the same set as finitely
+many closed geodesic half-planes: the elements fixing the centre `p` impose no condition, and for
+the others the inequality is the closure of the half-plane left of the perpendicular bisector. -/
+theorem _root_.UpperHalfPlane.exists_finset_iInter_dist_le_eq_iInter_closure_leftHalfPlane
+    (p : ℍ) (s : Finset G) :
+    ∃ s' : Finset G, (∀ g ∈ s', p ≠ g • p) ∧
+      ⋂ g ∈ s, {z : ℍ | dist z p ≤ dist z (g • p)} =
+        ⋂ g ∈ s', closure (leftHalfPlane (perpBisector p (g • p))) := by
+  classical
+  refine ⟨s.filter (fun g ↦ p ≠ g • p), fun g hg ↦ (Finset.mem_filter.mp hg).2, ?_⟩
+  ext z
+  simp only [mem_iInter, Finset.mem_filter]
+  constructor
+  · intro hz g hg
+    exact (mem_closure_leftHalfPlane_perpBisector_iff hg.2 z).mpr (hz g hg.1)
+  · intro hz g hg
+    by_cases hgp : p = g • p
+    · simp [← hgp]
+    · exact (mem_closure_leftHalfPlane_perpBisector_iff hgp z).mp (hz g ⟨hg, hgp⟩)
+
+/-- A family of Dirichlet inequalities which agrees with the domain on an open neighbourhood
+of the whole domain defines it globally. Geodesic convexity prevents the intersection from
+having an extra component outside that neighbourhood. -/
+theorem _root_.UpperHalfPlane.dirichletDomain_eq_iInter_of_inter_eq
+    (p : ℍ) (s : Set G)
+    {U : Set ℍ} (hU : IsOpen U) (hDU : dirichletDomain G p ⊆ U)
+    (heq : dirichletDomain G p ∩ U =
+      (⋂ g ∈ s, {z : ℍ | dist z p ≤ dist z (g • p)}) ∩ U) :
+    dirichletDomain G p = ⋂ g ∈ s, {z : ℍ | dist z p ≤ dist z (g • p)} := by
+  refine subset_antisymm (fun z hz ↦ mem_iInter₂.mpr fun g _ ↦
+    mem_dirichletDomain.mp hz g) ?_
+  intro z hz
+  let S := geodesicSegment p z
+  have hS : IsPreconnected S := by
+    dsimp only [S]
+    rw [geodesicSegment_def]
+    exact isPreconnected_Icc.image _ (isometry_geodesicLine _).continuous.continuousOn
+  have hSC : S ⊆ ⋂ g ∈ s, {z : ℍ | dist z p ≤ dist z (g • p)} := by
+    intro w hw
+    exact mem_iInter₂.mpr fun g hg ↦ geodesicSegment_subset_setOf_dist_le_dist
+      (by simp [dist_nonneg]) (mem_iInter₂.mp hz g hg) hw
+  let := Subtype.preconnectedSpace hS
+  have hpre : ((↑) : S → ℍ) ⁻¹' dirichletDomain G p = ((↑) : S → ℍ) ⁻¹' U := by
+    ext w
+    refine ⟨fun hw ↦ hDU hw, fun hw ↦ ?_⟩
+    have hwD : (w : ℍ) ∈ dirichletDomain G p ∩ U := by
+      rw [heq]
+      exact ⟨hSC w.property, hw⟩
+    exact hwD.1
+  have hclopen : IsClopen (((↑) : S → ℍ) ⁻¹' dirichletDomain G p) :=
+    ⟨(isClosed_dirichletDomain G p).preimage continuous_subtype_val,
+      hpre ▸ hU.preimage continuous_subtype_val⟩
+  have hall := hclopen.eq_univ
+    ⟨⟨p, left_mem_geodesicSegment p z⟩, self_mem_dirichletDomain p⟩
+  exact (Set.eq_univ_iff_forall.mp hall) ⟨z, right_mem_geodesicSegment p z⟩
 
 end TauCeti.UpperHalfPlane

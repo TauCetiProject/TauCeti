@@ -86,8 +86,8 @@ theorem degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id (r s : ℤ) :
         ((Nat.card F : ℤ) + 1 - (id (W⁄K).toAffine -
           ofIsogeny (baseChangeFrobenius K W)).degree) * (r * s) + s ^ 2 := by
   classical
-  apply TauCeti.Matrix.eq_quadratic_form_of_det_det_one_sub (p := ringChar K)
-  intro ℓ hℓ hℓne
+  refine TauCeti.Matrix.eq_quadratic_form_of_det_det_one_sub <|
+    (Filter.eventually_cofinite_ne (ringChar K)).mono fun ℓ hℓne hℓ ↦ ?_
   have : NeZero ℓ := ⟨hℓ.ne_zero⟩
   have hℓK : (ℓ : K) ≠ 0 := CharP.cast_ne_zero_of_ne_of_prime K hℓ hℓne.symm
   obtain ⟨b⟩ := WeierstrassCurve.nonempty_basis_torsionBy (W⁄K) ℓ hℓK

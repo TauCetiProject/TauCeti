@@ -77,7 +77,7 @@ variable {k G} {U V W : Type u} [AddCommGroup U] [DistribMulAction G U]
 /-- The action on the reduction is the base change of the action on `V`. -/
 @[simp]
 theorem reduction_ρ_hom_hom (g : G) :
-    (Action.ρ (reduction k G V) g).hom.hom =
+    (Action.ρ (reduction k G V) g).asHom.hom.hom =
       Representation.baseChange k (Representation.ofDistribMulAction ℤ G V) g :=
   (rfl)
 
@@ -153,7 +153,7 @@ private theorem coe_forgetModuleCat_map_reductionMap (f : V →+[G] W) :
   -- `Action.forget` and `forget₂` keep the underlying linear map
   change ⇑(reductionMap k f).hom.hom.hom = _
   exact (congrArg DFunLike.coe (reductionMap_hom_hom_hom f)).trans
-    (LinearMap.baseChange_eq_ltensor _)
+    (LinearMap.baseChange_eq_lTensor _)
 
 variable (k) in
 /-- **Reduction preserves epimorphisms**: a surjective equivariant map reduces to an epimorphism,

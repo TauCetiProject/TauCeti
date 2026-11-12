@@ -9,6 +9,8 @@ public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
+-- `Matrix.sum_sum_smul_congruence`, the scalar regrouping behind the congruence below.
+import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # Pure tensors on two strands
@@ -28,7 +30,8 @@ tensor square is being used for, so they live here rather than in any one consum
   vectors is pushed through `PiTensorProduct.map` and the result is wanted coefficientwise.
 * `Matrix.piTensorProductMap_bivector`: the same for a whole bivector `∑ x y, K x y • ⨂ₜ`, which
   becomes the bivector of the congruate `A * K * Aᵀ`. `A` may be rectangular, so the result is
-  indexed by its row type.
+  indexed by its row type. The scalar regrouping behind it is `Matrix.sum_sum_smul_congruence`,
+  which has no tensor content and lives in `TauCeti/LinearAlgebra/Matrix/Congruence.lean`.
 -/
 
 public section
@@ -93,44 +96,8 @@ theorem piTensorProductMap_bivector {ι κ R : Type*} [Fintype ι] [DecidableEq 
           PiTensorProduct.tprod R ![Pi.single x (1 : R), Pi.single y (1 : R)]) =
       ∑ p : κ, ∑ q : κ, (A * K * Aᵀ) p q •
         PiTensorProduct.tprod R ![Pi.single p (1 : R), Pi.single q (1 : R)] := by
-  have hcoef : ∀ p q : κ,
-      ∑ x : ι, ∑ y : ι, K x y * (A p x * A q y) = (A * K * Aᵀ) p q := by
-    intro p q
-    rw [Matrix.mul_apply, Finset.sum_comm]
-    refine Finset.sum_congr rfl fun y _ => ?_
-    rw [Matrix.mul_apply, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun x _ => ?_
-    simp only [Matrix.transpose_apply]
-    ring
-  calc
-    PiTensorProduct.map (fun _ : Fin 2 => Matrix.mulVecLin A)
-        (∑ x : ι, ∑ y : ι, K x y •
-          PiTensorProduct.tprod R ![Pi.single x (1 : R), Pi.single y (1 : R)])
-        = ∑ x : ι, ∑ y : ι, ∑ p : κ, ∑ q : κ,
-            (K x y * (A p x * A q y)) •
-              PiTensorProduct.tprod R ![Pi.single p (1 : R), Pi.single q (1 : R)] := by
-          simp only [map_sum, map_smul, Matrix.piTensorProductMap_tprod_single,
-            Finset.smul_sum, smul_smul]
-    -- move the two outer sums past the two inner ones, one adjacent swap at a time
-    _ = ∑ x : ι, ∑ p : κ, ∑ y : ι, ∑ q : κ,
-          (K x y * (A p x * A q y)) •
-            PiTensorProduct.tprod R ![Pi.single p (1 : R), Pi.single q (1 : R)] :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ p : κ, ∑ x : ι, ∑ y : ι, ∑ q : κ,
-          (K x y * (A p x * A q y)) •
-            PiTensorProduct.tprod R ![Pi.single p (1 : R), Pi.single q (1 : R)] := Finset.sum_comm
-    _ = ∑ p : κ, ∑ x : ι, ∑ q : κ, ∑ y : ι,
-          (K x y * (A p x * A q y)) •
-            PiTensorProduct.tprod R ![Pi.single p (1 : R), Pi.single q (1 : R)] :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ p : κ, ∑ q : κ, ∑ x : ι, ∑ y : ι,
-          (K x y * (A p x * A q y)) •
-            PiTensorProduct.tprod R ![Pi.single p (1 : R), Pi.single q (1 : R)] :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ p : κ, ∑ q : κ, (A * K * Aᵀ) p q •
-          PiTensorProduct.tprod R ![Pi.single p (1 : R), Pi.single q (1 : R)] := by
-          refine Finset.sum_congr rfl fun p _ => Finset.sum_congr rfl fun q _ => ?_
-          simp only [← Finset.sum_smul]
-          rw [hcoef p q]
+  simp only [map_sum, map_smul, Matrix.piTensorProductMap_tprod_single]
+  exact sum_sum_smul_congruence A K fun p q =>
+    PiTensorProduct.tprod R ![Pi.single p (1 : R), Pi.single q (1 : R)]
 
 end Matrix

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
+public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 
 /-!
 # The invariant form on the weights of a Killing Lie algebra
@@ -55,11 +56,17 @@ be stated.
   `cartanEquivDual`.
 * `TauCeti.invForm_coroot` and `TauCeti.invForm_coroot_weight`: the normalisation
   `⟨λ, α^∨⟩ ⟨α, α⟩ = 2 ⟨λ, α⟩`.
+* `TauCeti.invForm_weylGroup_smul_left`: the Weyl invariance of the form, in the shape
+  `⟨w λ, μ⟩ = ⟨λ, w⁻¹ μ⟩`.
+* `TauCeti.weylGroupCorootRep_cartanEquivDual_symm`: the Killing duality is Weyl-equivariant, the
+  Weyl group acting on `H` through the coroot representation.
 * `TauCeti.traceForm_coroot_self_mul_invForm_self_eq_four`: `⟨α^∨, α^∨⟩ ⟨α, α⟩ = 4`, so a long
   root has a short coroot.
 * `TauCeti.killingExtend_apply_cartan` and `TauCeti.killingExtend_apply_eq_zero`: the extension of
   a weight is the weight itself on `H` and vanishes on every root space of a nonzero weight, so it
   sees the zero-weight component of a vector and nothing else.
+* `TauCeti.cartanEquivDual_apply_apply_eq_killingForm`: on `H`, `cartanEquivDual` is the Killing
+  form of `L`.
 
 The compatibility with `LieAlgebra.IsKilling.rootSystem_pairing_apply` — that a Cartan integer is
 `2 ⟨α, β⟩ / ⟨β, β⟩` — and the orthogonality criterion and reflection invariance of the form are not
@@ -200,6 +207,12 @@ theorem killingExtend_apply_cartan (lam : Module.Dual K H) (x : H) :
   conv_rhs => rw [← (cartanEquivDual H).apply_symm_apply lam]
   rw [cartanEquivDual_apply_apply, traceForm_apply_apply, Module.End.mul_eq_comp]
 
+/-- On `H`, the duality `cartanEquivDual` is the Killing form of `L`: `cartanEquivDual H x` is the
+linear form `y ↦ κ(x, y)` on `H`. -/
+theorem cartanEquivDual_apply_apply_eq_killingForm (x y : H) :
+    cartanEquivDual H x y = killingForm K L x y := by
+  rw [← killingExtend_apply_cartan, killingExtend_apply, LinearEquiv.symm_apply_apply]
+
 /-- The extension of a weight vanishes on the root space of a nonzero weight, the Cartan
 subalgebra being the zero root space. -/
 theorem killingExtend_apply_eq_zero [LieModule.IsTriangularizable K H L] (lam : Module.Dual K H)
@@ -266,6 +279,29 @@ noncomputable def rootInvariantForm : (rootSystem H).InvariantForm where
 
 @[simp]
 theorem rootInvariantForm_form : (rootInvariantForm (H := H)).form = invForm := (rfl)
+
+/-- **The Weyl invariance of the form**, with the Weyl group element moved to the other side:
+`⟨w λ, μ⟩ = ⟨λ, w⁻¹ μ⟩`. -/
+theorem invForm_weylGroup_smul_left (w : (rootSystem H).weylGroup) (lam mu : Module.Dual K H) :
+    invForm (w • lam) mu = invForm lam (w⁻¹ • mu) := by
+  rw [← rootInvariantForm_form, ← (rootInvariantForm (H := H)).apply_weylGroup_smul (rootSystem H)
+    w lam (w⁻¹ • mu), smul_inv_smul]
+
+/-- **The Killing duality is Weyl-equivariant.** The opposite of a Weyl group element `w`, acting
+on `H` through the coroot representation `RootPairing.weylGroupCorootRep`, sends the vector `t_λ`
+representing a weight `λ` under the Killing form to `t_{w⁻¹ λ}`. -/
+theorem weylGroupCorootRep_cartanEquivDual_symm (w : (rootSystem H).weylGroup)
+    (lam : Module.Dual K H) :
+    (rootSystem H).weylGroupCorootRep (Subgroup.equivOp _ w) ((cartanEquivDual H).symm lam) =
+      (cartanEquivDual H).symm (w⁻¹ • lam) := by
+  refine sub_eq_zero.mp <| (Module.forall_dual_apply_eq_zero_iff K (V := H) _).mp fun nu ↦ ?_
+  rw [map_sub, sub_eq_zero, ← invForm_apply_apply, ← invForm_weylGroup_smul_left,
+    invForm_apply_apply, RootPairing.weylGroupCorootRep,
+    Representation.ofDistribMulAction_apply_apply]
+  -- the goal is `nu (w • t_λ) = (w • nu) t_λ`: Mathlib acts on weights through `weightEquiv` and
+  -- on coweights, here `H`, through `coweightEquiv`, and the evaluation pairing of `rootSystem H`
+  -- makes this their transposition law
+  exact (RootPairing.Equiv.toLinearMap_weightEquiv (w : (rootSystem H).Aut) nu _).symm
 
 /-- **The length of a coroot**: `⟨α^∨, α^∨⟩ ⟨α, α⟩ = 4`, so a long root has a short coroot.
 

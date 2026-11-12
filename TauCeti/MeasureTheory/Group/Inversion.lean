@@ -82,7 +82,7 @@ theorem coeFn_invLpₗᵢ (f : Lp E p μ) : invLpₗᵢ 𝕜 f =ᵐ[μ] fun g �
 @[simp]
 theorem invLpₗᵢ_invLpₗᵢ (f : Lp E p μ) : invLpₗᵢ 𝕜 (invLpₗᵢ 𝕜 f) = f := by
   simpa only [invLpₗᵢ_apply] using
-    Lp.compMeasurePreserving_comp_apply_of_ae_id (E := E) (p := p)
+    Lp.leftInverse_compMeasurePreserving (E := E) (p := p)
     (Measure.measurePreserving_inv μ) (Measure.measurePreserving_inv μ)
     (.of_eq (funext inv_inv)) f
 

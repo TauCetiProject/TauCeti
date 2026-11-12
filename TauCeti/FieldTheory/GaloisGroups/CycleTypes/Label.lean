@@ -23,9 +23,9 @@ cycle types along an equivalence, and `TauCeti.TransitiveGroupLabel.image_fullCy
 
 public section
 
-namespace TauCeti
-
 open Polynomial
+
+namespace TauCeti
 
 variable {F : Type*} [Field F] {p : F[X]}
 

@@ -66,7 +66,7 @@ theorem exists_basePointsRepresentation_eq_smul
       (CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H) I →ₐ[k] k))]
     (g : WithConv (CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H) I →ₐ[k] k)) :
     ∃ c : kˣ, Comodule.basePointsRepresentation (R := k) (H := H) V
-      (AlgHom.mapDomain (CommHopfAlgCat.mkQuotient
+      (BialgHom.mapDomain (CommHopfAlgCat.mkQuotient
         (_root_.CommHopfAlgCat.of k H) I).hom g) =
       (c : k) • (1 : Module.End k V) := by
   classical
@@ -88,7 +88,7 @@ theorem exists_basePointsRepresentation_eq_smul
         x.ofConv (q a) • v := by
       rw [Comodule.basePointsRepresentation_apply, Comodule.endOfPoint_tmul, hva]
       simp [q]
-    rw [Comodule.basePointsRepresentation_corestrict q] at hxv
+    rw [Comodule.basePointsRepresentation_corestrict q, BialgHom.mapDomain_apply] at hxv
     exact hxv
   let χ := (ρ.comp N.subtype).unitHomOfJointEigenvector
     (fun n : N ↦ n.val.ofConv a) v hv
@@ -119,7 +119,7 @@ universe u
 -- one universe, so this consequence is stated in that generality.
 variable {k H V : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
   [Algebra.FiniteType k H] [IsReduced H] [ConnectedSpace (PrimeSpectrum H)]
-  [AddCommGroup V] [Module k V] [Comodule k H V] [FiniteDimensional k V] [Nontrivial V]
+  [AddCommGroup V] [Module k V] [Comodule k H V] [FiniteDimensional k V]
   [IsSimpleOrder (Subcomodule k H V)]
 
 /-- A connected reduced normal solvable closed subgroup acting on a faithful simple
@@ -138,10 +138,16 @@ theorem eq_augmentation_of_isFaithful_of_isNormal_of_isSolvable_of_pow_eq_one
     (hpow : ∀ (g : WithConv
         (CommHopfAlgCat.quotient (_root_.CommHopfAlgCat.of k H) I →ₐ[k] k)) (c : k),
       Comodule.basePointsRepresentation (R := k) (H := H) V
-        (AlgHom.mapDomain (CommHopfAlgCat.mkQuotient
+        (BialgHom.mapDomain (CommHopfAlgCat.mkQuotient
           (_root_.CommHopfAlgCat.of k H) I).hom g) = c • (1 : Module.End k V) → c ^ N = 1) :
     I = HopfIdeal.augmentation k H := by
   classical
+  -- A simple comodule is nontrivial, since `⊥ ≠ ⊤` in its lattice of subcomodules.
+  have : Nontrivial V := by
+    by_contra h
+    rw [not_nontrivial_iff_subsingleton] at h
+    exact bot_ne_top (α := Subcomodule k H V)
+      (Subcomodule.ext fun m ↦ by simp [Subsingleton.elim m 0])
   let A := _root_.CommHopfAlgCat.of k H
   let Q := CommHopfAlgCat.quotient A I
   let q := (CommHopfAlgCat.mkQuotient A I).hom
@@ -155,11 +161,11 @@ theorem eq_augmentation_of_isFaithful_of_isNormal_of_isSolvable_of_pow_eq_one
   have hφ : φ e = 1 := by simp [φ, e]
   let a : Q := Comodule.matrixCoefficient (R := k) (C := Q) φ e
   have hscalar (g : WithConv (Q →ₐ[k] k)) :
-      ∃ c : kˣ, Comodule.basePointsRepresentation (R := k) (H := H) V (AlgHom.mapDomain q g) =
+      ∃ c : kˣ, Comodule.basePointsRepresentation (R := k) (H := H) V (BialgHom.mapDomain q g) =
         (c : k) • (1 : Module.End k V) :=
     exists_basePointsRepresentation_eq_smul I hI g
   have heval (g : WithConv (Q →ₐ[k] k)) (c : kˣ)
-      (hc : Comodule.basePointsRepresentation (R := k) (H := H) V (AlgHom.mapDomain q g) =
+      (hc : Comodule.basePointsRepresentation (R := k) (H := H) V (BialgHom.mapDomain q g) =
         (c : k) • (1 : Module.End k V)) :
       g.ofConv a = (c : k) := by
     rw [Comodule.apply_matrixCoefficient, Comodule.basePointsRepresentation_corestrict q, hc]

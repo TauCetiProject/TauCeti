@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 
 /-!
 # Exactness of flat pullback
 
-Pullback along a flat morphism of schemes preserves monomorphisms between quasicoherent
-module sheaves. Together with right exactness of pullback, this transports short exact
-sequences of quasicoherent coefficients under flat base change.
+Pullback along a flat morphism of schemes preserves monomorphisms and kernels between
+quasicoherent module sheaves. Together with right exactness of pullback, this transports exact
+complexes with quasicoherent second and third terms, and short exact sequences whose first
+two terms are quasicoherent, under flat base change.
 
 The affine calculation uses `tildeFunctorCompPullbackIso` and Mathlib's finite-limit
 preservation theorem for flat extension of scalars. No finiteness or Noetherian hypothesis
@@ -128,6 +131,44 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.shortExact_map_pullback_of_flat
   have h := (Functor.preservesFiniteColimits_iff_forall_exact_map_and_epi (pullback f)).mp
     inferInstance S hS
   exact ShortComplex.ShortExact.mk' h.1 (f.mono_pullback_map_of_flat S.f) h.2
+
+/-- Flat pullback preserves an exact complex when its second and third terms are quasicoherent.
+No condition on the first term, finiteness, or Noetherian hypothesis is required. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.exact_map_pullback_of_flat
+    (f : X ⟶ Y) [Flat f] (S : ShortComplex Y.Modules) (hS : S.Exact)
+    [S.X₂.IsQuasicoherent] [S.X₃.IsQuasicoherent] :
+    (S.map (pullback f)).Exact := by
+  let F := pullback f
+  -- As in Mathlib's `preservesHomology_of_preservesMonos_and_cokernels`, factor the
+  -- second arrow through its coimage. All objects here remain quasicoherent.
+  have : (Abelian.coimage S.g).IsQuasicoherent :=
+    inferInstanceAs (cokernel (kernel.ι S.g)).IsQuasicoherent
+  have : Mono (F.map (Abelian.factorThruCoimage S.g)) :=
+    f.mono_pullback_map_of_flat (Abelian.factorThruCoimage S.g)
+  let φ : (ShortComplex.mk _ _ (Abelian.comp_coimage_π_eq_zero S.zero)).map F ⟶
+      S.map F :=
+    { τ₁ := 𝟙 _
+      τ₂ := 𝟙 _
+      τ₃ := F.map (Abelian.factorThruCoimage S.g)
+      comm₂₃ := by
+        dsimp
+        rw [Category.id_comp, ← F.map_comp, cokernel.π_desc] }
+  apply (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).1
+  exact ((S.exact_iff_exact_coimage_π).1 hS).map_of_epi_of_preservesCokernel F
+    inferInstance inferInstance
+
+/-- Pullback along a flat morphism preserves the ambient kernel of a morphism between
+quasicoherent module sheaves. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.preservesKernel_pullback_of_flat
+    (f : X ⟶ Y) [Flat f] {M N : Y.Modules} (g : M ⟶ N)
+    [M.IsQuasicoherent] [N.IsQuasicoherent] :
+    PreservesLimit (parallelPair g 0) (pullback f) := by
+  apply preservesLimit_of_preserves_limit_cone (kernelIsKernel g)
+  apply (KernelFork.isLimitMapConeEquiv _ (pullback f)).2
+  have : Mono (((ShortComplex.mk _ _ (kernel.condition g)).map (pullback f)).f) :=
+    f.mono_pullback_map_of_flat (kernel.ι g)
+  exact (f.exact_map_pullback_of_flat (ShortComplex.mk _ _ (kernel.condition g))
+    (ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel g))).fIsKernel
 
 end
 

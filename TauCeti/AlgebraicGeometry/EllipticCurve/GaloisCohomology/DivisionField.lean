@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Coefficients
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 import Mathlib.FieldTheory.Galois.Infinite
 
@@ -42,8 +43,18 @@ places.
 
 * `WeierstrassCurve.divisionField_le_iff`: `K(E[m])` is the smallest intermediate field containing
   the coordinates of every point of `E(Kˢ)[m]`.
+* `WeierstrassCurve.divisionField_le_iff_forall_exists_map_eq`: equivalently, the smallest
+  intermediate field over which every point of `E(Kˢ)[m]` is defined.
+* `WeierstrassCurve.natCard_torsionBy_of_divisionField_le`: for `W` elliptic and `m` invertible in
+  `K`, the curve has `m²` points of order dividing `m` over every intermediate field containing
+  `K(E[m])`.
 * `WeierstrassCurve.mem_fixingSubgroup_divisionField_iff`: an element of `G_K` fixes `K(E[m])`
   exactly when it fixes every point of `E(Kˢ)[m]`.
+* `WeierstrassCurve.exists_map_separableClosure_eq_of_nsmul_eq_zero`: for `W` elliptic and `m`
+  invertible in `K`, every point of `E(K^{alg})[m]` is defined over `Kˢ`.
+* `WeierstrassCurve.forall_smul_torsionCoeff_eq_self_iff`: for `W` elliptic and `m` invertible in
+  `K`, an automorphism of `K^{alg}` fixes `E(K^{alg})[m]` exactly when its restriction to `Kˢ`
+  fixes `E(Kˢ)[m]`.
 * `WeierstrassCurve.isGalois_divisionField`: `K(E[m])` is Galois over `K`.
 * `WeierstrassCurve.finiteDimensional_divisionField`: for `W` elliptic and `m ≠ 0`, `K(E[m])` is
   finite over `K`.
@@ -112,6 +123,43 @@ theorem yCoord_mem_divisionField {P : (W⁄(SeparableClosure K)).toAffine.Point}
     Affine.Point.yCoord P ∈ W.divisionField m :=
   (divisionField_le_iff.1 le_rfl P hP).2
 
+open scoped Classical in
+/-- **`E[m]` is defined over `L` exactly when `L` contains `K(E[m])`**: an intermediate field `L`
+of `Kˢ/K` contains `K(E[m])` exactly when every point of `E(Kˢ)[m]` comes from a point of `W`
+over `L`. -/
+theorem divisionField_le_iff_forall_exists_map_eq {L : IntermediateField K (SeparableClosure K)} :
+    W.divisionField m ≤ L ↔
+      ∀ P ∈ AddSubgroup.torsionBy (W⁄(SeparableClosure K)).toAffine.Point m,
+        ∃ Q : (W⁄L).toAffine.Point, Affine.Point.map L.val Q = P := by
+  simp [divisionField_le_iff]
+
+open scoped Classical in
+/-- **An elliptic curve has full `m`-torsion over every field containing `K(E[m])`.** For `m`
+invertible in `K` and an intermediate field `L` of `Kˢ/K` containing `K(E[m])`, the group
+`E(L)[m]` has `m²` elements: it maps bijectively onto `E(Kˢ)[m]`. -/
+theorem natCard_torsionBy_of_divisionField_le [W.IsElliptic] (hm : (m : K) ≠ 0)
+    {L : IntermediateField K (SeparableClosure K)} (hL : W.divisionField m ≤ L) :
+    Nat.card (AddSubgroup.torsionBy (W⁄L).toAffine.Point m) = m ^ 2 := by
+  have hinj := Affine.Point.map_injective (W' := W) L.val
+  -- The point map carries `E(L)[m]` onto `E(Kˢ)[m]`.
+  have hmap : (AddSubgroup.torsionBy (W⁄L).toAffine.Point m).map (Affine.Point.map L.val) =
+      AddSubgroup.torsionBy (W⁄(SeparableClosure K)).toAffine.Point m := by
+    ext P
+    simp only [AddSubgroup.mem_map, AddSubgroup.torsionBy.nsmul_iff]
+    refine ⟨fun ⟨Q, hQ, hQP⟩ ↦ by rw [← hQP, ← map_nsmul, hQ, map_zero], fun hP ↦ ?_⟩
+    obtain ⟨Q, rfl⟩ := divisionField_le_iff_forall_exists_map_eq.1 hL P
+      (AddSubgroup.torsionBy.nsmul_iff.2 hP)
+    exact ⟨Q, hinj (by rwa [map_nsmul, map_zero]), rfl⟩
+  have hmK : ((m : ℤ) : SeparableClosure K) ≠ 0 := by
+    simpa using (map_ne_zero (algebraMap K (SeparableClosure K))).2 hm
+  have h := (W⁄(SeparableClosure K)).natCard_torsionBy hmK
+  rw [Int.natAbs_natCast] at h
+  rw [← AddSubgroup.card_map_of_injective hinj, hmap]
+  -- `h` is stated with the classical decidable equality on `Kˢ`; the two group laws agree.
+  convert h with P
+  simp only [AddSubgroup.torsionBy.nsmul_iff]
+  convert Iff.rfl
+
 /-! ### The Galois group of `K(E[m])` -/
 
 open scoped Classical in
@@ -137,6 +185,61 @@ theorem mem_fixingSubgroup_divisionField_iff {σ : AbsoluteGaloisGroup K} :
       W.pointCoeffEquiv.injective.eq_iff, Affine.Point.map_eq_self_iff] at hσ
   · exact hσ.1
   · exact hσ.2
+
+open scoped Classical in
+/-- **Every point of `E(K^{alg})[m]` is defined over `Kˢ`** for `W` elliptic and `m` invertible in
+`K`: it is the image of a point of `E(Kˢ)` under the inclusion `Kˢ → K^{alg}`. -/
+theorem exists_map_separableClosure_eq_of_nsmul_eq_zero [W.IsElliptic] (hm : (m : K) ≠ 0)
+    {P : (W⁄(AlgebraicClosure K)).toAffine.Point} (hP : m • P = 0) :
+    ∃ Q : (W⁄(SeparableClosure K)).toAffine.Point,
+      Affine.Point.map (separableClosure K (AlgebraicClosure K)).val Q = P := by
+  have hmK : ((m : ℤ) : SeparableClosure K) ≠ 0 := by
+    simpa using (map_ne_zero (algebraMap K (SeparableClosure K))).2 hm
+  -- Applied to the curve `W⁄Kˢ` over the separably closed field `Kˢ`, the rationality lemma speaks
+  -- of the curves `(W⁄Kˢ)⁄K^{alg}` and `(W⁄Kˢ)⁄Kˢ`. These are `W⁄K^{alg}` and `W⁄Kˢ` by unfolding
+  -- `WeierstrassCurve.baseChange`: the coefficients `algebraMap Kˢ K^{alg} (algebraMap K Kˢ a)`
+  -- reduce to `algebraMap K K^{alg} a`, as `Kˢ` is the subfield `separableClosure K K^{alg}` with
+  -- the induced algebra maps. So `P` and `Q` are used at these types directly.
+  obtain ⟨Q, rfl⟩ := (W⁄(SeparableClosure K)).mem_range_baseChange_of_zsmul_eq_zero_of_isSepClosed
+    (Ω := AlgebraicClosure K) hmK (P := P) (by exact_mod_cast hP)
+  -- `Affine.Point.baseChange Kˢ K^{alg}` is `Affine.Point.map (Algebra.ofId Kˢ K^{alg})`. On each
+  -- point it and `Affine.Point.map` along `val` both apply the subtype coercion `Kˢ → K^{alg}` to
+  -- the coordinates, so each case closes by `rfl`. No rewrite is available: Mathlib's
+  -- `Affine.Point.map_baseChange` compares base changes of one fixed curve, while here the two
+  -- maps start from the curves `(W⁄Kˢ)⁄Kˢ` and `W⁄Kˢ`, which agree only up to unfolding, and
+  -- rewriting along `WeierstrassCurve.map_baseChange` would put a `cast` on the points.
+  refine ⟨Q, ?_⟩
+  rcases Q with _ | _ <;> rfl
+
+open scoped Classical in
+/-- **The action on `E[m]` over `Kˢ` and over `K^{alg}`.** For `W` elliptic and `m` invertible in
+`K`, an automorphism `σ` of `K^{alg}` fixes every point of `E(K^{alg})[m]` exactly when its
+restriction to `Kˢ` fixes every point of `E(Kˢ)[m]`, since every point of `E(K^{alg})[m]` is
+already defined over `Kˢ`. -/
+theorem forall_smul_torsionCoeff_eq_self_iff [W.IsElliptic] (hm : (m : K) ≠ 0)
+    (σ : Gal(AlgebraicClosure K/K)) :
+    (∀ P : W.TorsionCoeff m, absoluteGaloisGroupRestrictEquiv K σ • P = P) ↔
+      ∀ P : (W⁄(AlgebraicClosure K)).toAffine.Point, m • P = 0 →
+        Affine.Point.map σ.toAlgHom P = P := by
+  refine ⟨fun h P hP ↦ ?_, fun h P ↦ Subtype.ext ?_⟩
+  · obtain ⟨Q, rfl⟩ := exists_map_separableClosure_eq_of_nsmul_eq_zero hm hP
+    have hQ : m • Q = 0 := Affine.Point.map_injective (W' := W)
+      (separableClosure K (AlgebraicClosure K)).val (by rw [map_nsmul, hP, map_zero])
+    -- The restriction of `σ` fixes `Q`, by the hypothesis applied to the image of `Q` in
+    -- `E(Kˢ)[m]`.
+    have hτ := congrArg Subtype.val
+      (h (AddEquiv.torsionByCongr W.pointCoeffEquiv m ⟨Q, AddSubgroup.torsionBy.nsmul_iff.2 hQ⟩))
+    rw [coe_smul_torsionCoeff, AddEquiv.torsionByCongr_apply_coe, smul_pointCoeffEquiv,
+      W.pointCoeffEquiv.injective.eq_iff] at hτ
+    rw [Affine.Point.map_map_separableClosure_val, hτ]
+  · -- `P` is the image of a point `Q` of `E(Kˢ)[m]`, whose image in `E(K^{alg})` `σ` fixes.
+    set Q := (AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm P
+    have hQ : W.pointCoeffEquiv Q = P := by simp [Q]
+    rw [coe_smul_torsionCoeff, ← hQ, smul_pointCoeffEquiv]
+    congr 1
+    refine Affine.Point.map_injective (W' := W) (separableClosure K (AlgebraicClosure K)).val ?_
+    rw [← Affine.Point.map_map_separableClosure_val,
+      h _ (by rw [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 Q.2, map_zero])]
 
 variable (W m)
 

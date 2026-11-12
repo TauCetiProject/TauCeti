@@ -286,7 +286,7 @@ noncomputable def stabilizeXCenterConeHomotopyEquiv :
       (G.unblockedComplex R) :=
   (HomotopyEquiv.ofIso
     (homotopyCofiber.mapHomologicalComplexObjIso _ _ ≪≫
-      homotopyCofiber.mapArrowIso _ _ (fun j => ⟨j, ComplexShape.refl_rel j⟩)
+      homotopyCofiber.mapArrowIso _ _ (fun j => ⟨j, ComplexShape.refl_rel_self j⟩)
         (Arrow.isoMk (G.polynomialExtensionIsoStabilizeXCenter s R).symm
           (G.polynomialExtensionIsoStabilizeXCenter s R).symm (by
             dsimp only [Arrow.mk_hom, Iso.symm_hom]
@@ -294,7 +294,7 @@ noncomputable def stabilizeXCenterConeHomotopyEquiv :
               ← polynomialExtensionMul_comp_polynomialExtensionIsoStabilizeXCenter_hom,
               Category.assoc, Iso.hom_inv_id, Category.comp_id])))).trans
     ((G.unblockedComplex R).polynomialExtensionMulXSubCHomotopyEquiv
-      (fun j => ⟨j, ComplexShape.refl_rel j⟩) (MvPolynomial.X s))
+      (fun j => ⟨j, ComplexShape.refl_rel_self j⟩) (MvPolynomial.X s))
 
 /-- On the summand of the cone given by the center complex, the homotopy equivalence
 `stabilizeXCenterConeHomotopyEquiv` is evaluation at `X = V_s` on the polynomial extension of
@@ -319,7 +319,7 @@ theorem map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom :
       (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
         (homotopyCofiber.inlX
           ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
-            𝟙 (G.stabilizeXCenterComplex s R)) () () (ComplexShape.refl_rel ())) ≫
+            𝟙 (G.stabilizeXCenterComplex s R)) () () (ComplexShape.refl_rel_self ())) ≫
       (G.stabilizeXCenterConeHomotopyEquiv s R).hom.f () = 0 := by
   simp only [stabilizeXCenterConeHomotopyEquiv, HomotopyEquiv.ofIso,
     HomotopyEquiv.trans_hom, HomologicalComplex.comp_f, Iso.trans_hom]
@@ -340,7 +340,7 @@ theorem map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom :
         (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
           (homotopyCofiber.inlX
             ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
-              𝟙 (G.stabilizeXCenterComplex s R)) () () (ComplexShape.refl_rel ())) ≫
+              𝟙 (G.stabilizeXCenterComplex s R)) () () (ComplexShape.refl_rel_self ())) ≫
         (homotopyCofiber.mapHomologicalComplexObjXIso _
           (ModuleCat.restrictScalars
             (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)) ()).hom =
@@ -349,7 +349,7 @@ theorem map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom :
           (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).mapHomologicalComplex
             _).map
           ((MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) •
-            𝟙 (G.stabilizeXCenterComplex s R))) () () (ComplexShape.refl_rel ()) := by
+            𝟙 (G.stabilizeXCenterComplex s R))) () () (ComplexShape.refl_rel_self ()) := by
     rw [← homotopyCofiber.inlX_mapHomologicalComplexObjXIso_inv,
       Category.assoc, Iso.inv_hom_id, Category.comp_id]
   simp only [← Category.assoc]

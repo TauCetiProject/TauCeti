@@ -74,16 +74,14 @@ theorem JointlyExchangeable.ae_jointlyExchangeable_condExpKernel_arrayTail
     (hρ : JointlyExchangeable ρ fun p x ↦ x p) :
     ∀ᵐ x ∂ρ, JointlyExchangeable
       (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x) (fun p y ↦ y p) := by
-  have hm := arrayTail_le_ambient (X := fun p (y : ℕ × ℕ → α) ↦ y p) 0
-    (fun p _ _ ↦ measurable_pi_apply p)
   have := hρ.smulInvariantMeasure
   have hinv (g : FinitaryPerm) :
       ∀ᵐ x ∂ρ,
         (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x).map (fun y ↦ g • y) =
           condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x :=
-    map_condExpKernel_ae_eq_of_invariant hm (measurePreserving_smul g ρ)
-      (fun _ hs ↦ Filter.EventuallyEq.of_eq
-        (preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail hs g))
+    map_condExpKernel_ae_eq_of_invariant (measurePreserving_smul g ρ)
+      (fun _ hs ↦ by
+        rw [preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail hs g])
   filter_upwards [ae_all_iff.2 hinv] with x hx
   have : SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α)
       (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x) := by
@@ -100,18 +98,16 @@ theorem SeparatelyExchangeable.ae_separatelyExchangeable_condExpKernel_arrayTail
     (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) :
     ∀ᵐ x ∂ρ, SeparatelyExchangeable
       (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x) (fun p y ↦ y p) := by
-  have hm := arrayTail_le_ambient (X := fun p (y : ℕ × ℕ → α) ↦ y p) 0
-    (fun p _ _ ↦ measurable_pi_apply p)
   have hinv (g : FinitaryPerm × FinitaryPerm) :
       ∀ᵐ x ∂ρ,
         (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x).map
             (pairReindex (FinitaryPerm.toPerm g.1) (FinitaryPerm.toPerm g.2)) =
           condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x :=
-    map_condExpKernel_ae_eq_of_invariant hm (hρ.measurePreserving_pairReindex _ _)
-      (fun _ hs ↦ Filter.EventuallyEq.of_eq
-        (preimage_pairReindex_eq_self_of_measurableSet_arrayTail hs
+    map_condExpKernel_ae_eq_of_invariant (hρ.measurePreserving_pairReindex _ _)
+      (fun _ hs ↦ by
+        rw [preimage_pairReindex_eq_self_of_measurableSet_arrayTail hs
           (FinitaryPerm.finite_compl_fixedBy_toPerm g.1)
-          (FinitaryPerm.finite_compl_fixedBy_toPerm g.2)))
+          (FinitaryPerm.finite_compl_fixedBy_toPerm g.2)])
   filter_upwards [ae_all_iff.2 hinv] with x hx
   refine separatelyExchangeable_of_map_pairReindex_finitary fun σ τ hσ hτ ↦ ?_
   have hστ := hx (FinitaryPerm.ofPerm σ hσ, FinitaryPerm.ofPerm τ hτ)

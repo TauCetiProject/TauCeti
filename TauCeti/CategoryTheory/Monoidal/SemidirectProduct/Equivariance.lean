@@ -37,9 +37,6 @@ the binary product used in the maximal-dimension construction of the unipotent r
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and §6.a.
 * A. Borel, *Linear Algebraic Groups*, Proposition 14.4.
-
-This advances Layer 5, "The unipotent radical", of the ReductiveGroups roadmap. It supplies the
-simultaneous-conjugation equation needed to prove normality of the binary-product image.
 -/
 
 public section

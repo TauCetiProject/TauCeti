@@ -61,7 +61,7 @@ noncomputable def weightLeviInParabolicPointsMulEquiv (w : Fin N → ℤ)
         (H := CommHopfAlgCat.quotient (weightParabolicCoordinateHopfAlgebra R w)
           (weightLeviInParabolicHopfIdeal R w)) A ≃*
       Cocharacter.levi A (weightCocharacter (R := R) w) :=
-  (AlgHom.mapDomainMulEquiv (A := A)
+  (BialgEquiv.mapDomainMulEquiv (A := A)
       (CommHopfAlgCat.ofIso (weightLeviInParabolicCoordinateIso R w))).trans
     ((weightLeviPointsIso R w).app A).groupIsoToMulEquiv
 
@@ -73,7 +73,7 @@ noncomputable def weightUnipotentInParabolicPointsMulEquiv (w : Fin N → ℤ)
         (H := CommHopfAlgCat.quotient (weightParabolicCoordinateHopfAlgebra R w)
           (weightUnipotentInParabolicHopfIdeal R w)) A ≃*
       Cocharacter.unipotent A (weightCocharacter (R := R) w) :=
-  (AlgHom.mapDomainMulEquiv (A := A)
+  (BialgEquiv.mapDomainMulEquiv (A := A)
       (CommHopfAlgCat.ofIso (weightUnipotentInParabolicCoordinateIso R w))).trans
     ((weightUnipotentPointsIso R w).app A).groupIsoToMulEquiv
 
@@ -98,18 +98,18 @@ theorem coe_weightLeviInParabolicPointsMulEquiv_apply (w : Fin N → ℤ)
   change (((eqToHom (Cocharacter.leviFunctor_obj
       (weightCocharacter (R := R) w) (CommAlgCat.of R A)))
     ((weightLeviPointsIso R w).hom.app (CommAlgCat.of R A)
-      (AlgHom.mapDomainMulEquiv
+      (BialgEquiv.mapDomainMulEquiv
         (A := CommAlgCat.of R A)
         (CommHopfAlgCat.ofIso (weightLeviInParabolicCoordinateIso R w)) z)) :
       Cocharacter.levi (CommAlgCat.of R A) (weightCocharacter (R := R) w)) :
         HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N)
           (CommAlgCat.of R A)) = _
-  rw [coe_weightLeviPointsIso_hom_app_apply, AlgHom.mapDomainMulEquiv_apply]
+  rw [coe_weightLeviPointsIso_hom_app_apply, BialgEquiv.mapDomainMulEquiv_apply]
   apply WithConv.ofConv_injective
   apply AlgHom.ext
   intro x
   rw [CommHopfAlgCat.quotientPointsHom_apply_apply,
-    CommHopfAlgCat.quotientPointsHom_apply_apply, AlgHom.mapDomain_apply_apply,
+    CommHopfAlgCat.quotientPointsHom_apply_apply, BialgHom.mapDomain_apply_apply,
     CommHopfAlgCat.quotientPointsHom_apply_apply]
   have h := congrArg
     (fun f : coordinateHopfAlgebra R N ⟶
@@ -142,18 +142,18 @@ theorem coe_weightUnipotentInParabolicPointsMulEquiv_apply (w : Fin N → ℤ)
   change (((eqToHom (Cocharacter.unipotentFunctor_obj
       (weightCocharacter (R := R) w) (CommAlgCat.of R A)))
     ((weightUnipotentPointsIso R w).hom.app (CommAlgCat.of R A)
-      (AlgHom.mapDomainMulEquiv
+      (BialgEquiv.mapDomainMulEquiv
         (A := CommAlgCat.of R A)
         (CommHopfAlgCat.ofIso (weightUnipotentInParabolicCoordinateIso R w)) g)) :
       Cocharacter.unipotent (CommAlgCat.of R A) (weightCocharacter (R := R) w)) :
         HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N)
           (CommAlgCat.of R A)) = _
-  rw [coe_weightUnipotentPointsIso_hom_app_apply, AlgHom.mapDomainMulEquiv_apply]
+  rw [coe_weightUnipotentPointsIso_hom_app_apply, BialgEquiv.mapDomainMulEquiv_apply]
   apply WithConv.ofConv_injective
   apply AlgHom.ext
   intro x
   rw [CommHopfAlgCat.quotientPointsHom_apply_apply,
-    CommHopfAlgCat.quotientPointsHom_apply_apply, AlgHom.mapDomain_apply_apply,
+    CommHopfAlgCat.quotientPointsHom_apply_apply, BialgHom.mapDomain_apply_apply,
     CommHopfAlgCat.quotientPointsHom_apply_apply]
   have h := congrArg
     (fun f : coordinateHopfAlgebra R N ⟶

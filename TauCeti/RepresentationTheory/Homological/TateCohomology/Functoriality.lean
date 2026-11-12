@@ -103,15 +103,12 @@ theorem chainsMap_comp_d₀
       (tateComplexConnectData N).d₀ =
       (tateComplexConnectData M).d₀ ≫
         (groupCohomology.cochainsMap (e.symm : H →* G) (IsIntertwiningMap.ofRes hφ)).f 0 := by
-  simp only [tateComplexConnectData_d₀]
-  ext x m y
-  simp only [groupHomology.lsingle_comp_chainsMap_f_assoc, MonoidHom.coe_ofClass,
-    ModuleCat.ofHom_comp, Category.assoc, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom,
-    LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply, Rep.tateNorm_eq,
-    groupCohomology.cochainsMap_f, IsIntertwiningMap.toRes_hom_toLinearMap,
-    IsIntertwiningMap.ofRes_hom_toLinearMap, Finsupp.lsum_single, LinearMap.pi_apply,
-    LinearMap.compLeft_apply, LinearMap.funLeft_apply]
-  exact congr($(IsIntertwiningMap.comp_norm hφ) m).symm
+  have hnorm : ModuleCat.ofHom φ ≫ N.norm.asHom.toModuleCatHom =
+      M.norm.asHom.toModuleCatHom ≫ ModuleCat.ofHom φ :=
+    ModuleCat.hom_ext (IsIntertwiningMap.comp_norm hφ).symm
+  rw [← cancel_mono (groupCohomology.cochainsIso₀ N).hom]
+  simpa [tateComplexConnectData_d₀, Rep.tateNorm, Category.assoc, Rep.Hom.toModuleCatHom]
+    using hnorm
 
 /-- **The map of Tate complexes attached to a compatible pair.** On the chain half it is
 `groupHomology.chainsMap` along `e`, on the cochain half `groupCohomology.cochainsMap` along
@@ -196,7 +193,7 @@ theorem complexMap_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
 
 /-- The identity compatible pair induces the identity of Tate complexes. -/
 @[simp] theorem complexMap_id :
-    complexMap (e := MulEquiv.refl G) (φ := LinearMap.id) (Rep.isIntertwiningMap_id M) =
+    complexMap (e := MulEquiv.refl G) (φ := LinearMap.id) M.ρ.isIntertwiningMap_id =
       𝟙 (tateComplex M) := by
   rw [complexMap_refl]
   exact (tateComplexFunctor R G).map_id M
@@ -446,7 +443,7 @@ theorem map_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
 
 /-- The identity compatible pair induces the identity in every degree. -/
 @[simp] theorem map_id (n : ℤ) :
-    map (e := MulEquiv.refl G) (φ := LinearMap.id) (Rep.isIntertwiningMap_id M) n =
+    map (e := MulEquiv.refl G) (φ := LinearMap.id) M.ρ.isIntertwiningMap_id n =
       𝟙 (tateCohomology M n) := by
   rw [map_def, complexMap_id]
   exact HomologicalComplex.homologyMap_id _ _

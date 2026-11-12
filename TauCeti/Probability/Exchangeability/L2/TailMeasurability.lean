@@ -8,18 +8,16 @@ module
 public import TauCeti.Probability.Exchangeability.L2.Cesaro.Convergence
 public import TauCeti.Probability.Process.BlockAverage.Tail
 import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
-import TauCeti.MeasureTheory.Function.BoundedMemLp
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
 # The Cesàro limit of an observable of a contractable process is tail-measurable
 
-Layer 3 of the Exchangeability roadmap reaches `weighted_sums_converge_L1_of_memLp`: the block
-averages of a square-integrable observable of a contractable process converge in `L¹` to a common
-limit, along every eventually-injective selection — fixed-start windows and disjoint windows
-alike. That limit is produced as an abstract `L¹` limit, so nothing about
-*where it lives* comes for free.
+By `weighted_sums_converge_L1_of_memLp`, the block averages of a square-integrable observable of a
+contractable process converge in `L¹` to a common limit, along every eventually-injective
+selection — fixed-start windows and disjoint windows alike. That limit is produced as an abstract
+`L¹` limit, so nothing about *where it lives* comes for free.
 
 `Contractable.exists_tailProcess_measurable_cesaro_limit_of_memLp` shows the limit has a
 `tailProcess X`-measurable representative, with `…_cesaro_limit` the bounded-observable corollary.
@@ -29,21 +27,21 @@ identifying *what* the limit is: `Exchangeability.L2.Cesaro.ToCondExp` identifie
 `μ[f ∘ X 0 | tailProcess X]`. Keeping the two apart is what lets the measurability argument avoid
 the reverse-martingale theorem entirely.
 
-The argument does not use the reverse-martingale convergence theorem `tendsto_ae_condExp_iInf` of
-Layer 4, which is what distinguishes this route from the martingale one. The window starting at `r`
+The argument does not use the reverse-martingale convergence theorem `tendsto_ae_condExp_iInf`,
+which is what distinguishes this route from the martingale one. The window starting at `r`
 is `tailFamily X r`-measurable; `L¹` convergence gives an a.e.-convergent subsequence, so the limit
 is `AEStronglyMeasurable[tailFamily X r]` for **every** `r`, and `tailProcess X` is exactly the
 infimum of that antitone family.
 
-The roadmap maps `Exchangeability/Bridge/CesaroToCondExp.lean` in `cameronfreer/exchangeability`
-(pin `e0532e59ceff23edab44dda9ab0655debbc9cc22`) as a Layer 3 source. This file is **not**
-adapted from it: the
-tail-measurability step is assembled from Tau Ceti's existing general helpers
-`aestronglyMeasurable_of_tendsto_ae'` and `aestronglyMeasurable_iInf_of_antitone` (themselves
-adapted from that repository's `Probability/SigmaAlgebraHelpers.lean`, and carrying attribution
-there), rather than by porting a bridge file. The divergence is deliberate: separating tail
-measurability from the conditional-expectation identification keeps this prerequisite independent
-of the directing measure.
+The corresponding bridge in `cameronfreer/exchangeability` (pin
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`) is `Exchangeability/Bridge/CesaroToCondExp.lean`. This
+file is **not** adapted from it: the tail-measurability step is assembled from Tau Ceti's
+existing general helpers `aestronglyMeasurable_of_tendsto_ae'` and
+`aestronglyMeasurable_iInf_of_antitone` (themselves adapted from that repository's
+`Probability/SigmaAlgebraHelpers.lean`, and carrying attribution there), rather than by porting a
+bridge file. The divergence is deliberate: separating tail measurability from the
+conditional-expectation identification keeps this prerequisite independent of the directing
+measure.
 -/
 
 public section
@@ -96,7 +94,8 @@ theorem Contractable.exists_tailProcess_measurable_cesaro_limit_of_memLp {μ : M
     have hL1 : Tendsto (fun m => eLpNorm
         (blockAverage (fun i ω => f (X i ω)) (fun j : Fin (m + 1) => r + j) - a₀) 1 μ)
         atTop (𝓝 0) :=
-      TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub (hg_int r) ha₀_int
+      TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub
+        (Eventually.of_forall fun m => (hg_int r m).sub ha₀_int)
         (by simpa [Real.norm_eq_abs] using ha₀_lim r)
     have hmeasure : TendstoInMeasure μ
         (fun m => blockAverage (fun i ω => f (X i ω)) (fun j : Fin (m + 1) => r + j)) atTop a₀ :=
@@ -128,8 +127,8 @@ theorem Contractable.exists_tailProcess_measurable_cesaro_limit {μ : Measure Ω
           atTop (𝓝 0) :=
   let ⟨C, hC⟩ := hf_bdd
   hX.exists_tailProcess_measurable_cesaro_limit_of_memLp hX_ae hf
-    (memLp_comp_of_bound hf (hX_ae 0) C
-      (Filter.Eventually.of_forall fun ω => hC (X 0 ω)) 2)
+    (MemLp.of_bound (hf.comp_aemeasurable (hX_ae 0)).aestronglyMeasurable C
+      (Filter.Eventually.of_forall fun ω => hC (X 0 ω)))
 
 end Probability
 

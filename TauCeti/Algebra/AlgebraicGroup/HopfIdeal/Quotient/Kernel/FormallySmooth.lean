@@ -49,7 +49,7 @@ theorem finrank_kernelLie_add_finrank_lie_of_formallySmooth
     derivationCompLieHom_surjective_of_formallySmooth f.hom hf
   have hrank := df.finrank_range_add_finrank_ker
   rw [LinearMap.range_eq_top.mpr hdf, finrank_top] at hrank
-  rw [finrank_kernelLie, ← finrank_toSubmodule, LieHom.ker_toSubmodule, add_comm]
+  rw [finrank_kernelLie, ← LieSubmodule.finrank_toSubmodule, LieHom.ker_toSubmodule, add_comm]
   exact hrank
 
 end TauCeti.CommHopfAlgCat

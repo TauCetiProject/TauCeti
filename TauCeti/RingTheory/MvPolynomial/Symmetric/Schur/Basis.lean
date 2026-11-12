@@ -44,7 +44,7 @@ the coordinates of `s_μ` are the Kostka numbers `K_{μν}`
 (`TauCeti.msymmBasis_repr_schurPoly`), which vanish unless `μ` dominates `ν`
 (`TauCeti.kostkaNumber_eq_zero_of_not_dominates`) and equal `1` on the diagonal
 (`TauCeti.kostkaNumber_self`).  Since dominance refines the lexicographic linear order on
-partitions (`TauCeti.lex_le_of_dominates`), the Kostka matrix is triangular with `1`s on the
+partitions (`Nat.Partition.lex_le_of_dominates`), the Kostka matrix is triangular with `1`s on the
 diagonal for that linear order, so its determinant is `1` and it is a change of basis.  This is
 where the ring hypothesis enters: over `ℕ` the transition matrix is not invertible.
 
@@ -58,7 +58,7 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.msymmBasis`: **the monomial basis**.
 * `TauCeti.schurPolyBasis`: **the Schur basis**.
 * `TauCeti.partitionEquivSchurIndex`: identifies partitions of `n` with the Schur basis index
-  when the alphabet is `Fin d` and `n ≤ d`.
+  when the alphabet has at least `n` letters.
 
 ## Main results
 
@@ -80,9 +80,6 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
   Sections 2 and 6: the monomial symmetric functions are a basis, the Kostka matrix is
   unitriangular for the dominance order, and hence the Schur functions are a basis.
 * R. P. Stanley, *Enumerative Combinatorics*, Volume 2, §7.10.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7, "The Schur functions are a `ℤ`-basis of the symmetric functions; `msymm`-to-`schurPoly`
-  change of basis is the Kostka matrix `Kλμ`".
 -/
 
 public section
@@ -92,28 +89,21 @@ namespace TauCeti
 open Finset MvPolynomial
 
 /-- For an alphabet with at least `n` letters, every partition of `n` indexes a Schur basis
-vector. -/
-def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
-    n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
-  toFun μ := ⟨μ, by
-    have hcard := μ.parts.card_nsmul_le_sum (a := 1) (fun x hx => μ.parts_pos hx)
-    have hparts : μ.parts.card ≤ n := by simpa [μ.parts_sum] using hcard
-    exact hparts.trans (by simpa using h)⟩
-  invFun μ := μ.1
-  left_inv _ := rfl
-  right_inv _ := Subtype.ext rfl
+vector: a partition of `n` has at most `n` parts, so the subtype condition always holds. -/
+def partitionEquivSchurIndex (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fintype.card σ) :
+    n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card σ} :=
+  (Equiv.subtypeUnivEquiv fun μ : n.Partition => μ.card_parts_le.trans h).symm
 
 /-- Reindexing a partition into the Schur basis retains the same underlying partition. -/
 @[simp]
-theorem partitionEquivSchurIndex_apply (n d : ℕ) (h : n ≤ d) (μ : n.Partition) :
-    (partitionEquivSchurIndex n d h μ).1 = μ := by
-  simp [partitionEquivSchurIndex]
+theorem partitionEquivSchurIndex_apply (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fintype.card σ)
+    (μ : n.Partition) : (partitionEquivSchurIndex σ n h μ).1 = μ := (rfl)
 
 /-- The inverse reindexing from the Schur basis returns the underlying partition. -/
 @[simp]
-theorem partitionEquivSchurIndex_symm_apply (n d : ℕ) (h : n ≤ d)
-    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin d)}) :
-    (partitionEquivSchurIndex n d h).symm μ = μ.1 := (rfl)
+theorem partitionEquivSchurIndex_symm_apply (σ : Type*) [Fintype σ] (n : ℕ)
+    (h : n ≤ Fintype.card σ) (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
+    (partitionEquivSchurIndex σ n h).symm μ = μ.1 := (rfl)
 
 section CommSemiring
 
@@ -283,7 +273,7 @@ private theorem isUnit_det_schurPolyElem :
     intro ν μ hμν
     have hlt : (μ : n.Partition) < (ν : n.Partition) := Subtype.coe_lt_coe.mpr hμν
     rw [hentry ν μ, kostkaNumber_eq_zero_of_not_dominates fun hdom =>
-      absurd (lex_le_of_dominates hdom) (not_le.mpr hlt), Nat.cast_zero]
+      absurd (Nat.Partition.lex_le_of_dominates hdom) (not_le.mpr hlt), Nat.cast_zero]
   have hdiag : ∏ ν, (msymmBasis σ R n).toMatrix (schurPolyElem σ R n) ν ν = 1 :=
     Finset.prod_eq_one fun ν _ => by rw [hentry ν ν, kostkaNumber_self, Nat.cast_one]
   rw [Module.Basis.det_apply, Matrix.det_of_isUpperTriangular htri, hdiag]
@@ -316,15 +306,28 @@ theorem coe_schurPolyBasis (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.
   rw [h]
   rfl
 
+/-- **The coordinates of a Schur expansion**: if a symmetric homogeneous polynomial is a combination
+`∑_λ c_λ s_λ` of the Schur polynomials of *all* partitions of `n`, its coordinate in the Schur
+basis at a partition the alphabet records is `c_μ`.  The partitions with more parts than the
+alphabet has letters contribute nothing, their Schur polynomials vanishing. -/
+theorem schurPolyBasis_repr_of_coe_eq_sum {p : symmetricHomogeneousSubmodule σ R n}
+    {c : n.Partition → R} (hp : (p : MvPolynomial σ R) = ∑ l, c l • schurPoly σ R l)
+    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
+    (schurPolyBasis σ R n).repr p μ = c μ.1 := by
+  have h : p = ∑ ν, c ν.1 • schurPolyBasis σ R n ν := by
+    refine Subtype.ext ?_
+    simp only [hp, Submodule.coe_sum, Submodule.coe_smul, coe_schurPolyBasis]
+    rw [← Fintype.sum_subtype_add_sum_subtype (fun l : n.Partition => l.parts.card ≤
+      Fintype.card σ), Fintype.sum_eq_zero (fun l : {l : n.Partition // ¬_} => _)
+      fun l => by rw [schurPoly_eq_zero_of_card_lt _ (not_le.mp l.2), smul_zero], add_zero]
+  rw [h, Module.Basis.repr_sum_self]
+
 /-- In an alphabet with at least `n` letters, the Schur polynomials of all partitions of
 `n` are linearly independent. Thus their coefficients in a finite expansion are unique. -/
 theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :
     LinearIndependent R (schurPoly σ R : n.Partition → MvPolynomial σ R) := by
   let f (μ : n.Partition) : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} :=
-    ⟨μ, by
-      have hc := μ.parts.card_nsmul_le_sum (a := 1) (fun x hx ↦ μ.parts_pos hx)
-      have : μ.parts.card ≤ n := by simpa [μ.parts_sum] using hc
-      exact this.trans h⟩
+    ⟨μ, μ.card_parts_le.trans h⟩
   have hf : Function.Injective f := fun _ _ he ↦ congrArg Subtype.val he
   simpa only [Function.comp_def, Submodule.subtype_apply, coe_schurPolyBasis, f] using
     ((schurPolyBasis σ R n).linearIndependent.comp f hf).map'

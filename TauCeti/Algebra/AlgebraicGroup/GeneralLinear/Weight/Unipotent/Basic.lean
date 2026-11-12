@@ -37,9 +37,9 @@ inverse of a block-unitriangular matrix is block unitriangular.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This advances the dynamic-unipotent route in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap by constructing the scheme-level unipotent subgroup attached to a weight
-cocharacter.
+This is the scheme-level unipotent subgroup attached to a weight cocharacter;
+`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Unipotent.Basic` identifies it with
+the dynamic unipotent subgroup of that cocharacter.
 -/
 
 public section
@@ -143,9 +143,9 @@ private theorem comul_sub_one_apply_mem (w : Fin N → ℤ) {i j : Fin N}
     Coalgebra.comul (R := R)
         ((genericMatrix R N) i j -
           (1 : Matrix (Fin N) (Fin N) (coordinateHopfAlgebra R N)) i j) ∈
-      HopfIdeal.leftTensorIdeal (R := R) (H := coordinateHopfAlgebra R N)
+      Ideal.leftTensorIdeal (R := R) (B := coordinateHopfAlgebra R N)
           (Ideal.span (weightUnipotentRelationSet R w)) ⊔
-        HopfIdeal.rightTensorIdeal (R := R) (H := coordinateHopfAlgebra R N)
+        Ideal.rightTensorIdeal (R := R) (A := coordinateHopfAlgebra R N)
           (Ideal.span (weightUnipotentRelationSet R w)) := by
   let J : Ideal (coordinateHopfAlgebra R N) :=
     Ideal.span (weightUnipotentRelationSet R w)
@@ -155,17 +155,15 @@ private theorem comul_sub_one_apply_mem (w : Fin N → ℤ) {i j : Fin N}
   change Coalgebra.comul (R := R)
       ((genericMatrix R N) i j -
         (1 : Matrix (Fin N) (Fin N) (coordinateHopfAlgebra R N)) i j) ∈
-    HopfIdeal.leftTensorIdeal (R := R) (H := coordinateHopfAlgebra R N) J ⊔
-      HopfIdeal.rightTensorIdeal (R := R) (H := coordinateHopfAlgebra R N) J
+    Ideal.leftTensorIdeal (R := R) (B := coordinateHopfAlgebra R N) J ⊔
+      Ideal.rightTensorIdeal (R := R) (A := coordinateHopfAlgebra R N) J
   have hker :
       RingHom.ker (Algebra.TensorProduct.map q q) =
-        HopfIdeal.leftTensorIdeal (R := R) (H := coordinateHopfAlgebra R N) J ⊔
-          HopfIdeal.rightTensorIdeal (R := R) (H := coordinateHopfAlgebra R N) J := by
-    rw [Algebra.TensorProduct.map_ker (f := q) (g := q)
-      (Ideal.Quotient.mkₐ_surjective R J) (Ideal.Quotient.mkₐ_surjective R J)]
-    rw [← RingHom.ker_coe_toRingHom q]
-    simp only [q, Ideal.Quotient.mkₐ_ker]
-    rfl
+        Ideal.leftTensorIdeal (R := R) (B := coordinateHopfAlgebra R N) J ⊔
+          Ideal.rightTensorIdeal (R := R) (A := coordinateHopfAlgebra R N) J := by
+    simpa only [AlgHom.ker_coe, q, Ideal.Quotient.mkₐ_ker] using
+      q.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q
+        (Ideal.Quotient.mkₐ_surjective R J) (Ideal.Quotient.mkₐ_surjective R J)
   rw [← hker]
   apply RingHom.mem_ker.mpr
   simp only [Matrix.one_apply]

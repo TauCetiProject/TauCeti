@@ -139,7 +139,8 @@ theorem neg_hom_hom_hom_left (f : E.toCommGrp ⟶ E'.toCommGrp) :
 /-- **Multiplication by `n` is the integer `n` of the endomorphism ring.** The homomorphism of
 elliptic curves given by `[n] : E ⟶ E` is the image of `n` under `ℤ → End_S(E)`. -/
 theorem homMk_mulBy (n : ℤ) :
-    CommGrp.homMk (A := E.toCommGrp) (B := E.toCommGrp) (E.mulBy n) = (n : End E.toCommGrp) :=
+    CommGrp.homMk (A := E.toCommGrp) (B := E.toCommGrp) (E.mulBy n) =
+      (n : End E.toCommGrp).asHom :=
   CommGrp.hom_ext _ _ <| by
     rw [CommGrp.homMk_hom_hom_hom, CommGrp.intCast_hom_hom_hom, mulBy_eq_zpow]
 
@@ -147,19 +148,21 @@ theorem homMk_mulBy (n : ℤ) :
 over the general `CategoryTheory.CommGrp.intCast_hom_hom_hom`, so that `E.mulBy n` is the simp
 normal form. -/
 @[simp high]
-theorem intCast_hom_hom_hom (n : ℤ) : (n : End E.toCommGrp).hom.hom.hom = E.mulBy n := by
+theorem intCast_hom_hom_hom (n : ℤ) :
+    (n : End E.toCommGrp).asHom.hom.hom.hom = E.mulBy n := by
   rw [← homMk_mulBy, CommGrp.homMk_hom_hom_hom]
 
 /-- The natural number `n` of the endomorphism ring of `E` is multiplication by `n`. -/
 @[simp high]
-theorem natCast_hom_hom_hom (n : ℕ) : (n : End E.toCommGrp).hom.hom.hom = E.mulBy n := by
+theorem natCast_hom_hom_hom (n : ℕ) :
+    (n : End E.toCommGrp).asHom.hom.hom.hom = E.mulBy n := by
   rw [← Int.cast_natCast, intCast_hom_hom_hom]
 
 /-- The image of the integer `n` of the endomorphism ring of `E` in the category of group schemes
 over `S` is multiplication by `n`. -/
 @[simp]
 theorem forget₂Grp_map_intCast (n : ℤ) :
-    (CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp) = Grp.ofHom (E.mulBy n) :=
+    (CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp).asHom = Grp.ofHom (E.mulBy n) :=
   Grp.hom_ext _ _ <| by
     rw [CommGrp.forget₂Grp_map_hom, Grp.ofHom_hom_hom, intCast_hom_hom_hom]
 

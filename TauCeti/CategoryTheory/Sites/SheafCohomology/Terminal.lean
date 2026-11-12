@@ -59,25 +59,14 @@ private noncomputable def freeYonedaObjIsoConst {T : C} (hT : IsTerminal T) :
 
 noncomputable section
 
-variable [HasWeakSheafify J AddCommGrpCat.{v}]
-
-private def freeYonedaSheafIsoConstantSheaf {T : C} (hT : IsTerminal T) :
-    (presheafToSheaf J AddCommGrpCat.{v}).obj (yoneda.obj T ⋙ AddCommGrpCat.free) ≅
-      (constantSheaf J AddCommGrpCat.{v}).obj (AddCommGrpCat.of (ULift.{v} ℤ)) :=
-  (presheafToSheaf J _).mapIso (freeYonedaObjIsoConst hT)
-
-end
-
-noncomputable section
-
 variable [HasSheafify J AddCommGrpCat.{v}] [HasExt.{w} (Sheaf J AddCommGrpCat.{v})]
 
--- Mathlib's `functorH` and `extFunctorObj` use definitionally equal object and map data.
+-- Mathlib's `extFunctorObj` and `functorH` use definitionally equal object and map data.
 -- Naming that identification here isolates the definitional coincidence used below.
-private noncomputable def functorHIso (n : ℕ) :
-    _root_.CategoryTheory.Sheaf.functorH J n ≅
-      (_root_.CategoryTheory.Abelian.extFunctor n).obj
-        (op ((constantSheaf J AddCommGrpCat.{v}).obj (AddCommGrpCat.of (ULift ℤ)))) :=
+private def extFunctorObjIsoFunctorH (n : ℕ) :
+    (_root_.CategoryTheory.Abelian.extFunctor n).obj
+        (op ((constantSheaf J AddCommGrpCat.{v}).obj (AddCommGrpCat.of (ULift ℤ)))) ≅
+      _root_.CategoryTheory.Sheaf.functorH J n :=
   NatIso.ofComponents (fun _ => Iso.refl _)
     (by
       intros
@@ -102,8 +91,9 @@ noncomputable def cohomologyPresheafEvaluationIsoFunctorH (n : ℕ) {T : C} (hT 
     cohomologyPresheafFunctor J n ⋙ (evaluation Cᵒᵖ AddCommGrpCat.{w}).obj (op T) ≅
       functorH J n :=
   (Abelian.extFunctor n).mapIso
-      (TauCeti.CategoryTheory.freeYonedaSheafIsoConstantSheaf hT).symm.op ≪≫
-    TauCeti.CategoryTheory.functorHIso n
+      ((presheafToSheaf J _).mapIso
+        (TauCeti.CategoryTheory.freeYonedaObjIsoConst hT)).symm.op ≪≫
+    TauCeti.CategoryTheory.extFunctorObjIsoFunctorH n
 
 /-- At a terminal object, the cohomology of the object is the cohomology of the site. -/
 noncomputable abbrev cohomologyPresheafObjIsoH (F : Sheaf J AddCommGrpCat.{v}) (n : ℕ)

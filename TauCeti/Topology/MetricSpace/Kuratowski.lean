@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.ContinuousMap.Bounded.Basic
+public import Mathlib.Topology.MetricSpace.Kuratowski
+import Mathlib.Topology.Algebra.Module.Basic
+import Mathlib.Topology.ContinuousMap.Bounded.Normed
 
 /-!
 # The Fréchet–Kuratowski embedding of a pseudometric space
@@ -16,6 +19,11 @@ Unlike Mathlib's `KuratowskiEmbedding.embeddingOfSubset`, which lands in `ℓ^�
 separable space, this embedding exists for every pseudometric space. It transfers metric
 statements proved for normed targets to arbitrary pseudometric targets.
 
+A separable pseudometric space moreover maps isometrically into a *separable* Banach space: the
+closed linear span of the image of Mathlib's Kuratowski embedding of its metric quotient into
+`ℓ^∞(ℕ)`. This transfers statements proved for separable Banach spaces, such as those resting on
+Polish path spaces, to separable pseudometric spaces.
+
 ## Main definitions
 
 * `TauCeti.kuratowskiEmbedding x₀`: the Fréchet–Kuratowski embedding `X → X →ᵇ ℝ` based at `x₀`.
@@ -23,11 +31,14 @@ statements proved for normed targets to arbitrary pseudometric targets.
 ## Main results
 
 * `TauCeti.isometry_kuratowskiEmbedding`: the Fréchet–Kuratowski embedding is an isometry.
+* `TauCeti.exists_isometry_separableSpace_completeSpace`: a separable pseudometric space maps
+  isometrically into a separable Banach space.
 -/
 
 public section
 
-open scoped BoundedContinuousFunction
+open Set TopologicalSpace
+open scoped BoundedContinuousFunction ENNReal lp
 
 namespace TauCeti
 
@@ -36,11 +47,8 @@ variable {X : Type*} [PseudoMetricSpace X]
 /-- The Fréchet–Kuratowski embedding of a pseudometric space into the bounded continuous real
 functions on it, based at `x₀`: it sends `x` to `y ↦ dist x y - dist x₀ y`. -/
 noncomputable def kuratowskiEmbedding (x₀ x : X) : X →ᵇ ℝ :=
-  .mkOfBound ⟨fun y ↦ dist x y - dist x₀ y, by fun_prop⟩ (2 * dist x x₀) fun y z ↦ by
-    have hy := abs_le.1 (abs_dist_sub_le x x₀ y)
-    have hz := abs_le.1 (abs_dist_sub_le x x₀ z)
-    rw [ContinuousMap.coe_mk, Real.dist_eq, abs_le]
-    constructor <;> linarith [hy.1, hy.2, hz.1, hz.2]
+  .ofNormedAddCommGroup (fun y ↦ dist x y - dist x₀ y) (by fun_prop) (dist x x₀)
+    fun y ↦ abs_dist_sub_le x x₀ y
 
 /-- The Fréchet–Kuratowski embedding of `x` evaluated at `y`. -/
 @[simp]
@@ -56,5 +64,20 @@ theorem isometry_kuratowskiEmbedding (x₀ : X) : Isometry (kuratowskiEmbedding 
   · simpa [Real.dist_eq, abs_sub_comm, dist_comm x] using
       BoundedContinuousFunction.dist_coe_le_dist (f := kuratowskiEmbedding x₀ x)
         (g := kuratowskiEmbedding x₀ x') x
+
+/-- A separable pseudometric space maps isometrically into a separable real Banach space. -/
+theorem exists_isometry_separableSpace_completeSpace (Y : Type*) [PseudoMetricSpace Y]
+    [SeparableSpace Y] :
+    ∃ (E : Type) (_ : NormedAddCommGroup E) (_ : NormedSpace ℝ E), CompleteSpace E ∧
+      SeparableSpace E ∧ ∃ f : Y → E, Isometry f := by
+  -- Kuratowski-embed the metric quotient of `Y` into `ℓ^∞(ℕ, ℝ)` and take the closed linear span.
+  have : SeparableSpace (SeparationQuotient Y) := SeparationQuotient.isQuotientMap_mk.separableSpace
+  have hι : Isometry (_root_.kuratowskiEmbedding (SeparationQuotient Y) ∘ SeparationQuotient.mk) :=
+    (kuratowskiEmbedding.isometry _).comp (.of_dist_eq SeparationQuotient.dist_mk)
+  set K : Submodule ℝ ℓ^∞(ℕ, ℝ) := (Submodule.span ℝ (range _)).topologicalClosure
+  have hK : IsSeparable (K : Set ℓ^∞(ℕ, ℝ)) := (isSeparable_range hι.continuous).span.closure
+  exact ⟨K, inferInstance, inferInstance, inferInstance, hK.separableSpace,
+    fun y ↦ ⟨_, Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨y, rfl⟩)⟩,
+    Isometry.of_dist_eq hι.dist_eq⟩
 
 end TauCeti

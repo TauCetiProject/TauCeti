@@ -72,7 +72,7 @@ theorem baseChangePointsMulEquiv_apply
     (baseChangePointsMulEquiv f : A) =
       f.ofConv (1 ⊗ₜ[k] LaurentPolynomial.T 1) := by
   rw [baseChangePointsMulEquiv, MulEquiv.trans_apply, pointsMulEquiv_apply,
-    unitOfPoint_val, AlgHom.baseChangePointsMulEquiv_symm_apply]
+    laurentEvalEquiv_symm_apply, AlgHom.baseChangePointsMulEquiv_symm_apply]
 
 /-- The inverse base-changed multiplicative-group points equivalence evaluates pure Laurent
 monomials `s ⊗ C r * T n` as scalar multiples of the corresponding power of the chosen unit. -/

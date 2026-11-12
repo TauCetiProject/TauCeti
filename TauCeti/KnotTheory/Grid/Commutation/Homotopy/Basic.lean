@@ -44,9 +44,13 @@ two-step domains thus reduces to comparing the multisets of squares they cover.
 * `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_single_apply`,
   `TauCeti.GridDiagram.commutationHomotopy_unblockedDifferential_single_apply` and
   `TauCeti.GridDiagram.reverse_commutationMap_commutationMap_single_apply`: the matrix coefficients
-  of `∂ ∘ H`, `H ∘ ∂` and `Ψ ∘ Φ`.
+  of `∂ ∘ H`, `H ∘ ∂` and `Ψ ∘ Φ`. The last is the case of
+  `TauCeti.GridDiagram.commutationMap_withTurnRow_commutationMap_single_apply`, for a return map
+  turning in an arbitrary row.
 * `TauCeti.GridDiagram.reverse_commutationMap_commutationMap_smul`: the round trip `Ψ ∘ Φ` is
-  linear over the polynomial ring.
+  linear over the polynomial ring. It is the case of
+  `TauCeti.GridDiagram.commutationMap_withTurnRow_commutationMap_smul`, for a return map turning
+  in an arbitrary row.
 * `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff`: the homotopy
   equation holds on every chain exactly when, for all grid states `x` and `z`, the rectangle and
   hexagon coefficient products from `x` to `z` sum to `δ_{xz}` plus the pentagon coefficient
@@ -90,6 +94,24 @@ theorem commutationHomotopy_unblockedDifferential_single_apply (x z : GridState 
   rw [commutationHomotopy_apply_apply, Finsupp.sum_fintype _ _ fun _ => zero_mul _]
   simp [commutationHexagonCoefficient_def]
 
+/-- On a grid-state generator, the coefficient of the round trip through the commuted diagram,
+first the commutation map of a turn `T` and then that of the commuted diagram at the same columns
+turning in row `t`, is the sum over intermediate states of the commutation pentagon coefficient
+of the first map, renamed by the column swap, times that of the second. -/
+theorem commutationMap_withTurnRow_commutationMap_single_apply (T : ColumnTurn n) (t : Fin n)
+    (x z : GridState n) :
+    (G.swapColumns T.column (finRotate n T.column)).commutationMap R (T.withTurnRow t)
+        (G.commutationMap R T (Finsupp.single x 1)) z =
+      ∑ y : GridState n,
+        rename (Equiv.swap T.column (finRotate n T.column))
+            (G.commutationPentagonCoefficient R T x y) *
+          (G.swapColumns T.column (finRotate n T.column)).commutationPentagonCoefficient R
+            (T.withTurnRow t) y z := by
+  rw [commutationMap_apply_apply, Finsupp.sum_fintype _ _ fun _ => by simp]
+  refine Finset.sum_congr rfl fun y _ => ?_
+  rw [commutationMap_single_apply, ColumnTurn.withTurnRow_column,
+    commutationPentagonCoefficient_def (G.swapColumns T.column (finRotate n T.column))]
+
 /-- On a grid-state generator, the coefficient of the round trip `Ψ ∘ Φ` through the commuted
 diagram is the sum over intermediate states of the commutation pentagon coefficient of `Φ`,
 renamed by the column swap, times that of the reverse commutation map `Ψ`. -/
@@ -99,24 +121,38 @@ theorem reverse_commutationMap_commutationMap_single_apply (x z : GridState n) :
       ∑ y : GridState n,
         rename (Equiv.swap C.column b) (G.commutationPentagonCoefficient R C x y) *
           (G.swapColumns C.column b).commutationPentagonCoefficient R C.reverse y z := by
-  rw [commutationMap_apply_apply, Finsupp.sum_fintype _ _ fun _ => by simp]
-  refine Finset.sum_congr rfl fun y _ => ?_
-  rw [commutationMap_single_apply, ColumnCommutationData.reverse_column,
-    commutationPentagonCoefficient_def (G.swapColumns C.column b)]
+  -- The turn of `C.reverse` is the turn of `C` in its opposite turn row.
+  rw [show C.reverse.toColumnTurn = C.toColumnTurn.withTurnRow C.oppositeTurnRow from
+    ColumnTurn.ext C.reverse_column C.reverse_turnRow]
+  exact G.commutationMap_withTurnRow_commutationMap_single_apply R C.toColumnTurn
+    C.oppositeTurnRow x z
+
+/-- The round trip through the commuted diagram, first the commutation map of a turn `T` and then
+that of the commuted diagram at the same columns turning in row `t`, is linear over the
+polynomial ring: both maps are semilinear over the renaming of the variables by the swap of the
+two commuted columns, and that renaming is an involution. -/
+theorem commutationMap_withTurnRow_commutationMap_smul (T : ColumnTurn n) (t : Fin n)
+    (p : MvPolynomial (Fin n) R) (c : GridChainMinus R n) :
+    (G.swapColumns T.column (finRotate n T.column)).commutationMap R (T.withTurnRow t)
+        (G.commutationMap R T (p • c)) =
+      p • (G.swapColumns T.column (finRotate n T.column)).commutationMap R (T.withTurnRow t)
+        (G.commutationMap R T c) := by
+  rw [LinearMap.map_smulₛₗ, LinearMap.map_smulₛₗ]
+  congr 1
+  simp only [AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe, renameEquiv_apply, rename_rename]
+  rw [← Equiv.coe_trans, Equiv.swap_swap, Equiv.coe_refl, rename_id_apply]
 
 /-- The round trip `Ψ ∘ Φ` through the commuted diagram is linear over the polynomial ring: the
 commutation map and its reverse are semilinear over the same renaming of the variables by the
 swap of the two commuted columns, and that renaming is an involution. -/
-@[simp]
 theorem reverse_commutationMap_commutationMap_smul (p : MvPolynomial (Fin n) R)
     (c : GridChainMinus R n) :
     (G.swapColumns C.column b).commutationMap R C.reverse (G.commutationMap R C (p • c)) =
       p • (G.swapColumns C.column b).commutationMap R C.reverse (G.commutationMap R C c) := by
-  rw [LinearMap.map_smulₛₗ, LinearMap.map_smulₛₗ]
-  congr 1
-  simp only [AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe, renameEquiv_apply, rename_rename,
-    ColumnCommutationData.reverse_column]
-  rw [← Equiv.coe_trans, Equiv.swap_swap, Equiv.coe_refl, rename_id_apply]
+  -- The turn of `C.reverse` is the turn of `C` in its opposite turn row.
+  rw [show C.reverse.toColumnTurn = C.toColumnTurn.withTurnRow C.oppositeTurnRow from
+    ColumnTurn.ext C.reverse_column C.reverse_turnRow]
+  exact G.commutationMap_withTurnRow_commutationMap_smul R C.toColumnTurn C.oppositeTurnRow p c
 
 /-- The homotopy equation `∂ ∘ H + H ∘ ∂ = 1 + Ψ ∘ Φ` of a column commutation holds on every
 chain exactly when, for all grid states `x` and `z`, the products of rectangle and hexagon

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.DiracProba
+public import Mathlib.MeasureTheory.Measure.Support
+public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
@@ -66,7 +68,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal ProbabilityTheory
 
 namespace TauCeti
 
@@ -310,6 +312,11 @@ theorem mk_coe (μ : WassersteinSpace p X) :
     mk (μ : ProbabilityMeasure X) (hasFiniteMoment μ) = μ :=
   (rfl)
 
+/-- The Wasserstein space over an empty ground space is empty: there is no probability measure. -/
+theorem isEmpty_of_isEmpty [IsEmpty X] : IsEmpty (WassersteinSpace p X) :=
+  ⟨fun μ ↦ (nonempty_of_isProbabilityMeasure ((μ : ProbabilityMeasure X) : Measure X)).elim
+    isEmptyElim⟩
+
 end Basic
 
 section MetricGround
@@ -425,6 +432,33 @@ theorem exists_coe_eq_smul_add_smul [OpensMeasurableSpace X] {a b : ℝ≥0∞} 
     ((hasFiniteMoment μ).smul_measure ha).add_measure ((hasFiniteMoment ν).smul_measure hb)
   exact ⟨mk ((μ : ProbabilityMeasure X).convexComb hab ν)
     (by rwa [ProbabilityMeasure.toMeasure_convexComb]), by simp⟩
+
+open ProbabilityTheory in
+/-- **Uniform laws on bounded sets lie in `P_p(X)`.** The normalised restriction `m[|s]` of a
+measure `m` to a bounded measurable set `s` of positive, finite measure is a law of `P_p(X)`. It
+is carried by `s`, so it has bounded support and is absolutely continuous with respect to `m`. -/
+theorem exists_coe_eq_cond [OpensMeasurableSpace X] {m : Measure X} {s : Set X}
+    (hs : MeasurableSet s) (hb : Bornology.IsBounded s) (h₀ : m s ≠ 0) (hfin : m s ≠ ∞) :
+    ∃ μ : WassersteinSpace p X, ((μ : ProbabilityMeasure X) : Measure X) = m[|s] ∧
+      Bornology.IsBounded ((μ : ProbabilityMeasure X) : Measure X).support ∧
+      ((μ : ProbabilityMeasure X) : Measure X) ≪ m := by
+  obtain ⟨x, -⟩ := nonempty_of_measure_ne_zero h₀
+  obtain ⟨r, hr⟩ := (Metric.isBounded_iff_subset_closedBall x).1 hb
+  have hprob : IsProbabilityMeasure m[|s] := cond_isProbabilityMeasure_of_finite h₀ hfin
+  have hae : ∀ᵐ y ∂m[|s], y ∈ Metric.closedBall x r :=
+    (ae_cond_mem hs).mono fun _ hy ↦ hr hy
+  -- The law is carried by `Metric.closedBall x r`, so its distance from `x` is bounded by `r`.
+  have hmom : HasFiniteMoment p m[|s] :=
+    hasFiniteMoment_def.2 ⟨x, MemLp.of_eNorm_bound (C := ENNReal.ofReal r)
+      measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top
+      (hae.mono fun y hy ↦ by
+        rw [eNorm_eq_self, edist_comm, edist_dist]
+        exact ENNReal.ofReal_le_ofReal (Metric.mem_closedBall.1 hy))⟩
+  have hcoe : ((mk (p := p) ⟨_, hprob⟩ hmom : ProbabilityMeasure X) : Measure X) = m[|s] :=
+    (congrArg ProbabilityMeasure.toMeasure (coe_mk _ _)).trans (ProbabilityMeasure.coe_mk _ _)
+  refine ⟨mk ⟨_, hprob⟩ hmom, hcoe, ?_, ?_⟩ <;> rw [hcoe]
+  exacts [Metric.isBounded_closedBall.subset
+    (Measure.support_subset_of_isClosed Metric.isClosed_closedBall hae), cond_absolutelyContinuous]
 
 /-- The weighted `p`-Wasserstein cost against finitely many points of `P_p(X)` is finite at every
 point of `P_p(X)`. -/
@@ -640,6 +674,41 @@ theorem WassersteinSpace.dist_sq_eq_integral {ν₀ ν₁ : WassersteinSpace 2 E
     ← ENNReal.ofReal_pow dist_nonneg] at hW
   exact ((ENNReal.ofReal_eq_ofReal_iff (integral_nonneg fun _ ↦ by positivity)
     (sq_nonneg _)).1 hW).symm
+
+/-- A coupling `π` of two laws of `P₂(E)` whose quadratic cost `∫ ‖x - y‖² dπ` is at most their
+squared quadratic Wasserstein distance is an optimal coupling for the quadratic cost. This is the
+converse of `TauCeti.WassersteinSpace.dist_sq_eq_integral`. -/
+theorem WassersteinSpace.isOptimalCoupling_of_integral_le_dist_sq {ν₀ ν₁ : WassersteinSpace 2 E}
+    {π : Measure (E × E)}
+    (hπ : IsCoupling π ((ν₀ : ProbabilityMeasure E) : Measure E)
+      ((ν₁ : ProbabilityMeasure E) : Measure E))
+    (h : ∫ z, ‖z.1 - z.2‖ ^ 2 ∂π ≤ dist ν₀ ν₁ ^ 2) :
+    IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π
+      ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E) := by
+  have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  have hi := integrable_norm_sub_sq_of_hasFiniteMoment (hπ.fst_eq ▸ ν₀.hasFiniteMoment)
+    (hπ.snd_eq ▸ ν₁.hasFiniteMoment)
+  refine isOptimalCoupling_iff.2 ⟨hπ, fun σ hσ ↦ ?_⟩
+  have : IsProbabilityMeasure σ := hσ.isProbabilityMeasure
+  have hiσ := integrable_norm_sub_sq_of_hasFiniteMoment (hσ.fst_eq ▸ ν₀.hasFiniteMoment)
+    (hσ.snd_eq ▸ ν₁.hasFiniteMoment)
+  simp only [ENNReal.rpow_two]
+  rw [lintegral_edist_sq_eq_ofReal_integral hi, lintegral_edist_sq_eq_ofReal_integral hiσ]
+  exact ENNReal.ofReal_le_ofReal (h.trans (WassersteinSpace.dist_sq_le_integral hσ))
+
+/-- The `L²(π)` norm of the displacement `(x, y) ↦ y - x` of an optimal coupling `π` of two laws of
+`P₂(E)` for the quadratic cost is their quadratic Wasserstein distance. -/
+theorem WassersteinSpace.norm_toLp_sub_eq_dist {ν₀ ν₁ : WassersteinSpace 2 E}
+    {π : Measure (E × E)}
+    (hπ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π
+      ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E))
+    (hd : MemLp (fun z : E × E ↦ z.2 - z.1) 2 π) :
+    ‖hd.toLp _‖ = dist ν₀ ν₁ := by
+  rw [Lp.norm_toLp, hd.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
+    ENNReal.toReal_ofReal (by positivity)]
+  simp only [ENNReal.toReal_ofNat, Real.rpow_two, norm_sub_rev _ (Prod.fst _),
+    ← WassersteinSpace.dist_sq_eq_integral hπ]
+  exact Real.pow_rpow_inv_natCast dist_nonneg two_ne_zero
 
 end SecondMoment
 

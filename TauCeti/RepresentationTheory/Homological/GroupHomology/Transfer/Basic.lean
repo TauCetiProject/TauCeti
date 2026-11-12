@@ -28,6 +28,12 @@ corestriction is the map induced by the counit `Indˢᴳ Resˢᴳ M ⟶ M`
 (`TauCeti.groupHomology.indIso_inv_comp_map_counit`), and the unit followed by the counit is
 `[G : S]`.
 
+Taking for `S` the trivial subgroup of a finite group `G`, whose positive-degree homology
+vanishes, shows that positive-degree homology of a finite group is killed by the order of the
+group, and vanishes when multiplication by that order is bijective on the coefficients. With
+trivial integral coefficients, this says that the integral homology of a finite group is torsion
+in positive degrees.
+
 ## Main definitions
 
 * `TauCeti.groupHomology.transfer`: the transfer from a group to a finite-index subgroup.
@@ -39,6 +45,14 @@ corestriction is the map induced by the counit `Indˢᴳ Resˢᴳ M ⟶ M`
 * `TauCeti.groupHomology.map_comp_transfer`: the transfer is natural in the coefficients.
 * `TauCeti.groupHomology.transfer_comp_map_subtype_id`: corestriction after transfer is
   multiplication by the index `[G : S]`.
+* `TauCeti.groupHomology.index_nsmul_eq_zero_of_transfer_eq_zero`: a class whose transfer to `S`
+  vanishes is killed by `[G : S]`.
+* `groupHomology.natCard_nsmul_eq_zero`: positive-degree homology of a finite group is killed by
+  the order of the group.
+* `groupHomology.subsingleton_of_bijective_nsmul`, `groupHomology.subsingleton_of_isUnit_natCard`:
+  positive-degree homology of a finite group vanishes when multiplication by the order of the
+  group is bijective on the coefficients, in particular when the order is a unit of the
+  coefficient ring.
 * `TauCeti.groupHomology.transfer_zero_H0π`: in degree zero, where group homology is the module of
   coinvariants, the transfer is the relative transfer `Representation.relTransfer`,
   `⟦m⟧ ↦ ⟦∑_{q ∈ G ⧸ S} q⁻¹ • m⟧`.
@@ -107,17 +121,16 @@ is `[G : S]` times the identity, in every degree `n`. -/
 theorem transfer_comp_map_subtype_id (M : Rep R G) (S : Subgroup G) [S.FiniteIndex] (n : ℕ) :
     transfer M S n ≫ _root_.groupHomology.map S.subtype (𝟙 (Rep.res S.subtype M)) n =
       S.index • 𝟙 _ := by
-  have hsmul : _root_.groupHomology.map (MonoidHom.id G) (S.index • 𝟙 M) n =
-      (HomologicalComplex.homologyFunctor _ _ n).map
-        ((_root_.groupHomology.chainsFunctor R G).map (S.index • 𝟙 M)) := by
-    rw [_root_.groupHomology.map, HomologicalComplex.homologyFunctor_map,
-      _root_.groupHomology.chainsFunctor_map]
-    rfl
   rw [← TauCeti.groupHomology.indIso_inv_comp_map_counit, transfer_comp_indIso_inv_assoc,
     _root_.groupHomology.functor_map, ← _root_.groupHomology.map_id_comp,
     TauCeti.Rep.resIndAdjunction_unit_app_comp_indResAdjunction_counit_app,
-    hsmul, Functor.map_nsmul, Functor.map_nsmul, CategoryTheory.Functor.map_id]
-  exact congrArg (S.index • ·) (CategoryTheory.Functor.map_id _ _)
+    _root_.groupHomology.map_id_nsmul_id]
+
+/-- A class in `Hₙ(G, M)` whose transfer to the finite-index subgroup `S` vanishes is killed by
+the index of `S`. -/
+theorem index_nsmul_eq_zero_of_transfer_eq_zero {M : Rep R G} {S : Subgroup G} [S.FiniteIndex]
+    {n : ℕ} {x : _root_.groupHomology M n} (h : transfer M S n x = 0) : S.index • x = 0 := by
+  rw [← transfer_comp_map_subtype_id_apply M S n x, h, map_zero]
 
 section DegreeZero
 
@@ -158,3 +171,46 @@ theorem transfer_zero_H0π (M : Rep R G) (S : Subgroup G) [S.FiniteIndex] (m : M
 end DegreeZero
 
 end TauCeti.groupHomology
+
+namespace groupHomology
+
+variable {k G : Type u} [CommRing k] [Group G] [Finite G]
+
+open CategoryTheory Limits
+
+/-- **Positive-degree homology of a finite group is killed by the order of the group**: for every
+representation `A` of a finite group `G`, `#G • x = 0` for every `x ∈ Hₙ₊₁(G, A)`. The transfer to
+the trivial subgroup lands in the vanishing homology of the trivial group. -/
+theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupHomology A (n + 1)) :
+    Nat.card G • x = 0 := by
+  simpa using TauCeti.groupHomology.index_nsmul_eq_zero_of_transfer_eq_zero (S := ⊥) <|
+    (ModuleCat.subsingleton_of_isZero
+      (isZero_groupHomology_succ_of_subsingleton (Rep.res (⊥ : Subgroup G).subtype A) n)).allEq _ _
+
+/-- Positive-degree homology of a finite group vanishes when multiplication by the order of the
+group is bijective on the coefficients, for instance for a representation on a `ℚ`-vector space
+over any coefficient ring. -/
+theorem subsingleton_of_bijective_nsmul (A : Rep k G)
+    (h : Function.Bijective fun a : A ↦ Nat.card G • a) (n : ℕ) :
+    Subsingleton (groupHomology A (n + 1)) := by
+  -- Multiplication by `#G` is an automorphism of `A`, so it induces an automorphism of
+  -- `Hₙ₊₁(G, A)`; that automorphism is multiplication by `#G`, which is zero.
+  have : IsIso ((forget (Rep k G)).map (Nat.card G • 𝟙 A)) := (isIso_iff_bijective _).2 h
+  have hA : IsIso (Nat.card G • 𝟙 A) := isIso_of_reflects_iso _ (forget (Rep k G))
+  have : IsIso (Nat.card G • 𝟙 (groupHomology A (n + 1))) := by
+    rw [← map_id_nsmul_id, ← functor_map]
+    exact Functor.map_isIso _ _
+  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
+  obtain ⟨y, rfl⟩ := (ConcreteCategory.bijective_of_isIso
+    (Nat.card G • 𝟙 (groupHomology A (n + 1)))).2 x
+  simpa using natCard_nsmul_eq_zero y
+
+/-- Positive-degree homology of a finite group vanishes when the order of the group is a unit of
+the coefficient ring. -/
+theorem subsingleton_of_isUnit_natCard (A : Rep k G) (h : IsUnit (Nat.card G : k)) (n : ℕ) :
+    Subsingleton (groupHomology A (n + 1)) :=
+  subsingleton_of_bijective_nsmul A (by
+    simpa only [Units.smul_def, IsUnit.unit_spec, Nat.cast_smul_eq_nsmul] using
+      (MulAction.bijective h.unit : Function.Bijective fun a : A ↦ h.unit • a)) n
+
+end groupHomology

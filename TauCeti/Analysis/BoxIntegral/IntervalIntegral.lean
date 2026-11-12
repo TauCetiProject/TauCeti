@@ -74,11 +74,9 @@ theorem splitLower_intervalBox (hac : a < c) (hcb : c < b) :
       (intervalBox a c hac : WithBot (Box (Fin 1))) := by
   rw [← Box.withBotCoe_inj]
   ext x
-  simp only [Box.coe_splitLower, Box.coe_coe, mem_inter_iff, mem_ofPred_eq]
-  -- Interval-box membership unfolds to the single-coordinate inequalities.
-  change ((x ∈ intervalBox a b (hac.trans hcb)) ∧ x 0 ≤ c) ↔ x ∈ intervalBox a c hac
-  simp only [mem_intervalBox, mem_Ioc]
-  exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.2.trans hcb.le⟩, h.2⟩⟩
+  simp only [Box.coe_splitLower, Box.coe_coe, mem_inter_iff, mem_ofPred_eq, Box.mem_coe,
+    mem_intervalBox, mem_Ioc]
+  grind
 
 /-- Splitting at an interior point gives the upper interval box. -/
 theorem splitUpper_intervalBox (hac : a < c) (hcb : c < b) :
@@ -86,23 +84,22 @@ theorem splitUpper_intervalBox (hac : a < c) (hcb : c < b) :
       (intervalBox c b hcb : WithBot (Box (Fin 1))) := by
   rw [← Box.withBotCoe_inj]
   ext x
-  simp only [Box.coe_splitUpper, Box.coe_coe, mem_inter_iff, mem_ofPred_eq]
-  -- Interval-box membership unfolds to the single-coordinate inequalities.
-  change ((x ∈ intervalBox a b (hac.trans hcb)) ∧ c < x 0) ↔ x ∈ intervalBox c b hcb
-  simp only [mem_intervalBox, mem_Ioc]
-  exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨hac.trans h.1, h.2⟩, h.1⟩⟩
+  simp only [Box.coe_splitUpper, Box.coe_coe, mem_inter_iff, mem_ofPred_eq, Box.mem_coe,
+    mem_intervalBox, mem_Ioc]
+  grind
 
-variable {E : Type*} [NormedAddCommGroup E]
+variable {E : Type*} [TopologicalSpace E] [ENormedAddMonoid E]
 
-/-- Integrability on an interval is equivalent to Bochner integrability on its interval box. -/
+/-- Integrability on an interval is equivalent to integrability on its interval box. -/
 theorem integrableOn_intervalBox_iff {a b : ℝ} (hab : a < b) {f : ℝ → E} :
     IntegrableOn (fun x : Fin 1 → ℝ ↦ f (x 0)) (intervalBox a b hab) ↔
       IntervalIntegrable f volume a b := by
-  rw [coe_intervalBox, intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le]
+  simp only [coe_intervalBox, IntervalIntegrable, Ioc_eq_empty_of_le hab.le,
+    integrableOn_empty, and_true]
   exact (volume_preserving_piUnique (fun _ : Fin 1 ↦ ℝ)).integrableOn_comp_preimage
     (MeasurableEquiv.piUnique _).measurableEmbedding
 
-variable [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The Bochner integral on an interval box is the usual oriented interval integral. -/
 theorem setIntegral_intervalBox {a b : ℝ} (hab : a < b) (f : ℝ → E) :

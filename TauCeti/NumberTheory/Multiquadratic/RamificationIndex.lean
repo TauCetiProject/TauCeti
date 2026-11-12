@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
+import TauCeti.Algebra.CharZero.IntCast
 import TauCeti.Algebra.Field.SqrtIntDiv
 import TauCeti.FieldTheory.Galois.SquareRoot
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
@@ -165,7 +166,8 @@ whenever `p ∣ d i`. (It fixes `r i` whenever `p ∤ d i`, by
 theorem apply_eq_neg_of_mem_inertia_of_ne_one {τ : K ≃ₐ[ℚ] K}
     (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K)) (hτ1 : τ ≠ 1) {i : ι} (hi : (p : ℤ) ∣ d i) :
     τ (r i) = -r i := by
-  have hri : r i ≠ 0 := ne_zero_of_sq_eq_intCast (hr i) fun h0 => hd i (h0 ▸ dvd_zero _)
+  have hri : r i ≠ 0 :=
+    ne_zero_of_pow_eq_intCast two_ne_zero (hr i) fun h0 => hd i (h0 ▸ dvd_zero _)
   refine (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq τ (hr i)).resolve_left fun hfix => hτ1 ?_
   -- If `τ` fixes `r i`, it fixes every generator, so it is the identity.
   refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_
@@ -210,7 +212,7 @@ theorem card_inertia_le_two : Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) ≤ 2 := by
 
 /-- The ramification index of a prime above an odd prime `p` is at most `2`, when no radicand is
 divisible by `p²`. -/
-theorem ramificationIdx_le_two [Finite ι] : Q.ramificationIdx ℤ ≤ 2 := by
+theorem ramificationIdx_le_two : Q.ramificationIdx ℤ ≤ 2 := by
   have := isGalois_rat hr htop
   rw [← Ideal.card_inertia_eq_ramificationIdx ℤ (K ≃ₐ[ℚ] K) Q]
   exact card_inertia_le_two hr htop hodd hd Q
@@ -219,7 +221,7 @@ omit hd in
 /-- An odd prime dividing a squarefree radicand has ramification index greater than `1` at every
 prime above it: it ramifies in `K`, and in the Galois extension `K / ℚ` unramifiedness at one prime
 above `p` would spread to all of them. -/
-private theorem one_lt_ramificationIdx [Finite ι] (hsf : ∀ i, Squarefree (d i)) {i : ι}
+private theorem one_lt_ramificationIdx (hsf : ∀ i, Squarefree (d i)) {i : ι}
     (hi : (p : ℤ) ∣ d i) : 1 < Q.ramificationIdx ℤ := by
   have := isGalois_rat hr htop
   refine lt_of_le_of_ne (Q.ramificationIdx_pos ℤ) fun h1 => ?_
@@ -233,7 +235,7 @@ omit hd in
 square roots `r i` of squarefree integers `d i`, and let `Q` be a prime of `𝓞 K` above an odd
 prime `p` dividing some `d i`. Then the ramification index of `Q` over `p` is exactly `2`, however
 many of the `d i` are divisible by `p`. -/
-theorem ramificationIdx_eq_two [Finite ι] (hsf : ∀ i, Squarefree (d i)) {i : ι}
+theorem ramificationIdx_eq_two (hsf : ∀ i, Squarefree (d i)) {i : ι}
     (hi : (p : ℤ) ∣ d i) : Q.ramificationIdx ℤ = 2 := by
   have hd (j : ι) : ¬ (p : ℤ) ^ 2 ∣ d j := fun h =>
     (Nat.prime_iff_prime_int.mp Fact.out).not_isUnit (hsf j _ (by rwa [← pow_two]))
@@ -246,7 +248,7 @@ omit hd in
 squarefree integers `d i`, and let `Q` be a prime of `𝓞 K` above an odd prime `p`. Then the
 ramification index of `Q` over `p` is `2` if `p` divides some `d i`; otherwise it is `1`
 (`TauCeti.Multiquadratic.isUnramifiedAt_of_forall_not_dvd`). -/
-theorem ramificationIdx_eq_two_iff [Finite ι] (hsf : ∀ i, Squarefree (d i)) :
+theorem ramificationIdx_eq_two_iff (hsf : ∀ i, Squarefree (d i)) :
     Q.ramificationIdx ℤ = 2 ↔ ∃ i, (p : ℤ) ∣ d i := by
   refine ⟨fun h2 => ?_, fun ⟨i, hi⟩ => ramificationIdx_eq_two hr htop hodd Q hsf hi⟩
   by_contra hcon
@@ -261,7 +263,7 @@ omit hd in
 /-- **The inertia group at an odd ramified prime has order `2`.** Let `K` be generated over `ℚ` by
 square roots of squarefree integers `d i`, and let `Q` be a prime of `𝓞 K` above an odd prime `p`
 dividing some `d i`. Then the inertia group of `Q` in `Gal(K/ℚ)` has exactly two elements. -/
-theorem card_inertia_eq_two [Finite ι] (hsf : ∀ i, Squarefree (d i)) {i : ι}
+theorem card_inertia_eq_two (hsf : ∀ i, Squarefree (d i)) {i : ι}
     (hi : (p : ℤ) ∣ d i) : Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) = 2 := by
   have := isGalois_rat hr htop
   rw [Ideal.card_inertia_eq_ramificationIdx ℤ (K ≃ₐ[ℚ] K) Q]
@@ -272,7 +274,7 @@ omit hd in
 `r i` of squarefree integers `d i`, and let `Q` be a prime of `𝓞 K` above an odd prime `p` dividing
 some `d i`. An automorphism of `K` lies in the inertia group of `Q` exactly when it is the identity
 or the sign change negating `r j` for the `j` with `p ∣ d j` and fixing the other `r j`. -/
-theorem mem_inertia_iff [Finite ι] (hsf : ∀ i, Squarefree (d i)) {i : ι} (hi : (p : ℤ) ∣ d i)
+theorem mem_inertia_iff (hsf : ∀ i, Squarefree (d i)) {i : ι} (hi : (p : ℤ) ∣ d i)
     {τ : K ≃ₐ[ℚ] K} :
     τ ∈ Q.inertia (K ≃ₐ[ℚ] K) ↔
       τ = 1 ∨ ∀ j, τ (r j) = if (p : ℤ) ∣ d j then -r j else r j := by
@@ -305,7 +307,7 @@ omit hd in
 roots of squarefree integers `d i`, and let `Q` be a prime of `𝓞 K` above an odd prime `p` dividing
 some `d i`. Then the number `g` of primes above `p` and their common residue degree `f` satisfy
 `g · f · 2 = [K : ℚ]`. -/
-theorem ncard_primesOver_mul_inertiaDeg_mul_two_eq_finrank [Finite ι]
+theorem ncard_primesOver_mul_inertiaDeg_mul_two_eq_finrank
     (hsf : ∀ i, Squarefree (d i)) {i : ι} (hi : (p : ℤ) ∣ d i) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * Q.inertiaDeg ℤ * 2 = finrank ℚ K := by
   have := isGalois_rat hr htop
@@ -325,7 +327,7 @@ prime of `𝓞 K` above an odd prime `p` dividing some `d i`, and let `σ` be an
 at `Q`. Then `σ` lies in the inertia group of `Q` exactly when every radicand prime to `p` is a
 quadratic residue mod `p`, and the `p`-free parts `d j / p` of the radicands divisible by `p` all
 have the same Legendre symbol. -/
-theorem isArithFrobAt_mem_inertia_iff [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+theorem isArithFrobAt_mem_inertia_iff (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
     (hsf : ∀ i, Squarefree (d i)) (Q : Ideal (𝓞 K)) [Q.IsPrime]
     [Q.LiesOver (span {(p : ℤ)})] {i : ι} (hi : (p : ℤ) ∣ d i) {σ : K ≃ₐ[ℚ] K}
@@ -346,7 +348,7 @@ theorem isArithFrobAt_mem_inertia_iff [Finite ι] (hr : ∀ i, r i ^ 2 = algebra
   · rintro ⟨hres, hsym⟩
     -- `σ` fixes the roots prime to `p` and acts by the sign `σ (r i) = ± r i` on the others.
     rw [mem_inertia_iff hr htop hodd Q hsf hi]
-    have hri : r i ≠ 0 := ne_zero_of_sq_eq_intCast (hr i) (hsf i).ne_zero
+    have hri : r i ≠ 0 := ne_zero_of_pow_eq_intCast two_ne_zero (hr i) (hsf i).ne_zero
     have hsame {k : ι} (hk : (p : ℤ) ∣ d k) : σ (r i) * σ (r k) = r i * r k :=
       (hpair hi hk).mpr (hsym i k hi hk)
     have hsq : σ (r i) ^ 2 = r i ^ 2 := by
@@ -375,7 +377,7 @@ residue degree `1` exactly when every radicand prime to `p` is a quadratic resid
 the `p`-free parts `d i / p` of the radicands divisible by `p` all have the same Legendre symbol.
 When `p` divides no radicand the second condition is vacuous, and this is
 `TauCeti.Multiquadratic.inertiaDeg_eq_one_iff_forall_legendreSym_eq_one`. -/
-theorem inertiaDeg_eq_one_iff_of_squarefree [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+theorem inertiaDeg_eq_one_iff_of_squarefree (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
     (hsf : ∀ i, Squarefree (d i)) (Q : Ideal (𝓞 K)) [Q.IsPrime]
     [Q.LiesOver (span {(p : ℤ)})] :
@@ -399,7 +401,7 @@ residue degree `2` exactly when the criterion of
 `TauCeti.Multiquadratic.inertiaDeg_eq_one_iff_of_squarefree` fails: some radicand prime to `p` is
 a quadratic non-residue mod `p`, or two radicands divisible by `p` have `p`-free parts with
 different Legendre symbols. -/
-theorem inertiaDeg_eq_two_iff_of_squarefree [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+theorem inertiaDeg_eq_two_iff_of_squarefree (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
     (hsf : ∀ i, Squarefree (d i)) (Q : Ideal (𝓞 K)) [Q.IsPrime]
     [Q.LiesOver (span {(p : ℤ)})] :
@@ -415,7 +417,7 @@ roots of squarefree integers `d i`, and let `p` be an odd prime dividing some `d
 exactly `[K : ℚ] / 2` primes of `𝓞 K` above `p`, the most possible given that `p` ramifies,
 exactly when the criterion of `TauCeti.Multiquadratic.inertiaDeg_eq_one_iff_of_squarefree`
 holds. -/
-theorem ncard_primesOver_mul_two_eq_finrank_iff_of_dvd [Finite ι]
+theorem ncard_primesOver_mul_two_eq_finrank_iff_of_dvd
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
     (hsf : ∀ i, Squarefree (d i)) {i : ι} (hi : (p : ℤ) ∣ d i) :

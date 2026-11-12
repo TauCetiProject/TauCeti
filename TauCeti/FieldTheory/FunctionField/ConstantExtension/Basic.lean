@@ -8,14 +8,15 @@ module
 public import TauCeti.FieldTheory.FunctionField.GeometricDegree
 public import TauCeti.FieldTheory.FunctionField.ConstantField
 public import Mathlib.FieldTheory.Normal.Basic
+public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 
 /-!
 # Finite extensions of the constant field
 
 A finite extension of constants yields a finite compositum over the original field, and a
-separable extension of constants produces a separable compositum.  Exactness of the original
-constant field is needed for neither.  The function-field theorem for arbitrary algebraic
-extensions of constants is in `ConstantExtension.Algebraic`.
+separable or purely inseparable extension of constants produces a compositum of the same kind.
+Exactness of the original constant field is needed for none of these statements. The function-field
+theorem for arbitrary algebraic extensions of constants is in `ConstantExtension.Algebraic`.
 
 Under the hypotheses that make constant field extensions well behaved — the original constant
 field `k` is exact in `F` and `k' / k` is separable — the compositum acquires no new separable
@@ -40,12 +41,14 @@ carried out after a finite constant field extension.
   separable `k' / k`, a compositum finite over the original field has finite constants.
 * `TauCeti.isSeparable_of_constantCompositum_eq_top`: the compositum of a separable constant
   field extension is separable over the original field.
+* `TauCeti.isPurelyInseparable_of_constantCompositum_eq_top`: the compositum of a purely
+  inseparable constant field extension is purely inseparable over the original field.
 * `TauCeti.separableClosure_eq_bot_of_constantCompositum_eq_top`: for a separable constant field
   extension of an exact constant field, `k'` is separably closed in `F · k'`.
 * `TauCeti.adjoin_image_eq_top_of_constantCompositum_eq_top`: generators of `F` over `k` generate
   `F · k'` over `k'`.
-* `TauCeti.isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top`: if `F` is separable over
-  `k(x)`, then `F · k'` is separable over `k'(x)`.
+* `TauCeti.isSeparable_adjoin_image_of_constantCompositum_eq_top`: if `F` is separable over
+  `k(S)`, then `F · k'` is separable over `k'(S)`.
 * `TauCeti.exists_finiteDimensional_lt_card_constantCompositum_eq_top` and
   `TauCeti.exists_finiteDimensional_normal_splits_constantCompositum_eq_top`: finite constant field
   extensions `F · k'` with more than a given number of constants, or with `k'` normal and
@@ -66,8 +69,28 @@ namespace TauCeti
 universe u u' v v'
 
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
-variable [Field k] [Field k'] [Field F] [Field F']
-variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+variable [Field k'] [Field F] [Field F'] [Algebra k' F'] [Algebra F F']
+
+section CommRing
+
+variable [CommRing k] [Algebra k k'] [Algebra k F] [Algebra k F']
+variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+
+/-- A separable extension of the constant field produces a separable compositum over the
+original field. The common base need only be a commutative ring. -/
+theorem isSeparable_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
+    (hcomp : constantCompositum F k' F' = ⊤) : Algebra.IsSeparable F F' := by
+  rw [← IntermediateField.isSeparable_top]
+  rw [← hcomp, constantCompositum_def,
+    IntermediateField.isSeparable_adjoin_iff_isSeparable]
+  rintro y ⟨c, rfl⟩
+  exact IsSeparable.tower_top F <|
+    (Algebra.IsSeparable.isSeparable k c).map (IsScalarTower.toAlgHom k k' F')
+      (algebraMap k' F').injective
+
+end CommRing
+
+variable [Field k] [Algebra k k'] [Algebra k F] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 /-- A compositum with finite constants is finite over the original field. The ambient field
@@ -101,17 +124,20 @@ theorem finiteDimensional_base_of_constantCompositum_eq_top [FiniteDimensional F
   rw [h, IntermediateField.finrank_top'] at hrank
   exact Module.finite_of_finrank_pos (hrank ▸ Module.finrank_pos)
 
-/-- A separable extension of the constant field produces a separable compositum over the
-original field. -/
-theorem isSeparable_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
-    (hcomp : constantCompositum F k' F' = ⊤) : Algebra.IsSeparable F F' := by
-  rw [← IntermediateField.isSeparable_top]
-  rw [← hcomp, constantCompositum_def,
-    IntermediateField.isSeparable_adjoin_iff_isSeparable]
-  rintro y ⟨c, rfl⟩
-  exact IsSeparable.tower_top F <|
-    (Algebra.IsSeparable.isSeparable k c).map (IsScalarTower.toAlgHom k k' F')
-      (algebraMap k' F').injective
+/-- Adjoining purely inseparable constants produces a purely inseparable extension of the
+original field, whether or not the constant extension is finite. -/
+theorem isPurelyInseparable_of_constantCompositum_eq_top [IsPurelyInseparable k k']
+    (h : constantCompositum F k' F' = ⊤) : IsPurelyInseparable F F' := by
+  obtain ⟨q, _⟩ := ExpChar.exists k
+  have := expChar_of_injective_algebraMap (algebraMap k F).injective q
+  rw [isPurelyInseparable_iff_perfectClosure_eq_top]
+  apply top_le_iff.mp
+  rw [← h, constantCompositum_def]
+  refine IntermediateField.adjoin_le_iff.mpr ?_
+  rintro _ ⟨c, rfl⟩
+  obtain ⟨n, a, ha⟩ := IsPurelyInseparable.pow_mem k q c
+  exact (mem_perfectClosure_iff_pow_mem q).mpr ⟨n, algebraMap k F a, by
+    rw [← map_pow, ← ha, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]⟩
 
 /-! ### The constant field of the compositum -/
 
@@ -149,33 +175,26 @@ theorem adjoin_image_eq_top_of_constantCompositum_eq_top {S : Set F}
   rw [h] at hle
   exact top_le_iff.mp fun z _ ↦ hle IntermediateField.mem_top
 
-/-- **A separating element stays separating in the compositum**: if `F` is separable over `k(x)`,
-then the compositum `F' = F · k'` is separable over `k'(x)`. No hypothesis on `k' / k` is needed,
-since the new constants lie in `k'(x)`. -/
-theorem isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top
-    (h : constantCompositum F k' F' = ⊤) {x : F} [Algebra.IsSeparable k⟮x⟯ F] :
-    Algebra.IsSeparable k'⟮algebraMap F F' x⟯ F' := by
-  set L := k'⟮algebraMap F F' x⟯
-  -- `k(x)` maps into `k'(x)`.
-  have hmem (a : k⟮x⟯) : algebraMap F F' a ∈ L := by
-    have ha : algebraMap F F' a ∈ k⟮x⟯.map (IsScalarTower.toAlgHom k F F') := ⟨a, a.2, rfl⟩
-    rw [IntermediateField.adjoin_map, Set.image_singleton] at ha
-    exact (IntermediateField.adjoin_simple_le_iff.mpr
-      (IntermediateField.mem_adjoin_simple_self k' (algebraMap F F' x)) :
-        k⟮IsScalarTower.toAlgHom k F F' x⟯ ≤ L.restrictScalars k) ha
-  let ψ : k⟮x⟯ →+* L :=
-    ((algebraMap F F').comp (algebraMap k⟮x⟯ F)).codRestrict L.toSubfield hmem
-  have hψ : (algebraMap L F').comp ψ = (algebraMap F F').comp (algebraMap k⟮x⟯ F) :=
-    RingHom.ext fun a ↦ RingHom.codRestrict_apply _ _ hmem a
-  -- Each element of `F` stays separable: its minimal polynomial over `k(x)`, mapped to `k'(x)`,
-  -- is separable and vanishes at it.
+/-- **Separability over an adjoined set persists in the compositum**: if `F` is separable
+algebraic over `k(S)`, then `F' = F · k'` is separable algebraic over `k'(S)`. In particular, a
+separating element stays separating. No hypothesis on `k' / k` is needed. -/
+theorem isSeparable_adjoin_image_of_constantCompositum_eq_top
+    (h : constantCompositum F k' F' = ⊤) {S : Set F}
+    [Algebra.IsSeparable (IntermediateField.adjoin k S) F] :
+    Algebra.IsSeparable (IntermediateField.adjoin k' (algebraMap F F' '' S)) F' := by
+  let K := IntermediateField.adjoin k S
+  let L := IntermediateField.adjoin k' (algebraMap F F' '' S)
+  have hle : K ≤ (L.restrictScalars k).comap (IsScalarTower.toAlgHom k F F') :=
+    IntermediateField.adjoin_le_iff.mpr fun z hz ↦
+      IntermediateField.subset_adjoin k' _ ⟨z, hz, rfl⟩
+  let ψ : K →+* L :=
+    ((algebraMap F F').comp (algebraMap K F)).codRestrict L.toSubfield fun a ↦ hle a.2
+  -- The restricted map makes the two routes from `k(S)` to `F'` agree.
+  let : Algebra K L := ψ.toAlgebra
+  have : IsScalarTower K L F' := .of_algebraMap_eq fun a ↦ rfl
   have hsep (z : F) : IsSeparable L (algebraMap F F' z) := by
-    have hroot : Polynomial.aeval (algebraMap F F' z) ((minpoly k⟮x⟯ z).map ψ) = 0 := by
-      rw [Polynomial.aeval_def, Polynomial.eval₂_map, hψ,
-        ← Polynomial.hom_eval₂, ← Polynomial.aeval_def, minpoly.aeval, map_zero]
-    have hp : (minpoly k⟮x⟯ z).Separable := Algebra.IsSeparable.isSeparable k⟮x⟯ z
-    exact (hp.map (f := ψ)).of_dvd (minpoly.dvd L _ hroot)
-  -- The image of `F` generates `F'` over `k'`, hence over `k'(x)`.
+    exact ((Algebra.IsSeparable.isSeparable K z).map
+      (IsScalarTower.toAlgHom K F F') (algebraMap F F').injective).tower_top L
   have htop : IntermediateField.adjoin L (Set.range (algebraMap F F')) = ⊤ := by
     have hk' := adjoin_image_eq_top_of_constantCompositum_eq_top
       (IntermediateField.adjoin_univ k F) h

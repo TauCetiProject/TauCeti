@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Exponential.Classification
 public import TauCeti.Geometry.Lie.Exponential.Smoothness
 public import TauCeti.Geometry.Lie.Exponential.Trotter
-public import TauCeti.Geometry.Manifold.Algebra.Monoid
+import TauCeti.Geometry.Lie.Exponential.Homomorphism
 
 /-!
 # Continuous homomorphisms of Lie groups are smooth
@@ -63,7 +63,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 namespace TauCeti.Lie
@@ -120,6 +120,13 @@ private def homGeneratorLinearMap (f : G →ₜ* G') :
   map_add' := homGenerator_add f
   map_smul' := homGenerator_smul f
 
+/-- The linear generator map evaluates to the one-parameter generator. -/
+@[simp]
+private theorem homGeneratorLinearMap_apply (f : G →ₜ* G')
+    (X : LeftInvariantDerivation I G) :
+    homGeneratorLinearMap (I' := I') f X = homGenerator (I' := I') f X := by
+  rfl
+
 end Generator
 
 /-- **Automatic smoothness.** A continuous homomorphism between finite-dimensional real Lie groups
@@ -128,21 +135,15 @@ left-invariant derivation `X` to the generator of the one-parameter subgroup
 `t ↦ f (lieExp (t • X))`. -/
 theorem contMDiff_of_continuous_monoidHom {F : Type*} [FunLike F G G'] [MonoidHomClass F G G']
     (f : F) (hf : Continuous f) : ContMDiff I I' ∞ f := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
-  let _ : T2Space G' := t2Space_of_lieGroup (I := I') (n := ∞)
-  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
   let φ : G →ₜ* G' := ⟨MonoidHom.ofClass f, hf⟩
-  let L := LinearMap.toContinuousLinearMap (homGeneratorLinearMap (I := I) (I' := I') φ)
-  have hev : (fun g ↦ lieExp (L (lieLog (I := I) g))) =ᶠ[𝓝 1] f := by
-    filter_upwards [eventually_lieExp_lieLog (I := I) (G := G)] with g hg
-    have h := map_lieExp_smul (I' := I') φ (lieLog (I := I) g) 1
-    rw [one_smul, one_smul, hg] at h
-    exact h.symm
-  have hsmooth : ContMDiffAt I I' ∞ (fun g ↦ lieExp (L (lieLog (I := I) g))) 1 :=
-    (contMDiff_lieExp (I := I') (G := G')).contMDiffAt.comp 1
-      (L.contDiff.contMDiff.contMDiffAt.comp 1 (contMDiffAt_lieLog_one (I := I) (G := G)))
-  exact contMDiff_of_contMDiffAt_mulHom f (hsmooth.congr_of_eventuallyEq hev.symm)
+  apply contMDiff_of_map_lieExp f (homGeneratorLinearMap (I := I) (I' := I') φ)
+  dsimp only
+  intro X
+  have hφ : (φ : G → G') = f := MonoidHom.coe_ofClass f
+  simpa only [homGeneratorLinearMap_apply, one_smul, hφ] using
+    map_lieExp_smul (I' := I') φ X 1
 
 end TauCeti.Lie
 

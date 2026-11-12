@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
+public import Mathlib.Algebra.GroupWithZero.NonZeroDivisors
 public import Mathlib.Topology.Continuous
 
 /-!
@@ -63,7 +64,10 @@ the two pointwise results only at their own.
 The class also gives, with no action involved,
 `TauCeti.HasZeroSequenceOfUnits.nhdsWithin_isUnit_neBot`: zero is a limit of units, the hypothesis
 under which Mathlib's `Submodule.eq_top_of_nonempty_interior'` rules out proper submodules with
-nonempty interior.
+nonempty interior. In a monoid with zero, the terms are non-zero-divisors, so
+`TauCeti.HasZeroSequenceOfUnits.frequently_mem_nonZeroDivisors_nhds_zero`: non-zero-divisors
+accumulate at zero, the hypothesis of the identity principle
+`PowerSeries.IsEntire.eq_of_forall_evalAt_eq`.
 
 ## References
 
@@ -170,6 +174,16 @@ instance nhdsWithin_isUnit_neBot : NeBot (𝓝[{x : A | IsUnit x}] 0) := by
   obtain ⟨u, hu⟩ := ‹HasZeroSequenceOfUnits A›.exists_tendsto
   exact mem_closure_iff_nhdsWithin_neBot.mp <|
     mem_closure_of_tendsto hu (Eventually.of_forall fun n ↦ (u n).isUnit)
+
+/-- **Non-zero-divisors accumulate at zero.** In a monoid with zero, the terms of a zero sequence
+of units are non-zero-divisors converging to `0`. This is the hypothesis of the identity principle
+`PowerSeries.IsEntire.eq_of_forall_evalAt_eq`; over a Tate normed ring the powers of a
+pseudo-uniformiser supply it. -/
+theorem frequently_mem_nonZeroDivisors_nhds_zero {M₀ : Type*} [MonoidWithZero M₀]
+    [TopologicalSpace M₀] [HasZeroSequenceOfUnits M₀] :
+    ∃ᶠ x in 𝓝 (0 : M₀), x ∈ nonZeroDivisors M₀ := by
+  obtain ⟨u, hu⟩ := ‹HasZeroSequenceOfUnits M₀›.exists_tendsto
+  exact hu.frequently (.of_forall fun n ↦ (u n).isUnit.mem_nonZeroDivisors)
 
 end HasZeroSequenceOfUnits
 

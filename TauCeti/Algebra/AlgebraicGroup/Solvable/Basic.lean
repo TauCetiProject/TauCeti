@@ -30,6 +30,8 @@ Lie--Kolchin theory and the construction of the solvable radical.
 
 * `TauCeti.geometricallySolvablePointsCommHopfAlgProperty`: solvability of the geometric point
   group.
+* `TauCeti.geometricallySolvablePointsCommHopfAlgProperty_of_isAlgClosed`: over an algebraically
+  closed field, solvability of rational points implies geometric solvability.
 * `TauCeti.geometricallySolvablePointsCommHopfAlgProperty_of_isCocomm`: commutative affine
   groups have solvable geometric points.
 * `TauCeti.geometricallySolvablePointsCommHopfAlgProperty_of_surjective`: closure under closed
@@ -69,6 +71,18 @@ theorem geometricallySolvablePointsCommHopfAlgProperty_iff
       Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) :=
   Iff.rfl
 
+/-- Over an algebraically closed field, solvability of rational points implies geometric
+solvability. No finite-type or smoothness hypothesis is needed. -/
+theorem geometricallySolvablePointsCommHopfAlgProperty_of_isAlgClosed
+    {k : Type u} [Field k] [IsAlgClosed k] (H : CommHopfAlgCat.{v} k)
+    [Group.IsSolvable (WithConv (H →ₐ[k] k))] :
+    geometricallySolvablePointsCommHopfAlgProperty k H := by
+  rw [geometricallySolvablePointsCommHopfAlgProperty_iff]
+  let φ : AlgebraicClosure k →ₐ[k] k := IsAlgClosed.lift
+  exact Group.isSolvable_of_isSolvable_injective
+    (f := AlgHom.mapValue (R := k) (H := H) φ)
+    (AlgHom.mapValue_injective (R := k) (H := H) (φ := φ) φ.injective)
+
 /-- A cocommutative coordinate Hopf algebra has solvable geometric points.
 
 Cocommutativity makes the convolution group of points commutative over every commutative value
@@ -89,8 +103,8 @@ instance (k : Type u) [Field k] :
     let e' : H ≃ₐc[k] K := CommHopfAlgCat.ofIso e
     let _ : Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) := hH
     exact Group.isSolvable_of_isSolvable_injective
-      (f := (AlgHom.mapDomainMulEquiv (A := AlgebraicClosure k) e').toMonoidHom)
-      (AlgHom.mapDomainMulEquiv (A := AlgebraicClosure k) e').injective
+      (f := (BialgEquiv.mapDomainMulEquiv (A := AlgebraicClosure k) e').toMonoidHom)
+      (BialgEquiv.mapDomainMulEquiv (A := AlgebraicClosure k) e').injective
 
 /-- Geometric-points solvability descends along a surjective coordinate Hopf-algebra morphism.
 
@@ -104,8 +118,8 @@ theorem geometricallySolvablePointsCommHopfAlgProperty_of_surjective
   rw [geometricallySolvablePointsCommHopfAlgProperty_iff] at hH ⊢
   let _ : Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) := hH
   exact Group.isSolvable_of_isSolvable_injective
-    (f := AlgHom.mapDomain (H₁ := H) (H₂ := K) (A := AlgebraicClosure k) f.hom)
-    (CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective f hf
+    (f := BialgHom.mapDomain (H₁ := H) (H₂ := K) (A := AlgebraicClosure k) f.hom)
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f hf
       (CommAlgCat.of k (AlgebraicClosure k)))
 
 /-- The closed subgroup cut out by a Hopf ideal has solvable geometric points whenever the

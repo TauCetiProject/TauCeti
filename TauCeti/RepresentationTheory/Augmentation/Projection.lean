@@ -14,7 +14,9 @@ public import TauCeti.LinearAlgebra.Dual.Lemmas
 Choosing an index splits the augmentation sequence as modules: subtract the coefficient sum
 at that index to project onto the sum-zero submodule. This projection is not generally
 equivariant, since the chosen index need not be fixed. It gives a split presentation of the
-augmentation module that remains exact after arbitrary extension of scalars.
+augmentation module that remains exact after arbitrary extension of scalars. Over a commutative
+ring it also shows that every linear form on the augmentation module extends to `R[X]`
+(`TauCeti.dualRestrict_augmentationSubrepresentation_surjective`).
 -/
 
 public noncomputable section
@@ -60,5 +62,17 @@ theorem exact_toSpanSingleton_augmentationProjection (x₀ : X) :
 theorem augmentationProjection_surjective (x₀ : X) :
     Function.Surjective (augmentationProjection R G X x₀) :=
   fun v => ⟨v.1, augmentationProjection_coe R G X x₀ v⟩
+
+variable {G X} in
+/-- Every linear form on the augmentation subrepresentation extends to `R[X]`, over any
+commutative ring: compose it with the sum-zero projection at any index. -/
+theorem dualRestrict_augmentationSubrepresentation_surjective (R : Type*) [CommRing R] :
+    Function.Surjective (augmentationSubrepresentation R G X).toSubmodule.dualRestrict := by
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · have : Subsingleton (MonoidAlgebra R X) :=
+      ⟨fun v w => MonoidAlgebra.coeff_inj.mp (Finsupp.ext fun x => hX.elim x)⟩
+    exact fun ψ ↦ ⟨0, LinearMap.ext fun v ↦ by rw [Subsingleton.elim v 0, map_zero, map_zero]⟩
+  exact fun ψ ↦ ⟨ψ ∘ₗ augmentationProjection R G X x₀, LinearMap.ext fun v ↦ by
+    rw [Submodule.dualRestrict_apply, LinearMap.comp_apply, augmentationProjection_coe]⟩
 
 end TauCeti

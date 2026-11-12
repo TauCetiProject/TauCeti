@@ -33,7 +33,7 @@ public section
 
 namespace TauCeti
 
-open ContCohomology ClassFieldTheory ValuativeRel
+open ContCohomology ClassFieldTheory _root_.ValuativeRel
 
 universe u
 

@@ -5,7 +5,7 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.CategoryTheory.DG.Functor.Basic
 public import Mathlib.Algebra.Module.TransferInstance
 
 /-!

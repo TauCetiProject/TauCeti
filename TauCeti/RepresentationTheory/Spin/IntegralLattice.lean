@@ -56,12 +56,6 @@ quadratic Clifford elements is carrier-specific and happens elsewhere; for type 
   and `TauCeti.SpinPolarizationData.two_smul_diagonalBivector_mem_integralSpinActionSubring`: the
   two combinations of diagonal bivectors realized by an orthogonal coroot are integral.
 
-## Roadmap
-
-This supplies the shared integral-spinor-lattice prerequisite for the full-weight type-`B` and
-type-`D` Chevalley carriers in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. Those carriers
-are consumed by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
-
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
@@ -90,7 +84,7 @@ def integralSpinActionSubring : Subring (CliffordAlgebra Q) where
     rw [map_zero, LinearMap.zero_apply]
     exact zero_mem _
   one_mem' x hx := by
-    rw [map_one, Module.End.one_apply]
+    rw [map_one, one_apply_eq_self]
     exact hx
   add_mem' {c d} hc hd x hx := by
     rw [map_add, LinearMap.add_apply]
@@ -99,7 +93,7 @@ def integralSpinActionSubring : Subring (CliffordAlgebra Q) where
     rw [map_neg, LinearMap.neg_apply]
     exact neg_mem (hc hx)
   mul_mem' {c d} hc hd x hx := by
-    rw [map_mul, Module.End.mul_apply]
+    rw [map_mul, mul_apply_eq_comp]
     exact hc (hd hx)
 
 /-- Membership in the integral-action subring means precisely that the spin action preserves the

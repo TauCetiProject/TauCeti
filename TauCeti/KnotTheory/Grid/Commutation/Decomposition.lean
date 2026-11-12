@@ -18,8 +18,8 @@ in the other, a pentagon is followed by a rectangle in the commuted diagram. Thi
 the two kinds of decomposition and rewrites the two matrix products in the chain-map equation as
 sums over them.
 
-For a validated column commutation `C` of `G`, write `G'` for the diagram obtained by swapping
-the columns of `C`, and `Phi` for `GridDiagram.pentagonMap`. The coefficient of
+For a column turn `C` (`GridDiagram.ColumnTurn`) for `G`, write `G'` for the diagram obtained by
+swapping the columns of `C`, and `Phi` for `GridDiagram.pentagonMap`. The coefficient of
 `Phi (partial x)` at `z` is the sum over
 `GridRectanglePentagonDecomposition C.column C.turnRow x z`; its weight is the rectangle weight,
 renamed into the coefficient variables of `G'`, times the pentagon weight. The coefficient of
@@ -290,6 +290,21 @@ theorem toRectangleDecomposition_second_toGridRectangle
   unfold toRectangleDecomposition
   rfl
 
+/-- An empty rectangle of a rectangle-pentagon decomposition stays empty as the first rectangle of
+the underlying rectangle decomposition. -/
+theorem toRectangleDecomposition_first_isEmpty (D : GridRectanglePentagonDecomposition a s x z)
+    (hrectangle : D.rectangle.IsEmpty) : D.toRectangleDecomposition.first.IsEmpty := by
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    D.toRectangleDecomposition_first_toGridRectangle] using hrectangle
+
+/-- An empty pentagon of a rectangle-pentagon decomposition stays empty as the second rectangle of
+the underlying rectangle decomposition. -/
+theorem toRectangleDecomposition_second_isEmpty (D : GridRectanglePentagonDecomposition a s x z)
+    (hpentagon : D.pentagon.IsEmpty) : D.toRectangleDecomposition.second.IsEmpty := by
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    D.toRectangleDecomposition_middle,
+    D.toRectangleDecomposition_second_toGridRectangle] using hpentagon
+
 /-- A rectangle--pentagon decomposition is determined by its underlying pair of rectangles. -/
 theorem toRectangleDecomposition_injective :
     Function.Injective
@@ -401,7 +416,7 @@ end GridRectanglePentagonDecomposition
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 local notation "b" => finRotate n C.column
 
@@ -422,6 +437,27 @@ theorem mem_rectanglePentagonDecompositions {x z : GridState n}
         D.pentagon ∈ G.pentagons C D.middle z := by
   classical
   simp [rectanglePentagonDecompositions]
+
+/-- The first rectangle underlying a counted rectangle--pentagon domain is empty. -/
+theorem toRectangleDecomposition_first_isEmpty_of_mem_rectanglePentagonDecompositions
+    {x z : GridState n} {D : GridRectanglePentagonDecomposition C.column C.turnRow x z}
+    (hD : D ∈ G.rectanglePentagonDecompositions C x z) :
+    D.toRectangleDecomposition.first.IsEmpty := by
+  have hempty := ((G.mem_unblockedRectangles _).1
+    ((G.mem_rectanglePentagonDecompositions C D).1 hD).1).1
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_first_toGridRectangle] using hempty
+
+/-- The second rectangle underlying a counted rectangle--pentagon domain is empty. -/
+theorem toRectangleDecomposition_second_isEmpty_of_mem_rectanglePentagonDecompositions
+    {x z : GridState n} {D : GridRectanglePentagonDecomposition C.column C.turnRow x z}
+    (hD : D ∈ G.rectanglePentagonDecompositions C x z) :
+    D.toRectangleDecomposition.second.IsEmpty := by
+  have hempty := ((G.mem_pentagons _).1
+    ((G.mem_rectanglePentagonDecompositions C D).1 hD).2).1
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_second_toGridRectangle,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_middle] using hempty
 
 /-- The pentagon--rectangle decompositions counted by the coefficient of the commuted
 differential after the pentagon map. -/

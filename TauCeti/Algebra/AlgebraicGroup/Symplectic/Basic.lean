@@ -89,7 +89,7 @@ theorem relationMatrix_def :
   rw [relationMatrix, ConstantForm.relationMatrix_def, JFin_map]
 
 /-- The set of defining relations: the entries of the relation matrix. -/
-abbrev relationSet : Set (GeneralLinear.coordinateHopfAlgebra R (m + m)) :=
+noncomputable abbrev relationSet : Set (GeneralLinear.coordinateHopfAlgebra R (m + m)) :=
   ConstantForm.relationSet R (m + m) (JFin m R)
 
 /-- **The symplectic Hopf ideal**: the ideal of the coordinate Hopf algebra of `GL (m + m)`

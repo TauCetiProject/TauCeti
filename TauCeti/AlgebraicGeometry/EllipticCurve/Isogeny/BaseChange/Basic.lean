@@ -52,6 +52,8 @@ proved there.
 
 * `TauCeti.CoordinatePullback.map`: the base-changed coordinate pullback.
 * `TauCeti.Isogeny.map`: the base-changed isogeny.
+* `TauCeti.Isogeny.baseChange`: the base change of an isogeny of curves over `F` to an extension
+  `K` of `F`, typed between `W₁⁄K` and `W₂⁄K`.
 
 ## Main results
 
@@ -68,15 +70,10 @@ proved there.
   isogeny and composition.
 * `TauCeti.Isogeny.map_id`, `TauCeti.Isogeny.map_map`: functoriality in the base map itself.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0.5** (README:369). Its first milestone
-(README:376-378) asks for "base change of Weierstrass equations, coordinate rings, function
-fields, points, and isogenies, compatible with identity, composition, degree, separability,
-`MapsInfinity`, duals, and induced point maps"; this file is the isogeny entry, with the identity,
-composition and `MapsInfinity` clauses. Layer 1's dual-isogeny milestone (README:529-531) opens
-"for the **separable** part, base change to `Kˢᵉᵖ`, where `Kˢᵉᵖ(W₁)/φ^*Kˢᵉᵖ(W₂)` **is** Galois",
-and `Isogeny.map` is the arrow that base change names there.
+This is the isogeny part of base change for Weierstrass curves, with its compatibility with the
+identity, composition and `MapsInfinity`. For the separable part of an isogeny, the dual is
+built after base change to `Kˢᵉᵖ`, where `Kˢᵉᵖ(W₁)/φ^*Kˢᵉᵖ(W₂)` is Galois; `Isogeny.map` is that
+base change.
 
 Mathlib's `WeierstrassCurve.map_id` and `WeierstrassCurve.map_map` are proved by `rfl`. Their
 affine specialisations are therefore definitional equalities too, so the identity and composition
@@ -265,6 +262,14 @@ theorem map_map (φ : Isogeny W₁ W₂) (f : F →+* K) (g : K →+* L) :
   apply Isogeny.ext
   rw [map_pullback, map_pullback, map_pullback]
   exact CoordinatePullback.map_map φ.pullback f g
+
+open WeierstrassCurve in
+variable (K) in
+/-- The base change of an isogeny `φ : W₁ → W₂` to an extension `K` of `F`, typed between the base
+changes `W₁⁄K` and `W₂⁄K`. -/
+noncomputable abbrev baseChange [Algebra F K] {W₁ W₂ : WeierstrassCurve F}
+    (φ : Isogeny W₁.toAffine W₂.toAffine) : Isogeny (W₁⁄K).toAffine (W₂⁄K).toAffine :=
+  φ.map (algebraMap F K)
 
 end Isogeny
 

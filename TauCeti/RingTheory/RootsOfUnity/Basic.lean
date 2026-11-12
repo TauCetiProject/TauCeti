@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Defs
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 
@@ -15,16 +16,26 @@ public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 
 This file records a criterion for a root of unity congruent to `1` modulo an ideal to equal `1`,
 and counts the square roots of unity in a domain in which `2 ≠ 0`; in any domain the number of
-`n`-th roots of unity divides `n`. For a prime `p` it relates the triviality of the `p`th roots of
-unity to the absence of a primitive one. It also records that
-roots of unity, and hence the values of a character of a finite group, are integral over `ℤ`.
-Finally, it identifies the `n`-torsion of a unit group, written additively, with the `n`-th roots
-of unity.
+`n`-th roots of unity divides `n`. It transfers `HasEnoughRootsOfUnity` along an injective
+homomorphism into a domain, and with it the nonemptiness of `primitiveRoots n R`. For a prime
+`p` it relates the triviality of the `p`th roots of unity to the absence of a primitive one. It
+also records that roots of unity, and hence the values of a character of a finite group, are
+integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, and the
+kernel of the `n`-th power map of a commutative group with the `n`-th roots of unity.
+Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th roots of unity.
 
 ## Main definitions
 
+* `TauCeti.negOneRootsOfUnity`: the square root of unity `-1` in a commutative ring.
+
 * `TauCeti.torsionByUnitsEquivRootsOfUnity`: the `n`-torsion of `Mˣ`, written additively, is
   `μₙ(M)`, written additively.
+* `TauCeti.powMonoidHomKerEquivRootsOfUnity`: in a commutative group, the kernel of the `n`-th
+  power map is `μₙ`.
+* `TauCeti.rootsOfUnityPowOfDvd`: for `n ∣ m`, the power map `η ↦ η ^ (m / n)` from `μₘ(M)` to
+  `μₙ(M)`.
+  Its kernel consists of the `(m / n)`-th roots of unity
+  (`TauCeti.mem_ker_rootsOfUnityPowOfDvd_iff`).
 
 ## Main results
 
@@ -34,17 +45,34 @@ of unity.
 
 * `TauCeti.eq_one_of_pow_eq_one_of_sub_one_mem`: in a commutative ring without zero divisors, a
   root of unity that is congruent to `1` modulo an ideal not containing its order is `1`.
+* `TauCeti.subsingleton_rootsOfUnity_prime_pow`: in a reduced commutative ring of exponential
+  characteristic `p`, the group of `pʲ`-th roots of unity is trivial.
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
   elements.
 * `TauCeti.card_rootsOfUnity_dvd`: in a domain, the number of `n`-th roots of unity divides `n`.
+* `TauCeti.exponent_pi_rootsOfUnity_cast_ne_zero`: in a domain, the exponent of a finite product
+  of groups `μ_{n i}` is nonzero as soon as each `n i` is.
 * `IsPrimitiveRoot.neg_one_of_two_ne_zero`: when `2 ≠ 0`, `-1` is a primitive square root of
   unity.
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
   order `n` is a primitive `2n`-th root of unity.
+* `IsPrimitiveRoot.sq_eq_neg_one`: a primitive fourth root of unity squares to `-1`.
+* `IsPrimitiveRoot.sum_pow_pow_eq` and `IsPrimitiveRoot.sum_prod_pow_pow_eq`: orthogonality of
+  the characters `a ↦ (ζ ^ e) ^ a` of `ℤ ⧸ m`, in one and in several variables, and
+  `IsPrimitiveRoot.sum_zpow_pow_eq` for an integral exponent `e` in a field.
+* `HasEnoughRootsOfUnity.of_injective`: a domain receiving an injective homomorphism from a
+  commutative monoid with enough `n`-th roots of unity has enough `n`-th roots of unity.
+* `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
+  `HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective`: with enough `n`-th roots of unity,
+  `primitiveRoots n R` is nonempty, also after an injective homomorphism into a domain.
 * `TauCeti.rootsOfUnity_eq_bot_iff`: for a prime `p`, the `p`th roots of unity are trivial
   exactly when there is no primitive `p`th root of unity.
 * `TauCeti.finite_torsionBy_additive_units`: the `n`-torsion of `Mˣ`, written additively, is
   finite when the `n`-th roots of unity are, for instance in a domain for `n ≠ 0`.
+* `TauCeti.exists_rootsOfUnity_isPrimitiveRoot_of_dvd`: for `k ∣ m`, if `M` has enough `k`-th roots
+  of unity, then some `m`-th root of unity is a primitive `k`-th root of unity.
+* `TauCeti.natCard_powMonoidHom_ker`: with enough `n`-th roots of unity, the kernel of the `n`-th
+  power map has `n` elements.
 -/
 
 public section
@@ -52,6 +80,12 @@ public section
 noncomputable section
 
 namespace TauCeti
+
+/-- An injective monoid homomorphism is injective on roots of unity. -/
+theorem restrictRootsOfUnity_injective {R S F : Type*} [CommMonoid R] [CommMonoid S]
+    [FunLike F R S] [MonoidHomClass F R S] (f : F) (n : ℕ) (hf : Function.Injective f) :
+    Function.Injective (restrictRootsOfUnity f n) :=
+  fun _ _ h ↦ Subtype.ext (Units.map_injective hf (congrArg Subtype.val h))
 
 variable {R : Type*} [CommRing R]
 
@@ -64,6 +98,16 @@ integral over `ℤ`. -/
 theorem _root_.MonoidHom.isIntegral_coe_apply {G : Type*} [Group G] [Finite G] (χ : G →* Rˣ)
     (g : G) : IsIntegral ℤ ((χ g : Rˣ) : R) :=
   (((Units.coeHom R).comp χ).isOfFinOrder (isOfFinOrder_of_finite g)).isIntegral
+
+/-- Multiplying by an `n`-th root of unity cannot turn an element whose `n`-th power
+is not one into one. This supplies the nonzero denominators in root averaging. -/
+theorem mul_sub_one_ne_zero_of_pow_eq_one {n : ℕ} {ζ y : R}
+    (hζ : ζ ^ n = 1) (hy : y ^ n ≠ 1) :
+    ζ * y - 1 ≠ 0 := by
+  intro h
+  apply hy
+  have hpow := congrArg (fun z : R ↦ z ^ n) (sub_eq_zero.mp h)
+  simpa [mul_pow, hζ] using hpow
 
 /-- In a commutative ring without zero divisors, a root of unity that is congruent to `1` modulo an
 ideal not containing its order is equal to `1`. -/
@@ -87,6 +131,33 @@ theorem card_rootsOfUnity_two [IsDomain R] (h2 : (2 : R) ≠ 0) :
     Nat.card (rootsOfUnity 2 R) = 2 :=
   (IsPrimitiveRoot.neg_one_of_two_ne_zero h2).card_rootsOfUnity
 
+/-- The square root of unity `-1` in a commutative ring. -/
+def negOneRootsOfUnity : rootsOfUnity 2 R :=
+  ⟨-1, (mem_rootsOfUnity 2 _).mpr (by simp)⟩
+
+/-- The unit underlying the square root `-1` is the negative unit. -/
+@[simp]
+theorem coe_negOneRootsOfUnity :
+    ((negOneRootsOfUnity : rootsOfUnity 2 R) : Rˣ) = -1 :=
+  (rfl)
+
+/-- In a ring without zero divisors, every square root of unity is `1` or `-1`. -/
+theorem _root_.rootsOfUnity.eq_one_or_eq_negOneRootsOfUnity [NoZeroDivisors R]
+    (ζ : rootsOfUnity 2 R) :
+    ζ = 1 ∨ ζ = negOneRootsOfUnity := by
+  have h : ((ζ : Rˣ) : R) ∈ ({1, -1} : Set R) :=
+    Units.val_set_image_rootsOfUnity_two (R := R) ▸ Set.mem_image_of_mem _ ζ.2
+  rcases h with h | h
+  · exact Or.inl (Subtype.ext (Units.ext h))
+  · exact Or.inr (Subtype.ext (Units.ext h))
+
+/-- The square roots `-1` and `1` are distinct when `2 ≠ 0`. -/
+theorem negOneRootsOfUnity_ne_one (h2 : (2 : R) ≠ 0) :
+    (negOneRootsOfUnity : rootsOfUnity 2 R) ≠ 1 := by
+  intro h
+  have h' : (-1 : R) = 1 := congrArg (fun ζ : rootsOfUnity 2 R ↦ ((ζ : Rˣ) : R)) h
+  exact h2 (by simpa [one_add_one_eq_two] using (congrArg (fun x : R ↦ x + 1) h').symm)
+
 /-- In a domain, the number of `n`-th roots of unity divides `n`: they form a cyclic group, and its
 exponent divides `n`. -/
 theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n R) ∣ n := by
@@ -96,6 +167,26 @@ theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n 
   rw [← IsCyclic.exponent_eq_card]
   exact Monoid.exponent_dvd_of_forall_pow_eq_one fun ζ ↦ OneMemClass.coe_eq_one.mp ζ.prop
 
+/-- The exponent of the product of the groups of `n i`-th roots of unity divides `∏ i, n i`. -/
+theorem exponent_pi_rootsOfUnity_dvd_prod {K ι : Type*} [CommMonoid K] [Fintype ι]
+    (n : ι → ℕ) : Monoid.exponent (∀ i, rootsOfUnity (n i) K) ∣ ∏ i, n i := by
+  rw [Monoid.exponent_pi]
+  refine Finset.lcm_dvd fun i _ ↦ dvd_trans ?_ (Finset.dvd_prod_of_mem n (Finset.mem_univ i))
+  exact Monoid.exponent_dvd_of_forall_pow_eq_one fun g ↦ OneMemClass.coe_eq_one.mp g.prop
+
+/-- The exponent of the product of the groups of `n i`-th roots of unity is nonzero in a domain
+`K` when each `n i` is. -/
+theorem exponent_pi_rootsOfUnity_cast_ne_zero {K ι : Type*} [CommRing K] [IsDomain K] [Finite ι]
+    (n : ι → ℕ) (hncast : ∀ i, (n i : K) ≠ 0) :
+    (Monoid.exponent (∀ i, rootsOfUnity (n i) K) : K) ≠ 0 := by
+  have := Fintype.ofFinite ι
+  have hprodcast : ((∏ i, n i : ℕ) : K) ≠ 0 := by
+    simpa using Finset.prod_ne_zero_iff.mpr (fun i _ ↦ hncast i)
+  obtain ⟨d, hd⟩ := exponent_pi_rootsOfUnity_dvd_prod (K := K) n
+  intro h
+  apply hprodcast
+  simp [hd, h]
+
 /-- In a commutative ring in which `2 ≠ 0`, the negative of a primitive `n`-th root of unity of
 odd order `n` is a primitive `2n`-th root of unity. -/
 theorem _root_.IsPrimitiveRoot.neg_of_odd {ζ : R} {n : ℕ} (hζ : IsPrimitiveRoot ζ n) (hn : Odd n)
@@ -104,6 +195,78 @@ theorem _root_.IsPrimitiveRoot.neg_of_odd {ζ : R} {n : ℕ} (hζ : IsPrimitiveR
   rw [IsPrimitiveRoot.iff_orderOf, neg_eq_neg_one_mul,
     (Commute.all _ _).orderOf_mul_eq_mul_orderOf_of_coprime, ← hneg.eq_orderOf, ← hζ.eq_orderOf]
   rwa [← hneg.eq_orderOf, ← hζ.eq_orderOf, Nat.coprime_two_left]
+
+/-- In a commutative ring without zero divisors, a primitive fourth root of unity is a square root
+of `-1`: its square is a primitive square root of unity. -/
+theorem _root_.IsPrimitiveRoot.sq_eq_neg_one [NoZeroDivisors R] {ζ : R}
+    (hζ : IsPrimitiveRoot ζ 4) : ζ ^ 2 = -1 :=
+  (hζ.pow (by norm_num) (by norm_num : 4 = 2 * 2)).eq_neg_one_of_two_right
+
+/-- **Orthogonality of characters.** In a domain, the sum of the powers `(ζ ^ e) ^ a` over `a < m`
+of a primitive `m`-th root of unity `ζ` is `m` if `m` divides `e`, and zero otherwise. -/
+theorem _root_.IsPrimitiveRoot.sum_pow_pow_eq [IsDomain R] {ζ : R} {m : ℕ}
+    (hζ : IsPrimitiveRoot ζ m) (e : ℕ) :
+    ∑ a : Fin m, (ζ ^ e) ^ (a : ℕ) = if m ∣ e then (m : R) else 0 := by
+  rw [Fin.sum_univ_eq_sum_range (fun a ↦ (ζ ^ e) ^ a)]
+  split_ifs with h
+  · simp [(hζ.pow_eq_one_iff_dvd e).mpr h]
+  · have h1 : ζ ^ e - 1 ≠ 0 := sub_ne_zero.mpr fun h' ↦ h ((hζ.pow_eq_one_iff_dvd e).mp h')
+    refine (mul_eq_zero.mp ?_).resolve_left h1
+    rw [mul_geom_sum, ← pow_mul, mul_comm, pow_mul, hζ.pow_eq_one, one_pow, sub_self]
+
+/-- **Orthogonality of characters, for an integral exponent.** In a field, the sum of the powers
+`(ζ ^ e) ^ a` over `a < m` of a primitive `m`-th root of unity `ζ` is `m` if `m` divides the integer
+`e`, and zero otherwise. -/
+theorem _root_.IsPrimitiveRoot.sum_zpow_pow_eq {K : Type*} [Field K] {ζ : K} {m : ℕ}
+    (hζ : IsPrimitiveRoot ζ m) (e : ℤ) :
+    ∑ a : Fin m, (ζ ^ e) ^ (a : ℕ) = if (m : ℤ) ∣ e then (m : K) else 0 := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · simp
+  have hr : (e % m).toNat = e % m := Int.toNat_of_nonneg (Int.emod_nonneg _ (by omega))
+  -- Reduce the exponent modulo `m`, where `ζ ^ m = 1`.
+  have he : ζ ^ e = ζ ^ (e % m).toNat := by
+    conv_lhs => rw [← Int.mul_ediv_add_emod e m]
+    rw [zpow_add₀ (hζ.ne_zero hm.ne'), zpow_mul, zpow_natCast, hζ.pow_eq_one, one_zpow, one_mul]
+    nth_rw 1 [← hr]
+    rw [zpow_natCast]
+  rw [he, hζ.sum_pow_pow_eq]
+  simp only [← Int.natCast_dvd_natCast, hr, Int.dvd_iff_emod_eq_zero, Int.emod_emod]
+
+/-- **Orthogonality of characters in several variables.** In a domain, the sum of
+`∏ᵢ (ζ ^ eᵢ) ^ jᵢ` over `j ∈ {0, …, m - 1} ^ ι`, for a primitive `m`-th root of unity `ζ`, is the
+product over `i` of `m` if `m` divides `eᵢ`, and zero otherwise. -/
+theorem _root_.IsPrimitiveRoot.sum_prod_pow_pow_eq [IsDomain R] {ι : Type*} [Fintype ι]
+    [DecidableEq ι] {ζ : R} {m : ℕ} (hζ : IsPrimitiveRoot ζ m) (e : ι → ℕ) :
+    ∑ j : ι → Fin m, ∏ i, (ζ ^ e i) ^ (j i : ℕ) = ∏ i, if m ∣ e i then (m : R) else 0 := by
+  simp only [← hζ.sum_pow_pow_eq, Fintype.prod_sum]
+
+/-- A domain receiving an injective monoid homomorphism from a commutative monoid with enough
+`n`-th roots of unity has enough `n`-th roots of unity: the image of a primitive root is primitive,
+and the `n`-th roots of unity of a domain form a cyclic group. For instance, every field extension
+of a field containing the `n`-th roots of unity contains them. -/
+theorem _root_.HasEnoughRootsOfUnity.of_injective {M : Type*} [CommMonoid M] [IsDomain R]
+    {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity M n] {f : M →* R} (hf : Function.Injective f) :
+    HasEnoughRootsOfUnity R n where
+  prim := have ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M n
+    ⟨f ζ, hζ.map_of_injective hf⟩
+  cyc := rootsOfUnity.isCyclic R n
+
+variable (R) in
+/-- A domain with enough `n`-th roots of unity, for `n ≠ 0`, has a primitive `n`-th root of
+unity in `primitiveRoots n R`. -/
+theorem _root_.HasEnoughRootsOfUnity.primitiveRoots_nonempty [IsDomain R] (n : ℕ) [NeZero n]
+    [HasEnoughRootsOfUnity R n] : (primitiveRoots n R).Nonempty :=
+  have ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot R n
+  ⟨ζ, (mem_primitiveRoots (NeZero.pos n)).mpr hζ⟩
+
+/-- A domain receiving an injective monoid homomorphism from a commutative monoid with enough
+`n`-th roots of unity, for `n ≠ 0`, has a primitive `n`-th root of unity in
+`primitiveRoots n R`. -/
+theorem _root_.HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective {M : Type*}
+    [CommMonoid M] [IsDomain R] (n : ℕ) [NeZero n] [HasEnoughRootsOfUnity M n] {f : M →* R}
+    (hf : Function.Injective f) : (primitiveRoots n R).Nonempty :=
+  have := HasEnoughRootsOfUnity.of_injective (n := n) hf
+  HasEnoughRootsOfUnity.primitiveRoots_nonempty R n
 
 /-- For a prime `p`, the `p`th roots of unity of a commutative monoid are trivial exactly when it
 has no primitive `p`th root of unity: a `p`th root of unity other than `1` has order `p`. -/
@@ -151,5 +314,91 @@ theorem coe_torsionByUnitsEquivRootsOfUnity_symm_apply {M : Type*} [CommMonoid M
 instance finite_torsionBy_additive_units {M : Type*} [CommMonoid M] (n : ℕ)
     [Finite (rootsOfUnity n M)] : Finite (Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) :=
   .of_equiv _ ((torsionByUnitsEquivRootsOfUnity n).toEquiv.trans Additive.toMul).symm
+
+/-- In a commutative group, the kernel of the `n`-th power map is the group of `n`-th roots of
+unity, through `toUnits`. -/
+def powMonoidHomKerEquivRootsOfUnity {G : Type*} [CommGroup G] (n : ℕ) :
+    (powMonoidHom n : G →* G).ker ≃* rootsOfUnity n G :=
+  { toUnits.toEquiv.subtypeEquiv fun u ↦ by simp [mem_rootsOfUnity, ← map_pow] with
+    map_mul' _ _ := Subtype.ext (map_mul toUnits _ _) }
+
+@[simp]
+theorem coe_powMonoidHomKerEquivRootsOfUnity_apply {G : Type*} [CommGroup G] (n : ℕ)
+    (u : (powMonoidHom n : G →* G).ker) :
+    (powMonoidHomKerEquivRootsOfUnity n u : Gˣ) = toUnits (u : G) :=
+  (rfl)
+
+@[simp]
+theorem coe_powMonoidHomKerEquivRootsOfUnity_symm_apply {G : Type*} [CommGroup G] (n : ℕ)
+    (ζ : rootsOfUnity n G) : ((powMonoidHomKerEquivRootsOfUnity n).symm ζ : G) = (ζ : Gˣ) :=
+  (rfl)
+
+/-- In a commutative group with enough `n`-th roots of unity, the kernel of the `n`-th power map
+has `n` elements. -/
+theorem natCard_powMonoidHom_ker (G : Type*) [CommGroup G] (n : ℕ) [NeZero n]
+    [HasEnoughRootsOfUnity G n] : Nat.card (powMonoidHom n : G →* G).ker = n :=
+  (Nat.card_congr (powMonoidHomKerEquivRootsOfUnity n).toEquiv).trans
+    (HasEnoughRootsOfUnity.natCard_rootsOfUnity G n)
+
+/-- For `n ∣ m`, raising to the power `m / n` maps the `m`-th roots of unity to the `n`-th roots of
+unity. -/
+def rootsOfUnityPowOfDvd {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m) :
+    rootsOfUnity m M →* rootsOfUnity n M :=
+  ((powMonoidHom (m / n)).comp (rootsOfUnity m M).subtype).codRestrict _ fun η ↦ by
+    rw [mem_rootsOfUnity, MonoidHom.comp_apply, powMonoidHom_apply, ← pow_mul,
+      Nat.div_mul_cancel h]
+    exact (mem_rootsOfUnity _ _).mp η.prop
+
+/-- The power map `rootsOfUnityPowOfDvd h` raises a root of unity to the power `m / n`. -/
+@[simp]
+theorem coe_rootsOfUnityPowOfDvd_apply {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m)
+    (η : rootsOfUnity m M) : (rootsOfUnityPowOfDvd h η : Mˣ) = (η : Mˣ) ^ (m / n) :=
+  (rfl)
+
+/-- The kernel of the power map `rootsOfUnityPowOfDvd h` consists of the `m`-th roots of unity
+that are `(m / n)`-th roots of unity. -/
+theorem mem_ker_rootsOfUnityPowOfDvd_iff {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m)
+    {η : rootsOfUnity m M} : η ∈ (rootsOfUnityPowOfDvd h).ker ↔ (η : Mˣ) ^ (m / n) = 1 := by
+  rw [MonoidHom.mem_ker, ← Subtype.coe_inj, coe_rootsOfUnityPowOfDvd_apply, OneMemClass.coe_one]
+
+/-- For `k ∣ m`, if `M` has enough `k`-th roots of unity (in particular a primitive one), then some
+`m`-th root of unity is a primitive `k`-th root of unity. -/
+theorem exists_rootsOfUnity_isPrimitiveRoot_of_dvd {M : Type*} [CommMonoid M] {k m : ℕ}
+    [NeZero k] (h : k ∣ m) [HasEnoughRootsOfUnity M k] :
+    ∃ η : rootsOfUnity m M, IsPrimitiveRoot (η : Mˣ) k := by
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M k
+  exact ⟨⟨hζ.toRootsOfUnity, rootsOfUnity_le_of_dvd h hζ.toRootsOfUnity.2⟩,
+    IsPrimitiveRoot.coe_units_iff.mp (by simpa using hζ)⟩
+
+/-- The power transition at a nonzero order is the identity. -/
+@[simp]
+theorem rootsOfUnityPowOfDvd_refl {M : Type*} [CommMonoid M] {n : ℕ} [NeZero n] :
+    rootsOfUnityPowOfDvd (M := M) (dvd_refl n) = MonoidHom.id _ := by
+  apply MonoidHom.ext
+  intro η
+  apply Subtype.ext
+  simp [Nat.div_self (NeZero.pos n)]
+
+/-- Power transitions compose along divisibility of orders. -/
+@[simp]
+theorem rootsOfUnityPowOfDvd_comp {M : Type*} [CommMonoid M] {n m l : ℕ}
+    (h₁ : n ∣ m) (h₂ : m ∣ l) :
+    (rootsOfUnityPowOfDvd (M := M) h₁).comp (rootsOfUnityPowOfDvd h₂) =
+      rootsOfUnityPowOfDvd (h₁.trans h₂) := by
+  apply MonoidHom.ext
+  intro η
+  apply Subtype.ext
+  simp only [MonoidHom.comp_apply, coe_rootsOfUnityPowOfDvd_apply]
+  rw [← pow_mul, Nat.div_mul_div h₂ h₁]
+
+/-- In a reduced commutative ring of exponential characteristic `p`, there is no nontrivial
+`pʲ`-th root of unity: `(u - 1) ^ pʲ = u ^ pʲ - 1`, so `u ^ pʲ = 1` forces `u = 1`. -/
+theorem subsingleton_rootsOfUnity_prime_pow [IsReduced R] (p j : ℕ) [ExpChar R p] :
+    Subsingleton (rootsOfUnity (p ^ j) R) := by
+  have key (x : rootsOfUnity (p ^ j) R) : x = 1 := by
+    have h : (x : Rˣ) ∈ rootsOfUnity 1 R :=
+      (mem_rootsOfUnity_prime_pow_mul_iff R p j 1).1 (by simp)
+    exact Subtype.ext (by simpa [mem_rootsOfUnity] using h)
+  exact ⟨fun x y ↦ (key x).trans (key y).symm⟩
 
 end TauCeti

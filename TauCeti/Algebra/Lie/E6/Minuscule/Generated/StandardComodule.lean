@@ -48,6 +48,11 @@ noncomputable def generatedWeightTorusCoordinateMap :
       (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin 6))).obj :=
   generatedCoordinateLift R (.inr ())
 
+/-- The generated weight-torus map is the torus component of the generator lift. -/
+theorem generatedWeightTorusCoordinateMap_def :
+    generatedWeightTorusCoordinateMap R = generatedCoordinateLift R (.inr ()) :=
+  (rfl)
+
 /-- The generated subgroup's weight torus recovers the ambient minuscule weight torus. -/
 @[reassoc (attr := simp)]
 theorem generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap :
@@ -64,7 +69,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     (i : Fin 6 ⊕ Fin 6) (B : CommAlgCat.{v} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) B) :
     GeneralLinear.pointToGeneralLinear 27
-        (AlgHom.mapDomain (generatedCoordinateMap R).hom
+        (BialgHom.mapDomain (generatedCoordinateMap R).hom
           (no_index (toConv (q.ofConv.comp (generatedCoordinateLift R (.inl i)).hom.toAlgHom)))) =
       (rootSubgroupPoints i B (AdditiveGroup.gaPointsMulEquiv q) :
         Matrix.GeneralLinearGroup (Fin 27) B) := by
@@ -72,12 +77,13 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
       coordinateMap R ≫ rootSubgroupToBaseChangeCoordinateMap R i := by
     rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl]
     exact (coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap R i).symm
-  have hpoint : AlgHom.mapDomain (generatedCoordinateMap R).hom
+  have hpoint : BialgHom.mapDomain (generatedCoordinateMap R).hom
       (toConv (q.ofConv.comp (generatedCoordinateLift R (.inl i)).hom.toAlgHom)) =
-      AlgHom.mapDomain (coordinateMap R).hom
+      BialgHom.mapDomain (coordinateMap R).hom
         (toConv (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap R i).hom.toAlgHom)) := by
     apply WithConv.ext
     ext x
+    simp only [BialgHom.mapDomain_apply_apply]
     exact congrArg (fun f ↦ q.ofConv (f.hom x)) hcomp
   rw [hpoint,
     pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints]

@@ -40,8 +40,10 @@ the cocycle laws, and they commute with the maps induced by functors. The public
   `ρ` over the model `m`, with its class map `TauCeti.IsoClassModel.K0.of`, its universal property
   `TauCeti.IsoClassModel.K0.lift` and its functoriality `TauCeti.IsoClassModel.K0.map`.
 * `TauCeti.IsoClassModel.K0.equiv m m' ρ`: the canonical isomorphism `m.K0 ρ ≃+ m'.K0 ρ`.
-* `TauCeti.IsoClassModel.K0.presentedK0Equiv m ρ`: the canonical isomorphism from the public
-  presentation `TauCeti.PresentedK0` of the codes of `ρ` to `m.K0 ρ`.
+* `TauCeti.IsoClassModel.K0.presentedK0Equiv m h`: the canonical isomorphism from the public
+  presentation `TauCeti.PresentedK0 rels` to `m.K0 ρ`, given `h` saying that `rels` is the set of
+  codes of `ρ`. The split, exact and triangulated Grothendieck groups use it to present themselves
+  over every model.
 
 ## Main results
 
@@ -400,48 +402,53 @@ private lemma freeLift_map_objectCode {G : Type*} [AddCommGroup G] {f : C → G}
     rw [AddMonoidHom.comp_apply, FreeAbelianGroup.map_of_apply, ← freeOf_def,
       freeLift_freeOf hf, FreeAbelianGroup.lift_apply_of]) r
 
+variable {rels : Set (FreeAbelianGroup (ObjectCode.{w'} C))}
+
 private lemma lift_presentedK0Of (r : FreeAbelianGroup C) :
-    FreeAbelianGroup.lift (PresentedK0.of :
-        C → PresentedK0 (FreeAbelianGroup.map (TauCeti.objectCode (C := C)) '' ρ)) r =
+    FreeAbelianGroup.lift (PresentedK0.of : C → PresentedK0 rels) r =
       PresentedK0.mk (FreeAbelianGroup.map TauCeti.objectCode r) := by
   rw [← AddMonoidHom.comp_apply]
   exact DFunLike.congr_fun (FreeAbelianGroup.lift_ext _ _ fun X => by
     rw [AddMonoidHom.comp_apply, FreeAbelianGroup.map_of_apply, ← freeOf_def,
       PresentedK0.mk_freeOf, FreeAbelianGroup.lift_apply_of]) r
 
-variable (m ρ) in
-/-- The public presentation `TauCeti.PresentedK0` of the codes of the object-level relations `ρ`
-is canonically isomorphic to the presentation of `ρ` over any model `m`, by the isomorphism
-preserving the class of every object. -/
-noncomputable def presentedK0Equiv :
-    PresentedK0 (FreeAbelianGroup.map (TauCeti.objectCode (C := C)) '' ρ) ≃+ m.K0 ρ :=
+variable (m) in
+/-- The public presentation `TauCeti.PresentedK0 rels` is canonically isomorphic to the
+presentation of the object-level relations `ρ` over any model `m`, when `rels` consists of the
+codes of `ρ`. The isomorphism preserves the class of every object. -/
+noncomputable def presentedK0Equiv (h : FreeAbelianGroup.map TauCeti.objectCode '' ρ = rels) :
+    PresentedK0 rels ≃+ m.K0 ρ :=
   AddMonoidHom.toAddEquiv
     (PresentedK0.lift
       { obj := of
         map_iso := fun _ _ e => of_congr e
         map_rel := by
-          rintro _ ⟨r, hr, rfl⟩
+          rintro _ hr
+          rw [← h] at hr
+          obtain ⟨r, hr, rfl⟩ := hr
           rw [freeLift_map_objectCode fun _ _ e => of_congr e]
           exact lift_of_eq_zero (AddSubgroup.subset_closure hr) })
     (lift PresentedK0.of (fun _ _ e => PresentedK0.of_congr e) fun r hr => by
       rw [lift_presentedK0Of]
-      exact PresentedK0.mk_eq_zero_of_mem ⟨r, hr, rfl⟩)
+      exact PresentedK0.mk_eq_zero_of_mem (h ▸ Set.mem_image_of_mem _ hr))
     (PresentedK0.hom_ext fun X => by simp) (hom_ext fun X => by simp)
 
 @[simp]
-lemma presentedK0Equiv_of (X : C) : presentedK0Equiv m ρ (PresentedK0.of X) = of X := by
+lemma presentedK0Equiv_of (h : FreeAbelianGroup.map TauCeti.objectCode '' ρ = rels) (X : C) :
+    presentedK0Equiv m h (PresentedK0.of X) = of X := by
   simp [presentedK0Equiv]
 
 @[simp]
-lemma presentedK0Equiv_symm_of (X : C) :
-    (presentedK0Equiv m ρ).symm (of X) = PresentedK0.of X :=
-  (presentedK0Equiv m ρ).symm_apply_eq.2 (presentedK0Equiv_of X).symm
+lemma presentedK0Equiv_symm_of (h : FreeAbelianGroup.map TauCeti.objectCode '' ρ = rels)
+    (X : C) : (presentedK0Equiv m h).symm (of X) = PresentedK0.of X :=
+  (presentedK0Equiv m h).symm_apply_eq.2 (presentedK0Equiv_of h X).symm
 
 /-- The identification with the public presentation is compatible with the canonical
 isomorphisms between models. -/
 @[simp]
-lemma presentedK0Equiv_trans_equiv (m' : IsoClassModel C J) :
-    (presentedK0Equiv m ρ).trans (equiv m m' ρ) = presentedK0Equiv m' ρ :=
+lemma presentedK0Equiv_trans_equiv (h : FreeAbelianGroup.map TauCeti.objectCode '' ρ = rels)
+    (m' : IsoClassModel C J) :
+    (presentedK0Equiv m h).trans (equiv m m' ρ) = presentedK0Equiv m' h :=
   AddEquiv.toAddMonoidHom_injective (PresentedK0.hom_ext fun X => by simp)
 
 end PresentedK0

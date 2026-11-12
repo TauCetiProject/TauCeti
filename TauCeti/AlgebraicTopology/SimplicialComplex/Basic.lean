@@ -104,4 +104,24 @@ theorem mem_top_iff {ι : Type*} {σ : Finset ι} :
     σ ∈ (⊤ : _root_.AbstractSimplicialComplex ι) ↔ σ.Nonempty :=
   Iff.rfl
 
+/-- The faces of the bottom abstract complex are exactly the singletons. -/
+@[simp]
+theorem mem_bot {ι : Type*} {σ : Finset ι} :
+    σ ∈ (⊥ : _root_.AbstractSimplicialComplex ι) ↔ ∃ v, σ = {v} :=
+  Iff.rfl
+
 end TauCeti.AbstractSimplicialComplex
+
+namespace AbstractSimplicialComplex
+
+/-- A complex is bottom if every face is a singleton face. -/
+theorem eq_bot_of_surjective_singleton {ι : Type*} (K : AbstractSimplicialComplex ι)
+    (h : Function.Surjective
+      (fun i : ι => (⟨{i}, K.singleton_mem i⟩ : TauCeti.SetLike.Face K))) : K = ⊥ := by
+  apply le_antisymm ?_ bot_le
+  intro σ hσ
+  obtain ⟨i, hi⟩ := h ⟨σ, hσ⟩
+  exact TauCeti.AbstractSimplicialComplex.mem_bot.mpr
+    ⟨i, (congrArg Subtype.val hi).symm⟩
+
+end AbstractSimplicialComplex

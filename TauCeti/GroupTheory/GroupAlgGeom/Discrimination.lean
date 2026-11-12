@@ -1,0 +1,175 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.GroupTheory.GroupAlgGeom.Basic
+
+/-!
+# Separation and discrimination of groups with coefficients
+
+A group under `G` is separated by another when each nonidentity element survives under some
+homomorphism fixing `G`. Discrimination asks for one homomorphism to preserve every element of
+any given finite family simultaneously. The latter is the relative version of full residuality
+used to recognize irreducible coordinate groups and, with trivial coefficients, limit groups.
+
+The coefficient maps need not be injective: the same definitions apply to the coefficient maps
+of quotients of free `G`-groups, even before the quotient is known to be a `G`-group.
+
+## Main results
+
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.isSeparatedBy`: discrimination implies separation.
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.trans`, `TauCeti.GroupAlgGeom.IsSeparatedBy.trans`:
+  discrimination and separation are transitive.
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.comp`, `TauCeti.GroupAlgGeom.IsSeparatedBy.comp`:
+  discrimination and separation survive restriction of the coefficients.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.nonempty_gHom`: a nontrivial group separated by `H` admits a
+  coefficient-preserving homomorphism to `H`.
+* `TauCeti.GroupAlgGeom.isSeparatedBy_iff_iInf_ker`: separation by `H` means the kernels of all
+  coefficient-preserving homomorphisms to `H` intersect trivially.
+
+## References
+
+* G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
+  and ideal theory*, J. Algebra 219 (1999), §1.
+* O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
+  (2005), §2.5.
+-/
+
+public section
+
+namespace TauCeti.GroupAlgGeom
+
+variable {G K H L : Type*} [Group G] [Group K] [Group H] [Group L]
+
+/-- `K` is separated by `H` over `G` when every nonidentity element of `K` survives in some
+homomorphism to `H` fixing the coefficients. -/
+def IsSeparatedBy (ιK : G →* K) (ιH : G →* H) : Prop :=
+  ∀ k : K, k ≠ 1 → ∃ φ : GHom ιK ιH, φ k ≠ 1
+
+/-- `K` is discriminated by `H` over `G` when any finite family of nonidentity elements of `K`
+survives simultaneously under one homomorphism to `H` fixing the coefficients. -/
+def IsDiscriminatedBy (ιK : G →* K) (ιH : G →* H) : Prop :=
+  ∀ s : Finset K, (∀ k ∈ s, k ≠ 1) →
+    ∃ φ : GHom ιK ιH, ∀ k ∈ s, φ k ≠ 1
+
+/-- Characterization of separation by coefficient-preserving homomorphisms. -/
+theorem isSeparatedBy_def (ιK : G →* K) (ιH : G →* H) :
+    IsSeparatedBy ιK ιH ↔ ∀ k : K, k ≠ 1 → ∃ φ : GHom ιK ιH, φ k ≠ 1 :=
+  Iff.rfl
+
+/-- Characterization of discrimination by coefficient-preserving homomorphisms. -/
+theorem isDiscriminatedBy_def (ιK : G →* K) (ιH : G →* H) :
+    IsDiscriminatedBy ιK ιH ↔
+      ∀ s : Finset K, (∀ k ∈ s, k ≠ 1) →
+        ∃ φ : GHom ιK ιH, ∀ k ∈ s, φ k ≠ 1 :=
+  Iff.rfl
+
+namespace IsDiscriminatedBy
+
+/-- Discrimination implies separation by testing a singleton. -/
+theorem isSeparatedBy {ιK : G →* K} {ιH : G →* H}
+    (h : IsDiscriminatedBy ιK ιH) : IsSeparatedBy ιK ιH := by
+  classical
+  intro k hk
+  obtain ⟨φ, hφ⟩ := h {k} (by simpa using hk)
+  exact ⟨φ, hφ k (by simp)⟩
+
+/-- The source of an injective coefficient-preserving map into a discriminated group is
+discriminated by the same target. -/
+theorem of_injective {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
+    (h : IsDiscriminatedBy ιL ιH) (f : GHom ιK ιL) (hf : Function.Injective f) :
+    IsDiscriminatedBy ιK ιH := by
+  classical
+  intro s hs
+  obtain ⟨φ, hφ⟩ := h (s.image f) (by
+    simpa only [Finset.forall_mem_image, map_ne_one_iff f hf] using hs)
+  refine ⟨φ.comp f, ?_⟩
+  intro k hk
+  simpa [GHom.coe_comp] using hφ (f k) (Finset.mem_image.mpr ⟨k, hk, rfl⟩)
+
+/-- Every group with a coefficient map discriminates itself through the identity. -/
+theorem self (ιK : G →* K) : IsDiscriminatedBy ιK ιK := by
+  intro s hs
+  exact ⟨GHom.id ιK, by simpa using hs⟩
+
+/-- Discrimination is transitive: if `K` is discriminated by `L` and `L` by `H`, all over `G`,
+then `K` is discriminated by `H`. -/
+theorem trans {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
+    (hKL : IsDiscriminatedBy ιK ιL) (hLH : IsDiscriminatedBy ιL ιH) :
+    IsDiscriminatedBy ιK ιH := by
+  classical
+  intro s hs
+  obtain ⟨φ, hφ⟩ := hKL s hs
+  obtain ⟨ψ, hψ⟩ := hLH (s.image φ) (by simpa using hφ)
+  exact ⟨ψ.comp φ, fun k hk => by
+    simpa [GHom.coe_comp] using hψ (φ k) (Finset.mem_image_of_mem φ hk)⟩
+
+/-- Discrimination survives restriction of the coefficients along any homomorphism
+`f : G' →* G`. -/
+theorem comp {G' : Type*} [Group G'] {ιK : G →* K} {ιH : G →* H}
+    (h : IsDiscriminatedBy ιK ιH) (f : G' →* G) :
+    IsDiscriminatedBy (ιK.comp f) (ιH.comp f) := by
+  intro s hs
+  obtain ⟨φ, hφ⟩ := h s hs
+  exact ⟨⟨φ, fun g => φ.map_coeff (f g)⟩, hφ⟩
+
+end IsDiscriminatedBy
+
+namespace IsSeparatedBy
+
+/-- The source of an injective coefficient-preserving map into a separated group is separated
+by the same target. -/
+theorem of_injective {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
+    (h : IsSeparatedBy ιL ιH) (f : GHom ιK ιL) (hf : Function.Injective f) :
+    IsSeparatedBy ιK ιH := by
+  intro k hk
+  obtain ⟨φ, hφ⟩ := h (f k) ((map_ne_one_iff f hf).2 hk)
+  exact ⟨φ.comp f, by simpa [GHom.coe_comp] using hφ⟩
+
+/-- Separation is transitive: if `K` is separated by `L` and `L` by `H`, all over `G`, then `K`
+is separated by `H`. -/
+theorem trans {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
+    (hKL : IsSeparatedBy ιK ιL) (hLH : IsSeparatedBy ιL ιH) : IsSeparatedBy ιK ιH := by
+  intro k hk
+  obtain ⟨φ, hφ⟩ := hKL k hk
+  obtain ⟨ψ, hψ⟩ := hLH (φ k) hφ
+  exact ⟨ψ.comp φ, by simpa [GHom.coe_comp] using hψ⟩
+
+/-- Separation survives restriction of the coefficients along any homomorphism `f : G' →* G`. -/
+theorem comp {G' : Type*} [Group G'] {ιK : G →* K} {ιH : G →* H}
+    (h : IsSeparatedBy ιK ιH) (f : G' →* G) : IsSeparatedBy (ιK.comp f) (ιH.comp f) := by
+  intro k hk
+  obtain ⟨φ, hφ⟩ := h k hk
+  exact ⟨⟨φ, fun g => φ.map_coeff (f g)⟩, hφ⟩
+
+/-- A nontrivial group separated by `H` admits a coefficient-preserving homomorphism to `H`. -/
+theorem nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}
+    (h : IsSeparatedBy ιK ιH) : Nonempty (GHom ιK ιH) :=
+  let ⟨k, hk⟩ := exists_ne (1 : K)
+  ⟨((isSeparatedBy_def _ _).1 h k hk).choose⟩
+
+end IsSeparatedBy
+
+/-- Separation by `H` is equivalent to triviality of the intersection of kernels of all
+coefficient-preserving homomorphisms to `H`. -/
+theorem isSeparatedBy_iff_iInf_ker (ιK : G →* K) (ιH : G →* H) :
+    IsSeparatedBy ιK ιH ↔
+      (⨅ φ : GHom ιK ιH, (φ : K →* H).ker) = ⊥ := by
+  simp only [IsSeparatedBy, Subgroup.eq_bot_iff_forall, Subgroup.mem_iInf,
+    MonoidHom.mem_ker]
+  exact ⟨fun h k hk => by
+      by_contra hne
+      obtain ⟨φ, hφ⟩ := h k hne
+      exact hφ (hk φ),
+    fun h k hk => by
+      by_contra hall
+      apply hk
+      apply h k
+      intro φ
+      by_contra hne
+      exact hall ⟨φ, hne⟩⟩
+
+end TauCeti.GroupAlgGeom

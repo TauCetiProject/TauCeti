@@ -35,7 +35,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 open scoped Classical in
 /-- The counted same-side pentagon--rectangle domains are exactly the two mixed-source recut
@@ -80,7 +80,6 @@ theorem filter_hasSameSideOverlap_pentagonRectangleDecompositions_eq_union :
   -- the same-side terms. Conversely, each family prescribes a shared side and distinct others.
   constructor
   · rintro ⟨hD, hcommon, hsides⟩
-    have hcases := hone hcommon
     grind
   · rintro ((⟨hD, ⟨hc, hcol⟩ | ⟨hc, hcol⟩⟩ | ⟨hD, hc, hcol⟩) | ⟨hD, hc, hcol⟩)
     · refine ⟨hD, ?_, Or.inr hc⟩

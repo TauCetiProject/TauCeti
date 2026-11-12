@@ -839,7 +839,7 @@ theorem fiveTerm_exact_H2Q (hN : IsClosed (N : Set G)) :
       ((z : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (g, h) : M) - g • (a : M) :=
     fun g h => by
       have := hf g h
-      simp only [cocyclesMap2_apply, ContinuousMonoidHom.quotientMk_apply,
+      simp only [cocyclesMap2_apply, Subgroup.quotientMkContinuousMonoidHom_apply,
         AddSubgroup.coe_subtype] at this
       rw [← this, d1_apply]
       simp only [f₀, smul_sub]

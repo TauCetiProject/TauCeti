@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
-import TauCeti.MeasureTheory.Measure.GiryMonad
 -- Non-public: the Giry-measurability of a pushforward is used only inside the proofs below.
 import TauCeti.MeasureTheory.Measure.Measurability
 
@@ -32,14 +31,12 @@ original process.
 ## Implementation
 
 These are the conditional counterparts of `MixedIIDWith.map_values` and
-`mixedIID_of_mixedIID_pathLaw`; the roadmap refers to the second as `conditionallyIID_transfer`,
-and asks for the first as the closure of each symmetry class under a coordinatewise pushforward
-(`TauCetiRoadmap/Exchangeability/README.md`, Layer 0). Where the mixture predicate needs only the
-block identity to move, the conditional predicate carries the directing measure along as a
-coordinate of a joint law, so `map_values` transports the *whole* disintegration identity along
-`(Q, x) ↦ (Q.map f, f ∘ x)`. That map splits as a product, which is what lets
-`Measure.map_prod_map` reduce the mixture side to `Measure.map_dirac'` on the tag and
-`Measure.pi_map_pi` on the sampled block.
+`mixedIID_of_mixedIID_pathLaw`; the first is the closure of the class under a coordinatewise
+pushforward. Where the mixture predicate needs only the block identity to move, the conditional
+predicate carries the directing measure along as a coordinate of a joint law, so `map_values`
+transports the *whole* disintegration identity along `(Q, x) ↦ (Q.map f, f ∘ x)`. That map
+splits as a product, which is what lets `Measure.map_prod_map` reduce the mixture side to
+`Measure.map_dirac'` on the tag and `Measure.pi_map_pi` on the sampled block.
 
 The path-law transfer is the pullback along the path map `φ ω = fun i => X i ω`, under which the
 directing measure transfers as `ν ∘ φ`. Its purpose is to remove `[StandardBorelSpace Ω]` from
@@ -98,7 +95,7 @@ theorem ConditionallyIIDWith.map_values {μ : Measure Ω} {X : ι → Ω → α}
     _ = μ.bind fun ω => ((Measure.dirac (ν ω)).prod
           (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure).map
           (Prod.map (fun Q : ProbabilityMeasure α => Q.map f) F) :=
-        TauCeti.MeasureTheory.map_bind hK hΦ
+        Measure.map_bind hK hΦ.aemeasurable
     _ = μ.bind fun ω => (Measure.dirac ((ν ω).map f)).prod
           (ProbabilityMeasure.pi fun _ : Fin m => (ν ω).map f).toMeasure := by
         refine congrArg (μ.bind ·) (funext fun ω => ?_)
@@ -143,7 +140,7 @@ theorem ConditionallyIIDWith.of_map {Ω' : Type*} [MeasurableSpace Ω'] {μ : Me
     _ = μ.bind fun ω =>
           (Measure.dirac (ν (φ ω))).prod
             (ProbabilityMeasure.pi fun _ : Fin m => ν (φ ω)).toMeasure :=
-        TauCeti.MeasureTheory.bind_map hφ.aemeasurable hker.aemeasurable
+        Measure.bind_map hφ.aemeasurable hker.aemeasurable
 
 /-- **Path-law transfer, at a named directing measure.** If the coordinate process is conditionally
 i.i.d. under the path law of `X` with directing measure `ν`, then `X` is conditionally i.i.d. with
@@ -155,9 +152,8 @@ theorem ConditionallyIIDWith.of_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α
     ConditionallyIIDWith μ X fun ω => ν fun i => X i ω :=
   ConditionallyIIDWith.of_map (Measurable.of_eval hX_meas) (by rwa [pathLaw_def] at hν)
 
-/-- **Path-law transfer for the conditional predicate**, existential form. The roadmap names this
-`conditionallyIID_transfer`; the name here matches its mixture counterpart
-`mixedIID_of_mixedIID_pathLaw`. -/
+/-- **Path-law transfer for the conditional predicate**, existential form. Its mixture
+counterpart is `mixedIID_of_mixedIID_pathLaw`. -/
 theorem conditionallyIID_of_conditionallyIID_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX_meas : ∀ n, Measurable (X n))
     (h : ConditionallyIID (pathLaw μ X) fun n p => p n) :

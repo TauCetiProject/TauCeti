@@ -7,19 +7,24 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Measure.Typeclasses.ZeroOne
+import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Coding
 import Mathlib.MeasureTheory.Constructions.Projective
 import Mathlib.MeasureTheory.SetAlgebra
 import TauCeti.MeasureTheory.Measure.ZeroOne
 
 /-!
-# Finite evaluation laws determine a measure on `ProbabilityMeasure α`
+# Extensionality for probability measures and their laws
 
 A finite measure on `ProbabilityMeasure α` is determined by the laws of its finite evaluation
-families `P ↦ (P (B 0), …, P (B (n-1)))`.
+families `P ↦ (P (B 0), …, P (B (n-1)))`. On a countably generated space, random probability
+measures are a.e. equal if their evaluations on each fixed measurable set are a.e. equal.
 
 ## Main results
 
+* `ProbabilityMeasure.ae_eq_of_forall_apply_ae_eq` — random probability measures on a countably
+  generated space agree a.e. as soon as their evaluations on each measurable set agree a.e.;
+  neither random map needs to be measurable, and the base measure is arbitrary.
 * `Measure.ext_of_forall_map_probabilityMeasure_eval_eq` — two measures on `ProbabilityMeasure α`
   agree as soon as every finite family of measurable sets induces the same pushforward law.
 * `IsZeroOneMeasure.exists_eq_dirac_probabilityMeasure` — a nonzero zero-one law on
@@ -63,6 +68,23 @@ namespace TauCeti
 namespace MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α]
+
+/-- Random probability measures on a countably generated space are almost everywhere equal if
+their masses on each fixed measurable set are almost everywhere equal. The base measure is
+arbitrary, and neither random map needs to be measurable. -/
+theorem _root_.MeasureTheory.ProbabilityMeasure.ae_eq_of_forall_apply_ae_eq
+    {Ω : Type*} [MeasurableSpace Ω] [CountablyGenerated α] {μ : Measure Ω}
+    {ν ν' : Ω → ProbabilityMeasure α}
+    (h : ∀ s : Set α, MeasurableSet s →
+      (fun ω => (ν ω : Measure α) s) =ᵐ[μ] fun ω => (ν' ω : Measure α) s) :
+    ν =ᵐ[μ] ν' := by
+  have hall : ∀ᵐ ω ∂μ, ∀ s : ProbabilityMeasureCodeIndex α,
+      probabilityMeasureCode (ν ω) s = probabilityMeasureCode (ν' ω) s :=
+    ae_all_iff.mpr fun s => by
+      simpa only [Filter.EventuallyEq, probabilityMeasureCode_apply] using
+        h s.1 (measurableSet_probabilityMeasureCodeIndex s)
+  filter_upwards [hall] with ω hω
+  exact probabilityMeasureCode_injective (funext hω)
 
 /-- The index type for the all-evaluations map: the measurable subsets of `α`. -/
 private abbrev MeasIdx (α : Type*) [MeasurableSpace α] := {s : Set α // MeasurableSet s}
@@ -112,18 +134,6 @@ private theorem measurable_evalReal : Measurable (evalReal (α := α)) :=
   Measurable.of_eval fun s => by
     simpa only [evalReal_apply] using measurable_probabilityMeasure_apply_real s.2
 
-/-- The Giry σ-algebra on `Measure α` is the pullback of the product σ-algebra along the
-all-evaluations map. This is a repackaging of the definition: the instance is already an `iSup`
-of comaps of the individual evaluations. -/
-private theorem measurableSpace_measure_eq_comap_eval :
-    (Measure.instMeasurableSpace : MeasurableSpace (Measure α))
-      = MeasurableSpace.comap (fun μ : Measure α => fun s : MeasIdx α => μ s.1)
-          MeasurableSpace.pi := by
-  rw [MeasurableSpace.pi, MeasurableSpace.comap_iSup]
-  simp only [MeasurableSpace.comap_comp, Function.comp_def]
-  rw [Measure.instMeasurableSpace, iSup_subtype]
-  simp only [← BorelSpace.measurable_eq (α := ENNReal)]
-
 /-- Expresses the `ℝ≥0∞`-valued evaluation `P ↦ (P : Measure α) s` as `ENNReal.ofReal` of its
 real-valued counterpart `evalReal`. -/
 private theorem coe_apply_eq_ofReal_evalReal (s : MeasIdx α) :
@@ -148,7 +158,8 @@ private theorem measurableSpace_probabilityMeasure_eq_comap :
   have hinst : (inferInstance : MeasurableSpace (ProbabilityMeasure α))
       = MeasurableSpace.comap Subtype.val Measure.instMeasurableSpace := rfl
   rw [hinst]
-  rw [measurableSpace_measure_eq_comap_eval, MeasurableSpace.comap_comp, MeasurableSpace.pi,
+  rw [_root_.MeasureTheory.Measure.measurableSpace_eq_comap_eval,
+    MeasurableSpace.comap_comp, MeasurableSpace.pi,
     MeasurableSpace.comap_iSup]
   refine iSup_le fun s => ?_
   rw [MeasurableSpace.comap_comp]

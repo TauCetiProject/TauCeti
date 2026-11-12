@@ -8,136 +8,166 @@ module
 public import Mathlib.Analysis.Analytic.Composition
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-public import Mathlib.Analysis.Complex.Basic
 
 /-!
 # Scalar formal multilinear series
 
 This file computes the formal composition of two scalar series in an arbitrary algebra. The
 algebra need not be commutative: variables retain their original order inside every composition
-block. It also identifies the iterated derivatives at zero of a convergent complex scalar series.
+block. It also evaluates the change-of-origin series of a scalar series on constant vectors, and
+uses this to express the iterated derivatives of a scalar power series over a complete nontrivially
+normed field, at any point of its ball of convergence, as the termwise differentiated series; at
+zero they recover the coefficients. Finally, it computes the scalar series of `z ↦ f (z ^ m)` on a
+ball of radius at most `1` from that of `f`, in any normed algebra with `‖1‖ = 1`.
 -/
 
 public section
 
-open scoped BigOperators
+open scoped BigOperators ENNReal
 
 namespace FormalMultilinearSeries
 
-variable {𝕜 E : Type*} [Field 𝕜] [Ring E] [Algebra 𝕜 E] [TopologicalSpace E]
-  [IsTopologicalRing E]
-
-omit [TopologicalSpace E] [IsTopologicalRing E] in
-private theorem prod_ofFn_smul {n : ℕ} (a : Fin n → 𝕜) (b : Fin n → E) :
-    (List.ofFn fun i ↦ a i • b i).prod = (∏ i, a i) • (List.ofFn b).prod := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [List.ofFn_succ, List.ofFn_succ, Fin.prod_univ_succ]
-    simp only [List.prod_cons, ih]
-    exact smul_mul_smul_comm _ _ _ _
-
-omit [Ring E] [TopologicalSpace E] [IsTopologicalRing E] in
-private theorem ofFn_embedding_eq_block {n : ℕ} (p : Composition n) (v : Fin n → E)
-    (i : Fin p.length) :
-    List.ofFn (fun j : Fin (p.blocksFun i) ↦ v (p.embedding i j)) =
-      ((List.ofFn v).splitWrtComposition p).get
-        ⟨i, by simp⟩ := by
-  let p' : Composition (List.ofFn v).length := p.cast (by simp)
-  have hsplit : (List.ofFn v).splitWrtComposition p' =
-      (List.ofFn v).splitWrtComposition p := by rfl
-  let ip : Fin ((List.ofFn v).splitWrtComposition p').length :=
-    ⟨i, by
-      simpa only [List.length_splitWrtComposition, p', Composition.cast] using i.isLt⟩
-  have hblock := List.get_of_eq hsplit ip
-  have hm := @List.getElem_of_eq _ _ _
-      (List.map_length_splitWrtComposition (List.ofFn v) p') i.val (by
-        simpa only [List.length_map, List.length_splitWrtComposition, p',
-          Composition.cast] using i.isLt)
-  have hlen :
-      (List.ofFn fun j : Fin (p.blocksFun i) ↦ v (p.embedding i j)).length =
-        (((List.ofFn v).splitWrtComposition p').get ip).length := by
-    calc
-      (List.ofFn fun j : Fin (p.blocksFun i) ↦ v (p.embedding i j)).length =
-          p.blocksFun i := by simp
-      _ = (((List.ofFn v).splitWrtComposition p').get ip).length := by
-        simpa [p', Composition.blocksFun, ip] using hm.symm
-  apply List.ext_getElem
-  · calc
-      _ = (((List.ofFn v).splitWrtComposition p').get ip).length := hlen
-      _ = _ := congrArg List.length hblock
-  · intro j hj₁ hj₂
-    have hvalue := @List.getElem_of_eq _ _ _ hblock j (hlen ▸ hj₁)
-    rw [List.getElem_ofFn]
-    rw [← hvalue]
-    simp only [List.get_eq_getElem]
-    have hslice := List.getElem_splitWrtComposition (List.ofFn v) p' ip.val ip.isLt
-    have hsliceValue := @List.getElem_of_eq _ _ _ hslice j (hlen ▸ hj₁)
-    rw [hsliceValue]
-    simp only [List.getElem_drop, List.getElem_take, List.getElem_ofFn]
-    apply congrArg v
-    apply Fin.ext
-    rfl
-
-omit [TopologicalSpace E] [IsTopologicalRing E] in
-private theorem prod_blocks {n : ℕ} (p : Composition n) (v : Fin n → E) :
-    (List.ofFn fun i : Fin p.length ↦
-        (List.ofFn fun j : Fin (p.blocksFun i) ↦ v (p.embedding i j)).prod).prod =
-      (List.ofFn v).prod := by
-  have h :
-      List.ofFn (fun i : Fin p.length ↦
-          (List.ofFn fun j : Fin (p.blocksFun i) ↦ v (p.embedding i j)).prod) =
-        ((List.ofFn v).splitWrtComposition p).map List.prod := by
-    apply List.ext_getElem
-    · simp
-    · intro i hi₁ hi₂
-      simp only [List.getElem_ofFn, List.getElem_map]
-      exact congrArg List.prod (ofFn_embedding_eq_block p v ⟨i, by simpa using hi₁⟩)
-  rw [h, ← List.prod_flatten]
-  let p' : Composition (List.ofFn v).length := p.cast (by simp)
-  have hsplit : (List.ofFn v).splitWrtComposition p' =
-      (List.ofFn v).splitWrtComposition p := by rfl
-  rw [← hsplit, List.flatten_splitWrtComposition]
-
-private theorem prod_applyComposition_ofScalars {n : ℕ} (d : ℕ → 𝕜) (p : Composition n)
-    (v : Fin n → E) :
-    (List.ofFn fun i : Fin p.length ↦
-        (ofScalars E d).applyComposition p v i).prod =
-      (∏ i, d (p.blocksFun i)) • (List.ofFn v).prod := by
-  simp only [applyComposition, ofScalars, _root_.smul_apply,
-    ContinuousMultilinearMap.mkPiAlgebraFin_apply]
-  rw [prod_ofFn_smul]
-  congr 1
-  exact prod_blocks p v
+variable {𝕜 E : Type*} [Field 𝕜] [Ring E] [Algebra 𝕜 E] [TopologicalSpace E] [IsTopologicalRing E]
 
 /-- Composing two scalar formal multilinear series gives the scalar series whose coefficients are
 obtained by summing over compositions. This remains valid for noncommutative target algebras. -/
 theorem ofScalars_comp_ofScalars (c d : ℕ → 𝕜) :
     (ofScalars E c).comp (ofScalars E d) =
       ofScalars E fun n ↦ ∑ p : Composition n, c p.length * ∏ i, d (p.blocksFun i) := by
+  have prod_ofFn_smul {m : ℕ} (a : Fin m → 𝕜) (b : Fin m → E) :
+      (List.ofFn fun i ↦ a i • b i).prod = (∏ i, a i) • (List.ofFn b).prod := by
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      rw [List.ofFn_succ, List.ofFn_succ, Fin.prod_univ_succ]
+      simp only [List.prod_cons, ih]
+      exact smul_mul_smul_comm _ _ _ _
   ext n v
   simp only [FormalMultilinearSeries.comp, ofScalars]
   rw [sum_apply, _root_.smul_apply, ContinuousMultilinearMap.mkPiAlgebraFin_apply,
     Finset.sum_smul]
-  apply Finset.sum_congr rfl
-  intro p _
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  have hprod :
+      (List.ofFn fun i : Fin p.length ↦ (ofScalars E d).applyComposition p v i).prod =
+        (∏ i, d (p.blocksFun i)) • (List.ofFn v).prod := by
+    simp only [applyComposition, ofScalars, _root_.smul_apply,
+      ContinuousMultilinearMap.mkPiAlgebraFin_apply]
+    rw [prod_ofFn_smul]
+    congr 1
+    have hblocks :
+        List.ofFn (fun i : Fin p.length ↦ (List.ofFn (v ∘ p.embedding i)).prod) =
+          ((List.ofFn v).splitWrtComposition p).map List.prod := by
+      refine List.ext_getElem (by simp) fun i hi₁ hi₂ ↦ ?_
+      simp only [List.getElem_ofFn, List.getElem_map, List.getElem_splitWrtComposition]
+      refine congrArg List.prod (List.ext_getElem ?_ fun j hj₁ hj₂ ↦ by
+        simpa using congrArg v (Fin.ext (p.coe_embedding _ _)))
+      simpa [p.sizeUpTo_le] using
+        (Nat.sub_eq_of_eq_add' (p.sizeUpTo_succ' ⟨i, by simpa using hi₁⟩)).symm
+    rw [hblocks, ← List.prod_flatten, List.splitWrtComposition,
+      List.flatten_splitWrtCompositionAux (by simp)]
   simp only [compAlongComposition_apply, ofScalars, _root_.smul_apply,
     ContinuousMultilinearMap.mkPiAlgebraFin_apply]
-  rw [prod_applyComposition_ofScalars]
-  simp only [smul_smul]
+  rw [hprod, smul_smul]
 
-/-- The iterated derivatives at zero of the sum of a complex scalar formal multilinear series
-recover its coefficients, up to the factorial normalization. -/
-theorem iteratedDeriv_ofScalarsSum_zero (c : ℕ → ℂ)
-    (hc : 0 < (ofScalars ℂ c).radius) (n : ℕ) :
-    iteratedDeriv n (ofScalarsSum (E := ℂ) c) 0 = n.factorial * c n := by
-  have hseries :=
-    (ofScalars ℂ c).hasFPowerSeriesOnBall hc
-  have hfac := hseries.factorial_smul (1 : ℂ)
-  simp only [apply_eq_prod_smul_coeff, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-    one_pow, one_mul, smul_eq_mul, coeff_ofScalars] at hfac
-  have h := hfac n
-  rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
-  simpa [ofScalarsSum, mul_comm] using h.symm
+/-- Evaluating a term of the change-of-origin series of a scalar series at two constant vectors
+produces the corresponding binomial coefficient. -/
+theorem changeOriginSeries_ofScalars_apply {𝕂 R : Type*} [NontriviallyNormedField 𝕂]
+    [NormedCommRing R] [NormedAlgebra 𝕂 R] (c : ℕ → 𝕂) (x y : R) (n l : ℕ) :
+    (((ofScalars R c).changeOriginSeries n l) (fun _ ↦ x)) (fun _ ↦ y) =
+      Nat.choose (n + l) l • (c (n + l) • (x ^ l * y ^ n)) := by
+  -- The change-of-origin API exposes this coefficient through its defining finite sum. After
+  -- unfolding it, each summand places `x` at the `l` indices of its finset and `y` elsewhere.
+  rw [changeOriginSeries]
+  simp only [_root_.sum_apply]
+  simp_rw [changeOriginSeriesTerm_apply]
+  have hx (s : {s : Finset (Fin (n + l)) // s.card = l}) :
+      ofScalars R c (n + l) (s.val.piecewise (fun _ ↦ x) (fun _ ↦ y)) =
+        c (n + l) • (x ^ l * y ^ n) := by
+    simp only [ofScalars, _root_.smul_apply, ContinuousMultilinearMap.mkPiAlgebraFin_apply,
+      List.prod_ofFn, Finset.prod_piecewise, Finset.univ_inter, Finset.prod_const,
+      Finset.card_univ_sdiff, Fintype.card_fin, s.property, Nat.add_sub_cancel]
+  simp_rw [hx]
+  rw [Finset.sum_const, Finset.card_univ, Fintype.card_finset_len, Fintype.card_fin]
+
+/-- Inside its ball of convergence, the iterated derivatives of a scalar power series are
+given by the termwise differentiated series. -/
+theorem _root_.HasFPowerSeriesOnBall.iteratedDeriv_eq_tsum_descFactorial_mul_pow
+    {𝕂 : Type*} [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂]
+    {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) (n : ℕ) :
+    iteratedDeriv n f y = ∑' k : ℕ, (k.descFactorial n : 𝕂) * c k * y ^ (k - n) := by
+  set p := ofScalars 𝕂 c
+  -- the `n`-th derivative at `y` is `n!` times the `n`-th coefficient of the series recentred
+  -- at `y`, and that coefficient is the sum of the change-of-origin series
+  have hderiv : iteratedDeriv n f y = (n.factorial : 𝕂) * p.changeOrigin y n fun _ ↦ 1 := by
+    rw [iteratedDeriv_eq_iteratedFDeriv]
+    simpa only [zero_add, nsmul_eq_mul] using ((hf.changeOrigin hy).factorial_smul 1 n).symm
+  have hsum := ContinuousMultilinearMap.hasSum_eval
+    ((p.hasFPowerSeriesOnBall_changeOrigin n (hf.r_pos.trans_le hf.r_le)).hasSum
+      (mem_eball_zero_iff.mpr (hy.trans_le hf.r_le))) fun _ ↦ (1 : 𝕂)
+  rw [zero_add] at hsum
+  -- reindex along `l ↦ l + n`: the terms with `k < n` vanish since `k.descFactorial n = 0`
+  rw [hderiv]
+  refine (((add_left_injective n).hasSum_iff fun k hk ↦ ?_).mp
+    ((hsum.mul_left _).congr_fun fun l ↦ ?_)).tsum_eq.symm
+  · simp [Nat.descFactorial_eq_zero_iff_lt.mpr (not_le.mp fun h ↦ hk ⟨k - n, Nat.sub_add_cancel h⟩)]
+  · simp only [Function.comp_apply, p, changeOriginSeries_ofScalars_apply, add_comm l n,
+      Nat.add_sub_cancel_left, Nat.descFactorial_eq_factorial_mul_choose, Nat.cast_mul,
+      nsmul_eq_mul, smul_eq_mul, one_pow, mul_one]
+    rw [Nat.choose_symm_add]
+    ring
+
+/-- The iterated derivatives at zero of the sum of a scalar formal multilinear series over a
+complete nontrivially normed field recover its coefficients, up to the factorial normalization. -/
+theorem iteratedDeriv_ofScalarsSum_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    (c : ℕ → 𝕜) (hc : 0 < (ofScalars 𝕜 c).radius) (n : ℕ) :
+    iteratedDeriv n (ofScalarsSum (E := 𝕜) c) 0 = n.factorial * c n := by
+  have h := ((ofScalars 𝕜 c).hasFPowerSeriesOnBall hc).iteratedDeriv_eq_tsum_descFactorial_mul_pow
+    (y := 0) (by simpa using hc) n
+  rw [ofScalarsSum, h, tsum_eq_single n fun k hk ↦ ?_]
+  · simp [Nat.descFactorial_self]
+  · rcases hk.lt_or_gt with hk | hk
+    · simp [Nat.descFactorial_eq_zero_iff_lt.mpr hk]
+    · simp [zero_pow (Nat.sub_ne_zero_of_lt hk)]
+
+/-- **Substituting `z ^ m` into a scalar power series.** Let `A` be a normed algebra over `𝕂`
+with `‖1‖ = 1`, for instance `𝕂` itself. If `f` is the sum of the scalar power series
+`∑ c k • z ^ k` on the ball of radius `r ≤ 1` about `0` in `A`, then for `0 < m` the function
+`z ↦ f (z ^ m)` is the sum on the same ball of the scalar power series with coefficient `c k` at
+the exponent `m * k`, and coefficient `0` at the exponents not divisible by `m`. -/
+theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [NontriviallyNormedField 𝕂]
+    [NormedRing A] [NormOneClass A] [NormedAlgebra 𝕂 A] {f : A → A} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars A c) 0 r) (hr : r ≤ 1) {m : ℕ} (hm : 0 < m) :
+    HasFPowerSeriesOnBall (fun z ↦ f (z ^ m))
+      (ofScalars A fun n ↦ if m ∣ n then c (n / m) else 0) 0 r := by
+  have hinj : Function.Injective fun k : ℕ ↦ m * k := fun _ _ e ↦ Nat.eq_of_mul_eq_mul_left hm e
+  refine ⟨ENNReal.le_of_forall_nnreal_lt fun ρ hρ ↦ ?_, hf.r_pos, fun {y} hy ↦ ?_⟩
+  · -- the expanded series is dominated termwise by the original one, as `ρ < r ≤ 1`
+    obtain ⟨C, -, hC⟩ := (ofScalars A c).norm_mul_pow_le_of_lt_radius (hρ.trans_le hf.r_le)
+    have hρ1 : (ρ : ℝ) ≤ 1 := by exact_mod_cast (hρ.trans_le hr).le
+    refine le_radius_of_bound _ C fun n ↦ ?_
+    rw [ofScalars_norm]
+    split_ifs with hn
+    · obtain ⟨k, rfl⟩ := hn
+      have hk := hC k
+      rw [ofScalars_norm] at hk
+      rw [Nat.mul_div_cancel_left _ hm]
+      exact (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one ρ.2 hρ1 (Nat.le_mul_of_pos_left k hm))
+        (norm_nonneg _)).trans hk
+    · simpa using (mul_nonneg (norm_nonneg _) (pow_nonneg ρ.2 0)).trans (hC 0)
+  · -- the series of `f` at `y ^ m`, reindexed along the multiples of `m`
+    have hy1 : ‖y‖ₑ ≤ 1 := (mem_eball_zero_iff.mp hy).le.trans hr
+    have hym : y ^ m ∈ Metric.eball (0 : A) r := by
+      rw [mem_eball_zero_iff]
+      calc ‖y ^ m‖ₑ ≤ ‖y‖ₑ ^ m := by simpa [eNorm_eq_nnNorm] using mod_cast nnNorm_pow_le y m
+        _ ≤ ‖y‖ₑ := pow_le_of_le_one zero_le hy1 hm.ne'
+        _ < r := mem_eball_zero_iff.mp hy
+    have hs := hf.hasSum hym
+    simp only [ofScalars_apply_eq, zero_add] at hs ⊢
+    refine (hinj.hasSum_iff fun n hn ↦ ?_).mp (hs.congr_fun fun k ↦ ?_)
+    · split_ifs with h
+      · exact absurd ⟨n / m, Nat.mul_div_cancel' h⟩ hn
+      · exact zero_smul _ _
+    · simp [Nat.mul_div_cancel_left _ hm, ← pow_mul]
 
 end FormalMultilinearSeries

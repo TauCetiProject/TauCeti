@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 public import TauCeti.AlgebraicGeometry.Group.Smooth
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 import Mathlib.Algebra.Field.ULift
-import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.BaseChange
 
 /-!
 # Smooth affine groups over algebraically closed fields
@@ -37,6 +38,11 @@ schemes are compared after base change.
 * `TauCeti.geometricallyReducedCommHopfAlgProperty_iff_isReduced_of_isAlgClosed`: over an
   algebraically closed field, ordinary and geometric reducedness agree for finite-type
   commutative Hopf algebras.
+* `TauCeti.geometricallyReducedCommHopfAlgProperty.of_isGeometricallyReduced`: for finite-type
+  commutative Hopf algebras, Mathlib's geometric reducedness implies reducedness after every
+  field extension.
+* `CommHopfAlgCat.isGeometricallyReduced_baseChange`: for finite-type commutative Hopf
+  algebras, Mathlib's geometric reducedness survives every extension of the base field.
 
 ## References
 
@@ -133,6 +139,29 @@ theorem geometricallyReducedCommHopfAlgProperty_iff_isReduced_of_isAlgClosed
     geometricallyReducedCommHopfAlgProperty k H ↔ IsReduced H := by
   rw [← smoothCommHopfAlgProperty_iff_geometricallyReduced,
     smoothCommHopfAlgProperty_iff_isReduced_of_isAlgClosed]
+
+/-- For a finite-type commutative Hopf algebra, Mathlib's geometric reducedness, which tests only
+the base change to an algebraic closure, implies reducedness after every field extension. This is
+the converse of `geometricallyReducedCommHopfAlgProperty.isGeometricallyReduced`. -/
+theorem geometricallyReducedCommHopfAlgProperty.of_isGeometricallyReduced
+    {k : Type u} [Field k] (H : CommHopfAlgCat.{u} k) [Algebra.FiniteType k H]
+    [Algebra.IsGeometricallyReduced k H] :
+    geometricallyReducedCommHopfAlgProperty k H := by
+  apply geometricallyReducedCommHopfAlgProperty.of_baseChange (AlgebraicClosure k) H
+  let e := CommHopfAlgCat.baseChangeAlgEquiv (K := AlgebraicClosure k) H
+  let _ : IsReduced (AlgebraicClosure k ⊗[k] H) :=
+    (Algebra.isGeometricallyReduced_field_iff k H).mp inferInstance
+  exact (geometricallyReducedCommHopfAlgProperty_iff_isReduced_of_isAlgClosed _ _).mpr
+    (isReduced_of_injective e.toRingHom e.injective)
+
+/-- For a finite-type commutative Hopf algebra, Mathlib's geometric reducedness survives every
+extension `K / k` of the base field, not only algebraic ones. -/
+instance _root_.CommHopfAlgCat.isGeometricallyReduced_baseChange
+    {k : Type u} [Field k] (H : CommHopfAlgCat.{u} k) [Algebra.FiniteType k H]
+    [Algebra.IsGeometricallyReduced k H] (K : Type u) [Field K] [Algebra k K] :
+    Algebra.IsGeometricallyReduced K (CommHopfAlgCat.baseChange (K := K) H) :=
+  ((geometricallyReducedCommHopfAlgProperty.of_isGeometricallyReduced H).baseChange
+    K).isGeometricallyReduced
 
 end
 

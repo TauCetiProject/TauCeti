@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Order.Group.MinMax
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
+import TauCeti.Data.Real.Truncation
 
 /-!
 # Complementary slackness, optimality certificates, and `c`-cyclical monotonicity
@@ -16,8 +18,8 @@ A pair of integrable potentials `φ`, `ψ` satisfying the Kantorovich dual const
 `φ x + ψ y ≤ c (x, y)` bounds the cost of every transport plan from below. When a plan is
 concentrated on the *contact set* where that constraint is an equality, the two bounds meet:
 the plan is optimal, the pair is a dual optimizer, and there is no duality gap. This is
-complementary slackness, and the resulting data is the standard optimality certificate that the
-Monge and barycentre layers verify instead of re-solving a transport problem.
+complementary slackness, and the resulting data is the standard optimality certificate: checking
+it proves a plan optimal without re-solving a transport problem.
 
 This file builds that certificate for the raw extended-nonnegative interface — an arbitrary cost
 `c : X × Y → ℝ≥0∞` on arbitrary measurable spaces — and shows that it is exact: in the
@@ -71,8 +73,7 @@ concentrated certify optimality even when they are not integrable.
   the map as a minimizer among transport maps;
 * `TauCeti.DualFeasible.isCyclicallyMonotone_dualContactSet` and
   `TauCeti.IsDualCertificate.exists_isCyclicallyMonotone` — contact sets are `c`-cyclically
-  monotone, and a certified plan whose cost and potentials are measurable is concentrated on a
-  measurable such set.
+  monotone, and a certified plan is concentrated on a measurable such set.
 
 ## Implementation notes
 
@@ -103,8 +104,6 @@ above, with both spaces a point, is such a pair.
 * W. Schachermayer and J. Teichmann, *Characterization of optimal transport plans for the
   Monge--Kantorovich problem*, Proc. Amer. Math. Soc. 137 (2009), 519--529, for optimality of
   strongly `c`-monotone plans.
-
-This is Layer 2, items 7 and 8 of the optimal-transport roadmap.
 -/
 
 public section
@@ -407,36 +406,18 @@ theorem IsCoupling.isOptimalCoupling_of_ae_mem_dualContactSet [IsFiniteMeasure �
   -- These are bounded, so their split sums have the same integral against both couplings; that
   -- integral is at most the cost of `σ` by feasibility, and tends to the cost of `π` by contact.
   set T : ℕ → ℝ → ℝ := fun n t ↦ max (-(n : ℝ)) (min t n) with hT
-  have hT_le (n : ℕ) (a b : ℝ) :
-      ENNReal.ofReal (T n a + T n b) ≤ ENNReal.ofReal (a + b) := by
-    have hn : (0 : ℝ) ≤ n := n.cast_nonneg
-    rw [ENNReal.ofReal_le_ofReal_iff']
-    rcases le_total 0 (a + b) with h | h
-    · left
-      simp only [hT, max_def, min_def]
-      split_ifs <;> linarith
-    · right
-      simp only [hT, max_def, min_def]
-      split_ifs <;> linarith
-  have hT_nonneg (n : ℕ) {a b : ℝ} (h : 0 ≤ a + b) : 0 ≤ T n a + T n b := by
-    have hn : (0 : ℝ) ≤ n := n.cast_nonneg
-    simp only [hT, max_def, min_def]
-    split_ifs <;> linarith
-  have hT_eq (a : ℝ) : ∀ᶠ n in Filter.atTop, T n a = a := by
-    obtain ⟨N, hN⟩ := exists_nat_ge |a|
-    filter_upwards [Filter.eventually_ge_atTop N] with n hn
-    have hle : |a| ≤ n := hN.trans (Nat.cast_le.2 hn)
-    simp only [hT, min_eq_left (abs_le.1 hle).2, max_eq_right (abs_le.1 hle).1]
-  have hT_norm (n : ℕ) (t : ℝ) : ‖T n t‖ ≤ n := by
-    rw [Real.norm_eq_abs, abs_le]
-    exact ⟨le_max_left _ _, max_le (by linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)])
-      (min_le_right _ _)⟩
   have hfint n : Integrable (fun x ↦ T n (φ x)) μ :=
     .of_bound (aemeasurable_const.max (hφ.min aemeasurable_const)).aestronglyMeasurable n
-      (ae_of_all _ fun x ↦ hT_norm n (φ x))
+      (ae_of_all _ fun x ↦ by
+        simpa only [hT, Real.norm_eq_abs, min_comm (φ x),
+          abs_of_nonneg (Nat.cast_nonneg (α := ℝ) n)] using
+          TauCeti.abs_max_min_le (n : ℝ) (φ x))
   have hgint n : Integrable (fun y ↦ T n (ψ y)) ν :=
     .of_bound (aemeasurable_const.max (hψ.min aemeasurable_const)).aestronglyMeasurable n
-      (ae_of_all _ fun y ↦ hT_norm n (ψ y))
+      (ae_of_all _ fun y ↦ by
+        simpa only [hT, Real.norm_eq_abs, min_comm (ψ y),
+          abs_of_nonneg (Nat.cast_nonneg (α := ℝ) n)] using
+          TauCeti.abs_max_min_le (n : ℝ) (ψ y))
   -- Against `σ`, the value of each truncated pair is at most the cost.
   have hAσ : ∀ᵐ z ∂σ, z.1 ∈ A := hσ.measurePreserving_fst.quasiMeasurePreserving.ae <|
     measure_eq_zero_iff_ae_notMem.1 hA |>.mono fun _ h ↦ by simpa using h
@@ -448,21 +429,24 @@ theorem IsCoupling.isOptimalCoupling_of_ae_mem_dualContactSet [IsFiniteMeasure �
     refine TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal.trans
       (lintegral_mono_ae ?_)
     filter_upwards [hAσ, hBσ] with z hzA hzB
-    exact (hT_le n _ _).trans (hfeas z.1 hzA z.2 hzB)
+    exact (ENNReal.ofReal_max_neg_min_add_max_neg_min_le n.cast_nonneg _ _).trans
+      (hfeas z.1 hzA z.2 hzB)
   -- Along `π` the truncated split sums are nonnegative, so they integrate to the same value.
   have hπeq n : ∫⁻ z, ENNReal.ofReal (T n (φ z.1) + T n (ψ z.2)) ∂π =
       ENNReal.ofReal (kantorovichDualValue μ ν (fun x ↦ T n (φ x)) (fun y ↦ T n (ψ y))) := by
     rw [kantorovichDualValue_eq_integral hπ (hfint n) (hgint n),
       ofReal_integral_eq_lintegral_ofReal (hπ.integrable_add_split (hfint n) (hgint n))
-        (hae.mono fun z hz ↦ hT_nonneg n (add_nonneg_of_mem_dualContactSet hz))]
+        (hae.mono fun z hz ↦
+          add_max_neg_min_nonneg (add_nonneg_of_mem_dualContactSet hz))]
   -- Along `π` the truncated split sums are eventually the cost, so Fatou's lemma concludes.
   have hlim : ∀ᵐ z ∂π,
       c z = Filter.liminf (fun n ↦ ENNReal.ofReal (T n (φ z.1) + T n (ψ z.2))) Filter.atTop := by
     filter_upwards [hae] with z hz
     rw [← ofReal_eq_of_mem_dualContactSet hz]
     refine (Filter.Tendsto.liminf_eq (tendsto_const_nhds.congr' ?_)).symm
-    filter_upwards [hT_eq (φ z.1), hT_eq (ψ z.2)] with n h₁ h₂
-    rw [h₁, h₂]
+    filter_upwards [Real.eventually_max_neg_min_eq (φ z.1), Real.eventually_max_neg_min_eq (ψ z.2)]
+      with n h₁ h₂
+    simp only [hT, h₁, h₂]
   calc ∫⁻ z, c z ∂π
       = ∫⁻ z, Filter.liminf (fun n ↦ ENNReal.ofReal (T n (φ z.1) + T n (ψ z.2))) Filter.atTop
           ∂π := lintegral_congr_ae hlim
@@ -482,8 +466,7 @@ section Monge
 variable [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y} {T : X → Y}
 
 /-- A transport map whose graph lies almost everywhere in the contact set of an integrable dual
-feasible pair is certified: its graph plan is an optimality certificate. This is the form in
-which the Brenier and polar-factorisation layers verify optimality of a map. -/
+feasible pair is certified: its graph plan is an optimality certificate. -/
 theorem isDualCertificate_graphPlan (hc : AEMeasurable c (graphPlan T μ))
     (hT : HasLaw T ν μ) (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hφ : Integrable φ μ)
     (hψ : Integrable ψ ν) (hae : ∀ᵐ x ∂μ, (x, T x) ∈ dualContactSet c φ ψ) :
@@ -515,13 +498,22 @@ theorem isDualCertificate_graphPlan (hc : AEMeasurable c (graphPlan T μ))
 `TauCeti.transportCost_le_lintegral_of_hasLaw`, this exhibits the map as a minimizer among
 transport maps. -/
 theorem transportCost_eq_lintegral_of_ae_mem_dualContactSet
-    (hc : AEMeasurable c (graphPlan T μ)) (hT : HasLaw T ν μ)
+    (hT : HasLaw T ν μ)
     (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
     (hae : ∀ᵐ x ∂μ, (x, T x) ∈ dualContactSet c φ ψ) :
     transportCost c μ ν = ∫⁻ x, c (x, T x) ∂μ := by
-  exact (isOptimalCoupling_graphPlan_iff hT hc).1
-    (isDualCertificate_graphPlan hc hT hfeas hφ hψ hae).isOptimalCoupling
+  have hψT : Integrable (fun x ↦ ψ (T x)) μ := hT.integrable_comp hψ
+  have hint' : Integrable (fun x ↦ φ x + ψ (T x)) μ := hφ.add hψT
+  have hV : kantorovichDualValue μ ν φ ψ = ∫ x, (φ x + ψ (T x)) ∂μ := by
+    rw [kantorovichDualValue_def, integral_add hφ hψT]
+    exact congrArg _ (hT.integral_comp hψ.aestronglyMeasurable).symm
+  have hup : ∫⁻ x, c (x, T x) ∂μ = ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) := by
+    rw [hV, ofReal_integral_eq_lintegral_ofReal hint'
+      (hae.mono fun x hx ↦ add_nonneg_of_mem_dualContactSet hx)]
+    exact lintegral_congr_ae (hae.mono fun x hx ↦ (ofReal_eq_of_mem_dualContactSet hx).symm)
+  refine le_antisymm ?_ (hup ▸ hfeas.ofReal_kantorovichDualValue_le_transportCost hφ hψ)
+  exact transportCost_le_lintegral_of_hasLaw hT c
 
 end Monge
 
@@ -552,18 +544,18 @@ theorem DualFeasible.isCyclicallyMonotone_dualContactSet
     _ ≤ ∑ i, c (x i, y (σ i)) :=
       Finset.sum_le_sum fun i _ ↦ h.ofReal_add_le (x i) (y (σ i))
 
-/-- **A certified plan with measurable cost and potentials is concentrated on a measurable
-`c`-cyclically monotone set.** The converse implication, that concentration on a
+/-- **A certified plan is concentrated on a measurable `c`-cyclically monotone set.** The
+contact set need not be measurable, but it has full measure, so it contains a measurable set of
+full measure. The converse implication, that concentration on a
 `c`-cyclically monotone set forces optimality, is the Schachermayer--Teichmann theorem
 `TauCeti.IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone`; it needs a finite cost and
 Polish spaces. -/
 theorem IsDualCertificate.exists_isCyclicallyMonotone [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)}
-    (h : IsDualCertificate c π μ ν φ ψ) (hc : Measurable c) (hφm : Measurable φ)
-    (hψm : Measurable ψ) :
-    ∃ S : Set (X × Y), MeasurableSet S ∧ IsCyclicallyMonotone c S ∧ π Sᶜ = 0 :=
-  ⟨dualContactSet c φ ψ, measurableSet_dualContactSet hc hφm hψm,
-    h.dualFeasible.isCyclicallyMonotone_dualContactSet, ae_iff.1 h.ae_mem_dualContactSet⟩
+    (h : IsDualCertificate c π μ ν φ ψ) :
+    ∃ S : Set (X × Y), MeasurableSet S ∧ IsCyclicallyMonotone c S ∧ π Sᶜ = 0 := by
+  obtain ⟨S, hS, hm, hsub⟩ := h.ae_mem_dualContactSet.exists_measurable_mem
+  exact ⟨S, hm, h.dualFeasible.isCyclicallyMonotone_dualContactSet.mono hsub, ae_iff.1 hS⟩
 
 end CyclicallyMonotone
 

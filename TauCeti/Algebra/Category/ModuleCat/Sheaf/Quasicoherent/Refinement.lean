@@ -33,7 +33,8 @@ how the tensor product and the biproduct of quasi-coherent sheaves are shown to 
 
 Restricting a presentation preserves finiteness, and it preserves presentations whose generating
 morphism is an isomorphism, that is, presentations exhibiting a free sheaf. Hence refining finite
-quasi-coherent data or locally free data gives data of the same kind.
+quasi-coherent data or locally free data gives data of the same kind. In particular, a finite
+global presentation gives a finitely presented sheaf via the trivial covering.
 
 ## Main declarations
 
@@ -107,6 +108,24 @@ theorem _root_.SheafOfModules.Presentation.isIso_map_generators_π (h : IsIso P.
   exact IsIso.comp_isIso' (Iso.isIso_hom _) (Functor.map_isIso F _)
 
 end Map
+
+/-- A sheaf of modules with a finite global presentation is finitely presented. -/
+theorem _root_.SheafOfModules.Presentation.isFinitePresentation
+    {C : Type u₁} [Category.{v₁} C] [HasBinaryProducts C]
+    {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
+    [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
+    [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+    [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
+    {M : SheafOfModules.{u} R} (P : M.Presentation) [P.IsFinite] :
+    M.IsFinitePresentation := by
+  let q := P.quasicoherentData
+  have : q.IsFinitePresentation := by
+    constructor
+    intro X
+    dsimp only [q, Presentation.quasicoherentData]
+    -- Determine the slice-site universes from the presentation before synthesizing sheafification.
+    apply +allowSynthFailures Presentation.isFinite_map
+  exact IsFinitePresentation.mk ⟨q, inferInstance⟩
 
 variable {C : Type u₁} [Category.{v₁} C] [HasPullbacks C] {J : GrothendieckTopology C}
   {R : Sheaf J RingCat.{u}}

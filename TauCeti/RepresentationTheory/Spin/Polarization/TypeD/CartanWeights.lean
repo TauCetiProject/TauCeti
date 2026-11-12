@@ -52,7 +52,7 @@ private theorem spinAction_ι_mul_ι_basis (i : Fin n) (s : Finset (Fin n)) :
         (CliffordAlgebra.ι Q (b i : V) * CliffordAlgebra.ι Q (P.dualVector b i : V))
         (b.ExteriorAlgebra s) =
       if i ∈ s then b.ExteriorAlgebra s else 0 := by
-  rw [map_mul, Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_contract,
+  rw [map_mul, mul_apply_eq_comp, spinAction_ι_wedge, spinAction_ι_contract,
     ← P.wedge_apply, ← P.contract_apply, P.wedge_contract_dualVector_basis]
 
 /-- A type-`D` simple-coroot bivector acts on an exterior-basis spinor by the corresponding

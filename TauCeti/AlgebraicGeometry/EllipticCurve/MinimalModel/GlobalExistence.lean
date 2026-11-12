@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Class
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
-import TauCeti.NumberTheory.DedekindDomain.FiniteApproximation
 import TauCeti.RingTheory.DedekindDomain.Factorization
 
 /-!
@@ -175,7 +174,7 @@ private theorem exists_isMinimal_smul_valuation (v : HeightOneSpectrum O)
     rw [obstructionExponentAt_smul] at h0
     omega
   have hu : v.valuation K D.u = WithZero.exp (-obstructionExponentAt O v W) := by
-    rw [Valuation.valuation_eq_exp_neg_ord _ D.u.ne_zero, hord]
+    rw [Valuation.valuation_eq_exp_neg_ord _ ((v.valuation K).ne_zero_iff.mpr D.u.ne_zero), hord]
   have hf := obstructionExponentAt_nonneg_of_isIntegral O v W
   obtain ⟨u₀, hu₀⟩ := hv.exists_of_le_one (r := (D.u : K)) (by
     rw [hu, ← WithZero.exp_zero, WithZero.exp_le_exp]; omega)
@@ -221,27 +220,19 @@ private theorem exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow
         WithZero.exp_ne_zero)
     exact ⟨b, hb.le⟩
   choose b hb using hloc
-  obtain ⟨a, ha⟩ := TauCeti.DedekindDomain.exists_eq_mod_localized_prime_pow
-    (fun v : S ↦ v.1) Subtype.val_injective
-    (fun v ↦ m * (obstructionExponentAt O v.1 W).toNat)
-    (fun v ↦ Ideal.Quotient.mk _
-      (algebraMap O (Localization.AtPrime v.1.asIdeal) (b v)))
+  obtain ⟨a, ha⟩ := IsDedekindDomain.exists_forall_sub_mem_ideal (s := S)
+    HeightOneSpectrum.asIdeal (fun v ↦ m * (obstructionExponentAt O v W).toNat)
+    (fun v _ ↦ v.prime) (fun _ _ _ _ h ↦ mt HeightOneSpectrum.ext h) b
   refine ⟨a, fun v ↦ ?_⟩
   have : IsIntegral (Localization.AtPrime v.asIdeal) W := IsIntegral.of_isScalarTower (R := O) W
   rw [← Int.toNat_of_nonneg (obstructionExponentAt_nonneg_of_isIntegral O v W),
     ← WithZero.exp_nsmul, smul_neg, nsmul_eq_mul, ← Nat.cast_mul]
   by_cases hv : v ∈ S
-  · have hab : a - b ⟨v, hv⟩ ∈ v.asIdeal ^
-        (m * (obstructionExponentAt O v W).toNat) := by
-      rw [← Ideal.Quotient.mk_eq_mk_iff_sub_mem]
-      apply (IsLocalization.AtPrime.equivQuotMaximalIdealPow v.asIdeal
-        (Localization.AtPrime v.asIdeal) _).injective
-      simpa only [IsLocalization.AtPrime.equivQuotMaximalIdealPow_apply_mk] using ha ⟨v, hv⟩
-    have hab' : v.valuation K (algebraMap O K (a - b ⟨v, hv⟩)) ≤
+  · have hab' : v.valuation K (algebraMap O K (a - b ⟨v, hv⟩)) ≤
         WithZero.exp (-(m * (obstructionExponentAt O v W).toNat : ℤ)) := by
       rw [← Nat.cast_mul, HeightOneSpectrum.valuation_of_algebraMap,
         HeightOneSpectrum.intValuation_le_pow_iff_mem]
-      exact hab
+      exact ha v hv
     rw [map_sub] at hab'
     have hsplit : algebraMap O K a - x v =
         (algebraMap O K a - algebraMap O K (b ⟨v, hv⟩)) +
@@ -326,7 +317,7 @@ private theorem ord_eq_obstructionExponentAt_of_coe_weierstrassDefectIdeal_eq
     FractionalIdeal.coeIdeal_ne_zero.2 (weierstrassDefectIdeal_ne_bot O W)
   have hu₀ : u ≠ 0 := by
     rintro rfl
-    exact hJ (by rw [hu, FractionalIdeal.spanSingleton_zero, zero_mul])
+    exact hJ (by rw [hu, map_zero (FractionalIdeal.spanSingleton _), zero_mul])
   -- Comparing multiplicities: `fᵥ(W) = ord_v u + [v = v₀]`.
   have hcount (v : HeightOneSpectrum O) : obstructionExponentAt O v W =
       (v.valuation K).ord u + if v₀ = v then 1 else 0 := by
@@ -363,7 +354,8 @@ theorem exists_isSharpSemiGlobalMinimalAt_smul_of_coe_weierstrassDefectIdeal_eq
     have := hDmin v₀
     obtain ⟨hr, hs, ht⟩ := hrst v₀
     refine isIntegral_smul_of_valuation_sub_le v₀ W C (D v₀) ?_ ?_ ?_ ?_
-    · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _ hu₀, hord₀,
+    · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _
+        ((v₀.valuation K).ne_zero_iff.mpr hu₀), hord₀,
         WithZero.exp_le_exp]
       omega
     · rw [hDu]; exact hr
@@ -372,7 +364,8 @@ theorem exists_isSharpSemiGlobalMinimalAt_smul_of_coe_weierstrassDefectIdeal_eq
   · have := hDmin v
     obtain ⟨hr, hs, ht⟩ := hrst v
     refine isMinimal_smul_of_valuation_sub_le v W C (D v) ?_ ?_ ?_ ?_
-    · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _ hu₀, hord v hv]
+    · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _
+        ((v.valuation K).ne_zero_iff.mpr hu₀), hord v hv]
     · rw [hDu]; exact hr
     · rw [hDu]; exact hs
     · rw [hDu]; exact ht

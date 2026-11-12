@@ -20,10 +20,10 @@ its pinned ambient group. That isogeny exists only for `B₂` and `F₄` in char
 Ree `G₂` family that of `G₂`, and the Ree `F₄` family together with the Tits index that of `F₄`.
 
 The point of selecting it here rather than downstream is that the selection carries a convention,
-and the convention has to be checked against the one the CFSG roadmap fixes. Its exponent
-assignment attaches `1` to a long simple root and the defining characteristic to a short one,
-which is a genuine choice: the opposite assignment also squares to the prime-field Frobenius. The
-upstream isogenies are pinned instead by squared root lengths, and
+and the convention has to be checked against the one `TauCeti.SuzukiReeIndex.exponent` records.
+Its exponent assignment attaches `1` to a long simple root and the defining characteristic to a
+short one, which is a genuine choice: the opposite assignment also squares to the prime-field
+Frobenius. The upstream isogenies are pinned instead by squared root lengths, and
 `TauCeti.SuzukiReeIndex.datumSpecialIsogeny_exponent_simpleIndex` and
 `TauCeti.SuzukiReeIndex.datumSpecialIsogeny_weightMap_root_simpleIndex` are the statements that
 the two agree. In the form the second one takes,
@@ -62,26 +62,25 @@ Chevalley--Demazure group schemes, and hence the finite groups themselves, are s
   `TauCeti.SuzukiReeIndex.rootLength_eq_one_of_not_isLongSimpleRoot`: the two squared root lengths
   of such an index are its defining characteristic and one.
 * `TauCeti.SuzukiReeIndex.rootLength_lengthPerm`: the squared length of the length-exchanged node
-  is the roadmap's exponent, so the two conventions are the same one.
+  is the index's exponent, so the two conventions are the same one.
 * `TauCeti.SuzukiReeIndex.datumSpecialIsogeny_indexEquiv_simpleIndex` and
   `TauCeti.SuzukiReeIndex.datumSpecialIsogeny_exponent_simpleIndex`: the selected isogeny permutes
   the simple-root indices by the pinned length permutation, with the pinned exponents.
 * `TauCeti.SuzukiReeIndex.datumSpecialIsogeny_weightMap_root_simpleIndex` and
   `TauCeti.SuzukiReeIndex.datumSpecialIsogeny_coweightMap_coroot_simpleIndex`: the defining
   relation of the exceptional isogeny on the simple roots and on the simple coroots, in the
-  exponent convention of the CFSG roadmap.
+  exponent convention of `TauCeti.SuzukiReeIndex.exponent`.
 * `TauCeti.SuzukiReeIndex.datumSpecialIsogeny_mul_self`: its square is scaling by the defining
   characteristic, which is the root-datum form of `τ ^ 2 = Frob_p`.
 
-## Roadmap and references
+## Related files and references
 
-This is the selection half of milestone L2 of `TauCetiRoadmap/CFSGStatement/README.md`, which owns
-"selecting `τ_X` for a given `SuzukiReeIndex`, checking that the upstream isogeny is the one this
-roadmap's conventions describe, and taking the odd power" and states its exponent convention
-against `TauCeti.DynkinType.IsLongSimpleRoot`. The isogeny selected here is the root-datum
-half of the target "Special isogenies in characteristics two and three" of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which owns the isogeny itself. This file is to L2 what
-`TauCeti/GroupTheory/SpecificGroups/CFSG/RootDatumAutomorphism.lean` is to L1.
+The exponent convention of `TauCeti.SuzukiReeIndex.exponent` is stated against
+`TauCeti.DynkinType.IsLongSimpleRoot`. The isogeny selected here is the root-datum half of the
+special isogenies in characteristics two and three, whose group-scheme half is separate work; the
+odd power is taken in `TauCeti/GroupTheory/SpecificGroups/CFSG/HalfFrobenius.lean`. This file is to
+the Suzuki--Ree Steinberg maps what
+`TauCeti/GroupTheory/SpecificGroups/CFSG/RootDatumAutomorphism.lean` is to the graph-twisted ones.
 
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
 * R. W. Carter, *Simple Groups of Lie Type*, §§12.3--12.4.
@@ -296,7 +295,7 @@ private theorem rootLength_eq_ite (e : SuzukiReeIndex) (i : Fin e.1.rank) :
     e.1.dynkinType.rootLength i =
       if e.1.dynkinType.IsLongSimpleRoot i then (e.1.characteristic : ℤ) else 1 := by
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     simp only [ValidLieTypeIndex.characteristic, LieTypeIndex.characteristic_suzuki,
       Nat.cast_ofNat]
@@ -334,11 +333,10 @@ for `B₂` and `F₄`, three for `G₂`. -/
     (hi : ¬ e.1.dynkinType.IsLongSimpleRoot i) : e.1.dynkinType.rootLength i = 1 := by
   simp [rootLength_eq_ite, hi]
 
-/-- **The exponent convention of the CFSG roadmap is the root-length convention of the
-root-systems roadmap.** The squared length of the node paired with `i` by the length permutation
-is the exponent the exceptional isogeny attaches to the root subgroup of `i`: it is `1` when `i`
-is long, because the paired node is then short, and the defining characteristic when `i` is
-short. -/
+/-- **The exponent convention of a Suzuki--Ree index is the root-length convention.** The squared
+length of the node paired with `i` by the length permutation is the exponent the exceptional
+isogeny attaches to the root subgroup of `i`: it is `1` when `i` is long, because the paired node
+is then short, and the defining characteristic when `i` is short. -/
 @[simp] theorem rootLength_lengthPerm (e : SuzukiReeIndex) (i : Fin e.1.rank) :
     e.1.dynkinType.rootLength (e.lengthPerm i) = (e.exponent i : ℤ) := by
   by_cases hi : e.1.dynkinType.IsLongSimpleRoot i
@@ -413,7 +411,7 @@ This is the check that the node convention of the upstream isogeny is the one
     e.datumSpecialIsogeny.indexEquiv (e.1.dynkinType.simpleIndex e.1.dynkinType_valid i) =
       e.1.dynkinType.simpleIndex e.1.dynkinType_valid (e.lengthPerm i) := by
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     rw [datumSpecialIsogeny_indexEquiv_suzuki, lengthPerm_suzuki]
     exact b2SpecialIsogeny_indexEquiv_simpleIndex _ i
@@ -430,13 +428,13 @@ This is the check that the node convention of the upstream isogeny is the one
 /-- **The exponent of the selected isogeny at a simple-root index is the squared length of that
 node.** The isogeny's `exponent` field is indexed by the source of its character map, which is the
 image node of the group-scheme isogeny; combined with
-`TauCeti.SuzukiReeIndex.rootLength_lengthPerm` this is the roadmap's assignment of `1` to a long
+`TauCeti.SuzukiReeIndex.rootLength_lengthPerm` this is the index's assignment of `1` to a long
 simple root and the characteristic to a short one. -/
 @[simp] theorem datumSpecialIsogeny_exponent_simpleIndex (e : SuzukiReeIndex) (i : Fin e.1.rank) :
     e.datumSpecialIsogeny.exponent (e.1.dynkinType.simpleIndex e.1.dynkinType_valid i) =
       e.1.dynkinType.rootLength i := by
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     rw [datumSpecialIsogeny_exponent_suzuki]
     exact b2SpecialIsogeny_exponent_simpleIndex _ i
@@ -451,7 +449,7 @@ simple root and the characteristic to a short one. -/
     exact f4SpecialIsogeny_exponent_simpleIndex _ i
 
 /-- **The defining relation of the exceptional isogeny on the simple roots, in the exponent
-convention of the CFSG roadmap.** The character map carries the simple root at the
+convention of `TauCeti.SuzukiReeIndex.exponent`.** The character map carries the simple root at the
 length-exchanged node to the simple root at `i`, rescaled by `TauCeti.SuzukiReeIndex.exponent i`,
 which is `1` at a long node and the defining characteristic at a short one.
 
@@ -496,7 +494,7 @@ powers of `τ` that cut out the Suzuki, Ree and Tits groups are read off it. -/
     e.datumSpecialIsogeny * e.datumSpecialIsogeny =
       RootPairingIsogeny.smulId _ ⟨e.1.characteristic, e.1.characteristic_prime.pos⟩ := by
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     have hc : (2 : ℕ+) = ⟨ValidLieTypeIndex.characteristic ⟨_, hvalid⟩,
         (ValidLieTypeIndex.characteristic_prime _).pos⟩ := by

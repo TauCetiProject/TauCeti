@@ -40,6 +40,8 @@ primitivity of the product action requires additional hypotheses and is not asse
 * `TauCeti.WreathProduct.imprimitiveToPerm`: the imprimitive permutation representation on
   `ι × Λ`.
 * `TauCeti.WreathProduct.productToPerm`: the product permutation representation on `ι → Λ`.
+* `TauCeti.WreathProduct.flatten`: the embedding `(D ≀ Sym(κ)) ≀ Sym(ι) →* D ≀ Sym(ι × κ)` of an
+  iterated wreath product, injective for nonempty `κ` (`TauCeti.WreathProduct.flatten_injective`).
 
 ## Main results
 
@@ -480,6 +482,68 @@ theorem mem_range_imprimitiveToPerm_bool_iff {σ : Equiv.Perm (ι × Bool)} :
 
 end Imprimitive
 
+section Flatten
+
+variable {κ : Type w}
+
+/-- **Flattening an iterated wreath product**, the homomorphism
+`(D ≀ Sym(κ)) ≀ Sym(ι) →* D ≀ Sym(ι × κ)`. Its base coordinate at `(i, k)` is the base
+coordinate at `k` of the coordinate of `w` at `i` (`flatten_left`), and its top permutation is
+`(i, k) ↦ (σ i, τ_{σ i} k)`, where `σ` is the top permutation of `w` and `τ_j` that of its
+coordinate at `j` (`flatten_right_apply`): the imprimitive action of `w` read through the top
+permutations of its coordinates. It is injective when `κ` is nonempty (`flatten_injective`). -/
+def flatten : WreathProduct (WreathProduct D κ) ι →* WreathProduct D (ι × κ) where
+  toFun w := ⟨fun x ↦ (w.left x.1).left x.2,
+    imprimitiveToPerm (Equiv.Perm κ) ι κ (map SemidirectProduct.rightHom w)⟩
+  map_one' := by
+    apply SemidirectProduct.ext
+    · funext x
+      simp
+    · simp
+  map_mul' w z := by
+    apply SemidirectProduct.ext
+    · funext x
+      simp [Equiv.Perm.smul_def, ← map_inv]
+    · simp
+
+/-- The base coordinates of a flattened element are the base coordinates of its coordinates. -/
+@[simp]
+theorem flatten_left (w : WreathProduct (WreathProduct D κ) ι) (x : ι × κ) :
+    (flatten w).left x = (w.left x.1).left x.2 := by
+  simp [flatten]
+
+/-- The top permutation of a flattened element permutes the blocks `{i} × κ` by the top
+permutation of the element, and inside each block by the top permutation of the coordinate. -/
+@[simp]
+theorem flatten_right_apply (w : WreathProduct (WreathProduct D κ) ι) (x : ι × κ) :
+    (flatten w).right x = (w.right x.1, (w.left (w.right x.1)).right x.2) := by
+  simp [flatten]
+
+/-- Flattening is natural in the base group. -/
+theorem flatten_map {D' : Type*} [Group D'] (f : D →* D')
+    (w : WreathProduct (WreathProduct D κ) ι) :
+    flatten (map (map f) w) = map f (flatten w) := by
+  apply SemidirectProduct.ext
+  · funext x
+    simp
+  · ext x <;> simp
+
+/-- Flattening an iterated wreath product is injective when the inner index type is nonempty. -/
+theorem flatten_injective [Nonempty κ] :
+    Function.Injective (flatten : WreathProduct (WreathProduct D κ) ι →* _) := by
+  intro w z h
+  -- The top permutation of a flattened element is the imprimitive image of the element with its
+  -- coordinates replaced by their top permutations, and the imprimitive action is faithful.
+  have hmap : map SemidirectProduct.rightHom w = map SemidirectProduct.rightHom z :=
+    imprimitiveToPerm_injective (Equiv.Perm κ) ι κ (congrArg SemidirectProduct.right h)
+  refine SemidirectProduct.ext (funext fun i ↦ SemidirectProduct.ext ?_ ?_)
+    (by simpa using congrArg SemidirectProduct.right hmap)
+  · funext l
+    simpa using congrArg (fun v ↦ v.left (i, l)) h
+  · simpa using congrFun (congrArg SemidirectProduct.left hmap) i
+
+end Flatten
+
 section Product
 
 variable (D ι) (Λ : Type w) [MulAction D Λ]
@@ -513,6 +577,26 @@ instance : MulAction (WreathProduct D ι) (ι → Λ) where
 theorem product_smul (w : WreathProduct D ι) (x : ι → Λ) (i : ι) :
     (w • x) i = w.left i • x (w.right⁻¹ i) :=
   rfl
+
+variable {D ι Λ} in
+/-- A base element `SemidirectProduct.inl t` acts on a function coordinatewise, by `t j` at the
+coordinate `j`. -/
+@[simp]
+theorem product_inl_smul (t : ι → D) (x : ι → Λ) :
+    (SemidirectProduct.inl t : WreathProduct D ι) • x = fun j ↦ t j • x j :=
+  rfl
+
+variable {D ι Λ} in
+/-- The coordinate inclusion of the base group at `i` acts on a function by moving its value at `i`
+by `g` and leaving every other coordinate alone. -/
+theorem product_inl_mulSingle_smul [DecidableEq ι] (i : ι) (g : D) (x : ι → Λ) :
+    (SemidirectProduct.inl (Pi.mulSingle i g : ι → D) : WreathProduct D ι) • x =
+      Function.update x i (g • x i) := by
+  funext j
+  by_cases hji : j = i
+  · subst j
+    simp
+  · simp [hji]
 
 /-- The permutation representation of the product wreath-product action on `ι → Λ`. -/
 def productToPerm : WreathProduct D ι →* Equiv.Perm (ι → Λ) :=

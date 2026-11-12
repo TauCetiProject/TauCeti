@@ -60,10 +60,9 @@ theorem degree_diagCoset_prime_pow (hp : p.Prime) (i k : ℕ) (hk : 0 < k) :
     k hk (by simp [Nat.pow_div (Nat.le_add_right i k) hp.pos])
 
 /-- The degree of a nonzero diagonal operator is the degree of its double coset. -/
-private lemma deg_heckeTDiag_eq_diagCoset_degree {a d : ℕ} (ha : 0 < a) (hd : 0 < d)
-    (hdvd : a ∣ d) :
+private lemma deg_heckeTDiag_eq_diagCoset_degree {a d : ℕ} (hd : 0 < d) (hdvd : a ∣ d) :
     deg (posDetInt 2) (SLnZ 2) ℤ (heckeTDiag a d) = ((diagCoset ![a, d]).degree : ℤ) := by
-  rw [heckeTDiag_eq_diagElem ha hd hdvd, diagElem_def, deg_single, nsmul_eq_mul, mul_one]
+  rw [heckeTDiag_eq_diagElem hd hdvd, diagElem_def, deg_single, nsmul_eq_mul, mul_one]
 
 /-- A term of the `T(pᵏ)` expansion strictly below the middle has degree
 `p^(k - 2i - 1)(p + 1)`. -/
@@ -74,7 +73,7 @@ private lemma deg_prime_pow_term_lt (hp : p.Prime) (i k : ℕ) (h2i : 2 * i < k)
   -- hides that shape inside `k - i`, and `rw` matches syntactically, so re-index the exponent
   -- with `omega` before the degree lemmas can fire.
   rw [show k - i = i + (k - 2 * i) by omega,
-    deg_heckeTDiag_eq_diagCoset_degree (pow_pos hp.pos i) (pow_pos hp.pos _)
+    deg_heckeTDiag_eq_diagCoset_degree (pow_pos hp.pos _)
       (Nat.pow_dvd_pow p (Nat.le_add_right i _)),
     degree_diagCoset_prime_pow p hp i (k - 2 * i) (by omega)]
 
@@ -86,7 +85,7 @@ private lemma deg_prime_pow_term_eq (hp : p.Prime) (i k : ℕ) (h2i : 2 * i = k)
   -- and `degree_diagCoset_const` is stated for a constant *function*, which `![x, x]` is only
   -- extensionally — hence the `funext`.
   rw [show k - i = i by omega,
-    deg_heckeTDiag_eq_diagCoset_degree (pow_pos hp.pos i) (pow_pos hp.pos i) dvd_rfl,
+    deg_heckeTDiag_eq_diagCoset_degree (pow_pos hp.pos i) dvd_rfl,
     show ![p ^ i, p ^ i] = (fun _ : Fin 2 ↦ p ^ i) from funext fun j ↦ by fin_cases j <;> rfl,
     degree_diagCoset_const 2 _, Nat.cast_one]
 
@@ -105,9 +104,9 @@ private lemma deg_prime_pow_shift (hp : p.Prime) (i k : ℕ) (hi : i < k / 2 + 1
 
 /-- The inductive step of `deg_heckeT_prime_pow`, from `k` to `k + 2`. -/
 private lemma deg_heckeT_prime_pow_step (hp : p.Prime) (k : ℕ)
-    (ih : deg (posDetInt 2) (SLnZ 2) ℤ (heckeT ⟨p ^ k, pow_pos hp.pos k⟩) =
+    (ih : deg (posDetInt 2) (SLnZ 2) ℤ (heckeT (p ^ k)) =
       ∑ j ∈ Finset.range (k + 1), (p : ℤ) ^ j) :
-    deg (posDetInt 2) (SLnZ 2) ℤ (heckeT ⟨p ^ (k + 2), pow_pos hp.pos (k + 2)⟩) =
+    deg (posDetInt 2) (SLnZ 2) ℤ (heckeT (p ^ (k + 2))) =
       ∑ j ∈ Finset.range (k + 2 + 1), (p : ℤ) ^ j := by
   rw [heckeT_prime_pow_expansion p hp (k + 2), map_sum, Nat.add_div_right k two_pos,
     Finset.sum_range_succ']
@@ -130,7 +129,7 @@ private lemma deg_heckeT_prime_pow_step (hp : p.Prime) (k : ℕ)
 /-- **The prime-power degree** (Shimura, Theorem 3.24(7) at a prime power):
 `deg T(pᵏ) = 1 + p + ⋯ + pᵏ`. -/
 theorem deg_heckeT_prime_pow (hp : p.Prime) (k : ℕ) :
-    deg (posDetInt 2) (SLnZ 2) ℤ (heckeT ⟨p ^ k, pow_pos hp.pos k⟩) =
+    deg (posDetInt 2) (SLnZ 2) ℤ (heckeT (p ^ k)) =
       ∑ j ∈ Finset.range (k + 1), (p : ℤ) ^ j := by
   induction k using Nat.twoStepInduction with
   | zero => simp
@@ -141,22 +140,18 @@ theorem deg_heckeT_prime_pow (hp : p.Prime) (k : ℕ) :
 
 /-- **The degree of `T(m)`** (Shimura, Theorem 3.24(7)): `deg T(m) = σ₁(m)`. -/
 -- `@[simp]` on the unconditional formula only: `deg_heckeT_prime_pow` is the instance
--- `m = ⟨p ^ k, _⟩` of this one, so annotating both would leave the specialized form unreachable.
+-- `m = p ^ k` of this one, so annotating both would leave the specialized form unreachable.
 @[simp]
-theorem deg_heckeT (m : ℕ+) :
-    deg (posDetInt 2) (SLnZ 2) ℤ (heckeT m) = (σ 1) (m : ℕ) := by
-  obtain ⟨n, hn⟩ := m
-  induction n using Nat.recOnPosPrimePosCoprime with
+theorem deg_heckeT (m : ℕ) :
+    deg (posDetInt 2) (SLnZ 2) ℤ (heckeT m) = (σ 1) m := by
+  induction m using Nat.recOnPosPrimePosCoprime with
   | prime_pow p k hp _ =>
     rw [deg_heckeT_prime_pow p hp k]
     exact_mod_cast (ArithmeticFunction.sigma_one_apply_prime_pow hp).symm
-  | zero => exact absurd hn (lt_irrefl 0)
+  | zero => simp
   | one => simp
-  | coprime p q hp hq hcop ihp ihq =>
-    have hp_pos : 0 < p := zero_lt_one.trans hp
-    have hq_pos : 0 < q := zero_lt_one.trans hq
-    rw [show heckeT ⟨p * q, hn⟩ = heckeT ⟨p, hp_pos⟩ * heckeT ⟨q, hq_pos⟩ from
-      (heckeT_mul_of_coprime ⟨p, hp_pos⟩ ⟨q, hq_pos⟩ hcop).symm, map_mul, ihp hp_pos, ihq hq_pos]
+  | coprime p q _ _ hcop ihp ihq =>
+    rw [← heckeT_mul_of_coprime p q hcop, map_mul, ihp, ihq]
     exact_mod_cast (ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime hcop).symm
 
 end HeckeRing.GL2

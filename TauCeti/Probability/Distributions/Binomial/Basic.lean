@@ -25,6 +25,7 @@ characterization of Mathlib's binomial measure.  The native law remains
 * `TauCeti.Probability.pgf_binomial` computes the probability-generating function on the native
   carrier;
 * `TauCeti.Probability.variance_id_map_cast_binomial` computes the variance of the cast law;
+* `TauCeti.Probability.integral_sq_id_map_cast_binomial` computes its second raw moment;
 * `TauCeti.Probability.mgf_id_map_cast_binomial` and
   `TauCeti.Probability.cgf_id_map_cast_binomial` compute its moment and cumulant generating
   functions;
@@ -203,6 +204,19 @@ theorem variance_id_map_cast_binomial (n : ℕ) (p : unitInterval) :
 theorem variance_of_hasLaw_binomial {n : ℕ} {p : unitInterval} {X : Ω → ℝ}
     (hX : HasLaw X Bin(ℝ, n, p) P) : Var[X; P] = p * (1 - p) * n := by
   rw [hX.variance_eq, variance_id_map_cast_binomial]
+
+/-- The second raw moment of a real-valued binomial law. -/
+theorem integral_sq_id_map_cast_binomial (n : ℕ) (p : unitInterval) :
+    ∫ x : ℝ, x ^ 2 ∂Bin(ℝ, n, p) =
+      (p : ℝ) * (1 - p) * n + ((p : ℝ) * n) ^ 2 := by
+  have hmem : MemLp id 2 Bin(ℝ, n, p) :=
+    (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2
+      (integrable_map_cast_binomial _)
+  have hvar := variance_eq_sub hmem
+  have hmean : ∫ x : ℝ, x ∂Bin(ℝ, n, p) = (p : ℝ) * n :=
+    integral_of_hasLaw_binomial (HasLaw.id (μ := Bin(ℝ, n, p)))
+  simp only [id_eq, Pi.pow_apply, variance_id_map_cast_binomial, hmean] at hvar
+  linarith
 
 end Probability
 

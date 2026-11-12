@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
-public import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # Rank is additive along a tower of submodules
@@ -16,8 +15,8 @@ and `TauCeti.rank_quotient_submoduleOf_tower` records that its rank is the sum o
 two steps.  Relative quotients are spelled with `Submodule.submoduleOf`, so that `q / p` means
 `↥q ⧸ p.submoduleOf q`.
 
-The proof is Noether's third isomorphism theorem (`Submodule.quotientQuotientEquivQuotient`)
-together with rank–nullity, which is why the base ring is asked only for `HasRankNullity`.
+It is the case of Mathlib's `LinearMap.rank_quot_submodule_map_eq` for the inclusion `q → r`,
+which rests on rank–nullity; this is why the base ring is asked only for `HasRankNullity`.
 -/
 
 public section
@@ -27,28 +26,19 @@ universe u v
 namespace TauCeti
 
 /-- Rank is additive along a tower `p ≤ q ≤ r` of submodules: the relative quotients of the two
-steps add up to the relative quotient of the composite.  This is Noether's third isomorphism
-theorem together with rank–nullity. -/
+steps add up to the relative quotient of the composite. -/
 theorem rank_quotient_submoduleOf_tower {R : Type v} {M : Type u} [Ring R] [AddCommGroup M]
     [Module R M] [HasRankNullity.{u} R] {p q r : Submodule R M} (hpq : p ≤ q) (hqr : q ≤ r) :
     Module.rank R (↥r ⧸ p.submoduleOf r) =
       Module.rank R (↥q ⧸ p.submoduleOf q) + Module.rank R (↥r ⧸ q.submoduleOf r) := by
-  have hAB : p.submoduleOf r ≤ q.submoduleOf r := Submodule.comap_mono hpq
-  set A := p.submoduleOf r with hA
-  set f : ↥q →ₗ[R] (↥r ⧸ A) := A.mkQ ∘ₗ Submodule.inclusion hqr with hf
-  have hker : LinearMap.ker f = p.submoduleOf q := by
-    ext z
-    simp [hf, hA, Submodule.submoduleOf, Submodule.inclusion]
-  have hrange : LinearMap.range f = (q.submoduleOf r).map A.mkQ := by
-    rw [hf, LinearMap.range_comp, Submodule.range_inclusion]
-    rfl
-  have e₁ : (↥q ⧸ p.submoduleOf q) ≃ₗ[R] ↥((q.submoduleOf r).map A.mkQ) :=
-    (Submodule.quotEquivOfEq _ _ hker.symm).trans
-      ((f.quotKerEquivRange).trans (LinearEquiv.ofEq _ _ hrange))
-  have e₂ : ((↥r ⧸ A) ⧸ (q.submoduleOf r).map A.mkQ) ≃ₗ[R] (↥r ⧸ q.submoduleOf r) :=
-    Submodule.quotientQuotientEquivQuotient A (q.submoduleOf r) hAB
-  have key := Submodule.rank_quotient_add_rank ((q.submoduleOf r).map A.mkQ)
-  rw [e₂.rank_eq, ← e₁.rank_eq] at key
-  rw [← key, add_comm]
+  have hp : (p.submoduleOf q).map (Submodule.inclusion hqr) = p.submoduleOf r := by
+    ext ⟨x, hx⟩
+    simpa [Submodule.submoduleOf, Subtype.ext_iff] using fun h => hpq h
+  rw [← hp, LinearMap.rank_quot_submodule_map_eq, add_comm]
+  congr 1
+  · refine (Submodule.Quotient.equiv _ _
+      (LinearEquiv.ofInjective _ (Submodule.inclusion_injective hqr)) ?_).rank_eq.symm
+    exact congrArg (Submodule.map · _) (by ext; simp)
+  · rw [Submodule.range_inclusion, Submodule.submoduleOf]
 
 end TauCeti

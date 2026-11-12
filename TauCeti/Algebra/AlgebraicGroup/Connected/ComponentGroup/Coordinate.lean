@@ -10,7 +10,9 @@ public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 public import TauCeti.Algebra.Coalgebra.Convolution
 public import TauCeti.RingTheory.Idempotents.Connected.Components
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Coinvariants
 import Mathlib.Algebra.BigOperators.Pi
+import TauCeti.RingTheory.Idempotents.LinearIndependent
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
 
 /-!
@@ -44,6 +46,8 @@ file.
   morphism of the component map.
 * `TauCeti.FiniteTypeCommHopfAlgCat.kernelHopfIdeal_componentCoordinateHom`: its scheme-theoretic
   kernel is the identity component.
+* `CommHopfAlgCat.Hom.exists_map_eq_identityComponentIdempotent`: descent of the
+  identity-component idempotent along a faithfully flat homomorphism with connected kernel.
 
 ## References
 
@@ -138,7 +142,7 @@ theorem map_connectedComponentsIdempotent_eq_one
     g.ofConv (PrimeSpectrum.connectedComponentsIdempotent C) = 1 := by
   rw [rationalComponentMap_apply] at hC
   rw [← hC, PrimeSpectrum.connectedComponentsIdempotent_mk]
-  exact TauCeti.AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one g.ofConv
+  exact AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one g.ofConv
 
 /-- A rational point evaluates every other component idempotent to zero. -/
 theorem map_connectedComponentsIdempotent_eq_zero
@@ -156,11 +160,8 @@ theorem map_connectedComponentsIdempotent_eq_zero
     rw [rationalComponentMap_apply]
     apply (PrimeSpectrum.mem_basicOpen_connectedComponentsIdempotent C
       (rationalKernelPoint H g)).mp
-    rw [PrimeSpectrum.mem_basicOpen]
-    intro hmem
-    have : g.ofConv (PrimeSpectrum.connectedComponentsIdempotent C) = 0 := by
-      simpa [RingHom.mem_ker] using hmem
-    exact zero_ne_one (this.symm.trans hone)
+    exact (AlgHom.kernelPoint_mem_basicOpen_iff g.ofConv _).mpr
+      (hone.trans_ne one_ne_zero)
 
 /-- Evaluation of a component-indexed function at a rational point is evaluation at the
 connected component containing that point. -/
@@ -179,14 +180,28 @@ theorem eval_componentFunctionAlgHom (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     rw [map_connectedComponentsIdempotent_eq_zero H g hC.symm, mul_zero]
   · simp
 
+/-- The counit evaluates a component-indexed function at the identity component. -/
+@[simp]
+theorem counit_componentFunctionAlgHom (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (f : ConnectedComponents (PrimeSpectrum H) → k) :
+    Coalgebra.counit (R := k) (componentFunctionAlgHom H f) = f 1 := by
+  simpa only [AlgHom.convOne_apply, Algebra.algebraMap_self_apply, map_one,
+    Bialgebra.counitAlgHom_apply] using
+    eval_componentFunctionAlgHom H
+      (1 : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) f
+
+omit [IsAlgClosed k] in
 /-- The component function algebra embeds in the coordinate ring. -/
 theorem componentFunctionAlgHom_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     Function.Injective (componentFunctionAlgHom H) := by
-  intro f g hfg
-  funext C
-  obtain ⟨x, hx⟩ := rationalComponentMap_surjective H C
-  rw [← hx, ← eval_componentFunctionAlgHom H x f,
-    ← eval_componentFunctionAlgHom H x g, hfg]
+  classical
+  rw [injective_iff_map_eq_zero]
+  intro f hf
+  have hli := (PrimeSpectrum.orthogonalIdempotents_connectedComponentsIdempotent (R := H)
+    ).linearIndependent (k := k) PrimeSpectrum.connectedComponentsIdempotent_ne_zero
+  funext D
+  exact Fintype.linearIndependent_iff.mp hli f
+    (by simpa only [componentFunctionAlgHom_apply, Algebra.smul_def] using hf) D
 
 /-- The coordinate algebra map representing projection to the finite constant group of connected
 components. -/
@@ -245,6 +260,7 @@ theorem componentCoordinateMap_indicator (H : FiniteTypeCommHopfAlgCat.{u, u} k)
         simp
       · simp
 
+omit [IsAlgClosed k] in
 /-- The component coordinate map is injective. -/
 theorem componentCoordinateMap_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     Function.Injective (componentCoordinateMap H) :=
@@ -285,6 +301,39 @@ private theorem counitAlgHom_comp_componentCoordinateMap
       rw [Bialgebra.counitAlgHom_apply, ConstantGroup.counit_apply,
         ConstantGroup.eval_apply]
 
+/-- At every `k`-point of the tensor square of `H`, both composites in the coalgebra law evaluate as
+the convolution of the two restricted points, so they agree. -/
+private theorem algHom_comp_map_comp_comulAlgHom_componentCoordinateMap
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) (f : TensorProduct k H H →ₐ[k] k) :
+    (f.comp (Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H))).comp
+        (Bialgebra.comulAlgHom k
+          (ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H)))) =
+      (f.comp (Bialgebra.comulAlgHom k H)).comp (componentCoordinateMap H) := by
+  let C := ConnectedComponents (PrimeSpectrum H)
+  let g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) :=
+    toConv (f.comp (Algebra.TensorProduct.includeLeft (R := k) (A := H) (B := H)))
+  let h : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) :=
+    toConv (f.comp (Algebra.TensorProduct.includeRight (R := k) (A := H) (B := H)))
+  set q := f.comp (Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H))
+  have hqleft :
+      q.comp (Algebra.TensorProduct.includeLeft (R := k)
+        (A := ConstantGroup.coordinateRing k C) (B := ConstantGroup.coordinateRing k C)) =
+        g.ofConv.comp (componentCoordinateMap H) := by
+    simp [q, g, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft]
+  have hqright :
+      q.comp (Algebra.TensorProduct.includeRight (R := k)
+        (A := ConstantGroup.coordinateRing k C) (B := ConstantGroup.coordinateRing k C)) =
+        h.ofConv.comp (componentCoordinateMap H) := by
+    simp [q, h, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight]
+  have htarget : f.comp (Bialgebra.comulAlgHom k H) = (g * h).ofConv := by
+    apply WithConv.toConv_injective
+    rw [Bialgebra.toConv_comp_comulAlgHom]
+  rw [htarget, eval_componentCoordinateMap, map_mul]
+  apply WithConv.toConv_injective
+  rw [Bialgebra.toConv_comp_comulAlgHom, hqleft, hqright,
+    eval_componentCoordinateMap, eval_componentCoordinateMap]
+  exact (ConstantGroup.eval_mul k C _ _).symm
+
 private theorem map_comp_comulAlgHom_componentCoordinateMap
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     (Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H)).comp
@@ -296,85 +345,21 @@ private theorem map_comp_comulAlgHom_componentCoordinateMap
   let _ : Algebra.FiniteType k (TensorProduct k H H) :=
     Algebra.FiniteType.trans (R := k) (S := H) (A := TensorProduct k H H)
       inferInstance inferInstance
-  let delta : C → ConstantGroup.coordinateRing k C :=
-    fun D ↦ (ConstantGroup.functionAlgEquiv k C).symm (Pi.single D 1)
+  let e := (ConstantGroup.functionAlgEquiv k C).symm
+  apply AlgHom.toLinearMap_injective
+  refine ((Pi.basisFun k C).map e.toLinearEquiv).ext fun D ↦ ?_
   -- It suffices to check the coalgebra law on the delta-function basis. Each side sends a delta
   -- function to an idempotent, so algebraically closed points separate the two images even though
   -- the tensor square of `H` need not be reduced.
-  have hdelta (D : C) :
-      ((Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H)).comp
-          (Bialgebra.comulAlgHom k (ConstantGroup.coordinateRing k C))) (delta D) =
-        ((Bialgebra.comulAlgHom k H).comp (componentCoordinateMap H)) (delta D) := by
-    have hsingle : IsIdempotentElem (Pi.single D 1 : C → k) :=
-      (CompleteOrthogonalIdempotents.single (fun _ : C ↦ k)).idem D
-    have hdelta_idem : IsIdempotentElem (delta D) :=
-      hsingle.map (ConstantGroup.functionAlgEquiv k C).symm.toRingHom
-    apply TauCeti.eq_of_isIdempotentElem_of_forall_algHom_apply_eq
-      (k := k) (K := k)
-      (hdelta_idem.map
-        ((Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H)).comp
-          (Bialgebra.comulAlgHom k (ConstantGroup.coordinateRing k C))).toRingHom)
-      (hdelta_idem.map
-        ((Bialgebra.comulAlgHom k H).comp (componentCoordinateMap H)).toRingHom)
-    intro f
-    -- Restrict a point of the tensor square to its two factors. Comultiplication evaluates as
-    -- convolution on both the constant component group and `H`.
-    let g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) :=
-      toConv (f.comp (Bialgebra.TensorProduct.includeLeft
-        (R := k) (H₁ := H) (H₂ := H)).toAlgHom)
-    let h : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) :=
-      toConv (f.comp (Bialgebra.TensorProduct.includeRight
-        (R := k) (H₁ := H) (H₂ := H)).toAlgHom)
-    let q :=
-      f.comp (Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H))
-    have hqleft :
-        q.comp (Bialgebra.TensorProduct.includeLeft (R := k)
-          (H₁ := ConstantGroup.coordinateRing k C)
-          (H₂ := ConstantGroup.coordinateRing k C)).toAlgHom =
-          g.ofConv.comp (componentCoordinateMap H) := by
-      simp [q, g, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft]
-    have hqright :
-        q.comp (Bialgebra.TensorProduct.includeRight (R := k)
-          (H₁ := ConstantGroup.coordinateRing k C)
-          (H₂ := ConstantGroup.coordinateRing k C)).toAlgHom =
-          h.ofConv.comp (componentCoordinateMap H) := by
-      simp [q, h, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight]
-    have hsource :
-        q.comp (Bialgebra.comulAlgHom k (ConstantGroup.coordinateRing k C)) =
-          ConstantGroup.eval k C (rationalComponentMap H g * rationalComponentMap H h) := by
-      apply WithConv.toConv_injective
-      rw [Bialgebra.toConv_comp_comulAlgHom, hqleft, hqright,
-        eval_componentCoordinateMap, eval_componentCoordinateMap]
-      exact (ConstantGroup.eval_mul k C _ _).symm
-    have htarget :
-        f.comp (Bialgebra.comulAlgHom k H) = (g * h).ofConv := by
-      apply WithConv.toConv_injective
-      rw [Bialgebra.toConv_comp_comulAlgHom]
-    calc
-      f (((Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H)).comp
-          (Bialgebra.comulAlgHom k (ConstantGroup.coordinateRing k C))) (delta D)) =
-          (q.comp (Bialgebra.comulAlgHom k (ConstantGroup.coordinateRing k C))) (delta D) := rfl
-      _ = ConstantGroup.eval k C
-          (rationalComponentMap H g * rationalComponentMap H h) (delta D) :=
-        AlgHom.congr_fun hsource (delta D)
-      _ = ConstantGroup.eval k C (rationalComponentMap H (g * h)) (delta D) := by
-        rw [map_mul]
-      _ = (g * h).ofConv (componentCoordinateMap H (delta D)) :=
-        (AlgHom.congr_fun (eval_componentCoordinateMap H (g * h)) (delta D)).symm
-      _ = (f.comp (Bialgebra.comulAlgHom k H)) (componentCoordinateMap H (delta D)) := by
-        rw [htarget]
-      _ = f (((Bialgebra.comulAlgHom k H).comp (componentCoordinateMap H)) (delta D)) := rfl
-  apply AlgHom.toLinearMap_injective
-  apply LinearMap.ext
-  intro a
-  have ha : a = ∑ D, (ConstantGroup.functionAlgEquiv k C a D) • delta D := by
-    apply (ConstantGroup.functionAlgEquiv k C).injective
-    simpa only [map_sum, map_smul, delta, AlgEquiv.apply_symm_apply] using
-      (pi_eq_sum_univ' (ConstantGroup.functionAlgEquiv k C a))
-  rw [ha, map_sum, map_sum]
-  simp only [map_smul]
-  exact Finset.sum_congr rfl fun D _ ↦ congrArg ((ConstantGroup.functionAlgEquiv k C a D) • ·)
-    (hdelta D)
+  have hidem : IsIdempotentElem (e (Pi.single D 1)) :=
+    ((CompleteOrthogonalIdempotents.single (fun _ : C ↦ k)).idem D).map e.toRingHom
+  simp only [Module.Basis.map_apply, Pi.basisFun_apply, AlgEquiv.toLinearEquiv_apply,
+    AlgHom.toLinearMap_apply]
+  exact TauCeti.eq_of_isIdempotentElem_of_forall_algHom_apply_eq (k := k) (K := k)
+    (hidem.map ((Algebra.TensorProduct.map (componentCoordinateMap H)
+      (componentCoordinateMap H)).comp (Bialgebra.comulAlgHom k _)).toRingHom)
+    (hidem.map ((Bialgebra.comulAlgHom k H).comp (componentCoordinateMap H)).toRingHom)
+    fun f ↦ AlgHom.congr_fun (algHom_comp_map_comp_comulAlgHom_componentCoordinateMap H f) _
 
 /-- The coordinate bialgebra morphism representing projection to the finite constant group of
 connected components. -/
@@ -418,6 +403,17 @@ theorem componentCoordinateHom_apply (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (x : ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))) :
     (componentCoordinateHom H).hom x = componentCoordinateMap H x := by
   rfl
+
+/-- The component coordinate morphism is injective on coordinate algebras. -/
+theorem componentCoordinateHom_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    Function.Injective (componentCoordinateHom H).hom := by
+  intro x y hxy
+  apply componentCoordinateMap_injective H
+  exact (componentCoordinateHom_apply H x).symm.trans
+    (hxy.trans (componentCoordinateHom_apply H y))
+
+instance (H : FiniteTypeCommHopfAlgCat.{u, u} k) : Mono (componentCoordinateHom H) :=
+  ConcreteCategory.mono_of_injective _ (componentCoordinateHom_injective H)
 
 /-- The idempotent of the identity component of `Spec H` is the idempotent of the connected
 component of the augmentation point. -/
@@ -512,3 +508,50 @@ theorem kernelHopfIdeal_componentCoordinateHom
   exact Ideal.mul_mem_left _ a (HopfIdeal.mem_toIdeal.mpr hgen)
 
 end TauCeti.FiniteTypeCommHopfAlgCat
+
+namespace CommHopfAlgCat.Hom
+
+open TauCeti TauCeti.CommHopfAlgCat
+
+universe u
+
+/-- Over an algebraically closed field, the identity-component idempotent descends along a
+faithfully flat homomorphism with connected scheme-theoretic kernel. Only the source group
+`Spec G` needs to be of finite type; the descended element is again idempotent. -/
+theorem exists_map_eq_identityComponentIdempotent
+    {k : Type u} [Field k] [IsAlgClosed k]
+    {Q G : CommHopfAlgCat.{u} k} [Algebra.FiniteType k G] (f : Q ⟶ G)
+    (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat)
+    [ConnectedSpace (PrimeSpectrum (quotient G (kernelHopfIdeal f)))] :
+    letI : IsNoetherianRing G := Algebra.FiniteType.isNoetherianRing k G
+    ∃ a : Q, IsIdempotentElem a ∧ f.hom a =
+      PrimeSpectrum.connectedComponentIdempotent (Bialgebra.augmentationPoint k G) := by
+  classical
+  let H : FiniteTypeCommHopfAlgCat.{u, u} k :=
+    ⟨G, (finiteTypeCommHopfAlgProperty_iff G).mpr inferInstance⟩
+  let _ : IsNoetherianRing G := Algebra.FiniteType.isNoetherianRing k G
+  let _ := FiniteTypeCommHopfAlgCat.instGroupConnectedComponents H
+  let z : PrimeSpectrum G := Bialgebra.augmentationPoint k G
+  let e : G := PrimeSpectrum.connectedComponentIdempotent z
+  -- The kernel is contained in the identity component, so component functions descend.
+  have hI : HopfAlgebra.identityComponentHopfIdeal (k := k) (H := G) ≤
+      kernelHopfIdeal f := by
+    intro x hx
+    exact (mkQuotient_eq_zero_iff G (kernelHopfIdeal f) x).mp
+      (identityComponentHopfIdeal_toIdeal_le_ker_of_connected
+        (mkQuotient G (kernelHopfIdeal f)) hx)
+  have hcoinv : ∀ x, (FiniteTypeCommHopfAlgCat.componentCoordinateHom H).hom x ∈
+      (kernelHopfIdeal f).coinvariants := by
+    apply (HopfIdeal.forall_hom_mem_coinvariants_iff _).mpr
+    rw [FiniteTypeCommHopfAlgCat.kernelHopfIdeal_componentCoordinateHom]
+    exact hI
+  have hecoinv : e ∈ (kernelHopfIdeal f).coinvariants := by
+    let C := ConnectedComponents (PrimeSpectrum H)
+    have he := hcoinv ((ConstantGroup.functionAlgEquiv k C).symm (Pi.single 1 1))
+    rw [FiniteTypeCommHopfAlgCat.componentCoordinateHom_apply,
+      FiniteTypeCommHopfAlgCat.componentCoordinateMap_indicator] at he
+    rwa [FiniteTypeCommHopfAlgCat.connectedComponentsIdempotent_one H] at he
+  exact f.exists_map_eq_of_isIdempotentElem_mem_coinvariants hf
+    (PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent z) hecoinv
+
+end CommHopfAlgCat.Hom

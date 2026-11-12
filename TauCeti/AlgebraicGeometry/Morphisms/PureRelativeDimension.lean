@@ -45,6 +45,8 @@ extension of scalars to a larger field is
   scheme-theoretic fibre characterization.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.isPureDimensional_fiber`: the
   scheme-theoretic fibre formulation.
+* `TauCeti.AlgebraicGeometry.PureRelativeDimension.unique`: a morphism with nonempty source has
+  at most one pure relative dimension.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.of_locallyQuasiFinite`: locally quasi-finite
   morphisms have pure relative dimension zero.
 * `TauCeti.AlgebraicGeometry.pureRelativeDimension_iff_of_field`: over a field, pure relative
@@ -95,17 +97,12 @@ theorem pureRelativeDimension_iff_relativeDimensionLE_and_isPureDimensional_fibe
     let _ : RelativeDimensionLE d f := hle
     exact ⟨fun y ↦ (f.fiberHomeo y).isPureDimensional_iff.mp (hpure y)⟩
 
-private theorem preimage_comp (i : Z ⟶ X) (f : X ⟶ Y) (s : Set Y) :
-    (i ≫ f) ⁻¹' s = i ⁻¹' (f ⁻¹' s) := by
-  ext
-  simp
-
 /-- Precomposing with an embedding whose range contains the fibre over `y` does not change that
 fibre up to homeomorphism. -/
 private theorem isPureDimensional_preimage_comp_iff (i : Z ⟶ X) (hi : IsEmbedding i) (f : X ⟶ Y)
     (y : Y) (hy : f ⁻¹' {y} ⊆ Set.range i) :
     IsPureDimensional d ↥((i ≫ f) ⁻¹' {y}) ↔ IsPureDimensional d ↥(f ⁻¹' {y}) := by
-  rw [preimage_comp]
+  rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp]
   exact (hi.homeomorphOfSubsetRange hy).isPureDimensional_iff
 
 /-- Postcomposing with a morphism that is injective on points does not change the pure relative
@@ -131,6 +128,13 @@ theorem isPureDimensional_fiber (f : X ⟶ Y) [PureRelativeDimension d f] (y : Y
     IsPureDimensional d (f.fiber y) :=
   ((pureRelativeDimension_iff_relativeDimensionLE_and_isPureDimensional_fiber f).mp
     inferInstance).2 y
+
+/-- A morphism with nonempty source has at most one pure relative dimension. -/
+theorem unique {e : ℕ} (f : X ⟶ Y) [Nonempty X] [PureRelativeDimension d f]
+    [PureRelativeDimension e f] : d = e := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  have : Nonempty (f ⁻¹' {f x}) := ⟨⟨x, rfl⟩⟩
+  exact (isPureDimensional_preimage (f := f) (f x)).unique (isPureDimensional_preimage (f x))
 
 /-- A locally quasi-finite morphism has pure relative dimension zero. -/
 instance (priority := low) of_locallyQuasiFinite (f : X ⟶ Y) [LocallyQuasiFinite f] :
@@ -168,7 +172,7 @@ dimension. -/
 instance isOpenImmersion_comp (i : Z ⟶ X) [IsOpenImmersion i] (f : X ⟶ Y)
     [LocallyOfFiniteType f] [PureRelativeDimension d f] : PureRelativeDimension d (i ≫ f) where
   isPureDimensional_preimage y := by
-    rw [preimage_comp]
+    rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp]
     exact (isPureDimensional_fiber f y).of_isOpenEmbedding
       (topologicalKrullDim_fiber_inter_eq f y) (isOpenEmbedding_fiber i f y)
 
@@ -185,7 +189,7 @@ instance isZariskiLocalAtTarget (d : ℕ) :
       exact isPureDimensional_preimage y
     · -- A point of `f ⁻¹ᵁ U` maps into `U`, so nothing in it lies over `y`.
       have : IsEmpty (((f ⁻¹ᵁ U).ι ≫ f) ⁻¹' {y}) :=
-        ⟨fun x ↦ hy (by simpa [preimage_comp] using x.2 ▸ x.1.2)⟩
+        ⟨fun x ↦ hy (by simpa [Set.preimage_comp] using x.2 ▸ x.1.2)⟩
       exact isPureDimensional_of_isEmpty _ _
   have : RelativeDimensionLE d f :=
     IsZariskiLocalAtTarget.of_iSup_eq_top U hU fun i ↦ (hf i).toRelativeDimensionLE
@@ -245,7 +249,7 @@ theorem pureRelativeDimension_iff_of_openCover (f : X ⟶ Y) [LocallyOfFiniteTyp
   rw [← (f.fiberHomeo y).isPureDimensional_iff, isPureDimensional_iff_forall_of_isOpenEmbedding
     (topologicalKrullDim_fiber_inter_eq f y) _ (fun i ↦ isOpenEmbedding_fiber (𝒰.f i) f y)]
   · intro i
-    rw [← preimage_comp]
+    rw [← Set.preimage_comp, ← TopCat.coe_comp, ← Scheme.Hom.comp_base]
     exact (h i).isPureDimensional_preimage y
   · intro p
     obtain ⟨i, z, hz⟩ := 𝒰.exists_eq (f.fiberHomeo y p).1

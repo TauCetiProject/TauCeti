@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 
 /-!
@@ -339,6 +339,28 @@ theorem continuousCochainsShortExact_g :
       eqToHom S.continuousCochainsShortExact_X₂ ≫
         (continuousCochainsFunctor ℤ G).map S.toShortComplex.g := by
   unfold continuousCochainsShortExact
+  rfl
+
+/-- On homogeneous cochains, the short-complex inclusion is the compatible-pair cochain map
+of the given coefficient inclusion. -/
+theorem continuousCochainsShortExact_f_f_apply (k : ℕ)
+    (x : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).X k) :
+    (S.continuousCochainsShortExact.f.f k).hom x =
+      (cochainsMap (ContinuousMonoidHom.id G)
+        (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
+          S.incl.toIntLinearMap S.incl_equivariant)).f k x := by
+  rw [cochainsMap_ofDiscreteModulePair_id]
+  rfl
+
+/-- On homogeneous cochains, the short-complex projection is the compatible-pair cochain map
+of the given coefficient projection. -/
+theorem continuousCochainsShortExact_g_f_apply (k : ℕ)
+    (x : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G B)).X k) :
+    (S.continuousCochainsShortExact.g.f k).hom x =
+      (cochainsMap (ContinuousMonoidHom.id G)
+        (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
+          S.proj.toIntLinearMap S.proj_equivariant)).f k x := by
+  rw [cochainsMap_ofDiscreteModulePair_id]
   rfl
 
 /-- The cochain map induced by the inclusion `A → B` is injective in every degree. -/

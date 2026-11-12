@@ -66,7 +66,7 @@ def relativeEffectiveCartierDegreeSubfunctor (d : ℕ) :
     have : IsFinite (D.1.subschemeι ≫ pullback.fst T.unop.hom f) := hrel.isFinite
     ext t
     exact (D.1.finrank_comap_of_isPullback _ _ _ _
-      (isPullback_over_pullback_map_left f φ.unop) t).trans
+      (Over.isPullback_pullback_map_left f φ.unop) t).trans
       (congrFun hD (φ.unop.left t))
 
 /-- A relative effective Cartier divisor belongs to `Div^d_{X/S}` exactly when the rank of its

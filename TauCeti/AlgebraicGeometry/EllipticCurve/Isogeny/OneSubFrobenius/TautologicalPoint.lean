@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.GenericPoint
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.FrobeniusFixed
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Frobenius.Fixed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Basic
 
 /-!

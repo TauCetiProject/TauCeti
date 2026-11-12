@@ -100,7 +100,7 @@ theorem IsTateTerminal.hasGoodReduction_iff (hϖ : Irreducible ϖ) (h : W.IsTate
   have := h.isMinimal_baseChange (K := K) hϖ
   have hΔ : (W.baseChange K).Δ = algebraMap R K W.Δ := map_Δ W _
   rw [WeierstrassCurve.hasGoodReduction_iff, hΔ, hϖ.valuation_algebraMap_eq_one_iff_not_dvd,
-    h.dvd_Δ_iff hϖ.prime, not_not]
+    h.dvd_Δ_iff, not_not]
   exact and_iff_right inferInstance
 
 /-- **Tate's split test.** If the algorithm stops on `W` at `Iₙ` with `n ≥ 1`, the reduction is
@@ -135,7 +135,7 @@ theorem IsTateTerminal.hasMultiplicativeReduction_iff (hϖ : Irreducible ϖ)
   have hc₄ : (W.baseChange K).c₄ = algebraMap R K W.c₄ := map_c₄ W _
   rw [WeierstrassCurve.hasMultiplicativeReduction_iff, hΔ, hc₄,
     hϖ.valuation_algebraMap_lt_one_iff_dvd, hϖ.valuation_algebraMap_eq_one_iff_not_dvd,
-    h.dvd_Δ_iff hϖ.prime] at hm
+    h.dvd_Δ_iff] at hm
   obtain ⟨-, hs₀, hc₄⟩ := hm
   by_contra hne
   simp only [not_exists] at hne
@@ -157,7 +157,7 @@ theorem IsTateTerminal.hasAdditiveReduction_iff (hϖ : Irreducible ϖ) (h : W.Is
   have hΔ : (W.baseChange K).Δ = algebraMap R K W.Δ := map_Δ W _
   have hc₄ : (W.baseChange K).c₄ = algebraMap R K W.c₄ := map_c₄ W _
   rw [WeierstrassCurve.hasAdditiveReduction_iff, hΔ, hc₄, hϖ.valuation_algebraMap_lt_one_iff_dvd,
-    hϖ.valuation_algebraMap_lt_one_iff_dvd, h.dvd_Δ_iff hϖ.prime]
+    hϖ.valuation_algebraMap_lt_one_iff_dvd, h.dvd_Δ_iff]
   exact ⟨inferInstance, hs 0, h.dvd_c₄ hs⟩
 
 /-- If Tate's algorithm stops on `W` at `s`, the reduction is good or multiplicative exactly when
@@ -189,8 +189,6 @@ theorem IsTateTerminal.hasAdditiveReduction_minimal_iff {E : WeierstrassCurve K}
     (D : VariableChange K) (hD : D • E = W.baseChange K) (hϖ : Irreducible ϖ)
     (h : W.IsTateTerminal ϖ s) : (E.minimal R).HasAdditiveReduction R ↔ ∀ n, s ≠ .I n := by
   have := h.isMinimal_baseChange (K := K) hϖ
-  obtain ⟨C, hC⟩ := E.exists_smul_eq_minimal R
-  have : (E.minimal R).IsElliptic := hC ▸ inferInstance
   obtain ⟨D', hD'⟩ := exists_smul_minimal_eq_of_smul_eq R D hD
   rw [← hasAdditiveReduction_iff_of_isMinimal_smul R _ hD']
   exact h.hasAdditiveReduction_iff hϖ
@@ -299,7 +297,6 @@ theorem isSemistable_iff_forall_isTateTerminal
   -- Run Tate's algorithm on the integral model of the chosen minimal equation at `v`.
   set Rv := Localization.AtPrime v.asIdeal
   obtain ⟨C₀, hC₀⟩ := W.exists_smul_eq_minimal Rv
-  have : (W.minimal Rv).IsElliptic := hC₀ ▸ inferInstance
   set W₀ := (W.minimal Rv).integralModel Rv
   have hW₀ : W₀.baseChange F = W.minimal Rv := baseChange_integralModel_eq Rv _
   have : IsMinimal Rv (W₀.baseChange F) := hW₀ ▸ inferInstance

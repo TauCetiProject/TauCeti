@@ -16,6 +16,9 @@ The universal property of a biproduct identifies morphisms out of it with famili
 morphisms out of its summands. In a linear category this is a linear equivalence, so finiteness
 and rank of the Hom module can be read summand by summand. Dually, morphisms into a biproduct
 are families of morphisms into its summands.
+
+Scalars also pull out of the morphism `biproduct.matrix m` between biproducts assembled from a
+matrix `m` of morphisms between the summands (`CategoryTheory.Limits.biproduct.matrix_smul`).
 -/
 
 public section
@@ -88,6 +91,12 @@ instance moduleFinite_hom_biproduct [Finite J] [∀ j, Module.Finite k (X j ⟶ 
     Module.Finite k (⨁ X ⟶ Y) :=
   .equiv (homBiproductLinearEquiv k X Y).symm
 
+/-- Finite Hom modules into each summand give a finite Hom module into a finite
+biproduct. -/
+instance moduleFinite_homTo_biproduct [Finite J] [∀ j, Module.Finite k (Y ⟶ X j)] :
+    Module.Finite k (Y ⟶ ⨁ X) :=
+  .equiv (homToBiproductLinearEquiv k X Y).symm
+
 /-- The rank of Hom out of a finite biproduct is the sum of the ranks from its summands, when
 these are finite free modules. -/
 theorem finrank_hom_biproduct [Fintype J] [StrongRankCondition k]
@@ -95,4 +104,26 @@ theorem finrank_hom_biproduct [Fintype J] [StrongRankCondition k]
     Module.finrank k (⨁ X ⟶ Y) = ∑ j, Module.finrank k (X j ⟶ Y) := by
   rw [(homBiproductLinearEquiv k X Y).finrank_eq, Module.finrank_pi_fintype]
 
+/-- The rank of Hom into a finite biproduct is the sum of the ranks into its summands, when
+these are finite free modules. -/
+theorem finrank_homTo_biproduct [Fintype J] [StrongRankCondition k]
+    [∀ j, Module.Free k (Y ⟶ X j)] [∀ j, Module.Finite k (Y ⟶ X j)] :
+    Module.finrank k (Y ⟶ ⨁ X) = ∑ j, Module.finrank k (Y ⟶ X j) := by
+  rw [(homToBiproductLinearEquiv k X Y).finrank_eq, Module.finrank_pi_fintype]
+
 end TauCeti
+
+namespace CategoryTheory.Limits
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasFiniteBiproducts C]
+  {R : Type*} [Semiring R] [Linear R C] {J : Type*} [Finite J] {K : Type} [Finite K]
+  {f : J → C} {g : K → C}
+
+/-- Scalars pull out of the morphism of biproducts assembled from a matrix of morphisms. -/
+@[simp]
+theorem biproduct.matrix_smul (r : R) (m : ∀ j k, f j ⟶ g k) :
+    biproduct.matrix (fun j k ↦ r • m j k) = r • biproduct.matrix m := by
+  ext
+  simp
+
+end CategoryTheory.Limits

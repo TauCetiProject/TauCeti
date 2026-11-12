@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.FiniteHasse
+public import TauCeti.NumberTheory.QuadraticForm.Global.FormInvariants
 import TauCeti.NumberTheory.HilbertSymbol.Binary
 import TauCeti.NumberTheory.QuadraticForm.Global.ArchimedeanSymbol
 
@@ -37,6 +38,10 @@ finite Hasse sign exactly at the finite places of `R`.
 
 ## Main results
 
+* `QuadraticForm.nondegenerate_weightedSumSquares_one_neg`,
+  `QuadraticForm.nondegenerate_weightedSumSquares_neg_self_mul`: both planes are regular.
+* `QuadraticForm.discr_formClass_weightedSumSquares_neg_self_mul`: they have the same
+  discriminant.
 * `QuadraticForm.finiteHasse_weightedSumSquares_one_neg`: `s_v(⟨1, -β⟩) = 1`.
 * `QuadraticForm.finiteHasse_weightedSumSquares_neg_self_mul`: `s_v(⟨α, -αβ⟩) = (α, β)_v`.
 * `QuadraticForm.equivalent_atFinitePlace_binary_one_neg_iff_hilbertSymbol_eq_one`: at a finite
@@ -56,6 +61,58 @@ public section
 open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap TauCeti
 
 namespace QuadraticForm
+
+section Planes
+
+variable {K : Type*} [Field K] [Invertible (2 : K)]
+
+/-- The norm plane `⟨1, -β⟩` is regular. -/
+theorem nondegenerate_weightedSumSquares_one_neg (b : Kˣ) :
+    (weightedSumSquares K ![1, -(b : K)]).Nondegenerate :=
+  nondegenerate_weightedSumSquares fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
+
+/-- The scaled norm plane `⟨α, -αβ⟩` is regular. -/
+theorem nondegenerate_weightedSumSquares_neg_self_mul (a b : Kˣ) :
+    (weightedSumSquares K ![(a : K), -(a * b : K)]).Nondegenerate :=
+  nondegenerate_weightedSumSquares fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
+
+/-- The plain discriminant of the norm plane `⟨1, -β⟩` is the square class of `-β`. -/
+@[simp]
+theorem discr_formClass_weightedSumSquares_one_neg (b : Kˣ) :
+    RegularFormClass.discr
+        (formClass _ (nondegenerate_weightedSumSquares_one_neg b)) = squareClass (-b) := by
+  have hc : ![1, -(b : K)] = fun i => ((![1, -b] : Fin 2 → Kˣ) i : K) := by
+    ext i
+    fin_cases i <;> simp
+  have hequiv : (weightedSumSquares K ![1, -(b : K)]).Equivalent
+      (presentedForm ⟨2, ![1, -b]⟩) := by
+    rw [presentedForm_eq_weightedSumSquares_coe, ← hc]
+  rw [discr_formClass _ _ ⟨2, ![1, -b]⟩ hequiv, Fin.prod_univ_two]
+  simp
+
+/-- The planes `⟨α, -αβ⟩` and `⟨1, -β⟩` have the same discriminant, since `-α²β` and `-β`
+differ by a square. -/
+theorem discr_formClass_weightedSumSquares_neg_self_mul (a b : Kˣ) :
+    RegularFormClass.discr
+        (formClass _ (nondegenerate_weightedSumSquares_neg_self_mul a b)) =
+      RegularFormClass.discr (formClass _ (nondegenerate_weightedSumSquares_one_neg b)) := by
+  have discr_of_eq (c : Fin 2 → K) (w : Fin 2 → Kˣ) (hc : c = fun i => (w i : K))
+      (h : (weightedSumSquares K c).Nondegenerate) :
+      RegularFormClass.discr (formClass (weightedSumSquares K c) h) =
+        squareClass (∏ i, w i) := by
+    subst c
+    exact discr_formClass_weightedSumSquares w h
+  have h₁ := discr_of_eq ![1, -(b : K)] ![(1 : Kˣ), -b]
+    (by funext i; fin_cases i <;> simp) (nondegenerate_weightedSumSquares_one_neg b)
+  have h₂ := discr_of_eq ![(a : K), -(a * b : K)] ![a, -(a * b)]
+    (by funext i; fin_cases i <;> simp) (nondegenerate_weightedSumSquares_neg_self_mul a b)
+  rw [h₂, h₁, squareClass_eq_iff_isSquare_mul]
+  refine ⟨a * b, Units.ext ?_⟩
+  simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Units.val_mul,
+    Units.val_neg, Units.val_one]
+  ring
+
+end Planes
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -78,8 +135,31 @@ theorem finiteHasse_weightedSumSquares_neg_self_mul (a b : Kˣ)
   have hneg : v.unitAtFinitePlace (-(a * b)) =
       -(v.unitAtFinitePlace a * v.unitAtFinitePlace b) := Units.ext (by simp)
   have := finiteHasse_weightedSumSquares_binary a (-(a * b)) (by simpa using h) v
-  rw [hneg, hilbertSymbol_neg_self_mul two_ne_zero] at this
+  rw [hneg, hilbertSymbol_neg_self_mul] at this
   simpa using this
+
+/-- The real Hasse sign of the scaled norm plane `⟨α, -αβ⟩` at a real place `w` is the
+Hilbert symbol `(α, β)_w`. -/
+theorem globalInvariants_realHasse_weightedSumSquares_neg_self_mul (a b : Kˣ)
+    (h : (weightedSumSquares K ![(a : K), -(a * b : K)]).Nondegenerate)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (globalInvariants (weightedSumSquares K ![(a : K), -(a * b : K)]) h).realHasse w =
+      hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) := by
+  have hc : ![(a : K), -(a * b : K)] =
+      fun i => ((![a, -(a * b)] : Fin 2 → Kˣ) i : K) := by
+    ext i
+    fin_cases i <;> simp
+  have hdiag : (weightedSumSquares K ![(a : K), -(a * b : K)]).Equivalent
+      (weightedSumSquares K fun i => ((![a, -(a * b)] : Fin 2 → Kˣ) i : K)) := by
+    rw [hc]
+  have hhasse := globalInvariants_realHasse_eq_prod_hilbertSymbol _ h hdiag w
+  have hneg : unitAtRealPlace w (-(a * b)) =
+      -(unitAtRealPlace w a) * unitAtRealPlace w b := Units.ext (by simp)
+  have hIoi0 : Finset.Ioi (0 : Fin 2) = {1} := by decide
+  have hIoi1 : Finset.Ioi (1 : Fin 2) = ∅ := by decide
+  simpa only [Fin.prod_univ_two, hIoi0, hIoi1, Finset.prod_singleton, Finset.prod_empty,
+    mul_one, Matrix.cons_val_zero, Matrix.cons_val_one, hneg, hilbertSymbol_real_mul_right,
+    hilbertSymbol_neg_self, one_mul] using hhasse
 
 /-- **The correction planes at a finite place.** Over the completion `K_v`, the planes
 `⟨1, -β⟩` and `⟨α, -αβ⟩` are isometric exactly when the Hilbert symbol `(α, β)_v` is `1`. -/

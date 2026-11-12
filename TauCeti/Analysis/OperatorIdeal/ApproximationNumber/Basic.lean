@@ -41,6 +41,7 @@ laws apply to rectangular maps.
   rank at most `n`.
 * `ContinuousLinearMap.singularValue_zero`: `a₀(T) = ‖T‖`.
 * `ContinuousLinearMap.antitone_singularValue`: `n ↦ aₙ(T)` is antitone.
+* `ContinuousLinearMap.iSup_singularValue`: `supₙ aₙ(T) = ‖T‖`.
 * `ContinuousLinearMap.singularValue_add_index_le`: `a_{m+n}(S + T) ≤ aₘ(S) + aₙ(T)`.
 * `ContinuousLinearMap.singularValue_comp_add_le_mul`: `a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`.
 * `ContinuousLinearMap.singularValue_comp_comp_le`: `aₙ(A T B) ≤ ‖A‖ aₙ(T) ‖B‖`.
@@ -151,6 +152,16 @@ theorem antitone_singularValue (T : E →L[𝕜] F) : Antitone T.singularValue :
   fun _ _ hmn ↦ le_singularValue_iff.mpr fun _ hR ↦
     T.singularValue_le_nnnorm_sub (hR.trans (by exact_mod_cast hmn))
 
+/-- The approximation numbers are bounded above by the operator norm. -/
+theorem bddAbove_range_singularValue (T : E →L[𝕜] F) : BddAbove (Set.range T.singularValue) :=
+  ⟨‖T‖₊, Set.forall_mem_range.2 T.singularValue_le_nnnorm⟩
+
+/-- The supremum of the approximation numbers is the operator norm, attained at `a₀(T)`. -/
+@[simp]
+theorem iSup_singularValue (T : E →L[𝕜] F) : ⨆ n, T.singularValue n = ‖T‖₊ :=
+  (ciSup_le T.singularValue_le_nnnorm).antisymm
+    (T.singularValue_zero ▸ le_ciSup T.bddAbove_range_singularValue 0)
+
 /-- The approximation numbers of the zero map vanish. -/
 @[simp]
 theorem zero_singularValue (n : ℕ) : (0 : E →L[𝕜] F).singularValue n = 0 :=
@@ -164,7 +175,7 @@ theorem singularValue_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
       rw [Nat.cast_add]
       exact (LinearMap.rank_add_le _ _).trans (add_le_add R₁.2 R₂.2)).trans <| by
       rw [add_sub_add_comm]
-      exact nnnorm_add_le _ _
+      exact nnNorm_add_le _ _
 
 /-- **Perturbative triangle bound.** `aₙ(S + T) ≤ aₙ(S) + ‖T‖`. -/
 theorem singularValue_add_le (S T : E →L[𝕜] F) (n : ℕ) :
@@ -256,7 +267,7 @@ theorem singularValue_smul (c : 𝕜) (T : E →L[𝕜] F) (n : ℕ) :
     refine le_ciInf fun R ↦ ((c • T).singularValue_le_nnnorm_sub (R := c • R.1)
       ((Submodule.rank_mono (LinearMap.range_smul_le_range _ c)).trans R.2)).trans ?_
     rw [← smul_sub]
-    exact nnnorm_smul_le _ _
+    exact nnNorm_smul_le _ _
   refine (hle c T).antisymm ?_
   rcases eq_or_ne c 0 with rfl | hc
   · simp
@@ -264,7 +275,7 @@ theorem singularValue_smul (c : 𝕜) (T : E →L[𝕜] F) (n : ℕ) :
         rw [inv_smul_smul₀ hc]
     _ ≤ ‖c‖₊ * (‖c⁻¹‖₊ * (c • T).singularValue n) := by gcongr; exact hle _ _
     _ = (c • T).singularValue n := by
-        rw [← mul_assoc, nnnorm_inv, mul_inv_cancel₀ (nnnorm_ne_zero_iff.mpr hc), one_mul]
+        rw [← mul_assoc, nnNorm_inv, mul_inv_cancel₀ (nnNorm_ne_zero_iff.mpr hc), one_mul]
 
 /-! ### The Ky Fan gauge -/
 
@@ -277,6 +288,13 @@ noncomputable def kyFanGauge (T : E →L[𝕜] F) (k : ℕ) : ℝ≥0 :=
 theorem kyFanGauge_def (T : E →L[𝕜] F) (k : ℕ) :
     T.kyFanGauge k = ∑ n ∈ Finset.range k, T.singularValue n := by
   rw [kyFanGauge]
+
+/-- Each finite Ky Fan gauge is continuous for the operator norm topology. -/
+@[fun_prop]
+theorem continuous_kyFanGauge (k : ℕ) :
+    Continuous fun T : E →L[𝕜] F ↦ T.kyFanGauge k := by
+  simp only [kyFanGauge_def]
+  exact continuous_finsetSum _ fun n _ ↦ continuous_singularValue n
 
 /-- The empty Ky Fan gauge vanishes. -/
 @[simp]
@@ -305,6 +323,14 @@ theorem nnnorm_le_kyFanGauge (T : E →L[𝕜] F) {k : ℕ} (hk : 0 < k) : ‖T�
 theorem kyFanGauge_le_mul_nnnorm (T : E →L[𝕜] F) (k : ℕ) : T.kyFanGauge k ≤ k * ‖T‖₊ := by
   simpa [kyFanGauge] using
     Finset.sum_le_sum fun n (_ : n ∈ Finset.range k) ↦ T.singularValue_le_nnnorm n
+
+/-- **Ky Fan comparison with the last term.** Since the approximation numbers decrease,
+`(k + 1) aₖ(T) ≤ Kₖ₊₁(T)`. -/
+theorem mul_singularValue_le_kyFanGauge_succ (T : E →L[𝕜] F) (k : ℕ) :
+    (k + 1) * T.singularValue k ≤ T.kyFanGauge (k + 1) := by
+  simpa [kyFanGauge] using Finset.card_nsmul_le_sum (Finset.range (k + 1)) T.singularValue
+    (T.singularValue k) fun n hn ↦
+      T.antitone_singularValue (Nat.lt_succ_iff.1 (Finset.mem_range.1 hn))
 
 /-- **Ky Fan homogeneity.** `Kₖ(c T) = ‖c‖ Kₖ(T)`. -/
 @[simp]

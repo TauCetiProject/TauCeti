@@ -66,6 +66,8 @@ with the Frobenius kernel.
 * `TauCeti.isTISubgroup_iff_inf_conj_smul_eq_bot`: the lattice form of the definition.
 * `TauCeti.IsTISubgroup.normalizer_eq_self`: a nontrivial trivial-intersection subgroup is
   self-normalizing.
+* `TauCeti.IsTISubgroup.index_eq_zero_or_one_of_infinite`: in an infinite group a
+  trivial-intersection subgroup has index `0` or `1`.
 * `TauCeti.IsTISubgroup.mem_of_conj_eq_self` and
   `TauCeti.IsTISubgroup.centralizer_singleton_le`: the centralizer of a nonidentity element of a
   trivial-intersection subgroup is contained in that subgroup.
@@ -94,8 +96,6 @@ well-definedness argument; the price is that hitting a conjugate has to move a w
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 7.
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 8 (`IsTISet`, `IsFrobeniusComplement`).
 -/
 
 public section
@@ -115,7 +115,21 @@ equivalent statement `H ⊓ g H g⁻¹ = ⊥` about the subgroup lattice. -/
 def IsTISubgroup (H : Subgroup G) : Prop :=
   ∀ ⦃g x : G⦄, g ∉ H → x ∈ H → g * x * g⁻¹ ∈ H → x = 1
 
+/-- The defining elementwise condition for a trivial-intersection subgroup. -/
+theorem isTISubgroup_iff :
+    IsTISubgroup H ↔ ∀ ⦃g x : G⦄, g ∉ H → x ∈ H → g * x * g⁻¹ ∈ H → x = 1 := Iff.rfl
+
 namespace IsTISubgroup
+
+/-- The whole group is malnormal. -/
+theorem top : IsTISubgroup (⊤ : Subgroup G) := by
+  intro g _ hg _ _
+  exact absurd (Subgroup.mem_top g) hg
+
+/-- The trivial subgroup is malnormal. -/
+theorem bot : IsTISubgroup (⊥ : Subgroup G) := by
+  intro _ _ _ hx _
+  exact Subgroup.mem_bot.mp hx
 
 /-- The defining property of a trivial-intersection subgroup, as a named lemma. -/
 theorem eq_one (hH : IsTISubgroup H) {g x : G} (hg : g ∉ H) (hx : x ∈ H)
@@ -159,6 +173,38 @@ theorem centralizer_singleton_le (hH : IsTISubgroup H) {x : G} (hx : x ∈ H) (h
   refine hH.mem_of_conj_eq_self hx hx1 ?_
   rw [hg]
   group
+
+/-- The preimage of a malnormal subgroup under an injective homomorphism is malnormal. -/
+theorem comap {K : Type*} [Group K] (hH : IsTISubgroup H) (f : K →* G)
+    (hf : Function.Injective f) : IsTISubgroup (H.comap f) := by
+  intro g x hg hx hgx
+  apply hf
+  have hfg : f g ∉ H := by simpa only [Subgroup.mem_comap] using hg
+  have hfx : f x ∈ H := Subgroup.mem_comap.mp hx
+  have hfgx : f g * f x * (f g)⁻¹ ∈ H := by
+    simpa only [Subgroup.mem_comap, map_mul, map_inv] using hgx
+  simpa only [map_one] using hH hfg hfx hfgx
+
+/-- **A trivial-intersection subgroup of an infinite group has index `0` or `1`.**  A proper
+subgroup of finite index meets each of its conjugates in a subgroup of finite index, which is
+infinite in an infinite group and so cannot be trivial. -/
+theorem index_eq_zero_or_one_of_infinite [Infinite G] (hH : IsTISubgroup H) :
+    H.index = 0 ∨ H.index = 1 := by
+  by_contra hcon
+  push Not at hcon
+  have : H.FiniteIndex := ⟨hcon.1⟩
+  obtain ⟨g, hg⟩ : ∃ g, g ∉ H := by
+    by_contra hall
+    push Not at hall
+    exact hcon.2 (Subgroup.index_eq_one.2 (eq_top_iff.2 fun x _ => hall x))
+  have hKinf : ¬ Finite ↥(H ⊓ H.comap (MulAut.conj g).toMonoidHom) := fun hfin =>
+    (Subgroup.finite_iff_finite_and_finiteIndex _).2 ⟨hfin, inferInstance⟩ |>.false
+  have hne : H ⊓ H.comap (MulAut.conj g).toMonoidHom ≠ ⊥ := fun hbot => by
+    rw [hbot] at hKinf
+    exact hKinf inferInstance
+  obtain ⟨⟨x, hxK⟩, hx1⟩ := Subgroup.ne_bot_iff_exists_ne_one.1 hne
+  rw [Subgroup.mem_inf, Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply] at hxK
+  exact Subtype.coe_ne_coe.2 hx1 (hH hg hxK.1 hxK.2)
 
 end IsTISubgroup
 

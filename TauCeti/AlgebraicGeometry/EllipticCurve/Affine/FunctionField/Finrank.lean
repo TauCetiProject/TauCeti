@@ -19,6 +19,7 @@ import TauCeti.FieldTheory.IntermediateField.FieldRange
 Mathlib gives the coordinate ring `R[W]` a power basis `{1, Y}` over `R[X]`, and defines the
 total fraction ring `R(W)` as its fraction ring. Its rank over any fraction ring of `R[X]` acting
 through a compatible scalar tower is two, for any nontrivial commutative base ring `R`.
+The rank and finite-dimensionality results require only a module action of the fraction ring.
 Over an integral domain these fraction rings are fields. The algebra structure for that pair is
 Mathlib's `FractionRing.liftAlgebra`, which is not a general instance because it collides with
 the identity structure on `FractionRing R[X]` itself. This file exports the specialized action
@@ -125,11 +126,12 @@ lemma finrank_coordinateRing [Nontrivial R] :
   (Module.finrank_eq_card_basis (CoordinateRing.basis W)).trans (Fintype.card_fin 2)
 
 /-- The total fraction ring of the coordinate ring has rank two over any fraction ring `L` of
-`R[X]` acting through a compatible scalar tower. When `R` is an integral domain, this says that
-the function field is a quadratic extension of the rational function field. -/
+`R[X]` acting through a compatible scalar tower; a module structure suffices. When `R` is an
+integral domain, this says that the function field is a quadratic extension of the rational
+function field. -/
 @[simp]
 theorem finrank_functionField [Nontrivial R] (L : Type*) [CommRing L] [Algebra R[X] L]
-    [IsFractionRing R[X] L] [Algebra L W.FunctionField] [IsScalarTower R[X] L W.FunctionField] :
+    [IsFractionRing R[X] L] [Module L W.FunctionField] [IsScalarTower R[X] L W.FunctionField] :
     Module.finrank L W.FunctionField = 2 := by
   -- `L` and `R(W)` are fraction rings of `R[X]` and `R[W]`, so their degrees agree.
   rw [IsFractionRing.finrank_eq R[X] L W.CoordinateRing W.FunctionField, finrank_coordinateRing]
@@ -137,7 +139,7 @@ theorem finrank_functionField [Nontrivial R] (L : Type*) [CommRing L] [Algebra R
 /-- The function field is finite-dimensional over any fraction field of `R[X]`. `finrank = 2` does
 not give this by instance search, and downstream norm/trace/separability arguments need it. -/
 instance finiteDimensional_functionField (L : Type*) [Field L] [Algebra R[X] L]
-    [IsFractionRing R[X] L] [Algebra L W.FunctionField] [IsScalarTower R[X] L W.FunctionField] :
+    [IsFractionRing R[X] L] [Module L W.FunctionField] [IsScalarTower R[X] L W.FunctionField] :
     FiniteDimensional L W.FunctionField := by
   have : Nontrivial R := ((algebraMap R[X] L).comp C).domain_nontrivial
   exact .of_finrank_pos (by simp)

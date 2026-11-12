@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.UnboundedCom
 public import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.Contour.Winding.Continuity
 import TauCeti.Analysis.Complex.CauchyKernel
-import TauCeti.MeasureTheory.Integral.KernelPotential
+import TauCeti.MeasureTheory.Integral.Kernel.Potential
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -114,18 +114,20 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingWeight_eq_zero_of_notMem_fi
     AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_unbounded_component
       hγ hclosed (fun h ↦ hz (mem_filledHull_iff.mpr h)), Complex.zero_re]
 
-/-- Index one throughout the bounded complementary region makes the winding weight its indicator. -/
-theorem _root_.AbsolutelyContinuousOnInterval.windingWeight_eq_indicator_of_index_one
+/-- A constant integer index throughout the bounded complementary region makes the winding
+weight that integer times the region's indicator. -/
+theorem _root_.AbsolutelyContinuousOnInterval.windingWeight_eq_indicator_of_index
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (n : ℤ)
     (hindex : ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b),
-      Contour.windingNumber γ a b z = 1) :
+      Contour.windingNumber γ a b z = n) :
     windingWeight γ a b =
-      (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).indicator (fun _ ↦ (1 : ℝ)) := by
+      (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).indicator (fun _ ↦ (n : ℝ)) := by
   classical
   ext z
   by_cases hz : z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)
   · rw [indicator_of_mem hz, windingWeight_eq_of_notMem hz.2, hindex z hz]
-    exact Complex.one_re
+    simp
   · rw [indicator_of_notMem hz]
     by_cases ht : z ∈ γ '' uIcc a b
     · exact windingWeight_eq_zero_of_mem ht
@@ -175,10 +177,9 @@ theorem _root_.AbsolutelyContinuousOnInterval.integrable_windingWeight
   obtain ⟨R, -, hR⟩ :=
     (isBounded_filledHull.mpr hK.isBounded).exists_pos_norm_lt
   let k : ℂ → ℝ := fun z ↦ ‖truncatedCauchyKernel (2 * R) z‖
-  have hkm : Measurable k := (measurable_truncatedCauchyKernel _).norm
   have hk : Integrable k := (integrable_truncatedCauchyKernel _).norm
   let F : ℂ → ℝ := fun z ↦ ∫ t in uIoc a b, k (z - γ t) * ‖deriv γ t‖
-  have hF : Integrable F := hk.integral_comp_sub_mul hkm
+  have hF : Integrable F := hk.integral_comp_sub_mul
     ((hγ.continuousOn.mono uIoc_subset_uIcc).aemeasurable measurableSet_uIoc)
     hγ.intervalIntegrable_deriv_of_finiteDimensional.def'.norm
   have hkpos (z : ℂ) : 0 ≤ k z := norm_nonneg _
@@ -214,5 +215,42 @@ theorem _root_.AbsolutelyContinuousOnInterval.integrable_windingWeight
       _ = C * F z := congrArg (C * ·) heq
   · rw [hγ.windingWeight_eq_zero_of_notMem_filledHull hclosed hzH, norm_zero]
     exact mul_nonneg (norm_nonneg _) (hFpos z)
+
+/-- Local constancy prevents the winding support from accumulating at an excluded point away
+from the trace. Thus an index-vanishing domain containing the trace contains the topological
+support of the winding weight. -/
+theorem _root_.AbsolutelyContinuousOnInterval.tsupport_windingWeight_subset
+    {U : Set ℂ}
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (htrace : γ '' uIcc a b ⊆ U)
+    (hindex : ∀ z ∉ U, Contour.windingNumber γ a b z = 0) :
+    tsupport (windingWeight γ a b) ⊆ U := by
+  intro z hz
+  by_contra hzU
+  have hzK : z ∉ γ '' uIcc a b := fun h ↦ hzU (htrace h)
+  have hzero : windingWeight γ a b =ᶠ[nhds z] 0 := by
+    simpa only [windingWeight_eq_of_notMem hzK, hindex z hzU, Complex.zero_re, Pi.zero_def]
+      using hγ.windingWeight_eventuallyEq_of_notMem hclosed hzK
+  exact (notMem_tsupport_iff_eventuallyEq.mpr hzero) hz
+
+/-- The trace and winding support of a closed AC curve have compact union. -/
+theorem _root_.AbsolutelyContinuousOnInterval.isCompact_trace_union_tsupport_windingWeight
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) :
+    IsCompact (γ '' uIcc a b ∪ tsupport (windingWeight γ a b)) :=
+  (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).union
+    (hγ.hasCompactSupport_windingWeight hclosed)
+
+/-- Index vanishing outside a domain identifies the whole-plane weighted area integral
+with its restriction to that domain. This equality needs no field regularity. -/
+theorem integral_windingWeight_mul_eq_setIntegral {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ}
+    (hindex : ∀ z ∉ U, Contour.windingNumber γ a b z = 0) (R : ℂ → ℝ) :
+    (∫ z : ℂ, windingWeight γ a b z * R z) =
+      ∫ z in U, windingWeight γ a b z * R z := by
+  symm
+  apply setIntegral_eq_integral_of_forall_compl_eq_zero
+  intro z hz
+  by_cases ht : z ∈ γ '' uIcc a b
+  · rw [windingWeight_eq_zero_of_mem ht, zero_mul]
+  · rw [windingWeight_eq_of_notMem ht, hindex z hz, Complex.zero_re, zero_mul]
 
 end TauCeti.Green

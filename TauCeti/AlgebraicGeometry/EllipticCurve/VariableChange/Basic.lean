@@ -25,7 +25,8 @@ automorphism fixes it) and `map_smul_baseChange_eq` (the conjugate of an isomorp
 changes is again one). Comparing an isomorphism with its conjugate via the last of these is what
 produces the Galois cocycle used by the twist classification. A change of variables over an
 extension descends to the base field exactly when its four coefficients do
-(`VariableChange.mem_range_baseChange_iff`).
+(`VariableChange.mem_range_baseChange_iff`). Conjugation by algebra automorphisms is an action
+(`VariableChange.map_map_algEquiv`).
 
 That cocycle comparison lands on a product `C * [-1]`, whose four components are read off here as
 `mul_negVariableChange_u/_r/_s/_t` rather than by unfolding `VariableChange.mul_def` against the
@@ -35,11 +36,18 @@ by `C` (`negVariableChange_smul`).
 Similarly, the components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`, are
 recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y ↦ y + t` leaves the
 discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
+Every change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal
+`(c₄, Δ)` cutting out the cuspidal locus (`span_variableChange_c₄_Δ`).
 
-The negation is the nontrivial automorphism in the `Aut (E, O)`
-milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
+The negation is the nontrivial automorphism in `Aut (E, O)`, proved in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean` to exhaust `Aut(E)` with the identity when
 `j(E) ∉ {0, 1728}`.
+
+A change of variables that fixes three affine points `(x₁, y₁)`, `(x₁, y₁')` and `(x₂, y₂)`, with
+`x₁ - x₂` and `y₁ - y₁'` units, is the identity (`VariableChange.eq_one_of_isUnit_sub`): the two
+`x`-coordinates force `u² = 1` and `r = 0`, the two `y`-coordinates over `x₁` force `u = 1`, and
+then `s = t = 0`. Read on the points of `E[N]` for `N ≥ 3`, this is the rigidity of full level
+structures.
 
 Everything here is stated over a commutative ring: `⟨-1, 0, -a₁, -a₃⟩` is an admissible change
 of variables for a Weierstrass curve over any commutative ring, and the two identities it
@@ -47,7 +55,7 @@ satisfies are polynomial. Only the nontriviality `negVariableChange_ne_one` need
 be elliptic over a nontrivial ring.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
-`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean` at the roadmap's pin
+`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean` at
 `bc2fe8ff7396` (FLT PR #1088), Apache 2.0, by Kevin Buzzard and Claude), generalised here from
 FLT's field-level statements to a commutative ring.
 -/
@@ -55,6 +63,13 @@ FLT's field-level statements to a commutative ring.
 public section
 
 namespace WeierstrassCurve
+
+/-- Conjugating a change of variables by `σ` and then by `τ` is conjugating by `τ * σ`. -/
+lemma VariableChange.map_map_algEquiv {R L : Type*} [CommSemiring R] [CommRing L] [Algebra R L]
+    (C : VariableChange L) (σ τ : L ≃ₐ[R] L) :
+    (C.map (σ : L →+* L)).map (τ : L →+* L) = C.map ((τ * σ : L ≃ₐ[R] L) : L →+* L) := by
+  rw [VariableChange.map_map]
+  exact congrArg C.map (RingHom.ext fun x ↦ (AlgEquiv.mul_apply τ σ x).symm)
 
 variable {R : Type*} [CommRing R] (E : WeierstrassCurve R)
 
@@ -217,6 +232,14 @@ theorem variableChange_translate_c₄ : (VariableChange.mk 1 x 0 y • W).c₄ =
 
 end Translate
 
+/-- A change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal they
+generate: the cuspidal locus `V(c₄, Δ)` is stable under the coordinate-change group. -/
+theorem span_variableChange_c₄_Δ (W : WeierstrassCurve R) (C : VariableChange R) :
+    Ideal.span {(C • W).c₄, (C • W).Δ} = Ideal.span {W.c₄, W.Δ} := by
+  rw [variableChange_c₄, variableChange_Δ, Ideal.span_insert, Ideal.span_insert,
+    Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 4),
+    Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 12)]
+
 section BaseChange
 
 variable (L : Type*) [CommRing L] [Algebra R L]
@@ -319,6 +342,33 @@ lemma VariableChange.mem_range_baseChange_iff {K L : Type*} [Field K] [CommRing 
       rintro rfl
       exact C.u.ne_zero (hu.symm.trans (map_zero _))
     exact ⟨⟨Units.mk0 u hu₀, r, s, t⟩, VariableChange.ext (Units.ext hu) hr hs ht⟩
+
+/-- **A change of variables fixing three suitable points is the identity.** Let
+`C = (u, r, s, t)` fix the affine points `(x₁, y₁)`, `(x₁, y₁')` and `(x₂, y₂)` under
+`(x, y) ↦ (u²x + r, u³y + u²sx + t)`. If `x₁ - x₂` and `y₁ - y₁'` are units, then `C = 1`. For
+points of a Weierstrass curve, `(x₁, y₁')` is typically the negative of `(x₁, y₁)`, and the
+hypotheses then say that the three points have distinct images in every residue field. -/
+lemma VariableChange.eq_one_of_isUnit_sub (C : VariableChange R) {x₁ x₂ y₁ y₁' y₂ : R}
+    (hx : IsUnit (x₁ - x₂)) (hy : IsUnit (y₁ - y₁'))
+    (hx₁ : (C.u : R) ^ 2 * x₁ + C.r = x₁) (hx₂ : (C.u : R) ^ 2 * x₂ + C.r = x₂)
+    (hy₁ : (C.u : R) ^ 3 * y₁ + (C.u : R) ^ 2 * C.s * x₁ + C.t = y₁)
+    (hy₁' : (C.u : R) ^ 3 * y₁' + (C.u : R) ^ 2 * C.s * x₁ + C.t = y₁')
+    (hy₂ : (C.u : R) ^ 3 * y₂ + (C.u : R) ^ 2 * C.s * x₂ + C.t = y₂) : C = 1 := by
+  have hu2 : (C.u : R) ^ 2 = 1 := by
+    have : ((C.u : R) ^ 2 - 1) * (x₁ - x₂) = 0 := by linear_combination hx₁ - hx₂
+    exact sub_eq_zero.mp (hx.mul_left_eq_zero.mp this)
+  have hu3 : (C.u : R) ^ 3 = 1 := by
+    have : ((C.u : R) ^ 3 - 1) * (y₁ - y₁') = 0 := by linear_combination hy₁ - hy₁'
+    exact sub_eq_zero.mp (hy.mul_left_eq_zero.mp this)
+  have hu : (C.u : R) = 1 := by linear_combination hu3 - (C.u : R) * hu2
+  have hs : C.s = 0 := by
+    have : C.s * (x₁ - x₂) = 0 := by
+      linear_combination hy₁ - hy₂ - (y₁ - y₂) * hu3 - C.s * (x₁ - x₂) * hu2
+    exact hx.mul_left_eq_zero.mp this
+  rw [VariableChange.one_def]
+  refine VariableChange.ext (Units.ext hu) ?_ hs ?_
+  · linear_combination hx₁ - x₁ * hu2
+  · linear_combination hy₁ - y₁ * hu3 - x₁ * (C.u : R) ^ 2 * hs
 
 end WeierstrassCurve
 

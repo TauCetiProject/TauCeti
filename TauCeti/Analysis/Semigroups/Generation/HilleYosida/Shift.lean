@@ -39,6 +39,8 @@ noncomputable section
 
 namespace TauCeti.LinearPMap
 
+open _root_.LinearPMap (subScalar)
+
 variable {X : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-- The general `(M, omega)` Hille--Yosida resolvent hypotheses become the exponent-zero

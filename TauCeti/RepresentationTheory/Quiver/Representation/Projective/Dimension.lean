@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.RepresentationTheory.Quiver.Representation.VertexSimpleModule
 import Mathlib.Algebra.Category.ModuleCat.ProjectiveDimension
 import Mathlib.RingTheory.Finiteness.Small
+import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
 
 /-!
 # Short projective resolutions over acyclic path algebras
@@ -17,7 +18,8 @@ Every finite-length module over the path algebra of a finite acyclic quiver has
 projective dimension at most one. Indeed, every simple module is a vertex simple,
 whose first-arrow resolution has length one, and this bound is preserved by
 extensions. In particular the result applies to every module finite-dimensional over
-the coefficient field.
+the coefficient field, and so to every finitely generated module when the path algebra
+itself is finite-dimensional.
 
 Applying `TauCeti.projective_projectiveShortComplex_X₁` to either bound shows that the
 standard free presentation has projective kernel and is a length-one projective
@@ -72,5 +74,17 @@ theorem hasProjectiveDimensionLT_two_pathAlgebra_of_finiteDimensional
   have : IsArtinian (pathAlgebra k Q) M := isArtinian_of_tower k inferInstance
   exact hasProjectiveDimensionLT_two_pathAlgebra k Q hQ M
     (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩)
+
+omit [∀ i j : Q, Finite (i ⟶ j)] in
+/-- A finitely generated module over a finite-dimensional path algebra has projective
+dimension at most one. -/
+theorem hasProjectiveDimensionLT_two_pathAlgebra_of_moduleFinite
+    [FiniteDimensional k (pathAlgebra k Q)] (M : ModuleCat.{max v w x} (pathAlgebra k Q))
+    (hM : Module.Finite (pathAlgebra k Q) M) :
+    HasProjectiveDimensionLT M 2 := by
+  have : ∀ i j : Q, Finite (i ⟶ j) := finite_hom_of_module_finite_pathAlgebra k Q inferInstance
+  have : Module.Finite k M := Module.Finite.trans (pathAlgebra k Q) M
+  exact hasProjectiveDimensionLT_two_pathAlgebra_of_finiteDimensional k Q
+    ((finiteDimensional_pathAlgebra_iff_isAcyclic k Q).1 inferInstance) M
 
 end TauCeti

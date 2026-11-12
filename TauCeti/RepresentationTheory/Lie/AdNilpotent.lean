@@ -47,6 +47,8 @@ it because `⁅L, R⁆ ≤ N`, shows that `r = x - s` is `ad`-nilpotent; the rad
   Lie algebra implies nilpotence in every finite-dimensional Lie module.
 * `TauCeti.isNilpotent_apply_of_isNilpotent_ad`: the same result for an explicit Lie
   homomorphism into an endomorphism algebra.
+* `LieHom.isNilpotent_apply_iff_isNilpotent_ad`: under a faithful representation, ad-nilpotence
+  is detected by nilpotence of the image.
 * `LieSubalgebra.isNilpotent_toEnd_of_isNilpotent_ad_of_isCompl_radical`: in characteristic
   zero, an `ad`-nilpotent element acts nilpotently on every finite-dimensional module on which the
   nilradical acts nilpotently.
@@ -81,7 +83,7 @@ theorem isNilpotent_apply_of_lie_eq_smul {ρ : L →ₗ⁅K⁆ Module.End K M}
 
 /-- An ad-nilpotent element has nilpotent image under every finite-dimensional representation
 of a Killing Lie algebra over a characteristic-zero field. -/
-theorem isNilpotent_apply_of_isNilpotent_ad [FiniteDimensional K L] [IsKilling K L]
+theorem isNilpotent_apply_of_isNilpotent_ad [IsKilling K L]
     {ρ : L →ₗ⁅K⁆ Module.End K M} {x : L} (hx : IsNilpotent (ad K L x)) :
     IsNilpotent (ρ x) := by
   obtain ⟨t, ht⟩ := exists_lie_eq_self_of_isNilpotent_ad hx
@@ -91,11 +93,31 @@ theorem isNilpotent_apply_of_isNilpotent_ad [FiniteDimensional K L] [IsKilling K
 /-- An ad-nilpotent element of a finite-dimensional Killing Lie algebra acts nilpotently in
 every finite-dimensional Lie module over a characteristic-zero field. -/
 theorem isNilpotent_toEnd_of_isNilpotent_ad [LieRingModule L M] [LieModule K L M]
-    [FiniteDimensional K L] [IsKilling K L] {x : L} (hx : IsNilpotent (ad K L x)) :
+    [IsKilling K L] {x : L} (hx : IsNilpotent (ad K L x)) :
     IsNilpotent (toEnd K L M x) :=
   isNilpotent_apply_of_isNilpotent_ad hx
 
 end TauCeti
+
+namespace LieHom
+
+variable {K L M : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [IsKilling K L] [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+
+-- Endomorphism algebras carry the associative commutator bracket locally.
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- Under a faithful finite-dimensional representation, an element of a Killing Lie algebra over a
+field of characteristic zero is ad-nilpotent exactly when its image is nilpotent. -/
+theorem isNilpotent_apply_iff_isNilpotent_ad (ρ : L →ₗ⁅K⁆ Module.End K M)
+    (hρ : Function.Injective ρ) (x : L) :
+    IsNilpotent (ρ x) ↔ IsNilpotent (ad K L x) := by
+  refine ⟨fun h ↦ ?_, TauCeti.isNilpotent_apply_of_isNilpotent_ad⟩
+  -- `ad (ρ x)` is nilpotent, and `ρ` carries powers of `ad x` to powers of `ad (ρ x)`.
+  obtain ⟨k, hk⟩ := ad_nilpotent_of_nilpotent (R := K) h
+  exact ⟨k, LinearMap.ext fun y ↦ hρ (by simp [hk])⟩
+
+end LieHom
 
 namespace LieSubalgebra
 
@@ -156,7 +178,7 @@ theorem isNilpotent_toEnd_of_isNilpotent_ad_of_isCompl_radical (S : LieSubalgebr
     have hr' : r = (1 : K) • (r + s) + -s := by rw [one_smul, add_neg_cancel_right]
     rw [had, hr']
     exact H.isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall hxH hH (had _ ▸ hx)
-      (H.smul_add_mem_lieSpan_insert hxH 1 (neg_mem (LieSubalgebra.subset_lieSpan
+      (H.smul_add_mem_lieSpan_insert 1 (neg_mem (LieSubalgebra.subset_lieSpan
         (Set.mem_insert s _))))
   have hrN : r ∈ LieAlgebra.nilradical K L :=
     LieAlgebra.mem_nilradical_of_mem_radical_of_isNilpotent_ad hr hrL

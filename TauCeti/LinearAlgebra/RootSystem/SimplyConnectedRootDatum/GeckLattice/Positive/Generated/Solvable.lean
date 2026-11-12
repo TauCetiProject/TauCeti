@@ -81,7 +81,7 @@ theorem geckTorusPositiveBaseChangeIdeal_comap_le_geckPositiveGeneratedDefiningI
             CommHopfAlgCat.mkQuotient _ (t.geckTorusPositiveBaseChangeIdeal ht A) ≫
             t.geckWeightTorusToTorusPositiveBaseChangeCoordinateMap ht A ≫
             (_root_.CommHopfAlgCat.ofHom
-              (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+              (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
                 (G := SplitTorus.characterGroup (Fin t.rank)))) =
           t.geckWeightTorusBaseChangeCoordinateMap ht A := by
       rw [← Category.assoc,
@@ -161,8 +161,8 @@ theorem isSolvable_points_geckPositiveGenerated (B : CommAlgCat.{w} A) :
         (CommHopfAlgCat.baseChange (K := A)
           (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
         (t.geckTorusPositiveBaseChangeIdeal ht A)) B)
-    (f := AlgHom.mapDomain (A := B) f.hom)
-    (CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective f
+    (f := BialgHom.mapDomain (A := B) f.hom)
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f
       (t.geckTorusPositiveBaseChangeToGeneratedCoordinateMap_surjective ht A) B)
 
 /-- Over every field, the generated positive Geck subgroup has solvable geometric points. -/

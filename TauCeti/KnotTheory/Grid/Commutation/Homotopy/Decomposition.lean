@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Basic
 public import TauCeti.KnotTheory.Grid.TwoStepDecomposition
-public import TauCeti.KnotTheory.Grid.Differential.Square.Decomposition
+public import TauCeti.KnotTheory.Grid.Differential.Square.Repartition
 
 /-!
 # Composite domains in the grid-commutation homotopy equation
@@ -36,6 +36,14 @@ whose counted finite families have membership characterizations.
   rewrites the round-trip commutation coefficient as a sum over pairs of pentagons.
 * `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff_decompositions`
   states the homotopy equation entirely in terms of the three finite domain families.
+* `TauCeti.GridHexagonCompositeDecomposition` combines the two orders of hexagon--rectangle
+  composition, with counted family `TauCeti.GridDiagram.hexagonCompositeDecompositions` and
+  weight `TauCeti.GridDiagram.hexagonCompositeWeight`.
+* `TauCeti.GridDiagram.XSet_inter_coveredSquares_of_mem_commutationHexagons` and
+  `TauCeti.GridDiagram.X_cutColumn_mul_commutationHexagonWeight`: the rectangle under a counted
+  commutation hexagon carries exactly one `X`-marking, in the column the hexagon cuts away
+  (`TauCeti.GridCommutationHexagonBetween.cutColumn`), and its weight exceeds the hexagon weight by
+  the variable of that column.
 
 ## References
 
@@ -81,20 +89,12 @@ theorem toGridRectangleBetween_inr (P : GridInitialHexagonBetween a s s' x y) :
 theorem toGridRectangleBetween_injective :
     Function.Injective (toGridRectangleBetween (a := a) (s := s) (s' := s')
       (x := x) (y := y)) := by
+  unfold toGridRectangleBetween
+  apply Sum.elim_injective.mpr
+  refine ⟨Function.injective_of_subsingleton _, Function.injective_of_subsingleton _, ?_⟩
   intro P Q h
-  cases P with
-  | inl P =>
-    cases Q with
-    | inl Q => exact congrArg Sum.inl (Subsingleton.elim P Q)
-    | inr Q =>
-      have hl := congrArg GridRectangleBetween.left h
-      exact False.elim (P.left_ne (hl.trans Q.left_eq))
-  | inr P =>
-    cases Q with
-    | inl Q =>
-      have hl := congrArg GridRectangleBetween.left h
-      exact False.elim (Q.left_ne (hl.symm.trans P.left_eq))
-    | inr Q => exact congrArg Sum.inr (Subsingleton.elim P Q)
+  have hl := congrArg GridRectangleBetween.left h
+  exact P.left_ne (hl.trans Q.left_eq)
 
 /-- The marking squares covered by a commutation hexagon of either turn-side kind. -/
 noncomputable def coveredSquares (P : GridCommutationHexagonBetween a s s' x y) :
@@ -147,12 +147,131 @@ theorem ofToGridRectangleEq_coveredSquares {u v : GridState n}
       ((congrArg GridRectangleBetween.toGridRectangle
         (GridInitialHexagonBetween.ofToGridRectangleEq_toGridRectangleBetween r P h)).trans h)
 
+/-- The column of the underlying rectangle that a commutation hexagon cuts away: column `a` for a
+hexagon turning on its terminal side and the column after it for one turning on its initial side.
+For a validated column commutation it is the column whose markings lie in the cut-away bigon. -/
+def cutColumn (P : GridCommutationHexagonBetween a s s' x y) : Fin n :=
+  P.elim (fun _ => a) fun _ => finRotate n a
+
+/-- A hexagon turning on its terminal side cuts away column `a`. -/
+@[simp]
+theorem cutColumn_inl (P : GridHexagonBetween a s' s x y) :
+    cutColumn (Sum.inl P : GridCommutationHexagonBetween a s s' x y) = a := (rfl)
+
+/-- A hexagon turning on its initial side cuts away the column after `a`. -/
+@[simp]
+theorem cutColumn_inr (P : GridInitialHexagonBetween a s s' x y) :
+    cutColumn (Sum.inr P : GridCommutationHexagonBetween a s s' x y) = finRotate n a := (rfl)
+
+/-- A commutation hexagon has the replaced grid line as a side. -/
+theorem left_eq_or_right_eq (P : GridCommutationHexagonBetween a s s' x y) :
+    P.toGridRectangleBetween.left = finRotate n a ∨
+      P.toGridRectangleBetween.right = finRotate n a := by
+  cases P with
+  | inl P => exact Or.inr P.right_eq
+  | inr P => exact Or.inl P.left_eq
+
+/-- Both intersection rows lie among the rows of a commutation hexagon. -/
+theorem pair_subset_cIco_bottom_top (P : GridCommutationHexagonBetween a s s' x y) :
+    {s, s'} ⊆ Grid.cIco P.toGridRectangleBetween.bottom P.toGridRectangleBetween.top := by
+  cases P with
+  | inl P =>
+    refine Finset.insert_subset ?_ (Finset.singleton_subset_iff.mpr P.lower_mem)
+    exact P.insert_cIco_subset_cIco_bottom_top (Finset.mem_insert_self _ _)
+  | inr P =>
+    refine Finset.insert_subset P.lower_mem (Finset.singleton_subset_iff.mpr ?_)
+    exact P.insert_cIco_subset_cIco_bottom_top (Finset.mem_insert_self _ _)
+
+/-- The two intersection rows of a commutation hexagon are distinct. -/
+theorem ne (P : GridCommutationHexagonBetween a s s' x y) : s ≠ s' := by
+  cases P with
+  | inl P => exact Grid.ne_left_of_mem_cIoo P.upper_mem
+  | inr P => exact (Grid.ne_left_of_mem_cIoo P.upper_mem).symm
+
+/-- Away from the two columns next to the replaced line, a commutation hexagon covers the squares
+of its underlying rectangle. -/
+theorem mem_coveredSquares_iff_of_ne (P : GridCommutationHexagonBetween a s s' x y)
+    {p : Fin n × Fin n} (ha : p.1 ≠ a) (hb : p.1 ≠ finRotate n a) :
+    p ∈ P.coveredSquares ↔ p ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares := by
+  cases P with
+  | inl P => simp only [coveredSquares_inl, toGridRectangleBetween_inl, P.mem_coveredSquares,
+      ne_eq, ha, not_false_eq_true, true_and]
+  | inr P => simp only [coveredSquares_inr, toGridRectangleBetween_inr, P.mem_coveredSquares,
+      ne_eq, hb, not_false_eq_true, true_and]
+
+/-- A commutation hexagon covers no square of the column before the replaced line. -/
+theorem mk_notMem_coveredSquares_left_column (P : GridCommutationHexagonBetween a s s' x y)
+    (t : Fin n) : (a, t) ∉ P.coveredSquares := by
+  cases P with
+  | inl P => simp [P.mem_coveredSquares]
+  | inr P =>
+    have ha : a ∉ Grid.cIco (finRotate n a) P.right := by simp
+    simp only [coveredSquares_inr, P.mem_coveredSquares, GridRectangle.mem_coveredSquares,
+      GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+      GridRectangleBetween.toGridRectangle_right, P.left_eq, ha, false_and, and_false,
+      not_false_eq_true]
+
+/-- A commutation hexagon covers no square of the column after the replaced line. -/
+theorem mk_notMem_coveredSquares_right_column (P : GridCommutationHexagonBetween a s s' x y)
+    (t : Fin n) : (finRotate n a, t) ∉ P.coveredSquares := by
+  cases P with
+  | inl P =>
+    simp only [coveredSquares_inl, P.mem_coveredSquares, GridRectangle.mem_coveredSquares,
+      GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_right, P.right_eq,
+      Grid.right_notMem_cIco, false_and, and_false, not_false_eq_true]
+  | inr P => simp [P.mem_coveredSquares]
+
+/-- The rectangle under a commutation hexagon covers the `X`-marking of the column the hexagon cuts
+away, whenever the `X`-markings of the two columns lie in the bigons the hexagon cuts away. -/
+theorem cutColumn_X_mem_toGridRectangle_coveredSquares_of_mem {G : GridDiagram n}
+    (hXcol : G.X a ∈ insert s (Grid.cIco s' s))
+    (hXnext : G.X (finRotate n a) ∈ insert s' (Grid.cIco s s'))
+    (P : GridCommutationHexagonBetween a s s' x y) :
+    (P.cutColumn, G.X P.cutColumn) ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares := by
+  cases P with
+  | inl P =>
+    rw [cutColumn_inl, toGridRectangleBetween_inl]
+    exact P.mk_mem_toGridRectangle_coveredSquares_of_mem hXcol
+  | inr P =>
+    rw [cutColumn_inr, toGridRectangleBetween_inr]
+    exact P.mk_mem_toGridRectangle_coveredSquares_of_mem hXnext
+
 end GridCommutationHexagonBetween
 
 /-- A commutation pentagon is either a pentagon turning on its terminal side or one turning on its
 initial side. -/
 abbrev GridCommutationPentagonBetween {n : ℕ} (a s : Fin n) (x y : GridState n) :=
   GridPentagonBetween a s x y ⊕ GridInitialPentagonBetween a s x y
+
+namespace GridCommutationPentagonBetween
+
+variable {n : ℕ} {a s : Fin n} {x y : GridState n}
+
+/-- Forget the turn of a commutation pentagon, retaining its oriented rectangle. -/
+def toGridRectangleBetween (P : GridCommutationPentagonBetween a s x y) :
+    GridRectangleBetween x y :=
+  P.elim GridPentagonBetween.toGridRectangleBetween
+    GridInitialPentagonBetween.toGridRectangleBetween
+
+@[simp]
+theorem toGridRectangleBetween_inl (P : GridPentagonBetween a s x y) :
+    toGridRectangleBetween (Sum.inl P) = P.toGridRectangleBetween := (rfl)
+
+@[simp]
+theorem toGridRectangleBetween_inr (P : GridInitialPentagonBetween a s x y) :
+    toGridRectangleBetween (Sum.inr P) = P.toGridRectangleBetween := (rfl)
+
+/-- The underlying oriented rectangle determines a commutation pentagon, including its side. -/
+theorem toGridRectangleBetween_injective :
+    Function.Injective (toGridRectangleBetween (a := a) (s := s) (x := x) (y := y)) := by
+  unfold toGridRectangleBetween
+  apply Sum.elim_injective.mpr
+  refine ⟨Function.injective_of_subsingleton _, Function.injective_of_subsingleton _, ?_⟩
+  intro P Q h
+  have hl := congrArg GridRectangleBetween.left h
+  exact P.left_ne (hl.trans Q.left_eq)
+
+end GridCommutationPentagonBetween
 
 /-- A two-step domain consisting of a commutation hexagon followed by a rectangle. -/
 abbrev GridHexagonRectangleDecomposition {n : ℕ} (a s s' : Fin n)
@@ -224,12 +343,108 @@ theorem toRectangleDecomposition_injective :
 
 end GridRectangleHexagonDecomposition
 
+/-- A two-step domain on the left-hand side of the commutation homotopy equation: a commutation
+hexagon followed by a rectangle, or a rectangle followed by a commutation hexagon. -/
+abbrev GridHexagonCompositeDecomposition {n : ℕ} (a s s' : Fin n) (x z : GridState n) :=
+  GridHexagonRectangleDecomposition a s s' x z ⊕ GridRectangleHexagonDecomposition a s s' x z
+
+namespace GridHexagonCompositeDecomposition
+
+variable {n : ℕ} {a s s' : Fin n} {x z : GridState n}
+
+/-- Forget the turns of the hexagon in a hexagon composite. -/
+def toRectangleDecomposition (D : GridHexagonCompositeDecomposition a s s' x z) :
+    GridRectangleDecomposition x z :=
+  D.elim GridHexagonRectangleDecomposition.toRectangleDecomposition
+    GridRectangleHexagonDecomposition.toRectangleDecomposition
+
+/-- The underlying rectangle decomposition of a hexagon followed by a rectangle. -/
+@[simp]
+theorem toRectangleDecomposition_inl (D : GridHexagonRectangleDecomposition a s s' x z) :
+    toRectangleDecomposition (Sum.inl D : GridHexagonCompositeDecomposition a s s' x z) =
+      D.toRectangleDecomposition := (rfl)
+
+/-- The underlying rectangle decomposition of a rectangle followed by a hexagon. -/
+@[simp]
+theorem toRectangleDecomposition_inr (D : GridRectangleHexagonDecomposition a s s' x z) :
+    toRectangleDecomposition (Sum.inr D : GridHexagonCompositeDecomposition a s s' x z) =
+      D.toRectangleDecomposition := (rfl)
+
+/-- A family of hexagon composites is determined by the underlying rectangle decompositions as
+soon as a property of the underlying decomposition tells which piece is the hexagon. -/
+theorem injOn_toRectangleDecomposition_of_isLeft_iff
+    {S : Set (GridHexagonCompositeDecomposition a s s' x z)}
+    (p : GridRectangleDecomposition x z → Prop)
+    (h : ∀ D ∈ S, D.isLeft ↔ p D.toRectangleDecomposition) :
+    Set.InjOn toRectangleDecomposition S := by
+  intro D hD E hE hDE
+  have hside : D.isLeft ↔ E.isLeft := by rw [h D hD, h E hE, hDE]
+  rcases D with D | D <;> rcases E with E | E <;> simp at hside <;>
+    simp only [toRectangleDecomposition_inl, toRectangleDecomposition_inr] at hDE
+  · exact congrArg Sum.inl
+      (GridHexagonRectangleDecomposition.toRectangleDecomposition_injective hDE)
+  · exact congrArg Sum.inr
+      (GridRectangleHexagonDecomposition.toRectangleDecomposition_injective hDE)
+
+/-- If the rows of the first rectangle of a decomposition miss `s'` and those of the second miss
+`s`, then the decomposition underlies no hexagon composite with turn rows `s` and `s'`: one
+rectangle of a hexagon composite contains both turn rows. -/
+theorem toRectangleDecomposition_ne_of_notMem_cIco
+    (F : GridHexagonCompositeDecomposition a s s' x z) {D : GridRectangleDecomposition x z}
+    (hs' : s' ∉ Grid.cIco D.first.bottom D.first.top)
+    (hs : s ∉ Grid.cIco D.second.bottom D.second.top) :
+    F.toRectangleDecomposition ≠ D := by
+  intro hFD
+  cases F with
+  | inl F =>
+    rw [toRectangleDecomposition_inl] at hFD
+    have hrows :=
+      congrArg (fun E : GridRectangleDecomposition x z => (E.first.bottom, E.first.top)) hFD
+    simp only [GridHexagonRectangleDecomposition.toRectangleDecomposition, Prod.mk.injEq] at hrows
+    have hturn := F.hexagon.pair_subset_cIco_bottom_top
+      (Finset.mem_insert_of_mem (Finset.mem_singleton_self s'))
+    rw [hrows.1, hrows.2] at hturn
+    exact hs' hturn
+  | inr F =>
+    rw [toRectangleDecomposition_inr] at hFD
+    have hrows :=
+      congrArg (fun E : GridRectangleDecomposition x z => (E.second.bottom, E.second.top)) hFD
+    simp only [GridRectangleHexagonDecomposition.toRectangleDecomposition, Prod.mk.injEq] at hrows
+    have hturn := F.hexagon.pair_subset_cIco_bottom_top (Finset.mem_insert_self s _)
+    rw [hrows.1, hrows.2] at hturn
+    exact hs hturn
+
+end GridHexagonCompositeDecomposition
+
 /-- A two-step domain consisting of a commutation pentagon followed by a pentagon for the reverse
 commutation. -/
 abbrev GridPentagonPairDecomposition {n : ℕ} (a s b t : Fin n)
     (x z : GridState n) :=
   GridTwoStepDecomposition (GridCommutationPentagonBetween a s)
     (GridCommutationPentagonBetween b t) x z
+
+namespace GridPentagonPairDecomposition
+
+variable {n : ℕ} {a s b t : Fin n} {x z : GridState n}
+
+/-- Forget both turns in a pair of commutation pentagons. -/
+abbrev toRectangleDecomposition (D : GridPentagonPairDecomposition a s b t x z) :
+    GridRectangleDecomposition x z :=
+  ⟨D.middle, D.first.toGridRectangleBetween, D.second.toGridRectangleBetween⟩
+
+/-- The underlying rectangle decomposition determines the pentagon pair. -/
+theorem toRectangleDecomposition_injective :
+    Function.Injective (toRectangleDecomposition (a := a) (s := s) (b := b) (t := t)
+      (x := x) (z := z)) := by
+  rintro ⟨m, P, Q⟩ ⟨m', P', Q'⟩ h
+  have hm : m = m' := congrArg GridTwoStepDecomposition.middle h
+  subst m'
+  have hp : P.toGridRectangleBetween = P'.toGridRectangleBetween := by injection h
+  have hq : Q.toGridRectangleBetween = Q'.toGridRectangleBetween := by injection h
+  rw [GridCommutationPentagonBetween.toGridRectangleBetween_injective hp,
+    GridCommutationPentagonBetween.toGridRectangleBetween_injective hq]
+
+end GridPentagonPairDecomposition
 
 namespace GridDiagram
 
@@ -252,6 +467,56 @@ theorem mem_commutationHexagons {x y : GridState n}
   cases P <;> simp [commutationHexagons,
     GridCommutationHexagonBetween.toGridRectangleBetween,
     GridCommutationHexagonBetween.coveredSquares]
+
+/-- The rectangle under a counted commutation hexagon carries exactly one `X`-marking, that of the
+column the hexagon cuts away. -/
+theorem XSet_inter_coveredSquares_of_mem_commutationHexagons {x y : GridState n}
+    {P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y}
+    (hP : P ∈ G.commutationHexagons C x y) :
+    G.XSet ∩ P.toGridRectangleBetween.toGridRectangle.coveredSquares =
+      {(P.cutColumn, G.X P.cutColumn)} := by
+  have hX := ((G.mem_commutationHexagons C P).mp hP).2
+  cases P with
+  | inl P =>
+    rw [GridCommutationHexagonBetween.coveredSquares_inl] at hX
+    rw [GridCommutationHexagonBetween.cutColumn_inl,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inl]
+    exact G.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_hexagon (C := C) hX
+  | inr P =>
+    rw [GridCommutationHexagonBetween.coveredSquares_inr] at hX
+    rw [GridCommutationHexagonBetween.cutColumn_inr,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inr]
+    exact G.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_initialHexagon (C := C) hX
+
+/-- The rectangle under a commutation hexagon covers the `X`-marking of the column the hexagon cuts
+away, whether or not the hexagon is counted. -/
+theorem cutColumn_X_mem_toGridRectangle_coveredSquares {x y : GridState n}
+    (P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
+    (P.cutColumn, G.X P.cutColumn) ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares :=
+  P.cutColumn_X_mem_toGridRectangle_coveredSquares_of_mem C.X_column_below C.X_next_above
+
+/-- A commutation hexagon is counted exactly when its underlying rectangle is empty and carries
+exactly one `X`-marking, that of the column the hexagon cuts away. -/
+theorem mem_commutationHexagons_iff_XSet_inter_eq {x y : GridState n}
+    (P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
+    P ∈ G.commutationHexagons C x y ↔
+      P.toGridRectangleBetween.IsEmpty ∧
+        G.XSet ∩ P.toGridRectangleBetween.toGridRectangle.coveredSquares =
+          {(P.cutColumn, G.X P.cutColumn)} := by
+  refine ⟨fun hP => ⟨((G.mem_commutationHexagons C P).mp hP).1,
+    G.XSet_inter_coveredSquares_of_mem_commutationHexagons C hP⟩,
+    fun ⟨hempty, hinter⟩ => (G.mem_commutationHexagons C P).mpr
+      ⟨hempty, Finset.disjoint_left.mpr fun {p} hp hX => ?_⟩⟩
+  obtain ⟨d, r⟩ := p
+  -- A covered square lies outside both columns next to the replaced line, so in the rectangle.
+  have hda : d ≠ C.column := fun h => P.mk_notMem_coveredSquares_left_column r (h ▸ hp)
+  have hdb : d ≠ b := fun h => P.mk_notMem_coveredSquares_right_column r (h ▸ hp)
+  have hmem := Finset.mem_inter.mpr ⟨hX, (P.mem_coveredSquares_iff_of_ne hda hdb).mp hp⟩
+  rw [hinter, Finset.mem_singleton] at hmem
+  have hcol : d = P.cutColumn := (Prod.mk.inj hmem).1
+  cases P with
+  | inl P => exact hda (by rwa [GridCommutationHexagonBetween.cutColumn_inl] at hcol)
+  | inr P => exact hdb (by rwa [GridCommutationHexagonBetween.cutColumn_inr] at hcol)
 
 /-- The counted commutation pentagons of either turn-side kind. -/
 noncomputable def commutationPentagons (x y : GridState n) :
@@ -301,6 +566,22 @@ theorem commutationHexagonWeight_eq_prod_coveredSquares {x y : GridState n}
   cases P with
   | inl P => exact G.hexagonWeight_eq_prod_coveredSquares R P
   | inr P => exact G.initialHexagonWeight_eq_prod_coveredSquares R P
+
+/-- The weight of a commutation hexagon times the variable of its cut column is the weight of its
+underlying rectangle. -/
+theorem X_cutColumn_mul_commutationHexagonWeight {x y : GridState n}
+    (P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
+    MvPolynomial.X P.cutColumn * G.commutationHexagonWeight C R P =
+      G.OMonomial R P.toGridRectangleBetween.toGridRectangle := by
+  cases P with
+  | inl P =>
+    rw [GridCommutationHexagonBetween.cutColumn_inl, commutationHexagonWeight_inl,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inl]
+    exact G.X_mul_hexagonWeight R P
+  | inr P =>
+    rw [GridCommutationHexagonBetween.cutColumn_inr, commutationHexagonWeight_inr,
+      GridCommutationHexagonBetween.toGridRectangleBetween_inr]
+    exact G.X_mul_initialHexagonWeight R P
 
 /-- The weight of a commutation pentagon of either kind. -/
 noncomputable def commutationPentagonWeight {x y : GridState n}
@@ -373,6 +654,20 @@ theorem mem_pentagonPairDecompositions {x z : GridState n}
   classical
   simp [pentagonPairDecompositions]
 
+/-- Both underlying rectangles of a counted pentagon pair are empty. -/
+theorem isEmpty_of_mem_pentagonPairDecompositions {x z : GridState n}
+    {D : GridPentagonPairDecomposition C.column C.turnRow C.reverse.column
+      C.reverse.turnRow x z} (hD : D ∈ G.pentagonPairDecompositions C x z) :
+    D.toRectangleDecomposition.first.IsEmpty ∧ D.toRectangleDecomposition.second.IsEmpty := by
+  obtain ⟨hP, hQ⟩ := (G.mem_pentagonPairDecompositions C D).mp hD
+  rcases D with ⟨m, P, Q⟩
+  cases P <;> cases Q <;>
+    simp only [inl_mem_commutationPentagons, inr_mem_commutationPentagons,
+      mem_pentagons, mem_initialPentagons] at hP hQ <;>
+    simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
+      GridCommutationPentagonBetween.toGridRectangleBetween_inl,
+      GridCommutationPentagonBetween.toGridRectangleBetween_inr] using And.intro hP.1 hQ.1
+
 /-- The weight of a counted hexagon followed by a rectangle. -/
 noncomputable def hexagonRectangleWeight {x z : GridState n}
     (D : GridHexagonRectangleDecomposition C.column C.turnRow C.oppositeTurnRow x z) :
@@ -398,6 +693,145 @@ theorem rectangleHexagonWeight_def {x z : GridState n}
     G.rectangleHexagonWeight C R D =
       G.OMonomial R D.rectangle.toGridRectangle *
         G.commutationHexagonWeight C R D.hexagon := (rfl)
+
+/-! ### The counted hexagon composites -/
+
+/-- The counted hexagon composites from `x` to `z`: the counted hexagon--rectangle and
+rectangle--hexagon decompositions. -/
+noncomputable def hexagonCompositeDecompositions (x z : GridState n) :
+    Finset (GridHexagonCompositeDecomposition C.column C.turnRow C.oppositeTurnRow x z) :=
+  (G.hexagonRectangleDecompositions C x z).disjSum (G.rectangleHexagonDecompositions C x z)
+
+/-- A hexagon followed by a rectangle is a counted composite exactly when it is counted as a
+hexagon--rectangle decomposition. -/
+@[simp]
+theorem inl_mem_hexagonCompositeDecompositions {x z : GridState n}
+    (D : GridHexagonRectangleDecomposition C.column C.turnRow C.oppositeTurnRow x z) :
+    Sum.inl D ∈ G.hexagonCompositeDecompositions C x z ↔
+      D ∈ G.hexagonRectangleDecompositions C x z :=
+  Finset.inl_mem_disjSum
+
+/-- A rectangle followed by a hexagon is a counted composite exactly when it is counted as a
+rectangle--hexagon decomposition. -/
+@[simp]
+theorem inr_mem_hexagonCompositeDecompositions {x z : GridState n}
+    (D : GridRectangleHexagonDecomposition C.column C.turnRow C.oppositeTurnRow x z) :
+    Sum.inr D ∈ G.hexagonCompositeDecompositions C x z ↔
+      D ∈ G.rectangleHexagonDecompositions C x z :=
+  Finset.inr_mem_disjSum
+
+/-- The weight of a hexagon composite: that of its hexagon--rectangle or rectangle--hexagon
+decomposition. -/
+noncomputable def hexagonCompositeWeight {x z : GridState n}
+    (D : GridHexagonCompositeDecomposition C.column C.turnRow C.oppositeTurnRow x z) :
+    MvPolynomial (Fin n) R :=
+  D.elim (G.hexagonRectangleWeight C R) (G.rectangleHexagonWeight C R)
+
+/-- The weight of a hexagon followed by a rectangle. -/
+@[simp]
+theorem hexagonCompositeWeight_inl {x z : GridState n}
+    (D : GridHexagonRectangleDecomposition C.column C.turnRow C.oppositeTurnRow x z) :
+    G.hexagonCompositeWeight C R (Sum.inl D) = G.hexagonRectangleWeight C R D := (rfl)
+
+/-- The weight of a rectangle followed by a hexagon. -/
+@[simp]
+theorem hexagonCompositeWeight_inr {x z : GridState n}
+    (D : GridRectangleHexagonDecomposition C.column C.turnRow C.oppositeTurnRow x z) :
+    G.hexagonCompositeWeight C R (Sum.inr D) = G.rectangleHexagonWeight C R D := (rfl)
+
+/-- Both rectangles under a counted composite are empty. -/
+theorem isEmpty_of_mem_hexagonCompositeDecompositions {x z : GridState n}
+    {D : GridHexagonCompositeDecomposition C.column C.turnRow C.oppositeTurnRow x z}
+    (hD : D ∈ G.hexagonCompositeDecompositions C x z) :
+    D.toRectangleDecomposition.first.IsEmpty ∧ D.toRectangleDecomposition.second.IsEmpty := by
+  cases D with
+  | inl D =>
+    obtain ⟨hP, hr⟩ := (G.mem_hexagonRectangleDecompositions C D).mp
+      ((G.inl_mem_hexagonCompositeDecompositions C D).mp hD)
+    exact ⟨((G.mem_commutationHexagons C _).mp hP).1, G.isEmpty_of_mem_unblockedRectangles hr⟩
+  | inr D =>
+    obtain ⟨hr, hP⟩ := (G.mem_rectangleHexagonDecompositions C D).mp
+      ((G.inr_mem_hexagonCompositeDecompositions C D).mp hD)
+    exact ⟨G.isEmpty_of_mem_unblockedRectangles hr, ((G.mem_commutationHexagons C _).mp hP).1⟩
+
+/-- A counted composite covers exactly one `X`-marking, that of the column its hexagon cuts away,
+and its weight times the variable of that column is the product of the weights of its two
+underlying rectangles. -/
+private theorem exists_X_mul_hexagonCompositeWeight {x z : GridState n}
+    {D : GridHexagonCompositeDecomposition C.column C.turnRow C.oppositeTurnRow x z}
+    (hD : D ∈ G.hexagonCompositeDecompositions C x z) :
+    ∃ c : Fin n,
+      MvPolynomial.X c * G.hexagonCompositeWeight C R D =
+          G.OMonomial R D.toRectangleDecomposition.first.toGridRectangle *
+            G.OMonomial R D.toRectangleDecomposition.second.toGridRectangle ∧
+        G.XSet ∩ (D.toRectangleDecomposition.first.toGridRectangle.coveredSquares ∪
+            D.toRectangleDecomposition.second.toGridRectangle.coveredSquares) =
+          {(c, G.X c)} := by
+  cases D with
+  | inl D =>
+    obtain ⟨hP, hr⟩ := (G.mem_hexagonRectangleDecompositions C D).mp
+      ((G.inl_mem_hexagonCompositeDecompositions C D).mp hD)
+    refine ⟨D.hexagon.cutColumn, ?_, ?_⟩
+    · rw [hexagonCompositeWeight_inl, hexagonRectangleWeight_def, ← mul_assoc,
+        G.X_cutColumn_mul_commutationHexagonWeight C R,
+        GridHexagonCompositeDecomposition.toRectangleDecomposition_inl]
+    · rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl,
+        Finset.inter_union_distrib_left,
+        G.XSet_inter_coveredSquares_of_mem_commutationHexagons C hP,
+        Finset.disjoint_iff_inter_eq_empty.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr).symm,
+        Finset.union_empty]
+  | inr D =>
+    obtain ⟨hr, hP⟩ := (G.mem_rectangleHexagonDecompositions C D).mp
+      ((G.inr_mem_hexagonCompositeDecompositions C D).mp hD)
+    refine ⟨D.hexagon.cutColumn, ?_, ?_⟩
+    · rw [hexagonCompositeWeight_inr, rectangleHexagonWeight_def, mul_left_comm,
+        G.X_cutColumn_mul_commutationHexagonWeight C R,
+        GridHexagonCompositeDecomposition.toRectangleDecomposition_inr]
+    · rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr,
+        Finset.inter_union_distrib_left,
+        G.XSet_inter_coveredSquares_of_mem_commutationHexagons C hP,
+        Finset.disjoint_iff_inter_eq_empty.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr).symm,
+        Finset.empty_union]
+
+/-- Two counted composites whose underlying rectangle decompositions repartition the same squares
+have the same weight. -/
+theorem hexagonCompositeWeight_eq_of_isRepartition {x z : GridState n}
+    {D E : GridHexagonCompositeDecomposition C.column C.turnRow C.oppositeTurnRow x z}
+    (hD : D ∈ G.hexagonCompositeDecompositions C x z)
+    (hE : E ∈ G.hexagonCompositeDecompositions C x z)
+    (h : D.toRectangleDecomposition.IsRepartition E.toRectangleDecomposition) :
+    G.hexagonCompositeWeight C R D = G.hexagonCompositeWeight C R E := by
+  obtain ⟨c, hcw, hcX⟩ := G.exists_X_mul_hexagonCompositeWeight C R hD
+  obtain ⟨d, hdw, hdX⟩ := G.exists_X_mul_hexagonCompositeWeight C R hE
+  -- Both composites cover the same squares, hence the same single `X`-marking.
+  rw [h.coveredSquares_union_eq, hcX, Finset.singleton_inj] at hdX
+  rw [← (Prod.mk.inj hdX).1] at hdw
+  refine (MvPolynomial.X_mul_cancel_left_iff (i := c)).mp ?_
+  rw [hcw, hdw, h.OMonomial_mul_OMonomial G R]
+
+/-- A counted composite is determined by its underlying rectangle decomposition, including the
+order of its hexagon and rectangle. -/
+theorem injOn_toRectangleDecomposition_hexagonCompositeDecompositions (x z : GridState n) :
+    Set.InjOn GridHexagonCompositeDecomposition.toRectangleDecomposition
+      (G.hexagonCompositeDecompositions C x z : Set
+        (GridHexagonCompositeDecomposition C.column C.turnRow C.oppositeTurnRow x z)) := by
+  -- The first rectangle covers an `X`-marking exactly when the hexagon comes first: the rectangle
+  -- under the hexagon covers an `X`-marking, while the counted rectangle covers none.
+  have key : ∀ D ∈ G.hexagonCompositeDecompositions C x z, D.isLeft ↔
+      (G.XSet ∩ D.toRectangleDecomposition.first.toGridRectangle.coveredSquares).Nonempty := by
+    rintro (D | D) hD
+    · obtain ⟨hP, -⟩ := (G.mem_hexagonRectangleDecompositions C D).mp
+        ((G.inl_mem_hexagonCompositeDecompositions C D).mp hD)
+      rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl,
+        G.XSet_inter_coveredSquares_of_mem_commutationHexagons C hP]
+      simp
+    · obtain ⟨hr, -⟩ := (G.mem_rectangleHexagonDecompositions C D).mp
+        ((G.inr_mem_hexagonCompositeDecompositions C D).mp hD)
+      rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr,
+        Finset.disjoint_iff_inter_eq_empty.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr).symm]
+      simp
+  exact GridHexagonCompositeDecomposition.injOn_toRectangleDecomposition_of_isLeft_iff
+    (fun D => (G.XSet ∩ D.first.toGridRectangle.coveredSquares).Nonempty) key
 
 /-- The weight of a forward pentagon followed by a reverse pentagon. The first factor is renamed
 because the forward commutation map is semilinear. -/

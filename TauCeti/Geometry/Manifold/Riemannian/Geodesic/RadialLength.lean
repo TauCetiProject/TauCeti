@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Length
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 
 /-!
 # Length of radial geodesic segments

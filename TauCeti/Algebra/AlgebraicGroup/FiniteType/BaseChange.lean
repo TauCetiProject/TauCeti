@@ -33,6 +33,9 @@ base-changed object is identified with the original points evaluated on `K`-alge
 * `FiniteTypeCommHopfAlgCat.baseChangeMap_includeLeft_injective` and
   `FiniteTypeCommHopfAlgCat.baseChangeMap_includeRight_injective`: the base-changed coordinate
   inclusions into a product are injective.
+* `FiniteTypeCommHopfAlgCat.baseChangeTowerIso`: base change along a tower `k → E → K` agrees
+  with base change along the composite; `baseChangeTowerIso_hom_apply` and
+  `baseChangeTowerIso_inv_apply` give its action on pure tensors.
 * `FiniteTypeCommHopfAlgCat.baseChangeIsoOfObjIso`: lift an isomorphism between specified
   underlying base-changed objects to the finite-type full subcategory.
 * `FiniteTypeCommHopfAlgCat.baseChangePointsMulEquiv`: the inherited point equivalence
@@ -202,58 +205,23 @@ theorem baseChangeMap_includeRight_comp_baseChangeTensorProductIso_hom
 theorem baseChangeMap_includeLeft_injective
     (H L : FiniteTypeCommHopfAlgCat.{u, v} k) :
     Function.Injective (toBialgHom (baseChangeMap (K := K) (includeLeft H L))) := by
-  let H' := baseChange (K := K) H
-  let L' := baseChange (K := K) L
-  let e := baseChangeTensorProductIso K H L
-  apply Function.Injective.of_comp (f := toBialgHom e.hom)
-  have hcomp := congrArg toBialgHom
-    (baseChangeMap_includeLeft_comp_baseChangeTensorProductIso_hom K H L)
-  rw [toBialgHom_comp] at hcomp
-  -- `includeLeft` is a finite-type categorical abbreviation for this bialgebra map. There is
-  -- deliberately no duplicate categorical `toBialgHom` lemma, so expose that abbreviation here.
-  change (toBialgHom e.hom).comp (toBialgHom (baseChangeMap (K := K) (includeLeft H L))) =
-    Bialgebra.TensorProduct.includeLeft at hcomp
-  -- Mathlib's algebra-level inclusion theorem requires `Module.Flat K H'`, which is not
-  -- available for an arbitrary Hopf algebra. The counit projection gives a retraction without
-  -- adding that unnecessary hypothesis.
-  have hinclude : Function.Injective
-      (Bialgebra.TensorProduct.includeLeft (R := K) (H₁ := H') (H₂ := L')) := by
-    apply Function.LeftInverse.injective
-      (g := Bialgebra.TensorProduct.projectLeft (R := K) (H₁ := H') (H₂ := L'))
-    intro x
-    simp only [← BialgHom.comp_apply,
-      Bialgebra.TensorProduct.projectLeft_comp_includeLeft, BialgHom.id_apply]
-  intro x y hxy
-  apply hinclude
-  simpa only [Function.comp_apply, ← BialgHom.comp_apply, hcomp] using hxy
+  apply Function.Injective.of_comp
+    (f := toBialgHom (baseChangeTensorProductIso K H L).hom)
+  have h := includeLeft_injective (baseChange (K := K) H) (baseChange (K := K) L)
+  rw [← baseChangeMap_includeLeft_comp_baseChangeTensorProductIso_hom K H L,
+    toBialgHom_comp] at h
+  exact h
 
 /-- The base change of the right coordinate inclusion into a product is injective. -/
 theorem baseChangeMap_includeRight_injective
     (H L : FiniteTypeCommHopfAlgCat.{u, v} k) :
     Function.Injective (toBialgHom (baseChangeMap (K := K) (includeRight H L))) := by
-  let H' := baseChange (K := K) H
-  let L' := baseChange (K := K) L
-  let e := baseChangeTensorProductIso K H L
-  apply Function.Injective.of_comp (f := toBialgHom e.hom)
-  have hcomp := congrArg toBialgHom
-    (baseChangeMap_includeRight_comp_baseChangeTensorProductIso_hom K H L)
-  rw [toBialgHom_comp] at hcomp
-  -- `includeRight` is likewise only a finite-type wrapper around the concrete bialgebra map;
-  -- expose the abbreviation rather than adding a second public statement of that identity.
-  change (toBialgHom e.hom).comp (toBialgHom (baseChangeMap (K := K) (includeRight H L))) =
-    Bialgebra.TensorProduct.includeRight at hcomp
-  -- As on the left, the bialgebra projection proves injectivity without the flatness
-  -- hypothesis required by Mathlib's algebra-level tensor-product inclusion theorem.
-  have hinclude : Function.Injective
-      (Bialgebra.TensorProduct.includeRight (R := K) (H₁ := H') (H₂ := L')) := by
-    apply Function.LeftInverse.injective
-      (g := Bialgebra.TensorProduct.projectRight (R := K) (H₁ := H') (H₂ := L'))
-    intro x
-    simp only [← BialgHom.comp_apply,
-      Bialgebra.TensorProduct.projectRight_comp_includeRight, BialgHom.id_apply]
-  intro x y hxy
-  apply hinclude
-  simpa only [Function.comp_apply, ← BialgHom.comp_apply, hcomp] using hxy
+  apply Function.Injective.of_comp
+    (f := toBialgHom (baseChangeTensorProductIso K H L).hom)
+  have h := includeRight_injective (baseChange (K := K) H) (baseChange (K := K) L)
+  rw [← baseChangeMap_includeRight_comp_baseChangeTensorProductIso_hom K H L,
+    toBialgHom_comp] at h
+  exact h
 
 /-- Lift an isomorphism between specified underlying base-changed Hopf algebras to the
 finite-type full subcategory. The object equalities record the chosen presentations of the
@@ -282,6 +250,49 @@ theorem baseChangeIsoOfObjIso_hom
         eqToIso hH'.symm).hom := by
   simp only [baseChangeIsoOfObjIso, ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom]
 
+section Tower
+
+variable (k K) {E : Type v} [CommRing E] [Algebra k E] [Algebra E K] [IsScalarTower k E K]
+
+/-- **Base change of finite-type commutative Hopf algebras composes in stages.** For a tower
+`k → E → K`, extending a finite-type coordinate Hopf algebra to `E` and then to `K` agrees with
+extending it to `K` in one step. This is `CommHopfAlgCat.baseChangeTowerIso` in the finite-type
+full subcategory. -/
+noncomputable def baseChangeTowerIso (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
+    baseChange (K := K) (baseChange (K := E) H) ≅ baseChange (K := K) H :=
+  ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso k K H.obj)
+
+/-- The underlying morphism of the finite-type tower comparison is the bundled tower
+comparison `CommHopfAlgCat.baseChangeTowerIso`. -/
+theorem baseChangeTowerIso_hom_hom (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
+    (baseChangeTowerIso (E := E) k K H).hom.hom =
+      (CommHopfAlgCat.baseChangeTowerIso (E := E) k K H.obj).hom := by
+  simp only [baseChangeTowerIso, ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom]
+
+/-- The underlying morphism of the inverse finite-type tower comparison is the inverse bundled
+tower comparison `CommHopfAlgCat.baseChangeTowerIso`. -/
+theorem baseChangeTowerIso_inv_hom (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
+    (baseChangeTowerIso (E := E) k K H).inv.hom =
+      (CommHopfAlgCat.baseChangeTowerIso (E := E) k K H.obj).inv := by
+  simp only [baseChangeTowerIso, ObjectProperty.isoMk_inv, ObjectProperty.homMk_hom]
+
+/-- The finite-type tower comparison absorbs the intermediate scalar. -/
+@[simp]
+lemma baseChangeTowerIso_hom_apply (H : FiniteTypeCommHopfAlgCat.{u, v} k) (s : K) (e : E)
+    (h : H) :
+    toBialgHom (baseChangeTowerIso k K H).hom (s ⊗ₜ[E] (e ⊗ₜ[k] h)) = (e • s) ⊗ₜ[k] h := by
+  rw [toBialgHom, baseChangeTowerIso_hom_hom]
+  exact CommHopfAlgCat.baseChangeTowerIso_hom_apply k K H.obj s e h
+
+/-- The inverse finite-type tower comparison inserts the unit of the intermediate ring. -/
+@[simp]
+lemma baseChangeTowerIso_inv_apply (H : FiniteTypeCommHopfAlgCat.{u, v} k) (s : K) (h : H) :
+    toBialgHom (baseChangeTowerIso (E := E) k K H).inv (s ⊗ₜ[k] h) = s ⊗ₜ[E] (1 ⊗ₜ[k] h) := by
+  rw [toBialgHom, baseChangeTowerIso_inv_hom]
+  exact CommHopfAlgCat.baseChangeTowerIso_inv_apply k K H.obj s h
+
+end Tower
+
 variable (A : CommAlgCat.{x} K)
 
 /-- The points of the base-changed finite-type Hopf algebra are the original points evaluated
@@ -289,7 +300,7 @@ on the same algebra, with scalars restricted from `K` to `k`. -/
 noncomputable def baseChangePointsMulEquiv (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
     HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A ≃*
       HopfAlgebra.points (R := k) (H := H)
-        (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
+        (CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
   CommHopfAlgCat.baseChangePointsMulEquiv (K := K) A H.obj
 
 /-- Applying the base-change points equivalence restricts a `K`-point along `h ↦ 1 ⊗ h`. -/
@@ -305,7 +316,7 @@ lemma baseChangePointsMulEquiv_apply_apply (H : FiniteTypeCommHopfAlgCat.{u, v} 
 lemma baseChangePointsMulEquiv_symm_apply_tmul
     (H : FiniteTypeCommHopfAlgCat.{u, v} k)
     (f : HopfAlgebra.points (R := k) (H := H)
-      (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A))
+      (CommAlgCat.restrictScalarsObj (algebraMap k K) A))
     (s : K) (h : H) :
     ((baseChangePointsMulEquiv (K := K) A H).symm f).ofConv (s ⊗ₜ[k] h) = s • f.ofConv h :=
   CommHopfAlgCat.baseChangePointsMulEquiv_symm_apply_tmul (K := K) A H.obj f s h
@@ -318,7 +329,7 @@ lemma baseChangePointsMulEquiv_mapValue
     (χ : A ⟶ B) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A) :
     baseChangePointsMulEquiv (K := K) B H (HopfAlgebra.mapPoints (H := baseChange (K := K) H) χ f) =
       HopfAlgebra.mapPoints (H := H)
-        ((_root_.TauCeti.CommAlgCat.restrictScalars (algebraMap k K)).map χ)
+        ((CommAlgCat.restrictScalars (algebraMap k K)).map χ)
         (baseChangePointsMulEquiv (K := K) A H f) :=
   CommHopfAlgCat.baseChangePointsMulEquiv_mapValue (K := K) H.obj χ f
 
@@ -326,9 +337,9 @@ lemma baseChangePointsMulEquiv_mapValue
 lemma baseChangePointsMulEquiv_mapDomain {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
     (φ : H ⟶ L) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) L) A) :
     baseChangePointsMulEquiv (K := K) A H
-        (AlgHom.mapDomain (A := A) (toBialgHom (baseChangeMap (K := K) φ)) f) =
-      AlgHom.mapDomain
-        (A := _root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A)
+        (BialgHom.mapDomain (A := A) (toBialgHom (baseChangeMap (K := K) φ)) f) =
+      BialgHom.mapDomain
+        (A := CommAlgCat.restrictScalarsObj (algebraMap k K) A)
         (toBialgHom φ)
         (baseChangePointsMulEquiv (K := K) A L f) :=
   CommHopfAlgCat.baseChangePointsMulEquiv_mapDomain (K := K) φ.hom f

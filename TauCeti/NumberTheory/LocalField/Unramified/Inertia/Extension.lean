@@ -37,8 +37,16 @@ They also determine how inertia sits along the extension. Since Frobenius genera
 `G_L · I_K` has index `f` in `G_K`. As `G_L` has index `[L : K] = e f` in `G_K`, the image
 `I_L = G_L ∩ I_K` of the inertia subgroup of `L` has index `e = e(L/K)` in that of `K`.
 
+The description of inertia through the roots of `X^{q^g} − X` needs no chosen embedding: under any
+ring isomorphism `L^{alg} ≃ K^{alg}`, elements of `G_L` and `G_K` that correspond lie in the
+inertia subgroups together. This identifies the inertia subgroup of a finite extension `M` of `K`
+inside `K^{alg}` with the elements of `I_K` fixing `M`, once `K^{alg}` is read as an algebraic
+closure of `M`.
+
 ## Main results
 
+* `RingEquiv.mem_inertiaSubgroup_iff_of_semiconj`: if `φ ∘ τ = σ ∘ φ` for a ring isomorphism
+  `φ : L^{alg} ≃ K^{alg}`, then `σ ∈ I_K` exactly when `τ ∈ I_L`.
 * `TauCeti.restrictMaximalUnramifiedHom_absoluteGaloisGroupExtend_eq_zpow_iff`: the image of
   `τ ∈ G_L` acts on `K^{ur}` as `Frob_K ^ (f n)` exactly when `τ` acts on `L^{ur}` as
   `Frob_L ^ n`, for every integer `n`.
@@ -67,6 +75,37 @@ public section
 noncomputable section
 
 open ValuativeRel IntermediateField
+
+namespace RingEquiv
+
+open TauCeti
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+
+/-- **Inertia along an identification of algebraic closures.** Let `L/K` be an extension of
+nonarchimedean local fields and `φ : L^{alg} ≃ K^{alg}` a ring isomorphism, and let `τ ∈ G_L` and
+`σ ∈ G_K` correspond under `φ`, that is `φ ∘ τ = σ ∘ φ`. Then `σ` lies in the inertia subgroup of
+`K` exactly when `τ` lies in that of `L`. No compatibility of `φ` with `L` or `K` is needed: both
+inertia subgroups are cut out by the roots of the polynomials `X^{q^g} − X`, which every ring
+isomorphism preserves. -/
+theorem mem_inertiaSubgroup_iff_of_semiconj (φ : AlgebraicClosure L ≃+* AlgebraicClosure K)
+    {τ : Gal(AlgebraicClosure L/L)} {σ : Gal(AlgebraicClosure K/K)} (h : Function.Semiconj φ τ σ) :
+    σ ∈ inertiaSubgroup K ↔ τ ∈ inertiaSubgroup L := by
+  refine ⟨fun hσ ↦ mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.2 fun z g hg hz ↦ ?_,
+    fun hτ ↦ mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.2 fun x g hg hx ↦ ?_⟩
+  · -- A root of `X^{(q^f)^g} − X` is a root of `X^{q^{f g}} − X`.
+    rw [natCard_residueField K L, ← pow_mul] at hz
+    refine φ.injective ((h z).trans ?_)
+    exact mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.1 hσ (φ z) _
+      (mul_ne_zero inertiaDegree_pos.ne' hg) (by rw [← map_pow, hz])
+  · obtain ⟨z, rfl⟩ := φ.surjective x
+    have hz : z ^ Nat.card 𝓀[K] ^ g = z := φ.injective (by rw [map_pow, hx])
+    exact (h z).symm.trans (congrArg φ (mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.1 hτ z g
+      hg (pow_natCard_residueField_pow_eq_self hz)))
+
+end RingEquiv
 
 namespace TauCeti
 
@@ -139,12 +178,6 @@ private theorem forall_absoluteGaloisGroupExtend_apply_pow_iff (τ : Field.absol
       ∀ (z : AlgebraicClosure L) (g : ℕ), g ≠ 0 → z ^ Nat.card 𝓀[L] ^ g = z →
         DFunLike.coe (F := Gal(AlgebraicClosure L/L)) τ z = z ^ Nat.card 𝓀[L] ^ n := by
   have hf : inertiaDegree K L ≠ 0 := inertiaDegree_pos.ne'
-  -- A root of `X^{q^g} − X` is a root of `X^{(q^f)^g} − X = X^{(q^g)^f} − X`.
-  have hroot {z : AlgebraicClosure L} {g : ℕ} (hz : z ^ Nat.card 𝓀[K] ^ g = z) :
-      z ^ Nat.card 𝓀[L] ^ g = z := by
-    rw [natCard_residueField K L, ← pow_mul, mul_comm, pow_mul]
-    have h := Function.IsFixedPt.iterate (f := (· ^ Nat.card 𝓀[K] ^ g)) hz (inertiaDegree K L)
-    rwa [pow_iterate] at h
   have hexp : Nat.card 𝓀[K] ^ (inertiaDegree K L * n) = Nat.card 𝓀[L] ^ n := by
     rw [natCard_residueField K L, pow_mul]
   simp_rw [hexp]
@@ -160,8 +193,9 @@ private theorem forall_absoluteGaloisGroupExtend_apply_pow_iff (τ : Field.absol
     exact h x _ (mul_ne_zero hf hg) hx
   · exact (forall_absoluteGaloisGroupExtend_apply_iff ι τ
       (fun x hx ↦ mem_separableClosure_of_pow_natCard_pow_eq_self hg hx)
-      (fun z hz ↦ mem_separableClosure_of_pow_natCard_pow_eq_self hg (hroot hz))).2
-      (fun z hz ↦ h z g hg (hroot hz)) x hx
+      (fun z hz ↦ mem_separableClosure_of_pow_natCard_pow_eq_self hg
+        (pow_natCard_residueField_pow_eq_self hz))).2
+      (fun z hz ↦ h z g hg (pow_natCard_residueField_pow_eq_self hz)) x hx
 
 /-- **Frobenius along a finite extension.** For `n : ℕ`, the image of `τ ∈ G_L` in `G_K` acts on
 `K^{ur}` as the `f n`-th power of the arithmetic Frobenius of `K`, where `f = f(L/K)`, exactly when

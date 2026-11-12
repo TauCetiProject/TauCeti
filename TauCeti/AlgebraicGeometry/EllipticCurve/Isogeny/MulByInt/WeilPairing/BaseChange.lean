@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Torsion.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Basic
@@ -43,6 +44,8 @@ translation by `f S`,
   divisor `[N]^* (T) - [N]^* (O)` has divisor `[N]^* (f T) - [N]^* (O)`.
 * `WeierstrassCurve.weilPairing_torsionMapAlong`: the Weil pairing is functorial under change of
   field.
+* `WeierstrassCurve.weilPairing_torsionByCongr_cast`: the Weil pairing is unchanged when the curve
+  is transported along an equality.
 
 ## References
 
@@ -126,6 +129,25 @@ theorem weilPairing_torsionMapAlong (N : ℕ) [NeZero N] (hN : (N : F) ≠ 0)
     ← FunctionField.map_algebraMap, algebraMap_weilPairing W N hN hg, map_div₀,
     FunctionField.map_translation]
   simp
+
+/-- The Weil pairing of a Weierstrass curve is unchanged when the curve is transported along an
+equality, the torsion points being transported with it. -/
+theorem weilPairing_torsionByCongr_cast {V₁ V₂ : WeierstrassCurve F} [V₁.IsElliptic]
+    [V₂.IsElliptic] (h : V₁ = V₂) (N : ℕ) [NeZero N] (hN : (N : F) ≠ 0)
+    (P Q : Submodule.torsionBy ℤ V₁.toAffine.Point (N : ℤ)) :
+    weilPairing V₂ N hN
+        (AddEquiv.torsionByCongr
+          (AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point) h) N P)
+        (AddEquiv.torsionByCongr
+          (AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point) h) N Q) =
+      weilPairing V₁ N hN P Q := by
+  subst h
+  -- after `subst`, both transports are the identity on points
+  have hc (R : Submodule.torsionBy ℤ V₁.toAffine.Point (N : ℤ)) :
+      AddEquiv.torsionByCongr
+        (AddEquiv.cast (M := fun V : WeierstrassCurve F ↦ V.toAffine.Point) rfl) N R = R :=
+    Subtype.ext (by simp)
+  rw [hc, hc]
 
 end WeierstrassCurve
 

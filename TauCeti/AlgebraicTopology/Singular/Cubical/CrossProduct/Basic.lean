@@ -63,7 +63,7 @@ theorem crossProduct_assoc (c : SingularCube X p) (d : SingularCube Y q)
         (crossProduct (crossProduct c d) e) := by
   apply ContinuousMap.ext
   intro x
-  simp only [cast_apply, ContinuousMap.comp_apply, toContinuousMap, Homeomorph.prodAssoc,
+  simp only [cast_apply, ContinuousMap.comp_apply, ContinuousMap.ofClass, Homeomorph.prodAssoc,
     crossProduct_apply, Function.comp_apply]
   congr 2
   congr 1

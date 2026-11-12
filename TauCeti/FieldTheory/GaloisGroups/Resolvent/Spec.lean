@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Separable
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Specialization
 
 import Mathlib.Data.Fintype.Perm
+import TauCeti.RingTheory.Polynomial.RootEnumeration
 
 /-!
 # Resolvent specifications
@@ -34,6 +36,8 @@ the orbit of `Φ` at those roots.
 ## Main definitions
 
 * `TauCeti.ResolventSpec`: a resolvent specification.
+* `TauCeti.ResolventSeparationEvidence`: evidence that distinct symbolic orbit elements remain
+  distinct after specialization at a polynomial.
 * `TauCeti.ResolventSpec.mk'`: the specification attached to an invariant with prescribed exact
   stabilizer, with its orbit product supplied by the symmetric descent.
 * `TauCeti.ResolventSpec.specialize`: the resolvent of a polynomial over a commutative ring.
@@ -48,6 +52,10 @@ the orbit of `Φ` at those roots.
   resolvent is monic of degree `[Sₙ : H]`.
 * `TauCeti.ResolventSpec.map_specialize_eq_galResolvent`: the resolvent is the orbit product at
   the roots.
+* `TauCeti.ResolventSpec.map_specialize_eq_galResolvent_numbering`: the same description at a
+  degree-sized numbering of the distinct roots in a domain.
+* `TauCeti.ResolventSpec.splits_specialize`: the resolvent splits in a domain containing the
+  numbered distinct roots of a monic polynomial.
 * `TauCeti.ResolventSpec.isRoot_specialize_eval₂_rename`: every orbit value at the roots is a
   root of the resolvent.
 * `TauCeti.ResolventSpec.specialize_rename`: renaming the invariant does not change the
@@ -162,6 +170,40 @@ theorem specialize_map {R S : Type*} [CommRing R] [CommRing S] (φ : R →+* S) 
     (spec.specialize R f).map φ = spec.specialize S (f.map φ) := by
   rw [specialize_def, specialize_def, Polynomial.map_map, vietaHom_map]
 
+end ResolventSpec
+
+/-- **Separation evidence for a specialized resolvent.** This records that the specialized
+resolvent is separable. Under the usual monic degree-`n` splitting description, it says that
+distinct elements of the symbolic orbit take distinct values at the roots of `f`. This is the
+hypothesis that lets a root or a factorization of the resolvent constrain the Galois image;
+specialization never loses degree, but its values can collide. -/
+structure ResolventSeparationEvidence {F : Type*} [Field F] {n : ℕ} (spec : ResolventSpec n)
+    (f : F[X]) : Prop where
+  /-- The specialized resolvent is separable. -/
+  specializationSeparated : (spec.specialize F f).Separable
+
+namespace ResolventSeparationEvidence
+
+variable {F K : Type*} [Field F] [Field K] {n : ℕ} {spec : ResolventSpec n} {f : F[X]}
+
+/-- Separation evidence is precisely separability of the specialized resolvent. -/
+theorem iff_separable_specialize :
+    ResolventSeparationEvidence spec f ↔ (spec.specialize F f).Separable :=
+  ⟨specializationSeparated, .mk⟩
+
+/-- Separation evidence is preserved by mapping the coefficients to another field. -/
+theorem map (h : ResolventSeparationEvidence spec f) (fφ : F →+* K) :
+    ResolventSeparationEvidence spec (f.map fφ) := by
+  constructor
+  rw [← spec.specialize_map]
+  exact h.specializationSeparated.map
+
+end ResolventSeparationEvidence
+
+namespace ResolventSpec
+
+variable {n : ℕ} (spec : ResolventSpec n)
+
 /-- The resolvent is monic, for every polynomial `f`. -/
 theorem monic_specialize (R : Type*) [CommRing R] (f : R[X]) : (spec.specialize R f).Monic :=
   monic_map_vietaHom spec.orbitProduct_esymm f
@@ -194,6 +236,26 @@ theorem map_specialize_eq_galResolvent {R L : Type*} [CommRing R] [CommRing L] [
   rw [specialize_map, specialize_def]
   exact map_vietaHom_eq_galResolvent_of_roots spec.orbitProduct_esymm (hf.map φ)
     (by rw [hf.natDegree_map, hdeg]) hx
+
+/-- The resolvent is the orbit product at a numbering of all `n` distinct roots of a monic
+polynomial of degree `n` in a domain. -/
+theorem map_specialize_eq_galResolvent_numbering {R L : Type*} [CommRing R] [CommRing L]
+    [IsDomain L] [Algebra R L] {f : R[X]} (hf : f.Monic) (hdeg : f.natDegree = n)
+    (e : f.rootSet L ≃ Fin n) :
+    (spec.specialize R f).map (algebraMap R L) =
+      galResolvent spec.Φ (fun i ↦ (e.symm i : L)) := by
+  subst hdeg
+  exact spec.map_specialize_eq_galResolvent _ hf rfl
+    (Polynomial.isRootEnumeration_iff.mp (Polynomial.isRootEnumeration_numbering e.symm))
+
+/-- The specialized resolvent splits over a domain with a degree-sized numbering of the root set
+of a monic polynomial. The numbering requires `n` distinct roots in `L`; `f.Separable` over `R`
+is not a premise, and no separability of the resolvent is required. -/
+theorem splits_specialize {R L : Type*} [CommRing R] [CommRing L] [IsDomain L] [Algebra R L]
+    {f : R[X]} (hf : f.Monic) (hdeg : f.natDegree = n) (e : f.rootSet L ≃ Fin n) :
+    ((spec.specialize R f).map (algebraMap R L)).Splits := by
+  rw [spec.map_specialize_eq_galResolvent_numbering hf hdeg e, MvPolynomial.galResolvent_def]
+  exact Splits.prod fun _ _ => Splits.X_sub_C _
 
 /-- **Every orbit value is a root of the resolvent.** If `f` is the product of the linear factors
 attached to a family `x`, then the value at `x` of every renaming of the invariant is a root of
@@ -241,6 +303,14 @@ theorem rename_orbitProduct (e : Equiv.Perm (Fin n)) :
 theorem specialize_rename (e : Equiv.Perm (Fin n)) (R : Type*) [CommRing R] (f : R[X]) :
     (spec.rename e).specialize R f = spec.specialize R f :=
   (rfl)
+
+/-- Renaming the invariant preserves separation evidence. -/
+@[simp]
+theorem resolventSeparationEvidence_rename_iff {F : Type*} [Field F]
+    (e : Equiv.Perm (Fin n)) (f : F[X]) :
+    ResolventSeparationEvidence (spec.rename e) f ↔ ResolventSeparationEvidence spec f := by
+  rw [ResolventSeparationEvidence.iff_separable_specialize,
+    ResolventSeparationEvidence.iff_separable_specialize, specialize_rename]
 
 end ResolventSpec
 

@@ -73,7 +73,6 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
     (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hjl : ⁅e j, e l⁆ = 0)
-    (hkl : ⁅e k, e l⁆ = 0)
     (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
@@ -90,7 +89,7 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq
       kostantRootSubgroupPoints e h ρ M hM k hk p *
         kostantRootSubgroupPoints e h ρ M hM l hl q := by
   have hconj :=
-    kostantRootSubgroupPoints_conj_of_lie_lie_eq e h ρ M hM hij hiij hil hjk hkl
+    kostantRootSubgroupPoints_conj_of_lie_lie_eq e h ρ M hM hij hiij hil hjk
       hi hj hk hl f g p q hp hq
   rw [← MulAut.conj_apply] at hconj
   rw [conj_eq_commutatorElement_mul] at hconj
@@ -106,7 +105,6 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq'
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
     (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hjl : ⁅e j, e l⁆ = 0)
-    (hkl : ⁅e k, e l⁆ = 0)
     (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
@@ -125,7 +123,7 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq'
               (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) ^ 2 *
                 Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g))))) :=
   commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq e h ρ M hM
-    hij hiij hil hjk hjl hkl hi hj hk hl f g _ _
+    hij hiij hil hjk hjl hi hj hk hl f g _ _
       (congrArg Multiplicative.toAdd
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
       (congrArg Multiplicative.toAdd
@@ -142,7 +140,6 @@ theorem commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_eq
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
     (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hjl : ⁅e j, e l⁆ = 0)
-    (hkl : ⁅e k, e l⁆ = 0)
     (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
@@ -163,14 +160,13 @@ theorem commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_eq
   simpa only [MonoidHom.comp_apply, map_commutatorElement, map_mul] using
     congrArg (Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMonoidHom)
       (commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq e h ρ M hM
-        hij hiij hil hjk hjl hkl hi hj hk hl f g p q hp hq)
+        hij hiij hil hjk hjl hi hj hk hl f g p q hp hq)
 
 /-- The multiply-laced matrix commutator relation with both output points written out. -/
 theorem commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_eq'
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
     (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hjl : ⁅e j, e l⁆ = 0)
-    (hkl : ⁅e k, e l⁆ = 0)
     (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
@@ -189,7 +185,7 @@ theorem commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_eq'
               (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) ^ 2 *
                 Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g))))) :=
   commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_eq e h ρ M hM b
-    hij hiij hil hjk hjl hkl hi hj hk hl f g _ _
+    hij hiij hil hjk hjl hi hj hk hl f g _ _
       (congrArg Multiplicative.toAdd
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
       (congrArg Multiplicative.toAdd

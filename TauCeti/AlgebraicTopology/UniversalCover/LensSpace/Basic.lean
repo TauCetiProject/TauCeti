@@ -61,6 +61,8 @@ trivial and the lens space is a copy of the sphere.
   projection under a rotation.
 * `TauCeti.LensSpace.isQuotientCoveringMap_mk`: the projection from the sphere is a quotient
   covering map with group the lens group.
+* `TauCeti.LensSpace.isOpenQuotientMap_mk`: the projection from the sphere is an open quotient
+  map.
 * A lens space is compact, Hausdorff and path-connected.
 
 ## References
@@ -107,6 +109,11 @@ theorem lensRotation_apply (a : Multiplicative (ZMod m)) (x : EuclideanSpace ℂ
     (i : Fin k) :
     lensRotation m ℓ a x i = ZMod.toCircle ((ℓ i : ZMod m) * a.toAdd) * x i := by
   simp [lensRotation]
+
+/-- A rotation preserves the norm of each coordinate. -/
+theorem norm_lensRotation_apply (a : Multiplicative (ZMod m)) (x : EuclideanSpace ℂ (Fin k))
+    (i : Fin k) : ‖lensRotation m ℓ a x i‖ = ‖x i‖ := by
+  simp [lensRotation_apply]
 
 /-- A rotation fixes a nonzero coordinate only if it is the identity: the weight of the
 coordinate is a unit modulo `m`, so the rotation angle `2π ℓᵢ a / m` is a multiple of `2π` only
@@ -278,6 +285,10 @@ theorem isCoveringMap_mk : IsCoveringMap (mk m ℓ) :=
 /-- The projection from the sphere to a lens space is continuous. -/
 theorem continuous_mk : Continuous (mk m ℓ) :=
   (isCoveringMap_mk m ℓ).continuous
+
+/-- The projection from the sphere to a lens space is an open quotient map. -/
+theorem isOpenQuotientMap_mk : IsOpenQuotientMap (mk m ℓ) :=
+  MulAction.isOpenQuotientMap_quotientMk
 
 /-- A lens space is path-connected, as a quotient of the path-connected sphere. -/
 instance instPathConnectedSpace : PathConnectedSpace (LensSpace m ℓ) := by

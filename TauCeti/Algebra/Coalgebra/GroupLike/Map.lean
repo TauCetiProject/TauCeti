@@ -15,59 +15,46 @@ induces an equivalence of group-like elements.
 
 ## Main declarations
 
-* `TauCeti.GroupLike.equivOfCoalgEquiv`: the equivalence induced by a coalgebra equivalence.
+* `CoalgEquiv.mapGroupLike`: the equivalence of group-like elements induced by a coalgebra
+  equivalence, compatible with `CoalgEquiv.refl`, `CoalgEquiv.trans` and `CoalgEquiv.symm`.
 -/
 
 public section
 
-namespace TauCeti
+namespace CoalgEquiv
 
-universe u v w
-
-namespace GroupLike
-
-variable {R : Type u} {A : Type v} {B : Type w}
-variable [CommSemiring R]
-variable [AddCommMonoid A] [AddCommMonoid B] [Module R A] [Module R B]
-variable [Coalgebra R A] [Coalgebra R B]
+variable {R A B C : Type*} [CommSemiring R]
+variable [AddCommMonoid A] [AddCommMonoid B] [AddCommMonoid C] [Module R A] [Module R B]
+  [Module R C] [Coalgebra R A] [Coalgebra R B] [Coalgebra R C]
 
 /-- A coalgebra equivalence induces an equivalence of group-like elements. -/
-def equivOfCoalgEquiv (e : A ≃ₗc[R] B) :
-    _root_.GroupLike R A ≃ _root_.GroupLike R B where
+def mapGroupLike (e : A ≃ₗc[R] B) : GroupLike R A ≃ GroupLike R B where
   toFun x := ⟨e x.val, x.isGroupLikeElem_val.map e⟩
   invFun x := ⟨e.symm x.val, x.isGroupLikeElem_val.map e.symm⟩
-  left_inv x := _root_.GroupLike.val_injective (e.symm_apply_apply x.val)
-  right_inv x := _root_.GroupLike.val_injective (e.apply_symm_apply x.val)
+  left_inv x := GroupLike.val_injective (e.symm_apply_apply x.val)
+  right_inv x := GroupLike.val_injective (e.apply_symm_apply x.val)
 
 /-- The value of the transported group-like element is the image under the coalgebra
 equivalence. -/
 @[simp]
-theorem val_equivOfCoalgEquiv (e : A ≃ₗc[R] B) (x : _root_.GroupLike R A) :
-    (equivOfCoalgEquiv e x).val = e x.val :=
+theorem val_mapGroupLike (e : A ≃ₗc[R] B) (x : GroupLike R A) :
+    (e.mapGroupLike x).val = e x.val :=
   (rfl)
 
 /-- Transport along the identity coalgebra equivalence is the identity equivalence. -/
 @[simp]
-theorem equivOfCoalgEquiv_refl :
-    equivOfCoalgEquiv (_root_.CoalgEquiv.refl R A) = Equiv.refl _ := by
-  ext x
-  rfl
+theorem mapGroupLike_refl : (CoalgEquiv.refl R A).mapGroupLike = Equiv.refl _ :=
+  (rfl)
 
 /-- Transport along a composite coalgebra equivalence is the composite transport. -/
 @[simp]
-theorem equivOfCoalgEquiv_trans {C : Type*} [AddCommMonoid C] [Module R C] [Coalgebra R C]
-    (e : A ≃ₗc[R] B) (f : B ≃ₗc[R] C) :
-    equivOfCoalgEquiv (e.trans f) = (equivOfCoalgEquiv e).trans (equivOfCoalgEquiv f) := by
-  ext x
-  rfl
+theorem mapGroupLike_trans (e : A ≃ₗc[R] B) (f : B ≃ₗc[R] C) :
+    (e.trans f).mapGroupLike = e.mapGroupLike.trans f.mapGroupLike :=
+  (rfl)
 
 /-- Inverting transport is transport along the inverse coalgebra equivalence. -/
 @[simp]
-theorem equivOfCoalgEquiv_symm (e : A ≃ₗc[R] B) :
-    (equivOfCoalgEquiv e).symm = equivOfCoalgEquiv e.symm := by
-  ext x
-  rfl
+theorem mapGroupLike_symm (e : A ≃ₗc[R] B) : e.mapGroupLike.symm = e.symm.mapGroupLike :=
+  (rfl)
 
-end GroupLike
-
-end TauCeti
+end CoalgEquiv

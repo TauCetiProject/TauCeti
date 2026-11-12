@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Congr
 public import TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Basic
+public import TauCeti.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Transporting relative diffeomorphism groups
@@ -49,6 +50,9 @@ analogues of Mathlib's pointwise-fixer conjugation API
   `Diffeomorph.diffCongr e`.
 * `Diffeomorph.relativeDiffCongr_apply_apply`: pointwise,
   `relativeDiffCongr e s φ y = e (φ (e.symm y))`.
+* `Diffeomorph.infinite_fixingSubgroup_empty`: a manifold diffeomorphic to an infinite additive
+  group with `C^n` translations has infinitely many diffeomorphisms fixing the empty set, namely
+  the translations transported along the diffeomorphism.
 -/
 
 public section
@@ -204,6 +208,17 @@ theorem relativeDiffCongr_symm_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set
       e.symm ((ψ : N ≃ₘ^n⟮J, J⟯ N) (e x)) := by
   rw [relativeDiffCongr_symm_apply]
   exact diffCongr_apply_apply e.symm ψ x
+
+/-- A manifold diffeomorphic to an infinite additive group `G` whose translations are `C^n`, such
+as a complex torus, has infinitely many diffeomorphisms fixing the empty set: the translations of
+`G`, transported along `e`. -/
+theorem infinite_fixingSubgroup_empty {G : Type*} [AddGroup G] [TopologicalSpace G]
+    [ChartedSpace H' G] [ContMDiffConstVAdd J n G G] [Infinite G] (e : M ≃ₘ^n⟮I, J⟯ G) :
+    Infinite (fixingSubgroup (I := I) (n := n) (∅ : Set M)) := by
+  have : Infinite (M ≃ₘ^n⟮I, I⟯ M) :=
+    (diffCongr e).toEquiv.infinite_iff.mpr (infinite_of_faithfulVAdd (G := G))
+  rw [fixingSubgroup_empty]
+  exact Subgroup.topEquiv.toEquiv.infinite_iff.mpr this
 
 section Topology
 

@@ -195,7 +195,7 @@ theorem smul_kummerCoeff_eq_self_of_mem_fixingSubgroup (hn : IsUnit (n : F))
   rw [← map_range_absoluteGaloisGroupExtend F L σ, hV, Subgroup.mem_map] at hh
   obtain ⟨g, hg, rfl⟩ := hh
   rw [MonoidHom.coe_ofClass, smul_kummerCoeff_eq hn e, (QuotientGroup.eq_one_iff g).2 hg, map_one,
-    Module.End.one_apply, LinearEquiv.apply_symm_apply, AddEquiv.symm_apply_apply]
+    one_apply_eq_self, LinearEquiv.apply_symm_apply, AddEquiv.symm_apply_apply]
 
 /-! ### Equivariant Kummer theory -/
 

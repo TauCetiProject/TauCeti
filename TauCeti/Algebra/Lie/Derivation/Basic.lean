@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Derivation.Basic
 public import Mathlib.Algebra.Lie.NonUnitalNonAssocAlgebra
 public import Mathlib.Algebra.Lie.Submodule
 public import Mathlib.RingTheory.Derivation.Lie
+import TauCeti.Algebra.Lie.AdjointAction.Basic
 
 /-!
 # Derivations of a non-associative algebra
@@ -45,6 +46,8 @@ instances of it.
 * `TauCeti.ad_mem_derivationLieAlgebra_commutatorRing`: the adjoint action of a Lie algebra is by
   derivations -- the Jacobi identity in Leibniz form; and
   `TauCeti.ad_mem_derivationLieAlgebra`: the same for the commutator of an associative algebra.
+* `TauCeti.lie_innerDerivation`: the bracket `⁅D, ad z⁆` of a derivation with an inner derivation
+  is the inner derivation `ad (D z)`.
 * `TauCeti.derivationEquivDerivationLieAlgebra`: for a commutative associative algebra, `Der A` is
   Mathlib's `Derivation R A A` with its Lie structure.
 * `TauCeti.derivationLieAlgebraCommutatorRingEquivLieDerivation`: for a Lie algebra `L`, the
@@ -62,8 +65,9 @@ is an additive *group*, so the semiring-level hypotheses under which the Leibniz
 sense do not suffice to make `Der A` one.
 
 The Leibniz rule is preserved by sums and by scalar multiples because the multiplication of `A` is
-`R`-bilinear, and by the commutator because the "second derivative" terms `D (E x) * y` and
-`x * D (E y)` that the composite `D ∘ E` contributes cancel against those of `E ∘ D`.
+`R`-bilinear, and by the commutator because the mixed terms `D x * E y` and `E x * D y` occur
+in the expansions of both `D (E (x * y))` and `E (D (x * y))` and cancel on subtraction. The
+remaining terms give the Leibniz rule for `⁅D, E⁆`.
 
 The Lie bracket of `Module.End R A` is the ring commutator, which Mathlib deliberately keeps out of
 the global instance set (`LieRing.ofAssociativeRing`) because it clashes with the module action; it
@@ -93,9 +97,6 @@ constructions' own `apply` lemmas rather than by unfolding.
 
 ## References
 
-* [Highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md),
-  Layer 8, whose `derivationLieAlgebra` this is: the derivation algebra through which the split
-  octonions and the Albert algebra produce `G₂` and `F₄`.
 * N. Jacobson, *Lie Algebras* (1962), Chapter I, §2, and Chapter VII.
 -/
 
@@ -124,7 +125,7 @@ def derivationLieAlgebra : LieSubalgebra R (Module.End R A) where
   smul_mem' r _ hD x y := by
     simp only [LinearMap.smul_apply, hD x y, smul_add, smul_mul_assoc, mul_smul_comm]
   lie_mem' hD hE x y := by
-    simp only [Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply, hE x y, hD x y, map_add,
+    simp only [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp, hE x y, hD x y, map_add,
       hD _ y, hD x _, hE _ y, hE x _, sub_mul, mul_sub]
     abel
 
@@ -282,6 +283,30 @@ theorem coe_innerDerivation (z : A) :
     (innerDerivation R z : Module.End R A) = LieAlgebra.ad R A z :=
   (rfl)
 
+/-- A central element induces the zero inner derivation. -/
+theorem innerDerivation_eq_zero_of_mem_center {z : A} (hz : z ∈ Subalgebra.center R A) :
+    innerDerivation R z = 0 := by
+  ext a
+  simp [coe_innerDerivation, (TauCeti.LieAlgebra.ad_eq_zero_iff_mem_center (R := R) z).mpr hz]
+
+/-- **The bracket of a derivation with an inner derivation is inner**: `⁅D, ad z⁆ = ad (D z)`.
+This is the identity making the image of `innerDerivation` an ideal of `Der A`. It is the
+associative-algebra analogue of Mathlib's `LieDerivation.lie_der_ad_eq_ad_der`. -/
+theorem lie_innerDerivation (D : derivationLieAlgebra R A) (z : A) :
+    ⁅D, innerDerivation R z⁆ = innerDerivation R ((D : Module.End R A) z) := by
+  ext a
+  simp only [LieSubalgebra.coe_bracket, Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp,
+    coe_innerDerivation, LieAlgebra.ad_apply, map_sub, derivationLieAlgebra.leibniz]
+  abel
+
+variable {R} in
+/-- **A derivation kills the scalars**: it vanishes on the image of `algebraMap`. This is the
+analogue of Mathlib's `Derivation.map_algebraMap`. -/
+@[simp]
+theorem derivationLieAlgebra.map_algebraMap (D : derivationLieAlgebra R A) (r : R) :
+    (D : Module.End R A) (algebraMap R A r) = 0 := by
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, derivationLieAlgebra.apply_one_eq_zero, smul_zero]
+
 end Associative
 
 section Congr
@@ -290,22 +315,15 @@ variable {R : Type u} {A : Type v} {B : Type w} [CommRing R]
   [NonUnitalNonAssocRing A] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
   [NonUnitalNonAssocRing B] [Module R B] [SMulCommClass R B B] [IsScalarTower R B B]
 
-omit [SMulCommClass R A A] [IsScalarTower R A A] [SMulCommClass R B B] [IsScalarTower R B B] in
-/-- **The inverse of a multiplicative linear equivalence is multiplicative.**  The hypothesis is an
-unbundled multiplicativity condition on a `LinearEquiv` because Mathlib has no equivalence class for
-non-unital non-associative algebras; `he` says exactly that `e` is an algebra map, and no unitality
-is used.  This is an implementation detail of `derivationLieAlgebraCongr`, and so is private. -/
-private theorem symm_map_mul (e : A ≃ₗ[R] B) (he : ∀ x y : A, e (x * y) = e x * e y) (u v : B) :
-    e.symm (u * v) = e.symm u * e.symm v :=
-  e.injective (by simp [he])
-
-/-- **Conjugation by a multiplicative linear equivalence carries derivations to derivations.** -/
-theorem lieConj_mem_derivationLieAlgebra {e : A ≃ₗ[R] B}
-    (he : ∀ x y : A, e (x * y) = e x * e y) {D : Module.End R A}
-    (hD : D ∈ derivationLieAlgebra R A) : e.lieConj D ∈ derivationLieAlgebra R B :=
-  mem_derivationLieAlgebra.mpr fun x y => by
-    simp only [LinearEquiv.lieConj_apply, LinearEquiv.conj_apply_apply, symm_map_mul e he,
-      mem_derivationLieAlgebra.mp hD, map_add, he, LinearEquiv.apply_symm_apply]
+/-- Conjugation by a multiplicative linear equivalence preserves and reflects the derivation
+property. The multiplicativity condition is unbundled because Mathlib has no equivalence type for
+non-unital non-associative algebras. -/
+theorem lieConj_mem_derivationLieAlgebra_iff {e : A ≃ₗ[R] B}
+    (he : ∀ x y : A, e (x * y) = e x * e y) {D : Module.End R A} :
+    e.lieConj D ∈ derivationLieAlgebra R B ↔ D ∈ derivationLieAlgebra R A := by
+  rw [mem_derivationLieAlgebra, mem_derivationLieAlgebra, e.surjective.forall₂]
+  simp only [LinearEquiv.lieConj_apply, LinearEquiv.conj_apply_apply, ← he,
+    LinearEquiv.symm_apply_apply, ← map_add, e.injective.eq_iff]
 
 /-- **Derivation algebras are transported along isomorphisms of algebras.**  A multiplicative
 `R`-linear equivalence `e : A ≃ₗ[R] B` conjugates derivations of `A` to derivations of `B`, and the
@@ -314,11 +332,10 @@ models of the same algebra -- two constructions of the split octonions, say. -/
 def derivationLieAlgebraCongr (e : A ≃ₗ[R] B) (he : ∀ x y : A, e (x * y) = e x * e y) :
     derivationLieAlgebra R A ≃ₗ⁅R⁆ derivationLieAlgebra R B :=
   LieEquiv.ofSubalgebras _ _ e.lieConj <| by
-    refine SetLike.ext fun D => ⟨?_, fun hD => ?_⟩
-    · rintro ⟨E, hE, rfl⟩
-      exact lieConj_mem_derivationLieAlgebra he hE
-    · exact ⟨e.lieConj.symm D, lieConj_mem_derivationLieAlgebra (symm_map_mul e he) hD,
-        e.lieConj.apply_symm_apply D⟩
+    refine SetLike.ext fun D => ?_
+    obtain ⟨D, rfl⟩ := e.lieConj.surjective D
+    simp only [LieSubalgebra.mem_map, LieEquiv.coe_toLieHom, EquivLike.apply_eq_iff_eq,
+      exists_eq_right, lieConj_mem_derivationLieAlgebra_iff he]
 
 @[simp]
 theorem derivationLieAlgebraCongr_apply (e : A ≃ₗ[R] B) (he : ∀ x y : A, e (x * y) = e x * e y)

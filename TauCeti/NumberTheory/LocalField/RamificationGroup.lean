@@ -53,7 +53,9 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
 * `TauCeti.LocalFieldsRamification.instNormalLowerRamificationGroup`: each `G_i` is normal.
 * `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_eq_bot` and
   `TauCeti.LocalFieldsRamification.lowerRamificationGroup_eq_bot_iff`: `G_i = 1` for large `i`,
-  precisely for `i` past the largest jump when the Galois group is nontrivial.
+  precisely for `i` past the largest jump when the Galois group is nontrivial;
+  `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_natCast_eq_bot` is the
+  first statement at natural indices.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_of_sub_one_lt_of_le`: the real
   indexing is constant on each interval `(i - 1, i]`.
 * `TauCeti.LocalFieldsRamification.mem_lowerRamificationGroupReal_iff_of_lowerIndex_eq`: when
@@ -163,6 +165,14 @@ theorem lowerRamificationGroup_zero_eq_top_iff [IsGalois K L] :
   rw [← Subgroup.card_eq_iff_eq_top, natCard_lowerRamificationGroup_zero,
     IsGalois.card_aut_eq_finrank, isTotallyRamified_iff_ramificationIndex_eq_finrank]
 
+variable {K L} in
+/-- If a nonnegative lower ramification group is the whole Galois group, the extension is
+totally ramified. -/
+theorem isTotallyRamified_of_lowerRamificationGroup_eq_top [IsGalois K L] {i : ℤ}
+    (hi : 0 ≤ i) (hG : lowerRamificationGroup K L i = ⊤) : IsTotallyRamified K L :=
+  (lowerRamificationGroup_zero_eq_top_iff K L).1 <|
+    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L hi)
+
 /-! ### Comparison with Mathlib's inertia subgroup of a valuation subring -/
 
 /-- The zeroth lower ramification group is Mathlib's `ValuationSubring.inertiaSubgroup` of the
@@ -204,6 +214,12 @@ theorem iInf_lowerRamificationGroup_eq_bot : ⨅ i : ℤ, lowerRamificationGroup
 theorem exists_forall_lowerRamificationGroup_eq_bot :
     ∃ N : ℤ, ∀ i : ℤ, N ≤ i → lowerRamificationGroup K L i = ⊥ :=
   TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot _ _
+
+/-- The lower ramification groups are trivial from some natural index on. -/
+theorem exists_forall_lowerRamificationGroup_natCast_eq_bot :
+    ∃ N : ℕ, ∀ i : ℕ, N ≤ i → lowerRamificationGroup K L i = ⊥ := by
+  obtain ⟨N, hN⟩ := exists_forall_lowerRamificationGroup_eq_bot K L
+  exact ⟨N.toNat, fun i hi ↦ hN _ (by omega)⟩
 
 /-- The **largest jump** `t` of the lower ramification filtration. For a nontrivial Galois group
 it is the largest index with `G_t ≠ 1`, so that `G_t ≠ 1` and `G_{t + 1} = 1`

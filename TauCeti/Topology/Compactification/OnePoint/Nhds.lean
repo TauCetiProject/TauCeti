@@ -14,6 +14,9 @@ import Mathlib.Topology.Instances.ENNReal.Lemmas
 /-!
 # Approach filters in the one-point compactification
 
+The punctured neighbourhoods of a point of the space in its one-point compactification are the
+images of its punctured neighbourhoods in the space, so the inclusion preserves them.
+
 Approaching infinity within the image of a set is described by the coclosed-compact filter
 restricted to that set. In a pseudometric space, escaping bounded sets gives convergence to
 the compactifying point. These facts translate limits in the original space into limits in
@@ -33,6 +36,25 @@ open Bornology Filter Set Topology
 open scoped OnePoint
 
 namespace TauCeti
+
+namespace OnePoint
+
+/-- The punctured neighbourhoods of a point of `X` in the one-point compactification are the images
+of its punctured neighbourhoods in `X`. -/
+theorem nhdsNE_coe_eq {X : Type*} [TopologicalSpace X] (x : X) :
+    𝓝[≠] (x : OnePoint X) = map (↑) (𝓝[≠] x) := by
+  rw [OnePoint.nhdsWithin_coe]
+  congr 2
+  ext
+  simp
+
+/-- The inclusion into the one-point compactification maps punctured neighbourhoods to punctured
+neighbourhoods. -/
+theorem tendsto_coe_nhdsNE {X : Type*} [TopologicalSpace X] (x : X) :
+    Tendsto ((↑) : X → OnePoint X) (𝓝[≠] x) (𝓝[≠] (x : OnePoint X)) :=
+  tendsto_map.mono_right (nhdsNE_coe_eq x).ge
+
+end OnePoint
 
 /-- Approaching infinity within the image of a set in the one-point compactification is
 equivalent to escaping closed compact sets within the original set. -/

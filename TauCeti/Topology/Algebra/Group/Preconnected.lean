@@ -8,10 +8,17 @@ module
 public import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
-# Homomorphisms from preconnected topological groups
+# Homomorphisms and preconnected topological groups
 
 This file records a local-to-global principle for monoid homomorphisms from a preconnected
 topological group: two such homomorphisms that agree near the identity agree everywhere.
+An open homomorphism into a preconnected group is surjective.
+
+## Main results
+
+* `MonoidHomClass.eq_of_eventuallyEq_one`: agreement near the identity gives global equality.
+* `MonoidHom.surjective_of_isOpenMap` and `AddMonoidHom.surjective_of_isOpenMap`: an open
+  homomorphism into a preconnected group is onto.
 -/
 
 public section
@@ -21,24 +28,26 @@ open scoped Topology
 
 /-- Two monoid homomorphisms from a preconnected topological group that agree near the identity
 agree everywhere. -/
-theorem MonoidHom.eq_of_eventuallyEq_one
-    {G M : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
-    [PreconnectedSpace G] [Monoid M]
-    {φ ψ : G →* M} (h : φ =ᶠ[𝓝 (1 : G)] ψ) : φ = ψ := by
-  let S := φ.eqLocus ψ
-  have hS : (S : Set G) ∈ 𝓝 (1 : G) := by
-    -- Expose equality-locus membership as the pointwise equality used by the filter statement.
-    change φ =ᶠ[𝓝 (1 : G)] ψ
-    exact h
-  have hopen : IsOpen (S : Set G) := S.isOpen_of_mem_nhds hS
-  have hclosed : IsClosed (S : Set G) := S.isClosed_of_isOpen hopen
-  have huniv : (S : Set G) = Set.univ :=
-    IsClopen.eq_univ ⟨hclosed, hopen⟩ ⟨1, S.one_mem⟩
-  apply MonoidHom.ext
-  intro g
-  -- Expose equality-locus membership as the pointwise equality required by extensionality.
-  change g ∈ S
-  have hg : g ∈ (S : Set G) := by
-    rw [huniv]
-    trivial
-  exact hg
+@[to_additive /-- Two additive monoid homomorphisms from a preconnected additive topological group
+that agree near zero agree everywhere. -/]
+theorem MonoidHomClass.eq_of_eventuallyEq_one
+    {F G M : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+    [PreconnectedSpace G] [Monoid M] [FunLike F G M] [MonoidHomClass F G M]
+    {φ ψ : F} (h : φ =ᶠ[𝓝 (1 : G)] ψ) : φ = ψ := by
+  -- Membership in the equality locus is pointwise equality, so `h` says it is a neighbourhood
+  -- of `1`; an open subgroup is clopen, hence everything in a preconnected group.
+  let S := (φ : G →* M).eqLocus ψ
+  have hopen : IsOpen (S : Set G) := S.isOpen_of_mem_nhds h
+  have huniv := IsClopen.eq_univ ⟨S.isClosed_of_isOpen hopen, hopen⟩ ⟨1, S.one_mem⟩
+  exact DFunLike.ext _ _ fun g => Set.eq_univ_iff_forall.1 huniv g
+
+/-- An open homomorphism into a preconnected group is surjective. -/
+@[to_additive /-- An open additive homomorphism into a preconnected additive group is
+surjective. -/]
+theorem MonoidHom.surjective_of_isOpenMap {G K : Type*} [Group G] [TopologicalSpace G]
+    [Group K] [TopologicalSpace K] [SeparatelyContinuousMul K] [PreconnectedSpace K]
+    (f : G →* K) (hf : IsOpenMap f) : Function.Surjective f := by
+  have hopen : IsOpen (f.range : Set K) := hf.isOpen_range
+  have hclopen : IsClopen (f.range : Set K) := ⟨f.range.isClosed_of_isOpen hopen, hopen⟩
+  have hfull := hclopen.eq_univ ⟨1, f.range.one_mem⟩
+  exact Set.range_eq_univ.mp hfull

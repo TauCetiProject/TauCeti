@@ -48,8 +48,7 @@ which is `TauCeti.DynkinType.eq_f4Length_of_mul_pairing`.
 ## References
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
-4--6*, Plate VIII. The table is the type `F₄` input asked for by the "special isogenies in
-characteristics two and three" bullet of Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`,
+4--6*, Plate VIII. The table is the type `F₄` input of the special isogeny in characteristic two,
 matching the rank-two type `B` table of
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/B/RankTwo.lean`.
 -/
@@ -90,6 +89,11 @@ Bourbaki nodes of `F₄` are long and the last two are short. -/
 
 /-- Every root of the pinned `F₄` datum is short or long, of squared length `1` or `2`. -/
 theorem f4Length_eq_one_or_eq_two (i : Fin 48) : f4Length i = 1 ∨ f4Length i = 2 := by
+  decide +revert
+
+/-- Reflection in any root preserves the tabulated squared length. -/
+@[simp] theorem f4Length_f4ReflectionIndex (j k : Fin 48) :
+    f4Length (f4ReflectionIndex j k) = f4Length k := by
   decide +revert
 
 /-- Every root of the pinned `F₄` datum has positive squared length. -/

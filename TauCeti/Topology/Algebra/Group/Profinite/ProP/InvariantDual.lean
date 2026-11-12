@@ -119,7 +119,7 @@ theorem subsingleton_h1ConjInvariants_proPKernel {M : Type v} [AddCommGroup M]
     Subsingleton (H1ConjInvariants G M (proPKernel p G)) := by
   -- `H¹(R, M)^G` is the group of continuous homomorphisms `R ⧸ Rᵖ[R, G] → M`, and the quotient
   -- is trivial by `pLowerCentralStep_proPKernel`.
-  let e := H1ConjInvariantsEquivOfSmulEqSelf htriv p (isClosed_proPKernel (p := p) (G := G)) hpM
+  let e := H1ConjInvariantsEquivOfSmulEqSelf (N := proPKernel p G) htriv p hpM
   refine ⟨fun x y ↦ e.injective (Additive.toMul.injective (ContinuousMonoidHom.ext fun q ↦ ?_))⟩
   obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective q
   have hr : (r : proPKernel p G ⧸ (pLowerCentralStep p (proPKernel p G)).subgroupOf
@@ -145,11 +145,10 @@ finitely generated. -/
 theorem finite_H1ConjInvariants_iff :
     Finite (H1ConjInvariants G (ZMod p) N) ↔
       IsTopologicallyFinitelyGenerated (N ⧸ (pLowerCentralStep p N).subgroupOf N) := by
-  have hK := isClosed_pLowerCentralStep_subgroupOf (p := p) N
   have : CompactSpace N := isCompact_iff_compactSpace.mp hN.isCompact
   have hQ : IsProP p (N ⧸ (pLowerCentralStep p N).subgroupOf N) :=
     (isPGroup_quotient_pLowerCentralStep_subgroupOf N).isProP
-  rw [(H1ConjInvariantsEquivOfSmulEqSelf htriv p hN fun m ↦ by
+  rw [(H1ConjInvariantsEquivOfSmulEqSelf htriv p fun m ↦ by
     rw [nsmul_eq_mul, ZMod.natCast_self, zero_mul]).toEquiv.finite_iff,
     ← Module.finite_iff_finite (R := ZMod p), hQ.finite_continuousZModDual_iff]
 
@@ -161,12 +160,11 @@ theorem natCard_H1ConjInvariants
     (h : IsTopologicallyFinitelyGenerated (N ⧸ (pLowerCentralStep p N).subgroupOf N)) :
     Nat.card (H1ConjInvariants G (ZMod p) N) =
       p ^ topologicalGeneratorRankNat (N ⧸ (pLowerCentralStep p N).subgroupOf N) h := by
-  have hK := isClosed_pLowerCentralStep_subgroupOf (p := p) N
   have : CompactSpace N := isCompact_iff_compactSpace.mp hN.isCompact
   have hQ : IsProP p (N ⧸ (pLowerCentralStep p N).subgroupOf N) :=
     (isPGroup_quotient_pLowerCentralStep_subgroupOf N).isProP
   have := finite_continuousZModDual (p := p) h
-  rw [Nat.card_congr (H1ConjInvariantsEquivOfSmulEqSelf htriv p hN fun m ↦ by
+  rw [Nat.card_congr (H1ConjInvariantsEquivOfSmulEqSelf htriv p fun m ↦ by
     rw [nsmul_eq_mul, ZMod.natCast_self, zero_mul]).toEquiv,
     Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod,
     hQ.finrank_continuousZModDual_eq_topologicalGeneratorRankNat h]

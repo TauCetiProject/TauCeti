@@ -25,7 +25,7 @@ model-specific hyperbolic development.
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Chapter 3.
-* P. Scott, *The geometries of 3-manifolds*, Proposition 3.4.15.
+* W. Thurston, *Three-Dimensional Geometry and Topology*, Vol. 1, Proposition 3.4.15.
 -/
 
 public section

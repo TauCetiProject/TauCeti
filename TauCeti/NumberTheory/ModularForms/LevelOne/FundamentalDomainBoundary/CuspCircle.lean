@@ -13,7 +13,7 @@ public import TauCeti.NumberTheory.ModularForms.Order.AtCusp
 
 import Mathlib.NumberTheory.ModularForms.LevelOne.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
-import TauCeti.Analysis.Complex.IsolatedZero
+import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Contour.Argument.Principle
 
 /-!

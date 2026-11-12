@@ -19,8 +19,9 @@ at the determinant of the polynomial algebra on the entries within equal-weight 
 This file constructs that presentation directly. The generic block-diagonal matrix supplies the
 map from the determinant localization defining `GL_N`; conversely, its surviving entries in the
 weight-Levi quotient supply the inverse map. The presentation proves smoothness over an arbitrary
-commutative base ring. Over a field it remains a domain after every scalar extension, and hence
-the weight Levi is geometrically connected.
+commutative base ring, and that the coordinate algebra is an integral domain when the base ring
+is. Over a field `k`, its base change to every field extension of `k` is again a weight-Levi
+coordinate algebra, hence an integral domain, so the weight Levi is geometrically connected.
 
 ## Main declarations
 
@@ -128,7 +129,8 @@ private theorem weightLeviDefiningIdeal_le_ker_ambientToCoordinateRing
     (weightLeviDefiningHopfIdeal R w).toIdeal ≤
       RingHom.ker (weightLeviAmbientToCoordinateRing R w).toRingHom :=
   weightLeviDefiningHopfIdeal_toIdeal_le_ker R w _ fun i j hij ↦ by
-    rw [← genericMatrix_apply, weightLeviAmbientToCoordinateRing_genericMatrix_apply,
+    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← genericMatrix_apply,
+      weightLeviAmbientToCoordinateRing_genericMatrix_apply,
       weightLeviLocalizedGenericMatrix_apply_of_ne R w hij]
 
 /-- The weight-Levi quotient maps to its localized block coordinates. -/

@@ -35,13 +35,11 @@ superfluousness of the kernel; `TauCeti.isProjectiveCover_iff_forall_surjective`
 additive group it is exactly the condition used here, so this file is the categorical reading of
 the same notion, available in categories with no ambient kernel or subobject theory.
 
-The uniqueness argument is short and needs no additivity, exactness, or subobjects — only the
-lifting property of projectives and the fact that a split epimorphism whose section is an
-epimorphism is an isomorphism (`CategoryTheory.IsIso.of_epi_section'`). Given two covers
-`π : P ⟶ M` and `π' : P' ⟶ M`, lift `π` through `π'` to `h : P ⟶ P'`. Essentiality of `π'` makes
-`h` an epimorphism, so projectivity of `P'` splits it: there is `σ : P' ⟶ P` with `σ ≫ h = 𝟙`.
-That section satisfies `σ ≫ π = π'`, so essentiality of `π` makes `σ` an epimorphism too, and a
-split epimorphism whose section is an epimorphism is an isomorphism.
+The uniqueness argument needs no additivity, exactness, or subobjects — only the lifting
+property of projectives. A morphism `h : P ⟶ P'` between the sources of two covers of `M` that
+commutes with them is again an essential epimorphism, now onto the projective object `P'`. Such an
+epimorphism splits, and an essential epimorphism that splits is an isomorphism, since essentiality
+makes its section an epimorphism as well (`CategoryTheory.IsIso.of_epi_section`).
 
 ## Main definitions
 
@@ -51,6 +49,9 @@ split epimorphism whose section is an epimorphism is an isomorphism.
 
 ## Main results
 
+* `TauCeti.IsEssentialEpi.isIso_of_isSplitEpi`: an essential epimorphism that splits is an
+  isomorphism; hence `TauCeti.IsEssentialEpi.isIso_of_projective_target`, a projective object is
+  its own projective cover.
 * `TauCeti.IsEssentialEpi.isIso_of_comp_eq`: **rigidity** — any morphism between the sources of
   two projective covers of `M` that commutes with them is an isomorphism. Only the *target* of
   that morphism has to be projective.
@@ -59,9 +60,6 @@ split epimorphism whose section is an epimorphism is an isomorphism.
 * `TauCeti.IsEssentialEpi.exists_comp_eq_and_isSplitEpi`: **minimality** — every epimorphism onto
   `M` from a projective object factors through a projective cover by a *split* epimorphism, so the
   cover is a retract of every projective presentation of `M`.
-* `TauCeti.IsEssentialEpi.isIso_of_isSplitEpi`: an essential epimorphism that splits is an
-  isomorphism; hence `TauCeti.IsEssentialEpi.isIso_of_projective_target`, a projective object is
-  its own projective cover.
 * `TauCeti.IsEssentialEpi.comp` and `TauCeti.isEssentialEpi_of_isIso`: essential epimorphisms are
   closed under composition and contain the isomorphisms.
 
@@ -78,11 +76,6 @@ second field takes the epimorphism hypothesis on the composite as an explicit ar
 same reason.
 
 ## References
-
-This supplies the "unique up to isomorphism" clause of the "projective covers and injective
-envelopes" bullet of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, in the categorical form the
-representation category needs.
 
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
   Algebras, Vol. 1*, LMS Student Texts 65, CUP (2006), I.5.
@@ -125,13 +118,23 @@ namespace IsEssentialEpi
 morphism whose composite with `π ≫ τ` is an epimorphism is caught first by `τ`, then by `π`. -/
 theorem comp {P M N : C} {π : P ⟶ M} {τ : M ⟶ N} (hπ : IsEssentialEpi π)
     (hτ : IsEssentialEpi τ) : IsEssentialEpi (π ≫ τ) where
-  epi := by
-    have := hπ.epi
-    have := hτ.epi
-    infer_instance
-  epi_of_epi_comp g hg := by
-    refine hπ.epi_of_epi_comp g (hτ.epi_of_epi_comp (g ≫ π) ?_)
-    rwa [Category.assoc]
+  epi := epi_comp' hπ.epi hτ.epi
+  epi_of_epi_comp g hg :=
+    hπ.epi_of_epi_comp g (hτ.epi_of_epi_comp (g ≫ π) (by rwa [Category.assoc]))
+
+/-- **An essential epimorphism that splits is an isomorphism.** -/
+theorem isIso_of_isSplitEpi {P M : C} {π : P ⟶ M} (hπ : IsEssentialEpi π) [IsSplitEpi π] :
+    IsIso π := by
+  have : Epi (section_ π) := hπ.epi_of_epi_comp _ (by rw [IsSplitEpi.id]; infer_instance)
+  exact IsIso.of_epi_section π
+
+/-- **A projective object is its own projective cover.** An essential epimorphism onto a
+projective object splits, hence is an isomorphism. -/
+theorem isIso_of_projective_target {P M : C} [Projective M] {π : P ⟶ M}
+    (hπ : IsEssentialEpi π) : IsIso π := by
+  have := hπ.epi
+  have : IsSplitEpi π := .mk' ⟨Projective.factorThru (𝟙 M) π, Projective.factorThru_comp _ _⟩
+  exact hπ.isIso_of_isSplitEpi
 
 /-- **Rigidity of a projective cover.** If `π : P ⟶ M` and `π' : P' ⟶ M` are essential
 epimorphisms with `P'` projective, then any `h : P ⟶ P'` over `M` is an isomorphism. Note that
@@ -139,24 +142,22 @@ only the *target* `P'` is required to be projective; taking `π' = π` this says
 of the source of a projective cover commuting with the cover is automatically an isomorphism. -/
 theorem isIso_of_comp_eq {P P' M : C} [Projective P'] {π : P ⟶ M} {π' : P' ⟶ M}
     (hπ : IsEssentialEpi π) (hπ' : IsEssentialEpi π') {h : P ⟶ P'} (hh : h ≫ π' = π) :
-    IsIso h := by
-  have hepi : Epi h := hπ'.epi_of_epi_comp h (by rw [hh]; exact hπ.epi)
-  -- Projectivity of `P'` splits the epimorphism `h`.
-  obtain ⟨σ, hσh⟩ : ∃ σ : P' ⟶ P, σ ≫ h = 𝟙 P' :=
-    ⟨Projective.factorThru (𝟙 P') h, Projective.factorThru_comp _ _⟩
-  -- The section is itself a morphism over `M`, so essentiality of `π` makes it an epimorphism.
-  have hσπ : σ ≫ π = π' := by rw [← hh, ← Category.assoc, hσh, Category.id_comp]
-  have hepiσ : Epi σ := hπ.epi_of_epi_comp σ (by rw [hσπ]; exact hπ'.epi)
-  exact IsIso.of_epi_section' ⟨σ, hσh⟩
+    IsIso h :=
+  -- `h` is itself an essential epimorphism, onto the projective object `P'`.
+  isIso_of_projective_target
+    { epi := hπ'.epi_of_epi_comp h (hh ▸ hπ.epi)
+      epi_of_epi_comp g hg := hπ.epi_of_epi_comp g <| by
+        rw [← hh, ← Category.assoc]
+        exact epi_comp' hg hπ'.epi }
 
 /-- **The projective cover is unique.** Two essential epimorphisms onto `M` from projective
 objects are related by an isomorphism of their sources commuting with them, so "the" projective
 cover of `M` is well defined up to isomorphism over `M`. -/
 theorem exists_iso {P P' M : C} [Projective P] [Projective P'] {π : P ⟶ M} {π' : P' ⟶ M}
     (hπ : IsEssentialEpi π) (hπ' : IsEssentialEpi π') : ∃ e : P ≅ P', e.hom ≫ π' = π := by
-  have hepi := hπ'.epi
-  have hcomp : Projective.factorThru π π' ≫ π' = π := Projective.factorThru_comp _ _
-  have hiso : IsIso (Projective.factorThru π π') := hπ.isIso_of_comp_eq hπ' hcomp
+  have := hπ'.epi
+  have hcomp := Projective.factorThru_comp π π'
+  have := hπ.isIso_of_comp_eq hπ' hcomp
   exact ⟨asIso (Projective.factorThru π π'), hcomp⟩
 
 /-- **The projective cover is minimal.** Every epimorphism onto `M` from a projective object
@@ -166,30 +167,10 @@ nothing here needs additivity.) -/
 theorem exists_comp_eq_and_isSplitEpi {P M : C} [Projective P] {π : P ⟶ M}
     (hπ : IsEssentialEpi π) {X : C} [Projective X] {f : X ⟶ M} (hf : Epi f) :
     ∃ g : X ⟶ P, g ≫ π = f ∧ IsSplitEpi g := by
-  have hepi := hπ.epi
-  refine ⟨Projective.factorThru f π, Projective.factorThru_comp _ _, ?_⟩
-  have hg : Epi (Projective.factorThru f π) :=
-    hπ.epi_of_epi_comp _ (by rw [Projective.factorThru_comp]; exact hf)
-  exact IsSplitEpi.mk' ⟨Projective.factorThru (𝟙 P) (Projective.factorThru f π),
-    Projective.factorThru_comp _ _⟩
-
-/-- **An essential epimorphism that splits is an isomorphism.** Its composite with its section is
-the identity, so essentiality makes that section an epimorphism, and a split epimorphism whose
-section is an epimorphism is an isomorphism. -/
-theorem isIso_of_isSplitEpi {P M : C} {π : P ⟶ M} (hπ : IsEssentialEpi π) [IsSplitEpi π] :
-    IsIso π := by
-  have hs : section_ π ≫ π = 𝟙 M := IsSplitEpi.id π
-  have hepi : Epi (section_ π) := hπ.epi_of_epi_comp _ (by rw [hs]; infer_instance)
-  exact IsIso.of_epi_section π
-
-/-- **A projective object is its own projective cover.** An essential epimorphism onto a
-projective object splits, hence is an isomorphism. -/
-theorem isIso_of_projective_target {P M : C} [Projective M] {π : P ⟶ M}
-    (hπ : IsEssentialEpi π) : IsIso π := by
-  have hepi := hπ.epi
-  have hsplit : IsSplitEpi π :=
-    IsSplitEpi.mk' ⟨Projective.factorThru (𝟙 M) π, Projective.factorThru_comp _ _⟩
-  exact hπ.isIso_of_isSplitEpi
+  have := hπ.epi
+  have hcomp := Projective.factorThru_comp f π
+  have : Epi (Projective.factorThru f π) := hπ.epi_of_epi_comp _ (by rwa [hcomp])
+  exact ⟨_, hcomp, .mk' ⟨Projective.factorThru (𝟙 P) _, Projective.factorThru_comp _ _⟩⟩
 
 end IsEssentialEpi
 

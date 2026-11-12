@@ -7,6 +7,8 @@ module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 public import Mathlib.FieldTheory.Separable
+-- Proof-only: separability is transitive in towers.
+import Mathlib.FieldTheory.SeparableDegree
 
 /-!
 # Intermediate fields along an algebra equivalence
@@ -33,6 +35,8 @@ subfield dictionary in `TauCeti/FieldTheory/Galois/SubfieldDictionary.lean`.
 * `IntermediateField.isSeparable_map` and `IntermediateField.isSeparable_adjoin_simple_map`: if
   `K` is separable over `E`, then `L` is separable over `E.map e`; in particular separability
   over `F⟮x⟯` transfers to separability over `F⟮e x⟯`.
+* `IntermediateField.isSeparable_adjoin_simple_algebraMap`: if `K` is separable over `F⟮x⟯` and
+  `L` is separable over `K`, then `L` is separable over `F⟮x⟯` read in `L`.
 
 The name follows Mathlib's `Submodule.orderIsoMapComap`, the same construction for submodules.
 -/
@@ -85,6 +89,19 @@ theorem isSeparable_adjoin_simple_map (e : K ≃ₐ[F] L) {x : K} [Algebra.IsSep
     Algebra.IsSeparable F⟮e x⟯ L := by
   have h := isSeparable_map e F⟮x⟯
   rwa [adjoin_map, Set.image_singleton, AlgEquiv.coe_toAlgHom] at h
+
+/-- **Separability over `F⟮x⟯` climbs a separable extension**: if `K` is separable over `F⟮x⟯` and
+`L` is separable over `K`, then `L` is separable over `F⟮x⟯` read in `L`. -/
+instance isSeparable_adjoin_simple_algebraMap [Algebra K L] [IsScalarTower F K L]
+    [Algebra.IsSeparable K L] {x : K} [Algebra.IsSeparable F⟮x⟯ K] :
+    Algebra.IsSeparable F⟮algebraMap K L x⟯ L := by
+  -- `L` is separable over `F⟮x⟯` acting through `K`; transport along `F⟮x⟯ ≃ F⟮x⟯.map _`.
+  have := Algebra.IsSeparable.trans F⟮x⟯ K L
+  have h : F⟮x⟯.map (IsScalarTower.toAlgHom F K L) = F⟮algebraMap K L x⟯ := by
+    rw [adjoin_map, Set.image_singleton, IsScalarTower.coe_toAlgHom']
+  exact Algebra.IsSeparable.of_equiv_equiv
+    ((F⟮x⟯.equivMap _).trans (equivOfEq h)).toRingEquiv (RingEquiv.refl L)
+    (RingHom.ext fun _ ↦ rfl)
 
 end IntermediateField
 

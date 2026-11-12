@@ -50,10 +50,9 @@ on `ArithmeticFunction ℂ`.
 `TauCeti.IdealArithmeticFunction K` is a `Pi` type, so it already carries Mathlib's *pointwise*
 `CommRing` structure, in which `f * g` is `fun A => f A * g A` and `1` is the everywhere-one
 function. Convolution is therefore deliberately **not** registered as a `Mul` instance and its
-identity is the separate function `TauCeti.IdealArithmeticFunction.delta`; this is the roadmap's
-convention that pointwise multiplication and ideal convolution stay distinct operations on one
-carrier. The monoid laws are stated as ordinary theorems about
-`TauCeti.IdealArithmeticFunction.convolution`, and
+identity is the separate function `TauCeti.IdealArithmeticFunction.delta`, so that pointwise
+multiplication and ideal convolution stay distinct operations on one carrier. The monoid laws are
+stated as ordinary theorems about `TauCeti.IdealArithmeticFunction.convolution`, and
 `TauCeti.IdealArithmeticFunction.convolution_one_one_ne_mul` records that the two products really do
 differ. Consequently iterated convolution is the explicit
 `TauCeti.IdealArithmeticFunction.convolutionPow` rather than a `Monoid.npow`.
@@ -63,11 +62,9 @@ Excluding the zero ideal from the carrier is what makes the index set finite: `�
 many, by Mathlib's `UniqueFactorizationMonoid.fintypeSubtypeDvd` for the unique factorization
 monoid `Ideal (𝓞 K)`.
 
-## Roadmap role
-
-This is Layer **2.1** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, built on the Layer
-**0.1** carrier of `TauCeti/NumberTheory/ArithmeticDirichletSeries/Basic.lean`. Its consumers are
-the ideal Möbius function and von Mangoldt transform of Layer 2 and the local factors of Layer 3.
+The ideal Möbius inversion of `TauCeti/NumberTheory/ArithmeticDirichletSeries/Moebius.lean` and
+the Euler products of `TauCeti/NumberTheory/ArithmeticDirichletSeries/EulerProduct/` are built on
+this convolution.
 
 ## References
 

@@ -50,30 +50,6 @@ variable (k : Type u) [CommRing k]
 
 attribute [local instance] standardComodule
 
-private theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
-  intro a b h
-  apply matrixIndexEquiv.symm.injective
-  apply e6DoubledMinusculeWeight_injective
-  funext i
-  simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter, matrixWeight_apply] using
-    congrArg (fun χ : Multiplicative (Fin 6 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
-
-private theorem root_mulVec_single_sub (j : Fin 6 ⊕ Fin 6) (a : Fin 54)
-    (ha : matrixWeight a (Sum.elim id id j) =
-      (Sum.elim (fun _ ↦ -1) (fun _ ↦ 1) j : ℤ)) :
-    (((rootSubgroupPoints j k (Multiplicative.ofAdd 1) :
-        Matrix.GeneralLinearGroup (Fin 54) k) : Matrix (Fin 54) (Fin 54) k) *ᵥ
-          Pi.single a 1) - Pi.single a 1 =
-      (summandSign (matrixIndexEquiv.symm a) : k) •
-        Pi.single (matrixIndexEquiv (reflection (Sum.elim id id j)
-          (matrixIndexEquiv.symm a))) 1 := by
-  rw [coe_rootSubgroupPoints_eq_one_add_smul, Matrix.add_mulVec, Matrix.one_mulVec,
-    Matrix.smul_mulVec]
-  simp only [toAdd_ofAdd, one_smul, add_sub_cancel_left,
-    Matrix.mulVec_single_one]
-  ext b
-  simp [Matrix.map_apply, rootIntMatrix_apply, ha, Pi.single_apply]
-
 /-- Root points propagate membership of a coordinate vector along a simple reflection. -/
 private theorem single_reflection_mem
     (N : Submodule k (Fin 54 → k))

@@ -415,7 +415,7 @@ theorem stabilizeXCenterComplex_d :
         ModuleCat.ofHom (G.stabilizeXCenterDifferential s R) ≫
           eqToHom (G.stabilizeXCenterComplex_X s R ()).symm := by
   unfold stabilizeXCenterComplex
-  exact oneObjectHomologicalComplex_d _ _ _
+  exact oneObjectHomologicalComplex_d _ _ _ _ _
 
 /-- The complex of off-center states: the subcomplex of the unblocked complex of the
 stabilization spanned by the grid states not containing the center of the new block. -/
@@ -441,7 +441,7 @@ theorem stabilizeXOffCenterComplex_d :
         ModuleCat.ofHom (G.stabilizeXOffCenterDifferential s R) ≫
           eqToHom (G.stabilizeXOffCenterComplex_X s R ()).symm := by
   unfold stabilizeXOffCenterComplex
-  exact oneObjectHomologicalComplex_d _ _ _
+  exact oneObjectHomologicalComplex_d _ _ _ _ _
 
 /-- The connecting map as a chain map from the center complex to the off-center complex. -/
 noncomputable def stabilizeXConnectingHom :
@@ -556,7 +556,7 @@ theorem unblockedComplexStabilizeXIsoHomotopyCofiber_hom_f :
       (eqToHom ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedComplex_X R ()) ≫
           ModuleCat.ofHom (G.stabilizeXCenterProjection s R) ≫
             eqToHom (G.stabilizeXCenterComplex_X s R ()).symm) ≫
-        homotopyCofiber.inlX (G.stabilizeXConnectingHom s R) () () (ComplexShape.refl_rel ()) +
+        homotopyCofiber.inlX (G.stabilizeXConnectingHom s R) () () (ComplexShape.refl_rel_self ()) +
       (eqToHom ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedComplex_X R ()) ≫
           ModuleCat.ofHom (G.stabilizeXOffCenterProjection s R) ≫
             eqToHom (G.stabilizeXOffCenterComplex_X s R ()).symm) ≫
@@ -568,7 +568,7 @@ second as the off-center states. -/
 @[simp]
 theorem unblockedComplexStabilizeXIsoHomotopyCofiber_inv_f :
     (G.unblockedComplexStabilizeXIsoHomotopyCofiber s R).inv.f () =
-      homotopyCofiber.fstX (G.stabilizeXConnectingHom s R) () () (ComplexShape.refl_rel ()) ≫
+      homotopyCofiber.fstX (G.stabilizeXConnectingHom s R) () () (ComplexShape.refl_rel_self ()) ≫
           eqToHom (G.stabilizeXCenterComplex_X s R ()) ≫
             ModuleCat.ofHom (G.stabilizeXCenterInclusion s R) ≫
               eqToHom ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedComplex_X R ()).symm +

@@ -249,9 +249,7 @@ theorem wishartGramMeasure_eq_map_sqrt (ν : ℕ) (hS : S.PosSemidef) :
       (wishartGramMeasure ν 1).map (Matrix.symmetricCongruenceLinearMap (CFC.sqrt S)) := by
   rw [map_symmetricCongruenceLinearMap_wishartGramMeasure ν _ Matrix.PosSemidef.one]
   refine congrArg _ ?_
-  rw [Matrix.mul_one, ← Matrix.conjTranspose_eq_transpose_of_trivial,
-    (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg S)).isHermitian.eq,
-    CFC.sqrt_mul_sqrt_self S hS.nonneg]
+  rw [Matrix.mul_one, hS.sqrt_mul_transpose_sqrt]
 
 /-! ### Support, rank and singularity -/
 
@@ -275,7 +273,7 @@ theorem ae_posSemidef_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) 
       (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef := by
   refine (ae_iff_prob_eq_one ?_).2 (wishartGramMeasure_setOf_posSemidef ν S)
   apply measurableSet_setOfPred.mp
-  exact (Matrix.posSemidef_is_closed (n := Fin p) (𝕜 := ℝ)).measurableSet.preimage
+  exact (_root_.isClosed_setOfPred_posSemidef (n := Fin p) (R := ℝ)).measurableSet.preimage
     continuous_subtype_val.measurable
 
 /-- Every value of the congruated Gram sum has rank at most `min ν S.rank`: the Gram sum of `ν`

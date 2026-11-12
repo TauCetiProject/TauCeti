@@ -56,9 +56,9 @@ universe u
 
 variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
 
-/-- The torus of a finitely generated lattice `N` surjects onto the torus of the quotient lattice
-`N ⧸ N_σ` of any cone `σ`: that quotient is torsion free, hence free. -/
-theorem complexTorusMap_mk'_coneSublattice_surjective [Module.Finite ℤ N]
+/-- The torus of a lattice `N` surjects onto the torus of the quotient lattice `N ⧸ N_σ` of any
+cone `σ`. -/
+theorem complexTorusMap_mk'_coneSublattice_surjective
     (i : N →+ V) (σ : PointedCone ℝ V) :
     Function.Surjective (complexTorusMap (QuotientAddGroup.mk' (coneSublattice i σ))) :=
   complexTorusMap_surjective (QuotientAddGroup.mk'_surjective _)
@@ -246,7 +246,7 @@ theorem analyticConeOrbitTorusHomeomorph_analyticDistinguishedPoint (σ : Φ.con
       ⟨Φ.analyticAffineChartι hΦ σ (distinguishedPoint Φ.lattice (⊤ : σ.1.Face)),
         (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hd).2 rfl⟩ :=
     Subtype.ext (Φ.analyticDistinguishedPoint_def hΦ σ)
-  rw [hx₀, h, AddChar.one_apply, Units.val_one]
+  rw [hx₀, h, _root_.one_apply, Units.val_one]
 
 /-- The identification of the orbit of `σ` with the quotient torus is equivariant: translating by
 a torus point `T` multiplies by the image of `T` in the quotient torus. -/
@@ -266,7 +266,7 @@ theorem analyticConeOrbitTorusHomeomorph_smul (σ : Φ.cones) (T : ComplexTorus 
         (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hTy).2 rfl⟩ :=
     Subtype.ext (Φ.smul_analyticAffineChartι hΦ T σ y)
   refine DFunLike.ext _ _ fun m ↦ Units.ext ?_
-  rw [hι, AddChar.mul_apply, Units.val_mul, Φ.val_analyticConeOrbitTorusHomeomorph_apply hΦ σ hy,
+  rw [hι, _root_.mul_apply, Units.val_mul, Φ.val_analyticConeOrbitTorusHomeomorph_apply hΦ σ hy,
     Φ.val_analyticConeOrbitTorusHomeomorph_apply hΦ σ hTy,
     AffineSemigroupComplexPoint.ambient_smul_apply_single, complexTorusMap_apply,
     characterEvaluation_apply, compHom'_mk'_coneSublattice]

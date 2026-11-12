@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.HasLaw
-public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
+public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Basic
 public import TauCeti.Probability.Distributions.Beta.Basic
 import TauCeti.Probability.Cdf
 
@@ -34,6 +34,7 @@ integral divided by itself, namely `1`.
 ## Main results
 
 * `TauCeti.Probability.cdf_betaMeasure_eq` — the closed-form cdf `I_x(α, β)`;
+* `TauCeti.Probability.cdf_betaMeasure_one_right` — the power-function cdf `x ^ α` when `β = 1`;
 * `TauCeti.Probability.measureReal_Iic_betaMeasure` — the same in measure form;
 * `TauCeti.Probability.measureReal_Ioc_betaMeasure` — the mass of a bounded interval, as a
   difference of two
@@ -144,6 +145,12 @@ theorem cdf_betaMeasure_eq (hα : 0 < α) (hβ : 0 < β) (x : ℝ) :
   · rw [setIntegral_betaPDFReal_Iic_of_one_le hα hβ hx₁.le,
       regularizedIncompleteBeta_eq_one_of_one_le hα.le hβ hx₁.le]
 
+/-- With second shape parameter one the beta law is the power-function law: on `[0, 1]` its
+cumulative distribution function is `x ^ α`. -/
+theorem cdf_betaMeasure_one_right (hα : 0 < α) (hx : x ∈ Icc 0 1) :
+    cdf (betaMeasure α 1) x = x ^ α := by
+  rw [cdf_betaMeasure_eq hα one_pos, regularizedIncompleteBeta_one_right hα hx.1 hx.2]
+
 /-! ### Consequences -/
 
 /-- The mass a beta law assigns to a lower half-line, in measure form. -/
@@ -167,8 +174,7 @@ theorem measureReal_Ioc_betaMeasure (hα : 0 < α) (hβ : 0 < β) {y : ℝ} (hyx
 theorem measureReal_Ioi_betaMeasure (hα : 0 < α) (hβ : 0 < β) (x : ℝ) :
     (betaMeasure α β).real (Ioi x) = 1 - regularizedIncompleteBeta α β x := by
   have hp : IsProbabilityMeasure (betaMeasure α β) := isProbabilityMeasureBeta hα hβ
-  rw [← compl_Iic, measureReal_compl measurableSet_Iic, measureReal_Iic_betaMeasure hα hβ]
-  simp
+  rw [Measure.measureReal_Ioi_eq_one_sub_cdf, cdf_betaMeasure_eq hα hβ]
 
 /-- The cumulative distribution function of a beta law is continuous: `I_·(α, β)` is continuous
 even at the two endpoints of the support, where for `α < 1` or `β < 1` the beta integrand blows

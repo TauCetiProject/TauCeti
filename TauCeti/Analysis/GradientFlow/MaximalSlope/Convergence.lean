@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.GradientFlow.MaximalSlope.Basic
 import Mathlib.Topology.Instances.EReal.Lemmas
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Limits of curves of maximal slope
@@ -46,6 +47,7 @@ variable {X ι : Type*} [PseudoMetricSpace X] {l : Filter ι}
   [l.NeBot] [l.IsCountablyGenerated] {p q a b : ℝ}
   {u : ℝ → X} {us : ι → ℝ → X} {g : X → ℝ≥0∞} {gs : ι → X → ℝ≥0∞}
 
+omit [l.NeBot] in
 /-- **Lower semicontinuity of dissipation.** Pointwise convergence of curves, eventually
 absolutely continuous, and an almost-everywhere lower bound on the upper gradients give a
 lower bound on the limiting dissipation. No absolute continuity of the limit is assumed. -/
@@ -56,6 +58,9 @@ theorem dissipation_le_liminf (hp : 1 < p) (hq : 0 < q)
     (hg : ∀ᵐ t ∂volume.restrict (Ι a b), g (u t) ≤ liminf (fun i ↦ gs i (us i t)) l) :
     dissipation p q g u a b ≤ liminf (fun i ↦ dissipation p q (gs i) (us i) a b) l := by
   classical
+  rcases l.eq_or_neBot with rfl | hl
+  · rw [liminf_bot]
+    exact le_top
   have hA := curveAction_le_liminf_of_one_lt hp hus hu
   -- Replace the exceptional, possibly nonmeasurable integrands by zero for Fatou.
   let fs : ι → ℝ → ℝ≥0∞ := fun i ↦
@@ -93,19 +98,7 @@ theorem dissipation_le_liminf (hp : 1 < p) (hq : 0 < q)
         liminf (fun i ↦ ∫⁻ t in Ι a b, gs i (us i t) ^ q) l / ENNReal.ofReal q :=
       add_le_add (ENNReal.div_le_div_right hA _) (ENNReal.div_le_div_right hG _)
     _ = _ := by rw [hdiv p (zero_lt_one.trans hp), hdiv q hq]
-    _ ≤ _ := by
-      -- `EReal.le_liminf_add` applies to nonnegative extended reals after the continuous
-      -- order embedding; the generic ordered-group lemma does not apply to `ENNReal`.
-      have hcast (v : ι → ℝ≥0∞) :
-          (↑(liminf v l) : EReal) = liminf (fun i ↦ (v i : EReal)) l :=
-        EReal.coe_ennreal_strictMono.monotone.map_liminf_of_continuousAt _
-          continuous_coe_ennreal_ereal.continuousAt
-      apply EReal.coe_ennreal_le_coe_ennreal_iff.1
-      rw [EReal.coe_ennreal_add, hcast, hcast, hcast]
-      simpa only [Function.comp_apply, EReal.coe_ennreal_add, Pi.add_def] using
-        (EReal.le_liminf_add (f := l)
-          (u := fun i ↦ (↑(curveAction p (us i) a b / ENNReal.ofReal p) : EReal))
-          (v := fun i ↦ (↑((∫⁻ t in Ι a b, gs i (us i t) ^ q) / ENNReal.ofReal q) : EReal)))
+    _ ≤ _ := ENNReal.le_liminf_add _ _
 
 /-- **The Sandier–Serfaty limit argument on a fixed carrier.** Let the approximating curves
 eventually be curves of maximal slope and converge pointwise on `[a,b]`, with initial
@@ -171,7 +164,7 @@ theorem isCurveOfMaximalSlope_of_tendsto {φ : X → EReal} {φs : ι → X → 
   exact EReal.coe_ennreal_le_coe_ennreal_iff.2
     (dissipation_le_liminf hpq.lt hpq.symm.pos hAC hlim hgs hslope)
 
-omit [l.IsCountablyGenerated] in
+omit [l.NeBot] [l.IsCountablyGenerated] in
 /-- **Convergence of energy and dissipation.** For a limiting curve of maximal slope with
 a strong upper gradient, well-prepared initial energies and lower bounds on the terminal
 energy and dissipation force convergence of both quantities, provided the approximating
@@ -189,6 +182,8 @@ theorem IsCurveOfMaximalSlope.tendsto_apply_and_dissipation
     Tendsto (fun i ↦ φs i (us i b)) l (𝓝 (φ (u b))) ∧
       Tendsto (fun i ↦ dissipation p q (gs i) (us i) a b) l
         (𝓝 (dissipation p q g u a b)) := by
+  rcases l.eq_or_neBot with rfl | hl
+  · exact ⟨tendsto_bot, tendsto_bot⟩
   have haI : a ∈ Icc a b := ⟨le_rfl, hab⟩
   have hbI : b ∈ Icc a b := ⟨hab, le_rfl⟩
   set D := dissipation p q g u a b

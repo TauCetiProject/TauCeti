@@ -74,6 +74,8 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
   `TauCeti.mem_integer_iff_toAdd_normalizedValuation_nonneg` and
   `TauCeti.dvd_iff_toAdd_normalizedValuation_le`: the normalized valuation reads off the units,
   the elements and the divisibility relation of the ring of integers.
+* `TauCeti.normalizedValuation_comp_unitsMap_tower`: in a tower `M/L/K`, the normalized valuation
+  of `M` on the image of `Kˣ` factors through the units map of the step `K → L`.
 
 ## Implementation notes
 
@@ -104,8 +106,6 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
--- The declaration sequence follows the human-authored specification in
--- `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`.
 variable (K) in
 /-- The normalized valuation `v_K^×` of a nonarchimedean local field `K`: the composite of
 `ValuativeRel.valuation K` with the order isomorphism `valueGroupWithZeroIsoInt` of the value
@@ -224,14 +224,16 @@ theorem valueGroupWithZeroIsoInt_valuation (x : Kˣ) :
     valueGroupWithZeroIsoInt K (valuation K (x : K))
       = WithZero.exp (-(normalizedValuation K x).toAdd) := by
   rw [toAdd_normalizedValuation_eq_ord]
-  exact Valuation.valuation_eq_exp_neg_ord (intValuation (K := K)) x.ne_zero
+  exact Valuation.valuation_eq_exp_neg_ord (intValuation (K := K))
+    ((intValuation (K := K)).ne_zero_iff.mpr x.ne_zero)
 
 /-- The normalized valuation vanishes exactly on the elements of valuation `1`. -/
 @[simp]
 theorem normalizedValuation_eq_one_iff (x : Kˣ) :
     normalizedValuation K x = 1 ↔ valuation K (x : K) = 1 := by
   rw [← toAdd_eq_zero, toAdd_normalizedValuation_eq_ord,
-    Valuation.ord_eq_iff_valuation_eq_exp_neg (intValuation (K := K)) x.ne_zero]
+    Valuation.ord_eq_iff_valuation_eq_exp_neg (intValuation (K := K))
+      ((intValuation (K := K)).ne_zero_iff.mpr x.ne_zero)]
   simp [intValuation]
 
 /-- The normalized valuation vanishes on every root of unity: `Multiplicative ℤ` is torsion
@@ -261,6 +263,15 @@ theorem toAdd_normalizedValuation_le_iff_valuation_le (x y : Kˣ) :
     WithZero.log_le_log (valueGroupWithZeroIsoInt_valuation_ne_zero y)
       (valueGroupWithZeroIsoInt_valuation_ne_zero x),
     OrderIsoClass.map_le_map_iff]
+
+/-- Two units have the same normalized valuation exactly when they have the same
+multiplicative valuation. -/
+theorem toAdd_normalizedValuation_eq_iff_valuation_eq (x y : Kˣ) :
+    (normalizedValuation K x).toAdd = (normalizedValuation K y).toAdd
+      ↔ valuation K (x : K) = valuation K (y : K) := by
+  rw [le_antisymm_iff, le_antisymm_iff (a := valuation K (x : K)),
+    toAdd_normalizedValuation_le_iff_valuation_le,
+    toAdd_normalizedValuation_le_iff_valuation_le, and_comm]
 
 /-- A uniformizer has normalized valuation `n` in its `n`-th power. -/
 theorem normalizedValuation_zpow_of_eq_ofAdd_one {ϖ : Kˣ}
@@ -431,6 +442,22 @@ theorem exists_eq_valuation_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducibl
   refine ⟨n, ?_⟩
   simpa using congrArg Units.val hn.symm
 
+/-- In a tower `M/L/K`, the normalized valuation of `M` on the image of `Kˣ` factors through
+the units map of the step `K → L`. -/
+theorem normalizedValuation_comp_unitsMap_tower (K L M : Type*) [Field K] [Field L] [Field M]
+    [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+    [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M] :
+    (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
+      ((normalizedValuation M).comp (Units.map (algebraMap L M : L →* M))).comp
+        (Units.map (algebraMap K L : K →* L)) := by
+  have h : Units.map (algebraMap K M : K →* M) =
+      (Units.map (algebraMap L M : L →* M)).comp (Units.map (algebraMap K L : K →* L)) := by
+    rw [← Units.map_comp]
+    congr 1
+    ext x
+    exact IsScalarTower.algebraMap_apply K L M x
+  rw [h, MonoidHom.comp_assoc]
+
 section NormalizedAbsoluteValue
 
 open scoped NNRat
@@ -449,6 +476,7 @@ noncomputable def normalizedAbsoluteValue : AbsoluteValue K ℚ≥0 :=
     (fun _ _ h ↦
       (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone h)
     (fun _ ↦ map_eq_zero _)
+    (fun _ ↦ (intValuation (K := K)).zero_iff)
 
 /-- The normalized absolute value is the rational power `q ^ (-v_K(x))` at every nonzero
 element, where `q` is the cardinality of the residue field. -/
@@ -458,8 +486,7 @@ theorem normalizedAbsoluteValue_apply_ne_zero (x : K) (hx : x ≠ 0) :
         (-(normalizedValuation K (Units.mk0 x hx)).toAdd) := by
   rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_apply_of_ne_zero]
-  · rw [toAdd_normalizedValuation_eq_ord, Valuation.ord_def, neg_neg,
-      WithZero.toAdd_unzero_eq_log]
+  · rw [toAdd_normalizedValuation_eq_ord, Valuation.ord_def, neg_neg]
     simp only [Units.val_mk0]
   · simp [intValuation, hx]
 

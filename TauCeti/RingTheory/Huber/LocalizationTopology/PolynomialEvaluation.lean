@@ -63,11 +63,12 @@ namespace TauCeti.Huber
 
 open UniformSpace TauCeti.Localization
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 section PolynomialEvaluation
 
-variable (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+variable [NonarchimedeanRing A] (s : A) (S : Type*) [CommRing S] [Algebra A S]
+  [IsLocalization.Away s S]
 
 /-- **The evaluation of polynomials at the fractions**, `Xᵢ ↦ tᵢ/s`, read on the subring of
 polynomials inside `A⟨X₁, …, Xₖ⟩`.
@@ -116,9 +117,8 @@ end PolynomialEvaluation
 namespace PairOfDefinition
 
 variable (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*)
-  [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
+  [CommRing S] [Algebra A S] [IsLocalization.Away s S]
 
-omit [NonarchimedeanRing A] hden in
 /-- Every element of `D` is the value of a polynomial over `A₀` at the fractions. -/
 private theorem exists_aeval_eq_of_mem_locSubring {d : S} (hd : d ∈ locSubring P T s S) :
     ∃ q : MvPolynomial ↥T ↥P.ringOfDefinition,
@@ -127,7 +127,6 @@ private theorem exists_aeval_eq_of_mem_locSubring {d : S} (hd : d ∈ locSubring
     Algebra.adjoin_range_eq_range_aeval] at hd
   exact hd
 
-omit [NonarchimedeanRing A] in
 /-- **Every element of the `n`-th neighbourhood of `Aₛ` is the value of a polynomial with
 coefficients in `Iⁿ`.** Only this direction is proved here; the converse, that every such value
 lies in the neighbourhood, is `TauCeti.Huber.PairOfDefinition.aeval_mem_locIdealImage_of_coeff_mem`
@@ -164,7 +163,6 @@ theorem exists_aeval_eq_of_mem_locIdealImage (n : ℕ) {x : S}
 
 /-! ### The polynomial evaluation is open -/
 
-omit [NonarchimedeanRing A] in
 /-- **Every element of the `n`-th neighbourhood of `Aₛ` is the value at the fractions of a
 polynomial over `A` whose coefficients all lie in the image of `Iⁿ`.**
 
@@ -197,6 +195,10 @@ theorem exists_polynomial_coeff_mem_idealImage {k : ℕ} (t : Fin k → A)
     rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_map, ← IsScalarTower.algebraMap_eq,
       ← MvPolynomial.aeval_def, MvPolynomial.aeval_rename, hcomp]
     exact hqx
+
+section Open
+
+variable [NonarchimedeanRing A] (hden : HasDenominatorPower P T s S)
 
 /-- **The polynomial evaluation `Xᵢ ↦ tᵢ/s` is an open map**, when the fractions of `T` all
 occur among the `tᵢ/s`.
@@ -249,9 +251,10 @@ theorem isOpenMap_polyEvalHom {k : ℕ} (t : Fin k → A)
     exact hn (hp ν)
   · simpa only [polyEvalHom_weightedPolynomialsEquiv_apply] using hpx
 
+end Open
+
 /-! ### The polynomial evaluation is continuous -/
 
-omit [NonarchimedeanRing A] in
 /-- **A polynomial whose coefficients all lie in the image of `Iⁿ` takes its value at the fractions
 inside the `n`-th neighbourhood of `Aₛ`.**
 
@@ -269,6 +272,8 @@ theorem aeval_mem_locIdealImage_of_coeff_mem {k : ℕ} (t : Fin k → A)
   refine locIdealImage_mul_locSubring_subset P T s S n (Set.mul_mem_mul ?_ ?_)
   · exact hyd ▸ algebraMap_mem_locIdealImage P T s S hy
   · exact prod_mem fun i _ ↦ pow_mem (hmem i) _
+
+variable [NonarchimedeanRing A] (hden : HasDenominatorPower P T s S)
 
 /-- **The polynomial evaluation is continuous.** -/
 theorem continuous_polyEvalHom {k : ℕ} (t : Fin k → A)

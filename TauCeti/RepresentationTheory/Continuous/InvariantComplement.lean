@@ -19,6 +19,10 @@ again invariant, so an invariant subspace admitting an orthogonal projection has
 complement. This is the averaging-free half of complete reducibility: it needs no measure, only
 that every action operator preserves the inner product.
 
+For the subspace of fixed vectors, its orthogonal complement is invariant even for a unitary
+*monoid* representation; `IsUnitary.invariantsOrthogonal` is the resulting representation,
+which has no nonzero invariant vectors.
+
 Invariance of a submodule is Mathlib's `Representation.invtSubmodule`, the sublattice of submodules
 invariant under every action operator, and semisimplicity is Mathlib's
 `Representation.IsSemisimpleRepresentation`, the statement that the lattice of subrepresentations is
@@ -79,6 +83,53 @@ public section
 open scoped InnerProductSpace
 
 namespace ContRepresentation
+
+/-! ### The orthogonal complement of the fixed subspace -/
+
+section Monoid
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Monoid G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+
+namespace IsUnitary
+
+variable {ρ : ContRepresentation 𝕜 G V}
+
+/-- The restriction of a unitary representation to the orthogonal complement of its invariant
+vectors. -/
+def invariantsOrthogonal (hρ : ρ.IsUnitary) : ContRepresentation 𝕜 G ρ.invariantsᗮ :=
+  ρ.subrepresentation ρ.invariantsᗮ (fun g _ hv ↦ by
+    rw [Submodule.mem_orthogonal]
+    intro w hw
+    rw [← hw g, hρ.inner_map_map]
+    exact hv w hw)
+
+/-- The action on the orthogonal complement is the original action on underlying vectors. -/
+@[simp]
+theorem coe_invariantsOrthogonal_apply (hρ : ρ.IsUnitary) (g : G) (v : ρ.invariantsᗮ) :
+    (hρ.invariantsOrthogonal g v : V) = ρ g v :=
+  coe_subrepresentation_apply _ _
+
+/-- The orthogonal-complement representation is unitary. -/
+theorem isUnitary_invariantsOrthogonal (hρ : ρ.IsUnitary) :
+    hρ.invariantsOrthogonal.IsUnitary :=
+  hρ.subrepresentation _
+
+/-- Removing the invariant subspace leaves no nonzero invariant vectors. -/
+@[simp]
+theorem invariants_invariantsOrthogonal (hρ : ρ.IsUnitary) :
+    hρ.invariantsOrthogonal.invariants = ⊥ := by
+  apply eq_bot_iff.mpr
+  intro v hv
+  have hfixed : (v : V) ∈ ρ.invariants := by
+    intro g
+    simpa only [coe_invariantsOrthogonal_apply] using congrArg Subtype.val (hv g)
+  have hzero : (v : V) = 0 :=
+    (Submodule.disjoint_def.mp ρ.invariants.orthogonal_disjoint) v hfixed v.property
+  exact Subtype.ext hzero
+
+end IsUnitary
+
+end Monoid
 
 /-! ### The orthogonal complement of an invariant subspace -/
 
@@ -162,11 +213,7 @@ theorem isCompl_orthogonalSubrepresentation (hπ : IsUnitary π)
     (σ : Subrepresentation π.toRepresentation) [σ.toSubmodule.HasOrthogonalProjection] :
     IsCompl σ (hπ.orthogonalSubrepresentation σ) := by
   have h : IsCompl σ.toSubmodule σ.toSubmoduleᗮ := σ.toSubmodule.isCompl_orthogonal
-  constructor
-  · rw [disjoint_iff]
-    exact Subrepresentation.toSubmodule_injective h.inf_eq_bot
-  · rw [codisjoint_iff]
-    exact Subrepresentation.toSubmodule_injective h.sup_eq_top
+  exact Subrepresentation.isCompl_toSubmodule.mp h
 
 /-- A subrepresentation, together with its orthogonal complement taken inside a larger
 subrepresentation, recovers that larger subrepresentation. This is

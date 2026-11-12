@@ -66,7 +66,7 @@ of the group supplies a positive definite invariant Hermitian form, and comparin
 a real structure, whose real points are a real form. -/
 theorem isRealizableOverReal_of_frobeniusSchurIndicator_eq_one
     (h : frobeniusSchurIndicator ρ = 1) : IsRealizableOverReal ρ := by
-  have : FiniteDimensional ℂ V := IsIrreducible.finiteDimensional ‹ρ.IsIrreducible›
+  have : FiniteDimensional ℂ V := ρ.asModuleEquiv.finiteDimensional
   obtain ⟨B, hBinv, hBsymm, hBnd⟩ := (frobeniusSchurIndicator_eq_one_iff ρ).mp h
   obtain ⟨H, hHinv, hHpos, hdef⟩ :=
     exists_isInvariantSesqForm_isPosSemidef_apply_self_ne_zero ρ

@@ -218,11 +218,7 @@ theorem brBaseChange_brBaseChange (M : Type w) [Field M] [Algebra K M] [Algebra 
     brBaseChange L M (brBaseChange K L x) = brBaseChange K M x := by
   let τ : SeparableClosure K →ₐ[K] SeparableClosure L := IsSepClosed.lift
   let τ' : SeparableClosure L →ₐ[L] SeparableClosure M := IsSepClosed.lift
-  -- The composite `Kˢ → Lˢ → Mˢ` is a `K`-embedding.
-  have : IsScalarTower K L (SeparableClosure M) := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply K M (SeparableClosure M),
-      IsScalarTower.algebraMap_apply K L M, ← IsScalarTower.algebraMap_apply L M]
-  let τ'' : SeparableClosure K →ₐ[K] SeparableClosure M := (τ'.restrictScalars K).comp τ
+  let τ'' : SeparableClosure K →ₐ[K] SeparableClosure M := compSeparableClosure τ τ'
   have hpair := explicitMap2_congr_of_eq (AbsoluteGaloisGroup K) (UnitsCoeff K)
     (AbsoluteGaloisGroup M) (UnitsCoeff M) (absoluteGaloisGroupMap τ'')
     ((absoluteGaloisGroupMap τ).comp (absoluteGaloisGroupMap τ')) (unitsCoeffBaseChange τ'')
@@ -232,8 +228,8 @@ theorem brBaseChange_brBaseChange (M : Type w) [Field M] [Algebra K M] [Algebra 
     (hψ := (absoluteGaloisGroupMap τ).comp_map_smul (absoluteGaloisGroupMap τ')
       (unitsCoeffBaseChange τ) (unitsCoeffBaseChange τ')
       (unitsCoeffBaseChange_smul τ) (unitsCoeffBaseChange_smul τ'))
-    (ContinuousMonoidHom.ext fun g ↦
-      (absoluteGaloisGroupMap_absoluteGaloisGroupMap τ τ' τ'' (fun _ ↦ rfl) g).symm)
+    (ContinuousMonoidHom.ext fun g ↦ (absoluteGaloisGroupMap_absoluteGaloisGroupMap τ τ' τ''
+      (compSeparableClosure_apply τ τ') g).symm)
     (AddMonoidHom.ext fun _ ↦ Additive.toMul.injective (Units.ext (by simp [τ''])))
   rw [brBaseChange_apply K L τ, brBaseChange_apply L M τ', brBaseChange_apply K M τ'',
     AddEquiv.symm_apply_apply, hpair,

@@ -113,7 +113,7 @@ lemma scalarExtensionMap_smul {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (a : A) (x : A ⊗[R] V) :
     scalarExtensionMap (V := V) φ (a • x) =
       φ.hom a • scalarExtensionMap (V := V) φ x :=
-  rTensor_algHom_smul φ.hom a x
+  φ.hom.rTensor_toLinearMap_apply_smul a x
 
 /-- Extend a scalar-extension automorphism along a morphism of value algebras.
 

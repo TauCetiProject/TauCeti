@@ -93,7 +93,7 @@ theorem measurable_permReindex_exchangeableSigma (π : Equiv.Perm ℕ) :
     ext x
     simp only [Set.mem_preimage]
     have hconj : (MulAction.fixedBy ℕ (π⁻¹ * σ * π))ᶜ.Finite :=
-      TauCeti.finite_compl_fixedBy_conj hσ
+      TauCeti.finite_compl_fixedBy_conj.mpr hσ
     have hinv := MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma
       (α := α) hs hconj
     have hx := Set.ext_iff.mp hinv (permReindex (α := α) π x)
@@ -161,7 +161,7 @@ theorem pathTail_le_exchangeableSigma :
   · exact tailProcess_le_ambient 0 (X := fun k (x : ℕ → α) => x k)
       (fun k _ => measurable_pi_apply k) s hs
   · intro π hπ
-    rcases TauCeti.finite_compl_fixedBy_eventually_eq_self hπ with ⟨N, hN⟩
+    rcases TauCeti.eventually_eq_self_of_finite_compl_fixedBy hπ with ⟨N, hN⟩
     exact preimage_permReindex_eq_of_measurable_tailFamily
       ((pathTail_le_tailFamily (α := α) N) s hs) hN
 

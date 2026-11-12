@@ -55,6 +55,12 @@ In global notation, the two exceptions of the local realization theorem
 * `GlobalFormInvariants.IsLocalRealization.equivalent_atFinitePlace`,
   `GlobalFormInvariants.IsLocalRealization.equivalent_atRealPlace`: a form whose system is `I` is
   isometric at every finite and real place to any family realizing `I`.
+* `GlobalFormInvariants.IsLocalRealization.atFinitePlace_equivalent_iff_finiteHasse_eq`: a form
+  with the rank and global discriminant of `I` is isometric at a finite place to a family
+  realizing `I` exactly when its Hasse sign there is the prescribed one.
+* `GlobalFormInvariants.IsLocalRealization.atRealPlace_equivalent_iff_realPositiveIndex_eq`: a
+  form of rank `I.rank` is isometric at a real place to a family realizing `I` exactly when its
+  positive index there is the prescribed one.
 
 ## References
 
@@ -187,6 +193,33 @@ theorem equivalent_atFinitePlace (hL : I.IsLocalRealization U R)
   · rw [hL.discr_finite, GlobalFormInvariants.discrAtFinitePlace_def,
       QuadraticForm.globalInvariants_discr]
   · rw [hL.localHasse_finite, QuadraticForm.globalInvariants_finiteHasse]
+
+/-- A regular form of rank `I.rank` with the global discriminant of `I` is isometric at a finite
+place `v` to the form at `v` of a family realizing `I` exactly when its Hasse sign at `v` is the
+prescribed one. -/
+theorem atFinitePlace_equivalent_iff_finiteHasse_eq (hL : I.IsLocalRealization U R)
+    (hQr : Module.finrank K V = I.rank)
+    (hQd : letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+      RegularFormClass.discr (formClass Q hQ) = I.discr)
+    (v : HeightOneSpectrum (𝓞 K)) :
+    (Q.atFinitePlace v).Equivalent (U v) ↔ Q.finiteHasse hQ v = I.finiteHasse v := by
+  rw [Q.atFinitePlace_equivalent_iff_finrank_eq_and_discr_eq_and_finiteHasse_eq hQ v
+    (hL.nondegenerate_finite v), hL.discr_finite, hL.localHasse_finite,
+    GlobalFormInvariants.discrAtFinitePlace_def, hQd]
+  simp [hQr]
+
+/-- A regular form of rank `I.rank` is isometric at a real place `w` to the form at `w` of a
+family realizing `I` exactly when its positive index at `w` is the prescribed one. -/
+theorem atRealPlace_equivalent_iff_realPositiveIndex_eq (hL : I.IsLocalRealization U R)
+    (hQ : Q.Nondegenerate) (hQr : Module.finrank K V = I.rank)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (Q.atRealPlace w).Equivalent (R w) ↔ Q.realPositiveIndex w = I.realPositiveIndex w := by
+  have := QuadraticForm.realPositiveIndex_add_realNegativeIndex_eq_finrank hQ w
+  rw [QuadraticForm.equivalent_iff_sigPos_eq_and_sigNeg_eq
+    (QuadraticForm.Nondegenerate.atRealPlace hQ w) (hL.nondegenerate_real w), hL.sigPos_real,
+    hL.sigNeg_real, ← QuadraticForm.realPositiveIndex_eq_sigPos,
+    ← QuadraticForm.realNegativeIndex_eq_sigNeg, GlobalFormInvariants.realNegativeIndex_def]
+  omega
 
 /-- A regular form whose system of local invariants is `I` is isometric at every real place `w`
 to the form at `w` of any family realizing `I`. -/

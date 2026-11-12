@@ -11,17 +11,16 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.Spectrum
 # The Rayleigh principle for a coercive variational problem
 
 Let `B` be a bounded coercive symmetric bilinear form on a real Hilbert space `V` and let
-`J : V →L[ℝ] H` be a continuous linear map into a real inner-product space. When `H` is complete
-and `J` is nonzero and compact, the **variational eigenvalues** of the pair are the reciprocals of
-the nonzero
-eigenvalues of the solution operator `S = IsCoercive.formSolutionOperator`, and the *least*
+`J : V →L[ℝ] H` be a continuous linear map into a real inner-product space. When `J` is
+nonzero and compact, the **variational eigenvalues** of the pair are the reciprocals of the
+nonzero eigenvalues of the solution operator `S = IsCoercive.formSolutionOperator`, and the *least*
 variational eigenvalue `‖S‖⁻¹` is the minimum of the **Rayleigh quotient**
 
 `B v v / ‖J v‖²`,
 
 taken over the `v : V` with `J v ≠ 0`.  Without compactness, this file proves that `‖S‖⁻¹` is
 still the largest constant `C` for which `C ‖J v‖² ≤ B v v` holds for every `v : V`, provided
-`J ≠ 0`; these bounds do not require completeness of `H`.
+`J ≠ 0`; neither the bounds nor attainment require completeness of `H`.
 
 For the Dirichlet problem of a divergence-form elliptic operator, with `V = H¹₀(Ω)`,
 `H = L²(Ω)` and `J` the inclusion, this says that the first eigenvalue is the minimum of the
@@ -132,7 +131,7 @@ variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Complet
 /-- **The Rayleigh principle**: the least variational eigenvalue `‖S‖⁻¹` is the *minimum* of the
 Rayleigh quotient `B v v / ‖J v‖²` over the vectors with `J v ≠ 0`.  The minimum is attained at
 an eigenfunction, which is why compactness of `J` is assumed. -/
-theorem isLeast_rayleighQuotient [CompleteSpace H] (hB : IsCoercive B) {J : V →L[ℝ] H}
+theorem isLeast_rayleighQuotient (hB : IsCoercive B) {J : V →L[ℝ] H}
     (hJ : IsCompactOperator J)
     (hsymm : ∀ u v : V, B u v = B v u) (hJne : J ≠ 0) :
     IsLeast {r : ℝ | ∃ v : V, J v ≠ 0 ∧ B v v / ‖J v‖ ^ 2 = r}

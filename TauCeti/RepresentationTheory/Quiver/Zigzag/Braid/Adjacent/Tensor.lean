@@ -264,31 +264,20 @@ private theorem adjacentTripleUnderlyingEquiv_insert {i j : V} (h : G.Adj j i)
     | add x y hx hy => simp only [map_add, hx, hy]
   simpa only [LinearEquiv.symm_apply_apply] using key (zigzagBraidBimoduleFactorsEquiv k G i u)
 
-private def adjacentTripleInsertEquiv {i j : V} (h : G.Adj j i) :
-    (U i).shiftObj 2 ≃ₗ[E] T (T (U i) (U j)) (U i) :=
-  LinearEquiv.ofBijective (adjacentTripleInsert k G h)
-    ⟨fun x y heq ↦ by
-      simpa only [adjacentTripleUnderlyingEquiv_insert] using
-        congrArg (zigzagBraidAdjacentTripleUnderlyingEquiv k G h) heq,
-     fun t ↦ ⟨zigzagBraidAdjacentTripleUnderlyingEquiv k G h t, by
-       apply (zigzagBraidAdjacentTripleUnderlyingEquiv k G h).injective
-       exact adjacentTripleUnderlyingEquiv_insert k G h _⟩⟩
+private theorem bijective_adjacentTripleInsert {i j : V} (h : G.Adj j i) :
+    Function.Bijective (adjacentTripleInsert k G h) :=
+  ⟨fun x y heq ↦ by
+    simpa only [adjacentTripleUnderlyingEquiv_insert] using
+      congrArg (zigzagBraidAdjacentTripleUnderlyingEquiv k G h) heq,
+   fun t ↦ ⟨zigzagBraidAdjacentTripleUnderlyingEquiv k G h t, by
+     apply (zigzagBraidAdjacentTripleUnderlyingEquiv k G h).injective
+     exact adjacentTripleUnderlyingEquiv_insert k G h _⟩⟩
 
 private theorem isIso_adjacentTripleInsert {i j : V} (h : G.Adj j i) :
-    IsIso (zigzagBraidAdjacentTripleInsert k G h) := by
-  let F := GradedModuleCat.toModuleCat (𝒜 := (zigzagEnvelopingGrading k G).piece)
-  let q : F.obj ((U i).shiftObj 2) ≅ F.obj (T (T (U i) (U j)) (U i)) :=
-    (adjacentTripleInsertEquiv k G h).toModuleIso
-  have heq : F.map (zigzagBraidAdjacentTripleInsert k G h) =
-      q.hom := by
-    apply ModuleCat.hom_ext
-    apply LinearMap.ext
-    intro u
-    rfl
-  have : IsIso q.hom := inferInstance
-  have : IsIso (F.map (zigzagBraidAdjacentTripleInsert k G h)) :=
-    heq.symm ▸ inferInstance
-  exact isIso_of_reflects_iso _ F
+    IsIso (zigzagBraidAdjacentTripleInsert k G h) :=
+  (GradedModuleCat.isIso_iff_bijective _).2 <| by
+    simpa only [zigzagBraidAdjacentTripleInsert, GradedModuleCat.hom_ofHom] using
+      bijective_adjacentTripleInsert k G h
 
 /-- At adjacent vertices, the top actual triple tensor is the vertex bimodule shifted by two. -/
 def zigzagBraidAdjacentTripleIso {i j : V} (h : G.Adj j i) :
@@ -334,11 +323,7 @@ theorem zigzagBraidAdjacentTripleIso_hom_apply {i j : V} (h : G.Adj j i)
     (t : T (T (U i) (U j)) (U i)) :
     (zigzagBraidAdjacentTripleIso k G h).hom.hom t =
       zigzagBraidAdjacentTripleUnderlyingEquiv k G h t := by
-  obtain ⟨u, hu⟩ := (adjacentTripleInsertEquiv k G h).surjective t
-  -- LinearEquiv.ofBijective retains adjacentTripleInsert as its forward function.
-  -- Unbundle that application: this private equivalence has no separate computation
-  -- equation to rewrite before using the public insertion and inverse equations.
-  change adjacentTripleInsert k G h u = t at hu
+  obtain ⟨u, hu⟩ := (bijective_adjacentTripleInsert k G h).2 t
   rw [← hu, adjacentTripleUnderlyingEquiv_insert]
   have heq := congrArg (fun f : (U i).shiftObj 2 ⟶ (U i).shiftObj 2 ↦ f.hom u)
     (Iso.inv_hom_id (zigzagBraidAdjacentTripleIso k G h))

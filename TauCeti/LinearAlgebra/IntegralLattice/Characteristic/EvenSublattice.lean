@@ -173,4 +173,18 @@ theorem natCard_quotient_evenSubmodule (hL : ¬ L.IsEven) :
   rw [Nat.card_congr (L.evenSubmoduleQuotientEquiv hL).toEquiv]
   exact Nat.card_zmod 2
 
+/-- The even sublattice has index at most two in the lattice: it is the kernel of norm parity. -/
+theorem relIndex_evenSublattice_le_two :
+    L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup ≤ 2 := by
+  have htop : (⊤ : AddSubgroup L).map (L.carrier.subtype : L →+ V) =
+      L.carrier.toAddSubgroup :=
+    (AddSubgroup.map_top _).trans (AddSubgroup.range_subtype L.carrier.toAddSubgroup)
+  have hker : L.evenSubmodule.toAddSubgroup = L.normParity.ker := by
+    ext x
+    simp [normParity_apply, ZMod.intCast_eq_zero_iff_even]
+  rw [evenSublattice_carrier, Submodule.map_toAddSubgroup, ← htop, hker,
+    AddSubgroup.relIndex_map_map_of_injective _ _ L.carrier.injective_subtype,
+    AddSubgroup.relIndex_top_right, AddSubgroup.index_ker]
+  exact (Nat.card_le_card_of_injective _ Subtype.coe_injective).trans (Nat.card_zmod 2).le
+
 end TauCeti.IntegralLattice

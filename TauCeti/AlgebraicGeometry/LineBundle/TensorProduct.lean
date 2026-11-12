@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.TensorProduct.Closure
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Associator
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 
 /-!
@@ -22,7 +22,9 @@ for the trivial line bundle.
 
 * `InvertibleSheaf.tensorProduct` packages the tensor product of two line bundles;
 * `InvertibleSheaf.trivialObjIsoUnit` identifies the trivial line bundle with the monoidal unit;
-* `InvertibleSheaf.tensorProduct_obj` identifies its underlying sheaf;
+* `InvertibleSheaf.tensorProduct_obj` identifies its underlying sheaf, and
+  `InvertibleSheaf.tensorProductObjIso` identifies it with the monoidal tensor product of the
+  underlying sheaves;
 * `InvertibleSheaf.tensorProductCongrLeft` and `InvertibleSheaf.tensorProductCongrRight` transport
   isomorphisms through either tensor factor, so `InvertibleSheaf.isIsomorphic_tensorProduct`
   shows that tensor product respects isomorphism;
@@ -35,8 +37,6 @@ The underlying sheaf is exposed by `tensorProduct_obj`, while the congruence, sy
 associativity, and unit isomorphisms provide the categorical API for manipulating tensor products
 of line bundles.
 -/
-
--- This implementation follows `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A.
 
 public section
 
@@ -73,6 +73,13 @@ underlying sheaves of `L` and `K`. -/
 lemma tensorProduct_obj (L K : InvertibleSheaf X) :
     (tensorProduct L K).obj = SheafOfModules.tensorProduct X.sheaf L.obj K.obj :=
   (rfl)
+
+/-- The underlying sheaf of the tensor product of two line bundles is the tensor product of their
+underlying sheaves in the monoidal category of `𝒪_X`-modules. -/
+def tensorProductObjIso (L K : InvertibleSheaf X) :
+    (tensorProduct L K).obj ≅ L.obj ⊗ K.obj :=
+  eqToIso (tensorProduct_obj L K) ≪≫ SheafOfModules.tensorProductIso X.sheaf L.obj K.obj ≪≫
+    (L.obj.tensorUnderlyingIso K.obj).symm
 
 /-- The sheaf isomorphism underlying transport through the first tensor factor. -/
 def tensorProductCongrLeftIso {L L' K : InvertibleSheaf X} (e : L ≅ L') :

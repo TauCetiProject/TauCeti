@@ -65,7 +65,7 @@ private theorem card_point_curveX3SubXAddOne_zmod (p : ℕ) [Fact p.Prime]
   rw [← pointCount_eq_card_point, pointCount_def,
     Nat.card_congr (Equiv.subtypeEquivRight
       (q := fun xy : ZMod p × ZMod p ↦ xy.2 ^ 2 = xy.1 ^ 3 - xy.1 + 1)
-      fun xy ↦ by rw [equation_iff]; simp [curveX3SubXAddOne, sub_eq_add_neg]),
+      fun xy ↦ by rw [← algebraMap_int_eq]; exact equation_curveX3SubXAddOne_iff xy.1 xy.2),
     Nat.card_eq_fintype_card]
 
 /-- The reduction of `y² = x³ - x + 1` modulo `3` has `7` points, including infinity. -/
@@ -108,7 +108,9 @@ theorem torsion_curveX3SubXAddOne_eq_bot :
       curveX3SubXAddOne.card_nsmul_reductionHom_baseChange_eq_zero w 5 hw P) hP
 
 /-- The rational point group of `y² = x³ - x + 1` is torsion-free. -/
-instance : IsAddTorsionFree (curveX3SubXAddOne.baseChange ℚ).toAffine.Point :=
-  AddCommGroup.isAddTorsionFree_iff_torsion_eq_bot.mpr torsion_curveX3SubXAddOne_eq_bot
+instance : HasUniqueDiv (curveX3SubXAddOne.baseChange ℚ).toAffine.Point where
+  nsmul_right_injective _ hn a b h :=
+    (AddCommGroup.isAddTorsionFree_iff_torsion_eq_bot.mpr
+      torsion_curveX3SubXAddOne_eq_bot).eq_of_nsmul_eq_nsmul_of_addCommute hn (.all a b) h
 
 end TauCeti.WorkedExamples

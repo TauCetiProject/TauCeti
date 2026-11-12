@@ -35,6 +35,9 @@ frame smoothness API replace those constructions.
   metric.
 * `Riemannian.Tensor.rieszDual_eq_sum_chartLocalFrame` gives the inverse-Gram-matrix coordinate
   formula for the Riesz dual.
+* `Riemannian.Tensor.norm_sq_eq_apply_rieszDual` and
+  `Riemannian.Tensor.norm_sq_eq_dotProduct_chartInvGramMatrix_mulVec` express the squared norm of
+  a covector as its value on its Riesz dual, and in coordinates through the inverse Gram matrix.
 * `Riemannian.Tensor.contMDiffOn_rieszDual` proves smoothness on a chart domain from smoothness
   of the covector's evaluations on the chart-local frame.
 * `Riemannian.Tensor.contMDiffAt_rieszDual` is the corresponding pointwise criterion.
@@ -44,8 +47,6 @@ Mathlib's `LinearIsometryEquiv` API (`map_add`, `map_smul`, `LinearIsometryEquiv
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Regularity of the Levi-Civita connection".
 * M. P. do Carmo, *Riemannian Geometry*, Chapter 2.
 * Poincare-Conjecture, `DoCarmoLib/Riemannian/TensorBundle/MusicalIso.lean`, stages 6–7,
   revision `24f32e4d600878bfaac6bc2f2f9324175571c321` (Apache-2.0).
@@ -74,7 +75,7 @@ search on `TangentSpace I x`. -/
 def rieszDual (x : M) : (TangentSpace I x →L[ℝ] ℝ) ≃ₗᵢ[ℝ] TangentSpace I x := by
   let _ : FiniteDimensional ℝ (TangentSpace I x) :=
     VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-  let _ := FiniteDimensional.complete ℝ (TangentSpace I x)
+  let _ := FiniteDimensional.completeSpace ℝ (TangentSpace I x)
   exact (InnerProductSpace.toDual ℝ (TangentSpace I x)).symm
 
 /-- The Riesz dual represents its functional by the fibre inner product. -/
@@ -83,7 +84,7 @@ theorem inner_rieszDual {x : M} (φ : TangentSpace I x →L[ℝ] ℝ)
     (v : TangentSpace I x) : inner ℝ (rieszDual (I := I) x φ) v = φ v := by
   let _ : FiniteDimensional ℝ (TangentSpace I x) :=
     VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-  let _ := FiniteDimensional.complete ℝ (TangentSpace I x)
+  let _ := FiniteDimensional.completeSpace ℝ (TangentSpace I x)
   exact InnerProductSpace.toDual_symm_apply
 
 /-- A tangent vector is the Riesz dual of `φ` exactly when its inner product against every
@@ -134,6 +135,20 @@ theorem rieszDual_eq_sum_chartLocalFrame (a : M) {x : M}
       rw [hGGinv]
       exact congrFun (Matrix.one_mulVec v) k
     _ = φ (e k) := by rw [he k]
+
+/-- The squared norm of a covector is its value on its Riesz dual. -/
+theorem norm_sq_eq_apply_rieszDual {x : M} (φ : TangentSpace I x →L[ℝ] ℝ) :
+    ‖φ‖ ^ 2 = φ (rieszDual (I := I) x φ) := by
+  rw [← (rieszDual (I := I) x).norm_map φ, ← real_inner_self_eq_norm_sq, inner_rieszDual]
+
+/-- The coordinate formula for the squared norm of a covector: in a chart-local frame it is the
+quadratic form of the inverse Gram matrix on the components `φ (eⱼ)` of the covector. -/
+theorem norm_sq_eq_dotProduct_chartInvGramMatrix_mulVec (a : M) {x : M}
+    (hx : x ∈ (chartAt H a).source) (φ : TangentSpace I x →L[ℝ] ℝ) :
+    ‖φ‖ ^ 2 = (fun j ↦ φ (chartLocalFrame (I := I) a j x)) ⬝ᵥ
+      (chartInvGramMatrix (I := I) a x *ᵥ fun j ↦ φ (chartLocalFrame (I := I) a j x)) := by
+  rw [norm_sq_eq_apply_rieszDual, rieszDual_eq_sum_chartLocalFrame (I := I) a hx, map_sum]
+  simp only [map_smul, smul_eq_mul, dotProduct, mul_comm]
 
 section Smooth
 

@@ -34,7 +34,7 @@ public section
 namespace TauCeti
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 variable (R : Type*) [CommSemiring R] {x : GridState n}
 
 /-- A vertical rectangle--initial-side pentagon annulus has one factor for each covered

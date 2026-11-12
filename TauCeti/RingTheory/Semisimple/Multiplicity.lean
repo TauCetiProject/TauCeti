@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Tower
+public import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Finset
+public import TauCeti.LinearAlgebra.End.Basic
 public import TauCeti.RingTheory.SimpleModule.Isotypic
 public import TauCeti.RingTheory.CompositionSeries.Additivity
 public import TauCeti.RingTheory.Semisimple.Schur
@@ -26,10 +29,10 @@ so that the multiplicity is an invariant of `M` and needs no decomposition to be
 The proof is Schur's lemma plus additivity.  A hom space out of `S` into a finite product splits
 as the product of the hom spaces into the factors, and each factor contributes `1` or `0`
 according as it is or is not isomorphic to `S`.  Those two values are the dimension forms of
-Schur's lemma, `TauCeti.finrank_linearMap_eq_one_of_nonempty_linearEquiv` and
+Schur's lemma, `LinearEquiv.finrank_linearMap_eq_one` and
 `TauCeti.finrank_linearMap_eq_zero_of_isEmpty_linearEquiv`, proved in
-`TauCeti/RingTheory/Semisimple/Schur.lean` alongside the transport of a hom space along an
-isomorphism of its target, `TauCeti.homCongrRight`.
+`TauCeti/RingTheory/Semisimple/Schur.lean`. Transport of a hom space along an isomorphism of its
+target uses `LinearEquiv.homCongrRight`, defined in `TauCeti/Algebra/Module/Equiv/Basic.lean`.
 
 Over an arbitrary field, an isomorphic factor instead contributes
 `finrank k (Module.End A S)`.  The corresponding scaled multiplicity formula is enough to recover
@@ -66,9 +69,9 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
   finitely generated semisimple module `M` to a simple module `S` number `#End(S) ^ [M : S]`.
 * `TauCeti.natCard_linearMap_pi_eq_prod_pow`: maps from `M` into a finite product of simple
   modules `N i` number `∏ i, #End(N i) ^ [M : N i]`.
-* `TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`: over any ring,
+* `IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`: over any ring,
   finitely generated semisimple modules with the same Jordan-Hölder multiplicities are isomorphic.
-* `TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq`: over any ring,
+* `IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq`: over any ring,
   finite semisimple modules `M` and `N` with `#Hom(M, N) · #Hom(N, M) = #End(M) · #End(N)` are
   isomorphic.
 * `TauCeti.finrank_linearMap_pos_iff_exists_nonempty_linearEquiv`: the multiplicity is positive
@@ -82,6 +85,10 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
 * `TauCeti.finrank_linearMap_pos_of_ne_bot`: for a finite-dimensional `M`, the hom space out of
   any nonzero submodule is positive-dimensional.  This asks for neither simplicity nor an
   algebraically closed field, so it lives apart from the results above.
+* `TauCeti.range_isotypicEval`: **the range of evaluation is the isotypic component**, where
+  `TauCeti.isotypicEval : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M` is `s ⊗ f ↦ f s`.  Evaluation and its
+  naturality in the target (`TauCeti.isotypicEval_comp`) are stated over a commutative semiring, no
+  finiteness and no field operations being involved.
 
 ## The isotypic component
 
@@ -93,6 +100,12 @@ finite-dimensional.  What the multiplicity theorem adds is the value of the expo
 their hom spaces out of `S`, and the count above identifies the exponent with
 `finrank k (S →ₗ[A] M)`. This is the decomposition-free description of the component that a
 multiplicity computation needs.
+
+The same fact says that evaluation `S ⊗[k] (S →ₗ[A] M) →ₗ[A] M` has the isotypic component as its
+range: a map out of `S` lands there, and every submodule isomorphic to `S` is the range of such a
+map. This half of the uncounted decomposition needs only a commutative semiring of scalars; that
+evaluation is moreover injective, and hence an isomorphism onto the component, is proved over an
+algebraically closed field in `TauCeti/RingTheory/Semisimple/IsotypicTensor.lean`.
 
 ## Implementation notes
 
@@ -154,7 +167,7 @@ theorem finrank_linearMap_pi_eq_natCard_mul_finrank_end :
       if Nonempty (S ≃ₗ[A] N i) then Module.finrank k (Module.End A S) else 0 := by
     intro i
     split_ifs with hi
-    · exact (homCongrRight k (S := S) hi.some).finrank_eq.symm
+    · exact (LinearEquiv.homCongrRight k (S := S) hi.some).finrank_eq.symm
     · exact finrank_linearMap_eq_zero_of_isEmpty_linearEquiv (not_nonempty_iff.mp hi)
   rw [hpi, Finset.sum_congr rfl fun i _ ↦ hval i]
   simp [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.sum_ite]
@@ -166,10 +179,35 @@ theorem _root_.LinearEquiv.finrank_linearMap_eq_natCard_mul_finrank_end {M : Typ
     (e : M ≃ₗ[A] ∀ i, N i) :
     Module.finrank k (S →ₗ[A] M) =
       Nat.card {i // Nonempty (S ≃ₗ[A] N i)} * Module.finrank k (Module.End A S) := by
-  rw [(homCongrRight k (S := S) e).finrank_eq,
+  rw [(LinearEquiv.homCongrRight k (S := S) e).finrank_eq,
     finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k)]
 
 end ArbitraryField
+
+section SimpleTarget
+
+variable {k A S : Type*} [Field k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [FiniteDimensional k S]
+variable {ι : Type*} [Finite ι] {N : ι → Type*} [∀ i, AddCommGroup (N i)] [∀ i, Module k (N i)]
+  [∀ i, Module A (N i)] [∀ i, IsScalarTower k A (N i)] [∀ i, IsSimpleModule A (N i)]
+
+omit [∀ i, Module k (N i)] [∀ i, IsScalarTower k A (N i)] in
+/-- A module with a finite decomposition into simple modules has a finite-dimensional space of
+maps from any finite-dimensional module into it. The `k`-structure of the factors plays no role:
+it is induced from the `A`-structure through `algebraMap k A`. -/
+theorem _root_.LinearEquiv.finiteDimensional_linearMap_of_pi {M : Type*} [AddCommGroup M]
+    [Module k M] [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
+    FiniteDimensional k (S →ₗ[A] M) := by
+  let (i : ι) : Module k (N i) := Module.compHom (N i) (algebraMap k A)
+  have (i : ι) : IsScalarTower k A (N i) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have hfin : ∀ i, FiniteDimensional k (S →ₗ[A] N i) := fun _ ↦
+    finiteDimensional_linearMap_of_isSimpleModule
+  have hpi : FiniteDimensional k (S →ₗ[A] ∀ i, N i) :=
+    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S) (φ := N) k)
+  exact Module.Finite.equiv (LinearEquiv.homCongrRight k (S := S) e).symm
+
+end SimpleTarget
 
 variable {k A S : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
@@ -183,7 +221,7 @@ factors isomorphic to `S`. -/
 theorem finrank_linearMap_pi_eq_natCard :
     Module.finrank k (S →ₗ[A] ∀ i, N i) = Nat.card {i // Nonempty (S ≃ₗ[A] N i)} := by
   rw [finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k),
-    finrank_linearMap_eq_one_of_nonempty_linearEquiv (LinearEquiv.refl A S), mul_one]
+    LinearEquiv.finrank_linearMap_eq_one (LinearEquiv.refl A S), mul_one]
 
 /-- **The multiplicity theorem.**  If `M` decomposes as a finite direct sum of simple modules
 `N i`, then the dimension of the space of `A`-linear maps from a simple module `S` into `M` is
@@ -196,33 +234,19 @@ theorem finrank_linearMap_eq_natCard_of_linearEquiv_pi {M : Type*} [AddCommGroup
     [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
     Module.finrank k (S →ₗ[A] M) = Nat.card {i // Nonempty (S ≃ₗ[A] N i)} := by
   rw [e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
-    finrank_linearMap_eq_one_of_nonempty_linearEquiv (LinearEquiv.refl A S), mul_one]
+    LinearEquiv.finrank_linearMap_eq_one (LinearEquiv.refl A S), mul_one]
 
-omit [IsAlgClosed k] in
-/-- A module with a finite decomposition into simple modules has a finite-dimensional space of
-maps from a finite-dimensional simple module into it. -/
-theorem finiteDimensional_linearMap_of_linearEquiv_pi {M : Type*} [AddCommGroup M] [Module k M]
-    [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
-    FiniteDimensional k (S →ₗ[A] M) := by
-  have hfin : ∀ i, FiniteDimensional k (S →ₗ[A] N i) := fun _ ↦
-    finiteDimensional_linearMap_of_isSimpleModule
-  have hpi : FiniteDimensional k (S →ₗ[A] ∀ i, N i) :=
-    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S) (φ := N) k)
-  exact Module.Finite.equiv (homCongrRight k (S := S) e).symm
-
-omit [IsAlgClosed k] in
+omit [IsAlgClosed k] [∀ i, Module k (N i)] [∀ i, IsScalarTower k A (N i)] in
 /-- **A hom space detects a constituent.**  There is a nonzero `A`-linear map from the simple
 module `S` into `M` exactly when `S` occurs among the simple factors of `M`. -/
 theorem finrank_linearMap_pos_iff_exists_nonempty_linearEquiv {M : Type*} [AddCommGroup M]
     [Module k M] [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
     0 < Module.finrank k (S →ₗ[A] M) ↔ ∃ i, Nonempty (S ≃ₗ[A] N i) := by
-  have : Module.Finite k (Module.End A S) :=
-    finiteDimensional_linearMap_of_isSimpleModule
+  let (i : ι) : Module k (N i) := Module.compHom (N i) (algebraMap k A)
+  have (i : ι) : IsScalarTower k A (N i) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have : Nontrivial S := IsSimpleModule.nontrivial A S
   rw [e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
-    mul_pos_iff_of_pos_right
-      (Module.finrank_pos : 0 < Module.finrank k (Module.End A S)), Nat.card_pos_iff,
-    nonempty_subtype]
+    mul_pos_iff_of_pos_right (finrank_end_pos (k := k)), Nat.card_pos_iff, nonempty_subtype]
   exact and_iff_left inferInstance
 
 end Multiplicity
@@ -304,7 +328,7 @@ variable {R : Type u} [Ring R]
 /-- A finitely generated semisimple module is a finite product of quotients of the ring by maximal
 left ideals. This is `IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp` with each simple summand
 replaced by an isomorphic cyclic module, so that all the factors live in the universe of `R`. -/
-theorem IsSemisimpleModule.exists_linearEquiv_pi_quotient (M : Type v) [AddCommGroup M]
+theorem _root_.IsSemisimpleModule.exists_linearEquiv_pi_quotient (M : Type v) [AddCommGroup M]
     [Module R M] [IsSemisimpleModule R M] [Module.Finite R M] :
     ∃ (n : ℕ) (m : Fin n → Ideal R), (∀ i, (m i).IsMaximal) ∧
       Nonempty (M ≃ₗ[R] ∀ i, R ⧸ m i) := by
@@ -376,7 +400,7 @@ module is isomorphic to a quotient of `R`.
 Over a semisimple ring this is `TauCeti.nonempty_linearEquiv_pi_of_natCard_eq`, where the simple
 modules are indexed by the simple left ideals of `R`; in general a simple module need not embed in
 `R`, and the factors are matched by isomorphism directly. -/
-theorem IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq
+theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq
     (M : Type v) (N : Type w) [AddCommGroup M] [Module R M] [IsSemisimpleModule R M]
     [Module.Finite R M] [AddCommGroup N] [Module R N] [IsSemisimpleModule R N]
     [Module.Finite R N]
@@ -416,6 +440,99 @@ theorem IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq
   exact ⟨eM.trans <| (LinearEquiv.piCongrRight fun i ↦ (hσ i).some).trans <|
     (LinearEquiv.piCongrLeft R (fun j ↦ R ⧸ b j) σ).trans eN.symm⟩
 
+/-- The Jordan-Hölder multiplicities of a simple quotient `R ⧸ Sum.elim a b x` agree in two finite
+products of simple quotients of the ring whose numbers of maps satisfy
+`#Hom(P, Q) · #Hom(Q, P) = #End(P) · #End(Q)`. -/
+private theorem jordanHolderMultiplicity_quotient_eq_of_natCard_linearMap_mul_eq
+    {n m : ℕ} {a : Fin n → Ideal R} {b : Fin m → Ideal R}
+    [∀ i, IsSimpleModule R (R ⧸ a i)] [∀ j, IsSimpleModule R (R ⧸ b j)]
+    [∀ i, Finite (R ⧸ a i)] [∀ j, Finite (R ⧸ b j)]
+    (h : Nat.card ((∀ i, R ⧸ a i) →ₗ[R] ∀ j, R ⧸ b j) *
+        Nat.card ((∀ j, R ⧸ b j) →ₗ[R] ∀ i, R ⧸ a i) =
+      Nat.card (Module.End R (∀ i, R ⧸ a i)) * Nat.card (Module.End R (∀ j, R ⧸ b j)))
+    (x : Fin n ⊕ Fin m) :
+    jordanHolderMultiplicity R (∀ i, R ⧸ a i) (R ⧸ Sum.elim a b x) =
+      jordanHolderMultiplicity R (∀ j, R ⧸ b j) (R ⧸ Sum.elim a b x) := by
+  classical
+  -- Index the simple factors of the two products together, and group them by isomorphism class.
+  let c : Fin n ⊕ Fin m → Ideal R := Sum.elim a b
+  -- `c (.inl i)` and `c (.inr j)` reduce to `a i` and `b j` by `Sum.elim`, so the instances for
+  -- `a` and `b` apply by definition.
+  have hc : ∀ x, IsSimpleModule R (R ⧸ c x) := by
+    rintro (i | j)
+    exacts [inferInstanceAs (IsSimpleModule R (R ⧸ a i)),
+      inferInstanceAs (IsSimpleModule R (R ⧸ b j))]
+  have hfin : ∀ x, Finite (R ⧸ c x) := by
+    rintro (i | j)
+    exacts [inferInstanceAs (Finite (R ⧸ a i)), inferInstanceAs (Finite (R ⧸ b j))]
+  let s : Setoid (Fin n ⊕ Fin m) :=
+    { r x y := Nonempty ((R ⧸ c y) ≃ₗ[R] R ⧸ c x)
+      iseqv := ⟨fun _ ↦ ⟨LinearEquiv.refl R _⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩,
+        fun ⟨e⟩ ⟨e'⟩ ↦ ⟨e'.trans e⟩⟩ }
+  let κ : Fin n ⊕ Fin m → Quotient s := Quotient.mk s
+  -- The size of the endomorphism ring of a class of simple factors, and the numbers `A q` and
+  -- `B q` of factors of the two products in the class `q`.
+  let C : Quotient s → ℕ := Quotient.lift (fun x ↦ Nat.card (Module.End R (R ⧸ c x)))
+    fun x y ⟨e⟩ ↦ (Nat.card_congr (e.arrowCongrAddEquiv e).toEquiv).symm
+  -- `C` is defined by `Quotient.lift`, so it computes on classes by definition.
+  have hC_mk (x) : C (κ x) = Nat.card (Module.End R (R ⧸ c x)) := rfl
+  let A (q : Quotient s) : ℕ := Nat.card {i // κ (.inl i) = q}
+  let B (q : Quotient s) : ℕ := Nat.card {j // κ (.inr j) = q}
+  -- `κ y = κ x` unfolds to `Nonempty ((R ⧸ c x) ≃ₗ[R] R ⧸ c y)`, the condition counted by
+  -- `jordanHolderMultiplicity_pi_eq_natCard`.
+  have hA (x) : jordanHolderMultiplicity R (∀ i, R ⧸ a i) (R ⧸ c x) = A (κ x) := by
+    rw [jordanHolderMultiplicity_pi_eq_natCard]
+    simp only [A, κ, Quotient.eq]
+    rfl
+  have hB (x) : jordanHolderMultiplicity R (∀ j, R ⧸ b j) (R ⧸ c x) = B (κ x) := by
+    rw [jordanHolderMultiplicity_pi_eq_natCard]
+    simp only [B, κ, Quotient.eq]
+    rfl
+  -- Grouping a product over the factors of a product by the fibres of their class.
+  have hgroup {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) (F : Quotient s → ℕ) :
+      ∏ j, C (κ (g j)) ^ F (κ (g j)) = ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * F q) := by
+    rw [← Fintype.prod_fiberwise' (fun j ↦ κ (g j)) fun q ↦ C q ^ F q]
+    refine Finset.prod_congr rfl fun q _ ↦ ?_
+    rw [Finset.prod_const, ← pow_mul, mul_comm, Finset.card_univ, Nat.card_eq_fintype_card]
+  -- Counting maps into a product of simple factors, grouped by class.
+  have hcardM {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) :
+      Nat.card ((∀ i, R ⧸ a i) →ₗ[R] ∀ j, R ⧸ c (g j)) =
+        ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * A q) := by
+    have := fun j ↦ hc (g j)
+    rw [natCard_linearMap_pi_eq_prod_pow, ← hgroup g A]
+    simp only [hA, hC_mk]
+  have hcardN {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) :
+      Nat.card ((∀ j, R ⧸ b j) →ₗ[R] ∀ j, R ⧸ c (g j)) =
+        ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * B q) := by
+    have := fun j ↦ hc (g j)
+    rw [natCard_linearMap_pi_eq_prod_pow, ← hgroup g B]
+    simp only [hB, hC_mk]
+  -- `c (.inl i)` and `c (.inr j)` unfold to `a i` and `b j`, and `A q`, `B q` to the fibre counts,
+  -- so the four counts have the stated types by definition.
+  have hMN : Nat.card ((∀ i, R ⧸ a i) →ₗ[R] ∀ j, R ⧸ b j) = ∏ q, C q ^ (B q * A q) :=
+    hcardM Sum.inr
+  have hNM : Nat.card ((∀ j, R ⧸ b j) →ₗ[R] ∀ i, R ⧸ a i) = ∏ q, C q ^ (A q * B q) :=
+    hcardN Sum.inl
+  have hMM : Nat.card (Module.End R (∀ i, R ⧸ a i)) = ∏ q, C q ^ (A q * A q) := hcardM Sum.inl
+  have hNN : Nat.card (Module.End R (∀ j, R ⧸ b j)) = ∏ q, C q ^ (B q * B q) := hcardN Sum.inr
+  rw [hMN, hNM, hMM, hNN, ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib] at h
+  simp only [← pow_add] at h
+  have hC (q : Quotient s) : 1 < C q := by
+    induction q using Quotient.ind with | _ x
+    have := IsSimpleModule.nontrivial R (R ⧸ c x)
+    have := hfin x
+    exact Module.End.one_lt_natCard (R := R) (M := R ⧸ c x)
+  have hle (q : Quotient s) : B q * A q + A q * B q ≤ A q * A q + B q * B q := by
+    nlinarith [sq_nonneg ((A q : ℤ) - B q)]
+  have hAB := Nat.eq_of_prod_pow_eq_of_le (s := Finset.univ) (fun q _ ↦ hC q)
+    (fun q _ ↦ hle q) h (κ x) (Finset.mem_univ _)
+  have : A (κ x) = B (κ x) := by
+    rcases lt_trichotomy (A (κ x)) (B (κ x)) with hlt | heq | hgt
+    · nlinarith
+    · exact heq
+    · nlinarith
+  rw [hA, hB, this]
+
 /-- **Finite semisimple modules are determined by the numbers of maps between them**, over an
 arbitrary ring. Two finite semisimple modules `M` and `N` with
 `#Hom(M, N) · #Hom(N, M) = #End(M) · #End(N)` are isomorphic.
@@ -425,7 +542,7 @@ Writing `a_S` and `b_S` for the multiplicities of a simple module `S` in `M` and
 `∏ q_S ^ (a_S ^ 2)` and `∏ q_S ^ (b_S ^ 2)`, so the hypothesis says `∏ q_S ^ ((a_S - b_S) ^ 2) = 1`.
 This form of the comparison applies when only maps between `M` and `N` themselves can be counted,
 for instance when `M` and `N` are reductions of lattices whose hom modules are known. -/
-theorem IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq
+theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq
     (M : Type v) (N : Type w) [AddCommGroup M] [Module R M] [IsSemisimpleModule R M]
     [Finite M] [AddCommGroup N] [Module R N] [IsSemisimpleModule R N] [Finite N]
     (h : Nat.card (M →ₗ[R] N) * Nat.card (N →ₗ[R] M) =
@@ -434,102 +551,25 @@ theorem IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq
   classical
   obtain ⟨n, a, ha, ⟨eM⟩⟩ := IsSemisimpleModule.exists_linearEquiv_pi_quotient (R := R) M
   obtain ⟨m, b, hb, ⟨eN⟩⟩ := IsSemisimpleModule.exists_linearEquiv_pi_quotient (R := R) N
-  -- Index the simple factors of `M` and of `N` together, and group them by isomorphism class.
-  let c : Fin n ⊕ Fin m → Ideal R := Sum.elim a b
-  have hc : ∀ x, IsSimpleModule R (R ⧸ c x) := by
-    rintro (i | j)
-    exacts [isSimpleModule_iff_isCoatom.mpr (ha i).out, isSimpleModule_iff_isCoatom.mpr (hb j).out]
-  have (i : Fin n) : IsSimpleModule R (R ⧸ a i) := hc (.inl i)
-  have (j : Fin m) : IsSimpleModule R (R ⧸ b j) := hc (.inr j)
-  let eM' : M ≃ₗ[R] ∀ i, R ⧸ c (.inl i) := eM
-  let eN' : N ≃ₗ[R] ∀ j, R ⧸ c (.inr j) := eN
-  have hfin : ∀ x, Finite (R ⧸ c x) := by
-    rintro (i | j)
-    · exact Finite.of_surjective (fun y : M ↦ eM' y i) fun z ↦ ⟨eM'.symm (Pi.single i z), by simp⟩
-    · exact Finite.of_surjective (fun y : N ↦ eN' y j) fun z ↦ ⟨eN'.symm (Pi.single j z), by simp⟩
-  let s : Setoid (Fin n ⊕ Fin m) :=
-    { r x y := Nonempty ((R ⧸ c y) ≃ₗ[R] R ⧸ c x)
-      iseqv := ⟨fun _ ↦ ⟨LinearEquiv.refl R _⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩,
-        fun ⟨e⟩ ⟨e'⟩ ↦ ⟨e'.trans e⟩⟩ }
-  let κ : Fin n ⊕ Fin m → Quotient s := Quotient.mk s
-  -- The size of the endomorphism ring of a class of simple factors, and the numbers `A q` and
-  -- `B q` of factors of `M` and of `N` in the class `q`.
-  let C : Quotient s → ℕ := Quotient.lift (fun x ↦ Nat.card (Module.End R (R ⧸ c x)))
-    fun x y ⟨e⟩ ↦ (Nat.card_congr (e.arrowCongrAddEquiv e).toEquiv).symm
-  -- `C` is defined by `Quotient.lift`, so it computes on classes by definition.
-  have hC_mk (x) : C (κ x) = Nat.card (Module.End R (R ⧸ c x)) := rfl
-  let A (q : Quotient s) : ℕ := Nat.card {i // κ (.inl i) = q}
-  let B (q : Quotient s) : ℕ := Nat.card {j // κ (.inr j) = q}
-  -- `κ y = κ x` unfolds to `Nonempty ((R ⧸ c x) ≃ₗ[R] R ⧸ c y)`, the condition counted by
-  -- `jordanHolderMultiplicity_pi_eq_natCard`.
-  have hA (x) : jordanHolderMultiplicity R M (R ⧸ c x) = A (κ x) := by
-    have := hc x
-    rw [jordanHolderMultiplicity_eq_of_linearEquiv eM, jordanHolderMultiplicity_pi_eq_natCard]
-    simp only [A, κ, Quotient.eq]
-    rfl
-  have hB (x) : jordanHolderMultiplicity R N (R ⧸ c x) = B (κ x) := by
-    have := hc x
-    rw [jordanHolderMultiplicity_eq_of_linearEquiv eN, jordanHolderMultiplicity_pi_eq_natCard]
-    simp only [B, κ, Quotient.eq]
-    rfl
-  -- Counting maps into a product of simple factors, grouped by class.
-  have hfib {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) (F : Quotient s → ℕ) :
-      ∏ j, C (κ (g j)) ^ F (κ (g j)) = ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * F q) := by
-    rw [← Finset.prod_fiberwise' Finset.univ (fun j ↦ κ (g j)) fun q ↦ C q ^ F q]
-    refine Finset.prod_congr rfl fun q _ ↦ ?_
-    rw [Finset.prod_const, ← pow_mul, mul_comm, Nat.card_eq_fintype_card, Fintype.card_subtype]
-  have hcardM {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) :
-      Nat.card (M →ₗ[R] ∀ j, R ⧸ c (g j)) = ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * A q) := by
-    have := fun j ↦ hc (g j)
-    rw [natCard_linearMap_pi_eq_prod_pow, ← hfib]
-    simp only [hA, hC_mk]
-  have hcardN {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) :
-      Nat.card (N →ₗ[R] ∀ j, R ⧸ c (g j)) = ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * B q) := by
-    have := fun j ↦ hc (g j)
-    rw [natCard_linearMap_pi_eq_prod_pow, ← hfib]
-    simp only [hB, hC_mk]
-  rw [Nat.card_congr ((LinearEquiv.refl R M).arrowCongrAddEquiv eN').toEquiv,
-    Nat.card_congr ((LinearEquiv.refl R N).arrowCongrAddEquiv eM').toEquiv,
-    Nat.card_congr ((LinearEquiv.refl R M).arrowCongrAddEquiv eM').toEquiv,
-    Nat.card_congr ((LinearEquiv.refl R N).arrowCongrAddEquiv eN').toEquiv,
-    hcardM Sum.inr, hcardN Sum.inl, hcardM Sum.inl, hcardN Sum.inr,
-    ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib] at h
-  simp only [← pow_add] at h
-  -- Since `a * a + b * b = (b * a + a * b) + ((a - b) ^ 2 + (b - a) ^ 2)`, the hypothesis forces
-  -- `∏ q, C q ^ ((A q - B q) ^ 2 + (B q - A q) ^ 2) = 1`.
-  have hsq (a b : ℕ) : a * a + b * b = (b * a + a * b) + ((a - b) ^ 2 + (b - a) ^ 2) := by
-    rcases le_total a b with hab | hab <;>
-    · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hab
-      simp only [Nat.sub_eq_zero_of_le hab, add_tsub_cancel_left]
-      ring
-  have hC (q : Quotient s) : 1 < C q := by
-    induction q using Quotient.ind with | _ x
-    have := hc x
-    have := hfin x
-    have : Finite (Module.End R (R ⧸ c x)) := Finite.of_injective _ DFunLike.coe_injective
-    have := IsSimpleModule.nontrivial R (R ⧸ c x)
-    exact Finite.one_lt_card (α := Module.End R (R ⧸ c x))
-  have hone : ∏ q, C q ^ ((A q - B q) ^ 2 + (B q - A q) ^ 2) = 1 := by
-    have h' : ∏ q, C q ^ (B q * A q + A q * B q) = ∏ q, C q ^ (A q * A q + B q * B q) := h
-    have h2 : ∏ q, C q ^ (A q * A q + B q * B q) = (∏ q, C q ^ (B q * A q + A q * B q)) *
-        ∏ q, C q ^ ((A q - B q) ^ 2 + (B q - A q) ^ 2) := by
-      rw [← Finset.prod_mul_distrib]
-      exact Finset.prod_congr rfl fun q _ ↦ by rw [← pow_add, ← hsq]
-    rw [h2] at h'
-    exact (mul_eq_left₀ (Finset.prod_ne_zero_iff.mpr fun q _ ↦
-      pow_ne_zero _ (zero_lt_one.trans (hC q)).ne')).mp h'.symm
-  have hAB (q : Quotient s) : A q = B q := by
-    have := Nat.dvd_one.mp (hone ▸ Finset.dvd_prod_of_mem _ (Finset.mem_univ q))
-    rw [Nat.pow_eq_one] at this
-    have := this.resolve_left (hC q).ne'
-    simp only [Nat.add_eq_zero_iff, pow_eq_zero_iff two_ne_zero, Nat.sub_eq_zero_iff_le] at this
-    omega
+  have (i : Fin n) : IsSimpleModule R (R ⧸ a i) := isSimpleModule_iff_isCoatom.mpr (ha i).out
+  have (j : Fin m) : IsSimpleModule R (R ⧸ b j) := isSimpleModule_iff_isCoatom.mpr (hb j).out
+  have : ∀ i, Finite (R ⧸ a i) := fun i ↦
+    Finite.of_surjective (fun y : M ↦ eM y i) fun z ↦ ⟨eM.symm (Pi.single i z), by simp⟩
+  have : ∀ j, Finite (R ⧸ b j) := fun j ↦
+    Finite.of_surjective (fun y : N ↦ eN y j) fun z ↦ ⟨eN.symm (Pi.single j z), by simp⟩
+  rw [Nat.card_congr (eM.arrowCongrAddEquiv eN).toEquiv,
+    Nat.card_congr (eN.arrowCongrAddEquiv eM).toEquiv,
+    Nat.card_congr (eM.arrowCongrAddEquiv eM).toEquiv,
+    Nat.card_congr (eN.arrowCongrAddEquiv eN).toEquiv] at h
   -- Hence `M` and `N` have the same Jordan-Hölder multiplicities.
   refine IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq M N
     fun S _ _ _ ↦ ?_
-  by_cases hx : ∃ x, Nonempty (S ≃ₗ[R] R ⧸ c x)
+  by_cases hx : ∃ x, Nonempty (S ≃ₗ[R] R ⧸ Sum.elim a b x)
   · obtain ⟨x, ⟨e⟩⟩ := hx
-    rw [jordanHolderMultiplicity_congr e, jordanHolderMultiplicity_congr e, hA, hB, hAB]
+    rw [jordanHolderMultiplicity_congr e, jordanHolderMultiplicity_congr e]
+    rw [jordanHolderMultiplicity_eq_of_linearEquiv eM,
+      jordanHolderMultiplicity_eq_of_linearEquiv eN]
+    exact jordanHolderMultiplicity_quotient_eq_of_natCard_linearMap_mul_eq h x
   · push Not at hx
     rw [jordanHolderMultiplicity_eq_of_linearEquiv eM, jordanHolderMultiplicity_pi_eq_natCard,
       jordanHolderMultiplicity_eq_of_linearEquiv eN, jordanHolderMultiplicity_pi_eq_natCard]
@@ -570,12 +610,7 @@ theorem nonempty_linearEquiv_of_finrank_linearMap_eq
       let _ : IsSimpleModule A S := hS
       let _ : Module.Finite k S :=
         Module.Finite.of_injective (S.subtype.restrictScalars k) Subtype.val_injective
-      let _ : Module.Finite k (Module.End A S) :=
-        .of_injective (LinearMap.restrictScalarsₗ k A S S k) (LinearMap.restrictScalars_injective k)
-      have hendpos : 0 < Module.finrank k (Module.End A S) := by
-        let _ : Nontrivial S := IsSimpleModule.nontrivial A S
-        let _ : Nontrivial (Module.End A S) := inferInstance
-        exact Module.finrank_pos
+      have hendpos := finrank_end_pos (k := k) (A := A) (S := S)
       have hpredM (i : Fin n) : simpleModuleClass A (SM i) =
           SimpleSubmoduleClasses.mk S ↔ Nonempty (S ≃ₗ[A] SM i) := by
         rw [simpleModuleClass_eq_mk_iff]
@@ -621,17 +656,9 @@ section IsotypicComponent
 variable {k A M S : Type*} [Field k] [Ring A] [Algebra k A]
 variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
-
-omit [Module k S] [IsScalarTower k A S] in
-/-- **The multiplicity of `S` in `M` is its multiplicity in the `S`-isotypic component**, every
-map out of `S` landing there. -/
-@[simp]
-theorem finrank_linearMap_isotypicComponent :
-    Module.finrank k (S →ₗ[A] isotypicComponent A M S) = Module.finrank k (S →ₗ[A] M) :=
-  (linearMapIsotypicComponentEquiv k).finrank_eq
-
 variable [IsAlgClosed k] [FiniteDimensional k S] [FiniteDimensional k M]
 
+omit [FiniteDimensional k S] in
 /-- **The isotypic component is the power of its type with exponent the multiplicity.**  Mathlib's
 `IsIsotypicOfType.linearEquiv_fun` writes the component as a finite power of `S`; what is proved
 here is that the exponent is the multiplicity `finrank k (S →ₗ[A] M)`, which is the form that
@@ -644,9 +671,31 @@ theorem nonempty_linearEquiv_isotypicComponent :
     Module.Finite.of_restrictScalars_finite k A _
   obtain ⟨n, ⟨e⟩⟩ := (IsIsotypicOfType.isotypicComponent A M S).linearEquiv_fun
   have hn : Module.finrank k (S →ₗ[A] M) = n := by
-    rw [← finrank_linearMap_isotypicComponent (k := k),
-      finrank_linearMap_eq_natCard_of_linearEquiv_pi_const (k := k) e]
-    simp
+    by_cases hS : FiniteDimensional k S
+    · rw [← finrank_linearMap_isotypicComponent (k := k),
+        finrank_linearMap_eq_natCard_of_linearEquiv_pi_const (k := k) e]
+      simp
+    · -- A nonzero map out of `S` would embed it `k`-linearly in the finite-dimensional `M`,
+      -- so there is none, and the power has exponent zero.
+      have hzero : ∀ f : S →ₗ[A] M, f = 0 := fun f ↦ by
+        by_contra hf
+        exact hS (Module.Finite.of_injective (f.restrictScalars k)
+          ((LinearMap.injective_or_eq_zero f).resolve_right hf))
+      have hn0 : n = 0 := by
+        by_contra hn0
+        have : Nontrivial S := IsSimpleModule.nontrivial A S
+        let f : S →ₗ[A] M := (isotypicComponent A M S).subtype ∘ₗ e.symm.toLinearMap ∘ₗ
+          LinearMap.single A (fun _ : Fin n ↦ S) ⟨0, Nat.pos_of_ne_zero hn0⟩
+        have hsingle : Function.Injective
+            (LinearMap.single A (fun _ : Fin n ↦ S) ⟨0, Nat.pos_of_ne_zero hn0⟩) :=
+          Pi.single_injective (M := fun _ : Fin n ↦ S) _
+        have hf : Function.Injective f :=
+          Subtype.val_injective.comp (e.symm.injective.comp hsingle)
+        obtain ⟨x, hx⟩ := exists_ne (0 : S)
+        exact hx (hf (by rw [hzero f]; simp))
+      have : Subsingleton (S →ₗ[A] M) := ⟨fun f g ↦ (hzero f).trans (hzero g).symm⟩
+      rw [hn0]
+      exact Module.finrank_zero_of_subsingleton
   rw [hn]
   exact ⟨e⟩
 
@@ -661,6 +710,78 @@ theorem finrank_isotypicComponent :
   simp [Module.finrank_pi_fintype]
 
 end IsotypicComponent
+
+/-! ### Evaluation of the multiplicity space -/
+
+section Evaluation
+
+open TensorProduct
+
+variable (k : Type*) {A S M N : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+variable [AddCommMonoid S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [AddCommMonoid N] [Module k N] [Module A N] [IsScalarTower k A N]
+
+/-- **Evaluation** `S ⊗[k] (S →ₗ[A] M) →ₗ[A] M`, `s ⊗ f ↦ f s`.  Only the left factor carries an
+`A`-action, so this is a map of `A`-modules for the `TensorProduct.leftModule` structure.
+The construction works over semirings and needs no additive inverses. -/
+def isotypicEval : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M :=
+  AlgebraTensorModule.lift (LinearMap.id (R := k) (M := S →ₗ[A] M)).flip
+
+@[simp]
+theorem isotypicEval_tmul (s : S) (f : S →ₗ[A] M) : isotypicEval k (s ⊗ₜ f) = f s :=
+  (rfl)
+
+/-- **Naturality of evaluation in the target.**  Postcomposition with an `A`-linear map
+`g : M →ₗ[A] N` is, on the tensor factorization, the map `g` induces on multiplicity spaces; the
+left factor is untouched.  So an operator commuting with `A` acts through the multiplicity space
+alone, which is what makes the second factor a module over the commutant. -/
+theorem isotypicEval_comp (g : M →ₗ[A] N) :
+    g ∘ₗ isotypicEval k (S := S) =
+      isotypicEval k ∘ₗ
+        AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
+          (LinearMap.compRight (M := S) k g) := by
+  refine AlgebraTensorModule.curry_injective ?_
+  ext s f
+  rfl
+
+/-- The value form of `TauCeti.isotypicEval_comp`. -/
+@[simp]
+theorem isotypicEval_map_apply (g : M →ₗ[A] N) (x : S ⊗[k] (S →ₗ[A] M)) :
+    isotypicEval k
+        (AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
+          (LinearMap.compRight (M := S) k g) x) = g (isotypicEval k x) :=
+  (LinearMap.congr_fun (isotypicEval_comp k g) x).symm
+
+end Evaluation
+
+section EvaluationRange
+
+open TensorProduct
+
+variable (k : Type*) {A S M : Type*} [CommSemiring k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [IsSimpleModule A S]
+
+/-- **The range of evaluation is the `S`-isotypic component of `M`.**  A map out of `S` lands in
+the component, and every submodule of `M` isomorphic to `S` is the range of such a map.  This
+needs no finiteness and no field hypothesis: a commutative semiring of scalars suffices. -/
+@[simp]
+theorem range_isotypicEval :
+    LinearMap.range (isotypicEval k (S := S) (M := M)) = isotypicComponent A M S := by
+  apply le_antisymm
+  · intro y hy
+    obtain ⟨x, rfl⟩ := hy
+    induction x using TensorProduct.inductionOn with
+    | tmul s f => simpa using f.apply_mem_isotypicComponent s
+    | add x y hx hy => simpa using Submodule.add_mem _ hx hy
+  · refine sSup_le ?_
+    rintro m ⟨e⟩ x hx
+    refine ⟨e ⟨x, hx⟩ ⊗ₜ (m.subtype ∘ₗ (e.symm : S →ₗ[A] m)), ?_⟩
+    simp
+
+end EvaluationRange
 
 /-! ### Positivity for an arbitrary nonzero submodule -/
 

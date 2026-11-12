@@ -100,6 +100,17 @@ theorem partialCycleWord_succ' (j : Fin n) (m : ℕ) :
   | succ m ih =>
     rw [partialCycleWord_succ, ih, partialCycleWord_succ, Function.iterate_succ_apply, mul_assoc]
 
+/-- The partial cycle words are multiplicative along the cycle: the first `a + b` generators from
+`j` are the first `a` generators from `j`, followed by the first `b` from `next^[a] j`. -/
+theorem partialCycleWord_add (j : Fin n) (a b : ℕ) :
+    sigma.partialCycleWord j (a + b) =
+      sigma.partialCycleWord (sigma.next^[a] j) b * sigma.partialCycleWord j a := by
+  induction b with
+  | zero => simp
+  | succ b ih =>
+    rw [← add_assoc, partialCycleWord_succ, ih, partialCycleWord_succ, mul_assoc,
+      add_comm a b, Function.iterate_add_apply]
+
 /-- Evaluating a partial cycle word gives the corresponding partial cycle transformation. -/
 @[simp]
 theorem pairingHom_partialCycleWord (j : Fin n) (m : ℕ) :
@@ -125,6 +136,15 @@ theorem pairingHom_cycleWord (j : Fin n) :
     sigma.pairingHom (sigma.cycleWord j) = sigma.cycleMap j := by
   rw [cycleWord_def, pairingHom_partialCycleWord, cycleMap_def]
 
+/-- Going `k` times around the cycle through `j` gives the `k`-th power of the cycle word. -/
+theorem partialCycleWord_mul_cycleLength (j : Fin n) (k : ℕ) :
+    sigma.partialCycleWord j (k * sigma.cycleLength j) = sigma.cycleWord j ^ k := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Nat.succ_mul, partialCycleWord_add, next_iterate_mul_cycleLength, ih, ← cycleWord_def,
+      pow_succ']
+
 /-- **The cycle words along a cycle are conjugate**: the one at the successor of `j` is the
 conjugate of the one at `j` by the generator of the side leaving `j`. -/
 theorem cycleWord_next (j : Fin n) :
@@ -133,6 +153,18 @@ theorem cycleWord_next (j : Fin n) :
   refine eq_mul_inv_of_mul_eq ?_
   rw [cycleWord_def, cycleWord_def, cycleLength_next, ← partialCycleWord_succ',
     partialCycleWord_succ, next_iterate_cycleLength]
+
+/-- Cycle words based at vertices on the same vertex cycle are conjugate in the free side
+group. In particular, imposing a cycle relation at one vertex imposes it throughout the cycle. -/
+theorem isConj_cycleWord_of_mem_cycle {j i : Fin n} (hi : i ∈ sigma.cycle j) :
+    IsConj (sigma.cycleWord j) (sigma.cycleWord i) := by
+  obtain ⟨m, rfl⟩ := (sigma.mem_cycle_iff j i).mp hi
+  clear hi
+  induction m with
+  | zero => exact .refl _
+  | succ m ih =>
+    rw [Function.iterate_succ_apply', cycleWord_next]
+    exact ih.trans (isConj_iff.mpr ⟨_, rfl⟩)
 
 /-- The `t`-th power of a cycle word is a relation exactly when the order of the cycle
 transformation divides `t`. -/

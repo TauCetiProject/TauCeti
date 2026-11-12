@@ -166,7 +166,7 @@ theorem cohomFpLinearEquivContinuousZModDual_cohomFpMap (f : H →ₜ* G)
       rw [cohomFpLinearEquivContinuousZModDual_symm_apply]
     _ = π (trivialFp p H) 1
         (_root_.ContinuousCohomology.cocyclesMap f
-          (eqToHom (res_trivialFp_hom p f)) 1 (characterCocycle p χ)) := by
+          (eqToHom (res_trivialFp_hom p f.toMonoidHom)) 1 (characterCocycle p χ)) := by
       rw [cohomFpMap_def, ContinuousCohomology.map_π_apply]
     _ = π (trivialFp p H) 1 (characterCocycle p (f.continuousZModDualMap χ)) := by
       congr 1
@@ -175,9 +175,9 @@ theorem cohomFpLinearEquivContinuousZModDual_cohomFpMap (f : H →ₜ* G)
         ((trivialFpEquiv p H).symm.toLinearMap ∘ₗ
           (trivialFpEquiv p G).toLinearMap).toAddMonoidHom
       have hf (m : (trivialFp p G).V) :
-          (eqToHom (res_trivialFp_hom p f)).hom m = f' m :=
+          (eqToHom (res_trivialFp_hom p f.toMonoidHom)).hom m = f' m :=
         (trivialFpEquiv p H).injective <| by
-          simpa [f'] using trivialFpEquiv_eqToHom_res_trivialFp_hom p f m
+          simpa [f'] using trivialFpEquiv_eqToHom_res_trivialFp_hom p f.toMonoidHom m
       have hf'_symm_apply (z : ZMod p) :
           f' ((trivialFpEquiv p G).symm z) = (trivialFpEquiv p H).symm z := by
         apply (trivialFpEquiv p H).injective
@@ -185,7 +185,7 @@ theorem cohomFpLinearEquivContinuousZModDual_cohomFpMap (f : H →ₜ* G)
       apply Subtype.ext
       ext h₀ h₁
       refine (ContinuousCohomology.iCycles_cocyclesMap_one_apply f
-        (eqToHom (res_trivialFp_hom p f)) (characterCocycle p χ) f' hf h₀ h₁).trans ?_
+        (eqToHom (res_trivialFp_hom p f.toMonoidHom)) (characterCocycle p χ) f' hf h₀ h₁).trans ?_
       rw [iCycles_characterCocycle, iCycles_characterCocycle,
         characterCochain_apply, characterCochain_apply, hf'_symm_apply]
       apply (trivialFpEquiv p H).injective

@@ -40,21 +40,8 @@ scheme morphism at every source prime above it. -/
 theorem _root_.PrimeSpectrum.flat_stalkMap_specMap_of_comap_mem_freeLocus
     {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
     (q : PrimeSpectrum S) (hq : q.comap (algebraMap R S) ∈ Module.freeLocus R S) :
-    ((Spec.map (CommRingCat.ofHom (algebraMap R S))).stalkMap q).hom.Flat := by
-  have hflat := PrimeSpectrum.flat_localization_of_comap_mem_freeLocus q hq
-  let φ := Localization.localRingHom (q.comap (algebraMap R S)).asIdeal
-    q.asIdeal (algebraMap R S) rfl
-  let := φ.toAlgebra
-  have : IsScalarTower R (Localization.AtPrime (q.comap (algebraMap R S)).asIdeal)
-      (Localization.AtPrime q.asIdeal) :=
-    .of_algebraMap_eq fun r ↦ (Localization.localRingHom_to_map _ _ _ rfl r).symm
-  have hφ : φ.Flat := by
-    rw [RingHom.Flat, Module.flat_iff_of_isLocalization
-      (S := Localization.AtPrime (q.comap (algebraMap R S)).asIdeal)
-      (p := (q.comap (algebraMap R S)).asIdeal.primeCompl)]
-    exact hflat
-  exact (CommRingCat.flat.arrow_mk_iso_iff
-    (Scheme.arrowStalkMapSpecIso (CommRingCat.ofHom (algebraMap R S)) q)).mpr hφ
+    ((Spec.map (CommRingCat.ofHom (algebraMap R S))).stalkMap q).hom.Flat :=
+  (flat_stalkMap_specMap_iff q).mpr (PrimeSpectrum.flat_localization_of_comap_mem_freeLocus q hq)
 
 namespace Scheme.Hom
 

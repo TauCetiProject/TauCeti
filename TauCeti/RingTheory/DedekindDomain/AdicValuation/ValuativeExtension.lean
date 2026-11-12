@@ -65,7 +65,7 @@ adic valuations. -/
 algebra structure given by `adicCompletionExtension`. -/
 theorem completionValuativeExtension :
     ValuativeExtension (v.adicCompletion K) (w.adicCompletion L) where
-  vle_iff_vle a b := by
+  vle_iff_vle {a b} := by
     rw [algebraMap_adicCompletionExtensionAlgebra]
     exact adicCompletionExtension_vle_iff_vle K L v w a b
 

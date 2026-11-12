@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Units.Fintype
-public import Mathlib.Analysis.Normed.Module.Ball.Action
+public import TauCeti.Analysis.Normed.Module.Ball.Action
 
 /-!
 # The integer-unit action on real spheres
@@ -53,11 +53,6 @@ theorem coe_intUnitsToUnitSphere (u : ℤˣ) :
     ((intUnitsToUnitSphere u : sphere (0 : ℝ) 1) : ℝ) = ((u : ℤ) : ℝ) :=
   by
     obtain rfl | rfl := Int.units_eq_one_or u <;> simp [intUnitsToUnitSphere]
-
-/-- The coercion of Mathlib's sphere action is scalar multiplication in the ambient space. -/
-private theorem coe_sphere_smul {r : ℝ} (c : sphere (0 : ℝ) 1) (x : sphere (0 : E) r) :
-    ((c • x : sphere (0 : E) r) : E) = (c : ℝ) • (x : E) :=
-  (rfl)
 
 /-- The two integer units act on every sphere centred at zero by the identity and the antipodal
 map. -/

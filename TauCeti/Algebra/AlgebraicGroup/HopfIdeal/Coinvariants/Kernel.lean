@@ -35,6 +35,8 @@ canonical-map criterion.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 open scoped TensorProduct
 

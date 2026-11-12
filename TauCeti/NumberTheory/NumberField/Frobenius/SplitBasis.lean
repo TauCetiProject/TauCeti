@@ -42,7 +42,9 @@ residue degree one therefore generate `Gal(M/L)` on their own, and an `𝔽_p`-b
 This is the choice of the auxiliary set `T` in Milne's Kummer-theoretic proof of the second
 fundamental inequality, applied with `M = K(U_S^{1/p})` and `L/K` cyclic of degree `p`. The
 generation hypothesis is the conclusion of Milne's Proposition 4.7 for the extension `M/L`, that
-the Frobenius elements outside a finite set generate the Galois group of an abelian extension.
+the Frobenius elements outside a finite set generate the Galois group of an abelian extension. It
+is proved from the first fundamental inequality in
+`TauCeti.ClassFieldTheory.closure_isArithFrobAt_eq_top_tower`.
 
 ## Main results
 
@@ -69,6 +71,7 @@ variable {K L M : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Fi
   (hur : ∀ v : HeightOneSpectrum (𝓞 K), v ∉ S →
     ∀ (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver v.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q)
 
+omit [NumberField L] in
 include hp hexp in
 /-- The Frobenius elements `Frob_v` at the places `v ∉ S` that have a place of `L` of residue
 degree one above them generate `Gal(M/L)`, as soon as the Frobenius elements of `M/L` above the
@@ -101,7 +104,7 @@ private theorem closure_artinElementAway_image_eq_range
     -- `f(w/v)` divides `f(Q/v)`, the order of `Frob_v`, which divides `p`.
     have hdvd : (Q.asIdeal.under (𝓞 L)).inertiaDeg (𝓞 K) ∣ p := by
       have := hur v hv Q.asIdeal
-      have horder := Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q.asIdeal Q.ne_bot
+      have horder := Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q.asIdeal
         (isArithFrobAt_artinElementAway hab S hur hv Q.asIdeal)
       rw [Ideal.inertiaDeg_tower (Q.asIdeal.under (𝓞 L)) Q.asIdeal] at horder
       exact (Dvd.intro _ horder.symm).trans (orderOf_dvd_of_pow_eq_one (hpow _))
@@ -134,7 +137,7 @@ theorem exists_finset_closure_artinElementAway_eq_range_restrictScalarsHom
         Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1 := by
   classical
   have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
-  have : IsMulCommutative (M ≃ₐ[K] M) := isMulCommutative_galoisGroup_of_commute hab
+  have : IsMulCommutative (M ≃ₐ[K] M) := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   set Y : Set (HeightOneSpectrum (𝓞 K)) := {v | v ∉ S ∧ ∃ Q : HeightOneSpectrum (𝓞 M),
     Q.asIdeal.LiesOver v.asIdeal ∧ (Q.asIdeal.under (𝓞 L)).inertiaDeg (𝓞 K) = 1}
   have hY := closure_artinElementAway_image_eq_range hp hexp hab S hur hgen

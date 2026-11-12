@@ -133,17 +133,12 @@ theorem submodulesBasis_pow_smul_topology_eq_of_ringOfDefinition
   refine (P.submodulesBasis_pow_smul_topology_eq_of_isPseudoUniformizer hs hu hsP huP M₀
     hspan₀).trans (Eq.trans ?_ (Q.submodulesBasis_pow_smul_topology_eq_of_isPseudoUniformizer
       hu ht huQ htQ M₁ hspan₁))
-  apply IsTopologicalAddGroup.ext inferInstance inferInstance
-  apply (P.submodulesBasis_pow_smul hu huP M₀ hspan₀).hasBasis_nhds_zero.ext
-    (Q.submodulesBasis_pow_smul hu huQ M₁ hspan₁).hasBasis_nhds_zero
-  · intro n _
-    obtain ⟨k, hk⟩ := P.exists_pow_smul_subset_pow_smul Q hu.isTopologicallyNilpotent
-      huP huQ M₀ M₁ (by rw [hspan₀]; exact Set.subset_univ _) hfg₁ n
-    exact ⟨k, trivial, hk⟩
-  · intro n _
-    obtain ⟨k, hk⟩ := Q.exists_pow_smul_subset_pow_smul P hu.isTopologicallyNilpotent
-      huQ huP M₁ M₀ (by rw [hspan₁]; exact Set.subset_univ _) hfg₀ n
-    exact ⟨k, trivial, hk⟩
+  exact ((P.submodulesBasis_pow_smul hu huP M₀ hspan₀).topology_eq_iff
+    (Q.submodulesBasis_pow_smul hu huQ M₁ hspan₁)).2
+    ⟨Q.exists_pow_smul_subset_pow_smul P hu.isTopologicallyNilpotent huQ huP M₁ M₀
+        (by rw [hspan₁]; exact Set.subset_univ _) hfg₀,
+      P.exists_pow_smul_subset_pow_smul Q hu.isTopologicallyNilpotent huP huQ M₀ M₁
+        (by rw [hspan₀]; exact Set.subset_univ _) hfg₁⟩
 
 end TauCeti.Huber.PairOfDefinition
 

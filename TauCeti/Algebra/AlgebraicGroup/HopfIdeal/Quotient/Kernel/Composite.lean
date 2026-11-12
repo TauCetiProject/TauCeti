@@ -29,6 +29,8 @@ The coordinates of the restriction are obtained by base change along the quotien
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 
 namespace TauCeti.CommHopfAlgCat
@@ -126,7 +128,7 @@ private theorem kernelCompositeMap_property
   let e := Ideal.quotientEquivAlgOfEq L he.symm
   have hp := hiso.left (Ideal.quotientMap (I.map g.hom.toAlgHom.toRingHom)
     g.hom.toAlgHom.toRingHom Ideal.le_comap_map) e.toRingEquiv
-    (hP.quotientMap hiso g.hom.toAlgHom.toRingHom I hg)
+    (hP.quotientMap g.hom.toAlgHom.toRingHom I hg)
   convert hp using 1
   ext x
   simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, e]

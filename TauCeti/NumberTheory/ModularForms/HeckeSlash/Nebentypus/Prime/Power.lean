@@ -71,7 +71,7 @@ indices `p^j m` with `m` prime to `p`, where the divisor sum is the `min` sum ab
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups
 
@@ -148,13 +148,13 @@ theorem qExpansion_coeff_prime_pow_mul_heckeRingHomCharSpace_heckeTGeneratorRecG
             (p ^ (j + r - 2 * i) * m) := by
   induction r using Nat.twoStepInduction generalizing j with
   | zero =>
-    rw [heckeTGeneratorRecGamma0_zero, map_one, Module.End.one_apply]
+    rw [heckeTGeneratorRecGamma0_zero, map_one, one_apply_eq_self]
     simp
   | one =>
     rw [heckeTGeneratorRecGamma0_one]
     exact qExpansion_coeff_prime_pow_mul_heckeRingHomCharSpace_heckeTGeneratorGamma0 hp hpN F hpm j
   | more r ih1 ih2 =>
-    rw [heckeRingHomCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k χ hp.pos hpN F r,
+    rw [heckeRingHomCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k χ hpN F r,
       Submodule.coe_sub, Submodule.coe_smul,
       ← TauCeti.ModularForm.qExpansionLinearMap_apply one_pos
         (TauCeti.one_mem_strictPeriods_Gamma1_map _), map_sub, map_smul,
@@ -212,7 +212,7 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_l
   induction r generalizing m with
   | zero => simp
   | succ r ih =>
-      rw [pow_succ', Module.End.mul_apply,
+      rw [pow_succ', mul_apply_eq_comp,
         coe_heckeRingHomCharSpace_heckeTGeneratorGamma0 k χ hp]
       have hs := qExpansion_coeff_heckeTNat_of_primeFactors_subset (N := N) k p
         (Nat.primeFactors_mono hpN (NeZero.ne N))

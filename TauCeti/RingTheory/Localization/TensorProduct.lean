@@ -17,13 +17,22 @@ Let `K` be a localization of `R` and let `A` be an `R`-algebra. Mathlib's
 automatically `K`-linear. This file records the analogue for the ring `K ⊗[R] A`: on modules where
 `q ⊗ₜ a` acts as `q • a • _`, every `A`-linear map is `K ⊗[R] A`-linear.
 
-The ordinary-localization base-change isomorphism also agrees with the localized
-coefficient inclusion on every localized element.
+For `R`-algebras `S` and `A` and a localization `B` of `A` away from `f : A`, Mathlib's isomorphism
+`IsLocalization.Away.tensorProductEquivTMulRight : S ⊗[R] B ≃ₐ[S] Localization.Away (1 ⊗ₜ f)` is
+computed on elements `1 ⊗ₜ z` by the map of localizations induced by `a ↦ 1 ⊗ₜ a`.
+
+Finally, `ℚ ⊗[ℤ] M` is the localization of an additive group `M` at the positive integers, so
+each of its elements is a single fraction: a common denominator clears every rational coefficient
+of a finite sum of elementary tensors.
 
 ## Main results
 
 * `TauCeti.IsLocalization.linearMap_compatibleSMul_tensorProduct`: `A`-linear maps between such
   modules commute with the action of `K ⊗[R] A`.
+* `IsLocalization.Away.tensorProductEquivTMulRight_one_tmul`: the base-change isomorphism on
+  elements `1 ⊗ₜ z` is the induced map of localizations.
+* `TensorProduct.exists_eq_inv_natCast_tmul`: every element of `ℚ ⊗[ℤ] M` is an elementary
+  tensor `(n : ℚ)⁻¹ ⊗ₜ m` with `n ≠ 0`.
 -/
 
 public section
@@ -65,8 +74,9 @@ variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
   (f : A) (B : Type*) [CommSemiring B] [Algebra R B] [Algebra A B]
   [IsScalarTower R A B] [IsLocalization.Away f B]
 
-/-- Ordinary-localization base change extends an arbitrary localized element by the
-localized coefficient inclusion. -/
+/-- On elements `1 ⊗ₜ z`, the base-change isomorphism
+`tensorProductEquivTMulRight : S ⊗[R] B ≃ₐ[S] Localization.Away (1 ⊗ₜ f)` is the map of
+localizations away from `f` induced by the inclusion `A → S ⊗[R] A`, `a ↦ 1 ⊗ₜ a`. -/
 @[simp]
 theorem tensorProductEquivTMulRight_one_tmul (z : B) :
     tensorProductEquivTMulRight R S f B (1 ⊗ₜ[R] z) =
@@ -74,27 +84,39 @@ theorem tensorProductEquivTMulRight_one_tmul (z : B) :
         ((Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f))
         (P := S ⊗[R] A)
         (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f z := by
-  let e := tensorProductEquivTMulRight R S f B
-  have h : e.toRingHom.comp
-      (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toRingHom =
-      IsLocalization.Away.map B (Localization.Away
-        ((Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f))
-        (P := S ⊗[R] A)
-        (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f := by
-    apply IsLocalization.ringHom_ext (Submonoid.powers f)
-    ext a
-    -- Normalize the stored ring-hom composition to its pure-tensor formula.
-    change e (1 ⊗ₜ[R] algebraMap A B a) =
-      IsLocalization.Away.map B (Localization.Away
-        ((Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f))
-        (P := S ⊗[R] A)
-        (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f
-        (algebraMap A B a)
-    dsimp only [e]
-    erw [tensorProductEquivTMulRight_tmul]
-    simp only [IsLocalization.Away.map]
-    erw [IsLocalization.map_eq]
-    rfl
-  exact RingHom.congr_fun h z
+  -- Both sides are ring maps out of `B` agreeing on `A`, so they agree by the uniqueness of
+  -- maps out of a localization. The target `Localization.Away (includeRight f)` of the localized
+  -- map is the codomain `Localization.Away (1 ⊗ₜ f)` of the isomorphism, since
+  -- `includeRight f` unfolds to `1 ⊗ₜ f`.
+  refine (RingHom.congr_fun (IsLocalization.map_unique (M := .powers f) (T := .powers _)
+    (Q := Localization.Away ((Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f))
+    _ ((tensorProductEquivTMulRight R S f B).toRingHom.comp
+      Algebra.TensorProduct.includeRight.toRingHom) fun a ↦ ?_) z).symm
+  exact tensorProductEquivTMulRight_tmul (S := S) A f B 1 a
 
 end IsLocalization.Away
+
+namespace TensorProduct
+
+/-! ## A common denominator in `ℚ ⊗[ℤ] M` -/
+
+open scoped TensorProduct
+
+variable {M : Type*} [AddCommGroup M]
+
+/-- Every element of `ℚ ⊗[ℤ] M` is a single elementary tensor with a natural-number denominator:
+the rational coefficients of a finite sum can be put over a common denominator, and the numerators
+absorbed into the right-hand factor. -/
+theorem exists_eq_inv_natCast_tmul (z : ℚ ⊗[ℤ] M) :
+    ∃ n : ℕ, ∃ m : M, n ≠ 0 ∧ z = (n : ℚ)⁻¹ ⊗ₜ[ℤ] m := by
+  -- `ℚ ⊗[ℤ] M` is the localization of `M` at the positive integers, so `z` is a fraction `m / s`
+  -- with `0 < s`; such an `s` is a natural number.
+  have := IsLocalization.tensorProduct_isLocalizedModule (M := M) (Submonoid.pos ℤ) ℚ
+  obtain ⟨⟨m, s, hs : 0 < s⟩, rfl⟩ :=
+    IsLocalizedModule.mk'_surjective (Submonoid.pos ℤ) (mk ℤ ℚ M 1) z
+  lift s to ℕ using hs.le
+  have hs' : (s : ℚ) ≠ 0 := by norm_cast; omega
+  refine ⟨s, m, by omega, IsLocalizedModule.mk'_eq_iff.mpr ?_⟩
+  simp [Submonoid.smul_def, smul_tmul', hs']
+
+end TensorProduct

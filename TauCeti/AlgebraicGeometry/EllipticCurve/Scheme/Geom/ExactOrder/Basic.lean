@@ -13,6 +13,7 @@ import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
+import TauCeti.CategoryTheory.Comma.Over.StrictInitial
 
 /-!
 # Points of exact order `N` on an elliptic curve
@@ -120,6 +121,30 @@ def IsOfExactOrder (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) : P
 
 variable {E}
 
+/-- A point `P` has exact order `N` exactly when the closed subscheme of `[P] + ⋯ + [NP]` is a
+subgroup scheme of `E`. -/
+theorem isOfExactOrder_def {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : ℕ} :
+    E.IsOfExactOrder P N ↔
+      ∃ _ : GrpObj (Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap)),
+        IsMonHom (Over.homMk (E.multiplesDivisor P N).subschemeι :
+          Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) ⟶
+            Over.mk E.structureMap) :=
+  Iff.rfl
+
+/-- Over an empty base every object of `Over S` is a group object and every morphism to a group
+object is a monoid homomorphism, so every point has exact order `N`. -/
+theorem isOfExactOrder_of_isEmpty [IsEmpty S]
+    {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : ℕ} : E.IsOfExactOrder P N := by
+  have ht (X : Over S) : IsTerminal X := Over.isTerminalOfIsInitial isInitialOfIsEmpty X
+  rw [isOfExactOrder_def]
+  let X := Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap)
+  let _ : MonObj X :=
+    { one := (ht _).from _, mul := (ht _).from _, one_mul := (ht _).hom_ext _ _,
+      mul_one := (ht _).hom_ext _ _, mul_assoc := (ht _).hom_ext _ _ }
+  let _ : GrpObj X :=
+    { inv := (ht _).from _, left_inv := (ht _).hom_ext _ _, right_inv := (ht _).hom_ext _ _ }
+  exact ⟨inferInstance, { one_hom := (ht _).hom_ext _ _, mul_hom := (ht _).hom_ext _ _ }⟩
+
 /-- **The closed-subgroup criterion for points of exact order `N`.** A point `P` has exact order
 `N` exactly when the ideal sheaf of `D = [P] + ⋯ + [NP]` vanishes on the identity, on the product
 of two points of `D` and on the inverse of a point of `D`. -/
@@ -177,13 +202,8 @@ theorem multiplesDivisor_le_ker {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} 
 theorem coe_support_multiplesDivisor (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) :
     ((E.multiplesDivisor P N).support : Set E.carrier) =
       ⋃ a < N, Set.range (P ^ (a + 1)).left := by
-  induction N with
-  | zero => simp [Scheme.IdealSheafData.support_top]
-  | succ N ih =>
-    have := (P ^ (N + 1)).left.isClosedImmersion_of_comp_eq_id (f := E.structureMap) (Over.w _)
-    rw [multiplesDivisor_succ, Scheme.IdealSheafData.support_mul, TopologicalSpace.Closeds.coe_sup,
-      ih, Set.biUnion_lt_succ, Scheme.Hom.support_ker,
-      (P ^ (N + 1)).left.isClosedEmbedding.isClosed_range.closure_eq]
+  ext
+  simp [multiplesDivisor_eq_pointsDivisor, coe_support_pointsDivisor, Fin.exists_iff]
 
 /-! ### Translating divisors of points -/
 
@@ -262,7 +282,7 @@ theorem IsOfExactOrder.comp_mulBy_eq_one {P : 𝟙_ (Over S) ⟶ Over.mk E.struc
 
 /-- **The points of exact order one**: an `S`-point of `E` has exact order one exactly when it is
 the zero section. The divisor `[0]` is the trivial subgroup scheme of `E`. -/
-@[simp]
+@[simp high]
 theorem isOfExactOrder_one_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
     E.IsOfExactOrder P 1 ↔ P = 1 := by
   refine ⟨fun h ↦ by simpa using h.pow_eq_one, ?_⟩
@@ -277,10 +297,9 @@ theorem isOfExactOrder_one_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
   -- The inclusion of `[0]` factors through the zero section, so it is the zero homomorphism.
   have hi₁ : i = 1 := by
     have hle : E.zero.ker ≤ i.left.ker := hi.ge
-    have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp
     have key : (IsClosedImmersion.lift E.zero i.left hle ≫ E.zero) ≫ E.structureMap ≫ E.zero =
         IsClosedImmersion.lift E.zero i.left hle ≫ E.zero := by
-      rw [Category.assoc, zero_comp_structureMap_assoc]
+      rw [Category.assoc, E.zero_comp_assoc]
     rw [IsClosedImmersion.lift_fac] at key
     ext1
     rw [hom_one_left]

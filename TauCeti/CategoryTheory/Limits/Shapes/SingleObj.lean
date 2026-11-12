@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
-public import TauCeti.CategoryTheory.Preadditive.NSMul
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
 # Recognising colimits and limits of shape `SingleObj G`
@@ -85,9 +85,6 @@ theorem nonempty_isColimit_iff :
   refine ((Setoid.lift_injective_iff_ker_eq_of_le hle).and (Quot.surjective_lift _)).trans ?_
   rw [and_comm, Setoid.ext_iff]
   simp only [Setoid.ker_def, MulAction.orbitRel_apply]
-  -- The two sides now differ only in how the codomain of the leg is written, as
-  -- `(J.coconeTypesEquiv.symm c).pt` or as `((Functor.const _).obj c.pt).obj _`; both are `c.pt`.
-  rfl
 
 /-- A cocone over `J : SingleObj G ⥤ Type u` whose leg is surjective, and identifies two elements
 only when they lie in the same orbit of the action of `G`, is a colimit. -/
@@ -117,12 +114,12 @@ noncomputable def isColimitOfTransfer
   desc s := t ≫ inv (Fintype.card G • 𝟙 _) ≫ s.ι.app (SingleObj.star G)
   fac s j := by
     obtain rfl : j = SingleObj.star G := rfl
-    rw [← Category.assoc, ht', reassoc_of% Preadditive.comp_inv_nsmul_id, IsIso.inv_comp_eq]
-    simp [Preadditive.sum_comp, Preadditive.nsmul_comp, s.w]
+    rw [← Category.assoc, ht', reassoc_of% Linear.comp_inv_smul_id, IsIso.inv_comp_eq]
+    simp [Preadditive.sum_comp, s.w]
   uniq s m hm := by
     have key : inv (Fintype.card G • 𝟙 _) ≫ c.ι.app (SingleObj.star G) =
         c.ι.app (SingleObj.star G) ≫ inv (Fintype.card G • 𝟙 c.pt) :=
-      (Preadditive.comp_inv_nsmul_id (Y := c.pt) _ _).symm
+      (Linear.comp_inv_smul_id (Y := c.pt) _ _).symm
     conv_rhs => rw [← hm (SingleObj.star G), reassoc_of% key, reassoc_of% ht,
       IsIso.hom_inv_id_assoc]
 
@@ -136,12 +133,14 @@ noncomputable def isColimitMapCoconeOfTransfer {D : Type*} [Category D] [Preaddi
     [IsIso (Fintype.card G • 𝟙 (J.obj (SingleObj.star G)))] [IsIso (Fintype.card G • 𝟙 c.pt)] :
     IsColimit (F.mapCocone c) :=
   have : IsIso (Fintype.card G • 𝟙 ((J ⋙ F).obj (SingleObj.star G))) :=
-    F.isIso_nsmul_id_obj _ (J.obj _)
-  have : IsIso (Fintype.card G • 𝟙 (F.mapCocone c).pt) := F.isIso_nsmul_id_obj _ c.pt
+    F.isIso_smul_id_obj _ (J.obj _)
+  have : IsIso (Fintype.card G • 𝟙 (F.mapCocone c).pt) := F.isIso_smul_id_obj _ c.pt
   isColimitOfTransfer (F.mapCocone c) (F.map t)
-    (by simp only [Functor.mapCocone_pt, Functor.mapCocone_ι_app, ← F.map_comp, ht,
+    (by simp only [CategoryTheory.Functor.mapCocone_pt, CategoryTheory.Functor.mapCocone_ι_app,
+      ← F.map_comp, ht,
       F.map_nsmul, F.map_id])
-    (by simp only [Functor.mapCocone_ι_app, ← F.map_comp, ht', F.map_sum, Functor.comp_map])
+    (by simp only [CategoryTheory.Functor.mapCocone_ι_app, ← F.map_comp, ht', F.map_sum,
+      CategoryTheory.Functor.comp_map])
 
 end Preadditive
 
@@ -208,9 +207,9 @@ noncomputable def isLimitOfTransfer
   lift s := s.π.app (SingleObj.star G) ≫ p ≫ inv (Fintype.card G • 𝟙 c.pt)
   fac s j := by
     obtain rfl : j = SingleObj.star G := rfl
-    rw [Category.assoc, Category.assoc, ← Preadditive.comp_inv_nsmul_id, reassoc_of% hp',
+    rw [Category.assoc, Category.assoc, ← Linear.comp_inv_smul_id, reassoc_of% hp',
       ← Category.assoc, IsIso.comp_inv_eq]
-    simp [Preadditive.comp_sum, Preadditive.comp_nsmul, s.w]
+    simp [Preadditive.comp_sum, s.w]
   uniq s m hm := by
     rw [← hm (SingleObj.star G), Category.assoc, reassoc_of% hp, IsIso.hom_inv_id]
     exact (Category.comp_id m).symm
@@ -227,9 +226,11 @@ noncomputable def isLimitMapConeOfTransfer {D : Type*} [Category D] [Preadditive
     [IsIso (Fintype.card G • 𝟙 (F.mapCone c).pt)] :
     IsLimit (F.mapCone c) :=
   isLimitOfTransfer (F.mapCone c) (F.map p)
-    (by simp only [Functor.mapCone_pt, Functor.mapCone_π_app, ← F.map_comp, hp,
+    (by simp only [CategoryTheory.Functor.mapCone_pt, CategoryTheory.Functor.mapCone_π_app,
+      ← F.map_comp, hp,
       F.map_nsmul, F.map_id])
-    (by simp only [Functor.mapCone_π_app, ← F.map_comp, hp', F.map_sum, Functor.comp_map])
+    (by simp only [CategoryTheory.Functor.mapCone_π_app, ← F.map_comp, hp', F.map_sum,
+      CategoryTheory.Functor.comp_map])
 
 end PreadditiveLimit
 

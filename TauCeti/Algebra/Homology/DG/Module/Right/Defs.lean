@@ -154,6 +154,20 @@ theorem op_map_smul_mem_range_of_map_eq_zero (hM : IsDGRightModule h ℳ dM) (a 
   rw [hcycle, smul_zero, sub_zero] at key
   exact key
 
+/-- The right action of a cycle of the algebra, twisted by the Koszul sign, anticommutes with the
+differential of the module. -/
+theorem op_smul_koszulTwist_map_eq_neg (hM : IsDGRightModule h ℳ dM) {a : A} (ha : d a = 0)
+    (x : M) :
+    op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (dM x) =
+      -dM (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x) := by
+  have hhom : LinearMap.IsHomogeneous dM (InternalGrading.ofDecomposition ℳ).piece
+      (InternalGrading.ofDecomposition ℳ).piece 1 :=
+    LinearMap.isHomogeneous_def.mpr fun p y hy ↦ by
+      rw [InternalGrading.ofDecomposition_piece] at hy ⊢
+      exact hM.isHomogeneous.map_mem hy
+  rw [hhom.koszulTwist_apply 1 x, hM.leibniz_of_map_eq_zero _ ha]
+  simp
+
 end IsDGRightModule
 
 /-- A differential graded algebra is a differential graded right module over itself, the **free

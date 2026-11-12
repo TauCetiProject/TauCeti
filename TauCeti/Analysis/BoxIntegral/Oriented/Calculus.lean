@@ -7,13 +7,14 @@ module
 
 public import TauCeti.Analysis.BoxIntegral.Oriented.Basic
 public import TauCeti.Analysis.BoxIntegral.Substitution
+import TauCeti.Analysis.Calculus.Deriv.Projection
 
 /-!
 # Fundamental theorem and substitution for oriented Henstock intervals
 
 The genuine gauge FTC and substitution theorems hold for arbitrary endpoint order, including
 zero intervals and backtracking parametrizations. Neither theorem assumes Bochner integrability
-of the derivative.
+of the derivative. Constant real projections have zero integral, without curve regularity.
 -/
 
 public section
@@ -62,5 +63,15 @@ theorem hasHenstockIntervalIntegral_deriv_smul_comp {a b : ℝ} {f : ℝ → E} 
       (by simpa only [uIcc_of_ge hba.le] using hθ)
       (by simpa only [uIoo_of_ge hba.le] using hdθ)
       (by simpa only [uIcc_of_ge hba.le] using hf)
+
+/-- A raw curve with constant projection contributes zero to that coordinate one-form.
+No regularity of its other coordinate or of the field is needed. -/
+theorem hasHenstockIntervalIntegral_of_projection_constant {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] (L : V →L[ℝ] ℝ) {a b c : ℝ}
+    {γ : ℝ → V} (hγ : ∀ t, L (γ t) = c) (P : V → ℝ) :
+    TauCeti.BoxIntegral.HasHenstockIntervalIntegral (fun t ↦ P (γ t) * L (deriv γ t)) a b 0 := by
+  have hd (t : ℝ) : L (deriv γ t) = 0 := L.apply_deriv_eq_zero_of_forall_eq hγ t
+  simpa only [hd, mul_zero, Pi.zero_def] using
+    TauCeti.BoxIntegral.hasHenstockIntervalIntegral_zero (E := ℝ) a b
 
 end TauCeti.BoxIntegral

@@ -105,12 +105,20 @@ namespace presentedProfiniteGroup
 /-- The canonical quotient map from the free profinite group to the presented profinite group. -/
 noncomputable def mk {X : Type u} (rels : Set (freeProfiniteGroup X)) :
     freeProfiniteGroup X →ₜ* presentedProfiniteGroup X rels :=
-  ContinuousMonoidHom.quotientMk _
+  Subgroup.quotientMkContinuousMonoidHom _
+
+/-- The presentation projection sends an element to its quotient class.
+This is a rewrite lemma; `mk_of` keeps the named generators as the simp normal form. -/
+theorem mk_apply {X : Type u} (rels : Set (freeProfiniteGroup X)) (x : freeProfiniteGroup X) :
+    mk rels x = (x : presentedProfiniteGroup X rels) :=
+  Subgroup.quotientMkContinuousMonoidHom_apply _ x
 
 /-- The canonical quotient map onto a presented profinite group is surjective. -/
 theorem mk_surjective {X : Type u} (rels : Set (freeProfiniteGroup X)) :
-    Function.Surjective (mk rels) :=
-  QuotientGroup.mk'_surjective _
+    Function.Surjective (mk rels) := by
+  intro q
+  obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective _ q
+  exact ⟨x, mk_apply rels x⟩
 
 /-- The canonical generator in a presented profinite group. -/
 noncomputable def of {X : Type u} (rels : Set (freeProfiniteGroup X)) (x : X) :
@@ -129,9 +137,7 @@ variable {X : Type u} {rels : Set (freeProfiniteGroup X)}
 /-- The quotient map kills every relator. -/
 @[simp]
 theorem mk_relator (r : freeProfiniteGroup X) (hr : r ∈ rels) : mk rels r = 1 := by
-  -- Reduce the named presentation carrier and map to the quotient form accepted by Mathlib's
-  -- quotient kernel criterion.
-  change (r : freeProfiniteGroup X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1
+  rw [mk_apply]
   exact (QuotientGroup.eq_one_iff r).mpr
     (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr))
 
@@ -140,8 +146,7 @@ relators. -/
 @[simp]
 theorem mk_eq_one_iff (r : freeProfiniteGroup X) :
     mk rels r = 1 ↔ r ∈ (Subgroup.normalClosure rels).topologicalClosure := by
-  -- Expose the quotient representation so Mathlib's general criterion applies.
-  change (r : freeProfiniteGroup X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
+  rw [mk_apply]
   exact QuotientGroup.eq_one_iff r
 
 /-- The generators generate the presented profinite group topologically. -/
@@ -161,7 +166,7 @@ the presented profinite group. -/
 noncomputable def lift {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
     presentedProfiniteGroup X rels →ₜ* G :=
-  ContinuousMonoidHom.quotientLift _ ψ (topologicalClosure_normalClosure_le_ker hψ)
+  ContinuousMonoidHom.quotientLift ψ _ (topologicalClosure_normalClosure_le_ker hψ)
 
 /-- The factorisation through a presented profinite group recovers the original map after the
 canonical quotient projection. -/
@@ -171,9 +176,9 @@ theorem lift_comp_mk {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (lift ψ hψ).comp (mk rels) = ψ := by
   -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
   -- factorization equation.
-  change (ContinuousMonoidHom.quotientLift (Subgroup.normalClosure rels).topologicalClosure ψ
+  change (ContinuousMonoidHom.quotientLift ψ (Subgroup.normalClosure rels).topologicalClosure
     (topologicalClosure_normalClosure_le_ker hψ)).comp
-      (ContinuousMonoidHom.quotientMk (Subgroup.normalClosure rels).topologicalClosure) = ψ
+      (Subgroup.quotientMkContinuousMonoidHom (Subgroup.normalClosure rels).topologicalClosure) = ψ
   exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
 /-- The factorisation through a presented profinite group computes on classes as the original
@@ -338,16 +343,16 @@ noncomputable def congr (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
 @[simp]
 theorem congr_mk (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
     (h : ∀ r ∈ rels, mk rels' (e r) = 1) (h' : ∀ r ∈ rels', mk rels (e.symm r) = 1)
-    (x : freeProfiniteGroup X) : congr e h h' (mk rels x) = mk rels' (e x) :=
-  e.quotientCongr_mk _ _ _ x
+    (x : freeProfiniteGroup X) : congr e h h' (mk rels x) = mk rels' (e x) := by
+  simpa only [mk_apply, congr] using e.quotientCongr_mk _ _ _ x
 
 /-- The inverse of the induced isomorphism computes on classes as the inverse isomorphism of free
 profinite groups. -/
 @[simp]
 theorem congr_symm_mk (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
     (h : ∀ r ∈ rels, mk rels' (e r) = 1) (h' : ∀ r ∈ rels', mk rels (e.symm r) = 1)
-    (y : freeProfiniteGroup Y) : (congr e h h').symm (mk rels' y) = mk rels (e.symm y) :=
-  e.quotientCongr_symm_mk _ _ _ y
+    (y : freeProfiniteGroup Y) : (congr e h h').symm (mk rels' y) = mk rels (e.symm y) := by
+  simpa only [mk_apply, congr] using e.quotientCongr_symm_mk _ _ _ y
 
 /-- The induced isomorphism sends a canonical generator to the class of its image. -/
 @[simp]
@@ -381,8 +386,9 @@ every element of the free profinite group. -/
 theorem congrOfClosureEq_mk {rels₂ : Set (freeProfiniteGroup X)}
     (h : (Subgroup.normalClosure rels).topologicalClosure =
       (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProfiniteGroup X) :
-    congrOfClosureEq h (mk rels x) = mk rels₂ x :=
-  (ContinuousMulEquiv.refl _).quotientCongr_mk _ _ _ x
+    congrOfClosureEq h (mk rels x) = mk rels₂ x := by
+  simpa only [mk_apply, congrOfClosureEq, ContinuousMulEquiv.refl_apply] using
+    (ContinuousMulEquiv.refl _).quotientCongr_mk _ _ _ x
 
 /-- The inverse of the isomorphism between presentations with the same closed normal closure also
 fixes the class of every element of the free profinite group. -/
@@ -390,8 +396,11 @@ fixes the class of every element of the free profinite group. -/
 theorem congrOfClosureEq_symm_mk {rels₂ : Set (freeProfiniteGroup X)}
     (h : (Subgroup.normalClosure rels).topologicalClosure =
       (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProfiniteGroup X) :
-    (congrOfClosureEq h).symm (mk rels₂ x) = mk rels x :=
-  (ContinuousMulEquiv.refl _).quotientCongr_symm_mk _ _ _ x
+    (congrOfClosureEq h).symm (mk rels₂ x) = mk rels x := by
+  have hx : (ContinuousMulEquiv.refl _).symm x = x :=
+    (ContinuousMulEquiv.symm_apply_eq _).mpr (ContinuousMulEquiv.refl_apply _ x).symm
+  simpa only [mk_apply, congrOfClosureEq, hx] using
+    (ContinuousMulEquiv.refl _).quotientCongr_symm_mk _ _ _ x
 
 /-! ## The empty set of relators -/
 
@@ -401,10 +410,12 @@ section Empty
 quotient map is a topological isomorphism. -/
 noncomputable def equivFreeProfiniteGroup :
     presentedProfiniteGroup X (∅ : Set (freeProfiniteGroup X)) ≃ₜ* freeProfiniteGroup X where
-  toFun := lift (ContinuousMonoidHom.id (freeProfiniteGroup X)) fun _ hr ↦ hr.elim
+  toFun := lift (ContinuousMonoidHom.id (freeProfiniteGroup X))
+    fun _ (hr : _ ∈ (∅ : Set (freeProfiniteGroup X))) ↦ hr.elim
   invFun := mk ∅
   left_inv y := by
-    have h : (mk ∅).comp (lift (ContinuousMonoidHom.id (freeProfiniteGroup X)) fun _ hr ↦ hr.elim) =
+    have h : (mk ∅).comp (lift (ContinuousMonoidHom.id (freeProfiniteGroup X))
+          fun _ (hr : _ ∈ (∅ : Set (freeProfiniteGroup X))) ↦ hr.elim) =
         ContinuousMonoidHom.id (presentedProfiniteGroup X ∅) :=
       hom_ext <| ContinuousMonoidHom.ext fun x ↦ by
         simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, lift_mk,
@@ -459,8 +470,10 @@ noncomputable def equivOfSurjective (φ : freeProfiniteGroup X →ₜ* G)
 image. -/
 @[simp]
 theorem equivOfSurjective_mk (φ : freeProfiniteGroup X →ₜ* G) (hφ : Function.Surjective φ)
-    (x : freeProfiniteGroup X) : equivOfSurjective φ hφ (mk _ x) = φ x :=
-  QuotientGroup.liftEquiv_mk _ hφ φ.topologicalClosure_normalClosure_ker x
+    (x : freeProfiniteGroup X) : equivOfSurjective φ hφ (mk _ x) = φ x := by
+  simpa only [mk_apply, equivOfSurjective, ContinuousMulEquiv.coe_mk,
+    ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass] using
+    QuotientGroup.liftEquiv_mk _ hφ φ.topologicalClosure_normalClosure_ker x
 
 /-- The presentation isomorphism of a continuous image matches the generators. -/
 @[simp]
@@ -482,12 +495,20 @@ namespace presentedProP
 /-- The canonical quotient map from the free pro-`p` group to the presented pro-`p` group. -/
 noncomputable def mk (p : ℕ) {X : Type u} (rels : Set (freeProP p X)) :
     freeProP p X →ₜ* presentedProP p X rels :=
-  ContinuousMonoidHom.quotientMk _
+  Subgroup.quotientMkContinuousMonoidHom _
+
+/-- The pro-`p` presentation projection sends an element to its quotient class.
+This is a rewrite lemma; `mk_of` keeps the named generators as the simp normal form. -/
+theorem mk_apply (p : ℕ) {X : Type u} (rels : Set (freeProP p X)) (x : freeProP p X) :
+    mk p rels x = (x : presentedProP p X rels) :=
+  Subgroup.quotientMkContinuousMonoidHom_apply _ x
 
 /-- The canonical quotient map onto a presented pro-`p` group is surjective. -/
 theorem mk_surjective (p : ℕ) {X : Type u} (rels : Set (freeProP p X)) :
-    Function.Surjective (mk p rels) :=
-  QuotientGroup.mk'_surjective _
+    Function.Surjective (mk p rels) := by
+  intro q
+  obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective _ q
+  exact ⟨x, mk_apply p rels x⟩
 
 /-- The canonical generator in a presented pro-`p` group. -/
 noncomputable def of (p : ℕ) {X : Type u} (rels : Set (freeProP p X)) (x : X) :
@@ -511,9 +532,7 @@ variable {p : ℕ} {X : Type u} {rels : Set (freeProP p X)}
 /-- The quotient map kills every relator. -/
 @[simp]
 theorem mk_relator (r : freeProP p X) (hr : r ∈ rels) : mk p rels r = 1 := by
-  -- Reduce the named presentation carrier and map to the quotient form accepted by Mathlib's
-  -- quotient kernel criterion.
-  change (r : freeProP p X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1
+  rw [mk_apply]
   exact (QuotientGroup.eq_one_iff r).mpr
     (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr))
 
@@ -522,8 +541,7 @@ relators. -/
 @[simp]
 theorem mk_eq_one_iff (r : freeProP p X) :
     mk p rels r = 1 ↔ r ∈ (Subgroup.normalClosure rels).topologicalClosure := by
-  -- Expose the quotient representation so Mathlib's general criterion applies.
-  change (r : freeProP p X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
+  rw [mk_apply]
   exact QuotientGroup.eq_one_iff r
 
 /-- The kernel of the quotient map onto a presented pro-`p` group is the closed normal closure of
@@ -531,7 +549,7 @@ the relators. -/
 @[simp] theorem ker_mk :
     (mk p rels : freeProP p X →* presentedProP p X rels).ker =
       (Subgroup.normalClosure rels).topologicalClosure := by
-  rw [mk, ContinuousMonoidHom.coe_quotientMk, QuotientGroup.ker_mk']
+  rw [mk, Subgroup.coe_quotientMkContinuousMonoidHom, QuotientGroup.ker_mk']
 
 /-- The generators generate the presented pro-`p` group topologically, as an equation of
 subgroups. -/
@@ -561,7 +579,7 @@ the presented pro-`p` group. -/
 noncomputable def lift {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
     presentedProP p X rels →ₜ* P :=
-  ContinuousMonoidHom.quotientLift _ ψ (topologicalClosure_normalClosure_le_ker hψ)
+  ContinuousMonoidHom.quotientLift ψ _ (topologicalClosure_normalClosure_le_ker hψ)
 
 /-- The factorisation through a presented pro-`p` group recovers the original map after the
 canonical quotient projection. -/
@@ -571,9 +589,9 @@ theorem lift_comp_mk {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (lift ψ hψ).comp (mk p rels) = ψ := by
   -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
   -- factorization equation.
-  change (ContinuousMonoidHom.quotientLift (Subgroup.normalClosure rels).topologicalClosure ψ
+  change (ContinuousMonoidHom.quotientLift ψ (Subgroup.normalClosure rels).topologicalClosure
     (topologicalClosure_normalClosure_le_ker hψ)).comp
-      (ContinuousMonoidHom.quotientMk (Subgroup.normalClosure rels).topologicalClosure) = ψ
+      (Subgroup.quotientMkContinuousMonoidHom (Subgroup.normalClosure rels).topologicalClosure) = ψ
   exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
 /-- The factorisation through a presented pro-`p` group computes on classes as the original
@@ -730,16 +748,16 @@ noncomputable def congr (e : freeProP p X ≃ₜ* freeProP p Y)
 @[simp]
 theorem congr_mk (e : freeProP p X ≃ₜ* freeProP p Y) (h : ∀ r ∈ rels, mk p rels' (e r) = 1)
     (h' : ∀ r ∈ rels', mk p rels (e.symm r) = 1) (x : freeProP p X) :
-    congr e h h' (mk p rels x) = mk p rels' (e x) :=
-  e.quotientCongr_mk _ _ _ x
+    congr e h h' (mk p rels x) = mk p rels' (e x) := by
+  simpa only [mk_apply, congr] using e.quotientCongr_mk _ _ _ x
 
 /-- The inverse of the induced isomorphism computes on classes as the inverse isomorphism of free
 pro-`p` groups. -/
 @[simp]
 theorem congr_symm_mk (e : freeProP p X ≃ₜ* freeProP p Y) (h : ∀ r ∈ rels, mk p rels' (e r) = 1)
     (h' : ∀ r ∈ rels', mk p rels (e.symm r) = 1) (y : freeProP p Y) :
-    (congr e h h').symm (mk p rels' y) = mk p rels (e.symm y) :=
-  e.quotientCongr_symm_mk _ _ _ y
+    (congr e h h').symm (mk p rels' y) = mk p rels (e.symm y) := by
+  simpa only [mk_apply, congr] using e.quotientCongr_symm_mk _ _ _ y
 
 /-- A topological isomorphism of the free pro-`p` groups carrying the relator `r` to the relator
 `r'` induces a topological isomorphism of the one-relator presented pro-`p` groups
@@ -790,8 +808,9 @@ every element of the free pro-`p` group. -/
 theorem congrOfClosureEq_mk {rels₂ : Set (freeProP p X)}
     (h : (Subgroup.normalClosure rels).topologicalClosure =
       (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProP p X) :
-    congrOfClosureEq h (mk p rels x) = mk p rels₂ x :=
-  (ContinuousMulEquiv.refl _).quotientCongr_mk _ _ _ x
+    congrOfClosureEq h (mk p rels x) = mk p rels₂ x := by
+  simpa only [mk_apply, congrOfClosureEq, ContinuousMulEquiv.refl_apply] using
+    (ContinuousMulEquiv.refl _).quotientCongr_mk _ _ _ x
 
 /-- The inverse of the isomorphism between presentations with the same closed normal closure also
 fixes the class of every element of the free pro-`p` group. -/
@@ -799,8 +818,11 @@ fixes the class of every element of the free pro-`p` group. -/
 theorem congrOfClosureEq_symm_mk {rels₂ : Set (freeProP p X)}
     (h : (Subgroup.normalClosure rels).topologicalClosure =
       (Subgroup.normalClosure rels₂).topologicalClosure) (x : freeProP p X) :
-    (congrOfClosureEq h).symm (mk p rels₂ x) = mk p rels x :=
-  (ContinuousMulEquiv.refl _).quotientCongr_symm_mk _ _ _ x
+    (congrOfClosureEq h).symm (mk p rels₂ x) = mk p rels x := by
+  have hx : (ContinuousMulEquiv.refl _).symm x = x :=
+    (ContinuousMulEquiv.symm_apply_eq _).mpr (ContinuousMulEquiv.refl_apply _ x).symm
+  simpa only [mk_apply, congrOfClosureEq, hx] using
+    (ContinuousMulEquiv.refl _).quotientCongr_symm_mk _ _ _ x
 
 /-! ## The empty set of relators -/
 
@@ -809,10 +831,12 @@ section Empty
 /-- With no relators, the presented pro-`p` group is the free pro-`p` group: the canonical
 quotient map is a topological isomorphism. -/
 noncomputable def equivFreeProP : presentedProP p X (∅ : Set (freeProP p X)) ≃ₜ* freeProP p X where
-  toFun := lift (ContinuousMonoidHom.id (freeProP p X)) fun _ hr ↦ hr.elim
+  toFun := lift (ContinuousMonoidHom.id (freeProP p X))
+    fun _ (hr : _ ∈ (∅ : Set (freeProP p X))) ↦ hr.elim
   invFun := mk p ∅
   left_inv y := by
-    have h : (mk p ∅).comp (lift (ContinuousMonoidHom.id (freeProP p X)) fun _ hr ↦ hr.elim) =
+    have h : (mk p ∅).comp (lift (ContinuousMonoidHom.id (freeProP p X))
+          fun _ (hr : _ ∈ (∅ : Set (freeProP p X))) ↦ hr.elim) =
         ContinuousMonoidHom.id (presentedProP p X ∅) :=
       hom_ext <| ContinuousMonoidHom.ext fun x ↦ by
         simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, lift_mk,
@@ -864,8 +888,10 @@ noncomputable def equivOfSurjective (φ : freeProP p X →ₜ* G) (hφ : Functio
 image. -/
 @[simp]
 theorem equivOfSurjective_mk (φ : freeProP p X →ₜ* G) (hφ : Function.Surjective φ)
-    (x : freeProP p X) : equivOfSurjective φ hφ (mk p _ x) = φ x :=
-  QuotientGroup.liftEquiv_mk _ hφ φ.topologicalClosure_normalClosure_ker x
+    (x : freeProP p X) : equivOfSurjective φ hφ (mk p _ x) = φ x := by
+  simpa only [mk_apply, equivOfSurjective, ContinuousMulEquiv.coe_mk,
+    ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass] using
+    QuotientGroup.liftEquiv_mk _ hφ φ.topologicalClosure_normalClosure_ker x
 
 /-- The presentation isomorphism of a continuous image matches the generators. -/
 @[simp]

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Complex.RemovableSingularity
+import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.Topology.Order.OrderClosed
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
@@ -75,11 +76,6 @@ variable {x c : ℝ}
 noncomputable def perronIntegrand (x c t : ℝ) : ℂ :=
   (x : ℂ) ^ ((c : ℂ) + t * I) / ((c : ℂ) + t * I)
 
-/-- A point of the vertical line `Re s = c` is nonzero as soon as `c` is.  Mathlib's
-`Complex.ne_zero_of_re_pos` covers only the positive-real-part case. -/
-private theorem ofReal_add_mul_I_ne_zero_of_re (hc : c ≠ 0) (t : ℝ) : (c : ℂ) + t * I ≠ 0 :=
-  fun h => hc (by simpa using congrArg Complex.re h)
-
 /-- At the endpoint `x = 1` the Perron integrand is the reciprocal of the point of the line. -/
 @[simp]
 theorem perronIntegrand_one (c t : ℝ) : perronIntegrand 1 c t = ((c : ℂ) + t * I)⁻¹ := by
@@ -90,12 +86,14 @@ theorem perronIntegrand_one (c t : ℝ) : perronIntegrand 1 c t = ((c : ℂ) + t
 theorem perronIntegrand_def (x c t : ℝ) :
     perronIntegrand x c t = (x : ℂ) ^ ((c : ℂ) + t * I) / ((c : ℂ) + t * I) := (rfl)
 
-/-- The Perron integrand vanishes at the ratio `0`, at every height, whenever the line `Re s = c`
-misses the origin.  This is the value the `n = 0` term of an arithmetic Perron sum takes. -/
+/-- The Perron integrand vanishes at the ratio `0`, on every vertical line and at every height.
+At the origin this uses the convention that division by zero is zero. -/
 @[simp]
-theorem perronIntegrand_zero (hc : c ≠ 0) (t : ℝ) : perronIntegrand 0 c t = 0 := by
-  have hline : (c : ℂ) + t * I ≠ 0 := fun h ↦ hc (by simpa using congrArg Complex.re h)
-  rw [perronIntegrand_def, Complex.ofReal_zero, Complex.zero_cpow hline, zero_div]
+theorem perronIntegrand_zero (c t : ℝ) : perronIntegrand 0 c t = 0 := by
+  rw [perronIntegrand_def, Complex.ofReal_zero]
+  by_cases hline : (c : ℂ) + t * I = 0
+  · rw [hline, div_zero]
+  · rw [Complex.zero_cpow hline, zero_div]
 
 /-- The modulus of the Perron integrand: the numerator contributes `x ^ c`, independently of the
 height, and the denominator the distance from the origin to `c + i t`. -/
@@ -113,7 +111,7 @@ theorem continuous_perronIntegrand (hx : x ≠ 0) (hc : c ≠ 0) :
     continuous_const.add (Complex.continuous_ofReal.mul continuous_const)
   have hcpow : Continuous fun s : ℂ => (x : ℂ) ^ s :=
     continuous_iff_continuousAt.2 fun _ => continuousAt_const_cpow (mod_cast hx)
-  exact (hcpow.comp hline).div hline fun t => ofReal_add_mul_I_ne_zero_of_re hc t
+  exact (hcpow.comp hline).div hline fun t => Complex.ofReal_add_mul_I_ne_zero hc t
 
 /-- The Perron integrand is integrable over every bounded piece of a vertical line off the
 imaginary axis. -/
@@ -151,11 +149,11 @@ theorem truncatedPerronKernel_def (x c T : ℝ) :
 theorem truncatedPerronKernel_height_zero (x c : ℝ) : truncatedPerronKernel x c 0 = 0 := by
   simp [truncatedPerronKernel]
 
-/-- The truncated Perron kernel vanishes at the ratio `0`, at every truncation height, whenever the
-line `Re s = c` misses the origin. -/
+/-- The truncated Perron kernel vanishes at the ratio `0`, on every vertical line and at every
+truncation height. -/
 @[simp]
-theorem truncatedPerronKernel_zero (hc : c ≠ 0) (T : ℝ) : truncatedPerronKernel 0 c T = 0 := by
-  simp [truncatedPerronKernel_def, perronIntegrand_zero hc]
+theorem truncatedPerronKernel_zero (c T : ℝ) : truncatedPerronKernel 0 c T = 0 := by
+  simp [truncatedPerronKernel_def]
 
 /-- The truncated Perron kernel is real: the two halves of the segment contribute conjugate
 values. -/
@@ -578,9 +576,9 @@ private theorem norm_integral_perronFn_sub_two_pi_le_of_le (hx1 : 1 < x) (hc : 0
     integral_perronDslope_comp hx (continuous_horizontalLine T)
       (ofReal_add_mul_I_ne_zero_of_im hT.ne'),
     integral_perronDslope_comp hx (continuous_verticalLine c)
-      (ofReal_add_mul_I_ne_zero_of_re hc.ne'),
+      (Complex.ofReal_add_mul_I_ne_zero hc.ne'),
     integral_perronDslope_comp hx (continuous_verticalLine (-B))
-      (ofReal_add_mul_I_ne_zero_of_re (neg_ne_zero.2 hB0.ne'))] at hcauchy
+      (Complex.ofReal_add_mul_I_ne_zero (neg_ne_zero.2 hB0.ne'))] at hcauchy
   -- The four sides of the integrand at `1` contribute the residue `2 π i`.
   have e₁ := integral_perronFn_one_horizontal_diff hT.ne' (-B) c
   have e₂ := integral_perronFn_one_vertical hc.ne' T

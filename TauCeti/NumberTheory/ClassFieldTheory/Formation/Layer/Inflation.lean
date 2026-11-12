@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Character
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.CoefficientMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Conjugation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
@@ -60,6 +61,8 @@ corestriction from the ground subgroup `U` to `G`) are defined.
 
 * `TauCeti.ClassFieldTheory.NormalLayer.explicitInfl2_H2π`: inflation sends the class of a layer
   cocycle to the class of its inflated cocycle.
+* `TauCeti.ClassFieldTheory.NormalLayer.explicitInfl2_artinCharacterCup`: inflation sends the
+  class `a ∪ δχ` of the character formula to the carry class of `χ` and `a`.
 * `TauCeti.ClassFieldTheory.NormalLayer.explicitInfl2_injective_of_subsingleton`: inflation is
   injective when `H¹(V, M)` vanishes.
 * `TauCeti.ClassFieldTheory.NormalLayer.explicitMap2_explicitInfl2_eq_zero`: restriction to the
@@ -161,7 +164,7 @@ private theorem h2EquivExplicit_H2π (c : cocycles₂ (L.rep F)) :
 `(u, v) ↦ c (u V, v V)` on the ground subgroup `U`, with values in `M` (`inflCocycle2_apply`).
 Its class is `explicitInfl2 L e he [c]` (`explicitInfl2_H2π`). -/
 def inflCocycle2 (c : cocycles₂ (L.rep F)) : Z2 L.ground.toSubgroup M :=
-  cocyclesMap2 _ _ _ _ (ContinuousMonoidHom.quotientMk _)
+  cocyclesMap2 _ _ _ _ (Subgroup.quotientMkContinuousMonoidHom _)
     (FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M).subtype
     (continuous_fixedPoints_addSubgroup_subtype _ _ _)
     (L.top.toSubgroup.subgroupOf L.ground.toSubgroup).fixedPoints_subtype_quotientMk_smul
@@ -174,7 +177,8 @@ two arguments, read in `M`. -/
 theorem inflCocycle2_apply (c : cocycles₂ (L.rep F)) (u v : L.ground.toSubgroup) :
     (inflCocycle2 L e he c : L.ground.toSubgroup × L.ground.toSubgroup → M) (u, v) =
       e.symm (c ((u : L.Gal), (v : L.Gal)) : F.level L.top) := by
-  rw [inflCocycle2, cocyclesMap2_apply]
+  rw [inflCocycle2, cocyclesMap2_apply, Subgroup.quotientMkContinuousMonoidHom_apply,
+    Subgroup.quotientMkContinuousMonoidHom_apply, AddSubgroup.coe_subtype]
   exact L.coeffFixedPointsEquiv_apply_coe e he _
 
 /-- **Inflation on cocycle classes**: `explicitInfl2 L e he` sends the class of a layer cocycle `c`
@@ -185,6 +189,33 @@ theorem explicitInfl2_H2π (c : cocycles₂ (L.rep F)) :
   rw [explicitInfl2, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, h2EquivExplicit_H2π,
     explicitInfl2_mk]
   rfl
+
+/-- **The inflated Artin character cup is the carry class.** For an element `a'` of the ground
+level `A^U` of a layer and a character `χ'` of its abelianized Galois group, read on `U` as `ψ`, the
+inflation to `U` of the class `a' ∪ δχ'` of the character formula is the class of the carry cocycle
+of `ψ` and of `a'`, read as an invariant `a` of `U` in `M`. -/
+theorem explicitInfl2_artinCharacterCup (a' : F.level L.ground)
+    (χ' : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ))
+    (ψ : Additive L.ground.toSubgroup →+ AddCircle (1 : ℚ))
+    (hψ : IsOpen (ψ.ker : Set (Additive L.ground.toSubgroup)))
+    (hψχ : ∀ u : L.ground.toSubgroup,
+      ψ (.ofMul u) = χ' (.ofMul (Group.Abelianization.of (u : L.Gal))))
+    (a : H0 L.ground.toSubgroup M) (ha : e a = a') :
+    L.explicitInfl2 e he (L.artinCharacterCup F a' χ') =
+      (characterCarryCocycle ψ hψ a : H2 L.ground.toSubgroup M) := by
+  -- `ψ` is `χ'` read on `U` through `U → U ⧸ V`.
+  have hψ' : ψ = (χ'.comp Group.Abelianization.of.toAdditive).comp
+      (QuotientGroup.mk' L.relativeTop : L.ground.toSubgroup →* L.Gal).toAdditive :=
+    AddMonoidHom.ext fun u ↦ hψχ u.toMul
+  rw [← LinearEquiv.apply_symm_apply (L.groundLevelEquiv F) a',
+    artinCharacterCup_groundLevelEquiv_eq_H2π, explicitInfl2_H2π]
+  congr 1
+  refine Subtype.ext (funext fun ⟨u, v⟩ ↦ ?_)
+  rw [inflCocycle2_apply, TauCeti.groupCohomology.characterCarryCocycles₂_apply,
+    characterCarryCocycle_apply]
+  simp only [AddSubgroupClass.coe_zsmul, map_zsmul, hψ', characterCarry_comp]
+  refine congrArg₂ (· • ·) rfl ((AddEquiv.symm_apply_eq _).2 ?_)
+  exact (groundLevelEquiv_symm_apply_coe _ _ a').trans ha.symm
 
 /-- **Inflation from a layer is injective when `H¹(V, M)` vanishes**: the transgression into
 `H²(U ⧸ V, M^V)` then vanishes. For the formation of units this is Hilbert 90 for `V`. -/

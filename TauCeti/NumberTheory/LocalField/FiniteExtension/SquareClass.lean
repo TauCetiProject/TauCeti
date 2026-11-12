@@ -16,7 +16,7 @@ import TauCeti.NumberTheory.LocalField.InertiaDegree
 Let `K` be a nonarchimedean local field with `2 ≠ 0` and let `M` be a field that is a finite
 extension of `K`. A nonarchimedean local field `F` has `4 · #𝓀[F] ^ v_F(2)` square classes
 (`TauCeti.card_squareClass`). Equipping `M` with its local-field structure
-(`TauCeti.finiteExtensionValuativeRel`), the fundamental identity `e · f = [M : K]` and
+(`TauCeti.algebraicExtensionValuativeRel`), the fundamental identity `e · f = [M : K]` and
 `v_M(2) = e · v_K(2)` turn this into a count expressed in terms of `K` and the degree alone:
 
 `#(Mˣ/(Mˣ)²) = 4 · (#𝓀[K] ^ v_K(2)) ^ [M : K]`.
@@ -52,9 +52,9 @@ theorem card_squareClass_eq_four_mul_pow_finrank (h2 : (2 : K) ≠ 0) (M : Type*
     [Algebra K M] [Module.Finite K M] :
     Nat.card (MultiplicativeSquareClassGroup M) =
       4 * (Nat.card 𝓀[K] ^ natCastValuation K 2 h2) ^ Module.finrank K M := by
-  let _ := finiteExtensionValuativeRel K M
-  let _ := finiteExtensionNormedFieldTopology K M
-  have := finiteExtension_valuativeExtension K M
+  let _ := algebraicExtensionValuativeRel K M
+  let _ := algebraicExtensionNormedFieldTopology K M
+  have := algebraicExtension_valuativeExtension K M
   have := finiteExtension_isNonarchimedeanLocalField K M
   have h2M : (2 : M) ≠ 0 := by
     simpa only [map_ofNat] using (map_ne_zero (algebraMap K M)).mpr h2

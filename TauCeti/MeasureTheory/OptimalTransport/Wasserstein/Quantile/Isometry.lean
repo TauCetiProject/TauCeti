@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Rearrangement
 public import TauCeti.Topology.MetricSpace.CBBZero
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
@@ -80,8 +80,8 @@ theorem hasFiniteMoment_iff_memLp_quantile (μ : Measure ℝ) [IsProbabilityMeas
   have hQ := Measure.measurable_quantile μ
   conv_lhs => rw [← Measure.map_quantile_volume_Ioo μ]
   rw [hasFiniteMoment_map_iff_memLp_edist hQ.aemeasurable 0]
-  exact memLp_congr_enorm (hQ.edist measurable_const).aestronglyMeasurable hQ.aestronglyMeasurable
-    (.of_forall fun t ↦ by simp [edist_eq_enorm_sub])
+  exact memLp_congr_eNorm (hQ.edist measurable_const).aestronglyMeasurable hQ.aestronglyMeasurable
+    (.of_forall fun t ↦ by simp [eDist_eq_eNorm_sub])
 
 namespace WassersteinSpace
 

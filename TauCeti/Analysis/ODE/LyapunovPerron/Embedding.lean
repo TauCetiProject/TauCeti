@@ -100,7 +100,7 @@ theorem coe_localStableSetHomeomorph_symm_apply
     (((localStableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ).symm x : range P) : X) =
       P x := by
   simp only [localStableSetHomeomorph, Homeomorph.symm_trans_apply,
-    TauCeti.Homeomorph.setCongr_symm_apply, coe_graphHomeomorph_symm_apply]
+    Homeomorph.setCongr_symm_apply, coe_graphHomeomorph_symm_apply]
 
 /-- The local unstable set of confined backward solutions, truncated by the norm of its
 complementary projection, is homeomorphic to the corresponding closed ball in the unstable
@@ -143,7 +143,7 @@ theorem coe_localUnstableSetHomeomorph_symm_apply
     (((localUnstableSetHomeomorph A P N r hs hu hr hN hsmall hN0 hP hAP hρ).symm x :
         range (ContinuousLinearMap.id ℝ X - P)) : X) = (ContinuousLinearMap.id ℝ X - P) x := by
   simp only [localUnstableSetHomeomorph, Homeomorph.symm_trans_apply,
-    TauCeti.Homeomorph.setCongr_symm_apply, coe_graphHomeomorph_symm_apply]
+    Homeomorph.setCongr_symm_apply, coe_graphHomeomorph_symm_apply]
 
 include hs hu hN hsmall hN0 hP hAP in
 /-- For a small enough truncation radius, the local stable set of confined forward solutions is

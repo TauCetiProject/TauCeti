@@ -99,8 +99,8 @@ theorem subsingleton_h3_unitsCoeff_of_isOpen (V : Subgroup (AbsoluteGaloisGroup 
     rw [← InfiniteGalois.isOpen_iff_finite, hE]
     exact hV
   -- The canonical structure of nonarchimedean local field on `E`.
-  let _ := finiteExtensionValuativeRel K E
-  let _ := finiteExtensionNormedFieldTopology K E
+  let _ := algebraicExtensionValuativeRel K E
+  let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
   have := subsingleton_h3_unitsRep E
   have : Subsingleton (continuousCohomology 3

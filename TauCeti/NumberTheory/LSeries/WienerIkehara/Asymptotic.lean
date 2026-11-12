@@ -87,10 +87,11 @@ theorem tendsto_tsum_term_mul_fourier_sub_pole_atTop
         (∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) -
           A * ∫ u in Ici (-Real.log x), 𝓕 psi (u / (2 * π))) atTop (𝓝 0) := by
   refine Tendsto.congr' ?_
-    (tendsto_integral_mul_cpow_mul_I_atTop fun t : ℝ ↦ G (1 + t * I) * psi t)
+    (tendsto_integral_cpow_mul_I_smul_atTop fun t : ℝ ↦ G (1 + t * I) * psi t)
   filter_upwards [eventually_gt_atTop 0, hFint, hFsum] with x hx hxint hxsum
-  exact (tsum_term_mul_fourier_sub_pole_eq_integral_boundary hx hG hG' hsum hpsi hsupp
-    hxint hxsum).symm
+  simpa only [smul_eq_mul, mul_comm] using
+    (tsum_term_mul_fourier_sub_pole_eq_integral_boundary hx hG hG' hsum hpsi hsupp
+      hxint hxsum).symm
 
 /-- The `o(1)` estimate of `tendsto_tsum_term_mul_fourier_sub_pole_atTop` for a smooth, compactly
 supported test function, whose regularity supplies both its own integrability and the half-line
@@ -107,7 +108,7 @@ theorem tendsto_tsum_term_mul_fourier_sub_pole_atTop_of_contDiff
           A * ∫ u in Ici (-Real.log x), 𝓕 psi (u / (2 * π))) atTop (𝓝 0) :=
   tendsto_tsum_term_mul_fourier_sub_pole_atTop hG hG' hsum
     (hpsi.continuous.integrable_of_hasCompactSupport hsupp) hsupp
-    (.of_forall fun _ ↦ ((integrable_fourier_of_contDiff_of_hasCompactSupport hpsi hsupp).comp_div
+    (.of_forall fun _ ↦ ((hpsi.integrable_fourier_of_hasCompactSupport hsupp).comp_div
       (by positivity)).integrableOn) hFsum
 
 /-- **The smoothed Wiener--Ikehara asymptotic.** The Fourier-weighted Dirichlet series on the line
@@ -169,7 +170,7 @@ theorem tendsto_tsum_term_mul_fourier_atTop_of_contDiff
       atTop (𝓝 (2 * (π : ℂ) * A * psi 0)) :=
   tendsto_tsum_term_mul_fourier_atTop hG hG' hsum
     (hpsi.continuous.integrable_of_hasCompactSupport hsupp) hsupp
-    (integrable_fourier_of_contDiff_of_hasCompactSupport hpsi hsupp)
+    (hpsi.integrable_fourier_of_hasCompactSupport hsupp)
     hpsi.continuous.continuousAt hFsum
 
 end TauCeti.LSeries

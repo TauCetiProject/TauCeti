@@ -32,7 +32,7 @@ abbrev absoluteGaloisGroupProP : Type _ :=
 quotient. -/
 noncomputable abbrev absoluteGaloisGroupProPQuotientMap :
     Field.absoluteGaloisGroup K →ₜ* absoluteGaloisGroupProP p K :=
-  ContinuousMonoidHom.quotientMk (proPKernel p (Field.absoluteGaloisGroup K))
+  Subgroup.quotientMkContinuousMonoidHom (proPKernel p (Field.absoluteGaloisGroup K))
 
 /-- The maximal pro-`p` quotient of an absolute Galois group is pro-`p`. -/
 theorem isProP_absoluteGaloisGroupProP : IsProP p (absoluteGaloisGroupProP p K) :=

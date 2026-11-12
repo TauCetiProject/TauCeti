@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.CochainComplexMinus
 public import Mathlib.Algebra.Homology.HomotopyCategory.Plus
+public import Mathlib.CategoryTheory.Localization.OfQuotient
 public import TauCeti.Algebra.Homology.EssentiallySmall
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.CategoryTheory.ObjectProperty
@@ -18,10 +20,13 @@ are represented by cochain complexes vanishing outside a finite interval. It als
 quotient functor from bounded cochain complexes and proves that this functor is full and
 essentially surjective.
 
-The boundedness predicate records both bounds at once. This matters for closure under cones: if
-the source has bounds `(a₁, b₁)` and the target has bounds `(a₂, b₂)`, the standard mapping
-cone has bounds `(min (a₁ - 1) a₂, max (b₁ - 1) b₂)`. Consequently the full subcategory is
-stable under shifts and distinguished triangles.
+The boundedness predicate records both bounds at once. This matters for closure under cones: the
+mapping cone of a morphism between bounded complexes is bounded
+(`CochainComplex.bounded_mappingCone`). The explicit bounds are given by
+`CochainComplex.isStrictlyGE_mappingCone` and `CochainComplex.isStrictlyLE_mappingCone`: if the
+source has bounds `(a₁, b₁)` and the target has bounds `(a₂, b₂)`, the cone is strictly bounded
+by `(min (a₁ - 1) a₂, max (b₁ - 1) b₂)`. Consequently the full subcategory is stable under
+shifts and distinguished triangles.
 
 The construction follows the organization of Mathlib's bounded-below category
 `HomotopyCategory.Plus`, replacing its one-sided support condition by two-sided boundedness.
@@ -32,7 +37,20 @@ The construction follows the organization of Mathlib's bounded-below category
 * `CochainComplex.Bounded`: the full subcategory of bounded cochain complexes.
 * `TauCeti.HomotopyCategory.bounded`: the corresponding property in the homotopy category.
 * `TauCeti.HomotopyCategory.Bounded`: the homotopy category of bounded cochain complexes.
-* `TauCeti.HomotopyCategory.Bounded.quotient`: the quotient functor from bounded complexes.
+* `TauCeti.HomotopyCategory.Bounded.quotient`: the quotient functor from bounded complexes. It is
+  a localization functor with respect to the homotopy equivalences, so functors and their shift
+  compatibilities descend along it.
+* `TauCeti.HomotopyCategory.Bounded.toPlus`: the inclusion `Kᵇ(C) ⥤ K⁺(C)`.
+* `TauCeti.HomotopyCategory.Bounded.mk`: the class in `Kᵇ(C)` of a bounded cochain complex.
+* `TauCeti.HomotopyCategory.Bounded.rep`: the underlying cochain complex of an object of the
+  bounded homotopy category, strictly bounded below and above
+  (`TauCeti.HomotopyCategory.Bounded.exists_isStrictlyGE_isStrictlyLE`).
+* `TauCeti.HomotopyCategory.Bounded.quotientCompιIso`: the bounded quotient followed by the
+  inclusion agrees with the ordinary homotopy quotient.
+* `TauCeti.HomotopyCategory.Bounded.singleFunctors`: the single functors
+  `C ⥤ HomotopyCategory.Bounded C` with their shift compatibilities, with `singleFunctor` the
+  functor in degree `n` and `singleFunctorCompιIso` its comparison with
+  `HomotopyCategory.singleFunctor`.
 
 The homotopy category of bounded complexes over an essentially small category is essentially
 small (through `HomotopyCategory.essentiallySmall` and
@@ -58,11 +76,13 @@ variable (C : Type u) [Category.{v} C]
 
 namespace CochainComplex
 
-/-- A cochain complex is bounded when it is strictly bounded both below and above. -/
+/-- A cochain complex is bounded when it is strictly bounded both below and above: the meet of
+Mathlib's `CochainComplex.plus` and `CochainComplex.minus`. -/
 def bounded [HasZeroMorphisms C] : ObjectProperty (CochainComplex C ℤ) :=
-  fun K ↦ CochainComplex.plus C K ∧ ∃ b : ℤ, K.IsStrictlyLE b
+  CochainComplex.plus C ⊓ CochainComplex.minus C
 
-/-- The elementwise characterization of a bounded cochain complex. -/
+/-- A cochain complex is bounded iff it is strictly bounded below by some `a` and strictly bounded
+above by some `b`. -/
 lemma bounded_iff [HasZeroMorphisms C] (K : CochainComplex C ℤ) :
     CochainComplex.bounded C K ↔ ∃ a b : ℤ, K.IsStrictlyGE a ∧ K.IsStrictlyLE b := by
   constructor
@@ -84,30 +104,59 @@ lemma bounded_iff_exists_finset_isZero_X [HasZeroMorphisms C] (K : CochainComple
     exact ⟨a, b, (K.isStrictlyGE_iff a).2 fun i hi ↦ hs i fun h ↦ absurd (ha h) (not_le.2 hi),
       (K.isStrictlyLE_iff b).2 fun i hi ↦ hs i fun h ↦ absurd (hb h) (not_le.2 hi)⟩
 
-instance [HasZeroMorphisms C] : (CochainComplex.bounded C).IsClosedUnderIsomorphisms where
-  of_iso := by
-    rintro K L e h
-    rw [CochainComplex.bounded_iff] at h ⊢
-    obtain ⟨a, b, ha, hb⟩ := h
-    let _ := ha
-    let _ := hb
-    exact ⟨a, b, K.isStrictlyGE_of_iso e a, K.isStrictlyLE_of_iso e b⟩
+instance [HasZeroMorphisms C] : (CochainComplex.bounded C).IsClosedUnderIsomorphisms :=
+  inferInstanceAs (CochainComplex.plus C ⊓ CochainComplex.minus C).IsClosedUnderIsomorphisms
 
-instance [Preadditive C] : (CochainComplex.bounded C).IsStableUnderShift ℤ where
-  isStableUnderShiftBy n :=
-    ⟨by
-      rintro K h
-      rw [CochainComplex.bounded_iff] at h
-      obtain ⟨a, b, ha, hb⟩ := h
-      rw [ObjectProperty.prop_shift_iff, CochainComplex.bounded_iff]
-      let _ := ha
-      let _ := hb
-      exact ⟨a - n, b - n, K.isStrictlyGE_shift a n (a - n) (by omega),
-        K.isStrictlyLE_shift b n (b - n) (by omega)⟩⟩
+instance [Preadditive C] : (CochainComplex.bounded C).IsStableUnderShift ℤ :=
+  inferInstanceAs ((CochainComplex.plus C ⊓ CochainComplex.minus C).IsStableUnderShift ℤ)
 
 /-- The full subcategory of bounded cochain complexes. -/
 abbrev Bounded [HasZeroMorphisms C] :=
   (CochainComplex.bounded C).FullSubcategory
+
+section
+
+variable {C} [Preadditive C] [HasBinaryBiproducts C]
+
+/-- The cylinder of a bounded cochain complex is bounded. -/
+lemma bounded_cylinder {K : CochainComplex C ℤ} (hK : CochainComplex.bounded C K) :
+    CochainComplex.bounded C K.cylinder := by
+  obtain ⟨a, b, ha, hb⟩ := (CochainComplex.bounded_iff C K).1 hK
+  obtain ⟨a', ha'⟩ := K.plus_cylinder ⟨a, ha⟩
+  refine (CochainComplex.bounded_iff C _).2 ⟨a', b, ha', ?_⟩
+  rw [CochainComplex.isStrictlyLE_iff]
+  intro i hi
+  refine homotopyCofiber.isZero_X (biprod.lift (𝟙 K) (-𝟙 K)) _ ?_ (fun j hj ↦ ?_)
+  · refine IsZero.of_iso ?_ ((HomologicalComplex.eval C (.up ℤ) i).mapBiprod _ _)
+    simpa using K.isZero_of_isStrictlyLE b i
+  · simp only [ComplexShape.up_Rel] at hj
+    exact K.isZero_of_isStrictlyLE b _ (by lia)
+
+omit [HasBinaryBiproducts C] in
+/-- The mapping cone of a morphism `K ⟶ L` is strictly bounded above by `n` when `K` is strictly
+bounded above by `n + 1` and `L` by `n`. This is the upper-bound counterpart of Mathlib's
+`CochainComplex.isStrictlyGE_mappingCone`. -/
+lemma isStrictlyLE_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L) [HasHomotopyCofiber f]
+    (n₁ n₂ n : ℤ) [K.IsStrictlyLE n₁] [L.IsStrictlyLE n₂] (hn₁ : n₁ ≤ n + 1 := by lia)
+    (hn₂ : n₂ ≤ n := by lia) :
+    (CochainComplex.mappingCone f).IsStrictlyLE n := by
+  rw [CochainComplex.isStrictlyLE_iff]
+  intro i hi
+  rw [CochainComplex.mappingCone.isZero_X_iff]
+  exact ⟨K.isZero_of_isStrictlyLE n₁ (i + 1) (by lia), L.isZero_of_isStrictlyLE n₂ i (by lia)⟩
+
+/-- The mapping cone of a morphism between bounded cochain complexes is bounded. The explicit
+bounds are given by `CochainComplex.isStrictlyGE_mappingCone` and `isStrictlyLE_mappingCone`. -/
+lemma bounded_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
+    (hK : CochainComplex.bounded C K) (hL : CochainComplex.bounded C L) :
+    CochainComplex.bounded C (CochainComplex.mappingCone f) := by
+  obtain ⟨a₁, b₁, ha₁, hb₁⟩ := (CochainComplex.bounded_iff C K).1 hK
+  obtain ⟨a₂, b₂, ha₂, hb₂⟩ := (CochainComplex.bounded_iff C L).1 hL
+  exact (CochainComplex.bounded_iff C _).2 ⟨min (a₁ - 1) a₂, max (b₁ - 1) b₂,
+    CochainComplex.isStrictlyGE_mappingCone f a₁ a₂ _,
+    isStrictlyLE_mappingCone f b₁ b₂ _⟩
+
+end
 
 namespace Bounded
 
@@ -183,13 +232,6 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
       rwa [← HomotopyCategory.bounded_quotient_obj_iff]
     have h₂' : CochainComplex.bounded C T.obj₂.as := by
       rwa [← HomotopyCategory.bounded_quotient_obj_iff]
-    rw [CochainComplex.bounded_iff] at h₁' h₂'
-    obtain ⟨a₁, b₁, ha₁, hb₁⟩ := h₁'
-    obtain ⟨a₂, b₂, ha₂, hb₂⟩ := h₂'
-    let _ := ha₁
-    let _ := hb₁
-    let _ := ha₂
-    let _ := hb₂
     have quotient_obj_of_as (K : HomotopyCategory C (.up ℤ)) :
         (HomotopyCategory.quotient C (.up ℤ)).obj K.as = K := by
       cases K
@@ -205,14 +247,8 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
       ⟨Triangle.π₃.mapIso (isoTriangleOfIso₁₂ T _ hT
         (HomotopyCategory.mappingCone_triangleh_distinguished f)
         e₁.symm e₂.symm ?_)⟩⟩
-    · rw [HomotopyCategory.bounded_quotient_obj_iff, CochainComplex.bounded_iff]
-      refine ⟨min (a₁ - 1) a₂, max (b₁ - 1) b₂, ?_, ?_⟩
-      · exact CochainComplex.isStrictlyGE_mappingCone f a₁ a₂ _ (by omega) (by omega)
-      · rw [CochainComplex.isStrictlyLE_iff]
-        intro i hi
-        rw [CochainComplex.mappingCone.isZero_X_iff]
-        exact ⟨CochainComplex.isZero_of_isStrictlyLE (K := T.obj₁.as) b₁ (i + 1) (by omega),
-          CochainComplex.isZero_of_isStrictlyLE (K := T.obj₂.as) b₂ i (by omega)⟩
+    · rw [HomotopyCategory.bounded_quotient_obj_iff]
+      exact CochainComplex.bounded_mappingCone f h₁' h₂'
     -- Unfold the compatibility condition from `isoTriangleOfIso₁₂`; the explicit transports
     -- `e₁` and `e₂` avoid the nonstandard definitional-equality options used by Mathlib's proof.
     · change T.mor₁ ≫ e₂.inv =
@@ -223,6 +259,12 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
 instance [HasZeroObject C] [HasBinaryBiproducts C] :
     (HomotopyCategory.bounded C).IsTriangulated where
   toIsTriangulatedClosed₂ := .of_isTriangulatedClosed₃
+
+/-- Every object of the homotopy category represented by a bounded complex is represented by a
+bounded below complex. -/
+lemma bounded_le_plus : HomotopyCategory.bounded C ≤ _root_.HomotopyCategory.plus C := by
+  rintro _ ⟨K, hK⟩
+  exact ⟨K, hK.1⟩
 
 /-- The homotopy category of bounded cochain complexes. -/
 abbrev Bounded := (HomotopyCategory.bounded C).FullSubcategory
@@ -237,6 +279,51 @@ abbrev ι : HomotopyCategory.Bounded C ⥤ HomotopyCategory C (.up ℤ) :=
 /-- The inclusion of the bounded homotopy category is fully faithful. -/
 abbrev fullyFaithfulι : (ι C).FullyFaithful :=
   ObjectProperty.fullyFaithfulι _
+
+/-- The inclusion `Kᵇ(C) ⥤ K⁺(C)` of bounded complexes into bounded below complexes. -/
+abbrev toPlus : HomotopyCategory.Bounded C ⥤ _root_.HomotopyCategory.Plus C :=
+  ObjectProperty.ιOfLE (bounded_le_plus C)
+
+variable {C} in
+/-- The bounded cochain complex underlying an object of the bounded homotopy category. -/
+def rep (K : HomotopyCategory.Bounded C) : CochainComplex C ℤ :=
+  K.obj.as
+
+variable {C} in
+/-- An object of the bounded homotopy category is the homotopy class of its underlying complex. -/
+@[simp]
+lemma quotient_obj_rep (K : HomotopyCategory.Bounded C) :
+    (HomotopyCategory.quotient C (.up ℤ)).obj (rep K) = K.obj :=
+  (rfl)
+
+variable {C} in
+/-- The underlying complex of an object of the bounded homotopy category is bounded. -/
+lemma bounded_rep (K : HomotopyCategory.Bounded C) : CochainComplex.bounded C (rep K) := by
+  rw [← HomotopyCategory.bounded_quotient_obj_iff, quotient_obj_rep]
+  exact K.property
+
+variable {C} in
+/-- The class in `Kᵇ(C)` of a bounded cochain complex. -/
+abbrev mk (K : CochainComplex C ℤ) (hK : CochainComplex.bounded C K) :
+    HomotopyCategory.Bounded C :=
+  ⟨_, (HomotopyCategory.bounded_quotient_obj_iff K).2 hK⟩
+
+variable {C} in
+/-- The underlying complex of an object of the bounded homotopy category is strictly bounded
+below and above. -/
+lemma exists_isStrictlyGE_isStrictlyLE (K : HomotopyCategory.Bounded C) :
+    ∃ a b : ℤ, CochainComplex.IsStrictlyGE K.obj.as a ∧ CochainComplex.IsStrictlyLE K.obj.as b :=
+  (CochainComplex.bounded_iff C _).1 (bounded_rep K)
+
+variable {C} in
+/-- The underlying complexes of two objects of the bounded homotopy category are strictly bounded
+above by a common integer. -/
+lemma exists_isStrictlyLE_isStrictlyLE (K L : HomotopyCategory.Bounded C) :
+    ∃ n : ℤ, CochainComplex.IsStrictlyLE K.obj.as n ∧ CochainComplex.IsStrictlyLE L.obj.as n := by
+  obtain ⟨_, b, _, _⟩ := exists_isStrictlyGE_isStrictlyLE K
+  obtain ⟨_, b', _, _⟩ := exists_isStrictlyGE_isStrictlyLE L
+  exact ⟨max b b', CochainComplex.isStrictlyLE_of_le K.obj.as b _ (le_max_left _ _),
+    CochainComplex.isStrictlyLE_of_le L.obj.as b' _ (le_max_right _ _)⟩
 
 /-- The quotient functor from bounded cochain complexes to their bounded homotopy category. -/
 @[implicit_reducible]
@@ -272,6 +359,14 @@ lemma quotient_map_hom {X Y : CochainComplex.Bounded C} (f : X ⟶ Y) :
       eqToHom (quotient_obj_obj C X) ≫
         (HomotopyCategory.quotient C (.up ℤ)).map f.hom ≫
         eqToHom (quotient_obj_obj C Y).symm := quotient_map_hom_private C f
+
+variable {C} in
+/-- The underlying complex of the class of a bounded complex has the same homotopy class as that
+complex. -/
+lemma quotient_obj_rep_quotient_obj (K : CochainComplex.Bounded C) :
+    (HomotopyCategory.quotient C (.up ℤ)).obj (rep ((quotient C).obj K)) =
+      (HomotopyCategory.quotient C (.up ℤ)).obj K.obj :=
+  (quotient_obj_rep _).trans (quotient_obj_obj C K)
 
 private def quotientCompιIsoAux :
     quotient C ⋙ ι C ≅
@@ -325,6 +420,29 @@ instance : (quotient C).EssSurj where
 instance : (quotient C).Full := by
   dsimp [quotient]
   infer_instance
+
+variable (C) in
+/-- The quotient functor from bounded cochain complexes is a localization functor with respect to
+the homotopy equivalences. This is the bounded analogue of Mathlib's corresponding instance for
+`HomotopyCategory.Plus.quotient`. -/
+instance [HasBinaryBiproducts C] :
+    (quotient C).IsLocalization
+      ((homotopyEquivalences C (.up ℤ)).inverseImage (CochainComplex.Bounded.ι C)) :=
+  Functor.isLocalization_of_essSurj_of_full_of_exists_cylinders _ _
+    (fun _ _ f hf ↦ by
+      simpa [← isIso_iff_of_reflects_iso _ (ι C),
+        ← HomotopyCategory.inverseImage_quotient_isomorphisms] using hf) (by
+    rintro K L f₀ f₁ hf
+    obtain ⟨f₀, rfl⟩ := ObjectProperty.homMk_surjective f₀
+    obtain ⟨f₁, rfl⟩ := ObjectProperty.homMk_surjective f₁
+    replace hf := HomotopyCategory.homotopyOfEq f₀ f₁ (by
+      simpa [quotient_map_hom, cancel_epi, cancel_mono] using congrArg InducedCategory.Hom.hom hf)
+    exact ⟨K.obj.precylinder.toFullSubcategory (CochainComplex.bounded_cylinder K.property),
+      HomotopicalAlgebra.Precylinder.LeftHomotopy.fullSubcategoryEquiv.symm
+        { h := cylinder.desc _ _ hf
+          h₀ := cylinder.ι₀_desc _ _ hf
+          h₁ := cylinder.ι₁_desc _ _ hf },
+      ⟨cylinder.homotopyEquiv _ (fun n ↦ ⟨n - 1, by simp⟩), rfl⟩⟩)
 
 section
 

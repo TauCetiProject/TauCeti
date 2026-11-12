@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Central.Matrix
+public import TauCeti.Algebra.Subalgebra.Center
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.MatrixProd
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
 public import TauCeti.RepresentationTheory.Spin.Structure
@@ -24,12 +26,20 @@ The general rank-four comparison between Spin and the reverse-unitary carrier th
 Spin group with `SL₂(K) × SL₂(K)`. In particular this supplies the split rational model after
 specializing `K` to `ℚ`.
 
+Since each matrix factor is central, the centre of the even Clifford algebra, the discriminant
+quadratic algebra of the space, is the split algebra `K × K`. Here the two factors cut out by the
+split centre are matrix algebras. A split centre alone does not force this: the even Clifford
+algebra of the sum of four squares over `ℝ` also has split centre, but its factors are
+quaternion division algebras (`TauCeti.isEmpty_realCliffordFourZeroEven_algEquiv_matrix_prod`).
+
 ## Main definitions and results
 
 * `TauCeti.hyperbolicFourEvenEquivMatrixProd` identifies the even Clifford algebra with two
   two-by-two matrix algebras.
 * `TauCeti.hyperbolicFourEvenEquivMatrixProd_apply` relates it to the canonical half-spin
   matrix-product model.
+* `TauCeti.hyperbolicFourCenterEvenEquivProd` identifies the centre of the even Clifford algebra
+  with the split quadratic algebra `K × K`.
 * `TauCeti.hyperbolicFourSpinEquivSpecialLinearProd` identifies the Spin group with
   `SL₂(K) × SL₂(K)`.
 * The accompanying coercion theorems expose the forward and inverse maps through the chosen even
@@ -51,17 +61,6 @@ universe u
 
 variable (K : Type u) [Field K]
 
-private theorem hyperbolicFour_finrank :
-    finrank K (SplitEvenSpace K 2) = 2 * 2 := by
-  simp [SplitEvenSpace]
-
-private theorem hyperbolicFour_W_ne_bot :
-    (splitEvenPolarization K 2).W ≠ ⊥ :=
-  Submodule.finrank_eq_zero.not.1 <| by
-    rw [(splitEvenPolarization K 2).finrank_W_eq_of_finrank_eq_two_mul
-      (hyperbolicFour_finrank K)]
-    norm_num
-
 variable [NeZero (2 : K)]
 
 /-- The internal invertibility witness used by the characteristic-not-two Clifford APIs. -/
@@ -75,8 +74,9 @@ noncomputable def hyperbolicFourEvenEquivMatrixProd :
     even (splitEvenForm K 2) ≃ₐ[K]
       Matrix (Fin 2) (Fin 2) K × Matrix (Fin 2) (Fin 2) K := by
   simpa using (splitEvenPolarization K 2).evenCliffordEquivProdMatrix
-    (hyperbolicFour_W_ne_bot K) (hyperbolicFour_finrank K)
+    (splitEvenPolarization_W_ne_bot K (by norm_num)) (finrank_splitEvenSpace K 2)
 
+omit [NeZero (2 : K)] in
 /-- The hyperbolic even-Clifford equivalence applies the matrix-product model of the canonical
 polarization. The latter's application theorem identifies its two coordinates with the matrices
 of the two half-spin actions. -/
@@ -85,12 +85,27 @@ theorem hyperbolicFourEvenEquivMatrixProd_apply
     (x : even (splitEvenForm K 2)) :
     hyperbolicFourEvenEquivMatrixProd K x =
       (splitEvenPolarization K 2).evenCliffordEquivProdMatrix (l := 2)
-        (Submodule.finrank_eq_zero.not.1 <| by
-          rw [(splitEvenPolarization K 2).finrank_W_eq_of_finrank_eq_two_mul
-            (by simp [SplitEvenSpace] : finrank K (SplitEvenSpace K 2) = 2 * 2)]
-          norm_num)
-        (by simp [SplitEvenSpace]) x := by
+        (splitEvenPolarization_W_ne_bot K (by norm_num))
+        (finrank_splitEvenSpace K 2) x := by
   simp [hyperbolicFourEvenEquivMatrixProd]
+
+/-- The centre of the even Clifford algebra of the four-dimensional hyperbolic space, its
+discriminant quadratic algebra, is the split algebra `K × K`. -/
+noncomputable def hyperbolicFourCenterEvenEquivProd :
+    Subalgebra.center K (even (splitEvenForm K 2)) ≃ₐ[K] K × K :=
+  (centerCongr (hyperbolicFourEvenEquivMatrixProd K)).trans
+    (centerProdAlgEquivOfIsCentral K _ _)
+
+omit [NeZero (2 : K)] in
+/-- The inverse of the hyperbolic centre equivalence sends a pair of scalars to the even Clifford
+element whose two matrix components are the corresponding scalar matrices. -/
+@[simp]
+theorem coe_hyperbolicFourCenterEvenEquivProd_symm (r : K × K) :
+    ((hyperbolicFourCenterEvenEquivProd K).symm r : even (splitEvenForm K 2)) =
+      (hyperbolicFourEvenEquivMatrixProd K).symm
+        (algebraMap K (Matrix (Fin 2) (Fin 2) K) r.1,
+          algebraMap K (Matrix (Fin 2) (Fin 2) K) r.2) := by
+  simp [hyperbolicFourCenterEvenEquivProd]
 
 /-- The Spin group of the four-dimensional hyperbolic space is the product of two special linear
 groups of degree two. -/
@@ -98,7 +113,8 @@ noncomputable def hyperbolicFourSpinEquivSpecialLinearProd :
     spinGroup (splitEvenForm K 2) ≃*
       Matrix.SpecialLinearGroup (Fin 2) K × Matrix.SpecialLinearGroup (Fin 2) K :=
   spinGroupEquivSpecialLinearProdOfAlgEquiv (splitEvenForm K 2)
-    (nondegenerate_splitEvenForm K 2) ((hyperbolicFour_finrank K).trans (by norm_num))
+    (nondegenerate_splitEvenForm K 2)
+      ((finrank_splitEvenSpace K 2).trans (by norm_num))
       (hyperbolicFourEvenEquivMatrixProd K)
 
 /-- The hyperbolic four-dimensional Spin equivalence evaluates the chosen even-Clifford

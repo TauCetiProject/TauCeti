@@ -40,6 +40,7 @@ happens before integration.
 ## Main results
 
 * the additive and scaling laws for `rectIntegral`, and its `L¹` bound;
+* `rectIntegral_toMeasurable` — a rectangle integral is unchanged by passing to measurable hulls;
 * `rectIntegral_uniformOn_univ` — on a finite carrier with the uniform measure, a rectangle
   integral is a normalized finite sum;
 * `testIntegral_indicator_one` — testing against indicators recovers a rectangle integral;
@@ -80,6 +81,13 @@ theorem rectIntegral_eq_setIntegral_setIntegral [IsFiniteMeasure μ]
     K.rectIntegral μ S T = ∫ x in S, ∫ y in T, K x y ∂μ ∂μ := by
   rw [rectIntegral_def]
   exact setIntegral_prod _ K.integrable_uncurry.integrableOn
+
+/-- A rectangle integral does not change when the two sets are replaced by measurable hulls. -/
+theorem rectIntegral_toMeasurable [IsFiniteMeasure μ] (K : SymmKernel Ω μ) (S T : Set Ω) :
+    K.rectIntegral μ S T =
+      K.rectIntegral μ (toMeasurable μ S) (toMeasurable μ T) := by
+  simp only [rectIntegral_def, ← Measure.prod_restrict,
+    Measure.restrict_toMeasurable (measure_ne_top μ _)]
 
 @[simp]
 theorem rectIntegral_empty_left (K : SymmKernel Ω μ) (T : Set Ω) :
@@ -204,12 +212,8 @@ theorem integrable_testIntegrand [IsFiniteMeasure μ] (K : SymmKernel Ω μ) {u 
     (((hu.comp measurable_fst).mul (hv.comp measurable_snd)).mul
       K.measurable).aestronglyMeasurable (ae_of_all _ fun p => ?_)
   rw [Real.norm_eq_abs, abs_mul, abs_mul]
-  calc |u p.1| * |v p.2| * |K p.1 p.2|
-      ≤ 1 * 1 * |K p.1 p.2| := by
-        gcongr
-        · exact abs_le.2 (hu1 p.1)
-        · exact abs_le.2 (hv1 p.2)
-    _ = |K p.1 p.2| := by ring
+  exact mul_le_of_le_one_left (abs_nonneg _)
+    ((mul_le_of_le_one_left (abs_nonneg _) (abs_le.2 (hu1 p.1))).trans (abs_le.2 (hv1 p.2)))
 
 /-- Every `[-1,1]`-test integral is bounded by the `L¹` norm of the kernel.  This is the bound that
 makes the signed cut norm's supremum a supremum of a bounded set. -/
@@ -222,12 +226,8 @@ theorem abs_testIntegral_le_integral_abs [IsFiniteMeasure μ] (K : SymmKernel Ω
   refine integral_mono (K.integrable_testIntegrand μ hu hv hu1 hv1).abs
     K.integrable_uncurry.abs fun p => ?_
   rw [abs_mul, abs_mul]
-  calc |u p.1| * |v p.2| * |K p.1 p.2|
-      ≤ 1 * 1 * |K p.1 p.2| := by
-        gcongr
-        · exact abs_le.2 (hu1 p.1)
-        · exact abs_le.2 (hv1 p.2)
-    _ = |K p.1 p.2| := by ring
+  exact mul_le_of_le_one_left (abs_nonneg _)
+    ((mul_le_of_le_one_left (abs_nonneg _) (abs_le.2 (hu1 p.1))).trans (abs_le.2 (hv1 p.2)))
 
 /-- Testing against two indicator functions recovers the rectangle integral.  This is what makes
 the set form of the cut norm a special case of the signed form. -/

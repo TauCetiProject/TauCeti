@@ -15,6 +15,7 @@ Adjoining an element to a field is unchanged when that element is replaced by it
 ## Main results
 
 * `TauCeti.IntermediateField.adjoin_simple_inv`: `K⟮x⁻¹⟯ = K⟮x⟯`.
+* `TauCeti.minpoly.natDegree_inv`: `x⁻¹` and `x` have minimal polynomials of the same degree.
 -/
 
 public section
@@ -36,3 +37,18 @@ theorem adjoin_simple_inv (x : L) : K⟮x⁻¹⟯ = K⟮x⟯ :=
       (by simpa using inv_mem (_root_.IntermediateField.mem_adjoin_simple_self K x⁻¹)))
 
 end TauCeti.IntermediateField
+
+namespace TauCeti.minpoly
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+
+/-- An element and its inverse have minimal polynomials of the same degree, since they generate
+the same intermediate field. -/
+theorem natDegree_inv (x : L) : (minpoly K x⁻¹).natDegree = (minpoly K x).natDegree := by
+  by_cases hx : IsIntegral K x
+  · rw [← IntermediateField.adjoin.finrank hx.inv, ← IntermediateField.adjoin.finrank hx,
+      TauCeti.IntermediateField.adjoin_simple_inv]
+  · have hx' : ¬IsIntegral K x⁻¹ := fun h ↦ hx (by simpa using h.inv)
+    rw [minpoly.eq_zero hx, minpoly.eq_zero hx']
+
+end TauCeti.minpoly

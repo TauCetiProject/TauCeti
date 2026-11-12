@@ -21,7 +21,7 @@ so the kernel is read off the character alone. That equivalence is the content o
 (`Representation.mem_ker_iff_char_eq` and its `FDRep` form `FDRep.mem_ker_iff_char_eq`), together
 with the consequence that the locus where a whole *family* of characters takes its value at the
 identity is the common kernel of that family (`FDRep.coe_iInf_ker`), a normal subgroup by
-`FDRep.normal_iInf_ker` (`TauCeti/RepresentationTheory/FDRep.lean`, that normality needing no
+`FDRep.normal_iInf_ker` (`TauCeti/RepresentationTheory/FDRep/Basic.lean`, that normality needing no
 characters).
 
 One direction is immediate: if `ρ g` is the identity then its trace is `finrank ℂ V`. The other is
@@ -62,7 +62,7 @@ saying that such a common kernel is cut out by character equations and is a norm
   description of the kernel; `FDRep.coe_ker` states it as an equality of sets.
 * `FDRep.coe_iInf_ker`: **the locus where every member of a family of characters takes its value at
   the identity is the common kernel of that family**, which `FDRep.normal_iInf_ker`
-  (`TauCeti/RepresentationTheory/FDRep.lean`) records as a normal subgroup.
+  (`TauCeti/RepresentationTheory/FDRep/Basic.lean`) records as a normal subgroup.
 * `FDRep.ker_eq_ker_of_char_eq`: the kernel depends on the representation only through its
   character.
 * `FDRep.ker_eq_top_iff` and `FDRep.ker_eq_bot_iff`: the kernel is everything exactly when the

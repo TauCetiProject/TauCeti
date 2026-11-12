@@ -116,7 +116,7 @@ theorem generalLinearUpperTriangularDefiningHopfIdeal_le_kostantTorusSubsystemDe
           (GeneralLinear.coordinateRingMap ℤ n (MvPolynomial.X (i, j)))) = 0 := by
       rw [GeneralLinear.weightTorusCoordinateMap_X]
       simp only [hji.ne', ↓reduceIte]
-    simpa only [BialgHom.coe_toAlgHom] using hzero
+    simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, BialgHom.coe_toAlgHom] using hzero
 
 include α hwt hα hpos in
 /-- The canonical closed immersion from a torus-plus-positive-root Kostant subsystem into the
@@ -196,13 +196,13 @@ theorem isSolvable_points_kostantTorusSubsystem (A : Type v) [CommRing A] :
   let φ : HopfAlgebra.points (R := ℤ) (H := CommHopfAlgCat.quotient H IS)
       (CommAlgCat.of ℤ A) →* HopfAlgebra.points (R := ℤ)
         (H := CommHopfAlgCat.quotient H IB) (CommAlgCat.of ℤ A) :=
-    ((CommHopfAlgCat.mapPointsFunctor f).app (CommAlgCat.of ℤ A)).hom
+    ((CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of ℤ A)).hom
   let _ : Group.IsSolvable
       (HopfAlgebra.points (R := ℤ)
         (H := CommHopfAlgCat.quotient H IB) (CommAlgCat.of ℤ A)) :=
     GeneralLinear.UpperTriangular.isSolvable_points ℤ A n
   exact Group.isSolvable_of_isSolvable_injective (f := φ)
-    (CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective f
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f
       (CommHopfAlgCat.quotientMapOfLe_surjective H hle) (CommAlgCat.of ℤ A))
 
 end TauCeti.UniversalEnvelopingAlgebra

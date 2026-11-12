@@ -89,8 +89,9 @@ theorem intervalIntegrable_excised_of_continuousOn (hγc : ContinuousOn γ (uIcc
     rw [MeasureTheory.Measure.restrict_restrict₀ hA0]
     refine (ContinuousOn.aemeasurable₀ (f := fun t => φ (γ t)) (fun t ht => ?_) ?_
       ).aestronglyMeasurable
-    · exact (hφ.comp (hγc.mono fun u hu => Set.uIoc_subset_uIcc hu.1.2)
-        fun u hu => ⟨⟨u, Set.uIoc_subset_uIcc hu.1.2, rfl⟩, fun s hs => (hu.1.1 s hs).le⟩) t ht
+    · exact (hφ.comp (hγc.mono fun u hu => by exact Set.uIoc_subset_uIcc hu.1.2)
+        fun u hu => by
+          exact ⟨⟨u, Set.uIoc_subset_uIcc hu.1.2, rfl⟩, fun s hs => (hu.1.1 s hs).le⟩) t ht
     · exact ((MeasureTheory.nullMeasurableSet_restrict_of_subset
         Set.inter_subset_right).mp hA0).inter measurableSet_uIoc.nullMeasurableSet
   · refine (MeasureTheory.ae_restrict_iff' measurableSet_uIoc).mpr

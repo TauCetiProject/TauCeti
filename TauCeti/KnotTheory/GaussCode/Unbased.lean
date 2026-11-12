@@ -166,6 +166,33 @@ theorem writhe_rotateBasepoint_symm (D : BasedOrientedGaussCode n) :
     ((rotateBasepoint n).symm D).writhe = D.writhe := by
   simpa using (writhe_rotateBasepoint ((rotateBasepoint n).symm D)).symm
 
+/-- After moving the base point forward `k` times, visit `i` contains the data formerly at the
+visit `k` steps later. -/
+@[simp]
+theorem visit_rotateBasepoint_pow (D : BasedOrientedGaussCode n) (k : ℕ) (i : Fin (2 * n)) :
+    ((rotateBasepoint n ^ k) D).visit i = D.visit ((finRotate (2 * n) ^ k) i) := by
+  induction k generalizing D with
+  | zero => simp
+  | succ k ih => rw [pow_succ (rotateBasepoint n), Equiv.Perm.mul_apply, ih,
+      visit_rotateBasepoint, pow_succ' (finRotate (2 * n)), Equiv.Perm.mul_apply]
+
+/-- Moving the base point forward `k` times shifts the over/under sequence by `k` visits. -/
+@[simp]
+theorem over_rotateBasepoint_pow (D : BasedOrientedGaussCode n) (k : ℕ) (i : Fin (2 * n)) :
+    ((rotateBasepoint n ^ k) D).over i = D.over ((finRotate (2 * n) ^ k) i) := by
+  induction k generalizing D with
+  | zero => simp
+  | succ k ih => rw [pow_succ (rotateBasepoint n), Equiv.Perm.mul_apply, ih,
+      over_rotateBasepoint, pow_succ' (finRotate (2 * n)), Equiv.Perm.mul_apply]
+
+/-- Moving the base point forward `k` times does not change crossing signs. -/
+@[simp]
+theorem sign_rotateBasepoint_pow (D : BasedOrientedGaussCode n) (k : ℕ) :
+    ((rotateBasepoint n ^ k) D).sign = D.sign := by
+  induction k generalizing D with
+  | zero => simp
+  | succ k ih => rw [pow_succ, Equiv.Perm.mul_apply, ih, sign_rotateBasepoint]
+
 /-- Mirroring a based code commutes with moving its base point. -/
 @[simp]
 theorem mirror_rotateBasepoint (D : BasedOrientedGaussCode n) :
@@ -248,6 +275,15 @@ theorem forgetBasepoint_rotateBasepoint (D : BasedOrientedGaussCode n) :
     (rotateBasepoint n D).forgetBasepoint = D.forgetBasepoint := by
   rw [forgetBasepoint_eq_iff]
   exact ⟨-1, by simp⟩
+
+/-- Moving the base point forward any number of times does not change the unbased oriented Gauss
+code. -/
+@[simp]
+theorem forgetBasepoint_rotateBasepoint_pow (D : BasedOrientedGaussCode n) (k : ℕ) :
+    ((rotateBasepoint n ^ k) D).forgetBasepoint = D.forgetBasepoint := by
+  induction k generalizing D with
+  | zero => simp
+  | succ k ih => simp [pow_succ, ih]
 
 /-- Moving the base point backward does not change the unbased oriented Gauss code. -/
 @[simp]

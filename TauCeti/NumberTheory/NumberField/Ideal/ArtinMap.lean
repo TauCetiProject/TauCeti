@@ -84,7 +84,7 @@ noncomputable def artinElement (hab : ∀ σ τ : L ≃ₐ[K] L, Commute σ τ)
     (𝔭 : Ideal (𝓞 K)) [𝔭.IsMaximal]
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭],
       Algebra.IsUnramifiedAt (𝓞 K) Q) : L ≃ₐ[K] L :=
-  letI := isMulCommutative_galoisGroup_of_commute hab
+  letI := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   ConjClasses.mkEquiv.symm (artinSymbol (L := L) 𝔭 hur)
 
 /-- At an unramified prime, the Artin automorphism represents the Artin symbol. -/
@@ -92,7 +92,7 @@ theorem artinSymbol_eq_mk_artinElement (𝔭 : Ideal (𝓞 K)) [𝔭.IsMaximal]
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭],
       Algebra.IsUnramifiedAt (𝓞 K) Q) :
     artinSymbol (L := L) 𝔭 hur = ConjClasses.mk (artinElement hab 𝔭 hur) := by
-  let _ := isMulCommutative_galoisGroup_of_commute hab
+  let _ := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   exact (ConjClasses.mkEquiv.apply_symm_apply _).symm
 
 include hab in
@@ -103,7 +103,7 @@ theorem isArithFrobAt_artinElement (𝔭 : Ideal (𝓞 K)) [𝔭.IsMaximal]
       Algebra.IsUnramifiedAt (𝓞 K) Q)
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭] :
     IsArithFrobAt (𝓞 K) (artinElement hab 𝔭 hur) Q := by
-  let _ := isMulCommutative_galoisGroup_of_commute hab
+  let _ := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt K Q
     (Ideal.ne_bot_of_liesOver_of_ne_bot (NeZero.ne 𝔭) Q)
   have hconj : IsConj (artinElement hab 𝔭 hur) σ :=
@@ -117,9 +117,17 @@ include hab in
 theorem artinElement_eq_of_isArithFrobAt (𝔭 : Ideal (𝓞 K)) [𝔭.IsMaximal]
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭],
       Algebra.IsUnramifiedAt (𝓞 K) Q)
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭] {σ : L ≃ₐ[K] L}
-    (hσ : IsArithFrobAt (𝓞 K) σ Q) : artinElement hab 𝔭 hur = σ :=
-  isArithFrobAt_eq_of_isUnramifiedAt (isArithFrobAt_artinElement hab 𝔭 hur Q) hσ
+    (Q : Ideal (𝓞 L)) [Q.LiesOver 𝔭] {σ : L ≃ₐ[K] L}
+    (hσ : IsArithFrobAt (𝓞 K) σ Q) : artinElement hab 𝔭 hur = σ := by
+  have hQ : Q ≠ ⊤ := (Ideal.ne_top_iff_of_liesOver Q 𝔭).mpr ‹𝔭.IsMaximal›.ne_top
+  obtain ⟨P, hPmax, hQP⟩ := Ideal.exists_le_maximal Q hQ
+  have : P.IsPrime := hPmax.isPrime
+  have hunder : P.under (𝓞 K) = 𝔭 :=
+    (‹𝔭.IsMaximal›.eq_of_le (Ideal.IsPrime.under (𝓞 K) P).ne_top
+      (by rw [Ideal.over_def Q 𝔭]; exact Ideal.comap_mono hQP)).symm
+  have : P.LiesOver 𝔭 := ⟨hunder.symm⟩
+  have hσP : IsArithFrobAt (𝓞 K) σ P := hσ.of_le hQP (hunder.trans (Ideal.over_def Q 𝔭))
+  exact isArithFrobAt_eq_of_isUnramifiedAt (isArithFrobAt_artinElement hab 𝔭 hur P) hσP
 
 open scoped Classical in
 /-- The Artin automorphism at a finite place of `K`, extended by `1` inside the excluded set `S`.
@@ -169,7 +177,7 @@ include hab in
 prime above `v` equals it, which is what makes the assignment `v ↦ artinElementAway hab S hur v`
 well defined without a choice of prime above `v`. -/
 theorem artinElementAway_eq_of_isArithFrobAt {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ S)
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal] {σ : L ≃ₐ[K] L}
+    (Q : Ideal (𝓞 L)) [Q.LiesOver v.asIdeal] {σ : L ≃ₐ[K] L}
     (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     artinElementAway hab S hur v = σ := by
   rw [artinElementAway, dite_eq_right hv]
@@ -179,7 +187,7 @@ theorem artinElementAway_eq_of_isArithFrobAt {v : HeightOneSpectrum (𝓞 K)} (h
 the unique factorization of an invertible fractional ideal, on the group of fractional ideals
 with multiplicity zero at every prime of `S`. -/
 noncomputable def artinHomAway : idealsAway K S →* (L ≃ₐ[K] L) :=
-  letI := isMulCommutative_galoisGroup_of_commute hab
+  letI := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   MonoidHom.mk' (fun I ↦ ∏ᶠ v : HeightOneSpectrum (𝓞 K), artinElementAway hab S hur v ^
       FractionalIdeal.count K v ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K))
     fun I J ↦ by
@@ -195,11 +203,11 @@ factors being trivial. It is taken in the commutative structure that `hab` itsel
 no bundled commutativity is asked of the caller. -/
 theorem artinHomAway_apply (I : idealsAway K S) :
     artinHomAway (L := L) hab S hur I =
-      letI := isMulCommutative_galoisGroup_of_commute hab
+      letI := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
       ∏ᶠ v : HeightOneSpectrum (𝓞 K), artinElementAway hab S hur v ^ FractionalIdeal.count K v
         ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :=
   -- The defining equation of the `MonoidHom.mk'` that `artinHomAway` is built from: the `letI`
-  -- above is the same named instance term as the one in the definition, so this is `rfl`.
+  -- above supplies the same commutative structure as the one in the definition.
   (rfl)
 
 /-- **The value of the Artin map at a prime outside `S` is its local Artin automorphism.** -/
@@ -208,7 +216,7 @@ theorem artinHomAway_apply_eq_artinElementAway (I : idealsAway K S)
     (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K)) :
     artinHomAway (L := L) hab S hur I = artinElementAway hab S hur v := by
-  let _ := isMulCommutative_galoisGroup_of_commute hab
+  let _ := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   rw [artinHomAway_apply hab S hur I, finprod_eq_single _ v, hI,
     FractionalIdeal.count_self, zpow_one]
   intro w hw
@@ -216,14 +224,13 @@ theorem artinHomAway_apply_eq_artinElementAway (I : idealsAway K S)
 
 /-- **The value of the Artin map at a prime outside `S` is the Frobenius there.** -/
 theorem artinHomAway_apply_prime (I : idealsAway K S) (v : HeightOneSpectrum (𝓞 K))
-    (hv : v ∉ S)
     (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K))
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal] (σ : L ≃ₐ[K] L)
+    (Q : Ideal (𝓞 L)) [Q.LiesOver v.asIdeal] (σ : L ≃ₐ[K] L)
     (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     artinHomAway (L := L) hab S hur I = σ := by
   rw [artinHomAway_apply_eq_artinElementAway hab S hur I v hI,
-    artinElementAway_eq_of_isArithFrobAt hab S hur hv Q hσ]
+    artinElementAway_eq_of_isArithFrobAt hab S hur (notMem_of_coe_eq_asIdeal I.2 hI) Q hσ]
 
 /-- **The values on the primes outside `S` determine the Artin map.** The carrier is generated by
 those primes, so a homomorphism taking the Frobenius value at each of them is the Artin map. -/
@@ -237,7 +244,7 @@ theorem artinHomAway_eq_of_apply_prime (φ : idealsAway K S →* (L ≃ₐ[K] L)
   refine idealsAway_hom_ext fun I v hv hI ↦ ?_
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 L)))
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt K Q (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
-  rw [hφ I v hv hI Q ‹_› ‹_› σ hσ, artinHomAway_apply_prime hab S hur I v hv hI Q σ hσ]
+  rw [hφ I v hv hI Q ‹_› ‹_› σ hσ, artinHomAway_apply_prime hab S hur I v hI Q σ hσ]
 
 /-- **Enlarging the excluded set restricts the Artin map.** For `S ⊆ S'` the Artin map for `S'`
 is the Artin map for `S` composed with the inclusion of carriers. -/
@@ -247,8 +254,8 @@ theorem artinHomAway_mono (S' : Finset (HeightOneSpectrum (𝓞 K))) (h : S ⊆ 
     artinHomAway (L := L) hab S' hur' =
       (artinHomAway (L := L) hab S hur).comp (idealsAwayInclusion K h) := by
   refine (artinHomAway_eq_of_apply_prime hab S' hur' _ ?_).symm
-  intro I v hv hI Q hQp hQl σ hσ
-  exact artinHomAway_apply_prime hab S hur (idealsAwayInclusion K h I) v (fun hvS ↦ hv (h hvS))
+  intro I v _ hI Q _ hQl σ hσ
+  exact artinHomAway_apply_prime hab S hur (idealsAwayInclusion K h I) v
     (by rw [coe_idealsAwayInclusion]; exact hI) Q σ hσ
 
 end ArtinHomAway
@@ -272,12 +279,12 @@ theorem artinHomAway_restrict (M : Type*) [Field M] [NumberField M] [Algebra K M
         (isUnramifiedAway_of_intermediateField M S hur) := by
   refine artinHomAway_eq_of_apply_prime (commute_of_tower (K := K) (L := L) (M := M) hab)
     S _ _ ?_
-  intro I v hv hI P hPp hPl τ hτ
+  intro I v hv hI P _ hPl τ hτ
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 L)))
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt K Q (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
-  let _ := isMulCommutative_galoisGroup_of_commute
-    (commute_of_tower (K := K) (L := L) (M := M) hab)
-  rw [MonoidHom.comp_apply, artinHomAway_apply_prime hab S hur I v hv hI Q σ hσ]
+  have : IsMulCommutative (M ≃ₐ[K] M) :=
+    .of_comm fun σ τ ↦ (commute_of_tower (K := K) (L := L) hab σ τ).eq
+  rw [MonoidHom.comp_apply, artinHomAway_apply_prime hab S hur I v hI Q σ hσ]
   -- Both sides represent the Artin symbol of `v` for `M/K`, which is the image of the one for
   -- `L/K` under restriction; in a commutative group a class has only one representative.
   refine ConjClasses.mk_injective ?_
@@ -311,12 +318,12 @@ theorem artinHomAwayIntegral_apply (I : integralIdealsAway (R := 𝓞 K) S) :
 
 /-- **The value of the integral Artin homomorphism at a prime outside `S` is the Frobenius
 there.** -/
-theorem artinHomAwayIntegral_apply_prime (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ S)
+theorem artinHomAwayIntegral_apply_prime (v : HeightOneSpectrum (𝓞 K))
     (hmem : v.asIdeal ∈ integralIdealsAway (R := 𝓞 K) S)
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal] (σ : L ≃ₐ[K] L)
+    (Q : Ideal (𝓞 L)) [Q.LiesOver v.asIdeal] (σ : L ≃ₐ[K] L)
     (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     artinHomAwayIntegral (L := L) hab S hur ⟨v.asIdeal, hmem⟩ = σ :=
-  artinHomAway_apply_prime hab S hur _ v hv
+  artinHomAway_apply_prime hab S hur _ v
     (coe_integralIdealsAwayHom S ⟨v.asIdeal, hmem⟩) Q σ hσ
 
 end Integral

@@ -458,6 +458,14 @@ theorem ofPath_mul_vertexIdempotent {a b : Q} (p : _root_.Quiver.Path a b) :
     (ofPath ⟨a, b, p⟩ * vertexIdempotent k a : pathAlgebra k Q) = ofPath ⟨a, b, p⟩ :=
   single_mul_vertexIdempotent (k := k) ⟨a, b, p⟩ 1
 
+/-- The vertex idempotent at the source of a path is absorbed by it in a right-associated
+product. -/
+@[simp]
+theorem ofPath_mul_vertexIdempotent_mul {a b : Q} (p : _root_.Quiver.Path a b)
+    (y : pathAlgebra k Q) :
+    ofPath ⟨a, b, p⟩ * (vertexIdempotent k a * y) = ofPath ⟨a, b, p⟩ * y := by
+  rw [← mul_assoc, ofPath_mul_vertexIdempotent]
+
 /-- A vertex idempotent not at the target of a path annihilates its canonical element on the
 left. -/
 @[simp]
@@ -617,12 +625,6 @@ end Algebra
 end PathAlgebra
 
 /-! ### The path basis -/
-
-/-- A quiver with finitely many total paths has finitely many vertices. -/
-instance Quiver.finite_of_finite_totalPath (Q : Type u) [Quiver.{v} Q]
-    [Finite (Quiver.TotalPath Q)] : Finite Q :=
-  Finite.of_injective (fun q : Q ↦ (⟨q, q, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q))
-    (fun _ _ h ↦ congrArg Sigma.fst h)
 
 section Basis
 
@@ -1061,6 +1063,18 @@ theorem vertexIdempotent_mul_ofArrow [DecidableEq Q] (u : Q) {i j : Q} (b : i �
     exact vertexIdempotent_mul_ofPath _
   · exact vertexIdempotent_mul_ofPath_of_ne _ (Ne.symm h)
 
+/-- The vertex idempotent at the target of an arrow is a left unit for it. This is not a `simp`
+lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath` rewrites its left-hand side. -/
+theorem vertexIdempotent_mul_ofArrow_self {i j : Q} (b : i ⟶ j) :
+    vertexIdempotent k j * ofArrow b = (ofArrow b : pathAlgebra k Q) :=
+  vertexIdempotent_mul_ofPath _
+
+/-- The vertex idempotent at the source of an arrow is a right unit for it. This is not a `simp`
+lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath` rewrites its left-hand side. -/
+theorem ofArrow_mul_vertexIdempotent_self {i j : Q} (b : i ⟶ j) :
+    ofArrow b * vertexIdempotent k i = (ofArrow b : pathAlgebra k Q) :=
+  ofPath_mul_vertexIdempotent _
+
 /-- **Extending a path by an arrow.** In the later-factor-first convention the new arrow is the
 left factor, so the product is the path with that arrow consed on. -/
 theorem ofArrow_mul_ofPath {a b c : Q} (e : b ⟶ c) (p : _root_.Quiver.Path a b) :
@@ -1078,25 +1092,25 @@ end Arrow
 
 section ArrowCoordinates
 
-variable {k : Type w} {Q : Type u} [CommSemiring k] [Quiver.{v} Q]
+variable {k : Type w} {Q : Type u} [Semiring k] [Quiver.{v} Q]
 
 /-- The coordinates of an arrow times a basis path: the basis path extended by the arrow. This is
 not a `simp` lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath` rewrites its left-hand side. -/
 theorem pathAlgebraBasis_repr_ofArrow_mul_single {i j s : Q} (b : i ⟶ j)
-    (p : _root_.Quiver.Path s i) (c : k) (x : Quiver.TotalPath Q) :
-    (pathAlgebraBasis k Q).repr (ofArrow b * single ⟨s, i, p⟩ c) x =
-      Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c x := by
-  rw [single_eq_smul_ofPath, mul_smul_comm, ofArrow_mul_ofPath, ← single_eq_smul_ofPath,
-    pathAlgebraBasis_repr_single]
+    (p : _root_.Quiver.Path s i) (c : k) :
+    (pathAlgebraBasis k Q).repr (ofArrow b * single ⟨s, i, p⟩ c) =
+      Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c := by
+  rw [ofArrow_eq_ofPath, ofPath_eq_single, single_mul_single_of_comp, one_mul,
+    _root_.Quiver.Path.comp_toPath_eq_cons, pathAlgebraBasis_repr_single]
 
 /-- The simp-normal form of `TauCeti.PathAlgebra.pathAlgebraBasis_repr_ofArrow_mul_single`, in
 which `TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow as its length-one path. -/
 @[simp]
 theorem pathAlgebraBasis_repr_ofPath_toPath_mul_single {i j s : Q} (b : i ⟶ j)
-    (p : _root_.Quiver.Path s i) (c : k) (x : Quiver.TotalPath Q) :
-    (pathAlgebraBasis k Q).repr (ofPath ⟨i, j, b.toPath⟩ * single ⟨s, i, p⟩ c) x =
-      Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c x :=
-  pathAlgebraBasis_repr_ofArrow_mul_single b p c x
+    (p : _root_.Quiver.Path s i) (c : k) :
+    (pathAlgebraBasis k Q).repr (ofPath ⟨i, j, b.toPath⟩ * single ⟨s, i, p⟩ c) =
+      Finsupp.single (⟨s, j, p.cons b⟩ : Quiver.TotalPath Q) c :=
+  pathAlgebraBasis_repr_ofArrow_mul_single b p c
 
 /-- **Reading off a coordinate through the last arrow**: the coordinate of `b f` on the path `q`
 followed by `b` is the coordinate of `f` on `q`. -/
@@ -1159,20 +1173,20 @@ theorem pathAlgebraBasis_repr_ofPath_toPath_mul_cons_of_ne {i i' j s : Q} (b : i
 /-- The coordinates of a basis path times an arrow: the arrow followed by the basis path. This is
 not a `simp` lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath` rewrites its left-hand side. -/
 theorem pathAlgebraBasis_repr_single_mul_ofArrow {i j t : Q} (a : i ⟶ j)
-    (p : _root_.Quiver.Path j t) (c : k) (x : Quiver.TotalPath Q) :
-    (pathAlgebraBasis k Q).repr (single ⟨j, t, p⟩ c * ofArrow a) x =
-      Finsupp.single (⟨i, t, a.toPath.comp p⟩ : Quiver.TotalPath Q) c x := by
-  rw [single_eq_smul_ofPath, smul_mul_assoc, ofArrow_eq_ofPath, ofPath_mul_ofPath_of_comp,
-    ← single_eq_smul_ofPath, pathAlgebraBasis_repr_single]
+    (p : _root_.Quiver.Path j t) (c : k) :
+    (pathAlgebraBasis k Q).repr (single ⟨j, t, p⟩ c * ofArrow a) =
+      Finsupp.single (⟨i, t, a.toPath.comp p⟩ : Quiver.TotalPath Q) c := by
+  rw [ofArrow_eq_ofPath, ofPath_eq_single, single_mul_single_of_comp, mul_one,
+    pathAlgebraBasis_repr_single]
 
 /-- The simp-normal form of `TauCeti.PathAlgebra.pathAlgebraBasis_repr_single_mul_ofArrow`, in
 which `TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow as its length-one path. -/
 @[simp]
 theorem pathAlgebraBasis_repr_single_mul_ofPath_toPath {i j t : Q} (a : i ⟶ j)
-    (p : _root_.Quiver.Path j t) (c : k) (x : Quiver.TotalPath Q) :
-    (pathAlgebraBasis k Q).repr (single ⟨j, t, p⟩ c * ofPath ⟨i, j, a.toPath⟩) x =
-      Finsupp.single (⟨i, t, a.toPath.comp p⟩ : Quiver.TotalPath Q) c x :=
-  pathAlgebraBasis_repr_single_mul_ofArrow a p c x
+    (p : _root_.Quiver.Path j t) (c : k) :
+    (pathAlgebraBasis k Q).repr (single ⟨j, t, p⟩ c * ofPath ⟨i, j, a.toPath⟩) =
+      Finsupp.single (⟨i, t, a.toPath.comp p⟩ : Quiver.TotalPath Q) c :=
+  pathAlgebraBasis_repr_single_mul_ofArrow a p c
 
 /-- **Reading off a coordinate through the first arrow**: the coordinate of `f a` on the arrow `a`
 followed by the path `q` is the coordinate of `f` on `q`. -/
@@ -1293,6 +1307,26 @@ theorem adjoin_vertexIdempotents_union_arrows :
   | single x c => exact single_eq_smul_ofPath x c ▸ S.smul_mem (ofPath_mem x) c
 
 end Generate
+
+section Envelope
+
+open MulOpposite
+open scoped TensorProduct
+
+variable {k : Type w} {Q : Type u} [CommSemiring k] [Quiver.{v} Q]
+
+/-- Two `k`-linear maps out of the enveloping algebra `kQ ⊗[k] kQᵐᵒᵖ` agree once they agree on the
+`x ⊗ q`, for paths `q`. -/
+@[ext]
+theorem tensorProduct_op_linearMap_ext {M : Type*} [AddCommMonoid M] [Module k M]
+    {f g : pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ →ₗ[k] M}
+    (h : ∀ (x : pathAlgebra k Q) {s t : Q} (q : Quiver.Path s t),
+      f (x ⊗ₜ[k] op (ofPath ⟨s, t, q⟩)) = g (x ⊗ₜ[k] op (ofPath ⟨s, t, q⟩))) : f = g :=
+  TensorProduct.ext <| LinearMap.ext fun x ↦
+    ((pathAlgebraBasis k Q).map (opLinearEquiv k)).ext fun q ↦ by
+      simpa [Module.Basis.map_apply] using h x q.2.2
+
+end Envelope
 
 end PathAlgebra
 

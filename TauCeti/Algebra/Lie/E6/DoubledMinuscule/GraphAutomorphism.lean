@@ -447,6 +447,18 @@ theorem matrixWeight_graphMatrixPerm (i : Fin 54) (k : Fin 6) :
   rw [matrixIndexEquiv_symm_graphMatrixPerm]
   exact weight_graphPerm_graphPerm _ _
 
+/-- The signed graph symmetry carries each weight component of the doubled lattice to the component
+of the weight relabelled by the diagram involution. -/
+private theorem matrixWeight_of_repr_ne_zero (i j : Fin 54)
+    (hij : matrixBasis.repr (graphModuleEquiv.toAddEquiv.invariantRestrict
+      lattice.toAddSubgroup graphModuleEquiv_mem_lattice_iff (matrixBasis j)) i ≠ 0)
+    (k : Fin 6) :
+    matrixWeight i (graphPermE6 k) = matrixWeight j k := by
+  obtain rfl := AddEquiv.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial
+    graphModuleEquiv.toAddEquiv lattice.toAddSubgroup graphModuleEquiv_mem_lattice_iff matrixBasis
+    graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis hij
+  exact matrixWeight_graphMatrixPerm j k
+
 /-! ## The graph automorphism of the carrier -/
 
 private noncomputable def toralGraphAutomorphism :
@@ -460,8 +472,7 @@ private noncomputable def toralGraphAutomorphism :
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis matrixWeight
     graphRootPerm graphModuleEquiv graphModuleEquiv_mem_lattice_iff
     graphModuleEquiv_ι_rep_serreRootGenerator graphRootPerm.surjective
-    graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis graphPermE6
-    matrixWeight_graphMatrixPerm
+    graphPermE6 matrixWeight_of_repr_ne_zero
 
 /-- **The graph automorphism of the doubled type-`E₆` minuscule carrier**, characterized on
 the numbered simple-root subgroups and represented weight torus. -/
@@ -472,7 +483,7 @@ noncomputable def graphAutomorphism : Aut groupScheme :=
 type-`E₆` diagram involution, without changing its additive parameter. -/
 @[reassoc (attr := simp)]
 theorem rootSubgroup_comp_graphAutomorphism_hom (k : Fin 6 ⊕ Fin 6) :
-    rootSubgroup k ≫ graphAutomorphism.hom = rootSubgroup (graphRootPerm k) := by
+    rootSubgroup k ≫ graphAutomorphism.asIso.hom = rootSubgroup (graphRootPerm k) := by
   rw [rootSubgroup_def, graphAutomorphism, toralGraphAutomorphism,
     kostantRootSubgroupToToral_comp_numberedSymmetryIso_hom]
   exact (rootSubgroup_def (graphRootPerm k)).symm
@@ -484,22 +495,22 @@ generate the carrier, so these equations leave nothing free; in particular no co
 represented weight torus is needed. -/
 theorem eq_graphAutomorphism_hom_of_rootSubgroup (φ : groupScheme ⟶ groupScheme)
     (hroot : ∀ k, rootSubgroup k ≫ φ = rootSubgroup (graphRootPerm k)) :
-    φ = graphAutomorphism.hom :=
+    φ = graphAutomorphism.asIso.hom :=
   groupScheme_hom_ext_of_rootSubgroup φ _ fun k => by
     rw [hroot k, rootSubgroup_comp_graphAutomorphism_hom]
 
 /-- **The graph automorphism is the unique automorphism of the carrier realizing the type-`E₆`
 diagram involution on the numbered simple-root subgroups.** -/
 theorem eq_graphAutomorphism_of_rootSubgroup (γ : Aut groupScheme)
-    (hroot : ∀ k, rootSubgroup k ≫ γ.hom = rootSubgroup (graphRootPerm k)) :
+    (hroot : ∀ k, rootSubgroup k ≫ γ.asIso.hom = rootSubgroup (graphRootPerm k)) :
     γ = graphAutomorphism :=
-  Iso.ext (eq_graphAutomorphism_hom_of_rootSubgroup γ.hom hroot)
+  Aut.ext (Iso.ext (eq_graphAutomorphism_hom_of_rootSubgroup γ.asIso.hom hroot))
 
 /-- The graph automorphism relabels the represented split weight torus by the type-`E₆` diagram
 involution. -/
 @[reassoc (attr := simp)]
 theorem weightTorus_comp_graphAutomorphism_hom :
-    weightTorus ≫ graphAutomorphism.hom =
+    weightTorus ≫ graphAutomorphism.asIso.hom =
       SplitTorus.relabel ℤ graphPermE6 ≫ weightTorus := by
   rw [weightTorus_def, graphAutomorphism, toralGraphAutomorphism,
     kostantWeightTorusToToral_comp_numberedSymmetryIso_hom, Equiv.Perm.inv_def,
@@ -517,22 +528,19 @@ theorem graphAutomorphism_sq : graphAutomorphism ^ 2 = 1 := by
 /-- Applying the graph automorphism twice is the identity on the doubled type-`E₆` carrier. -/
 @[reassoc (attr := simp)]
 theorem graphAutomorphism_hom_comp_self :
-    graphAutomorphism.hom ≫ graphAutomorphism.hom = 𝟙 groupScheme := by
+    graphAutomorphism.asIso.hom ≫ graphAutomorphism.asIso.hom = 𝟙 groupScheme := by
   calc
-    graphAutomorphism.hom ≫ graphAutomorphism.hom =
-        (graphAutomorphism.trans graphAutomorphism).hom := (Iso.trans_hom _ _).symm
-    _ = (graphAutomorphism * graphAutomorphism).hom :=
-      congrArg Iso.hom
-        (Aut.Aut_mul_def groupScheme graphAutomorphism graphAutomorphism).symm
-    _ = (1 : Aut groupScheme).hom := by
+    graphAutomorphism.asIso.hom ≫ graphAutomorphism.asIso.hom =
+        (graphAutomorphism * graphAutomorphism).asIso.hom := by
+      rw [Aut.mul_asIso, Iso.trans_hom]
+    _ = (1 : Aut groupScheme).asIso.hom := by
       rw [← pow_two, graphAutomorphism_sq]
-    _ = (Iso.refl groupScheme).hom := rfl
-    _ = 𝟙 groupScheme := Iso.refl_hom groupScheme
+    _ = 𝟙 groupScheme := by rw [Aut.one_asIso, Iso.refl_hom]
 
 /-- The inverse leg of the doubled type-`E₆` graph automorphism is its forward leg. -/
 @[simp]
-theorem graphAutomorphism_inv : graphAutomorphism.inv = graphAutomorphism.hom :=
-  ((Iso.hom_comp_eq_id graphAutomorphism).mp graphAutomorphism_hom_comp_self).symm
+theorem graphAutomorphism_inv : graphAutomorphism.asIso.inv = graphAutomorphism.asIso.hom :=
+  ((Iso.hom_comp_eq_id graphAutomorphism.asIso).mp graphAutomorphism_hom_comp_self).symm
 
 /-! ## The graph automorphism on matrix-valued points -/
 
@@ -567,7 +575,7 @@ theorem graphAutomorphismMatrix_sq (A : Type v) [CommRing A] :
   rw [graphAutomorphismMatrix]
   apply kostantNumberedSymmetryMatrix_pow_eq_one
   intro x
-  rw [pow_two, LinearEquiv.mul_apply]
+  rw [pow_two, mul_apply_eq_comp]
   exact graphModuleEquiv_apply_apply x
 
 /-- Conjugation by the signed graph-automorphism matrix preserves the doubled carrier's point
@@ -582,8 +590,7 @@ theorem map_points_conj_graphAutomorphismMatrix (A : Type v) [CommRing A] :
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis matrixWeight
     graphRootPerm graphModuleEquiv graphModuleEquiv_mem_lattice_iff
     graphModuleEquiv_ι_rep_serreRootGenerator graphRootPerm.surjective
-    graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis graphPermE6
-    matrixWeight_graphMatrixPerm A
+    graphPermE6 matrixWeight_of_repr_ne_zero A
 
 /-- **The graph automorphism on matrix-valued points of the doubled carrier**, given by
 conjugation by its signed monomial matrix. -/
@@ -635,7 +642,7 @@ theorem graphAutomorphismPoints_weightTorusPoints (A : Type v) [CommRing A]
     exact congrArg (fun z => torusCharacter z (matrixWeight i))
       (funext fun k => by
         rw [MulEquiv.arrowCongr_apply, MulEquiv.refl_apply, graphPermE6_symm])
-  have hconj := kostantNumberedSymmetryMatrix_conj_diagGL
+  have hconj := kostantNumberedSymmetryMatrix_conj_diagGL_of_monomial
     lattice.toAddSubgroup matrixBasis graphModuleEquiv graphModuleEquiv_mem_lattice_iff
     graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis A
     (fun i => torusCharacter s (matrixWeight i))
@@ -651,7 +658,7 @@ theorem schemePointsMulEquiv_graphAutomorphism_comp_carrierι
     (A : Type) [CommRing A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶ groupScheme.X) :
     GeneralLinear.schemePointsMulEquiv 54 A
-        (p ≫ (graphAutomorphism.hom ≫ carrierι).hom.hom) =
+        (p ≫ (graphAutomorphism.asIso.hom ≫ carrierι).hom.hom) =
       graphAutomorphismMatrix A *
           GeneralLinear.schemePointsMulEquiv 54 A (p ≫ carrierι.hom.hom) *
         (graphAutomorphismMatrix A)⁻¹ := by
@@ -663,8 +670,7 @@ theorem schemePointsMulEquiv_graphAutomorphism_comp_carrierι
       rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis matrixWeight
       graphRootPerm graphModuleEquiv graphModuleEquiv_mem_lattice_iff
       graphModuleEquiv_ι_rep_serreRootGenerator graphRootPerm.surjective
-      graphMatrixPerm graphMatrixScale graphModuleEquiv_matrixBasis graphPermE6
-      matrixWeight_graphMatrixPerm A p
+      graphPermE6 matrixWeight_of_repr_ne_zero A p
 
 /-- The graph automorphism on points is natural in the value ring. In particular, it commutes
 with every iterated Frobenius map. -/

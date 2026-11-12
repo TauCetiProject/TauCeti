@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.EllipticDivisibilitySequence
-import Mathlib.Tactic.Ring
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The sixth term of a normalised elliptic divisibility sequence
@@ -29,16 +29,18 @@ in the copyright header. J. Xu is acknowledged for the surrounding LutzNagell de
 authors `Universal.lean` and co-authors `DivisionPolynomialOmega.lean` at the same revision — as
 context for this port, not as an author of the declarations above.
 
-**Adaptations:** converted to this repository's module system, and restated for Mathlib's current
-names — the source predates the rename of `compl₂EDS` to `complEDS₂` and of
-`normEDS_mul_compl₂EDS` to `normEDS_mul_complEDS₂`. The source also unfolds `compl₂EDS` and
-re-evaluates it at `3` from the `preNormEDS` values; Mathlib now has `complEDS₂_three`, so that
-step is a rewrite rather than a computation.
+**Adaptations:** converted to this repository's module system, placed in the `TauCeti`
+namespace as `TauCeti.normEDS_six` (its arguments are ring elements, so no Mathlib type's
+namespace would give it dot notation), and restated for Mathlib's current names — the source
+predates the rename of `compl₂EDS` to `complEDS₂` and of `normEDS_mul_compl₂EDS` to
+`normEDS_mul_complEDS₂`. The source unfolds `compl₂EDS` and re-evaluates it at `3` from the
+`preNormEDS` values; Mathlib now has the `@[simp]` lemma `complEDS₂_three`, so that evaluation is
+done by `simp`.
 -/
 
 public section
 
-namespace WeierstrassCurve
+namespace TauCeti
 
 variable {R : Type*} [CommRing R] (b c d : R)
 
@@ -47,13 +49,10 @@ variable {R : Type*} [CommRing R] (b c d : R)
 at the fourth term. -/
 @[simp]
 theorem normEDS_six : normEDS b c d 6 = (normEDS b c d 5 - d ^ 2) * b * c := by
-  -- `normEDS_mul_complEDS₂` is stated at `2 * k`, so the index has to be presented in that shape.
-  -- `6` and `2 * 3` are definitionally equal literals, which is why `show … by rfl` suffices; there
-  -- is no arithmetic step to perform.
-  rw [show (6 : ℤ) = 2 * 3 by rfl, ← normEDS_mul_complEDS₂, complEDS₂_three, normEDS_three]
-  norm_num [normEDS, Int.even_iff]
-  ring
+  have h := normEDS_mul_complEDS₂ b c d 3
+  simp [normEDS, Int.even_iff] at h ⊢
+  linear_combination -h
 
-end WeierstrassCurve
+end TauCeti
 
 end

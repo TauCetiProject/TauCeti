@@ -58,10 +58,11 @@ a basis and the multiplication table above holds on the nose.
 
 `IsFactorSet` is a `Prop`-valued class on the raw function `α`, spelled out as the multiplicative
 `2`-cocycle identity `α (g * h) j * α g h = α h j * α g (h * j)` together with the normalization
-`α 1 g = α g 1 = 1`, rather than as `groupCohomology.IsMulCocycle₂` for the trivial action of `G`
-on `kˣ`: the twisted algebra wants `α` curried, and wants the normalization, which the cocycle
-identity alone gives only up to the constant `α 1 1`. Carrying the hypotheses in a class keeps the
-type `twistedMonoidAlgebra k G α` free of proof arguments.
+`α 1 g = 1`, rather than as `groupCohomology.IsMulCocycle₂` for the trivial action of `G` on `kˣ`:
+the twisted algebra wants `α` curried, and wants the normalization, which the cocycle identity
+alone gives only up to the constant `α 1 1`. The other normalization `α g 1 = 1` follows from these
+two (`TauCeti.IsFactorSet.one_right`). Carrying the hypotheses in a class keeps the type
+`twistedMonoidAlgebra k G α` free of proof arguments.
 
 `α g h` is the value of the factor set at the ordered pair `(g, h)`. The multiplication
 `e g * e h = (α g h : k) • e (g * h)` follows the left-action convention used for projective
@@ -69,8 +70,10 @@ representations.
 
 Nothing in the construction uses inverses in `G`, so `IsFactorSet`, the twisted algebra, its basis,
 the universal property and the two comparison isomorphisms are all stated for a monoid `G`. A group
-is assumed only where an inverse appears, in `TauCeti.IsFactorSet.apply_inv_eq_inv_apply` and
-`TauCeti.TwistedMonoidAlgebra.isUnit_of`.
+is assumed for descent to a quotient group and where an inverse appears, in
+`TauCeti.IsFactorSet.apply_inv_eq_inv_apply` and `TauCeti.TwistedMonoidAlgebra.isUnit_of`.
+The twisted translations themselves need only a multiplication on `G`; they are linearly
+independent whenever `G` has a two-sided identity, without any factor-set identities on `α`.
 
 `twistedMonoidAlgebra k G α` is a `Subalgebra k (Module.End k (G →₀ k))` rather than a fresh type
 carrying a hand-built ring structure on `G →₀ k`. The two are the same algebra:
@@ -98,10 +101,9 @@ class IsFactorSet {k G : Type*} [CommSemiring k] [Monoid G] (α : G → G → k�
   /-- The multiplicative `2`-cocycle identity, the associativity constraint of the twisted
   product. -/
   cocycle (g h j : G) : α (g * h) j * α g h = α h j * α g (h * j)
-  /-- Normalization on the left, half of the unitality of the twisted product. -/
+  /-- Normalization on the left, half of the unitality of the twisted product. The other half,
+  `α g 1 = 1`, follows from the cocycle identity (`TauCeti.IsFactorSet.one_right`). -/
   one_left (g : G) : α 1 g = 1
-  /-- Normalization on the right, half of the unitality of the twisted product. -/
-  one_right (g : G) : α g 1 = 1
 
 namespace IsFactorSet
 
@@ -109,11 +111,16 @@ section Monoid
 
 variable {k G : Type*} [CommSemiring k] [Monoid G]
 
+/-- Normalization on the right, the other half of the unitality of the twisted product: the
+cocycle identity at `(g, 1, 1)` reads `α g 1 * α g 1 = α 1 1 * α g 1`, and `α 1 1 = 1`. -/
+theorem one_right {α : G → G → kˣ} [self : IsFactorSet α] (g : G) : α g 1 = 1 := by
+  have h := cocycle (α := α) g 1 1
+  rwa [mul_one, mul_one, one_left (α := α), one_mul, mul_eq_right] at h
+
 /-- The trivial factor set, whose twisted monoid algebra is the ordinary monoid algebra. -/
 instance : IsFactorSet (1 : G → G → kˣ) where
   cocycle _ _ _ := by simp
   one_left _ := rfl
-  one_right _ := rfl
 
 /-- The pointwise product of two factor sets is a factor set. It is the factor set of a tensor
 product of projective representations (`TauCeti.IsProjectiveRep.tensorProduct`). -/
@@ -122,7 +129,6 @@ instance mul (α β : G → G → kˣ) [IsFactorSet α] [IsFactorSet β] : IsFac
     simp only [Pi.mul_apply]
     rw [mul_mul_mul_comm, cocycle (α := α), cocycle (α := β), mul_mul_mul_comm]
   one_left g := by simp [one_left (α := α), one_left (α := β)]
-  one_right g := by simp [one_right (α := α), one_right (α := β)]
 
 /-- The pointwise inverse of a factor set is a factor set. -/
 instance inv (α : G → G → kˣ) [IsFactorSet α] : IsFactorSet α⁻¹ where
@@ -130,7 +136,6 @@ instance inv (α : G → G → kˣ) [IsFactorSet α] : IsFactorSet α⁻¹ where
     simp only [Pi.inv_apply]
     rw [← mul_inv, cocycle (α := α), mul_inv]
   one_left g := by simp [one_left (α := α)]
-  one_right g := by simp [one_right (α := α)]
 
 end Monoid
 
@@ -156,7 +161,6 @@ theorem comp (f : G →* H) (β : H → H → kˣ) [IsFactorSet β] :
     IsFactorSet fun g₁ g₂ ↦ β (f g₁) (f g₂) where
   cocycle g₁ g₂ g₃ := by simpa only [map_mul] using cocycle (α := β) (f g₁) (f g₂) (f g₃)
   one_left g := by simpa only [map_one] using one_left (α := β) (f g)
-  one_right g := by simpa only [map_one] using one_right (α := β) (f g)
 
 /-- A function on `H` whose pullback along a surjective homomorphism `f : G →* H` is a normalized
 factor set is itself a normalized factor set. -/
@@ -171,9 +175,6 @@ theorem of_comp {β : H → H → kˣ} (f : G →* H) (hf : Function.Surjective 
   one_left a := by
     obtain ⟨g, rfl⟩ := hf a
     simpa only [map_one] using h.one_left g
-  one_right a := by
-    obtain ⟨g, rfl⟩ := hf a
-    simpa only [map_one] using h.one_right g
 
 end Comp
 
@@ -224,7 +225,11 @@ end IsFactorSet
 
 section Translation
 
-variable (k : Type*) {G : Type*} [CommSemiring k] [Monoid G] (α : G → G → kˣ)
+variable (k : Type*) {G : Type*} [CommSemiring k]
+
+section Mul
+
+variable [Mul G] (α : G → G → kˣ)
 
 /-- The `α`-twisted translation by `g` on `G →₀ k`: it sends the basis vector at `h` to `α g h`
 times the basis vector at `g * h`. For the trivial factor set this is the regular representation
@@ -237,7 +242,19 @@ theorem twistedTranslation_single (g h : G) (b : k) :
     twistedTranslation k α g (Finsupp.single h b) = Finsupp.single (g * h) ((α g h : k) * b) := by
   simp [twistedTranslation, Finsupp.lsum_single, Finsupp.smul_single]
 
-variable [IsFactorSet α]
+end Mul
+
+/-- Twisted translations are linearly independent even without the factor-set identities:
+evaluation at the basis vector of `1` gives the standard basis rescaled by units. -/
+theorem linearIndependent_twistedTranslation [MulOneClass G] (α : G → G → kˣ) :
+    LinearIndependent k (twistedTranslation k α) := by
+  refine LinearIndependent.of_comp (LinearMap.applyₗ (Finsupp.single (1 : G) (1 : k))) ?_
+  simpa only [Function.comp_def, LinearMap.applyₗ_apply_apply, twistedTranslation_single,
+    Finsupp.coe_basisSingleOne, Pi.smul_def', Units.smul_def, Finsupp.smul_single,
+    smul_eq_mul, mul_one] using
+    (Finsupp.basisSingleOne (ι := G) (R := k)).linearIndependent.units_smul (fun g ↦ α g 1)
+
+variable [Monoid G] (α : G → G → kˣ) [IsFactorSet α]
 
 @[simp]
 theorem twistedTranslation_one : twistedTranslation k α 1 = 1 := by
@@ -252,22 +269,10 @@ theorem twistedTranslation_mul (g h : G) :
   refine Finsupp.lhom_ext fun a b ↦ ?_
   have hcoef : α g (h * a) * α h a = α g h * α (g * h) a := by
     rw [mul_comm (α g (h * a)), ← IsFactorSet.cocycle (α := α) g h a, mul_comm]
-  simp only [Module.End.mul_apply, twistedTranslation_single, LinearMap.smul_apply,
+  simp only [mul_apply_eq_comp, twistedTranslation_single, LinearMap.smul_apply,
     Finsupp.smul_single, smul_eq_mul, ← mul_assoc]
   congr 1
   rw [← Units.val_mul, ← Units.val_mul, hcoef]
-
-/-- The twisted translations are linearly independent: the translation by `g` is recovered from its
-value at the basis vector of `1`, which is the basis vector of `g`. -/
-theorem linearIndependent_twistedTranslation :
-    LinearIndependent k (twistedTranslation k α) := by
-  refine LinearIndependent.of_comp (LinearMap.applyₗ (Finsupp.single (1 : G) (1 : k))) ?_
-  have h : (LinearMap.applyₗ (R := k) (Finsupp.single (1 : G) (1 : k))) ∘
-      twistedTranslation k α = fun g : G ↦ Finsupp.single g (1 : k) := by
-    funext g
-    simp [IsFactorSet.one_right]
-  rw [h]
-  simpa using (Finsupp.basisSingleOne (ι := G) (R := k)).linearIndependent
 
 end Translation
 
@@ -285,16 +290,13 @@ noncomputable def twistedMonoidAlgebra : Subalgebra k (Module.End k (G →₀ k)
       rw [← twistedTranslation_one k α]
       exact Submodule.subset_span ⟨1, rfl⟩)
     (by
-      have hle : Submodule.span k (Set.range (twistedTranslation k α)) *
-          Submodule.span k (Set.range (twistedTranslation k α)) ≤
-          Submodule.span k (Set.range (twistedTranslation k α)) := by
-        rw [Submodule.span_mul_span]
-        refine Submodule.span_le.2 ?_
-        rintro _ ⟨_, ⟨g, rfl⟩, _, ⟨h, rfl⟩, rfl⟩
-        refine SetLike.mem_coe.2 ?_
-        simp only [twistedTranslation_mul]
-        exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨g * h, rfl⟩)
-      exact fun x y hx hy ↦ hle (Submodule.mul_mem_mul hx hy))
+      -- The span is closed under products since the products of its spanning operators are
+      -- multiples of spanning operators (`TauCeti.twistedTranslation_mul`).
+      refine fun x y hx hy ↦ Submodule.mul_le.1 ?_ x hx y hy
+      rw [Submodule.span_mul_span, Submodule.span_le]
+      rintro _ ⟨_, ⟨g, rfl⟩, _, ⟨h, rfl⟩, rfl⟩
+      simp only [SetLike.mem_coe, twistedTranslation_mul]
+      exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨g * h, rfl⟩))
 
 @[simp]
 theorem toSubmodule_twistedMonoidAlgebra :
@@ -313,13 +315,13 @@ namespace TwistedMonoidAlgebra
 variable {k G α}
 
 /-- The basis element of `k_α[G]` at `g : G`, namely the `α`-twisted translation by `g`. -/
-@[expose] noncomputable def of (g : G) : twistedMonoidAlgebra k G α :=
+noncomputable def of (g : G) : twistedMonoidAlgebra k G α :=
   ⟨twistedTranslation k α g, twistedTranslation_mem_twistedMonoidAlgebra k G α g⟩
 
 @[simp]
 theorem coe_of (g : G) :
     ((of g : twistedMonoidAlgebra k G α) : Module.End k (G →₀ k)) = twistedTranslation k α g :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem of_one : (of 1 : twistedMonoidAlgebra k G α) = 1 :=
@@ -394,23 +396,12 @@ noncomputable def lift (u : G → A) (hu₁ : u 1 = 1)
   AlgHom.ofLinearMap ((basis k G α).constr k u)
     (by rw [← of_one (α := α), constr_of, hu₁])
     (by
-      have hleft : ∀ (g : G) (y : twistedMonoidAlgebra k G α),
-          ((basis k G α).constr k u) (of g * y)
-            = ((basis k G α).constr k u) (of g) * ((basis k G α).constr k u) y := by
-        intro g
-        have key : ((basis k G α).constr k u) ∘ₗ LinearMap.mulLeft k (of g)
-            = LinearMap.mulLeft k (((basis k G α).constr k u) (of g)) ∘ₗ
-              ((basis k G α).constr k u) := by
-          refine (basis k G α).ext fun h ↦ ?_
-          simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, basis_apply, of_mul_of,
-            map_smul, constr_of, hu g h]
-        exact fun y ↦ congrFun (congrArg DFunLike.coe key) y
-      intro x y
-      have key : ((basis k G α).constr k u) ∘ₗ LinearMap.mulRight k y
-          = LinearMap.mulRight k (((basis k G α).constr k u) y) ∘ₗ ((basis k G α).constr k u) := by
-        refine (basis k G α).ext fun g ↦ ?_
-        simpa using hleft g y
-      exact congrFun (congrArg DFunLike.coe key) x)
+      -- Multiplicativity is an equality of bilinear maps, so it suffices to check it on pairs of
+      -- basis elements, where it is the hypothesis `hu`.
+      have key : (LinearMap.mul k _).compr₂ ((basis k G α).constr k u) =
+          (LinearMap.mul k A).compl₁₂ ((basis k G α).constr k u) ((basis k G α).constr k u) :=
+        (basis k G α).ext fun g ↦ (basis k G α).ext fun h ↦ by simp [constr_of, hu]
+      exact LinearMap.congr_fun₂ key)
 
 @[simp]
 theorem lift_of (u : G → A) (hu₁ : u 1 = 1)
@@ -456,8 +447,6 @@ theorem monoidAlgebraEquiv_of (g : G) :
     monoidAlgebraEquiv k G (of g) = MonoidAlgebra.single g (1 : k) :=
   toMonoidAlgebra_of k G g
 
-variable {k G}
-
 end Trivial
 
 section Coboundary
@@ -485,15 +474,6 @@ theorem homOfCoboundary_of (c : G → kˣ)
     homOfCoboundary α β c hc (of g) = (c g : k) • of g :=
   lift_of ..
 
-omit [IsFactorSet α] [IsFactorSet β] in
-/-- The inverse rescaling witnesses the same coboundary relation with the two factor sets
-exchanged; this is what makes `TauCeti.TwistedMonoidAlgebra.homOfCoboundary` invertible. -/
-theorem coboundary_inv (c : G → kˣ)
-    (hc : ∀ g h : G, β g h * c (g * h) = α g h * (c g * c h)) (g h : G) :
-    α g h * (c (g * h))⁻¹ = β g h * ((c g)⁻¹ * (c h)⁻¹) := by
-  have hβ : β g h = α g h * (c g * c h) * (c (g * h))⁻¹ := eq_mul_inv_of_mul_eq (hc g h)
-  rw [hβ, ← mul_inv, mul_right_comm, mul_inv_cancel_right]
-
 /-- **Factor sets differing by a coboundary have isomorphic twisted monoid algebras.** The
 isomorphism rescales the basis element at `g` by `c g`. When `G` is a group, the hypothesis says
 exactly that `α` and `β` are cohomologous, so there `k_α[G]` depends up to isomorphism only on the
@@ -502,7 +482,9 @@ noncomputable def equivOfCoboundary (c : G → kˣ)
     (hc : ∀ g h : G, β g h * c (g * h) = α g h * (c g * c h)) :
     twistedMonoidAlgebra k G β ≃ₐ[k] twistedMonoidAlgebra k G α :=
   AlgEquiv.ofAlgHom (homOfCoboundary α β c hc)
-    (homOfCoboundary β α (fun g ↦ (c g)⁻¹) (coboundary_inv α β c hc))
+    (homOfCoboundary β α (fun g ↦ (c g)⁻¹) (fun g h ↦ by
+      rw [← mul_inv, mul_inv_eq_mul_inv_iff_mul_eq_mul]
+      exact (hc g h).symm))
     (by ext g; simp [smul_smul, ← Units.val_mul])
     (by ext g; simp [smul_smul, ← Units.val_mul])
 

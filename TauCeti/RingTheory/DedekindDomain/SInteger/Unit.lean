@@ -46,10 +46,9 @@ subgroup with the `∅`-units along `Subgroup.subgroupOfEquivOfLe`; it is not in
 The rank refinement — that the rank is exactly `rank Rˣ + |S|` when the class group is finite — is
 a separate topic and is not here.
 
-This is the second of the two finiteness inputs that
-`TauCetiRoadmap/EllipticCurves/README.md` §Layer 6 names for the weak Mordell–Weil theorem:
-"`A(S, 2)` is finite because the `S`-class group is finite and **the `S`-units are finitely
-generated** (AEC VIII.1)."
+This is the second of the two finiteness inputs to the weak Mordell–Weil theorem: `A(S, 2)` is
+finite because the `S`-class group is finite and **the `S`-units are finitely generated**
+(AEC VIII.1).
 
 Throughout, `R` is an *arbitrary* Dedekind domain and `K` its fraction field; `Rˣ` and
 `(S.integer K)ˣ` are the unit groups in play. The motivating case is `R = 𝒪_K` for a number
@@ -82,12 +81,12 @@ bump time they must be re-homed onto Mathlib's `Set.unit_fg`, not dropped with t
 
 The valuation lemma these proofs run on,
 `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZero_eq_one_iff`, is not here: it mentions no
-`S` and no `Set.unit`, so it lives in `TauCeti/RingTheory/DedekindDomain/SelmerGroup.lean`
+`S` and no `Set.unit`, so it lives in `TauCeti/RingTheory/DedekindDomain/ValuationOfNeZero.lean`
 beside the `valuationOfNeZero` API it belongs to.
 
 Adapted from Michael Stoll's elliptic-curves formalisation
 (`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at
-the roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll), and then restated to match
+commit `66889eada51a`, Apache 2.0, by Michael Stoll), and then restated to match
 mathlib4#40791 as described above. Following this repository's convention for adapted material, the
 upstream authorship is credited here rather than in the copyright header.
 -/
@@ -186,6 +185,20 @@ theorem algebraMap_unitEmptyEquivUnits_apply (u : (∅ : Set (HeightOneSpectrum 
     Units.coe_mapEquiv, RingEquiv.coe_toMulEquiv, RingEquiv.coe_mk, AlgEquiv.toEquiv_eq_coe,
     EquivLike.coe_coe, AlgEquiv.trans_apply, Subalgebra.equivOfEq_apply,
     val_unitEquivUnitsInteger_apply_coe, Algebra.algebraMap_botEquivOfInjective]
+
+/-- The units outside the empty set of primes are exactly the images of base-ring units. -/
+theorem mem_unit_empty_iff {x : Kˣ} :
+    x ∈ (∅ : Set (HeightOneSpectrum R)).unit K ↔
+      ∃ u : Rˣ, algebraMap R K (u : R) = (x : K) := by
+  constructor
+  · intro hx
+    exact ⟨unitEmptyEquivUnits K ⟨x, hx⟩, algebraMap_unitEmptyEquivUnits_apply K ⟨x, hx⟩⟩
+  · rintro ⟨u, hu⟩
+    refine (mem_unit_iff _ K).mpr fun v _ ↦ ?_
+    rw [← hu]
+    refine eq_one_of_one_le_mul_left (v.valuation_le_one (K := K) (u : R))
+      (v.valuation_le_one (K := K) (↑u⁻¹ : R)) ?_
+    rw [← map_mul, ← map_mul, Units.mul_inv, map_one, map_one]
 
 /-- **Finite generation of the `S`-units, over the base ring.** If `Rˣ` is finitely generated and
 `S` is finite, then so is the group of `S`-units. This is `unit_fg` with its hypothesis

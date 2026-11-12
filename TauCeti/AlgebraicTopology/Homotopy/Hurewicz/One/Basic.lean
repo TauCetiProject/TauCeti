@@ -35,12 +35,17 @@ Paths `γ : I → X` are read as singular `1`-simplices along the parameter of t
   homotopic paths have homologous chains.
 
 So the Hurewicz map is a well-defined homomorphism `π₁(X, x) → H₁(X; ℤ)`
-(`TauCeti.HurewiczOne.hurewicz₁`). Its inverse sends a singular `1`-simplex `σ` to the class of the
-loop that runs along a chosen path from `x` to the first vertex of `σ`, along `σ`, and back from
-its last vertex. It vanishes on boundaries because the three edges of a singular `2`-simplex are
-images of paths in the simply connected standard simplex, and it inverts the Hurewicz map because
-conjugation is trivial in the abelianization. Conversely, the loop through `σ` differs from `σ` by
-the chains of the chosen paths at its endpoints, which cancel on cycles.
+(`TauCeti.HurewiczOne.hurewicz₁`).
+
+Conversely, a function `f` on path classes that is additive under concatenation induces a
+homomorphism out of `H₁(X; ℤ)` sending the class of a cycle `Σ nᵢ σᵢ` to `Σ nᵢ f [σᵢ]`
+(`TauCeti.HurewiczOne.H₁.liftPathClass`): it vanishes on boundaries because the three edges of a
+singular `2`-simplex are images of paths in the simply connected standard simplex. The inverse
+of the Hurewicz map is induced in this way by sending a path class from `y` to `z` to the class of
+the loop that runs along a chosen path from `x` to `y`, along the class, and back from `z`. It
+inverts the Hurewicz map because conjugation is trivial in the abelianization. Conversely, the
+loop through a singular `1`-simplex `σ` differs from `σ` by the chains of the chosen paths at its
+endpoints, which cancel on cycles.
 
 The homology group is first described as the explicit homology
 `ShortComplex.moduleCatLeftHomologyData` of the short complex `C₂ → C₁ → C₀`, that is `1`-cycles
@@ -50,6 +55,9 @@ singular chain complex (`TauCeti.HurewiczOne.H₁AddEquivHomology`).
 ## Main definitions and results
 
 * `TauCeti.HurewiczOne.hurewicz₁`: the Hurewicz homomorphism `π₁(X, x) → H₁(X; ℤ)`.
+* `TauCeti.HurewiczOne.H₁.lift`, `TauCeti.HurewiczOne.H₁.liftPathClass`: the homomorphisms out of
+  `H₁` induced by linear maps on `1`-chains vanishing on boundaries, and by functions on path
+  classes additive under concatenation.
 * `TauCeti.HurewiczOne.hurewiczAddEquiv`: for path-connected `X`, it induces an isomorphism from the
   abelianization of `π₁(X, x)` onto `H₁`, the `1`-cycles modulo boundaries.
 * `TauCeti.HurewiczOne.hurewiczHomologyAddEquiv`: the same isomorphism onto the first homology group
@@ -173,14 +181,12 @@ lemma pathChain_add_sub_trans_mem_boundaries₁ {a b c : X} (γ : Path a b) (δ 
   rw [d_chain₂ _ δ.toContinuousMap (γ.trans δ).toContinuousMap γ.toContinuousMap]
   · abel
   · ext a
-    exact Path.trans_apply_of_ge γ δ
-      (by simp [concatProj]; linarith [a.total_fin_two, a.weights_nonneg 1]) _
+    exact Path.trans_apply_of_eq_two_mul_sub_one γ δ _
       (by simp [concatProj, StdSimplex.homeomorphI_apply_eq_mk]; linarith [a.total_fin_two])
   · ext a
     simp [concatProj, StdSimplex.homeomorphI_apply_eq_mk]
   · ext a
-    exact Path.trans_apply_of_le γ δ
-      (by simp [concatProj]; linarith [a.total_fin_two, a.weights_nonneg 0]) _
+    exact Path.trans_apply_of_eq_two_mul γ δ _
       (by simp [concatProj, StdSimplex.homeomorphI_apply_eq_mk]; ring)
 
 /-- The weight of the last vertex of the standard `2`-simplex, as a point of the unit
@@ -240,7 +246,6 @@ variable (X) in
 abbrev H₁ : ModuleCat ℤ := (sc₁ X).moduleCatLeftHomologyData.H
 
 /-- A `1`-chain is a cycle when its boundary vanishes. -/
-@[simp]
 lemma mem_cycles₁_iff {c : ((singularChains ℤ).obj X).X 1} :
     c ∈ cycles₁ X ↔ ((singularChains ℤ).obj X).d 1 0 c = 0 :=
   -- The differential `(sc₁ X).g` of the short complex is `d 1 0` by definition of `sc'`.
@@ -272,6 +277,14 @@ lemma H₁.mk_surjective : Function.Surjective (H₁.mk (X := X)) := by
   obtain ⟨c, hc⟩ := ShortComplex.moduleCatLeftHomologyData_π_hom_surjective (sc₁ X) h
   exact ⟨c, by rw [H₁.mk]; exact hc⟩
 
+/-- Two additive maps out of `H₁ X` agree once they agree on the classes of `1`-cycles. -/
+@[ext]
+lemma H₁.addMonoidHom_ext {A : Type*} [AddZeroClass A] {f g : H₁ X →+ A}
+    (h : ∀ c : cycles₁ X, f (H₁.mk c) = g (H₁.mk c)) : f = g := by
+  ext a
+  obtain ⟨c, rfl⟩ := H₁.mk_surjective a
+  exact h c
+
 lemma pathChain_mem_cycles₁ {x : X} (γ : Path x x) : pathChain ℤ γ.toContinuousMap ∈ cycles₁ X :=
   mem_cycles₁ (by rw [singularChains_d_pathChain]; simp)
 
@@ -287,6 +300,13 @@ lemma loopClass_eq_iff {x y : X} (γ : Path x x) (γ' : Path y y) :
     loopClass γ = loopClass γ' ↔
       pathChain ℤ γ.toContinuousMap - pathChain ℤ γ'.toContinuousMap ∈ boundaries₁ X := by
   rw [loopClass, loopClass, H₁.mk_eq_mk_iff]
+
+/-- Loops with the same values have the same homology class, even when their base points are not
+syntactically equal. -/
+lemma loopClass_eq_of_apply_eq {x y : X} (γ : Path x x) (γ' : Path y y) (hγ : ∀ t, γ t = γ' t) :
+    loopClass γ = loopClass γ' := by
+  rw [loopClass_eq_iff, sub_eq_zero.2 (congrArg (pathChain ℤ) (ContinuousMap.ext hγ))]
+  exact zero_mem _
 
 @[simp]
 lemma loopClass_refl (x : X) : loopClass (Path.refl x) = 0 := by
@@ -305,27 +325,160 @@ lemma loopClass_trans {x : X} (γ δ : Path x x) :
 variable (X) in
 /-- **The Hurewicz map in degree one**: a loop is sent to the homology class of its chain. -/
 def hurewicz₁ (x : X) : FundamentalGroup X x →* Multiplicative (H₁ X) where
-  toFun := Quotient.lift (s := Path.Homotopic.setoid x x)
-    (fun γ ↦ Multiplicative.ofAdd (loopClass γ)) fun γ γ' h ↦
+  toFun g := Quotient.lift (s := Path.Homotopic.setoid x x)
+    (fun γ ↦ Multiplicative.ofAdd (loopClass γ)) (fun γ γ' h ↦
       congrArg Multiplicative.ofAdd ((loopClass_eq_iff γ γ').2
-        (pathChain_sub_mem_boundaries₁_of_homotopy h.some))
+        (pathChain_sub_mem_boundaries₁_of_homotopy h.some))) g.toPath
   map_one' := congrArg Multiplicative.ofAdd (loopClass_refl x)
-  map_mul' p q := by
+  map_mul' := by
+    rintro ⟨p⟩ ⟨q⟩
     induction p using Path.Homotopic.Quotient.ind with | mk p =>
     induction q using Path.Homotopic.Quotient.ind with | mk q =>
-    rw [FundamentalGroup.mul_def, ← Path.Homotopic.Quotient.mk_trans]
     -- `Quotient.lift` computes on the classes of `q.trans p`, `p` and `q`.
     change Multiplicative.ofAdd (loopClass (q.trans p)) = _
     rw [loopClass_trans, add_comm, ofAdd_add]
     -- `Quotient.lift` computes on the classes `⟦p⟧` and `⟦q⟧`.
     rfl
 
-@[simp]
 lemma hurewicz₁_mk {x : X} (γ : Path x x) :
-    hurewicz₁ X x (Path.Homotopic.Quotient.mk γ) = Multiplicative.ofAdd (loopClass γ) := by
+    hurewicz₁ X x (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) =
+      Multiplicative.ofAdd (loopClass γ) := by
   rw [hurewicz₁]
   -- `Quotient.lift` computes on the class of `γ`.
   rfl
+
+/-! ### Homomorphisms out of the first homology group -/
+
+section Lift
+
+variable {A : Type} [AddCommGroup A]
+
+/-- The homomorphism out of `H₁ X` induced by a linear map on the singular `1`-chains which
+vanishes on boundaries. -/
+def H₁.lift (f : ((singularChains ℤ).obj X).X 1 →ₗ[ℤ] A)
+    (hf : ∀ y, f (((singularChains ℤ).obj X).d 2 1 y) = 0) : H₁ X →+ A :=
+  -- The module structure on the cycles is passed explicitly: for `ℤ`, instance search on
+  -- `LinearMap.ker (sc₁ X).g.hom` finds `AddCommGroup.toIntModule`, which is only propositionally
+  -- equal to the submodule structure.
+  ((sc₁ X).moduleCatLeftHomologyData.descH
+    (@ModuleCat.ofHom ℤ _ _ _ _ (cycles₁ X).module _ _ (f.comp (cycles₁ X).subtype))
+    (ModuleCat.hom_ext (LinearMap.ext hf))).hom.toAddMonoidHom
+
+lemma H₁.lift_mk (f : ((singularChains ℤ).obj X).X 1 →ₗ[ℤ] A)
+    (hf : ∀ y, f (((singularChains ℤ).obj X).d 2 1 y) = 0) (c : cycles₁ X) :
+    H₁.lift f hf (H₁.mk c) = f c := by
+  rw [H₁.lift]
+  exact congr($((sc₁ X).moduleCatLeftHomologyData.π_descH
+    (@ModuleCat.ofHom ℤ _ _ _ _ (cycles₁ X).module _ _ (f.comp (cycles₁ X).subtype))
+    (ModuleCat.hom_ext (LinearMap.ext hf))).hom c)
+
+/-- An edge of the standard `2`-simplex, as a path. -/
+private def edgePath (i : Fin 3) :
+    Path (face i (StdSimplex.single 0)) (face i (StdSimplex.single 1)) where
+  toContinuousMap := (face i).comp ofI
+  source' := by simp
+  target' := by simp
+
+private lemma face_single (i : Fin 3) (j : Fin 2) :
+    face i (StdSimplex.single j) = StdSimplex.single (i.succAbove j) :=
+  StdSimplex.map_single _ _
+
+/-- The path of the `i`-th face of a singular `2`-simplex is the image of the `i`-th edge of the
+standard `2`-simplex. -/
+private lemma path₁_δ (τ : (TopCat.toSSet.obj X) _⦋2⦌) (i : Fin 3) :
+    path₁ ((TopCat.toSSet.obj X).δ i τ) = (edgePath i).map (X.toSSetObjEquiv _ τ).continuous := by
+  ext t
+  rw [path₁_apply, TopCat.toSSetObjEquiv_δ_apply]
+  -- By definition of `edgePath`, the right-hand side is `τ` at the image of
+  -- `homeomorphI.symm t` under the inclusion `face i` of the facet.
+  rfl
+
+variable (f : ∀ {y z : X}, Path.Homotopic.Quotient y z → A)
+
+/-- The value of `f` on the image under `g` of the (unique) path class from `u` to `v` in a
+simply connected space. -/
+private def imageValue {Y : Type} [TopologicalSpace Y] [SimplyConnectedSpace Y] (g : C(Y, X))
+    (u v : Y) : A :=
+  f ((Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath u v)).map g)
+
+omit [AddCommGroup A] in
+private lemma map_eq_imageValue {Y : Type} [TopologicalSpace Y] [SimplyConnectedSpace Y]
+    (g : C(Y, X)) {u v : Y} (γ : Path u v) :
+    f ((Path.Homotopic.Quotient.mk γ).map g) = imageValue f g u v := by
+  rw [imageValue, Subsingleton.elim (Path.Homotopic.Quotient.mk γ)]
+
+omit [AddCommGroup A] in
+/-- The value of `f` on the path of the `i`-th face of a singular `2`-simplex `τ`. -/
+private lemma apply_path₁_δ (τ : (TopCat.toSSet.obj X) _⦋2⦌) (i : Fin 3) :
+    f (.mk (path₁ ((TopCat.toSSet.obj X).δ i τ))) = imageValue f (X.toSSetObjEquiv _ τ)
+      (StdSimplex.single (i.succAbove 0)) (StdSimplex.single (i.succAbove 1)) := by
+  rw [← face_single, ← face_single, ← map_eq_imageValue f _ (edgePath i),
+    ← Path.Homotopic.Quotient.mk_map]
+  exact congrArg (fun γ ↦ f (Path.Homotopic.Quotient.mk γ)) (path₁_δ τ i)
+
+variable {f}
+variable (hf : ∀ {y z w : X} (p : Path.Homotopic.Quotient y z) (q : Path.Homotopic.Quotient z w),
+  f (p.trans q) = f p + f q)
+include hf
+
+private lemma imageValue_add {Y : Type} [TopologicalSpace Y] [SimplyConnectedSpace Y]
+    (g : C(Y, X)) (u v w : Y) :
+    imageValue f g u v + imageValue f g v w = imageValue f g u w := by
+  -- Both sides are values of `f` on images of paths from `u` to `w`.
+  rw [imageValue, imageValue, ← hf, ← map_eq_imageValue f g
+    ((PathConnectedSpace.somePath u v).trans (PathConnectedSpace.somePath v w))]
+  simp only [← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_trans, Path.map_trans]
+
+/-- An additive function on path classes kills the boundaries of singular `2`-simplices: the
+three edges of a singular `2`-simplex are images of paths in the simply connected standard
+simplex. -/
+lemma chainsDesc_path₁_d (y : ((singularChains ℤ).obj X).X 2) :
+    chainsDesc (fun s ↦ f (.mk (path₁ s))) (((singularChains ℤ).obj X).d 2 1 y) = 0 := by
+  have := singularChains_linearMap_ext
+    (L := chainsDesc (fun s ↦ f (.mk (path₁ s))) ∘ₗ (((singularChains ℤ).obj X).d 2 1).hom)
+    (L' := 0) fun τ ↦ by
+      rw [LinearMap.comp_apply, singularChains_d_simplexChain (n := 1), Fin.sum_univ_three]
+      simp only [map_add, map_zsmul, chainsDesc_simplexChain_one, apply_path₁_δ]
+      have h₀₁ : (0 : Fin 3).succAbove 0 = 1 := rfl
+      have h₀₂ : (0 : Fin 3).succAbove 1 = 2 := rfl
+      have h₁₁ : (1 : Fin 3).succAbove 1 = 2 := rfl
+      have h₂₁ : (2 : Fin 3).succAbove 1 = 1 := rfl
+      rw [h₀₁, h₀₂, h₁₁, h₂₁, Fin.succAbove_ne_zero_zero one_ne_zero,
+        Fin.succAbove_ne_zero_zero two_ne_zero,
+        ← imageValue_add hf _ (StdSimplex.single 0) (StdSimplex.single 1) (StdSimplex.single 2)]
+      simp
+  exact LinearMap.congr_fun this y
+
+/-- The homomorphism out of `H₁ X` induced by a function `f` on path classes that is additive
+under concatenation: the class of a cycle `Σ nᵢ σᵢ` is sent to `Σ nᵢ f [σᵢ]`. -/
+def H₁.liftPathClass : H₁ X →+ A :=
+  H₁.lift (chainsDesc fun s ↦ f (.mk (path₁ s))) (chainsDesc_path₁_d hf)
+
+lemma H₁.liftPathClass_mk (c : cycles₁ X) :
+    H₁.liftPathClass hf (H₁.mk c) =
+      chainsDesc (fun s ↦ f (.mk (path₁ s))) (c : ((singularChains ℤ).obj X).X 1) :=
+  H₁.lift_mk _ _ c
+
+omit [AddCommGroup A] hf in
+private lemma apply_cast {y z y' z' : X} (hy : y' = y) (hz : z' = z)
+    (q : Path.Homotopic.Quotient y z) : f (q.cast hy hz) = f q := by
+  subst hy hz
+  rw [Path.Homotopic.Quotient.cast_rfl_rfl]
+
+/-- The homomorphism out of `H₁ X` induced by an additive function `f` on path classes sends the
+class of a loop to the value of `f` on its class. -/
+lemma H₁.liftPathClass_loopClass {x : X} (γ : Path x x) :
+    H₁.liftPathClass hf (loopClass γ) = f (.mk γ) := by
+  have hs : source₁ (simplex₁ γ.toContinuousMap) = x := (source₁_simplex₁ _).trans γ.source
+  have ht : target₁ (simplex₁ γ.toContinuousMap) = x := (target₁_simplex₁ _).trans γ.target
+  have hγ : path₁ (simplex₁ γ.toContinuousMap) = γ.cast hs ht := by
+    ext t
+    simp
+  rw [loopClass, H₁.liftPathClass_mk, chainsDesc_simplexChain_one, hγ,
+    Path.Homotopic.Quotient.mk_cast]
+  exact apply_cast hs ht _
+
+end Lift
 
 /-! ### The inverse map -/
 
@@ -339,154 +492,52 @@ private def pathTo (y : X) : Path x y := PathConnectedSpace.somePath x y
 /-- The loop at the base point obtained from a path class `q` from `y` to `z` by going out to `y`
 along the chosen path, along `q`, and back from `z` along the chosen path. -/
 private def loopThrough {y z : X} (q : Path.Homotopic.Quotient y z) : FundamentalGroup X x :=
-  (Path.Homotopic.Quotient.mk (pathTo x y)).trans
-    (q.trans (Path.Homotopic.Quotient.mk (pathTo x z)).symm)
+  FundamentalGroup.fromPath ((Path.Homotopic.Quotient.mk (pathTo x y)).trans
+    (q.trans (Path.Homotopic.Quotient.mk (pathTo x z)).symm))
 
 private lemma loopThrough_trans {y z w : X} (q : Path.Homotopic.Quotient y z)
     (q' : Path.Homotopic.Quotient z w) :
-    (loopThrough x q).trans (loopThrough x q') = loopThrough x (q.trans q') := by
-  simp only [loopThrough, Path.Homotopic.Quotient.trans_assoc,
+    loopThrough x q' * loopThrough x q = loopThrough x (q.trans q') := by
+  simp only [loopThrough, FundamentalGroup.mul_def, FundamentalGroup.fromPath,
+    FundamentalGroup.fromArrow, Path.Homotopic.Quotient.trans_assoc,
     ← Path.Homotopic.Quotient.trans_assoc (Path.Homotopic.Quotient.symm _),
     Path.Homotopic.Quotient.symm_trans, Path.Homotopic.Quotient.refl_trans]
 
-/-- The value of the inverse Hurewicz map on a singular `1`-simplex. -/
-private def inverseValue (s : (TopCat.toSSet.obj X) _⦋1⦌) :
-    Additive (Abelianization (FundamentalGroup X x)) :=
-  Additive.ofMul (Abelianization.of (loopThrough x (Path.Homotopic.Quotient.mk (path₁ s))))
+/-- The class in the abelianized fundamental group of the loop through a path class. -/
+private def loopThroughAb {y z : X} (q : Path.Homotopic.Quotient y z) :
+    Additive (Group.Abelianization (FundamentalGroup X x)) :=
+  Additive.ofMul (Group.Abelianization.of (loopThrough x q))
 
-/-- The loop at the base point through the image under `g` of the (unique) path class from `u`
-to `v` in a simply connected space. -/
-private def imageClass {Y : Type} [TopologicalSpace Y] [SimplyConnectedSpace Y] (g : C(Y, X))
-    (u v : Y) :
-    FundamentalGroup X x :=
-  loopThrough x ((Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath u v)).map g)
-
-private lemma loopThrough_map_eq_imageClass {Y : Type} [TopologicalSpace Y] [SimplyConnectedSpace Y]
-    (g : C(Y, X)) {u v : Y} (γ : Path u v) :
-    loopThrough x ((Path.Homotopic.Quotient.mk γ).map g) = imageClass x g u v := by
-  rw [imageClass, Subsingleton.elim (Path.Homotopic.Quotient.mk γ)]
-
-/-- The loops through the images of two composable paths compose to the loop through the image
-of their concatenation. -/
-private lemma loopThrough_map_trans {Y : Type} [TopologicalSpace Y] (g : C(Y, X)) {u v w : Y}
-    (p : Path u v) (q : Path v w) :
-    (loopThrough x ((Path.Homotopic.Quotient.mk p).map g)).trans
-        (loopThrough x ((Path.Homotopic.Quotient.mk q).map g)) =
-      loopThrough x ((Path.Homotopic.Quotient.mk (p.trans q)).map g) := by
-  rw [loopThrough_trans, ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_map,
-    ← Path.Homotopic.Quotient.mk_trans, ← Path.map_trans, Path.Homotopic.Quotient.mk_map]
-
-private lemma imageClass_trans {Y : Type} [TopologicalSpace Y] [SimplyConnectedSpace Y]
-    (g : C(Y, X)) (u v w : Y) :
-    (imageClass x g u v).trans (imageClass x g v w) = imageClass x g u w := by
-  rw [imageClass, imageClass, loopThrough_map_trans, loopThrough_map_eq_imageClass]
-
-/-- An edge of the standard `2`-simplex, as a path. -/
-private def edgePath (i : Fin 3) :
-    Path (face i (StdSimplex.single 0)) (face i (StdSimplex.single 1)) where
-  toContinuousMap := (face i).comp ofI
-  source' := by simp
-  target' := by simp
-
-private lemma inverseValue_δ (τ : (TopCat.toSSet.obj X) _⦋2⦌) (i : Fin 3) :
-    inverseValue x ((TopCat.toSSet.obj X).δ i τ) =
-      Additive.ofMul (Abelianization.of (imageClass x (X.toSSetObjEquiv _ τ)
-        (face i (StdSimplex.single 0)) (face i (StdSimplex.single 1)))) := by
-  have : path₁ ((TopCat.toSSet.obj X).δ i τ) =
-      (edgePath i).map (X.toSSetObjEquiv _ τ).continuous := by
-    ext t
-    rw [path₁_apply, TopCat.toSSetObjEquiv_δ_apply]
-    -- By definition of `edgePath`, the right-hand side is `τ` at the image of
-    -- `homeomorphI.symm t` under the inclusion `face i` of the facet.
-    rfl
-  rw [inverseValue]
-  exact congrArg (fun q ↦ Additive.ofMul (Abelianization.of q))
-    ((congrArg (fun γ ↦ loopThrough x (Path.Homotopic.Quotient.mk γ)) this).trans
-      (loopThrough_map_eq_imageClass x _ (edgePath i)))
-
-private lemma face_single (i : Fin 3) (j : Fin 2) :
-    face i (StdSimplex.single j) = StdSimplex.single (i.succAbove j) :=
-  StdSimplex.map_single _ _
-
-/-- The values of the inverse map on the faces of a singular `2`-simplex satisfy the cocycle
-relation. -/
-private lemma inverseValue_cocycle (τ : (TopCat.toSSet.obj X) _⦋2⦌) :
-    inverseValue x ((TopCat.toSSet.obj X).δ 0 τ) - inverseValue x ((TopCat.toSSet.obj X).δ 1 τ) +
-      inverseValue x ((TopCat.toSSet.obj X).δ 2 τ) = 0 := by
-  simp only [inverseValue_δ, face_single]
-  rw [sub_add_eq_add_sub, add_comm, Abelianization.ofMul_of_add_ofMul_of, sub_eq_zero,
-    FundamentalGroup.mul_def]
-  exact congrArg (fun q ↦ Additive.ofMul (Abelianization.of q)) (imageClass_trans x _ _ _ _)
-
-/-- The inverse Hurewicz map on singular `1`-chains. -/
-private def inverseChains :
-    ((singularChains ℤ).obj X).X 1 →ₗ[ℤ] Additive (Abelianization (FundamentalGroup X x)) :=
-  chainsDesc (inverseValue x)
-
-private lemma inverseChains_simplexChain (s : (TopCat.toSSet.obj X) _⦋1⦌) :
-    inverseChains x (simplexChain s 1) = inverseValue x s := by
-  rw [inverseChains, chainsDesc_simplexChain_one]
-
-private lemma inverseChains_d (y : ((singularChains ℤ).obj X).X 2) :
-    inverseChains x (((singularChains ℤ).obj X).d 2 1 y) = 0 := by
-  have := singularChains_linearMap_ext
-    (L := inverseChains x ∘ₗ (((singularChains ℤ).obj X).d 2 1).hom) (L' := 0) fun τ ↦ by
-      rw [LinearMap.comp_apply, singularChains_d_simplexChain (n := 1), Fin.sum_univ_three]
-      simp only [map_add, map_zsmul, inverseChains_simplexChain]
-      simpa [sub_eq_add_neg] using inverseValue_cocycle x τ
-  exact LinearMap.congr_fun this y
-
-/-- The inverse Hurewicz map on the `1`-cycles, as a morphism of `ℤ`-modules. The module structure
-on the cycles is passed explicitly: for `ℤ`, instance search on `LinearMap.ker (sc₁ X).g.hom` finds
-`AddCommGroup.toIntModule`, which is only propositionally equal to the submodule structure. -/
-private def inverseCycles :
-    (sc₁ X).moduleCatLeftHomologyData.K ⟶ ModuleCat.of ℤ (Additive (Abelianization
-      (FundamentalGroup X x))) :=
-  @ModuleCat.ofHom ℤ _ _ _ _ (cycles₁ X).module _ _
-    ((inverseChains x).comp (cycles₁ X).subtype)
-
-private lemma f'_inverseCycles : (sc₁ X).moduleCatLeftHomologyData.f' ≫ inverseCycles x = 0 :=
-  ModuleCat.hom_ext (LinearMap.ext fun y ↦ inverseChains_d x y)
+private lemma loopThroughAb_trans {y z w : X} (q : Path.Homotopic.Quotient y z)
+    (q' : Path.Homotopic.Quotient z w) :
+    loopThroughAb x (q.trans q') = loopThroughAb x q + loopThroughAb x q' := by
+  rw [loopThroughAb, loopThroughAb, loopThroughAb, Group.Abelianization.ofMul_of_add_ofMul_of,
+    loopThrough_trans]
 
 /-- **The inverse of the Hurewicz map in degree one**, on the first homology group. -/
-private def inverse₁ : H₁ X →ₗ[ℤ] Additive (Abelianization (FundamentalGroup X x)) :=
-  ((sc₁ X).moduleCatLeftHomologyData.descH (inverseCycles x) (f'_inverseCycles x)).hom
-
-private lemma inverse₁_mk (c : cycles₁ X) : inverse₁ x (H₁.mk c) = inverseChains x c := by
-  rw [inverse₁]
-  exact congr($((sc₁ X).moduleCatLeftHomologyData.π_descH (inverseCycles x)
-    (f'_inverseCycles x)).hom c)
+private def inverse₁ : H₁ X →+ Additive (Group.Abelianization (FundamentalGroup X x)) :=
+  H₁.liftPathClass (loopThroughAb_trans x)
 
 /-- The class of the chosen loop at the base point, as an element of the fundamental group. -/
-private def basePathClass : FundamentalGroup X x := Path.Homotopic.Quotient.mk (pathTo x x)
+private def basePathClass : FundamentalGroup X x :=
+  FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (pathTo x x))
 
 /-- The loop through a loop at the base point is its conjugate by the chosen loop at the base
 point. -/
 private lemma loopThrough_eq_inv_mul_mul (q : FundamentalGroup X x) :
-    loopThrough x q = (basePathClass x)⁻¹ * q * basePathClass x := by
+    loopThrough x q.toPath = (basePathClass x)⁻¹ * q * basePathClass x := by
   rw [FundamentalGroup.mul_def, FundamentalGroup.mul_def, FundamentalGroup.inv_def, loopThrough,
     basePathClass]
-
-private lemma ofMul_of_loopThrough_cast {y z : X} (hy : y = x) (hz : z = x)
-    (q : Path.Homotopic.Quotient x x) :
-    Additive.ofMul (Abelianization.of (loopThrough x (q.cast hy hz))) =
-      Additive.ofMul ((Abelianization.of : FundamentalGroup X x →* _) q) := by
-  subst hy hz
-  rw [Path.Homotopic.Quotient.cast_rfl_rfl, loopThrough_eq_inv_mul_mul,
-    Abelianization.of_inv_mul_mul]
 
 /-- The inverse Hurewicz map sends the homology class of a loop back to the class of the loop. -/
 private lemma inverse₁_loopClass (γ : Path x x) :
     inverse₁ x (loopClass γ) =
-      Additive.ofMul ((Abelianization.of : FundamentalGroup X x →* _)
-        (Path.Homotopic.Quotient.mk γ)) := by
-  have hs : source₁ (simplex₁ γ.toContinuousMap) = x := (source₁_simplex₁ _).trans γ.source
-  have ht : target₁ (simplex₁ γ.toContinuousMap) = x := (target₁_simplex₁ _).trans γ.target
-  have hγ : path₁ (simplex₁ γ.toContinuousMap) = γ.cast hs ht := by
-    ext t
-    simp
-  rw [loopClass, inverse₁_mk, inverseChains_simplexChain, inverseValue, hγ,
-    Path.Homotopic.Quotient.mk_cast, ofMul_of_loopThrough_cast]
+      Additive.ofMul ((Group.Abelianization.of : FundamentalGroup X x →* _)
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))) := by
+  rw [inverse₁, H₁.liftPathClass_loopClass, loopThroughAb]
+  exact (congrArg (fun g ↦ Additive.ofMul (Group.Abelianization.of g))
+    (loopThrough_eq_inv_mul_mul _ (FundamentalGroup.fromPath (.mk γ)))).trans
+      (by rw [Group.Abelianization.of_inv_mul_mul])
 
 /-- The `1`-chains of the chosen paths from the base point to the points of a `0`-chain. -/
 private def pathChains : ((singularChains ℤ).obj X).X 0 →ₗ[ℤ] ((singularChains ℤ).obj X).X 1 :=
@@ -568,68 +619,68 @@ private lemma loopChains_mem_cycles₁ (c : ((singularChains ℤ).obj X).X 1) :
 
 omit [PathConnectedSpace X] in
 /-- The Hurewicz map on the abelianized fundamental group, written additively. -/
-def hurewiczAb : Additive (Abelianization (FundamentalGroup X x)) →+ H₁ X :=
-  MonoidHom.toAdditiveLeft (Abelianization.lift (hurewicz₁ X x))
+def hurewiczAb : Additive (Group.Abelianization (FundamentalGroup X x)) →+ H₁ X :=
+  MonoidHom.toAdditiveLeft (Group.Abelianization.lift (hurewicz₁ X x))
 
 omit [PathConnectedSpace X] in
 /-- On the abelianization, the Hurewicz map is induced by `TauCeti.HurewiczOne.hurewicz₁`. -/
-@[simp]
 lemma hurewiczAb_ofMul_of (g : FundamentalGroup X x) :
-    hurewiczAb x (Additive.ofMul (Abelianization.of g)) =
+    hurewiczAb x (Additive.ofMul (Group.Abelianization.of g)) =
       Multiplicative.toAdd (hurewicz₁ X x g) := by
   simp [hurewiczAb]
 
 omit [PathConnectedSpace X] in
 lemma hurewiczAb_ofMul_of_mk (γ : Path x x) :
-    hurewiczAb x (Additive.ofMul ((Abelianization.of : FundamentalGroup X x →* _)
-      (Path.Homotopic.Quotient.mk γ))) = loopClass γ := by
-  simp [hurewiczAb]
+    hurewiczAb x (Additive.ofMul ((Group.Abelianization.of : FundamentalGroup X x →* _)
+      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)))) = loopClass γ := by
+  rw [hurewiczAb_ofMul_of, hurewicz₁_mk, toAdd_ofAdd]
 
-private lemma hurewiczAb_inverseChains (c : ((singularChains ℤ).obj X).X 1) :
-    hurewiczAb x (inverseChains x c) = H₁.mk ⟨_, loopChains_mem_cycles₁ x c⟩ := by
+private lemma hurewiczAb_chainsDesc_loopThroughAb (c : ((singularChains ℤ).obj X).X 1) :
+    hurewiczAb x (chainsDesc (fun s ↦ loopThroughAb x (.mk (path₁ s))) c) =
+      H₁.mk ⟨_, loopChains_mem_cycles₁ x c⟩ := by
   let ψ : ((singularChains ℤ).obj X).X 1 →+ H₁ X :=
-    (hurewiczAb x).comp (inverseChains x).toAddMonoidHom
+    (hurewiczAb x).comp (chainsDesc fun s ↦ loopThroughAb x (.mk (path₁ s))).toAddMonoidHom
   let ρ : ((singularChains ℤ).obj X).X 1 →+ H₁ X := ((sc₁ X).moduleCatLeftHomologyData.π.hom ∘ₗ
     (loopChains x).codRestrict (cycles₁ X) (loopChains_mem_cycles₁ x)).toAddMonoidHom
   have : ψ = ρ := singularChains_addMonoidHom_ext fun s ↦ by
     simp only [ψ, ρ, AddMonoidHom.coe_comp, Function.comp_apply, LinearMap.toAddMonoidHom_coe,
-      inverseChains_simplexChain]
+      chainsDesc_simplexChain_one]
     refine (hurewiczAb_ofMul_of_mk x (loopPath x s)).trans
       (congrArg H₁.mk (Subtype.ext (loopChains_simplexChain x s).symm))
   exact DFunLike.congr_fun this c
 
 private lemma hurewiczAb_inverse₁ (h : H₁ X) : hurewiczAb x (inverse₁ x h) = h := by
   obtain ⟨z, rfl⟩ := H₁.mk_surjective h
-  rw [inverse₁_mk, hurewiczAb_inverseChains, H₁.mk_eq_mk_iff]
+  rw [inverse₁, H₁.liftPathClass_mk, hurewiczAb_chainsDesc_loopThroughAb, H₁.mk_eq_mk_iff]
   have hz : ((singularChains ℤ).obj X).d 1 0 z = 0 := mem_cycles₁_iff.1 z.2
   have := loopChains_sub_mem_boundaries₁ x z
   rw [hz, map_zero, add_zero] at this
   exact this
 
-private lemma inverse₁_hurewiczAb (a : Additive (Abelianization (FundamentalGroup X x))) :
+private lemma inverse₁_hurewiczAb (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
     inverse₁ x (hurewiczAb x a) = a := by
   induction a using Additive.rec with | ofMul a =>
   induction a using Quot.ind with | mk p =>
+  obtain ⟨p⟩ := p
   induction p using Path.Homotopic.Quotient.ind with | mk γ =>
-  rw [Abelianization.mk_eq_of]
+  rw [Group.Abelianization.mk_eq_of]
   exact (congrArg (inverse₁ x) (hurewiczAb_ofMul_of_mk x γ)).trans (inverse₁_loopClass x γ)
 
 /-- **The Hurewicz theorem in degree one**: for a path-connected space, the Hurewicz map
 identifies the abelianized fundamental group with the first homology group, written as the
 explicit homology of the short complex `C₂ → C₁ → C₀`. -/
-def hurewiczAddEquiv : Additive (Abelianization (FundamentalGroup X x)) ≃+ H₁ X where
+def hurewiczAddEquiv : Additive (Group.Abelianization (FundamentalGroup X x)) ≃+ H₁ X where
   __ := hurewiczAb x
   invFun := inverse₁ x
   left_inv := inverse₁_hurewiczAb x
   right_inv := hurewiczAb_inverse₁ x
 
-@[simp]
 lemma hurewiczAddEquiv_ofMul_of_mk (γ : Path x x) :
-    hurewiczAddEquiv x (Additive.ofMul ((Abelianization.of : FundamentalGroup X x →* _)
-      (Path.Homotopic.Quotient.mk γ))) = loopClass γ :=
+    hurewiczAddEquiv x (Additive.ofMul ((Group.Abelianization.of : FundamentalGroup X x →* _)
+      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)))) = loopClass γ :=
   hurewiczAb_ofMul_of_mk x γ
 
-lemma hurewiczAddEquiv_apply (a : Additive (Abelianization (FundamentalGroup X x))) :
+lemma hurewiczAddEquiv_apply (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
     hurewiczAddEquiv x a = hurewiczAb x a := by
   rw [hurewiczAddEquiv]
   -- The forward map of `hurewiczAddEquiv` is `hurewiczAb` by construction.
@@ -637,11 +688,10 @@ lemma hurewiczAddEquiv_apply (a : Additive (Abelianization (FundamentalGroup X x
 
 /-- The inverse of the Hurewicz isomorphism sends the class of a loop to its class in the
 abelianized fundamental group. -/
-@[simp]
 lemma hurewiczAddEquiv_symm_loopClass (γ : Path x x) :
     (hurewiczAddEquiv x).symm (loopClass γ) =
-      Additive.ofMul ((Abelianization.of : FundamentalGroup X x →* _)
-        (Path.Homotopic.Quotient.mk γ)) := by
+      Additive.ofMul ((Group.Abelianization.of : FundamentalGroup X x →* _)
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))) := by
   rw [AddEquiv.symm_apply_eq, hurewiczAddEquiv_ofMul_of_mk]
 
 end Inverse
@@ -685,24 +735,36 @@ lemma H₁AddEquivHomology_loopClass {x : X} (γ : Path x x)
   rw [loopClass]
   exact H₁AddEquivHomology_mk _ z hz
 
+/-- Two additive maps out of the first homology group of the singular chain complex agree once
+they agree on the classes of `1`-cycles. -/
+lemma homology_one_addMonoidHom_ext {A : Type*} [AddZeroClass A]
+    {f g : ((singularChains ℤ).obj X).homology 1 →+ A}
+    (h : ∀ c : cycles₁ X, f (H₁AddEquivHomology X (H₁.mk c)) = g (H₁AddEquivHomology X (H₁.mk c))) :
+    f = g :=
+  (AddMonoidHom.cancel_right (H₁AddEquivHomology X).surjective).1 (H₁.addMonoidHom_ext h :
+    f.comp (H₁AddEquivHomology X).toAddMonoidHom = g.comp (H₁AddEquivHomology X).toAddMonoidHom)
+
 /-! ### The Hurewicz isomorphism -/
 
 /-- **The Hurewicz theorem in degree one**: for a path-connected space `X` with a base point `x`,
 the Hurewicz map identifies the abelianization of `π₁(X, x)` with `H₁(X; ℤ)`, the first homology
 group of the singular chain complex of `X` with integer coefficients. -/
 def hurewiczHomologyAddEquiv [PathConnectedSpace X] (x : X) :
-    Additive (Abelianization (FundamentalGroup X x)) ≃+ ((singularChains ℤ).obj X).homology 1 :=
+    Additive (Group.Abelianization (FundamentalGroup X x)) ≃+ ((singularChains ℤ).obj
+        X).homology 1 :=
   (hurewiczAddEquiv x).trans (H₁AddEquivHomology X)
 
 lemma hurewiczHomologyAddEquiv_apply [PathConnectedSpace X] {x : X}
-    (a : Additive (Abelianization (FundamentalGroup X x))) :
+    (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
     hurewiczHomologyAddEquiv x a = H₁AddEquivHomology X (hurewiczAb x a) := by
   rw [hurewiczHomologyAddEquiv, AddEquiv.trans_apply, hurewiczAddEquiv_apply]
 
 @[simp]
 lemma hurewiczHomologyAddEquiv_ofMul_of_mk [PathConnectedSpace X] {x : X} (γ : Path x x) :
-    hurewiczHomologyAddEquiv x (Additive.ofMul ((Abelianization.of : FundamentalGroup X x →* _)
-      (Path.Homotopic.Quotient.mk γ))) = H₁AddEquivHomology X (loopClass γ) := by
-  simp [hurewiczHomologyAddEquiv]
+    hurewiczHomologyAddEquiv x (Additive.ofMul
+      ((Group.Abelianization.of : FundamentalGroup X x →* _)
+      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)))) =
+        H₁AddEquivHomology X (loopClass γ) := by
+  rw [hurewiczHomologyAddEquiv, AddEquiv.trans_apply, hurewiczAddEquiv_ofMul_of_mk]
 
 end TauCeti.HurewiczOne

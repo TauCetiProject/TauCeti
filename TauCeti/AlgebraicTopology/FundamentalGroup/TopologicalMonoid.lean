@@ -21,7 +21,7 @@ commutative.
 Both facts are the Eckmann–Hilton argument, applied through Mathlib's `EckmannHilton.mul` and
 `EckmannHilton.mul_comm`. Multiplication `M × M → M` induces a homomorphism
 `π₁(M, 1) × π₁(M, 1) ≃ π₁(M × M, (1, 1)) → π₁(M, 1)`, the first map being
-`TauCeti.FundamentalGroup.prodMulEquiv`, and on a pair of loop classes it is the class of the
+`FundamentalGroup.prodMulEquiv`, and on a pair of loop classes it is the class of the
 pointwise product. So pointwise multiplication of loop classes is a binary operation on
 `π₁(M, 1)` over which the group law distributes, and since `1` is a strict unit of `M`, the
 constant loop is a two-sided unit for it. Eckmann–Hilton then says that the two operations agree
@@ -58,24 +58,25 @@ private def mulHom :
     FundamentalGroup M 1 × FundamentalGroup M 1 →* FundamentalGroup M 1 :=
   (mapOfEq ⟨fun x : M × M ↦ x.1 * x.2, continuous_mul⟩
       (mul_one (1 : M))).comp
-    (TauCeti.FundamentalGroup.prodMulEquiv (1 : M) (1 : M)).symm.toMonoidHom
+    (prodMulEquiv (1 : M) (1 : M)).symm.toMonoidHom
 
 /-- The homomorphism induced by multiplication sends a pair of loop classes to the class of the
 pointwise product. -/
 private theorem mulHom_apply (a b : FundamentalGroup M 1) :
-    mulHom (a, b) =
-      ((prod a b).map ⟨fun x : M × M ↦ x.1 * x.2, continuous_mul⟩).cast (mul_one 1).symm
-        (mul_one 1).symm := by
+    mulHom (a, b) = .of
+      (((prod a.asHom b.asHom).map ⟨fun x : M × M ↦ x.1 * x.2, continuous_mul⟩).cast
+        (mul_one 1).symm (mul_one 1).symm) := by
   simp [mulHom, mapOfEq_apply]
 
 /-- Multiplying a loop pointwise by the constant loop at the unit does not change its class. -/
 private theorem mulHom_inl (a : FundamentalGroup M 1) :
     mulHom (a, 1) = a := by
   rw [mulHom_apply]
+  obtain ⟨a⟩ := a
   induction a using Path.Homotopic.Quotient.ind with | mk γ => ?_
   rw [one_def, ← Quotient.mk_refl, prod_lift, ← Quotient.mk_map,
     ← Quotient.mk_cast]
-  congr 1
+  congr 2
   ext t
   simp
 
@@ -83,10 +84,11 @@ private theorem mulHom_inl (a : FundamentalGroup M 1) :
 private theorem mulHom_inr (b : FundamentalGroup M 1) :
     mulHom (1, b) = b := by
   rw [mulHom_apply]
+  obtain ⟨b⟩ := b
   induction b using Path.Homotopic.Quotient.ind with | mk δ => ?_
   rw [one_def, ← Quotient.mk_refl, prod_lift, ← Quotient.mk_map,
     ← Quotient.mk_cast]
-  congr 1
+  congr 2
   ext t
   simp
 
@@ -106,8 +108,8 @@ private theorem mulHom_mul_mul (a b c d : FundamentalGroup M 1) :
 with a continuous multiplication and a two-sided unit `1`, the class of the loop
 `t ↦ γ t * δ t` is the product in `π₁(M, 1)` of the classes of the loops `γ` and `δ` at `1`. -/
 theorem cast_map_prod_mul (a b : FundamentalGroup M 1) :
-    ((prod a b).map ⟨fun x : M × M ↦ x.1 * x.2, continuous_mul⟩).cast (mul_one 1).symm
-      (mul_one 1).symm = a * b := by
+    (.of (((prod a.asHom b.asHom).map ⟨fun x : M × M ↦ x.1 * x.2, continuous_mul⟩).cast
+      (mul_one 1).symm (mul_one 1).symm) : FundamentalGroup M 1) = a * b := by
   rw [← mulHom_apply]
   exact congrFun₂ (EckmannHilton.mul isUnital_mulHom
     EckmannHilton.MulOneClass.isUnital mulHom_mul_mul) a b

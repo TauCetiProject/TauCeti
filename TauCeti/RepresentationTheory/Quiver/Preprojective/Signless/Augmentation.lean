@@ -14,7 +14,9 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Grading
 /-!
 # The augmentation endpoint of the signless preprojective Koszul complex
 
-The signless preprojective algebra augments onto the product of the coefficient rings at its
+The signless relation ideal lies in the square of the arrow ideal, so over a nontrivial ring the
+vertex idempotents and the arrows survive in the signless preprojective algebra. The signless
+preprojective algebra augments onto the product of the coefficient rings at its
 vertices. In the right vertex projective `e_v Π`, the kernel of the vertex coefficient is
 exactly the image of the incoming-arrow map `(z_b) ↦ ∑ b z_b`. Every scalar occurs as a vertex
 coefficient, so the cokernel of this map is one copy of the coefficient ring, not an unspecified
@@ -52,10 +54,14 @@ noncomputable local instance fintypeHomOfFiniteStar {R : Type u} [Quiver.{v} R]
 section VertexAugmentation
 
 variable (k : Type w) [CommRing k] {R : Type u} [Quiver.{v} R] [HasReverse R]
-  [Finite R] [∀ x : R, Fintype (Quiver.Star x)]
+  [∀ x : R, Fintype (Quiver.Star x)]
 
 local notation "Π" => signlessPreprojectiveAlgebra k R
 local notation "π" => signlessPreprojectiveMk k R
+
+section Finite
+
+variable [Finite R]
 
 /-- The signless relation ideal lies in the square of the arrow ideal, since each relator
 is a sum of length-two backtracks. In particular the vertex coefficients survive the quotient. -/
@@ -76,6 +82,24 @@ to the signless preprojective algebra. -/
 theorem signlessPreprojectiveIdeal_le_arrowIdeal :
     (signlessPreprojectiveIdeal k R).asIdeal ≤ arrowIdeal k R :=
   (signlessPreprojectiveIdeal_le_arrowIdeal_sq k).trans (Ideal.pow_le_self two_ne_zero)
+
+/-- **Vertex idempotents survive in the signless preprojective algebra** over a nontrivial ring:
+the relation ideal lies in the arrow ideal, which contains no vertex idempotent. -/
+theorem signlessPreprojectiveMk_vertexIdempotent_ne_zero [Nontrivial k] (i : R) :
+    π (vertexIdempotent k i) ≠ 0 := by
+  rw [Ne, signlessPreprojectiveMk_eq_zero_iff, ← TwoSidedIdeal.mem_asIdeal]
+  exact fun h => vertexIdempotent_notMem_arrowIdeal (k := k) _
+    (signlessPreprojectiveIdeal_le_arrowIdeal k h)
+
+/-- **Arrows survive in the signless preprojective algebra** over a nontrivial ring: the relation
+ideal lies in the square of the arrow ideal, which contains no path of length one. -/
+theorem signlessPreprojectiveMk_ofArrow_ne_zero [Nontrivial k] {i j : R} (b : i ⟶ j) :
+    π (ofArrow b) ≠ 0 := by
+  rw [Ne, signlessPreprojectiveMk_eq_zero_iff, ← TwoSidedIdeal.mem_asIdeal]
+  intro h
+  have h2 := signlessPreprojectiveIdeal_le_arrowIdeal_sq k h
+  rw [ofArrow_eq_ofPath, ofPath_mem_arrowIdeal_pow_iff, Path.length_toPath] at h2
+  omega
 
 /-- The augmentation of the signless preprojective algebra onto its vertex coefficients. -/
 noncomputable def signlessPreprojectiveAugmentation : Π →ₐ[k] (R → k) :=
@@ -102,6 +126,21 @@ theorem signlessPreprojectiveAugmentation_ofArrow {i j : R} (b : i ⟶ j) :
     signlessPreprojectiveAugmentation k (π (ofArrow b)) = 0 := by
   rw [signlessPreprojectiveAugmentation_mk, trivialCoeff_ofArrow]
 
+/-- A closed path of positive length which is a scalar multiple of its vertex idempotent vanishes,
+since its augmentation does. -/
+theorem signlessPreprojectiveMk_ofPath_eq_zero_of_eq_algebraMap_mul {v : R} (p : Path v v)
+    (hp : 0 < p.length) {r : k}
+    (h : π (ofPath ⟨_, _, p⟩) = algebraMap k Π r * π (vertexIdempotent k v)) :
+    π (ofPath ⟨_, _, p⟩) = 0 := by
+  classical
+  -- The path has augmentation zero, while the right side has augmentation `r`.
+  have haug := signlessPreprojectiveAugmentation_mk k (ofPath ⟨_, _, p⟩)
+  rw [trivialCoeff_ofPath_of_length_pos hp, h] at haug
+  have hr : r = 0 := by
+    simpa [signlessPreprojectiveAugmentation_mk, trivialCoeff_vertexIdempotent] using
+      congrFun haug v
+  rw [h, hr, map_zero, zero_mul]
+
 /-- Every family of vertex coefficients occurs in the signless preprojective algebra. -/
 theorem signlessPreprojectiveAugmentation_surjective :
     Function.Surjective (signlessPreprojectiveAugmentation (R := R) k) :=
@@ -116,6 +155,8 @@ theorem signlessPreprojectiveAugmentation_eq_single [DecidableEq R] (v : R) {x :
     quotientTrivialCoeff_eq_single_of_vertexIdempotent_mul
       (signlessPreprojectiveIdeal_le_arrowIdeal k) v
       (by simpa only [signlessPreprojectiveMk_apply] using hx)
+
+end Finite
 
 /-- Exactness at the augmentation endpoint of the signless vertex Koszul complex:
 `x ∈ e_v Π` has vertex coefficient zero exactly when `x = ∑ b z_b` with `z_b ∈ e_i Π`.
@@ -132,6 +173,7 @@ theorem signlessPreprojectiveAugmentation_apply_eq_zero_iff_exists_eq_sum
       (signlessPreprojectiveIdeal_le_arrowIdeal k) v
       (by simpa only [signlessPreprojectiveMk_apply] using hx)
 
+variable [Finite R] in
 /-- Every scalar is the vertex coefficient of an element of the right vertex projective. -/
 theorem exists_signlessPreprojectiveAugmentation_apply_eq (v : R) (c : k) :
     ∃ x : Π, π (vertexIdempotent k v) * x = x ∧

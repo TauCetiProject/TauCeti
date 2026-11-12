@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import Mathlib.RingTheory.AdicCompletion.Topology
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.Henselian.Basic
 
 /-!
@@ -31,6 +31,12 @@ Everything here concerns one completion. The comparison of two completions along
   element of `R` maps to `K_v` through `K` as it does through `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_adicCompletionIntegers`: `v` is the
   prime lying under the maximal ideal of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.isUnit_algebraMap_adicCompletionIntegers_iff`: an element
+  of `R` maps to a unit of `𝒪_v` exactly when it does not belong to `v`.
+* `IsDedekindDomain.HeightOneSpectrum.natCard_quotient_span_algebraMap_adicCompletionIntegers`:
+  consequently `𝒪_v` modulo such an element is trivial.
+* `exists_span_algebraMap_adicCompletionIntegers_eq_maximalIdeal_pow` (in the same namespace): a
+  nonzero element of `R` generates a power of the maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.map_asIdeal_adicCompletionIntegers`: `v` generates the
   maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.mem_maximalIdeal_pow_iff`: membership in `𝔪 ^ n` is the
@@ -53,6 +59,8 @@ Everything here concerns one completion. The comparison of two completions along
   representative.
 * `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
   an element of `K` of valuation one maps to a unit of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersSubmodule`: `𝒪_v` as an
+  `R`-submodule of `K_v`, whose quotient `K_v ⧸ 𝒪_v` is the module of principal parts at `v`.
 
 ## Implementation notes
 
@@ -73,8 +81,7 @@ a curve — each statement is about a Dedekind domain and one of its completions
 ## Provenance
 
 Adapted, with the author's proof, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean` line 594, and
 `EllipticCurves/Mathlib/AdicCompletionExtension.lean` for the filtration and Henselian results,
 and for `residueFieldEquivAdicCompletionIntegers` and the approximation modulo the maximal ideal
@@ -146,6 +153,34 @@ lemma under_maximalIdeal_adicCompletionIntegers (v : HeightOneSpectrum R) :
   refine (Valuation.mem_maximalIdeal_iff (v := (Valued.v : Valuation (v.adicCompletion K)
     (WithZero (Multiplicative ℤ))))).trans ?_
   rw [algebraMap_adicCompletionIntegers_apply, valuedAdicCompletion_eq_valuation']
+
+/-- An element of `R` maps to a unit in the ring of integers of its completion at `v` exactly
+when it does not belong to `v`. -/
+theorem isUnit_algebraMap_adicCompletionIntegers_iff (v : HeightOneSpectrum R) (r : R) :
+    IsUnit (algebraMap R (v.adicCompletionIntegers K) r) ↔ r ∉ v.asIdeal := by
+  rw [← IsLocalRing.notMem_maximalIdeal, ← Ideal.mem_under,
+    v.under_maximalIdeal_adicCompletionIntegers]
+
+/-- The quotient of the ring of integers of the completion at `v` by an element of `R` outside `v`
+is trivial, since that element maps to a unit. -/
+theorem natCard_quotient_span_algebraMap_adicCompletionIntegers (v : HeightOneSpectrum R) {r : R}
+    (hr : r ∉ v.asIdeal) :
+    Nat.card (v.adicCompletionIntegers K ⧸
+      Ideal.span {algebraMap R (v.adicCompletionIntegers K) r}) = 1 := by
+  rw [Ideal.span_singleton_eq_top.mpr ((v.isUnit_algebraMap_adicCompletionIntegers_iff r).mpr hr),
+    Nat.card_eq_one_iff_unique]
+  exact ⟨Ideal.Quotient.subsingleton_iff.mpr rfl, inferInstance⟩
+
+/-- A nonzero element of `R` generates a power of the maximal ideal of the ring of integers of the
+completion at `v`, a discrete valuation ring. -/
+theorem exists_span_algebraMap_adicCompletionIntegers_eq_maximalIdeal_pow
+    (v : HeightOneSpectrum R) {r : R} (hr : r ≠ 0) :
+    ∃ e : ℕ, Ideal.span {algebraMap R (v.adicCompletionIntegers K) r} =
+      IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ e := by
+  refine exists_maximalIdeal_pow_eq_of_principal _ (IsPrincipalIdealRing.principal _) _ ?_
+  rw [Ne, Ideal.span_singleton_eq_bot,
+    map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective R (v.adicCompletionIntegers K))]
+  exact hr
 
 section SingleCompletion
 
@@ -467,6 +502,25 @@ theorem residueFieldEquivAdicCompletionIntegers_apply_mk (a : R) :
         (algebraMap R (v.adicCompletionIntegers K) a) := (rfl)
 
 end SingleCompletion
+
+variable (K) in
+/-- The local integers `𝒪_v` as an `R`-submodule of the completion `K_v` at a finite place `v`.
+The quotient `K_v ⧸ 𝒪_v` is the module of principal parts at `v`. -/
+noncomputable def adicCompletionIntegersSubmodule (v : HeightOneSpectrum R) :
+    Submodule R (v.adicCompletion K) where
+  carrier := v.adicCompletionIntegers K
+  add_mem' := add_mem
+  zero_mem' := zero_mem _
+  smul_mem' r x hx := by
+    rw [Algebra.smul_def]
+    exact mul_mem (coe_mem_adicCompletionIntegers v r) hx
+
+variable (K) in
+/-- Membership in `adicCompletionIntegersSubmodule` is membership in the local integers. -/
+@[simp]
+theorem mem_adicCompletionIntegersSubmodule {v : HeightOneSpectrum R} {x : v.adicCompletion K} :
+    x ∈ v.adicCompletionIntegersSubmodule K ↔ x ∈ v.adicCompletionIntegers K :=
+  Iff.rfl
 
 end IsDedekindDomain.HeightOneSpectrum
 

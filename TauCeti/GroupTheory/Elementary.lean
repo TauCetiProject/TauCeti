@@ -75,7 +75,7 @@ Each of the four predicates is restated as an `Iff` by `TauCeti.isPElementary_de
   `TauCeti.not_dvd_relIndex_pElementaryOfSylow`: `TauCeti.pElementaryOfSylow s P` is
   `p`-elementary, and, provided `P` has finite index in the centraliser of `s`, its index there is
   prime to `p`.
-* `TauCeti.exists_mem_pElementaryOfSylow`: every finite-order element `x` lies in
+* `TauCeti.exists_mem_pElementaryOfSylow`: every element `x` lies in
   `TauCeti.pElementaryOfSylow` of its `p`-free part, for a suitable Sylow `p`-subgroup.
 * `TauCeti.pFreePart_mem_zpowers_of_mem_pElementaryOfSylow` and
   `TauCeti.pPart_mem_map_sylow_of_mem_pElementaryOfSylow`: the `p`-free part and the `p`-part of
@@ -104,12 +104,6 @@ subgroup holds for each of them. `TauCeti.exists_mem_pElementaryOfSylow` makes t
 a prescribed element inside.
 
 ## References
-
-This supplies a prerequisite for
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`,
-Layer 6 ("Elementary and hyperelementary subgroups"), which asks for exactly these two predicates
-"from these orientations, with their basic closure properties", as the indexing sets of Artin's and
-Brauer's induction theorems.
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Part II, §10.
 -/
@@ -537,7 +531,7 @@ theorem isPElementary_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ orderOf s
     IsPElementary p ↥(pElementaryOfSylow s P) := by
   have hQ : IsPGroup p
       ((P : Subgroup (centralizer ({s} : Set G))).map (centralizer ({s} : Set G)).subtype) :=
-    P.2.map _
+    P.isPGroup.map _
   have hCp : ¬ p ∣ Nat.card (zpowers s) := by rwa [Nat.card_zpowers]
   exact isPElementary_sup_of_commute inferInstance hCp hQ
     (disjoint_of_not_dvd_natCard_of_isPGroup hCp hQ)
@@ -581,7 +575,7 @@ theorem pPart_mem_map_sylow_of_mem_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p 
     pPart p x ∈ (P : Subgroup (centralizer ({s} : Set G))).map
       (centralizer ({s} : Set G)).subtype := by
   obtain ⟨c, hc, y, hy, hcomm, rfl⟩ := exists_mul_eq_of_mem_pElementaryOfSylow s P hx
-  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.2.map _) ⟨y, hy⟩
+  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.isPGroup.map _) ⟨y, hy⟩
   rw [← eq_pPart Fact.out hcomm rfl
     (fun hd => hs (hd.trans (orderOf_dvd_of_mem_zpowers hc))) (k := n) (by simpa using hn)]
   exact hy
@@ -592,7 +586,7 @@ factor `⟨s⟩`.** This is the other half of the factorisation
 theorem pFreePart_mem_zpowers_of_mem_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ orderOf s)
     {x : G} (hx : x ∈ pElementaryOfSylow s P) : pFreePart p x ∈ zpowers s := by
   obtain ⟨c, hc, y, hy, hcomm, rfl⟩ := exists_mul_eq_of_mem_pElementaryOfSylow s P hx
-  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.2.map _) ⟨y, hy⟩
+  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.isPGroup.map _) ⟨y, hy⟩
   rw [← eq_pFreePart Fact.out hcomm rfl
     (fun hd => hs (hd.trans (orderOf_dvd_of_mem_zpowers hc))) (k := n) (by simpa using hn)]
   exact hc
@@ -601,14 +595,18 @@ theorem pFreePart_mem_zpowers_of_mem_pElementaryOfSylow [Fact p.Prime] (hs : ¬ 
 factor is central in the subgroup, so the product of two elements factors as the product of their
 `p`-free parts times the product of their `p`-parts, and that is again a commuting factorisation
 of the kind `TauCeti.eq_pFreePart` recognises. -/
-theorem pFreePart_mul_of_mem_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ orderOf s) {x y : G}
+theorem pFreePart_mul_of_mem_pElementaryOfSylow (hs : ¬ p ∣ orderOf s) {x y : G}
     (hx : x ∈ pElementaryOfSylow s P) (hy : y ∈ pElementaryOfSylow s P) :
     pFreePart p (x * y) = pFreePart p x * pFreePart p y := by
+  by_cases hp : p.Prime
+  swap
+  · simp [pFreePart_of_not_prime hp]
+  have := Fact.mk hp
   have hfx := pFreePart_mem_zpowers_of_mem_pElementaryOfSylow s P hs hx
   have hfy := pFreePart_mem_zpowers_of_mem_pElementaryOfSylow s P hs hy
   have hpx := pPart_mem_map_sylow_of_mem_pElementaryOfSylow s P hs hx
   have hpy := pPart_mem_map_sylow_of_mem_pElementaryOfSylow s P hs hy
-  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.2.map _) ⟨_, mul_mem hpx hpy⟩
+  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.isPGroup.map _) ⟨_, mul_mem hpx hpy⟩
   refine (eq_pFreePart Fact.out
     (commute_of_mem_zpowers_of_mem_centralizer s (mul_mem hfx hfy)
       (map_subtype_le _ (mul_mem hpx hpy))) ?_
@@ -652,18 +650,21 @@ theorem pFreePartHom_surjective [Fact p.Prime] (hs : ¬ p ∣ orderOf s) :
 
 end OfSylow
 
-/-! ### Finite-order elements
+/-! ### Membership of an element
 
-Every finite-order element lies in the `p`-elementary subgroup built from its `p`-free part.
+Every element lies in the `p`-elementary subgroup built from its `p`-free part.
 -/
 
-/-- For every prime `p` and every finite-order element `x`, some Sylow `p`-subgroup of the
+/-- For every `p` and every element `x`, some Sylow `p`-subgroup of the
 centraliser of the `p`-free part of `x` produces, by
-`TauCeti.pElementaryOfSylow`, a subgroup containing `x`. That subgroup is `p`-elementary by
-`TauCeti.isPElementary_pElementaryOfSylow`; when the Sylow subgroup has finite index in the
-centraliser, which is not asserted here, `TauCeti.not_dvd_relIndex_pElementaryOfSylow` further
-gives the subgroup index prime to `p` there. -/
-theorem exists_mem_pElementaryOfSylow [Fact p.Prime] (x : G) (hx : orderOf x ≠ 0) :
+`TauCeti.pElementaryOfSylow`, a subgroup containing `x`. When `p` is prime and `x` has finite
+order, so that `p` does not divide the order of `TauCeti.pFreePart p x`, that subgroup is
+`p`-elementary by `TauCeti.isPElementary_pElementaryOfSylow`, and when moreover the Sylow subgroup
+has finite index in the centraliser, which is not asserted here,
+`TauCeti.not_dvd_relIndex_pElementaryOfSylow` gives the subgroup index prime to `p` there.  For
+`p` not prime or `x` of infinite order the `p`-free part is `x` itself and any Sylow subgroup
+works, with no `p`-elementary conclusion. -/
+theorem exists_mem_pElementaryOfSylow (x : G) :
     ∃ P : Sylow p (centralizer ({pFreePart p x} : Set G)),
       x ∈ pElementaryOfSylow (pFreePart p x) P := by
   have hu : pPart p x ∈ centralizer ({pFreePart p x} : Set G) :=
@@ -671,7 +672,7 @@ theorem exists_mem_pElementaryOfSylow [Fact p.Prime] (x : G) (hx : orderOf x ≠
   have hQ : IsPGroup p (zpowers (⟨pPart p x, hu⟩ :
       centralizer ({pFreePart p x} : Set G))) := by
     refine IsPGroup.of_card_dvd_pow (n := (orderOf x).factorization p) ?_
-    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart Fact.out hx]
+    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart]
   obtain ⟨P, hP⟩ := hQ.exists_le_sylow
   refine ⟨P, ?_⟩
   have hmem : pFreePart p x * pPart p x ∈ pElementaryOfSylow (pFreePart p x) P :=

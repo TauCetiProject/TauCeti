@@ -27,8 +27,8 @@ standard coordinate vectors are affinely independent and that their convex hulls
 common faces. The polyhedron carries the weak topology: the final topology for the inclusions of
 all its closed simplices. This avoids a finiteness or local-finiteness hypothesis on `K`.
 
-This is the first item of layer 11 of the geometric-topology roadmap: the polyhedron `|K|` of an
-abstract simplicial complex. It is the object used in the subsequent definition of a triangulation.
+The resulting space is the polyhedron `|K|` of the abstract simplicial complex `K`. It is the
+space used in the definition of a triangulation (`TauCeti.IsTriangulable`).
 
 ## Main definitions
 
@@ -109,6 +109,11 @@ theorem faceBarycenter_apply (K : AbstractSimplicialComplex ι) (σ : Face K) (v
 topologies used to define the weak topology on the whole realization. -/
 instance (σ : Finset ι) : TopologicalSpace (StandardSimplex σ) :=
   TopologicalSpace.induced (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) inferInstance
+
+/-- Closed coordinate simplices are Hausdorff, including on an infinite vertex type. -/
+instance instT2SpaceStandardSimplex (σ : Finset ι) : T2Space (StandardSimplex σ) :=
+  (Topology.IsEmbedding.induced
+    (fun _ _ h => Subtype.ext (Finsupp.ext fun v => congrFun h v))).t2Space
 
 /-- Every closed coordinate simplex is compact, even in an infinite vertex set. -/
 instance instCompactSpaceStandardSimplex (σ : Finset ι) : CompactSpace (StandardSimplex σ) := by
@@ -336,6 +341,35 @@ theorem StandardSimplex.smul_add_single_mem [DecidableEq ι] {σ : Finset ι} (x
   · exact t.2.1
   · ring
 
+/-- The point at parameter `t ∈ [0, 1]` of the segment from `b` to `x` in a closed simplex. -/
+noncomputable def StandardSimplex.lineMap {σ : Finset ι} (b x : StandardSimplex σ)
+    (t : unitInterval) : StandardSimplex σ :=
+  ⟨AffineMap.lineMap (b : ι →₀ ℝ) x (t : ℝ), (convex_convexHull ℝ _).lineMap_mem b.2 x.2 t.2⟩
+
+/-- A point of a segment in a closed simplex has the affine-combination coordinates. -/
+@[simp]
+theorem StandardSimplex.coe_lineMap {σ : Finset ι} (b x : StandardSimplex σ) (t : unitInterval) :
+    (StandardSimplex.lineMap b x t : ι →₀ ℝ) = AffineMap.lineMap (b : ι →₀ ℝ) x (t : ℝ) :=
+  (rfl)
+
+/-- The segment from `b` to `x` in a closed simplex starts at `b`. -/
+@[simp]
+theorem StandardSimplex.lineMap_zero {σ : Finset ι} (b x : StandardSimplex σ) :
+    StandardSimplex.lineMap b x 0 = b :=
+  Subtype.ext (by simp)
+
+/-- The segment from `b` to `x` in a closed simplex ends at `x`. -/
+@[simp]
+theorem StandardSimplex.lineMap_one {σ : Finset ι} (b x : StandardSimplex σ) :
+    StandardSimplex.lineMap b x 1 = x :=
+  Subtype.ext (by simp)
+
+/-- The segment from `b` to itself in a closed simplex is constant. -/
+@[simp]
+theorem StandardSimplex.lineMap_same {σ : Finset ι} (b : StandardSimplex σ) (t : unitInterval) :
+    StandardSimplex.lineMap b b t = b :=
+  Subtype.ext (by simp)
+
 /-- The support of a realization point is an abstract face. -/
 theorem support_mem (K : AbstractSimplicialComplex ι) (x : Realization K) : x.1.support ∈ K := by
   obtain ⟨σ, hσ, hx⟩ := mem_realization_iff.1 x.2
@@ -387,6 +421,11 @@ theorem Realization.le_one (K : AbstractSimplicialComplex ι) (x : Realization K
     x.1 v ≤ 1 :=
   Convexity.StdSimplex.weights_apply_le_one
     ⟨x.1, Realization.nonneg K x, Realization.sum_eq_one K x⟩ v
+
+/-- The barycentric coordinates of a realization point are positive on its support. -/
+theorem Realization.pos_of_mem_support (K : AbstractSimplicialComplex ι) (x : Realization K)
+    {v : ι} (hv : v ∈ x.1.support) : 0 < x.1 v :=
+  (Realization.nonneg K x v).lt_of_ne' (Finsupp.mem_support_iff.mp hv)
 
 /-- The carrier is contained in every finite vertex set whose closed simplex contains the point. -/
 theorem carrier_minimal (K : AbstractSimplicialComplex ι) (x : Realization K) {σ : Finset ι}

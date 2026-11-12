@@ -15,27 +15,27 @@ Two measured kernels are weakly isomorphic when a coupling of their measures mak
 pullbacks equal almost everywhere on the square of the coupling. For probability measures this
 is equivalently a common probability parametrization, in either of two regimes: a.e. measurable
 kernels into a measurable target with measurable equality, or a.e. strongly measurable kernels
-with extended metric values. The coordinate projections give a canonical parametrizing space,
+into a metrizable target. The coordinate projections give a canonical parametrizing space,
 and two measure-preserving maps with equal pulled-back kernels give an exact coupling.
 
 The relation is defined for raw measures and kernels with arbitrary target. Symmetry and
 invariance under a.e. changes require only a sigma-finite first measure. The exact coupling then
 is sigma-finite, although the second measure need not be. Common-space introduction,
 reflexivity and transitivity are available in both regimes above. The measurable-target API
-requires no topology or essentially separable range; the extended metric API requires no
+requires no topology or essentially separable range; the metrizable API requires no
 measurable structure on the target. Transitivity uses gluing: an explicit gluing hypothesis
 needs only a sigma-finite middle measure, while a finite middle measure and a standard Borel
 last carrier ensure such a gluing without topology on the other carriers.
 
-For an extended metric target and every nonzero exponent, an exact coupling is precisely a
+For a weak extended metric target and every nonzero exponent, an exact coupling is precisely a
 coupling of zero distortion. Weakly isomorphic kernels have Gromov–Wasserstein distance zero
 whenever their target discrepancy vanishes on the diagonal; no topology, symmetry or triangle
 inequality is needed for this implication. The converse requires an attainment theorem and is
 not asserted here.
 
-Raw kernels admit pullback along a transport map whose target carrier has measurable equality
-and whose source measure is s-finite. The identity case gives reflexivity under measurable
-carrier equality. These laws require no structure on the kernel values. The extended-metric
+Raw kernels admit pullback along a transport map whose target carrier has measurable equality.
+The identity case gives reflexivity under measurable carrier equality. These laws require no
+structure on the kernel values and no finiteness of the measures. The metrizable
 pullback and reflexivity laws use a.e. strong measurability without measurable carrier equality.
 
 ## References
@@ -77,10 +77,10 @@ theorem areWeaklyIsomorphicKernels_of_isCoupling {π : Measure (X × Y)}
   ⟨π, hπ, heq⟩
 
 /-- A raw kernel and its pullback along a transport map are weakly isomorphic when the target
-carrier has measurable equality and the source measure is s-finite. The graph plan supplies the
-exact coupling, so neither structure on the kernel target nor measurability of the kernel is
-required. In particular this permits duplication of a measured carrier. -/
-theorem areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw [MeasurableEq Y] [SFinite μ]
+carrier has measurable equality. The graph plan supplies the exact coupling, so neither
+structure on the kernel target, measurability of the kernel nor finiteness of the source
+measure is required. In particular this permits duplication of a measured carrier. -/
+theorem areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw [MeasurableEq Y]
     {f : X → Y} (ωY : Y × Y → Z) (hf : ProbabilityTheory.HasLaw f ν μ) :
     AreWeaklyIsomorphicKernels μ (ωY ∘ Prod.map f f) ν ωY := by
   refine areWeaklyIsomorphicKernels_of_isCoupling (isCoupling_graphPlan hf) ?_
@@ -89,9 +89,9 @@ theorem areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw [MeasurableEq Y] [SFin
     Measure.quasiMeasurePreserving_snd.ae hgraph] with q hq₁ hq₂
   simp only [Function.comp_apply, Prod.map_apply, hq₁, hq₂]
 
-/-- Every raw kernel on an s-finite measure with measurable carrier equality is weakly
-isomorphic to itself. No structure or measurability is required of its values. -/
-theorem areWeaklyIsomorphicKernels_refl_of_measurableEq [MeasurableEq X] [SFinite μ]
+/-- Every raw kernel on a carrier with measurable equality is weakly isomorphic to itself,
+over any measure. No structure or measurability is required of its values. -/
+theorem areWeaklyIsomorphicKernels_refl_of_measurableEq [MeasurableEq X]
     (ωX : X × X → Z) : AreWeaklyIsomorphicKernels μ ωX μ ωX := by
   simpa using areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw ωX
     (ProbabilityTheory.HasLaw.id (μ := μ))
@@ -273,9 +273,9 @@ theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_eq_zero
 
 end EDist
 
-section EMetricSpace
+section WeakEMetricSpace
 
-variable [EMetricSpace Z] {p : ℝ≥0∞}
+variable [TopologicalSpace Z] [WeakEMetricSpace Z] {p : ℝ≥0∞}
 
 /-- Weak isomorphism is equivalent to the existence of a zero-distortion coupling at any
 nonzero exponent, including `∞`. This does not assert attainment of the distance infimum. -/
@@ -290,6 +290,12 @@ theorem areWeaklyIsomorphicKernels_iff_exists_distortion_eq_zero (hp : p ≠ 0) 
   · rintro ⟨π, hπ, hzero⟩
     exact areWeaklyIsomorphicKernels_of_isCoupling hπ
       ((gromovWassersteinDistortion_eq_zero_iff hp).mp hzero)
+
+end WeakEMetricSpace
+
+section MetrizableSpace
+
+variable [TopologicalSpace Z] [TopologicalSpace.MetrizableSpace Z]
 
 /-- A common s-finite parametrizing measure with equal pulled-back kernels gives a weak
 isomorphism. The witness coupling is the pushforward along the paired parametrizing maps. -/
@@ -346,6 +352,6 @@ protected theorem AreWeaklyIsomorphicKernels.trans [StandardBorelSpace W] [IsFin
     have : IsFiniteMeasure σ := hσ.isFiniteMeasure
     Measure.exists_glue_of_standardBorel_right π σ (hπ.snd_eq.trans hσ.fst_eq.symm)
 
-end EMetricSpace
+end MetrizableSpace
 
 end TauCeti

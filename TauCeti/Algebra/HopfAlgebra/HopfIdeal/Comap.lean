@@ -142,13 +142,7 @@ theorem comapOfSurjective_le_comapOfSurjective_iff (f : H →ₐc[R] K)
 theorem comapOfSurjective_eq_comapOfSurjective_iff (f : H →ₐc[R] K)
     (hf : Function.Surjective f) {I J : HopfIdeal R K} :
     I.comapOfSurjective f hf = J.comapOfSurjective f hf ↔ I = J := by
-  constructor
-  · intro h
-    apply le_antisymm
-    · rw [← comapOfSurjective_le_comapOfSurjective_iff f hf, h]
-    · rw [← comapOfSurjective_le_comapOfSurjective_iff f hf, h]
-  · intro h
-    rw [h]
+  simp only [le_antisymm_iff, comapOfSurjective_le_comapOfSurjective_iff f hf]
 
 /-- The inverse image of the zero Hopf ideal is the kernel Hopf ideal. -/
 @[simp]
@@ -176,13 +170,11 @@ theorem comapOfSurjective_sup (I J : HopfIdeal R K) (f : H →ₐc[R] K)
     (hf : Function.Surjective f) :
     (I ⊔ J).comapOfSurjective f hf =
       I.comapOfSurjective f hf ⊔ J.comapOfSurjective f hf := by
-  -- `iSup_bool_eq` requires a complete lattice, so apply it to the underlying ideals.
-  have h := congrArg toIdeal (comapOfSurjective_iSup (fun b : Bool => cond b I J) f hf)
-  simp only [comapOfSurjective_toIdeal, iSup_toIdeal, iSup_bool_eq,
-    Bool.cond_true, Bool.cond_false] at h
   ext x
-  simpa only [← mem_toIdeal, comapOfSurjective_toIdeal, sup_toIdeal] using
-    (congrArg (x ∈ ·) h).to_iff
+  simp only [← mem_toIdeal, comapOfSurjective_toIdeal, sup_toIdeal]
+  rw [← Ideal.map_sup_comap_of_surjective (f : H →+* K) hf,
+    Ideal.comap_map_of_surjective (f : H →+* K) hf,
+    sup_of_le_left ((Ideal.comap_mono bot_le).trans le_sup_left)]
 
 /-- Surjective inverse image of Hopf ideals preserves nonempty suprema of sets. -/
 @[simp]

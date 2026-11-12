@@ -25,7 +25,8 @@ out because the deck group is commutative), yielding
   `FundamentalGroup (RealProjectiveSpace n) x ≃* ℤˣ`.
 
 As consequences, `RPⁿ` (for `2 ≤ n`) has a fundamental group of order 2, a nontrivial fundamental
-group, is not simply connected, not contractible, and not homeomorphic to `ℝ`.
+group, is not simply connected, not contractible, and not homotopy equivalent (in particular, not
+homeomorphic) to `ℝ`.
 
 ## Main declarations
 
@@ -45,7 +46,8 @@ group, is not simply connected, not contractible, and not homeomorphic to `ℝ`.
 * `TauCeti.RealProjectiveSpace.nontrivial_fundamentalGroup`: the fundamental group is nontrivial.
 * `TauCeti.RealProjectiveSpace.not_simplyConnectedSpace`: `RPⁿ` is not simply connected.
 * `TauCeti.RealProjectiveSpace.not_contractibleSpace`: `RPⁿ` is not contractible.
-* `TauCeti.RealProjectiveSpace.isEmpty_homeomorph_real`: `RPⁿ` is not homeomorphic to `ℝ`.
+* `TauCeti.RealProjectiveSpace.isEmpty_homotopyEquiv_real`: `RPⁿ` is not homotopy equivalent
+  to `ℝ`.
 
 ## References
 
@@ -66,6 +68,7 @@ namespace TauCeti
 namespace RealProjectiveSpace
 
 open Metric Deck
+open scoped ContinuousMap
 
 noncomputable section
 
@@ -96,7 +99,7 @@ lemma fundamentalGroupMulEquiv_apply_eq_iff (hn : 2 ≤ n)
     {x : RealProjectiveSpace n} (e : (mk n) ⁻¹' {x})
     (γ : FundamentalGroup (RealProjectiveSpace n) x) (u : ℤˣ) :
     fundamentalGroupMulEquiv n hn e γ = u ↔
-      ((isCoveringMap_mk n).monodromy γ e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) =
+      ((isCoveringMap_mk n).monodromy γ.toPath e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) =
         u • (e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=by
   have := simplyConnectedSpace_sphere_euclideanSpace hn
   rw [fundamentalGroupMulEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_eq,
@@ -108,7 +111,7 @@ translates the chosen lift by `u`. -/
 @[simp]
 lemma monodromy_fundamentalGroupMulEquiv_symm (hn : 2 ≤ n)
     {x : RealProjectiveSpace n} (e : (mk n) ⁻¹' {x}) (u : ℤˣ) :
-    ((isCoveringMap_mk n).monodromy ((fundamentalGroupMulEquiv n hn e).symm u) e :
+    ((isCoveringMap_mk n).monodromy ((fundamentalGroupMulEquiv n hn e).symm u).toPath e :
       sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) =
         u • (e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
   exact (fundamentalGroupMulEquiv_apply_eq_iff n hn e
@@ -121,13 +124,13 @@ lemma fundamentalGroupMulEquiv_eq_one_iff (hn : 2 ≤ n)
     {x : RealProjectiveSpace n} (e : (mk n) ⁻¹' {x})
     (γ : FundamentalGroup (RealProjectiveSpace n) x) :
     fundamentalGroupMulEquiv n hn e γ = 1 ↔
-      (isCoveringMap_mk n).monodromy γ e = e := by
+      (isCoveringMap_mk n).monodromy γ.toPath e = e := by
   rw [fundamentalGroupMulEquiv_apply_eq_iff]
   simpa using (Iff.symm Subtype.ext_iff :
-    (((isCoveringMap_mk n).monodromy γ e :
+    (((isCoveringMap_mk n).monodromy γ.toPath e :
           sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) =
         (e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) ↔
-      (isCoveringMap_mk n).monodromy γ e = e))
+      (isCoveringMap_mk n).monodromy γ.toPath e = e))
 
 /-- **The fundamental group of real projective space `RPⁿ` (for `2 ≤ n`) is isomorphic to `ℤˣ`
 for any basepoint `x`**: `FundamentalGroup (RealProjectiveSpace n) x ≃* ℤˣ`. -/
@@ -167,11 +170,10 @@ theorem not_contractibleSpace (hn : 2 ≤ n)
     ¬ ContractibleSpace (RealProjectiveSpace n) :=
   not_contractibleSpace_of_not_simplyConnectedSpace (not_simplyConnectedSpace n hn)
 
-/-- For `2 ≤ n`, real projective space `RPⁿ` is not homeomorphic to `ℝ`. -/
-theorem isEmpty_homeomorph_real (hn : 2 ≤ n)
- :
-    IsEmpty (RealProjectiveSpace n ≃ₜ ℝ) :=
-  isEmpty_homeomorph_real_of_not_simplyConnectedSpace (not_simplyConnectedSpace n hn)
+/-- For `2 ≤ n`, real projective space `RPⁿ` is not homotopy equivalent (in particular, not
+homeomorphic) to `ℝ`. -/
+theorem isEmpty_homotopyEquiv_real (hn : 2 ≤ n) : IsEmpty (RealProjectiveSpace n ≃ₕ ℝ) :=
+  isEmpty_homotopyEquiv_real_of_not_simplyConnectedSpace (not_simplyConnectedSpace n hn)
 
 end
 

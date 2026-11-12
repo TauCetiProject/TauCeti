@@ -8,10 +8,18 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Restricted
 public import Mathlib.RingTheory.MvPowerSeries.GaussNorm
+public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Data.Finsupp.MonomialOrder
+public import Mathlib.RingTheory.Finiteness.Defs
+import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
+import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.SetTheory.Cardinal.Order
+import TauCeti.Data.Finsupp.MonomialOrder.Basic
+import TauCeti.Topology.Order.OrderClosed
+import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
 # The Gauss norm on multivariate restricted power series
@@ -33,23 +41,58 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 
 ## Main results
 
+* `MvPowerSeries.uniformContinuous_coeff_isRestrictedSubring`: coefficient maps are uniformly
+  continuous for the Gauss norm at arbitrary positive polyradii.
 * `MvPowerSeries.norm_eq_gaussNorm`: the norm is the Gauss norm at the chosen polyradii.
+* `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
+  monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
+* `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound gives
+  the same Gauss-norm bound, even across different coefficient rings.
+* `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
+* `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
+  polyradius the norm is the largest coefficient norm, and it is attained.
+* `TauCeti.MvPowerSeries.exists_isUnit_and_norm_eq`: at unit polyradius over a division ring,
+  the Gauss norm of a nonzero series is the norm of a unit, a constant series.
+* `MvPowerSeries.norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le`: a constant coefficient
+  dominating every other weighted coefficient attains the Gauss norm.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
-  largest norm-achieving exponent for any monomial order.
-* `MvPowerSeries.exists_achievesGaussNorm` and `MvPowerSeries.exists_norm_coeff_mul_prod_gap`: a
-  restricted series attains its norm, and its smaller weighted coefficient norms stay below a
-  constant smaller than its norm.
+  largest norm-achieving exponent for any monomial order, and
+  `MvPowerSeries.IsRestricted.norm_coeff_mul_norm_coeff_lt`: the product of the coefficients at
+  such exponents of two series dominates every other summand of the product coefficient;
+  `MvPowerSeries.IsRestricted.exists_norm_coeff_mul_norm_coeff_lt` chooses such exponents.
+* `MvPowerSeries.IsRestricted.exists_achievesGaussNorm` and
+  `MvPowerSeries.exists_norm_coeff_mul_prod_gap`: a restricted series attains its norm, and its
+  smaller weighted coefficient norms stay below a constant smaller than its norm.
 * The restricted-series subring inherits `CompleteSpace`, `IsUltrametricDist`, and
   `NormMulClass` from its coefficient ring.
 * `MvPowerSeries.dense_closure_monomial`: polynomials with coefficients in a dense subset of the
   coefficient ring are dense.
+* `MvPowerSeries.IsRestricted.rename_of_injective`: renaming along an embedding preserves
+  restrictedness at the reindexed polyradii.
 * `MvPowerSeries.isRestricted_renameEquiv_iff`: renaming the variables along an equivalence
   reindexes the polyradii, and `MvPowerSeries.IsRestricted.renameAlgEquiv` is the resulting
-  algebra isomorphism of restricted-series subrings.
+  algebra isomorphism of restricted-series subrings; `MvPowerSeries.IsRestricted.renameAlgEquivOfEq`
+  takes source polyradii only propositionally equal to the reindexed ones.
+* `MvPowerSeries.IsRestricted.coeff_renameAlgEquiv`: renaming moves each coefficient along `e`;
+  `MvPowerSeries.IsRestricted.renameAlgEquiv_X`: it sends `X i` to `X (e i)`; and
+  `TauCeti.MvPowerSeries.renameAlgEquiv_polynomialToRestricted`: it extends the renaming of
+  polynomials.
+* `MvPowerSeries.IsRestricted.renameAlgEquivOfEq_refl`,
+  `MvPowerSeries.IsRestricted.renameAlgEquivOfEq_trans` and
+  `MvPowerSeries.IsRestricted.renameAlgEquivOfEq_symm`: the identity, composition and inverse laws
+  of renaming.
+* `MvPowerSeries.IsRestricted.isEmptyEquiv`: without variables, the constant coefficient is an
+  isometric `R`-algebra isomorphism from restricted series to `R`.
 * `MvPowerSeries.mk_monomial_eq_algebraMap_mul_prod`: a restricted monomial `r Xᵗ` is the constant
   `r` times the product of the variables.
-* Over a normed field, the restricted-series subring is a `NormedAlgebra` over its coefficients.
+* The restricted-series subring is an algebra over every algebra `S` of coefficients, through the
+  constant series, and over a normed field `K` restricted series over a normed `K`-algebra form a
+  `NormedAlgebra` over `K`.
+* `TauCeti.MvPowerSeries.polynomialToRestricted`: the inclusion of polynomials as an algebra
+  homomorphism into restricted series.
+* `TauCeti.MvPowerSeries.not_finite_isRestrictedSubring`: over a nontrivial ring, restricted
+  series in at least one variable do not form a finitely generated module.
 
 ## References
 
@@ -57,6 +100,12 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 -/
 
 public section
+
+/-- Restricted series over a normed domain form a domain at any polyradius. -/
+instance TauCeti.instIsDomainIsRestrictedSubring {σ R : Type*}
+    [NormedRing R] [IsUltrametricDist R] [IsDomain R] (c : σ → ℝ) :
+    IsDomain (MvPowerSeries.IsRestricted.subring (R := R) c) :=
+  NoZeroDivisors.to_isDomain _
 
 namespace MvPowerSeries
 
@@ -76,11 +125,96 @@ theorem IsRestricted.hasGaussNorm {c : σ → ℝ} {f : MvPowerSeries σ R}
 theorem prod_abs_pow_nonneg {c : σ → ℝ} (t : σ →₀ ℕ) : 0 ≤ t.prod (|c| · ^ ·) :=
   Finset.prod_nonneg fun _ _ ↦ pow_nonneg (abs_nonneg _) _
 
+/-- Decreasing the polyradius `c` to `c'`, the weight of an exponent drops at least by the factor
+`(c'ᵢ / cᵢ) ^ νᵢ` coming from the variable `Xᵢ`. -/
+theorem _root_.Finsupp.prod_pow_le_prod_pow_mul {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {c c' : σ → K} {i : σ} (hc' : ∀ j, 0 ≤ c' j)
+    (hle : ∀ j, c' j ≤ c j) (hi : 0 < c i) (n : σ →₀ ℕ) :
+    n.prod (c' · ^ ·) ≤ n.prod (c · ^ ·) * (c' i / c i) ^ n i := by
+  classical
+  calc n.prod (c' · ^ ·)
+      ≤ n.prod fun j k ↦ c j ^ k * (if j = i then (c' i / c i) ^ k else 1) := by
+        refine Finset.prod_le_prod₀ (fun j _ ↦ pow_nonneg (hc' j) _) fun j _ ↦ ?_
+        dsimp only
+        split_ifs with h
+        · subst h
+          rw [← mul_pow, mul_div_cancel₀ _ hi.ne']
+        · rw [mul_one]
+          exact pow_le_pow_left₀ (hc' j) (hle j) _
+    _ = n.prod (c · ^ ·) * (c' i / c i) ^ n i := by
+        rw [Finsupp.prod_mul]
+        congr 1
+        simp only [Finsupp.prod, Finset.prod_ite_eq', Finsupp.mem_support_iff]
+        split_ifs with h
+        · rfl
+        · rw [not_not.1 h, pow_zero]
+
+/-- Restricted series at a polyradius and at its absolute value coincide. -/
+@[simp]
+theorem IsRestricted.subring_abs [IsUltrametricDist R] (c : σ → ℝ) :
+    IsRestricted.subring (R := R) (|c ·|) = IsRestricted.subring c :=
+  Subring.ext fun f ↦ isRestricted_abs_iff c f
+
 variable [IsUltrametricDist R] {c : σ → ℝ} [hc : ∀ i, Fact (0 < c i)]
 
 /-- At positive polyradii, the weight `∏ i, c i ^ t i` of an exponent is positive. -/
 theorem prod_pow_pos (t : σ →₀ ℕ) : 0 < t.prod (c · ^ ·) :=
   Finset.prod_pos fun i _ ↦ pow_pos (hc i).out _
+
+omit [IsUltrametricDist R] hc in
+/-- A sequence of families that is uniformly Cauchy in the weighted coefficient norms
+`‖A k t‖ * w t` has a family `a` approximating it uniformly in these weighted norms; at indices
+with positive weight `a t` is the coefficientwise limit. No decay, boundedness or positivity
+hypothesis on the weights is needed. -/
+theorem _root_.TauCeti.MvPowerSeries.exists_weighted_uniform_limit {ι E : Type*}
+    [SeminormedAddCommGroup E] [CompleteSpace E] (w : ι → ℝ) (A : ℕ → ι → E)
+    (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t, ‖A k t - A l t‖ * w t < ε) :
+    ∃ a : ι → E, ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * w t ≤ ε := by
+  have hlim : ∀ t, ∃ a : E, 0 < w t → Tendsto (fun k ↦ A k t) atTop (𝓝 a) := fun t ↦ by
+    by_cases ht : 0 < w t
+    · refine (cauchySeq_tendsto_of_complete ?_).imp fun a ha _ ↦ ha
+      refine Metric.cauchySeq_iff.mpr fun ε hε ↦ ?_
+      obtain ⟨N, hN⟩ := hC (ε * w t) (mul_pos hε ht)
+      exact ⟨N, fun k hk l hl ↦ by
+        rw [dist_eq_norm]
+        exact lt_of_mul_lt_mul_right (hN k hk l hl t) ht.le⟩
+    · exact ⟨0, fun h ↦ absurd h ht⟩
+  choose a ha using hlim
+  refine ⟨a, fun ε hε ↦ ?_⟩
+  obtain ⟨N, hN⟩ := hC ε hε
+  refine ⟨N, fun k hk t ↦ ?_⟩
+  by_cases ht : 0 < w t
+  · exact le_of_tendsto (((tendsto_const_nhds.sub (ha t ht)).norm).mul_const (w t))
+      (eventually_atTop.mpr ⟨N, fun l hl ↦ (hN k hk l hl t).le⟩)
+  · exact (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg _) (not_lt.mp ht)).trans hε.le
+
+/-- A sequence of restricted families that is uniformly Cauchy in the
+weighted coefficient norms has a restricted limit, with uniform weighted error estimates.
+This is the common limit construction for scalar and module-valued Gauss completeness. -/
+theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : Type*}
+    [SeminormedAddCommGroup E] [CompleteSpace E] {c : σ → ℝ} (hc : ∀ i, 0 ≤ c i)
+    (A : ℕ → (σ →₀ ℕ) → E)
+    (hres : ∀ k, Tendsto (fun t ↦ ‖A k t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0))
+    (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t,
+      ‖A k t - A l t‖ * t.prod (c · ^ ·) < ε) :
+    ∃ a : (σ →₀ ℕ) → E,
+      Tendsto (fun t ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0) ∧
+      ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
+  obtain ⟨a, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_uniform_limit _ A hC
+  refine ⟨a, ?_, hunif⟩
+  have hw (t : σ →₀ ℕ) : 0 ≤ t.prod (c · ^ ·) := Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc i) _
+  -- A uniform weighted limit again vanishes at infinity.
+  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
+    hb.trans_le (mul_nonneg (norm_nonneg _) (hw t)), fun ε hε ↦ ?_⟩
+  obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
+  filter_upwards [(hres N).eventually (gt_mem_nhds (half_pos hε))] with t ht
+  calc
+    ‖a t‖ * t.prod (c · ^ ·) ≤ ‖A N t‖ * t.prod (c · ^ ·) +
+        ‖A N t - a t‖ * t.prod (c · ^ ·) := by
+      rw [← add_mul]
+      exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (hw t)
+    _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
+    _ = ε := add_halves ε
 
 omit hc in
 /-- The weights of exponents are multiplicative. -/
@@ -120,12 +254,46 @@ theorem norm_coeff_mul_prod_le (f : IsRestricted.subring (R := R) c) (t : σ →
     ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ ‖f‖ :=
   le_gaussNorm norm c _ f.2.hasGaussNorm t
 
-/-- A nonnegative bound on the norm is exactly a bound on every weighted coefficient norm. -/
-theorem norm_le_iff {f : IsRestricted.subring (R := R) c} {r : ℝ}
-    (hr : 0 ≤ r) : ‖f‖ ≤ r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ r := by
+/-- The constant coefficient is bounded by the Gauss norm of the restricted series. -/
+theorem norm_constantCoeff_le (f : IsRestricted.subring (R := R) c) :
+    ‖constantCoeff (f : MvPowerSeries σ R)‖ ≤ ‖f‖ := by
+  simpa [coeff_zero_eq_constantCoeff_apply] using norm_coeff_mul_prod_le f 0
+
+/-- Coefficient maps are uniformly continuous for the Gauss norm, with bound `(cᵗ)⁻¹`. -/
+theorem uniformContinuous_coeff_isRestrictedSubring (t : σ →₀ ℕ) :
+    UniformContinuous fun f : IsRestricted.subring (R := R) c ↦ coeff t (f : MvPowerSeries σ R) :=
+  AddMonoidHomClass.uniformContinuous_of_bound
+    ((coeff t).toAddMonoidHom.comp (IsRestricted.subring (R := R) c).subtype.toAddMonoidHom)
+    (t.prod (c · ^ ·))⁻¹ fun f ↦ by
+      rw [inv_mul_eq_div, le_div_iff₀ (prod_pow_pos t)]
+      exact norm_coeff_mul_prod_le f t
+
+/-- **Coefficients are continuous for the Gauss norm**: the coefficient of `Xᵗ` is bounded by
+`(cᵗ)⁻¹` times the Gauss norm. -/
+theorem continuous_coeff_isRestrictedSubring (t : σ →₀ ℕ) :
+    Continuous fun f : IsRestricted.subring (R := R) c ↦ coeff t (f : MvPowerSeries σ R) :=
+  (uniformContinuous_coeff_isRestrictedSubring t).continuous
+
+/-- A bound on the norm is exactly a bound on every weighted coefficient norm. -/
+theorem norm_le_iff {f : IsRestricted.subring (R := R) c} {r : ℝ} :
+    ‖f‖ ≤ r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ r := by
   refine ⟨fun h t ↦ (norm_coeff_mul_prod_le f t).trans h, fun h ↦ ?_⟩
+  have hr : 0 ≤ r := (mul_nonneg (norm_nonneg _) (prod_pow_pos (c := c) 0).le).trans (h 0)
   rw [norm_eq_gaussNorm, gaussNorm]
   exact Real.iSup_le (by simpa using h) hr
+
+/-- A constant coefficient dominating the weighted norm of every other coefficient attains the
+Gauss norm. -/
+theorem norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le
+    {f : IsRestricted.subring (R := R) c}
+    (h : ∀ t ≠ 0, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
+      ‖constantCoeff (f : MvPowerSeries σ R)‖) :
+    ‖f‖ = ‖constantCoeff (f : MvPowerSeries σ R)‖ := by
+  refine le_antisymm (norm_le_iff.2 fun t ↦ ?_) ?_
+  · rcases eq_or_ne t 0 with rfl | ht
+    · simp [coeff_zero_eq_constantCoeff_apply]
+    · exact h t ht
+  · exact norm_constantCoeff_le f
 
 /-- **The norm gap of a restricted series.** The weighted coefficient norms of a nonzero
 restricted series that are smaller than its norm are bounded by a constant smaller than its
@@ -151,16 +319,35 @@ theorem exists_norm_coeff_mul_prod_gap (f : IsRestricted.subring (R := R) c) (hf
     · exact le_max_of_le_right (hmax t (Finset.mem_filter.mpr ⟨hF.mem_toFinset.mpr h, ht⟩))
     · exact le_max_of_le_left (le_of_not_ge h)
 
-/-- A restricted series attains its Gauss norm at some exponent. -/
-theorem exists_achievesGaussNorm (f : IsRestricted.subring (R := R) c) :
-    ∃ t, AchievesGaussNorm norm c (f : MvPowerSeries σ R) t := by
-  rcases eq_or_ne f 0 with rfl | hf
-  · exact ⟨0, by simp [AchievesGaussNorm, gaussNorm_zero]⟩
-  obtain ⟨ε, hε0, hεM, hε⟩ := exists_norm_coeff_mul_prod_gap f hf
-  by_contra! h
-  have hM : ‖f‖ ≤ ε := (norm_le_iff hε0).mpr fun t ↦
-    hε t ((norm_coeff_mul_prod_le f t).lt_of_ne (h t))
-  exact hM.not_gt hεM
+omit [IsUltrametricDist R] hc in
+/-- A restricted series attains its Gauss norm at some exponent, at any polyradius. -/
+theorem IsRestricted.exists_achievesGaussNorm {f : MvPowerSeries σ R} (hf : IsRestricted c f) :
+    ∃ t, AchievesGaussNorm norm c f t := by
+  set v : (σ →₀ ℕ) → ℝ := fun t ↦ ‖coeff t f‖ * t.prod (c · ^ ·)
+  obtain ⟨t, ht⟩ := Filter.Tendsto.exists_forall_le_of_le (v := v) (a := 0) hf (by simp [v])
+  refine ⟨t, ?_⟩
+  rw [AchievesGaussNorm, gaussNorm]
+  exact le_antisymm (le_ciSup ⟨v t, by rintro _ ⟨s, rfl⟩; exact ht s⟩ t) (ciSup_le ht)
+
+/-- A strict bound on the norm is exactly a strict bound on every weighted coefficient norm,
+since the norm is attained. -/
+theorem norm_lt_iff {f : IsRestricted.subring (R := R) c} {r : ℝ} :
+    ‖f‖ < r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) < r := by
+  refine ⟨fun h t ↦ (norm_coeff_mul_prod_le f t).trans_lt h, fun h ↦ ?_⟩
+  obtain ⟨t, ht⟩ := f.2.exists_achievesGaussNorm
+  rw [norm_eq_gaussNorm, ← ht]
+  exact h t
+
+/-- At unit polyradius every coefficient norm is bounded by the Gauss norm. -/
+theorem norm_coeff_le_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
+    ‖coeff t (f : MvPowerSeries σ R)‖ ≤ ‖f‖ := by
+  simpa using norm_coeff_mul_prod_le f t
+
+/-- At unit polyradius a restricted series has a coefficient whose norm is its Gauss norm. -/
+theorem exists_norm_coeff_eq_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
+    ∃ t, ‖coeff t (f : MvPowerSeries σ R)‖ = ‖f‖ := by
+  obtain ⟨t, ht⟩ := f.2.exists_achievesGaussNorm
+  exact ⟨t, by simpa [AchievesGaussNorm, ← norm_eq_gaussNorm] using ht⟩
 
 /-- The norm of a restricted monomial is its weighted coefficient norm. -/
 @[simp]
@@ -169,7 +356,7 @@ theorem norm_monomial (t : σ →₀ ℕ) (a : R) :
       IsRestricted.subring (R := R) c)‖ = ‖a‖ * t.prod (c · ^ ·) := by
   classical
   apply le_antisymm
-  · rw [norm_le_iff (mul_nonneg (norm_nonneg a) (prod_pow_pos t).le)]
+  · rw [norm_le_iff]
     intro s
     by_cases h : s = t <;>
       simp [coeff_monomial, h, mul_nonneg (norm_nonneg a) (prod_pow_pos t).le]
@@ -183,6 +370,22 @@ theorem norm_C (a : R) :
     ‖(⟨C a, isRestricted_C _ a⟩ :
       IsRestricted.subring (R := R) c)‖ = ‖a‖ := by
   simpa [monomial_zero_eq_C_apply] using norm_monomial (σ := σ) 0 a
+
+/-- At unit polyradius over a division ring, the Gauss norm of a nonzero restricted series is the
+norm of a unit: the constant series at a coefficient of maximal norm. -/
+theorem _root_.TauCeti.MvPowerSeries.exists_isUnit_and_norm_eq {K : Type*} [NormedDivisionRing K]
+    [IsUltrametricDist K] {f : IsRestricted.subring (R := K) (fun _ : σ ↦ 1)} (hf : f ≠ 0) :
+    ∃ u : IsRestricted.subring (R := K) (fun _ : σ ↦ 1), IsUnit u ∧ ‖u‖ = ‖f‖ := by
+  obtain ⟨t, ht⟩ := exists_norm_coeff_eq_norm f
+  have hu : coeff t (f : MvPowerSeries σ K) ≠ 0 := by
+    rwa [← norm_pos_iff, ht, norm_pos_iff]
+  let C' := (C (σ := σ) (R := K)).codRestrict (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))
+    (isRestricted_C _)
+  have hC' : C' (coeff t (f : MvPowerSeries σ K)) = ⟨C (coeff t (f : MvPowerSeries σ K)),
+      isRestricted_C _ _⟩ :=
+    Subtype.ext (RingHom.codRestrict_apply _ _ _ _)
+  refine ⟨C' (coeff t (f : MvPowerSeries σ K)), (Units.mk0 _ hu).isUnit.map C', ?_⟩
+  rw [hC', norm_C, ht]
 
 /-- Each variable has norm equal to its radius when the coefficient norm of `1` is `1`. -/
 @[simp]
@@ -218,7 +421,7 @@ theorem dense_closure_monomial {s : Set R} (hs : Dense s) :
   refine ⟨q, ?_, AddSubgroup.sum_mem _ fun t _ ↦
     AddSubgroup.subset_closure ⟨(t, a t), ⟨trivial, has t⟩, rfl⟩⟩
   rw [Metric.mem_ball, dist_comm, dist_eq_norm]
-  refine ((norm_le_iff (half_pos hε).le).mpr fun t ↦ ?_).trans_lt (half_lt_self hε)
+  refine (norm_le_iff.mpr fun t ↦ ?_).trans_lt (half_lt_self hε)
   have hq : coeff t (q : MvPowerSeries σ R) = if t ∈ hF.toFinset then a t else 0 := by
     simp [q, coeff_monomial]
   rw [AddSubgroupClass.coe_sub, map_sub, hq]
@@ -245,46 +448,19 @@ instance [NormOneClass R] : NormOneClass
 instance [CompleteSpace R] : CompleteSpace
     (IsRestricted.subring (R := R) c) := by
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
-  have hcoeff (t : σ →₀ ℕ) : CauchySeq fun k ↦ coeff t (F k : MvPowerSeries σ R) := by
-    let coeffHom : IsRestricted.subring (R := R) c →+ R :=
-      (coeff t).toAddMonoidHom.comp
-        (IsRestricted.subring (R := R) c).subtype.toAddMonoidHom
-    refine (AddMonoidHomClass.uniformContinuous_of_bound coeffHom (t.prod (c · ^ ·))⁻¹
-      fun f ↦ ?_).comp_cauchySeq hF
-    rw [← div_eq_inv_mul, le_div_iff₀ (prod_pow_pos t)]
-    exact norm_coeff_mul_prod_le f t
-  -- Multivariate power series are coefficient functions; `a` is their coefficientwise limit.
-  choose a ha using fun t ↦ cauchySeq_tendsto_of_complete (hcoeff t)
-  have hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t,
-      ‖coeff t (F k : MvPowerSeries σ R) - a t‖ * t.prod (c · ^ ·) ≤ ε := by
-    intro ε hε
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
-    refine ⟨N, fun k hk t ↦ le_of_tendsto
-      (((tendsto_const_nhds.sub (ha t)).norm).mul_const (t.prod (c · ^ ·)))
-      (eventually_atTop.mpr ⟨N, fun l hl ↦ ?_⟩)⟩
-    have h := norm_coeff_mul_prod_le (F k - F l) t
-    rw [AddSubgroupClass.coe_sub, map_sub] at h
-    exact h.trans ((dist_eq_norm _ _).symm.trans_le (hN k hk l hl).le)
-  have hg : IsRestricted c (a : MvPowerSeries σ R) := by
-    refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
-      hb.trans_le (mul_nonneg (norm_nonneg _) (prod_pow_pos t).le), fun ε hε ↦ ?_⟩
-    obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-    filter_upwards [((F N).2).eventually (gt_mem_nhds (half_pos hε))] with t ht
-    calc ‖coeff t (a : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
-        ≤ ‖coeff t (F N : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) +
-          ‖coeff t (F N : MvPowerSeries σ R) - a t‖ * t.prod (c · ^ ·) := by
-            rw [← add_mul]
-            exact mul_le_mul_of_nonneg_right
-              (by
-                rw [coeff_apply (a : MvPowerSeries σ R) t]
-                exact norm_le_norm_add_norm_sub
-                  (coeff t (F N : MvPowerSeries σ R)) (a t)) (prod_pow_pos t).le
-      _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
-      _ = ε := add_halves ε
+  obtain ⟨a, hg, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_coefficient_limit
+    (fun i ↦ (hc i).out.le) (fun k t ↦ coeff t (F k : MvPowerSeries σ R)) (fun k ↦ (F k).2)
+    (by
+      intro ε hε
+      obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
+      refine ⟨N, fun k hk l hl t ↦ ?_⟩
+      have h := norm_coeff_mul_prod_le (F k - F l) t
+      rw [AddSubgroupClass.coe_sub, map_sub] at h
+      exact h.trans_lt ((dist_eq_norm _ _).symm.trans_lt (hN k hk l hl)))
   refine ⟨⟨a, hg⟩, Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
   obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
   refine ⟨N, fun k hk ↦ (?_ : _ ≤ ε / 2).trans_lt (half_lt_self hε)⟩
-  rw [dist_eq_norm, norm_le_iff (half_pos hε).le]
+  rw [dist_eq_norm, norm_le_iff]
   intro t
   rw [AddSubgroupClass.coe_sub, map_sub, coeff_apply (a : MvPowerSeries σ R) t]
   exact hN k hk t
@@ -305,13 +481,8 @@ theorem IsRestricted.exists_achievesGaussNorm_max (m : MonomialOrder σ) {f : Mv
     have h := hf.eventually (gt_mem_nhds hi_pos)
     simpa only [eventually_cofinite, not_lt] using h
   let S := hfinite.toFinset
-  have hi_mem : i ∈ S := by simp [S]
-  obtain ⟨j, hj, hmax⟩ := S.exists_max_image a ⟨i, hi_mem⟩
-  have hbound (t) : a t ≤ a j := by
-    by_cases ht : t ∈ S
-    · exact hmax t ht
-    · have ht' : a t < a i := by simpa [S] using ht
-      exact ht'.le.trans (hmax i hi_mem)
+  obtain ⟨j, hbound⟩ := Filter.Tendsto.exists_forall_le_of_le (v := a) hf hi_pos.le
+  have hj : j ∈ S := by simpa [S] using hbound i
   have heq : a j = gaussNorm norm c f := by
     rw [gaussNorm]
     exact (ciSup_eq_of_forall_le_of_forall_lt_exists_gt hbound fun _ h ↦ ⟨j, h⟩).symm
@@ -324,8 +495,106 @@ theorem IsRestricted.exists_achievesGaussNorm_max (m : MonomialOrder σ) {f : Mv
   refine lt_of_le_of_ne (hbound t) fun h ↦ ?_
   have ht_mem : t ∈ T := by
     simp only [T, Finset.mem_filter]
-    exact ⟨by simpa [S] using (hmax i hi_mem).trans_eq h.symm, h⟩
+    exact ⟨by simpa [S] using (hbound i).trans_eq h.symm, h⟩
   exact (not_le_of_gt ht) (hnmax t ht_mem)
+
+omit [IsUltrametricDist R] in
+/-- A nonzero restricted series has positive Gauss norm. -/
+theorem IsRestricted.gaussNorm_pos {f : MvPowerSeries σ R} (hf : IsRestricted c f)
+    (hf0 : f ≠ 0) : 0 < gaussNorm norm c f :=
+  (gaussNorm_nonneg norm c f norm_nonneg).lt_of_ne' fun h ↦ hf0 <|
+    (gaussNorm_eq_zero_iff norm c f norm_zero norm_nonneg (fun _ ↦ norm_eq_zero.mp)
+      (fun i ↦ (hc i).out) hf.hasGaussNorm).mp h
+
+omit [IsUltrametricDist R] in
+/-- A nonzero restricted series has a nonzero coefficient at every exponent where it attains its
+Gauss norm. -/
+theorem IsRestricted.coeff_ne_zero_of_achievesGaussNorm {f : MvPowerSeries σ R}
+    (hf : IsRestricted c f) (hf0 : f ≠ 0) {i : σ →₀ ℕ} (hi : AchievesGaussNorm norm c f i) :
+    coeff i f ≠ 0 := by
+  intro h
+  rw [AchievesGaussNorm, h, norm_zero, zero_mul] at hi
+  exact (hf.gaussNorm_pos hf0).ne hi
+
+omit [IsUltrametricDist R] in
+/-- **The dominant product summand.** Let `i` and `j` be the largest exponents, for a monomial
+order `m`, at which restricted series `f` and `g` attain their Gauss norms. Every other
+summand `coeff p.1 f * coeff p.2 g` of the coefficient of `f * g` at `i + j` has a strictly
+smaller product of coefficient norms than `coeff i f * coeff j g`. -/
+theorem IsRestricted.norm_coeff_mul_norm_coeff_lt [DecidableEq σ] (m : MonomialOrder σ)
+    {f g : MvPowerSeries σ R} (hf : IsRestricted c f) (hg : IsRestricted c g)
+    {i j : σ →₀ ℕ} (hi : AchievesGaussNorm norm c f i)
+    (himax : ∀ t, m.toSyn i < m.toSyn t → ‖coeff t f‖ * t.prod (c · ^ ·) < gaussNorm norm c f)
+    (hj : AchievesGaussNorm norm c g j)
+    (hjmax : ∀ t, m.toSyn j < m.toSyn t → ‖coeff t g‖ * t.prod (c · ^ ·) < gaussNorm norm c g)
+    {p : (σ →₀ ℕ) × (σ →₀ ℕ)} (hp : p ∈ Finset.antidiagonal (i + j)) (hne : p ≠ (i, j)) :
+    ‖coeff p.1 f‖ * ‖coeff p.2 g‖ < ‖coeff i f‖ * ‖coeff j g‖ := by
+  have hp' : p.1 + p.2 = i + j := Finset.mem_antidiagonal.mp hp
+  -- A series with a strictly larger exponent than `k` in the monomial order has positive Gauss
+  -- norm, because the proper multiple `k + single s 1` has nonnegative weighted norm below it.
+  have hpos {x : MvPowerSeries σ R} {k k' : σ →₀ ℕ} (hk : m.toSyn k' < m.toSyn k)
+      (hmax : ∀ t, m.toSyn k < m.toSyn t → ‖coeff t x‖ * t.prod (c · ^ ·) < gaussNorm norm c x) :
+      0 < gaussNorm norm c x := by
+    have hk0 : k ≠ 0 := fun h0 ↦ by
+      simp only [h0, map_zero] at hk
+      exact absurd hk (not_lt_of_ge (m.zero_le _))
+    obtain ⟨s, -⟩ := Finsupp.ne_iff.mp hk0
+    exact (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le).trans_lt
+      (hmax (k + Finsupp.single s 1)
+        (m.toSyn_lt_toSyn_add k (Finsupp.single_ne_zero.mpr one_ne_zero)))
+  -- Every summand at this exponent has the same positive weight.
+  have hweight : p.1.prod (c · ^ ·) * p.2.prod (c · ^ ·) =
+      i.prod (c · ^ ·) * j.prod (c · ^ ·) := by
+    simpa [prod_pow_add] using congrArg (fun t ↦ t.prod (c · ^ ·)) hp'
+  -- A different pair forces one exponent beyond the chosen maximal norm achiever.
+  have hsyn : m.toSyn p.1 + m.toSyn p.2 = m.toSyn i + m.toSyn j := by
+    rw [← map_add, ← map_add, hp']
+  have hlt : (‖coeff p.1 f‖ * p.1.prod (c · ^ ·)) *
+      (‖coeff p.2 g‖ * p.2.prod (c · ^ ·)) < gaussNorm norm c f * gaussNorm norm c g := by
+    rcases trichotomy_of_add_eq_add hsyn with h | h | h
+    · exact False.elim (hne (Prod.ext (m.toSyn.injective h.1) (m.toSyn.injective h.2)))
+    · have hp2 : m.toSyn j < m.toSyn p.2 :=
+        lt_of_add_lt_add_left (hsyn ▸ add_lt_add_left h (m.toSyn p.2))
+      exact mul_lt_mul' (le_gaussNorm norm c f hf.hasGaussNorm p.1)
+        (hjmax p.2 hp2) (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) (hpos h himax)
+    · have hp1 : m.toSyn i < m.toSyn p.1 :=
+        lt_of_add_lt_add_right (hsyn ▸ add_lt_add_right h (m.toSyn p.1))
+      simpa only [mul_comm] using
+        mul_lt_mul' (le_gaussNorm norm c g hg.hasGaussNorm p.2) (himax p.1 hp1)
+          (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) (hpos h hjmax)
+  rw [← hi, ← hj] at hlt
+  -- Cancel the common positive weight.
+  apply (mul_lt_mul_iff_of_pos_right
+    (mul_pos (prod_pow_pos (c := c) i) (prod_pow_pos (c := c) j))).mp
+  calc
+    _ = (‖coeff p.1 f‖ * p.1.prod (c · ^ ·)) *
+        (‖coeff p.2 g‖ * p.2.prod (c · ^ ·)) := by rw [← hweight]; ring
+    _ < (‖coeff i f‖ * i.prod (c · ^ ·)) *
+        (‖coeff j g‖ * j.prod (c · ^ ·)) := hlt
+    _ = _ := by ring
+
+omit [IsUltrametricDist R] in
+/-- **A dominant product summand exists.** Nonzero restricted series `f` and `g` attain their
+Gauss norms at exponents `i` and `j` that are not attained at any proper multiple
+`i + s` or `j + s`, and such that `coeff i f * coeff j g` has a strictly larger product of
+coefficient norms than every other summand of the coefficient of `f * g` at `i + j`. -/
+theorem IsRestricted.exists_norm_coeff_mul_norm_coeff_lt [DecidableEq σ] {f g : MvPowerSeries σ R}
+    (hf : IsRestricted c f) (hg : IsRestricted c g) (hf0 : f ≠ 0) (hg0 : g ≠ 0) :
+    ∃ i j, AchievesGaussNorm norm c f i ∧ AchievesGaussNorm norm c g j ∧
+      (∀ s ≠ 0, ‖coeff (i + s) f‖ * (i + s).prod (c · ^ ·) < gaussNorm norm c f) ∧
+      (∀ s ≠ 0, ‖coeff (j + s) g‖ * (j + s).prod (c · ^ ·) < gaussNorm norm c g) ∧
+      ∀ p ∈ Finset.antidiagonal (i + j), p ≠ (i, j) →
+        ‖coeff p.1 f‖ * ‖coeff p.2 g‖ < ‖coeff i f‖ * ‖coeff j g‖ := by
+  classical
+  -- Choose lexicographically largest norm-achieving exponents. The order is only proof data.
+  let : LinearOrder σ := linearOrderOfSTO (Function.swap WellOrderingRel)
+  have : WellFoundedGT σ := (WellOrderingRel.isWellOrder (α := σ)).wf.mono fun _ _ h ↦ h
+  let m : MonomialOrder σ := MonomialOrder.lex
+  obtain ⟨i, hi, himax⟩ := hf.exists_achievesGaussNorm_max m hf0
+  obtain ⟨j, hj, hjmax⟩ := hg.exists_achievesGaussNorm_max m hg0
+  exact ⟨i, j, hi, hj, fun s hs ↦ himax _ (m.toSyn_lt_toSyn_add i hs),
+    fun s hs ↦ hjmax _ (m.toSyn_lt_toSyn_add j hs),
+    fun p hp hne ↦ hf.norm_coeff_mul_norm_coeff_lt m hg hi himax hj hjmax hp hne⟩
 
 /-- The Gauss norm of a product of restricted series is the product of their Gauss norms when
 the coefficient norm is multiplicative. Positive polyradii are arbitrary. -/
@@ -337,57 +606,12 @@ theorem IsRestricted.gaussNorm_mul [NormMulClass R] {f g : MvPowerSeries σ R}
   · simp [hf0, gaussNorm_zero (R := R) norm c norm_zero]
   by_cases hg0 : g = 0
   · simp [hg0, gaussNorm_zero (R := R) norm c norm_zero]
-  -- Choose lexicographically largest norm-achieving exponents. The order is only proof data.
-  let : LinearOrder σ := linearOrderOfSTO (Function.swap WellOrderingRel)
-  have : WellFoundedGT σ := (WellOrderingRel.isWellOrder (α := σ)).wf.mono fun _ _ h ↦ h
-  obtain ⟨i, hi, himax⟩ := hf.exists_achievesGaussNorm_max MonomialOrder.lex hf0
-  obtain ⟨j, hj, hjmax⟩ := hg.exists_achievesGaussNorm_max MonomialOrder.lex hg0
-  have hfp : 0 < gaussNorm norm c f := by
-    rw [← norm_eq_gaussNorm (⟨f, hf⟩ : IsRestricted.subring c)]
-    exact norm_pos_iff.mpr fun h ↦ hf0 (congrArg Subtype.val h)
-  have hgp : 0 < gaussNorm norm c g := by
-    rw [← norm_eq_gaussNorm (⟨g, hg⟩ : IsRestricted.subring c)]
-    exact norm_pos_iff.mpr fun h ↦ hg0 (congrArg Subtype.val h)
+  obtain ⟨i, j, hi, hj, -, -, hdom⟩ := hf.exists_norm_coeff_mul_norm_coeff_lt hg hf0 hg0
   refine gaussNorm_mul_eq_mul norm c f g hf.hasGaussNorm hg.hasGaussNorm
-    (isRestricted.mul c hf hg).hasGaussNorm norm_nonneg norm_zero
+    (hf.mul hg).hasGaussNorm norm_nonneg norm_zero
     IsUltrametricDist.isNonarchimedean_norm norm_mul norm_neg
-    (fun _ ↦ norm_eq_zero.mp) (fun i ↦ (hc i).out) ⟨i, j, hi, hj, ?_⟩
-  intro p hp hne
-  have hp' : p.1 + p.2 = i + j := Finset.mem_antidiagonal.mp hp
-  -- Every summand at this exponent has the same positive weight.
-  have hweight : p.1.prod (c · ^ ·) * p.2.prod (c · ^ ·) =
-      i.prod (c · ^ ·) * j.prod (c · ^ ·) := by
-    simpa [prod_pow_add] using congrArg (fun t ↦ t.prod (c · ^ ·)) hp'
-  -- A different pair forces one exponent beyond the chosen maximal norm achiever.
-  have hlt : (‖coeff p.1 f‖ * p.1.prod (c · ^ ·)) *
-      (‖coeff p.2 g‖ * p.2.prod (c · ^ ·)) < gaussNorm norm c f * gaussNorm norm c g := by
-    rcases trichotomy_of_add_eq_add (α := Lex (σ →₀ ℕ)) (congrArg toLex hp') with h | h | h
-    · exact False.elim (hne (Prod.ext (toLex.injective h.1) (toLex.injective h.2)))
-    · have hp2 : toLex j < toLex p.2 := by
-        have heq : toLex p.1 + toLex p.2 = toLex i + toLex j := congrArg toLex hp'
-        exact lt_of_add_lt_add_left (α := Lex (σ →₀ ℕ))
-          (heq ▸ add_lt_add_left (α := Lex (σ →₀ ℕ)) h (toLex p.2))
-      exact mul_lt_mul' (le_gaussNorm norm c f hf.hasGaussNorm p.1)
-        (hjmax p.2 hp2) (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) hfp
-    · have hp1 : toLex i < toLex p.1 := by
-        have heq : toLex p.1 + toLex p.2 = toLex i + toLex j := congrArg toLex hp'
-        exact lt_of_add_lt_add_right (α := Lex (σ →₀ ℕ))
-          (heq ▸ add_lt_add_right (α := Lex (σ →₀ ℕ)) h (toLex p.1))
-      simpa only [mul_comm] using
-        mul_lt_mul' (le_gaussNorm norm c g hg.hasGaussNorm p.2) (himax p.1 hp1)
-          (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) hgp
-  rw [← hi, ← hj] at hlt
-  -- Cancel the common positive weight to apply the dominant-antidiagonal theorem.
-  have hlt' : ‖coeff p.1 f‖ * ‖coeff p.2 g‖ < ‖coeff i f‖ * ‖coeff j g‖ := by
-    apply (mul_lt_mul_iff_of_pos_right
-      (mul_pos (prod_pow_pos (c := c) i) (prod_pow_pos (c := c) j))).mp
-    calc
-      _ = (‖coeff p.1 f‖ * p.1.prod (c · ^ ·)) *
-          (‖coeff p.2 g‖ * p.2.prod (c · ^ ·)) := by rw [← hweight]; ring
-      _ < (‖coeff i f‖ * i.prod (c · ^ ·)) *
-          (‖coeff j g‖ * j.prod (c · ^ ·)) := hlt
-      _ = _ := by ring
-  simpa only [norm_mul] using hlt'
+    (fun _ ↦ norm_eq_zero.mp) (fun i ↦ (hc i).out) ⟨i, j, hi, hj, fun p hp hne ↦ ?_⟩
+  simpa only [norm_mul] using hdom p hp hne
 
 /-- The Gauss norm inherits multiplicativity from the coefficient norm. -/
 instance [NormMulClass R] : NormMulClass (IsRestricted.subring (R := R) c) where
@@ -399,15 +623,53 @@ section NormedCommRing
 
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ}
 
-/-- Restricted series form a coefficient algebra via the constant-series embedding. -/
-noncomputable instance instAlgebraIsRestrictedSubring :
-    Algebra R (IsRestricted.subring (R := R) c) :=
-  (C.codRestrict _ (isRestricted_C c)).toAlgebra
+/-- Restricted series form an algebra over every algebra `S` of coefficients, via the
+constant-series embedding. For `S = R` this is the coefficient algebra. -/
+noncomputable instance instAlgebraIsRestrictedSubring {S : Type*} [CommSemiring S]
+    [Algebra S R] : Algebra S (IsRestricted.subring (R := R) c) :=
+  ((C.codRestrict _ (isRestricted_C c)).comp (algebraMap S R)).toAlgebra
+
+/-- The algebra structures over `S` and over the coefficients `R` form a scalar tower. -/
+instance {S : Type*} [CommSemiring S] [Algebra S R] :
+    IsScalarTower S R (IsRestricted.subring (R := R) c) :=
+  IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
 
 /-- The coefficient algebra map into restricted series is the constant-series embedding. -/
 @[simp]
 theorem coe_algebraMap_isRestrictedSubring (r : R) :
     (algebraMap R (IsRestricted.subring (R := R) c) r : MvPowerSeries σ R) = C r := (rfl)
+
+/-- Without variables every restricted series is a constant. -/
+theorem algebraMap_isRestrictedSubring_surjective [IsEmpty σ] :
+    Function.Surjective (algebraMap R (IsRestricted.subring (R := R) c)) := fun g ↦
+  let ⟨r, hr⟩ := C_surjective (g : MvPowerSeries σ R)
+  ⟨r, Subtype.ext hr⟩
+
+variable (c) in
+/-- **Restricted series in no variables.** Without variables every series is restricted and
+constant, so Mathlib's `MvPowerSeries.isEmptyEquiv`, the constant coefficient, restricts to an
+`R`-algebra isomorphism from restricted series to the coefficient ring. -/
+noncomputable def IsRestricted.isEmptyEquiv [IsEmpty σ] :
+    IsRestricted.subring (R := R) c ≃ₐ[R] R where
+  toFun f := constantCoeff (f : MvPowerSeries σ R)
+  invFun := algebraMap R _
+  left_inv f := Subtype.ext <| by
+    simpa using (MvPowerSeries.isEmptyEquiv σ R).symm_apply_apply f
+  right_inv := constantCoeff_C
+  map_mul' f g := map_mul constantCoeff (f : MvPowerSeries σ R) g
+  map_add' f g := map_add constantCoeff (f : MvPowerSeries σ R) g
+  commutes' := constantCoeff_C
+
+/-- Without variables, the comparison with the coefficient ring is the constant coefficient. -/
+@[simp]
+theorem IsRestricted.isEmptyEquiv_apply [IsEmpty σ] (f : IsRestricted.subring (R := R) c) :
+    isEmptyEquiv c f = constantCoeff (f : MvPowerSeries σ R) := (rfl)
+
+/-- Without variables, the inverse comparison is the constant-series embedding. -/
+@[simp]
+theorem IsRestricted.isEmptyEquiv_symm_apply [IsEmpty σ] (r : R) :
+    (isEmptyEquiv c).symm r = algebraMap R (IsRestricted.subring (R := R) c) r := by
+  simp [AlgEquiv.symm_apply_eq]
 
 /-- A restricted monomial `r Xᵗ` is the constant `r` times the monomial `Xᵗ` in the variables. -/
 theorem mk_monomial_eq_algebraMap_mul_prod (t : σ →₀ ℕ) (r : R) :
@@ -437,27 +699,54 @@ theorem norm_algebraMap_isRestrictedSubring (r : R) :
     Subtype.ext (coe_algebraMap_isRestrictedSubring r)
   rw [h, norm_C]
 
+/-- The coefficient ring acts boundedly for the Gauss norm, without a field hypothesis. -/
+instance : IsBoundedSMul R (IsRestricted.subring (R := R) c) :=
+  IsBoundedSMul.of_norm_smul_le fun a f ↦ by
+    simpa only [Algebra.smul_def, norm_algebraMap_isRestrictedSubring] using
+      norm_mul_le (algebraMap R (IsRestricted.subring (R := R) c) a) f
+
+/-- The constant-series embedding is an isometry. -/
+theorem isometry_algebraMap_isRestrictedSubring :
+    Isometry (algebraMap R (IsRestricted.subring (R := R) c)) :=
+  AddMonoidHomClass.isometry_of_norm _ norm_algebraMap_isRestrictedSubring
+
+/-- Without variables, the comparison with the coefficient ring preserves the Gauss norm. -/
+theorem IsRestricted.norm_isEmptyEquiv [IsEmpty σ] (f : IsRestricted.subring (R := R) c) :
+    ‖isEmptyEquiv c f‖ = ‖f‖ := by
+  conv_rhs => rw [← (isEmptyEquiv c).symm_apply_apply f]
+  rw [isEmptyEquiv_symm_apply, norm_algebraMap_isRestrictedSubring]
+
 end NormedCommRing
 
 section Rename
 
 variable {σ τ R : Type*} [NormedCommRing R]
 
+/-- Renaming along an embedding preserves restrictedness at the reindexed polyradii.
+The polyradii outside the image of the embedding are arbitrary. -/
+theorem IsRestricted.rename_of_injective (e : σ ↪ τ) {c : τ → ℝ}
+    {f : MvPowerSeries σ R} (hf : IsRestricted (c ∘ e) f) :
+    IsRestricted c (rename e f) := by
+  intro s hs
+  refine eventually_cofinite.mpr <|
+    ((eventually_cofinite.mp (hf.eventually hs)).image (Finsupp.embDomain e)).subset ?_
+  intro t ht
+  obtain ⟨u, rfl⟩ : t ∈ Set.range (Finsupp.embDomain e) := by
+    by_contra h
+    have hzero := coeff_rename_eq_zero e f
+      (by rwa [← funext (Finsupp.embDomain_eq_mapDomain e)])
+    exact ht (by simpa [hzero] using mem_of_mem_nhds hs)
+  refine ⟨u, ?_, rfl⟩
+  intro hu
+  exact ht (by simpa [Finsupp.prod_embDomain, Function.comp_def] using hu)
+
 /-- **Restrictedness is invariant under renaming the variables.** Renaming along an equivalence
 `e : σ ≃ τ` gives a series restricted at the polyradii `c` exactly when the original series is
 restricted at the reindexed polyradii `c ∘ e`. -/
 theorem isRestricted_renameEquiv_iff (e : σ ≃ τ) {c : τ → ℝ} {f : MvPowerSeries σ R} :
     IsRestricted c (renameEquiv R e f) ↔ IsRestricted (c ∘ e) f := by
-  -- the weighted coefficients of `f` are those of the renamed series, reindexed along `e`
-  have h : (fun t : σ →₀ ℕ ↦ ‖coeff t f‖ * t.prod ((c ∘ e) · ^ ·)) =
-      (fun u : τ →₀ ℕ ↦ ‖coeff u (renameEquiv R e f)‖ * u.prod (c · ^ ·)) ∘
-        Finsupp.equivCongrLeft e := by
-    funext t
-    have hc : coeff (t.equivMapDomain e) (rename e f) = coeff t f := by
-      simpa [Finsupp.embDomain_eq_mapDomain, Finsupp.equivMapDomain_eq_mapDomain] using
-        coeff_embDomain_rename e.toEmbedding f t
-    simp [hc, Finsupp.prod_equivMapDomain]
-  rw [IsRestricted, IsRestricted, h, ← (Finsupp.equivCongrLeft e).injective.comap_cofinite_eq]
+  rw [IsRestricted, IsRestricted, weightedCoeff_renameEquiv,
+    ← (Finsupp.equivCongrLeft e).injective.comap_cofinite_eq]
   exact (tendsto_comap'_iff (by rw [(Finsupp.equivCongrLeft e).range_eq_univ]; exact univ_mem)).symm
 
 variable [IsUltrametricDist R]
@@ -477,26 +766,235 @@ theorem IsRestricted.coe_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ)
     (f : IsRestricted.subring (R := R) (c ∘ e)) :
     (renameAlgEquiv e c f : MvPowerSeries τ R) = renameEquiv R e f := (rfl)
 
+/-- The inverse renaming isomorphism is renaming along `e.symm` on the underlying series. -/
+@[simp]
+theorem IsRestricted.coe_renameAlgEquiv_symm (e : σ ≃ τ) (c : τ → ℝ)
+    (f : IsRestricted.subring (R := R) c) :
+    ((renameAlgEquiv e c).symm f : MvPowerSeries σ R) = renameEquiv R e.symm f := by
+  rw [← renameEquiv_symm, AlgEquiv.eq_symm_apply, ← coe_renameAlgEquiv,
+    AlgEquiv.apply_symm_apply]
+
+/-- **Coefficients of a renamed restricted series.** The coefficient at an exponent `u` on `τ` is
+the original coefficient at `u` transported back along `e`. -/
+theorem IsRestricted.coeff_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ)
+    (f : IsRestricted.subring (R := R) (c ∘ e)) (u : τ →₀ ℕ) :
+    coeff u (renameAlgEquiv e c f : MvPowerSeries τ R) =
+      coeff (u.equivMapDomain e.symm) (f : MvPowerSeries σ R) := by
+  simp [← coeff_equivMapDomain_rename e (f : MvPowerSeries σ R), ← Finsupp.equivMapDomain_trans]
+
+/-- Renaming sends the variable `X i` to the variable `X (e i)`. -/
+@[simp]
+theorem IsRestricted.renameAlgEquiv_X (e : σ ≃ τ) (c : τ → ℝ) (i : σ) :
+    renameAlgEquiv e c ⟨X i, isRestricted_X (c ∘ e) i⟩ =
+      (⟨X (e i), isRestricted_X c (e i)⟩ : IsRestricted.subring (R := R) c) :=
+  Subtype.ext (rename_X e i)
+
+/-- Reindexing positive polyradii keeps them positive. -/
+instance IsRestricted.fact_pos_comp {c : τ → ℝ} [∀ i, Fact (0 < c i)] (e : σ → τ) (i : σ) :
+    Fact (0 < (c ∘ e) i) :=
+  ⟨Fact.out (p := 0 < c (e i))⟩
+
+/-- Renaming the variables of restricted series preserves the Gauss norm. -/
+@[simp]
+theorem IsRestricted.norm_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ) [∀ i, Fact (0 < c i)]
+    (f : IsRestricted.subring (R := R) (c ∘ e)) : ‖renameAlgEquiv e c f‖ = ‖f‖ := by
+  rw [norm_eq_gaussNorm, norm_eq_gaussNorm,
+    gaussNorm, gaussNorm, coe_renameAlgEquiv, ← (Finsupp.equivCongrLeft e).iSup_comp]
+  exact congrArg iSup (weightedCoeff_renameEquiv e c (f : MvPowerSeries σ R)).symm
+
+/-- `IsRestricted.renameAlgEquiv` with source polyradii `a` given by an equation `c ∘ e = a`, for
+radii that are only propositionally equal to `c ∘ e`. -/
+noncomputable def IsRestricted.renameAlgEquivOfEq (e : σ ≃ τ) (c : τ → ℝ) {a : σ → ℝ}
+    (h : c ∘ e = a) : IsRestricted.subring (R := R) a ≃ₐ[R] IsRestricted.subring (R := R) c := by
+  subst h; exact renameAlgEquiv e c
+
+/-- `IsRestricted.renameAlgEquivOfEq` is `MvPowerSeries.renameEquiv` on the underlying series. -/
+@[simp]
+theorem IsRestricted.coe_renameAlgEquivOfEq (e : σ ≃ τ) (c : τ → ℝ) {a : σ → ℝ}
+    (h : c ∘ e = a) (f : IsRestricted.subring (R := R) a) :
+    (renameAlgEquivOfEq e c h f : MvPowerSeries τ R) = renameEquiv R e f := by
+  subst h; rfl
+
+/-- `IsRestricted.renameAlgEquivOfEq` preserves the Gauss norm. -/
+@[simp]
+theorem IsRestricted.norm_renameAlgEquivOfEq (e : σ ≃ τ) (c : τ → ℝ) [∀ i, Fact (0 < c i)]
+    {a : σ → ℝ} [∀ i, Fact (0 < a i)] (h : c ∘ e = a) (f : IsRestricted.subring (R := R) a) :
+    ‖renameAlgEquivOfEq e c h f‖ = ‖f‖ := by
+  subst h; exact norm_renameAlgEquiv e c f
+
+/-- `IsRestricted.renameAlgEquivOfEq` along the defining equation is
+`IsRestricted.renameAlgEquiv`. -/
+@[simp]
+theorem IsRestricted.renameAlgEquivOfEq_rfl (e : σ ≃ τ) (c : τ → ℝ) :
+    renameAlgEquivOfEq (R := R) e c rfl = renameAlgEquiv e c := (rfl)
+
+/-- **Renaming along the identity is the identity.** -/
+@[simp]
+theorem IsRestricted.renameAlgEquivOfEq_refl (c : σ → ℝ) (h : c ∘ Equiv.refl σ = c) :
+    renameAlgEquivOfEq (R := R) (Equiv.refl σ) c h = AlgEquiv.refl :=
+  AlgEquiv.ext fun f ↦ Subtype.ext <| by simp
+
+/-- **Renaming along `e₁` and then along `e₂` is renaming along the composite `e₁.trans e₂`.** -/
+@[simp]
+theorem IsRestricted.renameAlgEquivOfEq_trans {υ : Type*} (e₁ : σ ≃ τ) (e₂ : τ ≃ υ)
+    {a : σ → ℝ} {b : τ → ℝ} (c : υ → ℝ) (h₁ : b ∘ e₁ = a) (h₂ : c ∘ e₂ = b) :
+    (renameAlgEquivOfEq (R := R) e₁ b h₁).trans (renameAlgEquivOfEq e₂ c h₂) =
+      renameAlgEquivOfEq (e₁.trans e₂) c
+        (by rw [← h₁, ← h₂, Equiv.coe_trans, Function.comp_assoc]) :=
+  AlgEquiv.ext fun f ↦ Subtype.ext <| by
+    rw [AlgEquiv.trans_apply, coe_renameAlgEquivOfEq, coe_renameAlgEquivOfEq,
+      coe_renameAlgEquivOfEq, ← renameEquiv_trans, AlgEquiv.trans_apply]
+
+/-- **The inverse of renaming along `e` is renaming along `e.symm`.** -/
+@[simp]
+theorem IsRestricted.renameAlgEquivOfEq_symm (e : σ ≃ τ) (c : τ → ℝ) {a : σ → ℝ}
+    (h : c ∘ e = a) :
+    (renameAlgEquivOfEq (R := R) e c h).symm =
+      renameAlgEquivOfEq e.symm a (by rw [← h, Function.comp_assoc, Equiv.self_comp_symm,
+        Function.comp_id]) :=
+  AlgEquiv.ext fun f ↦ by
+    rw [AlgEquiv.symm_apply_eq]
+    refine Subtype.ext ?_
+    rw [coe_renameAlgEquivOfEq, coe_renameAlgEquivOfEq, ← renameEquiv_symm,
+      AlgEquiv.apply_symm_apply]
+
+/-- The inverse of renaming along `e` is renaming along `e.symm`, whose source polyradii `c` are
+only propositionally equal to the reindexed polyradii `(c ∘ e) ∘ e.symm`. -/
+theorem IsRestricted.renameAlgEquiv_symm (e : σ ≃ τ) (c : τ → ℝ) :
+    (renameAlgEquiv (R := R) e c).symm =
+      renameAlgEquivOfEq e.symm (c ∘ e) (by rw [Function.comp_assoc, Equiv.self_comp_symm,
+        Function.comp_id]) := by
+  rw [← renameAlgEquivOfEq_rfl, renameAlgEquivOfEq_symm]
+
 end Rename
+
+end MvPowerSeries
+
+namespace TauCeti.MvPowerSeries
+
+open _root_.MvPowerSeries
+
+/-- The combined polyradius is positive when each of its two parts is positive. -/
+instance instFactPosSumElim {σ τ : Type*} {c : σ → ℝ} {d : τ → ℝ}
+    [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] : ∀ k, Fact (0 < Sum.elim c d k)
+  | .inl i => ‹∀ i, Fact (0 < c i)› i
+  | .inr j => ‹∀ j, Fact (0 < d j)› j
+
+section Algebra
+
+variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ}
+
+/-- Over an algebra `S` of coefficients, the algebra map into restricted series sends a scalar to
+the constant series of its image in `R`. -/
+theorem coe_algebraMap_isRestrictedSubring_apply {S : Type*} [CommSemiring S] [Algebra S R]
+    (s : S) : (algebraMap S (IsRestricted.subring (R := R) c) s : MvPowerSeries σ R) =
+      C (algebraMap S R s) := (rfl)
+
+/-- Over an algebra `S` of coefficients, scalars act on restricted series coefficientwise. -/
+@[simp]
+theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
+    (f : IsRestricted.subring (R := R) c) :
+    ((s • f : IsRestricted.subring (R := R) c) : MvPowerSeries σ R) =
+      s • (f : MvPowerSeries σ R) := by
+  ext t
+  rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring_apply, coeff_C_mul]
+  exact (Algebra.smul_def s _).symm
+
+variable (c) in
+/-- The inclusion of polynomials into the algebra of restricted power series: Mathlib's
+`MvPolynomial.toRestricted` as an `R`-algebra homomorphism. -/
+noncomputable def polynomialToRestricted :
+    MvPolynomial σ R →ₐ[R] IsRestricted.subring (R := R) c where
+  __ := MvPolynomial.toRestricted c
+  commutes' r := Subtype.ext (MvPolynomial.coe_C r)
+
+/-- The polynomial inclusion has the usual underlying power series. -/
+@[simp]
+theorem coe_polynomialToRestricted (p : MvPolynomial σ R) :
+    (polynomialToRestricted c p : MvPowerSeries σ R) = p := (rfl)
+
+/-- The polynomial inclusion sends `p` to `p` with its restrictedness witness. -/
+theorem polynomialToRestricted_apply (p : MvPolynomial σ R) :
+    polynomialToRestricted c p = ⟨(p : MvPowerSeries σ R), p.isRestricted c⟩ := (rfl)
+
+/-- The polynomial inclusion sends each variable to the corresponding variable. -/
+@[simp]
+theorem polynomialToRestricted_X (i : σ) :
+    polynomialToRestricted c (MvPolynomial.X i) =
+      ⟨X i, isRestricted_monomial c (Finsupp.single i 1) (1 : R)⟩ :=
+  Subtype.ext (MvPolynomial.coe_X i)
+
+/-- Renaming the variables of restricted series extends renaming the variables of polynomials. -/
+@[simp]
+theorem renameAlgEquiv_polynomialToRestricted {τ : Type*} (e : σ ≃ τ) (c : τ → ℝ)
+    (p : MvPolynomial σ R) :
+    IsRestricted.renameAlgEquiv e c (polynomialToRestricted (c ∘ e) p) =
+      polynomialToRestricted c (MvPolynomial.rename e p) :=
+  Subtype.ext <| by simp [rename_coe]
+
+variable (c) in
+/-- Over a nontrivial ring, restricted series in at least one variable do not form a finitely
+generated module: the restricted monomials are linearly independent and infinite in number. -/
+theorem not_finite_isRestrictedSubring [Nontrivial R] [Nonempty σ] :
+    ¬Module.Finite R (IsRestricted.subring (R := R) c) := fun _ ↦
+  Module.Finite.not_linearIndependent_of_infinite _
+    ((MvPolynomial.basisMonomials σ R).linearIndependent.map'
+      (polynomialToRestricted c).toLinearMap
+      (LinearMap.ker_eq_bot.2 fun _ _ h ↦
+        MvPolynomial.coe_injective σ R (by simpa using congrArg Subtype.val h)))
+
+end Algebra
 
 section NormedField
 
-variable {σ R : Type*} [NormedField R] [IsUltrametricDist R] {c : σ → ℝ}
-  [∀ i, Fact (0 < c i)]
+variable {σ K R : Type*} [NormedField K] [NormedCommRing R] [NormedAlgebra K R]
+  [IsUltrametricDist R] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
 
-/-- At positive polyradii, restricted series form a normed algebra over their ultrametric
-coefficient field. -/
+/-- At positive polyradii, restricted series over a normed algebra `R` over a normed field `K`
+form a normed `K`-algebra: scalars act coefficientwise. In particular, restricted series form a
+normed algebra over an ultrametric coefficient field. -/
 noncomputable instance instNormedAlgebraIsRestrictedSubring :
-    NormedAlgebra R (IsRestricted.subring (R := R) c) where
+    NormedAlgebra K (IsRestricted.subring (R := R) c) where
   toAlgebra := instAlgebraIsRestrictedSubring
   norm_smul_le r f := by
-    rw [Algebra.smul_def]
-    have h : algebraMap R (IsRestricted.subring (R := R) c) r =
-        ⟨C r, isRestricted_C c r⟩ := Subtype.ext (coe_algebraMap_isRestrictedSubring r)
-    rw [h]
-    simpa only [norm_C] using
-      norm_mul_le (⟨C r, isRestricted_C c r⟩ : IsRestricted.subring (R := R) c) f
+    refine norm_le_iff.mpr fun t ↦ ?_
+    rw [coe_smul_isRestrictedSubring]
+    calc ‖r • coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
+        ≤ ‖r‖ * (‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)) := by
+          rw [← mul_assoc]
+          exact mul_le_mul_of_nonneg_right (norm_smul_le r _) (prod_pow_pos t).le
+      _ ≤ ‖r‖ * ‖f‖ := mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) (norm_nonneg r)
 
 end NormedField
 
-end MvPowerSeries
+/-- A coefficientwise norm bound gives the same Gauss-norm bound for restricted series over
+possibly different coefficient rings, at the same positive polyradii. The constant `K` may be
+any real number: if it is negative, all coefficients vanish. -/
+theorem norm_le_mul_of_norm_coeff_le {σ R S : Type*}
+    [NormedRing R] [IsUltrametricDist R] [NormedRing S] [IsUltrametricDist S]
+    {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    {f : IsRestricted.subring (R := R) c} {g : IsRestricted.subring (R := S) c}
+    {K : ℝ}
+    (h : ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ ≤ K * ‖coeff t (g : MvPowerSeries σ S)‖) :
+    ‖f‖ ≤ K * ‖g‖ := by
+  rcases le_or_gt 0 K with hK | hK
+  · refine norm_le_iff.mpr fun t ↦ ?_
+    calc
+      ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
+          K * ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) :=
+        mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
+      _ ≤ K * ‖g‖ := by
+        rw [mul_assoc]
+        exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le g t) hK
+  · -- a negative constant forces every coefficient of `f` and `g` to vanish
+    have hg t : ‖coeff t (g : MvPowerSeries σ S)‖ = 0 := by
+      nlinarith [h t, norm_nonneg (coeff t (f : MvPowerSeries σ R)),
+        norm_nonneg (coeff t (g : MvPowerSeries σ S))]
+    have hf t : ‖coeff t (f : MvPowerSeries σ R)‖ = 0 :=
+      le_antisymm (by simpa [hg t] using h t) (norm_nonneg _)
+    have hf0 : ‖f‖ ≤ 0 := norm_le_iff.mpr fun t ↦ by simp [hf t]
+    have hg0 : ‖g‖ ≤ 0 := norm_le_iff.mpr fun t ↦ by simp [hg t]
+    rw [le_antisymm hg0 (norm_nonneg g), mul_zero]
+    exact hf0
+
+end TauCeti.MvPowerSeries

@@ -13,14 +13,11 @@ public import TauCeti.Topology.Instances.AddCircle.Torus
 # The fundamental group of a torus
 
 Combining the product formula for fundamental groups
-(`TauCeti.FundamentalGroup.prodMulEquiv`, `…piMulEquiv`) with the circle computation
+(`FundamentalGroup.prodMulEquiv`, `FundamentalGroup.piMulEquiv`) with the circle computation
 `π₁(AddCircle p) ≃* Multiplicative ℤ` (`AddCircle.fundamentalGroupMulEquivZero`)
 gives the fundamental group of a torus. For a finite product of circles this is the free
 abelian group `(Multiplicative ℤ)ᵏ`; in particular the standard two-torus
 `AddCircle p × AddCircle q` has fundamental group `Multiplicative ℤ × Multiplicative ℤ`.
-
-This realises the universal-covers roadmap Stage 4 "applications" target `π_n(Tᵏ)` at
-`n = 1`: `π₁(Tᵏ) ≅ ℤᵏ`.
 
 ## Main declarations
 
@@ -51,7 +48,7 @@ def prodFundamentalGroupMulEquiv {p q : ℝ} (hp : p ≠ 0) (hq : q ≠ 0)
     (ex : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) (ey : ((↑) : ℝ → AddCircle q) ⁻¹' {y}) :
     FundamentalGroup (AddCircle p × AddCircle q) (x, y) ≃*
       Multiplicative ℤ × Multiplicative ℤ :=
-  (TauCeti.FundamentalGroup.prodMulEquiv x y).trans
+  (FundamentalGroup.prodMulEquiv x y).trans
     ((fundamentalGroupMulEquiv p hp ex).prodCongr (fundamentalGroupMulEquiv q hq ey))
 
 @[simp]
@@ -65,7 +62,7 @@ theorem prodFundamentalGroupMulEquiv_apply {p q : ℝ} (hp : p ≠ 0) (hq : q �
         fundamentalGroupMulEquiv q hq ey
           (FundamentalGroup.map (ContinuousMap.snd : C(AddCircle p × AddCircle q, _)) (x, y) γ)) :=
   congrArg ((fundamentalGroupMulEquiv p hp ex).prodCongr (fundamentalGroupMulEquiv q hq ey))
-    (TauCeti.FundamentalGroup.prodMulEquiv_apply x y γ)
+    (FundamentalGroup.prodMulEquiv_apply x y γ)
 
 @[simp]
 theorem prodFundamentalGroupMulEquiv_symm_apply {p q : ℝ} (hp : p ≠ 0) (hq : q ≠ 0)
@@ -73,9 +70,9 @@ theorem prodFundamentalGroupMulEquiv_symm_apply {p q : ℝ} (hp : p ≠ 0) (hq :
     (ex : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) (ey : ((↑) : ℝ → AddCircle q) ⁻¹' {y})
     (mn : Multiplicative ℤ × Multiplicative ℤ) :
     (prodFundamentalGroupMulEquiv hp hq ex ey).symm mn =
-      prod ((fundamentalGroupMulEquiv p hp ex).symm mn.1)
-        ((fundamentalGroupMulEquiv q hq ey).symm mn.2) :=
-  TauCeti.FundamentalGroup.prodMulEquiv_symm_apply x y
+      CategoryTheory.End.of (prod ((fundamentalGroupMulEquiv p hp ex).symm mn.1).asHom
+        ((fundamentalGroupMulEquiv q hq ey).symm mn.2).asHom) :=
+  FundamentalGroup.prodMulEquiv_symm_apply x y
     (((fundamentalGroupMulEquiv p hp ex).prodCongr (fundamentalGroupMulEquiv q hq ey)).symm mn)
 
 /-- The fundamental group of a torus `Π i, AddCircle (p i)`, based at any point `x` with chosen
@@ -86,7 +83,7 @@ loop. -/
 def piFundamentalGroupMulEquiv {ι : Type*} {p : ι → ℝ} (hp : ∀ i, p i ≠ 0)
     {x : ∀ i, AddCircle (p i)} (e : ∀ i, ((↑) : ℝ → AddCircle (p i)) ⁻¹' {x i}) :
     FundamentalGroup (∀ i, AddCircle (p i)) x ≃* ∀ _ : ι, Multiplicative ℤ :=
-  (TauCeti.FundamentalGroup.piMulEquiv x).trans
+  (FundamentalGroup.piMulEquiv x).trans
     (MulEquiv.piCongrRight fun i => fundamentalGroupMulEquiv (p i) (hp i) (e i))
 
 @[simp]
@@ -97,14 +94,15 @@ theorem piFundamentalGroupMulEquiv_apply {ι : Type*} {p : ι → ℝ} (hp : ∀
       fundamentalGroupMulEquiv (p i) (hp i) (e i)
         (FundamentalGroup.map (ContinuousMap.eval i) x γ) :=
   congrArg (fundamentalGroupMulEquiv (p i) (hp i) (e i))
-    (TauCeti.FundamentalGroup.piMulEquiv_apply x γ i)
+    (FundamentalGroup.piMulEquiv_apply x γ i)
 
 @[simp]
 theorem piFundamentalGroupMulEquiv_symm_apply {ι : Type*} {p : ι → ℝ} (hp : ∀ i, p i ≠ 0)
     {x : ∀ i, AddCircle (p i)} (e : ∀ i, ((↑) : ℝ → AddCircle (p i)) ⁻¹' {x i})
     (n : ∀ _ : ι, Multiplicative ℤ) : (piFundamentalGroupMulEquiv hp e).symm n =
-      pi fun i => (fundamentalGroupMulEquiv (p i) (hp i) (e i)).symm (n i) :=
-  TauCeti.FundamentalGroup.piMulEquiv_symm_apply x
+      CategoryTheory.End.of
+        (pi fun i => ((fundamentalGroupMulEquiv (p i) (hp i) (e i)).symm (n i)).asHom) :=
+  FundamentalGroup.piMulEquiv_symm_apply x
     ((MulEquiv.piCongrRight fun i => fundamentalGroupMulEquiv (p i) (hp i) (e i)).symm n)
 
 /-- The fundamental group of the two-torus `AddCircle p × AddCircle q`, based at `(0, 0)`, is
@@ -131,8 +129,8 @@ theorem prodFundamentalGroupMulEquivZero_apply {p q : ℝ} (hp : p ≠ 0) (hq : 
 @[simp]
 theorem prodFundamentalGroupMulEquivZero_symm_apply {p q : ℝ} (hp : p ≠ 0) (hq : q ≠ 0)
     (mn : Multiplicative ℤ × Multiplicative ℤ) : (prodFundamentalGroupMulEquivZero hp hq).symm mn =
-      prod ((fundamentalGroupMulEquivZero p hp).symm mn.1)
-        ((fundamentalGroupMulEquivZero q hq).symm mn.2) := by
+      CategoryTheory.End.of (prod ((fundamentalGroupMulEquivZero p hp).symm mn.1).asHom
+        ((fundamentalGroupMulEquivZero q hq).symm mn.2).asHom) := by
   simp [prodFundamentalGroupMulEquivZero]
 
 /-- The fundamental group of a torus `Π i, AddCircle (p i)`, based at `0`, is the product
@@ -155,7 +153,8 @@ theorem piFundamentalGroupMulEquivZero_apply {ι : Type*} {p : ι → ℝ} (hp :
 theorem piFundamentalGroupMulEquivZero_symm_apply {ι : Type*} {p : ι → ℝ}
     (hp : ∀ i, p i ≠ 0) (n : ∀ _ : ι, Multiplicative ℤ) :
     (piFundamentalGroupMulEquivZero hp).symm n =
-      pi fun i => (fundamentalGroupMulEquivZero (p i) (hp i)).symm (n i) := by
+      CategoryTheory.End.of
+        (pi fun i => ((fundamentalGroupMulEquivZero (p i) (hp i)).symm (n i)).asHom) := by
   simp [piFundamentalGroupMulEquivZero]
 
 /-- The straight loop `TauCeti.torusLoop p n` winds `n i` times around the `i`-th circle: the
@@ -178,7 +177,9 @@ theorem piFundamentalGroupMulEquivZero_torusLoop {ι : Type*} {p : ι → ℝ} (
       target' := by simp }
   refine congrArg Subtype.val ((AddCircle.isCoveringMap_coe (p i)).monodromy_eq_of_map_eq
     (ey := ⟨n i • p i, by simp [AddCircle.coe_period]⟩) (Path.Homotopic.Quotient.mk θ) ?_)
-  rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map]
+  dsimp only [FundamentalGroup.toPath, FundamentalGroup.toArrow, FundamentalGroup.map_apply_asHom,
+    FundamentalGroup.fromPath, FundamentalGroup.fromArrow]
+  rw [← Path.Homotopic.Quotient.mk_map]
   -- Casting a path class casts its representative, and `Path.cast` and `Path.map` do not change
   -- the underlying function. They are unfolded definitionally rather than by `mk_cast` and
   -- `Path.cast_coe`, because the endpoint proofs supplied by `monodromy_eq_of_map_eq` are fibre

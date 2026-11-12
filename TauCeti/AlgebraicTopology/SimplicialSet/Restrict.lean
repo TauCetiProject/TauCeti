@@ -30,9 +30,7 @@ of relative homology is in `TauCeti.AlgebraicTopology.SimplicialSet.Homology.Res
 
 public section
 
-noncomputable section
-
-open CategoryTheory Limits
+open CategoryTheory
 
 universe w
 
@@ -45,14 +43,9 @@ instance [Mono p] : Mono (S.fromPreimage p) := mono_of_mono_fac (S.fromPreimage_
 /-- A simplex of `S` lies in the image of the preimage of `S` under `p` exactly when it lies in
 the image of `p`. -/
 lemma mem_range_fromPreimage_app_iff {n : SimplexCategoryᵒᵖ} (x : (S : SSet).obj n) :
-    x ∈ Set.range ((S.fromPreimage p).app n) ↔ x.1 ∈ Set.range (p.app n) := by
-  constructor
-  · rintro ⟨a, rfl⟩
-    exact ⟨a.1, rfl⟩
-  · rintro ⟨a, ha⟩
-    refine ⟨⟨a, ?_⟩, Subtype.ext ha⟩
-    rw [preimage_obj, Set.mem_preimage, ha]
-    exact x.2
+    x ∈ Set.range ((S.fromPreimage p).app n) ↔ x.1 ∈ Set.range (p.app n) :=
+  ⟨fun ⟨a, ha⟩ ↦ ⟨a.1, congr_arg Subtype.val ha⟩,
+    fun ⟨a, ha⟩ ↦ ⟨⟨a, by simp [ha]⟩, Subtype.ext ha⟩⟩
 
 end SSet.Subcomplex
 
@@ -83,31 +76,18 @@ lemma mem_range_restrict_hom_app_iff {n : SimplexCategoryᵒᵖ} (x : (P.restric
 variable {P S} {P' : SSetPair.{w}} {S' : P'.right.Subcomplex} (f : P ⟶ P')
   (h : S ≤ S'.preimage f.right)
 
-include h in
-private lemma range_ι_comp_right_le : SSet.Subcomplex.range (S.ι ≫ f.right) ≤ S' := by
-  rintro n _ ⟨x, rfl⟩
-  exact h n x.2
-
-include h in
-private lemma range_ι_comp_left_le :
-    SSet.Subcomplex.range ((S.preimage P.hom).ι ≫ f.left) ≤ S'.preimage P'.hom := by
-  rintro n _ ⟨x, rfl⟩
-  have hx : f.right.app n (P.hom.app n x.1) ∈ S'.obj n := h n x.2
-  have hw : P'.hom.app n (f.left.app n x.1) = f.right.app n (P.hom.app n x.1) := by
-    have := congr($(f.w).app n x.1)
-    simpa using this
-  simpa [hw] using hx
-
 /-- A morphism of pairs `f : P ⟶ P'` carrying a subcomplex `S` of `P.right` into a subcomplex `S'`
 of `P'.right` restricts to a morphism of the restricted pairs. -/
 def restrictMap : P.restrict S ⟶ P'.restrict S' :=
   SSetPair.homMk
-    (SSet.Subcomplex.lift ((S.preimage P.hom).ι ≫ f.left) (range_ι_comp_left_le f h))
-    (SSet.Subcomplex.lift (S.ι ≫ f.right) (range_ι_comp_right_le f h)) (by
-      have hw : f.left ≫ P'.hom = P.hom ≫ f.right := by simpa using f.w
-      ext n x
-      apply Subtype.ext
-      exact congr($(hw).app n x.1))
+    (SSet.Subcomplex.lift ((S.preimage P.hom).ι ≫ f.left) (by
+      have hw : f.left ≫ P'.hom = P.hom ≫ f.right := f.w
+      rw [← SSet.Subcomplex.image_eq_range, SSet.Subcomplex.image_le_iff,
+        ← SSet.Subcomplex.preimage_comp, hw]
+      exact SSet.Subcomplex.preimage_monotone P.hom h))
+    (SSet.Subcomplex.lift (S.ι ≫ f.right) (by
+      rwa [← SSet.Subcomplex.image_eq_range, SSet.Subcomplex.image_le_iff]))
+    (by ext n x; exact Subtype.ext congr($(f.w).app n x.1))
 
 @[simp]
 lemma restrictMap_left_app_coe {n : SimplexCategoryᵒᵖ} (x : (P.restrict S).left.obj n) :
@@ -118,7 +98,7 @@ lemma restrictMap_right_app_coe {n : SimplexCategoryᵒᵖ} (x : (P.restrict S).
     ((restrictMap f h).right.app n x).1 = f.right.app n x.1 := (rfl)
 
 /-- The restriction of a morphism of pairs commutes with the inclusions of the restricted pairs. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma restrictMap_comp_restrictι :
     restrictMap f h ≫ P'.restrictι S' = P.restrictι S ≫ f := by
   ext : 2 <;> rfl

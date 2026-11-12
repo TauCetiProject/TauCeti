@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.DoubleCoset.Finite
+public import TauCeti.GroupTheory.TransversalWord
 public import TauCeti.RepresentationTheory.Induction.Character
 public import TauCeti.RepresentationTheory.Induction.Conjugate
 public import TauCeti.RepresentationTheory.Induction.Mackey.Subgroup
@@ -42,6 +43,9 @@ conjugate Mackey subgroup (`TauCeti.mackeySubgroup_conj`).  The splitting
   `K`-orbit of `sH`.
 * `TauCeti.mackeyQuotientEquiv`: the resulting bijection
   `(Σ KsH ∈ K \ G / H, K ⧸ (K ⊓ sHs⁻¹)) ≃ G ⧸ H`.
+* `Subgroup.mackeyLeftTransversal`: the left transversal of `H` adapted to that bijection, whose
+  representative of the coset with coordinates `(KsH, u)` is `t(u) * s` for chosen left
+  transversals `t` of the Mackey subgroups in `K`.
 * `TauCeti.mackeyToH`: the homomorphism `K ⊓ sHs⁻¹ → H`, `y ↦ s⁻¹ y s`, along which the Mackey
   summand pulls a representation of `H` back to the Mackey subgroup.
 * `TauCeti.mackeyClassFun`: the conjugated function `y ↦ f (s⁻¹ y s)` on the Mackey subgroup; it is
@@ -203,6 +207,48 @@ theorem smul_mackeyQuotientEquiv (H K : Subgroup G)
     (u : K ⧸ (mackeySubgroup (r D) H K).subgroupOf K) :
     (k : G) • mackeyQuotientEquiv H K r hr ⟨D, u⟩ = mackeyQuotientEquiv H K r hr ⟨D, k • u⟩ := by
   rw [mackeyQuotientEquiv_apply, mackeyQuotientEquiv_apply, mackeyCoset_smul]
+
+/-- **The left transversal adapted to the double cosets `K \ G / H`.**  Given representatives
+`r D` of the double cosets and, for each of them, a left transversal `t D` of the Mackey subgroup
+`K ⊓ (r D) H (r D)⁻¹` in `K`, the coset of `H` with Mackey coordinates `(D, u)` along
+`TauCeti.mackeyQuotientEquiv` is represented by `t_D(u) * r D`
+(`Subgroup.leftTransversalRep_mackeyLeftTransversal`). -/
+noncomputable def _root_.Subgroup.mackeyLeftTransversal (H K : Subgroup G)
+    (r : DoubleCoset.Quotient (K : Set G) (H : Set G) → G)
+    (hr : ∀ D, DoubleCoset.mk K H (r D) = D)
+    (t : ∀ D, ((mackeySubgroup (r D) H K).subgroupOf K).LeftTransversal) :
+    H.LeftTransversal :=
+  ⟨Set.range fun q ↦
+      let p := (mackeyQuotientEquiv H K r hr).symm q
+      ((Subgroup.leftTransversalRep ((mackeySubgroup (r p.1) H K).subgroupOf K) (t p.1) p.2 : K) :
+        G) * r p.1,
+    Subgroup.isComplement_range_left fun q ↦ by
+      rw [← mackeyCoset_mk, Subgroup.leftTransversalRep_mk]
+      exact (mackeyQuotientEquiv H K r hr).apply_symm_apply q⟩
+
+/-- The representative of the Mackey-adapted transversal at the coset with Mackey coordinates
+`(D, u)`, which is `TauCeti.mackeyCoset (r D) H K u`, is `t_D(u) * r D`. -/
+@[simp]
+theorem _root_.Subgroup.leftTransversalRep_mackeyLeftTransversal (H K : Subgroup G)
+    (r : DoubleCoset.Quotient (K : Set G) (H : Set G) → G)
+    (hr : ∀ D, DoubleCoset.mk K H (r D) = D)
+    (t : ∀ D, ((mackeySubgroup (r D) H K).subgroupOf K).LeftTransversal)
+    (D : DoubleCoset.Quotient (K : Set G) (H : Set G))
+    (u : K ⧸ (mackeySubgroup (r D) H K).subgroupOf K) :
+    Subgroup.leftTransversalRep H (Subgroup.mackeyLeftTransversal H K r hr t)
+        (mackeyCoset (r D) H K u) =
+      ((Subgroup.leftTransversalRep ((mackeySubgroup (r D) H K).subgroupOf K) (t D) u : K) : G) *
+        r D := by
+  have hq : mackeyCoset (r D) H K u = QuotientGroup.mk
+      (((Subgroup.leftTransversalRep ((mackeySubgroup (r D) H K).subgroupOf K) (t D) u : K) :
+        G) * r D) := by
+    rw [← mackeyCoset_mk, Subgroup.leftTransversalRep_mk]
+  rw [hq, Subgroup.leftTransversalRep_mk_of_mem]
+  exact ⟨mackeyQuotientEquiv H K r hr ⟨D, u⟩,
+    congrArg (fun p : Σ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
+        K ⧸ (mackeySubgroup (r D) H K).subgroupOf K ↦
+      ((Subgroup.leftTransversalRep ((mackeySubgroup (r p.1) H K).subgroupOf K) (t p.1) p.2 :
+        K) : G) * r p.1) ((mackeyQuotientEquiv H K r hr).symm_apply_apply ⟨D, u⟩)⟩
 
 /-- **Sorting a sum over `G ⧸ H` by double cosets.**  Along `TauCeti.mackeyQuotientEquiv`, a sum
 over the left cosets `G ⧸ H` is the sum over the double cosets `K \ G / H` of the sums over the

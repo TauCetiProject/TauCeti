@@ -15,7 +15,8 @@ import TauCeti.MeasureTheory.Function.Lp.Dilation
 # The Calderón–Zygmund estimate for constant-coefficient operators
 
 Let `A` be a constant `n × n` coefficient matrix whose quadratic form satisfies
-`λ ‖ξ‖² ≤ ξᵀ A ξ` with `0 < λ`, and write `L_A u = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu`. For `n ≥ 3` and `1 < p < ∞`,
+`λ ‖ξ‖² ≤ ξᵀ A ξ` with `0 < λ`, and write `L_A u = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu`. For every dimension `n` and `1
+< p < ∞`,
 this file proves
 
 `‖D²u‖_{Lᵖ} ≤ (C / λ) ‖L_A u‖_{Lᵖ}`
@@ -37,8 +38,9 @@ linear automorphism `e` with `‖e⁻¹‖ ≤ λ^(-1/2)` such that `Δ (u ∘ e
 (`TauCeti.PDE.exists_continuousLinearEquiv_laplacian_comp_eq`). The Schwartz function
 `v = u ∘ e` then satisfies `D²u (e y) = D²v y ∘ (e⁻¹ × e⁻¹)`, so `‖D²u ∘ e‖ ≤ λ⁻¹ ‖D²v‖`
 pointwise, while `Δ v = (L_A u) ∘ e`. Composing with `e` multiplies both `Lᵖ` norms by the same
-factor `|det e|^(-1 / p)` (`TauCeti.eLpNorm_comp_continuousLinearEquiv`), which cancels. This
-transfer is stated for any codomain and any exponent in which the estimate for the Laplacian holds
+factor `|det e|^(-1 / p)` (`MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv`), which
+cancels. This transfer is stated for any codomain and any exponent in which the estimate for the
+Laplacian holds
 (`TauCeti.PDE.eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacian`).
 
 ## References
@@ -108,8 +110,8 @@ theorem eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacia
     (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
   have hc0 : c ≠ 0 := (ENNReal.rpow_pos (by simpa using hdet) ENNReal.ofReal_ne_top).ne'
   have hctop : c ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top
-  have h1 := eLpNorm_comp_continuousLinearEquiv volume (iteratedFDeriv ℝ 2 ⇑u) e p
-  have h2 := eLpNorm_comp_continuousLinearEquiv volume L e p
+  have h1 := Measure.eLpNorm_comp_continuousLinearEquiv volume (iteratedFDeriv ℝ 2 ⇑u) e p
+  have h2 := Measure.eLpNorm_comp_continuousLinearEquiv volume L e p
   rw [← hc_def] at h1 h2
   have hmeas : AEStronglyMeasurable (iteratedFDeriv ℝ 2 ⇑u ∘ e) volume :=
     (((u.smooth ⊤).continuous_iteratedFDeriv (by simp)).comp e.continuous).aestronglyMeasurable
@@ -127,17 +129,17 @@ theorem eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacia
 
 end Transfer
 
-variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
-  {p : ℝ≥0∞}
+variable {n : ℕ} {p : ℝ≥0∞}
 
-/-- **The Calderón–Zygmund estimate for constant-coefficient operators.** Let `n ≥ 3`, let
-`1 < p < ∞`, and let `F` be a complex Hilbert space. There is a constant `C`, depending only on `n`,
+/-- **The Calderón–Zygmund estimate for constant-coefficient operators.** Let `1 < p < ∞`, and let
+`F` be a complex Hilbert space. There is a constant `C`, depending only on `n`,
 `p` and `F`, such that for every matrix `A` with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`,
 
 `‖D²u‖_{Lᵖ} ≤ (C / λ) ‖∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu‖_{Lᵖ}`
 
 for every Schwartz function `u` on `ℝⁿ` with values in `F`. -/
-theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv (hn : 3 ≤ n)
+theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ}, 0 < lam →
       (∀ ξ : EuclideanSpace ℝ (Fin n), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
@@ -145,19 +147,20 @@ theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv (hn 
           ENNReal.ofReal (C / lam) * eLpNorm (fun x => ∑ i, ∑ j, A i j •
             fderiv ℝ (fderiv ℝ ⇑u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
               p volume := by
-  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian (F := F) hn hp hp_top
+  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian
+    (V := EuclideanSpace ℝ (Fin n)) (F := F) hp hp_top
   exact ⟨C, fun hlam hA u =>
     eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacian hlam hA hC u⟩
 
-omit [InnerProductSpace ℂ F] [CompleteSpace F] in
 /-- **The Calderón–Zygmund estimate for constant-coefficient operators, real-valued form.** Let
-`n ≥ 3` and `1 < p < ∞`. There is a constant `C`, depending only on `n` and `p`, such that for every
+`1 < p < ∞`, in any dimension `n`. There is a constant `C`, depending only on `n` and `p`, such
+that for every
 matrix `A` with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`,
 
 `‖D²u‖_{Lᵖ} ≤ (C / λ) ‖∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu‖_{Lᵖ}`
 
 for every real-valued Schwartz function `u` on `ℝⁿ`. -/
-theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_real (hn : 3 ≤ n)
+theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_real
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ}, 0 < lam →
       (∀ ξ : EuclideanSpace ℝ (Fin n), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
@@ -165,7 +168,8 @@ theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_real
           ENNReal.ofReal (C / lam) * eLpNorm (fun x => ∑ i, ∑ j, A i j •
             fderiv ℝ (fderiv ℝ ⇑u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
               p volume := by
-  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real hn hp hp_top
+  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real
+    (V := EuclideanSpace ℝ (Fin n)) hp hp_top
   exact ⟨C, fun hlam hA u =>
     eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacian hlam hA hC u⟩
 

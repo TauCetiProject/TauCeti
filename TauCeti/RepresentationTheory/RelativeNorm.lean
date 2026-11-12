@@ -116,7 +116,7 @@ theorem relNorm_norm_apply (x : V) :
   conv_rhs => rw [Representation.norm, LinearMap.sum_apply, H.sum_eq_sum_leftCosets fun g => ρ g x]
   rw [relNorm_apply]
   refine Finset.sum_congr rfl fun q _ => ?_
-  simp [Representation.norm, map_sum, ← Module.End.mul_apply, ← map_mul]
+  simp [Representation.norm, map_sum, ← _root_.mul_apply_eq_comp, ← map_mul]
 
 /-- The norm of `G` is the relative norm of `H` composed with the norm of `H`. -/
 theorem relNorm_comp_norm :
@@ -129,7 +129,7 @@ theorem norm_relTransfer_apply (x : V) :
   conv_rhs => rw [Representation.norm, LinearMap.sum_apply, H.sum_eq_sum_rightCosets fun g => ρ g x]
   rw [relTransfer_apply, map_sum]
   refine Finset.sum_congr rfl fun q _ => ?_
-  simp [Representation.norm, LinearMap.sum_apply, ← Module.End.mul_apply, ← map_mul]
+  simp [Representation.norm, ← mul_apply_eq_comp, ← map_mul]
 
 /-- The norm of `G` is the norm of `H` composed with the relative transfer of `H`. -/
 theorem norm_comp_relTransfer :
@@ -177,7 +177,7 @@ theorem relNorm_apply_eq_self {x : V} (hx : ∀ h : H, ρ h x = x) (g : G) :
     ρ g (relNorm ρ H x) = relNorm ρ H x := by
   rw [relNorm_apply, map_sum]
   refine Fintype.sum_bijective (g • ·) (MulAction.bijective g) _ _ fun q => ?_
-  rw [← Module.End.mul_apply, ← map_mul]
+  rw [← _root_.mul_apply_eq_comp, ← map_mul]
   exact ρ.apply_eq_apply_of_quotientGroup_mk_eq hx (QuotientGroup.mk_out_smul g q).symm
 
 /-- On `G`-fixed vectors the relative norm is multiplication by the index. -/
@@ -258,7 +258,7 @@ theorem relTransfer_mem_coinvariantsKer {x : V} (hx : x ∈ Coinvariants.ker ρ)
       (⟨(g * ((g⁻¹ • q).out : G))⁻¹ * (q.out : G), hmem g q⟩⁻¹)
       (ρ (((g⁻¹ • q).out : G))⁻¹ y) _ ?_
     congr 1
-    rw [MonoidHom.comp_apply, ← Module.End.mul_apply, ← map_mul, ← Module.End.mul_apply,
+    rw [MonoidHom.comp_apply, ← _root_.mul_apply_eq_comp, ← map_mul, ← _root_.mul_apply_eq_comp,
       ← map_mul]
     congr 1
     exact congrArg ρ (hgrp g q)
@@ -283,7 +283,7 @@ theorem relTransfer_sub_sum_mem {ι : Type*} [Fintype ι] (f : ι → G)
   refine Coinvariants.mem_ker_of_eq (ρ := ρ.comp H.subtype) ⟨_, hq⟩⁻¹
     (ρ (f (e.symm q))⁻¹ x) _ ?_
   congr 1
-  rw [MonoidHom.comp_apply, ← Module.End.mul_apply, ← map_mul, hg]
+  rw [MonoidHom.comp_apply, ← _root_.mul_apply_eq_comp, ← map_mul, hg]
 
 /-- **The relative transfer commutes with a map of representations along a group isomorphism**,
 modulo the augmentation submodule of `H'`. Here `e : G ≃* G'` carries `H` onto `H'` and `φ`
@@ -311,7 +311,7 @@ theorem relTransfer_relTransfer_sub_relTransfer_mem {K : Subgroup G} (hKH : K �
   -- Squeezed: unsqueezed, this `simpa` roughly doubles the elaboration time of the proof.
   simpa only [relTransfer_apply, map_sum, MonoidHom.coe_comp, Subgroup.coe_subtype,
     Function.comp_apply, InvMemClass.coe_inv, sub_mem_comm_iff, mul_inv_rev, map_mul,
-    Module.End.mul_apply, Fintype.sum_prod_type] using
+    _root_.mul_apply_eq_comp, Fintype.sum_prod_type] using
     relTransfer_sub_sum_mem _ (Subgroup.mk_out_mul_out_bijective hKH) x
 
 end Coinvariants

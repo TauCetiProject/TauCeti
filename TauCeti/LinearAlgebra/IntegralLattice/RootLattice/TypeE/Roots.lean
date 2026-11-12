@@ -53,6 +53,12 @@ theorem norm_typeE₈RootVector (i : Fin 240) :
     DynkinType.e8Root_dotProduct_coroot]
   norm_num
 
+/-- Every enumerated E₈ root has integral norm two, so it defines a root reflection. -/
+@[simp]
+theorem integralNorm_typeE₈RootVector (i : Fin 240) :
+    typeE₈RootLattice.integralNorm (typeE₈RootVector i) = 2 := by
+  exact_mod_cast (typeE₈RootLattice.integralNorm_cast _).trans (norm_typeE₈RootVector i)
+
 /-- The Bourbaki simple-root indices give the simple roots of the integral lattice. -/
 @[simp]
 theorem typeE₈RootVector_e8SimpleIndex (i : Fin 8) :

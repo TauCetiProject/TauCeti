@@ -77,7 +77,7 @@ theorem coeff_divisorPullback_ofCusp_eq_widthIndex (A : WeilDivisor Γ.Compactif
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     WeilDivisor.coeff (divisorPullback (compactifiedQuotientFiniteHolomorphicMap h) A)
         (ofCusp D.cuspOrbit) =
-      (Subgroup.CuspDatum.widthIndex h D E (D.cusp_eq_of_scaling_eq E hσ) hσ : ℤ) *
+      (Subgroup.CuspDatum.widthIndex h D E hσ : ℤ) *
         WeilDivisor.coeff A (ofCusp E.cuspOrbit) := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   rw [coeff_divisorPullback, coe_compactifiedQuotientFiniteHolomorphicMap,
@@ -116,7 +116,7 @@ theorem coeff_ramificationDivisor_ofCusp_eq_widthIndex_sub_one (D : Δ.CuspDatum
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     WeilDivisor.coeff (ramificationDivisor (compactifiedQuotientFiniteHolomorphicMap h))
         (ofCusp D.cuspOrbit) =
-      (Subgroup.CuspDatum.widthIndex h D E (D.cusp_eq_of_scaling_eq E hσ) hσ : ℤ) - 1 := by
+      (Subgroup.CuspDatum.widthIndex h D E hσ : ℤ) - 1 := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   rw [coeff_ramificationDivisor, coe_compactifiedQuotientFiniteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex h D E hσ]
@@ -162,11 +162,8 @@ theorem ramificationDegree_eq_interior_add_cusps
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   let w : Δ.CompactifiedQuotient → ℕ := fun x ↦ localMultiplicity (compactifiedQuotientMap h) x - 1
   have hw : (support w).Finite := by
-    refine
-      ((compactifiedQuotientFiniteHolomorphicMap h).finite_setOf_one_lt_localMultiplicity).subset ?_
-    intro x hx
-    simpa only [mem_ofPred_eq, coe_compactifiedQuotientFiniteHolomorphicMap, mem_support, w,
-      Nat.sub_ne_zero_iff_lt] using hx
+    simpa only [w, coe_compactifiedQuotientFiniteHolomorphicMap] using
+      (compactifiedQuotientFiniteHolomorphicMap h).finite_support_localMultiplicity_sub_one
   have hdisj : Disjoint (range (ofQuotient (Γ := Δ))) (range (ofCusp (Γ := Δ))) := by
     rw [← compl_range_ofQuotient]
     exact disjoint_compl_right

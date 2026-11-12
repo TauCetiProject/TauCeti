@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.FiniteType
+public import TauCeti.AlgebraicGeometry.Geometrically.Connected
 
 /-!
 # Geometric connectedness of affine group schemes
@@ -43,10 +44,6 @@ namespace TauCeti
 open AlgebraicGeometry
 
 universe u
-
-private instance geometricallyConnected_respectsIso :
-    MorphismProperty.RespectsIso @GeometricallyConnected :=
-  MorphismProperty.IsStableUnderBaseChange.respectsIso
 
 /-- The object property on affine group schemes selecting those whose structural morphism is
 geometrically connected. -/

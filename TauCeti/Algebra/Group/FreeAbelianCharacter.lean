@@ -54,33 +54,26 @@ variable {σ : Type*} {M : Type*} [CommGroup M]
 to a commutative group `M` is the same data as a family `σ → M`. The forward map reads off the
 values on the standard generators `ofAdd (single i 1)`; the inverse extends a family to the
 unique homomorphism through `Finsupp.liftAddHom` and the `ℤ`-power homomorphism. -/
-@[expose] noncomputable def freeAbelianCharEquiv : (Multiplicative (σ →₀ ℤ) →* M) ≃* (σ → M) where
+noncomputable def freeAbelianCharEquiv : (Multiplicative (σ →₀ ℤ) →* M) ≃* (σ → M) where
   toFun χ i := χ (Multiplicative.ofAdd (Finsupp.single i 1))
   invFun c := AddMonoidHom.toMultiplicativeLeft
     (Finsupp.liftAddHom fun i => (zmultiplesHom (Additive M)) (Additive.ofMul (c i)))
   map_mul' _ _ := rfl
-  right_inv c := by
-    funext i
-    simp
-  left_inv χ := by
-    apply Multiplicative.monoidHom_ext
-    apply Finsupp.addHom_ext'
-    intro x
-    apply AddMonoidHom.ext_int
-    simp
+  right_inv c := by ext; simp
+  left_inv χ := by ext; simp
 
 /-- The forward direction of `freeAbelianCharEquiv` evaluates a character on the standard
 generator indexed by `i`. -/
 @[simp]
 theorem freeAbelianCharEquiv_apply (χ : Multiplicative (σ →₀ ℤ) →* M) (i : σ) :
     freeAbelianCharEquiv χ i = χ (Multiplicative.ofAdd (Finsupp.single i 1)) :=
-  rfl
+  (rfl)
 
 /-- The inverse of `freeAbelianCharEquiv` sends the standard generator indexed by `i` to the
 chosen coordinate `c i`. -/
 theorem freeAbelianCharEquiv_symm_apply_ofAdd_single (c : σ → M) (i : σ) :
     (freeAbelianCharEquiv (M := M)).symm c (Multiplicative.ofAdd (Finsupp.single i 1)) = c i := by
-  simp [freeAbelianCharEquiv]
+  rw [← freeAbelianCharEquiv_apply, MulEquiv.apply_symm_apply]
 
 /-- The inverse of `freeAbelianCharEquiv` evaluates an arbitrary finitely supported integer
 combination as the corresponding product of powers of the chosen coordinates. -/
@@ -88,15 +81,13 @@ combination as the corresponding product of powers of the chosen coordinates. -/
 theorem freeAbelianCharEquiv_symm_apply_ofAdd (c : σ → M) (m : σ →₀ ℤ) :
     (freeAbelianCharEquiv (M := M)).symm c (Multiplicative.ofAdd m) =
       m.prod fun i n => c i ^ n := by
-  simp [freeAbelianCharEquiv, Finsupp.liftAddHom_apply, Finsupp.sum, Finsupp.prod,
-    toMul_sum, zmultiplesHom_apply]
+  simp [freeAbelianCharEquiv, Finsupp.prod, Finsupp.sum]
 
 /-- Reading off generator values is natural in the target group: post-composing with a
 homomorphism `ψ : M →* N` commutes with `freeAbelianCharEquiv`. -/
-@[simp]
 theorem freeAbelianCharEquiv_comp {N : Type*} [CommGroup N] (ψ : M →* N)
     (χ : Multiplicative (σ →₀ ℤ) →* M) (i : σ) :
     freeAbelianCharEquiv (ψ.comp χ) i = ψ (freeAbelianCharEquiv χ i) :=
-  rfl
+  (rfl)
 
 end TauCeti

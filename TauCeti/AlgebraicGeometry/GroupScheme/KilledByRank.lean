@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.KilledByRank
 public import TauCeti.AlgebraicGeometry.GroupScheme.FiniteFlat
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.CartierDuality.Rank
+import TauCeti.CategoryTheory.Monoidal.Mon
 
 /-!
 # Finite locally free commutative group schemes are killed by their rank
@@ -21,7 +22,7 @@ unit. This is Deligne's theorem. It is what makes a point of exact order `n` of 
 an `n`-torsion point, and the kernel of an isogeny of degree `n` a subgroup killed by `n`.
 
 The affine case is `TauCeti.AlgHom.convPow_eq_one_of_rankAtStalk`, stated for a commutative and
-cocommutative Hopf algebra which is finite projective of constant rank. Over `Spec R`, the
+cocommutative Hopf algebra which is finite flat of constant stalk rank. Over `Spec R`, the
 group scheme `G` is the Hopf spectrum of its coordinate Hopf algebra
 (`TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso`), whose
 local rank is the rank of `G` (`finrank_eq_rankAtStalk_coordinateHopfAlgebra`), and Mathlib's
@@ -34,9 +35,11 @@ powers in the groups of points.
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.Spec.pow_eq_one_of_rankAtStalk`: the Hopf spectrum of a commutative
-  and cocommutative Hopf algebra which is finite projective of constant rank `n` is killed by `n`.
+  and cocommutative Hopf algebra which is finite flat of constant stalk rank `n` is killed by `n`.
 * `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.pow_eq_one_of_finrank`: a finite locally
   free commutative group scheme of constant rank `n` is killed by `n`.
+* `TauCeti.GroupScheme.pow_eq_one_of_finrank_of_mono`: a finite locally free subgroup of constant
+  rank `n` in a commutative group scheme is killed by `n` after its inclusion.
 
 ## References
 
@@ -57,11 +60,11 @@ namespace TauCeti.AlgebraicGeometry
 namespace Spec
 
 /-- Every point of the Hopf spectrum of a commutative and cocommutative Hopf algebra which is
-finite projective of constant rank `n` is killed by `n`: for every scheme `X` over `Spec R` and
+finite flat of constant stalk rank `n` is killed by `n`: for every scheme `X` over `Spec R` and
 every `x : X ⟶ Spec H` over `Spec R`, the `n`-th power of `x` in the group of `X`-valued points is
 the unit. -/
 theorem pow_eq_one_of_rankAtStalk {R H : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H]
-    [Coalgebra.IsCocomm R H] [Module.Finite R H] [Module.Projective R H] {n : ℕ}
+    [Coalgebra.IsCocomm R H] [Module.Finite R H] [Module.Flat R H] {n : ℕ}
     (hn : ∀ p, Module.rankAtStalk (R := R) H p = n) {X : Over (Spec (CommRingCat.of R))}
     (x : X ⟶ (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) : x ^ n = 1 := by
   -- It suffices to treat the universal point, the identity of `Spec H`.
@@ -142,3 +145,28 @@ theorem pow_eq_one_of_finrank {S : Scheme.{u}} (G : FiniteFlatCommGroupScheme S)
 end FiniteFlatCommGroupScheme
 
 end TauCeti.AlgebraicGeometry
+
+namespace TauCeti.GroupScheme
+
+/-- Let `i : H ⟶ G` be a monomorphism of group schemes into a commutative group scheme. If
+`H` is finite locally free of constant rank `n`, then the point of `G` given by `i` is killed by
+`n`. This is the form of Deligne's rank theorem used to place finite locally free subgroup schemes
+inside torsion subgroup schemes. -/
+theorem pow_eq_one_of_finrank_of_mono {S X Y : Scheme.{u}} {p : X ⟶ S} {q : Y ⟶ S}
+    [GrpObj (Over.mk p)] [GrpObj (Over.mk q)] [IsCommMonObj (Over.mk q)]
+    (i : Over.mk p ⟶ Over.mk q) [IsMonHom i] [Mono i] {n : ℕ}
+    (hfinite : IsFinite p) (hflat : Flat p) (hlfp : LocallyOfFinitePresentation p)
+    (hn : ∀ s, p.finrank s = n) :
+    i ^ n = 1 := by
+  let K : AlgebraicGeometry.FiniteFlatCommGroupScheme S :=
+    { carrier := X
+      structureMap := p
+      grp := inferInstance
+      comm := TauCeti.isCommMonObj_of_mono i
+      finite := hfinite
+      flat := hflat
+      locallyOfFinitePresentation := hlfp }
+  have hid : (𝟙 K.toOver) ^ n = 1 := K.pow_eq_one_of_finrank hn _
+  rw [← Category.id_comp i, ← MonObj.pow_comp, hid, MonObj.one_comp]
+
+end TauCeti.GroupScheme

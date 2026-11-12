@@ -168,8 +168,10 @@ theorem contMDiffOn_normalBundleTrivialization_coordChangeL [IsManifold I (n + 1
   refine ((contMDiffOn_const
     (c := (normalFiberEquiv hdim x₁ (himm x₁)).toContinuousLinearMap)).clm_comp
     (((contMDiffOn_normalCoordinateChange hf himm x₀ x₁).mono
-      (fun x hx => (mem_normalBundleTrivialization_baseSet
-        (hf.of_le le_add_self) himm hdim x₁ x).mp hx.2)).clm_comp
+      (fun x (hx : x ∈ _ ∩
+          (normalBundleTrivialization (hf.of_le le_add_self) himm hdim x₁).baseSet) =>
+        (mem_normalBundleTrivialization_baseSet
+          (hf.of_le le_add_self) himm hdim x₁ x).mp hx.2)).clm_comp
         (contMDiffOn_const
           (c := (normalFiberEquiv hdim x₀ (himm x₀)).symm.toContinuousLinearMap)))).congr ?_
   intro x hx

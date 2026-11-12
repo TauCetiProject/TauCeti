@@ -65,28 +65,22 @@ each fails to for a different reason.
 So the results below are proved directly for an arbitrary sequence, which is also the form in
 which they are consumed.
 
-## References
+## Applications
 
-The consumer is the prime-power Hecke recurrence of `TauCetiRoadmap/ModularForms`,
-`T_(p^(r+2)) = T_p * T_(p^(r+1)) - p^(k-1) * ⟨p⟩ * T_(p^r)`: taking `d r = T_(p^r)`, `D = T_p` and
-`S = p^(k-1) * ⟨p⟩` turns `linearRec₂_mul_eq_sum_pow_mul` into the product formula for
-`T_(p^r) * T_(p^s)`. That instantiation belongs to the Hecke tree, and nothing in this file
-mentions a Hecke operator.
+The prime-power Hecke recurrence
+`T_(p^(r+2)) = T_p * T_(p^(r+1)) - p^(k-1) * ⟨p⟩ * T_(p^r)` is an instance: taking
+`d r = T_(p^r)`, `D = T_p` and `S = p^(k-1) * ⟨p⟩` turns `linearRec₂_mul_eq_sum_pow_mul` into the
+product formula for `T_(p^r) * T_(p^s)`. That instantiation lives with the Hecke operators, and
+nothing in this file mentions one.
 
 ## Provenance
 
-Ported from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), the roadmap's nominated source
-for `TauCetiRoadmap/ModularForms`, at commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`,
+Ported from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
+`2baa76f742bdb4fb8ee323fabba41203bd390e08`,
 `projects/LeanModularForms/LeanModularForms/HeckeRIngs/GL2/Unified/Gamma0RingDn.lean`, section
 `FormalChebyshev` (lines 63-109), where the two results are the `private` lemmas `formal_D_mul_d`
-and `formal_ppow_mul`.
-
-They are ported public here rather than kept private: they are the reusable content of that
-block, and a private copy would have to be re-ported by every consumer. The hypotheses are
-AINTLIB's, except that the first result drops the ring axioms it does not use; `D`, `S` and `d`
-become `variable`s, the names follow Mathlib's
-statement-describing convention instead of the source's `formal_*` working names, and the first
-proof spells out the step that the source discharges with `grind`.
+and `formal_ppow_mul`. The hypotheses are AINTLIB's, except that the first result drops the ring
+axioms it does not use.
 -/
 
 public section
@@ -106,9 +100,8 @@ subject. No hypothesis relating `D` and `S` is needed. -/
 theorem linearRec₂_mul_eq_succ_add_mul_pred
     (hd : ∀ r, d (r + 2) = D * d (r + 1) - S * d r) {m : ℕ} (hm : 0 < m) :
     D * d m = d (m + 1) + S * d (m - 1) := by
-  obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
-  simp only [Nat.add_assoc, Nat.reduceAdd, Nat.add_sub_cancel]
-  rw [hd k, sub_add_cancel]
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hm.ne'
+  simp [hd]
 
 end AddGroup
 
@@ -125,29 +118,29 @@ theorem linearRec₂_mul_eq_sum_pow_mul (h0 : d 0 = 1) (h1 : d 1 = D) (hDS : Com
   induction r using Nat.twoStepInduction generalizing s with
   | zero => simp [h0]
   | one =>
-    rw [h1, linearRec₂_mul_eq_succ_add_mul_pred hd (m := s) (by omega), sum_range_succ,
-      sum_range_one, show 1 + s - 2 * 0 = s + 1 by omega, show 1 + s - 2 * 1 = s - 1 by omega]
-    simp
+    simp [h1, linearRec₂_mul_eq_succ_add_mul_pred hd (by omega : 0 < s), sum_range_succ,
+      add_comm 1 s]
   | more r ih1 ih2 =>
-    have key : ∀ i ∈ range (r + 2),
-        D * (S ^ i * d (r + 1 + s - 2 * i)) =
-          S ^ i * d (r + 2 + s - 2 * i) + S ^ (i + 1) * d (r + s - 2 * i) := by
-      intro i hi
-      rw [mem_range] at hi
+    -- Multiplying the `i`-th term of the expansion of `d (r + 1) * d s` by `D` shifts it up.
+    have key (i : ℕ) (hi : i < r + 2) : D * (S ^ i * d (r + 1 + s - 2 * i)) =
+        S ^ i * d (r + 2 + s - 2 * i) + S ^ (i + 1) * d (r + s - 2 * i) := by
+      have hup : r + 1 + s - 2 * i + 1 = r + 2 + s - 2 * i := by omega
+      have hdown : r + 1 + s - 2 * i - 1 = r + s - 2 * i := by omega
       have h := linearRec₂_mul_eq_succ_add_mul_pred hd (m := r + 1 + s - 2 * i) (by omega)
-      rw [show r + 1 + s - 2 * i + 1 = r + 2 + s - 2 * i by omega,
-        show r + 1 + s - 2 * i - 1 = r + s - 2 * i by omega] at h
-      rw [← mul_assoc, (hDS.pow_right i).eq, mul_assoc, h, mul_add, ← mul_assoc, ← pow_succ]
+      rw [hup, hdown] at h
+      rw [← mul_assoc, (hDS.pow_right i).eq, mul_assoc, h]
+      simp only [mul_add, pow_succ, mul_assoc]
+    -- Expand `d (r + 2) * d s` by the recurrence, then both products by the induction hypotheses.
     have hL : d (r + 2) * d s = D * (d (r + 1) * d s) - S * (d r * d s) := by
-      rw [hd r, sub_mul, mul_assoc, mul_assoc]
-    have hshift : S * ∑ i ∈ range (r + 1), S ^ i * d (r + s - 2 * i) =
-        ∑ i ∈ range (r + 1), S ^ (i + 1) * d (r + s - 2 * i) := by
-      rw [mul_sum]
-      exact sum_congr rfl fun i _ ↦ by rw [← mul_assoc, ← pow_succ']
-    rw [hL, ih2 (by omega), ih1 (by omega), mul_sum, sum_congr rfl key, sum_add_distrib, hshift,
-      sum_range_succ (fun i ↦ S ^ (i + 1) * d (r + s - 2 * i)) (r + 1),
-      sum_range_succ (fun i ↦ S ^ i * d (r + 2 + s - 2 * i)) (r + 2),
-      show r + 2 + s - 2 * (r + 2) = r + s - 2 * (r + 1) by omega]
+      simp only [hd r, sub_mul, mul_assoc]
+    rw [hL, ih2 (by omega), ih1 (by omega), mul_sum, mul_sum]
+    -- Shift each term with `key`; what remains is a telescoping comparison of two sums.
+    rw [sum_congr rfl fun i hi ↦ key i (mem_range.1 hi), sum_add_distrib]
+    -- Split off the top terms: the `S`-shifted sum cancels below them, and they agree.
+    have htop : r + 2 + s - 2 * (r + 2) = r + s - 2 * (r + 1) := by omega
+    rw [sum_range_succ (fun i ↦ S ^ (i + 1) * d (r + s - 2 * i)) (r + 1),
+      sum_range_succ (fun i ↦ S ^ i * d (r + 2 + s - 2 * i)) (r + 2), htop]
+    simp only [← mul_assoc, ← pow_succ']
     abel
 
 end TauCeti

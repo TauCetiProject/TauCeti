@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Real.Basic
 public import TauCeti.Geometry.Convex.Cone.Basic
 public import TauCeti.Geometry.Convex.Cone.Face.Basic
 public import TauCeti.Geometry.Convex.Cone.Face.Finite
@@ -31,6 +32,8 @@ pointed cone.
 * `TauCeti.Toric.ToricRay.instIsEmptyBot`: the zero cone has no rays.
 * `TauCeti.Toric.ToricRay.faceEmbedding` and `TauCeti.Toric.ToricRay.range_faceEmbedding`: the
   rays of a face of a cone are exactly the rays of the cone contained in that face.
+* `TauCeti.Toric.ToricRay.faceFinset`: the finite set of rays of a cone contained in a finitely
+  generated face.
 * `TauCeti.Toric.ToricRay.hullSingleton` and `TauCeti.Toric.ToricRay.eq_hullSingleton`: the cone
   spanned by a nonzero vector is its own only ray.
 * `TauCeti.Toric.ToricRay.map_fst_eq_bot_of_map_snd_ne_bot`,
@@ -52,7 +55,6 @@ namespace TauCeti.Toric
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] {σ τ : PointedCone ℝ V}
 
 /-- A ray of a pointed cone is a face whose linear span has real dimension one. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 abbrev ToricRay (σ : PointedCone ℝ V) :=
   {ρ : σ.Face // Module.finrank ℝ (Submodule.span ℝ ((ρ : PointedCone ℝ V) : Set V)) = 1}
 
@@ -170,7 +172,7 @@ theorem toPointedCone_eq_of_hull_singleton {x : V}
     (ρ : ToricRay (PointedCone.hull ℝ {x})) : ρ.toPointedCone = PointedCone.hull ℝ {x} := by
   have hx : x ∈ ρ.toPointedCone := by
     by_contra hx
-    have h := ρ.1.eq_hull_inter_of_eq_hull {x} rfl
+    have h := ρ.1.isFaceOf.eq_hull_inter_of_eq_hull rfl
     rw [Set.singleton_inter_eq_empty.2 (by simpa using hx)] at h
     exact ρ.toPointedCone_ne_bot (by simpa using h)
   exact le_antisymm ρ.1.isFaceOf.le (Submodule.span_le.2 (Set.singleton_subset_iff.2 hx))
@@ -455,6 +457,38 @@ faces. -/
 theorem finite_of_fg (hσ : σ.FG) : Finite (ToricRay σ) := by
   let _ := PointedCone.FG.finite_face hσ
   infer_instance
+
+/-- The rays of a cone `σ` contained in a finitely generated face `τ`, as a finite set: the image of
+the rays of `τ` under `faceEmbedding`. -/
+noncomputable def faceFinset (hτ : τ.IsFaceOf σ) (hfg : τ.FG) : Finset (ToricRay σ) :=
+  have := finite_of_fg hfg
+  (Set.finite_range (faceEmbedding hτ)).toFinset
+
+/-- A ray of `σ` lies in `faceFinset` of a face `τ` exactly when it is contained in `τ`. -/
+@[simp]
+theorem mem_faceFinset (hτ : τ.IsFaceOf σ) (hfg : τ.FG) {ρ : ToricRay σ} :
+    ρ ∈ faceFinset hτ hfg ↔ ρ.toPointedCone ≤ τ := by
+  rw [faceFinset, Set.Finite.mem_toFinset, range_faceEmbedding, Set.mem_ofPred_eq]
+
+/-- A ray of a face `τ` of `σ`, viewed as a ray of `σ`, lies in `faceFinset` of `τ`. -/
+theorem faceEmbedding_mem_faceFinset (hτ : τ.IsFaceOf σ) (hfg : τ.FG) (ρ : ToricRay τ) :
+    faceEmbedding hτ ρ ∈ faceFinset hτ hfg :=
+  (mem_faceFinset hτ hfg).2 ρ.1.isFaceOf.le
+
+/-- For faces `υ ≤ τ ≤ σ`, the rays of `σ` contained in `υ` are the rays of `τ` contained in `υ`,
+viewed as rays of `σ`. -/
+theorem faceFinset_eq_map {υ : PointedCone ℝ V} (hτ : τ.IsFaceOf σ) (hυτ : υ.IsFaceOf τ)
+    (hυσ : υ.IsFaceOf σ) (hfg : υ.FG) :
+    faceFinset hυσ hfg = (faceFinset hυτ hfg).map (faceEmbedding hτ) := by
+  ext ρ
+  simp only [mem_faceFinset, Finset.mem_map]
+  refine ⟨fun hρ ↦ ?_, ?_⟩
+  · obtain ⟨ν, rfl⟩ : ρ ∈ Set.range (faceEmbedding hτ) := by
+      rw [range_faceEmbedding]
+      exact hρ.trans hυτ.le
+    exact ⟨ν, hρ, rfl⟩
+  · rintro ⟨ν, hν, rfl⟩
+    exact hν
 
 end ToricRay
 

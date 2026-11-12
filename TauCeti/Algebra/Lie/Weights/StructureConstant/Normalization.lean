@@ -81,7 +81,7 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 namespace IsSl2System
 
 variable {x : Weight K H L → L} (hx : IsSl2System x)
-  (α β γ : Weight K H L) (hα : α.IsNonZero) (hβ : β.IsNonZero) (hγ : γ.IsNonZero)
+  (α β γ : Weight K H L) (hβ : β.IsNonZero) (hγ : γ.IsNonZero)
   (hαβ : (γ : H → K) = (α : H → K) + β)
   (e : L →ₗ⁅K⁆ L)
   (heα : e (x α) = -x (-α)) (heβ : e (x β) = -x (-β))
@@ -100,19 +100,9 @@ theorem structureConstant_neg_add_mul_killingForm_eq :
         rw [Weight.coe_neg, hαβ]
         abel) * killingForm K L (x β) (x (-β)) =
       hx.structureConstant α β γ hγ hαβ * killingForm K L (x γ) (x (-γ)) := by
-  have hγα : (β : H → K) = (γ : H → K) + (-α : Weight K H L) := by
-    rw [Weight.coe_neg, hαβ]
-    abel
-  have hαγ : (β : H → K) = (-α : Weight K H L) + (γ : H → K) := by
-    rw [Weight.coe_neg, hαβ]
-    abel
-  have hcyclic := hx.structureConstant_mul_killingForm_eq γ (-α) β hβ hγα hγ
-  have hskew := hx.structureConstant_skew (-α) γ β hβ hαγ
-  have hneg := hx.structureConstant_neg_neg_of_hom α β γ hγ hαβ e heα heβ heγ
-  rw [hskew, hneg] at hcyclic
-  simpa only [neg_mul, neg_inj] using hcyclic
-
-include hα
+  have h := hx.structureConstant_neg_neg_mul_killingForm_eq α β γ hγ hαβ hβ
+  rw [hx.structureConstant_neg_neg_of_hom α β γ hγ hαβ e heα heβ heγ] at h
+  simpa only [neg_mul, neg_inj] using h.symm
 
 /-- **Weighted square formula for a Chevalley structure constant.** If `γ = α + β` and the root
 vectors at `α`, `β`, and `γ` are compatible with a Chevalley involution, then
@@ -131,7 +121,7 @@ theorem structureConstant_sq_mul_killingForm_eq :
         killingForm K L (x β) (x (-β)) := by
   have hratio := hx.structureConstant_neg_add_mul_killingForm_eq α β γ hβ hγ hαβ
     e heα heβ heγ
-  have hproduct := hx.structureConstant_mul_structureConstant α β γ hγ hαβ hα hβ
+  have hproduct := hx.structureConstant_mul_structureConstant α β γ hγ hαβ hβ
   calc
     hx.structureConstant α β γ hγ hαβ ^ 2 * killingForm K L (x γ) (x (-γ)) =
         hx.structureConstant α β γ hγ hαβ *
@@ -158,7 +148,7 @@ theorem structureConstant_sq_eq_natCast_sq_of_killingForm_ratio
       (chainBotCoeff α β + 1 : ℕ) * killingForm K L (x γ) (x (-γ))) :
     hx.structureConstant α β γ hγ hαβ ^ 2 =
       ((chainBotCoeff α β + 1 : ℕ) : K) ^ 2 := by
-  have hsquare := hx.structureConstant_sq_mul_killingForm_eq α β γ hα hβ hγ hαβ
+  have hsquare := hx.structureConstant_sq_mul_killingForm_eq α β γ hβ hγ hαβ
     e heα heβ heγ
   have hkill : killingForm K L (x γ) (x (-γ)) ≠ 0 :=
     killingForm_ne_zero_of_mem_rootSpace hγ (hx.mem_rootSpace γ) (hx.ne_zero γ hγ)
@@ -186,7 +176,7 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast_of_killingForm_ratio
     hx.structureConstant α β γ hγ hαβ = ((chainBotCoeff α β + 1 : ℕ) : K) ∨
       hx.structureConstant α β γ hγ hαβ = -((chainBotCoeff α β + 1 : ℕ) : K) :=
   sq_eq_sq_iff_eq_or_eq_neg.mp <|
-    hx.structureConstant_sq_eq_natCast_sq_of_killingForm_ratio α β γ hα hβ hγ hαβ
+    hx.structureConstant_sq_eq_natCast_sq_of_killingForm_ratio α β γ hβ hγ hαβ
       e heα heβ heγ hlength
 
 end IsSl2System

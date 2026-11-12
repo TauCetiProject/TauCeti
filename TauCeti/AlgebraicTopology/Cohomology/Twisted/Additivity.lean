@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Basic
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Additivity
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Additivity.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.Limit
 public import TauCeti.Algebra.Category.ModuleCat.AB
 import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products

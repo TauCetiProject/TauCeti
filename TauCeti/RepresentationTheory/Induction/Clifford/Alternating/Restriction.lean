@@ -141,7 +141,7 @@ theorem liesOver_alternatingGroup_iff_nonempty_iso_indFDRep
       refine ⟨biprod.inl ≫ r.inv, ?_⟩
       intro hzero
       have hid := congrArg (fun f => f ≫ r.hom ≫ biprod.fst) hzero
-      exact id_nonzero (ofLinearCharacter χ) (by simpa using hid)
+      exact CategoryTheory.id_ne_zero (ofLinearCharacter χ) (by simpa using hid)
     exact h.of_iso_left e
 
 end FDRep

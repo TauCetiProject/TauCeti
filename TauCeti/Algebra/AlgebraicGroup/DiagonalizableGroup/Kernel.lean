@@ -80,7 +80,7 @@ noncomputable def kernelCoordinateIso :
         (CommHopfAlgCat.kernelHopfIdeal
           (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom R p))) ≅
       CommHopfAlgCat.of R (MonoidAlgebra R (N ⧸ p.range)) :=
-  CommHopfAlgCat.quotientIsoOfKerOfSurjectiveEq
+  CommHopfAlgCat.Hom.quotientIsoOfKerOfSurjectiveEq
     (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom R (QuotientGroup.mk' p.range)))
     (by exact MonoidAlgebra.mapDomain_surjective (QuotientGroup.mk'_surjective p.range))
     (kernelHopfIdeal_mapDomainBialgHom R p).symm
@@ -93,7 +93,7 @@ theorem mkQuotient_comp_kernelCoordinateIso_hom :
           (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom R p))) ≫
         (kernelCoordinateIso R p).hom =
       CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom R (QuotientGroup.mk' p.range)) :=
-  CommHopfAlgCat.mkQuotient_comp_quotientIsoOfKerOfSurjectiveEq_hom _ _ _
+  CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoOfKerOfSurjectiveEq_hom _ _ _
 
 /-- Over a nonzero base, the kernel of a diagonalizable-group morphism is finite if and
 only if the cokernel of its character homomorphism is finite. -/

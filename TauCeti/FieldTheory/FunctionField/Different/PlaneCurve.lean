@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
-public import TauCeti.Algebra.MvPolynomial.FinTwo
+public import TauCeti.Algebra.MvPolynomial.Fin.Two
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.FieldTheory.FunctionField.Divisor.RatFunc
@@ -16,6 +16,8 @@ import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
+import TauCeti.FieldTheory.RatFunc.Transcendental
+import TauCeti.RingTheory.Algebraic.LinearIndependent
 import TauCeti.RingTheory.RegularLocalRing.Hypersurface
 
 /-!
@@ -138,11 +140,7 @@ theorem differentExponent_eq_ord_aeval_pderiv_one {t : K} (ht : Transcendental k
   let _ : Algebra k[X] K := (aeval t).toAlgebra
   let _ : Algebra k[X] F := ((algebraMap K F).comp (algebraMap k[X] K)).toAlgebra
   have : IsScalarTower k[X] K F := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsFractionRing k[X] K := by
-    let e : RatFunc k ≃ₐ[k] K := (RatFunc.algEquivOfTranscendental t ht).trans
-      ((IntermediateField.equivOfEq htop).trans IntermediateField.topEquiv)
-    refine IsLocalization.isLocalization_of_algEquiv _ { e with commutes' := fun p ↦ ?_ }
-    simp [e, RingHom.algebraMap_toAlgebra]
+  have : IsFractionRing k[X] K := isFractionRing_polynomial_aeval ht htop
   have : IsScalarTower k k[X] K := .of_algebraMap_eq fun c ↦ by
     simp [RingHom.algebraMap_toAlgebra]
   have : IsScalarTower k k[X] F := .of_algebraMap_eq fun c ↦ by
@@ -180,13 +178,8 @@ theorem differentExponent_eq_ord_aeval_pderiv_one {t : K} (ht : Transcendental k
       rw [← Algebra.adjoin_image, Set.image_singleton, Algebra.map_top, Subalgebra.range_val]
       rfl
   -- `P` is finite on `C`, since `t` is regular at `P` and `C` is integral over `k[t]`.
-  have hR : ∀ r : k[X], algebraMap k[X] F r ∈ P.integers := fun r ↦ by
-    induction r using Polynomial.induction_on' with
-    | add p q hp hq => rw [map_add]; exact add_mem hp hq
-    | monomial n c =>
-      rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, ← htX, ← Polynomial.algebraMap_eq,
-        ← IsScalarTower.algebraMap_apply]
-      exact mul_mem (P.algebraMap_mem_integers c) (pow_mem htP n)
+  have hR : ∀ r : k[X], algebraMap k[X] F r ∈ P.integers :=
+    P.algebraMap_polynomial_mem_integers htP htX
   have hC : ∀ c : C, algebraMap C F c ∈ P.integers := fun c ↦
     P.mem_integers_of_isIntegral hR (Algebra.IsIntegral.isIntegral c).algebraMap
   rw [differentExponent_eq_ord_aeval_derivative_minpoly_of_isIntegralClosure k K
@@ -247,6 +240,24 @@ theorem finrank_ratFunc_eq_totalDegree_of_aeval_eq_zero {g : MvPolynomial (Fin 2
   rw [finrank_ratFunc_eq_natDegree_of_aeval_eq_zero hirr
       (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead) hgen hy,
     Bivariate.natDegree_equivMvPolynomial_symm le_rfl hlead]
+
+/-- **The monomials of degree less than `n` in the coordinates of a plane curve are
+independent**: let `g ∈ k[X, Y]` be irreducible of total degree `n`, with the coefficient of `Yⁿ`
+equal to `1`, and let `g(x, y) = 0`. Then the products `x ^ i y ^ j` with `i + j < n` are linearly
+independent over `k`, since `y` has degree `n` over `k(x)`. -/
+theorem linearIndepOn_pow_mul_pow_of_aeval_eq_zero {g : MvPolynomial (Fin 2) k}
+    (hirr : Irreducible g) (hlead : g.coeff (Finsupp.single 1 g.totalDegree) = 1) {y : F}
+    (hy : MvPolynomial.aeval ![algebraMap (RatFunc k) F RatFunc.X, y] g = 0) :
+    LinearIndepOn k (fun p : ℕ × ℕ ↦ algebraMap (RatFunc k) F RatFunc.X ^ p.1 * y ^ p.2)
+      {p | p.1 + p.2 < g.totalDegree} := by
+  have hdeg : (minpoly (RatFunc k) y).natDegree = g.totalDegree := by
+    rw [minpoly_ratFunc_eq_map_of_aeval_eq_zero hirr
+        (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead) hy,
+      (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead).natDegree_map,
+      Bivariate.natDegree_equivMvPolynomial_symm le_rfl hlead]
+  refine (RatFunc.transcendental_X.linearIndepOn_pow_mul_pow y).mono fun p hp ↦ ?_
+  simp only [Set.mem_ofPred_eq, hdeg] at hp ⊢
+  omega
 
 variable [Algebra.IsSeparable (RatFunc k) F]
 

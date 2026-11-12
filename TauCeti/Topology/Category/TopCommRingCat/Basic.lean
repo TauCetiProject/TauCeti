@@ -36,13 +36,11 @@ theorem forget₂_map_eqToHom_comp_comp_eqToHom {X X' Y Y' : _root_.TopCommRingC
       (forget₂ _root_.TopCommRingCat CommRingCat).map (eqToHom eX) ≫
         CommRingCat.ofHom g := by
   subst eX eY
-  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
-  rw [CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_id]
-  rw [forget₂_map]
-  -- Forgetting topology has the same underlying ring object as `CommRingCat.of X.α`.
-  change CommRingCat.ofHom g ≫ 𝟙 (CommRingCat.of Y.α) =
-    𝟙 (CommRingCat.of X.α) ≫ CommRingCat.ofHom g
-  simp only [Category.comp_id, Category.id_comp]
+  simp only [eqToHom_refl, Category.id_comp, Category.comp_id, CategoryTheory.Functor.map_id,
+    forget₂_map]
+  -- The forgetful image of `X` is `CommRingCat.of X.α` only after unfolding `forget₂`, so the
+  -- identity laws are applied by `exact`, which unifies the objects at default transparency.
+  exact (Category.comp_id _).trans (Category.id_comp _).symm
 
 end TauCeti.TopCommRingCat
 

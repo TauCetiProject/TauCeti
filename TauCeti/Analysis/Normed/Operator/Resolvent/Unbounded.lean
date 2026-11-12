@@ -14,9 +14,10 @@ public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.SpectralMappi
 
 The continuous-inverse foundation, the resolvent identity, and the bridge to Mathlib's algebraic
 resolvent are developed in `TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic`. This file
-proves the normed theory on complete normed spaces over nontrivially normed fields: a sufficiently
-small bounded perturbation of an operator preserves a resolvent point, and perturbing the
-spectral parameter gives a local Neumann formula and openness of the resolvent set.
+proves the normed theory over nontrivially normed fields when the continuous endomorphism algebra
+has summable geometric series, as it does on complete normed spaces. A sufficiently small bounded
+perturbation of an operator preserves a resolvent point, and perturbing the spectral parameter
+gives a local Neumann formula and openness of the resolvent set.
 
 For `A : X →ₗ.[𝕜] X`, the chosen inverse `A.resolvent lambda` is a bounded operator whenever
 `lambda ∈ A.resolventSet`. No semigroup assumption is needed, so this theory applies to
@@ -43,12 +44,14 @@ public section
 
 noncomputable section
 
+open scoped Topology
+
 namespace TauCeti.LinearPMap
 
 open _root_.LinearPMap (IsResolventAt)
 
 variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X]
-  [NormedSpace 𝕜 X] [CompleteSpace X]
+  [NormedSpace 𝕜 X] [HasSummableGeomSeries (X →L[𝕜] X)]
 variable {A : X →ₗ.[𝕜] X} {lambda mu : 𝕜}
 
 /-- If `lambda` lies in the resolvent set of `A` and `‖B R(lambda, A)‖ < 1`, then
@@ -80,17 +83,12 @@ theorem resolvent_eq_mul_inverse_one_sub (h : lambda ∈ A.resolventSet)
 
 /-- **The resolvent set is open.** -/
 theorem _root_.LinearPMap.isOpen_resolventSet (A : X →ₗ.[𝕜] X) : IsOpen (A.resolventSet) := by
-  rw [Metric.isOpen_iff]
+  rw [isOpen_iff_mem_nhds]
   intro lambda h
-  refine ⟨1 / (‖A.resolvent lambda‖ + 1), by positivity, fun mu hmu => ?_⟩
-  rw [Metric.mem_ball, dist_eq_norm] at hmu
-  refine mem_resolventSet_of_norm_mul_lt_one h ?_
-  have hlt : ‖mu - lambda‖ * (‖A.resolvent lambda‖ + 1) < 1 :=
-    (lt_div_iff₀ (by positivity)).mp (by simpa using hmu)
-  calc ‖mu - lambda‖ * ‖A.resolvent lambda‖
-      ≤ ‖mu - lambda‖ * (‖A.resolvent lambda‖ + 1) :=
-        mul_le_mul_of_nonneg_left (by linarith) (norm_nonneg _)
-    _ < 1 := hlt
+  have hsmall : ∀ᶠ mu in 𝓝 lambda, ‖mu - lambda‖ * ‖A.resolvent lambda‖ < 1 :=
+    ((continuous_id.sub continuous_const).norm.mul continuous_const).continuousAt.eventually_lt
+      continuousAt_const (by simp)
+  filter_upwards [hsmall] with mu hmu using mem_resolventSet_of_norm_mul_lt_one h hmu
 
 end TauCeti.LinearPMap
 

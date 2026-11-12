@@ -111,7 +111,7 @@ instance closedLowerCentralSeries_normal (n : ℕ) : (closedLowerCentralSeries G
   infer_instance
 
 /-- Every term of the closed lower central series is closed. -/
-theorem isClosed_closedLowerCentralSeries (n : ℕ) :
+instance isClosed_closedLowerCentralSeries (n : ℕ) :
     IsClosed (closedLowerCentralSeries G n : Set G) := by
   rw [closedLowerCentralSeries_def]
   exact isClosed_pLowerCentralSeries n

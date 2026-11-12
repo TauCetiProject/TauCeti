@@ -10,51 +10,34 @@ public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 /-!
 # Absorption of fixed elements in a nonarchimedean ring
 
-In a nonarchimedean ring multiplication by a fixed element `a` is continuous, so every
-neighbourhood `V` of zero absorbs `a`: some open additive subgroup `Z` satisfies `a * Z ⊆ V`.
-That single-element fact is Mathlib's `NonarchimedeanRing.left_mul_subset`. This file adds the
-one thing Mathlib does not have: the finite-family form, that one open subgroup absorbs each of
-finitely many fixed elements into its own target.
-
-It mentions no weight family, power series or Huber ring, so it is stated here rather than
-alongside the theory that uses it.
+When multiplication by a fixed element `a` is continuous and the additive group is
+nonarchimedean, every neighbourhood `V` of zero absorbs `a`: some open additive subgroup `Z`
+satisfies `a * Z ⊆ V`. For a single element in a nonarchimedean ring this is Mathlib's
+`NonarchimedeanRing.left_mul_subset`. This file adds the finite-family form: one open subgroup
+absorbs each of finitely many fixed elements into its own target neighbourhood.
 
 ## Main results
 
-* `NonarchimedeanRing.exists_openAddSubgroup_forall_mul_subset`: finitely many fixed elements
+* `NonarchimedeanAddGroup.exists_openAddSubgroup_forall_mul_mem`: finitely many fixed elements
   are absorbed into their own targets by a single open subgroup.
-
-## References
-
-* Mathlib's `Mathlib/Topology/Algebra/Nonarchimedean/Basic.lean`, whose
-  `NonarchimedeanRing.left_mul_subset` the proof below runs on.
 -/
 
 public section
 
-namespace NonarchimedeanRing
+namespace NonarchimedeanAddGroup
 
-variable {A : Type*} [Ring A] [TopologicalSpace A] [NonarchimedeanRing A]
+variable {A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A] [SeparatelyContinuousMul A]
+  [NonarchimedeanAddGroup A]
 
-/-- **The finite-family absorption lemma**: one open subgroup absorbs each of finitely many fixed
-elements into its own target.
-
-The single-element case is Mathlib's `NonarchimedeanRing.left_mul_subset`, used directly in the
-induction below; only the target has to be unbundled, since a subgroup that is a neighbourhood of
-zero is open. -/
-theorem exists_openAddSubgroup_forall_mul_subset {ι : Type*} (s : Finset ι) (a : ι → A)
-    (V : ι → AddSubgroup A) (hV : ∀ i ∈ s, (V i : Set A) ∈ nhds (0 : A)) :
+/-- **The finite-family absorption lemma**: one open additive subgroup `Z` absorbs each of
+finitely many fixed elements `a i` into its own neighbourhood `V i` of zero, i.e.
+`a i * z ∈ V i` for all `i ∈ s` and `z ∈ Z`. The single-element case in a nonarchimedean ring is
+Mathlib's `NonarchimedeanRing.left_mul_subset`. -/
+theorem exists_openAddSubgroup_forall_mul_mem {ι : Type*} (s : Finset ι) (a : ι → A)
+    (V : ι → Set A) (hV : ∀ i ∈ s, V i ∈ nhds (0 : A)) :
     ∃ Z : OpenAddSubgroup A, ∀ i ∈ s, ∀ z ∈ Z, a i * z ∈ V i := by
-  classical
-  induction s using Finset.induction with
-  | empty => exact ⟨⊤, by simp⟩
-  | insert i s' hi ih =>
-      obtain ⟨Z', hZ'⟩ := ih fun j hj ↦ hV j (Finset.mem_insert_of_mem hj)
-      obtain ⟨Z, hZ⟩ := left_mul_subset
-        ⟨V i, (V i).isOpen_of_mem_nhds (hV i (Finset.mem_insert_self i s'))⟩ (a i)
-      refine ⟨Z ⊓ Z', fun j hj z hz ↦ ?_⟩
-      rcases Finset.mem_insert.mp hj with rfl | hj'
-      · exact hZ ⟨z, hz.1, rfl⟩
-      · exact hZ' j hj' z hz.2
+  obtain ⟨Z, hZ⟩ := is_nonarchimedean _ <| s.eventually_all.2 fun i hi ↦
+    ((continuous_const_mul (a i)).tendsto' 0 0 (mul_zero _)).eventually_mem (hV i hi)
+  exact ⟨Z, fun i hi z hz ↦ hZ hz i hi⟩
 
-end NonarchimedeanRing
+end NonarchimedeanAddGroup

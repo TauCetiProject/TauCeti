@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Algebra.Polynomial.Monic
+public import Mathlib.Algebra.Star.Basic
+import Mathlib.Algebra.Star.BigOperators
 
 /-!
 # The monic polynomial with prescribed lower coefficients
@@ -27,9 +29,13 @@ a *free* tuple rather than as the data of a polynomial subtype.
   whose `n` lower coefficients are `c`.
 * `TauCeti.Polynomial.monic_monicOfCoeff`, `TauCeti.Polynomial.natDegree_monicOfCoeff`,
   `TauCeti.Polynomial.eval_monicOfCoeff`: its monicity, its degree and its values.
+* `TauCeti.Polynomial.star_eval_monicOfCoeff`: over a commutative star ring, conjugating its value
+  conjugates the coefficients and the argument.
 * `TauCeti.Polynomial.coeff_monicOfCoeff` and `TauCeti.Polynomial.monicOfCoeff_coeff`: the
   coefficients are read back off, and every monic polynomial of degree `n` arises this way, so the
   two constructions are mutually inverse.
+* `TauCeti.Polynomial.monicOfCoeff_add_single_zero`: moving the constant coefficient by `t` adds
+  the constant `t`.
 
 Mathlib writes the same polynomial in the same shape one universe up: `Polynomial.freeMonic R n`,
 in `Mathlib/RingTheory/Polynomial/UniversalFactorizationRing.lean`, is
@@ -38,8 +44,8 @@ in `Mathlib/RingTheory/Polynomial/UniversalFactorizationRing.lean`, is
 form, as the composite of `Polynomial.monicEquivDegreeLT` with `Polynomial.degreeLTEquiv`;
 `monicOfCoeff c` is by definition the image of `c` under the inverse of that composite, with the
 degree-`< n` and monic subtypes unbundled away and without the `Nontrivial R` that
-`monicEquivDegreeLT` carries. `TauCeti.Sym.coeffEquiv` is built from the bundled form, and
-`TauCeti.Sym.toMonic_coeffEquiv_symm` identifies its inverse with `monicOfCoeff`.
+`monicEquivDegreeLT` carries. `Sym.coeffEquiv` is built from the bundled form, and
+`Sym.toMonic_coeffEquiv_symm` identifies its inverse with `monicOfCoeff`.
 -/
 
 public section
@@ -56,8 +62,8 @@ variable {R : Type*} [CommSemiring R] {n : ℕ}
 
 /-- The monic polynomial of degree `n` whose `n` lower coefficients are `c`, that is, the
 specialization of Mathlib's `Polynomial.freeMonic` at the coefficient tuple `c`. It is the inverse
-of the coefficient-reading half of `TauCeti.Sym.coeffEquiv`, and is the natural object to state
-analytic dependence on the coefficients against: `TauCeti.Sym.coeffEquiv_symm_apply` describes the
+of the coefficient-reading half of `Sym.coeffEquiv`, and is the natural object to state
+analytic dependence on the coefficients against: `Sym.coeffEquiv_symm_apply` describes the
 inverse chart as its root multiset. -/
 noncomputable def monicOfCoeff (c : Fin n → R) : R[X] :=
   X ^ n + ∑ i : Fin n, monomial (i : ℕ) (c i)
@@ -79,7 +85,13 @@ theorem monic_monicOfCoeff (c : Fin n → R) : (monicOfCoeff c).Monic :=
 @[simp]
 theorem coeff_monicOfCoeff (c : Fin n → R) (i : Fin n) : (monicOfCoeff c).coeff (i : ℕ) = c i := by
   have hne : (i : ℕ) ≠ n := i.2.ne
-  simp [monicOfCoeff, coeff_X_pow, coeff_monomial, hne, Fin.val_eq_val]
+  simp [monicOfCoeff, coeff_X_pow, Finsupp.single_apply, hne, Fin.val_eq_val]
+
+/-- The coefficient of `X ^ n` in `TauCeti.Polynomial.monicOfCoeff c` is its leading coefficient
+`1`. -/
+@[simp]
+theorem coeff_monicOfCoeff_self (c : Fin n → R) : (monicOfCoeff c).coeff n = 1 := by
+  simp [monicOfCoeff, coeff_monomial, fun i : Fin n ↦ i.2.ne]
 
 /-- Monic polynomials with prescribed lower coefficients agree exactly when their
 coefficient tuples agree. -/
@@ -102,6 +114,21 @@ theorem map_monicOfCoeff {S : Type*} [CommSemiring S] (φ : R →+* S) (c : Fin 
     (monicOfCoeff c).map φ = monicOfCoeff (fun i ↦ φ (c i)) := by
   simp [monicOfCoeff, Polynomial.map_sum]
 
+/-- Conjugating the value of the monic polynomial with prescribed lower coefficients conjugates
+its coefficients and its argument. -/
+theorem star_eval_monicOfCoeff [StarRing R] (c : Fin n → R) (z : R) :
+    star ((monicOfCoeff c).eval z) = (monicOfCoeff fun i ↦ star (c i)).eval (star z) := by
+  simp [eval_monicOfCoeff, star_sum, star_pow]
+
+/-- Adding `t` to the constant coefficient of the tuple adds the constant polynomial `t`. -/
+@[simp]
+theorem monicOfCoeff_add_single_zero (c : Fin (n + 1) → R) (t : R) :
+    monicOfCoeff (c + Pi.single 0 t) = monicOfCoeff c + C t := by
+  have h : ∑ i : Fin (n + 1), monomial (i : ℕ) ((Pi.single 0 t : Fin (n + 1) → R) i) = C t := by
+    rw [Finset.sum_eq_single 0 (fun i _ hi ↦ by simp [hi]) (by simp)]
+    simp
+  simp only [monicOfCoeff, Pi.add_apply, map_add, Finset.sum_add_distrib, h, add_assoc]
+
 variable [Nontrivial R]
 
 /-- The polynomial attached to a tuple of `n` coefficients has degree exactly `n`, the degree of its
@@ -118,13 +145,10 @@ coefficients: together with `TauCeti.Polynomial.coeff_monicOfCoeff` this identif
 polynomials of degree `n` with the coefficient tuples. -/
 theorem monicOfCoeff_coeff {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
     monicOfCoeff (fun i : Fin n => p.coeff (i : ℕ)) = p := by
-  refine Polynomial.ext fun k => ?_
+  ext k
   rcases lt_trichotomy k n with hk | hk | hk
   · exact coeff_monicOfCoeff _ ⟨k, hk⟩
-  · have hlead : (monicOfCoeff fun i : Fin n => p.coeff (i : ℕ)).coeff n = 1 := by
-      simpa [natDegree_monicOfCoeff] using
-        (monic_monicOfCoeff fun i : Fin n => p.coeff (i : ℕ)).coeff_natDegree
-    rw [hk, hlead, ← hdeg, hp.coeff_natDegree]
+  · rw [hk, coeff_monicOfCoeff_self, ← hdeg, hp.coeff_natDegree]
   · rw [coeff_eq_zero_of_natDegree_lt (by rwa [natDegree_monicOfCoeff]),
       coeff_eq_zero_of_natDegree_lt (by rwa [hdeg])]
 

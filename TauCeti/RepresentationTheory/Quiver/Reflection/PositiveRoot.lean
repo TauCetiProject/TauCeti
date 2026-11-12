@@ -143,14 +143,14 @@ theorem exists_vertexPreReflectionList_take_apply_eq_single_of_not_nonneg
   have hmin (r : ℕ) (hr : r ≤ k) : 0 ≤ vertexPreReflectionList Q (l.take r) x :=
     not_not.mp (Nat.find_min hbad (by omega))
   have hneg := Nat.find_spec hbad
-  rw [hk, List.take_add_one, vertexPreReflectionList_append, Module.End.mul_apply] at hneg
+  rw [hk, List.take_add_one, vertexPreReflectionList_append, mul_apply_eq_comp] at hneg
   -- The segment `l.take k` does not exhaust `l`, so a vertex `j` follows it.
   obtain ⟨j, hj⟩ : ∃ j, l[k]? = some j :=
     Option.ne_none_iff_exists'.mp fun h ↦ hneg <| by
-      rw [h, Option.toList_none, vertexPreReflectionList_nil, Module.End.one_apply]
+      rw [h, Option.toList_none, vertexPreReflectionList_nil, one_apply_eq_self]
       exact hmin k le_rfl
   rw [hj, Option.toList_some, vertexPreReflectionList_apply_cons, vertexPreReflectionList_nil,
-    Module.End.one_apply] at hneg
+    one_apply_eq_self] at hneg
   refine ⟨k, j, hj, ?_, hmin⟩
   -- Otherwise the reflection at `j` would keep the vector nonnegative.
   by_contra hne
@@ -189,7 +189,7 @@ theorem exists_vertexPreReflectionList_take_apply_eq_single_and_nonneg (hpd : (t
     obtain ⟨N, j, hj⟩ := exists_vertexPreReflectionList_pow_apply_neg Q hpd hnd hmem (d := d)
       (by rintro rfl; simp at hroot)
     refine ⟨N, 0, fun h ↦ (h j).not_gt ?_⟩
-    rwa [List.take_zero, vertexPreReflectionList_nil, Module.End.one_apply]
+    rwa [List.take_zero, vertexPreReflectionList_nil, one_apply_eq_self]
   -- Take the first such pass; all earlier passes stay in the positive cone.
   have hpasses (p : ℕ) (hp : p < Nat.find hbad) (r : ℕ) :
       0 ≤ vertexPreReflectionList Q (l.take r) ((vertexPreReflectionList Q l ^ p) d) :=
@@ -197,9 +197,9 @@ theorem exists_vertexPreReflectionList_take_apply_eq_single_and_nonneg (hpd : (t
   -- The vector at the start of that pass is nonnegative: it ends the previous pass.
   have hx : 0 ≤ (vertexPreReflectionList Q l ^ Nat.find hbad) d := by
     rcases hN : Nat.find hbad with _ | N
-    · rwa [pow_zero, Module.End.one_apply]
+    · rwa [pow_zero, one_apply_eq_self]
     · have h := hpasses N (by omega) l.length
-      rwa [List.take_length, ← Module.End.mul_apply, ← pow_succ'] at h
+      rwa [List.take_length, ← mul_apply_eq_comp, ← pow_succ'] at h
   obtain ⟨m, hm⟩ := Nat.find_spec hbad
   obtain ⟨k, j, hj, heq, hnn⟩ := exists_vertexPreReflectionList_take_apply_eq_single_of_not_nonneg
     Q hpd hx (by rw [← vertexPreReflectionList_flatten_replicate,
@@ -232,11 +232,11 @@ theorem titsForm_eq_one_iff_exists_vertexPreReflectionList_single (hpd : (titsFo
     refine ⟨((List.replicate N l).flatten ++ l.take m).reverse, j, ?_⟩
     have hfwd : vertexPreReflectionList Q ((List.replicate N l).flatten ++ l.take m) d
         = Pi.single j 1 := by
-      rw [vertexPreReflectionList_append, Module.End.mul_apply,
+      rw [vertexPreReflectionList_append, mul_apply_eq_comp,
         vertexPreReflectionList_flatten_replicate]
       exact hEq
-    rw [← hfwd, ← Module.End.mul_apply,
-      vertexPreReflectionList_reverse_mul Q (fun i _ ↦ hloop i), Module.End.one_apply]
+    rw [← hfwd, ← mul_apply_eq_comp,
+      vertexPreReflectionList_reverse_mul Q (fun i _ ↦ hloop i), one_apply_eq_self]
   · rintro ⟨w, j, rfl⟩
     rw [titsForm_vertexPreReflectionList Q (fun i _ ↦ hloop i),
       titsForm_single_of_isEmpty Q (hloop j)]

@@ -155,8 +155,8 @@ private theorem explicitInfl2_explicitH2IsoGroupCohomology_symm_H2π
     (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ p.1 p.2).trans ?_))
   rw [Z2AddEquivCocycles₂_symm_coe, TauCeti.groupCohomology.mapCocycles₂_apply]
   refine (congrArg Subtype.val (hφ _)).trans ?_
-  rw [ofOpenNormalRepEquiv_apply_coe, hf, hf, ContinuousMonoidHom.quotientMk_apply,
-    ContinuousMonoidHom.quotientMk_apply, hz]
+  rw [ofOpenNormalRepEquiv_apply_coe, hf, hf, Subgroup.quotientMkContinuousMonoidHom_apply,
+    Subgroup.quotientMkContinuousMonoidHom_apply, hz]
 
 /-- **Inflation into the Brauer group on cocycle classes.** `brInfl V` sends the class of a
 `2`-cocycle `c` of the layer `V ◁ G_K` to the Brauer class of every continuous `2`-cocycle `z` on

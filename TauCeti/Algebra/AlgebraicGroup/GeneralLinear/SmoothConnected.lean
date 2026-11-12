@@ -39,13 +39,13 @@ noncomputable section
 /-- The coordinate Hopf algebra of `GL_n` is smooth over its base ring. -/
 instance instSmoothCoordinateHopfAlgebra (R : Type u) [CommRing R] (n : Nat) :
     Algebra.Smooth R (coordinateHopfAlgebra R n) := by
-  let _ : Algebra.Smooth R (MatrixMonoid.CoordinateRing R n) :=
+  let _ : Algebra.Smooth R (MatrixMonoid.CoordinateRing R (Fin n)) :=
     ⟨inferInstance, inferInstance⟩
-  let _ : Algebra.Smooth (MatrixMonoid.CoordinateRing R n) (CoordinateRing R n) :=
+  let _ : Algebra.Smooth (MatrixMonoid.CoordinateRing R (Fin n)) (CoordinateRing R n) :=
     Algebra.Smooth.of_isLocalization_Away
       (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R))
   let _ : Algebra.Smooth R (CoordinateRing R n) :=
-    Algebra.Smooth.comp R (MatrixMonoid.CoordinateRing R n) (CoordinateRing R n)
+    Algebra.Smooth.comp R (MatrixMonoid.CoordinateRing R (Fin n)) (CoordinateRing R n)
   exact Algebra.Smooth.of_equiv (coordinateHopfAlgebraAlgEquiv R n)
 
 /-- Over an integral domain, the coordinate Hopf algebra of `GL_n` is an integral domain. -/

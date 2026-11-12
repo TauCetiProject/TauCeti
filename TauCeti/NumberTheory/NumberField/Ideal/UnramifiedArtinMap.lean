@@ -73,12 +73,12 @@ theorem unramifiedArtinHom_apply (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
 finite prime is its multiplicity in the fractional ideal. -/
 theorem unramifiedArtinHom_apply_eq_finprod (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     unramifiedArtinHom (L := L) hab hur I =
-      letI := isMulCommutative_galoisGroup_of_commute hab
+      letI := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
       ∏ᶠ v : HeightOneSpectrum (𝓞 K),
         artinElement hab v.asIdeal (hur v) ^
           FractionalIdeal.count K v (I : FractionalIdeal (𝓞 K)⁰ K) := by
   rw [unramifiedArtinHom_apply, artinHomAway_apply]
-  let _ := isMulCommutative_galoisGroup_of_commute hab
+  let _ := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   rw [coe_idealsAwayEmptyEquiv_symm_apply]
   apply finprod_congr
   intro v
@@ -86,7 +86,7 @@ theorem unramifiedArtinHom_apply_eq_finprod (I : (FractionalIdeal (𝓞 K)⁰ K)
 
 /-- **The unrestricted Artin map sends a prime ideal to its Frobenius.** -/
 theorem unramifiedArtinHom_apply_prime (v : HeightOneSpectrum (𝓞 K))
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal]
+    (Q : Ideal (𝓞 L)) [Q.LiesOver v.asIdeal]
     (σ : L ≃ₐ[K] L) (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     unramifiedArtinHom (L := L) hab hur (v.unitOfPrime K) = σ := by
   rw [unramifiedArtinHom_apply]
@@ -98,7 +98,7 @@ theorem unramifiedArtinHom_apply_prime (v : HeightOneSpectrum (𝓞 K))
         (coe_idealsAwayEmptyEquiv_symm_apply (v.unitOfPrime K)) |>.trans
           (v.coe_unitOfPrime K)
   exact artinHomAway_apply_prime hab ∅ (fun w _ P _ _ ↦ hur w P)
-    ((idealsAwayEmptyEquiv K).symm (v.unitOfPrime K)) v (by simp)
+    ((idealsAwayEmptyEquiv K).symm (v.unitOfPrime K)) v
     hprime Q σ hσ
 
 /-- **Prime values determine the unrestricted Artin map.** A homomorphism on fractional ideals
@@ -177,7 +177,7 @@ theorem unramifiedArtinHomIntegral_apply (I : (Ideal (𝓞 K))⁰) :
 
 /-- **The integral unrestricted Artin map sends a prime ideal to its Frobenius.** -/
 theorem unramifiedArtinHomIntegral_apply_prime (v : HeightOneSpectrum (𝓞 K))
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal]
+    (Q : Ideal (𝓞 L)) [Q.LiesOver v.asIdeal]
     (σ : L ≃ₐ[K] L) (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     unramifiedArtinHomIntegral (L := L) hab hur
         ⟨v.asIdeal, mem_nonZeroDivisors_iff_ne_zero.mpr v.ne_bot⟩ = σ := by

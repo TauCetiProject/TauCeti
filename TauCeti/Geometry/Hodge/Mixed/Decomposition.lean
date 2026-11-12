@@ -629,7 +629,7 @@ theorem F_inf_WC_eq_iSup_deligneSplitting (p k : ℤ) :
         mhs.deligneSplitting rs.1 rs.2 := by
   rw [mhs.F_eq_iSup_deligneSplitting p, mhs.WC_eq_iSup_deligneSplitting k]
   simpa only [deligneSplittingFamily_apply] using
-    TauCeti.iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and
+    iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and
       (A := mhs.deligneSplittingFamily) mhs.iSupIndep_deligneSplittingFamily
       (fun rs ↦ p ≤ rs.1) (fun rs ↦ rs.1 + rs.2 ≤ k)
 

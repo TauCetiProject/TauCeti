@@ -23,6 +23,9 @@ A submodule whose restricted pairing is bijective is complementary to its orthog
 complement. Combining this with the isometry construction gives the unimodular splitting
 theorem without assuming nondegeneracy of the whole lattice.
 
+Finally, an isometry of integral lattices carries orthogonal complements of sublattices to
+orthogonal complements of their images (`TauCeti.IntegralLattice.Isometry.map_orthogonal`).
+
 The mathematical source is O. T. O'Meara, *Introduction to Quadratic Forms*, §82.
 -/
 
@@ -88,11 +91,7 @@ theorem orthogonalSumIsometryOfIsCompl_apply_one_tmul (h : IsCompl S T)
     (L.isSymm_integralForm.restrict T)
   let x := (orthogonalSumCarrierEquiv _ _).symm (es s, et t)
   have hx : (x : (ℚ ⊗[ℤ] S) × (ℚ ⊗[ℤ] T)) = (1 ⊗ₜ[ℤ] s, 1 ⊗ₜ[ℤ] t) := by
-    apply Prod.ext
-    · rw [← coe_orthogonalSumCarrierEquiv_fst]
-      simp [x, es]
-    · rw [← coe_orthogonalSumCarrierEquiv_snd]
-      simp [x, et]
+    simp [x, es, et]
   rw [← hx, ← Isometry.coe_carrierEquiv_apply]
   simp [orthogonalSumIsometryOfIsCompl, Isometry.carrierEquiv_ofCarrierEquiv,
     x, es, et]
@@ -183,5 +182,22 @@ theorem orthogonalSplittingIsometry_symm_apply_smul_add_smul (S : Submodule ℤ 
     (L.orthogonalSplittingIsometry S h).symm
         (q • ((s : L) : V) + r • ((t : L) : V)) = (q ⊗ₜ[ℤ] s, r ⊗ₜ[ℤ] t) :=
   L.orthogonalSumIsometryOfIsCompl_symm_apply_smul_add_smul S _ _ _ q r s t
+
+/-- An isometry carries the orthogonal complement of a sublattice onto the orthogonal complement
+of its image. -/
+theorem Isometry.map_orthogonal {L : IntegralLattice V} {W : Type*} [AddCommGroup W] [Module ℚ W]
+    {M : IntegralLattice W} (e : Isometry L M) (S : Submodule ℤ L) :
+    (L.integralForm.orthogonal S).map (e.carrierEquiv : L →ₗ[ℤ] M) =
+      M.integralForm.orthogonal (S.map (e.carrierEquiv : L →ₗ[ℤ] M)) := by
+  ext y
+  rw [Submodule.mem_map_equiv, LinearMap.BilinForm.mem_orthogonal_iff,
+    LinearMap.BilinForm.mem_orthogonal_iff]
+  constructor
+  · rintro h _ ⟨u, hu, rfl⟩
+    have := h u hu
+    rwa [← e.carrierEquiv_map_integralForm, LinearEquiv.apply_symm_apply] at this
+  · intro h u hu
+    have := h (e.carrierEquiv u) ⟨u, hu, rfl⟩
+    rwa [← e.carrierEquiv_map_integralForm, LinearEquiv.apply_symm_apply]
 
 end TauCeti.IntegralLattice

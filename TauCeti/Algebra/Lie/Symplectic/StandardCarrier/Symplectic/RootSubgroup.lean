@@ -108,15 +108,20 @@ private theorem coe_rootSubgroupPoints_symplecticRootIndex
             GLSymplecticFin.differenceShortRootHom_apply]
           simp only [Fin.orderSucc_castSucc]
 
-private theorem rootSubgroupCoordinateMap_eq
+/-- In Hopf coordinates, each numbered Kostant root subgroup of the type-C carrier is the standard
+symplectic root subgroup of the corresponding index, read through the symplectic quotient of
+`O(GL_(2n+2))`. -/
+theorem kostantRootSubgroupCoordinateMap_eq_comp_rootSubgroupCoordinateMap
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     kostantRootSubgroupCoordinateMap (rootGenerator n) (cartanGenerator n) (rep n)
-        (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+        (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n) k
         (isNilpotent_rep_rootGenerator n k) (latticeBasis n) =
       Symplectic.coordinateMap ℤ (n + 1) ≫
         Symplectic.rootSubgroupCoordinateMap (R := ℤ) (symplecticRootIndex n k) := by
-  let A := AdditiveGroup.coordinateHopfAlgebra ℤ
-  let q : WithConv (A →ₐ[ℤ] A) := WithConv.toConv (AlgHom.id ℤ A)
+  let A : Type := AdditiveGroup.coordinateHopfAlgebra ℤ
+  let : Algebra ℤ A := Ring.toIntAlgebra A
+  let q := WithConv.toConv (SymmetricAlgebra.lift
+    (LinearMap.toSpanSingleton ℤ A (SymmetricAlgebra.ι ℤ ℤ 1)))
   have hroot := coe_rootSubgroupPoints_symplecticRootIndex n k
     (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) q)
   rw [coe_rootSubgroupPoints] at hroot
@@ -125,17 +130,16 @@ private theorem rootSubgroupCoordinateMap_eq
   erw [MulEquiv.symm_apply_apply] at hroot
   have hmatrix := map_genericMatrix_eq_kostantRootSubgroupMatrix
     (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+    (rep_kostantForm_mem_lattice n) k
     (isNilpotent_rep_rootGenerator n k) (latticeBasis n)
-  -- The same additive-algebra presentation change applies to the universal matrix formula.
-  erw [hroot] at hmatrix
+  dsimp only at hmatrix
+  rw [hroot] at hmatrix
   have hpaired := congrArg (fun M => M.submatrix finSumFinEquiv finSumFinEquiv) hmatrix
   rw [GLSymplecticFin.RootSubgroupIndex.hom_apply_matrix] at hpaired
   have hparam : (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) q).toAdd =
       SymmetricAlgebra.ι ℤ ℤ 1 := by
     rw [AdditiveGroup.toAdd_gaPointsMulEquiv]
-    -- The universal algebra point evaluates the additive coordinate by the identity map.
-    rfl
+    simp only [q, SymmetricAlgebra.lift_ι_apply, LinearMap.toSpanSingleton_apply, one_smul]
   rw [hparam] at hpaired
   apply _root_.CommHopfAlgCat.hom_ext
   apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext
@@ -158,7 +162,8 @@ theorem rootSubgroup_comp_symplecticIso
   apply (cancel_mono (Symplectic.inclusion ℤ (n + 1))).mp
   rw [Category.assoc, symplecticIso_hom_comp_inclusion, rootSubgroup_comp_carrierι,
     kostantRootSubgroup_def, Symplectic.rootSubgroup_def, Symplectic.inclusion_def]
-  rw [rootSubgroupCoordinateMap_eq, op_comp, Functor.map_comp]
+  rw [kostantRootSubgroupCoordinateMap_eq_comp_rootSubgroupCoordinateMap, op_comp,
+    Functor.map_comp]
   simp [GeneralLinear.hopfIdealInclusion_def, Symplectic.coordinateMap_def,
     CommHopfAlgCat.quotientSpecι_def, Category.assoc]
 

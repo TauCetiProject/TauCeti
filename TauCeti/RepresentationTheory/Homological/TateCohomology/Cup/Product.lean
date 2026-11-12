@@ -347,6 +347,48 @@ theorem cup_map_left {M' : Rep k G} (f : M ⟶ M') (p q r : ℤ) (h : p + q = r)
         map_zsmul, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
         tensorDimensionShiftDownIso_inv_naturality_left]
 
+/-- The negative-degree case of `cup_map_right`: `cupNeg` is natural in the second coefficient
+representation. -/
+private theorem cupNeg_map_right {N' : Rep k G} (f : N ⟶ N') (p : ℤ) (n : ℕ)
+    (x : tateCohomology M p) (y : tateCohomology N (Int.negSucc n)) :
+    cupNeg M p n N' x ((tateCohomologyFunctor (Int.negSucc n)).map f y) =
+      (tateCohomologyFunctor (p - (n + 1 : ℕ))).map (M ◁ f) (cupNeg M p n N x y) := by
+  induction n generalizing N N' with
+  | zero =>
+    rw [cupNeg_zero_apply, cupNeg_zero_apply]
+    rw [← ModuleCat.comp_apply, dimensionShiftDownIso_hom_naturality]
+    -- The first downward step has degree `-1 + 1 = 0`; expose that degree to use `cupH0`.
+    change p.negOnePow •
+        (tensorDimensionShiftDownIso N' M (p - 1) p (by simp)).inv
+          (cupH0 M (dimensionShiftDown N') p x
+            ((tateCohomologyFunctor 0).map (dimensionShiftDownMap f)
+              ((dimensionShiftDownIso N (Int.negSucc 0)).hom y))) =
+      (tateCohomologyFunctor (p - 1)).map (M ◁ f)
+        (p.negOnePow • (tensorDimensionShiftDownIso N M (p - 1) p (by simp)).inv
+          (cupH0 M (dimensionShiftDown N) p x
+            ((dimensionShiftDownIso N (Int.negSucc 0)).hom y)))
+    rw [cupH0_map_right]
+    rw [Units.smul_def, Units.smul_def, map_zsmul,
+      ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
+      tensorDimensionShiftDownIso_inv_naturality_right]
+  | succ n ih =>
+    rw [cupNeg_succ_apply, cupNeg_succ_apply]
+    rw [← ModuleCat.comp_apply, dimensionShiftDownIso_hom_naturality]
+    let hy : tateCohomology (dimensionShiftDown N) (Int.negSucc n) :=
+      (dimensionShiftDownIso N (Int.negSucc (n + 1))).hom y
+    rw [ModuleCat.comp_apply]
+    convert congrArg (fun z => p.negOnePow •
+      (tensorDimensionShiftDownIso N' M (p - ((n + 1 + 1 : ℕ) : ℤ))
+        (p - ((n + 1 : ℕ) : ℤ)) (by push_cast; ring)).inv z)
+      (ih (dimensionShiftDownMap f) hy) using 1
+    · -- Holds by `rfl` because `Int.negSucc (n + 1) + 1` reduces to `Int.negSucc n`, so the
+      -- degree-`Int.negSucc n` naturality square from `ih` and the one from the rewrite agree.
+      dsimp only [hy]
+      rfl
+    · rw [Units.smul_def, Units.smul_def, map_zsmul,
+        ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
+        tensorDimensionShiftDownIso_inv_naturality_right]
+
 /-- The Tate cup product is natural in the second coefficient representation. -/
 theorem cup_map_right {N' : Rep k G} (f : N ⟶ N') (p q r : ℤ) (h : p + q = r)
     (x : tateCohomology M p) (y : tateCohomology N q) :
@@ -376,38 +418,6 @@ theorem cup_map_right {N' : Rep k G} (f : N ⟶ N') (p q r : ℤ) (h : p + q = r
     obtain rfl : r = p - (n + 1 : ℕ) := by rw [Int.negSucc_eq] at h; omega
     rw [cup_negSucc, cup_negSucc]
     clear h hq
-    induction n generalizing N N' with
-    | zero =>
-      rw [cupNeg_zero_apply, cupNeg_zero_apply]
-      rw [← ModuleCat.comp_apply, dimensionShiftDownIso_hom_naturality]
-      -- The first downward step has degree `-1 + 1 = 0`; expose that degree to use `cupH0`.
-      change p.negOnePow •
-          (tensorDimensionShiftDownIso N' M (p - 1) p (by simp)).inv
-            (cupH0 M (dimensionShiftDown N') p x
-              ((tateCohomologyFunctor 0).map (dimensionShiftDownMap f)
-                ((dimensionShiftDownIso N (Int.negSucc 0)).hom y))) =
-        (tateCohomologyFunctor (p - 1)).map (M ◁ f)
-          (p.negOnePow • (tensorDimensionShiftDownIso N M (p - 1) p (by simp)).inv
-            (cupH0 M (dimensionShiftDown N) p x
-              ((dimensionShiftDownIso N (Int.negSucc 0)).hom y)))
-      rw [cupH0_map_right]
-      rw [Units.smul_def, Units.smul_def, map_zsmul,
-        ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
-        tensorDimensionShiftDownIso_inv_naturality_right]
-    | succ n ih =>
-      rw [cupNeg_succ_apply, cupNeg_succ_apply]
-      rw [← ModuleCat.comp_apply, dimensionShiftDownIso_hom_naturality]
-      let hy : tateCohomology (dimensionShiftDown N) (Int.negSucc n) :=
-        (dimensionShiftDownIso N (Int.negSucc (n + 1))).hom y
-      rw [ModuleCat.comp_apply]
-      convert congrArg (fun z => p.negOnePow •
-        (tensorDimensionShiftDownIso N' M (p - ((n + 1 + 1 : ℕ) : ℤ))
-          (p - ((n + 1 : ℕ) : ℤ)) (by push_cast; ring)).inv z)
-        (ih (dimensionShiftDownMap f) hy) using 1
-      · dsimp only [hy]
-        rfl
-      · rw [Units.smul_def, Units.smul_def, map_zsmul,
-          ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
-          tensorDimensionShiftDownIso_inv_naturality_right]
+    exact cupNeg_map_right f p n x y
 
 end TauCeti.TateCohomology

@@ -21,8 +21,8 @@ are non-interleaving when each pair of endpoints lies on one side of the other c
 pair. The row version is the same definition after reading, in each row, the unique columns
 containing the `O` and `X` markings.
 
-The predicates are intentionally just the combinatorial hypotheses. The pentagon-counting maps
-and chain homotopies for commutation invariance are later Lane G.5 targets.
+The predicates are intentionally just the combinatorial hypotheses. The pentagon-counting maps and
+chain homotopies for commutation invariance are built on them elsewhere.
 
 ## Main definitions
 
@@ -43,13 +43,13 @@ and chain homotopies for commutation invariance are later Lane G.5 targets.
   `TauCeti.GridDiagram.rowsNoninterleaving_of_X_eq_finRotate_O`: a column (or row) whose two
   markings are adjacent, with the `X`-marking cyclically after the `O`-marking, is
   non-interleaving with every column (or row).
+* `TauCeti.GridDiagram.rowsNoninterleaving_of_apply`: row non-interleaving read off the columns
+  of the markings in the two rows.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.5,
-"Invariance over `𝔽₂`. Grid moves = commutation + (de)stabilization." It isolates the
-non-interleaving condition for row and column commutations in the grid homology construction of
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+This file isolates the non-interleaving condition for row and column commutations in the grid
+homology construction of Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
 
 @[expose] public section
@@ -160,6 +160,17 @@ theorem rowsNoninterleaving_of_X_eq_finRotate_O {a : Fin n}
   · exact Grid.noninterleaving_of_eq_finRotate h
       (fun h' ↦ hba (G.O.transpose.toPerm.injective h'))
       (fun h' ↦ hba (G.X.transpose.toPerm.injective h'))
+
+/-- Two rows do not interleave when the columns of their markings, `c` and `d` for the first and
+`c'` and `d'` for the second, do not interleave. -/
+theorem rowsNoninterleaving_of_apply {G : GridDiagram n} {a b c d c' d' : Fin n}
+    (hc : G.O c = a) (hd : G.X d = a) (hc' : G.O c' = b) (hd' : G.X d' = b)
+    (h : Grid.Noninterleaving c d c' d') : G.RowsNoninterleaving a b := by
+  have key : ∀ (x : GridState n) {r e : Fin n}, x e = r → x.transpose r = e := fun x r e he => by
+    rw [GridState.transpose_apply, Equiv.symm_apply_eq]
+    exact he.symm
+  rw [RowsNoninterleaving, key _ hc, key _ hd, key _ hc', key _ hd']
+  exact h
 
 /-- Column non-interleaving is symmetric in the two columns. -/
 theorem columnsNoninterleaving_comm {a b : Fin n} :

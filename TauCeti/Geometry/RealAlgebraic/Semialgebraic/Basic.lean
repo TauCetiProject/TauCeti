@@ -11,6 +11,8 @@ public import Mathlib.Basic.Sign.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.MeasureTheory.SetAlgebra
 public import TauCeti.Data.List.PermanencesMinusVariations
+public import TauCeti.Data.Set.Lattice
+public import TauCeti.MeasureTheory.SetAlgebra
 
 /-!
 # Semialgebraic sets
@@ -108,19 +110,21 @@ theorem setOf_isSemialgebraic_subset {ℬ : Set (Set (σ → R))} (hℬ : IsSetA
     (range_subset_iff.2 pos)
 
 /-- Induction principle for semialgebraic sets: a property of sets that holds for polynomial zero
-sets, polynomial positivity sets and the empty set, and is preserved by complements and binary
-unions, holds for every semialgebraic set. -/
+sets and polynomial positivity sets, and is preserved by complements and binary unions, holds for
+every semialgebraic set. -/
 @[elab_as_elim]
 theorem IsSemialgebraic.induction {motive : Set (σ → R) → Prop}
     (eq_zero : ∀ p : MvPolynomial σ R, motive {x | eval x p = 0})
     (pos : ∀ p : MvPolynomial σ R, motive {x | 0 < eval x p})
-    (empty : motive ∅) (compl : ∀ s, IsSemialgebraic s → motive s → motive sᶜ)
+    (compl : ∀ s, IsSemialgebraic s → motive s → motive sᶜ)
     (union : ∀ s t, IsSemialgebraic s → IsSemialgebraic t → motive s → motive t →
       motive (s ∪ t))
     {s : Set (σ → R)} (hs : IsSemialgebraic s) : motive s := by
   induction hs using generateSetAlgebra_induction with
   | base u hu => rcases hu with ⟨p, rfl⟩ | ⟨p, rfl⟩ <;> simp only [eq_zero, pos]
-  | empty => exact empty
+  | empty =>
+    have h : {x : σ → R | 0 < eval x (0 : MvPolynomial σ R)} = ∅ := by simp
+    exact h ▸ pos 0
   | compl u hu ih => exact compl u hu ih
   | union u v hu hv ihu ihv => exact union u v hu hv ihu ihv
 
@@ -220,19 +224,16 @@ theorem isSemialgebraic_eval_nonneg (p : MvPolynomial σ R) :
     IsSemialgebraic {x : σ → R | 0 ≤ eval x p} := by
   simpa only [compl_ofPred, not_lt] using (isSemialgebraic_eval_neg p).compl
 
-variable [IsOrderedAddMonoid R]
-
 /-- The set where one polynomial is less than another is semialgebraic. -/
-theorem isSemialgebraic_eval_lt (p q : MvPolynomial σ R) :
+theorem isSemialgebraic_eval_lt [IsOrderedAddMonoid R] (p q : MvPolynomial σ R) :
     IsSemialgebraic {x : σ → R | eval x p < eval x q} := by
   simpa using isSemialgebraic_eval_pos (q - p)
 
 /-- The set where one polynomial is at most another is semialgebraic. -/
-theorem isSemialgebraic_eval_le (p q : MvPolynomial σ R) :
+theorem isSemialgebraic_eval_le [IsOrderedAddMonoid R] (p q : MvPolynomial σ R) :
     IsSemialgebraic {x : σ → R | eval x p ≤ eval x q} := by
   simpa only [compl_ofPred, not_lt] using (isSemialgebraic_eval_lt q p).compl
 
-omit [IsOrderedAddMonoid R] in
 /-- The set where a polynomial has a prescribed sign is semialgebraic. -/
 theorem isSemialgebraic_sign_eval_eq (p : MvPolynomial σ R) (ε : SignType) :
     IsSemialgebraic {x : σ → R | SignType.sign (eval x p) = ε} := by
@@ -241,21 +242,14 @@ theorem isSemialgebraic_sign_eval_eq (p : MvPolynomial σ R) (ε : SignType) :
   · simpa only [SignType.neg_eq_neg_one, sign_eq_neg_one_iff] using isSemialgebraic_eval_neg p
   · simpa only [SignType.pos_eq_one, sign_eq_one_iff] using isSemialgebraic_eval_pos p
 
-omit [IsOrderedAddMonoid R] in
 /-- A sign condition on finitely many polynomials defines a semialgebraic set: membership may
 depend in any way on the signs of their values. -/
 theorem isSemialgebraic_setOf_sign_eval {ι : Type*} [Finite ι] (p : ι → MvPolynomial σ R)
     (Φ : (ι → SignType) → Prop) :
     IsSemialgebraic {x : σ → R | Φ fun i => SignType.sign (eval x (p i))} := by
-  have : {x : σ → R | Φ fun i => SignType.sign (eval x (p i))} =
-      ⋃ ε ∈ {ε | Φ ε}, ⋂ i, {x | SignType.sign (eval x (p i)) = ε i} := by
-    ext x
-    simp only [mem_ofPred_eq, mem_iUnion, mem_iInter, exists_prop]
-    exact ⟨fun h => ⟨_, h, fun _ => rfl⟩, fun ⟨ε, hε, h⟩ => (funext h).symm ▸ hε⟩
-  rw [this]
+  rw [setOf_apply_eq_biUnion_iInter (fun i x => SignType.sign (eval x (p i)))]
   exact .biUnion (toFinite _) fun ε _ => .iInter fun i => isSemialgebraic_sign_eval_eq _ _
 
-omit [IsOrderedAddMonoid R] in
 /-- A condition on the permanences minus variations of the values of finitely many polynomials
 defines a semialgebraic set, since the statistic depends only on the signs of the values. -/
 theorem isSemialgebraic_setOf_permanencesMinusVariations_eval
@@ -269,7 +263,6 @@ theorem isSemialgebraic_setOf_permanencesMinusVariations_eval
   simpa only [h] using isSemialgebraic_setOf_sign_eval (fun i : Fin l.length => l[i])
     fun ε => (List.ofFn ε).permanencesMinusVariations = c
 
-omit [IsOrderedAddMonoid R] in
 /-- The parameters at which the coefficients of `P` of index in `s` all vanish form a
 semialgebraic set. -/
 theorem isSemialgebraic_setOf_forall_coeff_eq_zero (P : Polynomial (MvPolynomial σ R))
@@ -289,7 +282,6 @@ theorem isSemialgebraic_setOf_forall_coeff_eq_zero (P : Polynomial (MvPolynomial
 
 /-! ### Finite sets -/
 
-omit [IsOrderedAddMonoid R] in
 /-- In finitely many coordinates, a point is semialgebraic. -/
 theorem isSemialgebraic_singleton [Finite σ] (a : σ → R) :
     IsSemialgebraic ({a} : Set (σ → R)) := by
@@ -299,15 +291,12 @@ theorem isSemialgebraic_singleton [Finite σ] (a : σ → R) :
   rw [this]
   exact .iInter fun i => isSemialgebraic_eval_eq_zero _
 
-omit [IsOrderedAddMonoid R] in
 /-- In finitely many coordinates, a finite set is semialgebraic. -/
 theorem _root_.Set.Finite.isSemialgebraic [Finite σ] {s : Set (σ → R)} (hs : s.Finite) :
     IsSemialgebraic s := by
   simpa using IsSemialgebraic.biUnion hs fun a _ => isSemialgebraic_singleton a
 
 /-! ### Inverse images and products -/
-
-omit [IsOrderedAddMonoid R]
 
 /-- The inverse image of a semialgebraic set under a polynomial map is semialgebraic. -/
 theorem IsSemialgebraic.preimage_eval {s : Set (τ → R)} (hs : IsSemialgebraic s)
@@ -394,14 +383,12 @@ signs of finitely many polynomials. -/
 theorem IsSemialgebraic.exists_eq_setOf_sign_eval {s : Set (σ → R)} (hs : IsSemialgebraic s) :
     ∃ (m : ℕ) (p : Fin m → MvPolynomial σ R) (Φ : (Fin m → SignType) → Prop),
       s = {x | Φ fun i => SignType.sign (eval x (p i))} := by
-  refine IsSemialgebraic.induction (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 0, by simp⟩)
-    (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 1, by simp [sign_eq_one_iff]⟩)
-    ⟨0, Fin.elim0, fun _ => False, by simp⟩
-    (fun s _ ⟨m, p, Φ, hs⟩ => ⟨m, p, fun ε => ¬Φ ε, hs ▸ compl_ofPred _⟩)
-    (fun s t _ _ ⟨m, p, Φ, hs⟩ ⟨m', p', Φ', ht⟩ => ⟨m + m', Fin.append p p',
-      fun ε => Φ (fun i => ε (Fin.castAdd m' i)) ∨ Φ' (fun i => ε (Fin.natAdd m i)), ?_⟩) hs
-  ext x
-  simp [hs, ht]
+  obtain ⟨m, f, hf, Φ, rfl⟩ := exists_eq_setOf_sign_of_mem_generateSetAlgebra
+    (P := fun f : (σ → R) → R => ∃ p, f = fun x => eval x p) <| generateSetAlgebra_mono
+      (union_subset_union (by rintro _ ⟨p, rfl⟩; exact ⟨_, ⟨p, rfl⟩, rfl⟩)
+        (by rintro _ ⟨p, rfl⟩; exact ⟨_, ⟨p, rfl⟩, rfl⟩)) hs
+  choose p hp using hf
+  exact ⟨m, p, Φ, by simp only [hp]⟩
 
 /-- **Finitely many coordinates.** Membership in a semialgebraic set depends on only finitely
 many coordinates: those of the variables of the polynomials describing it. -/

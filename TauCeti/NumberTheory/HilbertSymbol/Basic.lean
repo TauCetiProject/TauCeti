@@ -24,7 +24,8 @@ definition. In particular, no bimultiplicativity is asserted over an arbitrary f
 that property needs a local norm-index theorem.
 
 The symbol factors through square classes, so its value can be computed from any unit
-representatives.
+representatives. Inverting either parameter preserves its square class and hence the symbol,
+as expressed by `TauCeti.hilbertSymbol_inv_left` and `TauCeti.hilbertSymbol_inv_right`.
 
 ## References
 
@@ -101,6 +102,29 @@ theorem hilbertSymbol_eq_one_of_isSquare_right (a : Kˣ) {b : Kˣ} (hb : IsSquar
 @[simp] theorem hilbertSymbol_neg_self (a : Kˣ) : hilbertSymbol a (-a) = 1 :=
   (hilbertSymbol_eq_one_iff _ _).mpr ⟨0, 1, by simp⟩
 
+/-- `(a, ab)_K = (a, -b)_K`: the two second arguments differ by the norm `-a` from `K(√a)`. This
+holds over every field, since both norm equations are solvable together. -/
+theorem hilbertSymbol_self_mul (a b : Kˣ) :
+    hilbertSymbol a (a * b) = hilbertSymbol a (-b) := by
+  have h : hilbertSymbol a (a * b) = 1 ↔ hilbertSymbol a (-b) = 1 := by
+    simp only [hilbertSymbol_eq_one_iff, Units.val_mul, Units.val_neg]
+    have ha : (a : K) ≠ 0 := a.ne_zero
+    constructor
+    · rintro ⟨x, y, hx⟩
+      refine ⟨y, x / a, ?_⟩
+      field_simp
+      linear_combination -hx
+    · rintro ⟨x, y, hx⟩
+      exact ⟨a * y, x, by linear_combination (-(a : K)) * hx⟩
+  by_cases h1 : hilbertSymbol a (a * b) = 1
+  · rw [h1, h.1 h1]
+  · rw [Int.units_ne_iff_eq_neg.mp h1, Int.units_ne_iff_eq_neg.mp (mt h.2 h1)]
+
+/-- `(a, -ab)_K = (a, b)_K`: the two second arguments differ by the norm `-a` from `K(√a)`. -/
+theorem hilbertSymbol_neg_self_mul (a b : Kˣ) :
+    hilbertSymbol a (-(a * b)) = hilbertSymbol a b := by
+  rw [← mul_neg, hilbertSymbol_self_mul, neg_neg]
+
 /-- The Steinberg relation follows from the norm of `1 + √a`. -/
 @[simp] theorem hilbertSymbol_one_sub (a : Kˣ) (h : (1 : K) - a ≠ 0) :
     hilbertSymbol a (Units.mk0 (1 - a) h) = 1 :=
@@ -155,6 +179,22 @@ theorem hilbertSymbol_congr_sq (a a' b b' : Kˣ)
     rw [div_pow, pow_two d, ← hd]
     simp [pow_two, div_eq_mul_inv, mul_assoc, mul_left_comm]
   rw [ha', hb', hilbertSymbol_mul_sq_left, hilbertSymbol_mul_sq_right]
+
+/-- Inverting the first argument does not change the Hilbert symbol. -/
+@[simp]
+theorem hilbertSymbol_inv_left (a b : Kˣ) :
+    hilbertSymbol a⁻¹ b = hilbertSymbol a b := by
+  apply hilbertSymbol_congr_sq
+  · simpa only [inv_mul_cancel] using (IsSquare.one : IsSquare (1 : Kˣ))
+  · exact IsSquare.mul_self b
+
+/-- Inverting the second argument does not change the Hilbert symbol. -/
+@[simp]
+theorem hilbertSymbol_inv_right (a b : Kˣ) :
+    hilbertSymbol a b⁻¹ = hilbertSymbol a b := by
+  apply hilbertSymbol_congr_sq
+  · exact IsSquare.mul_self a
+  · simpa only [inv_mul_cancel] using (IsSquare.one : IsSquare (1 : Kˣ))
 
 /-- The Hilbert symbol is invariant under a ring isomorphism of fields: the norm equation
 `b = x² - a y²` is solvable over `K` exactly when its image is solvable over `L`. -/

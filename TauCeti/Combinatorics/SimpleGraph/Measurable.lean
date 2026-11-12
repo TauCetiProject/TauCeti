@@ -6,7 +6,7 @@ Authors: Codex, Claude
 module
 
 public import Mathlib.MeasureTheory.Constructions.SimpleGraph
-public import Mathlib.MeasureTheory.PiSystem
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Maps
 
 /-!
@@ -40,7 +40,9 @@ its cylinder masses are.
 * `SimpleGraph.measurable_restrictFin` — taking a window is measurable;
 * `SimpleGraph.isPiSystem_restrictFinCylinders` and
   `SimpleGraph.generateFrom_restrictFinCylinders` — the window cylinders are a π-system
-  generating the sigma-algebra on `SimpleGraph ℕ`.
+  generating the sigma-algebra on `SimpleGraph ℕ`;
+* `SimpleGraph.measure_ext_of_map_restrictFin` — a finite measure on `SimpleGraph ℕ` is
+  determined by the laws of its finite windows.
 
 ## Reference
 
@@ -165,5 +167,19 @@ theorem generateFrom_restrictFinCylinders :
     have hv : v < max u v + 1 := Nat.lt_succ_of_le (le_max_right u v)
     simpa using measurable_iff_adj.1 hwin ⟨u, hu⟩ ⟨v, hv⟩
   simpa using measurable_iff_comap_le.1 hid
+
+/-- **A finite measure on the graphs on `ℕ` is determined by its windows**: two measures, the first
+finite, with the same law of the window on the first `n` labels for every `n`, are equal. -/
+theorem measure_ext_of_map_restrictFin {μ ν : Measure (SimpleGraph ℕ)} [IsFiniteMeasure μ]
+    (h : ∀ n, μ.map (·.restrictFin n) = ν.map (·.restrictFin n)) : μ = ν := by
+  have hmass (n : ℕ) {s : Set (SimpleGraph (Fin n))} (hs : MeasurableSet s) :
+      μ ((·.restrictFin n) ⁻¹' s) = ν ((·.restrictFin n) ⁻¹' s) := by
+    rw [← Measure.map_apply (measurable_restrictFin n) hs, h, Measure.map_apply
+      (measurable_restrictFin n) hs]
+  refine ext_of_generate_finite restrictFinCylinders
+    generateFrom_restrictFinCylinders.symm isPiSystem_restrictFinCylinders ?_
+    (by simpa using hmass 0 MeasurableSet.univ)
+  rintro _ ⟨n, H, rfl⟩
+  exact hmass n (measurableSet_singleton H)
 
 end SimpleGraph

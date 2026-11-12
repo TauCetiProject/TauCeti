@@ -29,6 +29,11 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
 * `TauCeti.ValuationSpectrum.comap φ` : The continuous map `Spv B → Spv A` induced by
   `φ : A →+* B`.
 * `TauCeti.ValuationSpectrum.supp v` : The support ideal `{a ∈ A | v(a) = 0}`.
+* `TauCeti.ValuationSpectrum.ofValuation_valuationSubring_valuation`,
+  `TauCeti.ValuationSpectrum.ofValuation_comap_valuation`,
+  `TauCeti.ValuationSpectrum.comap_ofValuation_valuation` and
+  `TauCeti.ValuationSpectrum.valuationSubring_valuation_comap` : over a field, a point is the
+  point of its valuation subring, compatibly with pullback.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_inter` : **Wedhorn's step (i)** in the proof of
   Lemma 7.5, that the rational opens are stable under finite intersection.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_image_mul_right` : scaling every numerator and the
@@ -39,6 +44,9 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
   of ring elements is closed — the closedness behind Wedhorn's Corollary 7.12.
 * `TauCeti.ValuationSpectrum.specializes_of_forall_mem_basicOpen` : a point specializes to every
   point whose basic open neighbourhoods all contain it.
+* `TauCeti.ValuationSpectrum.vle_of_specializes` and
+  `TauCeti.ValuationSpectrum.vlt_of_specializes` : comparisons `w(f) ≤ w(s) ≠ 0` at a
+  specialization `w` of `v` hold at `v`, and strict comparisons at `v` persist at `w`.
 * `TauCeti.ValuationSpectrum.quotientLift 𝔞 h` : Lift the implicitly inferred point `v` with
   `𝔞 ≤ supp v` to `Spv (A ⧸ 𝔞)`.
 * `TauCeti.ValuationSpectrum.localizationComapSection S B v hS` : Lift `v` to a localization
@@ -48,7 +56,8 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
 * `TauCeti.ValuationSpectrum.suppFun` : The continuous support map `Spv A → Spec A`.
 * `TauCeti.ValuationSpectrum.trivialSection` : The continuous section of `suppFun` given by
   the trivial valuation attached to a prime ideal; in particular `suppFun` is surjective
-  (`suppFun_surjective`).
+  (`suppFun_surjective`). It is a topological embedding (`isEmbedding_trivialSection`), whose
+  image consists of the valuations with values in `{0, 1}` (`mem_range_trivialSection_iff`).
 
 ## References
 
@@ -169,6 +178,25 @@ lemma specializes_of_forall_mem_basicOpen {v w : Spv A}
   rintro U ⟨hwU, f, s, rfl⟩
   exact ⟨h f s hwU, f, s, rfl⟩
 
+/-- **Comparisons at a specialization hold at the generization.** If `v ⤳ w`, then
+`w(f) ≤ w(s) ≠ 0` implies `v(f) ≤ v(s)`: the basic open `Spv(A)(f/s)` contains `w`, hence `v`.
+A partial converse of `specializes_of_forall_mem_basicOpen`. -/
+lemma vle_of_specializes {v w : Spv A} (h : v ⤳ w) {f s : A}
+    (hfs : w.toValuativeRel.vle f s) (hs : ¬ w.toValuativeRel.vle s 0) :
+    v.toValuativeRel.vle f s :=
+  (h.mem_open (isOpen_basicOpen f s) ⟨hfs, hs⟩).1
+
+/-- **Strict comparisons at a generization hold at a specialization**, provided one side is
+nonzero there: if `v ⤳ w` and `v(s) < v(f)`, then `w(s) < w(f)` unless `w(f) = w(s) = 0`. -/
+lemma vlt_of_specializes {v w : Spv A} (h : v ⤳ w) {f s : A}
+    (hsf : v.toValuativeRel.vlt s f)
+    (hw : ¬ w.toValuativeRel.vle s 0 ∨ ¬ w.toValuativeRel.vle f 0) :
+    w.toValuativeRel.vlt s f := by
+  refine fun hfs ↦ hsf (vle_of_specializes h hfs ?_)
+  rcases hw with hw | hw
+  · exact hw
+  · exact fun hs ↦ hw (w.toValuativeRel.vle_trans hfs hs)
+
 /-- The valuative relation of a point is determined by its basic opens: `v(f) ≤ v(s)` holds
 iff `v` lies in `basicOpen f s`, or `s` and `f` both lie in the support — the latter being
 detected by the diagonal basic opens `basicOpen s s` and `basicOpen f f`. -/
@@ -268,6 +296,12 @@ lemma comap_comp (φ : A →+* B) (ψ : B →+* C) :
   funext v
   exact ValuationSpectrum.ext (ValuativeRel.comap_comp φ ψ v.toValuativeRel)
 
+/-- Pulling back along `ψ` and then along `φ` is pulling back along `ψ.comp φ`: the pointwise
+form of `comap_comp`. Not `@[simp]`, since `comap_comp` rewrites the right side back. -/
+lemma comap_comap (φ : A →+* B) (ψ : B →+* C) (v : Spv C) :
+    comap φ (comap ψ v) = comap (ψ.comp φ) v := by
+  rw [comap_comp, Function.comp_apply]
+
 /-- `comap φ` is injective when `φ` is surjective. -/
 lemma comap_injective {φ : A →+* B} (hφ : Function.Surjective φ) :
     Function.Injective (comap φ) := by
@@ -320,6 +354,13 @@ instance instIsPrimeSupp (v : Spv A) : v.supp.IsPrime :=
   let := v.toValuativeRel
   inferInstanceAs (ValuativeRel.supp A).IsPrime
 
+/-- A positive power of `x` lies in the support of `v` exactly when `x` does, since the support is
+prime. -/
+lemma vle_pow_zero_iff (v : Spv A) (x : A) {n : ℕ} (hn : n ≠ 0) :
+    v.toValuativeRel.vle (x ^ n) 0 ↔ v.toValuativeRel.vle x 0 := by
+  rw [← mem_supp_iff, ← mem_supp_iff]
+  exact Ideal.IsPrime.pow_mem_iff_mem inferInstance n (Nat.pos_of_ne_zero hn)
+
 /-- `(ofValuation v).vle x y ↔ v x ≤ v y`. -/
 @[simp]
 lemma vle_ofValuation {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
@@ -363,6 +404,12 @@ lemma valuation_lt_iff (v : Spv A) (x y : A) :
   let := v.toValuativeRel
   ((ValuativeRel.valuation A).vlt_iff_lt (x := x) (y := y)).symm
 
+/-- Membership in a basic open subset, read through the canonical valuation of the point:
+`v ∈ Spv(A)(f/s)` iff `v(f) ≤ v(s)` and `v(s) ≠ 0`. -/
+lemma mem_basicOpen_iff_valuation (f s : A) (v : Spv A) :
+    v ∈ basicOpen f s ↔ v.valuation f ≤ v.valuation s ∧ v.valuation s ≠ 0 := by
+  rw [mem_basicOpen_iff, ← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
+
 /-- The support of `v : Spv A` equals the support of its canonical valuation. -/
 lemma supp_eq_valuation_supp (v : Spv A) : v.supp = v.valuation.supp :=
   @ValuativeRel.supp_eq_valuation_supp A _ v.toValuativeRel
@@ -371,6 +418,32 @@ lemma supp_eq_valuation_supp (v : Spv A) : v.supp = v.valuation.supp :=
 lemma supp_comap {B : Type*} [CommRing B] (φ : A →+* B) (v : Spv B) :
     (comap φ v).supp = v.supp.comap φ :=
   Ideal.ext fun a ↦ by simp
+
+/-- If `w` pulls back to `v` along `φ`, then `w` compares images under `φ` as `v` compares the
+elements themselves. -/
+lemma valuation_map_le_iff {B : Type*} [CommRing B] {φ : A →+* B} {v : Spv A} {w : Spv B}
+    (hw : comap φ w = v) (a b : A) :
+    w.valuation (φ a) ≤ w.valuation (φ b) ↔ v.valuation a ≤ v.valuation b := by
+  rw [valuation_le_iff, valuation_le_iff, ← hw, comap_vle]
+
+/-- If `w` pulls back to `v` along `φ`, then `w(φ a) ≤ 1` iff `v(a) ≤ 1`. -/
+lemma valuation_map_le_one_iff {B : Type*} [CommRing B] {φ : A →+* B} {v : Spv A} {w : Spv B}
+    (hw : comap φ w = v) (a : A) : w.valuation (φ a) ≤ 1 ↔ v.valuation a ≤ 1 := by
+  simpa using valuation_map_le_iff hw a 1
+
+/-- If `w` pulls back to `v` along `φ`, then `w(φ a) < 1` iff `v(a) < 1`. -/
+lemma valuation_map_lt_one_iff {B : Type*} [CommRing B] {φ : A →+* B} {v : Spv A} {w : Spv B}
+    (hw : comap φ w = v) (a : A) : w.valuation (φ a) < 1 ↔ v.valuation a < 1 := by
+  simpa [not_le] using (valuation_map_le_iff hw 1 a).not
+
+/-- An element `b` outside a maximal ideal `𝔮` has an inverse `y` modulo `𝔮`, and
+`w(y) * w(b) = 1` at every point `w` with support `𝔮`. -/
+lemma exists_valuation_mul_eq_one {q : Ideal A} (hq : q.IsMaximal) {b : A} (hb : b ∉ q) :
+    ∃ y : A, ∀ w : Spv A, w.supp = q → w.valuation y * w.valuation b = 1 := by
+  obtain ⟨y, i, hi, hyi⟩ := hq.exists_inv hb
+  refine ⟨y, fun w hw ↦ ?_⟩
+  rw [← map_mul, ← w.valuation.map_add_supp (y * b) (s := i)
+    (by rwa [← supp_eq_valuation_supp, hw]), hyi, map_one]
 
 /-- The canonical valuation gives back the same point of `Spv`. -/
 @[simp]
@@ -383,6 +456,46 @@ lemma isEquiv_valuation_ofValuation {Γ₀ : Type*} [LinearOrderedCommGroupWithZ
     (w : Valuation A Γ₀) : Valuation.IsEquiv (ofValuation w).valuation w := by
   intro x y
   rw [valuation_le_iff, vle_ofValuation]
+
+section Field
+
+variable {K L : Type*} [Field K] [Field L]
+
+/-- A point of the valuation spectrum of a field is the point of its valuation subring. -/
+@[simp]
+theorem ofValuation_valuationSubring_valuation (w : Spv K) :
+    ofValuation w.valuation.valuationSubring.valuation = w :=
+  (ofValuation_eq_of_isEquiv
+    (Valuation.isEquiv_valuation_valuationSubring w.valuation).symm).trans (ofValuation_valuation w)
+
+/-- Pulling back the valuation of a valuation subring along a field homomorphism gives the point
+of the pulled-back valuation subring. -/
+@[simp]
+theorem ofValuation_comap_valuation (g : K →+* L) (W : ValuationSubring L) :
+    ofValuation (W.valuation.comap g) = ofValuation (W.comap g).valuation := by
+  refine ofValuation_eq_of_isEquiv ?_
+  rw [Valuation.isEquiv_iff_valuationSubring, ValuationSubring.valuationSubring_valuation]
+  ext x
+  simp [Valuation.mem_valuationSubring_iff, ValuationSubring.valuation_le_one_iff]
+
+/-- Pulling back the point of a valuation subring along a field homomorphism gives the point of
+the pulled-back valuation subring. Not `@[simp]`: `comap_ofValuation` and
+`ofValuation_comap_valuation` rewrite the left side to the right side. -/
+theorem comap_ofValuation_valuation (g : K →+* L) (W : ValuationSubring L) :
+    comap g (ofValuation W.valuation) = ofValuation (W.comap g).valuation := by
+  rw [comap_ofValuation, ofValuation_comap_valuation]
+
+/-- The valuation subring of a pulled-back point of the valuation spectrum of a field is the
+pullback of its valuation subring. -/
+@[simp]
+theorem valuationSubring_valuation_comap (g : K →+* L) (w : Spv L) :
+    (comap g w).valuation.valuationSubring = w.valuation.valuationSubring.comap g := by
+  ext x
+  have := valuation_le_iff (comap g w) x 1
+  rw [map_one, comap_vle, ← valuation_le_iff, map_one] at this
+  simpa [Valuation.mem_valuationSubring_iff] using this
+
+end Field
 
 section Quotient
 
@@ -421,6 +534,20 @@ lemma quotientMk_comap_range :
     Set.range (comap (Ideal.Quotient.mk 𝔞)) = {v : Spv A | 𝔞 ≤ v.supp} :=
   Set.ext fun _ ↦ ⟨fun ⟨w, hw⟩ ↦ hw ▸ self_le_supp_comap 𝔞 w,
     fun h ↦ ⟨quotientLift 𝔞 h, comap_quotientLift 𝔞 h⟩⟩
+
+/-- For a surjective ring map `φ`, the range of `comap φ` is `{v ∈ Spv A | ker φ ≤ supp v}`. -/
+lemma range_comap_of_surjective {B : Type*} [CommRing B] {φ : A →+* B}
+    (hφ : Function.Surjective φ) :
+    Set.range (comap φ) = {v : Spv A | RingHom.ker φ ≤ v.supp} := by
+  let e := RingHom.quotientKerEquivOfSurjective hφ
+  have he : (e.symm : B →+* A ⧸ RingHom.ker φ).comp φ = Ideal.Quotient.mk (RingHom.ker φ) :=
+    RingHom.ext fun a ↦ e.injective (by simp [e])
+  have hid : (e : A ⧸ RingHom.ker φ →+* B).comp e.symm = RingHom.id B :=
+    e.toRingHom_comp_symm_toRingHom
+  have hsurj : Function.Surjective (comap (e.symm : B →+* A ⧸ RingHom.ker φ)) := fun w ↦
+    ⟨comap (e : A ⧸ RingHom.ker φ →+* B) w, by rw [comap_comap, hid, comap_id, id]⟩
+  rw [← quotientMk_comap_range, ← he, comap_comp, Set.range_comp, hsurj.range_eq,
+    Set.image_univ]
 
 /-- `comap (mk 𝔞) : Spv (A ⧸ 𝔞) → Spv A` is a topological embedding. -/
 lemma isEmbedding_comap_quotientMk :
@@ -556,33 +683,24 @@ theorem suppFun_comap {B : Type*} [CommRing B] (φ : A →+* B) (v : Spv B) :
 `Spv A` given by the trivial valuation attached to a prime ideal. -/
 noncomputable def trivialSection (p : PrimeSpectrum A) : Spv A :=
   ofValuation
-    (Valuation.trivialValuation p.asIdeal : Valuation A (WithZero (Multiplicative ℤ)))
+    (p.asIdeal.trivialValuation : Valuation A (WithZero (Multiplicative ℤ)))
 
 /-- The valuative relation of a trivial-valuation point: `v(f) ≤ v(s)` holds precisely
 when `f` lies in the prime or `s` does not. -/
 @[simp]
 lemma trivialSection_vle_iff (p : PrimeSpectrum A) (f s : A) :
     (trivialSection p).toValuativeRel.vle f s ↔ f ∈ p.asIdeal ∨ s ∉ p.asIdeal := by
-  rw [trivialSection, vle_ofValuation, Valuation.trivialValuation_apply,
-    Valuation.trivialValuation_apply]
-  constructor
-  · intro h
-    by_cases hf : f ∈ p.asIdeal
-    · exact Or.inl hf
-    · refine Or.inr fun hs ↦ ?_
-      rw [ite_eq_right hf, ite_eq_left hs] at h
-      simp at h
-  · rintro (hf | hs)
-    · simp [hf]
-    · rw [ite_eq_right hs]
-      split <;> simp
+  classical
+  rw [trivialSection, vle_ofValuation, Ideal.trivialValuation_apply,
+    Ideal.trivialValuation_apply]
+  split_ifs <;> simp_all
 
 /-- `trivialSection` is a section of the support map. -/
 @[simp]
 lemma suppFun_trivialSection (p : PrimeSpectrum A) : suppFun (trivialSection p) = p := by
   ext x
   rw [suppFun_asIdeal, trivialSection, supp_ofValuation, Valuation.mem_supp_iff,
-    Valuation.trivialValuation_eq_zero_iff]
+    Ideal.trivialValuation_eq_zero_iff]
 
 /-- The preimage of a basic open under `trivialSection` is the corresponding basic open of
 the prime spectrum: `trivialSection ⁻¹' Spv(A)(f/s) = D(s)`. -/
@@ -603,6 +721,41 @@ lemma continuous_trivialSection :
 /-- The support map is surjective; the trivial valuations provide a section. -/
 theorem suppFun_surjective : Function.Surjective (suppFun : Spv A → PrimeSpectrum A) :=
   fun p ↦ ⟨trivialSection p, suppFun_trivialSection p⟩
+
+/-- `trivialSection` is injective: the support of the trivial valuation of a prime is that prime. -/
+theorem trivialSection_injective : Function.Injective (trivialSection : PrimeSpectrum A → Spv A) :=
+  Function.LeftInverse.injective suppFun_trivialSection
+
+/-- **Wedhorn, Remark 4.6(2)**: `trivialSection` is a topological embedding. Equivalently, the
+support map restricts to a homeomorphism from the subspace of trivial valuations onto `Spec A`. -/
+theorem isEmbedding_trivialSection :
+    Topology.IsEmbedding (trivialSection : PrimeSpectrum A → Spv A) :=
+  Function.LeftInverse.isEmbedding suppFun_trivialSection continuous_suppFun
+    continuous_trivialSection
+
+/-- **The trivial valuations** are the points of `Spv A` taking only the values `0` and `1`: every
+element is in the support or has value exactly `1`. -/
+theorem mem_range_trivialSection_iff (v : Spv A) :
+    v ∈ Set.range trivialSection ↔ ∀ a : A, v.toValuativeRel.vle a 0 ∨
+      v.toValuativeRel.vle 1 a ∧ v.toValuativeRel.vle a 1 := by
+  constructor
+  · rintro ⟨p, rfl⟩ a
+    have h1 : (1 : A) ∉ p.asIdeal := (Ideal.ne_top_iff_one _).mp p.isPrime.ne_top
+    simp only [trivialSection_vle_iff, p.asIdeal.zero_mem, h1, not_true_eq_false, or_false,
+      not_false_eq_true, or_true, false_or, and_true]
+    tauto
+  · refine fun h ↦ ⟨suppFun v, ext' fun x y ↦ ?_⟩
+    simp only [trivialSection_vle_iff, suppFun_asIdeal, mem_supp_iff, ← valuation_le_iff,
+      map_zero, map_one] at h ⊢
+    refine ⟨?_, fun hxy ↦ or_iff_not_imp_right.mpr fun hy ↦ hxy.trans (not_not.mp hy)⟩
+    -- `x` has value `0`, or `y` has value `1`, which bounds every value
+    rintro (hx | hy)
+    · exact hx.trans zero_le
+    · obtain hy' | hy' := h y
+      · exact absurd hy' hy
+      obtain hx | hx := h x
+      · exact hx.trans zero_le
+      · exact hx.2.trans hy'.1
 
 end PrimeSpectrum
 

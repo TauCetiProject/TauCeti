@@ -31,6 +31,8 @@ that does not vanish at the root.
 
 ## Main results
 
+* `Polynomial.modByMonic_X_sub_C_eq_zero`: division by a central linear factor has zero
+  remainder at a root.
 * `Polynomial.natDegree_C_sub_X`: the reversed linear factor `C x - X` has degree `1`.
 * `Polynomial.exists_eq_C_mul_X_sub_C_of_natDegree_le_one`: a polynomial of `natDegree ≤ 1` with
   root `x` is `C γ * (X - C x)` for some `γ`.
@@ -41,6 +43,8 @@ that does not vanish at the root.
   cofactor nonzero at `x`.
 * `Polynomial.rootMultiplicity_add_eq_left_of_dvd`: adding a multiple of a higher power of
   `X - C x` leaves the root multiplicity at `x` unchanged.
+* `Polynomial.rootMultiplicity_neg`: negating a polynomial leaves its root multiplicities
+  unchanged.
 
 ## Provenance
 
@@ -58,6 +62,19 @@ public section
 namespace Polynomial
 
 variable {R : Type*} [Ring R]
+
+/-- Division by `X - c` leaves no remainder at a root `c` that commutes with every coefficient. -/
+theorem modByMonic_X_sub_C_eq_zero {B : Type*} [Ring B] {p : B[X]} {c : B}
+    (hc : ∀ b, Commute c b) (hp : p.eval c = 0) : p %ₘ (Polynomial.X - C c) = 0 := by
+  nontriviality B
+  have hd := degree_modByMonic_lt p (monic_X_sub_C c)
+  rw [degree_X_sub_C] at hd
+  have hr := eq_C_of_degree_le_zero (Nat.WithBot.lt_one_iff_le_zero.mp hd)
+  have he := congrArg (Polynomial.eval c) (modByMonic_add_div p (Polynomial.X - C c))
+  rw [hr] at he
+  simp only [eval_add, eval_C, sub_mul, Polynomial.X_mul, eval_sub, eval_mul_X,
+    eval_C_mul, (hc _).eq, sub_self, add_zero, hp] at he
+  rw [hr, he, C_0]
 
 /-- The reversed linear polynomial `C x - X` has degree `1`, like `X - C x`. -/
 @[simp]
@@ -100,6 +117,13 @@ theorem rootMultiplicity_add_eq_left_of_dvd {A : Type*} [Ring A] {p q : A[X]} {a
     exact pow_rootMultiplicity_not_dvd hp a (by simpa using dvd_sub h hq)
   · apply (le_rootMultiplicity_iff hpq).mpr
     exact dvd_add (pow_rootMultiplicity_dvd p a) ((pow_dvd_pow _ (Nat.le_succ _)).trans hq)
+
+/-- Negating a polynomial does not change its root multiplicity at any point. -/
+@[simp]
+theorem rootMultiplicity_neg (p : R[X]) (a : R) :
+    (-p).rootMultiplicity a = p.rootMultiplicity a := by
+  classical
+  simp [rootMultiplicity_eq_multiplicity, multiplicity_neg]
 
 /-- A polynomial of degree at most one has constant nonzero sign on an interval without a root. -/
 theorem eval_mul_pos_of_natDegree_le_one_of_no_roots {R : Type*} [Field R] [LinearOrder R]

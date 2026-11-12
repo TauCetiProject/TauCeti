@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
@@ -252,6 +253,15 @@ instance : (toModuleCat (𝒜 := 𝒜)).Faithful where
 
 instance : (toModuleCat (𝒜 := 𝒜)).Additive where
   map_add := rfl
+
+/-- Over a field `K`, the forgetful functor is `K`-linear for the `K`-linear structure of
+`ModuleCat A` obtained by restricting scalars along `algebraMap K A`. -/
+instance {K : Type*} [Field K] [Algebra K A] {ℬ : ℤ → Submodule K A} :
+    (toModuleCat.{v} (𝒜 := ℬ)).Linear K where
+  map_smul f c := by
+    apply ModuleCat.hom_ext
+    ext x
+    exact (algebraMap_smul A c (f.hom x)).symm
 
 end Forget
 

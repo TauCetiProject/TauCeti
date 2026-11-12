@@ -151,7 +151,7 @@ theorem tangentScalarExtensionEquiv_tmul_derivationComp (c : B)
   rw [Derivation.tangentScalarExtensionEquiv_tmul, LinearEquiv.apply_symm_apply,
     gaTangentLinearEquiv_symm_eq_smul_mapValue (R := R) (B := B) c]
   ext a
-  simp only [derivationComp_apply, Derivation.mapValue_apply, Derivation.smul_apply]
+  simp only [derivationComp_apply, Derivation.mapValue_apply, _root_.smul_apply]
   -- Both counit coefficient modules inherit multiplication from the same value algebra.
   rfl
 

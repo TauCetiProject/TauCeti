@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.Homotopy.Path
 public import Mathlib.Topology.Homotopy.Equiv
 
 /-!
@@ -39,10 +40,14 @@ and its companions record.
   and the projection onto the target, with `TauCeti.MappingCylinder.proj_comp_incl` the
   factorization of `f` and `TauCeti.MappingCylinder.isClosedEmbedding_incl`,
   `TauCeti.MappingCylinder.isClosedEmbedding_mkBase` the closedness of the two subspaces, and
-  `TauCeti.MappingCylinder.inclHomeomorph` the homeomorphism of the source with the bottom face.
+  `TauCeti.MappingCylinder.inclHomeomorph` the homeomorphism of the source with the bottom face,
+  through which `TauCeti.MappingCylinder.proj_comp_subtypeVal_comp_inclHomeomorph` factors `f`.
 * `TauCeti.MappingCylinder.deformation`: **the mapping cylinder deformation retracts onto its
   base**, with `TauCeti.MappingCylinder.homotopyEquiv` the resulting homotopy equivalence with
-  the target.
+  the target, and `TauCeti.MappingCylinder.incl_homotopic_mkBase_comp` the resulting homotopy
+  from the bottom face inclusion to `f` followed by the base inclusion.
+* `TauCeti.MappingCylinder.exists_mem_range_incl_joined`: when `f` is surjective on path
+  components, every point of the mapping cylinder is joined by a path to the bottom face.
 
 ## References
 
@@ -265,63 +270,31 @@ lemma proj_comp_incl : (proj f).comp (incl f) = f := by
 cylinder lies in the image of the source. -/
 lemma mkCyl_mem_range_incl_iff {s : I} {x : X} :
     mkCyl f (s, x) ∈ Set.range (incl f) ↔ s = 0 := by
-  constructor
-  · rintro ⟨z, hz⟩
-    rw [incl_apply, mkCyl_eq_mkCyl_iff] at hz
-    obtain ⟨h, -⟩ | ⟨h, -⟩ := hz
-    · exact h.symm
-    · exact absurd h (zero_ne_one : (0 : I) ≠ 1)
-  · rintro rfl
-    exact ⟨x, incl_apply x⟩
+  simp [eq_comm]
 
 /-- No point of the base of the mapping cylinder comes from the source. -/
 lemma mkBase_notMem_range_incl (y : Y) : mkBase f y ∉ Set.range (incl f) := by
-  rintro ⟨x, hx⟩
-  rw [incl_apply, mkCyl_eq_mkBase_iff] at hx
-  exact (zero_ne_one : (0 : I) ≠ 1) hx.1
-
-/-- The preimage of the image of the source under the cylinder map is the bottom face. -/
-private lemma preimage_mkCyl_range_incl :
-    mkCyl f ⁻¹' Set.range (incl f) = (fun p : I × X => p.1) ⁻¹' {0} := by
-  ext ⟨s, x⟩
-  simp only [Set.mem_preimage, Set.mem_singleton_iff, mkCyl_mem_range_incl_iff]
-
-/-- The image of the source of `f` in the mapping cylinder is closed. -/
-theorem isClosed_range_incl : IsClosed (Set.range (incl f)) := by
-  refine isClosed_of_preimages ?_ ?_
-  · rw [preimage_mkCyl_range_incl]
-    exact isClosed_singleton.preimage continuous_fst
-  · convert isClosed_empty using 1
-    ext y
-    simp only [Set.mem_preimage, Set.mem_empty_iff_false, iff_false]
-    exact mkBase_notMem_range_incl y
+  simp
 
 /-- **The source of `f` is a closed subspace of its mapping cylinder.** -/
 theorem isClosedEmbedding_incl : IsClosedEmbedding (incl f) := by
-  refine .of_continuous_injective_isClosedMap (incl f).continuous (fun x x' hx => ?_)
-    fun K hK => isClosed_of_preimages ?_ ?_
-  · rw [incl_apply, incl_apply, mkCyl_eq_mkCyl_iff] at hx
-    obtain ⟨-, h⟩ | ⟨h, -⟩ := hx
-    · exact h
-    · exact absurd h (zero_ne_one : (0 : I) ≠ 1)
-  · have hpre : mkCyl f ⁻¹' (incl f '' K) =
+  refine .of_continuous_injective_isClosedMap (incl f).continuous
+    (fun x x' hx => by simpa using hx) fun K hK => isClosed_of_preimages ?_ ?_
+  · -- The cylinder meets the image of `K` in the bottom face over `K`.
+    have hpre : mkCyl f ⁻¹' (incl f '' K) =
         (fun p : I × X => p.1) ⁻¹' {0} ∩ (fun p : I × X => p.2) ⁻¹' K := by
       ext ⟨s, x⟩
-      constructor
-      · rintro ⟨z, hz, hzx⟩
-        rw [incl_apply, mkCyl_eq_mkCyl_iff] at hzx
-        obtain ⟨h, rfl⟩ | ⟨h, -⟩ := hzx
-        · exact ⟨h.symm, hz⟩
-        · exact absurd h (zero_ne_one : (0 : I) ≠ 1)
-      · rintro ⟨rfl, hx⟩
-        exact ⟨x, hx, incl_apply x⟩
+      simp [eq_comm, and_comm]
     rw [hpre]
     exact (isClosed_singleton.preimage continuous_fst).inter (hK.preimage continuous_snd)
-  · convert isClosed_empty using 1
+  · -- The base does not meet the image of the source at all.
+    convert isClosed_empty using 1
     ext y
-    simp only [Set.mem_preimage, Set.mem_empty_iff_false, iff_false]
-    rintro ⟨x, -, hx⟩
-    exact mkBase_notMem_range_incl (f := f) y ⟨x, hx⟩
+    simp
+
+/-- The image of the source of `f` in the mapping cylinder is closed. -/
+theorem isClosed_range_incl : IsClosed (Set.range (incl f)) :=
+  isClosedEmbedding_incl.isClosed_range
 
 /-- The source of `f` is homeomorphic to the bottom face `range (incl f)` of its mapping
 cylinder. -/
@@ -332,6 +305,15 @@ def inclHomeomorph (f : C(X, Y)) : X ≃ₜ Set.range (incl f) :=
 lemma inclHomeomorph_apply_coe (x : X) : (inclHomeomorph f x : MappingCylinder f) = incl f x :=
   (rfl)
 
+/-- `f` factors as the homeomorphism of its source with the bottom face of the mapping cylinder,
+followed by the inclusion of the bottom face and the projection onto the target. -/
+@[simp]
+lemma proj_comp_subtypeVal_comp_inclHomeomorph :
+    (proj f).comp ((ContinuousMap.subtypeVal (Set.range (incl f))).comp
+      (inclHomeomorph f : C(X, Set.range (incl f)))) = f := by
+  ext x
+  simp
+
 /-- **The target of `f` is a closed subspace of its mapping cylinder.** -/
 theorem isClosedEmbedding_mkBase : IsClosedEmbedding (mkBase f) := by
   refine .of_continuous_injective_isClosedMap (mkBase f).continuous mkBase_injective
@@ -339,18 +321,11 @@ theorem isClosedEmbedding_mkBase : IsClosedEmbedding (mkBase f) := by
   · have hpre : mkCyl f ⁻¹' (mkBase f '' K) =
         (fun p : I × X => p.1) ⁻¹' {1} ∩ (fun p : I × X => f p.2) ⁻¹' K := by
       ext ⟨s, x⟩
-      constructor
-      · rintro ⟨y, hy, hyx⟩
-        obtain ⟨h1, rfl⟩ := mkCyl_eq_mkBase_iff.1 hyx.symm
-        exact ⟨h1, hy⟩
-      · rintro ⟨rfl, hx⟩
-        exact ⟨f x, hx, (mkCyl_eq_mkBase_iff.2 ⟨rfl, rfl⟩).symm⟩
+      simp [eq_comm (b := mkCyl f _), and_comm]
     rw [hpre]
     exact (isClosed_singleton.preimage continuous_fst).inter
       (hK.preimage (f.continuous.comp continuous_snd))
-  · convert hK using 1
-    ext y
-    simp
+  · rwa [mkBase_injective.preimage_image]
 
 section Deformation
 
@@ -416,9 +391,35 @@ def homotopyEquiv (f : C(X, Y)) : ContinuousMap.HomotopyEquiv (MappingCylinder f
 @[simp]
 lemma homotopyEquiv_apply (m : MappingCylinder f) : homotopyEquiv f m = proj f m := (rfl)
 
+/-- The forward map of the homotopy equivalence with the target is the projection. -/
+lemma homotopyEquiv_toFun : (homotopyEquiv f).toFun = proj f := (rfl)
+
 /-- The homotopy inverse of the projection is the base inclusion. -/
 @[simp]
 lemma homotopyEquiv_symm_apply (y : Y) : (homotopyEquiv f).symm y = mkBase f y := (rfl)
+
+/-- The inclusion of the bottom face is homotopic to `f` followed by the base inclusion: follow the
+deformation onto the base. -/
+theorem incl_homotopic_mkBase_comp : (incl f).Homotopic ((mkBase f).comp f) := by
+  have h : (ContinuousMap.id (MappingCylinder f)).Homotopic ((mkBase f).comp (proj f)) :=
+    ⟨(deformation f).toHomotopy⟩
+  replace h := h.comp (ContinuousMap.Homotopic.refl (incl f))
+  rwa [ContinuousMap.id_comp, ContinuousMap.comp_assoc, proj_comp_incl] at h
+
+/-- Every point of the mapping cylinder is joined by a path to the point of the base below it:
+follow the deformation onto the base. -/
+theorem joined_mkBase_proj (m : MappingCylinder f) : Joined m (mkBase f (proj f m)) :=
+  ⟨(deformation f).toHomotopy.evalAt m⟩
+
+/-- If every point of `Y` is joined by a path to a point of the image of `f`, then every point of
+the mapping cylinder is joined by a path to a point of the bottom face. -/
+theorem exists_mem_range_incl_joined (h : ∀ y, ∃ x, Joined (f x) y) (m : MappingCylinder f) :
+    ∃ b ∈ Set.range (incl f), Joined m b := by
+  obtain ⟨x, hx⟩ := h (proj f m)
+  have hx' := joined_mkBase_proj (incl f x)
+  rw [← ContinuousMap.comp_apply (proj f), proj_comp_incl] at hx'
+  exact ⟨incl f x, Set.mem_range_self x,
+    (joined_mkBase_proj m).trans ((hx.symm.map (mkBase f).continuous).trans hx'.symm)⟩
 
 end Deformation
 

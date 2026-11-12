@@ -111,7 +111,7 @@ theorem pointsMulEquiv_mapPointsFunctor_typeAGraphCoordinateIso
     (A : CommAlgCat.{0} ℤ)
     (f : HopfAlgebra.points (R := ℤ) (H := coordinateHopfAlgebra ℤ (r + 1)) A) :
     pointsMulEquiv (r + 1)
-        ((CommHopfAlgCat.mapPointsFunctor (typeAGraphCoordinateIso r).hom).app A f) =
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (typeAGraphCoordinateIso r).hom).app A f) =
       TauCeti.typeAGraphAutomorphism r A (pointsMulEquiv (r + 1) f) := by
   have hmap := (CommHopfAlgCat.pointsFunctor (R := ℤ)).map_preimage
     (typeAGraphPointsNatIso r).hom
@@ -119,7 +119,8 @@ theorem pointsMulEquiv_mapPointsFunctor_typeAGraphCoordinateIso
   have hcoordinate : (typeAGraphCoordinateIso r).hom.op =
       (CommHopfAlgCat.pointsFunctor (R := ℤ)).preimage
         (typeAGraphPointsNatIso r).hom := rfl
-  -- `mapPointsFunctor` is the same Yoneda map under the opposite-category and `WithConv`
+  -- `CommHopfAlgCat.Hom.mapPointsFunctor` is the same Yoneda map under the opposite-category
+  -- and `WithConv`
   -- presentations; no rewrite lemma exposes both wrappers simultaneously.
   change pointsMulEquiv (r + 1)
       (((CommHopfAlgCat.pointsFunctor (R := ℤ)).map
@@ -138,7 +139,7 @@ theorem pointsMulEquiv_comp_typeAGraphCoordinateIso
         (toConv (f.ofConv.comp ((typeAGraphCoordinateIso r).hom.hom :
           coordinateHopfAlgebra ℤ (r + 1) →ₐ[ℤ] coordinateHopfAlgebra ℤ (r + 1)))) =
       TauCeti.typeAGraphAutomorphism r A (pointsMulEquiv (r + 1) f) := by
-  rw [← CommHopfAlgCat.mapPointsFunctor_app_apply]
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
   exact pointsMulEquiv_mapPointsFunctor_typeAGraphCoordinateIso r A f
 
 end TauCeti.GeneralLinear

@@ -15,7 +15,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.ODE.Transform
 import Mathlib.Topology.Order.MonotoneConvergence
 import Mathlib.Topology.UniformSpace.HeineCantor
-import TauCeti.Topology.Connected.TotallyDisconnected
+import TauCeti.Topology.Order.MonotoneConvergence
 
 /-!
 # Convergence of a negative gradient trajectory
@@ -27,9 +27,8 @@ points in `K`:
 `∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atTop (𝓝 p)`.
 
 This is the statement that makes the moduli spaces of the Morse complex — the trajectories running
-from one critical point to another — well defined objects at all, and it is where Lane M of the
-analytic Heegaard Floer roadmap turns the dynamical facts of
-`TauCeti/Analysis/Calculus/Morse/GradientFlow.lean` into the beginnings of a chain complex.
+from one critical point to another — well defined objects at all. It builds on the dynamical
+facts of `TauCeti/Analysis/Calculus/Morse/GradientFlow.lean`.
 
 Some hypothesis beyond compactness is needed to pin the limit down. For a merely smooth `f` a
 negative gradient trajectory can spiral forever towards a circle of critical points, its ω-limit
@@ -44,36 +43,36 @@ which is exactly what a Morse function on a compact set provides, by
 The three steps are the classical ones (Audin--Damian, Chapter 2).
 
 *The energy converges.* Along the trajectory `f` is antitone
-(`TauCeti.IsIntegralCurveOn.antitoneOn_comp_neg_gradient`) and is bounded below on `K`, so
+(`IsIntegralCurveOn.antitoneOn_comp_neg_gradient`) and is bounded below on `K`, so
 `f ∘ γ` has a limit.
 
 *The gradient dies.* The trajectory is Lipschitz, with the bound on `‖∇ f‖` over `K` as its
 constant, and `∇ f` is uniformly continuous on `K`; so if `‖∇ f (γ t)‖ ≥ ε` at some time `t`, the
 same holds with `ε / 2` throughout a time interval `[t, t + δ]` whose length `δ` does not depend on
-`t`. The energy identity `TauCeti.IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` then makes
+`t`. The energy identity `IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` then makes
 `f` drop by at least `δ (ε / 2) ^ 2` across that interval — impossible infinitely often, since the
 energy converges. Hence `∇ f (γ t) → 0`.
 
 *The ω-limit set is a point.* Every cluster point of `γ` along `atTop` is therefore a critical
 point in `K`, so the ω-limit set is finite; and it is preconnected, by
-`TauCeti.isPreconnected_setOf_mapClusterPt_atTop`. A finite preconnected set is a single point
-(`Set.Finite.isTotallyDisconnected`), and a map into a compact set with a unique cluster point
-converges to it.
+`TauCeti.isPreconnected_setOf_mapClusterPt_atTop`. A finite preconnected set is a single point,
+and a map into a compact set with a unique cluster point converges to it
+(`TauCeti.exists_tendsto_atTop_of_setOf_mapClusterPt_subset`).
 
 ## Main results
 
-* `TauCeti.IsIntegralCurveOn.exists_tendsto_comp_atTop`: the energy `f ∘ γ` converges.
-* `TauCeti.IsIntegralCurveOn.tendsto_gradient_atTop`: the gradient along the trajectory tends
+* `IsIntegralCurveOn.exists_tendsto_comp_atTop`: the energy `f ∘ γ` converges.
+* `IsIntegralCurveOn.tendsto_gradient_atTop`: the gradient along the trajectory tends
   to `0`.
-* `TauCeti.IsIntegralCurveOn.gradient_eq_zero_of_mapClusterPt`: every point of the ω-limit set is
+* `IsIntegralCurveOn.gradient_eq_zero_of_mapClusterPt`: every point of the ω-limit set is
   a critical point.
-* `TauCeti.IsIntegralCurveOn.exists_tendsto_atTop`: **a confined negative gradient trajectory
+* `IsIntegralCurveOn.exists_tendsto_atTop`: **a confined negative gradient trajectory
   converges to a critical point**, when the critical points in the confining compact set are
   finite in number.
-* `TauCeti.IsIntegralCurveOn.exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn`: the Morse
+* `IsIntegralCurveOn.exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn`: the Morse
   form of the same statement, where the finiteness comes from nondegeneracy.
-* `TauCeti.IsIntegralCurveOn.exists_tendsto_atBot`: the corresponding backward-time statement.
-* `TauCeti.IsIntegralCurveOn.exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn`: its Morse
+* `IsIntegralCurveOn.exists_tendsto_atBot`: the corresponding backward-time statement.
+* `IsIntegralCurveOn.exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn`: its Morse
   form, where finiteness follows from nondegeneracy.
 
 ## References
@@ -81,16 +80,12 @@ converges to it.
 * M. Audin, M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014, Chapter 2.
 * S. Łojasiewicz, *Ensembles semi-analytiques*, IHÉS, 1965, for the gradient inequality that
   replaces the finiteness hypothesis used here when `f` is analytic.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
 
-open Filter Function InnerProductSpace MeasureTheory Metric Set
+open Filter Function InnerProductSpace MeasureTheory Metric Set TauCeti
 open scoped Gradient Interval Topology
-
-namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {f : E → ℝ} {γ : ℝ → E} {K : Set E} {x : E}
@@ -122,19 +117,11 @@ theorem exists_tendsto_comp_atTop
     antitoneOn_comp_neg_gradient hγ (convex_Ici 0) fun t ht ↦ hdiff _ (hmaps ht)
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn
     fun y hy ↦ (hdiff y hy).continuousAt.continuousWithinAt
-  -- Extend the trajectory backwards by its initial value, so that the antitonicity is global.
-  have hgA : Antitone fun t ↦ f (γ (max t 0)) := fun a b hab ↦
-    hanti (mem_Ici.mpr (le_max_right a 0)) (mem_Ici.mpr (le_max_right b 0))
-      (max_le_max hab le_rfl)
-  have hgB : BddBelow (Set.range fun t ↦ f (γ (max t 0))) := by
-    refine ⟨-M, ?_⟩
-    rintro _ ⟨t, rfl⟩
-    have h := hM _ (hmaps (mem_Ici.mpr (le_max_right t 0)))
-    rw [Real.norm_eq_abs] at h
-    linarith [neg_abs_le (f (γ (max t 0)))]
-  refine ⟨⨅ t, f (γ (max t 0)), Tendsto.congr' ?_ (tendsto_atTop_ciInf hgA hgB)⟩
-  filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-  rw [max_eq_left ht]
+  refine ⟨_, tendsto_atTop_ciInf_of_antitoneOn_Ici hanti ⟨-M, ?_⟩⟩
+  rintro _ ⟨t, ht, rfl⟩
+  have h := hM _ (hmaps ht)
+  rw [Real.norm_eq_abs] at h
+  linarith [neg_abs_le (f (γ t))]
 
 /-! ### The gradient dies along the trajectory -/
 
@@ -187,7 +174,7 @@ private theorem energy_drop_of_le_norm_gradient {C δ ε η : ℝ}
     exact ((hcontg.mono hIcc).norm).pow 2
   have heq : ∫ s in t..(t + δ), ‖∇ f (γ s)‖ ^ 2 = f (γ t) - f (γ (t + δ)) :=
     integral_norm_gradient_sq_eq_sub hγ (huIcc ▸ hIcc)
-      (fun s hs ↦ hdiff _ (hmaps (hIcc (huIcc ▸ hs)))) hint
+      (fun s hs ↦ hdiff _ (hmaps (hIcc (huIcc ▸ hs))))
   rw [← heq]
   have hmono : ∫ _s in t..(t + δ), (ε / 2) ^ 2 ≤ ∫ s in t..(t + δ), ‖∇ f (γ s)‖ ^ 2 :=
     intervalIntegral.integral_mono_on htδ intervalIntegrable_const hint fun s hs ↦
@@ -266,7 +253,7 @@ of `f` in it**, provided `f` has only finitely many critical points there.
 Some such hypothesis is needed: a negative gradient trajectory can spiral forever towards a circle
 of critical points and then have no limit, its ω-limit set being the whole circle. The finiteness
 holds for a Morse function, which is
-`TauCeti.IsIntegralCurveOn.exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn` below.
+`IsIntegralCurveOn.exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn` below.
 
 Nothing is claimed about the *rate* of convergence, nor about the backward limit: the reversed
 curve `fun t ↦ γ (-t)` is a negative gradient trajectory of `-f`, so the backward limit is this
@@ -276,22 +263,14 @@ theorem exists_tendsto_atTop
     (hmaps : MapsTo γ (Ici 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
     (hgrad : ContinuousOn (∇ f) K) (hfin : {y ∈ K | ∇ f y = 0}.Finite) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atTop (𝓝 p) := by
-  obtain ⟨p, hpK, hp⟩ := hK.exists_mapClusterPt
-    (le_principal_iff.mpr (mem_map.mpr (mem_of_superset (Ici_mem_atTop 0) hmaps)))
-  -- The ω-limit set consists of critical points, so it is finite; and it is preconnected.
+  -- The ω-limit set consists of critical points in `K`, of which there are finitely many.
   have hsub : {y | MapClusterPt y atTop γ} ⊆ {y ∈ K | ∇ f y = 0} := fun y hy ↦
     ⟨hK.isClosed.mem_of_mapClusterPt hy
         (mem_map.mpr (mem_of_superset (Ici_mem_atTop 0) hmaps)),
       gradient_eq_zero_of_mapClusterPt hγ hK hmaps hdiff hgrad hy⟩
-  have hconn : IsPreconnected {y | MapClusterPt y atTop γ} :=
-    isPreconnected_setOf_mapClusterPt_atTop hK hγ.continuousOn hmaps
-  -- A finite preconnected set is a single point.
-  have hone : ∀ y ∈ K, MapClusterPt y atTop γ → y = p := fun y _ hy ↦
-    (hfin.subset hsub).isTotallyDisconnected _ subset_rfl hconn hy hp
-  exact ⟨p, hpK, (hsub hp).2,
-    hK.tendsto_nhds_of_unique_mapClusterPt
-      (by filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht using hmaps (mem_Ici.mpr ht))
-      hone⟩
+  obtain ⟨p, hp, h⟩ :=
+    exists_tendsto_atTop_of_setOf_mapClusterPt_subset hK hγ.continuousOn hmaps hfin hsub
+  exact ⟨p, hp.1, hp.2, h⟩
 
 /-- **The Morse form of the convergence theorem.** A negative gradient trajectory confined to a
 compact set on which `fderiv ℝ f` is continuous and every critical point of `f` is nondegenerate
@@ -309,13 +288,11 @@ theorem exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn
   have hgradeq : ∇ f = fun y ↦ (toDual ℝ E).symm (fderiv ℝ f y) := by
     funext y
     rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := y), LinearIsometryEquiv.symm_apply_apply]
-  have hzero : ∀ y : E, ∇ f y = 0 ↔ fderiv ℝ f y = 0 := fun y ↦ by
-    rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := y), map_eq_zero_iff _ (toDual ℝ E).injective]
   refine exists_tendsto_atTop hγ hK hmaps hdiff ?_ ?_
   · rw [hgradeq]
     exact (toDual ℝ E).symm.continuous.comp_continuousOn hfderiv
   · exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
-      fun y hy ↦ ⟨hy.1, (hzero y).mp hy.2⟩
+      fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
 
 /-- **A negative gradient trajectory confined to a compact set converges backwards to a critical
 point**, provided the critical locus in that set is finite.  Under these compactness, regularity,
@@ -327,9 +304,7 @@ theorem exists_tendsto_atBot
     (hmaps : MapsTo γ (Iic 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
     (hgrad : ContinuousOn (∇ f) K) (hfin : {y ∈ K | ∇ f y = 0}.Finite) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atBot (𝓝 p) := by
-  have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := by
-    intro y
-    simpa using (gradient_const_smul (𝕜 := ℝ) (F := E) (f := f) (x := y) (-1))
+  have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := fun y ↦ gradient_neg
   have hγ_rev := hγ.comp_mul (-1)
   have hdomain : {t : ℝ | t * (-1) ∈ Iic (0 : ℝ)} = Ici 0 := by
     ext t
@@ -381,14 +356,9 @@ theorem exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn
     (hmaps : MapsTo γ (Iic 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
     (hfderiv : ContinuousOn (fderiv ℝ f) K) (hM : HasNondegenerateCriticalPointsOn f K) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atBot (𝓝 p) := by
-  have hzero : ∀ y : E, ∇ f y = 0 ↔ fderiv ℝ f y = 0 := fun y ↦ by
-    rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := y),
-      map_eq_zero_iff _ (toDual ℝ E).injective]
   apply exists_tendsto_atBot hγ hK hmaps hdiff
     ((toDual ℝ E).symm.continuous.comp_continuousOn hfderiv)
   exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
-    fun y hy ↦ ⟨hy.1, (hzero y).mp hy.2⟩
+    fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
 
 end IsIntegralCurveOn
-
-end TauCeti

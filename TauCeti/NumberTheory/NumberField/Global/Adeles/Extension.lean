@@ -212,9 +212,9 @@ theorem adeleExtension_algebraMap (x : K) :
     adeleExtension R K B L (algebraMap K (AdeleRing R K) x) =
       algebraMap L (AdeleRing B L) (algebraMap K L x) := by
   refine Prod.ext ?_ ?_
-  · rw [adeleExtension_fst, AdeleRing.algebraMap_fst, AdeleRing.algebraMap_fst]
+  · rw [adeleExtension_fst, AdeleRing.algebraMap_fst_def, AdeleRing.algebraMap_fst_def]
     exact infiniteAdeleExtension_algebraMap K L x
-  · rw [adeleExtension_snd, AdeleRing.algebraMap_snd, AdeleRing.algebraMap_snd]
+  · rw [adeleExtension_snd, AdeleRing.algebraMap_snd_def, AdeleRing.algebraMap_snd_def]
     exact finiteAdeleExtension_algebraMap R K B L x
 
 /-- The extension maps of adele rings compose in a tower `K ⊆ L ⊆ M`. -/

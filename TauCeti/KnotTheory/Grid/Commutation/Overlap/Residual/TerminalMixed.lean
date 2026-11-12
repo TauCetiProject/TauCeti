@@ -40,7 +40,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 private theorem terminalMixed_side_facts
     (E : GridPentagonRectangleDecomposition C.column C.turnRow x z) (hzx : z ≠ x) :
@@ -115,8 +115,8 @@ theorem filter_hasMixedSideOverlap_pentagonRectangleDecompositions_eq_union (hzx
           (G.pentagonTerminalSelfPairs C x z).filter
             (fun E => E.toRectangleDecomposition.HasMixedSideOverlap) := by
   ext E
-  obtain ⟨hmixed, hother⟩ := G.terminalMixed_side_facts C E hzx
-  obtain ⟨hturn, hexclusive⟩ := G.terminalMixed_row_facts C E
+  obtain ⟨hmixed, hother⟩ := terminalMixed_side_facts C E hzx
+  obtain ⟨hturn, hexclusive⟩ := terminalMixed_row_facts C E
   have horder := G.terminalMixed_row_order C E
   have hb := E.pentagon.right_eq
   have hp := E.pentagon.left_ne_right
@@ -137,8 +137,8 @@ private theorem disjoint_terminalMixed_families (hzx : z ≠ x) :
         (G.pentagonRectangleTurnCuts C x z) ∧
       Disjoint (G.initialOverlapPartners C x z) (G.terminalCrossOverlapPartners C x z) := by
   refine ⟨?_, ?_, ?_⟩ <;> refine Finset.disjoint_left.2 fun E h₁ h₂ => ?_ <;>
-  · obtain ⟨hmixed, hother⟩ := G.terminalMixed_side_facts C E hzx
-    obtain ⟨hturn, hexclusive⟩ := G.terminalMixed_row_facts C E
+  · obtain ⟨hmixed, hother⟩ := terminalMixed_side_facts C E hzx
+    obtain ⟨hturn, hexclusive⟩ := terminalMixed_row_facts C E
     have hb := E.pentagon.right_eq
     have hp := E.pentagon.left_ne_right
     have hr := E.rectangle.left_ne_right

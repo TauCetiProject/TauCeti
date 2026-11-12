@@ -166,8 +166,8 @@ theorem exists_graphPlan_of_ae_mem_contactSet_of_strictConvexOn [IsFiniteMeasure
       (ae_subsingleton_setOf_mem_contactSet_of_strictConvexOn μ hh hfeas hφ)).mono
         fun _ ⟨y, _, hy⟩ ↦ ⟨y, hy⟩)
   have hcontact : ∀ᵐ x ∂μ, (x, T x) ∈ contactSet (fun z ↦ h (z.1 - z.2)) φ ψ := by
-    rw [hgraph, graphPlan_def] at hcon
-    exact ae_of_ae_map (aemeasurable_prodMk_self hT.aemeasurable) hcon
+    rw [hgraph] at hcon
+    exact ae_of_ae_graphPlan hT.aemeasurable hcon
   refine ⟨T, hT, hLaw, hgraph, ?_⟩
   filter_upwards [hcontact, hφ] with x hx ⟨hfin, hdiff⟩
   exact ⟨hx, add_le_of_mem_contactSet_sub hh.convexOn (.of_forall fun x' ↦ hfeas x' (T x)) hfin

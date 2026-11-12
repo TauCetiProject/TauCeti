@@ -501,7 +501,7 @@ private theorem pointsMulEquiv_map_specialIsogenyCoordinateMap
     (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra)
       (CommAlgCat.of (ZMod 3) B)) :
     pointsMulEquiv (CommAlgCat.of (ZMod 3) B)
-        (AlgHom.mapDomain specialIsogenyCoordinateMap.hom q) =
+        (BialgHom.mapDomain specialIsogenyCoordinateMap.hom q) =
       specialIsogeny B (pointsMulEquiv (CommAlgCat.of (ZMod 3) B) q) := by
   apply Subtype.ext
   apply Units.ext
@@ -510,11 +510,11 @@ private theorem pointsMulEquiv_map_specialIsogenyCoordinateMap
   have h := congrArg (fun M : Matrix (Fin 7) (Fin 7) carrierAlgebra => M.map q.ofConv)
     map_carrierGenericMatrix_specialIsogenyCoordinateMap
   have hmap :
-      (((AlgHom.mapDomain specialIsogenyCoordinateMap.hom q).ofConv :
+      (((BialgHom.mapDomain specialIsogenyCoordinateMap.hom q).ofConv :
           carrierAlgebra →ₐ[ZMod 3] B) : carrierAlgebra → B) =
         q.ofConv ∘ specialIsogenyCoordinateMap.hom := by
     funext x
-    rfl
+    exact BialgHom.mapDomain_apply_apply specialIsogenyCoordinateMap.hom q x
   rw [hmap]
   simpa only [Matrix.map_map, Function.comp_apply, BialgHom.coe_toAlgHom,
     g2SpecialIsogeny_map] using h

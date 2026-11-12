@@ -25,6 +25,7 @@ form on `Unit` to any subsingleton module.
   coefficient ring.
 * `CliffordAlgebra.even_eq_top_of_subsingleton` says that every element is even.
 * `CliffordAlgebra.reverse_eq_self_of_subsingleton` says that reversal is the identity.
+* `CliffordAlgebra.unitsEquivOfSubsingleton` identifies Clifford units with scalar units.
 -/
 
 public section
@@ -78,6 +79,27 @@ theorem reverse_eq_self_of_subsingleton [Subsingleton M] (x : CliffordAlgebra Q)
       apply (equivOfSubsingleton Q).injective
       simp only [map_mul, mul_comm]
   | add x y hx hy => rw [reverse.map_add, hx, hy]
+
+/-- Units of a zero-dimensional Clifford algebra are canonically scalar units. -/
+noncomputable def unitsEquivOfSubsingleton [Subsingleton M] :
+    (CliffordAlgebra Q)ˣ ≃* Rˣ :=
+  Units.mapEquiv (equivOfSubsingleton Q).toMulEquiv
+
+/-- The scalar-unit equivalence has the expected underlying scalar value. -/
+@[simp]
+theorem coe_unitsEquivOfSubsingleton_apply [Subsingleton M] (x : (CliffordAlgebra Q)ˣ) :
+    ((unitsEquivOfSubsingleton Q x : Rˣ) : R) = equivOfSubsingleton Q (x : CliffordAlgebra Q) := by
+  simp [unitsEquivOfSubsingleton]
+
+/-- The inverse scalar-unit equivalence has the expected underlying Clifford value. -/
+@[simp]
+theorem coe_unitsEquivOfSubsingleton_symm_apply [Subsingleton M] (u : Rˣ) :
+    (((unitsEquivOfSubsingleton Q).symm u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      (equivOfSubsingleton Q).symm (u : R) := by
+  apply (equivOfSubsingleton Q).injective
+  simpa only [coe_unitsEquivOfSubsingleton_apply, AlgEquiv.apply_symm_apply] using
+    congrArg Units.val ((unitsEquivOfSubsingleton Q).apply_symm_apply u)
+
 
 end CliffordAlgebra
 

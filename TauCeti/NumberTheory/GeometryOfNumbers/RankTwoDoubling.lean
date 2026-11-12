@@ -10,32 +10,32 @@ public import TauCeti.NumberTheory.GeometryOfNumbers.Doubling
 /-!
 # A concrete rank-two lattice exercising the geometry-of-numbers engine
 
-The Layer-0 engine in `TauCeti/NumberTheory/GeometryOfNumbers/Doubling.lean` proves its
-packing and doubling bounds for an *arbitrary* additive subgroup `Λ ≤ (ι → ℂ)`. This file
-is the roadmap's acceptance-criterion worked example for that engine: a concrete rank-two
+The packing and doubling bounds in `TauCeti/NumberTheory/GeometryOfNumbers/Doubling.lean`
+apply to an *arbitrary* additive subgroup `Λ ≤ (ι → ℂ)`. This file computes the bounds on a rank-two
 lattice in the plane `ℂ ≅ ℝ²` (indexed by `ι = Fin 1`, so `Fin 1 → ℂ` is one copy of `ℂ`)
 on which both bounds become explicit numbers.
 
 The lattice is the Gaussian lattice `ℤ + ℤ·i`, packaged as
-`TauCeti.GeometryOfNumbers.gaussianLattice : AddSubgroup (Fin 1 → ℂ)`. Its only nontrivial
+`gaussianLattice : AddSubgroup (Fin 1 → ℂ)`. Its only nontrivial
 input to the engine is the separation hypothesis: a *nonzero* Gaussian integer has norm at
 least `1` (`one_le_norm_of_mem_gaussianLattice_of_ne_zero`), so the packing lemma applies
 with separation scale `ρ = 1/2` and produces a finite intersection with the box.
 
 ## Main results
 
-* `TauCeti.GeometryOfNumbers.one_le_norm_of_mem_gaussianLattice_of_ne_zero`: a nonzero
+* `one_le_norm_of_mem_gaussianLattice_of_ne_zero`: a nonzero
   point of the Gaussian lattice has norm at least `1` (the lattice's minimal distance).
-* `TauCeti.GeometryOfNumbers.gaussianLattice_inter_box_two_finite`: the lattice points in
+* `gaussianLattice_inter_pi_closedBall_two_finite`: the lattice points in
   the radius-two box form a finite set (the packing lemma discharges discreteness).
-* `TauCeti.GeometryOfNumbers.gaussianLattice_inter_box_two_ncard_le`: at most `256` of
+* `gaussianLattice_inter_pi_closedBall_two_ncard_le`: at most `256` of
   them, the explicit packing count `(8/ρ)^(2·#ι)` at `ρ = 1/2`, `#ι = 1`.
-* `gaussianLattice_ncard_inter_box_two_le_fortyNine_mul_ncard_inter_box_one`:
-  the doubling instance `#(Λ ∩ box 2) ≤ 49 · #(Λ ∩ box 1)`, the engine's proved factor
-  `49^{#ι} = 49` at `#ι = 1`; `…_le_sixtyFour_…` is the rounder `64`-factor corollary.
+* `gaussianLattice_ncard_inter_pi_closedBall_two_le`:
+  the radius-two count is at most `49` times the radius-one count, the engine's proved factor
+  `49^{#ι} = 49` at `#ι = 1`.
 
-These exercise both halves of the engine — `addSubgroup_inter_box_finite_and_ncard_le_of_separated`
-and `ncard_inter_box_two_le_pow_mul_ncard_inter_box_one` — on a genuine rank-two lattice,
+These exercise both halves of the engine —
+`addSubgroup_inter_pi_closedBall_finite_and_ncard_le_of_separated`
+and `ncard_inter_pi_closedBall_two_le_pow_mul` — on a genuine rank-two lattice,
 with no new analytic input beyond the elementary minimal-distance bound.
 -/
 
@@ -111,37 +111,36 @@ private theorem gaussianLattice_separated :
 /-- **Discreteness via packing.** The Gaussian lattice meets the radius-two box in a finite
 set: the engine's packing lemma discharges the finiteness hypothesis directly from the
 minimal-distance bound. -/
-theorem gaussianLattice_inter_box_two_finite :
-    ((gaussianLattice : Set (Fin 1 → ℂ)) ∩ box (fun _ => 1) 2).Finite :=
-  (addSubgroup_inter_box_finite_and_ncard_le_of_separated (fun _ => 1) (fun _ => one_pos)
-    gaussianLattice (ρ := 1 / 2) (by norm_num) (by norm_num) gaussianLattice_separated).1
+theorem gaussianLattice_inter_pi_closedBall_two_finite :
+    ((gaussianLattice : Set (Fin 1 → ℂ)) ∩ Set.pi Set.univ
+        (fun _ ↦ Metric.closedBall (0 : ℂ) 2)).Finite := by
+  simpa only [mul_one] using
+    (addSubgroup_inter_pi_closedBall_finite_and_ncard_le_of_separated
+      (fun _ => 1) (fun _ => one_pos) gaussianLattice (ρ := 1 / 2)
+      (by norm_num) (by norm_num) gaussianLattice_separated).1
 
 /-- **Explicit packing count.** At most `256` Gaussian-lattice points lie in the radius-two
 box, the engine's bound `(8/ρ)^(2·#ι)` evaluated at `ρ = 1/2` and `#ι = 1` (so `16² = 256`). -/
-theorem gaussianLattice_inter_box_two_ncard_le :
-    (((gaussianLattice : Set (Fin 1 → ℂ)) ∩ box (fun _ => 1) 2).ncard : ℝ) ≤ 256 := by
-  refine (addSubgroup_inter_box_finite_and_ncard_le_of_separated (fun _ => 1) (fun _ => one_pos)
-    gaussianLattice (ρ := 1 / 2) (by norm_num) (by norm_num) gaussianLattice_separated).2.trans ?_
-  rw [Fintype.card_fin]
-  norm_num
+theorem gaussianLattice_inter_pi_closedBall_two_ncard_le :
+    (((gaussianLattice : Set (Fin 1 → ℂ)) ∩ Set.pi Set.univ
+        (fun _ ↦ Metric.closedBall (0 : ℂ) 2)).ncard : ℝ) ≤ 256 := by
+  have h := (addSubgroup_inter_pi_closedBall_finite_and_ncard_le_of_separated
+    (fun _ => 1) (fun _ => one_pos) gaussianLattice (ρ := 1 / 2)
+    (by norm_num) (by norm_num) gaussianLattice_separated).2
+  norm_num at h ⊢
+  exact h
 
 /-- **A concrete doubling instance.** Passing from the unit box to the double box multiplies the
 Gaussian-lattice point count by at most the engine's proved factor `49^{#ι} = 49` at `#ι = 1`:
-`#(Λ ∩ box 2) ≤ 49 · #(Λ ∩ box 1)`. -/
-theorem gaussianLattice_ncard_inter_box_two_le_fortyNine_mul_ncard_inter_box_one :
-    (((gaussianLattice : Set (Fin 1 → ℂ)) ∩ box (fun _ => 1) 2).ncard : ℝ) ≤
-      49 * (((gaussianLattice : Set (Fin 1 → ℂ)) ∩ box (fun _ => 1) 1).ncard : ℝ) := by
+the radius-two count is at most `49` times the radius-one count. -/
+theorem gaussianLattice_ncard_inter_pi_closedBall_two_le :
+    (((gaussianLattice : Set (Fin 1 → ℂ)) ∩ Set.pi Set.univ
+        (fun _ ↦ Metric.closedBall (0 : ℂ) 2)).ncard : ℝ) ≤
+      49 * (((gaussianLattice : Set (Fin 1 → ℂ)) ∩ Set.pi Set.univ
+          (fun _ ↦ Metric.closedBall (0 : ℂ) 1)).ncard : ℝ) := by
   simpa [Fintype.card_fin, pow_one] using
-    ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (ι := Fin 1) (fun _ => 1)
-      (fun _ => one_pos) gaussianLattice gaussianLattice_inter_box_two_finite
-
-/-- The same doubling instance with the rounder factor `64` — a compatibility corollary of
-`gaussianLattice_ncard_inter_box_two_le_fortyNine_mul_ncard_inter_box_one`, weakening `49 ≤ 64`:
-`#(Λ ∩ box 2) ≤ 64 · #(Λ ∩ box 1)`. -/
-theorem gaussianLattice_ncard_inter_box_two_le_sixtyFour_mul_ncard_inter_box_one :
-    (((gaussianLattice : Set (Fin 1 → ℂ)) ∩ box (fun _ => 1) 2).ncard : ℝ) ≤
-      64 * (((gaussianLattice : Set (Fin 1 → ℂ)) ∩ box (fun _ => 1) 1).ncard : ℝ) :=
-  gaussianLattice_ncard_inter_box_two_le_fortyNine_mul_ncard_inter_box_one.trans
-    (mul_le_mul_of_nonneg_right (by norm_num) (by positivity))
+    ncard_inter_pi_closedBall_two_le_pow_mul (ι := Fin 1) (fun _ => 1)
+      (fun _ => one_pos) gaussianLattice
+      (by simpa only [mul_one] using gaussianLattice_inter_pi_closedBall_two_finite)
 
 end TauCeti.GeometryOfNumbers

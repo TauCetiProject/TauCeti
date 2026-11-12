@@ -38,9 +38,8 @@ monodromy an equivalence onto the actions, which is proved in
 
 ## References
 
-This is the connected/transitive restriction in Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`, which asks for the classification of connected covers
-by *transitive* fundamental-group sets. It builds on the fibrewise pretransitive packaging in
+This is the connected/transitive restriction in the classification of connected covers by
+*transitive* fundamental-group sets. This file builds on the fibrewise pretransitive packaging in
 `TauCeti.Topology.Covering.Monodromy.Connected`.
 -/
 

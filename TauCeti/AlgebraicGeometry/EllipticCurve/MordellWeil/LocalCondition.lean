@@ -8,8 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.XSubT
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
--- Proof-only: `Point.cast_some`, the coordinates of a point transported along `AddEquiv.cast`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
 # Base change of the étale algebra, and the local condition of `2`-descent
@@ -29,17 +27,25 @@ of square classes whose image in `(W⁄L).M` lies in the image of the local desc
 `2`-Selmer group of `W` is cut out of `W.M` by these conditions at all completions of `K`, so
 `localCondition` is the object every later descent statement is phrased in.
 
+The underlying cubic quotient algebra, its square-class group, and their base-change maps are
+defined over arbitrary commutative rings. The discriminant identity holds at this generality
+as well, and a root of the cubic gives a nonsingular point after base change to any nontrivial
+commutative algebra, provided the curve is elliptic and in characteristic-≠-2 normal form.
+
 ## Main definitions
 
-* `WeierstrassCurve.Affine.mapA`: the base-change homomorphism `K[X]⧸⟨f⟩ →+* L[X]⧸⟨f⟩` of étale
-  algebras.
-* `WeierstrassCurve.Affine.localRes`: the induced map `W.M →* (W⁄L).M` on square classes.
+* `WeierstrassCurve.Affine.mapA`: the base-change homomorphism `R[X]⧸⟨f⟩ →+* S[X]⧸⟨f⟩` of
+  cubic quotient algebras, which are étale in the elliptic characteristic-≠-2 setting.
+* `WeierstrassCurve.Affine.localRes`: the induced map `W.M →* (W⁄S).M` on square classes over
+  commutative rings.
 * `WeierstrassCurve.Affine.localCondition`: the local `2`-descent condition at `L`.
 
 ## Main statements
 
 * `WeierstrassCurve.Affine.baseChange_discr_f`: the discriminant of the cubic `f` commutes with
   base change.
+* `WeierstrassCurve.Affine.nonsingular_baseChange_of_aeval_eq_zero`: a root `x` of `f` in a
+  nontrivial algebra `S` gives the point `(x, 0)` of `W⁄S`.
 * `WeierstrassCurve.Affine.localRes_μX` and `WeierstrassCurve.Affine.localRes_comp_μ`: the
   descent map is natural under base change — restricting square classes after the global `μ` is
   applying the local `μ` after the base change of points.
@@ -52,8 +58,8 @@ of square classes whose image in `(W⁄L).M` lies in the image of the local desc
   `WeierstrassCurve.Affine.range_μ_of_surjective_algebraMap`, which identifies the two images.
   This is the transport step: a count of `#(im μ)` established over a concrete field carries to
   any field isomorphic to it. Its inputs are
-  `WeierstrassCurve.Affine.bijective_mapA_of_surjective_algebraMap` and
-  `WeierstrassCurve.Affine.localRes_injective_of_surjective_algebraMap`.
+  `WeierstrassCurve.Affine.bijective_mapA_of_bijective_algebraMap` and
+  `WeierstrassCurve.Affine.localRes_bijective_of_bijective_algebraMap`.
 
 ## Implementation notes
 
@@ -69,23 +75,18 @@ The base change of points is `WeierstrassCurve.Affine.pointMap`, from
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, revision `66889eada51a`),
 `EllipticCurves/SelmerGroup.lean` lines 85-323 — that file's `BaseChange` section: lines 85-295
 give the base change up to the local condition and its compatibility with `μ`, and lines 296-323
 give the isomorphism-invariance block — `range_μ_of_bijective_algebraMap` and
 `card_range_μ_of_bijective_algebraMap` upstream, renamed here for the weaker hypothesis — plus the
 étale-algebra bijectivity at line 168.
 
-One declaration is **not** adapted from the source: `localRes_injective_of_surjective_algebraMap`
-is re-derived here. The source obtains it from its local `Units.modPow.bijective_map`, which is in
-the square-class spelling this repository does not carry, and Mathlib has no `QuotientGroup.map`
-injectivity helper to appeal to instead. `baseChange_discr_f` is the source's lemma of that name
-at its later revision `3bfe124`.
-
-This advances `TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (README:813-820), whose
-"Explicit `2`-descent (core, this layer)" bullet names "the local conditions" as the first item
-to migrate.
+The square-class isomorphism statement `localRes_bijective_of_bijective_algebraMap` follows from
+`QuotientGroup.congrRangePowMonoidHom` applied to the induced equivalence of unit groups.
+`baseChange_discr_f` is the source's lemma of that name at its later revision `3bfe124`.
+`nonsingular_baseChange_of_aeval_eq_zero` is not from the source: it is
+`WeierstrassCurve.Affine.nonsingular_of_eval_f_eq_zero` after base change.
 -/
 
 public section
@@ -132,6 +133,71 @@ lemma baseChange_fCofactor (x : R) :
 lemma baseChange_f : (W⁄S).toAffine.f = W.f.map (algebraMap R S) :=
   W.map_f (algebraMap R S)
 
+/-- The discriminant of the cubic `f` commutes with base change. -/
+lemma baseChange_discr_f : (W⁄S).toAffine.f.discr = algebraMap R S W.f.discr := by
+  nontriviality S
+  let := (algebraMap R S).domain_nontrivial
+  simp [discr_f, toAffine, map_ofNat]
+
+variable {S} in
+/-- A root `x` of the cubic `f` in a nontrivial `R`-algebra `S` gives the nonsingular point
+`(x, 0)` of the base-changed curve `W⁄S`. -/
+lemma nonsingular_baseChange_of_aeval_eq_zero [Nontrivial S] [W.IsElliptic] [W.IsCharNeTwoNF]
+    {x : S} (hx : aeval x W.f = 0) : (W⁄S).toAffine.Nonsingular x 0 :=
+  (W⁄S).toAffine.nonsingular_of_eval_f_eq_zero <| by
+    rw [W.baseChange_f, eval_map_algebraMap, hx]
+
+/-- The base-change homomorphism `R[X]⧸⟨f⟩ →+* S[X]⧸⟨f⟩` of cubic quotient algebras, as an
+instance of `AdjoinRoot.map`. In the elliptic characteristic-≠-2 setting these algebras are étale.
+-/
+noncomputable def mapA : W.A →+* (W⁄S).toAffine.A :=
+  AdjoinRoot.map (algebraMap R S) W.f (W⁄S).toAffine.f (W.baseChange_f S).dvd
+
+@[simp]
+lemma mapA_mk (p : R[X]) :
+    W.mapA S (AdjoinRoot.mk W.f p) = AdjoinRoot.mk (W⁄S).toAffine.f (p.map (algebraMap R S)) :=
+  AdjoinRoot.map_mk _ _
+
+/-- Base change of the cubic quotient algebra along an isomorphism of commutative rings is
+bijective. -/
+lemma bijective_mapA_of_bijective_algebraMap (h : Function.Bijective (algebraMap R S)) :
+    Function.Bijective (W.mapA S) :=
+  (AdjoinRoot.mapRingEquiv (RingEquiv.ofBijective (algebraMap R S) h)
+    W.f (W⁄S).toAffine.f (by rw [W.baseChange_f]; exact Associated.refl _)).bijective
+
+/-- The base-change map on square classes of units of the cubic quotient algebra, over
+commutative rings. -/
+noncomputable def localRes : W.M →* (W⁄S).toAffine.M :=
+  QuotientGroup.map _ _ (Units.map (W.mapA S).toMonoidHom) <| by
+    rintro _ ⟨u, rfl⟩
+    exact ⟨Units.map (W.mapA S).toMonoidHom u, by simp [powMonoidHom]⟩
+
+@[simp]
+lemma localRes_mk (u : W.Aˣ) :
+    W.localRes S (QuotientGroup.mk u) = QuotientGroup.mk (Units.map (W.mapA S).toMonoidHom u) :=
+  QuotientGroup.map_mk _ _ _ _ u
+
+/-- The base-change map on square classes, on the class of a unit given as `IsUnit a`. -/
+-- Deliberately NOT `@[simp]`: the left-hand side is not in simp-normal form, because
+-- `localRes_mk` rewrites `W.localRes S ↑ha.unit` first, so the attribute could never fire —
+-- use it for explicit rewriting at the `localRes_μX` call sites below.
+lemma localRes_unit {a : W.A} (ha : IsUnit a) :
+    W.localRes S (ha.unit : W.M) = ((ha.map (W.mapA S)).unit : (W⁄S).toAffine.M) := by
+  rw [localRes_mk]
+  exact congrArg _ (Units.ext rfl)
+
+/-- Base change along an isomorphism of commutative rings is bijective on square classes. -/
+lemma localRes_bijective_of_bijective_algebraMap (h : Function.Bijective (algebraMap R S)) :
+    Function.Bijective (W.localRes S) := by
+  let e := MulEquiv.ofBijective (Units.map (W.mapA S).toMonoidHom)
+    (Units.map_bijective (W.bijective_mapA_of_bijective_algebraMap S h))
+  have he : W.localRes S = (QuotientGroup.congrRangePowMonoidHom e 2).toMonoidHom := by
+    refine MonoidHom.ext fun m ↦ ?_
+    obtain ⟨u, rfl⟩ := QuotientGroup.mk_surjective m
+    simp [e]
+  rw [he]
+  exact (QuotientGroup.congrRangePowMonoidHom e 2).bijective
+
 end Algebra
 
 end CommRing
@@ -141,67 +207,6 @@ variable {K : Type*} [Field K] (W : Affine K)
 section BaseChange
 
 variable (L : Type*) [Field L] [Algebra K L]
-
-/-- The discriminant of the cubic `f` commutes with base change. -/
-lemma baseChange_discr_f : (W⁄L).toAffine.f.discr = algebraMap K L W.f.discr := by
-  simp [discr_f, toAffine, map_ofNat]
-
-/-- The base-change homomorphism `K[X]⧸⟨f⟩ →+* L[X]⧸⟨f⟩` of étale algebras, as an instance of
-`AdjoinRoot.map` (so that its API — `map_of`, `map_root`, `map_comp_map`, `mapRingEquiv` —
-applies directly). -/
-noncomputable def mapA : W.A →+* (W⁄L).toAffine.A :=
-  AdjoinRoot.map (algebraMap K L) W.f (W⁄L).toAffine.f (W.baseChange_f L).dvd
-
-@[simp]
-lemma mapA_mk (p : K[X]) :
-    W.mapA L (AdjoinRoot.mk W.f p) = AdjoinRoot.mk (W⁄L).toAffine.f (p.map (algebraMap K L)) :=
-  AdjoinRoot.map_mk _ _
-
-/-- The base-change map on square classes of units of the étale algebra. -/
-noncomputable def localRes : W.M →* (W⁄L).toAffine.M :=
-  QuotientGroup.map _ _ (Units.map (W.mapA L).toMonoidHom) <| by
-    rintro _ ⟨u, rfl⟩
-    exact ⟨Units.map (W.mapA L).toMonoidHom u, by simp [powMonoidHom]⟩
-
-@[simp]
-lemma localRes_mk (u : W.Aˣ) :
-    W.localRes L (QuotientGroup.mk u) = QuotientGroup.mk (Units.map (W.mapA L).toMonoidHom u) :=
-  QuotientGroup.map_mk _ _ _ _ u
-
-/-- The base-change map on square classes, on the class of a unit given as `IsUnit a`. -/
--- Deliberately NOT `@[simp]`: the left-hand side is not in simp-normal form, because
--- `localRes_mk` rewrites `W.localRes L ↑ha.unit` first, so the attribute could never fire —
--- tagging it is what failed the simp-NF lint on this branch. It is for explicit `rw` at the
--- `localRes_μX` call sites below.
-lemma localRes_unit {a : W.A} (ha : IsUnit a) :
-    W.localRes L (ha.unit : W.M) = ((ha.map (W.mapA L)).unit : (W⁄L).toAffine.M) := by
-  rw [localRes_mk]
-  exact congrArg _ (Units.ext rfl)
-
-/-- Base change of the étale algebra along a surjective algebra map of fields is an isomorphism:
-`mapA` is `AdjoinRoot.map`, which `AdjoinRoot.mapRingEquiv` upgrades.
-
-Surjectivity is the whole hypothesis: a ring homomorphism out of a field is automatically
-injective, so `algebraMap K L` is bijective as soon as it is onto. -/
-lemma bijective_mapA_of_surjective_algebraMap (h : Function.Surjective (algebraMap K L)) :
-    Function.Bijective (W.mapA L) :=
-  (AdjoinRoot.mapRingEquiv
-    (RingEquiv.ofBijective (algebraMap K L) ⟨(algebraMap K L).injective, h⟩)
-    W.f (W⁄L).toAffine.f (by rw [W.baseChange_f]; exact Associated.refl _)).bijective
-
-/-- Along an isomorphism, the base-change map on square classes is injective: a square root of
-`mapA a` pulls back along the isomorphism to a square root of `a`. -/
-lemma localRes_injective_of_surjective_algebraMap (h : Function.Surjective (algebraMap K L)) :
-    Function.Injective (W.localRes L) := by
-  have hb := W.bijective_mapA_of_surjective_algebraMap L h
-  rw [injective_iff_map_eq_one]
-  intro m hm
-  obtain ⟨u, rfl⟩ := QuotientGroup.mk_surjective m
-  rw [localRes_mk, QuotientGroup.eq_one_iff] at hm
-  obtain ⟨w, hw⟩ := hm
-  obtain ⟨w', rfl⟩ := (Units.map_bijective hb).2 w
-  exact (QuotientGroup.eq_one_iff _).mpr ⟨w', (Units.map_bijective hb).1
-    (by simpa only [powMonoidHom_apply, map_pow] using hw)⟩
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
 
@@ -300,7 +305,8 @@ to it. -/
 theorem card_range_μ_of_surjective_algebraMap (h : Function.Surjective (algebraMap K L)) :
     Nat.card (μ (W := (W⁄L).toAffine)).range = Nat.card (μ (W := W)).range := by
   rw [W.range_μ_of_surjective_algebraMap L h]
-  exact Subgroup.card_map_of_injective (W.localRes_injective_of_surjective_algebraMap L h)
+  exact Subgroup.card_map_of_injective
+    (W.localRes_bijective_of_bijective_algebraMap L ⟨(algebraMap K L).injective, h⟩).1
 
 end BaseChange
 

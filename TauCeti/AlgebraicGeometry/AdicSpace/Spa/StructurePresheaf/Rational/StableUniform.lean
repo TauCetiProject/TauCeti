@@ -16,8 +16,7 @@ Let `A` be a stably uniform Tate ring: every rational localisation `A⟨T/s⟩` 
 be a pair of definition whose ring of definition lies in `A⁺`, and `A⁺` a subring of power-bounded
 elements. Buzzard and Verberkmoes prove that the structure presheaf of `X = Spa(A, A⁺)` is a sheaf.
 This file proves this for the presentation-limit structure presheaf, as a sheaf of complete
-separated topological rings, and deduces that a complete Hausdorff stably uniform Tate ring is
-sheafy.
+separated topological rings, and deduces that every stably uniform Tate ring is sheafy.
 
 Stable uniformity passes to rational localisations, and over a stably uniform ring two-piece
 Laurent covers of rational subsets glue, with the topology on sections induced by restriction to
@@ -39,8 +38,7 @@ for strongly noetherian Tate rings. No noetherian hypothesis is used.
   topological rings.
 * `TauCeti.Huber.isSheafyForEveryPresentation_of_isStablyUniform` : every ring of integral
   elements of a stably uniform Tate ring satisfies `TauCeti.Huber.IsSheafyForEveryPresentation`.
-* `TauCeti.Huber.isSheafyRing_of_isStablyUniform` : a complete Hausdorff stably uniform Tate ring
-  is sheafy.
+* `TauCeti.Huber.isSheafyRing_of_isStablyUniform` : a stably uniform Tate ring is sheafy.
 
 ## References
 
@@ -117,13 +115,14 @@ theorem isSheafyForEveryPresentation_of_isStablyUniform {A : Type v} [CommRing A
   ⟨hAplus, fun P hP ↦
     isSheaf_presentationLimitPresheaf_of_isStablyUniform P hP hAplus.isPowerBounded_of_mem⟩
 
-/-- **A complete Hausdorff stably uniform Tate ring is sheafy** in the sense of Wedhorn's
-Definition 8.26 (`TauCeti.Huber.IsSheafyRing`). This is the ring-level form of the theorem of
-Buzzard and Verberkmoes. -/
+/-- **A stably uniform Tate ring is sheafy** in the sense of Wedhorn's Definition 8.26
+(`TauCeti.Huber.IsSheafyRing`). This is the ring-level form of the theorem of Buzzard and
+Verberkmoes. `A` need not be complete or Hausdorff: its completion `Â` is stably uniform
+(`TauCeti.Huber.IsStablyUniform.completion`), so every ring of integral elements of `Â` is
+sheafy by `TauCeti.Huber.isSheafyForEveryPresentation_of_isStablyUniform`. -/
 theorem isSheafyRing_of_isStablyUniform {A : Type v} [CommRing A] [UniformSpace A]
-    [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A] [IsStablyUniform A]
-    [CompleteSpace A] [T0Space A] : IsSheafyRing A :=
-  isSheafyRing_iff_forall_isSheafyForEveryPresentation.mpr fun _ ↦
-    isSheafyForEveryPresentation_of_isStablyUniform
+    [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A] [IsStablyUniform A] :
+    IsSheafyRing A :=
+  isSheafyRing_iff.mpr fun _ ↦ isSheafyForEveryPresentation_of_isStablyUniform
 
 end TauCeti.Huber

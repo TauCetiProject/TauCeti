@@ -83,27 +83,27 @@ instance _root_.SheafOfModules.isIso_evaluation_dual_of_isInvertible
     (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) [IsInvertible M] :
     IsIso ((ihom.ev M).app (unit (ringCatSheaf R))) := by
   let t := LocalTrivializations.ofIsInvertible M
-  refine isIso_of_coversTop t.coversTop _ fun i ↦ ?_
+  refine isIso_of_coversTop t.coversTop fun i ↦ ?_
   let F := overFunctor (ringCatSheaf R) (t.X i)
   have heval : IsIso ((ihom.ev (M.over (t.X i))).app
       (unit ((ringCatSheaf R).over (t.X i)))) :=
     isIso_evaluation_dual_of_iso_freePUnit (R := R.over (t.X i))
       (M.over (t.X i)) (t.iso i)
-  have : IsIso (F.ihomComparison M).natTrans := by
+  have : IsIso (F.ihomComparison M) := by
     rw [← overIhomComparison_def]
     infer_instance
-  have : IsIso ((F.ihomComparison M).natTrans.app (unit (ringCatSheaf R))) :=
+  have : IsIso ((F.ihomComparison M).app (unit (ringCatSheaf R))) :=
     NatIso.isIso_app_of_isIso _ _
   have : IsIso (Functor.OplaxMonoidal.η F) := inferInstance
   have : IsIso ((ihom (M.over (t.X i))).map (Functor.OplaxMonoidal.η F)) := inferInstance
-  have : IsIso ((F.ihomComparison M).natTrans.app (unit (ringCatSheaf R)) ≫
+  have : IsIso ((F.ihomComparison M).app (unit (ringCatSheaf R)) ≫
       (ihom (M.over (t.X i))).map (Functor.OplaxMonoidal.η F)) := inferInstance
   have : IsIso (M.over (t.X i) ◁
-      ((F.ihomComparison M).natTrans.app (unit (ringCatSheaf R)) ≫
+      ((F.ihomComparison M).app (unit (ringCatSheaf R)) ≫
         (ihom (M.over (t.X i))).map (Functor.OplaxMonoidal.η F))) := inferInstance
   have h := F.whiskerLeft_ihomComparison_app_unit_comp_map_η_comp_ev M
   have hlocal : IsIso (M.over (t.X i) ◁
-      ((F.ihomComparison M).natTrans.app (unit (ringCatSheaf R)) ≫
+      ((F.ihomComparison M).app (unit (ringCatSheaf R)) ≫
         (ihom (M.over (t.X i))).map (Functor.OplaxMonoidal.η F)) ≫
       (ihom.ev (M.over (t.X i))).app (unit ((ringCatSheaf R).over (t.X i)))) :=
     IsIso.comp_isIso' inferInstance heval

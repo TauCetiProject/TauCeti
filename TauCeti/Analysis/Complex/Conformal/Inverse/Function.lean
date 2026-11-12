@@ -26,6 +26,11 @@ functions that are injective on an open set and for holomorphic open partial hom
   segment through the image of `z₀`.
 * `TauCeti.OpenPartialHomeomorph.differentiableOn_symm` — the inverse of a holomorphic open partial
   homeomorphism is holomorphic on its target.
+
+## References
+
+* [Mathlib PR #33505](https://github.com/leanprover-community/mathlib4/pull/33505), the preceding
+  human-curated Riemann-mapping development and its local analytic prerequisites.
 -/
 
 public section

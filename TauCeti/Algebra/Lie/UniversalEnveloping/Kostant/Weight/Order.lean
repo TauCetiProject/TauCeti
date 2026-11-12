@@ -39,6 +39,8 @@ hypothesis.
   strictly decreases the numbered index.
 * `isUpperUnitriangular_kostantRootSubgroupMatrix_orderedWeightBasis`:
   a positive-degree root subgroup is upper unitriangular in the ordered basis.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_reindex_apply`: reindexing the
+  basis reindexes the root-subgroup matrix.
 
 ## References
 
@@ -99,6 +101,16 @@ theorem orderedWeightIndexEquiv_lt_of_eq_add_nsmul [Fintype η]
   apply orderedWeightIndexEquiv_lt_of_degree_lt degree wt
   rw [hrs, map_add, map_nsmul]
   exact lt_add_of_pos_right _ (nsmul_pos hα hn.ne')
+
+/-- Adding a positive multiple of a negative-degree root strictly increases the ordered index. -/
+theorem orderedWeightIndexEquiv_lt_of_eq_add_nsmul_of_neg [Fintype η]
+    (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ) {α : κ → ℤ}
+    (hα : degree α < 0) {r s : η} {n : ℕ} (hn : 0 < n)
+    (hrs : wt r = wt s + n • α) :
+    orderedWeightIndexEquiv degree wt s < orderedWeightIndexEquiv degree wt r := by
+  apply orderedWeightIndexEquiv_lt_of_degree_lt degree wt
+  rw [hrs, map_add, map_nsmul]
+  exact add_lt_of_neg_right _ (nsmul_neg hα hn.ne')
 
 /-! ## The ordered basis and its weights -/
 
@@ -168,21 +180,18 @@ theorem isCartanWeightVector_coe_orderedWeightBasis
   rw [orderedWeightBasis_apply, orderedWeight_apply]
   exact hwt _
 
-/-- A root operator of positive degree is strictly upper triangular in every positive divided
-power when the underlying weight basis is reordered by decreasing degree. -/
-theorem isUpperTriangular_toMatrix_integralDividedPower_orderedWeightBasis
-    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
-    {i : ι} {α : κ → ℤ} (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i)
-    (hdegree : 0 < degree α) {n : ℕ} (hn : 0 < n) :
-    (LinearMap.toMatrix (orderedWeightBasis degree wt b) (orderedWeightBasis degree wt b)
-      (integralDividedPower
-        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M n
-        (fun _ hv ↦ dividedPower_apply_mem_of_kostantForm_apply_mem
-          e h ρ hM i n hv))).IsUpperTriangular := by
-  apply isUpperTriangular_toMatrix_integralDividedPower e h ρ M hM
-    (orderedWeightBasis degree wt b) (orderedWeight degree wt)
-    (isCartanWeightVector_coe_orderedWeightBasis h ρ M b wt degree hwt) hα
-    (fun {_ _ n} hn hrs ↦ orderedWeight_lt_of_eq_add_nsmul degree wt hdegree hn hrs) hn
+/-- Reindexing the integral basis reindexes the rows and columns of a Kostant root-subgroup
+matrix. This transports triangularity in `orderedWeightBasis` to a basis numbered differently. -/
+theorem kostantRootSubgroupMatrix_reindex_apply [DecidableEq η] {η' : Type*} [Fintype η']
+    [DecidableEq η'] (σ : η ≃ η') (i : ι)
+    (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    {A : Type*} [CommRing A] (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) (r s : η') :
+    kostantRootSubgroupMatrix e h ρ M hM i hnil (b.reindex σ) f r s =
+      kostantRootSubgroupMatrix e h ρ M hM i hnil b f (σ.symm r) (σ.symm s) := by
+  have hbase : (b.reindex σ).baseChange A = (b.baseChange A).reindex σ := by
+    ext x
+    simp [Module.Basis.reindex_apply]
+  simp [kostantRootSubgroupMatrix_apply, hbase, Module.Basis.reindex_apply]
 
 /-- A root subgroup of positive degree is upper unitriangular in the weight basis ordered by
 decreasing degree. The choice used to order equal-degree weight spaces does not enter the proof. -/

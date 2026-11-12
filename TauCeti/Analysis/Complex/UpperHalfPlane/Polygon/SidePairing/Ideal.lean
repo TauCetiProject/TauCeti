@@ -20,7 +20,7 @@ parabolic.
 ## Main results
 
 * `ConvexPolygon.SidePairing.isRight_vertex_of_mem_cycle`: all vertices in a cycle have the
-  same type, finite or ideal.
+  same type, finite or ideal; `isLeft_vertex_eq_of_mem_cycle` is the same for finiteness.
 * `ConvexPolygon.SidePairing.cycleMap_smul_eq_self_of_vertex_eq_inr`: an ideal cycle transformation
   fixes its boundary vertex.
 * `ConvexPolygon.SidePairing.cycleAngleSum_eq_zero_of_isRight_vertex`: an ideal cycle has zero
@@ -59,6 +59,11 @@ theorem isRight_vertex_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
     (P.vertex i).isRight = (P.vertex j).isRight := by
   obtain ⟨m, rfl⟩ := (σ.mem_cycle_iff j i).mp hi
   exact σ.isRight_vertex_iterate_next j m
+
+/-- Every vertex on a cycle is finite exactly when its starting vertex is. -/
+theorem isLeft_vertex_eq_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
+    (P.vertex i).isLeft = (P.vertex j).isLeft := by
+  rw [← Sum.bnot_isRight, ← Sum.bnot_isRight, σ.isRight_vertex_of_mem_cycle hi]
 
 /-- The transformation of a full ideal cycle fixes its projective boundary vertex. -/
 @[simp]

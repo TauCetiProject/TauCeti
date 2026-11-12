@@ -33,14 +33,9 @@ namespace Polynomial
 /-- Evaluating a polynomial at an element of an opposite monoid and then taking
 `MulOpposite.unop` is the same as evaluating at the `MulOpposite.unop` of that element. -/
 @[simp]
-theorem unop_smeval {R A : Type*} [Semiring R] [Monoid A] [AddCommMonoid A] [Module R A]
-    (p : Polynomial R) (a : Aᵐᵒᵖ) :
+theorem unop_smeval {R A : Type*} [Semiring R] [Monoid A] [AddCommMonoid A]
+    [MulActionWithZero R A] (p : R[X]) (a : Aᵐᵒᵖ) :
     (p.smeval a).unop = p.smeval a.unop := by
-  induction p using Polynomial.induction_on' with
-  | add p q hp hq =>
-    rw [Polynomial.smeval_add, MulOpposite.unop_add, hp, hq, Polynomial.smeval_add]
-  | monomial n c =>
-    rw [Polynomial.smeval_monomial, MulOpposite.unop_smul, MulOpposite.unop_pow,
-      Polynomial.smeval_monomial]
+  simp [smeval_eq_sum, sum_def, Polynomial.smul_pow]
 
 end Polynomial

@@ -20,8 +20,9 @@ presenting it, which is never `≡ 2 mod 4`.
 
 ## Main results
 
-* `IsCyclotomicExtension.singleton_two_mul_iff_of_odd`: for odd `n`, a domain `B` with `2 ≠ 0` is
-  a `2n`-th cyclotomic extension of `A` iff it is an `n`-th cyclotomic extension of `A`.
+* `IsCyclotomicExtension.singleton_two_mul_iff_of_odd`: for odd `n`, a commutative ring `B`
+  without zero divisors is a `2n`-th cyclotomic extension of `A` iff `2 ≠ 0` in `B` and it is
+  an `n`-th cyclotomic extension of `A`.
 * `IsCyclotomicExtension.singleton_div_two_of_mod_four_eq_two`: for `n ≡ 2 mod 4`, an `n`-th
   cyclotomic extension is an `n / 2`-th one.
 
@@ -36,44 +37,43 @@ namespace IsCyclotomicExtension
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
 
-/-- **Odd levels may be doubled.** For odd `n`, a domain `B` in which `2 ≠ 0` is a `2n`-th
-cyclotomic extension of `A` exactly when it is an `n`-th cyclotomic extension of `A`. For example,
-a sixth cyclotomic field over `ℚ` is a third cyclotomic field. -/
-theorem singleton_two_mul_iff_of_odd [IsDomain B] {n : ℕ} (hn : Odd n) (h2 : (2 : B) ≠ 0) :
-    IsCyclotomicExtension {2 * n} A B ↔ IsCyclotomicExtension {n} A B := by
-  have hn0 : n ≠ 0 := hn.pos.ne'
-  have : NeZero n := ⟨hn0⟩
+/-- **Odd levels may be doubled exactly when `2 ≠ 0`.** For odd `n`, a commutative ring `B`
+without zero divisors is a `2n`-th cyclotomic extension of `A` exactly when `2 ≠ 0` in `B` and
+it is an `n`-th cyclotomic extension of `A`. For example, a sixth cyclotomic field over `ℚ` is
+also a third cyclotomic field. -/
+theorem singleton_two_mul_iff_of_odd [NoZeroDivisors B] {n : ℕ} (hn : Odd n) :
+    IsCyclotomicExtension {2 * n} A B ↔ (2 : B) ≠ 0 ∧ IsCyclotomicExtension {n} A B := by
+  have hn2 : 0 < 2 * n := Nat.mul_pos (by decide) hn.pos
+  have : NeZero n := ⟨hn.pos.ne'⟩
+  have : NeZero (2 * n) := ⟨hn2.ne'⟩
+  rw [iff_singleton, iff_singleton]
   constructor
-  · intro H
-    obtain ⟨ζ, hζ⟩ := exists_isPrimitiveRoot A B (Set.mem_singleton (2 * n)) (by omega)
-    rw [iff_singleton]
-    refine ⟨⟨ζ ^ 2, hζ.pow (by omega) rfl⟩, fun x ↦ ?_⟩
-    refine Algebra.adjoin_le (fun b hb ↦ ?_) (H.adjoin_roots x)
-    obtain ⟨m, hm, -, hbm⟩ := hb
-    rw [Set.mem_singleton_iff.mp hm] at hbm
-    have hsq : (b ^ n) ^ 2 = 1 := by rw [← pow_mul, mul_comm, hbm]
+  · rintro ⟨⟨ζ, hζ⟩, hgen⟩
+    have hζ₂ : IsPrimitiveRoot (ζ ^ n) 2 := hζ.pow hn2 (mul_comm 2 n)
+    refine ⟨fun h2 ↦ hζ₂.ne_one one_lt_two ?_, ⟨ζ ^ 2, hζ.pow hn2 rfl⟩, fun x ↦ ?_⟩
+    · rw [hζ₂.eq_neg_one_of_two_right]
+      exact neg_eq_iff_add_eq_zero.mpr (by simpa only [one_add_one_eq_two] using h2)
+    refine Algebra.adjoin_le (fun b hb ↦ ?_) (hgen x)
+    have hsq : (b ^ n) ^ 2 = 1 := by rw [← pow_mul, mul_comm, hb]
     rcases sq_eq_one_iff.mp hsq with h | h
     · exact Algebra.subset_adjoin h
     · have hneg : (-b) ^ n = 1 := by rw [hn.neg_pow, h, neg_neg]
       simpa using neg_mem (Algebra.subset_adjoin hneg :
         -b ∈ Algebra.adjoin A {b : B | b ^ n = 1})
-  · intro H
-    obtain ⟨ζ, hζ⟩ := exists_isPrimitiveRoot A B (Set.mem_singleton n) hn0
-    have := union_of_isPrimitiveRoot (S := {n}) (A := A) (B := B) (hζ.neg_of_odd hn h2)
-    rw [iff_union_of_dvd (S := {2 * n}) (n := n) A B ⟨2 * n, rfl, by omega, dvd_mul_left n 2⟩,
-      Set.union_comm]
-    exact this
+  · rintro ⟨h2, ⟨ζ, hζ⟩, hgen⟩
+    refine ⟨⟨-ζ, hζ.neg_of_odd hn h2⟩, fun x ↦ ?_⟩
+    exact Algebra.adjoin_mono (fun b hb ↦ by
+      rw [Set.mem_ofPred_eq, mul_comm 2 n, pow_mul, hb, one_pow]) (hgen x)
 
 /-- **Levels `≡ 2 mod 4` may be halved.** If `n ≡ 2 mod 4`, an `n`-th cyclotomic extension `B` of
-`A`, with `B` a domain, is also an `n / 2`-th cyclotomic extension of `A`. -/
-theorem singleton_div_two_of_mod_four_eq_two [IsDomain B] {n : ℕ} (hn : n % 4 = 2)
+`A`, with `B` a commutative ring without zero divisors, is also an `n / 2`-th cyclotomic
+extension of `A`. -/
+theorem singleton_div_two_of_mod_four_eq_two [NoZeroDivisors B] {n : ℕ} (hn : n % 4 = 2)
     [IsCyclotomicExtension {n} A B] : IsCyclotomicExtension {n / 2} A B := by
-  have : NeZero n := ⟨by omega⟩
-  have : NeZero (n : B) := IsCyclotomicExtension.neZero n A B
-  have h2 : (2 : B) ≠ 0 :=
-    ne_zero_of_dvd_ne_zero (NeZero.ne (n : B)) (Nat.cast_dvd_cast (by omega : 2 ∣ n))
-  rw [← singleton_two_mul_iff_of_odd (Nat.odd_iff.mpr (by omega)) h2,
-    Nat.mul_div_cancel' (by omega : 2 ∣ n)]
-  infer_instance
+  have hodd : Odd (n / 2) := Nat.odd_iff.mpr (by omega)
+  have H : IsCyclotomicExtension {2 * (n / 2)} A B := by
+    rw [Nat.mul_div_cancel' (by omega : 2 ∣ n)]
+    infer_instance
+  exact ((singleton_two_mul_iff_of_odd hodd).mp H).2
 
 end IsCyclotomicExtension

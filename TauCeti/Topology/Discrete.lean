@@ -7,14 +7,16 @@ module
 
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Order
+public import Mathlib.Topology.MetricSpace.Pseudo.Real
 
 /-!
 # Maps and convergence in discrete spaces
 
 A continuous map into a discrete space is locally constant, and this file records three
-consequences. Pointwise continuous families of equivalences have continuous inverse evaluation
-when the target space is discrete (`TauCeti.continuous_equiv_symm_apply`); this supplies
-continuity of inverse permutation evaluation in `TauCeti.WreathProduct.continuous_right_inv` and
+consequences. Pointwise continuous families of equivalences into a discrete space have continuous
+inverse evaluation, whatever the topology of their source (`TauCeti.continuous_equiv_symm_apply`).
+This supplies continuity of inverse permutation evaluation in
+`TauCeti.WreathProduct.continuous_right_inv` and
 inverse coset translation in `Subgroup.continuous_inv_smul_const`. A continuous map lifts along any
 surjection onto a discrete space (`TauCeti.exists_continuous_lift`), and an injection into a
 discrete space reflects continuity (`TauCeti.continuous_of_injective_comp`); these give
@@ -24,28 +26,27 @@ in `TauCeti/RepresentationTheory/Homological/ContCohomology/ShortExact.lean`.
 A family eventually contained in a subset and converging to one of its points witnesses
 nondiscreteness when it is frequently unequal to that point (`Filter.Tendsto.not_isDiscrete`).
 This criterion uses only the target topology and applies to ranges of homomorphisms whose
-nonidentity values accumulate at the identity.
+nonidentity values accumulate at the identity. Conversely, a real family converging along a
+filter and eventually in the discrete lattice `c ℤ`, `c > 0`, is eventually constant
+(`Filter.Tendsto.exists_eventually_eq_mul_intCast`); this is how convergent integer-valued
+charges stabilize.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- Inverse evaluation of a family of equivalences on a discrete space is continuous if every
-forward evaluation is continuous. -/
-theorem continuous_equiv_symm_apply {α β : Type*} [TopologicalSpace α]
-    [TopologicalSpace β] [DiscreteTopology β] {f : α → β ≃ β}
-    (hf : ∀ b, Continuous fun a => f a b) (b : β) :
+/-- Inverse evaluation of a family of equivalences into a discrete space is continuous if every
+forward evaluation is continuous, whatever the topology on the source of the equivalences. -/
+theorem continuous_equiv_symm_apply {α β γ : Type*} [TopologicalSpace α] [TopologicalSpace β]
+    [TopologicalSpace γ] [DiscreteTopology γ] {f : α → β ≃ γ}
+    (hf : ∀ c, Continuous fun a => f a c) (b : γ) :
     Continuous fun a => (f a).symm b := by
-  rw [continuous_discrete_rng]
+  apply IsLocallyConstant.continuous
+  rw [IsLocallyConstant.iff_isOpen_fiber]
   intro c
-  have h : (fun a : α => (f a).symm b) ⁻¹' {c} =
-      (fun a : α => f a c) ⁻¹' {b} := by
-    ext a
-    simp only [Set.mem_preimage, Set.mem_singleton_iff]
-    exact (Equiv.symm_apply_eq (e := f a) (x := b) (y := c)).trans eq_comm
-  rw [h]
-  exact (isOpen_discrete _).preimage (hf c)
+  simpa only [Set.preimage, Set.mem_singleton_iff, Equiv.symm_apply_eq, eq_comm (a := b)] using
+    (isOpen_discrete ({b} : Set γ)).preimage (hf c)
 
 /-- **A continuous map lifts along any surjection onto a discrete space.** A continuous map into
 the discrete `C` is locally constant, so composing it with any set-theoretic section of `p` is
@@ -80,5 +81,25 @@ theorem Tendsto.not_isDiscrete {X Y : Type*} [TopologicalSpace Y] {f : X → Y} 
   have heq := tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hf hs
   rw [nhdsWithin_of_mem_discrete hD ha, tendsto_pure] at heq
   exact hne (heq.mono fun _ h hne ↦ hne h)
+
+/-- A real family that converges along `l` and eventually lies in the lattice `c ℤ`, `c > 0`, is
+eventually equal to one fixed multiple of `c`. -/
+theorem Tendsto.exists_eventually_eq_mul_intCast {X : Type*} {f : X → ℝ} {l : Filter X} [l.NeBot]
+    {c L : ℝ} (hc : 0 < c) (hf : Tendsto f l (𝓝 L)) (h : ∀ᶠ x in l, ∃ n : ℤ, f x = c * n) :
+    ∃ n₀ : ℤ, ∀ᶠ x in l, f x = c * n₀ := by
+  -- Two multiples of `c` within `c / 2` of the limit are equal.
+  have hev := h.and (hf.eventually (Metric.ball_mem_nhds _ (half_pos hc)))
+  obtain ⟨x₀, ⟨n₀, hn₀⟩, hx₀⟩ := hev.exists
+  refine ⟨n₀, hev.mono fun x ⟨⟨n, hn⟩, hx⟩ ↦ ?_⟩
+  have hd : |c * (n - n₀)| < c := by
+    have := (dist_triangle_right (f x) (f x₀) L).trans_lt
+      (add_lt_add (Metric.mem_ball.1 hx) (Metric.mem_ball.1 hx₀))
+    rwa [Real.dist_eq, hn, hn₀, ← mul_sub, add_halves] at this
+  rw [abs_mul, abs_of_pos hc] at hd
+  have h1 : |((n - n₀ : ℤ) : ℝ)| < 1 := by
+    push_cast
+    exact (mul_lt_iff_lt_one_right hc).1 hd
+  have h2 : |n - n₀| < 1 := by exact_mod_cast h1
+  rw [hn, sub_eq_zero.1 (Int.abs_lt_one_iff.1 h2)]
 
 end Filter

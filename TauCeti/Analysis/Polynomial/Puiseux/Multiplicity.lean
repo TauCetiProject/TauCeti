@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.Roots
 public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference.Basic
 
 /-!
@@ -82,11 +83,11 @@ theorem eventually_rootMultiplicity_eq_on_hyperplane
       (P (x, y₀)).roots = Finset.univ.val.map (fun i ↦ r i (x, y₀)) := by
     rw [hx, roots_prod _ _ (Finset.prod_ne_zero_iff.2 fun i _ ↦ X_sub_C_ne_zero _)]
     simp only [roots_X_sub_C, Multiset.bind_singleton]
-  filter_upwards [hrel, hslice.eventually hP] with x hx hxP
-  intro i
-  rw [← count_roots, ← count_roots, hroots x hxP, hroots x₀ hP.self_of_nhds,
-    Multiset.count_map, Multiset.count_map]
-  congr 1
-  exact Multiset.filter_congr fun j _ ↦ hx i j
+  have hmult := eventually_rootMultiplicity_eq_of_roots_eq_map
+    (Q := fun x ↦ P (x, y₀)) (f := fun i x ↦ r i (x, y₀))
+    (hroots x₀ hP.self_of_nhds)
+    ((hslice.eventually hP).mono fun x hx ↦ hroots x hx)
+    (hrel.mono fun x hx i _ j _ ↦ hx i j)
+  exact hmult.mono fun x hx i ↦ hx i (Finset.mem_univ i)
 
 end TauCeti

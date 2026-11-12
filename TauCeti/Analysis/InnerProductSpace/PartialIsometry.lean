@@ -1,12 +1,14 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Algebra.Star.PartialIsometry
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Partial isometries between Hilbert spaces
@@ -41,8 +43,24 @@ orthogonal projection onto `(ker u)ᗮ`, or merely some star projection.
   the adjoint of a partial isometry is a partial isometry.
 * `ContinuousLinearMap.isPartialIsometry_iff_starMul`, `LinearMap.isPartialIsometry_iff_starMul`:
   on endomorphisms the rectangular predicate agrees with the star-monoid predicate.
+* `ContinuousLinearMap.IsPartialIsometry.adjoint_comp_comp_comp_of_mapsTo`: compression
+  `u† T u` along a bounded partial isometry is multiplicative when the right factor preserves the
+  range of `u`.
 * `LinearIsometry.isPartialIsometry_toContinuousLinearMap`,
-  `LinearIsometry.isPartialIsometry_toLinearMap`: linear isometries are partial isometries.
+  `LinearIsometry.isPartialIsometry_toLinearMap`: linear isometries are partial isometries, and
+  `LinearIsometry.apply_adjoint_apply_of_mem_range`: `f f†` fixes the range of `f`.
+* `LinearMap.adjoint_comp_eq_zero_of_comp_adjoint_add_eq_id`: complementary final operators
+  have orthogonal cross blocks if one block is a partial isometry.
+* `Submodule.exists_star_mul_self_eq_starProjection_and_starProjection_mul_eq_zero`: if `Kᗮ` is at
+  least as large as the finite-dimensional subspace `K`, some operator `u` maps `K` isometrically
+  into `Kᗮ` and vanishes on `Kᗮ`, so that its initial projection is `P_K` and `P_K * u = 0`.
+
+## Provenance
+
+The complementary-block orthogonality lemma is adapted from
+`ForTauCeti/Analysis/InnerProductSpace/DoubleAngle/Gram.lean` in the
+[AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization),
+released under Apache 2.0.
 
 ## References
 
@@ -62,30 +80,7 @@ namespace ContinuousLinearMap
 
 section Complete
 
-variable [CompleteSpace E] {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-
-/-- A bounded operator does not see the component of a vector in its kernel: it agrees with its
-composition with the orthogonal projection onto the orthogonal complement of its kernel. -/
-theorem apply_starProjection_orthogonal_ker (u : E →L[𝕜] G) (x : E) :
-    u (u.kerᗮ.starProjection x) = u x := by
-  have hx : x - u.kerᗮ.starProjection x ∈ u.ker :=
-    (Submodule.orthogonal_orthogonal u.ker).le (Submodule.sub_starProjection_mem_orthogonal x)
-  rw [LinearMap.mem_ker, coe_coe, map_sub, sub_eq_zero] at hx
-  exact hx.symm
-
-/-- Composing a bounded operator with the orthogonal projection onto the orthogonal complement of
-its kernel does not change it. -/
-@[simp]
-theorem comp_starProjection_orthogonal_ker (u : E →L[𝕜] G) :
-    u ∘L u.kerᗮ.starProjection = u :=
-  ext (apply_starProjection_orthogonal_ker u)
-
-variable [CompleteSpace F] {u : E →L[𝕜] F}
-
-/-- The adjoint of a bounded operator takes values in the orthogonal complement of its kernel. -/
-theorem adjoint_apply_mem_orthogonal_ker (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
-  rw [orthogonal_ker]
-  exact Submodule.le_topologicalClosure _ ⟨y, rfl⟩
+variable [CompleteSpace E] [CompleteSpace F] {u : E →L[𝕜] F}
 
 /-- A bounded operator `u : E →L[𝕜] F` is a **partial isometry** when `u u† u = u`. -/
 def IsPartialIsometry (u : E →L[𝕜] F) : Prop :=
@@ -104,6 +99,20 @@ theorem IsPartialIsometry.comp_adjoint_comp (hu : u.IsPartialIsometry) : u ∘L 
 theorem IsPartialIsometry.apply_adjoint_apply (hu : u.IsPartialIsometry) (x : E) :
     u ((u†) (u x)) = u x :=
   congr($hu x)
+
+/-- A bounded partial isometry `u` satisfies `u u† y = y` on its range. -/
+theorem IsPartialIsometry.apply_adjoint_apply_of_mem_range (hu : u.IsPartialIsometry) {y : F}
+    (hy : y ∈ Set.range u) : u ((u†) y) = y := by
+  obtain ⟨x, rfl⟩ := hy
+  exact hu.apply_adjoint_apply x
+
+/-- Compression `u† T u` along a bounded partial isometry `u` is multiplicative when the right
+factor preserves the range of `u`. -/
+theorem IsPartialIsometry.adjoint_comp_comp_comp_of_mapsTo (hu : u.IsPartialIsometry)
+    (S : F →L[𝕜] F) {T : F →L[𝕜] F} (hT : Set.MapsTo T (Set.range u) (Set.range u)) :
+    u† ∘L (S ∘L T) ∘L u = (u† ∘L S ∘L u) ∘L (u† ∘L T ∘L u) := by
+  ext x
+  simp only [comp_apply, hu.apply_adjoint_apply_of_mem_range (hT ⟨x, rfl⟩)]
 
 /-- A bounded partial isometry is a partial isometry in the star monoid of endomorphisms. -/
 theorem isPartialIsometry_iff_starMul {u : E →L[𝕜] E} :
@@ -135,7 +144,8 @@ theorem isPartialIsometry_iff_adjoint_apply_apply :
     exact sub_eq_zero.mp <| (Submodule.mem_bot 𝕜).mp <|
       u.ker.inf_orthogonal_eq_bot ▸ ⟨hker, hmem⟩
   · ext x
-    rw [comp_apply, comp_apply, ← u.apply_starProjection_orthogonal_ker x,
+    rw [comp_apply, comp_apply,
+      ← DFunLike.congr_fun u.comp_starProjection_orthogonal_ker x, comp_apply,
       h _ (Submodule.starProjection_apply_mem _ x)]
 
 /-- A bounded partial isometry `u` satisfies `u† u x = x` on its initial space `(ker u)ᗮ`. -/
@@ -148,7 +158,7 @@ its initial space `(ker u)ᗮ`. -/
 theorem IsPartialIsometry.adjoint_comp_self_eq_starProjection (hu : u.IsPartialIsometry) :
     u† ∘L u = u.kerᗮ.starProjection := by
   ext x
-  rw [comp_apply, ← u.apply_starProjection_orthogonal_ker x,
+  rw [comp_apply, ← DFunLike.congr_fun u.comp_starProjection_orthogonal_ker x, comp_apply,
     hu.adjoint_apply_apply (Submodule.starProjection_apply_mem _ x)]
 
 /-- A bounded operator is a partial isometry iff `u† u` is a star projection. -/
@@ -230,6 +240,13 @@ theorem LinearIsometry.isPartialIsometry_toContinuousLinearMap [CompleteSpace E]
   rw [ContinuousLinearMap.isPartialIsometry_iff, f.adjoint_comp_self,
     ContinuousLinearMap.one_def, ContinuousLinearMap.comp_id]
 
+/-- A linear isometry `f` between complete inner product spaces satisfies `f f† y = y` on its
+range. -/
+theorem LinearIsometry.apply_adjoint_apply_of_mem_range [CompleteSpace E] [CompleteSpace F]
+    (f : E →ₗᵢ[𝕜] F) {y : F} (hy : y ∈ Set.range f) :
+    f (ContinuousLinearMap.adjoint f.toContinuousLinearMap y) = y :=
+  f.isPartialIsometry_toContinuousLinearMap.apply_adjoint_apply_of_mem_range hy
+
 namespace LinearMap
 
 section FiniteDimensional
@@ -250,11 +267,33 @@ theorem IsPartialIsometry.comp_adjoint_comp (hu : u.IsPartialIsometry) :
     u ∘ₗ u.adjoint ∘ₗ u = u :=
   hu
 
+/-- **Complementary partial-isometry blocks have orthogonal ranges.** If `F₁` is a
+partial isometry and `F₀F₀⋆ + F₁F₁⋆ = 1`, then `F₀⋆F₁ = 0`.
+No isometry or injectivity hypothesis is needed for `F₀`. -/
+theorem adjoint_comp_eq_zero_of_comp_adjoint_add_eq_id
+    {L : Type*} [NormedAddCommGroup L] [InnerProductSpace 𝕜 L]
+    [FiniteDimensional 𝕜 L]
+    (F₀ : L →ₗ[𝕜] F) (F₁ : E →ₗ[𝕜] F) (hF₁ : F₁.IsPartialIsometry)
+    (hF : F₀ ∘ₗ LinearMap.adjoint F₀ +
+        F₁ ∘ₗ LinearMap.adjoint F₁ = LinearMap.id) :
+    LinearMap.adjoint F₀ ∘ₗ F₁ = 0 := by
+  ext y
+  have h0 : F₀ (LinearMap.adjoint F₀ (F₁ y)) = 0 := by
+    have hy := LinearMap.congr_fun hF (F₁ y)
+    have hpi := LinearMap.congr_fun hF₁.comp_adjoint_comp y
+    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply] at hy hpi
+    rw [hpi] at hy
+    exact add_eq_right.mp hy
+  have hker : F₁ y ∈ (F₀ ∘ₗ LinearMap.adjoint F₀).ker := by
+    simpa only [LinearMap.mem_ker, LinearMap.comp_apply] using h0
+  rw [F₀.ker_self_comp_adjoint] at hker
+  simpa only [LinearMap.mem_ker, LinearMap.comp_apply, LinearMap.zero_apply] using hker
+
 /-- A finite-dimensional linear map is a partial isometry iff the corresponding bounded operator
 is one. -/
 theorem isPartialIsometry_toContinuousLinearMap_iff :
-    have := FiniteDimensional.complete 𝕜 E
-    have := FiniteDimensional.complete 𝕜 F
+    have := FiniteDimensional.completeSpace 𝕜 E
+    have := FiniteDimensional.completeSpace 𝕜 F
     (toContinuousLinearMap u).IsPartialIsometry ↔ u.IsPartialIsometry := by
   intro _ _
   rw [ContinuousLinearMap.isPartialIsometry_iff, isPartialIsometry_iff,
@@ -282,8 +321,8 @@ theorem isPartialIsometry_adjoint_iff : u.adjoint.IsPartialIsometry ↔ u.IsPart
 /-- A finite-dimensional linear map is a partial isometry iff `u† u` is a star projection. -/
 theorem isPartialIsometry_iff_isStarProjection_adjoint_comp_self :
     u.IsPartialIsometry ↔ IsStarProjection (u.adjoint ∘ₗ u) := by
-  have := FiniteDimensional.complete 𝕜 E
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 F
   have h : toContinuousLinearMap (u.adjoint ∘ₗ u) =
       (toContinuousLinearMap u)† ∘L toContinuousLinearMap u := by
     rw [← ContinuousLinearMap.coe_inj]
@@ -303,8 +342,8 @@ finite-dimensional inner product spaces is a partial isometry iff it preserves n
 orthogonal complement of its kernel. -/
 theorem isPartialIsometry_iff_norm_map :
     u.IsPartialIsometry ↔ ∀ x ∈ u.kerᗮ, ‖u x‖ = ‖x‖ := by
-  have := FiniteDimensional.complete 𝕜 E
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 F
   simp [← isPartialIsometry_toContinuousLinearMap_iff,
     ContinuousLinearMap.isPartialIsometry_iff_norm_map]
 
@@ -316,3 +355,38 @@ end LinearMap
 theorem LinearIsometry.isPartialIsometry_toLinearMap [FiniteDimensional 𝕜 E]
     [FiniteDimensional 𝕜 F] (f : E →ₗᵢ[𝕜] F) : f.toLinearMap.IsPartialIsometry := by
   rw [LinearMap.isPartialIsometry_iff, f.adjoint_comp_self', LinearMap.comp_id]
+
+namespace Submodule
+
+variable [CompleteSpace E]
+
+/-- If the orthogonal complement of a finite-dimensional subspace `K` has dimension at least
+`Module.finrank 𝕜 K`, some operator `u` maps `K` isometrically into `Kᗮ` and vanishes on `Kᗮ`:
+`star u * u = K.starProjection` and `K.starProjection * u = 0`. -/
+theorem exists_star_mul_self_eq_starProjection_and_starProjection_mul_eq_zero
+    (K : Submodule 𝕜 E) [FiniteDimensional 𝕜 K]
+    (hK : (Module.finrank 𝕜 K : Cardinal) ≤ Module.rank 𝕜 Kᗮ) :
+    ∃ u : E →L[𝕜] E, star u * u = K.starProjection ∧ K.starProjection * u = 0 := by
+  obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_rank hK
+  let W : Submodule 𝕜 Kᗮ := span 𝕜 (Set.range v)
+  have : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
+  have hW : Module.finrank 𝕜 K = Module.finrank 𝕜 W := by
+    rw [finrank_span_eq_card hv, Fintype.card_fin]
+  -- An isometry from `K` onto the subspace `W` of `Kᗮ`, which has the same dimension.
+  let e : K ≃ₗᵢ[𝕜] W := (stdOrthonormalBasis 𝕜 K).equiv (stdOrthonormalBasis 𝕜 W) (finCongr hW)
+  let L : K →ₗᵢ[𝕜] E := Kᗮ.subtypeₗᵢ.comp (W.subtypeₗᵢ.comp e.toLinearIsometry)
+  have hLK : ∀ x, L x ∈ Kᗮ := fun x => ((e x : W) : Kᗮ).2
+  have hKK : ∀ z, K.starProjection (K.starProjection z) = K.starProjection z :=
+    fun z => starProjection_eq_self_iff.mpr (K.orthogonalProjectionOnto z).2
+  refine ⟨L.toContinuousLinearMap ∘L K.orthogonalProjectionOnto, ?_, ?_⟩
+  · ext x
+    refine ext_inner_left 𝕜 fun y => ?_
+    rw [ContinuousLinearMap.star_eq_adjoint, mul_apply_eq_comp,
+      ContinuousLinearMap.adjoint_inner_right]
+    simp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
+      LinearIsometry.inner_map_map, coe_inner, coe_orthogonalProjectionOnto_apply,
+      inner_starProjection_left_eq_right, hKK]
+  · ext x
+    exact starProjection_apply_eq_zero_iff K |>.mpr (hLK _)
+
+end Submodule

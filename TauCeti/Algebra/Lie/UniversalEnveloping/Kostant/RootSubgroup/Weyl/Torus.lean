@@ -134,10 +134,10 @@ private theorem IsCartanWeightVector.unit_of_conj {μ : κ → ℤ} {v : V}
   intro j'
   have hcancel : ∀ z : V, (n : Module.End ℚ V)
       (((n⁻¹ : (Module.End ℚ V)ˣ) : Module.End ℚ V) z) = z := fun z => by
-    rw [← Module.End.mul_apply, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-      Module.End.one_apply]
+    rw [← mul_apply_eq_comp, ← Units.val_mul, mul_inv_cancel, Units.val_one,
+      one_apply_eq_self]
   have happ := congrArg (fun f : Module.End ℚ V => f v) (hconj j')
-  simp only [Module.End.mul_apply, LinearMap.sub_apply, LinearMap.smul_apply] at happ
+  simp only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.smul_apply] at happ
   have hv' := (isCartanWeightVector_iff (h := h) (ρ := ρ)).1 hv
   rw [hv' j', hv' c] at happ
   have hgoal : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j'))
@@ -250,14 +250,14 @@ theorem kostantWeylPoints_conj_kostantTorusPoints
       ((torusCharacter s (wt x - wt x c • α) : A) * 1) ⊗ₜ[ℤ]
         ((_root_.TauCeti.UniversalEnvelopingAlgebra.kostantWeylRestrict
           e h ρ M hM hi hj).symm (b x)) :=
-    kostantTorusPoints_tmul_of_isCartanWeightVector e h ρ M hM b wt hwt hrefl s 1
+    kostantTorusPoints_tmul_of_isCartanWeightVector h ρ M b wt hwt hrefl s 1
   have h3 : (kostantWeylPoints e h ρ M hM hi hj A).toLinearMap
       (((torusCharacter s (wt x - wt x c • α) : A) * 1) ⊗ₜ[ℤ]
         ((_root_.TauCeti.UniversalEnvelopingAlgebra.kostantWeylRestrict
           e h ρ M hM hi hj).symm (b x))) =
       ((torusCharacter s (wt x - wt x c • α) : A) * 1) ⊗ₜ[ℤ] (b x : M) := by
     rw [LinearEquiv.coe_coe, kostantWeylPoints_apply_tmul, LinearEquiv.apply_symm_apply]
-  rw [Module.Basis.baseChange_apply, Module.End.mul_apply, Module.End.mul_apply, h1, h2, h3,
+  rw [Module.Basis.baseChange_apply, mul_apply_eq_comp, mul_apply_eq_comp, h1, h2, h3,
     kostantTorusPoints_tmul_basis, torusCharacter_weylReflectTorusPoint]
 
 include hM hT hα hαneg in

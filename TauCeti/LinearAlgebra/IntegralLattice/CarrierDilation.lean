@@ -31,7 +31,7 @@ noncomputable def carrierDilation (L : IntegralLattice V) (n : ℤ) (hn : n ≠ 
     IntegralLattice V := by
   let e := LinearEquiv.smulOfNeZero ℚ V (n : ℚ) (Int.cast_ne_zero.mpr hn)
   let S := L.carrier.map (e.restrictScalars ℤ).toLinearMap
-  letI : S.IsLattice ℚ := Submodule.IsLattice.map L.carrier e
+  letI : S.IsLattice ℚ := Submodule.isLattice_map L.carrier e.toLinearMap e.surjective
   refine ofSubmodule S L.form L.isSymm ?_
   rintro _ ⟨x, hx, rfl⟩
   rw [LinearMap.BilinForm.mem_dualSubmodule]

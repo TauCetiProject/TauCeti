@@ -62,6 +62,12 @@ def holomorphicCoordinateGerm (hx : x ∈ e.source) :
   (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.germ ⟨e.source, e.open_source⟩ x hx
     (holomorphicCoordinateSection e he (e x))
 
+/-- The centered coordinate germ is the germ of the translated coordinate section. -/
+theorem holomorphicCoordinateGerm_def (hx : x ∈ e.source) :
+    holomorphicCoordinateGerm e he x hx =
+      (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.germ ⟨e.source, e.open_source⟩ x hx
+        (holomorphicCoordinateSection e he (e x)) := (rfl)
+
 /-- The germ of a centered chart coordinate evaluates to zero at its center. -/
 @[simp]
 theorem eval_holomorphicCoordinateGerm (hx : x ∈ e.source) :
@@ -92,23 +98,14 @@ theorem holomorphicCoordinateGerm_ne_zero (hx : x ∈ e.source) :
   obtain ⟨z, hz, hez⟩ := (hne.and (hconst.filter_mono nhdsWithin_le_nhds)).exists
   exact hz hez
 
-/-- A holomorphic germ is divisible by a centered chart coordinate exactly when it vanishes
-at the center. The quotient is holomorphic also at the coordinate's zero. -/
-@[simp]
-theorem holomorphicCoordinateGerm_dvd_iff_eval_eq_zero (hx : x ∈ e.source)
-    (f : (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.stalk x) :
-    holomorphicCoordinateGerm e he x hx ∣ f ↔ eval 𝓘(ℂ) X x f = 0 := by
-  constructor
-  · rintro ⟨q, rfl⟩
-    simp only [map_mul, eval_holomorphicCoordinateGerm, zero_mul]
-  intro hf
-  classical
-  -- Represent the germ by a section and write that section in the chosen chart.
-  let S := (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf
-  obtain ⟨U, hxU, s, rfl⟩ := S.exists_germ_eq f
-  dsimp only [S] at *
-  have hs0 : s ⟨x, hxU⟩ = 0 := by
-    simpa only [eval_germ] using hf
+omit [IsManifold 𝓘(ℂ) 1 X] in
+include he in
+/-- A holomorphic section, extended by zero outside its domain and written in
+a local chart, is analytic at every point of its domain in the chart source. -/
+theorem analyticAt_holomorphicSection_extend_comp_symm (hx : x ∈ e.source)
+    (U : Opens X) (hxU : x ∈ U)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op U)) :
+    AnalyticAt ℂ ((Function.extend Subtype.val s (fun _ => 0)) ∘ e.symm) (e x) := by
   let F : X → ℂ := Function.extend Subtype.val s (fun _ => 0)
   have hF (y : U) : F y = s y := Subtype.val_injective.extend_apply _ _ y
   have hFa : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) F y := by
@@ -116,23 +113,28 @@ theorem holomorphicCoordinateGerm_dvd_iff_eval_eq_zero (hx : x ∈ e.source)
     have hdiff : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (fun z : U => F z) ⟨y, hy⟩ :=
       (contMDiff s).contMDiffAt.congr_of_eventuallyEq (.of_forall hF)
     exact (contMDiffAt_subtype_iff.mp hdiff).mdifferentiableAt (by simp)
+  simpa only [mfld_simps, Function.comp_def] using
+    analyticAt_chart_comp_comp_symm he (chart_mem_maximalAtlas (F x)) hx
+      (mem_chart_source ℂ (F x)) hFa
+
+/-- The division step: let `s` be a section over `U` that vanishes at the center, `s ⟨x, hxU⟩ = 0`.
+If the difference quotient of `s` (extended by zero and written in the chart `e`) at the center
+`e x` is analytic on a neighborhood `V` of `x` inside `U` and the chart source, then the germ of
+`s` is divisible by the centered coordinate germ. The vanishing `hs0` is what makes the difference
+quotient a quotient of `s` by the coordinate. -/
+private theorem holomorphicCoordinateGerm_dvd_germ_of_dslope (hx : x ∈ e.source)
+    (U : Opens X) (hxU : x ∈ U)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op U)) (hs0 : s ⟨x, hxU⟩ = 0)
+    (V : Set X) (hV : ∀ y ∈ V, y ∈ U ∧ y ∈ e.source ∧
+      AnalyticAt ℂ (dslope (Function.extend Subtype.val s (fun _ => 0) ∘ e.symm) (e x)) (e y))
+    (hVopen : IsOpen V) (hxV : x ∈ V) :
+    holomorphicCoordinateGerm e he x hx ∣
+      (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.germ U x hxU s := by
+  classical
+  let S := (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf
+  let F : X → ℂ := Function.extend Subtype.val s (fun _ => 0)
+  have hF (y : U) : F y = s y := Subtype.val_injective.extend_apply _ _ y
   let A : ℂ → ℂ := F ∘ e.symm
-  have hA : AnalyticAt ℂ A (e x) := by
-    simpa only [A, mfld_simps, Function.comp_def] using
-      analyticAt_chart_comp_comp_symm he (chart_mem_maximalAtlas (F x)) hx
-        (mem_chart_source ℂ (F x)) hFa
-  obtain ⟨p, hp⟩ := hA
-  -- The difference quotient extends analytically across the center.
-  have hD : AnalyticAt ℂ (dslope A (e x)) (e x) :=
-    ⟨p.fslope, hp.has_fpower_series_dslope_fslope⟩
-  have hDnear : ∀ᶠ y in 𝓝 x, AnalyticAt ℂ (dslope A (e x)) (e y) :=
-    (e.continuousAt hx).tendsto.eventually hD.eventually_analyticAt
-  have hnear : ∀ᶠ y in 𝓝 x,
-      y ∈ U ∧ y ∈ e.source ∧ AnalyticAt ℂ (dslope A (e x)) (e y) := by
-    filter_upwards [U.isOpen.mem_nhds hxU, e.open_source.mem_nhds hx, hDnear]
-      with y hyU hye hyD
-    exact ⟨hyU, hye, hyD⟩
-  obtain ⟨V, hV, hVopen, hxV⟩ := eventually_nhds_iff.mp hnear
   let W : Opens X := ⟨V, hVopen⟩
   have hWU : W ≤ U := fun y hy => (hV y hy).1
   have hWe : W ≤ (⟨e.source, e.open_source⟩ : Opens X) := fun y hy => (hV y hy).2.1
@@ -147,7 +149,7 @@ theorem holomorphicCoordinateGerm_dvd_iff_eval_eq_zero (hx : x ∈ e.source)
     dsimp only [S]
     apply holomorphicStructureSheaf.ext
     intro y
-    simp only [mul_apply, map_apply]
+    simp only [holomorphicStructureSheaf.mul_apply, map_apply]
     rw [holomorphicCoordinateSection_apply e he (e x) (Opens.inclusion hWe y)]
     have hq : q y = dslope A (e x) (e y) :=
       ofMDifferentiable_apply (U := W) _ _ y
@@ -163,6 +165,39 @@ theorem holomorphicCoordinateGerm_dvd_iff_eval_eq_zero (hx : x ∈ e.source)
   refine ⟨S.germ W x hxV q, ?_⟩
   rw [holomorphicCoordinateGerm, ← S.germ_res_apply (homOfLE hWe) x hxV,
     ← map_mul, hmul, S.germ_res_apply]
+
+/-- A holomorphic germ is divisible by a centered chart coordinate exactly when it vanishes
+at the center. The quotient is holomorphic also at the coordinate's zero. -/
+@[simp]
+theorem holomorphicCoordinateGerm_dvd_iff_eval_eq_zero (hx : x ∈ e.source)
+    (f : (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.stalk x) :
+    holomorphicCoordinateGerm e he x hx ∣ f ↔ eval 𝓘(ℂ) X x f = 0 := by
+  constructor
+  · rintro ⟨q, rfl⟩
+    simp only [map_mul, eval_holomorphicCoordinateGerm, zero_mul]
+  intro hf
+  -- Represent the germ by a section and write that section in the chosen chart.
+  let S := (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf
+  obtain ⟨U, hxU, s, rfl⟩ := S.exists_germ_eq f
+  dsimp only [S] at *
+  have hs0 : s ⟨x, hxU⟩ = 0 := by
+    simpa only [eval_germ] using hf
+  let A : ℂ → ℂ := Function.extend Subtype.val s (fun _ => 0) ∘ e.symm
+  have hA : AnalyticAt ℂ A (e x) :=
+    analyticAt_holomorphicSection_extend_comp_symm e he x hx U hxU s
+  obtain ⟨p, hp⟩ := hA
+  -- The difference quotient extends analytically across the center.
+  have hD : AnalyticAt ℂ (dslope A (e x)) (e x) :=
+    ⟨p.fslope, hp.dslope_fslope⟩
+  have hDnear : ∀ᶠ y in 𝓝 x, AnalyticAt ℂ (dslope A (e x)) (e y) :=
+    (e.continuousAt hx).tendsto.eventually hD.eventually_analyticAt
+  have hnear : ∀ᶠ y in 𝓝 x,
+      y ∈ U ∧ y ∈ e.source ∧ AnalyticAt ℂ (dslope A (e x)) (e y) := by
+    filter_upwards [U.isOpen.mem_nhds hxU, e.open_source.mem_nhds hx, hDnear]
+      with y hyU hye hyD
+    exact ⟨hyU, hye, hyD⟩
+  obtain ⟨V, hV, hVopen, hxV⟩ := eventually_nhds_iff.mp hnear
+  exact holomorphicCoordinateGerm_dvd_germ_of_dslope e he x hx U hxU s hs0 V hV hVopen hxV
 
 /-- The ideal of holomorphic germs vanishing at `x` is generated by any centered local chart
 coordinate. This identifies the local ideal of a point without a choice of preferred chart. -/

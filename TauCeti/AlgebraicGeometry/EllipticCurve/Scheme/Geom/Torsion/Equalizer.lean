@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Unramified
+import TauCeti.AlgebraicGeometry.EqualizerCarrier
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 
 /-!
@@ -33,6 +34,8 @@ is not an open immersion, as the local ring of `E[p]` at the origin is not a fie
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.range_equalizer_ι_left_one`: the equalizer of a
+  point and the zero point is the set where the point meets the zero section.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOpenImmersion_equalizer_ι_left_of_mulBy_eq_one`:
   two points killed by `n` agree on an open subscheme.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClopen_range_equalizer_ι_left_of_mulBy_eq_one`:
@@ -54,6 +57,13 @@ universe u
 namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
 variable {S : Scheme.{u}} (E : EllipticCurveGeom S) {n : ℤ} {Z : Over S}
+
+/-- **Where a point meets the zero section.** For a point `x` of `E` with values in `Z`, the image
+of the equalizer of `x` and the zero point is the set of points of `Z` at which `x` meets the zero
+section. -/
+theorem range_equalizer_ι_left_one (x : Z ⟶ Over.mk E.structureMap) :
+    Set.range (equalizer.ι x 1).left = {z | x.left z = E.zero (Z.hom z)} := by
+  simpa using range_equalizer_ι_left_of_left_eq_hom_comp x 1 η[Over.mk E.structureMap] (by simp)
 
 /-- **Torsion points agree on an open subscheme.** If the integer `n` is invertible in every
 residue field of `S`, two points of `E` with values in `Z` which are killed by multiplication by

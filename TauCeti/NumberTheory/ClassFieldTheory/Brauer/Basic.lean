@@ -339,7 +339,7 @@ def relBrCocycle
     (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L σ).toSubgroup)
     (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup (UnitsCoeff K))
     (AbsoluteGaloisGroup K) (UnitsCoeff K)
-    (ContinuousMonoidHom.quotientMk (galoisOpenNormalSubgroup K L σ).toSubgroup)
+    (Subgroup.quotientMkContinuousMonoidHom (galoisOpenNormalSubgroup K L σ).toSubgroup)
     (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup
       (UnitsCoeff K)).subtype
     (continuous_fixedPoints_addSubgroup_subtype _ _ _)
@@ -356,7 +356,7 @@ theorem relBrCocycle_apply
       embeddedUnitsEquivInvariants K L σ
         (Rep.toAdditive (c (σ.restrictNormalHom g, σ.restrictNormalHom h))) := by
   rw [relBrCocycle, cocyclesMap2_apply]
-  simpa only [ContinuousMonoidHom.quotientMk_apply, AddSubgroup.coe_subtype] using
+  simpa only [Subgroup.quotientMkContinuousMonoidHom_apply, AddSubgroup.coe_subtype] using
     relBrLevelCocycle_apply K L σ c g h
 
 /-- `relBrLevelEquiv K L σ` sends the class of a cocycle `c` to the class of any cocycle on

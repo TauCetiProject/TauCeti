@@ -55,25 +55,13 @@ theorem integral_fourierAtom_map_smul_stdGaussian {c : ℝ} (hc : 0 ≤ c) (a : 
     ∫ q, fourierAtom a q
         ∂(stdGaussian V).map ((Real.sqrt (2 * c) / (2 * Real.pi)) • ·) =
       Complex.exp (-(c * ‖a‖ ^ 2 : ℝ)) := by
-  rw [integral_fourierAtom_eq_charFun_neg_two_pi_smul,
-    MeasureTheory.charFun_map_smul, charFun_stdGaussian]
-  have hpi : (2 * Real.pi : ℝ) ≠ 0 := mul_ne_zero (by norm_num) Real.pi_ne_zero
   have hscale :
       (Real.sqrt (2 * c) / (2 * Real.pi)) * (-2 * Real.pi) = -Real.sqrt (2 * c) := by
-    field_simp [hpi]
-  have hnorm :
-      ‖(Real.sqrt (2 * c) / (2 * Real.pi)) • ((-2 * Real.pi) • a)‖ ^ 2 =
-        2 * c * ‖a‖ ^ 2 := by
-    rw [smul_smul, hscale, neg_smul, norm_neg, norm_smul, Real.norm_eq_abs,
-      abs_of_nonneg (Real.sqrt_nonneg _), mul_pow, Real.sq_sqrt (by positivity)]
-  have hnorm_complex :
-      (‖(Real.sqrt (2 * c) / (2 * Real.pi)) • ((-2 * Real.pi) • a)‖ : ℂ) ^ 2 =
-        (2 * c * ‖a‖ ^ 2 : ℝ) := by
-    exact_mod_cast hnorm
-  rw [hnorm_complex]
-  congr 1
-  push_cast
-  ring
+    field_simp [Real.pi_ne_zero]
+  rw [integral_fourierAtom_eq_charFun_neg_two_pi_smul,
+    MeasureTheory.charFun_map_smul, smul_smul, hscale, neg_smul, charFun_neg,
+    charFun_stdGaussian_sqrt_smul hc]
+  simp only [← Complex.exp_conj, map_neg, Complex.conj_ofReal]
 
 /-- The Bochner measure of `a ↦ exp (-c ‖a‖²)` is the standard Gaussian dilated by
 `√(2c) / (2π)`. -/

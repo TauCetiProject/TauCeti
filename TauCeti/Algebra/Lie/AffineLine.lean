@@ -173,7 +173,7 @@ theorem ad_mul_ad_self (u : AffineLine K) :
     LieAlgebra.ad K (AffineLine K) u * LieAlgebra.ad K (AffineLine K) u =
       u.1 • LieAlgebra.ad K (AffineLine K) u := by
   refine LinearMap.ext fun v => ?_
-  rw [Module.End.mul_apply]
+  rw [mul_apply_eq_comp]
   ext <;> simp
 
 /-- **The monic relation satisfied by the adjoint action**: `T ^ n = u.1 ^ (n - 1) • T` for every
@@ -258,7 +258,7 @@ theorem not_isNilpotent_of_ne_bot {N : LieIdeal K (AffineLine K)} (h : N ≠ ⊥
     ¬ LieModule.IsNilpotent (AffineLine K) N := by
   intro hnil
   have hidem : IsIdempotentElem (LieModule.toEnd K (AffineLine K) N (dilation K)) := by
-    ext u <;> simp [Module.End.mul_apply]
+    ext u <;> simp [mul_apply_eq_comp]
   have hz := hidem.eq_zero_of_isNilpotent
     (LieModule.isNilpotent_toEnd_of_isNilpotent K (AffineLine K) N (dilation K))
   have hsnd (u : N) : (u : AffineLine K).2 = 0 := by

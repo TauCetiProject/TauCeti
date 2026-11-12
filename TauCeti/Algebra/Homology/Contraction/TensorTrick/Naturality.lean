@@ -49,7 +49,7 @@ theorem reducedTensorWordsHomotopy_naturality
     ReducedTensorWords.map (R := R) f ∘ₗ c.reducedTensorWordsHomotopy G =
       c'.reducedTensorWordsHomotopy G' ∘ₗ ReducedTensorWords.map (R := R) f := by
   have hτ : f ∘ₗ G.koszulTwist 1 = G'.koszulTwist 1 ∘ₗ f := by
-    simpa using (hf.koszulTwist_comp 1).symm
+    simpa using (hf.koszulTwist_comp_eq_smul 1).symm
   simp only [LinearMap.ext_iff, LinearMap.comp_apply] at hi hp hh hτ
   refine ReducedTensorWords.linearMap_ext R M fun n x ↦ ?_
   simp only [LinearMap.comp_apply, reducedTensorWordsHomotopy_of_tprod,

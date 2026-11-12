@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Quotient
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Truncation
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.ParabolicCycle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Tessellation
+import TauCeti.Analysis.Complex.Fuchsian.Polygon.CuspDatum
 import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
@@ -23,8 +24,9 @@ vertices as representatives, nor agree with the scalings chosen at those vertice
 If there are finitely many cusp orbits, these compact representatives imply compactness of
 the cusp compactification. In particular, this applies to a cofinite group with such a polygon.
 The polygon need only meet every orbit: neither uniqueness of representatives nor a
-side pairing is needed for this compactness argument. Existence of a polygon for an arbitrary
-cofinite group is not asserted here.
+side pairing is needed for this compactness argument. Existence of such a polygon for an
+arbitrary cofinite group, and hence compactness, is proved separately from its Dirichlet domain
+(`Subgroup.IsCofinite.compactSpace_compactifiedQuotient`).
 
 A side-paired polygon whose translates under a group `Γ` containing the side-pairing maps form a
 locally finite family satisfies these hypotheses. Its translates cover `ℍ`, and each ideal vertex
@@ -81,29 +83,17 @@ theorem exists_cuspDatum_isCompact_carrier_diff_iUnion_horodisc
         ∀ B : {i : Fin n // (P.vertex i).isRight} → ℝ,
           IsCompact (P.carrier \ ⋃ i, horodisc (E i) (B i)) := by
   classical
-  -- Choose data only at ideal vertices; finite vertices carry no auxiliary cusp data.
-  have hex (i : {i : Fin n // (P.vertex i).isRight}) :
-      ∃ E : Γ.CuspDatum, P.vertex i = .inr E.cusp := by
-    obtain ⟨c, hc⟩ := Sum.isRight_iff.mp i.property
-    obtain ⟨E, hE⟩ := (hcusp i c hc).exists_cuspDatum_cusp_eq
-    exact ⟨E, by rw [hE]; exact hc⟩
-  choose E hE using hex
+  obtain ⟨E, hE, g, hgE, hg⟩ := P.exists_cuspDatum_scaling hcusp
   refine ⟨E, hE, fun B ↦ ?_⟩
-  let g (i : Fin n) : PSL(2, ℝ) :=
-    if hi : (P.vertex i).isRight then (E ⟨i, hi⟩).scaling else 1
   let B' (i : Fin n) : ℝ := if hi : (P.vertex i).isRight then B ⟨i, hi⟩ else 0
-  have hg (i : Fin n) (c : OnePoint ℝ) (hi : P.vertex i = .inr c) : g i • c = ∞ := by
-    have hright : (P.vertex i).isRight := by simp [hi]
-    have heq : (E ⟨i, hright⟩).cusp = c := Sum.inr.inj ((hE ⟨i, hright⟩).symm.trans hi)
-    simpa only [g, dite_eq_left hright, heq] using (E ⟨i, hright⟩).scaling_smul_cusp
   convert P.isCompact_carrier_diff_iUnion g hg B' using 2
   ext z
   simp only [mem_iUnion, mem_horodisc, mem_ofPred_eq]
   constructor
   · rintro ⟨⟨i, hi⟩, hz⟩
-    exact ⟨i, hi, by simpa only [g, B', dite_eq_left hi] using hz⟩
+    exact ⟨i, hi, by simpa only [hgE i hi, B', dite_eq_left hi] using hz⟩
   · rintro ⟨i, hi, hz⟩
-    exact ⟨⟨i, hi⟩, by simpa only [g, B', dite_eq_left hi] using hz⟩
+    exact ⟨⟨i, hi⟩, by simpa only [hgE i hi, B', dite_eq_left hi] using hz⟩
 
 /-- A convex polygon meeting every orbit and having only cuspidal ideal vertices gives a
 compact set of representatives outside any prescribed family of cusp horodiscs. The family
@@ -185,7 +175,7 @@ theorem exists_vertex_eq_inr_smul_of_isCuspPoint (hmap : ∀ i, σ.map i ∈ Γ)
     (hlf : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier)
     {c : OnePoint ℝ} (hc : Γ.IsCuspPoint c) : ∃ γ : Γ, ∃ j, P.vertex j = .inr (γ • c) := by
   classical
-  have : DiscreteTopology Γ := TauCeti.discreteTopology_of_locallyFinite_smul
+  have : DiscreteTopology Γ := TauCeti.discreteTopology_of_locallyFinite_smul (fun _ ↦ by fun_prop)
     (P.nonempty_interior_carrier.mono interior_subset) hlf
   by_contra hne
   simp only [not_exists] at hne

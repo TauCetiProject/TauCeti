@@ -47,6 +47,26 @@ reconciliation.
 The backfill updates label descriptions once, continues after individual errors,
 and reports failures. A rate limit stops the remaining pass visibly.
 
+PR-status batches checkpoint pending PR numbers and retry counts after each completed
+PR. The workflow restores the latest verified `pr-status-progress` artifact, including
+from failed runs, and uploads progress with `always()`. A retained quota deadline
+defers the next batch before any App reads. Finishing a resumed scan advances its
+watermark only to a completely read discovery boundary. Resuming also discovers
+new activity, skipping only updates older than the start of a finished PR check;
+changes during that check remain eligible. Active CI is refreshed. An hourly
+recovery trigger and manual dispatch can resume work without a new PR event.
+
+Restoration verifies the producing workflow and event through GitHub. A
+`pull_request_target` run executes trusted base code even when its recorded head
+repository is a fork; ordinary `pull_request` runs cannot supply progress. Other
+accepted events (`workflow_run`, `issue_comment`, schedule and manual dispatch)
+must name upstream `main`.
+The former retry-only artifact is migrated at deployment. Missing/expired state
+uses the existing bounded time-window fallback. Invalid state warns and rebuilds
+from that fallback, then writes a replacement checkpoint rather than repeatedly
+restoring the corrupt one. Lost state or a hard runner loss before upload can
+repeat work since the last uploaded checkpoint.
+
 The workflows check out the exact policy revision used by Auto-merge, without
 persisting credentials. The workflow-pin tests require labels, the health report,
 and their tests to use that same revision. For local commands, check out that
@@ -69,7 +89,11 @@ use its stricter OWNER/MEMBER/COLLABORATOR comment policy.
 
 ## Zulip reactions
 
-[`zulip.py`](zulip.py) finds-or-creates the PR's message in the **PRs** topic and
+The PR status, backfill, and healthcheck workflows set `ZULIP_CHANNEL=rss` and
+`ZULIP_TOPIC=Tau Ceti PRs`. Pass these same overrides when running the shared
+Zulip client locally; its defaults are `Tau Ceti > PRs`.
+
+[`zulip.py`](zulip.py) finds-or-creates the PR's message in **rss > Tau Ceti PRs** and
 reconciles two independent, mutually-exclusive reaction groups from `core.derive`:
 
 | Group | State | Emoji |
@@ -103,10 +127,11 @@ human reacting on a status message never confuses reconciliation.
 Two workflows drive it:
 
 - [`pr-status.yml`](../../.github/workflows/pr-status.yml): on PR events,
-  review-state comments, and `workflow_run` of `pr-build` and `Review`. It
-  reconciles in batches ([`batch.py`](batch.py)): one run at a time, each covering
-  every PR with activity since the previous successful run started, so a burst of
-  events costs one or two GitHub-hosted jobs rather than one per event. Per PR it
+  review-state comments, and `workflow_run` of `pr-build` and `Review`, plus
+  hourly/manual recovery. It reconciles in batches ([`batch.py`](batch.py)):
+  one run at a time, retaining pending work across interruptions and discovering
+  new activity before advancing the saved window. Bursts coalesce into one or
+  two GitHub-hosted jobs rather than one per event. Per PR it
   runs the status-label reconcile, then the Zulip reconcile: creating the message
   only while the PR is open (so churn on a closed PR can never create a late post),
   keeping its roadmap metadata current, owning the merged/closed ending, and
@@ -186,8 +211,8 @@ episode has no closing event in the timeline.
 
 Note that labelling and commenting both bump the PR's `updatedAt`, which
 `housekeeping.py` treats as freshness — so a conflict episode resets that PR's
-seven-day stale-close clock. That is the intended trade: a PR that just learned it
-conflicts should get its week to act on it.
+nine-day stale-close clock. That is the intended trade: a PR that just learned it
+conflicts should get nine days to act on it.
 
 ## Stuck-automation alerts (Tau Ceti > "Stuck PRs")
 
@@ -218,7 +243,7 @@ a persistent Zulip config break, exactly like the healthcheck.
 ## One-time setup
 
 1. **Create a dedicated Zulip bot** (Zulip → Settings → Bots → Add a new bot,
-   type *Generic*). Subscribe it to the **Tau Ceti** channel: a bot can only
+   type *Generic*). Subscribe it to **rss** (PR posts) and **Tau Ceti** (alerts): a bot can only
    post and react in channels it belongs to.
 2. **Add repository secrets** on `TauCetiProject/TauCeti`:
    - `ZULIP_API_KEY`: the bot's API key
@@ -258,6 +283,7 @@ When a run is red, re-set `ZULIP_API_KEY` per the gotcha above, then confirm:
 
 ```bash
 export ZULIP_API_KEY=... ZULIP_EMAIL=... ZULIP_SITE=https://leanprover.zulipchat.com
+export ZULIP_CHANNEL=rss ZULIP_TOPIC="Tau Ceti PRs"
 python3 scripts/pr_status/zulip.py check   # exits 0 and prints OK when healthy
 ```
 
@@ -274,6 +300,7 @@ python3 scripts/pr_status/labels.py reconcile-all
 # PR history in one low-request stream and edits existing posts in place,
 # including posts whose URL predates the FormalFrontier -> TauCetiProject transfer.
 export ZULIP_API_KEY=... ZULIP_EMAIL=... ZULIP_SITE=https://leanprover.zulipchat.com
+export ZULIP_CHANNEL=rss ZULIP_TOPIC="Tau Ceti PRs"
 gh api --paginate \
   'repos/TauCetiProject/TauCeti/pulls?state=all&sort=created&direction=asc&per_page=100' \
   --jq '.[] | {
@@ -312,3 +339,9 @@ checkout described above. `test_zulip` covers review reactions, PR post
 rendering, legacy-message rewriting, batch continuation, dry runs, and rate-limit
 retry. All GitHub and Zulip reads and writes are stubbed, so these need no
 network.
+
+GitHub reads require `gh` and `jq`. The read helper captures response headers,
+honors `Retry-After` and exhausted-quota reset times, and applies jq filters
+locally after decoding JSON response boundaries. Paginated bodies never include
+HTTP headers. If the requested wait exceeds the remaining 180-second sleep
+budget, it stops immediately and holds later reads until that deadline.

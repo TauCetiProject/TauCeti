@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.S
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Galois
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Bilinear
-import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 -- Proof-only: the fixed field of all automorphisms of a Galois extension is the base field.
 import Mathlib.FieldTheory.Galois.Infinite
 

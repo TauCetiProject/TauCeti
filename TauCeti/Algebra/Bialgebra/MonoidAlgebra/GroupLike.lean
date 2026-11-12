@@ -95,7 +95,7 @@ theorem isGroupLikeElem_iff_eq_single [CommRing R]
       rw [tensorEquiv_comul_apply] at hcomul
       simpa using hcomul
     have hcoeff_zero_or_one (g : H) : x.coeff g = 0 ∨ x.coeff g = 1 := by
-      apply eq_zero_or_eq_one_of_isIdempotentElem
+      apply IsIdempotentElem.eq_zero_or_eq_one_of_preconnectedSpace
       exact isIdempotentElem_iff.mpr (by simpa using (hcoeff g g).symm)
     have hx_coeff_ne : x.coeff ≠ 0 := by
       intro hzero
@@ -199,7 +199,7 @@ noncomputable def mapDomainBialgHomPreimage [CommRing R]
     [Monoid G] [Monoid H]
     (F : _root_.MonoidAlgebra R G →ₐc[R] _root_.MonoidAlgebra R H) : G →* H :=
   (groupLikeEquiv (R := R) (H := H)).toMonoidHom.comp
-    ((TauCeti.GroupLike.map F).comp
+    (F.mapGroupLike.comp
       (groupLikeEquiv (R := R) (H := G)).symm.toMonoidHom)
 
 /-- The recovered monoid homomorphism takes `g` to `h` exactly when the bialgebra
@@ -213,7 +213,7 @@ theorem mapDomainBialgHomPreimage_apply_eq_iff [CommRing R]
     mapDomainBialgHomPreimage R F g = h ↔
       F (_root_.MonoidAlgebra.single g 1) = _root_.MonoidAlgebra.single h 1 := by
   simp only [mapDomainBialgHomPreimage, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    groupLikeEquiv_apply_eq_iff, TauCeti.GroupLike.val_map, val_groupLikeEquiv_symm]
+    groupLikeEquiv_apply_eq_iff, BialgHom.val_mapGroupLike, val_groupLikeEquiv_symm]
 
 /-- The image of a standard basis element under a bialgebra morphism is indexed by
 the recovered monoid homomorphism. -/

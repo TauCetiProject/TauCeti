@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Associator
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit
+public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts.Basic
+public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import Mathlib.CategoryTheory.Monoidal.Category
 
 /-!
@@ -21,6 +23,12 @@ For endobimodules these identities package the existing tensor maps, associator,
 and unitors into `bimoduleMonoidalCategory`. The structure is chosen explicitly so its
 factor grading and carrier universe remain visible. Its curried tensor functor is the existing
 `bimoduleTensor`.
+
+The module also provides `GradedBimoduleMonoidalDatum`, the pointwise homotopy-monoidal datum
+of a functor on complexes of graded bimodules: for every pair of source complexes `X` and `Y`,
+a homotopy equivalence comparing the target tensor product of the image complexes with the
+image of the source tensor product. It is the monoidal compatibility data that such a functor
+has to supply.
 
 -/
 
@@ -184,3 +192,32 @@ theorem bimoduleMonoidalCategory_curriedTensor :
       bimoduleTensor Γ Γ Γ := (rfl)
 
 end TauCeti.GradedModuleCat
+
+namespace TauCeti
+
+universe w uA uB
+
+variable (k : Type w) [CommRing k]
+
+local notation "c" => ComplexShape.up ℤ
+
+variable {A₁ : Type uA} [Ring A₁] [Algebra k A₁]
+variable {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
+variable (Ξ₁ : InternalGrading k A₁) [GradedAlgebra Ξ₁.piece]
+variable (Ξ₂ : InternalGrading k A₂) [GradedAlgebra Ξ₂.piece]
+variable (Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
+    HomologicalComplex (GradedBimoduleCat k Ξ₂) c)
+
+/-- The pointwise homotopy-monoidal datum of the functor `Φ` on complexes of graded bimodules
+between the source and the target graded bimodule setting: for every pair of source complexes
+`X` and `Y`, a homotopy equivalence comparing the target tensor product of the image
+complexes with the image of the source tensor product. -/
+abbrev GradedBimoduleMonoidalDatum :=
+  ∀ (X Y : HomologicalComplex (GradedBimoduleCat k Ξ₁) c),
+    HomotopyEquiv
+      (HomologicalComplex.mapBifunctor (Φ.obj X) (Φ.obj Y)
+        (GradedModuleCat.bimoduleTensor Ξ₂ Ξ₂ Ξ₂) c)
+      (Φ.obj (HomologicalComplex.mapBifunctor X Y
+        (GradedModuleCat.bimoduleTensor Ξ₁ Ξ₁ Ξ₁) c))
+
+end TauCeti

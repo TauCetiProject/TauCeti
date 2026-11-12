@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Topology.Algebra.RestrictedProduct.Basic
+public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Left
 
 /-!
 # Restricted products of groups away from a set of indices
@@ -25,6 +27,11 @@ needs.
 
 No finiteness of `S` is assumed anywhere: the away-`S` restricted product and the restriction to
 it make sense for every set of indices.
+
+When `S` is empty, `awayEmptyEquiv` is the canonical reindexing to the original restricted
+product, with inverse `restrictAway ∅`. Both directions are continuous for every reference family;
+`awayEmptyContinuousMulEquiv` packages them as an isomorphism of topological groups. Its additive
+counterpart is `addAwayEmptyContinuousAddEquiv`.
 
 Everything here is also stated for additive groups (`RestrictedProductAddGroupAway`,
 `addRestrictAway`, …).
@@ -75,6 +82,75 @@ theorem restrictAway_apply (S : Set ι) (U : ∀ i, Subgroup (G i))
   RestrictedProduct.mapAlongMonoidHom_apply G (fun i : {i // i ∉ S} ↦ G i.1) Subtype.val
     Subtype.val_injective.tendsto_cofinite (fun i ↦ MonoidHom.id (G i.1))
     (.of_forall fun _ _ hx ↦ hx) x i
+
+/-- Removing an empty set of indices recovers the original restricted product, by the canonical
+reindexing which forgets the vacuous proof that an index is outside the empty set. -/
+@[to_additive addAwayEmptyEquiv /-- Removing an empty set of indices recovers the original
+restricted product of additive groups, by the canonical reindexing which forgets the vacuous
+proof that an index is outside the empty set. -/]
+def awayEmptyEquiv (U : ∀ i, Subgroup (G i)) :
+    RestrictedProductGroupAway (∅ : Set ι) U ≃* RestrictedProductGroup U :=
+  restrictedProductCongrLeft U (Equiv.subtypeUnivEquiv fun i ↦ Set.notMem_empty i)
+
+/-- The empty-away comparison preserves each coordinate. -/
+@[to_additive (attr := simp) addAwayEmptyEquiv_apply]
+theorem awayEmptyEquiv_apply (U : ∀ i, Subgroup (G i))
+    (x : RestrictedProductGroupAway (∅ : Set ι) U) (i : ι) :
+    awayEmptyEquiv U x i = x ⟨i, Set.notMem_empty i⟩ := by
+  unfold awayEmptyEquiv
+  exact restrictedProductCongrLeft_apply_apply U
+    (Equiv.subtypeUnivEquiv fun i ↦ Set.notMem_empty i) x ⟨i, Set.notMem_empty i⟩
+
+/-- Restriction away from the empty set is the inverse of the canonical comparison. -/
+@[to_additive (attr := simp) addAwayEmptyEquiv_restrictAway]
+theorem awayEmptyEquiv_restrictAway (U : ∀ i, Subgroup (G i))
+    (x : RestrictedProductGroup U) : awayEmptyEquiv U (restrictAway ∅ U x) = x := by
+  ext i
+  simp
+
+/-- The inverse empty-away comparison is restriction away from the empty set. -/
+@[to_additive (attr := simp) addAwayEmptyEquiv_symm_apply]
+theorem awayEmptyEquiv_symm_apply (U : ∀ i, Subgroup (G i))
+    (x : RestrictedProductGroup U) :
+    (awayEmptyEquiv U).symm x = restrictAway ∅ U x := by
+  apply (awayEmptyEquiv U).injective
+  simp
+
+/-- The canonical empty-away comparison is continuous for every reference family. -/
+@[to_additive continuous_addAwayEmptyEquiv]
+theorem continuous_awayEmptyEquiv [∀ i, TopologicalSpace (G i)]
+    (U : ∀ i, Subgroup (G i)) : Continuous (awayEmptyEquiv U) :=
+  continuous_restrictedProductCongrLeft U _
+
+/-- The inverse empty-away comparison is continuous for every reference family. -/
+@[to_additive continuous_addAwayEmptyEquiv_symm]
+theorem continuous_awayEmptyEquiv_symm [∀ i, TopologicalSpace (G i)]
+    (U : ∀ i, Subgroup (G i)) : Continuous (awayEmptyEquiv U).symm :=
+  continuous_restrictedProductCongrLeft_symm U _
+
+/-- The canonical empty-away comparison as an isomorphism of topological groups. -/
+@[to_additive addAwayEmptyContinuousAddEquiv /-- The canonical empty-away comparison as an
+isomorphism of topological additive groups. -/]
+def awayEmptyContinuousMulEquiv [∀ i, TopologicalSpace (G i)] (U : ∀ i, Subgroup (G i)) :
+    RestrictedProductGroupAway (∅ : Set ι) U ≃ₜ* RestrictedProductGroup U where
+  toMulEquiv := awayEmptyEquiv U
+  continuous_toFun := continuous_awayEmptyEquiv U
+  continuous_invFun := continuous_awayEmptyEquiv_symm U
+
+/-- The topological empty-away comparison has the canonical reindexing as underlying map. -/
+@[to_additive (attr := simp) addAwayEmptyContinuousAddEquiv_apply]
+theorem awayEmptyContinuousMulEquiv_apply [∀ i, TopologicalSpace (G i)]
+    (U : ∀ i, Subgroup (G i)) (x : RestrictedProductGroupAway (∅ : Set ι) U) :
+    awayEmptyContinuousMulEquiv U x = awayEmptyEquiv U x := by rfl
+
+/-- The inverse topological comparison is restriction away from the empty set. -/
+@[to_additive (attr := simp) addAwayEmptyContinuousAddEquiv_symm_apply]
+theorem awayEmptyContinuousMulEquiv_symm_apply [∀ i, TopologicalSpace (G i)]
+    (U : ∀ i, Subgroup (G i)) (x : RestrictedProductGroup U) :
+    (awayEmptyContinuousMulEquiv U).symm x = restrictAway ∅ U x := by
+  apply (awayEmptyContinuousMulEquiv U).injective
+  rw [ContinuousMulEquiv.apply_symm_apply, awayEmptyContinuousMulEquiv_apply,
+    awayEmptyEquiv_restrictAway]
 
 /-- Restricting away from a larger set factors through restricting away from a smaller one:
 the coordinate of `restrictAway T U x` at `i ∉ T` is the coordinate of `restrictAway S U x` at

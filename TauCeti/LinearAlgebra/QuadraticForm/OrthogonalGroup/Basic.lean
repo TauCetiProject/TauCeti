@@ -76,7 +76,7 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
   identification of the isometries of a quadratic form with the isometries of its polar bilinear
   form. At the level of groups this is
   `TauCeti.QuadraticMap.orthogonalGroup_eq_isometryGroup_polarBilin`: `O(Q)` is the isometry group
-  `TauCeti.BilinForm.isometryGroup` of `Q.polarBilin`, so the bilinear-form API applies to it. Its
+  `LinearMap.BilinForm.isometryGroup` of `Q.polarBilin`, so the bilinear-form API applies to it. Its
   determinant-one counterpart is
   `TauCeti.QuadraticMap.specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin`.
 * `TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv`: the underlying set of the orthogonal
@@ -308,7 +308,7 @@ theorem coe_orthogonalGroupCongr_apply (e : Q₁.IsometryEquiv Q₂) (f : orthog
 theorem coe_orthogonalGroupCongr_symm_apply (e : Q₁.IsometryEquiv Q₂) (g : orthogonalGroup Q₂)
     (m : M₁) : ((e.orthogonalGroupCongr).symm g : M₁ ≃ₗ[R] M₁) m
       = e.toLinearEquiv.symm ((g : M₂ ≃ₗ[R] M₂) (e.toLinearEquiv m)) := by
-  simp [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
+  simp only [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
     LinearEquiv.autCongr_symm_apply_apply]
 
 /-- Transporting the orthogonal group along the identity isometry is the identity equivalence. -/
@@ -385,14 +385,15 @@ section PolarBilin
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The orthogonal group of a quadratic form is the isometry group of its polar bilinear form, as
-soon as `2` is a regular scalar: `orthogonalGroup Q` and `TauCeti.BilinForm.isometryGroup
+soon as `2` is a regular scalar: `orthogonalGroup Q` and `LinearMap.BilinForm.isometryGroup
 Q.polarBilin` are then two names for the same subgroup of `M ≃ₗ[R] M`, and the bilinear-form API —
 the Gram-matrix criterion, `det ^ 2 = 1`, base change — applies to `O(Q)` through it. Some such
 hypothesis is needed: in characteristic two the polarization forgets `Q` on the diagonal. -/
 theorem orthogonalGroup_eq_isometryGroup_polarBilin (h2 : IsSMulRegular R (2 : R))
-    (Q : QuadraticForm R M) : orthogonalGroup Q = BilinForm.isometryGroup Q.polarBilin := by
+    (Q : QuadraticForm R M) :
+    orthogonalGroup Q = LinearMap.BilinForm.isometryGroup Q.polarBilin := by
   ext f
-  simp only [mem_orthogonalGroup_iff_polar h2, BilinForm.mem_isometryGroup_iff,
+  simp only [mem_orthogonalGroup_iff_polar h2, LinearMap.BilinForm.mem_isometryGroup_iff,
     QuadraticMap.polarBilin_apply_apply]
 
 end PolarBilin
@@ -1082,7 +1083,7 @@ theorem mul_reflectionOrthogonal_mul_inv (Q : QuadraticForm R M) (g : orthogonal
   let e := orthogonalGroupEquivIsometryEquiv Q g
   have hv : e v = (g : M ≃ₗ[R] M) v := congrFun (coe_orthogonalGroupEquivIsometryEquiv Q g) v
   simp only [Subgroup.coe_mul, Subgroup.coe_inv, coe_reflectionOrthogonal,
-    LinearEquiv.mul_apply, LinearEquiv.coe_inv]
+    mul_apply_eq_comp, LinearEquiv.coe_inv]
   -- Generalize over the `Invertible` instance so that `g v` can be rewritten to `e v` under it.
   revert ‹Invertible (Q ((g : M ≃ₗ[R] M) v))›
   rw [← hv]
@@ -1361,8 +1362,9 @@ theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
       (hrx : (r : V ≃ₗ[K] V) ((g : V ≃ₗ[K] V) x) = x) :
       ∀ y ∈ W ⊔ Submodule.span K {x},
         ((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y = y :=
-    ((r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap).eqOn_sup_span_singleton
-      (g := LinearMap.id) (fun w hw => by simp [hfix w hw, hr w hw]) (by simpa using hrx)
+    (LinearMap.eqOn_sup_span_singleton_iff
+      (f := (r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap) (g := LinearMap.id)).2
+      ⟨fun w hw => by simp [hfix w hw, hr w hw], by simpa using hrx⟩
   rcases QuadraticMap.isUnit_sub_or_add_of_map_eq Q _ x hmap
       (isUnit_of_invertible (Q x)).ne_zero with hsubUnit | haddUnit
   · -- One reflection, in `g x - x`.
@@ -1382,7 +1384,7 @@ theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
       rintro r (rfl | rfl) <;> exact ⟨_, inferInstance, rfl⟩
     · rw [List.prod_cons, List.prod_singleton]
       refine key _ (fun w hw => ?_) ?_ <;>
-        rw [Subgroup.coe_mul, LinearEquiv.mul_apply, QuadraticMap.coe_reflectionOrthogonal,
+        rw [Subgroup.coe_mul, mul_apply_eq_comp, QuadraticMap.coe_reflectionOrthogonal,
           QuadraticMap.coe_reflectionOrthogonal]
       · rw [QuadraticMap.reflection_apply_of_polar_eq_zero Q ((g : V ≃ₗ[K] V) x + x) (by
             rw [QuadraticMap.polar_add_left, hgx w hw, (hx w hw).polar_eq_zero, add_zero]),

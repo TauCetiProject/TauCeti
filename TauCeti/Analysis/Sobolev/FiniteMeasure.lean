@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Sobolev.Embedding
 import TauCeti.Analysis.Sobolev.Poincare.Potential
+import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Integral.Bochner.Holder
 import TauCeti.MeasureTheory.Integral.RieszPotential
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Sobolev inequalities on sets of finite measure
@@ -44,6 +47,8 @@ with `κ = 1/n`). The estimate then passes from test functions to their closure 
   on a ball `B(x₀, R)`, with constant a multiple of `R ^ (1 - n δ)`.
 * `TauCeti.W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top`: some
   exponent `q > p` and constant `S` with `‖u‖_{L^q} ≤ S ‖∇u‖_{Lᵖ}` on `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`: for `r > max 1 (2n/(n+2))`,
+  an `Lʳ(Ω)` function acts on `W^{1,2}_0(Ω)` as a continuous linear functional `v ↦ ∫_Ω f v`.
 
 ## References
 
@@ -55,10 +60,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open Function MeasureTheory Metric Set Module TopologicalSpace
 open scoped Distributions ENNReal NNReal
+
+namespace TauCeti
 
 section CompactSupport
 
@@ -83,8 +88,7 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 
   set ω := μ.real (ball (0 : E) 1)
   have hn : (1 : ℝ) ≤ n := by exact_mod_cast finrank_pos
   have hn0 : (n : ℝ) ≠ 0 := by positivity
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne'
-    measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos μ 0 one_pos
   have hcont := hu.continuous_fderiv one_ne_zero
   -- The Riesz potential of order one of `‖Du‖`, over `Ω`.
   set V : E → ℝ≥0∞ := fun x =>
@@ -92,17 +96,17 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 
   -- The pointwise potential bound `‖u x‖ ≤ (n ω)⁻¹ V x`.
   have hpt : ∀ x, ‖u x‖ₑ ≤ ENNReal.ofReal ((n * ω)⁻¹) * ‖V x‖ₑ := fun x => by
     refine (enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow (μ := μ) hu h2u x).trans_eq ?_
-    rw [enorm_eq_self, ← setLIntegral_eq_of_support_subset (s := Ω)]
+    rw [eNorm_eq_self, ← setLIntegral_eq_of_support_subset (s := Ω)]
     · congr 1
       refine lintegral_congr fun y => ?_
       rw [mul_comm, show (n : ℝ) * ((n : ℝ)⁻¹ - 1) = 1 - n by field_simp]
     · intro y hy
       by_contra hyΩ
       rw [mem_support, fderiv_of_notMem_tsupport ℝ fun h => hyΩ (hsupp h)] at hy
-      simp [enorm_eq_nnnorm] at hy
+      simp [eNorm_eq_nnNorm] at hy
   -- The `Lᵖ`-`L^q` bound for the potential, with `κ = 1/n`.
   have hpot := eLpNorm_setLIntegral_enorm_sub_rpow_mul_le (μ := μ) (p := p) (q := q)
-    (κ := (n : ℝ)⁻¹) hp hpq hδ hδn (inv_le_one_of_one_le₀ hn) hΩ hcont.enorm.aemeasurable
+    (κ := (n : ℝ)⁻¹) hp hpq hδ hδn (inv_le_one_of_one_le₀ hn) hΩ hcont.eNorm.aemeasurable
   rw [← eLpNorm_restrict_eq_of_support_subset hu.continuous.aestronglyMeasurable
     ((subset_tsupport _).trans hsupp)]
   calc
@@ -114,7 +118,7 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 
       refine (mul_le_mul_right hpot _).trans_eq ?_
       have hω' : ω ^ (1 - (n : ℝ)⁻¹) = ω * ω ^ (-(n : ℝ)⁻¹) := by
         rw [sub_eq_add_neg, Real.rpow_add hω, Real.rpow_one]
-      rw [hω', eLpNorm_enorm _ hcont.aestronglyMeasurable,
+      rw [hω', eLpNorm_eNorm _ hcont.aestronglyMeasurable,
         eLpNorm_restrict_eq_of_support_subset hcont.aestronglyMeasurable
           ((support_fderiv_subset ℝ).trans hsupp),
         ← mul_assoc, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
@@ -183,8 +187,7 @@ theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball [Nontrivial 
   set n := finrank ℝ E
   set ω := mu.real (ball (0 : E) 1)
   have hn : (0 : ℝ) < n := by exact_mod_cast finrank_pos
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne'
-    measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos mu 0 one_pos
   have he : 0 ≤ (n : ℝ)⁻¹ - δ := sub_nonneg.2 hδn.le
   have h1δ : 0 ≤ 1 - δ := by
     have : (n : ℝ)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by exact_mod_cast finrank_pos)
@@ -248,5 +251,87 @@ theorem W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top 
     (by rw [hq, inv_inv]; ring) hδn hu
 
 end W1p0
+
+section DualPairing
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {Omega : Opens E}
+
+/-- The pairing `v ↦ ∫_Ω f v` on `W^{1,2}_0(Ω)` as a linear map, given that each product
+`f v` is integrable. -/
+private def W1p0.setIntegralMulₗ (f : E → ℝ)
+    (hint : ∀ v : W1p0 mu Omega 2,
+      Integrable (fun x => f x * W1p.value (v : W1p mu Omega 2) x) (mu.restrict Omega)) :
+    W1p0 mu Omega 2 →ₗ[ℝ] ℝ where
+  toFun v := ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu
+  map_add' u v := by
+    simp only [Submodule.coe_add]
+    rw [← integral_add (hint u) (hint v)]
+    refine integral_congr_ae ?_
+    filter_upwards [W1p.value_add_ae (u : W1p mu Omega 2) (v : W1p mu Omega 2)] with x hx
+    rw [hx, Pi.add_apply, mul_add]
+  map_smul' c u := by
+    simp only [RingHom.id_apply, Submodule.coe_smul, smul_eq_mul]
+    rw [← integral_const_mul]
+    refine integral_congr_ae ?_
+    filter_upwards [W1p.value_smul_ae c (u : W1p mu Omega 2)] with x hx
+    rw [hx, Pi.smul_apply, smul_eq_mul]
+    ring
+
+/-- **An `Lʳ` function acts continuously on `W^{1,2}_0(Ω)`.** Let `n ≥ 1` be the dimension, let
+`Ω` have finite measure, and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)` (which
+is automatic for `n ≤ 2`). For `f ∈ Lʳ(Ω)`, the pairing `v ↦ ∫_Ω f v` is a continuous linear
+functional on `W^{1,2}_0(Ω)`. This is the right-hand side of the weak
+formulation of an elliptic equation with `Lʳ` data. -/
+theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
+    (hOmega : mu Omega ≠ ∞) {r : ℝ≥0} (hr : 1 < r)
+    (hrn : (finrank ℝ E : ℝ) * (2 - r) < 2 * r)
+    {f : E → ℝ} (hf : MemLp f r (mu.restrict Omega)) :
+    ∃ ℓ : StrongDual ℝ (W1p0 mu Omega 2), ∀ v : W1p0 mu Omega 2,
+      ℓ v = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+  set n : ℝ := (finrank ℝ E : ℝ)
+  have hn : (1 : ℝ) ≤ n := Nat.one_le_cast.2 finrank_pos
+  set ν := mu.restrict (Omega : Set E)
+  have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
+  obtain ⟨t, ht0, h2t, hτn, hrt⟩ :=
+    ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one (zero_lt_one.trans_le hn) hr hrn
+  -- The Sobolev inequality `‖v‖_{Lᵗ} ≤ S ‖∇v‖_{L²}` on `W^{1,2}_0(Ω)`.
+  obtain ⟨S, hSfin, hS⟩ : ∃ S : ℝ≥0∞, S ≠ ∞ ∧ ∀ v : W1p0 mu Omega 2,
+      eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν ≤ S * ‖W1p.gradient (v : W1p mu Omega 2)‖ₑ :=
+    ⟨_, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega), fun v =>
+      W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
+        ENNReal.ofNat_ne_top hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
+        hτn v.2⟩
+  have hmemt : ∀ v : W1p0 mu Omega 2, MemLp (W1p.value (v : W1p mu Omega 2)) t ν := fun v =>
+    (hS v).trans_lt (ENNReal.mul_lt_top hSfin.lt_top eNorm_lt_top)
+  -- Hölder's inequality: `f v` is integrable and `|∫_Ω f v| ≤ ‖f‖_{Lʳ} ‖v‖_{Lᵗ} |Ω|^{...}`.
+  have hq1 : (1 : ℝ≥0∞) ≤ ((r : ℝ≥0∞)⁻¹ + (t : ℝ≥0∞)⁻¹)⁻¹ := by
+    have hle : ((r⁻¹ + t⁻¹ : ℝ≥0) : ℝ) ≤ 1 := by push_cast; exact hrt
+    rw [ENNReal.one_le_inv, ← ENNReal.coe_inv (zero_lt_one.trans hr).ne', ← ENNReal.coe_inv ht0.ne',
+      ← ENNReal.coe_add]
+    exact_mod_cast hle
+  have hint : ∀ v : W1p0 mu Omega 2,
+      Integrable (fun x => f x * W1p.value (v : W1p mu Omega 2) x) ν := fun v =>
+    (hf.mul (hmemt v) (hpqr := ENNReal.HolderTriple.of _ _)).integrable hq1
+  refine ⟨(W1p0.setIntegralMulₗ f hint).mkContinuous
+    ((eLpNorm f r ν).toReal * S.toReal * ν.real univ ^ (1 - (r : ℝ)⁻¹ - (t : ℝ)⁻¹))
+    fun v => ?_, fun v => rfl⟩
+  have hhol := TauCeti.MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow
+    (by exact_mod_cast zero_lt_one.trans hr) (by exact_mod_cast ht0) hrt hf (hmemt v)
+    (measure_ne_top ν univ) (Filter.Eventually.of_forall fun x hx => absurd (mem_univ x) hx)
+  have hsob : (eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν).toReal ≤ S.toReal * ‖v‖ := by
+    have := ENNReal.toReal_mono (ENNReal.mul_ne_top hSfin eNorm_ne_top) (hS v)
+    rw [ENNReal.toReal_mul, toReal_eNorm] at this
+    exact this.trans (mul_le_mul_of_nonneg_left (W1p.norm_gradient_le _) ENNReal.toReal_nonneg)
+  refine hhol.trans ?_
+  calc (eLpNorm f r ν).toReal * (eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν).toReal *
+        ν.real univ ^ (1 - (r : ℝ)⁻¹ - (t : ℝ)⁻¹)
+      ≤ (eLpNorm f r ν).toReal * (S.toReal * ‖v‖) *
+        ν.real univ ^ (1 - (r : ℝ)⁻¹ - (t : ℝ)⁻¹) := by gcongr
+    _ = _ := by ring
+
+end DualPairing
 
 end TauCeti

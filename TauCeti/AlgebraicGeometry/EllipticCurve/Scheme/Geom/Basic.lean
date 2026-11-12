@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Smooth
 
 /-!
 # Elliptic curves over a scheme
@@ -38,13 +38,17 @@ affine opens `U` of `S` with Weierstrass curves over `Γ(S, U)` and the chosen p
   restrictions of the curve to the bases of two charts induced by a morphism of bases over `S`, a
   base change square (`isPullback_pullbackCarrierMap`); `projModelMap` is the same morphism between
   the projective models of the equations of the two charts.
+* `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.chartPoint` and
+  `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.modelPoint`: the sections of the restriction
+  of the curve to the base of a chart, and of the projective model of its equation, induced by a
+  section of the curve.
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassAtlas π zero`: a family of pointed Weierstrass
   charts whose images cover the base.
 * `TauCeti.AlgebraicGeometry.IsLocallyWeierstrass π zero hzero`: every point of the base has an
   affine open neighbourhood over which `π` is the projective model of an elliptic Weierstrass
   curve, compatibly with the section.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom S`: an elliptic curve over `S`, a smooth proper
-  morphism of relative dimension one with a section admitting a pointed Weierstrass atlas.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom S`: an elliptic curve over `S`, a morphism to `S`
+  with a map from `S` admitting a pointed Weierstrass atlas.
 
 ## Main results
 
@@ -54,6 +58,14 @@ affine opens `U` of `S` with Weierstrass curves over `Γ(S, U)` and the chosen p
   atlas gives the local-model condition.
 * `TauCeti.AlgebraicGeometry.nonempty_pointedWeierstrassAtlas_iff`: a pointed Weierstrass atlas
   exists if and only if the local-model condition holds.
+* `TauCeti.AlgebraicGeometry.PointedWeierstrassAtlas.of_projModelOver`: a property of morphisms
+  that is Zariski-local on the target and holds for projective Weierstrass models holds for a
+  morphism with a pointed Weierstrass atlas; hence such a morphism is proper and smooth of relative
+  dimension one, and its point is a section (`PointedWeierstrassAtlas.isProper`,
+  `PointedWeierstrassAtlas.smoothOfRelativeDimension`, `PointedWeierstrassAtlas.zero_comp`).
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.smooth`, `EllipticCurveGeom.proper` and
+  `EllipticCurveGeom.zero_comp`: the structure morphism of an elliptic curve is smooth of relative
+  dimension one and proper, and the zero section is a section of it.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isLocallyWeierstrass`: an elliptic curve over `S`
   satisfies the local-model condition.
 
@@ -79,6 +91,8 @@ a ring isomorphism `φ` with `WeierstrassCurve.map`, and identifies `projModel (
 is `WeierstrassCurve.projModel`, and the local model of `EllipticCurveGeom` is a nonempty pointed
 Weierstrass atlas, which is equivalent to `IsLocallyWeierstrass` by
 `nonempty_pointedWeierstrassAtlas_iff`.
+* `EllipticCurveGeom.isClosed_setOf_left_apply_eq_zero`: for any over-morphism into an elliptic
+  curve, meeting its zero section is a closed condition.
 -/
 
 public section
@@ -432,6 +446,109 @@ theorem projModelZero_projModelMap : k.equation.projModelZero ≫ projModelMap h
 
 end Map
 
+/-! ### Sections on a chart -/
+
+section Point
+
+variable (c : PointedWeierstrassChart π zero) {P : S ⟶ X} (hP : P ≫ π = 𝟙 S)
+
+/-- The section of the restriction of `X` to the base of a chart `c` induced by a section `P` of
+`π`. -/
+noncomputable def chartPoint : c.base ⟶ c.pullbackCarrier :=
+  c.isPullback.lift (c.baseMap ≫ P) (𝟙 _) (by simp [hP])
+
+/-- The section `chartPoint` lies over the restriction of `P` to the base of the chart. -/
+@[reassoc (attr := simp)]
+theorem chartPoint_toTotal : c.chartPoint hP ≫ c.toTotal = c.baseMap ≫ P :=
+  IsPullback.lift_fst _ _ _ _
+
+/-- The morphism `chartPoint` is a section of the restriction of `π`. -/
+@[reassoc (attr := simp)]
+theorem chartPoint_toBase : c.chartPoint hP ≫ c.toBase = 𝟙 _ :=
+  IsPullback.lift_snd _ _ _ _
+
+/-- The section induced by `zero` on a chart is the section `pulledZero` of the chart. -/
+@[simp]
+theorem chartPoint_zero (hzero : zero ≫ π = 𝟙 S) : c.chartPoint hzero = c.pulledZero :=
+  c.isPullback.hom_ext (by simp) (by simp)
+
+/-- The section of the projective model of the equation of a chart `c` induced by a section `P` of
+`π`: the section `chartPoint` read through `Spec c.ring ≅ c.base` and the isomorphism `modelIso`
+with the projective model. -/
+noncomputable def modelPoint : Spec c.ring ⟶ c.equation.projModel :=
+  c.baseIso.inv ≫ c.chartPoint hP ≫ c.modelIso.hom
+
+/-- The model point is `chartPoint`, read through `baseIso` and `modelIso`. -/
+theorem modelPoint_def : c.modelPoint hP = c.baseIso.inv ≫ c.chartPoint hP ≫ c.modelIso.hom :=
+  (rfl)
+
+/-- Through the isomorphisms `baseIso` and `modelIso`, `modelPoint` is `chartPoint`. -/
+@[reassoc]
+theorem chartPoint_modelIso_hom :
+    c.chartPoint hP ≫ c.modelIso.hom = c.baseIso.hom ≫ c.modelPoint hP := by
+  simp [modelPoint]
+
+/-- The model point of a section is a section of the projective model. -/
+@[reassoc (attr := simp)]
+theorem modelPoint_projModelOver : c.modelPoint hP ≫ c.equation.projModelOver = 𝟙 _ := by
+  simp [modelPoint]
+
+/-- The model point of a section `P`, carried back to `X`, is the restriction of `P` to the base of
+the chart. -/
+@[reassoc (attr := simp)]
+theorem modelPoint_modelIso_inv_toTotal :
+    c.modelPoint hP ≫ c.modelIso.inv ≫ c.toTotal = (c.baseIso.inv ≫ c.baseMap) ≫ P := by
+  simp [modelPoint]
+
+/-- The projective model of the equation of a chart, mapped to `X` through `modelIso` and `toTotal`,
+is the base change of `π` along `Spec c.ring ≅ c.base ⟶ S`. -/
+theorem isPullback_modelIso_inv_toTotal : IsPullback (c.modelIso.inv ≫ c.toTotal)
+    c.equation.projModelOver π (c.baseIso.inv ≫ c.baseMap) :=
+  c.isPullback.of_iso c.modelIso (.refl _) c.baseIso (.refl _) (by simp) c.modelIso_over.symm
+    (by simp) (by simp)
+
+/-- The zero section of the projective model, carried back to `X`, is the restriction of the
+section `zero` to the base of the chart. -/
+@[reassoc]
+theorem projModelZero_modelIso_inv_toTotal :
+    c.equation.projModelZero ≫ c.modelIso.inv ≫ c.toTotal =
+      (c.baseIso.inv ≫ c.baseMap) ≫ zero := by
+  rw [← cancel_epi c.baseIso.hom, ← c.modelIso_zero_assoc]
+  simp
+
+/-- The model point of the section `zero` is the zero section of the projective model. -/
+@[simp]
+theorem modelPoint_zero (hzero : zero ≫ π = 𝟙 S) :
+    c.modelPoint hzero = c.equation.projModelZero := by
+  simp [modelPoint, c.modelIso_zero]
+
+/-- The model point of a section `Q` that differs from a section `P` at every point differs from
+the model point of `P` at every point. -/
+theorem modelPoint_apply_ne_modelPoint {Q : S ⟶ X} (hQ : Q ≫ π = 𝟙 S) (h : ∀ s, Q s ≠ P s)
+    (s : Spec c.ring) : c.modelPoint hQ s ≠ c.modelPoint hP s := fun hs ↦
+  h ((c.baseIso.inv ≫ c.baseMap) s) (by
+    simpa only [← Scheme.Hom.comp_apply, modelPoint_modelIso_inv_toTotal] using
+      congrArg (c.modelIso.inv ≫ c.toTotal) hs)
+
+/-- The model point of a section `P` missing the section `zero` at every point misses the zero
+section of the projective model at every point. -/
+theorem modelPoint_apply_ne (h : ∀ s, P s ≠ zero s) (s : Spec c.ring) :
+    c.modelPoint hP s ≠ c.equation.projModelZero s := fun hs ↦
+  h ((c.baseIso.inv ≫ c.baseMap) s) (by
+    simpa only [← Scheme.Hom.comp_apply, modelPoint_modelIso_inv_toTotal,
+      projModelZero_modelIso_inv_toTotal] using congrArg (c.modelIso.inv ≫ c.toTotal) hs)
+
+variable {c} in
+/-- Model points are compatible with the morphisms `projModelMap` between charts. -/
+theorem modelPoint_projModelMap {k : PointedWeierstrassChart π zero} {h : k.base ⟶ c.base}
+    (hh : h ≫ c.baseMap = k.baseMap) :
+    k.modelPoint hP ≫ projModelMap hh = (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ c.modelPoint hP := by
+  have : k.chartPoint hP ≫ pullbackCarrierMap hh = h ≫ c.chartPoint hP :=
+    c.isPullback.hom_ext (by simp [reassoc_of% hh]) (by simp)
+  simp [modelPoint, reassoc_of% this]
+
+end Point
+
 end PointedWeierstrassChart
 
 /-- A morphism `π` with a section `zero` that admits a pointed Weierstrass atlas satisfies the
@@ -458,13 +575,77 @@ theorem nonempty_pointedWeierstrassAtlas_iff {X S : Scheme.{u}} {π : X ⟶ S} {
     chart s := .ofAffineOpen hzero (U s) (W s) (hW s) (e s) (hover s) (hzero' s)
     covers s := ⟨s, ⟨s, hU s⟩, rfl⟩ }⟩
 
+namespace PointedWeierstrassAtlas
+
+variable {S X : Scheme.{u}} {π : X ⟶ S} {zero : S ⟶ X}
+
+/-- The bases of the charts of an atlas, as an open cover of `S`. -/
+@[expose, simps! I₀]
+noncomputable def openCover (A : PointedWeierstrassAtlas π zero) : S.OpenCover :=
+  .mkOfCovers A.index (fun i ↦ (A.chart i).base) (fun i ↦ (A.chart i).baseMap) A.covers
+
+-- `openCover_X` and `openCover_f` are stated for an index of the cover rather than of the atlas,
+-- so that they apply to the goals produced by `Scheme.Cover.hom_ext` and similar lemmas.
+
+/-- The scheme of `A.openCover` at an index is the base of the corresponding chart. -/
+@[simp]
+theorem openCover_X (A : PointedWeierstrassAtlas π zero) (i : A.openCover.I₀) :
+    A.openCover.X i = (A.chart i).base :=
+  rfl
+
+/-- The map of `A.openCover` at an index is the base map of the corresponding chart. -/
+@[simp]
+theorem openCover_f (A : PointedWeierstrassAtlas π zero) (i : A.openCover.I₀) :
+    A.openCover.f i = (A.chart i).baseMap :=
+  rfl
+
+/-- A property of morphisms that is local on the target and holds for the projective models of the
+equations of the charts of an atlas holds for `π`. -/
+theorem of_projModelOver (A : PointedWeierstrassAtlas π zero) (P : MorphismProperty Scheme.{u})
+    [IsZariskiLocalAtTarget P]
+    (hP : ∀ i, P (A.chart i).equation.projModelOver) : P π := by
+  refine IsZariskiLocalAtTarget.of_openCover A.openCover fun i ↦ ?_
+  dsimp only [Scheme.Cover.pullbackHom, openCover_X, openCover_f]
+  have hw : ((A.chart i).modelIso.inv ≫ (A.chart i).isPullback.isoPullback.hom) ≫
+      pullback.snd π (A.chart i).baseMap =
+        (A.chart i).equation.projModelOver ≫ (A.chart i).baseIso.inv := by
+    rw [← cancel_epi (A.chart i).modelIso.hom]
+    simp
+  exact (P.arrow_mk_iso_iff (Arrow.isoMk ((A.chart i).modelIso.symm ≪≫
+    (A.chart i).isPullback.isoPullback) (A.chart i).baseIso.symm hw)).mp (hP i)
+
+/-- A morphism with a pointed Weierstrass atlas is proper. -/
+theorem isProper (A : PointedWeierstrassAtlas π zero) : IsProper π :=
+  A.of_projModelOver _ fun _ ↦ inferInstance
+
+/-- A morphism with a pointed Weierstrass atlas is smooth of relative dimension one. -/
+theorem smoothOfRelativeDimension (A : PointedWeierstrassAtlas π zero) :
+    SmoothOfRelativeDimension 1 π :=
+  -- The `IsZariskiLocalAtTarget` instance is passed by hand: instance search does not unify
+  -- `@SmoothOfRelativeDimension 1` with the property argument of
+  -- `HasRingHomProperty.instIsZariskiLocalAtTarget`.
+  @of_projModelOver _ _ _ _ A (@SmoothOfRelativeDimension 1)
+    (HasRingHomProperty.instIsZariskiLocalAtTarget (P := @SmoothOfRelativeDimension 1))
+    fun _ ↦ inferInstance
+
+/-- The point of a pointed Weierstrass atlas is a section. -/
+theorem zero_comp (A : PointedWeierstrassAtlas π zero) : zero ≫ π = 𝟙 S :=
+  A.openCover.hom_ext _ _ fun i ↦ by
+    dsimp only [openCover_X, openCover_f]
+    rw [← (A.chart i).pulledZero_toTotal_assoc, (A.chart i).isPullback.w,
+      (A.chart i).pulledZero_toBase_assoc, Category.comp_id]
+
+end PointedWeierstrassAtlas
+
 /-! ### Elliptic curves over a scheme -/
 
 /-- An **elliptic curve over a scheme** `S`, as a geometric object: a morphism
-`structureMap : carrier ⟶ S`, smooth of relative dimension one and proper, with a section `zero`,
-such that `structureMap` and `zero` admit a pointed Weierstrass atlas, so that Zariski-locally on
-`S` the curve is the projective model of an elliptic Weierstrass curve with `zero` the zero section
-`[0 : 1 : 0]`. The atlas appears under `Nonempty`, so no local equation is part of the data. -/
+`structureMap : carrier ⟶ S` with a map `zero` from `S`, such that `structureMap` and `zero` admit
+a pointed Weierstrass atlas, so that Zariski-locally on `S` the curve is the projective model of
+an elliptic Weierstrass curve with `zero` the zero section `[0 : 1 : 0]`. The atlas appears under
+`Nonempty`, so no local equation is part of the data. It implies that `structureMap` is smooth of
+relative dimension one and proper and that `zero` is a section of it
+(`EllipticCurveGeom.smooth`, `EllipticCurveGeom.proper`, `EllipticCurveGeom.zero_comp`). -/
 structure EllipticCurveGeom (S : Scheme.{u}) where
   /-- The total space. -/
   carrier : Scheme.{u}
@@ -472,26 +653,57 @@ structure EllipticCurveGeom (S : Scheme.{u}) where
   structureMap : carrier ⟶ S
   /-- The zero section. -/
   zero : S ⟶ carrier
-  /-- The zero section is a section of the structure morphism. -/
-  zero_comp : zero ≫ structureMap = 𝟙 S
-  /-- The structure morphism is smooth of relative dimension one. -/
-  smooth : SmoothOfRelativeDimension 1 structureMap
-  /-- The structure morphism is proper. -/
-  proper : IsProper structureMap
   /-- A pointed Weierstrass atlas exists: Zariski-locally on `S`, the curve is the projective model
   of an elliptic Weierstrass curve, compatibly with the zero section. -/
   localModel : Nonempty (PointedWeierstrassAtlas structureMap zero)
 
-attribute [instance] EllipticCurveGeom.smooth EllipticCurveGeom.proper
-
 namespace EllipticCurveGeom
 
-/-- The zero section of an elliptic curve is a section of its structure morphism: the field
-`zero_comp`, as a `simp` lemma. -/
+/-- The zero section is a section of the structure morphism. -/
 @[reassoc (attr := simp)]
-theorem zero_comp_structureMap {S : Scheme.{u}} (E : EllipticCurveGeom S) :
-    E.zero ≫ E.structureMap = 𝟙 S :=
-  E.zero_comp
+theorem zero_comp {S : Scheme.{u}} (E : EllipticCurveGeom S) : E.zero ≫ E.structureMap = 𝟙 S :=
+  E.localModel.elim PointedWeierstrassAtlas.zero_comp
+
+/-- The structure morphism is smooth of relative dimension one. -/
+instance smooth {S : Scheme.{u}} (E : EllipticCurveGeom S) :
+    SmoothOfRelativeDimension 1 E.structureMap :=
+  E.localModel.elim PointedWeierstrassAtlas.smoothOfRelativeDimension
+
+/-- The structure morphism is proper. -/
+instance proper {S : Scheme.{u}} (E : EllipticCurveGeom S) : IsProper E.structureMap :=
+  E.localModel.elim PointedWeierstrassAtlas.isProper
+
+/-- The zero section of an elliptic curve is a closed immersion, being a section of the separated
+structure morphism. -/
+instance isClosedImmersion_zero {S : Scheme.{u}} (E : EllipticCurveGeom S) :
+    IsClosedImmersion E.zero := by
+  have : IsClosedImmersion (E.zero ≫ E.structureMap) := by
+    rw [E.zero_comp]
+    infer_instance
+  exact .of_comp E.zero E.structureMap
+
+/-- A point `x` of `E` with values in a scheme `Z` over `S` takes a value in the image of the zero
+section at a point `z` of `Z` exactly when it agrees there with the zero section over the image of
+`z` in `S`. -/
+theorem left_apply_mem_range_zero_iff {S : Scheme.{u}} {E : EllipticCurveGeom S} {Z : Over S}
+    (x : Z ⟶ Over.mk E.structureMap) (z : Z.left) :
+    x.left z ∈ Set.range E.zero ↔ x.left z = E.zero (Z.hom z) := by
+  refine ⟨fun ⟨s, hs⟩ ↦ ?_, fun h ↦ ⟨_, h.symm⟩⟩
+  have hx : E.structureMap (x.left z) = Z.hom z := by
+    rw [← Scheme.Hom.comp_apply]
+    simpa using congr($(Over.w x) z)
+  rw [← hx, ← hs, ← Scheme.Hom.comp_apply E.zero, E.zero_comp]
+  rfl
+
+/-- **Meeting the zero section is a closed condition.** For an over-morphism `x` from a scheme
+`Z` over `S` to an elliptic curve `E`, the points of `Z` at which `x` meets the zero section form
+a closed set: it is the preimage of the image of the zero section, a closed immersion. -/
+theorem isClosed_setOf_left_apply_eq_zero {S : Scheme.{u}} {E : EllipticCurveGeom S}
+    {Z : Over S} (x : Z ⟶ Over.mk E.structureMap) :
+    IsClosed {z | x.left z = E.zero (Z.hom z)} := by
+  convert E.zero.isClosedEmbedding.isClosed_range.preimage x.left.continuous using 1
+  ext z
+  exact (left_apply_mem_range_zero_iff x z).symm
 
 /-- An elliptic curve over `S` satisfies the local-model condition `IsLocallyWeierstrass` for its
 structure morphism and zero section: the pointwise form of the atlas condition `localModel`. -/

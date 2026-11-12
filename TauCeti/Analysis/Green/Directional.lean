@@ -15,7 +15,8 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 Fubini slices the area integral over a vertical cell into integrals over its vertical fibers.
 Area integrability supplies both almost-everywhere fiber integrability and measurability of the
 zero-extended fiber integral. Applying the one-dimensional FTC gives the directional Green
-identity, requiring only the vertical derivative of the horizontal field component.
+identity, requiring only the vertical derivative and continuity along vertical fibers of the
+horizontal field component.
 
 The horizontal identity follows by interchanging the coordinates, with its corresponding sign.
 
@@ -30,10 +31,9 @@ open MeasureTheory Set
 
 namespace TauCeti.Green
 
-variable {E : Type*} [NormedAddCommGroup E]
-variable {a b : ℝ} {lower upper : ℝ → ℝ} {R : ℂ → E}
+variable {E : Type*} {a b : ℝ} {lower upper : ℝ → ℝ} {R : ℂ → E}
 
-private theorem integrable_indicator_coordinates
+private theorem integrable_indicator_coordinates [TopologicalSpace E] [ESeminormedAddMonoid E]
     (hl : ContinuousOn lower (Icc a b)) (hu : ContinuousOn upper (Icc a b))
     (hR : IntegrableOn R (verticalRegion a b lower upper)) :
     Integrable (fun p : ℝ × ℝ ↦ (verticalRegion a b lower upper).indicator R ⟨p.1, p.2⟩) := by
@@ -42,17 +42,23 @@ private theorem integrable_indicator_coordinates
       Complex.measurableEquivRealProd.symm.measurableEmbedding |>.2
         (hR.integrable_indicator (measurableSet_verticalRegion hl hu))
 
-private theorem indicator_coordinates (x y : ℝ) :
+private theorem indicator_coordinates [Zero E] (x y : ℝ) :
     (verticalRegion a b lower upper).indicator R ⟨x, y⟩ =
       (Icc a b).indicator (fun x ↦ (Icc (lower x) (upper x)).indicator
         (fun y ↦ R ⟨x, y⟩) y) x := by
   classical
   simp only [Set.indicator_apply, mem_verticalRegion]
-  by_cases hx : x ∈ Icc a b
-  · by_cases hy : y ∈ Icc (lower x) (upper x)
-    · simp only [hx, hy, true_and, ite_true]
-    · simp only [hx, hy, and_false, ite_true, ite_false]
-  · simp only [hx, false_and, ite_false]
+  split_ifs <;> grind
+
+/-- Coordinate swap transports integrability from a horizontal cell to its vertical cell. -/
+theorem integrableOn_comp_coordinateSwapCLE [TopologicalSpace E] [ContinuousENorm E]
+    (hR : IntegrableOn R (horizontalRegion a b lower upper)) :
+    IntegrableOn (R ∘ Complex.coordinateSwapCLE) (verticalRegion a b lower upper) := by
+  rw [← preimage_coordinateSwapCLE_horizontalRegion]
+  exact (Complex.measurePreserving_coordinateSwapCLE.integrableOn_comp_preimage
+    Complex.coordinateSwapCLE.toHomeomorph.toMeasurableEquiv.measurableEmbedding).2 hR
+
+variable [NormedAddCommGroup E]
 
 /-- An area-integrable function is integrable on almost every vertical fiber of a graph cell. -/
 theorem ae_integrableOn_verticalRegion_fiber
@@ -118,15 +124,6 @@ theorem integral_verticalRegion
   simp_rw [integral_indicator_coordinates]
   exact integral_indicator measurableSet_Icc
 
-omit [NormedSpace ℝ E] in
-/-- Coordinate swap transports integrability from a horizontal cell to its vertical cell. -/
-theorem integrableOn_comp_coordinateSwapCLE
-    (hR : IntegrableOn R (horizontalRegion a b lower upper)) :
-    IntegrableOn (R ∘ Complex.coordinateSwapCLE) (verticalRegion a b lower upper) := by
-  rw [← preimage_coordinateSwapCLE_horizontalRegion]
-  exact (Complex.measurePreserving_coordinateSwapCLE.integrableOn_comp_preimage
-    Complex.coordinateSwapCLE.toHomeomorph.toMeasurableEquiv.measurableEmbedding).2 hR
-
 /-- Coordinate swap transports the set integral from a vertical cell to its horizontal cell. -/
 theorem integral_comp_coordinateSwapCLE_verticalRegion :
     (∫ z in verticalRegion a b lower upper, (R ∘ Complex.coordinateSwapCLE) z) =
@@ -154,12 +151,13 @@ variable [CompleteSpace E]
 
 /-- The directional Green identity on a vertical graph cell. The positively oriented graph
 boundary contributes the bottom graph minus the top graph; the vertical sides contribute zero
-to `P dx`. Only the vertical derivative is assumed, and no continuity of that derivative is
-required. -/
+to `P dx`. Only continuity on each vertical fiber and the vertical derivative are assumed;
+no continuity in the horizontal direction or of the derivative is required. The integrand is the
+pointwise difference of graph values; the individual graph functions need not be integrable. -/
 theorem integral_graphs_sub_eq_neg_integral_verticalRegion {P : ℂ → E} (hab : a ≤ b)
     (hl : ContinuousOn lower (Icc a b)) (hu : ContinuousOn upper (Icc a b))
     (hlu : ∀ x ∈ Icc a b, lower x ≤ upper x)
-    (hP : ContinuousOn P (verticalRegion a b lower upper))
+    (hP : ∀ x ∈ Icc a b, ContinuousOn (fun y ↦ P ⟨x, y⟩) (Icc (lower x) (upper x)))
     (hdP : ∀ x ∈ Icc a b, ∀ y ∈ Ioo (lower x) (upper x),
       HasDerivAt (fun y ↦ P ⟨x, y⟩) (R ⟨x, y⟩) y)
     (hR : IntegrableOn R (verticalRegion a b lower upper)) :
@@ -169,11 +167,8 @@ theorem integral_graphs_sub_eq_neg_integral_verticalRegion {P : ℂ → E} (hab 
       volume.restrict (Icc a b)] (fun x ↦ P ⟨x, upper x⟩ - P ⟨x, lower x⟩) := by
     filter_upwards [ae_integrableOn_verticalRegion_fiber hl hu hR,
       ae_restrict_mem measurableSet_Icc] with x hx hxab
-    have hc : ContinuousOn (fun y ↦ P ⟨x, y⟩) (Icc (lower x) (upper x)) :=
-      hP.comp (Complex.equivRealProdCLM.symm.continuous.comp_continuousOn
-        (continuousOn_const.prodMk continuousOn_id)) (fun y hy ↦ mem_verticalRegion.mpr ⟨hxab, hy⟩)
     rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le (hlu x hxab)]
-    exact intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le (hlu x hxab) hc
+    exact intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le (hlu x hxab) (hP x hxab)
       (hdP x hxab) ((intervalIntegrable_iff_integrableOn_Icc_of_le (hlu x hxab)).2 hx)
   rw [integral_verticalRegion hl hu hR, integral_congr_ae hslice,
     ← integral_neg, intervalIntegral.integral_of_le hab, ← integral_Icc_eq_integral_Ioc]
@@ -183,20 +178,21 @@ theorem integral_graphs_sub_eq_neg_integral_verticalRegion {P : ℂ → E} (hab 
 
 /-- The directional Green identity on a horizontal graph cell. The positively oriented graph
 boundary contributes the right graph minus the left graph; the horizontal sides contribute zero
-to `Q dy`. Only the horizontal derivative is assumed. -/
+to `Q dy`. Only continuity on each horizontal fiber and the horizontal derivative are assumed;
+no continuity in the vertical direction or of the derivative is required. The integrand is the
+pointwise difference of graph values; the individual graph functions need not be integrable. -/
 theorem integral_graphs_sub_eq_integral_horizontalRegion {Q : ℂ → E} (hab : a ≤ b)
     (hl : ContinuousOn lower (Icc a b)) (hu : ContinuousOn upper (Icc a b))
     (hlu : ∀ y ∈ Icc a b, lower y ≤ upper y)
-    (hQ : ContinuousOn Q (horizontalRegion a b lower upper))
+    (hQ : ∀ y ∈ Icc a b, ContinuousOn (fun x ↦ Q ⟨x, y⟩) (Icc (lower y) (upper y)))
     (hdQ : ∀ y ∈ Icc a b, ∀ x ∈ Ioo (lower y) (upper y),
       HasDerivAt (fun x ↦ Q ⟨x, y⟩) (R ⟨x, y⟩) x)
     (hR : IntegrableOn R (horizontalRegion a b lower upper)) :
     (∫ y in a..b, Q ⟨upper y, y⟩ - Q ⟨lower y, y⟩) =
       ∫ z in horizontalRegion a b lower upper, R z := by
-  have hQ' : ContinuousOn (Q ∘ Complex.coordinateSwapCLE) (verticalRegion a b lower upper) :=
-    hQ.comp Complex.coordinateSwapCLE.continuous.continuousOn (fun z hz ↦ by
-      simpa only [mem_horizontalRegion, Complex.coordinateSwapCLE_apply] using
-        mem_verticalRegion.mp hz)
+  have hQ' : ∀ x ∈ Icc a b, ContinuousOn
+      (fun y ↦ (Q ∘ Complex.coordinateSwapCLE) ⟨x, y⟩) (Icc (lower x) (upper x)) := by
+    simpa only [Function.comp_apply, Complex.coordinateSwapCLE_apply] using hQ
   have hR' := integrableOn_comp_coordinateSwapCLE hR
   have hdQ' : ∀ x ∈ Icc a b, ∀ y ∈ Ioo (lower x) (upper x),
       HasDerivAt (fun y ↦ (Q ∘ Complex.coordinateSwapCLE) ⟨x, y⟩)

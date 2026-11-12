@@ -30,7 +30,7 @@ import TauCeti.FieldTheory.Finite.FrobeniusFixed
 import Mathlib.FieldTheory.Finite.Trace
 -- Non-public: lifting an invertible scalar matrix to a unit of `F` is used only inside the
 -- surjectivity half of the classification.
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # The conjugacy classes of `GL₂` over a field
@@ -76,14 +76,12 @@ describing the centralizer of a non-scalar matrix rather than its conjugacy clas
   `GL₂(F)` are conjugate exactly when they have the same trace and the same determinant.
 * `TauCeti.GL2NonSplitTorus.isConj_gl2NonSplitTorusHom_iff`: the elements of the non-split torus
   conjugate to an elliptic element `u` are exactly `u` and its Frobenius conjugate `u^q`.
-* `TauCeti.card_conjClasses_GL2`: `GL₂(𝔽_q)` has `q² - 1` conjugacy classes.
+* `TauCeti.card_conjClasses_GL2`: `GL₂(𝔽_q)` has `q² - 1` conjugacy classes, and
+  `TauCeti.natCard_conjClasses_GL_fin_two_of_card_eq_two`: three of them over a field with two
+  elements.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The conjugacy classes (a build target)": class representatives and the count
-  `q² - 1 = Nat.card (ConjClasses (GL (Fin 2) F))`, matching the number of irreducibles. The final
-  theorem carries the name `card_conjClasses_GL2` the roadmap gives it there.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §5.2.
 -/
@@ -111,13 +109,10 @@ theorem trace_val_eq_of_isConj {g h : GL n R} (hgh : IsConj g h) :
 central. -/
 theorem eq_of_mem_range_scalar_of_isConj {g h : GL n R}
     (hg : (g : Matrix n n R) ∈ Set.range (Matrix.scalar n)) (hgh : IsConj g h) : g = h := by
-  obtain ⟨c, hc⟩ := isConj_iff.1 hgh
+  refine hgh.eq_of_left_mem_center (Subgroup.mem_center_iff.2 fun c ↦ Units.ext ?_)
   obtain ⟨a, ha⟩ := hg
-  have hcomm : c * g = g * c := by
-    refine Units.ext ?_
-    rw [Units.val_mul, Units.val_mul, ← ha]
-    exact (Matrix.scalar_commute a (Commute.all a) (c : Matrix n n R)).symm.eq
-  rw [← hc, hcomm, mul_assoc, mul_inv_cancel, mul_one]
+  rw [Units.val_mul, Units.val_mul, ← ha]
+  exact (Matrix.scalar_commute a (Commute.all a) (c : Matrix n n R)).symm.eq
 
 /-- **A scalar element and a non-scalar element of `GL n R` are never conjugate.** The class of a
 scalar element is a single point, so it cannot contain a non-scalar one; being scalar is therefore a
@@ -356,8 +351,7 @@ ones, indexed by their trace and their determinant. This is the number of irredu
 representations of `GL₂(𝔽_q)`, whose four families have dimensions `1`, `q`, `q + 1` and
 `q - 1`.
 
-The name is the roadmap's; the statement is the roadmap's with `[Fintype F]` weakened to
-`[Finite F]`, nothing in the argument deciding equality. -/
+The field is assumed only `Finite`, not `Fintype`: nothing in the argument decides equality. -/
 theorem card_conjClasses_GL2 (F : Type*) [Field F] [Finite F] :
     Nat.card (ConjClasses (GL (Fin 2) F)) = Nat.card F ^ 2 - 1 := by
   rw [← Nat.card_congr (conjClassesGLFinTwoEquiv (F := F)), Nat.card_sum, Nat.card_prod,
@@ -368,5 +362,13 @@ theorem card_conjClasses_GL2 (F : Type*) [Field F] [Finite F] :
   have e1 : (m + 1) ^ 2 = m * m + 2 * m + 1 := by ring
   rw [hm, Nat.add_sub_cancel, e1, Nat.add_sub_cancel]
   ring
+
+/-- **`GL₂` over a field with two elements has three conjugacy classes**, namely `q² - 1 = 3` at
+`q = 2`: the central class `{1}`, the unipotent class of the transvections, and the elliptic class
+of the elements of order `3`. -/
+theorem natCard_conjClasses_GL_fin_two_of_card_eq_two {F : Type*} [Field F] [Fintype F]
+    (hF : Fintype.card F = 2) : Nat.card (ConjClasses (GL (Fin 2) F)) = 3 := by
+  rw [card_conjClasses_GL2 F, Nat.card_eq_fintype_card, hF]
+  norm_num
 
 end TauCeti

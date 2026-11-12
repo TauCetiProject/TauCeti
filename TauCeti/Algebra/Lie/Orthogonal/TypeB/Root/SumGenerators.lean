@@ -362,6 +362,32 @@ theorem typeBShortNegativeRootMatrix_lie_shortNegativeRootMatrix (i j : ι) :
     Matrix.smul_single]
   abel
 
+/-- Positive short-root generators bracket to minus twice the corresponding sum-root generator. -/
+@[simp]
+theorem typeBShortRootGenerator_lie_shortRootGenerator
+    (i j : ι) :
+    ⁅typeBShortRootGenerator (K := K) i, typeBShortRootGenerator (K := K) j⁆ =
+      -((2 : K) • typeBSumRootGenerator i j) := by
+  apply Subtype.ext
+  simp only [LieSubalgebra.coe_bracket, coe_typeBShortRootGenerator,
+    coe_typeBSumRootGenerator, NegMemClass.coe_neg, SetLike.val_smul]
+  simpa only [two_smul K, two_nsmul] using
+    typeBShortRootMatrix_lie_shortRootMatrix (K := K) i j
+
+/-- Negative short-root generators bracket to minus twice the corresponding negative
+sum-root generator. -/
+@[simp]
+theorem typeBShortNegativeRootGenerator_lie_shortNegativeRootGenerator
+    (i j : ι) :
+    ⁅typeBShortNegativeRootGenerator (K := K) i,
+      typeBShortNegativeRootGenerator (K := K) j⁆ =
+        -((2 : K) • typeBSumNegativeRootGenerator i j) := by
+  apply Subtype.ext
+  simp only [LieSubalgebra.coe_bracket, coe_typeBShortNegativeRootGenerator,
+    coe_typeBSumNegativeRootGenerator, NegMemClass.coe_neg, SetLike.val_smul]
+  simpa only [two_smul K, two_nsmul] using
+    typeBShortNegativeRootMatrix_lie_shortNegativeRootMatrix (K := K) i j
+
 /-- A short-root vector commutes with a positive sum-root vector: `εᵢ + ε_k + ε_l` is never a
 root, so this bracket vanishes for all index choices. -/
 @[simp]

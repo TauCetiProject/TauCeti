@@ -53,7 +53,7 @@ theorem conjugationMap_injective : Function.Injective (conjugationMap n R).hom :
       (CommAlgCat.of R A) := toConv (IsScalarTower.toAlgHom R (coordinateHopfAlgebra n R) A)
   obtain ⟨g, hg⟩ := mapPointsFunctor_conjugationMap_app_surjective n A q
   have h : g.ofConv ((conjugationMap n R).hom (x - y)) = q.ofConv (x - y) :=
-    (CommHopfAlgCat.mapPointsFunctor_app_apply_apply
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply
       (conjugationMap n R) (CommAlgCat.of R A) g (x - y)).symm.trans
         (congrArg (fun p ↦ p.ofConv (x - y)) hg)
   simpa only [q, WithConv.ofConv_toConv, IsScalarTower.toAlgHom_apply, hx, map_zero]
@@ -65,9 +65,8 @@ variable (k : Type u) [Field k]
 
 /-- The coordinate algebra of `PGLₙ` is geometrically reduced over every field. -/
 instance instIsGeometricallyReducedCoordinateHopfAlgebra :
-    Algebra.IsGeometricallyReduced k (coordinateHopfAlgebra n k) := by
-  let _ := isGeometricallyReduced_of_smooth k (GeneralLinear.coordinateHopfAlgebra k n)
-  exact Algebra.IsGeometricallyReduced.of_injective (conjugationMap n k).hom.toAlgHom
+    Algebra.IsGeometricallyReduced k (coordinateHopfAlgebra n k) :=
+  Algebra.IsGeometricallyReduced.of_injective (conjugationMap n k).hom.toAlgHom
     (conjugationMap_injective n k)
 
 end TauCeti.ProjectiveGeneralLinear

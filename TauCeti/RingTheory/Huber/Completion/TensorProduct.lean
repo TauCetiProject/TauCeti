@@ -121,32 +121,17 @@ private theorem exists_tmul_eq_normalForm (P : PairOfDefinition A) (a : A)
       a ⊗ₜ[P.ringOfDefinition] c = b ⊗ₜ[P.ringOfDefinition] 1 + 1 ⊗ₜ d := by
   obtain ⟨n, hn⟩ := P.exists_pow_idealOfDefinition_mul_mem P.isOpen_ringOfDefinition a
   let y := P.completionRingEquiv c
-  have hy : (y : Completion A) ∈ P.completionRingOfDefinition := y.2
-  obtain ⟨b, hby⟩ := P.exists_coe_sub_mem_completionIdealImage n (y : Completion A)
-  have hbB : b ∈ P.ringOfDefinition := by
-    have hcoe : (b : Completion A) ∈ P.completionRingOfDefinition := by
-      simpa using P.completionRingOfDefinition.add_mem (P.completionIdealImage_le n hby) hy
-    rw [P.mem_completionRingOfDefinition_iff] at hcoe
-    have hpre := Completion.preimage_closure_image_coe
-      (G := P.ringOfDefinition.toAddSubgroup) P.isOpen_ringOfDefinition
-    simp only [Subring.coe_toAddSubgroup] at hpre
-    have hb : b ∈ ((↑) : A → Completion A) ⁻¹'
-        closure (((↑) : A → Completion A) '' (P.ringOfDefinition : Set A)) := hcoe
-    rwa [hpre] at hb
-  let b' : P.ringOfDefinition := ⟨b, hbB⟩
+  obtain ⟨b', he⟩ := P.exists_sub_toCompletionRingOfDefinition_mem_completionIdeal_pow n y
   let e : P.completionRingOfDefinition := y - P.toCompletionRingOfDefinition b'
-  have he : e ∈ P.completionIdeal ^ n := by
-    rw [P.completionIdeal_pow, P.mem_completionIdealImageIdeal_iff]
-    simpa [e, b'] using (P.completionIdealImage n).neg_mem hby
   obtain ⟨d, hd⟩ := P.exists_tmul_completionIdeal_eq a n hn e he
-  refine ⟨a * b, d, ?_⟩
+  refine ⟨a * b', d, ?_⟩
   have hce : c = (b' : Completion P.ringOfDefinition) +
       P.completionRingEquiv.symm e := by
     apply P.completionRingEquiv.injective
     simp [e, y, completionEquivClosure_symm_toCompletionRingOfDefinition]
   rw [hce, TensorProduct.tmul_add, hd]
   congr 1
-  simpa [b', Algebra.smul_def, Completion.algebraMap_def,
+  simpa [Algebra.smul_def, Completion.algebraMap_def,
     Algebra.algebraMap_ofSubsemiring_apply, mul_comm] using
     (TensorProduct.tmul_smul (R := P.ringOfDefinition) b' a
       (1 : Completion P.ringOfDefinition)).trans
@@ -205,12 +190,7 @@ theorem completionTensorMap_injective (P : PairOfDefinition A) :
   have haC : (a : Completion A) ∈ P.completionRingOfDefinition := by
     rw [eq_neg_of_add_eq_zero_left hzero, ← P.coe_completionRingEquiv]
     exact P.completionRingOfDefinition.neg_mem (P.completionRingEquiv b).2
-  have hpre := Completion.preimage_closure_image_coe
-    (G := P.ringOfDefinition.toAddSubgroup) P.isOpen_ringOfDefinition
-  simp only [Subring.coe_toAddSubgroup] at hpre
-  have haB : a ∈ P.ringOfDefinition := by
-    rw [← SetLike.mem_coe, ← hpre]
-    exact P.mem_completionRingOfDefinition_iff.mp haC
+  have haB : a ∈ P.ringOfDefinition := P.coe_mem_completionRingOfDefinition_iff.mp haC
   let a' : P.ringOfDefinition := ⟨a, haB⟩
   have hjcoe : Completion.mapRingHom P.ringOfDefinition.subtype (by fun_prop)
       (a' : Completion P.ringOfDefinition) = (a : Completion A) :=

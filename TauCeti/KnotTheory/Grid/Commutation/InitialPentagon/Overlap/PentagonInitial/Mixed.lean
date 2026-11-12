@@ -44,14 +44,22 @@ variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 rectangle's rows. -/
 theorem turn_notMem_cIco_second_of_left_eq_left
     (D : GridInitialPentagonRectangleDecomposition a s x z)
-    (hcommon : D.first.left = D.second.left) (hother : D.first.right ≠ D.second.right)
+    (hcommon : D.first.left = D.second.left)
     (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
     s ∉ Grid.cIco D.second.bottom D.second.top := by
-  have hrow := (D.toGridRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left hcommon
-    hother hfirst hsecond).2
   rw [D.toGridRectangleDecomposition.second_bottom_eq_first_top_of_left_eq_left hcommon]
-  exact fun hs => Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow)
-    D.first_turn_mem hs
+  by_cases hother : D.first.right = D.second.right
+  · -- With both sides in common the second rectangle's rows are those of the first, swapped.
+    have htop : D.second.top = D.first.bottom := by
+      rw [GridRectangleBetween.top_def, GridRectangleBetween.bottom_def, ← hother,
+        D.first.map_right]
+    rw [htop]
+    exact fun hs => Finset.disjoint_left.mp (Grid.disjoint_cIco_swap D.first.top D.first.bottom)
+      hs D.first_turn_mem
+  · have hrow := (D.toGridRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left hcommon
+      hother hfirst hsecond).2
+    exact fun hs => Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow)
+      D.first_turn_mem hs
 
 private theorem rightLeftSelfRecut_geometry
     (D : GridInitialPentagonRectangleDecomposition a s x z)
@@ -112,7 +120,7 @@ end TauCeti.GridInitialPentagonRectangleDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted mixed pentagon--rectangle overlap whose turn row lies outside the arc from the
 rectangle's top to the pentagon's top belongs to an initial-side self-pair. -/
@@ -132,15 +140,14 @@ theorem mem_initialPentagonRectangleInitialSelfPairs_of_right_eq_left
   have hrecut : D.toGridRectangleDecomposition.IsRecut E.toGridRectangleDecomposition := by
     rw [hErect]
     exact D.toGridRectangleDecomposition.isRecut_recut hone hfirst hsecond
-  have hback := hrecut.symm hone hfirst hsecond
+  have hback := hrecut.symm hfirst hsecond
   have hEone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (D.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   obtain ⟨hleft, hsecondLeft, -, -⟩ :=
     D.rightLeftSelfRecut_geometry hcommon hone hfirst hsecond hturn
   rw [← hErect] at hleft hsecondLeft
   have hEcommon : E.first.left = E.second.left := hleft.trans hsecondLeft.symm
   have hEcol : E.second.right ∈ Grid.cIoo E.first.left E.first.right := by
-    have hdata := hback.isRecutOfLeftEqLeft hEone hEcommon
+    have hdata := hback.isRecutOfLeftEqLeft hEcommon
     rcases hdata.recut_branch with ⟨-, -, hright, -⟩ | ⟨hcol, -⟩
     · exact (E.first.left_ne_right (hleft.trans hright)).elim
     · exact hcol
@@ -190,21 +197,68 @@ theorem mem_initialPentagonRectangleInitialSelfPairs_iff_sides
     obtain ⟨hright, -, htop, hleft, -⟩ :=
       S.recutInitialSelf_geometry hcommon hcol hfirst hsecond
     rw [hEq] at hright htop hleft
-    have hback := hrecut.symm hone hfirst hsecond
+    have hback := hrecut.symm hfirst hsecond
     have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-      (S.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
     right
     refine ⟨hright.trans hleft.symm, hDone, ?_⟩
     have hsecondTop := S.recutInitialSelf_second_top hcommon hcol hfirst hsecond
     rw [hEq] at hsecondTop
     rw [hsecondTop, htop,
       ← S.toGridRectangleDecomposition.second_bottom_eq_first_top_of_left_eq_left hcommon]
-    exact S.turn_notMem_cIco_second_of_left_eq_left hcommon
-      (Grid.ne_right_of_mem_cIoo hcol).symm hfirst hsecond
+    exact S.turn_notMem_cIco_second_of_left_eq_left hcommon hfirst hsecond
   · rintro ⟨hD, hsource | ⟨hcommon, hone, hturn⟩⟩
     · exact (G.mem_initialPentagonRectangleInitialSelfPairs C D).2 (Or.inl
         ((G.mem_initialPentagonRectangleInitialSelfSources C D).2 ⟨hD, hsource⟩))
     · exact G.mem_initialPentagonRectangleInitialSelfPairs_of_right_eq_left C D hD hcommon
         hone hturn
+
+open scoped Classical in
+/-- The initial-side self-pairs are their same-side source terms together with their mixed-side
+partners. -/
+theorem initialPentagonRectangleInitialSelfSources_union_filter_hasMixedSideOverlap_eq_selfPairs :
+    G.initialPentagonRectangleInitialSelfSources C x z ∪
+        (G.initialPentagonRectangleInitialSelfPairs C x z).filter
+          (fun D => D.toGridRectangleDecomposition.HasMixedSideOverlap) =
+      G.initialPentagonRectangleInitialSelfPairs C x z := by
+  ext D
+  simp only [Finset.mem_union, Finset.mem_filter]
+  constructor
+  · rintro (hsource | ⟨hpair, -⟩)
+    · exact (G.mem_initialPentagonRectangleInitialSelfPairs C D).2 (Or.inl hsource)
+    · exact hpair
+  · intro hpair
+    obtain ⟨hcounted, hsource | ⟨hcommon, hone, -⟩⟩ :=
+      (G.mem_initialPentagonRectangleInitialSelfPairs_iff_sides C D).1 hpair
+    · exact Or.inl ((G.mem_initialPentagonRectangleInitialSelfSources C D).2 ⟨hcounted, hsource⟩)
+    · exact Or.inr ⟨hpair,
+        (GridRectangleDecomposition.hasMixedSideOverlap_iff _).2 ⟨hone, Or.inr hcommon⟩⟩
+
+open scoped Classical in
+private theorem disjoint_initialPentagonRectangleInitialSelfSources_filter_hasMixedSideOverlap :
+    Disjoint (G.initialPentagonRectangleInitialSelfSources C x z)
+      ((G.initialPentagonRectangleInitialSelfPairs C x z).filter
+        (fun D => D.toGridRectangleDecomposition.HasMixedSideOverlap)) := by
+  refine Finset.disjoint_left.2 fun D hsource hmixed => ?_
+  obtain ⟨-, hcommon, hcol⟩ := (G.mem_initialPentagonRectangleInitialSelfSources C D).1 hsource
+  have hsame : D.toGridRectangleDecomposition.HasSameSideOverlap :=
+    (GridRectangleDecomposition.hasSameSideOverlap_iff _).2
+      ⟨D.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommon hcol,
+        Or.inl hcommon⟩
+  exact D.toGridRectangleDecomposition.not_hasMixedSideOverlap_of_hasSameSideOverlap hsame
+    (Finset.mem_filter.1 hmixed).2
+
+open scoped Classical in
+/-- An additive weight on the complete initial-side self-pair family is the sum of its same-side
+source contribution and its mixed-side partner contribution. -/
+theorem sum_initialPentagonRectangleInitialSelfPairs_eq_sum_sources_add_sum_mixed
+    {M : Type*} [AddCommMonoid M]
+    (w : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z → M) :
+    ∑ D ∈ G.initialPentagonRectangleInitialSelfPairs C x z, w D =
+      (∑ D ∈ G.initialPentagonRectangleInitialSelfSources C x z, w D) +
+        ∑ D ∈ (G.initialPentagonRectangleInitialSelfPairs C x z).filter
+          (fun D => D.toGridRectangleDecomposition.HasMixedSideOverlap), w D := by
+  rw [← Finset.sum_union
+    (G.disjoint_initialPentagonRectangleInitialSelfSources_filter_hasMixedSideOverlap C),
+    G.initialPentagonRectangleInitialSelfSources_union_filter_hasMixedSideOverlap_eq_selfPairs C]
 
 end TauCeti.GridDiagram

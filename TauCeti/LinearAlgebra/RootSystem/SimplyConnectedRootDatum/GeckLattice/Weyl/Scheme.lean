@@ -85,7 +85,7 @@ theorem geckSchemePointsMulEquiv_comp_geckWeylWordInnerConjugation
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (t.geckGroupScheme ht).X) :
     t.geckSchemePointsMulEquiv ht A
-        (p ≫ (t.geckWeylWordInnerConjugation ht l).hom.hom.hom) =
+        (p ≫ (t.geckWeylWordInnerConjugation ht l).asIso.hom.hom.hom) =
       t.geckWeylWordPoint ht l A * t.geckSchemePointsMulEquiv ht A p *
         (t.geckWeylWordPoint ht l A)⁻¹ := by
   rw [geckWeylWordInnerConjugation_def,
@@ -95,7 +95,7 @@ theorem geckSchemePointsMulEquiv_comp_geckWeylWordInnerConjugation
 /-- Inner conjugation by the empty Weyl word is the identity group-scheme automorphism. -/
 @[simp]
 theorem geckWeylWordInnerConjugation_nil :
-    t.geckWeylWordInnerConjugation ht [] = Iso.refl _ := by
+    t.geckWeylWordInnerConjugation ht [] = 1 := by
   rw [geckWeylWordInnerConjugation_def, geckWeylWordPoint_nil, geckInnerConjugation_one]
 
 /-- **The root-subgroup morphism attached to a Weyl word and a simple node**: conjugate the
@@ -103,20 +103,20 @@ positive simple-root subgroup at `i` by the integral Weyl-word point. Its root i
 datum is `geckWeylRootIndex l i`. -/
 def geckWeylRootSubgroup (l : List (Fin t.rank)) (i : Fin t.rank) :
     AdditiveGroup.groupScheme ℤ ⟶ t.geckGroupScheme ht :=
-  t.geckRootSubgroup ht (.inl i) ≫ (t.geckWeylWordInnerConjugation ht l).hom
+  t.geckRootSubgroup ht (.inl i) ≫ (t.geckWeylWordInnerConjugation ht l).asIso.hom
 
 /-- A Weyl-transported root subgroup is the positive simple-root subgroup followed by the
 corresponding inner automorphism. -/
 theorem geckWeylRootSubgroup_def (l : List (Fin t.rank)) (i : Fin t.rank) :
     t.geckWeylRootSubgroup ht l i =
-      t.geckRootSubgroup ht (.inl i) ≫ (t.geckWeylWordInnerConjugation ht l).hom :=
+      t.geckRootSubgroup ht (.inl i) ≫ (t.geckWeylWordInnerConjugation ht l).asIso.hom :=
   (rfl)
 
 /-- The empty Weyl word recovers the numbered positive simple-root morphism. -/
 @[simp]
 theorem geckWeylRootSubgroup_nil (i : Fin t.rank) :
     t.geckWeylRootSubgroup ht [] i = t.geckRootSubgroup ht (.inl i) := by
-  rw [geckWeylRootSubgroup_def, geckWeylWordInnerConjugation_nil, Iso.refl_hom,
+  rw [geckWeylRootSubgroup_def, geckWeylWordInnerConjugation_nil, Aut.one_asIso, Iso.refl_hom,
     Category.comp_id]
 
 /-- **On scheme-valued points, the transported root-subgroup morphism is conjugation of the
@@ -193,8 +193,8 @@ theorem geckSchemePointsMulEquiv_comp_geckRootSubgroupAt
 /-- Every Weyl-transported root-subgroup morphism is a closed immersion. -/
 instance isClosedImmersion_geckWeylRootSubgroup (l : List (Fin t.rank)) (i : Fin t.rank) :
     IsClosedImmersion (t.geckWeylRootSubgroup ht l i).hom.hom.left := by
-  let _ : IsIso (t.geckWeylWordInnerConjugation ht l).hom :=
-    (t.geckWeylWordInnerConjugation ht l).isIso_hom
+  let _ : IsIso (t.geckWeylWordInnerConjugation ht l).asIso.hom :=
+    (t.geckWeylWordInnerConjugation ht l).asIso.isIso_hom
   rw [← closedSubgroupMorphismProperty_iff]
   rw [geckWeylRootSubgroup_def,
     (closedSubgroupMorphismProperty _).cancel_right_of_respectsIso]

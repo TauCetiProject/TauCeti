@@ -43,6 +43,8 @@ when reducing arguments by derived length.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory WithConv
 
 namespace TauCeti

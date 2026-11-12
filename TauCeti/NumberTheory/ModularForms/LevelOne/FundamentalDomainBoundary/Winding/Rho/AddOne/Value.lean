@@ -373,7 +373,7 @@ private lemma truncated_integral_spec_rho_add_one (hH : Real.sqrt 3 / 2 < H) (h�
     (by linarith) fun s hs ↦
       lt_norm_of_far_right_rho_add_one hε₁ hεH hδR_pos hδR_lt h2sin ⟨hs.1, hs.2.le⟩
   obtain ⟨himid, hmid0⟩ :=
-    Contour.intervalIntegrable_truncated_and_integral_truncated_eq_zero_of_norm_le
+    Contour.intervalIntegrable_truncated_and_integral_truncated_eq_zero_of_norm_le (E := ℂ)
       (Filter.Eventually.of_forall fun s hs =>
         norm_le_of_near_rho_add_one hH hδL_le hlin hδR_lt h2sin
         (Set.Ioc_subset_Icc_self

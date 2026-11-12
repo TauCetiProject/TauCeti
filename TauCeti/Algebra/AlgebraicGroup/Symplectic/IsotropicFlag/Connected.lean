@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Levi
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.UnipotentGeneration
 import Mathlib.RingTheory.Localization.Away.Basic
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Geometric connectedness of the symplectic flag stabilizer
@@ -295,7 +296,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra
   let _ : IsDomain (ParameterRing K m) :=
     Localization.Away.isDomain (triangularMatrix_det_ne_zero K m)
   have hconnected : ConnectedSpace (PrimeSpectrum (coordinateHopfAlgebra K m)) :=
-    connectedSpace_primeSpectrum_of_injective (parameterAlgHom K m).toRingHom
+    RingHom.connectedSpace_primeSpectrum_of_injective (parameterAlgHom K m).toRingHom
       (parameterAlgHom_injective K m)
   let e := (Algebra.TensorProduct.comm k (coordinateHopfAlgebra k m) K).toRingEquiv.trans
     (CommHopfAlgCat.ofIso (coordinateHopfAlgebraBaseChangeIso k K m)).toAlgEquiv.toRingEquiv

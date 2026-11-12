@@ -295,6 +295,24 @@ theorem explicitMap2_characterCarryCocycle {H : Type uH} [Group H] [TopologicalS
         (explicitMap0 G M φ f hequiv a) : H2 H N) := by
   rw [explicitMap2_mk, cocyclesMap2_characterCarryCocycle]
 
+/-- **A carry class pulled back to a coefficient where its invariant vanishes is zero**: if the
+compatible pair `(φ, f)` sends the invariant `a` to `0`, it sends the carry class of `χ` and `a` to
+`0`. -/
+theorem explicitMap2_characterCarryCocycle_eq_zero {H : Type uH} [Group H] [TopologicalSpace H]
+    [ContinuousMul H] [ContinuousSMul G M]
+    {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
+    [IsTopologicalAddGroup N] [DistribMulAction H N] [ContinuousSMul H N]
+    (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    (χ : Additive G →+ AddCircle (1 : ℚ)) (hχ : IsOpen (χ.ker : Set (Additive G)))
+    (a : H0 G M) (ha : f a = 0) :
+    explicitMap2 G M H N φ f hf hequiv (characterCarryCocycle χ hχ a : H2 G M) = 0 := by
+  rw [explicitMap2_characterCarryCocycle]
+  generalize hz : explicitMap0 G M (φ : H →* G) f hequiv a = z
+  obtain rfl : z = 0 := Subtype.ext (by rw [← hz, coe_explicitMap0]; exact ha)
+  rw [map_zero]
+  rfl
+
 end Cohomology
 
 end TauCeti.ContCohomology

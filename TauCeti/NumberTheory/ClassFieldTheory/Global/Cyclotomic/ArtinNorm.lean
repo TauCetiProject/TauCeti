@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
@@ -229,10 +230,9 @@ theorem hasFiniteMulSupport_abelianizedLocalCyclotomicCharacter_artinMap (x : K�
       HeightOneSpectrum.valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
   -- `p` is a unit of `𝒪[K_v]`, so it is prime to the residue cardinality `q` of `K_v`.
   have hpunit : IsUnit (p : 𝒪[v.adicCompletion K]) := by
-    rw [isUnit_iff_normalizedValuationWithZero_eq_one]
-    push_cast
-    rw [← map_natCast (algebraMap K (v.adicCompletion K)) p,
-      HeightOneSpectrum.normalizedValuationWithZero_adicCompletion, hval, hvS.2, inv_one]
+    rw [v.isUnit_natCast_integer_adicCompletion_iff, ← HeightOneSpectrum.intValuation_eq_one_iff,
+      ← HeightOneSpectrum.valuation_of_algebraMap (K := K)]
+    exact_mod_cast hvS.2
   have hcop : p.Coprime (Nat.card 𝓀[v.adicCompletion K]) := by
     let _ := Fintype.ofFinite 𝓀[v.adicCompletion K]
     obtain ⟨n, hℓ, hcard⟩ :=
@@ -244,7 +244,7 @@ theorem hasFiniteMulSupport_abelianizedLocalCyclotomicCharacter_artinMap (x : K�
       IsLocalRing.residue_eq_zero_iff] at h0
     exact h0 hpunit
   have hq : IsUnit (Nat.card 𝓀[v.adicCompletion K] : ℤ_[p]) :=
-    PadicInt.isUnit_iff.2 (PadicInt.norm_natCast_eq_one_iff.2 hcop)
+    PadicInt.isUnit_natCast_of_coprime hcop
   -- By the unramified formula the character is `q ^ v(x)`, and `v(x) = 0`.
   have hx : normalizedValuation (v.adicCompletion K)
       (Units.map (algebraMap K (v.adicCompletion K)) x) = 1 := by

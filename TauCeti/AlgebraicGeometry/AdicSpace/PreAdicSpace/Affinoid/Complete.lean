@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.RationalOpen
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
 
 /-!
 # Complete models of affinoid pre-adic spaces
@@ -39,33 +39,32 @@ noncomputable def presentationLimitPreAdicSpaceCompleteIso
     (P : PairOfDefinition A) (Aplus : Subring A)
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (hP : P.ringOfDefinition ≤ Aplus)
     (B : Type u) [CommRing B] [Algebra A B] [IsLocalization.Away (1 : A) B]
-    (hden : HasDenominatorPower P {1} 1 B) :
-    letI := locUniformSpace P {1} 1 B hden
-    letI := isUniformAddGroup_locUniformSpace P {1} 1 B hden
-    letI := isTopologicalRing_locUniformSpace P {1} 1 B hden
+    (hden : HasDenominatorPower P ({1} : Finset A) 1 B) :
+    letI := locUniformSpace P ({1} : Finset A) 1 B hden
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) 1 B hden
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) 1 B hden
     presentationLimitPreAdicSpace P Aplus hAplus hP ≅
-      presentationLimitPreAdicSpace (completionLocalization P {1} 1 B hden)
-        (completedPlusSubring P Aplus {1} 1 B hden)
-        (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus {1} 1 B hden)
+      presentationLimitPreAdicSpace (completionLocalization P ({1} : Finset A) 1 B hden)
+        (completedPlusSubring P Aplus ({1} : Finset A) 1 B hden)
+        (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus ({1} : Finset A) 1 B hden)
         (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP
-          {1} 1 B hden) := by
-  letI := locUniformSpace P {1} 1 B hden
-  letI := isUniformAddGroup_locUniformSpace P {1} 1 B hden
-  letI := isTopologicalRing_locUniformSpace P {1} 1 B hden
-  let hj := isOpenEmbedding_spaComapLocHom P Aplus hP {1} 1 B hden
+          ({1} : Finset A) 1 B hden) := by
+  letI := locUniformSpace P ({1} : Finset A) 1 B hden
+  letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) 1 B hden
+  letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) 1 B hden
+  let hj := isOpenEmbedding_spaComapLocHom P Aplus hP ({1} : Finset A) 1 B hden
   -- The rational subset R({1}/1) is the whole space, so this restriction retains all of Spa.
-  have hr : Set.range (spaComapLocHom P Aplus {1} 1 B hden) = Set.univ := by
-    rw [coe_spaComapLocHom, range_spaComapLoc P Aplus hP {1} 1 B hden]
-    ext x
-    simp [mem_spaBasicOpen, rationalSubset_singleton_one]
+  have hr : Set.range (spaComapLocHom P Aplus ({1} : Finset A) 1 B hden) = Set.univ := by
+    rw [coe_spaComapLocHom, range_spaComapLoc P Aplus hP ({1} : Finset A) 1 B hden,
+      spaBasicOpen_singleton_one, Opens.coe_top]
   let M := presentationLimitPreAdicSpace P Aplus hAplus hP
   have hrange : Set.range (Opens.inclusion' (⊤ : Opens M)) =
-      Set.range (spaComapLocHom P Aplus {1} 1 B hden) := by
+      Set.range (spaComapLocHom P Aplus ({1} : Finset A) 1 B hden) := by
     rw [Opens.set_range_inclusion', hr]
     exact Opens.coe_top
   exact M.restrictTopIso.symm ≪≫
     M.restrictIsoOfRangeEq (⊤ : Opens M).isOpenEmbedding hj hrange ≪≫
-    presentationLimitPreAdicSpaceLocIso P Aplus {1} 1 B hden hAplus hP (by simp)
+    presentationLimitPreAdicSpaceLocIso P Aplus ({1} : Finset A) 1 B hden hAplus hP (by simp)
 
 end TauCeti.ValuationSpectrum
 
@@ -86,25 +85,54 @@ theorem isAffinoid_iff_exists_complete (X : PreAdicSpace.{u}) : isAffinoid X ↔
   · intro hX
     obtain ⟨A, _, _, _, _, S, P, hP, ⟨e⟩⟩ := (isAffinoid_iff X).mp hX
     let B := Localization.Away (1 : A)
-    have hden := hasDenominatorPower_denom_one P {1} B
-    let _ := locUniformSpace P {1} 1 B hden
-    have _ := isUniformAddGroup_locUniformSpace P {1} 1 B hden
-    have _ := isTopologicalRing_locUniformSpace P {1} 1 B hden
-    have _ := isHuberRing_completion_locTopology P {1} 1 B hden
+    have hden := hasDenominatorPower_denom_one P ({1} : Finset A) B
+    let _ := locUniformSpace P ({1} : Finset A) 1 B hden
+    have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) 1 B hden
+    have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) 1 B hden
+    have _ := isHuberRing_completion_locTopology P ({1} : Finset A) 1 B hden
     let S' : Pair (UniformSpace.Completion B) :=
-      rationalLocalizationPair P S hP {1} 1 B hden
-    have hP' : (completionLocalization P {1} 1 B hden).ringOfDefinition ≤ S'.plus := by
+      rationalLocalizationPair P S hP ({1} : Finset A) 1 B hden
+    have hP' : (completionLocalization P ({1} : Finset A) 1 B hden).ringOfDefinition ≤ S'.plus := by
       simpa only [S', rationalLocalizationPair_plus] using
         completionLocalization_ringOfDefinition_le_completedPlusSubring P S.plus hP
-          {1} 1 B hden
+          ({1} : Finset A) 1 B hden
     refine ⟨UniformSpace.Completion B, inferInstance, inferInstance, inferInstance,
       inferInstance, inferInstance, inferInstance, inferInstance, S',
-      completionLocalization P {1} 1 B hden, hP', ⟨?_⟩⟩
+      completionLocalization P ({1} : Finset A) 1 B hden, hP', ⟨?_⟩⟩
     simpa only [S', rationalLocalizationPair_plus] using
       e ≪≫ presentationLimitPreAdicSpaceCompleteIso P S.plus
         S.isRingOfIntegralElements.isPowerBounded_of_mem hP B hden
   · rintro ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨e⟩⟩
     exact (isAffinoid_iff X).mpr
       ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, S, P, hP, ⟨e⟩⟩
+
+/-- Every sheafy affinoid pre-adic space admits a presentation by a complete Hausdorff Huber pair
+whose presentation-limit structure presheaf is a sheaf. -/
+theorem isAffinoid.exists_complete_isSheaf {X : PreAdicSpace.{u}}
+    (hX : isAffinoid X) (hs : isSheafy X) :
+    ∃ (A : Type u) (_ : CommRing A) (_ : UniformSpace A) (_ : IsUniformAddGroup A)
+      (_ : IsTopologicalRing A) (_ : CompleteSpace A) (_ : T2Space A) (_ : IsHuberRing A)
+      (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
+      (_ : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
+        (presentationLimitPresheaf P S.plus)),
+      Nonempty (X ≅ presentationLimitPreAdicSpace P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP) := by
+  obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨e⟩⟩ := (isAffinoid_iff_exists_complete X).mp hX
+  exact ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+    inferInstance, inferInstance, S, P, hP, ObjectProperty.prop_of_iso isSheafy e hs, ⟨e⟩⟩
+
+/-- Every open affinoid subspace of a sheafy pre-adic space admits a presentation by a complete
+Hausdorff Huber pair whose presentation-limit structure presheaf is a sheaf. -/
+theorem isSheafy.exists_complete_isSheaf_of_mem_affinoidOpens {X : PreAdicSpace.{u}}
+    (hs : isSheafy X) {U : Opens X} (hU : U ∈ X.affinoidOpens) :
+    ∃ (A : Type u) (_ : CommRing A) (_ : UniformSpace A) (_ : IsUniformAddGroup A)
+      (_ : IsTopologicalRing A) (_ : CompleteSpace A) (_ : T2Space A) (_ : IsHuberRing A)
+      (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
+      (_ : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
+        (presentationLimitPresheaf P S.plus)),
+      Nonempty (X.restrict U.isOpenEmbedding ≅ presentationLimitPreAdicSpace P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
+  ((mem_propOpens_iff isAffinoid).mp hU).exists_complete_isSheaf
+    (isSheafy_restrict U.isOpenEmbedding hs)
 
 end TauCeti.PreAdicSpace

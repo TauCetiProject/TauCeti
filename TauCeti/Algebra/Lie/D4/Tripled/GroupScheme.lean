@@ -11,7 +11,6 @@ public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 
 /-!
@@ -34,7 +33,8 @@ the twenty-four tripled weights triality acts by
 numbered-symmetry construction on a Kostant toral-closure carrier; its remaining inputs, a linear
 automorphism of the module intertwining the Serre root generators along the permutation and
 acting monomially on the lattice basis, are supplied in
-`TauCeti.Algebra.Lie.D4.Tripled.Triality`, which builds the triality automorphism of the carrier.
+`TauCeti.Algebra.Lie.D4.Tripled.Triality.Basic`, which builds the triality automorphism of the
+carrier.
 
 The character by which the split torus rescales a numbered root subgroup is
 `TauCeti.TypeDStd.rootGeneratorWeight`, a row of the type-`D₄` Cartan matrix, identified with the
@@ -211,17 +211,6 @@ carrier. -/
 instance isClosedImmersion_weightTorus : IsClosedImmersion weightTorus.hom.hom.left :=
   TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantWeightTorusToToral
     _ _ _ _ _ _ _ _ span_range_d4TripledWeight_eq_top
-
-/-- Two morphisms out of the tripled type-`D₄` carrier agree when they agree on its numbered
-root subgroups and represented split torus. -/
-@[ext]
-theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
-    (f g : groupScheme ⟶
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
-    (hroot : ∀ k, rootSubgroup k ≫ f = rootSubgroup k ≫ g)
-    (htorus : weightTorus ≫ f = weightTorus ≫ g) : f = g :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme_hom_ext
-    _ _ _ _ _ _ _ _ f g hroot htorus
 
 /-! ## Matrix-valued points -/
 

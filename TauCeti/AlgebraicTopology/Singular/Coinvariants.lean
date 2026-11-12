@@ -21,7 +21,8 @@ complex with any coefficients, of `B` are the coinvariants of those of `E`:
 
 * `IsQuotientCoveringMap.isColimitMapCoconeToSSet`: the singular simplicial set of `B` is the
   quotient of that of `E` by `G`: every singular simplex of `B` lifts to `E`, and any two lifts of
-  the same simplex differ by an element of `G`.
+  the same simplex differ by an element of `G` (`IsQuotientCoveringMap.toSSet_map_app_surjective`
+  and `IsQuotientCoveringMap.toSSet_map_app_eq_iff`).
 * `IsQuotientCoveringMap.isColimitMapCoconeSingularChainComplex`: hence `C(B; R)` is the colimit
   `C(E; R)_G` of the action of `G` on `C(E; R)` by the chain maps `g_*`, for coefficients `R` in
   any preadditive category with coproducts, since the simplicial chain complex preserves
@@ -95,6 +96,22 @@ def isColimitMapCoconeToSSet : IsColimit (TopCat.toSSet.mapCocone hG.cocone) :=
         rw [simplexMap_app, ContinuousMap.comp_apply]
         exact (TopCat.actionFunctor_map_apply ..).trans hg
 
+include hG in
+/-- **Every singular simplex of the base of a quotient covering lifts** to the total space. -/
+theorem toSSet_map_app_surjective (n : SimplexCategoryᵒᵖ) :
+    Function.Surjective ((TopCat.toSSet.map p).app n) :=
+  ((SingleObj.Types.nonempty_isColimit_iff _).1
+    ⟨isColimitOfPreserves ((evaluation _ _).obj n) hG.isColimitMapCoconeToSSet⟩).1
+
+/-- **Two lifts of a singular simplex of the base of a quotient covering differ by an element of
+`G`**: two singular simplices of the total space have the same image in the base exactly when one
+is a translate of the other. -/
+theorem toSSet_map_app_eq_iff {n : SimplexCategoryᵒᵖ} (σ σ' : (TopCat.toSSet.obj E).obj n) :
+    haveI := hG.toContinuousConstSMul
+    (TopCat.toSSet.map p).app n σ = (TopCat.toSSet.map p).app n σ' ↔ ∃ g : G, g • σ' = σ :=
+  ((SingleObj.Types.nonempty_isColimit_iff _).1
+    ⟨isColimitOfPreserves ((evaluation _ _).obj n) hG.isColimitMapCoconeToSSet⟩).2 σ σ'
+
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] (R : C)
 
 /-- **The singular chains of the base of a quotient covering are coinvariants.** For the quotient
@@ -117,9 +134,9 @@ def isColimitMapCoconeSingularHomology [Fintype G] [CategoryWithHomology C] (n :
   -- `C(B; R)`. By `TopCat.actionFunctor_obj` and `cocone_pt` (both `rfl`), these are the acted-on
   -- object and the cocone point of `F.mapCocone hG.cocone`.
   have : IsIso (Fintype.card G • 𝟙 ((E.actionFunctor G ⋙ F).obj (SingleObj.star G))) :=
-    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj E).isIso_nsmul_id_obj _ R
+    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj E).isIso_smul_id_obj _ R
   have : IsIso (Fintype.card G • 𝟙 (F.mapCocone hG.cocone).pt) :=
-    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj B).isIso_nsmul_id_obj _ R
+    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj B).isIso_smul_id_obj _ R
   refine SingleObj.isColimitMapCoconeOfTransfer (F.mapCocone hG.cocone)
     (hG.isCoveringMap.singularTransfer hG.finite_fiber R)
     (HomologicalComplex.homologyFunctor C _ n) ?_ ?_

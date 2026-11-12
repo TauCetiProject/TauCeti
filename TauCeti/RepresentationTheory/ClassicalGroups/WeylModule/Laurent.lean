@@ -110,7 +110,7 @@ theorem char_rationalWeylRep_shift_diagonal (l : DominantWeight n) (m : ℤ) (t 
   cases n with
   | zero => simp
   | succ n =>
-    rw [DominantWeight.detShift_shift, zpow_add, Units.val_mul]
+    rw [DominantWeight.detShift_shift, _root_.zpow_add, Units.val_mul]
     ring
 
 /-- The determinant twist along a shift of the weight, for the bundled rational Weyl module. -/

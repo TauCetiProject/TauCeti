@@ -6,12 +6,10 @@ Authors: Codex, Claude
 module
 
 public import Mathlib.Data.Set.BoolIndicator
-public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
-public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 import Mathlib.Data.Finset.Sym
-import Mathlib.Data.Sym.Sym2.Order
-import Mathlib.MeasureTheory.Constructions.Projective
+import Mathlib.Order.Sym2
+import TauCeti.Data.Sym.Sym2
 
 /-!
 # Edge coordinates of an infinite simple graph
@@ -21,9 +19,8 @@ pairs of natural numbers.  This file makes that equivalence measurable and recor
 equivariance under relabelling.  It is the carrier-level bridge between laws on infinite simple
 graphs and laws on jointly exchangeable symmetric, irreflexive Boolean arrays.
 
-Finite measures on infinite graphs are determined by the laws of all their finite vertex windows:
-every finite collection of edge coordinates lies in one such window, so projective-limit
-uniqueness applies after transporting the measures through the coordinate equivalence.
+Every finite collection of edge coordinates lies in the coordinates of a finite vertex window,
+and below a window's bound the coordinates of an infinite graph are read off that window.
 
 The coordinate type excludes diagonal pairs, rather than imposing an irreflexivity condition on a
 two-dimensional array.  Consequently every Boolean assignment is a graph, and relabelling acts by
@@ -41,8 +38,8 @@ an honest equivalence of coordinates.
 * `TauCeti.DenseGraphLimits.measurable_graphCoordEquiv` and
   `TauCeti.DenseGraphLimits.measurable_graphCoordEquiv_symm` show that the coordinate equivalence
   is measurable in both directions;
-* `TauCeti.DenseGraphLimits.measure_ext_of_map_restrictFin` shows that a finite measure on infinite
-  graphs is determined by its finite windows;
+* `TauCeti.DenseGraphLimits.graphCoordEquiv_eq_windowCoord` reads the coordinates below a bound
+  off the corresponding finite window;
 * `Equiv.Perm.graphCoordEquiv_comap` is the relabelling commuting square.
 
 ## References
@@ -204,35 +201,6 @@ theorem graphCoordEquiv_eq_windowCoord {n : ℕ} (G : SimpleGraph ℕ) {e : Edge
     rw [SimpleGraph.restrictFin_adj] at h
     exact h.symm
 
-/-! ### Finite measures on infinite graphs are determined by their windows -/
-
-/-- **A finite measure on the graphs on `ℕ` is determined by its windows.** The coordinates of an
-infinite graph below any bound are a function of its window, so the laws of all finitely many
-coordinates agree, and the law of the coordinates is their unique projective limit. -/
-theorem measure_ext_of_map_restrictFin {μ ν : Measure (SimpleGraph ℕ)} [IsFiniteMeasure μ]
-    (h : ∀ n, μ.map (·.restrictFin n) = ν.map (·.restrictFin n)) : μ = ν := by
-  -- The law of the coordinates in `J` is a pushforward of the window below `windowBound J`.
-  have hcoord : ∀ J : Finset EdgeIndex, (fun G => J.restrict (graphCoordEquiv G)) =
-      (fun H => J.restrict (windowCoord H)) ∘ (·.restrictFin (windowBound J)) := fun J => by
-    funext G
-    ext e
-    exact graphCoordEquiv_eq_windowCoord G (subset_edgeWindow_windowBound J e.2)
-  have hlaw : ∀ ρ : Measure (SimpleGraph ℕ), ∀ J : Finset EdgeIndex,
-      (ρ.map graphCoordEquiv).map J.restrict =
-        (ρ.map (·.restrictFin (windowBound J))).map fun H => J.restrict (windowCoord H) :=
-    fun ρ J => by
-      rw [Measure.map_map (Finset.measurable_restrict J) measurable_graphCoordEquiv,
-        Measure.map_map (measurable_of_countable _) (SimpleGraph.measurable_restrictFin _)]
-      exact congrArg ρ.map (hcoord J)
-  have hcoordEq : μ.map graphCoordEquiv = ν.map graphCoordEquiv :=
-    IsProjectiveLimit.unique (P := fun J => (μ.map graphCoordEquiv).map J.restrict)
-      (fun _ => rfl) fun J => by beta_reduce; rw [hlaw, hlaw, h]
-  have hsymm : ∀ ρ : Measure (SimpleGraph ℕ),
-      (ρ.map graphCoordEquiv).map graphCoordEquiv.symm = ρ := fun ρ => by
-    rw [Measure.map_map measurable_graphCoordEquiv_symm measurable_graphCoordEquiv,
-      Equiv.symm_comp_self, Measure.map_id]
-  rw [← hsymm μ, hcoordEq, hsymm]
-
 end DenseGraphLimits
 
 end TauCeti
@@ -241,54 +209,34 @@ namespace Equiv.Perm
 
 open TauCeti.DenseGraphLimits
 
-/-- A permutation of the vertices relabels the unordered non-diagonal edge coordinates. -/
-def edgeIndexMap (e : Equiv.Perm ℕ) : EdgeIndex ≃ EdgeIndex where
-  toFun p := ⟨Sym2.map e p.1, fun h => p.2 ((Sym2.isDiag_map e.injective).mp h)⟩
-  invFun p := ⟨Sym2.map e.symm p.1, fun h => p.2 ((Sym2.isDiag_map e.symm.injective).mp h)⟩
-  left_inv p := by
-    apply Subtype.ext
-    -- The subtype coercions hide the two successive `Sym2.map`s from rewriting.
-    change Sym2.map e.symm (Sym2.map e p.1) = p.1
-    rw [Sym2.map_map, e.symm_comp_self, Sym2.map_id]
-    rfl
-  right_inv p := by
-    apply Subtype.ext
-    -- The subtype coercions hide the two successive `Sym2.map`s from rewriting.
-    change Sym2.map e (Sym2.map e.symm p.1) = p.1
-    rw [Sym2.map_map, e.self_comp_symm, Sym2.map_id]
-    rfl
+/-- A permutation of the vertices relabels the unordered non-diagonal edge coordinates: it is
+the restriction of `Sym2.equivCongr e` to the non-diagonal pairs, which it preserves. -/
+def edgeIndexMap (e : Equiv.Perm ℕ) : EdgeIndex ≃ EdgeIndex :=
+  (Sym2.equivCongr e).subtypeEquiv fun p ↦ by
+    rw [Sym2.equivCongr_apply, Sym2.isDiag_map e.injective]
 
 /-- Vertex relabelling acts on an edge coordinate by applying the permutation to both endpoints. -/
 @[simp]
 theorem edgeIndexMap_val (e : Equiv.Perm ℕ) (p : EdgeIndex) :
-    (edgeIndexMap e p).1 = Sym2.map e p.1 := (rfl)
+    (edgeIndexMap e p).1 = Sym2.map e p.1 := by
+  simp only [edgeIndexMap, Equiv.subtypeEquiv_apply, Sym2.equivCongr_apply]
 
 /-- The identity vertex relabelling induces the identity edge-coordinate relabelling. -/
 @[simp]
-theorem edgeIndexMap_refl : edgeIndexMap (Equiv.refl ℕ) = Equiv.refl EdgeIndex := by
-  apply Equiv.ext
-  intro p
-  apply Subtype.ext
-  exact congrFun Sym2.map_id p.1
+theorem edgeIndexMap_refl : edgeIndexMap (Equiv.refl ℕ) = Equiv.refl EdgeIndex :=
+  Equiv.ext fun p ↦ Subtype.ext <| by simp
 
 /-- Successive vertex relabellings induce the corresponding successive coordinate relabellings. -/
 @[simp]
 theorem edgeIndexMap_trans (e₁ e₂ : Equiv.Perm ℕ) :
-    edgeIndexMap (e₁.trans e₂) = (edgeIndexMap e₁).trans (edgeIndexMap e₂) := by
-  apply Equiv.ext
-  intro p
-  apply Subtype.ext
-  -- Unfold the two equivalence applications so functoriality of `Sym2.map` applies.
-  change Sym2.map ⇑(e₁.trans e₂) p.1 = Sym2.map ⇑e₂ (Sym2.map ⇑e₁ p.1)
-  rw [Sym2.map_map, Equiv.coe_trans]
+    edgeIndexMap (e₁.trans e₂) = (edgeIndexMap e₁).trans (edgeIndexMap e₂) :=
+  Equiv.ext fun p ↦ Subtype.ext <| by simp [Sym2.map_map]
 
 /-- Inverting a vertex relabelling inverts the induced edge-coordinate relabelling. -/
 @[simp]
 theorem edgeIndexMap_symm (e : Equiv.Perm ℕ) :
-    (edgeIndexMap e).symm = edgeIndexMap e.symm := by
-  apply Equiv.ext
-  intro p
-  rfl
+    (edgeIndexMap e).symm = edgeIndexMap e.symm :=
+  Equiv.ext fun p ↦ (edgeIndexMap e).symm_apply_eq.mpr <| Subtype.ext <| by simp [Sym2.map_map]
 
 /-- Relabelling an infinite graph is the same as relabelling its Boolean edge coordinates. -/
 @[simp]

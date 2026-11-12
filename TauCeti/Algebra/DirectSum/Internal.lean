@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Algebra.GradedMulAction
-public import Mathlib.RingTheory.Finiteness.Basic
-import TauCeti.Order.CompactlyGenerated
+public import Mathlib.LinearAlgebra.Basis.Basic
+public import Mathlib.LinearAlgebra.Pi
 
 /-!
 # Internal direct sums from explicit equivalences
@@ -20,6 +20,12 @@ criterion for proving that a family of submodules is an internal direct sum by i
 summands with the components of a linear equivalence.
 
 A second group of declarations concerns maps between decompositions.
+`DirectSum.decompose_map_eq_sum` computes a target component by summing source components
+over its degree fiber, with no injectivity or finite-fiber assumption on the degree map.
+This formula is adapted from `Mei/Algebra/DirectSum/Map.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
+commit `bac6f02d25746bc1c2ec808601d4e9284911c475` (Apache 2.0),
+by the Mei contributors (Authors: Codex).
 `DirectSum.map_decompose_shift` says that an additive map carrying each summand of one
 decomposition into a summand of another, along an injective reindexing of the degrees, commutes
 with the homogeneous projections, while `DirectSum.isInternal_comap` and
@@ -27,21 +33,33 @@ with the homogeneous projections, while `DirectSum.isInternal_comap` and
 map whose range contains the homogeneous projections of its elements, with
 `DirectSum.map_decompose_restrict` computing the projections of the restricted decomposition.
 
-A third group is about maps compatible with a decomposition: if a linear map carries each
-summand of a spanning family into the corresponding member of an independent family, then its
-kernel is spanned by its homogeneous parts, `LinearMap.ker_eq_iSup_inf_of_map_le`.
+A third group is about maps compatible with a decomposition. Two linear maps agreeing on every
+member of a spanning family of submodules are equal, `LinearMap.ext_of_iSup_eq_top`; for an
+internal direct sum the spanning hypothesis is `DirectSum.IsInternal.submodule_iSup_eq_top`. If a
+linear map carries each summand of a spanning family into the corresponding member of an
+independent family, then its kernel is spanned by its homogeneous parts,
+`LinearMap.ker_eq_iSup_inf_of_map_le`. Conversely, `iSupIndep.map_of_ker_inf_iSup_le` shows that a
+linear map preserves independence when the part of its kernel in the span is spanned by its
+intersections with the summands. Two linear maps out of a finite product `P → M` agree as soon as
+they agree on the homogeneous single-coordinate functions `Pi.single x α`,
+`LinearMap.pi_ext_of_decomposition`.
 
-The file also specializes the compactness bound
-`TauCeti.finite_ne_bot_of_iSupIndep_of_isCompactElement` to submodules,
-`TauCeti.Submodule.finite_ne_bot_of_iSupIndep_of_fg`.
-
-`DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map.
+`DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
+and `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types.
 
 `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
 submodule that contains the canonical components of each of its elements.
 
-Finally, `DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
+`DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
 action on a homogeneous element when the scalar and module decompositions are compatible.
+
+Finally, the external direct sum `⨁ i, M i` of a family of `R`-modules is the internal direct sum
+of its summands `DirectSum.summand R M i`, the ranges of the inclusions `DirectSum.lof R ι M i`
+(`DirectSum.isInternal_summand`). The resulting decomposition `DirectSum.instDecompositionSummand`
+has `i`-th component `DirectSum.of M i (x i)` (`DirectSum.coe_decompose_summand`).
+
+Over any semiring, the spans of the basis vectors in the fibers of a map on the index set of a basis
+form an internal direct sum (`Module.Basis.isInternal_span_image_fiber`).
 -/
 
 public section
@@ -62,15 +80,15 @@ submodules. -/
 def DirectSum.piSubmodule {R ι : Type*} {M : ι → Type*} [Semiring R]
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (N : ∀ i, Submodule R (M i)) :
     Submodule R (⨁ i, M i) :=
-  LinearMap.range (TauCeti.DirectSum.piInclusion N)
+  LinearMap.range (DirectSum.piInclusion N)
 
 /-- The componentwise formula for the inclusion of a direct sum of submodules. -/
 @[simp]
 theorem DirectSum.piInclusion_apply {R ι : Type*} {M : ι → Type*} [Semiring R]
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (N : ∀ i, Submodule R (M i))
     (x : ⨁ i, N i) (i : ι) :
-    TauCeti.DirectSum.piInclusion N x i = (x i : M i) := by
-  rw [TauCeti.DirectSum.piInclusion, DirectSum.lmap_apply, Submodule.coe_subtype]
+    DirectSum.piInclusion N x i = (x i : M i) := by
+  rw [DirectSum.piInclusion, DirectSum.lmap_apply, Submodule.coe_subtype]
 
 /-- The inclusion of a generator of a direct sum of submodules. -/
 @[simp]
@@ -78,53 +96,53 @@ theorem DirectSum.piInclusion_lof {R ι : Type*} {M : ι → Type*} [Semiring R]
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (N : ∀ i, Submodule R (M i)) (i : ι)
     (x : N i)
     [DecidableEq ι] :
-    TauCeti.DirectSum.piInclusion N
+    DirectSum.piInclusion N
         (DirectSum.lof R ι (fun i ↦ N i) i x) = DirectSum.lof R ι (fun i ↦ M i) i x := by
-  rw [TauCeti.DirectSum.piInclusion, DirectSum.lmap_lof, Submodule.coe_subtype]
+  rw [DirectSum.piInclusion, DirectSum.lmap_lof, Submodule.coe_subtype]
 
 private theorem DirectSum.piInclusion_injective {R ι : Type*} {M : ι → Type*} [Semiring R]
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (N : ∀ i, Submodule R (M i)) :
-    Function.Injective (TauCeti.DirectSum.piInclusion N) := by
-  rw [TauCeti.DirectSum.piInclusion]
+    Function.Injective (DirectSum.piInclusion N) := by
+  rw [DirectSum.piInclusion]
   refine (DirectSum.lmap_injective fun i ↦ (N i).subtype).mpr fun i ↦ ?_
   exact (N i).injective_subtype
 
 /-- The linear equivalence from the direct sum of submodules to `piSubmodule N`. -/
 noncomputable def DirectSum.piSubmoduleEquiv {R ι : Type*} {M : ι → Type*} [Semiring R]
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (N : ∀ i, Submodule R (M i)) :
-    (⨁ i, N i) ≃ₗ[R] TauCeti.DirectSum.piSubmodule N :=
-  LinearEquiv.ofInjective (TauCeti.DirectSum.piInclusion N)
-    (TauCeti.DirectSum.piInclusion_injective N)
+    (⨁ i, N i) ≃ₗ[R] DirectSum.piSubmodule N :=
+  LinearEquiv.ofInjective (DirectSum.piInclusion N)
+    (DirectSum.piInclusion_injective N)
 
 /-- The underlying map of `piSubmoduleEquiv` is the canonical inclusion. -/
 @[simp]
 theorem DirectSum.piSubmoduleEquiv_apply {R ι : Type*} {M : ι → Type*} [Semiring R]
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (N : ∀ i, Submodule R (M i))
     (x : ⨁ i, N i) :
-    ((TauCeti.DirectSum.piSubmoduleEquiv N x : TauCeti.DirectSum.piSubmodule N) :
-      ⨁ i, M i) = TauCeti.DirectSum.piInclusion N x := by
-  rw [TauCeti.DirectSum.piSubmoduleEquiv]
+    ((DirectSum.piSubmoduleEquiv N x : DirectSum.piSubmodule N) :
+      ⨁ i, M i) = DirectSum.piInclusion N x := by
+  rw [DirectSum.piSubmoduleEquiv]
   exact LinearEquiv.ofInjective_apply _ x
 
 /-- The inverse of `piSubmoduleEquiv` has the expected componentwise values. -/
 @[simp]
 theorem DirectSum.piSubmoduleEquiv_symm_apply {R ι : Type*} {M : ι → Type*} [Semiring R]
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (N : ∀ i, Submodule R (M i))
-    (y : TauCeti.DirectSum.piSubmodule N) (i : ι) :
-    ((TauCeti.DirectSum.piSubmoduleEquiv N).symm y i : M i) = (y : ⨁ i, M i) i := by
-  have h := TauCeti.DirectSum.piSubmoduleEquiv_apply N
-    ((TauCeti.DirectSum.piSubmoduleEquiv N).symm y)
+    (y : DirectSum.piSubmodule N) (i : ι) :
+    ((DirectSum.piSubmoduleEquiv N).symm y i : M i) = (y : ⨁ i, M i) i := by
+  have h := DirectSum.piSubmoduleEquiv_apply N
+    ((DirectSum.piSubmoduleEquiv N).symm y)
   rw [LinearEquiv.apply_symm_apply] at h
   have hi := congrArg (fun z : ⨁ i, M i ↦ z i) h
-  simpa only [TauCeti.DirectSum.piInclusion_apply] using hi.symm
+  simpa only [DirectSum.piInclusion_apply] using hi.symm
 
 /-- Membership in the direct sum of a family of submodules is componentwise. -/
 @[simp]
 theorem DirectSum.mem_piSubmodule_iff {R ι : Type*} {M : ι → Type*} [Semiring R]
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (N : ∀ i, Submodule R (M i))
     (x : ⨁ i, M i) :
-    x ∈ TauCeti.DirectSum.piSubmodule N ↔ ∀ i, x i ∈ N i := by
-  rw [TauCeti.DirectSum.piSubmodule, TauCeti.DirectSum.piInclusion, DirectSum.range_lmap]
+    x ∈ DirectSum.piSubmodule N ↔ ∀ i, x i ∈ N i := by
+  rw [DirectSum.piSubmodule, DirectSum.piInclusion, DirectSum.range_lmap]
   simp [Submodule.mem_comap, DirectSum.coeFnLinearMap_apply, Submodule.mem_pi]
 
 /-- An included summand belongs to the direct sum of a family of submodules. -/
@@ -132,9 +150,9 @@ theorem DirectSum.lof_mem_piSubmodule {R ι : Type*} {M : ι → Type*} [Semirin
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (N : ∀ i, Submodule R (M i)) (i : ι)
     (x : N i)
     [DecidableEq ι] :
-    DirectSum.lof R ι M i x ∈ TauCeti.DirectSum.piSubmodule N := by
+    DirectSum.lof R ι M i x ∈ DirectSum.piSubmodule N := by
   refine ⟨DirectSum.lof R ι (fun i ↦ N i) i x, ?_⟩
-  exact TauCeti.DirectSum.piInclusion_lof N i x
+  exact DirectSum.piInclusion_lof N i x
 
 /-- Restrict an internal direct sum decomposition along an injective linear map `f` which detects
 membership in the summands and whose range contains every homogeneous projection of each of its
@@ -196,6 +214,33 @@ end TauCeti
 
 namespace DirectSum
 
+open Classical in
+/-- Under a homogeneous additive map, a target component is the finite sum of the images
+of the source components whose degrees map to that target degree. -/
+theorem decompose_map_eq_sum {ι κ M N S T : Type*}
+    [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M] [AddCommMonoid N]
+    [SetLike S M] [AddSubmonoidClass S M] [SetLike T N] [AddSubmonoidClass T N]
+    (ℳ : ι → S) [Decomposition ℳ] (𝓝 : κ → T) [Decomposition 𝓝]
+    (f : M →+ N) (σ : ι → κ)
+    (hf : ∀ i x, x ∈ ℳ i → f x ∈ 𝓝 (σ i)) (x : M) (j : κ) :
+    (decompose 𝓝 (f x) j : N) =
+      ∑ i ∈ (decompose ℳ x).support with σ i = j, f (decompose ℳ x i : M) := by
+  have hproj (i : ι) :
+      (decompose 𝓝 (f (decompose ℳ x i : M)) j : N) =
+        if σ i = j then f (decompose ℳ x i : M) else 0 := by
+    split_ifs with h
+    · exact decompose_of_mem_same 𝓝 (h ▸ hf i _ (decompose ℳ x i).property)
+    · exact decompose_of_mem_ne 𝓝 (hf i _ (decompose ℳ x i).property) h
+  calc
+    (decompose 𝓝 (f x) j : N) =
+        (decompose 𝓝 (f (∑ i ∈ (decompose ℳ x).support,
+          (decompose ℳ x i : M))) j : N) := by rw [sum_support_decompose]
+    _ = ∑ i ∈ (decompose ℳ x).support,
+        (decompose 𝓝 (f (decompose ℳ x i : M)) j : N) := by
+      simp only [map_sum, decompose_sum, sum_apply]
+      exact map_sum (AddSubmonoidClass.subtype (𝓝 j)) _ _
+    _ = _ := by simp_rw [hproj]; rw [Finset.sum_filter]
+
 /-- An additive map which carries the degree-`i` summand of one internal decomposition into the
 degree-`σ i` summand of another, along an injective reindexing `σ` of the degrees, commutes with
 the homogeneous projections. The summands may be any additive subobjects, including submodules
@@ -203,20 +248,20 @@ over unrelated scalar semirings. -/
 theorem map_decompose_shift {ι κ M N S T : Type*}
     [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M] [AddCommMonoid N]
     [SetLike S M] [AddSubmonoidClass S M] [SetLike T N] [AddSubmonoidClass T N]
-    (ℳ : ι → S) [DirectSum.Decomposition ℳ] (𝓝 : κ → T)
-    [DirectSum.Decomposition 𝓝] (f : M →+ N) (σ : ι → κ) (hσ : Function.Injective σ)
+    (ℳ : ι → S) [Decomposition ℳ] (𝓝 : κ → T)
+    [Decomposition 𝓝] (f : M →+ N) (σ : ι → κ) (hσ : Function.Injective σ)
     (hf : ∀ (i : ι) (x : M), x ∈ ℳ i → f x ∈ 𝓝 (σ i)) (i : ι) (x : M) :
-    f (DirectSum.decompose ℳ x i : M) = (DirectSum.decompose 𝓝 (f x) (σ i) : N) := by
-  induction x using DirectSum.Decomposition.inductionOn ℳ with
+    f (decompose ℳ x i : M) = (decompose 𝓝 (f x) (σ i) : N) := by
+  induction x using Decomposition.inductionOn ℳ with
   | zero => simp
   | @homogeneous j x =>
     have hxM : (x : M) ∈ ℳ j := x.2
     have hxN : f (x : M) ∈ 𝓝 (σ j) := hf j x hxM
     by_cases hij : i = j
     · subst hij
-      rw [DirectSum.decompose_of_mem_same ℳ hxM, DirectSum.decompose_of_mem_same 𝓝 hxN]
-    · rw [DirectSum.decompose_of_mem_ne ℳ hxM (Ne.symm hij), map_zero,
-        DirectSum.decompose_of_mem_ne 𝓝 hxN fun hc ↦ Ne.symm hij (hσ hc)]
+      rw [decompose_of_mem_same ℳ hxM, decompose_of_mem_same 𝓝 hxN]
+    · rw [decompose_of_mem_ne ℳ hxM (Ne.symm hij), map_zero,
+        decompose_of_mem_ne 𝓝 hxN fun hc ↦ Ne.symm hij (hσ hc)]
   | add x y hx hy => simp [hx, hy]
 
 end DirectSum
@@ -284,25 +329,20 @@ theorem DirectSum.isInternal_of_lof {R ι M : Type*} [Semiring R] [DecidableEq �
   rw [DirectSum.isInternal_iff_bijective_coeLinearMap, hcoe]
   exact F.bijective
 
--- The decomposition is spelled as `iSupIndep A` together with a finiteness hypothesis on
--- `⨆ i, A i` rather than as `DirectSum.IsInternal`, which carries a `DecidableEq` hypothesis on
--- the index type that the proof does not need.  Over a semiring an internal decomposition supplies
--- the two hypotheses through `DirectSum.IsInternal.submodule_iSupIndep` and
--- `DirectSum.IsInternal.submodule_iSup_eq_top`; the converse implication, and with it
--- `DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top`, needs `[Ring R]` and
--- `[AddCommGroup M]`.
-private theorem Submodule.finite_ne_bot_of_iSupIndep_of_fg_aux
-    {R ι M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] {A : ι → Submodule R M} (hAi : iSupIndep A) (hAf : (⨆ i, A i).FG) :
-    {i | A i ≠ ⊥}.Finite :=
-  finite_ne_bot_of_iSupIndep_of_isCompactElement hAi ((Submodule.fg_iff_compact _).mp hAf)
+end TauCeti
 
-/-- An independent family of submodules spanning a finitely generated submodule has only finitely
-many nonzero members. -/
-theorem Submodule.finite_ne_bot_of_iSupIndep_of_fg {R ι M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] {A : ι → Submodule R M} (hAi : iSupIndep A) (hAf : (⨆ i, A i).FG) :
-    {i | A i ≠ ⊥}.Finite :=
-  Submodule.finite_ne_bot_of_iSupIndep_of_fg_aux hAi hAf
+namespace LinearMap
+
+/-- Two semilinear maps that agree on every member of a family of submodules spanning the source
+are equal. -/
+theorem ext_of_iSup_eq_top {R R₂ ι M M₂ : Type*} [Semiring R] [Semiring R₂]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂] {σ : R →+* R₂}
+    {A : ι → Submodule R M} (hA : ⨆ i, A i = ⊤) {f g : M →ₛₗ[σ] M₂}
+    (h : ∀ i, ∀ x ∈ A i, f x = g x) : f = g :=
+  ext_on (s := ⋃ i, (A i : Set M)) (by rw [← Submodule.iSup_eq_span, hA])
+    fun x hx ↦ by
+      obtain ⟨i, hi⟩ := Set.mem_iUnion.1 hx
+      exact h i x hi
 
 /-- **The kernel of a map compatible with a decomposition is spanned by its homogeneous parts.**
 If the submodules `A i` span the source, the submodules `A' i` are independent, and `g` carries
@@ -310,11 +350,11 @@ If the submodules `A i` span the source, the submodules `A' i` are independent, 
 
 The hypothesis on the source is only that its family spans; independence there is not used, and
 an internal direct sum supplies it through `DirectSum.IsInternal.submodule_iSup_eq_top`. -/
-theorem _root_.LinearMap.ker_eq_iSup_inf_of_map_le {R ι M N : Type*} [Ring R] [AddCommGroup M]
+theorem ker_eq_iSup_inf_of_map_le {R ι M N : Type*} [Ring R] [AddCommGroup M]
     [Module R M] [AddCommGroup N] [Module R N] (g : M →ₗ[R] N) {A : ι → Submodule R M}
     {A' : ι → Submodule R N} (hA : ⨆ i, A i = ⊤) (hA' : iSupIndep A')
     (hg : ∀ i, (A i).map g ≤ A' i) :
-    LinearMap.ker g = ⨆ i, LinearMap.ker g ⊓ A i := by
+    ker g = ⨆ i, ker g ⊓ A i := by
   classical
   refine le_antisymm (fun x hx ↦ ?_) (iSup_le fun _ ↦ inf_le_left)
   obtain ⟨c, hc, rfl⟩ :=
@@ -326,37 +366,50 @@ theorem _root_.LinearMap.ker_eq_iSup_inf_of_map_le {R ι M N : Type*} [Ring R] [
     (fun i ↦ g (c i)) (fun i _ ↦ hg i ⟨c i, hc i, rfl⟩) hsum
   simp only [Finsupp.sum]
   exact Submodule.sum_mem _ fun i hi ↦
-    Submodule.mem_iSup_of_mem i ⟨LinearMap.mem_ker.2 (hzero i hi), hc i⟩
+    Submodule.mem_iSup_of_mem i ⟨mem_ker.2 (hzero i hi), hc i⟩
 
-/-- **A homogeneous submodule can be quotiented componentwise.** If `A` is an independent
-family and the part of `U` in the span of `A` is contained in the sum of its intersections with
-the members of `A`, then the members of `A` in `M ⧸ U` are again independent. -/
-theorem iSupIndep_map_mkQ {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    {A : ι → Submodule R M} (hA : iSupIndep A) {U : Submodule R M}
-    (hU : U ⊓ (⨆ i, A i) ≤ ⨆ i, U ⊓ A i) : iSupIndep fun i ↦ (A i).map U.mkQ := by
+/-- Two linear maps out of `P → M` agree if they agree on the homogeneous single-coordinate
+functions `Pi.single x α`, with `α` in a piece `ℳ q` of a decomposition of `M`. -/
+theorem pi_ext_of_decomposition {R ι M N P : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [AddCommMonoid N] [Module R N] [Finite P] [DecidableEq P] [DecidableEq ι]
+    (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] {φ ψ : (P → M) →ₗ[R] N}
+    (h : ∀ (x : P) {q : ι} {α : M}, α ∈ ℳ q → φ (Pi.single x α) = ψ (Pi.single x α)) :
+    φ = ψ := by
+  refine pi_ext' fun x ↦ ?_
+  refine DirectSum.decompose_lhom_ext ℳ fun i ↦ ?_
+  refine ext fun α ↦ ?_
+  simpa using h x α.2
+
+end LinearMap
+
+/-- A linear map preserves independence of a family of submodules if the part of its kernel
+in their span is spanned by its intersections with the family. In particular, a quotient by a
+homogeneous submodule preserves independence.
+
+The ring hypothesis is essential: for semimodules, even a map with zero kernel can identify
+independent summands. -/
+theorem iSupIndep.map_of_ker_inf_iSup_le {R ι M N : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] {A : ι → Submodule R M}
+    (hA : iSupIndep A) (f : M →ₗ[R] N)
+    (hker : LinearMap.ker f ⊓ (⨆ i, A i) ≤ ⨆ i, LinearMap.ker f ⊓ A i) :
+    iSupIndep fun i ↦ (A i).map f := by
   rw [iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero]
   classical
   intro s v hv hv0 j hj
-  have hall : ∀ i : ι, ∃ y, y ∈ A i ∧ (i ∈ s → U.mkQ y = v i) ∧ (i ∉ s → y = 0) := by
+  have hall : ∀ i : ι, ∃ y, y ∈ A i ∧ (i ∈ s → f y = v i) ∧ (i ∉ s → y = 0) := by
     intro i
     by_cases hi : i ∈ s
-    · obtain ⟨y, hy, hq⟩ := Submodule.mem_map.1 (hv i hi)
-      exact ⟨y, hy, fun _ ↦ hq, fun h ↦ absurd hi h⟩
+    · obtain ⟨y, hy, hf⟩ := Submodule.mem_map.1 (hv i hi)
+      exact ⟨y, hy, fun _ ↦ hf, fun h ↦ absurd hi h⟩
     · exact ⟨0, Submodule.zero_mem _, fun h ↦ absurd h hi, fun _ ↦ rfl⟩
-  choose a haA haQ ha0 using hall
-  have hasum : ∑ i ∈ s, a i ∈ U := by
-    apply (Submodule.Quotient.mk_eq_zero (p := U)).mp
-    calc
-      Submodule.Quotient.mk (∑ i ∈ s, a i) = ∑ i ∈ s, U.mkQ (a i) := by
-        rw [← Submodule.mkQ_apply]
-        rw [map_sum]
-      _ = ∑ i ∈ s, v i := Finset.sum_congr rfl fun i hi ↦ haQ i hi
-      _ = 0 := hv0
+  choose a haA haf ha0 using hall
+  have hasum : ∑ i ∈ s, a i ∈ LinearMap.ker f := by
+    rw [LinearMap.mem_ker, map_sum]
+    exact (Finset.sum_congr rfl fun i hi ↦ haf i hi).trans hv0
   have hasumA : ∑ i ∈ s, a i ∈ ⨆ i, A i :=
     Submodule.sum_mem _ fun i _ ↦ Submodule.mem_iSup_of_mem i (haA i)
-  have hasum' : ∑ i ∈ s, a i ∈ ⨆ i, U ⊓ A i := by
-    exact hU ⟨hasum, hasumA⟩
-  obtain ⟨c, hc, hca⟩ := (Submodule.mem_iSup_iff_exists_finsupp _ _).1 hasum'
+  obtain ⟨c, hc, hca⟩ :=
+    (Submodule.mem_iSup_iff_exists_finsupp _ _).1 (hker ⟨hasum, hasumA⟩)
   have haj : a j = c j := by
     refine (iSupIndep_iff_finsetSum_eq_imp_eq A).1 hA (s ∪ c.support) a c
       (fun i _ ↦ ⟨haA i, (hc i).2⟩) ?_ j (Finset.mem_union_left _ hj)
@@ -370,11 +423,8 @@ theorem iSupIndep_map_mkQ {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M
         _ = ∑ i ∈ s ∪ c.support, c i := by
           apply Finset.sum_subset (Finset.subset_union_right)
           simp
-  rw [← haQ j hj, haj]
-  rw [Submodule.mkQ_apply]
-  exact (Submodule.Quotient.mk_eq_zero (p := U)).mpr (hc j).1
-
-end TauCeti
+  rw [← haf j hj, haj]
+  exact LinearMap.mem_ker.mp (hc j).1
 
 namespace DirectSum.IsInternal
 
@@ -382,23 +432,23 @@ namespace DirectSum.IsInternal
 decomposition. Each new summand is the sum of the original summands over the corresponding fiber. -/
 theorem iSup_fiber {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     [DecidableEq ι] [DecidableEq κ] {P : ι → Submodule R M}
-    (hP : DirectSum.IsInternal P) (degree : ι → κ) :
-    DirectSum.IsInternal fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i := by
+    (hP : IsInternal P) (degree : ι → κ) :
+    IsInternal fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i := by
   -- For submodules, the additive recomposition map in `IsInternal` is the underlying function
   -- of the canonical linear recomposition map.
-  change Function.Bijective (DirectSum.coeLinearMap fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i)
+  change Function.Bijective (coeLinearMap fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i)
   refine ⟨?_, ?_⟩
   · -- Projection onto each fiber recovers that component of the recomposed direct sum.
     let Q : κ → Submodule R M := fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i
-    let _ : DirectSum.Decomposition P := hP.chooseDecomposition
+    let _ : Decomposition P := hP.chooseDecomposition
     let projection (j : κ) : M →ₗ[R] M :=
-      (DirectSum.toModule R ι M fun i ↦
+      (toModule R ι M fun i ↦
         if degree i = j then (P i).subtype else 0) ∘ₗ
-          (DirectSum.decomposeLinearEquiv P).toLinearMap
+          (decomposeLinearEquiv P).toLinearMap
     have projection_piece (j : κ) (i : ι) (x : P i) :
         projection j x = if degree i = j then (x : M) else 0 := by
       simp only [projection, LinearMap.comp_apply, LinearEquiv.coe_coe,
-        DirectSum.decomposeLinearEquiv_apply_coe, DirectSum.toModule_lof]
+        decomposeLinearEquiv_apply_coe, toModule_lof]
       split <;> rfl
     have projection_mem (j k : κ) {x : M} (hx : x ∈ Q k) :
         projection j x = if k = j then x else 0 := by
@@ -410,39 +460,73 @@ theorem iSup_fiber {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R 
       · simpa only [i.property] using projection_piece j i ⟨x, hx⟩
       · simp only [map_add, ihx, ihy, ite_add_zero]
     have projection_coe (j : κ) (z : ⨁ k, ↥(Q k)) :
-        projection j (DirectSum.coeLinearMap Q z) = z j := by
+        projection j (coeLinearMap Q z) = z j := by
       induction z using DirectSum.induction_on with
       | zero => simp
       | of k x =>
-          rw [DirectSum.coeLinearMap_of, projection_mem j k x.property]
-          simp only [DirectSum.coe_of_apply]
+          rw [coeLinearMap_of, projection_mem j k x.property]
+          simp only [coe_of_apply]
           split <;> rfl
       | add x y ihx ihy =>
-          rw [map_add (DirectSum.coeLinearMap Q), map_add (projection j), ihx, ihy]
+          rw [map_add (coeLinearMap Q), map_add (projection j), ihx, ihy]
           rfl
     intro x y hxy
-    apply DirectSum.ext fun j ↦ Subtype.ext ?_
+    apply ext fun j ↦ Subtype.ext ?_
     exact (projection_coe j x).symm.trans ((congrArg (projection j) hxy).trans
       (projection_coe j y))
-  · rw [← LinearMap.range_eq_top, DirectSum.range_coeLinearMap, iSup_comm]
+  · rw [← LinearMap.range_eq_top, range_coeLinearMap, iSup_comm]
     simpa only [iSup_iSup_eq_right] using hP.submodule_iSup_eq_top
+
+/-- An internal direct sum of submodules can be reindexed along an equivalence of the index
+types. -/
+theorem comp_equiv {R M κ κ' : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [DecidableEq κ] [DecidableEq κ'] {A : κ' → Submodule R M} (hA : IsInternal A)
+    (e : κ ≃ κ') : IsInternal (A ∘ e) := by
+  convert hA.iSup_fiber e.symm with k
+  simp [Equiv.symm_apply_eq]
+
+/-- Transporting an internal direct sum of submodules along a linear equivalence gives an internal
+direct sum. -/
+theorem map_linearEquiv {R M N ι : Type*} [Semiring R] [AddCommMonoid M]
+    [AddCommMonoid N] [Module R M] [Module R N] [DecidableEq ι] {A : ι → Submodule R M}
+    (h : IsInternal A) (e : M ≃ₗ[R] N) :
+    IsInternal fun i => (A i).map e.toLinearMap := by
+  -- For submodules, the additive recomposition map in `IsInternal` is the underlying function
+  -- of the canonical linear recomposition map.
+  have hA : Function.Bijective (coeLinearMap A) := h
+  refine TauCeti.DirectSum.isInternal_of_lof
+    (e := fun i => (A i).equivMapOfInjective e.toLinearMap e.injective)
+    (E := (LinearEquiv.ofBijective (coeLinearMap A) hA).trans e) fun i x => ?_
+  simp [coeLinearMap_lof]
+
+/-- Prepending the zero submodule to a natural-number-indexed internal decomposition
+again gives an internal decomposition. -/
+theorem nat_cons_bot {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {N : ℕ → Submodule R M} (h : IsInternal N) :
+    IsInternal (fun | 0 => ⊥ | i + 1 => N i) := by
+  have hfamily : (fun j ↦ ⨆ i, ⨆ _ : Nat.succ i = j, N i) =
+      (fun | 0 => ⊥ | i + 1 => N i) := by
+    funext j
+    cases j <;> simp
+  rw [← hfamily]
+  exact h.iSup_fiber Nat.succ
 
 /-- **Restricting an internal decomposition to a component-stable subspace.** If a subspace
 contains every canonical component of each of its elements, then it is the internal sum of its
 intersections with the original summands. -/
 theorem iSup_inf_eq_of_component_mem
     {S V κ : Type*} [Semiring S] [AddCommMonoid V] [Module S V] [DecidableEq κ]
-    {A : κ → Submodule S V} (h : DirectSum.IsInternal A) (p : Submodule S V)
+    {A : κ → Submodule S V} (h : IsInternal A) (p : Submodule S V)
     (hp : ∀ (m : V), m ∈ p → ∀ i,
-      (((LinearEquiv.ofBijective (DirectSum.coeLinearMap A) h).symm m i : A i) : V) ∈ p) :
+      (((LinearEquiv.ofBijective (coeLinearMap A) h).symm m i : A i) : V) ∈ p) :
     ⨆ i, p ⊓ A i = p := by
   classical
   refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun m hm ↦ ?_
-  let e := LinearEquiv.ofBijective (DirectSum.coeLinearMap A) h
+  let e := LinearEquiv.ofBijective (coeLinearMap A) h
   have hsum : m = ∑ i ∈ (e.symm m).support, ((e.symm m i : A i) : V) := by
-    conv_lhs => rw [← e.apply_symm_apply m, ← DirectSum.sum_support_of (e.symm m)]
+    conv_lhs => rw [← e.apply_symm_apply m, ← sum_support_of (e.symm m)]
     rw [map_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ DirectSum.coeLinearMap_of A i (e.symm m i)
+    exact Finset.sum_congr rfl fun i _ ↦ coeLinearMap_of A i (e.symm m i)
   rw [hsum]
   exact Submodule.sum_mem _ fun i _ ↦
     Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).2⟩
@@ -475,3 +559,99 @@ theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x �
   | add a b ha hb => simp [add_smul, ha, hb]
 
 end DirectSum
+
+namespace DirectSum
+
+section Module
+
+variable {ι : Type*} (R : Type*) (M : ι → Type*) [DecidableEq ι] [Semiring R]
+  [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+
+/-- The `i`-th summand of the external direct sum `⨁ i, M i`: the image of `M i` under the
+inclusion `DirectSum.lof R ι M i`. -/
+def summand (i : ι) : Submodule R (⨁ i, M i) :=
+  LinearMap.range (lof R ι M i)
+
+/-- The `i`-th summand is the range of the inclusion `DirectSum.lof R ι M i`. -/
+theorem summand_def (i : ι) : summand R M i = LinearMap.range (lof R ι M i) :=
+  (rfl)
+
+variable {R M}
+
+/-- An element of `⨁ i, M i` lies in the `i`-th summand exactly when it is `DirectSum.of M i m`
+for some `m : M i`. -/
+theorem mem_summand {i : ι} {x : ⨁ i, M i} :
+    x ∈ summand R M i ↔ ∃ m : M i, of M i m = x := by
+  simp [summand, lof_eq_of]
+
+/-- The element `DirectSum.lof R ι M i m` lies in the `i`-th summand. -/
+theorem lof_mem_summand (i : ι) (m : M i) : lof R ι M i m ∈ summand R M i :=
+  LinearMap.mem_range_self _ m
+
+/-- The element `DirectSum.of M i m` lies in the `i`-th summand. -/
+theorem of_mem_summand (i : ι) (m : M i) : of M i m ∈ summand R M i :=
+  mem_summand.mpr ⟨m, rfl⟩
+
+/-- The summands of the external direct sum form an internal direct sum: they are the ranges of
+the inclusions `DirectSum.lof R ι M i`. -/
+theorem isInternal_summand : IsInternal (summand R M) :=
+  TauCeti.DirectSum.isInternal_of_lof
+    (e := fun i ↦ LinearEquiv.ofInjective (lof R ι M i) (of_injective i))
+    (E := LinearEquiv.refl R _) fun _ _ ↦ rfl
+
+/-- The external direct sum decomposes as the direct sum of its summands. -/
+noncomputable instance instDecompositionSummand : Decomposition (summand R M) :=
+  isInternal_summand.chooseDecomposition
+
+/-- The `i`-th component of an element `x` of `⨁ i, M i` for the summand decomposition is the
+summand `x i`. -/
+@[simp]
+theorem coe_decompose_summand (x : ⨁ i, M i) (i : ι) :
+    (decompose (summand R M) x i : ⨁ i, M i) = of M i (x i) := by
+  induction x using DirectSum.induction_on with
+  | zero => simp
+  | of j m =>
+    rw [decompose_of_mem (summand R M) (of_mem_summand j m)]
+    by_cases h : j = i
+    · subst h
+      simp
+    · simp [of_eq_of_ne _ _ _ (Ne.symm h)]
+  | add x y hx hy => simp [hx, hy]
+
+end Module
+
+end DirectSum
+
+/-- **A basis split along the fibers of a map gives an internal direct sum**: if `b` is a basis of
+`M` and `w : ι → κ` is any map of the index type, then the spans of the basis vectors in the fibers
+of `w` form an internal direct sum decomposition of `M`. -/
+theorem Module.Basis.isInternal_span_image_fiber {R ι κ M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [DecidableEq κ] (b : Module.Basis ι R M) (w : ι → κ) :
+    DirectSum.IsInternal fun c : κ => Submodule.span R (b '' {i | w i = c}) := by
+  let A : κ → Submodule R M := fun c => Submodule.span R (b '' {i | w i = c})
+  have hsupp : ∀ c (a : M), a ∈ A c → ∀ i, w i ≠ c → b.repr a i = 0 := fun c a ha i hi => by
+    by_contra h
+    exact hi ((Module.Basis.mem_span_image b).1 ha (Finsupp.mem_support_iff.2 h))
+  have key : ∀ (x : ⨁ c, A c) (c : κ) (i : ι), w i = c →
+      b.repr (DirectSum.coeLinearMap A x) i = b.repr (x c : M) i := by
+    intro x c i hi
+    induction x using DirectSum.induction_on with
+    | zero => simp
+    | of c' a =>
+      rw [DirectSum.coeLinearMap_of]
+      by_cases h : c' = c
+      · subst h; simp
+      · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm h), hsupp c' a a.2 i fun e => h (e.symm.trans hi)]
+        simp
+    | add x y hx hy => simp [hx, hy]
+  -- For submodules, the additive recomposition map in `IsInternal` is the underlying function
+  -- of the canonical linear recomposition map.
+  change Function.Bijective (DirectSum.coeLinearMap A)
+  refine ⟨fun x y hxy => ?_, ?_⟩
+  · refine DirectSum.ext fun c => Subtype.ext (b.repr.injective (Finsupp.ext fun i => ?_))
+    by_cases hi : w i = c
+    · rw [← key x c i hi, ← key y c i hi, hxy]
+    · rw [hsupp c _ (x c).2 i hi, hsupp c _ (y c).2 i hi]
+  · rw [← LinearMap.range_eq_top, eq_top_iff, ← b.span_eq, Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    exact ⟨DirectSum.of (fun c => A c) (w i) ⟨b i, Submodule.subset_span ⟨i, rfl, rfl⟩⟩, by simp⟩

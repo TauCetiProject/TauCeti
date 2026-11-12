@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.PolygonalDom
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Vertex
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
+import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 
 /-!
 # The Schwarz--Christoffel theorem for polygonal Jordan domains
@@ -106,7 +107,7 @@ private theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_eqOn {
     (eventually_nhdsWithin_of_forall hform)
 
 /-- **The Schwarz--Christoffel theorem for a bounded polygonal Jordan domain.**  Let `U` be a
-bounded, connected open set whose frontier is a Jordan curve.  Suppose that `U` coincides
+bounded open set whose frontier is a Jordan curve.  Suppose that `U` coincides
 near each frontier point other than the distinct vertices `v i` with an open half-plane, and near
 the vertex `v i` with the open sector of opening `(e i + 1) * π` at `v i`, where `e i ∈ (-1, 1)`.
 Then there are distinct real prevertices `a i` and constants `A ≠ 0` and `B` such that
@@ -115,7 +116,7 @@ Schwarz--Christoffel primitive for the prevertices `a` and the turning exponents
 the Schwarz--Christoffel vertex at `a i`, the limit of `F` at `a i`, is sent to `v i`. -/
 theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier
     {ι : Type*} [Fintype ι] (e : ι → ℝ) (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane)
-    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U) (hUb : IsBounded U)
+    {U : Set ℂ} (hUo : IsOpen U) (hUb : IsBounded U)
     (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Injective v)
     (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
       ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
@@ -124,6 +125,7 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
     ∃ a : ι → ℝ, Injective a ∧ ∃ A : ℂ, A ≠ 0 ∧ ∃ B : ℂ,
       BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U ∧
       ∀ i, A * schwarzChristoffelVertex a e z₀ i + B = v i := by
+  have hUc : IsConnected U := hUJ.isConnected_of_isOpen_of_isBounded hUo hUb
   obtain ⟨f, a, p, ha, hfd, hfc, hfi, hfH, hfa, hfp, hpf⟩ :=
     exists_prevertices_of_isJordanCurve_frontier hUo hUc hUb hUJ hv
       (vertex_mem_frontier_of_corner e he hcorner)
@@ -151,35 +153,6 @@ theorem exponent_sum_eq_neg_two_of_isJordanCurve_frontier
   exact exponent_sum_eq_neg_two_of_polygonal_domain a e ha he hfd hfc hfi hfH.image_eq hfa hfp
     hpf hside hcorner
 
-/-- A Carathéodory map of the upper half-plane onto an unbounded polygonal Jordan domain, sending
-infinity to infinity, with real prevertices of the vertices.  The exterior point that
-`TauCeti.exists_prevertices_of_isJordanCurve_insert_infty` asks for comes from the shape of the
-domain at infinity. -/
-private theorem exists_prevertices_of_unbounded_polygon {ι : Type*} (e : ι → ℝ)
-    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U)
-    (hq : ∃ q, q ∉ closure U)
-    (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) {v : ι → ℂ}
-    (hv : Injective v)
-    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
-      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2)) :
-    ∃ f : ℂ → ℂ, ∃ a : ι → ℝ, Injective a ∧
-      DifferentiableOn ℂ f upperHalfPlaneSet ∧ ContinuousOn f {z : ℂ | 0 ≤ z.im} ∧
-      InjOn f {z : ℂ | 0 ≤ z.im} ∧ BijOn f upperHalfPlaneSet U ∧ (∀ i, f (a i) = v i) ∧
-      Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ) := by
-  obtain ⟨q, hq⟩ := hq
-  exact exists_prevertices_of_isJordanCurve_insert_infty hUo hUc hq hUJ hv
-    (vertex_mem_frontier_of_corner e he hcorner)
-
-/-- A set that coincides far out with a sector of opening `β * π < 2 * π` has an exterior
-point. -/
-private theorem exists_notMem_closure_of_sector {β : ℝ} (hβ : β ∈ Ioo (0 : ℝ) 2) {U : Set ℂ}
-    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
-      (z ∈ U ↔ |((z - c) / b).arg| < β * Real.pi / 2)) :
-    ∃ q, q ∉ closure U := by
-  obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
-  exact exists_notMem_closure_of_forall_mem_iff_abs_arg_lt hb
-    (by nlinarith [Real.pi_pos, hβ.2]) hU
-
 /-- **The Schwarz--Christoffel theorem for an unbounded polygonal Jordan domain.**  Let `U` be a
 connected open set whose frontier, together with the point at infinity, is a Jordan curve
 of the Riemann sphere.  Suppose that `U` coincides near each frontier point other than the
@@ -206,8 +179,8 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
       BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U ∧
       ∀ i, A * schwarzChristoffelVertex a e z₀ i + B = v i := by
   obtain ⟨f, a, ha, hfd, hfc, hfi, hfH, hfa, hfinf⟩ :=
-    exists_prevertices_of_unbounded_polygon e he hUo hUc (exists_notMem_closure_of_sector hβ hinfty)
-      hUJ hv hcorner
+    exists_prevertices_of_isJordanCurve_insert_infty hUo hUc hUJ hv
+      (vertex_mem_frontier_of_corner e he hcorner)
   exact ⟨a, ha, exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_eqOn he z₀ ha hfd hfc hfH
     hfa (eqOn_const_mul_schwarzChristoffelPrimitive_add_of_unbounded_polygonal_domain a e ha he z₀
       hβ hfd hfc hfi hfH.image_eq hfa hfinf hside hcorner hinfty)⟩
@@ -229,18 +202,10 @@ theorem exponent_sum_eq_sub_one_of_isJordanCurve_insert_infty
       (z ∈ U ↔ |((z - c) / b).arg| < β * Real.pi / 2)) :
     ∑ i, e i = β - 1 := by
   obtain ⟨f, a, ha, hfd, hfc, hfi, hfH, hfa, hfinf⟩ :=
-    exists_prevertices_of_unbounded_polygon e he hUo hUc (exists_notMem_closure_of_sector hβ hinfty)
-      hUJ hv hcorner
+    exists_prevertices_of_isJordanCurve_insert_infty hUo hUc hUJ hv
+      (vertex_mem_frontier_of_corner e he hcorner)
   exact exponent_sum_eq_sub_one_of_unbounded_polygonal_domain a e ha he hβ hfd hfc hfi
     hfH.image_eq hfa hfinf hside hcorner hinfty
-
-/-- A set that coincides far out with a half-strip has an exterior point. -/
-private theorem exists_notMem_closure_of_halfStrip {U : Set ℂ}
-    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
-      (z ∈ U ↔ 0 < ((z - c) / b).re ∧ ((z - c) / b).im ∈ Ioo 0 Real.pi)) :
-    ∃ q, q ∉ closure U := by
-  obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
-  exact exists_notMem_closure_of_forall_mem_re_div_pos hb fun z hz hzU => ((hU z hz).mp hzU).1
 
 /-- **The Schwarz--Christoffel theorem for a polygonal Jordan domain with a half-strip end.**  Let
 `U` be a connected open set whose frontier, together with the point at infinity, is a Jordan curve
@@ -269,8 +234,8 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
       BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U ∧
       ∀ i, A * schwarzChristoffelVertex a e z₀ i + B = v i := by
   obtain ⟨f, a, ha, hfd, hfc, hfi, hfH, hfa, hfinf⟩ :=
-    exists_prevertices_of_unbounded_polygon e he hUo hUc (exists_notMem_closure_of_halfStrip hinfty)
-      hUJ hv hcorner
+    exists_prevertices_of_isJordanCurve_insert_infty hUo hUc hUJ hv
+      (vertex_mem_frontier_of_corner e he hcorner)
   exact ⟨a, ha, exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_eqOn he z₀ ha hfd hfc hfH
     hfa (eqOn_const_mul_schwarzChristoffelPrimitive_add_of_halfStrip_polygonal_domain a e ha he z₀
       hfd hfc hfi hfH.image_eq hfa hfinf hside hcorner hinfty)⟩
@@ -291,20 +256,10 @@ theorem exponent_sum_eq_neg_one_of_isJordanCurve_of_halfStrip
       (z ∈ U ↔ 0 < ((z - c) / b).re ∧ ((z - c) / b).im ∈ Ioo 0 Real.pi)) :
     ∑ i, e i = -1 := by
   obtain ⟨f, a, ha, hfd, hfc, hfi, hfH, hfa, hfinf⟩ :=
-    exists_prevertices_of_unbounded_polygon e he hUo hUc (exists_notMem_closure_of_halfStrip hinfty)
-      hUJ hv hcorner
+    exists_prevertices_of_isJordanCurve_insert_infty hUo hUc hUJ hv
+      (vertex_mem_frontier_of_corner e he hcorner)
   exact exponent_sum_eq_neg_one_of_halfStrip_polygonal_domain a e ha he hfd hfc hfi hfH.image_eq
     hfa hfinf hside hcorner hinfty
-
-/-- A set that coincides far out with the exterior of a closed half-strip has an exterior
-point. -/
-private theorem exists_notMem_closure_of_halfStripExterior {U : Set ℂ}
-    (hinfty : ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧ ∀ z : ℂ, ρ < ‖z - c‖ →
-      (z ∈ U ↔ ((z - c) / b).re < 0 ∨ ((z - c) / b).im ∉ Icc 0 Real.pi)) :
-    ∃ q, q ∉ closure U := by
-  obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
-  exact exists_notMem_closure_of_forall_mem_notMem_halfStrip hb fun z hz hzU h =>
-    ((hU z hz).mp hzU).elim h.1.not_gt fun h' => h' (Ioo_subset_Icc_self h.2)
 
 /-- **The Schwarz--Christoffel theorem for a polygonal Jordan domain whose end is the exterior of
 a half-strip.**  Let `U` be a connected open set whose frontier, together with the point at
@@ -333,8 +288,8 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
       BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U ∧
       ∀ i, A * schwarzChristoffelVertex a e z₀ i + B = v i := by
   obtain ⟨f, a, ha, hfd, hfc, hfi, hfH, hfa, hfinf⟩ :=
-    exists_prevertices_of_unbounded_polygon e he hUo hUc
-      (exists_notMem_closure_of_halfStripExterior hinfty) hUJ hv hcorner
+    exists_prevertices_of_isJordanCurve_insert_infty hUo hUc hUJ hv
+      (vertex_mem_frontier_of_corner e he hcorner)
   exact ⟨a, ha, exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_eqOn he z₀ ha hfd hfc hfH
     hfa (eqOn_const_mul_schwarzChristoffelPrimitive_add_of_halfStripExterior_polygonal_domain a e ha
       he z₀ hfd hfc hfi hfH.image_eq hfa hfinf hside hcorner hinfty)⟩
@@ -356,8 +311,8 @@ theorem exponent_sum_eq_one_of_isJordanCurve_of_halfStripExterior
       (z ∈ U ↔ ((z - c) / b).re < 0 ∨ ((z - c) / b).im ∉ Icc 0 Real.pi)) :
     ∑ i, e i = 1 := by
   obtain ⟨f, a, ha, hfd, hfc, hfi, hfH, hfa, hfinf⟩ :=
-    exists_prevertices_of_unbounded_polygon e he hUo hUc
-      (exists_notMem_closure_of_halfStripExterior hinfty) hUJ hv hcorner
+    exists_prevertices_of_isJordanCurve_insert_infty hUo hUc hUJ hv
+      (vertex_mem_frontier_of_corner e he hcorner)
   exact exponent_sum_eq_one_of_halfStripExterior_polygonal_domain a e ha he hfd hfc hfi
     hfH.image_eq hfa hfinf hside hcorner hinfty
 

@@ -28,7 +28,7 @@ including the dyadic case (`TauCeti.hilbertSymbol_mul_left`).
 Together with the rank and the discriminant, this sign is the third invariant in the
 classification of regular quadratic forms over a nonarchimedean local field. It is the
 `{±1}`-valued counterpart of the Brauer-valued `TauCeti.RegularFormClass.hasseInvariant` of
-`TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse`, whose construction and whose
+`TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.Basic`, whose construction and whose
 orthogonal-sum and scaling formulas are adapted here to the Hilbert symbol. O'Meara's `i ≤ j`
 Hasse symbol differs from this `i < j` sign by the Hilbert symbol of the discriminant with `-1`.
 
@@ -48,6 +48,8 @@ Hasse symbol differs from this `i < j` sign by the Hilbert symbol of the discrim
 * `TauCeti.RegularFormClass.localHasse_eq_one_of_rank_eq_two_of_discr_eq_neg_one`: a class of
   rank two and discriminant `[-1]` has trivial local Hasse invariant.
 * `TauCeti.RegularFormClass.localHasse_add`: `s(q ⊥ r) = s(q) · s(r) · (d(q), d(r))_K`.
+* `TauCeti.RegularFormClass.localHasse_nsmul_hyperbolicClass`: `m` hyperbolic planes have local
+  Hasse invariant `(-1, -1)_K^{m(m-1)/2}`.
 * `TauCeti.RegularFormClass.localHasse_mk_rankOne_add`: `s(⟨a⟩ ⊥ q) = s(q) · (a, d(q))_K`.
 * `TauCeti.RegularFormClass.localHasse_mk_rankOne_mul`: the formula for scaling by a unit.
 
@@ -207,6 +209,20 @@ theorem localHasse_add (x y : RegularFormClass K) :
     induction y using Quotient.inductionOn with
     | h q =>
       simpa only [discr_mk, hilbertSymbolOnSquareClasses_squareClass] using localHasse_add_mk p q
+
+/-- **The local Hasse invariant of `m` hyperbolic planes** is `(-1, -1)_K^{m(m-1)/2}`. -/
+theorem localHasse_nsmul_hyperbolicClass (m : ℕ) :
+    localHasse (m • hyperbolicClass K) = hilbertSymbol (-1 : Kˣ) (-1) ^ m.choose 2 := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    -- Adding a plane to `m` planes multiplies the invariant by the symbol
+    -- `(-1, (-1)^m)_K = (-1, -1)_K^m` of the two discriminants.
+    rw [succ_nsmul, localHasse_add, ih, localHasse_hyperbolicClass, discr_nsmul,
+      discr_hyperbolicClass, ← squareClass_pow, hilbertSymbolOnSquareClasses_squareClass,
+      hilbertSymbol_pow_left (Invertible.ne_zero (2 : K))]
+    -- It remains to check `m.choose 2 + m = (m + 1).choose 2` in the exponent.
+    simp [Nat.choose_succ_succ', pow_add, mul_comm]
 
 /-- **Adjoining a line**: `s(⟨a⟩ ⊥ q) = s(q) · (a, d(q))_K`, the orthogonal-sum formula with the
 trivial local Hasse invariant of the rank-one summand. -/

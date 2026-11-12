@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Extension
 public import TauCeti.Analysis.Complex.RiemannSurface.Degree
-public import TauCeti.Geometry.Manifold.Instances.OnePoint
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 
 /-!
 # The modular invariant identifies the level-one surface with the sphere
@@ -19,6 +19,12 @@ where `F` is the analytic cusp function of `q j` and `F(0) = 1`. Thus its only p
 has local multiplicity one. The fibre-counting degree theorem gives degree one, and
 `jBiholomorph` is the resulting biholomorphism, normalized by the images of the cusp and the two
 elliptic orbits.
+
+Restricted to the coarse quotient, the biholomorphism shows that `j` is injective there
+(`jQuotient_injective`): two points of the upper half-plane have the same value of `j` exactly
+when they lie in one `SL(2, ℤ)`-orbit (`j_eq_j_iff`). Away from the cusp it is in fact a bijection
+from the coarse quotient onto `ℂ` (`jQuotient_bijective`), so the modular invariant `j : ℍ → ℂ` is
+surjective (`TauCeti.ModularForm.j_surjective`).
 
 ## References
 
@@ -79,16 +85,14 @@ private theorem jSphere_comp_cuspChart_symm_eventuallyEq :
     eventually_sup, nhdsWithin_singleton, eventually_pure]
   constructor
   · filter_upwards [hj, cuspFunction_j_eventuallyEq, nhdsWithin_le_nhds hF,
-      self_mem_nhdsWithin,
-      nhdsWithin_le_nhds ((cuspChart cuspDatumInfty le_rfl).open_target.mem_nhds
-        (by simp [cuspChart_target, cuspRadius_pos]))] with q hjq hqj hFq hq hqt
+      self_mem_nhdsWithin] with q hjq hqj hFq hq
     have hq0 : q ≠ 0 := hq
     have hqR : reciprocalCusp q ≠ 0 := div_ne_zero hq0 hFq
-    rw [comp_apply, cuspChart_symm_of_ne_zero cuspDatumInfty le_rfl hqt hq0,
+    rw [comp_apply, cuspChart_symm_of_ne_zero cuspDatumInfty le_rfl hq0,
       jSphere_ofQuotient, comp_apply, OnePoint.invChart_symm_of_ne_zero hqR]
     apply congrArg ((↑) : ℂ → OnePoint ℂ)
     have h := hjq.trans hqj
-    rw [comp_apply, cuspChart_symm_of_ne_zero cuspDatumInfty le_rfl hqt hq0,
+    rw [comp_apply, cuspChart_symm_of_ne_zero cuspDatumInfty le_rfl hq0,
       jCompactified_ofQuotient] at h
     simpa [reciprocalCusp, inv_div] using h
   · simp [comp_apply, cuspChart_symm_zero, reciprocalCusp]
@@ -197,5 +201,34 @@ theorem jBiholomorph_ρ :
 theorem jBiholomorph_I :
     jBiholomorph (ofQuotient (Quotient.mk _ I)) = ((1728 : ℂ) : OnePoint ℂ) := by
   simp [j_I]
+
+/-- The modular invariant is injective on the coarse level-one quotient. -/
+theorem jQuotient_injective : Function.Injective jQuotient := fun p q h ↦ by
+  have : jBiholomorph (ofQuotient p) = jBiholomorph (ofQuotient q) := by simp [h]
+  exact ofQuotient.inj (jBiholomorph.injective this)
+
+/-- The descended modular invariant is a bijection from the coarse level-one quotient onto `ℂ`:
+these are the points of the Riemann sphere other than the image `∞` of the cusp. -/
+theorem jQuotient_bijective : Bijective jQuotient := by
+  refine ⟨jQuotient_injective, fun w ↦ ?_⟩
+  obtain ⟨x, hx⟩ := jBiholomorph.surjective (w : OnePoint ℂ)
+  cases x with
+  | ofQuotient p => exact ⟨p, by simpa using hx⟩
+  | ofCusp C => simp at hx
+
+/-- **The modular invariant `j : ℍ → ℂ` is surjective.** -/
+theorem _root_.TauCeti.ModularForm.j_surjective : Surjective j := by
+  intro w
+  obtain ⟨p, hp⟩ := jQuotient_bijective.2 w
+  induction p using Quotient.inductionOn with
+  | h z => exact ⟨z, by rwa [jQuotient_mk] at hp⟩
+
+/-- **The modular invariant classifies `SL(2, ℤ)`-orbits**: `j z = j w` exactly when `w` lies in
+the `SL(2, ℤ)`-orbit of `z`. -/
+theorem j_eq_j_iff {z w : ℍ} : j z = j w ↔ ∃ γ : SL(2, ℤ), γ • z = w := by
+  rw [← jQuotient_mk, ← jQuotient_mk, jQuotient_injective.eq_iff, Quotient.eq,
+    orbitRel_psl2zToPSL2RRange_iff_orbitRel_sl, orbitRel_apply, mem_orbit_iff]
+  exact ⟨fun ⟨γ, h⟩ ↦ ⟨γ⁻¹, by rw [← h, inv_smul_smul]⟩,
+    fun ⟨γ, h⟩ ↦ ⟨γ⁻¹, by rw [← h, inv_smul_smul]⟩⟩
 
 end TauCeti.ModularGroup

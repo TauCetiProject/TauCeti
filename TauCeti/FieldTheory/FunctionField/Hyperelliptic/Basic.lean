@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
-public import TauCeti.FieldTheory.Separable.Quadratic
+public import TauCeti.FieldTheory.Separable.PrimeDegree
+-- Proof-only: `[k(x) : k(x ^ 2)] = 2` for the rational function field in genus zero.
+import TauCeti.FieldTheory.RatFunc.PowerTower
 
 /-!
 # Hyperelliptic function fields
@@ -25,7 +27,7 @@ index-two generator, whose Riemann--Roch space contains `1` and `x`.  The other 
 its class to an effective divisor `B`, picks a function `x ∈ L(B)` outside the constants — which
 positivity of `ℓ(B)` over the line of constants provides — and reads `[F : k(x)] = deg (x)_∞`
 off the product formula: the pole divisor of `x` is dominated by `B`, so the degree is at most
-two, and it is not one because a rational function field has genus zero.
+two.  If it is one then `F = k(x)`, and `k(x ^ 2)` has index two instead.
 
 In genus two the canonical divisor is such an `A`, since `deg W = 2g - 2 = 2` and `ℓ(W) = g = 2`;
 so every function field of genus two has an index-two rational subfield, and away from
@@ -110,21 +112,24 @@ theorem IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim
   refine ⟨Divisor.poles hF (Units.mk0 x hx0), ?_, ?_⟩
   · rw [Divisor.degree_poles hF (Units.mk0 x hx0) hx, Units.val_mk0, hrank]
     norm_num
-  · simpa using Divisor.succ_le_dim_nsmul_poles hF (Units.mk0 x hx0) hx 1
+  · simpa using le_dim_zsmul_poles hF (Units.mk0 x hx0) hx (n := 1 + 1) (m := ((1 : ℕ) : ℤ))
+      (by omega)
 
 /-! ### From a divisor of degree two to the index-two subfield -/
 
 /-- **A divisor of degree two whose Riemann--Roch space has dimension at least two produces a
-rational subfield of index two**, as soon as the genus is positive.
+rational subfield of index two**: some transcendental `x` has `[F : k(x)] = 2`.
 
 No hypothesis on the characteristic is made, and no separability is claimed: this is the part of
-Stichtenoth's Section VI.2 dictionary that holds over an arbitrary constant field.  The genus
-hypothesis cannot be dropped: over a rational function field the subfield produced would be all
-of `F`. -/
+Stichtenoth's Section VI.2 dictionary that holds over an arbitrary constant field.  The case of a
+rational function field `F = k(t)` is included. -/
 theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : genus k F ≠ 0)
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     {A : Divisor k F} (hA : Divisor.degree A = 2) (hdim : 2 ≤ Divisor.dim A) :
     ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = 2 := by
+  -- The subfield is `k(x)` for a nonconstant `x` in the Riemann--Roch space of an effective
+  -- divisor `B` linearly equivalent to `A`; its index is at most two.  If it is one, so
+  -- `k(x) = F`, replace `x` by `x ^ 2`, whose subfield has index two.
   -- Move `A` inside its class to an effective divisor `B`, which has the same degree and `ℓ`.
   obtain ⟨z, hzA, hz0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF A).mp (by omega))
@@ -134,19 +139,8 @@ theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
   have hBeff : 0 ≤ B := (mem_riemannRochSpace_units_iff hF).mp hzA
   have hBdeg : Divisor.degree B = 2 := by rw [hB]; simp [hA]
   have hBdim : 2 ≤ Divisor.dim B := by rwa [hBrw, Divisor.dim_sub_principal]
-  -- The constants form a line inside `L(B)`, which has dimension at least two, so `L(B)` holds a
-  -- function `x` outside the constants.
-  have hlt : (k ∙ (1 : F)) < riemannRochSpace B := by
-    refine lt_of_le_of_ne ((Submodule.span_singleton_le_iff_mem _ _).mpr
-      (one_mem_riemannRochSpace_iff.mpr hBeff)) fun hEq ↦ ?_
-    rw [Divisor.dim_def, ← hEq, finrank_span_singleton (one_ne_zero : (1 : F) ≠ 0)] at hBdim
-    omega
-  obtain ⟨x, hxB, hxspan⟩ := IsConcreteLE.exists_of_lt hlt
-  have hxconst : ∀ c : k, algebraMap k F c ≠ x := fun c hc ↦
-    hxspan (hc ▸ Submodule.mem_span_singleton.mpr ⟨c, by simp [Algebra.smul_def]⟩)
-  have hx : Transcendental k x := fun halg ↦
-    let ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex x halg
-    hxconst c hc
+  -- `L(B)` has dimension at least two, so it holds a transcendental function `x`.
+  obtain ⟨x, hxB, hx⟩ := Divisor.exists_mem_riemannRochSpace_transcendental hF hex hBdim
   have hx0 : x ≠ 0 := fun h ↦ hx (h ▸ isAlgebraic_zero)
   -- The poles of `x` are bounded by `B`, so `[F : k(x)] = deg (x)_∞ ≤ deg B = 2`.
   have hle : Divisor.poles hF (Units.mk0 x hx0) ≤ B := by
@@ -164,9 +158,13 @@ theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
       Divisor.degree (Divisor.poles hF (Units.mk0 x hx0)) :=
     (Divisor.degree_poles hF (Units.mk0 x hx0) hx).symm
   have hpos : 0 < Module.finrank k⟮x⟯ F := Module.finrank_pos
-  have hne : Module.finrank k⟮x⟯ F ≠ 1 := fun h1 ↦ hg (genus_eq_zero_of_adjoin_eq_top hx
-    (IntermediateField.finrank_eq_one_iff_eq_top.mp h1))
-  exact ⟨x, hx, by omega⟩
+  by_cases h1 : Module.finrank k⟮x⟯ F = 1
+  · -- `F = k(x)`, and `k(x ^ 2)` has index two in it
+    have h := hx.relfinrank_adjoin_pow_adjoin 2
+    rw [IntermediateField.finrank_eq_one_iff_eq_top.mp h1,
+      IntermediateField.relfinrank_top_right] at h
+    exact ⟨x ^ 2, hx.pow two_pos, h⟩
+  · exact ⟨x, hx, by omega⟩
 
 /-- **The intrinsic characterization of hyperelliptic function fields** away from characteristic
 two (Stichtenoth, Section VI.2): `F` is hyperelliptic exactly when its genus is at least two and
@@ -184,7 +182,7 @@ theorem isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_a
   refine ⟨fun hhyp ↦ ⟨hhyp.two_le_genus, hhyp.exists_degree_eq_two_and_two_le_dim⟩, ?_⟩
   rintro ⟨hgen, A, hA, hdim⟩
   obtain ⟨x, hx, hrank⟩ :=
-    exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega) hA hdim
+    exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex hA hdim
   have h2' : (2 : k⟮x⟯) ≠ 0 := by
     intro h
     have hmap : algebraMap k k⟮x⟯ (2 : k) = 0 := by rw [map_ofNat]; exact h
@@ -214,7 +212,7 @@ theorem exists_transcendental_finrank_adjoin_eq_two_of_genus_eq_two (hF : IsFunc
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 2) :
     ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = 2 := by
   obtain ⟨A, hA, hdim⟩ := exists_degree_eq_two_and_dim_eq_two_of_genus_eq_two hF hex hg
-  exact exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega) hA hdim.ge
+  exact exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex hA hdim.ge
 
 /-- **Every function field of genus two away from characteristic two is hyperelliptic**
 (Stichtenoth, Lemma 6.2.2). -/

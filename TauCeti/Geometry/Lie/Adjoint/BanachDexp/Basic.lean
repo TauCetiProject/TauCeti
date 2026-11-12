@@ -46,12 +46,12 @@ variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R]
 /-- The Banach-algebra realization of the regularized operator quotient
 `(1 - exp (-ad x)) / ad x`. -/
 noncomputable def banachDexpFactor (x : R) : R →L[ℝ] R :=
-  oneSubExpNegDivSelf ℝ (continuousCommutator x)
+  oneSubExpNegDivSelf ℝ (continuousCommutator ℝ x)
 
 omit [CompleteSpace R] in
 /-- The Banach dexp factor is the regularized quotient evaluated at the commutator operator. -/
 theorem banachDexpFactor_eq_oneSubExpNegDivSelf (x : R) :
-    banachDexpFactor x = oneSubExpNegDivSelf ℝ (continuousCommutator x) := by
+    banachDexpFactor x = oneSubExpNegDivSelf ℝ (continuousCommutator ℝ x) := by
   rw [banachDexpFactor]
 
 omit [CompleteSpace R] in
@@ -63,32 +63,32 @@ theorem banachDexpFactor_zero : banachDexpFactor (0 : R) = 1 := by
 /-- Multiplication by the commutator operator cancels the regularized denominator. -/
 @[simp]
 theorem continuousCommutator_mul_banachDexpFactor (x : R) :
-    continuousCommutator x * banachDexpFactor x =
-      1 - exp (-continuousCommutator x) := by
+    continuousCommutator ℝ x * banachDexpFactor x =
+      1 - exp (-continuousCommutator ℝ x) := by
   rw [banachDexpFactor_eq_oneSubExpNegDivSelf, mul_oneSubExpNegDivSelf]
 
 /-- Multiplication by the commutator operator on the right also cancels the regularized
 denominator. -/
 @[simp]
 theorem banachDexpFactor_mul_continuousCommutator (x : R) :
-    banachDexpFactor x * continuousCommutator x =
-      1 - exp (-continuousCommutator x) := by
+    banachDexpFactor x * continuousCommutator ℝ x =
+      1 - exp (-continuousCommutator ℝ x) := by
   rw [banachDexpFactor_eq_oneSubExpNegDivSelf, oneSubExpNegDivSelf_mul]
 
 omit [CompleteSpace R] in
 /-- The commutator operator commutes with its Banach dexp factor. -/
 theorem commute_continuousCommutator_banachDexpFactor (x : R) :
-    Commute (continuousCommutator x) (banachDexpFactor x) := by
+    Commute (continuousCommutator ℝ x) (banachDexpFactor x) := by
   rw [banachDexpFactor_eq_oneSubExpNegDivSelf]
-  exact commute_oneSubExpNegDivSelf (continuousCommutator x)
+  exact commute_oneSubExpNegDivSelf (continuousCommutator ℝ x)
 
 /-- The operator quotient identity evaluated on an algebra element, with the operator exponential
 rewritten as concrete conjugation. -/
 theorem continuousCommutator_banachDexpFactor_apply (x y : R) :
-    continuousCommutator x (banachDexpFactor x y) =
+    continuousCommutator ℝ x (banachDexpFactor x y) =
       y - exp (-x) * y * exp x := by
-  have hneg : -continuousCommutator x = continuousCommutator (-x) :=
-    (map_neg continuousCommutator x).symm
+  have hneg : -continuousCommutator ℝ x = continuousCommutator ℝ (-x) :=
+    (map_neg (continuousCommutator ℝ) x).symm
   have h := congrArg (fun f : R →L[ℝ] R ↦ f y)
     (continuousCommutator_mul_banachDexpFactor x)
   simpa only [mul_apply_eq_comp, one_apply_eq_self, sub_apply, hneg,
@@ -97,7 +97,7 @@ theorem continuousCommutator_banachDexpFactor_apply (x y : R) :
 /-- The symmetric operator quotient identity evaluated on an algebra element, with the operator
 exponential rewritten as concrete conjugation. -/
 theorem banachDexpFactor_continuousCommutator_apply (x y : R) :
-    banachDexpFactor x (continuousCommutator x y) =
+    banachDexpFactor x (continuousCommutator ℝ x y) =
       y - exp (-x) * y * exp x := by
   rw [← mul_apply_eq_comp,
     ← (commute_continuousCommutator_banachDexpFactor x).eq, mul_apply_eq_comp]

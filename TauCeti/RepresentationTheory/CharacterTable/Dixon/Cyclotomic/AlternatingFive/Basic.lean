@@ -114,7 +114,7 @@ theorem alternatingGroupFiveGaloisEquiv_golden :
   rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.powRingHom_apply,
     ← Cyclotomic.evalRingHom_eq_evalCoeffs _ _
       (Cyclotomic.eval₂_cyclotomic_zeta_pow (by decide)), Cyclotomic.evalRingHom_ofCoeffList]
-  norm_num [TauCeti.Polynomial.ofCoeffList_cons]
+  norm_num [Polynomial.ofCoeffList_cons]
   decide
 
 /-- The Galois automorphism `ζ ↦ ζ²` sends the conjugate golden-ratio value back to the
@@ -126,7 +126,7 @@ theorem alternatingGroupFiveGaloisEquiv_galoisConjugate :
   rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.powRingHom_apply,
     ← Cyclotomic.evalRingHom_eq_evalCoeffs _ _
       (Cyclotomic.eval₂_cyclotomic_zeta_pow (by decide)), Cyclotomic.evalRingHom_ofCoeffList]
-  norm_num [TauCeti.Polynomial.ofCoeffList_cons]
+  norm_num [Polynomial.ofCoeffList_cons]
   decide
 
 /-- The two golden-ratio character values sum to one. -/
@@ -349,10 +349,9 @@ private theorem alternatingGroupFive_candidateCharacterTable_orthogonal_reindex
     norm_num [Fin.sum_univ_succ, card_classFinset_alternatingGroupFiveClassData,
       alternatingGroupFiveCandidateCharacterTable_apply]
   all_goals
-    try rw [hgolden]
+    rw [hgolden]
     ring_nf
-    try rw [hsq]
-    try ring
+  all_goals rw [hsq]; ring
 
 /-- The candidate ordinary-character rows satisfy Hermitian row orthogonality. -/
 theorem alternatingGroupFive_candidateCharacterTable_orthogonal

@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.StrictPositivity
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+public import TauCeti.Analysis.InnerProductSpace.BasisSpan
+public import TauCeti.Data.Fin.Tuple.Sort
+public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
+import TauCeti.Analysis.InnerProductSpace.CourantFischer
 
 /-!
 # Spectral decompositions of self-adjoint operators
@@ -30,10 +35,15 @@ into a Hilbert basis of `E`.
 In finite dimensions, this file also packages Mathlib's ordered eigenbasis into the spans of
 any chosen set of its eigenvectors. In particular, the negative and positive spectral subspaces,
 spanned by the eigenvectors with negative and with positive eigenvalue, are disjoint, invariant
-under the operator, and together span the whole space when the operator is injective. Writing
+under the operator, and together span the whole space when the operator is injective; the
+quadratic form `re ⟪T v, v⟫` is coercive on the positive one and anticoercive on the negative one,
+with constant any lower bound for the absolute values of the nonzero eigenvalues. Writing
 the determinant as the product of the eigenvalues shows that a positive operator has nonnegative
 determinant, and its smallest eigenvalue, the infimum of the Rayleigh quotient, bounds an injective
-positive operator below.
+positive operator below. If an invertible operator anticommutes with the symmetric operator, as a
+complex structure anticommutes with the shape operator of a complex submanifold, then the ordered
+eigenvalues are antisymmetric, so the positive and negative spectral subspaces have equal
+dimension.
 
 No separability is assumed anywhere: the basis is indexed by a set of vectors of `E`, exactly as
 in Mathlib's `exists_hilbertBasis`, and the eigenvalue `0` may well carry an infinite-dimensional
@@ -43,7 +53,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 ## Main declarations
 
 * `ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces`:
-  a symmetric operator whose eigenspaces have dense span admits a Hilbert basis of eigenvectors.
+  an operator whose eigenspaces are mutually orthogonal with dense span admits a Hilbert basis of
+  eigenvectors.
 * `ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector`: the compact symmetric
   specialization of the preceding result.
 * `ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector_ne_zero`: for an injective compact
@@ -58,10 +69,22 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 * `LinearMap.IsSymmetric.negativeSpectralSubspace` and
   `LinearMap.IsSymmetric.positiveSpectralSubspace`: the negative and positive halves of the
   finite-dimensional spectral splitting.
+* `LinearMap.IsSymmetric.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace` and
+  `LinearMap.IsSymmetric.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace`: the
+  quadratic form is coercive on the positive spectral subspace and anticoercive on the negative
+  one, with the constant of `LinearMap.IsSymmetric.exists_pos_forall_le_abs_eigenvalues`.
+* `LinearMap.IsSymmetric.eigenvalues_rev_of_anticommute`: if an invertible operator anticommutes
+  with `T`, the `i`-th largest eigenvalue of `T` is minus its `i`-th smallest.
+* `finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute`, in the
+  same namespace: in that case the positive and negative spectral subspaces have the same
+  dimension.
 * `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
   nonnegative determinant, the product of its eigenvalues.
+* `LinearMap.IsPositive.abs_det_neg`: on a real space, `|det (-S)| = det S` for positive `S`.
 * `LinearMap.IsPositive.det_pos`: an injective positive operator on a finite-dimensional space has
   positive determinant.
+* `IsStrictlyPositive.det_pos`: a strictly positive continuous linear operator on a
+  finite-dimensional inner product space has positive determinant.
 * `LinearMap.IsPositive.exists_pos_mul_norm_sq_le_re_inner`: an injective positive operator on a
   finite-dimensional space is coercive.
 * `ContinuousLinearMap.IsPositive.det_one_sub_smul_id_add_smul_pos`: interpolating the identity
@@ -92,11 +115,14 @@ namespace ContinuousLinearMap
 
 variable [CompleteSpace E] {T : E →L[𝕜] E}
 
-/-- **A symmetric operator whose eigenspaces have dense span has an orthonormal basis of
-eigenvectors.**  The basis is indexed by a set of vectors of `E`, as in `exists_hilbertBasis`,
-and no separability is assumed. -/
+/-- **An operator whose eigenspaces are mutually orthogonal and have dense span has an
+orthonormal basis of eigenvectors.**  The basis is indexed by a set of vectors of `E`, as in
+`exists_hilbertBasis`, and no separability is assumed. The orthogonality holds for symmetric
+operators (`LinearMap.IsSymmetric.orthogonalFamily_eigenspaces`) and, more generally, for normal
+ones. -/
 theorem exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces
-    (hT' : (T : E →ₗ[𝕜] E).IsSymmetric)
+    (hT' : OrthogonalFamily 𝕜 (fun mu ↦ eigenspace (T : Module.End 𝕜 E) mu)
+      fun mu ↦ (eigenspace (T : Module.End 𝕜 E) mu).subtypeₗᵢ)
     (hspan : (⨆ mu, eigenspace (T : Module.End 𝕜 E) mu)ᗮ = ⊥) :
     ∃ (s : Set E) (b : HilbertBasis s 𝕜 E) (nu : s → 𝕜), ⇑b = ((↑) : s → E) ∧
       ∀ x : s, HasEigenvector (T : Module.End 𝕜 E) (nu x) (x : E) := by
@@ -112,7 +138,7 @@ theorem exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces
   set v : (Σ mu : 𝕜, w mu) → E := fun p =>
     (eigenspace (T : Module.End 𝕜 E) p.1).subtypeₗᵢ (bw p.1 p.2)
   have hv : Orthonormal 𝕜 v :=
-    hT'.orthogonalFamily_eigenspaces.orthonormal_sigma_orthonormal fun mu => (bw mu).orthonormal
+    hT'.orthonormal_sigma_orthonormal fun mu => (bw mu).orthonormal
   have hinj : Function.Injective v := hv.linearIndependent.injective
   have hmem : ∀ p, v p ∈ eigenspace (T : Module.End 𝕜 E) p.1 := fun p => (bw p.1 p.2).2
   have hvspan : (Submodule.span 𝕜 (Set.range v))ᗮ = ⊥ := by
@@ -142,13 +168,14 @@ theorem exists_hilbertBasis_forall_hasEigenvector (hT : IsCompactOperator T)
     (hT' : (T : E →ₗ[𝕜] E).IsSymmetric) :
     ∃ (s : Set E) (b : HilbertBasis s 𝕜 E) (nu : s → 𝕜), ⇑b = ((↑) : s → E) ∧
       ∀ x : s, HasEigenvector (T : Module.End 𝕜 E) (nu x) (x : E) :=
-  exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces hT'
+  exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces hT'.orthogonalFamily_eigenspaces
     (ContinuousLinearMap.orthogonalComplement_iSup_eigenspaces_eq_bot hT hT')
 
-/-- **An injective symmetric operator whose eigenspaces have dense span has an orthonormal basis
-of eigenvectors with nonzero eigenvalues.** -/
+/-- **An injective operator whose eigenspaces are mutually orthogonal and have dense span has an
+orthonormal basis of eigenvectors with nonzero eigenvalues.** -/
 theorem exists_hilbertBasis_forall_hasEigenvector_ne_zero_of_dense_eigenspaces
-    (hT' : (T : E →ₗ[𝕜] E).IsSymmetric)
+    (hT' : OrthogonalFamily 𝕜 (fun mu ↦ eigenspace (T : Module.End 𝕜 E) mu)
+      fun mu ↦ (eigenspace (T : Module.End 𝕜 E) mu).subtypeₗᵢ)
     (hspan : (⨆ mu, eigenspace (T : Module.End 𝕜 E) mu)ᗮ = ⊥)
     (hker : LinearMap.ker (T : E →ₗ[𝕜] E) = ⊥) :
     ∃ (s : Set E) (b : HilbertBasis s 𝕜 E) (nu : s → 𝕜), ⇑b = ((↑) : s → E) ∧
@@ -169,7 +196,8 @@ theorem exists_hilbertBasis_forall_hasEigenvector_ne_zero (hT : IsCompactOperato
     ∃ (s : Set E) (b : HilbertBasis s 𝕜 E) (nu : s → 𝕜), ⇑b = ((↑) : s → E) ∧
       (∀ x : s, nu x ≠ 0) ∧ ∀ x : s, HasEigenvector (T : Module.End 𝕜 E) (nu x) (x : E) :=
   exists_hilbertBasis_forall_hasEigenvector_ne_zero_of_dense_eigenspaces
-    hT' (ContinuousLinearMap.orthogonalComplement_iSup_eigenspaces_eq_bot hT hT') hker
+    hT'.orthogonalFamily_eigenspaces
+    (ContinuousLinearMap.orthogonalComplement_iSup_eigenspaces_eq_bot hT hT') hker
 
 omit [CompleteSpace E] in
 /-- **The spectral expansion of an operator diagonal in a Hilbert basis.**  Applying `T` term by
@@ -221,6 +249,19 @@ subsets cut out by inequalities on the corresponding eigenvalues. -/
 noncomputable def eigenvectorSpan (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     (s : Set (Fin n)) : Submodule 𝕜 E :=
   Submodule.span 𝕜 (hT.eigenvectorBasis hn '' s)
+
+/-- The selected eigenvector span is the span of the same indices in the orthonormal basis. -/
+theorem eigenvectorSpan_eq_spanIndices (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) (s : Set (Fin n)) :
+    hT.eigenvectorSpan hn s = (hT.eigenvectorBasis hn).spanIndices s := by
+  rw [eigenvectorSpan, OrthonormalBasis.spanIndices_eq_span]
+
+/-- The span of the eigenvectors at embedded indices equals their canonical eigenvector span. -/
+theorem span_range_eigenvectorBasis_apply_eq_eigenvectorSpan (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) {ι : Type*} (e : ι ↪ Fin n) :
+    Submodule.span 𝕜 (Set.range fun i => hT.eigenvectorBasis hn (e i)) =
+      hT.eigenvectorSpan hn (Set.range e) := by
+  rw [eigenvectorSpan, ← Set.range_comp, Function.comp_def]
 
 /-- A vector belongs to an eigenvector span exactly when its eigenbasis representation is
 supported on the selected indices. -/
@@ -396,6 +437,94 @@ theorem isCompl_negativeSpectralSubspace_positiveSpectralSubspace_of_ker_eq_bot
     exact lt_or_gt_of_ne (hT.eigenvalues_ne_zero_of_ker_eq_bot hn hker i)
   rw [hindices, hT.eigenvectorSpan_univ hn]
 
+/-! ### The quadratic form on the spectral subspaces -/
+
+/-- **The quadratic form is coercive on the positive spectral subspace.** If `c` is at most every
+positive eigenvalue of a finite-dimensional symmetric operator `T`, then
+`c ‖v‖ ^ 2 ≤ re ⟪T v, v⟫` on the positive spectral subspace of `T`. -/
+theorem mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) {c : ℝ}
+    (hc : ∀ i, 0 < hT.eigenvalues hn i → c ≤ hT.eigenvalues hn i) {v : E}
+    (hv : v ∈ hT.positiveSpectralSubspace hn) :
+    c * ‖v‖ ^ 2 ≤ RCLike.re ⟪T v, v⟫_𝕜 := by
+  rw [positiveSpectralSubspace, eigenvectorSpan_eq_spanIndices] at hv
+  exact hT.le_re_inner_apply_self_of_mem_spanIndices hn hc hv
+
+/-- **The quadratic form is anticoercive on the negative spectral subspace.** If `c` is at most
+the absolute value of every negative eigenvalue of a finite-dimensional symmetric operator `T`,
+then `re ⟪T v, v⟫ ≤ -(c ‖v‖ ^ 2)` on the negative spectral subspace of `T`. -/
+theorem re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) {c : ℝ}
+    (hc : ∀ i, hT.eigenvalues hn i < 0 → c ≤ -hT.eigenvalues hn i) {v : E}
+    (hv : v ∈ hT.negativeSpectralSubspace hn) :
+    RCLike.re ⟪T v, v⟫_𝕜 ≤ -(c * ‖v‖ ^ 2) := by
+  rw [negativeSpectralSubspace, eigenvectorSpan_eq_spanIndices] at hv
+  rw [← neg_mul]
+  exact hT.re_inner_apply_self_le_of_mem_spanIndices hn
+    (fun i hi ↦ le_neg_of_le_neg (hc i hi)) hv
+
+/-- A finite-dimensional symmetric operator has a positive lower bound `c` for the absolute
+values of its nonzero eigenvalues. Such a `c` is a coercivity constant for the quadratic form on
+both strict spectral subspaces
+(`LinearMap.IsSymmetric.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace`,
+`LinearMap.IsSymmetric.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace`). -/
+theorem exists_pos_forall_le_abs_eigenvalues (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) :
+    ∃ c > 0, ∀ i, hT.eigenvalues hn i ≠ 0 → c ≤ |hT.eigenvalues hn i| := by
+  classical
+  let s := Finset.univ.filter fun i : Fin n ↦ hT.eigenvalues hn i ≠ 0
+  rcases s.eq_empty_or_nonempty with hs | hs
+  · refine ⟨1, one_pos, fun i hi ↦ ?_⟩
+    have : i ∈ s := Finset.mem_filter.2 ⟨Finset.mem_univ i, hi⟩
+    simp [hs] at this
+  obtain ⟨j, hj, hjmin⟩ := s.exists_min_image (fun i ↦ |hT.eigenvalues hn i|) hs
+  exact ⟨|hT.eigenvalues hn j|, abs_pos.2 (Finset.mem_filter.1 hj).2, fun i hi ↦
+    hjmin i (Finset.mem_filter.2 ⟨Finset.mem_univ i, hi⟩)⟩
+
+/-! ### Operators anticommuting with an invertible operator -/
+
+open Finset in
+/-- **Paired eigenvalues.** If an invertible operator `e` anticommutes with a symmetric operator
+`T`, the decreasingly ordered eigenvalues of `T` are antisymmetric: the `i`-th largest eigenvalue
+is minus the `i`-th smallest one. Equivalently, the eigenvalues of `T`, counted with
+multiplicity, are symmetric about `0`. -/
+theorem eigenvalues_rev_of_anticommute (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
+    (e : E ≃ₗ[𝕜] E) (h : T * e + e * T = 0) (i : Fin n) :
+    hT.eigenvalues hn i.rev = -hT.eigenvalues hn i := by
+  classical
+  -- The real number `-μ` occurs as often as `μ` in the ordered eigenvalue family.
+  have hcount (μ : ℝ) :
+      #{j | hT.eigenvalues hn j = -μ} = #{j | hT.eigenvalues hn j = μ} := by
+    have hcard (ν : ℝ) :
+        #{j | hT.eigenvalues hn j = ν} = Module.finrank 𝕜 (eigenspace T (ν : 𝕜)) := by
+      rw [← hT.card_filter_eigenvalues_eq hn]
+      simp only [RCLike.ofReal_inj]
+    rw [hcard, hcard, RCLike.ofReal_neg, finrank_genEigenspace_neg_of_anticommute e h]
+  -- The family `j ↦ -λ_{rev j}` is again decreasing, and every value occurs in it as often as
+  -- in the ordered eigenvalue family, so it is that family itself.
+  have hgev : (fun j ↦ -hT.eigenvalues hn j.rev) = hT.eigenvalues hn := by
+    refine Antitone.eq_of_card_filter_eq
+      (fun j k hjk ↦ neg_le_neg (hT.eigenvalues_antitone hn (Fin.rev_le_rev.2 hjk)))
+      (hT.eigenvalues_antitone hn) fun μ ↦ ?_
+    rw [← hcount μ]
+    refine Finset.card_equiv Fin.revPerm fun j ↦ ?_
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.revPerm_apply]
+    constructor <;> intro hj <;> linarith
+  simpa using (congrFun hgev i.rev).symm
+
+/-- If an invertible operator anticommutes with a symmetric operator `T`, then `T` has as many
+positive as negative eigenvalues, counted with multiplicity: its positive and negative spectral
+subspaces have the same dimension. -/
+theorem finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute
+    (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (e : E ≃ₗ[𝕜] E) (h : T * e + e * T = 0) :
+    Module.finrank 𝕜 (hT.positiveSpectralSubspace hn) =
+      Module.finrank 𝕜 (hT.negativeSpectralSubspace hn) := by
+  rw [finrank_positiveSpectralSubspace, finrank_negativeSpectralSubspace]
+  refine Set.ncard_congr (fun i _ ↦ i.rev) (fun i hi ↦ ?_) (fun _ _ _ _ ↦ Fin.rev_inj.1)
+    fun j hj ↦ ⟨j.rev, ?_, Fin.rev_rev j⟩
+  · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hi
+  · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hj
+
 end LinearMap.IsSymmetric
 
 namespace LinearMap.IsPositive
@@ -442,7 +571,30 @@ theorem exists_pos_mul_norm_sq_le_re_inner (hT : T.IsPositive) (hker : LinearMap
       exact div_nonneg (hT.re_inner_nonneg_left x) (by positivity)⟩ (⟨w, hw⟩ : {x : E // x ≠ 0})
   rwa [le_div_iff₀ (pow_pos (norm_pos_iff.2 hw) 2)] at hle
 
+omit [FiniteDimensional 𝕜 E] in
+/-- The determinant of a positive operator on a finite-dimensional real inner product space is the
+absolute value of the determinant of its negative. -/
+theorem abs_det_neg {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] {S : F →ₗ[ℝ] F} (hS : S.IsPositive) :
+    |LinearMap.det (-S)| = LinearMap.det S := by
+  rw [← neg_one_smul ℝ S, LinearMap.det_smul]
+  simp [abs_of_nonneg hS.det_nonneg]
+
 end LinearMap.IsPositive
+
+namespace IsStrictlyPositive
+
+open scoped ComplexOrder
+
+/-- A strictly positive operator on a finite-dimensional inner product space has positive
+determinant. -/
+theorem det_pos [FiniteDimensional 𝕜 E] {T : E →L[𝕜] E} (hT : IsStrictlyPositive T) :
+    0 < T.det :=
+  (ContinuousLinearMap.nonneg_iff_isPositive.mp hT.nonneg).toLinearMap.det_pos
+    ((T : E →ₗ[𝕜] E).isUnit_iff_ker_eq_bot.mp
+      (hT.isUnit.map ContinuousLinearMap.toLinearMapRingHom))
+
+end IsStrictlyPositive
 
 namespace ContinuousLinearMap.IsPositive
 

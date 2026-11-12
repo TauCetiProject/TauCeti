@@ -15,6 +15,7 @@ An admissible change of variables with algebraic coefficients has a locally cons
 under the Krull topology. This gives continuity for the cocycles attached to pointed twists
 of Weierstrass curves. Descent is developed in
 `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisDescent.lean`.
+
 -/
 
 public section

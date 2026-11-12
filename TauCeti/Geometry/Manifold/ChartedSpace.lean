@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ChartedSpace
+public import Mathlib.Topology.Perfect
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Transporting local statements through charts
@@ -21,10 +23,17 @@ charted space in its preferred charts and to check that it is well behaved.
 
 * `TauCeti.tendsto_chartAt_symm_nhdsNE`: the inverse of the chart at `x` maps punctured
   neighbourhoods of `chartAt H x x` into punctured neighbourhoods of `x`.
+* `TauCeti.tendsto_chartAt_nhdsNE`: conversely, the chart at `x` maps punctured neighbourhoods of
+  `x` into punctured neighbourhoods of `chartAt H x x`.
+* `TauCeti.tendsto_comp_chartAt_symm_nhdsNE_iff`: a function has a limit along the punctured
+  neighbourhoods of `x` exactly when its representative in the chart at `x` has the same limit.
 * `TauCeti.comp_symm_eventuallyEq_comp_chartAt_symm_comp`: the representative of `k` in a chart `e`
   at `x` is its representative in the preferred chart composed with the transition map.
 * `TauCeti.comp_comp_chartAt_symm_eventuallyEq`: the representative of `k ∘ φ` is the
   representative of `k` composed with the representative of `φ`.
+* `ChartedSpace.perfectSpace`: a charted space over a space without isolated points has no
+  isolated points.
+* `ChartedSpace.nontrivial`: a nonempty such charted space has two distinct points.
 -/
 
 public section
@@ -40,11 +49,24 @@ variable {H H' X Y : Type*} [TopologicalSpace H] [TopologicalSpace H'] [Topologi
 punctured neighbourhoods of `x`. -/
 theorem tendsto_chartAt_symm_nhdsNE (x : X) :
     Tendsto (chartAt H x).symm (𝓝[≠] (chartAt H x x)) (𝓝[≠] x) := by
-  have hx := mem_chart_source H x
-  refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-    (((chartAt H x).tendsto_symm hx).mono_left nhdsWithin_le_nhds) ?_
-  simpa [(chartAt H x).left_inv hx] using
-    (chartAt H x).symm.eventually_ne_nhdsWithin ((chartAt H x).map_source hx)
+  simpa [(chartAt H x).left_inv (mem_chart_source H x)] using
+    (chartAt H x).symm.tendsto_nhdsNE ((chartAt H x).map_source (mem_chart_source H x))
+
+/-- The chart at `x` maps punctured neighbourhoods of `x` into punctured neighbourhoods of
+`chartAt H x x`. -/
+theorem tendsto_chartAt_nhdsNE (x : X) :
+    Tendsto (chartAt H x) (𝓝[≠] x) (𝓝[≠] (chartAt H x x)) :=
+  (chartAt H x).tendsto_nhdsNE (mem_chart_source H x)
+
+/-- A function on `X` tends to a filter along the punctured neighbourhoods of `x` exactly when its
+representative in the chart at `x` does along the punctured neighbourhoods of `chartAt H x x`. -/
+theorem tendsto_comp_chartAt_symm_nhdsNE_iff {α : Type*} {k : X → α} {l : Filter α} :
+    Tendsto (k ∘ (chartAt H x).symm) (𝓝[≠] (chartAt H x x)) l ↔ Tendsto k (𝓝[≠] x) l := by
+  refine ⟨fun h ↦ (h.comp (tendsto_chartAt_nhdsNE x)).congr' ?_,
+    fun h ↦ h.comp (tendsto_chartAt_symm_nhdsNE x)⟩
+  filter_upwards [nhdsWithin_le_nhds
+    ((chartAt H x).open_source.mem_nhds (mem_chart_source H x))] with y hy
+  simp [(chartAt H x).left_inv hy]
 
 /-- Near `e x`, the representative of `k` in a chart `e` is its representative in the preferred
 chart at `x`, composed with the transition map from `e` to that chart. -/
@@ -67,4 +89,39 @@ theorem comp_comp_chartAt_symm_eventuallyEq {α : Type*} (k : Y → α) {φ : X 
     ((chartAt H' (φ x)).open_source.mem_nhds (mem_chart_source H' (φ x)))] with z hz
   simp [(chartAt H' (φ x)).left_inv hz]
 
+section T2
+
+variable [T2Space X]
+
+/-- In a Hausdorff charted space, finitely many distinct points `p i` have pairwise disjoint open
+neighbourhoods `V i` inside the domains of the charts at them. -/
+theorem exists_pairwise_disjoint_isOpen_subset_chartAt_source {ι : Type*} [Finite ι]
+    {p : ι → X} (hinj : Function.Injective p) :
+    ∃ V : ι → Set X, (∀ i, IsOpen (V i)) ∧ (∀ i, V i ⊆ (chartAt H (p i)).source) ∧
+      (∀ i, p i ∈ V i) ∧ Pairwise (Function.onFun Disjoint V) := by
+  obtain ⟨U, hU, hUdisj⟩ := (Set.finite_range p).t2_separation
+  refine ⟨fun i => U (p i) ∩ (chartAt H (p i)).source,
+    fun i => (hU (p i)).2.inter (chartAt H (p i)).open_source, fun i => Set.inter_subset_right,
+    fun i => ⟨(hU (p i)).1, mem_chart_source H (p i)⟩, fun i j hij => ?_⟩
+  exact (hUdisj (Set.mem_range_self i) (Set.mem_range_self j) (hinj.ne hij)).mono
+    Set.inter_subset_left Set.inter_subset_left
+
+end T2
+
 end TauCeti
+
+/-- A charted space over a space without isolated points has no isolated points: the inverse
+chart at `x` carries the punctured neighbourhoods of `chartAt H x x` into those of `x`. -/
+theorem ChartedSpace.perfectSpace {H X : Type*} [TopologicalSpace H] [PerfectSpace H]
+    [TopologicalSpace X] [ChartedSpace H X] : PerfectSpace X :=
+  perfectSpace_iff_forall_not_isolated.2 fun x ↦
+    (TauCeti.tendsto_chartAt_symm_nhdsNE (H := H) x).neBot
+
+/-- A nonempty charted space over a space without isolated points is nontrivial: its points are
+not isolated, so the punctured neighbourhoods of any point contain a second point. -/
+theorem ChartedSpace.nontrivial {H X : Type*} [TopologicalSpace H] [PerfectSpace H]
+    [TopologicalSpace X] [ChartedSpace H X] [Nonempty X] : Nontrivial X := by
+  have := ChartedSpace.perfectSpace (H := H) (X := X)
+  obtain ⟨x⟩ := ‹Nonempty X›
+  obtain ⟨y, hy⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin : {x}ᶜ ∈ 𝓝[≠] x)
+  exact ⟨⟨y, x, hy⟩⟩

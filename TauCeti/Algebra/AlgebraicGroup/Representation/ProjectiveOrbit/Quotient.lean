@@ -9,9 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Fibe
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Lifting
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LineFibers
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Basic
-public import Mathlib.CategoryTheory.Sites.LocallyBijective
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
-import Mathlib.CategoryTheory.Sites.SheafOfTypes
 
 /-!
 # Projective orbits represent homogeneous quotients
@@ -24,9 +22,9 @@ scheme of the line through `m`: its fppf sheaf of points is isomorphic to `G/N`,
 with the projections from `G`. Every closed subgroup admits such a vector, so `G/N` is
 represented by a scheme, locally closed in a projective space.
 
-The orbit scheme defines an fppf sheaf on affine `k`-schemes because the fppf topology is
-subcanonical. The orbit map from `G` is invariant under `N` and descends to `G/N`. The
-descended map is locally injective because the fibers of the orbit map are exactly the left
+The orbit scheme defines an fppf sheaf on affine `k`-schemes, `CommAlgCat.pointsSheaf`, because
+the fppf topology is subcanonical. The orbit map from `G` is invariant under `N` and descends to
+`G/N`. The descended map is locally injective because the orbit-map fibers are exactly the left
 cosets of `N` (`Comodule.projectiveOrbitMap_SpecMap_eq_iff_exists_units_matrixCoefficient`),
 and it is locally surjective because every point of the orbit lifts to `G` after a faithfully
 flat, finitely presented extension (`Comodule.exists_faithfullyFlat_lift_toProjectiveOrbit`).
@@ -64,12 +62,7 @@ variable {k : Type u} [Field k] [IsAlgClosed k] {H : _root_.CommHopfAlgCat.{u} k
 beside the fppf homogeneous quotient. -/
 noncomputable def projectiveOrbitPointsSheaf (m : M) (hm : Module.IsUnimodular k m) :
     Sheaf (CommAlgCat.fppfTopology k) (Type (u + 1)) :=
-  ⟨((algSpec (CommRingCat.of k)).op ⋙
-      yoneda.obj (Over.mk (projectiveOrbitToSpec (H := H) m hm))) ⋙ uliftFunctor.{u + 1, u},
-    (isSheaf_iff_isSheaf_of_type _ _).mpr <| Presieve.isSheaf_comp_uliftFunctor _ <|
-      (isSheaf_iff_isSheaf_of_type _ _).mp <| (algSpec (CommRingCat.of k)).op_comp_isSheaf _ _
-        ((Scheme.fppfTopology.over (Spec (CommRingCat.of k))).yoneda.obj
-          (Over.mk (projectiveOrbitToSpec (H := H) m hm)))⟩
+  CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm))
 
 /-- The points of the projective orbit scheme over `Spec A` are its morphisms from `Spec A`
 over the base field. -/
@@ -207,38 +200,11 @@ theorem fppfHomogeneousQuotientProjection_comp_toProjectiveOrbitPoints :
 an algebraically closed field and a vector whose matrix coefficients detect the left cosets of a
 closed subgroup `N`, the descended orbit map `G/N ⟶ X` is an isomorphism of fppf sheaves. -/
 instance isIso_fppfHomogeneousQuotientToProjectiveOrbitPoints [_root_.IsReduced H] :
-    IsIso (fppfHomogeneousQuotientToProjectiveOrbitPoints I m hm hcoset) := by
-  let J := CommAlgCat.fppfTopology k
-  let P := CommHopfAlgCat.homogeneousQuotientPresheaf H I
-  let e := CommHopfAlgCat.homogeneousQuotientPresheafHomEquiv H I
-    (projectiveOrbitPointsSheaf (H := H) m hm).obj
-  let ψ := e.symm ⟨toProjectiveOrbitPoints m hm, toProjectiveOrbitPoints_app_mul I m hm hcoset⟩
-  have hψ : CommHopfAlgCat.homogeneousQuotientPresheafProjection H I ≫ ψ =
-      toProjectiveOrbitPoints m hm := by
-    simpa only [e, CommHopfAlgCat.homogeneousQuotientPresheafHomEquiv_apply] using
-      congrArg Subtype.val (e.apply_symm_apply
-        ⟨toProjectiveOrbitPoints m hm, toProjectiveOrbitPoints_app_mul I m hm hcoset⟩)
-  -- On the coset presheaf the orbit map is injective: its fibers are exactly the cosets.
-  have hinj : Presheaf.IsLocallyInjective J ψ := by
-    refine Presheaf.isLocallyInjective_of_injective J ψ fun A q₁ q₂ hq ↦ ?_
-    obtain ⟨x₁, rfl⟩ := CommHopfAlgCat.homogeneousQuotientPresheafProjection_surjective H I A q₁
-    obtain ⟨x₂, rfl⟩ := CommHopfAlgCat.homogeneousQuotientPresheafProjection_surjective H I A q₂
-    have h := (congrArg (fun α ↦ α.app A x₁) hψ).symm.trans
-      (hq.trans (congrArg (fun α ↦ α.app A x₂) hψ))
-    have hc := (toProjectiveOrbitPoints_app_eq_iff m hm A x₁.down x₂.down).mp h
-    exact (CommHopfAlgCat.homogeneousQuotientPresheafProjection_eq_iff H I A _ _).mpr
-      (QuotientGroup.eq.mp ((hcoset A.unop.unop x₁.down x₂.down).mpr hc))
-  -- The orbit map on `G/N` restricts to `ψ` along the unit of sheafification.
-  have hfac : (toSheafify J P ≫ eqToHom (CommHopfAlgCat.fppfHomogeneousQuotient_obj H I).symm) ≫
-      (fppfHomogeneousQuotientToProjectiveOrbitPoints I m hm hcoset).hom = ψ := by
-    apply CommHopfAlgCat.homogeneousQuotientPresheaf_hom_ext
-    rw [hψ, ← Category.assoc, ← CommHopfAlgCat.fppfHomogeneousQuotientProjection_def,
-      fppfHomogeneousQuotientProjection_comp_toProjectiveOrbitPoints]
-  refine (GrothendieckTopology.W_sheafToPresheaf_map_iff_isIso J _).mp
-    ((J.W_iff_isLocallyBijective _).mpr ⟨?_, ?_⟩)
-  · exact Presheaf.isLocallyInjective_of_isLocallyInjective_of_isLocallySurjective_fac J ψ hfac
-  · exact Presheaf.isLocallySurjective_of_isLocallySurjective_fac J
-      (fppfHomogeneousQuotientProjection_comp_toProjectiveOrbitPoints I m hm hcoset)
+    IsIso (fppfHomogeneousQuotientToProjectiveOrbitPoints I m hm hcoset) :=
+  -- The fibers of the orbit map are exactly the cosets.
+  CommHopfAlgCat.isIso_fppfHomogeneousQuotientHomEquiv_symm H I _ _ _ fun A g g' h ↦
+    QuotientGroup.eq.mp ((hcoset A.unop.unop g g').mpr
+      ((toProjectiveOrbitPoints_app_eq_iff m hm A g g').mp h))
 
 /-- **The homogeneous quotient `G/N` is represented by a projective orbit.** For a reduced
 finite-type group over an algebraically closed field and a vector `m` whose matrix coefficients

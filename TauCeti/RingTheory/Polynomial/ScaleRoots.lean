@@ -13,6 +13,8 @@ public import Mathlib.RingTheory.Polynomial.ScaleRoots
 Scaling roots commutes with finite products over a commutative semiring without zero
 divisors, and with finite products of monic polynomials over any commutative semiring.
 This transports factorizations into linear factors through integral normalization.
+Scaling the roots by `s` also multiplies the subleading coefficient by `s`, so it preserves
+the vanishing of that coefficient.
 -/
 
 public section
@@ -20,6 +22,15 @@ public section
 namespace Polynomial
 
 variable {R ι : Type*} [CommSemiring R]
+
+/-- Scaling the roots by `s` multiplies the subleading coefficient by `s`. -/
+@[simp]
+theorem nextCoeff_scaleRoots (p : R[X]) (s : R) :
+    (p.scaleRoots s).nextCoeff = p.nextCoeff * s := by
+  rcases Nat.eq_zero_or_pos p.natDegree with h | h
+  · simp [nextCoeff, natDegree_scaleRoots, h]
+  rw [nextCoeff_of_natDegree_pos (by rwa [natDegree_scaleRoots]), nextCoeff_of_natDegree_pos h,
+    natDegree_scaleRoots, coeff_scaleRoots, Nat.sub_sub_self (by omega), pow_one]
 
 /-- Scaling roots commutes with a finite product of monic polynomials, even when the
 coefficient semiring has zero divisors. -/

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Empty
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.Sphere
+public import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
 # The relative homology of a disk and its boundary
@@ -35,6 +37,9 @@ carries the generator of the pair to the standard generator of the sphere.
 * `TauCeti.singularHomologyCubeBoundaryPairIso` and
   `TauCeti.isZero_singularHomology_cubeBoundaryPair_of_ne`: the same for the cube pair
   `(Iⁿ, ∂Iⁿ)`, transported along `TauCeti.diskBoundaryPairIsoCube`.
+* `TauCeti.isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter`: the inclusion
+  `(Dⁿ, Sⁿ⁻¹) ⟶ (Dⁿ, Dⁿ ∖ {0})` induces isomorphisms on relative homology, since the boundary
+  sphere is a deformation retract of the punctured disk (`StarConvex.sphereHomotopyEquiv`).
 
 ## References
 
@@ -79,10 +84,7 @@ lemma diskBoundary_singularHomologyMap_zero_isIso {n : ℕ} (hn : 2 ≤ n) :
 /-- The degree-zero relative homology of a positive-dimensional disk and its boundary vanishes. -/
 lemma isZero_singularHomology_diskBoundaryPair_zero {n : ℕ} (hn : 1 ≤ n) :
     IsZero ((diskBoundaryPair n).singularHomology R 0) := by
-  have : Nonempty (diskBoundaryPair.{w} n).snd := by
-    -- Unfolding `TopCat.diskBoundary` exposes its metric-sphere carrier.
-    change Nonempty (ULift (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1))
-    exact ⟨⟨EuclideanSpace.single ⟨0, hn⟩ 1, by simp⟩⟩
+  have : Nonempty (diskBoundaryPair.{w} n).snd := nonempty_diskBoundary_iff.2 (by omega)
   exact TopPair.isZero_singularHomology_zero _ R
 
 section HigherDegrees
@@ -213,5 +215,64 @@ theorem isZero_singularHomology_cubeBoundaryPair_of_ne {k : ℕ} (hk : k ≠ n) 
       (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n))).symm
 
 end CubePairHomology
+
+section PuncturedDisk
+
+variable (n : ℕ)
+
+/-- The inclusion of pairs `(Dⁿ, Sⁿ⁻¹) ⟶ (Dⁿ, Dⁿ ∖ {0})`. -/
+def diskBoundaryPairToComplDiskCenter :
+    diskBoundaryPair.{w} n ⟶ TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{w} n)) :=
+  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun s ↦ ⟨TopCat.diskBoundaryInclusion n s,
+    fun h ↦ diskCenter_notMem_range_diskBoundaryInclusion n ⟨s, h⟩⟩,
+    (TopCat.diskBoundaryInclusion n).hom.continuous.subtype_mk _⟩) rfl
+
+@[simp]
+lemma diskBoundaryPairToComplDiskCenter_fst :
+    TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{w} n) = 𝟙 _ :=
+  (rfl)
+
+/-- The punctured closed ball of `EuclideanSpace ℝ (Fin n)` is the punctured disk `Dⁿ ∖ {0}`. -/
+private def complDiskCenterHomeomorph :
+    ↥(Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1 \ {0}) ≃ₜ
+      ↥({diskCenter n}ᶜ : Set (TopCat.disk.{w} n)) where
+  toFun z := ⟨(ULift.up ⟨z, z.2.1⟩ :
+      ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)),
+    fun h ↦ z.2.2 ((congrArg (fun w : TopCat.disk.{w} n ↦
+      ((w : ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n))) h).trans (coe_diskCenter_down n))⟩
+  invFun w := ⟨((w : TopCat.disk.{w} n) :
+      ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down,
+    ((w : TopCat.disk.{w} n) :
+      ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2,
+    fun h ↦ w.2 (ULift.ext (Subtype.ext ((Set.mem_singleton_iff.1 h).trans
+      (coe_diskCenter_down n).symm)))⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+/-- **The punctured disk retracts onto its boundary**: the inclusion `(Dⁿ, Sⁿ⁻¹) ⟶ (Dⁿ, Dⁿ ∖ {0})`
+induces isomorphisms on relative singular homology. -/
+theorem isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter (k : ℕ) :
+    IsIso (TopPair.singularHomologyMap (diskBoundaryPairToComplDiskCenter.{w} n) R k) := by
+  -- The subspace map is the inclusion of the boundary sphere into the punctured disk, a homotopy
+  -- equivalence by radial projection.
+  let e := (Homeomorph.ulift.{w} (X := Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1) :
+      TopCat.diskBoundary.{w} n ≃ₜ _).toHomotopyEquiv.trans
+    ((((convex_closedBall (0 : EuclideanSpace ℝ (Fin n)) 1).starConvex
+      (Metric.mem_closedBall_self zero_le_one)).sphereHomotopyEquiv one_pos
+        Metric.sphere_subset_closedBall).trans (complDiskCenterHomeomorph.{w} n).toHomotopyEquiv)
+  have he : TopCat.ofHom e.toFun = TopPair.Hom.snd (diskBoundaryPairToComplDiskCenter.{w} n) := by
+    ext s
+    apply ULift.ext
+    apply Subtype.ext
+    exact (StarConvex.coe_sphereHomotopyEquiv_apply _ _ _ _).trans
+      (TopCat.coe_diskBoundaryInclusion_apply_down n s).symm
+  exact TopPair.isIso_singularHomologyMap_of_homotopyEquiv
+    (diskBoundaryPairToComplDiskCenter.{w} n) (.refl (TopCat.disk.{w} n)) e
+    (diskBoundaryPairToComplDiskCenter_fst n) he.symm R k
+
+end PuncturedDisk
 
 end TauCeti

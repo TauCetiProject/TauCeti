@@ -99,11 +99,6 @@ than a quotient map on one fixed group.
 * J.-P. Serre, *Local Fields*, Chapter VII, §5, and Chapter XI, §1.
 -/
 
--- The signatures of `LayerRefinement`, `relativeDegree`, `cohomologyInfl`, `tateInfl`,
--- `groundEquiv`, the tower lemmas and `exists_commonRefinement` below follow the Tau Ceti
--- `ClassFieldTheory` blueprint, `README.md` and `Suggested.lean`, which write down the refinement
--- relation between two normal layers formalised here.
-
 public noncomputable section
 
 open CategoryTheory
@@ -348,6 +343,7 @@ theorem cohomologyInfl_self {L : NormalLayer G} (T : LayerRefinement L L) (F : F
 
 /-- **Inflation of cohomology is functorial along a tower of refinements.** Inflating from `K/F`
 to `L/F` and then to `M/F` is inflating from `K/F` to `M/F`. -/
+@[elementwise]
 theorem cohomologyInfl_trans (T : LayerRefinement a b) (T' : LayerRefinement b c)
     (F : Formation G) (n : ℕ) :
     (T.trans T').cohomologyInfl F n = T.cohomologyInfl F n ≫ T'.cohomologyInfl F n := by

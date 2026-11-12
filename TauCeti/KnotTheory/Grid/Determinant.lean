@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Laurent
+public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.KnotTheory.Grid.Grading.Parity
 
@@ -71,11 +71,9 @@ the states have even `O`-Maslov grading (`GridDiagram.sum_negOnePow_maslovOℤ_e
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.4, "Euler
-characteristic = Alexander polynomial, via the grid determinant formula". The determinant formula
-is Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.3; identifying the
-determinant with the Alexander polynomial of the link the diagram presents is the remaining half
-of that milestone.
+The determinant formula is Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter
+3.3; identifying the determinant with the Alexander polynomial of the link the diagram presents is
+not done here.
 -/
 
 public section
@@ -85,14 +83,6 @@ open LaurentPolynomial
 namespace TauCeti
 
 variable {n : ℕ}
-
-/-- The monomial of a finite sum of exponents is the product of the monomials. -/
-private theorem T_sum {ι : Type*} (s : Finset ι) (f : ι → ℤ) :
-    (T (∑ i ∈ s, f i) : ℤ[T;T⁻¹]) = ∏ i ∈ s, T (f i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih => rw [Finset.sum_insert ha, Finset.prod_insert ha, T_add, ih]
 
 namespace GridDiagram
 

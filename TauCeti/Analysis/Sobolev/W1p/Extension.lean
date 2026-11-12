@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Zero
+public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 
@@ -19,12 +20,11 @@ that obstruction disappears, and this file proves it: the zero-extension of a `W
 function to any larger open set `Ω'` lies in `W^{1,p}_0(Ω')`, and its weak gradient is the
 zero-extension of the original weak gradient.
 
-This is the boundary-regularity-free half of Lane A.6 of `TauCetiRoadmap/PDE/README.md`.  Taking
-`Ω' = ⊤` gives the extension operator `W^{1,p}_0(Ω) → W^{1,p}(ℝⁿ)` that lane asks for, which is
-what lets whole-space statements (Gagliardo--Nirenberg--Sobolev, translation estimates, and
-through them Rellich--Kondrachov) be applied to functions given on a domain.  The extension
-operator for `W^{1,p}(Ω)` itself is a genuinely harder theorem needing Lipschitz `∂Ω`, and is not
-proved here.
+This is the half of the Sobolev extension theorem that needs no boundary regularity.  Taking
+`Ω' = ⊤` gives an extension operator `W^{1,p}_0(Ω) → W^{1,p}(ℝⁿ)`, which is what lets whole-space
+statements (Gagliardo--Nirenberg--Sobolev, translation estimates, and through them
+Rellich--Kondrachov) be applied to functions given on a domain.  The extension operator for
+`W^{1,p}(Ω)` itself is a genuinely harder theorem needing Lipschitz `∂Ω`, and is not proved here.
 
 ## The argument
 
@@ -50,6 +50,9 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
   `TauCeti.W1p0.extendByZeroL_extendByZeroL`.
 * `TauCeti.W1p0.value_extendByZeroL_ae_eq_zero_compl`: the whole-space extension vanishes almost
   everywhere off `Ω`.
+* `TauCeti.W1p0.norm_value_extendByZeroL`, `TauCeti.W1p0.norm_gradient_extendByZeroL`: the
+  extension preserves the norms of both components.
+* `TauCeti.W1p0.restrictL_extendByZeroL`: restricting the extension back to `Ω` recovers `u`.
 * `TauCeti.W1p0.hasWeakFDerivOn_indicator`: the analytic content, that the
   zero-extension of `u` is weakly differentiable on `Ω'` with the zero-extension of `∇u` as its
   weak gradient.
@@ -60,9 +63,8 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
 
 ## References
 
-Lane A.6 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans, *Partial Differential Equations*,
-Section 5.5, and H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential
-Equations*, Lemma 9.5.
+L. C. Evans, *Partial Differential Equations*, Section 5.5, and H. Brezis, *Functional Analysis,
+Sobolev Spaces and Partial Differential Equations*, Lemma 9.5.
 -/
 
 public section
@@ -296,6 +298,26 @@ theorem W1p0.gradient_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega
   rw [W1p.gradient_coe, W1p.gradient_coe, W1p0.coe_extendByZeroL,
     Sobolev1JetLp.gradient_extendByZeroₗᵢ]
 
+/-- Extension by zero preserves the `Lᵖ` norm of the value component. -/
+theorem W1p0.norm_value_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
+    ‖W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p)‖ = ‖W1p.value (u : W1p mu Omega p)‖ :=
+  by rw [W1p0.value_extendByZeroL, LinearIsometry.norm_map]
+
+/-- Extension by zero preserves the `Lᵖ` norm of the weak gradient. -/
+theorem W1p0.norm_gradient_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
+    ‖W1p.gradient (W1p0.extendByZeroL hsub u : W1p mu Omega' p)‖ =
+      ‖W1p.gradient (u : W1p mu Omega p)‖ := by
+  rw [W1p0.gradient_extendByZeroL, LinearIsometry.norm_map]
+
+/-- **Restricting a zero extension recovers the original function.** For `u ∈ W^{1,p}_0(Ω)` and
+`Ω ⊆ Ω'`, the restriction to `Ω` of the zero-extension of `u` to `Ω'` is `u`. -/
+@[simp]
+theorem W1p0.restrictL_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
+    W1p.restrictL hsub (W1p0.extendByZeroL hsub u : W1p mu Omega' p) = u :=
+  W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hsub _).trans (by
+    rw [W1p0.value_extendByZeroL]
+    exact coeFn_extendByZeroLpₗᵢ_restrict ℝ _ _ _)))
+
 /-- **The analytic content of the extension theorem.**  The zero-extension of `u ∈ W^{1,p}_0(Ω)`
 is weakly differentiable on the larger open set `Ω'`, with weak gradient the zero-extension of the
 weak gradient of `u`.  This is the statement that can *fail* for a general `u ∈ W^{1,p}(Ω)`: with
@@ -325,14 +347,12 @@ theorem W1p0.hasWeakFDerivOn_indicator (hsub : Omega ≤ Omega')
     exact coeFn_extendByZeroLpₗᵢ _ _ _ _
   refine (hmem.congr_ae hvalue).congr_ae_deriv ?_
   filter_upwards [hgradient] with x hx
-  refine ContinuousLinearMap.ext fun v => ?_
-  rw [Sobolev1JetLp.candidateWeakFDeriv_apply, innerSL_apply_apply, ← W1p.gradient_coe, hx]
-  exact real_inner_comm _ _
+  rw [Sobolev1JetLp.candidateWeakFDeriv_def, ← W1p.gradient_coe, hx]
 
 /-- **The weak gradient of a `W^{1,p}_0` function on a bounded set has integral zero.** If `Ω` is
 bounded and `u ∈ W^{1,p}_0(Ω)`, then `∫_Ω ⟪∇u, w⟫ = 0` for every direction `w`. A function of
 `W^{1,p}(Ω)` need not have this property, so it detects functions with nonzero boundary values:
-for nonempty `Ω` and `w ≠ 0`, the function `x ↦ ⟪x, w⟫` is not in `W^{1,p}_0(Ω)`. -/
+a function of `W^{1,p}(Ω)` with `∫_Ω ⟪∇u, w⟫ ≠ 0` for some `w` is not in `W^{1,p}_0(Ω)`. -/
 theorem W1p0.setIntegral_inner_gradient_eq_zero (hΩ : Bornology.IsBounded (Omega : Set E))
     (u : W1p0 mu Omega p) (w : E) :
     ∫ x in Omega, ⟪W1p.gradient (u : W1p mu Omega p) x, w⟫_ℝ ∂mu = 0 := by

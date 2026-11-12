@@ -55,13 +55,13 @@ instance : IsGalois ℚ_[2] DyadicCyclotomicEight :=
   IsCyclotomicExtension.isGalois {8} ℚ_[2] DyadicCyclotomicEight
 
 instance : ValuativeRel DyadicCyclotomicEight :=
-  finiteExtensionValuativeRel ℚ_[2] DyadicCyclotomicEight
+  algebraicExtensionValuativeRel ℚ_[2] DyadicCyclotomicEight
 
 instance : TopologicalSpace DyadicCyclotomicEight :=
-  finiteExtensionNormedFieldTopology ℚ_[2] DyadicCyclotomicEight
+  algebraicExtensionNormedFieldTopology ℚ_[2] DyadicCyclotomicEight
 
 instance : ValuativeExtension ℚ_[2] DyadicCyclotomicEight :=
-  finiteExtension_valuativeExtension ℚ_[2] DyadicCyclotomicEight
+  algebraicExtension_valuativeExtension ℚ_[2] DyadicCyclotomicEight
 
 instance : IsNonarchimedeanLocalField DyadicCyclotomicEight :=
   finiteExtension_isNonarchimedeanLocalField ℚ_[2] DyadicCyclotomicEight
@@ -107,10 +107,6 @@ theorem coe_integerZetaEight : (integerZetaEight : DyadicCyclotomicEight) = zeta
 @[simp]
 private theorem coe_ofNat_two : ((2 : 𝒪[DyadicCyclotomicEight]) : DyadicCyclotomicEight) = 2 :=
   map_ofNat 𝒪[DyadicCyclotomicEight].subtype 2
-
-@[simp]
-private theorem coe_base_ofNat_two : ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 :=
-  map_ofNat 𝒪[ℚ_[2]].subtype 2
 
 /-- The norm of `ζ₈ - 1` is two. -/
 @[simp]
@@ -192,7 +188,8 @@ private theorem addVal_integerZetaEight_sq_sub_one :
       coe_integerZetaEight, Subring.coe_one]
     exact (isPrimitiveRoot_zetaEight.norm_pow_sub_one_of_prime_pow_ne_two
       (p := 2) (k := 2) (s := 1) irreducible_cyclotomic_eight (by decide) (by decide)).trans
-        (by simp only [Subring.coe_pow, coe_base_ofNat_two, pow_one, Nat.cast_ofNat])
+        (by simp only [Subring.coe_pow, _root_.Padic.coe_two_integerRing 2,
+          pow_one, Nat.cast_ofNat])
   have h := addVal_norm (K := ℚ_[2]) (integerZetaEight ^ 2 - 1)
   rw [hnorm, IsDiscreteValuationRing.addVal_pow,
     ← Nat.cast_ofNat (R := 𝒪[ℚ_[2]]),

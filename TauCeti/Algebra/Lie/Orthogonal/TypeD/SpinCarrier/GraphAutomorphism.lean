@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
-public import TauCeti.CategoryTheory.Aut.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.GraphAutomorphism
 import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generation
 
@@ -59,8 +58,8 @@ the spin group scheme or the pinned simply connected Chevalley--Demazure group s
 What this feeds is the graph-twisted family `²Dₙ(q)`, whose Steinberg endomorphism is `γ ∘ Frob_q`
 for the `γ` built here and the `q`-power Frobenius of
 `TauCeti/Algebra/Lie/Orthogonal/TypeD/SpinCarrier/Frobenius.lean`, on the very carrier
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeD.lean` attaches to the three families on a type-`D`
-diagram. The type-`A` counterpart of this construction is
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeD/Basic.lean` attaches to the three families on a
+type-`D` diagram. The type-`A` counterpart of this construction is
 `TauCeti/Algebra/Lie/SpecialLinear/StandardCarrier/GraphAutomorphism.lean`, and the counterpart on
 the Geck carrier is
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/GeckLattice/GraphAutomorphism.lean`.
@@ -288,6 +287,19 @@ private theorem graphOperator_mem_lattice_iff :
   fun x => (polarization n).typeDGraphOperator_mem_integralLattice_iff
     (polarizationBasis n) (by omega)
 
+/-- The graph operator carries each weight component of the spin lattice to the component of the
+weight relabelled by the fork exchange. -/
+private theorem basisWeight_of_repr_ne_zero (i j : Fin (dimension n))
+    (hij : (latticeBasis n).repr ((graphOperator n (by omega)).toAddEquiv.invariantRestrict
+      (lattice n).toAddSubgroup (graphOperator_mem_lattice_iff n hn) (latticeBasis n j)) i ≠ 0)
+    (k : Fin n) :
+    basisWeight n i (graphPermD n (by omega) k) = basisWeight n j k := by
+  obtain rfl := AddEquiv.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial
+    (graphOperator n (by omega)).toAddEquiv (lattice n).toAddSubgroup
+    (graphOperator_mem_lattice_iff n hn) (latticeBasis n) (graphBasisPerm n (by omega))
+    (graphBasisScale n (by omega)) (graphOperator_latticeBasis n (by omega)) hij
+  exact basisWeight_graphBasisPerm n (by omega) j k
+
 /-- The numbered symmetry of the Kostant toral closure attached to the fork exchange. -/
 private def toralGraphAut :
     Aut (kostantToralGroupScheme
@@ -304,9 +316,7 @@ private def toralGraphAut :
     (graphOperator_mem_lattice_iff n hn)
     (graphOperator_rep_rootGenerator n hn)
     (graphRootPerm n (by omega)).surjective
-    (graphBasisPerm n (by omega)) (graphBasisScale n (by omega))
-    (graphOperator_latticeBasis n (by omega))
-    (graphPermD n (by omega)) (basisWeight_graphBasisPerm n (by omega))
+    (graphPermD n (by omega)) (basisWeight_of_repr_ne_zero n hn)
 
 /-- **The graph automorphism of the type-`Dₙ` spin carrier**: the automorphism realizing the fork
 exchange of the two final Bourbaki nodes. It renumbers the pinned root subgroups by that exchange
@@ -320,17 +330,17 @@ def graphAut : Aut (groupScheme n hn) :=
     (toralGraphAut n hn)
 
 private theorem graphAut_hom :
-    (graphAut n hn).hom =
-      eqToHom (groupScheme_eq_kostantToralGroupScheme n hn) ≫ (toralGraphAut n hn).hom ≫
+    (graphAut n hn).asIso.hom =
+      eqToHom (groupScheme_eq_kostantToralGroupScheme n hn) ≫ (toralGraphAut n hn).asIso.hom ≫
         eqToHom (groupScheme_eq_kostantToralGroupScheme n hn).symm := by
-  rw [graphAut, TauCeti.CategoryTheory.autMulEquivOfIso_hom, eqToIso.inv, eqToIso.hom]
+  simp [graphAut]
 
 /-- **The graph automorphism renumbers every pinned raising and lowering root subgroup by the fork
 exchange, without changing its additive parameter.** This is the equation `γ (x_α(t)) = x_{γ α}(t)`
 that pins a graph automorphism, on the type-`Dₙ` spin carrier. -/
 @[reassoc (attr := simp)]
 theorem rootSubgroup_comp_graphAut_hom (k : Fin n ⊕ Fin n) :
-    rootSubgroup n hn k ≫ (graphAut n hn).hom =
+    rootSubgroup n hn k ≫ (graphAut n hn).asIso.hom =
       rootSubgroup n hn (graphRootPerm n (by omega) k) := by
   rw [graphAut_hom, rootSubgroup_def, rootSubgroup_def, Category.assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, toralGraphAut, ← Category.assoc,
@@ -342,17 +352,17 @@ theorem rootSubgroup_comp_graphAut_hom (k : Fin n ⊕ Fin n) :
 /-- The inverse graph automorphism restores the original numbering of a pinned root subgroup. -/
 @[reassoc]
 theorem rootSubgroup_comp_graphAut_inv (k : Fin n ⊕ Fin n) :
-    rootSubgroup n hn (graphRootPerm n (by omega) k) ≫ (graphAut n hn).inv =
+    rootSubgroup n hn (graphRootPerm n (by omega) k) ≫ (graphAut n hn).asIso.inv =
       rootSubgroup n hn k := by
   rw [← rootSubgroup_comp_graphAut_hom n hn k, Category.assoc,
-    (graphAut n hn).hom_inv_id, Category.comp_id]
+    (graphAut n hn).asIso.hom_inv_id, Category.comp_id]
 
 /-- **The graph automorphism relabels the coordinates of the represented spin weight torus** by
 the fork exchange. Nothing here asserts that this morphism is an immersion, so this is an equation
 of morphisms and not a statement that `γ` normalizes a subgroup scheme. -/
 @[reassoc (attr := simp)]
 theorem weightTorus_comp_graphAut_hom :
-    weightTorus n hn ≫ (graphAut n hn).hom =
+    weightTorus n hn ≫ (graphAut n hn).asIso.hom =
       SplitTorus.relabel ℤ (graphPermD n (by omega)) ≫ weightTorus n hn := by
   rw [graphAut_hom, weightTorus_def, Category.assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, toralGraphAut, ← Category.assoc,
@@ -368,7 +378,7 @@ theorem graphAut_sq : graphAut n hn ^ 2 = 1 := by
     funext k
     rw [Function.iterate_succ_apply, Function.iterate_one, graphRootPerm_apply_apply, id_eq]
   have htoral : toralGraphAut n hn ^ 2 = 1 :=
-    kostantToralNumberedSymmetryIso_pow_eq_one _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 2
+    kostantToralNumberedSymmetryIso_pow_eq_one _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 2
       hrootIter (graphPermD_sq n (by omega))
   rw [graphAut, ← map_pow, htoral, map_one]
 
@@ -377,12 +387,12 @@ morphism-level reading of `TauCeti.TypeDSpinCarrier.graphAut_sq`, in the shape a
 composing scheme morphisms works in. -/
 @[reassoc (attr := simp)]
 theorem graphAut_hom_comp_self :
-    (graphAut n hn).hom ≫ (graphAut n hn).hom = 𝟙 (groupScheme n hn) := by
+    (graphAut n hn).asIso.hom ≫ (graphAut n hn).asIso.hom = 𝟙 (groupScheme n hn) := by
   have h := graphAut_sq n hn
   rw [pow_two] at h
   -- `Aut` multiplication is reverse categorical composition, and its unit is `Iso.refl`, so the
   -- forward legs of the two sides are already the two sides of the goal.
-  exact congrArg Iso.hom h
+  exact congrArg (fun γ : Aut (groupScheme n hn) => γ.asIso.hom) h
 
 /-- **The fork exchange has exactly one realization on the carrier.** An endomorphism of the
 carrier carrying each numbered raising and lowering root subgroup to the one at the exchanged
@@ -392,7 +402,7 @@ represented weight torus is needed. -/
 theorem eq_graphAut_hom_of_rootSubgroup (φ : groupScheme n hn ⟶ groupScheme n hn)
     (hroot : ∀ k, rootSubgroup n hn k ≫ φ =
       rootSubgroup n hn (graphRootPerm n (by omega) k)) :
-    φ = (graphAut n hn).hom := by
+    φ = (graphAut n hn).asIso.hom := by
   refine (cancel_mono (eqToHom (groupScheme_def n hn))).1 ?_
   refine groupScheme_hom_ext_of_rootSubgroup n hn _ _ fun k => ?_
   rw [← Category.assoc, ← Category.assoc, hroot k, rootSubgroup_comp_graphAut_hom]
@@ -400,16 +410,16 @@ theorem eq_graphAut_hom_of_rootSubgroup (φ : groupScheme n hn ⟶ groupScheme n
 /-- **The graph automorphism is the unique automorphism of the carrier exchanging the two fork
 root subgroups and fixing the others.** -/
 theorem eq_graphAut_of_rootSubgroup (γ : Aut (groupScheme n hn))
-    (hroot : ∀ k, rootSubgroup n hn k ≫ γ.hom =
+    (hroot : ∀ k, rootSubgroup n hn k ≫ γ.asIso.hom =
       rootSubgroup n hn (graphRootPerm n (by omega) k)) :
     γ = graphAut n hn :=
-  Iso.ext (eq_graphAut_hom_of_rootSubgroup n hn γ.hom hroot)
+  Aut.ext (Iso.ext (eq_graphAut_hom_of_rootSubgroup n hn γ.asIso.hom hroot))
 
 /-- The inverse leg of the graph automorphism is its forward leg, since it is an involution. -/
 @[simp]
-theorem graphAut_inv : (graphAut n hn).inv = (graphAut n hn).hom := by
-  rw [← Category.id_comp (graphAut n hn).inv, ← graphAut_hom_comp_self n hn, Category.assoc,
-    (graphAut n hn).hom_inv_id, Category.comp_id]
+theorem graphAut_inv : (graphAut n hn).asIso.inv = (graphAut n hn).asIso.hom := by
+  rw [← Category.id_comp (graphAut n hn).asIso.inv, ← graphAut_hom_comp_self n hn, Category.assoc,
+    (graphAut n hn).asIso.hom_inv_id, Category.comp_id]
 
 /-! ## The graph automorphism on matrix-valued points -/
 
@@ -480,9 +490,7 @@ theorem map_points_conj_graphAutMatrix (A : Type v) [CommRing A] :
     (graphOperator_mem_lattice_iff n hn)
     (graphOperator_rep_rootGenerator n hn)
     (graphRootPerm n (by omega)).surjective
-    (graphBasisPerm n (by omega)) (graphBasisScale n (by omega))
-    (graphOperator_latticeBasis n (by omega))
-    (graphPermD n (by omega)) (basisWeight_graphBasisPerm n (by omega)) A
+    (graphPermD n (by omega)) (basisWeight_of_repr_ne_zero n hn) A
 
 /-- The graph matrix, as an element of the normalizer of the carrier points. -/
 private def graphAutNormalizer (A : Type v) [CommRing A] :
@@ -520,12 +528,12 @@ one on its matrix-valued points are the same action. -/
 theorem schemePointsMulEquiv_graphAut_comp_carrierι (A : Type) [CommRing A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶ (groupScheme n hn).X) :
     GeneralLinear.schemePointsMulEquiv (dimension n) A
-        (p ≫ ((graphAut n hn).hom ≫ carrierι n hn).hom.hom) =
+        (p ≫ ((graphAut n hn).asIso.hom ≫ carrierι n hn).hom.hom) =
       graphAutMatrix n hn A *
           GeneralLinear.schemePointsMulEquiv (dimension n) A (p ≫ (carrierι n hn).hom.hom) *
         (graphAutMatrix n hn A)⁻¹ := by
-  have hcomp : (graphAut n hn).hom ≫ carrierι n hn =
-      eqToHom (groupScheme_eq_kostantToralGroupScheme n hn) ≫ (toralGraphAut n hn).hom ≫
+  have hcomp : (graphAut n hn).asIso.hom ≫ carrierι n hn =
+      eqToHom (groupScheme_eq_kostantToralGroupScheme n hn) ≫ (toralGraphAut n hn).asIso.hom ≫
         kostantToralGroupSchemeι
           (TauCeti.serreRootGenerator (CartanMatrix.D n))
           (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
@@ -544,9 +552,7 @@ theorem schemePointsMulEquiv_graphAut_comp_carrierι (A : Type) [CommRing A]
       (graphOperator_mem_lattice_iff n hn)
       (graphOperator_rep_rootGenerator n hn)
       (graphRootPerm n (by omega)).surjective
-      (graphBasisPerm n (by omega)) (graphBasisScale n (by omega))
-      (graphOperator_latticeBasis n (by omega))
-      (graphPermD n (by omega)) (basisWeight_graphBasisPerm n (by omega)) A
+      (graphPermD n (by omega)) (basisWeight_of_repr_ne_zero n hn) A
       (p ≫ (eqToHom (groupScheme_eq_kostantToralGroupScheme n hn)).hom.hom)
 
 /-- **The graph automorphism renumbers the pinned root subgroups on matrix-valued points**,
@@ -591,7 +597,7 @@ theorem graphAutPoints_weightTorusPoints (A : Type v) [CommRing A] (s : Fin n �
   refine Subtype.ext ?_
   rw [coe_graphAutPoints, coe_weightTorusPoints, coe_weightTorusPoints, kostantTorusMatrix_apply,
     kostantTorusMatrix_apply, graphAutMatrix,
-    kostantNumberedSymmetryMatrix_conj_diagGL (lattice n).toAddSubgroup (latticeBasis n)
+    kostantNumberedSymmetryMatrix_conj_diagGL_of_monomial (lattice n).toAddSubgroup (latticeBasis n)
       (graphOperator n (by omega)) (graphOperator_mem_lattice_iff n hn)
       (graphBasisPerm n (by omega)) (graphBasisScale n (by omega))
       (graphOperator_latticeBasis n (by omega)) A]

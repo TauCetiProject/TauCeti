@@ -73,19 +73,6 @@ namespace TauCeti.GridRectangleInitialPentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
-private theorem underlying_second_isEmpty
-    (D : GridRectangleInitialPentagonDecomposition a s x z) (h : D.pentagon.IsEmpty) :
-    D.toGridRectangleDecomposition.second.IsEmpty := by
-  rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at h ⊢
-  simpa only [D.pentagon_toGridRectangleBetween] using h
-
-private theorem second_bottom_eq_first_bottom
-    (D : GridRectangleInitialPentagonDecomposition a s x z)
-    (hcommon : D.first.right = D.second.left) :
-    D.second.bottom = D.first.bottom := by
-  rw [GridRectangleBetween.bottom_def, ← hcommon, D.first.map_right,
-    GridRectangleBetween.bottom_def]
-
 /-- If the rectangle avoids the turn row, the noncommon sides of a mixed `right = left` overlap
 differ: otherwise the pentagon would span the rectangle's rows and contain the turn row. -/
 theorem first_left_ne_second_right_of_right_eq_left
@@ -94,11 +81,10 @@ theorem first_left_ne_second_right_of_right_eq_left
     (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
     D.first.left ≠ D.second.right := by
   intro hother
-  have htop : D.second.top = D.first.top := by
-    rw [GridRectangleBetween.top_def, ← hother, D.first.map_left,
-      GridRectangleBetween.top_def]
   exact hturn (by
-    simpa only [D.second_bottom_eq_first_bottom hcommon, htop] using D.second_turn_mem)
+    simpa only [D.toGridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left
+      hcommon, D.toGridRectangleDecomposition.second_top_eq_first_top_of_left_eq_right hother]
+      using D.second_turn_mem)
 
 private noncomputable def rightLeftRecut
     (D : GridRectangleInitialPentagonDecomposition a s x z)
@@ -128,7 +114,9 @@ private theorem rightLeftRecut_geometry
       (D.first_left_ne_second_right_of_right_eq_left hcommon hturn))
     hfirst (D.underlying_second_isEmpty hsecond)
   have hturnWhole : s ∈ Grid.cIco D.first.bottom D.second.top := by
-    simpa only [D.second_bottom_eq_first_bottom hcommon] using D.second_turn_mem
+    simpa only [D.toGridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left
+      hcommon]
+      using D.second_turn_mem
   rcases hdata.recut_branch with hbranch | hbranch
   · have hfirstLeft : E.first.left = D.second.left := by
       apply x.toPerm.injective
@@ -203,9 +191,7 @@ theorem recutRightEqLeft_toGridRectangleDecomposition
       D.toGridRectangleDecomposition.recut
         (D.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_left hcommon
           (D.first_left_ne_second_right_of_right_eq_left hcommon hturn))
-        hfirst (by
-          rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at hsecond ⊢
-          simpa only [D.pentagon_toGridRectangleBetween] using hsecond) :=
+        hfirst (D.underlying_second_isEmpty hsecond) :=
   (rfl)
 
 /-- The promoted decomposition is an empty-rectangle recut of the original composite domain. -/
@@ -282,7 +268,9 @@ theorem first_top_mem_cIoo_of_right_eq_left
       (D.underlying_second_isEmpty hsecond)).2 with h | h
   · exact h
   · have hturnWhole : s ∈ Grid.cIco D.first.bottom D.second.top := by
-      simpa only [D.second_bottom_eq_first_bottom hcommon] using D.second_turn_mem
+      simpa only [D.toGridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left
+        hcommon]
+        using D.second_turn_mem
     exact (hturn (Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hturnWhole h)).elim
 
 /-- The promoted recut of a mixed `right = left` overlap covers the squares of the original
@@ -304,29 +292,23 @@ theorem coveredSquares_val_add_val_recutRightEqLeft
   set E := D.recutRightEqLeft hcommon hfirst hsecond hturn
   rw [hEbottom, hEtop] at hEturn
   have hrow := D.first_top_mem_cIoo_of_right_eq_left hcommon hfirst hsecond hturn
-  have hD2bottom := D.second_bottom_eq_first_bottom hcommon
+  have hD2bottom : D.second.bottom = D.first.bottom :=
+    D.toGridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left hcommon
   have hb : D.second.left = finRotate n a := D.second_left_eq
   -- Both pentagons start on the replaced line and the rectangle ends there, so the rectangle
   -- covers the column before that line but not the column after it, while the pentagons cover
   -- the column after it but not the column before it.
-  have haD1 : a ∈ Grid.cIco D.first.left D.first.right := by
-    rw [hcommon, hb]
-    exact Grid.self_mem_cIco_finRotate (by rw [← hb, ← hcommon]; exact D.first.left_ne_right)
-  have hbD1 : finRotate n a ∉ Grid.cIco D.first.left D.first.right := by
-    rw [hcommon, hb]
-    exact Grid.right_notMem_cIco _ _
-  have haD2 : a ∉ Grid.cIco D.second.left D.second.right := by
-    rw [hb]
-    simp
-  have hbD2 : finRotate n a ∈ Grid.cIco D.second.left D.second.right := by
-    rw [← hb]
-    exact Grid.left_mem_cIco D.second.left_ne_right
-  have haE1 : a ∉ Grid.cIco E.first.left E.first.right := by
-    rw [hEleft, hb]
-    simp
-  have hbE1 : finRotate n a ∈ Grid.cIco E.first.left E.first.right := by
-    rw [← hb, ← hEleft]
-    exact Grid.left_mem_cIco E.first.left_ne_right
+  have hr : D.first.right = finRotate n a := hcommon.trans hb
+  have haD1 : a ∈ Grid.cIco D.first.left D.first.right :=
+    hr ▸ Grid.self_mem_cIco_finRotate (hr ▸ D.first.left_ne_right)
+  have hbD1 : finRotate n a ∉ Grid.cIco D.first.left D.first.right :=
+    hr ▸ Grid.right_notMem_cIco _ _
+  have haD2 : a ∉ Grid.cIco D.second.left D.second.right := by simp [hb]
+  have hbD2 : finRotate n a ∈ Grid.cIco D.second.left D.second.right :=
+    hb ▸ Grid.left_mem_cIco D.second.left_ne_right
+  have haE1 : a ∉ Grid.cIco E.first.left E.first.right := by simp [hEleft, hb]
+  have hbE1 : finRotate n a ∈ Grid.cIco E.first.left E.first.right :=
+    hEleft.trans hb ▸ Grid.left_mem_cIco E.first.left_ne_right
   -- The pentagon's rows are those of the rectangle followed by those of the new pentagon.
   have hsplit (t : Fin n) :
       (if t ∈ Grid.cIco D.first.bottom D.second.top then 1 else 0 : ℕ) =
@@ -362,7 +344,7 @@ end TauCeti.GridRectangleInitialPentagonDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 section Weights
 
@@ -454,10 +436,9 @@ private theorem initialPentagonRightLeftOverlapSource_recut_data
     D.toGridRectangleDecomposition.HasOneCommonSide ∧ D.first.IsEmpty ∧ D.second.IsEmpty := by
   obtain ⟨hcommon, hturn, hfirst, hsecond⟩ :=
     G.initialPentagonRightLeftOverlapSource_data C D hD
-  refine ⟨D.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_left hcommon
-    (D.first_left_ne_second_right_of_right_eq_left hcommon hturn), hfirst, ?_⟩
-  rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at hsecond ⊢
-  simpa only [D.pentagon_toGridRectangleBetween] using hsecond
+  exact ⟨D.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_left hcommon
+    (D.first_left_ne_second_right_of_right_eq_left hcommon hturn), hfirst,
+    D.underlying_second_isEmpty hsecond⟩
 
 private theorem initialPentagonRightLeftOverlapPartner_injective :
     Function.Injective (G.initialPentagonRightLeftOverlapPartner C (x := x) (z := z)) := by
@@ -465,14 +446,13 @@ private theorem initialPentagonRightLeftOverlapPartner_injective :
   have hD := G.initialPentagonRightLeftOverlapPartner_isRecut C D
   have hE := G.initialPentagonRightLeftOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨honeD, hfD, hsD⟩ :=
+  obtain ⟨_, hfD, hsD⟩ :=
     G.initialPentagonRightLeftOverlapSource_recut_data C D.val D.property
-  obtain ⟨honeE, hfE, hsE⟩ :=
+  obtain ⟨_, hfE, hsE⟩ :=
     G.initialPentagonRightLeftOverlapSource_recut_data C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectangleInitialPentagonDecomposition.toGridRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone

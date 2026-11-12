@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Prod
 public import TauCeti.Order.Partition.Finpartition
-import Mathlib.Data.Setoid.Partition
+import Mathlib.Order.Setoid.Partition
 
 /-!
 # Integrals split by finite measurable partitions

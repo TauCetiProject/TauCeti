@@ -297,6 +297,19 @@ theorem Presentation.toCompletionLocTopHom_comp_mapHomOfSubset
     (existsUnique_continuous_ringHom_of_comap_rationalSubset_subset
       φ hφ Aplus Bplus hBplus p q hsub).choose_spec.1.2
 
+/-- When the denominator of `q` is `φ(p.den)` and its numerators contain the images of those of `p`,
+the geometric base change is the base change `Presentation.mapHom`. -/
+theorem Presentation.mapHomOfSubset_eq_mapHom (φ : A →+* B) (hφ : Continuous φ)
+    (Aplus : Subring A) (Bplus : Subring B) (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (p : Presentation P) (q : Presentation P')
+    (hsub : ValuationSpectrum.rationalSubset Bplus q.num q.den ⊆
+      ValuationSpectrum.comap φ ⁻¹'
+        ValuationSpectrum.rationalSubset Aplus p.num p.den)
+    (hden : q.den = φ p.den) (hnum : ∀ t ∈ p.num, φ t ∈ q.num) :
+    p.mapHomOfSubset φ hφ Aplus Bplus hBplus q hsub = p.mapHom φ hφ q hden hnum :=
+  p.hom_ext <| by
+    rw [toCompletionLocTopHom_comp_mapHomOfSubset, toCompletionLocTopHom_comp_mapHom]
+
 end TauCeti.Huber.PairOfDefinition
 
 namespace TauCeti.ValuationSpectrum

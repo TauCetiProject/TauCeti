@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.Algebra.Homology.Single
 public import TauCeti.Algebra.Homology.OrderedCech
 
-import Mathlib.Tactic.Ring
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The ordered Čech complex of a cover of a set
@@ -116,6 +116,8 @@ lemma ι_freeCechFunctor_map {s t : Finset ι} (f : op s ⟶ op t) (a : A) (ha :
       freeCechι R a fun i hi ↦ ha i (leOfHom f.unop hi) :=
   (Sigma.ι_comp_map' _ _ _).trans (Category.id_comp _)
 
+section
+
 variable [Preadditive C] [LinearOrder ι] [HasZeroObject C]
 
 variable (P) in
@@ -146,6 +148,8 @@ lemma freeCechι_freeCechAugmentation_f_zero (s : {s : Finset ι // #s = 0 + 1})
   rw [← Category.comp_id ((freeCechAugmentation R P).f 0)]
   exact h
 
+end
+
 namespace FreeCech
 
 /-! ### The contracting homotopy
@@ -154,6 +158,10 @@ The proof works with the summand inclusions `single R p t a`, which are defined 
 set `t` and vanish unless `t` has `p + 1` elements, so that sums over the elements of a set need no
 cardinality proofs. -/
 
+section
+
+variable [Preadditive C] [LinearOrder ι]
+
 /-- The inclusion of the summand of the point `a` and the set `t` in degree `p`; it vanishes when
 `t` does not have `p + 1` elements. -/
 private def single (p : ℕ) (t : Finset ι) (a : A) (ha : ∀ i ∈ t, a ∈ P i) :
@@ -161,31 +169,26 @@ private def single (p : ℕ) (t : Finset ι) (a : A) (ha : ∀ i ∈ t, a ∈ P 
   if ht : #t = p + 1 then freeCechι R a ha ≫ (freeCechFunctor R P).orderedCechComplexι ⟨t, ht⟩
   else 0
 
-omit [HasZeroObject C] in
 private lemma single_of_card_eq {p : ℕ} {t : Finset ι} {a : A} (ha : ∀ i ∈ t, a ∈ P i)
     (ht : #t = p + 1) :
     single R p t a ha = freeCechι R a ha ≫ (freeCechFunctor R P).orderedCechComplexι ⟨t, ht⟩ :=
   by simp [single, ht]
 
-omit [HasZeroObject C] in
 private lemma single_of_card_ne {p : ℕ} {t : Finset ι} {a : A} (ha : ∀ i ∈ t, a ∈ P i)
     (ht : #t ≠ p + 1) : single R p t a ha = 0 :=
   by simp [single, ht]
 
-omit [HasZeroObject C] in
 private lemma single_congr {p : ℕ} {t t' : Finset ι} {a : A} (ha : ∀ i ∈ t, a ∈ P i)
     (e : t = t') : single R p t a ha = single R p t' a (e ▸ ha) := by
   subst e
   rfl
 
-omit [HasZeroObject C] in
 private lemma hom_ext {p : ℕ} {Y : C} {f g : (freeCechFunctor R P).orderedCechComplex.X p ⟶ Y}
     (h : ∀ (s : Finset ι) (_ : #s = p + 1) (a : A) (ha : ∀ i ∈ s, a ∈ P i),
       single R p s a ha ≫ f = single R p s a ha ≫ g) : f = g := by
   refine Functor.orderedCechComplex_hom_ext _ fun s ↦ freeCechFunctor_hom_ext R fun a ha ↦ ?_
   simpa only [single_of_card_eq R ha s.2, Category.assoc] using h s.1 s.2 a ha
 
-omit [HasZeroObject C] in
 private lemma single_d {p : ℕ} {s : Finset ι} (hs : #s = p + 1 + 1) {a : A}
     (ha : ∀ i ∈ s, a ∈ P i) :
     single R (p + 1) s a ha ≫ (freeCechFunctor R P).orderedCechComplex.d (p + 1) p =
@@ -197,6 +200,7 @@ private lemma single_d {p : ℕ} {s : Finset ι} (hs : #s = p + 1 + 1) {a : A}
   rw [Preadditive.comp_zsmul, ι_freeCechFunctor_map_assoc,
     single_of_card_eq R _ (by rw [card_erase_of_mem i.2, hs, Nat.add_sub_cancel])]
 
+variable [HasZeroObject C] in
 /-- The augmentation on a summand inclusion of degree `0`. -/
 private lemma single_freeCechAugmentation {s : Finset ι} (hs : #s = 0 + 1) {a : A}
     (ha : ∀ i ∈ s, a ∈ P i) :
@@ -208,15 +212,18 @@ private lemma single_freeCechAugmentation {s : Finset ι} (hs : #s = 0 + 1) {a :
   -- definitional unfolding of `HomologicalComplex.single`.
   exact (freeCechι_freeCechAugmentation_f_zero_assoc R ⟨s, hs⟩ a ha _).trans (Category.comp_id _)
 
+end
+
 variable (hP : ⋃ i, P i = Set.univ)
 
 /-- A chosen member of the cover containing `a`. -/
 private def vertex (a : A) : ι :=
   (Set.mem_iUnion.1 (hP ▸ Set.mem_univ a)).choose
 
-omit [LinearOrder ι] in
 private lemma mem_vertex (a : A) : a ∈ P (vertex hP a) :=
   (Set.mem_iUnion.1 (hP ▸ Set.mem_univ a)).choose_spec
+
+variable [Preadditive C] [LinearOrder ι]
 
 /-- The components of the contracting homotopy: the summand of `(s, a)` goes to `± (s ∪ {c}, a)`,
 for the chosen member `c` of the cover containing `a`. The sign makes `c` the vertex of a cone. -/
@@ -227,7 +234,6 @@ private def homotopy (p j : ℕ) :
       single R j (insert (vertex hP a) s.1) a
         ((forall_mem_insert _ _ _).2 ⟨mem_vertex hP a, ha⟩)
 
-omit [HasZeroObject C] in
 private lemma single_homotopy {p : ℕ} (j : ℕ) {s : Finset ι} (hs : #s = p + 1) {a : A}
     (ha : ∀ i ∈ s, a ∈ P i) :
     single R p s a ha ≫ homotopy R hP p j =
@@ -245,22 +251,6 @@ private def coneFace (p : ℕ) (s : Finset ι) (a : A) (ha : ∀ i ∈ s, a ∈ 
     single R p (insert (vertex hP a) (s.erase k)) a
       ((forall_mem_insert _ _ _).2 ⟨mem_vertex hP a, fun j hj ↦ ha j (mem_of_mem_erase hj)⟩)
 
-omit hP in
-/-- Deleting an element `k` of `s` and adding `c ∉ s` in either order gives opposite signs. -/
-private lemma sign_cone {s : Finset ι} {c k : ι} (hc : c ∉ s) (hk : k ∈ s) :
-    ((-1 : ℤ) ^ #{j ∈ s | j < c}) * (-1) ^ #{j ∈ insert c s | j < k} =
-      -((-1) ^ #{j ∈ s | j < k} * (-1) ^ #{j ∈ s.erase k | j < c}) := by
-  have hck : c ≠ k := fun h ↦ hc (h ▸ hk)
-  rcases hck.lt_or_gt with h | h
-  · simp only [filter_insert, h, ↓reduceIte, filter_erase]
-    rw [card_insert_of_notMem (by simp [hc]),
-      erase_eq_of_notMem (show k ∉ {j ∈ s | j < c} by simp [h.not_gt]), pow_succ]
-    ring
-  · simp only [filter_insert, h.not_gt, ↓reduceIte, filter_erase]
-    rw [← card_erase_add_one (mem_filter.2 ⟨hk, h⟩), pow_succ]
-    ring
-
-omit [HasZeroObject C] in
 private lemma single_homotopy_d_of_notMem {p : ℕ} {s : Finset ι} (hs : #s = p + 1) {a : A}
     (ha : ∀ i ∈ s, a ∈ P i) (hc : vertex hP a ∉ s) :
     single R p s a ha ≫ homotopy R hP p (p + 1) ≫
@@ -275,16 +265,15 @@ private lemma single_homotopy_d_of_notMem {p : ℕ} {s : Finset ι} (hs : #s = p
   congr 1
   refine Finset.sum_congr rfl fun k hk ↦ ?_
   have hck : vertex hP a ≠ k := fun h ↦ hc (h ▸ hk)
-  rw [smul_smul, sign_cone hc hk, neg_smul, single_congr R _ (erase_insert_of_ne hck)]
+  rw [smul_smul, neg_one_pow_card_filter_lt_mul_insert hc hk, neg_smul,
+    single_congr R _ (erase_insert_of_ne hck)]
 
-omit [HasZeroObject C] in
 private lemma single_homotopy_of_mem {p : ℕ} {s : Finset ι} (hs : #s = p + 1) {a : A}
     (ha : ∀ i ∈ s, a ∈ P i) (hc : vertex hP a ∈ s) :
     single R p s a ha ≫ homotopy R hP p (p + 1) = 0 := by
   rw [single_homotopy R hP _ hs,
     single_of_card_ne R _ (by rw [insert_eq_of_mem hc, hs]; omega), smul_zero]
 
-omit [HasZeroObject C] in
 private lemma single_d_homotopy {p : ℕ} {s : Finset ι} (hs : #s = p + 1 + 1) {a : A}
     (ha : ∀ i ∈ s, a ∈ P i) :
     single R (p + 1) s a ha ≫ (freeCechFunctor R P).orderedCechComplex.d (p + 1) p ≫
@@ -295,7 +284,6 @@ private lemma single_d_homotopy {p : ℕ} {s : Finset ι} (hs : #s = p + 1 + 1) 
   rw [Preadditive.zsmul_comp, single_homotopy R hP _ (by rw [card_erase_of_mem hk, hs]; rfl),
     smul_smul]
 
-omit [HasZeroObject C] in
 private lemma coneFace_of_mem {p : ℕ} {s : Finset ι} (hs : #s = p + 1) {a : A}
     (ha : ∀ i ∈ s, a ∈ P i) (hc : vertex hP a ∈ s) :
     coneFace R hP p s a ha = single R p s a ha := by
@@ -308,13 +296,14 @@ private lemma coneFace_of_mem {p : ℕ} {s : Finset ι} (hs : #s = p + 1) {a : A
       smul_zero]
   · exact fun h ↦ (h hc).elim
 
-omit [HasZeroObject C] in
 /-- In degree `0` the cone face of `({i}, a)` is the summand of `({c}, a)`. -/
 private lemma coneFace_zero {s : Finset ι} (hs : #s = 0 + 1) {a : A} (ha : ∀ i ∈ s, a ∈ P i) :
     coneFace R hP 0 s a ha =
       single R 0 {vertex hP a} a (by simpa using mem_vertex hP a) := by
   obtain ⟨i, rfl⟩ := card_eq_one.1 hs
   simp [coneFace, filter_singleton]
+
+variable [HasZeroObject C]
 
 /-- The section of the augmentation: the summand of `a` goes to the summand of `({c}, a)`. -/
 private def section_ :
@@ -366,6 +355,8 @@ private lemma id_sub_freeCechAugmentation_comp_section :
     · rw [single_homotopy_d_of_notMem R hP hs ha hc, add_sub_cancel]
 
 end FreeCech
+
+variable [Preadditive C] [LinearOrder ι] [HasZeroObject C]
 
 open FreeCech in
 /-- **The ordered Čech complex of a cover resolves the free object on the covered set.** When the

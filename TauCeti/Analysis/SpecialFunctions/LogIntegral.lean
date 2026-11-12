@@ -45,13 +45,13 @@ The auxiliary bounds `TauCeti.Real.integral_inv_log_pow_le` and
 the logarithm. They are stated for a general exponent because the identity above needs `n = 2`
 while `Li` itself is the case `n = 1`.
 
-## Roadmap role
+## Use in prime counting
 
-This is the analytic half of Layer **6.2** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`,
-which asks for `Li` together with `Li(x) ∼ x/log x` on the way to the transfer
-`ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)` that Layer 10.3 exports as `primeCount_asymptotic_of_primeTheta`.
-The weighted-remainder estimate `isLittleO_integral_div_mul_log_sq` is the analytic input to that
-transfer: it is what absorbs the integral produced by Abel summation.
+These are the analytic inputs to the transfer `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)`,
+`TauCeti.primeCount_asymptotic_of_primeTheta` in
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Transfer.lean`. The weighted-remainder estimate
+`TauCeti.Real.isLittleO_integral_div_mul_log_sq` is what absorbs the integral produced by Abel
+summation there.
 
 ## References
 
@@ -78,6 +78,14 @@ theorem continuousOn_inv_log_pow (n : ℕ) :
   have hlog : ContinuousOn (fun t : ℝ ↦ Real.log t) (Ioi 1) :=
     Real.continuousOn_log.mono fun t ht ↦ ne_of_gt (lt_trans one_pos ht)
   exact (hlog.pow n).inv₀ fun t ht ↦ ne_of_gt (pow_pos (Real.log_pos ht) n)
+
+/-- The weight `t⁻¹ / log t ^ n` of integrals against powers of `1 / log` is continuous to the
+right of `t = 1`. -/
+theorem continuousOn_inv_div_log_pow (n : ℕ) :
+    ContinuousOn (fun t : ℝ ↦ t⁻¹ / Real.log t ^ n) (Ioi 1) := by
+  simpa only [div_eq_mul_inv] using
+    ContinuousOn.fun_mul (continuousOn_inv₀.mono fun t (ht : t ∈ Ioi 1) ↦
+      mem_compl_singleton_iff.mpr (zero_lt_one.trans ht).ne') (continuousOn_inv_log_pow n)
 
 /-- Reciprocal powers of the logarithm are interval integrable on any interval to the right
 of `1`. -/

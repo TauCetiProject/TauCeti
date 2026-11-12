@@ -13,8 +13,9 @@ import Mathlib.RingTheory.Filtration
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Points
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
+import TauCeti.RingTheory.Valuation.LtAddSubgroup
 import TauCeti.RingTheory.Valuation.ValuationRing
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # The adic spectrum of a discrete valuation ring
@@ -38,7 +39,7 @@ No completeness of `R` is needed. The proof sorts points by their support, a pri
 hence `⊥` or `𝔪`. On a point with support `𝔪`, units have value `1` and nonunits value `0`
 (`TauCeti.ValuationSpectrum.eq_trivialSection_of_supp_eq`). On a point with support `⊥`, the
 nonunits are topologically nilpotent and so have value below `1`, which forces comparison by
-divisibility (`Valuation.le_iff_dvd`).
+divisibility (`MonoidWithZeroHom.le_iff_dvd`).
 
 ## Main results
 
@@ -111,9 +112,10 @@ theorem isContinuous_ofValuation_intValuation (hR : IsAdic (maximalIdeal R)) :
     rw [Ideal.iInf_pow_eq_bot_of_isLocalRing _ (maximalIdeal.isMaximal R).ne_top,
       Ideal.mem_bot] at hmem
     exact hb (by simp [hmem])
-  refine AddSubgroup.isOpen_mono (H₁ := (maximalIdeal R ^ n).toAddSubgroup)
-    (H₂ := w.ltAddSubgroup (Units.mk0 (w b) hb)) (fun a ha ↦ ?_) (hR.isOpen_pow n)
-  rw [Valuation.mem_ltAddSubgroup_iff, Units.val_mk0, ← not_le]
+  rw [← Valuation.coe_ltAddSubgroupOfNeZero hb]
+  refine AddSubgroup.isOpen_mono (H₁ := (maximalIdeal R ^ n).toAddSubgroup) (fun a ha ↦ ?_)
+    (hR.isOpen_pow n)
+  rw [Valuation.mem_ltAddSubgroupOfNeZero, ← not_le]
   intro hba
   rw [intValuation_le_intValuation_iff_dvd] at hba
   exact hn (Ideal.mem_of_dvd _ hba ha)
@@ -133,8 +135,8 @@ theorem eq_ofValuation_intValuation_of_supp_eq_bot (hR : IsAdic (maximalIdeal R)
   refine ext' fun x y ↦ ?_
   rw [vle_ofValuation, intValuation_le_intValuation_iff_dvd,
     ← valuation_le_iff]
-  refine Valuation.le_iff_dvd _ (fun a ↦ valuation_le_one_of_mem_spa hv trivial)
-    (fun a ha ↦ ?_) (fun a ha ↦ ?_)
+  refine MonoidWithZeroHom.le_iff_dvd v.valuation.toMonoidWithZeroHom
+    (fun a ↦ valuation_le_one_of_mem_spa hv trivial) (fun a ha ↦ ?_) (fun a ha ↦ ?_)
   · exact ((isContinuous_def v).mp ((mem_spa_iff _ v).mp hv).1).lt_one_of_isTopologicallyNilpotent
       (hR.isTopologicallyNilpotent_of_mem ((mem_maximalIdeal a).mpr ha))
   · rw [← Ideal.mem_bot, ← hsupp, supp_eq_valuation_supp]

@@ -29,6 +29,8 @@ Nullified members, repeated roots, the empty family and stacks without sections 
 ## Main results
 
 * `TauCeti.exists_isCAD_signInvariant`: every finite set of polynomials has an adapted CAD.
+* `TauCeti.IsSemialgebraic.exists_isCAD_subset_or_disjoint`: every semialgebraic set is a union of
+  cells of some CAD.
 * `TauCeti.HasSemialgebraicProjections ℝ`: **projection closure**, the Tarski–Seidenberg theorem.
   Forgetting the coordinate `0` maps semialgebraic subsets of `ℝ ^ (n + 1)` to semialgebraic
   subsets of `ℝ ^ n` (`TauCeti.HasSemialgebraicProjections.isSemialgebraic_image_tail`). A
@@ -72,21 +74,26 @@ theorem exists_isCAD_signInvariant (F : Finset (MvPolynomial (Fin n) ℝ)) :
       Finset.mem_image_of_mem _ hf
     obtain ⟨𝒟, h𝒟, hproj⟩ := ih G.collinsProjection
     -- over each base cell, the stack of a delineation of the fibers of `G`
-    have hstack (C : Set (Fin n → ℝ)) : ∃ (k : ℕ) (θ : Fin k → C → ℝ), C ∈ 𝒟 →
-        IsSemialgebraicStack C θ ∧
-          ∀ E ∈ stackCells C θ, ∀ f ∈ F, SignInvariant (fun y ↦ eval y f) E := by
-      by_cases hC : C ∈ 𝒟
-      · obtain ⟨D⟩ := nonempty_delineation_of_signInvariant_collinsProjection
+    obtain ⟨𝒞, h𝒞, -, hsign⟩ := h𝒟.exists_succ_of_forall_exists_stack
+      (fun E ↦ ∀ f ∈ F, SignInvariant (fun y ↦ eval y f) E) fun C hC ↦ by
+        obtain ⟨D⟩ := nonempty_delineation_of_signInvariant_collinsProjection
           (φ := RingHom.id ℝ) (h𝒟.isConnected hC).isPreconnected fun q hq ↦ by
             simpa only [eval₂_id] using hproj q hq C hC
-        refine ⟨D.count, D.root, fun _ ↦ ⟨D.isSemialgebraicStack (h𝒟.isSemialgebraic hC),
-          fun E hE f hf ↦ ?_⟩⟩
+        refine ⟨D.count, D.root, D.isSemialgebraicStack (h𝒟.isSemialgebraic hC),
+          fun E hE f hf ↦ ?_⟩
         simpa only [eval₂_id] using D.signInvariant_eval₂_of_mem_stackCells (hFG hf) hE
-      · exact ⟨0, Fin.elim0, fun h ↦ (hC h).elim⟩
-    choose k θ hθ using hstack
-    refine ⟨_, .succ k θ h𝒟 fun C hC ↦ (hθ C hC).1, fun f hf E hE ↦ ?_⟩
-    obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
-    exact (hθ C hC).2 E hE f hf
+    exact ⟨𝒞, h𝒞, fun f hf E hE ↦ hsign E hE f hf⟩
+
+/-- **Decompositions adapted to a semialgebraic set.** For a semialgebraic subset `s` of `ℝ ^ n`
+there is a cylindrical algebraic decomposition of `ℝ ^ n` each cell of which lies in `s` or misses
+it, so that `s` is the union of the cells it contains (`TauCeti.IsCAD.sUnion_sep_subset`). -/
+theorem IsSemialgebraic.exists_isCAD_subset_or_disjoint {s : Set (Fin n → ℝ)}
+    (hs : IsSemialgebraic s) : ∃ 𝒞, IsCAD n 𝒞 ∧ ∀ E ∈ 𝒞, E ⊆ s ∨ Disjoint E s := by
+  classical
+  obtain ⟨m, p, Φ, rfl⟩ := hs.exists_eq_setOf_sign_eval
+  obtain ⟨𝒞, h𝒞, hp⟩ := exists_isCAD_signInvariant (Finset.univ.image p)
+  exact ⟨𝒞, h𝒞, fun E hE ↦ subset_or_disjoint_setOf_sign (f := fun i x ↦ eval x (p i))
+    (fun i ↦ hp _ (Finset.mem_image_of_mem _ (Finset.mem_univ i)) E hE) Φ⟩
 
 /-- **The Tarski–Seidenberg theorem.** The projection of a semialgebraic subset of `ℝ ^ (n + 1)`
 forgetting the coordinate `0` is semialgebraic. So quantifier elimination, the identification of
@@ -94,11 +101,8 @@ semialgebraic sets with definable sets, and the image and composition laws of se
 functions, which assume `HasSemialgebraicProjections`, hold over `ℝ` unconditionally. -/
 instance : HasSemialgebraicProjections ℝ where
   isSemialgebraic_image_tail {_ _} hs := by
-    classical
-    obtain ⟨m, p, Φ, rfl⟩ := hs.exists_eq_setOf_sign_eval
-    obtain ⟨𝒞, h𝒞, hp⟩ := exists_isCAD_signInvariant (Finset.univ.image p)
-    exact h𝒞.isSemialgebraic_image_tail_setOf_sign_eval
-      (fun i ↦ hp _ (Finset.mem_image_of_mem _ (Finset.mem_univ i))) Φ
+    obtain ⟨𝒞, h𝒞, h⟩ := hs.exists_isCAD_subset_or_disjoint
+    exact h𝒞.isSemialgebraic_image_tail h
 
 /-- **Sample points.** For finitely many real polynomials `p i` in `n` variables there is a
 finite set of points of `ℝ ^ n` at which the `p i` take every sign vector that they take on

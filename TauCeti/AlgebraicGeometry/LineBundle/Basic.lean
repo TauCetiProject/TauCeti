@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Properties
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
 # Invertible sheaves on a scheme
@@ -103,6 +104,12 @@ instance isInvertible_unit :
     (N := _root_.SheafOfModules.unit X.ringCatSheaf)
     (TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf)
 
+open MonoidalCategory in
+/-- The monoidal unit `𝟙_ X.Modules`, the structure sheaf, is an invertible sheaf. Instance search
+does not identify it with `SheafOfModules.unit X.ringCatSheaf` of `isInvertible_unit`. -/
+instance isInvertible_tensorUnit : isInvertible X (𝟙_ X.Modules) :=
+  isInvertible_unit X
+
 end SheafOfModules
 
 variable {X : Scheme.{u}}
@@ -116,6 +123,12 @@ namespace InvertibleSheaf
 
 instance (L : InvertibleSheaf X) : SheafOfModules.isInvertible X L.obj :=
   L.property
+
+/-- The underlying sheaf of a line bundle is quasicoherent. -/
+instance isQuasicoherent_obj (L : InvertibleSheaf X) : L.obj.IsQuasicoherent :=
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
+  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
+  inferInstanceAs F.IsQuasicoherent
 
 /-- The invertible sheaf given by the free sheaf on an indexing type with exactly one element. -/
 def free (X : Scheme.{u}) (I : Type u) [Nonempty I] [Subsingleton I] :

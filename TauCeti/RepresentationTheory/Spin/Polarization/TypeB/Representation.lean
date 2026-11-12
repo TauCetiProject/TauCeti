@@ -117,7 +117,7 @@ theorem typeBSpinRep_differenceRootGenerator_apply (i j : ι) (hij : i ≠ j)
   rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
     P.typeBQuadraticEquiv_typeBDifferenceRootGenerator b z hz,
     bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_basis_dualVector b hij), map_mul,
-    Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_contract,
+    mul_apply_eq_comp, spinAction_ι_wedge, spinAction_ι_contract,
     P.pairingEquiv_dualVector]
 
 section TerminalRoot
@@ -136,7 +136,7 @@ theorem typeBSpinRep_shortRootGenerator_apply (i : Fin (n + 1))
   rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
     P.typeBQuadraticEquiv_typeBShortRootGenerator b z hz,
     bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_W_line _ z), map_mul,
-    Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_lineOperator]
+    mul_apply_eq_comp, spinAction_ι_wedge, spinAction_ι_lineOperator]
 
 /-- A negative short-root operator contracts its exterior coordinate and applies the grade
 involution, scaled by the line coordinate of the distinguished remainder vector. -/
@@ -149,7 +149,7 @@ theorem typeBSpinRep_shortNegativeRootGenerator_apply (i : Fin (n + 1))
   rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
     P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator b z hz,
     bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_line_W' z _), map_mul,
-    Module.End.mul_apply, spinAction_ι_contract, P.pairingEquiv_dualVector,
+    mul_apply_eq_comp, spinAction_ι_contract, P.pairingEquiv_dualVector,
     spinAction_ι_lineOperator]
 
 /-- The terminal positive short-root operator creates the final exterior coordinate from the

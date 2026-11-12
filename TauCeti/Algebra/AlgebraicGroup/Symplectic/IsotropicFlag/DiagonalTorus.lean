@@ -117,7 +117,7 @@ theorem pointsMulEquiv_diagonalTorusCoordinateMap {A : Type w} [CommRing A] [Alg
     (definingHopfIdeal R m) (diagonalTorusCoordinateMap R m)
     (Symplectic.diagonalTorusCoordinateMap (R := R) (m := m))
     (coordinateMap_comp_diagonalTorusCoordinateMap R m) (CommAlgCat.of R A) f
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply (diagonalTorusCoordinateMap R m)
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (diagonalTorusCoordinateMap R m)
     (CommAlgCat.of R A) f] at hquot
   rw [← pointsMulEquiv_coe, ← hquot, Symplectic.mapPointsFunctor_diagonalTorusCoordinateMap_app]
 

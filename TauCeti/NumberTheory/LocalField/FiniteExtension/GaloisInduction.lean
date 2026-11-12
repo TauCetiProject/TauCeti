@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
+public import Mathlib.FieldTheory.Galois.Basic
 import TauCeti.GroupTheory.Solvable
 import TauCeti.NumberTheory.LocalField.Solvable
 

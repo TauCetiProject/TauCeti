@@ -39,6 +39,30 @@ universe u
 
 variable {T : NumericalType.{u}}
 
+/-- The numerical data of a genus-one four-leaf star (affine D₄), including its indexing
+equivalence, constant weights, multiplicity ratios, and complete intersection matrix.
+Component genera are imposed separately in the minimal classification. -/
+def IsGenusOneFourLeafStarShape (T : NumericalType.{u}) : Prop :=
+  ∃ e : Option (Fin 4) ≃ T.Component,
+  (∀ v, T.weight (e v) = T.weight (e none)) ∧
+  (∀ v, (T.multiplicity (e v) : ℤ) =
+    if v = none then 2 * (T.multiplicity (e (some 0)) : ℤ)
+    else T.multiplicity (e (some 0))) ∧
+  (∀ v w, T.intersection (e v) (e w) =
+    if v = w then -(2 * (T.weight (e none) : ℤ))
+    else if v = none ∨ w = none then T.weight (e none) else 0)
+
+/-- The complete numerical data recorded by `IsGenusOneFourLeafStarShape`. -/
+theorem isGenusOneFourLeafStarShape_iff : T.IsGenusOneFourLeafStarShape ↔
+  ∃ e : Option (Fin 4) ≃ T.Component,
+  (∀ v, T.weight (e v) = T.weight (e none)) ∧
+  (∀ v, (T.multiplicity (e v) : ℤ) =
+    if v = none then 2 * (T.multiplicity (e (some 0)) : ℤ)
+    else T.multiplicity (e (some 0))) ∧
+  (∀ v w, T.intersection (e v) (e w) =
+    if v = w then -(2 * (T.weight (e none) : ℤ))
+    else if v = none ∨ w = none then T.weight (e none) else 0) := Iff.rfl
+
 /-- Four distinct leaves of self-intersection `-2w` meeting a centre of self-intersection `-2w`
 exhaust the numerical type. No hypothesis on its other components or on its genus is needed. -/
 private lemma card_eq_five_of_fourLeafStar {c : T.Component} {l : Fin 4 → T.Component}
@@ -212,5 +236,22 @@ theorem IsMinimal.ncard_neighborSet_le_three_of_card_ne_five (hT : T.IsMinimal)
   by_contra hd
   obtain ⟨e, -⟩ := hT.exists_equiv_fourLeafStar_of_four_le_ncard_neighborSet hg c (by omega)
   exact hcard (by simpa using (Fintype.card_congr e).symm)
+
+/-- In the four-leaf star shape, a component weight divides all weights with quotient at most four,
+and a component multiplicity divides all multiplicities with quotient at most six. -/
+lemma IsGenusOneFourLeafStarShape.exists_weight_and_multiplicity_dvd_and_le
+    (hshape : T.IsGenusOneFourLeafStarShape) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  -- The star has constant weights and multiplicity coefficients one or two.
+  obtain ⟨e, hw, hm, -⟩ := isGenusOneFourLeafStarShape_iff.mp hshape
+  refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_of_equiv (nw := 4) (nm := 6)
+    e none (some 0)
+    (fun i ↦ ?_) (fun i ↦ ?_)
+  all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+  · rw [hw i]; omega
+  · have hv := hm i; split_ifs at hv <;> omega
 
 end TauCeti.NumericalType

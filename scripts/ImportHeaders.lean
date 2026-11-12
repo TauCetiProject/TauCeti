@@ -10,13 +10,15 @@ their local imports and refuse disagreement, so neither interpretation can hide 
 Nested comments, multiline imports, modifiers, and escaped names are handled by the compiler.
 Compare semantic `Name`s: a quoted component containing a dot is not a directory boundary.
 
-The same parsed frontend header enforces TauCeti's no-meta-import rule. Use written imports
+The same parsed frontend header rejects meta imports and direct imports of Lean, Lake, and
+Mathlib.Lean implementation modules. Mathlib tactic imports remain allowed. Use written imports
 (`includeInit := false`), so implicit meta Init imports are ignored while an explicit meta Init
 import is still rejected. No separate driver or narrower file inventory can drift from this one.
 
 The complete candidate inventory includes TauCeti.lean, orphan modules, and batch additions.
-Only imports rooted at TauCeti are checked. External resolution and body validity remain the
-authoritative Lake build's responsibility; no external syntax or candidate code is loaded.
+Only imports rooted at TauCeti are checked for missing sources. External resolution and body
+validity remain the authoritative Lake build's responsibility; no external syntax or candidate
+code is loaded.
 -/
 
 open Lean Elab
@@ -63,6 +65,15 @@ def problems (source : Source) (inventory : Std.HashSet Name) : IO (Array Proble
     if imported.isMeta then
       found := found.push <| mk s!"`meta import {imported.module}` is not allowed: TauCeti/ \
         holds no metaprogramming, and meta code belongs in scripts/"
+  -- Compare semantic components, not string prefixes: Leaning and Mathlib.Leaning are allowed.
+  -- Check both parsers so malformed prefixes cannot hide a forbidden implementation import.
+  for imported in written ++ lakeHeader.imports do
+    let name := imported.module
+    if name.getRoot == `Lean || name.getRoot == `Lake || (`Mathlib.Lean).isPrefixOf name then
+      let problem := mk s!"direct metaprogramming import {name} is not allowed: \
+        import mathematical modules or Mathlib tactics; implementation code belongs in scripts/"
+      unless found.any (fun p => p.message == problem.message) do
+        found := found.push problem
   let localNames (imports : Array Import) :=
     imports.filter (·.module.getRoot == `TauCeti) |>.map (·.module)
   let frontend := localNames written

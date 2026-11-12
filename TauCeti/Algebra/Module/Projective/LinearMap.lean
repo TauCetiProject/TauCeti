@@ -111,8 +111,9 @@ theorem ker_compRight_mkQ_eq_smul_top (hx : IsSMulRegular V x) :
   · -- A map into `x • V` is `x` times a map, because multiplication by `x` is injective on `V`.
     intro h0
     have hp (p : P) : ∃ w, x • w = h p := by
-      rw [← Submodule.mem_span_algebraMap_smul_top_iff (A := A), ← Submodule.Quotient.mk_eq_zero]
-      exact LinearMap.congr_fun h0 p
+      simpa only [Submodule.mem_top, true_and] using
+        (Submodule.mem_span_algebraMap_smul_iff (⊤ : Submodule A V) x).mp
+          ((Submodule.Quotient.mk_eq_zero _).mp (LinearMap.congr_fun h0 p))
     choose w hw using hp
     refine ⟨{ toFun := w, map_add' := fun p p' ↦ hx ?_, map_smul' := fun a p ↦ hx ?_ }, ?_⟩
     · simp only [smul_add, hw, map_add]
@@ -123,7 +124,7 @@ theorem ker_compRight_mkQ_eq_smul_top (hx : IsSMulRegular V x) :
     ext p
     simp only [LinearMap.compRight_apply, LinearMap.comp_apply, LinearMap.smul_apply,
       Submodule.mkQ_apply, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
-    exact (Submodule.mem_span_algebraMap_smul_top_iff x).mpr ⟨g p, rfl⟩
+    exact (Submodule.mem_span_algebraMap_smul_iff ⊤ x).mpr ⟨g p, Submodule.mem_top, rfl⟩
 
 variable (P) [Module.Projective A P] in
 /-- For `P` projective, a map `P → V` vanishes modulo `x` exactly when it is `x` times a map,
@@ -134,10 +135,10 @@ theorem ker_compRight_mkQ_eq_smul_top_of_projective :
       (Ideal.span {algebraMap R A x} • (⊤ : Submodule A V)).mkQ) = x • ⊤ := by
   let N : Submodule A V := Ideal.span {algebraMap R A x} • ⊤
   let sx : V →ₗ[A] N := (DistribSMul.toLinearMap A V x).codRestrict N fun v =>
-    (Submodule.mem_span_algebraMap_smul_top_iff x).mpr ⟨v, rfl⟩
+    (Submodule.mem_span_algebraMap_smul_iff ⊤ x).mpr ⟨v, Submodule.mem_top, rfl⟩
   have hsx : Function.Surjective sx := by
     intro v
-    obtain ⟨w, hw⟩ := (Submodule.mem_span_algebraMap_smul_top_iff x).mp v.property
+    obtain ⟨w, _, hw⟩ := (Submodule.mem_span_algebraMap_smul_iff ⊤ x).mp v.property
     refine ⟨w, Subtype.ext ?_⟩
     simpa only [sx, LinearMap.codRestrict_apply, DistribSMul.toLinearMap_apply] using hw
   ext h
@@ -157,7 +158,7 @@ theorem ker_compRight_mkQ_eq_smul_top_of_projective :
     ext p
     simp only [LinearMap.compRight_apply, LinearMap.comp_apply, LinearMap.smul_apply,
       Submodule.mkQ_apply, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
-    exact (Submodule.mem_span_algebraMap_smul_top_iff x).mpr ⟨g p, rfl⟩
+    exact (Submodule.mem_span_algebraMap_smul_iff ⊤ x).mpr ⟨g p, Submodule.mem_top, rfl⟩
 
 end CommSemiring
 

@@ -176,6 +176,12 @@ noncomputable instance : CommGroup (LineBundleClass X) := by
       inv_mul_cancel := invMulCancel
       mul_comm := mulComm }
 
+/-- Tensoring with the dual of the trivial line bundle does not change the class. -/
+lemma mk_tensorProduct_dual_trivial (L : InvertibleSheaf X) :
+    mk (InvertibleSheaf.tensorProduct L (InvertibleSheaf.dual (InvertibleSheaf.trivial X))) =
+      mk L := by
+  rw [mk_tensorProduct, ← inv_mk, mk_trivial, inv_one, mul_one]
+
 end LineBundleClass
 
 end

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+public import TauCeti.Topology.VectorBundle.Subbundle
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
@@ -26,20 +28,32 @@ while its regularity and involutivity are predicates on that family.
 
 ## Main definitions
 
+* `TauCeti.distributionModelFiber`: a tangent-space fibre of a distribution on a normed space,
+  transported to the model vector space.
 * `TauCeti.IsDistributionFrameOn I n D X U`: the vector fields `X i` form a `C^n` local frame of
   `D` on `U`.
+* `TauCeti.IsDistributionFrameOn.extend`: the extension of a vector of a fibre of `D` by a local
+  frame, with constant coefficients.
 * `TauCeti.IsContMDiffDistribution I n k D`: `D` is a `C^n` distribution of rank `k`.
 * `TauCeti.IsInvolutiveDistribution I D`: `D` is involutive.
+* `TauCeti.IsInvolutiveDistributionOn I D s`: `D` is involutive on `s`.
 * `TauCeti.standardContactDistribution 𝕜`: the kernel of `dz - x dy` on `𝕜³`.
 
 ## Main results
 
+* `TauCeti.IsDistributionFrameOn.isSubbundleFrameOn`: a `C^n` local frame of `D` is a continuous
+  local frame of `D` as a family of subspaces of the tangent bundle, in the sense of
+  `TauCeti.IsSubbundleFrameOn`.
 * `TauCeti.isDistributionFrameOn_top_iff`: local frames of the whole tangent bundle, in the sense
   of `IsLocalFrameOn`, are the local frames of the distribution `⊤`.
 * `TauCeti.IsContMDiffDistribution.finrank_eq`: a distribution of rank `k` has `k`-dimensional
   fibres.
+* `TauCeti.IsContMDiffDistribution.exists_contMDiffOn_apply_eq`: every vector of `D x` extends to a
+  `C^n` vector field tangent to `D` near `x`.
 * `TauCeti.isContMDiffDistribution_top` and `TauCeti.isInvolutiveDistribution_top`: the whole
   tangent bundle is a `C^n` involutive distribution.
+* `TauCeti.IsInvolutiveDistribution.isInvolutiveDistributionOn`: an involutive distribution is
+  involutive on every set.
 * `TauCeti.mlieBracket_sum_smul_mem`: if vector fields differentiable at `x` have values and
   pairwise Lie brackets at `x` in a subspace `D` of the tangent space there, then so does the Lie
   bracket of any two of their combinations with coefficients differentiable at `x`. This is the
@@ -79,6 +93,36 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {n m : ℕ∞ω} {k : ℕ} {ι : Type*}
 
+section ModelFiber
+
+/-- The fibre of a distribution on a normed space, transported from the tangent space to the model
+vector space by its canonical identification. -/
+noncomputable def distributionModelFiber
+    (D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)) (p : E) : Submodule 𝕜 E :=
+  (D p).map (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).toLinearMap
+
+/-- Membership in `distributionModelFiber`, expressed in the original tangent-space fibre. -/
+@[simp]
+theorem mem_distributionModelFiber
+    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} {p v : E} :
+    v ∈ distributionModelFiber D p ↔
+      (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).symm v ∈ D p := by
+  unfold distributionModelFiber
+  convert Submodule.mem_map_equiv (p := D p)
+    (e := (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).toLinearEquiv) (x := v) using 1
+  rfl
+
+/-- On a normed space, transporting a distribution fibre through the canonical tangent-model
+identification leaves the submodule unchanged. -/
+theorem distributionModelFiber_eq
+    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} (p : E) :
+    distributionModelFiber D p = D p := by
+  -- Mathlib's canonical tangent-model identification is definitionally the identity linear map.
+  unfold distributionModelFiber
+  exact Submodule.map_id (D p)
+
+end ModelFiber
+
 section Frame
 
 variable (I n) in
@@ -112,16 +156,78 @@ theorem of_le (hX : IsDistributionFrameOn I n D X U) (hmn : m ≤ n) :
   linearIndependent := hX.linearIndependent
   span_eq := hX.span_eq
 
-/-- Every member of a local frame of `D` on `U` is tangent to `D` on `U`. -/
-theorem apply_mem (hX : IsDistributionFrameOn I n D X U) (i : ι) {x : M} (hx : x ∈ U) :
-    X i x ∈ D x :=
-  hX.span_eq hx ▸ Submodule.subset_span (mem_range_self i)
+/-- A `C^n` local frame of `D` is a continuous local frame of `D`, viewed as a family of subspaces
+of the fibres of the tangent bundle. Its algebraic consequences, such as the basis of each fibre
+`hX.isSubbundleFrameOn.basis`, are those of `TauCeti.IsSubbundleFrameOn`. -/
+theorem isSubbundleFrameOn (hX : IsDistributionFrameOn I n D X U) :
+    IsSubbundleFrameOn E D X U where
+  continuousOn i := (hX.contMDiffOn i).continuousOn
+  linearIndependent := hX.linearIndependent
+  span_eq := hX.span_eq
 
-/-- The subspaces of a distribution with a local frame indexed by `ι` have dimension `card ι`. -/
-theorem finrank_eq [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U) :
-    finrank 𝕜 (D x) = Fintype.card ι := by
-  rw [← hX.span_eq hx]
-  exact finrank_span_eq_card (hX.linearIndependent hx)
+/-- The operator of a `C^n` distribution frame, read in the tangent-bundle trivialization at
+`x`, is `C^n` where both the frame and the trivialization are defined. -/
+theorem contMDiffOn_trivOperator [Fintype ι] [IsManifold I (n + 1) M]
+    (hX : IsDistributionFrameOn I n D X U) (x : M) :
+    ContMDiffOn I 𝓘(𝕜, (ι → 𝕜) →L[𝕜] E) n
+      (IsSubbundleFrameOn.trivOperator 𝕜 E X x)
+      (U ∩ (trivializationAt E (TangentSpace I) x).baseSet) := by
+  let : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  let e := trivializationAt E (TangentSpace I) x
+  have heq : IsSubbundleFrameOn.trivOperator 𝕜 E X x = fun y ↦
+      ∑ i, ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) E
+        (ContinuousLinearMap.proj i) (e ⟨y, X i y⟩).2 :=
+    funext fun y ↦ IsSubbundleFrameOn.trivOperator_eq_sum (𝕜 := 𝕜) (F := E) (X := X) x y
+  rw [heq]
+  apply contMDiffOn_finsetSum
+  intro i _
+  exact (ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) E
+    (ContinuousLinearMap.proj i)).contMDiff.comp_contMDiffOn
+      (contMDiff_snd.comp_contMDiffOn
+        (e.contMDiffOn.comp ((hX.contMDiffOn i).mono inter_subset_left)
+          (fun y hy ↦ e.mem_source.mpr hy.2)))
+
+/-- The extension of a vector `u` of `D x` by a local frame `X` on a set `U` containing `x`: the
+vector field `∑ i, c i • X i`, where the constants `c i` are the coordinates of `u` in the basis
+`X · x` of `D x`. -/
+def extend [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U) (u : D x) :
+    Π y : M, TangentSpace I y :=
+  fun y ↦ ∑ i, (hX.isSubbundleFrameOn.basis hx).equivFun u i • X i y
+
+/-- The constant-coefficient extension of `u` by a local frame takes the value `u` at `x`. -/
+@[simp]
+theorem extend_apply_self [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M}
+    (hx : x ∈ U) (u : D x) : hX.extend hx u x = u := by
+  have h := congrArg Subtype.val ((hX.isSubbundleFrameOn.basis hx).sum_repr u)
+  simp only [Submodule.coe_sum, Submodule.coe_smul, IsSubbundleFrameOn.coe_basis] at h
+  simpa only [extend, Basis.equivFun_apply] using h
+
+/-- The constant-coefficient extension of a vector by a local frame on `U` is tangent to `D`
+on `U`. -/
+theorem extend_mem [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U)
+    (u : D x) {y : M} (hy : y ∈ U) : hX.extend hx u y ∈ D y :=
+  Submodule.sum_mem _ fun i _ ↦ (D y).smul_mem _ (hX.isSubbundleFrameOn.apply_mem i hy)
+
+/-- The constant-coefficient extension of a vector by a `C^n` local frame on `U` is `C^n`
+on `U`. -/
+theorem contMDiffOn_extend [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M}
+    (hx : x ∈ U) (u : D x) : CMDiff[U] n (T% (hX.extend hx u)) :=
+  ContMDiffOn.sum_section fun i _ ↦ (hX.contMDiffOn i).const_smul_section
+
+/-- The constant-coefficient extension by a local frame is additive. -/
+@[simp]
+theorem extend_add [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U)
+    (u u' : D x) : hX.extend hx (u + u') = hX.extend hx u + hX.extend hx u' := by
+  funext y
+  simp [extend, add_smul, Finset.sum_add_distrib]
+
+/-- The constant-coefficient extension by a local frame commutes with scalar multiplication. -/
+@[simp]
+theorem extend_smul [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U)
+    (c : 𝕜) (u : D x) : hX.extend hx (c • u) = c • hX.extend hx u := by
+  funext y
+  simp [extend, Finset.smul_sum, smul_smul]
 
 /-- A `C^n` local frame `X` of a distribution on a normed space `V`, on a set `U`, gives a
 `C^n` family of continuous linear maps `Φ p : (ι → 𝕜) →L[𝕜] V`, namely `c ↦ ∑ i, c i • X i p`,
@@ -182,6 +288,15 @@ theorem IsContMDiffDistribution.of_mem_nhds
   exact ⟨interior U, isOpen_interior, mem_interior_iff_mem_nhds.mpr hU, X,
     hX.mono interior_subset⟩
 
+/-- Every vector of `D x`, for a `C^n` distribution `D`, is the value at `x` of a vector field which
+is `C^n` and tangent to `D` on an open neighbourhood of `x`. -/
+theorem IsContMDiffDistribution.exists_contMDiffOn_apply_eq (hD : IsContMDiffDistribution I n k D)
+    {x : M} (v : D x) : ∃ U : Set M, IsOpen U ∧ x ∈ U ∧ ∃ V : Π y : M, TangentSpace I y,
+      CMDiff[U] n (T% V) ∧ (∀ y ∈ U, V y ∈ D y) ∧ V x = v := by
+  obtain ⟨U, hU, hxU, X, hX⟩ := isContMDiffDistribution_iff.mp hD x
+  exact ⟨U, hU, hxU, hX.extend hxU v, hX.contMDiffOn_extend hxU v,
+    fun _ hy ↦ hX.extend_mem hxU v hy, hX.extend_apply_self hxU v⟩
+
 /-- A distribution with a global `C^n` frame of `k` vector fields is a `C^n` distribution of
 rank `k`. -/
 theorem IsDistributionFrameOn.isContMDiffDistribution {X : Fin k → Π x : M, TangentSpace I x}
@@ -192,7 +307,7 @@ theorem IsDistributionFrameOn.isContMDiffDistribution {X : Fin k → Π x : M, T
 theorem IsContMDiffDistribution.finrank_eq (hD : IsContMDiffDistribution I n k D) (x : M) :
     finrank 𝕜 (D x) = k := by
   obtain ⟨U, -, hx, X, hX⟩ := hD x
-  simpa using hX.finrank_eq hx
+  simpa using hX.isSubbundleFrameOn.finrank_eq hx
 
 /-- A `C^n` distribution is a `C^m` distribution for every `m ≤ n`. -/
 theorem IsContMDiffDistribution.of_le (hD : IsContMDiffDistribution I n k D) (hmn : m ≤ n) :
@@ -238,6 +353,15 @@ def IsInvolutiveDistribution (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) :
     MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) → (∀ x ∈ U, W x ∈ D x) →
       ∀ x ∈ U, mlieBracket I V W x ∈ D x
 
+variable (I) in
+/-- `D` is involutive on `s`: whenever two vector fields are differentiable and tangent to `D` on
+an open subset of `s`, their Lie bracket is tangent to `D` there. -/
+def IsInvolutiveDistributionOn (D : Π x : M, Submodule 𝕜 (TangentSpace I x))
+    (s : Set M) : Prop :=
+  ∀ ⦃U : Set M⦄, IsOpen U → U ⊆ s → ∀ ⦃V W : Π x : M, TangentSpace I x⦄,
+    MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) →
+      (∀ x ∈ U, W x ∈ D x) → ∀ x ∈ U, mlieBracket I V W x ∈ D x
+
 variable {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
 
 /-- The defining property of an involutive distribution. -/
@@ -247,6 +371,13 @@ theorem isInvolutiveDistribution_iff : IsInvolutiveDistribution I D ↔
         ∀ x ∈ U, mlieBracket I V W x ∈ D x :=
   Iff.rfl
 
+/-- The defining property of a distribution that is involutive on a set. -/
+theorem isInvolutiveDistributionOn_iff {s : Set M} : IsInvolutiveDistributionOn I D s ↔
+    ∀ ⦃U : Set M⦄, IsOpen U → U ⊆ s → ∀ ⦃V W : Π x : M, TangentSpace I x⦄,
+      MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) →
+        (∀ x ∈ U, W x ∈ D x) → ∀ x ∈ U, mlieBracket I V W x ∈ D x :=
+  Iff.rfl
+
 /-- The Lie bracket of two vector fields that are differentiable and tangent to an involutive
 distribution on an open set is tangent to it there. -/
 theorem IsInvolutiveDistribution.mlieBracket_mem (hD : IsInvolutiveDistribution I D) {U : Set M}
@@ -254,6 +385,36 @@ theorem IsInvolutiveDistribution.mlieBracket_mem (hD : IsInvolutiveDistribution 
     (hW : MDiff[U] (T% W)) (hVD : ∀ x ∈ U, V x ∈ D x) (hWD : ∀ x ∈ U, W x ∈ D x) {x : M}
     (hx : x ∈ U) : mlieBracket I V W x ∈ D x :=
   hD hU hV hW hVD hWD x hx
+
+/-- The Lie bracket of two vector fields that are differentiable and tangent to a distribution on
+an open subset of its involutivity set is tangent to the distribution there. -/
+theorem IsInvolutiveDistributionOn.mlieBracket_mem {s U : Set M}
+    (hD : IsInvolutiveDistributionOn I D s) (hU : IsOpen U) (hUs : U ⊆ s)
+    {V W : Π x : M, TangentSpace I x} (hV : MDiff[U] (T% V))
+    (hW : MDiff[U] (T% W)) (hVD : ∀ x ∈ U, V x ∈ D x)
+    (hWD : ∀ x ∈ U, W x ∈ D x) {x : M} (hx : x ∈ U) :
+    mlieBracket I V W x ∈ D x :=
+  hD hU hUs hV hW hVD hWD x hx
+
+/-- An involutive distribution is involutive on every set. -/
+theorem IsInvolutiveDistribution.isInvolutiveDistributionOn
+    (hD : IsInvolutiveDistribution I D) (s : Set M) :
+    IsInvolutiveDistributionOn I D s :=
+  fun _ hU _ _ _ hV hW hVD hWD _x hx ↦ hD.mlieBracket_mem hU hV hW hVD hWD hx
+
+/-- A distribution that is involutive on `s` is involutive on every subset of `s`. -/
+theorem IsInvolutiveDistributionOn.mono {s t : Set M}
+    (hD : IsInvolutiveDistributionOn I D s) (ht : t ⊆ s) :
+    IsInvolutiveDistributionOn I D t :=
+  fun _ hU hUt _ _ hV hW hVD hWD ↦ hD hU (hUt.trans ht) hV hW hVD hWD
+
+/-- Involutivity on the whole manifold is equivalent to involutivity. -/
+@[simp]
+theorem isInvolutiveDistributionOn_univ :
+    IsInvolutiveDistributionOn I D univ ↔ IsInvolutiveDistribution I D := by
+  refine ⟨fun hD U hU V W hV hW hVD hWD ↦
+    hD hU (subset_univ U) hV hW hVD hWD, fun hD ↦ ?_⟩
+  exact hD.isInvolutiveDistributionOn univ
 
 /-- The whole tangent bundle is involutive. -/
 theorem isInvolutiveDistribution_top : IsInvolutiveDistribution I (fun _ : M ↦ ⊤) :=
@@ -401,8 +562,9 @@ theorem not_isInvolutiveDistribution_standardContactDistribution :
   intro h
   have hframe := isDistributionFrameOn_contactFrame (𝕜 := 𝕜) (n := 1)
   have hmem := h isOpen_univ ((hframe.contMDiffOn 0).mdifferentiableOn one_ne_zero)
-    ((hframe.contMDiffOn 1).mdifferentiableOn one_ne_zero) (fun p hp ↦ hframe.apply_mem 0 hp)
-    (fun p hp ↦ hframe.apply_mem 1 hp) 0 (mem_univ 0)
+    ((hframe.contMDiffOn 1).mdifferentiableOn one_ne_zero)
+    (fun p hp ↦ hframe.isSubbundleFrameOn.apply_mem 0 hp)
+    (fun p hp ↦ hframe.isSubbundleFrameOn.apply_mem 1 hp) 0 (mem_univ 0)
   rw [mlieBracket_eq_lieBracket] at hmem
   have hW : HasFDerivAt (fun p : 𝕜 × 𝕜 × 𝕜 ↦ ((0, 1, p.1) : 𝕜 × 𝕜 × 𝕜))
       ((0 : 𝕜 × 𝕜 × 𝕜 →L[𝕜] 𝕜).prod ((0 : 𝕜 × 𝕜 × 𝕜 →L[𝕜] 𝕜).prod

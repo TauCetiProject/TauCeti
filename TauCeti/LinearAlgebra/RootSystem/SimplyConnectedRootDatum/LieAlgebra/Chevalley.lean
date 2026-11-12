@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.Algebra.Lie.Weights.Chevalley.BaseSquare
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Killing
+import TauCeti.Algebra.Lie.Sl2.RangeKer
 
 /-!
 # Chevalley systems for the pinned rational Lie algebra
@@ -22,7 +24,9 @@ by the imported Killing-form module.
 * `TauCeti.DynkinType.instIsTriangularizableLieAlgebra`: the distinguished Cartan acts
   triangularizably on the pinned rational Lie algebra.
 * `TauCeti.DynkinType.exists_isChevalleySystem`: the signed Geck involution admits a compatible
-  Chevalley system over `ℚ`.
+  Chevalley system over `ℚ` whose simple root vectors are the numbered generators `eᵢ` and `fᵢ`.
+* `TauCeti.DynkinType.isNilpotent_representation_rootGenerator`: the numbered raising and
+  lowering generators act nilpotently on every finite-dimensional rational module.
 
 ## References
 
@@ -46,15 +50,37 @@ instance instIsTriangularizableLieAlgebra :
     IsTriangularizable ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht) :=
   (t.lieBasis ht).isTriangularizable
 
-/-- The pinned rational Lie algebra admits a root-vector system compatible with its signed Geck
-involution. -/
+/-- **The pinned rational Lie algebra has a Chevalley system pinned to its Chevalley generators.**
+There is a Chevalley system for the signed Geck involution whose root vectors at the `i`-th simple
+root and its negative are the Bourbaki-numbered generators `eᵢ` and `fᵢ` of
+`TauCeti.DynkinType.lieBasis`. These equations fix it only up to signs at the non-simple roots
+(`TauCeti.IsChevalleySystem.eq_or_eq_neg`). -/
 theorem exists_isChevalleySystem :
     ∃ x : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht) → t.lieAlgebra ht,
-      TauCeti.IsChevalleySystem (t.chevalleyInvolution ht) x := by
-  obtain ⟨x, hx⟩ := TauCeti.exists_isSl2System ℚ (t.cartanSubalgebra ht)
-  exact hx.exists_isChevalleySystem_of_lieBasis (t.chevalleyInvolution ht)
-    (fun y hy => t.chevalleyInvolution_cartan ht ⟨y, hy⟩) (t.lieBasis ht)
-    (t.chevalleyInvolution_lieBasis_e ht)
+      TauCeti.IsChevalleySystem (t.chevalleyInvolution ht) x ∧
+        ∀ i : Fin t.rank, x ((t.lieBasis ht).baseSupportEquiv i) = (t.lieBasis ht).e i ∧
+          x (-(t.lieBasis ht).baseSupportEquiv i) = (t.lieBasis ht).f i :=
+  (TauCeti.exists_isSl2System ℚ (t.cartanSubalgebra ht)).elim fun _ hx =>
+    (hx.exists_isChevalleySystem_of_lieBasis (t.chevalleyInvolution ht)
+      (fun y hy => t.chevalleyInvolution_cartan ht ⟨y, hy⟩) (t.lieBasis ht)
+      (t.chevalleyInvolution_lieBasis_e ht)).elim fun _ hy =>
+    hy.exists_isChevalleySystem_simple_eq_lieBasis (t.lieBasis ht)
+      (t.chevalleyInvolution_lieBasis_e ht)
+
+open _root_.TauCeti.UniversalEnvelopingAlgebra in
+/-- The numbered root generators act nilpotently on every finite-dimensional rational
+module of the pinned Lie algebra. -/
+theorem isNilpotent_representation_rootGenerator
+    {V : Type*} [AddCommGroup V] [Module ℚ V]
+    [LieRingModule (t.lieAlgebra ht) V] [LieModule ℚ (t.lieAlgebra ht) V]
+    [FiniteDimensional ℚ V] (i : Fin t.rank ⊕ Fin t.rank) :
+    IsNilpotent (representation ℚ (t.lieAlgebra ht) V
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))) := by
+  rcases i with i | i
+  · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inl] using
+      ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_e (K := ℚ) (M := V)
+  · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inr] using
+      ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_f (K := ℚ) (M := V)
 
 end
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Cover.Directed
 public import Mathlib.AlgebraicGeometry.Gluing
+public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 public import TauCeti.Geometry.Toric.Algebraic.FaceLocalization
 
 /-!
@@ -44,6 +45,9 @@ morphism of the associated toric schemes.
   toric scheme.
 * `TauCeti.Toric.Fan.exists_affineToricChartι_apply_eq`: the affine toric charts cover the toric
   scheme.
+* `TauCeti.Toric.Fan.isIso_affineToricChartι_of_forall_le`: when every cone of the fan is a face
+  of one cone, the chart of that cone is the whole toric scheme; in particular for the fan of the
+  faces of a single cone, `TauCeti.Toric.Fan.isIso_affineToricChartι_ofCone`.
 * `TauCeti.Toric.Fan.affineToricOpenCover`: the cone-indexed affine open cover of the toric
   scheme.
 * `TauCeti.Toric.Fan.affineToricChartι_eq_affineToricChartι_iff`: points of two
@@ -306,6 +310,28 @@ theorem range_affineToricChartι_inter_range_affineToricChartι (σ τ : Φ.cone
     · exact ⟨Φ.affineToricOverlapRight σ τ w, by
         rw [← Scheme.Hom.comp_apply, Φ.affineToricOverlapRight_comp_affineToricChartι]⟩
 
+/-- If every cone of a fan is a face of `σ`, the chart of `σ` covers the whole toric scheme. -/
+theorem affineToricChartι_surjective_of_forall_le {σ : Φ.cones} (h : ∀ τ : Φ.cones, τ ≤ σ) :
+    Function.Surjective (Φ.affineToricChartι σ) := by
+  intro x
+  obtain ⟨τ, y, rfl⟩ := Φ.exists_affineToricChartι_apply_eq x
+  exact ⟨faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (h τ)) y, by
+    rw [← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp_affineToricChartι]⟩
+
+/-- If every cone of a fan is a face of `σ`, the toric scheme of the fan is the affine toric
+scheme of `σ`: the chart inclusion of `σ` is an isomorphism. -/
+theorem isIso_affineToricChartι_of_forall_le {σ : Φ.cones} (h : ∀ τ : Φ.cones, τ ≤ σ) :
+    IsIso (Φ.affineToricChartι σ) :=
+  have : Surjective (Φ.affineToricChartι σ) := ⟨Φ.affineToricChartι_surjective_of_forall_le h⟩
+  (isIso_iff_isOpenImmersion_and_surjective _).2 ⟨inferInstance, inferInstance⟩
+
+/-- The toric scheme of the fan of the faces of a toric cone `σ` is the affine toric scheme of
+`σ`: the chart inclusion of `σ` is an isomorphism. -/
+instance isIso_affineToricChartι_ofCone {σ : PointedCone ℝ V} (hi : IsIntegralLattice i)
+    (hσ : IsToricCone i σ) :
+    IsIso ((ofCone hi hσ).affineToricChartι ⟨σ, (mem_ofCone_cones hi hσ).2 (.refl σ)⟩) :=
+  isIso_affineToricChartι_of_forall_le _ fun τ ↦ ((mem_ofCone_cones hi hσ).1 τ.2).le
+
 /-- The canonical affine open cover of the scheme of a finite fan, indexed by its cones. -/
 -- Expose the cover so that its index type is the cone type in importing modules.
 @[expose]
@@ -437,18 +463,24 @@ theorem affineToricChartι_comp_algebraicMap (f : FanHom Φ Ψ) (σ : Φ.cones) 
   rw [← Fan.affineToricCocone_ι_app]
   exact Φ.isColimitAffineToricCocone.fac f.algebraicMapCocone σ)
 
-/-- If the least target cone containing the image of `σ` is `τ`, then on the chart of `σ` the
+/-- If the cone `τ` of the target fan contains the image of `σ`, then on the chart of `σ` the
 global algebraic map is the affine toric map into the chart of `τ`, followed by that chart's
 inclusion. -/
-theorem affineToricChartι_comp_algebraicMap_of_leastCone_eq (f : FanHom Φ Ψ) (σ : Φ.cones)
-    (τ : Ψ.cones) (h : f.leastCone σ.2 = τ.1)
-    (hmaps : Set.MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V')) :
+theorem affineToricChartι_comp_algebraicMap_of_mapsTo (f : FanHom Φ Ψ) (σ : Φ.cones)
+    (τ : Ψ.cones) (hmaps : Set.MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V')) :
     Φ.affineToricChartι σ ≫ f.algebraicMap =
       affineToricSchemeMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice hmaps ≫
         Ψ.affineToricChartι τ := by
-  obtain ⟨τ, hτ⟩ := τ
-  subst h
-  rw [affineToricChartι_comp_algebraicMap, affineToricChartMap_def]
+  have hface : (f.leastCone σ.2).IsFaceOf τ.1 :=
+    Ψ.isFaceOf_of_le τ.2 (f.leastCone_mem σ.2)
+      (f.leastCone_le σ.2 τ.2 fun x ⟨y, hy, hyx⟩ ↦ hyx ▸ hmaps hy)
+  rw [affineToricChartι_comp_algebraicMap,
+    ← Fan.faceAffineToricSchemeMap_comp_affineToricChartι
+      (τ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩)
+      (σ := τ) hface,
+    ← Category.assoc, affineToricChartMap_def, faceAffineToricSchemeMap_eq_affineToricSchemeMap,
+    affineToricSchemeMap_comp]
+  rfl
 
 /-- The algebraic map induced by the identity fan morphism is the identity. -/
 @[simp]

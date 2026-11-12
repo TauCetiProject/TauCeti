@@ -46,6 +46,8 @@ fibres.
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsRelativeEffectiveCartier.isFinite`: on a proper
   morphism of relative dimension at most one, every relative effective Cartier divisor is finite
   over the base.
+* `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.isFinite_subschemeι_comp`: on a
+  proper curve over a field, every effective Cartier divisor is finite over the field.
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsRelativeEffectiveCartier.isLocallyConstant_finrank`:
   the degree of a proper relative effective Cartier divisor on a morphism locally of finite
   presentation of relative dimension at most one is locally constant on the base.
@@ -145,6 +147,15 @@ theorem IsRelativeEffectiveCartier.isFinite {f : X ⟶ S} [IsProper f]
     [TauCeti.AlgebraicGeometry.RelativeDimensionLE 1 f] (hI : I.IsRelativeEffectiveCartier f) :
     IsFinite (I.subschemeι ≫ f) :=
   hI.isFinite_iff_isProper.mpr inferInstance
+
+/-- **Effective Cartier divisors on proper curves over a field are finite.** If `S` is an integral
+scheme with a single point, for instance the spectrum of a field, and `f : X ⟶ S` is proper with
+fibres of dimension at most one, then the closed subscheme of every effective Cartier divisor on
+`X` is finite over `S`: over such a base every effective Cartier divisor is relative. -/
+theorem IsEffectiveCartier.isFinite_subschemeι_comp [Subsingleton S] [IsIntegral S] {f : X ⟶ S}
+    [IsProper f] [TauCeti.AlgebraicGeometry.RelativeDimensionLE 1 f] (hI : I.IsEffectiveCartier) :
+    IsFinite (I.subschemeι ≫ f) :=
+  ((isRelativeEffectiveCartier_iff_isEffectiveCartier I f).mpr hI).isFinite
 
 /-- **The degree of a relative effective Cartier divisor is locally constant.** If
 `f : X ⟶ S` is locally of finite presentation with fibres of dimension at most one, and the closed

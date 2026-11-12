@@ -86,12 +86,6 @@ theorem galoisRes_sw1Class_formClass {V : Type*} [AddCommGroup V] [Module K V]
       sw1Class (formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)) := by
   rw [QuadraticForm.formClass_baseChange, galoisRes_sw1Class]
 
-section SecondClass
-
-variable {K L : Type} [Field K] [Field L] [Algebra K L]
-  [Invertible (2 : K)] [Invertible (2 : L)] [FiniteDimensional K L]
-  (σ : L →ₐ[K] SeparableClosure K)
-
 /-- Restriction of the second Stiefel-Whitney class is the class of the scalar extension. -/
 @[simp]
 theorem galoisRes_sw2Class (q : RegularFormClass K) :
@@ -108,7 +102,5 @@ theorem galoisRes_sw2Class_formClass {V : Type*} [AddCommGroup V] [Module K V]
     galoisRes K L σ 2 (sw2Class (formClass Q hQ)) =
       sw2Class (formClass (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)) := by
   rw [QuadraticForm.formClass_baseChange, galoisRes_sw2Class]
-
-end SecondClass
 
 end TauCeti

@@ -8,7 +8,7 @@ module
 public import Mathlib.Order.Filter.Basic
 
 /-!
-# The members of a filter form a codirected order
+# Basic facts about filters
 
 A filter is closed under binary intersections, so its members, ordered by inclusion, are
 codirected.  Together with Mathlib's `Filter.inhabitedMem`, this lets the members of a filter
@@ -18,6 +18,8 @@ inclusion.
 ## Main results
 
 * `Filter.isCodirectedOrder_mem`: the members of a filter are codirected under inclusion.
+* `Equiv.symm_comp_eventuallyEq_iff`: the eventual form of `Equiv.symm_comp_eq`, which moves an
+  equivalence to the other side of an eventual equality.
 -/
 
 public section
@@ -32,3 +34,15 @@ instance isCodirectedOrder_mem (f : Filter α) : IsCodirectedOrder {s : Set α /
   ⟨fun s t ↦ ⟨⟨_, inter_mem s.2 t.2⟩, Set.inter_subset_left, Set.inter_subset_right⟩⟩
 
 end Filter
+
+namespace Equiv
+
+variable {α β γ : Type*}
+
+/-- The eventual form of `Equiv.symm_comp_eq`: `e.symm ∘ g` agrees with `f` along a filter exactly
+when `g` agrees with `e ∘ f` there. -/
+theorem symm_comp_eventuallyEq_iff (e : β ≃ γ) {l : Filter α} {f : α → β} {g : α → γ} :
+    e.symm ∘ g =ᶠ[l] f ↔ g =ᶠ[l] e ∘ f :=
+  Filter.eventually_congr <| .of_forall fun _ ↦ e.symm_apply_eq
+
+end Equiv

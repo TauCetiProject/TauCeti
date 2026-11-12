@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
-public import TauCeti.NumberTheory.LocalField.ProP.Marked
+public import TauCeti.NumberTheory.LocalField.ProP.Marked.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Orientation
 import Mathlib.RingTheory.Prime
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
@@ -99,19 +99,24 @@ private def powerBasis : PowerBasis ℚ_[2] RatPadicSqrtNegTwo :=
 
 instance : FiniteDimensional ℚ_[2] RatPadicSqrtNegTwo := powerBasis.finite
 
+-- Use finite dimensionality directly when installing the spectral-norm structures.
+local instance : Algebra.IsAlgebraic ℚ_[2] RatPadicSqrtNegTwo :=
+  Algebra.IsAlgebraic.of_finite ℚ_[2] RatPadicSqrtNegTwo
+
 instance : Algebra.IsSeparable ℚ_[2] RatPadicSqrtNegTwo :=
   Algebra.IsAlgebraic.isSeparable_of_perfectField
 
 instance : CharZero RatPadicSqrtNegTwo :=
   charZero_of_injective_algebraMap (algebraMap ℚ_[2] RatPadicSqrtNegTwo).injective
 
-instance : ValuativeRel RatPadicSqrtNegTwo := finiteExtensionValuativeRel ℚ_[2] RatPadicSqrtNegTwo
+instance : ValuativeRel RatPadicSqrtNegTwo :=
+  algebraicExtensionValuativeRel ℚ_[2] RatPadicSqrtNegTwo
 
 instance : TopologicalSpace RatPadicSqrtNegTwo :=
-  finiteExtensionNormedFieldTopology ℚ_[2] RatPadicSqrtNegTwo
+  algebraicExtensionNormedFieldTopology ℚ_[2] RatPadicSqrtNegTwo
 
 instance : ValuativeExtension ℚ_[2] RatPadicSqrtNegTwo :=
-  finiteExtension_valuativeExtension ℚ_[2] RatPadicSqrtNegTwo
+  algebraicExtension_valuativeExtension ℚ_[2] RatPadicSqrtNegTwo
 
 instance : IsNonarchimedeanLocalField RatPadicSqrtNegTwo :=
   finiteExtension_isNonarchimedeanLocalField ℚ_[2] RatPadicSqrtNegTwo
@@ -235,7 +240,7 @@ theorem absoluteGaloisGroupProP_two_ratPadicSqrtNegTwo_marked :
         cyclotomicOrientation 2 RatPadicSqrtNegTwo ratPadicSqrtNegTwo_hasPrimitiveRoot
             (e.symm (presentedProPGen 2 4 _ 2)) = 1 := by
   have hmarked := absoluteGaloisGroupProP_two_marked_of_degree_even_principal RatPadicSqrtNegTwo
-    ratPadicSqrtNegTwo_hasPrimitiveRoot (by simp) (a := 4) (k := 2) (f := 3) le_rfl
+    ratPadicSqrtNegTwo_hasPrimitiveRoot (a := 4) (k := 2) (f := 3) le_rfl
     (by norm_num) (by norm_num) (by norm_num) negThreeUnit_neg_coe
     range_localCyclotomicCharacter_ratPadicSqrtNegTwo
   rw [finrank_ratPadicSqrtNegTwo] at hmarked

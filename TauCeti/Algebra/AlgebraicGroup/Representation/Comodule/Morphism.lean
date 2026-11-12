@@ -124,7 +124,7 @@ theorem map_coact_of_baseChange_comp_endOfPoint_universal
           (f.baseChange (ULift.{max u v w x} H)
             (Comodule.endOfPoint V ULift.algEquiv.symm.toAlgHom (1 ⊗ₜ[R] z)))) := by
         congr 1
-        simp only [LinearMap.baseChange_eq_ltensor, LinearMap.lTensor_def,
+        simp only [LinearMap.baseChange_eq_lTensor, LinearMap.lTensor_def,
           TensorProduct.map_map, LinearMap.comp_id, LinearMap.id_comp]
     _ = TensorProduct.comm R H W
         (TensorProduct.map ULift.algEquiv.toLinearMap LinearMap.id

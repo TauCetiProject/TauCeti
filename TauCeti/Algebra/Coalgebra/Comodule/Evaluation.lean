@@ -127,7 +127,7 @@ theorem baseChangeEvaluation_dual_endOfPoint_tmul (g : WithConv (H →ₐ[R] A))
   rw [endOfPoint_tmul]
   rw [dual_coact (R := R) (H := H) (M := M)]
   simp only [map_smul, LinearMap.smul_apply, baseChangeEvaluation_comm_lTensor]
-  rw [dualTensorHom_dualCoact_apply, AlgHom.convInv_apply]
+  rw [dualTensorHom_dualCoact_apply, WithConv.algHom_inv_apply]
   simp only [smul_eq_mul]
   ac_rfl
 

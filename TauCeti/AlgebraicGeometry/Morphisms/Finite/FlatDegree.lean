@@ -58,13 +58,13 @@ namespace TauCeti.AlgebraicGeometry
 
 /-- The rank of a finite flat affine morphism with integral target is the dimension after
 passing to fraction rings. If `S` is a domain, `K` and `L` are fields and this is the degree
-of the induced function-field extension. The algebra structures record compatibility with the
+of the induced function-field extension. The scalar towers record compatibility with the
 map of coordinate rings. -/
 theorem finrank_SpecMap_eq_finrank_fractionRing
     {R S : Type u} {K : Type v} {L : Type w}
     [CommRing R] [IsDomain R] [CommRing S]
     [CommRing K] [CommRing L] [Algebra R S] [Algebra R K] [Algebra S L]
-    [Algebra R L] [Algebra K L] [IsScalarTower R K L] [IsScalarTower R S L]
+    [Algebra R L] [Module K L] [IsScalarTower R K L] [IsScalarTower R S L]
     [IsFractionRing R K] [IsFractionRing S L] [Module.Flat R S] [Module.Finite R S]
     (p : PrimeSpectrum R) :
     (Spec.map (CommRingCat.ofHom (algebraMap R S))).finrank p = Module.finrank K L := by

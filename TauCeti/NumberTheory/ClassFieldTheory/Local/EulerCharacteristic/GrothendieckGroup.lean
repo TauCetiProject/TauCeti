@@ -28,7 +28,7 @@ G₀((ZMod n)[G_F ⧸ V]) → Additive ℚ^×_{>0}
 through the universal property `TauCeti.liftFDRepK0`. As every finite smooth discrete Galois
 representation is inflated from some finite quotient (`exists_galRepOfQuotient_iso`), Tate's
 local Euler characteristic formula `χ_F = φ_F` holds exactly when these two homomorphisms agree
-for every `V`. Since `ℚ^×_{>0}` is torsion-free (`Units.instIsMulTorsionFreePosSubgroup`), that
+for every `V`. Since `ℚ^×_{>0}` is torsion-free (`Units.instHasUniqueRootsPosSubgroup`), that
 agreement may be checked on a positive multiple of each class, such as the one the modular Artin
 theorem writes as a sum of classes induced from cyclic subgroups.
 

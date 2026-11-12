@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Polygon.Basic
 public import Mathlib.LinearAlgebra.Quotient.Defs
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
-import TauCeti.Geometry.Polygon.Basic
+public import TauCeti.Geometry.Polygon.Basic
 import TauCeti.LinearAlgebra.CrossProduct
 
 /-!
@@ -32,10 +32,17 @@ on its fibres on the polygon (`Polygon.isRegularProjection_congr`), so the quoti
 replaced by any projection onto a plane with the same fibres, such as a coordinate projection.
 Projecting along a nondegenerate edge is never regular (`Polygon.not_isRegularProjection_edge`).
 
+An injective affine map `f` carries regular projections along: `π` is a regular projection of
+`poly.map f` exactly when `π ∘ f` is one of `poly` (`Polygon.isRegularProjection_map_iff`). When
+the linear part of `f` is injective, it carries the lines parallel to `d` onto lines parallel to
+`f.linear d` without identifying two of them (`Polygon.projAlong_map_eq_projAlong_map_iff`), so
+the projection of `poly.map f` along `f.linear d` is regular exactly when the projection of `poly`
+along `d` is (`Polygon.isRegularProjection_map_projAlong_iff`).
+
 ## Main definitions
 
-* `Polygon.projAlong R p₀ d`: the projection `P → V ⧸ R ∙ d` along the direction `d`, with
-  origin `p₀`.
+* `Polygon.projAlong R p₀ d`: the affine projection `P →ᵃ[R] V ⧸ R ∙ d` along the direction `d`,
+  with origin `p₀`.
 * `Polygon.IsRegularProjection R poly π`: no three distinct points of the polygon have the same
   image under `π`, and no vertex has the same image as another point of the polygon.
 
@@ -43,7 +50,15 @@ Projecting along a nondegenerate edge is never regular (`Polygon.not_isRegularPr
 
 * `Polygon.isRegularProjection_congr`: regularity only depends on the fibres of the projection on
   the polygon.
+* `Polygon.isRegularProjection_rotate_iff`: regularity is unchanged by cyclically relabelling the
+  vertices.
+* `Polygon.isRegularProjection_reverse_iff`: regularity is unchanged by reversing the order of the
+  vertices.
 * `Polygon.not_isRegularProjection_edge`: projecting along a nondegenerate edge is not regular.
+* `Polygon.isRegularProjection_map_iff`, `Polygon.isRegularProjection_map_projAlong_iff`: regular
+  projections of the image of a polygon under an injective affine map.
+* `Polygon.IsRegularProjection.injOn_edgeSet`: an affine regular projection is injective on every
+  edge.
 * `Polygon.dense_setOf_isRegularProjection`: the directions of regular projections of a polygon in
   a three-dimensional real affine space are dense.
 * `Polygon.exists_ne_zero_isRegularProjection`: every such polygon has a regular projection along
@@ -86,10 +101,11 @@ section ProjAlong
 variable [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 variable (R) in
-/-- The **projection along `d`** with origin `p₀`: the map `P → V ⧸ R ∙ d` sending `p` to the
-class of `p -ᵥ p₀`. Its fibres are the lines parallel to `d` (`projAlong_eq_projAlong_iff`). -/
-def projAlong (p₀ : P) (d : V) (p : P) : V ⧸ R ∙ d :=
-  Submodule.Quotient.mk (p -ᵥ p₀)
+/-- The **projection along `d`** with origin `p₀`: the affine map `P →ᵃ[R] V ⧸ R ∙ d` sending
+`p` to the class of `p -ᵥ p₀`. Its fibres are the lines parallel to `d`
+(`projAlong_eq_projAlong_iff`). -/
+def projAlong (p₀ : P) (d : V) : P →ᵃ[R] V ⧸ R ∙ d :=
+  (R ∙ d).mkQ.toAffineMap.comp (AffineEquiv.vaddConst R p₀).symm.toAffineMap
 
 /-- The projection along `d` sends `p` to the class of `p -ᵥ p₀`. -/
 theorem projAlong_apply (p₀ : P) (d : V) (p : P) :
@@ -140,6 +156,47 @@ theorem isRegularProjection_congr {π : P → Q} {π' : P → Q'}
   · exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz ((h x hx y hy).1 hxy) ((h x hx z hz).1 hxz)
   · exact hπ.eq_vertex_of_apply_eq i hx ((h x hx _ (hvertex hx i)).1 hxi)
 
+/-- A projection is regular for the cyclic relabelling `poly.rotate` exactly when it is regular for
+`poly`: the two have the same boundary and the same vertices. -/
+@[simp]
+theorem isRegularProjection_rotate_iff {π : P → Q} :
+    poly.rotate.IsRegularProjection R π ↔ poly.IsRegularProjection R π := by
+  have hb := boundary_rotate (R := R) poly
+  refine ⟨fun hπ ↦ ⟨fun x y z hx hy hz ↦ ?_, fun i x hx hxi ↦ ?_⟩,
+    fun hπ ↦ ⟨fun x y z hx hy hz ↦ ?_, fun i x hx hxi ↦ ?_⟩⟩
+  · rw [← hb] at hx hy hz
+    exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz
+  · rw [← hb] at hx
+    have h := hπ.eq_vertex_of_apply_eq ((finRotate n).symm i) hx
+    rw [rotate_apply, Equiv.apply_symm_apply] at h
+    exact h hxi
+  · rw [hb] at hx hy hz
+    exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz
+  · rw [hb] at hx
+    rw [rotate_apply] at hxi ⊢
+    exact hπ.eq_vertex_of_apply_eq _ hx hxi
+
+variable [IsOrderedRing R] in
+/-- A projection regular for `poly` is regular for its reversal `poly.reverse`: the two have the
+same boundary and the same vertices. -/
+theorem IsRegularProjection.reverse {π : P → Q} (hπ : poly.IsRegularProjection R π) :
+    poly.reverse.IsRegularProjection R π := by
+  have hb := boundary_reverse (R := R) poly
+  refine ⟨fun x y z hx hy hz ↦ ?_, fun i x hx hxi ↦ ?_⟩
+  · rw [hb] at hx hy hz
+    exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz
+  · rw [hb] at hx
+    rw [reverse_apply] at hxi ⊢
+    exact hπ.eq_vertex_of_apply_eq _ hx hxi
+
+variable [IsOrderedRing R] in
+/-- A projection is regular for the reversal `poly.reverse` exactly when it is regular for
+`poly`. -/
+@[simp]
+theorem isRegularProjection_reverse_iff {π : P → Q} :
+    poly.reverse.IsRegularProjection R π ↔ poly.IsRegularProjection R π :=
+  ⟨fun hπ ↦ by simpa using hπ.reverse, IsRegularProjection.reverse⟩
+
 variable [ZeroLEOneClass R]
 
 /-- Projecting along a nondegenerate edge of a polygon is not a regular projection: both endpoints
@@ -152,6 +209,76 @@ theorem not_isRegularProjection_edge (p₀ : P) {i : Fin n} (hi : poly i ≠ pol
   exact projAlong_eq_projAlong_iff.2 ⟨1, one_smul R _⟩
 
 end Defs
+
+section Map
+
+open Function AffineMap
+
+variable {V' P' : Type*} [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P] [AddCommGroup V']
+  [Module R V'] [AddTorsor V' P'] {f : P →ᵃ[R] P'}
+
+/-- An affine map `f` with injective linear part carries the lines parallel to `d` onto lines
+parallel to `f.linear d`, and does not identify two such lines. -/
+theorem projAlong_map_eq_projAlong_map_iff (hf : Injective f.linear) (q₀ : P') (p₀ : P) (d : V)
+    {x y : P} : projAlong R q₀ (f.linear d) (f x) = projAlong R q₀ (f.linear d) (f y) ↔
+      projAlong R p₀ d x = projAlong R p₀ d y := by
+  simp only [projAlong_eq_projAlong_iff, ← f.linear_apply_vsub, ← LinearMap.map_smul, hf.eq_iff]
+
+variable [PartialOrder R] {poly : Polygon P n}
+
+/-- A map `π` is a regular projection of the image of a polygon under an injective affine map `f`
+exactly when `π ∘ f` is a regular projection of the polygon. -/
+theorem isRegularProjection_map_iff (hf : Injective f) {π : P' → Q} :
+    (poly.map f).IsRegularProjection R π ↔ poly.IsRegularProjection R (π ∘ f) := by
+  refine ⟨fun h ↦ ⟨fun x y z hx hy hz hxy hxz ↦ ?_, fun i x hx hxi ↦ ?_⟩,
+    fun h ↦ ⟨fun x y z hx hy hz hxy hxz ↦ ?_, fun i x hx hxi ↦ ?_⟩⟩
+  · simpa only [hf.eq_iff] using h.eq_or_eq_or_eq_of_apply_eq (x := f x) (y := f y) (z := f z)
+      (boundary_map f poly ▸ mem_image_of_mem f hx) (boundary_map f poly ▸ mem_image_of_mem f hy)
+      (boundary_map f poly ▸ mem_image_of_mem f hz) hxy hxz
+  · refine hf ?_
+    simpa only [map_apply] using h.eq_vertex_of_apply_eq i
+      (boundary_map f poly ▸ mem_image_of_mem f hx) (by rwa [map_apply])
+  · rw [boundary_map] at hx hy hz
+    obtain ⟨x, hx, rfl⟩ := hx
+    obtain ⟨y, hy, rfl⟩ := hy
+    obtain ⟨z, hz, rfl⟩ := hz
+    simpa only [hf.eq_iff] using h.eq_or_eq_or_eq_of_apply_eq hx hy hz hxy hxz
+  · rw [boundary_map] at hx
+    obtain ⟨x, hx, rfl⟩ := hx
+    rw [map_apply] at hxi ⊢
+    exact congrArg f (h.eq_vertex_of_apply_eq i hx hxi)
+
+/-- The projection of the image of a polygon along the image of a direction `d` is regular exactly
+when the projection of the polygon along `d` is. -/
+theorem isRegularProjection_map_projAlong_iff (hf : Injective f.linear)
+    (q₀ : P') (p₀ : P) (d : V) :
+    (poly.map f).IsRegularProjection R (projAlong R q₀ (f.linear d)) ↔
+      poly.IsRegularProjection R (projAlong R p₀ d) := by
+  rw [isRegularProjection_map_iff ((linear_injective_iff f).1 hf)]
+  exact isRegularProjection_congr fun x _ y _ ↦ projAlong_map_eq_projAlong_map_iff hf q₀ p₀ d
+
+end Map
+
+section InjOn
+
+variable {W : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R] [IsDomain R] [AddCommGroup V]
+  [Module R V] [AddTorsor V P] [AddCommGroup W] [Module R W] [Module.IsTorsionFree R W]
+  [AddTorsor W Q] {poly : Polygon P n} {π : P →ᵃ[R] Q}
+
+/-- An affine regular projection is injective on every edge of the polygon: on a nondegenerate
+edge, failure of injectivity would identify the two ends of the edge. -/
+theorem IsRegularProjection.injOn_edgeSet (hπ : poly.IsRegularProjection R π) (i : Fin n) :
+    InjOn π (poly.edgeSet R i) := by
+  by_cases hi : poly i = poly (finRotate n i)
+  · rintro _ ⟨s, -, rfl⟩ _ ⟨t, -, rfl⟩ -
+    rw [hi, AffineMap.lineMap_same_apply, AffineMap.lineMap_same_apply]
+  have hne : π (poly i) ≠ π (poly (finRotate n i)) := fun h ↦
+    hi (hπ.eq_vertex_of_apply_eq i (poly.apply_mem_boundary R _) h.symm).symm
+  rintro _ ⟨s, -, rfl⟩ _ ⟨t, -, rfl⟩ hst
+  rw [π.apply_lineMap, π.apply_lineMap] at hst
+  rw [AffineMap.lineMap_injective R hne hst]
+
+end InjOn
 
 section EdgeVector
 

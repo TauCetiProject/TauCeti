@@ -115,9 +115,9 @@ theorem map_genericMatrix_generator_inl (k : Fin 2 ⊕ Fin 2) :
   set q : HopfAlgebra.points (R := ZMod 3)
       (H := AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) B :=
     toConv (AlgHom.id (ZMod 3) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))) with hq
-  have hid : (CommHopfAlgCat.mapPointsFunctor (generator (.inl k))).app B q =
+  have hid : (CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inl k))).app B q =
       toConv (generator (.inl k)).hom.toAlgHom := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, hq, WithConv.ofConv_toConv, AlgHom.id_comp]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, hq, WithConv.ofConv_toConv, AlgHom.id_comp]
   have hu : AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) q =
       Multiplicative.ofAdd (SymmetricAlgebra.ι (ZMod 3) (ZMod 3) 1) := by
     rw [← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) q),
@@ -149,9 +149,9 @@ theorem exists_map_genericMatrix_generator_inr :
         (SplitTorus.characterGroup (Fin 2))).obj) B :=
     toConv (AlgHom.id (ZMod 3) ((DiagonalizableGroup.coordinateRing (ZMod 3)
       (SplitTorus.characterGroup (Fin 2))).obj)) with hq
-  have hid : (CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app B q =
+  have hid : (CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inr ()))).app B q =
       toConv (generator (.inr ())).hom.toAlgHom := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, hq, WithConv.ofConv_toConv, AlgHom.id_comp]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, hq, WithConv.ofConv_toConv, AlgHom.id_comp]
   refine ⟨SplitTorus.pointsMulEquiv q, ?_⟩
   rw [coe_weightTorusPoints_pointsMulEquiv, hid,
     TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,

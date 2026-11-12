@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
+public import TauCeti.Algebra.Lie.Isotypic
 public import TauCeti.Algebra.Lie.Multiplicity
 public import TauCeti.Algebra.Lie.Weights.FormalCharacter
 -- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
@@ -84,8 +85,12 @@ multiplicity the sum omits is zero.
   labelled by a dominant integral `λ` are counted by the multiplicity of `L(λ)`.**
 * `TauCeti.nonempty_lieModuleEquiv_directSum_irreducibleQuotient`: **the packaged isotypic
   decomposition** `M ≃ ⨁_λ L(λ)^{m λ}`.
+* `TauCeti.iSup_isotypicComponent_irreducibleQuotient_eq_top`: a finite-dimensional module is the
+  sum of its `L(λ)`-isotypic components over the dominant integral weights `λ`.
 * `TauCeti.isotypicMultiplicity_irreducibleQuotient_eq_zero_of_not_isDominantIntegral`: `L(λ)` of
   a non-dominant weight `λ` has multiplicity zero in every finite-dimensional module.
+* `TauCeti.genWeightSpace_ne_bot_of_isotypicMultiplicity_irreducibleQuotient_ne_zero`:
+  an irreducible with nonzero multiplicity has its highest weight among the weights of `M`.
 * `TauCeti.irreducibleFormalCharacter_ne_zero`: **the character of `L(lam)` is nonzero.**
 * `TauCeti.formalCharacter_eq_finsum_isotypicMultiplicity_smul`: **the character of a
   finite-dimensional module is the multiplicity-weighted sum of the irreducible characters.**
@@ -147,8 +152,10 @@ theorem natCard_eq_isotypicMultiplicity_irreducibleQuotient {lam : Dual K H}
           ⟨e.trans (hc i).some⟩).symm
     · exact fun hi ↦ ⟨(hi ▸ (hc i).some).symm⟩
   rw [LieModule.isotypicMultiplicity_eq_ncard_of_isInternal N h hirr, hset]
-  -- `Set.ncard` is `Nat.card` of the coercion, and `↥{i | c i = lam}` is `{i // c i = lam}`.
-  exact Nat.card_coe_set_eq _
+  -- `Set.ncard` is `Nat.card` of the coercion, and `↥{i | c i = lam}` is equivalent to
+  -- `{i // c i = lam}`.
+  rw [← Nat.card_coe_set_eq]
+  exact Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ by simp)
 
 end Count
 
@@ -181,6 +188,20 @@ theorem nonempty_lieModuleEquiv_directSum_irreducibleQuotient [FiniteDimensional
       ↔ c i = (s : Dual K H) := fun _ ↦ Subtype.ext_iff
   rw [Nat.card_congr (Equiv.subtypeEquivRight hiff)]
   exact natCard_eq_isotypicMultiplicity_irreducibleQuotient b N hint hirr c hcequiv s.2
+
+variable (M) in
+/-- **A finite-dimensional module is the sum of its `L(lam)`-isotypic components**, `lam` running
+over the dominant integral weights. -/
+theorem iSup_isotypicComponent_irreducibleQuotient_eq_top [FiniteDimensional K M] :
+    ⨆ lam : {l : Dual K H // IsDominantIntegral b l},
+      isotypicComponent K L M (irreducibleQuotient b lam.1) = ⊤ := by
+  obtain ⟨k, N, hint, hirr⟩ := exists_isInternal_isIrreducible_of_isKilling K L M
+  refine top_unique <| LieSubmodule.iSup_toSubmodule_eq_top.mp hint.submodule_iSup_eq_top ▸
+    iSup_le fun i ↦ ?_
+  have := hirr i
+  obtain ⟨lam, hlam, e⟩ :=
+    exists_isDominantIntegral_nonempty_lieModuleEquiv_irreducibleQuotient (M := N i) b
+  exact le_iSup_of_le ⟨lam, hlam⟩ ((N i).le_isotypicComponent_of_equiv e)
 
 /-! ### The character of the irreducible module of a dominant integral weight -/
 
@@ -288,7 +309,7 @@ theorem formalCharacter_eq_finsum_isotypicMultiplicity_smul [FiniteDimensional K
     intro i
     have := finiteDimensional_irreducibleQuotient_of_isDominantIntegral (hcdom i)
     rw [irreducibleFormalCharacter_def]
-    exact formalCharacter_congr (LieModuleEquiv.restrictLie (hcequiv i).some H)
+    exact formalCharacter_congr ((hcequiv i).some.restrictLie H)
   -- the summands with a label outside the image of the labelling are absent, so the sum is finite
   have hsupp : (Function.support fun lam : {l : Dual K H // IsDominantIntegral b l} ↦
       (LieModule.isotypicMultiplicity K L M (irreducibleQuotient b lam.1) : ℤ) •
@@ -306,5 +327,26 @@ theorem formalCharacter_eq_finsum_isotypicMultiplicity_smul [FiniteDimensional K
   rw [Finset.sum_comp (fun lam ↦ irreducibleFormalCharacter b lam) d]
   refine Finset.sum_congr rfl fun lam _ ↦ ?_
   rw [← Nat.cast_smul_eq_nsmul ℤ, hcard lam]
+
+variable (b) in
+/-- **Any irreducible `L(lam)` occurring with nonzero multiplicity in `M` has `lam` as a weight of
+`M`.** A nonzero morphism `L(lam) →ₗ⁅K,L⁆ M` cannot kill the canonical generator (which spans
+`L(lam)` over `L`), so it sends that generator to a highest weight vector of weight `lam` in `M`
+(`TauCeti.IsHighestWeightVector.map`). -/
+theorem genWeightSpace_ne_bot_of_isotypicMultiplicity_irreducibleQuotient_ne_zero
+    {lam : Dual K H}
+    (h : LieModule.isotypicMultiplicity K L M (irreducibleQuotient b lam) ≠ 0) :
+    genWeightSpace M (lam : H → K) ≠ ⊥ := by
+  have hsub : ¬ Subsingleton (irreducibleQuotient b lam →ₗ⁅K,L⁆ M) := fun hsub ↦
+    h (by rw [LieModule.isotypicMultiplicity_def]; exact finrank_zero_of_subsingleton)
+  obtain ⟨f, hf⟩ : ∃ f : irreducibleQuotient b lam →ₗ⁅K,L⁆ M, f ≠ 0 := by
+    rw [not_subsingleton_iff_nontrivial] at hsub
+    exact exists_ne 0
+  have hfv : f (irreducibleQuotientGenerator b lam) ≠ 0 := fun h0 ↦ by
+    have htop : f.ker = ⊤ := top_unique <| by
+      rw [← lieSpan_irreducibleQuotientGenerator_eq_top b lam, LieSubmodule.lieSpan_le]
+      exact Set.singleton_subset_iff.mpr h0
+    exact hf (LieModuleHom.ext fun x ↦ (htop ▸ LieSubmodule.mem_top x : x ∈ f.ker))
+  exact ((isHighestWeightVector_irreducibleQuotientGenerator b lam).map f hfv).genWeightSpace_ne_bot
 
 end TauCeti

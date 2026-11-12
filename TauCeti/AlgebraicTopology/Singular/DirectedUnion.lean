@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
@@ -117,7 +118,7 @@ end Homology
 section Module
 
 variable {A : Type w} [Ring A] (M : ModuleCat.{w} A) (n : ℕ) {Y : TopCat.{w}} {J : Type}
-  [Preorder J] [IsDirected J (· ≤ ·)] [Nonempty J] {U : J → Set Y} (hU : Monotone U)
+  [Preorder J] [IsDirected J (· ≤ ·)] {U : J → Set Y} (hU : Monotone U)
   {V : Set Y} (hUV : ∀ j, U j ⊆ V) (hopen : ∀ j, IsOpen (Subtype.val ⁻¹' U j : Set V))
   (hcover : V ⊆ ⋃ j, U j)
 
@@ -132,6 +133,7 @@ theorem exists_singularHomologyMap_inclusion_eq_zero {i : J}
     ∃ j, ∃ hij : i ≤ j,
       ((singularHomologyFunctor _ n).obj M).map (ofHom (ContinuousMap.inclusion (hU hij))) x =
         0 := by
+  have : Nonempty J := ⟨i⟩
   have : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{w} A)) :=
     preservesSmallestFilteredColimits_of_preservesFilteredColimits _
   -- The subspaces `U j` and their inclusions into `V` form a cocone of embeddings.

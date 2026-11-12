@@ -9,7 +9,7 @@ import TauCeti.Analysis.SpecialFunctions.Beta
 public import TauCeti.Probability.Density
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Probability.Distributions.Cauchy
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -274,13 +274,14 @@ theorem integral_studentTMeasure_eq {F : Type*} [NormedAddCommGroup F] [NormedSp
   exact integral_withDensity_ofReal (measurable_studentTPDFReal ν).aemeasurable
     (ae_of_all _ (studentTPDFReal_nonneg ν)) f
 
-/-- The real mass of a measurable set under a Student t law is the integral of its real-valued
-density. -/
-theorem measureReal_studentTMeasure {s : Set ℝ} (hs : MeasurableSet s)
-    : (studentTMeasure ν).real s = ∫ z in s, studentTPDFReal ν z := by
-  rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
-  exact measureReal_withDensity_ofReal (ae_of_all _ (studentTPDFReal_nonneg ν)) hs
-    (integrable_studentTPDFReal ν).integrableOn
+/-- The real mass of a set under a Student t law is the integral of its real-valued density. -/
+theorem measureReal_studentTMeasure (s : Set ℝ) :
+    (studentTMeasure ν).real s = ∫ z in s, studentTPDFReal ν z := by
+  rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν), measureReal_def,
+    withDensity_apply' _ s,
+    ← ofReal_integral_eq_lintegral_ofReal (integrable_studentTPDFReal ν).integrableOn
+      (ae_of_all _ (studentTPDFReal_nonneg ν))]
+  exact ENNReal.toReal_ofReal (integral_nonneg fun z => studentTPDFReal_nonneg ν z)
 
 /-! ### Symmetry -/
 
@@ -295,6 +296,10 @@ theorem studentTMeasure_map_neg (ν : ℝ) :
   have h := (Measure.measurePreserving_neg (volume : Measure ℝ)).setLIntegral_comp_preimage_emb
     (Homeomorph.neg ℝ).measurableEmbedding (studentTPDF ν) t
   simpa only [studentTPDF_neg] using h
+
+/-- Student's t law is invariant under negation, including its invalid zero-measure branch. -/
+instance isNegInvariant_studentTMeasure (ν : ℝ) : (studentTMeasure ν).IsNegInvariant :=
+  ⟨studentTMeasure_map_neg ν⟩
 
 /-! ### One degree of freedom -/
 

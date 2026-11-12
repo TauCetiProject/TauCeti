@@ -58,7 +58,10 @@ is all of `ℤ_2ˣ`, so every subgroup of `ℤ_2ˣ` is pro-`2`.
 * `TauCeti.unitsPrincipalMk`: the element of `U^(f)` with a prescribed value `v ≡ 1 mod p ^ f`.
 * `TauCeti.isOpen_unitsPrincipal`, `TauCeti.isClosed_unitsPrincipal`,
   `TauCeti.unitsPrincipal_antitone`, `TauCeti.iInf_unitsPrincipal_eq_bot`,
-  `TauCeti.hasBasis_nhds_one_unitsPrincipal`: the topology of the filtration.
+  `TauCeti.hasBasis_nhds_one_unitsPrincipal`: the topology of the filtration;
+  `TauCeti.exists_unitsPrincipal_le_of_isOpen`: every open subgroup contains some `U^(f)`.
+* `TauCeti.ker_unitsToZModPow`, `TauCeti.unitsToZModPow_eq_one_iff`: `U^(f)` is the kernel of
+  the truncation `PadicInt.unitsToZModPow f`.
 * `TauCeti.index_unitsPrincipal`: `[ℤ_pˣ : U^(f)] = φ(p ^ f)`, so `p ^ (f - 1) * (p - 1)`
   for `f ≥ 1`, and `2 ^ (f - 1)` for `p = 2`; `TauCeti.relIndex_unitsPrincipal`:
   `[U^(f) : U^(f+k)] = p ^ k` for `f ≥ 1`.
@@ -250,14 +253,33 @@ theorem hasBasis_nhds_one_unitsPrincipal :
   rw [Metric.mem_ball, dist_eq_norm]
   exact (mem_unitsPrincipal_iff_norm.mp hu).trans_lt hf
 
+/-- Every open subgroup of `ℤ_pˣ` contains some principal unit group `U^(f)`. -/
+theorem exists_unitsPrincipal_le_of_isOpen {H : Subgroup ℤ_[p]ˣ}
+    (hH : IsOpen (H : Set ℤ_[p]ˣ)) : ∃ f, unitsPrincipal p f ≤ H := by
+  obtain ⟨f, -, hf⟩ := (hasBasis_nhds_one_unitsPrincipal p).mem_iff.mp (hH.mem_nhds H.one_mem)
+  exact ⟨f, hf⟩
+
+variable (p) in
+/-- `U^(f)` is the kernel of truncation modulo `p ^ f` on units. -/
+theorem ker_unitsToZModPow (f : ℕ) :
+    (PadicInt.unitsToZModPow (p := p) f).toMonoidHom.ker = unitsPrincipal p f := by
+  ext u
+  simp [mem_unitsPrincipal_iff_toZModPow, Units.ext_iff]
+
+/-- A unit truncates to `1` modulo `p ^ f` exactly when it lies in `U^(f)`. -/
+@[simp]
+theorem unitsToZModPow_eq_one_iff {f : ℕ} {u : ℤ_[p]ˣ} :
+    PadicInt.unitsToZModPow f u = 1 ↔ u ∈ unitsPrincipal p f := by
+  simp [← ker_unitsToZModPow]
+
 /-! ### Indices -/
 
 variable (p) in
 /-- `[ℤ_pˣ : U^(f)] = φ(p ^ f)`: reduction modulo `p ^ f` is surjective on units. -/
 @[simp]
 theorem index_unitsPrincipal (f : ℕ) : (unitsPrincipal p f).index = Nat.totient (p ^ f) := by
-  rw [unitsPrincipal, Subgroup.index_ker,
-    MonoidHom.range_eq_top_of_surjective _ (PadicInt.surjective_units_map_toZModPow f),
+  rw [← ker_unitsToZModPow, Subgroup.index_ker,
+    MonoidHom.range_eq_top_of_surjective _ (PadicInt.unitsToZModPow_surjective f),
     Subgroup.card_top, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 
 variable (p) in
@@ -320,12 +342,15 @@ theorem relIndex_unitsPrincipal {f : ℕ} (hf : 0 < f) (k : ℕ) :
   exact mul_right_cancel₀ (Nat.mul_ne_zero (pow_pos hp.out.pos _).ne'
     (Nat.sub_ne_zero_of_lt hp.out.one_lt)) h
 
-/-- At `p = 2`, two elements of exact level `f ≥ 1` are congruent modulo `U^(f+1)`: the quotient
-`U^(f) / U^(f+1)` has order `2`. -/
-theorem inv_mul_mem_unitsPrincipal_two_succ {f : ℕ} (hf : 0 < f) {u x : ℤ_[2]ˣ}
+/-- At `p = 2`, two elements of exact level `f` are congruent modulo `U^(f+1)`: for `f ≥ 1` the
+quotient `U^(f) / U^(f+1)` has order `2`; for `f = 0` the hypotheses are unsatisfiable, since
+`U^(1) = ⊤`. -/
+theorem inv_mul_mem_unitsPrincipal_two_succ {f : ℕ} {u x : ℤ_[2]ˣ}
     (hu : u ∈ unitsPrincipal 2 f) (hu' : u ∉ unitsPrincipal 2 (f + 1))
     (hx : x ∈ unitsPrincipal 2 f) (hx' : x ∉ unitsPrincipal 2 (f + 1)) :
     u⁻¹ * x ∈ unitsPrincipal 2 (f + 1) := by
+  rcases Nat.eq_zero_or_pos f with rfl | hf
+  · exact absurd (by rw [zero_add, unitsPrincipal_two_one]; exact Subgroup.mem_top _) hu'
   have h2 : ((unitsPrincipal 2 (f + 1)).subgroupOf (unitsPrincipal 2 f)).index = 2 := by
     rw [← Subgroup.relIndex, relIndex_unitsPrincipal 2 hf 1, pow_one]
   have := (Subgroup.mul_mem_iff_of_index_two h2 (a := ⟨u⁻¹, (unitsPrincipal 2 f).inv_mem hu⟩)

@@ -50,8 +50,8 @@ The Frobenius endomorphism `TauCeti.AdditiveGroup.frobeniusEnd` of `𝔾ₐ` is 
 `TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Frobenius`; the Frobenius kernel `αₚ` and its
 `p`-nilpotent functor of points are `TauCeti.Algebra.AlgebraicGroup.AdditiveFrobeniusKernel.Basic`.
 The additive-group points dictionary `TauCeti.AdditiveGroup.gaPointsMulEquiv` and the
-coordinate-Hopf-algebra functoriality `TauCeti.AlgHom.mapDomain` (with its naturality
-`TauCeti.AlgHom.mapValue_mapDomain`) are Tau Ceti's. This realizes `αₚ = ker(Frobenius)` on the
+coordinate-Hopf-algebra functoriality `BialgHom.mapDomain` (with its naturality
+`BialgHom.mapValue_mapDomain`) are Tau Ceti's. This realizes `αₚ = ker(Frobenius)` on the
 functor of points, the additive companion of `TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Kernel`.
 -/
 

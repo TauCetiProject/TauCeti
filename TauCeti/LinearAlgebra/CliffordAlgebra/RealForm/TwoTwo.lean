@@ -74,13 +74,13 @@ noncomputable def realCliffordTwoTwoVectorEquivMatrix :
     (A 1 1 - A 0 0) / 2, -(A 0 1 + A 1 0) / 2]
   map_add' v w := by
     ext i j
-    all_goals fin_cases i
+    fin_cases i
     all_goals fin_cases j
     all_goals simp
     all_goals ring
   map_smul' r v := by
     ext i j
-    all_goals fin_cases i
+    fin_cases i
     all_goals fin_cases j
     all_goals simp
     all_goals ring
@@ -89,7 +89,7 @@ noncomputable def realCliffordTwoTwoVectorEquivMatrix :
     fin_cases i <;> simp
   right_inv A := by
     ext i j
-    all_goals fin_cases i
+    fin_cases i
     all_goals fin_cases j
     all_goals simp
     all_goals ring

@@ -9,8 +9,8 @@ public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
-public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Base change of the bundled coordinate Hopf algebra of `𝔾ₐ`
@@ -75,7 +75,7 @@ theorem connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra
     ConnectedSpace (PrimeSpectrum
       (CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra k))) := by
   let e := coordinateHopfAlgebraBaseChangeIso k K
-  exact connectedSpace_primeSpectrum_of_injective e.hom.hom.toAlgHom.toRingHom
+  exact RingHom.connectedSpace_primeSpectrum_of_injective e.hom.hom.toAlgHom.toRingHom
     (ConcreteCategory.bijective_of_isIso e.hom).1
 
 /-- The coordinate Hopf algebra of the additive group is geometrically connected over every
@@ -87,6 +87,6 @@ theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra
   intro K _ _
   have := connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra k K
   let e := Algebra.TensorProduct.comm k (coordinateHopfAlgebra k) K
-  exact connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
+  exact e.toRingHom.connectedSpace_primeSpectrum_of_injective e.injective
 
 end TauCeti.AdditiveGroup

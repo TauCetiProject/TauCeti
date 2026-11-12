@@ -104,7 +104,7 @@ end TauCeti.GridInitialPentagonRectangleDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 private theorem mem_terminalOverlapPartners_of_recut_geometry
     (E : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z)
@@ -126,9 +126,8 @@ private theorem mem_terminalOverlapPartners_of_recut_geometry
   have hrecut : E.toGridRectangleDecomposition.IsRecut D.toGridRectangleDecomposition := by
     rw [hDrect]
     exact E.toGridRectangleDecomposition.isRecut_recut hone hf hs
-  have hback := hrecut.symm hone hf hs
+  have hback := hrecut.symm hf hs
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (E.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   have hcommon : D.first.right = D.second.right := hgeometry.1
   have hEq : D.recutRightEqRight hcommon hDone hrecut.isEmpty_first hrecut.isEmpty_second = E := by
     apply GridInitialPentagonRectangleDecomposition.toGridRectangleDecomposition_injective
@@ -195,8 +194,7 @@ private theorem initialPentagonTerminalOverlapPartner_sides
   obtain ⟨hcounted, hcommon, hone⟩ := (G.mem_initialPentagonTerminalOverlapSources C D).1 hD
   obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hcounted
   have hf := G.isEmpty_of_mem_unblockedRectangles hR
-  have hs : D.second.IsEmpty := by
-    simpa only [D.pentagon_toGridRectangleBetween] using ((G.mem_initialPentagons _).1 hP).1
+  have hs : D.second.IsEmpty := D.underlying_second_isEmpty ((G.mem_initialPentagons _).1 hP).1
   have hcanonical :
       E.toGridRectangleDecomposition = D.toGridRectangleDecomposition.recut hone hf hs :=
     (D.toGridRectangleDecomposition.existsUnique_isRecut hone hf hs).unique hrecut

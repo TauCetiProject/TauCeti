@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.NumberTheory.Modular.Orbits
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic

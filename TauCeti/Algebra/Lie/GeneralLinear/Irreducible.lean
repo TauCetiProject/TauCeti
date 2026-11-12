@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Radical
-public import TauCeti.Algebra.Lie.Reductive
+public import TauCeti.Algebra.Lie.Reductive.Basic
 
 /-!
 # The `sl n` ↔ `gl n` dictionary for irreducible modules
 
 `gl n K` is reductive (`TauCeti.hasCentralRadical_matrix`), its centre is the scalar matrices and
 its derived ideal is `sl n K` (`TauCeti.derivedSeries_one_eq_slIdeal`). Specializing the reductive
-theory of `TauCeti/Algebra/Lie/Reductive.lean` to that data gives the two halves of the transfer
-between the representation theory of `gl n K` and that of `sl n K`:
+theory of `TauCeti/Algebra/Lie/Reductive/Basic.lean` to that data gives the two halves of the
+transfer between the representation theory of `gl n K` and that of `sl n K`:
 
 * restriction to `sl n K` preserves irreducibility, over an algebraically closed field of
   characteristic zero;
@@ -35,12 +35,8 @@ scalar by which the identity matrix acts, which is the central weight of
   map between `gl n K`-modules on which `1` acts by the same scalar is `gl n K`-equivariant, with
   `TauCeti.lieModuleEquivOfOneLieEqSmulOfSlEquiv` the packaged equivalence.
 
-## Roadmap
-
-This is the "`sl ↔ gl` transfer, pinned" bullet of Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, stated for an arbitrary
-irreducible `gl n K`-module rather than for the not-yet-constructed named carrier
-`glIrreducible n μ`, which it will specialize to.
+Both are stated for arbitrary `gl n K`-modules, so they apply in particular to the named
+irreducible modules `TauCeti.glIrreducible` of `TauCeti/Algebra/Lie/GeneralLinear/Carrier.lean`.
 -/
 
 public section

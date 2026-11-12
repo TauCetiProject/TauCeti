@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Order.Filter.AtTopBot.Archimedean
 public import Mathlib.Topology.MetricSpace.Bounded
+public import Mathlib.Topology.MetricSpace.HausdorffDistance
+public import Mathlib.Topology.Sets.Opens
 
 /-!
 # Proper spaces and compact exhaustions with diverging distance
@@ -32,6 +34,12 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
   exhaustion by compact sets with the divergence condition, namely by the closed balls about `p`.
 * `TauCeti.properSpace_iff_exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist`: the
   equivalence.
+* `IsOpen.exists_iUnion_isOpen_isCompact_closure`: in a proper space, every open set is the union
+  of an increasing sequence of open sets with compact closures inside it.
+* `TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq`: the same exhaustion of an
+  open set `Ω`, as a sequence of `Opens` whose traces on the subspace `Ω` cover it.
+* `TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_iUnion_eq`: an exhaustion of an
+  open set `Ω` by open sets with compact closures, each closure inside the next set.
 
 ## References
 
@@ -42,6 +50,7 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
 public section
 
 open Filter Metric Set Topology
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -94,5 +103,82 @@ theorem properSpace_iff_exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist (p
       ∀ q : ℕ → α, (∀ n, q n ∉ K n) → Tendsto (fun n ↦ dist p (q n)) atTop atTop :=
   ⟨fun _ ↦ exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist p,
     fun ⟨_, hKc, _, _, hK⟩ ↦ properSpace_of_isCompact_of_tendsto_dist hKc hK⟩
+
+/-- **Exhaustion of an open set.** In a proper pseudometric space, an open set `U` is the union of
+an increasing sequence of open sets `V n` whose closures are compact subsets of `U`. -/
+theorem _root_.IsOpen.exists_iUnion_isOpen_isCompact_closure [ProperSpace α] {U : Set α}
+    (hU : IsOpen U) :
+    ∃ V : ℕ → Set α, (∀ n, IsOpen (V n)) ∧ (∀ n, IsCompact (closure (V n))) ∧
+      (∀ n, closure (V n) ⊆ U) ∧ Monotone V ∧ ⋃ n, V n = U := by
+  rcases U.eq_empty_or_nonempty with rfl | ⟨p, -⟩
+  · exact ⟨fun _ ↦ ∅, fun _ ↦ isOpen_empty, fun _ ↦ by simp, fun _ ↦ by simp,
+      fun _ _ _ ↦ le_rfl, by simp⟩
+  -- `V n` consists of the points within `n` of `p` at distance more than `1 / (n + 1)` from `Uᶜ`.
+  let V : ℕ → Set α := fun n ↦ ball p n ∩ {x | ((n : ℝ≥0∞) + 1)⁻¹ < infEDist x Uᶜ}
+  have hclosure (n : ℕ) :
+      closure (V n) ⊆ closedBall p n ∩ {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ infEDist x Uᶜ} :=
+    closure_inter_subset.trans (inter_subset_inter closure_ball_subset_closedBall
+      (closure_lt_subset_le continuous_const continuous_infEDist))
+  refine ⟨V, fun n ↦ isOpen_ball.inter (isOpen_lt continuous_const continuous_infEDist),
+    fun n ↦ (isCompact_closedBall p n).of_isClosed_subset isClosed_closure
+      ((hclosure n).trans inter_subset_left), fun n x hx ↦ ?_, fun m n hmn x hx ↦ ?_, ?_⟩
+  · by_contra hxU
+    have h := (hclosure n hx).2
+    rw [mem_ofPred_eq, infEDist_zero_of_mem hxU] at h
+    simp at h
+  · exact ⟨ball_subset_ball (by exact_mod_cast hmn) hx.1,
+      lt_of_le_of_lt (ENNReal.inv_le_inv.2 (by gcongr)) hx.2⟩
+  · refine subset_antisymm (iUnion_subset fun n x hx ↦ ?_) fun x hx ↦ ?_
+    · by_contra hxU
+      have h := hx.2
+      rw [mem_ofPred_eq, infEDist_zero_of_mem hxU] at h
+      exact not_lt_zero h
+    have hpos : infEDist x Uᶜ ≠ 0 := fun h ↦
+      ((mem_iff_infEDist_zero_of_closed hU.isClosed_compl).2 h) hx
+    obtain ⟨k, hk⟩ := ENNReal.exists_inv_nat_lt hpos
+    obtain ⟨m, hm⟩ := exists_nat_gt (dist x p)
+    refine mem_iUnion.2 ⟨max k m, mem_ball.2 (hm.trans_le (by exact_mod_cast le_max_right k m)),
+      lt_of_le_of_lt (ENNReal.inv_le_inv.2 ?_) hk⟩
+    exact (Nat.cast_le.2 (le_max_left k m)).trans le_self_add
+
+/-- **Exhaustion of an open set by opens.** In a proper pseudometric space, an open set `Ω` is the
+union of an increasing sequence of open sets `V n` whose closures are compact subsets of `Ω`; the
+traces of the `V n` on the subspace `Ω` cover it. -/
+theorem _root_.TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq [ProperSpace α]
+    (Ω : TopologicalSpace.Opens α) :
+    ∃ V : ℕ → TopologicalSpace.Opens α, (∀ n, IsCompact (closure (V n : Set α))) ∧
+      (∀ n, closure (V n : Set α) ⊆ Ω) ∧ Monotone V ∧ ⋃ n, (V n : Set α) = Ω ∧
+      ⋃ n, ((↑) : Ω → α) ⁻¹' (V n : Set α) = univ := by
+  obtain ⟨V, hVo, hVc, hVΩ, hVmono, hVU⟩ := Ω.isOpen.exists_iUnion_isOpen_isCompact_closure
+  refine ⟨fun n ↦ ⟨V n, hVo n⟩, hVc, hVΩ, fun _ _ h ↦ hVmono h, hVU, ?_⟩
+  simp only [← preimage_iUnion, TopologicalSpace.Opens.coe_mk, hVU]
+  exact Subtype.coe_preimage_self _
+
+/-- **Nested exhaustion of an open set.** In a proper pseudometric space, an open set `Ω` is the
+union of a sequence of open sets `V n` with compact closures, the closure of each lying in the next.
+It is a subsequence of the exhaustion
+`TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq`. -/
+theorem _root_.TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_iUnion_eq
+    [ProperSpace α] (Ω : TopologicalSpace.Opens α) :
+    ∃ V : ℕ → TopologicalSpace.Opens α, (∀ n, IsCompact (closure (V n : Set α))) ∧
+      (∀ n, closure (V n : Set α) ⊆ V (n + 1)) ∧ ⋃ n, (V n : Set α) = Ω := by
+  obtain ⟨V, hVc, hVΩ, hVmono, hVU, -⟩ := Ω.exists_monotone_isCompact_closure_iUnion_eq
+  -- Each closure lies in a strictly later set of the exhaustion.
+  have hg : ∀ m, ∃ N, m < N ∧ closure (V m : Set α) ⊆ V N := fun m => by
+    obtain ⟨N, hN⟩ := (hVc m).elim_directed_cover (fun n => (V n : Set α))
+      (fun n => (V n).isOpen) ((hVΩ m).trans hVU.symm.subset)
+      (Monotone.directed_le fun _ _ h => SetLike.coe_subset_coe.2 (hVmono h))
+    exact ⟨max N (m + 1), by omega, hN.trans (SetLike.coe_subset_coe.2 (hVmono (le_max_left ..)))⟩
+  choose g hgm hgV using hg
+  have hle : ∀ n, n ≤ g^[n] 0 := fun n => by
+    induction n with
+    | zero => exact le_rfl
+    | succ n ih =>
+      rw [Function.iterate_succ_apply']
+      exact ih.trans_lt (hgm _)
+  refine ⟨fun n => V (g^[n] 0), fun n => hVc _, fun n => ?_, subset_antisymm
+    (iUnion_subset fun n => hVU ▸ subset_iUnion (fun n => (V n : Set α)) _)
+    (hVU.symm.subset.trans (iUnion_mono fun n => SetLike.coe_subset_coe.2 (hVmono (hle n))))⟩
+  simpa only [Function.iterate_succ_apply'] using hgV (g^[n] 0)
 
 end TauCeti

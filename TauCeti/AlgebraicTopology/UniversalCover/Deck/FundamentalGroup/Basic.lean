@@ -79,13 +79,13 @@ along the monodromy of `γ`. -/
 @[simp]
 lemma IsRegular.fundamentalGroupEquiv_unop_apply [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    (hreg.fundamentalGroupEquiv hp e γ).unop.1 (e : E) = (hp.monodromy γ e : E) :=
+    (hreg.fundamentalGroupEquiv hp e γ).unop.1 (e : E) = (hp.monodromy γ.toPath e : E) :=
   (hreg.isQuotientCoveringMap hp).unop_fundamentalGroupToMulOpposite_smul
 
 /-- Compatibility spelling of `fundamentalGroupEquiv_unop_apply` using the deck action. -/
 lemma IsRegular.fundamentalGroupEquiv_unop_smul [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    (hreg.fundamentalGroupEquiv hp e γ).unop • (e : E) = hp.monodromy γ e := by
+    (hreg.fundamentalGroupEquiv hp e γ).unop • (e : E) = hp.monodromy γ.toPath e := by
   simpa only [deck.smul_eq_apply] using IsRegular.fundamentalGroupEquiv_unop_apply hreg hp e γ
 
 /-- The fundamental group element `γ` corresponds to a deck transformation `g` exactly when
@@ -94,14 +94,14 @@ lemma IsRegular.fundamentalGroupEquiv_apply_eq_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x})
     (γ : FundamentalGroup X x) (g : (deck p)ᵐᵒᵖ) :
     hreg.fundamentalGroupEquiv hp e γ = g ↔
-      g.unop • (e : E) = hp.monodromy γ e :=
-  (hreg.isQuotientCoveringMap hp).fundamentalGroupToMulOpposite_apply_eq_Iff
+      g.unop • (e : E) = hp.monodromy γ.toPath e :=
+  (hreg.isQuotientCoveringMap hp).fundamentalGroupToMulOpposite_apply_eq_iff
 
 /-- The fundamental group element corresponding to an opposite deck transformation is the
 unique loop class whose monodromy moves the chosen lift `e` by that deck transformation. -/
 lemma IsRegular.fundamentalGroupEquiv_symm_monodromy [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (g : (deck p)ᵐᵒᵖ) :
-    (hp.monodromy ((hreg.fundamentalGroupEquiv hp e).symm g) e : E) = g.unop • (e : E) := by
+    (hp.monodromy ((hreg.fundamentalGroupEquiv hp e).symm g).toPath e : E) = g.unop • (e : E) := by
   simpa using
     (IsRegular.fundamentalGroupEquiv_unop_apply hreg hp e
       ((hreg.fundamentalGroupEquiv hp e).symm g)).symm
@@ -110,7 +110,7 @@ lemma IsRegular.fundamentalGroupEquiv_symm_monodromy [SimplyConnectedSpace E]
 corresponding to `MulOpposite.op φ` has monodromy action equal to `φ` at the chosen lift. -/
 lemma IsRegular.fundamentalGroupEquiv_symm_op_monodromy [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (φ : deck p) :
-    (hp.monodromy ((hreg.fundamentalGroupEquiv hp e).symm (MulOpposite.op φ)) e : E) =
+    (hp.monodromy ((hreg.fundamentalGroupEquiv hp e).symm (MulOpposite.op φ)).toPath e : E) =
       φ • (e : E) := by
   simpa using IsRegular.fundamentalGroupEquiv_symm_monodromy hreg hp e (MulOpposite.op φ)
 
@@ -118,7 +118,7 @@ lemma IsRegular.fundamentalGroupEquiv_symm_op_monodromy [SimplyConnectedSpace E]
 fixes the chosen basepoint lift `e`. -/
 lemma IsRegular.fundamentalGroupEquiv_eq_one_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    hreg.fundamentalGroupEquiv hp e γ = 1 ↔ hp.monodromy γ e = e :=
+    hreg.fundamentalGroupEquiv hp e γ = 1 ↔ hp.monodromy γ.toPath e = e :=
   (hreg.isQuotientCoveringMap hp).fundamentalGroupToMulOpposite_eq_one_iff
 
 /-- When the deck group of a regular covering map with simply connected total space is
@@ -150,7 +150,7 @@ lemma IsRegular.fundamentalGroupDeckEquiv_apply_eq_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x})
     (hcomm : ∀ a b : deck p, a * b = b * a)
     (γ : FundamentalGroup X x) (d : deck p) :
-    hreg.fundamentalGroupDeckEquiv hp e hcomm γ = d ↔ d • (e : E) = hp.monodromy γ e := by
+    hreg.fundamentalGroupDeckEquiv hp e hcomm γ = d ↔ d • (e : E) = hp.monodromy γ.toPath e := by
   constructor
   · intro h
     subst h
@@ -168,7 +168,8 @@ monodromy moves the chosen lift by that transformation. -/
 lemma IsRegular.fundamentalGroupDeckEquiv_symm_monodromy [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x})
     (hcomm : ∀ a b : deck p, a * b = b * a) (d : deck p) :
-    (hp.monodromy ((hreg.fundamentalGroupDeckEquiv hp e hcomm).symm d) e : E) = d • (e : E) :=
+    (hp.monodromy ((hreg.fundamentalGroupDeckEquiv hp e hcomm).symm d).toPath e : E) =
+      d • (e : E) :=
   ((hreg.fundamentalGroupDeckEquiv_apply_eq_iff hp e hcomm
     ((hreg.fundamentalGroupDeckEquiv hp e hcomm).symm d) d).1
       ((hreg.fundamentalGroupDeckEquiv hp e hcomm).apply_symm_apply d)).symm
@@ -178,7 +179,7 @@ the chosen basepoint lift `e`. -/
 lemma IsRegular.fundamentalGroupDeckEquiv_eq_one_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x})
     (hcomm : ∀ a b : deck p, a * b = b * a) (γ : FundamentalGroup X x) :
-    hreg.fundamentalGroupDeckEquiv hp e hcomm γ = 1 ↔ hp.monodromy γ e = e := by
+    hreg.fundamentalGroupDeckEquiv hp e hcomm γ = 1 ↔ hp.monodromy γ.toPath e = e := by
   rw [fundamentalGroupDeckEquiv_apply_eq_iff, one_smul]
   exact ⟨fun h => (Subtype.ext h).symm, fun h => (congrArg Subtype.val h).symm⟩
 

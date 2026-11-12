@@ -104,7 +104,7 @@ private theorem adjacentSecond_inl (i j : V) :
 private theorem adjacentSecond_inl_inr (i j : V) :
     (biprod.inl : U i ⟶ U i ⊞ (U i).shiftObj 2) ≫ biprod.inr ≫
         adjacentSecond k G i j = biprod.lift (-𝟙 (U i)) (delta k G i j) := by
-  repeat' first | apply biprod.hom_ext | apply biprod.hom_ext'
+  repeat' apply biprod.hom_ext
   all_goals simp [adjacentSecond, pairSplitIso, vertexSplitIso, delta,
     Category.assoc, biprod.lift_eq, Preadditive.comp_add,
     zigzagBraidTripleSecondDifferential_inl_inr_assoc]
@@ -138,7 +138,7 @@ private theorem adjacentSecond_eq (i j : V) :
 private theorem adjacentLast_eq (i j : V) :
     (vertexSplitIso k G i j).inv ≫ biprod.desc (biprod.desc (E i) (E j)) (E i) =
       biprod.desc (E i) (epsilon k G i j) := by
-  repeat' first | apply biprod.hom_ext | apply biprod.hom_ext'
+  repeat' apply biprod.hom_ext'
   all_goals simp [vertexSplitIso, epsilon, Category.assoc]
 
 private theorem source_d_minusThree {i j : V} (h : G.Adj j i) :

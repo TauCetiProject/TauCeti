@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.TsumDivisorsAntidiagonal
+public import TauCeti.Topology.Algebra.InfiniteSum.Sigma
+import Mathlib.Analysis.RCLike.Basic
 
 /-!
 # Regrouping a double series by the product of the indices
@@ -23,11 +25,15 @@ same equivalence `sigmaAntidiagonalEquivProd`.
 
 * `HasSum.sum_divisorsAntidiagonal`: regrouping a convergent double series by the product of
   the indices.
+* `TauCeti.summable_mul_pow_mul`: for bounded `f` and `‖r‖ < 1`, the double series
+  `∑_{c, m ≥ 1} f(c, m) r^{c m}` converges absolutely.
+* `TauCeti.hasSum_sum_divisors_mul_pow`: for bounded `g` and `‖r‖ < 1`, the Lambert-type series
+  `∑_{c, m ≥ 1} g(m) r^{c m}` is the power series `∑_n (∑_{m ∣ n} g(m)) rⁿ`.
 -/
 
 public section
 
-variable {α : Type*} [AddCommMonoid α] [TopologicalSpace α] [ContinuousAdd α] [RegularSpace α]
+variable {α : Type*} [AddCommMonoid α] [TopologicalSpace α]
 
 /-- **Regrouping a double series by the product of the indices.** If the family
 `(c, m) ↦ f c m` over pairs of positive integers sums to `a`, then so does the series over
@@ -35,7 +41,50 @@ variable {α : Type*} [AddCommMonoid α] [TopologicalSpace α] [ContinuousAdd α
 theorem HasSum.sum_divisorsAntidiagonal {f : ℕ → ℕ → α} {a : α}
     (hf : HasSum (fun p : ℕ+ × ℕ+ ↦ f p.1 p.2) a) :
     HasSum (fun n : ℕ+ ↦ ∑ x ∈ (n : ℕ).divisorsAntidiagonal, f x.1 x.2) a := by
-  refine (sigmaAntidiagonalEquivProd.hasSum_iff.mpr hf).sigma fun n ↦ ?_
-  have h := hasSum_fintype fun x : (n : ℕ).divisorsAntidiagonal ↦ f x.1.1 x.1.2
-  rw [Finset.univ_eq_attach, Finset.sum_attach _ fun x : ℕ × ℕ ↦ f x.1 x.2] at h
-  simpa [sigmaAntidiagonalEquivProd, divisorsAntidiagonalFactors] using h
+  convert (sigmaAntidiagonalEquivProd.hasSum_iff.mpr hf).sigma_of_finite using 2 with n
+  rw [Finset.univ_eq_attach]
+  simpa [sigmaAntidiagonalEquivProd, divisorsAntidiagonalFactors] using
+    (Finset.sum_attach _ fun x : ℕ × ℕ ↦ f x.1 x.2).symm
+
+namespace TauCeti
+
+/-- A family `f` over pairs of positive integers bounded by `C`, times `r^(c m)` with `‖r‖ < 1`
+in a complete normed ring, is summable. -/
+theorem summable_mul_pow_mul {K : Type*} [NormedRing K] [CompleteSpace K] {r : K} (hr : ‖r‖ < 1)
+    {C : ℝ} {f : ℕ+ × ℕ+ → K} (hf : ∀ p, ‖f p‖ ≤ C) :
+    Summable fun p : ℕ+ × ℕ+ ↦ f p * r ^ ((p.1 : ℕ) * p.2) := by
+  have hC : 0 ≤ C := (norm_nonneg _).trans (hf 1)
+  refine Summable.of_norm_bounded (g := fun p : ℕ+ × ℕ+ ↦ C * ‖r‖ ^ ((p.1 : ℕ) * p.2))
+    (by simpa using (summable_prod_mul_pow 0 (r := ‖r‖) (by simpa using hr)).mul_left C)
+    fun p ↦ ?_
+  calc ‖f p * r ^ ((p.1 : ℕ) * p.2)‖ ≤ ‖f p‖ * ‖r ^ ((p.1 : ℕ) * p.2)‖ := norm_mul_le _ _
+    _ ≤ C * ‖r‖ ^ ((p.1 : ℕ) * p.2) :=
+      mul_le_mul (hf p) (norm_pow_le' _ (mul_pos p.1.2 p.2.2)) (norm_nonneg _) hC
+
+/-- **Lambert-type series as power series.** For a bounded sequence `g` and `‖r‖ < 1` in a
+complete normed ring, the power series `∑_n (∑_{m ∣ n} g(m)) rⁿ` sums to the double series
+`∑_{c ≥ 1} ∑_{m ≥ 1} g(m) r^{c m}`. For instance `g(m) = m sᵐ` gives
+`∑_{c ≥ 1} r^c s / (1 - r^c s)²` when `‖s‖ ≤ 1` in a non-archimedean field. -/
+theorem hasSum_sum_divisors_mul_pow {K : Type*} [NormedRing K] [CompleteSpace K] {g : ℕ → K}
+    {C : ℝ} (hg : ∀ m, ‖g m‖ ≤ C) {r : K} (hr : ‖r‖ < 1) :
+    HasSum (fun n : ℕ ↦ (∑ m ∈ n.divisors, g m) * r ^ n)
+      (∑' c : ℕ, ∑' m : ℕ, g (m + 1) * r ^ ((c + 1) * (m + 1))) := by
+  have hs : Summable (fun p : ℕ+ × ℕ+ ↦ g p.2 * r ^ ((p.1 : ℕ) * p.2)) :=
+    summable_mul_pow_mul hr fun p ↦ hg p.2
+  have hv : ∑' p : ℕ+ × ℕ+, g p.2 * r ^ ((p.1 : ℕ) * p.2) =
+      ∑' c : ℕ, ∑' m : ℕ, g (m + 1) * r ^ ((c + 1) * (m + 1)) := by
+    rw [hs.tsum_prod, tsum_pnat_eq_tsum_succ (f := fun c ↦ ∑' m : ℕ+, g m * r ^ (c * m))]
+    exact tsum_congr fun c ↦ tsum_pnat_eq_tsum_succ (f := fun m ↦ g m * r ^ ((c + 1) * m))
+  have h := hs.hasSum.sum_divisorsAntidiagonal (f := fun c m ↦ g m * r ^ (c * m))
+  rw [hv] at h
+  -- the term `n = 0` vanishes, so the series over `ℕ` is the series over `ℕ+`
+  rw [← hasSum_nat_add_iff' 1]
+  simp only [Finset.range_one, Finset.sum_singleton, Nat.divisors_zero, Finset.sum_empty,
+    zero_mul, sub_zero]
+  rw [← hasSum_pnat_iff_hasSum_succ (f := fun n ↦ (∑ m ∈ n.divisors, g m) * r ^ n)]
+  convert h using 2 with n
+  rw [Nat.sum_divisorsAntidiagonal' (f := fun c m ↦ g m * r ^ (c * m)), Finset.sum_mul]
+  refine Finset.sum_congr rfl fun m hm ↦ ?_
+  rw [Nat.div_mul_cancel (Nat.dvd_of_mem_divisors hm)]
+
+end TauCeti

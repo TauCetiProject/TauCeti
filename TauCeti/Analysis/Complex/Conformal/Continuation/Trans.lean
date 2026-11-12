@@ -42,7 +42,8 @@ families indexed by the unit interval into one is pure reparametrisation, so `Ta
 carries values in an arbitrary sort and is specialised to germs only where continuations are
 concatenated. The two halves are compared at the junction, where `TauCeti.transFamily` takes the
 value coming from `γ`; the hypothesis of `TauCeti.IsAnalyticContinuationAlong.trans` is exactly
-that the germ `γ` delivers there agrees with the germ `δ` starts from.
+that the germ `γ` delivers there agrees with the germ `δ` starts from. The `Path.trans`
+concatenation and its `Path.extend` calculus are consumed from Mathlib rather than rebuilt.
 
 ## Moving the base point
 
@@ -82,17 +83,6 @@ Germs of maps `ℂ → E` into a complex Banach space, as in `Continuation/Basic
 choice is discussed; the conformal-mapping consumers instantiate `E = ℂ`. `TauCeti.transFamily` is
 pure reparametrisation and is stated for values in an arbitrary sort, and the two restriction
 lemmas need no completeness, being reparametrisations as well.
-
-## Coordination with upstream Mathlib
-
-This is basic API for layer **L4** of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`), analytic continuation and the reflection
-principle. Mathlib has no analytic continuation along a path, and L4 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself. So
-nothing here is a shim under the roadmap's shim-deletion clause, which covers L0–L3 only. The
-`Path.trans` concatenation and its `Path.extend` calculus are consumed from Mathlib rather than
-rebuilt.
 
 ## References
 
@@ -189,7 +179,7 @@ private theorem eqOn_trans_comp_projIcc {X : Type*} [TopologicalSpace X] {x y z 
 
 /-- The first half of `p.trans q` is `p` reparametrised by doubling, so `transFamily F G`
 continues along `p.trans q` on `{u | u ≤ 2⁻¹}`. -/
-private theorem isAnalyticContinuationAlong_transFamily_Iic [CompleteSpace E] {p : Path a b}
+private theorem isAnalyticContinuationAlong_transFamily_Iic {p : Path a b}
     {q : Path b c} (hF : IsAnalyticContinuationAlong F (⇑p) univ) :
     IsAnalyticContinuationAlong (transFamily F G) (⇑(p.trans q)) {u : I | (u : ℝ) ≤ 2⁻¹} := by
   have hφ₁ : Continuous fun u : I => projIcc (0 : ℝ) 1 zero_le_one (2 * u) :=
@@ -211,7 +201,7 @@ private theorem isAnalyticContinuationAlong_transFamily_Iic [CompleteSpace E] {p
 /-- The second half of `p.trans q` is `q` reparametrised by doubling and shifting, so
 `transFamily F G` continues along `p.trans q` on `{u | 2⁻¹ ≤ u}`. At the midpoint the two halves
 are reconciled by the matching hypothesis `hFG`. -/
-private theorem isAnalyticContinuationAlong_transFamily_Ici [CompleteSpace E] {p : Path a b}
+private theorem isAnalyticContinuationAlong_transFamily_Ici {p : Path a b}
     {q : Path b c} (hG : IsAnalyticContinuationAlong G (⇑q) univ) (hFG : F 1 =ᶠ[𝓝 b] G 0) :
     IsAnalyticContinuationAlong (transFamily F G) (⇑(p.trans q)) {u : I | 2⁻¹ ≤ (u : ℝ)} := by
   have hφ₂ : Continuous fun u : I => projIcc (0 : ℝ) 1 zero_le_one (2 * u - 1) :=
@@ -244,7 +234,7 @@ private theorem isAnalyticContinuationAlong_transFamily_Ici [CompleteSpace E] {p
 Its germ at parameter time `0` is that of `F 0` and its germ at time `1` is that of `G 1`
 (`TauCeti.transFamily_zero`, `TauCeti.transFamily_one`), so continuing along `p` and then along
 `q` carries the initial germ of `F` to the terminal germ of `G`. -/
-theorem IsAnalyticContinuationAlong.trans [CompleteSpace E] {p : Path a b} {q : Path b c}
+theorem IsAnalyticContinuationAlong.trans {p : Path a b} {q : Path b c}
     (hF : IsAnalyticContinuationAlong F (⇑p) univ)
     (hG : IsAnalyticContinuationAlong G (⇑q) univ) (hFG : F 1 =ᶠ[𝓝 b] G 0) :
     IsAnalyticContinuationAlong (transFamily F G) (⇑(p.trans q)) univ := by
@@ -258,7 +248,7 @@ theorem IsAnalyticContinuationAlong.trans [CompleteSpace E] {p : Path a b} {q : 
 /-- **Continuability is transitive along a concatenation.** If `F` continues the germ of `f₀`
 along `p`, and the germ `F 1` it delivers at the end of `p` continues along `q`, then `f₀`
 continues along `p.trans q`. -/
-theorem continuesAlong_trans [CompleteSpace E] {p : Path a b} {q : Path b c}
+theorem continuesAlong_trans {p : Path a b} {q : Path b c}
     (hF : IsAnalyticContinuationAlong F (⇑p) univ) (hF0 : F 0 =ᶠ[𝓝 a] f₀)
     (hq : ContinuesAlong (F 1) (⇑q)) : ContinuesAlong f₀ (⇑(p.trans q)) := by
   obtain ⟨G, hG, hG0⟩ := continuesAlong_iff_exists.mp hq
@@ -347,7 +337,7 @@ So `TauCeti.ContinuesInside`, the hypothesis of the monodromy theorem for a simp
 domain, is a condition on the domain and on the branch being carried, not on the point one starts
 from: a path issuing from `z₁` is continued by prefixing `p` to it, and uniqueness of continuation
 along `p` identifies the germ reached halfway with `F 1`. -/
-theorem continuesInside_of_isAnalyticContinuationAlong [CompleteSpace E] {U : Set ℂ} {z₀ z₁ : ℂ}
+theorem continuesInside_of_isAnalyticContinuationAlong {U : Set ℂ} {z₀ z₁ : ℂ}
     (H : ContinuesInside f₀ U z₀) {p : Path z₀ z₁} (hpU : ∀ t, p t ∈ U)
     (hF : IsAnalyticContinuationAlong F (⇑p) univ) (hF0 : F 0 =ᶠ[𝓝 z₀] f₀) :
     ContinuesInside (F 1) U z₁ := by
@@ -399,7 +389,7 @@ by the central symmetry `σ`, which `TauCeti.IsAnalyticContinuationAlong.reparam
 neither endpoint of `p` is distinguished, and any point the branch reaches inside `U` may serve as
 the base point of `TauCeti.ContinuesInside`, the hypothesis of the monodromy theorem for a simply
 connected domain (`Conformal/GlobalBranch.lean`). -/
-theorem continuesInside_iff_of_isAnalyticContinuationAlong [CompleteSpace E] {U : Set ℂ}
+theorem continuesInside_iff_of_isAnalyticContinuationAlong {U : Set ℂ}
     {z₀ z₁ : ℂ} {p : Path z₀ z₁} (hpU : ∀ t, p t ∈ U)
     (hF : IsAnalyticContinuationAlong F (⇑p) univ) :
     ContinuesInside (F 1) U z₁ ↔ ContinuesInside (F 0) U z₀ := by

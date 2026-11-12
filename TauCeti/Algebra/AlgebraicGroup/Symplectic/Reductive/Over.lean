@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Over
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Reductive.Basic
-import TauCeti.Algebra.AlgebraicGroup.Symplectic.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.Symplectic.Smooth
+import TauCeti.Algebra.AlgebraicGroup.Symplectic.Semisimple.Over
 
 /-!
 # The symplectic group is reductive over a ring
@@ -18,9 +17,9 @@ in characteristic two. Its coordinate algebra is smooth over the base, and every
 fiber is identified with the symplectic group constructed over that field. This supplies the
 reductivity certificate for an integral symplectic pinning and its specializations.
 
-The proof combines `Symplectic.smoothCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra`,
-`Symplectic.finiteTypeCoordinateHopfAlgebraBaseChangeIso`, and the fieldwise reductivity theorem.
-The assembly follows `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive.Over`.
+The proof deduces it from semisimplicity over the base,
+`Symplectic.semisimpleCommHopfAlgPropertyOver_finiteTypeCoordinateHopfAlgebra`, as in
+`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive.Over`.
 
 ## References
 
@@ -40,14 +39,7 @@ universe u
 rank and without a restriction on characteristic. -/
 theorem reductiveCommHopfAlgPropertyOver_finiteTypeCoordinateHopfAlgebra
     (R : Type u) [CommRing R] (m : ℕ) :
-    reductiveCommHopfAlgPropertyOver R (finiteTypeCoordinateHopfAlgebra R m) := by
-  rw [reductiveCommHopfAlgPropertyOver_iff]
-  refine ⟨?_, ?_⟩
-  · exact (smoothCommHopfAlgProperty_iff _).mp
-      (smoothCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra R m)
-  · intro k _ _ _
-    exact (reductiveCommHopfAlgProperty k).prop_of_iso
-      (finiteTypeCoordinateHopfAlgebraBaseChangeIso R k m).symm
-      (reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra k m)
+    reductiveCommHopfAlgPropertyOver R (finiteTypeCoordinateHopfAlgebra R m) :=
+  (semisimpleCommHopfAlgPropertyOver_finiteTypeCoordinateHopfAlgebra R m).reductive
 
 end TauCeti.Symplectic

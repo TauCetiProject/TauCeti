@@ -38,11 +38,11 @@ variable {k A : Type*} [Field k] [CommRing A] [Algebra k A]
 without a finite-type assumption. -/
 @[simp]
 theorem isClosed_singleton_kernelPoint (f : A →ₐ[k] k) :
-    IsClosed ({TauCeti.AlgHom.kernelPoint f} :
+    IsClosed ({kernelPoint f} :
       Set (AlgebraicGeometry.Spec (.of A))) := by
   apply (PrimeSpectrum.isClosed_singleton_iff_isMaximal
-    (TauCeti.AlgHom.kernelPoint f)).mpr
-  rw [TauCeti.AlgHom.kernelPoint_asIdeal]
+    (kernelPoint f)).mpr
+  rw [kernelPoint_asIdeal]
   exact RingHom.ker_isMaximal_of_surjective _
     (fun r ↦ ⟨algebraMap k A r, f.commutes r⟩)
 
@@ -56,7 +56,7 @@ variable {k A : Type*} [Field k] [IsAlgClosed k] [CommRing A] [Algebra k A]
 /-- Every closed point of a finite-type algebra over an algebraically closed field is the
 kernel point of a base-field-valued algebra homomorphism. -/
 theorem exists_kernelPoint_eq_of_isClosed (x : PrimeSpectrum A) (hx : IsClosed {x}) :
-    ∃ f : A →ₐ[k] k, TauCeti.AlgHom.kernelPoint f = x := by
+    ∃ f : A →ₐ[k] k, AlgHom.kernelPoint f = x := by
   let : x.asIdeal.IsMaximal := x.isClosed_singleton_iff_isMaximal.mp hx
   let : Field (A ⧸ x.asIdeal) := Ideal.Quotient.field x.asIdeal
   let : Module.Finite k (A ⧸ x.asIdeal) :=
@@ -65,7 +65,7 @@ theorem exists_kernelPoint_eq_of_isClosed (x : PrimeSpectrum A) (hx : IsClosed {
     IsAlgClosed.algebraMap_bijective_of_isIntegral
   refine ⟨e.symm.toAlgHom.comp (Ideal.Quotient.mkₐ k x.asIdeal), ?_⟩
   apply PrimeSpectrum.ext
-  rw [TauCeti.AlgHom.kernelPoint_asIdeal, AlgHom.comp_toRingHom,
+  rw [AlgHom.kernelPoint_asIdeal, AlgHom.comp_toRingHom,
     RingHom.ker_comp_of_injective _ e.symm.injective,
     Ideal.Quotient.mkₐ_ker]
 

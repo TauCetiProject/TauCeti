@@ -36,6 +36,8 @@ identity for every exponent `1 ≤ p ≤ ∞` — is a rearrangement inequality 
 ## Main statements
 
 * `MeasureTheory.Measure.isCoupling_quantileCoupling` — the monotone coupling is a transport plan;
+* `MeasureTheory.Measure.ae_fst_le_snd_quantileCoupling` — it is concentrated on ordered pairs
+  whenever the cdfs are ordered;
 * `MeasureTheory.Measure.quantileCoupling_Iic_prod_Ioi` — its mass on a quadrant
   `Iic a ×ˢ Ioi b` is the positive part of `cdf μ a - cdf ν b`;
 * `TauCeti.eLpNorm_edist_quantileCoupling` — its transport objective is the `L^p (0,1)` distance
@@ -99,6 +101,16 @@ theorem map_swap_quantileCoupling (μ ν : Measure ℝ) :
   rw [quantileCoupling_def, quantileCoupling_def, map_map measurable_swap (by fun_prop)]
   simp only [Function.comp_def, Prod.swap_prod_mk]
 
+/-- If the cdfs are ordered, the common-uniform quantile coupling is concentrated on ordered
+pairs. Thus the stochastic comparison is realized by random variables satisfying `X ≤ Y` almost
+surely. -/
+theorem ae_fst_le_snd_quantileCoupling (μ ν : Measure ℝ) (h : ∀ x, cdf ν x ≤ cdf μ x) :
+    ∀ᵐ z ∂μ.quantileCoupling ν, z.1 ≤ z.2 := by
+  rw [quantileCoupling_def]
+  refine (ae_map_iff (by fun_prop) (measurableSet_le measurable_fst measurable_snd)).2 ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioo] with u hu
+  exact (cdf_le_iff_quantile_le μ ν).1 h u hu.1 hu.2
+
 /-- **The monotone coupling on a quadrant.** The monotone coupling of two real laws gives the
 quadrant `Iic a ×ˢ Ioi b` the positive part of the gap `cdf μ a - cdf ν b`: the uniform levels `t`
 with `μ.quantile t ≤ a` and `b < ν.quantile t` are those with `cdf ν b < t ≤ cdf μ a`. -/
@@ -115,7 +127,7 @@ theorem quantileCoupling_Iic_prod_Ioi (μ ν : Measure ℝ) (a b : ℝ) :
       and_congr_left_iff]
     rintro ⟨ht0, ht1⟩
     rw [quantile_le_iff μ ht0 ht1, lt_quantile_iff ν ht0 ht1, and_comm]
-  rw [hset, TauCeti.volume_Ioc_inter_Ioo_zero_one (cdf_nonneg ν b) (cdf_le_one μ a)]
+  rw [hset, TauCeti.volume_Ioc_inter_Ioo_of_le_of_le (cdf_nonneg ν b) (cdf_le_one μ a)]
 
 end MeasureTheory.Measure
 
@@ -129,8 +141,8 @@ theorem eLpNorm_edist_quantileCoupling (p : ℝ≥0∞) (μ ν : Measure ℝ) :
   have hq : Measurable fun t ↦ (μ.quantile t, ν.quantile t) := by fun_prop
   rw [Measure.quantileCoupling_def,
     eLpNorm_map_measure measurable_edist.aestronglyMeasurable hq.aemeasurable]
-  exact eLpNorm_congr_enorm_ae (measurable_edist.comp hq).aestronglyMeasurable (by fun_prop)
-    (.of_forall fun t ↦ by simp [Function.comp_apply, edist_eq_enorm_sub])
+  exact eLpNorm_congr_eNorm_ae (measurable_edist.comp hq).aestronglyMeasurable (by fun_prop)
+    (.of_forall fun t ↦ by simp [Function.comp_apply, eDist_eq_eNorm_sub])
 
 /-- The `p`-Wasserstein distance of two real laws is at most the `L^p (0,1)` distance of their
 quantile functions, the transport objective of the monotone coupling. -/

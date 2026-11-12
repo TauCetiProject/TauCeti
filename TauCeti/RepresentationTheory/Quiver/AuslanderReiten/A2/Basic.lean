@@ -30,7 +30,7 @@ It describes the underlying quiver; it does not define the partial Auslander–R
 
 public section
 
-namespace TauCeti.irreducibleMorphismQuiver
+namespace TauCeti.IrreducibleMorphismQuiver
 
 open CategoryTheory Quiver.Kronecker
 
@@ -40,13 +40,13 @@ variable (k : Type u) [Field k] (A : Type) [Unique A]
 
 /-- The vertices of the one-arrow irreducible-morphism quiver, listed as `S₁`, `S₂`, `P₁`. -/
 noncomputable def a2VertexEquiv :
-    Fin 3 ≃ irreducibleMorphismQuiver.{u, 0, 0, u} k (Quiver.Kronecker A) :=
+    Fin 3 ≃ IrreducibleMorphismQuiver k (IsFinDim.{u, 0, 0, u} k (Quiver.Kronecker A)) :=
   (indecomposableKroneckerEquiv k A).trans equivSkeleton.symm
 
 /-- Vertex zero is the class of the source simple `S₁`. -/
 @[simp]
 theorem a2VertexEquiv_zero :
-    a2VertexEquiv k A 0 = of
+    a2VertexEquiv k A 0 = of k
       (isFinDim_iff.mpr fun v ↦
         finiteDimensional_simpleRep_obj (k := k) (src : Quiver.Kronecker A) v)
       (indecomposable_of_simple (simpleRep k (Quiver.Kronecker A) src)) := by
@@ -56,7 +56,7 @@ theorem a2VertexEquiv_zero :
 /-- Vertex one is the class of the target simple `S₂`. -/
 @[simp]
 theorem a2VertexEquiv_one :
-    a2VertexEquiv k A 1 = of
+    a2VertexEquiv k A 1 = of k
       (isFinDim_iff.mpr fun v ↦
         finiteDimensional_simpleRep_obj (k := k) (tgt : Quiver.Kronecker A) v)
       (indecomposable_of_simple (simpleRep k (Quiver.Kronecker A) tgt)) := by
@@ -66,7 +66,7 @@ theorem a2VertexEquiv_one :
 /-- Vertex two is the class of the source projective `P₁`. -/
 @[simp]
 theorem a2VertexEquiv_two :
-    a2VertexEquiv k A 2 = of
+    a2VertexEquiv k A 2 = of k
       (isFinDim_iff.mpr fun v ↦ by
         cases v <;> exact finiteDimensional_indecProjRep_obj (k := k) (src : Quiver.Kronecker A) _)
       (indecomposable_indecProjRep_of_isAcyclic (k := k) Quiver.Kronecker.isAcyclic src) := by
@@ -100,4 +100,4 @@ theorem card_arrows_a2VertexEquiv (i j : Fin 3) :
         exact indecomposable_indecProjRep_of_isAcyclic Quiver.Kronecker.isAcyclic src)]
     simp [hSS, hSP, hPS, hTS]
 
-end TauCeti.irreducibleMorphismQuiver
+end TauCeti.IrreducibleMorphismQuiver

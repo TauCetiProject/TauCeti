@@ -94,8 +94,8 @@ theorem continuous_complexTorus_iff {X : Type*} [TopologicalSpace X] {f : X → 
 instance : IsTopologicalGroup (ComplexTorus N) :=
   let f : ComplexTorus N →* (IntegralCharacter N → ℂˣ) :=
     { toFun := fun x ↦ ⇑x
-      map_one' := AddChar.coe_one
-      map_mul' := AddChar.coe_mul }
+      map_one' := FunLike.coe_one
+      map_mul' := FunLike.coe_mul }
   Topology.IsInducing.isTopologicalGroup f ⟨rfl⟩
 
 /-- The complex torus is Hausdorff. -/

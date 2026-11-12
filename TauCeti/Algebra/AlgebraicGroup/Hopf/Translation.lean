@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.HopfAlgebra.Augmentation
 public import Mathlib.RingTheory.Ideal.Height
 
@@ -193,7 +193,7 @@ theorem rightTranslationAlgEquiv_mul (g h : WithConv (H →ₐ[k] k)) :
     _ = (rightTranslationLinearEquiv g * rightTranslationLinearEquiv h) x :=
       LinearEquiv.congr_fun (rightTranslationLinearEquiv_mul g h) x
     _ = rightTranslationLinearEquiv g (rightTranslationLinearEquiv h x) :=
-      LinearEquiv.mul_apply _ _ x
+      mul_apply_eq_comp _ _ x
     _ = rightTranslationLinearEquiv g (rightTranslationAlgEquiv h x) :=
       congrArg (rightTranslationLinearEquiv g)
         (LinearEquiv.congr_fun (rightTranslationAlgEquiv_toLinearEquiv h) x).symm
@@ -353,11 +353,11 @@ variable {R H K : Type*} [CommRing R] [CommRing H] [CommRing K]
 
 /-- A homomorphism of affine groups commutes with right translation by a point and its image. -/
 theorem comp_rightTranslationAlgHom (f : H →ₐc[R] K) (g : WithConv (K →ₐ[R] R)) :
-    f.toAlgHom.comp (TauCeti.HopfAlgebra.rightTranslationAlgHom (AlgHom.mapDomain f g)) =
+    f.toAlgHom.comp (TauCeti.HopfAlgebra.rightTranslationAlgHom (BialgHom.mapDomain f g)) =
       (TauCeti.HopfAlgebra.rightTranslationAlgHom g).comp f.toAlgHom := by
   simp only [TauCeti.HopfAlgebra.rightTranslationAlgHom,
     _root_.AlgHom.comp_convMul_distrib, _root_.AlgHom.convMul_comp_bialgHom_distrib,
     ofConv_toConv, _root_.AlgHom.comp_id, _root_.AlgHom.id_comp,
-    AlgHom.mapDomain_apply, ← _root_.AlgHom.comp_assoc, Algebra.comp_ofId]
+    BialgHom.mapDomain_apply, ← _root_.AlgHom.comp_assoc, Algebra.comp_ofId]
 
 end BialgHom

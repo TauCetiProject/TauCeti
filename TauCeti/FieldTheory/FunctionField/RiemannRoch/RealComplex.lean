@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Basic
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # The constants of `ℂ(x)` over `ℝ`

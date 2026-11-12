@@ -27,9 +27,6 @@ module instead of rebuilding the same restricted-scalars basis in each construct
   coordinate vectors and basis over `ℤ`.
 * `TauCeti.apply_coordinateLatticeBasis_eq_sum_of_forall_apply_eq_mulVec`: an endomorphism
   represented by an integer matrix has that matrix in the coordinate-lattice basis.
-
-This is a reusable prerequisite for the Chevalley--Demazure carriers in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section
@@ -45,7 +42,7 @@ variable (ι : Type u) [Finite ι]
 attribute [local instance] TauCeti.moduleNNRat
 
 /-- The standard integral lattice in the rational coordinate space `ι → ℚ`. -/
-def coordinateLattice : Submodule ℤ (ι → ℚ) :=
+noncomputable def coordinateLattice : Submodule ℤ (ι → ℚ) :=
   Submodule.span ℤ (Set.range (Pi.basisFun ℚ ι))
 
 /-- A rational coordinate vector lies in the standard lattice exactly when every coordinate is

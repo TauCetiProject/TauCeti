@@ -1,0 +1,400 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Orientation.Lift
+public import TauCeti.Geometry.Manifold.IsManifold.Basic
+
+/-!
+# Orientations of manifolds with corners
+
+A manifold orientation is a source-indexed orientation lift modulo simultaneous reversal of its
+model orientation and all chart signs. It induces an actual, locally constant orientation of the
+tangent bundle. This definition includes boundary and corner points.
+Orientability records existence; every model with corners is orientable.
+
+Reindexing along an equivalence of index types (`TauCeti.Manifold.Orientation.reindex`) reindexes
+every tangent orientation. It compares orientations indexed by `Fin (m + n)` and `Fin (n + m)`,
+such as the products of two oriented manifolds taken in either order.
+
+Orientability records existence; every model with corners is orientable, and
+`TauCeti.Manifold.Orientation.congrModel` casts manifold orientations along an equality of models.
+-/
+
+public section
+
+noncomputable section
+
+open scoped Manifold
+
+namespace TauCeti.Manifold
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  [TopologicalSpace M] [ChartedSpace H M]
+  [FiniteDimensional ℝ E] {ι : Type*} [Fintype ι]
+
+/-- An orientation of a manifold, including its boundary and corners. -/
+def Orientation (M : Type*) [TopologicalSpace M] [ChartedSpace H M]
+    (ι : Type*) [Fintype ι] : Type _ :=
+  Quotient (OrientationLift.setoid (I := I) (M := M) (ι := ι))
+
+namespace Orientation
+
+variable {I}
+
+/-- The orientation represented by a lift. -/
+def mk (o : OrientationLift I M ι) : Orientation I M ι := Quotient.mk _ o
+
+/-- Two lifts represent the same orientation exactly when they agree or differ by the
+simultaneous reversal of model orientation and source signs. -/
+theorem mk_eq_mk_iff (a b : OrientationLift I M ι) :
+    mk a = mk b ↔ a = b ∨ a = b.flip := by
+  constructor
+  · intro h
+    have hr := Quotient.exact h
+    rcases (OrientationLift.setoid_rel a b).mp hr with h | h
+    · exact .inl h.symm
+    · exact .inr (by rw [h, OrientationLift.flip_flip])
+  · rintro (rfl | rfl)
+    · rfl
+    · apply Quotient.sound
+      apply (OrientationLift.setoid_rel b.flip b).mpr
+      exact .inr b.flip_flip.symm
+
+/-- Define a function on orientations from a function on lifts invariant under diagonal flip. -/
+def lift {α : Sort*} (f : OrientationLift I M ι → α)
+    (hflip : ∀ l, f l.flip = f l) : Orientation I M ι → α :=
+  Quotient.lift f (fun a b h ↦ by
+    rcases (OrientationLift.setoid_rel a b).mp h with rfl | rfl
+    · rfl
+    · exact (hflip a).symm)
+
+/-- A function induced from lifts evaluates on a represented orientation at its lift. -/
+@[simp] theorem lift_mk {α : Sort*} (f : OrientationLift I M ι → α)
+    (hflip : ∀ l, f l.flip = f l) (l : OrientationLift I M ι) :
+    lift f hflip (mk l) = f l := (rfl)
+
+/-- Every manifold orientation has a source-indexed lift. -/
+theorem exists_lift (o : Orientation I M ι) : ∃ l : OrientationLift I M ι, mk l = o :=
+  Quotient.inductionOn o fun l ↦ ⟨l, rfl⟩
+
+/-- Every manifold orientation has a lift with any prescribed model orientation, obtained by
+flipping an arbitrary lift if necessary. -/
+theorem exists_lift_modelOrientation_eq (o : Orientation I M ι)
+    (m : _root_.Orientation ℝ E ι) :
+    ∃ l : OrientationLift I M ι, mk l = o ∧ l.modelOrientation = m := by
+  obtain ⟨l, rfl⟩ := o.exists_lift
+  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m l.card_eq with h | h
+  · exact ⟨l, rfl, h⟩
+  · exact ⟨l.flip, (mk_eq_mk_iff _ _).mpr (.inr rfl), by
+      rw [OrientationLift.flip_modelOrientation, h]
+      exact _root_.neg_neg m⟩
+
+/-- Prove a property of orientations by proving it for every source-indexed lift. -/
+@[elab_as_elim]
+theorem inductionOn {p : Orientation I M ι → Prop} (o : Orientation I M ι)
+    (h : ∀ l : OrientationLift I M ι, p (mk l)) : p o :=
+  Quotient.inductionOn o h
+
+/-- The index type has the dimension of the model space. -/
+theorem card_eq (o : Orientation I M ι) : Fintype.card ι = Module.finrank ℝ E :=
+  Quotient.inductionOn o OrientationLift.card_eq
+
+/-- The tangent space has the dimension encoded by the orientation index. -/
+theorem finrank_tangentSpace_eq (o : Orientation I M ι) (x : M) :
+    Module.finrank ℝ (TangentSpace I x) = Fintype.card ι :=
+  (TauCeti.finrank_tangentSpace (I := I) x).trans o.card_eq.symm
+
+/-- The orientation index supplies the tangent-space finrank as a `Fact` instance. -/
+theorem fact_finrank_tangentSpace {m : ℕ} (o : Orientation I M (Fin m)) (x : M) :
+    Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+  ⟨by simpa using o.finrank_tangentSpace_eq x⟩
+
+/-- Reverse the tangent orientations by reversing the model orientation of a lift. -/
+def neg (o : Orientation I M ι) : Orientation I M ι :=
+  lift (fun l ↦ mk (-l)) (fun l ↦
+    (mk_eq_mk_iff _ _).mpr (.inr l.flip_neg.symm)) o
+
+instance : Neg (Orientation I M ι) := ⟨Orientation.neg⟩
+
+@[simp]
+theorem neg_mk (o : OrientationLift I M ι) : -(mk o) = mk (-o) := (rfl)
+
+/-- Reindex a manifold orientation along an equivalence of index types. -/
+def reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι) : Orientation I M ι' :=
+  lift (fun l ↦ mk (l.reindex e)) (fun l ↦ by
+    rw [OrientationLift.reindex_flip]
+    exact (mk_eq_mk_iff _ _).mpr (.inr rfl)) o
+
+@[simp]
+theorem reindex_mk {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) :
+    (mk o).reindex e = mk (o.reindex e) := (rfl)
+
+variable [IsManifold I 1 M]
+
+/-- The induced orientation of the tangent bundle. -/
+def toVectorBundleOrientation (o : Orientation I M ι) :
+    TauCeti.VectorBundleOrientation E (TangentSpace I : M → Type _) ι :=
+  lift OrientationLift.toVectorBundleOrientation (fun l ↦ by
+    ext x
+    simpa only [OrientationLift.toVectorBundleOrientation_apply] using l.orientationAt_flip x) o
+
+@[simp]
+theorem toVectorBundleOrientation_mk (o : OrientationLift I M ι) :
+    (mk o).toVectorBundleOrientation = o.toVectorBundleOrientation := (rfl)
+
+@[simp]
+theorem toVectorBundleOrientation_neg (o : Orientation I M ι) :
+    (-o).toVectorBundleOrientation = -o.toVectorBundleOrientation := by
+  induction o using Quotient.inductionOn with | _ o =>
+    apply TauCeti.VectorBundleOrientation.ext
+    intro x
+    -- Quotient induction produces raw representatives; use the public constructor to
+    -- reduce tangent-bundle negation through its representative equation.
+    change (mk (-o)).toVectorBundleOrientation x = -(mk o).toVectorBundleOrientation x
+    simpa only [toVectorBundleOrientation_mk, OrientationLift.toVectorBundleOrientation_apply]
+      using o.orientationAt_neg x
+
+end Orientation
+
+variable [IsManifold I 1 M]
+
+variable {I}
+
+namespace Orientation
+
+/-- The orientation of a tangent space induced by a manifold orientation. -/
+def orientationAt (o : Orientation I M ι) (x : M) :
+    _root_.Orientation ℝ (TangentSpace I x) ι := o.toVectorBundleOrientation x
+
+/-- Evaluation of the tangent-bundle interpretation is the manifold's tangent orientation. -/
+@[simp]
+theorem toVectorBundleOrientation_apply (o : Orientation I M ι) (x : M) :
+    o.toVectorBundleOrientation x = o.orientationAt x := (rfl)
+
+/-- The tangent orientation of a represented manifold orientation is the representative's
+intrinsic tangent orientation, including at boundary and corner points. -/
+@[simp]
+theorem orientationAt_mk (o : OrientationLift I M ι) (x : M) :
+    orientationAt (Orientation.mk o) x = o.orientationAt x := by
+  simp only [orientationAt, Orientation.toVectorBundleOrientation_mk,
+    OrientationLift.toVectorBundleOrientation_apply]
+
+@[simp]
+theorem orientationAt_neg (o : Orientation I M ι) (x : M) :
+    orientationAt (-o) x = -orientationAt o x := by
+  simp only [orientationAt, Orientation.toVectorBundleOrientation_neg,
+    TauCeti.VectorBundleOrientation.neg_apply]
+
+/-- Reindexing a manifold orientation reindexes each of its tangent orientations. -/
+@[simp]
+theorem orientationAt_reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι)
+    (x : M) :
+    orientationAt (o.reindex e) x =
+      _root_.Orientation.reindex ℝ (TangentSpace I x) e (orientationAt o x) := by
+  induction o using Orientation.inductionOn with | h l =>
+    rw [reindex_mk, orientationAt_mk, orientationAt_mk, OrientationLift.orientationAt_reindex]
+
+/-- A manifold orientation is determined by its actual tangent orientations. -/
+@[ext]
+theorem ext {o o' : Orientation I M ι}
+    (h : ∀ x, orientationAt o x = orientationAt o' x) : o = o' := by
+  induction o using Orientation.inductionOn with | _ a =>
+    induction o' using Orientation.inductionOn with | _ b =>
+      simp only [orientationAt_mk] at h
+      exact (mk_eq_mk_iff a b).mpr (OrientationLift.eq_or_eq_flip_of_orientationAt h)
+
+/-- Over a preconnected manifold there are at most two orientations. -/
+theorem eq_or_eq_neg [PreconnectedSpace M] (o o' : Orientation I M ι) :
+    o = o' ∨ o = -o' := by
+  rcases o.toVectorBundleOrientation.eq_or_eq_neg o.card_eq o'.toVectorBundleOrientation with h | h
+  · exact .inl (ext fun x ↦ congrArg (fun v ↦ v x) h)
+  · right
+    apply ext
+    intro x
+    rw [orientationAt_neg]
+    exact congrArg (fun v ↦ v x) h
+
+omit [IsManifold I 1 M] in
+/-- An orientation differs from its opposite on every nonempty manifold. -/
+theorem neg_ne_self [Nonempty M] (o : Orientation I M ι) : -o ≠ o := by
+  induction o using Orientation.inductionOn with | h l =>
+  intro h
+  rw [neg_mk, mk_eq_mk_iff] at h
+  rcases h with h | h
+  · exact Module.Ray.ne_neg_self _ (congrArg OrientationLift.modelOrientation h).symm
+  · -- The signs of `-l` are those of `l`, while those of `l.flip` are their negatives.
+    have hs := congrArg (fun l' : OrientationLift I M ι ↦
+      l'.sign (Classical.arbitrary M) ⟨_, mem_chart_source H (Classical.arbitrary M)⟩) h
+    simp only [OrientationLift.neg_sign, OrientationLift.flip_sign] at hs
+    exact units_ne_neg_self _ hs
+
+omit [IsManifold I 1 M] in
+protected theorem neg_neg (o : Orientation I M ι) : - -o = o := by
+  induction o using Orientation.inductionOn with | h l =>
+  rw [neg_mk, neg_mk, OrientationLift.neg_neg]
+
+omit [IsManifold I 1 M] in
+instance : InvolutiveNeg (Orientation I M ι) where
+  neg_neg := Orientation.neg_neg
+
+omit [IsManifold I 1 M] in
+@[simp]
+theorem reindex_neg {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι) :
+    (-o).reindex e = -o.reindex e := by
+  induction o using Orientation.inductionOn with | h l =>
+  rw [neg_mk, reindex_mk, reindex_mk, neg_mk]
+  exact congrArg mk (OrientationLift.ext (by
+    simp only [OrientationLift.reindex_modelOrientation, OrientationLift.neg_modelOrientation,
+      _root_.Orientation.reindex_neg])
+    (funext fun α ↦ funext fun x ↦ by
+      simp only [OrientationLift.reindex_sign, OrientationLift.neg_sign]))
+
+/-- Construct a manifold orientation from a locally constant orientation of its tangent bundle.
+The choice of model orientation affects only its representative lift. -/
+def ofVectorBundleOrientation (model : _root_.Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E)
+    (o : TauCeti.VectorBundleOrientation E (TangentSpace I : M → Type _) ι) :
+    Orientation I M ι := mk (OrientationLift.ofVectorBundleOrientation model hι o)
+
+@[simp]
+theorem orientationAt_ofVectorBundleOrientation (model : _root_.Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E)
+    (o : TauCeti.VectorBundleOrientation E (TangentSpace I : M → Type _) ι) (x : M) :
+    orientationAt (ofVectorBundleOrientation model hι o) x = o x := by
+  simp only [ofVectorBundleOrientation, orientationAt, toVectorBundleOrientation_mk,
+    OrientationLift.toVectorBundleOrientation_apply,
+    OrientationLift.orientationAt_ofVectorBundleOrientation]
+
+/-- Interpreting the orientation reconstructed from tangent orientations recovers the bundle
+orientation. -/
+@[simp]
+theorem toVectorBundleOrientation_ofVectorBundleOrientation
+    (model : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E)
+    (o : TauCeti.VectorBundleOrientation E (TangentSpace I : M → Type _) ι) :
+    (ofVectorBundleOrientation model hι o).toVectorBundleOrientation = o := by
+  ext x
+  exact orientationAt_ofVectorBundleOrientation model hι o x
+
+/-- Recovering a manifold orientation from its tangent bundle orientations is independent of
+the chosen model orientation. -/
+@[simp]
+theorem ofVectorBundleOrientation_toVectorBundleOrientation
+    (model : _root_.Orientation ℝ E ι) (o : Orientation I M ι) :
+    ofVectorBundleOrientation model o.card_eq o.toVectorBundleOrientation = o := by
+  apply ext
+  intro x
+  exact orientationAt_ofVectorBundleOrientation model o.card_eq o.toVectorBundleOrientation x
+
+/-- The constant orientation of a model with corners. -/
+def model (o : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E) :
+    Orientation I H ι := mk (OrientationLift.ofHasGroupoid (I := I) (M := H) o hι)
+
+/-- The constant model orientation is represented by its actual constant orientation lift. -/
+theorem model_eq_mk (o : _root_.Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E) :
+    model (I := I) o hι = mk (OrientationLift.ofHasGroupoid (I := I) (M := H) o hι) := (rfl)
+
+@[simp]
+theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E) (x : H) :
+    orientationAt (model (I := I) o hι) x = o := by
+  simp only [model, orientationAt, toVectorBundleOrientation_mk,
+    OrientationLift.toVectorBundleOrientation_apply, OrientationLift.orientationAt_ofHasGroupoid]
+  -- The tangent space of the model uses its model-space scalar structure.
+  rfl
+
+/-- The standard orientation of `ℝ`, in which the unit vector `1` is positive. -/
+def real : Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1) :=
+  model (Module.Basis.singleton (Fin 1) ℝ).orientation (by simp)
+
+/-- The standard orientation of `ℝ` is the constant model orientation of the singleton basis. -/
+theorem real_eq_model :
+    real = model (Module.Basis.singleton (Fin 1) ℝ).orientation (by simp) := (rfl)
+
+/-- At every point of `ℝ`, the standard orientation is the orientation of the singleton basis. -/
+@[simp]
+theorem orientationAt_real (x : ℝ) :
+    orientationAt real x = (Module.Basis.singleton (Fin 1) ℝ).orientation := by
+  rw [real_eq_model, orientationAt_model]
+
+/-- Cast a manifold orientation along an equality of models on the same model vector space and
+chart carrier. -/
+def congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : Orientation I M ι) :
+    Orientation J M ι :=
+  o.lift (fun l ↦ mk (l.congrModel h)) fun l ↦
+    (mk_eq_mk_iff _ _).mpr (.inr (l.flip_congrModel h).symm)
+
+@[simp]
+theorem congrModel_mk {I J : ModelWithCorners ℝ E H} (h : I = J) (l : OrientationLift I M ι) :
+    (mk l).congrModel h = mk (l.congrModel h) := by
+  unfold congrModel
+  rw [lift_mk]
+
+@[simp]
+theorem congrModel_refl {I : ModelWithCorners ℝ E H} (o : Orientation I M ι) :
+    o.congrModel rfl = o :=
+  o.inductionOn fun l ↦ by simp
+
+@[simp]
+theorem congrModel_congrModel {I J K : ModelWithCorners ℝ E H} (h₁ : I = J) (h₂ : J = K)
+    (o : Orientation I M ι) :
+    (o.congrModel h₁).congrModel h₂ = o.congrModel (h₁.trans h₂) :=
+  o.inductionOn fun l ↦ by simp
+
+@[simp]
+theorem neg_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : Orientation I M ι) :
+    (-o).congrModel h = -(o.congrModel h) :=
+  o.inductionOn fun l ↦ by simp
+
+theorem congrModel_injective {I J : ModelWithCorners ℝ E H} (h : I = J) :
+    Function.Injective (congrModel (M := M) (ι := ι) h) := fun o₁ o₂ heq ↦ by
+  simpa using congrArg (congrModel h.symm) heq
+
+@[simp]
+theorem congrModel_inj {I J : ModelWithCorners ℝ E H} (h : I = J) {o₁ o₂ : Orientation I M ι} :
+    o₁.congrModel h = o₂.congrModel h ↔ o₁ = o₂ :=
+  (congrModel_injective h).eq_iff
+
+@[simp]
+theorem orientationAt_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
+    [IsManifold I 1 M] [IsManifold J 1 M] (o : Orientation I M ι) (x : M) :
+    (o.congrModel h).orientationAt x = o.orientationAt x := by
+  subst h
+  rw [congrModel_refl]
+
+end Orientation
+end TauCeti.Manifold
+
+namespace TauCeti
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  (M : Type*) [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A manifold with corners is orientable when it carries an orientation of its tangent spaces
+compatible with the within-range chart Jacobians. -/
+class Orientable : Prop where
+  /-- A manifold orientation exists. -/
+  nonempty_orientation : Nonempty (Manifold.Orientation I M (Fin (Module.finrank ℝ E)))
+
+variable {I M}
+
+/-- Every model with corners carries its constant model orientation. -/
+instance : Orientable I H :=
+  ⟨⟨Manifold.Orientation.model (I := I) (Module.finBasis ℝ E).orientation
+    (Fintype.card_fin _)⟩⟩
+
+/-- A manifold is orientable exactly when its tangent bundle is orientable. -/
+theorem orientable_iff_nonempty_vectorBundleOrientation [IsManifold I 1 M] :
+    Orientable I M ↔ Nonempty
+      (VectorBundleOrientation E (TangentSpace I : M → Type _) (Fin (Module.finrank ℝ E))) :=
+  ⟨fun ⟨⟨o⟩⟩ ↦ ⟨o.toVectorBundleOrientation⟩, fun ⟨o⟩ ↦
+    ⟨⟨Manifold.Orientation.ofVectorBundleOrientation (Module.finBasis ℝ E).orientation
+      (Fintype.card_fin _) o⟩⟩⟩
+
+end TauCeti

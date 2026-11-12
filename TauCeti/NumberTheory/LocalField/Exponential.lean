@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.NumberTheory.LocalField.FactorialValuation
 import Mathlib.RingTheory.PowerSeries.Exp
+import TauCeti.Topology.Algebra.ValuativeRel.Nonarchimedean
 
 /-!
 # The local exponential series
@@ -153,9 +154,6 @@ theorem summable_expSeries_of_mem_maximalIdeal_pow {i : ℕ}
     (x : (𝓂[K] ^ i : Ideal 𝒪[K]))
     (hi : absoluteRamificationIndex K p < (p - 1) * i) :
     Summable (fun n : ℕ => (x : K) ^ n / (n.factorial : K)) := by
-  let _ : NonarchimedeanRing K := by
-    rw [(valuation K).toTopologicalSpace_eq]
-    exact ValuativeRel.nonarchimedeanRing K
   let _ := IsTopologicalAddGroup.rightUniformSpace K
   let _ := isUniformAddGroup_of_addCommGroup (G := K)
   rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero, Nat.cofinite_eq_atTop]
@@ -185,9 +183,6 @@ theorem exp_add_of_mem_maximalIdeal_pow {i : ℕ}
     (x y : (𝓂[K] ^ i : Ideal 𝒪[K])) :
     exp ((x : K) + y) = exp (x : K) * exp (y : K) := by
   have := FinitePadicExtension.charZero K p
-  let _ : NonarchimedeanRing K := by
-    rw [(valuation K).toTopologicalSpace_eq]
-    exact ValuativeRel.nonarchimedeanRing K
   let _ := IsTopologicalAddGroup.rightUniformSpace K
   let _ := isUniformAddGroup_of_addCommGroup (G := K)
   have hx := hasSum_exp_of_mem_maximalIdeal_pow x hi

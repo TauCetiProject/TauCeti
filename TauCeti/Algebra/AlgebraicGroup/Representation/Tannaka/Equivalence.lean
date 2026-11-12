@@ -79,14 +79,16 @@ private theorem counitEvaluation_matrixCoefficientSubcoalgebraHom
   rw [hcomp, LinearMap.baseChange_comp]
   exact Comodule.counit_baseChange_matrixCoefficientHom (C := H) A phi z
 
-private theorem scalarExtensionComponent_reconstructedPoint_tmul
+/-- The local functional of the corestricted coefficient morphism at `phi` is `phi` applied to the
+component of `eta` on `M`. -/
+private theorem localFunctional_matrixCoefficientSubcoalgebraHom
     (eta : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
-    (M : FGComoduleCat.{u, u, u} k H) (m : M) :
-    scalarExtensionComponent k H A
-        (fgPointTensorIso k H A (reconstructedPoint k H A eta)) M (1 ⊗ₜ[k] m) =
-      scalarExtensionComponent k H A eta M (1 ⊗ₜ[k] m) := by
-  apply TauCeti.Module.Dual.eq_of_baseChange_eq (A := A)
-  intro phi
+    (M : FGComoduleCat.{u, u, u} k H) (m : M) (phi : Module.Dual k M) :
+    localFunctional k H A eta
+        ⟨(Comodule.matrixCoefficientSubcoalgebra (R := k) (C := H) (M := M)).toRegularSubcomodule,
+          Subcomodule.mem_finiteSubcomodules.mpr inferInstance⟩
+        (Comodule.matrixCoefficientSubcoalgebraHom (C := H) phi m) =
+      Module.Dual.baseChange A phi (scalarExtensionComponent k H A eta M (1 ⊗ₜ[k] m)) := by
   let D := Comodule.matrixCoefficientSubcoalgebra (R := k) (C := H) (M := M)
   let N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H) :=
     ⟨D.toRegularSubcomodule, Subcomodule.mem_finiteSubcomodules.mpr inferInstance⟩
@@ -104,6 +106,34 @@ private theorem scalarExtensionComponent_reconstructedPoint_tmul
     rw [LinearMap.baseChange_tmul]
     exact congrArg (fun n => (1 : A) ⊗ₜ[k] n)
       (ComoduleCat.ofHom_apply (R := k) (C := H) q m)
+  calc
+    localFunctional k H A eta N
+          (Comodule.matrixCoefficientSubcoalgebraHom (C := H) phi m) =
+        counitEvaluation k H A N.1
+          (scalarExtensionComponent k H A eta (finiteRegularObject k H N)
+            (1 ⊗ₜ[k] Comodule.matrixCoefficientSubcoalgebraHom (C := H) phi m)) := by
+            rw [localFunctional_apply]
+    _ = counitEvaluation k H A N.1
+          (f.hom.toLinearMap.baseChange A
+            (scalarExtensionComponent k H A eta M (1 ⊗ₜ[k] m))) := by
+            rw [← hf_baseChange_tmul, ← hnatural]
+    _ = Module.Dual.baseChange A phi
+          (scalarExtensionComponent k H A eta M (1 ⊗ₜ[k] m)) := by
+            simpa only [f, q, N, D] using
+              counitEvaluation_matrixCoefficientSubcoalgebraHom k H A M phi
+                (scalarExtensionComponent k H A eta M (1 ⊗ₜ[k] m))
+
+private theorem scalarExtensionComponent_reconstructedPoint_tmul
+    (eta : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
+    (M : FGComoduleCat.{u, u, u} k H) (m : M) :
+    scalarExtensionComponent k H A
+        (fgPointTensorIso k H A (reconstructedPoint k H A eta)) M (1 ⊗ₜ[k] m) =
+      scalarExtensionComponent k H A eta M (1 ⊗ₜ[k] m) := by
+  apply TauCeti.Module.Dual.eq_of_baseChange_eq (A := A)
+  intro phi
+  let D := Comodule.matrixCoefficientSubcoalgebra (R := k) (C := H) (M := M)
+  let N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H) :=
+    ⟨D.toRegularSubcomodule, Subcomodule.mem_finiteSubcomodules.mpr inferInstance⟩
   have hpointAction :
       Comodule.pointsAction M (reconstructedPoint k H A eta) (1 ⊗ₜ[k] m) =
         Comodule.endOfPoint M (reconstructedPoint k H A eta).ofConv (1 ⊗ₜ[k] m) :=
@@ -134,19 +164,9 @@ private theorem scalarExtensionComponent_reconstructedPoint_tmul
             congr 1
             simpa only [Comodule.matrixCoefficientHom_apply] using
               (Comodule.matrixCoefficientSubcoalgebraHom_apply_coe phi m).symm
-    _ = counitEvaluation k H A N.1
-          (scalarExtensionComponent k H A eta (finiteRegularObject k H N)
-            (1 ⊗ₜ[k] Comodule.matrixCoefficientSubcoalgebraHom (C := H) phi m)) := by
-            rw [localFunctional_apply]
-    _ = counitEvaluation k H A N.1
-          (f.hom.toLinearMap.baseChange A
-            (scalarExtensionComponent k H A eta M (1 ⊗ₜ[k] m))) := by
-            rw [← hf_baseChange_tmul, ← hnatural]
     _ = Module.Dual.baseChange A phi
-          (scalarExtensionComponent k H A eta M (1 ⊗ₜ[k] m)) := by
-            simpa only [f, q, N, D] using
-              counitEvaluation_matrixCoefficientSubcoalgebraHom k H A M phi
-                (scalarExtensionComponent k H A eta M (1 ⊗ₜ[k] m))
+          (scalarExtensionComponent k H A eta M (1 ⊗ₜ[k] m)) :=
+            localFunctional_matrixCoefficientSubcoalgebraHom k H A eta M m phi
 
 /-- The component of the point reconstructed from a tensor automorphism is the original
 component on every finite-dimensional comodule. -/

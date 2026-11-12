@@ -61,7 +61,7 @@ theorem traceEquiv_unique (ω : cohomFp p G 2) (hω : ω ≠ 0)
     (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p) (hφ : φ ω = 1) :
     φ = (hG.traceEquiv ω hω).toLinearMap := by
   ext x
-  obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_nonzero' ω hω).mp
+  obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' ω hω).mp
     hG.finrank_cohomFp_two x
   simp [hφ]
 

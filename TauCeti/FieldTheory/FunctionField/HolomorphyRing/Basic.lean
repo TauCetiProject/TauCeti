@@ -55,6 +55,8 @@ None of it needs an exactness hypothesis on the constant field.
 * `TauCeti.coe_holomorphyRing_subset_integers_iff`: **Stichtenoth, Corollary 3.2.8** — the
   functions of `𝒪_S` are all regular at `P` exactly when `P ∈ S`, so `S` is recovered from
   `𝒪_S` and the two constructions are mutually inverse.
+* `TauCeti.exists_setOf_mem_integers_eq_compl`: every finite set of places is the pole set of
+  some function.
 * `TauCeti.isFractionRing_holomorphyRing`: `F` is the field of fractions of `𝒪_S` as soon as
   some place lies outside `S`; in particular (`TauCeti.isFractionRing_holomorphyRing_setOf_mem`)
   of the ring of functions regular wherever a transcendental `x` is.
@@ -316,6 +318,26 @@ theorem coe_holomorphyRing_subset_integers_iff (hF : IsFunctionField k F)
   rw [SetLike.mem_coe, P.mem_integers_iff_ord_nonneg] at hzP
   omega
 
+/-- **Every finite set of places is the pole set of a function**: for a finite set `T` of places
+of an algebraic function field there is a function regular exactly at the places outside `T`. -/
+theorem exists_setOf_mem_integers_eq_compl (hF : IsFunctionField k F) {T : Set (Place k F)}
+    (hT : T.Finite) : ∃ x : F, {P : Place k F | x ∈ P.integers} = Tᶜ := by
+  -- Each place `Q` is the only pole of some `z Q`; the sum of the `z Q` over `Q ∈ T` has a pole
+  -- at each `Q ∈ T`, where `z Q` alone has one, and no pole elsewhere.
+  choose z hzneg hzpos using fun Q : Place k F ↦ Q.exists_ord_neg_and_forall_ne_ord_nonneg hF
+  refine ⟨∑ Q ∈ hT.toFinset, z Q, Set.ext fun P ↦ ?_⟩
+  simp only [Set.mem_ofPred_eq, Set.mem_compl_iff]
+  by_cases hP : P ∈ T
+  · -- `z P` is the only summand with a pole at `P`, so it dictates the order of the sum.
+    have hz0 : z P ≠ 0 := fun h ↦ by simpa [h] using hzneg P
+    rw [P.mem_integers_iff_ord_nonneg,
+      P.ord_sum_eq_of_forall_lt (hT.mem_toFinset.mpr hP) hz0
+        fun Q _ hQP ↦ (hzneg P).trans_le (hzpos Q P (Ne.symm hQP))]
+    simpa [hP] using hzneg P
+  · refine iff_of_true (sum_mem fun Q hQ ↦ ?_) hP
+    exact P.mem_integers_iff_ord_nonneg.mpr
+      (hzpos Q P fun h ↦ hP (h ▸ hT.mem_toFinset.mp hQ))
+
 /-! ### Finitely many places: a principal ideal domain -/
 
 section Principal
@@ -380,16 +402,12 @@ private theorem exists_mem_ideal_forall_ord_le (hS : S.Finite) {I : Ideal ↥(ho
   have hz₀F : (z₀ : F) ≠ 0 := fun h ↦ hz₀ (Subtype.ext h)
   -- at each place of `S`, a function of `I` of least order there
   have key : ∀ P : Place k F, ∃ z : ↥(holomorphyRing S), z ∈ I ∧ (z : F) ≠ 0 ∧
-      (P ∈ S → ∀ w ∈ I, (w : F) ≠ 0 → P.ord (z : F) ≤ P.ord (w : F)) := by
-    intro P
-    by_cases hP : P ∈ S
-    · obtain ⟨z, hzI, hz, hzmin⟩ := exists_mem_ideal_ord_le hP hI
-      exact ⟨z, hzI, hz, fun _ ↦ hzmin⟩
-    · exact ⟨z₀, hz₀I, hz₀F, fun h ↦ absurd h hP⟩
+      (P ∈ S → ∀ w ∈ I, (w : F) ≠ 0 → P.ord (z : F) ≤ P.ord (w : F)) := fun P ↦
+    if hP : P ∈ S then (exists_mem_ideal_ord_le hP hI).imp fun _ h ↦ ⟨h.1, h.2.1, fun _ ↦ h.2.2⟩
+    else ⟨z₀, hz₀I, hz₀F, fun h ↦ absurd h hP⟩
   choose z hzI hz hzmin using key
   rcases hS.toFinset.eq_empty_or_nonempty with hempty | ⟨Q₀, hQ₀⟩
-  · exact ⟨z₀, hz₀I, hz₀F, fun P hP ↦
-      absurd (hS.mem_toFinset.mpr hP) (by simp [hempty])⟩
+  · exact ⟨z₀, hz₀I, hz₀F, fun P hP ↦ by simp [Set.Finite.toFinset_eq_empty.mp hempty] at hP⟩
   -- a damping factor: a unit at one place of `S`, a zero at each of the others
   have hdamp : ∀ P : Place k F, ∃ u : F, u ≠ 0 ∧ P.ord u = 0 ∧
       ∀ Q ∈ hS.toFinset, Q ≠ P → Q.ord u = 1 := by
@@ -403,8 +421,7 @@ private theorem exists_mem_ideal_forall_ord_le (hS : S.Finite) {I : Ideal ↥(ho
     mem_holomorphyRing_iff_forall_ord_nonneg.mpr fun Q hQ ↦ by
       rcases eq_or_ne Q P with rfl | hQP
       · exact (huP Q).ge
-      · rw [huQ P Q (hS.mem_toFinset.mpr hQ) hQP]
-        norm_num
+      · simp [huQ P Q (hS.mem_toFinset.mpr hQ) hQP]
   have hf0 : ∀ P : Place k F, u P * (z P : F) ≠ 0 := fun P ↦ mul_ne_zero (hu0 P) (hz P)
   -- away from `Q`, every summand is damped below the one indexed by `Q`
   have hlt : ∀ Q ∈ hS.toFinset, ∀ P ∈ hS.toFinset, P ≠ Q →
@@ -421,8 +438,7 @@ private theorem exists_mem_ideal_forall_ord_le (hS : S.Finite) {I : Ideal ↥(ho
       Q.ord_mul (hu0 Q) (hz Q), huP Q, zero_add]
   have hsum : ((∑ P ∈ hS.toFinset, (⟨u P, huS P⟩ * z P : ↥(holomorphyRing S)) : _) : F) =
       ∑ P ∈ hS.toFinset, u P * (z P : F) := by
-    rw [AddSubmonoidClass.coe_finsetSum]
-    exact Finset.sum_congr rfl fun P _ ↦ Subalgebra.coe_mul _ _ _
+    simp
   refine ⟨∑ P ∈ hS.toFinset, ⟨u P, huS P⟩ * z P, Ideal.sum_mem _ fun P _ ↦
     Ideal.mul_mem_left _ _ (hzI P), ?_, ?_⟩
   · rw [hsum]

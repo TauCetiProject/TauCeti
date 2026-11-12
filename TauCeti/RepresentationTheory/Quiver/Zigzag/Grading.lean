@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
@@ -46,8 +47,7 @@ structure, and it computes the concrete pieces.
 * `TauCeti.mem_zigzagGrade_iff`: a graded piece consists of the classes of the homogeneous
   elements of its degree.
 * `TauCeti.isInternal_zigzagGrade`: **the quotient is the internal direct sum of its graded
-  pieces**, the comparison of the direct-sum graded algebra with the ungraded quotient asked for
-  by the roadmap.
+  pieces**, the comparison of the direct-sum graded algebra with the ungraded quotient.
 * `TauCeti.zigzagGrade_zero_eq_span_range_vertexIdempotent`,
   `TauCeti.zigzagGrade_one_eq_span_range_ofArrow` and
   `TauCeti.zigzagGrade_two_eq_span_range_zigzagVolume`: the concrete pieces, spanned by the
@@ -57,14 +57,12 @@ structure, and it computes the concrete pieces.
   internal direct sum, so it is an integer grading of the quotient.
 * `TauCeti.zigzagBasis_coord_dart_eq_zero_of_mem_zigzagIntegerGrade`: an arrow coordinate vanishes
   on every piece of degree other than one.
+* `TauCeti.zigzagBasis_coord_dart_koszulTwist_one`: the degree-one Koszul twist of the path-length
+  grading negates arrow coordinates.
 
 ## References
 
-This is the grading clause of Layer 0 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, which
-asks for the relation ideal to be homogeneous for the path-length grading and for the induced
-nonnegative grading on the quotient to be compared with the ungraded quotient rather than
-postulated as an unrelated graded copy. See Huerfano--Khovanov, *A category for the adjoint
-representation*, Section 3.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3.
 -/
 
 public section
@@ -172,9 +170,8 @@ theorem nonisolatedZigzagQuotientEquiv_mem_zigzagGrade_iff
     exact zigzagMk_mem_zigzagGrade k H ((pathAlgebraEquiv_mem_grade_iff k e).mpr hy)
 
 /-- **The quotient is the internal direct sum of its graded pieces**: this is the comparison of
-the direct-sum graded algebra with the ungraded quotient asked for by the roadmap, in the
-internal sense in which the pieces are submodules of the quotient itself rather than a separate
-graded copy. -/
+the direct-sum graded algebra with the ungraded quotient, in the internal sense in which the pieces
+are submodules of the quotient itself rather than a separate graded copy. -/
 theorem isInternal_zigzagGrade :
     DirectSum.IsInternal (zigzagGrade k G) :=
   TauCeti.GradedAlgebra.isInternal_quotientPiece (grade k (DoubledQuiver G))
@@ -202,9 +199,9 @@ theorem zigzagGrade_zero_eq_span_range_vertexIdempotent :
         (Set.range fun i : V => zigzagMk k G (vertexIdempotent k (vertex G i))) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 0)
-      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (DoubledQuiver G)) ?_ hw
+      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (DoubledQuiver G))).2 ?_ hw
     rintro z ⟨v, rfl⟩
     rw [← zigzagMk_apply k G]
     exact Submodule.subset_span ⟨(vertexEquiv G).symm v, by simp⟩
@@ -219,9 +216,9 @@ theorem zigzagGrade_one_eq_span_range_ofArrow :
         zigzagMk k G (ofArrow (arrow G d.adj))) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 1)
-      (PathAlgebra.grade_one_eq_span_range_ofArrow) ?_ hw
+      (PathAlgebra.grade_one_eq_span_range_ofArrow)).2 ?_ hw
     rintro z ⟨⟨a, b, e⟩, rfl⟩
     rw [← zigzagMk_apply k G]
     obtain ⟨i, rfl⟩ : ∃ i, a = vertex G i :=
@@ -244,9 +241,9 @@ theorem zigzagGrade_two_eq_span_range_zigzagVolume :
       Submodule.span k (Set.range fun i : V => zigzagVolume k G i) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 2)
-      (PathAlgebra.grade_eq_span_image_basis k (DoubledQuiver G) 2) ?_ hw
+      (PathAlgebra.grade_eq_span_image_basis k (DoubledQuiver G) 2)).2 ?_ hw
     rintro z ⟨t, ht, rfl⟩
     rw [← zigzagMk_apply k G]
     simp only [coe_pathAlgebraBasis]
@@ -282,9 +279,8 @@ theorem zigzagGrade_eq_bot_of_three_le {n : ℕ} (hn : 3 ≤ n) : zigzagGrade k 
     simp only [coe_pathAlgebraBasis]
     exact TwoSidedIdeal.mem_asIdeal.mpr
       (mem_zigzagIdeal_of_isZigzagRelator k G (IsZigzagRelator.long_path t (hn.trans ht'.symm.le)))
-  refine TauCeti.GradedAlgebra.quotientPiece_eq_bot_of_le (grade k (DoubledQuiver G))
-    (zigzagIdeal k G).asIdeal fun y hy => ?_
-  exact hle hy
+  exact (TauCeti.GradedAlgebra.quotientPiece_eq_bot_iff (grade k (DoubledQuiver G))
+    (zigzagIdeal k G).asIdeal).2 fun _ hy => hle hy
 
 /-! ### Integer-indexed grading -/
 
@@ -307,7 +303,7 @@ theorem zigzagIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
 /-- **The integer extension of the path-length grading is an internal direct sum**: the pieces
 in nonnegative degrees are those of `TauCeti.zigzagGrade`, and those in negative degrees vanish. -/
 theorem isInternal_zigzagIntegerGrade : DirectSum.IsInternal (zigzagIntegerGrade k G) :=
-  Graded.isInternal_extendByZero (isInternal_zigzagGrade k G)
+  Graded.isInternal_extendByZero_iff.2 (isInternal_zigzagGrade k G)
 
 /-- **The zigzag relation quotient is an integer-graded algebra** for the path-length grading
 indexed by `ℤ`, extended by zero in negative degrees. -/
@@ -347,10 +343,108 @@ theorem zigzagBasis_coord_dart_eq_zero_of_mem_zigzagIntegerGrade (hns : ∀ i : 
     rw [zigzagGrade_eq_bot_of_three_le k G (by omega)]
     exact bot_le
 
+/-- **A vertex coordinate vanishes off degree zero**: the pieces of nonzero degree are spanned by
+arrows and volume classes, which have no vertex-idempotent component. -/
+theorem zigzagBasis_coord_vertex_eq_zero_of_mem_zigzagIntegerGrade
+    (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V) {e : ℤ} (he : e ≠ 0)
+    {x : nonisolatedZigzagQuotient k G} (hx : x ∈ zigzagIntegerGrade k G e) :
+    (zigzagBasis k G hns).coord (.inl i) x = 0 := by
+  classical
+  suffices hle : zigzagIntegerGrade k G e ≤
+      LinearMap.ker ((zigzagBasis k G hns).coord (.inl i)) from hle hx
+  rcases lt_or_ge e 0 with h | h
+  · simp [zigzagIntegerGrade_eq_bot_of_neg k G h]
+  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le h
+  rw [zigzagIntegerGrade_ofNat]
+  match n, he with
+  | 0, he => exact absurd rfl he
+  | 1, _ =>
+    rw [zigzagGrade_one_eq_span_range_ofArrow, Submodule.span_le]
+    rintro _ ⟨d, rfl⟩
+    simp only [SetLike.mem_coe, LinearMap.mem_ker]
+    rw [← zigzagBasisFun_inr_inl, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
+    simp
+  | 2, _ =>
+    rw [zigzagGrade_two_eq_span_range_zigzagVolume, Submodule.span_le]
+    rintro _ ⟨j, rfl⟩
+    simp only [SetLike.mem_coe, LinearMap.mem_ker]
+    rw [← zigzagBasisFun_inr_inr, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
+    simp
+  | n + 3, _ =>
+    rw [zigzagGrade_eq_bot_of_three_le k G (by omega)]
+    exact bot_le
+
+/-- Every arrow class has degree one. -/
+theorem zigzagMk_ofArrow_mem_zigzagIntegerGrade_one (d : G.Dart) :
+    zigzagMk k G (ofArrow (arrow G d.adj)) ∈ zigzagIntegerGrade k G 1 := by
+  rw [← Nat.cast_one (R := ℤ), zigzagIntegerGrade_ofNat]
+  exact zigzagMk_mem_zigzagGrade k G (PathAlgebra.ofArrow_mem_grade_one _)
+
+/-- Every volume class has degree two. -/
+theorem zigzagVolume_mem_zigzagIntegerGrade_two (i : V) :
+    zigzagVolume k G i ∈ zigzagIntegerGrade k G 2 := by
+  rw [← Nat.cast_ofNat (R := ℤ) (n := 2), zigzagIntegerGrade_ofNat,
+    zigzagGrade_two_eq_span_range_zigzagVolume]
+  exact Submodule.subset_span ⟨i, rfl⟩
+
 /-- Multiplication adds signed degrees in the integer extension of the path-length grading. -/
 theorem mul_mem_zigzagIntegerGrade {m n : ℤ}
     {x y : nonisolatedZigzagQuotient k G} (hx : x ∈ zigzagIntegerGrade k G m)
     (hy : y ∈ zigzagIntegerGrade k G n) : x * y ∈ zigzagIntegerGrade k G (m + n) :=
   Graded.mul_mem_extendByZero (mul_mem_zigzagGrade k G) hx hy
+
+/-! ### The degree-one Koszul twist of the path-length grading -/
+
+section Twist
+
+variable {k G} {hns : ∀ i : V, ∃ j, G.Adj i j}
+  {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G)}
+
+/-- The degree-one Koszul twist of the path-length grading negates arrows. -/
+theorem koszulTwist_one_zigzagMk_ofArrow (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G) (d : G.Dart) :
+    𝒢.koszulTwist 1 (zigzagMk k G (ofArrow (arrow G d.adj))) =
+      -zigzagMk k G (ofArrow (arrow G d.adj)) := by
+  rw [𝒢.koszulTwist_one_apply_of_mem (e := 1)
+    (by rw [h𝒢]; exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G d)]
+  simp
+
+/-- The degree-one Koszul twist of the path-length grading on the vertex-arrow-volume basis: it
+fixes vertex idempotents and volume classes and negates arrows. -/
+private theorem koszulTwist_one_zigzagBasis (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G)
+    (b : ZigzagBasisIndex G) :
+    𝒢.koszulTwist 1 (zigzagBasis k G hns b) =
+      (match b with
+        | .inl _ => 1
+        | .inr (.inl _) => -1
+        | .inr (.inr _) => 1 : k) • zigzagBasis k G hns b := by
+  rcases b with v | d | v <;> simp only [zigzagBasis_apply, zigzagBasisFun_inl,
+    zigzagBasisFun_inr_inl, zigzagBasisFun_inr_inr]
+  · rw [𝒢.koszulTwist_apply_of_mem_zero, one_smul]
+    rw [h𝒢, ← Nat.cast_zero, zigzagIntegerGrade_ofNat,
+      zigzagGrade_zero_eq_span_range_vertexIdempotent]
+    exact Submodule.subset_span ⟨v, rfl⟩
+  · rw [koszulTwist_one_zigzagMk_ofArrow h𝒢, neg_one_smul]
+  · rw [𝒢.koszulTwist_one_apply_of_mem (e := 2)
+      (by rw [h𝒢]; exact zigzagVolume_mem_zigzagIntegerGrade_two k G v)]
+    simp [Int.negOnePow_even 2 even_two]
+
+/-- The degree-one Koszul twist of the path-length grading negates arrow coordinates. -/
+theorem zigzagBasis_coord_dart_koszulTwist_one (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G)
+    (d : G.Dart) (x : nonisolatedZigzagQuotient k G) :
+    (zigzagBasis k G hns).coord (.inr (.inl d)) (𝒢.koszulTwist 1 x) =
+      -(zigzagBasis k G hns).coord (.inr (.inl d)) x := by
+  have key : (zigzagBasis k G hns).coord (.inr (.inl d)) ∘ₗ 𝒢.koszulTwist 1 =
+      -(zigzagBasis k G hns).coord (.inr (.inl d)) := by
+    refine (zigzagBasis k G hns).ext fun b ↦ ?_
+    rw [LinearMap.comp_apply, koszulTwist_one_zigzagBasis h𝒢, map_smul, zigzagBasis_coord_apply,
+      LinearMap.neg_apply, zigzagBasis_coord_apply]
+    rcases b with j | e | j
+    · simp only [reduceCtorEq, ite_false, smul_zero, neg_zero]
+    · simp only [Sum.inr.injEq, Sum.inl.injEq]
+      split_ifs <;> simp only [neg_one_smul, smul_zero, neg_zero]
+    · simp only [Sum.inr.injEq, reduceCtorEq, ite_false, smul_zero, neg_zero]
+  exact LinearMap.congr_fun key x
+
+end Twist
 
 end TauCeti

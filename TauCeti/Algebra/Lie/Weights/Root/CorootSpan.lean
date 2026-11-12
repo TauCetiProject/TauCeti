@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Weights.Killing
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Weights.Sl2System
 public import TauCeti.Algebra.Lie.Weights.WeightLattice
 
@@ -71,7 +71,7 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 /-- The set consisting of a weight-indexed family `x` and all coroots, regarded as elements of the
 ambient Lie algebra. When `x` is a normalized system (such as `IsSl2System x`), its zero-weight
 value vanishes alongside the zero coroot. -/
-def rootCorootGenerators (x : Weight K H L → L) : Set L :=
+noncomputable def rootCorootGenerators (x : Weight K H L → L) : Set L :=
   Set.range x ∪ Set.range fun α : Weight K H L => (coroot α : L)
 
 omit [CharZero K] [LieModule.IsTriangularizable K H L] in
@@ -83,7 +83,7 @@ theorem mem_rootCorootGenerators_iff {x : Weight K H L → L} {v : L} :
   rw [rootCorootGenerators, Set.mem_union, Set.mem_range, Set.mem_range]
 
 /-- The integral span of a weight-indexed family `x` and all coroots in the ambient Lie algebra. -/
-def rootCorootSpan (x : Weight K H L → L) : Submodule ℤ L :=
+noncomputable def rootCorootSpan (x : Weight K H L → L) : Submodule ℤ L :=
   Submodule.span ℤ (rootCorootGenerators x)
 
 omit [CharZero K] [LieModule.IsTriangularizable K H L] in
@@ -144,11 +144,12 @@ theorem intCast_rootCartanWeight_apply (α β : Weight K H L) :
     ((rootCartanWeight β α : ℤ) : K) = β (coroot α) := by
   rw [rootCartanWeight, apply_coroot_eq_cast α β]
 
+omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 /-- A coroot at the zero weight vanishes in the ambient Lie algebra, which is why indexing the
 coroot family by all weights rather than by the roots costs nothing. -/
 @[simp] theorem coe_coroot_eq_zero_of_isZero {α : Weight K H L} (hα : α.IsZero) :
     ((coroot α : H) : L) = 0 := by
-  rw [coroot_eq_zero_iff.2 hα, ZeroMemClass.coe_zero]
+  simp [coroot, Weight.coe_toLinear_eq_zero_iff.mpr hα]
 
 /-- Every root has Cartan integer zero at the zero weight, the coroot there being zero. -/
 @[simp] theorem rootCartanWeight_eq_zero_of_isZero (β : Weight K H L) {α : Weight K H L}
@@ -172,7 +173,7 @@ omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 /-- **Two coroots commute**, being elements of the abelian Cartan subalgebra. -/
 theorem lie_coroot_coroot_eq_zero (α β : Weight K H L) :
     ⁅(coroot α : L), (coroot β : L)⁆ = 0 :=
-  lie_cartan_cartan_eq_zero (coroot α) (coroot β)
+  LieSubalgebra.lie_eq_zero_of_mem (coroot α).2 (coroot β).2
 
 namespace IsSl2System
 

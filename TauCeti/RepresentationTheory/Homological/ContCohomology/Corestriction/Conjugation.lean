@@ -62,6 +62,8 @@ of the conjugation `f ↦ (x ↦ g • f (g⁻¹ x))` of `Coind_V^G M`.
   coefficients.
 * `TauCeti.ContinuousCohomology.conjNormalMap_eq_map_of_smul_eq_self`: with trivial coefficients,
   `(g)_*` is the pullback along conjugation alone.
+* `TauCeti.eqToHom_conjNormalMap_eqToHom`: with trivial `𝔽₂` coefficients, `(g)_*` is
+  `TauCeti.trivialF2Map` along the conjugation `u ↦ g⁻¹ u g` of the normal subgroup.
 
 ## References
 
@@ -108,22 +110,7 @@ theorem shapiroMap_comp_map_of_conj (hVU : V ≤ U.map (MulAut.conj g).toMonoidH
           fun h F => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h F) n ≫
         shapiroMap V M n := by
   let X := ofDiscreteModule ℤ G (DiscreteCoind G U M)
-  -- The inner compatible pair `(x ↦ g⁻¹ x g, F ↦ g • F)` on `Hⁿ(G, Coind_U^G M)`.
-  let c : G →ₜ* G := ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conj g⁻¹)
-  have hc (x : G) : c x = g⁻¹ * x * g := by simp [c]
-  have hcM (x : G) : (c : G →* G) x = g⁻¹ * x * g := hc x
-  let B : TopRep.res (c : G →* G) X ⟶ X := ofDiscreteModulePair (c : G →* G)
-    (DistribSMul.toAddMonoidHom (DiscreteCoind G U M) g).toIntLinearMap
-    fun x F => by
-      simp only [AddMonoidHom.coe_toIntLinearMap, DistribSMul.toAddMonoidHom_apply,
-        hcM, smul_smul]
-      congr 1
-      group
-  have hB : _root_.ContinuousCohomology.map c B n = 𝟙 _ :=
-    map_eq_id_of_inner g c hc B
-      (fun (Φ : DiscreteCoind G U M) => (ofDiscreteModulePair_hom_apply (c : G →* G) _ _ Φ).trans
-        (ofDiscreteModule_ρ_apply_apply g Φ).symm)
-      (ofDiscreteModule_isSmoothDiscrete ℤ G (DiscreteCoind G U M)) n
+  obtain ⟨c, B, hc, hBΦ, hB⟩ := exists_map_eq_id_conj_smul (DiscreteCoind G U M) g n
   -- Both sides are the compatible pair of `v ↦ g⁻¹ v g` and `Φ ↦ g • Φ 1`; on the left this needs
   -- the inner pair, which induces the identity.
   let F : DiscreteCoind G U M →ₗ[ℤ] M :=
@@ -161,24 +148,18 @@ theorem shapiroMap_comp_map_of_conj (hVU : V ≤ U.map (MulAut.conj g).toMonoidH
   · intro Φ
     let BV := (TopRep.resFunctor (ContinuousMonoidHom.subgroupSubtype V : V →* G)).map B
     let ΨV := (TopRep.resFunctor (ContinuousMonoidHom.subgroupSubtype V : V →* G)).map Ψ
-    have h₁ : BV.hom Φ = g • Φ := ofDiscreteModulePair_hom_apply (c : G →* G) _ _ Φ
-    have h₂ : ΨV.hom (g • Φ) = DiscreteCoind.conj U V M g hVU (g • Φ) :=
-      ofDiscreteModuleMap_hom_apply (G := G)
-        (DiscreteCoind.conj U V M g hVU).toAddMonoidHom.toIntLinearMap
-        (fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h Φ) (g • Φ)
-    have h₃ : evV.hom (DiscreteCoind.conj U V M g hVU (g • Φ)) =
-        DiscreteCoind.conj U V M g hVU (g • Φ) 1 :=
-      (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.subgroupSubtype V : V →* G)
-        (DiscreteCoind.eval G V M).toIntLinearMap
-        (fun v Φ => eval_subgroupSubtype_smul G V M v Φ) _).trans
-        (DiscreteCoind.eval_apply (A := M) _)
     refine (TopRep.comp_apply BV (ΨV ≫ evV) Φ).trans ((TopRep.comp_apply ΨV evV _).trans ?_)
-    refine (congrArg evV.hom ((congrArg ΨV.hom h₁).trans h₂)).trans (h₃.trans ?_)
+    have h₂ : ΨV.hom (g • Φ) = DiscreteCoind.conj U V M g hVU (g • Φ) :=
+      ofDiscreteModuleMap_hom_apply (G := G) _
+        (fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h Φ) (g • Φ)
+    refine (congrArg evV.hom ((congrArg ΨV.hom (hBΦ Φ)).trans h₂)).trans ?_
+    refine (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.subgroupSubtype V : V →* G)
+      (DiscreteCoind.eval G V M).toIntLinearMap
+      (fun v Φ => eval_subgroupSubtype_smul G V M v Φ) _).trans
+      ((DiscreteCoind.eval_apply (A := M) _).trans ?_)
     rw [hFΦ, DiscreteCoind.conj_apply, DiscreteCoind.coe_smul, mul_one, inv_mul_cancel]
   · intro Φ
-    refine (TopRep.comp_apply ((TopRep.resFunctor (κ : V →* U)).map (ofDiscreteModulePair
-      (ContinuousMonoidHom.subgroupSubtype U : U →* G) (DiscreteCoind.eval G U M).toIntLinearMap
-      fun u Φ => eval_subgroupSubtype_smul G U M u Φ)) f Φ).trans ((hf _).trans ?_)
+    refine (TopRep.comp_apply _ _ _).trans ((hf _).trans ?_)
     exact (congrArg (fun m : M => g • m) ((ofDiscreteModulePair_hom_apply _ _ _ Φ).trans
       (DiscreteCoind.eval_apply Φ))).trans (hFΦ Φ).symm
 
@@ -394,6 +375,23 @@ theorem trivialF2Map_comp_trivialF2CorMap_of_conj (hU : IsOpen (U : Set G)) [U.F
     (fun m => (ofDiscreteModulePair_hom_apply _ _ _ m).trans
       ((TopRep.distribMulAction_smul _ g m).trans (trivialF2_ρ_apply_apply G g m)).symm) hVU hU hV
     n _
+
+omit [CompactSpace G] [TotallyDisconnectedSpace G] in
+/-- With trivial coefficients, the conjugation `(g)_*` of `Hⁿ(U, 𝔽₂)`, read through the
+identification of `ofDiscreteModule ℤ U (trivialF2 G).V` with `trivialF2 U`, is pullback along
+`u ↦ g⁻¹ u g`. -/
+theorem eqToHom_conjNormalMap_eqToHom (U : Subgroup G) [U.Normal] (g : G) (n : ℕ) :
+    eqToHom (congrArg (continuousCohomology n) (ofDiscreteModule_subgroup_trivialF2 G U).symm) ≫
+        ContinuousCohomology.conjNormalMap U (trivialF2 G).V g n ≫
+          eqToHom (congrArg (continuousCohomology n) (ofDiscreteModule_subgroup_trivialF2 G U)) =
+      trivialF2Map (ContinuousMonoidHom.toContinuousMonoidHom
+        (ContinuousAut.conjNormal g⁻¹ : ContinuousAut U)) n := by
+  have hM := ofDiscreteModule_subgroup_trivialF2 G U
+  rw [ContinuousCohomology.conjNormalMap_eq_map_of_smul_eq_self _ _
+      (fun g m => (TopRep.distribMulAction_smul _ g m).trans (trivialF2_ρ_apply_apply G g m)),
+    ← cancel_epi (eqToHom (congrArg (continuousCohomology n) hM)), eqToHom_trans_assoc,
+    eqToHom_refl, Category.id_comp]
+  exact (eqToHom_comp_trivialF2Map _ hM hM (AddMonoidHom.id _) _ (fun _ => rfl) n).symm
 
 end TrivialF2
 

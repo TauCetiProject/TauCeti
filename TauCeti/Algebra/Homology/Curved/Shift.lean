@@ -173,6 +173,23 @@ theorem projectiveStableFunctor_map_curvedDuplexSplitSuspensionPresentation_coke
     (diskSumMap f) ((parityShift C w).map f) (toDiskSum_comp_diskSumMap f)
     (diskSumToParityShift_comp_parityShift_map f)
 
+/-- The identity comparison of the cokernel terms of disk-sum presentations with the parity
+shifts is natural in the projective stable category. -/
+private theorem projectiveStableFunctor_map_curvedDuplexSplitSuspensionPresentation_cokernelMap_comp
+    {X Y : CurvedDuplex C w} (f : X ⟶ Y) :
+    ((split C).curvedDuplex w).projectiveStableFunctor.map
+        ((curvedDuplexSplitSuspensionPresentation X).cokernelMap
+          (curvedDuplexSplitSuspensionPresentation Y) f) ≫
+        (Iso.refl (((split C).curvedDuplex w).projectiveStableFunctor.obj
+          ((parityShift C w).obj Y))).hom =
+      (Iso.refl (((split C).curvedDuplex w).projectiveStableFunctor.obj
+          ((parityShift C w).obj X))).hom ≫
+        ((split C).curvedDuplex w).projectiveStableFunctor.map ((parityShift C w).map f) :=
+  -- The cokernel terms are the parity shifts only definitionally, beyond the reach of `simp`.
+  (Category.comp_id _).trans
+    ((projectiveStableFunctor_map_curvedDuplexSplitSuspensionPresentation_cokernelMap f).trans
+      (Category.id_comp _).symm)
+
 variable (C w)
 
 /-- **Stable suspension of curved duplexes is the parity shift.** For the componentwise split
@@ -182,26 +199,9 @@ noncomputable def curvedDuplexSplitStableSuspensionIsoParityShift :
     ((split C).curvedDuplex w).projectiveStableFunctor ⋙
         (curvedDuplex_split_isFrobenius C w).stableSuspension ≅
       parityShift C w ⋙ ((split C).curvedDuplex w).projectiveStableFunctor :=
-  -- The implicit endpoints are given so that they are syntactically those of the two functors.
-  (NatIso.ofComponents (fun X ↦ Iso.trans
-    (X := (parityShift C w ⋙ ((split C).curvedDuplex w).projectiveStableFunctor).obj X)
-    (Z := (((split C).curvedDuplex w).projectiveStableFunctor ⋙
-      (curvedDuplex_split_isFrobenius C w).stableSuspension).obj X)
-    ((curvedDuplex_split_isFrobenius C w).projectiveStableIsoSuspensionObj
-        (curvedDuplexSplitSuspensionPresentation X))
-    (eqToIso ((curvedDuplex_split_isFrobenius C w).stableSuspension_obj_projectiveStableFunctor_obj
-        X).symm)) (fun {X Y} f ↦ by
-    have h := (curvedDuplex_split_isFrobenius C w).projectiveStableIsoSuspensionObj_hom_naturality
-      (curvedDuplexSplitSuspensionPresentation X) (curvedDuplexSplitSuspensionPresentation Y) f
-    rw [projectiveStableFunctor_map_curvedDuplexSplitSuspensionPresentation_cokernelMap] at h
-    rw [Functor.comp_map, Functor.comp_map,
-      IsFrobenius.stableSuspension_map_projectiveStableFunctor_map]
-    -- The endpoints of `Iso.trans` are the functor composites, which are only definitionally
-    -- equal to the endpoints of the presentation comparison; `rw` cannot see through them.
-    erw [Iso.trans_hom, Iso.trans_hom]
-    rw [eqToIso.hom, eqToIso.hom]
-    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-    exact (Category.assoc _ _ _).symm.trans ((reassoc_of% h) _))).symm
+  (curvedDuplex_split_isFrobenius C w).stableSuspensionIsoOfPresentations _
+    curvedDuplexSplitSuspensionPresentation (fun _ ↦ Iso.refl _)
+    projectiveStableFunctor_map_curvedDuplexSplitSuspensionPresentation_cokernelMap_comp
 
 /-- The component of `curvedDuplexSplitStableSuspensionIsoParityShift` at `X` is induced by the
 identity of `X`, from the chosen suspension presentation to the disk-sum presentation. -/
@@ -211,13 +211,10 @@ theorem curvedDuplexSplitStableSuspensionIsoParityShift_hom_app (X : CurvedDuple
       eqToHom ((curvedDuplex_split_isFrobenius C w).stableSuspension_obj_projectiveStableFunctor_obj
         X) ≫ ((split C).curvedDuplex w).projectiveStableFunctor.map
           (((curvedDuplex_split_isFrobenius C w).suspensionPresentation X).cokernelMap
-            (curvedDuplexSplitSuspensionPresentation X) (𝟙 X)) := by
-  simp only [curvedDuplexSplitStableSuspensionIsoParityShift, Iso.symm_hom,
-    NatIso.ofComponents_inv_app]
-  -- As in the definition, the endpoints agree with those of the composite only definitionally.
-  erw [Iso.trans_inv]
-  rw [eqToIso.inv, IsFrobenius.projectiveStableIsoSuspensionObj_inv]
-  rfl
+            (curvedDuplexSplitSuspensionPresentation X) (𝟙 X)) :=
+  ((curvedDuplex_split_isFrobenius C w).stableSuspensionIsoOfPresentations_hom_app _ _ _
+    projectiveStableFunctor_map_curvedDuplexSplitSuspensionPresentation_cokernelMap_comp X).trans
+    (congrArg (_ ≫ ·) (Category.comp_id _))
 
 /-- The inverse component of `curvedDuplexSplitStableSuspensionIsoParityShift` at `X` is induced
 by the identity of `X`, from the disk-sum presentation to the chosen suspension presentation. -/
@@ -229,13 +226,10 @@ theorem curvedDuplexSplitStableSuspensionIsoParityShift_inv_app (X : CurvedDuple
             ((curvedDuplex_split_isFrobenius C w).suspensionPresentation X) (𝟙 X)) ≫
         eqToHom
           ((curvedDuplex_split_isFrobenius C w).stableSuspension_obj_projectiveStableFunctor_obj
-            X).symm := by
-  simp only [curvedDuplexSplitStableSuspensionIsoParityShift, Iso.symm_inv,
-    NatIso.ofComponents_hom_app]
-  -- As in the definition, the endpoints agree with those of the composite only definitionally.
-  erw [Iso.trans_hom]
-  rw [eqToIso.hom, IsFrobenius.projectiveStableIsoSuspensionObj_hom]
-  rfl
+            X).symm :=
+  ((curvedDuplex_split_isFrobenius C w).stableSuspensionIsoOfPresentations_inv_app _ _ _
+    projectiveStableFunctor_map_curvedDuplexSplitSuspensionPresentation_cokernelMap_comp X).trans
+    (Category.id_comp _)
 
 /-- The comparison from the componentwise split stable category to the homotopy category of
 curved duplexes intertwines stable suspension with the parity shift. -/
@@ -244,16 +238,10 @@ noncomputable def stableSuspensionCompCurvedDuplexSplitStableToHomotopyIso :
         curvedDuplexSplitStableToHomotopy C w ≅
       curvedDuplexSplitStableToHomotopy C w ⋙
         (HomotopyCategory.parityShiftEquivalence C w).functor :=
-  Quotient.natIsoLift _ <|
-    (Functor.associator _ _ _).symm ≪≫
-      Functor.isoWhiskerRight (curvedDuplexSplitStableSuspensionIsoParityShift C w) _ ≪≫
-      Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft _
-        (eqToIso (projectiveStableFunctor_comp_curvedDuplexSplitStableToHomotopy C w)) ≪≫
-      eqToIso HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor.symm ≪≫
-      Functor.isoWhiskerRight
-        (eqToIso (projectiveStableFunctor_comp_curvedDuplexSplitStableToHomotopy C w).symm) _ ≪≫
-      Functor.associator _ _ _
+  (curvedDuplex_split_isFrobenius C w).stableSuspensionCompIsoOfFactorization
+    (projectiveStableFunctor_comp_curvedDuplexSplitStableToHomotopy C w)
+    (curvedDuplexSplitStableSuspensionIsoParityShift C w)
+    (eqToIso HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor.symm)
 
 /-- On the stable image of a curved duplex `X`, the intertwining isomorphism is the homotopy
 class of the map induced by the identity of `X` from the chosen suspension presentation to the
@@ -271,7 +259,7 @@ theorem stableSuspensionCompCurvedDuplexSplitStableToHomotopyIso_hom_app (X : Cu
         (curvedDuplexSplitStableToHomotopy C w).map
           ((curvedDuplexSplitStableSuspensionIsoParityShift C w).hom.app X) ≫
             eqToHom (by simp) := by
-    simp [stableSuspensionCompCurvedDuplexSplitStableToHomotopyIso, eqToHom_map]
+    simp [stableSuspensionCompCurvedDuplexSplitStableToHomotopyIso]
   rw [h, curvedDuplexSplitStableSuspensionIsoParityShift_hom_app]
   -- The component is typed at the parity shift, while the cokernel map is typed at the cokernel
   -- term of the presentation; unfolding the presentation makes the two agree reducibly.

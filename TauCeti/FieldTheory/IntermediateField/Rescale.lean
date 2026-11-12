@@ -34,15 +34,9 @@ base field `K`, then the family `(u i) · x i` generates the same intermediate f
 the family `x`. -/
 theorem adjoin_range_algebraMap_mul {ι : Type*} {u : ι → K} (hu : ∀ i, u i ≠ 0) (x : ι → L) :
     adjoin K (Set.range fun i => algebraMap K L (u i) * x i) = adjoin K (Set.range x) := by
-  refine le_antisymm (adjoin_le_iff.mpr ?_) (adjoin_le_iff.mpr ?_)
-  · rintro _ ⟨i, rfl⟩
-    exact mul_mem (_root_.algebraMap_mem _ _) (subset_adjoin K _ ⟨i, rfl⟩)
-  · rintro _ ⟨i, rfl⟩
-    have hne : algebraMap K L (u i) ≠ 0 :=
-      (map_ne_zero_iff _ (algebraMap K L).injective).mpr (hu i)
-    have hx : x i = algebraMap K L (u i)⁻¹ * (algebraMap K L (u i) * x i) := by
-      rw [map_inv₀, inv_mul_cancel_left₀ hne]
-    rw [hx]
-    exact mul_mem (_root_.algebraMap_mem _ _) (subset_adjoin K _ ⟨i, rfl⟩)
+  refine le_antisymm (adjoin_le_iff.mpr ?_) (adjoin_le_iff.mpr ?_) <;> rintro _ ⟨i, rfl⟩
+  · exact mul_mem (_root_.algebraMap_mem _ _) (subset_adjoin K _ ⟨i, rfl⟩)
+  · simpa [hu] using mul_mem (_root_.algebraMap_mem _ (u i)⁻¹) <|
+      subset_adjoin K (Set.range fun i => algebraMap K L (u i) * x i) ⟨i, rfl⟩
 
 end TauCeti.IntermediateField

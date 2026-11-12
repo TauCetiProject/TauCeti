@@ -84,10 +84,11 @@ theorem MarkovExchangeable.measure_setOf_excursionPrefix_eq_of_perm (h : MarkovE
     have hempty : ∀ cs : List (List α), ¬(∀ e ∈ cs, a₀ ∉ e) →
         μ {ω | excursionPrefix (fun n => X n ω) a₀ cs.length = cs} = 0 := by
       intro cs hcs
-      convert measure_empty (μ := μ)
-      refine Set.eq_empty_of_forall_notMem fun ω hω => hcs ?_
-      rw [← hω]
-      exact forall_not_mem_excursionPrefix _ a₀ cs.length
+      have hset : {ω | excursionPrefix (fun n => X n ω) a₀ cs.length = cs} = ∅ :=
+        Set.eq_empty_of_forall_notMem fun ω hω => hcs (by
+          rw [← Set.mem_ofPred.mp hω]
+          exact forall_not_mem_excursionPrefix _ a₀ cs.length)
+      rw [hset, measure_empty]
     rw [hempty bs havoid,
       hempty bs' fun hbs' => havoid fun e he => hbs' e (hperm.mem_iff.mp he)]
 

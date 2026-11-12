@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RingTheory.HopkinsLevitzki
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Basic
 
 /-!
@@ -48,21 +48,9 @@ every simple module, it is Euler-admissible against every module of finite lengt
 theorem isEulerAdmissible_of_isFiniteLength (Y : ModuleCat.{u} R)
     (h : ∀ S : ModuleCat.{u} R, IsSimpleModule R S → IsEulerAdmissible.{u} k S Y)
     (X : ModuleCat.{u} R) (hX : IsFiniteLength R X) : IsEulerAdmissible.{u} k X Y := by
-  suffices key : ∀ (M : Type u) [AddCommGroup M] [Module R M], IsFiniteLength R M →
-      IsEulerAdmissible.{u} k (ModuleCat.of R M) Y from key X hX
-  intro M _ _ hM
-  induction hM with
-  | of_subsingleton =>
-    exact IsEulerAdmissible.of_isZero_left k (ModuleCat.isZero_of_subsingleton _)
-  | @of_simple_quotient M _ _ N _ _ ih =>
-    let T : ShortComplex (ModuleCat.{u} R) :=
-      ShortComplex.mk (ModuleCat.ofHom N.subtype) (ModuleCat.ofHom N.mkQ) (by
-        ext x
-        exact (LinearMap.exact_subtype_mkQ N).apply_apply_eq_zero x)
-    have hT : T.ShortExact := ModuleCat.shortComplex_shortExact T
-      (LinearMap.exact_subtype_mkQ N) N.injective_subtype N.mkQ_surjective
-    exact IsEulerAdmissible.of_shortExact₂' hT ih
-      (h (ModuleCat.of R (M ⧸ N)) (inferInstanceAs (IsSimpleModule R (M ⧸ N))))
+  exact X.prop_of_isFiniteLength hX (fun M ↦ IsEulerAdmissible.{u} k M Y)
+    (fun _ hM ↦ IsEulerAdmissible.of_isZero_left k hM) h
+    (fun hS h₁ h₃ ↦ h₁.of_shortExact₂' hS h₃)
 
 variable [IsArtinianRing R]
 

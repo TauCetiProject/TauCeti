@@ -21,7 +21,7 @@ Consequently the left-hand map `y ↦ (ε_b b* y)_b` of the Koszul complex
 0 ⟶ e_v Π ⟶ ⨁_{b : i ⟶ v} e_i Π ⟶ e_v Π ⟶ S_v ⟶ 0
 ```
 
-of `TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex` is injective. Together with
+of `TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex` is injective. Together with
 the exactness at the other terms proved there, the complex is a projective resolution of the vertex
 module `S_v`, for every vertex `v` and every commutative ring `k`.
 
@@ -98,14 +98,8 @@ theorem preprojectiveMk_ofArrow_mul_eq_zero_iff (hQ : ∀ u : Q, ∃ w, Nonempty
     (fun u => localPreprojectiveRelator_eq_sum_ofArrow_mul (Q := Q) k u) hπ
     (preprojectiveMk_surjective k Q) (Symmetrify.of.obj (V := Q) v) hy'
   -- The chosen arrow at `v` is `a`, read in the doubled quiver.
-  have hσ : σ v = ⟨w, a⟩ := Function.update_self ..
-  have ha : ∀ s : Σ w : Q, (v ⟶ w), s = ⟨w, a⟩ →
-      (ofArrow (Symmetrify.of.map s.2) : pathAlgebra k (Symmetrify Q)) =
-        ofArrow (Symmetrify.of.map a) := by
-    rintro _ rfl
-    rfl
-  rw [← key]
-  exact Iff.of_eq (congrArg (fun f => preprojectiveMk k Q f * y = 0) (ha (σ v) hσ).symm)
+  unfold τ σ at key
+  rwa [symmetrify_of_obj, Function.update_self] at key
 
 /-- **Exactness of the Koszul complex at its left end, for a quiver without sinks.** If every vertex
 of `Q` is the tail of an arrow and `y = e_v y`, then `b* y = 0` for every arrow `b` of the doubled

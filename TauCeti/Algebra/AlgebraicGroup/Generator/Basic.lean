@@ -12,10 +12,10 @@ public import TauCeti.RingTheory.Norm.FullSetOfSections.Basic
 public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 
 /-!
-# Katz–Mazur generators of finite free group schemes
+# Katz–Mazur generators of finite flat group schemes
 
-Let `H` be a commutative `R`-bialgebra, finite and free as an `R`-module, so that `G = Spec H` is
-a finite locally free monoid scheme over `Spec R`; its points with values in `R` form the
+Let `H` be a commutative `R`-bialgebra, finite and flat as an `R`-module, so that `G = Spec H` is
+a finite flat monoid scheme over `Spec R`; its points with values in `R` form the
 convolution monoid `WithConv (H →ₐ[R] R)`. For a finite monoid `A`, a homomorphism
 `φ : A →* G(R)` is an *`A`-generator* of `G` when the `|A|` points `φ a` form a full set of sections
 of `G` over `R` (`TauCeti.IsFullSetOfSections`). Katz–Mazur §1.10 make this definition for a finite
@@ -27,8 +27,10 @@ they need not be distinct, since in characteristic `p` the identity, taken `p` t
 set of sections of `μ_p`. The Drinfeld level structures on elliptic curves are of this form: a
 `[Γ(N)]`-structure on `E` is a `(ℤ/N)²`-generator of `E[N]`.
 
-The second half of the file constructs the scheme of `A`-generators of `G`. The scheme of
-homomorphisms `A_R → G` from the constant monoid `A_R = Spec (coordinateRing R A)` is
+The rank and product results also assume that the coordinate algebras are free over `R`.
+The second half of the file likewise assumes that `H` is free over `R` and constructs the scheme of
+`A`-generators of `G`. The scheme of homomorphisms `A_R → G` from the constant monoid
+`A_R = Spec (coordinateRing R A)` is
 `Spec (HomAlgebra R H (coordinateRing R A))`. On it the universal homomorphism provides a universal
 family of `|A|` points of `G`, and the locus where these points form a full set of sections is a
 closed subscheme of finite presentation, `Spec (HomAlgebra R H (coordinateRing R A) ⧸ I)` with
@@ -49,13 +51,13 @@ the functor `T ↦ {φ : A →* G(T) // IsAGenerator φ}`.
 
 ## Main results
 
-* `TauCeti.IsAGenerator.card_eq_finrank`: over a nontrivial ring, the order of `A` is the rank
-  of `G`.
+* `TauCeti.IsAGenerator.card_eq_finrank`: over a nontrivial ring, if a finite free `G` has an
+  `A`-generator, the order of `A` is the rank of `G`.
 * `TauCeti.IsAGenerator.baseChange`, `TauCeti.IsAGenerator.of_baseChange` and
   `TauCeti.isAGenerator_baseChange_iff`: `A`-generators are stable under arbitrary base change and
   descend along injective ring maps, in particular along faithfully flat ones.
-* `TauCeti.IsAGenerator.prodMap`: an `A₁`-generator of `G₁` and an `A₂`-generator of `G₂` together
-  give an `A₁ × A₂`-generator of the product `G₁ × G₂`.
+* `TauCeti.IsAGenerator.prodMap`: for finite free `G₁`, `G₂`, an `A₁`-generator of `G₁` and an
+  `A₂`-generator of `G₂` together give an `A₁ × A₂`-generator of the product `G₁ × G₂`.
 * `TauCeti.ConstantGroup.isAGenerator_toPoints`: the tautological homomorphism from `A` to the
   points of the constant monoid `A_R` is an `A`-generator.
 * `TauCeti.isAGenerator_pointsOfBialgHom_homEquiv_iff` and
@@ -97,21 +99,25 @@ variable {φ : A →* WithConv (H →ₐ[R] R)}
 theorem isAGenerator_iff : IsAGenerator φ ↔ IsFullSetOfSections fun a ↦ (φ a).ofConv :=
   Iff.rfl
 
-variable [Module.Free R H] [Module.Finite R H]
+variable [Module.Finite R H]
 
-/-- Over a nontrivial ring, if `G` has an `A`-generator then the order of `A` is the rank of `G`. -/
-theorem IsAGenerator.card_eq_finrank [Nontrivial R] (h : IsAGenerator φ) :
+/-- Over a nontrivial ring, if a finite free `G` has an `A`-generator then the order of `A` is
+the rank of `G`. -/
+theorem IsAGenerator.card_eq_finrank [Module.Free R H] [Nontrivial R] (h : IsAGenerator φ) :
     Fintype.card A = Module.finrank R H :=
   IsFullSetOfSections.card_eq_finrank h
 
-/-- An `A`-generator remains one after an arbitrary base change `R → T`. -/
+variable [Module.Flat R H]
+
+/-- An `A`-generator of a finite flat algebra remains one after an arbitrary base change
+`R → T`. -/
 theorem IsAGenerator.baseChange (h : IsAGenerator φ) (T : Type w) [CommRing T] [Algebra R T] :
     IsAGenerator ((AlgHom.pointsBaseChange T).comp φ) := by
   simpa [isAGenerator_iff, AlgHom.ofConv_pointsBaseChange] using
     IsFullSetOfSections.baseChange h T
 
-/-- Being an `A`-generator descends along an injective ring map `R → T`, in particular along a
-faithfully flat one. -/
+/-- Being an `A`-generator of a finite flat algebra descends along an injective ring map
+`R → T`, in particular along a faithfully flat one. -/
 theorem IsAGenerator.of_baseChange {T : Type w} [CommRing T] [Algebra R T]
     (hT : Function.Injective (algebraMap R T))
     (h : IsAGenerator ((AlgHom.pointsBaseChange T).comp φ)) : IsAGenerator φ :=
@@ -134,9 +140,10 @@ variable {R : Type u} {H₁ H₂ : Type*} [CommRing R] [CommRing H₁] [CommRing
   [Module.Finite R H₂] {A₁ A₂ : Type*} [Monoid A₁] [Fintype A₁] [Monoid A₂] [Fintype A₂]
   {φ₁ : A₁ →* WithConv (H₁ →ₐ[R] R)} {φ₂ : A₂ →* WithConv (H₂ →ₐ[R] R)}
 
-/-- **Products of generators.** If `φ₁` is an `A₁`-generator of `G₁ = Spec H₁` and `φ₂` is an
-`A₂`-generator of `G₂ = Spec H₂`, then `(a₁, a₂) ↦ (φ₁ a₁, φ₂ a₂)` is an `A₁ × A₂`-generator of
-the product `G₁ × G₂ = Spec (H₁ ⊗[R] H₂)`. -/
+/-- **Products of generators.** For finite free `G₁ = Spec H₁`, `G₂ = Spec H₂`, if `φ₁` is an
+`A₁`-generator of `G₁` and `φ₂` is an `A₂`-generator of `G₂`, then
+`(a₁, a₂) ↦ (φ₁ a₁, φ₂ a₂)` is an `A₁ × A₂`-generator of the product
+`G₁ × G₂ = Spec (H₁ ⊗[R] H₂)`. -/
 theorem IsAGenerator.prodMap (h₁ : IsAGenerator φ₁) (h₂ : IsAGenerator φ₂) :
     IsAGenerator ((AffineGroup.Product.pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂)
       (A := R)).symm.toMonoidHom.comp (φ₁.prodMap φ₂)) := by

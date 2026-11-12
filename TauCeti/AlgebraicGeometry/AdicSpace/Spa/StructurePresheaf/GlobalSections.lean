@@ -147,31 +147,33 @@ private theorem isIso_toCompletionLocObjHom_one :
     IsIso (Presentation.trivial P).toCompletionLocObjHom := by
   -- The projection equations identify the presentation for the denominator-one API.
   rw [show Presentation.trivial P =
-    ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩ from by ext <;> simp]
+    ⟨{1}, 1, hasDenominatorPower_denom_one P ({1} : Finset A) _⟩ from by ext <;> simp]
   have hpb : ∀ t ∈ ({1} : Finset A), IsPowerBounded t := fun t ht ↦ by
     rw [Finset.mem_singleton.mp ht]
     exact isPowerBounded_one
-  let _ := locUniformSpace P {1} 1 (Localization.Away (1 : A))
-    (hasDenominatorPower_denom_one P {1} _)
-  let _ := isUniformAddGroup_locUniformSpace P {1} 1 (Localization.Away (1 : A))
-    (hasDenominatorPower_denom_one P {1} _)
-  let _ := isTopologicalRing_locUniformSpace P {1} 1 (Localization.Away (1 : A))
-    (hasDenominatorPower_denom_one P {1} _)
-  let r := toCompletionLocEquivDenomOne P {1} hpb (Localization.Away (1 : A))
+  let _ := locUniformSpace P ({1} : Finset A) 1 (Localization.Away (1 : A))
+    (hasDenominatorPower_denom_one P ({1} : Finset A) _)
+  let _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) 1 (Localization.Away (1 : A))
+    (hasDenominatorPower_denom_one P ({1} : Finset A) _)
+  let _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) 1 (Localization.Away (1 : A))
+    (hasDenominatorPower_denom_one P ({1} : Finset A) _)
+  let r := toCompletionLocEquivDenomOne P ({1} : Finset A) hpb (Localization.Away (1 : A))
   let F : TopCommRingCat.of A ⟶
       TopCommRingCat.of (UniformSpace.Completion (Localization.Away (1 : A))) :=
-    ⟨_, continuous_toCompletionLoc P {1} 1 _ (hasDenominatorPower_denom_one P {1} _)⟩
+    ⟨_, continuous_toCompletionLoc P ({1} : Finset A) 1 _
+      (hasDenominatorPower_denom_one P ({1} : Finset A) _)⟩
   let G : TopCommRingCat.of (UniformSpace.Completion (Localization.Away (1 : A))) ⟶
       TopCommRingCat.of A :=
-    ⟨r.symm.toRingHom, continuous_toCompletionLocEquivDenomOne_symm P {1} hpb _⟩
+    ⟨r.symm.toRingHom, continuous_toCompletionLocEquivDenomOne_symm P ({1} : Finset A) hpb _⟩
   have hFG : F ≫ G = 𝟙 _ := Subtype.ext <| RingHom.ext fun x ↦
-    (congrArg r.symm (toCompletionLocEquivDenomOne_apply P {1} hpb _ x).symm).trans
+    (congrArg r.symm (toCompletionLocEquivDenomOne_apply P ({1} : Finset A) hpb _ x).symm).trans
       (r.symm_apply_apply x)
   have hGF : G ≫ F = 𝟙 _ := Subtype.ext <| RingHom.ext fun x ↦
-    (toCompletionLocEquivDenomOne_apply P {1} hpb _ (r.symm x)).symm.trans
+    (toCompletionLocEquivDenomOne_apply P ({1} : Finset A) hpb _ (r.symm x)).symm.trans
       (r.apply_symm_apply x)
   refine ⟨ObjectProperty.homMk
-    (eqToHom (completionLocObj_obj P {1} 1 _ (hasDenominatorPower_denom_one P {1} _)) ≫ G ≫
+    (eqToHom (completionLocObj_obj P ({1} : Finset A) 1 _
+      (hasDenominatorPower_denom_one P ({1} : Finset A) _)) ≫ G ≫
       eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm), ?_, ?_⟩ <;>
     apply InducedCategory.hom_ext
   -- by `Presentation.toCompletionLocObjHom_hom`, the underlying morphism of the structure

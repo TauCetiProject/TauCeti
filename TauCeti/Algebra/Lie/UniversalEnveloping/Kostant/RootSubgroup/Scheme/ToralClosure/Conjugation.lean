@@ -143,7 +143,7 @@ theorem comapOfSurjective_conjCoordinateIso_inv_le_kostantToralDefiningIdeal
       toConv (AlgHom.id ℤ _)
     let f : WithConv (GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
         MonoidAlgebra ℤ (SplitTorus.characterGroup κ)) :=
-      (CommHopfAlgCat.mapPointsFunctor t).app _ p
+      (CommHopfAlgCat.Hom.mapPointsFunctor t).app _ p
     have hmatrix : GeneralLinear.pointsMulEquiv n f =
         kostantTorusMatrix M b wt (SplitTorus.pointsMulEquiv p) := by
       rw [kostantTorusMatrix_apply]
@@ -151,7 +151,10 @@ theorem comapOfSurjective_conjCoordinateIso_inv_le_kostantToralDefiningIdeal
     have hzero := ofConv_conjCoordinateIso_hom_eq_zero J P _ f
       (hmatrix ▸ htorus _ _) (HopfIdeal.mem_comapOfSurjective.mp hy)
     rw [hc] at hzero
-    exact hzero
+    dsimp only [f] at hzero
+    erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at hzero
+    simpa only [p, ofConv_toConv, AlgHom.id_apply, RingHom.mem_ker,
+      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, BialgHom.coe_toAlgHom] using hzero
 
 /-- The coordinate morphism from the quotient cut out by `J` to the toral-closure quotient,
 obtained by first transporting along conjugation by `P` and then applying the quotient map induced

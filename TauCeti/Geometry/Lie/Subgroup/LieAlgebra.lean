@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Exponential.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 public import TauCeti.Geometry.Lie.Exponential.Smoothness
 public import TauCeti.Geometry.Lie.Exponential.Trotter
+public import Mathlib.Topology.Connected.TotallyDisconnected
 -- Non-public: the slope characterisation of a derivative and the module description of a slope
 -- are used only inside proofs, and no statement below mentions `slope`.
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -26,6 +27,11 @@ subalgebra of `𝔤` they generate, defined for every subgroup, and this file pr
 **closed** `K` the generating set is already a Lie subalgebra, so that the generation is inert and
 membership is exactly the defining condition
 (`TauCeti.Lie.mem_lieSubalgebraOfSubgroup`).
+
+For a totally disconnected subgroup, closed or not, the canonical Lie algebra is zero.
+Exponential curves in the subgroup are constant by connectedness, and their initial velocities
+vanish. The same criterion is used for countable subgroups and for the discrete direction of
+the closed-subgroup theorem.
 
 Addition and the bracket produce the new element as a *limit* of elements of `K`, each using a
 different piece of the Layer 0/1 machinery; scalars involve no limit at all:
@@ -68,22 +74,32 @@ target — the closed-subgroup theorem, promoting `K` to an embedded Lie subgrou
 
 ## Main results
 
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_eq_bot_of_isTotallyDisconnected`: a totally disconnected
+  subgroup, closed or not, has zero Lie algebra.
+
 * `TauCeti.Lie.lieExp_smul_add_mem`, `TauCeti.Lie.lieExp_smul_smul_mem` and
   `TauCeti.Lie.lieExp_smul_lie_mem`: the three closure properties, stated on the defining
   condition itself so that they can be used without producing the bundled subalgebra.
 * `TauCeti.Lie.hasDerivAt_Ad_lieExp_smul_apply_zero`: the adjoint orbit `s ↦ Ad (lieExp (s • X)) Y`
   has derivative `⁅X, Y⁆` at the origin. This is the derivation-level infinitesimal adjoint, the
   analytic input to bracket closure.
+* `TauCeti.Lie.finiteDimensional_lieSubalgebraOfSubgroup`: finite-dimensional subgroup models.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_le_iff`: the universal property of the generated subalgebra,
   for an arbitrary subgroup.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_induction`: induction on the generated subalgebra, for an
+  arbitrary subgroup.
 * `TauCeti.Lie.mem_lieSubalgebraOfSubgroup` and `TauCeti.Lie.coe_lieSubalgebraOfSubgroup`: for a
   closed subgroup, the Lie algebra of `K` is exactly `𝔨`.
 * `TauCeti.Lie.isClosed_setOf_forall_lieExp_smul_mem`: the candidate Lie algebra is a closed
   subset of `𝔤`.
 * `TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`: the Lie algebra of `K` is invariant under the
-  adjoint action of `K`.
+  adjoint action of the normalizer of `K`.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_le_comap_Ad_sub_id`: for `g` in the normalizer of `K`,
+  `Ad g - 1` maps `Lie(K)` into itself, in the form that `Submodule.mapQ` consumes.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_inf`: for closed subgroups, the Lie algebra of an
   intersection is the intersection of the Lie algebras.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_map_conj`: the Lie algebra of a conjugate of a subgroup is
+  the adjoint image of its Lie algebra.
 
 ## References
 
@@ -108,7 +124,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-! ### The three closure properties -/
@@ -152,16 +168,16 @@ theorem isClosed_setOf_forall_lieExp_smul_mem {K : Subgroup G} (hK : IsClosed (K
   refine isClosed_iInter fun t => hK.preimage ?_
   exact (contMDiff_lieExp (I := I) (G := G)).continuous.comp (continuous_const_smul t)
 
-/-- The adjoint action of an element of `K` preserves the defining condition: conjugating the
-one-parameter subgroup of `Y` by `g ∈ K` is the one-parameter subgroup of `Ad g Y`, and stays
-inside `K`. -/
-theorem lieExp_smul_Ad_mem {K : Subgroup G} {g : G} (hg : g ∈ K)
+/-- The adjoint action of an element of the normalizer of `K` preserves the defining condition:
+conjugating the one-parameter subgroup of `Y` by `g ∈ N(K)` is the one-parameter subgroup of
+`Ad g Y`, and stays inside `K`. -/
+theorem lieExp_smul_Ad_mem {K : Subgroup G} {g : G} (hg : g ∈ Subgroup.normalizer (K : Set G))
     {Y : LeftInvariantDerivation I G} (hY : ∀ t : ℝ, lieExp (I := I) (t • Y) ∈ K) (t : ℝ) :
     lieExp (I := I) (t • Ad (I := I) g Y) ∈ K := by
   have hconj : lieExp (I := I) (t • Ad (I := I) g Y) = g * lieExp (I := I) (t • Y) * g⁻¹ := by
     rw [← map_smul, conj_lieExp (I := I) g (t • Y)]
   rw [hconj]
-  exact K.mul_mem (K.mul_mem hg (hY t)) (K.inv_mem hg)
+  exact (Subgroup.mem_normalizer_iff.mp hg _).mp (hY t)
 
 /-! ### The derivative of the adjoint orbit -/
 
@@ -246,7 +262,8 @@ theorem lieExp_smul_lie_mem {K : Subgroup G} (hK : IsClosed (K : Set G))
   -- The adjoint orbit of `Y` along the one-parameter subgroup of `X`.
   set φ : ℝ → LeftInvariantDerivation I G := fun s => Ad (I := I) (lieExp (I := I) (s • X)) Y
     with hφ
-  have hφmem : ∀ s : ℝ, φ s ∈ S := fun s => lieExp_smul_Ad_mem (hX s) hY
+  have hφmem : ∀ s : ℝ, φ s ∈ S := fun s =>
+    lieExp_smul_Ad_mem (Subgroup.le_normalizer (hX s)) hY
   have hφzero : φ 0 = Y := by simp [hφ]
   have hderiv : HasDerivAt φ ⁅X, Y⁆ 0 := hasDerivAt_Ad_lieExp_smul_apply_zero X Y
   -- A difference quotient of a curve in `S` stays in `S`, and `S` is closed.
@@ -273,6 +290,13 @@ def lieSubalgebraOfSubgroup (K : Subgroup G) : LieSubalgebra ℝ (LeftInvariantD
   LieSubalgebra.lieSpan ℝ (LeftInvariantDerivation I G)
     {X : LeftInvariantDerivation I G | ∀ t : ℝ, lieExp (I := I) (t • X) ∈ K}
 
+/-- The model given by the Lie algebra of a subgroup is finite-dimensional. -/
+instance finiteDimensional_lieSubalgebraOfSubgroup (K : Subgroup G) :
+    FiniteDimensional ℝ (lieSubalgebraOfSubgroup (I := I) K).toSubmodule := by
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  exact FiniteDimensional.finiteDimensional_submodule _
+
 /-- A derivation whose one-parameter subgroup lies in `K` lies in the Lie algebra of `K`. This
 direction needs no hypothesis on `K`. -/
 theorem mem_lieSubalgebraOfSubgroup_of_forall {K : Subgroup G} {X : LeftInvariantDerivation I G}
@@ -288,6 +312,61 @@ theorem lieSubalgebraOfSubgroup_le_iff {K : Subgroup G}
     lieSubalgebraOfSubgroup (I := I) K ≤ L ↔
       ∀ X : LeftInvariantDerivation I G, (∀ t : ℝ, lieExp (I := I) (t • X) ∈ K) → X ∈ L :=
   LieSubalgebra.lieSpan_le
+
+/-- The canonical Lie algebra of a totally disconnected subgroup is zero, without closedness. -/
+theorem lieSubalgebraOfSubgroup_eq_bot_of_isTotallyDisconnected {K : Subgroup G}
+    (hK : IsTotallyDisconnected (K : Set G)) :
+    TauCeti.Lie.lieSubalgebraOfSubgroup (I := I) K = ⊥ := by
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  apply le_antisymm _ bot_le
+  apply TauCeti.Lie.lieSubalgebraOfSubgroup_le_iff.mpr
+  intro X hX
+  rw [LieSubalgebra.mem_bot]
+  let eG := leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint
+  let γ : ℝ → G := fun t ↦ mulInvariantExp (I := I) (G := G) (t • eG X)
+  have hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ := contMDiff_mulInvariantExp_smul (eG X)
+  have hγexp (t : ℝ) : γ t = lieExp (I := I) (t • X) := by
+    rw [lieExp_eq_mulInvariantExp]
+    simp only [map_smul, γ, eG]
+  have hr : Set.range γ ⊆ K := by
+    rintro _ ⟨t, rfl⟩
+    exact hγexp t ▸ hX t
+  have hs : (Set.range γ).Subsingleton :=
+    hK (Set.range γ) hr (isPreconnected_range hγ.continuous)
+  have hγ0 : γ 0 = 1 := by simp [γ]
+  have hconst : γ = fun _ ↦ (1 : G) :=
+    funext fun t ↦ (hs (Set.mem_range_self t) (Set.mem_range_self 0)).trans hγ0
+  have hd : mfderiv 𝓘(ℝ, ℝ) I γ 0 = (1 : ℝ →L[ℝ] ℝ).smulRight (eG X) :=
+    (hasMFDerivAt_mulInvariantExp_smul_zero (I := I) (G := G) (eG X)).mfderiv
+  rw [hconst, mfderiv_const] at hd
+  -- Normalize the tangent-space zero map so zero_apply matches its continuous-linear-map instance.
+  change (0 : ℝ →L[ℝ] GroupLieAlgebra I G) =
+    (1 : ℝ →L[ℝ] ℝ).smulRight (eG X) at hd
+  have hv := congrArg (fun F : ℝ →L[ℝ] GroupLieAlgebra I G ↦ F (1 : ℝ)) hd
+  have hx0 : eG X = 0 := by
+    simpa only [zero_apply, ContinuousLinearMap.smulRight_apply,
+      one_apply_eq_self, one_smul] using hv.symm
+  exact eG.injective (hx0.trans eG.map_zero.symm)
+
+
+/-- **Induction on the Lie algebra of a subgroup.** A property that holds for every derivation
+whose one-parameter subgroup lies in `K` and for `0`, and is preserved by addition, scalar
+multiplication and the bracket, holds on all of `Lie(K)`. This is `LieSubalgebra.lieSpan_induction`
+for the generating set, exposed across the module boundary, where the definition does not
+unfold. -/
+@[elab_as_elim]
+theorem lieSubalgebraOfSubgroup_induction {K : Subgroup G}
+    {p : (X : LeftInvariantDerivation I G) → X ∈ lieSubalgebraOfSubgroup (I := I) K → Prop}
+    (mem : ∀ X (h : ∀ t : ℝ, lieExp (I := I) (t • X) ∈ K),
+      p X (mem_lieSubalgebraOfSubgroup_of_forall h))
+    (zero : p 0 (LieSubalgebra.zero_mem _))
+    (add : ∀ X Y hX hY, p X hX → p Y hY → p (X + Y) (LieSubalgebra.add_mem _ ‹_› ‹_›))
+    (smul : ∀ (c : ℝ) X hX, p X hX → p (c • X) (LieSubalgebra.smul_mem _ _ ‹_›))
+    (lie : ∀ X Y hX hY, p X hX → p Y hY → p ⁅X, Y⁆ (LieSubalgebra.lie_mem _ ‹_› ‹_›))
+    {X : LeftInvariantDerivation I G} (hX : X ∈ lieSubalgebraOfSubgroup (I := I) K) : p X hX :=
+  LieSubalgebra.lieSpan_induction (R := ℝ) (L := LeftInvariantDerivation I G) (p := p) mem zero add
+    smul lie hX
 
 /-- **The Lie algebra of a closed subgroup is exactly `𝔨`**: the three closure properties make the
 defining condition a Lie subalgebra, so generating it adds nothing. -/
@@ -363,19 +442,48 @@ theorem lieSubalgebraOfSubgroup_top :
   eq_top_iff.mpr fun _ _ =>
     mem_lieSubalgebraOfSubgroup_of_forall fun _ => Subgroup.mem_top _
 
-/-- **The Lie algebra of `K` is invariant under the adjoint action of `K`.** Conjugating by `g ∈ K`
-carries the one-parameter subgroup of `X` to the one of `Ad g X`, which therefore also stays in `K`.
-This is the bundled form of `lieExp_smul_Ad_mem`, the statement that makes the adjoint orbit of the
-bracket proof run inside `𝔨`. No hypothesis on `K` is needed: `Ad g` is an automorphism of `𝔤`
-preserving the generating set, hence preserves the subalgebra it generates. Invariance under `Ad g`
-for `g` outside `K` — which for a normal `K` would say that `𝔨` is an ideal of `𝔤` — is not
-asserted here. -/
+/-- **The Lie algebra of `K` is invariant under the adjoint action of the normalizer of `K`.**
+Conjugating by `g ∈ N(K)` carries the one-parameter subgroup of `X` to the one of `Ad g X`, which
+therefore also stays in `K`. This is the bundled form of `lieExp_smul_Ad_mem`, the statement that
+makes the adjoint orbit of the bracket proof run inside `𝔨`. No hypothesis on `K` is needed:
+`Ad g` is an automorphism of `𝔤` preserving the generating set, hence preserves the subalgebra it
+generates. -/
 theorem Ad_mem_lieSubalgebraOfSubgroup {K : Subgroup G} {g : G}
-    (hg : g ∈ K) {X : LeftInvariantDerivation I G}
+    (hg : g ∈ Subgroup.normalizer (K : Set G)) {X : LeftInvariantDerivation I G}
     (hX : X ∈ lieSubalgebraOfSubgroup (I := I) K) :
     Ad (I := I) g X ∈ lieSubalgebraOfSubgroup (I := I) K :=
   lieSubalgebraOfSubgroup_le_iff
       (L := (lieSubalgebraOfSubgroup (I := I) K).comap (Ad (I := I) g).toLieHom)
       |>.mpr (fun _ hY => mem_lieSubalgebraOfSubgroup_of_forall (lieExp_smul_Ad_mem hg hY)) hX
+
+/-- **`Ad g - 1` preserves the Lie algebra of `K` for `g ∈ N(K)`**, in the form that lets it
+descend to the quotient `𝔤 ⧸ Lie(K)` through `Submodule.mapQ`. -/
+theorem lieSubalgebraOfSubgroup_le_comap_Ad_sub_id {K : Subgroup G} {g : G}
+    (hg : g ∈ Subgroup.normalizer (K : Set G)) :
+    (lieSubalgebraOfSubgroup (I := I) K).toSubmodule ≤
+      Submodule.comap ((Ad (I := I) g).toLinearEquiv.toLinearMap - LinearMap.id)
+        (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
+  fun _ hX => sub_mem (Ad_mem_lieSubalgebraOfSubgroup hg hX) hX
+
+/-- **The Lie algebra of a conjugate of a subgroup** is the adjoint image of its Lie algebra. -/
+theorem lieSubalgebraOfSubgroup_map_conj {K : Subgroup G} (g : G) :
+    lieSubalgebraOfSubgroup (I := I) (K.map (MulAut.conj g).toMonoidHom) =
+      (lieSubalgebraOfSubgroup (I := I) K).map (Ad (I := I) g : _ →ₗ⁅ℝ⁆ _) := by
+  rw [lieSubalgebraOfSubgroup, lieSubalgebraOfSubgroup, LieSubalgebra.map_lieSpan]
+  congr 1
+  ext X
+  constructor
+  · intro h
+    refine ⟨Ad (I := I) g⁻¹ X, fun t ↦ ?_, by simp⟩
+    have hmem := Subgroup.mem_map_equiv.mp (h t)
+    rw [MulAut.conj_symm_apply] at hmem
+    have hconj : g⁻¹ * lieExp (I := I) (t • X) * g = lieExp (Ad (I := I) g⁻¹ (t • X)) := by
+      simpa only [inv_inv] using conj_lieExp (I := I) g⁻¹ (t • X)
+    rw [← map_smul, ← hconj]
+    exact hmem
+  · rintro ⟨Y, hY, rfl⟩ t
+    refine ⟨lieExp (I := I) (t • Y), hY t, ?_⟩
+    rw [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, conj_lieExp, map_smul,
+      LieEquiv.coe_toLieHom]
 
 end TauCeti.Lie

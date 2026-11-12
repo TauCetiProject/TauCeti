@@ -8,6 +8,11 @@ module
 public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 public import TauCeti.FieldTheory.Kummer.Cyclic
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Kummer.Basic
+import TauCeti.Algebra.Group.Pow
+import TauCeti.FieldTheory.AlgHom
+import TauCeti.FieldTheory.Galois.Cyclic
+import TauCeti.RingTheory.Norm.Complex
+import TauCeti.RingTheory.Norm.Equiv
 
 /-!
 # Cup products of Kummer classes and cyclic classes
@@ -24,9 +29,13 @@ of the cyclic class `TauCeti.cyclicClass` of `a` at `g`
 (`kummerBrauerClass_eq_neg_relBrInfl_cyclicClass`), which is
 classically the class of the cyclic algebra `(L/K, g, a)`. Since inflation into `Br K` is
 injective (`relBrInfl_injective`) and the cyclic class of `a` vanishes exactly when `a` is a norm
-from `L` (`TauCeti.cyclicClass_eq_zero_iff`), the local symbol `(a, b)` vanishes exactly when `a`
-is a norm from `K(ⁿ√b)` (`localSymbol_eq_zero_iff_mem_normGroup`). Nothing here uses local class
-field theory, and `K` need not be a local field.
+from `L` (`TauCeti.cyclicClass_eq_zero_iff`), the cup product `(a) ∪ (b)`, and with it the local
+symbol `(a, b)`, vanishes exactly when `a` is a norm from `K(ⁿ√b)`
+(`cup_kummerClass_eq_zero_iff_mem_normGroup`, `localSymbol_eq_zero_iff_mem_normGroup`). Nothing
+here uses local class field theory, and `K` need not be a local field. For a field isomorphic to
+`ℝ`, such as the completion of a field at a real place, `K(√b)` is `ℂ` when `b < 0`, whose norms are
+the positive reals, so the mod-two cup product `(a) ∪ (b)` vanishes exactly when `a > 0` or `b > 0`
+(`cup_kummerClass_eq_zero_iff_of_ringEquiv_real`).
 
 The comparison is made on explicit cocycles. If `αⁿ = a` and `κ_a(σ) = σ α / α`, and
 `χ(σ) ∈ [0, n)` is the exponent of `σ (ⁿ√b) / ⁿ√b` with respect to `ζ`, then the cup cocycle is
@@ -42,8 +51,11 @@ cocycle computation `TauCeti.TwoCocycle.inflateClass_quadratic_eq_h2MuToUnits_cu
 * `TauCeti.ClassFieldTheory.kummerBrauerClass_eq_neg_relBrInfl_cyclicClass`:
   the image of `(a) ∪ (b)` in `Br K` is
   minus the inflation of the cyclic class of `a`.
-* `TauCeti.ClassFieldTheory.localSymbol_eq_zero_iff_mem_normGroup`: the local symbol `(a, b)`
-  along `kummerCupPairing ζ` vanishes exactly when `a` is a norm from `K(ⁿ√b)`.
+* `TauCeti.ClassFieldTheory.cup_kummerClass_eq_zero_iff_mem_normGroup`,
+  `TauCeti.ClassFieldTheory.localSymbol_eq_zero_iff_mem_normGroup`: the cup product and the local
+  symbol `(a, b)` along `kummerCupPairing ζ` vanish exactly when `a` is a norm from `K(ⁿ√b)`.
+* `TauCeti.ClassFieldTheory.cup_kummerClass_eq_zero_iff_of_ringEquiv_real`: over a field
+  isomorphic to `ℝ`, the mod-two cup product `(a) ∪ (b)` vanishes exactly when `a > 0` or `b > 0`.
 
 ## References
 
@@ -130,36 +142,26 @@ private theorem kummerLog_kummerCocycle_eq {L : Type} [Field L] [Algebra K L] [N
 
 end Log
 
-/-- **Carries under scaling.** For `n = m d` with `m > 0` and `p, q < d`, the carry of
-`m p + m q` modulo `n` is the carry of `p + q` modulo `d`. -/
-private theorem add_eq_mod_add_carry {m d n p q : ℕ} (hmd : m * d = n) (hm : 0 < m)
-    (hp : p < d) (hq : q < d) :
-    m * p + m * q = (m * p + m * q) % n + n * if d ≤ p + q then 1 else 0 := by
-  have hlt : m * p + m * q < 2 * n := calc
-    m * p + m * q = m * (p + q) := (mul_add _ _ _).symm
-    _ < m * (2 * d) := Nat.mul_lt_mul_of_pos_left (by omega) hm
-    _ = 2 * n := by rw [← hmd]; ring
-  have hle (h : d ≤ p + q) : n ≤ m * p + m * q := calc
-    n = m * d := hmd.symm
-    _ ≤ m * (p + q) := Nat.mul_le_mul_left m h
-    _ = m * p + m * q := mul_add _ _ _
-  have hlt' (h : p + q < d) : m * p + m * q < n := calc
-    m * p + m * q = m * (p + q) := (mul_add _ _ _).symm
-    _ < m * d := Nat.mul_lt_mul_of_pos_left h hm
-    _ = n := hmd
-  generalize m * p + m * q = X at *
-  split_ifs with h
-  · rw [Nat.mod_eq_sub_mod (hle h), Nat.mod_eq_of_lt (by omega)]
-    omega
-  · rw [Nat.mod_eq_of_lt (hlt' (not_le.1 h))]
-    omega
-
 /-! ### The cup product of Kummer classes as a cyclic class -/
 
 section Cyclic
 
 variable [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hn : IsUnit (n : K))
   {L : Type} [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
+
+omit [FiniteDimensional K L] [IsGalois K L] in
+/-- The value of a cocycle with carry values, read in `Kˢ` through the embedding of units. -/
+private lemma _root_.AlgHom.toMul_embeddedUnitsEquivInvariants_eq {g : L ≃ₐ[K] L} {a : Kˣ}
+    (ι : L →ₐ[K] SeparableClosure K)
+    (z : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ))
+    {p q : ℕ} (hzpq : Additive.toMul (z (g ^ p, g ^ q)) =
+      if finrank K L ≤ p + q then Units.map (algebraMap K L : K →* L) a else 1) :
+    ((Additive.toMul (embeddedUnitsEquivInvariants K L ι
+      (Rep.toAdditive (z (g ^ p, g ^ q))) : UnitsCoeff K) : (SeparableClosure K)ˣ) :
+        SeparableClosure K) = if finrank K L ≤ p + q then algebraMap K _ a else 1 := by
+  rw [embeddedUnitsEquivInvariants_apply, toMul_coe_embeddedUnitsInvariants]
+  refine (congrArg (fun u : Lˣ ↦ ι (u : L)) hzpq).trans ?_
+  split_ifs <;> simp
 
 /-- **The cup product of two Kummer classes is a cyclic class.** Let `ζ ∈ K` be a primitive
 `n`-th root of unity, `L/K` a Galois extension of degree `d ∣ n` whose Galois group is generated
@@ -183,13 +185,9 @@ theorem kummerBrauerClass_eq_neg_relBrInfl_cyclicClass (a b : Kˣ) {s : L}
     rw [orderOf_eq_card_of_forall_mem_zpowers hg, IsGalois.card_aut_eq_finrank]
   -- choose `n`-th roots `α` of `a` and `β = ι s` of `b` in `Kˢ`
   obtain ⟨α, hα⟩ := exists_pow_eq_units_map hn a
-  have hs0 : ι s ≠ 0 := (map_ne_zero_iff _ ι.injective).2 <| by
-    rintro rfl
-    rw [zero_pow (NeZero.ne n), eq_comm, map_eq_zero] at hs
-    exact b.ne_zero hs
-  set β : (SeparableClosure K)ˣ := Units.mk0 (ι s) hs0
-  have hβ : β ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom b := Units.ext <| by
-    simp [β, ← map_pow, hs]
+  have hαn : (α : SeparableClosure K) ^ n = algebraMap K _ a := by
+    simpa using congrArg Units.val hα
+  obtain ⟨β, hβs, hβ⟩ := ι.exists_unit_pow_eq_map b hs
   -- represent both sides by explicit cocycles `W` and `relBrCocycle K L ι z` on `G_K`; it
   -- remains to show that `W + relBrCocycle K L ι z` is the coboundary of `σ ↦ α ^ χ(σ)`
   obtain ⟨W, hW, hWv⟩ := exists_h2MuToBr_cup_kummerClass (kummerCupPairing ζ hζ) hn hα hβ
@@ -204,16 +202,11 @@ theorem kummerBrauerClass_eq_neg_relBrInfl_cyclicClass (a b : Kˣ) {s : L}
       kummerLog hζ x • (Additive.ofMul α : UnitsCoeff K))).comp hβc.1, fun σ τ ↦ ?_⟩
   -- the restrictions of `σ` and `τ` to `L` are `g ^ p` and `g ^ q` with `p, q < d`, so that
   -- `χ(σ) = m p`, `χ(τ) = m q` and `χ(σ τ) = (m p + m q) % n`
-  have hexp (σ : AbsoluteGaloisGroup K) : ∃ p < d, ι.restrictNormalHom σ = g ^ p := by
-    classical
-    obtain ⟨p, hp, hpσ⟩ := Finset.mem_image.1
-      (mem_zpowers_iff_mem_range_orderOf.1 (hg (ι.restrictNormalHom σ)))
-    exact ⟨p, hord ▸ Finset.mem_range.1 hp, hpσ.symm⟩
-  obtain ⟨p, hp, hpσ⟩ := hexp σ
-  obtain ⟨q, hq, hqτ⟩ := hexp τ
-  have hχσ := kummerLog_kummerCocycle_eq hζ hgs ι rfl hβ hpσ
+  obtain ⟨p, hp, hpσ⟩ := exists_lt_finrank_eq_pow hg (ι.restrictNormalHom σ)
+  obtain ⟨q, hq, hqτ⟩ := exists_lt_finrank_eq_pow hg (ι.restrictNormalHom τ)
+  have hχσ := kummerLog_kummerCocycle_eq hζ hgs ι hβs hβ hpσ
     (hmd ▸ Nat.mul_lt_mul_of_pos_left hp hm0)
-  have hχτ := kummerLog_kummerCocycle_eq hζ hgs ι rfl hβ hqτ
+  have hχτ := kummerLog_kummerCocycle_eq hζ hgs ι hβs hβ hqτ
     (hmd ▸ Nat.mul_lt_mul_of_pos_left hq hm0)
   have hχστ : kummerLog hζ (kummerCocycle hβ (σ * τ)) = (m * p + m * q) % n := by
     rw [← hχσ, ← hχτ, ← kummerLog_add, hβc.2 σ τ, smul_kummerCoeff_eq_self hζ, add_comm]
@@ -222,24 +215,12 @@ theorem kummerBrauerClass_eq_neg_relBrInfl_cyclicClass (a b : Kˣ) {s : L}
   rw [hpσ, hqτ] at hR
   have hzpq := hzv p q (hord ▸ hp) (hord ▸ hq)
   rw [hord] at hzpq
-  have hRv : ((Additive.toMul (embeddedUnitsEquivInvariants K L ι
-      (Rep.toAdditive (z (g ^ p, g ^ q))) : UnitsCoeff K) : (SeparableClosure K)ˣ) :
-        SeparableClosure K) = if d ≤ p + q then algebraMap K _ a else 1 := by
-    rw [embeddedUnitsEquivInvariants_apply, toMul_coe_embeddedUnitsInvariants]
-    refine (congrArg (fun u : Lˣ ↦ ι (u : L)) hzpq).trans ?_
-    split_ifs <;> simp
-  have hσα := coe_toMul_eq_pow_kummerLog hζ (kummerCocycle hα σ)
-  rw [toMul_kummerCocycle, Units.val_mul, AlgEquiv.smul_units_def, Units.coe_map,
-    Units.val_inv_eq_inv_val, mul_inv_eq_iff_eq_mul₀ α.ne_zero] at hσα
+  have hRv := ι.toMul_embeddedUnitsEquivInvariants_eq z hzpq
+  have hσα := apply_eq_pow_kummerLog_mul hζ hα σ
   have hτβ := coe_toMul_eq_pow_kummerLog hζ (kummerCocycle hβ τ)
   rw [hχτ] at hτβ
   -- `α ^ (m p) α ^ (m q) = α ^ χ(σ τ) a ^ c`, with `c` the carry of `p + q` modulo `d`
-  have key : (α : SeparableClosure K) ^ (m * p) * α ^ (m * q) =
-      α ^ ((m * p + m * q) % n) * if d ≤ p + q then algebraMap K _ a else 1 := by
-    have hαn : (α : SeparableClosure K) ^ n = algebraMap K _ a := by
-      simpa using congrArg Units.val hα
-    rw [← pow_add, add_eq_mod_add_carry hmd hm0 hp hq, pow_add, pow_mul, hαn]
-    split_ifs <;> simp
+  have key := pow_mul_mul_pow_mul_eq hαn hmd hp hq
   simp only [Pi.add_apply]
   rw [hWv, hR, kummerCoeffPairing_kummerCupPairing hζ, smul_kummerCoeff_eq_self hζ]
   beta_reduce
@@ -262,6 +243,21 @@ variable [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n)
   (tr : continuousCohomology 2 (muNRep n K) ≃+ ZMod n) (hn : IsUnit (n : K))
   {L : Type} [Field L] [Algebra K L] [FiniteDimensional K L]
 
+/-- **The cup–norm criterion.** Let `ζ ∈ K` be a primitive `n`-th root of unity, with `n`
+invertible in `K`, and let `L = K(s)` with `sⁿ = b`. Then the cup product `(a) ∪ (b)` of the
+Kummer classes along `kummerCupPairing ζ hζ` vanishes exactly when `a` is a norm from `L`. `K` need
+not be a local field. -/
+theorem cup_kummerClass_eq_zero_iff_mem_normGroup (a b : Kˣ) {s : L}
+    (hs : s ^ n = algebraMap K L b) (hgen : K⟮s⟯ = ⊤) :
+    (kummerCupPairing ζ hζ).cup 1 1 (kummerClass K hn a) (kummerClass K hn b) = 0 ↔
+      a ∈ normGroup K L := by
+  have := isGalois_of_pow_eq_of_adjoin_eq_top hζ hs hgen
+  obtain ⟨g, hg, hd, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ hs hgen
+  let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
+  rw [← map_eq_zero_iff _ (h2MuToBr_injective n K hn), ← kummerBrauerClass_def ζ hζ,
+    kummerBrauerClass_eq_neg_relBrInfl_cyclicClass hζ a b hs hg hd hgs ι, neg_eq_zero,
+    map_eq_zero_iff _ (relBrInfl_injective K L ι), cyclicClass_eq_zero_iff]
+
 /-- **The symbol–norm criterion.** Let `ζ ∈ K` be a primitive `n`-th root of unity, with `n`
 invertible in `K`, and let `L = K(s)` with `sⁿ = b`. Then the local symbol `(a, b)` along
 `kummerCupPairing ζ hζ` vanishes exactly when `a` is a norm from `L`. The identification
@@ -270,12 +266,48 @@ theorem localSymbol_eq_zero_iff_mem_normGroup (a b : Kˣ) {s : L}
     (hs : s ^ n = algebraMap K L b) (hgen : K⟮s⟯ = ⊤) :
     localSymbol (kummerCupPairing ζ hζ) tr (kummerClass K hn a) (kummerClass K hn b) = 0 ↔
       a ∈ normGroup K L := by
-  have := isGalois_of_pow_eq_of_adjoin_eq_top hζ b.ne_zero hs hgen
-  obtain ⟨g, hg, hd, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ b.ne_zero hs hgen
-  let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
-  rw [localSymbol_apply, AddEquiv.map_eq_zero_iff, ← map_eq_zero_iff _ (h2MuToBr_injective n K hn),
-    ← kummerBrauerClass_def ζ hζ,
-    kummerBrauerClass_eq_neg_relBrInfl_cyclicClass hζ a b hs hg hd hgs ι, neg_eq_zero,
-    map_eq_zero_iff _ (relBrInfl_injective K L ι), cyclicClass_eq_zero_iff]
+  rw [localSymbol_apply, AddEquiv.map_eq_zero_iff,
+    cup_kummerClass_eq_zero_iff_mem_normGroup hζ hn a b hs hgen]
+
+/-! ### Fields isomorphic to the reals -/
+
+/-- **The real quadratic symbol.** Let `K` be a field isomorphic to `ℝ` through `e`, such as the
+completion of a field at a real place. The cup product `(a) ∪ (b)` of the mod-two Kummer classes of
+`a, b ∈ Kˣ` along the pairing of `-1` vanishes exactly when `a` or `b` is positive. -/
+theorem cup_kummerClass_eq_zero_iff_of_ringEquiv_real (a b : Kˣ) (e : K ≃+* ℝ)
+    (hζ : IsPrimitiveRoot (-1 : K) 2) (hn : IsUnit ((2 : ℕ) : K)) :
+    (kummerCupPairing (-1) hζ).cup 1 1 (kummerClass K hn a) (kummerClass K hn b) = 0 ↔
+      0 < e a ∨ 0 < e b := by
+  by_cases hb : 0 < e b
+  · -- a positive `b` is a square, so its Kummer class vanishes
+    have hsq : b ∈ powerSubgroup Kˣ 2 := (mem_powerSubgroup_iff _).2
+      ⟨Units.mk0 (e.symm √(e b)) ((map_ne_zero e.symm).2 (Real.sqrt_pos.2 hb).ne'),
+        Units.ext <| e.injective <| by simp [Real.sq_sqrt hb.le]⟩
+    simp [(kummerClass_eq_zero_iff K hn).2 hsq, hb]
+  · -- for a negative `b`, the extension `K(√b)` is `ℂ` with `K` acting through `e`
+    have hb' : e b < 0 := lt_of_le_of_ne (not_lt.1 hb) (by simp)
+    let : Algebra K ℂ := (Complex.ofRealHom.comp (e : K →+* ℝ)).toAlgebra
+    have he : (algebraMap ℝ ℂ).comp (e : K →+* ℝ) =
+        ((RingEquiv.refl ℂ : ℂ ≃+* ℂ) : ℂ →+* ℂ).comp (algebraMap K ℂ) := rfl
+    have : Module.Finite K ℂ := .of_equiv_equiv e.symm (RingEquiv.refl ℂ) <| by
+      ext x
+      simp [RingHom.algebraMap_toAlgebra]
+    have hr : √(-e b) ≠ 0 := (Real.sqrt_pos.2 (neg_pos.2 hb')).ne'
+    set s : ℂ := √(-e b) * Complex.I
+    have hs : s ^ 2 = algebraMap K ℂ b := by
+      simp [s, RingHom.algebraMap_toAlgebra, mul_pow, ← Complex.ofReal_pow,
+        Real.sq_sqrt (neg_nonneg.2 hb'.le)]
+    have hgen : K⟮s⟯ = ⊤ := by
+      refine eq_top_iff.2 fun z _ ↦ ?_
+      have hz : z = algebraMap K ℂ (e.symm z.re) +
+          algebraMap K ℂ (e.symm (z.im / √(-e b))) * s := by
+        apply Complex.ext <;> simp [s, RingHom.algebraMap_toAlgebra, hr]
+      rw [hz]
+      exact add_mem (IntermediateField.algebraMap_mem _ _)
+        (mul_mem (IntermediateField.algebraMap_mem _ _) (mem_adjoin_simple_self K s))
+    rw [cup_kummerClass_eq_zero_iff_mem_normGroup hζ hn a b hs hgen,
+      e.normGroup_eq_comap_of_equiv_equiv (RingEquiv.refl ℂ) he, Subgroup.mem_comap,
+      normGroup_real_complex, Units.mem_posSubgroup]
+    simp [hb]
 
 end TauCeti.ClassFieldTheory

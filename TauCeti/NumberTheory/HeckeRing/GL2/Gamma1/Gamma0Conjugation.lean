@@ -92,17 +92,6 @@ namespace HeckeRing.GL2
 
 variable {N p : ℕ}
 
-/-- The matrix of `diag(1, p)` as the image of an integer matrix, the shape the integral-witness
-API consumes. Derived from `coe_natDiagGL_one`, which is where this matrix is stated, rather than
-from the rank-`n` `HeckeRing.GLn.natDiagGL_coe_eq_map_intCast`: either route works, and this one
-keeps a single source for the matrix of `diag(1, p)`. -/
-private lemma coe_natDiagGL_one_eq_map (hp : 0 < p) :
-    ((natDiagGL 2 ![1, p] : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ)
-      = (!![1, 0; 0, (p : ℤ)] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → ℚ) := by
-  rw [coe_natDiagGL_one hp]
-  ext i k
-  fin_cases i <;> fin_cases k <;> simp
-
 /-- The conjugate `g · diag(1, p) · g⁻¹` of the diagonal matrix by `g = !![a, b; c, e]`, for
 `g` of determinant one, written out. -/
 private def conjDiag (a b c e p : ℤ) : Matrix (Fin 2) (Fin 2) ℤ :=

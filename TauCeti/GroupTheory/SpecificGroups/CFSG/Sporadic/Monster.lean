@@ -52,7 +52,7 @@ first `p`, `q`, and `r` of `b₁ c₁ d₁ e₁ f₁`, `b₂ c₂ d₂ e₂ f₂
 Coxeter relations of the induced subdiagram of `Y₅₅₅`, and quotients it by the spider relation
 `(a b₁ c₁ a b₂ c₂ a b₃ c₃)¹⁰ = 1` displayed in the introduction on p. 412. At `(p,q,r) = (4,4,3)`
 those generators are `a`, `b₁ c₁ d₁ e₁`, `b₂ c₂ d₂ e₂`, and `b₃ c₃ d₃`, which is the twelve-node
-alphabet of `presentation.generatorNames`, and the induced subdiagram is the arm structure `edges`
+alphabet documented for `presentation`, and the induced subdiagram is the arm structure `edges`
 records: eleven edges, four along each of the first two arms and three along the third, so the
 simply laced `coxeterMatrix` built from them is the source's Coxeter data. `spiderRelator` is the
 displayed spider word letter for letter.
@@ -198,65 +198,33 @@ theorem relatorList_def : relatorList = coxeterRelators coxeterMatrix ++ adjoine
 
 Ivanov proves that `Y₄₄₃` is `M × 2` and that quotienting by the central element `f₃₁₂` gives `M`.
 No structural property of the resulting `PresentedGroup` is asserted here; this definition records
-only the cited generators and complete relator data. -/
+only the cited generators and complete relator data.
+
+Generator order (starting at index zero): `a`, `b1`, `c1`, `d1`, `e1`, `b2`, `c2`, `d2`, `e2`,
+`b3`, `c3`, `d3`.
+
+Source: J. N. Bray, Sporadic (Fischer-Griess) Monster group M = F1; A. A. Ivanov, Y-groups via
+Transitive Extension, Journal of Algebra 218 (1999), 412-435.
+
+Source locator: Bray's Y443 presentation at
+https://webspace.maths.qmul.ac.uk/j.n.bray/web/Pres/Mnst.html; Ivanov, definition on p. 413, Lemma
+3.2 on p. 419, and Section 3.9 on pp. 430-431; doi:10.1006/jabr.1999.7882
+
+Generator convention: Indices 0 through 11 are a,b1,c1,d1,e1,b2,c2,d2,e2,b3,c3,d3. Every node is
+an involution, adjacent nodes have product of order dividing three, and nonadjacent nodes commute.
+Products are read left to right. Ivanov writes `f_ijk` = `(a*b_i*c_i*d_i*b_j*c_j*b_k)^9`.
+
+Transcription notes: The Coxeter matrix expands the displayed Y443 diagram to 78 relators. Append
+Bray's spider relator to present M x 2, then Ivanov's `f_312` to quotient its central factor and
+present M. The first 79 relators have the source's length 400; `f_312` has length 63. -/
 def presentation : GroupPresentation where
-  generatorNames := ["a", "b1", "c1", "d1", "e1", "b2", "c2", "d2", "e2", "b3", "c3", "d3"]
-  source := "J. N. Bray, Sporadic (Fischer-Griess) Monster group M = F1; A. A. Ivanov, Y-groups \
-    via Transitive Extension, Journal of Algebra 218 (1999), 412-435"
-  sourceLocator := "Bray's Y443 presentation at \
-    https://webspace.maths.qmul.ac.uk/j.n.bray/web/Pres/Mnst.html; Ivanov, definition on p. 413, \
-    Lemma 3.2 on p. 419, and Section 3.9 on pp. 430-431; doi:10.1006/jabr.1999.7882"
-  generatorConvention := "Indices 0 through 11 are a,b1,c1,d1,e1,b2,c2,d2,e2,b3,c3,d3. Every \
-    node is an involution, adjacent nodes have product of order dividing three, and nonadjacent \
-    nodes commute. Products are read left to right. Ivanov writes f_ijk = \
-    (a*b_i*c_i*d_i*b_j*c_j*b_k)^9."
-  transcriptionNotes := "The Coxeter matrix expands the displayed Y443 diagram to 78 relators. \
-    Append Bray's spider relator to present M x 2, then Ivanov's f_312 to quotient its central \
-    factor and present M. The first 79 relators have the source's length 400; f_312 has length 63."
-  expectedGeneratorCount := 12
+  generatorCount := 12
   expectedRelatorCount := 80
   transcribed := relatorList
 
-/-- The generator names recorded for the Monster presentation. -/
+/-- The number of generators in the Monster presentation. -/
 @[simp]
-theorem presentation_generatorNames : presentation.generatorNames =
-    ["a", "b1", "c1", "d1", "e1", "b2", "c2", "d2", "e2", "b3", "c3", "d3"] := by
-  rw [presentation]
-
-/-- The source recorded for the Monster presentation. -/
-@[simp]
-theorem presentation_source : presentation.source =
-    "J. N. Bray, Sporadic (Fischer-Griess) Monster group M = F1; A. A. Ivanov, Y-groups via \
-      Transitive Extension, Journal of Algebra 218 (1999), 412-435" := by
-  rw [presentation]
-
-/-- The exact source locator recorded for the Monster presentation. -/
-@[simp]
-theorem presentation_sourceLocator : presentation.sourceLocator =
-    "Bray's Y443 presentation at \
-      https://webspace.maths.qmul.ac.uk/j.n.bray/web/Pres/Mnst.html; Ivanov, definition on p. 413, \
-      Lemma 3.2 on p. 419, and Section 3.9 on pp. 430-431; doi:10.1006/jabr.1999.7882" := by
-  rw [presentation]
-
-/-- The generator and Coxeter conventions recorded for the Monster presentation. -/
-@[simp]
-theorem presentation_generatorConvention : presentation.generatorConvention =
-    "Indices 0 through 11 are a,b1,c1,d1,e1,b2,c2,d2,e2,b3,c3,d3. Every node is an involution, \
-      adjacent nodes have product of order dividing three, and nonadjacent nodes commute. Products \
-      are read left to right. Ivanov writes f_ijk = (a*b_i*c_i*d_i*b_j*c_j*b_k)^9." := by
-  rw [presentation]
-
-/-- The transcription notes recorded for the Monster presentation. -/
-@[simp]
-theorem presentation_transcriptionNotes : presentation.transcriptionNotes =
-    "The Coxeter matrix expands the displayed Y443 diagram to 78 relators. Append Bray's spider \
-      relator to present M x 2, then Ivanov's f_312 to quotient its central factor and present M. \
-      The first 79 relators have the source's length 400; f_312 has length 63." := by
-  rw [presentation]
-
-/-- The expected generator count recorded for the Monster presentation. -/
-@[simp]
-theorem presentation_expectedGeneratorCount : presentation.expectedGeneratorCount = 12 := by
+theorem presentation_generatorCount : presentation.generatorCount = 12 := by
   rw [presentation]
 
 /-- The expected relator count recorded for the Monster presentation. -/
@@ -276,7 +244,6 @@ theorem presentation_relatorLetters : presentation.relatorLetters =
     relatorList.map fun r => r.toWord.map fun letter => (letter.1.val, letter.2) := by
   rw [GroupPresentation.relatorLetters_def, GroupPresentation.relators_def, presentation]
   simp only [List.map_map, Function.comp_def]
-  rfl
 
 /-! ### Decidable transcription checks -/
 
@@ -296,14 +263,10 @@ theorem presentation_transcribed_length : presentation.transcribed.length = 80 :
   rw [presentation_transcribed]
   exact length_relatorList
 
-/-- The generator and relator counts recorded for the Monster agree with the transcribed data. -/
+/-- The relator count recorded for the Monster agrees with the transcribed data. -/
 theorem presentation_matchesMetadata : presentation.matchesMetadata := by
   rw [GroupPresentation.matchesMetadata_iff]
-  refine ⟨?_, ?_⟩
-  · rw [GroupPresentation.generatorCount, presentation_generatorNames,
-      presentation_expectedGeneratorCount]
-    rfl
-  · rw [presentation_transcribed_length, presentation_expectedRelatorCount]
+  rw [presentation_transcribed_length, presentation_expectedRelatorCount]
 
 /-- The spider relator has ninety letters. -/
 @[simp]
@@ -384,7 +347,7 @@ generator. -/
 protected theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin 12) :
     Monster.mulEquivPresentedGroupCoxeterAppend
         (PresentedGroup.of
-          (Fin.cast (by simp [GroupPresentation.generatorCount, presentation]) i)) =
+          (Fin.cast (by simp [presentation]) i)) =
       PresentedGroup.of i := by
   -- Same reduction as in the equivalence itself: `Fin.cast` moves the index from `Fin 12` to
   -- `Fin presentation.generatorCount`, and unfolding the sealed row identifies the two.

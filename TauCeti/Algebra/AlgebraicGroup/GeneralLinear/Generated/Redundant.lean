@@ -68,15 +68,16 @@ theorem commonKernelHopfIdeal_toIdeal_le_ker_of_mapPointsFunctor_mem {ι : Type 
     {L : _root_.CommHopfAlgCat.{u} R} (g : coordinateHopfAlgebra R n ⟶ L)
     (hg : ∀ (A : Type u) [CommRing A] [Algebra R A]
       (q : HopfAlgebra.points (R := R) (H := L) (CommAlgCat.of R A)),
-      pointsMulEquiv n ((CommHopfAlgCat.mapPointsFunctor g).app (CommAlgCat.of R A) q) ∈
+      pointsMulEquiv n ((CommHopfAlgCat.Hom.mapPointsFunctor g).app (CommAlgCat.of R A) q) ∈
         generatedPointsSubgroup n p A) :
     (CommHopfAlgCat.commonKernelHopfIdeal p).toIdeal ≤ RingHom.ker g.hom.toAlgHom.toRingHom := by
   -- Test the hypothesis on the universal point of `L`, the identity of its coordinate algebra;
   -- its image under `g` is `g` itself.
   have hmem := hg L (toConv (AlgHom.id R L))
-  have hq : (CommHopfAlgCat.mapPointsFunctor g).app (CommAlgCat.of R L) (toConv (AlgHom.id R L)) =
+  have hq : (CommHopfAlgCat.Hom.mapPointsFunctor g).app (CommAlgCat.of R L) (toConv (AlgHom.id R
+    L)) =
       toConv g.hom.toAlgHom := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, ofConv_toConv, AlgHom.id_comp]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ofConv_toConv, AlgHom.id_comp]
   rw [hq, pointsMulEquiv_apply, generatedPointsSubgroup_def] at hmem
   exact (pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker n _ _ _).1 hmem
 

@@ -10,10 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the Higman--Sims group
 
-This file carries the `HS` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records John Bray's ATLAS version 3 presentation of
-the Higman--Sims group on its standard generators `a` and `b` as a `TauCeti.GroupPresentation`,
-together with the source, the generator convention, transcription notes, and the expected counts.
+This file carries the `HS` row of the sporadic presentation data. It records John Bray's ATLAS
+version 3 presentation of the Higman--Sims group on its standard generators `a` and `b` as a
+`TauCeti.GroupPresentation`, together with the source, the generator convention, transcription
+notes, and the expected counts.
 
 Writing `s₁ = ab`, `s₂ = ab²`, `s₋₁ = ab⁻¹` and `s₋₂ = ab⁻²` for the four syllables that occur, the
 thirteen transcribed relators are
@@ -76,7 +76,7 @@ and `R3`, says they are redundant but useful, and keeps them inside the construc
 therefore correctly retains them. The rendered presentation page omits those three and swaps the
 display order of `[a,bab]³` and `[a,b²]⁶`, while the row deliberately follows the raw Magma order.
 This comparison was performed from the pinned source bytes independently of the original
-transcription and closes this row's S1 source-to-Lean read-through.
+transcription and closes this row's source-to-Lean read-through.
 
 ## Independent comparison with `FiniteSimpleGroups`
 
@@ -101,7 +101,7 @@ the pair therefore generates the pinned group of order `44352000`.
 The check used Python 3.14.6 and SymPy 1.14.0. Concatenating the forward image tables for `a` and
 then `b`, with each image stored as a two-byte little-endian integer, has SHA-256
 `6820d1571023e66bfff5a2fac256bd6d6ccb7e38bffd5f86b56db6ee1e17f6f2`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau Ceti.
+comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out, and the provenance a manifest row
@@ -172,26 +172,31 @@ generators `a` and `b`.
 The ATLAS lists this as a full presentation of the abstract group, separately from the
 semi-presentation used to recognize standard generators inside a group already constructed. No
 structural property of the presented group is asserted here: this definition records only the
-cited generators and relations. -/
+cited generators and relations.
+
+Generator order (starting at index zero): `a`, `b`.
+
+Source: R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group Representations,
+version 3; presentation contributed by John Bray.
+
+Source locator: HSG1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/HSG1-P1, with the relator
+list and the demonstration of correctness in the Magma source file
+https://brauer.maths.qmul.ac.uk/Atlas/spor/HS/mag/HSG1-P1.M
+
+Generator convention: The ATLAS standard generators a and b of HS, that is, a in class 2A and b in
+class 5A with ab of order 11, in that order, so index 0 is a and index 1 is b. Products are read
+left to right, negative exponents denote inverses, and [r,s] denotes r^-1 s^-1 r s.
+
+Transcription notes: The thirteen words of the source's relator list are stored as thirteen
+relators equal to the identity. The last three, marked R1, R2 and R3 there, are redundant, and are
+transcribed because the source runs its coset enumerations with them. The source demonstrates
+correctness by enumerating the 5775 cosets of a subgroup that visibly centralizes a, using
+`(a*b^2)^10` = 1 to exclude the double cover 2.HS. GAP 4.15.1 checks that the thirteen compiled
+words vanish on five independent standard generating pairs of the 100-point primitive
+representation of HS, taking a with centralizer of order 7680, b of order 5 with centralizer of
+order 500, and ab of order 11. -/
 def hsPresentation : GroupPresentation where
-  generatorNames := ["a", "b"]
-  source := "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group \
-    Representations, version 3; presentation contributed by John Bray"
-  sourceLocator := "HSG1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/HSG1-P1, with the \
-    relator list and the demonstration of correctness in the Magma source file \
-    https://brauer.maths.qmul.ac.uk/Atlas/spor/HS/mag/HSG1-P1.M"
-  generatorConvention := "The ATLAS standard generators a and b of HS, that is, a in class 2A and \
-    b in class 5A with ab of order 11, in that order, so index 0 is a and index 1 is b. Products \
-    are read left to right, negative exponents denote inverses, and [r,s] denotes r^-1 s^-1 r s."
-  transcriptionNotes := "The thirteen words of the source's relator list are stored as thirteen \
-    relators equal to the identity. The last three, marked R1, R2 and R3 there, are redundant, \
-    and are transcribed because the source runs its coset enumerations with them. The source \
-    demonstrates correctness by enumerating the 5775 cosets of a subgroup that visibly \
-    centralizes a, using (a*b^2)^10 = 1 to exclude the double cover 2.HS. GAP 4.15.1 checks that \
-    the thirteen compiled words vanish on five independent standard generating pairs of the \
-    100-point primitive representation of HS, taking a with centralizer of order 7680, b of \
-    order 5 with centralizer of order 500, and ab of order 11."
-  expectedGeneratorCount := 2
+  generatorCount := 2
   expectedRelatorCount := 13
   transcribed :=
     [ .pow a 2,
@@ -209,63 +214,15 @@ def hsPresentation : GroupPresentation where
       .pow (ab1 ⬝ ab1 ⬝ ab2) 2 ⬝ ab1 ⬝ ab1 ⬝ abNeg1 ⬝ ab1 ⬝ ab1 ⬝ .pow ab2 3 ⬝ ab1 ⬝ ab1 ⬝ abNeg1,
       ab1 ⬝ .pow (ab1 ⬝ ab2) 3 ⬝ ab1 ⬝ ab1 ⬝ ab2 ⬝ abNeg1 ⬝ ab1 ⬝ abNeg2 ⬝ ab1 ⬝ abNeg1 ⬝ ab2 ]
 
-/-- The generator names recorded for `HS`. The row's body is sealed, so this is what lets a
+/-- The number of generators in the presentation of `HS`. The row's body is sealed, so this is
+what lets a
 consumer see that it is a two-generator presentation. -/
 @[simp]
-theorem hsPresentation_generatorNames : hsPresentation.generatorNames = ["a", "b"] := by
-  simp [hsPresentation]
-
-/-- The source recorded for `HS`. The row's body is sealed, so this equation publishes the citation
-itself, rather than only the row's name, to a downstream audit. -/
-@[simp]
-theorem hsPresentation_source :
-    hsPresentation.source = "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group \
-      Representations, version 3; presentation contributed by John Bray" := by
-  simp [hsPresentation]
-
-/-- The locator recorded for `HS`, pointing at the presentation and its demonstration of
-correctness inside the source. -/
-@[simp]
-theorem hsPresentation_sourceLocator :
-    hsPresentation.sourceLocator = "HSG1-P1, \
-      https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/HSG1-P1, with the relator list and the \
-      demonstration of correctness in the Magma source file \
-      https://brauer.maths.qmul.ac.uk/Atlas/spor/HS/mag/HSG1-P1.M" := by
-  simp [hsPresentation]
-
-/-- The generator convention recorded for `HS`, fixing which generator each relator index names and
-which commutator convention the source uses. -/
-@[simp]
-theorem hsPresentation_generatorConvention :
-    hsPresentation.generatorConvention = "The ATLAS standard generators a and b of HS, that is, a \
-      in class 2A and b in class 5A with ab of order 11, in that order, so index 0 is a and index \
-      1 is b. Products are read left to right, negative exponents denote inverses, and [r,s] \
-      denotes r^-1 s^-1 r s." := by
-  simp [hsPresentation]
-
-/-- The transcription notes recorded for `HS`, including which of the source's relators it flags as
-redundant. -/
-@[simp]
-theorem hsPresentation_transcriptionNotes :
-    hsPresentation.transcriptionNotes = "The thirteen words of the source's relator list are \
-      stored as thirteen relators equal to the identity. The last three, marked R1, R2 and R3 \
-      there, are redundant, and are transcribed because the source runs its coset enumerations \
-      with them. The source demonstrates correctness by enumerating the 5775 cosets of a subgroup \
-      that visibly centralizes a, using (a*b^2)^10 = 1 to exclude the double cover 2.HS. GAP \
-      4.15.1 checks that the thirteen compiled words vanish on five independent standard \
-      generating pairs of the 100-point primitive representation of HS, taking a with centralizer \
-      of order 7680, b of order 5 with centralizer of order 500, and ab of order 11." := by
-  simp [hsPresentation]
-
-/-- The generator count `HS`'s source states. With
-`TauCeti.Sporadic.hsPresentation_generatorNames` this makes
-`TauCeti.Sporadic.hsPresentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem hsPresentation_expectedGeneratorCount : hsPresentation.expectedGeneratorCount = 2 := by
+theorem hsPresentation_generatorCount : hsPresentation.generatorCount = 2 := by
   simp [hsPresentation]
 
 /-- The relator count `HS`'s source states; see
-`TauCeti.Sporadic.hsPresentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.hsPresentation_generatorCount`. -/
 @[simp]
 theorem hsPresentation_expectedRelatorCount : hsPresentation.expectedRelatorCount = 13 := by
   simp [hsPresentation]
@@ -278,7 +235,7 @@ The row's body is sealed, so this is the equation that characterizes it: with
 `TauCeti.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
 `TauCeti.GroupPresentation.Group`, so a consumer never has to unfold the row. Index `0` is the
 generator `a` and index `1` is `b`, and the bounds come from
-`TauCeti.Sporadic.hsPresentation_generatorNames`. The comments name each relator in the syllables
+`TauCeti.Sporadic.hsPresentation_generatorCount`. The comments name each relator in the syllables
 `s₁ = ab`, `s₂ = ab²`, `s₋₁ = ab⁻¹` and `s₋₂ = ab⁻²` of the module docstring. -/
 @[simp]
 theorem hsPresentation_transcribed :
@@ -360,7 +317,7 @@ theorem hsPresentation_transcribed :
           (.gen ⟨0, by simp⟩ ⬝ .pow (.gen ⟨1, by simp⟩) 2) ] := by
   simp [hsPresentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `HS` agree with the transcribed data. -/
+/-- The relator count recorded for `HS` agrees with the transcribed data. -/
 theorem hsPresentation_matchesMetadata : hsPresentation.matchesMetadata := by decide
 
 /-- The lengths of the thirteen compiled relator words for `HS`, in the order of the source.

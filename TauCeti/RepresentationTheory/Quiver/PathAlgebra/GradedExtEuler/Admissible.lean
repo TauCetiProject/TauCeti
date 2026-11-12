@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedSimple
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Quotient
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.UniformBound
 public import TauCeti.Algebra.Category.GradedModuleCat.HomLaurentSupport
 
 /-!
@@ -16,6 +17,10 @@ For a finite quiver with finitely many arrows, the first-arrow
 resolution of a vertex simple has finitely generated projective terms. Against a finite
 graded module, their shifted Hom spaces have finite Laurent support. The resolution
 therefore makes the vertex simple Euler-admissible.
+
+Over a finite-dimensional path algebra, the same resolutions show that every finite graded module
+has projective dimension at most one in the graded category, so its graded Ext groups vanish from
+cohomological degree two on.
 
 This is the finiteness step needed before computing the graded Ringel form from the
 first-arrow resolution. The resolution follows Assem--Simson--Skowroński,
@@ -86,5 +91,32 @@ theorem isGradedEulerAdmissible_gradedVertexSimple (i : Q)
       isGradedEulerAdmissible_gradedVertexProjective k Q i Y
   simpa only [gradedVertexSimpleResolution_def] using
     hA.of_shortExact₃' (shortExact_gradedVertexSimpleResolution k Q i) hP
+
+omit [∀ a b : Q, Finite (a ⟶ b)] in
+/-- **A finite graded module over a finite-dimensional path algebra has projective dimension at
+most one in the graded category.** Equivalently, its graded Ext groups into any target vanish from
+cohomological degree two on, uniformly in the internal degree. -/
+theorem isGradedExtBoundedBy_two_of_finite_source [FiniteDimensional k (pathAlgebra k Q)]
+    (X Y : GradedModuleCat.{max u v w} (integerGrade k Q)) [Module.Finite k X] :
+    IsGradedExtBoundedBy.{t} (GradedModuleCat.shift (integerGrade k Q)) X Y 2 := by
+  classical
+  let _ := integerGradedAlgebra k Q
+  have : ∀ i j : Q, Finite (i ⟶ j) :=
+    finite_hom_of_module_finite_pathAlgebra k Q inferInstance
+  refine isGradedExtBoundedBy_of_finite_of_forall_simple _ Y 2 ?_ X
+  intro S hS hs
+  have := hS
+  have : Module.Finite (pathAlgebra k Q) S :=
+    Module.Finite.of_restrictScalars_finite k (pathAlgebra k Q) S
+  obtain ⟨i, d, ⟨e⟩⟩ :=
+    (isExhaustiveGradedSimpleFamily_iff _).mp
+      (isExhaustiveGradedSimpleFamily_gradedVertexSimple k Q)
+      ⟨S, gradedFiniteModules_iff.mpr inferInstance⟩ hs
+  let _ := hasProjectiveDimensionLT_two_gradedVertexSimple k Q i
+  have hb : IsGradedExtBoundedBy.{t}
+      (GradedModuleCat.shift (integerGrade k Q)) (gradedVertexSimple k Q i) Y 2 :=
+    ⟨fun n hn j ↦ HasProjectiveDimensionLT.subsingleton
+      (gradedVertexSimple k Q i) 2 n hn _⟩
+  exact (hb.shiftObj d).of_iso e.symm (Iso.refl Y)
 
 end TauCeti.PathAlgebra

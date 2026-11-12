@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Continuation
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -117,16 +118,17 @@ end Single
 section Properties
 
 variable {R : Type uR} {A : Type uA} {M : Type uM}
-  [CommRing R] [Ring A] [Algebra R A]
-  [AddCommGroup M] [Module R M]
   {P : Type uP} {Q : Type uQ} {ind : P → ℤ} {indQ : Q → ℤ}
-  [Fintype P] [Fintype Q] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
-  (h : P → Q → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  [Fintype P] (h : P → Q → A)
 
-variable {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 d}
+section Homogeneity
+
+variable [CommRing R] [Semiring A] [Algebra R A]
+  [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
 
-omit [IsScalarTower R Aᵐᵒᵖ M] [Fintype Q] in
 /-- The homotopy map of a matrix with homogeneous entries of degree `indQ y - ind x - 1` lowers
 the total degree by one. -/
 theorem homotopyMap_mem_twistedTotalGrading (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - ind x - 1))
@@ -146,7 +148,15 @@ theorem homotopyMap_mem_twistedTotalGrading (hh : ∀ x y, h x y ∈ 𝒜 (indQ 
   convert this using 2
   ring
 
-variable (mP : P → P → A) (mQ : Q → Q → A) (ν₀ ν₁ : P → Q → A) (dM : M →ₗ[R] M)
+end Homogeneity
+
+variable [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Fintype Q]
+  [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 d}
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+  (mP : P → P → A) (mQ : Q → Q → A) (ν₀ ν₁ : P → Q → A) (dM : M →ₗ[R] M)
 
 /-- **The chain homotopy identity**: for a matrix `h` with homogeneous entries which satisfies the
 parametrized equation between the continuation cocycles `ν₀` and `ν₁`, and a differential graded
@@ -164,20 +174,13 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
       continuationMap R M ν₁ (Pi.single x α) - continuationMap R M ν₀ (Pi.single x α) =
         twistedDifferential mQ ℳ dM (homotopyMap h ℳ (Pi.single x α)) +
           homotopyMap h ℳ (twistedDifferential mP ℳ dM (Pi.single x α)) by
-    rw [← Finset.univ_sum_single f]
-    simp only [map_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun x _ ↦ ?_
-    generalize f x = α
-    induction α using DirectSum.Decomposition.inductionOn ℳ with
-    | zero => simp
-    | @homogeneous i α => exact key x α.2
-    | add a b ha hb =>
-      simp only [Pi.single_add, map_add] at ha hb ⊢
-      rw [add_sub_add_comm, ha, hb]
-      abel
+    have hlin : continuationMap R M ν₁ - continuationMap R M ν₀ =
+        twistedDifferential mQ ℳ dM ∘ₗ homotopyMap h ℳ +
+          homotopyMap h ℳ ∘ₗ twistedDifferential mP ℳ dM :=
+      LinearMap.pi_ext_of_decomposition ℳ fun x q α hα ↦ by simpa using key x hα
+    simpa using LinearMap.congr_fun hlin f
   intro x q α hα
   funext w
-  have hdα : dM α ∈ ℳ (q + 1) := hM.isHomogeneous.map_mem hα
   have hγ : ∀ y, q.negOnePow • (op (h x y) • α) ∈ ℳ (q + (indQ y - ind x - 1)) := fun y ↦
     Submodule.smul_of_tower_mem _ _ (op_smul_mem_of_mem_graded (hh x y) hα)
   have hδ : ∀ z, q.negOnePow • (op (mP x z) • α) ∈ ℳ (q + (ind z - ind x + 1)) := fun z ↦
@@ -200,28 +203,20 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
         ∑ z, (q + (ind z - ind x + 1)).negOnePow •
           (op (h z w) • (q.negOnePow • (op (mP x z) • α))) := by
     rw [twistedDifferential_single mP dM x hα, map_add, map_sum, Pi.add_apply, Finset.sum_apply,
-      homotopyMap_single_apply h x hdα w]
+      homotopyMap_single_apply h x (hM.isHomogeneous.map_mem hα) w]
     simp only [fun z ↦ homotopyMap_single_apply h z (hδ z) w]
   set SQ := ∑ y, (ind x - indQ y).negOnePow • (op (h x y * mQ y w) • α) with hSQ_def
   set SP := ∑ z, (ind x - ind z).negOnePow • (op (mP x z * h z w) • α) with hSP_def
   have hSQ : ∑ y, (q + (indQ y - ind x - 1)).negOnePow •
       (op (mQ y w) • (q.negOnePow • (op (h x y) • α))) = -SQ := by
     rw [hSQ_def, ← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun y _ ↦ ?_
-    have hsign : (q + (indQ y - ind x - 1)).negOnePow * q.negOnePow =
-        -(ind x - indQ y).negOnePow := by
-      rw [← Int.negOnePow_succ]
-      exact negOnePow_mul_negOnePow_of_even ⟨indQ y - ind x - 1 + q, by ring⟩
-    rw [smul_comm (op (mQ y w)) q.negOnePow, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul]
+    exact Finset.sum_congr rfl fun y _ ↦
+      negOnePow_smul_op_smul_negOnePow_smul_op_smul ⟨-1, by ring⟩ _ _ α
   have hSP : ∑ z, (q + (ind z - ind x + 1)).negOnePow •
       (op (h z w) • (q.negOnePow • (op (mP x z) • α))) = -SP := by
     rw [hSP_def, ← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun z _ ↦ ?_
-    have hsign : (q + (ind z - ind x + 1)).negOnePow * q.negOnePow =
-        -(ind x - ind z).negOnePow := by
-      rw [← Int.negOnePow_succ]
-      exact negOnePow_mul_negOnePow_of_even ⟨ind z - ind x + q, by ring⟩
-    rw [smul_comm (op (h z w)) q.negOnePow, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul]
+    exact Finset.sum_congr rfl fun z _ ↦
+      negOnePow_smul_op_smul_negOnePow_smul_op_smul ⟨0, by ring⟩ _ _ α
   have hd : dM (q.negOnePow • (op (h x w) • α)) =
       q.negOnePow • (op (h x w) • dM α) + op (d (h x w)) • α := by
     rw [LinearMap.map_smul_of_tower, hM.leibniz hα (h x w), smul_add, smul_smul, Int.units_mul_self,
@@ -245,7 +240,7 @@ section Cocycle
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
   {P : Type uP} {Q : Type uQ} {ind : P → ℤ} {indQ : Q → ℤ} [Fintype P] [Fintype Q]
-  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
+  {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A}
   {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
 
 /-- A **parametrized cocycle** between two continuation cocycles `ν₀` and `ν₁` (the source's
@@ -264,27 +259,37 @@ structure ParametrizedCocycle (ν₀ ν₁ : ContinuationCocycle mP mQ) where
 
 namespace ParametrizedCocycle
 
-omit [GradedAlgebra 𝒜] in
+variable {ν₀ ν₁ : ContinuationCocycle mP mQ}
+
 @[ext]
-theorem ext {ν₀ ν₁ : ContinuationCocycle mP mQ} {η₁ η₂ : ParametrizedCocycle ν₀ ν₁}
+theorem ext {η₁ η₂ : ParametrizedCocycle ν₀ ν₁}
     (h : ∀ x y, η₁.h x y = η₂.h x y) : η₁ = η₂ := by
   obtain ⟨h₁, _, _⟩ := η₁
   obtain ⟨h₂, _, _⟩ := η₂
   obtain rfl : h₁ = h₂ := funext fun x ↦ funext fun y ↦ h x y
   rfl
 
-variable {ν₀ ν₁ : ContinuationCocycle mP mQ} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
-  [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] {ℳ : ℤ → Submodule R M}
-  [DirectSum.Decomposition ℳ]
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
-  {dM : M →ₗ[R] M} {hA : IsDGAlgebra 𝒜 d}
+variable [GradedAlgebra 𝒜]
 
-omit [IsScalarTower R Aᵐᵒᵖ M] in
+section Homogeneity
+
+variable [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+
 /-- The homotopy map of a parametrized cocycle lowers the total degree by one. -/
 theorem homotopyMap_mem_twistedTotalGrading (η : ParametrizedCocycle ν₀ ν₁) {n : ℤ}
     {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
     homotopyMap η.h ℳ f ∈ twistedTotalGrading ℳ indQ (n - 1) :=
   TauCeti.homotopyMap_mem_twistedTotalGrading η.h η.mem_graded hf
+
+end Homogeneity
+
+variable [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
+  [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] {ℳ : ℤ → Submodule R M}
+  [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+  {dM : M →ₗ[R] M} {hA : IsDGAlgebra 𝒜 d}
 
 /-- **Homotopic continuation cocycles induce chain homotopic continuation maps**:
 `Ψ¹ - Ψ⁰ = D⁻ ∘ 𝔥 + 𝔥 ∘ D⁺`. -/

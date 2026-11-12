@@ -12,8 +12,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Basic
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.AdjoinRoot
--- Proof-only: the trace and norm of a quadratic irrationality, read off its quadratic equation.
-import TauCeti.FieldTheory.Quadratic
 -- Proof-only: `isMinimal_of_valuation_c₄_eq_one` and the transfer of split multiplicative
 -- reduction along a change of variables between minimal models.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
@@ -175,25 +173,8 @@ theorem exists_quadraticTwist_hasSplitMultiplicativeReduction [E.IsElliptic]
   have hqdeg : q.natDegree = 2 := by unfold q; compute_degree!
   -- A root of `q` in `K` is integral over `R`, hence in `R`, and would split the reduced node
   -- polynomial.
-  have hroot : ∀ x : K, ¬ q.IsRoot x := by
-    intro x hx
-    have hx' : x ^ 2 + E.a₁ * x + n = 0 := by simpa [q] using hx
-    have hxint : _root_.IsIntegral R x := by
-      refine ⟨X ^ 2 + C I.a₁ * X + C n₀, by monicity!, ?_⟩
-      simp [eval₂_add, ← hx', hn₀K, I, integralModel_a₁_eq]
-    obtain ⟨x₀, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hxint
-    have hx₀ : x₀ ^ 2 + I.a₁ * x₀ + n₀ = 0 := IsFractionRing.injective R K (by
-      rw [map_zero, ← hx']; simp [I, integralModel_a₁_eq, hn₀K])
-    -- So the node quadratic factors over `R` with the roots `x₀` and `-a₁ - x₀`.
-    have hfac : X ^ 2 + C I.a₁ * X + C n₀ = (X - C x₀) * (X - C (-I.a₁ - x₀)) := by
-      have hC := congrArg C hx₀
-      simp only [map_add, map_mul, map_pow, map_zero] at hC
-      simp only [map_sub, map_neg]
-      linear_combination hC
-    refine h ((HasMultiplicativeReduction.splits_nodePolynomial_reduction_iff R
-      inferInstance).mp ?_)
-    rw [reduction, map_nodePolynomial, nodePolynomial_eq_C_mul I hn₀, hfac]
-    exact (((Splits.X_sub_C _).mul (Splits.X_sub_C _)).C_mul _).map _
+  have hroot : ∀ x : K, ¬ q.IsRoot x := fun x hx ↦
+    false_of_isRoot_nodeQuadratic R h hn₀ hn₀K (by simpa [q] using hx)
   have hirr : Irreducible q :=
     irreducible_of_degree_le_three_of_not_isRoot (by rw [hqdeg]; decide) hroot
   have : Fact (Irreducible q) := ⟨hirr⟩
@@ -222,15 +203,17 @@ theorem exists_quadraticTwist_hasSplitMultiplicativeReduction [E.IsElliptic]
   refine ⟨AdjoinRoot q, inferInstance, inferInstance, inferInstance, inferInstance, ?_⟩
   -- The twist by `L` is the explicit twist up to a change of variables over `K`.
   -- `θ² = -a₁ θ - n`, so `θ` has trace `-a₁` and norm `n`.
-  have hθ2 : AdjoinRoot.root q * AdjoinRoot.root q =
-      algebraMap K (AdjoinRoot q) (-E.a₁) * AdjoinRoot.root q - algebraMap K (AdjoinRoot q) n := by
+  have hθeq : AdjoinRoot.root q ^ 2 + algebraMap K (AdjoinRoot q) E.a₁ * AdjoinRoot.root q +
+      algebraMap K (AdjoinRoot q) n = 0 := by
     have h := AdjoinRoot.mk_self (f := q)
     rw [← AdjoinRoot.aeval_eq] at h
-    simp only [q, map_add, map_mul, map_pow, aeval_X, aeval_C] at h
+    simpa only [q, map_add, map_mul, map_pow, aeval_X, aeval_C] using h
+  have hθ2 : AdjoinRoot.root q * AdjoinRoot.root q =
+      algebraMap K (AdjoinRoot q) (-E.a₁) * AdjoinRoot.root q - algebraMap K (AdjoinRoot q) n := by
     rw [map_neg]
-    linear_combination h
+    linear_combination hθeq
   obtain ⟨C₁, hC₁⟩ := E.exists_smul_quadraticTwist_eq hθ
-  rw [TauCeti.Algebra.trace_eq_of_mul_self_eq hθ hθ2,
+  rw [_root_.Algebra.IsQuadraticExtension.trace_eq_neg_of_sq_add_mul_add_eq_zero hθ hθeq,
     TauCeti.Algebra.norm_eq_of_mul_self_eq hθ hθ2] at hC₁
   obtain ⟨C₂, hC₂⟩ := (E.quadraticTwist (AdjoinRoot q)).exists_smul_eq_minimal R
   have : (E.quadraticTwistOf (-E.a₁) n).IsElliptic := hC₁ ▸ inferInstance

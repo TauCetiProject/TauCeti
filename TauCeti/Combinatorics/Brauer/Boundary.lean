@@ -52,8 +52,6 @@ loops that form there, by alternately following the caps of `D₁` (`capMatching
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9.
 -/
 
 public section
@@ -183,8 +181,7 @@ private theorem capFun_ne (i : {i : Fin k // D.IsCap (Sum.inl i)}) : D.capFun i 
 /-- The perfect matching that a diagram induces on its capped bottom points: the caps pair those
 points off among themselves. -/
 def capMatching : PerfectMatching {i : Fin k // D.IsCap (Sum.inl i)} :=
-  .mk (capFun_involutive D).toPerm (fun i => by simpa using capFun_involutive D i)
-    fun i => by simpa using capFun_ne D i
+  .ofInvolutive (capFun_involutive D) (capFun_ne D)
 
 /-- `BrauerDiagram.capMatching` matches a capped bottom point with the other end of its cap. -/
 @[simp]
@@ -215,8 +212,7 @@ private theorem cupFun_ne (j : {j : Fin k // D.IsCup (Sum.inr j)}) : D.cupFun j 
 /-- The perfect matching that a diagram induces on its cupped top points: the cups pair those
 points off among themselves. -/
 def cupMatching : PerfectMatching {j : Fin k // D.IsCup (Sum.inr j)} :=
-  .mk (cupFun_involutive D).toPerm (fun j => by simpa using cupFun_involutive D j)
-    fun j => by simpa using cupFun_ne D j
+  .ofInvolutive (cupFun_involutive D) (cupFun_ne D)
 
 /-- `BrauerDiagram.cupMatching` matches a cupped top point with the other end of its cup. -/
 @[simp]

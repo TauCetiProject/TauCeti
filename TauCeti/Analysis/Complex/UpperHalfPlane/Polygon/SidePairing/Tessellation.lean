@@ -96,11 +96,8 @@ theorem mem_interior_carrier_union_iUnion_smul_carrier {z : ℍ} (hz : z ∈ P.c
   by_cases hzi : z ∈ interior P.carrier
   · exact interior_mono subset_union_left hzi
   -- a boundary point lies on a side, away from its finite endpoints
-  have hzf : z ∈ frontier P.carrier := ⟨subset_closure hz, hzi⟩
-  obtain ⟨k, hk⟩ := mem_iUnion.1 (P.frontier_carrier ▸ hzf)
-  have h := σ.mem_interior_union_smul_carrier_of_mem_side (σ.pair k)
-    (by rwa [σ.pair_pair]) (by rw [σ.pair_pair]; exact hv k)
-    (by rw [σ.pair_pair]; exact hv (k + 1))
+  obtain ⟨k, -, h⟩ := σ.exists_mem_side_mem_interior_union_inv_smul_carrier hz hzi hv
+  rw [← map_pair] at h
   exact interior_mono (union_subset_union_right _
     (subset_iUnion (fun i ↦ σ.map i • P.carrier) (σ.pair k))) h
 
@@ -124,7 +121,8 @@ theorem iUnion_smul_carrier_eq_univ {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, �
   set V := ⋃ (γ : Γ) (i : Fin n), (γ : PSL(2, ℝ)) • {z : ℍ | P.vertex i = .inl z}
   have hV : V.Countable := countable_iUnion fun γ ↦ countable_iUnion fun i ↦ by
     rw [← image_smul]
-    exact (Subsingleton.countable fun _ ha _ hb ↦ Sum.inl_injective (ha.symm.trans hb)).image _
+    exact (Set.Subsingleton.countable
+      (by exact fun _ ha _ hb ↦ Sum.inl_injective (ha.symm.trans hb))).image _
   -- off `V`, the union `U` is a neighbourhood of each of its points
   have hint (y : ℍ) (hy : y ∈ U) (hyV : y ∉ V) : y ∈ interior U := by
     obtain ⟨γ, hγ⟩ := mem_iUnion.1 hy

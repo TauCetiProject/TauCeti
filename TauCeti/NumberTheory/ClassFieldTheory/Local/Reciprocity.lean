@@ -56,6 +56,8 @@ multiplicative form `normResidue K L : Kˣ / N_{L/K}(Lˣ) ≃* Gal(L/K)^ab` is c
   for every embedding.
 * `TauCeti.ClassFieldTheory.index_normGroup_of_isMulCommutative`: the norm group of a finite
   abelian extension has index equal to the degree.
+* `TauCeti.ClassFieldTheory.comap_normUnits_normGroup`: for a tower `E/F/K` with `E/K` abelian,
+  `N_{F/K}⁻¹(N_{E/K}(Eˣ)) = N_{E/F}(Eˣ)`.
 
 ## References
 
@@ -81,7 +83,7 @@ Artin reciprocity isomorphism `ClassFormation.artinEquiv` of the local class for
 layer of `L`, read through `layerNormQuotientEquiv K L` and `layerGalEquiv ι`. It does not depend
 on `ι` (`localArtinEquiv_eq_of_iota`). -/
 def localArtinEquiv (ι : L →ₐ[K] SeparableClosure K) :
-    Additive (Kˣ ⧸ normGroup K L) ≃+ Additive (Abelianization Gal(L/K)) :=
+    Additive (Kˣ ⧸ normGroup K L) ≃+ Additive (Group.Abelianization Gal(L/K)) :=
   (layerNormQuotientEquiv K L).trans <|
     ((localClassFormation K).artinEquiv
         (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L))).trans
@@ -116,7 +118,7 @@ theorem localArtinEquiv_eq_of_iota (ι ι' : L →ₐ[K] SeparableClosure K) :
 nonarchimedean local field: the class modulo `N_{L/K}(Lˣ)` followed by finite local reciprocity
 `localArtinEquiv K L ι`. -/
 def localArtinMap (ι : L →ₐ[K] SeparableClosure K) :
-    Additive Kˣ →+ Additive (Abelianization Gal(L/K)) :=
+    Additive Kˣ →+ Additive (Group.Abelianization Gal(L/K)) :=
   (localArtinEquiv K L ι).toAddMonoidHom.comp
     (MonoidHom.toAdditive (QuotientGroup.mk' (normGroup K L)))
 
@@ -157,7 +159,7 @@ finite local reciprocity `localArtinEquiv`, for the embedding of `L` into the se
 supplied by `IsSepClosed.lift`. Since finite local reciprocity does not depend on the embedding,
 it is the multiplicative form of `localArtinEquiv K L ι` for every `ι` (`toAdditive_normResidue`).
 -/
-def normResidue : (Kˣ ⧸ normGroup K L) ≃* Abelianization Gal(L/K) :=
+def normResidue : (Kˣ ⧸ normGroup K L) ≃* Group.Abelianization Gal(L/K) :=
   MulEquiv.toAdditive.symm (localArtinEquiv K L (IsSepClosed.lift : L →ₐ[K] SeparableClosure K))
 
 /-- **The norm residue isomorphism is finite local reciprocity** for every embedding `ι` of `L`
@@ -174,6 +176,19 @@ theorem normResidue_mk (ι : L →ₐ[K] SeparableClosure K) (a : Kˣ) :
   rw [localArtinMap_apply, ← toAdditive_normResidue K L ι, MulEquiv.toAdditive_apply_apply,
     toMul_ofMul, toMul_ofMul]
 
+/-- The norm residue symbol of the class of `a ∈ Kˣ` is trivial exactly when `a` is a norm from
+`L`. -/
+theorem normResidue_mk_eq_one_iff (a : Kˣ) :
+    normResidue K L (a : Kˣ ⧸ normGroup K L) = 1 ↔ a ∈ normGroup K L := by
+  rw [EmbeddingLike.map_eq_one_iff, QuotientGroup.eq_one_iff]
+
+/-- **Powers to the order of `Gal(L/K)^ab` are norms**: the norm residue isomorphism identifies
+`Kˣ / N_{L/K}(Lˣ)` with `Gal(L/K)^ab`, so `a ^ #Gal(L/K)^ab ∈ N_{L/K}(Lˣ)` for every `a ∈ Kˣ`. -/
+theorem pow_natCard_abelianization_mem_normGroup (a : Kˣ) :
+    a ^ Nat.card (Group.Abelianization Gal(L/K)) ∈ normGroup K L := by
+  rw [← normResidue_mk_eq_one_iff, QuotientGroup.mk_pow, map_pow]
+  exact pow_card_eq_one'
+
 open scoped IsMulCommutative in
 /-- **The norm index of a finite abelian extension**: if `Gal(L/K)` is commutative, then
 `[Kˣ : N_{L/K}(Lˣ)] = [L : K]`, since the norm residue isomorphism identifies the norm quotient
@@ -181,7 +196,7 @@ with `Gal(L/K)^ab`, which is `Gal(L/K)` itself. -/
 theorem index_normGroup_of_isMulCommutative [IsMulCommutative Gal(L/K)] :
     (normGroup K L).index = Module.finrank K L := by
   rw [Subgroup.index, Nat.card_congr (normResidue K L).toEquiv,
-    ← Nat.card_congr (Abelianization.equivOfComm (H := Gal(L/K))).toEquiv,
+    ← Nat.card_congr (Group.Abelianization.equivOfComm (H := Gal(L/K))).toEquiv,
     IsGalois.card_aut_eq_finrank]
 
 /-- **`n`-th powers are norms when `n` kills the Galois group.** If `σ ^ n = 1` for every
@@ -192,9 +207,47 @@ theorem powerSubgroup_le_normGroup_of_exponent_dvd {n : ℕ}
   intro x hx
   obtain ⟨y, rfl⟩ := (mem_powerSubgroup_iff n).1 hx
   have hsurj : Function.Surjective
-      ((normResidue K L).symm.toMonoidHom.comp (Abelianization.of (G := Gal(L/K)))) :=
+      ((normResidue K L).symm.toMonoidHom.comp (Group.Abelianization.of (G := Gal(L/K)))) :=
     (normResidue K L).symm.surjective.comp (QuotientGroup.mk'_surjective _)
   rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
   exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp ((MonoidHom.exponent_dvd hsurj).trans hn) _
+
+/-! ### Norm groups in a tower -/
+
+section Tower
+
+variable {K} (F : Type) [Field F] [ValuativeRel F] [TopologicalSpace F]
+  [IsNonarchimedeanLocalField F] [Algebra K F] (E : Type*) [Field E] [Algebra K E] [Algebra F E]
+  [IsScalarTower K F E] [FiniteDimensional K E] [FiniteDimensional F E] [IsAbelianGalois K E]
+
+/-- **Norm groups in a tower of abelian extensions.** For finite extensions `E/F/K` of a
+nonarchimedean local field `K` with `E/K` abelian, an element of `Fˣ` is a norm from `E` exactly
+when its norm to `K` is a norm from `E`: `N_{F/K}⁻¹(N_{E/K}(Eˣ)) = N_{E/F}(Eˣ)`. -/
+theorem comap_normUnits_normGroup :
+    (normGroup K E).comap (Algebra.normUnits K : Fˣ →* Kˣ) = normGroup F E := by
+  have : FiniteDimensional K F := .left K F E
+  have := IsAbelianGalois.tower_bot K F E
+  have := IsAbelianGalois.tower_top K F E
+  -- `⊇` is the transitivity of the norm, and both sides have index `[E : F]`.
+  have hle : normGroup F E ≤ (normGroup K E).comap (Algebra.normUnits K) := fun x hx ↦ by
+    obtain ⟨y, rfl⟩ := mem_normGroup_iff_exists_normUnits.1 hx
+    exact mem_normGroup_iff_exists_normUnits.2 ⟨y, Units.ext (by simp [Algebra.norm_norm])⟩
+  have hrange : (Algebra.normUnits K : Fˣ →* Kˣ).range = normGroup K F :=
+    Subgroup.ext fun _ ↦ mem_normGroup_iff_exists_normUnits.symm
+  -- `[Fˣ : N_{F/K}⁻¹(N_{E/K}(Eˣ))] = [N_{F/K}(Fˣ) : N_{E/K}(Eˣ)] = [E : F]`.
+  have hindex : ((normGroup K E).comap (Algebra.normUnits K : Fˣ →* Kˣ)).index =
+      Module.finrank F E := by
+    have hmul := Subgroup.relIndex_mul_index
+      (AlgHom.normGroup_le_normGroup (IsScalarTower.toAlgHom K F E))
+    rw [index_normGroup_of_isMulCommutative, index_normGroup_of_isMulCommutative,
+      ← Module.finrank_mul_finrank K F E, mul_comm] at hmul
+    rw [Subgroup.index_comap, hrange]
+    exact Nat.eq_of_mul_eq_mul_left Module.finrank_pos hmul
+  have : ((normGroup K E).comap (Algebra.normUnits K : Fˣ →* Kˣ)).FiniteIndex :=
+    ⟨hindex ▸ Module.finrank_pos.ne'⟩
+  exact (Subgroup.eq_of_index_dvd_index hle
+    (by rw [hindex, index_normGroup_of_isMulCommutative])).symm
+
+end Tower
 
 end TauCeti.ClassFieldTheory

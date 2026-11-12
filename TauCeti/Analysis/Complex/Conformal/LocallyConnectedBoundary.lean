@@ -12,11 +12,11 @@ import Mathlib.Analysis.Normed.Module.Convex
 /-!
 # Local connectedness of the boundary of a conformally mapped domain
 
-Carathéodory's *continuity theorem* — the analytic half of layer **L5** of the conformal-mapping
-roadmap — says that a Riemann map `f : 𝔻 → Ω` extends continuously to the closed disc **if and only
-if** `∂Ω` is locally connected. This file proves the "only if" half, the half that holds with no
-hypothesis on the boundary at all: local connectedness is *carried along* by any continuous
-extension, so a domain whose boundary is not locally connected admits no such extension.
+Carathéodory's *continuity theorem* — the analytic half of the boundary correspondence — says that a
+Riemann map `f : 𝔻 → Ω` extends continuously to the closed disc **if and only if** `∂Ω` is locally
+connected. This file proves the "only if" half, the half that holds with no hypothesis on the
+boundary at all: local connectedness is *carried along* by any continuous extension, so a domain
+whose boundary is not locally connected admits no such extension.
 
 Each conclusion comes in two forms. The pointwise one is `LocallyConnectedSpace`; the uniform one,
 `TauCeti.IsUniformlyLocallyConnected`, asks for a single `δ` per `ε` joining any two nearby points
@@ -40,18 +40,16 @@ corollary for the disc discharges its own hypothesis differently, the closed dis
 hence locally connected.
 
 Together with `TauCeti.exists_continuousOn_closure_eqOn`, the extension criterion of
-`TauCeti/Topology/ClusterSet.lean`, this delimits the L5 milestone from both sides: the criterion
-says which boundary behaviour *produces* a continuous extension, and the results here say what any
-continuous extension *forces* on the image boundary. The sufficiency half of the continuity
-theorem, and with it the Jordan-domain milestone itself, is not proved here; what this file and
-`TauCeti.IsJordanDomain.locallyConnectedSpace_frontier` supply for it is the hypothesis it runs
-on — local connectedness of the boundary of a Jordan domain — together with the machinery that
-transports it.
+`TauCeti/Topology/ClusterSet.lean`, this delimits Carathéodory's theorem from both sides: the
+criterion says which boundary behaviour *produces* a continuous extension, and the results here say
+what any continuous extension *forces* on the image boundary. The sufficiency half of the continuity
+theorem, and with it the Jordan-domain correspondence itself, is not proved here; what this file and
+`TauCeti.IsJordanDomain.locallyConnectedSpace_frontier` supply for it is the hypothesis it runs on —
+local connectedness of the boundary of a Jordan domain — together with the machinery that transports
+it.
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, the results below are stated for maps of `ℂ`, as in
-`Conformal/BoundaryCorrespondence.lean`; the topological engine they run on is stated for arbitrary
-topological spaces.
+The results below are stated for maps of `ℂ`, as in `Conformal/BoundaryCorrespondence.lean`; the
+topological engine they run on is stated for arbitrary topological spaces.
 
 ## Main results
 
@@ -71,17 +69,6 @@ topological spaces.
   `TauCeti.isUniformlyLocallyConnected_closure_image_ball` and
   `TauCeti.isUniformlyLocallyConnected_frontier_image_ball` — the same five statements in the
   uniform `ε`–`δ` form, the images in question being compact.
-
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and
-Mathlib has no boundary correspondence for conformal maps. So this file is new Lean formalization
-rather than a temporary shim. It consumes the L0–L3 shim
-`TauCeti.isOpen_image_of_differentiableOn_of_injOn` through
-`Conformal/BoundaryCorrespondence.lean`, to be refactored onto Mathlib once the upstream work
-lands.
 
 ## References
 

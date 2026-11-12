@@ -95,11 +95,11 @@ theorem kostantRootSubgroupMatrix_mem_generatedPoints
     kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q ∈
       kostantGeneratedPointsSubgroup e h ρ M hM hnil b A := by
   have hmatrix : GeneralLinear.pointsMulEquiv n
-      ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
         (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b)).app
           (CommAlgCat.of ℤ A) q) =
       kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply]
     exact pointsMulEquiv_kostantRootSubgroupCoordinateMap
       e h ρ M hM i (hnil i) b A q
   rw [kostantGeneratedPointsSubgroup_def, ← hmatrix]

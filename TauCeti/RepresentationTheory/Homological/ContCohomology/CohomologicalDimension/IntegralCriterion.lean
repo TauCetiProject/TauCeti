@@ -259,8 +259,11 @@ private theorem primaryComponent_succ_eq_bot (M : Type u) [AddCommGroup M] [Topo
   obtain ⟨y', hy', hy'x⟩ := exists_mem_primaryComponent_apply_eq
     (coeffMap (ofDiscreteModuleMap N.subtype.toIntLinearMap
       (N.restrictDistribMulAction_coe_smul hN)) (n + 1)).hom hp
-    (isAddTorsion_continuousCohomology n y) hx
-  rw [primaryComponent_eq_bot_of_finite hp hs hZ S N (AddSubgroup.orbitsGenerator w)
+    (isAddTorsion_continuousCohomology n y) (by
+      simpa only [← AddCommGroup.primaryComponent_toAddSubmonoid,
+        AddSubgroup.mem_toAddSubmonoid] using hx)
+  rw [← AddCommGroup.primaryComponent_toAddSubmonoid, AddSubgroup.mem_toAddSubmonoid,
+    primaryComponent_eq_bot_of_finite hp hs hZ S N (AddSubgroup.orbitsGenerator w)
     (AddSubgroup.mem_closure_orbits_orbitsGenerator w), AddSubgroup.mem_bot] at hy'
   rw [← hy'x, hy', _root_.map_zero]
 

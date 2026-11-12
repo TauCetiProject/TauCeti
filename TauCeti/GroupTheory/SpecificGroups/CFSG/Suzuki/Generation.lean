@@ -39,6 +39,8 @@ Both halves only use the equations in the generator coordinates, which the earli
   top entry vanishes, and conversely when its middle entries vanish and its bottom entry does not.
 * `TauCeti.SuzukiLieIndex.exists_eq_torus_mul_unipotent`: a fixed point fixing `∞` is a torus
   element times a standard unipotent generator.
+* `TauCeti.SuzukiLieIndex.exists_eq_unipotent_mul_weyl_mul_torus_mul_unipotent`: any other fixed
+  point lies in the big Bruhat cell `U w H U`.
 * `TauCeti.SuzukiLieIndex.finiteFixedSubgroup_eq_suzukiGroup`: the finite-field fixed subgroup is
   the generated Suzuki group.
 * `TauCeti.SuzukiLieIndex.suzukiGroupEquivFixedPoints`: the generated Suzuki group is isomorphic
@@ -276,6 +278,47 @@ theorem exists_eq_torus_mul_unipotent
   rw [← eq_unipotent_of_apply_zero_zero_eq_one hu hu00 hu03, ← mul_assoc, ← map_mul,
     mul_inv_cancel, map_one, one_mul]
 
+/-- **The big Bruhat cell**: a fixed point not fixing the point at infinity is
+`u(a, b) w h(κ) u(c, d)` for standard unipotent generators, the Weyl generator and a torus
+element. -/
+theorem exists_eq_unipotent_mul_weyl_mul_torus_mul_unipotent
+    (h : (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 0 3 ≠ 0) :
+    ∃ (a b : GaloisField 2 (2 * m + 1)) (κ : (GaloisField 2 (2 * m + 1))ˣ)
+      (c d : GaloisField 2 (2 * m + 1)),
+      g = Suzuki.unipotent m a b * Suzuki.weyl m *
+        (Suzuki.torus m κ * Suzuki.unipotent m c d) := by
+  have htwo : (2 : GaloisField 2 (2 * m + 1)) = 0 := CharTwo.two_eq_zero
+  set a := (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3 / g 0 3
+  set b := (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 2 3 / g 0 3
+  set g' := Suzuki.weyl m * Suzuki.unipotent m a b * g with hg'
+  have hg'mem : g' ∈ finiteFixedSubgroup m hvalid :=
+    mul_mem (mul_mem (suzukiGroup_le_finiteFixedSubgroup m hvalid Suzuki.weyl_mem_suzukiGroup)
+      (suzukiGroup_le_finiteFixedSubgroup m hvalid (Suzuki.unipotent_mem_suzukiGroup a b))) hg
+  have ha' : a * g 0 3 = g 1 3 := div_mul_cancel₀ _ h
+  have hb' : b * g 0 3 = g 2 3 := div_mul_cancel₀ _ h
+  -- The Weyl element reverses the rows, so the entries `(1,3)` and `(2,3)` of `g'` are the
+  -- entries `(2,3)` and `(1,3)` of `u(a, b) g`.
+  have h1 : (g' : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3 = 0 := by
+    have e : (g' : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3 =
+        (a * a ^ 2 ^ (m + 1) + b) * g 0 3 + a ^ 2 ^ (m + 1) * g 1 3 + g 2 3 := by
+      simp [hg', Matrix.mul_apply, Fin.sum_univ_four]
+    rw [e]
+    linear_combination a ^ 2 ^ (m + 1) * ha' + hb' +
+      (a ^ 2 ^ (m + 1) * (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3 +
+        g 2 3) * htwo
+  have h2 : (g' : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 2 3 = 0 := by
+    have e : (g' : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 2 3 =
+        a * g 0 3 + g 1 3 := by
+      simp [hg', Matrix.mul_apply, Fin.sum_univ_four]
+    rw [e, ha', CharTwo.add_self_eq_zero]
+  have h3 : (g' : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 3 3 ≠ 0 := by
+    simpa [hg', Matrix.mul_apply, Fin.sum_univ_four] using h
+  obtain ⟨κ, a', b', heq⟩ :=
+    exists_eq_torus_mul_unipotent hg'mem (apply_zero_three_eq_zero hg'mem h1 h2 h3)
+  refine ⟨a, b + a * a ^ 2 ^ (m + 1), κ, a', b', ?_⟩
+  rw [← Suzuki.unipotent_inv, ← Suzuki.weyl_inv, ← heq, hg']
+  group
+
 end Stabilizer
 
 /-! ## The generation theorem -/
@@ -292,42 +335,9 @@ theorem finiteFixedSubgroup_le_suzukiGroup :
   by_cases h : (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 0 3 = 0
   · obtain ⟨κ, a, b, rfl⟩ := exists_eq_torus_mul_unipotent hg h
     exact mul_mem (Suzuki.torus_mem_suzukiGroup m κ) (Suzuki.unipotent_mem_suzukiGroup a b)
-  · have htwo : (2 : GaloisField 2 (2 * m + 1)) = 0 := CharTwo.two_eq_zero
-    set a := (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3 / g 0 3
-    set b := (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 2 3 / g 0 3
-    set g' := Suzuki.weyl m * Suzuki.unipotent m a b * g with hg'
-    have hg'mem : g' ∈ finiteFixedSubgroup m hvalid :=
-      mul_mem (mul_mem (suzukiGroup_le_finiteFixedSubgroup m hvalid Suzuki.weyl_mem_suzukiGroup)
-        (suzukiGroup_le_finiteFixedSubgroup m hvalid (Suzuki.unipotent_mem_suzukiGroup a b))) hg
-    have ha' : a * g 0 3 = g 1 3 := div_mul_cancel₀ _ h
-    have hb' : b * g 0 3 = g 2 3 := div_mul_cancel₀ _ h
-    -- The Weyl element reverses the rows, so the entries `(1,3)` and `(2,3)` of `g'` are the
-    -- entries `(2,3)` and `(1,3)` of `u(a, b) g`.
-    have h1 : (g' : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3 = 0 := by
-      have e : (g' : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3 =
-          (a * a ^ 2 ^ (m + 1) + b) * g 0 3 + a ^ 2 ^ (m + 1) * g 1 3 + g 2 3 := by
-        simp [hg', Matrix.mul_apply, Fin.sum_univ_four]
-      rw [e]
-      linear_combination a ^ 2 ^ (m + 1) * ha' + hb' +
-        (a ^ 2 ^ (m + 1) * (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3 +
-          g 2 3) * htwo
-    have h2 : (g' : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 2 3 = 0 := by
-      have e : (g' : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 2 3 =
-          a * g 0 3 + g 1 3 := by
-        simp [hg', Matrix.mul_apply, Fin.sum_univ_four]
-      rw [e, ha', CharTwo.add_self_eq_zero]
-    have h3 : (g' : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 3 3 ≠ 0 := by
-      simpa [hg', Matrix.mul_apply, Fin.sum_univ_four] using h
-    obtain ⟨κ, a', b', heq⟩ :=
-      exists_eq_torus_mul_unipotent hg'mem (apply_zero_three_eq_zero hg'mem h1 h2 h3)
-    have hg : g = (Suzuki.unipotent m a b)⁻¹ * (Suzuki.weyl m)⁻¹ *
-        (Suzuki.torus m κ * Suzuki.unipotent m a' b') := by
-      rw [← heq, hg']
-      group
-    rw [hg]
-    exact mul_mem (mul_mem (inv_mem (Suzuki.unipotent_mem_suzukiGroup a b))
-      (inv_mem Suzuki.weyl_mem_suzukiGroup))
-      (mul_mem (Suzuki.torus_mem_suzukiGroup m κ) (Suzuki.unipotent_mem_suzukiGroup a' b'))
+  · obtain ⟨a, b, κ, c, d, rfl⟩ := exists_eq_unipotent_mul_weyl_mul_torus_mul_unipotent hg h
+    exact mul_mem (mul_mem (Suzuki.unipotent_mem_suzukiGroup a b) Suzuki.weyl_mem_suzukiGroup)
+      (mul_mem (Suzuki.torus_mem_suzukiGroup m κ) (Suzuki.unipotent_mem_suzukiGroup c d))
 
 /-- The finite-field preimage of the Suzuki Steinberg fixed points is the generated Suzuki
 group. -/

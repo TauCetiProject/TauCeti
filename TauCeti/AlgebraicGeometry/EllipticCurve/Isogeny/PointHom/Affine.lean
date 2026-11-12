@@ -63,16 +63,6 @@ namespace Isogeny
 variable {F : Type*} [Field F] [DecidableEq F] {W₁ W₂ : WeierstrassCurve.Affine F}
   [W₁.IsElliptic] [W₂.IsElliptic] (φ : Isogeny W₁ W₂)
 
-local instance : IsIntegrallyClosed W₁.CoordinateRing := W₁.isIntegrallyClosed_coordinateRing
-
-local instance : IsIntegrallyClosed W₂.CoordinateRing := W₂.isIntegrallyClosed_coordinateRing
-
-local instance : IsDedekindDomain W₁.CoordinateRing :=
-  W₁.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
-local instance : IsDedekindDomain W₂.CoordinateRing :=
-  W₂.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- **The class-group point map evaluates at affine points, given trivial residue extensions over
 the target point.** If the place of the affine point `(x, y)` of `W₁` restricts along `φ^*` to the
 place of the affine point `(x', y')` of `W₂` — that is, if `φ^* x₂` and `φ^* y₂` take the values
@@ -114,13 +104,8 @@ theorem toPointHom_some_eq_some_of_isEquiv_comap_pointPlace_of_forall_inertiaDeg
   have : FaithfulSMul W₂.CoordinateRing φ.intermediateRing :=
     (faithfulSMul_iff_algebraMap_injective _ _).mpr φ.pullbackToIntermediateRing_injective
   -- `φ^* x₂` has no pole at `P`, because `x₂` has none at the affine point `Q`
-  have hxle : (CoordinateRing.pointPlace h.1).valuation W₁.FunctionField
-      (φ.pullback (algebraMap F[X] W₂.CoordinateRing X)) ≤ 1 := by
-    have hQ := (CoordinateRing.pointPlace h'.1).valuation_le_one (K := W₂.FunctionField)
-      (algebraMap F[X] W₂.CoordinateRing X)
-    rw [← Valuation.isEquiv_iff_val_le_one.mp hP, Valuation.comap_apply, RingHom.coe_coe,
-      fieldPullback_algebraMap] at hQ
-    exact hQ
+  have hxle := φ.valuation_pullback_le_one_of_isEquiv_comap_pointPlace h.1 h'.1 hP
+    (algebraMap F[X] W₂.CoordinateRing X)
   -- so the intermediate ring lies in the valuation ring of `P`, and `v_P` is the valuation of a
   -- height one prime `𝔓` of the intermediate ring
   obtain ⟨𝔓, h𝔓, -⟩ := Valuation.existsUnique_heightOneSpectrum_valuation_eq φ.intermediateRing
@@ -149,8 +134,7 @@ theorem toPointHom_some_eq_some_of_isEquiv_comap_pointPlace_of_forall_inertiaDeg
   -- hence the norm of `𝔓` is the ideal of `Q`
   have hnorm : Ideal.relNorm W₂.CoordinateRing 𝔓.asIdeal =
       (CoordinateRing.pointPlace h'.1).asIdeal :=
-    Ideal.relNorm_eq_of_forall_inertiaDeg_eq_one (CoordinateRing.pointPlace h'.1).ne_bot hf
-      𝔓.asIdeal
+    Ideal.relNorm_eq_of_forall_inertiaDeg_eq_one hf 𝔓.asIdeal
   -- read the class-group computation off these ideals
   rw [toPointHom_eq_iff, Point.toClass_some_eq_ofMul_mk0 h, Point.toClass_some_eq_ofMul_mk0 h',
     pushClass_apply, toMul_ofMul, pushClassMonoidHom_mk0]

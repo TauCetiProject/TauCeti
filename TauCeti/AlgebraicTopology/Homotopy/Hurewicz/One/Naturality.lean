@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+
 /-!
 # Naturality of the Hurewicz map in degree one
 
@@ -18,10 +20,14 @@ path, which conjugates loops by the path, does not change their homology classes
 
 ## Main results
 
+* `ContinuousMap.singularHomologyMap_loopClass`: the map induced on first singular homology by a
+  continuous map sends the class of a loop to the class of its image.
 * `TauCeti.HurewiczOne.homologyMap_H₁AddEquivHomology_hurewiczAb`: naturality of the Hurewicz
   map on the abelianized fundamental group.
 * `TauCeti.HurewiczOne.homologyMap_hurewiczHomologyAddEquiv`: the same for the Hurewicz
   isomorphism of path-connected spaces.
+* `TauCeti.HurewiczOne.homologyMap_hurewiczHomologyAddEquiv_mapOfEq`: the same for a map carrying
+  the base point to a prescribed base point of the target.
 * `TauCeti.HurewiczOne.hurewicz₁_fundamentalGroupMulEquivOfPath`: the Hurewicz map is invariant
   under the change of base point along a path.
 
@@ -79,27 +85,40 @@ lemma homologyMap_H₁AddEquivHomology_loopClass {x : X} (γ : Path x x) :
 homology group of the singular chain complex corresponds to the map induced on fundamental
 groups. -/
 theorem homologyMap_H₁AddEquivHomology_hurewiczAb {x : X}
-    (a : Additive (Abelianization (FundamentalGroup X x))) :
+    (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
     (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
         (H₁AddEquivHomology X (hurewiczAb x a)) =
-      H₁AddEquivHomology Y (hurewiczAb (f x) (Additive.ofMul (Abelianization.map
+      H₁AddEquivHomology Y (hurewiczAb (f x) (Additive.ofMul (Group.Abelianization.map
         (FundamentalGroup.map f.hom x) a.toMul))) := by
   induction a using Additive.rec with | ofMul a =>
   induction a using Quot.ind with | mk p =>
+  obtain ⟨p⟩ := p
   induction p using Path.Homotopic.Quotient.ind with | mk γ =>
-  rw [Abelianization.mk_eq_of, toMul_ofMul, Abelianization.map_of,
-    FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map, hurewiczAb_ofMul_of_mk,
+  rw [Group.Abelianization.mk_eq_of, toMul_ofMul, Group.Abelianization.map_of,
+    FundamentalGroup.map_fromPath f.hom x γ, hurewiczAb_ofMul_of_mk,
     hurewiczAb_ofMul_of_mk, homologyMap_H₁AddEquivHomology_loopClass]
 
 /-- **Naturality of the Hurewicz isomorphism** of path-connected spaces. -/
 theorem homologyMap_hurewiczHomologyAddEquiv [PathConnectedSpace X] [PathConnectedSpace Y]
-    {x : X} (a : Additive (Abelianization (FundamentalGroup X x))) :
+    {x : X} (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
     (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
         (hurewiczHomologyAddEquiv x a) =
-      hurewiczHomologyAddEquiv (f x) (Additive.ofMul (Abelianization.map
+      hurewiczHomologyAddEquiv (f x) (Additive.ofMul (Group.Abelianization.map
         (FundamentalGroup.map f.hom x) a.toMul)) := by
   rw [hurewiczHomologyAddEquiv_apply, hurewiczHomologyAddEquiv_apply,
     homologyMap_H₁AddEquivHomology_hurewiczAb]
+
+/-- **Naturality of the Hurewicz isomorphism** of path-connected spaces, for a continuous map
+carrying the base point `x` to a prescribed base point `y` of the target. -/
+theorem homologyMap_hurewiczHomologyAddEquiv_mapOfEq [PathConnectedSpace X]
+    [PathConnectedSpace Y] {x : X} {y : Y} (h : f x = y)
+    (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
+    (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
+        (hurewiczHomologyAddEquiv x a) =
+      hurewiczHomologyAddEquiv y (Additive.ofMul (Group.Abelianization.map
+        (FundamentalGroup.mapOfEq f.hom h) a.toMul)) := by
+  subst h
+  rw [FundamentalGroup.mapOfEq_rfl, homologyMap_hurewiczHomologyAddEquiv]
 
 /-- **Independence of the base point**: the Hurewicz map is invariant under the change of base
 point along a path. -/
@@ -108,8 +127,11 @@ point along a path. -/
 theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
     (a : FundamentalGroup X x) :
     hurewicz₁ X x' (FundamentalGroup.fundamentalGroupMulEquivOfPath p a) = hurewicz₁ X x a := by
+  obtain ⟨a⟩ := a
   induction a using Path.Homotopic.Quotient.ind with | mk γ =>
-  rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_apply, ← Path.Homotopic.Quotient.mk_symm,
+  rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
+  dsimp only
+  rw [← Path.Homotopic.Quotient.mk_symm,
     ← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_trans, hurewicz₁_mk,
     hurewicz₁_mk]
   congr 1
@@ -122,4 +144,29 @@ theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
   convert this using 1
   abel
 
+/-- Changing the base point along a path does not change the singular homology class supplied
+by the degree-one Hurewicz isomorphism. -/
+theorem hurewiczHomologyAddEquiv_fundamentalGroupMulEquivOfPath [PathConnectedSpace X]
+    {x x' : X} (p : Path x x') (a : FundamentalGroup X x) :
+    hurewiczHomologyAddEquiv x' (Additive.ofMul (Group.Abelianization.of
+      (FundamentalGroup.fundamentalGroupMulEquivOfPath p a))) =
+      hurewiczHomologyAddEquiv x (Additive.ofMul (Group.Abelianization.of a)) := by
+  simp only [hurewiczHomologyAddEquiv_apply, hurewiczAb_ofMul_of]
+  exact congrArg (fun z ↦ H₁AddEquivHomology X (Multiplicative.toAdd z))
+    (hurewicz₁_fundamentalGroupMulEquivOfPath p a)
+
 end TauCeti.HurewiczOne
+
+namespace ContinuousMap
+
+open TauCeti.HurewiczOne
+
+/-- The map induced on first singular homology by a continuous map sends the class of a loop to
+the class of its image. -/
+theorem singularHomologyMap_loopClass {Y Z : Type} [TopologicalSpace Y] [TopologicalSpace Z]
+    (g : C(Y, Z)) {y : Y} (γ : Path y y) :
+    singularHomologyMap ℤ 1 g (H₁AddEquivHomology (TopCat.of Y) (loopClass γ)) =
+      H₁AddEquivHomology (TopCat.of Z) (loopClass (γ.map g.continuous)) :=
+  homologyMap_H₁AddEquivHomology_loopClass (TopCat.ofHom g) γ
+
+end ContinuousMap

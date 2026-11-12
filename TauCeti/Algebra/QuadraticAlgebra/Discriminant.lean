@@ -4,28 +4,33 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wentao Li
 -/
 module
-public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
-public import Mathlib.RingTheory.Discriminant
+import Mathlib.Algebra.Order.Ring.Defs
+import Mathlib.Tactic.Linarith
 
 /-!
-# The discriminant of the standard quadratic-algebra basis
+# Discriminants and nonnegative norms in quadratic algebras
 
-The algebra discriminant of the basis `1, ω` is `b² + 4a`, where `ω² = a + bω`.
-This identifies Mathlib's explicit quadratic discriminant with the discriminant computed
-from the trace pairing. Over `ℤ`, choosing `a` and `b` with `b² + 4a = Δ` gives `Δ` as the
-discriminant of the basis `1, ω` of `QuadraticAlgebra ℤ a b`.
+A ring map commutes with the discriminant (`QuadraticAlgebra.map_discr`). Over an ordered ring,
+a nonpositive discriminant makes the norm nonnegative
+(`QuadraticAlgebra.norm_nonneg_of_discr_nonpos`), as for `ℚ(√d)` with `d < 0`.
 -/
 
 public section
 
 namespace QuadraticAlgebra
 
-/-- The discriminant of the standard basis `1, ω` is the explicit quadratic discriminant. -/
-@[simp] theorem algebraDiscr_basis {R : Type*} [CommRing R] (a b : R) :
-    Algebra.discr R (basis a b) = discr a b := by
-  simp [Algebra.discr_def, Matrix.det_fin_two, Algebra.traceMatrix_apply,
-    Algebra.traceForm_apply, basis_apply_zero, basis_apply_one, trace_def, discr_def]
-  ring
+/-- A ring map commutes with the discriminant. -/
+theorem map_discr {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) (a b : R) :
+    f (discr a b) = discr (f a) (f b) := by
+  simp [discr_def, map_ofNat]
+
+/-- **The norm is nonnegative when the discriminant is nonpositive.** Over an ordered ring, if
+`b² + 4a ≤ 0` then every element of `QuadraticAlgebra R a b` has nonnegative norm. -/
+theorem norm_nonneg_of_discr_nonpos {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] {a b : R} (h : discr a b ≤ 0) (z : QuadraticAlgebra R a b) :
+    0 ≤ norm z := by
+  have := im_sq_mul_discr z
+  nlinarith [mul_nonpos_of_nonneg_of_nonpos (sq_nonneg z.im) h, sq_nonneg (trace z)]
 
 end QuadraticAlgebra

@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Topology.Order.MonotoneConvergence
-public import TauCeti.Analysis.Calculus.IteratedDerivWithin
+public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
+import TauCeti.Topology.Order.MonotoneConvergence
 
 /-!
 # Completely monotone functions
@@ -268,10 +269,9 @@ differentiable at any `t > 0`, with derivative the `(k+1)`-th iterated derivativ
 lemma hasDerivAt_iteratedDerivWithin_succ
     (hcm : IsCompletelyMonotone f) (k : ℕ) {t : ℝ} (ht : 0 < t) :
     HasDerivAt (iteratedDerivWithin k f (Ici 0))
-      (iteratedDerivWithin (k + 1) f (Ici 0) t) t := by
-  have horder : ((k + 1 : ℕ) : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
-  exact ContDiffOn.hasDerivAt_iteratedDerivWithin (k := k)
-    (hcm.contDiffOn.of_le horder) (uniqueDiffOn_Ici 0) (Ici_mem_nhds ht)
+      (iteratedDerivWithin (k + 1) f (Ici 0) t) t :=
+  hcm.contDiffOn.hasDerivAt_iteratedDerivWithin (mod_cast ENat.natCast_lt_top k)
+    (Ici_mem_nhds ht)
 
 /-- Completely monotone functions are closed under addition. -/
 lemma add (hf : IsCompletelyMonotone f) (hg : IsCompletelyMonotone g) :
@@ -471,10 +471,10 @@ theorem isCompletelyMonotoneOnIoi_of_forall_comp_add_const {f : ℝ → ℝ}
 
 /-! ## Closed-half-line complete monotonicity -/
 
-/-- Roadmap-level complete monotonicity on the closed half-line.
+/-- Complete monotonicity on the closed half-line.
 
 This is the classical finite-measure hypothesis: the function is continuous on `[0, ∞)` and
-completely monotone on the open half-line `(0, ∞)`. It is weaker at the endpoint than the existing
+completely monotone on the open half-line `(0, ∞)`. It is weaker at the endpoint than
 `IsCompletelyMonotone`, which requires all derivatives within `[0, ∞)` to exist at `0`. -/
 def IsContinuousCompletelyMonotoneOnIoi (f : ℝ → ℝ) : Prop :=
   ContinuousOn f (Ici 0) ∧ IsCompletelyMonotoneOnIoi f
@@ -499,7 +499,7 @@ lemma continuousOn (hf : IsContinuousCompletelyMonotoneOnIoi f) : ContinuousOn f
 lemma isCompletelyMonotoneOnIoi (hf : IsContinuousCompletelyMonotoneOnIoi f) :
     IsCompletelyMonotoneOnIoi f := hf.2
 
-/-- The existing strong Tau Ceti predicate implies the roadmap-level closed-half-line predicate. -/
+/-- The stronger predicate `IsCompletelyMonotone` implies the closed-half-line predicate. -/
 lemma of_isCompletelyMonotone (hf : IsCompletelyMonotone f) :
     IsContinuousCompletelyMonotoneOnIoi f :=
   ⟨hf.contDiffOn.continuousOn, hf.isCompletelyMonotoneOnIoi⟩
@@ -566,23 +566,10 @@ protected lemma sum {ι : Type*} {s : Finset ι} {F : ι → ℝ → ℝ}
 end IsContinuousCompletelyMonotoneOnIoi
 
 /-- The `max`-truncation of a function antitone on a closed half-line is antitone everywhere:
-the shared totalization step of the half-line limit lemmas below. -/
+the totalization step of the half-line limit lemma below. -/
 private lemma antitone_comp_max {f : ℝ → ℝ} {a : ℝ} (hf : AntitoneOn f (Ici a)) :
     Antitone fun t : ℝ => f (max t a) := fun _ _ hab =>
   hf (mem_Ici.mpr (le_max_right _ _)) (mem_Ici.mpr (le_max_right _ _)) (max_le_max_right a hab)
-
-/-- A function antitone and bounded below on a closed half-line converges at infinity. -/
-private lemma exists_tendsto_atTop_of_antitoneOn_Ici {f : ℝ → ℝ} {a : ℝ} (hf : AntitoneOn f (Ici a))
-    (hbdd : BddBelow (f '' Ici a)) :
-    ∃ L, Tendsto f atTop (𝓝 L) := by
-  set g := fun t : ℝ => f (max t a) with hg
-  have hg_anti : Antitone g := antitone_comp_max hf
-  have hg_bdd : BddBelow (Set.range g) := by
-    obtain ⟨b, hb⟩ := hbdd
-    exact ⟨b, by rintro y ⟨t, rfl⟩; exact hb ⟨max t a, mem_Ici.mpr (le_max_right _ _), rfl⟩⟩
-  refine ⟨⨅ i, g i, ?_⟩
-  exact (tendsto_atTop_ciInf hg_anti hg_bdd).congr'
-    (eventually_atTop.mpr ⟨a, fun t ht => by simp [hg, max_eq_left ht]⟩)
 
 /-- A function antitone on a closed half-line lies above its limit at infinity there. -/
 private lemma le_of_tendsto_atTop_of_antitoneOn_Ici {f : ℝ → ℝ} {a : ℝ} (hf : AntitoneOn f (Ici a))
@@ -601,9 +588,9 @@ variable {f : ℝ → ℝ}
 antitone on `[0, ∞)` and bounded below by `0`. -/
 lemma exists_nonneg_tendsto_atTop (hf : IsContinuousCompletelyMonotoneOnIoi f) :
     ∃ L, Tendsto f atTop (𝓝 L) ∧ 0 ≤ L := by
-  obtain ⟨L, hL⟩ := exists_tendsto_atTop_of_antitoneOn_Ici hf.antitoneOn
+  have hL := tendsto_atTop_ciInf_of_antitoneOn_Ici hf.antitoneOn
     ⟨0, by rintro y ⟨x, hx, rfl⟩; exact hf.nonneg hx⟩
-  exact ⟨L, hL, ge_of_tendsto hL (eventually_atTop.mpr ⟨0, fun t ht => hf.nonneg ht⟩)⟩
+  exact ⟨_, hL, ge_of_tendsto hL (eventually_atTop.mpr ⟨0, fun t ht => hf.nonneg ht⟩)⟩
 
 /-- A closed-half-line completely monotone function lies above its limit at infinity on
 `[0, ∞)`. -/

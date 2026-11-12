@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Intertwining
+public import Mathlib.LinearAlgebra.Basis.Defs
 
 /-!
 # Intertwining maps: images, and the action of the monoid algebra
@@ -23,6 +24,11 @@ argument together with a proof that the image fills it, rather than being fixed 
 the range of a different operator, say -- and matching the two ranges is a separate step that the
 caller has already done.
 
+The file also restricts intertwining maps and equivalences along a monoid homomorphism
+`f : H →* G`, keeping the underlying linear map. This is the unbundled form of `Rep.resFunctor`,
+and it is how an equivalence of representations of `G` is passed to a subgroup, for instance before
+taking invariants under it.
+
 ## Main definitions
 
 * `Representation.IntertwiningMap.codRestrict`: corestrict an intertwining map to a
@@ -31,15 +37,22 @@ caller has already done.
   onto a subrepresentation that its image fills.
 * `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
   intertwining map of the conjugation representations `Representation.linHom`.
+* `Representation.IntertwiningMap.res` and `Representation.Equiv.res`: restriction of an
+  intertwining map or an equivalence along a monoid homomorphism `H →* G`.
 * `DistribMulActionHom.toIntertwiningMap`: an equivariant additive map of `G`-modules, as an
   intertwining map of the attached representations over `ℤ`.
 * `Representation.Equiv.tprod`: the tensor product of two equivalences of representations.
 * `Representation.Equiv.dual`: the dual of an equivalence of representations.
+* `Representation.Equiv.ofBasisAction`: build an equivalence from matching coordinate actions.
 
 ## Main results
 
+* `Representation.IntertwiningMap.equivLinearMapAsModule_apply`: the attached module map acts
+  by the original intertwining map on the underlying types.
 * `Representation.IntertwiningMap.apply_asAlgebraHom`: an intertwining map commutes with the
   action of the monoid algebra, not only with that of the group elements.
+* `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
+  the dual representations.
 
 -/
 
@@ -63,7 +76,21 @@ theorem prod_ext {A G V W U : Type*} [Semiring A] [Monoid G]
   · exact congrArg IntertwiningMap.toLinearMap hl
   · exact congrArg IntertwiningMap.toLinearMap hr
 
-variable {A G V W : Type*} [CommSemiring A] [Monoid G]
+/-- **Evaluation of the `k[G]`-linear map attached to an intertwining map.** The map
+`Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f` is `f` itself on the underlying
+types, so it too may be erased from an application. -/
+@[simp]
+theorem equivLinearMapAsModule_apply
+    {k G V W : Type*} [CommSemiring k] [Monoid G]
+    [AddCommMonoid V] [Module k V] [AddCommMonoid W] [Module k W]
+    {ρ : Representation k G V} {σ : Representation k G W}
+    (f : IntertwiningMap ρ σ) (x : ρ.asModule) :
+    equivLinearMapAsModule ρ σ f x = (f (x : V) : W) :=
+  (rfl)
+
+section codRestrict
+
+variable {A G V W : Type*} [Semiring A] [Monoid G]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
   {ρ : Representation A G V} {σ : Representation A G W}
 
@@ -80,6 +107,12 @@ theorem codRestrict_apply_coe (f : IntertwiningMap ρ σ) (P : Subrepresentation
     (hP : ∀ v, f v ∈ P.toSubmodule) (v : V) :
     ((f.codRestrict P hP v : P.toSubmodule) : W) = f v := by
   rfl
+
+end codRestrict
+
+variable {A G V W : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- **An injective intertwining map is an isomorphism onto its image**, here onto any
 subrepresentation `P` that the image fills. -/
@@ -127,9 +160,121 @@ theorem lcomp_apply (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) (φ
 
 end lcomp
 
+section Restriction
+
+variable {A G H V W U : Type*} [Semiring A] [Monoid G] [Monoid H]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
+  {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
+
+/-- **Restriction of an intertwining map** along a monoid homomorphism `f : H →* G`: the same
+linear map intertwines the restricted representations `ρ ∘ f` and `σ ∘ f` of `H`. This is the
+unbundled counterpart of `Rep.resFunctor` on morphisms. -/
+def res (φ : IntertwiningMap ρ σ) (f : H →* G) : IntertwiningMap (ρ.comp f) (σ.comp f) where
+  toLinearMap := φ.toLinearMap
+  isIntertwining' h := φ.isIntertwining' (f h)
+
+@[simp]
+theorem coe_res (φ : IntertwiningMap ρ σ) (f : H →* G) : ⇑(φ.res f) = φ :=
+  (rfl)
+
+@[simp]
+theorem toLinearMap_res (φ : IntertwiningMap ρ σ) (f : H →* G) :
+    (φ.res f).toLinearMap = φ.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem res_id (f : H →* G) : (IntertwiningMap.id ρ).res f = .id (ρ.comp f) :=
+  (rfl)
+
+@[simp]
+theorem res_comp (ψ : IntertwiningMap σ τ) (φ : IntertwiningMap ρ σ) (f : H →* G) :
+    (ψ.comp φ).res f = (ψ.res f).comp (φ.res f) :=
+  (rfl)
+
+end Restriction
+
 end Representation.IntertwiningMap
 
 namespace Representation.Equiv
+
+section Basis
+
+variable {A G V W ι : Type*} [Semiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [Finite ι]
+
+/-- A linear identification with a based module is an equivalence of representations when the
+two actions have the same coordinates in that basis. -/
+noncomputable def ofBasisAction (ρ : Representation A G V)
+    (σ : Representation A G (ι → A)) (e : V ≃ₗ[A] W) (b : Module.Basis ι A W)
+    (a : G → W →ₗ[A] W) (haction : ∀ g v, e (ρ g v) = a g (e v))
+    (hcoordinates : ∀ g w, σ g (b.repr w) = b.repr (a g w)) : ρ.Equiv σ := by
+  refine .mk (e.trans b.equivFun) ?_
+  intro g
+  apply LinearMap.ext
+  intro v
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply]
+  rw [haction]
+  exact (hcoordinates g (e v)).symm
+
+/-- The equivalence built by `ofBasisAction` sends a vector to its coordinates after applying the
+given linear equivalence. -/
+@[simp]
+theorem ofBasisAction_apply (ρ : Representation A G V)
+    (σ : Representation A G (ι → A)) (e : V ≃ₗ[A] W) (b : Module.Basis ι A W)
+    (a : G → W →ₗ[A] W) (haction : ∀ g v, e (ρ g v) = a g (e v))
+    (hcoordinates : ∀ g w, σ g (b.repr w) = b.repr (a g w)) (v : V) :
+    ofBasisAction ρ σ e b a haction hcoordinates v = b.equivFun (e v) :=
+  (rfl)
+
+/-- The inverse of the equivalence built by `ofBasisAction` reconstructs a vector from its
+coordinates and applies the inverse of the given linear equivalence. -/
+@[simp]
+theorem ofBasisAction_symm_apply (ρ : Representation A G V)
+    (σ : Representation A G (ι → A)) (e : V ≃ₗ[A] W) (b : Module.Basis ι A W)
+    (a : G → W →ₗ[A] W) (haction : ∀ g v, e (ρ g v) = a g (e v))
+    (hcoordinates : ∀ g w, σ g (b.repr w) = b.repr (a g w)) (w : ι → A) :
+    (ofBasisAction ρ σ e b a haction hcoordinates).symm w =
+      e.symm (b.equivFun.symm w) :=
+  (rfl)
+
+end Basis
+
+section Restriction
+
+variable {A G H V W U : Type*} [Semiring A] [Monoid G] [Monoid H]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
+  {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
+
+/-- **Restriction of an equivalence of representations** along a monoid homomorphism
+`f : H →* G`: the same linear isomorphism is an equivalence between the restricted
+representations `ρ ∘ f` and `σ ∘ f` of `H`. This is the unbundled counterpart of
+`Rep.resFunctor` on isomorphisms. -/
+def res (e : Equiv ρ σ) (f : H →* G) : Equiv (ρ.comp f) (σ.comp f) :=
+  .mk e.toLinearEquiv (e.toIntertwiningMap.res f).isIntertwining'
+
+@[simp]
+theorem res_apply (e : Equiv ρ σ) (f : H →* G) (v : V) : e.res f v = e v :=
+  (rfl)
+
+@[simp]
+theorem toIntertwiningMap_res (e : Equiv ρ σ) (f : H →* G) :
+    (e.res f).toIntertwiningMap = e.toIntertwiningMap.res f :=
+  (rfl)
+
+@[simp]
+theorem symm_res (e : Equiv ρ σ) (f : H →* G) : (e.res f).symm = e.symm.res f :=
+  (rfl)
+
+@[simp]
+theorem res_refl (f : H →* G) : (refl ρ).res f = refl (ρ.comp f) :=
+  (rfl)
+
+@[simp]
+theorem res_trans (e : Equiv ρ σ) (e' : Equiv σ τ) (f : H →* G) :
+    (e.trans e').res f = (e.res f).trans (e'.res f) :=
+  (rfl)
+
+end Restriction
 
 section Tensor
 
@@ -178,6 +323,19 @@ theorem dual_apply_apply (e : Equiv ρ σ) (f : Module.Dual A V) (w : W) :
 end Dual
 
 end Representation.Equiv
+
+namespace Representation
+
+/-- The transpose of an intertwining map intertwines the dual representations, in the reverse
+direction. This is the unbundled counterpart of `Representation.Equiv.dual`, for maps that need
+not be bijective. -/
+theorem IsIntertwiningMap.dualMap {A G V W : Type*} [CommSemiring A] [Group G]
+    [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] {ρ : Representation A G V}
+    {σ : Representation A G W} {f : V →ₗ[A] W} (hf : IsIntertwiningMap ρ σ f) :
+    IsIntertwiningMap σ.dual ρ.dual f.dualMap :=
+  ⟨fun g φ ↦ LinearMap.ext fun v ↦ congrArg φ (hf.isIntertwining g⁻¹ v).symm⟩
+
+end Representation
 
 namespace DistribMulActionHom
 

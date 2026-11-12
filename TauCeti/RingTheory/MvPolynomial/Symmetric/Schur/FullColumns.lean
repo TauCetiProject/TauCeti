@@ -68,11 +68,7 @@ private theorem diagramSchurPoly_int_eq_prod_X_pow_mul (hμ : μ.colLen 0 ≤ N)
     diagramSchurPoly N ℤ ν
       = (∏ i, (X i : MvPolynomial (Fin N) ℤ)) ^ c * diagramSchurPoly N ℤ μ := by
   -- Cancel the staircase alternant, whose exponents are pairwise distinct.
-  have hδ : Function.Injective fun j : Fin N => N - 1 - (j : ℕ) := fun a b hab => by
-    have := a.isLt
-    have := b.isLt
-    exact Fin.ext (by simp only at hab; omega)
-  refine mul_right_cancel₀ (alternant_ne_zero_of_injective hδ) ?_
+  refine mul_right_cancel₀ (alternant_ne_zero_of_injective (injective_staircase N)) ?_
   rw [diagramSchurPoly_mul_alternant N ν hν, betaNumber_eq_add h, alternant_add_const,
     mul_assoc, diagramSchurPoly_mul_alternant N μ hμ]
 

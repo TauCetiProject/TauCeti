@@ -8,9 +8,6 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 
--- Private in `RayClass.Basic`; needed below for the principal-ideal class criteria.
-import TauCeti.RingTheory.ClassGroup.Basic
-
 /-!
 # The ray class group of a modulus is finite
 
@@ -95,22 +92,26 @@ instance unitsCongruenceSubgroup_finiteIndex (𝔪 : Modulus K) :
 `idealsPrimeToClassGroup`. -/
 private noncomputable def principalIdealHom (𝔪 : Modulus K) :
     primeToSubgroup 𝔪 →* (idealsPrimeToClassGroup 𝔪).ker :=
-  MonoidHom.codRestrict (principalIdealPrimeTo 𝔪) (idealsPrimeToClassGroup 𝔪).ker fun x ↦ by
-    rw [MonoidHom.mem_ker, idealsPrimeToClassGroup_apply, coe_principalIdealPrimeTo]
+  MonoidHom.codRestrict (NumberFieldArithmetic.principalIdealAway K 𝔪.support)
+    (idealsPrimeToClassGroup 𝔪).ker fun x ↦ by
+    rw [MonoidHom.mem_ker, idealsPrimeToClassGroup_apply,
+      NumberFieldArithmetic.coe_principalIdealAway]
     exact ClassGroup.mk_toPrincipalIdeal (x : Kˣ)
 
 @[simp] private theorem coe_principalIdealHom (𝔪 : Modulus K) (x : primeToSubgroup 𝔪) :
     (((principalIdealHom 𝔪 x : (idealsPrimeToClassGroup 𝔪).ker) : idealsPrimeTo 𝔪) :
         (FractionalIdeal (𝓞 K)⁰ K)ˣ) =
       toPrincipalIdeal (𝓞 K) K (x : Kˣ) := by
-  rw [principalIdealHom, MonoidHom.codRestrict_apply, coe_principalIdealPrimeTo]
+  rw [principalIdealHom, MonoidHom.codRestrict_apply, NumberFieldArithmetic.coe_principalIdealAway]
 
 private theorem principalIdealHom_surjective (𝔪 : Modulus K) :
     Function.Surjective (principalIdealHom 𝔪) := by
   intro I
-  have hI : (I : idealsPrimeTo 𝔪) ∈ (principalIdealPrimeTo 𝔪).range := by
-    rw [range_principalIdealPrimeTo]
-    exact I.2
+  have hI : (I : idealsPrimeTo 𝔪) ∈
+      (NumberFieldArithmetic.principalIdealAway K 𝔪.support).range := by
+    rw [NumberFieldArithmetic.range_principalIdealAway, MonoidHom.mem_ker,
+      MonoidHom.comp_apply, Subgroup.subtype_apply, ← idealsPrimeToClassGroup_apply]
+    exact MonoidHom.mem_ker.mp I.2
   obtain ⟨x, hx⟩ := hI
   exact ⟨x, Subtype.ext hx⟩
 

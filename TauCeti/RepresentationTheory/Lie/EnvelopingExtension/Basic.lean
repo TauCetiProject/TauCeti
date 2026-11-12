@@ -111,7 +111,7 @@ noncomputable def envelopingQuotientRep : (S ⋊⁅ψ⁆ H) →ₗ⁅R⁆ Module
       simp only [SemiDirectSum.lie_eq_mk, LinearMap.add_apply,
         LieHom.leftRegularRep_apply, map_sub, map_add, LieHom.map_lie,
         LieSubalgebra.coe_bracket, Ring.lie_def,
-        Module.End.mul_apply, LinearMap.sub_apply, derivationLieAlgebra.leibniz, hδ]
+        mul_apply_eq_comp, LinearMap.sub_apply, derivationLieAlgebra.leibniz, hδ]
       abel }
 
 /-- The multiplication-plus-derivation formula for the split extension action. -/

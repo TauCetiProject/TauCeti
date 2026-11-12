@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RingTheory.HopfAlgebra.Basic
+import Mathlib.LinearAlgebra.TensorProduct.Projective
 import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.Algebra.Coalgebra.Convolution
 
@@ -57,6 +58,27 @@ abbrev ConvolutionDual (k : Type u) (H : Type v) [CommSemiring k] [AddCommMonoid
   WithConv (Module.Dual k H)
 
 namespace ConvolutionDual
+
+section Evaluation
+
+variable {k : Type u} {H : Type v} [CommSemiring k] [AddCommMonoid H] [Module k H]
+  [Coalgebra k H]
+
+open scoped _root_.Coalgebra
+
+/-- Evaluate convolution by contracting the first coproduct factor before applying the second
+functional. -/
+theorem mul_apply_eq_rTensor (φ ψ : ConvolutionDual k H) (h : H) :
+    (φ * ψ) h = ψ.ofConv (TensorProduct.lid k H (φ.ofConv.rTensor H (Coalgebra.comul h))) := by
+  simp [← (ℛ k h).eq, (ℛ k h).convMul_apply]
+
+/-- Evaluate convolution by contracting the second coproduct factor before applying the first
+functional. -/
+theorem mul_apply_eq_lTensor (φ ψ : ConvolutionDual k H) (h : H) :
+    (φ * ψ) h = φ.ofConv (TensorProduct.rid k H (ψ.ofConv.lTensor H (Coalgebra.comul h))) := by
+  simp [← (ℛ k h).eq, (ℛ k h).convMul_apply, mul_comm]
+
+end Evaluation
 
 /-- The convolution dual of a finite projective module is finite. -/
 noncomputable instance instFinite (k : Type u) (H : Type v) [CommSemiring k]
@@ -145,7 +167,7 @@ private noncomputable def evalTensorConv :
   (WithConv.linearEquiv k _).symm.toLinearMap ∘ₗ (dualDistribEquiv k H).toLinearMap
 
 private theorem evalTensorConv_tmul (phi psi : ConvolutionDual k H) :
-    evalTensorConv k H (phi ⊗ₜ[k] psi) = LinearMap.mulTensor phi psi := by
+    evalTensorConv k H (phi ⊗ₜ[k] psi) = WithConv.mulTensor phi psi := by
   apply WithConv.ofConv_injective
   apply TensorProduct.ext'
   intro x y
@@ -303,7 +325,7 @@ private theorem evalTensorConv_mul
   apply LinearMap.map_mul_of_map_mul_tmul
   intro phi chi psi omega
   rw [evalTensorConv_tmul, evalTensorConv_tmul, evalTensorConv_tmul,
-    LinearMap.mulTensor_convMul]
+    WithConv.mulTensor_convMul]
 
 private theorem ofConv_mul_apply
     (w : ConvolutionDual k H ⊗[k] ConvolutionDual k H) (x : H) :

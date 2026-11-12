@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Units.Fintype
-public import TauCeti.GroupTheory.SemidirectProduct
+public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.GroupTheory.TrivialIntersection
 
 /-!

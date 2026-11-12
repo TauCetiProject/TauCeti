@@ -40,8 +40,6 @@ positive definiteness of the Tits form is a property of the underlying graph alo
 (`TauCeti.titsForm_posDef_iff_posDef_graphCartanMatrix`). A positive definite Tits form forces this
 arrow condition (`TauCeti.card_hom_add_card_hom_le_one_of_titsForm_posDef`).
 
-The definitions follow the Layer 4 signatures in
-`TauCetiRoadmap/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/Suggested.lean`.
 See Derksen--Weyman, *An Introduction to Quiver Representations*.
 -/
 
@@ -144,7 +142,7 @@ public theorem titsPolarForm_comm (d e : Q → ℤ) :
 /-- **The Euler form against a path-count vector is evaluation.** Pairing the vector counting the
 paths out of `i` against any `e : Q → ℤ` returns `eᵢ`: at each vertex `b` the path count `#(i → b)`
 cancels the arrow-weighted sum `∑ₐ #(a ⟶ b) · #(i → a)` up to the trivial path, by the last-arrow
-recursion `TauCeti.card_path_eq_ite_add_sum`. -/
+recursion `TauCeti.card_path_eq_ite_add_sum_lastArrow`. -/
 public theorem eulerForm_card_path_left (i : Q) [∀ a : Q, Finite (Quiver.Path i a)] (e : Q → ℤ) :
     eulerForm Q (fun v ↦ (Nat.card (Quiver.Path i v) : ℤ)) e = e i := by
   classical

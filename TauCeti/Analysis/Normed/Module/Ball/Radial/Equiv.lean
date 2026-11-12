@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
 # Radial coordinates in a seminormed space
@@ -19,13 +20,21 @@ product neighbourhoods of the sphere even when the seminorm has a nonzero kernel
 `homeomorphUnitSphereProd`: the positive-norm locus replaces the complement of the origin. The
 construction follows those homeomorphisms, with the domain and the proof that the inverse lands in
 it adapted to seminorms.
+
+Reparametrizing the radius by an open embedding `ρ : Y → ℝ` with positive values gives an open
+embedding `(u, y) ↦ ρ y • u` of `sphere (0 : E) 1 × Y` into `E`
+(`Topology.IsOpenEmbedding.smul_coe_sphere`). With `Y = ℝ` and `ρ` an increasing homeomorphism
+onto an interval of radii, such as `t ↦ r * exp t` or the logistic sigmoid, this is a product
+neighbourhood of a round sphere: a bicollar whose zero slice is the sphere of radius `ρ 0`.
+`TauCeti.polar` uses the exponential radius `exp (t - 1)`, so that time `1` corresponds to the
+unit sphere and times at most `1` parametrize the punctured closed unit ball.
 -/
 
 public section
 
 namespace TauCeti
 
-open Metric Set
+open Metric Set Topology
 
 variable (E : Type*) [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -101,5 +110,61 @@ theorem homeomorphUnitSphereProdOfNormPos_symm_apply_coe
     (p : sphere (0 : E) 1 × Ioi (0 : ℝ)) :
     ((homeomorphUnitSphereProdOfNormPos E).symm p : E) = (p.2 : ℝ) • (p.1 : E) := by
   simp [homeomorphUnitSphereProdOfNormPos]
+
+variable {E} in
+/-- **Polar coordinates with a reparametrized radius.** If `ρ : Y → ℝ` is an open embedding with
+positive values, then `(u, y) ↦ ρ y • u` is an open embedding of `sphere (0 : E) 1 × Y` into
+`E`, onto the vectors whose norm lies in the range of `ρ`. -/
+theorem _root_.Topology.IsOpenEmbedding.smul_coe_sphere {Y : Type*} [TopologicalSpace Y]
+    {ρ : Y → ℝ} (hρ : Topology.IsOpenEmbedding ρ) (hpos : ∀ y, 0 < ρ y) :
+    Topology.IsOpenEmbedding fun q : sphere (0 : E) 1 × Y => ρ q.2 • (q.1 : E) := by
+  have hρ' : Topology.IsOpenEmbedding (codRestrict ρ (Ioi 0) fun y ↦ mem_Ioi.2 (hpos y)) := by
+    refine ⟨hρ.isEmbedding.codRestrict _ _, ?_⟩
+    rw [range_codRestrict]
+    exact hρ.isOpen_range.preimage continuous_subtype_val
+  exact (isOpen_lt continuous_const continuous_norm).isOpenEmbedding_subtypeVal.comp
+    ((homeomorphUnitSphereProdOfNormPos E).symm.isOpenEmbedding.comp
+      (Topology.IsOpenEmbedding.id.prodMap hρ'))
+
+/-! ### Exponential polar coordinates -/
+
+section Exponential
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- Polar coordinates on the complement of the origin, with time `t` on the sphere of radius
+`exp (t - 1)`: time `1` is the unit sphere, and the times `t ≤ 1` fill the punctured closed unit
+ball. -/
+noncomputable def polar (q : sphere (0 : V) 1 × ℝ) : V :=
+  Real.exp (q.2 - 1) • (q.1 : V)
+
+/-- The value of the exponential polar-coordinate map. -/
+theorem polar_apply (q : sphere (0 : V) 1 × ℝ) :
+    polar q = Real.exp (q.2 - 1) • (q.1 : V) :=
+  (rfl)
+
+/-- The radius in exponential polar coordinates. -/
+@[simp]
+theorem norm_polar (q : sphere (0 : V) 1 × ℝ) : ‖polar q‖ = Real.exp (q.2 - 1) := by
+  rw [polar_apply, norm_smul, norm_eq_of_mem_sphere q.1, mul_one, Real.norm_eq_abs,
+    abs_of_pos (Real.exp_pos _)]
+
+/-- Exponential polar coordinates avoid the origin. -/
+theorem polar_ne_zero (q : sphere (0 : V) 1 × ℝ) : polar q ≠ 0 := by
+  rw [← norm_pos_iff, norm_polar]
+  exact Real.exp_pos _
+
+/-- Exponential polar coordinates embed the sphere times the real line openly. -/
+theorem isOpenEmbedding_polar : IsOpenEmbedding (polar (V := V)) :=
+  (Real.isOpenEmbedding_exp.comp (Homeomorph.subRight (1 : ℝ)).isOpenEmbedding).smul_coe_sphere
+    fun _ => Real.exp_pos _
+
+/-- Every nonzero vector has exponential polar coordinates. -/
+theorem mem_range_polar {v : V} (hv : v ≠ 0) : v ∈ range (polar (V := V)) := by
+  have hv' : 0 < ‖v‖ := norm_pos_iff.2 hv
+  refine ⟨(⟨‖v‖⁻¹ • v, by simp [norm_smul, hv'.ne']⟩, 1 + Real.log ‖v‖), ?_⟩
+  simp [polar_apply, Real.exp_log hv', smul_smul, hv'.ne']
+
+end Exponential
 
 end TauCeti

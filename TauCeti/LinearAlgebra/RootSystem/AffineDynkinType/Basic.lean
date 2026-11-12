@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.CycleGraph
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
-public import TauCeti.Combinatorics.SimpleGraph.Connected
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
 /-!
@@ -32,12 +32,17 @@ numbering, and it is what the affine `E₈` matrix below is defined to be
 already carries affine matrices as *obstructions* inside the finite-type classification:
 `TauCeti.doubleForkCartanMatrix n` is the affine `Dₘ` matrix for `m = n + 5`, and
 `TauCeti.starCartanMatrix` at `![2, 2, 2]`, `![1, 3, 3]` and `![1, 2, 5]` is the affine `E₆`, `E₇`
-and `E₈` matrix. Those live on the sum and sigma
-index types that make the classification argument uniform rather than on `Fin`, and their marks are
-rational and unnormalized -- `TauCeti.starMark ![2, 2, 2]` is `9` times the marks below -- so
-identifying them with the diagrams of this file is a relabelling problem of its own, of a piece
-with the Bourbaki relabelling that the roadmap asks for and that is not proved here either. This
-file is the affine complement, and it is deliberately *graph* first, because its consumers --
+and `E₈` matrix. Those live on the sum and sigma index types that make the classification argument
+uniform rather than on `Fin`, and their marks are rational and unnormalized --
+`TauCeti.starMark ![2, 2, 2]` is `9` times the marks below -- so identifying them with the diagrams
+of this file is a relabelling problem of its own, which this file does not address. For the three
+stars it is done in `TauCeti/LinearAlgebra/RootSystem/AffineDynkinType/Star.lean`
+(`TauCeti.AffineDynkinType.starCartanMatrix_two_two_two_eq_submatrix_E6` and its `E₇` and `E₈`
+analogues); the affine `Dₘ` matrix `TauCeti.doubleForkCartanMatrix` is not identified here.
+Relabelling the finite diagram left after deleting the affine node into the Bourbaki numbering is
+`TauCeti.AffineDynkinType.bourbakiNode`, in
+`TauCeti/LinearAlgebra/RootSystem/AffineDynkinType/Deletion.lean`. This file is the affine
+complement, and it is deliberately *graph* first, because its consumers --
 zigzag and preprojective algebras, and the McKay correspondence -- start from the diagram rather
 than from a root system.
 
@@ -79,6 +84,10 @@ number, which reduces connectedness to a single induction. Explicitly:
 * `TauCeti.AffineDynkinType.graph_connected`: every valid affine simply-laced diagram is
   connected.
 * `TauCeti.AffineDynkinType.exists_adj_graph`: every node of a valid diagram has a neighbour.
+* `TauCeti.AffineDynkinType.isBipartite_graph_E6`, `.isBipartite_graph_E7`,
+  `.isBipartite_graph_E8`: the exceptional diagrams are bipartite.
+* `TauCeti.AffineDynkinType.eq_of_graph_iso`: valid affine diagrams with isomorphic graphs are
+  equal.
 * `TauCeti.AffineDynkinType.graph_A_adj`, `.graph_D_adj`, `.graph_E6_adj`, `.graph_E7_adj`,
   `.graph_E8_adj`: adjacency in each diagram, as a condition on node numbers.
 * `TauCeti.AffineDynkinType.cartanMatrix_eq_graphCartanMatrix`: outside `A₁` the Cartan matrix is
@@ -92,13 +101,13 @@ number, which reduces connectedness to a single induction. Explicitly:
 * `TauCeti.AffineDynkinType.cartanMatrix_mulVec_marks_eq_zero`: the marks are a null vector,
   `Cδ = 0`.
 * `TauCeti.AffineDynkinType.marks_affineNode`: the mark at the affine node is `1`.
+* `SimpleGraph.exists_isContained_affineDynkinType_A_of_not_isAcyclic`: a graph with a cycle
+  contains a copy of the cycle `Aₙ` for some `n ≥ 2`.
 
 ## References
 
-This is the affine simply-laced family of Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`; the `E₈` numbering below is the one that roadmap's
-`Suggested.lean` fixes in `affineE8ArmRel`. See V. Kac, *Infinite dimensional Lie algebras*,
-3rd ed., Chapter 4 and Table Aff 1, for the diagrams, their marks and the null root.
+See V. Kac, *Infinite dimensional Lie algebras*, 3rd ed., Chapter 4 and Table Aff 1, for the
+diagrams, their marks and the null root.
 -/
 
 public section
@@ -322,7 +331,8 @@ smaller number first. -/
 `n - 1` is joined to node `1`, and node `n` is joined to node `n - 3`, so every node other than `0`
 has a neighbour with a smaller number. -/
 private theorem graph_D_connected {n : ℕ} (hn : 4 ≤ n) : (D n).graph.Connected := by
-  refine SimpleGraph.connected_fin_of_exists_adj_lt (D n).nodes_pos fun i hi ↦ ?_
+  refine connected_of_exists_adj_lt 0 fun i hi ↦ ?_
+  replace hi : (i : ℕ) ≠ 0 := Fin.val_ne_zero_iff.2 hi
   have hi' : (i : ℕ) < n + 1 := i.isLt
   -- In each branch the neighbour is named by its node number. The `hval` equations are `rfl`, and
   -- are stated only so that the `omega` calls after them can read that number off the `Fin.mk`.
@@ -342,11 +352,11 @@ private theorem graph_D_connected {n : ℕ} (hn : 4 ≤ n) : (D n).graph.Connect
 constructors outside `TauCeti.AffineDynkinType.Valid`, such as `D 2`, are disconnected. -/
 theorem graph_connected {t : AffineDynkinType} (ht : t.Valid) : t.graph.Connected := by
   cases t with
-  | A n => exact (graph_A n) ▸ SimpleGraph.cycleGraph_connected
+  | A n => exact (graph_A n) ▸ SimpleGraph.connected_cycleGraph_add_one
   | D n => exact graph_D_connected ht
-  | E6 => exact SimpleGraph.connected_fin_of_exists_adj_lt E6.nodes_pos (by decide)
-  | E7 => exact SimpleGraph.connected_fin_of_exists_adj_lt E7.nodes_pos (by decide)
-  | E8 => exact SimpleGraph.connected_fin_of_exists_adj_lt E8.nodes_pos (by decide)
+  | E6 => exact connected_of_exists_adj_lt 0 (by decide)
+  | E7 => exact connected_of_exists_adj_lt 0 (by decide)
+  | E8 => exact connected_of_exists_adj_lt 0 (by decide)
 
 /-- Every node of a valid affine simply-laced diagram has a neighbour: the diagram is connected
 and has at least two nodes. -/
@@ -355,6 +365,134 @@ theorem exists_adj_graph {t : AffineDynkinType} (ht : t.Valid) (i : Fin t.nodes)
   have : Nontrivial (Fin t.nodes) := Fin.nontrivial_iff_two_le.mpr (by
     cases t <;> simp only [Valid, nodes] at ht ⊢ <;> omega)
   exact (graph_connected ht).preconnected.exists_adj_of_nontrivial i
+
+/-! ## Bipartiteness of the exceptional diagrams -/
+
+/-- **The affine diagram `E₆` is bipartite**: its arms `1, 2`, `3, 4` and `5, 6` alternate from the
+trivalent node `0`. -/
+theorem isBipartite_graph_E6 : E6.graph.IsBipartite :=
+  ⟨Coloring.mk (![0, 1, 0, 1, 0, 1, 0] : Fin 7 → Fin 2)
+    (@fun v w ↦ by
+      revert v w
+      simp only [graph_E6_adj]
+      simp only [nodes_E6]
+      decide)⟩
+
+/-- **The affine diagram `E₇` is bipartite**: its arms `1`, `2, 3, 4` and `5, 6, 7` alternate from
+the trivalent node `0`. -/
+theorem isBipartite_graph_E7 : E7.graph.IsBipartite :=
+  ⟨Coloring.mk (![0, 1, 1, 0, 1, 1, 0, 1] : Fin 8 → Fin 2)
+    (@fun v w ↦ by
+      revert v w
+      simp only [graph_E7_adj]
+      simp only [nodes_E7]
+      decide)⟩
+
+/-- **The affine diagram `E₈` is bipartite**: its arms `1`, `2, 3` and `4, 5, 6, 7, 8` alternate
+from the trivalent node `0`. -/
+theorem isBipartite_graph_E8 : E8.graph.IsBipartite :=
+  ⟨Coloring.mk (![0, 1, 1, 0, 1, 0, 1, 0, 1] : Fin 9 → Fin 2)
+    (@fun v w ↦ by
+      revert v w
+      simp only [graph_E8_adj]
+      simp only [nodes_E8]
+      decide)⟩
+
+/-- The affine diagram `Dₙ` is bipartite: the path `0 - 1 - ⋯ - (n - 2)` is coloured by parity,
+and the leaves `n - 1` at node `1` and `n` at node `n - 3` take the other colour. -/
+theorem isBipartite_graph_D {n : ℕ} (hn : 4 ≤ n) : (D n).graph.IsBipartite := by
+  refine ⟨.mk (fun i ↦ ⟨if (i : ℕ) ≤ n - 2 then (i : ℕ) % 2 else if (i : ℕ) = n - 1 then 0
+    else n % 2, by split_ifs <;> omega⟩) fun {i j} h ↦ ?_⟩
+  have hij := (graph_D_adj hn (i := i) (j := j)).1 h
+  simp only [ne_eq, Fin.mk.injEq]
+  split_ifs <;> omega
+
+/-! ## The graph determines the diagram -/
+
+section GraphIso
+
+open Finset
+
+/-- A cycle `Ãₙ` with `n ≥ 2` has no leaf. -/
+private lemma card_filter_degree_A_eq_zero {n : ℕ} (hn : 2 ≤ n) :
+    #{v | (A n).graph.degree v = 1} = 0 := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
+  have e : (A (m + 2)).graph ≃g cycleGraph (m + 3) := by rw [graph_A]; exact .refl
+  refine card_eq_zero.2 (filter_eq_empty_iff.2 fun v _ ↦ ?_)
+  rw [← e.degree_eq v, cycleGraph_degree_three_le]
+  omega
+
+/-- Node `0` is a leaf of affine `Dₙ`, attached to node `1`. -/
+private lemma card_filter_degree_D_pos {n : ℕ} (hn : 4 ≤ n) :
+    0 < #{v | (D n).graph.degree v = 1} := by
+  refine card_pos.2 ⟨0, mem_filter.2 ⟨mem_univ _, degree_eq_one_iff_existsUnique_adj.2 ?_⟩⟩
+  refine ⟨⟨1, by simp; omega⟩, (graph_D_adj hn).2 (by simp; omega), fun j hj ↦ ?_⟩
+  replace hj := (graph_D_adj hn).1 hj
+  ext
+  simp only [Fin.val_zero] at hj ⊢
+  omega
+
+/-- Affine `D₆`, `D₇` and `D₈` have two trivalent nodes. -/
+private lemma card_filter_degree_D_eq_two {n : ℕ} (hn : n = 6 ∨ n = 7 ∨ n = 8) :
+    #{v | (D n).graph.degree v = 3} = 2 := by
+  -- `graph_D_adj` is stated on `Fin (n + 1)`; this restatement on `Fin (D n).nodes` lets `simp`
+  -- match the adjacency in the goal.
+  have h (i j : Fin (D n).nodes) := graph_D_adj (n := n) (i := i) (j := j) (by omega)
+  simp only [← card_neighborFinset_eq_degree, neighborFinset_eq_filter, h]
+  rcases hn with rfl | rfl | rfl <;> decide
+
+/-- Affine `E₆` has three leaves and one trivalent node. -/
+private lemma card_filter_degree_E6 :
+    #{v | E6.graph.degree v = 1} = 3 ∧ #{v | E6.graph.degree v = 3} = 1 := by
+  simp only [← card_neighborFinset_eq_degree, neighborFinset_eq_filter, graph_E6_adj]
+  decide
+
+/-- Affine `E₇` has three leaves and one trivalent node. -/
+private lemma card_filter_degree_E7 :
+    #{v | E7.graph.degree v = 1} = 3 ∧ #{v | E7.graph.degree v = 3} = 1 := by
+  simp only [← card_neighborFinset_eq_degree, neighborFinset_eq_filter, graph_E7_adj]
+  decide
+
+/-- Affine `E₈` has three leaves and one trivalent node. -/
+private lemma card_filter_degree_E8 :
+    #{v | E8.graph.degree v = 1} = 3 ∧ #{v | E8.graph.degree v = 3} = 1 := by
+  simp only [← card_neighborFinset_eq_degree, neighborFinset_eq_filter, graph_E8_adj]
+  decide
+
+/-- **The graph determines a valid affine diagram.** If two valid affine simply-laced diagrams
+have isomorphic graphs, they are equal. This includes `Ã₁`, the only valid diagram on two nodes,
+although its graph forgets its double edge. Validity is needed: the degenerate `A 0` and `D 0`
+both have a single node. -/
+theorem eq_of_graph_iso {t t' : AffineDynkinType} (ht : t.Valid) (ht' : t'.Valid)
+    (e : t.graph ≃g t'.graph) : t = t' := by
+  -- The numbers of nodes, of leaves and of trivalent nodes tell the graphs apart: a cycle on at
+  -- least three nodes has no leaf, affine `Dₙ` has a leaf, and at seven, eight and nine nodes
+  -- affine `Dₙ` has two trivalent nodes where affine `E₆`, `E₇` and `E₈` have one.
+  have hnodes : t.nodes = t'.nodes := by simpa using Fintype.card_congr e.toEquiv
+  have hcard (k : ℕ) : #{v | t.graph.degree v = k} = #{v | t'.graph.degree v = k} :=
+    card_equiv e.toEquiv fun v ↦ by simp
+  have hleaf := hcard 1
+  have hfork := hcard 3
+  obtain ⟨hE6₁, hE6₃⟩ := card_filter_degree_E6
+  obtain ⟨hE7₁, hE7₃⟩ := card_filter_degree_E7
+  obtain ⟨hE8₁, hE8₃⟩ := card_filter_degree_E8
+  rcases t with n | n | _ | _ | _ <;> rcases t' with m | m | _ | _ | _ <;>
+    simp only [valid_A, valid_D, nodes_A, nodes_D, nodes_E6, nodes_E7, nodes_E8,
+      Nat.add_right_cancel_iff, A.injEq, D.injEq] at ht ht' hnodes ⊢
+  all_goals first
+    | omega
+    | have := card_filter_degree_A_eq_zero (n := n) (by omega)
+      first
+        | omega
+        | have := card_filter_degree_D_pos (n := m) (by omega); omega
+    | have := card_filter_degree_A_eq_zero (n := m) (by omega)
+      first
+        | omega
+        | have := card_filter_degree_D_pos (n := n) (by omega); omega
+    | have := card_filter_degree_D_eq_two (n := n) (by omega); omega
+    | have := card_filter_degree_D_eq_two (n := m) (by omega); omega
+
+end GraphIso
 
 /-! ## The generalized Cartan matrix -/
 
@@ -430,6 +568,15 @@ lemma cartanMatrix_apply_of_not_adj {t : AffineDynkinType} {i j : Fin t.nodes} (
     rw [graph_A, SimpleGraph.cycleGraph_two_eq_top] at h
     exact (h ((SimpleGraph.top_adj i j).2 hij)).elim
   · simp [cartanMatrix_apply ht, hij, h]
+
+open scoped Classical in
+/-- The affine `E₆` Cartan matrix entries, with the conditional indexed by `Fin 7`: the Cartan API
+is indexed by `Fin E6.nodes`, whose implicit decidability instance is opaque outside its
+module, so adjacency is decided classically. -/
+lemma cartanMatrix_E6_apply (i j : Fin 7) : E6.cartanMatrix i j =
+    if i = j then 2 else if E6.graph.Adj i j then -1 else 0 := by
+  convert cartanMatrix_apply isGraphical_E6 i j using 1
+  split_ifs <;> first | rfl | contradiction
 
 /-- The generalized Cartan matrix of an affine simply-laced diagram is symmetric, `A₁` included:
 away from `A₁` the matrix is `2I - A` and an adjacency matrix is symmetric, while at `A₁` the
@@ -597,7 +744,8 @@ private lemma sum_dMarks_neighborFinset {n : ℕ} (hn : 4 ≤ n) (i : Fin (n + 1
        omega)
     | (simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
        split_ifs <;> omega)
-    | (simp [Fin.ext_iff] <;> omega)
+    | (simp [Fin.ext_iff]; omega)
+    | simp [Fin.ext_iff]
 
 /-- The local balance condition for `Aₙ`: every node of a cycle on at least three nodes has two
 neighbours, and every mark of `Aₙ` is `1`. -/
@@ -639,3 +787,20 @@ theorem cartanMatrix_mulVec_marks_eq_zero {t : AffineDynkinType} (ht : t.Valid) 
 end AffineDynkinType
 
 end TauCeti
+
+namespace SimpleGraph
+
+open TauCeti
+
+variable {V : Type*} {G : SimpleGraph V}
+
+/-- **A graph with a cycle contains an affine diagram `Ãₙ`**, the cycle on `n + 1 ≥ 3` nodes. -/
+theorem exists_isContained_affineDynkinType_A_of_not_isAcyclic (hG : ¬ G.IsAcyclic) :
+    ∃ n, 2 ≤ n ∧ (AffineDynkinType.A n).graph ⊑ G := by
+  rw [isAcyclic_iff_free_cycleGraph] at hG
+  push Not at hG
+  obtain ⟨n, hn, hc⟩ := hG
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  exact ⟨m, by omega, by rwa [AffineDynkinType.graph_A]⟩
+
+end SimpleGraph

@@ -44,9 +44,9 @@ representation. This is the form in which the graded pieces `A ⧸ ϖ • A` of 
   `Ĥⁿ(S, Coind_⊥^G X) = Ĥⁿ(S, Ind_⊥^G X) = Ĥⁿ(S, k[G]) = 0` for all `n : ℤ`.
 * `TauCeti.TateCohomology.isZero_of_forall_eq_sum`: if the identity of `C` is a norm
   `x ↦ ∑ g, g φ(g⁻¹ x)`, then `Ĥⁿ(G, C) = 0` for all `n : ℤ`.
-* `TauCeti.TateCohomology.isZero_restrictScalarsInt_of_equiv_leftRegular`: if `V` is free of rank
+* `TauCeti.TateCohomology.isZero_restrictScalars_of_equiv_leftRegular`: if `V` is free of rank
   one over `k[G]`, then `Ĥⁿ(G, V) = 0` over `ℤ`.
-* `TauCeti.TateCohomology.isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular`: if `V` is
+* `TauCeti.TateCohomology.isZero_restrictScalars_quotSMulTop_of_equiv_leftRegular`: if `V` is
   free of rank one over `k[G]`, then `Ĥⁿ(G, V ⧸ r • V) = 0` over `ℤ` for every `r : k`.
 
 ## References
@@ -188,7 +188,7 @@ theorem map_eq_zero_of_hom_apply_eq_sum {A B : Rep k G} (f : A ⟶ B) (φ : A.V 
       simp only [ψ₀, LinearMap.coe_sum, Finset.sum_apply, LinearMap.comp_apply,
         LinearEquiv.coe_coe, coindBotEquivPi_apply, LinearMap.proj_apply, map_sum]
       refine Fintype.sum_equiv (Equiv.mulRight g) _ _ fun h ↦ ?_
-      simp only [Equiv.coe_mulRight, ← Module.End.mul_apply, ← map_mul, mul_inv_rev,
+      simp only [Equiv.coe_mulRight, ← _root_.mul_apply_eq_comp, ← map_mul, mul_inv_rev,
         mul_inv_cancel_left]
       rw [Representation.coind_apply_coe_apply]
   have hfac : f = coindBotUnit A ≫ ψ := by
@@ -198,7 +198,7 @@ theorem map_eq_zero_of_hom_apply_eq_sum {A B : Rep k G} (f : A ⟶ B) (φ : A.V 
       LinearMap.coe_comp, LinearMap.coe_proj, LinearEquiv.coe_coe, Finset.sum_apply,
       Function.comp_apply, Function.eval, coindBotEquivPi_apply, coindBotUnit_hom_apply_coe]
     exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g ↦ by simp
-  rw [hfac, Functor.map_comp, (isZero_coindBot A.V n).eq_zero_of_src
+  rw [hfac, CategoryTheory.Functor.map_comp, (isZero_coindBot A.V n).eq_zero_of_src
     ((tateCohomologyFunctor n).map ψ), Limits.comp_zero]
 
 omit X in
@@ -221,7 +221,8 @@ theorem isZero_tensor_of_forall_eq_sum {C : Rep k G} (φ : C.V →ₗ[k] C.V)
   induction x using TensorProduct.inductionOn with
   | tmul m c =>
     conv_lhs => rw [hφ c]
-    simp [TensorProduct.tmul_sum, Representation.tprod_apply, ← Module.End.mul_apply, ← map_mul]
+    simp [TensorProduct.tmul_sum, Representation.tprod_apply,
+      ← _root_.mul_apply_eq_comp, ← map_mul, -FunLike.coe_mul_eq_comp]
   | add x y hx hy =>
     conv_lhs => rw [hx, hy]
     simp only [map_add, Finset.sum_add_distrib]
@@ -297,9 +298,9 @@ variable {k : Type*} {G V : Type} [Group G] [Fintype G] [AddCommGroup V]
 
 /-- If the identity of `ρ` is the norm `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`, then
 all Tate cohomology of `ρ`, read as an integral representation, vanishes. -/
-theorem isZero_restrictScalarsInt_of_forall_eq_sum [Semiring k] [Module k V]
+theorem isZero_restrictScalars_of_forall_eq_sum [Semiring k] [Module k V]
     {ρ : Representation k G V} (φ : V →ₗ[k] V) (hφ : ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x)))
-    (n : ℤ) : IsZero (tateCohomology (Rep.of ρ.restrictScalarsInt) n) :=
+    (n : ℤ) : IsZero (tateCohomology (Rep.of (ρ.restrictScalars ℤ)) n) :=
   isZero_of_forall_eq_sum (C := Rep.of _) (φ.restrictScalars ℤ) (fun x ↦ by simpa using hφ x) n
 
 /-- If `ρ` is free of rank one over the group ring `k[G]`, then the identity of `ρ` is the norm
@@ -324,32 +325,32 @@ theorem exists_forall_eq_sum_of_equiv_leftRegular [Semiring k] [Module k V]
 
 /-- If `ρ` is free of rank one over the group ring `k[G]`, then all Tate cohomology of `ρ`, read
 as an integral representation, vanishes. -/
-theorem isZero_restrictScalarsInt_of_equiv_leftRegular [Semiring k] [Module k V]
+theorem isZero_restrictScalars_of_equiv_leftRegular [Semiring k] [Module k V]
     {ρ : Representation k G V} (e : (Representation.leftRegular k G).Equiv ρ) (n : ℤ) :
-    IsZero (tateCohomology (Rep.of ρ.restrictScalarsInt) n) :=
+    IsZero (tateCohomology (Rep.of (ρ.restrictScalars ℤ)) n) :=
   let ⟨φ, hφ⟩ := exists_forall_eq_sum_of_equiv_leftRegular e
-  isZero_restrictScalarsInt_of_forall_eq_sum φ hφ n
+  isZero_restrictScalars_of_forall_eq_sum φ hφ n
 
 variable [CommRing k] [Module k V] {ρ : Representation k G V}
 
 /-- If the identity of `ρ` is the norm `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`, then
 for every `r : k` all Tate cohomology of the reduction `V ⧸ r • V`, as an integral representation,
 vanishes: its identity is the norm of the reduction of `φ`. -/
-theorem isZero_restrictScalarsInt_quotSMulTop_of_forall_eq_sum (φ : V →ₗ[k] V)
+theorem isZero_restrictScalars_quotSMulTop_of_forall_eq_sum (φ : V →ₗ[k] V)
     (hφ : ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x))) (r : k) (n : ℤ) :
-    IsZero (tateCohomology (Rep.of (ρ.quotSMulTop r).restrictScalarsInt) n) :=
-  isZero_restrictScalarsInt_of_forall_eq_sum _ (ρ.quotSMulTop_forall_eq_sum φ hφ r) n
+    IsZero (tateCohomology (Rep.of ((ρ.quotSMulTop r).restrictScalars ℤ)) n) :=
+  isZero_restrictScalars_of_forall_eq_sum _ (ρ.quotSMulTop_forall_eq_sum φ hφ r) n
 
 /-- **A free representation modulo a scalar has trivial Tate cohomology.** If `ρ` is free of rank
 one over the group ring `k[G]`, then for every `r : k` all Tate cohomology of the reduction
 `V ⧸ r • V`, a free module of rank one over `(k ⧸ (r))[G]`, read as an integral representation,
 vanishes. Its identity is the norm of the reduction of the projection onto the coefficient of
 `1 ∈ G`. -/
-theorem isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular
+theorem isZero_restrictScalars_quotSMulTop_of_equiv_leftRegular
     (e : (Representation.leftRegular k G).Equiv ρ) (r : k) (n : ℤ) :
-    IsZero (tateCohomology (Rep.of (ρ.quotSMulTop r).restrictScalarsInt) n) :=
+    IsZero (tateCohomology (Rep.of ((ρ.quotSMulTop r).restrictScalars ℤ)) n) :=
   let ⟨φ, hφ⟩ := exists_forall_eq_sum_of_equiv_leftRegular e
-  isZero_restrictScalarsInt_quotSMulTop_of_forall_eq_sum φ hφ r n
+  isZero_restrictScalars_quotSMulTop_of_forall_eq_sum φ hφ r n
 
 end QuotSMulTop
 

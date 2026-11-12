@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.Order.Interval.Set.OrdConnected
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.LinearAlgebra.Matrix.Reindex
 
@@ -18,7 +19,8 @@ consumers keep needing: on the diagonal, a product of triangular matrices multip
 entrywise, because `∑ k, A i k * B k i` has a single surviving term — and consequences of
 that, such as the diagonal of an inverse. It also proves uniqueness of a lower-triangular Gram
 factor with positive diagonal, defines upper-unitriangular matrices, and proves that strictly
-upper-triangular matrices are nilpotent.
+upper-triangular matrices are nilpotent. A nonzero submodule invariant under a family of strictly
+upper-triangular matrices contains a nonzero vector annihilated by the whole family.
 
 The diagonal results are stated directly for `Matrix.IsUpperTriangular` and
 `Matrix.IsLowerTriangular` rather than through membership in the Borel subalgebra, since there is
@@ -41,6 +43,8 @@ Lie-algebra theory.
   diagonal are determined by their product with their transpose.
 * `Matrix.IsLowerTriangular.submatrix_castLE_mul_transpose` — a leading principal submatrix of a
   lower-triangular Gram matrix is the Gram matrix of the corresponding submatrix.
+* `Matrix.IsUpperTriangular.submatrix_mul` and `submatrix_pow` — restriction to order-connected
+  index sets preserves multiplication and powers.
 * `Matrix.pow_apply_diag_of_isUpperTriangular` — the diagonal of a power of an upper-triangular
   matrix is the corresponding power of the diagonal entry.
 * `Matrix.isUpperUnitriangular_geom_sum_of_isUpperTriangular_of_diag_eq_zero` — the geometric
@@ -58,8 +62,15 @@ Lie-algebra theory.
 * `Matrix.IsUpperUnitriangular.submatrix` — selecting rows and columns by a strictly increasing
   map preserves upper unitriangularity.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
+* `Matrix.IsUpperUnitriangular.mul` and `Matrix.IsUpperUnitriangular.pow` — upper-unitriangular
+  matrices are closed under products and natural powers.
 * `Matrix.isNilpotent_of_isUpperTriangular_of_diag_eq_zero` — strict upper triangularity implies
   nilpotence.
+* `Matrix.updateCol_mul_updateCol_apply_of_lt` — replacing the same column of both factors of a
+  product with an upper-triangular right factor leaves the earlier columns of the product
+  unchanged.
+* `Matrix.exists_sum_mul_eq_of_isUpperUnitriangular` — a unitriangular system on a set of rows has
+  a solution supported on the rows together with one further index, equal to one there.
 * `TauCeti.isUpperTriangular_transvection_iff` — a transvection with its off-diagonal entry
   strictly below the diagonal is upper triangular exactly when its parameter vanishes.
 * `TauCeti.vecMul_injective_of_submatrix_isUpperTriangular` — a rectangular matrix has injective
@@ -80,7 +91,7 @@ theorem BlockTriangular.det_eq_prod_diag {ι α S : Type*} [Fintype ι] [Decidab
   rw [hN.det, Finset.prod_image fun x _ y _ hxy ↦ hb hxy]
   refine Finset.prod_congr rfl fun i _ ↦ ?_
   let _ : Unique {j // b j = b i} := ⟨⟨⟨i, rfl⟩⟩, fun j ↦ Subtype.ext (hb j.2)⟩
-  exact Matrix.det_unique _
+  exact det_unique _
 
 /-- A square matrix is upper unitriangular when it is upper triangular and every diagonal entry
 is one. -/
@@ -102,13 +113,32 @@ theorem IsUpperUnitriangular.apply_diag [LT m] [Zero R] [One R]
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) (i : m) : M i i = 1 :=
   ((isUpperUnitriangular_def M).1 hM).2 i
 
+/-- Subtracting the identity preserves upper triangularity of an upper-unitriangular matrix. -/
+theorem IsUpperUnitriangular.isUpperTriangular_sub_one [Preorder m] [DecidableEq m]
+    [AddGroupWithOne R] {M : Matrix m m R} (hM : M.IsUpperUnitriangular) :
+    (M - 1).IsUpperTriangular :=
+  hM.isUpperTriangular.sub blockTriangular_one
+
+/-- Subtracting the identity from an upper-unitriangular matrix gives a zero diagonal. -/
+theorem IsUpperUnitriangular.sub_one_apply_diag [LT m] [DecidableEq m] [AddGroupWithOne R]
+    {M : Matrix m m R} (hM : M.IsUpperUnitriangular) (i : m) : (M - 1) i i = 0 := by
+  simp [hM.apply_diag]
+
+/-- Selecting rows and columns by the same strictly increasing map preserves upper
+triangularity. -/
+theorem IsUpperTriangular.submatrix_of_strictMono {n : Type*} [Preorder m] [Preorder n]
+    [Zero R]
+    {M : Matrix m m R} (hM : M.IsUpperTriangular) {f : n → m} (hf : StrictMono f) :
+    (M.submatrix f f).IsUpperTriangular :=
+  fun _ _ hij ↦ hM (hf hij)
+
 /-- Selecting the same strictly increasing family of rows and columns preserves upper
 unitriangularity. In particular, this applies to principal submatrices and order-preserving
 reindexing. -/
 theorem IsUpperUnitriangular.submatrix {n : Type*} [Preorder m] [Preorder n] [Zero R] [One R]
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) {f : n → m} (hf : StrictMono f) :
     (M.submatrix f f).IsUpperUnitriangular :=
-  ⟨fun _ _ hij ↦ hM.isUpperTriangular (hf hij), fun i ↦ hM.apply_diag (f i)⟩
+  ⟨hM.isUpperTriangular.submatrix_of_strictMono hf, fun i ↦ hM.apply_diag (f i)⟩
 
 /-- Two upper-unitriangular matrices are equal if their entries strictly above the diagonal
 agree. -/
@@ -123,13 +153,13 @@ theorem IsUpperUnitriangular.ext [LinearOrder m] [Zero R] [One R] {M N : Matrix 
     · exact (hM.apply_diag _).trans (hN.apply_diag _).symm
 
 /-- The determinant of an upper-unitriangular matrix is one. -/
-theorem IsUpperUnitriangular.det_eq_one [Fintype m] [LinearOrder m] [CommRing R]
+theorem IsUpperUnitriangular.det_eq_one [Fintype m] [DecidableEq m] [LinearOrder m] [CommRing R]
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) : M.det = 1 := by
-  rw [Matrix.det_of_isUpperTriangular hM.isUpperTriangular]
+  rw [det_of_isUpperTriangular hM.isUpperTriangular]
   exact Finset.prod_eq_one fun i _ ↦ hM.apply_diag i
 
 /-- The determinant of an upper-unitriangular matrix is a unit. -/
-theorem IsUpperUnitriangular.isUnit_det [Fintype m] [LinearOrder m] [CommRing R]
+theorem IsUpperUnitriangular.isUnit_det [Fintype m] [DecidableEq m] [LinearOrder m] [CommRing R]
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) : IsUnit M.det := by
   rw [hM.det_eq_one]
   exact isUnit_one
@@ -171,7 +201,7 @@ theorem pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
       subst j
       omega
   | succ k ih =>
-      rw [pow_succ, mul_apply]
+      rw [pow_succ, Matrix.mul_apply]
       apply Finset.sum_eq_zero
       intro l _
       by_cases hil : i.1 + k ≤ l.1
@@ -184,10 +214,10 @@ theorem pow_card_eq_zero_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [Linea
     {M : Matrix m m S} (htri : M.IsUpperTriangular) (hdiag : ∀ i, M i i = 0) :
     M ^ Fintype.card m = 0 := by
   let e : Fin (Fintype.card m) ≃o m := Fintype.orderIsoFinOfCardEq m rfl
-  let reindexEquiv := Matrix.reindexRingEquiv S e.symm.toEquiv
+  let reindexEquiv := reindexRingEquiv S e.symm.toEquiv
   apply reindexEquiv.injective
   rw [map_pow, map_zero]
-  apply Matrix.ext
+  apply ext
   intro i j
   apply pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
   · intro a b hba
@@ -239,7 +269,7 @@ theorem IsLowerTriangular.submatrix_castLE_mul_transpose {p q : ℕ}
       L.submatrix (Fin.castLE hqp) (Fin.castLE hqp) *
         (L.submatrix (Fin.castLE hqp) (Fin.castLE hqp))ᵀ := by
   ext i j
-  simp only [Matrix.submatrix_apply, Matrix.mul_apply, Matrix.transpose_apply]
+  simp only [submatrix_apply, Matrix.mul_apply, transpose_apply]
   have hvanish : ∀ k ∈ (Finset.univ : Finset (Fin p)),
       k ∉ Finset.univ.image (Fin.castLE hqp) →
       L (Fin.castLE hqp i) k * L (Fin.castLE hqp j) k = 0 := by
@@ -266,25 +296,25 @@ theorem IsLowerTriangular.eq_one_of_mul_transpose_self_eq_one
     (hQorth : Q * Qᵀ = 1) : Q = 1 := by
   let _ : Invertible Q := invertibleOfRightInverse Q Qᵀ hQorth
   have hQttri : Qᵀ.IsLowerTriangular := by
-    rw [← Matrix.inv_eq_right_inv hQorth]
-    exact Matrix.blockTriangular_inv_of_blockTriangular hQ
+    rw [← inv_eq_right_inv hQorth]
+    exact blockTriangular_inv_of_blockTriangular hQ
   have hQupper : Q.IsUpperTriangular := by
     intro i j hji
-    simpa only [Matrix.transpose_apply] using hQttri hji
+    simpa only [transpose_apply] using hQttri hji
   ext i j
   rcases lt_trichotomy i j with hij | rfl | hij
-  · rw [hQ hij, Matrix.one_apply_ne hij.ne]
+  · rw [hQ hij, one_apply_ne hij.ne]
   · have hii : Q i i * Q i i = 1 := by
-      have hmul := Matrix.mul_apply_diag_of_isUpperTriangular hQupper hQ.transpose i
+      have hmul := mul_apply_diag_of_isUpperTriangular hQupper hQ.transpose i
       calc
-        Q i i * Q i i = Q i i * Qᵀ i i := by rw [Matrix.transpose_apply]
+        Q i i * Q i i = Q i i * Qᵀ i i := by rw [transpose_apply]
         _ = (Q * Qᵀ) i i := hmul.symm
-        _ = 1 := by rw [hQorth, Matrix.one_apply_eq]
-    rw [Matrix.one_apply_eq]
+        _ = 1 := by rw [hQorth, one_apply_eq]
+    rw [one_apply_eq]
     nlinarith [hQnonneg i]
   · have hzero : Qᵀ j i = 0 := hQttri hij
-    rw [Matrix.one_apply_ne hij.ne']
-    simpa only [Matrix.transpose_apply] using hzero
+    rw [one_apply_ne hij.ne']
+    simpa only [transpose_apply] using hzero
 
 /-- Lower-triangular matrices over an ordered field with positive diagonal are determined by
 their Gram matrices `L * Lᵀ`.
@@ -297,11 +327,11 @@ theorem IsLowerTriangular.eq_of_mul_transpose_self_eq
     (hLpos : ∀ i, 0 < L i i) (hMpos : ∀ i, 0 < M i i)
     (hgram : L * Lᵀ = M * Mᵀ) : L = M := by
   have hLdet : IsUnit L.det := by
-    rw [Matrix.det_of_isLowerTriangular L hL, isUnit_iff_ne_zero]
+    rw [det_of_isLowerTriangular L hL, isUnit_iff_ne_zero]
     exact Finset.prod_ne_zero_iff.mpr fun i _ ↦ (hLpos i).ne'
-  let _ : Invertible L := Matrix.invertibleOfIsUnitDet L hLdet
+  let _ : Invertible L := invertibleOfIsUnitDet L hLdet
   have hLinv : L⁻¹.IsLowerTriangular :=
-    Matrix.blockTriangular_inv_of_blockTriangular hL
+    blockTriangular_inv_of_blockTriangular hL
   have hQtri : (L⁻¹ * M).IsLowerTriangular := hLinv.mul hM
   have hQdiag : ∀ i, 0 < (L⁻¹ * M) i i := by
     intro i
@@ -309,25 +339,58 @@ theorem IsLowerTriangular.eq_of_mul_transpose_self_eq
     apply mul_pos
     · have hinvdiag : L⁻¹ i i * L i i = 1 := by
         rw [← mul_apply_diag_of_isLowerTriangular hLinv hL,
-          Matrix.nonsing_inv_mul L hLdet, Matrix.one_apply_eq]
+          nonsing_inv_mul L hLdet, one_apply_eq]
       nlinarith [hLpos i]
     · exact hMpos i
   have hLinvt_right : Lᵀ * L⁻¹ᵀ = 1 := by
-    rw [← Matrix.transpose_mul, Matrix.nonsing_inv_mul L hLdet, Matrix.transpose_one]
+    rw [← transpose_mul, nonsing_inv_mul L hLdet, transpose_one]
   have hQorth : (L⁻¹ * M) * (L⁻¹ * M)ᵀ = 1 := by
-    rw [Matrix.transpose_mul]
+    rw [transpose_mul]
     calc
       (L⁻¹ * M) * (Mᵀ * L⁻¹ᵀ) = L⁻¹ * (M * Mᵀ) * L⁻¹ᵀ := by
         simp only [Matrix.mul_assoc]
       _ = L⁻¹ * (L * Lᵀ) * L⁻¹ᵀ := by rw [← hgram]
       _ = (L⁻¹ * L) * (Lᵀ * L⁻¹ᵀ) := by simp only [Matrix.mul_assoc]
-      _ = 1 := by rw [Matrix.nonsing_inv_mul L hLdet, hLinvt_right, one_mul]
+      _ = 1 := by rw [nonsing_inv_mul L hLdet, hLinvt_right, one_mul]
   have hQone : L⁻¹ * M = 1 := by
     exact hQtri.eq_one_of_mul_transpose_self_eq_one (fun i ↦ (hQdiag i).le) hQorth
   calc
     L = L * 1 := (Matrix.mul_one L).symm
     _ = L * (L⁻¹ * M) := by rw [hQone]
-    _ = M := by rw [← Matrix.mul_assoc, Matrix.mul_nonsing_inv L hLdet, Matrix.one_mul]
+    _ = M := by rw [← Matrix.mul_assoc, mul_nonsing_inv L hLdet, Matrix.one_mul]
+
+section IntervalRestriction
+
+variable {ι κ R : Type*} [LinearOrder ι] [Fintype ι] [Fintype κ]
+
+/-- Restricting upper-triangular matrices to an order-connected set of indices preserves
+multiplication. -/
+theorem IsUpperTriangular.submatrix_mul [NonUnitalNonAssocSemiring R] {A B : Matrix ι ι R}
+    (hA : A.IsUpperTriangular) (hB : B.IsUpperTriangular)
+    (e : κ ↪ ι) (he : Set.OrdConnected (Set.range e)) :
+    (A * B).submatrix e e = A.submatrix e e * B.submatrix e e := by
+  ext i j
+  simp only [submatrix_apply, Matrix.mul_apply]
+  symm
+  refine Fintype.sum_of_injective e e.injective _ _ ?_ (fun _ ↦ rfl)
+  intro k hk
+  by_cases hki : k < e i
+  · simp [hA hki]
+  by_cases hjk : e j < k
+  · simp [hB hjk]
+  exact False.elim (hk (he.out ⟨i, rfl⟩ ⟨j, rfl⟩ ⟨not_lt.mp hki, not_lt.mp hjk⟩))
+
+/-- Restricting an upper-triangular matrix to an order-connected set of indices preserves
+powers. -/
+theorem IsUpperTriangular.submatrix_pow [Semiring R] [DecidableEq ι] [DecidableEq κ]
+    {A : Matrix ι ι R} (hA : A.IsUpperTriangular)
+    (e : κ ↪ ι) (he : Set.OrdConnected (Set.range e)) (n : ℕ) :
+    (A ^ n).submatrix e e = (A.submatrix e e) ^ n := by
+  induction n with
+  | zero => simp only [pow_zero, submatrix_one_embedding]
+  | succ n ih => rw [pow_succ, IsUpperTriangular.submatrix_mul (hA.pow n) hA e he, ih, pow_succ]
+
+end IntervalRestriction
 
 /-- The diagonal of a power of an upper-triangular matrix is the corresponding power of the
 diagonal entry. -/
@@ -350,7 +413,7 @@ theorem isUpperUnitriangular_geom_sum_of_isUpperTriangular_of_diag_eq_zero
   -- below the diagonal every power vanishes; on the diagonal every power after the zeroth does,
   -- leaving the `1` that `M ^ 0` contributes -- and the index `i` is itself the inhabitant that
   -- makes the range nonempty
-  rw [Matrix.isUpperUnitriangular_def]
+  rw [isUpperUnitriangular_def]
   refine ⟨?_, ?_⟩
   · intro i j hji
     simp only [Matrix.sum_apply]
@@ -394,21 +457,107 @@ theorem IsUpperUnitriangular.mul {T p : Type*} [NonAssocSemiring T] [Fintype p]
   refine ⟨hM.1.mul hN.1, fun i ↦ ?_⟩
   rw [mul_apply_diag_of_isUpperTriangular hM.1 hN.1, hM.2 i, hN.2 i, one_mul]
 
-/-- The inverse of an invertible upper-unitriangular matrix is upper unitriangular. -/
+/-- Every natural power of an upper-unitriangular matrix is upper unitriangular. -/
+theorem IsUpperUnitriangular.pow {T p : Type*} [Semiring T] [Fintype p] [LinearOrder p]
+    {M : Matrix p p T} (hM : M.IsUpperUnitriangular) (k : ℕ) :
+    (M ^ k).IsUpperUnitriangular := by
+  induction k with
+  | zero => exact isUpperUnitriangular_one
+  | succ k ih => rw [pow_succ]; exact ih.mul hM
+
+/-- The inverse of an upper-unitriangular matrix is upper unitriangular. -/
 theorem IsUpperUnitriangular.inv {T p : Type*} [CommRing T] [Fintype p] [LinearOrder p]
-    {M : Matrix p p T} [Invertible M] (hM : M.IsUpperUnitriangular) :
+    {M : Matrix p p T} (hM : M.IsUpperUnitriangular) :
     M⁻¹.IsUpperUnitriangular := by
+  -- The determinant is `1`, so `M` is invertible.
+  have := ((isUnit_iff_isUnit_det M).2 hM.isUnit_det).invertible
   refine ⟨blockTriangular_inv_of_blockTriangular hM.1, fun i ↦ ?_⟩
   exact inv_apply_diag_of_isUpperTriangular hM.1 (hM.2 i)
 
 /-- Subtracting the identity from an upper-unitriangular matrix gives a nilpotent matrix. -/
 theorem IsUpperUnitriangular.isNilpotent_sub_one {T p : Type*} [Ring T] [Fintype p]
     [LinearOrder p] {M : Matrix p p T} (hM : M.IsUpperUnitriangular) :
-    _root_.IsNilpotent (M - 1) := by
-  apply isNilpotent_of_isUpperTriangular_of_diag_eq_zero
-  · exact hM.1.sub blockTriangular_one
-  · intro i
-    simp [hM.2 i]
+    _root_.IsNilpotent (M - 1) :=
+  isNilpotent_of_isUpperTriangular_of_diag_eq_zero
+    hM.isUpperTriangular_sub_one hM.sub_one_apply_diag
+
+/-- A nonzero submodule invariant under strictly upper-triangular matrices contains a nonzero
+vector annihilated by all of them. Neither a field nor commutation of the matrices is required. -/
+theorem exists_ne_zero_forall_mulVec_eq_zero_of_invariant_submodule
+    {S ι κ : Type*} [Semiring S] [Fintype ι] [LinearOrder ι]
+    (A : κ → Matrix ι ι S) (htri : ∀ j, (A j).IsUpperTriangular)
+    (hdiag : ∀ j a, A j a a = 0) (N : Submodule S (ι → S)) (hN : N ≠ ⊥)
+    (hstable : ∀ j v, v ∈ N → A j *ᵥ v ∈ N) :
+    ∃ v ∈ N, v ≠ 0 ∧ ∀ j, A j *ᵥ v = 0 := by
+  classical
+  have htop (v : ι → S) (hv : v ≠ 0) :
+      ∃ a, v a ≠ 0 ∧ ∀ b, a < b → v b = 0 := by
+    have hs : {a | v a ≠ 0}.Nonempty := by
+      simpa only [Set.nonempty_def, Set.mem_ofPred_eq, ne_eq, funext_iff, Pi.zero_apply,
+        not_forall] using hv
+    obtain ⟨a, ha, hmax⟩ := (Set.toFinite {a | v a ≠ 0}).exists_maximal hs
+    exact ⟨a, ha, fun b hab ↦ by
+      by_contra hb
+      exact hab.not_ge (hmax hb hab.le)⟩
+  let P : ι → Prop := fun a ↦ ∃ v ∈ N, v a ≠ 0 ∧ ∀ b, a < b → v b = 0
+  have hP : ∃ a, P a := by
+    obtain ⟨v, hv, hv0⟩ := N.ne_bot_iff.mp hN
+    obtain ⟨a, ha, htop⟩ := htop v hv0
+    exact ⟨a, v, hv, ha, htop⟩
+  obtain ⟨a, ha, hmin⟩ := (Set.toFinite {a | P a}).exists_minimal hP
+  obtain ⟨v, hv, hva, hsupport⟩ := ha
+  refine ⟨v, hv, fun h ↦ hva (congrFun h a), fun j ↦ ?_⟩
+  by_contra hzero
+  obtain ⟨b, hb, htop'⟩ := htop (A j *ᵥ v) hzero
+  have hvanish (c : ι) (hac : a ≤ c) : (A j *ᵥ v) c = 0 := by
+    apply Finset.sum_eq_zero
+    intro d _
+    by_cases hcd : d ≤ c
+    · have hentry : A j c d = 0 := by
+        obtain hdc | rfl := hcd.lt_or_eq
+        · exact htri j hdc
+        · exact hdiag j d
+      exact mul_eq_zero_of_left hentry _
+    · exact mul_eq_zero_of_right _ (hsupport d (hac.trans_lt (lt_of_not_ge hcd)))
+  have hba : b < a := lt_of_not_ge fun hab ↦ hb (hvanish b hab)
+  exact hba.not_ge (hmin ⟨A j *ᵥ v, hstable j v hv, hb, htop'⟩ hba.le)
+
+/-- Replacing the column `a` of both factors of a product leaves every earlier column `c < a` of
+the product unchanged, when the right factor is upper triangular. -/
+theorem updateCol_mul_updateCol_apply_of_lt {T l p : Type*} [NonUnitalNonAssocSemiring T]
+    [Fintype p] [LinearOrder p] {J : Matrix l p T} {H : Matrix p p T}
+    (hH : H.IsUpperTriangular) {a c : p} (hca : c < a) (x : l → T) (y : p → T) (i : l) :
+    (J.updateCol a x * H.updateCol a y) i c = (J * H) i c := by
+  simp only [Matrix.mul_apply, updateCol_apply, hca.ne, ↓reduceIte]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  split_ifs with hk
+  · rw [hk, hH hca, mul_zero, mul_zero]
+  · rfl
+
+/-- A unitriangular system on a set `S` of rows not containing `a`: there is a vector `y`, equal to
+`1` at `a` and supported on `S ∪ {a}`, whose product with the principal submatrix of `J` on `S` is
+`u`. -/
+theorem exists_sum_mul_eq_of_isUpperUnitriangular {ι T : Type*} [LinearOrder ι] [Ring T]
+    {J : Matrix ι ι T} (hJ : J.IsUpperUnitriangular) (u : ι → T) (a : ι) (S : Finset ι)
+    (haS : a ∉ S) :
+    ∃ y : ι → T, y a = 1 ∧ (∀ l, l ∉ S → l ≠ a → y l = 0) ∧
+      ∀ i ∈ S, ∑ l ∈ S, J i l * y l = u i := by
+  -- On `S` the vector `y` solves a unitriangular system, a principal submatrix of `J`.
+  let M : Matrix S S T := J.submatrix (↑) (↑)
+  have hM : M.IsUpperUnitriangular := hJ.submatrix (Subtype.strictMono_coe _)
+  -- The two `DecidableEq` instances on `S`, from `ι` and from the order of `S`, agree.
+  have hN : IsNilpotent (M - 1) := by convert hM.isNilpotent_sub_one
+  have hunit : IsUnit M := by simpa using hN.isUnit_one_add
+  obtain ⟨M', hM'⟩ := hunit.exists_right_inv
+  let z : S → T := M' *ᵥ fun t : S ↦ u t
+  have hz : M *ᵥ z = fun t : S ↦ u t := by
+    simp only [z, mulVec_mulVec, hM', one_mulVec]
+  let y : ι → T := fun l ↦ if h : l ∈ S then z ⟨l, h⟩ else if l = a then 1 else 0
+  refine ⟨y, by simp [y, haS], fun l hl hla ↦ by simp [y, hl, hla], fun i hi ↦ ?_⟩
+  have := congrFun hz ⟨i, hi⟩
+  simp only [M, mulVec, dotProduct, submatrix_apply] at this
+  rw [← this, ← Finset.sum_coe_sort S]
+  exact Finset.sum_congr rfl fun t _ ↦ by simp [y, t.2]
 
 end Matrix
 

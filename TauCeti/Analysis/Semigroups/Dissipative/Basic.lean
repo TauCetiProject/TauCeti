@@ -29,7 +29,7 @@ and expanding a Neumann series propagates the range condition from `lambda` to e
 `mu ∈ (0, 2 lambda)`, and iterating that step along the geometric sequence `(3/2)^n lambda`
 covers all of `(0, ∞)`, so `mu • I - A : D(A) → X` is bijective for every `mu > 0`.
 Equivalently, every positive `mu` belongs to the resolvent set, and the resolvent satisfies
-`‖R(mu, A)‖ ≤ 1 / mu`.
+`‖R(mu, A)‖ ≤ 1 / mu`; conversely, these resolvent conditions imply m-dissipativity.
 
 The file then connects dissipativity to C₀-semigroups. For a semigroup with growth bound
 `(ω, M)` and `lambda > ω`, the Laplace-transform resolvent turns the bound `‖R(lambda)‖ ≤
@@ -38,9 +38,11 @@ M / (lambda - ω)` into the *resolvent-range inequality*
 `‖x‖ ≤ M / (lambda - ω) * ‖lambda • x - A x‖` for `x ∈ D(A)`,
 
 so that `lambda • I - A : D(A) → X` is bijective for every `lambda > ω` — that is,
-`(ω, ∞)` lies in the resolvent set of the generator. Specializing to `(ω, M) = (0, 1)` gives the
-**converse of the Lumer--Phillips theorem**: the generator of a contraction semigroup is
-dissipative.
+`(ω, ∞)` lies in the resolvent set of the generator. For a contraction semigroup, the
+**converse of the Lumer--Phillips theorem** — the generator is dissipative — follows from the
+elementary estimate `‖lambda • x - t⁻¹ • (S t x - x)‖ ≥ lambda * ‖x‖` as `t → 0⁺`, with no
+completeness needed; the resolvent route is used for `isMDissipative_generator`, whose range
+condition does need completeness.
 
 ## Main results
 
@@ -52,6 +54,8 @@ dissipative.
 * `TauCeti.Semigroups.IsMDissipative.mem_resolventSet` and
   `TauCeti.Semigroups.IsMDissipative.norm_resolvent_le`: every positive real is a resolvent
   point, with the contraction bound `‖R(lambda, A)‖ ≤ 1 / lambda`.
+* `TauCeti.Semigroups.isMDissipative_iff_forall_mem_resolventSet_and_norm_resolvent_le`:
+  conversely, these resolvent conditions characterize m-dissipativity.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.norm_le_norm_smul_sub_generator`: the
   resolvent-range inequality at a general growth bound `(ω, M)`.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.smul_sub_generator_bijective`:
@@ -208,6 +212,17 @@ private theorem IsDissipative.exists_bounded_rightInverse {A : X →ₗ.[ℝ] X}
     A.resolvent lambda, hR.norm_le_inv hlambda (hA lambda hlambda),
     fun _ => rfl, hR.smul_sub_apply⟩
 
+/-- **m-dissipativity from resolvent bounds.** If every `lambda > 0` lies in the resolvent set
+of `A` and `‖R(lambda, A)‖ ≤ 1 / lambda`, then `A` is m-dissipative: the resolvent bound is the
+dissipativity inequality, and any one resolvent point supplies the range condition. -/
+theorem isMDissipative_of_forall_norm_resolvent_le {A : X →ₗ.[ℝ] X}
+    (hres : ∀ lambda : ℝ, 0 < lambda → lambda ∈ LinearPMap.resolventSet A)
+    (hnorm : ∀ lambda : ℝ, 0 < lambda → ‖LinearPMap.resolvent A lambda‖ ≤ lambda⁻¹) :
+    IsMDissipative A :=
+  ⟨fun lambda hlambda => ((LinearPMap.isResolventAt_resolvent (hres lambda hlambda)).norm_le_inv_iff
+      hlambda).mp (hnorm lambda hlambda),
+    1, one_pos, (LinearPMap.isResolventAt_resolvent (hres 1 one_pos)).smul_sub_surjective⟩
+
 section CompleteSpace
 
 variable [CompleteSpace X]
@@ -321,6 +336,15 @@ theorem IsMDissipative.mul_norm_resolvent_le_one {A : X →ₗ.[ℝ] X} (hA : Is
       exact hA.norm_resolvent_le hlambda
     _ = 1 := mul_inv_cancel₀ hlambda.ne'
 
+/-- **m-dissipativity in resolvent form.** On a real Banach space, an operator is m-dissipative
+exactly when every `lambda > 0` lies in its resolvent set, with `‖R(lambda, A)‖ ≤ 1 / lambda`. -/
+theorem isMDissipative_iff_forall_mem_resolventSet_and_norm_resolvent_le {A : X →ₗ.[ℝ] X} :
+    IsMDissipative A ↔
+      (∀ lambda : ℝ, 0 < lambda → lambda ∈ LinearPMap.resolventSet A) ∧
+        ∀ lambda : ℝ, 0 < lambda → ‖LinearPMap.resolvent A lambda‖ ≤ lambda⁻¹ :=
+  ⟨fun hA => ⟨fun _ => hA.mem_resolventSet, fun _ => hA.norm_resolvent_le⟩,
+    fun ⟨hres, hnorm⟩ => isMDissipative_of_forall_norm_resolvent_le hres hnorm⟩
+
 end CompleteSpace
 
 /-! ## The generator of a C₀-semigroup -/
@@ -388,26 +412,47 @@ namespace ContractionSemigroup
 
 variable [CompleteSpace X]
 
+omit [CompleteSpace X] in
 /-- **Converse of the Lumer--Phillips theorem**: the generator of a contraction semigroup is
 dissipative.
 
-It is the `(ω, M) = (0, 1)` case of the resolvent-range inequality
-`StronglyContinuousSemigroup.norm_le_norm_smul_sub_generator`. Together with
+This holds on any real normed space `X`: completeness is not needed. Together with
 `StronglyContinuousSemigroup.smul_sub_generator_surjective` and the density of the generator
 domain, it shows that the hypotheses of the Lumer--Phillips generation theorem are also
 necessary. -/
 theorem isDissipative_generator (S : ContractionSemigroup X) :
     IsDissipative S.toStronglyContinuousSemigroup.generator := by
+  -- For `x` in the domain and `t > 0`, contractivity gives
+  -- `‖lambda x - t⁻¹ (S t x - x)‖ ≥ (lambda + t⁻¹) ‖x‖ - t⁻¹ ‖S t x‖ ≥ lambda ‖x‖`, and the left
+  -- side tends to `‖lambda x - A x‖` as `t → 0⁺`.
   intro lambda hlambda x
-  have h := S.toStronglyContinuousSemigroup.norm_le_norm_smul_sub_generator
-    S.hasGrowthBound (by simpa using hlambda) x
-  rw [sub_zero, one_div] at h
-  calc lambda * ‖(x : X)‖
-      ≤ lambda * (lambda⁻¹ *
-          ‖lambda • (x : X) - S.toStronglyContinuousSemigroup.generator x‖) := by
-        gcongr
-    _ = ‖lambda • (x : X) - S.toStronglyContinuousSemigroup.generator x‖ := by
-        rw [← mul_assoc, mul_inv_cancel₀ hlambda.ne', one_mul]
+  have hx : (x : X) ∈ S.toStronglyContinuousSemigroup.domain := by
+    rw [← S.toStronglyContinuousSemigroup.generator_domain]
+    exact x.property
+  have hlim := (S.toStronglyContinuousSemigroup.generator_tendsto ⟨(x : X), hx⟩).const_sub
+    (lambda • (x : X)) |>.norm
+  refine ge_of_tendsto hlim ?_
+  filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
+  have hS : ‖S.toStronglyContinuousSemigroup.realOperator t (x : X)‖ ≤ ‖(x : X)‖ :=
+    ((S.toStronglyContinuousSemigroup.realOperator t).le_opNorm _).trans
+      (by simpa using mul_le_mul_of_nonneg_right (S.contracting_real t) (norm_nonneg _))
+  have key : lambda • (x : X) - (1 / t) • (S.toStronglyContinuousSemigroup.realOperator t
+      (x : X) - (x : X)) = (lambda + 1 / t) • (x : X) -
+        (1 / t) • S.toStronglyContinuousSemigroup.realOperator t (x : X) := by
+    rw [smul_sub, add_smul]
+    abel
+  have h1 : (lambda + 1 / t) * ‖(x : X)‖ - 1 / t * ‖S.toStronglyContinuousSemigroup.realOperator
+      t (x : X)‖ ≤ ‖(lambda + 1 / t) • (x : X) -
+        (1 / t) • S.toStronglyContinuousSemigroup.realOperator t (x : X)‖ := by
+    have := norm_sub_norm_le ((lambda + 1 / t) • (x : X))
+      ((1 / t) • S.toStronglyContinuousSemigroup.realOperator t (x : X))
+    rw [norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
+      Real.norm_of_nonneg (by positivity)] at this
+    exact this
+  simp only [key]
+  have : 1 / t * ‖S.toStronglyContinuousSemigroup.realOperator t (x : X)‖ ≤ 1 / t * ‖(x : X)‖ :=
+    by gcongr
+  nlinarith
 
 /-- **The generator of a contraction semigroup is m-dissipative.** This is the full converse of
 the Lumer--Phillips theorem apart from the density of the domain (which is
@@ -421,6 +466,7 @@ theorem isMDissipative_generator (S : ContractionSemigroup X) :
     (S.toStronglyContinuousSemigroup.smul_sub_generator_surjective S.hasGrowthBound
       (by norm_num))
 
+omit [CompleteSpace X] in
 /-- The a priori estimate for the generator of a contraction semigroup: a solution of
 `lambda x - A x = y` has `‖x‖ ≤ ‖y‖ / lambda`. -/
 theorem norm_le_of_smul_sub_generator_eq (S : ContractionSemigroup X) {lambda : ℝ}

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5, Adam Bornemann
 -/
 module
 
@@ -37,6 +37,8 @@ linear maps used by the semigroup development.
 
 ## Main results
 
+* `LinearPMap.IsFormalAdjoint.add`: formal adjointness is preserved by sums; in particular a sum
+  of symmetric partial linear maps is symmetric.
 * `IsSelfAdjoint.isFormalAdjoint`: a self-adjoint partial linear map is formally self-adjoint.
 * `LinearPMap.IsFormalAdjoint.im_inner_self_apply`: the quadratic form of a formally self-adjoint
   map is real.
@@ -47,6 +49,10 @@ linear maps used by the semigroup development.
   eigenvector for a nonreal eigenvalue.
 * `LinearPMap.exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero`: a vector orthogonal to the range
   of the shift `c • x - A x` is an eigenvector of the adjoint `A†` for the eigenvalue `conj c`.
+* `LinearPMap.IsFormalAdjoint.range_le_orthogonal_ker` and `IsSelfAdjoint.orthogonal_range_eq_ker`:
+  the range of a symmetric map is orthogonal to its kernel, and for a self-adjoint map
+  `(range A)ᗮ = ker A`; `LinearPMap.exists_coe_eq_sub_starProjection` removes the kernel
+  component of a vector of the domain without changing its image.
 * `IsSelfAdjoint.denseRange_smul_sub_of_norm_le` and
   `IsSelfAdjoint.smul_sub_surjective_of_norm_le`: the range of a shift of a self-adjoint operator
   that is bounded below is dense, and is the whole space.
@@ -60,6 +66,20 @@ linear maps used by the semigroup development.
   skew-adjoint partial linear map has dense domain, and its multiple by a nonzero purely imaginary
   scalar is self-adjoint.
 
+## Provenance
+
+The shifted-surjectivity and domain-density criteria added here are adapted from
+[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean)
+and
+[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean)
+in the AIQ-Kitware DKPS formalization (copyright (c) 2026 Kitware, Inc.;
+authors Jon Crall and Claude Opus 5; Apache-2.0). The donor `Basic.lean`
+credits the earlier
+[`Spectra/OneParameterUnitaryGroup/Basic.lean`](https://github.com/adambornemann-glitch/Spectra/blob/8dbaaf6728d1342ae16acf79fd7eef7c59b37e63/Spectra/OneParameterUnitaryGroup/Basic.lean)
+at commit `8dbaaf6728d1342ae16acf79fd7eef7c59b37e63` (copyright (c) 2026
+Spectra Formalization Project; author Adam Bornemann; Apache-2.0).
+The present formulations use TauCeti's canonical `LinearPMap` adjoint API.
+
 ## References
 
 * M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*,
@@ -72,6 +92,16 @@ public section
 noncomputable section
 
 namespace LinearPMap
+
+/-- Formal adjointness is preserved by sums: if `S₁` and `S₂` are formal adjoints of `T₁` and
+`T₂`, then `S₁ + S₂` is a formal adjoint of `T₁ + T₂`. In particular a sum of symmetric partial
+linear maps is symmetric. -/
+theorem IsFormalAdjoint.add {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    {T₁ T₂ : E →ₗ.[𝕜] F} {S₁ S₂ : F →ₗ.[𝕜] E} (h₁ : T₁.IsFormalAdjoint S₁)
+    (h₂ : T₂.IsFormalAdjoint S₂) : (T₁ + T₂).IsFormalAdjoint (S₁ + S₂) := fun x y ↦ by
+  rw [add_apply, add_apply, inner_add_left, inner_add_right, h₁ ⟨x, x.2.1⟩ ⟨y, y.2.1⟩,
+    h₂ ⟨x, x.2.2⟩ ⟨y, y.2.2⟩]
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
@@ -104,6 +134,38 @@ theorem exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero [CompleteSpace E] {A :
     rw [inner_smul_left, RCLike.conj_conj, ← hx, inner_smul_right]
   have hy : y ∈ A†.domain := mem_adjoint_domain_of_exists y ⟨_, hpair⟩
   exact ⟨hy, adjoint_apply_eq hdense ⟨y, hy⟩ hpair⟩
+
+/-- The values of a symmetric partial linear map are orthogonal to its kernel. -/
+theorem IsFormalAdjoint.apply_mem_orthogonal_ker {A : E →ₗ.[𝕜] E} (hA : A.IsFormalAdjoint A)
+    (x : A.domain) : A x ∈ A.kerᗮ := by
+  refine (Submodule.mem_orthogonal _ _).2 fun y hy ↦ ?_
+  obtain ⟨z, rfl, hz⟩ := mem_ker_iff.1 hy
+  rw [← hA z x, hz, inner_zero_left]
+
+/-- The range of a symmetric partial linear map is orthogonal to its kernel. -/
+theorem IsFormalAdjoint.range_le_orthogonal_ker {A : E →ₗ.[𝕜] E} (hA : A.IsFormalAdjoint A) :
+    LinearMap.range A.toFun ≤ A.kerᗮ := by
+  rintro _ ⟨x, rfl⟩
+  exact hA.apply_mem_orthogonal_ker x
+
+/-- Removing the kernel component of `u ∈ D(A)` gives a vector of `D(A)` with the same image. -/
+theorem exists_coe_eq_sub_starProjection {A : E →ₗ.[𝕜] E} [A.ker.HasOrthogonalProjection]
+    (u : A.domain) : ∃ v : A.domain, (v : E) = u - A.ker.starProjection u ∧ A v = A u :=
+  ⟨u - ⟨_, A.ker_le_domain (A.ker.starProjection_apply_mem u)⟩, rfl, by
+    rw [map_sub, (coe_mem_ker_iff (x := ⟨_, _⟩)).1 (A.ker.starProjection_apply_mem u), sub_zero]⟩
+
+/-- For a self-adjoint `A`, the orthogonal complement of the range is the kernel: a vector
+orthogonal to the range lies in the domain of `A† = A` and is killed by it. -/
+theorem _root_.IsSelfAdjoint.orthogonal_range_eq_ker [CompleteSpace E] {A : E →ₗ.[𝕜] E}
+    (hA : IsSelfAdjoint A) : (LinearMap.range A.toFun)ᗮ = A.ker := by
+  refine le_antisymm (fun y hy ↦ ?_)
+    (Submodule.isOrtho_comm.1 hA.isFormalAdjoint.range_le_orthogonal_ker)
+  have hortho : ∀ x : A.domain, inner 𝕜 y ((0 : 𝕜) • (x : E) - A x) = 0 := fun x ↦ by
+    rw [zero_smul, zero_sub, inner_neg_right, neg_eq_zero]
+    exact Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self A.toFun x) hy
+  obtain ⟨hy', hAy⟩ := exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero hA.dense_domain hortho
+  obtain ⟨z, hz, hAz⟩ := exists_of_le (isSelfAdjoint_def.mp hA).le ⟨y, hy'⟩
+  exact mem_ker_iff.2 ⟨z, hz, by rw [← hAz, hAy]; simp⟩
 
 
 /-- For a formally self-adjoint partial linear map, the real cross term between `c • x` and `A x`
@@ -268,14 +330,12 @@ theorem _root_.IsSelfAdjoint.smul_sub_bijective [CompleteSpace E] {A : E →ₗ.
   ⟨hA.isFormalAdjoint.smul_sub_injective hc, hA.smul_sub_surjective hc⟩
 
 
-/-- **The adjoint of a scalar multiple.** For a densely defined partial linear map `T` and a nonzero
-scalar `c`, `(c • T)† = conj c • T†`; in particular the two adjoints have the same domain. -/
+/-- **The adjoint of a scalar multiple.** For a partial linear map `T` and a nonzero scalar `c`,
+`(c • T)† = conj c • T†`; in particular the two adjoints have the same domain. If `T` is not
+densely defined, both adjoints are the junk value `0` on their common domain. -/
 theorem adjoint_smul {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace E]
-    {T : E →ₗ.[𝕜] F} (hT : Dense (T.domain : Set E)) {c : 𝕜} (hc : c ≠ 0) :
+    (T : E →ₗ.[𝕜] F) {c : 𝕜} (hc : c ≠ 0) :
     (c • T)† = (starRingEnd 𝕜) c • T† := by
-  have hT' : Dense ((c • T).domain : Set E) := by
-    rw [LinearPMap.smul_domain]
-    exact hT
   have hdom : (c • T)†.domain = T†.domain := by
     ext y
     rw [mem_adjoint_domain_iff, mem_adjoint_domain_iff]
@@ -289,9 +349,16 @@ theorem adjoint_smul {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 
     exact continuous_const_smul_iff₀ hc
   refine LinearPMap.ext hdom fun y hy hy' => ?_
   rw [LinearPMap.smul_apply]
-  refine adjoint_apply_eq hT' ⟨y, hy⟩ fun x => ?_
-  rw [inner_smul_left, RCLike.conj_conj, LinearPMap.smul_apply, inner_smul_right,
-    adjoint_isFormalAdjoint hT ⟨y, hy'⟩ x]
+  by_cases hT : Dense (T.domain : Set E)
+  · have hT' : Dense ((c • T).domain : Set E) := by
+      rw [LinearPMap.smul_domain]
+      exact hT
+    refine adjoint_apply_eq hT' ⟨y, hy⟩ fun x => ?_
+    rw [inner_smul_left, RCLike.conj_conj, LinearPMap.smul_apply, inner_smul_right,
+      adjoint_isFormalAdjoint hT ⟨y, hy'⟩ x]
+  · have hT' : ¬Dense ((c • T).domain : Set E) := by
+      rwa [LinearPMap.smul_domain]
+    rw [adjoint_apply_of_not_dense hT' ⟨y, hy⟩, adjoint_apply_of_not_dense hT ⟨y, hy'⟩, smul_zero]
 
 /-- A partial linear map whose adjoint is its negative has dense domain: otherwise the adjoint is
 the junk value `0`, so the map vanishes and every vector lies in the adjoint domain. -/
@@ -322,9 +389,93 @@ operator behind a skew-adjoint generator. -/
 theorem isSelfAdjoint_smul_of_adjoint_eq_neg [CompleteSpace E] {G : E →ₗ.[𝕜] E} {c : 𝕜}
     (hre : RCLike.re c = 0) (hc : c ≠ 0) (hG : G† = -G) : IsSelfAdjoint (c • G) := by
   have hconj : (starRingEnd 𝕜) c = -c := RCLike.ext (by simp [hre]) (by simp)
-  rw [LinearPMap.isSelfAdjoint_def, adjoint_smul (dense_domain_of_adjoint_eq_neg hG) hc, hG, hconj,
+  rw [LinearPMap.isSelfAdjoint_def, adjoint_smul G hc, hG, hconj,
     LinearPMap.smul_neg, LinearPMap.neg_smul, neg_neg]
 
+
+/-! ## Von Neumann's shifted-surjectivity criterion -/
+
+section VonNeumann
+
+open Complex InnerProductSpace
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+
+/-- Surjectivity of `A + i` for a symmetric partial operator makes its domain dense.
+This supplies the density hypothesis needed when using the adjoint of the operator. -/
+theorem dense_domain_of_surjective_add_I (A : H →ₗ.[ℂ] H) (hsym : A.IsFormalAdjoint A)
+    (hplus : ∀ φ : H, ∃ ψ : A.domain, A ψ + I • (ψ : H) = φ) :
+    Dense (A.domain : Set H) := by
+  rw [Submodule.dense_iff_topologicalClosure_eq_top,
+    Submodule.topologicalClosure_eq_top_iff, Submodule.eq_bot_iff]
+  intro x hx
+  obtain ⟨ψ, hψ⟩ := hplus x
+  have hx0 : ⟪(ψ : H), x⟫_ℂ = 0 :=
+    (Submodule.mem_orthogonal _ x).mp hx (ψ : H) ψ.2
+  have hIm : (⟪(ψ : H), A ψ⟫_ℂ).im = 0 := hsym.im_inner_self_apply ψ
+  have hexp : ⟪(ψ : H), A ψ⟫_ℂ + I * ⟪(ψ : H), (ψ : H)⟫_ℂ = 0 := by
+    rw [← hψ, inner_add_right, inner_smul_right] at hx0
+    exact hx0
+  have him : (⟪(ψ : H), (ψ : H)⟫_ℂ).re = 0 := by
+    have hi := congrArg Complex.im hexp
+    simp only [Complex.add_im, Complex.mul_im, Complex.I_re, Complex.I_im, Complex.zero_im,
+      hIm, zero_mul, one_mul, zero_add] at hi
+    exact hi
+  have hψ0 : (ψ : H) = 0 :=
+    (re_inner_self_nonpos (𝕜 := ℂ) (x := (ψ : H))).mp
+      (by simpa only [RCLike.re_to_complex] using (le_of_eq him))
+  have : ψ = 0 := Subtype.ext hψ0
+  rw [this] at hψ
+  simpa using hψ.symm
+
+/-- **Von Neumann's criterion.** A symmetric partial linear map is self-adjoint if its
+shifts by `+i` and `-i` are surjective. Density follows from the first shift, so no
+independent density hypothesis is needed. -/
+theorem isSelfAdjoint_of_surjective_addSub
+    (A : H →ₗ.[ℂ] H) (hsym : A.IsFormalAdjoint A)
+    (hplus : ∀ φ : H, ∃ ψ : A.domain, A ψ + I • (ψ : H) = φ)
+    (hminus : ∀ φ : H, ∃ ψ : A.domain, A ψ - I • (ψ : H) = φ) :
+    IsSelfAdjoint A := by
+  have hdense := dense_domain_of_surjective_add_I A hsym hplus
+  rw [LinearPMap.isSelfAdjoint_def]
+  refine le_antisymm ?_ (hsym.le_adjoint hdense)
+  have hker : ∀ w : (A.adjoint).domain, A.adjoint w = I • (w : H) → (w : H) = 0 := by
+    intro w hw
+    obtain ⟨v, hv⟩ := hplus (w : H)
+    have hadj : ⟪A.adjoint w, (v : H)⟫_ℂ = ⟪(w : H), A v⟫_ℂ :=
+      LinearPMap.adjoint_isFormalAdjoint hdense w v
+    rw [hw, inner_smul_left, Complex.conj_I] at hadj
+    have key : ⟪(w : H), A v⟫_ℂ + I * ⟪(w : H), (v : H)⟫_ℂ =
+        ⟪(w : H), (w : H)⟫_ℂ := by
+      rw [← inner_smul_right, ← inner_add_right, hv]
+    have hww : ⟪(w : H), (w : H)⟫_ℂ = 0 := by rw [← key, ← hadj]; ring
+    exact inner_self_eq_zero.mp hww
+  apply LinearPMap.le_of_eqLocus_ge
+  intro w hw
+  set W : (A.adjoint).domain := ⟨w, hw⟩ with hWdef
+  obtain ⟨x, hx⟩ := hminus (A.adjoint W - I • (W : H))
+  have hxin : (x : H) ∈ (A.adjoint).domain := (hsym.le_adjoint hdense).1 x.2
+  have hxeq : A.adjoint (⟨(x : H), hxin⟩ : (A.adjoint).domain) = A x :=
+    ((hsym.le_adjoint hdense).2 (x := x) (y := ⟨(x : H), hxin⟩) rfl).symm
+  set W' : (A.adjoint).domain := W - ⟨(x : H), hxin⟩ with hW'def
+  have hW'val : (W' : H) = (W : H) - (x : H) := by
+    simp only [hW'def, Submodule.coe_sub]
+  have hrearr : A.adjoint W - A x = I • (W : H) - I • (x : H) := by
+    have h2 : A.adjoint W = A x - I • (x : H) + I • (W : H) := by rw [hx]; abel
+    rw [h2]; abel
+  have hAW' : A.adjoint W' = I • (W' : H) := by
+    have e1 : A.adjoint W' = A.adjoint W - A x := by
+      rw [hW'def, LinearPMap.map_sub, hxeq]
+    rw [e1, hrearr, hW'val, smul_sub]
+  have hWx : (W : H) = (x : H) := sub_eq_zero.mp (hW'val ▸ hker W' hAW')
+  have hwx : w = (x : H) := by
+    have hWcoe : (W : H) = w := by rw [hWdef]
+    rw [← hWcoe]
+    exact hWx
+  subst hwx
+  exact ⟨hw, x.2, hxeq⟩
+
+end VonNeumann
 
 end LinearPMap
 

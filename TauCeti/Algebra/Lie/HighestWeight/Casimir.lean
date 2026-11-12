@@ -124,7 +124,7 @@ private theorem representation_casimirElement_apply {ι : Type*} [DecidableEq ι
       ∑ i, casimirBilin K v (bs i) (killingDualBasis bs i) := by
   rw [casimirElement_eq_sum bs, map_sum, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [map_mul, Module.End.mul_apply, UniversalEnvelopingAlgebra.representation_ι,
+  rw [map_mul, mul_apply_eq_comp, UniversalEnvelopingAlgebra.representation_ι,
     UniversalEnvelopingAlgebra.representation_ι, casimirBilin_apply]
   simp
 
@@ -189,7 +189,7 @@ private theorem sum_casimirBilin_proj_pos (hv : IsHighestWeightVector base lam v
       (genWeightSpaceProjection_apply_mem (K := K) (L := H) χ (bs i)))
   have hterm : ∀ i, casimirBilin K v (genWeightSpaceProjection K H L χ (bs i))
       (genWeightSpaceProjection K H L (-χ) (killingDualBasis bs i)) =
-      killingForm K L (genWeightSpaceProjection K H L χ (bs i)) (killingDualBasis bs i) •
+      killingForm K L (killingDualBasis bs i) (genWeightSpaceProjection K H L χ (bs i)) •
         ⁅(((IsKilling.cartanEquivDual H).symm (χ : Module.Dual K H) : H) : L), v⁆ := by
     intro i
     have hlower : genWeightSpaceProjection K H L (-χ) (killingDualBasis bs i) ∈
@@ -197,14 +197,14 @@ private theorem sum_casimirBilin_proj_pos (hv : IsHighestWeightVector base lam v
       simpa using genWeightSpaceProjection_apply_mem (K := K) (L := H) (-χ) (killingDualBasis bs i)
     have hcoef : killingForm K L (genWeightSpaceProjection K H L χ (bs i))
         (genWeightSpaceProjection K H L (-χ) (killingDualBasis bs i)) =
-        killingForm K L (genWeightSpaceProjection K H L χ (bs i)) (killingDualBasis bs i) := by
+        killingForm K L (killingDualBasis bs i) (genWeightSpaceProjection K H L χ (bs i)) := by
       rw [killingForm_genWeightSpaceProjection H χ, genWeightSpaceProjection_apply_apply,
-        ← killingForm_genWeightSpaceProjection H χ]
+        ← killingForm_genWeightSpaceProjection H χ, LieModule.traceForm_comm]
     rw [casimirBilin_apply, leibniz_lie, hkill i, lie_zero, add_zero,
       IsKilling.lie_eq_killingForm_smul_of_mem_rootSpace_of_mem_rootSpace_neg
         (genWeightSpaceProjection_apply_mem (K := K) (L := H) χ (bs i)) hlower, smul_lie, hcoef]
   rw [Finset.sum_congr rfl fun i _ ↦ hterm i, ← Finset.sum_smul,
-    sum_killingForm_killingDualBasis_eq_trace, trace_genWeightSpaceProjection_eq_one H hnz,
+    LinearMap.BilinForm.sum_apply_dualBasis_eq_trace, trace_genWeightSpaceProjection_eq_one H hnz,
     one_smul, hv.lie_eq_smul, invForm_apply_apply]
 
 end Terms

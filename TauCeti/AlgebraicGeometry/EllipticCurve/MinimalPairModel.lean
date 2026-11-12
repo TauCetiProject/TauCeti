@@ -10,8 +10,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 
 import Mathlib.Algebra.CharP.Invertible
 import Mathlib.Data.Int.Interval
-import TauCeti.Data.Int.WeightedPrimitivePair
 import TauCeti.Data.Rat.NumDenDvd
+import TauCeti.RingTheory.UniqueFactorizationDomain.WeightedPrimitivePair
 
 /-!
 # The minimal-pair short equation of an elliptic curve over `ℚ`, and its naïve height
@@ -39,6 +39,8 @@ such a table finite.
 
 ## Main results
 
+* `WeierstrassCurve.IsMinimalPairNF.of_forall_le`: the minimal-pair condition need only be
+  checked at the primes `ℓ` with `ℓ⁴ ≤ gcd (a₄, a₆)`.
 * `WeierstrassCurve.exists_minimalPairModel`: every elliptic curve over `ℚ` has a minimal-pair
   model.
 * `WeierstrassCurve.minimalPairModel_unique`: any two minimal-pair models of `E` have the same
@@ -183,6 +185,22 @@ theorem IsMinimalPairNF.of_forall_not_dvd [W.IsShortNF]
     IsMinimalPairNF W :=
   ⟨inferInstance, h⟩
 
+/-- **The minimal-pair condition is a finite check.** A prime `ℓ` with `ℓ⁴ ∣ a₄` and `ℓ⁶ ∣ a₆` has
+`ℓ⁴ ∣ gcd (a₄, a₆)`, so once `gcd (a₄, a₆)` is nonzero and less than `(b + 1)⁴` it suffices to check
+the primes `ℓ ≤ b`. -/
+theorem IsMinimalPairNF.of_forall_le [W.IsShortNF] (b : ℕ) (hg : Int.gcd W.a₄ W.a₆ ≠ 0)
+    (hb : Int.gcd W.a₄ W.a₆ < (b + 1) ^ 4)
+    (h : ∀ ℓ ≤ b, ℓ.Prime → ¬ ((ℓ : ℤ) ^ 4 ∣ W.a₄ ∧ (ℓ : ℤ) ^ 6 ∣ W.a₆)) :
+    IsMinimalPairNF W := by
+  refine .of_forall_not_dvd fun ℓ hℓ hdvd ↦ h ℓ (not_lt.1 fun hlt ↦ ?_) hℓ hdvd
+  have h₄ : ((ℓ ^ 4 : ℕ) : ℤ) ∣ (Int.gcd W.a₄ W.a₆ : ℤ) := by
+    push_cast
+    exact Int.dvd_coe_gcd hdvd.1 ((pow_dvd_pow _ (by norm_num)).trans hdvd.2)
+  have := Nat.le_of_dvd (Nat.pos_of_ne_zero hg) (Int.natCast_dvd_natCast.1 h₄)
+  have hbound : b + 1 ≤ ℓ := hlt
+  have := Nat.pow_le_pow_left hbound 4
+  omega
+
 /-- **The only integers `x` with `x⁴ ∣ a₄` and `x⁶ ∣ a₆` for a minimal pair are `±1`.** This is
 the form in which the minimal-pair condition is consumed: it rules out every scaling of the
 equation but the sign. -/
@@ -213,7 +231,7 @@ theorem IsMinimalPairNF.eq_of_intCast_eq_pow_mul {W' : WeierstrassCurve ℤ}
       (by simpa [Rat.num_pow] using (q ^ 4).num_dvd_of_intCast_eq_mul_intCast h₄)
       (by simpa [Rat.num_pow] using (q ^ 6).num_dvd_of_intCast_eq_mul_intCast h₆))
   have hq : q = 1 ∨ q = -1 := by
-    rw [← Rat.coe_int_num_of_den_eq_one hden]
+    rw [← Rat.intCast_num_of_den_eq_one hden]
     rcases hnum with h | h <;> simp [h]
   have hq4 : q ^ 4 = 1 := by rcases hq with rfl | rfl <;> norm_num
   have hq6 : q ^ 6 = 1 := by rcases hq with rfl | rfl <;> norm_num
@@ -313,8 +331,8 @@ theorem exists_minimalPairModel (E : WeierstrassCurve ℚ) [E.IsElliptic] :
       (mul_eq_zero.mp (hB₁.trans (by rw [h.2, Int.cast_zero]))).resolve_left (pow_ne_zero 6 hd')
     exact (C • E).isUnit_Δ.ne_zero (by rw [Δ_of_isShortNF, ha₄, ha₆]; norm_num)
   obtain ⟨e, A, B, he, hA, hB, hmin⟩ :=
-    A₂.exists_eq_pow_mul_and_forall_prime_not_pow_dvd_of_ne_zero B₂ (m := 4) (n := 6)
-      (by norm_num) (by norm_num) hne
+    TauCeti.exists_eq_pow_mul_and_forall_isUnit_of_pow_dvd (m := 4) (n := 6) (by norm_num)
+      (by norm_num) hne
   have he' : (e : ℚ) ≠ 0 := Int.cast_ne_zero.mpr he
   have hA' : (A₂ : ℚ) = (e : ℚ) ^ 4 * A := by exact_mod_cast hA
   have hB' : (B₂ : ℚ) = (e : ℚ) ^ 6 * B := by exact_mod_cast hB
@@ -328,7 +346,8 @@ theorem exists_minimalPairModel (E : WeierstrassCurve ℚ) [E.IsElliptic] :
       linear_combination -hA₁ - hA'
     · rw [div_eq_iff (pow_ne_zero 6 hd')]
       linear_combination -hB₁ - hB'
-  exact ⟨⟨shortCurve A B, .of_forall_not_dvd (by simpa using hmin), C⁻¹ * ⟨u, 0, 0, 0⟩,
+  exact ⟨⟨shortCurve A B, .of_forall_not_dvd fun ℓ hℓ h ↦ (Nat.prime_iff_prime_int.mp hℓ).not_isUnit
+    (hmin _ (by simpa using h.1) (by simpa using h.2)), C⁻¹ * ⟨u, 0, 0, 0⟩,
     by rw [mul_smul, key, inv_smul_smul]⟩⟩
 
 /-- **A chosen minimal-pair model** of an elliptic curve over `ℚ`. Its equation and its height
@@ -358,7 +377,7 @@ theorem minimalPairModel_unique (E : WeierstrassCurve ℚ) [E.IsElliptic]
     rw [hD]
     infer_instance
   have h₄ := variableChange_a₄_of_isShortNF (M.model.baseChange ℚ) (CN⁻¹ * CM)
-    (isRegular_iff_ne_zero.mpr two_ne_zero) (isRegular_iff_ne_zero.mpr three_ne_zero)
+    (isRegular_iff_ne_zero.mpr two_ne_zero)
   have h₆ := variableChange_a₆_of_isShortNF (M.model.baseChange ℚ) (CN⁻¹ * CM)
     (isRegular_iff_ne_zero.mpr two_ne_zero) (isRegular_iff_ne_zero.mpr three_ne_zero)
   rw [hD] at h₄ h₆

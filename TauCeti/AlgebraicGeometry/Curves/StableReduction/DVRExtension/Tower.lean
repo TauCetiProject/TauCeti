@@ -212,7 +212,7 @@ noncomputable def ofAlgHom (φ : E.extensionField →ₐ[K] F.extensionField)
           -- both sides are `φ c`: the algebra maps out of the integral closures are the inclusions
           rfl)) x
     isLocalHom_localMap := by
-      refine ((IsLocalRing.local_hom_TFAE _).out 4 1).mp ?_
+      refine ((IsLocalRing.local_hom_tfae _).out 4 1).mp ?_
       rw [← IsLocalization.AtPrime.map_eq_maximalIdeal E.prime E.localRing,
         Ideal.map_le_iff_le_comap]
       intro x hx

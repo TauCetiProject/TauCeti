@@ -77,18 +77,15 @@ theorem upperTriangular_comap_le_geckTorusPositiveDefiningIdeal :
         (CommAlgCat.of ℤ (MonoidAlgebra ℤ (SplitTorus.characterGroup (Fin t.rank)))) :=
       toConv (AlgHom.id ℤ _)
     have hmatrix : GeneralLinear.pointsMulEquiv (t.geckDim ht)
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (GeneralLinear.weightTorusCoordinateMap (R := ℤ) (t.geckWeightFin ht))).app _ p) =
         t.geckTorusMatrix ht (SplitTorus.pointsMulEquiv p) := by
       rw [geckTorusMatrix, kostantTorusMatrix_apply]
       exact GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap
         (t.geckWeightFin ht) _ p
-    -- Evaluating the point functor at the identity point gives the coordinate map. Here `p`
-    -- uses the monoid algebra while the map targets its bundled coordinate ring; this conversion
-    -- normalizes those wrappers before rewriting.
-    change GeneralLinear.pointsMulEquiv (t.geckDim ht)
-      (toConv (GeneralLinear.weightTorusCoordinateMap (R := ℤ)
-        (t.geckWeightFin ht)).hom.toAlgHom) = _ at hmatrix
+    erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hmatrix
+    dsimp only [p, ofConv_toConv] at hmatrix
+    rw [AlgHom.id_comp] at hmatrix
     rw [hmatrix]
     exact t.isUpperTriangular_conj_geckTorusMatrix ht (SplitTorus.pointsMulEquiv p)
 
@@ -186,12 +183,12 @@ theorem isSolvable_points_geckTorusPositive (A : CommAlgCat.{v} ℤ) :
         (t.geckTorusPositiveDefiningIdeal ht)) A →*
       HopfAlgebra.points (R := ℤ)
         (H := GeneralLinear.UpperTriangular.coordinateHopfAlgebra ℤ (t.geckDim ht)) A :=
-    ((CommHopfAlgCat.mapPointsFunctor f).app A).hom
+    ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A).hom
   let _ : Group.IsSolvable (HopfAlgebra.points (R := ℤ)
       (H := GeneralLinear.UpperTriangular.coordinateHopfAlgebra ℤ (t.geckDim ht)) A) :=
     GeneralLinear.UpperTriangular.isSolvable_points ℤ A (t.geckDim ht)
   exact Group.isSolvable_of_isSolvable_injective (f := φ)
-    (CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective f
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f
       (t.geckTorusPositiveUpperTriangularCoordinateMap_surjective ht) A)
 
 end

@@ -29,8 +29,6 @@ original one.
 
 public section
 
-open Function Set
-
 namespace LieAlgebra.Basis
 
 variable {ι ι' R L : Type*} [Finite ι] [Finite ι']
@@ -44,26 +42,19 @@ def reindex (b : Basis ι H) (σ : ι ≃ ι') : Basis ι' H where
   h := b.h ∘ σ.symm
   e := b.e ∘ σ.symm
   f := b.f ∘ σ.symm
-  cartan_eq_lieSpan := by
-    rw [σ.symm.surjective.range_comp]
-    exact b.cartan_eq_lieSpan
-  span_ef := by
-    rw [σ.symm.surjective.range_comp, σ.symm.surjective.range_comp]
-    exact b.span_ef
+  cartan_eq_lieSpan := by simpa using b.cartan_eq_lieSpan
+  span_ef := by simpa using b.span_ef
   linInd := b.linInd.comp σ.symm σ.symm.injective
   nondegen := by
     classical
-    let _ := Fintype.ofFinite ι
-    let _ := Fintype.ofFinite ι'
-    rw [Matrix.nondegenerate_iff_det_ne_zero, Matrix.det_submatrix_equiv_self,
-      ← Matrix.nondegenerate_iff_det_ne_zero]
-    exact b.nondegen
+    have := Fintype.ofFinite ι
+    have := Fintype.ofFinite ι'
+    simpa [Matrix.nondegenerate_iff_det_ne_zero] using b.nondegen
   sl2 i := b.sl2 (σ.symm i)
   lie_h_h i j := b.lie_h_h (σ.symm i) (σ.symm j)
   lie_h_e i j := b.lie_h_e (σ.symm i) (σ.symm j)
   lie_h_f i j := b.lie_h_f (σ.symm i) (σ.symm j)
-  lie_e_f_ne i j hij :=
-    b.lie_e_f_ne (σ.symm i) (σ.symm j) fun h => hij (σ.symm.injective h)
+  lie_e_f_ne i j hij := b.lie_e_f_ne (σ.symm i) (σ.symm j) (σ.symm.injective.ne hij)
 
 /-- Reindexing transports the Cartan matrix along the given equivalence. -/
 @[simp] theorem reindex_A (b : Basis ι H) (σ : ι ≃ ι') :

@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Convex
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Stability
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Data.EReal.Operations
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 
 /-!
@@ -48,8 +50,9 @@ The geodesic used is the interpolation of an optimal plan
 displacement convexity: two laws are joined by some geodesic along which the inequality holds. The
 plan-level inequality does not need the plan to be optimal, so it also applies to interpolations
 along non-optimal plans: applied to generalized geodesics, it makes the potential energy `m`-convex
-along generalized geodesics based at every law of `P₂(E)`
-(`StrongConvexOn.generalizedGeodesicallyConvex_potentialEnergy`), the convexity under which the
+along every generalized-geodesic plan based at every law of `P₂(E)`
+(`StrongConvexOn.convexAlongGeneralizedGeodesics_potentialEnergy`). Thus it can be added to an
+energy convex along some generalized-geodesic plan while retaining the convexity under which the
 Jordan–Kinderlehrer–Otto step is unique.
 
 ## Main definitions
@@ -64,6 +67,8 @@ Jordan–Kinderlehrer–Otto step is unique.
   measurable potential is integrable exactly when its potential energy is finite.
 * `TauCeti.potentialEnergy_mono`: the potential energy is monotone in the potential.
 * `TauCeti.potentialEnergy_add_of_integrable`: adding an integrable function adds its integral.
+* `TauCeti.potentialEnergy_le_mul_add_mul`: a potential bounded by a convex combination of two
+  potentials has at most the same convex combination of their potential energies.
 * `TauCeti.potentialEnergy_dirac`: the potential energy of a Dirac mass at `x` is `V x`.
 * `TauCeti.potentialEnergy_ne_bot_of_hasFiniteMoment`: a potential with at most quadratic negative
   part has potential energy `≠ ⊥` against every finite measure with finite second moment.
@@ -82,8 +87,8 @@ Jordan–Kinderlehrer–Otto step is unique.
 * `StrongConvexOn.geodesicallyConvex_potentialEnergy`: the potential energy of an `m`-strongly
   convex potential with at most quadratic negative part is `m`-geodesically convex on the
   `2`-Wasserstein space of a separable Banach space.
-* `StrongConvexOn.generalizedGeodesicallyConvex_potentialEnergy`: the same potential energy is
-  `m`-convex along generalized geodesics based at every law of finite second moment.
+* `StrongConvexOn.convexAlongGeneralizedGeodesics_potentialEnergy`: the same potential energy is
+  `m`-convex along every generalized-geodesic plan based at every law of finite second moment.
 
 ## References
 
@@ -151,6 +156,17 @@ theorem potentialEnergy_of_integrable (h : Integrable V μ) :
   rw [potentialEnergy_of_lintegral_ne_top h₁,
     integral_eq_lintegral_pos_part_sub_lintegral_neg_part h, EReal.coe_sub,
     EReal.coe_ennreal_toReal h₁, EReal.coe_ennreal_toReal h₂]
+
+/-- For an almost everywhere nonnegative potential, the potential energy is the lower Lebesgue
+integral of the potential. -/
+theorem potentialEnergy_of_nonneg_ae (h : 0 ≤ᵐ[μ] V) :
+    potentialEnergy V μ = (∫⁻ x, ENNReal.ofReal (V x) ∂μ : EReal) := by
+  have h₀ : ∫⁻ x, ENNReal.ofReal (-V x) ∂μ = 0 :=
+    (lintegral_congr_ae (h.mono fun x hx ↦ ENNReal.ofReal_eq_zero.2 (neg_nonpos.2 hx))).trans
+      lintegral_zero
+  by_cases hV : ∫⁻ x, ENNReal.ofReal (V x) ∂μ = ∞
+  · simp [potentialEnergy, hV]
+  · rw [potentialEnergy_of_lintegral_ne_top hV, h₀, EReal.coe_ennreal_zero, sub_zero]
 
 /-- An almost everywhere strongly measurable potential is integrable exactly when its potential
 energy is finite. -/
@@ -224,6 +240,45 @@ theorem potentialEnergy_add_of_integrable (hV : AEStronglyMeasurable V μ) (hW :
       (hV.add hW.aestronglyMeasurable)).2 ⟨mt htop.1 hT, hB'⟩)
   rw [hB, hB', EReal.bot_add]
 
+/-- Two potentials whose positive parts, and whose negative parts, have the same integrals have the
+same potential energy. -/
+theorem potentialEnergy_eq_of_lintegral_eq
+    (hpos : ∫⁻ x, ENNReal.ofReal (V x) ∂μ = ∫⁻ x, ENNReal.ofReal (W x) ∂μ)
+    (hneg : ∫⁻ x, ENNReal.ofReal (-V x) ∂μ = ∫⁻ x, ENNReal.ofReal (-W x) ∂μ) :
+    potentialEnergy V μ = potentialEnergy W μ := by
+  by_cases h : ∫⁻ x, ENNReal.ofReal (V x) ∂μ = ∞
+  · rw [potentialEnergy_eq_top_iff.2 h, potentialEnergy_eq_top_iff.2 (hpos ▸ h)]
+  · rw [potentialEnergy_of_lintegral_ne_top h, potentialEnergy_of_lintegral_ne_top (hpos ▸ h),
+      hpos, hneg]
+
+/-- **The potential energy of a pointwise convex combination.** If `V ≤ (1 - t) V₀ + t V₁` almost
+everywhere for some `t ∈ [0, 1]`, then the potential energy of `V` is at most the same convex
+combination of the potential energies of `V₀` and `V₁`, provided neither of them is `⊥`. -/
+theorem potentialEnergy_le_mul_add_mul {V₀ V₁ : X → ℝ} (hV₀ : AEStronglyMeasurable V₀ μ)
+    (hV₁ : AEStronglyMeasurable V₁ μ) (h₀ : potentialEnergy V₀ μ ≠ ⊥)
+    (h₁ : potentialEnergy V₁ μ ≠ ⊥) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
+    (h : ∀ᵐ x ∂μ, V x ≤ (1 - t) * V₀ x + t * V₁ x) :
+    potentialEnergy V μ ≤
+      ((1 - t : ℝ) : EReal) * potentialEnergy V₀ μ + (t : EReal) * potentialEnergy V₁ μ := by
+  rcases ht.1.eq_or_lt with rfl | ht₀
+  · simpa using potentialEnergy_mono (h.mono fun x hx ↦ by simpa using hx)
+  rcases ht.2.eq_or_lt with rfl | ht₁
+  · simpa using potentialEnergy_mono (h.mono fun x hx ↦ by simpa using hx)
+  by_cases hfin : potentialEnergy V₀ μ ≠ ⊤ ∧ potentialEnergy V₁ μ ≠ ⊤
+  · obtain ⟨hfin₀, hfin₁⟩ := hfin
+    have hi₀ := (integrable_iff_potentialEnergy_ne_top_and_ne_bot hV₀).2 ⟨hfin₀, h₀⟩
+    have hi₁ := (integrable_iff_potentialEnergy_ne_top_and_ne_bot hV₁).2 ⟨hfin₁, h₁⟩
+    refine (potentialEnergy_mono h).trans_eq ?_
+    rw [potentialEnergy_of_integrable (V := fun x ↦ (1 - t) * V₀ x + t * V₁ x)
+      ((hi₀.const_mul _).add (hi₁.const_mul _)), potentialEnergy_of_integrable hi₀,
+      potentialEnergy_of_integrable hi₁,
+      integral_add (hi₀.const_mul _) (hi₁.const_mul _), integral_const_mul, integral_const_mul]
+    norm_cast
+  -- One of the two energies is `⊤`, and neither is `⊥`, so the right side is `⊤`.
+  rw [EReal.coe_mul_add_coe_mul_eq_top (sub_pos.2 ht₁) ht₀ h₀ h₁
+    (by simpa only [not_and_or, not_not] using hfin)]
+  exact le_top
+
 /-- The potential energy of the zero measure is `0`. -/
 @[simp]
 theorem potentialEnergy_zero_measure (V : X → ℝ) : potentialEnergy V 0 = 0 := by
@@ -249,23 +304,30 @@ end Definition
 
 section Growth
 
-variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
 
 /-- A potential whose negative part grows at most quadratically has potential energy `≠ ⊥`
 against every finite measure with finite second moment. -/
 theorem potentialEnergy_ne_bot_of_hasFiniteMoment {V : E → ℝ} {μ : Measure E} [IsFiniteMeasure μ]
     (hμ : HasFiniteMoment 2 μ) {A B : ℝ} (hVAB : ∀ x, -(A + B * ‖x‖ ^ 2) ≤ V x) :
     potentialEnergy V μ ≠ ⊥ := by
-  have hnorm : AEStronglyMeasurable (fun x : E ↦ ‖x‖) μ :=
-    continuous_norm.measurable.aestronglyMeasurable
-  have hmem : MemLp (fun x : E ↦ ‖x‖) 2 μ :=
-    (memLp_congr_enorm hnorm measurable_edist_right.aestronglyMeasurable
-      (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).2
-      (hμ.memLp (x := 0) measurable_edist_right.aestronglyMeasurable)
-  have hsq := (memLp_two_iff_integrable_sq_norm hnorm).1 hmem
-  simp only [norm_norm] at hsq
-  exact potentialEnergy_ne_bot_of_le ((integrable_const A).add (hsq.const_mul B)).neg
-    (.of_forall hVAB)
+  obtain ⟨x₀, hx₀⟩ := hasFiniteMoment_def.1 hμ
+  have hmem : MemLp (fun y ↦ dist y x₀) 2 μ := memLp_dist_iff_memLp_edist.2 hx₀
+  have hsq := (memLp_two_iff_integrable_sq_norm hmem.aestronglyMeasurable).1 hmem
+  simp only [Real.norm_eq_abs, sq_abs] at hsq
+  -- Bound `‖y‖ ^ 2 ≤ 2 d(y, x₀) ^ 2 + 2 ‖x₀‖ ^ 2` and use the integrable lower bound.
+  refine potentialEnergy_ne_bot_of_le
+    (W := fun y ↦ -(A + |B| * (2 * dist y x₀ ^ 2 + 2 * ‖x₀‖ ^ 2)))
+    ((integrable_const A).add ((hsq.const_mul 2).add (integrable_const _) |>.const_mul _)).neg
+    (.of_forall fun y ↦ ?_)
+  refine le_trans ?_ (hVAB y)
+  have hy : ‖y‖ ^ 2 ≤ 2 * dist y x₀ ^ 2 + 2 * ‖x₀‖ ^ 2 := by
+    rw [dist_eq_norm]
+    nlinarith [sq_nonneg (‖y - x₀‖ - ‖x₀‖), norm_le_norm_add_norm_sub' y x₀,
+      norm_nonneg y, norm_nonneg (y - x₀), norm_nonneg x₀]
+  have := mul_le_mul_of_nonneg_left hy (abs_nonneg B)
+  have := neg_abs_le B
+  nlinarith [sq_nonneg ‖y‖, abs_nonneg B, le_abs_self B]
 
 end Growth
 
@@ -286,7 +348,7 @@ theorem integrable_comp_of_norm_gradient_le {α : Type*} [MeasurableSpace α] {�
   have hgrowth (x : E) : |V x - V 0| ≤ C * (1 + ‖x‖) * ‖x‖ := by
     have hb : ∀ y ∈ Metric.closedBall (0 : E) ‖x‖, ‖fderiv ℝ V y‖ ≤ C * (1 + ‖x‖) := by
       intro y hy
-      rw [← toDual_gradient, LinearIsometryEquiv.norm_map]
+      rw [← norm_gradient_eq_norm_fderiv]
       exact (hV' y).trans (mul_le_mul_of_nonneg_left (by simpa using hy)
         (by simpa using (norm_nonneg _).trans (hV' 0)))
     have := (convex_closedBall (0 : E) ‖x‖).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
@@ -440,18 +502,8 @@ theorem _root_.StrongConvexOn.potentialEnergy_map_le (hV : StrongConvexOn univ m
   by_cases hfin : potentialEnergy V π.fst ≠ ⊤ ∧ potentialEnergy V π.snd ≠ ⊤
   swap
   · -- One endpoint has energy `⊤`, so the right-hand side is `⊤`.
-    have h₀' : ((1 - t : ℝ) : EReal) * potentialEnergy V π.fst ≠ ⊥ :=
-      (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr h₀, .inl (EReal.coe_ne_top _),
-        .inl (EReal.coe_nonneg.2 (sub_nonneg.2 ht.2))⟩
-    have h₁' : (t : EReal) * potentialEnergy V π.snd ≠ ⊥ :=
-      (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr h₁, .inl (EReal.coe_ne_top _),
-        .inl (EReal.coe_nonneg.2 ht.1)⟩
-    have htop : ((1 - t : ℝ) : EReal) * potentialEnergy V π.fst +
-        (t : EReal) * potentialEnergy V π.snd = ⊤ := by
-      rcases not_and_or.1 hfin with h | h <;> rw [not_not] at h <;> rw [h]
-      · rw [EReal.coe_mul_top_of_pos (sub_pos.2 ht₁), EReal.top_add_of_ne_bot h₁']
-      · rw [EReal.coe_mul_top_of_pos ht₀, EReal.add_top_of_ne_bot h₀']
-    rw [htop, EReal.top_sub_coe]
+    rw [EReal.coe_mul_add_coe_mul_eq_top (sub_pos.2 ht₁) ht₀ h₀ h₁
+      (by simpa only [not_and_or, not_not] using hfin), EReal.top_sub_coe]
     exact le_top
   obtain ⟨hfin₀, hfin₁⟩ := hfin
   have hi₀ : Integrable V π.fst :=
@@ -508,24 +560,22 @@ theorem _root_.StrongConvexOn.geodesicallyConvex_potentialEnergy (hV : StrongCon
       hVAB)
     ((memLp_two_iff_integrable_sq_norm (by fun_prop)).1 hmem) ht
 
-/-- **Convexity of the potential energy along generalized geodesics.** On a separable Banach space
-`E`, the potential energy of an `m`-strongly convex measurable potential `V` whose negative part
-grows at most quadratically is `m`-convex along generalized geodesics based at every `μ ∈ P₂(E)`:
-any two laws `ν₀` and `ν₁` of `P₂(E)` carry some quadratic generalized-geodesic plan `γ` from `ν₀`
-to `ν₁` based at `μ` along whose generalized geodesic `ν_t`, for `t ∈ [0, 1]`,
+omit [CompleteSpace E] in
+/-- **Convexity of the potential energy along every generalized-geodesic plan.** On a separable
+normed space `E`, the potential energy of an `m`-strongly convex measurable potential `V` whose
+negative part grows at most quadratically is `m`-convex along every quadratic
+generalized-geodesic plan based at every `μ ∈ P₂(E)`. For its interpolation `ν_t`,
 `∫ V dν_t ≤ (1 - t) ∫ V dν₀ + t ∫ V dν₁ - (m / 2) t (1 - t) ∫ ‖y₀ - y₁‖² dγ`. -/
-theorem _root_.StrongConvexOn.generalizedGeodesicallyConvex_potentialEnergy
+theorem _root_.StrongConvexOn.convexAlongGeneralizedGeodesics_potentialEnergy
     (hV : StrongConvexOn univ m V) (hVm : Measurable V) {A B : ℝ}
     (hVAB : ∀ x, -(A + B * ‖x‖ ^ 2) ≤ V x) (μ : WassersteinSpace 2 E) :
-    GeneralizedGeodesicallyConvex m
+    ConvexAlongGeneralizedGeodesics m
       (fun ν : WassersteinSpace 2 E ↦ potentialEnergy V ((ν : ProbabilityMeasure E) : Measure E))
       μ := by
-  rw [generalizedGeodesicallyConvex_def]
-  intro ν₀ ν₁ _ _
-  obtain ⟨γ, hγ⟩ := exists_isGeneralizedGeodesicPlan two_ne_zero
-    ((μ : ProbabilityMeasure E) : Measure E) ((ν₀ : ProbabilityMeasure E) : Measure E)
-    ((ν₁ : ProbabilityMeasure E) : Measure E) ⟨_, isCoupling_prod _ _⟩ ⟨_, isCoupling_prod _ _⟩
-  refine ⟨γ, hγ, fun t ht ν hν ↦ ?_⟩
+  rw [convexAlongGeneralizedGeodesics_def]
+  intro ν₀ ν₁ _ _ γ hγ
+  rw [convexAlongGeneralizedGeodesicPlan_def]
+  intro t ht ν hν
   -- The generalized geodesic is the interpolation of the coupling `γ.snd` of `ν₀` and `ν₁`.
   have hπ := hγ.isCoupling_snd
   have : IsProbabilityMeasure γ.snd := hπ.isProbabilityMeasure

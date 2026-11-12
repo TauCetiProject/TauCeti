@@ -45,23 +45,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 theorem ContMDiffMul.isInteriorPoint {n : WithTop ℕ∞} [ContMDiffMul I n G] (hn : n ≠ 0)
     (g : G) : I.IsInteriorPoint g := by
   obtain ⟨y, hy⟩ := interior_extChartAt_target_nonempty I (1 : G)
-  let x := (extChartAt I (1 : G)).symm y
-  have hy_target : y ∈ (extChartAt I (1 : G)).target := interior_subset hy
-  have hx_source : x ∈ (chartAt H (1 : G)).source := by
-    rw [← extChartAt_source I (1 : G)]
-    exact (extChartAt I (1 : G)).map_target hy_target
+  have hy_target := interior_subset hy
+  set x := (extChartAt I (1 : G)).symm y
   have hx : I.IsInteriorPoint x := by
-    rw [I.isInteriorPoint_iff_of_mem_atlas hn (chart_mem_atlas H (1 : G)) hx_source]
-    -- `extChartAt` is definitionally the extension of `chartAt` used by the preceding theorem.
-    change extChartAt I (1 : G) x ∈ interior (extChartAt I (1 : G)).target
-    rwa [(extChartAt I (1 : G)).right_inv hy_target]
-  have htranslate :=
-    ((Diffeomorph.smul I I n (g * x⁻¹)).isLocalDiffeomorph x).isInteriorPoint_iff hn |>.mp hx
-  simpa [x] using htranslate
+    refine (I.isInteriorPoint_iff_of_mem_atlas hn (chart_mem_atlas H (1 : G)) ?_).2 ?_
+    · exact extChartAt_source I (1 : G) ▸ (extChartAt I (1 : G)).map_target hy_target
+    · rwa [← extChartAt, (extChartAt I (1 : G)).right_inv hy_target]
+  simpa using
+    (((Diffeomorph.smul I I n (g * x⁻¹)).isLocalDiffeomorph x).isInteriorPoint_iff hn).1 hx
 
 /-- A group manifold with `C^1` multiplication is boundaryless.
 
 This theorem is deliberately not an instance: consumers can opt in with
 `attribute [local instance] ContMDiffMul.boundarylessManifold`. -/
 theorem ContMDiffMul.boundarylessManifold [ContMDiffMul I 1 G] : BoundarylessManifold I G :=
-  ⟨ContMDiffMul.isInteriorPoint (n := 1) (by norm_num)⟩
+  ⟨ContMDiffMul.isInteriorPoint (n := 1) one_ne_zero⟩

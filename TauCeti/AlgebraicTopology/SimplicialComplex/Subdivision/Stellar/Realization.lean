@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Basic
+public import TauCeti.Data.Finsupp.MassTransfer
 
 /-!
 # The barycentric identification for stellar subdivision
@@ -101,7 +102,7 @@ private theorem exists_zero_coordinate {x : ι →₀ ℝ} (hvσ : v ∉ σ)
   exact ⟨i, hi, Finsupp.notMem_support_iff.mp hix⟩
 
 /-- The barycentric map sends the stellar polyhedron into the original polyhedron. -/
-theorem mapsTo_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
+theorem mapsTo_stellarSubdivisionLinearMap :
     MapsTo (stellarSubdivisionLinearMap σ v)
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (stellarSubdivision K σ v)).space
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) K).space := by
@@ -118,7 +119,11 @@ theorem mapsTo_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
     rw [stellarSubdivisionLinearMap_apply]
     by_cases hiv : i = v
     · subst i
-      simp [hvσ]
+      by_cases hvσ : v ∈ σ
+      · have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by exact_mod_cast hσne.card_pos)
+        simp only [hvσ, ite_true]
+        nlinarith [hxpos v]
+      · simp [hvσ]
     · simp only [hiv, ite_false, sub_zero]
       exact add_nonneg (hxpos i) (mul_nonneg (hxpos v) (by split_ifs <;> positivity))
   · by_cases hvx : v ∈ x.support
@@ -130,9 +135,9 @@ theorem mapsTo_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
         have his : i ∉ σ := fun h => hnot (Finset.mem_union_right _ h)
         have hiv : i ≠ v := by
           intro h
-          subst i
+          rw [h] at his hi
           have hz : stellarSubdivisionLinearMap σ v x v = 0 := by
-            simp [stellarSubdivisionLinearMap_apply, hvσ]
+            simp [stellarSubdivisionLinearMap_apply, his]
           exact Finsupp.mem_support_iff.mp hi hz
         have hix : x i = 0 := Finsupp.notMem_support_iff.mp fun h =>
           hnot (Finset.mem_union_left _ (Finset.mem_erase.mpr ⟨hiv, h⟩))
@@ -149,25 +154,30 @@ theorem mapsTo_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
       rw [heq]
       exact ((mem_stellarSubdivision_iff_of_notMem hvx).mp hxface).1
 
-/-- The barycentric map is injective on the stellar polyhedron when the new vertex
-lies outside the starred face. -/
-theorem injOn_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
+/-- The barycentric map is injective on the stellar polyhedron. -/
+theorem injOn_stellarSubdivisionLinearMap :
     InjOn (stellarSubdivisionLinearMap σ v)
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (stellarSubdivision K σ v)).space := by
   intro x hx y hy heq
   obtain ⟨hxpos, -, hxface⟩ := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mp hx
   obtain ⟨hypos, -, hyface⟩ := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mp hy
-  obtain ⟨i, hi, hxi⟩ := exists_zero_coordinate hvσ hxface
-  obtain ⟨j, hj, hyj⟩ := exists_zero_coordinate hvσ hyface
-  have hiv : i ≠ v := fun h => hvσ (h ▸ hi)
-  have hjv : j ≠ v := fun h => hvσ (h ▸ hj)
-  have hei := DFunLike.congr_fun heq i
-  have hej := DFunLike.congr_fun heq j
-  simp only [stellarSubdivisionLinearMap_apply, hi, hj, ite_true, hiv, hjv, ite_false,
-    sub_zero, hxi, hyj, zero_add] at hei hej
-  have hσne : σ.Nonempty := ⟨i, hi⟩
-  have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by exact_mod_cast hσne.card_pos)
-  have hxyv : x v = y v := by nlinarith [hxpos j, hypos i]
+  have hxyv : x v = y v := by
+    by_cases hvσ : v ∈ σ
+    · have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by exact_mod_cast Finset.card_pos.mpr ⟨v, hvσ⟩)
+      have hev := DFunLike.congr_fun heq v
+      simp only [stellarSubdivisionLinearMap_apply, hvσ, ite_true] at hev
+      nlinarith [hev]
+    · obtain ⟨i, hi, hxi⟩ := exists_zero_coordinate hvσ hxface
+      obtain ⟨j, hj, hyj⟩ := exists_zero_coordinate hvσ hyface
+      have hiv : i ≠ v := fun h => hvσ (h ▸ hi)
+      have hjv : j ≠ v := fun h => hvσ (h ▸ hj)
+      have hei := DFunLike.congr_fun heq i
+      have hej := DFunLike.congr_fun heq j
+      simp only [stellarSubdivisionLinearMap_apply, hi, hj, ite_true, hiv, hjv, ite_false,
+        sub_zero, hxi, hyj, zero_add] at hei hej
+      have hσne : σ.Nonempty := ⟨i, hi⟩
+      have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by exact_mod_cast hσne.card_pos)
+      nlinarith [hxpos j, hypos i]
   ext k
   have hek := DFunLike.congr_fun heq k
   simp only [stellarSubdivisionLinearMap_apply, hxyv] at hek
@@ -209,37 +219,14 @@ theorem surjOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset 
     obtain ⟨a, ha, hmin⟩ := (σ : Set ι).exists_min_image (fun i => x i)
       σ.finite_toSet hσne
     have haσ : a ∈ σ := ha
-    have hav : a ≠ v := fun h => hvσ (h ▸ ha)
-    let c : ι →₀ ℝ := ∑ i ∈ σ, Finsupp.single i 1
-    let y : ι →₀ ℝ := x + x a • ((σ.card : ℝ) • Finsupp.single v 1 - c)
-    have hycoord (i : ι) : y i = x i + x a *
-        ((if i = v then (σ.card : ℝ) else 0) - if i ∈ σ then 1 else 0) := by
-      simp [y, c, Finsupp.single_apply, eq_comm]
-    -- Remove equal mass on σ and transfer it to v, preserving nonnegativity.
-    have hypos : ∀ i, 0 ≤ y i := by
-      intro i
-      rw [hycoord]
-      by_cases hiv : i = v
-      · subst i
-        simp only [hxv, ite_true, hvσ, ite_false, sub_zero, zero_add]
-        exact mul_nonneg (hxpos a) (Nat.cast_nonneg _)
-      · by_cases his : i ∈ σ
-        · simp only [hiv, ite_false, his, ite_true, zero_sub, mul_neg_one]
-          linarith [hmin i his]
-        · simpa [hiv, his] using hxpos i
-    have hya : y a = 0 := by simp [hycoord, haσ, hav]
+    obtain ⟨y, hy, hycoord, hypos, hya, hysum'⟩ :=
+      Finsupp.exists_transfer_vector hvσ hxpos haσ hmin
+    have hysum : y.sum (fun _ r => r) = 1 := hysum'.trans hxsum
+    -- The least coordinate vanishes, and every other old coordinate stays in the old face.
     have hyne : y.support.Nonempty := by
-      have hsum : y.sum (fun _ r => r) = 1 := by
-        let S := Finsupp.linearCombination ℝ (fun _ : ι => (1 : ℝ))
-        have hS (z : ι →₀ ℝ) : S z = z.sum (fun _ r => r) := by
-          simp [S, Finsupp.linearCombination_apply]
-        rw [← hS]
-        have hSx : S x = 1 := (hS x).trans hxsum
-        simp [y, c, map_add, map_smul, map_sub, map_sum, hSx, S]
       apply Finsupp.support_nonempty_iff.mpr
       intro hz
-      simp [hz] at hsum
-    -- The least coordinate vanishes, and every other old coordinate stays in the old face.
+      simp [hz] at hysum
     have hysub : y.support.erase v ⊆ x.support := by
       intro i hi
       obtain ⟨hiv, hiy⟩ := Finset.mem_erase.mp hi
@@ -260,12 +247,10 @@ theorem surjOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset 
         exact K.isRelLowerSet_faces.mem_of_le hxface
           (by simpa [Finset.erase_eq_of_notMem hvy] using hysub) hyne
     have hyimage : stellarSubdivisionLinearMap σ v y = x :=
-      stellarSubdivisionLinearMap_lift hσne hvσ hxv (x a)
-    -- The linear map undoes the transfer; mass preservation supplies the final normalization.
-    refine ⟨y, Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr
-      ⟨hypos, ?_, hyface⟩, hyimage⟩
-    rw [← sum_stellarSubdivisionLinearMap hσne y, hyimage]
-    exact hxsum
+      hy ▸ stellarSubdivisionLinearMap_lift hσne hvσ hxv (x a)
+    -- The linear map undoes the transfer, and the transfer preserves total mass.
+    exact ⟨y, Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr ⟨hypos, hysum, hyface⟩,
+      hyimage⟩
   · refine ⟨x, Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr
       ⟨hxpos, hxsum, (mem_stellarSubdivision_iff_of_notMem hvx).mpr ⟨hxface, hsub⟩⟩, hfix⟩
 
@@ -275,8 +260,8 @@ theorem bijOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset �
     BijOn (stellarSubdivisionLinearMap σ v)
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (stellarSubdivision K σ v)).space
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) K).space :=
-  ⟨mapsTo_stellarSubdivisionLinearMap (notMem_of_singleton_notMem hv hσ),
-    injOn_stellarSubdivisionLinearMap (notMem_of_singleton_notMem hv hσ),
+  ⟨mapsTo_stellarSubdivisionLinearMap,
+    injOn_stellarSubdivisionLinearMap,
     surjOn_stellarSubdivisionLinearMap hσ hv⟩
 
 end PreAbstractSimplicialComplex

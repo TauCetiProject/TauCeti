@@ -149,8 +149,8 @@ theorem adjoin_eq_top_of_span_eval_eq_maximalIdeal {β : S} {g : R[X]}
   have hsup := _root_.Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top hgen hmem
     (adjoin_toSubmodule_sup_maximalIdeal_eq_top_of_adjoin_residue_eq_top hres) n
   rw [← Algebra.toSubmodule_eq_top]
-  refine top_le_iff.mp (Submodule.le_of_le_smul_of_le_jacobson_bot
-    (Module.finite_def.mp inferInstance) (maximalIdeal_le_jacobson ⊥) ?_)
+  refine top_le_iff.mp (Submodule.le_of_le_smul_of_le_jacobson
+    (Module.finite_def.mp inferInstance) (ringJacobson_eq_maximalIdeal R).ge ?_)
   rw [Ideal.smul_top_eq_map]
   exact hsup.ge.trans (sup_le_sup_left (Submodule.restrictScalars_mono R hn) _)
 

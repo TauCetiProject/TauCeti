@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.IsAlgClosed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Eval
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
 
 /-!
 # Coprimality of the division polynomials `Φₙ` and `ΨSqₙ`
@@ -35,6 +36,8 @@ has `X = Z = 0`, so there was no common factor.
 * `WeierstrassCurve.evalEval_ψ_ne_zero_of_zsmul_ne_zero`: its bivariate form, for `ψₙ`.
 * `WeierstrassCurve.eval_Ψ₂Sq_ne_zero_of_eval_Ψ₃_eq_zero`: `Ψ₂Sq` and `Ψ₃` have no common root, in
   every characteristic.
+* `WeierstrassCurve.isUnit_evalEval_ψ₂_of_eval_Ψ₃_eq_zero`: its form over a commutative ring — on
+  an elliptic curve, `ψ₂(x, y)` is a unit at every point `(x, y)` with `Ψ₃(x) = 0`.
 
 ## Implementation notes
 
@@ -55,20 +58,17 @@ characteristic divides `n`. Coprimality removes that restriction: were `ΨSqₙ`
 to be a unit, and `natDegree_Φ_pos` says it has positive degree. Neither statement subsumes the
 other — Mathlib's holds on singular curves, this one in every characteristic — so both are useful.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md:99` — "**`[n]` is division polynomials**": for `n ≠ 0`,
-multiplication-by-`n` is an isogeny of degree `n²`, pinned by the division-polynomial
-multiplication formula. Reading that degree off `Φₙ / ΨSqₙ` requires knowing the fraction is in
-lowest terms, which is what this file supplies; `ΨSq_ne_zero_of_Δ_ne_zero` is the accompanying
-statement that the denominator is not the zero polynomial in any characteristic.
+**Why lowest terms.** For `n ≠ 0`, multiplication-by-`n` is an isogeny of degree `n²`, pinned by
+the division-polynomial multiplication formula. Reading that degree off `Φₙ / ΨSqₙ` requires
+knowing the fraction is in lowest terms, which is what this file supplies;
+`ΨSq_ne_zero_of_Δ_ne_zero` is the accompanying statement that the denominator is not the zero
+polynomial in any characteristic.
 
 ## Provenance
 
 Ported, with the authors' proofs, from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), the
-HasseWeil project at `dev/hasse-weil @ 513e83879e2f` — the revision
-`TauCetiRoadmap/EllipticCurves/README.md:1071` pins for that project, as distinct from the
-restructured `projects/HasseWeil` copy carried at the NagellLutz entry's `dev/modular-curves` pin.
+HasseWeil project at `dev/hasse-weil @ 513e83879e2f`, as distinct from the restructured
+`projects/HasseWeil` copy carried at `dev/modular-curves`.
 Source file `projects/HasseWeil/HasseWeil/Auxiliary/DivisionPolynomial.lean`, section
 `Coprimality`, declaration `isCoprime_Φ_ΨSq`. The section's `exists_point_on_curve`, which the
 proof below calls, is ported in `Affine/IsAlgClosed.lean` instead, since it is about
@@ -172,5 +172,33 @@ theorem eval_Ψ₂Sq_ne_zero_of_eval_Ψ₃_eq_zero (hΔ : W.Δ ≠ 0) {x : F} (h
   have := congrArg (eval x) hab
   rw [ΨSq_two, Φ_two_eq_X_mul_Ψ₂Sq_sub_Ψ₃] at this
   simp [h, h₂] at this
+
+section CommRing
+
+variable {R : Type*} [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic]
+
+/-- **A root of `Ψ₃` is nowhere a root of `ψ₂`, over a ring.** Let `(x, y)` be a point of an
+elliptic curve `W` over a commutative ring `R` with `Ψ₃(x) = 0`. Then `ψ₂(x, y) = 2y + a₁x + a₃`
+is a unit of `R`. This is the form over a ring of `eval_Ψ₂Sq_ne_zero_of_eval_Ψ₃_eq_zero`;
+geometrically, a point killed by `3` in every fibre is nowhere killed by `2`. -/
+theorem isUnit_evalEval_ψ₂_of_eval_Ψ₃_eq_zero {x y : R} (h : W.toAffine.Equation x y)
+    (hx : W.Ψ₃.eval x = 0) : IsUnit (W.ψ₂.evalEval x y) := by
+  -- otherwise `ψ₂(x, y)` lies in a maximal ideal `m`, and modulo `m` the point is a common root
+  -- of `Ψ₃` and of `Ψ₂Sq`, which agrees with `ψ₂²` on the curve
+  by_contra hu
+  obtain ⟨m, hm, hmem⟩ := exists_max_ideal_of_mem_nonunits hu
+  let π := Ideal.Quotient.mk m
+  let _ : Field (R ⧸ m) := Ideal.Quotient.field m
+  have hΔ : (W.map π).Δ ≠ 0 := by
+    rw [map_Δ]
+    exact (W.isUnit_Δ.map π).ne_zero
+  have h₃ : (W.map π).Ψ₃.eval (π x) = 0 := by
+    rw [map_Ψ₃, eval_map_apply, hx, map_zero]
+  apply (W.map π).eval_Ψ₂Sq_ne_zero_of_eval_Ψ₃_eq_zero hΔ h₃
+  rw [map_Ψ₂Sq, eval_map_apply, ← evalEval_ψ₂_sq W h, map_pow,
+    Ideal.Quotient.eq_zero_iff_mem.mpr hmem]
+  simp
+
+end CommRing
 
 end WeierstrassCurve

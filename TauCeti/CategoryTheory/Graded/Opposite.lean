@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Opposite
+public import Mathlib.Basic.Opposite
 public import TauCeti.CategoryTheory.Graded.TotalHom
 
 /-!
@@ -15,6 +15,9 @@ The **opposite** of a graded linear quiver `C` has the objects `Cᵒᵖ`, and it
 `op X ⟶ op Y` are the morphisms `Y ⟶ X` of `C`, with the same grading.  It is the quiver of the
 opposite of an `A∞` category: a composable string of `Cᵒᵖ` is a composable string of `C` read
 backwards.
+
+The opposite quiver and its total-module comparison work over any ring; multilinear operations
+use commutative scalars.
 
 The total module of morphisms of `Cᵒᵖ` is the total module of morphisms of `C`, with the summand
 of the pair `(op Y, op X)` identified with the summand of `(X, Y)`; this is the linear equivalence
@@ -50,7 +53,9 @@ namespace TauCeti.GradedLinearQuiver
 
 universe u v w
 
-variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
+section Ring
+
+variable {R : Type w} [Ring R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
 
 /-- The **opposite** graded linear quiver: the morphisms `op X ⟶ op Y` are the morphisms `Y ⟶ X`
 of `C`, with the same grading. -/
@@ -139,19 +144,25 @@ theorem opTotalHomEquiv_mem_totalGrading_piece_iff (n : ℤ) (x : TotalHom R C) 
     opTotalHomEquiv R C x ∈ (totalGrading R Cᵒᵖ).piece n ↔ x ∈ (totalGrading R C).piece n := by
   rw [← totalGrading_map_opTotalHomEquiv, InternalGrading.apply_mem_map_piece_iff]
 
+end Ring
+
+section CommRing
+
+variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
+
 /-- The operation on `Cᵒᵖ` given by a multilinear operation `f` on `C` with its inputs reversed:
 `(x₀, …, xₙ₋₁) ↦ f (xₙ₋₁, …, x₀)`, along the identification of the total modules of
 morphisms. -/
 noncomputable def reverseOperation {n : ℕ}
-    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)) :
-    MultilinearMap R (fun _ : Fin n ↦ TotalHom R Cᵒᵖ) (TotalHom R Cᵒᵖ) :=
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R Cᵒᵖ) (TotalHom R Cᵒᵖ) :=
   (opTotalHomEquiv R C).toLinearMap.compMultilinearMap
     ((f.domDomCongr Fin.revPerm).compLinearMap fun _ ↦ (opTotalHomEquiv R C).symm.toLinearMap)
 
 /-- The reversed operation evaluates the original operation on the reversed inputs. -/
 @[simp]
 theorem reverseOperation_apply {n : ℕ}
-    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C))
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C))
     (x : Fin n → TotalHom R Cᵒᵖ) :
     reverseOperation f x = opTotalHomEquiv R C (f fun i ↦ (opTotalHomEquiv R C).symm (x i.rev)) :=
   (rfl)
@@ -159,8 +170,8 @@ theorem reverseOperation_apply {n : ℕ}
 /-- **The reverse of a path-compatible operation is path-compatible.**  A composable string of
 `Cᵒᵖ`, read backwards, is a composable string of `C` between the same endpoints. -/
 theorem IsPathCompatible.reverse {n : ℕ}
-    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)}
-    (hf : IsPathCompatible f) : IsPathCompatible (reverseOperation f) where
+    {f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)}
+    (hf : IsPathCompatible id f) : IsPathCompatible id (reverseOperation f) where
   mem_range_homInclusion X x := by
     rcases n with _ | n
     · obtain ⟨y, hy⟩ := hf.mem_range_homInclusion (fun _ ↦ unop (X 0)) fun i ↦ i.elim0
@@ -176,11 +187,14 @@ theorem IsPathCompatible.reverse {n : ℕ}
       rw [reverseOperation_apply]
       simp only [opTotalHomEquiv_symm_homInclusion]
       rw [← hy, opTotalHomEquiv_homInclusion]
+      rfl
   eq_zero_of_ne s t x i j hij hne := by
     rw [reverseOperation_apply]
     simp only [opTotalHomEquiv_symm_homInclusion]
     rw [hf.eq_zero_of_ne (fun k ↦ unop (t k.rev)) (fun k ↦ unop (s k.rev)) (fun k ↦ x k.rev)
       j.rev i.rev (by simp [Fin.val_rev]; omega) (by simpa using unop_injective.ne hne.symm),
       map_zero]
+
+end CommRing
 
 end TauCeti.GradedLinearQuiver

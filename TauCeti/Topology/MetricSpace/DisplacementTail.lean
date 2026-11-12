@@ -24,7 +24,8 @@ two laws control the transport cost of an unbounded power of the distance.
 * `TauCeti.coe_nndist_rpow` — the nonnegative and extended powers of a distance agree;
 * `TauCeti.continuous_nndist_rpow_const` — a nonnegative power of distance from a fixed point is
   continuous;
-* `TauCeti.edist_rpow_le_min_add_indicator` — the pointwise truncation estimate.
+* `TauCeti.edist_rpow_le_min_add_indicator` — the pointwise truncation estimate, for every real
+  exponent.
 -/
 
 public section
@@ -50,29 +51,32 @@ theorem continuous_nndist_rpow_const {q : ℝ} (hq : 0 ≤ q) (x : X) :
 /-- A displacement larger than `2 R` is at most twice the distance from the basepoint `x` of an
 endpoint lying at distance at least `R` from it. Hence the `q`-th power of the displacement is at
 most its truncation at `2 R` plus `2 ^ q` times the tail parts, beyond `R`, of the `q`-th powers of
-the distances of the two endpoints from `x`. -/
-theorem edist_rpow_le_min_add_indicator {q : ℝ} (hq : 0 ≤ q) (x : X) (R : ℝ≥0) (y z : X) :
+the distances of the two endpoints from `x`. For a negative exponent the truncation alone already
+bounds the power. -/
+theorem edist_rpow_le_min_add_indicator {q : ℝ} (x : X) (R : ℝ≥0) (y z : X) :
     edist y z ^ q ≤ min (edist y z) (2 * R) ^ q +
       2 ^ q * {w | R ≤ nndist x w}.indicator (fun w ↦ edist x w ^ q) y +
       2 ^ q * {w | R ≤ nndist x w}.indicator (fun w ↦ edist x w ^ q) z := by
-  by_cases hd : edist y z ≤ 2 * R
+  rcases lt_or_ge q 0 with hq | hq
+  · -- A negative power is antitone, so it is at most the power of the truncation.
+    refine le_add_right (le_add_right ?_)
+    simpa only [← ENNReal.rpow_neg, neg_neg] using ENNReal.inv_le_inv.2
+      (ENNReal.rpow_le_rpow (min_le_left (edist y z) (2 * R)) (neg_nonneg.2 hq.le))
+  rcases le_or_gt (edist y z) (2 * R) with hd | hd
   · rw [min_eq_left hd, add_assoc]
     exact le_self_add
-  rw [not_le] at hd
   -- An endpoint `w` with `edist y z ≤ 2 * edist x w` lies at distance at least `R` from `x`.
-  have hmem {w : X} (hw : edist y z ≤ 2 * edist x w) : w ∈ {w | R ≤ nndist x w} := by
-    rw [mem_ofPred_eq, ← ENNReal.coe_le_coe, ← edist_nndist]
-    by_contra hlt
-    exact (not_le.2 hd) (hw.trans (by gcongr; exact (not_le.1 hlt).le))
   have hbound {w : X} (hw : edist y z ≤ 2 * edist x w) :
       edist y z ^ q ≤ 2 ^ q * {w | R ≤ nndist x w}.indicator (fun w ↦ edist x w ^ q) w := by
-    rw [indicator_of_mem (hmem hw), ← ENNReal.mul_rpow_of_nonneg _ _ hq]
+    have hR : R ≤ nndist x w := by
+      rw [← ENNReal.coe_le_coe, ← edist_nndist]
+      exact (lt_of_mul_lt_mul_left (hd.trans_le hw) zero_le).le
+    rw [indicator_of_mem (by rwa [mem_ofPred_eq]), ← ENNReal.mul_rpow_of_nonneg _ _ hq]
     exact ENNReal.rpow_le_rpow hw hq
-  have htri : edist y z ≤ edist x y + edist x z := edist_triangle_left y z x
   rcases le_total (edist x z) (edist x y) with hle | hle
-  · refine (hbound ?_).trans (le_add_right (le_add_left le_rfl))
-    exact htri.trans (by rw [two_mul]; gcongr)
-  · refine (hbound ?_).trans (le_add_left le_rfl)
-    exact htri.trans (by rw [two_mul]; gcongr)
+  · refine (hbound ?_).trans (le_add_right le_add_self)
+    grw [edist_triangle_left y z x, hle, two_mul]
+  · refine (hbound ?_).trans le_add_self
+    grw [edist_triangle_left y z x, hle, two_mul]
 
 end TauCeti

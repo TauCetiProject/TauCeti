@@ -67,6 +67,7 @@ noncomputable def typeBLieBasis (n : ℕ) :
     letI := invertibleOfNonzero (NeZero.ne (2 : K))
     typeBDiagonalCartan_eq_lieSpan_typeBSimpleCorootGenerator
   span_ef :=
+    letI := invertibleOfNonzero (NeZero.ne (2 : K))
     lieSpan_range_typeBSimpleRootGenerator_union_range_typeBSimpleNegativeRootGenerator_eq_top n
   linInd :=
     letI := invertibleOfNonzero (NeZero.ne (2 : K))

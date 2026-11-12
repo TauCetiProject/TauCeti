@@ -1,0 +1,284 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
+public import Mathlib.RingTheory.KrullDimension.Field
+public import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
+public import TauCeti.RingTheory.Depth.Basic
+import TauCeti.RingTheory.KrullDimension.Module
+
+/-!
+# Cohen–Macaulay modules over a local ring
+
+A finite module `M` over a Noetherian local ring `R` is *Cohen–Macaulay* if `M = 0` or its depth
+equals the dimension of its support (Stacks, Definition 10.103.1 (00N3)). Depth is Mathlib's
+`IsLocalRing.depth`, defined through the vanishing of `Ext (R ⧸ 𝔪) M`, and the dimension of the
+support is Mathlib's `Module.supportDim`. Since the depth of a finite nonzero module never exceeds
+the dimension of its support (`IsLocalRing.depth_le_supportDim`), being Cohen–Macaulay is the
+reverse inequality.
+
+The zero module is Cohen–Macaulay by convention: its depth is `⊤` while its support dimension is
+`⊥`, so the depth equation alone would exclude it.
+
+## Main definitions and results
+
+* `Module.IsCohenMacaulay R M`: the `R`-module `M` is Cohen–Macaulay.
+* `Module.isCohenMacaulay_iff_supportDim_le_depth`: a finite nonzero module over a Noetherian local
+  ring is Cohen–Macaulay if and only if the dimension of its support is at most its depth.
+* `RingEquiv.isCohenMacaulay_self_iff`: being Cohen–Macaulay over itself is invariant under
+  isomorphisms of Noetherian local rings.
+* `Module.isCohenMacaulay_iff_isCohenMacaulay_of_surjective`: along a surjective homomorphism of
+  local rings `R → T`, a finite `T`-module is Cohen–Macaulay over `R` exactly when it is over `T`.
+  For instance, a quotient `R ⧸ I` that is Cohen–Macaulay as an `R`-module is a Cohen–Macaulay
+  ring.
+* `IsLocalization.AtPrime.isCohenMacaulay_self_iff`: a localization of a Noetherian ring at a
+  prime is Cohen–Macaulay over itself exactly when `Localization.AtPrime p` is.
+* `Module.isCohenMacaulay_quotSMulTop_iff`: for an `M`-regular element `x` of the maximal ideal,
+  `M ⧸ x M` is Cohen–Macaulay if and only if `M` is (Stacks, Lemma 10.103.5 (0C6G)), and
+  `Module.isCohenMacaulay_quotient_ofList_smul_iff` is the same for an `M`-regular sequence.
+* `Module.isCohenMacaulay_of_krullDimLE_zero`: every module over a Noetherian local ring of
+  dimension zero, such as a field, is Cohen–Macaulay.
+* `Module.isCohenMacaulay_self_of_isDomain_of_krullDimLE_one`: a Noetherian local domain of
+  dimension at most one, such as a discrete valuation ring, is Cohen–Macaulay over itself.
+* `Module.IsCohenMacaulay.ringKrullDim_quotient_eq_supportDim` and
+  `Module.IsCohenMacaulay.associatedPrimes_eq_minimalPrimes`: a Cohen–Macaulay module is unmixed.
+  For every associated prime `p`, the dimension of `R ⧸ p` is the dimension of the support, and
+  the associated primes are exactly the minimal primes of the support, so there are no embedded
+  primes (Stacks, Lemma 10.103.7 (0BUS)).
+-/
+
+public section
+
+universe u v w
+
+open IsLocalRing RingTheory.Sequence Pointwise
+
+namespace Module
+
+variable (R : Type u) [CommRing R] [IsLocalRing R] [Small.{v} R]
+  (M : Type v) [AddCommGroup M] [Module R M]
+
+/-- An `R`-module `M` over a local ring `R` is *Cohen–Macaulay* if it is zero or its depth equals
+the dimension of its support. This is meant for finite modules over a Noetherian local ring, where
+the depth never exceeds the dimension of the support. Stacks, Definition 10.103.1 (00N3). -/
+@[stacks 00N3]
+def IsCohenMacaulay : Prop :=
+  Subsingleton M ∨ (depth (ModuleCat.of R M) : WithBot ℕ∞) = supportDim R M
+
+/-- Unfolds `Module.IsCohenMacaulay`. -/
+theorem isCohenMacaulay_iff : IsCohenMacaulay R M ↔
+    Subsingleton M ∨ (depth (ModuleCat.of R M) : WithBot ℕ∞) = supportDim R M :=
+  Iff.rfl
+
+variable {R M}
+
+/-- The zero module is Cohen–Macaulay. -/
+theorem isCohenMacaulay_of_subsingleton [Subsingleton M] : IsCohenMacaulay R M :=
+  Or.inl ‹_›
+
+/-- A nonzero module is Cohen–Macaulay if and only if its depth equals the dimension of its
+support. -/
+theorem isCohenMacaulay_iff_depth_eq [Nontrivial M] :
+    IsCohenMacaulay R M ↔ (depth (ModuleCat.of R M) : WithBot ℕ∞) = supportDim R M := by
+  rw [isCohenMacaulay_iff, or_iff_right (not_subsingleton M)]
+
+/-- The depth of a nonzero Cohen–Macaulay module equals the dimension of its support. -/
+theorem IsCohenMacaulay.depth_eq [Nontrivial M] (h : IsCohenMacaulay R M) :
+    (depth (ModuleCat.of R M) : WithBot ℕ∞) = supportDim R M :=
+  isCohenMacaulay_iff_depth_eq.1 h
+
+/-- A finite nonzero module over a Noetherian local ring is Cohen–Macaulay if and only if the
+dimension of its support is at most its depth, the reverse inequality being
+`IsLocalRing.depth_le_supportDim`. -/
+theorem isCohenMacaulay_iff_supportDim_le_depth [IsNoetherianRing R] [Module.Finite R M]
+    [Nontrivial M] :
+    IsCohenMacaulay R M ↔ supportDim R M ≤ (depth (ModuleCat.of R M) : WithBot ℕ∞) := by
+  rw [isCohenMacaulay_iff_depth_eq, le_antisymm_iff, and_iff_right depth_le_supportDim]
+
+end Module
+
+namespace LinearEquiv
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R] [Small.{w} R]
+  {M : Type v} [AddCommGroup M] [Module R M] {N : Type w} [AddCommGroup N] [Module R N]
+
+/-- Being Cohen–Macaulay is invariant under linear equivalence. -/
+theorem isCohenMacaulay_iff (e : M ≃ₗ[R] N) :
+    Module.IsCohenMacaulay R M ↔ Module.IsCohenMacaulay R N := by
+  rw [Module.isCohenMacaulay_iff, Module.isCohenMacaulay_iff, e.toEquiv.subsingleton_congr,
+    depth_eq_of_linearEquiv e, Module.supportDim_eq_of_equiv e]
+
+end LinearEquiv
+
+namespace RingEquiv
+
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [IsLocalRing R] [IsLocalRing S]
+  [IsNoetherianRing R]
+
+/-- A Noetherian local ring is Cohen–Macaulay over itself exactly when an isomorphic ring is. -/
+theorem isCohenMacaulay_self_iff (e : R ≃+* S) :
+    Module.IsCohenMacaulay R R ↔ Module.IsCohenMacaulay S S := by
+  rw [Module.isCohenMacaulay_iff_depth_eq, Module.isCohenMacaulay_iff_depth_eq,
+    Module.supportDim_self_eq_ringKrullDim, Module.supportDim_self_eq_ringKrullDim,
+    e.depth_self_eq, ringKrullDim_eq_of_ringEquiv e]
+
+end RingEquiv
+
+namespace Module
+
+variable {R : Type u} {T : Type v} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
+  [CommRing T] [IsLocalRing T] [Algebra R T]
+
+/-- Along a surjective homomorphism of local rings `R → T` with `R` Noetherian, a finite `T`-module
+is Cohen–Macaulay over `R` exactly when it is Cohen–Macaulay over `T`: both the depth and the
+dimension of the support are unchanged by restriction of scalars. -/
+theorem isCohenMacaulay_iff_isCohenMacaulay_of_surjective {M : Type w} [AddCommGroup M]
+    [Module R M] [Module T M] [IsScalarTower R T M] [Module.Finite T M] [Small.{w} R]
+    [Small.{w} T] (hsurj : Function.Surjective (algebraMap R T)) :
+    IsCohenMacaulay R M ↔ IsCohenMacaulay T M := by
+  have : Module.Finite R T := .of_surjective (Algebra.linearMap R T) hsurj
+  have : Module.Finite R M := .trans T M
+  have : IsNoetherianRing T := isNoetherianRing_of_surjective R T (algebraMap R T) hsurj
+  -- `R ⧸ Ann_R M ≅ T ⧸ Ann_T M`, since `Ann_R M` is the preimage of `Ann_T M`.
+  let f : R →+* T ⧸ annihilator T M := (Ideal.Quotient.mk _).comp (algebraMap R T)
+  have hf : Function.Surjective f := Ideal.Quotient.mk_surjective.comp hsurj
+  have hker : RingHom.ker f = annihilator R M := by
+    ext r
+    rw [RingHom.mem_ker, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem, mem_annihilator,
+      mem_annihilator]
+    simp only [algebraMap_smul]
+  rw [isCohenMacaulay_iff, isCohenMacaulay_iff, depth_eq_depth_of_surjective hsurj,
+    supportDim_eq_ringKrullDim_quotient_annihilator R M,
+    supportDim_eq_ringKrullDim_quotient_annihilator T M, ← hker,
+    ringKrullDim_eq_of_ringEquiv (RingHom.quotientKerEquivOfSurjective hf)]
+
+end Module
+
+namespace IsLocalization.AtPrime
+
+variable {A : Type u} [CommRing A] [IsNoetherianRing A] (p : Ideal A) [p.IsPrime]
+  (B : Type v) [CommRing B] [IsLocalRing B] [Algebra A B] [IsLocalization.AtPrime B p]
+
+/-- A localization `B` of a Noetherian ring `A` at a prime `p` is Cohen–Macaulay over itself
+exactly when `Localization.AtPrime p` is. The local-ring instance on `B` is taken as an argument
+so that it can be the one already present, as on the stalks of a scheme; it always holds, by
+`IsLocalization.AtPrime.isLocalRing`. -/
+theorem isCohenMacaulay_self_iff :
+    Module.IsCohenMacaulay B B ↔
+      Module.IsCohenMacaulay (Localization.AtPrime p) (Localization.AtPrime p) :=
+  have := IsLocalization.isNoetherianRing p.primeCompl B inferInstance
+  (IsLocalization.algEquiv p.primeCompl B (Localization.AtPrime p)).toRingEquiv
+    |>.isCohenMacaulay_self_iff
+
+end IsLocalization.AtPrime
+
+namespace Module
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [Small.{v} R]
+  {M : Type v} [AddCommGroup M] [Module R M] [Module.Finite R M]
+
+/-- For an `M`-regular element `x` of the maximal ideal, `M ⧸ x M` is Cohen–Macaulay if and only if
+`M` is. Stacks, Lemma 10.103.5 (0C6G). -/
+@[stacks 0C6G]
+theorem isCohenMacaulay_quotSMulTop_iff {x : R} (reg : IsSMulRegular M x)
+    (hx : x ∈ maximalIdeal R) : IsCohenMacaulay R (QuotSMulTop x M) ↔ IsCohenMacaulay R M := by
+  cases subsingleton_or_nontrivial M
+  · exact iff_of_true isCohenMacaulay_of_subsingleton isCohenMacaulay_of_subsingleton
+  have := nontrivial_quotSMulTop_of_mem_maximalIdeal M hx
+  rw [isCohenMacaulay_iff_depth_eq, isCohenMacaulay_iff_depth_eq,
+    ← depth_quotSMulTop_succ_eq_depth reg hx, ← supportDim_quotSMulTop_succ_eq_supportDim reg hx,
+    WithBot.coe_add, WithBot.coe_one, ENat.WithBot.add_one_cancel]
+
+/-- For an `M`-regular sequence `r₁, …, rₙ`, `M ⧸ (r₁, …, rₙ) M` is Cohen–Macaulay if and only if
+`M` is. Stacks, Lemma 10.103.5 (0C6G), applied `n` times. -/
+theorem isCohenMacaulay_quotient_ofList_smul_iff (rs : List R) (reg : IsRegular M rs) :
+    IsCohenMacaulay R (M ⧸ Ideal.ofList rs • (⊤ : Submodule R M)) ↔ IsCohenMacaulay R M := by
+  have := reg.nontrivial
+  have := reg.quot_ofList_smul_nontrivial ⊤
+  rw [isCohenMacaulay_iff_depth_eq, isCohenMacaulay_iff_depth_eq,
+    ← depth_add_length_eq_depth_of_isRegular rs reg,
+    ← supportDim_add_length_eq_supportDim_of_isRegular rs reg, WithBot.coe_add,
+    WithBot.coe_natCast, ENat.WithBot.add_natCast_cancel]
+
+omit [Module.Finite R M] in
+/-- Every module over a Noetherian local ring of dimension zero is Cohen–Macaulay. -/
+theorem isCohenMacaulay_of_krullDimLE_zero [Ring.KrullDimLE 0 R] : IsCohenMacaulay R M := by
+  cases subsingleton_or_nontrivial M
+  · exact isCohenMacaulay_of_subsingleton
+  have hmem : maximalIdeal R ∈ associatedPrimes R M := by
+    obtain ⟨p, hp⟩ := associatedPrimes.nonempty R M
+    have := hp.isPrime
+    rwa [← IsLocalRing.eq_maximalIdeal (Ideal.isMaximal_of_isPrime p)]
+  have hdepth : depth (ModuleCat.of R M) = 0 :=
+    depth_eq_zero_iff_maximalIdeal_mem_associatedPrimes.2 hmem
+  rw [isCohenMacaulay_iff_depth_eq, hdepth]
+  refine le_antisymm ?_ ?_
+  · obtain ⟨d, hd⟩ := WithBot.ne_bot_iff_exists.1 (supportDim_ne_bot_of_nontrivial R M)
+    rw [← hd]
+    exact_mod_cast zero_le
+  · exact (supportDim_le_ringKrullDim R M).trans (Ring.krullDimLE_iff.1 ‹_›)
+
+/-- Over a Noetherian local ring, the quotient by an associated prime of a Cohen–Macaulay module
+has the dimension of the support of the module. Stacks, Lemma 10.103.7 (0BUS); H. Matsumura,
+*Commutative Ring Theory*, Theorem 17.3 (i). -/
+@[stacks 0BUS]
+theorem IsCohenMacaulay.ringKrullDim_quotient_eq_supportDim (h : IsCohenMacaulay R M)
+    {p : Ideal R} (hp : IsAssociatedPrime p M) : ringKrullDim (R ⧸ p) = supportDim R M := by
+  have : Nontrivial M :=
+    not_subsingleton_iff_nontrivial.1 fun _ ↦ not_isAssociatedPrime_of_subsingleton hp
+  exact le_antisymm hp.ringKrullDim_quotient_le_supportDim
+    (h.depth_eq ▸ depth_le_ringKrullDim_quotient_of_isAssociatedPrime hp)
+
+/-- The associated primes of a Cohen–Macaulay module over a Noetherian local ring are the minimal
+primes of its support: a Cohen–Macaulay module has no embedded primes. Stacks, Lemma 10.103.7
+(0BUS). -/
+@[stacks 0BUS]
+theorem IsCohenMacaulay.associatedPrimes_eq_minimalPrimes (h : IsCohenMacaulay R M) :
+    associatedPrimes R M = (annihilator R M).minimalPrimes := by
+  refine Set.Subset.antisymm (fun p hp ↦ ?_)
+    (associatedPrimes.minimalPrimes_annihilator_subset_associatedPrimes R M)
+  have hp : IsAssociatedPrime p M := AssociatedPrimes.mem_iff.1 hp
+  have : Nontrivial M :=
+    not_subsingleton_iff_nontrivial.1 fun _ ↦ not_isAssociatedPrime_of_subsingleton hp
+  refine ⟨⟨hp.isPrime, Submodule.annihilator_top (R := R) (M := M) ▸ hp.annihilator_le⟩,
+    fun q ⟨hq, hann⟩ hqp ↦ by_contra fun hpq ↦ ?_⟩
+  -- A prime `q ⊊ p` of the support would give `dim (R ⧸ p) + 1 ≤ dim (R ⧸ q) ≤ dim Supp M`,
+  -- while `dim (R ⧸ p) = dim Supp M` is finite.
+  have hle := (TauCeti.ringKrullDim_quotient_add_one_le_of_lt (lt_of_le_not_ge hqp hpq)).trans
+    (supportDim_eq_ringKrullDim_quotient_annihilator R M ▸
+      ringKrullDim_le_of_surjective _ (Ideal.Quotient.factor_surjective hann))
+  rw [h.ringKrullDim_quotient_eq_supportDim hp] at hle
+  obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
+  rw [hk] at hle
+  exact absurd (by exact_mod_cast hle : k + 1 ≤ k) (Nat.not_succ_le_self k)
+
+end Module
+
+namespace Module
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [IsDomain R]
+
+/-- A Noetherian local domain of dimension at most one is Cohen–Macaulay over itself. -/
+theorem isCohenMacaulay_self_of_isDomain_of_krullDimLE_one [Ring.KrullDimLE 1 R] :
+    IsCohenMacaulay R R := by
+  rw [isCohenMacaulay_iff_supportDim_le_depth, supportDim_self_eq_ringKrullDim]
+  by_cases hm : maximalIdeal R = ⊥
+  · rw [ringKrullDim_eq_zero_of_isField ((isField_iff_maximalIdeal_eq).2 hm)]
+    exact_mod_cast zero_le
+  obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hm
+  rw [← depth_quotSMulTop_succ_eq_depth (IsSMulRegular.of_ne_zero hx0) hx]
+  refine (Ring.krullDimLE_iff.1 ‹_›).trans ?_
+  exact_mod_cast le_add_self
+
+example (K : Type u) [Field K] (V : Type u) [AddCommGroup V] [Module K V] :
+    IsCohenMacaulay K V :=
+  isCohenMacaulay_of_krullDimLE_zero
+
+example (A : Type u) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A] : IsCohenMacaulay A A :=
+  isCohenMacaulay_self_of_isDomain_of_krullDimLE_one
+
+end Module

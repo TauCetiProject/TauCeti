@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.GroupTheory.Exponent
 public import Mathlib.LinearAlgebra.FreeModule.ModN
 public import TauCeti.Algebra.Group.Coprime
 
@@ -42,6 +43,8 @@ latter making the reduction `M` itself (`TauCeti.modNEquiv`).
 * `TauCeti.torsionBy_eq_top_of_forall_nsmul_eq_zero`,
   `TauCeti.range_lsmul_eq_bot_of_forall_nsmul_eq_zero`: at the exponent itself everything is torsion
   and multiplication is zero.
+* `Monoid.exists_forall_pow_mul_eq_self`: a natural number coprime to the exponent of a monoid is
+  invertible modulo that exponent.
 -/
 
 public section
@@ -156,3 +159,15 @@ theorem modNEquiv_symm_apply (hp : ∀ m : M, p • m = 0) (m : M) :
 end Torsion
 
 end TauCeti
+
+/-- A natural number coprime to the exponent of a monoid is invertible modulo the exponent, so
+that `g ^ (n * m) = g` for all `g`. -/
+theorem Monoid.exists_forall_pow_mul_eq_self {M : Type*} [Monoid M] {n : ℕ}
+    (hn : (Monoid.exponent M).Coprime n) : ∃ m : ℕ, ∀ g : M, g ^ (n * m) = g := by
+  by_cases he : Monoid.exponent M = 0
+  · rw [he, Nat.coprime_zero_left] at hn
+    exact ⟨1, by simp [hn]⟩
+  · obtain ⟨m, -, hm⟩ := Nat.exists_mul_mod_eq_of_coprime 1 hn.symm he
+    refine ⟨m, fun g ↦ ?_⟩
+    have hg := Monoid.pow_exponent_eq_one g
+    rw [pow_eq_pow_mod _ hg, hm, ← pow_eq_pow_mod _ hg, pow_one]

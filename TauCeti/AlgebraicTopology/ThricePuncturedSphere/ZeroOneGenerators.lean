@@ -8,10 +8,13 @@ module
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PeripheralLoops
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoods
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 import TauCeti.Topology.Homotopy.Path
+
+import TauCeti.Analysis.Normed.Module.Connected
 
 /-!
 # The positive local generators at `0` and `1`
@@ -105,7 +108,7 @@ private theorem map_direction_bijective (hR : 0 < R)
       FundamentalGroup.map (c.directionFrom (ball c R)) (ballHomeomorph hS hsub z) ∘
         FundamentalGroup.map (⟨ballHomeomorph hS hsub, (ballHomeomorph hS hsub).continuous⟩ :
           C(S, ↥(ball c R \ {c}))) z :=
-    funext fun γ => FundamentalGroupoid.map_comp_map _ _ γ
+    funext fun γ => CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map _ _ γ.asHom)
   rw [hcomp]
   have hhome : ⇑(FundamentalGroup.homeomorphMulEquiv (ballHomeomorph hS hsub) z) =
       ⇑(FundamentalGroup.map (⟨ballHomeomorph hS hsub, (ballHomeomorph hS hsub).continuous⟩ :
@@ -181,7 +184,9 @@ private theorem mem_puncturedNeighborhoodZero_iff_mem_ball (z : ThricePuncturedS
 
 /-- The standard punctured neighborhood of `0` is path connected. -/
 theorem isPathConnected_puncturedNeighborhoodZero : IsPathConnected puncturedNeighborhoodZero := by
-  have := pathConnectedSpace_ball_diff_singleton (0 : ℂ) (R := 1 / 2) (by norm_num)
+  have := isPathConnected_iff_pathConnectedSpace.1
+    (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
+      (0 : ℂ) (r := 1 / 2) (by norm_num))
   exact isPathConnected_iff_pathConnectedSpace.2 (ballHomeomorph
     mem_puncturedNeighborhoodZero_iff_mem_ball
     (ball_diff_subset_range (.inl rfl) (by norm_num))).symm.pathConnectedSpace
@@ -228,11 +233,11 @@ theorem transport_δZero_eq_periph0 :
     (αZero.codRestrict (x := ⟨basePt, hb⟩) (y := ⟨_, hy⟩) hα)).map
     ⟨Subtype.val, continuous_subtype_val⟩
   simp only [Path.map_trans, ← Path.map_symm, Path.map_codRestrict] at h
-  rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
+  rw [FundamentalGroup.map_fromPath _ _ δZero,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periph0_def,
     ← Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.mk_trans,
     ← Path.Homotopic.Quotient.mk_trans]
-  exact Quotient.sound h.symm
+  exact congrArg CategoryTheory.End.of (Quotient.sound h.symm)
 
 /-! ### The puncture `1` -/
 
@@ -283,7 +288,9 @@ private theorem mem_puncturedNeighborhoodOne_iff_mem_ball (z : ThricePuncturedSp
 
 /-- The standard punctured neighborhood of `1` is path connected. -/
 theorem isPathConnected_puncturedNeighborhoodOne : IsPathConnected puncturedNeighborhoodOne := by
-  have := pathConnectedSpace_ball_diff_singleton (1 : ℂ) (R := 1 / 2) (by norm_num)
+  have := isPathConnected_iff_pathConnectedSpace.1
+    (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
+      (1 : ℂ) (r := 1 / 2) (by norm_num))
   exact isPathConnected_iff_pathConnectedSpace.2 (ballHomeomorph
     mem_puncturedNeighborhoodOne_iff_mem_ball
     (ball_diff_subset_range (.inr rfl) (by norm_num))).symm.pathConnectedSpace
@@ -332,11 +339,11 @@ theorem transport_δOne_eq_periph1 :
     (αOne.codRestrict (x := ⟨basePt, hb⟩) (y := ⟨_, hy⟩) hα)).map
     ⟨Subtype.val, continuous_subtype_val⟩
   simp only [Path.map_trans, ← Path.map_symm, Path.map_codRestrict] at h
-  rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
+  rw [FundamentalGroup.map_fromPath _ _ δOne,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periph1_def,
     ← Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.mk_trans,
     ← Path.Homotopic.Quotient.mk_trans]
-  exact Quotient.sound h.symm
+  exact congrArg CategoryTheory.End.of (Quotient.sound h.symm)
 
 end ThricePuncturedSphere
 end TauCeti

@@ -128,11 +128,6 @@ open CategoryTheory Representation
 
 namespace TauCeti.ClassFieldTheory
 
--- Provenance: the signatures of the formation type and normal-layer structure below, and of
--- `level`, `rep`, `norm` and the
--- cohomology carriers, follow the blueprint `Suggested.lean` of the Tau Ceti `ClassFieldTheory`
--- roadmap (`TauCetiRoadmap/ClassFieldTheory/README.md` and `Suggested.lean`).
-
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
 /-! ### Formations and their levels -/
@@ -312,6 +307,13 @@ theorem galOfOpenNormalEquiv_mk (V : OpenNormalSubgroup G) (u : (ofOpenNormal V)
     galOfOpenNormalEquiv V (QuotientGroup.mk u) = QuotientGroup.mk (u : G) :=
   (rfl)
 
+/-- The inverse identification of `G ⧸ V` with the Galois group of `V ◁ ⊤` sends the class of `u`
+to the class of `u`. -/
+@[simp]
+theorem galOfOpenNormalEquiv_symm_mk (V : OpenNormalSubgroup G) (u : (ofOpenNormal V).ground) :
+    (galOfOpenNormalEquiv V).symm (QuotientGroup.mk (u : G)) = QuotientGroup.mk u :=
+  (MulEquiv.symm_apply_eq _).2 (galOfOpenNormalEquiv_mk V u).symm
+
 /-- The ground level of the layer `V ◁ G` of an open normal subgroup `V` is the level `A^G` of the
 whole group. -/
 def groundEquivOfOpenNormal (F : Formation G) (V : OpenNormalSubgroup G) :
@@ -371,9 +373,9 @@ theorem level_top_le_comap (u : L.ground) :
     simpa using L.conj_mem_top (L.ground.toSubgroup.inv_mem u.2) hv
   have hvu : v * (u : G) = (u : G) * ((u : G)⁻¹ * v * (u : G)) := by group
   calc F.toRep.ρ v (F.toRep.ρ (u : G) x)
-      = F.toRep.ρ (v * (u : G)) x := by rw [map_mul, Module.End.mul_apply]
+      = F.toRep.ρ (v * (u : G)) x := by rw [map_mul, mul_apply_eq_comp]
     _ = F.toRep.ρ (u : G) (F.toRep.ρ ((u : G)⁻¹ * v * (u : G)) x) := by
-        rw [hvu, map_mul, Module.End.mul_apply]
+        rw [hvu, map_mul, mul_apply_eq_comp]
     _ = F.toRep.ρ (u : G) x := by rw [(F.mem_level.1 hx) _ hconj]
 
 /-- The action of the ground subgroup `U` on the top level `A^V`. -/
@@ -532,7 +534,7 @@ Tate pairing of `σ ∈ Γ^ab` with the connecting class `δχ` of a character i
 sign it is `χ(σ)`, and the Artin map satisfies the classical character formula
 `χ(artinMap a) = inv(a₀ ∪ δχ)` instead of being the inverse of the classical reciprocity map. -/
 def tateHMinusTwoEquivAbelianization :
-    L.TrivialTateH (-2) ≃+ Additive (Abelianization L.Gal) :=
+    L.TrivialTateH (-2) ≃+ Additive (Group.Abelianization L.Gal) :=
   TauCeti.TateCohomology.HNegTwoAddEquivAbelianization.trans (AddEquiv.neg _)
 
 /-- The layer's degree-`-2` identification is the negative of the generic identification for its
@@ -546,14 +548,13 @@ theorem tateHMinusTwoEquivAbelianization_apply (x : L.TrivialTateH (-2)) :
 -- `Rep.trivial` is also an `abbrev` for `Rep.of`, so `simp` reduces its carrier as well.
 /-- The degree `-2` identification sends the standard first-homology class represented by
 `(g, 1)` to the class of `g⁻¹` in the additive abelianization. -/
-@[simp]
 theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
     (dsimp% only (L.tateHMinusTwoEquivAbelianization
       ((TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
             (Finsupp.single g 1)))))) =
-      Additive.ofMul (Abelianization.of g⁻¹) := by
+      Additive.ofMul (Group.Abelianization.of g⁻¹) := by
   rw [tateHMinusTwoEquivAbelianization_apply,
     TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_single_one, map_inv, ofMul_inv]
 
@@ -561,13 +562,14 @@ theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
 first-homology class represented by `(g⁻¹, 1)`. -/
 @[simp]
 theorem tateHMinusTwoEquivAbelianization_symm_of (g : L.Gal) :
-    L.tateHMinusTwoEquivAbelianization.symm (Additive.ofMul (Abelianization.of g)) =
+    L.tateHMinusTwoEquivAbelianization.symm (Additive.ofMul (Group.Abelianization.of g)) =
       (TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app
         (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
-            (Finsupp.single g⁻¹ 1))) := by
-  simp [AddEquiv.symm_apply_eq]
+            (Finsupp.single g⁻¹ 1))) :=
+  (AddEquiv.symm_apply_eq _).2
+    ((L.tateHMinusTwoEquivAbelianization_single_one g⁻¹).trans (by rw [inv_inv])).symm
 
 /-- **In positive degrees the Tate cohomology of a finite normal layer is its ordinary
 cohomology.** This is Mathlib's comparison `TateCohomology.isoGroupCohomology`, stated between the
@@ -685,7 +687,6 @@ theorem tateHZeroEquivNormQuotient_H0π (x : (L.rep F).ρ.invariants) :
   have h := TateCohomology.H0π_comp_H0IsoNormQuotient_hom_apply (L.rep F) x
   simp [tateHZeroEquivNormQuotient, h]
 
--- Specified by the class field theory roadmap, `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
 /-- The **zero-dimensional Tate class** `a₀` of an element `a` of the ground level `A^U`: the class
 of `a` in the degree-zero Tate group `H^0(U/V, A^V)`, reading `a` as an invariant of the
 coefficient module `A^V`. -/

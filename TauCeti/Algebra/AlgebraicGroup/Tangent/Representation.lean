@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Comodule.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Coordinate
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.CounitPoints
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 
 /-!
@@ -110,6 +111,18 @@ theorem pointInCounitAlgebra_apply
 
 omit [Module.Finite R (Bialgebra.CotangentSpace R H)]
   [Module.Projective R (Bialgebra.CotangentSpace R H)] in
+/-- Regarding a point as counit-algebra-valued is transporting it along
+`Bialgebra.CounitAlgebra.pointsMulEquiv`. -/
+theorem pointInCounitAlgebra_eq_pointsMulEquiv_symm
+    (A : Type w) [CommRing A] [Algebra R A] (g : WithConv (H →ₐ[R] A)) :
+    pointInCounitAlgebra A g = (Bialgebra.CounitAlgebra.pointsMulEquiv R H A).symm g := by
+  apply WithConv.ofConv_injective
+  ext b
+  simp only [pointInCounitAlgebra_apply, Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply]
+  exact (Bialgebra.CounitAlgebra.algEquivSelf_symm_apply R H A _).symm
+
+omit [Module.Finite R (Bialgebra.CotangentSpace R H)]
+  [Module.Projective R (Bialgebra.CotangentSpace R H)] in
 /-- Changing the value algebra of a point commutes with regarding it as a point valued in the
 counit-indexed copy of that algebra. -/
 @[simp]
@@ -125,6 +138,22 @@ theorem pointInCounitAlgebra_mapPoints
   rw [pointInCounitAlgebra_apply, AlgHom.mapValue_apply, HopfAlgebra.mapPoints_apply]
   simp only [AlgHom.comp_apply, Bialgebra.CounitAlgebra.mapAlgHom_apply]
   exact congrArg phi.hom (pointInCounitAlgebra_apply A g h).symm
+
+omit [Module.Finite R (Bialgebra.CotangentSpace R H)]
+  [Module.Projective R (Bialgebra.CotangentSpace R H)] in
+/-- Regarding a point as counit-algebra-valued commutes with restricting it along a bialgebra
+morphism `φ : H →ₐc[R] L`. -/
+theorem pointInCounitAlgebra_comp {L : Type x} [CommRing L] [HopfAlgebra R L]
+    (A : Type w) [CommRing A] [Algebra R A] (φ : H →ₐc[R] L) (g : L →ₐ[R] A) :
+    pointInCounitAlgebra (H := H) A (toConv (g.comp (φ : H →ₐ[R] L))) =
+      BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R H A) φ
+        (pointInCounitAlgebra (H := L) A (toConv g)) := by
+  erw [BialgHom.mapDomain_apply]
+  apply WithConv.ofConv_injective
+  ext h
+  have h₁ := pointInCounitAlgebra_apply (H := H) A (toConv (g.comp (φ : H →ₐ[R] L))) h
+  have h₂ := pointInCounitAlgebra_apply (H := L) A (toConv g) (φ h)
+  exact h₁.trans h₂.symm
 
 /-- The adjoint action at a coefficient algebra, transported from coefficient-valued derivations
 to the scalar extension of the dual cotangent space. -/
@@ -304,6 +333,18 @@ theorem tangentScalarExtensionEquiv_adjointComodule_endOfPoint
   rw [hrecover, adjointPointRepresentation_action] at haction
   rw [← haction]
   exact tangentScalarExtensionEquiv_adjointAction A g x
+
+/-- The point action of the adjoint comodule agrees with the adjoint action on scalar
+extensions of the cotangent dual. -/
+theorem adjointComodule_endOfPoint_eq_adjointAction
+    (A : CommAlgCat.{max u v} R) (g : HopfAlgebra.points (H := H) A)
+    (x : A ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    (letI := adjointComodule (R := R) (H := H)
+     Comodule.endOfPoint (Module.Dual R (Bialgebra.CotangentSpace R H)) g.ofConv x) =
+      (adjointAction A g).val x := by
+  apply (tangentScalarExtensionEquiv (R := R) (A := H) (B := A)).injective
+  exact (tangentScalarExtensionEquiv_adjointComodule_endOfPoint A g x).trans
+    (tangentScalarExtensionEquiv_adjointAction A g x).symm
 
 /-- The coordinate Hopf-algebra morphism opposite to the adjoint representation in a basis
 indexed by `Fin n`. -/

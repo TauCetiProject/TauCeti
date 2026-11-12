@@ -251,14 +251,8 @@ theorem sum_genusDefect :
   rw [Finset.sum_congr rfl fun i _ ↦ T.genusDefect_def i,
     Finset.sum_sub_distrib, T.sum_normalizedTerm_eq_sum_genusContribution,
     T.arithmeticGenus_eq_one_add_sum_genusContribution]
-  have hdegree := T.intersectionGraph.sum_degrees_eq_twice_card_edges
-  have hedge : #T.intersectionGraph.edgeFinset = T.intersectionGraph.edgeSet.ncard := by
-    rw [SimpleGraph.edgeFinset_card, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
-  have hdegree' : ∑ v, T.intersectionGraph.degree v =
-      2 * T.intersectionGraph.edgeSet.ncard := by
-    rw [hdegree, hedge]
   have hdegreeQ : (∑ v, (T.intersectionGraph.degree v : ℚ)) =
-      2 * T.intersectionGraph.edgeSet.ncard := by exact_mod_cast hdegree'
+      2 * T.intersectionGraph.edgeSet.ncard := by exact_mod_cast T.sum_degrees_eq_twice_ncard_edges
   have hhalf : ∑ v, (T.intersectionGraph.degree v : ℚ) / 2 =
       (T.intersectionGraph.edgeSet.ncard : ℚ) := by
     rw [← Finset.sum_div]

@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.KrullTopology
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Aut
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisDescent
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Galois
-import TauCeti.GroupTheory.GroupAction.Stabilizer
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
 
 /-!

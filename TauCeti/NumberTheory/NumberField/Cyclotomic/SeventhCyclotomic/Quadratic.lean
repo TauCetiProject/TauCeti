@@ -38,7 +38,6 @@ private instance : Fact (Nat.Prime 7) := ⟨by decide⟩
 instance : IsGalois ℚ (seventhCyclotomicQuadraticSubfield (L := L)) := by
   have : IsMulCommutative (L ≃ₐ[ℚ] L) :=
     (Rat.galEquivZMod 7 L).symm.surjective.isMulCommutative
-      inferInstance
   rw [seventhCyclotomicQuadraticSubfield_def]
   infer_instance
 

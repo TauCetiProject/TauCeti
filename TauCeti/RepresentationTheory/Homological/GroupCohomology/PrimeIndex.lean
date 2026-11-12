@@ -124,7 +124,7 @@ theorem isZero_groupCohomology_one_of_prime_index [Finite G] (A : Rep k G)
     IsZero (groupCohomology A 1) := by
   refine isZero_of_isZero_sylow A 0 fun p _ _ => ?_
   obtain ⟨P⟩ : Nonempty (Sylow p G) := inferInstance
-  exact ⟨P, isZero_groupCohomology_one_res_of_isPGroup A h1 p _ P P.isPGroup'
+  exact ⟨P, isZero_groupCohomology_one_res_of_isPGroup A h1 p _ P P.isPGroup
     (P : Subgroup G).subtype Subtype.val_injective rfl⟩
 
 /-- **The order of `H²` divides that of the group if it does on the subquotients of prime
@@ -155,7 +155,7 @@ theorem natCard_groupCohomology_two_dvd_natCard_of_prime_index [Finite G] (A : R
     exact ⟨P ⟨p, Nat.mem_primeFactors.2 ⟨Fact.out, hp, Nat.card_pos.ne'⟩⟩, congrFun hx _⟩
   have hP (p : (Nat.card G).primeFactors) :
       Nat.card (groupCohomology (res (P p : Subgroup G).subtype A) 2) ∣ Nat.card (P p) := by
-    exact natCard_groupCohomology_two_res_dvd_of_isPGroup A h1 h2 p _ (P p).isPGroup'
+    exact natCard_groupCohomology_two_res_dvd_of_isPGroup A h1 h2 p _ (P p).isPGroup
       (P p : Subgroup G).subtype Subtype.val_injective
   calc Nat.card (groupCohomology A 2)
       ∣ Nat.card (∀ p, groupCohomology (res (P p : Subgroup G).subtype A) 2) :=

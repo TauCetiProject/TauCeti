@@ -137,28 +137,15 @@ Consequently the compositum of `F` and `k'` inside `E` behaves like `F ⊗[k] k'
 Proposition 3.6.1(b), for separable constant field extensions. -/
 theorem linearDisjoint_fieldRange_of_isIntegrallyClosedIn
     (hex : IsIntegrallyClosedIn k F) [Algebra.IsSeparable k k'] :
-    (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F := by
-  set K := (IsScalarTower.toAlgHom k k' E).fieldRange
-  have : Algebra.IsSeparable k K :=
-    AlgEquiv.Algebra.isSeparable (IsScalarTower.toAlgHom k k' E).equivFieldRange
-  let b := Module.Basis.ofVectorSpace k K
-  refine .of_basis_left b (linearIndependent_iff_finset_linearIndependent.2 fun s ↦ ?_)
-  -- the finitely many basis vectors indexed by `s` generate a finite separable subextension
-  let K₀ : IntermediateField k E := adjoin k (Set.range fun i : s ↦ (b i : E))
-  have hK₀ : K₀ ≤ K := adjoin_le_iff.2 (Set.range_subset_iff.2 fun i ↦ (b i).2)
-  have : FiniteDimensional k K₀ := finiteDimensional_adjoin fun _ ⟨i, hi⟩ ↦
-    hi ▸ (Algebra.IsIntegral.isIntegral (b i)).map K.val
-  have : Algebra.IsSeparable k K₀ := Algebra.IsSeparable.of_algHom k K (inclusion hK₀)
-  let v : s → K₀ := fun i ↦ ⟨b i, subset_adjoin k _ ⟨i, rfl⟩⟩
-  have hb : LinearIndependent k (K.val ∘ b) :=
-    b.linearIndependent.map' K.val.toLinearMap (LinearMap.ker_eq_bot.2 Subtype.val_injective)
-  have hv : LinearIndependent k v :=
-    .of_comp K₀.val.toLinearMap (hb.comp _ Subtype.val_injective)
-  have h := LinearDisjoint.linearIndependent_left
-    (linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional hex K₀) hv
-  convert h using 1
-  ext i
-  simp only [Function.comp_apply, IntermediateField.coe_val, v]
+    (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F :=
+  linearDisjoint_fieldRange_of_forall_finiteDimensional fun M _ ↦ by
+    -- the image of a finite separable subextension is a finite separable subfield of `E`
+    let e := (IsScalarTower.toAlgHom k M E).equivFieldRange
+    have : FiniteDimensional k (IsScalarTower.toAlgHom k M E).fieldRange :=
+      e.toLinearEquiv.finiteDimensional
+    have : Algebra.IsSeparable k (IsScalarTower.toAlgHom k M E).fieldRange :=
+      AlgEquiv.Algebra.isSeparable e
+    exact linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional hex _
 
 /-- A linearly independent family of separable elements over a relatively algebraically closed
 field `k` remains linearly independent after extending scalars to `F` inside a common overfield.
@@ -202,9 +189,7 @@ which extends scalars on the other side of the linearly disjoint pair `F`, `k'`.
 theorem linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn_of_isSeparable
     (hex : IsIntegrallyClosedIn k F) [Algebra.IsSeparable k k'] {ι : Type*} {v : ι → F}
     (hv : LinearIndependent k v) : LinearIndependent k' (algebraMap F E ∘ v) :=
-  ((linearDisjoint_fieldRange_of_isIntegrallyClosedIn (E := E) hex).linearIndependent_right'
-    hv).map_of_injective_injective (IsScalarTower.toAlgHom k k' E).equivFieldRange
-    (AddMonoidHom.id E) (by simp) (by simp) fun _ _ ↦ by simp_rw [Algebra.smul_def]; rfl
+  (linearDisjoint_fieldRange_of_isIntegrallyClosedIn hex).linearIndependent_algebraMap_comp hv
 
 /-! ### Constants of the compositum -/
 

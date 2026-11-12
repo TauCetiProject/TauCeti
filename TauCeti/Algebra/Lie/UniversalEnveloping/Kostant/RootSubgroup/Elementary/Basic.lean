@@ -431,7 +431,7 @@ endomorphism of the value ring stays injective after tensoring with `M`; an auto
 scalar extension is determined by its values on the canonical copy of `M`. -/
 theorem kostantElementaryFrobenius_injective [IsReduced A] :
     Function.Injective (kostantElementaryFrobenius e h ρ M hM hnil p n A) := by
-  have htf : IsAddTorsionFree V := IsAddTorsionFree.of_module_rat V
+  have htf : HasUniqueDiv V := .of_module_rat V
   have hφ : Function.Injective (iterateFrobeniusValueHom p n A).hom := by
     intro x y hxy
     refine iterateFrobenius_inj (A : Type w) p n ?_

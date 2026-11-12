@@ -181,9 +181,9 @@ private theorem f4ShortRootSignedSimpleAdjoint_basis_root_of_coeff_eq_zero (k : 
     rcases hzero with heq | hlong | hnone
     · subst β
       exact lie_self _
-    · obtain ⟨hα, γ, hγ, hadd⟩ := hlong
+    · obtain ⟨-, γ, hγ, hadd⟩ := hlong
       exact f4Modular_lie_rootVector_eq_zero_of_short_add_short_eq_long
-        (f4SignedSimpleRootIndex k) β γ hα hβ hγ (by
+        (f4SignedSimpleRootIndex k) β γ hβ hγ (by
           simpa only [f4SimplyConnectedRootDatum_root] using hadd)
     · obtain ⟨-, hopp, hpair⟩ := hnone
       have hopp' : f4SignedSimpleRootIndex k ≠ f4OppositeRootIndex β := by
@@ -192,8 +192,8 @@ private theorem f4ShortRootSignedSimpleAdjoint_basis_root_of_coeff_eq_zero (k : 
         simpa using (congrArg f4OppositeRootIndex h).symm
       apply f4Modular_lie_rootVector_eq_zero_of_chainTopCoeff_eq_zero _ _ hopp'
       rcases hpair with hpair | ⟨hα, hpair⟩
-      · exact f4_chainTopCoeff_eq_zero_of_short_pairing_eq_one _ _ hβ hpair
-      · exact f4_chainTopCoeff_eq_zero_of_short_long_pairing_eq_zero _ _ hα hβ hpair
+      · exact f4_chainTopCoeff_eq_zero_of_pairing_eq_one _ _ hpair
+      · exact f4_chainTopCoeff_eq_zero_of_length_eq_two_of_pairing_eq_zero _ _ hα hpair
   calc
     _ = 0 := haction
     _ = (0 : ZMod 2) • f4ShortRootLieIdealBasis (f4SimpleRootTarget k b) :=
@@ -371,7 +371,9 @@ private theorem f4ShortRootSignedSimpleAdjoint_basis_of_weight_ne_zero
   · exact f4ShortRootSignedSimpleAdjoint_basis_root_of_coeff_eq_zero k b β hβ hb hcoeff
   · exact f4ShortRootSignedSimpleAdjoint_basis_root_of_coeff_ne_zero k b β hβ hb hcoeff
 
-private theorem f4ShortRootSignedSimpleAdjoint_basis (k : Fin 4 ⊕ Fin 4) (b : Fin 26) :
+/-- The signed simple-root adjoint action sends each canonical short-root ideal basis vector
+to the scalar multiple specified by the sparse root table. -/
+theorem f4ShortRootSignedSimpleAdjoint_basis (k : Fin 4 ⊕ Fin 4) (b : Fin 26) :
     f4ShortRootSignedSimpleAdjoint k (f4ShortRootLieIdealBasis b) =
       (f4SimpleRootCoeff k b : ZMod 2) •
         f4ShortRootLieIdealBasis (f4SimpleRootTarget k b) := by

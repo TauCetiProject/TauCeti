@@ -273,7 +273,7 @@ private theorem realClifford_positiveAxis_base (p : ℕ) (hp : p < 8) :
 private theorem realClifford_positiveAxis_classification (p : ℕ) :
     IsRealCliffordClassified p 0 := by
   induction p using Nat.strong_induction_on with
-  | h p ih =>
+  | ind p ih =>
       by_cases hp : p < 8
       · exact realClifford_positiveAxis_base p hp
       · obtain ⟨n, rfl⟩ : ∃ n, p = n + 8 := ⟨p - 8, by omega⟩

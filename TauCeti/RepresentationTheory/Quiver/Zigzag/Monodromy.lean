@@ -110,7 +110,7 @@ theorem monodromy_reverse (c : SkewZigzagParameter k G)
     apply eq_inv_of_mul_eq_one_right
     convert c.ratio_inv (hx (-i - 1 - 1)).symm (hx (-i - 1 - 1 + 1)) using 1
     congr 1
-    all_goals congr 1
+    congr 1
     all_goals
       apply congrArg x
       abel

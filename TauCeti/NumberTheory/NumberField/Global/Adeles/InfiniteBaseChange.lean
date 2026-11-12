@@ -49,6 +49,7 @@ private local instance (priority := 50) :
     IsScalarTower K (InfiniteAdeleRing K) (InfiniteAdeleRing L) :=
   IsScalarTower.of_algebraMap_eq fun x ↦ by
     rw [algebraMap_infiniteAdeleExtensionAlgebra]
+    rw [IsScalarTower.algebraMap_apply K L (InfiniteAdeleRing L)]
     exact (infiniteAdeleExtension_algebraMap K L x).symm
 
 /-- The scalar-extension map of infinite adeles, using the completion maps at the places above
@@ -80,7 +81,7 @@ theorem infiniteAdeleBaseChangeHom_tmul_apply (a : InfiniteAdeleRing K) (x : L)
   change (infiniteAdeleExtension K L a) w *
     (algebraMap L (InfiniteAdeleRing L) x) w = _
   rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
-  rfl
+  rw [InfinitePlace.Completion.algebraMap_apply]
 
 /-- **Infinite adeles grouped by places of the base field.** The infinite adeles of `L` are the
 product over the infinite places `v` of `K` of the families of components at the places of `L`
@@ -118,17 +119,19 @@ theorem infiniteAdelePiLiesOverEquiv_symm_apply
       a (w.comap (algebraMap K L)) ⟨w, inferInstance⟩ :=
   (rfl)
 
-variable [NumberField K] [NumberField L]
+section
+
+variable [NumberField L]
 
 open scoped Classical in
-private def baseChangeLinearEquiv :
+private def baseChangeLinearEquiv [NumberField K] :
     InfiniteAdeleRing K ⊗[K] L ≃ₗ[K] InfiniteAdeleRing L :=
   (TensorProduct.piLeft K L (fun v : InfinitePlace K ↦ v.Completion)).trans
     ((LinearEquiv.piCongrRight fun v ↦
       (infiniteSemilocalEquiv L v).toLinearEquiv.restrictScalars K).trans
         ((infiniteAdelePiLiesOverEquiv K L).toAddEquiv.toLinearEquiv fun _ _ ↦ rfl).symm)
 
-private theorem baseChangeLinearEquiv_apply (t : InfiniteAdeleRing K ⊗[K] L) :
+private theorem baseChangeLinearEquiv_apply [NumberField K] (t : InfiniteAdeleRing K ⊗[K] L) :
     baseChangeLinearEquiv K L t = infiniteAdeleBaseChangeHom K L t := by
   induction t using TensorProduct.inductionOn with
   | tmul a x =>
@@ -143,12 +146,18 @@ private theorem baseChangeLinearEquiv_apply (t : InfiniteAdeleRing K ⊗[K] L) :
     change _ = (infiniteAdeleExtension K L a) w *
       (algebraMap L (InfiniteAdeleRing L) x) w
     rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
-    rfl
+    rw [InfinitePlace.Completion.algebraMap_apply, RingHom.algebraMap_toAlgebra]
   | add t u ht hu => simp [ht, hu]
 
 /-- The archimedean semilocal decompositions assemble to a bijective base-change map. -/
 theorem infiniteAdeleBaseChangeHom_bijective :
     Function.Bijective (infiniteAdeleBaseChangeHom K L) := by
+  -- `K` embeds in the number field `L`, so it is a number field
+  have : CharZero K := (algebraMap K L).charZero
+  have : FiniteDimensional ℚ K :=
+    Module.Finite.of_injective (algebraMap K L).toRatAlgHom.toLinearMap
+      (algebraMap K L).injective
+  have : NumberField K := ⟨⟩
   have h : ⇑(baseChangeLinearEquiv K L) = ⇑(infiniteAdeleBaseChangeHom K L) :=
     funext (baseChangeLinearEquiv_apply K L)
   rw [← h]
@@ -175,7 +184,9 @@ theorem infiniteAdeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
   apply (infiniteAdeleBaseChangeAlgEquiv K L).injective
   simp [infiniteAdeleBaseChangeAlgEquiv]
 
-variable [TopologicalSpace (InfiniteAdeleRing K ⊗[K] L)]
+end
+
+variable [NumberField K] [NumberField L] [TopologicalSpace (InfiniteAdeleRing K ⊗[K] L)]
   [IsModuleTopology (InfiniteAdeleRing K) (InfiniteAdeleRing K ⊗[K] L)]
 
 /-- Base change of infinite adeles is a continuous algebra equivalence over the infinite adele

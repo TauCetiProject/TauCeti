@@ -49,6 +49,8 @@ Atkin–Lehner sign.
   Atkin–Lehner operator scales the Petersson product by `Q ^ (k - 2)`.
 * `TauCeti.peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp`: the same scaling law for an
   arbitrary choice of Atkin–Lehner matrix acting on `S_k(Γ₁(N))`.
+* `TauCeti.peterssonInnerCosets_atkinLehnerNormalizer_smul_atkinLehnerOperatorGamma1Cusp`: so the
+  normalized operator `(√Q) ^ (2 - k) • W_Q` on `S_k(Γ₁(N))` is unitary.
 * `TauCeti.Nat.IsExactDivisor.peterssonInnerCosets_normalizedAtkinLehnerOperatorCusp`: `𝒲_Q` is
   unitary.
 * `TauCeti.Nat.IsExactDivisor.peterssonInnerCosets_normalizedAtkinLehnerOperatorCusp_left`:
@@ -153,6 +155,20 @@ theorem peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp
       (coe_atkinLehnerOperatorGamma1Cusp hQ hQN hW f)
       (coe_atkinLehnerOperatorGamma1Cusp hQ hQN hW g),
     ← Matrix.GeneralLinearGroup.val_det_apply, val_det_atkinLehnerGL, Complex.ofReal_natCast]
+
+/-- **The normalized Atkin–Lehner operator on `S_k(Γ₁(N))` is Petersson-unitary**:
+`⟪𝒲_Q f, 𝒲_Q g⟫ = ⟪f, g⟫` for `𝒲_Q = (√Q) ^ (2 - k) • W_Q`, whatever the Atkin–Lehner matrix. The
+real normalizer cancels the factor `Q ^ (k - 2)` of the raw operator. -/
+theorem peterssonInnerCosets_atkinLehnerNormalizer_smul_atkinLehnerOperatorGamma1Cusp
+    (hQ : 0 < Q) (hQN : Q ∣ N) (hW : IsAtkinLehnerMatrix N Q W)
+    (f g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    CuspForm.peterssonInnerCosets
+        (atkinLehnerNormalizer Q k • atkinLehnerOperatorGamma1Cusp hQ hQN hW k f)
+        (atkinLehnerNormalizer Q k • atkinLehnerOperatorGamma1Cusp hQ hQN hW k g) =
+      CuspForm.peterssonInnerCosets f g := by
+  rw [CuspForm.peterssonInnerCosets_smul_left, CuspForm.peterssonInnerCosets_smul_right,
+    peterssonInnerCosets_atkinLehnerOperatorGamma1Cusp, conj_atkinLehnerNormalizer, ← mul_assoc,
+    ← mul_assoc, ← pow_two, atkinLehnerNormalizer_sq_mul hQ.ne', one_mul]
 
 namespace Nat.IsExactDivisor
 

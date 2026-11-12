@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Extension
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Vector
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finrank
 
 /-!
 # Building upper-triangular bases from weight vectors
@@ -18,8 +19,8 @@ dimension, together with the extension basis from
 `TauCeti.Algebra.Coalgebra.Comodule.Flag.Extension`, gives a basis whose coefficient matrix is
 upper triangular with diagonal entries in `S`.
 
-This is the formal induction step behind both Kolchin arguments in Layer 5 of the ReductiveGroups
-roadmap. Taking `S = {1}` recovers the unitriangular statement used for unipotent groups, where
+This is the formal induction step behind both Kolchin arguments. Taking `S = {1}` recovers the
+unitriangular statement used for unipotent groups, where
 Kolchin's theorem supplies genuine fixed vectors; taking `S` to be the set of group-like elements
 gives the triangular statement Lie--Kolchin needs for solvable groups, where only eigenvectors are
 available and group-like elements survive on the diagonal. When `C` is the coordinate Hopf algebra
@@ -72,11 +73,6 @@ private theorem weightSpan_toSubmodule (v : M) (c : C)
     (weightSpan v c hv).toSubmodule = k ∙ v :=
   rfl
 
-/-- A bundled subcomodule has the same dimension as its underlying submodule. -/
-private theorem finrank_toSubmodule (N : Subcomodule k C M) :
-    finrank k N.toSubmodule = finrank k N :=
-  rfl
-
 /-- Every vector in the subcomodule spanned by a weight vector has the same weight. -/
 private theorem weightSpan_coact [Module.Flat k C] (v : M) (c : C)
     (hv : coact (R := k) (C := C) (M := M) v = v ⊗ₜ[k] c) (x : weightSpan v c hv) :
@@ -92,7 +88,7 @@ private theorem weightSpan_coact [Module.Flat k C] (v : M) (c : C)
 private theorem weightSpan_finrank (v : M) (c : C)
     (hv : coact (R := k) (C := C) (M := M) v = v ⊗ₜ[k] c) (hv₀ : v ≠ 0) :
     finrank k (weightSpan v c hv) = 1 := by
-  rw [← finrank_toSubmodule, weightSpan_toSubmodule]
+  rw [← Subcomodule.finrank_toSubmodule, weightSpan_toSubmodule]
   exact finrank_span_singleton hv₀
 
 /-- If every nonzero finite-dimensional `C`-comodule has a nonzero weight vector whose weight lies
@@ -114,7 +110,7 @@ theorem exists_basis_coefficientMatrix_isUpperTriangular_diag_mem_of_weight_vect
   let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
   generalize hdim : finrank k M = d
   induction d using Nat.strong_induction_on generalizing M with
-  | h d ih =>
+  | ind d ih =>
       by_cases hM : Nontrivial M
       · let _ : Nontrivial M := hM
         obtain ⟨v, c, hv, hc, hvcoact⟩ := hweight M
@@ -140,7 +136,7 @@ theorem exists_basis_coefficientMatrix_isUpperTriangular_diag_mem_of_weight_vect
           change finrank k (M ⧸ L.toSubmodule) < d
           have hsum := Module.finrank_quotient_add_finrank_le L.toSubmodule
           have hLto : finrank k L.toSubmodule = 1 :=
-            (finrank_toSubmodule L).trans hLfinrank
+            (Subcomodule.finrank_toSubmodule L).trans hLfinrank
           rw [hLto, hdim] at hsum
           omega
         obtain ⟨n, bQ, hbQtri, hbQdiag⟩ := ih (finrank k Q) hQdim (M := Q) rfl

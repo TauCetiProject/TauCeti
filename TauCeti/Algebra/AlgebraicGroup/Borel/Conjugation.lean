@@ -156,6 +156,7 @@ theorem isBorelOverAlgClosed_iff_exists_eq_conjugate (D : HopfIdeal k H)
   · rintro ⟨g, rfl⟩
     exact hDB.conjugate g
 
+omit [IsAlgClosed k] in
 /-- **Over an algebraically closed field, any two Borel subgroups are conjugate** by a rational
 point, provided every Borel subgroup can be conjugated into a distinguished Borel candidate. -/
 theorem exists_conjugate_eq_of_isBorelOverAlgClosed (D : HopfIdeal k H)
@@ -167,6 +168,7 @@ theorem exists_conjugate_eq_of_isBorelOverAlgClosed (D : HopfIdeal k H)
     (hI : IsBorelOverAlgClosed k (FiniteTypeCommHopfAlgCat.of k H) I)
     (hJ : IsBorelOverAlgClosed k (FiniteTypeCommHopfAlgCat.of k H) J) :
     ∃ g : WithConv (H →ₐ[k] k), I.conjugate g = J := by
+  let : IsAlgClosed k := (isBorelOverAlgClosed_iff _ _ _).mp hI |>.1
   obtain ⟨g, rfl⟩ := (isBorelOverAlgClosed_iff_exists_eq_conjugate D hD hcontain I).mp hI
   obtain ⟨h, rfl⟩ := (isBorelOverAlgClosed_iff_exists_eq_conjugate D hD hcontain J).mp hJ
   exact ⟨h * g⁻¹, by simp [conjugate_mul]⟩

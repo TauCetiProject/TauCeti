@@ -8,7 +8,8 @@ module
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Derivative
 public import TauCeti.RingTheory.Derivation.Wronskian.Rescale
-import Mathlib.LinearAlgebra.Vandermonde
+import TauCeti.FieldTheory.FunctionField.Place.Degree
+import TauCeti.LinearAlgebra.Vandermonde
 
 /-!
 # Wronskians in function fields
@@ -35,7 +36,8 @@ and columns the Wronskian matrix reduces modulo `P` to a Vandermonde matrix in t
 `ord_P W(f₀, …, fₙ₋₁) ≥ a₀ + ⋯ + aₙ₋₁ - n (n - 1) / 2`
 
 in every characteristic, with equality, and a nonzero Wronskian, as soon as the orders `aⱼ` are
-pairwise distinct in `k`; in characteristic zero, as soon as they are pairwise distinct. This is
+pairwise distinct in `k`; in characteristic zero, as soon as they are pairwise distinct. The lower
+bound holds more generally at every place whose residue field is separable over `k`. This is
 the local computation behind the description of Weierstrass weights by orders of Wronskians.
 
 ## Main results
@@ -44,7 +46,7 @@ the local computation behind the description of Weierstrass weights by orders of
   constant field, the Wronskian detects linear independence.
 * `TauCeti.wronskian_eq_pow_mul_wronskian_derivativeOfSeparating`: the change-of-parameter law.
 * `TauCeti.Place.wronskian_derivativeOfSeparating_mem_filtration`: the lower bound on the order of
-  the Wronskian at a rational place, in every characteristic.
+  the Wronskian at a place with separable residue field, in every characteristic.
 * `TauCeti.Place.ord_wronskian_derivativeOfSeparating`: the order of the Wronskian of functions
   whose orders at a rational place are pairwise distinct in `k`.
 
@@ -58,7 +60,7 @@ public section
 
 namespace TauCeti
 
-open scoped IntermediateField
+open scoped _root_.IntermediateField
 
 section CharZero
 
@@ -87,7 +89,7 @@ theorem wronskian_eq_pow_mul_wronskian_derivativeOfSeparating {k F : Type*}
     D.wronskian f = D x ^ (n * (n - 1) / 2) * (derivativeOfSeparating hx).wronskian f := by
   have hder : D = D x • derivativeOfSeparating hx := by
     ext z
-    simpa only [Derivation.smul_apply, smul_eq_mul, mul_comm] using
+    simpa only [_root_.smul_apply, smul_eq_mul, mul_comm] using
       D.apply_eq_derivativeOfSeparating_smul hx z
   calc
     _ = (D x • derivativeOfSeparating hx).wronskian f :=
@@ -101,13 +103,13 @@ open Matrix
 variable {k F : Type*} [Field k] [Field F] [Algebra k F] (P : Place k F) {t : F}
   (hP : P.degree = 1) (ht : P.ord t = 1) (htr : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ F]
 
-include hP ht in
-/-- **A lower bound for the order of a Wronskian.** At a rational place `P` with a separating
-prime element `t`, if each `f j` vanishes to order at least `m j`, then the Wronskian with respect
-to `t` vanishes to order at least `∑ j, m j - n (n - 1) / 2`. This holds in every
-characteristic. -/
-theorem wronskian_derivativeOfSeparating_mem_filtration {n : ℕ} {f : Fin n → F} {m : Fin n → ℤ}
-    (hf : ∀ j, f j ∈ P.filtration (m j)) :
+include ht in
+/-- **A lower bound for the order of a Wronskian.** At a place `P` with residue field separable
+over `k` and a separating prime element `t`, if each `f j` vanishes to order at least `m j`, then
+the Wronskian with respect to `t` vanishes to order at least `∑ j, m j - n (n - 1) / 2`. This
+holds in every characteristic. -/
+theorem wronskian_derivativeOfSeparating_mem_filtration [Algebra.IsSeparable k P.ResidueField]
+    {n : ℕ} {f : Fin n → F} {m : Fin n → ℤ} (hf : ∀ j, f j ∈ P.filtration (m j)) :
     (derivativeOfSeparating htr).wronskian f ∈
       P.filtration (∑ j, m j - (n * (n - 1) / 2 : ℕ)) := by
   rw [Derivation.wronskian_def, det_apply, ← Finset.sum_range_id, Nat.cast_sum,
@@ -118,7 +120,7 @@ theorem wronskian_derivativeOfSeparating_mem_filtration {n : ℕ} {f : Fin n →
   refine zsmul_mem ?_ _
   have h := P.prod_mem_filtration Finset.univ (a := fun j ↦ m j - ((σ j : ℕ) : ℤ))
     (z := fun j ↦ (⇑(derivativeOfSeparating htr))^[σ j] (f j))
-    (fun j _ ↦ P.iterate_derivativeOfSeparating_mem_filtration hP ht htr (hf j) (σ j))
+    (fun j _ ↦ P.iterate_derivativeOfSeparating_mem_filtration ht htr (hf j) (σ j))
   rwa [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun i ↦ ((i : ℕ) : ℤ))] at h
 
 include hP ht in
@@ -131,26 +133,13 @@ private lemma det_normalized {n : ℕ} {f : Fin n → F} (hf : ∀ j, f j ≠ 0)
       ((f j)⁻¹ * (⇑(derivativeOfSeparating htr))^[i] (f j))).det ≠ 0 ∧
     P.ord (of fun i j : Fin n ↦ t ^ (i : ℕ) *
       ((f j)⁻¹ * (⇑(derivativeOfSeparating htr))^[i] (f j))).det = 0 := by
+  have := P.isSeparable_residueField_of_degree_eq_one hP
   generalize hNdef : (of fun i j : Fin n ↦ t ^ (i : ℕ) *
       ((f j)⁻¹ * (⇑(derivativeOfSeparating htr))^[i] (f j))) = N
-  have ht0 : t ≠ 0 := by
-    rintro rfl
-    simp at ht
   let c : Matrix (Fin n) (Fin n) ℤ := of fun i j ↦ (descPochhammer ℤ i).eval (P.ord (f j))
   -- Each normalized entry is congruent to the integer `(ord f_j)(ord f_j - 1)⋯` modulo `𝔪_P`.
   have hentry (i j : Fin n) : N i j - (c i j : F) ∈ P.filtration 1 := by
-    have hE := P.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration hP ht htr
-      (P.mem_filtration_ord (f j)) i
-    have hw : t ^ (i : ℕ) * (f j)⁻¹ ∈ P.filtration (i - P.ord (f j)) := by
-      convert P.mul_mem_filtration (P.mem_filtration_ord (t ^ (i : ℕ)))
-        (P.mem_filtration_ord (f j)⁻¹) using 2
-      simp [ht, sub_eq_add_neg]
-    convert P.mul_mem_filtration hw hE using 1
-    · congr 1
-      omega
-    · have := hf j
-      simp only [← hNdef, c, of_apply, zsmul_eq_mul, inv_pow]
-      field_simp
+    simpa [← hNdef, c] using P.normalized_entry_sub_mem_filtration_one ht htr (hf j) i
   have hint (i j : Fin n) : N i j ∈ P.integers := by
     rw [← mem_filtration_zero_iff, ← sub_add_cancel (N i j) (c i j : F)]
     refine add_mem (P.filtration_antitone (by omega) (hentry i j)) ?_
@@ -172,16 +161,12 @@ private lemma det_normalized {n : ℕ} {f : Fin n → F} (hf : ∀ j, f j ≠ 0)
     exact (residue_eq_iff_sub_mem_filtration_one P).mpr (by simpa [N'] using hentry i j)
   have hc : ((c.det : ℤ) : k) ≠ 0 := by
     -- The reduction of `c` is the transpose of a Vandermonde matrix in the orders.
-    have hv : ((c.det : ℤ) : k) = (vandermonde fun j ↦ (P.ord (f j) : k)).det := by
-      have h := RingHom.map_det (Int.castRingHom k) cᵀ
-      rw [eq_intCast, det_transpose] at h
-      rw [h, det_eval_matrixOfPolynomials_eq_det_vandermonde _ (fun i ↦ descPochhammer k i)
-        (fun i ↦ descPochhammer_natDegree k i) (fun i ↦ monic_descPochhammer k i)]
-      congr 1
-      ext i j
-      simp [c, descPochhammer_eval_cast]
-    rw [hv]
-    exact det_vandermonde_ne_zero_iff.mpr hinj
+    have h := RingHom.map_det (Int.castRingHom k) c
+    rw [eq_intCast] at h
+    rw [h]
+    convert det_descPochhammer_eval_ne_zero hinj using 2
+    ext i j
+    simp [c, descPochhammer_eval_cast]
   have hcmem : ((c.det : ℤ) : F) ∉ P.filtration 1 := by
     rw [← map_intCast (algebraMap k F),
       P.mem_filtration_iff_le_ord ((map_ne_zero _).mpr hc), ord_algebraMap]

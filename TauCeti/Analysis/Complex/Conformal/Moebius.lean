@@ -15,16 +15,11 @@ public import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
 
 This file packages the standard Moebius factor
 `z ↦ (z - a) / (1 - conj a * z)` as a bundled self-map of the complex unit disc.  It is
-the elementary automorphism API used by the Schwarz--Pick and disc-automorphism layer of
-the conformal-mapping roadmap: the map sends `a` to `0`, its norm is the
+the elementary automorphism API used by the Schwarz--Pick lemma and the classification of the
+disc automorphisms: the map sends `a` to `0`, its norm is the
 pseudo-hyperbolic expression from `z` to `a`, and the inverse is the factor with center
 `-a`.  The same map is also bundled as an equivalence and as a homeomorphism of the
 unit disc.
-
-This L2 material is coordinated with the upstream Mathlib RMT effort in
-leanprover-community/mathlib4#33505.  Mathlib already contains the preceding human-curated
-work in `Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`;
-this file only adds the small discoverable API around `Complex.UnitDisc`.
 -/
 
 public section
@@ -110,8 +105,8 @@ lemma differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha : ‖
   intro z hz
   have hden :
       1 - (starRingEnd ℂ) a * z ≠ 0 :=
-    one_sub_conj_mul_ne_zero_of_norm_lt_one
-      (by simpa [mem_ball_zero_iff] using hz) ha
+    one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one
+      (mem_ball_zero_iff.mp hz).le ha
   have hnum :
       DifferentiableWithinAt ℂ (fun z : ℂ => z - a) (ball (0 : ℂ) 1) z :=
     differentiableWithinAt_id.sub (differentiableWithinAt_const (c := a))

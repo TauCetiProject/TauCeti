@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Algebra.Algebra.Hom
-import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.PointsFunctor
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.RootDatum
@@ -74,26 +73,6 @@ variable (t : DynkinType) (ht : t.Valid)
 
 /-! ## A simple Weyl representative -/
 
-/-- The defining representation carries the numbered `sl₂` triple at node `i` to an `sl₂` triple
-of endomorphisms of the Geck module. -/
-theorem isSl2Triple_geckRepresentation (i : Fin t.rank) :
-    IsSl2Triple
-      (t.geckRepresentation ht
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
-      (t.geckRepresentation ht
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i))))
-      (t.geckRepresentation ht
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr i)))) := by
-  simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply,
-    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
-    ((t.lieBasis ht).sl2 i).map
-      ((t.geckRepresentation ht).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
-      (by
-        intro hzero
-        apply ((t.lieBasis ht).sl2 i).h_ne_zero
-        apply t.geckRepresentation_ι_injective ht
-        simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply, map_zero] using hzero)
-
 /-- **The pinned simple Weyl representative in the Geck carrier.**  At node `i` this is
 `xᵢ(1) x₋ᵢ(-1) xᵢ(1)`. -/
 def geckSimpleWeylPoint (i : Fin t.rank) (A : Type v) [CommRing A] : t.geckPoints ht A :=
@@ -104,6 +83,18 @@ def geckSimpleWeylPoint (i : Fin t.rank) (A : Type v) [CommRing A] : t.geckPoint
       (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (.inl i) (.inr i) A)
+
+/-- The pinned simple Weyl representative is the three-factor opposite-root word. -/
+theorem geckSimpleWeylPoint_eq_mul (i : Fin t.rank) (A : Type v) [CommRing A] :
+    t.geckSimpleWeylPoint ht i A =
+      t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd (1 : A)) *
+        t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-1 : A)) *
+        t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd (1 : A)) := by
+  apply Subtype.ext
+  simp only [geckSimpleWeylPoint, MulEquiv.subgroupCongr_apply,
+    UniversalEnvelopingAlgebra.kostantToralWeylPoint_def, Subgroup.coe_mul,
+    coe_geckRootSubgroupPoints,
+    UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints]
 
 /-- In the Geck coordinate basis, the simple Weyl representative is the integral Weyl
 automorphism supplied by the corresponding numbered `sl₂` pair. -/
@@ -355,6 +346,21 @@ theorem map_geckWeylWordTorusAction {A : Type v} {B : Type v'}
       simp only [geckWeylWordTorusAction_cons, MonoidHom.comp_apply,
         map_geckSimpleReflectionTorusPoint, ih]
 
+/-- **Weyl-word conjugation in any group.** If each `n j` conjugates `T s` to the image under `T`
+of the pinned simple reflection at `j` applied to `s`, then the product of the `n j` along a word
+conjugates `T s` to the image of the word's torus action on `s`. -/
+theorem list_prod_conj_eq_geckWeylWordTorusAction {G : Type*} [Group G] {A : Type v}
+    [CommRing A] (T : (Fin t.rank → Aˣ) → G) (n : Fin t.rank → G)
+    (hn : ∀ j s, n j * T s * (n j)⁻¹ = T (t.geckSimpleReflectionTorusPoint ht j A s))
+    (l : List (Fin t.rank)) (s : Fin t.rank → Aˣ) :
+    (l.map n).prod * T s * (l.map n).prod⁻¹ = T (t.geckWeylWordTorusAction ht l A s) := by
+  induction l with
+  | nil => simp
+  | cons i l ih =>
+      rw [List.map_cons, List.prod_cons, geckWeylWordTorusAction_cons, MonoidHom.comp_apply,
+        ← hn, ← ih]
+      group
+
 /-- **Conjugation by a Weyl-word representative realizes the word's action on the represented
 weight torus.** -/
 @[simp]
@@ -362,30 +368,9 @@ theorem geckWeylWordPoint_conj_geckWeightTorusPoints (l : List (Fin t.rank))
     (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
     t.geckWeylWordPoint ht l A * t.geckWeightTorusPoints ht A s *
         (t.geckWeylWordPoint ht l A)⁻¹ =
-      t.geckWeightTorusPoints ht A (t.geckWeylWordTorusAction ht l A s) := by
-  induction l with
-  | nil => simp
-  | cons i l ih =>
-      rw [geckWeylWordPoint_cons]
-      calc
-        (t.geckSimpleWeylPoint ht i A * t.geckWeylWordPoint ht l A) *
-              t.geckWeightTorusPoints ht A s *
-              (t.geckSimpleWeylPoint ht i A * t.geckWeylWordPoint ht l A)⁻¹ =
-            t.geckSimpleWeylPoint ht i A *
-              (t.geckWeylWordPoint ht l A * t.geckWeightTorusPoints ht A s *
-                (t.geckWeylWordPoint ht l A)⁻¹) *
-              (t.geckSimpleWeylPoint ht i A)⁻¹ := by group
-        _ = t.geckSimpleWeylPoint ht i A *
-              t.geckWeightTorusPoints ht A (t.geckWeylWordTorusAction ht l A s) *
-              (t.geckSimpleWeylPoint ht i A)⁻¹ := by rw [ih]
-        _ = t.geckWeightTorusPoints ht A
-              (t.geckSimpleReflectionTorusPoint ht i A
-                (t.geckWeylWordTorusAction ht l A s)) :=
-          t.geckSimpleWeylPoint_conj_geckWeightTorusPoints ht i A _
-        _ = t.geckWeightTorusPoints ht A
-              (t.geckWeylWordTorusAction ht (i :: l) A s) := by
-          rw [geckWeylWordTorusAction_cons]
-          rfl
+      t.geckWeightTorusPoints ht A (t.geckWeylWordTorusAction ht l A s) :=
+  t.list_prod_conj_eq_geckWeylWordTorusAction ht _ _
+    (t.geckSimpleWeylPoint_conj_geckWeightTorusPoints ht · A) l s
 
 /-- **Every Weyl-word representative normalizes the represented weight torus.** -/
 theorem geckWeylWordPoint_mem_normalizer_geckWeightTorusPoints (l : List (Fin t.rank))

@@ -15,10 +15,9 @@ The finite-dimensional weak-form integrand
 bundles that linearity as continuous linear maps from coefficient spaces to spaces of
 continuous bilinear maps.
 
-This is a pointwise prerequisite for Lane D of the PDE roadmap.  Once the weak energy form is
-defined by integrating `x ↦ energyIntegrand (a x) (b x) (c x)` over a domain, continuous
-coefficient fields and continuous perturbation families should give continuous integrand
-families without unfolding the jet form.
+The weak energy form is defined by integrating `x ↦ energyIntegrand (a x) (b x) (c x)` over a
+domain.  With these maps, continuous coefficient fields and continuous perturbation families give
+continuous integrand families without unfolding the jet form.
 
 ## Main declarations
 
@@ -78,30 +77,32 @@ lemma continuous_energyIntegrand :
   (energyIntegrandLinear (n := n)).continuous.congr fun p =>
     energyIntegrandLinear_apply p.1 p.2.1 p.2.2
 
-variable [TopologicalSpace X]
+end PDE
+
+end TauCeti
 
 namespace Continuous
+
+variable {X n : Type*} [Fintype n] [TopologicalSpace X]
 
 /-- Continuous coefficient fields give a continuous field of full pointwise energy
 integrands. -/
 lemma energyIntegrand {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
     (ha : Continuous a) (hb : Continuous b) (hc : Continuous c) :
-    Continuous (fun x => PDE.energyIntegrand (a x) (b x) (c x)) :=
-  continuous_energyIntegrand.comp (ha.prodMk (hb.prodMk hc))
+    Continuous (fun x => TauCeti.PDE.energyIntegrand (a x) (b x) (c x)) :=
+  TauCeti.PDE.continuous_energyIntegrand.comp (ha.prodMk (hb.prodMk hc))
 
 end Continuous
 
 namespace ContinuousOn
 
+variable {X n : Type*} [Fintype n] [TopologicalSpace X]
+
 /-- Continuous coefficient fields on a set give a continuous field of full pointwise energy
 integrands on that set. -/
 lemma energyIntegrand {s : Set X} {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n}
     {c : X → ℝ} (ha : ContinuousOn a s) (hb : ContinuousOn b s) (hc : ContinuousOn c s) :
-    ContinuousOn (fun x => PDE.energyIntegrand (a x) (b x) (c x)) s :=
-  continuous_energyIntegrand.comp_continuousOn (ha.prodMk (hb.prodMk hc))
+    ContinuousOn (fun x => TauCeti.PDE.energyIntegrand (a x) (b x) (c x)) s :=
+  TauCeti.PDE.continuous_energyIntegrand.comp_continuousOn (ha.prodMk (hb.prodMk hc))
 
 end ContinuousOn
-
-end PDE
-
-end TauCeti

@@ -114,13 +114,13 @@ private theorem second_connection_const (p : SL2Tilde) (u v w : P) :
   have h₂ := (he (-1)).smul_section (hd (negativeCoeff v w))
   have h₃ := (he (-2)).smul_section (hd (doubleNegativeCoeff v w))
   have h₀₁ := mdifferentiableAt_add_section (hd (constantCoeff v w)) h₁
-  rw [connection_const, ∇.isCovariantDerivativeOn.add
+  rw [connection_const, ∇.isCovariantDerivativeOnUniv.add
     (mdifferentiableAt_add_section h₀₁ h₂) h₃,
-    ∇.isCovariantDerivativeOn.add h₀₁ h₂,
-    ∇.isCovariantDerivativeOn.add (hd (constantCoeff v w)) h₁,
-    ∇.isCovariantDerivativeOn.leibniz (hd (positiveCoeff v w)) (he 1),
-    ∇.isCovariantDerivativeOn.leibniz (hd (negativeCoeff v w)) (he (-1)),
-    ∇.isCovariantDerivativeOn.leibniz (hd (doubleNegativeCoeff v w)) (he (-2))]
+    ∇.isCovariantDerivativeOnUniv.add h₀₁ h₂,
+    ∇.isCovariantDerivativeOnUniv.add (hd (constantCoeff v w)) h₁,
+    ∇.isCovariantDerivativeOnUniv.leibniz (hd (positiveCoeff v w)) (he 1),
+    ∇.isCovariantDerivativeOnUniv.leibniz (hd (negativeCoeff v w)) (he (-1)),
+    ∇.isCovariantDerivativeOnUniv.leibniz (hd (doubleNegativeCoeff v w)) (he (-2))]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
     map_add, map_smul]
   rw [mvfderiv_exp_y, mvfderiv_exp_y, mvfderiv_exp_y]
@@ -156,7 +156,7 @@ vectors are the curvature directions and the third is the vector acted on. -/
   have hb : mlieBracket J (constantField u) (constantField v) p = 0 := by
     -- The constant fields are the model-space constant fields in the inherited atlas.
     rw [funext (constantField_apply u), funext (constantField_apply v)]
-    exact TauCeti.mlieBracket_const_model_space (𝕜 := ℝ) u v (toProd p)
+    exact mlieBracket_const_model_space (𝕜 := ℝ) u v (toProd p)
   rw [hb, map_zero, sub_zero, map_sub, second_connection_const, second_connection_const]
   have hsq : exp (-(p.y * 2)) = exp (-p.y) * exp (-p.y) := by
     rw [← exp_add]
@@ -223,11 +223,12 @@ theorem mfderiv_vertical_iff (Φ : Isom J SL2Tilde) (p : SL2Tilde)
   rw [← ricciTensor_eq_half_inner_iff, ← ricciTensor_eq_half_inner_iff]
   constructor
   · intro h v
-    simpa only [Φ.ricciTensor_mfderiv, Φ.inner_mfderiv] using h (mfderiv J J Φ p v)
+    simpa only [Φ.isLocalRiemannianIsometry.ricciTensor_mfderiv, Φ.inner_mfderiv] using
+      h (mfderiv J J Φ p v)
   · intro h v
     obtain ⟨w, hw⟩ := (Φ.mfderivToLinearIsometryEquiv p).surjective v
     rw [RiemannianIsometry.mfderivToLinearIsometryEquiv_apply] at hw
-    rw [← hw, Φ.ricciTensor_mfderiv, Φ.inner_mfderiv]
+    rw [← hw, Φ.isLocalRiemannianIsometry.ricciTensor_mfderiv, Φ.inner_mfderiv]
     exact h w
 
 end TauCeti.SL2Tilde

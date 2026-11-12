@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
+import Mathlib.Algebra.GroupWithZero.Action.Regular
+
 /-!
 # Isometries of quadratic maps
 
@@ -18,18 +20,25 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 
 ## Main results
 
+* `QuadraticMap.Isometry.neg`: an isometry also preserves the negatives of the quadratic maps.
 * `QuadraticMap.Isometry.polar_apply`: an isometry preserves polarization.
 * `QuadraticForm.isIsometry_polarBilin_of_forall_map_app`: a form-preserving linear map preserves
   the polar bilinear form.
+* `QuadraticMap.apply_eq_zero_of_apply_eq_smul`: an eigenvector of a form-preserving endomorphism
+  whose eigenvalue does not square to `1` (in the sense of regularity of `μ² - 1`) is isotropic.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.trans_apply`: composition of isometries acts by composition.
 * `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
+* `QuadraticMap.isometryEquivNeg`: if `u * u = -1`, multiplication by `u` is an isometry from
+  `Q` to `-Q`.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
   of squares along an equivalence of index types gives an isometric quadratic form.
 * `QuadraticForm.equivalent_weightedSumSquares_of_comp_eq`: weighted sums of squares whose weights
   agree after reindexing are equivalent.
+* `QuadraticForm.equivalent_zero_iff_finrank_eq_zero`: a form is isometric to the canonical
+  zero-dimensional form exactly when its space has dimension zero.
 -/
 
 public section
@@ -39,6 +48,23 @@ namespace TauCeti
 open QuadraticMap
 
 universe u v w
+
+/-- An isometry of quadratic maps, regarded as an isometry of their negatives. The underlying
+linear map is unchanged. -/
+def _root_.QuadraticMap.Isometry.neg {R M₁ M₂ N : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (f : Q₁ →qᵢ Q₂) : (-Q₁) →qᵢ (-Q₂) where
+  __ := f.toLinearMap
+  map_app' x := by simp
+
+/-- Negating both quadratic maps does not change the isometry on vectors. -/
+@[simp]
+theorem _root_.QuadraticMap.Isometry.neg_apply {R M₁ M₂ N : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (f : Q₁ →qᵢ Q₂) (x : M₁) : f.neg x = f x :=
+  (rfl)
 
 /-- An isometry preserves the polarization of a quadratic map. -/
 @[simp]
@@ -59,6 +85,17 @@ theorem _root_.QuadraticForm.isIsometry_polarBilin_of_forall_map_app
   have hp : polar Q (f x) (f y) = polar Q x y :=
     (⟨f, hf⟩ : Q →qᵢ Q).polar_apply x y
   simpa only [QuadraticMap.polarBilin_apply_apply] using hp
+
+/-- An eigenvector of a form-preserving endomorphism is isotropic as soon as `μ² - 1` is a regular
+scalar for its eigenvalue `μ`: from `f v = μ • v` and `Q (f v) = Q v` one gets `μ² • Q v = Q v`.
+Over a field it suffices that `μ² ≠ 1`. -/
+theorem _root_.QuadraticMap.apply_eq_zero_of_apply_eq_smul {R : Type u} {M : Type v}
+    {N : Type w} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    {Q : QuadraticMap R M N} {f : Module.End R M} (hf : ∀ x, Q (f x) = Q x) {μ : R}
+    (hμ : IsSMulRegular N (μ * μ - 1)) {v : M} (hv : f v = μ • v) : Q v = 0 := by
+  have h := hf v
+  rw [hv, QuadraticMap.map_smul] at h
+  exact hμ.right_eq_zero_of_smul (by rw [sub_smul, h, one_smul, sub_self])
 
 /-- An isometric equivalence preserves the polarization of a quadratic map. -/
 @[simp]
@@ -152,6 +189,44 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
     rw [← e.toLinearEquiv.lift_rank_map_eq Q₁.polarBilin.ker, hpolar]
     exact Cardinal.lift_le_one_iff.mpr hQ₂.rank_rad_polar_le
 
+section Neg
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] {Q Q' : QuadraticMap R M N} {u : R}
+
+/-- If `u * u = -1`, multiplication by `u` is an isometry from `Q` to `Q' = -Q`, with inverse
+multiplication by `-u`. -/
+def _root_.QuadraticMap.isometryEquivNeg (h : Q' = -Q) (hu : u * u = -1) :
+    Q.IsometryEquiv Q' where
+  toLinearEquiv := LinearEquiv.smulOfUnit ⟨u, -u, by rw [mul_neg, hu, neg_neg],
+    by rw [neg_mul, hu, neg_neg]⟩
+  map_app' m := by
+    simp [LinearEquiv.smulOfUnit, h, QuadraticMap.map_smul, hu]
+
+/-- The isometry `QuadraticMap.isometryEquivNeg` multiplies each vector by `u`. -/
+@[simp]
+theorem _root_.QuadraticMap.isometryEquivNeg_apply (h : Q' = -Q) (hu : u * u = -1) (m : M) :
+    QuadraticMap.isometryEquivNeg h hu m = u • m :=
+  -- The parentheses keep the proof opaque, so the definition need not be exposed.
+  (rfl)
+
+/-- The inverse of `QuadraticMap.isometryEquivNeg` for `u` is the same construction for `-u`, in
+the opposite direction. -/
+theorem _root_.QuadraticMap.isometryEquivNeg_symm (h : Q' = -Q) (hu : u * u = -1) :
+    (QuadraticMap.isometryEquivNeg h hu).symm =
+      QuadraticMap.isometryEquivNeg (by rw [h, neg_neg]) (u := -u) (by rw [neg_mul_neg, hu]) := by
+  dsimp only [IsometryEquiv.symm, QuadraticMap.isometryEquivNeg]
+  congr 1
+  exact LinearEquiv.ext fun _ ↦ rfl
+
+/-- The inverse of `QuadraticMap.isometryEquivNeg` multiplies each vector by `-u`. -/
+@[simp]
+theorem _root_.QuadraticMap.isometryEquivNeg_symm_apply (h : Q' = -Q) (hu : u * u = -1) (m : M) :
+    (QuadraticMap.isometryEquivNeg h hu).symm m = -(u • m) := by
+  rw [QuadraticMap.isometryEquivNeg_symm, QuadraticMap.isometryEquivNeg_apply, neg_smul]
+
+end Neg
+
 section Reindex
 
 variable {ι ι' R S : Type*} [Fintype ι] [Fintype ι'] [CommSemiring R] [Monoid S]
@@ -182,5 +257,19 @@ theorem _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq
     (QuadraticForm.weightedSumSquaresCongr h)).symm⟩
 
 end Reindex
+
+/-- A quadratic form is isometric to the canonical zero-dimensional form exactly when
+its underlying space has dimension zero. -/
+@[simp]
+theorem _root_.QuadraticForm.equivalent_zero_iff_finrank_eq_zero {K V : Type*} [Field K]
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] (Q : QuadraticForm K V) :
+    Q.Equivalent (0 : QuadraticForm K (Fin 0 → K)) ↔ Module.finrank K V = 0 := by
+  constructor
+  · rintro ⟨e⟩
+    simpa using e.toLinearEquiv.finrank_eq
+  · intro h
+    have := Module.finrank_zero_iff.mp h
+    exact ⟨{ LinearEquiv.ofSubsingleton V (Fin 0 → K) with
+      map_app' x := by rw [zero_apply, Subsingleton.elim x 0, map_zero] }⟩
 
 end TauCeti

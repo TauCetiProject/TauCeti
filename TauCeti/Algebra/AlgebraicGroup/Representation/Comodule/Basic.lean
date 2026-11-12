@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.ScalarExtension
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 
 import TauCeti.Algebra.Coalgebra.Convolution
 
@@ -145,7 +145,7 @@ theorem action_mapPoints_one_tmul
     (GeneralLinear.mapScalarExtensionAutomorphisms_apply_scalarExtensionMap
       (V := V) phi (Theta.action A x) (1 ⊗ₜ[R] v))
 
-private noncomputable def rawPointAction (rho : Comodule R H V)
+private noncomputable def rawPointAction (_ : Comodule R H V)
     (A : CommAlgCat.{max u v w} R) :
     points (H := H) A ⟶ GeneralLinear.scalarExtensionAutomorphisms (V := V) A :=
   GrpCat.ofHom <|
@@ -330,7 +330,7 @@ private theorem scalarExtensionMap_counit_universalGenerator
       (toConv ULift.algEquiv.symm.toAlgHom) v
   rw [mapPoints_universal_counit,
     (Theta.action (CommAlgCat.of R (ULift.{max u v w} R))).hom.map_one] at h
-  simpa only [universalGenerator_apply, Units.val_one, Module.End.one_apply] using h.symm
+  simpa only [universalGenerator_apply, Units.val_one, one_apply_eq_self] using h.symm
 
 private theorem counit_rTensor_universalGeneratorDown
     (Theta : PointRepresentation (R := R) (H := H) (V := V)) (v : V) :
@@ -381,19 +381,19 @@ private theorem recoveredCoaction_counit
   exact counit_rTensor_universalGeneratorDown Theta v
 
 private noncomputable abbrev includeLeftAlgHom : H →ₐ[R] H ⊗[R] H :=
-  (Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H) (H₂ := H)).toAlgHom
+  (Algebra.TensorProduct.includeLeft (R := R) (A := H) (B := H))
 
 private noncomputable abbrev includeRightAlgHom : H →ₐ[R] H ⊗[R] H :=
-  (Bialgebra.TensorProduct.includeRight (R := R) (H₁ := H) (H₂ := H)).toAlgHom
+  (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H))
 
 private theorem includeRight_mul_includeLeft (a b : H) :
     includeRightAlgHom (R := R) (H := H) a *
         includeLeftAlgHom (R := R) (H := H) b =
       b ⊗ₜ[R] a := by
   have hleft : includeLeftAlgHom (R := R) (H := H) b = b ⊗ₜ[R] 1 :=
-    Bialgebra.TensorProduct.includeLeft_apply b
+    Algebra.TensorProduct.includeLeft_apply b
   have hright : includeRightAlgHom (R := R) (H := H) a = 1 ⊗ₜ[R] a :=
-    Bialgebra.TensorProduct.includeRight_apply a
+    Algebra.TensorProduct.includeRight_apply a
   rw [hleft, hright, Algebra.TensorProduct.tmul_mul_tmul, one_mul, mul_one]
 
 private noncomputable def liftedIncludeLeftAlgHom (_V : Type w) :
@@ -596,7 +596,7 @@ private theorem include_actions_eq_scalarExtensionMap_comul
               (mapPoints (H := H)
                 (CommAlgCat.ofHom (liftedIncludeRightAlgHom (R := R) (H := H) V))
                   (toConv ULift.algEquiv.symm.toAlgHom))).val (1 ⊗ₜ[R] v)) := by
-    simpa only [Units.val_mul, Module.End.mul_apply] using hvalue
+    simpa only [Units.val_mul, mul_apply_eq_comp] using hvalue
   rw [← hcompose, hnatural]
   rw [universalGenerator_apply]
 

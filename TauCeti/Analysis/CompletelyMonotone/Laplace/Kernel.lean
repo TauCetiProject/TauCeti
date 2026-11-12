@@ -30,8 +30,17 @@ depend on each other.
 
 public section
 
-open MeasureTheory ProbabilityTheory
-open scoped BoundedContinuousFunction ENNReal NNReal
+open Filter MeasureTheory ProbabilityTheory
+open scoped BoundedContinuousFunction ENNReal NNReal Topology
+
+namespace NNReal
+
+/-- For fixed nonnegative `p`, the Laplace kernel is antitone in its real parameter. -/
+lemma exp_neg_mul_antitone (p : ℝ≥0) :
+    Antitone fun t : ℝ => Real.exp (-t * (p : ℝ)) :=
+  fun _ _ htu => Real.exp_le_exp.mpr (by gcongr)
+
+end NNReal
 
 namespace TauCeti
 
@@ -42,36 +51,20 @@ lemma continuous_exp_neg_mul (t : ℝ) :
 
 /-- For `0 ≤ x` the Laplace kernel is bounded by `1` on `ℝ≥0`. -/
 lemma exp_neg_mul_le_one {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
-    Real.exp (-(x * (p : ℝ))) ≤ 1 := by
-  rw [Real.exp_le_one_iff]
-  exact neg_nonpos.mpr (mul_nonneg hx p.coe_nonneg)
-
-/-- For fixed nonnegative `p`, the Laplace kernel is antitone in its nonnegative parameter. -/
-lemma antitone_exp_neg_mul (p : ℝ≥0) :
-    Antitone fun t : ℝ≥0 => Real.exp (-(t : ℝ) * (p : ℝ)) := by
-  intro t u htu
-  exact Real.exp_le_exp.mpr
-    (mul_le_mul_of_nonneg_right (neg_le_neg (mod_cast htu)) p.coe_nonneg)
+    Real.exp (-(x * (p : ℝ))) ≤ 1 :=
+  Real.exp_le_one_iff.mpr <| neg_nonpos.mpr <| by positivity
 
 /-- The Laplace kernel as a bundled bounded continuous test function of the nonnegative
 variable `p`, for fixed nonnegative `x`. -/
-noncomputable def laplaceKernelBoundedContinuous {x : ℝ} (hx : 0 ≤ x) : ℝ≥0 →ᵇ ℝ where
-  toFun := fun p => Real.exp (-(x * (p : ℝ)))
-  continuous_toFun := continuous_exp_neg_mul x
-  map_bounded' :=
-    ⟨1, fun p q => by
-      rw [Real.dist_eq]
-      have hp0 : 0 < Real.exp (-(x * (p : ℝ))) := Real.exp_pos _
-      have hp1 := exp_neg_mul_le_one hx p
-      have hq0 : 0 < Real.exp (-(x * (q : ℝ))) := Real.exp_pos _
-      have hq1 := exp_neg_mul_le_one hx q
-      exact abs_sub_le_iff.mpr ⟨by linarith, by linarith⟩⟩
+noncomputable def laplaceKernelBoundedContinuous {x : ℝ} (hx : 0 ≤ x) : ℝ≥0 →ᵇ ℝ :=
+  .ofNormedAddCommGroup (fun p => Real.exp (-(x * (p : ℝ)))) (continuous_exp_neg_mul x) 1
+    fun p => by simpa [Real.norm_eq_abs] using exp_neg_mul_le_one hx p
 
 /-- The bundled Laplace kernel evaluates to the usual exponential kernel on `ℝ≥0`. -/
 @[simp]
 lemma laplaceKernelBoundedContinuous_apply {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
-    laplaceKernelBoundedContinuous hx p = Real.exp (-(x * (p : ℝ))) := by
-  rw [laplaceKernelBoundedContinuous]; rfl
+    laplaceKernelBoundedContinuous hx p = Real.exp (-(x * (p : ℝ))) :=
+  (rfl)
 
 /-- **The Laplace kernel is integrable against a finite measure.** For `0 ≤ x` the kernel
 `p ↦ e^{-xp}` is bounded and continuous on `ℝ≥0`, hence integrable against any finite measure. -/
@@ -79,6 +72,35 @@ lemma integrable_exp_neg_mul (μ : Measure ℝ≥0) [IsFiniteMeasure μ] {x : �
     Integrable (fun p : ℝ≥0 => Real.exp (-(x * (p : ℝ)))) μ := by
   have h := (laplaceKernelBoundedContinuous hx).integrable μ
   rwa [funext (laplaceKernelBoundedContinuous_apply hx)] at h
+
+/-- Monotone convergence for the exponentially damped functions `exp (-(ε n * x)) * q x`, where
+`ε n` decreases to `0` and `q` is almost everywhere measurable. -/
+lemma tendsto_lintegral_ofReal_exp_mul {σ : Measure ℝ≥0} {q : ℝ≥0 → ℝ} {ε : ℕ → ℝ}
+    (hε : Antitone ε) (hε₀ : Tendsto ε atTop (𝓝 0)) (hq_meas : AEMeasurable q σ) :
+    Tendsto (fun n => ∫⁻ x, ENNReal.ofReal (Real.exp (-(ε n * (x : ℝ))) * q x) ∂σ)
+      atTop (𝓝 (∫⁻ x, ENNReal.ofReal (q x) ∂σ)) := by
+  have hG_mono : ∀ x : ℝ≥0,
+      Monotone fun n => ENNReal.ofReal (Real.exp (-(ε n * (x : ℝ))) * q x) := by
+    intro x n m hnm
+    rcases le_or_gt 0 (q x) with hq | hq
+    · exact ENNReal.ofReal_le_ofReal <| mul_le_mul_of_nonneg_right
+        (Real.exp_le_exp.mpr <| neg_le_neg <| mul_le_mul_of_nonneg_right (hε hnm) x.coe_nonneg)
+        hq
+    · simp only [ENNReal.ofReal_of_nonpos (mul_neg_of_pos_of_neg (Real.exp_pos _) hq).le,
+        zero_le]
+  have hG_tendsto_real : ∀ x : ℝ≥0,
+      Tendsto (fun n => Real.exp (-(ε n * (x : ℝ))) * q x) atTop (𝓝 (q x)) := by
+    intro x
+    have hexp : Tendsto (fun n => Real.exp (-(ε n * (x : ℝ)))) atTop (𝓝 1) := by
+      have harg : Tendsto (fun n => -(ε n * (x : ℝ))) atTop (𝓝 0) := by
+        simpa [mul_comm] using hε₀.const_mul (-(x : ℝ))
+      simpa only [Real.exp_zero] using harg.rexp
+    simpa only [one_mul] using hexp.mul_const (q x)
+  exact lintegral_tendsto_of_tendsto_of_monotone
+    (fun n => (((by fun_prop : Measurable fun x : ℝ≥0 => Real.exp (-(ε n * (x : ℝ))))
+      |>.aemeasurable).mul hq_meas).ennreal_ofReal)
+    (ae_of_all _ hG_mono)
+    (ae_of_all _ fun x => ENNReal.tendsto_ofReal (hG_tendsto_real x))
 
 /-! ## The extended-nonnegative-valued Laplace transform -/
 
@@ -93,26 +115,25 @@ theorem laplaceTransformENN_apply (μ : Measure ℝ≥0) (t : ℝ≥0) :
     laplaceTransformENN μ t = ∫⁻ p, ENNReal.ofReal (Real.exp (-(t : ℝ) * (p : ℝ))) ∂μ :=
   (rfl)
 
-/-- At time `0`, the extended-real Laplace transform is the total mass. -/
+/-- At time `0`, the extended-nonnegative-valued Laplace transform is the total mass. -/
 @[simp]
 theorem laplaceTransformENN_zero (μ : Measure ℝ≥0) :
     laplaceTransformENN μ 0 = μ Set.univ := by
-  rw [laplaceTransformENN_apply]
-  simp
+  simp [laplaceTransformENN_apply]
 
-/-- The extended-real Laplace transform decreases in time. -/
+/-- The extended-nonnegative-valued Laplace transform decreases in time. -/
 theorem laplaceTransformENN_antitone (μ : Measure ℝ≥0) : Antitone (laplaceTransformENN μ) := by
   intro t u htu
   simp only [laplaceTransformENN_apply]
-  exact lintegral_mono fun p => ENNReal.ofReal_le_ofReal (antitone_exp_neg_mul p htu)
+  exact lintegral_mono fun p => ENNReal.ofReal_le_ofReal (p.exp_neg_mul_antitone (mod_cast htu))
 
-/-- The extended-real Laplace transform is bounded by the total mass. -/
+/-- The extended-nonnegative-valued Laplace transform is bounded by the total mass. -/
 theorem laplaceTransformENN_le_apply_univ (μ : Measure ℝ≥0) (t : ℝ≥0) :
     laplaceTransformENN μ t ≤ μ Set.univ :=
   (laplaceTransformENN_antitone μ (zero_le : (0 : ℝ≥0) ≤ t)).trans_eq
     (laplaceTransformENN_zero μ)
 
-/-- The extended-real Laplace transform of a finite measure is finite. -/
+/-- The extended-nonnegative-valued Laplace transform of a finite measure is finite. -/
 @[simp]
 theorem laplaceTransformENN_ne_top (μ : Measure ℝ≥0) [IsFiniteMeasure μ] (t : ℝ≥0) :
     laplaceTransformENN μ t ≠ ⊤ :=
@@ -139,6 +160,7 @@ theorem laplaceTransform_apply (κ : Kernel V ℝ≥0) (t : ℝ≥0) (q : V) :
     laplaceTransform κ t q = TauCeti.laplaceTransformENN (κ q) t :=
   (rfl)
 
+/-- The fibrewise Laplace transform of a kernel is measurable in the base point. -/
 @[fun_prop]
 theorem measurable_laplaceTransform (κ : Kernel V ℝ≥0) (t : ℝ≥0) :
     Measurable (laplaceTransform κ t) := by
@@ -162,6 +184,6 @@ theorem laplaceTransform_zero_of_isMarkovKernel (κ : Kernel V ℝ≥0)
     [IsMarkovKernel κ] :
     laplaceTransform κ 0 = 1 := by
   funext q
-  rw [laplaceTransform_zero, measure_univ, Pi.one_apply]
+  simp
 
 end ProbabilityTheory.Kernel

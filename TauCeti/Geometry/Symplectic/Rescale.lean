@@ -31,8 +31,8 @@ they do preserve invariance because invariance is linear in the form.
   reflects compatibility after replacing `J` by `-J`.
 * `TauCeti.SymplecticForm.orthogonal_rescale`: nonzero rescaling leaves symplectic complements
   unchanged.
-* `TauCeti.SymplecticForm.isLagrangian_rescale_iff`: nonzero rescaling preserves and reflects
-  Lagrangian subspaces.
+* `TauCeti.SymplecticForm.isLagrangian_rescale_iff` and `isSymplectic_rescale_iff`: nonzero
+  rescaling preserves and reflects Lagrangian and symplectic subspaces.
 
 The convention is the standard one from symplectic geometry: changing the overall positive scale
 of `ω` changes the metric scale but not the compatible almost complex structure.
@@ -157,6 +157,17 @@ lemma isLagrangian_rescale_iff (c : ℝ) (hc : c ≠ 0) :
 lemma IsLagrangian.rescale (h : ω.IsLagrangian L) (c : ℝ) (hc : c ≠ 0) :
     (ω.rescale c hc).IsLagrangian L :=
   (isLagrangian_rescale_iff c hc).mpr h
+
+/-- Nonzero rescaling preserves and reflects symplectic subspaces. -/
+@[simp]
+lemma isSymplectic_rescale_iff (c : ℝ) (hc : c ≠ 0) :
+    (ω.rescale c hc).IsSymplectic L ↔ ω.IsSymplectic L := by
+  rw [isSymplectic_iff_disjoint, isSymplectic_iff_disjoint, orthogonal_rescale c hc]
+
+/-- Symplectic subspaces are preserved by nonzero rescaling of the symplectic form. -/
+lemma IsSymplectic.rescale (h : ω.IsSymplectic L) (c : ℝ) (hc : c ≠ 0) :
+    (ω.rescale c hc).IsSymplectic L :=
+  (isSymplectic_rescale_iff c hc).mpr h
 
 /-- The associated bilinear form of a rescaled symplectic form is rescaled by the same factor. -/
 @[simp]

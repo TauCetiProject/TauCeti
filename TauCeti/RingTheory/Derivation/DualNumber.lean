@@ -5,110 +5,196 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DualNumber
-public import Mathlib.RingTheory.Derivation.Basic
+public import TauCeti.RingTheory.Derivation.TrivSqZeroExt
+public import TauCeti.Algebra.DualNumber.Basic
+public import TauCeti.Algebra.DualNumber.Map
 
 /-!
-# Dual-number points and derivations
+# Infinitesimal automorphisms and derivations
 
-An `R`-algebra homomorphism `A →ₐ[R] B[ε]` into the dual numbers lifting a fixed point
-`A →ₐ[R] B` is the same data as an `R`-derivation of `A` valued in `B`. This is the
-infinitesimal-lifting dictionary specialised to the square-zero extension `B[ε] → B`,
-and it is the engine identifying the tangent space of a functor of points with a module
-of derivations (reductive-groups roadmap, Layer 2): tangent vectors at a point are
-exactly the dual-number points lying over it.
+An automorphism of `A[ε]` over `R` that fixes `ε` and reduces to the identity modulo `ε`
+is uniquely of the form `a + b ε ↦ a + (b + d a) ε`, for an `R`-derivation `d` of `A`.
+Composition corresponds to addition of derivations. Fixing `ε` is essential: reduction to
+identity alone would also allow changes of the infinitesimal parameter.
 
-The fixed point is carried by the algebra-tower hypotheses `[Algebra A B]`
-`[IsScalarTower R A B]`, as in `Mathlib.RingTheory.Derivation.ToSquareZero`. For an
-arbitrary point `φ : A →ₐ[R] B`, instantiate the tower locally with
-`letI := φ.toRingHom.toAlgebra` and `IsScalarTower.of_algHom φ` — in a fresh scope
-only: installing the instance where an `SMul A B` already exists creates a diamond,
-and derivations elaborated before it refer to the old point.
+These are the affine infinitesimal automorphisms of the trivial first-order deformation.
+The conditions for such automorphisms to commute with a morphism are the corresponding
+compatibility conditions on derivations; in particular, fixing a target map or a marking
+amounts to a vanishing condition on the derivation.
 
-The construction is direct (send `d` to `a ↦ inl (algebraMap A B a) + inr (d a)`),
-which keeps `B` an arbitrary semiring — the image of `A` is central by
-`Algebra.commutes` — where the ideal-general route through
-`Mathlib.RingTheory.Derivation.ToSquareZero` would force a `CommRing`.
+The construction uses `TauCeti.derivationToTrivSqZeroExtEquivLift` for the correspondence
+between derivations and lifts, and `DualNumber.lift` to extend a lift to the dual numbers.
 
-## Main declarations
+## References
 
-* `derivationToDualNumberEquivLift`: `R`-derivations `A → B` are equivalent to lifts
-  `A →ₐ[R] B[ε]` of the structure point along `TrivSqZeroExt.fstHom`.
+* R. Hartshorne, *Deformation Theory*, Chapter 1, for infinitesimal automorphisms
+  as derivations.
 -/
 
 public section
 
+open TrivSqZeroExt DualNumber
+
+namespace Derivation
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+private def dualNumberEnd (d : Derivation R A A) : A[ε] →ₐ[R] A[ε] :=
+  DualNumber.lift ⟨((TauCeti.derivationToTrivSqZeroExtEquivLift R A A d).1, ε),
+    eps_mul_eps, fun _ ↦ Commute.all _ _⟩
+
+private theorem dualNumberEnd_fst (d : Derivation R A A) (z : A[ε]) :
+    (dualNumberEnd d z).fst = z.fst := by
+  simp [dualNumberEnd, DualNumber.lift_apply_apply]
+
+private theorem dualNumberEnd_snd (d : Derivation R A A) (z : A[ε]) :
+    (dualNumberEnd d z).snd = z.snd + d z.fst := by
+  simp [dualNumberEnd, DualNumber.lift_apply_apply, add_comm]
+
+/-- The infinitesimal automorphism `a + b ε ↦ a + (b + d a) ε` attached to a derivation.
+Its inverse is the automorphism attached to `-d`. -/
+def toDualNumberAut (d : Derivation R A A) : A[ε] ≃ₐ[R] A[ε] :=
+  AlgEquiv.ofAlgHom (dualNumberEnd d) (dualNumberEnd (-d))
+    (by ext z <;> simp [dualNumberEnd_fst, dualNumberEnd_snd])
+    (by ext z <;> simp [dualNumberEnd_fst, dualNumberEnd_snd])
+
+/-- An infinitesimal automorphism leaves the scalar part unchanged. -/
+@[simp]
+theorem toDualNumberAut_fst (d : Derivation R A A) (z : A[ε]) :
+    (d.toDualNumberAut z).fst = z.fst :=
+  dualNumberEnd_fst d z
+
+/-- The infinitesimal part changes by the derivation of the scalar part. -/
+@[simp]
+theorem toDualNumberAut_snd (d : Derivation R A A) (z : A[ε]) :
+    (d.toDualNumberAut z).snd = z.snd + d z.fst :=
+  dualNumberEnd_snd d z
+
+@[simp]
+theorem toDualNumberAut_eps (d : Derivation R A A) : d.toDualNumberAut ε = ε := by
+  ext <;> simp
+
+@[simp]
+theorem toDualNumberAut_zero : (0 : Derivation R A A).toDualNumberAut = 1 := by
+  ext z <;> simp
+
+/-- Addition of derivations corresponds to composition of infinitesimal automorphisms. -/
+@[simp]
+theorem toDualNumberAut_add (d e : Derivation R A A) :
+    (d + e).toDualNumberAut = d.toDualNumberAut * e.toDualNumberAut := by
+  ext z <;> simp [add_left_comm, add_comm]
+
+@[simp]
+theorem toDualNumberAut_neg (d : Derivation R A A) :
+    (-d).toDualNumberAut = d.toDualNumberAut⁻¹ := by
+  ext z <;> simp [toDualNumberAut, dualNumberEnd_fst, dualNumberEnd_snd]
+
+/-- Infinitesimal automorphisms commute with the coefficient map of `f` exactly when
+their derivations are compatible with `f`. This is the affine compatibility criterion
+for automorphisms of a morphism and for restriction to open charts. -/
+theorem toDualNumberAut_comp_iff {B : Type*} [CommRing B] [Algebra R B]
+    (d : Derivation R A A) (e : Derivation R B B) (f : A →ₐ[R] B) :
+    f.dualNumberMap.comp d.toDualNumberAut.toAlgHom =
+      e.toDualNumberAut.toAlgHom.comp f.dualNumberMap ↔
+        ∀ a, f (d a) = e (f a) := by
+  constructor
+  · intro h a
+    have h' := congrArg (fun g : A[ε] →ₐ[R] B[ε] ↦ (g (inl a)).snd) h
+    simpa using h'
+  · intro h
+    ext z <;> simp [h]
+
+/-- The infinitesimal automorphism fixes a map from an undeformed target precisely when
+the derivation vanishes on its image. -/
+theorem toDualNumberAut_comp_dualNumberMap_eq_iff {B : Type*} [CommRing B] [Algebra R B]
+    (d : Derivation R A A) (f : B →ₐ[R] A) :
+    d.toDualNumberAut.toAlgHom.comp f.dualNumberMap = f.dualNumberMap ↔
+      ∀ b, d (f b) = 0 := by
+  simpa [AlgEquiv.aut_one, eq_comm] using
+    (toDualNumberAut_comp_iff (0 : Derivation R B B) d f)
+
+/-- The infinitesimal automorphism preserves a marking precisely when the derivation
+vanishes after evaluation at the marking. -/
+theorem dualNumberMap_comp_toDualNumberAut_eq_iff {B : Type*} [CommRing B] [Algebra R B]
+    (d : Derivation R A A) (f : A →ₐ[R] B) :
+    f.dualNumberMap.comp d.toDualNumberAut.toAlgHom = f.dualNumberMap ↔
+      ∀ a, f (d a) = 0 := by
+  simpa [AlgEquiv.aut_one] using
+    (toDualNumberAut_comp_iff d (0 : Derivation R B B) f)
+
+end Derivation
+
 namespace TauCeti
 
-open TrivSqZeroExt
+variable (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A]
 
-variable (R A B : Type*) [CommSemiring R] [CommSemiring A] [Semiring B]
-  [Algebra R A] [Algebra R B] [Algebra A B] [IsScalarTower R A B]
+/-- Automorphisms of `A[ε]` that fix the infinitesimal parameter and induce the identity
+on `A` modulo `ε`. Equivalently these are automorphisms of the trivial first-order
+deformation over the dual-number base, reducing to the identity. -/
+def infinitesimalDualNumberAut : Subgroup (A[ε] ≃ₐ[R] A[ε]) where
+  carrier := {e | (∀ z, (e z).fst = z.fst) ∧ e ε = ε}
+  one_mem' := ⟨fun _ ↦ rfl, rfl⟩
+  mul_mem' {e f} he hf := ⟨fun z ↦ (he.1 (f z)).trans (hf.1 z), by
+    simpa only [AlgEquiv.mul_apply, hf.2] using he.2⟩
+  inv_mem' := by
+    intro e he
+    constructor
+    · intro z
+      simpa using (he.1 (e.symm z)).symm
+    · exact e.injective (by simpa using he.2.symm)
 
-variable {A B} in
-/-- A derivation extends the structure point of the tower to a dual-number point: the
-value at `a` has classical component `algebraMap A B a` and infinitesimal component
-`d a`. -/
-private def liftOfDerivation (d : Derivation R A B) : A →ₐ[R] DualNumber B where
-  toFun a := inl (algebraMap A B a) + inr (d a)
-  map_one' := by rw [map_one, d.map_one_eq_zero, inr_zero, add_zero, inl_one]
-  map_mul' a b := by
-    ext
-    · simp [fst_mul]
-    · simp only [snd_mul, fst_add, fst_inl, fst_inr, snd_add, snd_inl, snd_inr, add_zero,
-        zero_add, smul_eq_mul, MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op,
-        d.leibniz, Algebra.smul_def]
-      rw [Algebra.commutes, Algebra.commutes]
-  map_zero' := by rw [map_zero, map_zero, inr_zero, add_zero, inl_zero]
-  map_add' a b := by rw [map_add, map_add, inl_add, inr_add]; abel
-  commutes' r := by
-    rw [Derivation.map_algebraMap, inr_zero, add_zero, ← IsScalarTower.algebraMap_apply,
-      algebraMap_eq_inl']
+variable {R A}
 
-/-- Lifting the structure point of an algebra to the dual numbers is the same as giving
-a derivation: the equivalence between `R`-derivations `A → B` and dual-number points
-`A →ₐ[R] B[ε]` lying over the point `A →ₐ[R] B` of the tower. -/
-noncomputable def derivationToDualNumberEquivLift :
-    Derivation R A B ≃
-      {ψ : A →ₐ[R] DualNumber B // (fstHom R B B).comp ψ = IsScalarTower.toAlgHom R A B} where
-  toFun d := ⟨liftOfDerivation R d, by ext a; simp [liftOfDerivation]⟩
-  invFun ψ :=
-    { toLinearMap := (sndHom B B).restrictScalars R ∘ₗ ψ.1.toLinearMap
-      map_one_eq_zero' := by simp [snd_one]
-      leibniz' := fun a b => by
-        have ha : fst (ψ.1 a) = algebraMap A B a := congrArg (fun f => f a) <|
-          congrArg DFunLike.coe ψ.2
-        have hb : fst (ψ.1 b) = algebraMap A B b := congrArg (fun f => f b) <|
-          congrArg DFunLike.coe ψ.2
-        simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, Function.comp_apply,
-          AlgHom.toLinearMap_apply, map_mul, snd_mul, sndHom_apply, ha, hb, smul_eq_mul,
-          MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op, Algebra.smul_def]
-        rw [Algebra.commutes, Algebra.commutes] }
-  left_inv d := by ext a; simp [liftOfDerivation]
-  right_inv ψ := by
+/-- Membership in the infinitesimal automorphism subgroup is reduction to the identity
+and preservation of `ε`. -/
+@[simp]
+theorem mem_infinitesimalDualNumberAut (e : A[ε] ≃ₐ[R] A[ε]) :
+    e ∈ infinitesimalDualNumberAut R A ↔ (∀ z, (e z).fst = z.fst) ∧ e ε = ε :=
+  Iff.rfl
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- Derivations, with addition written multiplicatively, are the infinitesimal
+automorphisms of the dual numbers. The inverse reads off the coefficient of `ε`
+in the image of a constant. -/
+def derivationEquivInfinitesimalDualNumberAut :
+    Multiplicative (Derivation R A A) ≃* infinitesimalDualNumberAut R A where
+  toFun d := ⟨d.toAdd.toDualNumberAut, by simp⟩
+  invFun e := Multiplicative.ofAdd <|
+    (derivationToTrivSqZeroExtEquivLift R A A).symm
+      ⟨e.val.toAlgHom.comp (inlAlgHom R A A), AlgHom.ext fun a ↦ e.prop.1 (inl a)⟩
+  left_inv d := by
+    apply Multiplicative.toAdd.injective
     ext a
-    · have ha : fst (ψ.1 a) = algebraMap A B a := congrArg (fun f => f a) <|
-        congrArg DFunLike.coe ψ.2
-      simpa [liftOfDerivation] using ha.symm
-    · simp [liftOfDerivation]
+    simp
+  right_inv e := by
+    apply Subtype.ext
+    ext z
+    · simpa only [Derivation.toDualNumberAut_fst] using (e.prop.1 z).symm
+    · simp only [Derivation.toDualNumberAut_snd]
+      have h : e.val z = e.val (inl z.fst) + e.val (inl z.snd) * e.val ε :=
+        AlgHom.apply_dualNumber e.val.toAlgHom z
+      rw [e.prop.2] at h
+      rw [h]
+      simp [e.prop.1, add_comm]
+  map_mul' d e := by
+    apply Subtype.ext
+    exact Derivation.toDualNumberAut_add d.toAdd e.toAdd
 
-variable {R A B}
-
+/-- The automorphism corresponding to a derivation is `Derivation.toDualNumberAut`. -/
 @[simp]
-lemma derivationToDualNumberEquivLift_apply_fst (d : Derivation R A B) (a : A) :
-    fst ((derivationToDualNumberEquivLift R A B d : A →ₐ[R] DualNumber B) a) =
-      algebraMap A B a := by
-  simp [derivationToDualNumberEquivLift, liftOfDerivation]
+theorem derivationEquivInfinitesimalDualNumberAut_apply_coe
+    (d : Multiplicative (Derivation R A A)) :
+    (derivationEquivInfinitesimalDualNumberAut d : A[ε] ≃ₐ[R] A[ε]) =
+      d.toAdd.toDualNumberAut :=
+  (rfl)
 
+/-- Recover a derivation by taking the infinitesimal part of the image of each constant. -/
 @[simp]
-lemma derivationToDualNumberEquivLift_apply_snd (d : Derivation R A B) (a : A) :
-    snd ((derivationToDualNumberEquivLift R A B d : A →ₐ[R] DualNumber B) a) = d a := by
-  simp [derivationToDualNumberEquivLift, liftOfDerivation]
-
-@[simp]
-lemma derivationToDualNumberEquivLift_symm_apply (ψ : {ψ : A →ₐ[R] DualNumber B //
-      (fstHom R B B).comp ψ = IsScalarTower.toAlgHom R A B}) (a : A) :
-    (derivationToDualNumberEquivLift R A B).symm ψ a = snd (ψ.1 a) := by
-  simp [derivationToDualNumberEquivLift]
+theorem derivationEquivInfinitesimalDualNumberAut_symm_apply
+    (e : infinitesimalDualNumberAut R A) (a : A) :
+    ((derivationEquivInfinitesimalDualNumberAut (R := R) (A := A)).symm e).toAdd a =
+      (e.val (inl a)).snd :=
+  derivationToTrivSqZeroExtEquivLift_symm_apply _ _
 
 end TauCeti

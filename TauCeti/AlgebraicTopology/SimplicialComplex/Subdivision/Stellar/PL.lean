@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Geometry
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Homeomorph
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.PL
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.PL
 public import TauCeti.Topology.PL.FiniteInf
 public import TauCeti.Topology.PL.Inverse
 import Mathlib.Analysis.Normed.Module.FiniteDimension
@@ -14,7 +16,7 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 /-!
 # Piecewise-linear transport across a stellar subdivision
 
-The barycentric identification of a finite stellar subdivision is a piecewise-linear map on the
+The barycentric identification of a stellar subdivision is a piecewise-linear map on the
 coordinate polyhedra. Its inverse is piecewise affine on the subdivided simplices, using the
 finite-simplex inverse criterion. These are the local transition maps needed to transport PL
 charts across stellar equivalences.
@@ -22,7 +24,11 @@ charts across stellar equivalences.
 The inverse also has an explicit extension to arbitrary coordinate spaces: it removes the least
 coordinate on the starred face from each of its vertices and transfers the total removed mass
 to the new vertex. This extension is piecewise affine on minimum-coordinate cells and agrees
-with the inverse of the stellar homeomorphism of finite weak polyhedra.
+with the inverse of the stellar homeomorphism of weak polyhedra. The resulting maps are
+packaged by the realization-level `PLHomeomorphic` relation, which is closed under symmetry and
+composition; this file derives such a package for every stellar equivalence, with no finiteness
+hypothesis on the complexes, and descends it through injective vertex relabelings for intrinsic
+stellar equivalence.
 
 Reference: Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2.
 -/
@@ -223,35 +229,17 @@ private theorem stellarSubdivision_face_relabel
         face' τ ∈ Kκ.stellarSubdivision σ' v' ∧
           (face' τ).image e = τ.1 ∧
             ((face' τ).erase v').image e = τ.1.erase v := by
-  have hσimage : σ'.image e = σ := by
-    apply Finset.ext
-    intro i
-    constructor
-    · intro hi
-      rw [Finset.mem_image] at hi
-      obtain ⟨j, hj, rfl⟩ := hi
-      exact (hσ_spec j).mp hj
-    · intro hi
-      obtain ⟨j, hj⟩ := hσ_range i hi
-      have hjσ : e j ∈ σ := by simpa [hj] using hi
-      exact Finset.mem_image.mpr ⟨j, (hσ_spec j).mpr hjσ, hj⟩
+  have hσimage : σ'.image e = σ := Finset.coe_injective <| by
+    rw [Finset.coe_image, show (σ' : Set κ) = e ⁻¹' σ from Set.ext hσ_spec]
+    exact Set.image_preimage_eq_of_subset fun i hi => hσ_range i hi
   have hvimage : ({v'} : Finset κ).image e = {v} := by
     ext i
     simp [hev]
   refine ⟨hσimage, hvimage, ?_⟩
   intro τ
-  have hτVimage : (face' τ).image e = τ.1 := by
-    apply Finset.ext
-    intro i
-    constructor
-    · intro hi
-      rw [Finset.mem_image] at hi
-      obtain ⟨j, hj, rfl⟩ := hi
-      exact (hface_spec τ j).mp hj
-    · intro hi
-      obtain ⟨j, hj⟩ := hface_range τ i hi
-      have hjτ : e j ∈ τ.1 := by simpa [hj] using hi
-      exact Finset.mem_image.mpr ⟨j, (hface_spec τ j).mpr hjτ, hj⟩
+  have hτVimage : (face' τ).image e = τ.1 := Finset.coe_injective <| by
+    rw [Finset.coe_image, show (face' τ : Set κ) = e ⁻¹' (τ.1 : Set ι) from Set.ext (hface_spec τ)]
+    exact Set.image_preimage_eq_of_subset fun i hi => hface_range τ i hi
   have herase : ((face' τ).erase v').image e = τ.1.erase v := by
     rw [Finset.image_erase e.injective, hτVimage]
     simp [hev]
@@ -283,6 +271,69 @@ private theorem stellarSubdivision_face_relabel
     · apply (hKκ _).2
       rw [Finset.image_union, herase, hσimage]
       exact hτK
+
+/-- The stellar coordinate map is injective on any union of the geometric simplices spanned by
+faces of the stellar subdivision. -/
+private theorem injOn_stellarSubdivisionCoordinateMap [Finite ι] {T : Type*}
+    (f : T → Finset ι) (hf : ∀ t, f t ∈ (K.stellarSubdivision σ v).faces) :
+    InjOn (stellarSubdivisionCoordinateMap σ v)
+      (⋃ t, convexHull ℝ ((Pi.single · (1 : ℝ)) '' (f t : Set ι))) := by
+  intro x hx y hy hxy
+  obtain ⟨t, hxt⟩ := mem_iUnion.mp hx
+  obtain ⟨r, hyr⟩ := mem_iUnion.mp hy
+  have hxf := coord_mem_source (K := K) (σ := σ) (v := v) (τ := ⟨f t, hf t⟩) hxt
+  have hyf := coord_mem_source (K := K) (σ := σ) (v := v) (τ := ⟨f r, hf r⟩) hyr
+  have key (z : ι → ℝ) : stellarSubdivisionLinearMap σ v (Finsupp.equivFunOnFinite.symm z) =
+      Finsupp.equivFunOnFinite.symm (stellarSubdivisionCoordinateMap σ v z) := by
+    rw [← Finsupp.equivFunOnFinite.apply_symm_apply z,
+      Finset.stellarSubdivisionCoordinateMap_on_equiv]
+    simp
+  have hxy_map : stellarSubdivisionLinearMap σ v (Finsupp.equivFunOnFinite.symm x) =
+      stellarSubdivisionLinearMap σ v (Finsupp.equivFunOnFinite.symm y) := by
+    rw [key, key, hxy]
+  exact congrArg Finsupp.equivFunOnFinite
+    (injOn_stellarSubdivisionLinearMap (K := K) (σ := σ) (v := v) hxf hyf hxy_map)
+
+/-- The images of the vertices of a face of the stellar subdivision under the stellar coordinate
+map are affinely independent. -/
+private theorem affineIndependent_image_stellarSubdivisionCoordinateMap [Finite ι]
+    (hvσ : v ∉ σ) {τ : Finset ι} (hτ : τ ∈ (K.stellarSubdivision σ v).faces) :
+    AffineIndependent ℝ ((↑) : (stellarSubdivisionCoordinateMap σ v ''
+      ((Pi.single · (1 : ℝ)) '' (τ : Set ι))) → (ι → ℝ)) := by
+  let eF : (ι →₀ ℝ) ≃ₗ[ℝ] (ι → ℝ) := Finsupp.linearEquivFunOnFinite ℝ ℝ ι
+  have hm : AffineIndependent ℝ (fun i : τ => stellarSubdivisionCoordinateMap σ v
+      (Pi.single (i : ι) 1)) := by
+    have heqfun : (fun i : τ => stellarSubdivisionCoordinateMap σ v (Pi.single (i : ι) 1)) =
+        (fun i : τ => eF (Finset.stellarSubdivisionLinearMap σ v (Finsupp.single (i : ι) 1))) := by
+      funext i
+      rw [← Finsupp.equivFunOnFinite_single, stellarSubdivisionCoordinateMap_on_equiv]
+      rfl
+    rw [heqfun]
+    exact (affineIndependent_stellarSubdivision (K := K) hvσ hτ).map' eF.toAffineMap eF.injective
+  rw [Set.image_image, Set.image_eq_range]
+  exact hm.range
+
+/-- The inverse of the stellar coordinate map is piecewise linear on the image of any finite
+union of the geometric simplices spanned by faces of the stellar subdivision. -/
+private theorem exists_isPLOn_leftInverse_stellarSubdivisionCoordinateMap [Finite ι] {T : Type*}
+    [Finite T] (hvσ : v ∉ σ) (f : T → Finset ι) (hf : ∀ t, f t ∈ (K.stellarSubdivision σ v).faces) :
+    ∃ g : (ι → ℝ) → (ι → ℝ),
+      TauCeti.IsPLOn g (stellarSubdivisionCoordinateMap σ v ''
+        (⋃ t, convexHull ℝ ((Pi.single · (1 : ℝ)) '' (f t : Set ι)))) ∧
+        ∀ x ∈ (⋃ t, convexHull ℝ ((Pi.single · (1 : ℝ)) '' (f t : Set ι))),
+          g (stellarSubdivisionCoordinateMap σ v x) = x := by
+  classical
+  have := Fintype.ofFinite ι
+  let S := stellarSubdivisionCoordinateMap σ v
+  let U : Set (ι → ℝ) := ⋃ t, convexHull ℝ ((Pi.single · (1 : ℝ)) '' (f t : Set ι))
+  have hSinj : InjOn S U := injOn_stellarSubdivisionCoordinateMap f hf
+  let g := Function.invFunOn S U
+  have hgf : ∀ x ∈ U, g (S x) = x := hSinj.leftInvOn_invFunOn
+  exact ⟨g, (TauCeti.isPiecewiseAffineOn_inverse_of_finite_simplex_cover (f := S) (g := g)
+    (fun t => (Pi.single · (1 : ℝ)) '' (f t : Set ι)) (A := fun _ => S.toContinuousAffineMap)
+    (fun _ _ _ => rfl)
+    (fun t => affineIndependent_image_stellarSubdivisionCoordinateMap hvσ (hf t)) hgf).isPLOn,
+    hgf⟩
 
 /-- The inverse barycentric map is piecewise linear on finite active coordinates.
 
@@ -329,19 +380,9 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
         apply (K.isRelLowerSet_faces hq).2
         · exact Finset.image_subset_image hr
         · exact Finset.image_nonempty.mpr hrne }
-  let s (τ : L.faces) : Set (κ → ℝ) :=
-    (Pi.single · (1 : ℝ)) '' (face' τ : Set κ)
-  let U : Set (κ → ℝ) := ⋃ τ : L.faces, convexHull ℝ (s τ)
-  let S := stellarSubdivisionCoordinateMap σ' v'
-  have hfinL : L.faces.Finite := by
-    apply Set.Finite.subset V.powerset.finite_toSet
-    intro τ hτ
-    exact Finset.mem_powerset.mpr (hV τ hτ)
-  let _ := hfinL.fintype
-  have hv'σ' : v' ∉ σ' := by
-    intro h
-    have : v ∈ σ := Finset.mem_preimage.mp h
-    exact hvσ this
+  have hL : Finite L.faces := (V.powerset.finite_toSet.subset fun τ hτ =>
+    Finset.mem_powerset.mpr (hV τ hτ)).to_subtype
+  have hv'σ' : v' ∉ σ' := fun h => hvσ (Finset.mem_preimage.mp h)
   -- Relabel finite-coordinate faces, then use injectivity and the finite-simplex criterion.
   have hfaceκ_data : σ'.image e = σ ∧ ({v'} : Finset κ).image e = {v} ∧
       ∀ τ : L.faces, face' τ ∈ Kκ.stellarSubdivision σ' v' ∧
@@ -356,120 +397,17 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
     · intro τ i hi
       exact ⟨⟨i, hV τ.1 τ.2 hi⟩, rfl⟩
     · rfl
-  have hfaceκ (τ : L.faces) : face' τ ∈ Kκ.stellarSubdivision σ' v' :=
+  have hfaceκ (τ : L.faces) : face' τ ∈ (Kκ.stellarSubdivision σ' v').faces :=
     (hfaceκ_data.2.2 τ).1
-  have hSinj : Set.InjOn S U := by
-    intro x hx y hy hxy
-    obtain ⟨τ, hxτ⟩ := mem_iUnion.mp hx
-    obtain ⟨ρ, hyρ⟩ := mem_iUnion.mp hy
-    have hfaceκ_mem (τ : L.faces) : face' τ ∈ (Kκ.stellarSubdivision σ' v').faces := by
-      exact hfaceκ τ
-    have hxf := coord_mem_source (K := Kκ) (σ := σ') (v := v')
-      (τ := ⟨face' τ, hfaceκ_mem τ⟩) hxτ
-    have hyf := coord_mem_source (K := Kκ) (σ := σ') (v := v')
-      (τ := ⟨face' ρ, hfaceκ_mem ρ⟩) hyρ
-    have hxy_map : Finset.stellarSubdivisionLinearMap σ' v'
-          (Finsupp.equivFunOnFinite.symm x) =
-        Finset.stellarSubdivisionLinearMap σ' v'
-          (Finsupp.equivFunOnFinite.symm y) := by
-      calc
-        Finset.stellarSubdivisionLinearMap σ' v'
-            (Finsupp.equivFunOnFinite.symm x) =
-            Finsupp.equivFunOnFinite.symm
-              (S (Finsupp.equivFunOnFinite (Finsupp.equivFunOnFinite.symm x))) := by
-          rw [Finset.stellarSubdivisionCoordinateMap_on_equiv]
-          simp
-        _ = Finsupp.equivFunOnFinite.symm
-              (S (Finsupp.equivFunOnFinite (Finsupp.equivFunOnFinite.symm y))) := by
-          simpa only [Equiv.apply_symm_apply] using
-            congrArg Finsupp.equivFunOnFinite.symm hxy
-        _ = Finset.stellarSubdivisionLinearMap σ' v'
-            (Finsupp.equivFunOnFinite.symm y) := by
-          rw [Finset.stellarSubdivisionCoordinateMap_on_equiv]
-          simp
-    have hxy_f := (injOn_stellarSubdivisionLinearMap (K := Kκ) (σ := σ') (v := v')
-      hv'σ') hxf hyf hxy_map
-    exact congrArg Finsupp.equivFunOnFinite hxy_f
-  let g : (κ → ℝ) → (κ → ℝ) := fun y =>
-    if hy : y ∈ S '' U then Classical.choose ((Set.mem_image S U _).mp hy) else 0
-  have hgf : ∀ x ∈ U, g (S x) = x := by
-    intro x hx
-    have hy : S x ∈ S '' U := ⟨x, hx, rfl⟩
-    dsimp [g]
-    rw [dite_eq_left hy]
-    apply hSinj (Classical.choose_spec ((Set.mem_image S U _).mp hy)).1 hx
-    exact (Classical.choose_spec ((Set.mem_image S U _).mp hy)).2
-  let F : L.faces → ((κ → ℝ) →ᴬ[ℝ] (κ → ℝ)) := fun _ => S.toContinuousAffineMap
-  have hind (τ : L.faces) :
-      AffineIndependent ℝ ((↑) : ((F τ) '' s τ) → (κ → ℝ)) := by
-    let eF : (κ →₀ ℝ) ≃ₗ[ℝ] (κ → ℝ) := Finsupp.linearEquivFunOnFinite ℝ ℝ κ
-    have h := affineIndependent_stellarSubdivision (K := Kκ) (σ := σ') (v := v')
-      hv'σ' (hfaceκ τ)
-    have hm : AffineIndependent ℝ (fun i : face' τ => F τ (Pi.single (i : κ) 1)) := by
-      have hm' := h.map' eF.toAffineMap eF.injective
-      have heqfun : (fun i : face' τ => F τ (Pi.single (i : κ) 1)) =
-          (fun i : face' τ => eF (Finset.stellarSubdivisionLinearMap σ' v'
-            (Finsupp.single (i : κ) 1))) := by
-        funext i
-        dsimp [F, S]
-        rw [← Finsupp.equivFunOnFinite_single, stellarSubdivisionCoordinateMap_on_equiv]
-        rfl
-      rw [heqfun]
-      exact hm'
-    have hset : (F τ) '' s τ =
-        Set.range (fun i : face' τ => F τ (Pi.single (i : κ) 1)) := by
-      ext y
-      constructor
-      · rintro ⟨z, ⟨i, hi, rfl⟩, rfl⟩
-        exact ⟨⟨i, hi⟩, rfl⟩
-      · rintro ⟨i, rfl⟩
-        exact ⟨Pi.single (i : κ) 1, ⟨i, i.2, rfl⟩, rfl⟩
-    rw [hset]
-    exact hm.range
-  have hPA : TauCeti.IsPiecewiseAffineOn g (S '' U) := by
-    simpa only [U] using
-      (TauCeti.isPiecewiseAffineOn_inverse_of_finite_simplex_cover
-        (f := S) (g := g) s F (fun _ _ _ => rfl) hind hgf)
-  have hσ'eq : σ.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn = σ' := by
-    ext i
-    simp [σ', e]
-  have hface'eq (τ : L.faces) :
-      τ.1.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn = face' τ := by
-    ext i
-    simp [face', e]
-  let decEqκCanonical : DecidableEq κ :=
-    @Subtype.instDecidableEq ι (fun i : ι => i ∈ V) (stellarSubdivisionDecidableEq ι)
-  have hsingle (x : κ) :
-      @Pi.single κ (fun _ : κ => ℝ) (fun _ => Real.instZero) decEqκCanonical x 1 =
-        @Pi.single κ (fun _ : κ => ℝ) (fun _ => Real.instZero)
-          (stellarSubdivisionDecidableEq κ) x 1 := by
-    ext j
-    by_cases h : x = j <;> simp [h]
-  have hUCanonical :
-      (⋃ τ : L.faces, convexHull ℝ
-        ((@Pi.single κ (fun _ : κ => ℝ) (fun _ => Real.instZero) decEqκCanonical · 1) ''
-          (τ.1.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn : Set κ))) = U := by
-    apply iUnion_congr
-    intro τ
-    rw [hface'eq τ]
-    congr 1
-    ext z
-    constructor
-    · rintro ⟨x, hx, rfl⟩
-      exact ⟨x, hx, (hsingle x).symm⟩
-    · rintro ⟨x, hx, rfl⟩
-      exact ⟨x, hx, hsingle x⟩
-  have hSeq :
-      stellarSubdivisionCoordinateMap
-          (σ.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn)
-          ⟨v, hVv⟩ = S := by
-    rw [hσ'eq]
+  obtain ⟨g, hg, hgf⟩ := exists_isPLOn_leftInverse_stellarSubdivisionCoordinateMap
+    (K := Kκ) (σ := σ') (v := v') hv'σ' (fun τ : L.faces => face' τ) hfaceκ
+  -- The `convert`s below close two gaps: (1) the preimage-along-`Subtype.val` faces in the goal
+  -- are definitionally the `σ'`/`face' τ` of `hg`/`hgf`; (2) the `Pi.single` `DecidableEq`
+  -- instance (`Subtype.instDecidableEq` vs `stellarSubdivisionDecidableEq κ`) is a subsingleton.
   refine ⟨g, ?_, ?_⟩
-  · convert hPA.isPLOn using 1
-    rw [hSeq]
-    exact congrArg (fun t : Set (κ → ℝ) => S '' t) hUCanonical
-  · convert hgf using 1
-    rw [hSeq, hUCanonical]
+  · convert hg using 8
+  · intro x hx
+    convert hgf x (by convert hx using 8) using 3
 
 section
 
@@ -477,11 +415,11 @@ open AbstractSimplicialComplex
 
 variable [DecidableEq ι] {A : AbstractSimplicialComplex ι}
 
-/-- The finite stellar homeomorphism has the barycentric continuous linear coordinate map
-as its forward extension and the piecewise-affine minimum-transfer map as its inverse extension.
-Thus stellar moves identify finite weak polyhedra by PL maps in both directions. -/
+/-- The stellar homeomorphism has the barycentric continuous linear coordinate map as its
+forward extension and the piecewise-affine minimum-transfer map as its inverse extension.
+Thus stellar moves identify weak polyhedra by PL maps in both directions. -/
 theorem exists_homeomorph_stellarSubdivision_with_inverse
-    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) (hfin : K.faces.Finite)
+    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)
     (hK : K ≤ A.toPreAbstractSimplicialComplex)
     (hS : stellarSubdivision K σ v ≤ A.toPreAbstractSimplicialComplex) :
     ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v} ≃ₜ
@@ -489,7 +427,7 @@ theorem exists_homeomorph_stellarSubdivision_with_inverse
       (∀ x, ((e x).1.1 : ι → ℝ) = Finset.stellarSubdivisionCoordinateMap σ v x.1.1) ∧
       ∀ y, ((e.symm y).1.1 : ι → ℝ) =
         Finset.stellarSubdivisionInverseExtension σ (K.isRelLowerSet_faces hσ).1 v y.1.1 := by
-  obtain ⟨e, he⟩ := exists_homeomorph_stellarSubdivision hσ hv hfin hK hS
+  obtain ⟨e, he⟩ := exists_homeomorph_stellarSubdivision hσ hv hK hS
   refine ⟨e, fun x => ?_, fun y => ?_⟩
   · simp [he x]
   · obtain ⟨x, rfl⟩ := e.surjective y
@@ -499,5 +437,60 @@ theorem exists_homeomorph_stellarSubdivision_with_inverse
       (Realization.nonneg A x.1) x.2).symm
 
 end
+
+end PreAbstractSimplicialComplex
+
+public section
+
+open Set TauCeti AbstractSimplicialComplex
+
+namespace PreAbstractSimplicialComplex
+
+variable {ι : Type*} [DecidableEq ι]
+  {K L : PreAbstractSimplicialComplex ι}
+
+/-! ### PL formulas along a stellar equivalence -/
+
+/-- A single stellar move gives a `PLHomeomorphic` package. -/
+theorem IsStellarMove.plHomeomorphic
+    {A B : PreAbstractSimplicialComplex ι} (h : IsStellarMove A B) : PLHomeomorphic A B := by
+  obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp h
+  obtain ⟨e, he, heinv⟩ := exists_homeomorph_stellarSubdivision_with_inverse
+    hσ hv (le_top _) (le_top _)
+  let f : (ι → ℝ) → (ι → ℝ) :=
+    Finset.stellarSubdivisionInverseExtension σ (A.isRelLowerSet_faces hσ).1 v
+  let g : (ι → ℝ) → (ι → ℝ) := Finset.stellarSubdivisionCoordinateMap σ v
+  have hf : IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+      x.1.support ∈ A} => (x.1.1 : ι → ℝ)) := by
+    exact (Finset.isPiecewiseAffineOn_stellarSubdivisionInverseExtension σ
+      (A.isRelLowerSet_faces hσ).1 v).isPLOn.mono (subset_univ _)
+  have hg : IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
+      x.1.support ∈ stellarSubdivision A σ v} => (x.1.1 : ι → ℝ)) := by
+    exact isPLOn_continuousAffineMap
+      (Finset.stellarSubdivisionCoordinateMap σ v).toContinuousAffineMap _
+  exact PLHomeomorphic.intro e.symm f g hf hg
+    (fun x => by simpa only [f] using (heinv x).symm)
+    (fun y => by simpa only [g, Homeomorph.symm_symm] using (he y).symm)
+
+namespace StellarEquivalent
+
+/-- A stellar equivalence identifies its weak polyhedra by ambient maps that are piecewise
+linear in their barycentric coordinates. -/
+theorem plHomeomorphic
+    (h : _root_.PreAbstractSimplicialComplex.StellarEquivalent K L) : PLHomeomorphic K L :=
+  h.induction_on (fun _ _ hmove => hmove.plHomeomorphic) PLHomeomorphic.refl
+    (fun _ _ => PLHomeomorphic.symm) (fun _ _ _ => PLHomeomorphic.trans)
+
+end StellarEquivalent
+
+namespace StellarEquivalentUpToRelabeling
+
+/-- Intrinsically stellar-equivalent complexes have PL-homeomorphic weak polyhedra. -/
+theorem plHomeomorphic (h : StellarEquivalentUpToRelabeling K L) : PLHomeomorphic K L :=
+  h.induction_on
+    (fun _ _ e d he => PLHomeomorphic.of_common_relabeling (e := e) (d := d) he.plHomeomorphic)
+    PLHomeomorphic.refl (fun _ _ => PLHomeomorphic.symm) (fun _ _ _ => PLHomeomorphic.trans)
+
+end StellarEquivalentUpToRelabeling
 
 end PreAbstractSimplicialComplex

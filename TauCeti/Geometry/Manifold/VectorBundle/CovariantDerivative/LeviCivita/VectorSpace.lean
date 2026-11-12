@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
+public import Mathlib.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The Levi-Civita connection in global linear coordinates
@@ -36,6 +39,12 @@ Christoffel map, which is the input of the coordinate curvature formula of
   first kind for the Levi-Civita connection of a differentiable metric on `F`.
 * `TauCeti.Manifold.leviCivitaConnection_model_space_eq_fderiv_add`: the Levi-Civita connection
   is the flat derivative plus any vector solving the Christoffel formula of the first kind.
+* `TauCeti.Manifold.leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind`: the
+  Levi-Civita connection is the flat derivative plus the Christoffel symbols of the second kind
+  of the metric, as constructed for any nondegenerate metric in
+  `TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic`.
+* `TauCeti.Manifold.leviCivitaConnection_eq_fderiv_model_space`: for the standard metric, the
+  Levi-Civita connection is the ordinary Fréchet derivative.
 
 ## References
 
@@ -66,14 +75,14 @@ variable [FiniteDimensional ℝ F]
   {g : F → F →L[ℝ] F →L[ℝ] ℝ} {x : F} {V : Π y : F, TangentSpace 𝓘(ℝ, F) y}
 
 /-- **The Christoffel formula of the first kind.** If the Riemannian metric of the model space
-`F` is the field of bilinear forms `g`, differentiable at `x`, then the Levi-Civita derivative of
+`F` is the field of bilinear forms `g`, then the Levi-Civita derivative of
 a vector field `V` differentiable at `x` satisfies
 `2 g(∇_u V, w) = 2 g(DV(u), w) + (Dg(u))(V, w) + (Dg(V))(w, u) - (Dg(w))(u, V)`.
 Tangent vectors are read in the model space through `tangentSpaceCastModel`. -/
 theorem two_mul_leviCivitaConnection_model_space
     (hg : ∀ y (v w : TangentSpace 𝓘(ℝ, F) y), inner ℝ v w =
       g y (tangentSpaceCastModel 𝓘(ℝ, F) y v) (tangentSpaceCastModel 𝓘(ℝ, F) y w))
-    (hgx : DifferentiableAt ℝ g x) (hV : DifferentiableAt ℝ V x) (u w : F) :
+    (hV : DifferentiableAt ℝ V x) (u w : F) :
     2 * g x (tangentSpaceCastModel 𝓘(ℝ, F) x
         (leviCivitaConnection 𝓘(ℝ, F) F V x ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm u))) w =
       2 * g x (fderiv ℝ V x u) w + fderiv ℝ g x u (tangentSpaceCastModel 𝓘(ℝ, F) x (V x)) w +
@@ -97,25 +106,22 @@ theorem two_mul_leviCivitaConnection_model_space
   have hinner (A B : Π y : F, TangentSpace 𝓘(ℝ, F) y) : (fun y ↦ inner ℝ (A y) (B y)) =
       fun y ↦ g y (tangentSpaceCastModel 𝓘(ℝ, F) y (A y)) (tangentSpaceCastModel 𝓘(ℝ, F) y (B y)) :=
     funext fun y ↦ hg y (A y) (B y)
+  -- The metric coefficients are differentiable, being inner products of constant fields.
+  have hgx : DifferentiableAt ℝ g x := by
+    refine TauCeti.differentiableAt_clm_apply₂.2 fun a b ↦ ?_
+    have h : MDiffAt (fun y ↦ inner ℝ (C a y) (C b y)) x :=
+      MDifferentiableAt.inner_bundle (IB := 𝓘(ℝ, F)) (F := F)
+        (E := fun y : F ↦ TangentSpace 𝓘(ℝ, F) y) (b := id) (hC a) (hC b)
+    rw [hinner] at h
+    simpa only [C, ContinuousLinearEquiv.apply_symm_apply] using
+      mdifferentiableAt_iff_differentiableAt.1 h
   -- The three Lie brackets of the Koszul formula, read in the model space.
   have hbr₁ : tangentSpaceCastModel 𝓘(ℝ, F) x (mlieBracket 𝓘(ℝ, F) (C u) V x) =
-      fderiv ℝ W x u := by
-    rw [TauCeti.mlieBracket_eq_lieBracket]
-    -- `tangentSpaceCastModel` is the identity of `F`, so in the model space `C u` is the constant
-    -- map `u` and `V` is `W`.
-    change lieBracket ℝ (fun _ ↦ u) W x = fderiv ℝ W x u
-    rw [lieBracket_eq]
-    simp
+      fderiv ℝ W x u := mlieBracket_const_left_model_space u V x
   have hbr₂ : tangentSpaceCastModel 𝓘(ℝ, F) x (mlieBracket 𝓘(ℝ, F) (C u) (C w) x) = 0 :=
-    TauCeti.mlieBracket_const_model_space u w x
+    mlieBracket_const_model_space u w x
   have hbr₃ : tangentSpaceCastModel 𝓘(ℝ, F) x (mlieBracket 𝓘(ℝ, F) V (C w) x) =
-      -fderiv ℝ W x w := by
-    rw [TauCeti.mlieBracket_eq_lieBracket]
-    -- `tangentSpaceCastModel` is the identity of `F`, so in the model space `V` is `W` and `C w`
-    -- is the constant map `w`.
-    change lieBracket ℝ W (fun _ ↦ w) x = -fderiv ℝ W x w
-    rw [lieBracket_eq]
-    simp
+      -fderiv ℝ W x w := mlieBracket_const_right_model_space V w x
   have hcomm (a b : F) : g x a b = g x b a := by
     have h := hg x ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm b)
       ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm a)
@@ -140,7 +146,7 @@ solving the Christoffel formula of the first kind
 theorem leviCivitaConnection_model_space_eq_fderiv_add
     (hg : ∀ y (v w : TangentSpace 𝓘(ℝ, F) y), inner ℝ v w =
       g y (tangentSpaceCastModel 𝓘(ℝ, F) y v) (tangentSpaceCastModel 𝓘(ℝ, F) y w))
-    (hgx : DifferentiableAt ℝ g x) (hV : DifferentiableAt ℝ V x) (u γ : F)
+    (hV : DifferentiableAt ℝ V x) (u γ : F)
     (hγ : ∀ w, 2 * g x γ w = fderiv ℝ g x u (tangentSpaceCastModel 𝓘(ℝ, F) x (V x)) w +
       fderiv ℝ g x (tangentSpaceCastModel 𝓘(ℝ, F) x (V x)) w u -
       fderiv ℝ g x w u (tangentSpaceCastModel 𝓘(ℝ, F) x (V x))) :
@@ -155,10 +161,57 @@ theorem leviCivitaConnection_model_space_eq_fderiv_add
     simpa using h
   rw [← sub_eq_zero]
   refine hnondeg _ fun w ↦ ?_
-  have h₁ := two_mul_leviCivitaConnection_model_space hg hgx hV u w
+  have h₁ := two_mul_leviCivitaConnection_model_space hg hV u w
   have h₂ := hγ w
   simp only [map_sub, map_add, sub_apply, add_apply]
   linarith
+
+/-- The Levi-Civita derivative `∇_u V` of a vector field `V` on the model space `F`, for a metric
+given by the field of bilinear forms `g`, is the flat derivative `DV(u)` plus the Christoffel
+symbols of the second kind of `g`: `∇_u V = DV(u) + Γ(u, V)`. Thus the Christoffel symbols of a
+general nondegenerate metric specialize, for a positive-definite one, to those of Mathlib's
+Levi-Civita connection. -/
+theorem leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind
+    (hg : ∀ y (v w : TangentSpace 𝓘(ℝ, F) y), inner ℝ v w =
+      g y (tangentSpaceCastModel 𝓘(ℝ, F) y v) (tangentSpaceCastModel 𝓘(ℝ, F) y w))
+    (hV : DifferentiableAt ℝ V x) (u : F) :
+    tangentSpaceCastModel 𝓘(ℝ, F) x
+        (leviCivitaConnection 𝓘(ℝ, F) F V x ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm u)) =
+      fderiv ℝ V x u + christoffelSecondKind g x u (tangentSpaceCastModel 𝓘(ℝ, F) x (V x)) := by
+  -- Read in the model space, the metric is a symmetric positive-definite bilinear form.
+  have hinner (y : F) (a b : F) : g y a b = inner ℝ ((tangentSpaceCastModel 𝓘(ℝ, F) y).symm a)
+      ((tangentSpaceCastModel 𝓘(ℝ, F) y).symm b) := by
+    rw [hg]
+    simp
+  have hcomm (y a b : F) : g y a b = g y b a := by
+    rw [hinner y a b, hinner y b a, real_inner_comm]
+  have hsep : (g x).toBilinForm.SeparatingLeft := fun a ha ↦ by
+    have h := ha a
+    rw [ContinuousLinearMap.toBilinForm_apply, hinner, inner_self_eq_zero] at h
+    simpa using h
+  have hnd : (g x).toBilinForm.Nondegenerate :=
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+      (ContinuousLinearMap.isSymm_toBilinForm_iff.2 (hcomm x)).isRefl |>.2 hsep
+  refine leviCivitaConnection_model_space_eq_fderiv_add hg hV u _ fun w ↦ ?_
+  rw [apply_christoffelSecondKind hnd, christoffelFirstKind_apply,
+    TauCeti.fderiv_apply_apply_comm (Filter.Eventually.of_forall (hcomm ·))
+      (tangentSpaceCastModel 𝓘(ℝ, F) x (V x)) w]
+  ring
+
+/-- For the standard Riemannian metric on a finite-dimensional real inner-product space, the
+Levi-Civita derivative is the ordinary Fréchet derivative. -/
+theorem leviCivitaConnection_eq_fderiv_model_space
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    {V : ∀ y : F, TangentSpace (modelWithCornersSelf ℝ F) y}
+    {x : F} (hV : DifferentiableAt ℝ V x) (u : F) :
+    tangentSpaceCastModel (modelWithCornersSelf ℝ F) x
+        (leviCivitaConnection (modelWithCornersSelf ℝ F) F V x
+          ((tangentSpaceCastModel (modelWithCornersSelf ℝ F) x).symm u)) =
+      fderiv ℝ V x u := by
+  have h := leviCivitaConnection_model_space_eq_fderiv_add
+    (g := fun _ : F ↦ innerSL ℝ)
+    (fun _ _ _ ↦ rfl) hV u 0 (fun w ↦ by simp)
+  simpa only [add_zero] using h
 
 end Christoffel
 

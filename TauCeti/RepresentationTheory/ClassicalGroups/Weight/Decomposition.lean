@@ -158,7 +158,7 @@ private theorem apply_diagGL_coeff_eq_weightCharHom_mul {S : Finset (Fin n → �
     have e1 := hψ (ψ ∘ₗ ρ (diagGL s)) t w
     have e2 := hψ ψ (s * t) w
     have e3 : ρ (diagGL (s * t)) w = ρ (diagGL s) (ρ (diagGL t) w) := by
-      rw [map_mul, map_mul, Module.End.mul_apply]
+      rw [map_mul, map_mul, mul_apply_eq_comp]
     rw [e3] at e2
     simp only [LinearMap.coe_comp, Function.comp_apply] at e1
     have e4 : ∑ l' ∈ S, weightCharHom K l' t * ψ (ρ (diagGL s) (A l' w))
@@ -216,7 +216,7 @@ theorem IsRationalRep.iSup_weightSpace_eq_top (h : IsRationalRep ρ) :
   refine top_le_iff.mp fun w _ ↦ ?_
   have hw : w = ∑ l ∈ S, A l w := by
     have hval := congrArg (fun f : Module.End ℂ W ↦ f w) hone
-    simpa only [Module.End.one_apply, LinearMap.sum_apply] using hval
+    simpa only [one_apply_eq_self, LinearMap.sum_apply] using hval
   rw [hw]
   exact Submodule.sum_mem _ fun l hl ↦ Submodule.mem_iSup_of_mem l
     (apply_mem_weightSpace_of_forall_diagGL_eq_sum_smul hA hl w)

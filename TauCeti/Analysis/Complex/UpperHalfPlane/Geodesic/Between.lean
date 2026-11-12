@@ -132,15 +132,16 @@ theorem range_geodesicLine_geodesicBetween_of_mem {g : PSL(2, ℝ)} {z w : ℍ}
   have hst : s ≠ t := fun h ↦ hzw (h ▸ rfl)
   rcases lt_or_gt_of_ne hst with h | h
   · rw [geodesicBetween_geodesicLine_of_lt g h, range_geodesicLine_mul_dilation]
-  · have : geodesicBetween (geodesicLine g s) (geodesicLine g t) = g * ↑(dilation s) * pslS := by
-      symm
-      refine eq_geodesicBetween_of_geodesicLine_eq hzw ?_ ?_
-      · rw [geodesicLine_mul_pslS, neg_zero, geodesicLine_mul_dilation, add_zero]
-      · rw [geodesicLine_mul_pslS, geodesicLine_mul_dilation, dist_geodesicLine,
-          abs_of_pos (by linarith)]
-        congr 1
-        ring
-    rw [this, range_geodesicLine_mul_pslS, range_geodesicLine_mul_dilation]
+  · rw [← range_geodesicLine_geodesicBetween_swap (geodesicLine g s) (geodesicLine g t),
+      geodesicBetween_geodesicLine_of_lt g h, range_geodesicLine_mul_dilation]
+
+/-- Two geodesic lines through two distinct common points have the same image. -/
+theorem range_geodesicLine_eq_of_mem {g h : PSL(2, ℝ)} {z w : ℍ} (hzw : z ≠ w)
+    (hz : z ∈ Set.range (geodesicLine g)) (hw : w ∈ Set.range (geodesicLine g))
+    (hz' : z ∈ Set.range (geodesicLine h)) (hw' : w ∈ Set.range (geodesicLine h)) :
+    Set.range (geodesicLine g) = Set.range (geodesicLine h) :=
+  (range_geodesicLine_geodesicBetween_of_mem hz hw hzw).symm.trans
+    (range_geodesicLine_geodesicBetween_of_mem hz' hw' hzw)
 
 /-- The geodesic line from `I` up the imaginary axis is the identity's. -/
 theorem geodesicBetween_I_geodesicLine_one {d : ℝ} (hd : 0 < d) :

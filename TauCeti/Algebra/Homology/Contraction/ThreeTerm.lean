@@ -42,8 +42,8 @@ open CategoryTheory CategoryTheory.Limits CochainComplex.HomComplex
 
 namespace TauCeti.Contraction
 
-variable {C : Type*} [Category* C] [Preadditive C] [HasZeroObject C]
-  [HasBinaryBiproducts C] (K : CochainComplex C ℤ) (U Z W : C)
+variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
+  (K : CochainComplex C ℤ) (U Z W : C)
 
 /-- Component identifications for a three-term complex with two cancellable identity blocks. -/
 structure ThreeTermCancellationData where
@@ -72,7 +72,6 @@ private abbrev iW : W ⟶ Z ⊞ (W ⊞ U) := biprod.inl ≫ biprod.inr
 private def delta : U ⟶ Z :=
   h.minusIso.inv ≫ K.d (-1) 0 ≫ h.zeroIso.hom ≫ biprod.fst
 
-omit [HasZeroObject C] in
 private theorem d_fst : K.d (-1) 0 ≫ h.zeroIso.hom ≫ biprod.fst =
     h.minusIso.hom ≫ (delta h) := by
   simp only [delta, Iso.hom_inv_id_assoc]
@@ -82,10 +81,8 @@ private def epsilon : Z ⟶ W :=
 
 /-- The degree-zero projection after eliminating the two identity blocks. -/
 def projectionZero : K.X 0 ⟶ Z :=
-  h.zeroIso.hom ≫ (biprod.fst - (biprod.snd ≫ biprod.snd) ≫
-    (h.minusIso.inv ≫ K.d (-1) 0 ≫ h.zeroIso.hom ≫ biprod.fst))
+  h.zeroIso.hom ≫ (biprod.fst - pU ≫ delta h)
 
-omit [HasZeroObject C] in
 /-- The corrected projection subtracts the bottom differential's surviving component. -/
 theorem projectionZero_def :
     projectionZero h = h.zeroIso.hom ≫
@@ -94,17 +91,14 @@ theorem projectionZero_def :
 
 /-- The degree-zero inclusion corrected by the differential into the upper identity block. -/
 def inclusionZero : Z ⟶ K.X 0 :=
-  (biprod.inl - (biprod.inl ≫ h.zeroIso.inv ≫ K.d 0 1 ≫ h.oneIso.hom) ≫
-    (biprod.inl ≫ biprod.inr)) ≫ h.zeroIso.inv
+  (biprod.inl - epsilon h ≫ iW) ≫ h.zeroIso.inv
 
-omit [HasZeroObject C] in
 /-- The corrected inclusion subtracts the surviving component of the top differential. -/
 theorem inclusionZero_def :
     inclusionZero h =
       (biprod.inl - (biprod.inl ≫ h.zeroIso.inv ≫ K.d 0 1 ≫ h.oneIso.hom) ≫
         (biprod.inl ≫ biprod.inr)) ≫ h.zeroIso.inv := (rfl)
 
-omit [HasZeroObject C] in
 private theorem d_projectionZero : K.d (-1) 0 ≫ projectionZero h = 0 := by
   rw [projectionZero_def]
   have hu := h.d_snd_snd
@@ -112,16 +106,79 @@ private theorem d_projectionZero : K.d (-1) 0 ≫ projectionZero h = 0 := by
   simp only [Category.assoc, Preadditive.comp_sub]
   simp only [← Category.assoc, hu, Iso.hom_inv_id, Category.id_comp, sub_self]
 
-omit [HasZeroObject C] in
 private theorem inclusionZero_d : inclusionZero h ≫ K.d 0 1 = 0 := by
   rw [← cancel_mono h.oneIso.hom, zero_comp]
   have hw := h.inl_inr_d
-  simp only [inclusionZero, Preadditive.sub_comp, Category.assoc, hw,
+  simp only [inclusionZero_def, Preadditive.sub_comp, Category.assoc, hw,
     Category.comp_id, sub_self]
 
-omit [HasZeroObject C] in
 private theorem inclusionZero_projectionZero : inclusionZero h ≫ projectionZero h = 𝟙 Z := by
-  simp [inclusionZero, projectionZero, Category.assoc]
+  simp [inclusionZero, projectionZero, pU, iW, Category.assoc]
+
+private def normalFirst : U ⟶ Z ⊞ (W ⊞ U) :=
+  h.minusIso.inv ≫ K.d (-1) 0 ≫ h.zeroIso.hom
+
+private def normalLast : Z ⊞ (W ⊞ U) ⟶ W :=
+  h.zeroIso.inv ≫ K.d 0 1 ≫ h.oneIso.hom
+
+private def crossFirst : U ⟶ W := normalFirst h ≫ biprod.snd ≫ biprod.fst
+
+private def crossLast : U ⟶ W := biprod.inr ≫ biprod.inr ≫ normalLast h
+
+private theorem normalFirst_eq : normalFirst h =
+    biprod.lift (delta h) (biprod.lift (crossFirst h) (𝟙 U)) := by
+  apply biprod.hom_ext
+  · simp only [normalFirst, Category.assoc, biprod.lift_fst]
+    rw [d_fst h, Iso.inv_hom_id_assoc]
+  · apply biprod.hom_ext
+    · simp [crossFirst, Category.assoc]
+    · simp only [normalFirst, Category.assoc, biprod.lift_snd]
+      rw [h.d_snd_snd, Iso.inv_hom_id]
+
+private theorem normalLast_eq : normalLast h =
+    biprod.desc (epsilon h) (biprod.desc (𝟙 W) (crossLast h)) := by
+  apply biprod.hom_ext'
+  · simp [normalLast, epsilon]
+  · apply biprod.hom_ext'
+    · simp only [normalLast, biprod.inr_desc, biprod.inl_desc]
+      exact h.inl_inr_d
+    · simp [crossLast]
+
+private theorem cross_relation : (delta h) ≫ epsilon h + (crossFirst h + crossLast h) = 0 := by
+  have hs : normalFirst h ≫ normalLast h = 0 := by
+    simp [normalFirst, normalLast, Category.assoc]
+  rw [normalFirst_eq, normalLast_eq] at hs
+  simpa only [biprod.lift_desc, Category.id_comp, Category.comp_id] using hs
+
+private theorem normal_contraction :
+    normalLast h ≫ iW + pU ≫ normalFirst h +
+      (biprod.fst - pU ≫ (delta h)) ≫ (biprod.inl - epsilon h ≫ iW) =
+        𝟙 (Z ⊞ (W ⊞ U)) := by
+  rw [normalFirst_eq, normalLast_eq]
+  ext <;> simp [pU, iW, Category.assoc]
+  simpa [add_comm, add_left_comm, add_assoc] using cross_relation h
+
+private def s0 : K.X 0 ⟶ K.X (-1) := h.zeroIso.hom ≫ pU ≫ h.minusIso.inv
+
+private def s1 : K.X 1 ⟶ K.X 0 := h.oneIso.hom ≫ iW ≫ h.zeroIso.inv
+
+private theorem bottom_contract : K.d (-1) 0 ≫ s0 h = 𝟙 _ := by
+  simpa only [s0, pU, Category.assoc, Iso.hom_inv_id] using
+    congrArg (fun f ↦ f ≫ h.minusIso.inv) h.d_snd_snd
+
+private theorem top_contract : s1 h ≫ K.d 0 1 = 𝟙 _ := by
+  rw [← cancel_mono h.oneIso.hom, Category.id_comp]
+  simp only [s1, iW, Category.assoc, h.inl_inr_d, Category.comp_id]
+
+private theorem middle_contract : K.d 0 1 ≫ s1 h + s0 h ≫ K.d (-1) 0 +
+    projectionZero h ≫ inclusionZero h = 𝟙 _ := by
+  have hn := congrArg (fun f ↦ h.zeroIso.hom ≫ f ≫ h.zeroIso.inv)
+    (normal_contraction h)
+  simpa only [s0, s1, normalFirst, normalLast, projectionZero, inclusionZero,
+    Preadditive.comp_add, Preadditive.add_comp, Category.assoc,
+    Iso.hom_inv_id_assoc, Iso.hom_inv_id, Category.comp_id, Category.id_comp] using hn
+
+variable [HasZeroObject C]
 
 private def projection : K ⟶ (HomologicalComplex.single C (ComplexShape.up ℤ) 0).obj Z :=
   HomologicalComplex.mkHomToSingle (projectionZero h) (by
@@ -148,77 +205,6 @@ private theorem inclusion_projection : inclusion h ≫ projection h = 𝟙 _ := 
     HomologicalComplex.id_f]
   rw [← Category.assoc, Category.assoc _ (inclusionZero h), inclusionZero_projectionZero,
     Category.comp_id, Iso.hom_inv_id]
-
-private def normalFirst : U ⟶ Z ⊞ (W ⊞ U) :=
-  h.minusIso.inv ≫ K.d (-1) 0 ≫ h.zeroIso.hom
-
-private def normalLast : Z ⊞ (W ⊞ U) ⟶ W :=
-  h.zeroIso.inv ≫ K.d 0 1 ≫ h.oneIso.hom
-
-private def crossFirst : U ⟶ W := normalFirst h ≫ biprod.snd ≫ biprod.fst
-
-private def crossLast : U ⟶ W := biprod.inr ≫ biprod.inr ≫ normalLast h
-
-omit [HasZeroObject C] in
-private theorem normalFirst_eq : normalFirst h =
-    biprod.lift (delta h) (biprod.lift (crossFirst h) (𝟙 U)) := by
-  apply biprod.hom_ext
-  · simp only [normalFirst, Category.assoc, biprod.lift_fst]
-    rw [d_fst h, Iso.inv_hom_id_assoc]
-  · apply biprod.hom_ext
-    · simp [crossFirst, Category.assoc]
-    · simp only [normalFirst, Category.assoc, biprod.lift_snd]
-      rw [h.d_snd_snd, Iso.inv_hom_id]
-
-omit [HasZeroObject C] in
-private theorem normalLast_eq : normalLast h =
-    biprod.desc (epsilon h) (biprod.desc (𝟙 W) (crossLast h)) := by
-  apply biprod.hom_ext'
-  · simp [normalLast, epsilon]
-  · apply biprod.hom_ext'
-    · simp only [normalLast, biprod.inr_desc, biprod.inl_desc]
-      exact h.inl_inr_d
-    · simp [crossLast]
-
-omit [HasZeroObject C] in
-private theorem cross_relation : (delta h) ≫ epsilon h + (crossFirst h + crossLast h) = 0 := by
-  have hs : normalFirst h ≫ normalLast h = 0 := by
-    simp [normalFirst, normalLast, Category.assoc]
-  rw [normalFirst_eq, normalLast_eq] at hs
-  simpa only [biprod.lift_desc, Category.id_comp, Category.comp_id] using hs
-
-omit [HasZeroObject C] in
-private theorem normal_contraction :
-    normalLast h ≫ iW + pU ≫ normalFirst h +
-      (biprod.fst - pU ≫ (delta h)) ≫ (biprod.inl - epsilon h ≫ iW) =
-        𝟙 (Z ⊞ (W ⊞ U)) := by
-  rw [normalFirst_eq, normalLast_eq]
-  ext <;> simp [pU, iW, Category.assoc]
-  simpa [add_comm, add_left_comm, add_assoc] using cross_relation h
-
-private def s0 : K.X 0 ⟶ K.X (-1) := h.zeroIso.hom ≫ pU ≫ h.minusIso.inv
-
-private def s1 : K.X 1 ⟶ K.X 0 := h.oneIso.hom ≫ iW ≫ h.zeroIso.inv
-
-omit [HasZeroObject C] in
-private theorem bottom_contract : K.d (-1) 0 ≫ s0 h = 𝟙 _ := by
-  simpa only [s0, pU, Category.assoc, Iso.hom_inv_id] using
-    congrArg (fun f ↦ f ≫ h.minusIso.inv) h.d_snd_snd
-
-omit [HasZeroObject C] in
-private theorem top_contract : s1 h ≫ K.d 0 1 = 𝟙 _ := by
-  rw [← cancel_mono h.oneIso.hom, Category.id_comp]
-  simp only [s1, iW, Category.assoc, h.inl_inr_d, Category.comp_id]
-
-omit [HasZeroObject C] in
-private theorem middle_contract : K.d 0 1 ≫ s1 h + s0 h ≫ K.d (-1) 0 +
-    projectionZero h ≫ inclusionZero h = 𝟙 _ := by
-  have hn := congrArg (fun f ↦ h.zeroIso.hom ≫ f ≫ h.zeroIso.inv)
-    (normal_contraction h)
-  simpa only [s0, s1, normalFirst, normalLast, projectionZero, inclusionZero,
-    delta, epsilon, iW, pU,
-    Preadditive.comp_add, Preadditive.add_comp, Category.assoc,
-    Iso.hom_inv_id_assoc, Iso.hom_inv_id, Category.comp_id, Category.id_comp] using hn
 
 private theorem δ_singles :
     δ (-1) 0 (Cochain.single (s0 h) (-1) + Cochain.single (s1 h) (-1)) =
@@ -261,7 +247,7 @@ def toContraction : TauCeti.Contraction K
   δ_homotopy := δ_singles h
 
 /-- The degree-zero projection is the corrected projection to the surviving summand. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem toContraction_proj_f_zero :
     (h.toContraction.proj).f 0 ≫ (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0 Z).hom =
       h.projectionZero := by
@@ -269,7 +255,7 @@ theorem toContraction_proj_f_zero :
     Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
 /-- The contraction's degree-zero inclusion is the corrected inclusion of the surviving summand. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem toContraction_incl_f_zero :
     (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0 Z).inv ≫
       (h.toContraction.incl).f 0 = h.inclusionZero := by

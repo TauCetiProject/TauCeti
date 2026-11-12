@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Invariants
+import TauCeti.Algebra.TensorProduct.BaseChange
 import TauCeti.RepresentationTheory.GaloisDescent.Span
 import TauCeti.RepresentationTheory.GaloisDescent.Injective
 
@@ -79,19 +80,13 @@ theorem liftEquiv_groupAlgebraInvariants_injective
       map_one' := by ext x; simp
       map_mul' := by intros; ext x; simp }
   let f := (groupAlgebraInvariants rho).val
-  have h := liftBaseChange_injective_of_invariant (ρ := ρ) (f := f.toLinearMap)
+  have h := liftBaseChange_injective_of_invariant (L := L) (ρ := ρ) (f := f.toLinearMap)
     Subtype.val_injective (fun σ a x ↦ by
       -- Expand the local representation and inclusion to apply the action's scalar law.
       change groupAlgebraAction rho σ (a • x.val) = σ a • x.val
       rw [groupAlgebraAction_smul,
         (mem_groupAlgebraInvariants_iff rho x).mp x.property σ])
-  have heq : (AlgHom.liftEquiv k L _ _ f).toLinearMap =
-      f.toLinearMap.liftBaseChange L := by
-    apply TensorProduct.AlgebraTensorModule.ext
-    intro a x
-    simp
-  rw [← heq] at h
-  exact h
+  rwa [← AlgHom.liftEquiv_toLinearMap] at h
 
 /-- The invariant group algebra descends the split coordinate algebra along a finite Galois
 extension: extending its scalars recovers the original group algebra. -/

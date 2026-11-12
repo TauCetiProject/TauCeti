@@ -41,17 +41,17 @@ variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
 
 /-- The coordinate Hopf algebras of the root subgroups and weight torus over `K` are the scalar
 extensions of the corresponding algebras over `k`. -/
-private noncomputable def generatorCoordinateAlgebraBaseChangeIso :
+noncomputable def generatorCoordinateAlgebraBaseChangeIso :
     ∀ j, CommHopfAlgCat.baseChange (K := K) (generatorCoordinateAlgebra k j) ≅
       generatorCoordinateAlgebra K j
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
   | .inr _ => _root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K
+      (MonoidAlgebra.scalarTensorBialgEquiv k K
         (G := SplitTorus.characterGroup (Fin 4)))
 
 /-- Each root or torus generator over `K` is the scalar extension of the corresponding generator
 over `k`, under the coordinate identifications of `GL₂₄` and the generator's domain. -/
-private theorem generatorCoordinateMap_baseChange (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
+theorem generatorCoordinateMap_baseChange (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
     ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 24).inv ≫
         CommHopfAlgCat.baseChangeMap (generatorCoordinateMap k j)) ≫
         (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
@@ -63,6 +63,12 @@ private theorem generatorCoordinateMap_baseChange (j : Sum (Fin 4 ⊕ Fin 4) Uni
         _ _ _ _ _ _ _ k K j
   · rw [Category.assoc, generatorCoordinateMap_inr, generatorCoordinateMap_inr]
     exact GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange ℤ k K _
+
+/-- Scalar extension preserves the epimorphism from ambient coordinates to generated coordinates. -/
+instance baseChangeMap_generatedCoordinateMap_epi :
+    Epi (CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k)) :=
+  ConcreteCategory.epi_of_surjective _ (CommHopfAlgCat.baseChangeMap_surjective
+    (generatedCoordinateMap k) (generatedCoordinateMap_surjective k))
 
 /-- For a free algebra extension `K / k`, the transported defining ideal of the generated
 subgroup over `k` is the defining ideal of the subgroup generated over `K`. -/

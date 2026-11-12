@@ -62,7 +62,8 @@ complement.
   complement and a Frobenius kernel have coprime orders, and a proper `H` is strictly smaller than
   its kernel.
 * `TauCeti.frobeniusKernelSubgroup_eq_of_isComplement'`: **the kernel constructed here is the
-  normal complement one started from**, whenever `G = N ⋊ H` with `N` normal.
+  complement one started from**, whenever `N` is a complement to `H` (`N.IsComplement' H`); no
+  normality of `N` is assumed.
 
 A concrete Frobenius group is presented the other way round, as a semidirect product `G = N ⋊ H`
 whose complement acts on the kernel without nonidentity fixed points.  That presentation already
@@ -121,7 +122,7 @@ The irreducible characters span the class functions, so if they all take at `g` 
 at the identity, then so does every class function; the indicator of the identity conjugacy class
 does not, unless `g = 1`. -/
 private theorem eq_one_of_forall_irreducibleCharacter_eq (k : Type u) {G : Type v} [Field k]
-    [Group G] [Finite G] [IsAlgClosed k] [Invertible (Nat.card G : k)] {g : G}
+    [Group G] [IsAlgClosed k] [Invertible (Nat.card G : k)] {g : G}
     (hg : ∀ f ∈ irreducibleCharacters k G, f g = f 1) : g = 1 := by
   classical
   by_contra hne
@@ -148,6 +149,32 @@ private theorem eq_one_of_forall_irreducibleCharacter_eq (k : Type u) {G : Type 
 /-! ### Frobenius's theorem -/
 
 variable {G : Type u} [Group G] [Finite G] {H : Subgroup G}
+
+/-- **A subgroup element fixed by every exceptional character is trivial**: if for every
+irreducible character `φ` of `H` the exceptional extension `φ*` takes at `h : H` the value
+`φ(1)`, then `h = 1`.  Restricting `φ*` to `H` gives back `φ`, so every irreducible character of `H`
+is unmoved at `h`. -/
+private theorem eq_one_of_forall_indExtend_eq (hH : IsTISubgroup H) {h : H}
+    (hh : ∀ j : Fin (Nat.card (ConjClasses H)),
+      (indExtend H (ofCharacter (irreducibleRepresentation ℂ j))).1 (h : G) =
+        (ofCharacter (irreducibleRepresentation ℂ j)).1 1) : h = 1 := by
+  classical
+  let : Invertible (Nat.card H : ℂ) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  refine eq_one_of_forall_irreducibleCharacter_eq ℂ fun f hf => ?_
+  obtain ⟨j, rfl⟩ := exists_irreducibleCharacter_eq (k := ℂ) hf
+  have hφcoe : ((ofCharacter (irreducibleRepresentation ℂ j) : ClassFunction ℂ H) : H → ℂ) =
+      irreducibleCharacter ℂ j := funext fun y => by
+    simp only [ofCharacter_apply, character_irreducibleRepresentation]
+  rw [← hφcoe]
+  calc (ofCharacter (irreducibleRepresentation ℂ j)).1 h
+      = (indExtend H (ofCharacter (irreducibleRepresentation ℂ j))).1 (h : G) := by
+        simpa only [comap_apply, Subgroup.coe_subtype] using
+          (congrArg (fun F : ClassFunction ℂ H => F.1 h)
+            (comap_subtype_indExtend hH
+              (isUnit_natCard_subgroup H (isUnit_of_invertible _))
+              (ofCharacter (irreducibleRepresentation ℂ j)))).symm
+    _ = _ := hh j
 
 /-- **Frobenius's theorem.**  For a trivial-intersection subgroup `H` of a finite group `G` — a
 Frobenius complement, in the nondegenerate case — the Frobenius kernel is the carrier of a normal
@@ -205,17 +232,8 @@ private theorem exists_normal_coe_eq_frobeniusKernel (hH : IsTISubgroup H) :
       (MonoidHom.normal_ker (σ j)).conj_mem' g ((hker j g).mpr (hgN j)) x
     -- on `H` the extension restricts back to `φ`, so every irreducible character of `H` is
     -- unmoved at the conjugated element, which therefore is the identity
-    have hone : (⟨x⁻¹ * g * x, hx⟩ : H) = 1 := by
-      refine eq_one_of_forall_irreducibleCharacter_eq ℂ fun f hf => ?_
-      obtain ⟨j, rfl⟩ := exists_irreducibleCharacter_eq (k := ℂ) hf
-      rw [← hφcoe j]
-      calc (φ j).1 (⟨x⁻¹ * g * x, hx⟩ : H)
-          = (indExtend H (φ j)).1 (x⁻¹ * g * x) := by
-            simpa only [comap_apply, Subgroup.coe_subtype] using
-              (congrArg (fun F : ClassFunction ℂ H => F.1 (⟨x⁻¹ * g * x, hx⟩ : H))
-                (comap_subtype_indExtend hH
-                  (isUnit_natCard_subgroup H (isUnit_of_invertible _)) (φ j))).symm
-        _ = (φ j).1 1 := (hker j _).mp (hyN j)
+    have hone : (⟨x⁻¹ * g * x, hx⟩ : H) = 1 :=
+      eq_one_of_forall_indExtend_eq hH fun j => (hker j _).mp (hyN j)
     refine hg1 ?_
     have hy : x⁻¹ * g * x = 1 := congrArg Subtype.val hone
     have hgx : g = x * (x⁻¹ * g * x) * x⁻¹ := by group
@@ -313,21 +331,21 @@ theorem card_lt_card_frobeniusKernelSubgroup (hH : IsTISubgroup H) (hne : H ≠ 
   rw [card_frobeniusKernelSubgroup hH]
   exact hH.card_lt_index hne
 
-/-! ### The kernel of a normal complement -/
+/-! ### The kernel of a complement -/
 
 section Semidirect
 
 variable {N : Subgroup G}
 
-/-- **Frobenius's theorem returns the normal complement it was handed.**  If `G = N ⋊ H` with `N`
-normal and `H` a trivial-intersection subgroup, then the subgroup that the exceptional-character
-argument above constructs -- out of the irreducible characters of `H`, with no reference to `N` --
-is `N` itself.
+/-- **Frobenius's theorem returns the complement it was handed.**  If `N` is a complement to a
+trivial-intersection subgroup `H` (`N.IsComplement' H`, with no normality assumed), then the
+subgroup that the exceptional-character argument above constructs -- out of the irreducible
+characters of `H`, with no reference to `N` -- is `N` itself.
 
 This is what makes the abstract construction checkable on a concrete Frobenius group, which comes
 presented as such a decomposition with `H` acting on `N` without nonidentity fixed points
 (`TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`). -/
-theorem frobeniusKernelSubgroup_eq_of_isComplement' [N.Normal] (hH : IsTISubgroup H)
+theorem frobeniusKernelSubgroup_eq_of_isComplement' (hH : IsTISubgroup H)
     (hNH : N.IsComplement' H) :
     frobeniusKernelSubgroup hH = N :=
   SetLike.coe_injective <|

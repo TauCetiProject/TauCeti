@@ -64,7 +64,7 @@ endomorphism ring is `(r)`-adically complete, every idempotent endomorphism of `
 reduction of an idempotent endomorphism of `N`.
 
 The completeness hypothesis holds when `R` is Noetherian and `(r)`-adically complete and `N` is
-finitely generated over `R`, by `Module.Finite.linearMap_of_isNoetherian` and
+finitely generated over `R`, by `TauCeti.isNoetherian_linearMap_of_finite` and
 `IsAdicComplete.of_finite`. -/
 theorem exists_isIdempotentElem_endMapQ_eq
     {e : Module.End A (N ⧸ Ideal.span {algebraMap R A r} • (⊤ : Submodule A N))}
@@ -115,9 +115,9 @@ theorem exists_projective_quotient_smul_top_linearEquiv {Y : Type*}
     have hx' : q (Submodule.Quotient.mk (x : N)) = 0 := by simpa [φ] using hx
     have hx0 : (x : N) ∈ Ideal.span {algebraMap R A r} • (⊤ : Submodule A N) := by
       rw [← Submodule.Quotient.mk_eq_zero, ← hfix x, ← hred, hx', map_zero]
-    obtain ⟨w, hw⟩ := (Submodule.mem_span_algebraMap_smul_top_iff r).mp hx0
-    refine (Submodule.mem_span_algebraMap_smul_top_iff r).mpr
-      ⟨⟨e w, LinearMap.mem_range_self e w⟩, Subtype.ext ?_⟩
+    obtain ⟨w, _, hw⟩ := (Submodule.mem_span_algebraMap_smul_iff ⊤ r).mp hx0
+    refine (Submodule.mem_span_algebraMap_smul_iff ⊤ r).mpr
+      ⟨⟨e w, LinearMap.mem_range_self e w⟩, Submodule.mem_top, Subtype.ext ?_⟩
     rw [Submodule.coe_smul_of_tower, ← LinearMap.map_smul_of_tower, hw, hfix]
   have hsurj : Function.Surjective φ := fun y ↦ by
     obtain ⟨n, hn⟩ := Submodule.Quotient.mk_surjective _ (i y)

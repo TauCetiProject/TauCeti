@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Opposite
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 
 /-!
 # Opposites of path algebras
@@ -110,6 +110,49 @@ theorem reverseOpAlgEquiv_ofArrow {a b : Q} (e : a ⟶ b) :
   simp
 
 end Reverse
+
+section Grading
+
+variable (k : Type w) (Q : Type u) [CommSemiring k] [Quiver.{v} Q]
+  [HasInvolutiveReverse Q] [Finite Q]
+
+/-- Reversing paths preserves path length in the opposite path algebra. -/
+theorem reverseOpAlgEquiv_mem_opGrade {n : ℕ} {x : pathAlgebra k Q}
+    (hx : x ∈ grade k Q n) : reverseOpAlgEquiv k Q x ∈ opGrade k Q n := by
+  rw [grade_eq_span_range] at hx
+  induction hx using Submodule.span_induction with
+  | mem y hy =>
+    obtain ⟨p, rfl⟩ := hy
+    rw [reverseOpAlgEquiv_ofPath, mem_opGrade_iff, MulOpposite.unop_op]
+    exact ofPath_mem_grade_of_length (by simpa only [Quiver.TotalPath.length_reverse]
+      using p.property)
+  | zero => simp
+  | add x y _ _ hx hy => simpa only [map_add] using add_mem hx hy
+  | smul r x _ hx => simpa only [map_smul] using Submodule.smul_mem _ r hx
+
+/-- The inverse path-reversal comparison also preserves path length. -/
+theorem reverseOpAlgEquiv_symm_mem_grade {n : ℕ} {x : (pathAlgebra k Q)ᵐᵒᵖ}
+    (hx : x ∈ opGrade k Q n) : (reverseOpAlgEquiv k Q).symm x ∈ grade k Q n := by
+  have hx' := (mem_opGrade_iff k Q).1 hx
+  rw [grade_eq_span_range] at hx'
+  have h : ∀ y ∈ Submodule.span k
+      (Set.range fun p : {p : Quiver.TotalPath Q // p.2.2.length = n} =>
+        (ofPath p.1 : pathAlgebra k Q)),
+      (reverseOpAlgEquiv k Q).symm (MulOpposite.op y) ∈ grade k Q n := by
+    intro y hy
+    induction hy using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨p, rfl⟩ := hy
+      rw [reverseOpAlgEquiv_symm_op_ofPath]
+      exact ofPath_mem_grade_of_length (by simpa only [Quiver.TotalPath.length_reverse]
+        using p.property)
+    | zero => simp
+    | add x y _ _ hx hy => simpa only [MulOpposite.op_add, map_add] using add_mem hx hy
+    | smul r x _ hx =>
+      simpa only [MulOpposite.op_smul, map_smul] using Submodule.smul_mem _ r hx
+  simpa only [MulOpposite.op_unop] using h x.unop hx'
+
+end Grading
 
 end PathAlgebra
 

@@ -59,7 +59,8 @@ with measurable singletons.
   `∫⁻ z, c z ∂graphPlan T μ = ∫⁻ x, c (x, T x) ∂μ`, which feeds the Monge-to-Kantorovich
   inequality `TauCeti.transportCost_le_lintegral_of_hasLaw` in
   `TauCeti/MeasureTheory/OptimalTransport/Cost/Basic.lean`, and its Bochner version
-  `TauCeti.integral_graphPlan`;
+  `TauCeti.integral_graphPlan`, together with its almost-everywhere counterpart
+  `TauCeti.ae_graphPlan_iff`;
 * `TauCeti.eq_graphPlan_iff` — a plan is the graph plan of `T` exactly when it is concentrated
   on the graph of `T`, with `TauCeti.graphPlan_eq_graphPlan_iff` the uniqueness of the map that
   induces a given deterministic plan;
@@ -275,6 +276,15 @@ theorem map_prodMap_id_graphPlan {R : Y → Z} (hR : AEMeasurable R (μ.map T))
   rw [graphPlan_def, AEMeasurable.map_map_of_aemeasurable hR' (aemeasurable_prodMk_self hT)]
   rfl
 
+/-- Pushing the graph plan of `T` forward along `f` is pushing `μ` forward along
+`x ↦ f (x, T x)`. -/
+theorem map_graphPlan (hT : AEMeasurable T μ) {f : X × Y → Z}
+    (hf : AEMeasurable f (graphPlan T μ)) :
+    (graphPlan T μ).map f = μ.map fun x ↦ f (x, T x) := by
+  rw [graphPlan_def] at hf ⊢
+  rw [AEMeasurable.map_map_of_aemeasurable hf (aemeasurable_prodMk_self hT)]
+  rfl
+
 /-- Reparametrizing the source measure pushes the graph plan through the first coordinate. -/
 theorem graphPlan_map {f : Z → X} {μ : Measure Z} (hf : AEMeasurable f μ)
     (hT : AEMeasurable T (μ.map f)) :
@@ -314,6 +324,19 @@ theorem integral_graphPlan {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E
     ∫ z, f z ∂graphPlan T μ = ∫ x, f (x, T x) ∂μ :=
   integral_map (aemeasurable_prodMk_self hT) hf
 
+/-- A property holding almost everywhere for the graph plan of `T` holds at the graph points
+`(x, T x)` for `μ`-almost every `x`. -/
+theorem ae_of_ae_graphPlan (hT : AEMeasurable T μ) {P : X × Y → Prop}
+    (h : ∀ᵐ z ∂graphPlan T μ, P z) : ∀ᵐ x ∂μ, P (x, T x) :=
+  ae_of_ae_map (aemeasurable_prodMk_self hT) h
+
+/-- A measurable property holds almost everywhere for the graph plan of `T` exactly when it
+holds at the graph points `(x, T x)` for `μ`-almost every `x`. -/
+theorem ae_graphPlan_iff (hT : AEMeasurable T μ) {P : X × Y → Prop}
+    (hP : MeasurableSet {z | P z}) :
+    (∀ᵐ z ∂graphPlan T μ, P z) ↔ ∀ᵐ x ∂μ, P (x, T x) :=
+  ae_map_iff (aemeasurable_prodMk_self hT) hP
+
 end ChangeOfVariables
 
 section Determinism
@@ -334,19 +357,21 @@ theorem graphPlan_apply_compl_graph (hT : AEMeasurable T μ) (hS : AEMeasurable 
 
 /-- A graph plan of `T` is carried by the graph of `S` exactly when `S` agrees with `T`
 almost everywhere. -/
-theorem ae_snd_eq_graphPlan_iff (hT : AEMeasurable T μ) (hS : AEMeasurable S μ) :
+theorem ae_snd_eq_graphPlan_iff (hT : AEMeasurable T μ) :
     (∀ᵐ z ∂graphPlan T μ, z.2 = S z.1) ↔ T =ᵐ[μ] S := by
+  refine ⟨fun h ↦ ae_of_ae_map (aemeasurable_prodMk_self hT) h, fun h ↦ ?_⟩
+  have hS : AEMeasurable S μ := hT.congr h
   have h₁ : (∀ᵐ z ∂graphPlan T μ, z.2 = S z.1) ↔
       graphPlan T μ {z : X × Y | ¬ z.2 = S z.1} = 0 := ae_iff
   have h₂ : (∀ᵐ x ∂μ, T x = S x) ↔ μ {x | ¬ T x = S x} = 0 := ae_iff
   rw [h₁, graphPlan_apply_compl_graph hT hS, ← h₂]
-  exact Iff.rfl
+  exact h
 
 /-- A graph plan is carried by the graph of its map: almost every point of `graphPlan T μ` has
 second coordinate the value of `T` at its first. -/
 theorem ae_snd_eq_graphPlan (hT : AEMeasurable T μ) :
     ∀ᵐ z ∂graphPlan T μ, z.2 = T z.1 :=
-  (ae_snd_eq_graphPlan_iff hT hT).2 (Filter.EventuallyEq.refl _ _)
+  (ae_snd_eq_graphPlan_iff hT).2 (Filter.EventuallyEq.refl _ _)
 
 omit [MeasurableEq Y] in
 /-- A plan carried by the graph of `T` is the graph plan of `T` over its own first marginal.
@@ -375,7 +400,7 @@ theorem eq_graphPlan_iff (hT : AEMeasurable T π.fst) :
 plan exactly when they agree `μ`-almost everywhere. -/
 theorem graphPlan_eq_graphPlan_iff (hT : AEMeasurable T μ) (hS : AEMeasurable S μ) :
     graphPlan T μ = graphPlan S μ ↔ T =ᵐ[μ] S :=
-  ⟨fun h ↦ (ae_snd_eq_graphPlan_iff hT hS).1 (h ▸ ae_snd_eq_graphPlan hS), graphPlan_congr⟩
+  ⟨fun h ↦ (ae_snd_eq_graphPlan_iff hT).1 (h ▸ ae_snd_eq_graphPlan hS), graphPlan_congr⟩
 
 /-- **A plan dominated by a graph plan is a graph plan of the same map.** If `π` is absolutely
 continuous with respect to the graph plan of `T` over `μ`, then `π` is carried by the graph of `T`,
@@ -399,17 +424,16 @@ theorem comp_ae_eq_id_of_map_swap_graphPlan_eq [MeasurableEq X] {R : Y → X} {�
     have h₁ : ∀ᵐ w ∂(graphPlan T μ).map Prod.swap, w.2 = R w.1 := by
       rw [h]
       exact ae_snd_eq_graphPlan hR
-    have h₂ := ae_of_ae_map measurable_swap.aemeasurable h₁
-    rw [graphPlan_def] at h₂
-    filter_upwards [ae_of_ae_map (aemeasurable_prodMk_self hT) h₂] with x hx
+    filter_upwards [ae_of_ae_graphPlan hT (ae_of_ae_map measurable_swap.aemeasurable h₁)]
+      with x hx
     simpa using hx.symm
   · -- `R` is a right inverse: push the graph of `T` forward along the exchange, which is a
     -- measurable equivalence, then read it back along the graph of `R`.
     have h₁ : ∀ᵐ w ∂(graphPlan T μ).map Prod.swap, w.1 = T w.2 :=
       (MeasurableEquiv.map_ae MeasurableEquiv.prodComm (graphPlan T μ)).ge
         (ae_snd_eq_graphPlan hT)
-    rw [h, graphPlan_def] at h₁
-    filter_upwards [ae_of_ae_map (aemeasurable_prodMk_self hR) h₁] with y hy
+    rw [h] at h₁
+    filter_upwards [ae_of_ae_graphPlan hR h₁] with y hy
     simpa using hy.symm
 
 end Determinism

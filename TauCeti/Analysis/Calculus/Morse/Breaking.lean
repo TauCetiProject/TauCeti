@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Calculus.Morse.Convergence
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 public import TauCeti.Analysis.Calculus.Morse.Index
+public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Basic
 public import TauCeti.Dynamics.Flow.Breaking
 public import Mathlib.Data.List.Chain
 -- Private: used only to compare the gradient with the differential.
@@ -50,9 +51,9 @@ unstable sets.
 * `TauCeti.IsNondegenerateCriticalPoint.morseIndex_lt_of_mem_closure_stableSet_inter_stableSet`
   and its time reversal: iterating breaks through convergent Morse--Smale trajectories strictly
   lowers the Morse index.
-* `TauCeti.IsNondegenerateCriticalPoint.isClosed_unstableSet_inter_stableSet_inter_level` and
-  `finite_unstableSet_inter_stableSet_inter_level`: an index-one trajectory slice is closed, and
-  is finite when it is contained in a compact set.
+* `TauCeti.IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level` and
+  `TauCeti.IsNondegenerateCriticalPoint.finite_unstableSet_inter_stableSet_inter_level`: an
+  index-one trajectory slice is closed, and is finite when it is contained in a compact set.
 
 ## References
 
@@ -78,8 +79,8 @@ theorem IsNegativeGradient.mem_stableSet_of_forall_mem_closedBall (hφ : IsNegat
     (hdiff : ∀ y ∈ closedBall x r, DifferentiableAt ℝ f y)
     (hgrad : ContinuousOn (∇ f) (closedBall x r)) (hcrit : ∀ y ∈ closedBall x r, ∇ f y = 0 → y = x)
     {w : E} (hw : ∀ t, 0 ≤ t → φ t w ∈ closedBall x r) : w ∈ stableSet φ x := by
-  obtain ⟨p, hp, hp0, hlim⟩ := TauCeti.IsIntegralCurveOn.exists_tendsto_atTop
-    ((hφ.isIntegralCurve w).isIntegralCurveOn _) (isCompact_closedBall x r) hw hdiff hgrad
+  obtain ⟨p, hp, hp0, hlim⟩ := ((hφ.isIntegralCurve w).isIntegralCurveOn _).exists_tendsto_atTop
+    (isCompact_closedBall x r) hw hdiff hgrad
     ((finite_singleton x).subset fun y hy ↦ hcrit y hy.1 hy.2)
   exact mem_stableSet.2 (hcrit p hp hp0 ▸ hlim)
 
@@ -89,8 +90,8 @@ theorem IsNegativeGradient.mem_unstableSet_of_forall_mem_closedBall (hφ : IsNeg
     (hdiff : ∀ y ∈ closedBall x r, DifferentiableAt ℝ f y)
     (hgrad : ContinuousOn (∇ f) (closedBall x r)) (hcrit : ∀ y ∈ closedBall x r, ∇ f y = 0 → y = x)
     {w : E} (hw : ∀ t, t ≤ 0 → φ t w ∈ closedBall x r) : w ∈ unstableSet φ x := by
-  obtain ⟨p, hp, hp0, hlim⟩ := TauCeti.IsIntegralCurveOn.exists_tendsto_atBot
-    ((hφ.isIntegralCurve w).isIntegralCurveOn _) (isCompact_closedBall x r) hw hdiff hgrad
+  obtain ⟨p, hp, hp0, hlim⟩ := ((hφ.isIntegralCurve w).isIntegralCurveOn _).exists_tendsto_atBot
+    (isCompact_closedBall x r) hw hdiff hgrad
     ((finite_singleton x).subset fun y hy ↦ hcrit y hy.1 hy.2)
   exact mem_unstableSet.2 (hcrit p hp hp0 ▸ hlim)
 
@@ -119,7 +120,7 @@ private theorem eventually_closedBall (h : IsNondegenerateCriticalPoint f x) :
   · rw [hgradfun]
     exact ((InnerProductSpace.toDual ℝ E).symm.continuous.continuousAt.comp
       ((hball y (hsub y hy)).1.continuousAt_fderiv two_ne_zero)).continuousWithinAt
-  · rw [← norm_eq_zero, ← norm_gradient_eq_norm_fderiv, hy0, norm_zero]
+  · rwa [← gradient_eq_zero_iff]
 
 /-- **Small balls isolate a nondegenerate critical point in forward time.** For every sufficiently
 small `r > 0`, a negative gradient trajectory staying in `closedBall x r` at all nonnegative times
@@ -255,14 +256,7 @@ theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet
     (hconv : ∀ {z}, z ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.stableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     ∃ l : List E,
       (x :: l).IsChain (fun a b ↦ a ≠ b ∧
         (Flow.unstableSet (negativeGradientFlow f hf) a ∩
@@ -284,14 +278,13 @@ theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet
         l.length + morseIndex f q ≤ morseIndex f x := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
         intro x hxn hx hqx hy
         obtain ⟨y, hy⟩ := hy
         obtain ⟨a, z, ha, hax, hzq, hza⟩ :=
           exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
             hx hfs hf hqx hy hconv
-        have hdrop := hx.morseIndex_lt_of_mem_unstableSet_inter_stableSet ha hfs hf
-          hax.symm hzq.2 hza (htr hx ha hzq.2 hza)
+        have hdrop := htr.morseIndex_lt hx ha hfs hax.symm hzq.2 hza
         have hedge : x ≠ a ∧
             (Flow.unstableSet (negativeGradientFlow f hf) x ∩
               Flow.stableSet (negativeGradientFlow f hf) a).Nonempty :=
@@ -323,14 +316,7 @@ theorem morseIndex_lt_of_mem_closure_stableSet_inter_stableSet
     (hconv : ∀ {z}, z ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.stableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     morseIndex f q < morseIndex f x := by
   obtain ⟨l, -, hlast, -, hlen⟩ :=
     hx.exists_isChain_of_mem_closure_stableSet_inter_stableSet hfs hf hqx hy hconv htr
@@ -353,14 +339,7 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet
     (hconv : ∀ {z}, z ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.unstableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     ∃ l : List E,
       (p :: l).IsChain (fun a b ↦ a ≠ b ∧
         (Flow.unstableSet (negativeGradientFlow f hf) a ∩
@@ -383,14 +362,13 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet
         l.length + morseIndex f x ≤ morseIndex f p := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
         intro x hxn hx hpx hy
         obtain ⟨y, hy⟩ := hy
         obtain ⟨a, z, ha, hax, hzp, hza⟩ :=
           exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
             hx hfs hf hpx hy hconv
-        have hxa := ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hx hfs hf hax
-          hza hzp.2 (htr ha hx hza hzp.2)
+        have hxa := htr.morseIndex_lt ha hx hfs hax hza hzp.2
         have hcodim : d - morseIndex f a < d - morseIndex f x := by
           have hxa' := morseIndex_le_finrank (f := f) (x := a)
           omega
@@ -428,14 +406,7 @@ theorem morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet
     (hconv : ∀ {z}, z ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.unstableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     morseIndex f x < morseIndex f p := by
   obtain ⟨l, -, hlast, -, hlen⟩ :=
     hx.exists_isChain_of_mem_closure_unstableSet_inter_unstableSet hfs hf hpx hy hconv htr
@@ -445,13 +416,16 @@ theorem morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet
       simp only [List.length_cons] at hlen
       omega
 
+end IsNondegenerateCriticalPoint
+
+namespace IsMorseSmale
+
 /-- **An index-one Morse trajectory slice is closed.** Assume that points in the closures of the
 relevant stable and unstable manifolds converge to nondegenerate critical points, and that all
 such manifolds meet transversally. If the Morse indices of `p` and `q` differ by one, then their
 connecting set, cut at any value strictly between `f q` and `f p`, is closed. -/
 theorem isClosed_unstableSet_inter_stableSet_inter_level
-    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
-    (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    {p q : E} (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hind : morseIndex f p = morseIndex f q + 1) {c : ℝ} (hc : f q < c ∧ c < f p)
     (hconvS : ∀ {z}, z ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) →
       ∃ b, IsNondegenerateCriticalPoint f b ∧
@@ -459,82 +433,64 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
     (hconvU : ∀ {z}, z ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.unstableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     IsClosed (Flow.unstableSet (negativeGradientFlow f hf) p ∩
       Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c}) := by
-  -- A limit point has backward and forward critical limits `a` and `b`. The two preceding
-  -- index-control theorems and the trajectory from `a` to `b` fit their indices between two
-  -- consecutive integers. Any extra break would force a strict intermediate index; the only
-  -- remaining degenerate possibilities put the limit point at `p` or `q`, away from the level.
+  -- A limit point has backward and forward critical limits `a` and `b`, with the indices
+  -- `ind q ≤ ind b ≤ ind a ≤ ind p = ind q + 1`, strict where the points differ. If `a = b`, the
+  -- point is the critical point `a` itself, which is neither `p` nor `q` (wrong level) and so
+  -- would give two strict steps. Otherwise `ind b < ind a` uses up the one step: `a = p`, `b = q`.
   apply isClosed_of_closure_subset
   intro y hy
   have hyU : y ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) :=
-    closure_mono (fun _ hz ↦ hz.1.1) hy
+    closure_mono (by exact fun _ hz ↦ hz.1.1) hy
   have hyS : y ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) :=
-    closure_mono (fun _ hz ↦ hz.1.2) hy
+    closure_mono (by exact fun _ hz ↦ hz.1.2) hy
   have hyc : f y = c :=
     (isClosed_eq hfs.continuous continuous_const).closure_subset
-      (closure_mono (fun _ hz ↦ hz.2) hy)
+      (closure_mono (by exact fun _ hz ↦ hz.2) hy)
   obtain ⟨a, ha, hya⟩ := hconvU hyU
   obtain ⟨b, hb, hyb⟩ := hconvS hyS
-  have hba : morseIndex f b ≤ morseIndex f a := by
-    by_cases hab : a = b
-    · subst a
-      exact le_rfl
-    · exact (ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hb hfs hf hab hya hyb
-        (htr ha hb hya hyb)).le
-  have hbq : b = q := by
-    by_contra hbq
-    have hqb := hb.morseIndex_lt_of_mem_closure_stableSet_inter_stableSet hfs hf
-      (fun h ↦ hbq h.symm) ⟨y, hyS, hyb⟩ hconvS htr
-    have hap : a = p := by
-      by_contra hap
-      have hap' := ha.morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hfs hf
-        (fun h ↦ hap h.symm) ⟨y, hyU, hya⟩ hconvU htr
-      omega
-    subst a
-    have hab : p = b := by
-      by_contra hab
-      have hba' := hp.morseIndex_lt_of_mem_unstableSet_inter_stableSet hb hfs hf hab hya hyb
-        (htr hp hb hya hyb)
-      omega
-    subst b
-    have hyp : y = p := Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
+  have hpa (hap : a ≠ p) : morseIndex f a < morseIndex f p :=
+    ha.morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hfs hf (Ne.symm hap)
+      ⟨y, hyU, hya⟩ hconvU htr
+  have hqb (hbq : b ≠ q) : morseIndex f q < morseIndex f b :=
+    hb.morseIndex_lt_of_mem_closure_stableSet_inter_stableSet hfs hf (Ne.symm hbq)
+      ⟨y, hyS, hyb⟩ hconvS htr
+  by_cases hab : a = b
+  · subst b
+    have hya' : y = a := Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
       (isNegativeGradient_negativeGradientFlow f hf)
         (fun t ↦ (hfs.differentiable (by norm_num)).differentiableAt)
         hfs.continuous.continuousAt ⟨hya, hyb⟩
-    rw [hyp] at hyc
-    linarith
-  subst b
-  have hap : a = p := by
-    by_contra hap
-    have hap' := ha.morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hfs hf
-      (fun h ↦ hap h.symm) ⟨y, hyU, hya⟩ hconvU htr
-    by_cases hab : a = q
-    · subst a
-      have hyq : y = q := Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
-        (isNegativeGradient_negativeGradientFlow f hf)
-          (fun t ↦ (hfs.differentiable (by norm_num)).differentiableAt)
-          hfs.continuous.continuousAt ⟨hya, hyb⟩
-      rw [hyq] at hyc
-      linarith
-    · have hba' := ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hq hfs hf hab hya hyb
-        (htr ha hq hya hyb)
-      omega
-  subst a
-  exact ⟨⟨hya, hyb⟩, hyc⟩
+    rcases eq_or_ne a p with rfl | hap
+    · linarith [hya' ▸ hyc]
+    rcases eq_or_ne a q with rfl | haq
+    · linarith [hya' ▸ hyc]
+    have := hpa hap
+    have := hqb haq
+    omega
+  have hba := htr.morseIndex_lt ha hb hfs hab hya hyb
+  rcases eq_or_ne b q with rfl | hbq
+  · rcases eq_or_ne a p with rfl | hap
+    · exact ⟨⟨hya, hyb⟩, hyc⟩
+    have := hpa hap
+    omega
+  have := hqb hbq
+  rcases eq_or_ne a p with rfl | hap
+  · omega
+  have := hpa hap
+  omega
 
-/-- **A compact index-one Morse trajectory slice is finite.** Under the hypotheses of
-`isClosed_unstableSet_inter_stableSet_inter_level`, if the slice is contained in a compact set
-then it is finite. This is the finiteness needed to define the coefficient of the Morse
-differential. -/
+end IsMorseSmale
+
+namespace IsNondegenerateCriticalPoint
+
+/-- **A compact index-one Morse trajectory slice is finite.** Assume that `p` and `q` are
+nondegenerate critical points and that the hypotheses of
+`IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level` hold. If the slice is contained in
+a compact set, then it is finite. This is the finiteness needed to define the coefficient of the
+Morse differential. -/
 theorem finite_unstableSet_inter_stableSet_inter_level
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
@@ -545,14 +501,7 @@ theorem finite_unstableSet_inter_stableSet_inter_level
     (hconvU : ∀ {z}, z ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) →
       ∃ a, IsNondegenerateCriticalPoint f a ∧
         z ∈ Flow.unstableSet (negativeGradientFlow f hf) a)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤)
+    (htr : IsMorseSmale f hf)
     {C : Set E} (hC : IsCompact C)
     (hsub : Flow.unstableSet (negativeGradientFlow f hf) p ∩
       Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c} ⊆ C) :
@@ -561,10 +510,10 @@ theorem finite_unstableSet_inter_stableSet_inter_level
   -- The slice is a closed subset of a compact set, and Morse--Smale transversality together with
   -- the index difference makes it discrete.
   apply (hC.of_isClosed_subset
-    (hp.isClosed_unstableSet_inter_stableSet_inter_level hq hfs hf hind hc hconvS hconvU htr)
+    (htr.isClosed_unstableSet_inter_stableSet_inter_level hfs hf hind hc hconvS hconvU)
     hsub).finite
   exact hp.isDiscrete_unstableSet_inter_stableSet_level hq hfs hf hind
-    (fun y hy ↦ htr hp hq hy.1.1 hy.1.2)
+    (fun y hy ↦ htr.transverse_at hp hq hy.1)
 
 end IsNondegenerateCriticalPoint
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
@@ -30,6 +31,8 @@ and vanishing on boundaries.
 * `TauCeti.chainsDesc f`: the linear map out of the singular `n`-chains with the given values on
   singular simplices.
 * `TauCeti.singularAugment k X`: the augmentation of the simplicial singular chains.
+* `ContinuousMap.singularHomologyMap`: the induced linear map on singular homology.
+* `TauCeti.singularChainsAugmentation k X`: the augmentation, as a chain map to `k` in degree `0`.
 
 ## Main results
 
@@ -184,6 +187,21 @@ theorem singularAugment_d (X : TopCat.{u}) (x : ((singularChains k).obj X).X 1) 
       simp [Fin.sum_univ_succ, singularAugment_simplexChain]
   exact LinearMap.congr_fun this x
 
+variable (k) in
+/-- The augmentation of the simplicial singular chains, as a chain map to the coefficient ring
+placed in degree `0`. -/
+def singularChainsAugmentation (X : TopCat.{u}) :
+    (singularChains k).obj X ⟶ (ChainComplex.single₀ (ModuleCat.{u} k)).obj (ModuleCat.of k k) :=
+  (((singularChains k).obj X).toSingle₀Equiv _).symm
+    ⟨ModuleCat.ofHom (singularAugment k X), by ext x; exact singularAugment_d X x⟩
+
+variable (k) in
+/-- In degree `0` the augmentation chain map is the augmentation. -/
+@[simp]
+theorem singularChainsAugmentation_f_zero (X : TopCat.{u}) :
+    (singularChainsAugmentation k X).f 0 = ModuleCat.ofHom (singularAugment k X) :=
+  ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
+
 section Paths
 
 open unitInterval
@@ -220,3 +238,38 @@ theorem singularChains_map_f_pathChain {X Y : TopCat.{u}} (f : X ⟶ Y) (g : C(I
 end Paths
 
 end TauCeti
+
+namespace ContinuousMap
+
+open TauCeti
+
+variable (k : Type u) [Ring k] (n : ℕ)
+
+/-- The map induced on degree-`n` singular homology with coefficients in `k` by a continuous
+map. -/
+abbrev singularHomologyMap {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace Z]
+    (g : C(Y, Z)) :
+    ((singularChains k).obj (TopCat.of Y)).homology n →ₗ[k]
+      ((singularChains k).obj (TopCat.of Z)).homology n :=
+  (HomologicalComplex.homologyMap ((singularChains k).map (TopCat.ofHom g)) n).hom
+
+variable {k n} in
+/-- The identity map induces the identity on singular homology. -/
+@[simp]
+theorem singularHomologyMap_id {Y : Type u} [TopologicalSpace Y] (x) :
+    singularHomologyMap k n (ContinuousMap.id Y) x = x := by
+  rw [singularHomologyMap, TopCat.ofHom_id, CategoryTheory.Functor.map_id,
+    HomologicalComplex.homologyMap_id, ModuleCat.hom_id, LinearMap.id_apply]
+
+variable {k n} in
+/-- Singular homology respects composition of continuous maps. -/
+theorem singularHomologyMap_comp {Y Z W : Type u} [TopologicalSpace Y] [TopologicalSpace Z]
+    [TopologicalSpace W] (g : C(Z, W)) (g' : C(Y, Z)) (x) :
+    singularHomologyMap k n (g.comp g') x =
+      singularHomologyMap k n g (singularHomologyMap k n g' x) := by
+  simp only [singularHomologyMap, TopCat.ofHom_comp, Functor.map_comp,
+    HomologicalComplex.homologyMap_comp]
+  -- The composite of linear maps applied to `x` is the iterated application by definition.
+  rfl
+
+end ContinuousMap

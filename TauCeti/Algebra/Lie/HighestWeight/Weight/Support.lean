@@ -13,8 +13,8 @@ import TauCeti.LinearAlgebra.RootSystem.DominantCone
 /-!
 # The weight support of a highest weight module
 
-Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over an algebraically
-closed field of characteristic zero, let `H` be a splitting Cartan subalgebra, let `b` be a base of
+Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over a field of
+characteristic zero, let `H` be a splitting Cartan subalgebra, let `b` be a base of
 its root system, and let `M` be an `L`-module carrying a highest weight vector of weight `lam`.
 This file describes the weights of `M` in two ways.
 
@@ -24,9 +24,9 @@ is the conclusion. Together with finite-dimensionality of the individual weight 
 makes such a module finite-dimensional
 (`TauCeti.finiteDimensional_of_isHighestWeightVector_of_isDominantIntegral`).
 
-If instead `M` is finite-dimensional, every weight of `M` has a **dominant integral Weyl
-conjugate** which is again a weight of `M`. That is the form in which a weight of `M` is compared
-with `lam`, for example by the Casimir scalar in
+If instead `M` is finite-dimensional and the field is algebraically closed, every weight of `M`
+has a **dominant integral Weyl conjugate** which is again a weight of `M`. That is the form in
+which a weight of `M` is compared with `lam`, for example by the Casimir scalar in
 `TauCeti/Algebra/Lie/HighestWeight/Separation.lean`; dominance is what makes the invariant form
 available with a sign.
 
@@ -78,9 +78,9 @@ open LieAlgebra LieModule Module
 
 universe u v w
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L]
   [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   {b : (IsKilling.rootSystem H).Base} {lam : Dual K H} {v : M}
 
@@ -114,7 +114,7 @@ theorem finite_setOf_genWeightSpace_ne_bot_of_isHighestWeightVector
 
 section FiniteDimensional
 
-variable [IsTriangularizable K H L] [FiniteDimensional K M]
+variable [IsAlgClosed K] [FiniteDimensional K M]
 
 /-- **Every weight of a finite-dimensional highest weight module has a dominant integral Weyl
 conjugate, again a weight of the module.** Here `M` is a module over an algebraically closed field

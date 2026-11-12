@@ -67,7 +67,7 @@ a graphon equals the unique infinite exchangeable law whose finite marginals are
 finite sampling laws. -/
 theorem infiniteSampleLaw_eq_extension (W : Graphon Ω μ) :
     infiniteSampleLaw W = (exchangeableGraphLawEquivInfinite (sampleExchangeableLaw W)).law := by
-  apply measure_ext_of_map_restrictFin
+  apply SimpleGraph.measure_ext_of_map_restrictFin
   intro n
   rw [infiniteSampleLaw_map_restrictFin,
     exchangeableGraphLawEquivInfinite_law_map_restrictFin, sampleExchangeableLaw_law]
@@ -90,7 +90,7 @@ probability carriers, at cut distance zero have the same law of the infinite ran
 on infinite graphs is determined by its finite windows, and those are the finite sampling laws. -/
 theorem infiniteSampleLaw_eq_of_cutDist_eq_zero (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
     (h : cutDist U W = 0) : infiniteSampleLaw U = infiniteSampleLaw W :=
-  measure_ext_of_map_restrictFin fun n => by
+  SimpleGraph.measure_ext_of_map_restrictFin fun n => by
     rw [infiniteSampleLaw_map_restrictFin, infiniteSampleLaw_map_restrictFin,
       sampleGraph_eq_of_cutDist_eq_zero U W h n]
 

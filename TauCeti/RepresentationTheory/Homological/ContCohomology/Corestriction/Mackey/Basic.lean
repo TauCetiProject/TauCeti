@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.RepresentationTheory.Induction.Mackey.Basic
+import TauCeti.Algebra.BigOperators.RightInverse
 
 /-!
 # The Mackey double-coset formula for low-degree corestriction
@@ -54,7 +55,8 @@ single double coset shows that each summand depends only on the double coset `Vs
 ## Main definitions
 
 * `Subgroup.mackeyTransversal`: the transversal of `G ⧸ U` adapted to the double cosets `V \ G / U`.
-* `Subgroup.continuousMackeyToH`: the conjugation `V ⊓ sUs⁻¹ → U` as a continuous homomorphism.
+* `Subgroup.continuousMackeyToH`: the conjugation `V ⊓ sUs⁻¹ → U` as a continuous homomorphism;
+  `Subgroup.continuous_mackeyToH` states the continuity of `TauCeti.mackeyToH` itself.
 * `TauCeti.ContCohomology.explicitMackeyTerm0`, `explicitMackeyTerm1`, `explicitMackeyTerm2`: the
   summand `cor^V_{V ⊓ sUs⁻¹} ∘ (s)_* ∘ res` attached to `s` in degrees zero, one and two.
 
@@ -166,6 +168,11 @@ theorem coe_continuousMackeyToH [ContinuousMul G] (s : G) :
     (continuousMackeyToH U V s : (mackeySubgroup s U V).subgroupOf V →* U) = mackeyToH s U V :=
   (rfl)
 
+/-- The conjugation `TauCeti.mackeyToH s U V : V ⊓ sUs⁻¹ → U`, `y ↦ s⁻¹ y s`, is continuous. -/
+@[fun_prop]
+theorem continuous_mackeyToH [ContinuousMul G] (s : G) : Continuous (mackeyToH s U V) :=
+  (continuousMackeyToH U V s).continuous
+
 end Topological
 
 end Subgroup
@@ -249,7 +256,7 @@ theorem explicitMackeyTerm0_eq_of_mk_eq {s s' : G}
     (h : DoubleCoset.mk V U s = DoubleCoset.mk V U s') :
     explicitMackeyTerm0 G M U V s = explicitMackeyTerm0 G M U V s' := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  refine AddMonoidHom.ext fun m => eq_of_sum_doubleCoset_rep_eq V U
+  refine AddMonoidHom.ext fun m => Function.RightInverse.eq_of_sum_eq DoubleCoset.out_eq'
     (fun s => explicitMackeyTerm0 G M U V s m) (fun r hr => ?_) h
   rw [← explicitCor0_mackey G M U V r hr m,
     ← explicitCor0_mackey G M U V Quotient.out DoubleCoset.out_eq' m]
@@ -344,7 +351,7 @@ theorem explicitMackeyTerm1_eq_of_mk_eq {s s' : G}
     (h : DoubleCoset.mk V U s = DoubleCoset.mk V U s') :
     explicitMackeyTerm1 G M U V hU s = explicitMackeyTerm1 G M U V hU s' := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  refine AddMonoidHom.ext fun x => eq_of_sum_doubleCoset_rep_eq V U
+  refine AddMonoidHom.ext fun x => Function.RightInverse.eq_of_sum_eq DoubleCoset.out_eq'
     (fun s => explicitMackeyTerm1 G M U V hU s x) (fun r hr => ?_) h
   rw [← explicitCor1_mackey G M U V r hr hU x,
     ← explicitCor1_mackey G M U V Quotient.out DoubleCoset.out_eq' hU x]
@@ -414,6 +421,17 @@ theorem explicitMackeyTerm2_mk (s : G) (f : Z2 U M) :
           (smul_continuousMackeyToH_smul G M U V s) f) : H2 V M) := by
   rw [explicitMackeyTerm2, AddMonoidHom.comp_apply, explicitMap2_mk, explicitCor2_mk]
 
+/-- The degree-two Mackey summand is the corestriction from the Mackey subgroup of the pullback
+along conjugation by `s`. -/
+theorem explicitMackeyTerm2_apply (s : G) (x : H2 U M) :
+    explicitMackeyTerm2 G M U V hU s x =
+      explicitCor2 V M ((mackeySubgroup s U V).subgroupOf V)
+        (U.isOpen_mackeySubgroup_subgroupOf V hU s)
+        (explicitMap2 U M ((mackeySubgroup s U V).subgroupOf V) M (U.continuousMackeyToH V s)
+          (DistribSMul.toAddMonoidHom M s) ((continuous_const_smul s).congr fun _ => rfl)
+          (smul_continuousMackeyToH_smul G M U V s) x) :=
+  (rfl)
+
 include hr in
 /-- **The Mackey double-coset formula in degree two** (NSW (1.5.6)): for an open subgroup `U` of
 finite index and any subgroup `V`,
@@ -446,7 +464,7 @@ theorem explicitMackeyTerm2_eq_of_mk_eq {s s' : G}
     (h : DoubleCoset.mk V U s = DoubleCoset.mk V U s') :
     explicitMackeyTerm2 G M U V hU s = explicitMackeyTerm2 G M U V hU s' := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  refine AddMonoidHom.ext fun x => eq_of_sum_doubleCoset_rep_eq V U
+  refine AddMonoidHom.ext fun x => Function.RightInverse.eq_of_sum_eq DoubleCoset.out_eq'
     (fun s => explicitMackeyTerm2 G M U V hU s x) (fun r hr => ?_) h
   rw [← explicitCor2_mackey G M U V r hr hU x,
     ← explicitCor2_mackey G M U V Quotient.out DoubleCoset.out_eq' hU x]

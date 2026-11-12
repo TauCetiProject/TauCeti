@@ -77,16 +77,11 @@ universe u u' v v'
 
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
-variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
-variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [Algebra k F] [Algebra F F'] [Algebra k F'] [IsScalarTower k F F']
 
 attribute [local instance 10] Place.algebraIntegersExtension Place.isScalarTowerIntegersExtension
 
 /-! ### Relative repartitions -/
-
-section Relative
-
-omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F']
 
 variable (k F F') in
 /-- The **relative repartitions** of `F' / F`: the families `β : Place k F → F'` whose entry at
@@ -133,13 +128,21 @@ theorem const_mem_relativeRepartitionSpace [Algebra.IsIntegral F F'] (hF : IsFun
   Filter.eventually_cofinite.mpr
     (Place.finite_setOf_not_isIntegral hF x (Algebra.IsIntegral.isIntegral x))
 
-end Relative
+open scoped Classical in
+/-- The family that is `z` at `P` and `0` elsewhere is a relative repartition: its entries are `0`,
+hence integral, at every place other than `P`. -/
+theorem single_mem_relativeRepartitionSpace (P : Place k F) (z : F') :
+    Pi.single P z ∈ relativeRepartitionSpace k F F' :=
+  mem_relativeRepartitionSpace_iff.mpr <| Filter.eventually_cofinite.mpr <|
+    (Set.finite_singleton P).subset fun Q hQ ↦ by
+      by_contra hQP
+      exact hQ (by simp [Pi.single_eq_of_ne hQP, isIntegral_zero])
 
 /-! ### Pulling relative repartitions back to `F'` -/
 
 section Pullback
 
-variable [FiniteDimensional F F']
+variable [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] [FiniteDimensional F F']
 
 /-- **The pullback of a relative repartition is a repartition of `F' / k'`**: at a place `P'`
 over a place `P` at which `β P` is integral over `𝒪_P`, the entry `β P` is regular at `P'`, and
@@ -297,10 +300,6 @@ end Pullback
 
 section Trace
 
-variable [FiniteDimensional F F']
-
-omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F']
-
 variable (k F F') in
 /-- Multiplication by functions of `F` on relative repartitions. -/
 noncomputable def relativeRepartitionMul (hF : IsFunctionField k F) :
@@ -329,7 +328,6 @@ noncomputable def repartitionSpaceModule (hF : IsFunctionField k F) :
     Module F ↥(repartitionSpace k F) :=
   Module.compHom _ (repartitionMul hF).toRingHom
 
-omit [FiniteDimensional F F'] in
 /-- Scalar multiplication for the natural `F`-module structure on relative repartitions is
 entrywise multiplication. -/
 @[simp]
@@ -340,7 +338,6 @@ theorem coe_relativeRepartitionSpaceModule_smul (hF : IsFunctionField k F) (f : 
       f • (β : Place k F → F') :=
   (rfl)
 
-omit [FiniteDimensional F F'] in
 /-- Scalar multiplication for the natural `F`-module structure on repartitions is entrywise
 multiplication. -/
 @[simp]
@@ -354,6 +351,8 @@ theorem coe_repartitionSpaceModule_smul (hF : IsFunctionField k F) (f : F)
     -- Expose it as `repartitionMul` so its coercion lemma can identify the underlying function.
     change ((repartitionMul hF f a : ↥(repartitionSpace k F)) : Place k F → F) = _
     exact coe_repartitionMul_apply hF f a
+
+variable [FiniteDimensional F F']
 
 /-- The entrywise trace of a relative repartition is a repartition of `F / k`: the trace of an
 element integral over the integrally closed ring `𝒪_P` lies in `𝒪_P`. -/
@@ -416,6 +415,18 @@ theorem repartitionTrace_smul (hF : IsFunctionField k F) (f : F)
     let _ := relativeRepartitionSpaceModule (F' := F') hF
     let _ := repartitionSpaceModule hF
     exact map_smul (repartitionTrace k F F' hF) f β
+
+open scoped Classical in
+/-- The trace of the fibre-constant repartition `z` over `P` is `Tr z` at `P`. -/
+@[simp]
+theorem repartitionTrace_single (hF : IsFunctionField k F) (P : Place k F) (z : F') :
+    repartitionTrace k F F' hF ⟨_, single_mem_relativeRepartitionSpace P z⟩ =
+      singleRepartition P (Algebra.trace F F' z) :=
+  Subtype.ext <| funext fun Q ↦ by
+    rw [repartitionTrace_apply]
+    rcases eq_or_ne Q P with rfl | hQ
+    · simp
+    · simp [hQ, singleRepartition_of_ne hQ]
 
 /-- **The trace estimate** (Stichtenoth, proof of Theorem 3.4.6): if the pullback of a relative
 repartition `β` to `F'` lies in `A_{F'}(Con D + Diff(F'/F))`, then its trace lies in `A_F(D)`.

@@ -50,7 +50,7 @@ complexification with intersections is needed.
 ## References
 
 Deligne, *Théorie de Hodge II*, 1.2.10 and 2.3.5; Peters–Steenbrink, *Mixed Hodge Structures*,
-Theorem 3.13. This is the milestone of Layer L2 of the Hodge structures roadmap.
+Theorem 3.13.
 -/
 
 public section
@@ -90,7 +90,7 @@ theorem range_inf_iSup_deligneSplittingFamily_eq_map_iSup (f : Hom source target
     LinearMap.range f.toLinearMap ⊓ ⨆ (pq) (_ : P pq), target.deligneSplittingFamily pq =
       (⨆ (pq) (_ : P pq), source.deligneSplittingFamily pq).map f.toLinearMap := by
   rw [f.range_eq_iSup_map_deligneSplittingFamily, inf_comm,
-    TauCeti.iSupIndep.iSup₂_inf_iSup_eq_iSup₂ (A := target.deligneSplittingFamily)
+    iSupIndep.iSup₂_inf_iSup_eq_iSup₂ (A := target.deligneSplittingFamily)
       (B := fun pq ↦ (source.deligneSplittingFamily pq).map f.toLinearMap)
       target.iSupIndep_deligneSplittingFamily
       (fun pq ↦ by
@@ -125,9 +125,9 @@ filtration.** -/
 vector lying both in the image of `f` and in the target's weight step `W_k` is the image of a
 vector of the source's `W_k`.
 
-The weight filtration is rational, so this is the form the milestone takes; it descends from the
-complex statement because complexification of rational subspaces reflects inclusions. Only the
-inclusion `(A ∩ B)_ℂ ≤ A_ℂ ∩ B_ℂ` is used, which is monotonicity. -/
+The weight filtration is rational, so this is the natural form of the statement; it descends
+from the complex statement because complexification of rational subspaces reflects inclusions.
+Only the inclusion `(A ∩ B)_ℂ ≤ A_ℂ ∩ B_ℂ` is used, which is monotonicity. -/
 @[simp] theorem range_inf_WQ_eq_map_WQ (f : Hom source target) (k : ℤ) :
     LinearMap.range f.toRatLinearMap ⊓ target.WQ k = (source.WQ k).map f.toRatLinearMap := by
   refine le_antisymm ?_ (le_inf LinearMap.map_le_range (f.map_WQ_le k))

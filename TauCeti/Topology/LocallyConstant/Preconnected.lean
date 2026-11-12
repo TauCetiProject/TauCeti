@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.LocallyConstant.Basic
+public import Mathlib.Topology.Connected.Clopen
 
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.Order.IntermediateValue
@@ -40,17 +40,13 @@ variable {X : Type*} [TopologicalSpace X] {s : Set X}
 
 /-- A function that is locally constant along a preconnected set is constant along it.
 
-This is `IsLocallyConstant.apply_eq_of_preconnectedSpace` transported to the subspace `s`. -/
+This is `IsLocallyConstant.apply_eq_of_preconnectedSpace` transported to the subspace `s`, and
+the special case of `IsPreconnected.induction₂` for the relation `f y = f x`. -/
 theorem apply_eq_of_eventually_eq {Y : Type*} {f : X → Y} (hs : IsPreconnected s)
     (hf : ∀ t ∈ s, ∀ᶠ u in 𝓝[s] t, f u = f t) {a b : X} (ha : a ∈ s) (hb : b ∈ s) :
-    f a = f b := by
-  have hlc : IsLocallyConstant fun x : s => f x.1 := by
-    rw [IsLocallyConstant.iff_eventually_eq]
-    rintro ⟨t, ht⟩
-    rw [nhds_subtype_eq_comap_nhdsWithin]
-    exact Filter.Eventually.comap ((hf t ht).mono fun _ hu => hu) _
-  have : PreconnectedSpace s := isPreconnected_iff_preconnectedSpace.mp hs
-  exact hlc.apply_eq_of_preconnectedSpace ⟨a, ha⟩ ⟨b, hb⟩
+    f a = f b :=
+  hs.induction₂ (fun x y => f y = f x) hf (fun _ _ _ _ _ _ hxy hyz => hyz.trans hxy)
+    (fun _ _ _ _ => Eq.symm) hb ha
 
 end IsPreconnected
 

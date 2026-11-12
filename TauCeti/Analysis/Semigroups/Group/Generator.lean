@@ -1,13 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 -/
 module
 
 public import TauCeti.Analysis.Semigroups.Group.Basic
 public import TauCeti.Analysis.Semigroups.BoundedGenerator.Basic
 -- Non-public: the exponential norm bound supplies the growth bound of `ofBounded`.
+import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Analysis.Semigroups.Generator.Invariance
 
@@ -39,6 +40,16 @@ forward half directly and the backward half through `U.reflect`.
 * `TauCeti.Semigroups.StronglyContinuousGroup.ofBounded`: the C₀-group `t ↦ exp (t • A)` of a
   bounded operator, with generator `A`; every C₀-group whose generator is `A` on all of `X` is of
   this form.
+
+## Provenance
+
+The bounded-commutant theorem added here is adapted from
+[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Commutant.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Commutant.lean)
+in the AIQ-Kitware DKPS formalization (copyright (c) 2026 Kitware, Inc.;
+authors Jon Crall and Claude Opus 5; Apache-2.0). Its delegation to the forward
+semigroup follows the approach of
+[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/SemigroupBridge.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/SemigroupBridge.lean).
+The present proof uses TauCeti's canonical group and semigroup generator APIs.
 
 ## References
 
@@ -108,6 +119,16 @@ theorem generator_eq_of_tendsto (U : StronglyContinuousGroup X) {x : X} (hx : x 
     {y : X} (h : Tendsto (fun t : ℝ => (1 / t) • (U t x - x)) (𝓝[>] (0 : ℝ)) (𝓝 y)) :
     U.generator ⟨x, by rw [U.generator_domain]; exact hx⟩ = y :=
   U.toSemigroup.generator_eq_of_tendsto hx ((tendsto_congr' (U.genQuot_eventuallyEq x)).mpr h)
+
+/-- A bounded operator commuting with a strongly continuous group preserves its generator
+domain and commutes with the generator on that domain. -/
+theorem generator_commute_of_commute (U : StronglyContinuousGroup X) (T : X →L[ℝ] X)
+    (hT : ∀ (t : ℝ) (y : X), U t (T y) = T (U t y)) (x : U.domain) :
+    ∃ hmem : T (x : X) ∈ U.domain,
+      U.generator ⟨T (x : X), by rw [U.generator_domain]; exact hmem⟩ =
+        T (U.generator ⟨(x : X), by rw [U.generator_domain]; exact x.property⟩) := by
+  exact U.toSemigroup.generator_commute_of_commute T
+    (fun s y => by simpa only [U.toSemigroup_apply] using hT (s : ℝ) y) x
 
 /-- The difference quotient based at `U r x` is `U r` applied to the difference quotient based
 at `x`. -/
@@ -289,7 +310,7 @@ def ofBounded (A : X →L[ℝ] X) : StronglyContinuousGroup X where
   toFun t := exp (t • A)
   map_zero' := by rw [zero_smul, exp_zero, ContinuousLinearMap.one_def]
   map_add' s t := by
-    rw [TauCeti.exp_add_smul]
+    rw [ContinuousLinearMap.exp_add_smul]
   continuousAt_zero' x :=
     (((differentiable_exp_smul_const ℝ A).continuous).clm_apply continuous_const).continuousAt
 
@@ -327,7 +348,8 @@ theorem ofBounded_generator (A : X →L[ℝ] X) :
 theorem ofBounded_hasGrowthBound (A : X →L[ℝ] X) : (ofBounded A).HasGrowthBound ‖A‖ 1 := by
   refine hasGrowthBound_of_bound le_rfl fun t => ?_
   rw [one_mul, ofBounded_apply]
-  exact TauCeti.norm_exp_smul_le A t
+  simpa only [Real.norm_eq_abs] using
+    TauCeti.norm_exp_smul_le ContinuousLinearMap.norm_id_le A t
 
 /-- A C₀-group whose generator is the bounded operator `A`, defined on all of `X`, is the
 operator exponential `t ↦ exp (t • A)`. -/

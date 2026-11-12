@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Equivalence
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Restriction
--- Non-public: `Action.resTensorator`, restriction commutes with the tensor product.
+-- Non-public: `Action.resMonoidal`, restriction commutes with the tensor product.
 import TauCeti.CategoryTheory.Action.Monoidal
 
 /-!
@@ -222,7 +222,7 @@ theorem resK0_mul (φ : H →* G) (x y : ExactK0 (finiteModulesExactStructure k[
     Function.comp_apply, AddMonoidHom.mul_apply]
   rw [← map_mul, ExactK0.of_mul_of, resK0_fdRepK0RingEquiv_of, resK0_fdRepK0RingEquiv_of,
     resK0_fdRepK0RingEquiv_of, ← map_mul, ExactK0.of_mul_of]
-  exact congrArg _ (ExactK0.of_congr (Action.resTensorator _ φ V W).symm)
+  exact congrArg _ (ExactK0.of_congr (Functor.Monoidal.μIso (Action.res _ φ) V W).symm)
 
 /-- **Restriction is unital**: it sends the class of the trivial line to the class of the trivial
 line. -/

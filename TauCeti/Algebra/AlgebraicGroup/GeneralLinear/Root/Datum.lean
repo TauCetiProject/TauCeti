@@ -34,6 +34,8 @@ X*(T) = ULift (Fin n) →₀ ℤ,    X_*(T) = ULift (Fin n) → ℤ.
 * `TauCeti.GeneralLinear.diagonalRootDatum`: the coordinate-difference root datum specialized to
   the diagonal torus lattice of `GL_n`.
 * `TauCeti.GeneralLinear.diagonalRootDatum_pairing_apply`: the closed Cartan-integer formula.
+* `TauCeti.GeneralLinear.diagonalRootDatum_coroot'_apply`: the coroot of `e_i - e_j` evaluates a
+  character on the difference of its `i`-th and `j`-th coordinates.
 * `TauCeti.GeneralLinear.diagonalRootDatum_reflection_apply` and
   `diagonalRootDatum_coreflection_apply`: reflections transpose arbitrary character and
   cocharacter coordinates.
@@ -173,6 +175,17 @@ theorem diagonalRootDatum_pairing_apply {n : ℕ} (p q : DiagonalRootIndex n) :
   rw [diagonalRootDatum, SplitTorus.coordinateRootDatum_pairing_apply]
   split_ifs <;> rfl
 
+/-- The coroot of the diagonal root indexed by `p = (i, j)` evaluates a character `x` to the
+difference `x i - x j` of two of its coordinates.
+
+Not `@[simp]`: `RootPairing.coroot'` is an `abbrev`, so `simp` would unfold the left-hand side
+before this lemma could fire. -/
+theorem diagonalRootDatum_coroot'_apply {n : ℕ} (p : DiagonalRootIndex.{u} n)
+    (x : ULift.{u} (Fin n) →₀ ℤ) :
+    (diagonalRootDatum n : RootDatum _ (ULift.{u} (Fin n) →₀ ℤ) _).coroot' p x =
+      x p.1.1 - x p.1.2 := by
+  rw [diagonalRootDatum, SplitTorus.coordinateRootDatum_coroot'_apply]
+
 /-- The index of the root obtained by applying the reflection in the root indexed by `p` to the
 root indexed by `q`: both entries of `q` are transposed by `Equiv.swap p.1.1 p.1.2`. -/
 noncomputable def diagonalReflectionIndex {n : ℕ} (p q : DiagonalRootIndex n) :
@@ -232,7 +245,7 @@ theorem ofAdd_diagonalRoot {n : ℕ} (i j : Fin n) :
 
 /-- Every root in the diagonal coordinate root datum occurs as a nontrivial adjoint weight of
 `GL_n`. This is the proved inclusion from the packaged root set into the adjoint weight set. -/
-theorem ofAdd_root_mem_nontrivialAdjointWeights {k : Type u} [Field k] {n : ℕ}
+theorem ofAdd_root_mem_nontrivialAdjointWeights {k : Type u} [CommRing k] [Nontrivial k] {n : ℕ}
     (p : DiagonalRootIndex n) :
     Multiplicative.ofAdd
         ((diagonalRootDatum n : RootDatum _ (ULift.{u} (Fin n) →₀ ℤ) _).root p) ∈

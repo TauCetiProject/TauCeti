@@ -59,7 +59,7 @@ transport.
 
 ## The two theorems
 
-`TauCeti.TopCat.Presheaf.EtaleSpace.isLocalHomeomorph_base` is the chart statement of
+`TopCat.Presheaf.EtaleSpace.isLocalHomeomorph_base` is the chart statement of
 `TauCeti/Topology/Sheaves/EtaleSpace.lean`: over an open set on which a section is defined, the
 germs of that section form an open set carried homeomorphically onto the base.
 
@@ -97,21 +97,18 @@ is stated for a Banach target. The sheaf, the germ dictionary
 the identity theorem `AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq` needing no
 completeness.
 
-The *source* is `ℂ` rather than a Riemann surface, in accordance with the generality bar of
-`ConformalMapping/README.md`, which fixes the scalar domain for the conformal layers L0–L6, and
-because the consumer `Conformal/Continuation/Basic.lean` continues germs along paths in `ℂ`. A
-Riemann surface source would need a holomorphic atlas to even state the predicate, which the
-pinned Mathlib has for complex manifolds but which this area does not use anywhere else.
+The *source* is `ℂ` rather than a Riemann surface because the consumer
+`Conformal/Continuation/Basic.lean` continues germs along paths in `ℂ`. A Riemann surface source
+would need a holomorphic atlas to even state the predicate, which the pinned Mathlib has for complex
+manifolds but which this area does not use anywhere else.
 
 ## Relation to Mathlib
 
 Mathlib has the étalé space of a presheaf (`Mathlib/Topology/Sheaves/EtaleSpace.lean`) and the
 local-predicate construction of a sheaf of functions
 (`Mathlib/Topology/Sheaves/LocalPredicate.lean`), both consumed here; it has no sheaf of
-holomorphic functions and no étalé space of holomorphic germs. The in-progress human-curated
-Riemann-mapping effort [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505)
-contains no continuation or monodromy material, so nothing here is a shim for it. Mathlib's sheaf
-of smooth functions on a manifold (`Mathlib/Geometry/Manifold/Sheaf/Smooth.lean`) reaches the same
+holomorphic functions and no étalé space of holomorphic germs. Mathlib's sheaf of smooth
+functions on a manifold (`Mathlib/Geometry/Manifold/Sheaf/Smooth.lean`) reaches the same
 `LocalPredicate` interface through the structure-groupoid machinery, but is fixed at smoothness
 `∞`; running that route at analytic smoothness would put the charted-space structure of `ℂ` and a
 translation between `ContMDiff` and `AnalyticOnNhd` between this file and the identity theorem it
@@ -351,7 +348,7 @@ theorem germPoint_eq_germSection (hg : AnalyticOnNhd ℂ g U) (y : U) :
 /-- **The germ map of a holomorphic function is a continuous section of the étalé projection.**
 Over its domain it is exactly the section of the étalé space swept out by `g`
 (`TauCeti.HolomorphicPresheaf.germPoint_eq_germSection`), so continuity is
-`TauCeti.TopCat.Presheaf.EtaleSpace.continuous_germSection`. -/
+`TopCat.Presheaf.EtaleSpace.continuous_germSection`. -/
 theorem continuousOn_germPoint (hg : AnalyticOnNhd ℂ g U) : ContinuousOn (germPoint g) U := by
   rw [continuousOn_iff_continuous_domRestrict]
   have hrestr : (U : Set ℂ).domRestrict (germPoint g) =

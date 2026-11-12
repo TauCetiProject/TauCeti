@@ -79,11 +79,6 @@ open AlgebraicGeometry
 
 variable {F : Type*} [Field F] [DecidableEq F] (W : WeierstrassCurve F) [W.IsElliptic]
 
-/-- The coordinate ring of an elliptic curve is a Dedekind domain. -/
-local instance : IsDedekindDomain W.toAffine.CoordinateRing :=
-  have := WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing W.toAffine
-  W.toAffine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 attribute [local instance] isIntegrallyClosedIn_functionField
 
 /-- **A function with divisor `[n]^* (T) - [n]^* (O)` has its `n`-th power pulled back along

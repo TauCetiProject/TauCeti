@@ -15,30 +15,33 @@ This file records lightweight consequences of the Lie-group regularity hierarchy
 
 ## Main results
 
-* `t2Space_of_lieGroup`: a Lie group modeled on a normed space is Hausdorff.
-* `LieGroup.minSmoothnessThree`: a `C³` Lie group over an RCL-like field has the regularity
-  required by Mathlib's tangent Lie algebra.
+* `ModelWithCorners.t2Space_of_lieGroup`: a Lie group modeled on a normed space is Hausdorff.
+* `LieGroup.minSmoothness_of_isRCLikeNormedField`: over a field satisfying
+  `IsRCLikeNormedField`, a `Cⁿ` Lie group is a `C^(minSmoothness 𝕜 n)` Lie group; Mathlib's
+  tangent Lie algebra `GroupLieAlgebra` assumes regularity `minSmoothness 𝕜 3`.
 -/
 
 public section
 
 open scoped ContDiff Manifold
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
 
-omit [IsRCLikeNormedField 𝕜] in
+variable (I) in
 /-- A Lie group modeled on a normed space is Hausdorff. -/
-theorem t2Space_of_lieGroup {n : ℕ∞ω} [LieGroup I n G] : T2Space G := by
-  let _ : T1Space G := I.t1Space G
-  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I n
-  exact IsTopologicalGroup.t2Space_iff_one_closed.mpr isClosed_singleton
+theorem ModelWithCorners.t2Space_of_lieGroup (n : ℕ∞ω) [LieGroup I n G] : T2Space G := by
+  have := I.t1Space G
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I n
+  infer_instance
 
-/-- A `C³` Lie group over an RCL-like field has the regularity required by Mathlib's tangent Lie
-algebra. This theorem is deliberately not a global instance, so the downgrade applies only in files
-that opt in with `attribute [local instance] LieGroup.minSmoothnessThree`. -/
-theorem LieGroup.minSmoothnessThree [LieGroup I 3 G] :
-    LieGroup I (minSmoothness 𝕜 3) G := by
-  simpa using (inferInstance : LieGroup I 3 G)
+/-- Over a field satisfying `IsRCLikeNormedField`, `minSmoothness 𝕜 n = n`, so a `Cⁿ` Lie group
+is a `C^(minSmoothness 𝕜 n)` Lie group. Mathlib's tangent Lie algebra `GroupLieAlgebra` assumes
+`LieGroup I (minSmoothness 𝕜 3) G`, which this supplies from `LieGroup I 3 G`. This theorem is
+deliberately not a global instance, so the downgrade applies only in files that opt in with
+`attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField`. -/
+theorem LieGroup.minSmoothness_of_isRCLikeNormedField [IsRCLikeNormedField 𝕜] {n : ℕ∞ω}
+    [LieGroup I n G] : LieGroup I (minSmoothness 𝕜 n) G := by
+  rwa [_root_.minSmoothness_of_isRCLikeNormedField]

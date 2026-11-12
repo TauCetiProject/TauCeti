@@ -14,7 +14,7 @@ import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Metabolic
 /-!
 # Van der Blij's characteristic-norm congruence
 
-In a nondegenerate unimodular integral lattice, every characteristic vector has integral norm
+In a unimodular integral lattice, every characteristic vector has integral norm
 congruent to the signature difference modulo eight. The statement applies to all signatures
 and to both even and odd lattices.
 
@@ -39,27 +39,6 @@ namespace TauCeti.IntegralLattice
 
 universe u
 variable {V : Type u} [AddCommGroup V] [Module ℚ V] (L : IntegralLattice V)
-
-private def originalCarrierIntermediate : L.evenSublattice.IntermediateCarrier := by
-  refine ⟨L.carrier, L.evenSublattice_carrier_le, ?_⟩
-  intro x hx
-  rw [LinearMap.BilinForm.mem_dualSubmodule]
-  intro y hy
-  rw [L.evenSublattice_form]
-  exact L.le_dual hx y (L.evenSublattice_carrier_le hy)
-
-private theorem originalCarrier_isIntegral :
-    IntermediateCarrier.IsIntegral (originalCarrierIntermediate L) := by
-  rw [IntermediateCarrier.isIntegral_def]
-  intro x hx y hy
-  rw [L.evenSublattice_form]
-  exact L.le_dual hx y hy
-
-private theorem originalCarrier_toIntegralLattice [L.IsNondegenerate] :
-    (originalCarrier_isIntegral L).toIntegralLattice = L := by
-  apply IntegralLattice.ext
-  · exact (originalCarrier_isIntegral L).toIntegralLattice_carrier
-  · exact (originalCarrier_isIntegral L).toIntegralLattice_form.trans L.evenSublattice_form
 
 private theorem half_characteristic_mem_dual {w : L} (hw : L.IsCharacteristicVector w) :
     (1 / 2 : ℚ) • (w : V) ∈ L.evenSublattice.dualCarrier := by
@@ -108,7 +87,8 @@ private theorem halfNorm_add_lattice_vector {w : L} (hw : L.IsCharacteristicVect
 
 private theorem quadratic_halfCharacteristicDual_add {w : L}
     (hw : L.IsCharacteristicVector w)
-    (h : L.evenSublattice.discriminantSubgroup (originalCarrierIntermediate L)) :
+    (h : L.evenSublattice.discriminantSubgroup
+      (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)) :
     L.evenSublattice.discriminantQuadraticMap L.isEven_evenSublattice
         ((Submodule.Quotient.mk (halfCharacteristicDual L hw) :
           L.evenSublattice.DiscriminantGroup) + h) =
@@ -117,8 +97,10 @@ private theorem quadratic_halfCharacteristicDual_add {w : L}
   obtain ⟨x, hx⟩ := h
   induction x using Submodule.Quotient.induction_on with
   | _ y =>
-    have hy : (y : V) ∈ L.carrier :=
-      (L.evenSublattice.mk_mem_discriminantSubgroup_iff (originalCarrierIntermediate L) y).mp hx
+    have hy : (y : V) ∈ L.carrier := by
+      have := (L.evenSublattice.mk_mem_discriminantSubgroup_iff
+        (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le) y).mp hx
+      rwa [coe_toIntermediateCarrier] at this
     obtain ⟨k, hk⟩ := halfNorm_add_lattice_vector L hw ⟨y, hy⟩
     rw [← Submodule.Quotient.mk_add, discriminantQuadraticMap_mk,
       discriminantQuadraticMap_mk, L.evenSublattice_form]
@@ -131,16 +113,18 @@ private theorem gaussSum_evenSublattice_of_characteristic [L.IsNondegenerate]
       √(Nat.card L.evenSublattice.DiscriminantGroup) *
         expCircle (ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8)) := by
   let A := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
-  let H : AddSubgroup A :=
-    L.evenSublattice.discriminantSubgroup (originalCarrierIntermediate L)
+  have hI := L.isIntegral_toIntermediateCarrier L.evenSublattice_form.symm
+    L.evenSublattice_carrier_le
+  let H : AddSubgroup A := L.evenSublattice.discriminantSubgroup
+    (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)
   let a : A := Submodule.Quotient.mk (halfCharacteristicDual L hw)
-  have hM : (originalCarrier_isIntegral L).toIntegralLattice.IsUnimodular := by
-    rw [originalCarrier_toIntegralLattice L]
+  have hM : hI.toIntegralLattice.IsUnimodular := by
+    rw [L.toIntegralLattice_toIntermediateCarrier]
     exact hL
   have hH : A.toFiniteBilinearModule.IsLagrangian H := by
     simpa only [A, H, L.evenSublattice.discriminantQuadraticModule_toFiniteBilinearModule
       L.isEven_evenSublattice] using
-      (originalCarrier_isIntegral L).isUnimodular_toIntegralLattice_iff_isLagrangian.mp hM
+      hI.isUnimodular_toIntegralLattice_iff_isLagrangian.mp hM
   have ha (h : H) : A.quadratic (a + h) = A.quadratic a :=
     quadratic_halfCharacteristicDual_add L hw h
   have hqa : A.quadratic a = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) :=
@@ -152,11 +136,12 @@ private theorem gaussSum_evenSublattice_of_characteristic [L.IsNondegenerate]
     hqa, ← hcard,
     Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg _), Complex.ofReal_natCast]
 
-/-- **Van der Blij's congruence:** the signature difference of a nondegenerate unimodular
+/-- **Van der Blij's congruence:** the signature difference of a unimodular
 integral lattice is congruent modulo eight to the norm of any characteristic vector. -/
-theorem vanDerBlij [L.IsNondegenerate] (hL : L.IsUnimodular) {w : L}
+theorem vanDerBlij (hL : L.IsUnimodular) {w : L}
     (hw : L.IsCharacteristicVector w) :
     ((L.sigPos : ℤ) - L.sigNeg) ≡ L.integralNorm w [ZMOD 8] := by
+  have : L.IsNondegenerate := ⟨hL.nondegenerate⟩
   have := L.finiteDimensional
   have hg := FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq
     (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice)

@@ -34,6 +34,10 @@ presentation of `X` is canonically isomorphic to `ΣX` in the stable category, n
   the projective stable category.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj`: the comparison of the
   cokernel term of an arbitrary relative injective presentation with `ΣX`.
+* `TauCeti.ExactStructure.IsFrobenius.stableSuspensionIsoOfPresentations`: stable suspension is
+  naturally the image of an endofunctor computed by a family of relative injective presentations.
+* `TauCeti.ExactStructure.IsFrobenius.stableSuspensionCompIsoOfFactorization`: such a comparison
+  transported along a functor out of the stable category.
 
 ## References
 
@@ -49,7 +53,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe v u
+universe v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C]
@@ -214,6 +218,108 @@ theorem projectiveStableIsoSuspensionObj_hom_naturality {X Y : C}
     P (hE.suspensionPresentation X) Q (hE.suspensionPresentation Y) (hE.isProjective_I P)
     (hE.isProjective_I (hE.suspensionPresentation X)) (hE.isProjective_I Q)
     (hE.isProjective_I (hE.suspensionPresentation Y)) f
+
+/-- **Stable suspension from a family of presentations.** If every object `X` has a relative
+injective presentation `P X` whose cokernel term represents `G.obj X` in the stable category,
+naturally in `X`, then stable suspension is naturally the image of `G`. -/
+noncomputable def stableSuspensionIsoOfPresentations (G : C ⥤ C)
+    (P : ∀ X, E.InjectivePresentation X)
+    (e : ∀ X, E.projectiveStableFunctor.obj (P X).K ≅ E.projectiveStableFunctor.obj (G.obj X))
+    (he : ∀ {X Y : C} (f : X ⟶ Y),
+      E.projectiveStableFunctor.map ((P X).cokernelMap (P Y) f) ≫ (e Y).hom =
+        (e X).hom ≫ E.projectiveStableFunctor.map (G.map f)) :
+    E.projectiveStableFunctor ⋙ hE.stableSuspension ≅ G ⋙ E.projectiveStableFunctor :=
+  NatIso.ofComponents (fun X ↦
+    eqToIso (hE.stableSuspension_obj_projectiveStableFunctor_obj X) ≪≫
+      (hE.projectiveStableIsoSuspensionObj (P X)).symm ≪≫ e X) (fun {X Y} f ↦ by
+    have h : (hE.projectiveStableIsoSuspensionObj (P X)).inv ≫
+        E.projectiveStableFunctor.map ((P X).cokernelMap (P Y) f) =
+          E.projectiveStableFunctor.map
+            ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f) ≫
+            (hE.projectiveStableIsoSuspensionObj (P Y)).inv := by
+      rw [Iso.inv_comp_eq, ← Category.assoc,
+        ← hE.projectiveStableIsoSuspensionObj_hom_naturality, Category.assoc,
+        Iso.hom_inv_id, Category.comp_id]
+    simp only [Functor.comp_obj, Functor.comp_map,
+      stableSuspension_map_projectiveStableFunctor_map, Iso.trans_hom, eqToIso.hom,
+      Iso.symm_hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    rw [← he, reassoc_of% h])
+
+/-- The component of `stableSuspensionIsoOfPresentations` at `X` is the cokernel map induced by
+the identity of `X`, from the chosen suspension presentation to the presentation `P X`, followed
+by the comparison `e X` from `(P X).K` to `G.obj X`. -/
+@[simp]
+theorem stableSuspensionIsoOfPresentations_hom_app (G : C ⥤ C)
+    (P : ∀ X, E.InjectivePresentation X)
+    (e : ∀ X, E.projectiveStableFunctor.obj (P X).K ≅ E.projectiveStableFunctor.obj (G.obj X))
+    (he : ∀ {X Y : C} (f : X ⟶ Y),
+      E.projectiveStableFunctor.map ((P X).cokernelMap (P Y) f) ≫ (e Y).hom =
+        (e X).hom ≫ E.projectiveStableFunctor.map (G.map f)) (X : C) :
+    (hE.stableSuspensionIsoOfPresentations G P e he).hom.app X =
+      eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj X) ≫
+        E.projectiveStableFunctor.map
+          ((hE.suspensionPresentation X).cokernelMap (P X) (𝟙 X)) ≫ (e X).hom := by
+  simp [stableSuspensionIsoOfPresentations]
+
+/-- The inverse component of `stableSuspensionIsoOfPresentations` at `X` is the inverse of the
+comparison `e X`, followed by the cokernel map induced by the identity of `X`, from the
+presentation `P X` to the chosen suspension presentation. -/
+@[simp]
+theorem stableSuspensionIsoOfPresentations_inv_app (G : C ⥤ C)
+    (P : ∀ X, E.InjectivePresentation X)
+    (e : ∀ X, E.projectiveStableFunctor.obj (P X).K ≅ E.projectiveStableFunctor.obj (G.obj X))
+    (he : ∀ {X Y : C} (f : X ⟶ Y),
+      E.projectiveStableFunctor.map ((P X).cokernelMap (P Y) f) ≫ (e Y).hom =
+        (e X).hom ≫ E.projectiveStableFunctor.map (G.map f)) (X : C) :
+    (hE.stableSuspensionIsoOfPresentations G P e he).inv.app X =
+      (e X).inv ≫ E.projectiveStableFunctor.map
+          ((P X).cokernelMap (hE.suspensionPresentation X) (𝟙 X)) ≫
+        eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj X).symm := by
+  simp [stableSuspensionIsoOfPresentations]
+
+section Factorization
+
+variable {D : Type u'} [Category.{v'} D] {F : E.ProjectiveStableCategory ⥤ D} {Q : C ⥤ D}
+  (hF : E.projectiveStableFunctor ⋙ F = Q) {G : C ⥤ C} {T : D ⥤ D}
+
+/-- **Transporting a suspension comparison along a factorization.** Let `F` be a functor out of
+the stable category through which `Q` factors. If stable suspension is naturally the image of an
+endofunctor `G`, and `Q` intertwines `G` with an endofunctor `T` of the target, then `F`
+intertwines stable suspension with `T`. -/
+noncomputable def stableSuspensionCompIsoOfFactorization
+    (σ : E.projectiveStableFunctor ⋙ hE.stableSuspension ≅ G ⋙ E.projectiveStableFunctor)
+    (β : G ⋙ Q ≅ Q ⋙ T) :
+    hE.stableSuspension ⋙ F ≅ F ⋙ T :=
+  CategoryTheory.Quotient.natIsoLift _ <|
+    (Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight σ F ≪≫
+      Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft G (eqToIso hF) ≪≫ β ≪≫
+      Functor.isoWhiskerRight (eqToIso hF.symm) T ≪≫ Functor.associator _ _ _
+
+/-- On a represented object, the transported suspension comparison is the image of `σ`, followed
+by `β`. -/
+@[simp]
+theorem stableSuspensionCompIsoOfFactorization_hom_app
+    (σ : E.projectiveStableFunctor ⋙ hE.stableSuspension ≅ G ⋙ E.projectiveStableFunctor)
+    (β : G ⋙ Q ≅ Q ⋙ T) (X : C) :
+    (hE.stableSuspensionCompIsoOfFactorization hF σ β).hom.app
+        (E.projectiveStableFunctor.obj X) =
+      F.map (σ.hom.app X) ≫ eqToHom (by rw [← hF]; rfl) ≫ β.hom.app X ≫
+        eqToHom (by rw [← hF]; rfl) := by
+  simp [stableSuspensionCompIsoOfFactorization, eqToHom_map]
+
+/-- On a represented object, the inverse transported suspension comparison is the inverse of `β`,
+followed by the image of the inverse of `σ`. -/
+@[simp]
+theorem stableSuspensionCompIsoOfFactorization_inv_app
+    (σ : E.projectiveStableFunctor ⋙ hE.stableSuspension ≅ G ⋙ E.projectiveStableFunctor)
+    (β : G ⋙ Q ≅ Q ⋙ T) (X : C) :
+    (hE.stableSuspensionCompIsoOfFactorization hF σ β).inv.app
+        (E.projectiveStableFunctor.obj X) =
+      eqToHom (by rw [← hF]; rfl) ≫ β.inv.app X ≫ eqToHom (by rw [← hF]; rfl) ≫
+        F.map (σ.inv.app X) := by
+  simp [stableSuspensionCompIsoOfFactorization, eqToHom_map]
+
+end Factorization
 
 end ExactStructure.IsFrobenius
 

@@ -68,7 +68,7 @@ in the ambient algebra. -/
 theorem spectrum_eq_of_predicate (S : StarSubalgebra 𝕜 B) [IsClosed (S : Set B)] {x : S}
     (hx : q x) : spectrum 𝕜 x = spectrum 𝕜 (x : B) := by
   refine (Set.Subset.antisymm (spectrum.subset_subalgebra x) fun r hr ↦ ?_).symm
-  contrapose! hr
+  contrapose hr
   have hne : ∀ t ∈ spectrum 𝕜 (x : B), r - t ≠ 0 := fun t ht h ↦ hr (sub_eq_zero.1 h ▸ ht)
   rw [spectrum.notMem_iff] at hr ⊢
   let u := cfcUnits (fun t ↦ r - t) (x : B) hne

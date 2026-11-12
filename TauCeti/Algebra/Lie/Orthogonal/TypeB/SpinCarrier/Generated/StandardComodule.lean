@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.StandardComodule
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.WeightTorus
 
 /-!
 # The standard comodule of the generated type-Bₙ₊₁ spin subgroup
@@ -66,6 +67,10 @@ noncomputable def generatedWeightTorusCoordinateMap :
       (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin (n + 1)))).obj :=
   generatedCoordinateLift n R (.inr ())
 
+/-- The generated weight-torus map is the torus branch of the generator lifts. -/
+theorem generatedWeightTorusCoordinateMap_def :
+    generatedWeightTorusCoordinateMap n R = generatedCoordinateLift n R (.inr ()) := (rfl)
+
 /-- The generated subgroup's weight torus recovers the ambient spin weight torus. -/
 @[reassoc (attr := simp)]
 theorem generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap :
@@ -74,6 +79,18 @@ theorem generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap :
   rw [generatedWeightTorusCoordinateMap, generatedCoordinateMap_comp_generatedCoordinateLift,
     generatorCoordinateMap_inr]
 
+/-- The generated weight-torus coordinate map is surjective over every commutative ring. -/
+theorem generatedWeightTorusCoordinateMap_surjective :
+    Function.Surjective (generatedWeightTorusCoordinateMap n R).hom := by
+  have h : Function.Surjective
+      (coordinateMap n R ≫ weightTorusToBaseChangeCoordinateMap n R).hom := by
+    simpa only [CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using
+      (weightTorusToBaseChangeCoordinateMap_surjective n R).comp (coordinateMap_surjective n R)
+  rw [coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
+    ← generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap] at h
+  exact Function.Surjective.of_comp
+    (by simpa only [CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using h)
+
 /-- A point induced by a generated root-subgroup lift maps to the numbered spin root matrix with
 the same parameter, over every value algebra. -/
 theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints
@@ -81,7 +98,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R)
       (CommAlgCat.of R B)) :
     GeneralLinear.pointToGeneralLinear (dimension n)
-        (AlgHom.mapDomain (generatedCoordinateMap n R).hom
+        (BialgHom.mapDomain (generatedCoordinateMap n R).hom
           (toConv (q.ofConv.comp (generatedCoordinateLift n R (.inl j)).hom.toAlgHom))) =
       (rootSubgroupPoints n j B (AdditiveGroup.gaPointsMulEquiv q) :
         Matrix.GeneralLinearGroup (Fin (dimension n)) B) := by
@@ -90,21 +107,22 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
       coordinateMap n R ≫ rootSubgroupToBaseChangeCoordinateMap n R j := by
     rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl]
     exact (coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap n R j).symm
-  have hpoint : AlgHom.mapDomain (generatedCoordinateMap n R).hom
+  have hpoint : BialgHom.mapDomain (generatedCoordinateMap n R).hom
       (toConv (q.ofConv.comp (generatedCoordinateLift n R (.inl j)).hom.toAlgHom)) =
-      AlgHom.mapDomain (coordinateMap n R).hom
+      BialgHom.mapDomain (coordinateMap n R).hom
         (toConv (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap n R j).hom.toAlgHom)) := by
     apply WithConv.ext
     ext x
+    simp only [BialgHom.mapDomain_apply_apply]
     exact congrArg (fun f ↦ q.ofConv (f.hom x)) hcomp
   have hcarrier := mapPointsFunctor_coordinateMap_app n R
-    ((CommHopfAlgCat.mapPointsFunctor (rootSubgroupToBaseChangeCoordinateMap n R j)).app _ q)
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (rootSubgroupToBaseChangeCoordinateMap n R j)).app _ q)
   have hmatrix := coe_baseChangePointsMulEquiv_apply n R (CommAlgCat.of R B)
-    ((CommHopfAlgCat.mapPointsFunctor (rootSubgroupToBaseChangeCoordinateMap n R j)).app _ q)
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (rootSubgroupToBaseChangeCoordinateMap n R j)).app _ q)
   rw [baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordinateMap,
-    ← hcarrier, CommHopfAlgCat.mapPointsFunctor_app_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply] at hmatrix
-  rw [hpoint, hmatrix, GeneralLinear.pointsMulEquiv_apply, AlgHom.mapDomain_apply]
+    ← hcarrier, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hmatrix
+  rw [hpoint, hmatrix, GeneralLinear.pointsMulEquiv_apply, BialgHom.mapDomain_apply]
 
 /-- The standard right comodule of the generated type-`Bₙ₊₁` spin subgroup on `R^(2^(n+1))`. -/
 @[instance_reducible]

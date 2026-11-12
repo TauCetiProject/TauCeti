@@ -15,6 +15,9 @@ The quotient of a path algebra by the span of paths of length at least `n` has p
 shorter paths as a basis. When the vertex type is finite, this gives a concrete basis for the
 quotient by the `n`th power of the arrow ideal. It is useful for calculations with bound quivers,
 including the radical-square-zero presentation of the preprojective algebra of `A₂`.
+The paths of length less than two are the trivial paths and the arrows
+(`TauCeti.shortPathTwoEquiv`), so the quotient by the square of the arrow ideal has the vertices
+and the arrows as a basis.
 
 The construction follows the path-basis description of truncated quiver algebras in
 Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
@@ -74,6 +77,39 @@ theorem shortPathCoords_surjective (n : ℕ) :
   exact Finsupp.embDomain_apply_self e y p
 
 end Coordinates
+
+section ShortPathTwo
+
+variable {Q : Type u} [Quiver.{v} Q]
+
+/-- The paths of length less than two are the trivial paths at the vertices and the length-one
+paths of the arrows. -/
+def shortPathTwoEquiv : Q ⊕ (Σ i j : Q, i ⟶ j) ≃ ShortPath Q 2 where
+  toFun
+    | .inl i => ⟨⟨i, i, .nil⟩, by simp⟩
+    | .inr a => ⟨⟨a.1, a.2.1, a.2.2.toPath⟩, by simp⟩
+  invFun
+    | ⟨⟨i, _, .nil⟩, _⟩ => .inl i
+    | ⟨⟨_, _, .cons .nil a⟩, _⟩ => .inr ⟨_, _, a⟩
+    | ⟨⟨_, _, .cons (.cons _ _) _⟩, h⟩ => absurd h (by simp)
+  left_inv := by rintro (i | ⟨i, j, a⟩) <;> rfl
+  right_inv := by
+    rintro ⟨⟨i, j, _ | ⟨_ | ⟨p, b⟩, a⟩⟩, h⟩
+    · rfl
+    · rfl
+    · simp at h
+
+/-- A vertex corresponds to its trivial path. -/
+@[simp]
+theorem coe_shortPathTwoEquiv_inl (i : Q) :
+    (shortPathTwoEquiv (.inl i) : Quiver.TotalPath Q) = ⟨i, i, .nil⟩ := (rfl)
+
+/-- An arrow corresponds to its length-one path. -/
+@[simp]
+theorem coe_shortPathTwoEquiv_inr (a : Σ i j : Q, i ⟶ j) :
+    (shortPathTwoEquiv (.inr a) : Quiver.TotalPath Q) = ⟨a.1, a.2.1, a.2.2.toPath⟩ := (rfl)
+
+end ShortPathTwo
 
 section LengthFiltration
 

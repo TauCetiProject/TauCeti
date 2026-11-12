@@ -57,7 +57,7 @@ private theorem sum_rescaleCoefficients {k R : Type*}
     _ = _ := by
       rw [← Finset.sum_add_distrib]
       apply Finset.sum_congr rfl
-      intro j hj
+      intro j _
       ring
 
 end TauCeti
@@ -86,7 +86,7 @@ private theorem exists_rescaleCoefficients (D : Derivation k R R) (a : R) (i : �
         have hj0 : j ≠ 0 := by omega
         simp [d, hj0, hc j (by omega), hc (j - 1) (by omega)]
       · simp [hd, hlast, hdiag, pow_succ, mul_comm]
-      · rw [Function.iterate_succ_apply', hiter, Derivation.smul_apply, smul_eq_mul]
+      · rw [Function.iterate_succ_apply', hiter, _root_.smul_apply, smul_eq_mul]
         exact TauCeti.sum_rescaleCoefficients D a c i z hlast
 
 /-- Rescaling a derivation by `a` multiplies an `n`-function Wronskian by
@@ -108,7 +108,7 @@ theorem wronskian_smul (D : Derivation k R R) (a : R) {n : ℕ} (f : Fin n → R
     simp only [Matrix.of_apply, A]
     rw [hiter, Fin.sum_univ_eq_sum_range (fun l ↦ c i.val l * (D : R → R)^[l] (f j)) n]
     apply Finset.sum_subset (Finset.range_mono (by omega))
-    intro l hl hli
+    intro l _ hli
     have hil : i.val < l := by simp only [Finset.mem_range] at hli; omega
     simp [hc i.val l hil]
   rw [wronskian_def, hmatrix, Matrix.det_mul, Matrix.det_of_isLowerTriangular A htri]

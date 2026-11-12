@@ -33,6 +33,8 @@ unit.
   Cartier-divisor sheaf over a nonempty open subset, its *local equation* there;
 * `Scheme.principalCartierDivisor` sends a nonzero rational function to its principal Cartier
   divisor, the case of the whole space.
+* `Scheme.CartierDivisor.exists_restrict_eq_and_restrict_eq_zero` extends a local equation on
+  `V` by zero across `W` when `V ⊔ W = X` and the equation is a unit on `V ⊓ W`.
 
 The rational-function sheaf is constructed in
 `TauCeti/AlgebraicGeometry/Modules/RationalFunctions.lean`; the line bundle `𝒪_X(D)` of a Cartier
@@ -288,6 +290,43 @@ lemma rationalUnitClass_germToFunctionField_eq_zero (U : X.Opens) [Nonempty U]
     (congrArg Additive.ofMul (regularUnitToFunctionField_apply X U f).symm)).trans ?_
   rw [rationalUnitClass_apply, hsymm]
   exact hzero
+
+namespace CartierDivisor
+
+variable {X}
+
+/-- **Extension by zero.** Let `V` and `W` be open subsets covering `X` with `V ⊓ W` nonempty, and
+let `f` be a nonzero rational function whose Cartier class on `V ⊓ W` vanishes, that is, which is a
+unit of `Γ(X, V ⊓ W)`. Then there is a Cartier divisor with equation `f` on `V` and trivial on
+`W`. -/
+theorem exists_restrict_eq_and_restrict_eq_zero {V W : X.Opens} [Nonempty V]
+    [Nonempty (V ⊓ W : X.Opens)] (hVW : V ⊔ W = ⊤) (f : X.functionFieldˣ)
+    (hf : rationalUnitClass X (V ⊓ W) (Additive.ofMul f) = 0) :
+    ∃ G : CartierDivisor X,
+      G |_ V = rationalUnitClass X V (Additive.ofMul f) ∧ G |_ W = 0 := by
+  let U : Bool → X.Opens := fun i ↦ bif i then V else W
+  let sf : ∀ i, ((cartierDivisorSheaf X).obj.obj (op (U i)) : Type u) := fun i ↦
+    Bool.rec (motive := fun i ↦ ((cartierDivisorSheaf X).obj.obj (op (U i)) : Type u)) 0
+      (rationalUnitClass X V (Additive.ofMul f)) i
+  have hcompat : TopCat.Presheaf.IsCompatible (cartierDivisorSheaf X).obj U sf := by
+    have hVW : rationalUnitClass X V (Additive.ofMul f) |_ (V ⊓ W) = 0 :=
+      (rationalUnitClass_restrict X inf_le_left _).trans hf
+    have hWV : rationalUnitClass X V (Additive.ofMul f) |_ (W ⊓ V) = 0 := by
+      have : Nonempty (W ⊓ V : X.Opens) := by rw [inf_comm]; infer_instance
+      rw [rationalUnitClass_restrict X inf_le_right,
+        ← rationalUnitClass_restrict X (inf_comm W V).le, hf]
+      simp only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict, map_zero]
+    rintro (_ | _) (_ | _)
+    · rfl
+    · exact (map_zero _).trans hWV.symm
+    · exact hVW.trans (map_zero _).symm
+    · rfl
+  obtain ⟨G, hG, -⟩ := (cartierDivisorSheaf X).existsUnique_gluing' U ⊤
+    (fun _ ↦ homOfLE le_top) (by rw [← hVW]; exact sup_le (le_iSup U true) (le_iSup U false))
+    sf hcompat
+  exact ⟨G, hG true, hG false⟩
+
+end CartierDivisor
 
 /-- A nonzero rational function determines its principal Cartier divisor. The multiplicative
 group of the function field is written additively in the domain. -/

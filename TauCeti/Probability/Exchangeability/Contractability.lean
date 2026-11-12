@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Basic
+public import TauCeti.Probability.Exchangeability.PathSpace.ContractableLaw
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.Probability.IdentDistrib
-import TauCeti.Data.Fin.StrictMono
 import TauCeti.Probability.Exchangeability.ExchangeableAtMonotone
 import Mathlib.Order.Fin.Tuple
 import TauCeti.Probability.Process.PathLaw.FiniteMarginals
@@ -28,7 +28,7 @@ coordinates is contractable. The file also provides
 path law is invariant under strictly monotone time-reindexing, in particular the shift), plus the
 converse characterization `contractable_iff_forall_map_reindex_pathLaw`.
 
-These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
+These declarations are adapted from the `cameronfreer/exchangeability` sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
 combinatorial core, `StrictMono.exists_strictMono_nat_extending_fin`, now lives in
 `TauCeti.Data.Fin.StrictMono`. `Contractable.pairLaw_eq` is adapted
@@ -189,25 +189,32 @@ theorem Contractable.measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω
     map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) n]
   exact hX n (fun i : Fin n ↦ φ i.val) (hφ.comp Fin.val_strictMono)
 
+/-- A process whose path law is invariant under every strictly increasing time-reindexing
+`ℕ → ℕ` is contractable. No finiteness of the base measure is needed. -/
+theorem contractable_of_forall_map_reindex_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
+    (hX_meas : ∀ i, AEMeasurable (X i) μ)
+    (hX : ∀ φ : ℕ → ℕ, StrictMono φ →
+      (pathLaw μ X).map (fun x : ℕ → α ↦ fun k ↦ x (φ k)) = pathLaw μ X) :
+    Contractable μ X := by
+  intro m k hk
+  have hX' : ContractableLaw (pathLaw μ X) := ContractableLaw.intro hX
+  have h := hX'.map_prefixProj_of_strictMono hk
+  have hpath := AEMeasurable.of_eval hX_meas
+  rw [pathLaw_def, AEMeasurable.map_map_of_aemeasurable
+      (measurable_pi_iff.2 fun i ↦ measurable_pi_apply (k i)).aemeasurable hpath,
+    AEMeasurable.map_map_of_aemeasurable (measurable_prefixProj m).aemeasurable hpath] at h
+  rw [blockLaw_def, prefixLaw_def, blockLaw_def]
+  exact h
+
 /-- Contractability is equivalent to invariance of the path law under every strictly increasing
 time-reindexing `ℕ → ℕ`. This is the path-law form of spreadability/contractability. -/
 theorem contractable_iff_forall_map_reindex_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
     [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ) :
     Contractable μ X ↔
       ∀ φ : ℕ → ℕ, StrictMono φ →
-        (pathLaw μ X).map (fun x : ℕ → α ↦ fun k ↦ x (φ k)) = pathLaw μ X := by
-  constructor
-  · intro hX φ hφ
-    exact (hX.measurePreserving_reindex hX_meas hφ).map_eq
-  · intro hX m k hk
-    obtain ⟨φ, hφ, hφ_eq⟩ := hk.exists_strictMono_nat_extending_fin
-    have hmap := congrArg (fun ν : Measure (ℕ → α) ↦ ν.map (prefixProj α m)) (hX φ hφ)
-    rw [map_reindex_prefixProj_pathLaw μ hX_meas φ m,
-      map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) m] at hmap
-    have hidx : (fun i : Fin m ↦ φ i.val) = k := by
-      funext i
-      exact hφ_eq i
-    simpa [hidx] using hmap
+        (pathLaw μ X).map (fun x : ℕ → α ↦ fun k ↦ x (φ k)) = pathLaw μ X :=
+  ⟨fun hX _ hφ ↦ (hX.measurePreserving_reindex hX_meas hφ).map_eq,
+    contractable_of_forall_map_reindex_pathLaw hX_meas⟩
 
 /-- Contractability is equivalent to preservation of the path law by every strictly increasing
 time-reindexing `ℕ → ℕ`. -/
@@ -257,28 +264,18 @@ private theorem map_prod_tail_eq_pathLaw_map {μ : Measure Ω} [IsFiniteMeasure 
       μ.map (fun ω (i : ℕ) ↦ X (φ i) ω) = pathLaw μ X :=
     fun φ hφ ↦ hX.map_reindex_pathLaw_eq hX_ae hφ
   -- the selection `(h, g 0, g 1, …)` is strictly monotone, and splitting it recovers the pair
-  set φ : ℕ → ℕ := fun i ↦ if i = 0 then h else g (i - 1) with hφdef
-  have hφmono : StrictMono φ := by
-    intro a b hab
-    simp only [hφdef]
-    rcases Nat.eq_zero_or_pos a with ha | ha
-    · subst ha
-      rw [ite_eq_left rfl, ite_eq_right (by omega : b ≠ 0)]
-      exact hh.trans_le (hg.monotone (Nat.zero_le _))
-    · rw [ite_eq_right (by omega : a ≠ 0), ite_eq_right (by omega : b ≠ 0)]
-      exact hg (by omega : a - 1 < b - 1)
-  have hφ0 : φ 0 = h := by simp [hφdef]
-  -- the tail-index identity, stated explicitly rather than left to definitional reduction
-  have hφsucc : ∀ n, φ (n + 1) = g n := by
-    intro n
-    simp only [hφdef]
-    rw [ite_eq_right (by omega : n + 1 ≠ 0), Nat.add_sub_cancel]
+  let φ : ℕ → ℕ := fun
+    | 0 => h
+    | n + 1 => g n
+  have hφmono : StrictMono φ := strictMono_nat_of_lt_succ fun
+    | 0 => hh
+    | n + 1 => hg n.lt_succ_self
   have hpath_ae : AEMeasurable (fun ω (i : ℕ) ↦ X (φ i) ω) μ :=
     AEMeasurable.of_eval fun i ↦ hX_ae (φ i)
+  -- `φ 0 = h` and `φ (n + 1) = g n` hold by the defining equations of `φ`
   have hfun : (fun ω ↦ (X h ω, fun n ↦ X (g n) ω))
-      = headTail ∘ (fun ω (i : ℕ) ↦ X (φ i) ω) := by
-    funext ω
-    simp only [headTail, Function.comp_apply, hφ0, hφsucc]
+      = headTail ∘ (fun ω (i : ℕ) ↦ X (φ i) ω) :=
+    rfl
   rw [hfun, ← AEMeasurable.map_map_of_aemeasurable hheadTail_meas.aemeasurable hpath_ae,
     hreindex φ hφmono]
 

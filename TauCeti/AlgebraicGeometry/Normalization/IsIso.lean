@@ -31,9 +31,15 @@ the function field of `T`, along the generic point `Spec k(T) ⟶ T ⟶ Y`. On a
 * `AlgebraicGeometry.Scheme.Hom.isIso_normalizationDesc_iff`: `f.normalizationDesc f₁ f₂ H` is an
   isomorphism if and only if, over every affine open of `Y`, the sections of `T` map injectively
   onto the integral closure.
+* `AlgebraicGeometry.Scheme.Hom.isIso_fromNormalization_iff`: the normalization of `Y` in `X` is
+  `Y` itself if and only if, over every affine open of `Y`, the sections of `Y` map injectively
+  onto the integral closure.
 * `TauCeti.AlgebraicGeometry.isIso_normalizationDesc_fromSpecStalk_genericPoint`: an integral
   scheme with integrally closed local rings, integral over `Y`, is the normalization of `Y` in its
   function field.
+* `TauCeti.AlgebraicGeometry.isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed`:
+  the normalization of an integral scheme in its function field is an isomorphism over every
+  affine open with integrally closed ring of sections.
 
 ## References
 
@@ -126,6 +132,22 @@ theorem isIso_normalizationDesc_iff (H : f = f₁ ≫ f₂) :
       isIso_morphismRestrict_iff_isIso_app _ (U.2.preimage f₂)]
     exact (f.isIso_normalizationDesc_app_iff f₁ f₂ H U.2).2 (h U U.2)
 
+/-- The relative normalization `f.normalization ⟶ Y` is an isomorphism if and only if, for every
+affine open `U ⊆ Y`, the map `Γ(Y, U) → Γ(X, f ⁻¹ U)` is injective and its image contains every
+element integral over `Γ(Y, U)`: that is, `Y` is already the normalization of itself in `X`. -/
+theorem isIso_fromNormalization_iff :
+    IsIso f.fromNormalization ↔ ∀ U : Y.Opens, IsAffineOpen U →
+      Function.Injective (f.app U) ∧
+      ∀ s, (f.app U).hom.IsIntegralElem s → s ∈ (f.app U).hom.range := by
+  have H : f = f ≫ 𝟙 Y := (Category.comp_id f).symm
+  have h : f.normalizationDesc f (𝟙 Y) H = f.fromNormalization := by
+    simpa using f.normalizationDesc_comp f (𝟙 Y) H
+  rw [← h, isIso_normalizationDesc_iff]
+  simp only [Scheme.Hom.app_eq_appLE]
+  -- The preimage `𝟙 Y ⁻¹ᵁ U` is `U` by definition; it occurs inside the dependent `appLE`, where
+  -- rewriting with `TopologicalSpace.Opens.map_id_obj` is not possible.
+  rfl
+
 end AlgebraicGeometry.Scheme.Hom
 
 namespace TauCeti.AlgebraicGeometry
@@ -148,53 +170,50 @@ theorem isIso_normalizationDesc_fromSpecStalk_genericPoint [IsIntegral T]
   by_cases hη : genericPoint T ∈ g ⁻¹ᵁ U
   · have : Nonempty (g ⁻¹ᵁ U) := ⟨⟨_, hη⟩⟩
     have hV := hU.preimage g
-    have htop : T.fromSpecStalk (genericPoint T) ⁻¹ᵁ g ⁻¹ᵁ U = ⊤ := by
-      have : Subsingleton (Spec T.functionField) :=
-        inferInstanceAs (Subsingleton (PrimeSpectrum T.functionField))
-      refine top_le_iff.mp fun x _ ↦ ?_
-      rw [Subsingleton.elim x (IsLocalRing.closedPoint _)]
-      exact (Scheme.Hom.mem_preimage _).mpr (by rwa [Scheme.fromSpecStalk_closedPoint])
-    let ι := (Scheme.ΓSpecIso T.functionField).inv ≫
-      (Spec T.functionField).presheaf.map (homOfLE (le_top :
-        T.fromSpecStalk (genericPoint T) ⁻¹ᵁ g ⁻¹ᵁ U ≤ ⊤)).op
-    have hι : Function.Bijective ι.hom := by
-      have : homOfLE (le_top : T.fromSpecStalk (genericPoint T) ⁻¹ᵁ g ⁻¹ᵁ U ≤ ⊤) =
-        eqToHom htop := Subsingleton.elim _ _
-      simp only [ι, this, eqToHom_op, eqToHom_map]
-      exact ConcreteCategory.bijective_of_isIso _
-    have key : (T.fromSpecStalk (genericPoint T)).appLE (g ⁻¹ᵁ U)
-        ((T.fromSpecStalk (genericPoint T) ≫ g) ⁻¹ᵁ U)
-        (by simp) = T.germToFunctionField (g ⁻¹ᵁ U) ≫ ι := by
-      rw [← Scheme.fromSpecStalk_app hη, Scheme.Hom.app_eq_appLE]
+    set f := T.fromSpecStalk (genericPoint T)
+    let := (f.app (g ⁻¹ᵁ U)).hom.toAlgebra
+    have := Scheme.isFractionRing_app_fromSpecStalk_genericPoint hV
+    have := hV.isIntegrallyClosed fun x _ ↦ hT x
+    have key : f.appLE (g ⁻¹ᵁ U) ((f ≫ g) ⁻¹ᵁ U) (by simp) = f.app (g ⁻¹ᵁ U) := by
+      rw [Scheme.Hom.app_eq_appLE]
       simp only [Scheme.Hom.comp_preimage]
-    refine ⟨?_, fun s hs ↦ ?_⟩
+    refine ⟨?_, fun (s : Γ(Spec T.functionField, f ⁻¹ᵁ g ⁻¹ᵁ U)) hs ↦ ?_⟩
     · rw [key]
-      exact hι.1.comp (Scheme.germToFunctionField_injective T _)
-    · obtain ⟨t, rfl⟩ := hι.2 s
-      have happ : (T.fromSpecStalk (genericPoint T) ≫ g).app U =
-          g.app U ≫ T.germToFunctionField (g ⁻¹ᵁ U) ≫ ι := by
-        rw [Scheme.Hom.comp_app, Scheme.fromSpecStalk_app hη]
-      rw [happ] at hs
-      have ht : _root_.IsIntegral Γ(T, g ⁻¹ᵁ U) t := by
+      exact IsFractionRing.injective Γ(T, g ⁻¹ᵁ U) Γ(Spec T.functionField, f ⁻¹ᵁ g ⁻¹ᵁ U)
+    · rw [Scheme.Hom.comp_app] at hs
+      have ht : _root_.IsIntegral Γ(T, g ⁻¹ᵁ U) s := by
         obtain ⟨p, hp, hpe⟩ := hs
-        refine ⟨p.map (g.app U).hom, hp.map _, hι.1 ?_⟩
-        rw [Polynomial.eval₂_map, map_zero, Polynomial.hom_eval₂]
+        refine ⟨p.map (g.app U).hom, hp.map _, ?_⟩
+        -- `algebraMap` after `g.app U` is the composite `g.app U ≫ f.app (g ⁻¹ᵁ U)` of `hs`.
+        rw [Polynomial.eval₂_map]
         exact hpe
-      have := hV.isIntegrallyClosed fun x _ ↦ hT x
-      have := functionField_isFractionRing_of_isAffineOpen T _ hV
-      obtain ⟨b, rfl⟩ := (IsIntegrallyClosed.isIntegral_iff (K := T.functionField)).mp ht
-      -- The algebra structure of `Γ(T, V)` on `k(T)` is the germ map, so this is `key` at `b`.
-      exact ⟨b, by rw [key]; rfl⟩
-  · have hV : g ⁻¹ᵁ U = ⊥ := by
-      ext x
-      exact ⟨fun hx ↦ hη ((genericPoint_specializes x).mem_open (g ⁻¹ᵁ U).isOpen hx),
-        fun hx ↦ hx.elim⟩
-    have : Subsingleton Γ(T, g ⁻¹ᵁ U) := by
-      rw [hV]
-      infer_instance
-    have : Subsingleton Γ(Spec T.functionField, (T.fromSpecStalk (genericPoint T) ≫ g) ⁻¹ᵁ U) := by
-      rw [Scheme.Hom.comp_preimage, hV, Scheme.Hom.preimage_bot]
-      infer_instance
+      obtain ⟨b, hb⟩ := IsIntegrallyClosed.isIntegral_iff.mp ht
+      -- The algebra structure is `f.app (g ⁻¹ᵁ U)`, so this is `key` at `b`.
+      exact ⟨b, by rw [key]; exact hb⟩
+  · have := Scheme.subsingleton_of_genericPoint_notMem hη
+    have : Subsingleton Γ(Spec T.functionField, (T.fromSpecStalk (genericPoint T) ≫ g) ⁻¹ᵁ U) :=
+      Scheme.subsingleton_preimage_of_genericPoint_notMem (T.fromSpecStalk (genericPoint T)) hη
     exact ⟨fun a b _ ↦ Subsingleton.elim a b, fun _ _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+
+/-- The normalization of an integral scheme `Y` in its function field, along `Spec k(Y) ⟶ Y`, is an
+isomorphism over every affine open `U` whose ring of sections is integrally closed: the integral
+closure of `Γ(Y, U)` in its fraction field `k(Y)` is `Γ(Y, U)` itself. -/
+theorem isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed [IsIntegral Y]
+    {U : Y.Opens} (hU : IsAffineOpen U) [IsIntegrallyClosed Γ(Y, U)] :
+    IsIso ((Y.fromSpecStalk (genericPoint Y)).fromNormalization ∣_ U) := by
+  set f := Y.fromSpecStalk (genericPoint Y)
+  rw [isIso_morphismRestrict_iff_isIso_app _ hU, Scheme.Hom.fromNormalization_app _ hU]
+  let := (f.app U).hom.toAlgebra
+  suffices h : Function.Bijective
+      (algebraMap Γ(Y, U) (integralClosure Γ(Y, U) Γ(Spec Y.functionField, f ⁻¹ᵁ U))) by
+    have : IsIso (CommRingCat.ofHom (algebraMap Γ(Y, U)
+        (integralClosure Γ(Y, U) Γ(Spec Y.functionField, f ⁻¹ᵁ U)))) :=
+      (ConcreteCategory.isIso_iff_bijective _).mpr h
+    infer_instance
+  have := Scheme.isFractionRing_app_fromSpecStalk_genericPoint hU
+  refine ⟨fun a b hab ↦ IsFractionRing.injective Γ(Y, U) _ (congrArg Subtype.val hab),
+    fun ⟨x, hx⟩ ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hx
+  exact ⟨a, Subtype.ext (IsScalarTower.algebraMap_apply _ _ _ a).symm⟩
 
 end TauCeti.AlgebraicGeometry

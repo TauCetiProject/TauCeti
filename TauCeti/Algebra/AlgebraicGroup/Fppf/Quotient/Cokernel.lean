@@ -30,6 +30,8 @@ It does not require the source to be of finite type or smooth.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory
 open scoped CategoryTheory.MonObj
 

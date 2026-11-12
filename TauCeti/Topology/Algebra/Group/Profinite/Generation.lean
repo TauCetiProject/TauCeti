@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.Group.GeneratingTuples
 public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 import Mathlib.Topology.Separation.Connected
+import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.Section
 
 /-!
@@ -117,7 +118,6 @@ theorem convergesToOne_iff {s : Set G} :
   refine forall₂_congr fun U _ ↦ ?_
   rw [mem_cofinite, ← Set.finite_image_iff Subtype.val_injective.injOn]
   congr!
-  ext x
   simp
 
 /-- Every finite subset converges to one. -/
@@ -675,14 +675,10 @@ private def limit {c : Set (ConvergingGenData G)} (hc : IsChain Le c) (hne : c.N
       (Subgroup.isClosed_of_isOpen _ hopen)
   finite V hV hKV := by
     obtain ⟨a, haV⟩ := exists_K_subset hc hne hV fun x hx ↦ hKV (Subgroup.mem_iInf.mpr hx)
-    have hle : (⨅ b : c, b.1.K) ≤ a.1.K := iInf_le _ a
-    refine Set.Finite.of_finite_image (f := Subgroup.quotientMapOfLE hle) ?_ ?_
-    · rw [Set.image_image]
-      refine (a.1.finite V hV haV).subset ?_
-      rintro _ ⟨x, hx, rfl⟩
-      exact ⟨x, ⟨Set.mem_iInter.mp hx.1 a, hx.2⟩, rfl⟩
-    · rintro _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩ h
-      simp only [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
+    refine Subgroup.finite_image_mk_of_inv_mul_mem (K := a.1.K) ?_ ?_
+    · exact (a.1.finite V hV haV).subset
+        (Set.image_mono fun x hx ↦ ⟨Set.mem_iInter.mp hx.1 a, hx.2⟩)
+    · intro x hx x' hx' h
       exact Subgroup.mem_iInf.mpr <| mem_K_of_mem_iInter hc a.2 (Set.mem_iInter.mp hx.1)
         (Set.mem_iInter.mp hx'.1) (fun h' ↦ hx.2 (haV h')) h
 
@@ -744,7 +740,7 @@ private theorem mul_notMem_of_mem_reps (a : ConvergingGenData G) (U : OpenNormal
       ((a.K ⊔ U.toSubgroup).mul_mem h2 ((a.K ⊔ U.toSubgroup).inv_mem h1))
 
 /-- The set kept by the refinement. -/
-private def refineSet (a : ConvergingGenData G) (U : OpenNormalSubgroup G) : Set G :=
+private noncomputable def refineSet (a : ConvergingGenData G) (U : OpenNormalSubgroup G) : Set G :=
   a.S ∩ ((a.K : Set G) ∪ U.toSubgroup ∪ a.reps U)
 
 /-- Every point of `S` is congruent modulo `K` to a point kept by the refinement. -/
@@ -823,20 +819,12 @@ private theorem finite_refineSet (a : ConvergingGenData G) (U : OpenNormalSubgro
     exact V.mul_mem (hN hmN) (hLV (Subgroup.mem_inf.mpr ⟨hk, hkU⟩))
   have hA : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' a.K).Finite := by
     have := Subgroup.quotient_finite_of_isOpen U.toSubgroup U.isOpen
-    refine Set.Finite.of_finite_image (f := Subgroup.quotientMapOfLE inf_le_right)
-      (Set.toFinite _) ?_
-    rintro _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩ h
-    simp only [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
-    exact Subgroup.mem_inf.mpr ⟨a.K.mul_mem (a.K.inv_mem hx) hx', h⟩
+    exact Subgroup.finite_image_mk_of_inv_mul_mem (Set.toFinite _)
+      fun x hx x' hx' h ↦ ⟨a.K.mul_mem (a.K.inv_mem hx) hx', h⟩
   have hB : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' ((a.S ∩ U.toSubgroup) \ V)).Finite := by
-    refine Set.Finite.of_finite_image (f := Subgroup.quotientMapOfLE inf_le_left) ?_ ?_
-    · rw [Set.image_image]
-      refine (a.finite W hWopen le_sup_right).subset ?_
-      rintro _ ⟨x, hx, rfl⟩
-      exact ⟨x, hUW hx, rfl⟩
-    · rintro _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩ h
-      simp only [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
-      exact Subgroup.mem_inf.mpr ⟨h, U.toSubgroup.mul_mem (U.toSubgroup.inv_mem hx.1.2) hx'.1.2⟩
+    exact Subgroup.finite_image_mk_of_inv_mul_mem
+      ((a.finite W hWopen le_sup_right).subset (Set.image_mono hUW))
+      fun x hx x' hx' h ↦ ⟨h, U.toSubgroup.mul_mem (U.toSubgroup.inv_mem hx.1.2) hx'.1.2⟩
   have hC : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' a.reps U).Finite := by
     refine ((a.finite _ (Subgroup.isOpen_mono le_sup_right U.isOpen) le_sup_left).image
       fun q ↦ ((q.out : G) : G ⧸ (a.K ⊓ U.toSubgroup))).subset ?_

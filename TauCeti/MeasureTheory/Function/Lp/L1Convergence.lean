@@ -15,6 +15,10 @@ On a finite measure space the `Lᵖ` seminorm dominates the `L¹` seminorm up to
 distance written as a lower Lebesgue integral, which is the form consumed by arguments that pass
 an integral identity to a limit.
 
+The finite-set representative version,
+`TauCeti.tendsto_setLIntegral_enorm_sub_of_tendsto_Lp`, lives beside the restriction operator
+in `TauCeti.MeasureTheory.Function.Lp.Restriction` and is available through this module.
+
 ## Main declarations
 
 * `TauCeti.tendsto_lintegral_enorm_sub_of_tendsto_Lp`: `Lᵖ` convergence gives
@@ -25,7 +29,7 @@ public section
 
 namespace TauCeti
 
-open Filter MeasureTheory
+open Filter _root_.MeasureTheory
 open scoped ENNReal Topology
 
 /-- **On a finite measure space, `Lᵖ` convergence implies `L¹` convergence.** -/
@@ -40,7 +44,7 @@ theorem tendsto_lintegral_enorm_sub_of_tendsto_Lp {α G ι : Type*} [MeasurableS
     ((Measure.LpToL1CLM (𝕜 := ℝ) ν q).continuous.tendsto g).comp h
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at hL1
   refine hL1.congr fun i => ?_
-  rw [eLpNorm_one_eq_lintegral_enorm
+  rw [eLpNorm_one_eq_lintegral_eNorm
     ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))]
   apply lintegral_congr_ae
   filter_upwards [Measure.LpToL1CLM_coeFn (𝕜 := ℝ) ν q (f i),

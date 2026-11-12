@@ -25,7 +25,7 @@ This is a concrete case of, but does not prove, the general equivalence between 
 linear reductivity in characteristic zero.
 
 The argument follows the special-linear case in
-`TauCeti/Algebra/AlgebraicGroup/SpecialLinear/LinearlyReductive.lean`
+`TauCeti/Algebra/AlgebraicGroup/SpecialLinear/LinearlyReductive/Basic.lean`
 (`TauCeti.SpecialLinear.linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra`), with the
 symplectic Lie algebra in place of `slₙ`.
 

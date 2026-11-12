@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.List.Sort
+public import Mathlib.Data.Multiset.Sort
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 
@@ -165,5 +167,15 @@ theorem pbwMonomial_sub_insertionSort_mem_pbwFiltrationPrevious
       pbwFiltrationPrevious R L word.length :=
   pbwMonomial_sub_pbwMonomial_mem_pbwFiltrationPrevious_of_perm R L e
     (List.perm_insertionSort r word).symm
+
+/-- Relabelling the indices of an exponent vector along an order embedding relabels its ordered
+PBW monomial. -/
+theorem pbwMonomial_sort_toMultiset_mapDomain {ι₁ ι₂ : Type*} [LinearOrder ι₁]
+    [LinearOrder ι₂] (g : ι₁ ↪o ι₂) (e : ι₂ → L) (n : ι₁ →₀ ℕ) :
+    pbwMonomial R L e ((n.mapDomain g).toMultiset.sort (· ≤ ·)) =
+      pbwMonomial R L (e ∘ g) (n.toMultiset.sort (· ≤ ·)) := by
+  rw [← Finsupp.toMultiset_map, ← Multiset.map_sort g n.toMultiset (· ≤ ·) (· ≤ ·)
+    (fun _ _ _ _ ↦ g.le_iff_le.symm)]
+  simp only [pbwMonomial_def, List.map_map, Function.comp_def]
 
 end TauCeti.UniversalEnvelopingAlgebra

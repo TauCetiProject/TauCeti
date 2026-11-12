@@ -182,7 +182,7 @@ private theorem typeBSimpleCorootCoordinate_sub_eq_cartan_transpose
     simp only [Fin.castSucc_mk, Fin.succ_mk, CartanMatrix.B,
       Matrix.of_apply, Fin.ext_iff]
     split_ifs <;> simp_all [Pi.single_apply, Fin.ext_iff]
-    all_goals omega
+    omega
   · rw [typeBSimpleCorootCoordinate_castSucc]
     rcases i₀ with ⟨i, hi⟩
     rcases j with ⟨j, hj⟩

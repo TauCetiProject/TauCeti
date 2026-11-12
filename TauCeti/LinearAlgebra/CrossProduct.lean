@@ -78,7 +78,7 @@ theorem triple_product_eq_zero_iff_mem_span_pair {K : Type*} [Field K] {u v x : 
   · rw [← range_cons_cons_empty u v ![]]
     by_contra hx
     have hdet := (isUnit_iff_isUnit_det _).1
-      ((linearIndependent_rows_iff_isUnit (A := of ![x, u, v])).1
+      ((linearIndependent_row_iff_isUnit (A := of ![x, u, v])).1
         (linearIndependent_finCons.2 ⟨huv, hx⟩))
     have h0 : (of ![x, u, v]).det = 0 := (triple_product_eq_det x u v).symm.trans h
     rw [h0] at hdet

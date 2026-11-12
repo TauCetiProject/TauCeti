@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Tessellation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
-import TauCeti.GroupTheory.GroupAction.Stabilizer
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # Elliptic points on the sides of a fundamental polygon

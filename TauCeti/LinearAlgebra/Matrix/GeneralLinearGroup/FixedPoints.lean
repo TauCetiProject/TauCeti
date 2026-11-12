@@ -18,6 +18,13 @@ public import Mathlib.Data.Set.Card
 -- Non-public: `Polynomial.natDegree_linear_le` and `Polynomial.natDegree_quadratic_le` bound the
 -- degree of the fixed-point polynomial, in the proof only.
 import Mathlib.Algebra.Polynomial.Degree.SmallDegree
+-- Non-public: when `c ≠ 0`, the two real fixed points of a hyperbolic element are the roots
+-- `(a - d ± √(tr² - 4)) / (2 c)` of its fixed-point polynomial; when `c = 0` they are `∞` and the
+-- root of the linear polynomial.
+import Mathlib.Algebra.QuadraticDiscriminant
+import Mathlib.Analysis.Real.Sqrt
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
 # Fixed points of the Möbius action on the projective line
@@ -36,6 +43,10 @@ and two elements agreeing on three distinct points are equal. This **three-point
 makes a subgroup of `PGL₂(K)` embed into the permutations of any invariant set of at least three
 points of `ℙ¹(K)`.
 
+Over `ℝ`, the class in `PSL(2, ℝ)` of a matrix whose trace has absolute value greater than `2`, a
+hyperbolic element, attains this bound: its fixed-point polynomial has positive discriminant
+`tr² - 4`, so it fixes exactly two distinct points of `ℙ¹(ℝ)`.
+
 ## Main results
 
 * `Matrix.GeneralLinearGroup.encard_fixedBy_le_two`, with the `Set.ncard` form
@@ -49,6 +60,8 @@ points of `ℙ¹(K)`.
   uniqueness form — two elements acting the same way on a set of at least three points of the
   projective line are equal.  For a matrix `g`, `OnePoint.pglMk_smul` turns a hypothesis about the
   Möbius action of `g` into one about the action of its class.
+* `Matrix.ProjectiveSpecialLinearGroup.exists_ne_smul_eq_self_of_two_lt_abs_trace`: a hyperbolic
+  element of `PSL(2, ℝ)` fixes two distinct points of the projective line.
 
 ## References
 
@@ -172,3 +185,48 @@ theorem eq_of_forall_smul_eq {x y : PGL(2, K)} {S : Set (OnePoint K)} (hS : ∀ 
   exact hone.symm
 
 end Matrix.ProjGenLinGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
+/-- The class of a matrix `A = !![a, b; c, d]` of `SL(2, ℝ)` whose trace has absolute value greater
+than `2` has two distinct fixed ideal points. When `c ≠ 0` they are the two real roots of its
+fixed-point polynomial; when `c = 0` they are `∞` and the single real root `b / (d - a)` of the
+then linear polynomial. -/
+theorem exists_ne_smul_eq_self_of_two_lt_abs_trace {A : SL(2, ℝ)}
+    (h : 2 < |(A : Matrix (Fin 2) (Fin 2) ℝ).trace|) :
+    ∃ ξ η : OnePoint ℝ, ξ ≠ η ∧ (A : PSL(2, ℝ)) • ξ = ξ ∧ (A : PSL(2, ℝ)) • η = η := by
+  -- the fixed-point polynomial `c X² + (d - a) X - b` has discriminant `tr² - 4 > 0`
+  have hdisc : 0 < discrim (A 1 0) (A 1 1 - A 0 0) (-A 0 1) := by
+    have hhyp := (Matrix.isHyperbolic_iff_two_lt_abs_trace A.det_coe).2 h
+    rw [Matrix.IsHyperbolic, Matrix.discr_fin_two, Matrix.trace_fin_two, A.det_coe] at hhyp
+    rw [discrim]
+    linear_combination hhyp + 4 * A.fin_two_mul_sub_mul_eq_one
+  have hfix (x : ℝ) (hx : A 1 0 * (x * x) + (A 1 1 - A 0 0) * x + -A 0 1 = 0) :
+      (A : PSL(2, ℝ)) • (x : OnePoint ℝ) = x := by
+    rw [OnePoint.pslMk_smul, ← Matrix.GeneralLinearGroup.fixpointPolynomial_aeval_eq_zero_iff]
+    simpa [Matrix.GeneralLinearGroup.fixpointPolynomial, sq, sub_eq_add_neg] using hx
+  by_cases hc : A 1 0 = 0
+  · -- the class fixes `∞` and one real point
+    rw [discrim, hc, mul_zero, zero_mul, sub_zero] at hdisc
+    have hda : A 1 1 - A 0 0 ≠ 0 := by
+      rintro hda
+      rw [hda] at hdisc
+      norm_num at hdisc
+    refine ⟨((A 0 1 / (A 1 1 - A 0 0) : ℝ) : OnePoint ℝ), ∞, OnePoint.coe_ne_infty _,
+      hfix _ ?_, (mk_smul_infty_eq_infty_iff A).2 hc⟩
+    rw [hc]
+    field_simp
+    ring
+  · -- the class fixes the two real roots of its fixed-point polynomial
+    set r := √(discrim (A 1 0) (A 1 1 - A 0 0) (-A 0 1))
+    have hr : discrim (A 1 0) (A 1 1 - A 0 0) (-A 0 1) = r * r :=
+      (Real.mul_self_sqrt hdisc.le).symm
+    have hr0 : r ≠ 0 := (Real.sqrt_pos.2 hdisc).ne'
+    have hroot := quadratic_eq_zero_iff hc hr
+    refine ⟨((-(A 1 1 - A 0 0) + r) / (2 * A 1 0) : ℝ), ((-(A 1 1 - A 0 0) - r) / (2 * A 1 0) : ℝ),
+      ?_, hfix _ ((hroot _).2 (Or.inl rfl)), hfix _ ((hroot _).2 (Or.inr rfl))⟩
+    rw [Ne, OnePoint.coe_eq_coe, div_left_inj' (mul_ne_zero two_ne_zero hc)]
+    intro h'
+    exact hr0 (by linarith)
+
+end Matrix.ProjectiveSpecialLinearGroup

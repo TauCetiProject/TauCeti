@@ -61,10 +61,6 @@ reductive, that its torus is maximal, or that its root datum has been identified
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * B. Conrad, *Reductive Group Schemes*, §1.
 
-This advances the base-change target in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`.
-The resulting specialized pinned carrier is an input to milestone L0, “pinned ambient groups”,
-of `TauCetiRoadmap/CFSGStatement/README.md`.
-
 The declaration structure specializes the formal template in
 `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.BaseChange`. Every construction below uses the
 generic Kostant base-change API from
@@ -151,7 +147,7 @@ variable {B : Type w} [CommRing B] [Algebra A B]
 point of the ambient general linear group. -/
 theorem mapPointsFunctor_coordinateMap_app
     (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra A) (CommAlgCat.of A B)) :
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra A 27) (baseChangeDefiningIdeal A)
         (CommAlgCat.of A B) g := by
@@ -301,13 +297,13 @@ theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 6 ⊕ 
 
 /-- The specialized root-subgroup coordinate map sends an additive point to the numbered
 minuscule root matrix with the same parameter. -/
--- Normalize the point before `AlgHom.mapDomain_apply` unfolds the inner map.
+-- Normalize the point before `BialgHom.mapDomain_apply` unfolds the inner map.
 @[simp↓]
 theorem pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
     (i : Fin 6 ⊕ Fin 6) (B : CommAlgCat.{w} A)
     (q : HopfAlgebra.points (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
     GeneralLinear.pointToGeneralLinear 27
-        (AlgHom.mapDomain (coordinateMap A).hom
+        (BialgHom.mapDomain (coordinateMap A).hom
           (WithConv.toConv
             (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap A i).hom.toAlgHom))) =
       (rootSubgroupPoints i B (AdditiveGroup.gaPointsMulEquiv q) :
@@ -319,8 +315,11 @@ theorem pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_
       (TauCeti.serreRootGenerator weightTable.cartanMatrix)
       (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
       weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
-      weightTable.weight A definingIdeal_def i B q using 1
+      weightTable.weight A i B q using 1
   congr 1
+  erw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
+  rfl
 
 /-- Under the base-change coordinate isomorphism, the factored `k`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/
@@ -415,7 +414,7 @@ theorem baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
           CommHopfAlgCat.baseChangeMap weightTorusIntegralCoordinateMap ≫
         (_root_.CommHopfAlgCat.ofHom
           (BialgHomClass.toBialgHom
-            (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+            (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup (Fin 6))))) =
       weightTorusToBaseChangeCoordinateMap A := by
   rw [baseChangeCoordinateIso, weightTorusIntegralCoordinateMap,

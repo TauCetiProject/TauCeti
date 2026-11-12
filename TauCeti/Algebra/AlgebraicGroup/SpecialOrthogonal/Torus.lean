@@ -11,7 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Torus.Reductive
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.FinTwo
 
 /-!
-# The two-dimensional special orthogonal torus
+# The special orthogonal group `SO₂` as a torus
 
 Suppose a commutative ring `R` contains a square root `i` of `-1` and an element `half` with
 `2 * half = 1`. The standard special orthogonal group `SO₂` is then the rank-one split torus.
@@ -51,7 +51,7 @@ open CategoryTheory
 
 namespace TauCeti.SpecialOrthogonal
 
-universe u v
+universe u v w
 
 noncomputable section
 
@@ -67,7 +67,7 @@ private def rankOneCoordinatesSpecialOrthogonalMulEquiv
 /-- The rank-one-coordinate matrix equivalence commutes with a ring morphism which preserves
 the chosen square root and half. -/
 private theorem map_rankOneCoordinatesSpecialOrthogonalMulEquiv
-    {A B : Type v} [CommRing A] [CommRing B] (f : A →+* B)
+    {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B)
     (i half : A) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1)
     (c : ULift.{u} (Fin 1) → Aˣ) :
     Matrix.SpecialOrthogonalGroup.map f
@@ -155,7 +155,7 @@ theorem splitTorusPointsMulEquiv_symm_apply
 
 /-- The rank-one split-torus point equivalence is natural in the commutative value algebra. -/
 theorem splitTorusPointsMulEquiv_mapValue
-    {A B : Type v} [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+    {A : Type v} {B : Type w} [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
     (f : A →ₐ[R] B)
     (t : WithConv ((DiagonalizableGroup.coordinateRing R
       (SplitTorus.characterGroup (ULift.{u} (Fin 1)))) →ₐ[R] A)) :
@@ -224,10 +224,10 @@ inverse pointwise split-torus equivalence. -/
 theorem mapPointsFunctor_splitTorusCoordinateIso_hom_app_apply
     (A : CommAlgCat.{u} R)
     (s : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) :
-    (CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom).app A s =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom).app A s =
       (splitTorusPointsMulEquiv R i half hi hhalf A).symm s := by
   have hmap :
-      CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom =
+      CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).hom =
         (splitTorusPointsNatIso R i half hi hhalf).inv := by
     -- `pointsFunctor_map` does not cancel `op`/`unop` at rewrite transparency.
     -- Reduce them here to expose the categorical map needed by `Functor.map_preimage`.
@@ -252,10 +252,10 @@ theorem mapPointsFunctor_splitTorusCoordinateIso_inv_app_apply
     (t : HopfAlgebra.points (R := R)
       (H := (DiagonalizableGroup.coordinateRing R
         (SplitTorus.characterGroup (ULift.{u} (Fin 1)))).obj) A) :
-    (CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv).app A t =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv).app A t =
       splitTorusPointsMulEquiv R i half hi hhalf A t := by
   have hmap :
-      CommHopfAlgCat.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv =
+      CommHopfAlgCat.Hom.mapPointsFunctor (splitTorusCoordinateIso R i half hi hhalf).inv =
         (splitTorusPointsNatIso R i half hi hhalf).hom := by
     -- `pointsFunctor_map` does not cancel `op`/`unop` at rewrite transparency.
     -- Reduce them here to expose the categorical map needed by `Functor.map_preimage`.
@@ -281,8 +281,8 @@ def finiteTypeSplitTorusCoordinateIso :
   ObjectProperty.isoMk _ <| (splitTorusCoordinateIso R i half hi hhalf) ≪≫
     eqToIso (finiteTypeCoordinateHopfAlgebra_obj R 2).symm
 
-/-- When the base contains a square root of `-1` and a half, `SO₂` is a split torus of rank
-one. -/
+/-- When the base contains a square root of `-1` and a half, `SO₂` is a split torus.
+`finiteTypeSplitTorusCoordinateIso` identifies it with the rank-one split torus. -/
 theorem splitTorusCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_two
     (i half : R) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1) :
     splitTorusCommHopfAlgProperty R (finiteTypeCoordinateHopfAlgebra R 2) := by

@@ -12,7 +12,12 @@ public import Mathlib.Data.Nat.Factorization.Basic
 
 The least prime belongs to the prime factors of a natural number greater than one, and removing
 its full multiplicity gives a smaller number. Removing the `p`-part erases `p` from the prime
-factors. These facts support induction by successively removing prime-power blocks.
+factors. These facts support induction by successively removing prime-power blocks. For a
+divisor `n ∣ m`, the `p`-free parts are related by `m / n * ordCompl[p] n =
+ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m / n)` between groups
+of roots of unity acts on their `p`-primary parts. The product of any set of prime factors of
+`n` divides `n`, and monomial products of an injective family of primes (or fixed positive powers
+of their casts in characteristic zero) are injective on finitely supported exponent tuples.
 -/
 
 public section
@@ -22,6 +27,11 @@ namespace Nat
 /-- For `1 < n` the least prime factor of `n` is one of its primes. -/
 theorem minFac_mem_primeFactors {n : ℕ} (hn : 1 < n) : n.minFac ∈ n.primeFactors :=
   Nat.mem_primeFactors.2 ⟨Nat.minFac_prime hn.ne', n.minFac_dvd, by omega⟩
+
+/-- The product of a set of prime factors of `n` divides `n`. -/
+theorem prod_dvd_of_subset_primeFactors {n : ℕ} {s : Finset ℕ} (h : s ⊆ n.primeFactors) :
+    ∏ p ∈ s, p ∣ n :=
+  (Finset.prod_dvd_prod_of_subset _ _ id h).trans (prod_primeFactors_dvd n)
 
 /-- Peeling the block at the least prime factor makes `n` strictly smaller. -/
 theorem ordCompl_minFac_lt {n : ℕ} (hn : 1 < n) : ordCompl[n.minFac] n < n :=
@@ -36,4 +46,55 @@ theorem primeFactors_ordCompl (n p : ℕ) :
   rw [← support_factorization, factorization_ordCompl, Finsupp.support_erase,
     support_factorization]
 
+/-- For a divisor `n ∣ m`, the cofactor `m / n` times the `p`-free part of `n` is the `p`-free
+part of `m` times the power of `p` by which the `p`-parts of `m` and `n` differ. -/
+theorem div_mul_ordCompl_of_dvd {m n : ℕ} (p : ℕ) (h : n ∣ m) :
+    m / n * ordCompl[p] n = ordCompl[p] m * p ^ (m.factorization p - n.factorization p) := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  have hn : n ≠ 0 := ne_zero_of_dvd_ne_zero hm h
+  have hle : n.factorization p ≤ m.factorization p := (factorization_le_iff_dvd hn hm).2 h p
+  refine Nat.eq_of_mul_eq_mul_right (ordProj_pos n p) ?_
+  rw [mul_assoc, mul_comm (ordCompl[p] n), ordProj_mul_ordCompl_eq_self, Nat.div_mul_cancel h,
+    mul_assoc, ← pow_add, Nat.sub_add_cancel hle, mul_comm, ordProj_mul_ordCompl_eq_self]
+
 end Nat
+
+namespace TauCeti
+
+/-- Monomial products of an injective family of prime natural numbers are injective on finitely
+supported exponent tuples. -/
+theorem finsuppProd_prime_pow_injective {ι : Type*} {p : ι → ℕ}
+    (hp : ∀ i, Nat.Prime (p i)) (hinj : Function.Injective p) :
+    Function.Injective fun d : ι →₀ ℕ ↦ d.prod fun i k ↦ p i ^ k := by
+  classical
+  intro d₁ d₂ h
+  have hmap (d : ι →₀ ℕ) : (d.prod fun i k ↦ p i ^ k).factorization = d.mapDomain p := by
+    rw [← Finsupp.prod_mapDomain_index_inj hinj]
+    exact Nat.factorization_prod_pow_eq_self fun q hq ↦ by
+      obtain ⟨i, -, rfl⟩ := Finset.mem_image.1 (Finsupp.mapDomain_support hq)
+      exact hp i
+  exact Finsupp.mapDomain_injective hinj
+    ((hmap d₁).symm.trans ((congrArg Nat.factorization h).trans (hmap d₂)))
+
+/-- In a characteristic-zero commutative semiring `R`, monomial products of fixed positive powers
+`(p i : R) ^ m` (`m ≠ 0`) of an injective family of primes are injective on finitely supported
+exponent tuples. -/
+theorem finsuppProd_natCast_prime_pow_injective {R ι : Type*} [CommSemiring R] [CharZero R]
+    {p : ι → ℕ} (hp : ∀ i, Nat.Prime (p i)) (hinj : Function.Injective p) {m : ℕ}
+    (hm : m ≠ 0) :
+    Function.Injective fun d : ι →₀ ℕ ↦ d.prod fun i k ↦ ((p i : R) ^ m) ^ k := by
+  have hcast (d : ι →₀ ℕ) :
+      (d.prod fun i k ↦ ((p i : R) ^ m) ^ k) =
+        (((d.mapRange (m * ·) (mul_zero m)).prod fun i k ↦ p i ^ k : ℕ) : R) := by
+    have hhom := map_finsuppProd (Nat.castRingHom R) d fun i k ↦ p i ^ (m * k)
+    simp only [Nat.coe_castRingHom] at hhom
+    rw [Finsupp.prod_mapRange_index (fun _ ↦ rfl), hhom]
+    exact Finsupp.prod_congr fun i _ ↦ by simp [pow_mul]
+  intro d₁ d₂ h
+  have hmap := finsuppProd_prime_pow_injective hp hinj
+    (Nat.cast_injective ((hcast d₁).symm.trans (h.trans (hcast d₂))))
+  ext i
+  exact mul_left_cancel₀ hm (DFunLike.congr_fun hmap i)
+
+end TauCeti

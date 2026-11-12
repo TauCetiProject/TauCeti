@@ -39,6 +39,9 @@ between two given states is determined by its side columns.
   original and transposed endpoint states.
 * `TauCeti.GridRectangleDecomposition.target_mem_twoStepColumnSwapNeighbors`: the target of a
   decomposition is reached from its source by two nontrivial column transpositions.
+* `TauCeti.GridRectangleDecomposition.sides_of_middle_eq_swapRows`: when the intermediate state
+  swaps two rows of the source, the side columns of both rectangles are read off from the rows of
+  their corners.
 
 ## References
 
@@ -260,6 +263,23 @@ theorem target_mem_twoStepColumnSwapNeighbors (D : GridRectangleDecomposition x 
         ⟨D.first.left, D.first.right, D.first.left_ne_right, D.first.target_eq_swapColumns⟩,
       GridState.mem_columnSwapNeighbors.mpr
         ⟨D.second.left, D.second.right, D.second.left_ne_right, D.second.target_eq_swapColumns⟩⟩
+
+/-- The side columns of a decomposition whose intermediate state swaps two rows of the source,
+read off from the rows of its corners. -/
+theorem sides_of_middle_eq_swapRows {E : GridRectangleDecomposition x z}
+    {a b c d e f : Fin n} (hmiddle : E.middle = x.swapRows (x a) (x b))
+    (hfirstBottom : E.first.bottom = x c) (hfirstTop : E.first.top = x d)
+    (hsecondBottom : E.second.bottom = x e) (hsecondTop : E.second.top = x f) :
+    E.first.left = c ∧ E.first.right = d ∧
+      E.second.left = Equiv.swap a b e ∧ E.second.right = Equiv.swap a b f := by
+  rw [← GridState.swapColumns_eq_swapRows] at hmiddle
+  refine ⟨x.toPerm.injective hfirstBottom, x.toPerm.injective hfirstTop,
+    GridState.eq_swap_of_swapColumns_apply_eq (x := x) ?_,
+    GridState.eq_swap_of_swapColumns_apply_eq (x := x) ?_⟩
+  · rw [← hmiddle]
+    exact hsecondBottom
+  · rw [← hmiddle]
+    exact hsecondTop
 
 end GridRectangleDecomposition
 

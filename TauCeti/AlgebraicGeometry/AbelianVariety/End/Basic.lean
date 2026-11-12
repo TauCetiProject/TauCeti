@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AbelianVariety.MorphismGroup
 public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.Algebra.Ring.Equiv
 public import Mathlib.CategoryTheory.Conj
+import Mathlib.Algebra.Group.TransferInstance
 import Mathlib.Data.Int.Cast.Lemmas
 
 /-!
@@ -22,14 +23,9 @@ The pointwise group law on homomorphisms of abelian varieties is written *multip
 `TauCeti.AlgebraicGeometry.AbelianVariety.MorphismGroup`, matching the multiplicative encoding
 (`GrpObj`, `μ`, `η`, `ι`) of a group object. A ring is written additively, so the endomorphism ring
 is the additive reindexing `Additive (A ⟶ A)` of that group rather than the hom-set itself; this
-keeps the multiplicative convention on all hom-sets intact. (Declaring `AbelianVariety K`
-`CategoryTheory.Preadditive` instead would put an `AddCommGroup (A ⟶ B)` on the very hom-sets that
-already carry `AbelianVariety.Hom.instCommGroup` for the same operation — the situation `Additive`
-exists to avoid — and would mean re-deriving that group law additively rather than transporting
-Mathlib's multiplicative `CategoryTheory.MonObj.Hom.commGroup`; that is a change to already-merged
-material, not part of this file.) Reindexing only the additive structure leaves `End A` the same
-type as Mathlib's `CategoryTheory.End A`, so the multiplicative monoid here *is* Mathlib's, and
-conjugation by an isomorphism is Mathlib's `CategoryTheory.Iso.conj`.
+keeps the multiplicative convention on all hom-sets intact while giving the endomorphism ring its
+additive notation. The multiplicative monoid transports Mathlib's `CategoryTheory.End A`, and
+conjugation by an isomorphism transports Mathlib's `CategoryTheory.Iso.conj`.
 `AbelianVariety.End.toHom` and `AbelianVariety.End.ofHom` translate between the two views, and the
 `toHom_*` lemmas turn every ring operation into a group or categorical operation on morphisms.
 
@@ -45,16 +41,11 @@ The specialization to the trivial abelian variety is in
 `TauCeti.AlgebraicGeometry.AbelianVariety.End.Trivial`, which is where the trivial-variety theory
 gets imported.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E, "Abelian variety = smooth,
-proper, geometrically connected group scheme over `k`; basic API", and its item "`[n]` as an
-isogeny" — the endomorphism ring is where `[n]` lives, and where the homomorphism produced by
-Layer F's universal property of the Abel–Jacobi map is compared with others. That `[n]` *is* an
-isogeny needs the dimension and torsion theory of Layer E and is not proved here. No external
-mathematics is vendored; the ring is assembled from Tau Ceti's homomorphism-group API, Mathlib's
-`Additive` type synonym, Mathlib's `CategoryTheory.End` monoid and `CategoryTheory.Iso.conj`, with
-only the distributivity supplied by `AbelianVariety.Hom.mul_comp` and `AbelianVariety.Hom.comp_mul`
-proved here — the same assembly as Mathlib's `Ring (CategoryTheory.End X)` for preadditive
-categories.
+The endomorphism ring packages multiplication-by-integer maps and provides a common codomain
+for comparing homomorphisms obtained from the universal property of the Abel–Jacobi map. Proving
+that `[n]` is an isogeny additionally requires dimension and torsion results. The ring uses
+Tau Ceti's homomorphism-group API and Mathlib's `Additive` type synonym, with distributivity
+supplied by `AbelianVariety.Hom.mul_comp` and `AbelianVariety.Hom.comp_mul`.
 -/
 
 public section
@@ -137,20 +128,32 @@ lemma toHom_zsmul (n : ℤ) (x : End A) : toHom (n • x) = toHom x ^ n :=
 /-! ### The multiplicative monoid
 
 Multiplication in `End A` is composition, in the order of `Function.comp` rather than of
-`CategoryTheory.CategoryStruct.comp`. Since `End A` reindexes only the *additive* structure of
-`A ⟶ A`, it is the same type as Mathlib's `CategoryTheory.End A`, so the multiplicative monoid is
-Mathlib's `CategoryTheory.End.monoid` rather than a new one. -/
+`CategoryTheory.CategoryStruct.comp`, matching Mathlib's `CategoryTheory.End.monoid`. -/
+
+/-- The additive reindexing of an abelian variety's endomorphisms is equivalent to its
+categorical endomorphisms. This equivalence transports the composition monoid and conjugation. -/
+def categoryEndEquiv (A : AbelianVariety K) : End A ≃ CategoryTheory.End A where
+  toFun x := CategoryTheory.End.of (toHom x)
+  invFun x := ofHom x.asHom
+  left_inv := ofHom_toHom
+  right_inv x := CategoryTheory.End.ext (toHom_ofHom x.asHom)
+
+@[simp] lemma categoryEndEquiv_apply_asHom (x : End A) :
+    ((categoryEndEquiv A) x).asHom = toHom x := (rfl)
+
+@[simp] lemma categoryEndEquiv_symm_apply (x : CategoryTheory.End A) :
+    (categoryEndEquiv A).symm x = ofHom x.asHom := (rfl)
 
 instance instMonoid (A : AbelianVariety K) : Monoid (End A) :=
-  inferInstanceAs (Monoid (CategoryTheory.End A))
+  fast_instance% (categoryEndEquiv A).monoid
 
-@[simp] lemma toHom_one : toHom (1 : End A) = 𝟙 A := (rfl)
+@[simp] lemma toHom_one : toHom (1 : End A) = 𝟙 A := toHom_ofHom _
 
-@[simp] lemma toHom_mul (x y : End A) : toHom (x * y) = toHom y ≫ toHom x := (rfl)
+@[simp] lemma toHom_mul (x y : End A) : toHom (x * y) = toHom y ≫ toHom x := toHom_ofHom _
 
 /-- Composing two endomorphisms is multiplying them in the endomorphism ring, in the reversed
 order. -/
-lemma ofHom_comp (f g : A ⟶ A) : ofHom (f ≫ g) = ofHom g * ofHom f := (rfl)
+lemma ofHom_comp (f g : A ⟶ A) : ofHom (f ≫ g) = ofHom g * ofHom f := by ext; simp
 
 /-! ### The ring
 
@@ -194,29 +197,20 @@ lemma toHom_intCast (n : ℤ) : toHom (n : End A) = 𝟙 A ^ n := by
 /-- Conjugation by an isomorphism `e : A ≅ B` of abelian varieties, as an isomorphism of
 endomorphism rings `End A ≃+* End B`.
 
-The multiplicative part is Mathlib's `CategoryTheory.Iso.conj`; only additivity — that conjugation
-respects the pointwise group law — has to be proved here. -/
-def congr (e : A ≅ B) : End A ≃+* End B where
-  __ := e.conj
-  -- Mathlib's `e.conj` lives on `CategoryTheory.End`, of which `End A` is the definitional
-  -- synonym `Additive (A ⟶ A)`, so the `map_add'` goal mixes the two views: it applies `e.conj` to
-  -- elements of `End A` and takes `toHom` of a categorical composite. That mismatch cannot be
-  -- bridged by a rewrite lemma, because a statement about `toHom (e.conj x)` for `x : End A` does
-  -- not elaborate: the coercion of `e.conj` fixes its argument type to `CategoryTheory.End A`.
-  -- So the goal is moved into the morphism view once, definitionally, and `simp` closes it from
-  -- `Hom.mul_comp` and `Hom.comp_mul`.
-  map_add' x y := toHom_injective <| by
-    change e.inv ≫ toHom (x + y) ≫ e.hom
-      = (e.inv ≫ toHom x ≫ e.hom) * (e.inv ≫ toHom y ≫ e.hom)
-    simp
+The multiplicative equivalence transports Mathlib's `CategoryTheory.Iso.conj` through
+`categoryEndEquiv`. Additivity, that conjugation respects the pointwise group law, follows from
+`Hom.mul_comp` and `Hom.comp_mul`. -/
+def congr (e : A ≅ B) : End A ≃+* End B :=
+  { ((categoryEndEquiv A).mulEquiv.trans e.conj).trans (categoryEndEquiv B).mulEquiv.symm with
+    map_add' x y := by ext; simp }
 
 @[simp] lemma toHom_congr (e : A ≅ B) (x : End A) :
     toHom (congr e x) = e.inv ≫ toHom x ≫ e.hom :=
-  (rfl)
+  toHom_ofHom _
 
 @[simp] lemma toHom_congr_symm (e : A ≅ B) (y : End B) :
     toHom ((congr e).symm y) = e.hom ≫ toHom y ≫ e.inv :=
-  (rfl)
+  toHom_ofHom _
 
 @[simp] lemma congr_refl (A : AbelianVariety K) :
     congr (Iso.refl A) = RingEquiv.refl (End A) := by

@@ -112,7 +112,7 @@ private theorem groupSchemePointMulEquiv_comp_inclusion
       (Symplectic.groupSchemePointMulEquiv_apply_left m A)
       (fun f => by simpa only [AlgHom.toRingHom_eq_coe] using
         groupSchemePointMulEquiv_apply_left R m A f) (coordinateMap R m) f
-  erw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   rw [inclusion, CommHopfAlgCat.quotientSpecι_def]
   erw [CommHopfAlgCat.quotientPointsHom_apply]
   simpa only [eqToHom_refl, Category.id_comp, Grp.comp_hom_hom, coordinateMap,

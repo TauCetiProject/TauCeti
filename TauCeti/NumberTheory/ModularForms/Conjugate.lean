@@ -132,23 +132,6 @@ theorem qExpansion_slash_J {F : Type*} [FunLike F ℍ ℂ] [ModularFormClass F �
 
 /-! ### The congruence subgroups -/
 
-end TauCeti
-
-namespace Matrix.SpecialLinearGroup
-
-/-- Conjugation by `J` realizes `conjJ`. -/
-lemma J_mul_mapGL_mul_J (γ : SL(2, ℤ)) :
-    UpperHalfPlane.J * mapGL ℝ γ * UpperHalfPlane.J = mapGL ℝ (conjJ γ) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [UpperHalfPlane.J, Matrix.mul_apply, Fin.sum_univ_two, Matrix.vecMul, dotProduct]
-
-end Matrix.SpecialLinearGroup
-
-namespace TauCeti
-
-open UpperHalfPlane
-
 section Congruence
 
 lemma conjJ_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) : conjJ γ ∈ Gamma0 N := by
@@ -194,9 +177,7 @@ private lemma slash_conj_eq {f : ℍ → ℂ}
       (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f) (g : ↥(Gamma0 N)) :
     (f ∣[k] J) ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
       (↑(χ⁻¹ ((Gamma0Map N).toHomUnits g)) : ℂ) • (f ∣[k] J) := by
-  have hJg : J * mapGL ℝ (g : SL(2, ℤ)) = mapGL ℝ (conjJ (g : SL(2, ℤ))) * J := by
-    rw [← J_mul_mapGL_mul_J, mul_assoc, ← sq, J_sq, mul_one]
-  rw [← SlashAction.slash_mul, hJg, SlashAction.slash_mul,
+  rw [← SlashAction.slash_mul, J_mul_mapGL, SlashAction.slash_mul,
     hf ⟨conjJ (g : SL(2, ℤ)), conjJ_mem_Gamma0 g.2⟩, ModularForm.smul_slash,
     Gamma0Map_conjJ, sigma_J]
   congr 1
@@ -425,14 +406,16 @@ lemma coe_conjCharSpace_conjCharSpace (f : cuspFormCharSpace k χ) :
   simp
 
 open HeckeRing.GL2 in
-/-- **The conjugate form intertwines the Hecke operators**: for `f ∈ S_k(N, χ)` and `n ≠ 0`,
+/-- **The conjugate form intertwines the Hecke operators**: for `f ∈ S_k(N, χ)`,
 `T_n (f_ρ) = (T_n f)_ρ`, where on the left `T_n` acts on `S_k(N, χ⁻¹)`. Since the conjugation is
 antilinear, the conjugate of a `T_n`-eigenform with eigenvalue `λ` is a `T_n`-eigenform with
 eigenvalue `conj λ`. -/
-theorem heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] {n : ℕ} (hn : n ≠ 0)
+theorem heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] (n : ℕ)
     (f : cuspFormCharSpace k χ) :
     heckeRingHomCuspCharSpace k χ⁻¹ (heckeTCompositeGamma0 N n) (CuspForm.conjCharSpace k χ f) =
       CuspForm.conjCharSpace k χ (heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) f) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [heckeTCompositeGamma0_zero]
   have h1 := one_mem_strictPeriods_Gamma1_map N
   refine Subtype.ext <| _root_.CuspForm.qExpansion_injective one_pos h1 ?_
   ext m
@@ -444,13 +427,12 @@ theorem heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] {n : ℕ} (hn : n ≠
 open HeckeRing.GL2 in
 /-- **The conjugate of a Hecke eigenform is an eigenform with the conjugate eigenvalue**: if
 `Tₙ f = λ f` on `S_k(N, χ)`, then `Tₙ f_ρ = conj λ • f_ρ` on `S_k(N, χ⁻¹)`. -/
-theorem heckeRingHomCuspCharSpace_conjCharSpace_eq_smul [NeZero N] {n : ℕ}
-    (hn : n ≠ 0)
+theorem heckeRingHomCuspCharSpace_conjCharSpace_eq_smul [NeZero N] (n : ℕ)
     {f : cuspFormCharSpace k χ} {c : ℂ}
     (hf : heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) f = c • f) :
     heckeRingHomCuspCharSpace k χ⁻¹ (heckeTCompositeGamma0 N n) (CuspForm.conjCharSpace k χ f) =
       starRingEnd ℂ c • CuspForm.conjCharSpace k χ f := by
-  rw [heckeRingHomCuspCharSpace_conjCharSpace hn, hf, map_smulₛₗ]
+  rw [heckeRingHomCuspCharSpace_conjCharSpace n, hf, map_smulₛₗ]
 
 end Nebentypus
 

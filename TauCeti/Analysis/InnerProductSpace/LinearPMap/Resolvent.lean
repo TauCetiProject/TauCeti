@@ -84,6 +84,20 @@ theorem _root_.IsSelfAdjoint.norm_resolvent_le (hA : IsSelfAdjoint A)
     (him : RCLike.im z ≠ 0) : ‖A.resolvent z‖ ≤ |RCLike.im z|⁻¹ :=
   hA.isFormalAdjoint.norm_resolvent_le (hA.mem_resolventSet_of_im_ne_zero him) him
 
+/-- Every nonzero imaginary shift is a resolvent point of a self-adjoint partial operator. -/
+theorem _root_.IsSelfAdjoint.mem_resolventSet_I_mul
+    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    {A : H →ₗ.[ℂ] H} (hA : IsSelfAdjoint A) {r : ℝ} (hr : r ≠ 0) :
+    Complex.I * (r : ℂ) ∈ A.resolventSet :=
+  hA.mem_resolventSet_of_im_ne_zero (by simpa using hr)
+
+/-- The resolvent at a nonzero imaginary shift has norm at most the inverse shift size. -/
+theorem _root_.IsSelfAdjoint.norm_resolvent_I_mul_le
+    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    {A : H →ₗ.[ℂ] H} (hA : IsSelfAdjoint A) {r : ℝ} (hr : r ≠ 0) :
+    ‖A.resolvent (Complex.I * r)‖ ≤ |r|⁻¹ := by
+  simpa using hA.norm_resolvent_le (by simpa using hr : RCLike.im (Complex.I * (r : ℂ)) ≠ 0)
+
 /-- Resolvents of formally adjoint partial operators are adjoints at conjugate parameters,
 whenever both resolvents exist. -/
 theorem _root_.LinearPMap.IsFormalAdjoint.adjoint_resolvent_eq
@@ -122,5 +136,23 @@ theorem _root_.IsSelfAdjoint.isSelfAdjoint_resolvent (hA : IsSelfAdjoint A)
     IsSelfAdjoint (A.resolvent z) := by
   rw [ContinuousLinearMap.isSelfAdjoint_iff', hA.adjoint_resolvent hz,
     RCLike.conj_eq_iff_im.mpr him]
+
+section Complex
+
+open Complex
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  {A : H →ₗ.[ℂ] H}
+
+/-- `i` lies in the resolvent set of a self-adjoint operator. -/
+theorem _root_.IsSelfAdjoint.I_mem_resolventSet (hA : IsSelfAdjoint A) : I ∈ A.resolventSet :=
+  hA.mem_resolventSet_of_im_ne_zero (by simp)
+
+/-- `-i` lies in the resolvent set of a self-adjoint operator. -/
+theorem _root_.IsSelfAdjoint.neg_I_mem_resolventSet (hA : IsSelfAdjoint A) :
+    -I ∈ A.resolventSet :=
+  hA.mem_resolventSet_of_im_ne_zero (by simp)
+
+end Complex
 
 end TauCeti

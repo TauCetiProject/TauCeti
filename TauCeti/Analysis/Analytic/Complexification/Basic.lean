@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Complex.Basic
+import TauCeti.Analysis.Analytic.ConvergenceRadius
 import Mathlib.Analysis.Analytic.CPolynomial
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.LinearAlgebra.Multilinear.Basis
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Complexification of real analytic functions
@@ -25,9 +27,10 @@ Expanding each argument in the standard basis, `p n v = ∑ r, (∏ k, v k (r k)
 selects. The same formula with complex `v` defines a continuous `ℂ`-multilinear map on `ι → ℂ`,
 the *complexification* `ContinuousMultilinearMap.complexifyPi`. It agrees with `p n` on real
 arguments, it commutes with complex conjugation because its coefficients `p n (e_r)` are real, and
-its norm is at most `(card ι) ^ n` times that of `p n`. Applied to every term of a formal power
-series, this gives `FormalMultilinearSeries.complexifyPi`, whose radius of convergence is at least
-the original radius divided by `card ι`.
+its norm is at most `2 ^ n` times that of `p n`, independently of the coordinate dimension.
+Applied to every term of a formal power series, this gives
+`FormalMultilinearSeries.complexifyPi`, whose radius of convergence is at least half the original
+radius.
 
 Summing the complexified series of a real analytic function `f` at a point `a` gives a function
 `F` that is complex analytic on a ball around `a` (a polydisc, since `ι → ℂ` carries the sup norm),
@@ -48,19 +51,24 @@ commutes with complex conjugation near the point, not only the one constructed h
 
 * `ContinuousMultilinearMap.complexifyPi`: the complexification of a real multilinear form on
   `ι → ℝ`, with `complexifyPi_apply_ofReal`, `eq_complexifyPi_of_forall_ofReal`,
-  `complexifyPi_apply_star` and `norm_complexifyPi_le`; it is `ℝ`-linear (`complexifyPi_zero`,
-  `complexifyPi_add`, `complexifyPi_smul`).
+  `complexifyPi_apply_star`, `norm_complexifyPi_le` and `norm_complexifyPi_le_two_pow`; it is
+  `ℝ`-linear (`complexifyPi_zero`, `complexifyPi_add`, `complexifyPi_smul`).
 * `FormalMultilinearSeries.complexifyPi`: the termwise complexification of a power series, with
-  `FormalMultilinearSeries.le_radius_complexifyPi`.
+  `FormalMultilinearSeries.le_radius_complexifyPi` and
+  `FormalMultilinearSeries.le_radius_complexifyPi_two_mul`.
 * `AnalyticAt.exists_complexification`: a real analytic function has, on a polydisc around the
   point, a complex analytic extension compatible with conjugation.
 * `AnalyticAt.exists_complexification_pi`: the same for real analytic maps to `κ → ℝ`.
+* `AnalyticAt.exists_complexification_prod`: the same for real analytic functions on
+  `(ι → ℝ) × ℝ`, with values in `ℂ` on `(ι → ℂ) × ℂ`.
 * `AnalyticAt.eventually_eq_zero_of_eventually_real`, `AnalyticAt.eventuallyEq_of_eventually_real`:
   the identity theorem for complex analytic functions on the real points.
 * `AnalyticAt.eventually_comp_eq_id_of_eventually_real`: complex analytic extensions preserve a
   composition law equal to the identity near a real point.
 * `AnalyticAt.eventually_apply_star`: a complex analytic function that is real at the real points
   near a real point commutes with conjugation near it.
+* `TauCeti.eventually_ofReal_re_eq`: conversely, a function commuting with conjugation is real at
+  points fixed by conjugation.
 
 ## References
 
@@ -165,6 +173,42 @@ theorem norm_complexifyPi_le :
   refine (Finset.sum_le_sum fun r _ ↦ hterm r).trans_eq ?_
   simp [mul_assoc]
 
+/-- Complexification multiplies the norm of a real multilinear form by at most `2 ^ (card ν)`,
+independently of the dimension of its domain. -/
+theorem norm_complexifyPi_le_two_pow :
+    ‖f.complexifyPi‖ ≤ 2 ^ Fintype.card ν * ‖f‖ := by
+  classical
+  refine opNorm_le_bound (by positivity) fun v ↦ ?_
+  let x : ν → ι → ℂ := fun k i ↦ (v k i).re
+  let y : ν → ι → ℂ := fun k i ↦ Complex.I * (v k i).im
+  have hv : v = x + y := by
+    ext k i
+    apply Complex.ext <;> simp [x, y]
+  conv_lhs => rw [hv, f.complexifyPi.map_add_univ]
+  refine (norm_sum_le _ _).trans ?_
+  have hterm (s : Finset ν) :
+      ‖f.complexifyPi (s.piecewise x y)‖ ≤ ‖f‖ * ∏ k, ‖v k‖ := by
+    let c : ν → ℂ := fun k ↦ if k ∈ s then 1 else Complex.I
+    let w : ν → ι → ℝ := fun k i ↦ if k ∈ s then (v k i).re else (v k i).im
+    have hpiece : s.piecewise x y = fun k ↦ c k • fun i ↦ (w k i : ℂ) := by
+      ext k i
+      by_cases hk : k ∈ s <;> simp [x, y, c, w, hk, smul_eq_mul]
+    have hw (k : ν) : ‖w k‖ ≤ ‖v k‖ := by
+      rw [pi_norm_le_iff_of_nonneg (norm_nonneg _)]
+      intro i
+      by_cases hk : k ∈ s
+      · simpa only [w, hk, ↓reduceIte, Real.norm_eq_abs] using
+          (Complex.abs_re_le_norm (v k i)).trans (norm_le_pi_norm (v k) i)
+      · simpa only [w, hk, ↓reduceIte, Real.norm_eq_abs] using
+          (Complex.abs_im_le_norm (v k i)).trans (norm_le_pi_norm (v k) i)
+    rw [hpiece, f.complexifyPi.map_smul_univ, norm_smul, norm_prod]
+    simp_rw [show ∀ k, ‖c k‖ = 1 by intro k; by_cases hk : k ∈ s <;> simp [c, hk]]
+    simp only [Finset.prod_const_one, one_mul, complexifyPi_apply_ofReal, Complex.norm_real]
+    exact (f.le_opNorm w).trans <| mul_le_mul_of_nonneg_left
+      (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) (fun k _ ↦ hw k)) (norm_nonneg f)
+  refine (Finset.sum_le_sum fun s _ ↦ hterm s).trans_eq ?_
+  simp [nsmul_eq_mul, mul_assoc]
+
 end ContinuousMultilinearMap
 
 namespace ContinuousMultilinearMap
@@ -237,15 +281,17 @@ theorem complexifyPi_smul (c : ℝ) : (c • p).complexifyPi = (c : ℂ) • p.c
 
 /-- Complexification divides the radius of convergence by at most `card ι`. -/
 theorem le_radius_complexifyPi {r : ℝ≥0} (hr : ((Fintype.card ι * r : ℝ≥0) : ℝ≥0∞) < p.radius) :
-    (r : ℝ≥0∞) ≤ p.complexifyPi.radius := by
-  obtain ⟨C, -, hC⟩ := p.norm_mul_pow_le_of_lt_radius hr
-  refine le_radius_of_bound _ C fun n ↦ ?_
-  calc ‖p.complexifyPi n‖ * (r : ℝ) ^ n
-      ≤ Fintype.card ι ^ n * ‖p n‖ * (r : ℝ) ^ n := by
-        gcongr
-        simpa using (p n).norm_complexifyPi_le
-    _ = ‖p n‖ * ((Fintype.card ι * r : ℝ≥0) : ℝ) ^ n := by push_cast; ring
-    _ ≤ C := hC n
+    (r : ℝ≥0∞) ≤ p.complexifyPi.radius :=
+  le_radius_of_norm_le_mul_pow (c := Fintype.card ι)
+    (fun n ↦ by simpa using (p n).norm_complexifyPi_le) hr
+
+/-- Every radius whose double lies below the radius of the real series is a lower bound for the
+radius of the complexified series. -/
+theorem le_radius_complexifyPi_two_mul {r : ℝ≥0}
+    (hr : (((2 : ℝ≥0) * r : ℝ≥0) : ℝ≥0∞) < p.radius) :
+    (r : ℝ≥0∞) ≤ p.complexifyPi.radius :=
+  le_radius_of_norm_le_mul_pow (c := 2)
+    (fun n ↦ by simpa using (p n).norm_complexifyPi_le_two_pow) hr
 
 /-- On real arguments, the sum of the complexified series is the sum of the real series. -/
 @[simp]
@@ -287,7 +333,7 @@ theorem eventually_eq_zero_of_eventually_real {E : Type*} [NormedAddCommGroup E]
       simpa [Function.comp_def, hu] using h0.apply_eq_zero n y) z
   filter_upwards [Metric.eball_mem_nhds _ hQ.r_pos] with z hz
   have hz' : z - (fun i ↦ (a i : ℂ)) ∈ Metric.eball 0 r := by
-    rwa [Metric.mem_eball, edist_zero_right, ← edist_eq_enorm_sub]
+    rwa [Metric.mem_eball, edist_zero_right, ← eDist_eq_eNorm_sub]
   have hsum := hQ.hasSum hz'
   rw [add_sub_cancel] at hsum
   simp only [hQ0] at hsum
@@ -384,6 +430,36 @@ theorem exists_complexification_pi [Fintype κ] {f : (ι → ℝ) → κ → ℝ
   · exact hfF k x (ball_subset_ball (hρr k).2.le hx)
   · exact hFstar k z
 
+/-- **Complexification of a real analytic function on a product.** A real analytic function of
+`(x, t) ∈ (ι → ℝ) × ℝ`, with `ι` finite, extends near a real point to a complex analytic function
+of `(ι → ℂ) × ℂ` that commutes with complex conjugation. This is
+`AnalyticAt.exists_complexification` in the coordinates `Option ι`, the coordinate `none` being the
+last variable. -/
+theorem exists_complexification_prod {f : (ι → ℝ) × ℝ → ℝ} {x₀ : ι → ℝ} {t₀ : ℝ}
+    (hf : AnalyticAt ℝ f (x₀, t₀)) :
+    ∃ F : (ι → ℂ) × ℂ → ℂ, AnalyticAt ℂ F ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ)) ∧
+      (∀ᶠ p in 𝓝 (x₀, t₀), F ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) = f p) ∧
+        ∀ p, F (star p) = star (F p) := by
+  -- identify `(ι → 𝕜) × 𝕜` with `Option ι → 𝕜`
+  let L : ((ι → ℝ) × ℝ) ≃L[ℝ] (Option ι → ℝ) :=
+    ((LinearEquiv.prodComm ℝ _ _).trans
+      (LinearEquiv.piOptionEquivProd ℝ (M := fun _ : Option ι ↦ ℝ)).symm).toContinuousLinearEquiv
+  let Lℂ : ((ι → ℂ) × ℂ) ≃L[ℂ] (Option ι → ℂ) :=
+    ((LinearEquiv.prodComm ℂ _ _).trans
+      (LinearEquiv.piOptionEquivProd ℂ (M := fun _ : Option ι ↦ ℂ)).symm).toContinuousLinearEquiv
+  have hL (p : (ι → ℝ) × ℝ) : Lℂ ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) = fun o ↦ (L p o : ℂ) := by
+    funext o
+    cases o <;> simp [L, Lℂ, LinearEquiv.piOptionEquivProd]
+  have hLstar (p : (ι → ℂ) × ℂ) : Lℂ (star p) = star (Lℂ p) := by
+    funext o
+    cases o <;> simp [Lℂ, LinearEquiv.piOptionEquivProd]
+  obtain ⟨r, hr, G, hG, hGf, hGstar⟩ :=
+    (hf.comp_of_eq (L.symm.analyticAt _) (L.symm_apply_apply _)).exists_complexification
+  refine ⟨G ∘ Lℂ, (hG _ (mem_ball_self hr)).comp_of_eq (Lℂ.analyticAt _) (hL (x₀, t₀)), ?_,
+    fun p ↦ by simp only [Function.comp_apply, hLstar, hGstar]⟩
+  filter_upwards [L.continuous.continuousAt.preimage_mem_nhds (ball_mem_nhds _ hr)] with p hp
+  rw [Function.comp_apply, hL, hGf _ hp, Function.comp_apply, L.symm_apply_apply]
+
 /-- **Conjugation compatibility of complexifications.** A complex analytic function of finitely
 many variables that takes real values at the real points near a real point `a` commutes with
 complex conjugation near `a`. -/
@@ -409,3 +485,17 @@ theorem eventually_apply_star {F : (ι → ℂ) → ℂ} {a : ι → ℝ}
   rw [hz', hz, hGstar]
 
 end AnalyticAt
+
+namespace TauCeti
+
+/-- A complex-valued function commuting with conjugation is real at the points `φ x` near `x₀`,
+when the values of `φ` are fixed by conjugation and `φ` is continuous at `x₀`. -/
+theorem eventually_ofReal_re_eq {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Star Y]
+    {φ : X → Y} {x₀ : X} (hφ : ContinuousAt φ x₀) (hφs : ∀ x, star (φ x) = φ x) {F : Y → ℂ}
+    (h : ∀ᶠ y in 𝓝 (φ x₀), F (star y) = star (F y)) :
+    ∀ᶠ x in 𝓝 x₀, ((F (φ x)).re : ℂ) = F (φ x) := by
+  filter_upwards [hφ.eventually h] with x hx
+  rw [hφs] at hx
+  exact Complex.conj_eq_iff_re.1 hx.symm
+
+end TauCeti

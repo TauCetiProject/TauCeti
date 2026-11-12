@@ -122,7 +122,7 @@ theorem linearHomotopy_transferHomotopy :
   rw [AInfinityHom.Homotopy.linearHomotopy_apply, AInfinityHom.Homotopy.taylor_def,
     LinearMap.comp_apply, barHomotopy_transferHomotopy, LinearMap.sub_apply,
     LinearMap.comp_apply, LinearMap.comp_apply, c.reducedTensorWordsHomotopy_ofLetter]
-  simp only [LinearSpecialContraction.perturbationSeries_def, Module.End.mul_apply,
+  simp only [LinearSpecialContraction.perturbationSeries_def, mul_apply_eq_comp,
     higherBarDifferential_ofLetter, map_zero, sub_zero, letter_ofLetter]
 
 end TauCeti.AInfinityAlgebra

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Independence.Basic
-public import Mathlib.Probability.ProductMeasure
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 public import TauCeti.MeasureTheory.Measure.PiWithDensity
 public import TauCeti.Probability.Distributions.Gamma.Basic
@@ -125,44 +124,19 @@ theorem map_funOnFinite_map_pi_gammaMeasure {f : ι → κ} (hf : Function.Surje
   have hfib (j : κ) : Nonempty {i // f i = j} := (hf j).elim fun i hi ↦ ⟨⟨i, hi⟩⟩
   have hsub (g : ι → ℝ) (j : κ) : ∑ i : {i // f i = j}, g i = ∑ i with f i = j, g i :=
     (Finset.sum_subtype _ (by simp) g).symm
-  -- Read the coordinates of the product along the fibre decomposition of `ι`.
-  have h₁ : MeasurePreserving
-      (fun (x : ι → ℝ) (p : (j : κ) × {i // f i = j}) ↦ x p.2)
-      (Measure.pi fun i ↦ gammaMeasure (a i) r)
-      (Measure.pi fun p : (j : κ) × {i // f i = j} ↦ gammaMeasure (a p.2) r) := by
-    have h := (measurePreserving_piCongrLeft (fun i : ι ↦ gammaMeasure (a i) r)
-      (Equiv.sigmaFiberEquiv f)).symm
-      (MeasurableEquiv.piCongrLeft (fun _ : ι ↦ ℝ) (Equiv.sigmaFiberEquiv f))
-    have hfun : ⇑(MeasurableEquiv.piCongrLeft (fun _ : ι ↦ ℝ) (Equiv.sigmaFiberEquiv f)).symm =
-        fun (x : ι → ℝ) (p : (j : κ) × {i // f i = j}) ↦ x p.2 := by
-      funext x p
-      simp [MeasurableEquiv.piCongrLeft, Equiv.piCongrLeft_symm_apply, Equiv.sigmaFiberEquiv]
-    rw [hfun] at h
-    exact h
-  -- Group those coordinates by fibre.
-  have h₂ : MeasurePreserving
-      (Sigma.curry (γ := fun (j : κ) (_ : {i // f i = j}) ↦ ℝ))
-      (Measure.pi fun p : (j : κ) × {i // f i = j} ↦ gammaMeasure (a p.2) r)
-      (Measure.pi fun j ↦ Measure.pi fun i : {i // f i = j} ↦ gammaMeasure (a i) r) := by
-    refine ⟨(MeasurableEquiv.piCurry fun (j : κ) (_ : {i // f i = j}) ↦ ℝ).measurable, ?_⟩
-    have h := Measure.infinitePi_map_piCurry
-      (X := fun (j : κ) (_ : {i // f i = j}) ↦ ℝ)
-      (μ := fun (j : κ) (i : {i // f i = j}) ↦ gammaMeasure (a i) r)
-    simpa only [Measure.infinitePi_eq_pi, MeasurableEquiv.coe_piCurry] using h
-  -- Add up the coordinates inside each fibre.
   have hfactor (j : κ) : MeasurePreserving (fun y : {i // f i = j} → ℝ ↦ ∑ i, y i)
       (Measure.pi fun i : {i // f i = j} ↦ gammaMeasure (a i) r)
       (gammaMeasure (∑ i with f i = j, a i) r) := by
     have := hfib j
     refine ⟨by fun_prop, ?_⟩
     rw [map_sum_pi_gammaMeasure (fun i : {i // f i = j} ↦ ha i.1) hr, hsub]
-  have hcomp : ((fun (y : (j : κ) → {i // f i = j} → ℝ) (j : κ) ↦ ∑ i, y j i) ∘
-      Sigma.curry) ∘ (fun (x : ι → ℝ) (p : (j : κ) × {i // f i = j}) ↦ x p.2) =
-      FunOnFinite.map (M := ℝ) f := by
+  have h := measurePreserving_pi_fiberwise f (fun i => gammaMeasure (a i) r)
+    (fun j => gammaMeasure (∑ i with f i = j, a i) r) hfactor
+  have hfun : (fun x j => ∑ i : {i // f i = j}, x i) = FunOnFinite.map (M := ℝ) f := by
     funext x j
-    simp [FunOnFinite.map_apply_apply, Sigma.curry, hsub]
-  have hmp := ((measurePreserving_pi _ _ hfactor).comp h₂).comp h₁
-  rw [hcomp] at hmp
-  exact hmp.map_eq
+    simp only [FunOnFinite.map_apply_apply]
+    exact (Finset.sum_subtype _ (by simp) x).symm
+  rw [hfun] at h
+  exact h.map_eq
 
 end TauCeti.Probability

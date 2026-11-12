@@ -52,6 +52,10 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionFinZeroEquiv`: at `k = 0`, the identification
   of `A⟨⟩` with the separated completion `Â`, carried across the completions from the
   ring-level `TauCeti.Huber.weightedRestrictedSubringFinZeroEquiv`.
+* `IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv`: the isomorphism
+  `A⟨X₁,…,Xₖ⟩ ≃+* B⟨X₁,…,Xₖ⟩` induced by a dense inducing ring map `A → B`. For the completion
+  map `A → Â` it says that `A` and its separated completion have the same completed restricted
+  power-series algebras.
 
 ## Main results
 
@@ -75,17 +79,23 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionFinZeroEquiv_coe`,
   `…_symm_coe`, `continuous_restrictedMvPowerSeriesCompletionFinZeroEquiv` and its `_symm`: the
   zero-variable identification on canonical images, and its continuity in both directions.
+* `Topology.IsInducing.weightedMap_one_weight` and `DenseRange.weightedMap_one_weight`: the
+  coefficientwise map `A⟨X₁,…,Xₖ⟩ → B⟨X₁,…,Xₖ⟩` on the uncompleted rings is inducing, or has
+  dense range, when `φ : A → B` is. These are the two inputs of the isomorphism above.
+* `IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv_apply`,
+  `IsDenseInducing.continuous_restrictedMvPowerSeriesCompletionEquiv` and its `_symm`: that
+  isomorphism is `TauCeti.Huber.weightedMapCompletion`, and it is one of topological rings.
 
 ## Provenance
 
 AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
 `2baa76f742bdb4fb8ee323fabba41203bd390e08` formalises restricted power series in
-`projects/AdicSpaces/Adic spaces/RestrictedPowerSeries.lean`. It was consulted and not
-ported: everything there is stated for the *uncompleted* restricted-series subring, which
-matches Wedhorn only for complete Hausdorff rings, whereas the roadmap — and this file —
-define `A⟨X₁,…,Xₖ⟩` through the separated completion, so that the object is the intended one
-for an arbitrary Tate ring. The two descriptions are identified, where they agree, by
-`TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv`. Nothing was copied.
+`projects/AdicSpaces/Adic spaces/RestrictedPowerSeries.lean`. It was consulted and not ported:
+everything there is stated for the *uncompleted* restricted-series subring, which matches Wedhorn
+only for complete Hausdorff rings, whereas this file defines `A⟨X₁,…,Xₖ⟩` through the separated
+completion, so that the object is the intended one for an arbitrary Tate ring. The two descriptions
+are identified, where they agree, by `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv`. Nothing
+was copied.
 
 ## References
 
@@ -161,8 +171,8 @@ ring map `φ : A → B` carrying each weight `T i` into `S i` induces `A⟨X⟩_
 
 This is the completion-level companion of `TauCeti.Huber.weightedMap`. The subring-level map is
 not enough on its own: `TauCeti.Huber.restrictedMvPowerSeriesCompletion` — the object
-`IsStronglyNoetherian` is stated over, and the one the roadmap writes `A⟨X₁,…,Xₖ⟩` — is a
-completion, so any statement natural in `A` has to live here. -/
+`IsStronglyNoetherian` is stated over, written `A⟨X₁,…,Xₖ⟩` — is a completion, so any statement
+natural in `A` has to live here. -/
 noncomputable def weightedMapCompletion (hφ : Continuous φ) (hT : IsWeightFamily T)
     (hS : IsWeightFamily S) (hTS : ∀ i, φ '' T i ⊆ S i) :
     UniformSpace.Completion (weightedRestrictedSubring T hT) →+*
@@ -292,22 +302,172 @@ theorem continuous_weightedMapCompletionEquiv_symm (e : A ≃+* B) (he : Continu
 
 end Functoriality
 
+/-! ### Dense inducing coefficient maps -/
+
+section DenseInducing
+
+open Filter Topology UniformSpace
+
+variable {k} {A}
+variable {B : Type*} [CommRing B] [TopologicalSpace B] [NonarchimedeanRing B] {φ : A →+* B}
+
+/-- **An inducing ring map induces an inducing map on restricted power series.** If the topology
+of `A` is pulled back from `B` along `φ`, then the topology of the uncompleted ring of restricted
+power series over `A` is pulled back from the one over `B` along the coefficientwise map. -/
+-- A basic neighbourhood `U⟨X⟩` contains the preimage of `V⟨X⟩` as soon as `φ⁻¹ V ⊆ U`.
+theorem _root_.Topology.IsInducing.weightedMap_one_weight (hφ : IsInducing φ) :
+    IsInducing (weightedMap (k := k) hφ.continuous isWeightFamily_one_weight
+      isWeightFamily_one_weight fun _ ↦ by simp) := by
+  set F := weightedMap (k := k) hφ.continuous isWeightFamily_one_weight
+    isWeightFamily_one_weight fun _ ↦ by simp
+  refine IsTopologicalAddGroup.isInducing_iff_nhds_zero.mpr <| le_antisymm
+    (map_zero F ▸ (continuous_weightedMap ..).tendsto 0).le_comap ?_
+  refine (hasBasis_nhds_zero_weightedTopology isWeightFamily_one_weight).ge_iff.mpr
+    fun U _ ↦ ?_
+  -- `φ` is inducing, so `U` contains `φ⁻¹ V` for an open subgroup `V` of `B`
+  have hU : (U : Set A) ∈ comap φ (𝓝 0) := by
+    rw [← map_zero φ, ← hφ.nhds_eq_comap]
+    exact U.mem_nhds_zero
+  obtain ⟨W, hW, hWU⟩ := mem_comap.mp hU
+  obtain ⟨V, hVW⟩ := NonarchimedeanAddGroup.is_nonarchimedean W hW
+  refine mem_comap.mpr ⟨_, (hasBasis_nhds_zero_weightedTopology
+    isWeightFamily_one_weight).mem_of_mem (i := V) trivial, fun f hf ↦ ?_⟩
+  simp only [Set.mem_preimage, SetLike.mem_coe, mem_weightedNhd, weightMul_one_weight,
+    OpenAddSubgroup.mem_toAddSubgroup, F, coe_weightedMap, MvPowerSeries.coeff_map] at hf ⊢
+  exact fun ν ↦ hWU (hVW (hf ν))
+
+/-- **A ring map with dense range induces a map with dense range on restricted power series**:
+the coefficientwise map between the uncompleted rings of restricted power series over `A` and
+over `B` has dense range when `φ : A → B` does. -/
+-- A restricted series over `B` has only finitely many coefficients outside a given open subgroup
+-- `V`; approximating those by values of `φ` gives a polynomial over `A` whose image agrees with
+-- the series up to `V⟨X⟩`.
+theorem _root_.DenseRange.weightedMap_one_weight (hφ : DenseRange φ) (hφc : Continuous φ) :
+    DenseRange (weightedMap (k := k) hφc isWeightFamily_one_weight
+      isWeightFamily_one_weight fun _ ↦ by simp) := by
+  classical
+  intro g
+  rw [mem_closure_iff_nhds_basis (by
+    simpa only [← nhds_translation_add_neg g] using
+      (hasBasis_nhds_zero_weightedTopology isWeightFamily_one_weight).comap (· + -g))]
+  intro V _
+  -- approximate every coefficient of `g` by a value of `φ`
+  have ha (ν : Fin k →₀ ℕ) :
+      ∃ a : A, φ a - MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) ∈ V :=
+    hφ.exists_mem_open (V.isOpen.preimage (continuous_sub_right _))
+      ⟨MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B), by simp⟩
+  choose a ha using ha
+  -- only the finitely many coefficients of `g` outside `V` need correcting
+  have hbad : {ν | MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) ∉ V}.Finite := by
+    simpa using (mem_weightedRestrictedSubring.mp g.property).finite_coeff_notMem V
+  let p : MvPolynomial (Fin k) A := ∑ ν ∈ hbad.toFinset, MvPolynomial.monomial ν (a ν)
+  refine ⟨_, ⟨weightedPolynomialHom _ isWeightFamily_one_weight p, rfl⟩, ?_⟩
+  simp only [Set.mem_preimage, SetLike.mem_coe, mem_weightedNhd]
+  intro ν
+  simp only [weightMul_one_weight, OpenAddSubgroup.mem_toAddSubgroup, ← sub_eq_add_neg,
+    AddSubgroupClass.coe_sub, map_sub, coe_weightedMap, MvPowerSeries.coeff_map,
+    coe_weightedPolynomialHom, MvPolynomial.coeff_coe, p, MvPolynomial.coeff_sum,
+    MvPolynomial.coeff_monomial, Finset.sum_ite_eq']
+  split_ifs with hν
+  · exact ha ν
+  · rw [map_zero, zero_sub, neg_mem_iff]
+    by_contra hc
+    exact hν (hbad.mem_toFinset.mpr hc)
+
+section Compare
+
+attribute [local instance] AbstractCompletion.uniformStruct
+
+/-- The completion of the uncompleted restricted-series ring over `B`, seen through the
+coefficientwise map, is an abstract completion of the one over `A` when `φ` is dense inducing. -/
+private noncomputable def restrictedCompletionPkg (hφ : IsDenseInducing φ) :
+    AbstractCompletion
+      (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) where
+  space := restrictedMvPowerSeriesCompletion k B
+  coe := (↑) ∘ weightedMap hφ.continuous isWeightFamily_one_weight isWeightFamily_one_weight
+    fun _ ↦ by simp
+  uniformStruct := inferInstance
+  complete := inferInstance
+  separation := inferInstance
+  isUniformInducing := (Completion.isUniformInducing_coe _).comp
+    (AddMonoidHom.isUniformInducing_of_isInducing hφ.isInducing.weightedMap_one_weight)
+  dense := Completion.denseRange_coe.comp (hφ.dense.weightedMap_one_weight hφ.continuous)
+    (Completion.continuous_coe _)
+
+/-- The comparison of the two completions of the uncompleted restricted-series ring over `A` is
+`weightedMapCompletion`. -/
+private theorem coe_compareEquiv_restrictedCompletionPkg (hφ : IsDenseInducing φ) :
+    ⇑(Completion.cPkg.compareEquiv (restrictedCompletionPkg (k := k) hφ)) =
+      weightedMapCompletion (k := k) hφ.continuous
+        isWeightFamily_one_weight isWeightFamily_one_weight
+        fun _ ↦ by simp :=
+  Completion.ext (Y := restrictedMvPowerSeriesCompletion k B)
+    (Completion.cPkg.uniformContinuous_compareEquiv _).continuous
+    (continuous_weightedMapCompletion ..) fun f ↦
+      (Completion.cPkg.compare_coe _ f).trans (weightedMapCompletion_coe ..).symm
+
+variable (k) in
+/-- **A dense inducing ring map `φ : A → B` induces an isomorphism
+`A⟨X₁, …, Xₖ⟩ ≃+* B⟨X₁, …, Xₖ⟩`** of completed restricted power-series algebras, acting
+coefficientwise (`IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv_apply`).
+
+The main instance is the completion map `A → Â`: a nonarchimedean ring and its separated
+completion have the same completed restricted power-series algebras. -/
+-- The coefficientwise map `A⟨X⟩ → B⟨X⟩` is again inducing with dense range, so the completion
+-- of `B⟨X⟩` is a completion of `A⟨X⟩`, and two completions of the same uniform space agree.
+noncomputable def _root_.IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv
+    (hφ : IsDenseInducing φ) :
+    restrictedMvPowerSeriesCompletion k A ≃+* restrictedMvPowerSeriesCompletion k B where
+  __ := (Completion.cPkg.compareEquiv (restrictedCompletionPkg (k := k) hφ)).toEquiv
+  map_mul' x y := by
+    simp only [Equiv.toFun_as_coe, UniformEquiv.coe_toEquiv,
+      coe_compareEquiv_restrictedCompletionPkg, map_mul]
+  map_add' x y := by
+    simp only [Equiv.toFun_as_coe, UniformEquiv.coe_toEquiv,
+      coe_compareEquiv_restrictedCompletionPkg, map_add]
+
+/-- `IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv` is the coefficientwise map
+`weightedMapCompletion`. -/
+@[simp]
+theorem _root_.IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv_apply
+    (hφ : IsDenseInducing φ) (x : restrictedMvPowerSeriesCompletion k A) :
+    hφ.restrictedMvPowerSeriesCompletionEquiv k x =
+      weightedMapCompletion hφ.continuous isWeightFamily_one_weight isWeightFamily_one_weight
+        (fun _ ↦ by simp) x :=
+  congrFun (coe_compareEquiv_restrictedCompletionPkg hφ) x
+
+/-- `IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv` is continuous. -/
+theorem _root_.IsDenseInducing.continuous_restrictedMvPowerSeriesCompletionEquiv
+    (hφ : IsDenseInducing φ) : Continuous (hφ.restrictedMvPowerSeriesCompletionEquiv k) :=
+  (continuous_weightedMapCompletion ..).congr fun x ↦
+    (hφ.restrictedMvPowerSeriesCompletionEquiv_apply x).symm
+
+/-- The inverse of `IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv` is continuous. -/
+theorem _root_.IsDenseInducing.continuous_restrictedMvPowerSeriesCompletionEquiv_symm
+    (hφ : IsDenseInducing φ) : Continuous (hφ.restrictedMvPowerSeriesCompletionEquiv k).symm :=
+  -- the equivalence is built on `compareEquiv`, so its inverse is the inverse comparison
+  (Completion.cPkg.uniformContinuous_compareEquiv_symm (restrictedCompletionPkg hφ)).continuous
+
+end Compare
+
+end DenseInducing
+
 /-! ### Zero variables -/
 
 section ZeroVariables
 
 variable {A}
 
+-- The zero-variable comparison lands in the completion of `A` for the uniform structure of its
+-- additive group, which Mathlib leaves to the caller to install.
+attribute [local instance] IsTopologicalAddGroup.rightUniformSpace isUniformAddGroup_of_addCommGroup
+
 /-- **`A⟨⟩` is the separated completion of `A`**, as topological rings: the ring isomorphism
 between the two completions induced by the zero-variable comparison
 `weightedRestrictedSubringFinZeroEquiv`, which is a homeomorphism, through
 `UniformSpace.Completion.mapRingEquiv`. -/
 noncomputable def restrictedMvPowerSeriesCompletionFinZeroEquiv :
-    letI := IsTopologicalAddGroup.rightUniformSpace A
-    letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
     restrictedMvPowerSeriesCompletion 0 A ≃+* UniformSpace.Completion A :=
-  letI := IsTopologicalAddGroup.rightUniformSpace A
-  letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   UniformSpace.Completion.mapRingEquiv
     (weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A)))
     (continuous_weightedRestrictedSubringFinZeroEquiv _)
@@ -318,13 +478,9 @@ comparison of the rings underneath. -/
 @[simp]
 theorem restrictedMvPowerSeriesCompletionFinZeroEquiv_coe
     (f : weightedRestrictedSubring (fun _ : Fin 0 ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    letI := IsTopologicalAddGroup.rightUniformSpace A
-    letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
     restrictedMvPowerSeriesCompletionFinZeroEquiv (f : restrictedMvPowerSeriesCompletion 0 A) =
       ((weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A)) f : A) :
         UniformSpace.Completion A) := by
-  let _ := IsTopologicalAddGroup.rightUniformSpace A
-  let _ : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   simp only [restrictedMvPowerSeriesCompletionFinZeroEquiv]
   exact UniformSpace.Completion.map_coe (uniformContinuous_addMonoidHom_of_continuous
     (continuous_weightedRestrictedSubringFinZeroEquiv _)) f
@@ -333,34 +489,22 @@ theorem restrictedMvPowerSeriesCompletionFinZeroEquiv_coe
 the inverse ring comparison. -/
 @[simp]
 theorem restrictedMvPowerSeriesCompletionFinZeroEquiv_symm_coe (a : A) :
-    letI := IsTopologicalAddGroup.rightUniformSpace A
-    letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
     (restrictedMvPowerSeriesCompletionFinZeroEquiv (A := A)).symm (a : UniformSpace.Completion A) =
       ((weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A))).symm a :
         restrictedMvPowerSeriesCompletion 0 A) := by
-  let _ := IsTopologicalAddGroup.rightUniformSpace A
-  let _ : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   simp only [restrictedMvPowerSeriesCompletionFinZeroEquiv]
   exact UniformSpace.Completion.map_coe (uniformContinuous_addMonoidHom_of_continuous
     (continuous_weightedRestrictedSubringFinZeroEquiv_symm _)) a
 
 /-- The comparison of completions is continuous. -/
 theorem continuous_restrictedMvPowerSeriesCompletionFinZeroEquiv :
-    letI := IsTopologicalAddGroup.rightUniformSpace A
-    letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
     Continuous (restrictedMvPowerSeriesCompletionFinZeroEquiv (A := A)) := by
-  let _ := IsTopologicalAddGroup.rightUniformSpace A
-  let _ : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   simp only [restrictedMvPowerSeriesCompletionFinZeroEquiv]
   exact UniformSpace.Completion.continuous_mapRingEquiv _ _ _
 
 /-- Its inverse is continuous. -/
 theorem continuous_restrictedMvPowerSeriesCompletionFinZeroEquiv_symm :
-    letI := IsTopologicalAddGroup.rightUniformSpace A
-    letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
     Continuous (restrictedMvPowerSeriesCompletionFinZeroEquiv (A := A)).symm := by
-  let _ := IsTopologicalAddGroup.rightUniformSpace A
-  let _ : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   simp only [restrictedMvPowerSeriesCompletionFinZeroEquiv]
   exact UniformSpace.Completion.continuous_mapRingEquiv_symm _ _ _
 

@@ -38,7 +38,7 @@ namespace TauCeti
 
 namespace ContCohomology
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] {U : Subgroup G}
+variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {U : Subgroup G}
   [U.FiniteIndex] {M : Type*} [AddCommGroup M] [DistribMulAction G M]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex

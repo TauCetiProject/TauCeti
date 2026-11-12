@@ -28,6 +28,9 @@ open TauCeti
 
 noncomputable section
 
+-- Prefer the subaction's own action instances; the generic search times out on these carriers.
+attribute [local instance high] SubMulAction.smul' SubMulAction.mulAction
+
 /-- The orbit map of the compact real Spin group through a point of its unit level set. -/
 noncomputable def realCliffordSpinOrbitMap (n : ℕ) (x : realCliffordUnitLevel n) :
     C(realCliffordSpinGroupZero n, realCliffordUnitLevel n) where

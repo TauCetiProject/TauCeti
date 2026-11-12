@@ -61,7 +61,7 @@ theorem sub_one_mul_natCastValuation_factorial (n : ℕ) :
       absoluteRamificationIndex K p * (n - (p.digits n).sum) := by
   rw [natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat K p n.factorial
     (Nat.factorial_ne_zero n), ← Nat.mul_assoc, Nat.mul_comm (p - 1), Nat.mul_assoc,
-    sub_one_mul_padicValNat_factorial]
+    Nat.padicValNat_def, Nat.Prime.sub_one_mul_multiplicity_factorial (Fact.out : p.Prime)]
 
 /-- The normalized valuation of `n !` satisfies the strict Legendre bound after base change to a
 finite extension of `ℚ_[p]`. -/
@@ -75,8 +75,9 @@ theorem sub_one_mul_natCastValuation_factorial_lt_of_ne_zero {n : ℕ} (hn : n �
       absoluteRamificationIndex K p * n := by
   rw [natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat K p n.factorial
     (Nat.factorial_ne_zero n), ← Nat.mul_assoc, Nat.mul_comm (p - 1), Nat.mul_assoc]
+  simp only [Nat.padicValNat_def]
   exact Nat.mul_lt_mul_of_pos_left
-    (sub_one_mul_padicValNat_factorial_lt_of_ne_zero p hn)
+    (sub_one_mul_multiplicity_factorial_lt_of_ne_zero p hn)
     (absoluteRamificationIndex_pos K p)
 
 /-- At every depth `i` in the exponential convergence range `(p - 1) * i > e`, the valuation of

@@ -493,7 +493,7 @@ theorem visitCount_pathOfReindexedSuccessors_lt_visitCount (π : α → Equiv.Pe
   -- end where the original prefix does. Its last deficient row then gives a fixed last exit which
   -- the reconstruction cannot have consumed, contradicting the arrival balance at the next state.
   induction i using Nat.strong_induction_on with
-  | h t ih =>
+  | ind t ih =>
     have hused : ∀ j < t, visitCount (pathOfReindexedSuccessors π x)
         (pathOfReindexedSuccessors π x j) j <
         visitCount x (pathOfReindexedSuccessors π x j) m := fun j hj => ih j hj (hj.trans hi)

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Cusps.Prime
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.ConstantTerm
+import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Squarefree
 import TauCeti.NumberTheory.ModularForms.SturmBound
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 
@@ -18,15 +19,15 @@ is complementary to `S₂(Γ₀(p))` inside `M₂(Γ₀(p))`. The Eisenstein com
 is its constant term at infinity divided by `1 - p`, times that series.
 
 The cusp criterion at prime level identifies `S₂(Γ₀(p))` with the kernel of the
-constant term at infinity. The corrected series has constant term `1 - p ≠ 0`,
-so Mathlib's span–kernel decomposition applies. In particular the dimensions of
-the modular-form and cusp-form spaces differ by one.
+constant term at infinity. The complement and dimension results specialize the
+squarefree-level decomposition: a prime has exactly one nontrivial divisor.
+In particular the modular-form and cusp-form spaces differ in dimension by one.
 
 ## References
 
 * F. Diamond and J. Shurman, *A First Course in Modular Forms*, Chapter 4.
 
-The linear-algebra step uses `LinearMap.span_singleton_sup_ker_eq_top`.
+The complement specializes `isCompl_span_correctedE2AtLevel_cuspFormSubmodule_of_squarefree`.
 -/
 
 public noncomputable section
@@ -57,17 +58,17 @@ theorem _root_.ModularForm.sub_smul_correctedE2_mem_cuspFormSubmodule_iff
 submodule are complementary in the full modular-form space. -/
 theorem isCompl_span_correctedE2_cuspFormSubmodule :
     IsCompl (ℂ ∙ correctedE2 p) (cuspFormSubmodule ((Gamma0 p).map (mapGL ℝ)) 2) := by
-  have hker : LinearMap.ker (constantTermAt (Γ := (Gamma0 p).map (mapGL ℝ)) (k := 2) 1) =
-      cuspFormSubmodule ((Gamma0 p).map (mapGL ℝ)) 2 := by
-    ext f
-    rw [LinearMap.mem_ker, weight_two_mem_cuspFormSubmodule_Gamma0_prime_iff]
-  rw [← hker]
-  have hval : constantTermAt 1 (correctedE2 p) ≠ 0 := by
-    intro hv
-    have hc := (weight_two_mem_cuspFormSubmodule_Gamma0_prime_iff (correctedE2 p)).mpr hv
-    exact Nat.Prime.ne_one Fact.out ((correctedE2_mem_cuspFormSubmodule_iff p).mp hc)
-  exact ⟨(Submodule.disjoint_span_singleton_of_notMem hval).symm,
-    codisjoint_iff.mpr (LinearMap.span_singleton_sup_ker_eq_top _ hval)⟩
+  have : Nonempty {d : ℕ // 1 < d ∧ d ∣ p} :=
+    ⟨⟨p, (Fact.out : p.Prime).one_lt, dvd_rfl⟩⟩
+  have hrange : Set.range (correctedE2AtLevel p) = {correctedE2 p} :=
+    Set.range_eq_singleton fun ⟨d, hlt, hdvd⟩ ↦ by
+      have hd : d = p := ((Nat.dvd_prime Fact.out).mp hdvd).resolve_left (by omega)
+      subst d
+      ext z
+      exact correctedE2AtLevel_apply p _ z
+  simpa only [hrange] using
+    isCompl_span_correctedE2AtLevel_cuspFormSubmodule_of_squarefree
+      (Nat.Prime.prime (Fact.out : p.Prime)).squarefree
 
 end TauCeti.EisensteinSeries
 
@@ -80,11 +81,8 @@ than the cusp-form space. -/
 theorem finrank_weight_two_Gamma0_prime (p : ℕ) [Fact p.Prime] :
     Module.finrank ℂ (ModularForm ((Gamma0 p).map (mapGL ℝ)) 2) =
       Module.finrank ℂ (CuspForm ((Gamma0 p).map (mapGL ℝ)) 2) + 1 := by
-  have hdim := Submodule.finrank_add_eq_of_isCompl
-    (isCompl_span_correctedE2_cuspFormSubmodule (p := p)).symm
-  rw [finrank_span_singleton (by
-    exact (correctedE2_eq_zero_iff p).not.mpr (Nat.Prime.ne_one Fact.out)),
-    ← (CuspForm.equivCuspFormSubmodule ((Gamma0 p).map (mapGL ℝ)) 2).finrank_eq] at hdim
-  exact hdim.symm
+  simpa [Nat.Prime.divisors Fact.out, (Nat.Prime.ne_one Fact.out).symm] using
+    TauCeti.finrank_weight_two_Gamma0_of_squarefree
+      (Nat.Prime.prime (Fact.out : p.Prime)).squarefree
 
 end ModularForm

@@ -23,8 +23,7 @@ The main result is the instance
 the scheme-level finitely-presented-sheaf packaging is in
 `TauCeti/AlgebraicGeometry/FinitelyPresentedSheaf/Basic.lean`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, from Layer A's invertible sheaves to
-Layer B's coherent sheaves. No formalization is vendored.
+No formalization is vendored.
 -/
 
 public section
@@ -51,11 +50,11 @@ The rank-one local bases give finite generating families, and the locally free p
 have no relations. -/
 instance IsInvertible.isFinitePresentation [hM : IsInvertible M] : M.IsFinitePresentation := by
   obtain ⟨q, hq⟩ := hM.exists_isInvertible
-  apply SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation
-    hq.isLocallyFreeData
-  exact ⟨fun i ↦ by
-    let : Subsingleton (q.generators i).I := hq.basisSubsingleton i
-    exact ⟨Finite.of_subsingleton⟩⟩
+  have := hq.isLocallyFreeData
+  have : q.IsFiniteType := ⟨fun i ↦
+    have := hq.basisSubsingleton i
+    ⟨Finite.of_subsingleton⟩⟩
+  exact q.isFinitePresentation
 
 end SheafOfModules
 

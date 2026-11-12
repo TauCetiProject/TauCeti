@@ -8,45 +8,38 @@ module
 public import Mathlib.Algebra.Module.Torsion.Basic
 
 /-!
-# Primary decomposition of torsion subgroups
+# Primary decomposition of `N`-torsion modules
 
 For a nonzero natural number `N`, the prime-power factors `p ^ N.factorization p` are pairwise
-coprime and multiply to `N`. Consequently the `N`-torsion subgroup of an additive commutative
-group is the internal direct sum of its `p ^ N.factorization p`-torsion subgroups, one for each
-prime factor `p` of `N`. This reduces questions about `N`-torsion to prime-power torsion.
+coprime and multiply to `N`. Consequently a module over a commutative ring that is killed by `N`
+is the internal direct sum of its `p ^ N.factorization p`-torsion submodules, one for each prime
+factor `p` of `N`. Applied to the `N`-torsion subgroup of an additive commutative group, viewed
+as a `ℤ`-module, this reduces questions about `N`-torsion to prime-power torsion.
 
 ## Main results
 
-* `TauCeti.AddSubgroup.torsionBy_primeFactors_isInternal`: the `N`-torsion subgroup is the
-  internal direct sum of its primary components.
+* `TauCeti.Submodule.torsionBy_primeFactors_isInternal`: a module killed by `N` is the internal
+  direct sum of its primary components.
 -/
 
 public section
 
 namespace TauCeti
 
-namespace AddSubgroup
+namespace Submodule
 
-open scoped DirectSum
-
-/-- The primary torsion subgroups form an internal direct sum of the ambient `N`-torsion
-subgroup. -/
-theorem torsionBy_primeFactors_isInternal {A : Type*} [AddCommGroup A] (N : ℕ) (hN : N ≠ 0) :
+/-- A module killed by a nonzero natural number `N` is the internal direct sum of its
+`p ^ N.factorization p`-torsion submodules, where `p` ranges over the prime factors of `N`. -/
+theorem torsionBy_primeFactors_isInternal {R M : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] {N : ℕ} (hN : N ≠ 0) (hM : Module.IsTorsionBy R M (N : R)) :
     DirectSum.IsInternal fun p : N.primeFactors ↦
-      Submodule.torsionBy ℤ (_root_.AddSubgroup.torsionBy A (N : ℤ))
-        ((p ^ N.factorization p : ℕ) : ℤ) := by
-  have hcoprime : (N.primeFactors : Set ℕ).Pairwise
-      (Function.onFun IsCoprime fun p ↦ ((p ^ N.factorization p : ℕ) : ℤ)) := by
-    intro p hp r hr hpr
-    have hne : (⟨p, hp⟩ : N.primeFactors) ≠ ⟨r, hr⟩ :=
-      fun h ↦ hpr (congrArg Subtype.val h)
-    exact _root_.Nat.Coprime.cast <| N.pairwise_coprime_pow_primeFactors_factorization hne
-  apply Submodule.torsionBy_isInternal hcoprime
-  have hprod : ∏ p ∈ N.primeFactors, (((p ^ N.factorization p : ℕ) : ℤ)) = (N : ℤ) := by
-    exact_mod_cast (Nat.prod_primeFactors_pow_factorization hN).symm
-  rw [hprod]
-  exact Submodule.torsionBy_isTorsionBy (R := ℤ) (N : ℤ)
+      _root_.Submodule.torsionBy R M ((p ^ N.factorization p : ℕ) : R) := by
+  refine _root_.Submodule.torsionBy_isInternal
+    (q := fun p ↦ ((p ^ N.factorization p : ℕ) : R)) (fun p hp r hr hpr ↦ ?_) ?_
+  · exact _root_.Nat.Coprime.cast <| N.pairwise_coprime_pow_primeFactors_factorization
+      (i := ⟨p, hp⟩) (j := ⟨r, hr⟩) (Subtype.coe_ne_coe.mp hpr)
+  · rwa [← Nat.cast_prod, ← Nat.prod_primeFactors_pow_factorization hN]
 
-end AddSubgroup
+end Submodule
 
 end TauCeti

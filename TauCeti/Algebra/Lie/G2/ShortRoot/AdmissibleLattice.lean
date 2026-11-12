@@ -311,7 +311,7 @@ theorem isNilpotent_rep_serreRootGenerator (k : Fin 2 ⊕ Fin 2) :
 /-! ## The admissible coordinate lattice -/
 
 /-- The coordinate `ℤ`-lattice in the rational module. -/
-def lattice : Submodule ℤ (Fin 7 → ℚ) :=
+noncomputable def lattice : Submodule ℤ (Fin 7 → ℚ) :=
   TauCeti.coordinateLattice (Fin 7)
 
 /-- A vector belongs to the lattice exactly when every coordinate is integral. -/

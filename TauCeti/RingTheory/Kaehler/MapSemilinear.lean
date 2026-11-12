@@ -43,6 +43,10 @@ outside the `letI` scope.
   identity.
 * `KaehlerDifferential.mapSemilinear_comp_apply`, `mapSemilinear_comp`: compatibility with
   composition.
+* `KaehlerDifferential.mapSemilinear_apply_symm_apply`, `mapSemilinear_symm_apply_apply`: along
+  an algebra isomorphism the maps for `e` and `e.symm` are mutually inverse.
+* `KaehlerDifferential.span_singleton_mapSemilinear_eq_top_iff`: a generating differential
+  transfers along an algebra isomorphism.
 
 ## Provenance
 
@@ -121,6 +125,36 @@ theorem mapSemilinear_comp (f : B →ₐ[R] C) (g : A →ₐ[R] B) :
 theorem mapSemilinear_comp_apply (f : B →ₐ[R] C) (g : A →ₐ[R] B) (ω : Ω[A⁄R]) :
     mapSemilinear (f.comp g) ω = mapSemilinear f (mapSemilinear g ω) :=
   DFunLike.congr_fun (mapSemilinear_comp f g) ω
+
+/-- Mapping along `e.symm` and then along `e` fixes every differential. -/
+@[simp]
+theorem mapSemilinear_apply_symm_apply (e : A ≃ₐ[R] B) (ω : Ω[B⁄R]) :
+    mapSemilinear e.toAlgHom (mapSemilinear e.symm.toAlgHom ω) = ω := by
+  rw [← mapSemilinear_comp_apply, AlgEquiv.comp_symm, mapSemilinear_id_apply]
+
+/-- Mapping along `e` and then along `e.symm` fixes every differential. -/
+@[simp]
+theorem mapSemilinear_symm_apply_apply (e : A ≃ₐ[R] B) (ω : Ω[A⁄R]) :
+    mapSemilinear e.symm.toAlgHom (mapSemilinear e.toAlgHom ω) = ω :=
+  mapSemilinear_apply_symm_apply e.symm ω
+
+private theorem span_singleton_mapSemilinear_eq_top_of_eq_top (e : A ≃ₐ[R] B) {ω : Ω[A⁄R]}
+    (h : Submodule.span A {ω} = ⊤) : Submodule.span B {mapSemilinear e.toAlgHom ω} = ⊤ := by
+  rw [Submodule.span_singleton_eq_top_iff] at h ⊢
+  intro ξ
+  -- Write the transport of `ξ` back to `A` as a multiple of `ω`, then transport forward again.
+  obtain ⟨c, hc⟩ := h (mapSemilinear e.symm.toAlgHom ξ)
+  refine ⟨e c, ?_⟩
+  rw [← mapSemilinear_apply_symm_apply e ξ, ← hc, mapSemilinear_smul, AlgEquiv.toAlgHom_apply]
+
+/-- A single differential `ω` generates the Kähler differentials exactly when its transport
+`mapSemilinear e ω` along an algebra isomorphism `e` does. -/
+theorem span_singleton_mapSemilinear_eq_top_iff (e : A ≃ₐ[R] B) (ω : Ω[A⁄R]) :
+    Submodule.span B {mapSemilinear e.toAlgHom ω} = ⊤ ↔ Submodule.span A {ω} = ⊤ :=
+  ⟨fun h ↦ by
+    simpa only [mapSemilinear_symm_apply_apply] using
+      span_singleton_mapSemilinear_eq_top_of_eq_top e.symm h,
+    span_singleton_mapSemilinear_eq_top_of_eq_top e⟩
 
 /-- On a tower, `mapSemilinear` along the structure map is Mathlib's `KaehlerDifferential.map`
 — the sense in which this construction extends the tower functoriality to arbitrary algebra

@@ -14,6 +14,8 @@ public import TauCeti.RingTheory.Invariant.Basic
 
 For a finite group acting on a commutative ring `A`, the invariant-spectrum projection is
 integral and surjective, and its topological fibres are precisely the orbits of prime ideals.
+Likewise, two points of `Spec A` with values in a domain which have the same image in the quotient
+differ by an element of the group.
 If `A` is of finite type over its fixed subring, the projection is finite; in particular,
 this holds when `A` is of finite type over an invariant base semiring `R`.
 These results supplement the affine-target universal property in
@@ -29,11 +31,14 @@ Neither flatness nor finite presentation of the quotient projection is asserted.
 * `isFinite_projection_of_finiteType`: finiteness over an invariant base semiring suffices.
 * `isQuotientMap_projection`: the projection is a topological quotient map.
 * `projection_eq_iff_exists_smul`: its fibres are prime-ideal orbits.
+* `exists_comp_specComap_eq`: points with values in a domain and the same image in the quotient
+  differ by the action of a group element.
 
 ## References
 
 * Formal sources: Mathlib's `Algebra.IsInvariant.isIntegral` and
-  `Algebra.IsInvariant.exists_smul_of_under_eq`.
+  `Algebra.IsInvariant.exists_smul_of_under_eq`, and Tau Ceti's
+  `TauCeti.Algebra.IsInvariant.exists_comp_eq_of_comp_algebraMap_eq`.
 * M. Demazure and A. Grothendieck, *Schémas en groupes (SGA 3)*, Exposé V, §1.
 -/
 
@@ -100,6 +105,25 @@ theorem projection_eq_iff_exists_smul (x y : PrimeSpectrum A) :
   · rintro ⟨g, hg⟩
     simpa only [hg, PrimeSpectrum.asIdeal_smul] using
       (Ideal.under_smul (FixedPoints.subring A G) x.asIdeal g).symm
+
+/-- **Points of the affine invariant quotient are orbits.** Two morphisms from the spectrum of a
+domain to `Spec A` with the same image in the quotient differ by the action of an element of
+`G`. -/
+theorem exists_comp_specComap_eq {K : Type u} [CommRing K] [IsDomain K]
+    {x₁ x₂ : Spec (CommRingCat.of K) ⟶ Spec (CommRingCat.of A)}
+    (h : x₁ ≫ projection A G = x₂ ≫ projection A G) :
+    ∃ g : G, x₁ ≫ specComap A G g = x₂ := by
+  -- Pass to the ring maps `A ⟶ K`, which agree on the fixed subring.
+  have hφ : (CommRingCat.ofHom (algebraMap (FixedPoints.subring A G) A) ≫
+      Spec.preimage x₁) = CommRingCat.ofHom (algebraMap (FixedPoints.subring A G) A) ≫
+        Spec.preimage x₂ :=
+    Spec.map_injective (by simpa [Spec.map_comp, projection_def] using h)
+  obtain ⟨g, hg⟩ := TauCeti.Algebra.IsInvariant.exists_comp_eq_of_comp_algebraMap_eq
+    (FixedPoints.subring A G) G (Spec.preimage x₁).hom (Spec.preimage x₂).hom
+    congr(($hφ).hom)
+  refine ⟨g, ?_⟩
+  rw [← Spec.map_preimage x₁, ← Spec.map_preimage x₂, specComap_def, ← Spec.map_comp]
+  exact congrArg Spec.map (CommRingCat.hom_ext hg)
 
 end Group
 

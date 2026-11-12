@@ -9,6 +9,7 @@ public import TauCeti.KnotTheory.BraidWord.ClosingArcs
 import TauCeti.KnotTheory.BraidWord.DoubleCrossing.ExternalArcs
 import TauCeti.KnotTheory.BraidWord.CrossinglessComponents
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Equivalence
+import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Circle.Orientation
 
 /-!
 # Free cancellation as an algebraic clasp
@@ -20,6 +21,10 @@ This comparison identifies the entire diagram, including the external arcs and o
 crossing-free circles. If both participating positions are crossing-free, the inserted pair
 is instead a closed two-circle clasp, and hence gives a Reidemeister-II move.
 If only the lower position meets old crossings, it is the circle-and-arc clasp instead.
+If only the higher position does, the isolated circle on the lower position runs against the
+arc it is pushed across: after reversing that circle
+(`TauCeti.OrientedPDCode.reidemeisterEquiv_adjoinCircle_not`) it is again the circle-and-arc
+clasp, with the second new crossing read from its opposite slot.
 For the two-existing-arcs case, the common-face condition needed for a planar Reidemeister move
 is separate from the algebraic identification.
 
@@ -32,6 +37,9 @@ already supplied by the braid closure API, together with oriented clasp insertio
   pair with the clasp on the two existing closing arcs, using relabeling and crossing rotation.
 * `reidemeisterEquiv_closure_cons_cons_freeCancel_of_strandSucc_crossingsAt_eq_nil`: insertion
   beside a higher crossing-free circle is a Reidemeister-II move.
+* `reidemeisterEquiv_closure_cons_cons_freeCancel_of_strand_crossingsAt_eq_nil`: insertion
+  beside a lower crossing-free circle is a Reidemeister-II move, after reversing that circle when
+  the higher position meets crossings.
 
 ## References
 
@@ -154,19 +162,10 @@ private theorem readClosingClasp_edgePair_old {j : Fin v.length} {p : Fin n}
   have hinhi : incomingSlot ((i, ε) :: (i, -ε) :: v) 0 (strandSucc i) = 0 := by
     simpa using incomingSlot_strandSucc ((i, ε) :: (i, -ε) :: v) 0
   let x := v.closure.crossing j (v.outgoingSlot j p)
-  have hx : v.closure.orientation x = true := by
-    rcases v.outgoingSlot_eq_one_or_two j p with hs | hs <;>
-      simp [x, hs]
-  have hxe : x ≠ v.closure.edgePair.val (v.closingHalfEdge (strand i) hp) := by
-    intro he
-    have hh := v.closure.orientation_edgePair (v.closingHalfEdge (strand i) hp)
-    rw [← he, hx, orientation_closingHalfEdge] at hh
-    contradiction
-  have hxe' : x ≠ v.closure.edgePair.val (v.closingHalfEdge (strandSucc i) hq) := by
-    intro he
-    have hh := v.closure.orientation_edgePair (v.closingHalfEdge (strandSucc i) hq)
-    rw [← he, hx, orientation_closingHalfEdge] at hh
-    contradiction
+  have hxe : x ≠ v.closure.edgePair.val (v.closingHalfEdge (strand i) hp) :=
+    v.crossing_outgoingSlot_ne_edgePair_closingHalfEdge p hp
+  have hxe' : x ≠ v.closure.edgePair.val (v.closingHalfEdge (strandSucc i) hq) :=
+    v.crossing_outgoingSlot_ne_edgePair_closingHalfEdge p hq
   have hmatch := readClasp_edgePair_apply D
     (halfEdgeSuccEquiv (v.length + 1) (.inl (halfEdgeSuccEquiv v.length (.inl x))))
   have hxembed : claspHalf v.length
@@ -199,18 +198,7 @@ private theorem readClosingClasp_edgePair_old {j : Fin v.length} {p : Fin n}
       rw [edgePair_closure_outgoingSlot v hjold, crossing_closure,
         claspHalf_old_crossing] at hmatch
       -- All other outgoing arcs retain their old successor.
-      have hc : ¬ ((p = strand i ∨ p = strandSucc i) ∧
-          v.nextCrossing p j = (v.crossingsAt p).head (List.ne_nil_of_mem hjold)) := by
-        rintro ⟨hpos, hn⟩
-        rcases hpos with rfl | rfl
-        · apply hxp
-          apply (crossing_outgoingSlot_eq_closingHalfEdge_iff v hjold hp).mpr
-          refine ⟨rfl, (v.nextCrossing (strand i)).injective ?_⟩
-          simpa using hn
-        · apply hxq
-          apply (crossing_outgoingSlot_eq_closingHalfEdge_iff v hjold hq).mpr
-          refine ⟨rfl, (v.nextCrossing (strandSucc i)).injective ?_⟩
-          simpa using hn
+      have hc := v.not_nextCrossing_eq_head_of_ne_closingHalfEdge i hp hq hjold hxp hxq
       have h := edgePair_closure_cons_cons_of_mem v i ε (-ε) hjold
       simp only [hc, ite_false, crossing_closure, List.length_cons] at h
       simpa only [D, closingClasp] using h.trans hmatch.symm
@@ -218,16 +206,7 @@ private theorem readClosingClasp_edgePair_old {j : Fin v.length} {p : Fin n}
 private theorem readClosingClasp_edgePair :
     (closure ((i, ε) :: (i, -ε) :: v)).edgePair =
       (readClasp (closingClasp v i ε hp hq)).edgePair := by
-  let w : BraidWord n := (i, ε) :: (i, -ε) :: v
   let D := closingClasp v i ε hp hq
-  have hlo₀ : w.outgoingSlot 0 (strand i) = 2 := by
-    simpa [w] using outgoingSlot_strand w 0
-  have hhi₀ : w.outgoingSlot 0 (strandSucc i) = 1 := by
-    simpa [w] using outgoingSlot_strandSucc w 0
-  have hlo₁ : w.outgoingSlot 1 (strand i) = 2 := by
-    simpa [w] using outgoingSlot_strand w 1
-  have hhi₁ : w.outgoingSlot 1 (strandSucc i) = 1 := by
-    simpa [w] using outgoingSlot_strandSucc w 1
   have hfirst₁ := readClasp_edgePair_apply D
     (halfEdgeSuccEquiv (v.length + 1) (.inl (halfEdgeSuccEquiv v.length (.inr 2))))
   have hfirst₂ := readClasp_edgePair_apply D
@@ -241,36 +220,12 @@ private theorem readClosingClasp_edgePair :
     insertClasp_edgePair_inr_two, insertClasp_edgePair_inr_three,
     claspHalf_first, claspHalf_second, edgePair_closingHalfEdge, crossing_closure,
     claspHalf_old_crossing, Fin.reduceSub] at hfirst₁ hfirst₂ hsecond₁ hsecond₂
-  apply edgePair_closure_eq_of_outgoingSlot
-  intro j p hj
-  simp only [w, List.length_cons] at *
-  rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-  · have hpos : p = strand i ∨ p = strandSucc i := by
-      simpa [w] using (mem_crossingsAt (w := w)).mp hj
-    rcases hpos with rfl | rfl
-    · simpa only [List.length_cons, hlo₀, D, closingClasp] using
-        (edgePair_closure_cons_cons_two v i ε (-ε)).trans hfirst₂.symm
-    · simpa only [List.length_cons, hhi₀, D, closingClasp] using
-        (edgePair_closure_cons_cons_one v i ε (-ε)).trans hfirst₁.symm
-  · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-    · have hpos : p = strand i ∨ p = strandSucc i := by
-        simpa [w] using (mem_crossingsAt (w := w)).mp hj
-      rcases hpos with rfl | rfl
-      · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_ne_nil
-          v i ε (-ε) (Or.inl rfl) hp
-        simp only [crossing_closure, List.length_cons] at h
-        simpa only [Fin.succ_zero_eq_one, List.length_cons, hlo₁, D, closingClasp] using
-          h.trans hsecond₂.symm
-      · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_ne_nil
-          v i ε (-ε) (Or.inr rfl) hq
-        simp only [crossing_closure, List.length_cons] at h
-        simpa only [Fin.succ_zero_eq_one, List.length_cons, hhi₁, D, closingClasp] using
-          h.trans hsecond₁.symm
-    · have hjold : j ∈ v.crossingsAt p := by
-        simpa [w] using (mem_crossingsAt (w := w)).mp hj
-      have hletter : w[j.succ.succ.val] = v[j.val] := by simp [w]
-      rw [outgoingSlot_congr hletter p]
-      exact readClosingClasp_edgePair_old v i ε hp hq hjold
+  refine edgePair_closure_cons_cons_eq_of_outgoingSlot v i ε (-ε) ?_ ?_ ?_ ?_
+    fun hjold ↦ readClosingClasp_edgePair_old v i ε hp hq hjold
+  · exact (edgePair_closure_cons_cons_one v i ε (-ε)).trans hfirst₁.symm
+  · exact (edgePair_closure_cons_cons_two v i ε (-ε)).trans hfirst₂.symm
+  · exact (edgePair_closure_cons_cons_one_one_of_ne_nil v i ε (-ε) hq).trans hsecond₁.symm
+  · exact (edgePair_closure_cons_cons_one_two_of_ne_nil v i ε (-ε) hp).trans hsecond₂.symm
 
 private theorem readClosingClasp_orientation :
     (readClasp (closingClasp v i ε hp hq)).orientation =
@@ -452,7 +407,6 @@ include hp₀ hq₀ in
 private theorem readTwoCircleDiagram_edgePair :
     (closure ((i, ε) :: (i, -ε) :: v)).edgePair =
       (readClasp (twoCircleDiagram v ε D)).edgePair := by
-  let w : BraidWord n := (i, ε) :: (i, -ε) :: v
   let C := twoCircleDiagram v ε D
   -- The closed clasp matching supplies all four outgoing arcs at the new crossings.
   have hmatchFirst (s : Fin 4) :
@@ -472,43 +426,12 @@ private theorem readTwoCircleDiagram_edgePair :
   norm_num [Fin.rev] at hm₀₂ hm₀₁ hm₁₂ hm₁₁
   have hneg : (-1 : Fin 4) = 3 := by decide
   rw [hneg] at hm₁₂
-  apply edgePair_closure_eq_of_outgoingSlot
-  intro j p hj
-  simp only [List.length_cons] at *
-  rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-  · have hpos : p = strand i ∨ p = strandSucc i := by
-      simpa [w] using (mem_crossingsAt (w := w)).mp hj
-    rcases hpos with rfl | rfl
-    · have hout : w.outgoingSlot 0 (strand i) = 2 := outgoingSlot_strand w 0
-      simpa only [w, hout, List.length_cons] using
-        (edgePair_closure_cons_cons_two v i ε (-ε)).trans hm₀₂.symm
-    · have hout : w.outgoingSlot 0 (strandSucc i) = 1 := outgoingSlot_strandSucc w 0
-      simpa only [w, hout, List.length_cons] using
-        (edgePair_closure_cons_cons_one v i ε (-ε)).trans hm₀₁.symm
-  · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-    · have hpos : p = strand i ∨ p = strandSucc i := by
-        simpa [w] using (mem_crossingsAt (w := w)).mp hj
-      rcases hpos with rfl | rfl
-      · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_nil v i ε (-ε)
-          (Or.inl rfl) hp₀
-        have hout : w.outgoingSlot 1 (strand i) = 2 := outgoingSlot_strand w 1
-        have hin : w.incomingSlot 0 (strand i) = 3 := incomingSlot_strand w 0
-        dsimp only [w] at hin hout
-        simp only [crossing_closure, hin, List.length_cons] at h
-        simpa only [w, hout, List.length_cons, Fin.succ_zero_eq_one] using h.trans hm₁₂.symm
-      · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_nil v i ε (-ε)
-          (Or.inr rfl) hq₀
-        have hout : w.outgoingSlot 1 (strandSucc i) = 1 := outgoingSlot_strandSucc w 1
-        have hin : w.incomingSlot 0 (strandSucc i) = 0 := incomingSlot_strandSucc w 0
-        dsimp only [w] at hin hout
-        simp only [crossing_closure, hin, List.length_cons] at h
-        simpa only [w, hout, List.length_cons, Fin.succ_zero_eq_one] using h.trans hm₁₁.symm
-    · have hjold : j ∈ v.crossingsAt p := by
-        simpa [w] using (mem_crossingsAt (w := w)).mp hj
-      have hletter : w[j.succ.succ.val] = v[j.val] := by simp [w]
-      rw [outgoingSlot_congr hletter p]
-      -- Every old crossing lies on an unaffected position, so its arc is preserved.
-      exact readTwoCircleDiagram_edgePair_old v i ε hp₀ hq₀ D hD hjold
+  refine edgePair_closure_cons_cons_eq_of_outgoingSlot v i ε (-ε) ?_ ?_ ?_ ?_
+    fun hjold ↦ readTwoCircleDiagram_edgePair_old v i ε hp₀ hq₀ D hD hjold
+  · exact (edgePair_closure_cons_cons_one v i ε (-ε)).trans hm₀₁.symm
+  · exact (edgePair_closure_cons_cons_two v i ε (-ε)).trans hm₀₂.symm
+  · exact (edgePair_closure_cons_cons_one_one_of_nil v i ε (-ε) hq₀).trans hm₁₁.symm
+  · exact (edgePair_closure_cons_cons_one_two_of_nil v i ε (-ε) hp₀).trans hm₁₂.symm
 
 private theorem readTwoCircleDiagram_orientation :
     (readClasp (twoCircleDiagram v ε D)).orientation =
@@ -646,14 +569,9 @@ private theorem readCircleArcDiagram_edgePair_old {j : Fin baseWord.length} {p :
         (crossingSlotEquiv _ (j.succ.succ, baseWord.outgoingSlot j p)) := by
   let x := baseWord.closure.crossing j (baseWord.outgoingSlot j p)
   let a := baseWord.closingHalfEdge (strand idx) hArc
-  have hx : baseWord.closure.orientation x = true := by
-    rcases baseWord.outgoingSlot_eq_one_or_two j p with hs | hs <;> simp [x, hs]
   have hxe : x ≠ core.edgePair.val a := by
     rw [circleArcCore_edgePair baseWord core hCore]
-    intro he
-    have hh := baseWord.closure.orientation_edgePair a
-    rw [← he, hx, orientation_closingHalfEdge] at hh
-    contradiction
+    exact baseWord.crossing_outgoingSlot_ne_edgePair_closingHalfEdge p hArc
   have hm := readClasp_edgePair_apply (circleArcDiagram baseWord idx sgn hArc core)
     (halfEdgeSuccEquiv (baseWord.length + 1) (.inl (halfEdgeSuccEquiv baseWord.length (.inl x))))
   have hxm : claspHalf baseWord.length
@@ -698,7 +616,6 @@ include hCircle in
 private theorem readCircleArcDiagram_edgePair :
     (closure ((idx, sgn) :: (idx, -sgn) :: baseWord)).edgePair =
       (readClasp (circleArcDiagram baseWord idx sgn hArc core)).edgePair := by
-  let w : BraidWord n := (idx, sgn) :: (idx, -sgn) :: baseWord
   let C := circleArcDiagram baseWord idx sgn hArc core
   -- Match the four outgoing arcs at the inserted pair, then every old outgoing arc.
   have hm₀ (s : Fin 4) := readClasp_edgePair_apply C
@@ -719,42 +636,14 @@ private theorem readCircleArcDiagram_edgePair :
   norm_num only [Matrix.cons_val, Fin.reduceSub] at h0one h0two h1one h1two
   simp only [claspHalf_first, claspHalf_second, claspHalf_old_crossing, Fin.reduceSub]
     at h0one h0two h1one h1two
-  apply edgePair_closure_eq_of_outgoingSlot
-  intro j p hj
-  simp only [List.length_cons] at *
-  rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-  · have hpos : p = strand idx ∨ p = strandSucc idx := by
-      simpa [w] using (mem_crossingsAt (w := w)).mp hj
-    rcases hpos with rfl | rfl
-    · have hout : w.outgoingSlot 0 (strand idx) = 2 := outgoingSlot_strand w 0
-      simpa only [w, hout, List.length_cons, circleArcDiagram] using
-        (edgePair_closure_cons_cons_two baseWord idx sgn (-sgn)).trans h0two.symm
-    · have hout : w.outgoingSlot 0 (strandSucc idx) = 1 := outgoingSlot_strandSucc w 0
-      simpa only [w, hout, List.length_cons, circleArcDiagram] using
-        (edgePair_closure_cons_cons_one baseWord idx sgn (-sgn)).trans h0one.symm
-  · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-    · have hpos : p = strand idx ∨ p = strandSucc idx := by
-        simpa [w] using (mem_crossingsAt (w := w)).mp hj
-      rcases hpos with rfl | rfl
-      · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_ne_nil baseWord idx sgn (-sgn)
-          (Or.inl rfl) hArc
-        simp only [crossing_closure, List.length_cons] at h
-        have hout : w.outgoingSlot 1 (strand idx) = 2 := outgoingSlot_strand w 1
-        simpa only [w, hout, List.length_cons, Fin.succ_zero_eq_one, circleArcDiagram] using
-          h.trans h1two.symm
-      · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_nil baseWord idx sgn (-sgn)
-          (Or.inr rfl) hCircle
-        have hout : w.outgoingSlot 1 (strandSucc idx) = 1 := outgoingSlot_strandSucc w 1
-        have hin : w.incomingSlot 0 (strandSucc idx) = 0 := incomingSlot_strandSucc w 0
-        dsimp only [w] at hin hout
-        simp only [crossing_closure, hin, List.length_cons] at h
-        simpa only [w, hout, List.length_cons, Fin.succ_zero_eq_one, circleArcDiagram] using
-          h.trans h1one.symm
-    · have hjold : j ∈ baseWord.crossingsAt p := by
-        simpa [w] using (mem_crossingsAt (w := w)).mp hj
-      have hletter : w[j.succ.succ.val] = baseWord[j.val] := by simp [w]
-      rw [outgoingSlot_congr hletter p]
-      exact readCircleArcDiagram_edgePair_old baseWord idx sgn hArc hCircle core hCore hjold
+  refine edgePair_closure_cons_cons_eq_of_outgoingSlot baseWord idx sgn (-sgn) ?_ ?_ ?_ ?_
+    fun hjold ↦ readCircleArcDiagram_edgePair_old baseWord idx sgn hArc hCircle core hCore hjold
+  · exact (edgePair_closure_cons_cons_one baseWord idx sgn (-sgn)).trans h0one.symm
+  · exact (edgePair_closure_cons_cons_two baseWord idx sgn (-sgn)).trans h0two.symm
+  · exact (edgePair_closure_cons_cons_one_one_of_nil baseWord idx sgn (-sgn)
+      hCircle).trans h1one.symm
+  · exact (edgePair_closure_cons_cons_one_two_of_ne_nil baseWord idx sgn (-sgn)
+      hArc).trans h1two.symm
 
 private theorem readCircleArcDiagram_orientation :
     (readClasp (circleArcDiagram baseWord idx sgn hArc core)).orientation =
@@ -855,6 +744,246 @@ private theorem circleArc_cancel :
 
 end CircleArc
 
+/-- The half-edge relabeling for the circle-and-arc clasp with the circle on the lower position:
+it is `claspHalf` without the slot shift at the first new crossing, and with the second new
+crossing read from its opposite slot. -/
+private def lowerClaspHalf (N : ℕ) : Fin (4 * (N + 2)) ≃ Fin (4 * (N + 2)) :=
+  (crossingSlotEquiv (N + 2)).symm.trans
+    ((Equiv.prodCongrRight fun j : Fin (N + 2) =>
+      if j = Fin.last (N + 1) then Equiv.addRight 2 else Equiv.refl (Fin 4)).trans
+      ((Equiv.prodCongr (claspCross N) (Equiv.refl (Fin 4))).trans
+        (crossingSlotEquiv (N + 2))))
+
+@[simp] private theorem lowerClaspHalf_old_crossing (N : ℕ) (j : Fin N) (s : Fin 4) :
+    lowerClaspHalf N (halfEdgeSuccEquiv (N + 1)
+      (.inl (halfEdgeSuccEquiv N (.inl (crossingSlotEquiv N (j, s)))))) =
+      crossingSlotEquiv (N + 2) (j.succ.succ, s) := by
+  have hj : (j : ℕ) ≠ N + 1 := by omega
+  simp [← crossingSlotEquiv_succ_castSucc, lowerClaspHalf, Fin.ext_iff, hj]
+
+@[simp] private theorem lowerClaspHalf_first (N : ℕ) (s : Fin 4) :
+    lowerClaspHalf N (halfEdgeSuccEquiv (N + 1) (.inl (halfEdgeSuccEquiv N (.inr s)))) =
+      crossingSlotEquiv (N + 2) (0, s) := by
+  simp [← crossingSlotEquiv_succ_last, ← crossingSlotEquiv_succ_castSucc, lowerClaspHalf,
+    Fin.ext_iff]
+
+@[simp] private theorem lowerClaspHalf_second (N : ℕ) (s : Fin 4) :
+    lowerClaspHalf N (halfEdgeSuccEquiv (N + 1) (.inr s)) =
+      crossingSlotEquiv (N + 2) (1, s + 2) := by
+  simp [← crossingSlotEquiv_succ_last, lowerClaspHalf]
+
+/-- Read a circle-and-arc clasp with the circle on the lower position as a braid closure. -/
+private def readLowerClasp (D : OrientedPDCode (N + 2)) : OrientedPDCode (N + 2) :=
+  ((D.relabel (lowerClaspHalf N) (claspCross N)).rotateCrossing 1).rotateCrossing 1
+
+private theorem readLowerClasp_edgePair_apply (D : OrientedPDCode (N + 2))
+    (x : Fin (4 * (N + 2))) :
+    (readLowerClasp D).edgePair.val (lowerClaspHalf N x) =
+      lowerClaspHalf N (D.edgePair.val x) := by
+  simp [readLowerClasp]
+
+section LowerCircle
+
+variable (baseWord : BraidWord n) (idx : Fin (n - 1)) (sgn : ℤˣ)
+  (hCircle : baseWord.crossingsAt (strand idx) = [])
+  (hArc : baseWord.crossingsAt (strandSucc idx) ≠ [])
+  (core : OrientedPDCode baseWord.length) (hCore : core.adjoinCircle true = baseWord.closure)
+
+include hCore
+
+omit hCore in
+/-- The lower circle runs against the arc it is pushed across, so it is inserted with the
+opposite direction to the one it has in the closure. -/
+private def lowerCircleDiagram : OrientedPDCode (baseWord.length + 2) :=
+  core.insertCircleClasp (baseWord.closingHalfEdge (strandSucc idx) hArc) false
+    (decide (sgn = 1))
+
+include hCircle in
+private theorem readLowerCircleDiagram_edgePair_old {j : Fin baseWord.length} {p : Fin n}
+    (hj : j ∈ baseWord.crossingsAt p) :
+    (closure ((idx, sgn) :: (idx, -sgn) :: baseWord)).edgePair.val
+        (crossingSlotEquiv _ (j.succ.succ, baseWord.outgoingSlot j p)) =
+      (readLowerClasp (lowerCircleDiagram baseWord idx sgn hArc core)).edgePair.val
+        (crossingSlotEquiv _ (j.succ.succ, baseWord.outgoingSlot j p)) := by
+  let x := baseWord.closure.crossing j (baseWord.outgoingSlot j p)
+  let a := baseWord.closingHalfEdge (strandSucc idx) hArc
+  have hxe : x ≠ core.edgePair.val a := by
+    rw [circleArcCore_edgePair baseWord core hCore]
+    exact baseWord.crossing_outgoingSlot_ne_edgePair_closingHalfEdge p hArc
+  have hm := readLowerClasp_edgePair_apply (lowerCircleDiagram baseWord idx sgn hArc core)
+    (halfEdgeSuccEquiv (baseWord.length + 1) (.inl (halfEdgeSuccEquiv baseWord.length (.inl x))))
+  have hxm : lowerClaspHalf baseWord.length
+      (halfEdgeSuccEquiv (baseWord.length + 1)
+        (.inl (halfEdgeSuccEquiv baseWord.length (.inl x)))) =
+      crossingSlotEquiv (baseWord.length + 2) (j.succ.succ, baseWord.outgoingSlot j p) := by
+    simp only [x, crossing_closure, lowerClaspHalf_old_crossing]
+  rw [hxm] at hm
+  by_cases hxa : x = a
+  · -- The closing arc of the upper position now enters the first new crossing.
+    obtain ⟨rfl, rfl⟩ := (crossing_outgoingSlot_eq_closingHalfEdge_iff baseWord hj hArc).mp hxa
+    simp only [lowerCircleDiagram, OrientedPDCode.toPDCode_insertCircleClasp, hxa, a] at hm
+    rw [core.toPDCode.insertCircleClasp_edgePair_old_self, lowerClaspHalf_first] at hm
+    have h := edgePair_closure_cons_cons_of_mem baseWord idx sgn (-sgn) (List.getLast_mem hArc)
+    simp only [nextCrossing_getLast_crossingsAt, or_true, true_and, ite_true,
+      crossing_closure, List.length_cons] at h
+    have hin : incomingSlot ((idx, sgn) :: (idx, -sgn) :: baseWord) 0 (strandSucc idx) = 0 := by
+      simpa using incomingSlot_strandSucc ((idx, sgn) :: (idx, -sgn) :: baseWord) 0
+    rw [hin] at h
+    simpa only [lowerCircleDiagram, List.length_cons] using h.trans hm.symm
+  · -- Every other old outgoing arc keeps its partner.
+    simp only [lowerCircleDiagram, OrientedPDCode.toPDCode_insertCircleClasp] at hm
+    dsimp only [a] at hxa hxe
+    rw [core.toPDCode.insertCircleClasp_edgePair_old _ _ hxa hxe,
+      circleArcCore_edgePair baseWord core hCore] at hm
+    simp only [x] at hm
+    rw [edgePair_closure_outgoingSlot baseWord hj, crossing_closure,
+      lowerClaspHalf_old_crossing] at hm
+    have hc : ¬ ((p = strand idx ∨ p = strandSucc idx) ∧
+        baseWord.nextCrossing p j = (baseWord.crossingsAt p).head (List.ne_nil_of_mem hj)) := by
+      rintro ⟨hpos, hn⟩
+      rcases hpos with rfl | rfl
+      · simp [hCircle] at hj
+      · apply hxa
+        apply (crossing_outgoingSlot_eq_closingHalfEdge_iff baseWord hj hArc).mpr
+        refine ⟨rfl, (baseWord.nextCrossing (strandSucc idx)).injective ?_⟩
+        simpa using hn
+    have h := edgePair_closure_cons_cons_of_mem baseWord idx sgn (-sgn) hj
+    simp only [hc, ite_false, crossing_closure, List.length_cons] at h
+    simpa only [lowerCircleDiagram, List.length_cons] using h.trans hm.symm
+
+include hCircle in
+private theorem readLowerCircleDiagram_edgePair :
+    (closure ((idx, sgn) :: (idx, -sgn) :: baseWord)).edgePair =
+      (readLowerClasp (lowerCircleDiagram baseWord idx sgn hArc core)).edgePair := by
+  let C := lowerCircleDiagram baseWord idx sgn hArc core
+  -- Match the four outgoing arcs at the inserted pair, then every old outgoing arc.
+  have hm₀ (s : Fin 4) := readLowerClasp_edgePair_apply C
+    (halfEdgeSuccEquiv (baseWord.length + 1)
+      (.inl (halfEdgeSuccEquiv baseWord.length (.inr s))))
+  have hm₁ (s : Fin 4) := readLowerClasp_edgePair_apply C
+    (halfEdgeSuccEquiv (baseWord.length + 1) (.inr s))
+  have h0one := hm₀ 1
+  have h0two := hm₀ 2
+  have h1one := hm₁ 3
+  have h1two := hm₁ 0
+  simp only [C, lowerCircleDiagram, OrientedPDCode.toPDCode_insertCircleClasp,
+    core.toPDCode.insertCircleClasp_edgePair_first,
+    core.toPDCode.insertCircleClasp_edgePair_second,
+    lowerClaspHalf_first, lowerClaspHalf_second,
+    circleArcCore_edgePair baseWord core hCore, edgePair_closingHalfEdge, crossing_closure]
+    at h0one h0two h1one h1two
+  norm_num only [Matrix.cons_val, Fin.reduceAdd] at h0one h0two h1one h1two
+  simp only [lowerClaspHalf_first, lowerClaspHalf_second, lowerClaspHalf_old_crossing,
+    Fin.reduceAdd] at h0one h0two h1one h1two
+  refine edgePair_closure_cons_cons_eq_of_outgoingSlot baseWord idx sgn (-sgn) ?_ ?_ ?_ ?_
+    fun hjold ↦
+      readLowerCircleDiagram_edgePair_old baseWord idx sgn hCircle hArc core hCore hjold
+  · exact (edgePair_closure_cons_cons_one baseWord idx sgn (-sgn)).trans h0one.symm
+  · exact (edgePair_closure_cons_cons_two baseWord idx sgn (-sgn)).trans h0two.symm
+  · exact (edgePair_closure_cons_cons_one_one_of_ne_nil baseWord idx sgn (-sgn)
+      hArc).trans h1one.symm
+  · exact (edgePair_closure_cons_cons_one_two_of_nil baseWord idx sgn (-sgn)
+      hCircle).trans h1two.symm
+
+private theorem readLowerCircleDiagram_orientation :
+    (readLowerClasp (lowerCircleDiagram baseWord idx sgn hArc core)).orientation =
+      (closure ((idx, sgn) :: (idx, -sgn) :: baseWord)).orientation := by
+  funext x
+  obtain ⟨⟨j, s⟩, rfl⟩ := (crossingSlotEquiv (baseWord.length + 2)).surjective x
+  have hori : (closure ((idx, sgn) :: (idx, -sgn) :: baseWord)).orientation
+      (crossingSlotEquiv (baseWord.length + 2) (j, s)) = decide (s = 1 ∨ s = 2) := by
+    simpa only [List.length_cons] using
+      orientation_closure ((idx, sgn) :: (idx, -sgn) :: baseWord) j s
+  rw [hori]
+  rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
+  · rw [← lowerClaspHalf_first]
+    simp only [readLowerClasp, OrientedPDCode.rotateCrossing_orientation,
+      OrientedPDCode.relabel_orientation, Equiv.symm_apply_apply, lowerCircleDiagram,
+      OrientedPDCode.orientation_insertCircleClasp_first,
+      circleArcCore_orientation baseWord core hCore, orientation_closingHalfEdge]
+    fin_cases s <;> decide
+  · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
+    · have h := lowerClaspHalf_second baseWord.length (s - 2)
+      simp only [sub_add_cancel] at h
+      rw [Fin.succ_zero_eq_one, ← h]
+      simp only [readLowerClasp, OrientedPDCode.rotateCrossing_orientation,
+        OrientedPDCode.relabel_orientation, Equiv.symm_apply_apply, lowerCircleDiagram,
+        OrientedPDCode.orientation_insertCircleClasp_second,
+        circleArcCore_orientation baseWord core hCore, orientation_closingHalfEdge]
+      fin_cases s <;> decide
+    · rw [← lowerClaspHalf_old_crossing]
+      simp only [readLowerClasp, OrientedPDCode.rotateCrossing_orientation,
+        OrientedPDCode.relabel_orientation, Equiv.symm_apply_apply, lowerCircleDiagram,
+        OrientedPDCode.orientation_insertCircleClasp_old,
+        circleArcCore_orientation baseWord core hCore, orientation_closure]
+
+include hCircle in
+private theorem readLowerCircleDiagram_eq :
+    readLowerClasp (lowerCircleDiagram baseWord idx sgn hArc core) =
+      closure ((idx, sgn) :: (idx, -sgn) :: baseWord) := by
+  have hc := crossinglessComponents_closure_insert_pair ([] : BraidWord n) baseWord idx sgn (-sgn)
+  simp only [List.nil_append, hArc, hCircle, ite_false, ite_true, Multiset.replicate_zero,
+    Multiset.replicate_one, add_zero] at hc
+  have hcircles := congrArg OrientedPDCode.crossinglessComponents hCore
+  simp only [OrientedPDCode.crossinglessComponents_adjoinCircle] at hcircles
+  rw [← hc] at hcircles
+  have hc' : core.crossinglessComponents =
+      (closure ((idx, sgn) :: (idx, -sgn) :: baseWord)).crossinglessComponents := by
+    simpa only [Multiset.add_comm _ {true}, Multiset.singleton_add,
+      Multiset.cons_inj_right, List.cons_append, List.nil_append] using hcircles
+  -- Adjoining the isolated circle changes no crossing data of the old diagram.
+  have hhalf : core.halfEdge = baseWord.closure.halfEdge := by
+    simpa using congrArg (fun C => C.halfEdge) hCore
+  have hover : core.overPair = baseWord.closure.overPair := by
+    simpa using congrArg (fun C => C.overPair) hCore
+  apply OrientedPDCode.ext
+  · apply PDCode.ext
+    · ext x
+      obtain ⟨⟨j, s⟩, rfl⟩ := (crossingSlotEquiv (baseWord.length + 2)).surjective x
+      rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
+      · simp [readLowerClasp, lowerCircleDiagram]
+      · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
+        · fin_cases s <;> simp [readLowerClasp, lowerCircleDiagram, Fin.succ_zero_eq_one]
+        · simp [readLowerClasp, lowerCircleDiagram, hhalf, Fin.ext_iff]
+    · exact (readLowerCircleDiagram_edgePair baseWord idx sgn hCircle hArc core hCore).symm
+    · rw [← OrientedPDCode.card_crossinglessComponents,
+        ← OrientedPDCode.card_crossinglessComponents]
+      simp [readLowerClasp, lowerCircleDiagram, hc']
+    · funext j
+      rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
+      · rcases Int.units_eq_one_or sgn with rfl | rfl <;>
+          simp [readLowerClasp, lowerCircleDiagram]
+      · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
+        · rcases Int.units_eq_one_or sgn with rfl | rfl <;>
+            simp [readLowerClasp, lowerCircleDiagram, Fin.succ_zero_eq_one]
+        · simp [readLowerClasp, lowerCircleDiagram, hover, Fin.ext_iff]
+  · exact readLowerCircleDiagram_orientation baseWord idx sgn hArc core hCore
+  · simp [readLowerClasp, lowerCircleDiagram, hc']
+
+omit core hCore in
+include hCircle hArc in
+/-- An inverse pair between a crossing-free position and an adjacent higher position meeting
+old crossings is the circle-and-arc Reidemeister-II move, after reversing the isolated circle. -/
+private theorem lowerCircle_cancel :
+    OrientedPDCode.ReidemeisterEquiv baseWord.closure
+      (closure ((idx, sgn) :: (idx, -sgn) :: baseWord)) := by
+  have hc := crossinglessComponents_closure_insert_pair ([] : BraidWord n) baseWord idx sgn (-sgn)
+  simp only [List.nil_append, hArc, hCircle, ite_false, ite_true, Multiset.replicate_zero,
+    Multiset.replicate_one, add_zero] at hc
+  have hmem : true ∈ baseWord.closure.crossinglessComponents := by
+    rw [← hc]
+    simp
+  obtain ⟨core, hCore⟩ := OrientedPDCode.exists_eq_adjoinCircle_of_mem hmem
+  rw [← readLowerCircleDiagram_eq baseWord idx sgn hCircle hArc core hCore.symm, hCore]
+  exact (OrientedPDCode.reidemeisterEquiv_adjoinCircle_not core true).trans
+    ((OrientedPDCode.reidemeisterEquiv_insertCircleClasp core
+      (baseWord.closingHalfEdge (strandSucc idx) hArc) false (decide (sgn = 1))).trans
+      ((OrientedPDCode.reidemeisterEquiv_relabel _ _ _).trans
+        ((OrientedPDCode.reidemeisterEquiv_rotateCrossing _ 1).trans
+          (OrientedPDCode.reidemeisterEquiv_rotateCrossing _ 1))))
+
+end LowerCircle
+
 /-- An inverse pair beside a crossing-free higher position gives a Reidemeister-II move.
 The lower position may be crossing-free or already meet crossings. -/
 theorem reidemeisterEquiv_closure_cons_cons_freeCancel_of_strandSucc_crossingsAt_eq_nil
@@ -864,5 +993,17 @@ theorem reidemeisterEquiv_closure_cons_cons_freeCancel_of_strandSucc_crossingsAt
   by_cases hp : v.crossingsAt (strand i) = []
   · exact twoCircle_cancel v i ε hp hq
   · exact circleArc_cancel v i ε hp hq
+
+/-- An inverse pair beside a crossing-free lower position changes the closure only by
+Reidemeister moves. If the higher position is also crossing-free, this is a Reidemeister-II move
+between two isolated circles. If it already meets crossings, the isolated lower circle is first
+reversed and then clasped with the closing arc of the higher position. -/
+theorem reidemeisterEquiv_closure_cons_cons_freeCancel_of_strand_crossingsAt_eq_nil
+    (v : BraidWord n) (i : Fin (n - 1)) (ε : ℤˣ)
+    (hp : v.crossingsAt (strand i) = []) :
+    OrientedPDCode.ReidemeisterEquiv v.closure (closure ((i, ε) :: (i, -ε) :: v)) := by
+  by_cases hq : v.crossingsAt (strandSucc i) = []
+  · exact twoCircle_cancel v i ε hp hq
+  · exact lowerCircle_cancel v i ε hp hq
 
 end TauCeti.BraidWord

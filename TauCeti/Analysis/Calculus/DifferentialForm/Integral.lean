@@ -1,0 +1,167 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Calculus.DifferentialForm.Coordinates
+public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
+import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
+import TauCeti.MeasureTheory.Integral.DivergenceTheorem.CompactSupport
+
+/-!
+# Compactly supported exact top forms on a vector space
+
+A compactly supported C1 form has an integrable exterior derivative whose top-degree
+coefficient integrates to zero against the Haar measure of any basis. The coordinate proof
+uses the compact-support specialization of Mathlib's
+`MeasureTheory.integral_divergence_of_hasFDerivAt_off_countable`, exported as
+`MeasureTheory.integral_divergence_eq_zero`: a bounding box contains the support, and compact
+support eliminates all its boundary faces.
+
+Applied to a wedge `φ ∧ ψ` of real-valued forms, together with the Leibniz rule
+`d (φ ∧ ψ) = dφ ∧ ψ + (-1) ^ k φ ∧ dψ`, this is integration by parts for forms: when `ψ` has
+compact support, `∫ dφ ∧ ψ = -(-1) ^ k ∫ φ ∧ dψ`
+(`Module.Basis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv`).
+
+The integral of a wedge `ω ∧ η` with `η` vanishing outside a set `K` is bounded by a constant
+depending only on the basis times `sup ‖η‖ ∫_K ‖ω‖` (`Module.Basis.exists_abs_integral_wedge_le`).
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory Set
+
+namespace TauCeti
+
+private theorem integral_extDeriv_coordinate_eq_zero {n : ℕ}
+    {ω : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) [⋀^Fin n]→L[ℝ] ℝ}
+    (hω : ContDiff ℝ 1 ω) (hc : HasCompactSupport ω) :
+    Integrable (fun x ↦ extDeriv ω x (Pi.basisFun ℝ (Fin (n + 1)))) ∧
+      (∫ x, extDeriv ω x (Pi.basisFun ℝ (Fin (n + 1)))) = 0 := by
+  let e := Pi.basisFun ℝ (Fin (n + 1))
+  let L := ContinuousAlternatingMap.signedRemoveNth (𝕜 := ℝ) (F := ℝ) e
+  have hr := integral_divergence_eq_zero (L.contDiff.comp hω) (hc.comp_left L.map_zero)
+  have hd (x) : (∑ i : Fin (n + 1),
+      fderiv ℝ (L ∘ ω) x (Pi.single i 1) i) = extDeriv ω x e := by
+    simpa only [fderivWithin_univ, extDerivWithin_univ, e, Pi.basisFun_apply] using
+      DifferentiableWithinAt.sum_fderivWithin_signedRemoveNth
+        ((hω.differentiable one_ne_zero x).differentiableWithinAt (s := Set.univ))
+        uniqueDiffWithinAt_univ e
+  simpa only [hd] using hr
+
+/-- A compactly supported C1 form has an integrable exterior derivative, and the top-degree
+coefficient integrates to zero for every basis and its normalized Haar measure. -/
+theorem _root_.Module.Basis.integral_extDeriv_eq_zero {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {n : ℕ}
+    (b : Module.Basis (Fin (n + 1)) ℝ E) {ω : E → E [⋀^Fin n]→L[ℝ] ℝ}
+    (hω : ContDiff ℝ 1 ω) (hc : HasCompactSupport ω) :
+    Integrable (fun x ↦ extDeriv ω x b) b.addHaar ∧
+      (∫ x, extDeriv ω x b ∂b.addHaar) = 0 := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
+  let L := b.equivFun.symm.toContinuousLinearEquiv
+  let C := ContinuousAlternatingMap.compContinuousLinearMapCLM (F := ℝ) (ι := Fin n)
+    L.toContinuousLinearMap
+  let η := C ∘ ω ∘ L
+  have hη : ContDiff ℝ 1 η := C.contDiff.comp (hω.comp L.contDiff)
+  have hcη : HasCompactSupport η :=
+    (hc.comp_homeomorph L.toHomeomorph).comp_left C.map_zero
+  have hr := integral_extDeriv_coordinate_eq_zero hη hcη
+  have hmap : (Pi.basisFun ℝ (Fin (n + 1))).map L.toLinearEquiv = b := by
+    ext i
+    simp [L]
+  have hp : MeasurePreserving L volume b.addHaar := by
+    refine ⟨L.continuous.measurable, ?_⟩
+    rw [← Module.Basis.addHaar_basisFun, Module.Basis.map_addHaar, hmap]
+  have hd (x) : extDeriv η x (Pi.basisFun ℝ (Fin (n + 1))) = extDeriv ω (L x) b := by
+    have h := L.toContinuousLinearMap.extDerivWithin_pullback
+      (uniqueDiffWithinAt_univ) ((hω.differentiable one_ne_zero) (L x)).differentiableWithinAt
+      (mapsTo_univ _ _)
+    simp only [extDerivWithin_univ] at h
+    have he := congrArg (fun A ↦ A (Pi.basisFun ℝ (Fin (n + 1)))) h
+    -- Unfold the local pullback η to match the evaluated linear-pullback identity.
+    change extDeriv η x (Pi.basisFun ℝ (Fin (n + 1))) =
+      extDeriv ω (L x) (fun i ↦ L (Pi.basisFun ℝ (Fin (n + 1)) i)) at he
+    convert he using 1
+    exact congrArg (fun b : Module.Basis (Fin (n + 1)) ℝ E ↦ extDeriv ω (L x) b) hmap.symm
+  have he := L.toHomeomorph.measurableEmbedding
+  refine ⟨(hp.integrable_comp_emb he (g := fun x ↦ extDeriv ω x b)).mp (hr.1.congr (by
+    filter_upwards [] with x using hd x)), ?_⟩
+  rw [← hp.integral_comp he (fun x ↦ extDeriv ω x b)]
+  simpa only [← hd] using hr.2
+
+open ContinuousAlternatingMap in
+/-- **Integration by parts for differential forms.** For C1 real-valued forms `φ` of degree `k`
+and `ψ` of degree `l` on a space of dimension `N = k + l + 1`, with `ψ` compactly supported,
+`∫ dφ ∧ ψ = -(-1) ^ k ∫ φ ∧ dψ`. The top-degree coefficients are taken on a basis `b` and
+integrated against its Haar measure; the degrees `k + 1 + l` and `k + (l + 1)` of the two wedges
+are identified with `N` by `Fin.cast`. -/
+theorem _root_.Module.Basis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+    [BorelSpace E] {k l N : ℕ} (b : Module.Basis (Fin N) ℝ E) (hN : k + l + 1 = N)
+    {φ : E → E [⋀^Fin k]→L[ℝ] ℝ} {ψ : E → E [⋀^Fin l]→L[ℝ] ℝ}
+    (hφ : ContDiff ℝ 1 φ) (hψ : ContDiff ℝ 1 ψ) (hc : HasCompactSupport ψ) :
+    ∫ x, wedge (extDeriv φ x) (ψ x) (b ∘ Fin.cast (by omega)) ∂b.addHaar =
+      -(-1 : ℝ) ^ k * ∫ x, wedge (φ x) (extDeriv ψ x) (b ∘ Fin.cast (by omega)) ∂b.addHaar := by
+  subst hN
+  obtain ⟨hint, hzero⟩ := b.integral_extDeriv_eq_zero (hφ.wedge hψ) hc.wedge_left
+  -- The Leibniz rule splits `d (φ ∧ ψ)` into the two pairings being compared.
+  have hL (x : E) : extDeriv (fun x ↦ wedge (φ x) (ψ x)) x b =
+      wedge (extDeriv φ x) (ψ x) (b ∘ Fin.cast (by omega)) +
+        (-1 : ℝ) ^ k * wedge (φ x) (extDeriv ψ x) (b ∘ Fin.cast (by omega)) := by
+    simpa only [wedge_def, smul_eq_mul] using extDeriv_pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
+      (hφ.differentiable one_ne_zero x) (hψ.differentiable one_ne_zero x) b
+  have hB : Integrable (fun x ↦ wedge (φ x) (extDeriv ψ x) (b ∘ Fin.cast (by omega)))
+      b.addHaar := by
+    refine Continuous.integrable_of_hasCompactSupport ?_ ?_
+    · exact (((hφ.of_le zero_le_one).wedge (contDiff_extDeriv hψ le_rfl)).continuous).eval_const _
+    · exact (hc.extDeriv.wedge_left (φ := φ)).comp_left
+        (g := fun ω ↦ ω (b ∘ Fin.cast (by omega))) rfl
+  calc ∫ x, wedge (extDeriv φ x) (ψ x) (b ∘ Fin.cast (by omega)) ∂b.addHaar
+      = ∫ x, (extDeriv (fun x ↦ wedge (φ x) (ψ x)) x b -
+          (-1 : ℝ) ^ k * wedge (φ x) (extDeriv ψ x) (b ∘ Fin.cast (by omega))) ∂b.addHaar :=
+        integral_congr_ae (Filter.Eventually.of_forall fun x ↦ by simp only [hL]; ring)
+    _ = _ := by
+        rw [integral_sub hint (hB.const_mul _), integral_const_mul, hzero]
+        ring
+
+open ContinuousAlternatingMap in
+/-- The integral of the wedge of a form `ω` with a form `η` vanishing outside a set `K` is at
+most a constant depending only on the basis `b` times `A ∫_K G`, when `‖ω‖ ≤ G` on `K` and
+`‖η‖ ≤ A`. -/
+theorem _root_.Module.Basis.exists_abs_integral_wedge_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] {k l : ℕ}
+    (b : Module.Basis (Fin (k + l)) ℝ E) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ω : E → E [⋀^Fin k]→L[ℝ] ℝ⦄ ⦃η : E → E [⋀^Fin l]→L[ℝ] ℝ⦄ ⦃K : Set E⦄
+      ⦃G : E → ℝ⦄ ⦃A : ℝ⦄, MeasurableSet K → (∀ x ∉ K, η x = 0) →
+      IntegrableOn G K b.addHaar → (∀ x ∈ K, ‖ω x‖ ≤ G x) → (∀ x, ‖η x‖ ≤ A) →
+      |∫ x, wedge (ω x) (η x) b ∂b.addHaar| ≤ C * (A * ∫ x in K, G x ∂b.addHaar) := by
+  refine ⟨(k + l).choose k * ∏ i, ‖b i‖, by positivity, ?_⟩
+  intro ω η K G A hK hη0 hG hωG hηA
+  have hvan (x : E) (hx : x ∉ K) : wedge (ω x) (η x) b = 0 := by
+    simp [hη0 x hx, wedge_def]
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, ← integral_const_mul,
+    ← integral_const_mul, ← Real.norm_eq_abs]
+  refine norm_integral_le_of_norm_le ((hG.const_mul _).const_mul _)
+    (ae_restrict_of_forall_mem hK fun x hx ↦ ?_)
+  have hG0 : 0 ≤ G x := (norm_nonneg _).trans (hωG x hx)
+  calc ‖wedge (ω x) (η x) b‖ ≤ ‖wedge (ω x) (η x)‖ * ∏ i, ‖b i‖ :=
+        (wedge (ω x) (η x)).le_opNorm _
+    _ ≤ (k + l).choose k * ‖ω x‖ * ‖η x‖ * ∏ i, ‖b i‖ := by
+        gcongr
+        exact norm_wedge_le _ _
+    _ ≤ (k + l).choose k * G x * A * ∏ i, ‖b i‖ := by
+        gcongr
+        exacts [hωG x hx, hηA x]
+    _ = _ := by ring
+
+end TauCeti

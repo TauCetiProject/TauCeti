@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.SemisimpleQuotient
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Multiplication
-public import TauCeti.RingTheory.Jacobson.MulOpposite
+public import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # The radical filtration of a zigzag algebra
@@ -38,6 +38,8 @@ second radical layer is exactly the volume span.
 * `TauCeti.restrictScalars_jacobson_sq_nonisolatedZigzagQuotient_eq_zigzagVolumeSpan`: its square
   is the volume span.
 * `TauCeti.jacobson_pow_three_nonisolatedZigzagQuotient_eq_bot`: its third power is zero.
+* `TauCeti.mem_zigzagPositiveSpan_of_zigzagVolume_mul_eq_zero`: an element of `e_u Z` killed by
+  the volume class `x_u` lies in the positive-length span.
 
 ## References
 
@@ -313,6 +315,41 @@ theorem mul_mul_eq_zero_of_mem_zigzagPositiveSpan {x y z : nonisolatedZigzagQuot
   mul_eq_zero_of_mem_zigzagVolumeSpan_of_mem_zigzagPositiveSpan
     (mul_mem_zigzagVolumeSpan hx hy) hz
 
+/-- Every left multiple of an arrow class has positive length. -/
+theorem mul_zigzagMk_ofArrow_mem_zigzagPositiveSpan (y : nonisolatedZigzagQuotient k G)
+    (d : G.Dart) : y * zigzagMk k G (ofArrow (arrow G d.adj)) ∈ zigzagPositiveSpan k G := by
+  have h : (⊤ : Submodule k (nonisolatedZigzagQuotient k G)) ≤
+      (zigzagPositiveSpan k G).comap
+        (LinearMap.mulRight k (zigzagMk k G (ofArrow (arrow G d.adj)))) := by
+    rw [← span_range_zigzagBasisFun_eq_top, Submodule.span_le]
+    rintro _ ⟨b, rfl⟩
+    rcases b with i | e | i
+    · rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulRight_apply, zigzagBasisFun_inl]
+      by_cases hi : i = d.snd
+      · subst hi
+        rw [zigzagMk_vertexIdempotent_mul_ofArrow]
+        exact zigzagMk_ofArrow_mem_zigzagPositiveSpan d
+      · rw [zigzagMk_vertexIdempotent_mul_ofArrow_of_ne k G d hi]
+        exact Submodule.zero_mem _
+    · rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulRight_apply,
+        zigzagBasisFun_inr_inl]
+      exact zigzagVolumeSpan_le_zigzagPositiveSpan
+        (mul_mem_zigzagVolumeSpan (zigzagMk_ofArrow_mem_zigzagPositiveSpan e)
+          (zigzagMk_ofArrow_mem_zigzagPositiveSpan d))
+    · rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulRight_apply,
+        zigzagBasisFun_inr_inr, zigzagVolume_mul_zigzagMk_ofArrow]
+      exact Submodule.zero_mem _
+  exact h (Submodule.mem_top (x := y))
+
+/-- **An arrow class lies in the Jacobson radical**, with no hypothesis on isolated vertices: every
+left multiple of it is nilpotent, since three positive-length elements multiply to zero. -/
+theorem zigzagMk_ofArrow_mem_jacobson (d : G.Dart) :
+    zigzagMk k G (ofArrow (arrow G d.adj)) ∈ Ring.jacobson (nonisolatedZigzagQuotient k G) := by
+  refine Ring.mem_jacobson_of_forall_isNilpotent_mul fun y => ⟨3, ?_⟩
+  have hy := mul_zigzagMk_ofArrow_mem_zigzagPositiveSpan y d
+  rw [pow_three']
+  exact mul_mul_eq_zero_of_mem_zigzagPositiveSpan hy hy hy
+
 end CommRing
 
 /-! ### Identification with the Jacobson radical -/
@@ -424,5 +461,22 @@ theorem jacobson_pow_three_nonisolatedZigzagQuotient_eq_bot
       exact hz
     exact mul_eq_zero_of_mem_zigzagVolumeSpan_of_mem_zigzagPositiveSpan hyv hzp
   · exact Submodule.add_mem _ hx hy
+
+/-- **An element of `e_u Z` annihilated by the volume class `x_u` lies in the radical.** Its
+coefficient at `e_u` vanishes because `x_u c` is that coefficient times `x_u ≠ 0`, and its other
+vertex coefficients vanish because `c = e_u c`. -/
+theorem mem_zigzagPositiveSpan_of_zigzagVolume_mul_eq_zero (hns : ∀ i : V, ∃ j, G.Adj i j)
+    {u : V} {c : nonisolatedZigzagQuotient k G}
+    (hc : zigzagMk k G (vertexIdempotent k (vertex G u)) * c = c)
+    (h : zigzagVolume k G u * c = 0) : c ∈ zigzagPositiveSpan k G := by
+  classical
+  rw [mem_zigzagPositiveSpan_iff hns]
+  intro i
+  rcases eq_or_ne i u with rfl | hne
+  · rw [zigzagVolume_mul hns, smul_eq_zero] at h
+    obtain ⟨j, hij⟩ := hns i
+    exact h.resolve_right (zigzagVolume_ne_zero k G hij)
+  · rw [← zigzagTrivialCoeff_apply_eq_repr hns, ← hc, map_mul, Pi.mul_apply,
+      zigzagTrivialCoeff_vertexIdempotent, ite_eq_right (Ne.symm hne), zero_mul]
 
 end TauCeti

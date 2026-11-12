@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.PowMonoidHom
+import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 
 /-!
 # The group of `n`th power classes `G ⧸ Gⁿ`
@@ -75,6 +76,11 @@ theorem mem_powerSubgroup_iff {g : G} : g ∈ powerSubgroup G n ↔ ∃ h : G, h
   rw [powerSubgroup, MonoidHom.mem_range]
   exact exists_congr fun h => by rw [powMonoidHom_apply]
 
+/-- **`n` kills the power classes**: every element of `G ⧸ Gⁿ` has `n`th power `1`. -/
+@[simp]
+theorem powerClassQuotient_pow_eq_one (x : powerClassQuotient G n) : x ^ n = 1 :=
+  QuotientGroup.pow_eq_one_quotient_range_powMonoidHom n x
+
 /-- **A subgroup contains the powers to the exponent of its index**: `(G ⧸ H)` has order
 `[G : H]`, so `g ^ [G : H] ∈ H` for every `g`. When `H` has infinite index the exponent is `0`
 and the statement is trivial. -/
@@ -92,6 +98,17 @@ theorem powerSubgroup_le_comap (f : G →* H) :
     powerSubgroup G n ≤ (powerSubgroup H n).comap f := by
   rintro _ ⟨g, rfl⟩
   exact ⟨f g, (map_pow f g n).symm⟩
+
+/-- A subgroup `Δ` of `G` meeting `Gⁿ` in a subgroup of finite index also meets the preimage of
+`Hⁿ` under a homomorphism `f : G →* H` in a subgroup of finite index. -/
+instance _root_.MonoidHom.isFiniteRelIndex_comap_range_powMonoidHom {G H : Type*} [CommGroup G]
+    [CommGroup H] (f : G →* H) (n : ℕ) (Δ : Subgroup G)
+    [(powMonoidHom n : G →* G).range.IsFiniteRelIndex Δ] :
+    ((powMonoidHom n : H →* H).range.comap f).IsFiniteRelIndex Δ := by
+  let : (powerSubgroup G n).IsFiniteRelIndex Δ := by
+    simpa only [powerSubgroup] using
+      (inferInstance : (powMonoidHom n : G →* G).range.IsFiniteRelIndex Δ)
+  exact Subgroup.isFiniteRelIndex_of_le_left Δ (powerSubgroup_le_comap n f)
 
 /-- **The map of power classes** `G ⧸ Gⁿ → H ⧸ Hⁿ` induced by a homomorphism `f : G →* H`, the
 class of `g` going to the class of `f g`. -/

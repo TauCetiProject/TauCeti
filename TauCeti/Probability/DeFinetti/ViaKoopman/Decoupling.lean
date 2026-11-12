@@ -306,7 +306,8 @@ private theorem tendsto_setIntegral_mul_of_tendsto_integral_abs
     simp only [Pi.sub_apply, Real.norm_eq_abs, ← mul_sub, abs_mul]
     exact mul_le_of_le_one_left (abs_nonneg _) ((Real.norm_eq_abs _) ▸ hpx)
   have hbase : Filter.Tendsto (fun n ↦ eLpNorm ((u n) - v) 1 μ) Filter.atTop (nhds 0) := by
-    refine TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub hu hv ?_
+    refine TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub
+      (Filter.Eventually.of_forall fun n => (hu n).sub hv) ?_
     simpa only [Real.norm_eq_abs] using hconv
   have hL1 : Filter.Tendsto
       (fun n ↦ eLpNorm ((fun x ↦ p x * u n x) - fun x ↦ p x * v x) 1 μ)

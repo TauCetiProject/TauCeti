@@ -155,7 +155,7 @@ noncomputable def rootSubgroupCoordinateMap (hij : i ≠ j) :
 
 /-- Precomposition by the coordinate morphism is the constructed natural map on points. -/
 theorem mapPointsFunctor_rootSubgroupCoordinateMap (hij : i ≠ j) :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (rootSubgroupCoordinateMap (R := R) (N := N) hij) :
       HopfAlgebra.pointsFunctor (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R N)) =
@@ -170,7 +170,7 @@ special-linear root subgroup map. -/
 theorem mapPointsFunctor_rootSubgroupCoordinateMap_app (hij : i ≠ j)
     (A : CommAlgCat.{u} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (rootSubgroupCoordinateMap (R := R) (N := N) hij)).app A f =
       rootSubgroupPoints hij f := by
   rw [mapPointsFunctor_rootSubgroupCoordinateMap, rootSubgroupPointsMap_app]
@@ -188,11 +188,12 @@ theorem coordinateMap_comp_rootSubgroupCoordinateMap (hij : i ≠ j) :
     CommHopfAlgCat.pointsFunctor_map, CommHopfAlgCat.pointsFunctor_map]
   -- Mapping an opposite composite through `pointsFunctor` leaves the same natural
   -- transformation behind several category and opposite wrappers. There is no API lemma exposing
-  -- that elaborated type, so restate it using the public `mapPointsFunctor` name before rewriting.
-  change CommHopfAlgCat.mapPointsFunctor
+  -- that elaborated type, so restate it using the public `CommHopfAlgCat.Hom.mapPointsFunctor`
+  -- name before rewriting.
+  change CommHopfAlgCat.Hom.mapPointsFunctor
       (rootSubgroupCoordinateMap (R := R) (N := N) hij) ≫
-        CommHopfAlgCat.mapPointsFunctor (coordinateMap R N) =
-    CommHopfAlgCat.mapPointsFunctor
+        CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R N) =
+    CommHopfAlgCat.Hom.mapPointsFunctor
       (GeneralLinear.rootSubgroupCoordinateMap (R := R) (N := N) hij)
   rw [mapPointsFunctor_rootSubgroupCoordinateMap,
     GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap]
@@ -201,7 +202,7 @@ theorem coordinateMap_comp_rootSubgroupCoordinateMap (hij : i ≠ j) :
     GeneralLinear.rootSubgroupPointsMap_app]
   -- Components of the rewritten natural transformations are still displayed through bundled
   -- categorical coercions; expose their pointwise maps to use the point-equivalence API.
-  change (CommHopfAlgCat.mapPointsFunctor (coordinateMap R N)).app A
+  change (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R N)).app A
       (rootSubgroupPoints hij f) = GeneralLinear.rootSubgroupPoints hij f
   apply (GeneralLinear.pointsMulEquiv (R := R) (A := A) N).injective
   -- `coordinateMap` is the quotient map by definition, but the point-map and quotient-point APIs

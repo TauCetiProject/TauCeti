@@ -190,7 +190,8 @@ theorem weylModule_toSubmodule_inf_weightSpace_eq_bot (t : YoungTableau μ)
       refine le_trans (Submodule.map_le_iff_le_comap.mpr ?_) bot_le
       rw [Submodule.comap_bot]
       exact hker
-    · exact (map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le _ l').trans (le_biSup _ hl')
+    · exact (map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le _ l').trans
+        (le_iSup₂_of_le l' hl' le_rfl)
   rw [weylModule_toSubmodule, ← le_bot_iff]
   calc LinearMap.range (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)) ⊓
         weightSpace (tensorPowerRep k n μ.card) l
@@ -312,31 +313,10 @@ variable (k) (n) in
 internal direct sum. The rational algebra structure is required to define the Weyl module. -/
 theorem isInternal_weightSpace_weylRepOfShape [Field k] [Algebra ℚ k] (μ : YoungDiagram) :
     DirectSum.IsInternal fun l : Fin n → ℤ =>
-      weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ) l := by
-  classical
-  let a := YoungTableau.youngSymmetrizerOver k
-    (StandardYoungTableau.rowSuperstandard μ).toTableau
-  let A := permTensorActionAlgHom k n μ.card a
-  let q : Representation.IntertwiningMap (tensorPowerRep k n μ.card)
-      (weylRepOfShape k n μ) :=
-    { toLinearMap := A.codRestrict (weylModuleOfShape k n μ).toSubmodule (fun v => by
-        rw [weylModuleOfShape_toSubmodule]
-        exact LinearMap.mem_range.mpr ⟨v, rfl⟩)
-      isIntertwining' := fun g => by
-        apply LinearMap.ext
-        intro v
-        apply Subtype.ext
-        simp only [LinearMap.comp_apply, LinearMap.codRestrict_apply, weylRepOfShape_apply_coe]
-        exact congrArg (fun f : Module.End k _ => f v)
-          (commute_permTensorActionAlgHom_tensorPowerRep k n μ.card a g).eq }
-  have hq : Function.Surjective q := by
-    intro w
-    have hw : w.val ∈ LinearMap.range A := by
-      simpa only [weylModuleOfShape_toSubmodule] using w.property
-    obtain ⟨v, hv⟩ := hw
-    exact ⟨v, Subtype.ext hv⟩
-  exact isInternal_weightSpace_of_iSup_eq_top (weightChar_injective_of_algebraRat k)
-    (q.iSup_weightSpace_eq_top_of_surjective hq iSup_weightSpace_tensorPowerRep_eq_top)
+      weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ) l :=
+  isInternal_weightSpace_of_iSup_eq_top (weightChar_injective_of_algebraRat k)
+    ((weylRepOfShapeProjection k n μ).iSup_weightSpace_eq_top_of_surjective
+      (weylRepOfShapeProjection_surjective k n μ) iSup_weightSpace_tensorPowerRep_eq_top)
 
 /-- A shape-indexed Weyl weight space vanishes exactly when the corresponding weight space for
 its row-superstandard tableau vanishes. -/

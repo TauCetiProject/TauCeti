@@ -15,17 +15,17 @@ import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 An analytic arc is locally straightened by a biholomorphic coordinate chart. This file proves
 that every subset of the real locus of such a chart is removable for continuous holomorphic
 functions: if `F` is continuous on an open part of the chart source and holomorphic away from the
-subset, then `F` is holomorphic throughout that open set.
+subset, then `F` is holomorphic throughout that open set. Here `F` may take values in any complex
+Banach space.
 
 The proof reads `F` in the chart coordinate as `F ∘ e.symm`. The inverse chart is holomorphic on
 the image of the domain by `DifferentiableOn.invFunOn`, and the removable set becomes a subset of
 the real axis. Painlevé removability of the real axis then applies, after which the result is
 transported back through `e`.
 
-This is the analytic-arc case requested by layer L4 of the conformal-mapping roadmap. It follows
-the standard coordinate reduction of removability across an analytic arc to the real axis; see
-Ahlfors, *Complex Analysis*, Chapter 6, §1.4, and Rudin, *Real and Complex Analysis*, Chapter 11,
-Exercise 11.
+This is the analytic-arc case of removability. It follows the standard coordinate reduction of
+removability across an analytic arc to the real axis; see Ahlfors, *Complex Analysis*, Chapter 6,
+§1.4, and Rudin, *Real and Complex Analysis*, Chapter 11, Exercise 11.
 
 ## Main results
 
@@ -42,7 +42,7 @@ namespace TauCeti
 
 open Complex Set
 
-variable {F : ℂ → ℂ}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] {F : ℂ → E}
 
 /-- **Painlevé removability across a charted analytic arc.** Let `e` be an open partial
 homeomorphism of `ℂ` that is holomorphic on an open subset `Ω` of its source, and let `S` meet `Ω`
@@ -117,15 +117,8 @@ theorem
         (Ω ∩ {z : ℂ | 0 < (e z).im}) ∪
           (Ω ∩ {z : ℂ | (e z).im < 0}) := by
     ext z
-    simp only [mem_sdiff, mem_ofPred_eq, mem_union, mem_inter_iff]
-    constructor
-    · rintro ⟨hz, him⟩
-      rcases lt_or_gt_of_ne him with h | h
-      · exact Or.inr ⟨hz, h⟩
-      · exact Or.inl ⟨hz, h⟩
-    · rintro (⟨hz, h⟩ | ⟨hz, h⟩)
-      · exact ⟨hz, ne_of_gt h⟩
-      · exact ⟨hz, ne_of_lt h⟩
+    simp only [mem_sdiff, mem_ofPred_eq, mem_union, mem_inter_iff, ← ne_eq, ne_iff_lt_or_gt]
+    tauto
   rw [hoffArc]
   exact hpos.union_of_isOpen hneg
     (he.continuousOn.isOpen_inter_preimage hΩ

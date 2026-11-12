@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.RingTheory.FiniteType.PointSeparation
-public import TauCeti.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
 # Point separation after tensoring
@@ -27,15 +27,19 @@ that factor is a reduced finite-type algebra over a field. -/
 theorem tensor_eq_of_forall_map_algHom_eq
     {k B M K : Type*} [Field k] [Field K] [Algebra k K] [IsAlgClosed K]
     [CommRing B] [Algebra k B] [Algebra.FiniteType k B] [IsReduced B]
-    [AddCommGroup M] [Module k M] {x y : B ⊗[k] M}
+    [AddCommMonoid M] [Module k M] {x y : B ⊗[k] M}
     (h : ∀ p : B →ₐ[k] K,
       TensorProduct.map p.toLinearMap LinearMap.id x =
         TensorProduct.map p.toLinearMap LinearMap.id y) : x = y := by
-  apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
-  intro φ
-  apply eq_of_forall_algHom_apply_eq (k := k) (K := K)
+  -- Over a field, `M` is a vector space; this group structure lets `Module.Free.of_divisionRing`
+  -- supply `Module.Projective k M`, used by `tensor_eq_zero_of_forall_rTensor_eq_zero`.
+  let : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
+  apply sub_eq_zero.mp
+  apply tensor_eq_zero_of_forall_rTensor_eq_zero
+    (fun p : B →ₐ[k] K ↦ p.toLinearMap)
+    (fun b hb ↦ eq_of_forall_algHom_apply_eq (k := k) (K := K)
+      fun p ↦ (hb p).trans (map_zero p).symm)
   intro p
-  simpa only [LinearMap.tensorComponent_map, LinearMap.comp_id,
-    AlgHom.toLinearMap_apply] using congrArg (LinearMap.tensorComponent φ) (h p)
+  simpa only [LinearMap.rTensor_def, map_sub, sub_eq_zero] using h p
 
 end TauCeti

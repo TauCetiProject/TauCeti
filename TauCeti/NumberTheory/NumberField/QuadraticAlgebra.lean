@@ -13,10 +13,19 @@ import Mathlib.Data.Rat.Lemmas
 # Quadratic algebras as number fields
 
 A rational quadratic algebra whose defining polynomial has no rational root is a number field.
-The nonsquare hypothesis for an integer parameter transfers to its rational cast.
+The nonsquare hypothesis for an integer parameter transfers to its rational cast, and holds
+automatically for a negative integer parameter.
 -/
 
 public section
+
+namespace Int
+
+/-- A negative integer is not a square. -/
+instance instFactNotIsSquareNegNatCast (n : ℕ) [NeZero n] : Fact (¬ IsSquare (-(n : ℤ))) :=
+  ⟨not_isSquare_of_neg (by simpa using NeZero.pos n)⟩
+
+end Int
 
 namespace Rat
 

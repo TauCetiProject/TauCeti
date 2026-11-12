@@ -12,6 +12,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
 public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.ParameterBaseChange
 
+import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
+
 /-!
 # Extension of scalars for Spin groups and even unitary groups
 
@@ -26,6 +28,12 @@ Spin. Over a field `K`, this is how `U(C₀, σ)` is read as a twisted form: aft
 field `L` splitting the even Clifford algebra, the image lands in the unitary group of a matrix
 algebra with involution.
 
+An isomorphism `σ : A ≃ₐ[R] B` of coefficient algebras induces the isomorphism
+`CliffordAlgebra.baseChangeCongr σ Q` of the Clifford algebras of `Q_A` and `Q_B`. It preserves
+Clifford conjugation, the even part and the vector generators, so it restricts to an isomorphism
+of Spin groups. For complex conjugation of `ℂ` over `ℝ` this is coefficientwise conjugation of a
+complexified Spin group.
+
 ## Main results
 
 * `CliffordAlgebra.spinGroupBaseChange` extends a Spin element's scalars.
@@ -37,10 +45,13 @@ algebra with involution.
   for orthogonal automorphisms.
 * `CliffordAlgebra.spinGroupBaseChange_spinTransvection` identifies the scalar extension of a
   canonical transvection lift.
-* `TauCeti.CliffordAlgebra.spinGroupBaseChange_comp_spinTransvectionHom` transports the entire
+* `TauCeti.CliffordAlgebra.spinGroupBaseChange_comp_transvectionLiftHom` transports the entire
   quotient root-subgroup homomorphism.
 * `CliffordAlgebra.spinGroupBaseChange_baseChange` identifies direct and successive scalar
   extension.
+* `CliffordAlgebra.baseChangeCongr_mem_spinGroup` and `CliffordAlgebra.spinGroupBaseChangeCongr`:
+  an isomorphism of coefficient algebras preserves the Spin group, and restricts to an isomorphism
+  of Spin groups.
 * `CliffordAlgebra.evenUnitaryGroupBaseChange` extends the scalars of an even unitary unit, and
   `CliffordAlgebra.evenUnitaryGroupBaseChange_injective` proves injectivity for faithful flat
   extensions.
@@ -108,14 +119,10 @@ theorem spinGroupBaseChange_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
 /-- On a pure tensor, the action of a scalar-extended Spin element is the extension of the
 original action. -/
 @[simp]
-theorem spinVectorAction_baseChange_tmul (Q : QuadraticForm R M) (x : spinGroup Q)
-    (a : A) (m : M) :
-    letI : Invertible (2 : A) :=
-      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+theorem spinVectorAction_baseChange_tmul [Invertible (2 : A)] (Q : QuadraticForm R M)
+    (x : spinGroup Q) (a : A) (m : M) :
     spinVectorAction (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) (a ⊗ₜ[R] m) =
       a ⊗ₜ[R] spinVectorAction Q x m := by
-  let : Invertible (2 : A) :=
-    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
   suffices hOne :
       spinVectorAction (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) (1 ⊗ₜ[R] m) =
         1 ⊗ₜ[R] spinVectorAction Q x m by
@@ -131,14 +138,10 @@ theorem spinVectorAction_baseChange_tmul (Q : QuadraticForm R M) (x : spinGroup 
 /-- Extension of scalars commutes with the Spin homomorphism to the special orthogonal group. -/
 @[simp]
 theorem spinToSpecialOrthogonal_baseChange [Module.Free R M] [Module.Finite R M]
-    (Q : QuadraticForm R M) (x : spinGroup Q) :
-    letI : Invertible (2 : A) :=
-      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    [Invertible (2 : A)] (Q : QuadraticForm R M) (x : spinGroup Q) :
     TauCeti.QuadraticMap.specialOrthogonalGroupBaseChange (A := A) Q
         (spinToSpecialOrthogonal Q x) =
       spinToSpecialOrthogonal (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) := by
-  let : Invertible (2 : A) :=
-    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
   apply Subtype.ext
   apply LinearEquiv.ext
   intro z
@@ -159,17 +162,13 @@ variable {Q : QuadraticForm K V} {u w : V}
 /-- Extension of scalars carries the canonical Spin lift of `E_{u,w}` to the canonical lift of
 `E_{1 ⊗ u,1 ⊗ w}`. -/
 @[simp]
-theorem spinGroupBaseChange_spinTransvection (hQ : Q.Nondegenerate) (hu : Q u = 0)
-    (huw : QuadraticMap.polar Q u w = 0) :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+theorem spinGroupBaseChange_spinTransvection [Invertible (2 : L)] (hQ : Q.Nondegenerate)
+    (hu : Q u = 0) (huw : QuadraticMap.polar Q u w = 0) :
     spinGroupBaseChange (A := L) Q (spinTransvection hQ hu huw) =
       spinTransvection (QuadraticForm.Nondegenerate.baseChange hQ)
         (u := 1 ⊗ₜ[K] u) (w := 1 ⊗ₜ[K] w)
         (by simp [QuadraticForm.baseChange_tmul, hu])
         (by simp [QuadraticForm.polar_baseChange_tmul, huw]) := by
-  let : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   apply Subtype.ext
   rw [coe_spinGroupBaseChange_apply, coe_spinTransvection, coe_spinTransvection, map_add,
     map_one, map_mul, ofBaseChangeAux_ι, ofBaseChangeAux_ι]
@@ -200,6 +199,60 @@ theorem spinGroupBaseChange_baseChange (z : spinGroup Q) :
   exact ofBaseChangeAux_baseChange Q _
 
 end ScalarTower
+
+/-! ### Isomorphisms of the coefficient algebra -/
+
+section Congr
+
+variable {B : Type x} [CommRing B] [Algebra R B] (σ : A ≃ₐ[R] B) (Q : QuadraticForm R M)
+
+/-- The isomorphism `CliffordAlgebra.baseChangeCongr σ Q : Cℓ(A ⊗ M) ≃ Cℓ(B ⊗ M)` induced by an
+isomorphism of coefficient algebras sends Spin elements to Spin elements. -/
+theorem baseChangeCongr_mem_spinGroup {x : CliffordAlgebra (Q.baseChange A)}
+    (hx : x ∈ spinGroup (Q.baseChange A)) :
+    baseChangeCongr σ Q x ∈ spinGroup (Q.baseChange B) := by
+  let : Invertible (2 : B) := (Invertible.map (algebraMap R B) 2).copy 2 (map_ofNat _ _).symm
+  rw [spinGroup.mem_iff, pinGroup.mem_iff]
+  refine ⟨⟨?_, ?_⟩, ?_⟩
+  · obtain ⟨u, hu, rfl⟩ := (pinGroup.mem_iff.mp hx.1).1
+    simpa using lipschitzGroup.coe_mem_iff_mem.mpr (map_mem_lipschitzGroup_of_map_ι
+      (baseChangeCongr σ Q :
+        CliffordAlgebra (Q.baseChange A) →+* CliffordAlgebra (Q.baseChange B))
+      (LinearMap.rTensor M σ.toLinearMap) (fun w ↦ by simp) hu)
+  · rw [Unitary.mem_iff, ← baseChangeCongr_star, ← map_mul, ← map_mul]
+    simp [spinGroup.star_mul_self_of_mem hx, spinGroup.mul_star_self_of_mem hx]
+  · -- With `2` invertible, the even part is the fixed space of the grade involution, which
+    -- `baseChangeCongr σ Q` preserves.
+    rw [← Subalgebra.mem_toSubmodule, even_toSubmodule, ← involute_eq_self_iff,
+      ← baseChangeCongr_involute, spinGroup.involute_eq hx]
+
+/-- **Coefficient isomorphisms act on Spin groups.** An isomorphism `σ : A ≃ₐ[R] B` of
+coefficient algebras restricts `CliffordAlgebra.baseChangeCongr σ Q` to an isomorphism of the
+Spin groups of `Q_A` and `Q_B`. For complex conjugation of `ℂ` over `ℝ` this is coefficientwise
+conjugation of the Spin group of a complexified real quadratic form. -/
+def spinGroupBaseChangeCongr : spinGroup (Q.baseChange A) ≃* spinGroup (Q.baseChange B) where
+  toFun x := ⟨baseChangeCongr σ Q x, baseChangeCongr_mem_spinGroup σ Q x.2⟩
+  invFun x := ⟨baseChangeCongr σ.symm Q x, baseChangeCongr_mem_spinGroup σ.symm Q x.2⟩
+  left_inv x := Subtype.ext <| by simp [← baseChangeCongr_symm]
+  right_inv x := Subtype.ext <| by simp [← baseChangeCongr_symm]
+  map_mul' x y := Subtype.ext (map_mul (baseChangeCongr σ Q) (x : CliffordAlgebra _) y)
+
+/-- The Clifford value of `CliffordAlgebra.spinGroupBaseChangeCongr` is computed by
+`CliffordAlgebra.baseChangeCongr`. -/
+@[simp]
+theorem coe_spinGroupBaseChangeCongr_apply (x : spinGroup (Q.baseChange A)) :
+    (spinGroupBaseChangeCongr σ Q x : CliffordAlgebra (Q.baseChange B)) =
+      baseChangeCongr σ Q (x : CliffordAlgebra (Q.baseChange A)) :=
+  (rfl)
+
+/-- The inverse of `CliffordAlgebra.spinGroupBaseChangeCongr` is induced by the inverse
+coefficient isomorphism. -/
+@[simp]
+theorem spinGroupBaseChangeCongr_symm :
+    (spinGroupBaseChangeCongr σ Q).symm = spinGroupBaseChangeCongr σ.symm Q :=
+  (rfl)
+
+end Congr
 
 /-! ### The even unitary carrier -/
 
@@ -284,13 +337,10 @@ variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
 
 /-- Extension of scalars commutes with the Spin homomorphism to the orthogonal group. -/
 @[simp]
-theorem spinToOrthogonal_baseChange (Q : QuadraticForm R M) (x : spinGroup Q) :
-    letI : Invertible (2 : A) :=
-      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+theorem spinToOrthogonal_baseChange [Invertible (2 : A)] (Q : QuadraticForm R M)
+    (x : spinGroup Q) :
     spinToOrthogonal (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) =
       orthogonalGroupBaseChange (A := A) Q (spinToOrthogonal Q x) := by
-  let : Invertible (2 : A) :=
-    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
   apply Subtype.ext
   rw [coe_orthogonalGroupBaseChange]
   apply LinearEquiv.ext
@@ -310,16 +360,12 @@ variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
 /-- Extending scalars along a field extension carries the canonical Spin root-subgroup
 homomorphism to that of the extended quotient parameters, preserving its additive composition
 law. -/
-theorem spinGroupBaseChange_comp_spinTransvectionHom {Q : QuadraticForm K V} {u : V}
-    (hQ : Q.Nondegenerate) (hu : Q u = 0) :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-    (spinGroupBaseChange (A := L) Q).toAdditive.comp (spinTransvectionHom hQ hu) =
-      (spinTransvectionHom (QuadraticForm.Nondegenerate.baseChange hQ)
+theorem spinGroupBaseChange_comp_transvectionLiftHom [Invertible (2 : L)]
+    {Q : QuadraticForm K V} {u : V} (hQ : Q.Nondegenerate) (hu : Q u = 0) :
+    (spinGroupBaseChange (A := L) Q).toAdditive.comp (transvectionLiftHom hQ hu) =
+      (transvectionLiftHom (QuadraticForm.Nondegenerate.baseChange hQ)
         (u := 1 ⊗ₜ[K] u) (by simp [QuadraticForm.baseChange_tmul, hu])).comp
           (transvectionParameterBaseChange (A := L) Q u).toAddMonoidHom := by
-  let : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   apply AddMonoidHom.ext
   intro q
   induction q using Submodule.Quotient.induction_on with | H w =>
@@ -327,8 +373,8 @@ theorem spinGroupBaseChange_comp_spinTransvectionHom {Q : QuadraticForm K V} {u 
     apply Additive.toMul.injective
     simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply,
       LinearMap.toAddMonoidHom_coe, transvectionParameterBaseChange_mk, toMul_ofMul]
-    rw [toMul_spinTransvectionHom_mk hQ hu huw, spinGroupBaseChange_spinTransvection,
-      toMul_spinTransvectionHom_mk]
+    rw [toMul_transvectionLiftHom_mk hQ hu huw, spinGroupBaseChange_spinTransvection,
+      toMul_transvectionLiftHom_mk]
 
 end TauCeti.CliffordAlgebra
 

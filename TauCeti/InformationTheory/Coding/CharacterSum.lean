@@ -32,6 +32,7 @@ characteristic zero (`AddChar.FiniteField.primitiveChar`), and so does every `ZM
 
 * `Submodule.sum_addChar_dotProduct`: the orthogonality relation for a code and its dual.
 * `Submodule.sum_sum_addChar_dotProduct_smul`: the Poisson summation formula.
+* `AddChar.sum_apply_dotProduct`: the orthogonality relation for the full space `ι → R`.
 
 ## References
 
@@ -83,3 +84,25 @@ theorem sum_sum_addChar_dotProduct_smul [DecidableEq ι] [Fintype R] [Fintype C]
     smul_sum]
 
 end Submodule
+
+namespace AddChar
+
+variable {ι R S : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [Fintype R] [DecidableEq R]
+  [CommRing S] [IsDomain S] {ψ : AddChar R S}
+
+/-- The orthogonality relation for the full space `ι → R`: summing a primitive additive character
+over the values `v ⬝ᵥ z`, `z : ι → R`, gives `#R ^ #ι` when `v = 0` and zero otherwise. This is
+the case of the full code in `Submodule.sum_addChar_dotProduct`. -/
+theorem sum_apply_dotProduct (hψ : ψ.IsPrimitive) (v : ι → R) :
+    ∑ z : ι → R, ψ (v ⬝ᵥ z) = if v = 0 then (Fintype.card R : S) ^ Fintype.card ι else 0 := by
+  classical
+  have h := Submodule.sum_addChar_dotProduct (C := ⊤) hψ v
+  simp only [Submodule.euclideanDual_top_eq_bot, Submodule.mem_bot] at h
+  simp_rw [dotProduct_comm v]
+  rw [← (Equiv.subtypeUnivEquiv (p := (· ∈ (⊤ : Submodule R (ι → R))))
+    fun _ ↦ Submodule.mem_top).sum_comp]
+  simp only [Equiv.subtypeUnivEquiv_apply]
+  rw [h]
+  simp
+
+end AddChar

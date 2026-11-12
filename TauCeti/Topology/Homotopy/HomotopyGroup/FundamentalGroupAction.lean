@@ -62,6 +62,8 @@ monodromy action `IsCoveringMap.fundamentalGroupMulAction` a left action.
   `TauCeti.GenLoop.exists_homotopyAlong_iff_exists_homotopic_transport`, which reads free
   homotopy as transport up to based homotopy.
 * `TauCeti.fundamentalGroup_smul_eq_self`: on a simply connected space the action is trivial.
+* `TauCeti.one_mem_orbit_of_forall_mem_of_nullhomotopic`: a generalized loop staying in a set
+  whose inclusion is null-homotopic is freely homotopic to the constant loop.
 
 ## References
 
@@ -165,12 +167,14 @@ instance homotopyGroupMulDistribMulAction [Nonempty N] [DecidableEq N] :
     MulDistribMulAction (FundamentalGroup X x) (HomotopyGroup N X x) where
   __ := (inferInstance : MulAction (FundamentalGroup X x) (HomotopyGroup N X x))
   smul_mul γ a b := by
-    obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ.toPath
+    obtain ⟨γ⟩ := γ
+    obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ
     rw [fundamentalGroup_smul_eq_homotopyGroupMulEquivOfPath,
       fundamentalGroup_smul_eq_homotopyGroupMulEquivOfPath,
       fundamentalGroup_smul_eq_homotopyGroupMulEquivOfPath, map_mul]
   smul_one γ := by
-    obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ.toPath
+    obtain ⟨γ⟩ := γ
+    obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ
     rw [fundamentalGroup_smul_eq_homotopyGroupMulEquivOfPath, map_one]
 
 variable (N) in
@@ -190,6 +194,46 @@ theorem fundamentalGroupMulAut_apply [Nonempty N] [DecidableEq N] (γ : Fundamen
 
 /-! ### The action in dimension one -/
 
+/-- In dimension one, transporting a loop `f` along a path `p` gives a loop `r` with
+`f * p` homotopic to `p * r`, rel endpoints. -/
+private theorem genLoopEquivOfUnique_trans_homotopic_transport {x : X} (p : Path x x)
+    (f : Ω^ (Fin 1) X x) :
+    ((_root_.genLoopEquivOfUnique (Fin 1) f).trans p).Homotopic
+      (p.trans (_root_.genLoopEquivOfUnique (Fin 1) (GenLoop.transport p f))) := by
+  let q : Path x x := _root_.genLoopEquivOfUnique (Fin 1) f
+  let r : Path x x :=
+    _root_.genLoopEquivOfUnique (Fin 1) (GenLoop.transport p f)
+  let H := GenLoop.collarHomotopyAlong p f
+  let K : (q : C(I, X)).Homotopy (r : C(I, X)) :=
+    { toFun := fun ts => H.toHomotopy (ts.1, fun _ => ts.2)
+      continuous_toFun := H.toHomotopy.continuous.comp (by fun_prop)
+      map_zero_left := fun s => by
+        simp [q, genLoopEquivOfUnique]
+      map_one_left := fun s => by
+        simp [r, genLoopEquivOfUnique] }
+  have hK := Path.Homotopic.map_trans_evalAt K Path.id
+  let p₀ : Path x x := (K.evalAt 0).cast q.source.symm r.source.symm
+  let p₁ : Path x x := (K.evalAt 1).cast q.target.symm r.target.symm
+  have hp₀ : p₀ = p := by
+    ext t
+    exact H.map_boundary t (fun _ => 0) ⟨0, Or.inl rfl⟩
+  have hp₁ : p₁ = p := by
+    ext t
+    exact H.map_boundary t (fun _ => 1) ⟨0, Or.inr rfl⟩
+  have hKcast := hK.pathCast q.source.symm r.target.symm
+  have hq : (Path.id.map q.continuous).cast q.source.symm q.target.symm = q := by
+    ext t
+    rfl
+  have hr : (Path.id.map r.continuous).cast r.source.symm r.target.symm = r := by
+    ext t
+    rfl
+  rw [Path.cast_trans (Path.id.map q.continuous) (K.evalAt 1)
+    q.source.symm q.target.symm r.target.symm] at hKcast
+  rw [Path.cast_trans (K.evalAt 0) (Path.id.map r.continuous)
+    q.source.symm r.source.symm r.target.symm] at hKcast
+  rw [hq, hr] at hKcast
+  simpa only [p₀, p₁, hp₀, hp₁] using hKcast
+
 /-- **Under the canonical identification of the first homotopy group with the fundamental
 group, the fundamental-group action is conjugation.**
 
@@ -201,53 +245,25 @@ theorem pi1MulEquivFundamentalGroup_smul {γ : FundamentalGroup X x} {a : π_ 1 
     HomotopyGroup.pi1MulEquivFundamentalGroup (γ • a) =
       MulAut.conj γ (HomotopyGroup.pi1MulEquivFundamentalGroup a) := by
   rw [fundamentalGroup_smul_def]
-  obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ.toPath
+  obtain ⟨γ⟩ := γ
+  obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective γ
   induction a using Quotient.inductionOn with
   | h f =>
     rw [homotopyGroupTransportQuotient_mk, homotopyGroupTransport_mk]
-    let q : Path x x := _root_.genLoopEquivOfUnique (Fin 1) f
     let r : Path x x :=
       _root_.genLoopEquivOfUnique (Fin 1) (GenLoop.transport p f)
-    let H := GenLoop.collarHomotopyAlong p f
-    let K : (q : C(I, X)).Homotopy (r : C(I, X)) :=
-      { toFun := fun ts => H.toHomotopy (ts.1, fun _ => ts.2)
-        continuous_toFun := H.toHomotopy.continuous.comp (by fun_prop)
-        map_zero_left := fun s => by
-          simp [q, genLoopEquivOfUnique]
-        map_one_left := fun s => by
-          simp [r, genLoopEquivOfUnique] }
-    have hK := Path.Homotopic.map_trans_evalAt K Path.id
-    let p₀ : Path x x := (K.evalAt 0).cast q.source.symm r.source.symm
-    let p₁ : Path x x := (K.evalAt 1).cast q.target.symm r.target.symm
-    have hp₀ : p₀ = p := by
-      ext t
-      exact H.map_boundary t (fun _ => 0) ⟨0, Or.inl rfl⟩
-    have hp₁ : p₁ = p := by
-      ext t
-      exact H.map_boundary t (fun _ => 1) ⟨0, Or.inr rfl⟩
-    have hqr : (q.trans p).Homotopic (p.trans r) := by
-      have hKcast := hK.pathCast q.source.symm r.target.symm
-      have hq : (Path.id.map q.continuous).cast q.source.symm q.target.symm = q := by
-        ext t
-        rfl
-      have hr : (Path.id.map r.continuous).cast r.source.symm r.target.symm = r := by
-        ext t
-        rfl
-      rw [Path.cast_trans (Path.id.map q.continuous) (K.evalAt 1)
-        q.source.symm q.target.symm r.target.symm] at hKcast
-      rw [Path.cast_trans (K.evalAt 0) (Path.id.map r.continuous)
-        q.source.symm r.source.symm r.target.symm] at hKcast
-      rw [hq, hr] at hKcast
-      simpa only [p₀, p₁, hp₀, hp₁] using hKcast
+    have hqr := genLoopEquivOfUnique_trans_homotopic_transport p f
     -- Mathlib defines `pi1MulEquivFundamentalGroup` as a `Quotient.congr` along
     -- `genLoopEquivOfUnique` and supplies no lemma computing it on a class, so isolate that one
-    -- definitional step here; `FundamentalGroup.fromPath` is an `abbrev` for the identity on
+    -- definitional step here; `FundamentalGroup.fromPath` is an `abbrev` for `End.of` on
     -- `Path.Homotopic.Quotient`, so no other unfolding is involved.
     have hmk : ∀ g : Ω^ (Fin 1) X x, HomotopyGroup.pi1MulEquivFundamentalGroup ⟦g⟧ =
         FundamentalGroup.fromPath (.mk (_root_.genLoopEquivOfUnique (Fin 1) g)) := fun _ ↦ rfl
     rw [hmk, hmk, MulAut.conj_apply, FundamentalGroup.mul_def, FundamentalGroup.mul_def,
       FundamentalGroup.inv_def]
     simp only [← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_symm]
+    refine CategoryTheory.End.ext ?_
+    dsimp only [FundamentalGroup.fromPath, FundamentalGroup.fromArrow]
     rw [Path.Homotopic.Quotient.eq] at ⊢
     exact (Path.Homotopic.refl_trans r).symm |>.trans
       ((Path.Homotopic.symm_trans p).symm.hcomp (Path.Homotopic.refl r)) |>.trans
@@ -289,7 +305,7 @@ theorem map_fundamentalGroup_smul (F : C(X, Y)) (γ : FundamentalGroup X x)
       FundamentalGroup.map F x γ • _root_.HomotopyGroup.map F rfl a := by
   rw [fundamentalGroup_smul_def, fundamentalGroup_smul_def,
     map_homotopyGroupTransportQuotient]
-  rw [FundamentalGroup.map_apply]
+  rfl
 
 /-! ### The orbits of the action -/
 
@@ -349,5 +365,35 @@ interpretation with the distinguished point restricted to the path component of 
 theorem fundamentalGroup_smul_eq_self [Subsingleton (FundamentalGroup X x)]
     (γ : FundamentalGroup X x) (a : HomotopyGroup N X x) : γ • a = a := by
   rw [Subsingleton.elim γ 1, one_smul]
+
+/-- A generalized loop staying in a set whose inclusion is null-homotopic is freely homotopic to
+the constant loop: the identity class lies in the orbit of its class. Composing the loop with a
+null-homotopy of the inclusion moves the whole cube boundary along the single path traced by
+the base point. -/
+theorem one_mem_orbit_of_forall_mem_of_nullhomotopic [Nonempty N] [DecidableEq N] {s : Set X}
+    (hs : (ContinuousMap.mk (Subtype.val : s → X) continuous_subtype_val).Nullhomotopic)
+    (p : Ω^ N X x) (hp : ∀ z, p z ∈ s) :
+    (1 : HomotopyGroup N X x) ∈
+      MulAction.orbit (α := HomotopyGroup N X x) (FundamentalGroup X x) ⟦p⟧ := by
+  obtain ⟨c, ⟨G⟩⟩ := hs
+  have hx : x ∈ s := _root_.GenLoop.boundary p 0 zero_mem_cubeBoundary ▸ hp 0
+  let γ : Path x c := (G.evalAt ⟨x, hx⟩).cast rfl rfl
+  let Hforward : GenLoop.HomotopyAlong γ p (_root_.GenLoop.const : Ω^ N X c) := {
+    toFun := fun tz => G (tz.1, ⟨p tz.2, hp tz.2⟩)
+    continuous_toFun := by fun_prop
+    map_zero_left := fun z => G.apply_zero ⟨p z, hp z⟩
+    map_one_left := fun z => G.apply_one ⟨p z, hp z⟩
+    map_boundary := fun t z hz =>
+      congrArg (fun w => G (t, w)) (Subtype.ext (_root_.GenLoop.boundary p z hz)) }
+  let Hback : GenLoop.HomotopyAlong γ.symm (_root_.GenLoop.const : Ω^ N X c)
+      (_root_.GenLoop.const : Ω^ N X x) := {
+    toFun := fun tz => γ.symm tz.1
+    continuous_toFun := by fun_prop
+    map_zero_left := fun _ => γ.symm.source
+    map_one_left := fun _ => γ.symm.target
+    map_boundary := fun _ _ _ => rfl }
+  rw [_root_.HomotopyGroup.one_def]
+  exact (homotopyGroup_mem_orbit_iff_exists_homotopyAlong rfl rfl).2
+    ⟨γ.trans γ.symm, ⟨Hforward.trans Hback⟩⟩
 
 end TauCeti

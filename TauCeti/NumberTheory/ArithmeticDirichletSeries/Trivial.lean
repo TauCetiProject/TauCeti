@@ -30,12 +30,9 @@ isomorphism and using `Int.ideal_span_absNorm_eq_self` shows that there is exact
 each positive norm.  Thus the trivial ideal weight over `ℚ` regroups to the constant coefficient
 `1` at every positive index, as for the Riemann zeta function.
 
-## Roadmap role
-
-This is Layer **1.3**, the trivial specialization, of
-`TauCetiRoadmap/ArithmeticDirichletSeries/README.md`.  It completes Layer 1 without asserting the
-exact abscissa of convergence; that is Layer 5, proved in
-`TauCeti.abscissaOfAbsConv_normCoeff_one`.
+The exact abscissa of convergence of the trivial weight is not asserted here; it is
+`TauCeti.abscissaOfAbsConv_normCoeff_one` in
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Estimates.lean`.
 -/
 
 public section

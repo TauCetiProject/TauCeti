@@ -10,16 +10,33 @@ public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.BaseChang
 public import Mathlib.AlgebraicGeometry.Pullbacks
 
 /-!
-# Flat base change of projective spectra
+# Base change of projective spectra
 
-The projective spectrum of a graded algebra commutes with flat extension of its coefficient
+The projective spectrum of a graded algebra commutes with arbitrary extension of its coefficient
 ring. The comparison identifies the scheme fiber product, including its structure sheaf,
-rather than only its points. Over a field, every coefficient extension is flat. This permits
-projective linear transformations to be assembled into algebraic families.
+rather than only its points. This permits projective constructions to be transported through
+nonflat closed fibres as well as flat families.
 
 The construction combines `Proj.map` for coefficient inclusion, the homogeneous chart
 comparison `HomogeneousLocalization.Away.baseChangeEquiv`, and Mathlib's
 `pullbackSpecIso` and local criterion `Scheme.isPullback_of_openCover`.
+
+The base change need not be presented as the tensor product itself: a graded ring homomorphism
+`f : 𝒜 →+*ᵍ ℬ` over `R → S` exhibiting `B` as the base change of `A` (`IsBaseChange S f`) also
+gives a cartesian square of projective spectra (`Proj.isPullback_map_of_isBaseChange`). This is the
+form in which affine-local `Proj` constructions, such as the charts of a relative `Proj`, are
+compared over a localization of the base.
+
+## Main results
+
+* `AlgebraicGeometry.Proj.val_toSpecCoeff_appTop_apply`: the functions pulled back from the
+  coefficient ring `R` along `Proj A ⟶ Spec R` are the constants `r / 1`.
+* `AlgebraicGeometry.Proj.val_appLE_apply`: the same for functions on an affine open `U` of a
+  scheme, pulled back along `Proj ⟶ Spec Γ(X, U) ⟶ X`.
+* `AlgebraicGeometry.Proj.isPullback_baseChange`: `Proj` of `S ⊗[R] A` is the base change of
+  `Proj A` along `Spec S ⟶ Spec R`.
+* `AlgebraicGeometry.Proj.isPullback_map_of_isBaseChange`: the same for a graded ring homomorphism
+  exhibiting `B` as the base change of `A`.
 
 ## References
 
@@ -49,6 +66,33 @@ theorem toSpecCoeff_def :
     toSpecCoeff 𝒜 = toSpecZero 𝒜 ≫
       Spec.map (CommRingCat.ofHom (algebraMap R (𝒜 0))) := (rfl)
 
+/-- **Coefficients are the fractions `r / 1`.** The global function on `Proj A` pulled back from
+`r ∈ R` along `Proj A ⟶ Spec R` takes the value `r / 1` in the localization at every point. -/
+theorem val_toSpecCoeff_appTop_apply (r : R) (x : (⊤ : (Proj 𝒜).Opens)) :
+    (((toSpecCoeff 𝒜).appTop ((Scheme.ΓSpecIso (.of R)).inv r)).1 x).val =
+      Localization.mk (algebraMap R A r) 1 := by
+  rw [toSpecCoeff_def, Scheme.Hom.comp_appTop, ← ConcreteCategory.comp_apply, ← Category.assoc,
+    ← Scheme.ΓSpecIso_inv_naturality]
+  exact (val_toSpecZero_appTop_apply (algebraMap R (𝒜 0) r) x).trans
+    (congrArg (Localization.mk · 1) (SetLike.GradeZero.coe_algebraMap 𝒜 r))
+
+/-- A function `r` on an affine open `U` of a scheme `X`, pulled back along a morphism
+`g = Proj ℬ ⟶ Spec Γ(X, U) ⟶ X` to an open `V ≤ g⁻¹ U`, takes the value `r / 1` at every
+point. -/
+theorem val_appLE_apply {X : Scheme.{u}} {U : X.Opens} (hU : IsAffineOpen U) {B : Type u}
+    [CommRing B] [Algebra Γ(X, U) B] (ℬ : ℕ → Submodule Γ(X, U) B) [GradedAlgebra ℬ]
+    (g : Proj ℬ ⟶ X) (hg : g = toSpecCoeff ℬ ≫ hU.fromSpec) {V : (Proj ℬ).Opens}
+    (e : V ≤ g ⁻¹ᵁ U) (r : Γ(X, U)) (x : V) :
+    ((g.appLE U V e r).1 x).val = Localization.mk (algebraMap Γ(X, U) B r) 1 := by
+  subst hg
+  rw [Scheme.Hom.comp_appLE, hU.fromSpec_app_self, Category.assoc]
+  -- `toSpecCoeff ℬ` lands in `Spec (.of Γ(X, U))`, which is `Spec Γ(X, U)` only up to
+  -- unfolding `CommRingCat.of`, so the rewrite must see through it
+  erw [Scheme.Hom.map_appLE]
+  rw [Scheme.Hom.appLE, ← Category.assoc, ConcreteCategory.comp_apply]
+  -- restriction of functions on `Proj ℬ` keeps their values
+  exact val_toSpecCoeff_appTop_apply ℬ r ⟨x.1, trivial⟩
+
 /-- The coefficient morphism on a standard affine chart is the chart's coefficient map. -/
 @[reassoc (attr := simp)]
 theorem awayι_toSpecCoeff {f : A} {n : ℕ} (hf : f ∈ 𝒜 n) (hn : 0 < n) :
@@ -56,6 +100,17 @@ theorem awayι_toSpecCoeff {f : A} {n : ℕ} (hf : f ∈ 𝒜 n) (hn : 0 < n) :
       Spec.map (CommRingCat.ofHom (algebraMap R (Away 𝒜 f))) := by
   rw [toSpecCoeff, awayι_toSpecZero_assoc, ← Spec.map_comp,
     ← CommRingCat.ofHom_comp, ← algebraMap_eq_comp]
+
+/-- `Proj.map f` lies over the coefficient ring when `f` preserves the scalars in degree zero. -/
+@[reassoc]
+theorem map_toSpecCoeff {B : Type u} [CommRing B] [Algebra R B] {ℬ : ℕ → Submodule R B}
+    [GradedAlgebra ℬ] (f : 𝒜 →+*ᵍ ℬ)
+    (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f)
+    (hR : ∀ r : R, f.gradedZeroRingHom (algebraMap R (𝒜 0) r) = algebraMap R (ℬ 0) r) :
+    map f hf ≫ toSpecCoeff 𝒜 = toSpecCoeff ℬ := by
+  rw [toSpecCoeff, map_toSpecZero_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp, toSpecCoeff]
+  congr 3
+  exact RingHom.ext hR
 
 variable (S : Type u) [CommRing S] [Algebra R S]
 
@@ -107,8 +162,8 @@ theorem baseChangeProjection_toSpecCoeff :
   apply Subtype.ext
   simp [baseChangeMap, GradedRingHom.gradedZeroRingHom]
 
-/-- The affine standard-chart square of flat coefficient extension is cartesian. -/
-theorem isPullback_away_baseChange [Module.Flat R S] {f : A} {n : ℕ}
+/-- The affine standard-chart square of coefficient extension is cartesian. -/
+theorem isPullback_away_baseChange {f : A} {n : ℕ}
     (hf : f ∈ 𝒜 n) :
     IsPullback (Spec.map (CommRingCat.ofHom (Away.baseChangeMap 𝒜 S f)))
       (Spec.map (CommRingCat.ofHom
@@ -149,9 +204,9 @@ theorem isPullback_away_baseChange [Module.Flat R S] {f : A} {n : ℕ}
     intro r
     exact e.commutes r
 
-/-- Flat extension of coefficients makes the projective structural square cartesian. No
+/-- Extension of coefficients makes the projective structural square cartesian. No
 finite-generation hypothesis on the graded algebra is needed. -/
-theorem isPullback_baseChangeProjection [Module.Flat R S] :
+theorem isPullback_baseChange :
     IsPullback (baseChangeProjection 𝒜 S)
       (toSpecCoeff (fun n ↦ (𝒜 n).baseChange S))
       (toSpecCoeff 𝒜) (Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
@@ -190,24 +245,64 @@ theorem isPullback_baseChangeProjection [Module.Flat R S] :
   all_goals first | rfl |
     (convert heq_of_eq (awayι_toSpecCoeff 𝒜 hf n.pos) using 1 <;> rfl)
 
-/-- The canonical identification of the projective spectrum after flat coefficient extension
+/-- The canonical identification of the projective spectrum after arbitrary coefficient extension
 with the fiber product over the original coefficient spectrum. -/
-noncomputable def baseChangeIso [Module.Flat R S] :
+noncomputable def baseChangeIso :
     Proj (fun n ↦ (𝒜 n).baseChange S) ≅
       pullback (toSpecCoeff 𝒜) (Spec.map (CommRingCat.ofHom (algebraMap R S))) :=
-  (isPullback_baseChangeProjection 𝒜 S).isoPullback
+  (isPullback_baseChange 𝒜 S).isoPullback
 
 /-- The first projection of the comparison is the projective coefficient projection. -/
 @[reassoc (attr := simp)]
-theorem baseChangeIso_hom_fst [Module.Flat R S] :
+theorem baseChangeIso_hom_fst :
     (baseChangeIso 𝒜 S).hom ≫ pullback.fst _ _ = baseChangeProjection 𝒜 S :=
-  (isPullback_baseChangeProjection 𝒜 S).isoPullback_hom_fst
+  (isPullback_baseChange 𝒜 S).isoPullback_hom_fst
 
 /-- The second projection of the comparison is the extended coefficient structure map. -/
 @[reassoc (attr := simp)]
-theorem baseChangeIso_hom_snd [Module.Flat R S] :
+theorem baseChangeIso_hom_snd :
     (baseChangeIso 𝒜 S).hom ≫ pullback.snd _ _ =
       toSpecCoeff (fun n ↦ (𝒜 n).baseChange S) :=
-  (isPullback_baseChangeProjection 𝒜 S).isoPullback_hom_snd
+  (isPullback_baseChange 𝒜 S).isoPullback_hom_snd
+
+section IsBaseChange
+
+variable {S} {B : Type u} [CommRing B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
+  {ℬ : ℕ → Submodule S B} [GradedAlgebra ℬ] (f : 𝒜 →+*ᵍ ℬ)
+  (hfR : ∀ r : R, f (algebraMap R A r) = algebraMap R B r)
+  (hf : IsBaseChange S (AlgHom.mk f.toRingHom hfR).toLinearMap)
+
+/-- **`Proj` commutes with base change.** If a graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ` over the
+coefficient extension `R → S` exhibits `B` as the base change `S ⊗[R] A`, then the square
+
+`Proj ℬ ⟶ Proj 𝒜`, `Spec S ⟶ Spec R`
+
+formed by `Proj.map f` and the coefficient projections is cartesian. This is
+`Proj.isPullback_baseChange` for an arbitrary presentation of the base change. -/
+theorem isPullback_map_of_isBaseChange :
+    IsPullback (map f (HomogeneousIdeal.irrelevant_le_map_of_isBaseChange 𝒜 f hfR hf))
+      (toSpecCoeff ℬ) (toSpecCoeff 𝒜) (Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
+  have hfg := baseChangeLift_baseChangeLiftInv 𝒜 f hfR hf
+  have hgf := baseChangeLiftInv_baseChangeLift 𝒜 f hfR hf
+  have hmap : map f (HomogeneousIdeal.irrelevant_le_map_of_isBaseChange 𝒜 f hfR hf) =
+      (mapIso _ _ hfg hgf).hom ≫ baseChangeProjection 𝒜 S := by
+    rw [map_congr (baseChangeLift_comp_baseChangeMap 𝒜 f hfR).symm _
+      (HomogeneousIdeal.irrelevant_le_map_comp
+        (HomogeneousIdeal.irrelevant_le_map_baseChangeMap S 𝒜)
+        (HomogeneousIdeal.irrelevant_le_map_of_surjective _ hfg.surjective)),
+      map_comp, mapIso_hom, baseChangeProjection]
+  have hcoeff : (mapIso _ _ hfg hgf).hom ≫ toSpecCoeff (fun n ↦ (𝒜 n).baseChange S) =
+      toSpecCoeff ℬ := by
+    rw [mapIso_hom]
+    exact map_toSpecCoeff _ _ _ fun r ↦ Subtype.ext (by
+      simp [Algebra.smul_def])
+  refine (isPullback_baseChange 𝒜 S).of_iso (mapIso _ _ hfg hgf).symm (.refl _) (.refl _)
+    (.refl _) ?_ ?_ ?_ ?_
+  · simp [hmap, -mapIso_hom, -mapIso_inv]
+  · simp [← hcoeff, -mapIso_hom, -mapIso_inv]
+  · simp
+  · simp
+
+end IsBaseChange
 
 end AlgebraicGeometry.Proj

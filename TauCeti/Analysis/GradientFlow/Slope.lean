@@ -37,6 +37,8 @@ off the effective domain carries no meaning.
 
 ## Main results
 
+* `Isometry.descendingSlope_comp`: an isometry preserves the slope where its range contains a
+  neighbourhood, in particular when restricting an energy to an open subset.
 * `TauCeti.descendingSlope_le_of_eventually_le`: an upper bound for the slope from a local bound
   on the decrease of `φ`.
 * `TauCeti.le_descendingSlope_of_tendsto`: a lower bound for the slope from the rates of decrease
@@ -80,6 +82,18 @@ def descendingSlope (φ : X → EReal) (x : X) : ℝ≥0∞ :=
 theorem descendingSlope_def (φ : X → EReal) (x : X) :
     descendingSlope φ x = limsup (fun y ↦ (φ x - φ y).toENNReal / edist x y) (𝓝[≠] x) :=
   (rfl)
+
+/-- Pulling an energy back along an isometry preserves its descending slope at a point where the
+range of the isometry contains a neighbourhood. In particular, restricting an energy to an open
+subset leaves the descending slope unchanged there. -/
+theorem _root_.Isometry.descendingSlope_comp {Y : Type*} [EMetricSpace Y] {f : X → Y}
+    (hf : Isometry f) (φ : Y → EReal) (x : X) (hx : range f ∈ 𝓝 (f x)) :
+    descendingSlope (φ ∘ f) x = descendingSlope φ (f x) := by
+  have hmap := hf.isEmbedding.map_nhdsWithin_eq ({x}ᶜ) x
+  rw [image_compl_eq_range_sdiff_image hf.injective, image_singleton, sdiff_eq,
+    nhdsWithin_inter_of_mem (nhdsWithin_le_nhds hx)] at hmap
+  rw [descendingSlope_def, descendingSlope_def, ← hmap, ← limsup_comp]
+  simp only [Function.comp_def, hf.edist_eq]
 
 /-- For a real-valued function, the positive part in the descending slope is
 `ENNReal.ofReal (f x - f y)`. -/
@@ -214,7 +228,7 @@ private theorem descendingSlope_le_enorm_of_hasFDerivAt (hf : HasFDerivAt f f' x
     calc f x - f y = -(f y - f x - f' (y - x)) + -f' (y - x) := by ring
       _ ≤ ε * ‖y - x‖ + ‖f'‖ * ‖y - x‖ := add_le_add h₂ h₁
       _ = (‖f'‖ + ε) * ‖y - x‖ := by ring
-  rw [← EReal.coe_sub, EReal.real_coe_toENNReal, edist_comm, edist_eq_enorm_sub]
+  rw [← EReal.coe_sub, EReal.real_coe_toENNReal, edist_comm, eDist_eq_eNorm_sub]
   simpa [ENNReal.ofReal_mul (add_nonneg (norm_nonneg f') ε.coe_nonneg), ENNReal.ofReal_add,
     ofReal_norm] using ENNReal.ofReal_le_ofReal key
 
@@ -244,8 +258,9 @@ private theorem enorm_le_descendingSlope_of_hasFDerivAt (hf : HasFDerivAt f f' x
   have hlim : Tendsto (fun t : ℝ ↦ (f x - f (x - t • w)) / (t * ‖w‖)) (𝓝[>] 0)
       (𝓝 (f' w / ‖w‖)) := by
     have := ((hasDerivAt_iff_tendsto_slope.1 hderiv).mono_left
-      (nhdsWithin_mono _ fun t (ht : 0 < t) ↦ ht.ne')).neg.div_const ‖w‖
-    refine (this.congr' (eventually_nhdsWithin_of_forall fun t (_ : 0 < t) ↦ ?_)).trans
+      (nhdsWithin_mono _ fun t ht ↦
+        Set.mem_compl_singleton_iff.2 (Set.mem_Ioi.1 ht).ne')).neg.div_const ‖w‖
+    refine (this.congr' (eventually_nhdsWithin_of_forall fun t _ ↦ ?_)).trans
       (by rw [map_neg, neg_neg])
     simp only [slope_def_field, zero_smul, sub_zero, ← neg_div, neg_sub, div_div]
   have hmap : Tendsto (fun t : ℝ ↦ x - t • w) (𝓝[>] 0) (𝓝[≠] x) := by
@@ -258,7 +273,7 @@ private theorem enorm_le_descendingSlope_of_hasFDerivAt (hf : HasFDerivAt f f' x
       (𝓝[>] 0) (𝓝 (ENNReal.ofReal (f' w / ‖w‖))) := by
     refine ((ENNReal.continuous_ofReal.tendsto _).comp hlim).congr'
       (eventually_nhdsWithin_of_forall fun t (ht : 0 < t) ↦ ?_)
-    simp [edist_eq_enorm_sub, ← ofReal_norm, norm_smul, abs_of_pos ht,
+    simp [eDist_eq_eNorm_sub, ← ofReal_norm, norm_smul, abs_of_pos ht,
       ENNReal.ofReal_div_of_pos (mul_pos ht hwpos)]
   calc (r : ℝ≥0∞) = ENNReal.ofReal r := (ENNReal.ofReal_coe_nnreal).symm
     _ ≤ ENNReal.ofReal (f' w / ‖w‖) := by
@@ -284,7 +299,7 @@ is `|D|`. -/
 theorem _root_.HasDerivAt.descendingSlope_eq {g : ℝ → ℝ} {D t : ℝ} (hg : HasDerivAt g D t) :
     descendingSlope (fun u ↦ (g u : EReal)) t = ‖D‖ₑ := by
   rw [hg.hasFDerivAt.descendingSlope_eq]
-  simp only [enorm_eq_nnnorm, ContinuousLinearMap.nnnorm_toSpanSingleton]
+  simp only [eNorm_eq_nnNorm, ContinuousLinearMap.nnNorm_toSpanSingleton]
 
 end NormedSpace
 

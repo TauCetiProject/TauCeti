@@ -1,13 +1,14 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High, OpenAI GPT-6
 -/
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
+public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 
 /-!
 # Principal angles between two subspaces
@@ -17,30 +18,53 @@ the relative position of `U` and `V` is recorded by the two cross-projections
 
 * the *cosine map* `P_V P_U`, which projects vectors of `U` onto `V`, and
 * the *directed sine map* `P_{Vᗮ} P_U`, which keeps the component of a vector of `U` orthogonal
-  to `V`.
+  to `V`,
 
-In finite dimension their singular values are the *principal cosines* and the *principal sines*
-of `U` and `V`, each listed in nonincreasing order and padded with zeros, and the *principal
-angles* are the arcsines of the principal sines, so they lie in `[0, π/2]`. These are the
-quantities in which perturbation bounds for spectral subspaces (the Davis–Kahan `sin Θ`
-theorems) are stated; the operator norm of the directed sine map is the directed gap
-`Submodule.directedProjectionGap U V`.
+together with the *double-angle operator* `2 P_{Uᗮ} P_V P_U`, the off-diagonal `U → Uᗮ` block of
+`2 P_V`, in which `sin 2Θ` bounds are stated.
+
+In finite dimension the singular values of the cosine map and of the directed sine map are the
+*principal cosines* and the *principal sines* of `U` and `V`, each listed in nonincreasing order
+and padded with zeros, and the *principal angles* are the arcsines of the principal sines, so they
+lie in `[0, π/2]`. These are the quantities in which perturbation bounds for spectral subspaces
+(the Davis–Kahan `sin Θ` theorems) are stated; the operator norm of the directed sine map is the
+directed gap `Submodule.directedProjectionGap U V`.
+
+The map `Submodule.sinThetaEmbedding Z U` restricts the directed sine projection to a
+subspace `Z`, so it has source `Z` rather than the ambient space. Its singular values are
+the directed principal sines, including the zero tail.
 
 The principal cosines are symmetric in `U` and `V`. The principal sines are symmetric only when
 `U` and `V` have the same finite dimension (`Submodule.principalSines_comm`), the main result of
 this file. Without the dimension hypothesis the statement fails: for a line `U` inside a plane
 `V`, all principal sines of `U` and `V` vanish but one principal sine of `V` and `U` is `1`.
 
+When `U` is the range of an isometry `X : F →L[𝕜] E`, for instance the trial map of the
+Rayleigh–Ritz procedure, the angles are read off `X` directly: the *sine embedding* `P_{Vᗮ} X` and
+the *cosine embedding* `P_V X` have as singular values the principal sines and cosines of `U` and
+`V`, and the operator norm of the sine embedding is the directed gap from `U` to `V`.
+
 ## Main definitions
 
 * `Submodule.cosThetaMap U V`: the cosine map `P_V P_U`.
 * `Submodule.sinThetaMap U V`: the directed sine map `P_{Vᗮ} P_U`.
+* `Submodule.sinThetaEmbedding Z U`: the projection onto `Uᗮ` restricted to `Z`,
+  viewed as a continuous linear map from `Z` into the ambient space.
+* `Submodule.sinTwoAngleOperator U V`: the double-angle operator `2 P_{Uᗮ} P_V P_U`.
 * `Submodule.principalCosines U V`, `Submodule.principalSines U V`: the singular values of the
   cosine map and of the directed sine map.
 * `Submodule.principalAngles U V`: the arcsines of the principal sines.
 
 ## Main results
 
+* `Submodule.sinThetaEmbedding_apply`, `Submodule.singularValues_sinThetaEmbedding`:
+  the sine embedding acts by projection onto `Uᗮ` and has directed principal sines
+  as its singular values, without an equal-dimension assumption.
+* `Submodule.principalSines_range_eq_singularValues`,
+  `Submodule.principalCosines_range_eq_singularValues`: for an isometry `X`, the principal sines
+  and cosines of `range X` and `V` are the singular values of the sine and cosine embeddings.
+* `Submodule.norm_starProjection_orthogonal_comp`: the operator norm of the sine embedding of an
+  isometry is the directed gap.
 * `Submodule.principalCosines_comm`: the principal cosines are symmetric in `U` and `V`.
 * `Submodule.principalSines_comm`, `Submodule.principalAngles_comm`: for subspaces of the same
   dimension, the principal sines and the principal angles are symmetric in `U` and `V`.
@@ -50,6 +74,21 @@ this file. Without the dimension hypothesis the statement fails: for a line `U` 
 * `Submodule.principalCosines_eq_zero_iff`: all principal cosines vanish exactly when `U ⟂ V`.
 * `Submodule.sin_principalAngles`: the sine of the `i`-th principal angle is the `i`-th principal
   sine.
+* `Submodule.principalSines_zero`: the largest principal sine is the directed gap `‖P_{Vᗮ} P_U‖`;
+  hence `Submodule.forall_principalSines_lt_iff`: all principal sines are below `c` exactly when
+  the directed gap is.
+* `Submodule.ncard_ofPred_principalAngles_eq_pi_div_two`: the number of principal angles from `U`
+  to `V` equal to `π/2` is `dim (U ⊓ Vᗮ)`; hence
+  `Submodule.forall_principalAngles_lt_pi_div_two_iff`: all of them are strictly below `π/2`
+  exactly when no nonzero vector of `U` is orthogonal to `V`.
+* `Submodule.directedProjectionGap_lt_one_iff`: the directed gap from `U` to `V` is less than `1`
+  exactly when no nonzero vector of `U` is orthogonal to `V`.
+* `Submodule.forall_principalAngles_lt_iff`: all principal angles are below a threshold
+  `θ ∈ [-π/2, π/2]` exactly when the directed gap is less than `sin θ`; in particular
+  (`Submodule.forall_principalAngles_lt_pi_div_four_iff`) they are below `π/4` exactly when the
+  directed gap is less than `√2/2`.
+* `Submodule.norm_sinTwoAngleOperator_le_one`: the double-angle operator is a contraction, and
+  `Submodule.sinTwoAngleOperator_eq_zero_iff`: it vanishes exactly when `P_U` and `P_V` commute.
 
 ## References
 
@@ -130,11 +169,123 @@ theorem sinThetaMap_eq_zero_iff : U.sinThetaMap V = 0 ↔ U ≤ V := by
 theorem sinThetaMap_self : U.sinThetaMap U = 0 :=
   (sinThetaMap_eq_zero_iff U U).2 le_rfl
 
+/-! ### The double-angle operator -/
+
+/-- The double-angle operator `2 P_{Uᗮ} P_V P_U` of two subspaces with orthogonal projections: the
+off-diagonal `U → Uᗮ` block of `2 P_V` relative to `E = U ⊕ Uᗮ`. It is the operator in which
+`sin 2Θ` perturbation bounds for spectral subspaces are stated. -/
+def sinTwoAngleOperator : E →L[𝕜] E :=
+  (2 : 𝕜) • (Uᗮ.starProjection ∘L V.starProjection ∘L U.starProjection)
+
+theorem sinTwoAngleOperator_def :
+    U.sinTwoAngleOperator V =
+      (2 : 𝕜) • (Uᗮ.starProjection ∘L V.starProjection ∘L U.starProjection) :=
+  (rfl)
+
+@[simp]
+theorem sinTwoAngleOperator_apply (x : E) :
+    U.sinTwoAngleOperator V x =
+      (2 : 𝕜) • Uᗮ.starProjection (V.starProjection (U.starProjection x)) :=
+  (rfl)
+
+/-- The double-angle operator is twice the directed sine map from `V` to `U` composed with the
+cosine map from `U` to `V`: `2 P_{Uᗮ} P_V P_U = 2 (P_{Uᗮ} P_V) (P_V P_U)`. -/
+theorem sinTwoAngleOperator_eq_smul_sinThetaMap_comp_cosThetaMap :
+    U.sinTwoAngleOperator V = (2 : 𝕜) • (V.sinThetaMap U ∘L U.cosThetaMap V) := by
+  ext x
+  simp [starProjection_eq_self_iff.2 (V.starProjection_apply_mem _)]
+
+/-- **The double-angle operator is a contraction**: `‖2 P_{Uᗮ} P_V P_U‖ ≤ 1`, the operator form of
+`sin 2θ ≤ 1`. -/
+theorem norm_sinTwoAngleOperator_le_one : ‖U.sinTwoAngleOperator V‖ ≤ 1 := by
+  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ ?_
+  set u := U.starProjection x
+  set v := V.starProjection u
+  -- `‖v‖² = ⟪P_V u, u⟫ = ⟪P_U v, u⟫ ≤ ‖P_U v‖ ‖u‖` since `u ∈ U`.
+  have hv : ‖v‖ ^ 2 ≤ ‖U.starProjection v‖ * ‖u‖ := by
+    have h : ⟪v, v⟫_𝕜 = ⟪U.starProjection v, u⟫_𝕜 := by
+      calc ⟪v, v⟫_𝕜 = ⟪V.starProjection v, u⟫_𝕜 :=
+            (inner_starProjection_left_eq_right V _ _).symm
+        _ = ⟪v, U.starProjection u⟫_𝕜 := by
+            rw [starProjection_eq_self_iff.2 (V.starProjection_apply_mem u),
+              starProjection_eq_self_iff.2 (U.starProjection_apply_mem x)]
+        _ = ⟪U.starProjection v, u⟫_𝕜 := (inner_starProjection_left_eq_right U _ _).symm
+    rw [@norm_sq_eq_re_inner 𝕜, h]
+    exact re_inner_le_norm _ _
+  -- With Pythagoras `‖v‖² = ‖P_U v‖² + ‖P_{Uᗮ} v‖²`, this gives `4 ‖P_{Uᗮ} v‖² ≤ ‖u‖²`.
+  have hpy := norm_sq_eq_add_norm_sq_starProjection v U
+  have hu : ‖u‖ ≤ ‖x‖ := U.norm_starProjection_apply_le x
+  have hsq : (2 * ‖Uᗮ.starProjection v‖) ^ 2 ≤ ‖u‖ ^ 2 := by
+    nlinarith [sq_nonneg (‖u‖ - 2 * ‖U.starProjection v‖)]
+  have h2 : 2 * ‖Uᗮ.starProjection v‖ ≤ ‖u‖ :=
+    (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).1 hsq
+  rw [sinTwoAngleOperator_apply, norm_smul, RCLike.norm_ofNat, one_mul]
+  exact h2.trans hu
+
+/-- The double-angle operator vanishes when `U ≤ V`. -/
+theorem sinTwoAngleOperator_eq_zero_of_le (h : U ≤ V) : U.sinTwoAngleOperator V = 0 := by
+  have hVU : V.starProjection ∘L U.starProjection = U.starProjection := by
+    ext x
+    exact starProjection_eq_self_iff.2 (h (U.starProjection_apply_mem x))
+  rw [sinTwoAngleOperator_def, hVU,
+    (isOrtho_orthogonal_left U).starProjection_comp_starProjection, smul_zero]
+
+/-- The double-angle operator vanishes when `U` and `V` are orthogonal. -/
+theorem sinTwoAngleOperator_eq_zero_of_isOrtho (h : U ⟂ V) : U.sinTwoAngleOperator V = 0 := by
+  rw [sinTwoAngleOperator_eq_smul_sinThetaMap_comp_cosThetaMap,
+    (cosThetaMap_eq_zero_iff U V).2 h, ContinuousLinearMap.comp_zero, smul_zero]
+
+@[simp]
+theorem sinTwoAngleOperator_self : U.sinTwoAngleOperator U = 0 :=
+  sinTwoAngleOperator_eq_zero_of_le U U le_rfl
+
+/-- The double-angle operator vanishes exactly when the orthogonal projections onto `U` and `V`
+commute. -/
+@[simp]
+theorem sinTwoAngleOperator_eq_zero_iff :
+    U.sinTwoAngleOperator V = 0 ↔ Commute U.starProjection V.starProjection := by
+  rw [commute_iff_eq, ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def]
+  constructor
+  · intro h
+    -- `P_{Uᗮ} P_V P_U = 0` says that `P_V P_U` takes values in `U`, so `P_U P_V P_U = P_V P_U`.
+    have hU (x : E) : U.starProjection (V.starProjection (U.starProjection x)) =
+        V.starProjection (U.starProjection x) := by
+      have hx := congrArg (· x) h
+      simp only [sinTwoAngleOperator_apply, zero_apply, smul_eq_zero,
+        two_ne_zero, false_or, starProjection_apply_eq_zero_iff, orthogonal_orthogonal] at hx
+      exact starProjection_eq_self_iff.2 hx
+    -- Taking adjoints, `P_U P_V = P_U P_V P_U = P_V P_U`.
+    refine ContinuousLinearMap.ext fun y ↦ ext_inner_left 𝕜 fun z ↦ ?_
+    calc ⟪z, U.starProjection (V.starProjection y)⟫_𝕜
+        = ⟪V.starProjection (U.starProjection z), y⟫_𝕜 := by
+          rw [← inner_starProjection_left_eq_right U, inner_starProjection_left_eq_right V]
+      _ = ⟪U.starProjection (V.starProjection (U.starProjection z)), y⟫_𝕜 := by rw [hU]
+      _ = ⟪z, U.starProjection (V.starProjection (U.starProjection y))⟫_𝕜 := by
+          rw [inner_starProjection_left_eq_right U, inner_starProjection_left_eq_right V,
+            inner_starProjection_left_eq_right U]
+      _ = ⟪z, V.starProjection (U.starProjection y)⟫_𝕜 := by rw [hU]
+  · intro h
+    rw [sinTwoAngleOperator_def, ← h, ← ContinuousLinearMap.comp_assoc,
+      (isOrtho_orthogonal_left U).starProjection_comp_starProjection,
+      ContinuousLinearMap.zero_comp, smul_zero]
+
+end Submodule
+
 /-! ### Principal cosines, sines and angles -/
+
+namespace Submodule
+
+open Module Module.End
+open scoped InnerProductSpace
 
 section FiniteDimensional
 
-variable [FiniteDimensional 𝕜 E]
+/-! In a finite-dimensional space every submodule has an orthogonal projection
+(`Submodule.HasOrthogonalProjection.ofCompleteSpace`), so the principal cosines, sines and angles
+take their two subspaces without that hypothesis. -/
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] (U V : Submodule 𝕜 E)
 
 /-- The principal cosines of `U` and `V`: the singular values of the cosine map `P_V P_U`, in
 nonincreasing order and padded with zeros. -/
@@ -202,6 +353,18 @@ theorem principalAngles_le_pi_div_two (i : ℕ) : U.principalAngles V i ≤ Real
 theorem sin_principalAngles (i : ℕ) : Real.sin (U.principalAngles V i) = U.principalSines V i := by
   rw [principalAngles_apply, Real.sin_arcsin (by linarith [principalSines_nonneg U V i])
     (principalSines_le_one U V i)]
+
+/-- The largest principal sine from `U` to `V` is the directed gap `‖P_{Vᗮ} P_U‖`. -/
+theorem principalSines_zero : U.principalSines V 0 = U.directedProjectionGap V := by
+  rw [principalSines_def, ← ContinuousLinearMap.singularValue_eq_linearMap_singularValues,
+    ContinuousLinearMap.singularValue_zero, coe_nnNorm, norm_sinThetaMap]
+
+/-- All principal sines from `U` to `V` are below `c` exactly when the largest one, the directed
+gap `‖P_{Vᗮ} P_U‖`, is. -/
+theorem forall_principalSines_lt_iff {c : ℝ} :
+    (∀ i, U.principalSines V i < c) ↔ U.directedProjectionGap V < c := by
+  rw [← principalSines_zero]
+  exact ⟨fun h ↦ h 0, fun h i ↦ (principalSines_antitone U V (Nat.zero_le i)).trans_lt h⟩
 
 /-- There are at most `dim U` nonzero principal cosines. -/
 theorem principalCosines_of_finrank_le {i : ℕ} (hi : finrank 𝕜 U ≤ i) :
@@ -354,6 +517,295 @@ theorem principalAngles_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
     U.principalAngles V = V.principalAngles U := by
   rw [principalAngles, principalAngles, principalSines_comm U V h]
 
+/-! ### Right principal angles -/
+
+/-- **Counting right principal angles.** The number of principal angles from `U` to `V` equal to
+`π/2` is the dimension of `U ⊓ Vᗮ`, the subspace of vectors of `U` orthogonal to `V`. -/
+theorem ncard_ofPred_principalAngles_eq_pi_div_two :
+    {i | U.principalAngles V i = Real.pi / 2}.ncard = finrank 𝕜 ↥(U ⊓ Vᗮ) := by
+  have hset : {i | U.principalAngles V i = Real.pi / 2} = {i | U.principalSines V i = 1} := by
+    ext i
+    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, principalAngles_apply, Real.arcsin_eq_pi_div_two]
+    exact ⟨fun h ↦ le_antisymm (principalSines_le_one U V i) h, ge_of_eq⟩
+  rw [hset, principalSines_def, LinearMap.ncard_ofPred_singularValues_eq _ one_pos, one_pow,
+    RCLike.ofReal_one, eigenspace_sinThetaMap_one]
+
+/-- All principal angles from `U` to `V` are strictly below `π/2` exactly when no nonzero vector
+of `U` is orthogonal to `V`. -/
+theorem forall_principalAngles_lt_pi_div_two_iff :
+    (∀ i, U.principalAngles V i < Real.pi / 2) ↔ Disjoint U Vᗮ := by
+  have hfin : {i | U.principalAngles V i = Real.pi / 2}.Finite :=
+    (U.principalAngles V).hasFiniteSupport.subset fun i (hi : _ = _) ↦ by
+      rw [Function.mem_support, hi]
+      positivity
+  rw [disjoint_iff, ← Submodule.finrank_eq_zero, ← ncard_ofPred_principalAngles_eq_pi_div_two,
+    Set.ncard_eq_zero hfin, Set.eq_empty_iff_forall_notMem]
+  exact forall_congr' fun i ↦ (principalAngles_le_pi_div_two U V i).lt_iff_ne
+
+/-- For a threshold `θ ∈ [-π/2, π/2]`, all principal angles from `U` to `V` are strictly below
+`θ` exactly when the directed gap `‖P_{Vᗮ} P_U‖`, the largest principal sine, is less than
+`sin θ`. -/
+theorem forall_principalAngles_lt_iff {θ : ℝ} (hθ : θ ∈ Set.Icc (-(Real.pi / 2)) (Real.pi / 2)) :
+    (∀ i, U.principalAngles V i < θ) ↔ U.directedProjectionGap V < Real.sin θ := by
+  have hs (i : ℕ) : U.principalSines V i ∈ Set.Icc (-1 : ℝ) 1 :=
+    ⟨by linarith [principalSines_nonneg U V i], principalSines_le_one U V i⟩
+  simp only [principalAngles_apply, Real.arcsin_lt_iff_lt_sin (hs _) hθ]
+  exact forall_principalSines_lt_iff U V
+
+/-- All principal angles from `U` to `V` are strictly below `π/2` exactly when the directed gap
+`‖P_{Vᗮ} P_U‖`, the largest principal sine, is less than `1`. -/
+theorem forall_principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one :
+    (∀ i, U.principalAngles V i < Real.pi / 2) ↔ U.directedProjectionGap V < 1 := by
+  rw [forall_principalAngles_lt_iff U V ⟨by linarith [Real.pi_pos], le_rfl⟩, Real.sin_pi_div_two]
+
+/-- In finite dimension, the directed gap `‖P_{Vᗮ} P_U‖` from `U` to `V` is less than `1` exactly
+when no nonzero vector of `U` is orthogonal to `V`. -/
+theorem directedProjectionGap_lt_one_iff : U.directedProjectionGap V < 1 ↔ Disjoint U Vᗮ := by
+  rw [← forall_principalAngles_lt_pi_div_two_iff_directedProjectionGap_lt_one,
+    forall_principalAngles_lt_pi_div_two_iff]
+
+/-- All principal angles from `U` to `V` are strictly below `π/4` exactly when the directed gap
+`‖P_{Vᗮ} P_U‖` is less than `√2/2`. -/
+theorem forall_principalAngles_lt_pi_div_four_iff :
+    (∀ i, U.principalAngles V i < Real.pi / 4) ↔ U.directedProjectionGap V < √2 / 2 := by
+  rw [forall_principalAngles_lt_iff U V ⟨by linarith [Real.pi_pos], by linarith [Real.pi_pos]⟩,
+    Real.sin_pi_div_four]
+
 end FiniteDimensional
+
+end Submodule
+
+/-! ### Angles of the range of an isometry -/
+
+section Isometry
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {X : F →L[𝕜] E}
+
+namespace Submodule
+
+open ContinuousLinearMap
+
+variable (V : Submodule 𝕜 E) [V.HasOrthogonalProjection]
+
+/-- The operator norm of the sine embedding `P_{Vᗮ} X` of an isometry `X` is the directed gap
+from `range X` to `V`. -/
+theorem norm_starProjection_orthogonal_comp (hX : Isometry X) [X.range.HasOrthogonalProjection] :
+    ‖Vᗮ.starProjection ∘L X‖ = X.range.directedProjectionGap V := by
+  have hXn : ‖X‖ ≤ 1 := X.opNorm_le_bound zero_le_one fun x ↦ by
+    rw [AddMonoidHomClass.isometry_iff_norm _ |>.1 hX, one_mul]
+  rw [← norm_sinThetaMap]
+  refine le_antisymm ?_ ?_
+  · -- `P_{Vᗮ} X = (P_{Vᗮ} P_Z) X` and `X` is a contraction.
+    calc ‖Vᗮ.starProjection ∘L X‖ = ‖X.range.sinThetaMap V ∘L X‖ := by
+          rw [sinThetaMap_def, comp_assoc, starProjection_range_comp]
+      _ ≤ ‖X.range.sinThetaMap V‖ :=
+          (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hXn)
+  · -- `P_Z y = X x` for some `x` with `‖x‖ = ‖P_Z y‖ ≤ ‖y‖`, since `X` is an isometry.
+    refine opNorm_le_bound _ (norm_nonneg _) fun y ↦ ?_
+    obtain ⟨x, hx⟩ := LinearMap.mem_range.1 (X.range.starProjection_apply_mem y)
+    rw [ContinuousLinearMap.coe_coe] at hx
+    have hxy : ‖x‖ ≤ ‖y‖ := by
+      rw [← (AddMonoidHomClass.isometry_iff_norm _).1 hX x, hx]
+      exact X.range.norm_starProjection_apply_le y
+    calc ‖X.range.sinThetaMap V y‖ = ‖(Vᗮ.starProjection ∘L X) x‖ := by
+          rw [sinThetaMap_def, comp_apply, comp_apply, hx]
+      _ ≤ ‖Vᗮ.starProjection ∘L X‖ * ‖x‖ := le_opNorm _ _
+      _ ≤ ‖Vᗮ.starProjection ∘L X‖ * ‖y‖ := by gcongr
+
+end Submodule
+
+end Isometry
+
+section IsometryFiniteDimensional
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] {X : F →L[𝕜] E}
+
+namespace Submodule
+
+open ContinuousLinearMap
+
+variable (V : Submodule 𝕜 E)
+
+/-- The principal cosines of the range of an isometry `X` and of `V` are the singular values of
+the cosine embedding `P_V X`. -/
+theorem principalCosines_range_eq_singularValues (hX : Isometry X) :
+    X.range.principalCosines V =
+      ((V.starProjection ∘L X : F →L[𝕜] E) : F →ₗ[𝕜] E).singularValues := by
+  rw [principalCosines_def, cosThetaMap_def, singularValues_comp_starProjection_range hX]
+
+/-- The principal sines of the range of an isometry `X` and of `V` are the singular values of the
+sine embedding `P_{Vᗮ} X`. -/
+theorem principalSines_range_eq_singularValues (hX : Isometry X) :
+    X.range.principalSines V =
+      ((Vᗮ.starProjection ∘L X : F →L[𝕜] E) : F →ₗ[𝕜] E).singularValues := by
+  rw [principalSines_def, sinThetaMap_def, singularValues_comp_starProjection_range hX]
+
+end Submodule
+
+end IsometryFiniteDimensional
+
+/-! ### Directed sine embedding of a subspace -/
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  (Z U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
+
+/-- The directed sine embedding from `Z` to `U`: orthogonally project `Z` onto `Uᗮ`,
+viewed as a map into the ambient space. -/
+def sinThetaEmbedding : Z →L[𝕜] E :=
+  Uᗮ.starProjection ∘L Z.subtypeL
+
+/-- The directed sine embedding is orthogonal projection onto `Uᗮ`
+composed with the inclusion of `Z` into `E`. -/
+theorem sinThetaEmbedding_def :
+    Z.sinThetaEmbedding U = Uᗮ.starProjection ∘L Z.subtypeL := (rfl)
+
+/-- The directed sine embedding acts by projection onto `Uᗮ`. -/
+@[simp]
+theorem sinThetaEmbedding_apply (x : Z) :
+    Z.sinThetaEmbedding U x = Uᗮ.starProjection (x : E) := by
+  simp only [sinThetaEmbedding, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
+
+end Submodule
+
+namespace Submodule
+
+open Module
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] (Z U : Submodule 𝕜 E)
+
+/-- The singular values of the directed sine embedding are the principal sines
+from `Z` to `U`, including the zero tail. No equality of subspace ranks is required. -/
+theorem singularValues_sinThetaEmbedding :
+    (Z.sinThetaEmbedding U : Z →ₗ[𝕜] E).singularValues = Z.principalSines U := by
+  simpa only [sinThetaEmbedding, toLinearMap_subtypeL, range_subtype] using
+    (U.principalSines_range_eq_singularValues
+      (X := Z.subtypeL) Z.subtypeₗᵢ.isometry).symm
+
+end Submodule
+
+namespace Submodule
+
+open Module
+open scoped InnerProductSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- The ambient adjoint of the trial map acts on a sine left singular vector
+by the same singular relation, including at a zero singular value.
+
+Adapted from the Kitware DKPS formalization,
+`DavisKahan/FiniteDimensional/TanTheta/RitzResidual.lean` (Jon Crall and GPT 5.6 High;
+Apache-2.0). -/
+theorem adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+    (U : Submodule 𝕜 E) (X : F →ₗ[𝕜] E) {i : Fin (finrank 𝕜 F)} :
+    X.adjoint
+        (LinearMap.leftSingularVector ((Uᗮ.starProjection.toLinearMap ∘ₗ X)) i) =
+      (((((Uᗮ.starProjection.toLinearMap ∘ₗ X)).singularValues i : ℝ) : 𝕜) •
+        LinearMap.rightSingularBasis ((Uᗮ.starProjection.toLinearMap ∘ₗ X)) i) := by
+  let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X)
+  let y := LinearMap.leftSingularVector S i
+  have hSadj : S.adjoint y = ((S.singularValues i : ℝ) : 𝕜) •
+      LinearMap.rightSingularBasis S i := LinearMap.adjoint_leftSingularVector S i
+  have hyUperp : y ∈ Uᗮ := by
+    dsimp [y]
+    rw [LinearMap.leftSingularVector_def]
+    exact Uᗮ.smul_mem _
+      (Uᗮ.starProjection_apply_mem (X (LinearMap.rightSingularBasis S i)))
+  apply ext_inner_right 𝕜
+  intro z
+  calc
+    ⟪X.adjoint y, z⟫_𝕜 = ⟪y, X z⟫_𝕜 :=
+      LinearMap.adjoint_inner_left X z y
+    _ = ⟪y, Uᗮ.starProjection (X z)⟫_𝕜 := by
+      rw [← Uᗮ.inner_starProjection_left_eq_right,
+        Submodule.starProjection_eq_self_iff.mpr hyUperp]
+    _ = ⟪S.adjoint y, z⟫_𝕜 := by
+      rw [LinearMap.adjoint_inner_left]
+      rfl
+    _ = ⟪((S.singularValues i : ℝ) : 𝕜) •
+          LinearMap.rightSingularBasis S i, z⟫_𝕜 := by rw [hSadj]
+
+/-- Each Ritz vector `X vᵢ` is orthogonal to the unnormalized residual direction
+`y_j - σ_j • X v_j`. -/
+@[simp] theorem inner_map_sub_leftSingularVector_eq_zero
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
+    (i j : Fin (finrank 𝕜 F)) :
+    ⟪X (LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+      LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j -
+        (((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues j : ℝ) : 𝕜) •
+          X (LinearMap.rightSingularBasis
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j)⟫_𝕜 = 0 := by
+  simp only [← LinearIsometry.coe_toLinearMap]
+  have hadj := Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+    U X.toLinearMap (i := j)
+  have hXX : ⟪X.toLinearMap (LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+      X.toLinearMap (LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j)⟫_𝕜 = _ := X.inner_map_map _ _
+  rw [inner_sub_right, inner_smul_right, hXX, ← LinearMap.adjoint_inner_right, hadj,
+    inner_smul_right, sub_self]
+
+/-- For nonzero sines, the unnormalized residual directions `yᵢ - σᵢ • X vᵢ` are pairwise
+orthogonal, with squared norm `1 - σᵢ²`. -/
+theorem inner_sub_leftSingularVector_eq_ite
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
+    {i j : Fin (finrank 𝕜 F)}
+    (hi : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i ≠ 0)
+    (hj : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues j ≠ 0) :
+    ⟪LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i -
+        (((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i : ℝ) : 𝕜) •
+          X.toLinearMap (LinearMap.rightSingularBasis
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+      LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j -
+        (((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues j : ℝ) : 𝕜) •
+          X.toLinearMap (LinearMap.rightSingularBasis
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j)⟫_𝕜 =
+      if i = j then
+        (((1 - ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) ^ 2 : ℝ)) : 𝕜)
+      else 0 := by
+  classical
+  have hadji := Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+    U X.toLinearMap (i := i)
+  have hadjj := Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+    U X.toLinearMap (i := j)
+  have hvv := (LinearMap.rightSingularBasis
+    (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)).inner_eq_ite i j
+  set S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)
+  have hyy : ⟪LinearMap.leftSingularVector S i, LinearMap.leftSingularVector S j⟫_𝕜 =
+      if i = j then 1 else 0 := by
+    simpa using orthonormal_iff_ite.mp (LinearMap.orthonormal_leftSingularVector S)
+      ⟨i, hi⟩ ⟨j, hj⟩
+  have hyX : ⟪LinearMap.leftSingularVector S i,
+      X.toLinearMap (LinearMap.rightSingularBasis S j)⟫_𝕜 =
+      ((S.singularValues i : ℝ) : 𝕜) * ⟪LinearMap.rightSingularBasis S i,
+        LinearMap.rightSingularBasis S j⟫_𝕜 := by
+    rw [← LinearMap.adjoint_inner_left, hadji, inner_smul_left, RCLike.conj_ofReal]
+  have hXy : ⟪X.toLinearMap (LinearMap.rightSingularBasis S i),
+      LinearMap.leftSingularVector S j⟫_𝕜 =
+      ((S.singularValues j : ℝ) : 𝕜) * ⟪LinearMap.rightSingularBasis S i,
+        LinearMap.rightSingularBasis S j⟫_𝕜 := by
+    rw [← LinearMap.adjoint_inner_right, hadjj, inner_smul_right]
+  have hXX : ⟪X.toLinearMap (LinearMap.rightSingularBasis S i),
+      X.toLinearMap (LinearMap.rightSingularBasis S j)⟫_𝕜 =
+      ⟪LinearMap.rightSingularBasis S i, LinearMap.rightSingularBasis S j⟫_𝕜 :=
+    X.inner_map_map _ _
+  simp only [inner_sub_left, inner_sub_right, inner_smul_left, inner_smul_right,
+    RCLike.conj_ofReal, hyy, hyX, hXy, hXX, hvv]
+  by_cases hij : i = j
+  · subst hij
+    simp only [ite_true]
+    push_cast
+    ring
+  · simp [hij]
 
 end Submodule

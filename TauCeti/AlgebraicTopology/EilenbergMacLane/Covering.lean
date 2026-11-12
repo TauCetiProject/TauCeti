@@ -34,16 +34,14 @@ This file records that transfer and the two `K(G, 1)` recognition principles it 
 Taking the total space simply connected in the upwards direction says that the universal cover
 of an aspherical space is weakly contractible: all of its homotopy groups vanish, including
 `π₁`, which is where simple connectedness enters. Nothing here asserts that such a cover is
-contractible; that is a genuinely stronger statement, requiring a Whitehead-type theorem which
-this development does not have.
+contractible; that is a genuinely stronger statement, which holds when the cover has CW type by
+Whitehead's theorem (`TauCeti.contractibleSpace_of_subsingleton_homotopyGroup`), for instance for
+the cover of a CW complex (`IsCoveringMap.contractibleSpace_of_isAspherical`, in
+`TauCeti.AlgebraicTopology.EilenbergMacLane.Contractible`).
 
 The `ᵐᵒᵖ` in Mathlib's `IsQuotientCoveringMap.fundamentalGroupEquiv` is invisible in the
 `K(G, 1)` statement below: being a `K(G, 1)` is invariant under `MulEquiv.inv'`, the
 isomorphism `G ≃* Gᵐᵒᵖ` sending `g` to `op g⁻¹`.
-
-This advances `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13, "`K(G, 1)`
-spaces", by supplying the covering-space recognition principle for them; the concrete circle
-and torus examples were proved directly.
 
 ## Main declarations
 

@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.Basic
 import Mathlib.GroupTheory.Perm.Sign
 
@@ -131,7 +131,7 @@ private noncomputable def coordinatePermRootDatumAutHom :
     apply RootPairing.Equiv.weightHom_injective (coordinateRootDatum σ)
     apply LinearEquiv.ext
     intro x
-    simp only [RootPairing.Equiv.weightHom_apply, map_mul, LinearEquiv.mul_apply,
+    simp only [RootPairing.Equiv.weightHom_apply, map_mul, _root_.mul_apply_eq_comp,
       RootPairing.Equiv.weightEquiv_apply, coordinatePermRootDatumAut_weightMap_apply]
     simpa only [Equiv.Perm.mul_def, LinearEquiv.trans_apply] using
       congrArg (fun g : (σ →₀ ℤ) ≃ₗ[ℤ] (σ →₀ ℤ) ↦ g x)
@@ -273,6 +273,21 @@ theorem coordinatePermMulEquivWeylGroup_indexEquiv_apply
   by
     rw [coordinatePermMulEquivWeylGroup_val,
       coordinatePermRootDatumAut_indexEquiv]
+
+/-- The Weyl group of the coordinate-difference datum acts faithfully on root indices,
+even though the roots need not span the full coordinate lattice. -/
+theorem coordinateRootDatum_weylGroupToPerm_injective :
+    Function.Injective (coordinateRootDatum σ).weylGroupToPerm := by
+  intro w v h
+  obtain ⟨e, rfl⟩ := coordinatePermMulEquivWeylGroup.surjective w
+  obtain ⟨f, rfl⟩ := coordinatePermMulEquivWeylGroup.surjective v
+  congr 1
+  apply coordinatePermRootIndexHom_injective
+  apply Equiv.ext
+  intro p
+  simpa only [coordinatePermRootIndexHom_apply,
+    RootPairing.weylGroupToPerm_apply, coordinatePermMulEquivWeylGroup_indexEquiv_apply] using
+    congrArg (fun g : Equiv.Perm (CoordinateRootIndex σ) ↦ g p) h
 
 /-- A coordinate transposition corresponds to the reflection in the associated root. -/
 @[simp]

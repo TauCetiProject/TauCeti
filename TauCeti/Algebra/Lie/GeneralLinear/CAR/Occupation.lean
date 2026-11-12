@@ -57,9 +57,7 @@ open CliffordAlgebra
 
 variable {K n : Type*} [Field K] [Fintype n]
 
-attribute [local instance] Classical.decEq
-
-private theorem polar_single_single_eq_zero (i j k l : n)
+private theorem polar_single_single_eq_zero [DecidableEq n] (i j k l : n)
     (h : ¬(j = k ∧ l = i)) :
     QuadraticMap.polar (traceQuadraticForm K n)
       (Matrix.single i j 1) (Matrix.single k l 1) = 0 := by
@@ -71,13 +69,13 @@ private theorem polar_single_single_eq_zero (i j k l : n)
 idempotent off the diagonal. For `i = j` it is the scalar `1/2`. -/
 noncomputable def carOccupationElement (i j : n) :
     CliffordAlgebra (traceQuadraticForm K n) :=
-  (2 : K)⁻¹ • (carGenerator (K := K) i j * carGenerator j i)
+  (2 : K)⁻¹ • (carGenerator (R := K) i j * carGenerator j i)
 
 /-- The occupation element written in terms of the canonical matrix-unit generators. -/
 theorem carOccupationElement_def (i j : n) :
     carOccupationElement (K := K) i j =
       (2 : K)⁻¹ •
-        (carGenerator (K := K) i j * carGenerator j i) := by
+        (carGenerator (R := K) i j * carGenerator j i) := by
   rfl
 
 /-- The diagonal occupation element is the scalar `1/2`. -/
@@ -92,9 +90,9 @@ theorem carOccupationElement_self (i : n) :
 theorem carOccupationElement_mul_swap {i j : n} (hij : i ≠ j) :
     carOccupationElement (K := K) i j * carOccupationElement (K := K) j i = 0 := by
   rw [carOccupationElement, carOccupationElement, smul_mul_assoc, mul_smul_comm, smul_smul]
-  rw [mul_assoc (carGenerator (K := K) i j) (carGenerator j i)
+  rw [mul_assoc (carGenerator (R := K) i j) (carGenerator j i)
       (carGenerator j i * carGenerator i j),
-    ← mul_assoc (carGenerator (K := K) j i) (carGenerator j i)
+    ← mul_assoc (carGenerator (R := K) j i) (carGenerator j i)
       (carGenerator i j)]
   simp [carGenerator_mul_self, hij]
 
@@ -108,7 +106,7 @@ diagonal, where both terms are the scalar `1/2`. -/
 theorem carOccupationElement_add_swap (i j : n) :
     carOccupationElement (K := K) i j + carOccupationElement (K := K) j i = 1 := by
   rw [carOccupationElement, carOccupationElement, ← smul_add]
-  have hcar := carGenerator_mul_add_swap (K := K) i j j i
+  have hcar := carGenerator_mul_add_swap (R := K) i j j i
   rw [hcar, Algebra.smul_def, ← map_mul]
   simp
 
@@ -140,6 +138,7 @@ theorem carOccupationElement_mul_self {i j : n} (hij : i ≠ j) :
 theorem commute_carOccupationElement {i j k l : n} :
     Commute (carOccupationElement (K := K) i j)
       (carOccupationElement (K := K) k l) := by
+  classical
   by_cases heq : (i, j) = (k, l)
   · cases heq
     exact Commute.refl _
@@ -187,7 +186,7 @@ theorem commute_carOccupationElement {i j k l : n} :
 
 section Diagonal
 
-variable [Invertible (2 : K)]
+variable [DecidableEq n] [Invertible (2 : K)]
 
 /-- A diagonal normal-ordered generator is the sum of all occupation elements with its first
 index fixed. The diagonal summand is the scalar `1/2`. -/
@@ -211,6 +210,7 @@ theorem glCliffordHom_single_self_eq_sum_positive_occupation
   · exact eq_sub_iff_add_eq.mpr (carOccupationElement_add_swap (K := K) i k)
   · rfl
 
+omit [DecidableEq n] in
 private theorem sum_carOccupationElement_internal (s : Finset n) :
     (∑ i ∈ s, ∑ j ∈ s, carOccupationElement (K := K) i j) =
       ((s.card : K) ^ 2 / 2) • (1 : CliffordAlgebra (traceQuadraticForm K n)) := by

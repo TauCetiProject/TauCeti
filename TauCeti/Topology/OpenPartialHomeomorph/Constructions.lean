@@ -16,6 +16,12 @@ zero-slice subgroup charts use it after translating an ambient chart. Continuous
 inverse on open sets also give an open partial homeomorphism on their mutual restrictions
 (`ContinuousOn.toOpenPartialHomeomorph`). Composing with an open partial homeomorphism preserves
 open embeddings whose ranges lie in its source (`OpenPartialHomeomorph.isOpenEmbedding_comp`).
+An open embedding of a nonempty open subset extends to an open partial homeomorphism with that
+source (`OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding`); a homeomorphism of nonempty
+open subsets extends to one with that source and target
+(`OpenPartialHomeomorph.exists_source_eq_target_eq_of_homeomorph`).
+Finite products of open partial homeomorphisms commute with inverses and composition
+(`OpenPartialHomeomorph.pi_symm`, `OpenPartialHomeomorph.pi_trans`), as for partial equivalences.
 
 ## Main definitions
 
@@ -50,6 +56,28 @@ theorem isOpenEmbedding_comp (e : OpenPartialHomeomorph X Y) {g : Z → X}
     .of_isEmbedding_isOpenMap (hg.isEmbedding.codRestrict _ _) (hg.isOpenMap.codRestrict _)
   simpa only [Set.domRestrict_comp_codRestrict] using e.isOpenEmbedding_restrict.comp hgc
 
+/-- An open embedding of a nonempty open subset `U` of `X` into `Y` is the restriction of an open
+partial homeomorphism of `X` into `Y` with source `U`, obtained from
+`OpenPartialHomeomorph.lift_openEmbedding`. -/
+theorem exists_source_eq_of_isOpenEmbedding {U : Set X} (hU : IsOpen U) {g : U → Y}
+    (hg : IsOpenEmbedding g) (x : U) :
+    ∃ c : OpenPartialHomeomorph X Y, c.source = U ∧ ∀ y : U, c y = g y := by
+  have : Nonempty U := ⟨x⟩
+  have : Nonempty Y := ⟨g x⟩
+  have hi := hU.isOpenEmbedding_subtypeVal
+  exact ⟨(hg.toOpenPartialHomeomorph g).lift_openEmbedding hi, by simp, fun y ↦ by simp⟩
+
+/-- A homeomorphism between nonempty open subsets `U` of `X` and `V` of `Y` is the restriction of an
+open partial homeomorphism with source `U` and target `V`. -/
+theorem exists_source_eq_target_eq_of_homeomorph {U : Set X} {V : Set Y} (hU : IsOpen U)
+    (hV : IsOpen V) (e : U ≃ₜ V) (x : U) :
+    ∃ c : OpenPartialHomeomorph X Y, c.source = U ∧ c.target = V ∧ ∀ y : U, c y = e y := by
+  obtain ⟨c, hs, hc⟩ := exists_source_eq_of_isOpenEmbedding hU
+    (hV.isOpenEmbedding_subtypeVal.comp e.isOpenEmbedding) x
+  refine ⟨c, hs, ?_, hc⟩
+  rw [← c.image_source_eq_target, hs, image_eq_range, funext hc, range_comp,
+    e.surjective.range_eq, image_univ, Subtype.range_coe]
+
 open scoped Classical in
 /-- Restrict an open partial homeomorphism to a subtype represented by a parametrized coordinate
 slice.
@@ -71,23 +99,14 @@ noncomputable def subtypeCoord (e : OpenPartialHomeomorph X Y) (s : Set X) (hs :
   source := Subtype.val ⁻¹' e.source
   target := ι ⁻¹' e.target
   map_source' x hx := by
-    -- These fields are being defined, so their public equations are not available yet.
-    change ι (π (e x.1)) ∈ e.target
-    rw [hslice hx x.2]
+    rw [mem_preimage, hslice hx x.2]
     exact e.map_source hx
   map_target' z hz := by
     simp only [mem_preimage] at hz ⊢
     rw [dite_eq_left hz]
     exact e.map_target hz
-  left_inv' x hx := by
-    have htarget : ι (π (e x.1)) ∈ e.target := by
-      rw [hslice hx x.2]
-      exact e.map_source hx
-    rw [dite_eq_left htarget]
-    apply Subtype.ext
-    -- Reduce equality in the subtype after selecting the on-target inverse branch.
-    change e.symm (ι (π (e x.1))) = x.1
-    rw [hslice hx x.2, e.left_inv hx]
+  left_inv' x hx := Subtype.ext <| by
+    simp [hslice hx x.2, e.map_source hx, e.left_inv hx]
   right_inv' z hz := by
     simp only [mem_preimage] at hz
     rw [dite_eq_left hz, e.right_inv hz]
@@ -102,55 +121,36 @@ noncomputable def subtypeCoord (e : OpenPartialHomeomorph X Y) (s : Set X) (hs :
     rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
     refine ContinuousOn.congr
       (e.symm.continuousOn.comp hιc.continuousOn (mapsTo_preimage _ _)) fun z hz => ?_
-    simp only [mem_preimage] at hz
-    simp [Function.comp_apply, hz]
+    simp [mem_preimage.mp hz]
+
+section SubtypeCoord
+
+variable (e : OpenPartialHomeomorph X Y) (s : Set X) (hs : Nonempty s) (ι : Z → Y) (π : Y → Z)
+  (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
+  (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
+  (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
+  (hπc : ContinuousOn π (e.target ∩ Set.range ι))
 
 /-- The source of `subtypeCoord` is the part of the subtype in the ambient source. -/
 @[simp]
-theorem subtypeCoord_source (e : OpenPartialHomeomorph X Y) (s : Set X) (hs : Nonempty s)
-    (ι : Z → Y) (π : Y → Z)
-    (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
-    (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
-    (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
-    (hπc : ContinuousOn π (e.target ∩ Set.range ι)) :
-    (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).source = Subtype.val ⁻¹' e.source := by
-  unfold subtypeCoord
-  rfl
+theorem subtypeCoord_source :
+    (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).source = Subtype.val ⁻¹' e.source := (rfl)
 
 /-- The target of `subtypeCoord` is the preimage of the ambient target under the slice
 parametrization. -/
 @[simp]
-theorem subtypeCoord_target (e : OpenPartialHomeomorph X Y) (s : Set X) (hs : Nonempty s)
-    (ι : Z → Y) (π : Y → Z)
-    (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
-    (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
-    (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
-    (hπc : ContinuousOn π (e.target ∩ Set.range ι)) :
-    (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).target = ι ⁻¹' e.target := by
-  unfold subtypeCoord
-  rfl
+theorem subtypeCoord_target :
+    (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).target = ι ⁻¹' e.target := (rfl)
 
 /-- `subtypeCoord` reads a subtype point using the ambient map followed by the coordinate
 retraction. -/
 @[simp]
-theorem subtypeCoord_apply (e : OpenPartialHomeomorph X Y) (s : Set X) (hs : Nonempty s)
-    (ι : Z → Y) (π : Y → Z)
-    (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
-    (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
-    (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
-    (hπc : ContinuousOn π (e.target ∩ Set.range ι)) (x : s) :
-    e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x = π (e x.1) := by
-  unfold subtypeCoord
-  rfl
+theorem subtypeCoord_apply (x : s) :
+    e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x = π (e x.1) := (rfl)
 
 /-- On its source, `subtypeCoord` recovers the ambient coordinate after applying the slice
 parametrization. -/
-theorem subtypeCoord_parametrization_apply (e : OpenPartialHomeomorph X Y) (s : Set X)
-    (hs : Nonempty s) (ι : Z → Y) (π : Y → Z)
-    (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
-    (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
-    (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
-    (hπc : ContinuousOn π (e.target ∩ Set.range ι)) {x : s}
+theorem subtypeCoord_parametrization_apply {x : s}
     (hx : x ∈ (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).source) :
     ι (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x) = e x.1 := by
   rw [subtypeCoord_apply]
@@ -159,15 +159,33 @@ theorem subtypeCoord_parametrization_apply (e : OpenPartialHomeomorph X Y) (s : 
 /-- On its target, the inverse of `subtypeCoord` is the ambient inverse evaluated on the
 parametrized slice. -/
 @[simp]
-theorem coe_subtypeCoord_symm_apply (e : OpenPartialHomeomorph X Y) (s : Set X)
-    (hs : Nonempty s) (ι : Z → Y) (π : Y → Z)
-    (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
-    (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
-    (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
-    (hπc : ContinuousOn π (e.target ∩ Set.range ι)) {z : Z} (hz : ι z ∈ e.target) :
+theorem coe_subtypeCoord_symm_apply {z : Z} (hz : ι z ∈ e.target) :
     ((e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).symm z : X) = e.symm (ι z) := by
-  classical
   simp [subtypeCoord, hz]
+
+end SubtypeCoord
+
+section Pi
+
+variable {ι : Type*} [Finite ι] {X Y Z : ι → Type*} [∀ i, TopologicalSpace (X i)]
+  [∀ i, TopologicalSpace (Y i)] [∀ i, TopologicalSpace (Z i)]
+
+/-- The inverse of a finite product of open partial homeomorphisms is the product of the
+inverses. -/
+@[simp, mfld_simps]
+theorem pi_symm (e : ∀ i, OpenPartialHomeomorph (X i) (Y i)) :
+    (OpenPartialHomeomorph.pi e).symm = .pi fun i ↦ (e i).symm :=
+  toPartialEquiv_injective (PartialEquiv.pi_symm _)
+
+/-- The composition of two finite products of open partial homeomorphisms is the product of the
+compositions. -/
+@[simp, mfld_simps]
+theorem pi_trans (e : ∀ i, OpenPartialHomeomorph (X i) (Y i))
+    (e' : ∀ i, OpenPartialHomeomorph (Y i) (Z i)) :
+    (OpenPartialHomeomorph.pi e).trans (.pi e') = .pi fun i ↦ (e i).trans (e' i) :=
+  toPartialEquiv_injective (PartialEquiv.pi_trans _ _)
+
+end Pi
 
 end OpenPartialHomeomorph
 

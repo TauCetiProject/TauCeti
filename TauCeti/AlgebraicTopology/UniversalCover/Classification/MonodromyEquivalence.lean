@@ -92,18 +92,18 @@ vertex group of the fundamental groupoid at `x₀`. -/
 @[instance_reducible]
 def basepointMulAction (F : FundamentalGroupoid X ⥤ Type u) (x₀ : X) :
     MulAction (FundamentalGroup X x₀) (F.obj (FundamentalGroupoid.mk x₀)) where
-  smul g a := F.map g a
+  smul g a := F.map g.asHom a
   one_smul a := by
     have h : F.map (𝟙 (FundamentalGroupoid.mk x₀)) a = a := by
       rw [F.map_id, types_id_apply]
     exact h
-  mul_smul g h a := F.map_comp_apply h g a
+  mul_smul g h a := F.map_comp_apply h.asHom g.asHom a
 
 @[simp]
 theorem basepointMulAction_smul (F : FundamentalGroupoid X ⥤ Type u) (x₀ : X)
     (g : FundamentalGroup X x₀) (a : F.obj (FundamentalGroupoid.mk x₀)) :
     letI := basepointMulAction F x₀
-    g • a = F.map g a :=
+    g • a = F.map g.asHom a :=
   (rfl)
 
 end FundamentalGroupoidAction
@@ -126,7 +126,9 @@ theorem exists_monodromyFunctor_iso (F : FundamentalGroupoid X ⥤ Type u)
   let _ := FundamentalGroupoidAction.basepointMulAction F x₀
   have : MulAction.IsPretransitive (FundamentalGroup X x₀)
       (F.obj (FundamentalGroupoid.mk x₀)) :=
-    ⟨fun a b => hpre (FundamentalGroupoid.mk x₀) a b⟩
+    ⟨fun a b =>
+      let ⟨γ, hγ⟩ := hpre (FundamentalGroupoid.mk x₀) a b
+      ⟨.of γ, hγ⟩⟩
   obtain ⟨a⟩ :=
     FundamentalGroupoidAction.nonempty_of_isFiberwiseTransitive hF (FundamentalGroupoid.mk x₀)
   refine ⟨UniversalCover.stabilizerCover x₀ a, ⟨?_⟩⟩
@@ -136,7 +138,7 @@ theorem exists_monodromyFunctor_iso (F : FundamentalGroupoid X ⥤ Type u)
       (UniversalCover.transitiveActionFiberEquiv x₀ a).toIso (fun g => ?_)
   refine ConcreteCategory.hom_ext _ _ fun z => ?_
   simp only [types_comp_apply]
-  exact UniversalCover.transitiveActionFiberEquiv_apply_monodromy x₀ a g z
+  exact UniversalCover.transitiveActionFiberEquiv_apply_monodromy x₀ a (.of g) z
 
 /-- Transitive connected-cover monodromy is essentially surjective. -/
 instance transitiveMonodromyFunctor_essSurj :
@@ -188,7 +190,7 @@ theorem exists_monodromyFunctor_iso (F : FundamentalGroupoid X ⥤ Type u) :
   refine ConcreteCategory.hom_ext _ _ fun z => ?_
   simp only [types_comp_apply]
   exact UniversalCover.actionCoveringSpaceFiberEquiv_apply_monodromy x₀
-    (F.obj (FundamentalGroupoid.mk x₀)) g z
+    (F.obj (FundamentalGroupoid.mk x₀)) (.of g) z
 
 /-- Covering-space monodromy is essentially surjective. -/
 instance monodromyFunctor_essSurj : (monodromyFunctor X).EssSurj where

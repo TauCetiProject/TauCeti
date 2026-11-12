@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Examples.OpenUnitBall
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.HopfRinow
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Geodesics of the real open unit ball

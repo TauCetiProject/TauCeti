@@ -66,12 +66,6 @@ The ideal Möbius function is *not* completely multiplicative, so it is not a
 to the reader, following
 `TauCeti.MultiplicativeIdealWeight.not_exists_toIdealArithmeticFunction_eq_one`.
 
-## Roadmap role
-
-This is Layer **2.2** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, built on the Layer
-**2.1** convolution of `TauCeti/NumberTheory/ArithmeticDirichletSeries/Convolution/Basic.lean`. Its
-consumers are the von Mangoldt transform of Layer 2.3 and the local factors of Layer 3.
-
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII.

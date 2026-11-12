@@ -55,14 +55,14 @@ the field norm. -/
 theorem coe_norm_unitFiltrationZero [IsGalois K L]
     (x : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)) :
     (((Rep.toAdditive
-        ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.hom x)).toMul :
+        ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.asHom.hom x)).toMul :
           Lˣ) : L) =
       algebraMap K L (Algebra.norm K (((Rep.toAdditive x).toMul : Lˣ) : L)) := by
   -- Compare in `Lˣ`, where the representation norm is the field norm.
   have hc := congr($(Rep.norm_comm (unitFiltrationZeroIncl K L)).hom x)
   simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply] at hc
   rw [unitFiltrationZeroIncl_apply K L x, unitFiltrationZeroIncl_apply K L
-    ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.hom x)] at hc
+    ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.asHom.hom x)] at hc
   rw [← groupCohomology.norm_ofAlgebraAutOnUnits_eq]
   exact congr(((Additive.toMul (Rep.toAdditive $hc.symm) : Lˣ) : L))
 
@@ -160,10 +160,10 @@ instance finite_tateCohomology_negOne_unitFiltration_zero :
         (groupCohomology.H1 (Rep.ofAlgebraAutOnUnits K L))).of_iso
           (Rep.FiniteCyclicGroup.periodicIso (Rep.ofAlgebraAutOnUnits K L) (-1) 1 (by decide) ≪≫
             (_root_.TateCohomology.isoGroupCohomology 1).app _)
-  have hfinite : Finite (tateCohomology (Rep.trivial ℤ (L ≃ₐ[K] L) ℤ) (-2)) :=
+  have := ModuleCat.subsingleton_of_isZero hzero
+  have : Finite (tateCohomology (Rep.trivial ℤ (L ≃ₐ[K] L) ℤ) (-2)) :=
     Finite.of_equiv _ (TateCohomology.HNegTwoAddEquivAbelianization.toEquiv.symm)
-  apply TateCohomology.finite_tateCohomology_X₁_of_shortExact_of_isZero_X₂ hS (-2)
-  simpa only [Int.reduceNeg, Int.reduceAdd] using hzero
+  exact TateCohomology.finite_tateCohomology_X₁_of_shortExact hS (-2) (-1) rfl
 
 /-- The valuation sequence transfers the Herbrand quotient of the unit group to the
 multiplicative group, with factor the order of the automorphism group. -/

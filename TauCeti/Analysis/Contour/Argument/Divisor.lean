@@ -49,28 +49,9 @@ double duty.
 
 public section
 
-open Filter Topology Metric Complex
-open scoped Real
+open Metric
 
 namespace TauCeti.Contour
-
-/-- Where a meromorphic function is analytic, its divisor records the order of vanishing. The
-identity also holds at a point of infinite order, where both sides read `0`.
-
-This is the bridge between `MeromorphicOn.divisor` — whose support is finite on a ball by
-`MeromorphicOn.divisor_ball_support_finite` — and the `analyticOrderNatAt` vocabulary that zero
-counts are stated in, so zero-counting arguments can reuse it instead of rebuilding the
-correspondence. Note the finiteness is of the divisor's *support*, equivalently of the zeros of
-finite order: a point where `f` vanishes identically has divisor value `0` and is absent from it. -/
-theorem divisor_eq_analyticOrderNatAt {f : ℂ → ℂ} {U : Set ℂ} {z : ℂ}
-    (hm : MeromorphicOn f U) (hf : AnalyticAt ℂ f z) (hz : z ∈ U) :
-    MeromorphicOn.divisor f U z = (analyticOrderNatAt f z : ℤ) := by
-  rw [hm.divisor_apply hz, hf.meromorphicOrderAt_eq]
-  -- `analyticOrderNatAt` is `(analyticOrderAt · ·).toNat`; this is the one place the proof needs
-  -- that definitional equality, so unfold it here rather than in the statements.
-  cases h : analyticOrderAt f z with
-  | top => simp [analyticOrderNatAt, h]
-  | coe n => simp [analyticOrderNatAt, h]
 
 /-- **The argument principle, against the divisor.** For `f` meromorphic on the closed disc
 `C(c, R)` with no zero or pole on the bounding circle, the contour integral of the logarithmic
@@ -84,32 +65,19 @@ theorem argumentPrinciple_divisor {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 
     circleIntegral (logDeriv f) c R
       = 2 * (Real.pi : ℂ) * Complex.I *
         (∑ᶠ z, ((MeromorphicOn.divisor f (ball c R) z : ℤ) : ℂ)) := by
-  have hfb : MeromorphicOn f (ball c R) := fun x hx => hf x (ball_subset_closedBall hx)
-  have hsupp : Function.support (fun z => ((MeromorphicOn.divisor f (ball c R) z : ℤ) : ℂ))
-      ⊆ ((MeromorphicOn.divisor_ball_support_finite hf).toFinset : Set ℂ) := by
-    intro z hz
-    simp only [Function.mem_support, ne_eq, Int.cast_eq_zero] at hz
-    simpa [Set.Finite.mem_toFinset] using hz
-  rw [finsum_eq_finsetSum_of_support_subset _ hsupp]
+  have hfb : MeromorphicOn f (ball c R) := hf.mono_set ball_subset_closedBall
+  set S := (MeromorphicOn.divisor_ball_support_finite hf).toFinset
+  rw [finsum_eq_finsetSum_of_support_subset _ (s := S) fun z hz => by simpa [S] using hz]
   have hxs : c + (R : ℂ) ∈ sphere c R := by simp [abs_of_pos hR]
   have htop : ∀ z ∈ closedBall c R, meromorphicOrderAt f z ≠ ⊤ := fun z hz =>
     hf.meromorphicOrderAt_ne_top_of_isPreconnected (convex_closedBall c R).isPreconnected
-      (sphere_subset_closedBall hxs) hz (by rw [hsphere _ hxs]; exact WithTop.zero_ne_top)
-  refine argumentPrinciple hR _ (fun z => MeromorphicOn.divisor f (ball c R) z) hf ?_ ?_ ?_
-  · intro z hz
-    simp only [Set.Finite.coe_toFinset, Function.mem_support] at hz
-    exact (MeromorphicOn.divisor f (ball c R)).supportWithinDomain hz
-  · intro z hz hord
-    have hzball : z ∈ ball c R := by
-      rcases lt_or_eq_of_le (mem_closedBall.mp hz) with h | h
-      · exact mem_ball.mpr h
-      · exact absurd (hsphere z (mem_sphere.mpr h)) hord
-    simp only [Set.Finite.mem_toFinset, Function.mem_support, ne_eq,
-      MeromorphicOn.divisor_apply hfb hzball]
-    exact fun hc => hord ((WithTop.untop₀_eq_zero.mp hc).resolve_right (htop z hz))
-  · intro z hz
-    simp only [Set.Finite.mem_toFinset, Function.mem_support] at hz
-    have hzball := (MeromorphicOn.divisor f (ball c R)).supportWithinDomain hz
+      (sphere_subset_closedBall hxs) hz (by simp [hsphere _ hxs])
+  refine argumentPrinciple hR S _ hf (fun z hz => ?_) (fun z hz hord => ?_) fun z hz => ?_
+  · exact (MeromorphicOn.divisor f (ball c R)).supportWithinDomain (by simpa [S] using hz)
+  · have hzball : z ∈ ball c R := by
+      rw [← closedBall_sdiff_sphere]; exact ⟨hz, fun h => hord (hsphere z h)⟩
+    simpa [S, hfb, hzball, WithTop.untop₀_eq_zero, htop z hz] using hord
+  · have hzball := (MeromorphicOn.divisor f (ball c R)).supportWithinDomain (by simpa [S] using hz)
     rw [MeromorphicOn.divisor_apply hfb hzball,
       WithTop.coe_untop₀_of_ne_top (htop z (ball_subset_closedBall hzball))]
 

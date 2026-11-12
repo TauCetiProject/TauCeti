@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Gaussian.Basic
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Borel
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 public import TauCeti.MeasureTheory.Measure.FrechetMean.TwoPoint
@@ -45,8 +45,8 @@ law has finite second moment, including laws with singular covariance. -/
 def Probability.gaussianWassersteinLaw (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
     WassersteinSpace 2 (EuclideanSpace ℝ ι) :=
   WassersteinSpace.mk ⟨multivariateGaussian m S, by infer_instance⟩
-    (hasFiniteMoment_def.2 ⟨0, by simpa [edist_eq_enorm_sub] using
-      (ProbabilityTheory.IsGaussian.memLp_two_id (μ := multivariateGaussian m S)).enorm⟩)
+    (hasFiniteMoment_def.2 ⟨0, by simpa [eDist_eq_eNorm_sub] using
+      (ProbabilityTheory.IsGaussian.memLp_two_id (μ := multivariateGaussian m S)).eNorm⟩)
 
 @[simp]
 theorem Probability.gaussianWassersteinLaw_coe (m : EuclideanSpace ℝ ι)

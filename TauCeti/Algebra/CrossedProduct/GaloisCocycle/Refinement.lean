@@ -34,9 +34,11 @@ public section
 
 noncomputable section
 
+universe u
+
 namespace TauCeti
 
-variable {K : Type} [Field K]
+variable {K : Type u} [Field K]
 
 namespace GaloisCocycle
 
@@ -68,7 +70,7 @@ namespace BrauerGroup
 
 open TauCeti
 
-variable {K : Type} [Field K]
+variable {K : Type u} [Field K]
 
 /-- Every Brauer class is represented by a finite Galois cocycle over a field containing
 any prescribed finite subextension of the separable closure. In particular, for a finite

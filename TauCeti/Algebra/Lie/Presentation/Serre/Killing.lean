@@ -58,14 +58,11 @@ convention `⁅Hᵢ, Eⱼ⁆ = CMᵢⱼ Eⱼ`, whereas `RootPairing.Base.cartanM
 * [J.P. Serre, *Complex Semisimple Lie Algebras*][serre1965], chapter VI
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972], §18.1
 
-## Roadmap
+## Applications
 
 The Serre presentation is the explicit carrier of the split semisimple Lie algebra whose Chevalley
-basis and Kostant `ℤ`-form build the Chevalley--Demazure group scheme, Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, consumed in turn by milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`. `TauCeti.IsSerreSystem` had no consumer outside the
-presentation itself; this file supplies the one that matters there, namely that the split
-semisimple Lie algebras the construction is about really are Serre systems for their Cartan
+basis and Kostant `ℤ`-form build the Chevalley--Demazure group scheme. This file shows that the
+split semisimple Lie algebras that construction is about really are Serre systems for their Cartan
 matrices.
 -/
 
@@ -112,7 +109,7 @@ theorem ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot {α β : Weight K H L} (hα :
     simp
   rw [hexp, Nat.add_sub_cancel, hadt]
   rw [pow_succ] at hzero
-  simpa [Module.End.mul_apply] using hzero
+  simpa [mul_apply_eq_comp] using hzero
 
 /-! ## Simple roots -/
 
@@ -148,8 +145,7 @@ theorem isSerreSystem_coroot (b : (rootSystem H).Base) {e f : ↥b.support → L
     (he : ∀ i : ↥b.support, e i ∈ rootSpace H (⇑((i : H.root) : Weight K H L)))
     (hf : ∀ i : ↥b.support, f i ∈ rootSpace H (-⇑((i : H.root) : Weight K H L))) :
     IsSerreSystem K b.cartanMatrixᵀ (fun i ↦ (((rootSystem H).coroot i : H) : L)) e f where
-  lie_H_H i j := by
-    simp [← LieSubalgebra.coe_bracket, trivial_lie_zero]
+  lie_H_H i j := LieSubalgebra.lie_eq_zero_of_mem (Subtype.prop _) (Subtype.prop _)
   lie_E_F_self i := (hsl2 i).lie_e_f
   lie_E_F_of_ne i j hij := by
     have hmem : ⁅e i, f j⁆ ∈ rootSpace H

@@ -74,7 +74,7 @@ theorem exists_continuousOn_ae_eq (hk : finrank ℝ E < 2 * k)
     (u : Wkp (volume : Measure E) Omega 2 k) :
     ∃ g : E → ℝ, ContinuousOn g Omega ∧ (value k u : E → ℝ) =ᵐ[volume.restrict Omega] g := by
   simp_rw [← contDiffOn_zero (𝕜 := ℝ)]
-  refine exists_contDiffOn_ae_eq_of_locally Omega.isOpen fun x hx => ?_
+  refine exists_contDiffOn_ae_eq_of_locally fun x hx => ?_
   obtain ⟨R, hR, hRΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
   -- A bump equal to one on `ball x (R / 2)` and supported in `closedBall x R ⊆ Ω`.
   let ζ : ContDiffBump x := ⟨R / 2, R, half_pos hR, half_lt_self hR⟩
@@ -117,14 +117,8 @@ theorem exists_contDiffOn_ae_eq (hk : finrank ℝ E < 2 * k) :
       exact ⟨gi, hgi, (hd.congr_ae hug).congr_ae_deriv hdgi⟩
     choose G hG hdG using hd
     -- They assemble into a `Cʲ` weak derivative of `g`.
-    set D : E → E →L[ℝ] ℝ := fun y => ∑ i, G i y • innerSL ℝ (b i)
-    have hD : ContDiffOn ℝ j D Omega :=
-      ContDiffOn.sum fun i _ => (hG i).smul contDiffOn_const
-    have hDb : ∀ i y, D y (b i) = G i y := fun i y => by
-      simp [D, b.inner_eq_ite]
-    have hgD : HasWeakFDerivOn volume Omega g D :=
-      b.toBasis.hasWeakFDerivOn_of_forall (hg.locallyIntegrableOn Omega.isOpen.measurableSet)
-        fun i => by simpa only [OrthonormalBasis.coe_toBasis, hDb] using hdG i
+    obtain ⟨hD, hgD⟩ := contDiffOn_sum_innerSL_and_hasWeakFDerivOn hG
+      (hg.locallyIntegrableOn Omega.isOpen.measurableSet) hdG
     exact ⟨g, by exact_mod_cast hgD.contDiffOn_succ hg hD, hug⟩
 
 end Wkp

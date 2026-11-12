@@ -81,7 +81,9 @@ theorem galoisRes_eq_zero_iff (hL : Module.finrank K L = 2)
   let U := galoisSubgroup K L σ
   let hU : U.toSubgroup.index = 2 := (galoisSubgroup_index K L σ).trans hL
   let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
-  have hexact := U.exact_cup_res2_of_index_two hU
+  have hexact := U.exact_cup_res_of_index_two hU 1
+  simp only [trivialF2TopPairing_cup_one_one_comm (AbsoluteGaloisGroup K)
+    _ (U.indexTwoCharacterClass hU)] at hexact
   rw [galoisCharacter_def]
   constructor
   · intro hx

@@ -38,10 +38,10 @@ cusp forms by pulling `PowerSeries.supportedOnDvdSubmodule` back along the `q`-e
 * `PowerSeries.isSupportedOnDvd_expand`: the substitution `q ↦ q ^ d` lands in the supported
   series. This is the direction the modular-form applications use, so every `q ↦ q ^ d`
   statement about a `q`-expansion reduces to it.
-* `PowerSeries.IsSupportedOnDvd.exists_expand` and
-  `PowerSeries.isSupportedOnDvd_iff_exists_expand`: the converse and the resulting
-  characterisation — a series is supported on multiples of `d` exactly when it is a `q ↦ q ^ d`
-  substitution.
+* `PowerSeries.IsSupportedOnDvd.expand_mk_coeff_mul` and
+  `PowerSeries.isSupportedOnDvd_iff_exists_expand`: the converse, with the series substituted
+  into given explicitly, and the resulting characterisation — a series is supported on multiples
+  of `d` exactly when it is a `q ↦ q ^ d` substitution.
 * `PowerSeries.range_expand_eq_supportedOnDvdSubmodule`: the same characterisation in submodule
   form, an equality rather than a containment.
 
@@ -150,13 +150,9 @@ coefficient sits at `0`, which every `d` divides. -/
 @[simp]
 theorem one [Semiring R] (d : ℕ) : IsSupportedOnDvd d (1 : PowerSeries R) :=
   isSupportedOnDvd_iff.2 fun n hn ↦ by
-    rcases Nat.eq_zero_or_pos n with rfl | hpos
-    · exact absurd (dvd_zero d) hn
-    · simp [PowerSeries.coeff_one, hpos.ne']
+    simp [coeff_one, show n ≠ 0 by rintro rfl; exact hn (dvd_zero d)]
 
-/-- **The condition is closed under multiplication.** In a coefficient of `P * Q` at an index
-`n` not divisible by `d`, each term `aᵢ · b_j` with `i + j = n` has one of its two factors at an
-index away from the multiples of `d`: if `d ∣ i` then `d ∤ j`, since otherwise `d ∣ n`.
+/-- **The condition is closed under multiplication.**
 
 Both hypotheses are needed, and one-sidedness fails already over `ℕ`: `1` is supported on
 multiples of `2` while `1 * X = X` is not. The coefficient semiring has to be named — over the
@@ -164,7 +160,8 @@ trivial one `X = 0`, which *is* supported. -/
 theorem mul [Semiring R] (hP : IsSupportedOnDvd d P) (hQ : IsSupportedOnDvd d Q) :
     IsSupportedOnDvd d (P * Q) :=
   isSupportedOnDvd_iff.2 fun n hn ↦ by
-    rw [PowerSeries.coeff_mul]
+    -- In each term `aᵢ · bⱼ` with `i + j = n`, if `d ∣ i` then `d ∤ j`, since otherwise `d ∣ n`.
+    rw [coeff_mul]
     refine Finset.sum_eq_zero fun x hx ↦ ?_
     rw [Finset.mem_antidiagonal] at hx
     by_cases hi : d ∣ x.1
@@ -197,24 +194,23 @@ theorem isSupportedOnDvd_expand (hd : d ≠ 0) (P : PowerSeries R) :
     IsSupportedOnDvd d (P.expand d hd) := fun _ hn ↦ coeff_expand_of_not_dvd d hd P hn
 
 /-- **Every supported series is a substitution `q ↦ q ^ d`**, the converse of
-`PowerSeries.isSupportedOnDvd_expand`. The series substituted into is recovered by reading off
-the coefficients that survive, `PowerSeries.mk fun n ↦ P.coeff (d * n)`: at an index `d * m` the
-two sides agree by `PowerSeries.coeff_expand_mul`, and elsewhere both vanish — the left by
-`PowerSeries.coeff_expand_of_not_dvd`, the right by hypothesis. -/
-theorem IsSupportedOnDvd.exists_expand (hd : d ≠ 0) {P : PowerSeries R}
-    (hP : IsSupportedOnDvd d P) : ∃ Q, expand d hd Q = P := by
-  refine ⟨mk fun n ↦ P.coeff (d * n), PowerSeries.ext fun n ↦ ?_⟩
+`PowerSeries.isSupportedOnDvd_expand`, with the series substituted into given explicitly: it is
+`PowerSeries.mk fun n ↦ P.coeff (d * n)`, the series of the coefficients of `P` at multiples
+of `d`. -/
+theorem IsSupportedOnDvd.expand_mk_coeff_mul (hd : d ≠ 0) {P : PowerSeries R}
+    (hP : IsSupportedOnDvd d P) : expand d hd (mk fun n ↦ P.coeff (d * n)) = P := by
+  ext n
   by_cases h : d ∣ n
   · obtain ⟨m, rfl⟩ := h
     rw [coeff_expand_mul, coeff_mk]
   · rw [coeff_expand_of_not_dvd d hd _ h, isSupportedOnDvd_iff.1 hP n h]
 
 /-- **Being supported on multiples of `d` is exactly being a substitution `q ↦ q ^ d`.** The two
-directions are `PowerSeries.IsSupportedOnDvd.exists_expand` and
+directions are `PowerSeries.IsSupportedOnDvd.expand_mk_coeff_mul` and
 `PowerSeries.isSupportedOnDvd_expand`. -/
 theorem isSupportedOnDvd_iff_exists_expand (hd : d ≠ 0) (P : PowerSeries R) :
     IsSupportedOnDvd d P ↔ ∃ Q, expand d hd Q = P :=
-  ⟨fun hP ↦ hP.exists_expand hd, fun ⟨_, hQ⟩ ↦ hQ ▸ isSupportedOnDvd_expand hd _⟩
+  ⟨fun hP ↦ ⟨_, hP.expand_mk_coeff_mul hd⟩, fun ⟨_, hQ⟩ ↦ hQ ▸ isSupportedOnDvd_expand hd _⟩
 
 /-- **The range of `PowerSeries.expand d` is the supported submodule**, the bundled form of
 `PowerSeries.isSupportedOnDvd_iff_exists_expand`. `expand` is an `AlgHom`, so the range is taken

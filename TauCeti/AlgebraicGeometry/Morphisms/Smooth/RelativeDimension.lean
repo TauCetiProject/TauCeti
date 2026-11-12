@@ -35,6 +35,8 @@ subsets of a Jacobson scheme, so they contain closed points.
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq`:
   `f : X ⟶ Spec k` is smooth of relative dimension `n` if and only if it is smooth and the local
   rings at closed points have dimension `n`;
+* `TauCeti.AlgebraicGeometry.coheight_eq_of_isClosed_of_smoothOfRelativeDimension`: a closed
+  point of a `k`-scheme smooth of relative dimension `n` has codimension `n`;
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_of_topologicalKrullDim_eq`: a smooth
   irreducible `k`-scheme of dimension `n` is smooth of relative dimension `n`;
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_smoothOfRelativeDimension`: conversely,
@@ -112,6 +114,13 @@ theorem smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq (n : ℕ) :
       exact_mod_cast (ringKrullDim_stalk_eq_of_isStandardSmoothOfRelativeDimension f hV hm hyV
         hy).symm.trans (hdim y hy)
     exact ⟨⊤, hU, V, hV, hxV, e, hmn ▸ hm⟩
+
+/-- A closed point of a scheme smooth of relative dimension `n` over a field has codimension `n`.
+For instance, a rational point of a smooth curve is a point of codimension one. -/
+theorem coheight_eq_of_isClosed_of_smoothOfRelativeDimension {n : ℕ}
+    [SmoothOfRelativeDimension n f] {x : X} (hx : IsClosed {x}) : coheight x = n := by
+  exact_mod_cast (ringKrullDim_stalk_eq_coheight x).symm.trans
+    (((smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq f n).mp inferInstance).2 x hx)
 
 /-- A smooth irreducible scheme of dimension `n` over a field is smooth of relative
 dimension `n`. -/

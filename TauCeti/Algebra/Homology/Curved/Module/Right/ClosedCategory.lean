@@ -95,6 +95,14 @@ theorem closedHom_mem
   simpa only [closedHom, add_zero] using dgRightModuleCochains.map_mem
     (dgClosedHomEquivZeroCocycles M N f).1 hx
 
+/-- The ground-ring linear map underlying a closed morphism is homogeneous of degree zero. -/
+theorem isHomogeneous_closedHom
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    LinearMap.IsHomogeneous ((closedHom f).restrictScalars R) M.grading N.grading 0 :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+    simpa only [add_zero, LinearMap.restrictScalars_apply] using closedHom_mem f hx
+
 /-- A closed morphism commutes with the differentials. -/
 @[simp]
 theorem differential_closedHom
@@ -104,6 +112,14 @@ theorem differential_closedHom
   (dgRightModuleCochains.curvedDifferential_zero_eq_zero_iff
     (dgClosedHomEquivZeroCocycles M N f).1).mp
       (LinearMap.mem_ker.mp (dgClosedHomEquivZeroCocycles M N f).2) x
+
+/-- The ground-ring linear map underlying a closed morphism commutes with the differentials. -/
+theorem differential_comp_closedHom
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    N.differential ∘ₗ (closedHom f).restrictScalars R =
+      (closedHom f).restrictScalars R ∘ₗ M.differential :=
+  LinearMap.ext fun x ↦ differential_closedHom f x
 
 /-- The identity closed morphism is the identity right-linear map. -/
 @[simp]

@@ -21,6 +21,7 @@ Composition with Frobenius is also injective on morphisms.
 
 * `TauCeti.Isogeny.frobeniusIsogeny_comp`: Frobenius commutes with an isogeny.
 * `TauCeti.Isogeny.Hom.frobenius_comp`: Frobenius is central in the endomorphism carrier.
+* `TauCeti.Isogeny.Hom.frobenius_pow_comp`: so is every power of Frobenius.
 * `TauCeti.Isogeny.Hom.frobenius_comp_add`: composition by Frobenius preserves addition.
 * `TauCeti.Isogeny.Hom.frobenius_comp_injective` and
   `TauCeti.Isogeny.Hom.frobenius_comp_inj`: composition with Frobenius cancels.
@@ -64,6 +65,17 @@ theorem frobenius_comp (f : Hom W₁ W₂) :
   · simp
   · rw [ofIsogeny_comp_ofIsogeny, ofIsogeny_comp_ofIsogeny, frobeniusIsogeny_comp]
 
+omit [W₂.IsElliptic] in
+/-- Every power of Frobenius commutes with every morphism, including the zero morphism. -/
+theorem frobenius_pow_comp (f : Hom W₁ W₂) (n : ℕ) :
+    (ofIsogeny (frobeniusIsogeny W₂) ^ n).comp f =
+      f.comp (ofIsogeny (frobeniusIsogeny W₁) ^ n) := by
+  induction n with
+  | zero => rw [pow_zero, pow_zero, one_def, one_def, id_comp, comp_id]
+  | succ n ih =>
+    rw [pow_succ, pow_succ, mul_def, mul_def, comp_assoc, frobenius_comp, ← comp_assoc, ih,
+      comp_assoc]
+
 /-- Frobenius preserves sums of morphisms under composition. -/
 @[simp]
 theorem frobenius_comp_add (f g : Hom W₁ W₂) :
@@ -72,14 +84,26 @@ theorem frobenius_comp_add (f g : Hom W₁ W₂) :
         (ofIsogeny (frobeniusIsogeny W₂)).comp g := by
   rw [frobenius_comp, add_comp, ← frobenius_comp, ← frobenius_comp]
 
+omit [W.IsElliptic] in
 /-- **Composition with Frobenius cancels**: `f ↦ π ∘ f` is injective on morphisms. -/
 theorem frobenius_comp_injective :
-    Function.Injective fun f : Hom W₁ W ↦ (ofIsogeny (frobeniusIsogeny W)).comp f :=
-  -- `f ↦ π ∘ f` is additive, and a composite vanishes only when a factor does
-  (injective_iff_map_eq_zero (AddMonoidHom.mk'
-    (fun f : Hom W₁ W ↦ (ofIsogeny (frobeniusIsogeny W)).comp f) frobenius_comp_add)).2 fun _ hf ↦
-    (comp_eq_zero_iff.1 hf).resolve_left (ofIsogeny_ne_zero _)
+    Function.Injective fun f : Hom W₁ W ↦ (ofIsogeny (frobeniusIsogeny W)).comp f := by
+  intro f g h
+  simp only at h
+  rw [frobenius_comp, frobenius_comp] at h
+  -- a composite vanishes only when a factor does, and nonzero morphisms are isogenies
+  rcases f.eq_zero_or_exists_ofIsogeny with rfl | ⟨φ, rfl⟩
+  · rw [zero_comp] at h
+    exact (comp_eq_zero_iff.1 h.symm).resolve_right (ofIsogeny_ne_zero _) |>.symm
+  rcases g.eq_zero_or_exists_ofIsogeny with rfl | ⟨ψ, rfl⟩
+  · rw [zero_comp] at h
+    exact (comp_eq_zero_iff.1 h).resolve_right (ofIsogeny_ne_zero _)
+  rw [ofIsogeny_comp_ofIsogeny, ofIsogeny_comp_ofIsogeny] at h
+  have h' := ofIsogeny_injective h
+  congr 1
+  exact Isogeny.comp_right_injective (frobeniusIsogeny W₁) h'
 
+omit [W.IsElliptic] in
 /-- **Two morphisms agree exactly when they agree after composition with Frobenius.** -/
 @[simp]
 theorem frobenius_comp_inj {f g : Hom W₁ W} :

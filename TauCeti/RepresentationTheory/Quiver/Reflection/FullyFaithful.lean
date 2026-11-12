@@ -352,6 +352,7 @@ theorem finrank_end_reflectRep (hs : Function.Surjective (incomingSum M i)) :
     (X := M) (Y := M)) (reflectionFunctor_map_bijective hi hs)
   have he := e.finrank_eq
   rw [reflectionFunctor_obj] at he
+  rw [(End.linearEquiv (R := k)).finrank_eq, (End.linearEquiv (R := k)).finrank_eq]
   exact he.symm
 
 /-- **The reflection functor at a sink reflects isomorphisms**, between representations whose

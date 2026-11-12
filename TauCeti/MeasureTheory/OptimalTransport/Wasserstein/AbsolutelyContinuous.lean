@@ -53,6 +53,8 @@ finite moments needed to place the laws `η_t` in `P_p(X)` propagate from a sing
   satisfies `|μ'|(t) ^ p ≤ ∫ |γ'|(t) ^ p dη` at almost every time.
 * `TauCeti.curveAction_le_lintegral_of_coe_eq_map_IccExtend`: its `p`-action is at most the
   expected `p`-action of the paths.
+* `TauCeti.ae_metricDerivative_rpow_eq_lintegral_of_coe_eq_map_IccExtend`: when the two actions
+  are equal and finite, `|μ'|(t) ^ p = ∫ |γ'|(t) ^ p dη` at almost every time.
 
 ## References
 
@@ -111,7 +113,7 @@ private lemma lintegral_eLpNorm_metricDerivative_ne_top (hab : a ≤ b)
     simpa using ENNReal.toReal_mono hp hp1
   -- Hölder's inequality on `[a, b]` bounds the integral by the expected action.
   have h := rpow_lintegral_le_measure_univ_rpow_mul (μ := volume.restrict (Ι a b))
-    (measurable_eLpNorm_metricDerivative hab η hp0 hp).aemeasurable hr
+    (u := fun r ↦ eLpNorm (fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) r) p η) hr
   rw [lintegral_eLpNorm_metricDerivative_rpow hab η hp0 hp, Measure.restrict_apply_univ,
     Real.volume_uIoc] at h
   refine ((ENNReal.rpow_lt_top_iff_of_pos (by linarith)).1 (h.trans_lt ?_)).ne
@@ -135,12 +137,12 @@ private lemma isProbabilityMeasure_of_coe_eq_map_IccExtend (hab : a ≤ b)
 variable [SecondCountableTopology X]
 
 /-- **Time marginals of a law on paths move no faster than the averaged speed.** Let `η` be a
-σ-finite measure on `C([a, b], X)` concentrated on paths that are absolutely continuous on
+s-finite measure on `C([a, b], X)` concentrated on paths that are absolutely continuous on
 `[a, b]`, and let `1 ≤ p < ∞`. For times `s, u ∈ [a, b]`, the `p`-Wasserstein distance between the
 laws of `γ s` and `γ u` is at most the integral over the times between `s` and `u` of the `Lᵖ(η)`
 norm of the metric derivative of the paths. -/
 theorem wassersteinEDist_map_IccExtend_le_lintegral_eLpNorm (hab : a ≤ b)
-    {η : Measure C(Icc a b, X)} [SigmaFinite η]
+    {η : Measure C(Icc a b, X)} [SFinite η]
     (hAC : ∀ᵐ γ : C(Icc a b, X) ∂η, AbsolutelyContinuousOnInterval (IccExtend hab γ) a b)
     (hp1 : 1 ≤ p) (hp : p ≠ ∞) {s u : ℝ} (hs : s ∈ uIcc a b) (hu : u ∈ uIcc a b) :
     wassersteinEDist p (η.map fun γ : C(Icc a b, X) ↦ IccExtend hab γ s)
@@ -163,9 +165,9 @@ theorem wassersteinEDist_map_IccExtend_le_lintegral_eLpNorm (hab : a ≤ b)
         eLpNorm_map_measure measurable_edist.aestronglyMeasurable (hs'.prodMk hu').aemeasurable
     _ ≤ eLpNorm (fun γ : C(Icc a b, X) ↦ ∫⁻ r in Ι s u, metricDerivative (IccExtend hab γ) r)
           p η := by
-        refine eLpNorm_mono_enorm_ae (hs'.edist hu').aestronglyMeasurable ?_
+        refine eLpNorm_mono_eNorm_ae (hs'.edist hu').aestronglyMeasurable ?_
         filter_upwards [hAC] with γ hγ
-        simpa only [enorm_eq_self] using hγ.edist_le_lintegral_metricDerivative hs hu
+        simpa only [eNorm_eq_self] using hγ.edist_le_lintegral_metricDerivative hs hu
     _ ≤ ∫⁻ r in Ι s u,
           eLpNorm (fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) r) p η := by
         -- Minkowski's integral inequality moves the `Lᵖ(η)` seminorm inside the time integral.
@@ -293,5 +295,44 @@ theorem curveAction_le_lintegral_of_coe_eq_map_IccExtend (hab : a ≤ b)
     _ = ∫⁻ γ, curveAction p.toReal (IccExtend hab γ) a b ∂η := by
         simp_rw [curveAction_def]
         exact (lintegral_lintegral_swap (hM.pow_const p.toReal).aemeasurable).symm
+
+/-- **A representation of minimal expected action has the metric speed of the curve.** Let
+`1 ≤ p < ∞` and let `η` be a measure on `C([a, b], X)` concentrated on paths absolutely continuous
+on `[a, b]`, whose time marginals trace a curve `μ` in `P_p(X)` on `[a, b]`. If the expected
+`p`-action of the paths is finite and equal to the `p`-action of `μ`, then at almost every
+`t ∈ [a, b]` the metric derivative of `μ` is the averaged speed of the paths:
+`|μ'|(t) ^ p = ∫ |γ'|(t) ^ p dη(γ)`. -/
+theorem ae_metricDerivative_rpow_eq_lintegral_of_coe_eq_map_IccExtend (hab : a ≤ b)
+    {η : Measure C(Icc a b, X)}
+    (hAC : ∀ᵐ γ : C(Icc a b, X) ∂η, AbsolutelyContinuousOnInterval (IccExtend hab γ) a b)
+    (hp : p ≠ ∞) (hA : ∫⁻ γ, curveAction p.toReal (IccExtend hab γ) a b ∂η ≠ ∞)
+    {μ : ℝ → WassersteinSpace p X}
+    (hμ : ∀ t ∈ uIcc a b, ((μ t : ProbabilityMeasure X) : Measure X) =
+      η.map fun γ : C(Icc a b, X) ↦ IccExtend hab γ t)
+    (heq : ∫⁻ γ, curveAction p.toReal (IccExtend hab γ) a b ∂η = curveAction p.toReal μ a b) :
+    ∀ᵐ t, t ∈ uIcc a b →
+      metricDerivative μ t ^ p.toReal = ∫⁻ γ, metricDerivative (IccExtend hab γ) t ^ p.toReal ∂η
+    := by
+  have := isProbabilityMeasure_of_coe_eq_map_IccExtend hab hμ
+  have hM := (measurable_metricDerivative_IccExtend (X := X) hab).pow_const p.toReal
+  have hle := ae_metricDerivative_rpow_le_lintegral_of_coe_eq_map_IccExtend hab hAC hp hA hμ
+  -- On `Ι a b` the two sides have the same finite integral and are ordered almost everywhere.
+  have hint : ∫⁻ t in Ι a b, ∫⁻ γ, metricDerivative (IccExtend hab γ) t ^ p.toReal ∂η =
+      curveAction p.toReal μ a b := by
+    rw [← heq]
+    simp_rw [curveAction_def]
+    exact (lintegral_lintegral_swap hM.aemeasurable).symm
+  have hfg : (fun t ↦ metricDerivative μ t ^ p.toReal) =ᵐ[volume.restrict (Ι a b)]
+      fun t ↦ ∫⁻ γ, metricDerivative (IccExtend hab γ) t ^ p.toReal ∂η := by
+    refine ae_eq_of_ae_le_of_lintegral_le ?_ ?_ hM.lintegral_prod_left'.aemeasurable ?_
+    · filter_upwards [ae_restrict_mem measurableSet_uIoc, ae_restrict_of_ae hle] with t ht h
+        using h (uIoc_subset_uIcc ht)
+    · rwa [← curveAction_def, ← heq]
+    · rw [hint, curveAction_def]
+  -- The left endpoint of `uIcc a b` is the only point missing from `Ι a b`.
+  rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_uIoc] at hfg
+  filter_upwards [hfg, measure_eq_zero_iff_ae_notMem.1 (measure_singleton (min a b))]
+    with t ht hne htab
+  exact ht ⟨lt_of_le_of_ne htab.1 (Ne.symm hne), htab.2⟩
 
 end TauCeti

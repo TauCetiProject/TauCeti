@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Coset.Basic
 public import TauCeti.LinearAlgebra.Trace.Pi
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
@@ -49,20 +50,6 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
 
 private abbrev RightCosets (S : Subgroup G) := Quotient (QuotientGroup.rightRel S)
 
-/-- The right-to-left-coset equivalence sends the right coset of `x` to the left coset of
-`x⁻¹`. Mathlib does not currently expose a computation lemma for this equivalence, so keep
-the necessary unfolding of its `Quotient.map'` implementation isolated here. -/
-private theorem quotientRightRelEquivQuotientLeftRel_mk (S : Subgroup G) (x : G) :
-    QuotientGroup.quotientRightRelEquivQuotientLeftRel S (Quotient.mk'' x) =
-      QuotientGroup.mk x⁻¹ := by
-  change @Quotient.map' G G (QuotientGroup.rightRel S) (QuotientGroup.leftRel S)
-    (fun y => y⁻¹) (fun a b => by
-      rw [QuotientGroup.leftRel_apply, QuotientGroup.rightRel_apply]
-      exact fun h => (congrArg (· ∈ S) (by simp)).mp (S.inv_mem h))
-      (@Quotient.mk'' G (QuotientGroup.rightRel S) x) =
-      @Quotient.mk'' G (QuotientGroup.leftRel S) x⁻¹
-  apply Quotient.map'_mk''
-
 /-- A character is a class function, so `Function.indTerm` applies to it. -/
 private theorem character_mem_classFunction {V : Type u} [AddCommGroup V] [Module k V]
     (ρ : Representation k S V) : ρ.character ∈ ClassFunction k S :=
@@ -90,13 +77,19 @@ private theorem trace_ind_eq_sum_rightCosets [S.FiniteIndex] [Fintype (RightCose
     rw [indSubtypeEquivPi_ρ_apply]
     exact congrArg (A.ρ (rightCosetFactor (S := S) (q.out * g)))
       (congrFun he (Quotient.mk'' (q.out * g)))
-  rw [LinearMap.trace_pi_of_apply_eq
-    (T := e.conj ((Rep.ind S.subtype A).ρ g))
-    (σ := fun q => Quotient.mk'' (q.out * g))
-    (f := fun q => A.ρ (rightCosetFactor (S := S) (q.out * g))) hT]
+  rw [LinearMap.trace_pi]
   apply Finset.sum_congr rfl
   intro q _
-  by_cases hq : Quotient.mk'' (q.out * g) = q <;> simp [hq]
+  have hblock :
+      LinearMap.proj q ∘ₗ e.conj ((Rep.ind S.subtype A).ρ g) ∘ₗ
+        LinearMap.single k (fun _ : RightCosets S => A) q =
+      if Quotient.mk'' (q.out * g) = q then
+        A.ρ (rightCosetFactor (S := S) (q.out * g)) else 0 := by
+    ext a
+    simp only [LinearMap.comp_apply, LinearMap.proj_apply, LinearMap.single_apply, hT]
+    by_cases hq : Quotient.mk'' (q.out * g) = q <;> simp [hq]
+  rw [hblock]
+  split_ifs <;> simp
 
 open scoped Classical in
 /-- The trace computation expressed as the standard character summand, still indexed by right
@@ -191,12 +184,8 @@ theorem character_indFDRep_sum_quotient {k : Type u} {G : Type v} [Field k] [Gro
       apply Fintype.sum_equiv e
       intro q
       refine Function.indTerm_eq_of_mk_eq _ (Rep.character_mem_classFunction A'.ρ) _ _ _ ?_
-      have heq : e q = QuotientGroup.mk q.out⁻¹ := by
-        calc
-          e q = e (Quotient.mk'' q.out) :=
-            congrArg e (Quotient.out_eq' q).symm
-          _ = QuotientGroup.mk q.out⁻¹ :=
-            Rep.quotientRightRelEquivQuotientLeftRel_mk S q.out
+      have heq : e q = QuotientGroup.mk q.out⁻¹ :=
+        QuotientGroup.quotientRightRelEquivQuotientLeftRel_apply q
       exact heq.symm.trans (Quotient.out_eq' (e q)).symm
     _ = _ := by
       apply Finset.sum_congr rfl

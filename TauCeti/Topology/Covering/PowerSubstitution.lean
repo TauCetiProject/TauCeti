@@ -9,7 +9,10 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
 
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
+
+import TauCeti.Analysis.Normed.Module.Connected
 
 /-!
 # Lifting a power substitution through a finite covering of a punctured disc
@@ -78,6 +81,23 @@ theorem mapsTo_pow_ball_zero_diff_singleton (hn : n ≠ 0) (hR : R' ^ n ≤ R) :
     MapsTo (fun t : ℂ => t ^ n) (ball 0 R' \ {0}) (ball 0 R \ {0}) :=
   fun _ ht => ⟨mapsTo_pow_ball_zero hn hR ht.1, pow_ne_zero n ht.2⟩
 
+/-- A power-times-factor form `G b = b.2 ^ m * w b` for `G` off the hyperplane `t = 0`, on
+`V × (ball 0 R \ {0})`, pulls back along `(w, t) ↦ (w, t ^ n)` to the form
+`G (b.1, b.2 ^ n) = b.2 ^ (n * m) * w (b.1, b.2 ^ n)`, with the factor `w` pulled back along the
+same map and exponent `n * m`, in a neighbourhood of every point `(x, 0)` with `x ∈ V`. -/
+theorem eventually_comp_pow_eq_pow_mul {V : Set E} {G w : E × ℂ → ℂ} {m : ℕ} (hV : IsOpen V)
+    (hR : 0 < R) (hn : n ≠ 0)
+    (h : ∀ b ∈ V ×ˢ (ball 0 R \ {0}), G b = b.2 ^ m * w b) {x : E} (hx : x ∈ V) :
+    ∀ᶠ b in nhds (x, (0 : ℂ)), b.2 ≠ 0 →
+      G (b.1, b.2 ^ n) = b.2 ^ (n * m) * w (b.1, b.2 ^ n) := by
+  have hcont : Continuous fun b : E × ℂ ↦ (b.1, b.2 ^ n) := by fun_prop
+  have hx' : (fun b : E × ℂ ↦ (b.1, b.2 ^ n)) (x, (0 : ℂ)) ∈ V ×ˢ ball (0 : ℂ) R := by
+    rw [mem_prod]
+    exact ⟨hx, by simpa [zero_pow hn] using hR⟩
+  filter_upwards [hcont.continuousAt.preimage_mem_nhds
+    ((hV.prod isOpen_ball).mem_nhds hx')] with b hb hb0
+  simpa only [← pow_mul] using h _ ⟨hb.1, hb.2, pow_ne_zero n hb0⟩
+
 /-- The **power substitution** `(w, s) ↦ (w, s ^ n)` from `U × (ball 0 R' \ {0})` to
 `U × (ball 0 R \ {0})`, for `n ≠ 0` and `R' ^ n ≤ R`. -/
 def powerSubstitution (hn : n ≠ 0) (hR : R' ^ n ≤ R) :
@@ -123,7 +143,9 @@ theorem _root_.IsCoveringMap.existsUnique_continuousMap_lifts_powerSubstitution
     ∃! F : C(U × ↥(ball (0 : ℂ) R' \ {0}), E), F a = e ∧ p ∘ F = powerSubstitution U hn hR := by
   set q := powerSubstitution U hn hR
   have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.2.1)
-  have := pathConnectedSpace_ball_diff_singleton 0 hR'
+  have := isPathConnected_iff_pathConnectedSpace.1
+    (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
+      (0 : ℂ) hR')
   have : LocallyPathConnectedSpace ↥(ball (0 : ℂ) R' \ {0}) :=
     (isOpen_ball.sdiff isClosed_singleton).locallyPathConnectedSpace
   refine hp.existsUnique_continuousMap_lifts_of_range_le he ?_
@@ -142,14 +164,16 @@ theorem _root_.IsCoveringMap.existsUnique_continuousMap_lifts_powerSubstitution
       Circle.fundamentalGroupMulEquiv _ (FundamentalGroup.map dA a g) ^ n := by
     have h₁ : W (FundamentalGroup.map q a g) =
         Circle.fundamentalGroupMulEquiv _ (FundamentalGroup.map (dX.comp q) a g) :=
-      congrArg (Circle.fundamentalGroupMulEquiv _) (FundamentalGroupoid.map_comp_map dX q g).symm
+      congrArg (Circle.fundamentalGroupMulEquiv _)
+        (CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map dX q g.asHom)).symm
     -- rewriting `dX.comp q` also changes the base point of the circle, so it is done on a
     -- statement whose base point is that of `FundamentalGroup.map (dX.comp q) a`
     have h₂ : Circle.fundamentalGroupMulEquiv _ (FundamentalGroup.map (dX.comp q) a g) =
         Circle.fundamentalGroupMulEquiv _ (FundamentalGroup.map (pow.comp dA) a g) := by
       rw [hd]
     rw [h₁, h₂]
-    exact (congrArg _ (FundamentalGroupoid.map_comp_map pow dA g)).trans
+    exact (congrArg _
+      (CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map pow dA g.asHom))).trans
       (Circle.fundamentalGroupMulEquiv_map_pow n _)
   -- So the image of `g` is an `n`-th power, which has trivial monodromy.
   obtain ⟨h, hh⟩ := hW.2 (Circle.fundamentalGroupMulEquiv _ (FundamentalGroup.map dA a g))
@@ -174,7 +198,9 @@ theorem _root_.IsCoveringMap.exists_continuousMap_lifts_powerSubstitution
     (hp.existsUnique_continuousMap_lifts_powerSubstitution hn hR hdvd e.2).exists
   refine ⟨F, hF, fun b e e' h ↦ Subtype.ext ?_⟩
   have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.2.1)
-  have := pathConnectedSpace_ball_diff_singleton 0 hR'
+  have := isPathConnected_iff_pathConnectedSpace.1
+    (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
+      (0 : ℂ) hR')
   -- two lifts agreeing at `b` agree everywhere, in particular at `a`
   rw [← (hF e).1, ← (hF e').1,
     hp.eq_of_comp_eq (F e).continuous (F e').continuous ((hF e).2.trans (hF e').2.symm) b h]

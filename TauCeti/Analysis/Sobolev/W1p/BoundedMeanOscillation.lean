@@ -33,7 +33,7 @@ which fails for `n ≥ 2`. Unlike Trudinger's inequality
 By the John–Nirenberg inequality, functions of bounded mean oscillation are exponentially
 integrable. In `ℝⁿ = EuclideanSpace ℝ ι` this gives a local form of exponential integrability for
 every `u ∈ W^{1,n}(Ω)`: there are constants `A > 0` and `C`, depending only on `n`, such that if
-`B(x₀, R) ⊆ Ω` and `σ ω^(-1/n) ‖∇u‖_{Lⁿ(B(x₀, R))} ≤ A`, then on `B' = B(x₀, R / (3√n))`
+`B(x₀, R) ⊆ Ω` and `σ ω^(-1/n) ‖∇u‖_{Lⁿ(B(x₀, R))} ≤ A`, then on `B' = B(x₀, R / (2√n))`
 
 `∫_{B'} exp (σ |u - u_{B'}|) ≤ C |B'|`.
 
@@ -102,12 +102,12 @@ theorem W1p.setLAverage_enorm_value_sub_setAverage_ball_le_mul_measure_rpow {x :
   -- Poincaré–Wirtinger in `L¹`, written in `ℝ≥0∞`.
   have hPW : ∫⁻ y in B, ‖W1p.value u y - m‖ₑ ∂mu ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * r) * eLpNorm (W1p.gradient u) 1 (mu.restrict B) := by
-    rw [← ofReal_integral_norm_eq_lintegral_enorm hint,
-      eLpNorm_one_eq_lintegral_enorm ((Lp.aestronglyMeasurable _).mono_measure hle),
-      ← ofReal_integral_norm_eq_lintegral_enorm hgint, ← ENNReal.ofReal_mul (by positivity)]
+    rw [← ofReal_integral_norm_eq_lintegral_eNorm hint,
+      eLpNorm_one_eq_lintegral_eNorm ((Lp.aestronglyMeasurable _).mono_measure hle),
+      ← ofReal_integral_norm_eq_lintegral_eNorm hgint, ← ENNReal.ofReal_mul (by positivity)]
     refine ENNReal.ofReal_le_ofReal ?_
     simpa only [Real.norm_eq_abs] using
-      W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hr hball u
+      W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hball u
   -- Hölder's inequality on the ball.
   have hH : eLpNorm (W1p.gradient u) 1 (mu.restrict B) ≤
       eLpNorm (W1p.gradient u) p (mu.restrict B) * mu B ^ (1 - p.toReal⁻¹) := by
@@ -150,7 +150,6 @@ theorem W1p.setLAverage_enorm_value_sub_setAverage_ball_le (hp : p = finrank ℝ
     have h1 : (1 : ℝ≥0∞) ≤ p := Fact.out
     simp [hp, h] at h1
   have hpn : p.toReal = n := by rw [hp, ENNReal.toReal_natCast]
-  have h0 : mu (ball (0 : E) 1) ≠ 0 := (measure_ball_pos mu 0 one_pos).ne'
   have htop : mu (ball (0 : E) 1) ≠ ∞ := measure_ball_lt_top.ne
   -- The radius cancels: `r (rⁿ)^(-1/n) = 1`.
   have hrad : ENNReal.ofReal r * ENNReal.ofReal (r ^ n) ^ (-(n : ℝ)⁻¹) = 1 := by
@@ -179,7 +178,7 @@ variable {ι : Type*} [Fintype ι]
 /-- **Local exponential integrability of `W^{1,n}` functions.** There are constants `A > 0` and
 `C`, depending only on the dimension `n`, such that the following holds for every additive Haar
 measure `μ` on `ℝⁿ = EuclideanSpace ℝ ι`, with `ω = μ(B(0, 1))`. Let `u ∈ W^{1,n}(Ω)` and
-`B(x₀, R) ⊆ Ω`. If `σ ω^(-1/n) ‖∇u‖_{Lⁿ(B(x₀, R))} ≤ A`, then on `B' = B(x₀, R / (3√n))`
+`B(x₀, R) ⊆ Ω`. If `σ ω^(-1/n) ‖∇u‖_{Lⁿ(B(x₀, R))} ≤ A`, then on `B' = B(x₀, R / (2√n))`
 
 `∫_{B'} exp (σ |u - u_{B'}|) ≤ C |B'|`.
 
@@ -191,10 +190,10 @@ theorem W1p.exists_setLIntegral_exp_mul_abs_value_sub_setAverage_ball_le :
       ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       σ * (mu.real (ball 0 1) ^ (-(Fintype.card ι : ℝ)⁻¹) *
         (eLpNorm (W1p.gradient u) p (mu.restrict (ball x₀ R))).toReal) ≤ A →
-      ∫⁻ x in ball x₀ (R / (3 * √(Fintype.card ι))),
+      ∫⁻ x in ball x₀ (R / (2 * √(Fintype.card ι))),
           ENNReal.ofReal (Real.exp (σ * |W1p.value u x -
-            ⨍ y in ball x₀ (R / (3 * √(Fintype.card ι))), W1p.value u y ∂mu|)) ∂mu ≤
-        C * mu (ball x₀ (R / (3 * √(Fintype.card ι)))) := by
+            ⨍ y in ball x₀ (R / (2 * √(Fintype.card ι))), W1p.value u y ∂mu|)) ∂mu ≤
+        C * mu (ball x₀ (R / (2 * √(Fintype.card ι)))) := by
   obtain ⟨A, hA, C, hJN⟩ := exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le (ι := ι)
   set n := Fintype.card ι
   refine ⟨A / 2 ^ (n + 1), by positivity, C, fun {mu} _ Omega p _ hp u x₀ R σ hball hσ => ?_⟩

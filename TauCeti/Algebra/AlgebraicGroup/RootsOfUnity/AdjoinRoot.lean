@@ -27,27 +27,11 @@ unity: an algebra map out of either is determined by the image of its generator,
 
 public section
 
-open Polynomial WithConv
+open Polynomial
 
 namespace TauCeti.RootsOfUnityGroup
 
-variable {R : Type*} [CommRing R] (n : ℕ)
-
--- The standard generator of `R[Multiplicative (ZMod n)]` is an `n`th root of unity.
-private theorem single_generator_pow : MonoidAlgebra.single (generator n) (1 : R) ^ n = 1 := by
-  rw [MonoidAlgebra.single_pow, one_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero,
-    MonoidAlgebra.one_def]
-
--- An algebra map out of `R[Multiplicative (ZMod n)]` is determined by its value on the standard
--- generator, because the points of `μ_n` are determined by that value.
-private theorem algHom_ext_generator {B : Type*} [CommRing B] [Algebra R B]
-    {f₁ f₂ : MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] B}
-    (h : f₁ (MonoidAlgebra.single (generator n) 1) = f₂ (MonoidAlgebra.single (generator n) 1)) :
-    f₁ = f₂ :=
-  congrArg ofConv <| (pointsMulEquiv (R := R) (A := B) n).injective <|
-    Subtype.ext <| Units.ext <| by simpa only [pointsMulEquiv_apply] using h
-
-variable [NeZero n]
+variable {R : Type*} [CommRing R] (n : ℕ) [NeZero n]
 
 /-- For `n ≠ 0`, the coordinate ring `R[Multiplicative (ZMod n)]` of `μ_n` is `R[X]/(X ^ n - 1)`,
 the class of `X` corresponding to the standard generator (`adjoinRootEquiv_root`). -/
@@ -55,10 +39,10 @@ noncomputable def adjoinRootEquiv :
     AdjoinRoot (X ^ n - 1 : R[X]) ≃ₐ[R] MonoidAlgebra R (Multiplicative (ZMod n)) :=
   AlgEquiv.ofAlgHom
     (AdjoinRoot.liftAlgHom _ (Algebra.ofId R _) (MonoidAlgebra.single (generator n) 1) (by
-      rw [eval₂_sub, eval₂_X_pow, eval₂_one, single_generator_pow, sub_self]))
+      rw [eval₂_sub, eval₂_X_pow, eval₂_one, single_generator_pow_eq_one, sub_self]))
     ((pointsMulEquiv (R := R) n).symm
       (rootsOfUnity.mkOfPowEq _ (AdjoinRoot.root_X_pow_sub_one_pow n))).ofConv
-    (algHom_ext_generator n (by
+    (algHom_ext n (by
       rw [AlgHom.comp_apply, pointsMulEquiv_symm_apply_single_generator,
         rootsOfUnity.coe_mkOfPowEq, AdjoinRoot.liftAlgHom_root, AlgHom.id_apply]))
     (AdjoinRoot.algHom_ext (by

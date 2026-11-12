@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.RepresentationTheory.Coinvariants
+import TauCeti.Algebra.Exact.Pi
 import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 /-!
@@ -202,15 +203,9 @@ theorem shortExact_pi (S : ι → ShortComplex (Rep.{w} k G)) (hS : ∀ i, (S i)
   have hf (i : ι) := (Rep.mono_iff_injective _).1 (hS i).mono_f
   have hg (i : ι) := (Rep.epi_iff_surjective _).1 (hS i).epi_g
   have hfg (i : ι) := (exact_iff_function_exact _).1 (hS i).exact
-  refine .mk' ((exact_iff_function_exact _).2 fun y ↦ ⟨fun h ↦ ?_, ?_⟩)
-    ((Rep.mono_iff_injective _).2 fun x x' h ↦ funext fun i ↦ hf i (congrFun h i))
-    ((Rep.epi_iff_surjective _).2 fun z ↦ ⟨fun i ↦ (hg i (z i)).choose,
-      funext fun i ↦ (hg i (z i)).choose_spec⟩)
-  · choose x hx using fun i ↦ ((hfg i) (y i)).1 (congrFun h i)
-    exact ⟨x, funext hx⟩
-  · rintro ⟨x, rfl⟩
-    funext i
-    exact ((hfg i) _).2 ⟨x i, rfl⟩
+  exact .mk' ((exact_iff_function_exact _).2 (Function.Exact.piMap hfg))
+    ((Rep.mono_iff_injective _).2 (Function.Injective.piMap hf))
+    ((Rep.epi_iff_surjective _).2 (Function.Surjective.piMap hg))
 
 end Ring
 

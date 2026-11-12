@@ -30,6 +30,8 @@ When the subgroup is finite and central, the quotient projection is a central is
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 namespace TauCeti.CommHopfAlgCat
 
 universe u

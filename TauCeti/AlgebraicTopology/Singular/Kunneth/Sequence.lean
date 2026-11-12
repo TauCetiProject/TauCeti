@@ -5,8 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
+import Mathlib.Algebra.Category.ModuleCat.Projective
+import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
+import Mathlib.RingTheory.Flat.CategoryTheory
+import TauCeti.Algebra.Category.ModuleCat.End
+import TauCeti.Algebra.Homology.ShortComplex.Splitting
+import TauCeti.CategoryTheory.GradedObject
+import TauCeti.CategoryTheory.Monoidal.Tor
 
 /-!
 # The Künneth short exact sequence for singular homology
@@ -15,10 +23,11 @@ Let `X` and `Y` be topological spaces and `M` and `N` modules over a commutative
 Suppose that the cycles `Z_q(Y; N)` of the singular chain complex `C(Y; N)` and the quotients
 `C_q(Y; N) / Z_q(Y; N)` are projective.  Over a principal ideal domain this holds for every
 projective `N`, for instance `N = k`, since the singular chain modules `C_q(Y; N) = ⨁ N` are then
-projective (`SSet.projective_chainComplex_X`) and instance search finds both hypotheses
-(`HomologicalComplex.free_cycles_of_isPrincipalIdealRing` and
-`HomologicalComplex.free_cokernel_iCycles_of_isPrincipalIdealRing`).  Then the **Künneth
-sequence**
+projective (`SSet.projective_chainComplex_X`). More generally, both hypotheses are found by
+instance search when every `k`-module has projective dimension at most one
+(`HomologicalComplex.projective_cycles_of_hasProjectiveDimensionLE_one` and
+`HomologicalComplex.projective_cokernel_iCycles_of_hasProjectiveDimensionLE_one`). Then the
+**Künneth sequence**
 
 `0 ⟶ ⨁_{p + q = m + 1} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₘ₊₁(X × Y; M ⊗ N)`
 `    ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; M), H_q(Y; N)) ⟶ 0`
@@ -32,8 +41,8 @@ map `TopCat.singularHomologyKunneth`, assembled from the homology cross products
 through the Eilenberg–Zilber homotopy equivalence `TopCat.eilenbergZilberHomotopyEquiv`, whose
 inverse is the shuffle map through which the Künneth map is defined.
 
-Over a principal ideal domain `k`, with `M = N = k` and the unitor `k ⊗ k ≅ k`, this gives the
-classical sequence
+Over a hereditary commutative ring `k`, expressed by requiring every `k`-module to have
+projective dimension at most one, taking `M = N = k` and the unitor `k ⊗ k ≅ k` gives the sequence
 
 `0 ⟶ ⨁_{p + q = m + 1} Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₘ₊₁(X × Y; k)`
 `    ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k)) ⟶ 0`
@@ -43,15 +52,24 @@ classical sequence
 The map `TopCat.singularHomologyToTor` is natural in both spaces and in both coefficient modules
 (`TopCat.singularHomologyToTor_naturality` and
 `TopCat.singularHomologyToTor_coefficient_naturality`), as is the Künneth map, so the Künneth
-sequence is natural.
+sequence is natural: continuous maps and maps of coefficient modules induce morphisms of Künneth
+short complexes (`TopCat.singularHomologyKunnethShortComplexMap` and
+`TopCat.singularHomologyKunnethShortComplexCoefficientMap`).
 
 If the cycles of `C(X; M)` split off its terms as well, for instance for projective `M` and `N`
-over a principal ideal domain, the Künneth map is a split monomorphism
+over a hereditary commutative ring, the Künneth map is a split monomorphism
 (`TopCat.isSplitMono_singularHomologyKunneth`) and the sequence splits
 (`TopCat.singularHomologyKunnethSplitting`, and `TopCat.singularHomologyKunnethUnitSplitting` for
-coefficients in a principal ideal domain).  The splitting is built from chosen splittings of the
-cycles of the singular chain complexes and need not be natural in `X` and `Y`; that no natural
+coefficients in a hereditary commutative ring). The splitting is built from chosen splittings of
+the cycles of the singular chain complexes and need not be natural in `X` and `Y`; that no natural
 splitting exists is not proved here.
+
+Through the splitting, a natural number `e` that kills the positive-degree homology of `X` and of
+`Y`, with coefficients in a hereditary commutative ring, also kills that of `X × Y`
+(`TopCat.nsmul_singularHomology_tensor_eq_zero`). Every tensor product summand has a factor of
+positive degree, and so does every `Tor₁` summand except `Tor₁(H₀(X; k), H_q(Y; k))`, which
+vanishes because `H₀(X; k)` is a free `k`-module. The same number `e` works for the product;
+without the splitting the extension would only show that `e²` kills it.
 
 ## Main definitions and results
 
@@ -64,9 +82,14 @@ splitting exists is not proved here.
 * `TopCat.mono_singularHomologyKunneth`: the Künneth map is a monomorphism in every degree.
 * `TopCat.singularHomologyKunnethUnitShortComplex` and
   `TopCat.singularHomologyKunnethUnitShortComplex_shortExact`: its form with coefficients in a
-  principal ideal domain.
+  hereditary commutative ring.
+* `TopCat.singularHomologyKunnethShortComplexMap` and
+  `TopCat.singularHomologyKunnethShortComplexCoefficientMap`: the morphisms of Künneth short
+  complexes induced by a pair of continuous maps and by a pair of maps of coefficient modules.
 * `TopCat.singularHomologyKunnethSplitting` and `TopCat.singularHomologyKunnethUnitSplitting`:
   **the splitting of the Künneth sequence**.
+* `TopCat.nsmul_singularHomology_tensor_eq_zero`: a number killing the positive-degree
+  homology of `X` and `Y` kills that of `X × Y`.
 
 ## References
 
@@ -259,9 +282,114 @@ def singularHomologyKunnethSplitting
 
 end Kunneth
 
+section Naturality
+
+variable {X Y X' Y' : TopCat.{w}} (f : X ⟶ X') (g : Y ⟶ Y') (M N : ModuleCat.{w} k)
+  [∀ q, Projective (cokernel (((toSSet.obj Y).chainComplex N).iCycles q))]
+  [∀ q, Projective (((toSSet.obj Y).chainComplex N).cycles q)]
+  [∀ q, Projective (cokernel (((toSSet.obj Y').chainComplex N).iCycles q))]
+  [∀ q, Projective (((toSSet.obj Y').chainComplex N).cycles q)]
+
+/-- The morphism of Künneth short complexes induced by continuous maps `f : X ⟶ X'` and
+`g : Y ⟶ Y'`: the maps `f_* ⊗ g_*` on `⨁ Hₚ(X; M) ⊗ H_q(Y; N)`, `(f × g)_*` on
+`Hₘ₊₁(X × Y; M ⊗ N)` and `Tor₁(f_*, g_*)` on `⨁ Tor₁(Hₚ(X; M), H_q(Y; N))`.  Together with
+`TopCat.singularHomologyKunnethShortComplex_shortExact` this makes the Künneth short exact sequence
+natural in both spaces. -/
+def singularHomologyKunnethShortComplexMap (m : ℕ) :
+    singularHomologyKunnethShortComplex X Y M N m ⟶
+      singularHomologyKunnethShortComplex X' Y' M N m where
+  τ₁ := GradedObject.Monoidal.tensorHom (fun p ↦ ((singularHomologyFunctor _ p).obj M).map f)
+    (fun q ↦ ((singularHomologyFunctor _ q).obj N).map g) (m + 1)
+  τ₂ := ((singularHomologyFunctor _ (m + 1)).obj (M ⊗ N)).map (f ⊗ₘ g)
+  τ₃ := GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{w} k) 1) (fun x ↦ x.1 + x.2)
+    (fun p ↦ ((singularHomologyFunctor _ p).obj M).map f)
+    (fun q ↦ ((singularHomologyFunctor _ q).obj N).map g) m
+  comm₁₂ := singularHomologyKunneth_naturality f g M N (m + 1)
+  comm₂₃ := singularHomologyToTor_naturality M N f g m
+
+/-- On `⨁ Hₚ(X; M) ⊗ H_q(Y; N)`, the morphism of Künneth short complexes is `f_* ⊗ g_*`. -/
+@[simp]
+lemma singularHomologyKunnethShortComplexMap_τ₁ (m : ℕ) :
+    (singularHomologyKunnethShortComplexMap f g M N m).τ₁ =
+      GradedObject.Monoidal.tensorHom (fun p ↦ ((singularHomologyFunctor _ p).obj M).map f)
+        (fun q ↦ ((singularHomologyFunctor _ q).obj N).map g) (m + 1) :=
+  (rfl)
+
+/-- On `Hₘ₊₁(X × Y; M ⊗ N)`, the morphism of Künneth short complexes is `(f × g)_*`. -/
+@[simp]
+lemma singularHomologyKunnethShortComplexMap_τ₂ (m : ℕ) :
+    (singularHomologyKunnethShortComplexMap f g M N m).τ₂ =
+      ((singularHomologyFunctor _ (m + 1)).obj (M ⊗ N)).map (f ⊗ₘ g) :=
+  (rfl)
+
+/-- On `⨁ Tor₁(Hₚ(X; M), H_q(Y; N))`, the morphism of Künneth short complexes is
+`Tor₁(f_*, g_*)`. -/
+@[simp]
+lemma singularHomologyKunnethShortComplexMap_τ₃ (m : ℕ) :
+    (singularHomologyKunnethShortComplexMap f g M N m).τ₃ =
+      GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{w} k) 1) (fun x ↦ x.1 + x.2)
+        (fun p ↦ ((singularHomologyFunctor _ p).obj M).map f)
+        (fun q ↦ ((singularHomologyFunctor _ q).obj N).map g) m :=
+  (rfl)
+
+end Naturality
+
+section CoefficientNaturality
+
+variable (X Y : TopCat.{w}) {M N M' N' : ModuleCat.{w} k} (φ : M ⟶ M') (ψ : N ⟶ N')
+  [∀ q, Projective (cokernel (((toSSet.obj Y).chainComplex N).iCycles q))]
+  [∀ q, Projective (((toSSet.obj Y).chainComplex N).cycles q)]
+  [∀ q, Projective (cokernel (((toSSet.obj Y).chainComplex N').iCycles q))]
+  [∀ q, Projective (((toSSet.obj Y).chainComplex N').cycles q)]
+
+/-- The morphism of Künneth short complexes induced by linear maps `φ : M ⟶ M'` and `ψ : N ⟶ N'`
+of coefficient modules: the maps `φ_* ⊗ ψ_*` on `⨁ Hₚ(X; M) ⊗ H_q(Y; N)`, the map induced by
+`φ ⊗ ψ` on `Hₘ₊₁(X × Y; M ⊗ N)` and `Tor₁(φ_*, ψ_*)` on `⨁ Tor₁(Hₚ(X; M), H_q(Y; N))`.  Together
+with `TopCat.singularHomologyKunnethShortComplex_shortExact` this makes the Künneth short exact
+sequence natural in both coefficient modules. -/
+def singularHomologyKunnethShortComplexCoefficientMap (m : ℕ) :
+    singularHomologyKunnethShortComplex X Y M N m ⟶
+      singularHomologyKunnethShortComplex X Y M' N' m where
+  τ₁ := GradedObject.Monoidal.tensorHom (fun p ↦ ((singularHomologyFunctor _ p).map φ).app X)
+    (fun q ↦ ((singularHomologyFunctor _ q).map ψ).app Y) (m + 1)
+  τ₂ := ((singularHomologyFunctor _ (m + 1)).map (φ ⊗ₘ ψ)).app (X ⊗ Y)
+  τ₃ := GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{w} k) 1) (fun x ↦ x.1 + x.2)
+    (fun p ↦ ((singularHomologyFunctor _ p).map φ).app X)
+    (fun q ↦ ((singularHomologyFunctor _ q).map ψ).app Y) m
+  comm₁₂ := singularHomologyKunneth_coefficient_naturality X Y φ ψ (m + 1)
+  comm₂₃ := singularHomologyToTor_coefficient_naturality X Y φ ψ m
+
+/-- On `⨁ Hₚ(X; M) ⊗ H_q(Y; N)`, the morphism of Künneth short complexes is `φ_* ⊗ ψ_*`. -/
+@[simp]
+lemma singularHomologyKunnethShortComplexCoefficientMap_τ₁ (m : ℕ) :
+    (singularHomologyKunnethShortComplexCoefficientMap X Y φ ψ m).τ₁ =
+      GradedObject.Monoidal.tensorHom (fun p ↦ ((singularHomologyFunctor _ p).map φ).app X)
+        (fun q ↦ ((singularHomologyFunctor _ q).map ψ).app Y) (m + 1) :=
+  (rfl)
+
+/-- On `Hₘ₊₁(X × Y; M ⊗ N)`, the morphism of Künneth short complexes is the map induced by
+`φ ⊗ ψ`. -/
+@[simp]
+lemma singularHomologyKunnethShortComplexCoefficientMap_τ₂ (m : ℕ) :
+    (singularHomologyKunnethShortComplexCoefficientMap X Y φ ψ m).τ₂ =
+      ((singularHomologyFunctor _ (m + 1)).map (φ ⊗ₘ ψ)).app (X ⊗ Y) :=
+  (rfl)
+
+/-- On `⨁ Tor₁(Hₚ(X; M), H_q(Y; N))`, the morphism of Künneth short complexes is
+`Tor₁(φ_*, ψ_*)`. -/
+@[simp]
+lemma singularHomologyKunnethShortComplexCoefficientMap_τ₃ (m : ℕ) :
+    (singularHomologyKunnethShortComplexCoefficientMap X Y φ ψ m).τ₃ =
+      GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{w} k) 1) (fun x ↦ x.1 + x.2)
+        (fun p ↦ ((singularHomologyFunctor _ p).map φ).app X)
+        (fun q ↦ ((singularHomologyFunctor _ q).map ψ).app Y) m :=
+  (rfl)
+
+end CoefficientNaturality
+
 section Unit
 
-variable (k) [NoZeroDivisors k] [IsPrincipalIdealRing k] (X Y : TopCat.{w})
+variable (k) [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] (X Y : TopCat.{w})
 
 /-- The Künneth short complex with coefficients in the ring:
 `⨁_{p + q = m + 1} Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₘ₊₁(X × Y; k) ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k))`,
@@ -277,8 +405,8 @@ abbrev singularHomologyKunnethUnitShortComplex (m : ℕ) : ShortComplex (ModuleC
       singularHomologyToTor X Y (𝟙_ _) (𝟙_ _) m)
     (by simp)
 
-/-- **The Künneth short exact sequence over a principal ideal domain.**  For a principal ideal
-domain `k`, for instance `ℤ`,
+/-- **The Künneth short exact sequence over a hereditary commutative ring.** For a commutative
+ring `k` whose modules have projective dimension at most one, for instance `ℤ`,
 
 `0 ⟶ ⨁_{p + q = m + 1} Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₘ₊₁(X × Y; k)`
 `  ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k)) ⟶ 0`
@@ -295,7 +423,7 @@ theorem singularHomologyKunnethUnitShortComplex_shortExact (m : ℕ) :
     (((singularHomologyFunctor _ (m + 1)).mapIso (λ_ (𝟙_ (ModuleCat.{w} k)))).app (X ⊗ Y))
     (Iso.refl _) (Category.id_comp _).symm (by simp)
 
-/-- **The Künneth short exact sequence over a principal ideal domain splits**, so that
+/-- **The Künneth short exact sequence over a hereditary commutative ring splits**, so that
 `Hₘ₊₁(X × Y; k)` is the direct sum of `⨁_{p + q = m + 1} Hₚ(X; k) ⊗ H_q(Y; k)` and
 `⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k))`
 (`CategoryTheory.ShortComplex.Splitting.isoBinaryBiproduct`).
@@ -321,6 +449,58 @@ the Künneth map, preceded by the map induced by the inverse unitor. -/
             inferInstanceAs (Module.Projective k k)
           isSplitMono_singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1)) :=
   (rfl)
+
+/-- A number killing the positive-degree homology of `X` and of `Y` kills the tensor product
+term `⨁_{p + q = n + 1} Hₚ(X; k) ⊗ H_q(Y; k)` of the Künneth sequence: each summand has a factor
+of positive degree. -/
+private lemma nsmul_id_singularHomologyKunnethUnitShortComplex_X₁_eq_zero {e : ℕ}
+    (hX : ∀ p,
+      e • 𝟙 (((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X) = 0)
+    (hY : ∀ q,
+      e • 𝟙 (((singularHomologyFunctor _ (q + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj Y) = 0)
+    (n : ℕ) : e • 𝟙 (singularHomologyKunnethUnitShortComplex k X Y n).X₁ = 0 := by
+  refine GradedObject.nsmul_id_mapObj_eq_zero fun ⟨p, q⟩ h ↦ ?_
+  rcases p with _ | p
+  · obtain rfl : q = n + 1 := by simpa using h
+    exact nsmul_id_tensor_eq_zero_of_right (hY n) _
+  · exact nsmul_id_tensor_eq_zero_of_left (hX p) _
+
+/-- A number killing the positive-degree homology of `X` kills the `Tor₁` term
+`⨁_{p + q = n} Tor₁(Hₚ(X; k), H_q(Y; k))` of the Künneth sequence. The summands with `p = 0`
+vanish because `H₀(X; k)` is a free, hence flat, `k`-module. -/
+private lemma nsmul_id_singularHomologyKunnethUnitShortComplex_X₃_eq_zero {e : ℕ}
+    (hX : ∀ p,
+      e • 𝟙 (((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X) = 0)
+    (n : ℕ) : e • 𝟙 (singularHomologyKunnethUnitShortComplex k X Y n).X₃ = 0 := by
+  refine GradedObject.nsmul_id_mapObj_eq_zero fun ⟨p, q⟩ _ ↦ ?_
+  rcases p with _ | p
+  · -- Tensoring with the flat module `H₀(X; k)` is exact, so `Tor₁(H₀(X; k), -)` vanishes.
+    let H₀ := ((singularHomologyFunctor _ 0).obj (𝟙_ (ModuleCat.{w} k))).obj X
+    have : Projective H₀ := Projective.of_iso (X.singularHomology₀Iso _).symm inferInstance
+    have : Module.Projective k H₀ := (IsProjective.iff_projective H₀).2 this
+    have : ((tensoringLeft (ModuleCat.{w} k)).obj H₀).PreservesHomology :=
+      Functor.preservesHomology_of_map_exact _ fun S hS ↦
+        Module.Flat.lTensor_shortComplex_exact H₀ S hS
+    exact IsZero.eq_of_src (Functor.isZero_leftDerived_succ _ _ 0) _ _
+  · exact nsmul_id_Tor_eq_zero (hX p) _ 1
+
+/-- **A number killing the homology of two spaces kills that of their product.** Over a
+hereditary commutative ring `k`, if a natural number `e` kills the positive-degree homology of
+spaces `X` and `Y`, then it kills the positive-degree homology of `X × Y`. -/
+theorem nsmul_singularHomology_tensor_eq_zero {e : ℕ}
+    (hX : ∀ p (x : ((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X),
+      e • x = 0)
+    (hY : ∀ q (y : ((singularHomologyFunctor _ (q + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj Y),
+      e • y = 0)
+    (n : ℕ) (z : ((singularHomologyFunctor _ (n + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj (X ⊗ Y)) :
+    e • z = 0 := by
+  -- Work with the endomorphisms `e • 𝟙` of the homology modules.
+  replace hX p := ModuleCat.nsmul_id_eq_zero_iff.2 (hX p)
+  replace hY q := ModuleCat.nsmul_id_eq_zero_iff.2 (hY q)
+  exact ModuleCat.nsmul_id_eq_zero_iff.1
+    ((singularHomologyKunnethUnitSplitting k X Y n).nsmul_id_X₂_eq_zero
+      (nsmul_id_singularHomologyKunnethUnitShortComplex_X₁_eq_zero k X Y hX hY n)
+      (nsmul_id_singularHomologyKunnethUnitShortComplex_X₃_eq_zero k X Y hX n)) z
 
 end Unit
 

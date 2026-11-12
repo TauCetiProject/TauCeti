@@ -77,6 +77,8 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
   `TauCeti.LocalFieldsRamification.psiNat_eq_iff`: `ψℕ(n) = m ↔ #G_1 + ⋯ + #G_m = n · #G_0`.
 * `TauCeti.LocalFieldsRamification.psiNat_strictMono`,
   `TauCeti.LocalFieldsRamification.self_le_psiNat`: `ψℕ` is strictly increasing and `n ≤ ψℕ(n)`.
+* `TauCeti.LocalFieldsRamification.psiNat_le_iff_le_floor_herbrand`:
+  `ψℕ(n) ≤ i ↔ n ≤ ⌊φ(i)⌋`.
 * `TauCeti.LocalFieldsRamification.psiNat_eq_self_iff`,
   `TauCeti.LocalFieldsRamification.psiNat_eq_add_card_mul_sub`: `ψℕ(v) = v` exactly when
   `G_v = G_0`, and `ψℕ(v) = t + #G_0 (v - t)` for `v ≥ t` when the filtration is
@@ -84,6 +86,8 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_herbrand`: `G^{φ(u)} = G_u`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_antitone`: the upper filtration
   decreases, and each `G^v` is normal.
+* `TauCeti.LocalFieldsRamification.exists_forall_upperRamificationGroup_natCast_eq_bot`:
+  `G^n = 1` for every large enough natural number `n`.
 
 ## References
 
@@ -345,11 +349,15 @@ theorem coe_herbrand_sub_coe_herbrand_of_forall_eq {a b : RamificationIndexDomai
   exact herbrandReal_sub_of_forall_eq K L (Subtype.coe_le_coe.2 hab) h
 
 /-- The Herbrand function is the identity as long as the lower ramification filtration is
-constant from `0` through `u`. -/
-theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain} (hu : 0 ≤ (u : ℝ))
+constant from `0` through `u`. For `u ≤ 0` the hypothesis is vacuous and the conclusion is
+`herbrand_of_coe_le_zero`. -/
+theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain}
     (h : ∀ t : ℝ, 0 < t → t ≤ u →
       lowerRamificationGroupReal K L t = lowerRamificationGroup K L 0) :
     herbrand K L u = u := by
+  by_cases hu : (u : ℝ) ≤ 0
+  · exact herbrand_of_coe_le_zero K L hu
+  replace hu : 0 ≤ (u : ℝ) := le_of_not_ge hu
   apply Subtype.ext
   rw [coe_herbrand]
   have hcard : (Nat.card (lowerRamificationGroup K L 0) : ℝ) ≠ 0 := by
@@ -370,6 +378,17 @@ theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain} (hu : 0 ≤ 
 theorem inverseHerbrand_of_coe_le_zero {v : RamificationIndexDomain} (hv : (v : ℝ) ≤ 0) :
     inverseHerbrand K L v = v :=
   (herbrandOrderIso K L).symm_apply_eq.2 (herbrand_of_coe_le_zero K L hv).symm
+
+variable {K L} in
+/-- If the inverse Herbrand function sends `u` to `-1`, then `u = -1`. -/
+theorem coe_eq_neg_one_of_inverseHerbrand_eq_neg_one {u : RamificationIndexDomain}
+    (hinverse : inverseHerbrand K L u = ⟨(-1 : ℝ), le_rfl⟩) : (u : ℝ) = -1 := by
+  have hinverse_neg_one :
+      inverseHerbrand K L ⟨(-1 : ℝ), le_rfl⟩ = ⟨(-1 : ℝ), le_rfl⟩ :=
+    inverseHerbrand_of_coe_le_zero K L (by norm_num)
+  have hu_eq : u = ⟨(-1 : ℝ), le_rfl⟩ :=
+    (inverseHerbrand_strictMono K L).injective <| hinverse.trans hinverse_neg_one.symm
+  exact congrArg Subtype.val hu_eq
 
 omit [IsGalois K L] in
 private theorem herbrandReal_of_mem_Icc (n : ℕ) {u : ℝ} (h₁ : (n : ℝ) ≤ u) (h₂ : u ≤ n + 1) :
@@ -567,6 +586,28 @@ theorem psiNat_strictMono : StrictMono (psiNat K L) := fun a b h ↦ by
 theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n := by
   exact (psiNat_strictMono K L).id_le n
 
+/-- `ψℕ_{L/K}(n) ≤ i` exactly when `n ≤ ⌊φ_{L/K}(i)⌋`: on natural numbers the integral inverse
+Herbrand function is the lower adjoint of `i ↦ ⌊φ_{L/K}(i)⌋`. In particular
+`ψℕ_{L/K}(⌊φ_{L/K}(i)⌋) ≤ i`, which converts the Herbrand-shifted depths `ψℕ_{L/K}(n)` back into
+unshifted ones. -/
+@[simp]
+theorem psiNat_le_iff_le_floor_herbrand {n i : ℕ} :
+    psiNat K L n ≤ i ↔
+      n ≤ ⌊(herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ : ℝ)⌋₊ := by
+  have h0 : (0 : ℝ) ≤ herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ := by
+    have hle : (⟨(0 : ℕ), Nat.cast_mem_ramificationIndexDomain 0⟩ : RamificationIndexDomain) ≤
+        ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ :=
+      Subtype.mk_le_mk.2 (Nat.cast_le.2 i.zero_le)
+    have h := (herbrand_strictMono K L).monotone hle
+    rw [herbrand_of_coe_le_zero K L (by simp)] at h
+    simpa using Subtype.coe_le_coe.2 h
+  have h := (herbrandOrderIso K L).symm_apply_le (y := ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩)
+    (x := ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩)
+  rw [herbrandOrderIso_apply, herbrandOrderIso_symm_apply, ← Subtype.coe_le_coe,
+    ← Subtype.coe_le_coe] at h
+  rw [Nat.le_floor_iff h0, ← Nat.cast_le (α := ℝ), coe_psiNat]
+  exact h
+
 /-- `ψℕ_{L/K}(v) = v` exactly when `G_v = G_0`, that is when the lower filtration is constant
 through `v`. -/
 @[simp]
@@ -628,5 +669,15 @@ theorem upperRamificationGroup_natCast (n : ℕ) :
       lowerRamificationGroup K L (psiNat K L n) := by
   rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast,
     lowerRamificationGroupReal_intCast]
+
+/-- The upper ramification filtration of a finite Galois extension of local fields is trivial at
+every large enough natural index. -/
+theorem exists_forall_upperRamificationGroup_natCast_eq_bot :
+    ∃ N : ℕ, ∀ n : ℕ, N ≤ n →
+      upperRamificationGroup K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ = ⊥ := by
+  obtain ⟨N, hN⟩ := exists_forall_lowerRamificationGroup_natCast_eq_bot K L
+  refine ⟨N, fun n hn ↦ ?_⟩
+  rw [upperRamificationGroup_natCast]
+  exact hN _ (hn.trans (self_le_psiNat K L n))
 
 end TauCeti.LocalFieldsRamification

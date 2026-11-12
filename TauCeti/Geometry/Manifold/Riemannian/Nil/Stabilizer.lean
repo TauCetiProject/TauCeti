@@ -118,7 +118,7 @@ private theorem differential_rotation (Φ : Isom J Nil) (hΦ : Φ 1 = 1) :
   refine ⟨c, hc, ?_, fun u => ?_⟩
   · have h := congrArg (fun v : P => c • v) hz
     simpa [smul_smul, ← pow_two, hc] using h
-  have h := Φ.mfderiv_leviCivitaConnection_mpullback (hZ (Φ 1))
+  have h := Φ.isLocalRiemannianIsometry.mfderiv_leviCivitaConnection_mpullback (hZ (Φ 1))
     ((tangentSpaceCastModel J (1 : Nil)).symm u)
   rw [hconn, smul_apply, map_smul] at h
   have hs := congrArg (tangentSpaceCastModel J (Φ 1)) h
@@ -185,8 +185,6 @@ private theorem exists_differential_orthogonal (Φ : Isom J Nil) (hΦ : Φ 1 = 1
   have hx := congrArg Prod.fst hrot
   have hy := congrArg (fun v : P => v.2.1) hrot
   simp only [rotation, Prod.smul_fst, Prod.smul_snd, smul_eq_mul] at hx hy
-  have hcx : c * (L e₂).1 = -(L e₁).2.1 := by linarith
-  have hcy : c * (L e₂).2.1 = (L e₁).1 := by linarith
   let A : Matrix (Fin 2) (Fin 2) ℝ :=
     !![(L e₁).1, (L e₂).1; (L e₁).2.1, (L e₂).2.1]
   have hA : A ∈ Matrix.orthogonalGroup (Fin 2) ℝ := by

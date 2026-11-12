@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.DiscreteSubset
+public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -13,6 +14,10 @@ public import TauCeti.Topology.Algebra.Module.BilinearForm
 -- inside the proof of `TauCeti.IsNondegenerateCriticalPoint.neg`.
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Add
+-- Private: invariance of criticality is used only inside the proofs of
+-- `TauCeti.isNondegenerateCriticalPoint_comp_iff` and
+-- `TauCeti.HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const`.
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
 # Nondegenerate critical points
@@ -79,10 +84,23 @@ the notion be read off in any chart.
   locus all of whose points are nondegenerate is discrete.
 * `TauCeti.HasNondegenerateCriticalPointsOn.finite_setOfPred_fderiv_eq_zero`: such a critical
   locus is finite on a compact set on which `fderiv ℝ f` is continuous.
+* `ContDiffAt.exists_norm_fderiv_le_mul_norm_sub` and
+  `ContDiffAt.exists_abs_sub_le_mul_norm_sub_sq`: near a critical point the differential is
+  bounded by a multiple of the distance to it, and the energy difference by a multiple of its
+  square.
+* `TauCeti.IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_fderiv` and
+  `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`: near a
+  nondegenerate critical point the differential is bounded below by a multiple of the distance,
+  and the Morse form of Łojasiewicz's inequality holds.
 * `TauCeti.isNondegenerateCriticalPoint_comp_iff` and `TauCeti.IsNondegenerateCriticalPoint.comp`:
   nondegeneracy is invariant under a change of coordinates with invertible differential.
 * `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
   nondegeneracy is invariant under negating the function.
+* `TauCeti.isNondegenerateCriticalPoint_add_const_iff`: nondegeneracy is invariant under adding a
+  constant.
+* `TauCeti.HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const`: a function equal to a function
+  with nondegenerate critical points composed with a `C²` chart of invertible differential, plus a
+  constant, has nondegenerate critical points on the source of the chart.
 * `ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self`: the local model. A
   continuous bilinear form `B` whose polarization `B.flip + B` is invertible makes `z ↦ B z z` a
   function with a nondegenerate critical point at the origin.
@@ -102,8 +120,6 @@ twice differentiable point is `ContDiffAt.isSymmSndFDerivAt`.
   M. Schwarz, *Morse Homology*, Birkhäuser, 1993, Chapter 1, for the nondegeneracy condition in
   Banach and Hilbert generality used here, namely invertibility of the second derivative as a map
   into the dual space.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
@@ -148,6 +164,16 @@ theorem hasNondegenerateCriticalPointsOn_iff {s : Set E} :
       ∀ ⦃x⦄, x ∈ s → fderiv ℝ f x = 0 → IsNondegenerateCriticalPoint f x :=
   Iff.rfl
 
+/-- A function with nondegenerate critical points on `s` is differentiable at every point of `s`:
+where it is not differentiable `fderiv` is `0` by convention, so the point would be a critical
+point, hence nondegenerate, hence a point of differentiability. -/
+theorem HasNondegenerateCriticalPointsOn.differentiableAt {s : Set E}
+    (hM : HasNondegenerateCriticalPointsOn f s) {x : E} (hx : x ∈ s) :
+    DifferentiableAt ℝ f x := by
+  by_contra hd
+  exact hd ((hasNondegenerateCriticalPointsOn_iff.1 hM hx
+    (fderiv_zero_of_not_differentiableAt hd)).contDiffAt.differentiableAt two_ne_zero)
+
 /-- Having nondegenerate critical points on `t` is inherited by every subset of `t`. -/
 theorem HasNondegenerateCriticalPointsOn.mono {s t : Set E}
     (hM : HasNondegenerateCriticalPointsOn f t) (hst : s ⊆ t) :
@@ -168,8 +194,7 @@ theorem isNondegenerateCriticalPoint_iff_separatingLeft [FiniteDimensional ℝ E
         (fderiv ℝ (fderiv ℝ f) x).toBilinForm.SeparatingLeft := by
   refine ⟨fun h ↦ ⟨h.contDiffAt, h.fderiv_eq_zero, h.separatingLeft⟩,
     fun ⟨hd, h0, hnd⟩ ↦ ⟨hd, h0, ?_⟩⟩
-  exact ContinuousLinearMap.isInvertible_of_injective
-    ((ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective _).1 hnd)
+  exact ContinuousLinearMap.isInvertible_iff_separatingLeft.2 hnd
 
 /-- Nondegeneracy at a point depends only on the germ of the function there. -/
 theorem IsNondegenerateCriticalPoint.congr_of_eventuallyEq {g : E → ℝ}
@@ -220,6 +245,8 @@ At a critical point the first-order term of the chain rule drops out, so the sec
 transforms as a bilinear form; this is `TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero`, proved
 in `TauCeti.Analysis.Calculus.SecondDerivative` because it involves no nondegeneracy. It is why the
 Hessian at a critical point, and hence nondegeneracy, does not depend on the choice of chart.
+That criticality itself does not depend on it is `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`
+in `TauCeti.Analysis.Calculus.FDeriv.Comp`.
 -/
 
 /-- **Nondegeneracy of a critical point does not depend on the coordinates.** If `f` is `C²` at
@@ -228,15 +255,9 @@ nondegenerate critical point at `b` exactly when `f` has one at `φ b`. -/
 theorem isNondegenerateCriticalPoint_comp_iff {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
     (hφ : ContDiffAt ℝ 2 φ b) (hinv : (fderiv ℝ φ b).IsInvertible) :
     IsNondegenerateCriticalPoint (f ∘ φ) b ↔ IsNondegenerateCriticalPoint f (φ b) := by
+  have hcrit : fderiv ℝ (f ∘ φ) b = 0 ↔ fderiv ℝ f (φ b) = 0 :=
+    fderiv_comp_eq_zero_iff_of_isInvertible (hf.differentiableAt (by norm_num)) hinv
   obtain ⟨e, he⟩ := hinv
-  -- The differential of `f ∘ φ` at `b` is that of `f` at `φ b` precomposed with the equivalence
-  -- `e`, so one vanishes exactly when the other does.
-  have hcrit : fderiv ℝ (f ∘ φ) b = 0 ↔ fderiv ℝ f (φ b) = 0 := by
-    rw [fderiv_comp (x := b) (hf.differentiableAt (by norm_num))
-      (hφ.differentiableAt (by norm_num)), ← he]
-    refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ext u; simp⟩
-    ext u
-    simpa using congrArg (fun L : F →L[ℝ] ℝ ↦ L (e.symm u)) h
   -- The Hessian pulls back as `ψ ↦ ψ ∘ e` composed with the Hessian composed with `e`, and each of
   -- the three factors is invertible.
   have hEq : fderiv ℝ f (φ b) = 0 → fderiv ℝ (fderiv ℝ (f ∘ φ)) b =
@@ -286,6 +307,44 @@ theorem isNondegenerateCriticalPoint_neg :
     IsNondegenerateCriticalPoint (-f) x ↔ IsNondegenerateCriticalPoint f x :=
   ⟨fun h ↦ by simpa using h.neg, IsNondegenerateCriticalPoint.neg⟩
 
+/-- **Nondegeneracy of a critical point is invariant under adding a constant**, which changes
+neither the differential nor the second derivative. -/
+@[simp]
+theorem isNondegenerateCriticalPoint_add_const_iff (c : ℝ) :
+    IsNondegenerateCriticalPoint (fun y ↦ f y + c) x ↔ IsNondegenerateCriticalPoint f x := by
+  have hfun : fderiv ℝ (fun y ↦ f y + c) = fderiv ℝ f := funext fun _ ↦ fderiv_add_const c
+  refine ⟨fun h ↦ ⟨?_, ?_, ?_⟩, fun h ↦ ⟨h.contDiffAt.add contDiffAt_const, ?_, ?_⟩⟩
+  · simpa using h.contDiffAt.sub (contDiffAt_const (c := c))
+  · simpa [hfun] using h.fderiv_eq_zero
+  · simpa [hfun] using h.isInvertible
+  · simpa [hfun] using h.fderiv_eq_zero
+  · simpa [hfun] using h.isInvertible
+
+/-- **Nondegenerate critical points pull back through a chart.** If `k` has nondegenerate critical
+points on the target of an open partial homeomorphism `Φ`, and `Φ` is `C²` with invertible
+differential on its source, then every function that equals `k ∘ Φ + r` on the source has
+nondegenerate critical points on the source. -/
+theorem HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const
+    {Φ : OpenPartialHomeomorph F E} {k : E → ℝ} {h : F → ℝ} {r : ℝ}
+    (hk : HasNondegenerateCriticalPointsOn k Φ.target)
+    (hΦ : ∀ u ∈ Φ.source, ContDiffAt ℝ 2 Φ u ∧ (fderiv ℝ Φ u).IsInvertible)
+    (hev : ∀ u ∈ Φ.source, h u = k (Φ u) + r) :
+    HasNondegenerateCriticalPointsOn h Φ.source := by
+  refine hasNondegenerateCriticalPointsOn_iff.2 fun u hu hcrit ↦ ?_
+  obtain ⟨hΦu, hinv⟩ := hΦ u hu
+  have hev' : h =ᶠ[𝓝 u] (fun w ↦ k w + r) ∘ Φ :=
+    eventually_of_mem (Φ.open_source.mem_nhds hu) hev
+  -- Criticality passes to `k` at `Φ u`, since the differential of `Φ` there is invertible.
+  have hkcrit : fderiv ℝ k (Φ u) = 0 := by
+    by_cases hd : DifferentiableAt ℝ k (Φ u)
+    · rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible (hd.add_const r) hinv] at hcrit
+      simpa [fderiv_add_const] using hcrit
+    · exact fderiv_zero_of_not_differentiableAt hd
+  have hnd : IsNondegenerateCriticalPoint (fun w ↦ k w + r) (Φ u) :=
+    (isNondegenerateCriticalPoint_add_const_iff _).2
+      (hasNondegenerateCriticalPointsOn_iff.1 hk (Φ.map_source hu) hkcrit)
+  exact (hnd.comp hΦu hinv).congr_of_eventuallyEq hev'.symm
+
 end Morse
 
 /-! ### The quadratic model
@@ -317,17 +376,111 @@ theorem _root_.ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self_of_fl
     (hsymm : B.flip = B) (hB : B.IsInvertible) :
     IsNondegenerateCriticalPoint (fun z ↦ B z z) 0 := by
   refine ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self B ?_
+  rw [hsymm, ← two_smul ℝ B]
   obtain ⟨e, rfl⟩ := hB
-  have hflip : (e : E →L[ℝ] E →L[ℝ] ℝ).flip + (e : E →L[ℝ] E →L[ℝ] ℝ) =
-      (2 : ℝ) • (e : E →L[ℝ] E →L[ℝ] ℝ) := by
-    rw [hsymm]
-    exact (two_smul ℝ _).symm
-  rw [hflip]
   refine _root_.ContinuousLinearMap.IsInvertible.of_inverse
     (g := (2 : ℝ)⁻¹ • (e.symm : (E →L[ℝ] ℝ) →L[ℝ] E)) ?_ ?_ <;> ext v <;> simp [smul_smul]
 
 
 end Model
+
+end TauCeti
+
+/-! ### Upper and lower estimates on a normed space
+
+Near a critical point, the differential is bounded above by a multiple of the distance to the
+point, and the energy difference by a multiple of its square; at a nondegenerate critical point
+the differential is also bounded below by a multiple of the distance. These estimates use only the
+Fréchet derivative, so they hold on any real normed space; their gradient forms on a Hilbert space
+are in `TauCeti.Analysis.Calculus.Morse.Linearization`. -/
+
+namespace ContDiffAt
+
+section NormedSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
+
+/-- Near a critical point of a twice continuously differentiable function the differential is
+bounded above by a multiple of the distance to that point: it vanishes at the point and is
+differentiable there. -/
+theorem exists_norm_fderiv_le_mul_norm_sub (hf : ContDiffAt ℝ 2 f x) (hf' : fderiv ℝ f x = 0) :
+    ∃ C > 0, ∀ᶠ y in 𝓝 x, ‖fderiv ℝ f y‖ ≤ C * ‖y - x‖ := by
+  simpa only [hf', sub_zero] using
+    Asymptotics.isBigO_iff'.1 (hf.hasFDerivAt_fderiv le_rfl).isBigO_sub
+
+/-- Near a critical point of a twice continuously differentiable function the absolute energy
+difference `|f y - f x|` is bounded by a multiple of the squared distance to that point. This is
+the mean value inequality applied along the segment from `x` to `y`, on which the differential is
+bounded by a multiple of `‖y - x‖`. -/
+theorem exists_abs_sub_le_mul_norm_sub_sq (hf : ContDiffAt ℝ 2 f x) (hf' : fderiv ℝ f x = 0) :
+    ∃ C > 0, ∀ᶠ y in 𝓝 x, |f y - f x| ≤ C * ‖y - x‖ ^ 2 := by
+  obtain ⟨C, hC, hbd⟩ := hf.exists_norm_fderiv_le_mul_norm_sub hf'
+  have hdiff : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y := by
+    filter_upwards [hf.eventually (by simp)] with y hy
+    exact hy.differentiableAt (by simp)
+  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.1 (hbd.and hdiff)
+  refine ⟨C, hC, Metric.eventually_nhds_iff.2 ⟨r, hr, fun {y} hy ↦ ?_⟩⟩
+  have hyr : ‖y - x‖ < r := by rwa [← dist_eq_norm]
+  have hsub : Metric.closedBall x ‖y - x‖ ⊆ Metric.ball x r := fun z hz ↦
+    lt_of_le_of_lt (Metric.mem_closedBall.1 hz) hyr
+  have hkey : ‖f y - f x‖ ≤ C * ‖y - x‖ * ‖y - x‖ := by
+    refine Convex.norm_image_sub_le_of_norm_fderiv_le (s := Metric.closedBall x ‖y - x‖)
+      (fun z hz ↦ (hball (hsub hz)).2) (fun z hz ↦ ?_) (convex_closedBall x ‖y - x‖) ?_ ?_
+    · refine ((hball (hsub hz)).1).trans (mul_le_mul_of_nonneg_left ?_ hC.le)
+      have hz' := Metric.mem_closedBall.1 hz
+      rwa [dist_eq_norm] at hz'
+    · exact Metric.mem_closedBall_self (norm_nonneg _)
+    · simp [Metric.mem_closedBall, dist_eq_norm]
+  calc |f y - f x| = ‖f y - f x‖ := by rw [Real.norm_eq_abs]
+    _ ≤ C * ‖y - x‖ * ‖y - x‖ := hkey
+    _ = C * ‖y - x‖ ^ 2 := by ring
+
+end NormedSpace
+
+end ContDiffAt
+
+namespace TauCeti
+
+section NormedSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
+
+/-- Near a nondegenerate critical point the differential is bounded below by a multiple of the
+distance to that point: the second derivative is a linear homeomorphism onto the dual, hence
+bounded below, and the differential differs from it by a term of smaller order. -/
+theorem IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_fderiv
+    (h : IsNondegenerateCriticalPoint f x) :
+    ∃ c > 0, ∀ᶠ y in 𝓝 x, c * ‖y - x‖ ≤ ‖fderiv ℝ f y‖ := by
+  obtain ⟨A, hA⟩ := h.isInvertible
+  have hd : HasFDerivAt (fderiv ℝ f) (A : E →L[ℝ] E →L[ℝ] ℝ) x := by
+    rw [hA]
+    exact h.contDiffAt.hasFDerivAt_fderiv le_rfl
+  have hb := A.isBigO_sub_rev (𝓝 x) x
+  have he : Asymptotics.IsEquivalent (𝓝 x) (fun y ↦ fderiv ℝ f y - fderiv ℝ f x)
+      (fun y ↦ A (y - x)) :=
+    hd.isLittleO.trans_isBigO hb
+  simpa only [h.fderiv_eq_zero, sub_zero] using
+    Asymptotics.isBigO_iff''.1 (hb.trans he.isBigO_symm)
+
+/-- **The Morse form of Łojasiewicz's gradient inequality on a normed space.** Near a
+nondegenerate critical point the absolute energy difference is bounded by a multiple of the
+squared norm of the differential; equivalently the Łojasiewicz inequality holds there with
+exponent `1 / 2`. -/
+theorem IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq
+    (h : IsNondegenerateCriticalPoint f x) :
+    ∃ lam > 0, ∀ᶠ y in 𝓝 x, lam * |f y - f x| ≤ ‖fderiv ℝ f y‖ ^ 2 := by
+  obtain ⟨c, hc, h1⟩ := h.exists_mul_norm_sub_le_norm_fderiv
+  obtain ⟨C, hC, h2⟩ := h.contDiffAt.exists_abs_sub_le_mul_norm_sub_sq h.fderiv_eq_zero
+  refine ⟨c ^ 2 / C, by positivity, ?_⟩
+  filter_upwards [h1, h2] with y hy1 hy2
+  have h3 : (c * ‖y - x‖) ^ 2 ≤ ‖fderiv ℝ f y‖ ^ 2 :=
+    pow_le_pow_left₀ (by positivity) hy1 2
+  calc c ^ 2 / C * |f y - f x| ≤ c ^ 2 / C * (C * ‖y - x‖ ^ 2) :=
+        mul_le_mul_of_nonneg_left hy2 (by positivity)
+    _ = (c * ‖y - x‖) ^ 2 := by field_simp
+    _ ≤ ‖fderiv ℝ f y‖ ^ 2 := h3
+
+end NormedSpace
 
 end TauCeti
 

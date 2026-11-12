@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
-public import TauCeti.Topology.VectorBundle.Riemannian
+public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Basic Riemannian bundle constructions
 
 This file provides conversions between Mathlib's Riemannian bundle classes and bundled
-Riemannian metrics, and records that the Riemannian norm of the differential of a `C¹` map, applied
-to a fixed vector, depends continuously on the base point.
+Riemannian metrics, and records that the Riemannian norm of the differential of a `C¹` map
+depends continuously on both the base point and the tangent vector.
 
 ## Main definitions
 
@@ -24,10 +24,16 @@ to a fixed vector, depends continuously on the base point.
   induces the ambient Riemannian distance.
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner`: the packaged metric is
   the bundle's inner product.
+* `Bundle.ContMDiffRiemannianMetric.inner_riemannianBundle`: conversely, installing a metric as the
+  `RiemannianBundle` instance makes its inner product the fiber inner product.
 * `Bundle.IsContinuousRiemannianBundle.toIsContMDiffZero`: view a continuous Riemannian bundle as
   a `C^0` Riemannian bundle.
 * `IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle`: conversely, view a `C^n`
   Riemannian bundle as a continuous Riemannian bundle.
+* `IsContMDiffRiemannianBundle.vectorSpace`: the standard metric of an inner product space is
+  analytic.
+* `ContMDiffOn.continuousOn_norm_mfderiv_apply`: the norm `‖df_z ξ‖` is jointly continuous
+  in `z` and `ξ` on an open domain.
 * `ContMDiffOn.continuousOn_norm_mfderiv`: for a `C¹` map `f` from an open subset of a normed space
   to a Riemannian manifold, `z ↦ ‖df_z ξ‖` is continuous.
 * `ContMDiffOn.contDiffOn_inner_mfderiv`: for a `C^(m+1)` map `f` from an open subset of a normed
@@ -53,6 +59,20 @@ variable
   [∀ b, IsTopologicalAddGroup (V b)] [∀ b, ContinuousConstSMul ℝ (V b)]
   [FiberBundle F V] [VectorBundle ℝ F V]
 
+omit [∀ b, IsTopologicalAddGroup (V b)] [∀ b, ContinuousConstSMul ℝ (V b)] in
+/-- Smooth Riemannian metrics are equal when all their fibrewise inner products agree. -/
+@[ext]
+theorem ext {g h : ContMDiffRiemannianMetric IB n F V}
+    (heq : ∀ x v w, g.inner x v w = h.inner x v w) : g = h := by
+  cases g with
+  | mk ginner gsymm gpos gisVonNBounded gcontMDiff =>
+    cases h with
+    | mk hinner hsymm hpos hisVonNBounded hcontMDiff =>
+      congr 1
+      funext x
+      ext v w
+      exact heq x v w
+
 /-- Package the metric of a `C^n` Riemannian bundle as a `C^n` Riemannian metric. -/
 noncomputable def ofIsContMDiffRiemannianBundle
     [RiemannianBundle V] [IsContMDiffRiemannianBundle IB n F V] :
@@ -77,6 +97,13 @@ theorem ofIsContMDiffRiemannianBundle_inner
     (x : B) (v w : V x) :
     (ofIsContMDiffRiemannianBundle (IB := IB) (n := n) (F := F) (V := V)).inner x v w =
       RiemannianBundle.g.inner x v w := by
+  rfl
+
+/-- Once a `C^n` Riemannian metric `g` is installed as the `RiemannianBundle` instance, the inner
+product of each fiber is `g.inner`. -/
+theorem inner_riemannianBundle (g : ContMDiffRiemannianMetric IB n F V) (x : B) (v w : V x) :
+    letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
+    Inner.inner ℝ v w = g.inner x v w := by
   rfl
 
 end Bundle.ContMDiffRiemannianMetric
@@ -121,11 +148,17 @@ theorem toIsContinuousRiemannianBundle [IsContMDiffRiemannianBundle IB n F V] :
     IsContMDiffRiemannianBundle.exists_contMDiff (IB := IB) (n := n) (F := F) (E := V)
   exact ⟨⟨g, hg.continuous, hinner⟩⟩
 
+/-- The standard Riemannian metric of a real inner product space, given by its inner product on
+every tangent space (`riemannianMetricVectorSpace`), is analytic, in particular smooth. -/
+instance vectorSpace {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] :
+    IsContMDiffRiemannianBundle 𝓘(ℝ, E) ω E (fun x : E ↦ TangentSpace 𝓘(ℝ, E) x) :=
+  Bundle.instIsContMDiffRiemannianBundle (riemannianMetricVectorSpace E)
+
 end IsContMDiffRiemannianBundle
 
 namespace Bundle.ContMDiffRiemannianMetric
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [MetricSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M]
@@ -136,7 +169,6 @@ def InducesRiemannianDistance
   letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   IsRiemannianManifold I M
 
-omit [FiniteDimensional ℝ E] in
 /-- The metric's induced-distance condition yields the corresponding Riemannian-manifold
 structure after installing its metric bundle. -/
 theorem InducesRiemannianDistance.toIsRiemannianManifold
@@ -155,21 +187,35 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The Riemannian norm of the differential of a `C¹` map on an open subset of a normed
+space is jointly continuous in the base point and the tangent vector. -/
+theorem ContMDiffOn.continuousOn_norm_mfderiv_apply
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    {f : F → M} {U : Set F} {n : ℕ∞ω}
+    (hf : ContMDiffOn 𝓘(ℝ, F) I n f U) (hn : 1 ≤ n) (hU : IsOpen U) :
+    ContinuousOn (fun z : F × F ↦ ‖mfderiv 𝓘(ℝ, F) I f z.1 z.2‖) (U ×ˢ Set.univ) := by
+  intro z hz
+  have hmap : ContinuousAt (tangentMap 𝓘(ℝ, F) I f)
+      ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm z) :=
+    (hf.contMDiffAt (hU.mem_nhds hz.1)).continuousAt_tangentMap hn
+  have h := hmap.comp (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm.continuous.continuousAt
+  exact ((TauCeti.continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).continuousAt.comp
+    h).continuousWithinAt
 
 /-- Let `f` be a `C^n` map, `1 ≤ n`, from an open subset `U` of a real normed space to a manifold
 whose tangent spaces carry a continuous Riemannian metric. For each fixed vector `ξ`, the
 Riemannian norm of `df_z ξ` depends continuously on `z ∈ U`. -/
-theorem ContMDiffOn.continuousOn_norm_mfderiv {f : F → M} {U : Set F} {n : ℕ∞ω}
+theorem ContMDiffOn.continuousOn_norm_mfderiv
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    {f : F → M} {U : Set F} {n : ℕ∞ω}
     (hf : ContMDiffOn 𝓘(ℝ, F) I n f U) (hn : 1 ≤ n) (hU : IsOpen U) (ξ : F) :
     ContinuousOn (fun z ↦ ‖mfderiv 𝓘(ℝ, F) I f z ξ‖) U :=
-  -- the lifted directional derivative `z ↦ (f z, df_z ξ)` is continuous into `TM`, and the
-  -- Riemannian norm is continuous on `TM`
-  (TauCeti.continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp_continuousOn
-    (hf.contMDiffOn_totalSpaceMk_mfderiv_apply (m := 0) (by simpa using hn) hU ξ).continuousOn
+  (hf.continuousOn_norm_mfderiv_apply hn hU).comp
+    (continuous_id.prodMk (continuous_const (y := ξ))).continuousOn
+    (fun _ hz ↦ ⟨hz, Set.mem_univ _⟩)
 
-omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- Let `f` be a `C^n` map from an open subset `U` of a real normed space to a manifold whose
 tangent spaces carry a `C^m` Riemannian metric, with `m + 1 ≤ n`. For fixed vectors `ξ` and `η`,
 the Riemannian inner product `⟪df_z ξ, df_z η⟫` is a `C^m` function of `z ∈ U`. -/

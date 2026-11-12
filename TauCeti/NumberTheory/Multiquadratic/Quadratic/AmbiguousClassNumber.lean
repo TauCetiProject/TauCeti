@@ -160,7 +160,6 @@ conjugation-fixed classes.** For `K = ℚ(√d)` with `d > 0` squarefree whose p
 all positive, exactly `2 ^ (t - 1)` ideal classes are fixed by the quadratic conjugation. -/
 theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_forall_pos
     {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hpos : ∀ P ∈ s, 0 < P) :
@@ -177,7 +176,7 @@ theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_foral
       mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C),
     ← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
     TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
-    (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs heven hprod hmin hgen hsf hd).mpr hpos]
+    (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs hprod hmin hgen hsf hd).mpr hpos]
 
 /-- **The ambiguous class number formula for a real quadratic field with a negative prime
 discriminant, counted by conjugation-fixed classes.** For `K = ℚ(√d)` with `d > 0` squarefree and
@@ -185,7 +184,6 @@ some negative prime discriminant `P ∈ s`, exactly `2 ^ (t - 2)` ideal classes 
 quadratic conjugation. -/
 theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_neg {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : 0 < d) {P : ℤ} (hP : P ∈ s) (hneg : P < 0) :
@@ -196,7 +194,7 @@ theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_neg {
       mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C),
     ← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
     TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
-    twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg hs heven hprod hmin hgen hsf hd hP hneg]
+    twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg hs hprod hmin hgen hsf hd hP hneg]
 
 /-- **The strongly ambiguous class number of a quadratic field with a unit of norm `-1`.** For
 `K = ℚ(√d)` with `d` squarefree, if some unit of `𝓞 K` has norm `-1` (so `K` is real), then exactly
@@ -225,14 +223,10 @@ theorem natCard_stronglyAmbiguousClassSubgroup_eq_two_pow_of_forall_norm_ne_neg_
     Nat.card (stronglyAmbiguousClassSubgroup hmin hgen) =
       2 ^ ((ramifiedPrimes K).ncard - 2) := by
   have key := NarrowClassGroup.natCard_stronglyAmbiguousClassSubgroup_mul_natCard_ker hmin hgen
-  -- Without a unit of norm `-1` the kernel of `Cl⁺(K) → Cl(K)` is nontrivial, of order `2`.
-  have hne : (NarrowClassGroup.toClassGroup (K := K)).ker ≠ ⊥ := fun h => by
-    obtain ⟨u, hu'⟩ := (NarrowClassGroup.toClassGroup_injective_iff_exists_norm_eq_neg_one hmin
-      hgen hd).mp ((MonoidHom.ker_eq_bot_iff _).mp h)
-    exact hu u hu'
+  -- Without a unit of norm `-1` the kernel of `Cl⁺(K) → Cl(K)` has order `2`.
   have h2 : Nat.card (NarrowClassGroup.toClassGroup (K := K)).ker = 2 :=
-    le_antisymm (card_ker_toClassGroup_le_two (finrank_rat_eq_two hmin hgen))
-      (Subgroup.one_lt_card_iff_ne_bot _ |>.mpr hne)
+    TauCeti.NumberField.NarrowClassGroup.card_ker_toClassGroup_eq_two_of_forall_norm_ne_neg_one
+      hmin hgen hd hu
   rw [h2, natCard_narrowClassGroup_sq_eq_one_eq_two_pow hmin hgen hsf] at key
   -- `S * 2 = 2 ^ (t - 1)` forces `t ≥ 2`, so the factor `2` can be cancelled.
   have ht : 2 ≤ (ramifiedPrimes K).ncard := by

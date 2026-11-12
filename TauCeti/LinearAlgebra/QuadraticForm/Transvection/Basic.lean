@@ -263,7 +263,7 @@ theorem transvection_eq_one_of_mem_span (hu : Q u = 0) (huw : polar Q u w = 0)
   obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
   ext x
   simp only [transvection_apply, polar_smul_right, QuadraticMap.map_smul, hu, smul_eq_mul,
-    LinearEquiv.coe_one, id_eq]
+    FunLike.coe_one_eq_id, id_eq]
   module
 
 /-- The Eichler transvections with a fixed isotropic vector `u` compose additively in `w`. -/
@@ -272,7 +272,7 @@ theorem transvection_add (hu : Q u = 0) (huw : polar Q u w = 0) (huw' : polar Q 
     : transvection Q (w := w + w') hu (by simp [huw, huw']) =
       transvection Q hu huw * transvection Q hu huw' := by
   ext x
-  simp only [LinearEquiv.mul_apply, transvection_apply, polar_add_left, polar_sub_left,
+  simp only [mul_apply_eq_comp, transvection_apply, polar_add_left, polar_sub_left,
     polar_smul_left, polar_add_right, QuadraticMap.map_add Q, polar_self, hu, polar_comm Q w' u,
     huw, huw', smul_eq_mul, nsmul_eq_mul, polar_comm Q w' w]
   module
@@ -422,7 +422,7 @@ theorem transvection_eq_one_iff_of_isUnit (hu : Q u = 0) (huw : polar Q u w = 0)
     (hu₀ : ∃ x, IsUnit (polar Q x u)) : transvection Q hu huw = 1 ↔ w ∈ R ∙ u := by
   refine ⟨fun h => ?_, transvection_eq_one_of_mem_span hu huw⟩
   obtain ⟨x, a, ha⟩ := hu₀
-  have hEx : transvection Q hu huw x = x := by rw [h, LinearEquiv.coe_one, id_eq]
+  have hEx : transvection Q hu huw x = x := by rw [h, FunLike.coe_one_eq_id, id_eq]
   rw [transvection_apply] at hEx
   have hw : polar Q x u • w = (polar Q x w + Q w * polar Q x u) • u := by
     linear_combination (norm := module) hEx
@@ -469,9 +469,10 @@ theorem transvectionHom_injective (hu : Q u = 0) (hu₀ : Q.polarBilin u ≠ 0) 
 
 /-- In dimension at least three, a vector outside the polar radical has an orthogonal vector
 outside its span. For an isotropic vector, this gives a nontrivial transvection parameter. -/
-theorem exists_polar_eq_zero_not_mem_span_of_finrank_ge_three [FiniteDimensional K V]
+theorem exists_polar_eq_zero_not_mem_span_of_finrank_ge_three
     (Q : QuadraticForm K V) (hpolar : Q.polarBilin u ≠ 0)
     (hdim : 3 ≤ Module.finrank K V) : ∃ w : V, polar Q u w = 0 ∧ w ∉ K ∙ u := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   have hu₀ : u ≠ 0 := by
     rintro rfl
     exact hpolar (by ext; simp)
@@ -507,16 +508,17 @@ theorem finrank_transvectionParameter [FiniteDimensional K V] (hu : Q u = 0)
 /-- In a binary quadratic space, the Eichler-transvection parameter space `u^⊥ / K ∙ u` of an
 isotropic vector outside the polar radical is trivial. This is the low-dimensional
 exception to the nontrivial transvection families available in dimension at least three. -/
-theorem subsingleton_transvectionParameter_of_finrank_eq_two [FiniteDimensional K V]
+theorem subsingleton_transvectionParameter_of_finrank_eq_two
     (hV : Module.finrank K V = 2) (hu : Q u = 0) (hpolar : Q.polarBilin u ≠ 0) :
     Subsingleton (LinearMap.ker (Q.polarBilin u) ⧸
       (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype) := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   apply (Module.finrank_zero_iff (R := K)).mp
   rw [finrank_transvectionParameter hu hpolar, hV]
 
 /-- Every Eichler transvection in a binary quadratic space whose isotropic direction is outside
 the polar radical is the identity. -/
-theorem transvection_eq_one_of_finrank_eq_two [FiniteDimensional K V]
+theorem transvection_eq_one_of_finrank_eq_two
     (hV : Module.finrank K V = 2) (hu : Q u = 0) (huw : polar Q u w = 0)
     (hpolar : Q.polarBilin u ≠ 0) : transvection Q hu huw = 1 := by
   apply (transvection_eq_one_iff hu huw hpolar).2
@@ -529,7 +531,7 @@ theorem transvection_eq_one_of_finrank_eq_two [FiniteDimensional K V]
 
 /-- The Eichler root-subgroup homomorphism is zero in a binary quadratic space when its isotropic
 direction is outside the polar radical. -/
-theorem transvectionHom_eq_zero_of_finrank_eq_two [FiniteDimensional K V]
+theorem transvectionHom_eq_zero_of_finrank_eq_two
     (hV : Module.finrank K V = 2) (hu : Q u = 0) (hpolar : Q.polarBilin u ≠ 0) :
     transvectionHom Q hu = 0 := by
   have hsub := subsingleton_transvectionParameter_of_finrank_eq_two hV hu hpolar

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Dual
 public import TauCeti.LinearAlgebra.Submodule.Prod
-public import TauCeti.RepresentationTheory.Spin.Polarization.Basic
+public import TauCeti.RepresentationTheory.Spin.Polarization.Complement
 
 /-!
 # The split polarization of a hyperbolic quadratic space
@@ -30,8 +30,9 @@ polar Q (f, m) (g, x) = f x + g m.
 `TauCeti.SpinPolarizationData.hyperbolic` packages them as a `TauCeti.SpinPolarizationData`, with
 the copy of `M` as the exterior summand `W`, the copy of its dual as the contraction summand `W'`,
 and no orthogonal remainder, so the spinor module attached to it is the full exterior algebra of
-`M`. The only hypothesis is that the evaluation map `Module.Dual.eval K M` into the double dual is
-injective, that is, that the functionals on `M` separate its points. This ensures that the polar
+`M`; it is an instance of `TauCeti.SpinPolarizationData.ofIsComplOfPairing`. The only hypothesis
+is that the evaluation map `Module.Dual.eval K M` into the double dual is injective, that is, that
+the functionals on `M` separate its points. This ensures that the polar
 pairing has trivial left radical; by `Module.eval_apply_injective` it holds for every projective
 module, in particular over a field. The identification of `W'` with the dual of `W` needs no such
 hypothesis.
@@ -79,52 +80,37 @@ ring `K` whose functionals separate points, the hyperbolic form `Q (f, m) = f m`
 The exterior summand `W` is the copy of `M` and the contraction summand `W'` is the copy of its
 dual, so the spinor module attached to this datum is the full exterior algebra of `M`. -/
 noncomputable def hyperbolic (hM : Function.Injective (Module.Dual.eval K M)) :
-    SpinPolarizationData (QuadraticForm.dualProd K M) where
-  W := Submodule.snd K (Module.Dual K M) M
-  W' := Submodule.fst K (Module.Dual K M) M
-  line := ⊥
-  decompositionEquiv := LinearEquiv.prodUnique ≪≫ₗ
-    Submodule.prodEquivOfIsCompl _ _ (Submodule.isCompl_fst_snd K (Module.Dual K M) M).symm
-  decompositionEquiv_apply x := by
-    rw [LinearEquiv.trans_apply, LinearEquiv.prodUnique_apply, Submodule.coe_prodEquivOfIsCompl',
-      (Submodule.mem_bot K).mp x.2.2, add_zero]
-  isotropic_W x := by
-    rw [QuadraticForm.dualProd_apply, Submodule.mem_snd_iff.mp x.2, LinearMap.zero_apply]
-  isotropic_W' y := by
-    rw [QuadraticForm.dualProd_apply, Submodule.mem_fst_iff.mp y.2, map_zero]
-  pairingEquiv :=
-    (Submodule.fstEquiv K (Module.Dual K M) M) ≪≫ₗ
-      (Submodule.sndEquiv K (Module.Dual K M) M).dualMap
-  pairingEquiv_apply y x := by
-    rw [polar_dualProd, Submodule.mem_snd_iff.mp x.2, LinearMap.zero_apply, zero_add,
-      LinearEquiv.trans_apply, LinearEquiv.dualMap_apply, Submodule.fstEquiv_apply,
-      Submodule.sndEquiv_apply]
-  pairing_separatingLeft x hx := by
-    refine Subtype.ext (Prod.ext (Submodule.mem_snd_iff.mp x.2)
-      ((injective_iff_map_eq_zero _).mp hM _ (LinearMap.ext fun f => ?_)))
-    have := hx ⟨(f, 0), Submodule.mem_fst_iff.mpr rfl⟩
-    rwa [polar_dualProd, Submodule.mem_snd_iff.mp x.2, LinearMap.zero_apply, zero_add] at this
-  lineCoordinate := 0
-  lineCoordinate_injective a b _ := Subsingleton.elim a b
-  lineCoordinate_sq z := by
-    rw [Subsingleton.elim z 0, map_zero, mul_zero, ZeroMemClass.coe_zero, map_zero]
-  line_orthogonal_W z x := by
-    rw [Subsingleton.elim z 0, ZeroMemClass.coe_zero, polar_zero_left]
-  line_orthogonal_W' z y := by
-    rw [Subsingleton.elim z 0, ZeroMemClass.coe_zero, polar_zero_left]
+    SpinPolarizationData (QuadraticForm.dualProd K M) :=
+  ofIsComplOfPairing (Submodule.isCompl_fst_snd K (Module.Dual K M) M).symm
+    (isTotallyIsotropic_iff.mpr fun v hv => by
+      rw [QuadraticForm.dualProd_apply, Submodule.mem_snd_iff.mp hv, LinearMap.zero_apply])
+    (isTotallyIsotropic_iff.mpr fun v hv => by
+      rw [QuadraticForm.dualProd_apply, Submodule.mem_fst_iff.mp hv, map_zero])
+    ((Submodule.fstEquiv K (Module.Dual K M) M) ≪≫ₗ
+      (Submodule.sndEquiv K (Module.Dual K M) M).dualMap)
+    (fun y x => by
+      rw [polar_dualProd, Submodule.mem_snd_iff.mp x.2, LinearMap.zero_apply, zero_add,
+        LinearEquiv.trans_apply, LinearEquiv.dualMap_apply, Submodule.fstEquiv_apply,
+        Submodule.sndEquiv_apply])
+    (fun x hx => by
+      refine Subtype.ext (Prod.ext (Submodule.mem_snd_iff.mp x.2)
+        ((injective_iff_map_eq_zero _).mp hM _ (LinearMap.ext fun f => ?_)))
+      have := hx ⟨(f, 0), Submodule.mem_fst_iff.mpr rfl⟩
+      rwa [polar_dualProd, Submodule.mem_snd_iff.mp x.2, LinearMap.zero_apply, zero_add] at this)
 
 variable (hM : Function.Injective (Module.Dual.eval K M))
 
 @[simp]
 theorem hyperbolic_W : (hyperbolic hM).W = Submodule.snd K (Module.Dual K M) M :=
-  -- `(rfl)`, not `rfl`: the body of `hyperbolic` is not `@[expose]`d.
-  (rfl)
+  ofIsComplOfPairing_W ..
 
 @[simp]
-theorem hyperbolic_W' : (hyperbolic hM).W' = Submodule.fst K (Module.Dual K M) M := (rfl)
+theorem hyperbolic_W' : (hyperbolic hM).W' = Submodule.fst K (Module.Dual K M) M :=
+  ofIsComplOfPairing_W' ..
 
 @[simp]
-theorem hyperbolic_line : (hyperbolic hM).line = ⊥ := (rfl)
+theorem hyperbolic_line : (hyperbolic hM).line = ⊥ :=
+  ofIsComplOfPairing_line ..
 
 /-! ## The basis of the exterior summand -/
 

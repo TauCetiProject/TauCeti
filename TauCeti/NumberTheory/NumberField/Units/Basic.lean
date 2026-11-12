@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Units.Basic
+public import Mathlib.Order.Filter.TendstoCofinite
 import Mathlib.NumberTheory.NumberField.Norm
 import TauCeti.NumberTheory.NumberField.Minpoly
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # Units of a number field
@@ -28,6 +30,8 @@ to see that a non-torsion unit of a field of prime degree generates the field.
   of the minimal polynomial of a unit is `±1`.
 * `TauCeti.NumberField.Units.mem_torsion_of_mem_bot`: a unit whose image in `K` lies in the
   base field `ℚ` is torsion.
+* `Units.prod_norm_embedding_eq_one`: the absolute values of the conjugates of a unit have
+  product `|N(u)| = 1`.
 * `NumberField.InfinitePlace.exists_torsion_mul_embedding_eq_abs`: a torsion sign makes a
   unit's real embedding equal its absolute value at a real place.
 -/
@@ -41,6 +45,7 @@ namespace NumberField.InfinitePlace
 
 variable {K : Type*} [Field K] [NumberField K]
 
+omit [NumberField K] in
 /-- At a real place, multiply a unit by a torsion unit so that its real embedding is its
 (positive) absolute value. -/
 theorem exists_torsion_mul_embedding_eq_abs (w : InfinitePlace K) (hw : w.IsReal)
@@ -59,9 +64,24 @@ theorem exists_torsion_mul_embedding_eq_abs (w : InfinitePlace K) (hw : w.IsReal
 
 end NumberField.InfinitePlace
 
+namespace Units
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- The absolute values of the conjugates of a unit `u` have product `|N(u)| = 1`. -/
+@[simp]
+theorem prod_norm_embedding_eq_one (u : (𝓞 K)ˣ) : ∏ σ : K →+* ℂ, ‖σ u‖ = 1 := by
+  simp [NumberField.prod_norm_embedding_eq_abs_norm, ← Rat.cast_abs, NumberField.Units.norm]
+
+end Units
+
 namespace TauCeti.NumberField.Units
 
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- The coercion from units of the ring of integers to the number field has finite fibers. -/
+instance : Filter.TendstoCofinite (fun u : (𝓞 K)ˣ ↦ (u : K)) :=
+  Filter.tendstoCofinite_of_injective (Units.coe_injective K)
 
 open scoped IntermediateField in
 /-- The constant coefficient of the minimal polynomial of a unit is `±1`. -/

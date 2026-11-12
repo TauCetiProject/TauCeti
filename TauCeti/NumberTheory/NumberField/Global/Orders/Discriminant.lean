@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Conductor
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 import Mathlib.RingTheory.Localization.NormTrace
 
@@ -38,6 +39,8 @@ square divides `disc O`. In particular an order with squarefree discriminant is 
 
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.discr_eq_index_sq_mul`:
   `disc O = [𝓞 K : O] ^ 2 * disc K`.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.index_dvd_index_of_le`: a larger order has an
+  index dividing that of a smaller one.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.natCast_index_mem_conductor`: the index lies in
   the conductor.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.conductor_ne_bot`: the conductor is nonzero.
@@ -71,6 +74,12 @@ def index : ℕ :=
 /-- The index of an order is the cardinality of the additive quotient `𝓞 K / O`. -/
 theorem index_def : O.index = Nat.card (𝓞 K ⧸ Subalgebra.toSubmodule O.toRingOfIntegers) :=
   Submodule.cardQuot_apply _
+
+/-- The index of an order is the index of `O` as an additive subgroup of `𝓞 K`. This
+unfolds `Submodule.cardQuot`, through which `NumberFieldOrder.index` is defined. -/
+theorem index_eq_addSubgroup_index :
+    O.index = (Subalgebra.toSubmodule O.toRingOfIntegers).toAddSubgroup.index := by
+  rw [index, Submodule.cardQuot]
 
 /-- The discriminant of an order: the discriminant of a `ℤ`-basis of it. By
 `NumberFieldOrder.discr_eq_discr` it does not depend on the basis. -/
@@ -106,41 +115,28 @@ private def equivToRingOfIntegers :
 index in the maximal order times the discriminant of the number field. -/
 theorem discr_eq_index_sq_mul : O.discr = O.index ^ 2 * NumberField.discr K := by
   classical
-  set bK := RingOfIntegers.basis K
   set bO := Module.Free.chooseBasis ℤ O.toSubalgebra
   let bO' := bO.localizationLocalization ℚ ℤ⁰ K
-  -- Transport a basis of `O` into `𝓞 K`, indexed like the basis `bK` of `𝓞 K`.
+  -- Transport a basis of `O` into `𝓞 K`, indexed like a basis of `𝓞 K`.
   let σ := bO'.indexEquiv (integralBasis K)
   let bN := (bO.map O.equivToRingOfIntegers).reindex σ
-  let v : _ → 𝓞 K := (↑) ∘ bN
-  -- The change of basis determinant from `bK` to `v` is the index up to sign.
-  have hidx : (bK.det v).natAbs = O.index := by
-    rw [index_def]
-    exact Submodule.natAbs_det_basis_change bK _ bN
-  have hv : Algebra.discr ℤ v = (bK.det v) ^ 2 * NumberField.discr K := by
-    have := Algebra.discr_of_matrix_vecMul bK (bK.toMatrix v)
-    rwa [bK.toMatrix_map_vecMul, ← Module.Basis.det_apply] at this
-  -- The discriminant of `v`, computed with traces of `𝓞 K`, is that of `O`: compare in `K`.
-  have hO : O.discr = Algebra.discr ℤ v := by
-    apply Int.cast_injective (α := ℚ)
-    -- Traces over `ℤ` in `𝓞 K` are traces over `ℚ` in `K`.
-    have htr : Algebra.discr ℚ (algebraMap (𝓞 K) K ∘ v) = Algebra.discr ℤ v := by
-      rw [Algebra.discr_def, Algebra.discr_def, ← eq_intCast (algebraMap ℤ ℚ), RingHom.map_det]
-      congr 1
-      ext i j
-      simp only [Algebra.traceMatrix_apply, Algebra.traceForm_apply, RingHom.mapMatrix_apply,
-        Matrix.map_apply, Function.comp_apply, ← map_mul]
-      exact Algebra.trace_localization ℤ ℤ⁰ _
-    rw [← htr]
-    have : algebraMap (𝓞 K) K ∘ v = bO' ∘ σ.symm := by
+  have hcard : Fintype.card (Module.Free.ChooseBasisIndex ℤ (𝓞 K)) =
+      Module.finrank ℤ (𝓞 K) := (Module.finrank_eq_card_chooseBasisIndex ℤ (𝓞 K)).symm
+  have h := (Subalgebra.toSubmodule O.toRingOfIntegers).discr_eq_cardQuot_sq_mul_discr bN hcard
+  -- The discriminant of `bN`, computed with traces of `K`, is that of `O`.
+  have hO : Algebra.discr ℚ (fun i => algebraMap (𝓞 K) K (bN i : 𝓞 K)) = (O.discr : ℚ) := by
+    have : (fun i => algebraMap (𝓞 K) K (bN i : 𝓞 K)) = bO' ∘ σ.symm := by
       ext i
-      simp only [v, bN, bO', Function.comp_apply, Module.Basis.reindex_apply,
+      simp only [bN, bO', Function.comp_apply, Module.Basis.reindex_apply,
         Module.Basis.map_apply, Module.Basis.localizationLocalization_apply]
       -- `equivToRingOfIntegers` keeps the underlying element of `K`, and both sides are that
       -- element.
       rfl
     rw [this, Algebra.discr_reindex, Algebra.discr_localizationLocalization, eq_intCast, discr]
-  rw [hO, hv, ← hidx, Int.natCast_natAbs, sq_abs]
+  apply Int.cast_injective (α := ℚ)
+  rw [← hO, h]
+  push_cast
+  rfl
 
 /-- The square of the index of an order divides its discriminant. -/
 theorem sq_index_dvd_discr : (O.index : ℤ) ^ 2 ∣ O.discr :=
@@ -152,6 +148,15 @@ theorem index_ne_zero : O.index ≠ 0 := by
   apply O.discr_ne_zero
   rw [discr_eq_index_sq_mul, h]
   simp
+
+instance : NeZero O.index :=
+  ⟨O.index_ne_zero⟩
+
+/-- A larger order has smaller index: if `O ⊆ O'`, then `[𝓞 K : O']` divides `[𝓞 K : O]`. -/
+theorem index_dvd_index_of_le {O O' : NumberFieldOrder K} (h : O.toSubalgebra ≤ O'.toSubalgebra) :
+    O'.index ∣ O.index := by
+  rw [index_eq_addSubgroup_index, index_eq_addSubgroup_index]
+  exact AddSubgroup.index_dvd_of_le fun _ hx ↦ toRingOfIntegers_le_toRingOfIntegers_iff.mpr h hx
 
 /-- The index annihilates `𝓞 K / O`, so it lies in the conductor of `O`. -/
 theorem natCast_index_mem_conductor : (O.index : 𝓞 K) ∈ O.conductor := by

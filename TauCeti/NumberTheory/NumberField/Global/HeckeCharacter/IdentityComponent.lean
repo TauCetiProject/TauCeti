@@ -50,7 +50,7 @@ theorem isFiniteOrder_iff_connectedComponentOfOne_le_ker (χ : HeckeCharacter K)
   refine ⟨fun hχ ↦ Subgroup.connectedComponentOfOne_le_of_isOpen
     (isOpen_ker_of_isFiniteOrder hχ), fun hχ ↦ ?_⟩
   let D := Subgroup.connectedComponentOfOne (IdeleClassGroup (𝓞 K) K)
-  let ψ := ContinuousMonoidHom.quotientLift D χ hχ
+  let ψ := ContinuousMonoidHom.quotientLift χ D hχ
   have hψ : IsOpen (ψ.ker : Set (IdeleClassGroup (𝓞 K) K ⧸ D)) :=
     ψ.isOpen_ker_of_compactSpace_of_totallyDisconnectedSpace
   apply (isFiniteOrder_iff_isOpen_ker χ).mpr

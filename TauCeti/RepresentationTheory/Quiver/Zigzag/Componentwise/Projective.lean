@@ -40,12 +40,8 @@ theorem isHomogeneous_span_zigzagAlgebraBasis_inl (i : V) :
     (Ideal.span {e i} : Ideal (zigzagAlgebra k G)).IsHomogeneous
       (zigzagAlgebraIntegerGrade k G) := by
   let _ := zigzagAlgebraIntegerGradedAlgebra k G
-  have he : e i ∈ zigzagAlgebraIntegerGrade k G 0 := by
-    have hg : zigzagAlgebraIntegerGrade k G 0 = zigzagAlgebraGrade k G 0 := by
-      simpa only [Int.natCast_zero] using zigzagAlgebraIntegerGrade_ofNat k G 0
-    rw [hg]
-    exact zigzagAlgebraBasis_inl_mem_grade_zero k G i
-  exact Ideal.homogeneous_span _ _ fun _ hx ↦ ⟨0, (Set.mem_singleton_iff.1 hx) ▸ he⟩
+  exact Ideal.homogeneous_span _ _ fun _ hx ↦
+    ⟨0, (Set.mem_singleton_iff.1 hx) ▸ zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i⟩
 
 /-- The graded principal left ideal `Z e_i` of the public componentwise algebra. -/
 abbrev zigzagAlgebraGradedProjective (i : V) :
@@ -60,6 +56,14 @@ theorem mem_zigzagAlgebraGradedProjective_piece_iff (i : V) (d : ℤ)
       (x : zigzagAlgebra k G) ∈ zigzagAlgebraIntegerGrade k G d :=
   let _ := zigzagAlgebraIntegerGradedAlgebra k G
   GradedModuleCat.mem_ofIdeal_piece_iff (isHomogeneous_span_zigzagAlgebraBasis_inl k G i)
+
+/-- The canonical vertex generator lies in degree zero of its graded projective. -/
+theorem spanSingletonGenerator_mem_zigzagAlgebraGradedProjective_piece_zero (i : V) :
+    spanSingletonGenerator (e i) ∈ (zigzagAlgebraGradedProjective k G i).grading.piece 0 := by
+  let _ := zigzagAlgebraIntegerGradedAlgebra k G
+  apply (mem_zigzagAlgebraGradedProjective_piece_iff k G i 0).mpr
+  simpa only [coe_spanSingletonGenerator] using
+    zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i
 
 /-- The vertex ideal is a finite projective over the public algebra. -/
 theorem gradedFiniteProjectiveModules_zigzagAlgebraGradedProjective (i : V) :

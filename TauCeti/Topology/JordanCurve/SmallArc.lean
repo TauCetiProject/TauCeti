@@ -17,24 +17,24 @@ import Mathlib.Topology.UniformSpace.HeineCantor
 arcs. That cutting is purely qualitative: it says nothing about the *size* of the two pieces. This
 file adds the quantitative statement, for a Jordan curve in a metric space: **as the two cut points
 approach each other, one of the two arcs shrinks**. Given `ε > 0` there is a `δ > 0` such that any
-two distinct points of the curve at distance less than `δ` cut off an arc of diameter at most `ε`.
+two points of the curve at distance less than `δ` cut off an arc of diameter at most `ε`.
 
 The statement is not a formality — it is exactly where compactness of the curve enters. Two points
 of a Jordan curve that are close in the ambient space need not be close *along* the curve for any
 individual pair; what makes them close along the curve is that the parametrization by the circle is
 a homeomorphism of a compact space, hence uniformly continuous in both directions.
 
-## Why this is a layer-L5 prerequisite
+## Use in the Carathéodory boundary correspondence
 
-Layer **L5** of the conformal-mapping roadmap (`TauCetiRoadmap/ConformalMapping/README.md`) is
-Carathéodory's boundary correspondence for a Jordan domain. Its analytic half runs the length–area
-method on the circular crosscuts of `Conformal/Crosscut.lean`: a crosscut of the disc at a boundary
-point is mapped by the Riemann map to a crosscut of `Ω` whose *endpoints* on `∂Ω` are close, by the
-length–area estimate `TauCeti.exists_diam_image_ball_inter_sphere_le`. To convert that into the
-collar bound `TauCeti.exists_continuousOn_closedBall_eqOn` asks for, one needs the *region* the
-image crosscut cuts off to be small, and that region is bounded by the crosscut together with one of
-the two arcs into which its endpoints cut `∂Ω`. So the missing geometric input is precisely that two
-nearby points of the Jordan curve `∂Ω` cut off an arc of small diameter — which is what this file
+Carathéodory's boundary correspondence for a Jordan domain runs, in its analytic half, the
+length–area method on circular crosscuts (`TauCeti/Analysis/Complex/Conformal/Crosscut/Basic.lean`):
+a crosscut of the disc at a boundary point is mapped by the Riemann map to a crosscut of `Ω` whose
+*endpoints* on `∂Ω` are close, by the length–area estimate
+`TauCeti.exists_diam_image_ball_inter_sphere_le`. To convert that into the collar bound
+`TauCeti.exists_continuousOn_closedBall_eqOn` asks for, one needs the *region* the image crosscut
+cuts off to be small, and that region is bounded by the crosscut together with one of the two arcs
+into which its endpoints cut `∂Ω`. So the geometric input needed is precisely that two nearby
+points of the Jordan curve `∂Ω` cut off an arc of small diameter — which is what this file
 supplies, at the generality of an arbitrary Jordan curve in a metric space.
 
 ## The argument
@@ -47,16 +47,17 @@ in `TauCeti/Topology/Circle/Metric.lean`: the chord is at most the arc
 (`TauCeti.min_angleDiff_le_pi_div_two_mul_dist`). The converse bound is the one that matters here:
 it is what turns a hypothesis about the ambient distance into a bound on an arc.
 
-Together these give `TauCeti.exists_isPreconnected_union_eq_compl_pair_circle_diam_le`: two
-distinct points of the circle cut it into two preconnected pieces, the first of which stays of
-diameter at most `π / 2` times their distance after the cut points are put back. The two pieces are
-Mathlib's open arcs `Circle.path z w '' Set.Ioo 0 1` and `Circle.path w z '' Set.Ioo 0 1`, whose
-covering of the cut circle is `Circle.compl_range_path` together with
-`Circle.range_path_inter_range_path`, and each of them with its two endpoints lies in the closed arc
-`Circle.range_path`, a `Circle.exp` image of an interval of angles, on which the diameter bound is
-immediate. Only preconnectedness of the pieces is recorded, not the openness and path-connectedness
-of `TauCeti.exists_isOpen_isPathConnected_union_eq_compl_pair_circle`; that is all the transport
-below consumes.
+Together these give `TauCeti.exists_isPreconnected_union_eq_compl_pair_circle_diam_le`: two points
+of the circle (when they coincide the short piece is empty) cut it into two preconnected pieces, the
+first of which stays of diameter at most `π / 2` times their distance after the cut points are put
+back. The two pieces are Mathlib's open arcs `Circle.path z w '' Set.Ioo 0 1` and
+`Circle.path w z '' Set.Ioo 0 1`, whose covering of the cut circle is
+`Circle.compl_range_path` together with `Circle.range_path_inter_range_path`, and each of them with
+its two endpoints lies in the closed arc `Circle.range_path`, a `Circle.exp` image of an interval of
+angles, on which the diameter bound is immediate. Only preconnectedness of the pieces is recorded,
+not the openness and path-connectedness of
+`TauCeti.exists_isOpen_isPathConnected_union_eq_compl_pair_circle`; that is all the transport below
+consumes.
 
 The transport then runs both uniform continuities of the parametrization `TauCeti.jordanParam` of
 `TauCeti/Topology/JordanCurve/Basic.lean` at once: one converts "the two points are close in
@@ -109,13 +110,13 @@ which are recorded here once and spent by both transports.
 
 ## Main results
 
-* `TauCeti.exists_isPreconnected_union_eq_compl_pair_circle_diam_le` — two distinct points cut the
+* `TauCeti.exists_isPreconnected_union_eq_compl_pair_circle_diam_le` — two points cut the
   circle into two preconnected arcs, the first of which is of diameter at most `π / 2` times their
   distance even after the two points are put back, and
   `TauCeti.exists_path_injective_diam_range_le_circle` — two distinct points of the circle are the
   endpoints of an injective path whose range has diameter at most `π / 2` times their distance.
 * `TauCeti.IsJordanCurve.exists_pos_forall_diam_le` — **the main statement**: for every `ε > 0`
-  there is a `δ > 0` such that two distinct points `p`, `q` of a Jordan curve at distance less than
+  there is a `δ > 0` such that two points `p`, `q` of a Jordan curve at distance less than
   `δ` cut it into two arcs one of which has diameter at most `ε` together with `p` and `q`.
 * `TauCeti.IsJordanCurve.exists_pos_forall_exists_diam_le` — the same packaged with the cutting
   itself, producing the two arcs with the small one named first.
@@ -140,20 +141,21 @@ open scoped Real
 
 /-! ## Cutting the circle into a short arc and a long one -/
 
-/-- **Two distinct points cut the circle into a short arc and a long one.** The complement of
+/-- **Two points cut the circle into a short arc and a long one.** The complement of
 `{z, w}` is the union of two preconnected sets, the first of which stays of diameter at most
 `π / 2 * dist z w` even after the two cut points are put back: it is `P ∪ {z, w}`, the *closed*
-short arc, that is bounded. -/
-theorem exists_isPreconnected_union_eq_compl_pair_circle_diam_le {z w : Circle} (hzw : z ≠ w) :
+short arc, that is bounded. For `z = w` the open piece `P` is empty and the closed short arc is
+the singleton `{z}`. -/
+theorem exists_isPreconnected_union_eq_compl_pair_circle_diam_le {z w : Circle} :
     ∃ P Q : Set Circle, IsPreconnected P ∧ IsPreconnected Q ∧
       P ∪ Q = ({z, w} : Set Circle)ᶜ ∧ Metric.diam (P ∪ {z, w}) ≤ π / 2 * dist z w := by
+  rcases eq_or_ne z w with rfl | hzw
+  · exact ⟨∅, {z}ᶜ, isPreconnected_empty,
+      (Circle.isPathConnected_compl_singleton z).isConnected.isPreconnected, by simp, by simp⟩
   -- The two pieces are Mathlib's open arcs, which cover the complement of `{z, w}`.
-  have hunion : Circle.path z w '' Ioo 0 1 ∪ Circle.path w z '' Ioo 0 1 =
-      ({z, w} : Set Circle)ᶜ := by
-    rw [← Circle.compl_range_path hzw.symm, ← Circle.compl_range_path hzw, ← compl_inter,
-      Circle.range_path_inter_range_path hzw.symm, pair_comm]
+  have hunion := Circle.path_image_Ioo_union hzw
   have hpre : ∀ x y : Circle, IsPreconnected (Circle.path x y '' Ioo 0 1) := fun x y =>
-    isPreconnected_Ioo.image _ (Circle.path x y).continuous.continuousOn
+    (Circle.isPathConnected_path_image_Ioo x y).isConnected.isPreconnected
   -- Putting the endpoints back — they are the values of the path at `0` and `1` — lands inside the
   -- closed arc `Circle.range_path`, whose diameter is at most its angle.
   have hdiam : ∀ x y : Circle,
@@ -213,12 +215,12 @@ the transport to a Jordan curve consumes, since what arrives there is a hypothes
 `dist z w < δ`. -/
 private theorem exists_pos_forall_isPreconnected_union_eq_compl_pair_circle_diam_lt {η : ℝ}
     (hη : 0 < η) :
-    ∃ δ > 0, ∀ ⦃z w : Circle⦄, z ≠ w → dist z w < δ →
+    ∃ δ > 0, ∀ ⦃z w : Circle⦄, dist z w < δ →
       ∃ P Q : Set Circle, IsPreconnected P ∧ IsPreconnected Q ∧
         P ∪ Q = ({z, w} : Set Circle)ᶜ ∧ Metric.diam (P ∪ {z, w}) < η := by
-  refine ⟨2 / π * η, by positivity, fun z w hzw hd => ?_⟩
+  refine ⟨2 / π * η, by positivity, fun z w hd => ?_⟩
   obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ :=
-    exists_isPreconnected_union_eq_compl_pair_circle_diam_le hzw
+    exists_isPreconnected_union_eq_compl_pair_circle_diam_le (z := z) (w := w)
   exact ⟨P, Q, hPc, hQc, hunion, hPd.trans_lt (pi_div_two_mul_lt hη hd)⟩
 
 /-- **Two nearby points of the circle are joined by a short injective path**: the `δ`-`η` form of
@@ -279,7 +281,7 @@ private lemma subset_or_eq_empty_of_union_eq_union {α : Type*} {A B U V : Set �
     exact hmem.elim id fun h => absurd (hdisj.le_bot ⟨hx, hVB h⟩) id
 
 /-- **Two nearby points cut a small arc off a Jordan curve**, in the form that *builds* the small
-arc: for every `ε > 0` there is a `δ > 0` such that if `p` and `q` are two distinct points of the
+arc: for every `ε > 0` there is a `δ > 0` such that if `p` and `q` are two points of the
 curve at distance less than `δ`, then `C \ {p, q}` is covered by two preconnected sets, the first of
 which has diameter at most `ε` once the two cut points are put back.
 
@@ -291,7 +293,7 @@ cover is recorded, not the disjointness of the two pieces, since that is all the
 below consumes. -/
 private theorem IsJordanCurve.exists_pos_forall_exists_isPreconnected_diam_union_pair_le
     (h : IsJordanCurve C) (hε : 0 < ε) :
-    ∃ δ > 0, ∀ ⦃p : X⦄, p ∈ C → ∀ ⦃q : X⦄, q ∈ C → p ≠ q → dist p q < δ →
+    ∃ δ > 0, ∀ ⦃p : X⦄, p ∈ C → ∀ ⦃q : X⦄, q ∈ C → dist p q < δ →
       ∃ P Q : Set X, IsPreconnected P ∧ IsPreconnected Q ∧ P ∪ Q = C \ {p, q} ∧
         Metric.diam (P ∪ {p, q}) ≤ ε := by
   obtain ⟨e⟩ := isJordanCurve_iff.mp h
@@ -305,13 +307,12 @@ private theorem IsJordanCurve.exists_pos_forall_exists_isPreconnected_diam_union
     exists_pos_forall_isPreconnected_union_eq_compl_pair_circle_diam_lt hη₀
   -- Uniform continuity of its inverse turns nearby points into nearby parameters.
   obtain ⟨δ, hδpos, hδ⟩ := exists_pos_forall_dist_apply_lt e hδ₀
-  refine ⟨δ, hδpos, fun p hp q hq hpq hpqδ => ?_⟩
+  refine ⟨δ, hδpos, fun p hp q hq hpqδ => ?_⟩
   set z := e ⟨p, hp⟩
   set w := e ⟨q, hq⟩
   have hgz : g z = p := jordanParam_apply_apply e hp
   have hgw : g w = q := jordanParam_apply_apply e hq
-  have hzw : z ≠ w := fun hh => hpq (congrArg Subtype.val (e.injective hh))
-  obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ := hcut hzw (hδ p hp q hq hpqδ)
+  obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ := hcut (hδ p hp q hq hpqδ)
   -- The closed short arc downstairs is the image of the closed short arc of parameters.
   have hclosed : g '' (P ∪ {z, w}) = g '' P ∪ {p, q} := by
     rw [image_union, image_insert_eq, image_singleton, hgz, hgw]
@@ -322,7 +323,7 @@ private theorem IsJordanCurve.exists_pos_forall_exists_isPreconnected_diam_union
     himg, hclosed ▸ hη _ hPd⟩
 
 /-- **Two nearby points cut a small arc off a Jordan curve.** For every `ε > 0` there is a `δ > 0`
-with the following property: if `p` and `q` are two distinct points of a Jordan curve `C` at
+with the following property: if `p` and `q` are two points of a Jordan curve `C` at
 distance less than `δ`, then in any splitting of `C \ {p, q}` into two disjoint pieces `A` and `B`
 that separate it — that is, such that every preconnected subset of `C \ {p, q}` lies in one of
 them — one of the two pieces has diameter at most `ε` *together with the two cut points*: the bound
@@ -339,15 +340,15 @@ The hypotheses on `A` and `B` are exactly the conclusion of
 cutting without having to reproduce it; `TauCeti.IsJordanCurve.exists_pos_forall_exists_diam_le`
 records the combination. -/
 theorem IsJordanCurve.exists_pos_forall_diam_le (h : IsJordanCurve C) (hε : 0 < ε) :
-    ∃ δ > 0, ∀ ⦃p : X⦄, p ∈ C → ∀ ⦃q : X⦄, q ∈ C → p ≠ q → dist p q < δ →
+    ∃ δ > 0, ∀ ⦃p : X⦄, p ∈ C → ∀ ⦃q : X⦄, q ∈ C → dist p q < δ →
       ∀ A B : Set X, A ∪ B = C \ {p, q} → Disjoint A B →
         (∀ ⦃S : Set X⦄, S ⊆ C \ {p, q} → IsPreconnected S → S ⊆ A ∨ S ⊆ B) →
         Metric.diam (A ∪ {p, q}) ≤ ε ∨ Metric.diam (B ∪ {p, q}) ≤ ε := by
   obtain ⟨δ, hδ₀, hδ⟩ := h.exists_pos_forall_exists_isPreconnected_diam_union_pair_le hε
   -- `δ ≤ ε` so that the two cut points alone are already of diameter at most `ε`.
-  refine ⟨min δ ε, lt_min hδ₀ hε, fun p hp q hq hpq hpqδ A B hAB hdisj hsep => ?_⟩
+  refine ⟨min δ ε, lt_min hδ₀ hε, fun p hp q hq hpqδ A B hAB hdisj hsep => ?_⟩
   have hpqε : dist p q ≤ ε := (hpqδ.trans_le (min_le_right _ _)).le
-  obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ := hδ hp hq hpq (hpqδ.trans_le (min_le_left _ _))
+  obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ := hδ hp hq (hpqδ.trans_le (min_le_left _ _))
   have hPsub : P ⊆ C \ {p, q} := hunion ▸ subset_union_left
   have hQsub : Q ⊆ C \ {p, q} := hunion ▸ subset_union_right
   have hPbdd : Bornology.IsBounded (P ∪ {p, q}) :=
@@ -389,7 +390,7 @@ theorem IsJordanCurve.exists_pos_forall_exists_diam_le (h : IsJordanCurve C) (h�
   refine ⟨δ, hδ₀, fun p hp q hq hpq hpqδ => ?_⟩
   obtain ⟨A, B, hAc, hBc, hdisj, hunion, hsep⟩ :=
     h.exists_isPathConnected_union_eq_sdiff_pair hp hq hpq
-  rcases hδ hp hq hpq hpqδ A B hunion hdisj hsep with hA | hB
+  rcases hδ hp hq hpqδ A B hunion hdisj hsep with hA | hB
   · exact ⟨A, B, hAc, hBc, hdisj, hunion, hsep, hA⟩
   · exact ⟨B, A, hBc, hAc, hdisj.symm, by rw [union_comm]; exact hunion,
       fun S hS hSc => (hsep hS hSc).symm, hB⟩
@@ -441,10 +442,13 @@ theorem IsJordanCurve.exists_pos_forall_exists_path_injective_diam_le (h : IsJor
 missing that point whose complement lies in a given ball around it.**  The
 compact arc `S` is the image of a closed circle arc under the Jordan
 parametrization, chosen small enough that its complement `C \ S` — the open
-window through `a` — stays inside `ball a r`. -/
+window through `a` — stays inside `ball a r`. For a point `a` off the curve, `S = C` works. -/
 theorem IsJordanCurve.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball
-    (hJ : IsJordanCurve C) {a : X} (ha : a ∈ C) {r : ℝ} (hr : 0 < r) :
+    (hJ : IsJordanCurve C) {a : X} {r : ℝ} (hr : 0 < r) :
     ∃ S ⊆ C, IsCompact S ∧ IsPreconnected S ∧ a ∉ S ∧ C \ S ⊆ ball a r := by
+  by_cases ha : a ∈ C
+  swap
+  · exact ⟨C, subset_rfl, hJ.isCompact, hJ.isConnected.isPreconnected, ha, by simp⟩
   obtain ⟨e⟩ := isJordanCurve_iff.mp hJ
   set g : Circle → X := jordanParam e
   have hginj : Function.Injective g := jordanParam_injective e
@@ -458,7 +462,6 @@ theorem IsJordanCurve.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball
   obtain ⟨η₀, hη₀, hη⟩ := Metric.continuousAt_iff.mp hcont r hr
   set η : ℝ := min η₀ (π / 2)
   have hηpos : 0 < η := lt_min hη₀ (by positivity)
-  have hηle : η ≤ π / 2 := min_le_right _ _
   have hηη₀ : η ≤ η₀ := min_le_left _ _
   set K : Set Circle := Circle.exp '' Icc (θ₀ + η) (θ₀ - η + 2 * π)
   set S : Set X := g '' K
@@ -467,15 +470,13 @@ theorem IsJordanCurve.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball
     (isCompact_Icc.image Circle.exp.continuous).image hgc
   have hSpre : IsPreconnected S :=
     (isPreconnected_Icc.image _ Circle.exp.continuous.continuousOn).image _ hgc.continuousOn
-  have hab : θ₀ + η ≤ θ₀ - η + 2 * π := by linarith [Real.pi_pos]
-  have hlt : (θ₀ - η + 2 * π) - (θ₀ + η) < 2 * π := by linarith
   refine ⟨S, hSC, hScompact, hSpre, ?_, ?_⟩
   · rintro ⟨u, huK, hu⟩
     have : u = Circle.exp θ₀ := hginj (hu.trans hga.symm)
     subst this
     obtain ⟨θ, hθ, hθeq⟩ := huK
     have hnot : Circle.exp θ₀ ∈ (Circle.exp '' Icc (θ₀ + η) (θ₀ - η + 2 * π))ᶜ := by
-      rw [compl_circleExp_image_Icc hab hlt]
+      rw [compl_circleExp_image_Icc]
       refine ⟨θ₀ + 2 * π, ⟨by linarith, by linarith⟩, ?_⟩
       rw [Circle.exp_add, Circle.exp_two_pi, mul_one]
     exact hnot ⟨θ, hθ, hθeq⟩
@@ -485,7 +486,7 @@ theorem IsJordanCurve.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball
     have huK : u ∉ K := fun h => hzS ⟨u, h, rfl⟩
     have hu : u ∈ Circle.exp '' Ioo (θ₀ - η + 2 * π) (θ₀ + η + 2 * π) := by
       have huK' : u ∈ (Circle.exp '' Icc (θ₀ + η) (θ₀ - η + 2 * π))ᶜ := huK
-      rwa [compl_circleExp_image_Icc hab hlt] at huK'
+      rwa [compl_circleExp_image_Icc] at huK'
     obtain ⟨θ, hθ, rfl⟩ := hu
     have hshift : Circle.exp θ = Circle.exp (θ - 2 * π) := by
       have hθ2 : θ = (θ - 2 * π) + 2 * π := by ring

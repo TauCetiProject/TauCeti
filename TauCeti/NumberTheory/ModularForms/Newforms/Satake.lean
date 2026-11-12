@@ -138,7 +138,8 @@ theorem mem_satakeParameters_iff (f : Newform N k) (p : ℕ) (z : ℂ) :
   constructor
   · rintro ⟨-, h⟩
     linear_combination h
-  · refine fun h ↦ ⟨fun h0 ↦ by simpa using congrArg (coeff · 2) h0, by linear_combination h⟩
+  · refine fun h ↦ ⟨fun h0 ↦ by simpa using congrArg (AddMonoidAlgebra.coeff · 2) h0,
+      by linear_combination h⟩
 
 /-- The Satake parameters at `p` sum to the Fourier coefficient `a_p`. -/
 @[simp]
@@ -186,10 +187,10 @@ theorem zero_notMem_satakeParameters (f : Newform N k) {p : ℕ} (hp : p ≠ 0)
   rw [prod_satakeParameters] at hprod
   exact mul_ne_zero hχ (zpow_ne_zero _ (Nat.cast_ne_zero.mpr hp)) hprod
 
-/-- **The Euler product through the Satake parameters**: for `Re s > k/2 + 1`,
+/-- **The Euler product through the Satake parameters**: for `Re s > (k+1)/2`,
 `L(s, f) = ∏_p ((1 - α_p p^{-s}) (1 - β_p p^{-s}))⁻¹`. -/
 theorem LSeries_eulerProduct_hasProd_satakeParameters (f : Newform N k) {s : ℂ}
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
+    (hs : ((k : ℝ) + 1) / 2 < s.re) :
     HasProd (fun p : Nat.Primes ↦
         ((f.satakeParameters p).map fun α ↦ 1 - α * (p.val : ℂ) ^ (-s)).prod⁻¹)
       (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s) := by

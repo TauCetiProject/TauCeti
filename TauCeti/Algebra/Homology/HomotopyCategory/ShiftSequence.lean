@@ -50,6 +50,13 @@ noncomputable def shiftCyclesIso (n i i' : ℤ) (hi : n + i = i') :
     (K⟦n⟧).cycles i ≅ K.cycles i' :=
   ShortComplex.cyclesMapIso ((shiftShortComplexFunctorIso C n i i' hi).app K)
 
+/-- The isomorphism `CochainComplex.shiftCyclesIso` is the map on cycles induced by the
+isomorphism of short complexes `shiftShortComplexFunctorIso`. -/
+lemma shiftCyclesIso_hom (n i i' : ℤ) (hi : n + i = i') :
+    (K.shiftCyclesIso n i i' hi).hom =
+      ShortComplex.cyclesMap ((shiftShortComplexFunctorIso C n i i' hi).hom.app K) :=
+  (rfl)
+
 /-- The isomorphism `CochainComplex.shiftCyclesIso` commutes with the inclusions of the cycles,
 up to the identification `(K⟦n⟧).X i = K.X (i + n)`. -/
 @[reassoc (attr := simp)]
@@ -61,5 +68,15 @@ lemma shiftCyclesIso_hom_iCycles (n i i' : ℤ) (hi : n + i = i') :
   -- `CategoryTheory.shiftFunctor` on cochain complexes is `CochainComplex.shiftFunctor`, and
   -- `HomologicalComplex.iCycles` is the inclusion of the cycles of `HomologicalComplex.sc`.
   rfl
+
+/-- The isomorphism `CochainComplex.shiftCyclesIso` is natural in the complex. -/
+@[reassoc]
+lemma shiftCyclesIso_hom_naturality {L : CochainComplex C ℤ} (φ : K ⟶ L) (n i i' : ℤ)
+    (hi : n + i = i') :
+    HomologicalComplex.cyclesMap (φ⟦n⟧') i ≫ (L.shiftCyclesIso n i i' hi).hom =
+      (K.shiftCyclesIso n i i' hi).hom ≫ HomologicalComplex.cyclesMap φ i' := by
+  rw [← cancel_mono (L.iCycles i')]
+  obtain rfl : i' = i + n := by lia
+  simp [CochainComplex.shiftFunctor_map_f']
 
 end CochainComplex

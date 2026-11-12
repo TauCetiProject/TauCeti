@@ -59,8 +59,7 @@ endpoints and whose conclusion is a continuation along the path the far endpoint
 Mathlib's abstract theorem is rel endpoints and gives an equality of points, so the free-homotopy
 form remains the business of the metric engine in `Conformal/Monodromy.lean`. What is gained here
 is the interface: monodromy for holomorphic germs is now an instance of covering-space-style path
-lifting, in the vocabulary the deck-group and uniformization consumers of layer **L4** of
-`TauCetiRoadmap/ConformalMapping/README.md` speak.
+lifting, the vocabulary in which deck groups and uniformization are phrased.
 
 ## Main results
 

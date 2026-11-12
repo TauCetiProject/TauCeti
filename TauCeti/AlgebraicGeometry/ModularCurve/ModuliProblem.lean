@@ -61,6 +61,9 @@ and every problem representable by an object of `Ell/B` is rigid (`isRigid_of_re
 
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isPullback`: for an arrow `(E'/S') ⟶ (E/S)`
   of `Ell/B`, `𝒫_{E'/S'}` is the base change of `𝒫_{E/S}` along `S' ⟶ S`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.hasProperty_surjective_iff`: a relatively
+  representable problem is surjective over `Ell/B` exactly when every point of the base of every
+  object lies under a scheme over which the base-changed curve carries a level structure.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.tensor` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.HasProperty.tensor`: the simultaneous
   problem of two relatively representable problems is relatively representable, and inherits every
@@ -198,6 +201,36 @@ theorem hasProperty_congr (D' : P.RelRepData) (W : MorphismProperty Scheme.{u}) 
   let e := (D.representableBy X).uniqueUpToIso (D'.representableBy X)
   rw [← Over.w e.hom, W.cancel_left_of_respectsIso]
 
+/-- Transport relative-representability data along an isomorphism of moduli problems. -/
+noncomputable def ofIso (D : P.RelRepData) (e : P ≅ Q) : Q.RelRepData where
+  rep X := D.rep X
+  representableBy X :=
+    (D.representableBy X).ofIso (Functor.isoWhiskerLeft X.baseChangeFunctor.op e)
+
+@[simp]
+theorem ofIso_rep (D : P.RelRepData) (e : P ≅ Q) (X : EllObj B) :
+    (D.ofIso e).rep X = D.rep X :=
+  (rfl)
+
+/-- Isomorphic moduli problems have the same isomorphism-invariant properties of representing
+morphisms. -/
+theorem hasProperty_iff_of_iso (D : P.RelRepData) (D' : Q.RelRepData) (e : P ≅ Q)
+    (W : MorphismProperty Scheme.{u}) [W.RespectsIso] :
+    D.HasProperty W ↔ D'.HasProperty W :=
+  (D.ofIso e).hasProperty_congr D' W
+
+/-- **Surjectivity over `Ell/B`.** A relatively representable moduli problem `𝒫` is surjective
+over `Ell/B`, that is, every representing morphism `𝒫_{E/S} ⟶ S` is surjective, exactly when every
+point `s` of the base of every object `(E/S)` lies in the image of a scheme `T` over `S` such that
+the base change `E_T` carries a `𝒫`-structure. -/
+theorem hasProperty_surjective_iff :
+    D.HasProperty @Surjective ↔ ∀ (X : EllObj B) (s : X.base), ∃ T : Over X.base,
+      s ∈ Set.range T.hom ∧ Nonempty (P.obj (op (X.baseChangeFunctor.obj T))) := by
+  refine ⟨fun h X s ↦ ⟨D.rep X, (h X).surj s, ⟨D.universal X⟩⟩, fun h X ↦ ⟨fun s ↦ ?_⟩⟩
+  obtain ⟨T, ⟨p, rfl⟩, ⟨α⟩⟩ := h X s
+  let u := (D.representableBy X).homEquiv.symm α
+  exact ⟨u.left p, by rw [← Scheme.Hom.comp_apply, Over.w u]⟩
+
 variable (B) in
 /-- The trivial moduli problem `[Γ(1)]`, the terminal presheaf `𝟙_` on `Ell/B`, is relatively
 representable: its fibre over `(E/S)` is represented by `S` itself. -/
@@ -262,6 +295,17 @@ variable {P Q}
 /-- A moduli problem with a morphism to a rigid moduli problem is rigid. -/
 theorem IsRigid.of_hom (φ : P ⟶ Q) (hQ : Q.IsRigid) : P.IsRigid :=
   fun _ σ hσ α hα ↦ hQ σ hσ (φ.app _ α) (by rw [← NatTrans.naturality_apply, hα])
+
+/-- For a rigid `𝒫`, two arrows `σ τ : X ⟶ Y` of `Ell/B` with the same morphism of bases, with
+`τ` an isomorphism, which pull back some level structure `α ∈ 𝒫(Y)` to the same element, are
+equal: the automorphism `σ ≫ τ⁻¹` of `X` lies over the identity and fixes `τ^* α`. -/
+theorem IsRigid.eq_of_base_eq_of_map_eq (hP : P.IsRigid) (σ τ : X ⟶ Y) [IsIso τ]
+    (hb : σ.base = τ.base) (α : P.obj (op Y)) (h : P.map σ.op α = P.map τ.op α) : σ = τ := by
+  rw [← comp_inv_eq_id τ]
+  refine P.isRigid_iff.1 hP _ (by simp [hb]) (P.map τ.op α) ?_
+  have hinv : P.map (inv τ).op (P.map τ.op α) = α := by
+    rw [← Functor.map_comp_apply, ← op_comp, IsIso.inv_hom_id, op_id, Functor.map_id_apply]
+  rw [op_comp, Functor.map_comp_apply, hinv, h]
 
 /-- The simultaneous problem `(𝒫, 𝒬)` is rigid when `𝒫` is. -/
 theorem IsRigid.tensor_left (hP : P.IsRigid) : (P ⊗ Q).IsRigid :=

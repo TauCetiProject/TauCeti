@@ -54,21 +54,18 @@ so the hypothesis is now gone from the statement.
 finite-normalization theorem for a polynomial ring over a field. Krull–Akizuki alone would not
 supply that stronger module-finiteness conclusion.
 
-`IsDedekindDomain W₂.CoordinateRing` is taken as a hypothesis rather than derived. It is supplied
-in two steps: `WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed`
-needs `[IsIntegrallyClosed W₂.CoordinateRing]`, and for an elliptic curve
-`WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing` supplies that from `[W₂.IsElliptic]`.
-Taking the Dedekind property directly keeps both steps out of this file and states exactly what
-the conclusion needs.
+`IsDedekindDomain W₂.CoordinateRing` is taken as a hypothesis rather than derived, which states
+exactly what the conclusion needs. For an elliptic curve it is the instance
+`WeierstrassCurve.Affine.isDedekindDomain_coordinateRing`, and for an integrally closed coordinate
+ring it is `WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed`.
 
 ## Provenance
 
-⚠ *mathlib-track*. `TauCetiRoadmap/EllipticCurves/README.md:1092` lists the `IntermediateRing`
-with `intermediateRingFinite` and `intermediateRingIsIntegrallyClosed` among the components of
-D. Angdinata's shared isogeny development, on the way to `pushClass` and `toPointHom`; the Dedekind
-property is what those two facts are combined for. The same target records at `:1097` that the
-hypothesis inventory of that development is "genuinely minimal", which is what dropping
-separability here restores.
+⚠ *mathlib-track*. D. Angdinata's shared isogeny development carries the `IntermediateRing` with
+`intermediateRingFinite` and `intermediateRingIsIntegrallyClosed`, on the way to `pushClass` and
+`toPointHom`; the Dedekind property is what those two facts are combined for. That development's
+hypotheses are minimal — neither fact needs separability — and dropping separability here keeps
+the Dedekind property in line with them.
 
 AINTLIB proves the same statement about the same object as
 `NormConormIntegralClosure.instDedekindB` (`github.com/CBirkbeck/AINTLIB`, Apache-2.0,

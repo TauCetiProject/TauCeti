@@ -77,7 +77,7 @@ noncomputable def kostantRootSubgroupToralPoints (i : I) (A : CommAlgCat.{v} ℤ
         (R := ℤ)
         (H := CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
           (kostantToralDefiningIdeal e h ρ M hM hnil b wt)) A :=
-  ((CommHopfAlgCat.mapPointsFunctor
+  ((CommHopfAlgCat.Hom.mapPointsFunctor
     (kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt i)).app A).hom
 
 /-- The intrinsic root-subgroup point map is precomposition by its factored coordinate map. -/
@@ -86,7 +86,7 @@ theorem kostantRootSubgroupToralPoints_apply (i : I) (A : CommAlgCat.{v} ℤ)
     (q : HopfAlgebra.points
       (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ) A) :
     kostantRootSubgroupToralPoints e h ρ M hM hnil b wt i A q =
-      (CommHopfAlgCat.mapPointsFunctor
+      (CommHopfAlgCat.Hom.mapPointsFunctor
         (kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt i)).app A q :=
   (rfl)
 
@@ -99,15 +99,15 @@ theorem quotientPointsHom_kostantRootSubgroupToralPoints (i : I) (A : CommAlgCat
     CommHopfAlgCat.quotientPointsHom (GeneralLinear.coordinateHopfAlgebra ℤ n)
         (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A
         (kostantRootSubgroupToralPoints e h ρ M hM hnil b wt i A q) =
-      (CommHopfAlgCat.mapPointsFunctor
+      (CommHopfAlgCat.Hom.mapPointsFunctor
         (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b)).app A q := by
   apply WithConv.ofConv_injective
   apply AlgHom.ext
   intro x
   rw [CommHopfAlgCat.quotientPointsHom_apply_apply,
     kostantRootSubgroupToralPoints_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply_apply]
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply]
   -- Evaluating the point and removing `WithConv` leaves categorical composition, whose
   -- underlying algebra homomorphism is definitionally `AlgHom.comp`.
   change q.ofConv
@@ -133,7 +133,7 @@ theorem pointsMulEquiv_quotientPointsHom_kostantRootSubgroupToralPoints
             (CommAlgCat.of ℤ A) q)) =
       kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q := by
   rw [quotientPointsHom_kostantRootSubgroupToralPoints,
-    CommHopfAlgCat.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply]
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply]
   exact pointsMulEquiv_kostantRootSubgroupCoordinateMap
     e h ρ M hM i (hnil i) b A q
 
@@ -169,7 +169,7 @@ theorem mapPoints_kostantRootSubgroupToralPoints
       kostantRootSubgroupToralPoints e h ρ M hM hnil b wt i B
         (HopfAlgebra.mapPoints φ q) := by
   rw [kostantRootSubgroupToralPoints_apply, kostantRootSubgroupToralPoints_apply]
-  exact CommHopfAlgCat.mapPointsFunctor_naturality_apply
+  exact CommHopfAlgCat.Hom.mapPointsFunctor_naturality_apply
     (kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt i) φ q
 
 /-- Base change sends the intrinsic root element with parameter `t` to the root element whose

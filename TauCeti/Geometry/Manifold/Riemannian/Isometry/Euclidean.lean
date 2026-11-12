@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Affine.MazurUlam
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
+public import TauCeti.Analysis.Normed.Affine.Isometry.SemidirectProduct
 
 /-!
 # The isometry group of Euclidean space
@@ -37,6 +38,8 @@ geometry `(𝔼³, Isom(𝔼³))`, one of Thurston's eight three-dimensional geo
   isometry group of a real inner product space and its affine isometry group.
 * `TauCeti.RiemannianIsometry.stabilizerZeroMulEquiv`: the isomorphism between the isotropy group
   of the origin and the linear isometry group.
+* `TauCeti.RiemannianIsometry.semidirectProductMulEquiv`: the Euclidean group as the
+  semidirect product of translations and orthogonal transformations.
 
 ## Main results
 
@@ -77,7 +80,7 @@ def toRiemannianIsometry (f : F ≃ᵃⁱ[ℝ] G) :
         simp
       · ext u
         simpa using (f.map_vsub u 0).trans
-          (f.toAffineIsometry.toContinuousAffineMap.contLinear_map_vsub u 0).symm
+          (f.toAffineIsometry.toContinuousAffineMap.contLinear_apply_vsub u 0).symm
     have h : mfderiv 𝓘(ℝ, F) 𝓘(ℝ, G) f x =
         (f.linearIsometryEquiv.toContinuousLinearEquiv : F →L[ℝ] G) :=
       hf.hasMFDerivAt.mfderiv
@@ -138,6 +141,32 @@ theorem affineIsometryMulEquiv_apply (Φ : Isom 𝓘(ℝ, F) F) :
 @[simp]
 theorem affineIsometryMulEquiv_symm_apply (f : F ≃ᵃⁱ[ℝ] F) :
     affineIsometryMulEquiv.symm f = f.toRiemannianIsometry := (rfl)
+
+/-- The full Riemannian isometry group of a real inner product space is the semidirect
+product of its translations and its orthogonal group. For `F = EuclideanSpace ℝ (Fin n)`
+this is the Euclidean group decomposition `E(n) = ℝⁿ ⋊ O(n)`. -/
+def semidirectProductMulEquiv : Isom 𝓘(ℝ, F) F ≃*
+    Multiplicative F ⋊[LinearIsometryEquiv.multiplicativeAutHom] (F ≃ₗᵢ[ℝ] F) :=
+  affineIsometryMulEquiv.trans AffineIsometryEquiv.semidirectProductMulEquiv
+
+/-- The translation coordinate of a Euclidean Riemannian isometry is its image of zero. -/
+@[simp]
+theorem semidirectProductMulEquiv_left (Φ : Isom 𝓘(ℝ, F) F) :
+    (semidirectProductMulEquiv Φ).left = Multiplicative.ofAdd (Φ 0) := by
+  simp [semidirectProductMulEquiv]
+
+/-- The orthogonal coordinate is the linear part of the canonical affine isometry. -/
+@[simp]
+theorem semidirectProductMulEquiv_right (Φ : Isom 𝓘(ℝ, F) F) :
+    (semidirectProductMulEquiv Φ).right = Φ.toAffineIsometryEquiv.linearIsometryEquiv := by
+  simp [semidirectProductMulEquiv]
+
+/-- The Riemannian isometry corresponding to `(v, L)` acts as `x ↦ v + L x`. -/
+@[simp]
+theorem semidirectProductMulEquiv_symm_apply
+    (p : Multiplicative F ⋊[LinearIsometryEquiv.multiplicativeAutHom] (F ≃ₗᵢ[ℝ] F)) (x : F) :
+    semidirectProductMulEquiv.symm p x = p.left.toAdd + p.right x := by
+  simp [semidirectProductMulEquiv]
 
 /-- The isotropy group of the origin in the isometry group of a real inner product space is its
 linear isometry group, the orthogonal group `O(F)`: an isometry fixing the origin is linear by the

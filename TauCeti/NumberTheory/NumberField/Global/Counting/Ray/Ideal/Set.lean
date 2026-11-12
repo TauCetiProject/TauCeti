@@ -71,7 +71,7 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- The images, inside the ray fundamental domain of `𝔪`, of the elements of `𝔞` that are
 congruent to one modulo the finite part of `𝔪`.  This is the ray analogue of
 `NumberField.mixedEmbedding.fundamentalCone.idealSet`. -/
-def rayIdealSet (𝔪 : Modulus K) (𝔞 : (Ideal (𝓞 K))⁰) : Set (mixedSpace K) :=
+noncomputable def rayIdealSet (𝔪 : Modulus K) (𝔞 : (Ideal (𝓞 K))⁰) : Set (mixedSpace K) :=
   rayFundamentalDomain 𝔪 ∩ (fun y : 𝓞 K ↦ mixedEmbedding K (y : K)) ''
       {α : 𝓞 K | α ∈ (𝔞 : Ideal (𝓞 K)) ∧ α - 1 ∈ 𝔪.finitePart}
 

@@ -35,11 +35,14 @@ varies the coefficients.
   starts, and `Scheme.Modules.cohomologyMap_surjective`, the surjectivity it gives when the next
   cohomology group of `M₁` vanishes;
 * `Scheme.Modules.subsingleton_cohomology_X₂`, `Scheme.Modules.subsingleton_cohomology_X₃` and
-  `Scheme.Modules.subsingleton_cohomology_X₁`, the vanishing consequences;
+  `Scheme.Modules.subsingleton_cohomology_X₁`, the vanishing consequences, and
+  `Scheme.Modules.cohomologyδ_surjective` and `Scheme.Modules.cohomologyδ_bijective`, the
+  connecting map is onto, or bijective, when the adjacent cohomology of `M₂` vanishes;
 * `Scheme.Modules.finiteDimensional_cohomology_X₂`: in a short exact sequence, `Hⁱ(X, M₂)` is
   finite-dimensional when `Hⁱ(X, M₁)` and `Hⁱ(X, M₃)` are, and
   `Scheme.Modules.finiteDimensional_cohomology_X₁`: `Hⁱ⁺¹(X, M₁)` is finite-dimensional when
-  `Hⁱ(X, M₃)` and `Hⁱ⁺¹(X, M₂)` are;
+  `Hⁱ(X, M₃)` and `Hⁱ⁺¹(X, M₂)` are, and `Scheme.Modules.finiteDimensional_cohomology_zero_of_mono`:
+  `H⁰(X, M)` is finite-dimensional when `H⁰(X, N)` is, for a monomorphism `M ⟶ N`;
 * `Scheme.Modules.exact_sections` and `Scheme.Modules.sections_injective`: global sections are
   left exact, and `Scheme.Modules.sections_surjective`: they are exact on the right as soon as
   `H¹(X, M₁)` vanishes. This last statement is the form in which the sequence is normally used;
@@ -48,6 +51,10 @@ varies the coefficients.
   of global functions and `Scheme.Modules.cohomologyδBaseLinear` over the base ring of a scheme
   over a commutative ring. The maps induced by morphisms of sheaves are already linear, so this
   makes the whole long exact sequence one of modules; a dimension count in it needs that.
+  `Scheme.Modules.coe_cohomologyMapBaseLinear` and `Scheme.Modules.coe_cohomologyδBaseLinear`
+  identify the underlying maps, and
+  `Scheme.Modules.exact_cohomologyMapBaseLinear_cohomologyδBaseLinear` is exactness at `Hⁿ(X, M₃)`
+  for these linear maps.
 
 Additivity of the Euler characteristic, and with it Riemann-Roch, rest on this sequence. The
 sequence itself is Mathlib's `CategoryTheory.Sheaf.H.longSequence`, repackaged in
@@ -76,6 +83,12 @@ variable {X : Scheme.{u}}
 def cohomologyMap {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
     Cohomology M n →+ Cohomology N n :=
   CategoryTheory.Sheaf.H.map ((toSheaf X).map f) n
+
+/-- The map induced on cohomology by a morphism of sheaves of modules is the map induced by the
+underlying morphism of abelian sheaves. -/
+lemma cohomologyMap_eq {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
+    cohomologyMap f n = CategoryTheory.Sheaf.H.map ((toSheaf X).map f) n :=
+  (rfl)
 
 @[simp]
 lemma cohomologyFunctor_map {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
@@ -112,6 +125,12 @@ short exact sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of sheaves of modules.
 def cohomologyδ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     Cohomology S.X₃ n₀ →+ Cohomology S.X₁ n₁ :=
   CategoryTheory.Sheaf.H.δ (shortExact_map_toSheaf hS) n₀ n₁ h
+
+/-- The connecting map is the connecting map of the underlying short exact sequence of abelian
+sheaves. -/
+lemma cohomologyδ_eq (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+    cohomologyδ hS n₀ n₁ h = CategoryTheory.Sheaf.H.δ (shortExact_map_toSheaf hS) n₀ n₁ h :=
+  (rfl)
 
 /-- The long exact cohomology sequence is exact at `Hⁿ(X, M₂)`. -/
 theorem exact_cohomologyMap_cohomologyMap (n : ℕ) :
@@ -156,6 +175,19 @@ theorem subsingleton_cohomology_X₁ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
     (h₃ : Subsingleton (Cohomology S.X₃ n₀)) (h₂ : Subsingleton (Cohomology S.X₂ n₁)) :
     Subsingleton (Cohomology S.X₁ n₁) :=
   CategoryTheory.Sheaf.H.subsingleton_X₁ (shortExact_map_toSheaf hS) n₀ n₁ h h₃ h₂
+
+/-- If `Hⁿ¹(X, M₂)` vanishes, then the connecting map `Hⁿ⁰(X, M₃) →+ Hⁿ¹(X, M₁)` is
+surjective. -/
+theorem cohomologyδ_surjective (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
+    (h₂ : Subsingleton (Cohomology S.X₂ n₁)) : Function.Surjective (cohomologyδ hS n₀ n₁ h) :=
+  CategoryTheory.Sheaf.H.δ_surjective (shortExact_map_toSheaf hS) n₀ n₁ h h₂
+
+/-- If `Hⁿ⁰(X, M₂)` and `Hⁿ¹(X, M₂)` vanish, then the connecting map
+`Hⁿ⁰(X, M₃) →+ Hⁿ¹(X, M₁)` is bijective. -/
+theorem cohomologyδ_bijective (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
+    (h₂₀ : Subsingleton (Cohomology S.X₂ n₀)) (h₂₁ : Subsingleton (Cohomology S.X₂ n₁)) :
+    Function.Bijective (cohomologyδ hS n₀ n₁ h) :=
+  CategoryTheory.Sheaf.H.δ_bijective (shortExact_map_toSheaf hS) n₀ n₁ h h₂₀ h₂₁
 
 /-- Global sections are left exact: the sections of `M₁` are exactly the sections of `M₂` that
 die in `M₃`. -/
@@ -258,6 +290,32 @@ lemma cohomologyδBaseLinear_apply (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n�
     cohomologyδBaseLinear R X hS n₀ n₁ h x = cohomologyδ hS n₀ n₁ h x :=
   (rfl)
 
+omit hS in
+/-- The base-linear map induced on cohomology by a morphism of sheaves of modules has the same
+underlying function as `cohomologyMap`. -/
+@[simp]
+lemma coe_cohomologyMapBaseLinear {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
+    ⇑(cohomologyMapBaseLinear R X f n) = ⇑(cohomologyMap f n) := by
+  funext x
+  rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
+  exact AddCommGrpCat.ofHom_apply _ x
+
+omit hS in
+/-- The base-linear connecting map has the same underlying function as `cohomologyδ`. -/
+@[simp]
+lemma coe_cohomologyδBaseLinear (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+    ⇑(cohomologyδBaseLinear R X hS n₀ n₁ h) = ⇑(cohomologyδ hS n₀ n₁ h) :=
+  funext (cohomologyδBaseLinear_apply R X hS n₀ n₁ h)
+
+omit hS in
+/-- The long exact cohomology sequence is exact at `Hⁱ(X, M₃)`, as a sequence of modules over
+the base ring. -/
+theorem exact_cohomologyMapBaseLinear_cohomologyδBaseLinear (hS : S.ShortExact) (i : ℕ) :
+    Function.Exact (cohomologyMapBaseLinear R X S.g i)
+      (cohomologyδBaseLinear R X hS i (i + 1) rfl) := by
+  rw [coe_cohomologyδBaseLinear R X hS, coe_cohomologyMapBaseLinear R X]
+  exact exact_cohomologyMap_cohomologyδ hS i (i + 1) rfl
+
 end Base
 
 section Field
@@ -274,13 +332,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
     FiniteDimensional k (Cohomology S.X₂ i) := by
   have hex : Function.Exact (cohomologyMapBaseLinear k X S.f i)
       (cohomologyMapBaseLinear k X S.g i) := by
-    have coe_map : ∀ {M N : X.Modules} (f : M ⟶ N),
-        ⇑(cohomologyMapBaseLinear k X f i) = ⇑(cohomologyMap f i) := by
-      intro M N f
-      funext x
-      rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-      rfl
-    rw [coe_map, coe_map]
+    rw [coe_cohomologyMapBaseLinear, coe_cohomologyMapBaseLinear]
     exact exact_cohomologyMap_cohomologyMap hS i
   exact finiteDimensional_of_exact hex
 
@@ -293,10 +345,18 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
     FiniteDimensional k (Cohomology S.X₁ n₁) := by
   have hex : Function.Exact (cohomologyδBaseLinear k X hS n₀ n₁ h)
       (cohomologyMapBaseLinear k X S.f n₁) := by
-    intro x
-    rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-    exact exact_cohomologyδ_cohomologyMap hS n₀ n₁ h x
+    simpa only [coe_cohomologyδBaseLinear, coe_cohomologyMapBaseLinear] using
+      exact_cohomologyδ_cohomologyMap hS n₀ n₁ h
   exact finiteDimensional_of_exact hex
+
+omit hS in
+/-- A monomorphism `M ⟶ N` embeds `H⁰(X, M)` into `H⁰(X, N)`, so `H⁰(X, M)` is
+finite-dimensional as soon as `H⁰(X, N)` is. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_zero_of_mono
+    {M N : X.Modules} (f : M ⟶ N) [Mono f] [FiniteDimensional k (Cohomology N 0)] :
+    FiniteDimensional k (Cohomology M 0) := by
+  exact Module.Finite.of_injective (cohomologyMapBaseLinear k X f 0)
+    (by simpa only [coe_cohomologyMapBaseLinear] using cohomologyMap_injective f)
 
 end Field
 

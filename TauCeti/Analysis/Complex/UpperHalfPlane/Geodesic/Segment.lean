@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
+import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Geodesic segments and the convexity of half-planes
@@ -24,7 +25,10 @@ their closures are convex: they contain the segment between any two of their poi
 (`geodesicSegment_subset_rightHalfPlane`, …, `geodesicSegment_subset_closure_leftHalfPlane`).
 Convexity is what makes the triangles and polygons bounded by such half-planes convex.
 An interior point of an interval in a closed half-plane lies in the open half-plane unless the
-supporting lines coincide (`geodesicLine_mem_leftHalfPlane_of_mem_closure`).
+supporting lines coincide (`geodesicLine_mem_leftHalfPlane_of_mem_closure`). Hence crossing a
+line on the segment from a point strictly inside a family of half-planes to a point violating
+only one of them gives a point of that line strictly inside the others
+(`exists_geodesicLine_mem_leftHalfPlane_of_notMem`).
 
 Source: Walkden, *Hyperbolic geometry* (MATH32051 lecture notes, Manchester 2019), §7.1 (the
 segment `[z, w]`) and Solution 14.1 (half-planes are convex); Katok, *Fuchsian groups,
@@ -100,6 +104,11 @@ theorem isCompact_geodesicSegment (z w : ℍ) : IsCompact (geodesicSegment z w) 
 /-- Segments are closed. -/
 theorem isClosed_geodesicSegment (z w : ℍ) : IsClosed (geodesicSegment z w) :=
   (isCompact_geodesicSegment z w).isClosed
+
+/-- Segments are path-connected. -/
+theorem isPathConnected_geodesicSegment (z w : ℍ) : IsPathConnected (geodesicSegment z w) :=
+  ((convex_Icc 0 (dist z w)).isPathConnected (nonempty_Icc.2 dist_nonneg)).image
+    (isometry_geodesicLine _).continuous
 
 end UpperHalfPlane
 
@@ -234,9 +243,7 @@ theorem geodesicLine_mem_leftHalfPlane_of_mem_closure {g k : PSL(2, ℝ)} {s u t
     have hvk := (mem_range_geodesicLine_iff k _).2 hv
     have huk := (mem_range_geodesicLine_iff k _).2 hu0
     have hpoints := (geodesicLine_injective g).ne hvu
-    exact hne ((range_geodesicLine_geodesicBetween_of_mem
-      (g := g) ⟨v, rfl⟩ ⟨u, rfl⟩ hpoints).symm.trans
-      (range_geodesicLine_geodesicBetween_of_mem hvk huk hpoints))
+    exact hne (range_geodesicLine_eq_of_mem hpoints ⟨v, rfl⟩ ⟨u, rfl⟩ hvk huk)
   rcases monotone_re_geodesicLine_or_antitone (k⁻¹ * g) with hm | hm
   · have hle := hm hut.le
     simp only [← smul_geodesicLine] at hle
@@ -244,6 +251,36 @@ theorem geodesicLine_mem_leftHalfPlane_of_mem_closure {g k : PSL(2, ℝ)} {s u t
   · have hle := hm hsu.le
     simp only [← smul_geodesicLine] at hle
     exact unique hsu.ne (le_antisymm hs (hu0 ▸ hle))
+
+/-- Crossing the line of `L k` on the segment from a point strictly inside every half-plane of a
+family to a point violating only the half-plane of `L k` gives a point of that line strictly
+inside the other half-planes of the family. -/
+theorem exists_geodesicLine_mem_leftHalfPlane_of_notMem {ι : Type*} {t : Set ι}
+    {L : ι → PSL(2, ℝ)} {p x : ℍ} (hp : ∀ j ∈ t, p ∈ leftHalfPlane (L j)) {k : ι} (hk : k ∈ t)
+    (hx : ∀ j ∈ t, j ≠ k → x ∈ closure (leftHalfPlane (L j)))
+    (hxk : x ∉ closure (leftHalfPlane (L k))) :
+    ∃ u : ℝ, ∀ j ∈ t, j ≠ k → geodesicLine (L k) u ∈ leftHalfPlane (L j) := by
+  let m := geodesicBetween p x
+  let f : ℝ → ℝ := fun τ ↦ (geodesicLine ((L k)⁻¹ * m) τ).re
+  have hf : Continuous f := UpperHalfPlane.continuous_re.comp (isometry_geodesicLine _).continuous
+  have hf0 : f 0 < 0 := by
+    simpa only [f, ← smul_geodesicLine, m, geodesicLine_geodesicBetween_zero,
+      mem_leftHalfPlane_iff] using hp k hk
+  have hfx : 0 < f (dist p x) := by
+    simpa only [f, ← smul_geodesicLine, m, geodesicLine_geodesicBetween_dist,
+      mem_closure_leftHalfPlane_iff, not_le] using hxk
+  obtain ⟨u, hu, hfu⟩ := intermediate_value_Ioo dist_nonneg hf.continuousOn ⟨hf0, hfx⟩
+  obtain ⟨v, hv⟩ : geodesicLine m u ∈ range (geodesicLine (L k)) := by
+    rw [mem_range_geodesicLine_iff, smul_geodesicLine]
+    exact hfu
+  refine ⟨v, fun j hj hjk ↦ hv ▸ geodesicLine_mem_leftHalfPlane_of_mem_closure hu.1 hu.2 ?_ ?_ ?_⟩
+  · rw [geodesicLine_geodesicBetween_zero]
+    exact subset_closure (hp j hj)
+  · rw [geodesicLine_geodesicBetween_dist]
+    exact hx j hj hjk
+  · intro heq
+    exact disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine (L j)) (hp j hj)
+      (heq ▸ mem_range_geodesicLine_geodesicBetween_left p x)
 
 /-! ### Half-planes are convex -/
 

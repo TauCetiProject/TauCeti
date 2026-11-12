@@ -28,9 +28,9 @@ and the **`p`-Gromov–Wasserstein distance** is its infimum over the couplings 
 This file defines both, with no factor `1 / 2`, and proves the axioms of an extended
 pseudodistance under finiteness and measurability hypotheses: the distance vanishes from an
 almost-everywhere strongly measurable kernel on an s-finite measure to itself, it is symmetric
-for a finite measure on one side, and for `1 ≤ p` and a finite middle measure it satisfies the
-triangle inequality whenever the two couplings glue along the middle carrier, in particular when
-the third carrier is standard Borel.
+for a sigma-finite measure on one side, and for `1 ≤ p` and a finite middle measure it satisfies
+the triangle inequality whenever the two couplings glue along the middle carrier, in particular
+when the third carrier is standard Borel.
 
 As for `TauCeti.wassersteinEDist`, the objective is an `eLpNorm`, so the exponent `p = ∞` is a case
 of the definition: there the distortion is the `π ⊗ π`-essential supremum of the kernel
@@ -54,18 +54,24 @@ finiteness instances they use.
 
 * `TauCeti.gromovWassersteinEDist_le`, `TauCeti.le_gromovWassersteinEDist` and
   `TauCeti.gromovWassersteinEDist_lt_iff` — the universal property of the infimum;
-* `TauCeti.gromovWassersteinDistortion_map_prodMk` — the distortion of the plan
-  `(f, g)_# γ` induced by two measure-preserving parametrizations `f`, `g` of the marginals, read
-  on `γ ⊗ γ`, with `TauCeti.gromovWassersteinEDist_le_eLpNorm` the resulting bound on the distance;
+* `TauCeti.gromovWassersteinDistortion_map_prodMk_of_aemeasurable` and
+  `TauCeti.gromovWassersteinDistortion_map_prodMk` — the distortion of the plan `(f, g)_# γ`
+  induced by two parametrizations `f`, `g` of the marginals, read on `γ ⊗ γ`, with
+  `TauCeti.gromovWassersteinEDist_le_eLpNorm_of_aemeasurable`,
+  `TauCeti.gromovWassersteinEDist_le_eLpNorm` and
+  `TauCeti.tendsto_gromovWassersteinEDist_zero_of_tendsto_eLpNorm` the resulting distance bound
+  and convergence criterion;
 * `TauCeti.gromovWassersteinEDist_rpow` and `TauCeti.gromovWassersteinEDist_top` — the
   integral-of-a-power formula for `0 < p < ∞` and the essential-supremum formula for `p = ∞`;
 * `TauCeti.gromovWassersteinDistortion_congr_ae` and `TauCeti.gromovWassersteinEDist_congr_ae` —
   invariance under almost-everywhere modification of the kernels;
-* `TauCeti.gromovWassersteinDistortion_eq_zero_iff` — for an extended metric target and a
+* `TauCeti.gromovWassersteinDistortion_eq_zero_iff` — for a weak extended metric target and a
   nonzero exponent, zero distortion is exactly almost-everywhere equality of the pulled-back
   kernels;
 * `TauCeti.gromovWassersteinEDist_comp_prodMap_eq_zero` — a measured kernel and its pullback along
   a measure-preserving map are at distance `0`;
+* `TauCeti.gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap` — the same conclusion when the
+  source kernel agrees almost everywhere with the pullback;
 * `TauCeti.gromovWassersteinEDist_self`, `TauCeti.gromovWassersteinEDist_comm` and
   `TauCeti.gromovWassersteinEDist_triangle` — the axioms of an extended pseudodistance, the
   triangle inequality for a standard Borel third carrier, from the general form
@@ -105,8 +111,8 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set
-open scoped ENNReal
+open Filter MeasureTheory Set
+open scoped ENNReal Topology
 
 namespace TauCeti
 
@@ -115,7 +121,7 @@ variable {X Y W Ω Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [Measurabl
 
 section EDist
 
-variable [EDist Z] {μ : Measure X} {ν : Measure Y} {ωX : X × X → Z} {ωY : Y × Y → Z}
+variable [EDist Z] {μ : Measure X} {ν : Measure Y} {ωX ωX' : X × X → Z} {ωY ωY' : Y × Y → Z}
   {π : Measure (X × Y)}
 
 /-- The **`p`-distortion** of a plan `π` on `X × Y` between the kernels `ωX` and `ωY`: the
@@ -168,93 +174,6 @@ theorem gromovWassersteinEDist_lt_iff :
       ∃ π, IsCoupling π μ ν ∧ gromovWassersteinDistortion p ωX ωY π < a := by
   simp only [gromovWassersteinEDist_def, iInf_lt_iff, exists_prop]
 
-end EDist
-
-section PseudoEMetricSpace
-
-variable [PseudoEMetricSpace Z] {μ : Measure X} {ν : Measure Y} {ρ : Measure W}
-  {ωX ωX' : X × X → Z} {ωY ωY' : Y × Y → Z} {ωW : W × W → Z} {π : Measure (X × Y)}
-
-/-- Kernels reparametrized by two measure-preserving maps out of a common space `(Ω, γ)` give an
-almost-everywhere strongly measurable discrepancy on `γ ⊗ γ`. -/
-theorem aestronglyMeasurable_edist_comp {γ : Measure Ω} [SFinite γ] {f : Ω → X}
-    {g : Ω → Y} (hf : MeasurePreserving f γ μ) (hg : MeasurePreserving g γ ν)
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
-    AEStronglyMeasurable (fun q : Ω × Ω ↦ edist (ωX (f q.1, f q.2)) (ωY (g q.1, g q.2)))
-      (γ.prod γ) :=
-  continuous_edist.comp_aestronglyMeasurable₂
-    (hωX.comp_quasiMeasurePreserving (hf.prod hf).quasiMeasurePreserving)
-    (hωY.comp_quasiMeasurePreserving (hg.prod hg).quasiMeasurePreserving)
-
-/-- The kernel discrepancy integrated in the distortion of a coupling is almost-everywhere
-strongly measurable for the square of the coupling. -/
-theorem IsCoupling.aestronglyMeasurable_edist [SFinite π] (hπ : IsCoupling π μ ν)
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
-    AEStronglyMeasurable
-      (fun q : (X × Y) × (X × Y) ↦ edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2))) (π.prod π) :=
-  aestronglyMeasurable_edist_comp hπ.measurePreserving_fst hπ.measurePreserving_snd
-    hωX hωY
-
-/-- **Distortion of a parametrized plan.** If `f` and `g` push a measure `γ` on `Ω` forward to
-`μ` and `ν`, the plan `(f, g)_# γ` couples them, and its distortion is the `L^p (γ ⊗ γ)` seminorm
-of the discrepancy of the two pulled-back kernels. -/
-theorem gromovWassersteinDistortion_map_prodMk {γ : Measure Ω} [SFinite γ] {f : Ω → X}
-    {g : Ω → Y} (hf : MeasurePreserving f γ μ) (hg : MeasurePreserving g γ ν)
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
-    (p : ℝ≥0∞) :
-    gromovWassersteinDistortion p ωX ωY (γ.map fun w ↦ (f w, g w)) =
-      eLpNorm (fun q : Ω × Ω ↦ edist (ωX (f q.1, f q.2)) (ωY (g q.1, g q.2))) p (γ.prod γ) := by
-  have hfg : Measurable fun w ↦ (f w, g w) := hf.measurable.prodMk hg.measurable
-  have hmeas :=
-    (isCoupling_map_prodMk_of_measurePreserving hf hg).aestronglyMeasurable_edist hωX hωY
-  rw [Measure.map_prod_map γ γ hfg hfg] at hmeas
-  rw [gromovWassersteinDistortion_def, Measure.map_prod_map γ γ hfg hfg,
-    eLpNorm_map_measure hmeas (hfg.prodMap hfg).aemeasurable]
-  rfl
-
-/-- **The common-parametrization bound.** If `f` and `g` push a measure `γ` on `Ω` forward to `μ`
-and `ν`, the Gromov–Wasserstein distance of `(X, μ, ωX)` and `(Y, ν, ωY)` is at most the
-`L^p (γ ⊗ γ)` seminorm of the discrepancy of the pulled-back kernels. -/
-theorem gromovWassersteinEDist_le_eLpNorm {γ : Measure Ω} [SFinite γ] {f : Ω → X} {g : Ω → Y}
-    (hf : MeasurePreserving f γ μ) (hg : MeasurePreserving g γ ν)
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
-    (p : ℝ≥0∞) :
-    gromovWassersteinEDist p μ ωX ν ωY ≤
-      eLpNorm (fun q : Ω × Ω ↦ edist (ωX (f q.1, f q.2)) (ωY (g q.1, g q.2))) p (γ.prod γ) := by
-  rw [← gromovWassersteinDistortion_map_prodMk hf hg hωX hωY]
-  exact gromovWassersteinEDist_le (isCoupling_map_prodMk_of_measurePreserving hf hg) p ωX ωY
-
-/-- For `0 < p < ∞`, the `p`-th power of the Gromov–Wasserstein distance is the infimum over
-couplings `π` of `∫∫ edist (ωX (x, x')) (ωY (y, y')) ^ p d(π ⊗ π)`. -/
-theorem gromovWassersteinEDist_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) [IsFiniteMeasure μ]
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
-    gromovWassersteinEDist p μ ωX ν ωY ^ p.toReal =
-      ⨅ (π : Measure (X × Y)) (_ : IsCoupling π μ ν),
-        ∫⁻ q, edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)) ^ p.toReal ∂(π.prod π) := by
-  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  rw [gromovWassersteinEDist_def, ← ENNReal.orderIsoRpow_apply p.toReal hr,
-    OrderIso.map_iInf]
-  refine iInf_congr fun π ↦ ?_
-  rw [OrderIso.map_iInf]
-  refine iInf_congr fun hπ ↦ ?_
-  have : IsFiniteMeasure π := hπ.isFiniteMeasure
-  rw [ENNReal.orderIsoRpow_apply, gromovWassersteinDistortion_def,
-    eLpNorm_rpow_eq_lintegral hp0 hp (hπ.aestronglyMeasurable_edist hωX hωY).aemeasurable]
-
-/-- At exponent `∞`, the Gromov–Wasserstein distance is the infimum over couplings `π` of the
-`π ⊗ π`-essential supremum of the kernel discrepancy. -/
-theorem gromovWassersteinEDist_top [IsFiniteMeasure μ] (hωX : AEStronglyMeasurable ωX (μ.prod μ))
-    (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
-    gromovWassersteinEDist ∞ μ ωX ν ωY =
-      ⨅ (π : Measure (X × Y)) (_ : IsCoupling π μ ν),
-        eLpNormEssSup (fun q : (X × Y) × (X × Y) ↦ edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
-          (π.prod π) := by
-  rw [gromovWassersteinEDist_def]
-  refine iInf_congr fun π ↦ iInf_congr fun hπ ↦ ?_
-  have : IsFiniteMeasure π := hπ.isFiniteMeasure
-  rw [gromovWassersteinDistortion_def,
-    eLpNorm_exponent_top (hπ.aestronglyMeasurable_edist hωX hωY)]
-
 /-- The distortion of a coupling does not see a modification of either kernel on a null set. -/
 theorem gromovWassersteinDistortion_congr_ae [SFinite π] (hπ : IsCoupling π μ ν)
     (hX : ωX =ᵐ[μ.prod μ] ωX') (hY : ωY =ᵐ[ν.prod ν] ωY') (p : ℝ≥0∞) :
@@ -270,42 +189,14 @@ theorem gromovWassersteinDistortion_congr_ae [SFinite π] (hπ : IsCoupling π �
   rw [hqX, hqY]
 
 /-- The Gromov–Wasserstein distance does not see a modification of either kernel on a null set. -/
-theorem gromovWassersteinEDist_congr_ae [IsFiniteMeasure μ] (hX : ωX =ᵐ[μ.prod μ] ωX')
+theorem gromovWassersteinEDist_congr_ae [SigmaFinite μ] (hX : ωX =ᵐ[μ.prod μ] ωX')
     (hY : ωY =ᵐ[ν.prod ν] ωY') (p : ℝ≥0∞) :
     gromovWassersteinEDist p μ ωX ν ωY = gromovWassersteinEDist p μ ωX' ν ωY' := by
   rw [gromovWassersteinEDist_def, gromovWassersteinEDist_def]
   refine iInf_congr fun π ↦ iInf_congr fun hπ ↦ ?_
-  have : IsFiniteMeasure π := hπ.isFiniteMeasure
+  have : SigmaFinite π := SigmaFinite.of_map π measurable_fst.aemeasurable
+    (by rw [← Measure.fst, hπ.fst_eq]; infer_instance)
   exact gromovWassersteinDistortion_congr_ae hπ hX hY p
-
-/-- A measured kernel `(Y, ν, ωY)` and its pullback `(X, μ, ωY ∘ (f × f))` along a
-measure-preserving map `f` are at Gromov–Wasserstein distance `0`. In particular the
-Gromov–Wasserstein distance is only an extended pseudodistance on measured kernels. -/
-@[simp]
-theorem gromovWassersteinEDist_comp_prodMap_eq_zero [SFinite μ] {f : X → Y}
-    (hf : MeasurePreserving f μ ν) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) (p : ℝ≥0∞) :
-    gromovWassersteinEDist p μ (ωY ∘ Prod.map f f) ν ωY = 0 := by
-  refine nonpos_iff_eq_zero.mp ((gromovWassersteinEDist_le_eLpNorm (MeasurePreserving.id μ) hf
-    (hωY.comp_quasiMeasurePreserving (hf.prod hf).quasiMeasurePreserving) hωY p).trans_eq ?_)
-  simp [Prod.map_def]
-
-/-- A measured kernel is at Gromov–Wasserstein distance `0` from itself. -/
-@[simp]
-theorem gromovWassersteinEDist_self [SFinite μ] (hωX : AEStronglyMeasurable ωX (μ.prod μ))
-    (p : ℝ≥0∞) : gromovWassersteinEDist p μ ωX μ ωX = 0 := by
-  simpa using gromovWassersteinEDist_comp_prodMap_eq_zero (MeasurePreserving.id μ) hωX p
-
-/-- Exchanging the two coordinates of a plan exchanges the roles of the two kernels and does not
-change the distortion. -/
-theorem gromovWassersteinDistortion_map_swap [SFinite π] (p : ℝ≥0∞) :
-    gromovWassersteinDistortion p ωY ωX (π.map Prod.swap) =
-      gromovWassersteinDistortion p ωX ωY π := by
-  have he : MeasurableEmbedding (Prod.map (Prod.swap : X × Y → Y × X) Prod.swap) :=
-    (MeasurableEquiv.prodComm : X × Y ≃ᵐ Y × X).measurableEmbedding.prodMap
-      (MeasurableEquiv.prodComm : X × Y ≃ᵐ Y × X).measurableEmbedding
-  rw [gromovWassersteinDistortion_def, gromovWassersteinDistortion_def,
-    Measure.map_prod_map π π measurable_swap measurable_swap, he.eLpNorm_map_measure]
-  exact eLpNorm_congr_ae (.of_forall fun q ↦ edist_comm _ _)
 
 /-- Exchanging the two arguments of both kernels does not change the distortion of a plan. -/
 theorem gromovWassersteinDistortion_comp_swap [SFinite π] (p : ℝ≥0∞) :
@@ -331,19 +222,319 @@ theorem gromovWassersteinEDist_comp_swap (p : ℝ≥0∞) (μ : Measure X) [Sigm
     (by rw [← Measure.fst, hπ.fst_eq]; infer_instance)
   exact gromovWassersteinDistortion_comp_swap p
 
+end EDist
+
+section TopologicalSpace
+
+variable [TopologicalSpace Z] {μ : Measure X} {ν : Measure Y} {ωX : X × X → Z} {ωY : Y × Y → Z}
+  {π : Measure (X × Y)}
+
+/-- The pair of kernel values `((x, y), (x', y')) ↦ (ωX (x, x'), ωY (y, y'))` is
+almost-everywhere strongly measurable for the square of a coupling. -/
+theorem IsCoupling.aestronglyMeasurable_kernel_prodMk [SFinite π] (hπ : IsCoupling π μ ν)
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
+    AEStronglyMeasurable (fun q : (X × Y) × (X × Y) ↦ (ωX (q.1.1, q.2.1), ωY (q.1.2, q.2.2)))
+      (π.prod π) :=
+  (hωX.comp_quasiMeasurePreserving
+    (hπ.measurePreserving_fst.prod hπ.measurePreserving_fst).quasiMeasurePreserving).prodMk
+    (hωY.comp_quasiMeasurePreserving
+      (hπ.measurePreserving_snd.prod hπ.measurePreserving_snd).quasiMeasurePreserving)
+
+section WeakPseudoEMetricSpace
+
+variable [WeakPseudoEMetricSpace Z]
+
+/-- Exchanging the two coordinates of a plan exchanges the roles of the two kernels and does not
+change the distortion. -/
+theorem gromovWassersteinDistortion_map_swap [SFinite π] (p : ℝ≥0∞) :
+    gromovWassersteinDistortion p ωY ωX (π.map Prod.swap) =
+      gromovWassersteinDistortion p ωX ωY π := by
+  have he : MeasurableEmbedding (Prod.map (Prod.swap : X × Y → Y × X) Prod.swap) :=
+    (MeasurableEquiv.prodComm : X × Y ≃ᵐ Y × X).measurableEmbedding.prodMap
+      (MeasurableEquiv.prodComm : X × Y ≃ᵐ Y × X).measurableEmbedding
+  rw [gromovWassersteinDistortion_def, gromovWassersteinDistortion_def,
+    Measure.map_prod_map π π measurable_swap measurable_swap, he.eLpNorm_map_measure]
+  exact eLpNorm_congr_ae (.of_forall fun q ↦ edist_comm _ _)
+
 /-- **Symmetry.** Exchanging the two measured kernels does not change their Gromov–Wasserstein
 distance. -/
-theorem gromovWassersteinEDist_comm (p : ℝ≥0∞) (μ : Measure X) [IsFiniteMeasure μ]
+theorem gromovWassersteinEDist_comm (p : ℝ≥0∞) (μ : Measure X) [SigmaFinite μ]
     (ωX : X × X → Z) (ν : Measure Y) (ωY : Y × Y → Z) :
     gromovWassersteinEDist p μ ωX ν ωY = gromovWassersteinEDist p ν ωY μ ωX := by
   refine le_antisymm (le_gromovWassersteinEDist fun σ hσ ↦ ?_)
     (le_gromovWassersteinEDist fun π hπ ↦ ?_)
-  · have : IsFiniteMeasure σ := hσ.isFiniteMeasure_of_right
+  · have : SigmaFinite σ := SigmaFinite.of_map σ measurable_snd.aemeasurable
+      (by rw [← Measure.snd, hσ.snd_eq]; infer_instance)
     exact (gromovWassersteinEDist_le hσ.swap p ωX ωY).trans_eq
       (gromovWassersteinDistortion_map_swap p)
-  · have : IsFiniteMeasure π := hπ.isFiniteMeasure
+  · have : SigmaFinite π := SigmaFinite.of_map π measurable_fst.aemeasurable
+      (by rw [← Measure.fst, hπ.fst_eq]; infer_instance)
     exact (gromovWassersteinEDist_le hπ.swap p ωY ωX).trans_eq
       (gromovWassersteinDistortion_map_swap p)
+
+end WeakPseudoEMetricSpace
+
+section WeakEMetricSpace
+
+variable [WeakEMetricSpace Z]
+
+/-- At a nonzero exponent, zero distortion means that the two pulled-back kernels agree
+almost everywhere. No integrability or finiteness hypothesis is needed. -/
+theorem gromovWassersteinDistortion_eq_zero_iff (hp : p ≠ 0) :
+    gromovWassersteinDistortion p ωX ωY π = 0 ↔
+      (fun q : (X × Y) × (X × Y) ↦ ωX (q.1.1, q.2.1)) =ᵐ[π.prod π]
+        (fun q ↦ ωY (q.1.2, q.2.2)) := by
+  rw [gromovWassersteinDistortion_def, eLpNorm_eq_zero_iff hp]
+  simp only [Filter.EventuallyEq, Pi.zero_apply, edist_eq_zero]
+
+end WeakEMetricSpace
+
+end TopologicalSpace
+
+section PseudoEMetricSpace
+
+variable [PseudoEMetricSpace Z] {μ : Measure X} {ν : Measure Y} {ρ : Measure W}
+  {ωX : X × X → Z} {ωY : Y × Y → Z} {ωW : W × W → Z} {π : Measure (X × Y)}
+
+/-- Kernels reparametrized by two almost-everywhere measurable maps out of a common space `(Ω, γ)`
+pushing `γ` to `μ` and `ν` give an almost-everywhere strongly measurable discrepancy on `γ ⊗ γ`. -/
+theorem aestronglyMeasurable_edist_comp_of_aemeasurable {γ : Measure Ω} [SFinite γ] {f : Ω → X}
+    {g : Ω → Y} (hf : AEMeasurable f γ) (hg : AEMeasurable g γ)
+    (hfμ : γ.map f = μ) (hgν : γ.map g = ν)
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
+    AEStronglyMeasurable (fun q : Ω × Ω ↦ edist (ωX (f q.1, f q.2)) (ωY (g q.1, g q.2)))
+      (γ.prod γ) := by
+  have hX : AEStronglyMeasurable (ωX ∘ Prod.map f f) (γ.prod γ) := by
+    rw [← hfμ, Measure.map_prod_map_of_aemeasurable γ γ hf hf] at hωX
+    exact hωX.comp_aemeasurable (hf.prodMap hf)
+  have hY : AEStronglyMeasurable (ωY ∘ Prod.map g g) (γ.prod γ) := by
+    rw [← hgν, Measure.map_prod_map_of_aemeasurable γ γ hg hg] at hωY
+    exact hωY.comp_aemeasurable (hg.prodMap hg)
+  exact continuous_edist.comp_aestronglyMeasurable₂ hX hY
+
+/-- Kernels reparametrized by two measure-preserving maps out of a common space `(Ω, γ)` give an
+almost-everywhere strongly measurable discrepancy on `γ ⊗ γ`. -/
+theorem aestronglyMeasurable_edist_comp {γ : Measure Ω} [SFinite γ] {f : Ω → X}
+    {g : Ω → Y} (hf : MeasurePreserving f γ μ) (hg : MeasurePreserving g γ ν)
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
+    AEStronglyMeasurable (fun q : Ω × Ω ↦ edist (ωX (f q.1, f q.2)) (ωY (g q.1, g q.2)))
+      (γ.prod γ) :=
+  aestronglyMeasurable_edist_comp_of_aemeasurable hf.aemeasurable hg.aemeasurable
+    hf.map_eq hg.map_eq hωX hωY
+
+/-- The kernel discrepancy integrated in the distortion of a coupling is almost-everywhere
+strongly measurable for the square of the coupling. -/
+theorem IsCoupling.aestronglyMeasurable_edist [SFinite π] (hπ : IsCoupling π μ ν)
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
+    AEStronglyMeasurable
+      (fun q : (X × Y) × (X × Y) ↦ edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2))) (π.prod π) :=
+  aestronglyMeasurable_edist_comp hπ.measurePreserving_fst hπ.measurePreserving_snd
+    hωX hωY
+
+/-- For a coupling, the `∞`-distortion is at most `c` exactly when the indicator of the set where
+the kernel discrepancy exceeds `c` has zero integral against the square of the coupling. -/
+theorem gromovWassersteinDistortion_top_le_iff [SFinite π]
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (hπ : IsCoupling π μ ν) (c : ℝ≥0∞) :
+    gromovWassersteinDistortion ∞ ωX ωY π ≤ c ↔
+      ∫⁻ q, (Ioi c).indicator (fun _ ↦ (1 : ℝ≥0∞))
+        (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2))) ∂(π.prod π) = 0 := by
+  have hmeas := hπ.aestronglyMeasurable_edist hωX hωY
+  have hind : AEMeasurable (fun q : (X × Y) × (X × Y) ↦ (Ioi c).indicator
+      (fun _ ↦ (1 : ℝ≥0∞)) (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))) (π.prod π) :=
+    (measurable_const.indicator measurableSet_Ioi).comp_aemeasurable hmeas.aemeasurable
+  rw [gromovWassersteinDistortion_def, eLpNorm_exponent_top hmeas, lintegral_eq_zero_iff' hind]
+  refine ⟨fun h ↦ ?_, fun h ↦ eLpNormEssSup_le_of_ae_eNorm_bound ?_⟩
+  · filter_upwards [ae_le_eLpNormEssSup (f := fun q : (X × Y) × (X × Y) ↦
+      edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))] with q hq
+    simpa using (hq.trans h).not_gt
+  · filter_upwards [h] with q hq
+    simpa using hq
+
+/-- **Distortion of an a.e.-measurable parametrized plan.** If almost-everywhere measurable maps
+`f` and `g` push an s-finite measure `γ` on `Ω` forward to `μ` and `ν`, the plan `(f, g)_# γ`
+couples them, and its distortion is the `L^p (γ ⊗ γ)` seminorm of the discrepancy of the two
+pulled-back kernels. -/
+theorem gromovWassersteinDistortion_map_prodMk_of_aemeasurable {γ : Measure Ω} [SFinite γ]
+    {f : Ω → X} {g : Ω → Y} (hf : AEMeasurable f γ) (hg : AEMeasurable g γ)
+    (hfμ : γ.map f = μ) (hgν : γ.map g = ν)
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (p : ℝ≥0∞) :
+    gromovWassersteinDistortion p ωX ωY (γ.map fun w ↦ (f w, g w)) =
+      eLpNorm (fun q : Ω × Ω ↦ edist (ωX (f q.1, f q.2)) (ωY (g q.1, g q.2))) p (γ.prod γ) := by
+  have hfg : AEMeasurable (fun w ↦ (f w, g w)) γ := hf.prodMk hg
+  have hmeas :=
+    (isCoupling_map_prodMk_of_aemeasurable hf hg hfμ hgν).aestronglyMeasurable_edist hωX hωY
+  rw [Measure.map_prod_map_of_aemeasurable γ γ hfg hfg] at hmeas
+  rw [gromovWassersteinDistortion_def, Measure.map_prod_map_of_aemeasurable γ γ hfg hfg,
+    eLpNorm_map_measure hmeas (hfg.prodMap hfg)]
+  rfl
+
+/-- **Distortion of a parametrized plan.** If `f` and `g` push a measure `γ` on `Ω` forward to
+`μ` and `ν`, the plan `(f, g)_# γ` couples them, and its distortion is the `L^p (γ ⊗ γ)` seminorm
+of the discrepancy of the two pulled-back kernels. -/
+theorem gromovWassersteinDistortion_map_prodMk {γ : Measure Ω} [SFinite γ] {f : Ω → X}
+    {g : Ω → Y} (hf : MeasurePreserving f γ μ) (hg : MeasurePreserving g γ ν)
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (p : ℝ≥0∞) :
+    gromovWassersteinDistortion p ωX ωY (γ.map fun w ↦ (f w, g w)) =
+      eLpNorm (fun q : Ω × Ω ↦ edist (ωX (f q.1, f q.2)) (ωY (g q.1, g q.2))) p (γ.prod γ) :=
+  gromovWassersteinDistortion_map_prodMk_of_aemeasurable hf.aemeasurable hg.aemeasurable
+    hf.map_eq hg.map_eq hωX hωY p
+
+/-- **The common-parametrization bound** for almost-everywhere measurable parametrizations: if `f`
+and `g` push an s-finite measure `γ` on `Ω` forward to `μ` and `ν`, the Gromov–Wasserstein distance
+of `(X, μ, ωX)` and `(Y, ν, ωY)` is at most the `L^p (γ ⊗ γ)` seminorm of the discrepancy of the
+pulled-back kernels. -/
+theorem gromovWassersteinEDist_le_eLpNorm_of_aemeasurable {γ : Measure Ω} [SFinite γ] {f : Ω → X}
+    {g : Ω → Y} (hf : AEMeasurable f γ) (hg : AEMeasurable g γ)
+    (hfμ : γ.map f = μ) (hgν : γ.map g = ν)
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (p : ℝ≥0∞) :
+    gromovWassersteinEDist p μ ωX ν ωY ≤
+      eLpNorm (fun q : Ω × Ω ↦ edist (ωX (f q.1, f q.2)) (ωY (g q.1, g q.2))) p (γ.prod γ) := by
+  rw [← gromovWassersteinDistortion_map_prodMk_of_aemeasurable hf hg hfμ hgν hωX hωY]
+  exact gromovWassersteinEDist_le (isCoupling_map_prodMk_of_aemeasurable hf hg hfμ hgν) p ωX ωY
+
+/-- **The common-parametrization bound.** If `f` and `g` push a measure `γ` on `Ω` forward to `μ`
+and `ν`, the Gromov–Wasserstein distance of `(X, μ, ωX)` and `(Y, ν, ωY)` is at most the
+`L^p (γ ⊗ γ)` seminorm of the discrepancy of the pulled-back kernels. -/
+theorem gromovWassersteinEDist_le_eLpNorm {γ : Measure Ω} [SFinite γ] {f : Ω → X} {g : Ω → Y}
+    (hf : MeasurePreserving f γ μ) (hg : MeasurePreserving g γ ν)
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (p : ℝ≥0∞) :
+    gromovWassersteinEDist p μ ωX ν ωY ≤
+      eLpNorm (fun q : Ω × Ω ↦ edist (ωX (f q.1, f q.2)) (ωY (g q.1, g q.2))) p (γ.prod γ) :=
+  gromovWassersteinEDist_le_eLpNorm_of_aemeasurable hf.aemeasurable hg.aemeasurable
+    hf.map_eq hg.map_eq hωX hωY p
+
+/-- **Gromov–Wasserstein convergence from a common a.e.-measurable parametrization.** Along any
+filter `l`, if `f i : Ω → X' i` and `g : Ω → Y` push one s-finite measure `γ` forward to `μ' i`
+(eventually along `l`) and `ν`, and the `L^p (γ ⊗ γ)` discrepancy between the pulled-back kernels
+tends to zero, then `gromovWassersteinEDist p (μ' i) (ω' i) ν ωY` tends to zero. -/
+theorem tendsto_gromovWassersteinEDist_zero_of_tendsto_eLpNorm_of_aemeasurable {ι : Type*}
+    {l : Filter ι} {X' : ι → Type*} [∀ i, MeasurableSpace (X' i)]
+    {μ' : (i : ι) → Measure (X' i)} {ω' : (i : ι) → X' i × X' i → Z}
+    {γ : Measure Ω} [SFinite γ] {f : (i : ι) → Ω → X' i} {g : Ω → Y}
+    (hf : ∀ᶠ i in l, AEMeasurable (f i) γ) (hg : AEMeasurable g γ)
+    (hfμ : ∀ᶠ i in l, γ.map (f i) = μ' i) (hgν : γ.map g = ν)
+    (hω' : ∀ᶠ i in l, AEStronglyMeasurable (ω' i) ((μ' i).prod (μ' i)))
+    (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (hlim : Tendsto
+      (fun i ↦ eLpNorm (fun q : Ω × Ω ↦ edist (ω' i (f i q.1, f i q.2)) (ωY (g q.1, g q.2)))
+        p (γ.prod γ)) l (𝓝 0)) :
+    Tendsto (fun i ↦ gromovWassersteinEDist p (μ' i) (ω' i) ν ωY) l (𝓝 0) := by
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    (.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hf, hfμ, hω'] with i hfi hfμi hω'i
+  exact gromovWassersteinEDist_le_eLpNorm_of_aemeasurable hfi hg hfμi hgν hω'i hωY p
+
+/-- **Gromov–Wasserstein convergence from a common parametrization.** Along any filter `l`, if
+measure-preserving maps `f i : Ω → X' i` (eventually along `l`) and `g : Ω → Y` push one s-finite
+measure `γ` forward to `μ' i` and `ν`, and the `L^p (γ ⊗ γ)` discrepancy between the pulled-back
+kernels tends to zero, then `gromovWassersteinEDist p (μ' i) (ω' i) ν ωY` tends to zero. -/
+theorem tendsto_gromovWassersteinEDist_zero_of_tendsto_eLpNorm {ι : Type*}
+    {l : Filter ι} {X' : ι → Type*} [∀ i, MeasurableSpace (X' i)]
+    {μ' : (i : ι) → Measure (X' i)} {ω' : (i : ι) → X' i × X' i → Z}
+    {γ : Measure Ω} [SFinite γ] {f : (i : ι) → Ω → X' i} {g : Ω → Y}
+    (hf : ∀ᶠ i in l, MeasurePreserving (f i) γ (μ' i)) (hg : MeasurePreserving g γ ν)
+    (hω' : ∀ᶠ i in l, AEStronglyMeasurable (ω' i) ((μ' i).prod (μ' i)))
+    (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (hlim : Tendsto
+      (fun i ↦ eLpNorm (fun q : Ω × Ω ↦ edist (ω' i (f i q.1, f i q.2)) (ωY (g q.1, g q.2)))
+        p (γ.prod γ)) l (𝓝 0)) :
+    Tendsto (fun i ↦ gromovWassersteinEDist p (μ' i) (ω' i) ν ωY) l (𝓝 0) :=
+  tendsto_gromovWassersteinEDist_zero_of_tendsto_eLpNorm_of_aemeasurable
+    (hf.mono fun _ h ↦ h.aemeasurable) hg.aemeasurable (hf.mono fun _ h ↦ h.map_eq) hg.map_eq
+    hω' hωY hlim
+
+/-- For `0 < p < ∞`, the `p`-th power of the Gromov–Wasserstein distance is the infimum over
+couplings `π` of `∫∫ edist (ωX (x, x')) (ωY (y, y')) ^ p d(π ⊗ π)`. -/
+theorem gromovWassersteinEDist_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) [SigmaFinite μ]
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
+    gromovWassersteinEDist p μ ωX ν ωY ^ p.toReal =
+      ⨅ (π : Measure (X × Y)) (_ : IsCoupling π μ ν),
+        ∫⁻ q, edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)) ^ p.toReal ∂(π.prod π) := by
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  rw [gromovWassersteinEDist_def, ← ENNReal.orderIsoRpow_apply p.toReal hr,
+    OrderIso.map_iInf]
+  refine iInf_congr fun π ↦ ?_
+  rw [OrderIso.map_iInf]
+  refine iInf_congr fun hπ ↦ ?_
+  have : SigmaFinite π := SigmaFinite.of_map π measurable_fst.aemeasurable
+    (by rw [← Measure.fst, hπ.fst_eq]; infer_instance)
+  rw [ENNReal.orderIsoRpow_apply, gromovWassersteinDistortion_def,
+    eLpNorm_rpow_eq_lintegral hp0 hp (hπ.aestronglyMeasurable_edist hωX hωY).aemeasurable]
+
+/-- At exponent `∞`, the Gromov–Wasserstein distance is the infimum over couplings `π` of the
+`π ⊗ π`-essential supremum of the kernel discrepancy. -/
+theorem gromovWassersteinEDist_top [SigmaFinite μ] (hωX : AEStronglyMeasurable ωX (μ.prod μ))
+    (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
+    gromovWassersteinEDist ∞ μ ωX ν ωY =
+      ⨅ (π : Measure (X × Y)) (_ : IsCoupling π μ ν),
+        eLpNormEssSup (fun q : (X × Y) × (X × Y) ↦ edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
+          (π.prod π) := by
+  rw [gromovWassersteinEDist_def]
+  refine iInf_congr fun π ↦ iInf_congr fun hπ ↦ ?_
+  have : SigmaFinite π := SigmaFinite.of_map π measurable_fst.aemeasurable
+    (by rw [← Measure.fst, hπ.fst_eq]; infer_instance)
+  rw [gromovWassersteinDistortion_def,
+    eLpNorm_exponent_top (hπ.aestronglyMeasurable_edist hωX hωY)]
+
+/-- A measured kernel `(Y, ν, ωY)` and its pullback `(X, μ, ωY ∘ (f × f))` along a
+measure-preserving map `f` are at Gromov–Wasserstein distance `0`. In particular the
+Gromov–Wasserstein distance is only an extended pseudodistance on measured kernels. -/
+@[simp]
+theorem gromovWassersteinEDist_comp_prodMap_eq_zero [SFinite μ] {f : X → Y}
+    (hf : MeasurePreserving f μ ν) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) (p : ℝ≥0∞) :
+    gromovWassersteinEDist p μ (ωY ∘ Prod.map f f) ν ωY = 0 := by
+  refine nonpos_iff_eq_zero.mp ((gromovWassersteinEDist_le_eLpNorm (MeasurePreserving.id μ) hf
+    (hωY.comp_quasiMeasurePreserving (hf.prod hf).quasiMeasurePreserving) hωY p).trans_eq ?_)
+  simp [Prod.map_def]
+
+/-- A kernel agreeing almost everywhere with a pullback along a measure-preserving map is at
+Gromov–Wasserstein distance `0` from the original measured kernel. -/
+theorem gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap [SFinite μ] {f : X → Y}
+    {ω : X × X → Z} (hf : MeasurePreserving f μ ν)
+    (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (hω : ω =ᵐ[μ.prod μ] ωY ∘ Prod.map f f) (p : ℝ≥0∞) :
+    gromovWassersteinEDist p μ ω ν ωY = 0 := by
+  have hωm : AEStronglyMeasurable ω (μ.prod μ) :=
+    (hωY.comp_quasiMeasurePreserving (hf.prod hf).quasiMeasurePreserving).congr hω.symm
+  have hzero : (fun q : X × X ↦ edist (ω q) (ωY (f q.1, f q.2))) =ᵐ[μ.prod μ]
+      (fun _ ↦ (0 : ℝ≥0∞)) := by
+    filter_upwards [hω] with q hq
+    simp only [Function.comp_apply, Prod.map_def] at hq
+    simp [hq]
+  refine nonpos_iff_eq_zero.mp ((gromovWassersteinEDist_le_eLpNorm
+    (MeasurePreserving.id μ) hf hωm hωY p).trans_eq ?_)
+  simpa only [id_eq, Prod.mk.eta, eLpNorm_fun_zero] using eLpNorm_congr_ae (p := p) hzero
+
+/-- A kernel on a coupling that agrees almost everywhere with the pullback along the first
+projection is at Gromov–Wasserstein distance `0` from the first measured kernel. -/
+theorem gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_fst [SFinite π]
+    (hπ : IsCoupling π μ ν) (hωX : AEStronglyMeasurable ωX (μ.prod μ))
+    {ω : (X × Y) × (X × Y) → Z} (hω : ω =ᵐ[π.prod π] ωX ∘ Prod.map Prod.fst Prod.fst)
+    (p : ℝ≥0∞) :
+    gromovWassersteinEDist p π ω μ ωX = 0 := by
+  exact gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap
+    hπ.measurePreserving_fst hωX hω p
+
+/-- A kernel on a coupling that agrees almost everywhere with the pullback along the second
+projection is at Gromov–Wasserstein distance `0` from the second measured kernel. -/
+theorem gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_snd [SFinite π]
+    (hπ : IsCoupling π μ ν) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    {ω : (X × Y) × (X × Y) → Z} (hω : ω =ᵐ[π.prod π] ωY ∘ Prod.map Prod.snd Prod.snd)
+    (p : ℝ≥0∞) :
+    gromovWassersteinEDist p π ω ν ωY = 0 := by
+  exact gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap
+    hπ.measurePreserving_snd hωY hω p
+
+/-- A measured kernel is at Gromov–Wasserstein distance `0` from itself. -/
+@[simp]
+theorem gromovWassersteinEDist_self [SFinite μ] (hωX : AEStronglyMeasurable ωX (μ.prod μ))
+    (p : ℝ≥0∞) : gromovWassersteinEDist p μ ωX μ ωX = 0 := by
+  simpa using gromovWassersteinEDist_comp_prodMap_eq_zero (MeasurePreserving.id μ) hωX p
 
 /-- **The triangle inequality**, for carriers along which couplings glue. If every coupling of
 `μ` and `ν` and every coupling of `ν` and `ρ` are the two consecutive two-coordinate marginals of
@@ -395,8 +586,8 @@ theorem gromovWassersteinEDist_triangle_of_exists_glue (hp : 1 ≤ p) [IsFiniteM
     _ ≤ eLpNorm ((fun q : (X × Y × W) × (X × Y × W) ↦
             edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2.1, q.2.2.1))) +
           fun q ↦ edist (ωY (q.1.2.1, q.2.2.1)) (ωW (q.1.2.2, q.2.2.2))) p (γ.prod γ) :=
-        eLpNorm_mono_enorm (aestronglyMeasurable_edist_comp hX hW hωX hωW) fun q ↦ by
-          simpa only [Pi.add_apply, enorm_eq_self] using edist_triangle _ _ _
+        eLpNorm_mono_eNorm (aestronglyMeasurable_edist_comp hX hW hωX hωW) fun q ↦ by
+          simpa only [Pi.add_apply, eNorm_eq_self] using edist_triangle _ _ _
     _ ≤ _ := eLpNorm_add_le hp
 
 /-- **The triangle inequality.** For `1 ≤ p` and a standard Borel third carrier, the
@@ -419,17 +610,16 @@ variable [MeasurableSingletonClass Y]
 coupling with the Dirac measure `δ_y`, so the Gromov–Wasserstein distance from `({y}, δ_y, ωY)` to
 `(X, μ, ωX)` is the `L^p (μ ⊗ μ)` size of `ωX` about the point `ωY (y, y)`. -/
 theorem gromovWassersteinEDist_dirac_left (y : Y) (ωY : Y × Y → Z) [IsProbabilityMeasure μ]
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (p : ℝ≥0∞) :
+    (p : ℝ≥0∞) :
     gromovWassersteinEDist p (Measure.dirac y) ωY μ ωX =
       eLpNorm (fun q : X × X ↦ edist (ωY (y, y)) (ωX q)) p (μ.prod μ) := by
-  have hy : MeasurePreserving (fun _ : X ↦ y) μ (Measure.dirac y) :=
-    ⟨measurable_const, by rw [Measure.map_const, measure_univ, one_smul]⟩
-  have hωY : AEStronglyMeasurable ωY ((Measure.dirac y).prod (Measure.dirac y)) := by
-    rw [Measure.dirac_prod_dirac]
-    exact aestronglyMeasurable_dirac
   have key : gromovWassersteinDistortion p ωY ωX (μ.map (Prod.mk y)) =
-      eLpNorm (fun q : X × X ↦ edist (ωY (y, y)) (ωX q)) p (μ.prod μ) :=
-    gromovWassersteinDistortion_map_prodMk hy (MeasurePreserving.id μ) hωY hωX p
+      eLpNorm (fun q : X × X ↦ edist (ωY (y, y)) (ωX q)) p (μ.prod μ) := by
+    rw [gromovWassersteinDistortion_def,
+      Measure.map_prod_map μ μ measurable_prodMk_left measurable_prodMk_left,
+      ((measurableEmbedding_prodMk_left y).prodMap
+        (measurableEmbedding_prodMk_left y)).eLpNorm_map_measure]
+    rfl
   refine le_antisymm ((gromovWassersteinEDist_le (isCoupling_map_prodMk y μ) p ωY ωX).trans_eq
     key) (le_gromovWassersteinEDist fun π hπ ↦ ?_)
   rw [hπ.eq_map_prodMk, key]
@@ -438,29 +628,14 @@ theorem gromovWassersteinEDist_dirac_left (y : Y) (ωY : Y × Y → Z) [IsProbab
 Gromov–Wasserstein distance from `(X, μ, ωX)` to `({y}, δ_y, ωY)` is the `L^p (μ ⊗ μ)` size of
 `ωX` about the point `ωY (y, y)`. -/
 theorem gromovWassersteinEDist_dirac_right (y : Y) (ωY : Y × Y → Z) [IsProbabilityMeasure μ]
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (p : ℝ≥0∞) :
+    (p : ℝ≥0∞) :
     gromovWassersteinEDist p μ ωX (Measure.dirac y) ωY =
       eLpNorm (fun q : X × X ↦ edist (ωX q) (ωY (y, y))) p (μ.prod μ) := by
-  rw [gromovWassersteinEDist_comm, gromovWassersteinEDist_dirac_left y ωY hωX]
+  rw [gromovWassersteinEDist_comm, gromovWassersteinEDist_dirac_left y ωY]
   exact eLpNorm_congr_ae (.of_forall fun q ↦ edist_comm _ _)
 
 end Dirac
 
 end PseudoEMetricSpace
-
-section EMetricSpace
-
-variable [EMetricSpace Z] {ωX : X × X → Z} {ωY : Y × Y → Z} {π : Measure (X × Y)}
-
-/-- At a nonzero exponent, zero distortion means that the two pulled-back kernels agree
-almost everywhere. No integrability or finiteness hypothesis is needed. -/
-theorem gromovWassersteinDistortion_eq_zero_iff (hp : p ≠ 0) :
-    gromovWassersteinDistortion p ωX ωY π = 0 ↔
-      (fun q : (X × Y) × (X × Y) ↦ ωX (q.1.1, q.2.1)) =ᵐ[π.prod π]
-        (fun q ↦ ωY (q.1.2, q.2.2)) := by
-  rw [gromovWassersteinDistortion_def, eLpNorm_eq_zero_iff hp]
-  simp only [Filter.EventuallyEq, Pi.zero_apply, edist_eq_zero]
-
-end EMetricSpace
 
 end TauCeti

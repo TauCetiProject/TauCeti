@@ -13,11 +13,12 @@ import TauCeti.GroupTheory.Coset.Fiber
 import TauCeti.RingTheory.Norm.Projective
 
 /-!
-# Generators of an extension of finite free group schemes
+# Generators of an extension of finite flat group schemes
 
-Let `1 → G₁ → G → G₂ → 1` be a short exact sequence of affine group schemes over `Spec R` which
-are finite and free over `R`. In coordinate Hopf algebras it is a pair of morphisms
-`p : O(G₂) ⟶ O(G)` and `i : O(G) ⟶ O(G₁)` with `TauCeti.CommHopfAlgCat.IsShortExact p i`. Let
+Let `1 → G₁ → G → G₂ → 1` be a short exact sequence of affine group schemes over `Spec R`, with
+`G₁` and `G₂` finite flat over `R` and `G` finite over `R`. In coordinate Hopf algebras it is a pair
+of morphisms `p : O(G₂) ⟶ O(G)` and `i : O(G) ⟶ O(G₁)` with
+`TauCeti.CommHopfAlgCat.IsShortExact p i`. Let
 `1 → A₁ → A → A₂ → 1` be a short exact sequence of finite groups, given by `j : A₁ →* A` and
 `q : A →* A₂`, and let `φ₁ : A₁ →* G₁(R)`, `φ : A →* G(R)` and `φ₂ : A₂ →* G₂(R)` be compatible
 homomorphisms to the points. This file proves Katz–Mazur 1.11.3: if `φ₁` is an `A₁`-generator of
@@ -45,7 +46,9 @@ translates of `b` by the points `φ₁ a₁`. Taking
 values at `φ a` for one `a` above each element of `A₂` gives the product of `b` over all the points
 `φ (a * j a₁)`, that is over all of `A`. Since a full set of sections is defined by this identity
 after every base change, the argument is run after an arbitrary base change `R → T`, using
-`TauCeti.CommHopfAlgCat.IsShortExact.baseChange`.
+`TauCeti.CommHopfAlgCat.IsShortExact.baseChange`. Localizing `T` at its maximal ideals makes the
+finite flat coordinate algebras free, so the result does not require global bases. In fact only
+the finiteness of `G` and the finite flatness of `G₁` and `G₂` are needed in the statement.
 
 ## References
 
@@ -54,6 +57,8 @@ after every base change, the argument is run after an arbitrary base change `R �
 -/
 
 public section
+
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 open CategoryTheory WithConv TensorProduct TauCeti.CommHopfAlgCat
 
@@ -83,8 +88,8 @@ product of its values at the points `φ a`. -/
 private theorem norm_eq_prod_of_isShortExact [Module.Free R Q] [Module.Finite R Q]
     [Module.Free R G] [Module.Finite R G] [Module.Free R N] [Module.Finite R N]
     (h : IsShortExact p i) (hj : Function.Injective j) (hq : Function.Surjective q)
-    (hjq : q.ker = j.range) (h₁ : (AlgHom.mapDomain i.hom).comp φ₁ = φ.comp j)
-    (h₂ : (AlgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
+    (hjq : q.ker = j.range) (h₁ : (BialgHom.mapDomain i.hom).comp φ₁ = φ.comp j)
+    (h₂ : (BialgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
     (hφ₂ : IsAGenerator φ₂) (b : G) :
     Algebra.norm R b = ∏ a, (φ a).ofConv b := by
   let := p.hom.toAlgHom.toAlgebra
@@ -109,16 +114,18 @@ private theorem norm_eq_prod_of_isShortExact [Module.Free R Q] [Module.Finite R 
   -- at a point `φ a`, the norm of `b` over `Q` is the product of `b` over the coset `a A₁`
   have hnorm (a : A) : (φ₂ (q a)).ofConv (Algebra.projectiveNorm Q b) =
       ∏ a₁, (φ (a * j a₁)).ofConv b := by
-    have hpa : (φ₂ (q a)).ofConv = (φ a).ofConv.comp p.hom.toAlgHom :=
-      congrArg ofConv (DFunLike.congr_fun h₂ a).symm
+    have hpa : (φ₂ (q a)).ofConv = (φ a).ofConv.comp p.hom.toAlgHom := by
+      simpa only [MonoidHom.comp_apply, BialgHom.mapDomain_apply, ofConv_toConv] using
+        congrArg ofConv (DFunLike.congr_fun h₂ a).symm
     rw [hpa, AlgHom.comp_apply]
     -- `p` is the structure map of the `Q`-algebra `G`
     change (φ a).ofConv (algebraMap Q G (Algebra.projectiveNorm Q b)) = _
     rw [← Algebra.projectiveNorm_baseChange_tmul, ← Algebra.projectiveNorm_eq_of_algEquiv e,
       Algebra.projectiveNorm_eq_norm, (isAGenerator_iff.mp hφ₁).norm_eq, map_prod, he]
     refine Finset.prod_congr rfl fun a₁ _ ↦ ?_
-    have ha₁ : toConv ((φ₁ a₁).ofConv.comp i.hom.toAlgHom) = φ (j a₁) :=
-      DFunLike.congr_fun h₁ a₁
+    have ha₁ : toConv ((φ₁ a₁).ofConv.comp i.hom.toAlgHom) = φ (j a₁) := by
+      simpa only [MonoidHom.comp_apply, BialgHom.mapDomain_apply] using
+        DFunLike.congr_fun h₁ a₁
     rw [apply_sectionBaseChange_map_comul, map_mul, ha₁, toConv_ofConv]
   -- sum over `A` as a double sum over `A₂` and the cosets of `A₁`
   classical
@@ -131,21 +138,35 @@ private theorem norm_eq_prod_of_isShortExact [Module.Free R Q] [Module.Finite R 
     ((MonoidHom.ofInjective hj).trans (MulEquiv.subgroupCongr hjq.symm)).toEquiv _ _ fun _ ↦ rfl
 
 /-- **Generators of an extension** (Katz–Mazur 1.11.3). Let `p : O(G₂) ⟶ O(G)` and
-`i : O(G) ⟶ O(G₁)` be a short exact sequence `1 → G₁ → G → G₂ → 1` of finite free affine group
-schemes over `R`, and let `j : A₁ →* A` and `q : A →* A₂` be a short exact sequence of finite
-groups. Let `φ₁ : A₁ →* G₁(R)`, `φ : A →* G(R)` and `φ₂ : A₂ →* G₂(R)` be compatible with these
+`i : O(G) ⟶ O(G₁)` be a short exact sequence `1 → G₁ → G → G₂ → 1` of affine group schemes over
+`R`, with `G₁` and `G₂` finite flat over `R` and `G` finite over `R`, and let `j : A₁ →* A` and
+`q : A →* A₂` be a short exact sequence of finite groups. Let `φ₁ : A₁ →* G₁(R)`, `φ : A →* G(R)`
+and `φ₂ : A₂ →* G₂(R)` be compatible with these
 maps: `i ∘ φ₁ = φ ∘ j` and `p ∘ φ = φ₂ ∘ q` on points. If `φ₁` is an `A₁`-generator of `G₁` and
 `φ₂` is an `A₂`-generator of `G₂`, then `φ` is an `A`-generator of `G`. -/
-theorem IsAGenerator.of_isShortExact [Module.Free R Q] [Module.Finite R Q]
-    [Module.Finite R G] [Module.Free R N] [Module.Finite R N]
+theorem IsAGenerator.of_isShortExact [Module.Flat R Q] [Module.Finite R Q]
+    [Module.Finite R G] [Module.Flat R N] [Module.Finite R N]
     (h : IsShortExact p i) (hj : Function.Injective j) (hq : Function.Surjective q)
-    (hjq : q.ker = j.range) (h₁ : (AlgHom.mapDomain i.hom).comp φ₁ = φ.comp j)
-    (h₂ : (AlgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
+    (hjq : q.ker = j.range) (h₁ : (BialgHom.mapDomain i.hom).comp φ₁ = φ.comp j)
+    (h₂ : (BialgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
     (hφ₂ : IsAGenerator φ₂) : IsAGenerator φ := by
   refine isAGenerator_iff.mpr <| isFullSetOfSections_iff.mpr fun T _ _ _ f ↦ ?_
-  have h₁T := AlgHom.mapDomain_comp_pointsBaseChange_comp T i.hom h₁
-  have h₂T := AlgHom.mapDomain_comp_pointsBaseChange_comp T p.hom h₂
-  simpa [AlgHom.ofConv_pointsBaseChange] using norm_eq_prod_of_isShortExact (h.baseChange T) hj
-    hq hjq h₁T h₂T (hφ₁.baseChange T) (hφ₂.baseChange T) f
+  -- The norm identity is an equality in the test ring, so check it at every maximal ideal.
+  refine Module.eq_of_localization_maximal (fun P _ ↦ Localization.AtPrime P)
+    (fun P _ ↦ (Algebra.linearMap T (Localization.AtPrime P))) _ _ fun P _ ↦ ?_
+  let L := Localization.AtPrime P
+  have : Module.Free L (L ⊗[R] Q) := Module.free_of_flat_of_isLocalRing
+  have : Module.Free L (L ⊗[R] N) := Module.free_of_flat_of_isLocalRing
+  let e := Algebra.TensorProduct.cancelBaseChange R T L L G
+  have : Module.Free L (L ⊗[R] G) := Module.Free.of_equiv e.toLinearEquiv
+  have h₁L := BialgHom.mapDomain_comp_pointsBaseChange_comp L i.hom h₁
+  have h₂L := BialgHom.mapDomain_comp_pointsBaseChange_comp L p.hom h₂
+  have hnorm := norm_eq_prod_of_isShortExact (h.baseChange L) hj hq hjq h₁L h₂L
+    (hφ₁.baseChange L) (hφ₂.baseChange L) (e (1 ⊗ₜ[T] f))
+  rw [Algebra.linearMap_apply, Algebra.linearMap_apply, ← Algebra.norm_baseChange_tmul,
+    ← Algebra.norm_eq_of_algEquiv e, hnorm, map_prod]
+  refine Finset.prod_congr rfl fun a _ ↦ ?_
+  simp only [MonoidHom.comp_apply, AlgHom.ofConv_pointsBaseChange, e,
+    ← AlgHom.sectionBaseChange_sectionBaseChange, AlgHom.sectionBaseChange_tmul, one_mul, L]
 
 end TauCeti

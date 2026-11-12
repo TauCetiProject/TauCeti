@@ -76,7 +76,7 @@ theorem equationPolynomial_def : equationPolynomial k =
 
 private theorem irreducible_equationPolynomial : Irreducible (equationPolynomial k) := by
   rw [equationPolynomial_def]
-  refine X_pow_sub_C_irreducible_of_prime Nat.prime_two fun b hb ↦ ?_
+  refine irreducible_X_pow_sub_C_of_prime Nat.prime_two fun b hb ↦ ?_
   have hord := congrArg (Place.infty k).ord hb
   simp only [Place.ord_pow, Place.ord_infty, RatFunc.intDegree_polynomial,
     natDegree_X_pow_sub_C] at hord

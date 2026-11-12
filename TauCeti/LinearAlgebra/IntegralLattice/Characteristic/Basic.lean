@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Int.ModEq
+public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 
@@ -17,7 +18,9 @@ with the latter's norm. This parity condition is the input to the characteristic
 for unimodular lattices. The results here give its behavior under evenness, isometries,
 translation by twice a vector, and orthogonal sums.
 
-The congruences are in `ℤ`, using the integral restriction of the rational bilinear form.
+The congruences are in `ℤ`, using the integral restriction of the rational bilinear form, so the
+characteristic vectors of a lattice are those of that integral form in the sense of
+`LinearMap.BilinForm.IsCharacteristic`.
 
 ## References
 
@@ -61,6 +64,14 @@ theorem isCharacteristicVector_iff_forall_integralForm_eq_normParity
     apply (ZMod.intCast_eq_intCast_iff _ _ 2).mp
     simpa only [L.normParity_apply] using hw x
 
+/-- The characteristic vectors of `L` are the characteristic vectors of its integral bilinear
+form. -/
+theorem isCharacteristicVector_iff_isCharacteristic (L : IntegralLattice V) (w : L) :
+    L.IsCharacteristicVector w ↔ L.integralForm.IsCharacteristic w := by
+  rw [isCharacteristicVector_iff, LinearMap.BilinForm.isCharacteristic_iff]
+  refine forall_congr' fun x ↦ ?_
+  rw [Int.modEq_iff_dvd, L.integralNorm_apply, ← dvd_neg, neg_sub]
+
 /-- Zero is characteristic precisely when the lattice is even. -/
 @[simp ←]
 theorem isEven_iff_isCharacteristicVector_zero (L : IntegralLattice V) :
@@ -81,63 +92,50 @@ theorem isEven_iff_isCharacteristicVector_zero (L : IntegralLattice V) :
 /-- Adding twice a lattice vector preserves the characteristic parity condition. -/
 theorem IsCharacteristicVector.add_two_smul {L : IntegralLattice V} {w : L}
     (hw : L.IsCharacteristicVector w) (v : L) :
-    L.IsCharacteristicVector (w + (2 : ℤ) • v) := by
-  intro x
-  rw [Int.modEq_iff_dvd, map_add, map_smul]
-  obtain ⟨k, hk⟩ := Int.modEq_iff_dvd.mp (hw x)
-  refine ⟨k - L.integralForm v x, ?_⟩
-  simp only [two_zsmul, LinearMap.add_apply] at hk ⊢
-  omega
+    L.IsCharacteristicVector (w + (2 : ℤ) • v) :=
+  (L.isCharacteristicVector_iff_isCharacteristic _).2
+    (((L.isCharacteristicVector_iff_isCharacteristic w).1 hw).add_two_smul v)
 
 /-- Translation by twice a lattice vector preserves and reflects the characteristic condition. -/
 @[simp]
 theorem isCharacteristicVector_add_two_smul_iff (L : IntegralLattice V)
     (w v : L) :
     L.IsCharacteristicVector (w + (2 : ℤ) • v) ↔ L.IsCharacteristicVector w := by
-  constructor
-  · intro h
-    have h' := h.add_two_smul (-v)
-    simpa [smul_neg, add_assoc] using h'
-  · intro h
-    exact h.add_two_smul v
+  simp only [isCharacteristicVector_iff_isCharacteristic,
+    LinearMap.BilinForm.isCharacteristic_add_two_smul_iff]
 
 /-- A characteristic vector remains characteristic after changing its sign. -/
 theorem IsCharacteristicVector.neg {L : IntegralLattice V} {w : L}
-    (hw : L.IsCharacteristicVector w) : L.IsCharacteristicVector (-w) := by
-  have h : w + (2 : ℤ) • (-w) = -w := by abel
-  simpa only [h] using hw.add_two_smul (-w)
+    (hw : L.IsCharacteristicVector w) : L.IsCharacteristicVector (-w) :=
+  (L.isCharacteristicVector_iff_isCharacteristic _).2
+    (LinearMap.BilinForm.isCharacteristic_neg_iff.2
+      ((L.isCharacteristicVector_iff_isCharacteristic w).1 hw))
 
 /-- Negation preserves and reflects the characteristic condition. -/
 @[simp]
 theorem isCharacteristicVector_neg_iff (L : IntegralLattice V) (w : L) :
     L.IsCharacteristicVector (-w) ↔ L.IsCharacteristicVector w := by
-  constructor
-  · intro h
-    simpa only [neg_neg] using h.neg
-  · exact IsCharacteristicVector.neg
+  simp only [isCharacteristicVector_iff_isCharacteristic,
+    LinearMap.BilinForm.isCharacteristic_neg_iff]
 
 /-- The pairing of the difference of two characteristic vectors with every lattice vector
 is even. -/
 theorem IsCharacteristicVector.even_integralForm_sub {L : IntegralLattice V}
     {w₁ w₂ : L} (h₁ : L.IsCharacteristicVector w₁)
     (h₂ : L.IsCharacteristicVector w₂) (x : L) :
-    Even (L.integralForm (w₁ - w₂) x) := by
-  rw [map_sub, LinearMap.sub_apply, even_iff_two_dvd, ← Int.modEq_zero_iff_dvd]
-  simpa only [sub_self] using (h₁ x).sub (h₂ x)
+    Even (L.integralForm (w₁ - w₂) x) :=
+  even_iff_two_dvd.2 <| ((L.isCharacteristicVector_iff_isCharacteristic w₁).1 h₁).two_dvd_apply_sub
+    ((L.isCharacteristicVector_iff_isCharacteristic w₂).1 h₂) x
 
 /-- Isometries preserve and reflect characteristic vectors. -/
 @[simp]
 theorem Isometry.isCharacteristicVector_iff {L : IntegralLattice V}
     {M : IntegralLattice W} (e : Isometry L M) (w : L) :
     M.IsCharacteristicVector (e.carrierEquiv w) ↔ L.IsCharacteristicVector w := by
-  constructor
-  · intro h x
-    have hx := h (e.carrierEquiv x)
-    rwa [e.carrierEquiv_map_integralForm, e.integralNorm_carrierEquiv] at hx
-  · intro h y
-    have hx := h (e.carrierEquiv.symm y)
-    simpa only [LinearEquiv.apply_symm_apply, ← e.carrierEquiv_map_integralForm,
-      ← e.integralNorm_carrierEquiv] using hx
+  let f : L.integralForm.IsometryEquiv M.integralForm :=
+    { e.carrierEquiv with map_app' := e.carrierEquiv_map_integralForm }
+  rw [isCharacteristicVector_iff_isCharacteristic, isCharacteristicVector_iff_isCharacteristic]
+  exact f.isCharacteristic_apply_iff
 
 /-- A vector of an orthogonal sum is characteristic precisely when its two components are. -/
 @[simp]
@@ -168,12 +166,10 @@ multiple of eight. -/
 theorem IsCharacteristicVector.integralNorm_add_two_smul_modEq {L : IntegralLattice V}
     {w : L} (hw : L.IsCharacteristicVector w) (v : L) :
     L.integralNorm (w + (2 : ℤ) • v) ≡ L.integralNorm w [ZMOD 8] := by
-  rw [Int.modEq_iff_dvd]
-  obtain ⟨k, hk⟩ := Int.modEq_iff_dvd.mp (hw v)
-  rw [L.integralNorm_add, L.integralNorm_zsmul, map_smul]
-  simp only [Int.zsmul_eq_mul]
-  use k - L.integralNorm v
-  nlinarith
+  refine (Int.modEq_iff_dvd.2 ?_).symm
+  rw [L.integralNorm_apply, L.integralNorm_apply]
+  exact L.isSymm_integralForm.eight_dvd_apply_add_two_smul_sub
+    ((L.isCharacteristicVector_iff_isCharacteristic w).1 hw) v
 
 end IntegralLattice
 

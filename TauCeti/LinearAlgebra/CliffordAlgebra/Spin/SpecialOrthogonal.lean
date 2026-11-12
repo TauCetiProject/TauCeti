@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 
 /-!
 # The Spin action on the special orthogonal group
@@ -143,22 +144,6 @@ private theorem involute_eq_det_smul_of_mem_lipschitz [Module.Free R M] [Module.
       exact involute_mul_lipschitzDet Q hx' hy' (by simpa only using ihx)
         (by simpa only using ihy)
 
-private theorem mem_even_of_involute_eq (Q : QuadraticForm R M) {x : CliffordAlgebra Q}
-    (hx : involute x = x) : x ∈ even Q := by
-  have hxmem : x ∈ evenOdd Q 0 ⊔ evenOdd Q 1 := by
-    rw [(evenOdd_isCompl Q).sup_eq_top]
-    exact Submodule.mem_top
-  obtain ⟨e, he, o, ho, hsum⟩ := Submodule.mem_sup.mp hxmem
-  rw [← hsum, map_add, involute_eq_of_mem_even he, involute_eq_of_mem_odd ho] at hx
-  have hozero : o = 0 := by
-    apply (isUnit_of_invertible (2 : R)).smul_left_cancel.mp
-    rw [smul_zero, two_smul]
-    calc
-      o + o = (e + o) - (e + -o) := by abel
-      _ = 0 := by rw [hx]; abel
-  rw [← hsum, hozero, add_zero]
-  exact he
-
 private theorem det_lipschitzToOrthogonal_eq_one_of_mem_even_of_finite_free
     [Module.Free R M] [Module.Finite R M]
     (Q : QuadraticForm R M) (x : lipschitzGroup Q)
@@ -218,7 +203,8 @@ theorem mem_even_of_det_lipschitzToOrthogonal_eq_one [Module.Free R M] [Module.F
     rw [← _root_.QuadraticMap.orthogonalDet_apply]
     exact hdet
   rw [hdet', Units.val_one, map_one, one_mul] at hinv
-  exact mem_even_of_involute_eq Q hinv
+  rw [← Subalgebra.mem_toSubmodule, even_toSubmodule]
+  exact involute_eq_self_iff.mp hinv
 
 private theorem det_spinToOrthogonal_eq_one_of_finite_free
     [Module.Free R M] [Module.Finite R M] (Q : QuadraticForm R M) (x : spinGroup Q) :

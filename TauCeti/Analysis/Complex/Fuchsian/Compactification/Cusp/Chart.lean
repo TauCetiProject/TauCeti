@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Basic
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Quotient
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # The q-coordinate chart at a cusp of the compactified quotient
@@ -34,12 +35,14 @@ surface structure on the compactified quotient, are not part of this file.
 * `Subgroup.CompactifiedQuotient.cuspChart`: the cusp chart, with
   `Subgroup.CompactifiedQuotient.cuspChart_ofCusp` and
   `Subgroup.CompactifiedQuotient.cuspChart_ofQuotient_mk` computing it on its source, and
-  `Subgroup.CompactifiedQuotient.cuspChart_symm_zero`,
-  `Subgroup.CompactifiedQuotient.cuspChart_symm_coordinate` and
-  `Subgroup.CompactifiedQuotient.cuspChart_symm_of_ne_zero` computing its inverse on its target.
+  `Subgroup.CompactifiedQuotient.cuspChart_symm_zero` and
+  `Subgroup.CompactifiedQuotient.cuspChart_symm_coordinate` computing its inverse on its target,
+  and `Subgroup.CompactifiedQuotient.cuspChart_symm_of_ne_zero` giving the value of the inverse at
+  every nonzero `q`, including points outside the target.
 
-The underlying total maps of the chart and its inverse are implementation details: outside the
-source and target their values are junk, so they are private.
+The underlying total maps of the chart and its inverse are implementation details, so they are
+private: the chart takes junk values outside its source, and the inverse takes values outside its
+target that are given by the same formula but carry no geometric meaning.
 
 ## References
 
@@ -303,6 +306,13 @@ theorem cuspChart_ofQuotient_mk {z : ℍ} (hz : z ∈ horodisc D A) :
 theorem cuspChart_symm_zero : (cuspChart D hA).symm 0 = ofCusp D.cuspOrbit :=
   cuspChartInv_zero D
 
+/-- The inverse of the cusp chart sends the punctured neighbourhoods of `0` to the punctured
+neighbourhoods of the cusp orbit. -/
+theorem tendsto_cuspChart_symm_nhdsNE :
+    Tendsto (cuspChart D hA).symm (𝓝[≠] 0) (𝓝[≠] ofCusp D.cuspOrbit) := by
+  have h := (cuspChart D hA).symm.tendsto_nhdsNE (x := 0) (by simpa using cuspRadius_pos D A)
+  rwa [cuspChart_symm_zero] at h
+
 /-- The inverse of the cusp chart sends the q-coordinate of a point of the horodisc to its orbit. -/
 @[simp]
 theorem cuspChart_symm_coordinate {z : ℍ} (hz : z ∈ horodisc D A) :
@@ -310,19 +320,11 @@ theorem cuspChart_symm_coordinate {z : ℍ} (hz : z ∈ horodisc D A) :
   rw [← cuspChart_ofQuotient_mk D hA hz]
   exact (cuspChart D hA).left_inv ((ofQuotient_mem_cuspNhd_iff D A).mpr ⟨z, hz, rfl⟩)
 
-/-- The inverse of the cusp chart sends a nonzero point `q` of its target to the orbit of the
-logarithmic lift `σ⁻¹ • invQParam w q`. -/
-theorem cuspChart_symm_of_ne_zero {q : ℂ} (hq : q ∈ (cuspChart D hA).target) (hq0 : q ≠ 0) :
+/-- The inverse of the cusp chart sends a nonzero point `q` to the orbit of the logarithmic lift
+`σ⁻¹ • invQParam w q`. -/
+theorem cuspChart_symm_of_ne_zero {q : ℂ} (hq0 : q ≠ 0) :
     (cuspChart D hA).symm q =
-      ofQuotient (Quotient.mk _ (D.scaling⁻¹ • ofComplex (Periodic.invQParam D.width q))) := by
-  rw [cuspChart_target, mem_ball_zero_iff] at hq
-  obtain ⟨q', rfl⟩ := TauCeti.Complex.UnitDisc.exists_coe_punctured_eq hq0
-    (hq.trans (cuspRadius_lt_one D (D.width_pos.trans_le hA)))
-  have hz : D.scaling⁻¹ • invQParamUpperHalfPlane D.width D.width_pos q' ∈ horodisc D A := by
-    rw [← norm_qCoordinate_lt_iff_mem_horodisc, qCoordinate_smul_invQParamUpperHalfPlane]
-    exact hq
-  rw [← coe_invQParamUpperHalfPlane D.width D.width_pos q', ofComplex_apply,
-    ← cuspChart_symm_coordinate D hA hz, ← coe_qCoordinate,
-    qCoordinate_smul_invQParamUpperHalfPlane]
+      ofQuotient (Quotient.mk _ (D.scaling⁻¹ • ofComplex (Periodic.invQParam D.width q))) :=
+  cuspChartInv_of_ne_zero D hq0
 
 end Subgroup.CompactifiedQuotient

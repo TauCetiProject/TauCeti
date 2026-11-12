@@ -43,6 +43,8 @@ noncomputable section
 
 namespace TauCeti.Lie
 
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
 open Manifold
 open scoped ContDiff Manifold
 

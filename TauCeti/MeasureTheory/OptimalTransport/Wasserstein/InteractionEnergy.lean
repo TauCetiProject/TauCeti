@@ -305,11 +305,9 @@ theorem not_geodesicallyConvex_interactionEnergy [Nontrivial E] (hw : ∀ x, w 0
   obtain ⟨a, ha⟩ := exists_ne (0 : E)
   -- The Dirac masses at `0` and `a`, as points of `P₂(E)`.
   let δ (x : E) : WassersteinSpace 2 E :=
-    .mk (diracProba x) (hasFiniteMoment_of_ae_mem_finset (s := {x}) x (by simp [diracProba]))
-  have hδ (x : E) : ((δ x : ProbabilityMeasure E) : Measure E) = Measure.dirac x := by
-    -- `diracProba x` is `Measure.dirac x` bundled with its probability instance.
-    rw [WassersteinSpace.coe_mk]
-    rfl
+    .mk ⟨Measure.dirac x, inferInstance⟩ (hasFiniteMoment_dirac 2 x)
+  have hδ (x : E) : ((δ x : ProbabilityMeasure E) : Measure E) = Measure.dirac x :=
+    congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)
   have hI (x : E) : interactionEnergy (fun z ↦ w (z.1 - z.2))
       ((δ x : ProbabilityMeasure E) : Measure E) = (w 0 / 2 : ℝ) := by
     rw [hδ, interactionEnergy_dirac, sub_self]

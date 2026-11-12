@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.CentralSimple.Bimodule
+public import Mathlib.Algebra.Homology.Single
 public import Mathlib.Algebra.Module.ULift
 
 /-!
@@ -23,6 +25,9 @@ lift. The unit identities are the graded enveloping-module versions of
 Both unit isomorphisms have public evaluation and insertion formulas. Their evaluation
 maps are natural in graded bimodule maps; on the tensor of two regular bimodules, left
 and right evaluation agree.
+
+The unit complex of the graded bimodule setting of `Ξ`, the regular graded bimodule in
+cohomological degree zero, is `gradedBimoduleUnitComplex`.
 -/
 
 public section
@@ -433,3 +438,21 @@ theorem bimoduleTensorUnitHom_eq :
   simp only [bimoduleUnitEquiv_symm_smul.{v} Γ, unop_one, mul_one, unop_op, one_mul]
 
 end TauCeti.GradedModuleCat
+
+namespace TauCeti
+
+universe w uA
+
+variable (k : Type w) [CommRing k]
+
+local notation "c" => ComplexShape.up ℤ
+
+/-- The unit complex of the graded bimodule setting of `Ξ`: the regular graded bimodule
+`GradedModuleCat.bimoduleUnit Ξ` placed in cohomological degree zero. -/
+noncomputable abbrev gradedBimoduleUnitComplex {A : Type uA} [Ring A] [Algebra k A]
+    (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece] :
+    HomologicalComplex (GradedBimoduleCat k Ξ) c :=
+  (HomologicalComplex.single (GradedBimoduleCat k Ξ) c 0).obj
+    (GradedModuleCat.bimoduleUnit.{w} Ξ)
+
+end TauCeti

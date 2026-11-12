@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Character
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
+import TauCeti.NumberTheory.LegendreSymbol.NormForm
 
 /-!
 # Genus characters of a quadratic discriminant
@@ -87,29 +88,6 @@ private theorem sq_emod_eight (a : ℤ) : a ^ 2 % 8 = 0 ∨ a ^ 2 % 8 = 1 ∨ a 
       a % 8 = 6 ∨ a % 8 = 7 := by omega
   rcases h with h | h | h | h | h | h | h | h <;> rw [sq_emod a 8, h] <;> norm_num
 
-/-- **The odd half of the genus-character relation.** If an odd prime `p` divides `D` but not `n`,
-and `4n = x² - D y²`, then `n` is a nonzero quadratic residue modulo `p`: reducing the hypothesis
-modulo `p` kills the `D y²` term and leaves `4n ≡ x²`, so `n` is the square of `x / 2`. -/
-theorem jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
-    {D n x y : ℤ} (hpD : (p : ℤ) ∣ D) (hpn : ¬ (p : ℤ) ∣ n)
-    (h : 4 * n = x ^ 2 - D * y ^ 2) : jacobiSym n p = 1 := by
-  have : Fact p.Prime := ⟨hp⟩
-  have hn0 : (n : ZMod p) ≠ 0 := by rwa [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
-  have h2 : (2 : ZMod p) ≠ 0 := by
-    have hdvd : ¬ ((p : ℤ) ∣ 2) := fun hdvd =>
-      hp2 ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp (by exact_mod_cast hdvd))
-    simpa using (ZMod.intCast_zmod_eq_zero_iff_dvd (2 : ℤ) p).not.mpr hdvd
-  rw [← jacobiSym.legendreSym.to_jacobiSym]
-  refine (legendreSym.eq_one_iff p hn0).mpr ⟨(x : ZMod p) * 2⁻¹, ?_⟩
-  have hD0 : (D : ZMod p) = 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr hpD
-  have h4 : (4 : ZMod p) * (n : ZMod p) = (x : ZMod p) ^ 2 := by
-    have hcast := congrArg (fun z : ℤ => (z : ZMod p)) h
-    push_cast at hcast
-    rw [hD0] at hcast
-    simpa using hcast
-  field_simp
-  linear_combination h4
-
 /-- **The even half of the genus-character relation.** Let `P` be an even prime discriminant and
 `Q ≡ 1 (mod 4)`. If an odd integer `n` satisfies `4n = x² - P * Q * y²`, then the character of `P`
 is trivial at `n`.
@@ -161,16 +139,13 @@ theorem primeDiscriminantCharFun_eq_one_of_four_mul_eq_sq_sub_mul_sq {P Q n x y 
     (hP : IsPrimeDiscriminant P) (hQ : IsEvenPrimeDiscriminant P → Q % 4 = 1)
     (hcop : IsCoprime n P) (h : 4 * n = x ^ 2 - P * Q * y ^ 2) :
     primeDiscriminantCharFun P n = 1 := by
-  rcases isPrimeDiscriminant_iff.mp hP with hP | ⟨p, hp, hodd, rfl⟩
+  rcases isPrimeDiscriminant_iff.mp hP with hP | ⟨p, -, hodd, rfl⟩
   · exact primeDiscriminantCharFun_eq_one_of_isEvenPrimeDiscriminant_of_four_mul_eq_sq_sub_mul_sq
       hP (hQ hP) ((isCoprime_evenPrimeDiscriminant_iff_not_two_dvd hP).mp hcop) h
-  · have hp2 : p ≠ 2 := by have := Nat.odd_iff.mp hodd; omega
-    have hpd : (p : ℤ) ∣ oddPrimeDiscriminant p * Q :=
-      (dvd_oddPrimeDiscriminant_iff.mpr dvd_rfl).mul_right Q
+  · have hpP : (p : ℤ) ∣ oddPrimeDiscriminant p := dvd_oddPrimeDiscriminant_iff.mpr dvd_rfl
     rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd]
-    exact jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq hp hp2 hpd
-      (oddPrimeDiscriminant_dvd_iff.mpr.mt
-        ((prime_oddPrimeDiscriminant hp).coprime_iff_not_dvd.mp hcop.symm)) h
+    exact jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq (hpP.mul_right Q)
+      (Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_right hpP)) h
 
 /-! ### The genus characters of a fundamental discriminant -/
 
@@ -204,7 +179,7 @@ theorem primeDiscriminantCharFun_eq_one_of_mem_of_four_mul_eq_sq_sub_mul_sq {s :
   have hmem : P' ∈ s := Finset.mem_of_mem_erase hP'
   rcases isPrimeDiscriminant_iff.mp (hs P' hmem) with hev | ⟨p, _, hodd, rfl⟩
   · exact absurd (heven P hP P' hmem hPeven hev).symm (Finset.ne_of_mem_erase hP')
-  · exact oddPrimeDiscriminant_mod_four_eq_one hodd
+  · exact oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd
 
 /-- The genus character indexed by a finite set `s` of prime discriminants: the product of the
 characters they carry. The genus characters of a fundamental discriminant `D` are those indexed by

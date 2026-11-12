@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.PosSemidef
+public import TauCeti.Analysis.Matrix.PosSemidef.Basic
 
 /-!
 # Bounded positive-definite kernels decrease along a symmetric shift

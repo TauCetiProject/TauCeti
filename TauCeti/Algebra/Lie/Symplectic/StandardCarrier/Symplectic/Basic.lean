@@ -375,7 +375,7 @@ theorem baseChangeSymplecticPointsMulEquiv_apply
         (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
         (baseChangeDefiningIdeal n k)) (CommAlgCat.of k A)) :
     baseChangeSymplecticPointsMulEquiv n k A q =
-      (CommHopfAlgCat.mapPointsFunctor
+      (CommHopfAlgCat.Hom.mapPointsFunctor
         (baseChangeCoordinateSymplecticIso n k).inv).app (CommAlgCat.of k A) q :=
   by
     rw [baseChangeSymplecticPointsMulEquiv]

@@ -49,6 +49,8 @@ the pinned Chevalley--Demazure construction.
 * `TauCeti.TypeDSpinCarrier.rootSubgroup`: its numbered simple-root subgroup morphisms.
 * `TauCeti.TypeDSpinCarrier.weightTorus`: its closed rank-`n` split torus.
 * `TauCeti.TypeDSpinCarrier.points`: its matrix-valued points over a commutative ring.
+* `TauCeti.TypeDSpinCarrier.basisReflection`: a simple reflection on finite-ordinal spin-basis
+  indices.
 * `TauCeti.TypeDSpinCarrier.rootSubgroupPoints` and
   `TauCeti.TypeDSpinCarrier.weightTorusPoints`: the numbered root subgroups and the weight torus
   on those matrix-valued points.
@@ -129,6 +131,34 @@ noncomputable abbrev signSet (i : Fin (dimension n)) : Finset (Fin n) :=
 /-- The simply connected type-`Dₙ` weight of a finite-ordinal spin-basis vector. -/
 noncomputable abbrev basisWeight (i : Fin (dimension n)) : Fin n → ℤ :=
   TauCeti.DynkinType.typeDSpinWeight (signSet n i)
+
+/-- The `i`-th simple reflection on the finite-ordinal spin-basis indices. -/
+noncomputable def basisReflection (i : Fin n) (a : Fin (dimension n)) : Fin (dimension n) :=
+  Fintype.equivFin (Finset (Fin n)) (DynkinType.typeDSpinReflection i (signSet n a))
+
+/-- Enumerating a reflected basis index recovers the reflected sign set. -/
+@[simp]
+theorem signSet_basisReflection (i : Fin n) (a : Fin (dimension n)) :
+    signSet n (basisReflection n i a) = DynkinType.typeDSpinReflection i (signSet n a) := by
+  simp [basisReflection, signSet]
+
+/-- A simple reflection fixes a spin-basis index exactly when its coroot pairing vanishes. -/
+@[simp]
+theorem basisReflection_eq_self_iff (i : Fin n) (a : Fin (dimension n)) :
+    basisReflection n i a = a ↔ basisWeight n a i = 0 := by
+  constructor
+  · intro h
+    apply (DynkinType.typeDSpinReflection_eq_self_iff i _).1
+    simpa only [signSet_basisReflection] using congrArg (signSet n) h
+  · intro h
+    rw [basisReflection, (DynkinType.typeDSpinReflection_eq_self_iff i _).2 h]
+    exact (Fintype.equivFin (Finset (Fin n))).apply_symm_apply a
+
+/-- Each simple reflection on enumerated spin-basis indices is an involution. -/
+theorem basisReflection_involutive (i : Fin n) :
+    Function.Involutive (basisReflection n i) := by
+  intro a
+  simp [basisReflection, signSet, DynkinType.typeDSpinReflection_involutive i _]
 
 /-- A reindexed lattice-basis vector is the exterior basis vector of its sign set. -/
 @[simp]
@@ -559,10 +589,14 @@ theorem weightTorus_conj_rootSubgroup (k : Fin n ⊕ Fin n) (A : Type) [CommRing
               (SplitTorus.schemePointsMulEquiv (R := ℤ) (A := A) s)
               (TypeDStd.rootGeneratorWeight n k) : A) * u)) ≫
         (rootSubgroup n hn k).hom.hom := by
-  rw [weightTorus, rootSubgroup]
-  exact kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam
-    _ _ _ _ _ _ _ (isCartanWeightVector_latticeBasis n hn)
-    (isNilpotent_rep_rootGenerator n hn) A (TypeDStd.lie_serreH_serreRootGenerator n k) s u
+  have h := kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam _ _ _ _ _ _ _
+      (isCartanWeightVector_latticeBasis n hn) (isNilpotent_rep_rootGenerator n hn) A
+      (TypeDStd.lie_serreH_serreRootGenerator n k) s u =≫
+    (eqToHom (groupScheme_eq_kostantToralGroupScheme n hn).symm).hom.hom
+  -- Once simplified, `h` and the goal differ only by reducible unfolding inside instance
+  -- arguments; closing at reducible transparency avoids unfolding `*` on scheme points.
+  with_reducible simpa only [weightTorus_def, rootSubgroup_def, Grp.comp_hom_hom, Category.assoc,
+    MonObj.mul_comp, GrpObj.inv_comp] using h
 
 /-! ## The numbered root subgroups sit at the named simple roots
 

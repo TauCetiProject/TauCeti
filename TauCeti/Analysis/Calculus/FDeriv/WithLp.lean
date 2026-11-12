@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Analysis.InnerProductSpace.NormDet
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -21,7 +23,10 @@ corresponding coordinate direction: along the line `s ↦ (s, y)` in the first f
 `fderiv 𝕜 g (t, y) (1, 0)`, and on the slice `z ↦ (t, z)` it is `w ↦ fderiv 𝕜 g (t, y) (0, w)`.
 These are the chain rules used to compute integrals over a half-space `{x | a < x.fst}` one
 normal line or one tangential slice at a time, as in Fubini-type proofs of the divergence
-theorem.
+theorem. A map `w ↦ (f w, g w)` into the product is differentiated componentwise. The file also
+computes the derivative of the normal graph parametrization
+`y ↦ (φ y, y)`: it is the graph `x ↦ (A x, x)` of the derivative `A` of `φ`, so its
+geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
 
 ## Main declarations
 
@@ -29,6 +34,23 @@ theorem.
   its derivative in the direction `(1, 0)`.
 * `TauCeti.fderiv_comp_toLp_snd`: the derivative of `g` on a slice of the second factor is its
   derivative in the direction `(0, w)`.
+* `TauCeti.fderiv_toLp_prodMk_apply`: the derivative of `w ↦ (f w, g w)` is `v ↦ (df v, dg v)`.
+* `TauCeti.norm_fderiv_le_norm_fderiv_toLp_prodMk_left`,
+  `TauCeti.norm_fderiv_le_norm_fderiv_toLp_prodMk_right`,
+  `TauCeti.norm_fderiv_toLp_prodMk_apply_sq`: the derivative of `w ↦ (f w, g w)` dominates
+  those of `f` and `g`, and in the Euclidean product its value on `v` has squared length
+  `‖df v‖² + ‖dg v‖²`.
+* `TauCeti.fderiv_toLp_const_prodMk_apply`: with a constant first coordinate the derivative is
+  `v ↦ (0, dg v)` at every point.
+* `HasFDerivWithinAt.normalGraphEmbedding`, `HasFDerivAt.normalGraphEmbedding`: the derivative
+  of a graph parametrization is the graph of the derivative.
+* `DifferentiableAt.fderiv_normalGraphEmbedding`: the Fréchet derivative of a graph
+  parametrization at a differentiability point.
+* `DifferentiableAt.injective_fderiv_normalGraphEmbedding`: that derivative is injective.
+* `DifferentiableAt.range_fderiv_normalGraphEmbedding`: the range of that derivative is the
+  linear tangent graph.
+* `DifferentiableAt.normDet_fderiv_normalGraphEmbedding`: the geometric Jacobian of a graph
+  parametrization is `sqrt (1 + ‖Dφ‖²)`.
 -/
 
 public section
@@ -65,6 +87,136 @@ theorem fderiv_comp_toLp_snd {g : WithLp p (F × E) → G} {t : F} {y : E}
   have h : HasFDerivAt (fun z : E ↦ g (WithLp.toLp p (t, z))) _ y := hg.hasFDerivAt.comp y hl
   rw [h.fderiv]
   simp
+
+/-- The derivative of a map `w ↦ (f w, g w)` into `WithLp p (F × E)`, applied to a direction `v`,
+is `(df v, dg v)`. -/
+theorem fderiv_toLp_prodMk_apply {f : G → F} {g : G → E} {y : G}
+    (hf : DifferentiableAt 𝕜 f y) (hg : DifferentiableAt 𝕜 g y) (v : G) :
+    fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y v =
+      WithLp.toLp p (fderiv 𝕜 f y v, fderiv 𝕜 g y v) := by
+  have h : HasFDerivAt (fun w ↦ WithLp.toLp p (f w, g w))
+      ((WithLp.prodContinuousLinearEquiv p 𝕜 F E).symm.toContinuousLinearMap.comp
+        ((fderiv 𝕜 f y).prod (fderiv 𝕜 g y))) y :=
+    (WithLp.prodContinuousLinearEquiv p 𝕜 F E).symm.hasFDerivAt.comp y
+      (hf.hasFDerivAt.prodMk hg.hasFDerivAt)
+  rw [h.fderiv]
+  simp
+
+/-- The derivative of a map `w ↦ (f w, g w)` into the `L^p` product dominates the derivative
+of `f`. -/
+theorem norm_fderiv_le_norm_fderiv_toLp_prodMk_left {f : G → F} {g : G → E} {y : G}
+    (hg : DifferentiableAt 𝕜 g y) :
+    ‖fderiv 𝕜 f y‖ ≤ ‖fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y‖ := by
+  by_cases hf : DifferentiableAt 𝕜 f y
+  swap
+  · rw [fderiv_zero_of_not_differentiableAt hf, norm_zero]
+    exact norm_nonneg _
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+  have h := (WithLp.norm_fst_le (x := fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y v)).trans
+    (ContinuousLinearMap.le_opNorm _ v)
+  rwa [fderiv_toLp_prodMk_apply hf hg, WithLp.toLp_fst] at h
+
+/-- The derivative of a map `w ↦ (f w, g w)` into the `L^p` product dominates the derivative
+of `g`. -/
+theorem norm_fderiv_le_norm_fderiv_toLp_prodMk_right {f : G → F} {g : G → E} {y : G}
+    (hf : DifferentiableAt 𝕜 f y) :
+    ‖fderiv 𝕜 g y‖ ≤ ‖fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y‖ := by
+  by_cases hg : DifferentiableAt 𝕜 g y
+  swap
+  · rw [fderiv_zero_of_not_differentiableAt hg, norm_zero]
+    exact norm_nonneg _
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+  have h := (WithLp.norm_snd_le (x := fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y v)).trans
+    (ContinuousLinearMap.le_opNorm _ v)
+  rwa [fderiv_toLp_prodMk_apply hf hg, WithLp.toLp_snd] at h
+
+/-- In the Euclidean product, the derivative of a map `w ↦ (f w, g w)` in the direction `v` has
+squared length `‖df v‖² + ‖dg v‖²`. -/
+theorem norm_fderiv_toLp_prodMk_apply_sq {f : G → F} {g : G → E} {y : G}
+    (hf : DifferentiableAt 𝕜 f y) (hg : DifferentiableAt 𝕜 g y) (v : G) :
+    ‖fderiv 𝕜 (fun w ↦ WithLp.toLp 2 (f w, g w)) y v‖ ^ 2 =
+      ‖fderiv 𝕜 f y v‖ ^ 2 + ‖fderiv 𝕜 g y v‖ ^ 2 := by
+  rw [fderiv_toLp_prodMk_apply hf hg, WithLp.prod_norm_sq_eq_of_L2]
+  simp
+
+/-- The derivative of a map `w ↦ (c, g w)` into `WithLp p (F × E)` with constant first coordinate,
+applied to a direction `v`, is `(0, dg v)`. This holds at every point: where `g` is not
+differentiable, neither is the map, and both derivatives vanish. -/
+@[simp]
+theorem fderiv_toLp_const_prodMk_apply (c : F) (g : G → E) (y v : G) :
+    fderiv 𝕜 (fun w ↦ WithLp.toLp p (c, g w)) y v = WithLp.toLp p (0, fderiv 𝕜 g y v) := by
+  by_cases hg : DifferentiableAt 𝕜 g y
+  · rw [fderiv_toLp_prodMk_apply (differentiableAt_const c) hg]
+    simp
+  · have h : ¬DifferentiableAt 𝕜 (fun w ↦ WithLp.toLp p (c, g w)) y := fun h ↦
+      hg (by simpa [Function.comp_def] using (WithLp.sndL p 𝕜 F E).differentiableAt.comp y h)
+    rw [fderiv_zero_of_not_differentiableAt h, fderiv_zero_of_not_differentiableAt hg,
+      zero_apply, zero_apply]
+    exact (WithLp.toLp_zero (V := F × E) p).symm
+
+section NormalGraph
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- Within a parameter set, the derivative of a graph parametrization is the graph of the
+within-derivative. -/
+theorem _root_.HasFDerivWithinAt.normalGraphEmbedding {φ : V → ℝ} {φ' : V →L[ℝ] ℝ}
+    {s : Set V} {x : V} (hφ : HasFDerivWithinAt φ φ' s x) :
+    HasFDerivWithinAt (TauCeti.normalGraphEmbedding φ) φ'.normalGraphL s x := by
+  have h : TauCeti.normalGraphEmbedding φ =
+      (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ V).symm ∘ fun y ↦ (φ y, y) :=
+    funext fun y ↦ (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst φ y)
+      (normalGraphEmbedding_snd φ y)
+  rw [h]
+  refine (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ V).symm :
+    (ℝ × V) →L[ℝ] WithLp 2 (ℝ × V)).hasFDerivAt.comp_hasFDerivWithinAt x
+      (hφ.prodMk (hasFDerivWithinAt_id x s))).congr_fderiv ?_
+  ext v
+  simpa using (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst φ' v).symm
+    (normalGraphEmbedding_snd φ' v).symm
+
+/-- The derivative of a graph parametrization is the graph of the derivative. -/
+theorem _root_.HasFDerivAt.normalGraphEmbedding {φ : V → ℝ} {φ' : V →L[ℝ] ℝ} {x : V}
+    (hφ : HasFDerivAt φ φ' x) :
+    HasFDerivAt (TauCeti.normalGraphEmbedding φ) φ'.normalGraphL x :=
+  hasFDerivWithinAt_univ.mp (hφ.hasFDerivWithinAt.normalGraphEmbedding (s := Set.univ))
+
+/-- At a differentiability point, the Fréchet derivative of a graph parametrization is the
+continuous linear graph of the derivative. -/
+theorem _root_.DifferentiableAt.fderiv_normalGraphEmbedding {φ : V → ℝ} {x : V}
+    (hφ : DifferentiableAt ℝ φ x) :
+    fderiv ℝ (TauCeti.normalGraphEmbedding φ) x = (fderiv ℝ φ x).normalGraphL :=
+  hφ.hasFDerivAt.normalGraphEmbedding.fderiv
+
+/-- At a differentiability point, the Fréchet derivative of a graph parametrization is
+injective. -/
+theorem _root_.DifferentiableAt.injective_fderiv_normalGraphEmbedding {φ : V → ℝ} {x : V}
+    (hφ : DifferentiableAt ℝ φ x) :
+    Function.Injective (fderiv ℝ (TauCeti.normalGraphEmbedding φ) x) := by
+  rw [hφ.fderiv_normalGraphEmbedding]
+  exact (fderiv ℝ φ x).injective_normalGraphL
+
+/-- At a differentiability point of `φ`, the range of the derivative of the normal graph
+parametrization is the linear graph of `fderiv ℝ φ x`. This is the tangent plane to a `C¹`
+normal graph at the corresponding point. -/
+theorem _root_.DifferentiableAt.range_fderiv_normalGraphEmbedding {φ : V → ℝ} {x : V}
+    (hφ : DifferentiableAt ℝ φ x) :
+    (LinearMap.range (fderiv ℝ (TauCeti.normalGraphEmbedding φ) x).toLinearMap :
+      Set (WithLp 2 (ℝ × V))) =
+      {z | z.fst = fderiv ℝ φ x z.snd} := by
+  rw [hφ.fderiv_normalGraphEmbedding]
+  exact (fderiv ℝ φ x).range_normalGraphL
+
+/-- At a differentiability point, the geometric Jacobian of a normal graph parametrization is
+the classical surface factor `sqrt (1 + ‖Dφ‖²)`. -/
+theorem _root_.DifferentiableAt.normDet_fderiv_normalGraphEmbedding {U : Type*}
+    [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U] {φ : U → ℝ} {x : U}
+    (hφ : DifferentiableAt ℝ φ x) :
+    (fderiv ℝ (TauCeti.normalGraphEmbedding φ) x).normDet =
+      Real.sqrt (1 + ‖fderiv ℝ φ x‖ ^ 2) := by
+  rw [hφ.fderiv_normalGraphEmbedding, ContinuousLinearMap.normDet_normalGraphL]
+
+end NormalGraph
 
 end TauCeti
 

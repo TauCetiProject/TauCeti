@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Connected
+public import Mathlib.RingTheory.Spectrum.Prime.RingHom
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
+public import TauCeti.AlgebraicGeometry.AugmentationPoint.Basic
 import TauCeti.Algebra.Algebra.Pi
 
 /-!
@@ -14,7 +16,8 @@ import TauCeti.Algebra.Algebra.Pi
 
 Let `G` be a finite group and `k` a field. The `k`-valued points of the constant group attached
 to `G` are canonically `G` itself. Indeed, every `k`-algebra homomorphism from the function
-algebra `k^G` to `k` is evaluation at a unique element of `G`.
+algebra `k^G` to `k` is evaluation at a unique element of `G`. Moreover, since `k^G` is a finite
+product of copies of `k`, every point of its spectrum is the kernel of such an evaluation.
 
 This identification turns a coordinate bialgebra morphism `k^G \to H` into a group homomorphism
 from the `k`-valued points of `Spec H` to `G`. If `Spec H` is connected, that homomorphism is
@@ -28,6 +31,8 @@ connectedness applies to the corresponding morphism of affine group schemes.
 
 * `TauCeti.ConstantGroup.pointsMulEquiv`: the canonical multiplicative equivalence between a
   finite group and the base-valued points of its constant group.
+* `TauCeti.ConstantGroup.exists_eq_kernelPoint_eval`: every point of the spectrum of the constant
+  group is the kernel point of evaluation at a group element.
 * `TauCeti.ConstantGroup.pointHom`: the homomorphism on base-valued points induced by a coordinate
   bialgebra morphism to a finite constant group.
 * `TauCeti.ConstantGroup.pointHom_eq_one_of_connected`: connected affine groups have no nontrivial
@@ -80,6 +85,21 @@ theorem pointsMulEquiv_apply (G : Type v) [Group G] [Finite G] (g : G) :
   apply ofConv_injective
   exact toPoints_apply k G g
 
+/-- Every point of the spectrum of the coordinate ring of a finite constant group over a field is
+the rational point given by an element of the group. -/
+theorem exists_eq_kernelPoint_eval (G : Type v) [Finite G]
+    (x : AlgebraicGeometry.Spec (.of (coordinateRing k G))) :
+    ∃ g, x = AlgHom.kernelPoint (eval k G g) := by
+  set e := functionAlgEquiv k G
+  obtain ⟨⟨g, p⟩, hp⟩ := (PrimeSpectrum.sigmaToPi_bijective fun _ : G ↦ k).2
+    (PrimeSpectrum.comap (e.symm : (G → k) →+* coordinateRing k G) x)
+  rw [PrimeSpectrum.sigmaToPi_apply] at hp
+  refine ⟨g, PrimeSpectrum.ext (Ideal.ext fun f ↦ ?_)⟩
+  have hf : e f ∈ Ideal.comap (Pi.evalRingHom (fun _ : G ↦ k) g) p.asIdeal ↔
+      e.symm (e f) ∈ x.asIdeal :=
+    Ideal.ext_iff.mp (congrArg PrimeSpectrum.asIdeal hp) (e f)
+  simpa [e, Ideal.eq_bot_of_prime p.asIdeal] using hf.symm
+
 variable {H : Type w} [CommRing H] [Bialgebra k H]
 
 /-- A coordinate bialgebra morphism from the function algebra of a finite group to `H` induces
@@ -87,15 +107,15 @@ a homomorphism from the base-valued points of `Spec H` to that finite group. -/
 noncomputable def pointHom {G : Type v} [Group G] [Finite G]
     (f : coordinateRing k G →ₐc[k] H) :
     WithConv (H →ₐ[k] k) →* G :=
-  (pointsMulEquiv k G).symm.toMonoidHom.comp (AlgHom.mapDomain f)
+  (pointsMulEquiv k G).symm.toMonoidHom.comp (BialgHom.mapDomain f)
 
 /-- The point homomorphism induced by `f` is characterized by evaluation after precomposition
 with `f`. -/
 theorem pointsMulEquiv_pointHom {G : Type v} [Group G] [Finite G]
     (f : coordinateRing k G →ₐc[k] H)
     (p : WithConv (H →ₐ[k] k)) :
-    pointsMulEquiv k G (pointHom f p) = AlgHom.mapDomain f p := by
-  exact (pointsMulEquiv k G).apply_symm_apply (AlgHom.mapDomain f p)
+    pointsMulEquiv k G (pointHom f p) = BialgHom.mapDomain f p := by
+  exact (pointsMulEquiv k G).apply_symm_apply (BialgHom.mapDomain f p)
 
 /-- Pointwise, the coordinate map induced by `pointHom f p` is precomposition with `f`. -/
 @[simp]
@@ -104,7 +124,7 @@ theorem eval_pointHom {G : Type v} [Group G] [Finite G]
     (p : WithConv (H →ₐ[k] k)) :
     eval k G (pointHom f p) = p.ofConv.comp f.toAlgHom := by
   have h := congrArg ofConv (pointsMulEquiv_pointHom f p)
-  simpa only [pointsMulEquiv_apply, ofConv_toConv, AlgHom.mapDomain_apply] using h
+  simpa only [pointsMulEquiv_apply, ofConv_toConv, BialgHom.mapDomain_apply] using h
 
 /-- A coordinate morphism induced contravariantly by a homomorphism of finite groups recovers
 that homomorphism on base-valued points. -/
@@ -118,7 +138,7 @@ theorem pointHom_coordinateBialgHom
   rw [MonoidHom.comp_apply]
   apply (pointsMulEquiv k G).injective
   rw [pointsMulEquiv_pointHom, pointsMulEquiv_apply]
-  rw [AlgHom.mapDomain_apply]
+  rw [BialgHom.mapDomain_apply]
   apply congrArg toConv
   have hx : (pointsMulEquiv k F x).ofConv = eval k F x :=
     congrArg ofConv (pointsMulEquiv_apply (k := k) F x)
@@ -148,7 +168,7 @@ theorem pointHom_eq_one_of_connected {G : Type v} [Group G] [Finite G]
   apply MonoidHom.ext
   intro p
   apply (pointsMulEquiv k G).injective
-  rw [pointsMulEquiv_pointHom, MonoidHom.one_apply, map_one]
+  rw [pointsMulEquiv_pointHom, MonoidHom.one_apply, map_one, BialgHom.mapDomain_apply]
   exact point_comp_eq_one_of_connected G hconnected f p.ofConv
 
 end

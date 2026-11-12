@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Action.Concrete
 public import Mathlib.CategoryTheory.Whiskering
+public import TauCeti.CategoryTheory.Action.Basic
 
 /-!
 # Tannaka duality for `G`-sets
@@ -21,10 +21,11 @@ identity of the left regular `G`-set `Action.leftRegular G`, because for every `
 every point `x` of `A` the orbit map `a ↦ a • x` is a map of `G`-sets out of the left regular one,
 and naturality against it forces `η` to act as `x ↦ s • x`.
 
-The last statements below transport this along an equivalence: a functor `C ⥤ Type u` that factors
-as an equivalence onto `G`-sets followed by the forgetful functor has endomorphism monoid `G` and
-automorphism group `Gˣ`. This is the form the classification of covering spaces consumes, with `C`
-the covering spaces of a based space and `G` its fundamental group.
+The last statements below transport this along a functor `e : C ⥤ Action (Type u) G` such that
+precomposition with `e` is fully faithful on functors to types, for instance an equivalence or a
+localization functor: the composite of `e` with the forgetful functor then has endomorphism monoid
+`G` and automorphism group `Gˣ`. The classification of covering spaces consumes the case of an
+equivalence, with `C` the covering spaces of a based space and `G` its fundamental group.
 
 No finiteness enters, so this is not Mathlib's `CategoryTheory.PreGaloisCategory` picture: there a
 fibre functor takes values in `FintypeCat` and `CategoryTheory.PreGaloisCategory.IsFundamentalGroup`
@@ -34,8 +35,6 @@ asks for a *compact* topological group, which for a discrete `G` means a finite 
 
 * `TauCeti.toEndForgetAction`: the monoid map sending `g : G` to the natural endomorphism of the
   forgetful functor acting by `g`, with `TauCeti.toEndForgetAction_app_apply` computing it.
-* `CategoryTheory.Action.leftRegularHom`: the orbit map of a point of a `G`-set, as a map of
-  `G`-sets out of the left regular `G`-set.
 * `TauCeti.end_forgetAction_app_apply`: a natural endomorphism of the forgetful functor acts on
   every `G`-set by the element of `G` it produces at the identity of the left regular `G`-set.
 * `TauCeti.endForgetActionMulEquiv`: **Tannaka duality for `G`-sets**: `G` is the monoid of
@@ -45,8 +44,8 @@ asks for a *compact* topological group, which for a discrete `G` means a finite 
 * `TauCeti.autForgetActionMulEquiv`: its specialisation to a group `G`, where the automorphism
   group is `G` itself.
 * `TauCeti.endCompForgetActionMulEquiv`, `TauCeti.unitsAutCompForgetActionMulEquiv` and
-  `TauCeti.autCompForgetActionMulEquiv`: all three forms transported along an equivalence
-  `C ⥤ Action (Type u) G`.
+  `TauCeti.autCompForgetActionMulEquiv`: all three forms transported along a functor
+  `C ⥤ Action (Type u) G` with fully faithful precomposition, such as an equivalence.
 
 ## References
 
@@ -73,9 +72,9 @@ variable (G : Type u) [Monoid G]
 /-- Acting by `g : G` on every `G`-set is a natural endomorphism of the forgetful functor from
 `G`-sets to types; this is the resulting monoid map `G →* End (Action.forget (Type u) G)`. -/
 def toEndForgetAction : G →* End (Action.forget (Type u) G) where
-  toFun g := { app A := A.ρ g, naturality _ _ f := (f.comm g).symm }
-  map_one' := NatTrans.ext (funext fun A => map_one A.ρ)
-  map_mul' g h := NatTrans.ext (funext fun A => map_mul A.ρ g h)
+  toFun g := .of { app A := (A.ρ g).asHom, naturality _ _ f := (f.comm g).symm }
+  map_one' := End.ext (NatTrans.ext (funext fun A => congrArg End.asHom (map_one A.ρ)))
+  map_mul' g h := End.ext (NatTrans.ext (funext fun A => congrArg End.asHom (map_mul A.ρ g h)))
 
 variable {G}
 
@@ -85,43 +84,33 @@ This is not a `simp` lemma: the type of `NatTrans.app` puts `(Action.forget (Typ
 the coercion of the left-hand side, and `simp` rewrites that to `A.V` by `Action.forget_obj`, so
 the left-hand side here is not in `simp`-normal form. -/
 theorem toEndForgetAction_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
-    (toEndForgetAction G g).app A x = g • x :=
+    (toEndForgetAction G g).asHom.app A x = g • x :=
   by
     -- Unfold the unexposed constructor once to establish its public computation rule.
-    change A.ρ g x = g • x
+    change (A.ρ g).asHom x = g • x
     rfl
 
 /-- The value of `TauCeti.toEndForgetAction G g` at the identity of the left regular `G`-set; not a
 `simp` lemma, for the reason given at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem toEndForgetAction_app_leftRegular_one (g : G) :
-    (toEndForgetAction G g).app (Action.leftRegular G) (1 : G) = g :=
+    (toEndForgetAction G g).asHom.app (Action.leftRegular G) (1 : G) = g :=
   mul_one g
-
-/-- The orbit map `a ↦ a • x` of a point `x` of a `G`-set `A`, as a map of `G`-sets from the left
-regular `G`-set to `A`. -/
-def _root_.CategoryTheory.Action.leftRegularHom {A : Action (Type u) G} (x : ToType A) :
-    Action.leftRegular G ⟶ A where
-  hom := ↾(fun a : G => a • x)
-  comm g := by ext a; exact mul_smul g a x
-
-@[simp]
-theorem _root_.CategoryTheory.Action.leftRegularHom_hom_apply {A : Action (Type u) G}
-    (x : ToType A) (a : G) :
-    (Action.leftRegularHom x).hom a = a • x :=
-  by
-    -- Unfold the unexposed constructor once to establish its public computation rule.
-    change a • x = a • x
-    rfl
 
 /-- A natural endomorphism of the forgetful functor from `G`-sets to types acts on every `G`-set
 as the element of `G` it produces at the identity of the left regular `G`-set: naturality against
 the orbit map `CategoryTheory.Action.leftRegularHom` leaves it no other choice. -/
 theorem end_forgetAction_app_apply (η : End (Action.forget (Type u) G)) {s : G}
-    (hs : η.app (Action.leftRegular G) (1 : G) = s) (A : Action (Type u) G) (x : ToType A) :
-    η.app A x = s • x := by
+    (hs : η.asHom.app (Action.leftRegular G) (1 : G) = s) (A : Action (Type u) G)
+    (x : ToType A) :
+    η.asHom.app A x = s • x := by
   subst hs
-  calc η.app A x = η.app A ((1 : G) • x) := by rw [one_smul]
-    _ = _ := NatTrans.naturality_apply η (Action.leftRegularHom x) (1 : G)
+  -- The forgetful functor sends the orbit map to its underlying function.
+  calc η.asHom.app A x = η.asHom.app A ((Action.leftRegularHom x).hom (1 : G)) :=
+        congrArg (fun y ↦ η.asHom.app A y) ((Action.leftRegularHom_hom_apply x 1).trans
+          (one_smul G x)).symm
+    _ = (Action.leftRegularHom x).hom (η.asHom.app (Action.leftRegular G) (1 : G)) :=
+        NatTrans.naturality_apply η.asHom (Action.leftRegularHom x) (1 : G)
+    _ = _ := Action.leftRegularHom_hom_apply x _
 
 variable (G)
 
@@ -129,9 +118,9 @@ variable (G)
 does so without repetition: evaluation at the identity of the left regular `G`-set inverts
 `TauCeti.toEndForgetAction`, by `TauCeti.end_forgetAction_app_apply`. -/
 theorem toEndForgetAction_bijective : Function.Bijective (toEndForgetAction G) := by
-  refine ⟨fun g h hgh => ?_, fun η => ⟨η.app (Action.leftRegular G) (1 : G), ?_⟩⟩
+  refine ⟨fun g h hgh => ?_, fun η => ⟨η.asHom.app (Action.leftRegular G) (1 : G), ?_⟩⟩
   · rw [← toEndForgetAction_app_leftRegular_one g, ← toEndForgetAction_app_leftRegular_one h, hgh]
-  · refine NatTrans.ext (funext fun A => ?_)
+  · refine End.ext (NatTrans.ext (funext fun A => ?_))
     ext x
     exact (end_forgetAction_app_apply η rfl A x).symm
 
@@ -152,14 +141,14 @@ regular `G`-set. -/
 @[simp]
 theorem endForgetActionMulEquiv_symm_apply_eq (η : End (Action.forget (Type u) G)) (g : G) :
     (endForgetActionMulEquiv G).symm η = g ↔
-      η.app (Action.leftRegular G) (1 : G) = g := by
+      η.asHom.app (Action.leftRegular G) (1 : G) = g := by
   rw [MulEquiv.symm_apply_eq]
   constructor
   · intro h
     rw [h, endForgetActionMulEquiv_apply, toEndForgetAction_app_leftRegular_one]
   · intro h
     rw [endForgetActionMulEquiv_apply]
-    refine NatTrans.ext (funext fun A => ?_)
+    refine End.ext (NatTrans.ext (funext fun A => ?_))
     ext x
     exact (end_forgetAction_app_apply η h A x).trans
       (toEndForgetAction_app_apply g A x).symm
@@ -180,18 +169,18 @@ variable {G}
 at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem unitsAutForgetActionMulEquiv_hom_app_apply (g : Gˣ) (A : Action (Type u) G)
     (x : ToType A) :
-    (unitsAutForgetActionMulEquiv G g).hom.app A x = (g : G) • x := by
+    (unitsAutForgetActionMulEquiv G g).asIso.hom.app A x = (g : G) • x := by
   -- `Aut.unitsEndEquivAut` keeps the underlying endomorphism as the `hom` projection.
-  change (endForgetActionMulEquiv G (g : G)).app A x = _
+  change (endForgetActionMulEquiv G (g : G)).asHom.app A x = _
   rw [endForgetActionMulEquiv_apply, toEndForgetAction_app_apply]
 
 /-- The inverse of the automorphism attached to a unit `g` acts by `g⁻¹`; not a `simp` lemma, for
 the reason given at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem unitsAutForgetActionMulEquiv_inv_app_apply (g : Gˣ) (A : Action (Type u) G)
     (x : ToType A) :
-    (unitsAutForgetActionMulEquiv G g).inv.app A x = ((g⁻¹ : Gˣ) : G) • x := by
+    (unitsAutForgetActionMulEquiv G g).asIso.inv.app A x = ((g⁻¹ : Gˣ) : G) • x := by
   -- `Aut.unitsEndEquivAut` keeps the endomorphism of the inverse unit as the `inv` projection.
-  change (endForgetActionMulEquiv G ((g⁻¹ : Gˣ) : G)).app A x = _
+  change (endForgetActionMulEquiv G ((g⁻¹ : Gˣ) : G)).asHom.app A x = _
   rw [endForgetActionMulEquiv_apply, toEndForgetAction_app_apply]
 
 /-- The inverse of the automorphism form of Tannaka duality is characterized by evaluating the
@@ -199,7 +188,7 @@ forward natural transformation at the identity of the left regular `G`-set. -/
 @[simp]
 theorem unitsAutForgetActionMulEquiv_symm_apply_eq (η : Aut (Action.forget (Type u) G)) (g : Gˣ) :
     (unitsAutForgetActionMulEquiv G).symm η = g ↔
-      η.hom.app (Action.leftRegular G) (1 : G) = (g : G) := by
+      η.asIso.hom.app (Action.leftRegular G) (1 : G) = (g : G) := by
   rw [MulEquiv.symm_apply_eq]
   constructor
   · intro h
@@ -208,18 +197,21 @@ theorem unitsAutForgetActionMulEquiv_symm_apply_eq (η : Aut (Action.forget (Typ
       ((toEndForgetAction_app_apply (g : G) (Action.leftRegular G) (1 : G)).symm.trans
         (toEndForgetAction_app_leftRegular_one (g : G)))
   · intro h
-    refine Aut.ext (NatTrans.ext (funext fun A => ?_))
+    refine Aut.ext (Iso.ext (NatTrans.ext (funext fun A => ?_)))
     ext x
-    exact (end_forgetAction_app_apply η.hom h A x).trans
+    exact (end_forgetAction_app_apply (Aut.toEnd η) h A x).trans
       (unitsAutForgetActionMulEquiv_hom_app_apply g A x).symm
 
 variable (G)
 
-/-- Tannaka duality transported along an equivalence: if a functor `e` from a category `C` to
-`G`-sets is an equivalence, then `G` is the monoid of natural endomorphisms of the composite
-functor `C ⥤ Type u`. -/
-def endCompForgetActionMulEquiv {C : Type*} [Category C] (e : C ⥤ Action (Type u) G)
-    [e.IsEquivalence] : G ≃* End (e ⋙ Action.forget (Type u) G) :=
+variable {C : Type*} [Category C] (e : C ⥤ Action (Type u) G)
+  [((Functor.whiskeringLeft C (Action (Type u) G) (Type u)).obj e).Full]
+  [((Functor.whiskeringLeft C (Action (Type u) G) (Type u)).obj e).Faithful]
+
+/-- Tannaka duality transported along a functor: if precomposition with a functor `e` from a
+category `C` to `G`-sets is fully faithful, as it is when `e` is an equivalence, then `G` is the
+monoid of natural endomorphisms of the composite functor `C ⥤ Type u`. -/
+def endCompForgetActionMulEquiv : G ≃* End (e ⋙ Action.forget (Type u) G) :=
   (endForgetActionMulEquiv G).trans
     ((Functor.FullyFaithful.ofFullyFaithful
       ((Functor.whiskeringLeft C (Action (Type u) G) (Type u)).obj e)).mulEquivEnd _)
@@ -231,21 +223,19 @@ variable {G}
 This is not a `simp` lemma: `simp` rewrites the composite `(e ⋙ Action.forget (Type u) G).obj p`
 appearing in the type of `x` to `(Action.forget (Type u) G).obj (e.obj p)`, so the left-hand side
 here is not in `simp`-normal form. -/
-theorem endCompForgetActionMulEquiv_app_apply {C : Type*} [Category C]
-    (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : G) (p : C) (x : ToType (e.obj p)) :
-    (endCompForgetActionMulEquiv G e g).app p x = g • x :=
+theorem endCompForgetActionMulEquiv_app_apply (g : G) (p : C) (x : ToType (e.obj p)) :
+    (endCompForgetActionMulEquiv G e g).asHom.app p x = g • x :=
   by
     -- Unfold the unexposed transport once; its value is then governed by the public base rule.
-    change (endForgetActionMulEquiv G g).app (e.obj p) x = g • x
+    change (endForgetActionMulEquiv G g).asHom.app (e.obj p) x = g • x
     rw [endForgetActionMulEquiv_apply, toEndForgetAction_app_apply]
 
 variable (G)
 
-/-- The automorphism form of Tannaka duality, transported along an equivalence: if a functor `e`
-from a category `C` to `G`-sets is an equivalence, then `Gˣ` is the automorphism group of the
-composite `C ⥤ Type u`. -/
-def unitsAutCompForgetActionMulEquiv {C : Type*} [Category C] (e : C ⥤ Action (Type u) G)
-    [e.IsEquivalence] : Gˣ ≃* Aut (e ⋙ Action.forget (Type u) G) :=
+/-- The automorphism form of Tannaka duality, transported along a functor: if precomposition with
+a functor `e` from a category `C` to `G`-sets is fully faithful, as it is when `e` is an
+equivalence, then `Gˣ` is the automorphism group of the composite `C ⥤ Type u`. -/
+def unitsAutCompForgetActionMulEquiv : Gˣ ≃* Aut (e ⋙ Action.forget (Type u) G) :=
   (unitsAutForgetActionMulEquiv G).trans
     ((Functor.FullyFaithful.ofFullyFaithful
       ((Functor.whiskeringLeft C (Action (Type u) G) (Type u)).obj e)).autMulEquivOfFullyFaithful _)
@@ -254,20 +244,18 @@ variable {G}
 
 /-- The value of a transported natural automorphism on a point of a fibre; not a `simp` lemma, for
 the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. -/
-theorem unitsAutCompForgetActionMulEquiv_hom_app_apply {C : Type*} [Category C]
-    (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : Gˣ) (p : C) (x : ToType (e.obj p)) :
-    (unitsAutCompForgetActionMulEquiv G e g).hom.app p x = (g : G) • x := by
+theorem unitsAutCompForgetActionMulEquiv_hom_app_apply (g : Gˣ) (p : C) (x : ToType (e.obj p)) :
+    (unitsAutCompForgetActionMulEquiv G e g).asIso.hom.app p x = (g : G) • x := by
   -- The transport whiskers with `e`, so the value is the untransported one at `e.obj p`.
-  change (unitsAutForgetActionMulEquiv G g).hom.app (e.obj p) x = _
+  change (unitsAutForgetActionMulEquiv G g).asIso.hom.app (e.obj p) x = _
   exact unitsAutForgetActionMulEquiv_hom_app_apply g (e.obj p) x
 
 /-- The inverse of a transported natural automorphism acts by the inverse unit on every fibre; not
 a `simp` lemma, for the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. -/
-theorem unitsAutCompForgetActionMulEquiv_inv_app_apply {C : Type*} [Category C]
-    (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : Gˣ) (p : C) (x : ToType (e.obj p)) :
-    (unitsAutCompForgetActionMulEquiv G e g).inv.app p x = ((g⁻¹ : Gˣ) : G) • x := by
+theorem unitsAutCompForgetActionMulEquiv_inv_app_apply (g : Gˣ) (p : C) (x : ToType (e.obj p)) :
+    (unitsAutCompForgetActionMulEquiv G e g).asIso.inv.app p x = ((g⁻¹ : Gˣ) : G) • x := by
   -- The transport whiskers with `e`, so the value is the untransported one at `e.obj p`.
-  change (unitsAutForgetActionMulEquiv G g).inv.app (e.obj p) x = _
+  change (unitsAutForgetActionMulEquiv G g).asIso.inv.app (e.obj p) x = _
   exact unitsAutForgetActionMulEquiv_inv_app_apply g (e.obj p) x
 
 end Monoid
@@ -293,14 +281,14 @@ theorem autForgetActionMulEquiv_apply (g : G) :
 /-- The automorphism attached to `g` acts by `g`; not a `simp` lemma, for the reason given at
 `TauCeti.toEndForgetAction_app_apply`. -/
 theorem autForgetActionMulEquiv_hom_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
-    (autForgetActionMulEquiv G g).hom.app A x = g • x := by
+    (autForgetActionMulEquiv G g).asIso.hom.app A x = g • x := by
   rw [autForgetActionMulEquiv_apply, unitsAutForgetActionMulEquiv_hom_app_apply,
     val_toUnits_apply]
 
 /-- The inverse of the automorphism associated to `g` acts by `g⁻¹`; not a `simp` lemma, for the
 reason given at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem autForgetActionMulEquiv_inv_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
-    (autForgetActionMulEquiv G g).inv.app A x = g⁻¹ • x := by
+    (autForgetActionMulEquiv G g).asIso.inv.app A x = g⁻¹ • x := by
   rw [autForgetActionMulEquiv_apply, unitsAutForgetActionMulEquiv_inv_app_apply, ← map_inv,
     val_toUnits_apply]
 
@@ -309,7 +297,7 @@ transformation at the identity of the left regular `G`-set. -/
 @[simp]
 theorem autForgetActionMulEquiv_symm_apply_eq (η : Aut (Action.forget (Type u) G)) (g : G) :
     (autForgetActionMulEquiv G).symm η = g ↔
-      η.hom.app (Action.leftRegular G) (1 : G) = g := by
+      η.asIso.hom.app (Action.leftRegular G) (1 : G) = g := by
   rw [MulEquiv.symm_apply_eq]
   constructor
   · intro h
@@ -318,42 +306,42 @@ theorem autForgetActionMulEquiv_symm_apply_eq (η : Aut (Action.forget (Type u) 
       ((toEndForgetAction_app_apply g (Action.leftRegular G) (1 : G)).symm.trans
         (toEndForgetAction_app_leftRegular_one g))
   · intro h
-    refine Aut.ext (NatTrans.ext (funext fun A => ?_))
+    refine Aut.ext (Iso.ext (NatTrans.ext (funext fun A => ?_)))
     ext x
-    exact (end_forgetAction_app_apply η.hom h A x).trans
+    exact (end_forgetAction_app_apply (Aut.toEnd η) h A x).trans
       (autForgetActionMulEquiv_hom_app_apply g A x).symm
 
 variable (G)
 
-/-- Tannaka duality transported along an equivalence: if a functor `e` from a category `C` to
-`G`-sets is an equivalence, then the group `G` is the automorphism group of the composite
-`C ⥤ Type u`. -/
-def autCompForgetActionMulEquiv {C : Type*} [Category C] (e : C ⥤ Action (Type u) G)
-    [e.IsEquivalence] : G ≃* Aut (e ⋙ Action.forget (Type u) G) :=
+variable {C : Type*} [Category C] (e : C ⥤ Action (Type u) G)
+  [((Functor.whiskeringLeft C (Action (Type u) G) (Type u)).obj e).Full]
+  [((Functor.whiskeringLeft C (Action (Type u) G) (Type u)).obj e).Faithful]
+
+/-- Tannaka duality transported along a functor: if precomposition with a functor `e` from a
+category `C` to `G`-sets is fully faithful, as it is when `e` is an equivalence, then the group `G`
+is the automorphism group of the composite `C ⥤ Type u`. -/
+def autCompForgetActionMulEquiv : G ≃* Aut (e ⋙ Action.forget (Type u) G) :=
   toUnits.trans (unitsAutCompForgetActionMulEquiv G e)
 
 variable {G}
 
 /-- The transported group form of Tannaka duality is the transported monoid form at the unit
 attached to `g`. -/
-theorem autCompForgetActionMulEquiv_apply {C : Type*} [Category C] (e : C ⥤ Action (Type u) G)
-    [e.IsEquivalence] (g : G) :
+theorem autCompForgetActionMulEquiv_apply (g : G) :
     autCompForgetActionMulEquiv G e g = unitsAutCompForgetActionMulEquiv G e (toUnits g) :=
   (rfl)
 
 /-- The value of a transported natural automorphism on a point of a fibre; not a `simp` lemma, for
 the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. -/
-theorem autCompForgetActionMulEquiv_hom_app_apply {C : Type*} [Category C]
-    (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : G) (p : C) (x : ToType (e.obj p)) :
-    (autCompForgetActionMulEquiv G e g).hom.app p x = g • x := by
+theorem autCompForgetActionMulEquiv_hom_app_apply (g : G) (p : C) (x : ToType (e.obj p)) :
+    (autCompForgetActionMulEquiv G e g).asIso.hom.app p x = g • x := by
   rw [autCompForgetActionMulEquiv_apply, unitsAutCompForgetActionMulEquiv_hom_app_apply,
     val_toUnits_apply]
 
 /-- The inverse of a transported natural automorphism acts by `g⁻¹` on every fibre; not a `simp`
 lemma, for the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. -/
-theorem autCompForgetActionMulEquiv_inv_app_apply {C : Type*} [Category C]
-    (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : G) (p : C) (x : ToType (e.obj p)) :
-    (autCompForgetActionMulEquiv G e g).inv.app p x = g⁻¹ • x := by
+theorem autCompForgetActionMulEquiv_inv_app_apply (g : G) (p : C) (x : ToType (e.obj p)) :
+    (autCompForgetActionMulEquiv G e g).asIso.inv.app p x = g⁻¹ • x := by
   rw [autCompForgetActionMulEquiv_apply, unitsAutCompForgetActionMulEquiv_inv_app_apply,
     ← map_inv, val_toUnits_apply]
 

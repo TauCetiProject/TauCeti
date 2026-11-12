@@ -1,0 +1,294 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
+public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
+public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
+public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
+import Mathlib.Analysis.InnerProductSpace.Completion
+
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
+
+/-!
+# The modulus of a bounded operator
+
+For a bounded operator `T : E →L[𝕜] F` between Hilbert spaces over `RCLike 𝕜`, the source Gram
+operator `T† T` is positive, and its positive square root is the *modulus*
+`|T| = √(T† T) : E →L[𝕜] E` of `T`. The modulus measures the size of `T` on the source space:
+`‖|T| x‖ = ‖T x‖` for every `x`, so `|T|` and `T` have the same kernel and the same operator norm.
+It is the input to the polar decomposition `T = U |T|` of a bounded operator, whose factor `U`
+is the canonical factor `T.factorThru |T|` of `T` through its modulus.
+
+The square root is the one of the continuous functional calculus,
+`ContinuousLinearMap.instContinuousFunctionalCalculusRCLikeIsSelfAdjoint`. That calculus is
+stated for a real algebra structure on `E →L[𝕜] E` compatible with the `𝕜`-action; the
+definition uses `ContinuousLinearMap.realAlgebra`, obtained by restricting scalars along `ℝ → 𝕜`,
+so that `T.modulus` makes sense over every `RCLike` field and its API needs no structure beyond
+the Hilbert spaces. Any other compatible real algebra structure, such as Mathlib's own at `𝕜 = ℝ`
+and `𝕜 = ℂ`, gives the same square root (`ContinuousLinearMap.modulus_eq_sqrt`).
+
+No finite dimension is assumed. For linear maps between finite-dimensional spaces the modulus
+`LinearMap.operatorAbs` is built from an eigenbasis instead.
+
+## Main declarations
+
+* `ContinuousLinearMap.modulus`: the modulus `|T| = √(T† T)` of a bounded operator.
+* `ContinuousLinearMap.modulus_eq_sqrt`: `|T| = CFC.sqrt (T† T)` for every real algebra structure
+  compatible with the `𝕜`-action; `ContinuousLinearMap.modulus_eq_abs`: for an endomorphism,
+  `|T|` is the absolute value `CFC.abs T`.
+* `ContinuousLinearMap.isPositive_modulus`, `ContinuousLinearMap.isSelfAdjoint_modulus`: the
+  modulus is positive and self-adjoint.
+* `ContinuousLinearMap.modulus_comp_modulus`: `|T| |T| = T† T`.
+* `ContinuousLinearMap.eq_modulus_iff`: the modulus is the unique positive square root of
+  `T† T`; in particular `ContinuousLinearMap.IsPositive.modulus_eq`: a positive operator is its
+  own modulus.
+* `ContinuousLinearMap.norm_modulus_apply`: `‖|T| x‖ = ‖T x‖`; consequently
+  `ContinuousLinearMap.ker_modulus`: `ker |T| = ker T`,
+  `ContinuousLinearMap.topologicalClosure_range_modulus`: the closure of the range of `|T|` is
+  `(ker T)ᗮ`, and
+  `ContinuousLinearMap.norm_modulus`: `‖|T|‖ = ‖T‖`.
+* `ContinuousLinearMap.commute_modulus_of_commute`: an endomorphism commuting with `T† T`
+  commutes with `|T|`.
+* `ContinuousLinearMap.norm_modulus_comp`, `ContinuousLinearMap.norm_comp_modulus`: the
+  composition laws `‖|T| D‖ = ‖T D‖` and `‖D |T|‖ = ‖D T†‖`.
+* `ContinuousLinearMap.continuous_modulus`: on real Hilbert spaces, `|T|` depends continuously
+  on `T`.
+
+## References
+
+* M. Reed, B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*, revised
+  ed., Academic Press (1980), §VI.4.
+-/
+
+public section
+
+open scoped InnerProduct
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+section RealAlgebra
+
+-- The square root is taken for the real algebra structure on `E →L[𝕜] E` obtained by restricting
+-- scalars along `ℝ → 𝕜`; `modulus_eq_sqrt` below removes this choice from the public API.
+attribute [local instance] realAlgebra realIsScalarTower
+
+/-- The **modulus** `|T| = √(T† T)` of a bounded operator `T` between Hilbert spaces: the positive
+square root of the source Gram operator `T† T`.
+
+The square root is taken in the continuous functional calculus for the real algebra structure
+`ContinuousLinearMap.realAlgebra`; `ContinuousLinearMap.modulus_eq_sqrt` identifies it with the
+square root for any other compatible real algebra structure. -/
+noncomputable def modulus (T : E →L[𝕜] F) : E →L[𝕜] E :=
+  CFC.sqrt (T† ∘L T)
+
+/-- The modulus is nonnegative in the Loewner order. -/
+theorem modulus_nonneg (T : E →L[𝕜] F) : 0 ≤ T.modulus :=
+  CFC.sqrt_nonneg _
+
+/-- The square of the modulus is the source Gram operator: `|T| |T| = T† T`. -/
+@[simp]
+theorem modulus_comp_modulus (T : E →L[𝕜] F) : T.modulus ∘L T.modulus = T† ∘L T :=
+  CFC.sqrt_mul_sqrt_self _ (nonneg_iff_isPositive.2 (isPositive_adjoint_comp_self T))
+
+/-- Applying the modulus twice is applying the source Gram operator: `|T| (|T| x) = T† (T x)`. -/
+@[simp]
+theorem modulus_modulus_apply (T : E →L[𝕜] F) (x : E) : T.modulus (T.modulus x) = (T†) (T x) :=
+  congr($(T.modulus_comp_modulus) x)
+
+/-- **Uniqueness of the modulus.** The modulus is the unique positive operator whose square is
+the source Gram operator `T† T`. -/
+theorem eq_modulus_iff {T : E →L[𝕜] F} {S : E →L[𝕜] E} :
+    S = T.modulus ↔ S.IsPositive ∧ S ∘L S = T† ∘L T := by
+  refine ⟨?_, fun ⟨hS, h⟩ ↦ (CFC.sqrt_unique h (nonneg_iff_isPositive.2 hS)).symm⟩
+  rintro rfl
+  exact ⟨nonneg_iff_isPositive.1 T.modulus_nonneg, T.modulus_comp_modulus⟩
+
+/-- An endomorphism commuting with the source Gram operator `T† T` commutes with the modulus. -/
+theorem commute_modulus_of_commute {T : E →L[𝕜] F} {S : E →L[𝕜] E}
+    (h : Commute S (T† ∘L T)) : Commute S T.modulus :=
+  (h.symm.cfcₙ_nnreal NNReal.sqrt).symm
+
+/-- The modulus of an invertible operator is strictly positive. -/
+theorem isStrictlyPositive_modulus_of_isUnit (T : E →L[𝕜] E) (hT : IsUnit T) :
+    IsStrictlyPositive T.modulus := by
+  refine ⟨T.modulus_nonneg, ?_⟩
+  rw [modulus, CFC.isUnit_sqrt_iff _
+    (nonneg_iff_isPositive.mpr T.isPositive_adjoint_comp_self)]
+  exact (isUnit_star.mpr hT).mul hT
+
+end RealAlgebra
+
+/-- The modulus is positive. -/
+theorem isPositive_modulus (T : E →L[𝕜] F) : T.modulus.IsPositive :=
+  nonneg_iff_isPositive.1 T.modulus_nonneg
+
+/-- The modulus is self-adjoint. -/
+theorem isSelfAdjoint_modulus (T : E →L[𝕜] F) : IsSelfAdjoint T.modulus :=
+  T.isPositive_modulus.isSelfAdjoint
+
+/-- The modulus is its own adjoint. -/
+@[simp]
+theorem adjoint_modulus (T : E →L[𝕜] F) : T.modulus† = T.modulus :=
+  T.isSelfAdjoint_modulus.adjoint_eq
+
+/-- A positive operator is its own modulus. -/
+theorem IsPositive.modulus_eq {T : E →L[𝕜] E} (hT : T.IsPositive) : T.modulus = T :=
+  (eq_modulus_iff.2 ⟨hT, by rw [hT.isSelfAdjoint.adjoint_eq]⟩).symm
+
+/-- The modulus of the modulus is the modulus. -/
+@[simp]
+theorem modulus_modulus (T : E →L[𝕜] F) : T.modulus.modulus = T.modulus :=
+  T.isPositive_modulus.modulus_eq
+
+/-- The modulus of the zero operator is zero. -/
+@[simp]
+theorem modulus_zero : (0 : E →L[𝕜] F).modulus = 0 :=
+  (eq_modulus_iff.2 ⟨isPositive_zero, by simp⟩).symm
+
+/-- An operator and its negative have the same modulus. -/
+@[simp]
+theorem modulus_neg (T : E →L[𝕜] F) : (-T).modulus = T.modulus :=
+  (eq_modulus_iff.2 ⟨T.isPositive_modulus, by simp⟩).symm
+
+/-- The modulus is natural under linear isometric equivalences of the source and target:
+`|e₁ T e₂⁻¹| = e₂ |T| e₂⁻¹`. In particular the modulus commutes with conjugation by a linear
+isometric equivalence. -/
+theorem modulus_conj {E' F' : Type*} [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E']
+    [CompleteSpace E'] [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F'] [CompleteSpace F']
+    (e₁ : F ≃ₗᵢ[𝕜] F') (e₂ : E ≃ₗᵢ[𝕜] E') (T : E →L[𝕜] F) :
+    ((e₁ : F →L[𝕜] F') ∘L T ∘L (e₂.symm : E' →L[𝕜] E)).modulus =
+      (e₂ : E →L[𝕜] E') ∘L T.modulus ∘L (e₂.symm : E' →L[𝕜] E) := by
+  refine (eq_modulus_iff.2 ⟨?_, ?_⟩).symm
+  · simpa only [LinearIsometryEquiv.adjoint_eq_symm] using
+      T.isPositive_modulus.conj_adjoint (e₂ : E →L[𝕜] E')
+  · rw [adjoint_comp, adjoint_comp, LinearIsometryEquiv.adjoint_eq_symm,
+      LinearIsometryEquiv.adjoint_eq_symm, LinearIsometryEquiv.symm_symm]
+    ext x
+    simp [modulus_modulus_apply]
+
+/-- The modulus is the square root `CFC.sqrt (T† T)` of the continuous functional calculus, for
+every real algebra structure on `E →L[𝕜] E` compatible with the `𝕜`-action. -/
+theorem modulus_eq_sqrt [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+    (T : E →L[𝕜] F) : T.modulus = CFC.sqrt (T† ∘L T) :=
+  (CFC.sqrt_unique T.modulus_comp_modulus T.modulus_nonneg).symm
+
+/-- The modulus of an endomorphism `T` is its absolute value `CFC.abs T = √(star T * T)`, for
+every real algebra structure on `E →L[𝕜] E` compatible with the `𝕜`-action. -/
+theorem modulus_eq_abs [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+    (T : E →L[𝕜] E) : T.modulus = CFC.abs T := by
+  rw [modulus_eq_sqrt, CFC.abs, star_eq_adjoint, mul_def]
+
+/-- The modulus has the same pointwise norms as the operator: `‖|T| x‖ = ‖T x‖`. -/
+@[simp]
+theorem norm_modulus_apply (T : E →L[𝕜] F) (x : E) : ‖T.modulus x‖ = ‖T x‖ := by
+  refine adjoint_comp_self_eq_adjoint_comp_self_iff.1 ?_ x
+  rw [adjoint_modulus, modulus_comp_modulus]
+
+/-- The modulus and the operator have the same kernel. -/
+@[simp]
+theorem ker_modulus (T : E →L[𝕜] F) : T.modulus.ker = T.ker := by
+  ext x
+  simp only [LinearMap.mem_ker, coe_coe, ← norm_eq_zero (a := T.modulus x),
+    ← norm_eq_zero (a := T x), norm_modulus_apply]
+
+/-- The orthogonal complement of the range of the modulus is the kernel of the operator. -/
+@[simp]
+theorem orthogonal_range_modulus (T : E →L[𝕜] F) : T.modulus.rangeᗮ = T.ker := by
+  rw [orthogonal_range, adjoint_modulus, ker_modulus]
+
+/-- The closure of the range of the modulus is the orthogonal complement of the kernel of the
+operator. This is the initial space of the polar factor of `T`. -/
+@[simp]
+theorem topologicalClosure_range_modulus (T : E →L[𝕜] F) :
+    T.modulus.range.topologicalClosure = T.kerᗮ := by
+  rw [← Submodule.orthogonal_orthogonal_eq_closure, orthogonal_range_modulus]
+
+/-- The modulus and the operator have the same operator norm. -/
+@[simp]
+theorem norm_modulus (T : E →L[𝕜] F) : ‖T.modulus‖ = ‖T‖ :=
+  opNorm_ext _ _ T.norm_modulus_apply
+
+/-- Precomposition law for the modulus: `‖|T| D‖ = ‖T D‖` for every bounded operator `D` into
+the source of `T`. -/
+@[simp]
+theorem norm_modulus_comp {G : Type*} [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (T : E →L[𝕜] F) (D : G →L[𝕜] E) : ‖T.modulus ∘L D‖ = ‖T ∘L D‖ :=
+  opNorm_ext _ _ fun x ↦ T.norm_modulus_apply (D x)
+
+/-- Postcomposition law for the modulus: `‖D |T|‖ = ‖D T†‖` for every bounded operator `D` out of
+the source of `T` into an inner product space, which need not be complete. -/
+theorem norm_comp_modulus {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+    (T : E →L[𝕜] F) (D : E →L[𝕜] G) : ‖D ∘L T.modulus‖ = ‖D ∘L T†‖ := by
+  -- The embedding into the completion preserves norms, so we may assume `G` is complete.
+  let ι : G →L[𝕜] UniformSpace.Completion G := UniformSpace.Completion.toComplL
+  have hE (A : E →L[𝕜] G) : ‖ι ∘L A‖ = ‖A‖ :=
+    (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := G)).norm_toContinuousLinearMap_comp
+  have hF (A : F →L[𝕜] G) : ‖ι ∘L A‖ = ‖A‖ :=
+    (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := G)).norm_toContinuousLinearMap_comp
+  rw [← hE (D ∘L T.modulus), ← hF (D ∘L T†), ← comp_assoc, ← comp_assoc]
+  generalize ι ∘L D = D'
+  -- Pass to adjoints, which preserve norms, and apply the precomposition law.
+  calc ‖D' ∘L T.modulus‖ = ‖(D' ∘L T.modulus)†‖ := (adjoint.norm_map _).symm
+    _ = ‖T ∘L D'†‖ := by rw [adjoint_comp, adjoint_modulus, norm_modulus_comp]
+    _ = ‖D' ∘L T†‖ := by rw [← adjoint.norm_map, adjoint_comp, adjoint_adjoint]
+
+section RealAlgebra
+
+attribute [local instance] realAlgebra realIsScalarTower
+
+/-- The modulus of a pointwise expanding Hilbert space operator is at least the identity
+in Loewner order. -/
+theorem one_le_modulus_of_forall_norm_le (T : E →L[𝕜] F)
+    (hT : ∀ x, ‖x‖ ≤ ‖T x‖) : 1 ≤ T.modulus := by
+  have hgram : (1 : E →L[𝕜] E) ≤ T† ∘L T := by
+    rw [le_def, isPositive_iff]
+    refine ⟨(T.isPositive_adjoint_comp_self.isSelfAdjoint.sub
+      (IsSelfAdjoint.one _)).isSymmetric, fun x ↦ ?_⟩
+    have hsq : ‖x‖ ^ 2 ≤ ‖T x‖ ^ 2 := (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mpr (hT x)
+    simpa [sub_apply, comp_apply, inner_sub_left, adjoint_inner_left,
+      inner_self_eq_norm_sq_to_K, RCLike.ofReal_sub, RCLike.ofReal_pow] using
+      (RCLike.ofReal_nonneg (K := 𝕜)).mpr (sub_nonneg.mpr hsq)
+  have hgram₀ : 0 ≤ T† ∘L T := zero_le_one.trans hgram
+  rw [modulus_eq_sqrt, CFC.sqrt_eq_rpow, CFC.rpow_eq_cfc_real hgram₀]
+  rw [← cfc_const_one ℝ (T† ∘L T)]
+  apply (cfc_le_iff (fun _ : ℝ ↦ 1) (fun r : ℝ ↦ r ^ (1 / 2 : ℝ)) (T† ∘L T)).mpr
+  intro r hr
+  exact Real.one_le_rpow ((CFC.one_le_iff (R := ℝ) _).mp hgram r hr) (by norm_num)
+
+/-- The modulus of a pointwise expanding Hilbert space operator is strictly positive. -/
+theorem isStrictlyPositive_modulus_of_forall_norm_le (T : E →L[𝕜] F)
+    (hT : ∀ x, ‖x‖ ≤ ‖T x‖) : IsStrictlyPositive T.modulus := by
+  have hP := T.one_le_modulus_of_forall_norm_le hT
+  refine (StarOrderedRing.isStrictlyPositive_iff_spectrum_pos (R := ℝ) T.modulus
+    T.isSelfAdjoint_modulus).mpr fun r hr ↦ ?_
+  exact zero_lt_one.trans_le
+    ((CFC.one_le_iff (R := ℝ) _ T.isSelfAdjoint_modulus).mp hP r hr)
+
+end RealAlgebra
+
+section Continuity
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- The modulus of an operator between real Hilbert spaces depends continuously on the operator,
+in operator norm. -/
+theorem continuous_modulus : Continuous (modulus : (E →L[ℝ] F) → E →L[ℝ] E) := by
+  have hg : Continuous fun T : E →L[ℝ] F ↦ T† ∘L T :=
+    (adjoint (𝕜 := ℝ) (E := E) (F := F)).continuous.clm_comp continuous_id
+  refine (CFC.continuousOn_sqrt.comp_continuous hg fun T ↦ ?_).congr fun T ↦ ?_
+  · exact nonneg_iff_isPositive.2 T.isPositive_adjoint_comp_self
+  · exact (modulus_eq_sqrt T).symm
+
+end Continuity
+
+end ContinuousLinearMap

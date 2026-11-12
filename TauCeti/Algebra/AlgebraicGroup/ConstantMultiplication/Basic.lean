@@ -276,6 +276,31 @@ theorem Preserves.of_mul_eq_one {M N : Matrix (Fin n) (Fin n) S} (hM : Preserves
   rw [relationMatrix_of_mul_eq_one R n C h₁ k]
   simp only [hM, smul_zero, Finset.sum_const_zero, Matrix.mul_zero, Matrix.zero_mul, neg_zero]
 
+/-- If two basis vectors are eigenvectors of a multiplication-preserving matrix and their
+product is a third basis vector, the third vector is an eigenvector with the product eigenvalue.
+The statement applies to arbitrary constant multiplications, including Lie brackets. -/
+theorem Preserves.col_eq_smul_single {M : Matrix (Fin n) (Fin n) S}
+    (hM : Preserves R n C M) {a b c : Fin n} {s t : S}
+    (ha : M.col a = s • Pi.single a 1) (hb : M.col b = t • Pi.single b 1)
+    (hC : (C a).col b = Pi.single c 1) :
+    M.col c = (s * t) • Pi.single c 1 := by
+  have himage : imageStructureMatrix R n C M a = s • (C a).map (algebraMap R S) := by
+    rw [imageStructureMatrix_def]
+    simp_rw [← Matrix.col_apply M a, ha, Pi.smul_apply, Pi.single_apply,
+      smul_eq_mul, mul_ite, mul_one, mul_zero, ite_smul, zero_smul]
+    simp only [Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+  have hcol : ((C a).map (algebraMap R S)).col b = Pi.single c 1 := by
+    ext i
+    have h := congrFun hC i
+    simp only [Matrix.col_apply, Pi.single_apply] at h
+    simp only [Matrix.col_apply, Matrix.map_apply, h, Pi.single_apply]
+    split_ifs <;> simp
+  have h := congrArg (fun N : Matrix (Fin n) (Fin n) S ↦ N *ᵥ Pi.single b 1) (hM a)
+  rw [himage] at h
+  simp only [← Matrix.mulVec_mulVec, Matrix.smul_mulVec] at h
+  simpa only [Matrix.mulVec_single_one, hcol, hb, Matrix.mulVec_smul, smul_smul,
+    mul_comm s t] using h
+
 /-- Preserving the multiplication is stable under an algebra morphism of value rings. -/
 theorem Preserves.map {T : Type w} [CommRing T] [Algebra R T] {M : Matrix (Fin n) (Fin n) S}
     (hM : Preserves R n C M) (φ : S →ₐ[R] T) : Preserves R n C (M.map φ) := by
@@ -343,7 +368,7 @@ end Basis
 
 /-- The set of defining relations: the entries of the relation matrices of the generic
 matrix. -/
-def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
+noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
   Set.range fun p : Fin n × Fin n × Fin n =>
     relationMatrix R n C (GeneralLinear.genericMatrix R n) p.1 p.2.1 p.2.2
 
@@ -387,11 +412,11 @@ product of its two tensor inclusions, and the relation matrices of a product dec
 those of the two factors. -/
 private theorem comul_relationMatrix_mem (k i j : Fin n) :
     Coalgebra.comul (R := R) (relationMatrix R n C (GeneralLinear.genericMatrix R n) k i j) ∈
-      HopfIdeal.leftTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+      Ideal.leftTensorIdeal (R := R)
+          (B := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) ⊔
-        HopfIdeal.rightTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+        Ideal.rightTensorIdeal (R := R)
+          (A := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) := by
   have hmap := relationMatrix_map R n C
     (Bialgebra.comulAlgHom R (GeneralLinear.coordinateHopfAlgebra R n))
@@ -404,13 +429,13 @@ private theorem comul_relationMatrix_mem (k i j : Fin n) :
   · have hr : ∀ p q : Fin n, relationMatrix R n C
         ((GeneralLinear.genericMatrix R n).map
           (Algebra.TensorProduct.includeRight (R := R))) k p q ∈
-        HopfIdeal.rightTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+        Ideal.rightTensorIdeal (R := R)
+          (A := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) := by
       intro p q
       refine relationMatrix_map_genericMatrix_mem R n C _ _ (fun x hx => ?_) k p q
-      exact HopfIdeal.includeRight_mem_rightTensorIdeal (R := R)
-        (H := GeneralLinear.coordinateHopfAlgebra R n) (Ideal.subset_span hx)
+      exact Ideal.includeRight_mem_rightTensorIdeal (R := R)
+        (A := GeneralLinear.coordinateHopfAlgebra R n) (Ideal.subset_span hx)
     have hmem := Matrix.mul_mul_apply_mem hr
       ((GeneralLinear.genericMatrix R n).map
         (Algebra.TensorProduct.includeLeft (R := R) (S := R))) 1 i j
@@ -418,20 +443,20 @@ private theorem comul_relationMatrix_mem (k i j : Fin n) :
   · have hl : ∀ a p q : Fin n, relationMatrix R n C
         ((GeneralLinear.genericMatrix R n).map
           (Algebra.TensorProduct.includeLeft (R := R) (S := R))) a p q ∈
-        HopfIdeal.leftTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+        Ideal.leftTensorIdeal (R := R)
+          (B := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) := by
       intro a p q
       refine relationMatrix_map_genericMatrix_mem R n C _ _ (fun x hx => ?_) a p q
-      exact HopfIdeal.includeLeft_mem_leftTensorIdeal (R := R)
-        (H := GeneralLinear.coordinateHopfAlgebra R n) (Ideal.subset_span hx)
+      exact Ideal.includeLeft_mem_leftTensorIdeal (R := R)
+        (B := GeneralLinear.coordinateHopfAlgebra R n) (Ideal.subset_span hx)
     have hsum : ∀ p q : Fin n,
         (∑ a, ((GeneralLinear.genericMatrix R n).map
               (Algebra.TensorProduct.includeRight (R := R))) a k •
             relationMatrix R n C ((GeneralLinear.genericMatrix R n).map
               (Algebra.TensorProduct.includeLeft (R := R) (S := R))) a) p q ∈
-          HopfIdeal.leftTensorIdeal (R := R)
-            (H := GeneralLinear.coordinateHopfAlgebra R n)
+          Ideal.leftTensorIdeal (R := R)
+            (B := GeneralLinear.coordinateHopfAlgebra R n)
             (Ideal.span (relationSet R n C)) :=
       fun p q => Matrix.sum_smul_apply_mem hl _ p q
     have hmem := Matrix.mul_mul_apply_mem hsum 1

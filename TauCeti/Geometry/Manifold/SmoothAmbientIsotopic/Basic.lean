@@ -16,9 +16,8 @@ manifolds. Two maps are smoothly ambient isotopic when the final diffeomorphism 
 of the codomain carries the first map to the second.
 
 The relation is defined generally before its specialization to bundled smooth embeddings in
-`TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic`, following the
-GeometricTopology roadmap's encoding convention. Forgetting smoothness recovers
-`TauCeti.AmbientIsotopic`.
+`TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic`. Forgetting smoothness
+recovers `TauCeti.AmbientIsotopic`.
 
 ## Main definitions
 
@@ -136,7 +135,7 @@ theorem precomp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
 
 /-- Smooth ambient isotopy implies continuous ambient isotopy after forgetting smoothness. -/
 theorem ambientIsotopic (hfg : SmoothAmbientIsotopic f g) :
-    AmbientIsotopic (toContinuousMap f) (toContinuousMap g) := by
+    AmbientIsotopic (ContinuousMap.ofClass f) (ContinuousMap.ofClass g) := by
   obtain ⟨Φ, hΦ⟩ := hfg
   apply ambientIsotopic_def.mpr
   refine ⟨Φ.toAmbientIsotopy, ?_⟩

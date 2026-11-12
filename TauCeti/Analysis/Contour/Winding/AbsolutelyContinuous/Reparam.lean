@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.ConstantSpeed
 public import TauCeti.Analysis.Contour.Winding.Number.AbsolutelyContinuous
 public import TauCeti.MeasureTheory.Integral.CurveIntegral.Reparam
+import Mathlib.Analysis.Normed.Affine.AddTorsor
 import TauCeti.Analysis.Contour.Winding.Number.Reverse
+import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 
 /-!
 # Winding numbers under absolutely continuous reparametrizations
@@ -15,7 +18,8 @@ import TauCeti.Analysis.Contour.Winding.Number.Reverse
 Monotone or antitone absolutely continuous changes of parameter preserve the winding integral
 with its oriented image interval. Increasing parameters onto a given interval preserve its index;
 decreasing parameters onto that interval negate its index. Constant pieces and unbounded speeds
-are allowed.
+are allowed. In particular, passing from an absolutely continuous curve to its arclength
+parametrization `naturalParameterization γ (Icc a b) a` preserves its off-trace winding number.
 -/
 
 public section
@@ -88,5 +92,56 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_comp_of_antitoneOn
   exact cauchyPVExistsAt_of_avoidance hγ.continuousOn
     (fun t ht heq ↦ hz ⟨t, ht, heq⟩)
     (hγ.intervalIntegrable_inv_sub_mul_deriv hz)
+
+/-- Affine normalization to the unit interval preserves the off-trace winding number, with
+the original interval orientation, including constant intervals. -/
+theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_comp_lineMap
+    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hz : z ∉ γ '' uIcc a b) :
+    Contour.windingNumber (γ ∘ AffineMap.lineMap a b) 0 1 z =
+      Contour.windingNumber γ a b z := by
+  have ho : MonotoneOn (AffineMap.lineMap a b) (Icc (0 : ℝ) 1) ∨
+      AntitoneOn (AffineMap.lineMap a b) (Icc (0 : ℝ) 1) :=
+    (le_total a b).imp
+      (fun h ↦ (AffineMap.lineMap_mono h).monotoneOn _)
+      (fun h ↦ (AffineMap.lineMap_anti h).antitoneOn _)
+  have hγ' : AbsolutelyContinuousOnInterval γ
+      (AffineMap.lineMap a b (0 : ℝ)) (AffineMap.lineMap a b (1 : ℝ)) := by
+    simpa only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one] using hγ
+  have hz' : z ∉ γ '' uIcc (AffineMap.lineMap a b (0 : ℝ)) (AffineMap.lineMap a b (1 : ℝ)) := by
+    simpa only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one] using hz
+  simpa only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one] using
+    AbsolutelyContinuousOnInterval.windingNumber_comp hγ'
+      ((lipschitzWith_lineMap a b).lipschitzOnWith.absolutelyContinuousOnInterval)
+      zero_le_one ho hz'
+
+/-- For an absolutely continuous curve on `[a, b]` (`a ≤ b`), the off-trace winding number of its
+arclength parametrization `naturalParameterization γ (Icc a b) a` on
+`[0, (eVariationOn γ (Icc a b)).toReal]` agrees with `windingNumber γ a b`. -/
+theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_naturalParameterization
+    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ} (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hab : a ≤ b) (hz : z ∉ γ '' Icc a b) :
+    windingNumber (naturalParameterization γ (Icc a b) a) 0
+        (eVariationOn γ (Icc a b)).toReal z = windingNumber γ a b z := by
+  have hBV : BoundedVariationOn γ (Icc a b) := uIcc_of_le hab ▸ hγ.boundedVariationOn
+  have hcont : ContinuousOn γ (Icc a b) := uIcc_of_le hab ▸ hγ.continuousOn
+  set θ := variationOnFromTo γ (Icc a b) a
+  set η := naturalParameterization γ (Icc a b) a
+  set L := (eVariationOn γ (Icc a b)).toReal
+  have hθa : θ a = 0 := variationOnFromTo.self _ _ _
+  have hθb : θ b = L := by simp only [θ, L, variationOnFromTo.eq_of_le _ _ hab, inter_self]
+  have hθ : AbsolutelyContinuousOnInterval θ a b := by
+    simpa only [θ, uIcc_of_le hab] using hγ.absolutelyContinuousOnInterval_variationOnFromTo
+  have hθm : MonotoneOn θ (Icc a b) :=
+    variationOnFromTo.monotoneOn hBV.locallyBoundedVariationOn (left_mem_Icc.mpr hab)
+  have hfactor : EqOn (η ∘ θ) γ (Icc a b) := fun t ht ↦
+    hBV.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo
+      (left_mem_Icc.mpr hab) ht
+  have hη : AbsolutelyContinuousOnInterval η 0 L :=
+    hBV.absolutelyContinuousOnInterval_naturalParameterization hcont hab
+  have hzη : z ∉ η '' uIcc 0 L := by
+    rwa [uIcc_of_le ENNReal.toReal_nonneg, hBV.image_naturalParameterization_Icc hcont hab]
+  rw [← windingNumber_congr_curve (fun t ht ↦ hfactor (Ioo_subset_Icc_self (uIoo_of_le hab ▸ ht))),
+    hη.windingNumber_comp_of_monotoneOn hθ hab hθm hθa hθb hzη]
 
 end TauCeti.Contour

@@ -216,9 +216,6 @@ theorem semisimplePart_mul_unipotentPart (g : WithConv (H →ₐ[k] K)) :
   simp only [map_mul, Tannaka.fgPointTensorIsoEquiv_apply,
     fgPointTensorIso_semisimplePart, fgPointTensorIso_unipotentPart,
     Tannaka.fgPointSemisimplePartTensorIso_mul_fgPointUnipotentPartTensorIso]
-  -- Both sides are now the same point-induced tensor automorphism; the remaining equality is
-  -- only between the instance paths selected by the two constructions.
-  rfl
 
 /-- A commuting factorization of a point into factors acting semisimply and unipotently in every
 finite-dimensional comodule is its canonical Jordan decomposition. -/

@@ -44,12 +44,15 @@ its determinant twist `(1, 0, -1)` both carry exactly `8` patterns.
 ## Main definitions
 
 * `TauCeti.interlacingFinset`: the sequences interlacing a given one, as a `Finset`.
+* `TauCeti.interlacingWeights`: the dominant weights interlacing a given one, as a `Finset`.
 
 ## Main results
 
 * `TauCeti.card_interlacingFinset`: how many sequences interlace a given one.
 * `TauCeti.GTPattern.truncateSigmaEquiv`: the patterns over `l` sorted by the row below the top.
 * `TauCeti.GTPattern.card_topRow_succ`: **the branching recursion for the pattern count**.
+* `TauCeti.GTPattern.truncateTopWeightSigmaEquiv`: the patterns with top weight `l` sorted by the
+  dominant weight of the row below the top.
 * `TauCeti.GTPattern.nonempty_topRow_eq_iff` and `TauCeti.GTPattern.card_topRow_pos_iff`: a
   sequence is the top row of a pattern exactly when it is weakly decreasing.
 * `TauCeti.GTPattern.card_topWeight_eq_card_topRow`: counting by top weight is counting by top row.
@@ -97,6 +100,22 @@ theorem card_interlacingFinset (l : Fin (n + 1) → ℤ) :
   rw [interlacingFinset, Pi.card_Icc]
   exact Finset.prod_congr rfl fun i _ => Int.card_Icc _ _
 
+/-- The dominant weights interlacing a dominant weight `l`, as a `Finset`.
+
+A sequence interlacing a weakly decreasing sequence is itself weakly decreasing
+(`TauCeti.Interlaces.antitone`), so these are the members of `TauCeti.interlacingFinset l`, each
+read as a dominant weight.  They index the branching rule for the rational representation `V_l` of
+`GL (n + 1)` restricted along `GL n ↪ GL (n + 1)`. -/
+noncomputable def interlacingWeights (l : DominantWeight (n + 1)) : Finset (DominantWeight n) :=
+  (interlacingFinset l.1).preimage Subtype.val Subtype.val_injective.injOn
+
+/-- The members of `TauCeti.interlacingWeights l` are exactly the dominant weights interlacing
+`l`. -/
+@[simp]
+theorem mem_interlacingWeights {l : DominantWeight (n + 1)} {m : DominantWeight n} :
+    m ∈ interlacingWeights l ↔ Interlaces l.1 m.1 := by
+  rw [interlacingWeights, Finset.mem_preimage, mem_interlacingFinset]
+
 namespace GTPattern
 
 /-! ### The branching recursion -/
@@ -134,6 +153,73 @@ theorem card_topRow_succ (l : Fin (n + 1) → ℤ) :
       = ∑ m ∈ interlacingFinset l, Nat.card {Q : GTPattern n // Q.topRow = m} := by
   rw [Nat.card_congr (truncateSigmaEquiv l), Nat.card_sigma]
   exact Finset.sum_attach (interlacingFinset l) fun m => Nat.card {Q : GTPattern n // Q.topRow = m}
+
+/-! ### The branching recursion, indexed by dominant weights -/
+
+/-- The top weight of the truncation of a pattern interlaces the top weight of the pattern. -/
+theorem topWeight_truncate_mem_interlacingWeights (P : GTPattern (n + 1)) :
+    P.truncate.topWeight ∈ interlacingWeights P.topWeight := by
+  rw [mem_interlacingWeights, topWeight_coe, topWeight_coe]
+  exact P.interlaces_topRow_truncate
+
+/-- Two sigma-type points built from equal patterns are equal. -/
+private theorem sigma_mk_topWeight_eq {l : DominantWeight (n + 1)} {Q Q' : GTPattern n}
+    (h : Q' = Q) (h' : Q'.topWeight ∈ interlacingWeights l)
+    (hQ : Q.topWeight ∈ interlacingWeights l) :
+    (⟨⟨Q'.topWeight, h'⟩, ⟨Q', rfl⟩⟩ :
+      Σ m : interlacingWeights l, {Q : GTPattern n // Q.topWeight = m}) =
+        ⟨⟨Q.topWeight, hQ⟩, ⟨Q, rfl⟩⟩ := by
+  subst h
+  rfl
+
+/-- **The patterns with top weight `λ`, sorted by the dominant weight of their second row.**
+Deleting the top row identifies them with the patterns with one row fewer whose top weight
+interlaces `λ`. This is `TauCeti.GTPattern.truncateSigmaEquiv` indexed by the dominant weights
+`TauCeti.interlacingWeights λ`, the index set of the branching `GL (n + 1) ↓ GL n`. -/
+def truncateTopWeightSigmaEquiv (l : DominantWeight (n + 1)) :
+    {P : GTPattern (n + 1) // P.topWeight = l} ≃
+      Σ m : interlacingWeights l, {Q : GTPattern n // Q.topWeight = m} where
+  toFun P := ⟨⟨P.1.truncate.topWeight, by
+      have h := P.1.topWeight_truncate_mem_interlacingWeights
+      rwa [P.2] at h⟩,
+    ⟨P.1.truncate, rfl⟩⟩
+  invFun x := ⟨x.2.1.extend l.1 (by
+      rw [← topWeight_coe, x.2.2]
+      exact mem_interlacingWeights.mp x.1.2),
+    Subtype.ext (by rw [topWeight_coe, topRow_extend])⟩
+  left_inv P := by
+    obtain ⟨P, rfl⟩ := P
+    exact Subtype.ext (by simp only [topWeight_coe, extend_truncate])
+  right_inv := by
+    rintro ⟨⟨m, hm⟩, ⟨Q, hQ⟩⟩
+    obtain rfl : Q.topWeight = m := hQ
+    exact sigma_mk_topWeight_eq (truncate_extend _ _ _) _ _
+
+/-- `TauCeti.GTPattern.truncateTopWeightSigmaEquiv` sends a pattern to its truncation, indexed by
+the top weight of the truncation. -/
+theorem truncateTopWeightSigmaEquiv_apply (l : DominantWeight (n + 1))
+    (P : {P : GTPattern (n + 1) // P.topWeight = l})
+    (hm : P.1.truncate.topWeight ∈ interlacingWeights l) :
+    truncateTopWeightSigmaEquiv l P = ⟨⟨P.1.truncate.topWeight, hm⟩, ⟨P.1.truncate, rfl⟩⟩ :=
+  (rfl)
+
+@[simp]
+theorem truncateTopWeightSigmaEquiv_apply_fst_coe (l : DominantWeight (n + 1))
+    (P : {P : GTPattern (n + 1) // P.topWeight = l}) :
+    ((truncateTopWeightSigmaEquiv l P).1 : DominantWeight n) = P.1.truncate.topWeight :=
+  (rfl)
+
+@[simp]
+theorem truncateTopWeightSigmaEquiv_apply_snd_coe (l : DominantWeight (n + 1))
+    (P : {P : GTPattern (n + 1) // P.topWeight = l}) :
+    (truncateTopWeightSigmaEquiv l P).2.1 = P.1.truncate :=
+  (rfl)
+
+@[simp]
+theorem truncate_truncateTopWeightSigmaEquiv_symm_apply_coe (l : DominantWeight (n + 1))
+    (x : Σ m : interlacingWeights l, {Q : GTPattern n // Q.topWeight = m}) :
+    ((truncateTopWeightSigmaEquiv l).symm x).1.truncate = x.2.1 :=
+  truncate_extend _ _ _
 
 /-! ### Which sequences are top rows -/
 

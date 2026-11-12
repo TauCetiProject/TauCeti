@@ -348,21 +348,21 @@ private theorem pathEnd_mul_pathEnd {a b c : R} (p : Path a b) (q : Path c a) :
     pathEnd k σ ε ⟨a, b, p⟩ * pathEnd k σ ε ⟨c, a, q⟩ = pathEnd k σ ε ⟨c, b, q.comp p⟩ := by
   classical
   refine LinearMap.ext fun m => ?_
-  rw [Module.End.mul_apply, pathEnd_apply, pathEnd_apply, pathEnd_apply, pathMap_comp,
+  rw [mul_apply_eq_comp, pathEnd_apply, pathEnd_apply, pathEnd_apply, pathMap_comp,
     Pi.single_eq_same, LinearMap.comp_apply]
 
 private theorem pathEnd_mul_pathEnd_of_ne {x y : TauCeti.Quiver.TotalPath R} (h : y.2.1 ≠ x.1) :
     pathEnd k σ ε x * pathEnd k σ ε y = 0 := by
   classical
   refine LinearMap.ext fun m => ?_
-  rw [Module.End.mul_apply, pathEnd_apply, pathEnd_apply, Pi.single_eq_of_ne h.symm, map_zero,
+  rw [mul_apply_eq_comp, pathEnd_apply, pathEnd_apply, Pi.single_eq_of_ne h.symm, map_zero,
     Pi.single_zero, LinearMap.zero_apply]
 
 private theorem sum_pathEnd_nil : ∑ v : R, pathEnd k σ ε ⟨v, v, Path.nil⟩ = 1 := by
   classical
   refine LinearMap.ext fun m => ?_
   simp only [LinearMap.sum_apply, pathEnd_apply, pathMap, LinearMap.id_apply,
-    Module.End.one_apply, Finset.univ_sum_single]
+    one_apply_eq_self, Finset.univ_sum_single]
 
 /-- The action of the path algebra. -/
 private noncomputable def toEnd : pathAlgebra k R →ₐ[k] Module.End k (Vec k R) :=
@@ -418,7 +418,7 @@ private theorem toEnd_sum_ofArrow_mul (hσ : ∀ v, σ (σ v).1 ≠ Quiver.Star.
   classical
   refine LinearMap.ext fun m => ?_
   have h := LinearMap.congr_fun (sum_arrowMap_comp_arrowMap_reverse k hσ hε u) (m u)
-  simp only [map_sum, map_mul, map_smul, LinearMap.sum_apply, Module.End.mul_apply,
+  simp only [map_sum, map_mul, map_smul, LinearMap.sum_apply, mul_apply_eq_comp,
     LinearMap.smul_apply, toEnd_ofArrow_apply, Pi.single_eq_same, LinearMap.zero_apply]
   simp only [LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.comp_apply,
     LinearMap.zero_apply, Fintype.sum_sigma] at h
@@ -563,13 +563,13 @@ theorem map_ofArrow_mul_eq_zero_iff_of_ne_reverse (v : R) {y : A}
   set m := toEnd k σ ε (vertexIdempotent k v * f) (unitVec k R) with hm_def
   have hm : m = Pi.single v (m v) := by
     have hm' : m = Pi.single v (toEnd k σ ε f (unitVec k R) v) := by
-      rw [hm_def, map_mul, Module.End.mul_apply, toEnd_vertexIdempotent_apply]
+      rw [hm_def, map_mul, mul_apply_eq_comp, toEnd_vertexIdempotent_apply]
     rw [hm', Pi.single_eq_same]
   have hmv : m v = 0 := by
     have h0 : π (ofArrow (σ v).2 * (vertexIdempotent k v * f)) = 0 := by
       rw [map_mul, map_mul, hy, h]
     have h1 := LinearMap.congr_fun (hker _ h0) (unitVec k R)
-    rw [map_mul, Module.End.mul_apply, ← hm_def, LinearMap.zero_apply, toEnd_ofArrow_apply,
+    rw [map_mul, mul_apply_eq_comp, ← hm_def, LinearMap.zero_apply, toEnd_ofArrow_apply,
       Pi.single_eq_zero_iff] at h1
     -- `α_v` is not a `β`, so it acts by appending.
     have hα := LinearMap.congr_fun (arrowMap_eq_append k σ ε _ (sigma_chosenArrow_ne hσ v)) (m v)

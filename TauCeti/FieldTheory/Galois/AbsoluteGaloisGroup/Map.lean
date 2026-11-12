@@ -41,6 +41,8 @@ groups transport between isomorphic fields.
 ## Main definitions
 
 * `TauCeti.absoluteGaloisGroupMap τ`: the continuous homomorphism `G_L →ₜ* G_K` along `τ`.
+* `TauCeti.compSeparableClosure τ τ'`: the composite `Kˢ → Lˢ → Mˢ` of embeddings of separable
+  closures in a tower `K → L → M`.
 * `TauCeti.absoluteGaloisGroupMapEquiv e`: for an isomorphism of fields `e : K ≃+* L`, Mathlib's
   map `Field.absoluteGaloisGroup.map e` as an isomorphism `G_L ≃ₜ* G_K`.
 
@@ -48,9 +50,11 @@ groups transport between isomorphic fields.
 
 * `TauCeti.absoluteGaloisGroupMap_commutes`: `τ (absoluteGaloisGroupMap τ g x) = g (τ x)`.
 * `TauCeti.absoluteGaloisGroupMap_comp`: changing `τ` by an automorphism `h` of `Kˢ` conjugates
-  the map by `h`.
+  the map by `h`, so a character of `G_K` takes the same values along every `τ`
+  (`AddMonoidHom.map_ofMul_absoluteGaloisGroupMap_eq`).
 * `TauCeti.absoluteGaloisGroupMap_absoluteGaloisGroupMap`: the maps are compatible with
-  composition of extensions.
+  composition of extensions, and `TauCeti.absoluteGaloisGroupMap_compSeparableClosure` for the
+  composite embedding.
 * `TauCeti.absoluteGaloisGroup_mapOfAlgebra_commutes`: Mathlib's map
   `Field.absoluteGaloisGroup.mapOfAlgebra K L g` is intertwined with `g` by the embedding of
   algebraic closures.
@@ -118,6 +122,17 @@ theorem absoluteGaloisGroupMap_comp (h : AbsoluteGaloisGroup K) (g : AbsoluteGal
       h⁻¹ * absoluteGaloisGroupMap τ g * h :=
   τ.restrictNormalHom_comp h _
 
+/-- **A character does not see the choice of embedding**: a homomorphism from `G_K` to a
+commutative group, written additively, takes the same value on the images of `g ∈ G_L` along any
+two embeddings `τ, τ' : Kˢ →ₐ[K] Lˢ`, because the two maps differ by conjugation. -/
+theorem _root_.AddMonoidHom.map_ofMul_absoluteGaloisGroupMap_eq {A : Type*} [AddCommGroup A]
+    (f : Additive (AbsoluteGaloisGroup K) →+ A) (τ τ' : SeparableClosure K →ₐ[K] SeparableClosure L)
+    (g : AbsoluteGaloisGroup L) :
+    f (.ofMul (absoluteGaloisGroupMap τ' g)) = f (.ofMul (absoluteGaloisGroupMap τ g)) := by
+  obtain ⟨h, rfl⟩ := τ.exists_comp_eq_of_normal τ'
+  simp only [absoluteGaloisGroupMap_comp, ofMul_mul, ofMul_inv, map_add, map_neg]
+  abel
+
 /-- **The maps are compatible with composition of extensions** `K → L → M`: if `τ'' : Kˢ → Mˢ`
 is the composite of `τ : Kˢ → Lˢ` and `τ' : Lˢ → Mˢ`, the map `G_M → G_K` along `τ''` is the
 composite of the maps `G_M → G_L → G_K`. -/
@@ -128,6 +143,34 @@ theorem absoluteGaloisGroupMap_absoluteGaloisGroupMap {M : Type*} [Field M] [Alg
     absoluteGaloisGroupMap τ (absoluteGaloisGroupMap τ' g) = absoluteGaloisGroupMap τ'' g := by
   refine ((absoluteGaloisGroupMap_eq_iff τ'').2 fun x ↦ ?_).symm
   rw [hτ, hτ, absoluteGaloisGroupMap_commutes, absoluteGaloisGroupMap_commutes]
+
+section Tower
+
+variable {M : Type*} [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
+  (τ' : SeparableClosure L →ₐ[L] SeparableClosure M)
+
+/-- **The composite embedding `Kˢ → Lˢ → Mˢ`** of separable closures in a tower `K → L → M`:
+`τ' : Lˢ →ₐ[L] Mˢ` is in particular `K`-linear, so it composes with `τ : Kˢ →ₐ[K] Lˢ`. -/
+def compSeparableClosure : SeparableClosure K →ₐ[K] SeparableClosure M :=
+  have : IsScalarTower K L (SeparableClosure M) := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply K M (SeparableClosure M),
+      IsScalarTower.algebraMap_apply K L M, ← IsScalarTower.algebraMap_apply L M]
+  (τ'.restrictScalars K).comp τ
+
+/-- `compSeparableClosure τ τ'` applies `τ` and then `τ'`. -/
+@[simp]
+theorem compSeparableClosure_apply (x : SeparableClosure K) :
+    compSeparableClosure τ τ' x = τ' (τ x) := by
+  rfl
+
+/-- The map `G_M → G_K` along `compSeparableClosure τ τ'` is the composite of the maps
+`G_M → G_L → G_K` along `τ'` and `τ`. -/
+theorem absoluteGaloisGroupMap_compSeparableClosure (g : AbsoluteGaloisGroup M) :
+    absoluteGaloisGroupMap (compSeparableClosure τ τ') g =
+      absoluteGaloisGroupMap τ (absoluteGaloisGroupMap τ' g) :=
+  (absoluteGaloisGroupMap_absoluteGaloisGroupMap τ τ' _ (compSeparableClosure_apply τ τ') g).symm
+
+end Tower
 
 /-! ### Mathlib's map along algebraic closures -/
 
@@ -184,10 +227,7 @@ theorem bijective_absoluteGaloisGroup_mapOfAlgebra (h : Function.Bijective (alge
 
 end MapOfAlgebra
 
-section Isomorphism
-
-omit [Algebra K L]
-
+omit [Algebra K L] in
 /-- **Along a bijective ring homomorphism the map of absolute Galois groups is bijective**, for
 any choice of embedding of algebraic closures made by `Field.absoluteGaloisGroup.map`. -/
 theorem bijective_absoluteGaloisGroup_map {f : K →+* L} (hf : Function.Bijective f) :
@@ -197,6 +237,7 @@ theorem bijective_absoluteGaloisGroup_map {f : K →+* L} (hf : Function.Bijecti
     (IsAlgClosed.lift : AlgebraicClosure K →ₐ[K] AlgebraicClosure L).toAlgebra
   bijective_absoluteGaloisGroup_mapOfAlgebra hf
 
+omit [Algebra K L] in
 /-- **The isomorphism of absolute Galois groups induced by an isomorphism of fields**
 `e : K ≃+* L`: Mathlib's continuous map `Field.absoluteGaloisGroup.map e : G_L → G_K`, which is
 bijective (`bijective_absoluteGaloisGroup_map`) and hence a homeomorphism, as `G_L` is compact
@@ -213,12 +254,11 @@ def absoluteGaloisGroupMapEquiv (e : K ≃+* L) :
       (bijective_absoluteGaloisGroup_map e.bijective)).toEquiv)
     (Field.absoluteGaloisGroup.map e.toRingHom).continuous
 
+omit [Algebra K L] in
 /-- `absoluteGaloisGroupMapEquiv e` is Mathlib's map `Field.absoluteGaloisGroup.map e`. -/
 @[simp]
 theorem absoluteGaloisGroupMapEquiv_apply (e : K ≃+* L) (g : Field.absoluteGaloisGroup L) :
     absoluteGaloisGroupMapEquiv e g = Field.absoluteGaloisGroup.map e.toRingHom g :=
   (rfl)
-
-end Isomorphism
 
 end TauCeti

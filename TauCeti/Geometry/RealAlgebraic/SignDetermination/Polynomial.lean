@@ -88,12 +88,11 @@ theorem mulVec_signCount {K : Type*} [CommRing K] {J C I : Type*} [Fintype J]
     Function.mulVec_occCount _ columns hinj (fun x : Z => cover x.val x.property)
       (fun i σ => ∏ j, (σ j : K) ^ rows i j)
 
-/-- A left inverse recovers polynomial sign counts for injective candidate columns
+/-- A left inverse recovers polynomial sign counts for candidate columns
 covering every sample point. Coverage is a separate hypothesis from the matrix identity. -/
 theorem eq_signCount {K : Type*} [CommRing K] {J C I : Type*}
     [Fintype J] [Fintype C] [DecidableEq C] [Fintype I]
     (Z : Finset R) (Q : J → R[X]) (columns : C → (J → SignType)) (rows : I → J → ℕ)
-    (hinj : Function.Injective columns)
     (cover : ∀ x ∈ Z, ∃ c, columns c = fun j => sign ((Q j).eval x))
     (A : Matrix C I K)
     (hA : A * (Matrix.of fun i c => ∏ j, (columns c j : K) ^ rows i j) = 1)
@@ -103,18 +102,17 @@ theorem eq_signCount {K : Type*} [CommRing K] {J C I : Type*}
     proposed = fun c => (signCount Z Q (columns c) : K) := by
   simp_rw [signSum_prod_pow] at hsolve
   simpa only [signCount_eq_occCount] using
-    Function.eq_occCount (fun x : Z => fun j => sign ((Q j).eval x.val)) columns hinj
+    Function.eq_occCount (fun x : Z => fun j => sign ((Q j).eval x.val)) columns
       (fun x => cover x.val x.property) (fun i σ => ∏ j, (σ j : K) ^ rows i j)
       A hA proposed hsolve
 
-/-- Given a left inverse of the moment matrix and injective candidate columns
+/-- Given a left inverse of the moment matrix and candidate columns
 covering every sample point, positive entries of a solved polynomial moment system
 are exactly its realizable sign conditions. -/
 theorem signCount_solution_pos_iff {K : Type*} [CommRing K] [PartialOrder K]
     [IsOrderedRing K] [Nontrivial K] {J C I : Type*}
     [Fintype J] [Fintype C] [DecidableEq C] [Fintype I]
     (Z : Finset R) (Q : J → R[X]) (columns : C → (J → SignType)) (rows : I → J → ℕ)
-    (hinj : Function.Injective columns)
     (cover : ∀ x ∈ Z, ∃ c, columns c = fun j => sign ((Q j).eval x))
     (A : Matrix C I K)
     (hA : A * (Matrix.of fun i c => ∏ j, (columns c j : K) ^ rows i j) = 1)
@@ -122,7 +120,7 @@ theorem signCount_solution_pos_iff {K : Type*} [CommRing K] [PartialOrder K]
     (hsolve : (Matrix.of fun i c => ∏ j, (columns c j : K) ^ rows i j) *ᵥ proposed =
       fun i => (signSum Z (∏ j, Q j ^ rows i j) : K)) (c : C) :
     0 < proposed c ↔ ∃ x ∈ Z, ∀ j, sign ((Q j).eval x) = columns c j := by
-  rw [eq_signCount Z Q columns rows hinj cover A hA proposed hsolve]
+  rw [eq_signCount Z Q columns rows cover A hA proposed hsolve]
   simp only [Nat.cast_pos, signCount_pos]
 
 /-- All ternary moments determine the exact multiplicity of every sign pattern. -/

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
 public import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
+import TauCeti.AlgebraicGeometry.Curves.Smooth
 
 /-!
 # Two affine opens covering a regular proper curve
@@ -69,9 +70,7 @@ theorem exists_two_affine_opens_of_smooth (X : Scheme.{u}) [X.Over (Spec (.of k)
   have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
     isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
   have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
-  have : X.IsCurveOver k :=
-    { topologicalKrullDim_eq_one :=
-        topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k)) }
+  have := IsCurveOver.of_smooth k X
   exact X.exists_two_affine_opens (k := k)
 
 end AlgebraicGeometry.Scheme

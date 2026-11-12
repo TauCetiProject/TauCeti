@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+-- Private: `CliffordAlgebra.contractLeft_prod_map_ι_eq_zero` is used only inside a proof.
+import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 
 /-!
 # Exterior creation and contraction generate all endomorphisms
@@ -17,10 +19,6 @@ the full endomorphism algebra of its exterior algebra.
 
 * `TauCeti.ExteriorAlgebra.creation_contraction_adjoin_eq_top`: creation and contraction generate
   every endomorphism.
-
-## References
-
-* [Spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md)
 -/
 
 public section
@@ -107,7 +105,7 @@ private theorem listProd_basisFactor_apply {n : ℕ}
   induction l with
   | nil => simp
   | cons i l ih =>
-      rw [List.map_cons, List.prod_cons, Module.End.mul_apply, ih, map_smul,
+      rw [List.map_cons, List.prod_cons, mul_apply_eq_comp, ih, map_smul,
         basisFactor_apply]
       simp
 
@@ -196,7 +194,7 @@ private theorem create_basis_empty {n : ℕ} (b : Module.Basis (Fin n) K W)
         (xs.map fun i ↦ ExteriorAlgebra.ι K (b i)).prod := by
     induction xs with
     | nil => simp
-    | cons i xs ih => simp [ih, Module.End.mul_apply]
+    | cons i xs ih => simp [ih, mul_apply_eq_comp]
   rw [hmap]
   -- Expose the `ιMulti` family underlying the exterior basis vector.
   change _ = ExteriorAlgebra.ιMulti K s.card
@@ -212,19 +210,14 @@ private theorem contractLeft_listProd_eq_zero_of_not_mem {n : ℕ}
     (b : Module.Basis (Fin n) K W) (i : Fin n) (xs : List (Fin n)) (hi : i ∉ xs) :
     CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm K W)) (b.coord i)
       (xs.map fun j ↦ ExteriorAlgebra.ι K (b j)).prod = 0 := by
-  induction xs with
-  | nil => exact CliffordAlgebra.contractLeft_one (Q := (0 : QuadraticForm K W)) (b.coord i)
-  | cons j xs ih =>
-      rw [List.map_cons, List.prod_cons, CliffordAlgebra.contractLeft_ι_mul]
-      have hij : i ≠ j := by
-        intro h
-        exact hi (by simp [h])
-      have hit : i ∉ xs := by
-        intro h
-        exact hi (by simp [h])
-      simp only [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply]
-      simp only [ite_eq_right hij.symm]
-      rw [zero_smul, ih hit, mul_zero, sub_zero]
+  have h := CliffordAlgebra.contractLeft_prod_map_ι_eq_zero (Q := 0) (b.coord i) (l := xs.map b)
+    fun m hm ↦ by
+      obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hm
+      rw [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply,
+        ite_eq_right_iff]
+      rintro rfl
+      exact absurd hj hi
+  rwa [List.map_map] at h
 
 private theorem annihilate_listProd_self {n : ℕ}
     (b : Module.Basis (Fin n) K W) (xs : List (Fin n)) (hxs : xs.Nodup) :
@@ -235,7 +228,7 @@ private theorem annihilate_listProd_self {n : ℕ}
   | nil => simp
   | cons i xs ih =>
       simp only [List.map_cons, List.reverse_cons, List.prod_append, List.prod_cons,
-        Module.End.mul_apply]
+        mul_apply_eq_comp]
       -- Expose application of the bundled endomorphism product.
       change (xs.map fun i ↦ (CliffordAlgebra.contractLeft
         (Q := (0 : QuadraticForm K W)) (b.coord i) : Module.End K _)).reverse.prod
@@ -294,7 +287,7 @@ private theorem matrixUnit_basis {n : ℕ} (b : Module.Basis (Fin n) K W)
     (s t u : Finset (Fin n)) :
     matrixUnit b s t (b.ExteriorAlgebra u) =
       if t = u then b.ExteriorAlgebra s else 0 := by
-  rw [matrixUnit, Module.End.mul_apply, Module.End.mul_apply, basisProjection_basis]
+  rw [matrixUnit, mul_apply_eq_comp, mul_apply_eq_comp, basisProjection_basis]
   split_ifs with h
   · subst u
     rw [annihilate_basis_self, create_basis_empty]

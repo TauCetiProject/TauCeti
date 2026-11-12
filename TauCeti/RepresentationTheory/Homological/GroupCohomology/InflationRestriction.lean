@@ -48,6 +48,7 @@ extensions `K ⊆ L ⊆ M`, where `Gal(M/L) → Gal(M/K) → Gal(L/K)` and the u
 * `TauCeti.groupCohomology.natCard_groupCohomology_succ_dvd_mul`: the order of `Hⁿ⁺¹(G, A)` divides
   the product of the orders of `Hⁿ⁺¹(G ⧸ S, A^S)` and `Hⁿ⁺¹(S, A)`.
 * `TauCeti.groupCohomology.map_succ_injective`,
+  `TauCeti.groupCohomology.map_succ_injective_of_extension`,
   `TauCeti.groupCohomology.range_map_succ_eq_ker_map_succ`: injectivity and exactness for an
   extension `1 → H → G → Q → 1`.
 
@@ -161,7 +162,8 @@ theorem natCard_groupCohomology_succ_dvd_mul (n : ℕ)
   -- the middle term of an exact sequence of modules, counted through its underlying groups
   have key (T : ShortComplex (ModuleCat k)) (hT : T.Exact) :
       Nat.card T.X₂ ∣ Nat.card T.X₁ * Nat.card T.X₃ :=
-    AddMonoidHom.card_dvd_card_mul_card_of_exact T.f.hom.toAddMonoidHom T.g.hom.toAddMonoidHom <| by
+    AddMonoidHom.card_dvd_card_mul_card_of_ker_le_range T.f.hom.toAddMonoidHom
+      T.g.hom.toAddMonoidHom <| ge_of_eq <| by
       rw [← LinearMap.range_toAddSubgroup, ← LinearMap.ker_toAddSubgroup, hT.moduleCat_range_eq_ker]
   exact key _ (HInfRes_exact A n hA)
 
@@ -240,6 +242,16 @@ theorem map_succ_injective (n : ℕ)
   -- (`HInfRes_f`).
   exact ((ModuleCat.mono_iff_injective _).1 (mono_HInfRes_f A n hA)).comp
     (quotientIso hπ hφ hφA (n + 1)).toLinearEquiv.injective
+
+include hπ hφ hφA hι hιπ hψ in
+/-- **Inflation along a group extension is injective.** Let `1 → H → G → Q → 1` be exact, given
+by `ι` and `π`, let `φ : B ⟶ A` identify the `Q`-representation `B` with the invariants of `A`
+under `ker π`, and let `ψ : A ⟶ C` identify `A`, restricted to `H`, with `C`. If `Hⁱ(H, C) = 0` for
+`0 < i ≤ n`, then inflation `Hⁿ⁺¹(Q, B) ⟶ Hⁿ⁺¹(G, A)` is injective. -/
+theorem map_succ_injective_of_extension (n : ℕ)
+    (hC : ∀ i < n, IsZero (groupCohomology C (i + 1))) :
+    Function.Injective (map π φ (n + 1)).hom :=
+  map_succ_injective hπ hφ hφA n fun i hi => (hC i hi).of_iso (kerIso hι hιπ hψ (i + 1))
 
 include hπ hφ hφA hι hιπ hψ in
 /-- **The inflation-restriction sequence of a group extension.** Let `1 → H → G → Q → 1` be exact,

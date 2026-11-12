@@ -13,26 +13,19 @@ public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 /-!
 # The probabilists' Hermite polynomials over `ℝ`
 
-Mathlib defines `Polynomial.hermite` in `ℤ[X]`. Every analytic consumer in this library wants the
-same family in `ℝ[X]`, and each of them was spelling the cast out inline as
-`(hermite n).map (Int.castRingHom ℝ)`, re-deriving `eval` and `degree` facts about it at the point
-of use. This file gives that cast a name and states those two facts once.
-
-It deliberately sits beside
-`TauCeti/RingTheory/Polynomial/Hermite/Derivative.lean` rather than in any analysis or probability
-file: the definition mentions no measure, no inner product space, and no Gaussian, so putting it
-here is what lets the *earlier* function-side files import it. A copy living in a Gaussian leaf
-file would be unreachable from exactly the places that need it.
+Mathlib defines the probabilists' Hermite polynomials `Polynomial.hermite n` in `ℤ[X]`. Analytic
+statements about them (Hermite functions, Gaussian `L²` bases) need the same family as real
+polynomials. This file names the image of `Hₙ` in `ℝ[X]` and records how it evaluates and that it
+keeps degree `n`. Nothing here involves a measure or an inner product.
 
 ## Main definitions
 
-* `TauCeti.hermiteℝ` — `Hₙ` cast into `ℝ[X]`.
+* `TauCeti.hermiteℝ` — `Hₙ` mapped into `ℝ[X]`.
 
 ## Main statements
 
-* `TauCeti.eval_hermiteℝ` — evaluation agrees with `aeval` against the integer polynomial.
-* `TauCeti.degree_hermiteℝ` — the cast preserves degrees, so `Hₙ` has degree exactly `n`. This is
-  the exact-degree hypothesis that the polynomial-completeness machinery consumes.
+* `TauCeti.eval_hermiteℝ` — evaluating `hermiteℝ n` at `x` is `aeval x (hermite n)`.
+* `TauCeti.degree_hermiteℝ` — `hermiteℝ n` has degree exactly `n`.
 -/
 
 public section
@@ -41,20 +34,18 @@ namespace TauCeti
 
 open Polynomial
 
-/-- `Hₙ` over `ℝ`: Mathlib's `Polynomial.hermite n` lives in `ℤ[X]`, and the analytic consumers
-in this library take a real polynomial family. -/
+/-- The probabilists' Hermite polynomial `Hₙ` as a real polynomial: the image of Mathlib's
+`Polynomial.hermite n ∈ ℤ[X]` under the cast `ℤ → ℝ`. -/
 noncomputable def hermiteℝ (n : ℕ) : Polynomial ℝ := (hermite n).map (Int.castRingHom ℝ)
 
+/-- Evaluating `hermiteℝ n` at a real `x` is evaluating the integer polynomial `Hₙ` at `x`. -/
 @[simp]
 theorem eval_hermiteℝ (n : ℕ) (x : ℝ) : (hermiteℝ n).eval x = aeval x (hermite n) := by
-  rw [hermiteℝ, Polynomial.eval_map, Polynomial.aeval_def]
-  rfl
+  rw [hermiteℝ, ← algebraMap_int_eq, eval_map_algebraMap]
 
-/-- The cast to `ℝ[X]` preserves degrees: `Hₙ` has degree exactly `n`.
-
-Marked `@[simp]`, matching Mathlib's own `Polynomial.degree_hermite`. -/
+/-- `hermiteℝ n` has degree exactly `n`, as `Hₙ` does in `ℤ[X]`. -/
 @[simp]
 theorem degree_hermiteℝ (n : ℕ) : (hermiteℝ n).degree = (n : WithBot ℕ) := by
-  rw [hermiteℝ, Polynomial.degree_map_eq_of_injective Int.cast_injective, Polynomial.degree_hermite]
+  rw [hermiteℝ, degree_map_eq_of_injective Int.cast_injective, degree_hermite]
 
 end TauCeti

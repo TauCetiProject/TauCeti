@@ -52,6 +52,8 @@ Hopf-ideal APIs.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory WithConv
 
 namespace TauCeti.CommHopfAlgCat
@@ -179,6 +181,15 @@ theorem isIso_iff_kernelHopfIdeal_eq_augmentation (hf : IsIsogeny f) :
 theorem finiteType (hf : IsIsogeny f) : f.hom.toAlgHom.FiniteType :=
   hf.finite.finiteType
 
+/-- Finite type over the base passes from the domain to the codomain of an isogeny's
+coordinate map. -/
+theorem finiteType_target (hf : IsIsogeny f) [Algebra.FiniteType R H] :
+    Algebra.FiniteType R K := by
+  apply RingHom.finiteType_algebraMap.mp
+  rw [← f.hom.toAlgHom.comp_algebraMap]
+  exact RingHom.FiniteType.comp hf.finiteType
+    (RingHom.finiteType_algebraMap.mpr inferInstance)
+
 /-- A composite of isogenies is an isogeny. -/
 theorem comp {f : H ⟶ K} {g : K ⟶ L} (hf : IsIsogeny f) (hg : IsIsogeny g) :
     IsIsogeny (f ≫ g) := by
@@ -282,7 +293,7 @@ theorem isCentralIsogeny_id (H : _root_.CommHopfAlgCat.{v} R) :
 /-- An isogeny is surjective on points valued in an algebraically closed field. -/
 theorem IsIsogeny.mapPointsFunctor_app_surjective (hf : IsIsogeny f)
     (F : Type w) [Field F] [Algebra R F] [IsAlgClosed F] :
-    Function.Surjective ((mapPointsFunctor f).app (CommAlgCat.of R F)) :=
+    Function.Surjective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of R F)) :=
   mapPointsFunctor_app_surjective_of_faithfullyFlat F f hf.finiteType hf.faithfullyFlat
 
 end TauCeti.CommHopfAlgCat

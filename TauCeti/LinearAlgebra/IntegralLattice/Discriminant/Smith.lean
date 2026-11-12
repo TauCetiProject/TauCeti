@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
-public import TauCeti.LinearAlgebra.Matrix.SmithNormalForm
+public import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
 import TauCeti.Algebra.Module.Submodule.Quotient
 
 /-!

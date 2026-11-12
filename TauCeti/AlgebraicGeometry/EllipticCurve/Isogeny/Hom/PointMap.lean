@@ -216,11 +216,7 @@ class-group point map**, both sending `P` to the point under it. In particular i
 in the point there. -/
 theorem pointMap_ofIsogeny_eq_toPointHom [IsSepClosed F]
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] (P : W₁.Point) :
-    haveI := W₂.isIntegrallyClosed_coordinateRing
     (ofIsogeny φ).pointMap P = φ.toPointHom P := by
-  have := W₁.isIntegrallyClosed_coordinateRing
-  have := W₂.isIntegrallyClosed_coordinateRing
-  have := W₂.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback fun _ ↦ rfl
   have := φ.finiteDimensional_functionField fun _ ↦ rfl

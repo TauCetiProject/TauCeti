@@ -15,7 +15,9 @@ import TauCeti.NumberTheory.Padics.PadicIntegers
 The scale and norm ideals of the integral form on `ℤ_p ⊗[ℤ] L` are the extensions to `ℤ_p`
 of the corresponding ideals of `L`. In particular, their generators can be read directly from
 an integral Gram matrix. At an odd prime the ideals coincide, because `2` is a unit; at the
-dyadic prime their difference distinguishes the parity types of unimodular Jordan blocks.
+dyadic prime their difference distinguishes the parity types of unimodular Jordan blocks. In
+particular a lattice is even exactly when its dyadic localization is
+(`TauCeti.IntegralLattice.isEven_iff_forall_two_dvd_localIntegralForm_apply_self`).
 
 These are ideals of the integral localization, not of the completed rational space.
 
@@ -67,5 +69,23 @@ theorem isEven_iff_localNormIdeal_le_span_two :
     simpa using (PadicInt.pow_p_dvd_int_iff (p := 2) 1 z)
   rw [L.isEven_iff_normIdeal_le_span_singleton_two, L.localNormIdeal_eq_map 2,
     Ideal.map_le_iff_le_comap, hcomap]
+
+/-- **Evenness is detected by the dyadic localization.** A lattice is even exactly when every value
+`B(x, x)` of its localized integral form at `2` is divisible by `2` in `ℤ_[2]`. -/
+theorem isEven_iff_forall_two_dvd_localIntegralForm_apply_self :
+    L.IsEven ↔ ∀ x : L.LocalCarrier 2, (2 : ℤ_[2]) ∣ L.localIntegralForm 2 x x := by
+  simp only [L.isEven_iff_localNormIdeal_le_span_two, LinearMap.BilinForm.normIdeal_le_iff,
+    Ideal.mem_span_singleton]
+
+variable {L p} in
+/-- **The localizations of an even lattice are even.** Every value `B(x, x)` of the localized
+integral form of an even lattice at a prime `p` is divisible by `2` in `ℤ_[p]`. -/
+theorem IsEven.two_dvd_localIntegralForm_apply_self (heven : L.IsEven)
+    (x : L.LocalCarrier p) : (2 : ℤ_[p]) ∣ L.localIntegralForm p x x := by
+  have h : L.localNormIdeal p ≤ Ideal.span {(2 : ℤ_[p])} := by
+    rw [localNormIdeal_eq_map]
+    refine (Ideal.map_mono (L.isEven_iff_normIdeal_le_span_singleton_two.mp heven)).trans ?_
+    rw [Ideal.map_span, Set.image_singleton, map_ofNat]
+  exact Ideal.mem_span_singleton.mp (h ((L.localIntegralForm p).self_mem_normIdeal x))
 
 end TauCeti.IntegralLattice

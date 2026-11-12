@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.Derivative
+public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.Data.Finsupp.Fin
 
 /-!
@@ -30,9 +31,13 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 
 * `MvPolynomial.finSuccEquiv'_X_self`, `MvPolynomial.finSuccEquiv'_rename_succAbove`: the
   singled-out variable goes to the polynomial variable, and the others are constants.
+* `MvPolynomial.finSuccEquiv'_symm_apply`: the inverse renames the coefficients along
+  `p.succAbove` and evaluates the polynomial variable at `X p`.
 * `MvPolynomial.polynomial_eval_finSuccEquiv'`: evaluating the polynomial variable at `a`
   substitutes `a` for `X p`.
 * `MvPolynomial.finSuccEquiv'_zero`: for `p = 0` this is Mathlib's `MvPolynomial.finSuccEquiv`.
+* `MvPolynomial.degreeOf_eval_C_finSuccEquiv_le`: specializing `X₀ = a` via `finSuccEquiv` bounds
+  the degree in `Xⱼ` by `P.degreeOf j.succ`.
 * `MvPolynomial.finSuccEquiv'_map`, `MvPolynomial.finSuccEquiv_map`: singling out a variable
   commutes with mapping the coefficients along a ring homomorphism.
 * `MvPolynomial.polynomial_eval_map_finSuccEquiv'`, `MvPolynomial.polynomial_eval_map_finSuccEquiv`:
@@ -50,7 +55,11 @@ Dually, the last variable `Xₙ` can be moved into the coefficients instead, thr
 The coefficient of `Xᵘ` then has as its coefficient of `Xₙ ^ k` the coefficient of `f` at the
 exponent `Finsupp.snoc u k` (`MvPolynomial.optionEquivRight_rename_finSuccEquivLast_coeff_coeff`).
 This is the form used for Lazard evaluation, where the base variables are eliminated first and
-the last variable is kept.
+the last variable is kept. Specializing the base variables in this form gives the ordinary fibre
+`(optionEquivLeft R (Fin n) (rename finSuccEquivLast f)).map (eval α)`
+(`MvPolynomial.eval_optionEquivRight`), whose value at `β` is the value of `f` at `Fin.snoc α β`
+(`MvPolynomial.polynomial_eval_map_optionEquivLeft_rename_finSuccEquivLast`).
+
 -/
 
 public section
@@ -105,6 +114,15 @@ theorem finSuccEquiv'_symm_X (p : Fin (n + 1)) :
 theorem finSuccEquiv'_symm_C (p : Fin (n + 1)) (f : MvPolynomial (Fin n) R) :
     (finSuccEquiv' R p).symm (Polynomial.C f) = rename p.succAbove f :=
   (finSuccEquiv' R p).symm_apply_eq.mpr (finSuccEquiv'_rename_succAbove p f).symm
+
+/-- The inverse of `finSuccEquiv' R p` renames the coefficients along `p.succAbove` and then
+evaluates the polynomial variable at `X p`. -/
+theorem finSuccEquiv'_symm_apply (p : Fin (n + 1)) (f : Polynomial (MvPolynomial (Fin n) R)) :
+    (finSuccEquiv' R p).symm f = (f.map (rename p.succAbove).toRingHom).eval (X p) := by
+  rw [Polynomial.eval_map]
+  induction f using Polynomial.induction_on' with
+  | add f g hf hg => simp only [map_add, Polynomial.eval₂_add, hf, hg]
+  | monomial k a => simp [← Polynomial.C_mul_X_pow_eq_monomial]
 
 /-- Evaluating the singled-out variable at `a` is substituting `a` for `X p` and keeping the
 other variables. -/
@@ -187,6 +205,29 @@ theorem polynomial_eval_map_finSuccEquiv (φ : R →+* S) (s : Fin n → S) (y :
 
 end Map
 
+/-- Specializing `X₀ = a` via `finSuccEquiv` bounds the degree in `Xⱼ` by `P.degreeOf j.succ`. -/
+theorem degreeOf_eval_C_finSuccEquiv_le (a : R) (P : MvPolynomial (Fin (n + 1)) R) (j : Fin n) :
+    ((finSuccEquiv R n P).eval (C a)).degreeOf j ≤ P.degreeOf j.succ := by
+  rw [Polynomial.eval_eq_sum_range]
+  refine (degreeOf_sum_le j _ _).trans (Finset.sup_le fun i _ ↦ ?_)
+  rw [← map_pow]
+  exact (degreeOf_mul_C_le _ j _).trans (degreeOf_coeff_finSuccEquiv P j i)
+
+/-- Rotating the last variable to coordinate zero before singling it out is the same as
+singling out the last variable directly. This identifies the coordinate-zero convention for
+polynomial families with the last-coordinate convention for successive base specialization. -/
+theorem finSuccEquiv_rename_finRotate (f : MvPolynomial (Fin (n + 1)) R) :
+    finSuccEquiv R n (rename (finRotate (n + 1)) f) =
+      optionEquivLeft R (Fin n) (rename finSuccEquivLast f) := by
+  have h : (finSuccEquiv R n).toAlgHom.comp (rename (finRotate (n + 1))) =
+      (optionEquivLeft R (Fin n)).toAlgHom.comp (rename finSuccEquivLast) := by
+    apply algHom_ext
+    intro i
+    refine Fin.lastCases ?_ (fun j ↦ ?_) i
+    · simp [finSuccEquiv_X_zero, optionEquivLeft_X_none]
+    · simp [finSuccEquiv_X_succ, optionEquivLeft_X_some]
+  exact DFunLike.congr_fun h f
+
 /-- Moving the polynomial variable into the coefficient ring maps a constant multivariate
 polynomial by the univariate constant-coefficient homomorphism. -/
 theorem optionEquivRight_optionEquivLeft_symm_C {σ : Type*} (g : MvPolynomial σ R) :
@@ -199,6 +240,59 @@ theorem optionEquivRight_optionEquivLeft_symm_C {σ : Type*} (g : MvPolynomial �
   | mul_X p i hp =>
     simp only [map_mul, optionEquivLeft_symm_C_X,
       optionEquivRight_X_some, hp, map_X]
+
+/-- Moving the univariate variable into the coefficient ring commutes with specializing the
+multivariate variables, while retaining the univariate variable as a polynomial variable. -/
+theorem eval₂Hom_optionEquivRight_optionEquivLeft_symm {σ S : Type*} [CommSemiring S]
+    (f : R →+* S) (x : σ → S) (p : Polynomial (MvPolynomial σ R)) :
+    eval₂Hom (Polynomial.mapRingHom f) (Polynomial.C ∘ x)
+        (((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) p) =
+      p.map (eval₂Hom f x) := by
+  have hC (g : MvPolynomial σ R) :
+      eval₂Hom (Polynomial.mapRingHom f) (Polynomial.C ∘ x)
+          (((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) (Polynomial.C g)) =
+        Polynomial.C (eval₂Hom f x g) := by
+    rw [optionEquivRight_optionEquivLeft_symm_C, eval₂Hom_map_hom,
+      Polynomial.mapRingHom_comp_C]
+    exact (map_eval₂Hom f x Polynomial.C g).symm
+  have h : (eval₂Hom (Polynomial.mapRingHom f) (Polynomial.C ∘ x)).comp
+      ((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) =
+        Polynomial.mapRingHom (eval₂Hom f x) := by
+    apply Polynomial.ringHom_ext
+    · intro g
+      simpa only [RingHom.comp_apply, RingHom.coe_coe, Polynomial.coe_mapRingHom,
+        Polynomial.map_C] using hC g
+    · simp
+  exact RingHom.congr_fun h p
+
+/-- Moving the univariate variable into the coefficient ring and then taking constant
+coefficients of all coefficients recovers the constant coefficient in the univariate
+variable. -/
+theorem map_constantCoeff_optionEquivRight_optionEquivLeft_symm {σ : Type*}
+    (p : Polynomial (MvPolynomial σ R)) :
+    map Polynomial.constantCoeff (((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) p) =
+      p.coeff 0 := by
+  have hC : Polynomial.constantCoeff.comp (Polynomial.C : R →+* Polynomial R) = RingHom.id R := by
+    ext
+    simp
+  have h : (map (Polynomial.constantCoeff (R := R))).comp
+      ((optionEquivLeft R σ).symm.trans (optionEquivRight R σ) :
+        Polynomial (MvPolynomial σ R) →+* MvPolynomial σ (Polynomial R)) =
+        Polynomial.constantCoeff := by
+    apply Polynomial.ringHom_ext
+    · intro g
+      rw [RingHom.comp_apply, RingHom.coe_coe, optionEquivRight_optionEquivLeft_symm_C, map_map,
+        hC, map_id, Polynomial.constantCoeff_apply, Polynomial.coeff_C_zero]
+    · simp
+  exact RingHom.congr_fun h p
+
+/-- Moving the variable `none` into the coefficients with `optionEquivRight` and specializing the
+other variables at `x` gives the same univariate polynomial as singling out `none` with
+`optionEquivLeft` and specializing the coefficients at `x`. -/
+theorem eval_optionEquivRight {σ : Type*} (x : σ → R) (g : MvPolynomial (Option σ) R) :
+    eval (Polynomial.C ∘ x) (optionEquivRight R σ g) = (optionEquivLeft R σ g).map (eval x) := by
+  have h := eval₂Hom_optionEquivRight_optionEquivLeft_symm (RingHom.id R) x (optionEquivLeft R σ g)
+  rwa [AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply, Polynomial.mapRingHom_id] at h
 
 section Last
 
@@ -226,8 +320,18 @@ theorem optionEquivRight_rename_finSuccEquivLast_coeff_coeff (f : MvPolynomial (
       ite_and]
     split_ifs <;> simp [Polynomial.coeff_monomial, *]
   | add p q hp hq =>
-    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, Polynomial.coeff_add, hp,
-      hq]
+    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hp, hq]
+
+/-- Singling out the last variable, specializing the variables `X₀, …, Xₙ₋₁` at `α` and then
+evaluating the polynomial variable at `β` is evaluating at the point `Fin.snoc α β`. -/
+theorem polynomial_eval_map_optionEquivLeft_rename_finSuccEquivLast (α : Fin n → R) (β : R)
+    (f : MvPolynomial (Fin (n + 1)) R) :
+    ((optionEquivLeft R (Fin n) (rename finSuccEquivLast f)).map (eval α)).eval β =
+      eval (Fin.snoc α β) f := by
+  rw [← optionEquivLeft_elim_eval, eval_rename]
+  congr 2
+  funext i
+  cases i using Fin.lastCases <;> simp
 
 end Last
 

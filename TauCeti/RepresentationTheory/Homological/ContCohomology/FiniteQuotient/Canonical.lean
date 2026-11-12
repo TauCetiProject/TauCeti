@@ -122,6 +122,18 @@ theorem continuousFiniteQuotientPair_hom_apply (hVU : V ≤ U)
   rw [continuousFiniteQuotientPair]
   exact ofDiscreteModulePair_hom_apply _ _ _ m
 
+/-- The coefficient pair is the dictionary image of the inclusion of fixed points. -/
+theorem continuousFiniteQuotientPair_eq_ofDiscreteModulePair (hVU : V ≤ U) :
+    continuousFiniteQuotientPair G M hVU =
+      ofDiscreteModulePair (continuousFiniteQuotientMap G hVU :
+        G ⧸ V.toSubgroup →* G ⧸ U.toSubgroup)
+        (fixedPointsInclusion (M := M) hVU :
+          FixedPoints.addSubgroup U.toSubgroup M →+
+            FixedPoints.addSubgroup V.toSubgroup M).toIntLinearMap
+        (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) :=
+  (ofDiscreteModulePair_eq_of_hom_apply _ _ _ _
+    (continuousFiniteQuotientPair_hom_apply G M hVU)).symm
+
 /-- At a repeated level the coefficient pair is heterogeneously equal to the identity pair. -/
 private theorem continuousFiniteQuotientPair_refl (U : OpenNormalSubgroup G) :
     continuousFiniteQuotientPair G M (le_refl U) ≍
@@ -253,9 +265,9 @@ compatible-pair pullback along the quotient homomorphism `G → G ⧸ U` and the
 `M^U → M`. -/
 theorem continuousFiniteQuotientComparisonApp_eq_map (U : OpenNormalSubgroup G) (n : ℕ) :
     continuousFiniteQuotientComparisonApp G M U n =
-      _root_.ContinuousCohomology.map (ContinuousMonoidHom.quotientMk U.toSubgroup)
+      _root_.ContinuousCohomology.map (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup)
         (ofDiscreteModulePair
-          (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+          (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
           (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
           U.toSubgroup.fixedPoints_subtype_quotientMk_smul) n :=
   coeffMap_ofDiscreteModuleQuotient_comp_infl G M U.toSubgroup n
@@ -278,13 +290,13 @@ theorem continuousFiniteQuotientTransition_comp_comparisonApp (hVU : V ≤ U) (n
   intro m
   -- `change`: the same definitional composition as in `continuousFiniteQuotientPair_comp`.
   change (ofDiscreteModulePair
-      (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+      (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)
       (FixedPoints.addSubgroup V.toSubgroup M).subtype.toIntLinearMap
       V.toSubgroup.fixedPoints_subtype_quotientMk_smul).hom
       ((continuousFiniteQuotientPair G M hVU).hom m) = (m : M)
   rw [continuousFiniteQuotientPair_hom_apply (G := G) (M := M) hVU m,
     ofDiscreteModulePair_hom_apply
-      (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+      (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)
       (FixedPoints.addSubgroup V.toSubgroup M).subtype.toIntLinearMap
       V.toSubgroup.fixedPoints_subtype_quotientMk_smul (fixedPointsInclusion hVU m)]
   exact coe_fixedPointsInclusion hVU m

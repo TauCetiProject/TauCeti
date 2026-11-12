@@ -5,6 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+-- The comparison identifies the quotient transformation with its chain-complex map.
+import all Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
+
+import all TauCeti.AlgebraicTopology.Singular.Relative
+
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
@@ -73,7 +78,8 @@ noncomputable def singularChainComplexInclComparison :
     (AlgebraicTopology.singularChainComplexFunctor C).obj R ⟶
       incl ⋙ (singularChainComplexFunctor C).obj R :=
   eqToHom (singularChainComplexFunctor_eq_incl_chainComplexFunctorRight C R) ≫
-    Functor.whiskerLeft (incl ⋙ toSSetPair) ((SSetPair.chainComplexFunctorπ C).app R) ≫
+    CategoryTheory.Functor.whiskerLeft (incl ⋙ toSSetPair)
+      ((SSetPair.chainComplexFunctorπ C).app R) ≫
       eqToHom (incl_comp_singularChainComplexFunctor_eq C R).symm
 
 /-- Each component of the comparison from ordinary to relative singular chains is the quotient
@@ -81,13 +87,13 @@ map, up to the transports identifying the source and target chain complexes. -/
 @[simp]
 lemma singularChainComplexInclComparison_app (X : TopCat.{w}) :
     (singularChainComplexInclComparison C R).app X =
-      eqToHom (Functor.congr_obj
+      eqToHom (CategoryTheory.Functor.congr_obj
         (singularChainComplexFunctor_eq_incl_chainComplexFunctorRight C R) X) ≫
         (incl.obj X).singularChainComplexπ R ≫
-          eqToHom (Functor.congr_obj
+          eqToHom (CategoryTheory.Functor.congr_obj
             (incl_comp_singularChainComplexFunctor_eq C R).symm X) := by
   simp only [singularChainComplexInclComparison, NatTrans.comp_app, eqToHom_app,
-    Functor.whiskerLeft_app, Functor.comp_obj, singularChainComplexπ,
+    CategoryTheory.Functor.whiskerLeft_app, CategoryTheory.Functor.comp_obj, singularChainComplexπ,
     SSetPair.chainComplexπ]
 
 /-- Ordinary singular chains are naturally isomorphic to relative singular chains modulo the
@@ -96,20 +102,28 @@ noncomputable def singularChainComplexInclIso :
     (AlgebraicTopology.singularChainComplexFunctor C).obj R ≅
       incl ⋙ (singularChainComplexFunctor C).obj R :=
   NatIso.ofComponents (fun X ↦ by
-    letI : IsIso ((singularChainComplexInclComparison C R).app X) := by
-      let _ : IsIso (((SSetPair.chainComplexFunctorπ C).app R).app
-          (toSSetPair.obj (incl.obj X))) :=
-        inferInstanceAs (IsIso ((toSSetPair.obj (incl.obj X)).chainComplexπ R))
-      dsimp [singularChainComplexInclComparison]
-      infer_instance
-    exact asIso ((singularChainComplexInclComparison C R).app X))
-    (fun f ↦ (singularChainComplexInclComparison C R).naturality f)
+    let e := asIso ((toSSetPair.obj (incl.obj X)).chainComplexπ R)
+    exact eqToIso (CategoryTheory.Functor.congr_obj
+      (singularChainComplexFunctor_eq_incl_chainComplexFunctorRight C R) X) ≪≫
+        e ≪≫
+          eqToIso (CategoryTheory.Functor.congr_obj
+            (incl_comp_singularChainComplexFunctor_eq C R).symm X))
+    (fun f ↦ by
+      dsimp only [Iso.trans, eqToIso, asIso]
+      -- The component isomorphisms were assembled using transports. Their homs
+      -- reduce to the comparison map, whose public naturality law proves this square.
+      change _ ≫ (singularChainComplexInclComparison C R).app _ =
+        (singularChainComplexInclComparison C R).app _ ≫ _
+      exact (singularChainComplexInclComparison C R).naturality f)
 
 @[simp]
 lemma singularChainComplexInclIso_hom :
     (singularChainComplexInclIso C R).hom = singularChainComplexInclComparison C R := by
-  ext X
-  rfl
+  apply NatTrans.ext
+  funext X
+  dsimp only [singularChainComplexInclIso, NatIso.ofComponents_hom_app, Iso.trans_hom,
+    eqToIso.hom, asIso_hom]
+  exact (singularChainComplexInclComparison_app C R X).symm
 
 section Homology
 
@@ -129,18 +143,21 @@ empty subspace.  Its forward map is induced by the quotient map on singular chai
 noncomputable def singularHomologyInclIso (n : ℕ) :
     (AlgebraicTopology.singularHomologyFunctor C n).obj R ≅
       incl ⋙ singularHomologyFunctor R n :=
-  Functor.isoWhiskerRight (singularChainComplexInclIso C R)
+  CategoryTheory.Functor.isoWhiskerRight (singularChainComplexInclIso C R)
     (HomologicalComplex.homologyFunctor C (ComplexShape.down ℕ) n) ≪≫
     eqToIso (incl_comp_singularHomologyFunctor_eq C R n).symm
 
 @[simp]
 lemma singularHomologyInclIso_hom (n : ℕ) :
     (singularHomologyInclIso C R n).hom =
-      Functor.whiskerRight (singularChainComplexInclComparison C R)
+      CategoryTheory.Functor.whiskerRight (singularChainComplexInclComparison C R)
         (HomologicalComplex.homologyFunctor C (ComplexShape.down ℕ) n) ≫
       eqToHom (incl_comp_singularHomologyFunctor_eq C R n).symm := by
   rw [singularHomologyInclIso.eq_def]
-  ext X
+  -- Whiskering the composite isomorphism has this hom by definition; expose it
+  -- before rewriting by the chain-complex comparison's public hom formula.
+  change Functor.whiskerRight (singularChainComplexInclIso C R).hom _ ≫ _ = _
+  rw [singularChainComplexInclIso_hom]
   rfl
 
 /-- The component at `X` of the comparison from ordinary singular homology to relative singular
@@ -149,14 +166,14 @@ lemma singularHomologyInclIso_hom_app (n : ℕ) (X : TopCat.{w}) :
     (singularHomologyInclIso C R n).hom.app X =
       (incl.obj X).singularHomologyπ R n ≫
         eqToHom (singularHomologyFunctor_obj (incl.obj X) R n).symm := by
-  rw [singularHomologyInclIso_hom, NatTrans.comp_app, Functor.whiskerRight_app,
+  rw [singularHomologyInclIso_hom, NatTrans.comp_app, CategoryTheory.Functor.whiskerRight_app,
     singularChainComplexInclComparison_app]
-  simp only [Functor.map_comp, eqToHom_map, eqToHom_app, Category.assoc]
+  simp only [CategoryTheory.Functor.map_comp, eqToHom_map, eqToHom_app, Category.assoc]
   -- The remaining transports are between chain complexes and homology objects that agree only up
   -- to unfolding `singularChainComplexFunctor` and `TopCat.toSSet`, so `eqToHom_refl` has to be
   -- matched up to definitional equality; after that both sides are the homology of the quotient
   -- map followed by transports along proofs of the same equality.
-  erw [eqToHom_refl, Category.id_comp, Functor.map_comp, eqToHom_map, Category.assoc,
+  erw [eqToHom_refl, Category.id_comp, CategoryTheory.Functor.map_comp, eqToHom_map, Category.assoc,
     eqToHom_trans]
   rfl
 

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
+public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Topology.Category.TopCat.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalization
 
@@ -23,6 +25,11 @@ simplicial singular chain complex.
 
 * `TauCeti.normalizedCubicalChainComplex R`: the functor sending a space to its normalized cubical
   chain complex with coefficients in `R`.
+
+## Main results
+
+* `TauCeti.NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology`: if the normalized
+  cubical homology vanishes in dimension `n + 1`, every `(n + 1)`-cycle is a boundary.
 -/
 
 @[expose] public section
@@ -74,15 +81,73 @@ theorem normalizedCubicalChainComplex_obj_d_apply (X : TopCat.{u}) (n : ℕ)
   simp only [normalizedCubicalChainComplex, normalizedCubicalChainComplexObj, ChainComplex.of_d]
   rfl
 
+/-- The concrete identification of a term of the normalized cubical chain complex with the
+corresponding module of normalized cubical chains. -/
+def normalizedCubicalChainComplexXEquiv (X : TopCat.{u}) (n : ℕ) :
+    ((normalizedCubicalChainComplex R).obj X).X n ≃ₗ[R] NormalizedCubicalChain X R n :=
+  LinearEquiv.refl R _
+
+/-- The concrete identification of a chain-complex term acts as the identity on elements. -/
+@[simp]
+theorem normalizedCubicalChainComplexXEquiv_apply (X : TopCat.{u}) (n : ℕ)
+    (g : ((normalizedCubicalChainComplex R).obj X).X n) :
+    normalizedCubicalChainComplexXEquiv X n g = g :=
+  rfl
+
+/-- The inverse concrete identification acts as the identity on normalized cubical chains. -/
+@[simp]
+theorem normalizedCubicalChainComplexXEquiv_symm_apply (X : TopCat.{u}) (n : ℕ)
+    (g : NormalizedCubicalChain X R n) :
+    (normalizedCubicalChainComplexXEquiv X n).symm g = g :=
+  rfl
+
+/-- Under the concrete identification, the chain-complex differential is the cubical boundary. -/
+theorem normalizedCubicalChainComplexXEquiv_d_apply (X : TopCat.{u}) (n : ℕ)
+    (g : ((normalizedCubicalChainComplex R).obj X).X (n + 1)) :
+    normalizedCubicalChainComplexXEquiv X n
+        (((normalizedCubicalChainComplex R).obj X).d (n + 1) n g) =
+      NormalizedCubicalChain.boundary X R n
+        (normalizedCubicalChainComplexXEquiv X (n + 1) g) :=
+  normalizedCubicalChainComplex_obj_d_apply X n g
+
+/-- In each degree, the map of normalized cubical chain complexes induced by a map of spaces is
+the push-forward of normalized cubical chains. -/
+theorem normalizedCubicalChainComplex_map_f {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
+    ((normalizedCubicalChainComplex R).map f).f n =
+      ModuleCat.ofHom (NormalizedCubicalChain.map R f.hom n) :=
+  (rfl)
+
 @[simp]
 theorem normalizedCubicalChainComplex_map_f_apply {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
     (x : NormalizedCubicalChain X R n) :
     ((normalizedCubicalChainComplex R).map f).f n x = NormalizedCubicalChain.map R f.hom n x :=
   (rfl)
 
+/-- Under the concrete term identifications, a map of cubical complexes is the push-forward
+of normalized chains. -/
+theorem normalizedCubicalChainComplexXEquiv_map_f_apply {X Y : TopCat.{u}} (f : X ⟶ Y)
+    (n : ℕ) (x : ((normalizedCubicalChainComplex R).obj X).X n) :
+    normalizedCubicalChainComplexXEquiv Y n
+        (((normalizedCubicalChainComplex R).map f).f n x) =
+      NormalizedCubicalChain.map R f.hom n (normalizedCubicalChainComplexXEquiv X n x) :=
+  (rfl)
+
 /-- The terms of the normalized cubical chain complex are projective modules. -/
 instance (X : TopCat.{u}) (n : ℕ) :
     Module.Projective R (((normalizedCubicalChainComplex R).obj X).X n) :=
   inferInstanceAs (Module.Projective R (NormalizedCubicalChain X R n))
+
+/-- If the normalized cubical homology of `X` vanishes in dimension `n + 1`, every normalized
+cubical `(n + 1)`-cycle of `X` is a boundary. -/
+theorem NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology {X : TopCat.{u}} {n : ℕ}
+    (h : Limits.IsZero (((normalizedCubicalChainComplex R).obj X).homology (n + 1)))
+    {c : NormalizedCubicalChain X R (n + 1)} (hc : NormalizedCubicalChain.boundary X R n c = 0) :
+    ∃ c' : NormalizedCubicalChain X R (n + 2),
+      NormalizedCubicalChain.boundary X R (n + 1) c' = c := by
+  have hex := (((normalizedCubicalChainComplex R).obj X).exactAt_iff_isZero_homology (n + 1)).2 h
+  rw [HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp),
+    ShortComplex.moduleCat_exact_iff] at hex
+  obtain ⟨c', hc'⟩ := hex c ((normalizedCubicalChainComplex_obj_d_apply X n c).trans hc)
+  exact ⟨c', (normalizedCubicalChainComplex_obj_d_apply X (n + 1) c').symm.trans hc'⟩
 
 end TauCeti

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.MeasureTheory.Integral.CircleIntegral
@@ -524,8 +524,8 @@ theorem im_fdBoundarySegment5 (H : ℝ) {t : ℝ} (ht : t ∈ Icc (4 : ℝ) 5) :
 
 /-- The fundamental-domain boundary contour is piecewise `C¹` on `[0, 5]`;
 `contDiffOn_fdBoundary` certifies the three genuine corners as a breakpoint witness. -/
-theorem isPiecewiseC1On_fdBoundary (H : ℝ) : Contour.IsPiecewiseC1On (fdBoundary H) 0 5 := by
-  refine Contour.IsPiecewiseC1On.of_breakpoints ?_ fdBoundaryCorners ?_ ?_
+theorem isPiecewiseC1On_fdBoundary (H : ℝ) : IsPiecewiseC1On (fdBoundary H) 0 5 := by
+  refine IsPiecewiseC1On.of_breakpoints ?_ fdBoundaryCorners ?_ ?_
   · rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)]
     exact continuousOn_fdBoundary H
   · intro x hx

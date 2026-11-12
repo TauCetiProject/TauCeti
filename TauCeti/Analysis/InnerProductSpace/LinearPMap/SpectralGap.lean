@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.SpectralMapping
 
 /-!
 # Resolvents of self-adjoint partial linear maps across a spectral gap
@@ -92,7 +93,7 @@ theorem _root_.IsSelfAdjoint.norm_resolvent_le_of_spectrum_gap (hA : IsSelfAdjoi
     rcases hμ with hμ | rfl
     · exact norm_le_of_mem_spectrum_resolvent hA hs hgap hc hμ
     · simpa using hs.le
-  rw [← ENNReal.ofReal_coe_nnreal, coe_nnnorm]
+  rw [← ENNReal.ofReal_coe_nnreal, coe_nnNorm]
   exact ENNReal.ofReal_le_ofReal hμ'
 
 /-- **Lower bound across a spectral gap.** If the spectrum of a self-adjoint partial linear map on
@@ -103,13 +104,7 @@ theorem _root_.IsSelfAdjoint.mul_norm_le_norm_smul_sub_of_spectrum_gap (hA : IsS
     s * ‖(x : E)‖ ≤ ‖(c : ℂ) • (x : E) - A x‖ := by
   have hc : (c : ℂ) ∈ A.resolventSet := by
     simpa using hgap c (by simpa using hs)
-  rw [← le_inv_mul_iff₀ hs]
-  calc
-    ‖(x : E)‖ = ‖A.resolvent (c : ℂ) ((c : ℂ) • (x : E) - A x)‖ := by
-      rw [resolvent_smul_sub_apply hc]
-    _ ≤ ‖A.resolvent (c : ℂ)‖ * ‖(c : ℂ) • (x : E) - A x‖ := (A.resolvent _).le_opNorm _
-    _ ≤ s⁻¹ * ‖(c : ℂ) • (x : E) - A x‖ := by
-      gcongr
-      exact hA.norm_resolvent_le_of_spectrum_gap hs hgap
+  exact ((isResolventAt_resolvent hc).norm_le_inv_iff hs).mp
+    (hA.norm_resolvent_le_of_spectrum_gap hs hgap) x
 
 end TauCeti

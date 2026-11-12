@@ -6,17 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import TauCeti.Algebra.Bialgebra.SymmetricAlgebra.Basic
 public import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
 # The additive group
 
-The affine scheme `Spec (SymmetricAlgebra R M)` is the **additive (vector) group** on `M`.
-Its functor of points is computed here: for a commutative `R`-algebra `A`, the
-convolution monoid of `R`-algebra maps `SymmetricAlgebra R M →ₐ[R] A` is the additive monoid
-of `R`-linear maps `M →ₗ[R] A`, with convolution corresponding to addition. Taking `M = R`
-recovers the one-dimensional additive group `𝔾ₐ = Spec R[X]`, whose `A`-valued points are
-`(A, +)`; the `R`-points are this construction specialized to `A = R`.
+The affine scheme `Spec (SymmetricAlgebra R M)` is the **additive (vector) group** on `M`, in
+the convention `V(M) = Spec (Sym M)` of EGA II, (1.7.8); in general it does not represent
+`A ↦ M ⊗[R] A`. Its functor of points is computed here: for a commutative `R`-algebra `A`, the
+convolution monoid of `R`-algebra maps `SymmetricAlgebra R M →ₐ[R] A` is the additive monoid of
+`R`-linear maps `M →ₗ[R] A`, with convolution corresponding to addition. Over a commutative
+semiring these points form only a monoid; over a commutative ring they form a group, in which
+the inverse of a point corresponds to the negative of its linear map. Taking `M = R` recovers the
+one-dimensional additive group `𝔾ₐ = Spec R[X]`, whose `A`-valued points are `(A, +)`; the
+`R`-points are this construction specialized to `A = R`.
+
 ## Main declarations
 
 * `TauCeti.AdditiveGroup.pointsMulEquiv`: the convolution monoid of points
@@ -30,8 +36,14 @@ recovers the one-dimensional additive group `𝔾ₐ = Spec R[X]`, whose `A`-val
 ## See also
 
 The symmetric-algebra Hopf structure is supplied by
-`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic`, on top of Mathlib's symmetric-algebra
-bialgebra and convolution monoid APIs.
+`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic`, and the evaluation of convolution on
+generators by `TauCeti.Algebra.Bialgebra.SymmetricAlgebra.Basic`, on top of Mathlib's
+symmetric-algebra bialgebra and convolution monoid APIs.
+
+## References
+
+* A. Grothendieck, *Éléments de géométrie algébrique II*, Publ. Math. IHÉS 8 (1961), (1.7.8)
+  (the vector bundle `V(E)` defined by a quasi-coherent module `E`).
 -/
 
 public section
@@ -77,8 +89,8 @@ theorem toAdd_pointsMulEquiv (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
 
 /-- The linear map underlying a point evaluates as `x ↦ F (ι x)`. -/
 theorem toAdd_pointsMulEquiv_apply (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) (x : M) :
-    Multiplicative.toAdd (pointsMulEquiv F) x = F.ofConv (ι R M x) :=
-  TauCeti.SymmetricAlgebra.lift_symm_apply F.ofConv x
+    Multiplicative.toAdd (pointsMulEquiv F) x = F.ofConv (ι R M x) := by
+  simp
 
 /-- The inverse equivalence sends a linear map to the corresponding algebra map. -/
 @[simp]
@@ -149,12 +161,20 @@ noncomputable def gaPointsMulEquiv :
   pointsMulEquiv.trans
     (AddEquiv.toMultiplicative (LinearMap.ringLmapEquivSelf R R A).toAddEquiv)
 
-/-- A point of `𝔾ₐ` is the additive group element obtained by evaluating it at the generator
-`ι 1`. -/
+/-- A point of `𝔾ₐ` corresponds to the element of the value algebra obtained by evaluating it at
+the generator `ι 1`. -/
 @[simp]
 theorem toAdd_gaPointsMulEquiv (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     Multiplicative.toAdd (gaPointsMulEquiv F) = F.ofConv (ι R R 1) := by
   rw [gaPointsMulEquiv]
+  simp
+
+/-- The universal additive point has parameter equal to the universal coordinate. -/
+@[simp]
+theorem gaPointsMulEquiv_toConv_id :
+    gaPointsMulEquiv (toConv (AlgHom.id R (SymmetricAlgebra R R))) =
+      Multiplicative.ofAdd (ι R R 1) := by
+  rw [← ofAdd_toAdd (gaPointsMulEquiv _), toAdd_gaPointsMulEquiv]
   simp
 
 /-- The inverse equivalence sends an element of the value algebra to the corresponding

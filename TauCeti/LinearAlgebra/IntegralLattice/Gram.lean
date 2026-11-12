@@ -52,11 +52,12 @@ discriminant group.
   invariance of the basis-free invariants.
 * `TauCeti.IntegralLattice.Isometry.ofGramMatrixEq`: lattices with bases of equal Gram matrices
   are isometric.
+* `TauCeti.IntegralLattice.nonempty_isometry_of_finrank_le_one`: lattices of equal rank at most
+  one and equal determinant are isometric.
 
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1.
 -/
 
 public section
@@ -301,6 +302,13 @@ theorem discriminant_pos_iff (L : IntegralLattice V) :
   classical
   rw [discriminant_def, Int.natAbs_pos, determinant_ne_zero_iff]
 
+/-- The discriminant is zero exactly when the ambient rational form is degenerate. -/
+@[simp]
+theorem discriminant_eq_zero_iff (L : IntegralLattice V) :
+    L.discriminant = 0 ↔ ¬ L.form.Nondegenerate := by
+  rw [← discriminant_pos_iff]
+  omega
+
 end Invariants
 
 namespace Isometry
@@ -364,5 +372,22 @@ theorem ofGramMatrixEq_apply_basis {ι : Type v} (b : Basis ι ℤ L) (b' : Basi
     Equiv.refl_apply]
 
 end Isometry
+
+/-- **Lattices of rank at most one are classified by their determinant.** Two integral lattices of
+equal rank at most one and equal determinant are isometric: in rank one the Gram matrix of any
+basis is the `1 × 1` matrix of the determinant. -/
+theorem nonempty_isometry_of_finrank_le_one {L : IntegralLattice V} {M : IntegralLattice W}
+    (hrank : finrank ℤ L = finrank ℤ M) (hle : finrank ℤ L ≤ 1)
+    (hdet : L.determinant = M.determinant) : Nonempty (Isometry L M) := by
+  classical
+  let b := finBasisOfFinrankEq ℤ L rfl
+  let b' := finBasisOfFinrankEq ℤ M hrank.symm
+  refine ⟨Isometry.ofGramMatrixEq b b' (Matrix.ext fun i j ↦ ?_)⟩
+  let _ : Unique (Fin (finrank ℤ L)) := ⟨⟨i⟩, fun k ↦ Fin.ext (by omega)⟩
+  obtain rfl : i = j := Subsingleton.elim i j
+  have hL := L.determinant_eq_gramDet b
+  have hM := M.determinant_eq_gramDet b'
+  rw [gramDet_def, Matrix.det_unique] at hL hM
+  exact hL.symm.trans (hdet.trans hM)
 
 end TauCeti.IntegralLattice

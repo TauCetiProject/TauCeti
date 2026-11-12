@@ -52,7 +52,7 @@ theorem eq_algebraMap_of_finite_range_eval (a : A)
     simp only [map_mul, heval]
     split_ifs <;> simp
   have hone : aeval a p = 1 := by
-    rcases eq_zero_or_eq_one_of_isIdempotentElem hidem with h | h
+    rcases hidem.eq_zero_or_eq_one_of_preconnectedSpace with h | h
     · have h₀ := heval f₀
       simp [h] at h₀
     · exact h

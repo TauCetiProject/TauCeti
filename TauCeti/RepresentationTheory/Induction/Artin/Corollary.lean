@@ -104,7 +104,7 @@ theorem _root_.FDRep.nonempty_iso_of_subgroupCharacterSum_eq_cyclic
   have hchar : ∀ n : ℕ, ∀ x : G, orderOf x = n → V.character x = W.character x := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
       intro x hx
       let C := Subgroup.zpowers x
       let _ : Fintype C := Fintype.ofFinite C

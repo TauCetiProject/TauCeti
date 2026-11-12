@@ -26,8 +26,7 @@ Invariance under homotopy equivalence, and so in particular under homeomorphism,
 The product results reuse the existing product isomorphisms for fundamental and higher
 homotopy groups.
 
-This implements the general API for `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4,
-item 13, "`K(G, 1)` spaces". Concrete circle and torus examples are respectively in
+Concrete circle and torus examples are respectively in
 `TauCeti.AlgebraicTopology.UniversalCover.Circle.EilenbergMacLane` and
 `TauCeti.AlgebraicTopology.UniversalCover.Torus.EilenbergMacLane`.
 
@@ -130,6 +129,20 @@ theorem isEilenbergMacLaneSpaceOne_iff {G : Type u} [Group G]
     IsEilenbergMacLaneSpaceOne G X x ↔
       IsAspherical X x ∧ Nonempty (FundamentalGroup X x ≃* G) :=
   Iff.rfl
+
+/-- A based space is an Eilenberg--Mac Lane space of type `K(π₁(X, x), 1)` if and only if it is
+aspherical. -/
+@[simp]
+theorem isEilenbergMacLaneSpaceOne_fundamentalGroup_iff
+    {X : Type v} [TopologicalSpace X] {x : X} :
+    IsEilenbergMacLaneSpaceOne (FundamentalGroup X x) X x ↔ IsAspherical X x :=
+  and_iff_left ⟨MulEquiv.refl _⟩
+
+/-- An aspherical space is an Eilenberg--Mac Lane space of type `K(π₁(X, x), 1)`. -/
+theorem IsAspherical.isEilenbergMacLaneSpaceOne_fundamentalGroup
+    {X : Type v} [TopologicalSpace X] {x : X} (h : IsAspherical X x) :
+    IsEilenbergMacLaneSpaceOne (FundamentalGroup X x) X x :=
+  ⟨h, ⟨MulEquiv.refl _⟩⟩
 
 namespace IsEilenbergMacLaneSpaceOne
 

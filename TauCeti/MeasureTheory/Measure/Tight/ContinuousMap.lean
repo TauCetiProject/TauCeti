@@ -129,7 +129,7 @@ theorem isTightMeasureSet_of_map_eval_of_continuity_modulus [LindelofSpace α]
   · calc P (closure (⋃ i, B i)ᶜ)ᶜ ≤ P (⋃ i, B i) :=
           measure_mono (compl_subset_comm.mp subset_closure)
       _ ≤ ∑' i, P (B i) := measure_iUnion_le B
-      _ ≤ ∑' i, (ε' i : ℝ≥0∞) := ENNReal.tsum_le_tsum fun i ↦ ?_
+      _ ≤ ∑' i, (ε' i : ℝ≥0∞) := tsum_le_tsum fun i ↦ ?_
       _ ≤ ε := hε'sum.le
     rcases i with k | t
     · exact hδ k P hP

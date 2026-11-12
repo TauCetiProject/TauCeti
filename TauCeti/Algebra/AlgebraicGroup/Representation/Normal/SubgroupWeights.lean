@@ -142,8 +142,8 @@ theorem basePointsRepresentation_mem_weightSpace (g : WithConv (H →ₐ[R] R))
     (hg : I ≤ I.conjugate g⁻¹) {χ : GroupLike R (H ⧸ I.toIdeal)} {v : V}
     (hv : v ∈ I.weightSpace V χ) :
     Comodule.basePointsRepresentation (H := H) V g v ∈
-      I.weightSpace V (GroupLike.map (I.quotientPointConjugation g⁻¹ hg) χ) := by
-  rw [mem_weightSpace_iff_endOfPoint, GroupLike.val_map]
+      I.weightSpace V (BialgHom.mapGroupLike (I.quotientPointConjugation g⁻¹ hg) χ) := by
+  rw [mem_weightSpace_iff_endOfPoint, BialgHom.val_mapGroupLike]
   apply Comodule.endOfPoint_one_tmul_basePointsRepresentation_of_conj
   have hσ : (Ideal.Quotient.mkₐ R I.toIdeal).comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
       (I.quotientPointConjugation g⁻¹ hg : H ⧸ I.toIdeal →ₐ[R] H ⧸ I.toIdeal).comp
@@ -170,7 +170,7 @@ theorem IsNormal.map_basePointsRepresentation_weightSpace (hI : I.IsNormal)
     (g : WithConv (H →ₐ[R] R)) (χ : GroupLike R (H ⧸ I.toIdeal)) :
     (I.weightSpace V χ).map (Comodule.basePointsRepresentation (H := H) V g) =
       I.weightSpace V
-        (GroupLike.map (I.quotientPointConjugation g⁻¹ (hI.le_conjugate g⁻¹)) χ) := by
+        (BialgHom.mapGroupLike (I.quotientPointConjugation g⁻¹ (hI.le_conjugate g⁻¹)) χ) := by
   refine le_antisymm ?_ fun v hv ↦ ⟨Comodule.basePointsRepresentation (H := H) V g⁻¹ v, ?_,
     Representation.self_inv_apply _ g v⟩
   · rintro _ ⟨v, hv, rfl⟩
@@ -182,9 +182,9 @@ theorem IsNormal.map_basePointsRepresentation_weightSpace (hI : I.IsNormal)
       rw [quotientPointConjugation_mk, quotientPointConjugation_mk, ← AlgHom.comp_apply,
         ← HopfAlgebra.pointConjugationAlgHom_mul, mul_inv_cancel,
         HopfAlgebra.pointConjugationAlgHom_one, AlgHom.id_apply]
-    have hχ : GroupLike.map (I.quotientPointConjugation g⁻¹⁻¹ (hI.le_conjugate _))
-        (GroupLike.map (I.quotientPointConjugation g⁻¹ (hI.le_conjugate _)) χ) = χ :=
-      _root_.GroupLike.val_injective (by simp only [GroupLike.val_map, hcomp])
+    have hχ : BialgHom.mapGroupLike (I.quotientPointConjugation g⁻¹⁻¹ (hI.le_conjugate _))
+        (BialgHom.mapGroupLike (I.quotientPointConjugation g⁻¹ (hI.le_conjugate _)) χ) = χ :=
+      _root_.GroupLike.val_injective (by simp only [BialgHom.val_mapGroupLike, hcomp])
     have hv' := basePointsRepresentation_mem_weightSpace g⁻¹ (hI.le_conjugate _) hv
     rw [hχ] at hv'
     exact hv'

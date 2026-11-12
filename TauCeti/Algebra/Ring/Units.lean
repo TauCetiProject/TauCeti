@@ -18,10 +18,15 @@ the left-right symmetry of the Jacobson radical.
 Mathlib records the spectral statement as `spectrum.unit_mem_mul_comm`. The elementwise form is
 that statement for the base ring `ℤ`, read at the unit `1`, and that is how it is obtained here.
 
+The file also records that, in a ring without zero divisors, a unit `u` other than `±1` is not
+its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at `δ = u + u⁻¹`.
+
 ## Main results
 
 * `TauCeti.isUnit_one_sub_mul_comm`: `IsUnit (1 - a * b) ↔ IsUnit (1 - b * a)`.
 * `TauCeti.isUnit_one_add_mul_comm`: `IsUnit (1 + a * b) ↔ IsUnit (1 + b * a)`.
+* `Units.val_sub_val_inv_ne_zero`: in a ring without zero divisors, a unit `u ≠ ±1` satisfies
+  `u - u⁻¹ ≠ 0`.
 -/
 
 public section
@@ -42,3 +47,14 @@ theorem isUnit_one_add_mul_comm {a b : R} : IsUnit (1 + a * b) ↔ IsUnit (1 + b
   simpa only [neg_mul, mul_neg, sub_neg_eq_add] using isUnit_one_sub_mul_comm (a := -a) (b := b)
 
 end TauCeti
+
+namespace Units
+
+variable {R : Type*} [Ring R] [NoZeroDivisors R]
+
+/-- In a ring without zero divisors, a unit `u ≠ ±1` satisfies `u - u⁻¹ ≠ 0`. -/
+theorem val_sub_val_inv_ne_zero {u : Rˣ} (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) :
+    (u : R) - ↑u⁻¹ ≠ 0 := fun h ↦
+  ((inv_eq_self_iff u).1 (Units.ext (sub_eq_zero.1 h).symm)).elim hu₁ hu₂
+
+end Units

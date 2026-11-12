@@ -17,9 +17,12 @@ connecting morphism is killed by the map to `H₀(X)`, which commutes with augme
 The resulting morphism `TopPair.reducedSingularHomologyδ` is natural in maps of pairs and is an
 isomorphism when the reduced homology of `X` vanishes in degrees `k` and `k + 1`.  Dually, the
 quotient map `Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism when the reduced homology of `A` vanishes in
-degrees `k` and `k + 1` (`TopPair.isIso_singularHomologyπ`).
+degrees `k` and `k + 1` (`TopPair.isIso_singularHomologyπ`). In degree zero, the class of a point
+of the subspace vanishes in relative homology
+(`TopPair.singularHomology₀Section_comp_singularHomologyπ`).
 
-Coefficients are an object of an abelian category with coproducts.
+Coefficients are an object of an abelian category with coproducts; the vanishing of the class of
+a point of the subspace only needs a preadditive category with coproducts and homology.
 
 The construction follows Hatcher, *Algebraic Topology*, Section 2.1, on the reduced long exact
 sequence of a pair.
@@ -36,6 +39,24 @@ universe w v u
 namespace TopPair
 
 open TauCeti
+
+section
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
+  [CategoryWithHomology C] (P : TopPair.{w}) (R : C)
+
+/-- The class of a point of the subspace vanishes in relative homology, since it comes from
+zeroth homology of the subspace. -/
+@[simp, reassoc]
+lemma singularHomology₀Section_comp_singularHomologyπ (y : P.snd) :
+    singularHomology₀Section R (P.map y) ≫ P.singularHomologyπ R 0 = 0 := by
+  -- The two presentations of ambient homology agree only up to unfolding, so the composites
+  -- are reassociated by terms.
+  have h := singularHomology₀Section_naturality R P.map y =≫ P.singularHomologyπ R 0
+  exact h.symm.trans ((Category.assoc _ _ _).trans ((singularHomology₀Section R y ≫=
+    P.homologyMap_comp_singularHomologyπ R 0).trans comp_zero))
+
+end
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (P : TopPair.{w}) (R : A)
 

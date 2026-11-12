@@ -6,6 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.OfFn
+public import Mathlib.LinearAlgebra.Basis.Defs
+public import Mathlib.LinearAlgebra.LinearIndependent.Defs
+
+-- Proof-only: supply `Polynomial.X_sub_C_pow_dvd_iff` and `Polynomial.X_pow_dvd_iff`.
+import Mathlib.Algebra.Polynomial.AlgebraMap
+import Mathlib.Algebra.Polynomial.Div
 
 /-!
 # Recovering a polynomial of bounded degree from its coefficient vector
@@ -14,7 +20,10 @@ public import Mathlib.Algebra.Polynomial.OfFn
 Mathlib records that a polynomial of `natDegree` below `n` is recovered from its first `n`
 coefficients; this file states the same recovery in terms of `degree`, so that it also applies
 to the zero polynomial. This file also records evaluation of the coefficient vector and
-reconstruction of a coordinate vector as a power of `X`.
+reconstruction of a coordinate vector as a power of `X`, and characterizes divisibility of
+`ofFn n f` by `(X - t) ^ r` through the Taylor coefficients of order `< r` at `t`. Finally, the
+polynomials whose coefficient vectors are the coordinates of finitely many vectors in a basis of
+their span are linearly independent.
 -/
 
 public section
@@ -31,6 +40,23 @@ omit [DecidableEq R] in
 theorem _root_.Polynomial.toFn_apply (n : ℕ) (p : R[X]) (i : Fin n) :
     toFn n p i = p.coeff i := (rfl)
 
+/-- Evaluating the polynomial with coefficient vector `c` under a ring map `f` is the sum of
+`f (c j) * t ^ j`. -/
+@[simp]
+theorem _root_.Polynomial.eval₂_ofFn {S : Type*} [Semiring S] (f : R →+* S) (t : S) {n : ℕ}
+    (c : Fin n → R) : (ofFn n c).eval₂ f t = ∑ j, f (c j) * t ^ (j : ℕ) := by
+  simp only [ofFn_eq_sum_monomial, eval₂_finsetSum, eval₂_monomial]
+
+/-- The coefficient of the product of two polynomials given by coefficient vectors is the
+convolution over bounded pairs of indices of total degree equal to the requested degree. -/
+theorem _root_.Polynomial.coeff_ofFn_mul_ofFn {m n : ℕ} (a : Fin m → R) (b : Fin n → R)
+    (j : ℕ) :
+    (ofFn m a * ofFn n b).coeff j =
+      ∑ l : Fin m × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = j, a l.1 * b l.2 := by
+  rw [ofFn_eq_sum_monomial, ofFn_eq_sum_monomial, Finset.sum_mul_sum, finsetSum_coeff]
+  simp only [finsetSum_coeff, monomial_mul_monomial, coeff_monomial_apply]
+  rw [Finset.sum_filter, Fintype.sum_prod_type]
+
 -- Mathlib's `ofFn` takes `[DecidableEq R]`, so this instance occurs in the statement.
 /-- The coordinate vector with value one at `l` reconstructs the monomial `X ^ l.val`. -/
 @[simp]
@@ -46,5 +72,38 @@ theorem _root_.Polynomial.ofFn_comp_toFn_eq_id_of_degree_lt {n : ℕ} {p : R[X]}
   rcases eq_or_ne p 0 with rfl | hp
   · simp
   · exact ofFn_comp_toFn_eq_id_of_natDegree_lt ((natDegree_lt_iff_degree_lt hp).mpr h)
+
+/-- `(X - t) ^ r` divides the polynomial with coefficient vector `f` if and only if its Taylor
+coefficients of order `< r` at `t` vanish. -/
+theorem _root_.Polynomial.X_sub_C_pow_dvd_ofFn_iff {R : Type*} [CommRing R] [DecidableEq R]
+    (t : R) (r : ℕ) {n : ℕ} (f : Fin n → R) :
+    (X - C t) ^ r ∣ ofFn n f ↔
+      ∀ k < r, ∑ i : Fin n, f i * (t ^ ((i : ℕ) - k) * ((i : ℕ).choose k : R)) = 0 := by
+  rw [ofFn_eq_sum_monomial, X_sub_C_pow_dvd_iff, X_pow_dvd_iff]
+  refine forall₂_congr fun k _ ↦ ?_
+  simp [← C_mul_X_pow_eq_monomial, coeff_X_add_C_pow]
+
+/-- If a basis `b` of the span of finitely many vectors `Qⱼ` is given, the polynomials
+`∑ⱼ (b.repr Qⱼ k) Tʲ`, one for each basis index `k`, are linearly independent: a relation among
+them is a linear form on the span vanishing on every `Qⱼ`. -/
+theorem linearIndependent_ofFn_repr {K : Type*} [CommRing K] [DecidableEq K] {W : Type*}
+    [AddCommGroup W] [Module K W] {r N : ℕ}
+    (Q : Fin N → W) (b : Module.Basis (Fin r) K (Submodule.span K (Set.range Q))) :
+    LinearIndependent K fun k : Fin r ↦
+      ofFn N fun j ↦ b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k := by
+  refine Fintype.linearIndependent_iff.2 fun a ha k ↦ ?_
+  set φ : Submodule.span K (Set.range Q) →ₗ[K] K := ∑ k, a k • b.coord k
+  have hφQ (j : Fin N) :
+      ∑ k, a k * b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k = 0 := by
+    have hac : ∑ k, a k • (fun j ↦
+        b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k) = 0 :=
+      injective_ofFn N (by simpa [map_sum] using ha)
+    simpa using congr_fun hac j
+  have hv : Submodule.span K (Set.range fun j : Fin N ↦
+      (⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ : Submodule.span K (Set.range Q))) =
+      ⊤ :=
+    (Submodule.span_range_subtype_eq_top_iff _ _).mpr rfl
+  have hφ : φ = 0 := LinearMap.ext_on_range hv fun j ↦ by simpa [φ, mul_comm] using hφQ j
+  simpa [φ, Finsupp.single_apply] using LinearMap.congr_fun hφ (b k)
 
 end TauCeti

@@ -81,13 +81,13 @@ theorem moduleEquiv_single [DecidableEq ι] (a : ι) :
 @[simp]
 theorem moduleEquiv_one : (1 : T.Symmetry).moduleEquiv = 1 := by
   ext v a
-  simp only [moduleEquiv_apply, one_indexPerm, LinearEquiv.coe_one, id_eq]
+  simp only [moduleEquiv_apply, one_indexPerm, FunLike.coe_one_eq_id, id_eq]
   rfl
 
 @[simp]
 theorem moduleEquiv_mul : (S * R).moduleEquiv = S.moduleEquiv * R.moduleEquiv := by
   ext v a
-  rw [moduleEquiv_apply, LinearEquiv.mul_apply, moduleEquiv_apply, moduleEquiv_apply,
+  rw [moduleEquiv_apply, _root_.mul_apply_eq_comp, moduleEquiv_apply, moduleEquiv_apply,
     mul_indexPerm, Equiv.Perm.mul_def, Equiv.symm_trans_apply]
 
 @[simp]

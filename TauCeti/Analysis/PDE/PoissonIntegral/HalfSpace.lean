@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
@@ -88,7 +89,7 @@ private theorem unit_ne_zero (v : U) : (v : E) ≠ 0 :=
 private theorem finrank_orthogonal_unit (v : U) : finrank ℝ (ℝ ∙ (v : E))ᗮ = n - 1 := by
   have : Fact (finrank ℝ E = n - 1 + 1) :=
     ⟨by rw [finrank_euclideanSpace_fin, Nat.sub_add_cancel
-      (pos_of_ne_zero_euclideanSpace (unit_ne_zero v))]⟩
+      (pos_of_ne_euclideanSpace (unit_ne_zero v))]⟩
   exact Submodule.finrank_orthogonal_span_singleton (unit_ne_zero v)
 
 /-- The foot `x - ⟪v, x⟫ v` of `x` on the hyperplane `⟪v, ·⟫ = 0`. -/
@@ -114,7 +115,7 @@ private theorem halfSpacePoissonKernel_eq_rpow_one_add (v : U) {x : E}
       abs_inv, abs_of_pos hx]
     field_simp
     ring
-  rw [halfSpacePoissonKernel_def, norm_rpow_eq_norm_sq_rpow, h1,
+  rw [halfSpacePoissonKernel_def, ← Real.sq_rpow_div_two (norm_nonneg _), h1,
     Real.mul_rpow (by positivity) (by positivity)]
   ring
 
@@ -122,7 +123,7 @@ private theorem halfSpacePoissonKernel_eq_rpow_one_add (v : U) {x : E}
 theorem integrable_halfSpacePoissonKernel (v : U) {x : E} (hx : 0 < ⟪(v : E), x⟫) :
     Integrable (fun y : (ℝ ∙ (v : E))ᗮ ↦ halfSpacePoissonKernel n v x y) := by
   have hn : (finrank ℝ (ℝ ∙ (v : E))ᗮ : ℝ) < n := by
-    rw [finrank_orthogonal_unit, Nat.cast_sub (pos_of_ne_zero_euclideanSpace (unit_ne_zero v)),
+    rw [finrank_orthogonal_unit, Nat.cast_sub (pos_of_ne_euclideanSpace (unit_ne_zero v)),
       Nat.cast_one]
     linarith
   simp_rw [halfSpacePoissonKernel_eq_rpow_one_add v hx]
@@ -134,7 +135,7 @@ theorem integrable_halfSpacePoissonKernel (v : U) {x : E} (hx : 0 < ⟪(v : E), 
 theorem integral_halfSpacePoissonKernel (v : U) {x : E} (hx : 0 < ⟪(v : E), x⟫) :
     ∫ y : (ℝ ∙ (v : E))ᗮ, halfSpacePoissonKernel n v x y = 1 := by
   set t := ⟪(v : E), x⟫
-  have hn : 0 < n := pos_of_ne_zero_euclideanSpace (unit_ne_zero v)
+  have hn : 0 < n := pos_of_ne_euclideanSpace (unit_ne_zero v)
   have hfin : (finrank ℝ (ℝ ∙ (v : E))ᗮ : ℝ) = n - 1 := by
     rw [finrank_orthogonal_unit, Nat.cast_sub hn, Nat.cast_one]
   -- Translating by the foot of `x` and rescaling by `t` reduces to the Japanese bracket.
@@ -163,7 +164,6 @@ theorem integral_halfSpacePoissonKernel (v : U) {x : E} (hx : 0 < ⟪(v : E), x�
   have hπ : π ^ (((n : ℝ) - 1) / 2) * Real.Gamma (1 / 2) = π ^ ((n : ℝ) / 2) := by
     rw [Real.Gamma_one_half_eq, Real.sqrt_eq_rpow, ← Real.rpow_add pi_pos]
     ring_nf
-  have hΓ := Real.Gamma_pos_of_pos (show 0 < (n : ℝ) / 2 by positivity)
   rw [volume_real_unitBall, finrank_euclideanSpace_fin, Real.Gamma_add_one (by positivity)]
   calc _ = 2 * ((n : ℝ) * (π ^ ((n : ℝ) / 2) / ((n : ℝ) / 2 * Real.Gamma (n / 2))))⁻¹ *
         (π ^ (((n : ℝ) - 1) / 2) * Real.Gamma (1 / 2) / Real.Gamma (n / 2)) *

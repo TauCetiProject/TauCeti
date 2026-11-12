@@ -87,10 +87,8 @@ theorem contMDiff_analyticMap (n : ℕ∞ω) :
   refine (hloc.contMDiffAt hmem).congr_of_eventuallyEq ?_
   filter_upwards [hmem] with z hz
   obtain ⟨y, rfl⟩ := hP ▸ hz
-  have hPy : P.symm (Φ.analyticAffineChartι hΦ σ y) = y := by
-    rw [← Φ.analyticAffineChartPartialDiffeomorph_apply hΦ σ hB κ g n y]
-    exact P.left_inv ((Φ.analyticAffineChartPartialDiffeomorph_source hΦ σ hB κ g n).symm ▸
-      mem_univ y)
+  have hPy : P.symm (Φ.analyticAffineChartι hΦ σ y) = y :=
+    Φ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΦ σ hB κ g n y
   rw [analyticMap_analyticAffineChartι, Function.comp_apply, Function.comp_apply, hPy]
   exact congrArg (Ψ.analyticAffineChartι hΨ υ) (f.analyticChartMap_apply _ y)
 

@@ -99,7 +99,7 @@ theorem integrableExpSet_trace_mul_wishartGramMeasure_zero
   refine Set.eq_univ_of_forall fun t ↦ ?_
   rw [integrableExpSet, Set.mem_ofPred_eq, wishartGramMeasure_zero]
   exact integrable_dirac' (selfAdjoint.continuous_exp_trace_mul_coe Θ t).stronglyMeasurable
-    enorm_lt_top
+    eNorm_lt_top
 
 /-- At degree zero the trace statistic vanishes almost everywhere, so its moment-generating
 function is constantly `1`. -/
@@ -392,8 +392,8 @@ theorem mgf_trace_mul_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) 
   have hB : (S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ)).PosDef :=
     (hS.posDef_inv_sub_smul_iff _ _).2 ht
   have hpencil : (1 - (2 * t) • ((Θ : Matrix (Fin p) (Fin p) ℝ) * S)).det =
-      S.det * (S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ)).det :=
-    (Matrix.det_mul_det_inv_sub_smul (isUnit_iff_ne_zero.2 hS.det_pos.ne') _ _).symm
+      S.det * (S⁻¹ - (2 * t) • (Θ : Matrix (Fin p) (Fin p) ℝ)).det := by
+    rw [Matrix.det_mul_det_inv_sub (isUnit_iff_ne_zero.2 hS.det_pos.ne'), Matrix.smul_mul]
   have hneg : (-n / 2 : ℝ) = -(n / 2) := by ring
   have htwo : (2 : ℝ) ^ ((p : ℝ) * (n / 2)) = 2 ^ (n * (p : ℝ) / 2) := by
     congr 1

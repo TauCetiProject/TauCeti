@@ -43,7 +43,7 @@ explicit complement `S`, rather than deducing one, because that is how it is use
 summand of a second decomposition of `M`, whose other summands supply `S`.
 
 Of `N` the proof needs only that `Module.End A N` is local, so that is the hypothesis; it already
-makes `N` nonzero (`TauCeti.nontrivial_of_isLocalRing_end`) and indecomposable
+makes `N` nonzero (`TauCeti.nontrivial_of_nontrivial_end`) and indecomposable
 (`TauCeti.isIndecomposableModule_of_isLocalRing_end`), and indecomposability is never used.
 
 ## References
@@ -74,7 +74,7 @@ private theorem sum_projectionOnto_comp_internalProjection_eq_one {ι : Type w} 
   rw [map_sum] at hx
   rw [LinearMap.sum_apply]
   simpa only [LinearMap.comp_apply, LinearMap.domRestrict_apply, Submodule.subtype_apply,
-    Module.End.one_apply] using hx
+    one_apply_eq_self] using hx
 
 /-- **Azumaya's exchange lemma.** Let `M` be the internal direct sum of a finite family `Q` of
 indecomposable submodules, and let `N` be a direct summand of `M` whose endomorphism ring is local
@@ -89,7 +89,7 @@ theorem exists_linearEquiv_and_isCompl_biSup_ne
     [IsLocalRing (Module.End A N)] (hNS : IsCompl N S) :
     ∃ i₀ : ι, Nonempty (N ≃ₗ[A] Q i₀) ∧ IsCompl N (⨆ j, ⨆ (_ : j ≠ i₀), Q j) := by
   have _ : Fintype ι := Fintype.ofFinite ι
-  have _ : Nontrivial N := nontrivial_of_isLocalRing_end (A := A)
+  have _ : Nontrivial N := nontrivial_of_nontrivial_end (R := A)
   -- Locality of `Module.End A N` picks out an index whose component is invertible.
   obtain ⟨i₀, -, hunit⟩ : ∃ i₀ ∈ Finset.univ, IsUnit ((N.projectionOnto S hNS ∘ₗ (Q i₀).subtype)
       ∘ₗ (internalProjection hQi hQt i₀).domRestrict N) :=

@@ -24,8 +24,14 @@ convergence to `0`, so only the behaviour of that map **at `0`** matters — glo
 not needed, and asking for it would exclude the topological modules that carry `ContinuousAdd`
 rather than `IsTopologicalAddGroup`.
 
+Functions vanishing along a filter also form an additive subgroup when their target has
+continuous negation. The subgroup below uses exactly the carrier of Mathlib's
+`Filter.zeroAtFilterAddSubmonoid` and `Filter.zeroAtFilterSubmodule`; it supplies additive
+inverses independently of any scalar ring.
+
 ## Main results
 
+* `Filter.zeroAtFilterAddSubgroup`: the additive subgroup of functions vanishing along a filter.
 * `Filter.ZeroAtFilter.sum`: a finite sum of functions vanishing along `l` vanishes along `l`.
 * `Filter.BoundedAtFilter.sum`: a finite sum of functions bounded along `l` is bounded along `l`.
 * `Filter.ZeroAtFilter.comp`: a function vanishing along `l`, composed with a zero-preserving map
@@ -50,6 +56,23 @@ open Finset
 namespace Filter
 
 variable {α β ι : Type*} {l : Filter α} {s : Finset ι} {f : ι → α → β}
+
+/-- The additive subgroup of functions tending to zero along a filter. Its additive submonoid
+is `zeroAtFilterAddSubmonoid`, so it also has the carrier of `zeroAtFilterSubmodule` without
+requiring ring scalars. -/
+def zeroAtFilterAddSubgroup [TopologicalSpace β] [AddGroup β] [ContinuousAdd β]
+    [ContinuousNeg β] (l : Filter α) : AddSubgroup (α → β) where
+  toAddSubmonoid := zeroAtFilterAddSubmonoid l
+  neg_mem' := ZeroAtFilter.neg
+
+@[simp]
+theorem mem_zeroAtFilterAddSubgroup [TopologicalSpace β] [AddGroup β] [ContinuousAdd β]
+    [ContinuousNeg β] {f : α → β} : f ∈ zeroAtFilterAddSubgroup l ↔ ZeroAtFilter l f := (Iff.rfl)
+
+@[simp]
+theorem zeroAtFilterAddSubgroup_toAddSubmonoid [TopologicalSpace β] [AddGroup β]
+    [ContinuousAdd β] [ContinuousNeg β] (l : Filter α) :
+    (zeroAtFilterAddSubgroup (β := β) l).toAddSubmonoid = zeroAtFilterAddSubmonoid l := (rfl)
 
 /-- **A finite sum of functions vanishing along `l` vanishes along `l`.** The additive companion
 of `Filter.BoundedAtFilter.prod`. The `AddCommMonoid` hypothesis is what `Finset.sum` requires. -/

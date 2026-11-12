@@ -102,7 +102,7 @@ private theorem inner_symmetricBasis (p : ℕ)
   let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
   let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
   obtain ⟨⟨k, l⟩, hkl⟩ := kl
-  rw [selfAdjoint.coe_inner, Matrix.frobenius_inner_def]
+  rw [selfAdjoint.coe_inner, Matrix.frobenius_real_inner_eq_sum_mul]
   by_cases h : k = l
   · subst h
     rw [coe_symmetricBasis_diag, sum_mul_single]
@@ -187,7 +187,7 @@ private theorem volume_parallelepiped_symmetricBasis (p : ℕ) :
       ENNReal.ofReal (Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 4)) := by
   rw [Basis.coe_parallelepiped, ← addHaar_symScaled p, Measure.addHaar_parallelepiped,
     Basis.det_unitsSMul]
-  simp only [AlternatingMap.smul_apply, Basis.det_self, smul_eq_mul, mul_one]
+  simp only [_root_.smul_apply, Basis.det_self, smul_eq_mul, mul_one]
   rw [prod_symScale_inv]
   exact congrArg ENNReal.ofReal (abs_of_nonneg (Real.rpow_nonneg (by norm_num) _))
 

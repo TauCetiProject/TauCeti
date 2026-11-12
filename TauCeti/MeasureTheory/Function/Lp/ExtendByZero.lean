@@ -31,6 +31,8 @@ against `μ`, hence against every restriction of `μ`.
 * `TauCeti.extendByZeroLpₗᵢ`: extension by zero as a linear isometry.
 * `TauCeti.coeFn_extendByZeroLpₗᵢ` and `TauCeti.coeFn_extendByZeroLpₗᵢ_restrict`: the values of
   the extension, on `t` and back on `s`.
+* `TauCeti.ae_extendByZeroLpₗᵢ_eq_of_mem` and `TauCeti.ae_extendByZeroLpₗᵢ_eq_zero_of_notMem`:
+  the same values, split pointwise into the cases `x ∈ s` and `x ∉ s`.
 * `TauCeti.extendByZeroLpₗᵢ_self` and `TauCeti.extendByZeroLpₗᵢ_extendByZeroLpₗᵢ`: extending
   along `s ⊆ s` is the identity, and extending twice is extending once.
 * `TauCeti.extendByZeroLpₗᵢ_eq_of_ae_eq` and `TauCeti.coeFn_extendByZeroLpₗᵢ_comp`: the two ways
@@ -93,6 +95,19 @@ theorem coeFn_extendByZeroLpₗᵢ [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst 
   MemLp.coeFn_toLp
     (((memLp_indicator_iff_restrict hs.nullMeasurableSet).2 (Lp.memLp f)).mono_measure
       Measure.restrict_le_self)
+
+/-- **On `s`, the extension by zero agrees with the original function**, almost everywhere on
+`t`. -/
+theorem ae_extendByZeroLpₗᵢ_eq_of_mem [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t)
+    (f : Lp F p (μ.restrict s)) :
+    ∀ᵐ x ∂μ.restrict t, x ∈ s → extendByZeroLpₗᵢ 𝕜 μ hs hst f x = f x :=
+  (coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f).mono fun _ hx hxs => hx.trans (indicator_of_mem hxs _)
+
+/-- **Off `s`, the extension by zero vanishes**, almost everywhere on `t`. -/
+theorem ae_extendByZeroLpₗᵢ_eq_zero_of_notMem [Fact (1 ≤ p)] (hs : MeasurableSet s)
+    (hst : s ⊆ t) (f : Lp F p (μ.restrict s)) :
+    ∀ᵐ x ∂μ.restrict t, x ∉ s → extendByZeroLpₗᵢ 𝕜 μ hs hst f x = 0 :=
+  (coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f).mono fun _ hx hxs => hx.trans (indicator_of_notMem hxs _)
 
 /-- **The extension by zero restricts back to the original function.** -/
 theorem coeFn_extendByZeroLpₗᵢ_restrict [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t)

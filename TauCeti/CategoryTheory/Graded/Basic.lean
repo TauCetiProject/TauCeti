@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Module.GradedModule.GradedObject
 /-!
 # Graded linear quivers
 
-A *graded linear quiver* over a commutative ring `R` is a collection of objects such that every
+A *graded linear quiver* over a ring `R` is a collection of objects such that every
 ordered pair of objects carries an `R`-module of morphisms with an internal `ℤ`-grading.  That is
 the whole of the data: there is no composition, no identity, and no law relating the morphisms of
 different pairs of objects.
@@ -40,7 +40,7 @@ recovers the components `F X Y` of `ofGradedHom F` from its grading, degree by d
 
 ## Main definitions
 
-* `TauCeti.GradedLinearQuiver`: a graded linear quiver over a commutative ring.
+* `TauCeti.GradedLinearQuiver`: a graded linear quiver over a ring.
 * `TauCeti.GradedLinearQuiver.ofGradedHom`: the graded linear quiver of a graded object of hom
   modules.
 * `TauCeti.GradedLinearQuiver.grHom`: the morphisms `X → Y` of a fixed degree.
@@ -76,7 +76,7 @@ namespace TauCeti
 
 universe u v w
 
-/-- A **graded linear quiver** over a commutative ring `R`: a collection of objects `C` with, for
+/-- A **graded linear quiver** over a ring `R`: a collection of objects `C` with, for
 each ordered pair of objects, an `R`-module `homModule X Y` of morphisms carrying an internal `ℤ`
 grading `grading X Y`.
 
@@ -84,8 +84,9 @@ There is no composition and no identity, and no law relating the data of differe
 objects: they belong to the structure which a graded linear quiver carries, such as the `A∞`
 structure whose operation `m₂` is the composition.
 
-The base ring is a commutative ring, as for the differential graded categories of `TauCeti`. -/
-class GradedLinearQuiver (R : Type w) [CommRing R] (C : Type u) where
+The quiver itself only needs `R` to be a ring; the structures built on it, such as the
+differential graded and `A∞` categories of `TauCeti`, take `R` commutative. -/
+class GradedLinearQuiver (R : Type w) [Ring R] (C : Type u) where
   /-- The `R`-module of morphisms from `X` to `Y`. -/
   homModule : C → C → ModuleCat.{v} R
   /-- The internal `ℤ`-grading of the hom module from `X` to `Y`. -/
@@ -93,7 +94,7 @@ class GradedLinearQuiver (R : Type w) [CommRing R] (C : Type u) where
 
 namespace GradedLinearQuiver
 
-variable (R : Type w) [CommRing R] {C : Type u}
+variable (R : Type w) [Ring R] {C : Type u}
 
 /-- The graded linear quiver whose hom modules are the components of a graded object: the total
 module of morphisms `X → Y` is the external direct sum of the components of `F X Y`.
@@ -179,32 +180,32 @@ private inductive TwoObj where
 /-- The graded object of degree components assigned to every ordered pair of the two example
 objects: a copy of `R` in each of the degrees `0` and `1`, and the zero module in every other
 degree. -/
-private noncomputable def twoObjModule (R : Type v) [CommRing R] :
+private noncomputable def twoObjModule (R : Type v) [Ring R] :
     CategoryTheory.GradedObject ℤ (ModuleCat.{v} R) :=
   fun p => if p = 0 then ModuleCat.of R R else
     if p = 1 then ModuleCat.of R R else ModuleCat.of R PUnit
 
 /-- A graded linear quiver with two objects, a copy of `R` in each of the degrees `0` and `1` of the
 hom module of every ordered pair of objects, and no morphism in any other degree. -/
-private noncomputable instance twoObjQuiver (R : Type v) [CommRing R] :
+private noncomputable instance twoObjQuiver (R : Type v) [Ring R] :
     GradedLinearQuiver R TwoObj :=
   ofGradedHom (R := R) fun _ _ => twoObjModule R
 
 /-- The degree-`0` component assigned to every ordered pair of the two example objects is a copy of
 `R`. -/
-private theorem twoObjModule_zero (R : Type v) [CommRing R] :
+private theorem twoObjModule_zero (R : Type v) [Ring R] :
     twoObjModule R 0 = ModuleCat.of R R := by
   simp [twoObjModule]
 
 /-- The degree-`1` component assigned to every ordered pair of the two example objects is a copy of
 `R`. -/
-private theorem twoObjModule_one (R : Type v) [CommRing R] :
+private theorem twoObjModule_one (R : Type v) [Ring R] :
     twoObjModule R 1 = ModuleCat.of R R := by
   simp [twoObjModule]
 
 /-- Every other degree component assigned to every ordered pair of the two example objects is the
 zero module. -/
-private theorem twoObjModule_eq_punit_of_ne_zero_of_ne_one (R : Type v) [CommRing R]
+private theorem twoObjModule_eq_punit_of_ne_zero_of_ne_one (R : Type v) [Ring R]
     {p : ℤ} (h0 : p ≠ 0) (h1 : p ≠ 1) :
     twoObjModule R p = ModuleCat.of R PUnit := by
   simp [twoObjModule, h0, h1]

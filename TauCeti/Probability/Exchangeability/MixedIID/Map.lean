@@ -6,25 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.MixedIID.Basic
--- Non-public: `map_bind` is used only inside the proof below.
-import TauCeti.MeasureTheory.Measure.GiryMonad
 -- Non-public: the Giry-measurability of a pushforward is used only inside the proof below.
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # Coordinatewise maps of mixed i.i.d. families
 
-This file completes the Layer 0 closure API for the exchangeability symmetry classes: applying a
+This file proves that mixed i.i.d. families are closed under coordinatewise maps: applying a
 measurable map `f : α → β` to every coordinate of a mixed i.i.d. family gives another mixed
 i.i.d. family, whose mixing representative is the coordinatewise pushforward
 `ω ↦ (ν ω).map f` of the original mixing representative `ν`.
 
 `TauCeti.Probability.Exchangeability.Map` already records this closure for `ExchangeableAt`,
-`Exchangeable`, `FullyExchangeable`, and `Contractable`.  `MixedIID` is the remaining
-symmetry class from the roadmap item asking for closure of each class under the coordinatewise
-pushforward `X ↦ (f ∘ Xᵢ)` (`TauCetiRoadmap/Exchangeability/README.md`, Layer 0). The
-transformation of the mixing representative is the expected one: the mixture identity for the
-mapped family is the original identity with each product factor pushed forward by `f`.
+`Exchangeable`, `FullyExchangeable`, and `Contractable`; this file adds it for `MixedIID`, under
+the same coordinatewise pushforward `X ↦ (f ∘ Xᵢ)`. The transformation of the mixing
+representative is the expected one: the mixture identity for the mapped family is the original
+identity with each product factor pushed forward by `f`.
 
 `map_values` holds at an arbitrary index type; `mixedIID_of_mixedIID_pathLaw` below is genuinely
 sequence-level, since it transfers along the `ℕ`-indexed path law.
@@ -32,7 +29,7 @@ sequence-level, since it transfers along the `ℕ`-indexed path law.
 The proof runs at the level of the finite-block mixture identity. It reuses `map_blockLaw`
 (the coordinatewise pushforward of a block law), the random-product measurability of
 `TauCeti.MeasureTheory.Measure.ProductKernel`, the naturality of `bind`
-(`TauCeti.MeasureTheory.map_bind`), and Mathlib's product pushforward `Measure.pi_map_pi`.
+(`Measure.map_bind`), and Mathlib's product pushforward `Measure.pi_map_pi`.
 It needs no material from `cameronfreer/exchangeability` beyond the existing `MixedIIDWith` API
 this repository already carries.
 -/
@@ -77,7 +74,7 @@ theorem MixedIIDWith.map_values {μ : Measure Ω} {X : ι → Ω → α}
             fun x : Fin m → α => fun i => f (x i) := by rw [h.blockLaw_eq_mixture k hk]
       _ = μ.bind fun ω =>
             ((ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure).map
-              fun x : Fin m → α => fun i => f (x i) := TauCeti.MeasureTheory.map_bind hg hFmeas
+              fun x : Fin m → α => fun i => f (x i) := Measure.map_bind hg hFmeas.aemeasurable
       _ = μ.bind fun ω =>
             (ProbabilityMeasure.pi fun _ : Fin m => (ν ω).map f).toMeasure := by
             refine congrArg (μ.bind ·) (funext fun ω => ?_)

@@ -62,7 +62,7 @@ identities. Every input `ω_spec` consumes exists by name — the source's chain
 `redInvar_normEDS ← invar₂_normEDS ← invar_normEDS ← net_normEDS` has landed in full as
 `reducedInvarNum_eq_reducedInvarDenom_mul` (`EllipticDivisibilitySequence/ReducedInvariant.lean`)
 ← `IsEllipticNet.invarNum_normEDS_one_mul_eq_invarDenom_mul` ← `invarNum_mul_invarDenom` ←
-`isEllipticNet_normEDS`. Nothing in this file depends on any of it.
+`IsEllipticNet.normEDS`. Nothing in this file depends on any of it.
 
 ## Provenance
 

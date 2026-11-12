@@ -64,7 +64,8 @@ sheaf (`isSheaf_spaYPresheaf`).
 
 ## References
 
-* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 8.22 and Remark 8.27.
+* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 8.22, Remark 8.27 and
+  Theorem 8.28.
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, Arizona Winter School 2017 notes, §3.1.
 * K. S. Kedlaya, *Noetherian properties of Fargues–Fontaine curves*, IMRN 2016, no. 8,
   2544–2567; arXiv:1410.5160v3, Theorem 4.10.
@@ -202,7 +203,8 @@ theorem isLocallyAffinoid_spaXPreAdicSpace (h : (spaYPresheaf P ϖ).IsSheaf) :
     (PreAdicSpace.IsOpenImmersion.isoRestrict f)
     (PreAdicSpace.isLocallyAffinoid_restrict V.isOpenEmbedding
       (isLocallyAffinoid_spaYPreAdicSpace P hI)) ⟨y, hy⟩
-  exact ⟨_, (PreAdicSpace.mem_affinoidOpens_restrict_iff _ f.isOpenEmbedding W).mp hW,
+  exact ⟨_, (PreAdicSpace.mem_propOpens_restrict_iff _ f.isOpenEmbedding PreAdicSpace.isAffinoid
+    W).mp hW,
     ⟨y, hy⟩, hyW, hq⟩
 
 /-- **`𝒳 = 𝒴 / φ^ℤ` is an adic space** when `𝒪_𝒴` is a sheaf: it is sheafy

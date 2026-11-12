@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.IntervalChart
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Plus.PreAdicSpace
 
 import TauCeti.Analysis.SpecialFunctions.Pow.NNRat
 
@@ -47,6 +48,9 @@ affinoid subspaces, each isomorphic to the adic spectrum of an interval ring.
 * `TauCeti.FarguesFontaine.isOpenImmersion_spaXWindowChart` : for a wandering window the chart is
   an open immersion.
 * `TauCeti.FarguesFontaine.range_spaXWindowChart_base` : the image of the chart is `q(W)`.
+* `TauCeti.FarguesFontaine.comap_presentationLimitPlusSubring_spaXWindowChart` : over an open of
+  `q(W)`, the chart identifies the integral sections `𝒪_𝒳⁺` with the plus subrings of
+  `Spa(B^I, B^{I,+})`.
 * `TauCeti.FarguesFontaine.quotientMap_image_window_mem_affinoidOpens` : the image `q(W)` of a
   wandering window is an open affinoid subspace of `𝒳`.
 * `TauCeti.FarguesFontaine.quotientMap_image_windowU_mem_affinoidOpens` and
@@ -279,6 +283,28 @@ theorem range_spaXWindowChart_base :
     -- the chart is `i.inv ≫ l ≫ q`, and its base is the composite of the bases
     exact congrArg (fun z ↦ (quotientPreAdicHom P hI hY).base (l.base z)) hix
 
+/-- **The window chart identifies integral sections.** Over an open `V ⊆ q(W)` of `𝒳`, a section of
+`𝒪_𝒳` over `V` lies in `𝒪_𝒳⁺(V)` exactly when its pullback along the chart lies in the plus subring
+`𝒪⁺(V')` of `Spa(B^I, B^{I,+})` over the preimage `V'` of `V`. On a rational open `V'` this plus
+subring is the plus ring of the rational localisation of `(B^I, B^{I,+})`, by Wedhorn's
+Proposition 8.16 (`map_completedPlusSubring_eq_presentationLimitPlusSubring`). -/
+theorem comap_presentationLimitPlusSubring_spaXWindowChart {V : Opens (spaXPreAdicSpace P hI hY)}
+    (hV : (V : Set (spaXPreAdicSpace P hI hY)) ⊆ quotientMap hI '' (Subtype.val ⁻¹'
+        {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v})) :
+    (presentationLimitPlusSubring (fun _ ha ↦ mem_powerBoundedSubring.mp ha)
+        P'.le_powerBoundedSubring ((Opens.map
+          (spaXWindowChart hv hϖ hϖ' hρ₁ hρ₂ hI P hden hY h₁ h₂ h₁₂ P').base).obj V)).comap
+        ((PreAdicSpace.toRingPresheafedSpaceHom
+          (spaXWindowChart hv hϖ hϖ' hρ₁ hρ₂ hI P hden hY h₁ h₂ h₁₂ P').toHom).c.app
+            (Opposite.op V)).hom =
+      (spaXPreAdicSpace P hI hY).plusSubring V := by
+  -- the integral sections of `Spa(B^I, B^{I,+})` as a pre-adic space are its plus subrings
+  refine (congrArg _ (presentationLimitPreAdicSpace_plusSubring P' _ _ P'.le_powerBoundedSubring
+    _).symm).trans ?_
+  exact PreAdicSpace.Hom.comap_plusSubring_of_subset_range
+    (spaXWindowChart hv hϖ hϖ' hρ₁ hρ₂ hI P hden hY h₁ h₂ h₁₂ P') (hV.trans
+      (range_spaXWindowChart_base hv hϖ hϖ' hρ₁ hρ₂ hI P hden hY h₁ h₂ h₁₂ P').ge)
+
 end Chart
 
 section Affinoid
@@ -314,9 +340,6 @@ theorem quotientMap_image_window_mem_affinoidOpens (hq : q ≠ 0) (hqq' : q ≤ 
   -- the radius `v(ϖ) ^ (1 / r)` of the interval matching the radius bound `r`
   have hρ {r : ℚ≥0} (hr : r ≠ 0) : v (algebraMap O K ϖ) ^ ((r : ℝ)⁻¹) ∈ Set.Ioo 0 1 :=
     ⟨NNReal.rpow_pos hϖ₀, NNReal.rpow_lt_one hϖ' (inv_pos.mpr (by positivity))⟩
-  have hpow {r : ℚ≥0} (hr : r ≠ 0) :
-      (v (algebraMap O K ϖ) ^ ((r : ℝ)⁻¹)) ^ r.num = v (algebraMap O K ϖ) ^ r.den := by
-    rw [NNReal.rpow_inv_nnratCast, NNReal.rpow_inv_natCast_pow _ (NNRat.num_ne_zero.mpr hr)]
   have h₁₂ : v (algebraMap O K ϖ) ^ ((q : ℝ)⁻¹) ≤ v (algebraMap O K ϖ) ^ ((q' : ℝ)⁻¹) :=
     NNReal.rpow_le_rpow_of_exponent_ge hϖ₀ hϖ'.le
       (inv_anti₀ (by positivity) (by exact_mod_cast hqq'))
@@ -326,9 +349,10 @@ theorem quotientMap_image_window_mem_affinoidOpens (hq : q ≠ 0) (hqq' : q ≤ 
     (B := IntervalLocalization p hv hϖ hϖ' (hρ hq) (hρ hq')) hI P
   let P' : PairOfDefinition (IntervalRing p hv hϖ hϖ' (hρ hq) (hρ hq')) :=
     IsHuberRing.nonempty_pairOfDefinition.some
-  let f := spaXWindowChart hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY (hpow hq) (hpow hq') h₁₂ P'
-  have := isOpenImmersion_spaXWindowChart hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY (hpow hq)
-    (hpow hq') h₁₂ P' hW
+  let f := spaXWindowChart hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY
+    (NNReal.rpow_inv_nnratCast_pow_num _ hq) (NNReal.rpow_inv_nnratCast_pow_num _ hq') h₁₂ P'
+  have := isOpenImmersion_spaXWindowChart hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY
+    (NNReal.rpow_inv_nnratCast_pow_num _ hq) (NNReal.rpow_inv_nnratCast_pow_num _ hq') h₁₂ P' hW
   -- `𝒳` restricted to the image of the chart is `Spa(B^I, B^{I,+})`
   have hA := ObjectProperty.prop_of_iso PreAdicSpace.isAffinoid
     (PreAdicSpace.IsOpenImmersion.isoRestrict f)
@@ -336,8 +360,9 @@ theorem quotientMap_image_window_mem_affinoidOpens (hq : q ≠ 0) (hqq' : q ≤ 
       ⟨_, Pair.powerBounded_plus (A := IntervalRing p hv hϖ hϖ' (hρ hq) (hρ hq')) ▸
         (Pair.powerBounded _).isRingOfIntegralElements⟩ P'
       P'.le_powerBoundedSubring)
-  have hmem := (PreAdicSpace.mem_affinoidOpens_restrict_iff _ f.isOpenEmbedding ⊤).mp
-    ((PreAdicSpace.top_mem_affinoidOpens_iff _).mpr hA)
+  have hmem := (PreAdicSpace.mem_propOpens_restrict_iff _ f.isOpenEmbedding
+    PreAdicSpace.isAffinoid ⊤).mp
+    ((PreAdicSpace.top_mem_propOpens_iff _ PreAdicSpace.isAffinoid).mpr hA)
   -- the image of the chart is `q(W)`
   have hU : f.isOpenEmbedding.isOpenMap.functor.obj ⊤ = ⟨quotientMap hI '' (Subtype.val ⁻¹'
       {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v}),
@@ -345,8 +370,8 @@ theorem quotientMap_image_window_mem_affinoidOpens (hq : q ≠ 0) (hqq' : q ≤ 
           (isOpen_val_preimage_setOf_isRadiusLowerBound_isRadiusUpperBound hI hq)⟩ := by
     -- the open `functor.obj ⊤` is the image of `Set.univ` by definition
     refine Opens.ext (Set.image_univ.trans ?_)
-    exact range_spaXWindowChart_base hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY (hpow hq) (hpow hq')
-      h₁₂ P'
+    exact range_spaXWindowChart_base hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY
+      (NNReal.rpow_inv_nnratCast_pow_num _ hq) (NNReal.rpow_inv_nnratCast_pow_num _ hq') h₁₂ P'
   exact hU ▸ hmem
 
 include hv hϖ hϖ' in

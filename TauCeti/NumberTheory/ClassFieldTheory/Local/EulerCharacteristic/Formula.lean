@@ -59,7 +59,7 @@ theorem natCard_continuousCohomology_one_eq_mul_of_localEulerCharacteristic_eq_l
   have hA : 0 < Nat.card A.V := Nat.card_pos
   have hq := congrArg (fun x : Units.posSubgroup ℚ ↦ ((x.1 : ℚ))) h
   simp only [localEulerCharacteristic_coe, localCardNorm_coe] at hq
-  rw [padicNorm.eq_zpow_of_nonzero (by exact_mod_cast hA.ne'),
+  rw [padicNorm.eq_zpow_of_ne_zero (by exact_mod_cast hA.ne'),
     ← padicValRat_of_nat] at hq
   norm_num [zpow_neg, zpow_natCast] at hq
   field_simp [hcard₁.ne', (Fact.out : p.Prime).ne_zero] at hq
@@ -68,7 +68,7 @@ theorem natCard_continuousCohomology_one_eq_mul_of_localEulerCharacteristic_eq_l
         Nat.card (continuousCohomology 0 A) * Nat.card (continuousCohomology 2 A) *
           (p : ℚ) ^ (Module.finrank ℚ_[p] F * padicValNat p (Nat.card A.V)) := by
     rw [mul_comm (Module.finrank ℚ_[p] F) (padicValNat p (Nat.card A.V)), pow_mul]
-    exact hq.symm
+    simpa only [Nat.padicValNat_def] using hq.symm
   exact_mod_cast hq'
 
 /-- **The `𝔽_p`-dimension form of the local Euler characteristic formula.** Equality of the local
@@ -98,7 +98,7 @@ theorem finrank_continuousCohomology_one_eq_add_of_localEulerCharacteristic_eq_l
     Module.natCard_eq_pow_finrank (K := ZMod p) (V := continuousCohomology 0 A),
     Module.natCard_eq_pow_finrank (K := ZMod p) (V := continuousCohomology 2 A),
     Module.natCard_eq_pow_finrank (K := ZMod p) (V := A.V), Nat.card_zmod,
-    padicValNat.prime_pow, ← pow_add, ← pow_add] at hcard
+    Nat.padicValNat_def, Nat.multiplicity_prime_pow, ← pow_add, ← pow_add] at hcard
   exact Nat.pow_right_injective (Fact.out : p.Prime).two_le hcard
 
 end TauCeti.ClassFieldTheory

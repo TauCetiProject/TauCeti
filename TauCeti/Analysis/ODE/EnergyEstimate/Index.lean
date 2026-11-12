@@ -1,0 +1,728 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.Fredholm.ContinuousFamily
+public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
+public import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
+public import TauCeti.Analysis.Normed.Operator.Basic
+public import TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov
+public import TauCeti.Analysis.ODE.Linear
+public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
+import Mathlib.Analysis.SpecialFunctions.Exponential
+import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import Mathlib.MeasureTheory.Integral.ExpDecay
+import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Inertia
+
+/-!
+# The index of the trajectory operator
+
+Let `A : ℝ → End(E)` be a continuous family of operators on a finite-dimensional real inner
+product space `E`, with limits `A±` at `±∞` that have Lyapunov forms
+(`ContinuousLinearMap.HasLyapunovForm`), so that the trajectory operator
+`D_A u = u' + A u : W^{1,2}(ℝ, E) → L²(ℝ, E)` is Fredholm
+(`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`). Invertible symmetric
+limits have Lyapunov forms (`ContinuousLinearMap.hasLyapunovForm_of_isSymmetric`). This file
+proves:
+
+* the index of `D_A` depends only on the limits `A±`: two such families with the same limits give
+  operators of the same index;
+* the index vanishes when the two limits agree and are invertible and symmetric;
+* the index is the dimension of the space of square-integrable solutions of `v' = -A v` minus that
+  of `v' = A v`, and this holds for every continuous symmetric `A` for which `D_A` has closed range;
+* for invertible symmetric limits, the index is `n⁻(A⁻) - n⁻(A⁺)`, where `n⁻(B)` is the number
+  of negative eigenvalues of `B` counted with multiplicity, that is, the dimension of the sum of its
+  eigenspaces at negative eigenvalues;
+* for arbitrary limits with symmetric Lyapunov forms `S±`, the index is `n⁻(S⁻) - n⁻(S⁺)`. In
+  particular two symmetric Lyapunov forms of the same operator have the same negative inertia.
+
+For the first statement, the affine family `(1 - t) A + t B` has the same limits as `A` and `B` for
+every real `t`, so each of its trajectory operators is Fredholm. The trajectory operator depends
+continuously on its `L∞` coefficient (`TauCeti.WeakDerivStep.lipschitzWith_trajectoryOperator`),
+so the index is constant along this family. For the second, a constant coefficient `A₀` with a
+spectral gap gives an injective `D_{A₀}` and an injective formal adjoint `D_{-A₀}`, by the
+coercive estimate `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot`, so `D_{A₀}` is bijective
+and has index zero; a family with equal limits `A₀` has the index of the constant family.
+
+The first statement is the invariance of the index under deformations of the coefficient family
+that fix its limits; the second is its value when the limits agree. Together they reduce the
+computation of the index for arbitrary limits to that of one family for each pair of limits. The
+third statement is the form that computation takes: the kernel of `D_A` is the space of
+square-integrable solutions of `v' + A v = 0` (`TauCeti.WeakDerivStep.kerTrajectoryOperatorEquiv`),
+and the cokernel is the kernel of the formal adjoint `D_{-A}`.
+
+For the fourth statement we use the model family `ψ(-s) A⁻ + ψ(s) A⁺`, where `ψ` is Mathlib's
+`Real.smoothTransition`. On `[0, ∞)` it is `ψ(s) A⁺`, a scalar multiple of one symmetric operator,
+so a solution of `v' = -ψ(s) A⁺ v` multiplies the coordinate of `v` along an eigenvector of `A⁺`
+with eigenvalue `λ` by `exp (-λ ∫₀ˢ ψ)`. It is square integrable on `(0, ∞)` exactly when `v 0`
+lies in the positive spectral subspace `W` of `A⁺`. Likewise it is square integrable on `(-∞, 0)`
+exactly when `v 0` lies in the negative spectral subspace `U` of `A⁻`. So the kernel of the model
+operator is `W ⊓ U`, and the same argument for `-A` identifies its cokernel with `Wᗮ ⊓ Uᗮ`,
+because the positive and negative spectral subspaces of an invertible symmetric operator are
+orthogonal complements. Hence the index is `dim (W ⊓ U) - dim (W ⊔ U)ᗮ = dim W + dim U - dim E`,
+which is `n⁻(A⁻) - n⁻(A⁺)`.
+
+For the fifth statement, the index is also constant along `(1 - t) A + t B` when the limits move,
+as long as `(1 - t) A± + t B±` keeps a Lyapunov form for `t ∈ [0, 1]`. A symmetric Lyapunov form
+`S` of `A` is a Lyapunov form of every `(1 - t) A + t S` with `0 ≤ t ≤ 1`
+(`ContinuousLinearMap.hasLyapunovForm_one_sub_smul_add_smul`), so the limits `A±` can be deformed to
+the invertible symmetric operators `S±`, where the fourth statement applies. For a constant family,
+computing the index with the forms `S` and `S'` at the two ends shows `n⁻(S) = n⁻(S')`.
+
+## Main declarations
+
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_of_tendsto`: families with the same limits
+  have trajectory operators of the same index.
+* `TauCeti.WeakDerivStep.bijective_trajectoryOperator_const`: a constant coefficient with a spectral
+  gap gives a bijective trajectory operator.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_zero_of_tendsto`: a family with equal limits
+  at both ends gives index zero.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range`: when
+  the range of `D_A` is closed, the index of `D_A` is the dimension of the square-integrable
+  solutions of `v' = -A v` minus that of `v' = A v`.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank`: the same formula for a
+  continuous symmetric family with invertible limits.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank`:
+  the index is the number of negative eigenvalues of `A⁻` minus that of `A⁺`.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_of_forall_hasLyapunovForm`: the index is
+  constant along an affine deformation whose limits keep Lyapunov forms.
+* `index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner`, in
+  `TauCeti.WeakDerivStep`: for limits with symmetric Lyapunov forms `S±`, the index is
+  `n⁻(S⁻) - n⁻(S⁺)`.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_stableSubspace_sub_finrank`: for
+  hyperbolic limits, the index is the dimension of the stable subspace of `A⁻` minus that of `A⁺`.
+* `ContinuousLinearMap.finrank_pointSpectralSubspace_Iio_eq_of_forall_le_inner`: two symmetric
+  Lyapunov forms of one operator have the same number of negative eigenvalues.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed.,
+  Appendix A.1 (stability of the Fredholm index).
+* J. Robbin and D. Salamon, *The spectral flow and the Maslov index*, Bull. London Math. Soc.
+  **27** (1995), 1--33 (the index of `d/ds + A(s)` as a spectral flow, and its homotopy invariance).
+* A. Ostrowski and H. Schneider, *Some theorems on the inertia of general matrices*, J. Math. Anal.
+  Appl. **4** (1962), 72–84 (the inertia of Lyapunov forms).
+* M. Schwarz, *Morse Homology*, Chapter 2 (the index of linearized trajectory operators).
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory TopologicalSpace Filter
+open scoped ENNReal Topology InnerProductSpace
+
+namespace TauCeti.WeakDerivStep
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- For two continuous families of operators `A` and `B` with limits `A±` and `B±`, the affine
+combination `(1 - t) A + t B` has the limits `(1 - t) A± + t B±`. When these have Lyapunov forms,
+its trajectory operator is Fredholm. -/
+private theorem isFredholm_trajectoryOperator_one_sub_smul_add_smul {A B : ℝ → E →L[ℝ] E}
+    (hA : Continuous A) (hB : Continuous B) {Aminus Aplus Bminus Bplus : E →L[ℝ] E}
+    (hAbot : Tendsto A atBot (𝓝 Aminus)) (hAtop : Tendsto A atTop (𝓝 Aplus))
+    (hBbot : Tendsto B atBot (𝓝 Bminus)) (hBtop : Tendsto B atTop (𝓝 Bplus))
+    (AL BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] B) {t : ℝ}
+    (hminus : ((1 - t) • Aminus + t • Bminus).HasLyapunovForm)
+    (hplus : ((1 - t) • Aplus + t • Bplus).HasLyapunovForm) :
+    (trajectoryOperator (p := 2) ((1 - t) • AL + t • BL)).IsFredholm := by
+  set C : ℝ → E →L[ℝ] E := fun s ↦ (1 - t) • A s + t • B s
+  have hC : Continuous C := (hA.const_smul (1 - t)).add (hB.const_smul t)
+  refine isFredholm_trajectoryOperator_of_hasLyapunovForm hC hminus hplus
+    ((hAbot.const_smul (1 - t)).add (hBbot.const_smul t))
+    ((hAtop.const_smul (1 - t)).add (hBtop.const_smul t)) _ ?_
+  filter_upwards [Lp.coeFn_add ((1 - t) • AL) (t • BL), Lp.coeFn_smul (1 - t) AL,
+    Lp.coeFn_smul t BL, hAL, hBL] with s hs h1 h2 hAs hBs
+  simp only [hs, Pi.add_apply, h1, h2, Pi.smul_apply, hAs, hBs, C]
+
+/-- **Homotopy invariance of the index through hyperbolic limits.** Let `A` and `B` be continuous
+families of operators on a finite-dimensional real inner product space with limits `A±` and `B±`
+at `±∞`, such that `(1 - t) A± + t B±` has a Lyapunov form for every `t ∈ [0, 1]`. Then the
+trajectory operators `u ↦ u' + A u` and `u ↦ u' + B u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` have
+the same Fredholm index. Unlike `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_of_tendsto`,
+the limits may move. -/
+theorem index_trajectoryOperator_eq_of_forall_hasLyapunovForm {A B : ℝ → E →L[ℝ] E}
+    (hA : Continuous A) (hB : Continuous B) {Aminus Aplus Bminus Bplus : E →L[ℝ] E}
+    (hAbot : Tendsto A atBot (𝓝 Aminus)) (hAtop : Tendsto A atTop (𝓝 Aplus))
+    (hBbot : Tendsto B atBot (𝓝 Bminus)) (hBtop : Tendsto B atTop (𝓝 Bplus))
+    (AL BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] B)
+    (hminus : ∀ t ∈ Set.Icc (0 : ℝ) 1, ((1 - t) • Aminus + t • Bminus).HasLyapunovForm)
+    (hplus : ∀ t ∈ Set.Icc (0 : ℝ) 1, ((1 - t) • Aplus + t • Bplus).HasLyapunovForm) :
+    (trajectoryOperator (p := 2) AL).index = (trajectoryOperator (p := 2) BL).index := by
+  have hcont : Continuous fun t : ℝ ↦ trajectoryOperator (p := 2) ((1 - t) • AL + t • BL) :=
+    (lipschitzWith_trajectoryOperator (F := E) (mu := volume) (Omega := ⊤) (p := 2)).continuous.comp
+      (by fun_prop)
+  simpa using hcont.continuousOn.index_eq_of_isPreconnected
+    (fun t ht ↦ isFredholm_trajectoryOperator_one_sub_smul_add_smul hA hB hAbot hAtop hBbot hBtop
+      AL BL hAL hBL (hminus t ht) (hplus t ht))
+    isPreconnected_Icc (Set.left_mem_Icc.2 zero_le_one) (Set.right_mem_Icc.2 zero_le_one)
+
+/-- **The index of the trajectory operator depends only on the limits.** Let `A` and `B` be
+continuous families of operators on a finite-dimensional real inner product space with the same
+limits `A±` at `±∞`, which have Lyapunov forms. Then the trajectory operators `u ↦ u' + A u` and
+`u ↦ u' + B u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` have the same Fredholm index. -/
+theorem index_trajectoryOperator_eq_of_tendsto {A B : ℝ → E →L[ℝ] E}
+    (hA : Continuous A) (hB : Continuous B) {Aminus Aplus : E →L[ℝ] E}
+    (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)
+    (hAbot : Tendsto A atBot (𝓝 Aminus)) (hAtop : Tendsto A atTop (𝓝 Aplus))
+    (hBbot : Tendsto B atBot (𝓝 Aminus)) (hBtop : Tendsto B atTop (𝓝 Aplus))
+    (AL BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] B) :
+    (trajectoryOperator (p := 2) AL).index = (trajectoryOperator (p := 2) BL).index := by
+  have hsame {L : E →L[ℝ] E} (hL : L.HasLyapunovForm) (t : ℝ) :
+      ((1 - t) • L + t • L).HasLyapunovForm := by
+    rwa [← add_smul, sub_add_cancel, one_smul]
+  exact index_trajectoryOperator_eq_of_forall_hasLyapunovForm hA hB hAbot hAtop hBbot hBtop AL BL
+    hAL hBL (fun t _ ↦ hsame hminus t) (fun t _ ↦ hsame hplus t)
+
+/-- **A constant invertible coefficient gives a bijective trajectory operator.** For a symmetric
+operator `A₀` on a finite-dimensional real inner product space with `α ‖v‖ ≤ ‖A₀ v‖` for some
+`α > 0`, the trajectory operator `u ↦ u' + A₀ u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is bijective.
+Both it and its formal adjoint `-d/ds + A₀` are injective, and its range is closed. -/
+theorem bijective_trajectoryOperator_const {A₀ : E →L[ℝ] E}
+    (hsym : (A₀ : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α) (hgap : ∀ v, α * ‖v‖ ≤ ‖A₀ v‖)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A₀) :
+    Function.Bijective (trajectoryOperator (p := 2) AL) :=
+  ⟨LinearMap.ker_eq_bot.1 <| ker_trajectoryOperator_eq_bot (A := fun _ ↦ A₀) contDiff_const
+      (fun _ ↦ hsym) hα.le (fun _ ↦ hgap) (β := 0) (fun _ v ↦ by simp) (by positivity) AL hAL,
+    surjective_trajectoryOperator (A := fun _ ↦ A₀) contDiff_const (fun _ ↦ hsym) hα.le
+      (fun _ ↦ hgap) (β := 0) (fun _ v ↦ by simp) (by positivity) AL hAL⟩
+
+/-- A constant coefficient gives index zero: under the hypotheses of
+`TauCeti.WeakDerivStep.bijective_trajectoryOperator_const` the trajectory operator is bijective. -/
+private theorem index_trajectoryOperator_const {A₀ : E →L[ℝ] E}
+    (hsym : (A₀ : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α) (hgap : ∀ v, α * ‖v‖ ≤ ‖A₀ v‖)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A₀) :
+    (trajectoryOperator (p := 2) AL).index = 0 :=
+  ContinuousLinearMap.index_eq_zero_of_bijective _
+    (bijective_trajectoryOperator_const hsym hα hgap AL hAL)
+
+/-- **Equal limits give index zero.** Let `A` be a continuous family of operators on a
+finite-dimensional real inner product space with the same invertible symmetric limit `A₀` at `-∞`
+and at `+∞`. Then the trajectory operator `u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` has
+index zero. -/
+theorem index_trajectoryOperator_eq_zero_of_tendsto {A : ℝ → E →L[ℝ] E}
+    (hA : Continuous A) {A₀ : E →L[ℝ] E} (hsym₀ : (A₀ : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ}
+    (hα : 0 < α) (hgap : ∀ v, α * ‖v‖ ≤ ‖A₀ v‖)
+    (hbot : Tendsto A atBot (𝓝 A₀)) (htop : Tendsto A atTop (𝓝 A₀))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).index = 0 := by
+  have hLF := ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsym₀ hα hgap
+  let A₀L := (memLp_top_const (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) A₀).toLp
+  have hA₀L : A₀L =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A₀ := MemLp.coeFn_toLp _
+  rw [index_trajectoryOperator_eq_of_tendsto hA continuous_const hLF hLF hbot htop
+    tendsto_const_nhds tendsto_const_nhds AL A₀L hAL hA₀L]
+  exact index_trajectoryOperator_const hsym₀ hα hgap A₀L hA₀L
+
+variable {A : ℝ → E →L[ℝ] E}
+
+/-- **The index of a trajectory operator with closed range counts square-integrable solutions.**
+For a continuous family `A` of symmetric operators on a finite-dimensional real inner product
+space `E` such that the range of `D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is closed,
+the index of `D_A` is the dimension of the space of square-integrable solutions of `v' = -A v`
+minus the dimension of the space of square-integrable solutions of `v' = A v`. -/
+theorem index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range
+    (hA : Continuous A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (hclosed : IsClosed ((trajectoryOperator (p := 2) AL).range :
+      Set (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ (squareIntegrableSolutions A) : ℤ) -
+        Module.finrank ℝ (squareIntegrableSolutions (-A)) := by
+  have hALadj := ae_eq_adjoint_of_ae_eq hAL
+    (hAL.trans (.of_forall fun s ↦ (hsym s).clm_adjoint_eq.symm))
+  have hnegAL : -AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] -A := by
+    filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
+    simp only [hs, Pi.neg_apply, hAs]
+  rw [index_trajectoryOperator_of_isClosed_range hALadj hclosed,
+    finrank_ker_trajectoryOperator hA AL hAL, finrank_ker_trajectoryOperator hA.neg (-AL) hnegAL]
+
+/-- **The index of the trajectory operator counts square-integrable solutions.** For a continuous
+family `A` of symmetric operators on a finite-dimensional real inner product space with invertible
+limits at both ends, the index of `D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the
+dimension of the space of square-integrable solutions of `v' = -A v` minus the dimension of the
+space of square-integrable solutions of `v' = A v`. This specializes
+`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range`. -/
+theorem index_trajectoryOperator_eq_finrank_sub_finrank
+    (hA : Continuous A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
+    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
+    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ (squareIntegrableSolutions A) : ℤ) -
+        Module.finrank ℝ (squareIntegrableSolutions (-A)) :=
+  index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range hA hsym AL hAL
+    (isClosed_range_trajectoryOperator_of_hasLyapunovForm hA
+      (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot hα hminus)
+      (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym htop hα hplus) hbot htop
+      AL hAL)
+
+end TauCeti.WeakDerivStep
+
+/-! ### The index as a difference of Morse indices -/
+
+namespace TauCeti
+
+open Set NormedSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The primitive `G(t) = ∫₀ᵗ ψ` of Mathlib's smooth transition function `ψ`, which vanishes on
+`(-∞, 0]` and equals `1` on `[1, ∞)`. So `G` vanishes on `(-∞, 0]` and has slope `1` on
+`[1, ∞)`. -/
+private def transitionIntegral (t : ℝ) : ℝ := ∫ s in (0 : ℝ)..t, Real.smoothTransition s
+
+private theorem hasDerivAt_transitionIntegral (t : ℝ) :
+    HasDerivAt transitionIntegral (Real.smoothTransition t) t :=
+  (Real.smoothTransition.continuous.integral_hasStrictDerivAt 0 t).hasDerivAt
+
+private theorem continuous_transitionIntegral : Continuous transitionIntegral :=
+  continuous_iff_continuousAt.2 fun t ↦ (hasDerivAt_transitionIntegral t).continuousAt
+
+private theorem transitionIntegral_of_nonpos {t : ℝ} (ht : t ≤ 0) : transitionIntegral t = 0 := by
+  have h : EqOn Real.smoothTransition (fun _ ↦ (0 : ℝ)) (uIcc 0 t) := fun s hs ↦ by
+    rw [uIcc_of_ge ht] at hs
+    exact Real.smoothTransition.zero_of_nonpos hs.2
+  rw [transitionIntegral, intervalIntegral.integral_congr h, intervalIntegral.integral_zero]
+
+private theorem transitionIntegral_nonneg {t : ℝ} (ht : 0 ≤ t) : 0 ≤ transitionIntegral t :=
+  intervalIntegral.integral_nonneg ht fun s _ ↦ Real.smoothTransition.nonneg s
+
+/-- Since `ψ = 1` on `[1, ∞)`, the primitive `G` grows at unit speed there. -/
+private theorem sub_one_le_transitionIntegral {t : ℝ} (ht : 0 ≤ t) :
+    t - 1 ≤ transitionIntegral t := by
+  rcases le_total t 1 with h | h
+  · linarith [transitionIntegral_nonneg ht]
+  have hint (a b : ℝ) : IntervalIntegrable Real.smoothTransition MeasureTheory.volume a b :=
+    Real.smoothTransition.continuous.intervalIntegrable a b
+  have h1 : EqOn Real.smoothTransition (fun _ ↦ (1 : ℝ)) (uIcc 1 t) := fun s hs ↦ by
+    rw [uIcc_of_le h] at hs
+    exact Real.smoothTransition.one_of_one_le hs.1
+  rw [transitionIntegral, ← intervalIntegral.integral_add_adjacent_intervals (hint 0 1) (hint 1 t),
+    intervalIntegral.integral_congr h1]
+  simpa using intervalIntegral.integral_nonneg zero_le_one fun s _ ↦ Real.smoothTransition.nonneg s
+
+/-- The model coefficient `ψ(-s) A⁻ + ψ(s) A⁺`, equal to `A⁻` on `(-∞, -1]` and to `A⁺` on
+`[1, ∞)`. On each half-line it is a scalar multiple of a single operator, so the solutions of
+`v' = -A(s) v` there are explicit in the eigenbasis of that operator. -/
+private def modelCoefficient (Aminus Aplus : E →L[ℝ] E) (s : ℝ) : E →L[ℝ] E :=
+  Real.smoothTransition (-s) • Aminus + Real.smoothTransition s • Aplus
+
+variable {Aminus Aplus : E →L[ℝ] E}
+
+private theorem modelCoefficient_of_nonneg {s : ℝ} (hs : 0 ≤ s) :
+    modelCoefficient Aminus Aplus s = Real.smoothTransition s • Aplus := by
+  simp [modelCoefficient, Real.smoothTransition.zero_of_nonpos (neg_nonpos.mpr hs)]
+
+private theorem modelCoefficient_of_nonpos {s : ℝ} (hs : s ≤ 0) :
+    modelCoefficient Aminus Aplus s = Real.smoothTransition (-s) • Aminus := by
+  simp [modelCoefficient, Real.smoothTransition.zero_of_nonpos hs]
+
+private theorem neg_modelCoefficient :
+    -modelCoefficient Aminus Aplus = modelCoefficient (-Aminus) (-Aplus) := by
+  funext s
+  simp only [modelCoefficient, Pi.neg_apply, neg_add, smul_neg]
+
+private theorem continuous_modelCoefficient : Continuous (modelCoefficient Aminus Aplus) :=
+  ((Real.smoothTransition.continuous.comp continuous_neg).smul continuous_const).add
+    (Real.smoothTransition.continuous.smul continuous_const)
+
+private theorem isSymmetric_modelCoefficient (hminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
+    (hplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric) (s : ℝ) :
+    (modelCoefficient Aminus Aplus s : E →ₗ[ℝ] E).IsSymmetric := fun x y ↦ by
+  simp only [modelCoefficient, ContinuousLinearMap.coe_coe, add_apply, smul_apply, inner_add_left,
+    inner_add_right, real_inner_smul_left, real_inner_smul_right, hminus.apply_clm,
+    hplus.apply_clm]
+
+private theorem modelCoefficient_of_le_neg_one {s : ℝ} (hs : s ≤ -1) :
+    modelCoefficient Aminus Aplus s = Aminus := by
+  rw [modelCoefficient_of_nonpos (by linarith), Real.smoothTransition.one_of_one_le (by linarith),
+    one_smul]
+
+private theorem modelCoefficient_of_one_le {s : ℝ} (hs : 1 ≤ s) :
+    modelCoefficient Aminus Aplus s = Aplus := by
+  rw [modelCoefficient_of_nonneg (by linarith), Real.smoothTransition.one_of_one_le hs, one_smul]
+
+private theorem tendsto_modelCoefficient_atBot :
+    Tendsto (modelCoefficient Aminus Aplus) atBot (𝓝 Aminus) :=
+  tendsto_const_nhds.congr' <| (eventually_le_atBot (-1)).mono fun _ hs ↦
+    (modelCoefficient_of_le_neg_one hs).symm
+
+private theorem tendsto_modelCoefficient_atTop :
+    Tendsto (modelCoefficient Aminus Aplus) atTop (𝓝 Aplus) :=
+  tendsto_const_nhds.congr' <| (eventually_ge_atTop 1).mono fun _ hs ↦
+    (modelCoefficient_of_one_le hs).symm
+
+private theorem memLp_top_modelCoefficient {μ : Measure ℝ} :
+    MemLp (modelCoefficient Aminus Aplus) ∞ μ :=
+  memLp_top_of_bound continuous_modelCoefficient.aestronglyMeasurable
+    (‖Aminus‖ + ‖Aplus‖) (Eventually.of_forall fun s ↦ by
+      have hψ (x : ℝ) : ‖Real.smoothTransition x‖ ≤ 1 := by
+        rw [Real.norm_eq_abs, abs_of_nonneg (Real.smoothTransition.nonneg x)]
+        exact Real.smoothTransition.le_one x
+      refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul] <;>
+        exact mul_le_of_le_one_left (norm_nonneg _) (hψ _))
+
+variable [FiniteDimensional ℝ E] {T : E →L[ℝ] E} {v : ℝ → E}
+
+/-- Along a solution of `v' = -ψ(t) T v` on `[0, ∞)`, for a symmetric `T`, the eigencoordinate of
+`v` at an eigenvalue `λ` of `T` is multiplied by `exp (-λ G(t))`. -/
+private theorem inner_eigenvectorBasis_eq (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
+    (hv : ∀ t, 0 ≤ t → HasDerivAt v (-(Real.smoothTransition t • T (v t))) t)
+    (i : Fin (Module.finrank ℝ E)) {t : ℝ} (ht : 0 ≤ t) :
+    ⟪hT.eigenvectorBasis rfl i, v t⟫_ℝ =
+      Real.exp (-(hT.eigenvalues rfl i * transitionIntegral t)) *
+        ⟪hT.eigenvectorBasis rfl i, v 0⟫_ℝ := by
+  set e := hT.eigenvectorBasis rfl i
+  set lam := hT.eigenvalues rfl i
+  set f : ℝ → ℝ := fun s ↦ Real.exp (lam * transitionIntegral s) * ⟪e, v s⟫_ℝ
+  -- The rescaled coordinate `f` has derivative zero on `[0, ∞)`.
+  have hf (s : ℝ) (hs : 0 ≤ s) : HasDerivAt f 0 s := by
+    have hexp := (Real.hasDerivAt_exp _).comp s ((hasDerivAt_transitionIntegral s).const_mul lam)
+    have hinner := (innerSL ℝ e).hasFDerivAt.comp_hasDerivAt s (hv s hs)
+    have hTe : ⟪e, T (v s)⟫_ℝ = lam * ⟪e, v s⟫_ℝ := by
+      have heig : T e = lam • e := hT.apply_eigenvectorBasis rfl i
+      rw [← hT.apply_clm, heig, real_inner_smul_left]
+    refine (hexp.mul hinner).congr_deriv ?_
+    simp only [Function.comp_apply, innerSL_apply_apply, inner_neg_right, real_inner_smul_right,
+      hTe]
+    ring
+  have hconst := constant_of_has_deriv_right_zero
+    (fun s hs ↦ (hf s hs.1).continuousAt.continuousWithinAt)
+    (fun s hs ↦ (hf s hs.1).hasDerivWithinAt) t ⟨ht, le_rfl⟩
+  calc ⟪e, v t⟫_ℝ = Real.exp (-(lam * transitionIntegral t)) * f t := by
+        rw [← mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_mul]
+    _ = Real.exp (-(lam * transitionIntegral t)) * ⟪e, v 0⟫_ℝ := by
+        rw [hconst]
+        simp [f, transitionIntegral_of_nonpos le_rfl]
+
+/-- A square-integrable solution of `v' = -ψ(t) T v` on `[0, ∞)`, for a symmetric `T`, starts in
+the positive spectral subspace of `T`: a coordinate at a nonpositive eigenvalue does not decay. -/
+private theorem mem_pointSpectralSubspace_Ioi_of_integrableOn
+    (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
+    (hv : ∀ t, 0 ≤ t → HasDerivAt v (-(Real.smoothTransition t • T (v t))) t)
+    (hint : IntegrableOn (fun t ↦ ‖v t‖ ^ 2) (Ioi 0)) :
+    v 0 ∈ Module.End.pointSpectralSubspace (T : E →ₗ[ℝ] E) (Ioi 0) := by
+  have hcoord := inner_eigenvectorBasis_eq hT hv
+  set b := hT.eigenvectorBasis rfl
+  set lam := hT.eigenvalues rfl
+  rw [hT.pointSpectralSubspace_eq_eigenvectorSpan rfl,
+    LinearMap.IsSymmetric.mem_eigenvectorSpan_iff]
+  intro i hi
+  simp only [Finset.mem_coe, Finsupp.mem_support_iff, OrthonormalBasis.coe_toBasis_repr_apply,
+    OrthonormalBasis.repr_apply_apply] at hi
+  by_contra hlam
+  simp only [mem_ofPred_eq, mem_Ioi, not_lt] at hlam
+  -- A nonzero coordinate at a nonpositive eigenvalue does not decay, so it is not in `L²`.
+  have hconst : IntegrableOn (fun _ : ℝ ↦ ⟪b i, v 0⟫_ℝ ^ 2) (Ioi 0) := by
+    refine hint.mono' aestronglyMeasurable_const ((ae_restrict_iff' measurableSet_Ioi).mpr
+      (Eventually.of_forall fun t (ht : 0 < t) ↦ ?_))
+    have h1 : 1 ≤ Real.exp (-(lam i * transitionIntegral t)) :=
+      Real.one_le_exp (by nlinarith [transitionIntegral_nonneg ht.le])
+    have h2 : |⟪b i, v t⟫_ℝ| ≤ |‖v t‖| := by
+      simpa [b.orthonormal.1 i] using abs_real_inner_le_norm (b i) (v t)
+    calc ‖⟪b i, v 0⟫_ℝ ^ 2‖ = ⟪b i, v 0⟫_ℝ ^ 2 := by simp
+      _ ≤ ⟪b i, v t⟫_ℝ ^ 2 := by
+        rw [hcoord i ht.le, mul_pow]
+        exact le_mul_of_one_le_left (sq_nonneg _) (one_le_pow₀ h1)
+      _ ≤ ‖v t‖ ^ 2 := sq_le_sq.mpr h2
+  rw [integrableOn_const_iff] at hconst
+  exact hi (by simpa [Real.volume_Ioi] using hconst)
+
+/-- A solution of `v' = -ψ(t) T v` on `[0, ∞)`, for a symmetric `T`, starting in the positive
+spectral subspace of `T` decays exponentially, so it is square integrable on `(0, ∞)`. -/
+private theorem integrableOn_Ioi_norm_sq_of_mem (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
+    (hv : ∀ t, 0 ≤ t → HasDerivAt v (-(Real.smoothTransition t • T (v t))) t)
+    (hmem : v 0 ∈ Module.End.pointSpectralSubspace (T : E →ₗ[ℝ] E) (Ioi 0)) :
+    IntegrableOn (fun t ↦ ‖v t‖ ^ 2) (Ioi 0) := by
+  have hcoord := inner_eigenvectorBasis_eq hT hv
+  set b := hT.eigenvectorBasis rfl
+  set lam := hT.eigenvalues rfl
+  rw [hT.pointSpectralSubspace_eq_eigenvectorSpan rfl,
+    LinearMap.IsSymmetric.mem_eigenvectorSpan_iff] at hmem
+  have hsum : EqOn (fun t ↦ ∑ i, (Real.exp (-(lam i * transitionIntegral t)) *
+      ⟪b i, v 0⟫_ℝ) ^ 2) (fun t ↦ ‖v t‖ ^ 2) (Ioi 0) := fun t (ht : 0 < t) ↦ by
+    simp only [← b.sum_sq_norm_inner_right (v t), Real.norm_eq_abs, sq_abs, hcoord _ ht.le]
+  refine IntegrableOn.congr_fun ?_ hsum measurableSet_Ioi
+  refine integrable_finsetSum _ fun i _ ↦ ?_
+  by_cases hc : ⟪b i, v 0⟫_ℝ = 0
+  · simp [hc]
+  have hpos : 0 < lam i := hmem (by
+    simpa [OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.repr_apply_apply] using hc)
+  -- At a positive eigenvalue the coordinate decays exponentially.
+  refine ((exp_neg_integrableOn_Ioi 0 (by positivity : 0 < 2 * lam i)).const_mul
+    (⟪b i, v 0⟫_ℝ ^ 2 * Real.exp (2 * lam i))).mono'
+    (((Real.continuous_exp.comp (continuous_const.mul continuous_transitionIntegral).neg).mul
+      continuous_const).pow 2).aestronglyMeasurable ?_
+  refine (ae_restrict_iff' measurableSet_Ioi).mpr (Eventually.of_forall fun t (ht : 0 < t) ↦ ?_)
+  have key : Real.exp (-(lam i * transitionIntegral t)) ^ 2 ≤
+      Real.exp (2 * lam i) * Real.exp (-(2 * lam i) * t) := by
+    rw [sq, ← Real.exp_add, ← Real.exp_add]
+    exact Real.exp_le_exp.mpr (by nlinarith [sub_one_le_transitionIntegral ht.le])
+  calc ‖(Real.exp (-(lam i * transitionIntegral t)) * ⟪b i, v 0⟫_ℝ) ^ 2‖
+      = Real.exp (-(lam i * transitionIntegral t)) ^ 2 * ⟪b i, v 0⟫_ℝ ^ 2 := by
+        rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _), mul_pow]
+    _ ≤ Real.exp (2 * lam i) * Real.exp (-(2 * lam i) * t) * ⟪b i, v 0⟫_ℝ ^ 2 :=
+        mul_le_mul_of_nonneg_right key (sq_nonneg _)
+    _ = ⟪b i, v 0⟫_ℝ ^ 2 * Real.exp (2 * lam i) * Real.exp (-(2 * lam i) * t) := by ring
+
+/-- A solution of `v' = -ψ(t) T v` on `[0, ∞)`, for a symmetric `T`, is square integrable on
+`(0, ∞)` exactly when its value at `0` lies in the positive spectral subspace of `T`. -/
+private theorem integrableOn_Ioi_norm_sq_iff (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
+    (hv : ∀ t, 0 ≤ t → HasDerivAt v (-(Real.smoothTransition t • T (v t))) t) :
+    IntegrableOn (fun t ↦ ‖v t‖ ^ 2) (Ioi 0) ↔
+      v 0 ∈ Module.End.pointSpectralSubspace (T : E →ₗ[ℝ] E) (Ioi 0) :=
+  ⟨mem_pointSpectralSubspace_Ioi_of_integrableOn hT hv, integrableOn_Ioi_norm_sq_of_mem hT hv⟩
+
+/-- The reflection of `TauCeti.integrableOn_Ioi_norm_sq_iff`: a solution of `v' = -ψ(-t) T v` on
+`(-∞, 0]`, for a symmetric `T`, is square integrable on `(-∞, 0)` exactly when its value at `0`
+lies in the negative spectral subspace of `T`. -/
+private theorem integrableOn_Iio_norm_sq_iff (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
+    (hv : ∀ t, t ≤ 0 → HasDerivAt v (-(Real.smoothTransition (-t) • T (v t))) t) :
+    IntegrableOn (fun t ↦ ‖v t‖ ^ 2) (Iio 0) ↔
+      v 0 ∈ Module.End.pointSpectralSubspace (T : E →ₗ[ℝ] E) (Iio 0) := by
+  have hw (t : ℝ) (ht : 0 ≤ t) : HasDerivAt (fun s ↦ v (-s))
+      (-(Real.smoothTransition t • (-T) (v (-t)))) t := by
+    simpa [Function.comp_def] using (hv (-t) (neg_nonpos.mpr ht)).scomp t (hasDerivAt_neg t)
+  have h := integrableOn_Ioi_norm_sq_iff hT.neg hw
+  rw [ContinuousLinearMap.toLinearMap_neg, Module.End.pointSpectralSubspace_neg, neg_Ioi,
+    neg_zero] at h
+  rw [← h, ← (Measure.measurePreserving_neg volume).integrableOn_comp_preimage
+    (Homeomorph.neg ℝ).measurableEmbedding]
+  simp [Function.comp_def]
+
+/-- The square-integrable solutions of `v' = -A(s) v` for the model coefficient `A` are the
+initial values in the positive spectral subspace of `A⁺` and the negative spectral subspace of
+`A⁻`: square integrability on `(0, ∞)` and on `(-∞, 0)` impose the two conditions separately. -/
+private theorem squareIntegrableSolutions_modelCoefficient
+    (hminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric) (hplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric) :
+    squareIntegrableSolutions (modelCoefficient Aminus Aplus) =
+      Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0) ⊓
+        Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0) := by
+  -- A solution on the whole line splits into solutions on the two half-lines.
+  have hsplit {v : ℝ → E} (hv : ∀ t, HasDerivAt v (-modelCoefficient Aminus Aplus t (v t)) t) :
+      (IntegrableOn (fun t ↦ ‖v t‖ ^ 2) (Ioi 0) ↔
+        v 0 ∈ Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)) ∧
+      (IntegrableOn (fun t ↦ ‖v t‖ ^ 2) (Iio 0) ↔
+        v 0 ∈ Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) :=
+    ⟨integrableOn_Ioi_norm_sq_iff hplus fun t ht ↦ by
+        simpa [modelCoefficient_of_nonneg ht] using hv t,
+      integrableOn_Iio_norm_sq_iff hminus fun t ht ↦ by
+        simpa [modelCoefficient_of_nonpos ht] using hv t⟩
+  have hmemLp {v : ℝ → E} (hv : ∀ t, HasDerivAt v (-modelCoefficient Aminus Aplus t (v t)) t) :
+      MemLp v 2 ↔ IntegrableOn (fun t ↦ ‖v t‖ ^ 2) (Iio 0) ∧
+        IntegrableOn (fun t ↦ ‖v t‖ ^ 2) (Ioi 0) := by
+    have hcont : Continuous v := continuous_iff_continuousAt.2 fun t ↦ (hv t).continuousAt
+    rw [memLp_two_iff_integrable_sq_norm hcont.aestronglyMeasurable, ← integrableOn_univ,
+      ← Iio_union_Ici (a := (0 : ℝ)), integrableOn_union, integrableOn_Ici_iff_integrableOn_Ioi]
+  ext x
+  rw [mem_squareIntegrableSolutions, Submodule.mem_inf]
+  constructor
+  · rintro ⟨v, rfl, hv, hv2⟩
+    obtain ⟨hminus2, hplus2⟩ := (hmemLp hv).1 hv2
+    exact ⟨(hsplit hv).1.1 hplus2, (hsplit hv).2.1 hminus2⟩
+  · rintro ⟨hxplus, hxminus⟩
+    -- The explicit solution `exp (-G(t) A⁺) exp (G(-t) A⁻) x`: one factor is the identity on each
+    -- half-line.
+    set v : ℝ → E := fun t ↦
+      exp ((-transitionIntegral t) • Aplus) (exp (transitionIntegral (-t) • Aminus) x)
+    have hv0 : v 0 = x := by simp [v, transitionIntegral_of_nonpos le_rfl]
+    have hv (t : ℝ) : HasDerivAt v (-modelCoefficient Aminus Aplus t (v t)) t := by
+      have hP := (hasDerivAt_exp_smul_const' Aplus (-transitionIntegral t)).scomp t
+        (hasDerivAt_transitionIntegral t).neg
+      have hG : HasDerivAt (fun s ↦ transitionIntegral (-s)) (-Real.smoothTransition (-t)) t := by
+        simpa [Function.comp_def] using
+          (hasDerivAt_transitionIntegral (-t)).scomp t (hasDerivAt_neg t)
+      have hQ := (hasDerivAt_exp_smul_const' Aminus (transitionIntegral (-t))).scomp t hG
+      refine (hP.clm_apply (hQ.clm_apply (hasDerivAt_const t x))).congr_deriv ?_
+      rcases le_or_gt t 0 with ht | ht
+      · simp [v, transitionIntegral_of_nonpos ht, Real.smoothTransition.zero_of_nonpos ht,
+          modelCoefficient_of_nonpos ht]
+      · simp [v, transitionIntegral_of_nonpos (neg_nonpos.mpr ht.le),
+          Real.smoothTransition.zero_of_nonpos (neg_nonpos.mpr ht.le),
+          modelCoefficient_of_nonneg ht.le]
+    exact ⟨v, hv0, hv, (hmemLp hv).2 ⟨(hsplit hv).2.2 (hv0 ▸ hxminus),
+      (hsplit hv).1.2 (hv0 ▸ hxplus)⟩⟩
+
+end TauCeti
+
+namespace TauCeti.WeakDerivStep
+
+open Set
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {A : ℝ → E →L[ℝ] E}
+
+/-- **The index of the trajectory operator is a difference of Morse indices.** Let `A` be a
+continuous family of operators on a finite-dimensional real inner product space with invertible
+symmetric limits `A±` at `±∞`. Then the index of the
+trajectory operator `u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the number of negative
+eigenvalues of `A⁻` minus the number of negative eigenvalues of `A⁺`, counted with multiplicity:
+the dimensions of the sums of their eigenspaces at negative eigenvalues. -/
+theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
+    (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E} (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
+    (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α)
+    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0)) := by
+  -- Replace `A` by the model coefficient with the same limits, whose index is computable.
+  set M := modelCoefficient Aminus Aplus
+  set ML := (memLp_top_modelCoefficient (Aminus := Aminus) (Aplus := Aplus)
+    (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ))).toLp M
+  have hML : ML =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] M := MemLp.coeFn_toLp _
+  have hMsym := isSymmetric_modelCoefficient hsymminus hsymplus
+  have hMbot : Tendsto M atBot (𝓝 Aminus) := tendsto_modelCoefficient_atBot
+  have hMtop : Tendsto M atTop (𝓝 Aplus) := tendsto_modelCoefficient_atTop
+  rw [index_trajectoryOperator_eq_of_tendsto hA continuous_modelCoefficient
+      (ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsymminus hα hminus)
+      (ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsymplus hα hplus) hbot htop hMbot hMtop
+      AL ML hAL hML,
+    index_trajectoryOperator_eq_finrank_sub_finrank continuous_modelCoefficient hMsym hα hminus
+      hplus hMbot hMtop ML hML,
+    neg_modelCoefficient, squareIntegrableSolutions_modelCoefficient hsymminus hsymplus]
+  rw [squareIntegrableSolutions_modelCoefficient hsymminus.neg hsymplus.neg,
+    ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_neg,
+    Module.End.pointSpectralSubspace_neg, Module.End.pointSpectralSubspace_neg, neg_Ioi, neg_Iio,
+    neg_zero]
+  -- For an invertible symmetric operator the positive and negative spectral subspaces are
+  -- orthogonal complements, so the kernel and cokernel are `W ⊓ U` and `Wᗮ ⊓ Uᗮ`.
+  set W := Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)
+  set U := Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)
+  have hW : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0) = Wᗮ :=
+    (hsymplus.orthogonal_pointSpectralSubspace_Ioi_zero (LinearMap.ker_eq_bot.2
+      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+        (le_inv_mul_iff₀ hα).2 (hplus v)))).symm
+  have hU : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ioi 0) = Uᗮ :=
+    (hsymminus.orthogonal_pointSpectralSubspace_Iio_zero (LinearMap.ker_eq_bot.2
+      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+        (le_inv_mul_iff₀ hα).2 (hminus v)))).symm
+  rw [hW, hU, Submodule.inf_orthogonal]
+  have h1 := Submodule.finrank_sup_add_finrank_inf_eq W U
+  have h2 := (W ⊔ U).finrank_add_finrank_orthogonal
+  have h3 := W.finrank_add_finrank_orthogonal
+  omega
+
+/-- **The index of the trajectory operator with hyperbolic limits is a difference of inertia
+indices of Lyapunov forms.** Let `A` be a continuous family of operators on a finite-dimensional
+real inner product space whose limits `A±` at `±∞` have symmetric Lyapunov forms `S±`:
+`c± ‖v‖² ≤ ⟪S± (A± v), v⟫` with `c± > 0`. Then the index of the trajectory operator
+`u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the number of negative eigenvalues of `S⁻`
+minus the number of negative eigenvalues of `S⁺`, counted with multiplicity. Neither `A` nor its
+limits need to be symmetric; for invertible symmetric limits one may take `S± = A±`, which gives
+`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank`. -/
+theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner
+    (hA : Continuous A) {Aminus Aplus Sminus Splus : E →L[ℝ] E}
+    (hSminus : (Sminus : E →ₗ[ℝ] E).IsSymmetric) (hSplus : (Splus : E →ₗ[ℝ] E).IsSymmetric)
+    {cminus cplus : ℝ} (hcminus : 0 < cminus) (hcplus : 0 < cplus)
+    (hminus : ∀ v, cminus * ‖v‖ ^ 2 ≤ ⟪Sminus (Aminus v), v⟫_ℝ)
+    (hplus : ∀ v, cplus * ‖v‖ ^ 2 ≤ ⟪Splus (Aplus v), v⟫_ℝ)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ (Module.End.pointSpectralSubspace (Sminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (Splus : E →ₗ[ℝ] E) (Iio 0)) := by
+  -- Deform the limits along the segments from `A±` to `S±`, which keep the Lyapunov forms `S±`,
+  -- and the family along the segment from `A` to the model coefficient with limits `S±`.
+  set M := modelCoefficient Sminus Splus
+  set ML := (memLp_top_modelCoefficient (Aminus := Sminus) (Aplus := Splus)
+    (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ))).toLp M
+  have hML : ML =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] M := MemLp.coeFn_toLp _
+  have hMbot : Tendsto M atBot (𝓝 Sminus) := tendsto_modelCoefficient_atBot
+  have hMtop : Tendsto M atTop (𝓝 Splus) := tendsto_modelCoefficient_atTop
+  rw [index_trajectoryOperator_eq_of_forall_hasLyapunovForm hA continuous_modelCoefficient hbot htop
+    hMbot hMtop AL ML hAL hML
+    (fun t ht ↦ ContinuousLinearMap.hasLyapunovForm_one_sub_smul_add_smul hSminus hcminus hminus
+      ht.1 ht.2)
+    (fun t ht ↦ ContinuousLinearMap.hasLyapunovForm_one_sub_smul_add_smul hSplus hcplus hplus
+      ht.1 ht.2)]
+  -- The symmetric Lyapunov forms are bounded below, with a common constant.
+  obtain ⟨αminus, hαminus, hgapminus⟩ :=
+    ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_forall_le_inner hSminus
+      hcminus hminus
+  obtain ⟨αplus, hαplus, hgapplus⟩ :=
+    ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_forall_le_inner hSplus
+      hcplus hplus
+  exact index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
+    continuous_modelCoefficient hSminus hSplus (lt_min hαminus hαplus)
+    (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (hgapminus v))
+    (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (hgapplus v))
+    hMbot hMtop ML hML
+
+/-- **The index of the trajectory operator with hyperbolic limits counts stable directions.** Let
+`A` be a continuous family of operators on a finite-dimensional real inner product space whose
+limits `A±` at `±∞` have Lyapunov forms, that is, are hyperbolic. Then the index of the trajectory
+operator `u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is `dim Eˢ(A⁻) - dim Eˢ(A⁺)`, where
+the stable subspace `Eˢ(B)` (`ContinuousLinearMap.stableSubspace`) consists of the `v` with
+`exp (t • B) v → 0` as `t → ∞`. Neither `A` nor its limits need to be symmetric. For the operator
+`d/ds - A`, whose coefficient is `-A`, this reads `dim Eᵘ(A⁻) - dim Eᵘ(A⁺)` with the unstable
+subspaces `Eᵘ(B) = Eˢ(-B)`. -/
+theorem index_trajectoryOperator_eq_finrank_stableSubspace_sub_finrank (hA : Continuous A)
+    {Aminus Aplus : E →L[ℝ] E} (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ Aminus.stableSubspace : ℤ) - Module.finrank ℝ Aplus.stableSubspace := by
+  obtain ⟨Sminus, hSminus, cminus, hcminus, hSAminus⟩ :=
+    ContinuousLinearMap.hasLyapunovForm_iff.1 hminus
+  obtain ⟨Splus, hSplus, cplus, hcplus, hSAplus⟩ := ContinuousLinearMap.hasLyapunovForm_iff.1 hplus
+  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner hA
+      hSminus hSplus hcminus hcplus hSAminus hSAplus hbot htop AL hAL,
+    ContinuousLinearMap.finrank_stableSubspace_eq_finrank_pointSpectralSubspace_Iio hSminus hcminus
+      hSAminus,
+    ContinuousLinearMap.finrank_stableSubspace_eq_finrank_pointSpectralSubspace_Iio hSplus hcplus
+      hSAplus]
+
+end TauCeti.WeakDerivStep
+
+namespace ContinuousLinearMap
+
+open Set TauCeti.WeakDerivStep
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **The negative inertia of a Lyapunov form depends only on the operator.** If `S` and `S'` are
+symmetric Lyapunov forms of the same operator `A` on a finite-dimensional real inner product space,
+`c ‖v‖² ≤ ⟪S (A v), v⟫` and `c' ‖v‖² ≤ ⟪S' (A v), v⟫` with `c, c' > 0`, then `S` and `S'` have the
+same number of negative eigenvalues, counted with multiplicity. By the inertia theorem of Ostrowski
+and Schneider, which is not formalized here, this number is the dimension of the sum of the
+generalized eigenspaces of `A` at eigenvalues of negative real part. -/
+theorem finrank_pointSpectralSubspace_Iio_eq_of_forall_le_inner {A S S' : E →L[ℝ] E}
+    (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (hS' : (S' : E →ₗ[ℝ] E).IsSymmetric) {c c' : ℝ}
+    (hc : 0 < c) (hc' : 0 < c') (h : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ)
+    (h' : ∀ v, c' * ‖v‖ ^ 2 ≤ ⟪S' (A v), v⟫_ℝ) :
+    Module.finrank ℝ (Module.End.pointSpectralSubspace (S : E →ₗ[ℝ] E) (Iio 0)) =
+      Module.finrank ℝ (Module.End.pointSpectralSubspace (S' : E →ₗ[ℝ] E) (Iio 0)) := by
+  -- The index of the constant family `A` is `n⁻(S) - n⁻(S)` and also `n⁻(S) - n⁻(S')`.
+  let AL := (memLp_top_const (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) A).toLp
+  have hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A := MemLp.coeFn_toLp _
+  have h₁ :=
+    index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner
+      continuous_const hS hS hc hc h h tendsto_const_nhds tendsto_const_nhds AL hAL
+  have h₂ :=
+    index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner
+      continuous_const hS hS' hc hc' h h' tendsto_const_nhds tendsto_const_nhds AL hAL
+  omega
+
+end ContinuousLinearMap

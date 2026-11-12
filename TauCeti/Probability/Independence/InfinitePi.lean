@@ -5,11 +5,15 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.InfinitePi
 import TauCeti.Probability.Independence.DisjointBlocks
 
 /-!
 # Independence of disjoint coordinate restrictions of an infinite product
+
+The coordinates of a product sample are independent, and those of a countable power of one
+probability law are moreover identically distributed: they realize an i.i.d. sequence with that law.
 
 The restrictions of a product sample to disjoint index sets are independent, and so are its
 selections along maps with disjoint ranges.  The resulting joint-law identities are useful when a
@@ -23,9 +27,27 @@ public section
 
 open MeasureTheory ProbabilityTheory
 
+namespace MeasureTheory.Measure
+
+/-- The coordinates of a sample from the power `Measure.infinitePi fun _ => μ` of a probability
+law `μ` are identically distributed, each with law `μ`. -/
+theorem identDistrib_eval_infinitePi {ι β : Type*} [MeasurableSpace β] (μ : Measure β)
+    [IsProbabilityMeasure μ] (i j : ι) :
+    IdentDistrib (fun x : ι → β => x i) (fun x => x j) (Measure.infinitePi fun _ => μ)
+      (Measure.infinitePi fun _ => μ) :=
+  ⟨(measurable_pi_apply i).aemeasurable, (measurable_pi_apply j).aemeasurable, by
+    rw [Measure.infinitePi_map_eval, Measure.infinitePi_map_eval]⟩
+
+end MeasureTheory.Measure
+
 namespace TauCeti.Probability
 
 variable {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+
+/-- The coordinates of a product sample are independent under the product probability law. -/
+theorem iIndepFun_eval_infinitePi (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)] :
+    iIndepFun (fun i (x : ∀ j, α j) => x i) (Measure.infinitePi P) :=
+  iIndepFun_infinitePi (X := fun i : ι => (id : α i → α i)) fun _ => measurable_id
 
 /-- Restrictions to disjoint coordinate sets are independent under a product probability law. -/
 theorem indepFun_domRestrict_infinitePi (P : ∀ i, Measure (α i))
@@ -35,8 +57,7 @@ theorem indepFun_domRestrict_infinitePi (P : ∀ i, Measure (α i))
       (fun x : ∀ i, α i => T.domRestrict x) (Measure.infinitePi P) := by
   classical
   let ρ : Measure (∀ i, α i) := Measure.infinitePi P
-  have hi : iIndepFun (fun i : ι => fun x : ∀ j, α j => x i) ρ :=
-    iIndepFun_infinitePi (X := fun i : ι => (id : α i → α i)) fun _ => measurable_id
+  have hi : iIndepFun (fun i : ι => fun x : ∀ j, α j => x i) ρ := iIndepFun_eval_infinitePi P
   apply TauCeti.Probability.indepFun_of_measurable_blockSigma
     (hZ := hi.precomp (g := (Subtype.val : ↥(S ∪ T) → ι)) Subtype.val_injective)
     (fun _ _ => measurable_pi_apply _) hST

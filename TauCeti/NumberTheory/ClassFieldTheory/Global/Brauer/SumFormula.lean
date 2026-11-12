@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.LocalizationKernel
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Compositum
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Splitting
+import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SecondInequality
 import TauCeti.NumberTheory.Cyclotomic.Adjoin
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Torsion
 
 /-!
-# The sum of the local invariants of a Brauer class, from the Hasse principle
+# The sum of the local invariants of a Brauer class
 
 Let `K` be a number field. The global Brauer sequence
 
@@ -21,11 +23,13 @@ Let `K` be a number field. The global Brauer sequence
 
 has zero composite `Br K → ℚ/ℤ` exactly when the local invariants of every global Brauer class
 sum to zero; this is the inclusion of the image of `Br K` in the kernel of the sum, one half of
-exactness in the middle. This file proves that sum formula for every class of `Br K`, assuming the
-Hasse principle, injectivity of `Br E → ⨁_w Br E_w`, for the finite extensions `E` of `K`
-(`sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective`). The Hasse principle itself
-follows from the vanishing of idele-class `H¹`
-(`TauCeti.ClassFieldTheory.brLocalization_injective_of_subsingleton_groupCohomology_one`).
+exactness in the middle. This file proves that sum formula for every class of `Br K`
+(`sumLocalInv_brLocalization_eq_zero`) from the Hasse principle, injectivity of
+`Br E → ⨁_w Br E_w`, over the finite extensions `E` of `K`. The Hasse principle
+(`brLocalization_injective`) follows from the vanishing of idele-class `H¹`
+(`TauCeti.ClassFieldTheory.brLocalization_injective_of_subsingleton_h1_globalFormation`), which
+comes with the second fundamental inequality
+(`TauCeti.ClassFieldTheory.subsingleton_h1_globalFormation`).
 
 The argument is Milne's Lemma 8.6. A Brauer class is torsion, so it is a sum of classes killed by
 powers of primes, and the sum of the local invariants is additive. Let `x` be killed by a power
@@ -40,9 +44,10 @@ the product formula for the local Artin symbols on cyclotomic extensions
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective`: if
-  the Hasse principle holds over every finite extension of `K`, then the local invariants of
-  every Brauer class of `K` sum to zero.
+* `TauCeti.ClassFieldTheory.brLocalization_injective`: the Hasse principle: a Brauer class of `K`
+  with trivial localizations at all places is zero.
+* `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_eq_zero`: the local invariants of every
+  Brauer class of `K` sum to zero.
 
 ## References
 
@@ -60,11 +65,16 @@ open _root_.IntermediateField
 
 variable (K : Type) [Field K] [NumberField K]
 
+/-- **The Hasse principle for the Brauer group** (Albert–Brauer–Hasse–Noether). A Brauer class of
+the number field `K` whose localizations at all places vanish is zero: `Br K → ⨁_v Br K_v` is
+injective. -/
+theorem brLocalization_injective : Function.Injective (brLocalization K) :=
+  brLocalization_injective_of_subsingleton_h1_globalFormation K fun _ ↦
+    subsingleton_h1_globalFormation _
+
 /-- The sum formula for a class killed by a power of a prime, from the Hasse principle over the
 finite extensions of `K`. -/
 private theorem sumLocalInv_brLocalization_eq_zero_of_pow_nsmul_eq_zero
-    (h : ∀ (E : Type) [Field E] [NumberField E] [Algebra K E],
-      Function.Injective (brLocalization E))
     {ℓ : ℕ} (hℓ : ℓ.Prime) {k : ℕ} (x : Br K) (hx : ℓ ^ k • x = 0) :
     sumLocalInv K (brLocalization K x) = 0 := by
   obtain ⟨r, hr⟩ := (eventually_exists_isCyclic_brLocalization_eq_zero K hℓ x hx).exists
@@ -78,7 +88,7 @@ private theorem sumLocalInv_brLocalization_eq_zero_of_pow_nsmul_eq_zero
   have : NumberField C := NumberField.of_module_finite K C
   obtain ⟨E, _, _, hE⟩ := hr C
   -- By the Hasse principle over `E`, the class `x` dies in `E`, hence in its copy `E'` in `Kˢ`.
-  have hxE : brBaseChange K E x = 0 := h E (hE.trans (map_zero _).symm)
+  have hxE : brBaseChange K E x = 0 := brLocalization_injective E (hE.trans (map_zero _).symm)
   set E' : IntermediateField K (SeparableClosure K) := lift E
   let e : E ≃ₐ[K] E' := liftAlgEquiv E
   have : FiniteDimensional K E' := e.toLinearEquiv.finiteDimensional
@@ -89,13 +99,11 @@ private theorem sumLocalInv_brLocalization_eq_zero_of_pow_nsmul_eq_zero
   exact sumLocalInv_brLocalization_relBrInfl_eq_zero_of_le_adjoin_nth_roots E' (NeZero.ne _)
     (lift_le E) y
 
-/-- **The sum formula, from the Hasse principle.** If, for every finite extension `E` of the
-number field `K`, a Brauer class of `E` with trivial localizations at all places is zero, then the
-local invariants of every Brauer class of `K` sum to zero. -/
-theorem sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective
-    (h : ∀ (E : Type) [Field E] [NumberField E] [Algebra K E],
-      Function.Injective (brLocalization E))
-    (x : Br K) : sumLocalInv K (brLocalization K x) = 0 := by
+/-- **The sum formula.** The local invariants of every Brauer class of the number field `K` sum
+to zero. -/
+@[simp]
+theorem sumLocalInv_brLocalization_eq_zero (x : Br K) :
+    sumLocalInv K (brLocalization K x) = 0 := by
   -- Induction on an exponent `n` killing `x`, splitting `x` along coprime factors of `n`.
   suffices H : ∀ n : ℕ, 0 < n → ∀ x : Br K, n • x = 0 → sumLocalInv K (brLocalization K x) = 0 by
     obtain ⟨n, hn, hx⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.mp
@@ -104,7 +112,7 @@ theorem sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective
   intro n
   induction n using Nat.recOnPosPrimePosCoprime with
   | prime_pow ℓ k hℓ _ =>
-    exact fun _ x hx ↦ sumLocalInv_brLocalization_eq_zero_of_pow_nsmul_eq_zero K h hℓ x hx
+    exact fun _ x hx ↦ sumLocalInv_brLocalization_eq_zero_of_pow_nsmul_eq_zero K hℓ x hx
   | zero => exact fun h0 ↦ absurd h0 (lt_irrefl 0)
   | one =>
     intro _ x hx

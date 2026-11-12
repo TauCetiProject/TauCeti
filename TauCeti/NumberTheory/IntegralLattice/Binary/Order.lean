@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.IntegralLattice.Binary.NormForm
 public import TauCeti.NumberTheory.QuadraticOrder.Field
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.Conductor
-public import TauCeti.NumberTheory.QuadraticOrder.Split
+public import TauCeti.NumberTheory.QuadraticOrder.Split.Basic
 public import TauCeti.Algebra.QuadraticAlgebra.Etale
 
 /-!
@@ -44,6 +44,11 @@ noncomputable def binaryOrder :
     Subalgebra ℤ (QuadraticAlgebra ℚ (L.binaryDiscriminant hV : ℚ) 0) :=
   QuadraticOrder.toSubalgebra (L.binaryDiscriminant hV)
     (L.binaryDiscriminant_emod_four_eq_zero_or_one hV)
+
+/-- The lattice order is the quadratic order of its primitive discriminant. -/
+theorem binaryOrder_def :
+    L.binaryOrder hV = QuadraticOrder.toSubalgebra (L.binaryDiscriminant hV)
+      (L.binaryDiscriminant_emod_four_eq_zero_or_one hV) := (rfl)
 
 /-- Members of the lattice order have integral coefficients in its two generators. -/
 @[grind =] theorem mem_binaryOrder_iff

@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extensio
 public import TauCeti.RingTheory.Norm.Units
 import Mathlib.LinearAlgebra.Trace
 import Mathlib.RingTheory.Complex
-import TauCeti.FieldTheory.IsRealClosed.Real
+import Mathlib.FieldTheory.IsRealClosed.Real
 
 /-!
 # Local norms at the infinite places

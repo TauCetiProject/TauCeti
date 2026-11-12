@@ -35,7 +35,8 @@ theorem ord_Δ_smul (w : Valuation K ℤᵐ⁰) (C : VariableChange K)
     (W : WeierstrassCurve K) [W.IsElliptic] :
     w.ord (C • W).Δ = w.ord W.Δ - 12 * w.ord (C.u : K) := by
   rw [variableChange_Δ,
-    Valuation.ord_mul _ (pow_ne_zero _ C.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero,
+    Valuation.ord_mul _ (w.ne_zero_iff.mpr (pow_ne_zero _ C.u⁻¹.ne_zero))
+      (w.ne_zero_iff.mpr W.isUnit_Δ.ne_zero),
     Valuation.ord_pow, Units.val_inv_eq_inv_val, Valuation.ord_inv]
   ring
 

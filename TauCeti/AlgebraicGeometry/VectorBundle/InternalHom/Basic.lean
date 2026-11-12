@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.InternalHom.Quasicoherent
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
+public import TauCeti.CategoryTheory.Monoidal.Subcategory
 public import Mathlib.CategoryTheory.Adjunction.Restrict
 
 /-!
@@ -20,6 +21,11 @@ the target sheaf is arbitrary quasicoherent, without a finiteness hypothesis.
 
 The adjunction is restricted using Mathlib's `Adjunction.restrictFullyFaithful`. The dual-tensor
 isomorphism lifts `TauCeti.dualTensorIhom`, retaining its canonical evaluation equation.
+
+When the target is also finite locally free, so is `𝓗om(E, F)`. Hence `FiniteLocallyFreeSheaf X`
+is itself closed monoidal, with internal Homs, evaluation and precomposition computed in
+`X.Modules` (`CategoryTheory.ObjectProperty.fullMonoidalClosedSubcategory`); its internal Hom into
+`𝒪_X` is the dual `FiniteLocallyFreeSheaf.dual E`.
 -/
 
 public section
@@ -34,7 +40,18 @@ universe u
 
 noncomputable section
 
+/-- Finite locally free sheaves are closed under internal Hom in `X.Modules`. With this instance,
+`FiniteLocallyFreeSheaf X` is closed monoidal, with internal Homs computed in `X.Modules`. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isMonoidalClosed_isFiniteLocallyFree
+    (X : Scheme.{u}) : (Scheme.Modules.isFiniteLocallyFree X).IsMonoidalClosed where
+  prop_ihom _ _ hE hF := _root_.SheafOfModules.isFiniteLocallyFree_ihom (R := X.sheaf) _ hE hF
+
 variable {X : Scheme.{u}} (E : FiniteLocallyFreeSheaf X)
+
+/-- The internal Hom from `E` into the structure sheaf in `FiniteLocallyFreeSheaf X` is the dual
+`𝓗om(E, 𝒪_X)`. -/
+theorem ihom_obj_unit_eq_dual : (ihom E).obj (𝟙_ (FiniteLocallyFreeSheaf X)) = dual E :=
+  (rfl)
 
 /-- Internal Hom from `E`, restricted to quasicoherent target sheaves. -/
 def internalHom : QuasicoherentSheaf X ⥤ QuasicoherentSheaf X :=

@@ -98,7 +98,7 @@ theorem coset_eq_iff_exists_units_matrixCoefficient (I : HopfIdeal R H)
   have hmul : Comodule.pointsAction M g
       (Comodule.pointsAction M (g⁻¹ * h) (1 ⊗ₜ[R] m)) =
         Comodule.pointsAction M h (1 ⊗ₜ[R] m) := by
-    rw [← LinearEquiv.mul_apply, ← map_mul, mul_inv_cancel_left]
+    rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel_left]
   simp only [LinearEquiv.coe_coe]
   rw [hmul, eq_comm]
   exact Comodule.span_pointsAction_eq_iff_exists_units_matrixCoefficient m hm g h

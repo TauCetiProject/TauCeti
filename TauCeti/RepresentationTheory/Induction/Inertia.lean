@@ -60,14 +60,6 @@ restriction with a single `G`-orbit.
 * `FDRep.inertia_resFDRep`: a representation restricted from `G` to `N` has full inertia.
 * `TauCeti.char_conj_eq_of_mem_inertia`: the character of `A` is invariant under conjugation
   by an element of the inertia group.
-
-## References
-
-This file builds the inertia group of Layer 5 (Clifford theory over a normal subgroup) of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, which asks for
-"the **inertia (stabilizer) group** `inertia V ≤ G` of an irreducible `V : FDRep k N` is
-`{g : G | {}^g V ≅ V}`, a subgroup containing `N`", and pins `inertia`, `mem_inertia_iff` and
-`le_inertia` in the accompanying `Suggested.lean`.
 -/
 
 public section
@@ -187,11 +179,11 @@ theorem inertia_resFDRep (W : FDRep k G) (N : Subgroup G) [N.Normal] :
     inertia (N.resFDRep W) = ⊤ := by
   apply top_unique
   intro g _
-  refine mem_inertia_iff.mpr ⟨Action.mkIso (W.ρAut g) fun n ↦ ?_⟩
+  refine mem_inertia_iff.mpr ⟨Action.mkIso (W.ρAut g).asIso fun n ↦ ?_⟩
   -- Restriction preserves the underlying object. Rewriting `Action.res_obj_ρ` alone would
   -- leave incompatible object types in the compositions, so expose the ambient operators.
-  change Action.ρ W (MulAut.conjNormal g⁻¹ n : G) ≫ Action.ρ W g =
-    Action.ρ W g ≫ Action.ρ W (n : G)
+  change (Action.ρ W (MulAut.conjNormal g⁻¹ n : G)).asHom ≫ (Action.ρ W g).asHom =
+    (Action.ρ W g).asHom ≫ (Action.ρ W (n : G)).asHom
   ext v
   exact Representation.apply_conjNormal_inv ((forget₂ (FDRep k G) (Rep k G)).obj W).ρ g n v
 

@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Gluing
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
+import TauCeti.Geometry.RingedSpace.LocallyRingedSpace
 
 /-!
-# Epimorphisms of schemes with injective stalk maps
+# Epimorphisms of schemes with injective stalk or section maps
 
 A surjective morphism of schemes `f : X ⟶ Y` whose stalk maps `𝒪_{Y, f x} → 𝒪_{X, x}` are all
 injective is an epimorphism in the category of schemes: two morphisms out of `Y` which agree after
@@ -21,6 +23,12 @@ of `f` are injective. This is the criterion behind Mathlib's
 supplies their injectivity; here injectivity is assumed directly. It applies, for instance, to the
 quotient of an affine scheme by a finite group, whose stalk maps are injective but need not be flat.
 
+The same argument works with the maps on sections `Γ(Y, U) → Γ(X, f⁻¹ U)` in place of the stalk
+maps. Their injectivity holds when `𝒪_Y → f_* 𝒪_X` is an isomorphism, a condition on sections
+rather than on stalks, which is how contraction morphisms of curves are controlled. This version
+uses nothing about schemes and is deduced from its locally-ringed-space form
+`AlgebraicGeometry.LocallyRingedSpace.epi_of_base_surjective_of_c_app_mono`.
+
 Both hypotheses survive base change along an open immersion `U ⟶ Y`: surjectivity is stable under
 base change, and the stalk maps of `X ×_Y U ⟶ U` are those of `f`, up to the stalk isomorphisms of
 the two open immersions `X ×_Y U ⟶ X` and `U ⟶ Y`. So such an `f` remains an epimorphism over
@@ -29,16 +37,23 @@ morphism out of `X` which factors locally over an open cover of `Y` then factors
 This gluing step follows the proof of Mathlib's
 `AlgebraicGeometry.isRegularEpi_of_flat_of_surjective_of_isAffine`.
 
+The flat criterion itself applies to the spectrum of a homomorphism of fields, which is flat and
+surjective, so it is an epimorphism of schemes (`RingHom.epi_SpecMap_ofHom`).
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.epi_of_surjective_of_stalkMap_injective`: a surjective morphism
   with injective stalk maps is an epimorphism.
+* `AlgebraicGeometry.Scheme.Hom.epi_of_surjective_of_app_injective`: a surjective morphism which
+  is injective on sections over every open is an epimorphism.
 * `AlgebraicGeometry.Scheme.Hom.stalkMap_pullback_snd_injective`: the stalk maps of a base change
   along an open immersion are injective when those of `f` are.
 * `AlgebraicGeometry.Scheme.Hom.epi_pullback_snd_of_isOpenImmersion`: the base change of such an
   `f` along an open immersion is again an epimorphism.
 * `AlgebraicGeometry.Scheme.Hom.exists_comp_eq_of_openCover`: if every base change of `π` along an
   open immersion is an epimorphism, local factorizations through `π` over an open cover glue.
+* `RingHom.epi_SpecMap_ofHom`: the spectrum of a homomorphism of fields is an epimorphism of
+  schemes.
 
 ## References
 
@@ -62,6 +77,17 @@ theorem epi_of_surjective_of_stalkMap_injective (f : X ⟶ Y) [Surjective f]
   apply Functor.epi_of_epi_map LocallyRingedSpace.forgetToSheafedSpace
   refine SheafedSpace.epi_of_base_surjective_of_stalk_mono _ ‹Surjective f›.surj fun x ↦ ?_
   exact ConcreteCategory.mono_of_injective _ (h x)
+
+/-- **A surjective morphism of schemes injective on sections is an epimorphism.** If
+`f : X ⟶ Y` is surjective and every `Γ(Y, U) ⟶ Γ(X, f⁻¹ U)` is injective, as when
+`𝒪_Y ⟶ f_* 𝒪_X` is an isomorphism, then two morphisms out of `Y` which agree after composing
+with `f` agree on points because `f` is surjective, and on sections because `f` is injective on
+sections. -/
+theorem epi_of_surjective_of_app_injective (f : X ⟶ Y) [Surjective f]
+    (h : ∀ U, Function.Injective (f.app U)) : Epi f := by
+  apply Functor.epi_of_epi_map Scheme.forgetToLocallyRingedSpace
+  exact LocallyRingedSpace.epi_of_base_surjective_of_c_app_mono _ f.surjective
+    fun U ↦ ConcreteCategory.mono_of_injective _ (h U.unop)
 
 /-- The stalk maps of the base change of `f` along an open immersion are injective when those of
 `f` are. -/
@@ -119,3 +145,21 @@ theorem exists_comp_eq_of_openCover (π : X ⟶ Y)
         rw [pullback.condition_assoc, Cover.ι_glueMorphisms, hu i]
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace RingHom
+
+universe u
+
+variable {F L : Type u} [Field F] [Field L]
+
+open AlgebraicGeometry
+
+/-- The spectrum of a homomorphism of fields is an epimorphism of schemes: it is flat and
+surjective. -/
+instance epi_SpecMap_ofHom (ι : F →+* L) : Epi (Spec.map (CommRingCat.ofHom ι)) := by
+  obtain ⟨_, _⟩ := (flat_and_surjective_SpecMap_iff (CommRingCat.ofHom ι)).mpr (by
+    algebraize [ι]
+    exact inferInstanceAs <| Module.FaithfullyFlat F L)
+  exact Flat.epi_of_flat_of_surjective _
+
+end RingHom

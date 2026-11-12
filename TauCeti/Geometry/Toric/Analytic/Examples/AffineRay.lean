@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.Examples.AffineRay
 public import TauCeti.Geometry.Toric.Analytic.Cone.FaceLocalization
-public import TauCeti.Geometry.Toric.Analytic.Fan.Affine
+public import TauCeti.Geometry.Toric.Analytic.Fan.Affine.Basic
 public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 
 /-!

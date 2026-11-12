@@ -49,7 +49,7 @@ def bourbakiVertex : Fin 8 → DeletedVertex
 
 /-- The graph of the finite vertices left after deleting `long1` from the affine `E₈` quiver. -/
 def deletedGraph : SimpleGraph DeletedVertex :=
-  (Quiver.underlyingGraph AffineE8).induce (fun v : AffineE8 => v ≠ AffineE8.long1)
+  (Quiver.underlyingGraph AffineE8).induce {v : AffineE8 | v ≠ AffineE8.long1}
 
 /-- Adjacency in the deleted graph is inherited from the affine `E₈` quiver. -/
 @[simp] theorem deletedGraph_adj (u v : DeletedVertex) :

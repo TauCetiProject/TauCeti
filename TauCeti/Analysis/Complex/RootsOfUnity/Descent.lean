@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import TauCeti.Analysis.Analytic.Order
 public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Descent of rotation-invariant functions through `u ↦ u ^ m`
@@ -115,29 +116,23 @@ theorem descendPow_pow_eventuallyEq {f : ℂ → E}
     (fun u ↦ descendPow m f (u ^ m)) =ᶠ[𝓝 0] f := by
   exact (eventually_rootsOfUnity_invariant_nhds_of_nhdsNE hf).mono fun _ hu ↦ descendPow_pow hu
 
-variable [NormedAddCommGroup E] [NormedSpace ℂ E]
-
 /-- Away from `0`, the descent of a function invariant under the `m`-th roots of unity near `u` is
 complex differentiable at `u ^ m` when the function is complex differentiable at `u`. -/
-theorem differentiableAt_descendPow_pow {f : ℂ → E} {u : ℂ}
+theorem differentiableAt_descendPow_pow [AddCommGroup E] [Module ℂ E] [TopologicalSpace E]
+    [ContinuousAdd E] [ContinuousSMul ℂ E] {f : ℂ → E} {u : ℂ}
     (hf : ∀ᶠ v in 𝓝 u, ∀ ζ : rootsOfUnity m ℂ, f (ζ • v) = f v) (hu : u ≠ 0)
     (hfu : DifferentiableAt ℂ f u) :
     DifferentiableAt ℂ (descendPow m f) (u ^ m) := by
-  have hw : u ^ m ≠ 0 := pow_ne_zero m hu
   -- A holomorphic branch `ρ` of the `m`-th root near `u ^ m`, with `ρ (u ^ m) = u`.
-  obtain ⟨ρ, hρdef⟩ : ∃ ρ : ℂ → ℂ, ρ = fun v ↦ u * (v / u ^ m) ^ (m⁻¹ : ℂ) := ⟨_, rfl⟩
-  have hρw : ρ (u ^ m) = u := by simp [hρdef, div_self hw]
-  have hρ : DifferentiableAt ℂ ρ (u ^ m) := by
-    rw [hρdef]
-    refine ((differentiableAt_id.div_const _).cpow_const ?_).const_mul u
-    simp [div_self hw]
-  have hρpow (v : ℂ) : ρ v ^ m = v := by
-    rw [hρdef, mul_pow, Complex.cpow_nat_inv_pow _ (NeZero.ne m), mul_div_cancel₀ _ hw]
+  obtain ⟨ρ, hρ, hρw, hρpow⟩ :=
+    exists_differentiableAt_pow_eq (NeZero.ne m) (pow_ne_zero m hu) (rfl : u ^ m = u ^ m)
   have hρt := hρ.continuousAt.tendsto
   rw [hρw] at hρt
   have heq : descendPow m f =ᶠ[𝓝 (u ^ m)] f ∘ ρ := (hρt.eventually hf).mono fun v hv ↦ by
     rw [Function.comp_apply, ← descendPow_pow hv, hρpow]
   exact ((by rwa [hρw] : DifferentiableAt ℂ f (ρ (u ^ m))).comp _ hρ).congr_of_eventuallyEq heq
+
+variable [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- The descent of a function holomorphic on an open set `s` and invariant under the `m`-th roots
 of unity at every point of `s` is holomorphic on the open set `(· ^ m) '' s`. -/

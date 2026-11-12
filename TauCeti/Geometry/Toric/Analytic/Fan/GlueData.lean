@@ -31,6 +31,8 @@ point of the chart of the intersection cone.
   with the chart inclusions into the realization.
 * `TauCeti.Toric.Fan.exists_analyticAffineChartι_apply_eq`: the affine charts cover the
   realization.
+* `TauCeti.Toric.Fan.isEmpty_analyticRealization_iff`: the realization is empty exactly when the
+  fan has no cones.
 * `TauCeti.Toric.Fan.analyticAffineChartι_eq_analyticAffineChartι_iff`: points of two charts are
   identified exactly along the chart of the intersection cone.
 * `TauCeti.Toric.Fan.isOpen_iff_forall_preimage_analyticAffineChartι`: a subset of the
@@ -136,6 +138,19 @@ theorem exists_analyticAffineChartι_apply_eq (x : Φ.analyticRealization hΦ) :
     ∃ (σ : Φ.cones) (y : (Φ.analyticAffineChartDiagram).obj σ),
       Φ.analyticAffineChartι hΦ σ y = x :=
   (Φ.analyticGlueData hΦ).ι_jointly_surjective x
+
+/-- The analytic realization is empty exactly when the fan has no cones: every affine chart is
+nonempty, and the charts cover the realization. -/
+@[simp]
+theorem isEmpty_analyticRealization_iff : IsEmpty (Φ.analyticRealization hΦ) ↔ IsEmpty Φ.cones :=
+  ⟨fun _ ↦ ⟨fun σ ↦ isEmptyElim (Φ.analyticAffineChartι hΦ σ
+      (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)))⟩,
+    fun _ ↦ ⟨fun x ↦ isEmptyElim (Φ.exists_analyticAffineChartι_apply_eq hΦ x).choose⟩⟩
+
+/-- The analytic realization of a fan with no cones, such as the empty subfan of any fan, is
+empty. -/
+instance [IsEmpty Φ.cones] : IsEmpty (Φ.analyticRealization hΦ) :=
+  (Φ.isEmpty_analyticRealization_iff hΦ).2 ‹_›
 
 /-- Two maps out of the analytic realization agree when they agree on every affine analytic
 chart. -/

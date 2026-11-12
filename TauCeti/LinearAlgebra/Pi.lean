@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.LinearAlgebra.Matrix.Block
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # Supports, splittings, determinants and coordinate separation for dependent products
@@ -15,9 +16,11 @@ public import TauCeti.LinearAlgebra.Matrix.Block
 For `s : Set ι`, the submodule `Submodule.pi sᶜ (fun _ ↦ ⊥)` of `∀ i, M i` consists of the families
 vanishing outside `s`, the `Pi` analogue of `Finsupp.supported`; such submodules for disjoint
 supports meet in `⊥`. This file also records the linear splitting of a dependent product along a
-predicate on the indices, the linear splitting of a `Fin (n + 1)`-indexed product into its initial
-segment and its last coordinate, and the determinant of a coordinatewise endomorphism of a finite
-dependent product, which is used in finite-product norm calculations.
+predicate on the indices, the linear splittings of a `Fin (n + 1)`-indexed product into its initial
+segment and its last coordinate and of a `Fin (m + n)`-indexed product into its two blocks, and the
+determinant of a coordinatewise endomorphism of a finite dependent product, which is used in
+finite-product norm calculations, and rank–nullity for a surjection onto a finite dependent
+product.
 
 Finally, distinct sums and differences of standard coordinate vectors can be separated at a
 coordinate where their difference is regular. In two of these separations the critical case is
@@ -30,8 +33,16 @@ weights.
 
 * `Submodule.disjoint_pi_compl_bot_of_disjoint`: disjoint index sets give disjoint submodules of
   families vanishing outside them.
+* `LinearEquiv.piCongrLeft_apply_apply` and `LinearEquiv.piCongrLeft_single`: reindexing the
+  coordinates along `e` reads the coordinate at `e i` from `i`, and moves a one-point family to
+  the image coordinate.
 * `LinearEquiv.piFinSnoc`: the linear splitting of a tuple of length `n + 1` into its initial `n`
   coordinates and its last one, with `Fin.snoc` as its inverse.
+* `LinearEquiv.piFinAppend`: the linear splitting of a tuple of length `m + n` into its first `m`
+  and its last `n` coordinates, with `Fin.append` as its inverse.
+* `LinearEquiv.coprod_linearCombination_comp_piFinAppend`: under `LinearEquiv.piFinAppend`, the
+  linear combination with concatenated coefficients `Fin.append x y` splits as the sum of those
+  with coefficients `x` and `y`.
 * `Fin.snoc_zero_eq_single`: the tuple of length `n + 1` with vanishing initial segment is the
   one-point family `Pi.single` at the last index.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
@@ -40,8 +51,13 @@ weights.
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
   finite dependent product is the product of the determinants of its components.
-* `TauCeti.finrank_linearMap_pi_eq_sum`: the dimension of maps between finite dependent products
-  is the sum of the dimensions of the component hom spaces.
+* `Module.Basis.det_pi`: the determinant of a change between product bases is the product of the
+  factor change-of-basis determinants.
+* `TauCeti.finrank_linearMap_pi_eq_sum`: the finite rank of maps between finite dependent
+  products is the sum of the ranks of the finite free component hom spaces.
+* `LinearMap.sum_finrank_add_finrank_ker_of_surjective`: rank–nullity for a surjection from a
+  finite-dimensional space onto a finite dependent product, whose factors are then finite
+  (`LinearMap.finite_of_surjective_pi`).
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
   vectors on two different coordinates and any other ordered difference differ regularly at some
   coordinate.
@@ -49,7 +65,7 @@ weights.
   different coordinates and a sum with a different unordered index pair differ regularly at some
   coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
-  sum and a coordinate sum on two different coordinates differ regularly at some coordinate.
+  sum and a coordinate sum differ regularly at some coordinate.
 -/
 
 /-- **A tuple with vanishing initial segment is a one-point family.**  Appending `x` to the zero
@@ -74,9 +90,67 @@ public theorem disjoint_pi_compl_bot_of_disjoint {R ι : Type*} {M : ι → Type
     · exact ht i (Set.disjoint_left.mp h hi)
     · exact hs i hi
 
+/-- **Infinitely many submodules.** For an infinite index type, `ι → R` has infinitely many
+submodules over a nontrivial semiring `R`: the lines spanned by the coordinate vectors are
+pairwise distinct. -/
+public theorem infinite_pi_of_infinite {R ι : Type*} [Semiring R] [Nontrivial R] [Infinite ι] :
+    Infinite (Submodule R (ι → R)) := by
+  classical
+  refine Infinite.of_injective (fun i => span R {Pi.single i (1 : R)}) fun i j h => ?_
+  simp only at h
+  by_contra hij
+  have hmem : (Pi.single i (1 : R) : ι → R) ∈ span R {Pi.single j (1 : R)} := by
+    rw [← h]
+    exact subset_span rfl
+  obtain ⟨a, ha⟩ := mem_span_singleton.mp hmem
+  have := congrFun ha i
+  simp [hij] at this
+
 end Submodule
 
 namespace LinearEquiv
+
+/-- Forgetting the linear and additive structure of reindexing gives equivalence reindexing.
+Use this bridge explicitly for additive subgroup maps: its additive coercion is not a simp
+normal form. -/
+public theorem coe_toAddEquiv_piCongrLeft (R : Type*) {ι ι' : Type*} [Semiring R]
+    (M : ι → Type*) [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e : ι' ≃ ι) :
+    ⇑(piCongrLeft R M e).toAddEquiv = Equiv.piCongrLeft M e :=
+  (rfl)
+
+/-- The coordinate of `piCongrLeft R M e f` at `e i` is the coordinate of `f` at `i`; this is
+`Equiv.piCongrLeft_apply_apply` for the linear equivalence. -/
+@[simp]
+public theorem piCongrLeft_apply_apply {R ι ι' : Type*} [Semiring R] (M : ι → Type*)
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e : ι' ≃ ι) (f : ∀ i, M (e i)) (i : ι') :
+    piCongrLeft R M e f (e i) = f i :=
+  Equiv.piCongrLeft_apply_apply (P := M) e f i
+
+/-- Reindexing the coordinates along `e` moves a one-point family at `i` to the one-point family
+at `e i`. -/
+@[simp]
+public theorem piCongrLeft_single {R ι ι' : Type*} [Semiring R] [DecidableEq ι] [DecidableEq ι']
+    (M : ι → Type*) [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e : ι' ≃ ι) (i : ι')
+    (x : M (e i)) :
+    piCongrLeft R M e (Pi.single i x) = Pi.single (e i) x := by
+  funext j
+  obtain ⟨l, rfl⟩ := e.surjective j
+  rw [piCongrLeft_apply_apply]
+  by_cases h : l = i
+  · subst h
+    simp
+  · simp [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (e.injective.ne h)]
+
+/-- A coordinatewise linear equivalence sends a one-point family to the one-point family
+of its image in that coordinate. -/
+@[simp]
+public theorem piCongrRight_single {R ι : Type*} [Semiring R] [DecidableEq ι]
+    {M N : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
+    (e : ∀ i, M i ≃ₗ[R] N i) (i : ι) (x : M i) :
+    piCongrRight e (Pi.single i x) = Pi.single i (e i x) := by
+  funext j
+  exact Pi.apply_single (fun i => e i) (fun _ => map_zero _) i x j
 
 section FinSnoc
 
@@ -104,6 +178,38 @@ public theorem piFinSnoc_symm_apply (p : ((i : Fin n) → M i.castSucc) × M (Fi
   simp [piFinSnoc]
 
 end FinSnoc
+
+section FinAppend
+
+variable (R M : Type*) [Semiring R] [AddCommMonoid M] [Module R M] (m n : ℕ)
+
+/-- Splits a tuple of length `m + n` into its first `m` and its last `n` coordinates, with inverse
+`Fin.append`. This is the inverse of `Fin.appendEquiv` as a `LinearEquiv`. -/
+public def piFinAppend : (Fin (m + n) → M) ≃ₗ[R] (Fin m → M) × (Fin n → M) where
+  toEquiv := (Fin.appendEquiv m n).symm
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+public theorem piFinAppend_apply (v : Fin (m + n) → M) :
+    piFinAppend R M m n v = (fun i ↦ v (Fin.castAdd n i), fun i ↦ v (Fin.natAdd m i)) :=
+  (rfl)
+
+@[simp]
+public theorem piFinAppend_symm_apply (p : (Fin m → M) × (Fin n → M)) :
+    (piFinAppend R M m n).symm p = Fin.append p.1 p.2 :=
+  (rfl)
+
+variable {R M m n} in
+/-- Under the splitting `piFinAppend`, the linear combination with coefficients the concatenation
+`Fin.append x y` is the sum of the linear combinations with coefficients `x` and `y`. -/
+public theorem coprod_linearCombination_comp_piFinAppend (x : Fin m → M) (y : Fin n → M) :
+    (Fintype.linearCombination R x).coprod (Fintype.linearCombination R y) ∘ₗ
+        (piFinAppend R R m n).toLinearMap =
+      Fintype.linearCombination R (Fin.append x y) :=
+  LinearMap.ext fun v ↦ by simp [Fintype.linearCombination_apply, Fin.sum_univ_add]
+
+end FinAppend
 
 variable (R : Type*) {ι : Type*} [Semiring R] (p : ι → Prop) [DecidablePred p] (M : ι → Type*)
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
@@ -163,26 +269,76 @@ public theorem det_piMap {R ι : Type*} [CommRing R] [Fintype ι] {M : ι → Ty
   rw [← det_toMatrix (Pi.basis b), toMatrix_piMap b b, Matrix.det_blockDiagonal']
   exact Finset.prod_congr rfl fun i _ ↦ det_toMatrix (b i) (f i)
 
+/-- Every factor of a product that is the image of a finite module under a linear map is finite:
+it is the image of that module under the composite with the projection. -/
+public theorem finite_of_surjective_pi {R M ι : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Module.Finite R M] {Q : ι → Type*} [∀ i, AddCommMonoid (Q i)]
+    [∀ i, Module R (Q i)] (Φ : M →ₗ[R] (i : ι) → Q i) (hΦ : Function.Surjective Φ) (i : ι) :
+    Module.Finite R (Q i) := by
+  classical
+  exact Module.Finite.of_surjective ((proj i).comp Φ) fun y ↦
+    (hΦ (Pi.single i y)).imp fun z hz ↦ by simp [hz]
+
+/-- **Rank–nullity onto a finite product**: for a surjective linear map `Φ` from a
+finite-dimensional space onto a finite product, the dimensions of the factors add up, with the
+dimension of the kernel of `Φ`, to the dimension of the source. -/
+public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [DivisionRing K]
+    [Fintype ι] [AddCommGroup M] [Module K M] [FiniteDimensional K M] {Q : ι → Type*}
+    [∀ i, AddCommGroup (Q i)] [∀ i, Module K (Q i)] (Φ : M →ₗ[K] (i : ι) → Q i)
+    (hΦ : Function.Surjective Φ) :
+    ∑ i, Module.finrank K (Q i) + Module.finrank K (ker Φ) = Module.finrank K M := by
+  have := finite_of_surjective_pi Φ hΦ
+  rw [← Module.finrank_pi_fintype, ← finrank_top K, ← range_eq_top.2 hΦ]
+  exact finrank_range_add_finrank_ker Φ
+
 end LinearMap
+
+namespace Module.Basis
+
+/-- The determinant of a change between product bases of a finite dependent product is the
+product of the factor change-of-basis determinants. This is the dependent-family version of
+`Module.Basis.det_prod`. -/
+public theorem det_pi {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι] {M : ι → Type*}
+    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {κ : ι → Type*} [∀ i, Fintype (κ i)]
+    [∀ i, DecidableEq (κ i)] (b b' : ∀ i, Basis (κ i) R (M i)) :
+    (Pi.basis b).det (Pi.basis b') = ∏ i, (b i).det (b' i) := by
+  have he : (Pi.basis b).toMatrix (Pi.basis b') =
+      Matrix.blockDiagonal' fun i ↦ (b i).toMatrix (b' i) := by
+    ext ⟨i₁, j₁⟩ ⟨i₂, j₂⟩
+    simp only [Basis.toMatrix_apply, Pi.basis_apply, Pi.basis_repr, Matrix.blockDiagonal'_apply]
+    split_ifs with h
+    · subst h
+      simp
+    · simp [Pi.single_eq_of_ne h]
+  simp only [Basis.det_apply, he, Matrix.det_blockDiagonal']
+
+end Module.Basis
 
 namespace TauCeti
 
-/-- The dimension of maps between two finite dependent products is the sum of the dimensions
-of the component hom spaces, provided those hom spaces are finite-dimensional. -/
-public theorem finrank_linearMap_pi_eq_sum {k A ι κ : Type*} [Field k] [Semiring A]
-    [Algebra k A] [Fintype ι] [Fintype κ] (S : ι → Type*) (T : κ → Type*)
+/-- The finite rank of maps between two finite dependent products is the sum of the ranks
+of the component hom spaces, provided those hom spaces are finite free. The scalar semiring
+`R` need only act on the target modules, commuting with their `A`-actions; no algebra structure
+on `A` is required.
+
+The underlying Hom-space decompositions are Mathlib's `LinearMap.lsum` and
+`LinearEquiv.linearMapPi`. -/
+public theorem finrank_linearMap_pi_eq_sum {R A ι κ : Type*} [Semiring R] [StrongRankCondition R]
+    [Semiring A] [Fintype ι] [Fintype κ] (S : ι → Type*) (T : κ → Type*)
     [∀ i, AddCommMonoid (S i)] [∀ i, Module A (S i)]
-    [∀ j, AddCommMonoid (T j)] [∀ j, Module k (T j)] [∀ j, Module A (T j)]
-    [∀ j, IsScalarTower k A (T j)] [∀ i j, Module.Finite k (S i →ₗ[A] T j)] :
-    Module.finrank k (((i : ι) → S i) →ₗ[A] ((j : κ) → T j)) =
-      ∑ i, ∑ j, Module.finrank k (S i →ₗ[A] T j) := by
+    [∀ j, AddCommMonoid (T j)] [∀ j, Module R (T j)] [∀ j, Module A (T j)]
+    [∀ j, SMulCommClass A R (T j)] [∀ i j, Module.Free R (S i →ₗ[A] T j)]
+    [∀ i j, Module.Finite R (S i →ₗ[A] T j)] :
+    Module.finrank R (((i : ι) → S i) →ₗ[A] ((j : κ) → T j)) =
+      ∑ i, ∑ j, Module.finrank R (S i →ₗ[A] T j) := by
   classical
-  let _ (j : κ) : AddCommGroup (T j) := Module.addCommMonoidToAddCommGroup k
-  let _ (i : ι) : Module.Finite k (S i →ₗ[A] ((j : κ) → T j)) :=
-    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) k)
-  rw [← (LinearMap.lsum A S k).finrank_eq, Module.finrank_pi_fintype]
+  let _ (i : ι) : Module.Free R (S i →ₗ[A] ((j : κ) → T j)) :=
+    Module.Free.of_equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) R)
+  let _ (i : ι) : Module.Finite R (S i →ₗ[A] ((j : κ) → T j)) :=
+    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) R)
+  rw [← (LinearMap.lsum A S R).finrank_eq, Module.finrank_pi_fintype]
   exact Finset.sum_congr rfl fun i _ ↦ by
-    rw [← (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) k).finrank_eq,
+    rw [← (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) R).finrank_eq,
       Module.finrank_pi_fintype]
 
 variable {K ι : Type*} [Ring K] [DecidableEq ι]
@@ -231,14 +387,25 @@ public theorem exists_isRegular_single_add_single_sub {i j : ι} (hij : i ≠ j)
     exact ⟨b, by simpa [hab, hbi, hbj] using h1⟩
   exact ⟨a, by simpa [hab, hai, haj] using h1⟩
 
-/-- If `i ≠ j`, then the negative sum of standard coordinate vectors `-(eₐ + e_b)` and the sum
-`eᵢ + eⱼ` differ by a regular scalar at some coordinate, provided `2` is regular. -/
+/-- The negative sum of standard coordinate vectors `-(eₐ + e_b)` and the sum `eᵢ + eⱼ` differ by
+a regular scalar at some coordinate, provided `2` is regular. -/
 public theorem exists_isRegular_neg_single_add_single_sub_single_add_single
-    (h2 : IsRegular (2 : K)) {i j : ι} (hij : i ≠ j) (a b : ι) :
+    (h2 : IsRegular (2 : K)) (i j a b : ι) :
     ∃ k, IsRegular
       ((-(Pi.single a 1 + Pi.single b 1) - (Pi.single i 1 + Pi.single j 1) : ι → K) k) := by
   have h1 : IsRegular (-1 : K) := isUnit_neg_one.isRegular
   have hneg2 : IsRegular (-(2 : K)) := by simpa using h1.mul h2
+  rcases eq_or_ne i j with rfl | hij
+  · by_cases hai : a = i <;> by_cases hbi : b = i
+    · have h4 : IsRegular (-(2 : K) * 2) := hneg2.mul h2
+      exact ⟨i, by convert h4 using 1; norm_num [hai, hbi]⟩
+    · exact ⟨b, by simpa [hai, hbi, Ne.symm hbi] using h1⟩
+    · by_cases hab : b = a
+      · exact ⟨a, by convert hneg2 using 1; norm_num [hab, hai]⟩
+      · exact ⟨a, by simpa [hai, hab, Ne.symm hai, Ne.symm hab] using h1⟩
+    · by_cases hab : b = a
+      · exact ⟨a, by convert hneg2 using 1; norm_num [hab, hai]⟩
+      · exact ⟨a, by simpa [hai, hab, Ne.symm hai, Ne.symm hab] using h1⟩
   by_cases hai : a = i <;> by_cases hbi : b = i
   · subst a b
     exact ⟨j, by simpa [hij] using h1⟩

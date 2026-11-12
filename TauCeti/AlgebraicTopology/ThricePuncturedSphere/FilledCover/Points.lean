@@ -19,7 +19,10 @@ component-cycle equivalences identify the
 number of added points with the sum of the three full cycle counts of its monodromy triple.
 
 These are the new points in the compactification of a finite cover. Their puncture labels
-determine where the extended map sends them.
+determine where the extended map sends them. A homeomorphism over the thrice-punctured sphere
+transports these added points by its induced bijections on connected components, preserving
+puncture labels and respecting identities, inverses, and composition. The component bijections
+use Mathlib's `Topology.IsCoinducing.connectedComponentsHomeomorph`.
 
 ## References
 
@@ -182,6 +185,115 @@ theorem puncture_eq_two_iff (y : FilledPoint p) :
     · exact ⟨c, rfl⟩
   · rintro ⟨c, rfl⟩
     simp
+
+section Transport
+
+open Function
+
+variable {p} {F G : Type*} [TopologicalSpace F] [TopologicalSpace G]
+  {p' : F → ThricePuncturedSphere} {p'' : G → ThricePuncturedSphere}
+
+/-- Restrict an isomorphism over the sphere to the preimage of a standard punctured
+neighbourhood. -/
+def neighborhoodCongr (h : E ≃ₜ F) (hh : p' ∘ h = p) (q : Puncture) :
+    (p ⁻¹' q.neighborhood) ≃ₜ (p' ⁻¹' q.neighborhood) :=
+  h.subtype fun x ↦ by simp only [mem_preimage, ← congr_fun hh x, comp_apply]
+
+@[simp]
+theorem coe_neighborhoodCongr_apply (h : E ≃ₜ F) (hh : p' ∘ h = p) (q : Puncture)
+    (x : p ⁻¹' q.neighborhood) : (neighborhoodCongr h hh q x : F) = h x :=
+  (rfl)
+
+@[simp]
+theorem coe_neighborhoodCongr_symm_apply (h : E ≃ₜ F) (hh : p' ∘ h = p) (q : Puncture)
+    (y : p' ⁻¹' q.neighborhood) : ((neighborhoodCongr h hh q).symm y : E) = h.symm y :=
+  (rfl)
+
+/-- An isomorphism over the sphere transports added points by its induced bijection on
+components over each puncture. -/
+def congr (h : E ≃ₜ F) (hh : p' ∘ h = p) : FilledPoint p ≃ FilledPoint p' :=
+  (sigmaEquiv p).trans <| (Equiv.sigmaCongrRight fun q ↦
+    ((neighborhoodCongr h hh q).isQuotientMap.isCoinducing.connectedComponentsHomeomorph
+      fun y ↦ by
+        convert (isConnected_singleton (x := (neighborhoodCongr h hh q).symm y)) using 1
+        ext x
+        exact (neighborhoodCongr h hh q).eq_symm_apply.symm).toEquiv).trans (sigmaEquiv p').symm
+
+/-- The puncture and component of a transported point. -/
+@[simp]
+theorem sigmaEquiv_congr (h : E ≃ₜ F) (hh : p' ∘ h = p) (i : FilledPoint p) :
+    sigmaEquiv p' (congr h hh i) =
+      ⟨(sigmaEquiv p i).1,
+        (neighborhoodCongr h hh (sigmaEquiv p i).1).continuous.connectedComponentsMap
+          (sigmaEquiv p i).2⟩ := by
+  simp [congr, Topology.IsCoinducing.connectedComponentsHomeomorph]
+
+/-- On a component represented by a point, transport is represented by the image point. -/
+@[simp]
+theorem congr_sigmaEquiv_symm_mk (h : E ≃ₜ F) (hh : p' ∘ h = p) (q : Puncture)
+    (x : p ⁻¹' q.neighborhood) :
+    congr h hh ((sigmaEquiv p).symm ⟨q, ConnectedComponents.mk x⟩) =
+      (sigmaEquiv p').symm ⟨q, ConnectedComponents.mk (neighborhoodCongr h hh q x)⟩ := by
+  apply (sigmaEquiv p').injective
+  rw [sigmaEquiv_congr, Equiv.apply_symm_apply]
+  simp only [Equiv.apply_symm_apply, Continuous.connectedComponentsMap_mk]
+
+/-- Transport does not change the puncture label. -/
+@[simp]
+theorem puncture_congr (h : E ≃ₜ F) (hh : p' ∘ h = p) (i : FilledPoint p) :
+    puncture p' (congr h hh i) = puncture p i := by
+  obtain ⟨⟨q, c⟩, rfl⟩ := (sigmaEquiv p).symm.surjective i
+  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
+  have hi := congr_sigmaEquiv_symm_mk h hh q x
+  rw [hi]
+  cases q with
+  | zero =>
+    simp only [sigmaEquiv_symm_zero]
+    exact (puncture_overZero _ _).trans (puncture_overZero _ _).symm
+  | one =>
+    simp only [sigmaEquiv_symm_one]
+    exact (puncture_overOne _ _).trans (puncture_overOne _ _).symm
+  | inf =>
+    simp only [sigmaEquiv_symm_inf]
+    exact (puncture_overInf _ _).trans (puncture_overInf _ _).symm
+
+/-- Identity isomorphisms fix every added point. -/
+@[simp]
+theorem congr_refl : congr (Homeomorph.refl E) (p := p) (by simp) = Equiv.refl _ := by
+  ext i
+  obtain ⟨⟨q, c⟩, rfl⟩ := (sigmaEquiv p).symm.surjective i
+  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
+  rw [congr_sigmaEquiv_symm_mk]
+  rfl
+
+/-- Transport along a composite is the composite of the two transports. -/
+theorem congr_trans (h : E ≃ₜ F) (hh : p' ∘ h = p) (k : F ≃ₜ G)
+    (hk : p'' ∘ k = p') :
+    congr (h.trans k) (by funext x; exact (congr_fun hk (h x)).trans (congr_fun hh x)) =
+      (congr h hh).trans (congr k hk) := by
+  ext i
+  obtain ⟨⟨q, c⟩, rfl⟩ := (sigmaEquiv p).symm.surjective i
+  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
+  simp only [Equiv.trans_apply, congr_sigmaEquiv_symm_mk]
+  rfl
+
+/-- Transport along the inverse isomorphism reverses transport. -/
+@[simp]
+theorem symm_congr (h : E ≃ₜ F) (hh : p' ∘ h = p) :
+    (congr h hh).symm =
+      congr h.symm (by funext y; simpa using (congr_fun hh (h.symm y)).symm) := by
+  symm
+  ext i
+  apply (congr h hh).injective
+  obtain ⟨⟨q, c⟩, rfl⟩ := (sigmaEquiv p').symm.surjective i
+  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
+  simp only [congr_sigmaEquiv_symm_mk, Equiv.apply_symm_apply]
+  congr 2
+  congr 1
+  apply Subtype.ext
+  simp
+
+end Transport
 
 variable {n : ℕ}
 

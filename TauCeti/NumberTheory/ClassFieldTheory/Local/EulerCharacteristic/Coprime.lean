@@ -215,9 +215,6 @@ theorem finrank_continuousCohomology_one_fdGalRepOfQuotient [Fact ℓ.Prime]
         (V := TensorProduct (ZMod ℓ) (H1 W.toSubgroup (ZMod ℓ)) A)
         ((h1ConjRepresentation (p := ℓ) (G := Field.absoluteGaloisGroup F)
           (N := W.toSubgroup)).tprod A.ρ)) := by
-  have hℓ : ℓ.Prime := Fact.out
-  have : W.toSubgroup.FiniteIndex :=
-    ⟨fun h ↦ hℓ.one_lt.ne' (Nat.coprime_zero_left ℓ |>.1 (h ▸ hW))⟩
   rw [fdGalRepOfQuotient_obj]
   let X := (galRepOfQuotient ℓ F W).obj
     ((forget₂ (FDRep (ZMod ℓ) _) (Rep (ZMod ℓ) (Field.absoluteGaloisGroup F ⧸ W.toSubgroup))).obj A)
@@ -357,7 +354,7 @@ private theorem localEulerCharacteristic_fdGalRepOfQuotient_eq_localCardNorm {�
       have : CharZero L := FinitePadicExtension.charZero L p
       refine (natCastValuation_eq_zero_iff L ℓ (Nat.cast_ne_zero.2 (NeZero.ne ℓ))).1 ?_
       rw [natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat L p ℓ (NeZero.ne ℓ),
-        padicValNat_primes (Ne.symm hℓp), mul_zero]
+        Nat.padicValNat_def, multiplicity_primes (Ne.symm hℓp), mul_zero]
     have hk := finrank_invariants_h1ConjRepresentation_tprod_of_forall σ hσ hℓ e 0 (fun A' ↦
       by simpa using finrank_invariants_kummerH1FiniteRepresentation_tprod_of_isUnit σ _ hℓL A') A
     refine localEulerCharacteristic_eq_localCardNorm_of_finrank p _ 0
@@ -374,9 +371,8 @@ theorem localEulerCharacteristic_eq_localCardNorm_of_index_coprime {ℓ : ℕ} [
     (N : OpenNormalSubgroup (Field.absoluteGaloisGroup F)) (hN : N.toSubgroup.index.Coprime ℓ)
     (hA : ∀ g ∈ N, ∀ x : A.V, A.ρ g x = x) :
     localEulerCharacteristic (Nat.cast_ne_zero.2 (NeZero.ne ℓ)) A = localCardNorm p A := by
-  have hℓ : IsUnit (ℓ : F) := (Nat.cast_ne_zero.2 (NeZero.ne ℓ)).isUnit
   -- Shrink `N` so that it also fixes `μ_ℓ`, keeping its index prime to `ℓ`.
-  obtain ⟨W, hWN, hWμ, hW, -⟩ := exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime hℓ N hN
+  obtain ⟨W, hWN, hWμ, hW, -⟩ := exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime N hN
   have := (Fact.out : IsSmoothDiscrete (ZMod ℓ) A).discreteTopology
   obtain ⟨B, ⟨eB⟩⟩ := exists_galRepOfQuotient_iso_of_trivial ℓ F W A fun g hg ↦ hA g (hWN hg)
   have : Finite B.V := Finite.of_equiv _ ((forget (GalRep ℓ F)).mapIso eB).toEquiv.symm

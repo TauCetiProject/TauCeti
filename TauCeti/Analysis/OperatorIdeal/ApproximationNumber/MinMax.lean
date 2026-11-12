@@ -53,6 +53,8 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
   bound checked on unit vectors.
 * `ContinuousLinearMap.le_singularValue_of_linearIndependent`: the same, for the span of `n + 1`
   linearly independent vectors.
+* `ContinuousLinearMap.singularValue_id`: the approximation numbers of the identity are `1`
+  below the rank of the space and `0` from it on.
 * `ContinuousLinearMap.singularValue_le_nnnorm_comp_orthogonal`: `aₙ(T) ≤ ‖T|_{Vᗮ}‖` for every
   subspace `V` of rank at most `n`.
 * `ContinuousLinearMap.singularValue_eq_iInf_nnnorm_comp_orthogonal`: on a complete inner product
@@ -60,15 +62,22 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
 * `ContinuousLinearMap.exists_linearIndependent_or_exists_rank_le`: on a complete inner product
   space, `T` is `c`-coercive on the span of `n + 1` linearly independent vectors or
   `c`-contractive on the orthogonal complement of a subspace of rank at most `n`.
+* `ContinuousLinearMap.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le`: compressing a
+  map to subspaces of its source and target does not increase its approximation numbers.
 * `TauCeti.HasMinMaxLowerBound`: the converse min–max localization property of a pair of spaces.
 * `TauCeti.hasMinMaxLowerBound_iff_forall_isLUB`: a pair has this property exactly when, for every
   `T` and `n`, `aₙ(T)` is the least upper bound of the coercivity constants of `T` on spans of
   `n + 1` linearly independent vectors.
+* `TauCeti.HasMinMaxLowerBound.exists_rank_eq_coercive`: on a pair with the property, a strict
+  lower bound for the first `i` approximation numbers of `T` is a coercivity constant of `T` on a
+  subspace of rank `i`.
 * `TauCeti.HasMinMaxLowerBound.of_completeSpace`: a complete inner product space has the
   converse min–max localization property towards every inner product space.
 * `TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression`: on a pair with the property,
   the first `k` approximation numbers of `T` are those of a compression of `T` to
   finite-dimensional subspaces, up to any `δ > 0`.
+* `TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression_endomorphism`: the same for an
+  endomorphism, compressed to a single finite-dimensional subspace.
 
 ## References
 
@@ -124,6 +133,26 @@ theorem le_singularValue_of_linearIndependent (T : E →L[𝕜] F) {n : ℕ} {v 
   rw [← Module.finrank_eq_rank, finrank_span_eq_card hv, Fintype.card_fin]
   exact_mod_cast n.lt_succ_self
 
+/-- **Approximation numbers of the identity.** On a normed space of rank `r`, a possibly infinite
+cardinal, `aₙ(id) = 1` for `n < r` and `aₙ(id) = 0` for `r ≤ n`. -/
+@[simp]
+theorem singularValue_id (n : ℕ) :
+    (ContinuousLinearMap.id 𝕜 E).singularValue n =
+      if (n : Cardinal) < Module.rank 𝕜 E then 1 else 0 := by
+  split_ifs with hn
+  · refine le_antisymm (((ContinuousLinearMap.id 𝕜 E).singularValue_le_nnnorm n).trans ?_) ?_
+    · exact_mod_cast norm_id_le
+    · exact_mod_cast (ContinuousLinearMap.id 𝕜 E).le_singularValue_of_lt_rank
+        (V := ⊤) (by rwa [rank_top]) (c := 1) (by simp)
+  · exact singularValue_eq_zero_of_rank_domain_le _ (le_of_not_gt hn)
+
+/-- **Approximation numbers of a finite-dimensional identity.** `aₙ(id) = 1` below the dimension
+and `aₙ(id) = 0` at and above it. -/
+theorem singularValue_id_of_finiteDimensional [FiniteDimensional 𝕜 E] (n : ℕ) :
+    (ContinuousLinearMap.id 𝕜 E).singularValue n =
+      if n < Module.finrank 𝕜 E then 1 else 0 := by
+  simp [← Module.finrank_eq_rank]
+
 end Coercive
 
 section UnitNorm
@@ -153,11 +182,12 @@ end UnitNorm
 
 section OrthogonalTail
 
-variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
-/-- Composing with the projection onto a subspace of rank at most `n` has rank at most `n`. -/
-theorem rank_comp_starProjection_le (T : E →L[𝕜] F) {n : ℕ} {V : Submodule 𝕜 E}
+/-- Composing with the projection onto a subspace of rank at most `n` has rank at most `n`.
+The target needs only a topology and a module structure; no target norm is used. -/
+theorem rank_comp_starProjection_le {F : Type*} [TopologicalSpace F] [AddCommMonoid F]
+    [Module 𝕜 F] (T : E →L[𝕜] F) {n : ℕ} {V : Submodule 𝕜 E}
     [V.HasOrthogonalProjection] (hV : Module.rank 𝕜 V ≤ n) :
     (T ∘L V.starProjection).rank ≤ n := by
   have hP : (V.starProjection : E →ₗ[𝕜] E).rank ≤ n := by
@@ -165,6 +195,8 @@ theorem rank_comp_starProjection_le (T : E →L[𝕜] F) {n : ℕ} {V : Submodul
   have hle := (LinearMap.lift_rank_comp_le_right (V.starProjection : E →ₗ[𝕜] E)
     (T : E →ₗ[𝕜] F)).trans (Cardinal.lift_le.mpr hP)
   rwa [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hle
+
+variable {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- The projection approximant's error is bounded by the norm on the orthogonal complement. -/
 theorem nnnorm_sub_comp_starProjection_le (T : E →L[𝕜] F) (V : Submodule 𝕜 E)
@@ -210,10 +242,10 @@ theorem singularValue_eq_iInf_nnnorm_comp_orthogonal [CompleteSpace E] (T : E �
     rw [← Submodule.topologicalClosure_coe, ← Submodule.orthogonal_orthogonal_eq_closure]
     exact x.2
   have hRx : ‖R x‖₊ = 0 := by
-    rw [← NNReal.coe_eq_zero, coe_nnnorm, ← mem_closure_zero_iff_norm]
+    rw [← NNReal.coe_eq_zero, coe_nnNorm, ← mem_closure_zero_iff_norm]
     exact map_mem_closure R.continuous hx fun y hy ↦ hy
   calc ‖(T ∘L Vᗮ.subtypeL) x‖₊ = ‖(T - R) x + R x‖₊ := by simp
-    _ ≤ ‖(T - R) x‖₊ := by simpa [hRx] using nnnorm_add_le ((T - R) x) (R x)
+    _ ≤ ‖(T - R) x‖₊ := by simpa [hRx] using nnNorm_add_le ((T - R) x) (R x)
     _ ≤ ‖T - R‖₊ * ‖x‖₊ := (T - R).le_opNNNorm x
 
 end OrthogonalTail
@@ -311,6 +343,27 @@ theorem exists_linearIndependent_or_exists_rank_le [CompleteSpace E] (T : E →L
 
 end Inertia
 
+section Compression
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- Compressing `T` to subspaces `V ≤ E` and `W ≤ F`, by the inclusion of `V` and the orthogonal
+projection onto `W`, does not increase its approximation numbers. -/
+theorem singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le (W : Submodule 𝕜 F)
+    [W.HasOrthogonalProjection] (V : Submodule 𝕜 E) (T : E →L[𝕜] F) (n : ℕ) :
+    (W.orthogonalProjectionOnto.comp (T.comp V.subtypeL)).singularValue n ≤ T.singularValue n :=
+  calc (W.orthogonalProjectionOnto.comp (T.comp V.subtypeL)).singularValue n
+      ≤ ‖W.orthogonalProjectionOnto‖₊ * T.singularValue n * ‖V.subtypeL‖₊ :=
+        singularValue_comp_comp_le _ _ _ n
+    _ ≤ 1 * T.singularValue n * 1 := by
+        gcongr
+        · exact_mod_cast Submodule.orthogonalProjectionOnto_norm_le _
+        · exact_mod_cast V.norm_subtypeL_le
+    _ = T.singularValue n := by rw [one_mul, mul_one]
+
+end Compression
+
 end ContinuousLinearMap
 
 /-! ### The converse min–max localization -/
@@ -336,13 +389,28 @@ def HasMinMaxLowerBound : Prop :=
     ∃ s : ℝ, r < s ∧ ∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
       ∀ x ∈ Submodule.span 𝕜 (Set.range v), s * ‖x‖ ≤ ‖T x‖
 
-variable {𝕜 E F} in
+variable {𝕜 E F}
+
 /-- Unfolding `HasMinMaxLowerBound`. -/
 theorem hasMinMaxLowerBound_iff : HasMinMaxLowerBound 𝕜 E F ↔
     ∀ (T : E →L[𝕜] F) (n : ℕ) {r : ℝ}, 0 ≤ r → r < T.singularValue n →
       ∃ s : ℝ, r < s ∧ ∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
         ∀ x ∈ Submodule.span 𝕜 (Set.range v), s * ‖x‖ ≤ ‖T x‖ :=
   Iff.rfl
+
+/-- **Coercive subspaces of a prescribed rank.** On a pair with the converse min–max localization
+property, if `0 ≤ t` lies strictly below the first `i` approximation numbers of `T`, then `T` is
+`t`-coercive on a subspace of rank `i`. The source may be seminormed. -/
+theorem HasMinMaxLowerBound.exists_rank_eq_coercive (h : HasMinMaxLowerBound 𝕜 E F)
+    (T : E →L[𝕜] F) {i : ℕ} {t : ℝ} (ht : 0 ≤ t) (hi : ∀ k < i, t < T.singularValue k) :
+    ∃ V : Submodule 𝕜 E, Module.rank 𝕜 V = i ∧ ∀ x ∈ V, t * ‖x‖ ≤ ‖T x‖ := by
+  rcases i with _ | i
+  · exact ⟨⊥, by simp, fun x hx ↦ by simp [(Submodule.mem_bot 𝕜).mp hx]⟩
+  obtain ⟨s, hts, v, hv, hs⟩ := hasMinMaxLowerBound_iff.mp h T i ht (hi i i.lt_succ_self)
+  refine ⟨Submodule.span 𝕜 (Set.range v), ?_, fun x hx ↦
+    (mul_le_mul_of_nonneg_right hts.le (norm_nonneg x)).trans (hs x hx)⟩
+  have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
+  rw [← Module.finrank_eq_rank, finrank_span_eq_card hv, Fintype.card_fin]
 
 end HasMinMaxLowerBound
 
@@ -395,7 +463,7 @@ theorem HasMinMaxLowerBound.of_completeSpace [CompleteSpace E] : HasMinMaxLowerB
   -- `aₙ(T) ≤ c`, so `T` is `c`-coercive on an `(n + 1)`-dimensional span.
   set c : ℝ := (r + T.singularValue n) / 2 with hc
   have hrc : r < c := by rw [hc]; linarith
-  have hca : c < T.singularValue n := by rw [hc]; linarith
+  have _ : c < T.singularValue n := by rw [hc]; linarith
   obtain ⟨v, hv, hvc⟩ | ⟨U, hU, hUc⟩ :=
     T.exists_linearIndependent_or_exists_rank_le n (c := c) (by positivity)
   · exact ⟨c, hrc, v, hv, hvc⟩
@@ -457,6 +525,47 @@ theorem HasMinMaxLowerBound.exists_singularValue_le_compression (h : HasMinMaxLo
       W.norm_orthogonalProjectionOnto_apply hW]
     exact hvs x hx'
   · exact (le_of_not_gt hδn).trans (le_add_of_nonneg_left (NNReal.coe_nonneg _))
+
+/-- **Finite-dimensional compressions of endomorphisms.** On a space with the converse min–max
+localization property towards itself, for every `k` and `δ > 0` there is a finite-dimensional
+subspace `U` such that the compression `P_U T|_U : U → U` of an endomorphism `T` lowers none of the
+first `k` approximation numbers of `T` by more than `δ`. Unlike
+`TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression`, the same subspace is used for
+the source and the target, so that the compression of a positive operator is positive. -/
+theorem HasMinMaxLowerBound.exists_singularValue_le_compression_endomorphism
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] (h : HasMinMaxLowerBound 𝕜 E E)
+    (T : E →L[𝕜] E) (k : ℕ) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ (U : Submodule 𝕜 E) (_ : FiniteDimensional 𝕜 U), ∀ n < k,
+      (T.singularValue n : ℝ) ≤
+        (U.orthogonalProjectionOnto.comp (T.comp U.subtypeL)).singularValue n + δ := by
+  obtain ⟨V, _, hV⟩ := h.exists_singularValue_le_compression T k hδ
+  set W := V.map (T : E →ₗ[𝕜] E)
+  -- Enlarge `V` to `U = V ⊔ T V`; the compression `V → T V` factors through `P_U T|_U`.
+  set U := V ⊔ W
+  set C := U.orthogonalProjectionOnto.comp (T.comp U.subtypeL)
+  have hfac : W.orthogonalProjectionOnto.comp (T.comp V.subtypeL) =
+      (W.orthogonalProjectionOnto.comp U.subtypeL).comp
+        (C.comp (U.orthogonalProjectionOnto.comp V.subtypeL)) := by
+    ext x
+    have hx : U.starProjection (x : E) = x :=
+      Submodule.starProjection_eq_self_iff.2 (Submodule.mem_sup_left x.2)
+    simp only [C, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+      Submodule.coe_orthogonalProjectionOnto_apply, hx]
+    exact (congrArg (· (T x))
+      (Submodule.starProjection_comp_starProjection_of_le (le_sup_right : W ≤ U))).symm
+  -- Both outer factors have norm at most one.
+  have h₁ : ‖W.orthogonalProjectionOnto.comp U.subtypeL‖₊ ≤ 1 :=
+    (ContinuousLinearMap.opNNNorm_comp_le _ _).trans
+      (mul_le_one' (Submodule.orthogonalProjectionOnto_norm_le W) U.norm_subtypeL_le)
+  have h₂ : ‖U.orthogonalProjectionOnto.comp V.subtypeL‖₊ ≤ 1 :=
+    (ContinuousLinearMap.opNNNorm_comp_le _ _).trans
+      (mul_le_one' (Submodule.orthogonalProjectionOnto_norm_le U) V.norm_subtypeL_le)
+  refine ⟨U, inferInstance, fun n hn ↦ (hV n hn).trans ?_⟩
+  gcongr
+  rw [hfac]
+  calc _ ≤ _ := ContinuousLinearMap.singularValue_comp_comp_le _ _ _ n
+    _ ≤ 1 * C.singularValue n * 1 := by gcongr
+    _ = C.singularValue n := by rw [one_mul, mul_one]
 
 end Compression
 

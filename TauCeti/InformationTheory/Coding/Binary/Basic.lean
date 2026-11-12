@@ -71,6 +71,13 @@ theorem dotProduct_one_eq_hammingNorm (x : ι → ZMod 2) :
     x ⬝ᵥ (1 : ι → ZMod 2) = (hammingNorm x : ZMod 2) := by
   simp [dotProduct_eq_card_support_inter, hammingNorm]
 
+/-- The coordinates of the `0`/`1` lift of a binary word sum to its weight. -/
+theorem sum_val_eq_hammingNorm (x : ι → ZMod 2) : ∑ i, (x i).val = hammingNorm x := by
+  simp only [hammingNorm, Finset.card_filter]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  generalize x i = a
+  fin_cases a <;> rfl
+
 /-- The sum of two binary words of weights divisible by four again has weight divisible by
 four exactly when the two words are orthogonal. -/
 @[simp]

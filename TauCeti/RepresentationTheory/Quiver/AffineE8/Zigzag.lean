@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.RepresentationTheory.Quiver.AffineE8.Basic
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Basic
 
 /-!
 # The affine `E₈` quiver and zigzag graph
 
-The inward-oriented representation quiver for affine `E₈` and the arm-indexed graph used for
-its zigzag algebra are two labelings of the same `T₂,₃,₆` diagram. This file gives the explicit
-graph isomorphism between them and identifies the affine node in those labels.
+The inward-oriented representation quiver for affine `E₈` and the arm-indexed graph
+`TauCeti.AffineDynkinType.E8.graph`, which is also the graph used for its zigzag algebra, are two
+labelings of the same `T₂,₃,₆` diagram. This file gives the explicit graph isomorphism between
+them and identifies the affine node in those labels.
 -/
 
 public section
@@ -21,8 +22,8 @@ public section
 namespace TauCeti
 
 /-- The arm-coordinate labels on the affine `E₈` quiver, in the numbering of
-`zigzagAffineE8Graph`: the centre is `0`, and the short, medium, and long arms are numbered
-outwards. -/
+`TauCeti.AffineDynkinType.E8.graph`: the centre is `0`, and the short, medium, and long arms are
+numbered outwards. -/
 def affineE8VertexEquiv : Quiver.AffineE8 ≃ Fin 9 where
   toFun
     | .center => 0
@@ -120,14 +121,15 @@ def affineE8VertexEquiv : Quiver.AffineE8 ≃ Fin 9 where
     affineE8VertexEquiv.symm 8 = Quiver.AffineE8.long1 := (rfl)
 
 /-- The explicit relabelling identifies the underlying graph of the inward affine `E₈` quiver
-with the affine `E₈` graph used for its zigzag algebra. -/
+with the affine `E₈` graph, which is also the graph used for its zigzag algebra. -/
 def affineE8UnderlyingGraphIso :
-    Quiver.underlyingGraph Quiver.AffineE8 ≃g zigzagAffineE8Graph where
+    Quiver.underlyingGraph Quiver.AffineE8 ≃g AffineDynkinType.E8.graph where
   toEquiv := affineE8VertexEquiv
   map_rel_iff' := by
     classical
     intro v w
-    rw [zigzagAffineE8Graph_adj, Quiver.underlyingGraph_adj]
+    refine (AffineDynkinType.graph_E8_adj (affineE8VertexEquiv v) (affineE8VertexEquiv w)).trans ?_
+    rw [Quiver.underlyingGraph_adj]
     cases v <;> cases w
     all_goals
       simp only [Equiv.coe_fn_mk, affineE8VertexEquiv]
@@ -155,7 +157,12 @@ def affineE8UnderlyingGraphIso :
 /-- The graph isomorphism acts on vertices by the explicit arm-coordinate equivalence. -/
 @[simp]
 theorem affineE8UnderlyingGraphIso_apply (v : Quiver.AffineE8) :
-    affineE8UnderlyingGraphIso v = affineE8VertexEquiv v := (rfl)
+    -- Stated at the normal form `Fin 9` of `Fin E8.nodes`, which `simp` rewrites the type to.
+    @DFunLike.coe
+      (@SimpleGraph.Iso Quiver.AffineE8 (Fin 9) (Quiver.underlyingGraph Quiver.AffineE8)
+        AffineDynkinType.E8.graph)
+      Quiver.AffineE8 (fun _ ↦ Fin 9) RelIso.instFunLike affineE8UnderlyingGraphIso v =
+        affineE8VertexEquiv v := (rfl)
 
 /-- The affine node is the endpoint of the arm of length five in the representation-quiver
 labeling. -/

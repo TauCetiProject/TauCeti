@@ -48,16 +48,14 @@ namespace MonoidHom
 variable {G H ι : Type*} [Group G] [Group H] (f : G →* H)
 
 /-- If the subgroup `K` maps onto `H`, the number of `ι`-tuples in `K` lifting a tuple of `H`
-along `f` does not depend on the tuple: such tuples are families of elements of the fibres of
-`f.comp K.subtype`, and all fibres of a surjective homomorphism have the cardinality of its
-kernel. -/
+along `f` does not depend on the tuple. -/
 theorem card_forall_mem_and_comp_eq_congr {K : Subgroup G} (hK : K.map f = ⊤) (h h' : ι → H) :
     Nat.card {x : ι → G // (∀ i, x i ∈ K) ∧ f ∘ x = h} =
       Nat.card {x : ι → G // (∀ i, x i ∈ K) ∧ f ∘ x = h'} := by
-  have hsurj : Function.Surjective (f.comp K.subtype) := fun y ↦ by
-    obtain ⟨k, hk, rfl⟩ := Subgroup.mem_map.mp (hK ▸ Subgroup.mem_top y)
-    exact ⟨⟨k, hk⟩, rfl⟩
-  -- Tuples in `K` lifting `h` are families of elements of the fibres over the `h i`.
+  have hsurj : Function.Surjective (f.comp K.subtype) :=
+    MonoidHom.range_eq_top.mp (by rwa [MonoidHom.range_comp, Subgroup.range_subtype])
+  -- Tuples in `K` lifting `h` are families of elements of the fibres of `f.comp K.subtype` over
+  -- the `h i`, and all fibres of a surjective homomorphism are in bijection.
   let e : ∀ h : ι → H,
       {x : ι → G // (∀ i, x i ∈ K) ∧ f ∘ x = h} ≃ ∀ i, f.comp K.subtype ⁻¹' {h i} := fun h ↦
     { toFun x i := ⟨⟨x.1 i, x.2.1 i⟩, congr_fun x.2.2 i⟩
@@ -79,8 +77,7 @@ theorem card_comp_eq_and_closure_range_eq_congr (K : Subgroup G) {h h' : ι → 
   classical
   cases nonempty_fintype G
   cases nonempty_fintype ι
-  have : Finite (Subgroup G) := Finite.of_injective _ SetLike.coe_injective
-  let _ : Fintype (Subgroup G) := Fintype.ofFinite _
+  let _ : Fintype (Subgroup G) := .ofInjective _ SetLike.coe_injective
   induction K using WellFoundedLT.induction with
   | ind K ih =>
   by_cases hK : K.map f = ⊤
@@ -89,34 +86,23 @@ theorem card_comp_eq_and_closure_range_eq_congr (K : Subgroup G) {h h' : ι → 
     -- is independent of `h` by `card_forall_mem_and_comp_eq_congr`.
     have key : ∀ h : ι → H,
         Nat.card {x : ι → G // (∀ i, x i ∈ K) ∧ f ∘ x = h} =
-          ∑ L ∈ Finset.univ.filter (· ≤ K),
+          ∑ L ∈ {L | L ≤ K},
             Nat.card {x : ι → G // f ∘ x = h ∧ Subgroup.closure (Set.range x) = L} := by
       intro h
-      simp only [Nat.card_eq_fintype_card, Fintype.card_subtype]
+      have hle (x : ι → G) : (∀ i, x i ∈ K) ↔ Subgroup.closure (Set.range x) ≤ K := by
+        simp [Subgroup.closure_le, Set.range_subset_iff]
+      simp only [Nat.card_eq_fintype_card, Fintype.card_subtype, hle]
       rw [Finset.card_eq_sum_card_fiberwise (f := fun x : ι → G ↦ Subgroup.closure (Set.range x))
-        (t := Finset.univ.filter (· ≤ K))]
-      · refine Finset.sum_congr rfl fun L hL ↦ ?_
-        have hLK : L ≤ K := (Finset.mem_filter.mp hL).2
-        rw [Finset.filter_filter]
-        refine congr_arg Finset.card (Finset.filter_congr fun x _ ↦ ?_)
-        constructor
-        · rintro ⟨⟨-, hx⟩, hxL⟩
-          exact ⟨hx, hxL⟩
-        · rintro ⟨hx, hxL⟩
-          exact ⟨⟨fun i ↦ hLK (hxL ▸ Subgroup.subset_closure (Set.mem_range_self i)), hx⟩, hxL⟩
-      · intro x hx
-        simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_ofPred_eq] at hx ⊢
-        exact (Subgroup.closure_le K).mpr (Set.range_subset_iff.mpr hx.1)
-    have hKmem : K ∈ Finset.univ.filter (· ≤ K) := Finset.mem_filter.mpr ⟨Finset.mem_univ K, le_rfl⟩
+        (t := {L | L ≤ K}) fun x hx ↦ by simpa using (Finset.mem_filter.mp hx).2.1]
+      refine Finset.sum_congr rfl fun L hL ↦ ?_
+      have hLK := (Finset.mem_filter.mp hL).2
+      rw [Finset.filter_filter]
+      exact congr_arg Finset.card (Finset.filter_congr fun x _ ↦ by grind)
+    have hKmem : K ∈ ({L | L ≤ K} : Finset (Subgroup G)) := by simp
     have htotal := f.card_forall_mem_and_comp_eq_congr hK h h'
-    rw [key h, key h', ← Finset.add_sum_erase _ _ hKmem, ← Finset.add_sum_erase _ _ hKmem]
-      at htotal
-    have hrest : ∑ L ∈ (Finset.univ.filter (· ≤ K)).erase K,
-          Nat.card {x : ι → G // f ∘ x = h ∧ Subgroup.closure (Set.range x) = L} =
-        ∑ L ∈ (Finset.univ.filter (· ≤ K)).erase K,
-          Nat.card {x : ι → G // f ∘ x = h' ∧ Subgroup.closure (Set.range x) = L} :=
-      Finset.sum_congr rfl fun L hL ↦ ih L (lt_of_le_of_ne
-        (Finset.mem_filter.mp (Finset.mem_of_mem_erase hL)).2 (Finset.ne_of_mem_erase hL))
+    rw [key h, key h', ← Finset.add_sum_erase _ _ hKmem, ← Finset.add_sum_erase _ _ hKmem,
+      Finset.sum_congr rfl fun L hL ↦ ih L <| lt_of_le_of_ne
+        (Finset.mem_filter.mp (Finset.mem_of_mem_erase hL)).2 (Finset.ne_of_mem_erase hL)] at htotal
     omega
   · -- No tuple generating `K` lifts a generating tuple of `H`, because the image of such a
     -- tuple would generate `K.map f = ⊤`.
@@ -136,12 +122,11 @@ theorem exists_comp_eq_and_closure_range_eq_top_of_surjective (hf : Function.Sur
     ∃ g' : ι → G, f ∘ g' = h ∧ Subgroup.closure (Set.range g') = ⊤ := by
   have hfg : Subgroup.closure (Set.range (f ∘ g)) = ⊤ := by
     rw [Set.range_comp, ← MonoidHom.map_closure, hg, Subgroup.map_top_of_surjective f hf]
-  have hpos : 0 < Nat.card {x : ι → G // f ∘ x = h ∧ Subgroup.closure (Set.range x) = ⊤} := by
-    rw [f.card_comp_eq_and_closure_range_eq_congr ⊤ hh hfg]
-    have : Nonempty {x : ι → G // f ∘ x = f ∘ g ∧ Subgroup.closure (Set.range x) = ⊤} :=
-      ⟨⟨g, rfl, hg⟩⟩
-    exact Nat.card_pos
-  obtain ⟨⟨x, hx, hxtop⟩⟩ := (Nat.card_pos_iff.mp hpos).1
-  exact ⟨x, hx, hxtop⟩
+  -- `g` itself witnesses that `f ∘ g` has a generating lift, so `h` has one too.
+  have : Nonempty {x : ι → G // f ∘ x = f ∘ g ∧ Subgroup.closure (Set.range x) = ⊤} :=
+    ⟨⟨g, rfl, hg⟩⟩
+  obtain ⟨⟨x, hx⟩⟩ := (Nat.card_pos_iff.mp
+    (Nat.card_pos.trans_eq (f.card_comp_eq_and_closure_range_eq_congr ⊤ hh hfg).symm)).1
+  exact ⟨x, hx⟩
 
 end MonoidHom

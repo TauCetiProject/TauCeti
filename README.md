@@ -63,7 +63,7 @@ roadmaps and undergo review for coherence, reuse, and compatibility with Mathlib
 
 Review of implementation PRs is entirely driven by AIs. These operate according to a fixed open source rubric. Humans write the rubric, and update it as the project evolves.
 
-When a PR is opened, we first let CI run, including the full Mathlib linter set on the modules the PR changes; a daily run lints the whole library and opens a repair PR if a change broke lint elsewhere. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
+When a PR is opened, CI normally checks changed modules: the full Mathlib environment-linter set, docstrings, suppression checks, and source style. This initial check is the PR preflight. Dot-notation checks reuse content-addressed parsing context while computing findings afresh. Batch builds, dependency bumps, and uncertain scope use staging checks: changed-module environment lint plus downstream unused-argument checks, and library-wide docstring, suppression, source-style, and dot-notation checks. The `full-lint` label and the daily sweep run every environment linter across the library; the daily sweep opens a repair PR if a change broke lint elsewhere. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
 
 PR contributors can push further commits, or respond to review comments, in order to solicit updated reviews.
 
@@ -84,6 +84,11 @@ The rubrics are **adversarial**, including instructions to find mis-formalizatio
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
+Content CI builds and audits the mathematics without running regression suites for
+the CI machinery. **Infrastructure tests** runs those suites separately, only when
+`scripts/` or `.github/` changes. Its results do not gate content builds, merge
+statuses, lint, or cache publication.
+
 Human-owned infrastructure changes still require human review. After reviewing a PR,
 repository admins can issue `bors r+` or `bors merge`: bors records approval
 for the accepted head and merge base, requests trusted CI, and owns testing and
@@ -94,6 +99,40 @@ requires fresh approval. Both bors and CI check the approving account's current 
 repository admin role; removing that role invalidates its scope authority.
 Other users follow the existing review policy. See the
 [bors rollout and behavior documentation](https://github.com/TauCetiProject/bors-ng/blob/master/deploy/manual-approval.md).
+
+Stacked PRs are prohibited, including drafts: land prerequisites first, then rebase and
+submit a standalone diff. The trusted [no-stacking policy](scripts/stack-policy.md)
+checks current source evidence, comments and closes confirmed stacks, and blocks their
+bors admission. Keep/hold/human labels do not exempt stacks. Reviewers should follow
+the same policy; shared files, imports and roadmap areas alone do not establish stacking.
+
+## Changing labels by comment
+
+Anyone who can comment can add or remove the labels below, without triage access.
+Post a new issue or pull request conversation comment with the exact label on its own
+line to add it, or prefix it with `-` to remove it. For example:
+
+```text
+dont-repair-in-queue
+-help wanted
+```
+
+Names are case-sensitive; surrounding whitespace is ignored. You can put several commands
+on separate lines, and the last command for each label wins. Other text is ignored.
+Editing or deleting a comment does not undo a command; post a new comment instead.
+Review bodies and inline review comments are not processed.
+
+| Allowed labels | Purpose |
+| --- | --- |
+| `dont-repair-in-queue` | Opt out of agent edits during queue integration; work needing repair is withdrawn instead. |
+| `hold` | Pause automated review, repair, and admission; protect against automatic housekeeping closure. |
+| `keep` | Protect against automatic housekeeping closure; also pause repair and admission, while allowing review. |
+| `mathlib-overlap` | Flag work adopting an overlapping Mathlib API. |
+| `documentation`, `enhancement`, `help wanted` | Describe the issue or PR and invite contributors. |
+
+A hold does not withdraw a contribution already admitted to staging or exempt a PR from
+the no-stacking policy. Generated CI, review, queue, and roadmap-attribution labels are
+managed by their owning automation and cannot be changed by comment commands.
 
 ## Mathlib dependency
 
@@ -201,19 +240,30 @@ Run this from the repository root:
   while IFS= read -r cache_setting; do
     export "$cache_setting"
   done < "$GITHUB_ENV"
-  lake build
+  lake build --iofail
+  lake test
+  lake lint
 )
 ```
 
 Both fetches matter: `lake exe cache get` covers Mathlib, while the helper reads Tau Ceti's own
-built modules from a separate public, anonymous cache. No credentials are needed. The environment
-settings select this checkout's `.lake/cache` and tell Lake to restore cached outputs into
-`.lake/build`. The subshell keeps those settings out of your shell. A unique temporary directory
-holds the helper's configuration, logs, and environment file; the exit trap removes it.
+built modules from a separate public, anonymous cache. No credentials are needed, but the helper
+runs the pinned TauCetiTools cache implementation through `uvx`, so it needs
+[uv](https://docs.astral.sh/uv/). Without this fetch, `lake build` compiles the whole library from
+source, which takes hours. The environment settings select this checkout's `.lake/cache` and tell
+Lake to restore cached outputs into `.lake/build`. The subshell keeps those settings out of your
+shell and stops at the first failing command. A unique temporary directory holds the helper's
+configuration, logs, and environment file; the exit trap removes it.
 
 On a cache miss or exhausted fetch retries, the helper discards the partial cache and writes
 settings to `GITHUB_ENV` that disable caching and restoration. The loop exports them before
 `lake build`, allowing missing outputs to be compiled from source.
+
+`lake test` runs the inexpensive local axiom checks on changed modules and the module-system
+check. `lake lint` runs source guards, source style, shim checks and changed-module environment
+and documentation lint. They calculate scope offline from local Git history, including edits
+and new files. Full transitive axiom and declaration-ownership audits remain in staging CI.
+Use `--iofail` explicitly: it rejects informational output as PR/staging builds do.
 
 The cache stores each revision's outputs under the toolchain that built them, and the script looks
 back through ancestors of your checkout to find the nearest published one. So expect a full rebuild

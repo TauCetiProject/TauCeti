@@ -20,9 +20,8 @@ the strong maximum and minimum principles: two ordered harmonic functions that m
 interior point agree everywhere, and a harmonic function with a local extremum there is constant
 on the preconnected set.  For the latter, the comparison principle first gives constancy on a disk.
 
-This is the planar harmonic case of Lane C, item 13 in the PDE roadmap.  The local vanishing input
-is the zero case of Harnack's inequality; see Evans, *Partial Differential Equations*, Chapter 2,
-Section 2.2.
+The local vanishing input is the zero case of Harnack's inequality; see Evans, *Partial
+Differential Equations*, Chapter 2, Section 2.2.
 
 ## Main declarations
 
@@ -68,8 +67,8 @@ theorem eq_zero_on_of_harmonicOnNhd_of_nonneg_of_eq_zero
     EqOn f 0 Ω := by
   obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.mp hΩa
   have hzero : EqOn f 0 (ball a r) :=
-    eq_zero_on_ball_of_harmonicOnNhd_of_nonneg_of_eq_zero
-      (hf.mono hball) (fun z hz ↦ hnonneg z (hball hz)) (mem_ball_self hr) hfa
+    (hf.mono hball).eqOn_zero_of_nonneg_of_eq_zero (fun z hz ↦ hnonneg z (hball hz))
+      (mem_ball_self hr) hfa
   have hfanalytic : AnalyticOnNhd ℝ f Ω := fun z hz ↦ HarmonicAt.analyticAt (hf z hz)
   apply hfanalytic.eqOn_of_preconnected_of_eventuallyEq analyticOnNhd_const hΩconn
     (mem_of_mem_nhds hΩa)

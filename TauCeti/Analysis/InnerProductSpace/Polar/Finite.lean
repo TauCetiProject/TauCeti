@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
-public import TauCeti.Analysis.InnerProductSpace.PositiveSquareRoot
+public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 
 /-!
 # The canonical finite-dimensional polar factor
@@ -21,6 +21,17 @@ same kernel and range as `A`, and is the unique factor through the modulus that 
 The construction uses `ContinuousLinearMap.factorThru` and the finite-dimensional modulus;
 it applies to rectangular maps, including maps with nontrivial kernel. Its initial space is
 `(ker A)ᗮ` and its final space is `range A`.
+
+The adjoint of the polar factor inverts it on the modulus, `U† A = |A|`, and conjugates the two
+moduli into each other, `|A†| = A U† = U |A| U†`. Consequently the canonical polar factor of `A†`
+is `U†`, and `A = |A†| U` is the left polar decomposition. Between spaces of the same dimension,
+`U` agrees on `(ker A)ᗮ` with a linear isometric equivalence, and it is one when `A` is
+injective.
+
+The modulus and the polar factor are natural for isometries: `|W A| = |A|` and the polar factor of
+`W A` is `W U` for an isometric embedding `W`, and conjugating `A` by a linear isometric
+equivalence conjugates `|A|` and `U`. When an endomorphism `A` commutes with `|A|`, for example
+when `A` is normal, its polar factor commutes with both `|A|` and `A`.
 
 ## References
 
@@ -42,14 +53,14 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 /-- The canonical polar partial isometry of a finite-dimensional linear map. It sends
 `|A| x` to `A x` and vanishes on `ker A`. -/
 def polarFactor (A : E →ₗ[𝕜] F) : E →ₗ[𝕜] F :=
-  letI := FiniteDimensional.complete 𝕜 E
-  letI := FiniteDimensional.complete 𝕜 F
+  letI := FiniteDimensional.completeSpace 𝕜 E
+  letI := FiniteDimensional.completeSpace 𝕜 F
   (A.toContinuousLinearMap.factorThru A.operatorAbs.toContinuousLinearMap).toLinearMap
 
 /-- The polar factor as a bounded operator is the canonical factor through the modulus. -/
 theorem toContinuousLinearMap_polarFactor (A : E →ₗ[𝕜] F) :
-    let := FiniteDimensional.complete 𝕜 E
-    let := FiniteDimensional.complete 𝕜 F
+    let := FiniteDimensional.completeSpace 𝕜 E
+    let := FiniteDimensional.completeSpace 𝕜 F
     A.polarFactor.toContinuousLinearMap =
       A.toContinuousLinearMap.factorThru A.operatorAbs.toContinuousLinearMap := by
   intros
@@ -60,8 +71,8 @@ theorem toContinuousLinearMap_polarFactor (A : E →ₗ[𝕜] F) :
 @[simp]
 theorem polarFactor_operatorAbs_apply (A : E →ₗ[𝕜] F) (x : E) :
     A.polarFactor (A.operatorAbs x) = A x := by
-  let := FiniteDimensional.complete 𝕜 E
-  let := FiniteDimensional.complete 𝕜 F
+  let := FiniteDimensional.completeSpace 𝕜 E
+  let := FiniteDimensional.completeSpace 𝕜 F
   rw [← coe_toContinuousLinearMap A.polarFactor, A.toContinuousLinearMap_polarFactor]
   exact ContinuousLinearMap.factorThru_apply_apply
     (T := A.toContinuousLinearMap) (A := A.operatorAbs.toContinuousLinearMap)
@@ -77,8 +88,8 @@ theorem polarFactor_comp_operatorAbs (A : E →ₗ[𝕜] F) :
 @[simp]
 theorem polarFactor_apply_of_mem_ker (A : E →ₗ[𝕜] F) {x : E} (hx : x ∈ A.ker) :
     A.polarFactor x = 0 := by
-  let := FiniteDimensional.complete 𝕜 E
-  let := FiniteDimensional.complete 𝕜 F
+  let := FiniteDimensional.completeSpace 𝕜 E
+  let := FiniteDimensional.completeSpace 𝕜 F
   rw [← coe_toContinuousLinearMap A.polarFactor, A.toContinuousLinearMap_polarFactor]
   apply ContinuousLinearMap.factorThru_apply_of_mem_orthogonal
     (T := A.toContinuousLinearMap) (A := A.operatorAbs.toContinuousLinearMap)
@@ -129,8 +140,8 @@ theorem range_polarFactor (A : E →ₗ[𝕜] F) : A.polarFactor.range = A.range
 polar factor, without assuming that the competing factor is a partial isometry. -/
 theorem eq_polarFactor (A : E →ₗ[𝕜] F) {V : E →ₗ[𝕜] F}
     (hV : V ∘ₗ A.operatorAbs = A) (hV₀ : ∀ x ∈ A.ker, V x = 0) : V = A.polarFactor := by
-  let := FiniteDimensional.complete 𝕜 E
-  let := FiniteDimensional.complete 𝕜 F
+  let := FiniteDimensional.completeSpace 𝕜 E
+  let := FiniteDimensional.completeSpace 𝕜 F
   apply toContinuousLinearMap.injective
   rw [A.toContinuousLinearMap_polarFactor]
   apply ContinuousLinearMap.eq_factorThru
@@ -153,5 +164,225 @@ theorem eq_polarFactor_iff (A : E →ₗ[𝕜] F) {V : E →ₗ[𝕜] F} :
 theorem polarFactor_zero : (0 : E →ₗ[𝕜] F).polarFactor = 0 := by
   ext x
   exact (0 : E →ₗ[𝕜] F).polarFactor_apply_of_mem_ker (by simp)
+
+/-! ### The adjoint of the polar factor -/
+
+/-- The adjoint of the canonical polar factor carries the image of a vector back to its
+modulus: `U† (A x) = |A| x`. -/
+@[simp]
+theorem adjoint_polarFactor_apply_apply (A : E →ₗ[𝕜] F) (x : E) :
+    A.polarFactor.adjoint (A x) = A.operatorAbs x := by
+  let := FiniteDimensional.completeSpace 𝕜 E
+  let := FiniteDimensional.completeSpace 𝕜 F
+  have h := ContinuousLinearMap.adjoint_factorThru_comp
+    (T := A.toContinuousLinearMap) (A := A.operatorAbs.toContinuousLinearMap) (by simp)
+  rw [← A.toContinuousLinearMap_polarFactor] at h
+  simpa [adjoint_eq_toCLM_adjoint] using congr($h x)
+
+/-- The adjoint of the canonical polar factor carries the original map back to its modulus:
+`U† A = |A|`. -/
+@[simp]
+theorem adjoint_polarFactor_comp (A : E →ₗ[𝕜] F) :
+    A.polarFactor.adjoint ∘ₗ A = A.operatorAbs :=
+  LinearMap.ext A.adjoint_polarFactor_apply_apply
+
+/-- The adjoint of the polar decomposition: `A† = |A| U†`. -/
+@[simp]
+theorem operatorAbs_comp_adjoint_polarFactor (A : E →ₗ[𝕜] F) :
+    A.operatorAbs ∘ₗ A.polarFactor.adjoint = A.adjoint := by
+  conv_rhs => rw [← A.polarFactor_comp_operatorAbs]
+  rw [adjoint_comp, A.isPositive_operatorAbs.adjoint_eq]
+
+/-- The adjoint of the polar decomposition, applied to a vector: `|A| (U† y) = A† y`. -/
+@[simp]
+theorem operatorAbs_apply_adjoint_polarFactor_apply (A : E →ₗ[𝕜] F) (y : F) :
+    A.operatorAbs (A.polarFactor.adjoint y) = A.adjoint y :=
+  LinearMap.congr_fun A.operatorAbs_comp_adjoint_polarFactor y
+
+/-- The modulus of the adjoint is the original map composed with the adjoint of its canonical
+polar factor: `|A†| = A U†`, equivalently `|A†| = U |A| U†`. -/
+theorem operatorAbs_adjoint (A : E →ₗ[𝕜] F) :
+    A.adjoint.operatorAbs = A ∘ₗ A.polarFactor.adjoint := by
+  symm
+  refine IsPositive.eq_operatorAbs ?_ ?_
+  · have h : A ∘ₗ A.polarFactor.adjoint =
+        A.polarFactor ∘ₗ A.operatorAbs ∘ₗ A.polarFactor.adjoint := by
+      rw [← comp_assoc, polarFactor_comp_operatorAbs]
+    rw [h]
+    exact A.isPositive_operatorAbs.conj_adjoint A.polarFactor
+  · rw [adjoint_adjoint, comp_assoc, ← comp_assoc A.polarFactor.adjoint,
+      adjoint_polarFactor_comp, operatorAbs_comp_adjoint_polarFactor]
+
+/-- The canonical polar factor of the adjoint is the adjoint of the canonical polar factor. -/
+@[simp]
+theorem polarFactor_adjoint (A : E →ₗ[𝕜] F) : A.adjoint.polarFactor = A.polarFactor.adjoint := by
+  symm
+  refine A.adjoint.eq_polarFactor ?_ fun y hy ↦ ?_
+  · rw [operatorAbs_adjoint, ← comp_assoc, adjoint_polarFactor_comp,
+      operatorAbs_comp_adjoint_polarFactor]
+  · -- `ker U† = (range U)ᗮ = (range A)ᗮ = ker A†`.
+    have hy' : y ∈ A.polarFactor.adjoint.ker := by
+      rwa [← orthogonal_range, range_polarFactor, orthogonal_range]
+    exact mem_ker.mp hy'
+
+/-- The polar decomposition of the adjoint, in terms of the adjoint of the polar factor:
+`A† = U† |A†|`. -/
+@[simp]
+theorem adjoint_polarFactor_comp_operatorAbs_adjoint (A : E →ₗ[𝕜] F) :
+    A.polarFactor.adjoint ∘ₗ A.adjoint.operatorAbs = A.adjoint := by
+  rw [← polarFactor_adjoint, polarFactor_comp_operatorAbs]
+
+/-- The polar decomposition of the adjoint, applied to a vector: `U† (|A†| y) = A† y`. -/
+@[simp]
+theorem adjoint_polarFactor_apply_operatorAbs_adjoint_apply (A : E →ₗ[𝕜] F) (y : F) :
+    A.polarFactor.adjoint (A.adjoint.operatorAbs y) = A.adjoint y :=
+  LinearMap.congr_fun A.adjoint_polarFactor_comp_operatorAbs_adjoint y
+
+/-- The adjoint of the canonical polar factor has the same kernel as the adjoint. -/
+@[simp]
+theorem ker_adjoint_polarFactor (A : E →ₗ[𝕜] F) : A.polarFactor.adjoint.ker = A.adjoint.ker := by
+  rw [← polarFactor_adjoint, ker_polarFactor]
+
+/-- The adjoint of the canonical polar factor has the same range as the adjoint. -/
+@[simp]
+theorem range_adjoint_polarFactor (A : E →ₗ[𝕜] F) :
+    A.polarFactor.adjoint.range = A.adjoint.range := by
+  rw [← polarFactor_adjoint, range_polarFactor]
+
+/-- **Left polar decomposition:** `A = |A†| U` for the canonical polar factor `U` of `A`. -/
+@[simp]
+theorem operatorAbs_adjoint_comp_polarFactor (A : E →ₗ[𝕜] F) :
+    A.adjoint.operatorAbs ∘ₗ A.polarFactor = A := by
+  have h := congrArg adjoint A.adjoint.polarFactor_comp_operatorAbs
+  rwa [polarFactor_adjoint, adjoint_comp, adjoint_adjoint, adjoint_adjoint,
+    A.adjoint.isPositive_operatorAbs.adjoint_eq] at h
+
+/-- The left polar decomposition, applied to a vector: `|A†| (U x) = A x`. -/
+@[simp]
+theorem operatorAbs_adjoint_apply_polarFactor_apply (A : E →ₗ[𝕜] F) (x : E) :
+    A.adjoint.operatorAbs (A.polarFactor x) = A x :=
+  LinearMap.congr_fun A.operatorAbs_adjoint_comp_polarFactor x
+
+/-! ### Commutation with the modulus -/
+
+/-- If an endomorphism commutes with its modulus, for example a normal one
+(`LinearMap.commute_operatorAbs`), then so does its canonical polar factor. -/
+theorem commute_polarFactor_operatorAbs_of_commute {A : E →ₗ[𝕜] E}
+    (h : Commute A A.operatorAbs) : Commute A.polarFactor A.operatorAbs := by
+  -- Check `U |A| = |A| U` separately on `ker A`, where both sides vanish, and on
+  -- `(ker A)ᗮ = range |A|`, where both sides send `|A| y` to `A |A| y = |A| A y`.
+  refine LinearMap.ext fun x ↦ ?_
+  obtain ⟨u, hu, v, hv, rfl⟩ := A.ker.exists_add_mem_mem_orthogonal x
+  rw [← A.range_operatorAbs] at hv
+  obtain ⟨y, rfl⟩ := hv
+  have hu' : A.operatorAbs u = 0 := by rwa [← mem_ker, ker_operatorAbs]
+  simp only [mul_apply_eq_comp, map_add, hu', A.polarFactor_apply_of_mem_ker hu, map_zero,
+    zero_add, polarFactor_operatorAbs_apply]
+  exact LinearMap.congr_fun h.eq y
+
+/-- If an endomorphism commutes with its modulus, for example a normal one
+(`LinearMap.commute_operatorAbs`), then it commutes with its canonical polar factor. -/
+theorem commute_polarFactor_of_commute {A : E →ₗ[𝕜] E} (h : Commute A A.operatorAbs) :
+    Commute A.polarFactor A := by
+  have hA : A.polarFactor * A.operatorAbs = A := A.polarFactor_comp_operatorAbs
+  simpa only [hA] using (Commute.refl A.polarFactor).mul_right
+    (commute_polarFactor_operatorAbs_of_commute h)
+
+/-! ### Isometric changes of coordinates -/
+
+section Isometry
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+
+/-- Composing with an isometric embedding on the left does not change the modulus:
+`|W A| = |A|`. -/
+@[simp]
+theorem operatorAbs_linearIsometry_comp (W : F →ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
+    (W.toLinearMap ∘ₗ A).operatorAbs = A.operatorAbs := by
+  refine (IsPositive.eq_operatorAbs A.isPositive_operatorAbs ?_).symm
+  rw [operatorAbs_sq, adjoint_comp, comp_assoc, ← comp_assoc A, LinearIsometry.adjoint_comp_self',
+    id_comp]
+
+/-- Composing with a linear isometric equivalence on the right conjugates the modulus:
+`|A e| = e⁻¹ |A| e`. -/
+theorem operatorAbs_comp_linearIsometryEquiv (A : F →ₗ[𝕜] G) (e : E ≃ₗᵢ[𝕜] F) :
+    (A ∘ₗ e.toLinearMap).operatorAbs = e.symm.toLinearMap ∘ₗ A.operatorAbs ∘ₗ e.toLinearMap := by
+  have he := e.adjoint_toLinearMap_eq_symm
+  refine (IsPositive.eq_operatorAbs ?_ ?_).symm
+  · rw [← he]
+    exact A.isPositive_operatorAbs.adjoint_conj e.toLinearMap
+  · rw [adjoint_comp, he]
+    ext x
+    have hx := LinearMap.congr_fun A.operatorAbs_sq (e x)
+    rw [comp_apply, comp_apply] at hx
+    simp [hx]
+
+/-- Composing with an isometric embedding on the left composes the canonical polar factor:
+the polar factor of `W A` is `W U`. -/
+@[simp]
+theorem polarFactor_linearIsometry_comp (W : F →ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
+    (W.toLinearMap ∘ₗ A).polarFactor = W.toLinearMap ∘ₗ A.polarFactor := by
+  refine ((W.toLinearMap ∘ₗ A).eq_polarFactor ?_ fun x hx ↦ ?_).symm
+  · rw [operatorAbs_linearIsometry_comp, comp_assoc, polarFactor_comp_operatorAbs]
+  · have hx' : A x = 0 := W.injective (by simpa using hx)
+    simp [A.polarFactor_apply_of_mem_ker hx']
+
+/-- Composing with a linear isometric equivalence on the right composes the canonical polar
+factor: the polar factor of `A e` is `U e`. -/
+@[simp]
+theorem polarFactor_comp_linearIsometryEquiv (A : F →ₗ[𝕜] G) (e : E ≃ₗᵢ[𝕜] F) :
+    (A ∘ₗ e.toLinearMap).polarFactor = A.polarFactor ∘ₗ e.toLinearMap := by
+  refine ((A ∘ₗ e.toLinearMap).eq_polarFactor ?_ fun x hx ↦ ?_).symm
+  · rw [operatorAbs_comp_linearIsometryEquiv]
+    ext x
+    simp
+  · exact A.polarFactor_apply_of_mem_ker hx
+
+/-- The modulus is natural under conjugation by a linear isometric equivalence. -/
+theorem operatorAbs_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) :
+    (e.toLinearEquiv.conj T).operatorAbs = e.toLinearEquiv.conj T.operatorAbs := by
+  have h := operatorAbs_comp_linearIsometryEquiv (e.toLinearIsometry.toLinearMap ∘ₗ T) e.symm
+  -- `operatorAbs_linearIsometry_comp` reaches `e` through `e.toLinearIsometry.toLinearMap`, while
+  -- `conj` uses the coercion of `e.toLinearEquiv`. Both are by definition the underlying linear
+  -- map of `e`, and Mathlib states no lemma relating these two projections, so `rfl` aligns them.
+  rw [operatorAbs_linearIsometry_comp, LinearIsometryEquiv.symm_symm,
+    show e.toLinearIsometry.toLinearMap = e.toLinearEquiv from rfl] at h
+  rw [LinearEquiv.conj_apply, LinearEquiv.conj_apply, ← LinearIsometryEquiv.toLinearEquiv_symm,
+    h, comp_assoc]
+
+/-- The canonical polar factor is natural under conjugation by a linear isometric equivalence. -/
+theorem polarFactor_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) :
+    (e.toLinearEquiv.conj T).polarFactor = e.toLinearEquiv.conj T.polarFactor := by
+  have h := polarFactor_comp_linearIsometryEquiv (e.toLinearIsometry.toLinearMap ∘ₗ T) e.symm
+  -- As in `operatorAbs_conj`, `rfl` identifies the two definitionally equal projections of `e`.
+  rw [polarFactor_linearIsometry_comp,
+    show e.toLinearIsometry.toLinearMap = e.toLinearEquiv from rfl] at h
+  rw [LinearEquiv.conj_apply, LinearEquiv.conj_apply, ← LinearIsometryEquiv.toLinearEquiv_symm,
+    h, comp_assoc]
+
+end Isometry
+
+/-! ### Unitary extensions -/
+
+/-- **Unitary extension of the polar factor.** Between spaces of the same dimension, the canonical
+polar factor agrees on its initial space `(ker A)ᗮ` with a linear isometric equivalence. -/
+theorem exists_linearIsometryEquiv_eqOn_polarFactor (A : E →ₗ[𝕜] F)
+    (h : Module.finrank 𝕜 E = Module.finrank 𝕜 F) :
+    ∃ U : E ≃ₗᵢ[𝕜] F, Set.EqOn U A.polarFactor A.kerᗮ := by
+  let e : F ≃ₗᵢ[𝕜] E := (stdOrthonormalBasis 𝕜 F).equiv (stdOrthonormalBasis 𝕜 E) (finCongr h.symm)
+  let L : A.kerᗮ →ₗᵢ[𝕜] E :=
+    { toLinearMap := e.toLinearMap ∘ₗ A.polarFactor ∘ₗ A.kerᗮ.subtype
+      norm_map' := fun x ↦ by simp [A.norm_polarFactor_apply x.2] }
+  refine ⟨(L.extend.toLinearIsometryEquiv rfl).trans e.symm, fun x hx ↦ ?_⟩
+  have hL : L.extend x = e (A.polarFactor x) := L.extend_apply ⟨x, hx⟩
+  simp [hL]
+
+/-- **Invertible polar unitary.** Between spaces of the same dimension, the canonical polar
+factor of an injective map is a linear isometric equivalence. -/
+theorem exists_linearIsometryEquiv_eq_polarFactor {A : E →ₗ[𝕜] F} (hA : Function.Injective A)
+    (h : Module.finrank 𝕜 E = Module.finrank 𝕜 F) :
+    ∃ U : E ≃ₗᵢ[𝕜] F, (U : E →ₗ[𝕜] F) = A.polarFactor := by
+  obtain ⟨U, hU⟩ := A.exists_linearIsometryEquiv_eqOn_polarFactor h
+  exact ⟨U, LinearMap.ext fun x ↦ hU (by simp [ker_eq_bot.mpr hA])⟩
 
 end LinearMap

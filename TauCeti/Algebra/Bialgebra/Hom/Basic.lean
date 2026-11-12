@@ -11,9 +11,9 @@ public import Mathlib.RingTheory.Ideal.Maps
 /-!
 # Basic facts about bialgebra morphisms
 
-`BialgHom.id_toRingHom` identifies the direct ring-homomorphism coercion of the identity.
-It complements Mathlib's `BialgHom.id_toAlgHom`, which concerns the algebra-homomorphism
-coercion.
+`BialgHom.id_toRingHom` and `BialgHom.comp_toRingHom` identify the direct ring-homomorphism
+coercions of the identity and composition. They complement Mathlib's `BialgHom.id_toAlgHom`
+and `BialgHom.comp_toAlgHom`, which concern the algebra-homomorphism coercions.
 
 The ordinary kernel of a bialgebra morphism is killed by the counit, and its comultiplication
 lies in the kernel of the tensor-square map. These facts require only the algebra and coalgebra
@@ -32,6 +32,15 @@ theorem id_toRingHom : (BialgHom.id R A : A →+* A) = RingHom.id A := rfl
 
 variable {R A}
 variable {B : Type*} [Semiring B] [Algebra R B] [CoalgebraStruct R B]
+
+/-- The ring homomorphism underlying a composite of bialgebra morphisms is the composite
+of the underlying ring homomorphisms. -/
+@[simp]
+theorem comp_toRingHom {C : Type*} [Semiring C] [Algebra R C] [CoalgebraStruct R C]
+    (g : B →ₐc[R] C) (f : A →ₐc[R] B) :
+    (g.comp f : A →+* C) = (g : B →+* C).comp (f : A →+* B) := by
+  ext x
+  simp only [RingHom.coe_coe, BialgHom.coe_comp, RingHom.coe_comp, Function.comp_apply]
 
 /-- The tensor-square map sends the comultiplication of an element in the kernel of a
 bialgebra morphism to zero. -/

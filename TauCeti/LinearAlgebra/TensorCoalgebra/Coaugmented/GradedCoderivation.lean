@@ -157,7 +157,9 @@ theorem map_koszulTwist_apply_of_mem (G : InternalGrading R M) {D : ℤ}
         (((q * ∑ i, degree i).negOnePow : ℤ) : R) =
           ∏ i, (((q * degree i).negOnePow : ℤ) : R) := by
       simp only [← negOnePowCast_eq_intCast, Finset.mul_sum, negOnePowCast_sum]
-    rw [htuple, (PiTensorProduct.tprod R).map_smul_univ, map_smul, ← hD, ← hsign]
+    rw [htuple, (PiTensorProduct.tprod R).map_smul_univ]
+    simp only [RingHom.id_apply]
+    rw [map_smul, ← hD, ← hsign]
   · intro u v _ _ hu hv
     simp only [map_add, hu, hv, smul_add]
   · intro c u _ hu
@@ -169,13 +171,11 @@ theorem mem_gradedPiece_of_reducedInclusion {G : InternalGrading R M} {D : ℤ}
     {w : ReducedTensorWords R M} (hw : w ∈ ReducedTensorWords.gradedPiece G D) :
     reducedInclusion R M w ∈ gradedPiece G D := by
   refine ReducedTensorWords.gradedPiece_induction
-    (motive := fun w ↦ reducedInclusion R M w ∈ gradedPiece G D) hw ?_ ?_ ?_ ?_
+    (motive := fun w ↦ reducedInclusion R M w ∈ gradedPiece G D) hw ?_ ?_ ?_
   · intro n hn 𝒟 x hx hD
     rw [reducedInclusion_of]
     rw [← hD]
     exact mem_gradedPiece_of_tprod G x 𝒟 hx
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv

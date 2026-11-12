@@ -36,16 +36,11 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 variable (R : Type u) (L : Type v)
 variable [CommRing R] [LieRing L] [LieAlgebra R L]
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 
-section IntegralBasis
+section PowerProducts
 
-variable {A : Type x} [Ring A] [Algebra R A]
-variable (S : Type w) [CommRing S] [Algebra R S]
-variable [Algebra S A]
-variable [IsScalarTower R S A]
+variable {A : Type x} [Semiring A] [Algebra R A]
 
 /-- The nondecreasing list in which `i` occurs `c i` times. -/
 private def repeatedIndices (n : ℕ) (c : Fin n → ℕ) : List (Fin n) :=
@@ -108,8 +103,10 @@ private theorem pbwMonomial_repeatedIndices (n : ℕ) (e : Fin n → L) (c : Fin
   exact pbwMonomial_flatMap_replicate R L e c _
 
 /-- Ordered products of generator powers span every surjective image of an enveloping algebra.
-Only a spanning family of the Lie algebra is required. -/
-theorem span_range_orderedPowerProducts_eq_top {n : ℕ} (e : Fin n → L)
+Only a spanning family of the Lie algebra and a compatible scalar action on the target are
+required; the scalars `S` need not be commutative or act by central multiplication. -/
+theorem span_range_orderedPowerProducts_eq_top (S : Type w) [Semiring S] [Module S A] [SMul R S]
+    [IsScalarTower R S A] {n : ℕ} (e : Fin n → L)
     (he : Submodule.span R (Set.range e) = ⊤) (q : U →ₐ[R] A)
     (hq : Function.Surjective q) :
     Submodule.span S (Set.range fun c : Fin n → ℕ ↦
@@ -132,6 +129,8 @@ theorem span_range_orderedPowerProducts_eq_top {n : ℕ} (e : Fin n → L)
   refine eq_top_iff.mpr fun x _ ↦ ?_
   obtain ⟨a, rfl⟩ := hq x
   exact hle Submodule.mem_top
+
+variable (S : Type w) [CommRing S] [SMul R S] [Algebra S A] [IsScalarTower R S A]
 
 /-- If the generator images satisfy monic relations `p i`, the ordered products with exponent
 of generator `i` strictly less than `(p i).natDegree` span the target. This is an explicit finite
@@ -168,6 +167,13 @@ theorem span_range_bounded_orderedPowerProducts_eq_top {n : ℕ} (e : Fin n → 
   have h := Submodule.span_mono himage (f.map_mem_span_image_pi s hsingle)
   simpa [f, x, MultilinearMap.mkPiAlgebraFin_apply, List.ofFn_eq_map] using h
 
+end PowerProducts
+
+section ModuleFinite
+
+variable {A : Type x} [Ring A] [Algebra R A]
+variable (S : Type w) [CommRing S] [SMul R S] [Algebra S A] [IsScalarTower R S A]
+
 /-- A surjective image of an enveloping algebra is module-finite over central scalars `S`
 if the images of a finite spanning family of the Lie algebra are integral over `S`.
 The target algebra may be noncommutative. -/
@@ -184,6 +190,6 @@ theorem moduleFinite_of_isIntegral_of_span_eq_top {n : ℕ} (e : Fin n → L)
     ⟨_, Set.finite_range _, span_range_bounded_orderedPowerProducts_eq_top R L S e he q hq
       p hp hpx'⟩)
 
-end IntegralBasis
+end ModuleFinite
 
 end TauCeti.UniversalEnvelopingAlgebra

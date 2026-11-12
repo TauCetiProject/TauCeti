@@ -172,4 +172,24 @@ theorem affineToricSchemeMap_comp (hi : IsIntegralLattice i)
 
 end Scheme
 
+section Over
+
+/- The base `Spec ℂ` lives in the lowest universe, so here the lattices do too. -/
+variable {N N' : Type} [AddCommGroup N] [AddCommGroup N'] {i : N →+ V} {i' : N' →+ V'}
+
+/-- Affine toric morphisms are morphisms over `Spec ℂ`: they commute with the projections of their
+source and target to `Spec ℂ`. -/
+@[reassoc]
+theorem affineToricSchemeMap_comp_specMap_algebraMap (hi : IsIntegralLattice i)
+    (hi' : IsIntegralLattice i') (f : N →+ N') (g : V →ₗ[ℝ] V')
+    (hfg : ∀ n, g (i n) = i' (f n)) (hστ : Set.MapsTo g σ τ) :
+    affineToricSchemeMap hi hi' f g hfg hστ ≫
+        Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi' τ))) =
+      Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ))) := by
+  rw [affineToricSchemeMap_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  exact congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ))
+    (affineCoordinateRingMap hi hi' f g hfg hστ).comp_algebraMap
+
+end Over
+
 end TauCeti.Toric

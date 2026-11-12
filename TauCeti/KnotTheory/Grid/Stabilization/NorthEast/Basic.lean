@@ -31,9 +31,10 @@ corner. The induced map `GH⁻(G') → GH⁻(G)` (`GridDiagram.stabilizeXSuccHom
 composite of two half-turn equivalences and the south-west stabilization map of `G.rotate`, so
 it is bijective.
 
-The half-turn preserves the Alexander grading and `τ` (`Homology/HalfTurn.lean`).
-Consequently `τ` is also invariant under this north-east stabilization, by conjugating the
-south-west stabilization with the two half-turns.
+For a knot grid the half-turn preserves `GH⁻` as an Alexander-graded `R[U]`-module
+(`Homology/HalfTurn.lean`). Conjugating the south-west stabilization with the two half-turns shows
+that so does this north-east stabilization
+(`GridDiagram.IsKnot.unblockedHomologyIsomorphic_stabilizeX_succ`).
 
 ## Main definitions
 
@@ -50,6 +51,8 @@ south-west stabilization with the two half-turns.
   `z` goes to the class of `stabilizeXSuccChainMap z`.
 * `TauCeti.GridDiagram.stabilizeXSuccHomologyMap_bijective`: **stabilization invariance of
   `GH⁻` for the north-east corner**, the map on homology is bijective.
+* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_stabilizeX_succ`: for a knot grid, the
+  north-east stabilization preserves `GH⁻` as an Alexander-graded `R[U]`-module.
 
 ## References
 
@@ -180,18 +183,18 @@ namespace GridDiagram.IsKnot
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (s : Fin n)
   (K : Type*) [CommRing K] [CharP K 2]
 
-/-- The north-east corner `X`-stabilization of a knot grid preserves `τ`. -/
-theorem tau_stabilizeX_succ :
-    ((G.isKnot_stabilizeX s.succ (G.X s).succ s).mpr hG).tau K = hG.tau K := by
+/-- The north-east corner `X`-stabilization of a knot grid preserves `GH⁻` as an
+Alexander-graded `K[U]`-module. -/
+theorem unblockedHomologyIsomorphic_stabilizeX_succ :
+    hG.UnblockedHomologyIsomorphic ((G.isKnot_stabilizeX s.succ (G.X s).succ s).mpr hG) K := by
   have hrot := (G.isKnot_rotate).mpr hG
   have hstab := (G.isKnot_stabilizeX s.succ (G.X s).succ s).mpr hG
-  have hturn := hstab.tau_rotate K
-  have hsw := hrot.tau_stabilizeX s.rev K
-  have hturn' :
-      ((G.rotate.isKnot_stabilizeX s.rev.castSucc (G.rotate.X s.rev).castSucc s.rev).mpr
-        hrot).tau K = hstab.tau K := by
-    simpa only [G.rotate_stabilizeX_succ s] using hturn
-  exact hturn'.symm.trans (hsw.trans (hG.tau_rotate K))
+  -- The half-turn carries the north-east stabilization of `G` to the south-west stabilization
+  -- of `G.rotate`.
+  exact (hG.unblockedHomologyIsomorphic_rotate K).trans
+    ((hrot.unblockedHomologyIsomorphic_stabilizeX s.rev K).trans
+      ((unblockedHomologyIsomorphic_of_eq (G.rotate_stabilizeX_succ s).symm).trans
+        (hstab.unblockedHomologyIsomorphic_rotate K).symm))
 
 end GridDiagram.IsKnot
 

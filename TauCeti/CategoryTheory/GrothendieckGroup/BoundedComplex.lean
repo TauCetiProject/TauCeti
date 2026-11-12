@@ -7,10 +7,12 @@ module
 
 public import TauCeti.Algebra.Homology.Contractible
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
+public import TauCeti.Algebra.Homology.Embedding.StupidTrunc
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
+public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
-public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
-public import Mathlib.Algebra.Ring.NegOnePow
+public import Mathlib.Order.Interval.Finset.SuccPred
+public import Mathlib.Order.SuccPred.Int
 
 /-!
 # The Euler characteristic of a bounded complex in split `K₀`
@@ -59,6 +61,8 @@ on distinguished triangles. The comparison itself is proved in
   characteristic of a mapping cone is `χ(L) - χ(K)`, and shifting by `m` multiplies it by `(-1)ᵐ`.
 * `TauCeti.SplitK0.eulerChar_eq_eulerChar`: independence of the summation range for a bounded
   complex.
+* `TauCeti.SplitK0.eulerChar_Icc_add_one`: splitting off the top term, through the brutal
+  truncation below it.
 
 ## References
 
@@ -92,15 +96,10 @@ theorem sum_negOnePow_obj_X_eq_of_isZero {s t : Finset ℤ} (hs : ∀ n, n ∉ s
     (ht : ∀ n, n ∉ t → IsZero (K.X n)) :
     ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.X n) =
       ∑ n ∈ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) := by
-  have h₁ : ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.X n) =
-      ∑ n ∈ s ∪ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) :=
-    Finset.sum_subset Finset.subset_union_left fun n _ hn => by
-      rw [v.obj_eq_zero_of_isZero (hs n hn), smul_zero]
-  have h₂ : ∑ n ∈ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) =
-      ∑ n ∈ s ∪ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) :=
-    Finset.sum_subset Finset.subset_union_right fun n _ hn => by
-      rw [v.obj_eq_zero_of_isZero (ht n hn), smul_zero]
-  rw [h₁, h₂]
+  simpa only [TauCeti.finiteEulerSum_def] using
+    TauCeti.finiteEulerSum_eq_of_eq_zero (fun n ↦ v.obj (K.X n))
+      (fun n hn ↦ v.obj_eq_zero_of_isZero (hs n hn))
+      (fun n hn ↦ v.obj_eq_zero_of_isZero (ht n hn))
 
 end Range
 
@@ -112,13 +111,15 @@ theorem sum_negOnePow_obj_X_shift (K : CochainComplex C ℤ) (m : ℤ) (s : Fins
     ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj ((K⟦m⟧).X n) =
       (m.negOnePow : ℤ) •
         ∑ n ∈ s.map (Equiv.addRight m).toEmbedding, ((n.negOnePow : ℤ)) • v.obj (K.X n) := by
-  rw [Finset.sum_map, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun n _ => ?_
-  rw [v.map_iso (eqToIso (CochainComplex.shiftFunctor_obj_X' K m n))]
-  simp only [Equiv.coe_toEmbedding, Equiv.coe_addRight, Int.negOnePow_add,
-    Units.val_mul, smul_smul]
-  rw [mul_left_comm, ← Units.val_mul, Int.units_mul_self]
-  simp
+  calc
+    _ = TauCeti.finiteEulerSum (fun n ↦ v.obj (K.X (n + m))) s := by
+      rw [TauCeti.finiteEulerSum_def]
+      apply Finset.sum_congr rfl
+      intro n _
+      rw [v.map_iso (eqToIso (CochainComplex.shiftFunctor_obj_X' K m n))]
+    _ = _ := by
+      simpa only [TauCeti.finiteEulerSum_def] using
+        TauCeti.finiteEulerSum_reindex_add (fun n ↦ v.obj (K.X n)) m s
 
 section MappingCone
 
@@ -237,6 +238,23 @@ theorem eulerChar_eq_eulerChar (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b]
     (hs : Finset.Icc a b ⊆ s) (ht : Finset.Icc a b ⊆ t) : eulerChar K s = eulerChar K t :=
   eulerChar_eq_eulerChar_of_isZero K (fun _ hn => K.isZero_X_of_notMem_Icc a b fun h => hn (hs h))
     fun _ hn => K.isZero_X_of_notMem_Icc a b fun h => hn (ht h)
+
+/-- **Splitting off the top term of an Euler characteristic**: over an interval `[a, b + 1]`, the
+Euler characteristic of `K` is the signed class of its term in degree `b + 1` plus the Euler
+characteristic over `[a, b]` of its brutal truncation in degrees `≤ b`. -/
+theorem eulerChar_Icc_add_one [HasZeroObject C] {a b : ℤ} (hab : a ≤ b + 1) :
+    eulerChar K (Finset.Icc a (b + 1)) = ((b + 1).negOnePow : ℤ) • of (K.X (b + 1)) +
+      eulerChar (K.stupidTrunc (ComplexShape.embeddingUpIntLE b)) (Finset.Icc a b) := by
+  rw [← Order.succ_eq_add_one, ← Finset.insert_Icc_right_eq_Icc_succ (by simpa using hab),
+    eulerChar_insert K (by simp), Order.succ_eq_add_one, eulerChar_def, eulerChar_def]
+  congr 1
+  -- In degrees `≤ b` the truncation has the terms of `K`.
+  refine Finset.sum_congr rfl fun n hn ↦ ?_
+  have hn' := (Finset.mem_Icc.1 hn).2
+  have := K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE b)
+    (i := (b - n).natAbs) (i' := n)
+    (by simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hn')])
+  rw [of_congr (asIso ((K.πStupidTrunc (ComplexShape.embeddingUpIntLE b)).f n))]
 
 end Range
 

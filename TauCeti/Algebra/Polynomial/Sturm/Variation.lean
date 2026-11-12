@@ -101,10 +101,7 @@ Sturm variation away from its roots. -/
     signVariationsAt (sturmSeq (-p) (-q)) x = signVariationsAt (sturmSeq p q) x := by
   have hseq := sturmSeq_mul_left (r := -(1 : K[X])) (by simp) p q
   simp only [neg_one_mul] at hseq
-  rw [hseq, signVariationsAt_def, signVariationsAt_def]
-  simpa only [List.map_map, Function.comp_def, eval_mul, eval_neg, eval_one, neg_one_mul] using
-    List.signVariations_map_of_sign_eq_neg Left.sign_neg
-      ((sturmSeq p q).map (fun r => r.eval x))
+  rw [hseq, signVariationsAt_map_neg]
 
 /-- A common root of the two input polynomials annihilates every entry of
 their Sturm sequence, so its variation at that point is zero. -/
@@ -115,8 +112,7 @@ their Sturm sequence, so its variation at that point is zero. -/
   have hqd : X - C x ∣ q := dvd_iff_isRoot.mpr hq
   have hz (s : K[X]) (hs : s ∈ sturmSeq p q) : s.eval x = 0 :=
     (dvd_iff_isRoot.mp (dvd_of_mem_sturmSeq hpd hqd hs))
-  rw [signVariationsAt_def, ← List.signVariations_filter_ne_zero,
-    List.filter_eq_nil_iff.mpr, List.signVariations_nil]
-  simpa [List.forall_mem_map] using hz
+  rw [← signVariationsAt_filter_eval_ne_zero, List.filter_eq_nil_iff.mpr, signVariationsAt_nil]
+  simpa using hz
 
 end TauCeti.Sturm

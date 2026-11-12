@@ -64,7 +64,7 @@ theorem matrixCoefficientSet_transport (e : M ≃ₗ[R] N₀) :
     (R := R) (C := C) (M := M) (N := N₀)
     (transportToHom (R := R) (C := C) (M := M) (N := N₀) e)
     (transportInvHom (R := R) (C := C) (M := M) (N := N₀) e)
-    (fun n => e.apply_symm_apply n) (fun m => e.symm_apply_apply m)).symm
+    (by intro n; simp) (by intro m; simp)).symm
 
 /-- Transporting a comodule structure across a linear equivalence does not change its
 coefficient submodule. -/

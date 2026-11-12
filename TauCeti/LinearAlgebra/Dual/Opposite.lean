@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Finiteness.Projective
 public import Mathlib.Algebra.Module.Equiv.Opposite
 public import TauCeti.Algebra.Ring.Opposite
+public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 import Mathlib.LinearAlgebra.StdBasis
 
 /-!
@@ -26,6 +27,8 @@ evaluation with constructions that use the opposite ring itself as the second du
 
 `unopDualEvalEquiv` gives the right-module version with both duals taking values in `A`,
 so that its scalars stay in `Aᵐᵒᵖ` rather than passing to a triple opposite.
+The instances `unopDual_finite` and `unopDual_projective` transport finiteness and
+projectivity to this `A`-valued right dual over every semiring.
 
 This is the reflexivity used when dualizing a projective presentation twice in the
 Auslander--Bridger transpose construction. Unlike `Module.evalEquiv`, the evaluation here
@@ -56,6 +59,17 @@ theorem opDualCodomainEquiv_apply (F : N →ₗ[Aᵐᵒᵖ] A) (x : N) :
 @[simp]
 theorem opDualCodomainEquiv_symm_apply (F : Module.Dual Aᵐᵒᵖ N) (x : N) :
     (opDualCodomainEquiv A N).symm F x = MulOpposite.unop (F x) := (rfl)
+
+/-- The `A`-valued right dual of a finite projective right module is finite over `A`. -/
+instance unopDual_finite [Module.Finite Aᵐᵒᵖ N] [Module.Projective Aᵐᵒᵖ N] :
+    Module.Finite A (N →ₗ[Aᵐᵒᵖ] A) :=
+  Module.Finite.of_surjective (opDualCodomainEquiv A N).symm.toLinearMap
+    (opDualCodomainEquiv A N).symm.surjective
+
+/-- The `A`-valued right dual of a finite projective right module is projective over `A`. -/
+instance unopDual_projective [Module.Finite Aᵐᵒᵖ N] [Module.Projective Aᵐᵒᵖ N] :
+    Module.Projective A (N →ₗ[Aᵐᵒᵖ] A) :=
+  Module.Projective.of_equiv (opDualCodomainEquiv A N).symm
 
 variable {N} {N' : Type*} [AddCommMonoid N'] [Module Aᵐᵒᵖ N']
 

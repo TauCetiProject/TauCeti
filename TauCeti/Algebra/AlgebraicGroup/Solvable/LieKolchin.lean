@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Solvable
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Triangular
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Commutator
@@ -18,7 +19,9 @@ import TauCeti.Algebra.AlgebraicGroup.Derived.Connected
 import TauCeti.Algebra.AlgebraicGroup.Derived.PointClosure
 import TauCeti.Algebra.AlgebraicGroup.Derived.Smooth
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
+import TauCeti.Algebra.Coalgebra.Comodule.Flag.Extension
 import TauCeti.Algebra.Coalgebra.Comodule.Transport
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finrank
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
 /-!
@@ -67,6 +70,8 @@ commutator subgroup, and hence yields an ambient weight vector.
 * `TauCeti.Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable`: **the
   Lie--Kolchin theorem**, every finite-dimensional representation of a connected solvable group
   is upper triangularizable.
+* `TauCeti.Comodule.exists_basis_coefficientMatrix_isUpperTriangular_first_span_of_isSolvable`:
+  an upper-triangular basis whose first vector spans a prescribed one-dimensional subcomodule.
 * `exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallySolvable`: the same theorem
   stated with the geometric connectedness and solvability object properties.
 
@@ -168,16 +173,16 @@ private theorem hasNonzeroWeightVector_of_forall_isUnipotentPoint_of_le_derivedD
       A I hID (CommAlgCat.of k k)
   have hunipotent (n : N) : IsNilpotent (rho n - 1) := by
     obtain ⟨g, hg⟩ := n.2
-    have hg' : HopfAlgebra.IsUnipotentPoint (AlgHom.mapDomain q g) :=
+    have hg' : HopfAlgebra.IsUnipotentPoint (BialgHom.mapDomain q g) :=
       (hI g).mapDomain q
     have hnil :=
       (HopfAlgebra.isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one
-        (AlgHom.mapDomain q g)).mp hg'
+        (BialgHom.mapDomain q g)).mp hg'
         (FGComoduleCat.of (R := k) (C := H) V)
     have hinclude : CommHopfAlgCat.quotientPointsHom A I (CommAlgCat.of k k) g =
-        AlgHom.mapDomain q g := by
-      rw [CommHopfAlgCat.quotientPointsHom_apply, AlgHom.mapDomain_apply]
-    have hn : (n : G) = AlgHom.mapDomain q g := hg.symm.trans hinclude
+        BialgHom.mapDomain q g := by
+      rw [CommHopfAlgCat.quotientPointsHom_apply, BialgHom.mapDomain_apply]
+    have hn : (n : G) = BialgHom.mapDomain q g := hg.symm.trans hinclude
     rw [hrho n, hn]
     exact hnil
   obtain ⟨χ, w, hw, haction⟩ :=
@@ -336,13 +341,13 @@ every nonzero finite-dimensional representation has a weight vector. -/
 private theorem hasNonzeroWeightVector_of_derivedSeries_eq_bot (n : ℕ) :
     ∀ (H : Type v) [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H] [IsReduced H]
       [ConnectedSpace (PrimeSpectrum H)],
-      derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ →
+      Subgroup.derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ →
       ∀ (M : Type w) [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M]
         [Nontrivial M], HasNonzeroWeightVector k H M := by
   induction n with
   | zero =>
     intro H _ _ _ _ _ hn M _ _ _ _ _
-    rw [derivedSeries_zero] at hn
+    rw [Subgroup.derivedSeries_zero] at hn
     have hone (g : WithConv (H →ₐ[k] k)) : g = 1 := Subgroup.mem_bot.mp (hn ▸ Subgroup.mem_top g)
     apply hasNonzeroWeightVector_of_pairwise_commute
     intro g h _
@@ -368,8 +373,8 @@ private theorem hasNonzeroWeightVector_of_derivedSeries_eq_bot (n : ℕ) :
         CommHopfAlgCat.commutator_le_quotientPointsSubgroup_of_le_derivedDefiningIdeal
           A I le_rfl (CommAlgCat.of k k) x.2
       have hinclude : CommHopfAlgCat.quotientPointsHom A I (CommAlgCat.of k k) g =
-          AlgHom.mapDomain q g := by
-        rw [CommHopfAlgCat.quotientPointsHom_apply, AlgHom.mapDomain_apply]
+          BialgHom.mapDomain q g := by
+        rw [CommHopfAlgCat.quotientPointsHom_apply, BialgHom.mapDomain_apply]
       rw [Module.End.mem_eigenspace_iff, ← hg, CommHopfAlgCat.quotientPointsHom_apply_apply]
       simp only [ρ, hinclude, ← basePointsRepresentation_corestrict, basePointsRepresentation_apply,
         endOfPoint_tmul, hvc]
@@ -424,6 +429,41 @@ theorem exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable
         ∀ i, IsGroupLikeElem k (coefficientMatrix (C := H) b i i) :=
   exists_basis_coefficientMatrix_isUpperTriangular_of_weight_vectors
     fun _ _ _ _ _ _ ↦ hasNonzeroWeightVector_of_isSolvable
+
+/-- **Lie--Kolchin with a prescribed first line.** A one-dimensional subcomodule of a
+finite-dimensional representation of a reduced connected solvable affine group can be the
+first line of an upper-triangular basis. The remaining basis vectors lift an upper-triangular
+basis of the quotient by that line. -/
+theorem exists_basis_coefficientMatrix_isUpperTriangular_first_span_of_isSolvable
+    [FiniteDimensional k M] [ConnectedSpace (PrimeSpectrum H)]
+    [Group.IsSolvable (WithConv (H →ₐ[k] k))]
+    (L : Subcomodule k H M) (hL : Module.finrank k L = 1) :
+    ∃ (n : ℕ) (b : Module.Basis (Fin (1 + n)) k M),
+      (coefficientMatrix (C := H) b).IsUpperTriangular ∧ k ∙ b 0 = L.toSubmodule := by
+  let : AddCommGroup L := Module.addCommMonoidToAddCommGroup k
+  let bL : Module.Basis (Fin 1) k L := Module.basisUnique (Fin 1) hL
+  obtain ⟨n, bQ, hQ, -⟩ :=
+    exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable
+      (k := k) (H := H) (M := M ⧸ L.toSubmodule)
+  refine ⟨n, extensionBasis L bL bQ,
+    coefficientMatrix_extensionBasis_isUpperTriangular L bL bQ ?_ hQ, ?_⟩
+  · intro i j hji
+    simp only [Fin.fin_one_eq_zero, lt_self_iff_false] at hji
+  · have hzero : (0 : Fin (1 + n)) = Fin.castAdd n (0 : Fin 1) := rfl
+    rw [hzero, extensionBasis_castAdd]
+    apply (eq_span_singleton_of_mem_of_finrank_eq_one
+      ((Subcomodule.finrank_toSubmodule L).trans hL) (bL 0).property ?_).symm
+    exact fun h ↦ bL.ne_zero 0 (Subtype.ext h)
+
+/-- A nonzero vector in a representation of a reduced connected solvable affine group
+has a group-like matrix coefficient, hence one invertible on the whole group scheme. -/
+theorem exists_isGroupLikeElem_matrixCoefficient_of_isSolvable
+    [FiniteDimensional k M] [ConnectedSpace (PrimeSpectrum H)]
+    [Group.IsSolvable (WithConv (H →ₐ[k] k))] {m : M} (hm : m ≠ 0) :
+    ∃ φ : Module.Dual k M, IsGroupLikeElem k (matrixCoefficient (C := H) φ m) := by
+  obtain ⟨n, b, hb, hdiag⟩ :=
+    exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable (k := k) (H := H) (M := M)
+  exact b.exists_isGroupLikeElem_matrixCoefficient_of_isUpperTriangular hb hdiag hm
 
 /-- **The Lie--Kolchin theorem for the geometric object properties.** Over an algebraically
 closed field, every finite-dimensional representation of a reduced, geometrically connected,

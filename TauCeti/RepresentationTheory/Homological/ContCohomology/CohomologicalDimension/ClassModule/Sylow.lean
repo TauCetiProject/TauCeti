@@ -43,6 +43,8 @@ group, for `V ≤ W`:
 
 public section
 
+open Subgroup (quotientSubgroupOfEquivMap)
+
 namespace TauCeti
 
 open ContCohomology
@@ -107,7 +109,7 @@ private theorem abelianizationProPClass_of_sylow (hp : p.Prime)
   let _ : Finite (W.map (QuotientGroup.mk' V)) := Subtype.finite
   let _ : Finite (W ⧸ V.subgroupOf W) := Finite.of_equiv _ eWV.symm.toEquiv
   have hpWV : IsPGroup p (W ⧸ V.subgroupOf W) :=
-    (hmap ▸ P.isPGroup' : IsPGroup p (W.map (QuotientGroup.mk' V))).of_equiv
+    (hmap ▸ P.isPGroup : IsPGroup p (W.map (QuotientGroup.mk' V))).of_equiv
       eWV.toMulEquiv.symm
   obtain ⟨hsubP, htargetGen, hcardP⟩ := abelianizationProP_map_of_subgroupOf h hV hVW
     fun hdimW ↦ by
@@ -116,7 +118,7 @@ private theorem abelianizationProPClass_of_sylow (hp : p.Prime)
       obtain ⟨n, hn⟩ := IsPGroup.iff_card.mp hpWV
       refine ⟨subsingleton_h1_abelianizationProP_of_isPGroup hp hdimW
         (W.subgroupOf_isOpen V hV) hpWV, hP.1, ?_⟩
-      rw [hP.2, hn, padicValNat.prime_pow]
+      rw [hP.2, hn, Nat.padicValNat_def, Nat.multiplicity_prime_pow]
   -- Restriction to `W.map (mk' V) = P` is injective in degrees one and two.
   let r2 := explicitRes2 (G ⧸ V) (Additive (abelianizationProP p G V))
     (W.map (QuotientGroup.mk' V))
@@ -135,7 +137,9 @@ private theorem abelianizationProPClass_of_sylow (hp : p.Prime)
   have hcard : Nat.card (H2 (G ⧸ V) (Additive (abelianizationProP p G V))) =
       p ^ padicValNat p (Nat.card (G ⧸ V)) := by
     rw [Nat.card_congr (Equiv.ofBijective r2 ⟨hr2inj, hr2surj⟩), hcardP, hmap,
-      P.card_eq_multiplicity, padicValNat.prime_pow, Nat.factorization_def _ hp]
+      P.card_eq_multiplicity, Nat.padicValNat_def, Nat.multiplicity_prime_pow,
+        Nat.factorization_def _ hp]
+    simp only [Nat.padicValNat_def]
   exact ⟨hH1, hgen, hcard⟩
 
 /-- **The first cohomology of the pro-`p` class module vanishes.** If `G` has strict

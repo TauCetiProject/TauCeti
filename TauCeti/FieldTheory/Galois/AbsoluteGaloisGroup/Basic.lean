@@ -55,6 +55,8 @@ indexed by the separable closure.
   of topological groups, for any normal extension.
 * `TauCeti.absoluteGaloisGroupRestrictEquiv`: its specialisation comparing
   `Field.absoluteGaloisGroup K` with `TauCeti.AbsoluteGaloisGroup K`.
+* `IntermediateField.fixedField_fixingSubgroup_inf_separableClosure`: an intermediate field
+  inside the separable closure is the separable part of the fixed field of its fixing subgroup.
 * `TauCeti.fixingSubgroup_fixedField`: every closed subgroup is a fixing subgroup.
 * `TauCeti.intermediateFieldEquivClosedSubgroup`: the fundamental theorem of Galois theory for a
   normal extension.
@@ -208,6 +210,18 @@ theorem _root_.IntermediateField.fixedField_fixingSubgroup_lift_inf_separableClo
     Subgroup.map_comap_eq_self_of_surjective (AlgEquiv.restrictNormalHom_surjective E),
     InfiniteGalois.fixedField_fixingSubgroup]
 
+/-- **An intermediate field of `E` inside the separable closure is the separable part of the fixed
+field of its fixing subgroup.** This is
+`IntermediateField.fixedField_fixingSubgroup_lift_inf_separableClosure` for a field given as an
+intermediate field of `E` rather than of the separable closure; it applies, for instance, to any
+intermediate field that is separable over `F`, by `le_separableClosure`. -/
+theorem _root_.IntermediateField.fixedField_fixingSubgroup_inf_separableClosure
+    {M : IntermediateField F E} (hM : M ≤ separableClosure F E) :
+    IntermediateField.fixedField M.fixingSubgroup ⊓ separableClosure F E = M := by
+  simpa only [IntermediateField.lift_restrict] using
+    IntermediateField.fixedField_fixingSubgroup_lift_inf_separableClosure
+      (IntermediateField.restrict hM)
+
 /-- **A closed subgroup of `Gal(E/F)` is the fixing subgroup of its fixed field**, for `E/F`
 normal. -/
 theorem fixingSubgroup_fixedField {H : Subgroup Gal(E/F)}
@@ -249,7 +263,8 @@ def intermediateFieldEquivClosedSubgroup :
       ((IntermediateField.gc_map_comap _).monotone_l h)⟩
     have h₁ : IntermediateField.lift M₁ ≤ IntermediateField.lift M₂ := by
       rw [← IntermediateField.fixedField_fixingSubgroup_lift_inf_separableClosure M₂]
-      exact le_inf ((IntermediateField.le_iff_le _ _).mpr h) (IntermediateField.lift_le M₁)
+      exact le_inf ((IntermediateField.le_fixedField_iff_le_fixingSubgroup _ _).mpr h)
+        (IntermediateField.lift_le M₁)
     exact IntermediateField.lift_le_lift_iff.mp h₁
 
 /-- The correspondence sends an intermediate field to the fixing subgroup of its lift. -/

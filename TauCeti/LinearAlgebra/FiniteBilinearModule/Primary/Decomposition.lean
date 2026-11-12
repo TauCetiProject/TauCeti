@@ -30,17 +30,19 @@ orthogonality and finite-sum identities proved in
 * `TauCeti.FiniteBilinearModule.isNondegenerate_primaryComponents` and
   `TauCeti.FiniteQuadraticModule.isNondegenerate_primaryComponents`: nondegeneracy is equivalent
   to nondegeneracy of the orthogonal product.
+* `TauCeti.FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent` and
+  `TauCeti.FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent`: two modules of the
+  same order are isometric when their primary components are isometric at every prime.
 
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-
-This is the canonical-primary-decomposition part of Layer 3 of
-`TauCetiRoadmap/IntegralLattices/README.md`.
 -/
 
 public section
+
+open AddCommGroup
 
 namespace TauCeti
 
@@ -114,6 +116,49 @@ theorem isNondegenerate_primaryComponents :
     A.primaryComponents.IsNondegenerate ↔ A.IsNondegenerate :=
   A.primaryDecomposition.isNondegenerate_iff
 
+/-- Equal orders give the same index set of prime factors. -/
+private def primeFactorsEquiv {A B : FiniteBilinearModule} (hcard : Nat.card A = Nat.card B) :
+    (Nat.card A).primeFactors ≃ (Nat.card B).primeFactors :=
+  Equiv.subtypeEquivRight fun p ↦ by rw [hcard]
+
+/-- Additive equivalences of the primary components of two finite abelian groups of the same order
+assemble to an additive equivalence of the products of their primary components: reindex along
+`primeFactorsEquiv`, then apply the given equivalence componentwise. -/
+private noncomputable def primaryComponentsAddEquiv {A B : FiniteBilinearModule}
+    (hcard : Nat.card A = Nat.card B)
+    (f : ∀ p : ℕ, p.Prime → primaryComponent A p ≃+ primaryComponent B p) :
+    A.primaryComponents ≃+ B.primaryComponents :=
+  (LinearEquiv.piCongrLeft' ℤ (fun p : (Nat.card A).primeFactors ↦ primaryComponent A p.1)
+    (primeFactorsEquiv hcard)).toAddEquiv.trans
+    (AddEquiv.piCongrRight fun q ↦ f q.1 (Nat.prime_of_mem_primeFactors q.2))
+
+/-- `primaryComponentsAddEquiv` applies the given equivalence to the reindexed component. This is
+`LinearEquiv.piCongrLeft'_apply` followed by `AddEquiv.piCongrRight_apply`, stated for the bundled
+carrier `primaryComponents` so that it rewrites in the isometry proofs below. -/
+private theorem primaryComponentsAddEquiv_apply {A B : FiniteBilinearModule}
+    (hcard : Nat.card A = Nat.card B)
+    (f : ∀ p : ℕ, p.Prime → primaryComponent A p ≃+ primaryComponent B p)
+    (x : A.primaryComponents) (q : (Nat.card B).primeFactors) :
+    primaryComponentsAddEquiv hcard f x q =
+      f q.1 (Nat.prime_of_mem_primeFactors q.2) (x ((primeFactorsEquiv hcard).symm q)) :=
+  rfl
+
+/-- **Primary components decide isometry.** Two finite bilinear modules of the same order are
+isometric as soon as, at every prime `p`, their `p`-primary components are isometric. -/
+theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteBilinearModule}
+    (hcard : Nat.card A = Nat.card B)
+    (h : ∀ p : ℕ, p.Prime →
+      Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
+    Nonempty (Isometry A B) := by
+  let f p hp := (h p hp).some
+  let g := primaryComponentsAddEquiv hcard fun p hp ↦ (f p hp).toAddEquiv
+  refine ⟨A.primaryDecomposition.symm.trans (Isometry.trans ⟨g, fun x y ↦ ?_⟩
+    B.primaryDecomposition)⟩
+  rw [primaryComponents_pairing, primaryComponents_pairing]
+  exact Fintype.sum_equiv (primeFactorsEquiv hcard).symm _ _ fun q ↦ by
+    rw [primaryComponentsAddEquiv_apply, primaryComponentsAddEquiv_apply]
+    exact (f q.1 (Nat.prime_of_mem_primeFactors q.2)).map_pairing _ _
+
 end FiniteBilinearModule
 
 namespace FiniteQuadraticModule
@@ -174,6 +219,25 @@ finite quadratic module is nondegenerate. -/
 theorem isNondegenerate_primaryComponents :
     A.primaryComponents.IsNondegenerate ↔ A.IsNondegenerate :=
   A.primaryDecomposition.isNondegenerate_iff
+
+/-- **Primary components decide isometry.** Two finite quadratic modules of the same order are
+isometric as soon as, at every prime `p`, their `p`-primary components are isometric. -/
+theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteQuadraticModule}
+    (hcard : Nat.card A = Nat.card B)
+    (h : ∀ p : ℕ, p.Prime →
+      Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
+    Nonempty (Isometry A B) := by
+  let f p hp := (h p hp).some
+  let g := FiniteBilinearModule.primaryComponentsAddEquiv hcard fun p hp ↦
+    (f p hp).toLinearEquiv.toAddEquiv
+  refine ⟨A.primaryDecomposition.symm.trans
+    ((⟨g.toIntLinearEquiv, fun x ↦ ?_⟩ : Isometry _ _).trans B.primaryDecomposition)⟩
+  rw [primaryComponents_quadratic, primaryComponents_quadratic]
+  -- The coercion of `g.toIntLinearEquiv` is `g` (`AddEquiv.coe_toIntLinearEquiv` is `rfl`).
+  exact Fintype.sum_equiv (FiniteBilinearModule.primeFactorsEquiv hcard).symm _ _ fun q ↦
+    (congrArg (fun y : primaryComponent B.carrier q.1 ↦ B.quadratic y)
+      (FiniteBilinearModule.primaryComponentsAddEquiv_apply hcard _ x q)).trans
+      ((f q.1 (Nat.prime_of_mem_primeFactors q.2)).map_app _)
 
 end FiniteQuadraticModule
 

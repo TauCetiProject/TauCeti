@@ -35,7 +35,8 @@ where the principal branch works (`TauCeti.hasContinuousLogOn_of_mapsTo_slitPlan
 
 The first substantial fact is that continuous logarithms glue: if `S` and `T` are closed, their
 overlap `S ∩ T` is preconnected, and `g` has a continuous logarithm on each, then it has one on
-`S ∪ T` (`TauCeti.HasContinuousLogOn.union`). Two logarithms of the same function differ by a
+`S ∪ T` (`TauCeti.HasContinuousLogOn.union`), and likewise for two open sets
+(`TauCeti.HasContinuousLogOn.union_of_isOpen`). Two logarithms of the same function differ by a
 value of `Complex.exp ⁻¹' {1}`, that is by an integer multiple of `2 * π * I`; distinct such
 multiples are `2 * π` apart, so that fibre is a discrete subset of `ℂ` and the difference, being
 continuous on a preconnected overlap, is constant there. So one logarithm can be shifted by a
@@ -74,50 +75,30 @@ presume it; in particular the naive route to it, through winding numbers of curv
 `K`, is unavailable, since a compact connected set can separate the plane while containing no arc
 at all.
 
-## Roadmap role
+## Janiszewski's theorem and enclosure
 
-**Plane separation for Jordan curves** was an open frontier item of layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md`, the Carathéodory boundary correspondence.
-`TauCeti.image_inter_ball_subset_filledHull_of_diam_lt_of_isPreconnected_sdiff_singleton` of
-`TauCeti/Analysis/Complex/Conformal/Crosscut/Inside.lean` avoids the plane-separation hypothesis
-entirely by taking `IsPreconnected (K \ {f z₀})` instead, which
-`IsJordanCurve.isPathConnected_sdiff_singleton` discharges; `Caratheodory.lean` is now
-unconditional. The remaining open statement is
-`frontier Ω ∩ closure A ∩ closure B ⊆ closure γ`, the input
-`TauCeti/Analysis/Complex/Conformal/Crosscut/BoundarySplit.lean` names as missing before its
-dichotomy `TauCeti.subset_or_subset_of_isPreconnected_frontier_image_sdiff` can be fed a boundary
-arc.
+The classical route to the separation theorems of the plane runs through Janiszewski's theorem,
+proved as `TauCeti.janiszewski` in `TauCeti/Analysis/Complex/PlaneSeparation/Basic.lean`: if two
+*bounded* closed sets `S`, `T ⊆ ℂ` have preconnected intersection and neither separates `a` from
+`b`, then `S ∪ T` does not separate them either. Boundedness cannot be dropped: two opposite closed
+rays from the origin meet in a point and neither separates the plane, yet their union is a line.
+The proof translates "does not separate" into "the Borsuk map has a continuous logarithm" and
+glues the two logarithms over the intersection. This file supplies that translation in the
+direction that needs no boundedness, together with the gluing; the converse direction, which uses
+boundedness of `S ∪ T`, is added in `TauCeti/Analysis/Complex/PlaneSeparation/Basic.lean`.
 
-The classical route to both runs through Janiszewski's theorem — two closed sets with connected
-intersection, neither of which separates a pair of points, have a union that does not separate it
-either — and Janiszewski is proved by translating "does not separate" into "the Borsuk map has a
-continuous logarithm" and gluing the two logarithms over the connected intersection. This file
-supplies that translation in the direction that holds without duality, together with the gluing;
-`TauCeti/Analysis/Complex/PlaneSeparation/Basic.lean` adds the converse direction and assembles the
-three into `TauCeti.janiszewski`.
-
-The one statement below already phrased in the vocabulary of that development is
-`TauCeti.mem_filledHull_or_mem_filledHull_of_not_hasContinuousLogOn`: a bounded closed set on which
-the Borsuk map has no continuous logarithm encloses `a` or `b` in its filled hull. It reads the
-criterion through `TauCeti.mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn` of
+The criterion is also stated in terms of filled hulls, as
+`TauCeti.mem_filledHull_or_mem_filledHull_of_not_hasContinuousLogOn`: a bounded closed set on
+which the Borsuk map has no continuous logarithm encloses `a` or `b` in its filled hull. It reads
+the criterion through `TauCeti.mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn` of
 `TauCeti/Analysis/Normed/Module/FilledHull.lean`, so a source of logarithm obstructions becomes a
 source of the enclosure hypothesis `Conformal/Crosscut/Inside.lean` consumes.
-
-## Coordination with upstream Mathlib
-
-Mathlib has continuous branches of the logarithm on simply connected open sets
-(`Complex.exists_continuousOn_eqOn_exp_comp` of `Mathlib/Analysis/Complex/BranchLogRoot.lean`,
-which layer L3 consumes), but no predicate for a logarithm on an arbitrary set, no gluing theorem
-for logarithms, and no separation theory for the plane. Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself. So this
-file is new Lean formalization rather than a temporary shim, and it consumes no L0–L3 shim: its
-only complex-analytic input is the principal branch `Complex.log` on `Complex.slitPlane`.
 
 ## Main results
 
 * `TauCeti.HasContinuousLogOn` — the predicate, with `TauCeti.hasContinuousLogOn_iff` exposing it,
-  and its closure properties `TauCeti.HasContinuousLogOn.mul`, `.inv`, `.div`, `.mono`, `.congr`.
+  and its closure properties `TauCeti.HasContinuousLogOn.mul`, `.inv`, `.div`, `.pow`, `.mono`,
+  `.congr`.
 * `TauCeti.hasContinuousLogOn_of_mapsTo_slitPlane` — a function landing in the slit plane has the
   principal logarithm.
 * `TauCeti.eq_of_isPreconnected_of_forall_exp_eq_one` — a preconnected set of logarithms of `1` is
@@ -214,6 +195,13 @@ theorem HasContinuousLogOn.div (h : HasContinuousLogOn g S) (h' : HasContinuousL
     HasContinuousLogOn (fun x => g x / g' x) S :=
   (h.mul h'.inv).congr fun x _ => (div_eq_mul_inv (g x) (g' x)).symm
 
+/-- **Logarithms scale under powers.** -/
+theorem HasContinuousLogOn.pow (h : HasContinuousLogOn g S) (k : ℕ) :
+    HasContinuousLogOn (fun x => g x ^ k) S := by
+  obtain ⟨u, hc, hu⟩ := h
+  exact ⟨fun x => k * u x, continuousOn_const.mul hc, fun x hx => by
+    simp only [Complex.exp_nat_mul, hu hx]⟩
+
 /-- **A function landing in the slit plane has the principal logarithm.** This is the only source
 of logarithms that does not come from another logarithm, and everything below is built on it. -/
 theorem hasContinuousLogOn_of_mapsTo_slitPlane (hg : ContinuousOn g S)
@@ -259,17 +247,32 @@ theorem eq_of_isPreconnected_of_forall_exp_eq_one {P : Set ℂ} (hP : IsPreconne
       exact ⟨mem_ball_self Real.pi_pos, hy⟩
   exact hP.constant_of_mapsTo hdisc continuousOn_id (fun w hw => h w hw) h₁ h₂
 
-/-- **Continuous logarithms glue along a preconnected overlap.** Two logarithms of `g` differ, on
-the overlap, by a logarithm of `1`; that difference is constant there by
-`TauCeti.eq_of_isPreconnected_of_forall_exp_eq_one`, so shifting one logarithm by the constant
-makes the two agree on `S ∩ T` and define a single function, continuous on the union because both
-pieces are closed.
+/-- **Two continuous logarithms differ by a constant multiple of `2πi`.** On a preconnected space,
+two continuous functions with the same exponential differ by `k * (2 * π * I)` for a single
+integer `k`. -/
+theorem exists_int_forall_eq_add_of_exp_eq [PreconnectedSpace X] {u v : X → ℂ}
+    (hu : Continuous u) (hv : Continuous v) (h : ∀ x, Complex.exp (u x) = Complex.exp (v x)) :
+    ∃ k : ℤ, ∀ x, v x = u x + k * (2 * π * Complex.I) := by
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · exact ⟨0, fun x => isEmptyElim x⟩
+  have h1 (x : X) : Complex.exp (v x - u x) = 1 := by
+    rw [Complex.exp_sub, h x, div_self (Complex.exp_ne_zero _)]
+  obtain ⟨k, hk⟩ := Complex.exp_eq_one_iff.1 (h1 x₀)
+  refine ⟨k, fun x => ?_⟩
+  have := eq_of_isPreconnected_of_forall_exp_eq_one (isPreconnected_range (hv.sub hu))
+    (by rintro _ ⟨y, rfl⟩; exact h1 y) (mem_range_self x) (mem_range_self x₀)
+  simp only [Pi.sub_apply] at this
+  linear_combination this + hk
 
-The overlap is only asked to be preconnected, so the disjoint case is allowed: there the two
-logarithms are glued unchanged. -/
-theorem HasContinuousLogOn.union (hS : IsClosed S) (hT : IsClosed T)
+/-- Two logarithms of `g` on `S` and on `T` with preconnected overlap combine into one function that
+is a logarithm of `g` on `S ∪ T` and is continuous on each of the two pieces. Two logarithms of `g`
+differ, on the overlap, by a logarithm of `1`; that difference is constant there by
+`TauCeti.eq_of_isPreconnected_of_forall_exp_eq_one`, so shifting one logarithm by the constant
+makes the two agree on `S ∩ T`. -/
+private theorem HasContinuousLogOn.exists_continuousOn_continuousOn
     (hST : IsPreconnected (S ∩ T)) (h : HasContinuousLogOn g S) (h' : HasContinuousLogOn g T) :
-    HasContinuousLogOn g (S ∪ T) := by
+    ∃ L : X → ℂ, ContinuousOn L S ∧ ContinuousOn L T ∧
+      ∀ x ∈ S ∪ T, Complex.exp (L x) = g x := by
   classical
   obtain ⟨u, hu, hue⟩ := h
   obtain ⟨v, hv, hve⟩ := h'
@@ -292,26 +295,46 @@ theorem HasContinuousLogOn.union (hS : IsClosed S) (hT : IsClosed T)
       ?_ (mem_image_of_mem _ hx) (mem_image_of_mem _ hx₀)
     rintro w ⟨y, hy, rfl⟩
     exact hdiff y hy
-  refine ⟨S.piecewise u fun x => v x + c, ?_, fun x hx => ?_⟩
-  · refine ContinuousOn.union_of_isClosed ?_ ?_ hS hT
-    · exact hu.congr fun x hx => S.piecewise_eq_of_mem _ _ hx
-    · have hvc : ContinuousOn (fun x => v x + c) T := hv.add continuousOn_const
-      refine hvc.congr fun x hx => ?_
-      by_cases hxS : x ∈ S
+  refine ⟨S.piecewise u fun x => v x + c, ?_, ?_, fun x hx => ?_⟩
+  · exact hu.congr fun x hx => S.piecewise_eq_of_mem _ _ hx
+  · have hvc : ContinuousOn (fun x => v x + c) T := hv.add continuousOn_const
+    refine hvc.congr fun x hx => ?_
+    by_cases hxS : x ∈ S
+    · rw [S.piecewise_eq_of_mem _ _ hxS]
+      have := hc x ⟨hxS, hx⟩
+      linear_combination this
+    · exact S.piecewise_eq_of_notMem _ _ hxS
+  · rcases hx with hx | hx
+    · rw [S.piecewise_eq_of_mem _ _ hx]
+      exact hue hx
+    · by_cases hxS : x ∈ S
       · rw [S.piecewise_eq_of_mem _ _ hxS]
-        have := hc x ⟨hxS, hx⟩
-        linear_combination this
-      · exact S.piecewise_eq_of_notMem _ _ hxS
-  · have key : Complex.exp (S.piecewise u (fun x => v x + c) x) = g x := by
-      rcases hx with hx | hx
-      · rw [S.piecewise_eq_of_mem _ _ hx]
-        exact hue hx
-      · by_cases hxS : x ∈ S
-        · rw [S.piecewise_eq_of_mem _ _ hxS]
-          exact hue hxS
-        · rw [S.piecewise_eq_of_notMem _ _ hxS, Complex.exp_add, hc1, mul_one]
-          exact hve hx
-    exact key
+        exact hue hxS
+      · rw [S.piecewise_eq_of_notMem _ _ hxS, Complex.exp_add, hc1, mul_one]
+        exact hve hx
+
+/-- **Continuous logarithms glue along a preconnected overlap.** Two logarithms of `g` differ, on
+the overlap, by a logarithm of `1`; that difference is constant there by
+`TauCeti.eq_of_isPreconnected_of_forall_exp_eq_one`, so shifting one logarithm by the constant
+makes the two agree on `S ∩ T` and define a single function, continuous on the union because both
+pieces are closed.
+
+The overlap is only asked to be preconnected, so the disjoint case is allowed: there the two
+logarithms are glued unchanged. The same holds for two open pieces,
+`TauCeti.HasContinuousLogOn.union_of_isOpen`. -/
+theorem HasContinuousLogOn.union (hS : IsClosed S) (hT : IsClosed T)
+    (hST : IsPreconnected (S ∩ T)) (h : HasContinuousLogOn g S) (h' : HasContinuousLogOn g T) :
+    HasContinuousLogOn g (S ∪ T) := by
+  obtain ⟨L, hLS, hLT, hL⟩ := h.exists_continuousOn_continuousOn hST h'
+  exact hasContinuousLogOn_iff.mpr ⟨L, hLS.union_of_isClosed hLT hS hT, hL⟩
+
+/-- **Continuous logarithms on open sets glue along a preconnected overlap.** This is the open
+counterpart of `TauCeti.HasContinuousLogOn.union`. -/
+theorem HasContinuousLogOn.union_of_isOpen (hS : IsOpen S) (hT : IsOpen T)
+    (hST : IsPreconnected (S ∩ T)) (h : HasContinuousLogOn g S) (h' : HasContinuousLogOn g T) :
+    HasContinuousLogOn g (S ∪ T) := by
+  obtain ⟨L, hLS, hLT, hL⟩ := h.exists_continuousOn_continuousOn hST h'
+  exact hasContinuousLogOn_iff.mpr ⟨L, hLS.union_of_isOpen hLT hS hT, hL⟩
 
 /-! ## The Borsuk map of a pair of points -/
 
@@ -346,87 +369,37 @@ continuous logarithm on `K`.
 
 Contrapositively: if a closed set `K` carries no continuous logarithm of the Borsuk map of `a` and
 `b`, then `b ∉ connectedComponentIn Kᶜ a`; for `a`, `b` outside `K` that says the two points lie in
-different components of `Kᶜ`, and otherwise one of them lies in `K` itself.
-
-The proof moves the second point rather than constructing the logarithm. The set of points `w` of
-`Kᶜ` for which `z ↦ (z - a) / (z - w)` has a logarithm on `K` is open, because displacing `w` by
-less than half its distance to `K` multiplies the Borsuk map by a factor covered by
-`TauCeti.hasContinuousLogOn_sub_div_sub_of_norm_lt`; the same estimate run backwards makes the
-complementary set of `Kᶜ` open too. Since `a` itself is in the first set — its Borsuk map is the
-constant `1` — and the component of `a` is preconnected, the component lies in it. -/
+different components of `Kᶜ`, and otherwise one of them lies in `K` itself. -/
 theorem hasContinuousLogOn_sub_div_sub (hK : IsClosed K) (hb : b ∈ connectedComponentIn Kᶜ a) :
     HasContinuousLogOn (fun z => (z - a) / (z - b)) K := by
-  have ha : a ∈ Kᶜ := by
-    by_contra hmem
-    rw [connectedComponentIn_eq_empty hmem] at hb
-    exact hb
+  have ha : a ∈ Kᶜ := connectedComponentIn_nonempty_iff.mp ⟨b, hb⟩
   -- displacing the second point preserves the existence of a logarithm
-  have step : ∀ w w' : ℂ, w ∉ K → (∀ z ∈ K, ‖w - w'‖ < ‖z - w'‖) →
-      HasContinuousLogOn (fun z => (z - a) / (z - w)) K →
+  have step (w w' : ℂ) (hlt : ∀ z ∈ K, ‖w - w'‖ < ‖z - w'‖)
+      (hlog : HasContinuousLogOn (fun z => (z - a) / (z - w)) K) :
       HasContinuousLogOn (fun z => (z - a) / (z - w')) K := by
-    intro w w' hwK hlt hlog
     refine (hlog.mul (hasContinuousLogOn_sub_div_sub_of_norm_lt hlt)).congr fun z hz => ?_
-    have hzw : z - w ≠ 0 := sub_ne_zero.mpr fun hzeq => hwK (hzeq ▸ hz)
-    have hzw' : z - w' ≠ 0 := by
-      intro h0
-      have := hlt z hz
-      rw [h0, norm_zero] at this
-      exact absurd this (not_lt.mpr (norm_nonneg _))
+    have hzw : z - w ≠ 0 := sub_ne_zero.mpr (by rintro rfl; exact lt_irrefl _ (hlt _ hz))
+    have hzw' : z - w' ≠ 0 := norm_pos_iff.mp ((norm_nonneg _).trans_lt (hlt z hz))
     field_simp
-  -- every point off `K` is at a positive distance from it
-  have hradius : ∀ w ∉ K, ∃ ε > 0, ∀ z ∈ K, ε ≤ ‖z - w‖ := by
-    intro w hw
-    obtain ⟨ε, hε, hsub⟩ := Metric.isOpen_iff.mp hK.isOpen_compl w hw
-    refine ⟨ε, hε, fun z hz => le_of_not_gt fun hlt => ?_⟩
-    exact hsub (by simpa [Metric.mem_ball, dist_eq_norm] using hlt) hz
-  set G : Set ℂ := {w | w ∉ K ∧ HasContinuousLogOn (fun z => (z - a) / (z - w)) K} with hG
-  set B : Set ℂ := {w | w ∉ K ∧ ¬ HasContinuousLogOn (fun z => (z - a) / (z - w)) K} with hB
-  -- the displacement estimate, in the form both openness proofs use
-  have hnear : ∀ w ∉ K, ∀ ε > 0, (∀ z ∈ K, ε ≤ ‖z - w‖) → ∀ w' ∈ ball w (ε / 2),
-      w' ∉ K ∧ (∀ z ∈ K, ‖w - w'‖ < ‖z - w'‖) ∧ ∀ z ∈ K, ‖w' - w‖ < ‖z - w‖ := by
-    intro w _ ε hε hεK w' hw'
+  -- the existence of a logarithm is locally constant in the second point, on the component
+  refine (isPreconnected_connectedComponentIn.induction₂'
+    (fun w w' => HasContinuousLogOn (fun z => (z - a) / (z - w)) K ↔
+      HasContinuousLogOn (fun z => (z - a) / (z - w')) K) (fun w hw => ?_)
+    (fun _ _ _ _ _ _ => Iff.trans) (mem_connectedComponentIn ha) hb).mp
+    ((hasContinuousLogOn_const one_ne_zero).congr fun z hz => ?_)
+  · -- displacing `w` by less than half its distance to `K` works in both directions
+    obtain ⟨ε, hε, hsub⟩ :=
+      Metric.isOpen_iff.mp hK.isOpen_compl w (connectedComponentIn_subset _ _ hw)
+    have hfar (z) (hz : z ∈ K) : ε ≤ ‖z - w‖ :=
+      le_of_not_gt fun h => hsub (by rwa [Metric.mem_ball, dist_eq_norm]) hz
+    filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds w (half_pos hε))] with w' hw'
     rw [Metric.mem_ball, dist_eq_norm] at hw'
-    have hsymm : ‖w - w'‖ < ε / 2 := by rwa [norm_sub_rev]
-    have hw'K : w' ∉ K := fun hz => absurd (hεK w' hz) (by linarith)
-    refine ⟨hw'K, fun z hz => ?_, fun z hz => lt_of_lt_of_le (by linarith) (hεK z hz)⟩
-    have htri : ‖z - w‖ ≤ ‖z - w'‖ + ‖w' - w‖ := by
-      calc ‖z - w‖ = ‖z - w' + (w' - w)‖ := by rw [sub_add_sub_cancel]
-        _ ≤ ‖z - w'‖ + ‖w' - w‖ := norm_add_le _ _
-    have := hεK z hz
-    linarith
-  have hGopen : IsOpen G := by
-    rw [Metric.isOpen_iff]
-    rintro w hw
-    rw [hG, mem_ofPred_eq] at hw
-    obtain ⟨ε, hε, hεK⟩ := hradius w hw.1
-    refine ⟨ε / 2, by positivity, fun w' hw' => ?_⟩
-    obtain ⟨hw'K, hfar, -⟩ := hnear w hw.1 ε hε hεK w' hw'
-    exact ⟨hw'K, step w w' hw.1 hfar hw.2⟩
-  have hBopen : IsOpen B := by
-    rw [Metric.isOpen_iff]
-    rintro w hw
-    rw [hB, mem_ofPred_eq] at hw
-    obtain ⟨ε, hε, hεK⟩ := hradius w hw.1
-    refine ⟨ε / 2, by positivity, fun w' hw' => ?_⟩
-    obtain ⟨hw'K, -, hback⟩ := hnear w hw.1 ε hε hεK w' hw'
-    exact ⟨hw'K, fun hlog' => hw.2 (step w' w hw'K hback hlog')⟩
-  have hsub : connectedComponentIn Kᶜ a ⊆ G := by
-    refine isPreconnected_connectedComponentIn.subset_left_of_subset_union hGopen hBopen ?_ ?_ ?_
-    · rw [Set.disjoint_left]
-      rintro x hx hx'
-      rw [hG, mem_ofPred_eq] at hx
-      rw [hB, mem_ofPred_eq] at hx'
-      exact hx'.2 hx.2
-    · intro x hx
-      have hxK : x ∉ K := connectedComponentIn_subset _ _ hx
-      by_cases hlog : HasContinuousLogOn (fun z => (z - a) / (z - x)) K
-      · exact Or.inl ⟨hxK, hlog⟩
-      · exact Or.inr ⟨hxK, hlog⟩
-    · refine ⟨a, mem_connectedComponentIn ha, ha, (hasContinuousLogOn_const one_ne_zero).congr ?_⟩
-      intro z hz
-      have : z - a ≠ 0 := sub_ne_zero.mpr fun hzeq => ha (hzeq ▸ hz)
-      simp [div_self this]
-  exact (hsub hb).2
+    have h1 (z) (hz : z ∈ K) : ‖w - w'‖ < ‖z - w'‖ := by
+      linarith [hfar z hz, norm_sub_le_norm_sub_add_norm_sub z w' w, norm_sub_rev w w']
+    have h2 (z) (hz : z ∈ K) : ‖w' - w‖ < ‖z - w‖ := by linarith [hfar z hz]
+    exact ⟨⟨step w w' h1, step w' w h2⟩, step w' w h2, step w w' h1⟩
+  · have : z - a ≠ 0 := sub_ne_zero.mpr fun hzeq => ha (hzeq ▸ hz)
+    simp [div_self this]
 
 /-- **A bounded closed set with no continuous logarithm of a Borsuk map encloses one of the two
 points.** This is `TauCeti.hasContinuousLogOn_sub_div_sub` read through

@@ -48,8 +48,8 @@ this lives here rather than in the stability file that consumes it.
 ## Main statements
 
 * `TauCeti.isClosed_setOfPred_isCoupling` — the couplings of `μ` and `ν` are a weakly closed set of
-  probability measures on the product, with canonical Polish and compact-pseudometrizable
-  specialisations;
+  probability measures on the product, including Borel `HasOuterApproxClosed` factors through
+  typeclass inference, with a compact-pseudometrizable specialisation;
 * `TauCeti.isTightMeasureSet_setOfPred_exists_isCoupling` and
   `TauCeti.isTightMeasureSet_setOfPred_isCoupling` — the couplings of two tight families of
   measures, and of two tight measures, form a tight family, with no topological hypothesis beyond
@@ -240,6 +240,16 @@ theorem isCoupling_of_tendsto [l.NeBot]
     refine tendsto_nhds_unique h₂ (hν.congr' ?_)
     exact hπs.mono fun i hi ↦ (isCoupling_toMeasure_iff.mp hi).2.symm
 
+end MovingMarginals
+
+section MovingMarginalsBorel
+
+variable {ι X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  [T2Space (ProbabilityMeasure X)] [TopologicalSpace Y] [MeasurableSpace Y]
+  [OpensMeasurableSpace Y] [T2Space (ProbabilityMeasure Y)] {l : Filter ι}
+  {μs : ι → ProbabilityMeasure X} {νs : ι → ProbabilityMeasure Y} {μ : ProbabilityMeasure X}
+  {ν : ProbabilityMeasure Y} {πs : ι → ProbabilityMeasure (X × Y)}
+
 /-- **Relative compactness of a family of transport plans with moving marginals.** If a tail of
 each marginal family is tight, then any eventually feasible family of plans has a weakly convergent
 refinement whose limit is a coupling of the limiting marginals. Prokhorov's theorem needs
@@ -272,7 +282,7 @@ theorem exists_isCoupling_tendsto_of_isTightMeasureSet [T2Space (X × Y)]
   exact ⟨U, π, U.neBot, hUle, hUtend, isCoupling_of_tendsto
     (hπs.filter_mono hUle) hUtend (hμ.mono_left hUle) (hν.mono_left hUle)⟩
 
-end MovingMarginals
+end MovingMarginalsBorel
 
 section CompactMetrizable
 
@@ -287,28 +297,16 @@ theorem isClosed_setOfPred_isCoupling_of_compactSpace
     [TopologicalSpace.PseudoMetrizableSpace X] [TopologicalSpace.PseudoMetrizableSpace Y]
     (μ : ProbabilityMeasure X) (ν : ProbabilityMeasure Y) :
     IsClosed
-      {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} := by
-  let : UniformSpace X := TopologicalSpace.pseudoMetrizableSpaceUniformity X
-  let : UniformSpace Y := TopologicalSpace.pseudoMetrizableSpaceUniformity Y
-  let : TopologicalSpace.SeparableSpace X :=
-    TopologicalSpace.isSeparable_univ_iff.mp isCompact_univ.isSeparable
-  let : TopologicalSpace.SeparableSpace Y :=
-    TopologicalSpace.isSeparable_univ_iff.mp isCompact_univ.isSeparable
-  exact isClosed_setOfPred_isCoupling μ ν
+      {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} :=
+  isClosed_setOfPred_isCoupling μ ν
 
 /-- **Compactness of couplings on compact metrizable spaces.** Compactness makes every family of
 measures tight, so the general coupling compactness theorem applies without marginal hypotheses. -/
 theorem isCompact_setOfPred_isCoupling_of_compactSpace (μ : ProbabilityMeasure X)
     (ν : ProbabilityMeasure Y) :
     IsCompact
-      {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} := by
-  let : UniformSpace X := TopologicalSpace.pseudoMetrizableSpaceUniformity X
-  let : UniformSpace Y := TopologicalSpace.pseudoMetrizableSpaceUniformity Y
-  let : TopologicalSpace.SeparableSpace X :=
-    TopologicalSpace.isSeparable_univ_iff.mp isCompact_univ.isSeparable
-  let : TopologicalSpace.SeparableSpace Y :=
-    TopologicalSpace.isSeparable_univ_iff.mp isCompact_univ.isSeparable
-  exact isCompact_setOfPred_isCoupling IsTightMeasureSet.of_compactSpace
+      {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} :=
+  isCompact_setOfPred_isCoupling IsTightMeasureSet.of_compactSpace
     IsTightMeasureSet.of_compactSpace
 
 end CompactMetrizable
@@ -321,15 +319,6 @@ tight and hence the coupling set compact. -/
 
 variable {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
   [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
-
-/-- **Closedness of couplings on Polish Borel spaces.** This is the canonical weak/Borel
-specialisation: the probability-measure spaces are Hausdorff, so the two marginal fibers are
-closed. -/
-theorem isClosed_setOfPred_isCoupling_of_polishSpace (μ : ProbabilityMeasure X)
-    (ν : ProbabilityMeasure Y) :
-    IsClosed
-      {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} :=
-  isClosed_setOfPred_isCoupling μ ν
 
 /-- **The couplings of two probability measures on Polish spaces are weakly compact.** On a Polish
 space every finite Borel measure is tight, so the tightness hypotheses of

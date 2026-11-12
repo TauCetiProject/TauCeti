@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.Sum
 import TauCeti.AlgebraicGeometry.GroupScheme.KilledByRank
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
@@ -49,22 +48,20 @@ variable {S : Scheme.{u}} {E : EllipticCurveGeom S}
 
 /-- The divisor of the first `N` positive multiples of a point is finite over the base. -/
 instance isFinite_multiplesDivisor :
-    IsFinite ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) :=
-  (E.isRelativeEffectiveCartier_multiplesDivisor P N).isFinite
+    IsFinite ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) := by
+  rw [multiplesDivisor_eq_pointsDivisor]; infer_instance
 
 /-- The divisor of the first `N` positive multiples of a point is flat over the base. -/
 instance flat_multiplesDivisor :
-    Flat ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) :=
-  (E.isRelativeEffectiveCartier_multiplesDivisor P N).flat
+    Flat ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) := by
+  rw [multiplesDivisor_eq_pointsDivisor]; infer_instance
 
 /-- The divisor of the first `N` positive multiples of a point is locally of finite
 presentation over the base. Together with finiteness and flatness, this makes it finite
 locally free. -/
 instance locallyOfFinitePresentation_multiplesDivisor :
     LocallyOfFinitePresentation ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) := by
-  have : Smooth E.structureMap := SmoothOfRelativeDimension.smooth 1 _
-  exact TauCeti.locallyOfFinitePresentation_subschemeι_comp_of_isEffectiveCartier
-    (E.isRelativeEffectiveCartier_multiplesDivisor P N).isEffectiveCartier
+  rw [multiplesDivisor_eq_pointsDivisor]; infer_instance
 
 /-- The divisor `[P] + ⋯ + [NP]` has constant rank `N`, whether or not `P` has exact order. -/
 @[simp]
@@ -110,19 +107,10 @@ theorem IsOfExactOrder.subschemeι_comp_mulBy (h : E.IsOfExactOrder P N) :
   let := grp
   let := hi
   have : Mono i := Over.mono_of_mono_left i
-  let G : FiniteFlatCommGroupScheme S :=
-    { carrier := (E.multiplesDivisor P N).subscheme
-      structureMap := (E.multiplesDivisor P N).subschemeι ≫ E.structureMap
-      grp := grp
-      comm := isCommMonObj_of_mono i
-      finite := inferInstance
-      flat := inferInstance
-      locallyOfFinitePresentation := inferInstance }
-  have hid : (𝟙 G.toOver) ^ N = 1 :=
-    G.pow_eq_one_of_finrank (fun s ↦ congrFun (finrank_multiplesDivisor P N) s) _
   have hiN : i ≫ E.mulBy N = 1 := by
     rw [comp_mulBy, zpow_natCast]
-    simpa only [pow_comp, Category.id_comp, one_comp] using congrArg (fun x ↦ x ≫ i) hid
+    exact GroupScheme.pow_eq_one_of_finrank_of_mono i inferInstance inferInstance inferInstance
+      fun s ↦ congrFun (finrank_multiplesDivisor P N) s
   simpa only [Over.comp_left, hom_one_left, i, Over.homMk_left, Over.mk_hom, Category.assoc]
     using congrArg Over.Hom.left hiN
 

@@ -39,5 +39,6 @@ theorem PowerSeries.range_comap_constantCoeff_subset_iff_eq_top {R : Type*} [Com
   rw [range_comap_of_surjective R constantCoeff constantCoeff_surj]
   refine PrimeSpectrum.zeroLocus_subset_iff_eq_top_of_le_jacobson_bot fun f hf ↦ ?_
   -- which lies in the Jacobson radical, as `R⟦X⟧` is `X`-adically complete
-  exact IsAdicComplete.le_jacobson_bot (Ideal.span {X})
-    (Ideal.mem_span_singleton.mpr (X_dvd_iff.mpr (RingHom.mem_ker.mp hf)))
+  simpa only [Ideal.jacobson_bot] using
+    IsAdicComplete.le_jacobson (Ideal.span {X})
+      (Ideal.mem_span_singleton.mpr (X_dvd_iff.mpr (RingHom.mem_ker.mp hf)))

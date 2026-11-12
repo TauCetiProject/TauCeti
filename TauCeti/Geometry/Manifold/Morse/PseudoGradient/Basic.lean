@@ -8,11 +8,10 @@ module
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.Morse.Lemma
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Pseudo-gradient fields adapted to a Morse function
@@ -28,8 +27,8 @@ finite-dimensional real normed space `E`. A vector field `X` on `M` is a
   coordinates `z = L (ψ y)`, then `X` reads `z ↦ (-wᵢ zᵢ)ᵢ`.
 
 Smoothness of `f` is not part of the definition: the Morse chart condition already forces `f` to be
-a nondegenerate quadratic form near each critical point, and the results below that need `f` to be
-differentiable assume it separately.
+a nondegenerate quadratic form near each critical point, and differentiability of `f` follows from
+the definition (`TauCeti.IsAdaptedPseudoGradient.mdifferentiable` in `Existence.lean`).
 
 This is the class of vector fields with which Audin and Damian build Morse homology. Near a
 critical point the flow of an adapted pseudo-gradient is linear in the Morse chart, so its local
@@ -42,11 +41,10 @@ stable and unstable sets are exactly the coordinate planes, and the remaining an
 * `TauCeti.IsAdaptedPseudoGradient.mvfderiv_apply_nonpos`: `df(X) ≤ 0` everywhere.
 * `TauCeti.IsAdaptedPseudoGradient.eq_zero_iff`: the zeros of an adapted pseudo-gradient are
   exactly the critical points of `f`.
-* `TauCeti.IsAdaptedPseudoGradient.antitone_comp`: `f` is antitone along every integral curve
-  along which it is differentiable.
+* `TauCeti.MorseChart.coord_mfderiv_neg`: in the negated Morse chart, `-X` is the linear field.
 * `TauCeti.IsAdaptedPseudoGradient.neg`: `-X` is a pseudo-gradient adapted to `-f`.
 * `TauCeti.IsAdaptedPseudoGradient.strictAnti_comp`: `f` is strictly antitone along an integral
-  curve along which it is differentiable and that never meets a critical point.
+  curve that never meets a critical point.
 
 ## References
 
@@ -61,9 +59,9 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
-  {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
+  {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {γ : ℝ → M}
 
 /-- A vector field `X` is a **pseudo-gradient field adapted to `f`** when it is smooth, `f`
 strictly decreases along it away from the critical points (`d f_x (X x) < 0`, with the differential
@@ -78,23 +76,25 @@ structure IsAdaptedPseudoGradient (f : M → ℝ) (X : (x : M) → TangentSpace 
       φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
         fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)
 
-variable {γ : ℝ → M}
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- The derivative of `-f` vanishes exactly where the derivative of `f` does. -/
-theorem mfderiv_neg_eq_zero_iff {f : M → ℝ} {y : M} :
-    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) (-f) y = 0 ↔ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 := by
-  -- The two zero maps have codomains `TangentSpace 𝓘(ℝ) (-f y)` and `TangentSpace 𝓘(ℝ) (f y)`,
-  -- both `ℝ` by definition, so they agree by `rfl`.
-  constructor <;> intro h
-  · rw [← neg_neg f, mfderiv_neg, h, neg_zero]
-    rfl
-  · rw [mfderiv_neg, h, neg_zero]
-    rfl
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- In a Morse chart for `f` in which `X` is the linear field `z ↦ (-wᵢ zᵢ)ᵢ`, the reversed field
+`-X` is the linear field of the negated Morse chart for `-f`. -/
+theorem MorseChart.coord_mfderiv_neg {x : M} (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    ∀ y ∈ (φ.neg h).toChart.source,
+      (φ.neg h).coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.neg h).toChart y ((-X) y)) =
+        fun i ↦ -((φ.neg h).weight i * (φ.neg h).coord ((φ.neg h).toChart y) i) := by
+  intro y hy
+  rw [MorseChart.neg_toChart] at hy
+  rw [MorseChart.neg_coord, MorseChart.neg_toChart, MorseChart.neg_weight, Pi.neg_apply, map_neg]
+  refine (φ.coord.map_neg _).trans ((congrArg Neg.neg (hφ y hy)).trans ?_)
+  ext i
+  simp
 
 namespace IsAdaptedPseudoGradient
 
-omit [FiniteDimensional ℝ E] in
 /-- `f` does not increase along an adapted pseudo-gradient: `d f_x (X x) ≤ 0` everywhere. -/
 theorem mvfderiv_apply_nonpos (hX : IsAdaptedPseudoGradient f X) (x : M) :
     mvfderiv 𝓘(ℝ, E) f x (X x) ≤ 0 := by
@@ -102,7 +102,6 @@ theorem mvfderiv_apply_nonpos (hX : IsAdaptedPseudoGradient f X) (x : M) :
   · simp [mvfderiv, hx]
   · exact (hX.mvfderiv_apply_lt_zero x hx).le
 
-omit [FiniteDimensional ℝ E] in
 /-- An adapted pseudo-gradient does not vanish at a regular point of `f`. -/
 theorem ne_zero_of_mfderiv_ne_zero (hX : IsAdaptedPseudoGradient f X) {x : M}
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x ≠ 0) : X x ≠ 0 := by
@@ -111,7 +110,6 @@ theorem ne_zero_of_mfderiv_ne_zero (hX : IsAdaptedPseudoGradient f X) {x : M}
   rw [h0, map_zero] at this
   exact lt_irrefl _ this
 
-omit [FiniteDimensional ℝ E] in
 /-- An adapted pseudo-gradient vanishes at every critical point of `f`: in the Morse chart it is
 the linear field `z ↦ (-wᵢ zᵢ)ᵢ`, which vanishes at the centre. -/
 theorem eq_zero_of_mfderiv_eq_zero (hX : IsAdaptedPseudoGradient f X) {x : M}
@@ -121,33 +119,23 @@ theorem eq_zero_of_mfderiv_eq_zero (hX : IsAdaptedPseudoGradient f X) {x : M}
   rw [φ.apply_self, map_zero] at h
   simp only [Pi.zero_apply, mul_zero, neg_zero] at h
   have h0 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x (X x) = 0 := φ.coord.map_eq_zero_iff.1 h
-  have hinv := isInvertible_mfderiv_extend φ.mem_maximalAtlas_one φ.mem_source
-  have hext : (φ.toChart.extend 𝓘(ℝ, E) : M → E) = φ.toChart := by ext z; simp
-  rw [hext] at hinv
+  have hinv := isInvertible_mfderiv_chart
+    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.mem_source
   rw [← hinv.inverse_apply_self (X x), h0, map_zero]
 
-omit [FiniteDimensional ℝ E] in
 /-- **The zeros of an adapted pseudo-gradient are the critical points of `f`.** -/
 theorem eq_zero_iff (hX : IsAdaptedPseudoGradient f X) {x : M} :
     X x = 0 ↔ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 :=
   ⟨fun h ↦ by_contra fun hx ↦ hX.ne_zero_of_mfderiv_ne_zero hx h, hX.eq_zero_of_mfderiv_eq_zero⟩
 
-omit [FiniteDimensional ℝ E] in
-/-- **`f` is antitone along every integral curve of an adapted pseudo-gradient** along which `f` is
-differentiable. -/
-theorem antitone_comp (hX : IsAdaptedPseudoGradient f X)
-    (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t)) (hγ : IsMIntegralCurve γ X) :
-    Antitone (f ∘ γ) :=
-  antitone_of_hasDerivAt_nonpos (fun t ↦ Manifold.hasDerivAt_comp_curve (hf t) (hγ t))
-    fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
-
-omit [FiniteDimensional ℝ E] in
-/-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient** along which
-`f` is differentiable and that never meets a critical point. -/
-theorem strictAnti_comp (hX : IsAdaptedPseudoGradient f X)
-    (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t)) (hγ : IsMIntegralCurve γ X)
+/-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient** that never
+meets a critical point. Differentiability of `f` along the curve is automatic, since `mfderiv`
+vanishes where `f` is not differentiable. -/
+theorem strictAnti_comp (hX : IsAdaptedPseudoGradient f X) (hγ : IsMIntegralCurve γ X)
     (hcrit : ∀ t, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (γ t) ≠ 0) : StrictAnti (f ∘ γ) :=
-  strictAnti_of_hasDerivAt_neg (fun t ↦ Manifold.hasDerivAt_comp_curve (hf t) (hγ t))
+  strictAnti_of_hasDerivAt_neg
+    (fun t ↦ Manifold.hasDerivAt_comp_curve
+      (by_contra fun h ↦ hcrit t (mfderiv_zero_of_not_mdifferentiableAt h)) (hγ t))
     fun t ↦ hX.mvfderiv_apply_lt_zero _ (hcrit t)
 
 /-- **Reversing a pseudo-gradient.** If `X` is a pseudo-gradient adapted to a Morse function `f`,
@@ -162,13 +150,8 @@ theorem neg (hX : IsAdaptedPseudoGradient f X) (hf : IsMorse 𝓘(ℝ, E) f) :
   exists_morseChart y hy := by
     replace hy := mfderiv_neg_eq_zero_iff.1 hy
     obtain ⟨φ, hφ⟩ := hX.exists_morseChart y hy
-    refine ⟨φ.neg (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hy),
-      fun z hz ↦ ?_⟩
-    rw [MorseChart.neg_toChart] at hz
-    rw [MorseChart.neg_coord, MorseChart.neg_toChart, MorseChart.neg_weight, Pi.neg_apply, map_neg]
-    refine (φ.coord.map_neg _).trans ((congrArg Neg.neg (hφ z hz)).trans ?_)
-    ext i
-    simp
+    exact ⟨_, φ.coord_mfderiv_neg hφ
+      (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hy)⟩
 
 end IsAdaptedPseudoGradient
 

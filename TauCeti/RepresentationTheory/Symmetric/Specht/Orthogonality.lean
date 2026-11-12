@@ -287,7 +287,7 @@ theorem sum_symmetricCharacterTable_mul_div_zPart (μ μ' : n.Partition) :
 the regular representation of `Sₙ` into the Specht characters, each with multiplicity its
 degree. -/
 theorem sum_finrank_spechtModule_mul_spechtChar (σ : Equiv.Perm (Fin n)) :
-    ∑ μ : n.Partition, (finrank ℚ (spechtModule μ) : ℤ) * spechtChar μ σ =
+    ∑ μ : n.Partition, (finrank ℚ (spechtModule (R := ℚ) μ) : ℤ) * spechtChar μ σ =
       if σ = 1 then (n ! : ℤ) else 0 := by
   have hcol := symmetricCharacterTable_column_orthogonality
     ((partitionEquivConjClasses n).symm (ConjClasses.mk 1))
@@ -303,7 +303,7 @@ the class of the identity, whose weight `z` is the order of `Sₙ` and whose col
 degrees `f^μ = dim_ℚ S^μ`: the value at `σ = 1` of
 `TauCeti.sum_finrank_spechtModule_mul_spechtChar`. -/
 theorem sum_finrank_spechtModule_sq (n : ℕ) :
-    ∑ μ : n.Partition, finrank ℚ (spechtModule μ) ^ 2 = n ! := by
+    ∑ μ : n.Partition, finrank ℚ (spechtModule (R := ℚ) μ) ^ 2 = n ! := by
   have h := sum_finrank_spechtModule_mul_spechtChar (n := n) 1
   simp only [spechtChar_one, ite_true] at h
   exact_mod_cast (Finset.sum_congr rfl fun μ _ ↦ sq _).trans h

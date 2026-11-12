@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
 public import TauCeti.AlgebraicGeometry.GroupScheme.Degree
+public import TauCeti.AlgebraicGeometry.GroupScheme.Isogeny.FactorisationDual
 
 /-!
 # Isogenies of elliptic curves over a scheme
@@ -29,6 +30,10 @@ one being the isomorphisms, and the kernel of an isogeny of degree `n` being kil
 to every isogeny of elliptic curves directly. Multiplication by a nonzero integer `n` is an
 isogeny of degree `n²` over any base.
 
+Consequently the factorisation dual `TauCeti.GroupScheme.factorisationDual` of an isogeny of
+elliptic curves of degree `n ≠ 0`, which factors multiplication by `n` through the isogeny, is again
+an isogeny of degree `n`, and multiplication by `m ≠ 0` is its own factorisation dual.
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsIsogeny f`: the homomorphism `f` is an isogeny.
@@ -40,6 +45,10 @@ isogeny of degree `n²` over any base.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.degree_intCast` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isogenyOfDegree_intCast`: multiplication by a
   nonzero integer `n` is an isogeny of degree `n²`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isogenyOfDegree_factorisationDual`: the
+  factorisation dual of an isogeny of degree `n ≠ 0` is an isogeny of degree `n`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.factorisationDual_intCast`: multiplication by a
+  nonzero integer is its own factorisation dual.
 
 ## References
 
@@ -106,7 +115,7 @@ instance isIsogeny_comp (f : E.toCommGrp ⟶ E'.toCommGrp) (g : E'.toCommGrp ⟶
 variable (E : EllipticCurveGeom S)
 
 /-- **Multiplication by a nonzero integer is an isogeny** (Katz–Mazur 2.3.1), over any base. -/
-theorem isIsogeny_intCast {n : ℤ} (hn : n ≠ 0) : IsIsogeny (n : End E.toCommGrp) :=
+theorem isIsogeny_intCast {n : ℤ} (hn : n ≠ 0) : IsIsogeny (n : End E.toCommGrp).asHom :=
   (isIsogeny_iff _).mpr ⟨by simpa using E.isFinite_mulBy_left hn,
     by simpa using E.flat_mulBy_left hn, by simpa using E.surjective_mulBy_left hn⟩
 
@@ -114,15 +123,41 @@ theorem isIsogeny_intCast {n : ℤ} (hn : n ≠ 0) : IsIsogeny (n : End E.toComm
 its kernel `E[n]` is `n²` at every point of `S`. -/
 @[simp]
 theorem degree_intCast {n : ℤ} (hn : n ≠ 0) (s : S) :
-    GroupScheme.degree (n : End E.toCommGrp).hom s = n.natAbs ^ 2 := by
+    GroupScheme.degree (n : End E.toCommGrp).asHom.hom s = n.natAbs ^ 2 := by
   rw [GroupScheme.degree_apply]
   exact (congrArg (fun X : Over S ↦ X.hom.finrank s) (congrArg Grp.X (E.torsion_eq_kernel n))).symm
     |>.trans (E.finrank_torsion_hom hn s)
 
 /-- **Multiplication by a nonzero integer `n` is an isogeny of degree `n²`.** -/
 theorem isogenyOfDegree_intCast {n : ℤ} (hn : n ≠ 0) :
-    GroupScheme.IsogenyOfDegree (n : End E.toCommGrp).hom (n.natAbs ^ 2) :=
+    GroupScheme.IsogenyOfDegree (n : End E.toCommGrp).asHom.hom (n.natAbs ^ 2) :=
   ⟨(E.isIsogeny_intCast hn).isIsogeny, E.degree_intCast hn⟩
+
+/-! ### The factorisation dual -/
+
+/-- **Multiplication by a nonzero integer is its own factorisation dual.** Multiplication by
+`m ≠ 0` is an isogeny of degree `m²`, and its factorisation dual is multiplication by `m`. -/
+@[simp]
+theorem factorisationDual_intCast {m : ℤ} (hm : m ≠ 0) :
+    GroupScheme.factorisationDual (m : End E.toCommGrp).asHom (E.isogenyOfDegree_intCast hm) =
+      (m : End E.toCommGrp).asHom :=
+  GroupScheme.factorisationDual_intCast m m _ (by rw [Nat.cast_pow, Int.natCast_natAbs, sq_abs, sq])
+
+variable {E}
+
+/-- **The factorisation dual of an isogeny of degree `n` is an isogeny of degree `n`.** For an
+isogeny `f : E ⟶ E'` of degree `n ≠ 0`, the factorisation dual `E' ⟶ E` is again an isogeny of
+degree `n`; by `TauCeti.GroupScheme.factorisationDual_factorisationDual`, its own factorisation
+dual is `f`. -/
+theorem isogenyOfDegree_factorisationDual (f : E.toCommGrp ⟶ E'.toCommGrp) {n : ℕ} [NeZero n]
+    (hf : GroupScheme.IsogenyOfDegree f.hom n) :
+    GroupScheme.IsogenyOfDegree (GroupScheme.factorisationDual f hf).hom n := by
+  have hn : (n : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr (NeZero.ne n)
+  have hA := E.isogenyOfDegree_intCast hn
+  have hB := (E'.isIsogeny_intCast hn).isIsogeny.isFinite
+  rw [Int.cast_natCast, Int.natAbs_natCast, sq] at hA
+  rw [Int.cast_natCast] at hB
+  exact GroupScheme.isogenyOfDegree_factorisationDual f hf hA
 
 end EllipticCurveGeom
 

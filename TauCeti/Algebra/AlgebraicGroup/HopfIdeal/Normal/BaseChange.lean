@@ -60,13 +60,13 @@ theorem isNormal_baseChangeHopfIdeal {J : HopfIdeal k H} (hJ : J.IsNormal) :
   have hsubgroup :
       quotientPointsSubgroup (baseChange (K := K) H) (baseChangeHopfIdeal (K := K) J) A =
         (quotientPointsSubgroup H J
-          (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A)).comap
+          (CommAlgCat.restrictScalarsObj (algebraMap k K) A)).comap
             e.toMonoidHom := by
     ext g
     exact mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff A J g
   rw [hsubgroup]
   exact (quotientPointsSubgroup_normal H J hJ
-    (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A)).comap e.toMonoidHom
+    (CommAlgCat.restrictScalarsObj (algebraMap k K) A)).comap e.toMonoidHom
 
 /-- Extension of the normal core of a Hopf ideal is contained in the normal core after
 extension. Contravariantly, the base change of the normal closure contains the normal closure of

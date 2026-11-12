@@ -96,7 +96,7 @@ theorem explicitIso_coeffMap2
   have hpair : ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
       f.toAddMonoidHom.toIntLinearMap (fun g m ↦ map_smul f g m) =
       ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m :=
-    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+    ofDiscreteModulePair_id _ _
   rw [TauCeti.ContinuousCohomology.coeffMap_def, explicitCoeff2_eq_explicitMap2, ← hpair]
   exact explicitIso_map2 G M G N (ContinuousMonoidHom.id G) f.toAddMonoidHom
     (fun g m ↦ map_smul f g m) x
@@ -117,8 +117,7 @@ theorem explicitMap2_eq_self_of_inner [LocallyCompactSpace G] (g : G) (φ : G �
       ((hf m).trans (ofDiscreteModule_ρ_apply_apply g m).symm)
   apply (explicitH2AddEquivContinuousCohomology G M).injective
   rw [← explicitH2AddEquivContinuousCohomology_map G M G M φ f hequiv x,
-    TauCeti.ContinuousCohomology.map_eq_id_of_inner g φ hφ _ hF
-      (ofDiscreteModule_isSmoothDiscrete ℤ G M) 2]
+    TauCeti.ContinuousCohomology.map_eq_id_of_inner g φ hφ _ hF 2]
   rfl
 
 end TauCeti.ContCohomology

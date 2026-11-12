@@ -61,7 +61,10 @@ namespace WeierstrassCurve.Affine
 open TauCeti AlgebraicGeometry IsDedekindDomain
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
-  [IsDedekindDomain W.CoordinateRing] [DecidableEq F]
+
+section Dedekind
+
+variable [IsDedekindDomain W.CoordinateRing] [DecidableEq F]
 
 /-- **The sum of a degree-zero divisor**, as a point of `W`: the point whose class is the class of
 the divisor. On `(P) - (O)` it is `P`, and it is additive, so on `Σ nᵢ (Pᵢ)` it is `Σ [nᵢ] Pᵢ`. -/
@@ -100,11 +103,12 @@ theorem divisorSum_eq_zero_iff {D : (Divisor.degree (k := F) (F := W.FunctionFie
   rw [divisorSum_apply, AddEquiv.map_eq_zero_iff]
   exact Divisor.degreeZeroClassHom_eq_zero_iff W.isFunctionField
 
+end Dedekind
+
 section Dictionary
 
 variable [W.IsElliptic]
 
-omit [IsDedekindDomain W.CoordinateRing] [DecidableEq F] in
 /-- The divisor `(P) - (Q)` of two points has degree zero. -/
 theorem ofPoint_sub_ofPoint_mem_ker_degree (P Q : W.Point) :
     WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace P).1 -
@@ -112,6 +116,8 @@ theorem ofPoint_sub_ofPoint_mem_ker_degree (P Q : W.Point) :
       (Divisor.degree (k := F) (F := W.FunctionField)).ker := by
   rw [AddMonoidHom.mem_ker, map_sub, Divisor.degree_ofPoint, Divisor.degree_ofPoint,
     (W.pointEquivDegreeOnePlace P).2, (W.pointEquivDegreeOnePlace Q).2, sub_self]
+
+variable [DecidableEq F]
 
 /-- **`σ((P) - (Q)) = P - Q`**, for the places the point--place dictionary attaches to `P`
 and `Q`. -/

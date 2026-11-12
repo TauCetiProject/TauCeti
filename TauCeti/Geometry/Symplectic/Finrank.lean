@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Parity
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.LinearAlgebra.Complex.Finrank
+public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 public import TauCeti.LinearAlgebra.TotallyReal.Finrank
 
 /-!
@@ -35,8 +36,18 @@ assumption.
   twice the complex dimension, `finrank ℝ V = 2 * J.complexFinrank`.
 * `TauCeti.AlmostComplexStructure.even_finrank_real`: the real dimension of a module carrying an
   almost complex structure is even.
+* `TauCeti.AlmostComplexStructure.even_finrank_of_forall_mem`: a `J`-invariant subspace has even
+  real dimension.
+* `TauCeti.AlmostComplexStructure.even_finrank_genEigenspace_zero_of_anticommute`: the generalized
+  `0`-eigenspaces of an endomorphism anticommuting with `J` have even real dimension.
 * `TauCeti.AlmostComplexStructure.isEmpty_of_odd_finrank`: an odd-dimensional real module admits no
   almost complex structure.
+* `TauCeti.AlmostComplexStructure.span_pair_eq_top_of_finrank_eq_two` and
+  `TauCeti.AlmostComplexStructure.span_pair_eq_top_of_finrank_le_two`: in real dimension two, every
+  nonzero vector `v` and its image `J v` span the module.
+* `TauCeti.AlmostComplexStructure.bilin_eq_zero_of_finrank_le_two` and
+  `TauCeti.AlmostComplexStructure.bilin_eq_zero_of_finrank_eq_two`: in real dimension at most two, a
+  bilinear map vanishing on every `(v, v)` and `(v, J v)` is zero.
 * `TauCeti.AlmostComplexStructure.finrank_eq_complexFinrank_of_isMaximalTotallyReal`: a maximal
   totally real subspace has real dimension equal to the complex dimension of the ambient space.
   This is the statement that the totally real tori `T_α`, `T_β` in the symmetric product
@@ -84,13 +95,31 @@ theorem even_finrank_real (J : AlmostComplexStructure V) :
   rw [J.finrank_real_eq_two_mul_complexFinrank]
   exact even_two_mul _
 
-/-- A maximal totally real subspace `L` of a finite-dimensional almost complex module has real
-dimension equal to the complex dimension of the ambient module: `L` is "half-dimensional".
+/-- A real subspace invariant under an almost complex structure has even real dimension: `J`
+restricts to an almost complex structure on it. -/
+theorem even_finrank_of_forall_mem (J : AlmostComplexStructure V) {p : Submodule ℝ V}
+    (hp : ∀ v ∈ p, J v ∈ p) : Even (Module.finrank ℝ p) :=
+  even_finrank_real
+    { toLinearMap := J.toLinearMap.restrict hp
+      square_neg := by ext v; simp }
+
+/-- If an endomorphism `f` anticommutes with an almost complex structure `J`, then its
+generalized `0`-eigenspaces, in particular its kernel, are `J`-invariant and therefore have even
+real dimension. -/
+theorem even_finrank_genEigenspace_zero_of_anticommute (J : AlmostComplexStructure V)
+    {f : Module.End ℝ V} (h : f * J.toLinearMap + J.toLinearMap * f = 0) (k : ℕ∞) :
+    Even (Module.finrank ℝ (f.genEigenspace 0 k)) :=
+  J.even_finrank_of_forall_mem fun _ hv ↦ by
+    simpa using Module.End.mapsTo_genEigenspace_neg_of_anticommute h 0 k hv
+
+/-- A maximal totally real subspace `L` of an almost complex module has real dimension equal to
+the complex dimension of the ambient module: `L` is "half-dimensional". (An infinite-dimensional
+module has both dimensions `0`, since `L` and `J L` span it.)
 
 For a Heegaard diagram of genus `g`, this is the statement that the totally real tori `T_α`,
 `T_β` are `g`-dimensional inside the `g`-complex-dimensional symmetric product `Sym^g(Σ)`
 (Ozsváth--Szabó, [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), Section 2). -/
-theorem finrank_eq_complexFinrank_of_isMaximalTotallyReal [FiniteDimensional ℝ V]
+theorem finrank_eq_complexFinrank_of_isMaximalTotallyReal
     {J : AlmostComplexStructure V} {L : Submodule ℝ V}
     (hL : IsMaximalTotallyReal J.toLinearMap L) :
     Module.finrank ℝ L = J.complexFinrank := by
@@ -102,6 +131,45 @@ theorem finrank_eq_complexFinrank_of_isMaximalTotallyReal [FiniteDimensional ℝ
 theorem isEmpty_of_odd_finrank (h : Odd (Module.finrank ℝ V)) :
     IsEmpty (AlmostComplexStructure V) :=
   ⟨fun J => (Nat.not_odd_iff_even.mpr J.even_finrank_real) h⟩
+
+/-- On a two-dimensional real module carrying an almost complex structure `J`, every nonzero
+vector `v` and its image `J v` span the module. -/
+theorem span_pair_eq_top_of_finrank_eq_two (J : AlmostComplexStructure V)
+    (hV : Module.finrank ℝ V = 2) {v : V} (hv : v ≠ 0) :
+    Submodule.span ℝ {v, J v} = ⊤ := by
+  simpa [Matrix.range_cons_cons_empty, Set.pair_comm] using
+    (J.linearIndependent_pair hv).span_eq_top_of_card_eq_finrank (by simpa using hV.symm)
+
+/-- On a finite-dimensional real module of dimension at most two carrying an almost complex
+structure `J`, every nonzero vector `v` and its image `J v` span the module. -/
+theorem span_pair_eq_top_of_finrank_le_two [FiniteDimensional ℝ V] (J : AlmostComplexStructure V)
+    (hV : Module.finrank ℝ V ≤ 2) {v : V} (hv : v ≠ 0) :
+    Submodule.span ℝ {v, J v} = ⊤ :=
+  J.span_pair_eq_top_of_finrank_eq_two
+    (hV.antisymm (by simpa using (J.linearIndependent_pair hv).fintype_card_le_finrank)) hv
+
+/-- On a finite-dimensional real module of dimension at most two carrying an almost complex
+structure `J`, any bilinear map vanishing on `(v, v)` and `(v, J v)` for every `v` vanishes
+identically. -/
+theorem bilin_eq_zero_of_finrank_le_two [FiniteDimensional ℝ V] (J : AlmostComplexStructure V)
+    (hV : Module.finrank ℝ V ≤ 2) {W : Type*} [AddCommGroup W] [Module ℝ W]
+    {B : V →ₗ[ℝ] V →ₗ[ℝ] W} (hself : ∀ v, B v v = 0) (hJ : ∀ v, B v (J v) = 0) :
+    B = 0 := by
+  ext v w
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  · obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1
+      ((J.span_pair_eq_top_of_finrank_le_two hV hv).symm ▸ Submodule.mem_top (x := w))
+    simp [hself v, hJ v]
+
+/-- On a two-dimensional real module carrying an almost complex structure `J`, any bilinear map
+vanishing on `(v, v)` and `(v, J v)` for every `v` vanishes identically. -/
+theorem bilin_eq_zero_of_finrank_eq_two (J : AlmostComplexStructure V)
+    (hV : Module.finrank ℝ V = 2) {W : Type*} [AddCommGroup W] [Module ℝ W]
+    {B : V →ₗ[ℝ] V →ₗ[ℝ] W} (hself : ∀ v, B v v = 0) (hJ : ∀ v, B v (J v) = 0) :
+    B = 0 :=
+  have := Module.finite_of_finrank_eq_succ hV
+  J.bilin_eq_zero_of_finrank_le_two hV.le hself hJ
 
 end AlmostComplexStructure
 

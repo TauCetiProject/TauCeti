@@ -46,6 +46,9 @@ the finite components.
 
 ## Main results
 
+* `TauCeti.GlobalNumberFields.HeckeCharacter.finiteComponent_ofRayClassCharacter_of_isUniformizer`:
+  at a uniformizer of `K_v`, `v` outside the modulus, the component of a ray class character is
+  its value on the prime `v`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.exists_modulus_finiteComponent_eq_one`: a single
   modulus `𝔪` such that every component `χ_v` is trivial on `U(K_v, 𝔪.exponent v)`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.conductorExponent_le_iff`: `a_v(χ) ≤ n` exactly when
@@ -120,6 +123,24 @@ theorem finiteComponent_pow (χ : HeckeCharacter K) (n : ℕ) (v : HeightOneSpec
   | zero => simp
   | succ n ih => simp [pow_succ, ih]
 
+/-- **The component of a ray class character at a uniformizer.** For a finite place `v` outside
+the support of `𝔪` and a uniformizer `π` of `K_v`, the component at `v` of the Hecke character of
+a ray class character `η` of `𝔪` takes the value of `η` on the prime `v` at `π`, because the idele
+concentrated at `v` with coordinate `π` has the ray class of `v`
+(`rayClassQuotient_ofAdicCompletion_of_isUniformizer`). -/
+theorem finiteComponent_ofRayClassCharacter_of_isUniformizer {𝔪 : Modulus K}
+    (η : RayClassCharacter 𝔪) {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ 𝔪.support)
+    {π : (v.adicCompletion K)ˣ} (hπ : IsUniformizer (v.adicCompletion K) π) :
+    (ofRayClassCharacter 𝔪 η).finiteComponent v π =
+      η.onIdeals ⟨v.asIdeal, NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr
+        (Ideal.isPrimeTo_asIdeal_iff.mpr hv)⟩ := by
+  rw [finiteComponent_apply, ofRayClassCharacter_apply, RayClassCharacter.onIdeals_apply,
+    idealClass_apply, rayClassQuotient_ofAdicCompletion_of_isUniformizer hπ
+      (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support ⟨v.asIdeal,
+        NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr
+          (Ideal.isPrimeTo_asIdeal_iff.mpr hv)⟩)
+      (NumberFieldArithmetic.coe_integralIdealsAwayHom _ _)]
+
 /-! ### Triviality on the unit filtration -/
 
 /-- A Hecke character is trivial on the finite parts of all ideles in a sufficiently small
@@ -134,7 +155,7 @@ theorem exists_modulus_finitePart_eq_one (χ : HeckeCharacter K) :
   -- `χ` as a character of the idele group, and a neighbourhood of `1` on which it kills every
   -- subgroup.
   let f : IdeleGroup (𝓞 K) K →ₜ* ℂˣ :=
-    χ.comp (ContinuousMonoidHom.quotientMk (IdeleGroup.principalSubgroup (𝓞 K) K))
+    χ.comp (Subgroup.quotientMkContinuousMonoidHom (IdeleGroup.principalSubgroup (𝓞 K) K))
   obtain ⟨N, hN, hNker⟩ := f.exists_mem_nhds_one_forall_le_ker
   obtain ⟨𝔪, h𝔪⟩ := exists_ideleCongruenceSubgroup_ofFiniteIdele_mem_of_mem_nhds hN
   -- The finite parts of the ideles of `ideleCongruenceSubgroup 𝔪` form a subgroup inside `N`.
@@ -142,7 +163,8 @@ theorem exists_modulus_finitePart_eq_one (χ : HeckeCharacter K) :
     (IdeleGroup.ofFiniteIdele (𝓞 K) K).comp (IdeleGroup.toFiniteIdele (𝓞 K) K)
   have hker : (ideleCongruenceSubgroup 𝔪).map φ ≤ f.ker :=
     hNker _ (by rintro _ ⟨x, hx, rfl⟩; exact h𝔪 x hx)
-  exact ⟨𝔪, fun x hx ↦ MonoidHom.mem_ker.mp (hker ⟨x, hx, rfl⟩)⟩
+  refine ⟨𝔪, fun x hx ↦ ?_⟩
+  simpa [f, φ] using MonoidHom.mem_ker.mp (hker ⟨x, hx, rfl⟩)
 
 /-- **A Hecke character is trivial on a congruence subgroup at every finite place.** There is a
 modulus `𝔪` such that at every finite place `v` the component of `χ` is trivial on the step
@@ -185,7 +207,8 @@ theorem finiteComponent_eq_one_of_mem_unitFiltration (χ : HeckeCharacter K)
     {v : HeightOneSpectrum (𝓞 K)} {u : (v.adicCompletion K)ˣ}
     (hu : u ∈ TauCeti.unitFiltration (v.adicCompletion K) (χ.conductorExponent v)) :
     χ.finiteComponent v u = 1 :=
-  Nat.sInf_mem (χ.exists_finiteComponent_eq_one v) u hu
+  Nat.sInf_mem (s := {n | ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) n,
+    χ.finiteComponent v u = 1}) (χ.exists_finiteComponent_eq_one v) u hu
 
 /-- **The characterizing property of the conductor exponent**: `a_v(χ) ≤ n` exactly when the
 component of `χ` at `v` is trivial on `U(K_v, n)`. -/

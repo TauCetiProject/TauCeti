@@ -103,6 +103,13 @@ theorem cocharEquiv_apply (ψ : Multiplicative (σ →₀ ℤ) →* Multiplicati
     cocharEquiv ψ i = (ψ (Multiplicative.ofAdd (Finsupp.single i 1))).toAdd := by
   simp [cocharEquiv, Equiv.piCongrRight_apply]
 
+/-- The coordinate evaluation cocharacter corresponds to the standard coordinate vector. -/
+@[simp]
+theorem cocharEquiv_applyAddHom [DecidableEq σ] (i : σ) :
+    cocharEquiv (Finsupp.applyAddHom i).toMultiplicative = (Pi.single i 1 : σ → ℤ) := by
+  ext j
+  simp [cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
+
 /-- Reading off cocharacter coordinates is additive: the trivial cocharacter has zero
 coordinates. -/
 @[simp]
@@ -279,13 +286,6 @@ noncomputable local instance cocharacterLatticeAddCommGroup
     AddCommGroup (MultiplicativeTypeCommHopfAlgCat.cocharacterLattice
       (toMultiplicativeTypeCommHopfAlgCat k σ)) :=
   MultiplicativeTypeCommHopfAlgCat.instCocharacterLatticeAddCommGroup _
-
-/-- The transported integer-module structure specialized to the standard split torus. -/
-noncomputable local instance cocharacterLatticeModule
-    (k : Type u) [Field k] (σ : Type u) [Finite σ] :
-    Module ℤ (MultiplicativeTypeCommHopfAlgCat.cocharacterLattice
-      (toMultiplicativeTypeCommHopfAlgCat k σ)) :=
-  MultiplicativeTypeCommHopfAlgCat.instCocharacterLatticeModule _
 
 /-- The dual comparison for a standard split torus, expressed in coordinates `σ → ℤ`. -/
 noncomputable def cocharacterLatticeCoordEquiv

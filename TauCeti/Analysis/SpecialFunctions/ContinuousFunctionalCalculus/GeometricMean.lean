@@ -33,6 +33,8 @@ roots (`CFC.sqrt_unique`).
 * `TauCeti.geometricMean_mul_ringInverse_mul_geometricMean`: it solves `x * a⁻¹ * x = b`.
 * `TauCeti.eq_geometricMean_of_mul_ringInverse_mul`: it is the only nonnegative solution.
 * `TauCeti.geometricMean_eq_iff`: the resulting characterisation.
+* `TauCeti.isStrictlyPositive_geometricMean_iff`: for strictly positive `a`, it is strictly
+  positive exactly when `b` is.
 * `TauCeti.geometricMean_comm`: the geometric mean is symmetric in its two arguments.
 * `TauCeti.geometricMean_ringInverse_ringInverse`: it commutes with inversion.
 * `TauCeti.geometricMean_add_geometricMean_le`: the arithmetic--geometric mean inequality.
@@ -82,9 +84,8 @@ theorem geometricMean_def (a b : A) :
     geometricMean a b = conjSqrt a (sqrt (conjSqrt a⁻¹ʳ b)) := (rfl)
 
 @[simp]
-theorem geometricMean_nonneg (a b : A) : 0 ≤ geometricMean a b := by
-  rw [geometricMean_def, conjSqrt_apply]
-  exact conjugate_nonneg_of_nonneg (sqrt_nonneg _) (sqrt_nonneg _)
+theorem geometricMean_nonneg (a b : A) : 0 ≤ geometricMean a b :=
+  conjSqrt_nonneg _ (sqrt_nonneg _)
 
 /-- Outside the intended range, the geometric mean takes the junk value `0`. -/
 theorem geometricMean_of_not_nonneg (ha : ¬0 ≤ a) (b : A) : geometricMean a b = 0 := by
@@ -152,47 +153,37 @@ theorem geometricMean_ringInverse_self (ha : IsStrictlyPositive a := by cfc_tac)
     geometricMean a a⁻¹ʳ = 1 :=
   (eq_geometricMean_of_mul_ringInverse_mul (by rw [one_mul, mul_one]) ha zero_le_one).symm
 
-/-- The geometric mean of two strictly positive elements is strictly positive. -/
-theorem isStrictlyPositive_geometricMean (ha : IsStrictlyPositive a := by cfc_tac)
-    (hb : IsStrictlyPositive b := by cfc_tac) : IsStrictlyPositive (geometricMean a b) := by
-  rw [geometricMean_def, isStrictlyPositive_conjSqrt_iff a _ ha]
-  exact IsStrictlyPositive.sqrt _ ((isStrictlyPositive_conjSqrt_iff a⁻¹ʳ b ha.ringInverse).mpr hb)
+/-- For strictly positive `a`, the geometric mean of `a` and `b` is strictly positive exactly when
+`b` is. -/
+@[simp, grind =]
+theorem isStrictlyPositive_geometricMean_iff (ha : IsStrictlyPositive a := by cfc_tac) :
+    IsStrictlyPositive (geometricMean a b) ↔ IsStrictlyPositive b := by
+  rw [geometricMean_def, isStrictlyPositive_conjSqrt_iff a _ ha,
+    ← isStrictlyPositive_conjSqrt_iff a⁻¹ʳ b ha.ringInverse]
+  exact ⟨fun h => isUnit_sqrt_iff_isStrictlyPositive.mp h.isUnit, fun h => h.sqrt⟩
 
 /-- The inverse of the geometric mean conjugates `a` onto `b⁻¹`. -/
 private theorem conjugate_geometricMean_ringInverse (ha : IsStrictlyPositive a)
     (hb : IsStrictlyPositive b) :
     (geometricMean a b)⁻¹ʳ * a * (geometricMean a b)⁻¹ʳ = b⁻¹ʳ := by
-  set X := geometricMean a b
-  have hu : IsUnit X := (isStrictlyPositive_geometricMean ha hb).isUnit
-  have hXa : X * a⁻¹ʳ * X = b := geometricMean_mul_ringInverse_mul_geometricMean ha hb.nonneg
-  have hkey : b * (X⁻¹ʳ * a * X⁻¹ʳ) = 1 := by
-    rw [← hXa]
-    calc X * a⁻¹ʳ * X * (X⁻¹ʳ * a * X⁻¹ʳ)
-        = X * a⁻¹ʳ * (X * X⁻¹ʳ) * a * X⁻¹ʳ := by simp only [mul_assoc]
-      _ = 1 := by
-          rw [mul_inverse_cancel X hu, mul_one, mul_assoc X a⁻¹ʳ a,
-            inverse_mul_cancel a ha.isUnit, mul_one, mul_inverse_cancel X hu]
-  have h1 : b⁻¹ʳ * (b * (X⁻¹ʳ * a * X⁻¹ʳ)) = b⁻¹ʳ * 1 := by rw [hkey]
-  rwa [inverse_mul_cancel_left b _ hb.isUnit, mul_one] at h1
+  have hu := ((isStrictlyPositive_geometricMean_iff ha).mpr hb).isUnit
+  conv_rhs => rw [← geometricMean_mul_ringInverse_mul_geometricMean ha hb.nonneg]
+  rw [Ring.inverse_mul (.inr hu), Ring.inverse_mul (.inl hu), inverse_inverse ha.isUnit, mul_assoc]
 
 /-- The geometric mean is symmetric in its two arguments. -/
 theorem geometricMean_comm (ha : IsStrictlyPositive a := by cfc_tac)
     (hb : IsStrictlyPositive b := by cfc_tac) : geometricMean a b = geometricMean b a := by
-  have hu : IsUnit (geometricMean a b) := (isStrictlyPositive_geometricMean ha hb).isUnit
+  have hu := ((isStrictlyPositive_geometricMean_iff ha).mpr hb).isUnit
   refine eq_geometricMean_of_mul_ringInverse_mul ?_ hb (geometricMean_nonneg a b)
   rw [← conjugate_geometricMean_ringInverse ha hb]
-  calc geometricMean a b * ((geometricMean a b)⁻¹ʳ * a * (geometricMean a b)⁻¹ʳ) *
-        geometricMean a b
-      = geometricMean a b * (geometricMean a b)⁻¹ʳ * a *
-        ((geometricMean a b)⁻¹ʳ * geometricMean a b) := by simp only [mul_assoc]
-    _ = a := by rw [mul_inverse_cancel _ hu, inverse_mul_cancel _ hu, one_mul, mul_one]
+  simp [mul_assoc, inverse_mul_cancel _ hu, mul_inverse_cancel_left _ _ hu]
 
 /-- The geometric mean commutes with inversion. -/
 theorem geometricMean_ringInverse_ringInverse (ha : IsStrictlyPositive a := by cfc_tac)
     (hb : IsStrictlyPositive b := by cfc_tac) :
     geometricMean a⁻¹ʳ b⁻¹ʳ = (geometricMean a b)⁻¹ʳ := by
   refine (eq_geometricMean_of_mul_ringInverse_mul ?_ ha.ringInverse
-    (isStrictlyPositive_geometricMean ha hb).ringInverse.nonneg).symm
+    ((isStrictlyPositive_geometricMean_iff ha).mpr hb).ringInverse.nonneg).symm
   rw [inverse_inverse ha.isUnit]
   exact conjugate_geometricMean_ringInverse ha hb
 
@@ -201,20 +192,16 @@ theorem geometricMean_ringInverse_ringInverse (ha : IsStrictlyPositive a := by c
 theorem geometricMean_add_geometricMean_le (ha : IsStrictlyPositive a := by cfc_tac)
     (hb : 0 ≤ b := by cfc_tac) : geometricMean a b + geometricMean a b ≤ a + b := by
   set c := conjSqrt a⁻¹ʳ b with hc
-  have hc0 : 0 ≤ c := conjSqrt_nonneg _ hb
-  have hsq : IsSelfAdjoint (1 - sqrt c) := (IsSelfAdjoint.one A).sub (sqrt_nonneg c).isSelfAdjoint
-  have hexp : (1 - sqrt c) * (1 - sqrt c) = 1 + c - (sqrt c + sqrt c) := by
-    rw [sub_mul, mul_sub, mul_sub, sqrt_mul_sqrt_self c hc0]
-    noncomm_ring
   have hkey : sqrt c + sqrt c ≤ 1 + c := by
-    have h := hsq.mul_self_nonneg
-    rw [hexp] at h
-    exact sub_nonneg.mp h
-  have hmono := conjSqrt_monotone (c := a) hkey
-  rw [map_add, map_add, conjSqrt_one a ha.nonneg, hc,
-    conjSqrt_conjSqrt_ringInverse a b ha] at hmono
-  rw [geometricMean_def]
-  exact hmono
+    have h := ((IsSelfAdjoint.one A).sub (sqrt_nonneg c).isSelfAdjoint).mul_self_nonneg
+    have hexp : (1 - sqrt c) * (1 - sqrt c) = 1 + c - (sqrt c + sqrt c) := by
+      rw [sub_mul, mul_sub, mul_sub, sqrt_mul_sqrt_self c (conjSqrt_nonneg _ hb)]
+      noncomm_ring
+    exact sub_nonneg.mp (hexp ▸ h)
+  calc geometricMean a b + geometricMean a b = conjSqrt a (sqrt c + sqrt c) := by
+        rw [geometricMean_def, map_add]
+    _ ≤ conjSqrt a (1 + c) := by gcongr
+    _ = a + b := by rw [map_add, conjSqrt_one a ha.nonneg, hc, conjSqrt_conjSqrt_ringInverse a b ha]
 
 /-- The **transport identity**: `geometricMean a⁻¹ b` solves `x * a * x = b`. Read through the
 covariances of two centred Gaussian laws, this is the linear Brenier map from the first to the

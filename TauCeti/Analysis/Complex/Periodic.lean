@@ -22,9 +22,12 @@ nonzero width `h` factors through its cusp function along the parameter.
 ## Main declarations
 
 * `TauCeti.Periodic.qParam_sub`: `𝕢 h (z - j) = 𝕢 h z * exp (-2 π I j / h)`.
+* `TauCeti.Periodic.qParam_add_half`: translation by half a period negates the parameter.
 * `TauCeti.Periodic.qParam_add_mul_I_pow`: along the vertical ray from `z`, the powers of the
   local parameter acquire the factor `e^{-2πmt/h}`; this decays when `h > 0` and `m > 0`.
 * `TauCeti.Periodic.qParam_nat_mul_pow`: `𝕢 (m * h) z ^ m = 𝕢 h z` for `m ≠ 0`.
+* `TauCeti.Periodic.exp_pi_mul_I_mul_eq_qParam_pow`: `exp (π I t z) = 𝕢 h z ^ m` when
+  `h t = 2 m` and `h ≠ 0`.
 * `TauCeti.Periodic.sum_qParam_natCast_pow`: the roots-of-unity orthogonality relation
   `∑_{b < p} 𝕢 p b ^ m = if p ∣ m then p else 0`.
 * `TauCeti.Periodic.hasDerivAt_qParam` (with `deriv_qParam`): the `q`-parameter
@@ -58,6 +61,13 @@ theorem qParam_sub (z j : ℂ) : 𝕢 h (z - j) = 𝕢 h z * exp (-2 * π * I * 
   simp only [qParam, ← Complex.exp_add]
   ring_nf
 
+/-- Translating by half a period negates the local parameter. -/
+theorem qParam_add_half (hh : h ≠ 0) (z : ℂ) :
+    𝕢 h (z + (h : ℂ) / 2) = -𝕢 h z := by
+  have he : 2 * π * I * (z + (h : ℂ) / 2) / h = 2 * π * I * z / h + π * I := by
+    field_simp [Complex.ofReal_ne_zero.mpr hh]
+  simp only [qParam, he, Complex.exp_add, Complex.exp_pi_mul_I, mul_neg_one]
+
 /-- Along the vertical ray from `z`, the powers of the local parameter acquire an exponential
 factor: `𝕢 h (z + t I) ^ m = 𝕢 h z ^ m * e^{-2πmt/h}`. When `h > 0` and `m > 0`, this factor
 decays exponentially as `t` increases. -/
@@ -75,6 +85,21 @@ period `h`. -/
 theorem qParam_nat_mul_pow {m : ℕ} (hm : m ≠ 0) (z : ℂ) : 𝕢 (m * h) z ^ m = 𝕢 h z := by
   simp only [qParam, ← Complex.exp_nat_mul, ofReal_mul, ofReal_natCast]
   rw [mul_div_assoc', mul_div_mul_left _ _ (Nat.cast_ne_zero.mpr hm)]
+
+/-- If `h t = 2 m` with `m ∈ ℕ` and `h ≠ 0`, then `exp (π I t z)` is the `m`-th power of the
+local parameter `𝕢 h z = exp (2 π I z / h)`. This is how a term `exp (π I t z)` whose exponent
+`t` lies in the progression `(2 / h) ℕ` becomes a power of the local parameter. -/
+theorem exp_pi_mul_I_mul_eq_qParam_pow (hh : h ≠ 0) {t : ℝ} {m : ℕ} (ht : h * t = 2 * m)
+    (z : ℂ) : exp (π * I * t * z) = 𝕢 h z ^ m := by
+  rw [qParam, ← Complex.exp_nat_mul]
+  congr 1
+  have ht' : t = 2 * m / h := by
+    rw [eq_div_iff hh]
+    linarith
+  have hh' : (h : ℂ) ≠ 0 := ofReal_ne_zero.mpr hh
+  rw [ht']
+  push_cast
+  field_simp
 
 /-- **Orthogonality of the `p`-th roots of unity**, in the local-parameter spelling: the
 values `𝕢 p b = exp (2 π I b / p)` at the integer offsets `b < p` are the `p`-th roots of

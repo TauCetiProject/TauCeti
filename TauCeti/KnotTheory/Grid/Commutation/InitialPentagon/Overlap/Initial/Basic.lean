@@ -212,7 +212,7 @@ end GridRectangleInitialPentagonDecomposition
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 section Weights
 
@@ -281,11 +281,10 @@ private theorem initialPentagonInitialCrossOverlapSource_data
       D.toGridRectangleDecomposition.HasOneCommonSide ∧ D.first.IsEmpty ∧ D.second.IsEmpty := by
   obtain ⟨hcounted, hcommon, hcol⟩ := (G.mem_initialPentagonInitialCrossOverlapSources C D).1 hD
   rw [G.mem_rectangleInitialPentagonDecompositions, G.mem_unblockedRectangles,
-    G.mem_initialPentagons,
-    GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween] at hcounted
+    G.mem_initialPentagons] at hcounted
   exact ⟨hcommon, hcol,
     D.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommon hcol,
-    hcounted.1.1, hcounted.2.1⟩
+    hcounted.1.1, D.underlying_second_isEmpty hcounted.2.1⟩
 
 private noncomputable def initialPentagonInitialCrossOverlapPartner
     (D : {D // D ∈ G.initialPentagonInitialCrossOverlapSources C x z}) :
@@ -308,14 +307,13 @@ private theorem initialPentagonInitialCrossOverlapPartner_injective :
   have hD := G.initialPentagonInitialCrossOverlapPartner_isRecut C D
   have hE := G.initialPentagonInitialCrossOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨-, -, honeD, hfD, hsD⟩ :=
+  obtain ⟨-, -, _, hfD, hsD⟩ :=
     G.initialPentagonInitialCrossOverlapSource_data C D.val D.property
-  obtain ⟨-, -, honeE, hfE, hsE⟩ :=
+  obtain ⟨-, -, _, hfE, hsE⟩ :=
     G.initialPentagonInitialCrossOverlapSource_data C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectangleInitialPentagonDecomposition.toGridRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone

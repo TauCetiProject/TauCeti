@@ -71,7 +71,7 @@ end Local
 variable [DiscreteTopology Γ]
 
 /-- An elliptic orbit is an orbit containing a point with nontrivial stabilizer. -/
-def ellipticOrbits : Set (orbitRel.Quotient Γ ℍ) :=
+noncomputable def ellipticOrbits : Set (orbitRel.Quotient Γ ℍ) :=
   Quotient.mk (orbitRel Γ ℍ) '' (freeLocus Γ ℍ : Set ℍ)ᶜ
 
 omit [DiscreteTopology Γ] in
@@ -88,7 +88,7 @@ theorem quotientMk_mem_ellipticOrbits_iff (z : ℍ) :
 
 /-- The elliptic points of the compactification are precisely the coarse orbits with
 nontrivial stabilizer. -/
-private def ellipticCompactified : Set Γ.CompactifiedQuotient :=
+private noncomputable def ellipticCompactified : Set Γ.CompactifiedQuotient :=
   CompactifiedQuotient.ofQuotient '' Γ.ellipticOrbits
 
 /-- Near an interior point, there is at most one elliptic orbit. -/

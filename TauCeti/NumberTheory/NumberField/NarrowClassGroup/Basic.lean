@@ -23,8 +23,8 @@ narrow class group quotients the invertible fractional ideals over `K` by the *s
 `narrowPrincipalSubgroup` of principal ideals with a totally positive generator.
 
 The narrow class group is the object whose `2`-rank the genus-theory `t - 1` formula computes for a
-real quadratic field (Layer 3 of the multiquadratic roadmap); for imaginary fields, where every unit
-is totally positive (there are no real places), `Cl⁺(K)` and `Cl(K)` coincide.
+real quadratic field; for imaginary fields, where every unit is totally positive (there are no real
+places), `Cl⁺(K)` and `Cl(K)` coincide.
 
 ## Main definitions and results
 
@@ -388,7 +388,7 @@ theorem mk0_eq_mk0_iff {I J : (Ideal (𝓞 K))⁰} :
         rwa [Units.val_mul, FractionalIdeal.coe_mk0, FractionalIdeal.coe_mk0,
           coe_toPrincipalIdeal] at hval
       have hmul := congrArg (fun T => T * spanSingleton (𝓞 K)⁰ (y : K)) hcoe
-      simp only [mul_assoc, spanSingleton_mul_spanSingleton, ← hxK] at hmul
+      simp only [mul_assoc, ← map_mul (spanSingleton _), ← hxK] at hmul
       refine FractionalIdeal.coeIdeal_injective (K := K) ?_
       simp only [FractionalIdeal.coeIdeal_mul, coeIdeal_span_singleton]
       rw [mul_comm _ ((I : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K),

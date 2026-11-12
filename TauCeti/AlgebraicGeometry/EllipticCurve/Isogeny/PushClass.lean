@@ -250,7 +250,8 @@ theorem pushClassMonoidHom_apply (c : ClassGroup W₁.CoordinateRing) :
     haveI : Module.IsTorsionFree W₂.CoordinateRing φ.intermediateRing :=
       Module.isTorsionFree_iff_algebraMap_injective.mpr φ.pullbackToIntermediateRing_injective
     φ.pushClassMonoidHom c =
-      ClassGroup.relNorm (ClassGroup.extendedHom W₁.CoordinateRing φ.intermediateRing c) := by
+      ClassGroup.relNorm W₂.CoordinateRing
+        (ClassGroup.extendedHom W₁.CoordinateRing φ.intermediateRing c) := by
   -- the `letI`s above bind inside the statement only, so the same instances are re-introduced
   -- here to bring them into scope for the proof term
   have := _root_.WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed W₂
@@ -306,7 +307,7 @@ theorem pushClassMonoidHom_id (W : WeierstrassCurve.Affine F)
     Module.isTorsionFree_iff_algebraMap_injective.mpr (toIntermediateRing_injective _)
   refine MonoidHom.ext fun c ↦ ?_
   -- the norm of an extension is the `Module.finrank`-th power, and here that rank is one
-  have key : ClassGroup.relNorm (R := W.CoordinateRing)
+  have key : ClassGroup.relNorm W.CoordinateRing
       (ClassGroup.extendedHom W.CoordinateRing (Isogeny.id W).intermediateRing c) = c := by
     rw [ClassGroup.relNorm_extendedHom,
       (id W).finrank_intermediateRing_eq_degree (id_algebraMap_eq_pullback W), degree_id, pow_one]

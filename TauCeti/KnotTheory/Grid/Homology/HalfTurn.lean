@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.HalfTurn
-public import TauCeti.KnotTheory.Grid.Homology.Tau
+public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 public import TauCeti.KnotTheory.Grid.Grading.HalfTurn
 
 /-!
@@ -17,7 +17,8 @@ images under `GridState.halfTurn`, and it intertwines the unblocked differential
 variables are renamed along `Fin.rev` (`Differential/HalfTurn.lean`). This file descends that
 symmetry to unblocked grid homology: `GH⁻(G)` and `GH⁻(G.rotate)` are identified by a
 semilinear equivalence along the renaming of the variables. It preserves the Alexander
-grading, so it also preserves the knot invariant `τ`. On chains the half-turn preserves the
+grading, so for a knot grid the two homologies are isomorphic as Alexander-graded `R[U]`-modules.
+On chains the half-turn preserves the
 full `O`-Maslov--Alexander bigrading, including the coefficient-variable degrees.
 
 ## Main definitions
@@ -30,6 +31,8 @@ full `O`-Maslov--Alexander bigrading, including the coefficient-variable degrees
 * `TauCeti.GridDiagram.unblockedHomologyRotateEquiv_unblockedHomologyClass`,
   `TauCeti.GridDiagram.unblockedHomologyRotateEquiv_symm_unblockedHomologyClass`: it and its
   inverse send the class of a cycle to the class of the half-turned cycle.
+* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_rotate`: for a knot grid, `GH⁻` is
+  unchanged by the half-turn as an Alexander-graded `R[U]`-module.
 
 ## References
 
@@ -144,11 +147,12 @@ namespace GridDiagram.IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
 
-/-- The knot invariant `τ` is unchanged by the half-turn of the torus. -/
-theorem tau_rotate : ((G.isKnot_rotate).mpr hG).tau K = hG.tau K := by
-  refine (hG.tau_eq_of_semilinearMap K _ (fun p => ?_)
+/-- The half-turn of a knot grid preserves `GH⁻` as an Alexander-graded `K[U]`-module. -/
+theorem unblockedHomologyIsomorphic_rotate :
+    hG.UnblockedHomologyIsomorphic ((G.isKnot_rotate).mpr hG) K := by
+  refine .of_semilinearMap (fun p => ?_)
     (G.unblockedHomologyRotateEquiv K).toLinearMap
-    (G.unblockedHomologyRotateEquiv K).bijective fun a y hy => ?_).symm
+    (G.unblockedHomologyRotateEquiv K).bijective fun a y hy => ?_
   · simp [aeval_rename, Function.comp_def]
   · rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
       ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢

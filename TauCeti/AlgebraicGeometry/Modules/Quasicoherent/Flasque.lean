@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 public import Mathlib.Topology.Sheaves.Flasque
 public import TauCeti.Algebra.Module.Injective.Noetherian
-public import TauCeti.Algebra.Module.LocalizedModule.Away
+public import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
 
 /-!
 # The sheaf of an injective module over a Noetherian ring is flasque
@@ -19,8 +19,10 @@ quasi-coherent sheaf `I^~` on `Spec R` is flasque: every section of `I^~` over a
 extends to a global section (Hartshorne, *Algebraic Geometry*, Proposition III.3.4).
 
 Flasque sheaves have no higher cohomology, and every `R`-module embeds into an injective one, so
-this is the input for Serre's vanishing theorem `Hⁱ(Spec R, M^~) = 0` for `i > 0` on a Noetherian
-affine scheme.
+over a Noetherian ring this gives Hartshorne's route to Serre's vanishing theorem
+`Hⁱ(Spec R, M^~) = 0` for `i > 0`. The vanishing theorem itself is proved for every ring in
+`TauCeti.AlgebraicGeometry.Cohomology.Affine`, through Cartan's criterion, and does not use this
+file.
 
 ## Implementation notes
 
@@ -101,9 +103,6 @@ private theorem exists_restrict_eq_of_restrict_eq_zero (f : R) (G : Finset R)
         congr($(tilde.toOpen_res M _ _ (homOfLE hfg)) x)
       have h₂ : res[hfg] (f ^ k • σ) = f ^ k • res[hfg] σ := map_smul _ _ _
       rw [← h₁, ← hk, h₂, hσg, smul_zero]
-      -- The two zeros are those of the sections over `D(f g)`, with `D(f g)` read once as an open
-      -- subset of `Spec R` and once as an open subset of the prime spectrum; they agree by `rfl`.
-      rfl
     obtain ⟨⟨_, N, rfl⟩, hN⟩ := (IsLocalizedModule.eq_zero_iff (.powers (f * g))
       (tilde.toOpen M (basicOpen (f * g))).hom).mp hx
     exact ⟨N, IsLocalizedModule.Away.pow_smul_eq_zero_of_pow_smul_eq

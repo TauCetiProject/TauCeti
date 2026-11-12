@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+import Mathlib.Topology.Instances.Nat
 
 /-!
 # The multinomial distribution
@@ -55,7 +56,12 @@ namespace TauCeti
 
 namespace Probability
 
-variable {ι : Type*} [Fintype ι]
+variable {ι : Type*}
+
+open scoped Classical in
+section
+
+variable [Fintype ι]
 
 /-- The real-valued multinomial weight associated to nonnegative cell weights.
 
@@ -73,9 +79,8 @@ theorem multinomialWeightReal_def (w : ι → NNReal) (k : ι → ℕ) :
 
 /-- Every real multinomial weight is nonnegative. -/
 theorem multinomialWeightReal_nonneg (w : ι → NNReal) (k : ι → ℕ) :
-    0 ≤ multinomialWeightReal w k := by
-  exact mul_nonneg (Nat.cast_nonneg _)
-    (Finset.prod_nonneg fun i _ ↦ pow_nonneg (w i).coe_nonneg _)
+    0 ≤ multinomialWeightReal w k :=
+  mul_nonneg (Nat.cast_nonneg _) (Finset.prod_nonneg fun i _ ↦ pow_nonneg (w i).coe_nonneg _)
 
 /-- The `ℝ≥0∞`-valued multinomial weight used to scale Dirac measures. -/
 def multinomialWeight (w : ι → NNReal) (k : ι → ℕ) : ℝ≥0∞ :=
@@ -93,21 +98,18 @@ theorem multinomialWeight_toReal (w : ι → NNReal) (k : ι → ℕ) :
     (multinomialWeight w k).toReal = multinomialWeightReal w k := by
   simp [multinomialWeight, multinomialWeightReal, ENNReal.toReal_mul]
 
-open Classical in
 /-- The multinomial distribution with sample size `n` and cell probabilities `p`.
 
 The finite antidiagonal consists precisely of the count vectors whose coordinates sum to `n`. -/
 def multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) : Measure (ι → ℕ) :=
   ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k • Measure.dirac k
 
-open Classical in
 /-- The multinomial measure as its defining finite weighted sum of Dirac measures. -/
 theorem multinomialMeasure_def (n : ℕ) (p : StdSimplex NNReal ι) :
     multinomialMeasure n p =
       ∑ k ∈ Finset.piAntidiag Finset.univ n,
         multinomialWeight p.weights k • Measure.dirac k := (rfl)
 
-open Classical in
 /-- The real multinomial weights on a fixed antidiagonal satisfy the multinomial theorem. -/
 theorem sum_multinomialWeightReal (n : ℕ) (w : ι → NNReal) :
     ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeightReal w k =
@@ -116,7 +118,6 @@ theorem sum_multinomialWeightReal (n : ℕ) (w : ι → NNReal) :
   simpa [multinomialWeightReal] using
     (Finset.sum_pow_eq_sum_piAntidiag Finset.univ (fun i ↦ (w i : ℝ)) n)
 
-open Classical in
 /-- The real multinomial weights of a probability vector sum to one. -/
 theorem sum_multinomialWeightReal_eq_one (n : ℕ) (p : StdSimplex NNReal ι) :
     ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeightReal p.weights k = 1 := by
@@ -124,7 +125,6 @@ theorem sum_multinomialWeightReal_eq_one (n : ℕ) (p : StdSimplex NNReal ι) :
   norm_cast
   simp
 
-open Classical in
 /-- The `ℝ≥0∞`-valued multinomial weights satisfy the multinomial theorem. -/
 theorem sum_multinomialWeight (n : ℕ) (w : ι → NNReal) :
     ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight w k =
@@ -133,7 +133,6 @@ theorem sum_multinomialWeight (n : ℕ) (w : ι → NNReal) :
   simpa [multinomialWeight] using
     (Finset.sum_pow_eq_sum_piAntidiag Finset.univ (fun i ↦ (w i : ℝ≥0∞)) n)
 
-open Classical in
 /-- The `ℝ≥0∞`-valued multinomial weights of a probability vector sum to one. -/
 theorem sum_multinomialWeight_eq_one (n : ℕ) (p : StdSimplex NNReal ι) :
     ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k = 1 := by
@@ -144,15 +143,13 @@ theorem sum_multinomialWeight_eq_one (n : ℕ) (p : StdSimplex NNReal ι) :
 /-- The multinomial law is a probability measure. -/
 theorem isProbabilityMeasure_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) :
     IsProbabilityMeasure (multinomialMeasure n p) := by
-  classical
-  rw [isProbabilityMeasure_iff, multinomialMeasure, Measure.finsetSum_apply]
+  rw [isProbabilityMeasure_iff, multinomialMeasure, _root_.sum_apply]
   simpa using sum_multinomialWeight_eq_one n p
 
 /-- With no trials, the multinomial law is concentrated at the zero count vector. -/
 @[simp]
 theorem multinomialMeasure_zero (p : StdSimplex NNReal ι) :
     multinomialMeasure 0 p = Measure.dirac 0 := by
-  classical
   simp [multinomialMeasure, multinomialWeight, Nat.multinomial]
 
 /-- The singleton mass of a multinomial law is its defining weight on the count antidiagonal and
@@ -161,22 +158,8 @@ zero elsewhere. -/
 theorem multinomialMeasure_singleton (n : ℕ) (p : StdSimplex NNReal ι) (k : ι → ℕ) :
     multinomialMeasure n p {k} =
       if ∑ i, k i = n then multinomialWeight p.weights k else 0 := by
-  classical
-  rw [multinomialMeasure, Measure.finsetSum_apply]
-  split_ifs with hk
-  · rw [Finset.sum_eq_single k]
-    · simp
-    · intro b _ hbk
-      simp [hbk]
-    · intro hmem
-      exact (hmem (by simp [Finset.mem_piAntidiag, hk])).elim
-  · rw [Finset.sum_eq_zero]
-    intro b hb
-    have hbk : b ≠ k := by
-      intro h
-      subst b
-      exact hk (Finset.mem_piAntidiag.mp hb).1
-    simp [hbk]
+  simp [multinomialMeasure, _root_.sum_apply, Pi.single_apply,
+    mul_ite, Finset.mem_piAntidiag]
 
 /-- The real singleton mass of a multinomial law, in the usual factorial form. -/
 @[simp]
@@ -223,9 +206,7 @@ theorem multinomialMeasure_singleton_ne_zero_iff (n : ℕ) (p : StdSimplex NNRea
     multinomialMeasure n p {k} ≠ 0 ↔
       (∑ i, k i = n) ∧ ∀ i, k i ≠ 0 → p.weights i ≠ 0 := by
   rw [multinomialMeasure_singleton]
-  split_ifs with hk
-  · simp [hk]
-  · simp [hk]
+  split_ifs with hk <;> simp [hk]
 
 /-- Every multinomial weight is finite. -/
 @[simp]
@@ -241,8 +222,7 @@ size. -/
 @[simp]
 theorem multinomialMeasure_sum_eq (n : ℕ) (p : StdSimplex NNReal ι) :
     multinomialMeasure n p {k | ∑ i, k i = n} = 1 := by
-  classical
-  rw [multinomialMeasure, Measure.finsetSum_apply]
+  rw [multinomialMeasure, _root_.sum_apply]
   calc
     _ = ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k := by
       apply Finset.sum_congr rfl
@@ -252,15 +232,13 @@ theorem multinomialMeasure_sum_eq (n : ℕ) (p : StdSimplex NNReal ι) :
     _ = 1 := sum_multinomialWeight_eq_one n p
 
 /-- Every function is integrable against a multinomial law because the law has finite support. -/
-theorem integrable_multinomialMeasure {E : Type*} [NormedAddGroup E]
+theorem integrable_multinomialMeasure {E : Type*} [SeminormedAddGroup E]
     (f : (ι → ℕ) → E) (n : ℕ) (p : StdSimplex NNReal ι) :
     Integrable f (multinomialMeasure n p) := by
-  classical
   rw [multinomialMeasure]
   exact integrable_finsetSum_measure.mpr fun k _ ↦
     (integrable_dirac (by simp)).smul_measure (multinomialWeight_ne_top p.weights k)
 
-open Classical in
 /-- Integration against a multinomial law is the corresponding finite weighted sum. -/
 theorem integral_multinomialMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [CompleteSpace E] (f : (ι → ℕ) → E) (n : ℕ) (p : StdSimplex NNReal ι) :
@@ -271,25 +249,39 @@ theorem integral_multinomialMeasure {E : Type*} [NormedAddCommGroup E] [NormedSp
   · exact fun k _ ↦
       (integrable_dirac (by simp)).smul_measure (multinomialWeight_ne_top p.weights k)
 
+end
+
 /-- The count vector cast into Euclidean space. -/
 def multinomialToEuclidean (k : ι → ℕ) : EuclideanSpace ℝ ι :=
   (EuclideanSpace.equiv ι ℝ).symm fun i => (k i : ℝ)
 
-omit [Fintype ι] in
 /-- The coordinates of the cast are the counts, as reals. -/
 @[simp]
 theorem multinomialToEuclidean_apply (k : ι → ℕ) (i : ι) :
     multinomialToEuclidean k i = (k i : ℝ) := (rfl)
 
-omit [Fintype ι] in
-/-- The cast of count vectors into Euclidean space is measurable. -/
-theorem measurable_multinomialToEuclidean [Finite ι] :
-    Measurable (multinomialToEuclidean (ι := ι)) := by
-  have := Fintype.ofFinite ι
-  refine (EuclideanSpace.equiv ι ℝ).symm.continuous.measurable.comp ?_
-  exact Measurable.of_eval fun i => measurable_from_nat.comp (measurable_pi_apply i)
+/-- Pairing a direction with the Euclidean count vector is the corresponding weighted sum. -/
+theorem inner_multinomialToEuclidean [Fintype ι] (θ : EuclideanSpace ℝ ι) (k : ι → ℕ) :
+    inner ℝ θ (multinomialToEuclidean k) = ∑ i, θ i * (k i : ℝ) := by
+  simp only [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, star_trivial,
+    multinomialToEuclidean_apply]
+  exact Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
 
-omit [Fintype ι] in
+/-- The cast of count vectors into Euclidean space is measurable. -/
+theorem measurable_multinomialToEuclidean :
+    Measurable (multinomialToEuclidean (ι := ι)) :=
+  (WithLp.measurable_toLp 2 (ι → ℝ)).comp
+    (Measurable.of_eval fun i => measurable_from_nat.comp (measurable_pi_apply i))
+
+/-- Casting count vectors into Euclidean space is a closed embedding. In particular, closed
+sets of count vectors remain closed after casting, even when they are infinite. -/
+theorem isClosedEmbedding_multinomialToEuclidean :
+    Topology.IsClosedEmbedding (multinomialToEuclidean (ι := ι)) := by
+  convert (EuclideanSpace.equiv ι ℝ).symm.toHomeomorph.isClosedEmbedding.comp
+    (Topology.IsClosedEmbedding.piMap fun _ : ι => Nat.isClosedEmbedding_coe_real) using 1
+  ext k i
+  exact multinomialToEuclidean_apply k i
+
 /-- Casting count vectors into Euclidean space is a measurable embedding. -/
 theorem measurableEmbedding_multinomialToEuclidean [Finite ι] :
     MeasurableEmbedding (multinomialToEuclidean (ι := ι)) := by

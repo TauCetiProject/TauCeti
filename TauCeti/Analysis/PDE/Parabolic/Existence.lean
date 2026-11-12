@@ -85,7 +85,7 @@ measurable on `(a, b)` for all `u, v ∈ V` as in Lions and Showalter, and essen
 `Λ`. This covers divergence-form operators with `L^∞` coefficients, which are in general not
 strongly measurable as maps into `V →L[ℝ] V*`. Measurability of `t ↦ A(t) u(t) φ(t)` for
 `u ∈ L²(a, b; V)` then follows from
-`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuous`, which approximates `(u, φ)`
+`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuousAt`, which approximates `(u, φ)`
 with simple functions, so the variational existence theorem needs no separability of `V`.
 
 For the weak derivative, test the variational formulation against `φ(t) = ψ(t) v` with `ψ`
@@ -105,6 +105,8 @@ smooth and compactly supported in `(a, b)`. For the initial value, test it again
   takes the initial value `u₀` modulo `(range ι)ᗮ`.
 * `TauCeti.exists_hasWeakLineDerivOn_gelfandDual`: existence of a weak solution of
   `u' + A(t) u = f`, `u(a) = u₀`, in a Gelfand triple.
+* `TauCeti.exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq`: the same, with the hypotheses and the
+  equation stated for bilinear functionals `B(t)` that agree with `A(t)` for almost every `t`.
 
 ## References
 
@@ -149,8 +151,6 @@ private theorem exists_forall_integrable_and_abs_integral_le (ι : V →L[ℝ] H
     hφ'.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo
       Ioo_subset_Icc_self
   set K := |Λ| * C₁ + ‖ι‖ * ‖ι‖ * C₂
-  have hK : 0 ≤ K := add_nonneg (mul_nonneg (abs_nonneg _) lpNorm_nonneg)
-    (mul_nonneg (mul_self_nonneg _) lpNorm_nonneg)
   -- The integrand is dominated by `K ‖u‖`.
   have hdom : ∀ u : Lp V 2 μ,
       ∀ᵐ t ∂μ, ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ ≤ K * ‖u t‖ := by
@@ -169,11 +169,11 @@ private theorem exists_forall_integrable_and_abs_integral_le (ι : V →L[ℝ] H
   refine ⟨K * (μ univ ^ (1 - 1 / (2 : ℝ≥0∞).toReal)).toReal, fun u => ⟨?_, ?_⟩⟩
   · refine (((Lp.memLp u).integrable one_le_two).norm.const_mul K).mono' ?_ (hdom u)
     exact (((Lp.aestronglyMeasurable u).prodMk hφ.continuous.aestronglyMeasurable)
-      |>.apply_of_forall_of_continuous (g := fun t p => A t p.1 p.2)
-        (fun p => hA p.1 p.2) fun t => (A t).continuous₂).sub
+      |>.apply_of_forall_of_continuousAt (g := fun t p => A t p.1 p.2)
+        (fun p => hA p.1 p.2) (ae_of_all _ fun t => (A t).continuous₂.continuousAt)).sub
       ((ι.continuous.comp_aestronglyMeasurable (Lp.aestronglyMeasurable u)).inner
         (ι.continuous.comp hφ').aestronglyMeasurable)
-  · simpa only [Real.norm_eq_abs] using Lp.norm_integral_le_of_ae_norm_le_mul u hK (hdom u)
+  · simpa only [Real.norm_eq_abs] using Lp.norm_integral_le_of_ae_norm_le_mul u (hdom u)
 
 /-- **The energy inequality behind coercivity.** For a `C¹` function `φ` with `φ(b) = 0`,
 integrating `d/dt ‖ι φ‖² = 2 ⟪ι φ, ι φ'⟫` by parts and using coercivity of `A` gives
@@ -209,8 +209,9 @@ private theorem mul_setIntegral_norm_sq_add_le (ι : V →L[ℝ] H) (hab : a ≤
       hφ.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
         measurableSet_Ioo Ioo_subset_Icc_self
     refine (MemLp.of_bound ((hφ.continuous.aestronglyMeasurable.prodMk
-      hφ.continuous.aestronglyMeasurable).apply_of_forall_of_continuous
-        (g := fun t p => A t p.1 p.2) (fun p => hA p.1 p.2) fun t => (A t).continuous₂)
+      hφ.continuous.aestronglyMeasurable).apply_of_forall_of_continuousAt
+        (g := fun t p => A t p.1 p.2) (fun p => hA p.1 p.2)
+        (ae_of_all _ fun t => (A t).continuous₂.continuousAt))
       (Λ * C * C) ?_).integrable le_rfl
     filter_upwards [hA_bound, hC] with t hAt hφt
     have hΛ : 0 ≤ Λ := (norm_nonneg (A t)).trans hAt
@@ -363,12 +364,9 @@ private theorem exists_memLp_forall_setIntegral_eq_add_inner_of_coercive [Comple
         simp only [map_smul, inner_smul_right, Submodule.coe_smul, Pi.smul_apply,
           RingHom.id_apply, smul_eq_mul]
         ring }
-  have hℓ_def : ∀ φ : testFunctions V b, ℓ φ = ⟪F, j φ⟫_ℝ + ⟪u₀, ι ((φ : ℝ → V) a)⟫_ℝ :=
-    fun _ => rfl
   have hℓ_apply : ∀ φ : testFunctions V b,
-      ℓ φ = (∫ t in Ioo a b, f t ((φ : ℝ → V) t)) + ⟪u₀, ι ((φ : ℝ → V) a)⟫_ℝ := by
-    intro φ
-    rw [hℓ_def, L2.inner_def]
+      ℓ φ = (∫ t in Ioo a b, f t ((φ : ℝ → V) t)) + ⟪u₀, ι ((φ : ℝ → V) a)⟫_ℝ := fun φ => by
+    simp only [ℓ, LinearMap.coe_mk, AddHom.coe_mk, L2.inner_def]
     congr 1
     refine integral_congr_ae ?_
     filter_upwards [hRf.coeFn_toLp, coeFn_testFunctionsToL2 φ] with t hFt hjt
@@ -386,19 +384,14 @@ private theorem exists_memLp_forall_setIntegral_eq_add_inner_of_coercive [Comple
       min α (1 / 2) * p φ ^ 2 ≤ variationalForm ι hA hA_bound φ (j φ) := by
     intro φ
     have hlow := mul_norm_sq_add_le_variationalForm ι hab hA hA_bound hA_coercive φ
-    have hmin₁ : min α (1 / 2) ≤ α := min_le_left _ _
-    have hmin₂ : min α (1 / 2) ≤ 1 / 2 := min_le_right _ _
     rw [hp_sq]
-    nlinarith [sq_nonneg ‖j φ‖, sq_nonneg ‖ι ((φ : ℝ → V) a)‖]
+    nlinarith [sq_nonneg ‖j φ‖, sq_nonneg ‖ι ((φ : ℝ → V) a)‖, min_le_left α (1 / 2),
+      min_le_right α (1 / 2)]
   -- The right-hand side is bounded by `p`.
-  have hbound : ∀ φ : testFunctions V b, |ℓ φ| ≤ (‖F‖ + ‖u₀‖) * p φ := by
-    intro φ
-    calc |ℓ φ| = |⟪F, j φ⟫_ℝ + ⟪u₀, ι ((φ : ℝ → V) a)⟫_ℝ| := by rw [hℓ_def]
-      _ ≤ ‖F‖ * ‖j φ‖ + ‖u₀‖ * ‖ι ((φ : ℝ → V) a)‖ :=
-          (abs_add_le _ _).trans
-            (add_le_add (abs_real_inner_le_norm _ _) (abs_real_inner_le_norm _ _))
-      _ ≤ ‖F‖ * p φ + ‖u₀‖ * p φ := by gcongr <;> [exact hjp φ; exact hιp φ]
-      _ = (‖F‖ + ‖u₀‖) * p φ := by ring
+  have hbound : ∀ φ : testFunctions V b, |ℓ φ| ≤ (‖F‖ + ‖u₀‖) * p φ := fun φ =>
+    ((abs_add_le _ _).trans (add_le_add (abs_real_inner_le_norm _ _)
+      (abs_real_inner_le_norm _ _))).trans
+        (by nlinarith [hjp φ, hιp φ, norm_nonneg F, norm_nonneg u₀])
   -- Lions' theorem produces the solution.
   obtain ⟨u, hu, -⟩ := LinearMap.exists_forall_apply_eq_and_norm_le_of_coercive
     (variationalForm ι hA hA_bound) (fun φ => j φ) p ℓ (lt_min hα one_half_pos) (by positivity)
@@ -563,7 +556,7 @@ theorem hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner [Compl
   ext v
   have hI {g : ℝ → StrongDual ℝ V} (hg : LocallyIntegrableOn g (Ioo a b)) :
       Integrable (fun t => ψ t * g t v) μ := by
-    simpa using ((integrable_smul_of_locallyIntegrableOn hg φ).restrict
+    simpa using ((φ.integrable_smul hg).restrict
       (s := Ioo a b)).apply_continuousLinearMap v
   have hI' : Integrable (fun t => deriv ψ t * ⟪ι (u t), ι v⟫_ℝ) μ := by
     simpa [ContinuousLinearMap.gelfandDual_apply, lineDeriv_one] using
@@ -572,7 +565,7 @@ theorem hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner [Compl
   rw [ContinuousLinearMap.integral_apply
       ((integrable_lineDeriv_smul_of_locallyIntegrableOn hG φ 1).restrict) v,
     neg_apply, ContinuousLinearMap.integral_apply
-      ((integrable_smul_of_locallyIntegrableOn hg φ).restrict) v]
+      ((φ.integrable_smul hg).restrict) v]
   -- Test the variational formulation against `ψ v`.
   have h := hvar (fun t => ψ t • v) (hψ.smul contDiff_const) (by simp [hψ0 b (by simp)])
   have hd : ∀ t, deriv (fun s => ψ s • v) t = deriv ψ t • v := fun t =>
@@ -625,17 +618,16 @@ theorem gelfandDual_eq_of_forall_setIntegral_eq_add_inner [CompleteSpace V]
   refine ContinuousLinearMap.ext fun v => ?_
   -- Evaluate at `v` and pass to integrals over `(a, b)`.
   have hKv := congrArg (fun L : StrongDual ℝ V => L v) hK
+  have hQ : ∫ t in Ioo a b, (deriv θ t • ξ t) v = ∫ t in Ioo a b, deriv θ t * ⟪ι (u t), ι v⟫_ℝ := by
+    refine integral_congr_ae ?_
+    filter_upwards [hξae] with t ht
+    rw [smul_apply, ← ht, ContinuousLinearMap.gelfandDual_apply, smul_eq_mul]
   rw [ContinuousLinearMap.intervalIntegral_apply
       (hθd.continuousOn.smul (uIcc_of_le hab.le ▸ hξ)).intervalIntegrable v, sub_apply, neg_apply,
     ContinuousLinearMap.intervalIntegral_apply
       (hgi.continuousOn_smul hθ.continuous.continuousOn) v,
     intervalIntegral.integral_of_le hab.le, intervalIntegral.integral_of_le hab.le,
-    integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo] at hKv
-  have hQ : ∫ t in Ioo a b, (deriv θ t • ξ t) v = ∫ t in Ioo a b, deriv θ t * ⟪ι (u t), ι v⟫_ℝ := by
-    refine integral_congr_ae ?_
-    filter_upwards [hξae] with t ht
-    rw [smul_apply, ← ht, ContinuousLinearMap.gelfandDual_apply, smul_eq_mul]
-  rw [hQ] at hKv
+    integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo, hQ] at hKv
   simp only [smul_apply, smul_eq_mul, hg_def, sub_apply, mul_sub, ξ,
     ContinuousLinearMap.gelfandDual_apply] at hKv
   have hI {F : ℝ → StrongDual ℝ V} {c : ℝ → ℝ} (hc : Continuous c) (hF : MemLp F 2 μ) :
@@ -650,11 +642,9 @@ theorem gelfandDual_eq_of_forall_setIntegral_eq_add_inner [CompleteSpace V]
   rw [integral_sub (hI hθ.continuous hf) (hI hθ.continuous hAu)] at hKv
   -- Test the variational formulation against `θ v`.
   have h := hvar (fun t => θ t • v) (hθ.smul contDiff_const) (by simp [hθb])
-  have hd' : ∀ t, deriv (fun s => θ s • v) t = deriv θ t • v := fun t =>
-    deriv_smul_const ((hθ.differentiable one_ne_zero) t) v
-  simp only [hd', hθa, one_smul, map_smul, smul_eq_mul, inner_smul_right] at h
+  simp only [deriv_smul_const (hθ.differentiable one_ne_zero _) v, hθa, one_smul, map_smul,
+    smul_eq_mul, inner_smul_right, ContinuousLinearMap.gelfandDual_apply] at h ⊢
   rw [integral_sub (hI hθ.continuous hAu) hIQ] at h
-  simp only [ContinuousLinearMap.gelfandDual_apply]
   linarith
 
 /-- **Existence of weak solutions for linear parabolic equations.** Let `V ↪ H ↪ V*` be a Gelfand
@@ -692,6 +682,41 @@ theorem exists_hasWeakLineDerivOn_gelfandDual [CompleteSpace V] [TopologicalSpac
   obtain ⟨w, hw, hae⟩ := hd.exists_continuousOn_ae_eq_of_gelfandDual hu hg
   exact ⟨u, w, hu, hg, hd, hw, hae, ι.gelfandDual_injective hι
     (gelfandDual_eq_of_forall_setIntegral_eq_add_inner hab hA hA_bound hf hu hvar hw hae)⟩
+
+/-- `TauCeti.exists_hasWeakLineDerivOn_gelfandDual` with the operators `A(t)` known only through a
+family of bilinear functionals `B(t)` that they agree with for almost every `t`, as in
+`TauCeti.exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq`: measurability, boundedness and
+Gårding's inequality are hypotheses on `B`, and the equation `u' + A(t) u = f` is stated tested
+against every `v ∈ V`, as `u'(t)(v) + B(t)(u(t), v) = f(t)(v)` for almost every `t`. -/
+theorem exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq [CompleteSpace V]
+    [TopologicalSpace.SeparableSpace V] [CompleteSpace H] (hι : DenseRange ι) (hab : a ≤ b)
+    {B : ℝ → V → V → ℝ} (hAB : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, A t u v = B t u v)
+    (hB : ∀ u v, AEStronglyMeasurable (fun t => B t u v) (volume.restrict (Ioo a b)))
+    (hΛ : 0 ≤ Λ)
+    (hB_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, ‖B t u v‖ ≤ Λ * (‖u‖ * ‖v‖))
+    (hα : 0 < α)
+    (hB_garding : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ B t v v)
+    (hf : MemLp f 2 (volume.restrict (Ioo a b))) (u₀ : H) :
+    ∃ u : ℝ → V, ∃ u' : ℝ → StrongDual ℝ V, ∃ w : ℝ → H,
+      MemLp u 2 (volume.restrict (Ioo a b)) ∧ MemLp u' 2 (volume.restrict (Ioo a b)) ∧
+      HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t => ι.gelfandDual (ι (u t))) u' 1 ∧
+      (∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, u' t v + B t (u t) v = f t v) ∧
+      ContinuousOn w (Icc a b) ∧ (fun t => ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w ∧
+      w a = u₀ := by
+  obtain ⟨u, w, hu, hu', hd, hw, hae, hw₀⟩ := exists_hasWeakLineDerivOn_gelfandDual (A := A) hι hab
+    (fun u v => (hB u v).congr (hAB.mono fun t ht => (ht u v).symm))
+    (by
+      filter_upwards [hAB, hB_bound] with t hABt hBt
+      refine (A t).opNorm_le_bound₂ hΛ fun u v => ?_
+      rw [hABt, mul_assoc]
+      exact hBt u v)
+    hα (by
+      filter_upwards [hAB, hB_garding] with t hABt hBt v
+      rw [hABt]
+      exact hBt v) hf u₀
+  refine ⟨u, fun t => f t - A t (u t), w, hu, hu', hd, ?_, hw, hae, hw₀⟩
+  filter_upwards [hAB] with t hABt v
+  rw [sub_apply, ← hABt, sub_add_cancel]
 
 end WeakSolution
 

@@ -7,14 +7,16 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Invariants
+public import TauCeti.Topology.Algebra.Group.Basic
+public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 
 /-!
 # Inflation and the inflation-restriction sequence
 
 Inflation is the third named instance of the compatible-pair pullback on the explicit low-degree
-complex: for a normal subgroup `N` of a topological group `G` it is the pullback along the
-quotient homomorphism `G → G ⧸ N` paired with the inclusion `M ^ N ↪ M` of the invariants, which
+complex: for a normal subgroup `N` of a group `G` equipped with a topology it is the pullback along
+the quotient homomorphism `G → G ⧸ N` paired with the inclusion `M ^ N ↪ M` of the invariants, which
 is equivariant along that homomorphism. This file defines inflation in degrees `0`, `1`, and `2`.
 In degree one it proves the exactness of
 
@@ -78,9 +80,12 @@ Continuity of that action is carried as the instance hypothesis
 `TauCeti.continuousSMulQuotientFixedPointsOfContinuousSMul` discharges it for a discrete `M`, which
 is the case arising in arithmetic applications.
 
-The public results other than `TauCeti.ContCohomology.explicitInfRes2_exact` hold for an arbitrary
-topological group `G` and an arbitrary normal subgroup `N`; neither profiniteness nor closedness of
-`N` is used. Closedness would only make `G ⧸ N` Hausdorff, and the descent argument in
+Degree-two inflation and its injectivity and exactness results require only jointly continuous
+multiplication on `G`; continuous inversion is unnecessary. Descent of `2`-cocycles itself needs
+only separately continuous multiplication. The degree-zero and degree-one results need no
+continuity assumption on the group operations. Among the public results, only
+`TauCeti.ContCohomology.explicitInfRes2_exact` requires `N` to be open; neither profiniteness nor
+closedness of `N` is used. Closedness would only make `G ⧸ N` Hausdorff, and the descent argument in
 `TauCeti.ContCohomology.explicitInfRes_exact` needs nothing but the quotient topology: a cochain
 on `G` that is constant on the cosets of `N` descends to a *continuous* cochain on `G ⧸ N`
 precisely because `G ⧸ N` carries that topology.
@@ -204,7 +209,7 @@ variable (G : Type u) [Group G] [TopologicalSpace G]
 `G → G ⧸ N`, with the invariants `M ^ N` as coefficients. -/
 noncomputable def explicitInfl1 :
     H1 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H1 G M :=
-  explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+  explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (Subgroup.quotientMkContinuousMonoidHom N)
     (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
     N.fixedPoints_subtype_quotientMk_smul
 
@@ -213,7 +218,8 @@ it inflates to; `TauCeti.ContCohomology.cocyclesMap1_apply` evaluates the latter
 @[simp]
 theorem explicitInfl1_mk (c : Z1 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     explicitInfl1 G M N (c : H1 (G ⧸ N) (FixedPoints.addSubgroup N M)) =
-      (cocyclesMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+      (cocyclesMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
+        (Subgroup.quotientMkContinuousMonoidHom N)
         (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
         N.fixedPoints_subtype_quotientMk_smul c : H1 G M) :=
   explicitMap1_mk _ _ _ _ _ _ _ _ c
@@ -222,7 +228,8 @@ theorem explicitInfl1_mk (c : Z1 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
 `G → G ⧸ N` and the inclusion of the invariants `M ^ N` into `M`. -/
 theorem explicitInfl1_eq_explicitMap1 :
     explicitInfl1 G M N =
-      explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+      explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
+        (Subgroup.quotientMkContinuousMonoidHom N)
         (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
         N.fixedPoints_subtype_quotientMk_smul := by
   rw [explicitInfl1]
@@ -255,7 +262,7 @@ theorem explicitInfl1_injective : Function.Injective (explicitInfl1 G M N) := by
       refine (FixedPoints.mem_addSubgroup N M m).2 fun n => ?_
       have h := hm (n : G)
       rw [cocyclesMap1_apply] at h
-      simp only [ContinuousMonoidHom.quotientMk_apply, quotientMk_coe_eq_one,
+      simp only [Subgroup.quotientMkContinuousMonoidHom_apply, quotientMk_coe_eq_one,
         map_one_of_mem_Z1 c.2, AddSubgroup.coe_subtype, ZeroMemClass.coe_zero, sub_eq_zero] at h
       exact h
     rw [H1pi_eq_zero_iff, mem_B1_iff]
@@ -335,7 +342,7 @@ theorem explicitInfl1_descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n :
       (z : H1 G M) := by
   rw [explicitInfl1_mk]
   refine congrArg (fun w : Z1 G M => (w : H1 G M)) (Subtype.ext (funext fun g => ?_))
-  rw [cocyclesMap1_apply, ContinuousMonoidHom.quotientMk_apply, AddSubgroup.coe_subtype,
+  rw [cocyclesMap1_apply, Subgroup.quotientMkContinuousMonoidHom_apply, AddSubgroup.coe_subtype,
     coe_descendZ1_apply_mk]
 
 variable (G M N)
@@ -383,7 +390,7 @@ end DegreeOne
 
 section DegreeTwo
 
-variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable (G : Type u) [Group G] [TopologicalSpace G] [ContinuousMul G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M] [ContinuousSMul G M]
   (N : Subgroup G) [N.Normal] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]
@@ -392,7 +399,7 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 five-term exact sequence. -/
 noncomputable def explicitInfl2 :
     H2 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H2 G M :=
-  explicitMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+  explicitMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (Subgroup.quotientMkContinuousMonoidHom N)
     (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
     N.fixedPoints_subtype_quotientMk_smul
 
@@ -401,7 +408,8 @@ it inflates to; `TauCeti.ContCohomology.cocyclesMap2_apply` evaluates the latter
 @[simp]
 theorem explicitInfl2_mk (c : Z2 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     explicitInfl2 G M N (c : H2 (G ⧸ N) (FixedPoints.addSubgroup N M)) =
-      (cocyclesMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
+      (cocyclesMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
+        (Subgroup.quotientMkContinuousMonoidHom N)
         (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
         N.fixedPoints_subtype_quotientMk_smul c : H2 G M) :=
   explicitMap2_mk _ _ _ _ _ _ _ _ c
@@ -411,7 +419,7 @@ theorem explicitInfl2_mk (c : Z2 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
 theorem explicitInfl2_eq_explicitMap2 :
     explicitInfl2 G M N =
       explicitMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
-        (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
+        (Subgroup.quotientMkContinuousMonoidHom N) (FixedPoints.addSubgroup N M).subtype
         (continuous_fixedPoints_addSubgroup_subtype G M N)
         N.fixedPoints_subtype_quotientMk_smul := by
   rw [explicitInfl2]
@@ -431,13 +439,14 @@ theorem explicitRes2_comp_explicitInfl2 :
     refine ⟨fun _ => (m₀ : M), continuous_const, fun n n' => ?_⟩
     have hfix := (FixedPoints.mem_addSubgroup N M (m₀ : M)).1 m₀.2 n
     rw [cocyclesMap2_apply, cocyclesMap2_apply]
-    simp only [ContinuousMonoidHom.subgroupSubtype_apply, ContinuousMonoidHom.quotientMk_apply,
+    simp only [ContinuousMonoidHom.subgroupSubtype_apply,
+      Subgroup.quotientMkContinuousMonoidHom_apply,
       quotientMk_coe_eq_one, AddMonoidHom.id_apply, AddSubgroup.coe_subtype, ← hm₀, hfix]
     abel
 
 variable {G M N}
 
-omit [IsTopologicalGroup G] [ContinuousSMul G M]
+omit [ContinuousMul G] [ContinuousSMul G M]
   [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
 /-- Descend a continuous `2`-cocycle which is constant on right `N`-cosets in both variables and
 whose values are fixed by `N` to a cocycle on `G ⧸ N` with values in `M ^ N`. Only separate
@@ -473,7 +482,7 @@ def descendZ2 [SeparatelyContinuousMul G] (z : Z2 G M)
                 coe_smul_fixedPoints_addSubgroup, Quotient.liftOn₂'_mk'']
               exact (mem_Z2_iff.1 z.2).2 g h j⟩⟩
 
-omit [IsTopologicalGroup G] [ContinuousSMul G M]
+omit [ContinuousMul G] [ContinuousSMul G M]
   [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
 /-- The descended cocycle evaluates on quotient representatives as the original cocycle. -/
 @[simp]
@@ -499,18 +508,15 @@ theorem explicitInfl2_descendZ2 (z : Z2 G M)
       (z : H2 G M) := by
   rw [explicitInfl2_mk]
   refine congrArg (fun w : Z2 G M => (w : H2 G M)) (Subtype.ext (funext fun p => ?_))
-  rw [cocyclesMap2_apply, ContinuousMonoidHom.quotientMk_apply, AddSubgroup.coe_subtype]
-  -- The preceding rewrite leaves quotient representatives under the fixed-point subtype
-  -- coercion; expose that evaluation so the representative computation lemma applies.
-  change ((descendZ2 z hright hfixed :
-    (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (p.1, p.2) : M) = _
+  rw [cocyclesMap2_apply, Subgroup.quotientMkContinuousMonoidHom_apply,
+    AddSubgroup.coe_subtype, Subgroup.quotientMkContinuousMonoidHom_apply]
   exact coe_descendZ2_apply_mk z hright hfixed p.1 p.2
 
 end DegreeTwo
 
 section DegreeTwoExact
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M] [ContinuousSMul G M] {N : Subgroup G} [N.Normal]
 
@@ -530,7 +536,11 @@ private theorem exists_sub_mem_B2_vanishing_snd (hN : IsOpen (N : Set G)) (f : Z
   have hr : Continuous r := continuous_of_discreteTopology.comp QuotientGroup.continuous_mk
   have hrN (g : G) : (r g)⁻¹ * g ∈ N := QuotientGroup.eq.1 (QuotientGroup.out_eq' (g : G ⧸ N))
   let m : G → N := fun g => ⟨(r g)⁻¹ * g, hrN g⟩
-  have hm : Continuous m := (hr.inv.mul continuous_id).subtype_mk _
+  -- Inversion is applied only to the chosen representatives of the discrete quotient.
+  have hr_inv : Continuous (fun g => (r g)⁻¹) :=
+    (continuous_of_discreteTopology (f := fun q : G ⧸ N => q.out⁻¹)).comp
+      QuotientGroup.continuous_mk
+  have hm : Continuous m := (hr_inv.mul continuous_id).subtype_mk _
   have hrm (g : G) : r g * m g = g := mul_inv_cancel_left _ _
   have hr_mul (g : G) (n : N) : r (g * n) = r g := by
     simp only [r, QuotientGroup.mk_mul_of_mem g n.2]
@@ -641,6 +651,37 @@ theorem explicitInfRes2_exact (hN : IsOpen (N : Set G))
     rw [groupCohomology.apply_mul_snd_of_isCocycle₂_of_vanishing hf hR,
       groupCohomology.apply_mul_fst_of_isCocycle₂_of_vanishing hf hR hL]
 
+omit [ContinuousMul G] in
+/-- Second step of the injectivity of inflation in degree two: if a continuous cochain `c` on `G`
+has coboundary `F`, a function pulled back from `G ⧸ N` and valued in `N`-fixed points, and
+`H¹(N, M)` vanishes, then `c` can be corrected by a coboundary to a continuous cochain `k` with
+the same coboundary that is constant, equal to `F (1, 1)`, on `N`. -/
+private theorem exists_continuous_cochain_const_on_normal [Subsingleton (H1 N M)] {c : G → M}
+    (hc : Continuous c) {F : (G ⧸ N) × (G ⧸ N) → M} (hfix : ∀ n : N, (n : G) • F (1, 1) = F (1, 1))
+    (hcF : ∀ g h : G, g • c h - c (g * h) + c g = F ((g : G ⧸ N), (h : G ⧸ N))) :
+    ∃ k : G → M, Continuous k ∧ (∀ g h : G, g • k h - k (g * h) + k g = F (g, h)) ∧
+      ∀ n : N, k n = F (1, 1) := by
+  -- On `N`, `c - F (1, 1)` is a continuous `1`-cocycle, hence a coboundary.
+  have hz : (fun n : N ↦ c n - F (1, 1)) ∈ Z1 N M := by
+    refine mem_Z1_iff.2 ⟨(hc.comp continuous_subtype_val).sub continuous_const, fun n n' ↦ ?_⟩
+    have h := hcF n n'
+    rw [quotientMk_coe_eq_one, quotientMk_coe_eq_one] at h
+    simp only [Subgroup.coe_mul, Subgroup.smul_def, smul_sub]
+    rw [hfix]
+    linear_combination (norm := abel) -h
+  obtain ⟨m, hm⟩ := mem_B1_iff.1 (H1pi_eq_zero_iff.1 (Subsingleton.elim
+    ((⟨_, hz⟩ : Z1 N M) : H1 N M) 0))
+  -- `k = c - d⁰ m` has the same coboundary as `c` and is constant, equal to `F (1, 1)`, on `N`.
+  refine ⟨fun g ↦ c g - (g • m - m),
+    hc.sub ((continuous_id.smul continuous_const).sub continuous_const), fun g h ↦ ?_, fun n ↦ ?_⟩
+  · rw [← hcF]
+    simp only [smul_sub, mul_smul]
+    abel
+  · have h := hm n
+    simp only [Subgroup.smul_def] at h
+    simp only [h]
+    abel
+
 variable (G M N) in
 /-- **Injectivity of inflation in degree two** when `H¹(N, M)` vanishes: for a normal subgroup
 `N` of `G` (not necessarily open) and coefficients `M` of any topology on whose `N`-fixed points
@@ -661,7 +702,7 @@ theorem explicitInfl2_injective [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgro
       fun q ↦ ((f : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) q : M) with hF
     have hcF (g h : G) : g • c h - c (g * h) + c g = F ((g : G ⧸ N), (h : G ⧸ N)) := by
       rw [hcf g h, cocyclesMap2_apply, AddSubgroup.coe_subtype,
-        ContinuousMonoidHom.quotientMk_apply, ContinuousMonoidHom.quotientMk_apply]
+        Subgroup.quotientMkContinuousMonoidHom_apply, Subgroup.quotientMkContinuousMonoidHom_apply]
     -- The normalizations of the cocycle `f`, read in `M`.
     have hF1 (g : G) : F ((g : G ⧸ N), 1) = g • F (1, 1) := by
       simp only [hF]
@@ -670,31 +711,10 @@ theorem explicitInfl2_injective [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgro
     have hF1' (g : G) : F (1, (g : G ⧸ N)) = F (1, 1) := by
       simp only [hF]
       rw [map_one_fst_of_mem_Z2 f.2]
-    set m₀ := F (1, 1)
-    -- On `N`, `c - m₀` is a continuous `1`-cocycle, hence a coboundary.
-    have hz : (fun n : N ↦ c n - m₀) ∈ Z1 N M := by
-      refine mem_Z1_iff.2 ⟨(hc.comp continuous_subtype_val).sub continuous_const, fun n n' ↦ ?_⟩
-      have h := hcF n n'
-      rw [quotientMk_coe_eq_one, quotientMk_coe_eq_one] at h
-      simp only [Subgroup.coe_mul, Subgroup.smul_def, smul_sub]
-      have hfix : (n : G) • m₀ = m₀ :=
-        (FixedPoints.mem_addSubgroup N M _).1
-          ((f : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (1, 1)).2 n
-      rw [hfix]
-      linear_combination (norm := abel) -h
-    obtain ⟨m, hm⟩ := mem_B1_iff.1 (H1pi_eq_zero_iff.1 (Subsingleton.elim
-      ((⟨_, hz⟩ : Z1 N M) : H1 N M) 0))
-    -- `k = c - d⁰ m` has the same coboundary as `c` and is constant, equal to `m₀`, on `N`.
-    set k : G → M := fun g ↦ c g - (g • m - m) with hk
-    have hdk (g h : G) : g • k h - k (g * h) + k g = F ((g : G ⧸ N), (h : G ⧸ N)) := by
-      rw [← hcF]
-      simp only [hk, smul_sub, mul_smul]
-      abel
-    have hkN (n : N) : k n = m₀ := by
-      have h := hm n
-      simp only [Subgroup.smul_def] at h
-      simp only [hk, h]
-      abel
+    have hfix (n : N) : (n : G) • F (1, 1) = F (1, 1) :=
+      (FixedPoints.mem_addSubgroup N M _).1
+        ((f : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (1, 1)).2 n
+    obtain ⟨k, hkc, hdk, hkN⟩ := exists_continuous_cochain_const_on_normal hc hfix hcF
     have hright (g : G) (n : N) : k (g * n) = k g := by
       have h := hdk g n
       rw [quotientMk_coe_eq_one, hkN, hF1] at h
@@ -713,7 +733,7 @@ theorem explicitInfl2_injective [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgro
       fun a b hab ↦ Subtype.ext <| by
         simpa using (hright a ⟨a⁻¹ * b, QuotientGroup.leftRel_apply.1 hab⟩).symm
     refine H2pi_eq_zero_iff.2 (mem_B2_iff'.2 ⟨e, (QuotientGroup.isQuotientMap_mk N).continuous_iff.2
-      (((hc.sub ((continuous_id.smul continuous_const).sub continuous_const))).subtype_mk _),
+      (hkc.subtype_mk _),
       fun a b ↦ ?_⟩)
     induction a using QuotientGroup.induction_on with
     | H g =>

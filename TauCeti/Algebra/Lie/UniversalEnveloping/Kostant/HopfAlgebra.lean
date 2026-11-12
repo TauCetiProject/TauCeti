@@ -56,7 +56,7 @@ local notation "K" => kostantForm (L := L)
 /-- The module structure on the tensor square of the Kostant form definitionally
 aligned with its algebra structure; both canonical instances have the same action,
 but iterated tensor maps must use one consistently. -/
-local instance kostantTensorModule (e : I → L) (h : J → L) :
+noncomputable local instance kostantTensorModule (e : I → L) (h : J → L) :
     Module ℤ (K e h ⊗[ℤ] K e h) := Algebra.toModule
 
 /-! ## Faithful scalar extension for three tensor factors -/
@@ -76,10 +76,10 @@ private theorem kostantTripleMap_tmul (e : I → L) (h : J → L)
 
 private theorem kostantTripleMap_injective (e : I → L) (h : J → L) :
     Function.Injective (kostantTripleMap e h) := by
-  let : IsAddTorsionFree U := .of_module_rat U
-  let : IsAddTorsionFree (U ⊗[ℚ] U) := .of_module_rat (U ⊗[ℚ] U)
-  let : IsAddTorsionFree (K e h) :=
-    Function.Injective.isAddTorsionFree (K e h).subtype.toAddMonoidHom
+  let : HasUniqueDiv U := .of_module_rat U
+  let : HasUniqueDiv (U ⊗[ℚ] U) := .of_module_rat (U ⊗[ℚ] U)
+  let : HasUniqueDiv (K e h) :=
+    Function.Injective.hasUniqueDiv (K e h).subtype.toAddMonoidHom
       (K e h).subtype_injective
   let : Module.Flat ℤ (K e h) := inferInstance
   let f : K e h →ₗ[ℤ] U := (K e h).subtype.toIntAlgHom.toLinearMap
@@ -349,5 +349,13 @@ universal-enveloping antipode. -/
 @[simp low]
 theorem kostantForm_antipode (e : I → L) (h : J → L) :
     HopfAlgebra.antipode ℤ (A := K e h) = kostantFormAntipodeLinearMap e h := rfl
+
+/-- Including the integral Hopf antipode in the rational enveloping algebra gives the
+rational universal-enveloping antipode. -/
+theorem coe_antipode_kostantForm (e : I → L) (h : J → L) (a : K e h) :
+    ((HopfAlgebra.antipode ℤ a : K e h) : U) =
+      _root_.UniversalEnvelopingAlgebra.antipode ℚ (a : U) := by
+  rw [kostantForm_antipode, coe_kostantFormAntipodeLinearMap_apply,
+    hopfAlgebraStructAntipode_eq_antipode]
 
 end TauCeti.UniversalEnvelopingAlgebra

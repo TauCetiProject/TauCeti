@@ -59,6 +59,11 @@ the unrelated reason that positivity is vacuous
   the converse holds too.
 * `NumberField.NarrowClassGroup.card_eq_card_classGroup_iff_exists_norm_eq_neg_one`: for `0 < d`
   the narrow class number equals the class number exactly when some unit has norm `-1`.
+* `TauCeti.NumberField.NarrowClassGroup.card_ker_toClassGroup_eq_two_of_forall_norm_ne_neg_one`,
+  `TauCeti.NumberField.NarrowClassGroup.card_eq_two_mul_card_classGroup_of_forall_norm_ne_neg_one`:
+  for
+  `0 < d` without a unit of norm `-1`, the kernel of `Cl⁺(K) → Cl(K)` has order `2` and
+  `h⁺(K) = 2 h(K)`.
 
 ## References
 
@@ -242,3 +247,35 @@ theorem card_eq_card_classGroup_iff_exists_norm_eq_neg_one (hmin : minpoly ℤ �
 end NarrowClassGroup
 
 end NumberField
+
+namespace TauCeti.NumberField.NarrowClassGroup
+
+open _root_.NumberField.NarrowClassGroup
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+
+/-- **Without a unit of norm `-1`, the kernel of `Cl⁺(K) → Cl(K)` has order `2`** for a real
+quadratic field `K = ℚ(√d)`, `0 < d`. -/
+theorem card_ker_toClassGroup_eq_two_of_forall_norm_ne_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hd : 0 < d)
+    (hu : ∀ u : (𝓞 K)ˣ, Algebra.norm ℚ ((u : 𝓞 K) : K) ≠ -1) :
+    Nat.card (MonoidHom.ker (toClassGroup (K := K))) = 2 := by
+  -- The kernel has at most two elements, and it is nontrivial since `Cl⁺(K) → Cl(K)` is not
+  -- injective.
+  have hne : MonoidHom.ker (toClassGroup (K := K)) ≠ ⊥ := fun h => by
+    obtain ⟨u, hu'⟩ := (toClassGroup_injective_iff_exists_norm_eq_neg_one hmin hgen hd).mp
+      ((MonoidHom.ker_eq_bot_iff _).mp h)
+    exact hu u hu'
+  exact le_antisymm (card_ker_toClassGroup_le_two (finrank_rat_eq_two hmin hgen))
+    ((Subgroup.one_lt_card_iff_ne_bot _).mpr hne)
+
+/-- **Without a unit of norm `-1`, the narrow class number of a real quadratic field is twice the
+class number.** This is the other half of the classical criterion `h⁺ = h ↔ N(ε) = -1`. -/
+theorem card_eq_two_mul_card_classGroup_of_forall_norm_ne_neg_one
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hd : 0 < d)
+    (hu : ∀ u : (𝓞 K)ˣ, Algebra.norm ℚ ((u : 𝓞 K) : K) ≠ -1) :
+    Nat.card (NarrowClassGroup K) = 2 * Nat.card (ClassGroup (𝓞 K)) := by
+  rw [card_eq_card_classGroup_mul_card_ker,
+    card_ker_toClassGroup_eq_two_of_forall_norm_ne_neg_one hmin hgen hd hu, mul_comm]
+
+end TauCeti.NumberField.NarrowClassGroup

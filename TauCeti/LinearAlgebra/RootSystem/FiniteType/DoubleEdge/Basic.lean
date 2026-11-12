@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Chain
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
 /-!
@@ -29,8 +29,8 @@ equivalently `(p - 1) (q - 1) < 2`, whose solutions with both chains nonempty ar
 chains `Cₙ`), `p = 1` (the chains `Bₙ`), and `p = q = 2` (`F₄`).
 
 This file builds that diagram as a matrix, `TauCeti.doubleEdgeCartanMatrix`, out of the chain
-entries of `TauCeti.LinearAlgebra.RootSystem.Chain`, and proves the bound. The elimination tool is
-the one the fork bound uses: a finite-type matrix admits no nonzero
+entries of `TauCeti.LinearAlgebra.Matrix.Cartan.Chain`, and proves the bound. The elimination tool
+is the one the fork bound uses: a finite-type matrix admits no nonzero
 **subdominant** vector, one whose every coordinate `xᵢ` has `xᵢ · (A x)ᵢ ≤ 0`
 (`TauCeti.IsFiniteType.eq_zero_of_forall_mul_sum_apply_mul_nonpos`). The certificate is the vector
 of **marks** `TauCeti.doubleEdgeMark`, which grows linearly along each of the two chains towards
@@ -75,12 +75,10 @@ branch vertex is established - is outside this file.
 
 ## References
 
-This file supplies the chain half of the "chain/fork length constraints" step of the classification
-of finite-type Cartan matrices, Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See J. E. Humphreys, *Introduction to
-Lie Algebras and Representation Theory*, §11.4, step (6), where the same linear weighting of the two
-chains gives `(p - 1) (q - 1) < 2`, and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*,
-Ch. VI §4.
+This file supplies the chain half of the chain and fork length constraints of the classification of
+finite-type Cartan matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, §11.4, step (6), where the same linear weighting of the two chains gives
+`(p - 1) (q - 1) < 2`, and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
 -/
 
 public section
@@ -325,13 +323,15 @@ theorem not_isFiniteType_doubleEdgeCartanMatrix_of_succ_mul_succ_le
 are nonempty has one vertex on the second chain (the family `Cₙ`), or one vertex on the first (the
 family `Bₙ`), or two on each (`F₄`).
 
-This is the exclusion half of the classification of the diagrams with a double edge. The converse,
-that these shapes are the diagrams of actual root systems, is the separate realization target of
-the same layer. That the two families are at least of finite type is
-`TauCeti.isFiniteType_doubleEdgeCartanMatrix_one_right` and
+This is the exclusion half of the classification of the diagrams with a double edge. That the two
+families are at least of finite type is `TauCeti.isFiniteType_doubleEdgeCartanMatrix_one_right` and
 `TauCeti.isFiniteType_doubleEdgeCartanMatrix_one_left`; the remaining shape,
 `TauCeti.doubleEdgeCartanMatrix 2 2`, is the diagram of `F₄`, but nothing here identifies it with
-`TauCeti.DynkinType.F4.cartanMatrix`, so its finite type is not established in this file. -/
+`TauCeti.DynkinType.F4.cartanMatrix`, so its finite type is not established in this file. That
+identification is `TauCeti.doubleEdgeCartanMatrix_two_two`, in
+`TauCeti/LinearAlgebra/RootSystem/FiniteType/DoubleEdge/Classification.lean`. That every valid
+Dynkin type, `Bₙ`, `Cₙ` and `F₄` among them, is the type of an actual root system is
+`TauCeti.DynkinType.hasCartanType_rationalRootSystem`. -/
 theorem eq_one_or_eq_one_or_eq_two_two_of_isFiniteType_doubleEdge (hp : 0 < p) (hq : 0 < q)
     (h : IsFiniteType (doubleEdgeCartanMatrix p q)) :
     q = 1 ∨ p = 1 ∨ (p = 2 ∧ q = 2) := by

@@ -66,7 +66,8 @@ right half-plane is `{sideForm g > 0}`.
   neither half-plane.
 * `TauCeti.UpperHalfPlane.sideForm g`: the real quadratic form whose sign is the side of
   `geodesicLine g`, with `sideForm_mk` and `sideForm_mk_ofReal` in the entries of a
-  representative; `mem_leftHalfPlane_iff_sideForm_neg`, `mem_rightHalfPlane_iff_sideForm_pos`,
+  representative, and `sideForm_one`, `sideForm_pslS` for the imaginary axis and its reversal;
+  `mem_leftHalfPlane_iff_sideForm_neg`, `mem_rightHalfPlane_iff_sideForm_pos`,
   `mem_range_geodesicLine_iff_sideForm_eq_zero`, `mem_closure_leftHalfPlane_iff_sideForm_nonpos`;
   `sideForm_mul_dilation`: it too is unchanged by a dilation;
   `exists_sideForm_eq_mul_normSq_sub`: a side form vanishing at two points of a circle centred on
@@ -151,6 +152,19 @@ theorem isOpen_rightHalfPlane (g : PSL(2, ℝ)) : IsOpen (rightHalfPlane g) :=
 theorem isOpen_leftHalfPlane (g : PSL(2, ℝ)) : IsOpen (leftHalfPlane g) :=
   (isOpen_lt UpperHalfPlane.continuous_re continuous_const).smul g
 
+/-- The right half-plane bounded by `geodesicLine g` is preconnected. -/
+theorem isPreconnected_rightHalfPlane (g : PSL(2, ℝ)) : IsPreconnected (rightHalfPlane g) := by
+  have h : IsPreconnected {z : ℍ | 0 < z.re} := by
+    rw [← isOpenEmbedding_coe.isInducing.isPreconnected_image]
+    have himage : ((↑) : ℍ → ℂ) '' {z : ℍ | 0 < z.re} = {w : ℂ | 0 < w.re} ∩ {w | 0 < w.im} := by
+      ext w
+      refine ⟨?_, fun hw ↦ ⟨⟨w, hw.2⟩, hw.1, rfl⟩⟩
+      rintro ⟨z, hz, rfl⟩
+      exact ⟨hz, z.im_pos⟩
+    rw [himage]
+    exact ((convex_halfSpace_re_gt 0).inter (convex_halfSpace_im_gt 0)).isPreconnected
+  exact h.image _ (continuous_const_smul g).continuousOn
+
 /-- The right and left half-planes bounded by the same `geodesicLine g` are disjoint. -/
 theorem disjoint_rightHalfPlane_leftHalfPlane (g : PSL(2, ℝ)) :
     Disjoint (rightHalfPlane g) (leftHalfPlane g) := by
@@ -226,6 +240,22 @@ theorem closure_leftHalfPlane (g : PSL(2, ℝ)) :
   ext z
   simp only [Set.mem_ofPred_eq, Set.mem_union, le_iff_lt_or_eq]
 
+/-- The right half-plane bounded by `geodesicLine g` is disjoint from the closed left
+half-plane. -/
+theorem disjoint_rightHalfPlane_closure_leftHalfPlane (g : PSL(2, ℝ)) :
+    Disjoint (rightHalfPlane g) (closure (leftHalfPlane g)) := by
+  rw [closure_leftHalfPlane]
+  exact (disjoint_rightHalfPlane_leftHalfPlane g).union_right
+    (disjoint_rightHalfPlane_range_geodesicLine g)
+
+/-- The left half-plane bounded by `geodesicLine g` is disjoint from the closed right
+half-plane. -/
+theorem disjoint_leftHalfPlane_closure_rightHalfPlane (g : PSL(2, ℝ)) :
+    Disjoint (leftHalfPlane g) (closure (rightHalfPlane g)) := by
+  rw [closure_rightHalfPlane]
+  exact (disjoint_rightHalfPlane_leftHalfPlane g).symm.union_right
+    (disjoint_leftHalfPlane_range_geodesicLine g)
+
 -- Not `@[simp]`: `closure_rightHalfPlane` already rewrites `closure (rightHalfPlane g)` first.
 /-- A point `z` lies in the closed right half-plane of `g` iff `0 ≤ (g⁻¹ • z).re`. -/
 theorem mem_closure_rightHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
@@ -288,6 +318,11 @@ theorem rightHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
 theorem leftHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
     leftHalfPlane (g * pslS) = rightHalfPlane g := by
   rw [← rightHalfPlane_mul_pslS (g * pslS), mul_assoc, pslS_mul_self, mul_one]
+
+/-- The left half-plane bounded by `geodesicLine g` is preconnected. -/
+theorem isPreconnected_leftHalfPlane (g : PSL(2, ℝ)) : IsPreconnected (leftHalfPlane g) := by
+  rw [← rightHalfPlane_mul_pslS]
+  exact isPreconnected_rightHalfPlane _
 
 /-- The interior of a closed right half-plane is its open half-plane. -/
 -- Not `@[simp]`: `closure_rightHalfPlane` rewrites the inner closure first.
@@ -356,6 +391,18 @@ theorem sideForm_mk_ofReal (A : SL(2, ℝ)) (x : ℝ) :
     sideForm (A : PSL(2, ℝ)) x = (A 1 1 * x - A 0 1) * (-A 1 0 * x + A 0 0) := by
   rw [sideForm_mk, Complex.normSq_ofReal, Complex.ofReal_re]
   ring
+
+/-- The side form of the imaginary axis is the real part. -/
+@[simp]
+theorem sideForm_one (z : ℂ) : sideForm 1 z = z.re := by
+  rw [← QuotientGroup.mk_one, sideForm_mk]
+  simp
+
+/-- The side form of the reversed imaginary axis is minus the real part. -/
+@[simp]
+theorem sideForm_pslS (z : ℂ) : sideForm pslS z = -z.re := by
+  rw [pslS_def, psl2zToPSL2R_mk, sl2zToPSL2R_apply, sideForm_mk]
+  simp [ModularGroup.coe_S]
 
 /-- The real part of `g⁻¹ • z` is a positive multiple of the side form at `z`. -/
 theorem exists_pos_re_inv_smul_eq (g : PSL(2, ℝ)) (z : ℍ) :

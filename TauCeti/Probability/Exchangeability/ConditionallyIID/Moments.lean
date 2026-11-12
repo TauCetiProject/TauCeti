@@ -9,7 +9,7 @@ public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
 -- Non-public: the `measurable_probabilityMeasure_toMeasure_apply` lemmas evaluate a random measure
 -- at a fixed measurable set, in the `ℝ≥0∞` and `.toReal` forms.
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Ext
-import TauCeti.Probability.Process.BlockAverage.Basic
+import TauCeti.Probability.Moments.FiniteAverage
 
 /-!
 # Conditional moment identities and the empirical-frequency rate
@@ -201,51 +201,6 @@ private theorem integral_sub_mul_sub {u v q : Ω → ℝ}
   rw [integral_congr_ae (ae_of_all _ hexp), integral_add hiA hi4,
     integral_sub hiB hi3, integral_sub hi1 hi2]
 
-/-- The abstract second-moment computation behind the `L²` rate: if the centred variables `eᵢ - q`
-integrate against each other to `c` on the diagonal and to `0` off it, then the integral of the
-squared deviation of their average over `Fin n` is `c / n`. At a probability measure the hypothesis
-reads as "uncorrelated with common variance `c`" and the conclusion as a mean square. Private: it is
-an algebraic repackaging with no probabilistic content of its own. -/
-private theorem integral_sq_average_sub [IsFiniteMeasure μ] {e : ℕ → Ω → ℝ} {q : Ω → ℝ}
-    {c : ℝ} {n : ℕ} (he : ∀ i ∈ Finset.range n, AEMeasurable (e i) μ)
-    (hq : AEMeasurable q μ) (heb : ∀ i ∈ Finset.range n, ∀ ω, |e i ω| ≤ 1)
-    (hqb : ∀ ω, |q ω| ≤ 1)
-    (hcov : ∀ i ∈ Finset.range n, ∀ j ∈ Finset.range n,
-      ∫ ω, (e i ω - q ω) * (e j ω - q ω) ∂μ = if i = j then c else 0)
-    (hn : n ≠ 0) :
-    ∫ ω, ((n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, e i ω) - q ω) ^ 2 ∂μ = (n : ℝ)⁻¹ * c := by
-  have hdb : ∀ i ∈ Finset.range n, ∀ ω, |e i ω - q ω| ≤ 2 := by
-    intro i hi ω
-    have h1 := abs_le.mp (heb i hi ω)
-    have h2 := abs_le.mp (hqb ω)
-    rw [abs_le]
-    constructor <;> linarith [h1.1, h1.2, h2.1, h2.2]
-  have hInt : ∀ i ∈ Finset.range n, ∀ j ∈ Finset.range n,
-      Integrable (fun ω ↦ (e i ω - q ω) * (e j ω - q ω)) μ := by
-    intro i hi j hj
-    refine Integrable.of_bound (((he i hi).sub hq).mul ((he j hj).sub hq)).aestronglyMeasurable 4
-      (ae_of_all _ fun ω ↦ ?_)
-    rw [Real.norm_eq_abs, abs_mul]
-    nlinarith [hdb i hi ω, hdb j hj ω, abs_nonneg (e i ω - q ω),
-      abs_nonneg (e j ω - q ω)]
-  have hne : (Finset.range n).Nonempty := Finset.nonempty_range_iff.mpr hn
-  have hstep := fun ω ↦ by
-    simpa [Finset.card_range] using average_sub_sq_eq_sum_sum hne (fun i ↦ e i ω) (q ω)
-  simp_rw [hstep]
-  rw [integral_const_mul,
-    integral_finsetSum _ fun i hi ↦ integrable_finsetSum _ fun j hj ↦ hInt i hi j hj]
-  have hrow : ∀ i ∈ Finset.range n,
-      ∫ ω, ∑ j ∈ Finset.range n, (e i ω - q ω) * (e j ω - q ω) ∂μ = c := by
-    intro i hi
-    rw [integral_finsetSum _ fun j hj ↦ hInt i hi j hj]
-    calc
-      ∑ j ∈ Finset.range n, ∫ ω, (e i ω - q ω) * (e j ω - q ω) ∂μ =
-          ∑ j ∈ Finset.range n, if i = j then c else 0 := by
-        exact Finset.sum_congr rfl fun j hj ↦ hcov i hi j hj
-      _ = c := by simp [Finset.sum_ite_eq, Finset.mem_range.mp hi]
-  rw [Finset.sum_congr rfl hrow, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
-  field_simp
-
 omit [MeasurableSpace Ω] in
 /-- The real part of a `{0, 1}`-valued `ℝ≥0∞` indicator is the corresponding real indicator. -/
 private theorem toReal_indicator_one (s : Set Ω) (ω : Ω) :
@@ -334,7 +289,7 @@ private theorem ConditionallyIIDWith.integral_directing_mul_indicator
 vanishing cross moments and common second moment `∫ q - ∫ q²`.  At a probability measure this says
 they are uncorrelated with common variance `∫ q - ∫ q²`.
 
-This is the pairing hypothesis of `integral_sq_average_sub`, and it is the only place the
+This is the pairing hypothesis of `TauCeti.integral_sq_average_sub`, and it is the only place the
 conditional i.i.d. structure enters beyond measurability of the directing map. -/
 private theorem ConditionallyIIDWith.integral_indicator_sub_directing_mul_indicator_sub_directing
     [IsFiniteMeasure μ] (h : ConditionallyIIDWith μ X ν) (i j : ℕ)
@@ -405,7 +360,7 @@ theorem ConditionallyIIDWith.integral_empiricalFrequency_sub_sq [IsFiniteMeasure
   have he : ∀ i ∈ Finset.range n,
       AEMeasurable ((X i ⁻¹' B).indicator (1 : Ω → ℝ)) μ := fun i _ ↦
     measurable_one.aemeasurable.indicator₀ ((h.aemeasurable i).nullMeasurableSet_preimage hB)
-  -- the `[0, 1]` bounds feeding the `|·| ≤ 1` hypotheses of `integral_sq_average_sub`
+  -- The centered products are bounded by four, hence integrable.
   have hq0 : ∀ ω, 0 ≤ ((ν ω : Measure α) B).toReal := fun _ ↦ ENNReal.toReal_nonneg
   have hq1 : ∀ ω, ((ν ω : Measure α) B).toReal ≤ 1 := fun _ ↦ measureReal_le_one
   have he0 : ∀ i ω, 0 ≤ (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω := fun i ω ↦
@@ -413,12 +368,29 @@ theorem ConditionallyIIDWith.integral_empiricalFrequency_sub_sq [IsFiniteMeasure
   have he1 : ∀ i ω, (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω ≤ 1 := by
     intro i ω
     by_cases hmem : ω ∈ X i ⁻¹' B <;> simp [hmem]
-  exact integral_sq_average_sub he hq.aemeasurable
-    (fun i _ ω ↦ abs_le.mpr ⟨by linarith [he0 i ω], he1 i ω⟩)
-    (fun ω ↦ abs_le.mpr ⟨by linarith [hq0 ω], hq1 ω⟩)
-    (fun i _ j _ ↦
-      h.integral_indicator_sub_directing_mul_indicator_sub_directing i j hB)
-    hn
+  have hdb : ∀ i ω, |(X i ⁻¹' B).indicator (1 : Ω → ℝ) ω
+      - ((ν ω : Measure α) B).toReal| ≤ 2 := by
+    intro i ω
+    rw [abs_le]
+    constructor <;> linarith [he0 i ω, he1 i ω, hq0 ω, hq1 ω]
+  have hint : ∀ i ∈ Finset.range n, ∀ j ∈ Finset.range n,
+      Integrable (fun ω ↦
+        ((X i ⁻¹' B).indicator (1 : Ω → ℝ) ω - ((ν ω : Measure α) B).toReal) *
+          ((X j ⁻¹' B).indicator (1 : Ω → ℝ) ω - ((ν ω : Measure α) B).toReal)) μ := by
+    intro i hi j hj
+    refine Integrable.of_bound
+      (((he i hi).sub hq.aemeasurable).mul ((he j hj).sub hq.aemeasurable)).aestronglyMeasurable
+      4 (ae_of_all _ fun ω ↦ ?_)
+    rw [Real.norm_eq_abs, abs_mul]
+    nlinarith [hdb i ω, hdb j ω,
+      abs_nonneg ((X i ⁻¹' B).indicator (1 : Ω → ℝ) ω - ((ν ω : Measure α) B).toReal),
+      abs_nonneg ((X j ⁻¹' B).indicator (1 : Ω → ℝ) ω - ((ν ω : Measure α) B).toReal)]
+  simpa only [Finset.card_range] using
+    TauCeti.integral_sq_average_sub (Finset.nonempty_range_iff.mpr hn) hint
+      (fun i _ j _ ↦ by
+        by_cases hij : i = j <;>
+          simpa [hij] using
+            h.integral_indicator_sub_directing_mul_indicator_sub_directing i j hB)
 
 /-- The mean square error of `ConditionallyIIDWith.integral_empiricalFrequency_sub_sq` is at most
 `1 / n`: the factor on the right is a difference of moments of a `[0, 1]`-valued variable.

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Finiteness
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
+public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 
 /-!
 # Unimodular integral lattices
@@ -31,6 +32,8 @@ than reproving Smith normal form.
   criterion.
 * `TauCeti.IntegralLattice.isUnimodular_iff_integralForm_bijective`: the perfect-pairing
   criterion.
+* `TauCeti.IntegralLattice.IsUnimodular.isPerfPair_integralForm`: the integral form of a
+  unimodular lattice is a perfect pairing.
 * `TauCeti.IntegralLattice.isUnimodular_iff_discriminant_eq_one`: the determinant criterion.
 * `TauCeti.IntegralLattice.integralPairingEquiv`: the restricted pairing as a linear equivalence.
 
@@ -38,7 +41,6 @@ than reproving Smith normal form.
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layers 1 and 2.
 -/
 
 public section
@@ -171,19 +173,26 @@ theorem integralPairingEquiv_toLinearMap (hL : L.IsUnimodular) :
 
 end Pairing
 
+/-- The integral form of a unimodular lattice is a perfect pairing. -/
+theorem IsUnimodular.isPerfPair_integralForm {L : IntegralLattice V} (hL : L.IsUnimodular) :
+    L.integralForm.IsPerfPair :=
+  let _ : L.IsNondegenerate := ⟨hL.nondegenerate⟩
+  .of_bijective _ (L.isUnimodular_iff_integralForm_bijective.mp hL)
+
 section DeterminantCriteria
 
-variable (L : IntegralLattice V) [L.IsNondegenerate]
+variable (L : IntegralLattice V)
 
-/-- A nondegenerate integral lattice is unimodular exactly when its basis-independent
-discriminant is one. -/
+/-- An integral lattice is unimodular exactly when its basis-independent discriminant is one.
+Both sides force the ambient form to be nondegenerate. -/
 theorem isUnimodular_iff_discriminant_eq_one :
     L.IsUnimodular ↔ L.discriminant = 1 := by
-  rw [L.isUnimodular_iff_natCard_discriminantGroup_eq_one,
-    L.natCard_discriminantGroup]
+  by_cases hL : L.IsNondegenerate
+  · rw [L.isUnimodular_iff_natCard_discriminantGroup_eq_one, L.natCard_discriminantGroup]
+  · exact iff_of_false (fun h ↦ hL ⟨h.nondegenerate⟩) fun h ↦
+      hL ⟨(L.discriminant_pos_iff).mp (by omega)⟩
 
-/-- A nondegenerate integral lattice is unimodular exactly when its signed determinant is a unit
-of `ℤ`. -/
+/-- An integral lattice is unimodular exactly when its signed determinant is a unit of `ℤ`. -/
 theorem isUnimodular_iff_isUnit_determinant :
     L.IsUnimodular ↔ IsUnit L.determinant := by
   rw [L.isUnimodular_iff_discriminant_eq_one, L.discriminant_def,
@@ -194,8 +203,7 @@ value one. -/
 theorem isUnimodular_iff_natAbs_gramDet_eq_one {ι : Type v} [Fintype ι] [DecidableEq ι]
     (e : Basis ι ℤ L) :
     L.IsUnimodular ↔ (L.gramDet e).natAbs = 1 := by
-  rw [L.isUnimodular_iff_discriminant_eq_one,
-    L.discriminant_eq_natAbs_gramDet e]
+  rw [L.isUnimodular_iff_discriminant_eq_one, L.discriminant_eq_natAbs_gramDet e]
 
 /-- In every carrier basis, unimodularity is equivalent to the signed Gram determinant being a
 unit of `ℤ`; in particular, determinant `-1` is allowed. -/

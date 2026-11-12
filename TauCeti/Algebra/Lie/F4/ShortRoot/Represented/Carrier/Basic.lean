@@ -181,14 +181,15 @@ private theorem f4ShortRootCarrierCotangentRange_toSubmodule :
         (congrArg Set.range (funext f4ShortRootCotangentFlagBasis_range)))
   exact f4ShortRootCarrierCotangentRange_toSubmodule_span.trans
     ((congrArg (Submodule.span 𝔽₂) hset).trans
-      (Submodule.map_eq_span_basis f4ShortRootRepresentedRange
-        f4ShortRootRepresentedRangeBasis f4ShortRootEndEquivCotangentDual.toLinearMap).symm)
+      (Submodule.map_eq_span_of_span_eq_top f4ShortRootRepresentedRange
+        f4ShortRootRepresentedRangeBasis.span_eq
+        f4ShortRootEndEquivCotangentDual.toLinearMap).symm)
 
 private theorem f4ShortRootRepresentedIdealAmbient_eq_map :
     f4ShortRootRepresentedIdealAmbient =
       f4ShortRootRepresentedIdeal.map f4ShortRootRepresentedRange.subtype := by
-  exact (Submodule.map_eq_span_basis f4ShortRootRepresentedIdeal
-    f4ShortRootRepresentedIdealBasis f4ShortRootRepresentedRange.subtype).symm
+  exact (Submodule.map_eq_span_of_span_eq_top f4ShortRootRepresentedIdeal
+    f4ShortRootRepresentedIdealBasis.span_eq f4ShortRootRepresentedRange.subtype).symm
 
 /-- The represented-ideal step, regarded as a subcomodule of the represented-range step. -/
 noncomputable def f4ShortRootCarrierIdealInRange :
@@ -254,7 +255,7 @@ noncomputable def f4ShortRootCarrierMiddleEquivQuotient :
     f4ShortRootCarrierCotangentIdeal.toSubmodule
     f4ShortRootCarrierCotangentRange.toSubmodule
     (A.map e.toLinearMap) (B.map e.toLinearMap) hA hB
-  let eMap := TauCeti.mapSubquotientEquivOfInjective e.toLinearMap e.injective A B
+  let eMap := LinearMap.mapSubquotientEquivOfInjective e.toLinearMap e.injective A B
   let eTrace := Submodule.quotEquivOfEq (R := 𝔽₂) (M := ↥B)
     f4ShortRootRepresentedIdeal (Submodule.comap B.subtype A) htrace.symm
   let eCarrier := f4ShortRootCarrierRangeEquivToSubmodule
@@ -351,12 +352,10 @@ class. -/
     (X : f4ModularChevalleyLieAlgebra) :
     f4ShortRootCarrierQuotientProjection (f4ShortRootCarrierRepresentedMap X) =
       Submodule.Quotient.mk X := by
-  rw [f4ShortRootCarrierQuotientProjection]
-  -- Unfold the projection into transport followed by the quotient map.
-  change f4ShortRootCarrierMiddleEquivQuotient
-    (Submodule.Quotient.mk (f4ShortRootCarrierRepresentedMap X)) = _
-  rw [← f4ShortRootCarrierMiddleEquivQuotient_symm_mk X,
-    LinearEquiv.apply_symm_apply]
+  simp only [f4ShortRootCarrierQuotientProjection, Comodule.Hom.comp_apply,
+    Comodule.transportToHom_apply, Subcomodule.mkQ_apply]
+  simpa only [f4ShortRootCarrierMiddleEquivQuotient_symm_mk] using
+    f4ShortRootCarrierMiddleEquivQuotient.apply_symm_apply (Submodule.Quotient.mk X)
 
 /-- The represented adjoint map followed by the carrier quotient projection remains the ordinary
 quotient map after arbitrary scalar extension. -/

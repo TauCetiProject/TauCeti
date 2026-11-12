@@ -23,7 +23,9 @@ On the chart of a cone `σ` the glued map is the chart map into the chart of the
 `TauCeti.Toric.FanHom.leastCone`, or equivalently into the chart of any target cone containing the
 image of `σ`. The construction is functorial: the identity morphism of a fan induces the identity,
 and a composite of fan morphisms induces the composite map. The inclusion of an open subfan
-induces the open-subfan map `TauCeti.Toric.Fan.subfanAnalyticMap`.
+induces the open-subfan map `TauCeti.Toric.Fan.subfanAnalyticMap`, so the open-subfan maps inherit
+this functoriality: on all the cones of a fan the open-subfan map is the identity, and for nested
+open subfans the open-subfan maps compose.
 
 ## Main declarations
 
@@ -36,6 +38,8 @@ induces the open-subfan map `TauCeti.Toric.Fan.subfanAnalyticMap`.
   functoriality.
 * `TauCeti.Toric.FanHom.analyticMap_subfanInclusion`: the inclusion of an open subfan induces the
   open-subfan map.
+* `TauCeti.Toric.Fan.subfanAnalyticMap_self` and `TauCeti.Toric.Fan.subfanAnalyticMap_comp`: the
+  functoriality of the open-subfan maps for nested open subfans.
 
 ## References
 
@@ -266,3 +270,53 @@ theorem analyticMap_subfanInclusion (S : Set (PointedCone ℝ V)) (hS : S ⊆ Φ
   simp
 
 end TauCeti.Toric.FanHom
+
+/-! ### Functoriality of open-subfan maps -/
+
+namespace TauCeti.Toric.Fan
+
+universe u
+
+variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
+  {i : N →+ V} (Φ : Fan i) (hΦ : Φ.IsRegular) (S : Set (PointedCone ℝ V)) (hS : S ⊆ Φ.cones)
+  (hface : ∀ ⦃σ τ⦄, σ ∈ S → τ.IsFaceOf σ → τ ∈ S)
+
+/-- The open-subfan map of a fan on all of its cones is the identity of its analytic
+realization. -/
+@[simp]
+theorem subfanAnalyticMap_self :
+    Φ.subfanAnalyticMap hΦ Φ.cones subset_rfl Φ.mem_of_isFaceOf =
+      𝟙 (Φ.analyticRealization hΦ) := by
+  rw [← FanHom.analyticMap_subfanInclusion, subfanInclusion_self]
+  exact FanHom.analyticMap_id hΦ
+
+/-- The open-subfan maps are functorial for nested open subfans: mapping the realization of a
+subfan `T` of the subfan `Φ.subfan S hS hface` into the realization of `Φ.subfan S hS hface`, and
+then into the realization of `Φ`, is the open-subfan map of `T` as a subfan of `Φ`. -/
+@[reassoc]
+theorem subfanAnalyticMap_comp (T : Set (PointedCone ℝ V))
+    (hT : T ⊆ (Φ.subfan S hS hface).cones) (hfaceT : ∀ ⦃σ τ⦄, σ ∈ T → τ.IsFaceOf σ → τ ∈ T) :
+    (Φ.subfan S hS hface).subfanAnalyticMap (hΦ.subfan S hS hface) T hT hfaceT ≫
+        Φ.subfanAnalyticMap hΦ S hS hface =
+      Φ.subfanAnalyticMap hΦ T ((hT.trans (Φ.subfan_cones S hS hface).subset).trans hS)
+        hfaceT := by
+  rw [← FanHom.analyticMap_subfanInclusion, ← FanHom.analyticMap_subfanInclusion,
+    ← FanHom.analyticMap_subfanInclusion, ← FanHom.analyticMap_comp,
+    subfanInclusion_comp_subfanInclusion]
+  -- The two sides differ only in the source fan, the subfan of a subfan on the left and the
+  -- subfan of `Φ` on the right, which agree by definition (`Fan.subfan_subfan`).
+  rfl
+
+/-- On points, the open-subfan maps are functorial for nested open subfans. -/
+@[simp]
+theorem subfanAnalyticMap_subfanAnalyticMap (T : Set (PointedCone ℝ V))
+    (hT : T ⊆ (Φ.subfan S hS hface).cones) (hfaceT : ∀ ⦃σ τ⦄, σ ∈ T → τ.IsFaceOf σ → τ ∈ T)
+    (x : ((Φ.subfan S hS hface).subfan T hT hfaceT).analyticRealization
+      ((hΦ.subfan S hS hface).subfan T hT hfaceT)) :
+    Φ.subfanAnalyticMap hΦ S hS hface
+        ((Φ.subfan S hS hface).subfanAnalyticMap (hΦ.subfan S hS hface) T hT hfaceT x) =
+      Φ.subfanAnalyticMap hΦ T ((hT.trans (Φ.subfan_cones S hS hface).subset).trans hS)
+        hfaceT x :=
+  ConcreteCategory.congr_hom (Φ.subfanAnalyticMap_comp hΦ S hS hface T hT hfaceT) x
+
+end TauCeti.Toric.Fan

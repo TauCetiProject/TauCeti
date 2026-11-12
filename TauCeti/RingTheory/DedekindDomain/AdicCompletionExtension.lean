@@ -72,8 +72,7 @@ Dedekind domain and one of its completions.
 ## Provenance
 
 Adapted, with the authors' proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/AdicCompletionExtension.lean`.
 
 That file in turn credits the FLT project
@@ -377,8 +376,8 @@ lemma valued_adicCompletionExtension (x : v.adicCompletion K) :
     Valued.v (adicCompletionExtension K L v w x) =
       Valued.v x ^ v.asIdeal.ramificationIdx' w.asIdeal := by
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
-  rw [← adicCompletion.valued_toCompletion L w (adicCompletionExtension K L v w x),
-    toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion K v x]
+  rw [← adicCompletion.valued_toCompletion_apply L w (adicCompletionExtension K L v w x),
+    toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion_apply K v x]
   have hsurjK : Function.Surjective (⇑(Valued.v : Valuation (v.valuation K).Completion ℤᵐ⁰)) :=
     Valued.valuedCompletion_surjective_iff.mpr <| .of_comp (v.valuation_surjective K)
   have hsurjL : Function.Surjective (⇑(Valued.v : Valuation (w.valuation L).Completion ℤᵐ⁰)) :=

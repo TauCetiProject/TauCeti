@@ -20,7 +20,7 @@ groups: a group homomorphism `φ : G →* G'` induces a homomorphism of group fu
 `χ ↦ χ ∘ φ` of characters.
 
 Concretely `φ` induces, by `MonoidAlgebra.mapDomainBialgHom`, the bialgebra map
-`R[G] →ₐc[R] R[G']`, which `TauCeti.AlgHom.mapDomain` turns into a monoid homomorphism
+`R[G] →ₐc[R] R[G']`, which `BialgHom.mapDomain` turns into a monoid homomorphism
 `WithConv (R[G'] →ₐ[R] A) →* WithConv (R[G] →ₐ[R] A)` of convolution groups. The headline
 calculation `pointsMulEquiv_pointsMap` says this monoid homomorphism is intertwined by
 `pointsMulEquiv` with precomposition by `φ` on character groups, so the contravariant functor
@@ -44,7 +44,7 @@ on-points half of the anti-equivalence `M ↦ D(M)`.
 
 The group-algebra bialgebra functoriality `MonoidAlgebra.mapDomainBialgHom` is Mathlib's
 (`Mathlib.RingTheory.Bialgebra.MonoidAlgebra`). The convolution-group functoriality in the
-coordinate Hopf algebra is Tau Ceti's `TauCeti.AlgHom.mapDomain`
+coordinate Hopf algebra is Tau Ceti's `BialgHom.mapDomain`
 (`TauCeti.Algebra.AlgebraicGroup.Hopf.Map`).
 -/
 
@@ -67,7 +67,7 @@ variable [CommGroup G] [CommGroup G'] [CommGroup G'']
 homomorphism of convolution groups of points `D(G')(A) → D(G)(A)`. -/
 @[expose] noncomputable def pointsMap (φ : G →* G') :
     WithConv (MonoidAlgebra R G' →ₐ[R] A) →* WithConv (MonoidAlgebra R G →ₐ[R] A) :=
-  AlgHom.mapDomain (MonoidAlgebra.mapDomainBialgHom R φ)
+  BialgHom.mapDomain (MonoidAlgebra.mapDomainBialgHom R φ)
 
 /-- `pointsMap φ` acts by pre-composition with the induced bialgebra map. -/
 @[simp]
@@ -75,7 +75,7 @@ theorem pointsMap_apply (φ : G →* G') (f : WithConv (MonoidAlgebra R G' →�
     pointsMap (A := A) φ f =
       toConv (f.ofConv.comp
         (MonoidAlgebra.mapDomainBialgHom R φ : MonoidAlgebra R G →ₐ[R] MonoidAlgebra R G')) :=
-  rfl
+  BialgHom.mapDomain_apply _ _
 
 /-- Pre-composition by the identity homomorphism is the identity on points. -/
 @[simp]
@@ -83,7 +83,7 @@ theorem pointsMap_id :
     (pointsMap (MonoidHom.id G) :
         WithConv (MonoidAlgebra R G →ₐ[R] A) →* WithConv (MonoidAlgebra R G →ₐ[R] A)) =
       MonoidHom.id _ := by
-  rw [pointsMap, MonoidAlgebra.mapDomainBialgHom_id, AlgHom.mapDomain_id]
+  rw [pointsMap, MonoidAlgebra.mapDomainBialgHom_id, BialgHom.mapDomain_id]
 
 /-- **Contravariant functoriality.** Pre-composition by a composite homomorphism is the
 composite of the induced points homomorphisms, in the opposite order. -/
@@ -92,7 +92,7 @@ theorem pointsMap_comp (φ : G →* G') (ψ : G' →* G'') :
         WithConv (MonoidAlgebra R G'' →ₐ[R] A) →* WithConv (MonoidAlgebra R G →ₐ[R] A)) =
       (pointsMap (R := R) (A := A) φ).comp (pointsMap (R := R) (A := A) ψ) := by
   rw [pointsMap, pointsMap, pointsMap, MonoidAlgebra.mapDomainBialgHom_comp,
-    AlgHom.mapDomain_comp]
+    BialgHom.mapDomain_comp]
 
 /-- **Naturality in the value algebra.** The contravariant points homomorphism `pointsMap φ`
 commutes with the value-algebra functoriality `AlgHom.mapValue χ`: pre-composition by the
@@ -103,7 +103,7 @@ theorem mapValue_pointsMap {B : Type*} [CommSemiring B] [Algebra R B] (φ : G �
     (pointsMap (A := B) φ).comp (AlgHom.mapValue (H := MonoidAlgebra R G') χ) =
       (AlgHom.mapValue (H := MonoidAlgebra R G) χ).comp (pointsMap (A := A) φ) := by
   rw [pointsMap, pointsMap]
-  exact AlgHom.mapValue_mapDomain (MonoidAlgebra.mapDomainBialgHom R φ) χ
+  exact BialgHom.mapValue_mapDomain (MonoidAlgebra.mapDomainBialgHom R φ) χ
 
 /-- Reading off the character of a point pre-composed by the induced bialgebra map is the
 character of the original point pre-composed by `φ`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Resolvent.Analytic
-import TauCeti.Analysis.Normed.Operator.Resolvent.RestrictScalars
+import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.RestrictScalars
 import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 public import TauCeti.Analysis.Semigroups.PhaseShift
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
@@ -33,7 +33,7 @@ the complex picture. Moving parallel to the imaginary axis is the phase shift
 `t ↦ exp (-i b t) S(t)`, whose generator is `A - i b`
 (`TauCeti.Semigroups.StronglyContinuousSemigroup.complexGenerator_phaseShift`) and whose growth
 bound is that of `S`; moving from a real to a complex scalar field is
-`TauCeti.LinearPMap.mem_resolventSet_restrictScalars_iff`, which upgrades a bounded real-linear
+`LinearPMap.mem_resolventSet_restrictScalars_iff`, which upgrades a bounded real-linear
 inverse of `mu • I - A` to the complex resolvent. Holomorphy is then the abstract
 `LinearPMap.analyticOnNhd_resolvent` restricted to the half-plane.
 
@@ -82,7 +82,7 @@ theorem mem_resolventSet_complexGenerator (S : StronglyContinuousSemigroup X)
     rw [(S.phaseShift hS lambda.im).complexGenerator_restrictScalars hT]
     exact (S.phaseShift hS lambda.im).mem_resolventSet_generator
       (hb.phaseShift hS lambda.im) hlambda
-  have hc := TauCeti.LinearPMap.mem_resolventSet_restrictScalars_iff.mp hreal
+  have hc := LinearPMap.mem_resolventSet_restrictScalars_iff.mp hreal
   rw [Complex.coe_algebraMap, complexGenerator_phaseShift] at hc
   have hshift := (TauCeti.LinearPMap.mem_resolventSet_subScalar_iff
     (A := S.complexGenerator hS) (omega := (lambda.im : ℂ) * Complex.I)
@@ -115,7 +115,7 @@ theorem restrictScalars_resolvent_complexGenerator (S : StronglyContinuousSemigr
     rw [complexGenerator_phaseShift]
     rw [TauCeti.LinearPMap.resolvent_subScalar (A := S.complexGenerator hS)
       (omega := (lambda.im : ℂ) * Complex.I) (lambda := (lambda.re : ℂ)) hmem, Complex.re_add_im]
-  have hbridge := TauCeti.LinearPMap.restrictScalars_resolvent
+  have hbridge := LinearPMap.restrictScalars_resolvent
     (A := (S.phaseShift hS lambda.im).complexGenerator hT) (mu := lambda.re)
     (by rwa [hrestrict])
   rw [Complex.coe_algebraMap, hshift, hrestrict] at hbridge

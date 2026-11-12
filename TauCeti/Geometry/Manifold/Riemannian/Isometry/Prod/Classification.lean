@@ -15,7 +15,8 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Separation
 An isometry of a product of connected Einstein manifolds preserves each factor if their
 Ricci constants differ. The Ricci tensor identifies the two tangent summands; zero mixed
 derivatives then make the coordinate maps independent of the other variable. Hence the full
-isometry group is the product of the two factor isometry groups.
+isometry group is the product of the two factor isometry groups. The factors may have
+boundary or corners.
 
 This criterion applies to the product geometries `S² × ℝ` and `ℍ² × ℝ`, whose surface and
 line factors have distinct Ricci constants.
@@ -41,27 +42,34 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
-  [I.Boundaryless] [PreconnectedSpace M] [Nonempty M]
+  [PreconnectedSpace M] [Nonempty M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N] [T2Space N]
-  [J.Boundaryless] [PreconnectedSpace N] [Nonempty N]
+  [PreconnectedSpace N] [Nonempty N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
   {a b : ℝ}
 
+omit [Nonempty M] [Nonempty N] in
 /-- Distinct constant Ricci eigenvalues force every product isometry to preserve the two
 factors. The factor maps are Riemannian isometries, with no separation hypothesis on the
-original map. -/
+original map. If a factor is empty, so is the product, and the statement holds trivially. -/
 theorem prodCongrHom_surjective_of_ricciTensor_eq_smul_inner
     (hM : ∀ x u v, (leviCivitaConnection I M).ricciTensor x u v = a * inner ℝ u v)
     (hN : ∀ y u v, (leviCivitaConnection J N).ricciTensor y u v = b * inner ℝ u v)
     (hab : a ≠ b) : Function.Surjective (prodCongrHom I M J N) := by
   intro Q
-  obtain ⟨x₀⟩ := ‹Nonempty M›
-  obtain ⟨y₀⟩ := ‹Nonempty N›
+  rcases isEmpty_or_nonempty M with hMe | hMn
+  · exact ⟨1, RiemannianIsometry.ext fun p ↦ isEmptyElim p.1⟩
+  rcases isEmpty_or_nonempty N with hNe | hNn
+  · exact ⟨1, RiemannianIsometry.ext fun p ↦ isEmptyElim p.2⟩
+  have := hMn
+  have := hNn
+  obtain ⟨x₀⟩ := hMn
+  obtain ⟨y₀⟩ := hNn
   have hsep := (Q.mdifferentiable.eq_prodMap_iff_mfderiv_mixed_eq_zero x₀ y₀).mpr
     ⟨fun p v => (Q.fst_mfderiv_eq_zero_iff_of_ricciTensor_eq_smul_inner p
         (hM p.1) (hN p.2) (hM (Q p).1) (hN (Q p).2) hab (0, v)).mpr rfl,

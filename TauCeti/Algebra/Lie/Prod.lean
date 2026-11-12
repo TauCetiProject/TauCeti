@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Algebra.Lie.Prod
+public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Prod
 
@@ -31,6 +32,10 @@ product.
 * `TauCeti.LieModuleHom.fst` and `TauCeti.LieModuleHom.snd`: the two projections.
 * `TauCeti.LieModuleHom.inl` and `TauCeti.LieModuleHom.inr`: the two inclusions.
 * `TauCeti.LieModuleHom.prod`: the pairing of two morphisms with the same domain.
+* `TauCeti.LieModuleHom.prodEquiv`: pairing is a linear equivalence onto the morphisms into the
+  product.
+* `LieSubmodule.prodFst` and `LieSubmodule.prodSnd`: the projections of a product Lie submodule.
+  A nonzero coordinate guarantees surjectivity onto an irreducible factor.
 * `TauCeti.LieModuleEquiv.prodComm`: swapping the factors is an equivalence.
 * `TauCeti.lie_prod_apply`: the componentwise bracket on a product.
 * `LieHom.prodRepresentation`: the product of two explicit Lie representations.
@@ -117,9 +122,37 @@ theorem snd_prod (f : P →ₗ⁅R,L⁆ M) (g : P →ₗ⁅R,L⁆ N) :
   ext p
   simp
 
-end LieModuleHom
+/-- A morphism into a product of Lie modules is the pairing of its two components. -/
+@[simp]
+theorem prod_fst_comp_snd_comp (f : P →ₗ⁅R,L⁆ M × N) :
+    prod ((fst R L M N).comp f) ((snd R L M N).comp f) = f :=
+  LieModuleHom.ext fun _ ↦ by simp
 
 variable [LieAlgebra R L] [LieModule R L M] [LieModule R L N]
+
+variable (R L M N P) in
+/-- **The universal property of the binary product of Lie modules**: pairing is a linear
+equivalence between pairs of morphisms `P → M`, `P → N` and morphisms `P → M × N`. Its inverse
+takes the two components. -/
+def prodEquiv : ((P →ₗ⁅R,L⁆ M) × (P →ₗ⁅R,L⁆ N)) ≃ₗ[R] (P →ₗ⁅R,L⁆ M × N) where
+  toFun g := prod g.1 g.2
+  map_add' _ _ := LieModuleHom.ext fun _ ↦ by simp
+  map_smul' _ _ := LieModuleHom.ext fun _ ↦ by simp
+  invFun f := ((fst R L M N).comp f, (snd R L M N).comp f)
+  left_inv g := by simp
+  right_inv f := prod_fst_comp_snd_comp f
+
+@[simp]
+theorem prodEquiv_apply (g : (P →ₗ⁅R,L⁆ M) × (P →ₗ⁅R,L⁆ N)) :
+    prodEquiv R L M N P g = prod g.1 g.2 :=
+  (rfl)
+
+@[simp]
+theorem prodEquiv_symm_apply (f : P →ₗ⁅R,L⁆ M × N) :
+    (prodEquiv R L M N P).symm f = ((fst R L M N).comp f, (snd R L M N).comp f) :=
+  (rfl)
+
+end LieModuleHom
 
 namespace LieModuleEquiv
 
@@ -128,12 +161,10 @@ def prodComm : (M × N) ≃ₗ⁅R,L⁆ (N × M) where
   __ := LinearEquiv.prodComm R M N
   map_lie' := by simp [lie_prod_apply]
 
-omit [LieAlgebra R L] [LieModule R L M] [LieModule R L N] in
 @[simp]
 theorem prodComm_apply (p : M × N) : prodComm (R := R) (L := L) p = p.swap :=
   LinearEquiv.prodComm_apply R M N p
 
-omit [LieAlgebra R L] [LieModule R L M] [LieModule R L N] in
 @[simp]
 theorem coe_prodComm_apply (p : M × N) :
     ((prodComm (R := R) (L := L) : (M × N) ≃ₗ⁅R,L⁆ (N × M)) :
@@ -142,7 +173,119 @@ theorem coe_prodComm_apply (p : M × N) :
 
 end LieModuleEquiv
 
+/-- Swapping the factors of a product of Lie modules sends the Lie submodule spanned by `(v, w)` to
+the Lie submodule spanned by `(w, v)`. -/
+@[simp]
+theorem map_lieSpan_diagonal_prodComm {v : M} {w : N} :
+    (LieSubmodule.lieSpan R L {((v, w) : M × N)}).map
+        ((LieModuleEquiv.prodComm (R := R) (L := L) : (M × N) ≃ₗ⁅R,L⁆ (N × M)) :
+          M × N →ₗ⁅R,L⁆ N × M) =
+      LieSubmodule.lieSpan R L {((w, v) : N × M)} := by
+  apply le_antisymm
+  · rw [LieSubmodule.map_le_iff_le_comap, LieSubmodule.lieSpan_le]
+    rintro _ rfl
+    exact LieSubmodule.subset_lieSpan (by simp)
+  · rw [LieSubmodule.lieSpan_le]
+    rintro _ rfl
+    exact (LieSubmodule.mem_map _).mpr
+      ⟨(v, w), LieSubmodule.subset_lieSpan rfl, by simp⟩
+
+/-- Swapping the components of a pair in the Lie submodule spanned by `(v, w)` gives a pair in the
+Lie submodule spanned by `(w, v)`. -/
+theorem prodComm_mem_lieSpan_diagonal {v : M} {w : N}
+    {p : M × N} (hp : p ∈ LieSubmodule.lieSpan R L {((v, w) : M × N)}) :
+    p.swap ∈ LieSubmodule.lieSpan R L {((w, v) : N × M)} := by
+  have hmap := LieSubmodule.mem_map_of_mem
+    (f := ((LieModuleEquiv.prodComm (R := R) (L := L) : (M × N) ≃ₗ⁅R,L⁆ (N × M)) :
+      M × N →ₗ⁅R,L⁆ N × M)) hp
+  rw [map_lieSpan_diagonal_prodComm] at hmap
+  simpa using hmap
+
+/-- A Lie submodule of a product that contains both factors whole is the whole product. -/
+theorem eq_top_of_comap_inl_eq_top_of_comap_inr_eq_top {S : LieSubmodule R L (M × N)}
+    (hl : S.comap (LieModuleHom.inl R L M N) = ⊤)
+    (hr : S.comap (LieModuleHom.inr R L M N) = ⊤) :
+    S = ⊤ := by
+  refine eq_top_iff.mpr fun p _ ↦ ?_
+  have hp1 : p.1 ∈ S.comap (LieModuleHom.inl R L M N) := by
+    rw [hl]; exact LieSubmodule.mem_top _
+  have hp2 : p.2 ∈ S.comap (LieModuleHom.inr R L M N) := by
+    rw [hr]; exact LieSubmodule.mem_top _
+  have h1 : ((p.1, 0) : M × N) ∈ S := by
+    simpa only [LieSubmodule.mem_comap, LieModuleHom.inl_apply] using hp1
+  have h2 : ((0, p.2) : M × N) ∈ S := by
+    simpa only [LieSubmodule.mem_comap, LieModuleHom.inr_apply] using hp2
+  have hsum : ((p.1, 0) : M × N) + (0, p.2) = p := by
+    rw [Prod.mk_add_mk, add_zero, zero_add]
+  exact hsum ▸ add_mem h1 h2
+
+/-- If `v ≠ 0` and the Lie submodule spanned by `(v, w)` contains `(0, w)`, then it contains
+`(v, 0)`, hence — by irreducibility of `M` — the whole first factor. -/
+theorem comap_lieSpan_diagonal_inl_eq_top_of_mem [LieModule.IsIrreducible R L M]
+    {v : M} {w : N} (hv : v ≠ 0)
+    (hw : ((0, w) : M × N) ∈ LieSubmodule.lieSpan R L {((v, w) : M × N)}) :
+    (LieSubmodule.lieSpan R L {((v, w) : M × N)}).comap (LieModuleHom.inl R L M N) = ⊤ := by
+  have hvw : ((v, w) : M × N) ∈ LieSubmodule.lieSpan R L {((v, w) : M × N)} :=
+    LieSubmodule.subset_lieSpan rfl
+  have hv' : ((v, 0) : M × N) ∈ LieSubmodule.lieSpan R L {((v, w) : M × N)} := by
+    have hsub := sub_mem hvw hw
+    rwa [Prod.mk_sub_mk, sub_zero, sub_self] at hsub
+  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ hv ?_
+  have hmem : v ∈
+      (LieSubmodule.lieSpan R L {((v, w) : M × N)}).comap (LieModuleHom.inl R L M N) := by
+    simpa only [LieSubmodule.mem_comap, LieModuleHom.inl_apply] using hv'
+  rw [hbot] at hmem
+  simpa using hmem
+
 end TauCeti
+
+namespace LieSubmodule
+
+universe u v w w₁
+
+variable {R : Type u} {L : Type v} {M : Type w} {N : Type w₁}
+variable [CommRing R] [LieRing L] [AddCommGroup M] [Module R M] [LieRingModule L M]
+  [AddCommGroup N] [Module R N] [LieRingModule L N]
+
+/-- The first projection of a Lie submodule of a product. -/
+def prodFst (S : LieSubmodule R L (M × N)) : S →ₗ⁅R,L⁆ M :=
+  (TauCeti.LieModuleHom.fst R L M N).comp S.incl
+
+/-- The second projection of a Lie submodule of a product. -/
+def prodSnd (S : LieSubmodule R L (M × N)) : S →ₗ⁅R,L⁆ N :=
+  (TauCeti.LieModuleHom.snd R L M N).comp S.incl
+
+@[simp]
+theorem prodFst_apply (S : LieSubmodule R L (M × N)) (p : S) :
+    S.prodFst p = (p : M × N).1 := by
+  simp only [prodFst, LieModuleHom.comp_apply, incl_apply, TauCeti.LieModuleHom.fst_apply]
+
+@[simp]
+theorem prodSnd_apply (S : LieSubmodule R L (M × N)) (p : S) :
+    S.prodSnd p = (p : M × N).2 := by
+  simp only [prodSnd, LieModuleHom.comp_apply, incl_apply, TauCeti.LieModuleHom.snd_apply]
+
+/-- A Lie submodule of a product projects onto an irreducible first factor if it contains a pair
+with nonzero first coordinate. -/
+theorem prodFst_surjective_of_mem_of_ne_zero [LieModule.IsIrreducible R L M]
+    (S : LieSubmodule R L (M × N)) {m : M} {n : N} (hmn : (m, n) ∈ S) (hm : m ≠ 0) :
+    Function.Surjective S.prodFst := by
+  refine (LieModuleHom.range_eq_top _).mp ?_
+  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot => hm ?_
+  have hmem : m ∈ LieModuleHom.range S.prodFst := ⟨⟨(m, n), hmn⟩, by simp⟩
+  simpa only [hbot, mem_bot] using hmem
+
+/-- A Lie submodule of a product projects onto an irreducible second factor if it contains a pair
+with nonzero second coordinate. -/
+theorem prodSnd_surjective_of_mem_of_ne_zero [LieModule.IsIrreducible R L N]
+    (S : LieSubmodule R L (M × N)) {m : M} {n : N} (hmn : (m, n) ∈ S) (hn : n ≠ 0) :
+    Function.Surjective S.prodSnd := by
+  refine (LieModuleHom.range_eq_top _).mp ?_
+  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot => hn ?_
+  have hmem : n ∈ LieModuleHom.range S.prodSnd := ⟨⟨(m, n), hmn⟩, by simp⟩
+  simpa only [hbot, mem_bot] using hmem
+
+end LieSubmodule
 
 namespace LieHom
 
@@ -207,7 +350,7 @@ def piRepresentation (rho : (j : I) → L →ₗ⁅R⁆ Module.End R (V j)) :
     -- composition so that the corresponding coordinate representation law applies.
     change rho j ⁅x, y⁆ (m j) =
       rho j x (rho j y (m j)) - rho j y (rho j x (m j))
-    simpa only [LieRing.of_associative_ring_bracket, Module.End.mul_apply,
+    simpa only [LieRing.of_associative_ring_bracket, mul_apply_eq_comp,
       LinearMap.sub_apply] using LinearMap.congr_fun (map_lie (rho j) x y) (m j)
 
 /-- A product representation acts coordinatewise. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
+public import TauCeti.Topology.Homotopy.Cube.Concatenation
 public import TauCeti.Topology.Homotopy.Homotopic.With
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homotopy
 
@@ -18,7 +19,8 @@ when `N` is nonempty, that is in degrees at least two, and a commutative group w
 nontrivial, that is in degrees at least three. It then proves that the induced maps, the boundary
 map `π_{n+1}(X, A, a₀) → π_n(A, a₀)` and the map `π_{n+1}(X, a₀) → π_{n+1}(X, A, a₀)` of the long
 exact sequence are homomorphisms. For `N` empty, `π_1(X, A, a₀)` remains a pointed set, and
-`π_2(X, A, a₀)` receives no commutative structure.
+`π_2(X, A, a₀)` receives no commutative structure; it is commutative when `π_1(A, a₀)` is trivial
+(`TauCeti.RelHomotopyGroup.mul_comm_of_subsingleton`).
 
 The group structure is transported from Mathlib's `HomotopyGroup`. Let `P` be the space
 `TauCeti.BasedTopPair.pathSpace X` of paths in `X` from a point of `A` to `a₀`, with the
@@ -41,7 +43,9 @@ distinguished direction, and in the order of Mathlib's `HomotopyGroup.mul_spec`.
 * `TauCeti.BasedTopPair.pathSpace`: the space of paths from `A` to `a₀`.
 * `TauCeti.RelGenLoop.pathSpaceHomeo`: relative cubes are generalized loops in the path space.
 * `TauCeti.RelGenLoop.transAt`, `TauCeti.RelGenLoop.symmAt`: concatenation and reversal of
-  relative cubes along a direction of `I^N`.
+  relative cubes along a direction of `I^N`, which are `TauCeti.cubeTransAt` and
+  `TauCeti.cubeSymmAt` on the underlying maps (`TauCeti.RelGenLoop.coe_transAt`,
+  `TauCeti.RelGenLoop.coe_symmAt`).
 * `TauCeti.RelHomotopyGroup.pathSpaceEquiv`, `TauCeti.RelHomotopyGroup.pathSpaceMulEquiv`:
   `π_{n+1}(X, A, a₀) ≅ π_n(P, c)`.
 * `TauCeti.RelHomotopyGroup.group`, `TauCeti.RelHomotopyGroup.commGroup`: the group structures,
@@ -50,6 +54,9 @@ distinguished direction, and in the order of Mathlib's `HomotopyGroup.mul_spec`.
 * `TauCeti.RelHomotopyGroup.mapHom`, `TauCeti.RelHomotopyGroup.boundaryHom`,
   `TauCeti.RelHomotopyGroup.ofHomotopyGroupHom`: the maps of the long exact sequence as
   homomorphisms.
+* `TauCeti.RelHomotopyGroup.mul_comm_of_subsingleton`: `π_{n+1}(X, A, a₀)` is commutative when
+  `π_n(A, a₀)` is trivial; in particular `π_2(X, A, a₀)` is commutative when `A` is simply
+  connected.
 
 ## References
 
@@ -188,6 +195,17 @@ theorem symmAt_apply (i : N) (p : RelGenLoop N X) (s : I) (t : I^N) :
   rw [symmAt, pathSpaceHomeo_symm_apply, GenLoop.symmAt, GenLoop.coe_copy]
   exact pathSpaceHomeo_apply_apply _ _ _
 
+/-- The concatenation of two relative cubes is their concatenation as maps out of the cube. -/
+theorem coe_transAt (i : N) (p q : RelGenLoop N X) :
+    (transAt i p q : C(I × (I^N), X.pair.fst)) = cubeTransAt i p q fun s t ↦
+      (apply_update p s t i (.inr rfl)).trans (apply_update q s t i (.inl rfl)).symm :=
+  ContinuousMap.ext fun w ↦ (transAt_apply i p q w.1 w.2).trans (cubeTransAt_apply ..).symm
+
+/-- The reversal of a relative cube is its reversal as a map out of the cube. -/
+theorem coe_symmAt (i : N) (p : RelGenLoop N X) :
+    (symmAt i p : C(I × (I^N), X.pair.fst)) = cubeSymmAt i p :=
+  ContinuousMap.ext fun w ↦ (symmAt_apply i p w.1 w.2).trans (cubeSymmAt_apply ..).symm
+
 @[simp]
 theorem pathSpaceHomeo_transAt (i : N) (p q : RelGenLoop N X) :
     pathSpaceHomeo (transAt i p q) =
@@ -220,12 +238,8 @@ theorem ofGenLoop_transAt (i : N) (γ δ : Ω^ (Option N) X.pair.fst (X.pair.map
   ext ⟨s, t⟩
   rw [ofGenLoop_apply, transAt_apply, ofGenLoop_apply, ofGenLoop_apply, GenLoop.transAt,
     GenLoop.coe_copy]
-  have hupd (v : I) :
-      Function.update ((piOptionEquivProdHomeomorph fun _ => I).symm (s, t)) (some i) v =
-        (piOptionEquivProdHomeomorph fun _ => I).symm (s, Function.update t i v) := by
-    funext o
-    cases o <;> simp [Function.update_apply]
-  simp only [piOptionEquivProdHomeomorph_symm_apply_some, hupd]
+  simp only [piOptionEquivProdHomeomorph_symm_apply_some,
+    update_piOptionEquivProdHomeomorph_symm_some]
 
 end RelGenLoop
 
@@ -410,6 +424,17 @@ theorem ofHomotopyGroup_mul [Nonempty N]
     (a b : HomotopyGroup (Option N) X.pair.fst (X.pair.map X.basepoint)) :
     (ofHomotopyGroup (a * b) : RelHomotopyGroup N X) = ofHomotopyGroup a * ofHomotopyGroup b :=
   ofHomotopyGroupHom.map_mul a b
+
+/-- **`π_{n+1}(X, A, a₀)` is commutative when `π_n(A, a₀)` is trivial**, for `n ≥ 1`. In degree
+two this says that `π_2(X, A, a₀)` is commutative when `π_1(A, a₀)` is trivial: every relative
+class then comes from the commutative group `π_2(X, a₀)`
+(`TauCeti.RelHomotopyGroup.surjective_ofHomotopyGroup_of_subsingleton`). -/
+theorem mul_comm_of_subsingleton [Nonempty N]
+    (hA : Subsingleton (HomotopyGroup N X.pair.snd X.basepoint)) (a b : RelHomotopyGroup N X) :
+    a * b = b * a := by
+  obtain ⟨a, rfl⟩ := surjective_ofHomotopyGroup_of_subsingleton hA a
+  obtain ⟨b, rfl⟩ := surjective_ofHomotopyGroup_of_subsingleton hA b
+  rw [← ofHomotopyGroup_mul, ← ofHomotopyGroup_mul, mul_comm]
 
 end RelHomotopyGroup
 

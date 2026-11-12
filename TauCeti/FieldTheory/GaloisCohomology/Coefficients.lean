@@ -14,11 +14,14 @@ public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.RingTheory.RootsOfUnity.Action
+public import TauCeti.RingTheory.RootsOfUnity.Basic
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 -- Non-public: the roots of unity of a separably closed field are used only inside a proof.
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+-- Non-public: the nonvanishing of `n` in `Kˢ` is used only inside a proof.
+import TauCeti.Algebra.Algebra.NatCast
 -- Non-public: lifting a unit of `Kˢ` lying in `K` to a unit of `K` is used only inside a proof.
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # The multiplicative coefficient modules of Galois cohomology
@@ -80,10 +83,13 @@ are strictly larger than `Kˣ`.
 * `TauCeti.unitsCoeff_continuousSMul`, `TauCeti.kummerCoeff_continuousSMul`: the coefficients are
   discrete modules, that is, the action is continuous.
 * `TauCeti.natCard_kummerCoeff`: `μₙ` has `n` elements, for `n` invertible in `K`.
-* `TauCeti.finrank_kummerCoeff`: `μ_ℓ` is a line over `𝔽_ℓ` for a prime `ℓ` invertible in `K`.
+* `TauCeti.finrank_kummerCoeff`: `μ_ℓ` is a line over `ℤ/ℓℤ` for `ℓ` invertible in `K`, so over
+  `𝔽_ℓ` for a prime `ℓ`.
 * `TauCeti.smul_kummerCoeff_eq_self`: the action on `μₙ` is trivial when `K` contains a primitive
   `n`th root of unity.
 * `TauCeti.mem_H0_unitsCoeff_iff`: a unit of `Kˢ` fixed by `G_K` comes from `Kˣ`.
+* `TauCeti.baseRootsOfUnityEquivInvariants`: the roots of unity of `K` identify with the
+  Galois invariants of the roots of unity of `Kˢ`.
 * `TauCeti.mem_H0_fixingSubgroup_unitsCoeff_iff`: a unit of `Kˢ` fixed by the subgroup fixing
   `σ(L)` comes from `Lˣ`.
 
@@ -170,16 +176,6 @@ theorem natCard_kummerCoeff (hn : IsUnit (n : K)) : Nat.card (KummerCoeff K n) =
   exact (Nat.card_congr Additive.toMul).trans
     (HasEnoughRootsOfUnity.natCard_rootsOfUnity (SeparableClosure K) n)
 
-variable {K} in
-/-- **`μ_ℓ` is a line over `𝔽_ℓ`** for a prime `ℓ` invertible in `K`. -/
-theorem finrank_kummerCoeff {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : IsUnit (ℓ : K)) :
-    Module.finrank (ZMod ℓ) (KummerCoeff K ℓ) = 1 := by
-  have hp : ℓ.Prime := Fact.out
-  apply Nat.pow_right_injective hp.two_le
-  dsimp only
-  conv_rhs => rw [pow_one, ← natCard_kummerCoeff hℓ]
-  rw [Module.natCard_eq_pow_finrank (K := ZMod ℓ), Nat.card_zmod]
-
 variable {K n} in
 /-- **`μₙ` is cyclic of order `n`** for `n` invertible in `K`: the `n`th roots of unity of `Kˢ`
 are additively isomorphic to `ℤ/nℤ`. The isomorphism is not canonical; it amounts to a choice of
@@ -188,6 +184,31 @@ def kummerCoeffAddEquivZMod (hn : IsUnit (n : K)) : KummerCoeff K n ≃+ ZMod n 
   have : NeZero (n : K) := ⟨hn.ne_zero⟩
   have : NeZero n := NeZero.of_neZero_natCast K
   addEquivOfAddCyclicCardEq <| by rw [Nat.card_zmod, natCard_kummerCoeff hn]
+
+variable {K n} in
+/-- **In characteristic `n` there are no nontrivial `n`-th roots of unity**: the Kummer coefficient
+module `μₙ(Kˢ)` is trivial for a prime `n` with `CharP K n`. -/
+theorem subsingleton_kummerCoeff_of_charP [Fact n.Prime] [CharP K n] :
+    Subsingleton (KummerCoeff K n) := by
+  have : CharP (SeparableClosure K) n :=
+    charP_of_injective_algebraMap (algebraMap K (SeparableClosure K)).injective n
+  have : ExpChar (SeparableClosure K) n := ExpChar.prime Fact.out
+  refine ⟨fun x y ↦ ?_⟩
+  have h1 (z : KummerCoeff K n) : z = 0 := by
+    have hz : (z.toMul : (SeparableClosure K)ˣ) ∈
+        rootsOfUnity (n ^ 1 * 1) (SeparableClosure K) := by simp
+    rw [mem_rootsOfUnity_prime_pow_mul_iff (SeparableClosure K) n 1 1, rootsOfUnity_one,
+      Subgroup.mem_bot] at hz
+    exact Additive.toMul.injective (Subtype.ext hz)
+  rw [h1 x, h1 y]
+
+variable {K} in
+/-- **`μ_ℓ` is a line over `ℤ/ℓℤ`** for `ℓ` invertible in `K`, in particular a line over `𝔽_ℓ` for
+a prime `ℓ`. -/
+theorem finrank_kummerCoeff {ℓ : ℕ} (hℓ : IsUnit (ℓ : K)) :
+    Module.finrank (ZMod ℓ) (KummerCoeff K ℓ) = 1 := by
+  rw [((kummerCoeffAddEquivZMod hℓ).toLinearEquiv (ZMod.map_smul _)).finrank_eq]
+  exact CommSemiring.finrank_self _
 
 /-! ### The two maps of the Kummer sequence -/
 
@@ -259,9 +280,7 @@ theorem kummerSequence_exact : Function.Exact (kummerCoeffIncl K n) (unitsCoeffP
 invertible in `K`: `Xⁿ - a` is then separable, and `Kˢ` is separably closed. -/
 theorem unitsCoeffPow_surjective (hn : IsUnit (n : K)) :
     Function.Surjective (unitsCoeffPow K n) := by
-  have hn0 : (n : SeparableClosure K) ≠ 0 := by
-    have h := (map_ne_zero (algebraMap K (SeparableClosure K))).2 hn.ne_zero
-    rwa [map_natCast] at h
+  have hn0 : (n : SeparableClosure K) ≠ 0 := hn.natCast_ne_zero_of_algebra
   have hn' : n ≠ 0 := by rintro rfl; simp at hn0
   have : NeZero (n : SeparableClosure K) := ⟨hn0⟩
   intro x
@@ -362,6 +381,58 @@ def baseUnitsEquivInvariants :
 theorem toMul_coe_baseUnitsEquivInvariants (a : Additive Kˣ) :
     ((baseUnitsEquivInvariants K a : UnitsCoeff K).toMul : (SeparableClosure K)ˣ) =
       Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a.toMul :=
+  (rfl)
+
+/-! ### The invariants of the roots of unity -/
+
+variable {K} (n : ℕ)
+
+/-- A root of unity of the separable closure is fixed by `G_K` exactly when it comes from
+an `n`-th root of unity of the base field. No invertibility hypothesis on `n` is needed. -/
+theorem mem_H0_kummerCoeff_iff {x : KummerCoeff K n} :
+    x ∈ H0 (AbsoluteGaloisGroup K) (KummerCoeff K n) ↔
+      ∃ a : rootsOfUnity n K,
+        restrictRootsOfUnity (algebraMap K (SeparableClosure K)) n a = x.toMul := by
+  constructor
+  · intro hx
+    have hu : kummerCoeffIncl K n x ∈ H0 (AbsoluteGaloisGroup K) (UnitsCoeff K) := by
+      rw [FixedPoints.mem_addSubgroup] at hx ⊢
+      intro σ
+      rw [← kummerCoeffIncl_equivariant, hx σ]
+    obtain ⟨a, ha⟩ := mem_H0_unitsCoeff_iff.mp hu
+    rw [toMul_kummerCoeffIncl] at ha
+    have hpow : a ^ n = 1 := Units.map_injective (algebraMap K (SeparableClosure K)).injective
+      (by rw [map_pow, map_one, ha]; exact (mem_rootsOfUnity n _).mp x.toMul.2)
+    exact ⟨⟨a, (mem_rootsOfUnity n a).mpr hpow⟩, Subtype.ext ha⟩
+  · rintro ⟨a, ha⟩
+    rw [FixedPoints.mem_addSubgroup]
+    intro σ
+    apply Additive.toMul.injective
+    apply Subtype.ext
+    simp only [Additive.toMul_smul, rootsOfUnity.coe_smul, ← ha]
+    exact smul_units_map_algebraMap σ a
+
+variable (K)
+
+/-- The roots of unity of `K` are canonically the Galois invariants of those of `Kˢ`. -/
+def baseRootsOfUnityEquivInvariants :
+    Additive (rootsOfUnity n K) ≃+ H0 (AbsoluteGaloisGroup K) (KummerCoeff K n) :=
+  AddEquiv.ofBijective
+    ((MonoidHom.toAdditive (restrictRootsOfUnity (algebraMap K (SeparableClosure K)) n)).codRestrict
+      _ fun a ↦ (mem_H0_kummerCoeff_iff n).mpr ⟨a.toMul, rfl⟩)
+    ⟨fun a b h ↦ Additive.toMul.injective <|
+        restrictRootsOfUnity_injective _ n (algebraMap K (SeparableClosure K)).injective
+          (congrArg (fun x : H0 (AbsoluteGaloisGroup K) (KummerCoeff K n) ↦
+            (x : KummerCoeff K n).toMul) h),
+      fun x ↦ by
+        obtain ⟨a, ha⟩ := (mem_H0_kummerCoeff_iff n).mp x.2
+        exact ⟨Additive.ofMul a, Subtype.ext (Additive.toMul.injective ha)⟩⟩
+
+/-- The invariant associated to a base-field root of unity is its usual image in `Kˢ`. -/
+@[simp]
+theorem coe_baseRootsOfUnityEquivInvariants (a : Additive (rootsOfUnity n K)) :
+    (baseRootsOfUnityEquivInvariants K n a : KummerCoeff K n) =
+      Additive.ofMul (restrictRootsOfUnity (algebraMap K (SeparableClosure K)) n a.toMul) :=
   (rfl)
 
 section Embedded

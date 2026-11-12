@@ -18,13 +18,13 @@ the support map of the valuation spectrum.
 
 ## Main definitions
 
-* `Valuation.trivialValuation 𝔭` : The trivial valuation attached to a prime
+* `Ideal.trivialValuation 𝔭` : The trivial valuation attached to a prime
   ideal `𝔭`, with values in any linearly ordered commutative monoid with zero `Γ₀`
   (the valuation-spectrum section specializes it to `WithZero (Multiplicative ℤ)`).
 
 ## Main results
 
-* `Valuation.trivialValuation_eq_zero_iff` : The trivial valuation vanishes exactly
+* `Ideal.trivialValuation_eq_zero_iff` : The trivial valuation vanishes exactly
   on `𝔭`.
 
 ## References
@@ -34,7 +34,7 @@ the support map of the valuation spectrum.
 
 public section
 
-namespace Valuation
+namespace Ideal
 
 variable {A : Type*} [CommRing A] {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ₀]
 
@@ -45,27 +45,22 @@ along the quotient map. -/
 noncomputable def trivialValuation (𝔭 : Ideal A) [𝔭.IsPrime] : Valuation A Γ₀ :=
   (1 : Valuation (A ⧸ 𝔭) Γ₀).comap (Ideal.Quotient.mk 𝔭)
 
-open scoped Classical in
 /-- The value of the trivial valuation, as an `if`. -/
-lemma trivialValuation_apply {𝔭 : Ideal A} [𝔭.IsPrime] (a : A) :
-    trivialValuation (Γ₀ := Γ₀) 𝔭 a = if a ∈ 𝔭 then 0 else 1 := by
-  rw [trivialValuation, Valuation.comap_apply, Valuation.one_apply_def]
-  simp only [Ideal.Quotient.eq_zero_iff_mem]
+lemma trivialValuation_apply {𝔭 : Ideal A} [𝔭.IsPrime] (a : A) [Decidable (a ∈ 𝔭)] :
+    𝔭.trivialValuation (Γ₀ := Γ₀) a = if a ∈ 𝔭 then 0 else 1 := by
+  simp only [trivialValuation, Valuation.comap_apply, Valuation.one_apply_def,
+    Quotient.eq_zero_iff_mem]
 
-open scoped Classical in
 /-- The trivial valuation vanishes exactly on the prime ideal. -/
 @[simp]
 lemma trivialValuation_eq_zero_iff [Nontrivial Γ₀] {𝔭 : Ideal A} [𝔭.IsPrime] {a : A} :
-    trivialValuation (Γ₀ := Γ₀) 𝔭 a = 0 ↔ a ∈ 𝔭 := by
-  rw [trivialValuation, Valuation.comap_apply, Valuation.one_apply_eq_zero_iff,
-    Ideal.Quotient.eq_zero_iff_mem]
+    𝔭.trivialValuation (Γ₀ := Γ₀) a = 0 ↔ a ∈ 𝔭 := by
+  simp [trivialValuation, Quotient.eq_zero_iff_mem]
 
-open scoped Classical in
 /-- The trivial valuation takes the value `1` exactly off the prime ideal. -/
 @[simp]
 lemma trivialValuation_eq_one_iff [Nontrivial Γ₀] {𝔭 : Ideal A} [𝔭.IsPrime] {a : A} :
-    trivialValuation (Γ₀ := Γ₀) 𝔭 a = 1 ↔ a ∉ 𝔭 := by
-  rw [trivialValuation_apply]
-  split <;> simp_all
+    𝔭.trivialValuation (Γ₀ := Γ₀) a = 1 ↔ a ∉ 𝔭 := by
+  simp [trivialValuation, Quotient.eq_zero_iff_mem]
 
-end Valuation
+end Ideal

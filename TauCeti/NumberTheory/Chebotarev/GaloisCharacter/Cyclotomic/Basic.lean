@@ -37,6 +37,9 @@ ray class character.
 
 * `NumberField.Chebotarev.cyclotomicArtin_idealClass_of_isArithFrobAt`: the Artin map sends the
   ray class of a prime `𝔭 ∤ m` to the Frobenius at `𝔭`.
+* `NumberField.Chebotarev.cyclotomicArtin_comp_classMap_eq`: if `F` is both the `m`-th and the
+  `n`-th cyclotomic extension of `K`, the Artin maps of levels `m` and `n` agree on the ray class
+  group of every common multiple of the two cyclotomic moduli.
 * `MonoidHom.galoisCharacterWeight_eq_onIdeals_cyclotomicArtin`: on the integral ideals prime to
   `m`, the ideal weight of a character `χ` of `Gal(F/K)` is the ray class character
   `χ ∘ cyclotomicArtin`.
@@ -80,6 +83,14 @@ theorem mem_cyclotomicModulus_support_iff {v : HeightOneSpectrum (𝓞 K)} :
     v ∈ (cyclotomicModulus K m).support ↔ (m : 𝓞 K) ∈ v.asIdeal := by
   rw [Modulus.mem_support_iff, cyclotomicModulus_finitePart, Ideal.dvd_span_singleton]
 
+/-- The cyclotomic modulus of level `m` divides that of every multiple `n` of `m`. -/
+theorem cyclotomicModulus_dvd_cyclotomicModulus {n : ℕ} [NeZero n] (h : m ∣ n) :
+    cyclotomicModulus K m ∣ cyclotomicModulus K n :=
+  Modulus.dvd_iff.mpr ⟨by
+    rw [cyclotomicModulus_finitePart, cyclotomicModulus_finitePart,
+      Ideal.span_singleton_dvd_span_singleton_iff_dvd]
+    exact Nat.cast_dvd_cast h, fun w _ ↦ mem_cyclotomicModulus_infinitePart K n w⟩
+
 /-- A height-one prime is prime to the cyclotomic modulus exactly when it does not divide `m`. -/
 theorem asIdeal_mem_integralIdealsPrimeTo_cyclotomicModulus_iff {v : HeightOneSpectrum (𝓞 K)} :
     v.asIdeal ∈ integralIdealsPrimeTo (cyclotomicModulus K m) ↔ (m : 𝓞 K) ∉ v.asIdeal :=
@@ -110,7 +121,7 @@ section Cyclotomic
 /-- For `F = K(μ_m)`, every prime of `𝓞 F` above a prime `v` of `𝓞 K` outside the support of
 `cyclotomicModulus K m` (that is, with `(m : 𝓞 K) ∉ v.asIdeal`) is unramified over `𝓞 K`. -/
 theorem isUnramifiedAt_of_notMem_cyclotomicModulus_support {K : Type*} [Field K] [NumberField K]
-    (F : Type*) [Field F] [NumberField F] [Algebra K F] (m : ℕ) [NeZero m]
+    (F : Type*) [Field F] [Algebra K F] (m : ℕ) [NeZero m]
     [IsCyclotomicExtension {m} K F]
     {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ (cyclotomicModulus K m).support) (Q : Ideal (𝓞 F))
     [Q.IsPrime] [Q.LiesOver v.asIdeal] : Algebra.IsUnramifiedAt (𝓞 K) Q := by
@@ -142,12 +153,10 @@ private theorem cyclotomicArtinIntegral_apply (I : integralIdealsPrimeTo (cyclot
 
 -- At a prime not dividing `m`, the integral Artin map is the Frobenius.
 private theorem cyclotomicArtinIntegral_of_isArithFrobAt (v : HeightOneSpectrum (𝓞 K))
-    (hv : v.asIdeal ∈ integralIdealsPrimeTo (cyclotomicModulus K m)) (Q : Ideal (𝓞 F)) [Q.IsPrime]
+    (hv : v.asIdeal ∈ integralIdealsPrimeTo (cyclotomicModulus K m)) (Q : Ideal (𝓞 F))
     [Q.LiesOver v.asIdeal] {σ : F ≃ₐ[K] F} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     cyclotomicArtinIntegral F m ⟨v.asIdeal, hv⟩ = σ :=
-  artinHomAwayIntegral_apply_prime _ _ _ v
-    (mem_cyclotomicModulus_support_iff.not.mpr
-      (asIdeal_mem_integralIdealsPrimeTo_cyclotomicModulus_iff.mp hv)) hv Q σ hσ
+  artinHomAwayIntegral_apply_prime _ _ _ v hv Q σ hσ
 
 -- The cyclotomic character of the integral Artin map is the absolute norm.
 private theorem autToPow_cyclotomicArtinIntegral {ζ : F} (hζ : IsPrimitiveRoot ζ m)
@@ -181,7 +190,8 @@ private theorem ray_le_ker_cyclotomicArtinAway :
   rcases eq_or_ne m 1 with rfl | hm1
   · exact Subsingleton.elim _ _
   -- Write `x = a / b` with `a ≡ b ≡ 1 mod m`.
-  obtain ⟨a, b, ha, hb, hab⟩ := hx.exists_sub_one_mem_and_algebraMap_eq_mul
+  obtain ⟨a, b, ha, hb, -, -, hab⟩ :=
+    hx.exists_sub_one_mem_and_ne_zero_and_isTotallyPositive_and_algebraMap_eq_mul
   rw [cyclotomicModulus_finitePart] at ha hb
   have hne0 {c : 𝓞 K} (hc : c - 1 ∈ Ideal.span {(m : 𝓞 K)}) : c ≠ 0 := fun h ↦
     hm1 (Ideal.span_singleton_natCast_eq_top_iff.mp
@@ -194,7 +204,7 @@ private theorem ray_le_ker_cyclotomicArtinAway :
     refine Subtype.ext (Units.ext ?_)
     rw [Subgroup.coe_mul, Units.val_mul, coe_integralIdealsAwayHom, coe_integralIdealsAwayHom,
       ← hxJ, coe_toPrincipalIdeal, FractionalIdeal.coeIdeal_span_singleton,
-      FractionalIdeal.coeIdeal_span_singleton, FractionalIdeal.spanSingleton_mul_spanSingleton,
+      FractionalIdeal.coeIdeal_span_singleton, ← map_mul (FractionalIdeal.spanSingleton _),
       hab, mul_comm]
   -- Hence the cyclotomic character of `(x)` is trivial once those of `(a)` and `(b)` agree.
   refine (mul_eq_right (b := hζ.autToPow K (cyclotomicArtinIntegral F m ⟨_, hIb⟩))).mp ?_
@@ -243,12 +253,47 @@ private theorem cyclotomicArtin_idealClass (I : integralIdealsPrimeTo (cyclotomi
 not dividing `m`, every arithmetic Frobenius at every prime of `𝓞 F` above `𝔭` is the image of
 the ray class of `𝔭`. -/
 theorem cyclotomicArtin_idealClass_of_isArithFrobAt (𝔭 : HeightOneSpectrum (𝓞 K))
-    (h𝔭 : 𝔭.asIdeal ∈ integralIdealsPrimeTo (cyclotomicModulus K m)) (Q : Ideal (𝓞 F)) [Q.IsPrime]
+    (h𝔭 : 𝔭.asIdeal ∈ integralIdealsPrimeTo (cyclotomicModulus K m)) (Q : Ideal (𝓞 F))
     [Q.LiesOver 𝔭.asIdeal] {σ : F ≃ₐ[K] F} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     cyclotomicArtin K F m (idealClass _ ⟨𝔭.asIdeal, h𝔭⟩) = σ := by
   rw [cyclotomicArtin_idealClass, cyclotomicArtinIntegral_of_isArithFrobAt F m 𝔭 h𝔭 Q hσ]
 
 end Cyclotomic
+
+section Level
+
+variable {K : Type*} [Field K] [NumberField K] {F : Type*} [Field F] [NumberField F]
+  [Algebra K F] [IsGalois K F] {m n : ℕ} [NeZero m] [NeZero n]
+  [IsCyclotomicExtension {m} K F] [IsCyclotomicExtension {n} K F]
+
+-- Read through a transition map, the Artin map sends the ray class of a prime to its Frobenius.
+private theorem cyclotomicArtin_classMap_idealClass_of_isArithFrobAt {𝔐 : Modulus K}
+    (h : cyclotomicModulus K m ∣ 𝔐) (𝔭 : HeightOneSpectrum (𝓞 K))
+    (h𝔭 : 𝔭.asIdeal ∈ integralIdealsPrimeTo 𝔐) (Q : Ideal (𝓞 F))
+    [Q.LiesOver 𝔭.asIdeal] {σ : F ≃ₐ[K] F} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    cyclotomicArtin K F m (classMap h (idealClass 𝔐 ⟨𝔭.asIdeal, h𝔭⟩)) = σ := by
+  have hincl : integralIdealsPrimeToInclusion h ⟨𝔭.asIdeal, h𝔭⟩ =
+      ⟨𝔭.asIdeal, integralIdealsPrimeTo_antitone h h𝔭⟩ :=
+    Subtype.ext (coe_integralIdealsPrimeToInclusion h _)
+  rw [classMap_idealClass, hincl]
+  exact cyclotomicArtin_idealClass_of_isArithFrobAt F m 𝔭 _ Q hσ
+
+/-- **The Artin maps of two levels agree.** If `F` is both the `m`-th and the `n`-th cyclotomic
+extension of `K`, the Artin maps of levels `m` and `n` agree on the ray class group of every common
+multiple of the two cyclotomic moduli. -/
+theorem cyclotomicArtin_comp_classMap_eq {𝔐 : Modulus K} (hm : cyclotomicModulus K m ∣ 𝔐)
+    (hn : cyclotomicModulus K n ∣ 𝔐) :
+    (cyclotomicArtin K F m).comp (classMap hm) = (cyclotomicArtin K F n).comp (classMap hn) := by
+  -- Both send the ray class of a prime to its Frobenius, and these classes generate.
+  refine (MonoidHom.cancel_right (idealClass_surjective 𝔐)).mp <|
+    integralIdealsAway_hom_ext fun v hv ↦ ?_
+  obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 F)))
+  obtain ⟨σ, hσ⟩ := exists_isArithFrobAt K Q (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
+  simp only [MonoidHom.comp_apply]
+  rw [cyclotomicArtin_classMap_idealClass_of_isArithFrobAt hm v hv Q hσ,
+    cyclotomicArtin_classMap_idealClass_of_isArithFrobAt hn v hv Q hσ]
+
+end Level
 
 end NumberField.Chebotarev
 

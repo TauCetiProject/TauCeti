@@ -13,6 +13,7 @@ import Mathlib.RingTheory.KrullDimension.Polynomial
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.KrullDimension.Presentation
+import TauCeti.RingTheory.Spectrum.Prime.Point
 
 /-!
 # Standard syntomic algebras
@@ -52,6 +53,9 @@ a complete intersection, is not standard syntomic of relative dimension zero.
   isomorphism.
 * `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.mvPolynomial`: a polynomial algebra in
   finitely many variables is standard syntomic of relative dimension the number of variables.
+* `Algebra.Presentation.isStandardSyntomicOfRelativeDimension_of_ringKrullDim_le`: over a field, a
+  nonzero algebra of dimension at most `n` presented with at least `n` more generators than
+  relations is standard syntomic of relative dimension `n`.
 
 ## References
 
@@ -108,6 +112,32 @@ theorem _root_.Algebra.Presentation.isStandardSyntomicOfRelativeDimension [Modul
     P.reindex (Fintype.equivFin ι).symm (Fintype.equivFin σ).symm, by simpa using hP⟩
   ringKrullDim_fiber := hfib
 
+/-- Over a field, a nonzero algebra of Krull dimension at most `n` with a finite presentation
+having at least `n` more generators than relations is standard syntomic of relative dimension
+`n`: by Krull's height theorem the presentation has exactly `n` more generators than relations,
+and the algebra has dimension exactly `n`. -/
+theorem _root_.Algebra.Presentation.isStandardSyntomicOfRelativeDimension_of_ringKrullDim_le
+    {k : Type u} {B : Type v} [Field k] [CommRing B] [Algebra k B] [Nontrivial B] {ι σ : Type*}
+    [Finite ι] [Finite σ] (P : _root_.Algebra.Presentation k B ι σ)
+    (hcard : Nat.card σ + n ≤ Nat.card ι) (hdim : ringKrullDim B ≤ n) :
+    IsStandardSyntomicOfRelativeDimension n k B := by
+  obtain ⟨m, hm⟩ := Ideal.exists_maximal B
+  have hheight := (WithBot.coe_le_coe.mpr (P.dimension_le_height_of_isMaximal m)).trans
+    (Ideal.height_le_ringKrullDim_of_isPrime.trans hdim)
+  have hPdim : P.dimension = n := by
+    rw [_root_.Algebra.Presentation.dimension] at hheight ⊢
+    norm_cast at hheight
+    omega
+  have : _root_.Algebra.FinitePresentation k B := P.finitePresentation_of_isFinite
+  refine P.isStandardSyntomicOfRelativeDimension (by
+    rw [_root_.Algebra.Presentation.dimension] at hPdim
+    omega) fun p _ _ ↦ ?_
+  rw [ringKrullDim_tensorProduct_field_of_finiteType]
+  refine le_antisymm hdim ?_
+  have h₁ := P.dimension_le_height_of_isMaximal m
+  rw [hPdim] at h₁
+  exact (WithBot.coe_le_coe.mpr h₁).trans Ideal.height_le_ringKrullDim_of_isPrime
+
 namespace IsStandardSyntomicOfRelativeDimension
 
 variable [h : IsStandardSyntomicOfRelativeDimension n R S]
@@ -136,12 +166,7 @@ theorem ringKrullDim_tensorProduct_of_field (K : Type w) [Field K] [Algebra R K]
   -- The map `R → K` factors through the residue field `κ(p)` of its kernel `p`.
   let p := RingHom.ker (algebraMap R K)
   have : p.IsPrime := RingHom.ker_isPrime _
-  let φ : p.ResidueField →+* K := Ideal.ResidueField.lift p (algebraMap R K) le_rfl fun r hr ↦
-    (IsUnit.mk0 _ hr : IsUnit (algebraMap R K r))
-  let : Algebra p.ResidueField K := φ.toAlgebra
-  have : IsScalarTower R p.ResidueField K := .of_algebraMap_eq fun r ↦ by
-    rw [RingHom.algebraMap_toAlgebra]
-    exact (Ideal.ResidueField.lift_algebraMap p (algebraMap R K) _ _ r).symm
+  obtain ⟨_, _⟩ := Ideal.exists_algebra_residueField_isScalarTower (F := K) p rfl
   -- Hence `K ⊗[R] S = K ⊗[κ(p)] (κ(p) ⊗[R] S)`, and extending the base field does not change
   -- the Krull dimension.
   let e : K ⊗[p.ResidueField] p.Fiber S ≃ₐ[K] K ⊗[R] S :=

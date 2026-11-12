@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.GrothendieckAbelian
 public import Mathlib.Algebra.Homology.HomotopyCategory
 public import Mathlib.CategoryTheory.ObjectProperty.Small
+public import Mathlib.CategoryTheory.Quotient.LocallySmall
 
 /-!
 # Essential smallness of categories of complexes and of homotopy categories
@@ -73,16 +74,14 @@ variable (C : Type u) [Category.{v} C] [Preadditive C] {ι : Type t} (c : Comple
 /-- The homotopy category of complexes over a `w`-locally small category, indexed by a `w`-small
 type, is `w`-locally small. -/
 instance locallySmall [LocallySmall.{w} C] [Small.{w} ι] :
-    LocallySmall.{w} (HomotopyCategory C c) where
-  hom_small _ _ := small_of_surjective (quotient C c).map_surjective
+    LocallySmall.{w} (HomotopyCategory C c) :=
+  inferInstanceAs (LocallySmall.{w} (CategoryTheory.Quotient _))
 
 /-- The homotopy category of complexes over a `w`-essentially small category, indexed by a
 `w`-small type, is `w`-essentially small. -/
 instance essentiallySmall [EssentiallySmall.{w} C] [Small.{w} ι] :
     EssentiallySmall.{w} (HomotopyCategory C c) := by
   rw [essentiallySmall_iff_objectPropertyEssentiallySmall]
-  exact ⟨inferInstance, .of_le (Q := (quotient C c).essImage) fun K _ ↦
-    (quotient C c).essImage.prop_of_iso ((quotient C c).objObjPreimageIso K)
-      ((quotient C c).obj_mem_essImage _)⟩
+  exact ⟨inferInstance, .of_le fun K _ ↦ Functor.EssSurj.mem_essImage (F := quotient C c) K⟩
 
 end HomotopyCategory

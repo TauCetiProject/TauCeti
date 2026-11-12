@@ -25,6 +25,9 @@ subdivisions are subdivisions.
 * `TauCeti.Toric.Fan.IsSubdivision.support_eq`: a subdivision and the original fan have the same
   support.
 * `TauCeti.Toric.Fan.IsSubdivision.toFanHom`: the fan morphism induced by a subdivision.
+  `TauCeti.Toric.Fan.IsSubdivision.le_leastCone` and
+  `TauCeti.Toric.Fan.IsSubdivision.leastCone_eq_self`: a subdividing cone lies in its least original
+  cone, with equality when it is itself an original cone.
 * `TauCeti.Toric.Fan.IsSubdivision.refl` and `TauCeti.Toric.Fan.IsSubdivision.trans`: subdivision
   is a preorder relation.
 * `TauCeti.Toric.Fan.IsSubdivision.prod`: products preserve subdivisions.
@@ -108,6 +111,17 @@ theorem toFanHom_latticeMap (h : Φ.IsSubdivision Ψ) :
 @[simp]
 theorem toFanHom_realMap (h : Φ.IsSubdivision Ψ) : h.toFanHom.realMap = LinearMap.id :=
   by rw [toFanHom, FanHom.ofLatticeMap_realMap, Φ.lattice.extend_id]
+
+/-- A cone of a subdivision lies in its least cone of the original fan. -/
+theorem le_leastCone (h : Φ.IsSubdivision Ψ) (hσ : σ ∈ Φ.cones) :
+    σ ≤ h.toFanHom.leastCone hσ := by
+  simpa using h.toFanHom.map_le_leastCone hσ
+
+/-- A cone of a subdivision which is also a cone of the original fan is its own least cone. -/
+theorem leastCone_eq_self (h : Φ.IsSubdivision Ψ) (hσ : σ ∈ Φ.cones) (hσΨ : σ ∈ Ψ.cones) :
+    h.toFanHom.leastCone hσ = σ :=
+  (h.toFanHom.leastCone_le hσ hσΨ (by rw [toFanHom_realMap, PointedCone.map_id])).antisymm
+    (h.le_leastCone hσ)
 
 /-- Every fan is a subdivision of itself. -/
 protected theorem refl (Φ : Fan i) : Φ.IsSubdivision Φ where

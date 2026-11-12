@@ -29,8 +29,6 @@ namespace Polynomial.SplittingField
 
 variable {K : Type*} [Field K] [NumberField K]
 
--- The instance is Layer 3.8 of the human-authored roadmap
--- `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`, stated there for `K = ℚ`.
 /-- The splitting field of a polynomial over a number field is a number field. -/
 instance instNumberField (f : K[X]) : NumberField f.SplittingField :=
   NumberField.of_module_finite K f.SplittingField

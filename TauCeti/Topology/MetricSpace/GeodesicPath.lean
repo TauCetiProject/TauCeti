@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.PathConnected
 public import TauCeti.Topology.MetricSpace.Length
 
 /-!
@@ -28,17 +29,25 @@ in optimal transport.
 ## Main definitions
 
 * `TauCeti.geodesicPaths X`: the geodesic segments of `X`, as a subset of `C(I, X)`.
+* `TauCeti.segmentPath`: the affine segments of a real normed space, as a continuous map from
+  pairs of endpoints to path space.
 
 ## Main results
 
 * `TauCeti.mem_geodesicPaths_iff_isGeodesicSegment`: a path is a geodesic path exactly when its
   extension to `ℝ` is a geodesic segment between its endpoints.
+* `TauCeti.mem_geodesicPaths_of_lipschitzWith`: a path whose Lipschitz constant is the distance
+  between its endpoints is a geodesic path.
 * `TauCeti.exists_mem_geodesicPaths_iff`: two points are the endpoints of a geodesic path exactly
   when they are joined by a geodesic segment; `TauCeti.isGeodesicSpace_iff_exists_mem_geodesicPaths`
   restates the geodesic-space condition this way.
 * `TauCeti.isClosed_geodesicPaths`: the geodesic paths form a closed subset of path space.
 * `TauCeti.isClosed_setOf_mem_geodesicPaths_endpoints`: on a metric space, the relation between a
   pair of points and the geodesic paths joining them is closed.
+* `TauCeti.segmentPath_mem_geodesicPaths`: the affine segments of a real normed space are geodesic
+  paths.
+* `TauCeti.eq_segmentPath_of_mem_geodesicPaths`: conversely, in a strictly convex real normed
+  space every geodesic path is the affine segment between its endpoints.
 
 ## References
 
@@ -89,6 +98,15 @@ theorem IsGeodesicSegment.restrict_mem_geodesicPaths {γ : ℝ → X} (h : IsGeo
   simp only [ContinuousMap.coe_mk, domRestrict_apply, h0, h1]
   exact h.dist_eq s s.2 t t.2
 
+/-- A path whose Lipschitz constant is the distance between its endpoints is a geodesic path. -/
+theorem mem_geodesicPaths_of_lipschitzWith (hγ : LipschitzWith (dist (γ 0) (γ 1)).toNNReal γ) :
+    γ ∈ geodesicPaths X :=
+  mem_geodesicPaths_iff_isGeodesicSegment.2 <|
+    isGeodesicSegment_of_dist_le (IccExtend_left ..) (IccExtend_right ..) fun s hs t ht hst ↦ by
+      simpa only [IccExtend_of_mem _ _ hs, IccExtend_of_mem _ _ ht, Real.coe_toNNReal _ dist_nonneg,
+        Subtype.dist_eq, Real.dist_eq, abs_of_nonpos (sub_nonpos.2 hst), neg_sub, mul_comm] using
+        hγ.dist_le_mul ⟨s, hs⟩ ⟨t, ht⟩
+
 /-- Two points are the endpoints of a geodesic path exactly when they are joined by a geodesic
 segment. -/
 theorem exists_mem_geodesicPaths_iff :
@@ -127,5 +145,50 @@ theorem isClosed_setOf_mem_geodesicPaths_endpoints :
   (isClosed_geodesicPaths.preimage continuous_snd).inter (isClosed_eq (by fun_prop) (by fun_prop))
 
 end Metric
+
+section Normed
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The affine segments of a real normed space, as a continuous map from pairs of endpoints to path
+space: `segmentPath z` is Mathlib's `Path.segment z.1 z.2`, the path
+`t ↦ AffineMap.lineMap z.1 z.2 t` from `z.1` to `z.2`, depending continuously on both endpoints. -/
+def segmentPath : C(E × E, C(I, E)) :=
+  ContinuousMap.curry
+    ⟨fun p : (E × E) × I ↦ Path.segment p.1.1 p.1.2 p.2, by
+      simp only [Path.segment_apply, AffineMap.lineMap_apply_module]
+      fun_prop⟩
+
+/-- `segmentPath z` is Mathlib's straight-line path `Path.segment z.1 z.2`, so the `Path.segment`
+API applies to it. -/
+theorem segmentPath_eq_segment (z : E × E) :
+    segmentPath z = (Path.segment z.1 z.2 : C(I, E)) :=
+  (rfl)
+
+@[simp]
+theorem segmentPath_apply (z : E × E) (t : I) :
+    segmentPath z t = AffineMap.lineMap z.1 z.2 (t : ℝ) :=
+  Path.segment_apply z.1 z.2 t
+
+/-- The affine segments of a real normed space are geodesic paths. -/
+theorem segmentPath_mem_geodesicPaths (z : E × E) : segmentPath z ∈ geodesicPaths E :=
+  fun s t ↦ by simp [dist_lineMap_lineMap, Real.dist_eq]
+
+end Normed
+
+section StrictConvex
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [StrictConvexSpace ℝ E]
+
+/-- In a strictly convex real normed space, a constant-speed geodesic path is the affine segment
+between its endpoints. -/
+theorem eq_segmentPath_of_mem_geodesicPaths {γ : C(I, E)}
+    (hγ : γ ∈ geodesicPaths E) : γ = segmentPath (γ 0, γ 1) := by
+  ext t
+  rw [segmentPath_apply]
+  simpa only [IccExtend_of_mem _ _ t.property] using
+    (mem_geodesicPaths_iff_isGeodesicSegment.1 hγ).eq_lineMap t.property
+
+end StrictConvex
 
 end TauCeti

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.NormLeOne
 public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 public import TauCeti.Topology.Frontier
-public import TauCeti.Topology.MetricSpace.LipschitzParametrizable
+public import TauCeti.Topology.MetricSpace.Lipschitz.Parametrizable
 
 /-!
 # A Lipschitz parametrization of the frontier of the norm-≤-one region
@@ -102,19 +102,20 @@ private theorem contDiff_faceMapZero : ContDiff ℝ 1 (faceMapZero K) := by
   refine (contDiff_expMapBasis K).comp (contDiff_pi.mpr fun w ↦ ?_)
   by_cases hw : w = w₀
   · simpa [hw] using contDiff_const
-  · simpa [hw] using contDiff_apply ℝ ℝ _
+  · simpa [hw] using contDiff_apply ℝ (fun _ ↦ ℝ) _
 
 open scoped Classical in
 /-- A side face map is `C¹`. -/
 private theorem contDiff_faceMapSide (i : {w : InfinitePlace K // w ≠ w₀}) (a : ℝ) :
     ContDiff ℝ 1 (faceMapSide K i a) := by
-  refine (contDiff_apply ℝ ℝ i).smul ((contDiff_expMapBasis K).comp (contDiff_pi.mpr fun w ↦ ?_))
+  refine (contDiff_apply ℝ (fun _ ↦ ℝ) i).smul
+    ((contDiff_expMapBasis K).comp (contDiff_pi.mpr fun w ↦ ?_))
   by_cases hw : w = w₀
   · simpa [hw] using contDiff_const
   · simp only [hw, ↓reduceDIte]
     by_cases hi : (⟨w, hw⟩ : {w : InfinitePlace K // w ≠ w₀}) = i
     · simpa [hi] using contDiff_const
-    · simpa [hi] using contDiff_apply ℝ ℝ _
+    · simpa [hi] using contDiff_apply ℝ (fun _ ↦ ℝ) _
 
 /-- **The closure of the box image adds only the origin.** The origin is what the `w₀` coordinate
 escapes to as it runs to `-∞`, and it is the sole reason the closure of the image is not the image
@@ -133,7 +134,7 @@ theorem frontier_image_paramSet_subset :
       expMapBasis '' frontier (paramSet K) ∪ {0} :=
   TauCeti.frontier_image_subset_of_closure_subset
     (fun _ hs ↦ expMapBasis.isOpen_image_of_subset_source hs (by simp [expMapBasis_source]))
-    (injective_expMapBasis K) (closure_image_paramSet_subset K)
+    (closure_image_paramSet_subset K)
 
 variable {K}
 
@@ -220,7 +221,7 @@ private theorem isLipschitzParametrizable_image_frontier_paramSet :
       (expMapBasis '' frontier (paramSet K)) := by
   classical
   have hcard : Fintype.card {w : InfinitePlace K // w ≠ w₀} = rank K :=
-    (Fintype.card_congr equivFinRank).symm.trans (Fintype.card_fin _)
+    (Fintype.card_congr (NumberField.Units.equivFinRank K)).symm.trans (Fintype.card_fin _)
   refine .mono ?_ (image_frontier_paramSet_subset K)
   refine .union
     (.image_unitCube_of_contDiffOn hcard (ContDiff.contDiffOn (contDiff_faceMapZero K))) ?_
@@ -315,9 +316,10 @@ theorem isLipschitzParametrizable_frontier_normLeOne :
     simpa using TauCeti.IsLipschitzParametrizable.image_unitCube_of_contDiffOn
       (d := nrComplexPlaces K) (f := id) rfl contDiffOn_id
   -- `rank K + r₂` is the codimension-one dimension: the identity is
-  -- `NumberField.rank_add_nrComplexPlaces_add_one`, transported across `mixedEmbedding.finrank`.
+  -- `NumberField.Units.rank_add_nrComplexPlaces_add_one`, transported across
+  -- `mixedEmbedding.finrank`.
   have hdim : rank K + nrComplexPlaces K = finrank ℝ (mixedSpace K) - 1 := by
-    rw [mixedEmbedding.finrank, ← rank_add_nrComplexPlaces_add_one K]
+    rw [mixedEmbedding.finrank, ← Units.rank_add_nrComplexPlaces_add_one K]
     omega
   rw [← hdim]
   refine .mono (.iUnion fun s ↦ .image_of_locallyLipschitz (contDiff_liftMap K s).locallyLipschitz

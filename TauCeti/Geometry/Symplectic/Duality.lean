@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Topology.Algebra.Module.BilinearForm
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # Contraction with a symplectic form
@@ -14,7 +17,9 @@ public import TauCeti.Topology.Algebra.Module.BilinearForm
 On a finite-dimensional real normed space, contraction with a symplectic form is an
 invertible continuous linear map to the continuous dual. This identifies covectors with
 vectors and allows the contraction equation in Moser's deformation argument to be solved
-using the continuous-linear-map inverse.
+using the continuous-linear-map inverse. The symplectic pairing of two continuous maps is
+continuous, and that of two differentiable curves satisfies the product rule. The pairing is
+bounded by the operator norm of the form.
 
 See McDuff--Salamon, *Introduction to Symplectic Topology*, Section 3.2.
 -/
@@ -32,5 +37,37 @@ theorem isInvertible_toContinuousBilinearMap (ω : SymplecticForm V) :
     ω.toBilinForm.toContinuousBilinearMap.IsInvertible :=
   TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft.mpr
     ω.nondegenerate.1
+
+section Continuity
+
+variable {X : Type*} [TopologicalSpace X] {p q : X → V} {s : Set X}
+
+/-- The symplectic pairing of two maps continuous on a set is continuous on that set. -/
+theorem continuousOn_apply_comp (ω : SymplecticForm V) (hp : ContinuousOn p s)
+    (hq : ContinuousOn q s) : ContinuousOn (fun z ↦ ω (p z) (q z)) s := by
+  simpa only [Function.comp_apply, LinearMap.toContinuousBilinearMap_apply] using
+    ContinuousOn.clm_apply (ω.toBilinForm.toContinuousBilinearMap.continuous.comp_continuousOn hp)
+      hq
+
+/-- The symplectic pairing of two continuous maps is continuous. -/
+theorem continuous_apply_comp (ω : SymplecticForm V) (hp : Continuous p) (hq : Continuous q) :
+    Continuous fun z ↦ ω (p z) (q z) :=
+  continuousOn_univ.mp <| ω.continuousOn_apply_comp hp.continuousOn hq.continuousOn
+
+end Continuity
+
+/-- A symplectic form on a finite-dimensional space is bounded by the operator norm of its
+continuous bilinear map: `|ω(v, w)| ≤ ‖ω‖ ‖v‖ ‖w‖`. -/
+theorem abs_apply_le_opNorm_mul_norm_mul_norm (ω : SymplecticForm V) (v w : V) :
+    |ω v w| ≤ ‖ω.toBilinForm.toContinuousBilinearMap‖ * ‖v‖ * ‖w‖ := by
+  simpa only [LinearMap.toContinuousBilinearMap_apply, Real.norm_eq_abs] using
+    ω.toBilinForm.toContinuousBilinearMap.le_opNorm₂ v w
+
+/-- The product rule for the symplectic pairing of two curves. -/
+theorem hasDerivAt_apply_comp (ω : SymplecticForm V) {p q : ℝ → V} {p' q' : V} {t : ℝ}
+    (hp : HasDerivAt p p' t) (hq : HasDerivAt q q' t) :
+    HasDerivAt (fun t ↦ ω (p t) (q t)) (ω p' (q t) + ω (p t) q') t := by
+  simpa only [LinearMap.toContinuousBilinearMap_apply, add_comm] using
+    ω.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear (fun _ ↦ hp) (fun _ ↦ hq)
 
 end TauCeti.SymplecticForm

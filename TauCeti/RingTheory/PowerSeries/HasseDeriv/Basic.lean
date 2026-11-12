@@ -1,0 +1,226 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Polynomial.HasseDeriv
+public import Mathlib.RingTheory.PowerSeries.Derivative
+
+/-!
+# Hasse derivatives of power series
+
+The `k`th Hasse derivative of a power series `f = ∑ aₙ Xⁿ` is
+
+```text
+D⁽ᵏ⁾ f = ∑ₙ (n + k).choose k • aₙ₊ₖ Xⁿ.
+```
+
+It is defined coefficientwise over any semiring. Only natural-number multiples of coefficients
+occur, so the coefficients need not commute; this allows Hasse derivatives of series with
+coefficients in a noncommutative algebra, such as an algebra of operators. Over a commutative
+semiring, `k! • D⁽ᵏ⁾ = (d/dX)^[k]`. Unlike `(d/dX)^[k] / k!`, the Hasse derivative needs no division
+by `k!`, so it keeps its meaning in positive characteristic.
+
+The definitions and lemmas parallel Mathlib's `Polynomial.hasseDeriv`, and on polynomials the two
+agree (`PowerSeries.hasseDeriv_coe`). Since a coefficient of a Hasse derivative of `f` only sees
+finitely many coefficients of `f` (`PowerSeries.trunc_hasseDeriv`), the Leibniz rule is deduced
+from Mathlib's polynomial Leibniz rule `Polynomial.hasseDeriv_mul`.
+
+## Main definitions
+
+* `PowerSeries.hasseDeriv`: the `k`th Hasse derivative, an `R`-linear map `R⟦X⟧ → R⟦X⟧`.
+
+## Main results
+
+* `PowerSeries.coeff_hasseDeriv`: `coeff n (D⁽ᵏ⁾ f) = (n + k).choose k * coeff (n + k) f`.
+* `PowerSeries.hasseDeriv_coe` and `PowerSeries.trunc_hasseDeriv`: comparison with
+  `Polynomial.hasseDeriv` on polynomials and on truncations.
+* `PowerSeries.hasseDeriv_map`: Hasse derivatives commute with coefficient maps.
+* `PowerSeries.hasseDeriv_comp`: `D⁽ᵏ⁾ ∘ D⁽ˡ⁾ = (k + l).choose k • D⁽ᵏ⁺ˡ⁾`.
+* `PowerSeries.hasseDeriv_mul`: the Leibniz rule
+  `D⁽ᵏ⁾ (f * g) = ∑_{i + j = k} D⁽ⁱ⁾ f * D⁽ʲ⁾ g`, with the factors in their original order.
+* `PowerSeries.hasseDeriv_succ_X_mul` and `PowerSeries.hasseDeriv_succ_X_sub_C_mul`: its special
+  case `D⁽ᵏ⁺¹⁾ ((X - a) * f) = (X - a) * D⁽ᵏ⁺¹⁾ f + D⁽ᵏ⁾ f`.
+* `PowerSeries.hasseDeriv_one_apply` and `PowerSeries.factorial_smul_hasseDeriv`: over a
+  commutative semiring, `D⁽¹⁾ = d/dX` and `k! • D⁽ᵏ⁾ = (d/dX)^[k]`.
+
+## References
+
+* H. Hasse, *Theorie der höheren Differentiale in einem algebraischen Funktionenkörper mit
+  vollkommenem Konstantenkörper bei beliebiger Charakteristik*, J. Reine Angew. Math. 175 (1936).
+-/
+
+public section
+
+noncomputable section
+
+namespace PowerSeries
+
+open Finset (antidiagonal mem_antidiagonal)
+open Nat
+open scoped Polynomial
+
+section Semiring
+
+variable {R : Type*} [Semiring R] (k : ℕ)
+
+/-- The `k`th Hasse derivative of a power series `∑ aₙ Xⁿ` is `∑ (n + k).choose k • aₙ₊ₖ Xⁿ`.
+Over a commutative semiring, `k! • hasseDeriv k f` is the `k`th iterated derivative of `f`
+(`PowerSeries.factorial_smul_hasseDeriv`). -/
+def hasseDeriv : R⟦X⟧ →ₗ[R] R⟦X⟧ where
+  toFun f := mk fun n ↦ ((n + k).choose k : R) * coeff (n + k) f
+  map_add' f g := by
+    ext n
+    simp [mul_add]
+  map_smul' a f := by
+    ext n
+    simp only [coeff_mk, coeff_smul, smul_eq_mul, RingHom.id_apply, ← mul_assoc,
+      (Nat.cast_commute _ a).eq]
+
+/-- The coefficients of a Hasse derivative:
+`coeff n (D⁽ᵏ⁾ f) = (n + k).choose k * coeff (n + k) f`. -/
+@[simp]
+theorem coeff_hasseDeriv (f : R⟦X⟧) (n : ℕ) :
+    coeff n (hasseDeriv k f) = ((n + k).choose k : R) * coeff (n + k) f := by
+  simp [hasseDeriv]
+
+/-- The `0`th Hasse derivative is the identity. -/
+@[simp]
+theorem hasseDeriv_zero : hasseDeriv 0 = (LinearMap.id : R⟦X⟧ →ₗ[R] R⟦X⟧) := by
+  ext f n
+  simp
+
+/-- On polynomials, the Hasse derivative of power series is `Polynomial.hasseDeriv`. -/
+@[simp]
+theorem hasseDeriv_coe (p : R[X]) : hasseDeriv k (p : R⟦X⟧) = (p.hasseDeriv k : R⟦X⟧) := by
+  ext n
+  simp [Polynomial.hasseDeriv_coeff]
+
+/-- The coefficients of `D⁽ᵏ⁾ f` below `n` only depend on the coefficients of `f` below `n + k`. -/
+theorem trunc_hasseDeriv (f : R⟦X⟧) (n : ℕ) :
+    trunc n (hasseDeriv k f) = (trunc (n + k) f).hasseDeriv k := by
+  ext m
+  -- both sides are `(m + k).choose k * coeff (m + k) f` if `m < n` (equivalently
+  -- `m + k < n + k`), and `0` otherwise
+  simp [coeff_trunc, Polynomial.hasseDeriv_coeff]
+
+/-- The Hasse derivative of a monomial: `D⁽ᵏ⁾ (a Xⁿ) = n.choose k * a Xⁿ⁻ᵏ`. -/
+@[simp]
+theorem hasseDeriv_monomial (n : ℕ) (a : R) :
+    hasseDeriv k (monomial n a) = monomial (n - k) ((n.choose k : R) * a) := by
+  rw [← Polynomial.coe_monomial, hasseDeriv_coe, Polynomial.hasseDeriv_monomial,
+    Polynomial.coe_monomial]
+
+/-- Positive Hasse derivatives vanish on constants. -/
+theorem hasseDeriv_C {k : ℕ} (hk : 0 < k) (a : R) : hasseDeriv k (C a) = 0 := by
+  rw [← monomial_zero_eq_C_apply, hasseDeriv_monomial, Nat.choose_eq_zero_of_lt hk]
+  -- the coefficient is now `((0 : ℕ) : R) * a = 0`
+  simp only [Nat.cast_zero, zero_mul, map_zero]
+
+/-- Hasse derivatives commute with coefficient maps. -/
+@[simp]
+theorem hasseDeriv_map {S : Type*} [Semiring S] (φ : R →+* S) (f : R⟦X⟧) :
+    hasseDeriv k (map φ f) = map φ (hasseDeriv k f) := by
+  ext n
+  simp
+
+/-- The composition of Hasse derivatives: `D⁽ᵏ⁾ ∘ D⁽ˡ⁾ = (k + l).choose k • D⁽ᵏ⁺ˡ⁾`. -/
+theorem hasseDeriv_comp (l : ℕ) :
+    (hasseDeriv k).comp (hasseDeriv l) =
+      (k + l).choose k • (hasseDeriv (k + l) : R⟦X⟧ →ₗ[R] R⟦X⟧) := by
+  ext f n
+  -- both sides are multiples of `coeff (n + k + l) f`, by the multinomial coefficient
+  -- `(n + k + l)! / (n! k! l!)`, computed in two ways by `Nat.choose_mul`
+  have key : (n + k).choose k * (n + (k + l)).choose l =
+      (k + l).choose k * (n + (k + l)).choose (k + l) := by
+    have h := Nat.choose_mul (n := n + k + l) (k := k + l) (s := l) (by omega)
+    simp only [Nat.add_sub_cancel] at h
+    rw [← add_assoc, Nat.choose_symm_add]
+    linarith
+  simp only [LinearMap.comp_apply, LinearMap.smul_apply, map_nsmul, coeff_hasseDeriv, add_assoc]
+  simp only [nsmul_eq_mul, ← mul_assoc, ← Nat.cast_mul, key]
+
+/-- The **Leibniz rule** for Hasse derivatives:
+`D⁽ᵏ⁾ (f * g) = ∑_{i + j = k} D⁽ⁱ⁾ f * D⁽ʲ⁾ g`. The coefficients need not commute. -/
+theorem hasseDeriv_mul (f g : R⟦X⟧) :
+    hasseDeriv k (f * g) = ∑ ij ∈ antidiagonal k, hasseDeriv ij.1 f * hasseDeriv ij.2 g := by
+  ext n
+  -- Up to degree `n`, both sides only see the coefficients of `f` and `g` below `N`, so we may
+  -- replace them by their truncations and apply the polynomial Leibniz rule.
+  set N := n + k + 1
+  -- the `m`th coefficient of `D⁽ⁱ⁾ f * D⁽ʲ⁾ g` only involves `coeff a f` and `coeff b g` with
+  -- `a ≤ m + i` and `b ≤ m + j`, which truncation at `N > m + i + j` leaves unchanged
+  have htrunc (i j m : ℕ) (h : m + i + j < N) :
+      coeff m (hasseDeriv i f * hasseDeriv j g) =
+        coeff m (hasseDeriv i (trunc N f : R⟦X⟧) * hasseDeriv j (trunc N g : R⟦X⟧)) := by
+    simp only [coeff_mul, coeff_hasseDeriv]
+    refine Finset.sum_congr rfl fun ab hab ↦ ?_
+    rw [mem_antidiagonal] at hab
+    have ha : ab.1 + i < N := by omega
+    have hb : ab.2 + j < N := by omega
+    simp only [Polynomial.coeff_coe, coeff_trunc, ite_eq_left ha, ite_eq_left hb]
+  calc coeff n (hasseDeriv k (f * g))
+      = coeff n (hasseDeriv k ((trunc N f * trunc N g : R[X]) : R⟦X⟧)) := by
+        simp only [coeff_hasseDeriv, Polynomial.coe_mul]
+        congr 1
+        -- `htrunc` for `i = j = 0`, where `D⁽⁰⁾` is the identity
+        simpa only [hasseDeriv_zero, LinearMap.id_apply, add_zero] using
+          htrunc 0 0 (n + k) (by omega)
+    _ = ∑ ij ∈ antidiagonal k,
+          coeff n (hasseDeriv ij.1 (trunc N f : R⟦X⟧) * hasseDeriv ij.2 (trunc N g : R⟦X⟧)) := by
+        -- view the coercion `R[X] → R⟦X⟧` as a ring hom, so that it commutes with the sum and
+        -- the products of the polynomial Leibniz rule
+        rw [hasseDeriv_coe, Polynomial.hasseDeriv_mul, ← Polynomial.coeToPowerSeries.ringHom_apply]
+        simp only [map_sum, map_mul, Polynomial.coeToPowerSeries.ringHom_apply, hasseDeriv_coe]
+    _ = coeff n (∑ ij ∈ antidiagonal k, hasseDeriv ij.1 f * hasseDeriv ij.2 g) := by
+        rw [map_sum]
+        exact Finset.sum_congr rfl fun ij hij ↦
+          (htrunc ij.1 ij.2 n (by rw [mem_antidiagonal] at hij; omega)).symm
+
+/-- The Leibniz rule for a product with `X`: `D⁽ᵏ⁺¹⁾ (X * f) = X * D⁽ᵏ⁺¹⁾ f + D⁽ᵏ⁾ f`. -/
+theorem hasseDeriv_succ_X_mul (f : R⟦X⟧) :
+    hasseDeriv (k + 1) (X * f) = X * hasseDeriv (k + 1) f + hasseDeriv k f := by
+  ext n
+  rcases n with _ | n
+  · simp only [coeff_hasseDeriv, map_add, coeff_zero_X_mul, zero_add, coeff_succ_X_mul,
+      Nat.choose_self]
+  · simp only [coeff_hasseDeriv, map_add, Nat.add_right_comm n 1, coeff_succ_X_mul, ← add_assoc]
+    rw [Nat.choose_succ_succ', Nat.cast_add, add_mul, add_comm]
+
+end Semiring
+
+section Ring
+
+variable {R : Type*} [Ring R] (k : ℕ)
+
+/-- The Leibniz rule for a product with `X - a`:
+`D⁽ᵏ⁺¹⁾ ((X - a) * f) = (X - a) * D⁽ᵏ⁺¹⁾ f + D⁽ᵏ⁾ f`. -/
+theorem hasseDeriv_succ_X_sub_C_mul (a : R) (f : R⟦X⟧) :
+    hasseDeriv (k + 1) ((X - C a) * f) = (X - C a) * hasseDeriv (k + 1) f + hasseDeriv k f := by
+  simp only [sub_mul, map_sub, hasseDeriv_succ_X_mul, ← smul_eq_C_mul, map_smul]
+  abel
+
+end Ring
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R]
+
+/-- The first Hasse derivative is the derivative. -/
+@[simp]
+theorem hasseDeriv_one_apply (f : R⟦X⟧) : hasseDeriv 1 f = d⁄dX f := by
+  ext n
+  simp [coeff_derivative, mul_comm]
+
+/-- `k!` times the `k`th Hasse derivative is the `k`th iterated derivative:
+`k! • D⁽ᵏ⁾ f = (d/dX)^[k] f`. -/
+theorem factorial_smul_hasseDeriv (k : ℕ) (f : R⟦X⟧) :
+    k ! • hasseDeriv k f = d⁄dX^[k] f := by
+  ext n
+  simp [coeff_iterate_derivative, Nat.ascFactorial_eq_factorial_mul_choose, nsmul_eq_mul, mul_assoc]
+
+end CommSemiring
+
+end PowerSeries

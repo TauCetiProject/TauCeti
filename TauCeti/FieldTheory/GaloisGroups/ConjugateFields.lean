@@ -56,7 +56,7 @@ open scoped Pointwise
 variable {F E : Type*} [Field F] [Field E] [Algebra F E]
 
 /-- The distinct conjugates of `F⟮x⟯` inside its normal closure. -/
-def conjugateSimpleFields (x : E) :
+noncomputable def conjugateSimpleFields (x : E) :
     Set (IntermediateField F (normalClosure F F⟮x⟯ E)) :=
   IntermediateField.conjugateFields (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))
 

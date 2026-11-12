@@ -17,12 +17,17 @@ cut out by `J` is contained in the subgroup cut out by `I`.
 
 This is the point-level order bookkeeping for the correspondence between Hopf ideals and closed
 subgroup schemes. Larger Hopf ideals correspond contravariantly to smaller closed subgroup functors,
-and the inclusion is compatible with functoriality in the value algebra.
+and the inclusion is compatible with functoriality in the value algebra. Conversely, testing
+on all value algebras recovers the ideal inclusion, including infinitesimal structure.
 
 ## Main declarations
 
 * `CommHopfAlgCat.quotientPointsSubgroup_antitone`: the cut-out point subgroup is antitone in
   the Hopf ideal.
+* `HopfIdeal.le_iff_forall_quotientPointsSubgroup_le`: recover ideal inclusion from point
+  subgroup inclusion on all value algebras.
+* `HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq`: recover ideal equality from point
+  subgroup equality on all value algebras.
 * `CommHopfAlgCat.quotientPointsSubgroup_sup`: the point subgroup cut out by a join of Hopf
   ideals is the intersection of the point subgroups cut out by the joinands.
 * `CommHopfAlgCat.quotientPointsSubgroupInclusion`: the bundled natural inclusion between
@@ -65,6 +70,31 @@ theorem quotientPointsSubgroup_le_of_le (H : _root_.CommHopfAlgCat.{v} R)
     {I J : HopfIdeal R H} (hIJ : I ≤ J) (A : CommAlgCat.{w} R) :
     quotientPointsSubgroup H J A ≤ quotientPointsSubgroup H I A :=
   quotientPointsSubgroup_antitone H A hIJ
+
+/-- Hopf ideals are determined contravariantly by their subgroups of points over all
+commutative value algebras. Testing on the universal quotient point suffices, so no
+reducedness or finite-type assumption is required. -/
+theorem _root_.TauCeti.HopfIdeal.le_iff_forall_quotientPointsSubgroup_le
+    {H : _root_.CommHopfAlgCat.{v} R} (I J : HopfIdeal R H) :
+    I ≤ J ↔ ∀ A : CommAlgCat.{v} R,
+      quotientPointsSubgroup H J A ≤ quotientPointsSubgroup H I A := by
+  refine ⟨fun h A ↦ quotientPointsSubgroup_le_of_le H h A, fun h x hx ↦ ?_⟩
+  let A := CommAlgCat.of R (CommHopfAlgCat.quotient H J)
+  let q := toConv (AlgHom.id R (CommHopfAlgCat.quotient H J))
+  have hq := h A (quotientPointsHom_mem_quotientPointsSubgroup H J A q)
+  have hz := (mem_quotientPointsSubgroup_iff H I A _).mp hq x hx
+  rw [quotientPointsHom_apply_apply] at hz
+  exact HopfIdeal.mem_toIdeal.mp (Ideal.Quotient.eq_zero_iff_mem.mp hz)
+
+/-- Equality of the subgroups of points on every value algebra determines a Hopf ideal,
+including its infinitesimal structure. -/
+theorem _root_.TauCeti.HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq
+    {H : _root_.CommHopfAlgCat.{v} R} {I J : HopfIdeal R H}
+    (h : ∀ A : CommAlgCat.{v} R,
+      quotientPointsSubgroup H I A = quotientPointsSubgroup H J A) : I = J := by
+  exact le_antisymm
+    ((I.le_iff_forall_quotientPointsSubgroup_le J).mpr fun A ↦ (h A).ge)
+    ((J.le_iff_forall_quotientPointsSubgroup_le I).mpr fun A ↦ (h A).le)
 
 /-- Rewriting form of `quotientPointsSubgroup_le_of_le` as a membership implication. -/
 theorem mem_quotientPointsSubgroup_of_le (H : _root_.CommHopfAlgCat.{v} R)

@@ -16,10 +16,6 @@ subcategory of finitely generated right comodules. Since corestriction changes o
 coalgebra of the coaction and leaves the underlying module unchanged, finite generation is
 preserved automatically.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap target "Comodules over a
-coalgebra/Hopf algebra": the finitely generated comodule category must remain available when
-the coordinate coalgebra is changed along a coalgebra morphism.
-
 ## Main definitions
 
 * `TauCeti.FGComoduleCat.corestrict`: corestriction as a functor on finitely generated
@@ -40,7 +36,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u v w x y
+universe u v w x
 
 namespace FGComoduleCat
 
@@ -147,8 +143,6 @@ theorem forget₂_semimoduleCat_corestrict_map (f : C →ₗc[R] D)
       (forget₂ (FGComoduleCat.{u, v, x} R C) (SemimoduleCat.{x} R)).map g :=
   rfl
 
-variable {E : Type y} [AddCommMonoid E] [Module R E] [Coalgebra R E]
-
 /-- Corestricting finitely generated comodules along the identity coalgebra morphism leaves the
 coaction unchanged. -/
 theorem corestrict_obj_coact_id (M : FGComoduleCat.{u, v, x} R C) :
@@ -156,22 +150,6 @@ theorem corestrict_obj_coact_id (M : FGComoduleCat.{u, v, x} R C) :
         (M := (corestrict (R := R) (C := C) (D := C) (CoalgHom.id R C)).obj M) =
       Comodule.coact (R := R) (C := C) (M := M) :=
   Comodule.corestrictCoact_id (R := R) (C := C) (M := M)
-
-/-- Corestriction functors compose in the coalgebra morphism on underlying linear maps. -/
-theorem corestrict_map_comp_coalg_toLinearMap (f : C →ₗc[R] D) (g : D →ₗc[R] E)
-    {M N : FGComoduleCat.{u, v, x} R C} (h : M ⟶ N) :
-    (((corestrict (R := R) (C := C) (D := E) (g.comp f)).map h).hom).toLinearMap =
-      (((corestrict (R := R) (C := D) (D := E) g).map
-        ((corestrict (R := R) (C := C) (D := D) f).map h)).hom).toLinearMap :=
-  rfl
-
-/-- Corestriction functors compose in the coalgebra morphism on elements. -/
-theorem corestrict_map_comp_coalg_apply (f : C →ₗc[R] D) (g : D →ₗc[R] E)
-    {M N : FGComoduleCat.{u, v, x} R C} (h : M ⟶ N) (m : M) :
-    (corestrict (R := R) (C := C) (D := E) (g.comp f)).map h m =
-      (corestrict (R := R) (C := D) (D := E) g).map
-        ((corestrict (R := R) (C := C) (D := D) f).map h) m :=
-  rfl
 
 end FGComoduleCat
 

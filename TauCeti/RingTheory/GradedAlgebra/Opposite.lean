@@ -286,9 +286,9 @@ theorem unop_zsmul (G : InternalGrading R A) (n : ℤ) (a : GradedOpposite G) :
   rw [← zsmul_eq_mul]
   exact map_zsmul (opLinearEquiv G).symm n a
 
-section Multiplication
+section One
 
-variable (G : InternalGrading R A) [SetLike.GradedMonoid G.piece]
+variable (G : InternalGrading R A) [SetLike.GradedOne G.piece]
 
 /-- The unit of the graded opposite is the image of the original unit. -/
 @[simp]
@@ -302,6 +302,18 @@ theorem op_one : op G (1 : A) = 1 := by
 @[simp]
 theorem unop_one : unop G (1 : GradedOpposite G) = 1 := by
   rw [← op_one G, unop_op]
+
+/-- The degree-zero piece of a graded opposite contains its unit. -/
+instance instGradedOne : SetLike.GradedOne (grading G).piece where
+  one_mem := by
+    rw [← op_one G, op_mem_piece_iff]
+    exact SetLike.one_mem_graded G.piece
+
+end One
+
+section Mul
+
+variable (G : InternalGrading R A) [SetLike.GradedMul G.piece]
 
 /-- Multiplication in the graded opposite reverses homogeneous factors and inserts their Koszul
 sign. -/
@@ -368,10 +380,7 @@ theorem unop_mul {p q : ℤ} {a b : GradedOpposite G}
   simpa only [Units.smul_def, zsmul_eq_mul, unop_zsmul, unop_op] using key
 
 /-- The homogeneous pieces of a graded opposite are closed under its signed multiplication. -/
-noncomputable instance instGradedMonoid : SetLike.GradedMonoid (grading G).piece where
-  one_mem := by
-    rw [← op_one G, op_mem_piece_iff]
-    exact SetLike.one_mem_graded G.piece
+instance instGradedMul : SetLike.GradedMul (grading G).piece where
   mul_mem := by
     intro p q x y hx hy
     rw [← op_unop G x, ← op_unop G y]
@@ -383,11 +392,20 @@ noncomputable instance instGradedMonoid : SetLike.GradedMonoid (grading G).piece
       exact SetLike.mul_mem_graded ((mem_piece_iff G q y).1 hy)
         ((mem_piece_iff G p x).1 hx)) _
 
+end Mul
+
+section Monoid
+
+variable (G : InternalGrading R A) [SetLike.GradedMonoid G.piece]
+
+/-- The homogeneous pieces of a graded opposite form a graded monoid. -/
+instance instGradedMonoid : SetLike.GradedMonoid (grading G).piece where
+
 /-- The signed opposite is internally graded by the same degrees as the original algebra. -/
 noncomputable instance instGradedAlgebra : GradedAlgebra (grading G).piece :=
   (grading G).isInternal.gradedAlgebra
 
-end Multiplication
+end Monoid
 
 section Maps
 
@@ -524,7 +542,7 @@ theorem differential_map_mem {d : A →ₗ[R] A}
   rw [← op_unop G x, differential_op, op_mem_piece_iff]
   exact hd ((mem_piece_iff G p x).1 hx)
 
-variable [GradedAlgebra G.piece] {d : A →ₗ[R] A}
+variable [SetLike.GradedMul G.piece] {d : A →ₗ[R] A}
 
 private theorem differential_leibniz_of_mem
     (hl : ∀ {p : ℤ} {a : A}, a ∈ G.piece p → ∀ b : A,

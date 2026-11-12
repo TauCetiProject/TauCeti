@@ -1,0 +1,193 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Topology.Category.TopCat.DisjointOpens
+public import TauCeti.Topology.Category.TopCat.Limits.Basic
+public import TauCeti.Topology.CWComplex.Abstract.ClosedEmbedding
+public import TauCeti.Topology.Separation.Sigma
+
+/-!
+# Relative CW complexes on Hausdorff spaces are Hausdorff
+
+Mathlib's categorical relative CW complex `c : TopCat.RelativeCWComplex f`, for a morphism
+`f : X ⟶ Y` of `TopCat`, presents `Y` as the colimit of a sequence of spaces starting at `X`, each
+obtained from the previous one by attaching disks along their boundary spheres. This file proves
+that `Y` is Hausdorff when `X` is (`TopCat.RelativeCWComplex.t2Space`); in particular a CW complex
+in this sense is Hausdorff (`TopCat.CWComplex.t2Space`). Mathlib's theory of classical CW
+complexes assumes a Hausdorff ambient space, so this is needed to read a classical CW structure off
+a categorical one.
+
+The proof extends open sets cell by cell. The inclusion of the boundary sphere of a disk extends
+disjoint open sets in the sense of `TauCeti.TopCat.extendsDisjointOpens`: an open subset `U` of the
+sphere extends to the open cone `{x | 1 / 2 < ‖x‖ ∧ x / ‖x‖ ∈ U}`
+(`TauCeti.TopCat.extendsDisjointOpens_diskBoundaryInclusion`, the case of a point of the same
+statement for `∂𝔻 n × Z ⟶ 𝔻 n × Z`,
+`TauCeti.TopCat.extendsDisjointOpens_diskBoundaryInclusion_prodMap`). Hence so does every map
+between the stages of the complex, and every map from a stage to `Y`. Two points of `Y` lie in a
+common stage, so they are separated by open sets once that stage is Hausdorff. A stage obtained by
+attaching cells to a Hausdorff space is Hausdorff (`HomotopicalAlgebra.AttachCells.t2Space`): two
+points of the old space are separated by extending open sets, and a point of an open cell is
+separated from the other points inside the disks, which are regular.
+
+The statements hold for any relative cell complex in `TopCat` whose basic cells are closed
+embeddings extending disjoint open sets into regular Hausdorff spaces
+(`HomotopicalAlgebra.RelativeCellComplex.t2Space`).
+
+## Implementation notes
+
+The cells attached at each step are indexed by a type in the universe of the spaces, as they are
+for `TopCat.RelativeCWComplex`, so that the coproduct of the attached disks is identified with
+their disjoint union `Σ i, B i` (`TopCat.sigmaCofanIsColimit`), which is regular by
+`Sigma.regularSpace`.
+
+## References
+
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Appendix: the neighbourhoods `N_ε(A)` of subsets of a cell complex, built cell by cell by
+  radial extension, and Proposition A.3 that cell complexes are normal.
+* R. Fritsch and R. Piccinini, *Cellular Structures in Topology*, Cambridge University Press,
+  1990, for the categorical definition.
+-/
+
+public section
+
+open CategoryTheory Limits MorphismProperty Topology TauCeti.TopCat
+
+universe w' t u
+
+namespace TauCeti.TopCat
+
+/-- The inclusion `∂𝔻 n × Z ⟶ 𝔻 n × Z` of the boundary sphere of the disk, times a space `Z`,
+extends disjoint open sets: an open subset `U` of `∂𝔻 n × Z` is the trace of the open set of the
+points `(x, z)` with `1 / 2 < ‖x‖` and `(x / ‖x‖, z) ∈ U`, and these sets are disjoint over
+disjoint sets (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn` with the radial projection
+in the first factor). For `Z` a point this is
+`TauCeti.TopCat.extendsDisjointOpens_diskBoundaryInclusion`; in general it is the inclusion of the
+attaching region of a handle `𝔻 n × Z`. -/
+theorem extendsDisjointOpens_diskBoundaryInclusion_prodMap (n : ℕ) (Z : Type u)
+    [TopologicalSpace Z] :
+    extendsDisjointOpens (TopCat.ofHom
+      ((TopCat.diskBoundaryInclusion.{u} n).hom.prodMap (ContinuousMap.id Z))) := by
+  -- The points of the disk and of its boundary as vectors of `E`. The carriers of `TopCat.disk n`
+  -- and `TopCat.diskBoundary n` are, by definition, the lifts of the closed unit ball and of the
+  -- unit sphere; the ascriptions expose these carriers, which the `TopCat` wrappers hide.
+  let ν (x : TopCat.disk.{u} n) : EuclideanSpace ℝ (Fin n) :=
+    ((x : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+      EuclideanSpace ℝ (Fin n))
+  let μ (s : TopCat.diskBoundary.{u} n) : EuclideanSpace ℝ (Fin n) :=
+    ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+      EuclideanSpace ℝ (Fin n))
+  have hμ : IsEmbedding μ := IsEmbedding.subtypeVal.comp IsEmbedding.uliftDown
+  have hνμ (s : TopCat.diskBoundary.{u} n) : ν (TopCat.diskBoundaryInclusion n s) = μ s :=
+    coe_diskBoundaryInclusion_apply_down n s
+  have hμ₁ (s : TopCat.diskBoundary.{u} n) : ‖μ s‖ = 1 := mem_sphere_zero_iff_norm.1
+    (s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
+  -- The radial projection in the first factor, continuous away from the centre, retracts the
+  -- neighbourhood `1 / 2 < ‖x‖` of `∂𝔻 n × Z` onto it.
+  have hν : Continuous fun x : TopCat.disk.{u} n × Z ↦ ν x.1 :=
+    (continuous_subtype_val.comp continuous_uliftDown).comp continuous_fst
+  refine extendsDisjointOpens_of_continuousOn _ (hμ.prodMap IsEmbedding.id).isInducing
+    (N := {x | 1 / 2 < ‖ν x.1‖}) (ρ := fun x ↦ (‖ν x.1‖⁻¹ • ν x.1, x.2))
+    (isOpen_lt continuous_const hν.norm)
+    (((ContinuousOn.inv₀ hν.norm.continuousOn fun x hx ↦ (lt_trans (by norm_num) hx).ne').smul
+      hν.continuousOn).prodMk continuous_snd.continuousOn) (fun s ↦ ?_) (fun x hx ↦ ?_)
+    (fun s ↦ ?_)
+  · simp [hνμ, hμ₁, show (2 : ℝ)⁻¹ < 1 by norm_num]
+  · have h₁ : ‖‖ν x.1‖⁻¹ • ν x.1‖ = 1 :=
+      norm_smul_inv_norm (𝕜 := ℝ) (norm_pos_iff.1 (lt_trans (by norm_num) hx))
+    exact ⟨(ULift.up ⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, x.2), rfl⟩
+  · simp [hνμ, hμ₁, Prod.map]
+
+/-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk extends disjoint open sets: an
+open subset `U` of the sphere is the trace of the open cone `{x | 1 / 2 < ‖x‖ ∧ x / ‖x‖ ∈ U}`.
+This is `TauCeti.TopCat.extendsDisjointOpens_diskBoundaryInclusion_prodMap` for a point. -/
+theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
+    extendsDisjointOpens (TopCat.diskBoundaryInclusion.{u} n) :=
+  (extendsDisjointOpens.arrow_mk_iso_iff (Arrow.isoMk
+    (TopCat.isoOfHomeo (Homeomorph.prodPUnit _)) (TopCat.isoOfHomeo (Homeomorph.prodPUnit _))
+    rfl)).1 (extendsDisjointOpens_diskBoundaryInclusion_prodMap n PUnit)
+
+end TauCeti.TopCat
+
+namespace HomotopicalAlgebra
+
+variable {α : Type t} {A B : α → TopCat.{u}} {g : ∀ a, A a ⟶ B a} {X₁ X₂ : TopCat.{u}}
+  {f : X₁ ⟶ X₂}
+
+/-- Attaching cells to a Hausdorff space gives a Hausdorff space, provided the cells are closed
+embeddings into regular Hausdorff spaces which extend disjoint open sets. -/
+theorem AttachCells.t2Space (a : AttachCells.{u} g f) [T2Space X₁] [∀ k, T2Space (B k)]
+    [∀ k, RegularSpace (B k)] (hg : ∀ i, extendsDisjointOpens (g (a.π i)))
+    (hg' : ∀ i, IsClosedEmbedding (g (a.π i))) : T2Space X₂ := by
+  -- The space of cells is the disjoint union of the targets of the attached cells.
+  let e := TopCat.homeoOfIso
+    (a.isColimit₂.coconePointUniqueUpToIso (TopCat.sigmaCofanIsColimit fun i ↦ B (a.π i)))
+  -- The carrier of `TopCat.sigmaCofan` is the sigma type, which instance search does not see.
+  have : T2Space (TopCat.sigmaCofan fun i ↦ B (a.π i)).pt :=
+    inferInstanceAs (T2Space (Σ i, B (a.π i)))
+  have : RegularSpace (TopCat.sigmaCofan fun i ↦ B (a.π i)).pt :=
+    inferInstanceAs (RegularSpace (Σ i, B (a.π i)))
+  have : T2Space a.cofan₂.pt := e.isEmbedding.t2Space
+  have : RegularSpace a.cofan₂.pt := e.isEmbedding.isInducing.regularSpace
+  have hm : extendsDisjointOpens a.m :=
+    IsStableUnderColimitsOfShape.condition _ _ _ _ a.isColimit₁ a.isColimit₂
+      (Discrete.natTrans fun i ↦ g (a.π i.as)) (fun i ↦ hg i.as) a.m (fun i ↦ a.hm i.as)
+  have hm' : IsClosedEmbedding a.m := (TauCeti.TopCat.isClosedEmbedding_iff _).1 <|
+    IsStableUnderColimitsOfShape.condition _ _ _ _ a.isColimit₁ a.isColimit₂
+      (Discrete.natTrans fun i ↦ g (a.π i.as))
+      (fun i ↦ (TauCeti.TopCat.isClosedEmbedding_iff _).2 (hg' i.as)) a.m (fun i ↦ a.hm i.as)
+  exact t2Space_of_isPushout a.isPushout hm hm'.isClosed_range
+
+namespace RelativeCellComplex
+
+variable {J : Type w'} [LinearOrder J] [OrderBot J] [SuccOrder J] [WellFoundedLT J]
+  {α : J → Type t} {A B : (j : J) → α j → TopCat.{u}}
+  {basicCell : (j : J) → (i : α j) → A j i ⟶ B j i} {X Y : TopCat.{u}} {f : X ⟶ Y}
+  (c : RelativeCellComplex.{u} basicCell f)
+
+/-- A relative cell complex `f : X ⟶ Y` in `TopCat` on a Hausdorff space `X` has a Hausdorff
+target `Y`, provided its basic cells are closed embeddings into regular Hausdorff spaces which
+extend disjoint open sets. -/
+theorem t2Space [T2Space X] [∀ j i, T2Space (B j i)] [∀ j i, RegularSpace (B j i)]
+    (hc : ∀ s : c.Cells, extendsDisjointOpens (basicCell s.j s.i))
+    (hc' : ∀ s : c.Cells, IsClosedEmbedding (basicCell s.j s.i)) : T2Space Y := by
+  let h : extendsDisjointOpens.TransfiniteCompositionOfShape J f :=
+    (c.transfiniteCompositionOfShape' hc).ofLE (pushouts_le_iff.2 (coproducts_le _))
+  have := h.isWellOrderContinuous
+  have hF (j : J) : T2Space (c.F.obj j) := by
+    induction j using SuccOrder.limitRecOn with
+    | isMin j hj =>
+      obtain rfl := hj.eq_bot
+      exact (TopCat.homeoOfIso c.isoBot).isEmbedding.t2Space
+    | succ j hj ih =>
+      exact (c.attachCells j hj).t2Space (fun i ↦ hc ⟨j, hj, i⟩) (fun i ↦ hc' ⟨j, hj, i⟩)
+    | isSuccLimit j hj ih =>
+      have (k : Set.Iio j) : T2Space (((Set.principalSegIio j).monotone.functor ⋙ c.F).obj k) :=
+        ih k.1 k.2
+      exact t2Space_of_isColimit (c.F.isColimitOfIsWellOrderContinuous j hj)
+        fun k ↦ h.mem_map _
+  exact t2Space_of_isColimit c.isColimit h.mem_incl_app
+
+end RelativeCellComplex
+
+end HomotopicalAlgebra
+
+namespace TopCat
+
+/-- **A relative CW complex on a Hausdorff space is Hausdorff.** If `f : X ⟶ Y` is a relative CW
+complex in Mathlib's categorical sense and `X` is Hausdorff, then so is `Y`. -/
+theorem RelativeCWComplex.t2Space {X Y : TopCat.{u}} {f : X ⟶ Y} (c : RelativeCWComplex f)
+    [T2Space X] : T2Space Y :=
+  HomotopicalAlgebra.RelativeCellComplex.t2Space c
+    (fun s ↦ extendsDisjointOpens_diskBoundaryInclusion s.j)
+    (fun s ↦ isClosedEmbedding_diskBoundaryInclusion s.j)
+
+/-- **A CW complex is Hausdorff.** -/
+theorem CWComplex.t2Space {X : TopCat.{u}} (c : CWComplex X) : T2Space X :=
+  RelativeCWComplex.t2Space c
+
+end TopCat

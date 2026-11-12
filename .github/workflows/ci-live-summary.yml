@@ -1,0 +1,39 @@
+name: Live CI summary
+# Normal reporting uses job webhooks and bounded service-side enrichment.
+# A trusted operator can explicitly request one data-only summary for diagnosis.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id: {description: "Completed build run to summarize", required: true, type: string}
+      attempt: {description: "Run attempt", required: true, default: "1", type: string}
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            tauceti.toml
+            scripts
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          project-directory: .
+      - name: Publish bounded data-only summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_READ_TOKEN: ${{ github.token }}
+          TAUCETI_GITHUB_READ_ROLE: ci-workflow-read
+          TAUCETI_GITHUB_WRITE_ROLE: ci-workflow-write
+          TARGET_RUN: ${{ inputs.run_id }}
+          TARGET_ATTEMPT: ${{ inputs.attempt }}
+        run: python3 scripts/ci_live_summary.py --run-id "$TARGET_RUN" --attempt "$TARGET_ATTEMPT"

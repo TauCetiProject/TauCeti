@@ -53,7 +53,7 @@ theorem orthogonalSpinorNorm_surjective_iff_not_mem_quadraticNormSubgroup_of_ani
     obtain ⟨e⟩ := h
     exact FiniteDimensional.of_injective e.toLinearEquiv.toLinearMap e.toLinearEquiv.injective
   let N := quadraticNormSubgroup (-(a * b : K))
-  let H : Subgroup (Multiplicative (SquareClassGroup K)) := N.map squareClassHom
+  let H : Subgroup ((Kˣ ⧸ Subgroup.square Kˣ)) := N.map squareClassHom
   have hV : Module.finrank K V = 2 := by
     obtain ⟨e⟩ := h
     simpa using e.toLinearEquiv.finrank_eq
@@ -72,7 +72,7 @@ theorem orthogonalSpinorNorm_surjective_iff_not_mem_quadraticNormSubgroup_of_ani
   constructor
   · intro hsurj ha
     have htop : ((orthogonalSpinorNorm Q hQ).range :
-        Subgroup (Multiplicative (SquareClassGroup K))) = ⊤ := by
+        Subgroup ((Kˣ ⧸ Subgroup.square Kˣ))) = ⊤ := by
       apply eq_top_iff.mpr
       intro x _
       obtain ⟨g, rfl⟩ := hsurj x
@@ -88,10 +88,10 @@ theorem orthogonalSpinorNorm_surjective_iff_not_mem_quadraticNormSubgroup_of_ani
   · intro ha
     have hcoatom : IsCoatom H := Subgroup.isCoatom_of_index_prime (hindex ▸ Nat.prime_two)
     suffices htop : ((orthogonalSpinorNorm Q hQ).range :
-        Subgroup (Multiplicative (SquareClassGroup K))) = ⊤ by
+        Subgroup ((Kˣ ⧸ Subgroup.square Kˣ))) = ⊤ by
       intro x
       have hx : x ∈ ((orthogonalSpinorNorm Q hQ).range :
-          Subgroup (Multiplicative (SquareClassGroup K))) := htop.symm ▸ Subgroup.mem_top x
+          Subgroup ((Kˣ ⧸ Subgroup.square Kˣ))) := htop.symm ▸ Subgroup.mem_top x
       exact hx
     rw [hrange]
     exact (SetLike.isCoatom_iff.mp hcoatom).2 _ (squareClassHom a) le_sup_left
@@ -107,7 +107,7 @@ theorem index_range_orthogonalSpinorNorm_of_anisotropic_binary_of_mem_quadraticN
       obtain ⟨e⟩ := h
       exact FiniteDimensional.of_injective e.toLinearEquiv.toLinearMap e.toLinearEquiv.injective
     ((orthogonalSpinorNorm Q hQ).range :
-      Subgroup (Multiplicative (SquareClassGroup K))).index = 2 := by
+      Subgroup ((Kˣ ⧸ Subgroup.square Kˣ))).index = 2 := by
   have : FiniteDimensional K V := by
     obtain ⟨e⟩ := h
     exact FiniteDimensional.of_injective e.toLinearEquiv.toLinearMap e.toLinearEquiv.injective
@@ -132,7 +132,7 @@ theorem index_range_orthogonalSpinorNorm_of_anisotropic_binary_of_not_mem_quadra
       obtain ⟨e⟩ := h
       exact FiniteDimensional.of_injective e.toLinearEquiv.toLinearMap e.toLinearEquiv.injective
     ((orthogonalSpinorNorm Q hQ).range :
-      Subgroup (Multiplicative (SquareClassGroup K))).index = 1 := by
+      Subgroup ((Kˣ ⧸ Subgroup.square Kˣ))).index = 1 := by
   have : FiniteDimensional K V := by
     obtain ⟨e⟩ := h
     exact FiniteDimensional.of_injective e.toLinearEquiv.toLinearMap e.toLinearEquiv.injective

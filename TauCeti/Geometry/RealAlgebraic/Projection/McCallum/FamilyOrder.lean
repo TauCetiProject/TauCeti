@@ -12,7 +12,7 @@ public import TauCeti.Topology.Algebra.MvPolynomial.OrderAt
 /-!
 # Ambient order in a McCallum family stack
 
-Suppose an irreducible basis has a common delineation over a preconnected base. If the ambient
+Suppose a squarefree basis has a common delineation over a preconnected base. If the ambient
 order of the product of the basis members is constant on every root section, then the ambient
 order of each basis member is constant there as well. This is a topological consequence of
 product order constancy: a factor's order can only jump upwards, and the sum of all factor
@@ -35,7 +35,7 @@ public section
 
 open MvPolynomial Polynomial Set
 
-namespace Finset.IsIrreducibleBasis
+namespace Finset.IsSquarefreeBasis
 
 variable {n : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
   {F B : Finset (Polynomial (MvPolynomial (Fin n) ℝ))} {S : Set (Fin n → ℝ)}
@@ -45,7 +45,7 @@ delineation, then every original input has constant ambient order and sign on ev
 cell. Content order is required to be constant on the base, and basis fibers must be
 nonzero. The product order need only be controlled on sections: on sectors, every basis
 member has ambient order zero. -/
-theorem orderAt_eq_of_prod_delineation (hB : F.IsIrreducibleBasis B)
+theorem orderAt_eq_of_prod_delineation (hB : F.IsSquarefreeBasis B)
     (hS : IsPreconnected S)
     (D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.1.map (MvPolynomial.eval x.1))
     (hfiber : ∀ b ∈ B, ∀ x ∈ S, b.map (MvPolynomial.eval x) ≠ 0)
@@ -66,7 +66,7 @@ theorem orderAt_eq_of_prod_delineation (hB : F.IsIrreducibleBasis B)
   have hnonzero : (∏ b ∈ B, ((finSuccEquiv ℝ n).symm b)) ≠ 0 := by
     apply Finset.prod_ne_zero_iff.mpr
     intro b hb hz
-    exact (hB.irreducible b hb).ne_zero
+    exact (hB.isPrimitive b hb).ne_zero
       ((finSuccEquiv ℝ n).symm.injective (by simpa only [map_zero] using hz))
   intro E hE f hf
   have horder : ∀ a ∈ E, ∀ a' ∈ E,
@@ -92,4 +92,4 @@ theorem orderAt_eq_of_prod_delineation (hB : F.IsIrreducibleBasis B)
         TauCeti.continuous_cylinder.continuousOn
   exact hpreconn.signInvariant_eval_of_orderAt_eq horder
 
-end Finset.IsIrreducibleBasis
+end Finset.IsSquarefreeBasis

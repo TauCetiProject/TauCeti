@@ -7,22 +7,20 @@ module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Construct
 public import Mathlib.Probability.Distributions.Bernoulli
+import TauCeti.Probability.Distributions.Bernoulli.Measurability
 
 /-!
-# Exchangeable coin flips: the worked example of a random bias
+# Exchangeable coin flips with a random bias
 
-This file discharges the second worked example of the Exchangeability roadmap
-(`TauCetiRoadmap/Exchangeability/README.md`, "Worked examples"):
-
-> A `Bool`-valued sequence generated conditionally i.i.d. given a random `θ` (draw `θ`, then flip
-> i.i.d. `κ (θ ω)`-coins) is exchangeable, with `ω ↦ κ (θ ω)` (`κ` a two-point kernel) as the
-> directing measure — genuinely: the generating construction makes it a witness of
-> `ConditionallyIIDWith`, not merely a mixing representative.
+A `Bool`-valued sequence generated conditionally i.i.d. given a random `θ` (draw `θ`, then flip
+i.i.d. `κ (θ ω)`-coins) is exchangeable, with `ω ↦ κ (θ ω)` (`κ` a two-point kernel) as the
+directing measure — genuinely: the generating construction makes it a witness of
+`ConditionallyIIDWith`, not merely a mixing representative. This file works out that example.
 
 The two-point kernel is `coinKernel p = Ber(true, false, p)`, Mathlib's `bernoulliMeasure` bundled
 as a `ProbabilityMeasure Bool`; the parameter `θ` is the first coordinate of the canonical space
-`I × (ℕ → Bool)` and the bias measure `π` is arbitrary. As the roadmap insists, the directing
-measure is the *random probability measure* `ω ↦ coinKernel ω.1`, not the bias `ω ↦ ω.1` itself.
+`I × (ℕ → Bool)` and the bias measure `π` is arbitrary. The directing measure is the
+*random probability measure* `ω ↦ coinKernel ω.1`, not the bias `ω ↦ ω.1` itself.
 
 The example carries weight because the sequence is exchangeable without being independent:
 `not_iIndepFun_coinFlips` exhibits a two-point bias law for which the coordinates are dependent, so
@@ -38,7 +36,7 @@ a disguised constant.
 * `not_iIndepFun_coinFlips` — for a bias that is genuinely random the flips are *not* independent.
 
 The construction it instantiates is `iidMixtureLaw` in
-`TauCeti/Probability/Process/IIDMixture.lean`. Nothing here is adapted from
+`TauCeti/Probability/Process/IIDMixture/Basic.lean`. Nothing here is adapted from
 `cameronfreer/exchangeability`.
 -/
 
@@ -81,20 +79,13 @@ theorem coinKernel_apply_true (p : I) :
   exact bernoulliMeasure_apply_of_mem_of_notMem p (measurableSet_singleton _) rfl (by simp)
 
 /-- The two-point kernel is measurable in the bias, so it can direct a mixture. -/
-theorem measurable_coinKernel : Measurable coinKernel := by
-  have hp : Measurable fun p : I => (toNNReal p : ℝ≥0∞) :=
-    measurable_coe_nnreal_ennreal.comp toNNReal_continuous.measurable
-  have hσ : Measurable fun p : I => (toNNReal (σ p) : ℝ≥0∞) :=
-    measurable_coe_nnreal_ennreal.comp (toNNReal_continuous.comp continuous_symm).measurable
-  refine (Measure.measurable_of_measurable_coe _ fun s _ => ?_).subtype_mk
-  simp only [bernoulliMeasure_def, Measure.coe_add, Measure.coe_smul, Pi.add_apply,
-    Pi.smul_apply]
-  exact (hp.mul_const _).add (hσ.mul_const _)
+theorem measurable_coinKernel : Measurable coinKernel :=
+  (measurable_const.bernoulliMeasure measurable_const measurable_id).subtype_mk
 
 variable (π : Measure I)
 
-/-- **The worked example.** Draw a bias from `π`, then flip i.i.d. coins with that bias: the
-resulting `Bool`-valued sequence is conditionally i.i.d. with directing measure
+/-- **Coin flips with a random bias.** Draw a bias from `π`, then flip i.i.d. coins with that bias:
+the resulting `Bool`-valued sequence is conditionally i.i.d. with directing measure
 `ω ↦ coinKernel ω.1`.
 
 This is the sharp conditional statement, not just the mixture identity: the generating construction

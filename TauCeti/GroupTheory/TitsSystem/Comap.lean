@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.TitsSystem.Bruhat.Basic
+public import TauCeti.GroupTheory.TitsSystem.Coxeter
+import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.QuotientGroup.Map
 import Mathlib.Tactic.Group
 
 /-!
@@ -35,6 +37,10 @@ from `f⁻¹(B)`, with the leftover element of `T` moved past `f w`, which norma
 * `TauCeti.TitsSystem.comap_simple`: its simple reflections correspond to those of `(B, N)`.
 * `TauCeti.TitsSystem.comap_bruhatCell`: Weyl-indexed Bruhat cells pull back under this
   identification.
+* `TauCeti.TitsSystem.normalCore_comap_subgroupB`: the normal core of `f⁻¹(B)` is the preimage of
+  the normal core of `B`.
+* `TauCeti.TitsSystem.isIrreducible_comap_iff`: the pulled-back Tits system is irreducible
+  exactly when the original one is.
 
 ## References
 
@@ -117,25 +123,18 @@ private theorem comapWeylGroupHom_mk (n : T.subgroupN.comap f) :
     comapWeylGroupHom T (QuotientGroup.mk n) = QuotientGroup.mk (f.subgroupComap T.subgroupN n) :=
   QuotientGroup.map_mk _ _ _ _ _
 
-/-- A representative `r₀ ∈ N` of the image of the class of `r ∈ f⁻¹(N)` is `f r` times an
-element of `B ∩ N`. -/
-private theorem exists_eq_mul_of_mk_eq_comapWeylGroupHom_mk {r₀ : T.subgroupN}
-    {r : T.subgroupN.comap f}
-    (h : (QuotientGroup.mk r₀ : T.WeylGroup) = comapWeylGroupHom T (QuotientGroup.mk r)) :
-    ∃ t ∈ T.subgroupB ⊓ T.subgroupN, (r₀ : G) = f r * t := by
-  rw [comapWeylGroupHom_mk, eq_comm, QuotientGroup.eq, mem_intersection, Subgroup.coe_mul,
-    Subgroup.coe_inv, f.subgroupComap_apply_coe T.subgroupN r] at h
-  exact ⟨(f r)⁻¹ * r₀, Subgroup.mem_inf.mpr ⟨h, mul_mem (inv_mem r.2) r₀.2⟩,
-    (mul_inv_cancel_left _ _).symm⟩
+/-- If `f x * t = n ∈ N` with `t ∈ B`, the class of `x` maps to the class of `n`. -/
+private theorem comapWeylGroupHom_mk_of_mul_eq {x : H} (hx : f x ∈ T.subgroupN)
+    {n : T.subgroupN} {t : G} (ht : t ∈ T.subgroupB) (hxt : f x * t = n) :
+    comapWeylGroupHom T (QuotientGroup.mk ⟨x, hx⟩) = QuotientGroup.mk n := by
+  rw [comapWeylGroupHom_mk, QuotientGroup.eq, mem_intersection, Subgroup.coe_mul,
+    Subgroup.coe_inv, f.subgroupComap_apply_coe T.subgroupN (⟨x, hx⟩ : T.subgroupN.comap f),
+    ← hxt, inv_mul_cancel_left]
+  exact ht
 
 private theorem comapWeylGroupHom_injective :
-    Function.Injective (comapWeylGroupHom T (f := f)) := by
-  rw [injective_iff_map_eq_one]
-  intro q hq
-  induction q using QuotientGroup.induction_on with
-  | H n =>
-    rw [comapWeylGroupHom_mk, QuotientGroup.eq_one_iff] at hq
-    exact (QuotientGroup.eq_one_iff n).mpr hq
+    Function.Injective (comapWeylGroupHom T (f := f)) :=
+  (TauCeti.QuotientGroup.map_injective_iff _ _ _).mpr (comap_subgroupOf_eq T)
 
 private theorem comapWeylGroupHom_surjective
     (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g) :
@@ -144,12 +143,7 @@ private theorem comapWeylGroupHom_surjective
   induction q using QuotientGroup.induction_on with
   | H n =>
     obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf n.2
-    refine ⟨QuotientGroup.mk ⟨x, hx⟩, ?_⟩
-    rw [comapWeylGroupHom_mk, QuotientGroup.eq, mem_intersection]
-    rw [Subgroup.coe_mul, Subgroup.coe_inv,
-      f.subgroupComap_apply_coe T.subgroupN (⟨x, hx⟩ : T.subgroupN.comap f), ← hxt,
-      inv_mul_cancel_left]
-    exact ht.1
+    exact ⟨QuotientGroup.mk ⟨x, hx⟩, comapWeylGroupHom_mk_of_mul_eq T hx ht.1 hxt⟩
 
 private theorem closure_preimage_comapWeylGroupHom
     (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g) :
@@ -186,13 +180,13 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
   intersection_normal := inferInstance
   simple := comapWeylGroupHom T ⁻¹' T.simple
   closure_simple := closure_preimage_comapWeylGroupHom T hf
-  exists_simpleRep_sq_mem s hs := by
+  exists_simpleRep_mul_self_mem s hs := by
     obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective s
     refine ⟨r, rfl, ?_⟩
     -- The square of the class of `r` maps to the square of a simple reflection, which is `1`.
     have hsq : comapWeylGroupHom T (QuotientGroup.mk (r * r)) = 1 := by
       rw [QuotientGroup.mk_mul, map_mul]
-      exact T.simple_sq_eq_one hs
+      exact T.simple_mul_simple_self hs
     exact (QuotientGroup.eq_one_iff _).mp
       ((injective_iff_map_eq_one _).mp (comapWeylGroupHom_injective T) _ hsq)
   mul_doubleCoset_subset s hs := by
@@ -221,24 +215,25 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
       f.subgroupComap_apply_coe T.subgroupN w] using hmem
   exists_conj_not_mem s hs := by
     obtain ⟨r₀, hr₀, b, hb⟩ := T.exists_conj_not_mem _ hs
-    obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective s
-    have hr : f r ∈ T.subgroupN := r.2
-    obtain ⟨t, ht, hr₀t⟩ := T.exists_eq_mul_of_mk_eq_comapWeylGroupHom_mk hr₀
+    obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf r₀.2
+    let r : T.subgroupN.comap f := ⟨x, hx⟩
+    have hr : (QuotientGroup.mk r : _ ⧸ _) = s :=
+      comapWeylGroupHom_injective T ((comapWeylGroupHom_mk_of_mul_eq T hx ht.1 hxt).trans hr₀)
     -- Write `t b t⁻¹ = f x * t₁` with `f x ∈ B` and `t₁ ∈ B ∩ N`.
     obtain ⟨x, t₁, ht₁, hxt₁⟩ := hf (t * b * t⁻¹)
     have hx : f x ∈ T.subgroupB := by
       rw [eq_mul_inv_of_mul_eq hxt₁]
       exact mul_mem (mul_mem (mul_mem ht.1 b.2) (inv_mem ht.1)) (inv_mem ht₁.1)
-    refine ⟨r, rfl, ⟨x, hx⟩, fun hmem ↦ hb ?_⟩
+    refine ⟨r, hr, ⟨x, hx⟩, fun hmem ↦ hb ?_⟩
     -- Then `r₀ b r₀⁻¹ = f (r x r⁻¹) * (f r) t₁ (f r)⁻¹`, and both factors lie in `B`.
     have hconj : (r₀ : G) * b * (r₀ : G)⁻¹ =
         f ((r : H) * x * (r : H)⁻¹) * (f r * t₁ * (f r)⁻¹) := by
-      rw [hr₀t, map_mul, map_mul, map_inv]
+      rw [← hxt, map_mul, map_mul, map_inv]
       calc f r * t * b * (f r * t)⁻¹ = f r * (t * b * t⁻¹) * (f r)⁻¹ := by group
         _ = f r * (f x * t₁) * (f r)⁻¹ := by rw [hxt₁]
         _ = _ := by group
     rw [hconj]
-    exact mul_mem hmem (T.conj_mem_subgroupB hr ht₁)
+    exact mul_mem hmem (T.conj_mem_subgroupB r.2 ht₁)
 
 variable (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g)
 
@@ -282,5 +277,23 @@ theorem comap_bruhatCell (w : (T.comap f hf).WeylGroup) :
   rw [comapWeylGroupMulEquiv_mk, bruhatCell_mk, bruhatCell_mk,
     comap_subgroupB]
   exact (T.preimage_doubleCoset (fun b _ ↦ hf b) (by simpa using n.2)).symm
+
+/-- The normal core `⋂ x f⁻¹(B) x⁻¹` of the pulled-back `B` is the preimage of the normal core
+`⋂ g B g⁻¹` of `B`: every `g : G` is `f y * t` with `t ∈ B ∩ N`, and `t` normalizes `B`. -/
+theorem normalCore_comap_subgroupB :
+    (T.comap f hf).subgroupB.normalCore = T.subgroupB.normalCore.comap f := by
+  rw [comap_subgroupB]
+  exact Subgroup.normalCore_comap_of_forall_exists_mul_eq f fun g ↦
+    let ⟨x, t, ht, h⟩ := hf g
+    ⟨x, t, ht.1, h⟩
+
+/-- **A pulled-back Tits system is irreducible exactly when the original one is**, since the two
+Weyl groups are identified together with their simple reflections. -/
+@[simp]
+theorem isIrreducible_comap_iff : (T.comap f hf).IsIrreducible ↔ T.IsIrreducible := by
+  refine ⟨fun h ↦ h.of_mulEquiv (T.comapWeylGroupMulEquiv f hf).symm ?_,
+    fun h ↦ h.of_mulEquiv (T.comapWeylGroupMulEquiv f hf) (T.comap_simple f hf).symm⟩
+  ext w
+  simp
 
 end TauCeti.TitsSystem

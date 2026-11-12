@@ -28,7 +28,8 @@ increment by `‖h‖ ‖∇u‖ₚ`.  Restriction back to `Ω` then gives compa
 map `TauCeti.W1p0.valueL`.
 
 The corresponding statement for all of `W^{1,p}(Ω)` requires a boundary-regular extension
-operator and is not claimed here.
+operator; for bounded Lipschitz domains it is
+`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`.
 
 ## Main declaration
 
@@ -36,9 +37,9 @@ operator and is not claimed here.
 
 ## References
 
-Lane A.6 of `TauCetiRoadmap/PDE/README.md`; H. Brezis, *Functional Analysis, Sobolev Spaces and
-Partial Differential Equations*, Corollary 9.16; L. C. Evans, *Partial Differential Equations*,
-Section 5.7.  The compactness criterion used here is the Kolmogorov--Riesz form proved in
+H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
+Corollary 9.16; L. C. Evans, *Partial Differential Equations*, Section 5.7.  The compactness
+criterion used here is the Kolmogorov--Riesz form proved in
 `TauCeti/MeasureTheory/Function/Lp/FrechetKolmogorov.lean`.
 -/
 
@@ -106,9 +107,9 @@ private theorem W1p0.isCompactOperator_valueExtendByZeroL (hp : p ≠ ∞)
     intro f hf
     obtain ⟨u, hu, rfl⟩ := hf
     rw [mem_ball, dist_zero_right] at hu
-    rw [← Lp.enorm_def]
+    rw [← Lp.eNorm_def]
     calc
-      ‖W1p0.valueExtendByZeroL u‖ₑ ≤ ‖(1 : ℝ)‖ₑ := enorm_le_iff_norm_le.mpr
+      ‖W1p0.valueExtendByZeroL u‖ₑ ≤ ‖(1 : ℝ)‖ₑ := eNorm_le_iff_norm_le.mpr
         ((W1p0.norm_valueExtendByZeroL_le (mu := mu) (Omega := Omega) (p := p) u).trans
           (by simpa using hu.le))
       _ = 1 := by simp
@@ -118,7 +119,7 @@ private theorem W1p0.isCompactOperator_valueExtendByZeroL (hp : p ≠ ∞)
     intro epsilon hepsilon
     obtain ⟨delta, hdelta, hbound⟩ :=
       W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_norm_le
-        (S := ball (0 : W1p0 mu Omega p) 1) (C := 1) hp
+        (S := ball (0 : W1p0 mu Omega p) 1) (C := 1)
         (fun u hu => (mem_ball_zero_iff.1 hu).le) hepsilon
     refine ⟨delta, hdelta, fun f hf h hh => ?_⟩
     obtain ⟨u, hu, rfl⟩ := hf

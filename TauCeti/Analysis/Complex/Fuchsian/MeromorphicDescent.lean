@@ -69,7 +69,7 @@ theorem meromorphicAt_of_meromorphicAt_comp_quotientMk {F : orbitRel.Quotient Γ
     RiemannSurface.MeromorphicAt F (Quotient.mk _ z) := by
   have : Finite (stabilizer Γ z) := (ProperlyDiscontinuousSMul.finite_stabilizer z).to_subtype
   have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
-  obtain ⟨ε, hε, hopen⟩ := exists_pos_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z
+  obtain ⟨ε, hε, hopen⟩ := exists_pos_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall Γ z
   set e := stabilizerBallQuotientChart hε hopen with he_def
   set m := Nat.card (stabilizer Γ z) with hm
   have hsource : Quotient.mk _ z ∈ e.source :=

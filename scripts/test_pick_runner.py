@@ -1,315 +1,192 @@
-"""Exercise the actual runner-picker shell and batch runner expressions offline.
+"""Exercise this project's picker consumers and immutable recovery identity.
 
-Run with: python3 scripts/test_pick_runner.py
+Kept here because nightly source verification uses dedicated capacity, while its
+reference job and PR builds still consume the shared picker.
 """
 
 import json
 import os
-from pathlib import Path
 import subprocess
 import tempfile
-from types import SimpleNamespace
+import tomllib
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
 
 import yaml
 
-
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("TAUCETI_PROJECT_ROOT", Path(__file__).resolve().parents[1]))
 PICKER = yaml.safe_load((ROOT / ".github/workflows/pick-runner.yml").read_text())
 BUILD = yaml.safe_load((ROOT / ".github/workflows/pr-build.yml").read_text())
-NS = "nscloud-ubuntu-24.04-amd64-8x16-with-features"
-
-# Use real jq to exercise the workflow's filters, including pagination and errors.
-FAKE_GH = r'''#!/usr/bin/env python3
-import json, os, subprocess, sys
-args = sys.argv[1:]
-path = next(a for a in args[1:] if not a.startswith('-'))
-token = os.environ['GH_TOKEN']
-with open(os.environ['CALLS'], 'a') as f:
-    f.write(('repository:' if token == 'repository-token' else '') + path + '\n')
-fixture = json.load(open(os.environ['FIXTURE']))
-pages = fixture.get(token + ':' + path, fixture.get(path))
-if pages is None:
-    print('API read failed: ' + path, file=sys.stderr)
-    sys.exit(1)
-if '--paginate' not in args:
-    pages = pages[:1]
-query = args[args.index('--jq') + 1]
-for page in pages:
-    if page is None:
-        sys.exit(1)
-    result = subprocess.run(['jq', '-r', query], input=json.dumps(page), text=True)
-    if result.returncode:
-        sys.exit(result.returncode)
-'''
+MODERN = any(step.get("run") == "python3 scripts/fleet_runner.py --route"
+             for job in PICKER["jobs"].values() for step in job.get("steps", []))
 
 
-def job(provider="github", status="in_progress"):
-    labels = [NS] if provider == "namespace" else ["ubuntu-latest"]
-    if provider == "self-hosted":
-        labels = ["self-hosted", "linux"]
-    return dict(status=status, labels=labels)
-
-
-class PickerTests(unittest.TestCase):
-    def fixture(self, busy=2):
-        return {
-            "orgs/Test/repos?per_page=100": [[dict(name="code", archived=False)]],
-            "repos/Test/code/actions/runs?status=in_progress&per_page=100": [
-                dict(total_count=1, workflow_runs=[dict(id=1)])],
-            "repos/Test/code/actions/runs/1/jobs?per_page=100": [
-                dict(total_count=busy, jobs=[job() for _ in range(busy)])],
-            "rate_limit": [dict(resources=dict(core=dict(remaining=5000)))],
-        }
-
-    def pick(self, fixture, budget="18", app_token="installation-token", fallback_token="repository-token", repository_reserve=None):
-        with tempfile.TemporaryDirectory() as directory:
-            directory = Path(directory)
-            (directory / "gh").write_text(FAKE_GH)
-            (directory / "gh").chmod(0o755)
-            (directory / "fixture.json").write_text(json.dumps(fixture))
-            output, summary, calls = (directory / name for name in ["output", "summary", "calls"])
-            step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "pick")
-            variables = SimpleNamespace(PICKER_API_RESERVE="",
-                                        PICKER_REPOSITORY_API_RESERVE=repository_reserve or "")
-            selected_reserve = expression(step["env"]["API_RESERVE"], "", "", "", app_token,
-                                          variables=variables)
-            selected_repository_reserve = expression(step["env"]["REPOSITORY_API_RESERVE"],
-                                                    "", "", "", app_token, variables=variables)
-            env = {**os.environ, "PATH": f"{directory}:{os.environ['PATH']}",
-                   "ORG": "Test", "BUDGET": budget, "GITHUB_OUTPUT": str(output),
-                   "GITHUB_STEP_SUMMARY": str(summary), "CALLS": str(calls),
-                   "FIXTURE": str(directory / "fixture.json"),
-                   "API_RESERVE": selected_reserve, "FALLBACK_TOKEN": fallback_token,
-                   "REPOSITORY_API_RESERVE": selected_repository_reserve,
-                   "GH_TOKEN": app_token or "repository-token"}
-            step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "pick")
-            result = subprocess.run(["bash", "-c", step["run"]], env=env,
-                                    text=True, capture_output=True, timeout=20)
-            self.assertEqual(result.returncode, 0, result.stderr)
-            return (dict(line.split("=", 1) for line in output.read_text().splitlines()),
-                    summary.read_text(), calls.read_text().splitlines() if calls.exists() else [])
-
-    def test_namespace_backlog_does_not_spill_idle_github_capacity(self):
-        fixture = self.fixture()
-        # The picker completed on GitHub; these runs now wait for Namespace.
-        fixture["repos/Test/code/actions/runs?status=queued&per_page=100"] = [
-            dict(total_count=200, workflow_runs=[dict(id=n) for n in range(2, 202)])]
-        fixture["repos/Test/code/actions/runs/1/jobs?per_page=100"][0]["jobs"] += [
-            job("namespace") for _ in range(8)] + [job("namespace", "queued") for _ in range(64)]
-        output, _, calls = self.pick(fixture)
-        self.assertEqual(output, dict(github="true", budget="18", busy="2"))
-        self.assertFalse(any("status=queued" in path for path in calls))
-
-    def test_budget_boundary_counts_picker_slot(self):
-        for busy, expected in [(17, "true"), (18, "true"), (19, "false"), (20, "false")]:
-            with self.subTest(busy=busy):
-                output, _, _ = self.pick(self.fixture(busy))
-                self.assertEqual(output["github"], expected)
-                self.assertEqual(output["busy"], str(busy))
-
-    def test_only_running_hosted_jobs_consume_capacity(self):
-        fixture = self.fixture()
-        fixture["repos/Test/code/actions/runs/1/jobs?per_page=100"][0]["jobs"] += [
-            job(status="queued"), job(status="completed"), job("namespace"), job("self-hosted")]
-        output, _, _ = self.pick(fixture)
-        self.assertEqual(output["busy"], "2")
-        self.assertEqual(output["github"], "true")
-
-    def test_counts_all_repositories_and_pages(self):
-        fixture = self.fixture(1)
-        fixture["orgs/Test/repos?per_page=100"] += [[dict(name="review", archived=False)]]
-        fixture["repos/Test/review/actions/runs?status=in_progress&per_page=100"] = [
-            dict(total_count=101, workflow_runs=[dict(id=n) for n in range(2, 102)]),
-            dict(total_count=101, workflow_runs=[dict(id=102)])]
-        for n in range(2, 103):
-            fixture[f"repos/Test/review/actions/runs/{n}/jobs?per_page=100"] = [
-                dict(total_count=1, jobs=[job("namespace")])]
-        # Second page holds running GitHub jobs, after 100 completed jobs.
-        fixture["repos/Test/review/actions/runs/102/jobs?per_page=100"] = [
-            dict(total_count=118, jobs=[job(status="completed") for _ in range(100)]),
-            dict(total_count=118, jobs=[job() for _ in range(18)])]
-        output, _, calls = self.pick(fixture)
-        self.assertEqual(output["busy"], "19")
-        self.assertEqual(output["github"], "false")
-        self.assertIn("repos/Test/review/actions/runs/102/jobs?per_page=100", calls)
-
-    def test_incomplete_reads_fall_back_instead_of_undercounting(self):
-        for path in ["orgs/Test/repos?per_page=100",
-                     "repos/Test/code/actions/runs?status=in_progress&per_page=100",
-                     "repos/Test/code/actions/runs/1/jobs?per_page=100"]:
-            with self.subTest(path=path):
-                fixture = self.fixture()
-                fixture[path].append(None)  # A later page fails after partial output.
-                output, summary, _ = self.pick(fixture)
-                self.assertEqual(output["github"], "false")
-                self.assertIn("Could not", summary)
-
-    def test_low_quota_preserves_budget_without_per_run_reads(self):
-        for remaining in [0, 1000, 1500]:
-            with self.subTest(remaining=remaining):
-                fixture = self.fixture()
-                fixture["rate_limit"][0]["resources"]["core"]["remaining"] = remaining
-                fixture["repository-token:rate_limit"] = [
-                    dict(resources=dict(core=dict(remaining=250)))]
-                output, summary, calls = self.pick(fixture)
-                self.assertEqual(output["github"], "false")
-                self.assertIn("quota reserve", summary)
-                self.assertEqual(calls, ["rate_limit", "repository:rate_limit"])
-
-    def test_private_github_token_uses_its_separate_1000_request_budget(self):
-        fixture = self.fixture()
-        fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1000
-        output, _, _ = self.pick(fixture, app_token="")
-        self.assertEqual(output["github"], "true")
-        self.assertEqual(output["busy"], "2")
-
-    def test_shared_reserve_uses_repository_budget_and_still_checks_capacity(self):
-        for busy, expected in [(2, "true"), (18, "true"), (19, "false")]:
-            with self.subTest(busy=busy):
-                fixture = self.fixture(busy)
-                fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1500
-                fixture["repository-token:rate_limit"] = [
-                    dict(resources=dict(core=dict(remaining=1000)))]
-                output, summary, calls = self.pick(fixture, fallback_token="repository-token")
-                self.assertEqual(output["github"], expected)
-                self.assertEqual(output["busy"], str(busy))
-                self.assertIn("Shared App quota reserve protected", summary)
-                self.assertEqual(calls[0], "rate_limit")
-                self.assertTrue(all(path.startswith("repository:") for path in calls[1:]))
-
-    def test_repository_fallback_can_happen_before_parallel_job_reads(self):
-        fixture = self.fixture()
-        fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1501
-        fixture["repository-token:rate_limit"] = [dict(resources=dict(core=dict(remaining=1000)))]
-        output, _, calls = self.pick(fixture, fallback_token="repository-token")
-        self.assertEqual(output["github"], "true")
-        job_calls = [path for path in calls if "/jobs?" in path]
-        self.assertTrue(job_calls)
-        self.assertTrue(all(path.startswith("repository:") for path in job_calls))
-
-    def test_exhausted_or_unreadable_repository_budget_falls_back_to_namespace(self):
-        for remaining in [0, 250, None]:
-            with self.subTest(remaining=remaining):
-                fixture = self.fixture()
-                fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1500
-                fixture["repository-token:rate_limit"] = [
-                    dict(resources=dict(core=dict(remaining=remaining)))]
-                output, _, calls = self.pick(fixture, fallback_token="repository-token")
-                self.assertEqual(output["github"], "false")
-                self.assertEqual(calls, ["rate_limit", "repository:rate_limit"])
-
-    def test_projected_job_reads_preserve_reserve(self):
-        fixture = self.fixture()
-        fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1501
-        fixture["repository-token:rate_limit"] = [
-            dict(resources=dict(core=dict(remaining=251)))]
-        output, summary, calls = self.pick(fixture)
-        self.assertEqual(output["github"], "false")
-        self.assertIn("inspection would consume", summary)
-        self.assertFalse(any("/jobs?" in path for path in calls))
-
-    def test_no_app_preserves_repository_budget_without_switching(self):
-        for remaining in [0, 250, 251]:
-            with self.subTest(remaining=remaining):
-                fixture = self.fixture()
-                fixture["rate_limit"][0]["resources"]["core"]["remaining"] = remaining
-                output, summary, calls = self.pick(fixture, app_token="")
-                self.assertEqual(output["github"], "false")
-                self.assertNotIn("Shared App quota reserve protected", summary)
-                self.assertFalse(any("/jobs?" in path for path in calls))
-
-    def test_repository_reserve_is_configurable_and_identified_in_summary(self):
-        fixture = self.fixture()
-        fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1500
-        fixture["repository-token:rate_limit"] = [
-            dict(resources=dict(core=dict(remaining=500)))]
-        output, summary, _ = self.pick(fixture, repository_reserve="400")
-        self.assertEqual(output["github"], "true")
-        self.assertIn("repository API requests left this hour (reserve 400)", summary)
-        output, _, calls = self.pick(fixture, repository_reserve="500")
-        self.assertEqual(output["github"], "false")
-        self.assertEqual(calls, ["rate_limit", "repository:rate_limit"])
-
-    def test_invalid_repository_reserve_avoids_api_reads(self):
-        for value in ["bad", "9223372036854775807"]:
-            output, summary, calls = self.pick({}, repository_reserve=value)
-            self.assertEqual(output["github"], "false")
-            self.assertIn("Invalid repository API reserve", summary)
-            self.assertEqual(calls, [])
-
-    def test_no_app_custom_reserve_uses_workflow_expression(self):
-        fixture = self.fixture()
-        fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 400
-        output, _, calls = self.pick(fixture, app_token="", repository_reserve="400")
-        self.assertEqual(output["github"], "false")
-        self.assertEqual(calls, ["repository:rate_limit"])
-
-    def test_missing_fallback_token_preserves_installation_reserve(self):
-        fixture = self.fixture()
-        fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1500
-        output, _, calls = self.pick(fixture, fallback_token="")
-        self.assertEqual(output["github"], "false")
-        self.assertEqual(calls, ["rate_limit"])
-
-    def test_quota_read_failure_falls_back_before_org_scan(self):
-        fixture = self.fixture()
-        del fixture["rate_limit"]
-        output, _, calls = self.pick(fixture)
-        self.assertEqual(output["github"], "false")
-        self.assertEqual(calls, ["rate_limit"])
-
-    def test_namespace_profile_is_not_hosted_capacity(self):
-        fixture = self.fixture()
-        fixture["repos/Test/code/actions/runs/1/jobs?per_page=100"][0]["jobs"].append(
-            dict(status="in_progress", labels=["namespace-profile-test"]))
-        output, _, _ = self.pick(fixture)
-        self.assertEqual(output["busy"], "2")
-
-    def test_invalid_budget_falls_back(self):
-        output, summary, calls = self.pick({}, budget="bad")
-        self.assertEqual(output["github"], "false")
-        self.assertIn("not a number", summary)
-        self.assertEqual(calls, [])
-
-
-def expression(value, event, action, picked, app_token="installation-token", variables=None):
-    """Evaluate the actual workflow expression's boolean/format/JSON subset."""
-    source = value.removeprefix("${{").removesuffix("}}").strip()
+def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", staging_target="", pool="github", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
+    """Evaluate the actual YAML expression's boolean/format/JSON subset."""
+    source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
-    github = SimpleNamespace(event_name=event, event=SimpleNamespace(action=action), run_id=42)
-    needs = SimpleNamespace(**{"pick-runner": SimpleNamespace(outputs=SimpleNamespace(github=picked))})
-    source = source.replace("needs.pick-runner", "needs.__dict__['pick-runner']")
-    steps = SimpleNamespace(**{"app-token": SimpleNamespace(outputs=SimpleNamespace(token=app_token))})
-    variables = variables or SimpleNamespace(PICKER_API_RESERVE="", PICKER_REPOSITORY_API_RESERVE="")
-    source = source.replace("steps.app-token", "steps.__dict__['app-token']")
+    source = source.replace("!contains", "not contains").replace("!(", "not (").replace(".labels.*.name", ".label_names")
+    github = SimpleNamespace(repository="TauCetiProject/TauCeti", run_attempt=attempt, run_id=42, event_name=event, event=SimpleNamespace(
+        action=action, workflow_run=SimpleNamespace(event=upstream_event, display_title=upstream_title), label=SimpleNamespace(name=label), pull_request=SimpleNamespace(number=7, label_names=labels, user=SimpleNamespace(type=author_type),
+            head=SimpleNamespace(sha="a" * 40, ref=head_ref, repo=SimpleNamespace(full_name=head_repo))),
+        client_payload=SimpleNamespace(pr=7, head_sha="a" * 40, base_sha="b" * 40, base_ref="main", batch_id=12),
+        merge_group=SimpleNamespace(head_sha="c" * 40)))
+    needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot, pool=pool)))
+    source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging").replace("outputs.hosted-slot", "outputs.hosted_slot")
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
-                         "steps": steps, "vars": variables, "fromJSON": json.loads, "format": lambda s, *args: s.format(*args)})
+                         "inputs": SimpleNamespace(pr="7", staging=staging, maintenance=maintenance), "fromJSON": json.loads,
+                         "contains": lambda values, value: value in values, "format": lambda s, *args: s.format(*args), "startsWith": lambda s, p: s.startswith(p),
+                         "vars": SimpleNamespace(FLEET_CI_ENABLED="true", PICKER_GITHUB_FALLBACK="true" if hosted_picker else "", STAGING_RUNS_ON=staging_target)})
 
 
-class BatchPriorityTests(unittest.TestCase):
-    def test_bors_stays_on_namespace_and_has_priority_and_unique_assignment(self):
-        jobs = BUILD["jobs"]
-        for picked in ["true", "false", ""]:
-            with self.subTest(picked=picked):
-                labels = expression(jobs["sandboxed-build"]["runs-on"],
-                                    "repository_dispatch", "tauceti-bors-staging", picked)
-                self.assertEqual(labels, [NS + ";job.priority=1",
-                    "namespace-features:container.privileged=true;github.run-id=42"])
-                self.assertFalse(expression(jobs["pick-runner"]["if"],
-                                            "repository_dispatch", "tauceti-bors-staging", picked))
+@unittest.skipUnless(MODERN, "project uses the standard GitHub-only picker")
+class PickerWorkflow(unittest.TestCase):
+    def test_hosted_bulk_jobs_share_exactly_nineteen_native_slots(self):
+        for name, job, picker in (("pr-build.yml", "sandboxed-build", "pick-runner"),
+                                 ("nightly-verify.yml", "reference", "pick-reference-runner")):
+            workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+            concurrency = workflow["jobs"][job]["concurrency"]
+            group = concurrency["group"].replace("needs." + picker, "needs.pick-runner")
+            self.assertEqual({expression(group, hosted_slot=str(i)) for i in range(19)},
+                             {"tauceti-hosted-bulk-" + str(i) for i in range(19)})
+            self.assertEqual(expression(group, picker_attempt="", target="", hosted_slot=""), "tauceti-hosted-bulk-0")
+            for target in (["nscloud-ubuntu-24.04-amd64-8x16-with-features"],
+                           dict(group="TauCetiFleet", labels=["self-hosted", "tauceti-fleet-pr"])):
+                self.assertFalse(expression(group, target=json.dumps(target)).startswith("tauceti-hosted-bulk-"))
+                # A stale picker falls back to GitHub, so it must regain the cap.
+                self.assertEqual(expression(group, target=json.dumps(target), attempt=2), "tauceti-hosted-bulk-0")
+            self.assertEqual(concurrency["queue"], "max")
+            self.assertFalse(concurrency["cancel-in-progress"])
 
-    def test_pr_and_native_queue_routing_keeps_its_existing_policy(self):
-        for event, action in [("pull_request_target", "opened"), ("workflow_dispatch", ""),
-                              ("repository_dispatch", "tauceti-bors-pr-approved"),
-                              ("merge_group", "checks_requested")]:
-            for picked in ["true", "false", ""]:
-                with self.subTest(event=event, picked=picked):
-                    labels = expression(BUILD["jobs"]["sandboxed-build"]["runs-on"], event, action, picked)
-                    if picked == "true" and event != "merge_group":
-                        self.assertEqual(labels, "ubuntu-24.04")
-                    else:
-                        self.assertEqual(labels, [NS, "namespace-features:container.privileged=true"])
+    def test_priority_overrides_do_not_wait_for_hosted_bulk_slots(self):
+        group = BUILD["jobs"]["sandboxed-build"]["concurrency"]["group"]
+        self.assertFalse(expression(group, maintenance=True).startswith("tauceti-hosted-bulk-"))
+        self.assertFalse(expression(group, author_type="Bot", head_ref="bump-mathlib/abc").startswith("tauceti-hosted-bulk-"))
+        self.assertFalse(expression(group, event="repository_dispatch", action="tauceti-bors-staging",
+                                    staging_target='["nscloud-ubuntu-24.04-amd64-16x32-with-features"]')
+                         .startswith("tauceti-hosted-bulk-"))
+
+    def test_slot_calculation_never_creates_an_extra_group(self):
+        step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "hosted-slot")
+        with tempfile.TemporaryDirectory() as root:
+            for run_id in [*range(19), 42533533021, 999999999999999]:
+                output = Path(root) / "output"
+                output.unlink(missing_ok=True)
+                subprocess.run(["bash", "-e", "-c", step["run"]], check=True,
+                               env=dict(os.environ, HOSTED_RUN_ID=str(run_id), GITHUB_OUTPUT=str(output)))
+                self.assertEqual(output.read_text(), "slot=" + str(run_id % 19) + "\n")
+
+    def test_shared_pr_pool_target_is_used_for_this_attempt_only(self):
+        source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
+        target = dict(group="TauCetiFleet", labels=["self-hosted", "linux", "x64", "tauceti-fleet-pr"])
+        self.assertEqual(expression(source, target=json.dumps(target)), target)
+        self.assertEqual(expression(source, attempt=2, picker_attempt="2", target=json.dumps(target)), target)
+        self.assertEqual(expression(source, attempt=2, target=json.dumps(target)), "ubuntu-24.04")
+        self.assertEqual(expression(source, picker_attempt="", target=""), "ubuntu-24.04")
+
+    def test_startup_recovery_only_watches_bors_staging(self):
+        recovery = yaml.safe_load((ROOT / ".github/workflows/fleet-recovery.yml").read_text())
+        condition = recovery["jobs"]["recover"]["if"]
+        for event in ("pull_request_target", "repository_dispatch"):
+            self.assertFalse(expression(condition, upstream_event=event))
+        self.assertTrue(expression(condition, upstream_event="repository_dispatch",
+                                   upstream_title="bors branch=main batch=12 head=" + "a" * 40))
+
+    def test_namespace_target_and_fallback_obey_the_same_attempt_fence(self):
+        target = ["nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1", "namespace-features:container.privileged=true;github.run-id=42"]
+        for name, job, picker in [
+            ("pr-build.yml", "sandboxed-build", "pick-runner"),
+            ("nightly-verify.yml", "reference", "pick-reference-runner"),
+        ]:
+            workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+            source = workflow["jobs"][job]["runs-on"].replace("needs." + picker, "needs.pick-runner")
+            self.assertEqual(expression(source, target=json.dumps(target)), target)
+            self.assertEqual(expression(source, target=json.dumps(target), attempt=2), "ubuntu-24.04")
+
+    def test_maintenance_build_capacity_is_limited_to_explicit_or_same_repo_bot_work(self):
+        source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
+        priority_build = [
+            "nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1",
+            "namespace-features:container.privileged=true;github.run-id=42",
+        ]
+        self.assertEqual(expression(source, maintenance=True), priority_build)
+        for branch in ("bump-mathlib/abc", "lint-repair/main"):
+            self.assertEqual(expression(source, author_type="Bot", head_ref=branch), priority_build)
+            self.assertEqual(expression(source, head_ref=branch), "ubuntu-24.04")
+            self.assertEqual(expression(source, author_type="Bot", head_ref=branch,
+                                        head_repo="someone/fork"), "ubuntu-24.04")
+
+    def test_pr_title_contains_immutable_head_and_bors_title_is_unchanged(self):
+        self.assertEqual(expression(BUILD["run-name"]), "pr-build pr=7 head=" + "a" * 40)
+        self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-pr-approved"), "pr-build pr=7 head=" + "a" * 40)
+        self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-staging"), "bors branch=main batch=12 head=" + "a" * 40 + " base=" + "b" * 40)
+
+    def test_label_events_only_route_self_tested_prs(self):
+        condition = BUILD["jobs"]["pick-runner"]["if"]
+        for action in ("labeled", "unlabeled"):
+            self.assertFalse(expression(condition, action=action))
+            self.assertTrue(expression(condition, action=action, label="self-tested"))
+            self.assertFalse(expression(condition, action=action, labels=("self-tested",)))
+            self.assertFalse(expression(condition, action=action, label="full-lint"))
+            for label in ("full-lint", "lint-repair"):
+                self.assertTrue(expression(condition, action=action, label=label, labels=("self-tested",)))
+            self.assertEqual(expression(BUILD["run-name"], action=action), "Ignored label event 42")
+        self.assertTrue(expression(condition))
+
+    def test_staging_uses_only_tauchonki2_and_waits_there_on_picker_failure(self):
+        source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
+        group = BUILD["jobs"]["sandboxed-build"]["concurrency"]["group"]
+        config = tomllib.loads((ROOT / "tauceti.toml").read_text())["services"]["fleet"]
+        self.assertEqual(config["staging_order"], ["tauchonki2"])
+        fallback = ["self-hosted", "linux", "x64", "tauceti-fleet-staging",
+                    "fleet-" + config["machines"]["tauchonki2"]["machine_id"]]
+        common = dict(event="repository_dispatch", action="tauceti-bors-staging",
+                      staging_target='["nscloud-ubuntu-24.04-amd64-16x32-with-features"]')
+        for pool in ("tauchonki2",):
+            target = dict(group="TauCetiFleet", labels=["self-hosted", "tauceti-fleet-staging",
+                          "fleet-" + config["machines"][pool]["machine_id"], "fleet-instance-" + "b" * 16])
+            self.assertEqual(expression(source, pool=pool, target=json.dumps(target), **common), target)
+            self.assertEqual(expression(source, pool=pool, target=json.dumps(target), attempt=2, **common), fallback)
+        for pool, target in (("chungus2", '["self-hosted","tauceti-fleet-staging","fleet-old"]'),
+                             ("namespace", '["nscloud-old"]'), ("github", '"ubuntu-24.04"'),
+                             ("chris", '["self-hosted"]'), ("", "")):
+            self.assertEqual(expression(source, pool=pool, target=target, **common), fallback)
+            self.assertFalse(expression(group, pool=pool, target=target, **common).startswith("tauceti-hosted-bulk-"))
+        self.assertEqual(expression(source, picker_attempt="", target="", **common), fallback)
+        self.assertNotIn("fleet-instance-", " ".join(fallback))
+
+    def test_maintenance_build_keeps_its_explicit_namespace_runner(self):
+        source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
+        expected = ["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1",
+                    "namespace-features:container.privileged=true;github.run-id=42"]
+        self.assertEqual(expression(source, maintenance=True), expected)
+        self.assertEqual(expression(source, maintenance=True, hosted_picker=True, attempt=2), expected)
+
+    def test_picker_is_small_control_job_and_calls_the_existing_selector(self):
+        pick = PICKER["jobs"]["pick"]
+        priority_control = [
+            "nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0",
+            "namespace-features:github.run-id=42",
+        ]
+        self.assertEqual(expression(pick["runs-on"]), priority_control)
+        self.assertEqual(expression(pick["runs-on"], hosted_picker=True), "ubuntu-24.04")
+        self.assertEqual(expression(pick["runs-on"], staging=True), [
+            "self-hosted", "linux", "x64", "tauceti-fleet-queue-control",
+            "fleet-74773fc7f54d4877add11d80113fe340"])
+        self.assertEqual(expression(pick["runs-on"], maintenance=True), priority_control)
+        token = next(s for s in pick["steps"] if "create-github-app-token" in s.get("uses", ""))
+        self.assertTrue(token["continue-on-error"])
+        self.assertIn("inputs.pr-number > 0", token["if"])
+        self.assertIn("'self-tested'", token["if"])
+        self.assertTrue(pick["continue-on-error"])
+        step = next(s for s in pick["steps"] if s.get("id") == "pick")
+        self.assertEqual(step["run"], "python3 scripts/fleet_runner.py --route")
+        self.assertEqual(step["env"]["NAMESPACE_BUILD_CAP"], "${{ vars.NAMESPACE_BUILD_CAP }}")
+        self.assertEqual(step["env"]["GH_TOKEN"], "${{ github.token }}")
+        self.assertIn("'250'", step["env"]["API_RESERVE"])
+        self.assertNotIn("FALLBACK_TOKEN", step["env"])
+        self.assertNotIn("REPOSITORY_API_RESERVE", step["env"])
 
 
 if __name__ == "__main__":

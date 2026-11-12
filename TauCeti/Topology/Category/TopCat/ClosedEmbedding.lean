@@ -7,11 +7,10 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 public import Mathlib.CategoryTheory.Limits.Shapes.Preorder.WellOrderContinuous
-public import Mathlib.CategoryTheory.Limits.Types.Filtered
 public import Mathlib.CategoryTheory.Limits.Types.Coproducts
 public import Mathlib.CategoryTheory.Limits.Types.Pushouts
 public import Mathlib.CategoryTheory.MorphismProperty.TransfiniteComposition
-public import Mathlib.Topology.Category.TopCat.Limits.Basic
+public import TauCeti.Topology.Category.TopCat.Limits.Basic
 
 /-!
 # Closed embeddings in `TopCat`
@@ -33,7 +32,8 @@ complexes:
 
 The last point comes from a statement about directed colimits: if all transition maps of a
 directed diagram are closed embeddings, so are the maps to its colimit
-(`TauCeti.TopCat.isClosedEmbedding_ι_of_isColimit`).
+(`TauCeti.TopCat.isClosedEmbedding_ι_of_isColimit`), refining the corresponding statement for
+injective maps (`TauCeti.TopCat.injective_ι_of_isColimit`).
 
 With Mathlib's description of a relative cell complex as a transfinite composition of pushouts of
 coproducts of its basic cells, these stability properties show that a relative cell complex in
@@ -159,11 +159,7 @@ theorem isClosedEmbedding_ι_of_isColimit {J : Type w} [Preorder J] [IsDirectedO
     {F : J ⥤ TopCat.{u}}
     (hF : ∀ ⦃i j : J⦄ (hij : i ≤ j), IsClosedEmbedding (F.map (homOfLE hij)))
     {c : Cocone F} (hc : IsColimit c) (i : J) : IsClosedEmbedding (c.ι.app i) := by
-  have : Nonempty J := ⟨i⟩
-  have hc' := isColimitOfPreserves (forget TopCat) hc
-  have hinj (j : J) : Function.Injective (c.ι.app j) := fun x y h ↦ by
-    obtain ⟨k, g, hk⟩ := (Types.FilteredColimit.isColimit_eq_iff' hc' x y).1 h
-    exact (hF (leOfHom g)).injective hk
+  have hinj := injective_ι_of_isColimit (fun _ _ hij ↦ (hF hij).injective) hc
   refine .of_continuous_injective_isClosedMap (c.ι.app i).hom.continuous (hinj i) fun Z hZ ↦ ?_
   rw [TopCat.isClosed_iff_of_isColimit _ hc]
   intro k

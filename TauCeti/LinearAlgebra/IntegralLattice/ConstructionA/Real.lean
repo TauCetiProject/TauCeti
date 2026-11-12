@@ -15,7 +15,7 @@ public import Mathlib.Algebra.BigOperators.Field
 /-!
 # The real normalization of Construction A
 
-The rational Construction A form divides the dot product by the positive modulus `m`.
+The rational Construction A form divides the dot product by the modulus `m`.
 Multiplying real coordinates by `1 / √m` instead gives the ordinary dot product.
 This file identifies the scalar extension `ℝ ⊗[ℚ] (ι → ℚ)` with `ι → ℝ` by a bilinear
 isometry and identifies the image of the rational lattice with the usual real Construction A
@@ -23,8 +23,11 @@ carrier: the vectors `z / √m` whose integer coordinates reduce to a codeword.
 
 The comparison applies to every additive code, without self-orthogonality. When the code is
 self-orthogonal it also identifies the carrier and form of the bundled integral lattice.
-The modulus is positive throughout, and the coordinate type is arbitrary and finite for
-the full-lattice instance, scalar extension, and bilinear forms.
+The embedding `realEmbedding` and the carrier `realLattice` are defined for every modulus
+`m : ℕ`; at `m = 0` the embedding is zero (`(√0)⁻¹ = 0`), so `realLattice 0 C` is the zero
+submodule. Injectivity, the full-lattice instance, the scalar-extension isometry, and the
+comparison with the integral lattice assume `[NeZero m]`. The coordinate type is arbitrary,
+and finite for the full-lattice instance, scalar extension, and bilinear forms.
 
 The normalization follows Harada–Munemasa–Venkov, *Classification of ternary extremal
 self-dual codes of length 28*, §2, and Munemasa–Tamura, *The codes and the lattices of
@@ -42,7 +45,7 @@ namespace TauCeti.ConstructionA
 
 open Matrix
 
-variable (m : ℕ+) {ι : Type*}
+variable (m : ℕ) {ι : Type*}
 
 /-- The rational-linear embedding into real coordinates scaled by `1 / √m`. -/
 def realEmbedding : (ι → ℚ) →ₗ[ℚ] (ι → ℝ) :=
@@ -55,13 +58,13 @@ theorem realEmbedding_apply (x : ι → ℚ) (i : ι) :
   simp [realEmbedding, div_eq_mul_inv, mul_comm]
 
 /-- The real normalization is injective. -/
-theorem realEmbedding_injective : Function.Injective (realEmbedding m (ι := ι)) := by
+theorem realEmbedding_injective [NeZero m] : Function.Injective (realEmbedding m (ι := ι)) := by
   intro x y h
   funext i
   have hcoord := congrFun h i
   simp only [realEmbedding_apply] at hcoord
   exact Rat.cast_injective ((div_left_inj' (Real.sqrt_ne_zero'.mpr
-    (by exact_mod_cast m.pos))).mp hcoord)
+    (by exact_mod_cast NeZero.pos m))).mp hcoord)
 
 /-- The real Construction A carrier is the normalized image of its rational carrier. -/
 def realLattice (C : AddSubgroup (ι → ZMod m)) : Submodule ℤ (ι → ℝ) :=
@@ -83,7 +86,7 @@ theorem mem_realLattice {C : AddSubgroup (ι → ZMod m)} {x : ι → ℝ} :
 /-- Normalizing an integer vector gives a real lattice vector exactly when its reduction
 belongs to the code. -/
 @[simp]
-theorem intCast_div_sqrt_mem_realLattice {C : AddSubgroup (ι → ZMod m)} (z : ι → ℤ) :
+theorem intCast_div_sqrt_mem_realLattice [NeZero m] {C : AddSubgroup (ι → ZMod m)} (z : ι → ℤ) :
     (fun i ↦ (z i : ℝ) / Real.sqrt (m : ℝ)) ∈ realLattice m C ↔
       (fun i ↦ (z i : ZMod m)) ∈ C := by
   rw [mem_realLattice]
@@ -92,13 +95,13 @@ theorem intCast_div_sqrt_mem_realLattice {C : AddSubgroup (ι → ZMod m)} (z : 
     have hwz : w = z := by
       funext i
       exact Int.cast_injective ((div_left_inj' (Real.sqrt_ne_zero'.mpr
-        (by exact_mod_cast m.pos))).mp (congrFun h i))
+        (by exact_mod_cast NeZero.pos m))).mp (congrFun h i))
     simpa [hwz] using hw
   · exact fun hz ↦ ⟨z, hz, rfl⟩
 
-/-- For finite coordinates, the real Construction A carrier is a full, finitely generated
-lattice in `ι → ℝ`. -/
-instance isLattice_realLattice [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
+/-- For a nonzero modulus and finite coordinates, the real Construction A carrier is a full,
+finitely generated lattice in `ι → ℝ`. -/
+instance isLattice_realLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
     (realLattice m C).IsLattice ℝ where
   fg := (Submodule.IsLattice.fg (A := ℚ) (M := lattice m C)).map _
   span_eq_top := by
@@ -126,12 +129,14 @@ theorem dotProduct_realEmbedding (x y : ι → ℚ) :
     Real.sq_sqrt (show 0 ≤ (m : ℝ) by positivity), ← Finset.sum_div,
     form_apply, dotProduct, Rat.cast_div, Rat.cast_sum, Rat.cast_mul, Rat.cast_natCast]
 
+variable [NeZero m]
+
 /-- Real scalar extension followed by the normalization `1 / √m`. -/
 private def realScalarExtensionEquiv : ℝ ⊗[ℚ] (ι → ℚ) ≃ₗ[ℝ] (ι → ℝ) := by
   classical
   exact (TensorProduct.piScalarRight ℚ ℝ ℝ ι).trans
     (LinearEquiv.smulOfNeZero ℝ (ι → ℝ) (Real.sqrt (m : ℝ))⁻¹
-      (inv_ne_zero (Real.sqrt_ne_zero'.mpr (by exact_mod_cast m.pos))))
+      (inv_ne_zero (Real.sqrt_ne_zero'.mpr (by exact_mod_cast NeZero.pos m))))
 
 /-- The scalar-extension equivalence sends a pure tensor to its scaled coordinate vector. -/
 private theorem realScalarExtensionEquiv_tmul (r : ℝ) (x : ι → ℚ) (i : ι) :

@@ -13,6 +13,11 @@ public import Mathlib.Algebra.Homology.ComplexShapeSigns
 The total-complex shape induced by tensor signs adds the two input indices.
 This characteristic equation is independent of the category or bifunctor
 used to form a total complex.
+
+The instance `HomologicalComplex₂.totalComplexShapeSymmetryDownNat` identifies the total
+complexes of a first-quadrant bicomplex and of its flip by the Koszul sign `(-1)^(p*q)` in
+bidegree `(p, q)`. It is the natural-number analogue of Mathlib's `TotalComplexShapeSymmetry`
+instance for cochain complexes indexed by `ℤ`, and adapts its sign calculation.
 -/
 
 public section
@@ -27,3 +32,24 @@ theorem π_eq_add {I : Type*} [AddMonoid I] (c : ComplexShape I) [c.TensorSigns]
   rfl
 
 end ComplexShape
+
+namespace HomologicalComplex₂
+
+/-- The total complexes of a first-quadrant bicomplex and its flip are identified by the Koszul
+sign `(-1)^(p*q)` on the term in bidegree `(p, q)`. -/
+instance totalComplexShapeSymmetryDownNat :
+    TotalComplexShapeSymmetry (ComplexShape.down ℕ) (ComplexShape.down ℕ)
+      (ComplexShape.down ℕ) where
+  symm p q := Nat.add_comm q p
+  σ p q := (-1 : ℤˣ) ^ (p * q)
+  σ_ε₁ := by
+    rintro p _ rfl q
+    dsimp
+    rw [mul_one, Nat.add_mul, one_mul, pow_add]
+    ac_rfl
+  σ_ε₂ := by
+    rintro p q _ rfl
+    dsimp
+    rw [one_mul, Nat.mul_add, Nat.mul_one, pow_add, mul_assoc, Int.units_mul_self, mul_one]
+
+end HomologicalComplex₂

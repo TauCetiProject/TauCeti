@@ -25,7 +25,8 @@ part of the pinned type-`A` graph automorphism.
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.inverseTranspose_inverseTranspose`: inverse transpose is involutive.
+* `Matrix.GeneralLinearGroup.inverseTranspose_inverseTranspose` and
+  `Matrix.GeneralLinearGroup.inverseTranspose_symm`: inverse transpose is involutive.
 * `Matrix.GeneralLinearGroup.map_inverseTranspose`: naturality under ring homomorphisms.
 * `TauCeti.inverseTranspose_diagGL`: action on diagonal matrices.
 * `TauCeti.inverseTranspose_permutationGL`: permutation matrices are fixed.
@@ -33,12 +34,9 @@ part of the pinned type-`A` graph automorphism.
 
 ## Formalization source
 
-The transpose-and-units composition is the construction of `HeckeRing.GLn.transposeGLEquiv` in
-`TauCeti.NumberTheory.HeckeRing.GLn.TransposeAntiInvolution`, whose source credits Chris Birkbeck's
-[AINTLIB](https://github.com/CBirkbeck/AINTLIB) `LeanModularForms` project, file
-`LeanModularForms/HeckeRIngs/GLn/TransposeAntiInvolution.lean`. Here it is composed with inversion
-and generalized from rational matrices with `Fin` indices to commutative semirings and finite
-index types.
+The transpose-and-units composition is Mathlib's
+`Matrix.GeneralLinearGroup.transposeMulEquiv`. Here it is composed with inversion and generalized
+from Mathlib's commutative-ring coefficients to commutative semirings.
 -/
 
 public section
@@ -69,6 +67,12 @@ theorem inverseTranspose_inverseTranspose (g : GL n A) :
     inverseTranspose (inverseTranspose g) = g := by
   apply Units.ext
   simp only [← map_inv, coe_inverseTranspose, inv_inv, Matrix.transpose_transpose]
+
+/-- Inverse transpose is its own inverse automorphism. -/
+@[simp]
+theorem inverseTranspose_symm :
+    (inverseTranspose : GL n A ≃* GL n A).symm = inverseTranspose :=
+  MulEquiv.ext fun g ↦ by rw [MulEquiv.symm_apply_eq, inverseTranspose_inverseTranspose]
 
 variable {B : Type*} [CommSemiring B]
 

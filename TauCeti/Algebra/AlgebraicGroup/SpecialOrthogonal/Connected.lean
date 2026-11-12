@@ -11,7 +11,7 @@ import Mathlib.RingTheory.FiniteStability
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
-import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
+import TauCeti.Algebra.Polynomial.Laurent.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.FinTwo
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
 
@@ -104,20 +104,20 @@ private def laurentPath (i half : K) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1) :
         congrArg LaurentPolynomial.C hi)
       (by simpa only [map_ofNat, map_mul, map_one] using
         congrArg LaurentPolynomial.C hhalf)
-      (MultiplicativeGroup.genericUnit K))
+      (LaurentPolynomial.genericUnit K))
 
 private theorem mapValue_laurentPath
     (i half : K) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1) (u : Kˣ) :
     AlgHom.mapValue (H := K ⊗[k] coordinateHopfAlgebra k 2)
-        (MultiplicativeGroup.point u) (laurentPath (k := k) i half hi hhalf) =
+        (laurentEval u) (laurentPath (k := k) i half hi hhalf) =
       (baseChangePointsMulEquiv (k := k) (K := K) 2 K).symm
         (Matrix.SpecialOrthogonalGroup.finTwoOfUnit i half hi hhalf u) := by
   apply (baseChangePointsMulEquiv (k := k) (K := K) 2 K).injective
   rw [baseChangePointsMulEquiv_mapValue]
   simp only [laurentPath, MulEquiv.apply_symm_apply]
   rw [Matrix.SpecialOrthogonalGroup.map_finTwoOfUnit]
-  have hu : Units.map (MultiplicativeGroup.point u).toRingHom.toMonoidHom
-      (MultiplicativeGroup.genericUnit K) = u := by
+  have hu : Units.map (laurentEval u).toRingHom.toMonoidHom
+      (LaurentPolynomial.genericUnit K) = u := by
     apply Units.ext
     simp
   apply Subtype.ext
@@ -125,8 +125,8 @@ private theorem mapValue_laurentPath
     Matrix.SpecialOrthogonalGroup.coe_finTwoOfUnit]
   ext j k
   fin_cases j
-  · fin_cases k <;> norm_num [Matrix.of_apply, hu, MultiplicativeGroup.point_C]
-  · fin_cases k <;> norm_num [Matrix.of_apply, hu, MultiplicativeGroup.point_C]
+  · fin_cases k <;> norm_num [Matrix.of_apply, hu, laurentEval_C]
+  · fin_cases k <;> norm_num [Matrix.of_apply, hu, laurentEval_C]
 
 /-- The characteristic-two affine-line path with parameter `b`. -/
 private noncomputable def charTwoMatrixPath (b : K) (h2 : (2 : K) = 0) :
@@ -211,7 +211,7 @@ private theorem rightTranslationAlgHom_eq_self_of_two_ne_zero
     exact mul_inv_cancel₀ h2
   let E := baseChangePointsMulEquiv (k := k) (K := K) 2 K
   let u : Kˣ := Matrix.SpecialOrthogonalGroup.finTwoToUnit i hi (E g)
-  let eval (v : Kˣ) : LaurentPolynomial K →ₐ[K] K := MultiplicativeGroup.point v
+  let eval (v : Kˣ) : LaurentPolynomial K →ₐ[K] K := laurentEval v
   apply HopfAlgebra.rightTranslationAlgHom_eq_self_of_path e he g
     (laurentPath (k := k) i half hi hhalf) (eval u) (eval 1)
   · rw [mapValue_laurentPath]
@@ -272,17 +272,17 @@ private theorem rightTranslationAlgHom_eq_self_of_reflectionPair
   obtain ⟨M, a, b, hM⟩ := exists_laurentPath_reflectionMatrix_mul (n := Fin n) hc hd
   apply HopfAlgebra.rightTranslationAlgHom_eq_self_of_path e he _
     ((baseChangePointsMulEquiv (k := k) (K := K) n (LaurentPolynomial K)).symm M)
-    (MultiplicativeGroup.point b) (MultiplicativeGroup.point a)
+    (laurentEval b) (laurentEval a)
   · apply (baseChangePointsMulEquiv (k := k) (K := K) n K).injective
     rw [baseChangePointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
     refine Subtype.ext ?_
     rw [Matrix.SpecialOrthogonalGroup.coe_map, coe_reflectionPair]
-    exact (hM (MultiplicativeGroup.point b)).2 (by simp)
+    exact (hM (laurentEval b)).2 (by simp)
   · apply (baseChangePointsMulEquiv (k := k) (K := K) n K).injective
     rw [baseChangePointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, map_one]
     refine Subtype.ext ?_
     rw [Matrix.SpecialOrthogonalGroup.coe_map, Submonoid.coe_one]
-    exact (hM (MultiplicativeGroup.point a)).1 (by simp)
+    exact (hM (laurentEval a)).1 (by simp)
 
 /-- Right translation by any rational point of `SOₙ` fixes every idempotent: the points fixing a
 given idempotent form a subgroup, and products of two reflections generate. -/

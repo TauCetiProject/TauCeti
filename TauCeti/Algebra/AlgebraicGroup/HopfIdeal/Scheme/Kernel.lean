@@ -44,6 +44,8 @@ algebras is imposed by Mathlib's current `hopfSpec` construction, as in
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory CategoryTheory.Limits
 
 namespace TauCeti

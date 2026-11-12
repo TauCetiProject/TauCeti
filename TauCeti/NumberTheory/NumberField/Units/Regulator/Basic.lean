@@ -1,0 +1,313 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.NumberTheory.NumberField.Units.Regulator
+public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
+public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
+public import TauCeti.NumberTheory.NumberField.Units.Log.Embedding
+
+/-!
+# Evaluating and bounding the regulator
+
+In unit rank zero the regulator is evaluated exactly. When the unit rank is zero (equivalently,
+there is a single infinite place, so the field is `ℚ` or imaginary quadratic), the unit lattice
+lives in the zero-dimensional log space, and its covolume is the empty determinant `1`
+(`NumberField.Units.regulator_eq_one_of_rank_eq_zero`). Mathlib defines the regulator and proves
+it positive (`NumberField.Units.regulator_pos`) but does not evaluate it in the rank-zero case.
+
+For a number field of unit rank one, a unit generating the units modulo torsion computes the
+regulator at any infinite place `w` as `w.mult * |Real.log (w u)|`. In particular, at a place
+where `1 < w u`, the absolute value can be removed. The multiplicity is essential at a complex
+place.
+
+The more general index formula also applies to a unit which does not generate modulo torsion.
+It compares its weighted logarithm with the regulator times the subgroup index, using Mathlib's
+`NumberField.Units.regOfFamily_div_regulator` and `NumberField.Units.regOfFamily_eq_det`.
+
+In rank one, the norm of a unit's logarithmic embedding equals its weighted absolute logarithm
+at any infinite place. This identifies norm comparisons with logarithm comparisons at a chosen
+place. The product formula over the two infinite places also forces a unit expanding at one of
+them to contract at the other, which controls the remaining conjugates of a unit bounded at a
+chosen place.
+
+In every rank, Hadamard's `ℓ¹` bound `Matrix.abs_det_le_prod_sum_abs` bounds the regulator of a
+family of units by the product of the `ℓ¹` norms of their logarithmic embeddings
+(`TauCeti.NumberField.Units.regOfFamily_le_prod_sum_abs_logEmbedding`), and hence by the product
+of the full sums `∑ w, mult w * |log (w u)|` over all infinite places
+(`TauCeti.NumberField.Units.regOfFamily_le_prod_sum_mult_mul_abs_log`). A family has the
+regulator of `K` as its regulator exactly when it generates the units modulo torsion
+(`TauCeti.NumberField.Units.regOfFamily_eq_regulator_iff`), so the same products bound
+`regulator K` for every fundamental system. By the product formula, the full sum for a unit is
+twice its logarithmic height, so these bounds are the input to the upper bound of the regulator
+by the heights of a fundamental system (Bugeaud–Győry, Lemma 1).
+
+For a family `u` of maximal rank, the exponents of `x = ζ * ∏ j, u j ^ e j` with `ζ` a root of
+unity are the coordinates of the logarithmic embedding of `x` on the basis `basisOfIsMaxRank`
+(`TauCeti.NumberField.Units.basisOfIsMaxRank_repr_logEmbedding`). This extends Mathlib's
+`NumberField.Units.fun_eq_repr` from the fundamental system to any family of maximal rank.
+
+## References
+
+* H. Cohen, *A Course in Computational Algebraic Number Theory*, §5.7.
+* Y. Bugeaud and K. Győry, Bounds for the solutions of unit equations, *Acta Arith.* **74**
+  (1996), 67–80, §3, Lemma 1.
+-/
+
+public section
+
+open NumberField NumberField.Units NumberField.InfinitePlace
+open scoped NumberField
+
+namespace NumberField.Units
+
+open Module
+open NumberField.Units.dirichletUnitTheorem (w₀)
+
+variable (K : Type*) [Field K] [NumberField K]
+
+/-- **The regulator of a number field of unit rank zero is `1`.** When the unit rank is zero,
+the unit lattice sits inside the zero-dimensional log space, and the regulator, its covolume,
+is the determinant of an empty matrix. -/
+@[simp]
+theorem regulator_eq_one_of_rank_eq_zero (h : rank K = 0) : regulator K = 1 := by
+  classical
+  -- A rank-zero field has no infinite place other than the distinguished `w₀`, so the matrix
+  -- whose determinant is the regulator is the empty matrix.
+  have : IsEmpty {w : InfinitePlace K // w ≠ w₀} := by
+    rw [← Fintype.card_eq_zero_iff, ← Fintype.card_congr (equivFinRank K), Fintype.card_fin, h]
+  rw [regulator_eq_det', Matrix.det_isEmpty, abs_one]
+
+/-- **The regulator of `ℚ` is `1`.** The rational field has rank zero, so its regulator is the
+empty determinant. -/
+@[simp]
+theorem regulator_rat_eq_one : regulator ℚ = 1 :=
+  regulator_eq_one_of_rank_eq_zero ℚ (rank_eq_zero_of_finrank_eq_one ℚ (finrank_self ℚ))
+
+/-- **The regulator of an imaginary quadratic field is `1`**, the rank-zero case on a
+degree-two totally complex field. -/
+theorem regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two
+    [IsTotallyComplex K] (h : finrank ℚ K = 2) : regulator K = 1 :=
+  regulator_eq_one_of_rank_eq_zero K (rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two K h)
+
+end NumberField.Units
+
+namespace TauCeti.NumberField.Units
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- At unit rank one, the regulator of the constant one-unit family is its weighted absolute
+logarithm at any infinite place. This includes torsion units, for which both sides vanish. -/
+theorem regOfFamily_const_eq_mult_abs_log (hr : rank K = 1) (u : (𝓞 K)ˣ)
+    (w : InfinitePlace K) :
+    regOfFamily (fun _ : Fin (rank K) => u) = w.mult * |Real.log (w u)| := by
+  classical
+  have hcard : Fintype.card (InfinitePlace K) = 2 := by
+    unfold rank at hr
+    omega
+  have : Nontrivial (InfinitePlace K) :=
+    Fintype.one_lt_card_iff_nontrivial.mp (by omega)
+  obtain ⟨w', hw'⟩ := exists_ne w
+  have hc : Fintype.card {v : InfinitePlace K // v ≠ w'} = 1 := by
+    simp [Fintype.card_subtype_compl, hcard]
+  have : Subsingleton {v : InfinitePlace K // v ≠ w'} :=
+    Fintype.card_le_one_iff_subsingleton.mp hc.le
+  let : Unique {v : InfinitePlace K // v ≠ w'} :=
+    ⟨⟨⟨w, Ne.symm hw'⟩⟩, fun _ => Subsingleton.elim _ _⟩
+  let e : {v : InfinitePlace K // v ≠ w'} ≃ Fin (rank K) :=
+    Fintype.equivOfCardEq (by simp [hr])
+  rw [regOfFamily_eq_det _ w' e, Matrix.det_unique]
+  rw [Subsingleton.elim (default : {v : InfinitePlace K // v ≠ w'}) ⟨w, Ne.symm hw'⟩]
+  simp [Matrix.of_apply, abs_mul]
+
+/-- In unit rank one, the weighted absolute logarithm of a unit is the regulator multiplied
+by the index of the subgroup generated by that unit and torsion. -/
+theorem mult_abs_log_eq_index_mul_regulator (hr : rank K = 1) (u : (𝓞 K)ˣ)
+    (w : InfinitePlace K) :
+    w.mult * |Real.log (w u)| =
+      ((Subgroup.closure {u} ⊔ torsion K).index : ℝ) * regulator K := by
+  have : Nonempty (Fin (rank K)) := ⟨⟨0, by omega⟩⟩
+  have h := regOfFamily_div_regulator (fun _ : Fin (rank K) => u)
+  rw [regOfFamily_const_eq_mult_abs_log hr u w, Set.range_const] at h
+  exact (div_eq_iff (regulator_ne_zero K)).mp h
+
+open scoped Classical in
+/-- In unit rank one, the logarithmic embedding has one coordinate. Its norm is the absolute
+value of the weighted logarithm at any place other than Mathlib's distinguished place. -/
+private theorem norm_logEmbedding_eq_mult_abs_log_of_rank_eq_one (hr : rank K = 1)
+    (u : (𝓞 K)ˣ) (w : InfinitePlace K)
+    (hw : w ≠ NumberField.Units.dirichletUnitTheorem.w₀) :
+    ‖logEmbedding K (Additive.ofMul u)‖ = w.mult * |Real.log (w u)| := by
+  classical
+  have hplaces : Fintype.card (InfinitePlace K) = 2 := by
+    unfold rank at hr
+    omega
+  have hcard : Fintype.card {v : InfinitePlace K //
+      v ≠ NumberField.Units.dirichletUnitTheorem.w₀} = 1 := by
+    simp [Fintype.card_subtype_compl, hplaces]
+  have : Subsingleton {v : InfinitePlace K //
+      v ≠ NumberField.Units.dirichletUnitTheorem.w₀} :=
+    Fintype.card_le_one_iff_subsingleton.mp hcard.le
+  let : Unique {v : InfinitePlace K //
+      v ≠ NumberField.Units.dirichletUnitTheorem.w₀} :=
+    ⟨⟨⟨w, hw⟩⟩, fun _ => Subsingleton.elim _ _⟩
+  have hdefault : (default : {v : InfinitePlace K //
+      v ≠ NumberField.Units.dirichletUnitTheorem.w₀}) = ⟨w, hw⟩ :=
+    Subsingleton.elim _ _
+  rw [Pi.norm_def]
+  simp [Finset.univ_unique, hdefault,
+    NumberField.Units.dirichletUnitTheorem.logEmbedding_component]
+
+open scoped Classical in
+/-- In unit rank one, the norm of a unit's logarithmic embedding equals its weighted absolute
+logarithm at every infinite place. This evaluates an intrinsic norm at any chosen place. -/
+theorem norm_logEmbedding_eq_mult_abs_log (hr : rank K = 1) (u : (𝓞 K)ˣ)
+    (w : InfinitePlace K) :
+    ‖logEmbedding K (Additive.ofMul u)‖ = w.mult * |Real.log (w u)| := by
+  have hplaces : Fintype.card (InfinitePlace K) = 2 := by
+    unfold rank at hr
+    omega
+  have : Nontrivial (InfinitePlace K) :=
+    Fintype.one_lt_card_iff_nontrivial.mp (by omega)
+  obtain ⟨w', hw'⟩ := exists_ne (NumberField.Units.dirichletUnitTheorem.w₀ (K := K))
+  calc
+    ‖logEmbedding K (Additive.ofMul u)‖ =
+        w'.mult * |Real.log (w' u)| :=
+      norm_logEmbedding_eq_mult_abs_log_of_rank_eq_one hr u w' hw'
+    _ = ((Subgroup.closure {u} ⊔ torsion K).index : ℝ) * regulator K :=
+      mult_abs_log_eq_index_mul_regulator hr u w'
+    _ = w.mult * |Real.log (w u)| :=
+      (mult_abs_log_eq_index_mul_regulator hr u w).symm
+
+/-- In unit rank one, a unit whose absolute value exceeds one at an infinite place has absolute
+value less than one at the other infinite place. -/
+theorem lt_one_of_rank_eq_one_of_ne_of_one_lt (hr : rank K = 1) {w w' : InfinitePlace K}
+    (hne : w' ≠ w)
+    {v : (𝓞 K)ˣ} (hv : 1 < w v) : w' v < 1 := by
+  classical
+  have hcard : Fintype.card (InfinitePlace K) = 2 := by
+    unfold rank at hr
+    omega
+  have huniv : (Finset.univ : Finset (InfinitePlace K)) = {w', w} :=
+    (Finset.eq_univ_of_card _ (by rw [Finset.card_pair hne, hcard])).symm
+  have h := sum_mult_mul_log v
+  rw [huniv, Finset.sum_pair hne] at h
+  have hm : (0 : ℝ) < w.mult := by exact_mod_cast mult_pos
+  have hlog : Real.log (w' v) < 0 := by
+    have := Real.log_pos hv
+    nlinarith
+  exact (Real.log_neg_iff (Units.pos_at_place v w')).mp hlog
+
+open scoped Classical in
+/-- In unit rank one, a positive real value of a unit in `(1, B]` bounds the norm of its
+logarithmic embedding by `log B`. -/
+theorem norm_logEmbedding_le_log_of_interval (hr : rank K = 1)
+    {w : InfinitePlace K} (hw : w.IsReal) (v : (𝓞 K)ˣ) {B : ℝ}
+    (hlo : 1 < w.embedding_of_isReal hw (v : K))
+    (hhi : w.embedding_of_isReal hw (v : K) ≤ B) :
+    ‖logEmbedding K (Additive.ofMul v)‖ ≤ Real.log B := by
+  have hval : w v = w.embedding_of_isReal hw (v : K) := by
+    rw [← InfinitePlace.norm_embedding_of_isReal hw, Real.norm_eq_abs,
+      abs_of_pos (lt_trans zero_lt_one hlo)]
+  rw [norm_logEmbedding_eq_mult_abs_log hr v w, hw.mult_eq_one, Nat.cast_one, one_mul,
+    abs_of_pos (Real.log_pos (hval ▸ hlo))]
+  exact Real.log_le_log (hval ▸ lt_trans zero_lt_one hlo) (hval ▸ hhi)
+
+open scoped Classical in
+/-- At a place where `u` has absolute value greater than one, comparing log-embedding norms
+amounts to comparing the absolute logarithm of `v` with the logarithm of `u` at that place. -/
+theorem logEmbedding_norm_lt_iff_at_place (hr : rank K = 1) (u v : (𝓞 K)ˣ)
+    (w : InfinitePlace K) (hw : 1 < w u) :
+    ‖logEmbedding K (Additive.ofMul v)‖ < ‖logEmbedding K (Additive.ofMul u)‖ ↔
+      |Real.log (w v)| < Real.log (w u) := by
+  rw [norm_logEmbedding_eq_mult_abs_log hr v w,
+    norm_logEmbedding_eq_mult_abs_log hr u w, abs_of_pos (Real.log_pos hw)]
+  have hmult : (0 : ℝ) < (w.mult : ℝ) := by
+    exact_mod_cast (NumberField.InfinitePlace.mult_pos (w := w))
+  exact ⟨fun h => lt_of_mul_lt_mul_left h hmult.le,
+    fun h => mul_lt_mul_of_pos_left h hmult⟩
+
+/-- A generator modulo torsion in unit rank one evaluates the regulator at any infinite place.
+No choice of a sign or of an inverse for the generator is needed. -/
+theorem regulator_eq_mult_abs_log_of_rank_eq_one (hr : rank K = 1) (u : (𝓞 K)ˣ)
+    (hu : Subgroup.closure {u} ⊔ torsion K = ⊤) (w : InfinitePlace K) :
+    regulator K = w.mult * |Real.log (w u)| := by
+  simpa [hu] using (mult_abs_log_eq_index_mul_regulator hr u w).symm
+
+/-- At a place where a generator modulo torsion has absolute value greater than one, its
+weighted logarithm is the rank-one regulator. -/
+theorem regulator_eq_mult_log_of_rank_eq_one (hr : rank K = 1) (u : (𝓞 K)ˣ)
+    (hu : Subgroup.closure {u} ⊔ torsion K = ⊤) (w : InfinitePlace K) (hw : 1 < w u) :
+    regulator K = w.mult * Real.log (w u) := by
+  rw [regulator_eq_mult_abs_log_of_rank_eq_one hr u hu w,
+    abs_of_pos (Real.log_pos hw)]
+
+/-- A family of units has the regulator of `K` as its regulator if and only if it generates the
+units modulo torsion. -/
+theorem regOfFamily_eq_regulator_iff {u : Fin (rank K) → (𝓞 K)ˣ} :
+    regOfFamily u = regulator K ↔ Subgroup.closure (Set.range u) ⊔ torsion K = ⊤ := by
+  rw [← Subgroup.index_eq_one, ← Nat.cast_inj (R := ℝ), ← regOfFamily_div_regulator,
+    Nat.cast_one, div_eq_one_iff_eq (regulator_ne_zero K)]
+
+open scoped Classical in
+/-- If `u` has maximal rank and `x = ζ * ∏ j, u j ^ e j` with `ζ` a root of unity, then the
+exponents `e j` are the coordinates of the logarithmic embedding of `x` on the basis
+`basisOfIsMaxRank`. -/
+theorem basisOfIsMaxRank_repr_logEmbedding {u : Fin (rank K) → (𝓞 K)ˣ} (hu : IsMaxRank u)
+    {x ζ : (𝓞 K)ˣ} (hζ : ζ ∈ torsion K) {e : Fin (rank K) → ℤ}
+    (hx : x = ζ * ∏ j, u j ^ e j) (j : Fin (rank K)) :
+    (basisOfIsMaxRank hu).repr (logEmbedding K (Additive.ofMul x)) j = e j := by
+  have h : logEmbedding K (Additive.ofMul x) = ∑ i, (e i : ℝ) • basisOfIsMaxRank hu i := by
+    simp [hx, dirichletUnitTheorem.logEmbedding_eq_zero_iff.mpr hζ, ofMul_zpow, map_zsmul,
+      Int.cast_smul_eq_zsmul]
+  rw [h, Module.Basis.repr_sum_self]
+
+open scoped Classical in
+/-- **Hadamard's bound for the regulator of a family.** The regulator of a family of units is at
+most the product of the `ℓ¹` norms of their logarithmic embeddings. -/
+theorem regOfFamily_le_prod_sum_abs_logEmbedding (u : Fin (rank K) → (𝓞 K)ˣ) :
+    regOfFamily u ≤ ∏ i, ∑ w, |logEmbedding K (Additive.ofMul (u i)) w| := by
+  rw [regOfFamily_eq_det']
+  refine (Matrix.abs_det_le_prod_sum_abs _).trans_eq ?_
+  exact Fintype.prod_equiv (equivFinRank K).symm _ _ fun _ => by simp
+
+/-- **Hadamard's bound for the regulator of a family, over all places.** The regulator of a
+family of units is at most the product, over the family, of the sums of the weighted absolute
+logarithms at all infinite places. -/
+theorem regOfFamily_le_prod_sum_mult_mul_abs_log (u : Fin (rank K) → (𝓞 K)ˣ) :
+    regOfFamily u ≤ ∏ i, ∑ w : InfinitePlace K, w.mult * |Real.log (w (u i))| := by
+  refine (regOfFamily_le_prod_sum_abs_logEmbedding u).trans ?_
+  gcongr with i
+  exact sum_abs_logEmbedding_le_sum_mult_mul_abs_log (u i)
+
+open scoped Classical in
+/-- **Hadamard's bound for the regulator.** For every fundamental system of units `ε`, the
+regulator of `K` is at most the product of the `ℓ¹` norms of their logarithmic embeddings. -/
+theorem regulator_le_prod_sum_abs_logEmbedding {ε : Fin (rank K) → (𝓞 K)ˣ}
+    (hε : Subgroup.closure (Set.range ε) ⊔ torsion K = ⊤) :
+    regulator K ≤ ∏ i, ∑ w, |logEmbedding K (Additive.ofMul (ε i)) w| :=
+  (regOfFamily_eq_regulator_iff.mpr hε).symm.trans_le <|
+    regOfFamily_le_prod_sum_abs_logEmbedding ε
+
+/-- **Hadamard's bound for the regulator, over all places.** For every fundamental system of
+units `ε`, the regulator of `K` is at most the product, over the system, of the sums of the
+weighted absolute logarithms at all infinite places. -/
+theorem regulator_le_prod_sum_mult_mul_abs_log {ε : Fin (rank K) → (𝓞 K)ˣ}
+    (hε : Subgroup.closure (Set.range ε) ⊔ torsion K = ⊤) :
+    regulator K ≤ ∏ i, ∑ w : InfinitePlace K, w.mult * |Real.log (w (ε i))| :=
+  (regOfFamily_eq_regulator_iff.mpr hε).symm.trans_le <|
+    regOfFamily_le_prod_sum_mult_mul_abs_log ε
+
+open scoped Classical in
+/-- In a number field of unit rank one, the norm of the logarithmic embedding of a unit `v` is the
+index of `⟨v⟩ ⊔ torsion` in the unit group times the regulator. -/
+theorem norm_logEmbedding_eq_index_mul_regulator (hr : rank K = 1) (v : (𝓞 K)ˣ) :
+    ‖logEmbedding K (Additive.ofMul v)‖ =
+      ((Subgroup.closure {v} ⊔ torsion K).index : ℝ) * regulator K := by
+  rw [norm_logEmbedding_eq_mult_abs_log hr v NumberField.Units.dirichletUnitTheorem.w₀,
+    mult_abs_log_eq_index_mul_regulator hr v NumberField.Units.dirichletUnitTheorem.w₀]
+
+end TauCeti.NumberField.Units

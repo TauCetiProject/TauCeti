@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Basic
 public import TauCeti.MeasureTheory.Measure.ProductKernel
+import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # Mixed i.i.d. families
@@ -24,9 +25,8 @@ belongs to the genuine joint-law disintegration
 `Law(ν, block) = ∫ δ_{ν ω} ⊗ (ν ω)^{⊗m} dμ(ω)` (Kallenberg 2005, §1.1 eq. (2)), which strictly
 strengthens the identity below at a fixed `ν`: for a nondegenerate mixing law an *independent
 copy* of a directing measure also witnesses `MixedIIDWith`, while the family is not
-conditionally i.i.d. given it. Following the roadmap's terminology, a `ν` witnessing only the
-mixture identity is a **mixing representative**; *directing measure* is reserved for the
-conditional predicate's witness.
+conditionally i.i.d. given it. A `ν` witnessing only the mixture identity is called a **mixing
+representative**; *directing measure* is reserved for the conditional predicate's witness.
 
 The index type is arbitrary, matching `ConditionallyIIDWith`: the definition quantifies only over
 injective selections `Fin m → ι`, and nothing in it uses the order structure of `ℕ`. Sequence-level
@@ -42,7 +42,7 @@ The other *consequences* over `ℕ` — `prefixLaw_eq_mixture`,
 representation, and mixing-law uniqueness — remain sequence-level, because those genuinely use
 prefixes, shifts, or `ℕ`-indexed products.
 
-This file adds the Layer 0 mixed-i.i.d. definitions and destructors, together with the Layer 1
+This file adds the mixed-i.i.d. definitions and destructors, together with the
 rectangle-factorization characterization used by the common de Finetti ending. The exchangeability
 implications live in two places, along the same line as above: the sequence-level
 `MixedIIDWith.exchangeable` and `.exchangeableAt`, which conclude the `ℕ`-indexed `Exchangeable`,
@@ -50,11 +50,7 @@ are in `MixedIID/Implications.lean`; the index-generic `MixedIIDWith.exchangeabl
 `MixedIID.exchangeableFamily`, which conclude `ExchangeableFamily`, are in
 `Exchangeability/Family.lean` beside the conditional analogue they mirror.
 
-These declarations follow the roadmap signatures in
-`TauCetiRoadmap/Exchangeability/README.md` and
-`TauCetiRoadmap/Exchangeability/Suggested.lean`, Layer 0, refining the existential
-`MixedIID` of the roadmap into a named-witness relation (`MixedIIDWith`) plus its existential
-wrapper. They are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned at
+These declarations are adapted from the `cameronfreer/exchangeability` sources pinned at
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses.
 -/
 
@@ -69,26 +65,6 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω α ι κ : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-
-/-- Implementation helper for the rectangle characterization: two measures on a finite product
-space are equal if they agree on all measurable rectangles `Set.univ.pi B`. Only the first measure
-is assumed finite. -/
-private theorem measure_eq_of_forall_univ_pi {ι : Type*} [Finite ι] {α : ι → Type*}
-    [∀ i, MeasurableSpace (α i)] {μ ν : Measure (∀ i, α i)} [IsFiniteMeasure μ]
-    (h : ∀ B : ∀ i, Set (α i), (∀ i, MeasurableSet (B i)) →
-      μ (Set.univ.pi B) = ν (Set.univ.pi B)) :
-    μ = ν := by
-  let := Fintype.ofFinite ι
-  refine Measure.ext_of_generateFrom_of_iUnion
-    (C := Set.pi Set.univ '' Set.pi Set.univ fun i => {s : Set (α i) | MeasurableSet s})
-    (B := fun _ : ℕ => Set.univ) generateFrom_pi.symm isPiSystem_pi ?_ ?_ ?_ ?_
-  · simpa using (iUnion_const (Set.univ : Set (∀ i, α i)))
-  · intro _
-    exact ⟨fun _ => Set.univ, fun i _ => MeasurableSet.univ, by simp⟩
-  · intro _
-    exact measure_ne_top μ Set.univ
-  · rintro _ ⟨B, hB, rfl⟩
-    exact h B fun i => hB i (mem_univ i)
 
 /-- Mixed i.i.d.-ness with a specified mixing representative `ν`: the coordinates are a.e.
 measurable, the random measure `ν` is measurable, and along every finite selection `k` of
@@ -186,7 +162,7 @@ theorem mixedIIDWith_of_forall_rectangles {μ : Measure Ω} [IsFiniteMeasure μ]
     MixedIIDWith μ X ν := by
   refine MixedIIDWith.intro hX hν ?_
   intro m k hk
-  refine measure_eq_of_forall_univ_pi ?_
+  refine Measure.ext_pi ?_
   intro B hB
   rw [h_rect m k hk B hB]
   rw [TauCeti.MeasureTheory.bind_probabilityMeasure_pi_const_pi ν hν.aemeasurable B hB]

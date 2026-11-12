@@ -199,7 +199,7 @@ variable (G M)
 every transition out of that level is an isomorphism. -/
 private theorem isEventuallyConstantFrom_explicitFiniteQuotientSystem0 :
     (explicitFiniteQuotientSystem0 G M).IsEventuallyConstantFrom
-      (Opposite.op (openNormalSubgroupTop G)) := by
+      (Opposite.op (⊤ : OpenNormalSubgroup G)) := by
   intro U f
   rw [ConcreteCategory.isIso_iff_bijective]
   exact explicitFiniteQuotientTransition0_bijective (leOfHom f.unop)
@@ -212,9 +212,8 @@ level — where the comparison leg is the equivalence
 `TauCeti.ContCohomology.explicitInfl0Equiv` — already computes the colimit. -/
 noncomputable def explicitFiniteQuotientColimit0 :
     IsColimit (explicitFiniteQuotientCocone0 G M) :=
-  haveI : Nonempty (OpenNormalSubgroup G) := ⟨openNormalSubgroupTop G⟩
   haveI : IsIso ((explicitFiniteQuotientCocone0 G M).ι.app
-      (Opposite.op (openNormalSubgroupTop G))) := by
+      (Opposite.op (⊤ : OpenNormalSubgroup G))) := by
     rw [ConcreteCategory.isIso_iff_bijective]
     exact ⟨explicitInfl0_injective G M _, explicitInfl0_surjective G M _⟩
   (isEventuallyConstantFrom_explicitFiniteQuotientSystem0 G M).isColimitOfIsIso _
@@ -249,8 +248,8 @@ theorem explicitInfl1_comp_explicitFiniteQuotientTransition1 (U V : OpenNormalSu
   -- Both maps are compatible-pair pullbacks, so the composite is the pullback along the composite
   -- pair by `explicitMap1_comp`, and that pair is the one defining `explicitInfl1` at `U`.
   have hquot : (continuousFiniteQuotientMap G hVU).comp
-      (ContinuousMonoidHom.quotientMk V.toSubgroup) =
-      ContinuousMonoidHom.quotientMk U.toSubgroup := by
+      (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) =
+      Subgroup.quotientMkContinuousMonoidHom U.toSubgroup := by
     ext g
     simp
   have hincl : ((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
@@ -342,8 +341,8 @@ theorem explicitInfl2_comp_explicitFiniteQuotientTransition2 (U V : OpenNormalSu
     (explicitInfl2 G M V.toSubgroup).comp (explicitFiniteQuotientTransition2 G M U V hVU) =
       explicitInfl2 G M U.toSubgroup := by
   have hquot : (continuousFiniteQuotientMap G hVU).comp
-      (ContinuousMonoidHom.quotientMk V.toSubgroup) =
-      ContinuousMonoidHom.quotientMk U.toSubgroup := by
+      (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) =
+      Subgroup.quotientMkContinuousMonoidHom U.toSubgroup := by
     ext g
     simp
   have hincl : ((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
@@ -414,16 +413,16 @@ it back to `G` directly: the composite pair is the pair defining inflation from 
 private theorem cochainsMap2_quotientMk_comp_transition {U V : OpenNormalSubgroup G}
     (hVU : V ≤ U)
     (c : (G ⧸ U.toSubgroup) × (G ⧸ U.toSubgroup) → FixedPoints.addSubgroup U.toSubgroup M) :
-    cochainsMap2 (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+    cochainsMap2 (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)
         (FixedPoints.addSubgroup V.toSubgroup M).subtype
         (cochainsMap2 (continuousFiniteQuotientMap G hVU : G ⧸ V.toSubgroup →* G ⧸ U.toSubgroup)
           (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
             FixedPoints.addSubgroup V.toSubgroup M) c) =
-      cochainsMap2 (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+      cochainsMap2 (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
         (FixedPoints.addSubgroup U.toSubgroup M).subtype c := by
   have hquot : (continuousFiniteQuotientMap G hVU : G ⧸ V.toSubgroup →* G ⧸ U.toSubgroup).comp
-      (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup) =
-      (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup) := by
+      (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup) =
+      (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup) := by
     ext g
     simp
   have hincl : ((FixedPoints.addSubgroup V.toSubgroup M).subtype).comp
@@ -444,7 +443,7 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
     (hbV_apply : ∀ g : G, (bV (g : G ⧸ V.toSubgroup) : M) = b g)
     (hd : d1 G M b =
       cocyclesMap2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) G M
-        (ContinuousMonoidHom.quotientMk U.toSubgroup)
+        (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup)
         (FixedPoints.addSubgroup U.toSubgroup M).subtype
         (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
         U.toSubgroup.fixedPoints_subtype_quotientMk_smul c) :
@@ -455,18 +454,21 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
         continuous_of_discreteTopology
         (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c := by
   apply cochainsMap2_injective
-    (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+    (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)
     (FixedPoints.addSubgroup V.toSubgroup M).subtype
-    (fun q ↦ QuotientGroup.induction_on q fun g ↦ ⟨g, rfl⟩) Subtype.coe_injective
+    (fun q ↦ QuotientGroup.induction_on q fun g ↦
+      ⟨g, Subgroup.quotientMkContinuousMonoidHom_apply V.toSubgroup g⟩) Subtype.coe_injective
   have hbV_eq :
-      cochainsMap1 (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+      cochainsMap1 (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)
         (FixedPoints.addSubgroup V.toSubgroup M).subtype bV = b := by
     funext g
     rw [cochainsMap1_apply]
-    exact hbV_apply g
+    exact (congrArg (fun q => (bV q : M))
+      (DFunLike.congr_fun (Subgroup.coe_quotientMkContinuousMonoidHom V.toSubgroup) g)).trans
+        (hbV_apply g)
   -- The transition followed by pullback to `G` is the inflation from `G ⧸ U`.
   have htransition :
-      cochainsMap2 (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+      cochainsMap2 (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)
         (FixedPoints.addSubgroup V.toSubgroup M).subtype
         (cocyclesMap2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)
           (G ⧸ V.toSubgroup) (FixedPoints.addSubgroup V.toSubgroup M)
@@ -474,7 +476,7 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
           continuous_of_discreteTopology
           (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c) =
       (cocyclesMap2 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) G M
-        (ContinuousMonoidHom.quotientMk U.toSubgroup)
+        (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup)
         (FixedPoints.addSubgroup U.toSubgroup M).subtype
         (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
         U.toSubgroup.fixedPoints_subtype_quotientMk_smul c : G × G → M) := by
@@ -483,7 +485,7 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
       (cocyclesMap2_coe _ _ _ _ _ _ _ _ c).symm
   -- Pulling back to `G`, `d1` commutes with the pullback and `bV` becomes `b`.
   refine (cochainsMap2_d1
-    (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+    (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)
     (FixedPoints.addSubgroup V.toSubgroup M).subtype
     V.toSubgroup.fixedPoints_subtype_quotientMk_smul bV).trans ?_
   rw [hbV_eq, htransition]
@@ -599,6 +601,7 @@ theorem subsingleton_H1_of_forall_openNormalSubgroup
 
 /-! ### Degree two -/
 
+omit [TotallyDisconnectedSpace G] in
 /-- A degree-two class at a finite quotient which inflates to zero becomes zero after transition
 to a sufficiently deep finite quotient. This is the injectivity half of the degree-two
 finite-quotient colimit theorem. -/
@@ -620,6 +623,7 @@ theorem exists_explicitFiniteQuotientTransition2_eq_zero (U : OpenNormalSubgroup
     refine mem_B2_iff.2 ⟨bV, hbV, ?_⟩
     exact d1_descend_eq_cocyclesMap2 hVU c b bV hbV_apply hd
 
+omit [TotallyDisconnectedSpace G] in
 /-- Two finite-level degree-two classes with the same inflation agree after transition to a
 common deeper level: their difference inflates to zero, hence dies at a sufficiently deep
 level. -/

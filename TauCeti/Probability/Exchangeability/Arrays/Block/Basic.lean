@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.Basic
+public import TauCeti.Probability.Process.Array.Block
 -- Non-public: the permutation realizing one prescribed permutation along an injection, the one
 -- realizing two along injections with disjoint ranges, and the reduction of an array law to its
 -- finite-dimensional marginals, are used only inside proofs.
@@ -35,10 +36,8 @@ selected rectangular cross-block, and the pair array is separately exchangeable
 (`JointlyExchangeable.separatelyExchangeable_arrayBlockPair`). For a *symmetric* array the two
 coordinates of each such pair agree.
 
-## Main definitions
-
-* `TauCeti.Probability.arrayBlock` — the rectangular block of an array along two index maps;
-* `TauCeti.Probability.arrayBlockPair` — the same block, read together with its transpose.
+The block constructors and their measurability API live in
+`TauCeti.Probability.Process.Array.Block`; this file supplies their symmetry theorems.
 
 ## Main results
 
@@ -86,52 +85,7 @@ namespace Probability
 
 variable {α Ω : Type*}
 
-/-! ## Blocks of an array -/
-
-/-- The rectangular block of the array `X` along the index maps `e` and `f`: its `(i, j)`-entry is
-the `(e i, f j)`-entry of `X`. -/
-def arrayBlock (X : ℕ × ℕ → Ω → α) (e f : ℕ → ℕ) : ℕ × ℕ → Ω → α :=
-  fun p ↦ X (e p.1, f p.2)
-
-@[simp]
-theorem arrayBlock_apply (X : ℕ × ℕ → Ω → α) (e f : ℕ → ℕ) (p : ℕ × ℕ) :
-    arrayBlock X e f p = X (e p.1, f p.2) :=
-  (rfl)
-
-/-- The rectangular block of `X` along `e` and `f`, read together with its transpose: its
-`(i, j)`-entry is the pair of the `(e i, f j)`-entry and the `(f j, e i)`-entry of `X`. -/
-def arrayBlockPair (X : ℕ × ℕ → Ω → α) (e f : ℕ → ℕ) : ℕ × ℕ → Ω → α × α :=
-  fun p ω ↦ (X (e p.1, f p.2) ω, X (f p.2, e p.1) ω)
-
-@[simp]
-theorem arrayBlockPair_apply (X : ℕ × ℕ → Ω → α) (e f : ℕ → ℕ) (p : ℕ × ℕ) (ω : Ω) :
-    arrayBlockPair X e f p ω = (X (e p.1, f p.2) ω, X (f p.2, e p.1) ω) :=
-  (rfl)
-
 variable [MeasurableSpace α] [MeasurableSpace Ω] {μ : Measure Ω} {X : ℕ × ℕ → Ω → α} {e f : ℕ → ℕ}
-
-/-- Entrywise measurability passes to a block: the `p`-entry of `arrayBlock X e f` is the
-`(e p.1, f p.2)`-entry of `X`. A consumer cannot read this off the hypothesis on its own, since
-`arrayBlock` does not unfold outside this file. -/
-theorem aemeasurable_arrayBlock (hX : ∀ p, AEMeasurable (X p) μ) (p : ℕ × ℕ) :
-    AEMeasurable (arrayBlock X e f p) μ :=
-  hX _
-
-/-- Entrywise measurability passes to a block read together with its transpose: the `p`-entry of
-`arrayBlockPair X e f` pairs two entries of `X`. -/
-theorem aemeasurable_arrayBlockPair (hX : ∀ p, AEMeasurable (X p) μ) (p : ℕ × ℕ) :
-    AEMeasurable (arrayBlockPair X e f p) μ :=
-  (hX _).prodMk (hX _)
-
-/-- Reading a block off an array's sample path is measurable. -/
-theorem measurable_blockReadOff (e f : ℕ → ℕ) :
-    Measurable fun x : ℕ × ℕ → α ↦ fun p : ℕ × ℕ ↦ x (e p.1, f p.2) :=
-  Measurable.of_eval fun _ ↦ measurable_pi_apply _
-
-/-- Reading a block together with its transpose off an array's sample path is measurable. -/
-theorem measurable_blockPairReadOff (e f : ℕ → ℕ) :
-    Measurable fun x : ℕ × ℕ → α ↦ fun p : ℕ × ℕ ↦ (x (e p.1, f p.2), x (f p.2, e p.1)) :=
-  Measurable.of_eval fun _ ↦ (measurable_pi_apply _).prodMk (measurable_pi_apply _)
 
 /-! ## Blocks inherit the symmetry of the array -/
 
@@ -346,10 +300,11 @@ theorem JointlyExchangeable.map_arrayBlock_eq [IsFiniteMeasure μ] {e' f' : ℕ 
     (hd : Disjoint (Set.range e) (Set.range f))
     (he' : Function.Injective e') (hf' : Function.Injective f')
     (hd' : Disjoint (Set.range e') (Set.range f')) :
-    (μ.map fun ω p ↦ arrayBlock X e f p ω) = μ.map fun ω p ↦ arrayBlock X e' f' p ω :=
-  map_blockReadOff_eq (B := fun u v x p ↦ x (u p.1, v p.2)) measurable_blockReadOff
-    (fun _ _ _ _ ↦ rfl) (fun _ _ _ _ x _ hu hv ↦ congrArg x (Prod.ext hu hv))
-    h hX he hf hd he' hf' hd'
+    (μ.map fun ω p ↦ arrayBlock X e f p ω) = μ.map fun ω p ↦ arrayBlock X e' f' p ω := by
+  simpa only [arrayBlock_apply] using
+    map_blockReadOff_eq (B := fun u v x p ↦ x (u p.1, v p.2)) measurable_blockReadOff
+      (fun _ _ _ _ ↦ rfl) (fun _ _ _ _ x _ hu hv ↦ congrArg x (Prod.ext hu hv))
+      h hX he hf hd he' hf' hd'
 
 /-- **The law of a pair-valued block does not depend on the chosen pair of index maps.** Any two
 pairs of injections with disjoint ranges give the same law. -/
@@ -360,12 +315,13 @@ theorem JointlyExchangeable.map_arrayBlockPair_eq [IsFiniteMeasure μ] {e' f' : 
     (he' : Function.Injective e') (hf' : Function.Injective f')
     (hd' : Disjoint (Set.range e') (Set.range f')) :
     (μ.map fun ω p ↦ arrayBlockPair X e f p ω) =
-      μ.map fun ω p ↦ arrayBlockPair X e' f' p ω :=
-  map_blockReadOff_eq (B := fun u v x p ↦ (x (u p.1, v p.2), x (v p.2, u p.1)))
-    measurable_blockPairReadOff (fun _ _ _ _ ↦ rfl)
-    (fun _ _ _ _ x _ hu hv ↦
-      Prod.ext (congrArg x (Prod.ext hu hv)) (congrArg x (Prod.ext hv hu)))
-    h hX he hf hd he' hf' hd'
+      μ.map fun ω p ↦ arrayBlockPair X e' f' p ω := by
+  simpa only [arrayBlockPair_apply] using
+    map_blockReadOff_eq (B := fun u v x p ↦ (x (u p.1, v p.2), x (v p.2, u p.1)))
+      measurable_blockPairReadOff (fun _ _ _ _ ↦ rfl)
+      (fun _ _ _ _ x _ hu hv ↦
+        Prod.ext (congrArg x (Prod.ext hu hv)) (congrArg x (Prod.ext hv hu)))
+      h hX he hf hd he' hf' hd'
 
 end Probability
 

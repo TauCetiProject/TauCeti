@@ -49,7 +49,7 @@ identification `Bialgebra.CounitAlgebra R A B = B = Bialgebra.CounitAlgebra R A'
 definitional, and the identity points correspond because `φ` intertwines the counits. -/
 noncomputable def tangentKerMap (φ : A' →ₐc[R] A) :
     tangentKer R A B →* tangentKer R A' B :=
-  (((AlgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R A' B)) φ).comp
+  (((BialgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R A' B)) φ).comp
       (tangentKer R A B).subtype).codRestrict (tangentKer R A' B)) fun ψ => by
     have hψ : dualNumberReduction R A B ψ.val = 1 := by
       have h : ψ.val ∈ tangentKer R A B := ψ.2
@@ -63,13 +63,13 @@ noncomputable def tangentKerMap (φ : A' →ₐc[R] A) :
       rw [dualNumberReduction_def]
       rfl
     have hsquare := DFunLike.congr_fun
-      (AlgHom.mapValue_mapDomain φ
+      (BialgHom.mapValue_mapDomain φ
         (TrivSqZeroExt.fstHom R (Bialgebra.CounitAlgebra R A' B)
           (Bialgebra.CounitAlgebra R A' B))) ψ.val
     -- Naturality of reduction against precomposition, then the `A`-side reduction of
     -- `ψ` is the identity point; composition applications agree definitionally.
     exact hsquare.symm.trans
-      ((congrArg (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ)
+      ((congrArg (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ)
         (hred.trans hψ)).trans (map_one _))
 
 /-- The differential acts by precomposition on dual-number points. Not a `simp` lemma:
@@ -77,11 +77,11 @@ the pointwise form `tangentKerMap_apply_val_ofConv` is the canonical reduction r
 tagging both would leave its left-hand side reducible. -/
 lemma tangentKerMap_apply_val (φ : A' →ₐc[R] A) (ψ : tangentKer R A B) :
     (tangentKerMap φ ψ).val =
-      AlgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R A' B)) φ ψ.val := by
+      BialgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R A' B)) φ ψ.val := by
   -- `tangentKerMap` has no equation lemma to rewrite with; `change` spells out its
   -- definitional unfolding once, explicitly: the value of the corestriction is the
   -- value of `mapDomain` on the inclusion.
-  change ((AlgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R A' B)) φ).comp
+  change ((BialgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R A' B)) φ).comp
       (tangentKer R A B).subtype) ψ = _
   rfl
 
@@ -90,27 +90,17 @@ lemma tangentKerMap_apply_val (φ : A' →ₐc[R] A) (ψ : tangentKer R A B) :
 lemma tangentKerMap_apply_val_ofConv (φ : A' →ₐc[R] A) (ψ : tangentKer R A B) (a : A') :
     (tangentKerMap φ ψ).val.ofConv a = ψ.val.ofConv ((φ : A' →ₐ[R] A) a) := by
   rw [tangentKerMap_apply_val]
-  exact AlgHom.mapDomain_apply_apply φ ψ.val a
+  exact BialgHom.mapDomain_apply_apply φ ψ.val a
 
 /-- The differential of the identity morphism is the identity. -/
 @[simp]
 lemma tangentKerMap_id :
     tangentKerMap (B := B) (BialgHom.id R A) = MonoidHom.id (tangentKer R A B) := by
-  refine MonoidHom.ext fun ψ => Subtype.ext ?_
-  rw [tangentKerMap_apply_val, MonoidHom.id_apply,
-    AlgHom.mapDomain_id (A := DualNumber (Bialgebra.CounitAlgebra R A B)),
-    MonoidHom.id_apply]
-
-/-- `mapDomain` at the two counit coefficient indexings agrees: precomposition does not
-touch the coefficients, and the two indexings share the carrier `B` with the same
-`inferInstanceAs` instances. Recorded once as an explicit transport lemma, analogous to
-`fst_transport`. -/
-private lemma mapDomain_transport {A'' : Type*}
-    (φ : A' →ₐc[R] A)
-    (ψ : WithConv (A →ₐ[R] DualNumber (Bialgebra.CounitAlgebra R A B))) :
-    AlgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R A'' B)) φ ψ =
-      AlgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R A' B)) φ ψ :=
-  rfl
+  refine MonoidHom.ext fun ψ => Subtype.ext (WithConv.ofConv_injective ?_)
+  apply AlgHom.ext
+  intro a
+  simp only [MonoidHom.id_apply, tangentKerMap_apply_val_ofConv,
+    BialgHom.id_toAlgHom, AlgHom.id_apply]
 
 /-- The differential of a composite is the composite of the differentials. -/
 @[simp]
@@ -118,18 +108,13 @@ lemma tangentKerMap_comp {A'' : Type*} [CommSemiring A''] [HopfAlgebra R A'']
     (φ : A' →ₐc[R] A) (χ : A'' →ₐc[R] A') :
     tangentKerMap (B := B) (φ.comp χ) =
       (tangentKerMap (B := B) χ).comp (tangentKerMap (B := B) φ) := by
-  refine MonoidHom.ext fun ψ => Subtype.ext ?_
-  rw [MonoidHom.comp_apply, tangentKerMap_apply_val, tangentKerMap_apply_val,
-    tangentKerMap_apply_val,
-    AlgHom.mapDomain_comp (A := DualNumber (Bialgebra.CounitAlgebra R A'' B)) φ χ,
-    ← mapDomain_transport (A'' := A'') φ ψ.val]
-  exact MonoidHom.comp_apply _ _ _
-
-section Naturality
-
-variable {R A A' B : Type*} [CommSemiring R]
-  [CommSemiring A] [HopfAlgebra R A] [CommSemiring A'] [HopfAlgebra R A']
-  [CommSemiring B] [Algebra R B]
+  refine MonoidHom.ext fun ψ => Subtype.ext (WithConv.ofConv_injective ?_)
+  apply AlgHom.ext
+  intro a
+  simp only [MonoidHom.comp_apply, tangentKerMap_apply_val_ofConv,
+    BialgHom.comp_toAlgHom, AlgHom.comp_apply]
+  -- The coefficient indexings share the same carrier and inherited instances.
+  rfl
 
 /-- The differential intertwines the tangent dictionaries: the image of the dual-number
 point of a derivation `d` under `tangentKerMap φ` is the point of the precomposed
@@ -149,8 +134,6 @@ theorem tangentKerMap_derivationMulEquivTangentKer (φ : A' →ₐc[R] A)
   · rw [tangentKerMap_apply_val_ofConv, derivationMulEquivTangentKer_apply_snd,
       toAdd_ofAdd, derivationComp_apply]
     exact derivationMulEquivTangentKer_apply_snd d ((φ : A' →ₐ[R] A) a)
-
-end Naturality
 
 end Differential
 

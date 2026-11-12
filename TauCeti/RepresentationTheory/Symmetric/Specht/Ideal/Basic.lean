@@ -48,7 +48,7 @@ noncomputable section
 def spechtIdeal (t : YoungTableau μ) :
     Submodule (MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))
       (MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) :=
-  MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)) ∙ youngSymmetrizer t
+  MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)) ∙ youngSymmetrizer (R := ℚ) t
 
 /-- The Young-symmetrizer left ideal is contained in a submodule exactly when that
 submodule contains its generator. -/
@@ -56,7 +56,7 @@ submodule contains its generator. -/
 theorem spechtIdeal_le_iff (t : YoungTableau μ)
     (I : Submodule (MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))
       (MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))) :
-    spechtIdeal t ≤ I ↔ youngSymmetrizer t ∈ I := by
+    spechtIdeal t ≤ I ↔ youngSymmetrizer (R := ℚ) t ∈ I := by
   rw [spechtIdeal, Submodule.span_singleton_le_iff_mem]
 
 /-- An element lies in `ℚ[Sₙ] c_t` exactly when it is a left multiple of `c_t`. -/
@@ -65,18 +65,18 @@ theorem mem_spechtIdeal_iff (t : YoungTableau μ)
     (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) :
     x ∈ spechtIdeal t ↔
       ∃ a : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)),
-        a * youngSymmetrizer t = x := by
+        a * youngSymmetrizer (R := ℚ) t = x := by
   simp only [spechtIdeal, Submodule.mem_span_singleton, smul_eq_mul]
 
 /-- The Young symmetrizer belongs to the left ideal that it generates. -/
 theorem youngSymmetrizer_mem_spechtIdeal (t : YoungTableau μ) :
-    youngSymmetrizer t ∈ spechtIdeal t :=
+    youngSymmetrizer (R := ℚ) t ∈ spechtIdeal t :=
   Submodule.mem_span_singleton_self _
 
 /-- The Young-symmetrizer left ideal is zero exactly when its generator is zero. -/
 @[simp]
 theorem spechtIdeal_eq_bot_iff (t : YoungTableau μ) :
-    spechtIdeal t = ⊥ ↔ youngSymmetrizer t = 0 :=
+    spechtIdeal t = ⊥ ↔ youngSymmetrizer (R := ℚ) t = 0 :=
   Submodule.span_singleton_eq_bot
 
 /-- The Young-symmetrizer left ideal is nonzero. -/

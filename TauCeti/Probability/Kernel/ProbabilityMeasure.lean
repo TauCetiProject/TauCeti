@@ -39,34 +39,36 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory
 
-namespace TauCeti
-
-namespace Probability
+namespace ProbabilityTheory.Kernel
 
 variable {β Ω : Type*} [MeasurableSpace Ω] [mβ : MeasurableSpace β]
 
 /-- A Markov kernel with each fibre bundled as a `ProbabilityMeasure`.
-
-Note this lives in `TauCeti.Probability.Kernel`, not Mathlib's `ProbabilityTheory.Kernel`, so it is
-spelled `Kernel.probabilityMeasure κ` rather than by dot notation on `κ`. -/
-def Kernel.probabilityMeasure (κ : Kernel β Ω) [IsMarkovKernel κ] (b : β) : ProbabilityMeasure Ω :=
+Written in dot notation on the kernel, e.g. `κ.probabilityMeasure b`. -/
+def probabilityMeasure (κ : Kernel β Ω) [IsMarkovKernel κ] (b : β) : ProbabilityMeasure Ω :=
   ⟨κ b, inferInstance⟩
 
 /-- The underlying measure of a bundled fibre is the kernel's fibre.
 
 This is the abstraction boundary: importing modules should reason through this lemma rather than
-unfold `Kernel.probabilityMeasure`, which is why the definition is not `@[expose]`. -/
+unfold `probabilityMeasure`, which is why the definition is not `@[expose]`. -/
 @[simp]
-theorem Kernel.probabilityMeasure_toMeasure (κ : Kernel β Ω) [IsMarkovKernel κ] (b : β) :
-    (Kernel.probabilityMeasure κ b : Measure Ω) = κ b := by
-  simp only [Kernel.probabilityMeasure, ProbabilityMeasure.coe_mk]
+theorem probabilityMeasure_toMeasure (κ : Kernel β Ω) [IsMarkovKernel κ] (b : β) :
+    (probabilityMeasure κ b : Measure Ω) = κ b := by
+  simp only [probabilityMeasure, ProbabilityMeasure.coe_mk]
 
 /-- The bundled kernel is measurable into `ProbabilityMeasure Ω`. -/
 @[fun_prop]
-theorem Kernel.measurable_probabilityMeasure (κ : Kernel β Ω) [IsMarkovKernel κ] :
-    Measurable (Kernel.probabilityMeasure κ) := by
+theorem measurable_probabilityMeasure (κ : Kernel β Ω) [IsMarkovKernel κ] :
+    Measurable (probabilityMeasure κ) := by
   refine Measurable.subtype_mk ?_
   exact Measure.measurable_of_measurable_coe _ fun s hs => Kernel.measurable_coe _ hs
+
+end ProbabilityTheory.Kernel
+
+namespace TauCeti
+
+namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
 

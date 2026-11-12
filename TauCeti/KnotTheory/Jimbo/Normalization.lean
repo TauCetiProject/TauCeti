@@ -17,8 +17,10 @@ unframed Markov equivalence, on the existing braid presentation `MarkovBraid`.
 
 This is the `sl_N` specialization of the enhanced braid-trace construction of
 HOMFLY. Our normalization assigns the quantum dimension `∑ a, jimboWeight q a`
-to the one-strand unknot, rather than one. No invertibility of that sum is assumed,
-so the construction works over arbitrary commutative rings and at `q = 1`.
+to the one-strand unknot, rather than one. The normalized trace satisfies the
+oriented HOMFLY skein relation with `a = q ^ N` and `z = q - q⁻¹`.
+No invertibility of that sum is assumed, so the construction works over arbitrary
+commutative rings and at `q = 1`.
 No geometric-to-diagram or Markov classification theorem is asserted here.
 
 ## References
@@ -91,6 +93,25 @@ that dimension itself. -/
 theorem jimboTrace_one (q : Rˣ) :
     jimboTrace (N := N) ⟨n, 1⟩ q = (∑ a : Fin N, jimboWeight q a) ^ (n + 1) := by
   simp [jimboTrace_def]
+
+/-- The writhe-normalized Jimbo trace satisfies the oriented HOMFLY skein relation
+with `a = q ^ N` and `z = q - q⁻¹`, in any braid context. -/
+theorem jimboTrace_skein (q : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n) :
+    ↑(q ^ N) * jimboTrace (N := N) ⟨n, b * BraidGroup.sigma (n := n + 1) i * c⟩ q -
+        ↑((q⁻¹) ^ N) * jimboTrace (N := N) ⟨n, b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c⟩ q =
+      ((q : R) - ↑(q⁻¹)) * jimboTrace (N := N) ⟨n, b * c⟩ q := by
+  have h := jimboWeightedTrace_skein (N := N) q b c i
+  simp only [jimboTrace_def, map_mul, map_inv, BraidGroup.exponentSum_sigma,
+    toAdd_mul, toAdd_inv, toAdd_ofAdd, neg_add, neg_neg, zpow_add,
+    zpow_neg_one, zpow_one, Units.val_mul, inv_pow]
+  have ha : (↑(q ^ N) : R) * ↑((q ^ N)⁻¹) = 1 := Units.mul_inv _
+  linear_combination
+    ↑((q ^ N) ^ (-Multiplicative.toAdd (ArtinGroup.exponentSum _ b))) *
+      ↑((q ^ N) ^ (-Multiplicative.toAdd (ArtinGroup.exponentSum _ c))) * h +
+    (↑((q ^ N) ^ (-Multiplicative.toAdd (ArtinGroup.exponentSum _ b))) *
+      ↑((q ^ N) ^ (-Multiplicative.toAdd (ArtinGroup.exponentSum _ c))) *
+      (jimboWeightedTrace (N := N) q (b * BraidGroup.sigma (n := n + 1) i * c) -
+        jimboWeightedTrace (N := N) q (b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c))) * ha
 
 end MarkovBraid
 

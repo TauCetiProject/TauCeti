@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
 public import TauCeti.RingTheory.MvPolynomial.IrreducibleBasis.Lazard
+public import TauCeti.RingTheory.MvPolynomial.SquarefreeBasis.Lazard
 
 /-!
 # Lazard delineations of a family from its irreducible basis
@@ -94,7 +95,8 @@ noncomputable def ofIrreducibleBasis
     exponent f := (e f.1).lazardExponent (Polynomial.C ∘ x₀.1)
     lazardExponent_eq f x := by
       rw [hswap]
-      refine hB.lazardExponent_eq f.2 ?_ fun b hb ↦ (hexp b hb x).trans (hexp b hb x₀).symm
+      refine hB.isSquarefreeBasis.lazardExponent_eq f.2 ?_
+        fun b hb ↦ (hexp b hb x).trans (hexp b hb x₀).symm
       -- Constant content valuation gives constant content exponents, including content `0`.
       obtain h0 | h0 := eq_or_ne f.1.content 0
       · simp [h0]
@@ -104,7 +106,7 @@ noncomputable def ofIrreducibleBasis
     multiplicity f i := ((e f.1).lazardEval (Polynomial.C ∘ x₀.1)).rootMultiplicity (D.root i x₀)
     rootMultiplicity_root f i x := by
       rw [hswap]
-      exact hB.rootMultiplicity_lazardEval_eq f.2 fun b hb ↦
+      exact hB.isSquarefreeBasis.rootMultiplicity_lazardEval_eq f.2 fun b hb ↦
         (hmul b hb i x).trans (hmul b hb i x₀).symm
     exists_root_eq f x hf t ht := by
       rw [hswap] at ht

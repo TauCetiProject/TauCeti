@@ -21,7 +21,8 @@ extension property in the closed unit ball
 
 The same holds for the boundary `TauCeti.Cube.prodBoundary N` of the cube `I × I^N` with a
 distinguished first direction, on which relative cubes are defined: it corresponds to the boundary
-of `I^(Option N)` under `TauCeti.piOptionEquivProdHomeomorph`.
+of `I^(Option N)` under `TauCeti.piOptionEquivProdHomeomorph`, and likewise for the boundary of
+the cube `I × (I × I^N)`, which homotopies of relative cubes are defined on.
 
 ## Main declarations
 
@@ -29,6 +30,10 @@ of `I^(Option N)` under `TauCeti.piOptionEquivProdHomeomorph`.
   extension property.
 * `TauCeti.hasHomotopyExtensionProperty_prodBoundary`: the boundary of `I × I^N` has the homotopy
   extension property.
+* `TauCeti.hasHomotopyExtensionProperty_boundary_prod`: the boundary of `I × (I × I^N)` has the
+  homotopy extension property.
+* `TauCeti.hasHomotopyExtensionProperty_zero_one`: the end points `{0, 1}` of the unit interval,
+  the boundary of the one-dimensional cube, have the homotopy extension property.
 -/
 
 public section
@@ -56,5 +61,24 @@ theorem hasHomotopyExtensionProperty_prodBoundary :
   ext y
   rw [Homeomorph.image_eq_preimage_symm, mem_preimage,
     ← piOptionEquivProdHomeomorph_mem_prodBoundary_iff, Homeomorph.apply_symm_apply]
+
+/-- The boundary of the cube `I × (I × I^N)` has the homotopy extension property in the cube. -/
+theorem hasHomotopyExtensionProperty_boundary_prod :
+    HasHomotopyExtensionProperty
+      {x : I × (I × I^N) | (x.1 = 0 ∨ x.1 = 1) ∨ x.2 ∈ Cube.prodBoundary N} := by
+  convert (hasHomotopyExtensionProperty_prodBoundary (N := Option N)).image
+    ((Homeomorph.refl I).prodCongr (piOptionEquivProdHomeomorph fun _ ↦ I)) using 1
+  ext ⟨t, w⟩
+  rw [Homeomorph.image_eq_preimage_symm, mem_preimage]
+  simp [← piOptionEquivProdHomeomorph_mem_prodBoundary_iff]
+
+/-- The end points `{0, 1}` of the unit interval have the homotopy extension property in `I`: they
+form the boundary of the one-dimensional cube `I^Unit`. -/
+theorem hasHomotopyExtensionProperty_zero_one : HasHomotopyExtensionProperty ({0, 1} : Set I) := by
+  convert (hasHomotopyExtensionProperty_cubeBoundary (N := Unit)).image
+    (Homeomorph.funUnique Unit I) using 1
+  ext t
+  rw [Homeomorph.image_eq_preimage_symm]
+  simp [Cube.boundary]
 
 end TauCeti

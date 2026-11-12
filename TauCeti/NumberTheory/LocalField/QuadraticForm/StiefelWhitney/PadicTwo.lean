@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Class
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.CupPadicTwo
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.PadicTwo
 
 /-!
 # Stiefel–Whitney calculations over `ℚ₂`

@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.WindingWeight.Bound
+public import TauCeti.Analysis.Green.WindingWeight.FiniteSum
 public import Mathlib.Topology.UniformSpace.UniformConvergence
-import TauCeti.MeasureTheory.Integral.KernelPotential
+import TauCeti.MeasureTheory.Integral.Kernel.Potential
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -61,9 +62,8 @@ theorem tendsto_integral_abs_windingWeight_sub {γn : ℕ → ℝ → ℂ} (hab 
       (fun n ↦ ∫ t in Ioc a b, ‖deriv (γn n) t - deriv γ t‖) atTop (𝓝 0) := by
     simpa only [intervalIntegral.integral_of_le hab] using hderiv
   have hpot := (integrable_truncatedCauchyKernel (2 * R)).tendsto_integral_norm_kernel_potential_sub
-    (measurable_truncatedCauchyKernel (2 * R))
-    (fun n ↦ (hγn n).aemeasurable_restrict_Ioc hab) (hγ.aemeasurable_restrict_Ioc hab)
-    (fun n ↦ (hγn n).integrableOn_deriv_Ioc hab) (hγ.integrableOn_deriv_Ioc hab) hμconv hderiv'
+    (fun n ↦ (hγn n).aemeasurable_restrict_Ioc) hγ.aemeasurable_restrict_Ioc
+    (fun n ↦ (hγn n).integrableOn_deriv_Ioc) hγ.integrableOn_deriv_Ioc hμconv hderiv'
   have hbound := hpot.const_mul ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹‖
   apply squeeze_zero' (Eventually.of_forall fun n ↦ integral_nonneg fun _ ↦ abs_nonneg _) ?_
     (by simpa only [mul_zero] using hbound)
@@ -71,5 +71,66 @@ theorem tendsto_integral_abs_windingWeight_sub {γn : ℕ → ℝ → ℂ} (hab 
   simpa only [Real.norm_eq_abs] using
     integral_norm_windingWeight_sub_le_cauchyPotential hab hγ (hγn n) hγclosed
       (hγnclosed n) hγR hn
+
+section
+
+variable {ι : Type*} {s : Finset ι} {γ : ι → ℝ → ℂ} {γn : ℕ → ι → ℝ → ℂ}
+  {a b : ι → ℝ} {w : ι → ℤ}
+
+/-- Per-curve uniform and derivative `L¹` convergence imply `L¹` convergence of the actual total
+real winding weight. No uniform bound on the indices is assumed. -/
+theorem tendsto_integral_abs_sum_windingWeight_sub
+    (hab : ∀ i ∈ s, a i ≤ b i)
+    (hγ : ∀ i ∈ s, AbsolutelyContinuousOnInterval (γ i) (a i) (b i))
+    (hγn : ∀ n, ∀ i ∈ s, AbsolutelyContinuousOnInterval (γn n i) (a i) (b i))
+    (hclosed : ∀ i ∈ s, γ i (a i) = γ i (b i))
+    (hclosedn : ∀ n, ∀ i ∈ s, γn n i (a i) = γn n i (b i))
+    (hconv : ∀ i ∈ s, TendstoUniformlyOn (fun n ↦ γn n i) (γ i) atTop (Icc (a i) (b i)))
+    (hdconv : ∀ i ∈ s, Tendsto
+      (fun n ↦ ∫ t in a i..b i, ‖deriv (γn n i) t - deriv (γ i) t‖) atTop (nhds 0)) :
+    Tendsto (fun n ↦ ∫ z : ℂ,
+      |(∑ i ∈ s, (w i : ℝ) * windingWeight (γn n i) (a i) (b i) z) -
+        ∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) z|) atTop (nhds 0) := by
+  have hd (n : ℕ) (i : ι) (hi : i ∈ s) :
+      Integrable (fun z ↦ |windingWeight (γn n i) (a i) (b i) z -
+        windingWeight (γ i) (a i) (b i) z|) := by
+    simpa only [Real.norm_eq_abs, Pi.sub_apply] using
+      ((AbsolutelyContinuousOnInterval.integrable_windingWeight (hγn n i hi) (hclosedn n i hi)).sub
+        (AbsolutelyContinuousOnInterval.integrable_windingWeight (hγ i hi) (hclosed i hi))).norm
+  have hlim : Tendsto
+      (fun n ↦ ∑ i ∈ s, |(w i : ℝ)| *
+        ∫ z : ℂ, |windingWeight (γn n i) (a i) (b i) z - windingWeight (γ i) (a i) (b i) z|)
+      atTop (nhds 0) := by
+    simpa only [mul_zero, Finset.sum_const_zero] using tendsto_finsetSum s (fun i hi ↦
+      Tendsto.const_mul |(w i : ℝ)|
+        (tendsto_integral_abs_windingWeight_sub (hab i hi) (fun n ↦ hγn n i hi)
+          (hγ i hi) (fun n ↦ hclosedn n i hi) (hclosed i hi) (hconv i hi) (hdconv i hi)))
+  apply squeeze_zero (fun n ↦ integral_nonneg fun _ ↦ abs_nonneg _) (fun n ↦ ?_) hlim
+  have htotal : Integrable (fun z ↦
+      |(∑ i ∈ s, (w i : ℝ) * windingWeight (γn n i) (a i) (b i) z) -
+        ∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) z|) := by
+    simpa only [Real.norm_eq_abs, Pi.sub_apply] using
+      ((integrable_sum_windingWeight (fun i hi ↦ hγn n i hi) (fun i hi ↦ hclosedn n i hi)).sub
+        (integrable_sum_windingWeight hγ hclosed)).norm
+  calc
+    _ ≤ ∫ z : ℂ, ∑ i ∈ s, |(w i : ℝ)| *
+        |windingWeight (γn n i) (a i) (b i) z - windingWeight (γ i) (a i) (b i) z| := by
+      apply integral_mono htotal (integrable_finsetSum _ fun i hi ↦ (hd n i hi).const_mul _)
+      intro z
+      dsimp only
+      rw [← Finset.sum_sub_distrib]
+      have heq : ∀ i, (w i : ℝ) * windingWeight (γn n i) (a i) (b i) z -
+          (w i : ℝ) * windingWeight (γ i) (a i) (b i) z =
+          (w i : ℝ) * (windingWeight (γn n i) (a i) (b i) z -
+            windingWeight (γ i) (a i) (b i) z) := fun i ↦ (mul_sub _ _ _).symm
+      simp_rw [heq]
+      simpa only [abs_mul] using Finset.abs_sum_le_sum_abs
+        (f := fun i ↦ (w i : ℝ) * (windingWeight (γn n i) (a i) (b i) z -
+          windingWeight (γ i) (a i) (b i) z)) s
+    _ = _ := by
+      rw [integral_finsetSum s (fun i hi ↦ (hd n i hi).const_mul _)]
+      simp only [integral_const_mul]
+
+end
 
 end TauCeti.Green

@@ -123,7 +123,7 @@ def sylvesterEquivOne (hg : g.Monic) (n : ℕ) :
       exact ⟨h₁, h₂⟩
     · intro ⟨q, hq⟩
       refine ⟨(⟨q %ₘ g, modByMonic_mem_degreeLT hg q⟩,
-        ⟨q /ₘ g, divByMonic_mem_degreeLT hg hq⟩), ?_⟩
+        ⟨q /ₘ g, divByMonic_mem_degreeLT hq⟩), ?_⟩
       ext1
       simpa [add_comm] using modByMonic_add_div q g
 
@@ -215,7 +215,7 @@ theorem det_sylvesterBlock (hg : g.Monic) (p : R[X]) (hp : p.natDegree ≤ n) :
       simp
     · rw [toMatrix_apply, hinl, Basis.prod_repr_inr, fromBlocks_apply₂₁, of_apply]
     · rw [toMatrix_apply, hinr, hz, Basis.prod_repr_inr, fromBlocks_apply₂₂,
-        Basis.repr_self, one_apply, Finsupp.single_apply]
+        Basis.repr_self, Matrix.one_apply, Finsupp.single_apply]
       exact if_congr eq_comm rfl rfl
   rw [hmat, det_fromBlocks_zero₁₂, det_one, mul_one]
 

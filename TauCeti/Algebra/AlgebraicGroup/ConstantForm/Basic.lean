@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
@@ -78,6 +79,8 @@ a relation between `C` and `Cᵀ`.
   `inclusion_def` exposing the quotient-spectrum presentations.
 * `TauCeti.ConstantForm.mem_definingPointsSubgroup_iff`: an ambient point is cut out exactly
   when its matrix `M` satisfies `M C Mᵀ = C`.
+* `TauCeti.ConstantForm.mul_mul_transpose_of_mem_hopfIdealPointsSubgroup`: every matrix point of
+  a subgroup cut out by a Hopf ideal containing the form relations satisfies `M C Mᵀ = C`.
 
 ## References
 
@@ -127,7 +130,7 @@ theorem relationMatrix_def :
   rw [relationMatrix]
 
 /-- The set of defining relations: the entries of the relation matrix. -/
-def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
+noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
   Set.range fun ij : Fin n × Fin n => relationMatrix R n C ij.1 ij.2
 
 /-- Every entry of the relation matrix is a defining relation. -/
@@ -187,11 +190,11 @@ private theorem relationMatrix_map_comul :
 ideals of the span of the relations. -/
 private theorem comul_relationMatrix_mem (i j : Fin n) :
     Coalgebra.comul (R := R) (relationMatrix R n C i j) ∈
-      HopfIdeal.leftTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+      Ideal.leftTensorIdeal (R := R)
+          (B := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) ⊔
-        HopfIdeal.rightTensorIdeal (R := R)
-          (H := GeneralLinear.coordinateHopfAlgebra R n)
+        Ideal.rightTensorIdeal (R := R)
+          (A := GeneralLinear.coordinateHopfAlgebra R n)
           (Ideal.span (relationSet R n C)) := by
   have h := congrFun (congrFun (relationMatrix_map_comul R n C) i) j
   rw [Matrix.map_apply, Bialgebra.comulAlgHom_apply] at h
@@ -199,12 +202,12 @@ private theorem comul_relationMatrix_mem (i j : Fin n) :
   refine Ideal.add_mem _ (Ideal.mem_sup_right ?_) (Ideal.mem_sup_left ?_)
   · refine Matrix.mul_mul_apply_mem (fun k l => ?_) _ _ i j
     rw [Matrix.map_apply]
-    exact HopfIdeal.includeRight_mem_rightTensorIdeal (R := R)
-      (H := GeneralLinear.coordinateHopfAlgebra R n)
+    exact Ideal.includeRight_mem_rightTensorIdeal (R := R)
+      (A := GeneralLinear.coordinateHopfAlgebra R n)
       (Ideal.subset_span (relationMatrix_mem_relationSet R n C k l))
   · rw [Matrix.map_apply]
-    exact HopfIdeal.includeLeft_mem_leftTensorIdeal (R := R)
-      (H := GeneralLinear.coordinateHopfAlgebra R n)
+    exact Ideal.includeLeft_mem_leftTensorIdeal (R := R)
+      (B := GeneralLinear.coordinateHopfAlgebra R n)
       (Ideal.subset_span (relationMatrix_mem_relationSet R n C i j))
 
 /-- The antipode image of the relation matrix is the negative of the relation matrix framed by
@@ -388,12 +391,12 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 point. `CommHopfAlgCat.quotientPointsHom` is by definition the points map induced by the
 quotient morphism, so this is `coordinateMap_def` read on points; it is stated here to glue
 the two applied forms at a value algebra. -/
--- Not `@[simp]`: `CommHopfAlgCat.mapPointsFunctor_app_apply` already rewrites the left-hand
+-- Not `@[simp]`: `CommHopfAlgCat.Hom.mapPointsFunctor_app_apply` already rewrites the left-hand
 -- side to its composition form before this lemma could apply.
 theorem mapPointsFunctor_coordinateMap_app
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n C)
       (CommAlgCat.of R A)) :
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap R n C)).app (CommAlgCat.of R A) f =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R n C)).app (CommAlgCat.of R A) f =
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n C)
         (CommAlgCat.of R A) f := by
@@ -423,6 +426,25 @@ theorem mem_definingPointsSubgroup_iff
     GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear n g.ofConv
   rw [← hg]
   exact definingHopfIdeal_toIdeal_le_ker_iff R n C g.ofConv
+
+variable {R n C} in
+/-- **Every matrix point of a subgroup cut out by a Hopf ideal containing the form relations
+preserves the form**: `g C gᵀ = C`. This is the criterion through which a carrier whose defining
+Hopf ideal contains `definingHopfIdeal R n C` shows that all its points preserve `C`. -/
+theorem mul_mul_transpose_of_mem_hopfIdealPointsSubgroup
+    {I : HopfIdeal R (GeneralLinear.coordinateHopfAlgebra R n)} (hI : definingHopfIdeal R n C ≤ I)
+    {g : Matrix.GeneralLinearGroup (Fin n) A}
+    (hg : g ∈ GeneralLinear.hopfIdealPointsSubgroup n I A) :
+    (g : Matrix (Fin n) (Fin n) A) * C.map (algebraMap R A) * (g : Matrix (Fin n) (Fin n) A)ᵀ =
+      C.map (algebraMap R A) := by
+  have h := GeneralLinear.hopfIdealPointsSubgroup_le_of_le n hI A hg
+  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff] at h
+  have hmem : (GeneralLinear.pointsMulEquiv (R := R) n).symm g ∈
+      CommHopfAlgCat.quotientPointsSubgroup (GeneralLinear.coordinateHopfAlgebra R n)
+        (definingHopfIdeal R n C) (CommAlgCat.of R A) :=
+    (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr h
+  rw [mem_definingPointsSubgroup_iff, MulEquiv.apply_symm_apply] at hmem
+  exact hmem
 
 end Points
 

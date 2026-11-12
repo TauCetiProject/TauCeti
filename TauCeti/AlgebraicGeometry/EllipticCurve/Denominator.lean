@@ -17,8 +17,8 @@ have coefficients in `R`. Writing a `K`-point of `W` as a pair of reduced fracti
 `x = num x / den x` and `y = num y / den y` (Mathlib's `IsFractionRing.num` and
 `IsFractionRing.den`), the Weierstrass equation forces the denominator of the `x`-coordinate to
 be **powerful**: a prime dividing it divides it at least twice. In particular `den x` is never a
-prime element — the form in which the Nagell–Lutz integrality argument uses it, where the rational
-root theorem has already bounded `den x` by a prime.
+prime element, and a squarefree bound on `den x` — the kind the rational root theorem supplies in
+the Nagell–Lutz integrality argument — forces it to be a unit.
 
 This is weaker than the classical statement for a short model `y² = x³ + Ax + B` over `ℤ`, that
 `den x = d²` and `den y = d³` for some `d`: that needs each `q`-adic valuation of `den x` to be
@@ -42,14 +42,13 @@ of `y`.
 * `WeierstrassCurve.den_eq_one_of_dvd_squarefree`: the same over `ℤ`, where it says the
   rational `x`-coordinate is an integer — the conclusion the rational root theorem feeds into.
 
-This is the denominator input to the Nagell–Lutz integrality milestone of
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6, item "The torsion subgroup and Nagell–Lutz".
-No torsion hypothesis is needed here: the statements hold for every point.
+This is the denominator input to the Nagell–Lutz integrality theorem. No torsion hypothesis is
+needed here: the statements hold for every point.
 
 ## Provenance
 
-Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), pinned by
-that roadmap at `dev/modular-curves @ 9fec8eba7652`: the descent follows
+Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), at
+`dev/modular-curves @ 9fec8eba7652`: the descent follows
 `LutzNagell/LutzNagellTheorem/PIDDenominators.lean`
 (`den_no_simple_prime_factor_of_on_curve`, `den_not_prime_of_on_curve`) and its positive restatement
 `den_powerful_of_on_curve` in `LutzNagell/LutzNagellTheorem/PIDMain.lean`.
@@ -65,9 +64,7 @@ public section
 
 open IsFractionRing
 
-namespace TauCeti
-
-section
+namespace WeierstrassCurve
 
 section Descent
 
@@ -80,7 +77,7 @@ The hypothesis is the Weierstrass equation of the point `(α / (q * u), γ / e)`
 cleared, the cubic in the numerator of the `x`-coordinate split as `α ^ 3 + q * c`. Dividing by
 `q ^ 2` and then by `q` in turn shows `q ^ 2 ∣ e` and then `q ∣ γ`, so `γ / e` is not in lowest
 terms. -/
-private lemma _root_.WeierstrassCurve.not_isRelPrime_of_cleared_equation
+private lemma not_isRelPrime_of_cleared_equation
     {q u γ e α c A B : R} (hq : Prime q)
     (hu : ¬q ∣ u) (hα : ¬q ∣ α) (h : γ ^ 2 * (q * u) ^ 3 + A * (q * u) ^ 2 * e
       + B * (q * u) ^ 3 * e = e ^ 2 * (α ^ 3 + q * c)) : ¬IsRelPrime γ e := by
@@ -109,27 +106,25 @@ private lemma _root_.WeierstrassCurve.not_isRelPrime_of_cleared_equation
 
 end Descent
 
+section
+
 variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
 variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
-variable (W : _root_.WeierstrassCurve R) {x y : K} {q : R}
+variable (W : WeierstrassCurve R) {x y : K} {q : R}
 
 /-- The Weierstrass equation with the denominators of the two coordinates cleared: an identity
 in `R` between the numerators and denominators of a `K`-point. -/
-private lemma _root_.WeierstrassCurve.num_den_equation
+private lemma num_den_equation
     (h : (W.baseChange K).toAffine.Equation x y) :
     num R y ^ 2 * (den R x : R) ^ 3 + W.a₁ * num R x * num R y * (den R x : R) ^ 2 * (den R y : R)
         + W.a₃ * num R y * (den R x : R) ^ 3 * (den R y : R) =
       (den R y : R) ^ 2 * (num R x ^ 3 + W.a₂ * num R x ^ 2 * (den R x : R)
         + W.a₄ * num R x * (den R x : R) ^ 2 + W.a₆ * (den R x : R) ^ 3) := by
-  have hd : (algebraMap R K (den R x : R)) ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (den R x).2
-  have he : (algebraMap R K (den R y : R)) ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (den R y).2
+  have hd := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (K := K) (den R x).2
+  have he := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (K := K) (den R y).2
   apply IsFractionRing.injective R K
-  rw [_root_.WeierstrassCurve.Affine.equation_iff, ← mk'_num_den' R x, ← mk'_num_den' R y] at h
-  simp only [_root_.WeierstrassCurve.baseChange, _root_.WeierstrassCurve.map_a₁,
-    _root_.WeierstrassCurve.map_a₂, _root_.WeierstrassCurve.map_a₃,
-    _root_.WeierstrassCurve.map_a₄, _root_.WeierstrassCurve.map_a₆] at h
+  rw [Affine.equation_iff, ← mk'_num_den' R x, ← mk'_num_den' R y] at h
+  simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at h
   push_cast
   field_simp at h ⊢
   linear_combination h
@@ -138,12 +133,12 @@ private lemma _root_.WeierstrassCurve.num_den_equation
 
 If `(x, y)` is a point of `W` over the fraction field `K` of a unique factorization domain `R`,
 then a prime of `R` dividing the denominator of `x` divides it at least twice. -/
-theorem _root_.WeierstrassCurve.sq_dvd_den_of_prime_of_dvd
+theorem sq_dvd_den_of_prime_of_dvd
     (h : (W.baseChange K).toAffine.Equation x y) (hq : Prime q)
     (hqd : q ∣ (den R x : R)) : q ^ 2 ∣ (den R x : R) := by
   by_contra hq2
   obtain ⟨u, hu⟩ := hqd
-  have key := WeierstrassCurve.num_den_equation W h
+  have key := W.num_den_equation h
   rw [hu] at key
   set α := num R x
   set γ := num R y
@@ -154,53 +149,46 @@ theorem _root_.WeierstrassCurve.sq_dvd_den_of_prime_of_dvd
       + W.a₃ * γ * (q * u) ^ 3 * e = e ^ 2 * (α ^ 3 +
         q * (W.a₂ * α ^ 2 * u + W.a₄ * α * u ^ 2 * q + W.a₆ * u ^ 3 * q ^ 2)) := by
     linear_combination key
-  exact WeierstrassCurve.not_isRelPrime_of_cleared_equation hq hu' hα hcl (num_den_reduced R y)
+  exact not_isRelPrime_of_cleared_equation hq hu' hα hcl (num_den_reduced R y)
 
 /-- **A squarefree bound on the denominator forces it to be a unit.**
 
 A prime dividing the denominator divides it twice (`sq_dvd_den_of_prime_of_dvd`), so it would
 divide any bound twice as well; a squarefree bound admits no such prime, leaving the denominator
 without prime factors. -/
-theorem _root_.WeierstrassCurve.isUnit_den_of_dvd_squarefree
+theorem isUnit_den_of_dvd_squarefree
     (h : (W.baseChange K).toAffine.Equation x y) {m : R}
     (hsf : Squarefree m) (hdvd : (den R x : R) ∣ m) : IsUnit (den R x : R) := by
   by_contra hnu
-  obtain ⟨q, hq_irr, hq_dvd⟩ := WfDvdMonoid.exists_irreducible_factor hnu
-    (mem_nonZeroDivisors_iff_ne_zero.mp (den R x).2)
-  have hq : Prime q := UniqueFactorizationMonoid.irreducible_iff_prime.mp hq_irr
-  have hqq : q * q ∣ (den R x : R) := by
-    rw [← pow_two]; exact WeierstrassCurve.sq_dvd_den_of_prime_of_dvd W h hq hq_dvd
-  exact hq.not_isUnit (hsf q (hqq.trans hdvd))
+  obtain ⟨q, hq, hqd⟩ := WfDvdMonoid.exists_irreducible_factor hnu (nonZeroDivisors.coe_ne_zero _)
+  exact hq.not_isUnit <| hsf q <| (sq q ▸ W.sq_dvd_den_of_prime_of_dvd h hq.prime hqd).trans hdvd
 
 /-- **The denominator of the `x`-coordinate of a point is not prime.**
 
 The Nagell–Lutz form of `WeierstrassCurve.sq_dvd_den_of_prime_of_dvd`: a prime element is
 not divisible by its own square, so it cannot be the denominator of the `x`-coordinate of a
 point. -/
-theorem _root_.WeierstrassCurve.not_prime_den (h : (W.baseChange K).toAffine.Equation x y) :
+theorem not_prime_den (h : (W.baseChange K).toAffine.Equation x y) :
     ¬Prime (den R x : R) := fun hp ↦
   hp.not_isUnit <| hp.irreducible.squarefree _ <| by
-    simpa [sq] using WeierstrassCurve.sq_dvd_den_of_prime_of_dvd W h hp dvd_rfl
+    simpa [sq] using W.sq_dvd_den_of_prime_of_dvd h hp dvd_rfl
+
+end
 
 /-- **A rational point whose `x`-denominator divides a squarefree number has an integral
 `x`-coordinate.**
 
-The `ℚ`/`ℤ` form of `isUnit_den_of_dvd_squarefree`, which is what the Nagell–Lutz integrality
-argument consumes: the rational root theorem bounds `x.den`, and a squarefree bound leaves the
+The `ℚ`/`ℤ` form of `isUnit_den_of_dvd_squarefree`, the shape the Nagell–Lutz integrality
+argument takes over `ℚ`: the rational root theorem bounds `x.den`, and a squarefree bound leaves the
 denominator a unit, hence `1`. Over `ℤ` the ring-theoretic denominator and the numeral agree up
 to sign (`Rat.isFractionRingDen`). -/
-theorem _root_.WeierstrassCurve.den_eq_one_of_dvd_squarefree
-    {W : _root_.WeierstrassCurve ℤ} {x y : ℚ}
+theorem den_eq_one_of_dvd_squarefree
+    {W : WeierstrassCurve ℤ} {x y : ℚ}
     (h : (W.baseChange ℚ).toAffine.Equation x y) {m : ℕ} (hsf : Squarefree m)
     (hdvd : x.den ∣ m) : x.den = 1 := by
-  have hunit : IsUnit (den ℤ x : ℤ) := by
-    refine WeierstrassCurve.isUnit_den_of_dvd_squarefree W h (m := (m : ℤ))
-        (Int.squarefree_natCast.mpr hsf) ?_
-    rw [← Int.natAbs_dvd, Rat.isFractionRingDen x]
-    exact Int.natCast_dvd_natCast.mpr hdvd
   rw [← Rat.isFractionRingDen x]
-  exact Int.isUnit_iff_natAbs_eq.mp hunit
+  refine Int.isUnit_iff_natAbs_eq.mp <|
+    W.isUnit_den_of_dvd_squarefree h (Int.squarefree_natCast.mpr hsf) ?_
+  rwa [← Int.natAbs_dvd, Rat.isFractionRingDen x, Int.natCast_dvd_natCast]
 
-end
-
-end TauCeti
+end WeierstrassCurve

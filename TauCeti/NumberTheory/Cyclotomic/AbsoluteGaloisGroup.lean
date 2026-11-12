@@ -47,7 +47,7 @@ theorem apply_eq_self_of_forall_mem_adjoin_pow_eq_one {F : Type*} [Field F] [Cha
     (hσ : ∀ x ∈ IntermediateField.adjoin ℚ {z : AlgebraicClosure F | z ^ m = 1}, x ∈ M →
       σ.toRingEquiv x = x)
     (x : M) : σ.toRingEquiv (x : AlgebraicClosure F) = x := by
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure F) m
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure F) m
   have := hζ.isCyclotomicExtension_adjoin_nth_roots (K := ℚ)
   have := IsCyclotomicExtension.finiteDimensional {m} ℚ
     (IntermediateField.adjoin ℚ {z : AlgebraicClosure F | z ^ m = 1})

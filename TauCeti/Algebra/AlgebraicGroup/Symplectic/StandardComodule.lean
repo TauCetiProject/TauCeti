@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
+public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
 # The standard representation of the symplectic group
@@ -139,11 +140,11 @@ theorem basePointsRepresentation_eq_mulVec
   rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R m).hom g,
     GeneralLinear.basePointsRepresentation_eq_mulVec]
   have hpoint :
-      AlgHom.mapDomain (coordinateMap R m).hom g =
+      BialgHom.mapDomain (coordinateMap R m).hom g =
         CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R (m + m)) (definingHopfIdeal R m)
           (CommAlgCat.of R R) g := by
-    rw [coordinateMap_def, AlgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
+    rw [coordinateMap_def, BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
   rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_coe]
 
 /-- A scalar point in the standard representation of `Sp₂ₘ`, for `m ≠ 0`, has scalar a square
@@ -160,8 +161,9 @@ theorem scalar_sq_eq_one_of_basePointsRepresentation_eq_smul (hm : m ≠ 0)
     have hv := LinearMap.congr_fun hc v
     rw [basePointsRepresentation_eq_mulVec] at hv
     simpa only [Matrix.toLin'_apply, Matrix.smul_mulVec, Matrix.one_mulVec,
-      LinearMap.smul_apply, Module.End.one_apply] using hv
-  exact sq_eq_one_of_smul_one_mul_JFin_mul_transpose_eq hm
+      LinearMap.smul_apply, one_apply_eq_self] using hv
+  have : Nonempty (Fin (m + m)) := ⟨⟨0, by omega⟩⟩
+  exact Matrix.sq_eq_one_of_smul_one_mul_mul_transpose_eq (isUnit_JFin m R)
     (hmat ▸ GLSymplecticFin.mem_iff.mp (pointsMulEquiv (R := R) (A := R) m g).2)
 
 /-- **A subcomodule of the standard symplectic comodule is stable under every symplectic
