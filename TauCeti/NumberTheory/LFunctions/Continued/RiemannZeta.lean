@@ -23,6 +23,12 @@ open Complex Filter Topology
 
 namespace TauCeti.LFunctions
 
+private theorem uncompletedProduct_riemannZetaData (s : ℂ) :
+    riemannZetaData.uncompletedProduct s = completedRiemannZeta s / Gammaℝ s := by
+  simp only [AnalyticLFunctionData.uncompletedProduct_def, riemannZetaData_conductor,
+    PNat.one_coe, Nat.cast_one, one_cpow, one_mul, riemannZetaData_completed,
+    AnalyticLFunctionData.invGammaFactor_def, riemannZetaData_gammaFactor, div_eq_mul_inv]
+
 private theorem continuedL_eventuallyEq_riemannZeta (s : ℂ) :
     riemannZetaData.continuedL =ᶠ[𝓝[≠] s] riemannZeta := by
   have h0 : ∀ᶠ z : ℂ in 𝓝[≠] s, z ≠ 0 := by
@@ -32,9 +38,7 @@ private theorem continuedL_eventuallyEq_riemannZeta (s : ℂ) :
     · exact nhdsWithin_le_nhds (eventually_ne_nhds hs)
   filter_upwards [riemannZetaData_hasMeromorphicContinuation.continuedL_eventuallyEq s, h0]
     with z hz hz0
-  simpa [riemannZetaData_conductor, riemannZetaData_completed,
-    AnalyticLFunctionData.invGammaFactor_def, riemannZetaData_gammaFactor,
-    ← div_eq_mul_inv, ← riemannZeta_def_of_ne_zero hz0] using hz
+  rw [hz, uncompletedProduct_riemannZetaData, riemannZeta_def_of_ne_zero hz0]
 
 /-- Removing the conductor and gamma factors from the zeta record recovers the
 native Riemann zeta function, including the removable value at zero. -/
@@ -52,14 +56,9 @@ theorem continuedL_riemannZetaData : riemannZetaData.continuedL = riemannZeta :=
       simp
     rw [riemannZetaData_hasMeromorphicContinuation.continuedL_eq_of_order_neg
       (by rw [ho]; exact_mod_cast (by norm_num : (-1 : ℤ) < 0))]
-    simp [riemannZetaData_conductor, riemannZetaData_completed,
-      AnalyticLFunctionData.invGammaFactor_def, riemannZetaData_gammaFactor,
-      riemannZeta_def_of_ne_zero one_ne_zero, div_eq_mul_inv]
-  · have hζ := analyticOn_riemannZeta s hs
-    have ha := riemannZetaData_hasMeromorphicContinuation.analyticAt_continuedL
-      (s := s) (by rw [meromorphicOrderAt_congr heq]; exact hζ.meromorphicOrderAt_nonneg)
-    exact ((ha.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hζ.continuousAt).mp
-      heq).eq_of_nhds
+    rw [uncompletedProduct_riemannZetaData, riemannZeta_def_of_ne_zero one_ne_zero]
+  · exact riemannZetaData_hasMeromorphicContinuation.continuedL_eq_of_eventuallyEq
+      (analyticOn_riemannZeta s hs) heq
 
 -- The cancelled pole at zero is filled with the genuine value of zeta, not zero.
 example : riemannZetaData.continuedL 0 = -1 / 2 := by

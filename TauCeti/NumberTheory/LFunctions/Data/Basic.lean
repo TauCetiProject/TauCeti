@@ -101,6 +101,10 @@ namespace AnalyticLFunctionData
 
 variable (d : AnalyticLFunctionData)
 
+/-- Every complex power of the positive conductor is nonzero. -/
+theorem conductor_cpow_ne_zero (z : ℂ) : ((d.conductor : ℕ) : ℂ) ^ z ≠ 0 :=
+  cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr d.conductor.ne_zero))
+
 /-- The **degree** `#μ + 2 #ν` of a card: a real gamma shift counts once and a complex gamma
 shift twice, as `Γ_ℂ(s) = Γ_ℝ(s) Γ_ℝ(s + 1)`. -/
 def degree : ℕ := d.gammaR.card + 2 * d.gammaC.card
