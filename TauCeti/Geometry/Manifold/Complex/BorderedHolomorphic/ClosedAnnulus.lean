@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Interior
 public import TauCeti.Topology.Constructions.DoubleAlong.Annulus
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # The closed annulus as a Riemann surface with boundary
@@ -122,16 +123,11 @@ private theorem im_neg_I_mul_log (u : ℂ) : (-I * log u).im = -Real.log ‖u‖
 private theorem re_neg_I_mul_log (u : ℂ) : (-I * log u).re = arg u := by
   simp [log_im]
 
-private theorem abs_arg_lt_pi {u : ℂ} (hu : u ∈ slitPlane) : |arg u| < π :=
-  abs_lt.2 ⟨neg_pi_lt_arg u, lt_of_le_of_ne (arg_le_pi u) (slitPlane_arg_ne_pi hu)⟩
+private theorem neg_I_mul_I_mul (x : ℂ) : -I * (I * x) = x := by
+  rw [← mul_assoc, neg_mul, I_mul_I, neg_neg, one_mul]
 
-private theorem exp_mem_slitPlane_of_abs_im_lt {x : ℂ} (hx : |x.im| < π) : exp x ∈ slitPlane := by
-  obtain ⟨h₁, h₂⟩ := abs_lt.1 hx
-  rw [exp_mem_slitPlane, (toIocMod_eq_self _).2 ⟨h₁, by linarith [Real.pi_pos]⟩]
-  exact h₂.ne
-
-private theorem log_exp_of_abs_im_lt {x : ℂ} (hx : |x.im| < π) : log (exp x) = x :=
-  log_exp (abs_lt.1 hx).1 (abs_lt.1 hx).2.le
+private theorem I_mul_neg_I_mul (x : ℂ) : I * (-I * x) = x := by
+  rw [← mul_assoc, mul_neg, I_mul_I, neg_neg, one_mul]
 
 /-! ### The logarithmic charts -/
 
@@ -155,6 +151,13 @@ private theorem norm_coe_pos (z : closedAnnulus r₁ r₂) : 0 < ‖(z : ℂ)‖
 points with `|re w| < π` and `im w < log (r₂ / r₁)`. -/
 def chartTarget (r₁ r₂ : ℝ) : Set ClosedUpperHalfPlane :=
   {w | |(w : ℂ).re| < π ∧ (w : ℂ).im < Real.log (r₂ / r₁)}
+
+omit hr₁ hr₁₂ in
+/-- A point lies in the chart target exactly when `|re w| < π` and `im w < log (r₂ / r₁)`. -/
+@[simp]
+theorem mem_chartTarget_iff {w : ClosedUpperHalfPlane} :
+    w ∈ chartTarget r₁ r₂ ↔ |(w : ℂ).re| < π ∧ (w : ℂ).im < Real.log (r₂ / r₁) :=
+  Iff.rfl
 
 omit hr₁ hr₁₂ in
 private theorem isOpen_chartTarget : IsOpen (chartTarget r₁ r₂) :=
@@ -228,11 +231,9 @@ def innerChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
   source := {z | ‖(z : ℂ)‖ < r₂ ∧ (z : ℂ) / (r₁ * ζ) ∈ slitPlane}
   target := chartTarget r₁ r₂
   map_source' z hz := by
-    refine ⟨?_, ?_⟩
-    · change |(I * log ((z : ℂ) / (r₁ * ζ))).re| < π
-      rw [re_I_mul_log, abs_neg]
-      exact abs_arg_lt_pi hz.2
-    · exact im_inner_lt hζ z hz.1
+    simp only [mem_chartTarget_iff]
+    rw [re_I_mul_log, abs_neg]
+    exact ⟨abs_arg_lt_pi_of_mem_slitPlane hz.2, im_inner_lt hζ z hz.1⟩
   map_target' w hw := by
     have hρ := ofReal_mul_ne_zero hr₁.out hζ
     have hc : capIm (Real.log (r₂ / r₁)) w = w := capIm_of_im_le hw.2.le
@@ -252,17 +253,17 @@ def innerChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
   left_inv' z hz := by
     have hρ := ofReal_mul_ne_zero hr₁.out hζ
     apply Subtype.ext
-    change (r₁ : ℂ) * ζ * exp (-I * capIm (Real.log (r₂ / r₁)) (I * log ((z : ℂ) / (r₁ * ζ)))) = z
-    rw [capIm_of_im_le (im_inner_lt hζ z hz.1).le, ← mul_assoc, neg_mul, I_mul_I, neg_neg,
-      one_mul, exp_log (slitPlane_ne_zero hz.2), mul_div_cancel₀ _ hρ]
+    dsimp only
+    rw [capIm_of_im_le (im_inner_lt hζ z hz.1).le, neg_I_mul_I_mul,
+      exp_log (slitPlane_ne_zero hz.2), mul_div_cancel₀ _ hρ]
   right_inv' w hw := by
     have hρ := ofReal_mul_ne_zero hr₁.out hζ
     have hc : capIm (Real.log (r₂ / r₁)) w = w := capIm_of_im_le hw.2.le
     have hre : |(-I * (w : ℂ)).im| < π := by simpa using hw.1
     apply Subtype.ext
-    change I * log (r₁ * ζ * exp (-I * capIm (Real.log (r₂ / r₁)) w) / (r₁ * ζ)) = w
-    rw [hc, mul_div_cancel_left₀ _ hρ, log_exp_of_abs_im_lt hre, ← mul_assoc, mul_neg, I_mul_I,
-      neg_neg, one_mul]
+    dsimp only
+    rw [hc, mul_div_cancel_left₀ _ hρ, log_exp (abs_lt.1 hre).1 (abs_lt.1 hre).2.le,
+      I_mul_neg_I_mul]
   open_source := (isOpen_lt (continuous_norm.comp continuous_subtype_val) continuous_const).inter
     (isOpen_slitPlane.preimage (continuous_subtype_val.div_const _))
   open_target := isOpen_chartTarget
@@ -295,11 +296,9 @@ def outerChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
   source := {z | r₁ < ‖(z : ℂ)‖ ∧ (z : ℂ) / (r₂ * ζ) ∈ slitPlane}
   target := chartTarget r₁ r₂
   map_source' z hz := by
-    refine ⟨?_, ?_⟩
-    · change |(-I * log ((z : ℂ) / (r₂ * ζ))).re| < π
-      rw [re_neg_I_mul_log]
-      exact abs_arg_lt_pi hz.2
-    · exact im_outer_lt hζ z hz.1
+    simp only [mem_chartTarget_iff]
+    rw [re_neg_I_mul_log]
+    exact ⟨abs_arg_lt_pi_of_mem_slitPlane hz.2, im_outer_lt hζ z hz.1⟩
   map_target' w hw := by
     have hρ := ofReal_mul_ne_zero (zero_lt_r₂ r₁ r₂) hζ
     have hc : capIm (Real.log (r₂ / r₁)) w = w := capIm_of_im_le hw.2.le
@@ -319,17 +318,17 @@ def outerChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
   left_inv' z hz := by
     have hρ := ofReal_mul_ne_zero (zero_lt_r₂ r₁ r₂) hζ
     apply Subtype.ext
-    change (r₂ : ℂ) * ζ * exp (I * capIm (Real.log (r₂ / r₁)) (-I * log ((z : ℂ) / (r₂ * ζ)))) = z
-    rw [capIm_of_im_le (im_outer_lt hζ z hz.1).le, ← mul_assoc, mul_neg, I_mul_I, neg_neg,
-      one_mul, exp_log (slitPlane_ne_zero hz.2), mul_div_cancel₀ _ hρ]
+    dsimp only
+    rw [capIm_of_im_le (im_outer_lt hζ z hz.1).le, I_mul_neg_I_mul,
+      exp_log (slitPlane_ne_zero hz.2), mul_div_cancel₀ _ hρ]
   right_inv' w hw := by
     have hρ := ofReal_mul_ne_zero (zero_lt_r₂ r₁ r₂) hζ
     have hc : capIm (Real.log (r₂ / r₁)) w = w := capIm_of_im_le hw.2.le
     have hre : |(I * (w : ℂ)).im| < π := by simpa using hw.1
     apply Subtype.ext
-    change -I * log (r₂ * ζ * exp (I * capIm (Real.log (r₂ / r₁)) w) / (r₂ * ζ)) = w
-    rw [hc, mul_div_cancel_left₀ _ hρ, log_exp_of_abs_im_lt hre, ← mul_assoc, neg_mul, I_mul_I,
-      neg_neg, one_mul]
+    dsimp only
+    rw [hc, mul_div_cancel_left₀ _ hρ, log_exp (abs_lt.1 hre).1 (abs_lt.1 hre).2.le,
+      neg_I_mul_I_mul]
   open_source := (isOpen_lt continuous_const (continuous_norm.comp continuous_subtype_val)).inter
     (isOpen_slitPlane.preimage (continuous_subtype_val.div_const _))
   open_target := isOpen_chartTarget
@@ -384,17 +383,27 @@ theorem outerChart_target :
     (outerChart (r₁ := r₁) (r₂ := r₂) ζ hζ).target = chartTarget r₁ r₂ := by
   rw [outerChart]
 
+/-- The inverse of the inner chart, as defined: `w ↦ r₁ ζ exp (-I w)` with `im w` capped. -/
+private theorem coe_innerChart_symm_apply_eq_capIm (w : ClosedUpperHalfPlane) :
+    ((innerChart (r₁ := r₁) (r₂ := r₂) ζ hζ).symm w : ℂ) =
+      r₁ * ζ * exp (-I * capIm (Real.log (r₂ / r₁)) w) := by
+  rw [innerChart]; rfl
+
+/-- The inverse of the outer chart, as defined: `w ↦ r₂ ζ exp (I w)` with `im w` capped. -/
+private theorem coe_outerChart_symm_apply_eq_capIm (w : ClosedUpperHalfPlane) :
+    ((outerChart (r₁ := r₁) (r₂ := r₂) ζ hζ).symm w : ℂ) =
+      r₂ * ζ * exp (I * capIm (Real.log (r₂ / r₁)) w) := by
+  rw [outerChart]; rfl
+
 /-- On its target, the inverse of the inner chart is `w ↦ r₁ ζ exp (-I w)`. -/
 theorem coe_innerChart_symm_apply {w : ClosedUpperHalfPlane} (hw : w ∈ chartTarget r₁ r₂) :
     ((innerChart (r₁ := r₁) (r₂ := r₂) ζ hζ).symm w : ℂ) = r₁ * ζ * exp (-I * w) := by
-  change (r₁ : ℂ) * ζ * exp (-I * capIm (Real.log (r₂ / r₁)) w) = _
-  rw [capIm_of_im_le hw.2.le]
+  rw [coe_innerChart_symm_apply_eq_capIm, capIm_of_im_le hw.2.le]
 
 /-- On its target, the inverse of the outer chart is `w ↦ r₂ ζ exp (I w)`. -/
 theorem coe_outerChart_symm_apply {w : ClosedUpperHalfPlane} (hw : w ∈ chartTarget r₁ r₂) :
     ((outerChart (r₁ := r₁) (r₂ := r₂) ζ hζ).symm w : ℂ) = r₂ * ζ * exp (I * w) := by
-  change (r₂ : ℂ) * ζ * exp (I * capIm (Real.log (r₂ / r₁)) w) = _
-  rw [capIm_of_im_le hw.2.le]
+  rw [coe_outerChart_symm_apply_eq_capIm, capIm_of_im_le hw.2.le]
 
 /-- The imaginary part of the inner chart is `log (‖z‖ / r₁)`. -/
 theorem im_innerChart_apply (z : closedAnnulus r₁ r₂) :
@@ -484,38 +493,6 @@ private theorem isLogChart_of_mem_atlas
   · exact ⟨r₂ * ζ, I, -I, fun w hw ↦ coe_outerChart_symm_apply hw, fun z hz ↦ ⟨hz.2, rfl⟩⟩
 
 end Charts
-
-/-- A partial homeomorphism of the closed upper half-plane which, on its source and on its
-target, is given in the ambient coordinate by functions that are complex analytic at each point,
-belongs to the bordered holomorphic groupoid. -/
-private theorem mem_borderedHolomorphicGroupoid_of_contDiffAt
-    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane} {F G : ℂ → ℂ}
-    (hF : ∀ w ∈ e.source, ContDiffAt ℂ ∞ F w ∧ (e w : ℂ) = F w)
-    (hG : ∀ w ∈ e.target, ContDiffAt ℂ ∞ G w ∧ (e.symm w : ℂ) = G w) :
-    e ∈ borderedHolomorphicGroupoid := by
-  have key : ∀ {k : ClosedUpperHalfPlane → ClosedUpperHalfPlane} {s : Set ClosedUpperHalfPlane}
-      {K : ℂ → ℂ}, (∀ w ∈ s, ContDiffAt ℂ ∞ K w ∧ (k w : ℂ) = K w) →
-        ContDiffOn ℝ ∞ (closedUpperHalfPlaneModel ∘ k ∘ closedUpperHalfPlaneModel.symm)
-          (closedUpperHalfPlaneModel.symm ⁻¹' s ∩ range closedUpperHalfPlaneModel) ∧
-        DifferentiableOn ℂ (closedUpperHalfPlaneModel ∘ k ∘ closedUpperHalfPlaneModel.symm)
-          (closedUpperHalfPlaneModel.symm ⁻¹' s ∩ {z | 0 < z.im}) := by
-    intro k s K hk
-    have heq : ∀ {z : ℂ}, 0 ≤ z.im → closedUpperHalfPlaneModel.symm z ∈ s →
-        (closedUpperHalfPlaneModel ∘ k ∘ closedUpperHalfPlaneModel.symm) z = K z := by
-      intro z hz hs
-      simpa [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz] using (hk _ hs).2
-    have hat : ∀ {z : ℂ}, 0 ≤ z.im → closedUpperHalfPlaneModel.symm z ∈ s →
-        ContDiffAt ℂ ∞ K z := by
-      intro z hz hs
-      simpa [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz] using (hk _ hs).1
-    refine ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-    · have him : 0 ≤ z.im := by simpa using hz.2
-      exact ((hat him hz.1).restrict_scalars ℝ).contDiffWithinAt.congr
-        (fun y hy ↦ heq (by simpa using hy.2) hy.1) (heq him hz.1)
-    · exact ((hat hz.2.le hz.1).differentiableAt (by simp)).differentiableWithinAt.congr
-        (fun y hy ↦ heq hy.2.le hy.1) (heq hz.2.le hz.1)
-  exact mem_borderedHolomorphicGroupoid_iff.2
-    ⟨⟨(key hF).1, (key hG).1⟩, (key hF).2, (key hG).2⟩
 
 section Transitions
 
