@@ -67,8 +67,11 @@ open scoped Matrix
 
 universe u v w
 
-variable (k : Type w) (Q : Type u) [Quiver.{v} Q] [Field k] [Finite Q]
-  [FiniteDimensional k (pathAlgebra k Q)]
+variable (k : Type w) (Q : Type u) [Quiver.{v} Q] [Field k]
+
+section Finite
+
+variable [Finite Q] [FiniteDimensional k (pathAlgebra k Q)]
 
 /-- **The vertex-projective basis of `K₀^gr(proj kQ)`** over `ℤ[q,q⁻¹]`, for a finite acyclic
 quiver: its vector at `i` is the class `[kQ eᵢ]` of the graded vertex projective. -/
@@ -95,10 +98,16 @@ theorem gradedVertexProjectiveClassBasis_apply (i : Q) :
   congr 2
   exact (gradedVertexProjective_def k Q i).symm
 
+end Finite
+
+section Fintype
+
+variable [Fintype Q] [FiniteDimensional k (pathAlgebra k Q)]
+
 /-- **The graded Cartan matrix of a path algebra counts paths by length.** In the bases of graded
 vertex projectives and graded vertex simples, the coefficient of `qⁿ` in the `(i, j)` entry is
 the number of paths of length `n` from `j` to `i`. -/
-theorem coeff_gradedCartanMatrix_gradedVertexProjectiveClassBasis [Fintype Q] (i j : Q) (n : ℕ) :
+theorem coeff_gradedCartanMatrix_gradedVertexProjectiveClassBasis (i j : Q) (n : ℕ) :
     (gradedCartanMatrix (integerGrade k Q) (gradedVertexProjectiveClassBasis k Q)
         (gradedVertexSimpleClassBasis k Q) i j).coeff n =
       Nat.card (PathBetween Q n j i) := by
@@ -106,7 +115,7 @@ theorem coeff_gradedCartanMatrix_gradedVertexProjectiveClassBasis [Fintype Q] (i
     gradedVertexProjectiveClassBasis_apply, coeff_gradedCartanMap_gradedVertexProjectiveClass]
 
 /-- The entries of the graded Cartan matrix of a path algebra have no negative powers of `q`. -/
-theorem coeff_gradedCartanMatrix_gradedVertexProjectiveClassBasis_of_neg [Fintype Q] (i j : Q)
+theorem coeff_gradedCartanMatrix_gradedVertexProjectiveClassBasis_of_neg (i j : Q)
     (d : ℤ) (hd : d < 0) :
     (gradedCartanMatrix (integerGrade k Q) (gradedVertexProjectiveClassBasis k Q)
         (gradedVertexSimpleClassBasis k Q) i j).coeff d = 0 := by
@@ -119,7 +128,7 @@ of `A` counts arrows `i ⟶ j`, in the bases of graded vertex projectives and gr
 simples. On coefficients of `qⁿ` this is the last-arrow recursion for path counts: the paths of
 length `n + 1` from `j` to `i` are the paths of length `n` from `j` to some `l` followed by an
 arrow `l ⟶ i`, and the only path of length zero is the trivial path. -/
-theorem one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one [Fintype Q] [DecidableEq Q] :
+theorem one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one [DecidableEq Q] :
     (1 - (T 1 : LaurentPolynomial ℤ) •
         (Matrix.of fun i j : Q => (Nat.card (i ⟶ j) : LaurentPolynomial ℤ))ᵀ) *
       gradedCartanMatrix (integerGrade k Q) (gradedVertexProjectiveClassBasis k Q)
@@ -164,7 +173,7 @@ theorem one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one [Fintype Q] [Deci
 /-- **The graded Cartan matrix of a path algebra is `(1 - q Aᵀ)⁻¹`**, where the `(i, j)` entry
 of `A` counts arrows `i ⟶ j`, in the bases of graded vertex projectives and graded vertex
 simples. -/
-theorem gradedCartanMatrix_eq_inv_one_sub_T_smul_transpose [Fintype Q] [DecidableEq Q] :
+theorem gradedCartanMatrix_eq_inv_one_sub_T_smul_transpose [DecidableEq Q] :
     gradedCartanMatrix (integerGrade k Q) (gradedVertexProjectiveClassBasis k Q)
         (gradedVertexSimpleClassBasis k Q) =
       (1 - (T 1 : LaurentPolynomial ℤ) •
@@ -176,8 +185,7 @@ where the `(i, j)` entry of `A` counts arrows `i ⟶ j`. This is the conjugate t
 `TauCeti.PathAlgebra.one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one`. The matrix
 `1 - q⁻¹ A` is the graded Ringel matrix, the q-Euler matrix of the graded vertex simples
 (`TauCeti.PathAlgebra.gradedExtEulerForm_basis`). -/
-theorem gradedCartanMatrix_map_invert_transpose_mul_one_sub_T_neg_smul_eq_one [Fintype Q]
-    [DecidableEq Q] :
+theorem gradedCartanMatrix_map_invert_transpose_mul_one_sub_T_neg_smul_eq_one [DecidableEq Q] :
     ((gradedCartanMatrix (integerGrade k Q) (gradedVertexProjectiveClassBasis k Q)
         (gradedVertexSimpleClassBasis k Q)).map (invert (R := ℤ)))ᵀ *
       (1 - (T (-1) : LaurentPolynomial ℤ) •
@@ -192,5 +200,7 @@ theorem gradedCartanMatrix_map_invert_transpose_mul_one_sub_T_neg_smul_eq_one [F
     (one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one k Q)
   rwa [map_mul, map_one, Matrix.transpose_mul, Matrix.transpose_one, hA,
     AlgEquiv.mapMatrix_apply] at h
+
+end Fintype
 
 end TauCeti.PathAlgebra

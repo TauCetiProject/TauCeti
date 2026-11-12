@@ -106,7 +106,6 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_smoothIsotopic
   -- Run through the isotopy along the smooth step `σ` from time `0` to time `1`.
   set σ : ℝ → unitInterval := fun t ↦
     ⟨Real.smoothTransition t, Real.smoothTransition.nonneg t, Real.smoothTransition.le_one t⟩
-    with hσ
   set Γ : ℝ → ℝ → E := fun t s ↦ F (σ t, Circle.exp s) with hΓ_def
   have hΓ : ContDiff ℝ 1 (uncurry Γ) := by
     have hpair : ContMDiff 𝓘(ℝ, ℝ × ℝ) ((𝓡∂ 1).prod (𝓡 1)) 1

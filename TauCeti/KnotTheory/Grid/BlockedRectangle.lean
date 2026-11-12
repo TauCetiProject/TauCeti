@@ -20,8 +20,8 @@ oriented toroidal rectangle from `x` to `y`. Here we filter the generic empty-re
 enumeration to rectangles none of whose covered squares carries an `O` or `X` marking of a
 grid diagram.
 
-The final count is valued in `ZMod 2`, matching the first coefficient system used in the grid
-homology roadmap.
+The final count is valued in `ZMod 2`, the coefficients over which the fully blocked grid complex is
+defined.
 
 ## Main definitions
 
@@ -40,12 +40,9 @@ homology roadmap.
 
 ## References
 
-This supplies a prerequisite for the Tau Ceti Heegaard Floer roadmap,
-`CombinatorialHeegaardFloer/README.md` in TauCetiRoadmap, Lane G.3, "The complexes and
-`∂² = 0`", where the fully blocked grid complex over `𝔽₂` counts rectangles avoiding all
-markings. The objects and terminology follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots
-and Links*, Chapter 3; the marking-avoidance condition defining the fully blocked complex is in
-Chapter 4, Section 4.4.
+The fully blocked grid complex over `𝔽₂` counts rectangles avoiding all markings. The objects and
+terminology follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3; the
+marking-avoidance condition defining the fully blocked complex is in Chapter 4, Section 4.4.
 -/
 
 public section
