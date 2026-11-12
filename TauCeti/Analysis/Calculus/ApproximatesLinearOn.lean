@@ -24,8 +24,9 @@ Mathlib's local surjectivity and injectivity theorems also locate a unique zero 
 approximating a linear equivalence on a closed ball:
 `ApproximatesLinearOn.exists_eq_zero_of_two_mul_norm_le`.
 
-A map on a convex set whose derivative stays close to a linear map `A` with a left inverse `P`
-is injective there, with injective derivative: `P` of the map approximates the identity
+A map on a convex set `S` with a derivative within `S` that stays close to a linear map `A`
+admitting a continuous linear left inverse `P` is injective on `S`, and that derivative is
+injective at every point of `S`: `P` of the map approximates the identity
 (`Convex.injOn_and_injective_of_norm_hasFDerivWithin_sub_le`).
 
 If the derivative of a function `g` is approximated by a bilinear map `L` near `x`, a critical point
@@ -137,10 +138,11 @@ theorem norm_sub_le_of_fderiv_eq_zero [IsRCLikeNormedField 𝕜]
 
 end ApproximatesLinearOn
 
-/-- **A map whose derivative is close to an injective linear map is injective on a convex set.**
-If `P` is a left inverse of `A` and the derivative `h'` of `h` within a convex set `S` stays within
-`1 / (2 ‖P‖)` of `A` on `S`, then `h` is injective on `S`, and `h' u` is injective for every
-`u ∈ S`. -/
+/-- **A map with a derivative within a convex set close to a linear map admitting a continuous
+linear left inverse is injective there.**
+If `P` is a continuous linear left inverse of `A` and a derivative `h'` of `h` within a convex set
+`S` satisfies `‖P‖ * ‖h' u - A‖ ≤ 1 / 2` on `S`, then `h` is injective on `S`, and `h' u` is
+injective for every `u ∈ S`. -/
 theorem Convex.injOn_and_injective_of_norm_hasFDerivWithin_sub_le {𝕜 E F : Type*}
     [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
