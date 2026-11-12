@@ -117,23 +117,23 @@ theorem mem_range_intervalRepresentativeL_iff (hab : a < b) (w : C(Icc a b, ℝ)
     ext t
     simpa only [projIcc_of_mem hab.le t.property] using hu t
 
-/-- A constant plus the primitive from `a` of a function `g ∈ Lᵖ(a, b)` is the continuous
-representative of a Sobolev class, whose weak gradient is `g`. -/
-theorem exists_intervalRepresentativeL_eq_and_gradient_ae_eq (hab : a < b) (c : ℝ) {g : ℝ → ℝ}
-    (hg : MemLp g p (volume.restrict (Ioo a b))) :
+/-- A constant plus the primitive of a function `g ∈ Lᵖ(a, b)`, based at a point `t₀ ∈ [a, b]`, is
+the continuous representative of a Sobolev class, whose weak gradient is `g`. -/
+theorem exists_intervalRepresentativeL_eq_and_gradient_ae_eq (hab : a < b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Icc a b) (c : ℝ) {g : ℝ → ℝ} (hg : MemLp g p (volume.restrict (Ioo a b))) :
     ∃ u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
-      (∀ t : Icc a b, intervalRepresentativeL hab u t = c + ∫ s in a..t, g s) ∧
+      (∀ t : Icc a b, intervalRepresentativeL hab u t = c + ∫ s in t₀..t, g s) ∧
       gradient u =ᵐ[volume.restrict (Ioo a b)] g := by
   have hint : IntervalIntegrable g volume a b :=
     (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 (hg.integrable Fact.out)
-  set f : ℝ → ℝ := fun t ↦ c + ∫ s in a..t, g s
+  set f : ℝ → ℝ := fun t ↦ c + ∫ s in t₀..t, g s
   have hAC : AbsolutelyContinuousOnInterval f a b :=
     (LipschitzWith.const c).lipschitzOnWith.absolutelyContinuousOnInterval.add
-      (hint.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc)
+      (hint.absolutelyContinuousOnInterval_intervalIntegral (Icc_subset_uIcc ht₀))
   -- By Lebesgue's differentiation theorem `f` has derivative `g` at almost every point.
   have hfd : ∀ᵐ t, t ∈ Ioo a b → HasDerivAt f (g t) t := by
     filter_upwards [hint.ae_hasDerivAt_integral] with t ht htI
-    exact (ht (Icc_subset_uIcc (Ioo_subset_Icc_self htI)) a left_mem_uIcc).const_add c
+    exact (ht (Icc_subset_uIcc (Ioo_subset_Icc_self htI)) t₀ (Icc_subset_uIcc ht₀)).const_add c
   have hderiv : deriv f =ᵐ[volume.restrict (Ioo a b)] g :=
     (ae_restrict_iff' measurableSet_Ioo).2 (hfd.mono fun t ht htI ↦ (ht htI).deriv)
   obtain ⟨u, hu, -⟩ := existsUnique_intervalRepresentativeL_eq hab hAC (hg.ae_eq hderiv.symm)
