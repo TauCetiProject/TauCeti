@@ -15,7 +15,8 @@ import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Normed.Operator.Compact.Pi
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.Analysis.Distribution.TestFunction.PiLp
+import TauCeti.Topology.Algebra.Support
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Normed.Group.Pi
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 
@@ -265,8 +266,10 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
   have hae {P : ℂ → Prop} (h : ∀ᵐ z ∂μ⊤, P z) : ∀ᵐ z ∂(volume : Measure ℂ), P z := by
     rwa [hμ] at h
   have hint (f : ℂ → ℝ) : ∫ z, f z ∂μ⊤ = ∫ z, f z := by rw [hμ]
-  have hY : ContDiff ℝ 2 Y := (TestFunction.contDiff_toLp_pi 2 φ).of_le (by simp)
-  have hYc : HasCompactSupport Y := TestFunction.hasCompactSupport_toLp_pi 2 φ
+  have hY : ContDiff ℝ 2 Y := ((contDiff_piLp 2).2 fun j ↦ (φ j).contDiff).of_le (by simp)
+  have hYc : HasCompactSupport Y :=
+    (hasCompactSupport_pi_iff.2 fun j ↦ (φ j).hasCompactSupport).comp_left (g := WithLp.toLp 2)
+      (WithLp.toLp_zero 2)
   have hYi : Integrable (fun z ↦ ‖Y z‖ ^ 2) :=
     (hY.continuous.norm.pow 2).integrable_of_hasCompactSupport
       (hYc.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp) : HasCompactSupport fun z ↦ ‖Y z‖ ^ 2)

@@ -256,7 +256,7 @@ the field and the value `v` of the variation: the matrix `gaugeFixedZerothOrderM
 to `v`. These are the terms of `L_x y` without derivatives of `y`
 (`gaugeFixedOperator_eq_gaugeFixedFirstOrder_add`), and `L_x - L₀` is multiplication by
 `gaugeFixedZerothOrder (x z - vacuumField z)`. -/
-@[expose] def gaugeFixedZerothOrder :
+def gaugeFixedZerothOrder :
     EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
   LinearMap.toContinuousLinearMap <|
     (LinearMap.toContinuousLinearMap :
@@ -274,7 +274,7 @@ to `v`. These are the terms of `L_x y` without derivatives of `y`
           ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
 
 /-- The defining formula of `gaugeFixedZerothOrder`. -/
-theorem gaugeFixedZerothOrder_apply (w v : EuclideanSpace ℝ (Fin 4)) :
+@[simp] theorem gaugeFixedZerothOrder_apply (w v : EuclideanSpace ℝ (Fin 4)) :
     gaugeFixedZerothOrder w v =
       WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w i j * v j :=
   (rfl)
@@ -291,7 +291,7 @@ def gaugeFixedFirstOrder : (Fin 4 → ℂ) →L[ℝ] EuclideanSpace ℝ (Fin 4) 
       map_smul' := fun _ _ ↦ by ext i; fin_cases i <;> simp <;> ring }
 
 /-- The defining formula of `gaugeFixedFirstOrder`. -/
-theorem gaugeFixedFirstOrder_apply (g : Fin 4 → ℂ) :
+@[simp] theorem gaugeFixedFirstOrder_apply (g : Fin 4 → ℂ) :
     gaugeFixedFirstOrder g = !₂[⟪g 0, 1⟫_ℝ + ⟪g 1, I⟫_ℝ, ⟪g 0, I⟫_ℝ - ⟪g 1, 1⟫_ℝ,
         ⟪g 2, 1⟫_ℝ - ⟪g 3, I⟫_ℝ, ⟪g 3, 1⟫_ℝ + ⟪g 2, I⟫_ℝ] :=
   (rfl)

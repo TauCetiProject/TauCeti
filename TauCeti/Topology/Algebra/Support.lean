@@ -31,6 +31,9 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   `tsupport g ×ˢ tsupport f`.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
+* `hasCompactSupport_pi_iff`: a finite family of functions assembles into a compactly supported
+  product-valued function `x ↦ (fᵢ x)ᵢ` exactly when every `fᵢ` is compactly supported, with
+  multiplicative version `hasCompactMulSupport_pi_iff`.
 -/
 
 public section
@@ -120,3 +123,18 @@ theorem HasCompactSupport.comp_of_forall_mem_imp_mem {X Y Z : Type*} [Topologica
     (hΨK : ∀ y, Ψ y ∈ T → y ∈ K) {k : Y → Z}
     (hkz : ∀ z ∉ T, k z = 0) : HasCompactSupport fun y ↦ k (Ψ y) :=
   HasCompactSupport.intro hK fun y hy ↦ hkz _ fun h ↦ hy (hΨK y h)
+
+/-- A finite family of functions assembles into a product-valued function with compact
+multiplicative support exactly when each member has compact multiplicative support. -/
+@[to_additive /-- A finite family of functions assembles into a compactly supported
+product-valued function exactly when each member is compactly supported. -/]
+theorem hasCompactMulSupport_pi_iff {X ι : Type*} [TopologicalSpace X] [Finite ι]
+    {M : ι → Type*} [∀ i, One (M i)] {f : ∀ i, X → M i} :
+    HasCompactMulSupport (fun x i ↦ f i x) ↔ ∀ i, HasCompactMulSupport (f i) := by
+  refine ⟨fun h i ↦ h.comp_left (g := fun v : ∀ i, M i ↦ v i) rfl, fun hf ↦ ?_⟩
+  refine (isCompact_iUnion hf).of_isClosed_subset (isClosed_mulTSupport _)
+    (closure_minimal ?_ (isClosed_iUnion_of_finite fun i ↦ isClosed_mulTSupport _))
+  intro x hx
+  by_contra h
+  simp only [Set.mem_iUnion, not_exists] at h
+  exact hx (funext fun i ↦ image_eq_one_of_notMem_mulTSupport (h i))

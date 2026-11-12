@@ -275,6 +275,7 @@ private theorem mem_sobolevFields_natCast_add_one_of_mem_sobolevFields {k : ℕ}
     y ∈ sobolevFields (k + 1) := by
   have hA := contDiff_gaugeFixedZerothOrderMatrix_and_bounded hx hbound
   have hzo : (fun z ↦ gaugeFixedZerothOrder (x z - vacuumField z) (y z)) ∈ sobolevFields k := by
+    simp only [gaugeFixedZerothOrder_apply]
     exact mulVec_mem_sobolevFields_natCast k
       (A := fun i j z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) i j)
       (fun i j ↦ (hA i j).1) (fun i j ↦ (hA i j).2) hy
