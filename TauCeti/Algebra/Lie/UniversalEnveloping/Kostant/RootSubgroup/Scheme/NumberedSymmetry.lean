@@ -111,6 +111,14 @@ noncomputable def kostantNumberedSymmetryMatrix (A : Type v) [CommRing A] :
   Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMulEquiv
     (AddEquiv.baseChangeInvariantRestrictUnit (R := A) θ.toAddEquiv M hθM)
 
+/-- The symmetry matrix is the matrix of the scalar extension of the restricted lattice
+symmetry. -/
+theorem kostantNumberedSymmetryMatrix_def (A : Type v) [CommRing A] :
+    kostantNumberedSymmetryMatrix M b θ hθM A =
+      Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMulEquiv
+        (AddEquiv.baseChangeInvariantRestrictUnit (R := A) θ.toAddEquiv M hθM) :=
+  (rfl)
+
 /-- Taking the symmetry matrix preserves composition of lattice symmetries. -/
 theorem kostantNumberedSymmetryMatrix_mul (η : V ≃ₗ[ℚ] V)
     (hηM : ∀ v, η v ∈ M ↔ v ∈ M) (A : Type v) [CommRing A] :

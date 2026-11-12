@@ -293,7 +293,7 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   refine fun f => (mem_closure_iff_nhds_basis Metric.nhds_basis_closedEBall).2 fun ε hε => ?_
   -- Approximate `f` by a continuous function with compact support, and that by a test function.
-  obtain ⟨g, hgc, hfg, hg, hgp⟩ := (Lp.memLp f).exists_hasCompactSupport_eLpNorm_sub_le hp
+  obtain ⟨g, hgc, hfg, hg, _⟩ := (Lp.memLp f).exists_hasCompactSupport_eLpNorm_sub_le hp
     (ENNReal.half_pos hε.ne').ne'
   obtain ⟨φ, hφ⟩ := hgc.exists_testFunction_eLpNorm_sub_le (n := n) (μ := μ) hg hp
     (ENNReal.half_pos hε.ne').ne'

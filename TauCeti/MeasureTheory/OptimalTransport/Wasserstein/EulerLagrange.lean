@@ -275,7 +275,6 @@ theorem apply_le_apply_add_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
   -- Minimality of `ν` against `ν'`.
   have hmin := (mem_moreauYosidaResolvent_iff_isMinOn.1 hν) (mem_univ ν')
   simp only [coe_edist_sq_div_eq_coe_dist_sq_div hτ] at hmin
-  have hτ' : (0 : ℝ) < τ := hτ
   have hpen : dist μ ν' ^ 2 / (2 * τ) ≤
       dist μ ν ^ 2 / (2 * τ) + (h * A + h ^ 2 / 2 * B) / τ := by
     calc dist μ ν' ^ 2 / (2 * τ) ≤ (dist μ ν ^ 2 + 2 * h * A + h ^ 2 * B) / (2 * τ) := by
@@ -308,7 +307,7 @@ theorem integral_inner_eq_neg_mul_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
     ∫ z, ⟪z.1 - z.2, ξ z.1⟫ ∂γ = -(τ * D) := by
   set A := ∫ z, ⟪z.1 - z.2, ξ z.1⟫ ∂γ
   set B := ∫ x, ‖ξ x‖ ^ 2 ∂((ν : ProbabilityMeasure E) : Measure E)
-  have hτ' : (0 : ℝ) < τ := hτ
+  have _ : (0 : ℝ) < τ := hτ
   -- At `h = 0` the perturbation is the identity, so `φ ν = f 0`.
   have h₀ : φ ν = f 0 := hf.self_of_nhds ν (by simp)
   -- The penalized energy `g h = f h + (h A + h² B / 2) / τ` has a local minimum at `0`.

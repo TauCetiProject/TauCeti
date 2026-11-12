@@ -153,7 +153,7 @@ theorem exists_int_integral_cutoffCurrent_closedBall {α : ℂ → ℂ}
   have hdiff (θ : ℝ) (_ : θ ∈ Ioo (min (-π) π) (max (-π) π) \ ∅) : DifferentiableAt ℝ γ θ :=
     (hα.differentiable two_ne_zero).differentiableAt.comp θ (differentiable_circleMap z₀ r θ)
   obtain ⟨n, hn⟩ := Contour.exists_int_windingNumber_of_closed hclosed countable_empty
-    hγc.continuousOn hdiff (fun θ _ ↦ hγ₀ θ) hint
+    hγc.continuousOn hdiff (fun θ _ ↦ hγ₀ θ)
   refine ⟨n, hn, ?_⟩
   -- The winding number of the boundary loop is `(2π)⁻¹` times its real winding integral.
   have hreal := Contour.windingNumber_eq_real_integral_of_closed hclosed countable_empty

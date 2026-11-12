@@ -155,7 +155,7 @@ private theorem isLocalization_ρ₀ :
 
 /-- Restriction from the first chart to the overlap is injective. -/
 private theorem ψ₀_injective : Function.Injective (ψ₀ R) := by
-  rcases subsingleton_or_nontrivial R with hR | hR
+  rcases subsingleton_or_nontrivial R with hR | _
   · exact Function.injective_of_subsingleton _
   let := (ρ₀ R).toAlgebra
   have := isLocalization_ρ₀ R
