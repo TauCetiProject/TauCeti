@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.IdentityTheorem
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Sheaf
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
