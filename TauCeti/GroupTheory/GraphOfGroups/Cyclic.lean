@@ -9,6 +9,8 @@ public import TauCeti.GroupTheory.GraphOfGroups.OneEdge
 public import TauCeti.GroupTheory.PresentedGroup
 public import Mathlib.Algebra.Group.Torsion
 public import Mathlib.Data.Int.Cast.Lemmas
+public import Mathlib.GroupTheory.Abelianization.Defs
+public import Mathlib.RingTheory.Coprime.Basic
 
 /-!
 # One-edge graphs of infinite cyclic groups
@@ -26,7 +28,9 @@ multiplication by a nonzero integer `m` is the monomorphism `c ↦ c ^ m`.
 * The segment `GraphOfGroups.cyclicAmalgam m n hm hn` has boundary maps `(· ^ m)` and `(· ^ n)`
   into its two vertex groups. Its fundamental group, relative to its maximal tree, is the
   amalgam `ℤ ∗_ℤ ℤ = ⟨x, y ∣ x ^ m = y ^ n⟩`. For `m = 2` and `n = 3` this is the trefoil knot
-  group `⟨x, y ∣ x² = y³⟩`.
+  group `⟨x, y ∣ x² = y³⟩`. For coprime `m` and `n` its abelianization is infinite cyclic, the
+  generators of the two vertex groups going to `n` and to `m`; for the trefoil knot group the
+  abelianization is `ℤ`.
 
 The generators of the presented groups are indexed by `Bool`: `false` is `a`, respectively `x`,
 and `true` is `t`, respectively `y`.
@@ -41,6 +45,10 @@ and `true` is `t`, respectively `y`.
 * `TauCeti.GraphOfGroups.cyclicAmalgamRelator`: the relator `x ^ m y ^ (-n)`.
 * `TauCeti.GraphOfGroups.π₁Tree.cyclicAmalgamEquiv`: the fundamental group of the segment is
   `⟨x, y ∣ x ^ m = y ^ n⟩`.
+* `TauCeti.GraphOfGroups.cyclicAmalgamRelatorAbelianizationEquiv`: for coprime `m` and `n`, the
+  abelianization of `⟨x, y ∣ x ^ m = y ^ n⟩` is `ℤ`.
+* `TauCeti.GraphOfGroups.π₁Tree.cyclicAmalgamAbelianizationEquiv`: for coprime `m` and `n`, the
+  abelianization of the fundamental group of the segment is `ℤ`.
 
 ## References
 
@@ -49,6 +57,7 @@ and `true` is `t`, respectively `y`.
   Internat. J. Algebra Comput. 15 (2005), §2, Convention 2.1.
 * G. Baumslag, D. Solitar, *Some two-generator one-relator non-Hopfian groups*,
   Bull. Amer. Math. Soc. 68 (1962).
+* A. Hatcher, *Algebraic Topology*, Example 1.24 (the torus knot groups `⟨a, b ∣ a ^ m = b ^ n⟩`).
 -/
 
 public section
@@ -403,6 +412,111 @@ noncomputable def cyclicAmalgamEquiv (hT : T.Nonempty) :
     (cyclicAmalgamEquiv m n hm hn hT).symm (PresentedGroup.of true) =
       of T true (ofAdd (1 : ℤ)) :=
   ofCyclicAmalgam_of_true m n hm hn hT
+
+end π₁Tree
+
+/-! ### The abelianization of the amalgam of infinite cyclic groups -/
+
+/-- The map from `⟨x, y ∣ x ^ m = y ^ n⟩` to the infinite cyclic group sending `x` to `n` and `y`
+to `m`. -/
+private def cyclicAmalgamRelatorToInt :
+    PresentedGroup {cyclicAmalgamRelator m n} →* Multiplicative ℤ :=
+  PresentedGroup.toGroup (f := fun b => cond b (ofAdd m) (ofAdd n)) (by
+    rintro _ rfl
+    rw [lift_cyclicAmalgamRelator, mul_inv_eq_one]
+    simp only [Bool.cond_false, Bool.cond_true, ← ofAdd_zsmul, smul_eq_mul, mul_comm])
+
+private theorem cyclicAmalgamRelatorToInt_of_false :
+    cyclicAmalgamRelatorToInt m n (PresentedGroup.of false) = ofAdd n :=
+  PresentedGroup.toGroup.of _
+
+private theorem cyclicAmalgamRelatorToInt_of_true :
+    cyclicAmalgamRelatorToInt m n (PresentedGroup.of true) = ofAdd m :=
+  PresentedGroup.toGroup.of _
+
+private theorem bijective_lift_cyclicAmalgamRelatorToInt (hmn : IsCoprime m n) :
+    Function.Bijective (Abelianization.lift (cyclicAmalgamRelatorToInt m n)) := by
+  obtain ⟨u, v, huv⟩ := hmn
+  set x := Abelianization.of (PresentedGroup.of false : PresentedGroup {cyclicAmalgamRelator m n})
+  set y := Abelianization.of (PresentedGroup.of true : PresentedGroup {cyclicAmalgamRelator m n})
+  have hxy : x ^ m = y ^ n := by
+    simpa only [x, y, map_zpow] using
+      congrArg Abelianization.of (cyclicAmalgamRelator_relation m n)
+  -- The inverse sends the generator `1` to `x ^ v y ^ u`, whose `n`-th power is `x` and whose
+  -- `m`-th power is `y`, because `x ^ m = y ^ n` and `u m + v n = 1`.
+  have hx : (x ^ v * y ^ u) ^ n = x := by
+    rw [mul_zpow, ← zpow_mul, ← zpow_mul, mul_comm u n, zpow_mul y n u, ← hxy, ← zpow_mul,
+      ← zpow_add]
+    conv_rhs => rw [← zpow_one x, ← huv]
+    ac_rfl
+  have hy : (x ^ v * y ^ u) ^ m = y := by
+    rw [mul_zpow, ← zpow_mul, ← zpow_mul, mul_comm v m, zpow_mul x m v, hxy, ← zpow_mul,
+      ← zpow_add]
+    conv_rhs => rw [← zpow_one y, ← huv]
+    ac_rfl
+  let ψ := zpowersHom _ (x ^ v * y ^ u)
+  have hleft : ψ.comp (Abelianization.lift (cyclicAmalgamRelatorToInt m n)) = MonoidHom.id _ := by
+    refine Abelianization.hom_ext _ _ (PresentedGroup.ext fun b => ?_)
+    cases b
+    · simpa [ψ, cyclicAmalgamRelatorToInt_of_false] using hx
+    · simpa [ψ, cyclicAmalgamRelatorToInt_of_true] using hy
+  have hright : (Abelianization.lift (cyclicAmalgamRelatorToInt m n)).comp ψ = MonoidHom.id _ := by
+    refine MonoidHom.ext_mint (toAdd.injective ?_)
+    simpa [ψ, x, y, cyclicAmalgamRelatorToInt_of_false, cyclicAmalgamRelatorToInt_of_true,
+      add_comm] using huv
+  exact ⟨Function.LeftInverse.injective (g := ψ) fun a => DFunLike.congr_fun hleft a,
+    Function.RightInverse.surjective (g := ψ) fun a => DFunLike.congr_fun hright a⟩
+
+/-- For coprime `m` and `n`, the abelianization of `⟨x, y ∣ x ^ m = y ^ n⟩` is infinite cyclic:
+the class of `x` corresponds to `n` and the class of `y` to `m`. For `m = 2` and `n = 3` this is
+the abelianization `ℤ` of the trefoil knot group `⟨x, y ∣ x² = y³⟩`. -/
+noncomputable def cyclicAmalgamRelatorAbelianizationEquiv (hmn : IsCoprime m n) :
+    Abelianization (PresentedGroup {cyclicAmalgamRelator m n}) ≃* Multiplicative ℤ :=
+  MulEquiv.ofBijective (Abelianization.lift (cyclicAmalgamRelatorToInt m n))
+    (bijective_lift_cyclicAmalgamRelatorToInt m n hmn)
+
+@[simp] theorem cyclicAmalgamRelatorAbelianizationEquiv_of_false (hmn : IsCoprime m n) :
+    cyclicAmalgamRelatorAbelianizationEquiv m n hmn
+      (Abelianization.of (PresentedGroup.of false)) = ofAdd n :=
+  (Abelianization.lift_apply_of ..).trans (cyclicAmalgamRelatorToInt_of_false m n)
+
+@[simp] theorem cyclicAmalgamRelatorAbelianizationEquiv_of_true (hmn : IsCoprime m n) :
+    cyclicAmalgamRelatorAbelianizationEquiv m n hmn
+      (Abelianization.of (PresentedGroup.of true)) = ofAdd m :=
+  (Abelianization.lift_apply_of ..).trans (cyclicAmalgamRelatorToInt_of_true m n)
+
+namespace π₁Tree
+
+variable {T : Set SerreGraph.segment.E}
+
+/-- For coprime `m` and `n`, the fundamental group of the segment of infinite cyclic groups with
+boundary maps `(· ^ m)` and `(· ^ n)`, relative to a nonempty set `T` of darts (for instance its
+maximal tree), has infinite cyclic abelianization: the vertex group at `false` maps by `(· ^ n)`
+and the vertex group at `true` by `(· ^ m)`. For `m = 2` and `n = 3` the fundamental group is the
+trefoil knot group `⟨x, y ∣ x² = y³⟩`, with abelianization `ℤ`. -/
+noncomputable def cyclicAmalgamAbelianizationEquiv (hmn : IsCoprime m n) (hT : T.Nonempty) :
+    Abelianization (π₁Tree (cyclicAmalgam m n hm hn) T) ≃* Multiplicative ℤ :=
+  (cyclicAmalgamEquiv m n hm hn hT).abelianizationCongr.trans
+    (cyclicAmalgamRelatorAbelianizationEquiv m n hmn)
+
+@[simp] theorem cyclicAmalgamAbelianizationEquiv_of_false (hmn : IsCoprime m n)
+    (hT : T.Nonempty) (c : Multiplicative ℤ) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Abelianization.of (of T false c)) =
+      c ^ n := by
+  apply toAdd.injective
+  simp [cyclicAmalgamAbelianizationEquiv, mul_comm]
+
+@[simp] theorem cyclicAmalgamAbelianizationEquiv_of_true (hmn : IsCoprime m n)
+    (hT : T.Nonempty) (c : Multiplicative ℤ) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Abelianization.of (of T true c)) =
+      c ^ m := by
+  apply toAdd.injective
+  simp [cyclicAmalgamAbelianizationEquiv, mul_comm]
+
+@[simp] theorem cyclicAmalgamAbelianizationEquiv_edge (hmn : IsCoprime m n)
+    (hT : T.Nonempty) (e : SerreGraph.segment.E) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Abelianization.of (edge T e)) = 1 := by
+  simp [cyclicAmalgamAbelianizationEquiv]
 
 end π₁Tree
 

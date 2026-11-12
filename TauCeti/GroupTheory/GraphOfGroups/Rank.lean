@@ -27,6 +27,11 @@ spanning tree has one positive dart fewer than there are vertices, which gives t
 of the rank: the rank plus the number of vertices is the number of geometric edges plus one.
 In particular the path group of a rose has rank its number of petals.
 
+The same holds for a graph of groups with trivial vertex groups over a rose: relative to its
+maximal tree, which has no darts, its fundamental group is free on the petals
+(`TauCeti.GraphOfGroups.π₁Tree.roseEquivFreeGroup`), and of rank the number of petals when
+there are finitely many (`TauCeti.GraphOfGroups.π₁Tree.rank_rose`).
+
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §§2.3–3.1.
@@ -123,5 +128,70 @@ dart set is the number of remaining positive darts. -/
 theorem rank_eq_nat_card [Group.FG (π₁Tree 𝔸 T)] :
     Group.rank (π₁Tree 𝔸 T) = Nat.card ↥(O \ T) :=
   (FreeGroupBasis.ofRepr (equivFreeGroup 𝔸 hO hT)).rank_eq_nat_card
+
+end TauCeti.GraphOfGroups.π₁Tree
+
+namespace TauCeti.GraphOfGroups.π₁Tree
+
+universe v w x
+
+variable {α : Type v} (𝔸 : GraphOfGroups.{0, v, w, x} (SerreGraph.rose α))
+  [∀ a, Subsingleton (𝔸.vertexGroup a)] (T : (SerreGraph.rose α).SpanningTree)
+
+/-- The positive darts of a rose outside its maximal tree are its petals: the maximal tree of
+a rose has no darts. -/
+private def rosePetalEquiv :
+    ↥({e : (SerreGraph.rose α).E | e.2 = true} \ T.darts) ≃ α where
+  toFun e := e.1.1
+  invFun a := ⟨(a, true), rfl, by
+    rw [Subsingleton.elim T (SerreGraph.roseTree α), SerreGraph.roseTree_darts]
+    exact Set.notMem_empty _⟩
+  left_inv := by
+    rintro ⟨⟨a, b⟩, hb, -⟩
+    obtain rfl : b = true := hb
+    rfl
+  right_inv _ := rfl
+
+/-- A graph of groups with trivial vertex groups over the rose with petals `α` has fundamental
+group, relative to its maximal tree, free on the petals: the positive dart `(a, true)` of the
+petal `a` corresponds to the generator `a`. For the rose with `n` petals this is the free group
+of rank `n`. -/
+noncomputable def roseEquivFreeGroup : π₁Tree 𝔸 T.darts ≃* FreeGroup α :=
+  (equivFreeGroup 𝔸 (SerreGraph.rose_isOrientation α) T.rev_mem).trans
+    (FreeGroup.freeGroupCongr (rosePetalEquiv T))
+
+@[simp] theorem roseEquivFreeGroup_edge_true (a : α) :
+    roseEquivFreeGroup 𝔸 T (edge T.darts (a, true)) = FreeGroup.of a :=
+  -- The positive dart of the petal `a` is `(rosePetalEquiv T).symm a` by definition.
+  (congrArg (FreeGroup.freeGroupCongr (rosePetalEquiv T)) (equivFreeGroup_edge (𝔸 := 𝔸)
+    (SerreGraph.rose_isOrientation α) T.rev_mem ((rosePetalEquiv T).symm a).2)).trans (by simp)
+
+@[simp] theorem roseEquivFreeGroup_edge_false (a : α) :
+    roseEquivFreeGroup 𝔸 T (edge T.darts (a, false)) = (FreeGroup.of a)⁻¹ :=
+  -- The dart `(a, false)` is the reverse of `(a, true)` by definition of the rose.
+  (congrArg (roseEquivFreeGroup 𝔸 T)
+    (edge_rev (𝔸 := 𝔸) (T := T.darts) ((a, true) : (SerreGraph.rose α).E))).trans
+    (by rw [map_inv, roseEquivFreeGroup_edge_true])
+
+@[simp] theorem roseEquivFreeGroup_symm_of (a : α) :
+    (roseEquivFreeGroup 𝔸 T).symm (FreeGroup.of a) = edge T.darts (a, true) := by
+  rw [MulEquiv.symm_apply_eq, roseEquivFreeGroup_edge_true]
+
+/-- The fundamental group of a graph of groups with trivial vertex groups over a rose is
+finitely generated exactly when the rose has finitely many petals. -/
+theorem fg_rose_iff_finite : Group.FG (π₁Tree 𝔸 T.darts) ↔ Finite α :=
+  (FreeGroupBasis.ofRepr (roseEquivFreeGroup 𝔸 T)).fg_iff_finite
+
+/-- The fundamental group of a graph of groups with trivial vertex groups over a rose with
+finitely many petals is finitely generated. -/
+instance [Finite α] : Group.FG (π₁Tree 𝔸 T.darts) :=
+  (fg_rose_iff_finite 𝔸 T).2 inferInstance
+
+/-- The fundamental group of a graph of groups with trivial vertex groups over a rose, when
+finitely generated, has rank the number of petals: for the rose with `n` petals it is free of
+rank `n`. -/
+theorem rank_rose [Group.FG (π₁Tree 𝔸 T.darts)] :
+    Group.rank (π₁Tree 𝔸 T.darts) = Nat.card α :=
+  (FreeGroupBasis.ofRepr (roseEquivFreeGroup 𝔸 T)).rank_eq_nat_card
 
 end TauCeti.GraphOfGroups.π₁Tree
