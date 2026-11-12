@@ -470,6 +470,21 @@ theorem W1p.value_smul_ae (c : ℝ) (u : W1p mu Omega p) :
     ⇑(W1p.value (c • u)) =ᵐ[mu.restrict Omega] c • ⇑(W1p.value u) := by
   simpa only [← W1p.valueL_apply, map_smul] using Lp.coeFn_smul c (W1p.value u)
 
+/-- The value of the midpoint of two Sobolev functions is almost everywhere the average of their
+values. -/
+theorem W1p.value_midpoint_ae (u v : W1p mu Omega p) :
+    ⇑(W1p.value (midpoint ℝ u v)) =ᵐ[mu.restrict Omega]
+      fun x => (W1p.value u x + W1p.value v x) / 2 := by
+  filter_upwards [W1p.value_smul_ae (⅟2 : ℝ) (u + v), W1p.value_add_ae u v] with x hs ha
+  rw [midpoint_eq_smul_add, hs, Pi.smul_apply, ha, Pi.add_apply, smul_eq_mul, invOf_eq_inv]
+  ring
+
+/-- The weak gradient of the midpoint of two Sobolev functions is the midpoint of their weak
+gradients. -/
+theorem W1p.gradient_midpoint (u v : W1p mu Omega p) :
+    W1p.gradient (midpoint ℝ u v) = midpoint ℝ (W1p.gradient u) (W1p.gradient v) :=
+  (W1p.gradientL (mu := mu) (Omega := Omega) (p := p)).toLinearMap.toAffineMap.map_midpoint u v
+
 
 /-- As for `TauCeti.W1p.value_coe`: the Sobolev gradient component is the gradient component of
 the underlying ambient jet. -/
