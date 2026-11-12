@@ -43,25 +43,21 @@ theorem support_betaBinomialMeasure (n : ℕ) (a b : ℝ) :
   · simp [h]
 
 /-- Applying labels to a beta-binomial count transports its finite support exactly. Labels need
-not be injective, and invalid shape parameters give empty support. -/
+not be injective, and invalid shape parameters give empty support. Taking `f := Nat.cast` gives
+the support of a cast law. -/
 @[simp]
 theorem support_map_betaBinomialMeasure {E : Type*} [TopologicalSpace E] [T1Space E]
-    [MeasurableSpace E] [BorelSpace E] (n : ℕ) (a b : ℝ) (f : ℕ → E) :
+    [MeasurableSpace E] [MeasurableSingletonClass E] (n : ℕ) (a b : ℝ) (f : ℕ → E) :
     ((betaBinomialMeasure n a b).map f).support =
       if 0 < a ∧ 0 < b then f '' Iic n else ∅ := by
-  rw [Measure.support_map_eq_closure_image _ Measure.support_mem_ae
-    continuous_of_discreteTopology, support_betaBinomialMeasure]
-  split_ifs
-  · exact ((Set.finite_Iic n).image f).isClosed.closure_eq
-  · simp
-
-/-- The support of a cast beta-binomial law is the finite image of its possible native counts
-when both shape parameters are positive, and is empty otherwise. -/
-theorem support_map_cast_betaBinomialMeasure {R : Type*} [AddMonoidWithOne R]
-    [TopologicalSpace R] [T1Space R] [MeasurableSpace R] [BorelSpace R]
-    (n : ℕ) (a b : ℝ) :
-    ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → R)).support =
-      if 0 < a ∧ 0 < b then (Nat.cast : ℕ → R) '' Iic n else ∅ := by
-  exact support_map_betaBinomialMeasure n a b _
+  have hfin := (Set.finite_Iic n).image f
+  split_ifs with h
+  · refine Set.Subset.antisymm (Measure.support_subset_of_isClosed hfin.isClosed ?_) ?_
+    · exact (ae_map_iff (Measurable.of_discrete).aemeasurable hfin.measurableSet).2 <|
+        (ae_le_betaBinomialMeasure n a b).mono fun k hk ↦ mem_image_of_mem f hk
+    · rintro _ ⟨k, hk, rfl⟩
+      exact Measure.mem_support_map_of_continuousAt (Measurable.of_discrete).aemeasurable
+        continuous_of_discreteTopology.continuousAt (by simpa [h] using hk)
+  · simp [betaBinomialMeasure_eq_zero_of_invalid h]
 
 end TauCeti.Probability
