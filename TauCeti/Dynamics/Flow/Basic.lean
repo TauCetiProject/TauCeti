@@ -19,6 +19,8 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `IsInvariant.apply_mem_iff`: membership in a subset invariant under a family of maps with
   inverses is unchanged by each map.
 * `Flow.apply_comm`: the maps of a flow by a commutative time monoid commute.
+* `Flow.map_neg_apply_map`, `Flow.map_apply_map_neg`: the time-`(-t)` map undoes the time-`t` map
+  and conversely.
 * `Flow.orbit_apply`: flowing a point does not change its orbit.
 * `Flow.orbit_reverse`: reversing time does not change the orbits.
 * `Flow.exists_forall_exists_mem_Ioo_apply_mem`: if the forward orbits of the points of a compact
@@ -46,6 +48,16 @@ variable {τ α : Type*} [TopologicalSpace τ] [TopologicalSpace α]
 theorem apply_comm [AddCommMonoid τ] (ϕ : Flow τ α) (s t : τ) (x : α) :
     ϕ s (ϕ t x) = ϕ t (ϕ s x) := by
   rw [← map_add, add_comm, map_add]
+
+/-- The time-`(-t)` map undoes the time-`t` map. -/
+@[simp]
+theorem map_neg_apply_map [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ (-t) (ϕ t x) = x := by
+  rw [← ϕ.map_add, neg_add_cancel, ϕ.map_zero_apply]
+
+/-- The time-`t` map undoes the time-`(-t)` map. -/
+@[simp]
+theorem map_apply_map_neg [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ t (ϕ (-t) x) = x := by
+  rw [← ϕ.map_add, add_neg_cancel, ϕ.map_zero_apply]
 
 /-- All points of an orbit have the same orbit. -/
 @[simp]

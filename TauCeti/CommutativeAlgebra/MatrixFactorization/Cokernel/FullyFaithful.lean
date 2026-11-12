@@ -36,9 +36,10 @@ whose kernel is the image of `d₀` (`TauCeti.MatrixFactorization.quotientCokern
   is the null-homotopic map of the odd map `(t, k)`
   (`quotientGorensteinProjectiveCokernel_map_mem_projectiveStableIdeal_iff`).
 
-No noetherian, local, or regularity hypothesis is used. Essential surjectivity onto the stable
-category of maximal Cohen–Macaulay modules needs Eisenbud's hypotheses (`S` regular local) and is
-not proved here.
+No noetherian, local, or regularity hypothesis is used. Essential surjectivity needs more: when
+`S` has finite global dimension, as Eisenbud's regular local rings do, it holds and the functor is
+an equivalence
+(`TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Equivalence`).
 
 ## Main results
 

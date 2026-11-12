@@ -81,8 +81,7 @@ a curve — each statement is about a Dedekind domain and one of its completions
 ## Provenance
 
 Adapted, with the author's proof, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean` line 594, and
 `EllipticCurves/Mathlib/AdicCompletionExtension.lean` for the filtration and Henselian results,
 and for `residueFieldEquivAdicCompletionIntegers` and the approximation modulo the maximal ideal

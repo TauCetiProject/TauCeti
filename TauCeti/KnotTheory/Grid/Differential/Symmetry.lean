@@ -37,11 +37,9 @@ differential, while the diagonal reflection intertwines the differentials of `G`
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G item 8
-("Symmetries and the genus bound"), together with that roadmap's standing convention to "state
-invariance naturality-ready": these are the chain-level symmetries of the fully blocked grid
-complex on which an invariance statement is later built. The diagonal and marking symmetries
-follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+These are the chain-level symmetries of the fully blocked grid complex on which an invariance
+statement is built. The diagonal and marking symmetries follow Ozsváth--Stipsicz--Szabó, *Grid
+Homology for Knots and Links*, Chapter 3.
 -/
 
 public section
