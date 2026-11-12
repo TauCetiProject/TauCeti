@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Convolution.Weighted
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.Convolution
@@ -33,9 +34,9 @@ function is an `Lᵖ` function, since the first factor is bounded by the Sobolev
 This is the basic input for nonlinear analysis on the scale `H^s`, `s > n / 2`: polynomial
 expressions without constant term in `H^s` fields stay in `H^s`, and the functions `1 + h`,
 `h ∈ H^s`, are closed under multiplication, which is the closure step towards a gauge group. The
-estimate makes the product a bounded bilinear operation for the `H^s` norm, so that polynomial
-expressions depend continuously on `H^s` fields and multiplication `(1 + h)(1 + g)` is continuous
-for the distance `‖h - g‖_{H^s}`.
+estimate makes the product a bounded bilinear operation for the `H^s` norm
+(`BesselPotentialSpace.mul`), so that polynomial expressions depend continuously on `H^s` fields
+and multiplication `(1 + h)(1 + g)` is continuous for the distance `‖h - g‖_{H^s}`.
 
 ## The Fourier argument
 
@@ -75,6 +76,9 @@ estimate with `C = 2 ^ (s + 1) ‖⟨·⟩ ^ (-s)‖₂`.
 * `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`: the real form of
   `TemperedDistribution.MemSobolev.mul`.
 * `TemperedDistribution.mul_mem_realSobolevFunctions`: the same for pointwise representatives.
+* `BesselPotentialSpace.mul`: the product of `H^s(E)`, `s > n / 2`, as a bounded bilinear map,
+  with `BesselPotentialSpace.mul_toBesselPotentialSpace` identifying it with the pointwise product,
+  and `BesselPotentialSpace.mul_comm`, `BesselPotentialSpace.mul_assoc`.
 
 ## References
 
@@ -270,3 +274,121 @@ theorem mul_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s) {f g
   rw [h, h₁, h₂, Pi.mul_apply]
 
 end TemperedDistribution
+
+namespace BesselPotentialSpace
+
+open TemperedDistribution
+
+variable {s : ℝ}
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- The order of a Sobolev algebra is nonnegative. -/
+private theorem nonneg_of_finrank_lt (hs : finrank ℝ E < 2 * s) : 0 ≤ s := by
+  have := (finrank ℝ E).cast_nonneg (α := ℝ)
+  linarith
+
+/-- The `L²` function of `u ∈ H^s`, `s ≥ 0`, lies in `H^s`. -/
+private theorem memSobolev_toLp_inclusion (hs : 0 ≤ s) (u : H^{s}(E)) :
+    MemSobolev s 2 ((inclusion hs u).toLp : 𝓢'(E, ℂ)) := by
+  rw [toTemperedDistribution_toLp_inclusion]
+  exact u.memSobolev_toDistr
+
+/-- The pointwise product on `H^s`, before bundling. -/
+private def mulAux (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) : H^{s}(E) :=
+  ((memSobolev_toLp_inclusion (nonneg_of_finrank_lt hs) u).mul hs
+    (memSobolev_toLp_inclusion (nonneg_of_finrank_lt hs) v)).toBesselPotentialSpace
+
+/-- The `L²` function of `mulAux hs u v` is the pointwise product of those of `u` and `v`. -/
+private theorem toLp_inclusion_mulAux (hs : finrank ℝ E < 2 * s) (h : 0 ≤ s) (u v : H^{s}(E)) :
+    (inclusion h (mulAux hs u v)).toLp =ᵐ[volume]
+      fun x ↦ (inclusion h u).toLp x * (inclusion h v).toLp x := by
+  rw [mulAux, toLp_inclusion_toBesselPotentialSpace]
+  exact MemLp.coeFn_toLp _
+
+/-- An element of `H^s` whose `L²` function is the pointwise product of those of `u` and `v` is
+`mulAux hs u v`. -/
+private theorem mulAux_eq_of_ae_eq (hs : finrank ℝ E < 2 * s) {u v w : H^{s}(E)}
+    (h : (inclusion (nonneg_of_finrank_lt hs) w).toLp =ᵐ[volume]
+      fun x ↦ (inclusion (nonneg_of_finrank_lt hs) u).toLp x *
+        (inclusion (nonneg_of_finrank_lt hs) v).toLp x) :
+    mulAux hs u v = w := by
+  refine ext ?_
+  rw [mulAux, MemSobolev.toBesselPotentialSpace_toDistr,
+    ← toTemperedDistribution_toLp_inclusion (nonneg_of_finrank_lt hs) w]
+  exact congrArg _ (Lp.ext ((MemLp.coeFn_toLp _).trans h.symm))
+
+/-- **The product on `H^s(E)`, `s > dim E / 2`**, as a bounded bilinear map. On `L²` functions in
+`H^s` it is the pointwise product (`BesselPotentialSpace.mul_toBesselPotentialSpace`), and it is
+bounded by the algebra estimate `‖u v‖_{H^s} ≤ C ‖u‖_{H^s} ‖v‖_{H^s}`
+(`TemperedDistribution.exists_norm_toBesselPotentialSpace_mul_le`). -/
+def mul (hs : finrank ℝ E < 2 * s) : H^{s}(E) →L[ℂ] H^{s}(E) →L[ℂ] H^{s}(E) :=
+  have h := nonneg_of_finrank_lt hs
+  have hadd (u v : H^{s}(E)) :
+      (inclusion h (u + v)).toLp =ᵐ[volume]
+        fun x ↦ (inclusion h u).toLp x + (inclusion h v).toLp x := by
+    rw [map_add, toLp_add]
+    exact Lp.coeFn_add _ _
+  have hsmul (c : ℂ) (u : H^{s}(E)) :
+      (inclusion h (c • u)).toLp =ᵐ[volume] fun x ↦ c * (inclusion h u).toLp x := by
+    rw [map_smul, toLp_smul]
+    exact Lp.coeFn_smul _ _
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ ℂ (mulAux hs)
+      (fun u u' v ↦ mulAux_eq_of_ae_eq hs <| by
+        filter_upwards [hadd (mulAux hs u v) (mulAux hs u' v), toLp_inclusion_mulAux hs h u v,
+          toLp_inclusion_mulAux hs h u' v, hadd u u'] with x h₁ h₂ h₃ h₄
+        rw [h₁, h₂, h₃, h₄, add_mul])
+      (fun c u v ↦ mulAux_eq_of_ae_eq hs <| by
+        filter_upwards [hsmul c (mulAux hs u v), toLp_inclusion_mulAux hs h u v, hsmul c u]
+          with x h₁ h₂ h₃
+        rw [h₁, h₂, h₃, mul_assoc])
+      (fun u v v' ↦ mulAux_eq_of_ae_eq hs <| by
+        filter_upwards [hadd (mulAux hs u v) (mulAux hs u v'), toLp_inclusion_mulAux hs h u v,
+          toLp_inclusion_mulAux hs h u v', hadd v v'] with x h₁ h₂ h₃ h₄
+        rw [h₁, h₂, h₃, h₄, mul_add])
+      (fun c u v ↦ mulAux_eq_of_ae_eq hs <| by
+        filter_upwards [hsmul c (mulAux hs u v), toLp_inclusion_mulAux hs h u v, hsmul c v]
+          with x h₁ h₂ h₃
+        rw [h₁, h₂, h₃, mul_left_comm]))
+    (exists_norm_toBesselPotentialSpace_mul_le hs).choose fun u v ↦ by
+      have hu := memSobolev_toLp_inclusion h u
+      have hv := memSobolev_toLp_inclusion h v
+      have hu' : hu.toBesselPotentialSpace = u := ext (by simp)
+      have hv' : hv.toBesselPotentialSpace = v := ext (by simp)
+      have := (exists_norm_toBesselPotentialSpace_mul_le hs).choose_spec.2 hu hv
+      rwa [hu', hv'] at this
+
+/-- On `L²` functions in `H^s`, `s > dim E / 2`, the product of `H^s` is the pointwise product. -/
+@[simp]
+theorem mul_toBesselPotentialSpace (hs : finrank ℝ E < 2 * s) {u v : Lp ℂ 2 (volume : Measure E)}
+    (hu : MemSobolev s 2 (u : 𝓢'(E, ℂ))) (hv : MemSobolev s 2 (v : 𝓢'(E, ℂ))) :
+    mul hs hu.toBesselPotentialSpace hv.toBesselPotentialSpace =
+      (hu.mul hs hv).toBesselPotentialSpace := by
+  refine mulAux_eq_of_ae_eq hs ?_
+  rw [toLp_inclusion_toBesselPotentialSpace, toLp_inclusion_toBesselPotentialSpace,
+    toLp_inclusion_toBesselPotentialSpace]
+  exact MemLp.coeFn_toLp _
+
+/-- For `s ≥ 0`, the `L²` function of the product `mul hs u v` is the pointwise product of the
+`L²` functions of `u` and `v`. -/
+theorem toLp_inclusion_mul (hs : finrank ℝ E < 2 * s) (h : 0 ≤ s) (u v : H^{s}(E)) :
+    (inclusion h (mul hs u v)).toLp =ᵐ[volume]
+      fun x ↦ (inclusion h u).toLp x * (inclusion h v).toLp x :=
+  toLp_inclusion_mulAux hs h u v
+
+/-- The product of `H^s`, `s > dim E / 2`, is commutative. -/
+theorem mul_comm (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) : mul hs u v = mul hs v u :=
+  mulAux_eq_of_ae_eq hs <| by
+    filter_upwards [toLp_inclusion_mul hs (nonneg_of_finrank_lt hs) v u] with x hx
+    rw [hx, _root_.mul_comm]
+
+/-- The product of `H^s`, `s > dim E / 2`, is associative. -/
+theorem mul_assoc (hs : finrank ℝ E < 2 * s) (u v w : H^{s}(E)) :
+    mul hs (mul hs u v) w = mul hs u (mul hs v w) :=
+  mulAux_eq_of_ae_eq hs <| by
+    have h := nonneg_of_finrank_lt hs
+    filter_upwards [toLp_inclusion_mul hs h u (mul hs v w), toLp_inclusion_mul hs h v w,
+      toLp_inclusion_mul hs h u v] with x h₁ h₂ h₃
+    rw [h₁, h₂, h₃, _root_.mul_assoc]
+
+end BesselPotentialSpace

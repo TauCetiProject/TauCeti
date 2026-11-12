@@ -34,6 +34,8 @@ common compact support, are statements about this map.
   of a space into itself is the identity, and inclusions compose.
 * `BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM`: it is the identity on Schwartz
   functions.
+* `BesselPotentialSpace.toTemperedDistribution_toLp_inclusion`: for `s ≥ 0`, the image of
+  `u ∈ H^s` in `H^0` is the `L²` function representing `u`.
 -/
 
 public section
@@ -129,6 +131,23 @@ theorem inclusion_self (u : H^{s}(E, F)) : inclusion le_rfl u = u :=
 theorem inclusion_inclusion {t : ℝ} (h₁ : r ≤ s) (h₂ : t ≤ r) (u : H^{s}(E, F)) :
     inclusion h₂ (inclusion h₁ u) = inclusion (h₂.trans h₁) u :=
   ext (by simp)
+
+/-- For `s ≥ 0`, the image of `u ∈ H^s` in `H^0` is the `L²` function `(inclusion h u).toLp`, and
+this function represents the tempered distribution `u`. -/
+@[simp]
+theorem toTemperedDistribution_toLp_inclusion (h : 0 ≤ s) (u : H^{s}(E, F)) :
+    ((inclusion h u).toLp : 𝓢'(E, F)) = u.toDistr := by
+  rw [← (inclusion h u).bessel_toDistr_eq_toLp, besselPotential_zero, ContinuousLinearMap.id_apply,
+    toDistr_inclusion]
+
+/-- For `s ≥ 0`, the `L²` function of the element of `H^s` defined by an `L²` function `u` is `u`.
+-/
+@[simp]
+theorem toLp_inclusion_toBesselPotentialSpace (h : 0 ≤ s) {u : Lp F 2 (volume : Measure E)}
+    (hu : MemSobolev s 2 (u : 𝓢'(E, F))) : (inclusion h hu.toBesselPotentialSpace).toLp = u :=
+  LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
+      toTemperedDistribution_toLp_inclusion, MemSobolev.toBesselPotentialSpace_toDistr]
 
 /-- On Schwartz functions the inclusion `H^s ⊆ H^r` is the identity. -/
 @[simp]
