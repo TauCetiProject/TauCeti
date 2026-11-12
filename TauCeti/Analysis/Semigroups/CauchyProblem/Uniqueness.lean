@@ -138,9 +138,8 @@ theorem IsMildSolution.eq_realOperator {S : StronglyContinuousSemigroup X}
     u t = S.realOperator t x :=
   hu.unique (S.isMildSolution_realOperator x) ht
 
-/-- **A semigroup acts on an eigenvector of its generator by an exponential.** If
-`A x = μ • x`, then `t ↦ exp (μ t) • x` is a classical solution of `u' = A u`, `u(0) = x`, so it
-is the orbit of `x`. -/
+/-- **A semigroup acts on an eigenvector of its generator by an exponential.** If the generator
+sends `x` to `μ • x`, then `S.realOperator t x = Real.exp (μ * t) • x` for every time `t ≥ 0`. -/
 theorem StronglyContinuousSemigroup.realOperator_apply_eq_exp_smul_of_generator_eq_smul
     (S : StronglyContinuousSemigroup X) (x : S.generator.domain) {μ : ℝ}
     (hx : S.generator x = μ • (x : X)) {t : ℝ} (ht : 0 ≤ t) :
@@ -154,11 +153,12 @@ theorem StronglyContinuousSemigroup.realOperator_apply_eq_exp_smul_of_generator_
       simp only [mul_one, id] at h
       exact (by simpa only [mul_comm] using h : HasDerivAt _ _ s).hasDerivWithinAt
     · have hsmul : (⟨Real.exp (μ * s) • (x : X), S.generator.domain.smul_mem _ x.2⟩ :
-          S.generator.domain) = Real.exp (μ * s) • x := rfl
+          S.generator.domain) = Real.exp (μ * s) • x := Subtype.ext (Submodule.coe_smul _ _).symm
       rw [hsmul, S.generator.map_smul, hx, smul_smul, mul_comm]
   exact (hsol.eq_realOperator ht).symm
 
-/-- The form of `realOperator_apply_eq_exp_smul_of_generator_eq_smul` at a time `t : ℝ≥0`. -/
+/-- **A semigroup acts on an eigenvector of its generator by an exponential.** If the generator
+sends `x` to `μ • x`, then `S t x = Real.exp (μ * t) • x` for every time `t : ℝ≥0`. -/
 theorem StronglyContinuousSemigroup.apply_eq_exp_smul_of_generator_eq_smul
     (S : StronglyContinuousSemigroup X) (x : S.generator.domain) {μ : ℝ}
     (hx : S.generator x = μ • (x : X)) (t : NNReal) :

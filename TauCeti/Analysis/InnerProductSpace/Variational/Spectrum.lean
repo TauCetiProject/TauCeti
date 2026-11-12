@@ -60,7 +60,9 @@ eigenfunction.
   `IsCoercive.isSymmetric_formSolutionOperator` and
   `IsCoercive.inner_formSolutionOperator_self_nonneg`.
 * `IsCoercive.ker_formSolutionOperator`: the kernel of `S` is `(range J)ᗮ`, and
-  `IsCoercive.injective_formSolutionOperator`: `S` is injective when `J` has dense range.
+  `IsCoercive.formSolutionOperator_injective`, `IsCoercive.denseRange_formSolutionOperator`: `S`
+  is injective with dense range when `J` has dense range.
+* `IsCoercive.isUnit_one_add_formSolutionOperator`: `I + S` is invertible.
 * `IsCoercive.hasEigenvalue_formSolutionOperator_iff`: the reciprocal correspondence between
   the nonzero eigenvalues of `S` and the variational eigenvalues.
 * `IsCoercive.exists_ne_zero_forall_apply_eq_smul_inner`: existence of a variational
@@ -289,10 +291,37 @@ theorem eigenspace_formSolutionOperator_zero_eq_bot (hB : IsCoercive B) {J : V �
   exact (Submodule.mem_bot ℝ).mpr (hJ.eq_zero_of_inner_left ℝ hh)
 
 /-- With `J` of dense range, the solution operator is injective. -/
-theorem injective_formSolutionOperator (hB : IsCoercive B) {J : V →L[ℝ] H} (hJ : DenseRange J) :
+theorem formSolutionOperator_injective (hB : IsCoercive B) {J : V →L[ℝ] H} (hJ : DenseRange J) :
     Function.Injective (hB.formSolutionOperator J) :=
-  (injective_iff_map_eq_zero _).2 fun h hh =>
-    hJ.eq_zero_of_inner_left ℝ ((hB.formSolutionOperator_apply_eq_zero_iff J h).1 hh)
+  LinearMap.ker_eq_bot.1 ((eigenspace_zero _).symm.trans
+    (hB.eigenspace_formSolutionOperator_zero_eq_bot hJ))
+
+/-- With `J` of dense range, the solution operator has dense range. -/
+theorem denseRange_formSolutionOperator [CompleteSpace H] (hB : IsCoercive B) {J : V →L[ℝ] H}
+    (hJ : DenseRange J) : DenseRange (hB.formSolutionOperator J) := by
+  rw [DenseRange, ← ContinuousLinearMap.coe_coe, ← LinearMap.coe_range,
+    Submodule.dense_iff_topologicalClosure_eq_top, Submodule.topologicalClosure_eq_top_iff,
+    Submodule.eq_bot_iff]
+  intro g hg
+  have hself : ⟪g, hB.formSolutionOperator J g⟫_ℝ = 0 := by
+    rw [real_inner_comm]
+    exact (Submodule.mem_orthogonal _ _).1 hg _ (LinearMap.mem_range_self _ g)
+  rw [inner_formSolutionOperator_self] at hself
+  have hw : hB.formSolutionMap J g = 0 := by
+    by_contra hne
+    exact (hB.apply_self_pos hne).ne' hself
+  refine (injective_iff_map_eq_zero _).1 (hB.formSolutionOperator_injective hJ) g ?_
+  rw [formSolutionOperator_apply, hw, map_zero]
+
+/-- `I + S` is invertible, since `⟪(I + S) h, h⟫ ≥ ‖h‖²` for the positive semidefinite solution
+operator `S`. -/
+theorem isUnit_one_add_formSolutionOperator [CompleteSpace H] (hB : IsCoercive B)
+    (J : V →L[ℝ] H) : IsUnit (1 + hB.formSolutionOperator J) := by
+  refine ContinuousLinearMap.isUnit_of_forall_le_norm_inner_map _ one_pos fun h => ?_
+  rw [NNReal.coe_one, mul_one, add_apply, one_apply_eq_self,
+    Real.norm_eq_abs, inner_add_left, real_inner_self_eq_norm_sq, real_inner_comm]
+  exact (le_add_of_nonneg_right (hB.inner_formSolutionOperator_self_nonneg J h)).trans
+    (le_abs_self _)
 
 /-! ### Variational eigenvalues -/
 
