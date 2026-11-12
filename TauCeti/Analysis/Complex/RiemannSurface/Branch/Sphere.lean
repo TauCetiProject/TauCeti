@@ -10,17 +10,14 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
-import TauCeti.Topology.Triangulable.Sphere
+import TauCeti.Geometry.Manifold.Triangulation.Complex
 
 /-!
 # The branched-cover Euler formula over the Riemann sphere
 
-The Riemann sphere `OnePoint ℂ` is triangulable (`TauCeti.isTriangulable_onePoint`), so the
-complement of every finite set of its points has finite CW type
-(`Set.Finite.finiteCWType_compl_onePoint_complex`). This is stated as a theorem rather than an
-instance, since the finite set is a hypothesis and not part of the type.
-
-Applying the topological Riemann–Hurwitz formula
+The complement of every finite set of points of the Riemann sphere `OnePoint ℂ` has finite CW
+type (`Set.Finite.finiteCWType_compl_onePoint_complex`, in `Triangulation.Complex`). Applying the
+topological Riemann–Hurwitz formula
 (`FiniteHolomorphicMap.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_subset`)
 with the branch values as punctures and with `χ(ℙ¹) = 2` gives `-2 deg f + deg R_f = -χ(X)` for
 every finite holomorphic map `f : X → ℙ¹` from a compact Riemann surface of finite CW type
@@ -37,18 +34,6 @@ public section
 
 open OnePoint
 open scoped Manifold
-
-namespace Set.Finite
-
-open TauCeti
-
-/-- **Punctured Riemann spheres have finite CW type.** The complement of a finite set of points
-of the Riemann sphere `OnePoint ℂ` has finite CW type. -/
-theorem finiteCWType_compl_onePoint_complex {S : Set (OnePoint ℂ)} (hS : S.Finite) :
-    FiniteCWType ↥Sᶜ :=
-  hS.finiteCWType_compl_of_isTriangulable_complex isTriangulable_onePoint.{0, 0}
-
-end Set.Finite
 
 namespace TauCeti.RiemannSurface.FiniteHolomorphicMap
 
