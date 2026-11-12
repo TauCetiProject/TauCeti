@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ExtendedPhaseSpace
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
-import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
@@ -64,9 +63,6 @@ when `∂_t F + {F_t, H_t} = 0`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.forall_apply_timeDependentFlowOf_eq_iff`). No completeness
 of the flow is assumed.
 
-These rates of change come from the chain rule `d/du f(u, γ u) = ∂_t f + d(f u)(γ')` along a curve
-in a manifold (`HasMFDerivAt.hasDerivAt_comp_graph`).
-
 ## References
 
 * V. I. Arnold, *Mathematical Methods of Classical Mechanics*, 2nd ed., Graduate Texts in
@@ -84,26 +80,6 @@ namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- **The chain rule along a curve for a time-dependent family.** If the curve `u` has velocity
-`w` at `t` and `f` is jointly differentiable at `(t, u t)`, then `s ↦ f s (u s)` has derivative
-`∂_t f(t, u t) + d(f t)(w)` at `t`: the derivative of `f` in the time variable plus the
-derivative of the slice `f t` along the velocity. -/
-theorem _root_.HasMFDerivAt.hasDerivAt_comp_graph {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {u : ℝ → M} {f : ℝ → M → F} {t : ℝ} {w : TangentSpace I (u t)}
-    (hu : HasMFDerivAt 𝓘(ℝ) I u t ((1 : ℝ →L[ℝ] ℝ).smulRight w))
-    (hf : MDifferentiableAt (𝓘(ℝ).prod I) 𝓘(ℝ, F) (uncurry f) (t, u t)) :
-    HasDerivAt (fun s ↦ f s (u s)) (deriv (fun s ↦ f s (u t)) t + mvfderiv I (f t) (u t) w) t := by
-  have hd : DifferentiableAt ℝ (fun s ↦ f s (u s)) t :=
-    mdifferentiableAt_iff_differentiableAt.1
-      (hf.comp t (mdifferentiableAt_id.prodMk hu.mdifferentiableAt))
-  -- The velocity map `r ↦ r • w` sends `1` to `w`.
-  have hw : mfderiv 𝓘(ℝ) I u t (1 : ℝ) = w := by
-    rw [hu.mfderiv]
-    exact one_smul ℝ w
-  have h := fderiv_comp_graph_apply_of_mdifferentiableAt hu.mdifferentiableAt hf 1
-  rw [hw, fderiv_apply_one_eq_deriv, fderiv_apply_one_eq_deriv] at h
-  exact h ▸ hd.hasDerivAt
 
 /-- The extended Hamiltonian is differentiable wherever the time-dependent Hamiltonian is. -/
 theorem mdifferentiableAt_extendedHamiltonian {H : ℝ → M → ℝ} {t e : ℝ} {x : M}
