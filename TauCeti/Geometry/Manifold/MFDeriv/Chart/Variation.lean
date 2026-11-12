@@ -204,12 +204,8 @@ theorem sinChartVariation_zero (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).s
 theorem mfderiv_sinChartVariation_of_notMem {t : ℝ}
     (hw : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I (sinChartVariation I γ x₀ J φ e) (0, t))
     (htJ : t ∉ J) :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) I (sinChartVariation I γ x₀ J φ e) (0, t) (1, 0) = 0 := by
-  have hfun : (fun s ↦ sinChartVariation I γ x₀ J φ e (s, t)) = fun _ ↦ γ t :=
-    funext fun s ↦ sinChartVariation_of_notMem htJ s
-  rw [← curveVelocity_eq_mfderiv_fst (f := fun a b ↦ sinChartVariation I γ x₀ J φ e (a, b)) hw,
-    hfun, curveVelocity_const]
-  rfl
+    mfderiv 𝓘(ℝ, ℝ × ℝ) I (sinChartVariation I γ x₀ J φ e) (0, t) (1, 0) = 0 :=
+  mfderiv_apply_one_zero_eq_zero_of_apply_eq hw fun s ↦ sinChartVariation_of_notMem htJ s
 
 variable [I.Boundaryless]
 

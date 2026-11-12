@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.StripAction
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
@@ -71,10 +72,12 @@ In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 
 * `hasDerivAt_lagrangianPathAction`: the first variation formula.
 * `isLagrangianPathActionCritical`: Hamiltonian chords are critical points of the action.
-* `IsLagrangianPathActionCritical.hasMFDerivAt`: critical points of the action are Hamiltonian
-  chords.
 * `isLagrangianPathActionCritical_iff`: the critical points of the action are exactly the
   Hamiltonian chords.
+
+In the namespace `TauCeti.IsLagrangianPathActionCritical`:
+
+* `hasMFDerivAt`: critical points of the action are Hamiltonian chords.
 
 ## References
 
@@ -240,14 +243,6 @@ section CriticalPaths
 
 variable [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ E] [I.Boundaryless] {ω : SmoothTwoForm I M}
   {H : ℝ → M → ℝ} {γ : ℝ → M} {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E}
-
-/-- A smooth bump function centred at `c` and supported in the ball of radius `r` around `c`. -/
-private theorem exists_contDiffBump_tsupport_subset_ball (c : ℝ) {r : ℝ} (hr : 0 < r) :
-    ∃ b : ContDiffBump c, tsupport b ⊆ ball c r :=
-  -- the bump of radii `r / 4` and `r / 2`
-  ⟨⟨r / 4, r / 2, by positivity, by linarith⟩, by
-    rw [ContDiffBump.tsupport_eq]
-    exact closedBall_subset_ball (half_lt_self hr)⟩
 
 variable {α : SmoothForm I M ℝ 1} {f₀ : N₀ → ℝ} {f₁ : N₁ → ℝ} {i₀ : N₀ → M} {i₁ : N₁ → M}
   {y₀ : N₀} {y₁ : N₁}
