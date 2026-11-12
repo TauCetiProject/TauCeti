@@ -25,6 +25,9 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 -- This import is public: `Module.Basis` appears in the hypothesis of
 -- `Module.Basis.hasWeakFDerivOn_of_forall`.
 public import Mathlib.LinearAlgebra.Basis.Defs
+-- This import is private: the standard orthonormal basis is used only inside the proof of
+-- `HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg`.
+import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Weak derivatives on an open set
@@ -147,6 +150,9 @@ weaken them for no gain.
 * `TauCeti.HasWeakLineDerivOn.clm_comp` and `TauCeti.HasWeakFDerivOn.clm_comp`: a continuous
   linear map on the codomain passes through the weak derivative, which is how a vector-valued weak
   derivative is read off its scalar components.
+* `TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg`: the defining identity tested
+  against a test function valued in a finite-dimensional real inner product space,
+  `∫ ⟪∂_v φ, u⟫ = -∫ ⟪φ, u'⟫`.
 * `TauCeti.HasWeakLineDerivOn.add_direction`, `.smul_direction`, `.sum_direction` and
   `TauCeti.hasWeakLineDerivOn_zero_direction`: linearity in the direction, which is what makes
   the `TauCeti.HasWeakFDerivOn` packaging the right one.
@@ -639,6 +645,64 @@ theorem HasWeakLineDerivOn.sum_direction {ι : Type*} [CompleteSpace F] {u : E �
       exact key
 
 end Linearity
+
+/-! ### Testing against vector-valued test functions -/
+
+section Inner
+
+open scoped InnerProductSpace
+
+variable [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
+  {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- The weak derivative identity tested against a vector-valued test function through the inner
+product: if `u'` is a weak derivative of `u` in the direction `v` on `Ω`, then
+`∫ ⟪∂_v φ, u⟫ = -∫ ⟪φ, u'⟫` for every `φ ∈ 𝓓(Ω, V)`. The proof tests against the coordinates of
+`φ` in an orthonormal basis. -/
+theorem HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg {u u' : E → V}
+    (h : HasWeakLineDerivOn μ Ω u u' v) (φ : 𝓓(Ω, V)) :
+    ∫ x, ⟪lineDeriv ℝ (φ : E → V) x v, u x⟫_ℝ ∂μ = -∫ x, ⟪(φ : E → V) x, u' x⟫_ℝ ∂μ := by
+  let b := stdOrthonormalBasis ℝ V
+  let ψ : Fin (Module.finrank ℝ V) → 𝓓(Ω, ℝ) := fun i =>
+    TestFunction.postcompCLM (innerSL ℝ (b i)) φ
+  have hψ (i) : (ψ i : E → ℝ) = innerSL ℝ (b i) ∘ (φ : E → V) :=
+    TestFunction.postcompCLM_apply _ φ
+  have hφd : Differentiable ℝ (φ : E → V) := φ.contDiff.differentiable (by simp)
+  have hψd (i) (x : E) :
+      lineDeriv ℝ (ψ i : E → ℝ) x v = ⟪b i, lineDeriv ℝ (φ : E → V) x v⟫_ℝ := by
+    have h₁ : HasFDerivAt (innerSL ℝ (b i) ∘ (φ : E → V))
+        ((innerSL ℝ (b i)).comp (fderiv ℝ (φ : E → V) x)) x :=
+      (innerSL ℝ (b i)).hasFDerivAt.comp x (hφd x).hasFDerivAt
+    rw [hψ, h₁.hasLineDerivAt v |>.lineDeriv, (hφd x).lineDeriv_eq_fderiv]
+    simp [ContinuousLinearMap.comp_apply, innerSL_apply_apply]
+  have hw (i) := h.clm_comp (innerSL ℝ (b i))
+  calc ∫ x, ⟪lineDeriv ℝ (φ : E → V) x v, u x⟫_ℝ ∂μ
+      = ∫ x, ∑ i, lineDeriv ℝ (ψ i : E → ℝ) x v • ⟪b i, u x⟫_ℝ ∂μ := by
+        refine integral_congr_ae (.of_forall fun x => ?_)
+        dsimp only
+        rw [← b.sum_inner_mul_inner]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        rw [hψd, smul_eq_mul, real_inner_comm (b i)]
+    _ = ∑ i, ∫ x, lineDeriv ℝ (ψ i : E → ℝ) x v • ⟪b i, u x⟫_ℝ ∂μ :=
+        integral_finsetSum _ fun i _ =>
+          integrable_lineDeriv_smul_of_locallyIntegrableOn (hw i).locallyIntegrableOn (ψ i) v
+    _ = ∑ i, -∫ x, (ψ i : E → ℝ) x • ⟪b i, u' x⟫_ℝ ∂μ := by
+        refine Finset.sum_congr rfl fun i _ => ?_
+        exact (hw i).integral_lineDeriv_smul_eq_neg_integral_smul (ψ i)
+    _ = -∫ x, ∑ i, (ψ i : E → ℝ) x • ⟪b i, u' x⟫_ℝ ∂μ := by
+        rw [Finset.sum_neg_distrib]
+        congr 1
+        exact (integral_finsetSum _ fun i _ =>
+          (ψ i).integrable_smul (hw i).locallyIntegrableOn_deriv).symm
+    _ = -∫ x, ⟪(φ : E → V) x, u' x⟫_ℝ ∂μ := by
+        congr 1
+        refine integral_congr_ae (.of_forall fun x => ?_)
+        dsimp only
+        rw [← b.sum_inner_mul_inner]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        rw [hψ, Function.comp_apply, innerSL_apply_apply, smul_eq_mul, real_inner_comm (b i)]
+
+end Inner
 
 /-! ### Scaling the direction -/
 
