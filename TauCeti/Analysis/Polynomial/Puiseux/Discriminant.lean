@@ -109,7 +109,7 @@ theorem _root_.Polynomial.exists_analyticAt_prod_X_sub_C_of_orderAt_discr_eq
     exact ((analyticAt_pi_iff.1 (hΦ z.1 hz.1) j).comp analyticAt_fst).add
       (analyticAt_snd.mul analyticAt_const)
   have hcoeff (i : ℕ) : AnalyticOnNhd ℂ (fun z ↦ (F z).coeff i) (U ×ˢ ball 0 ρ) :=
-    p.analyticOnNhd_coeff_map_eval₂Hom (E := (ι → ℂ) × ℂ)
+    p.analyticOnNhd_coeff_map_eval₂Hom Complex.ofRealHom (E := (ι → ℂ) × ℂ)
       (f := fun z ↦ Φ z.1 + z.2 • (fun i ↦ (v i : ℂ))) (S := U ×ˢ ball 0 ρ) hcoord i
   have hmonic (z) : (F z).Monic := hp.map _
   have hdeg (z) : (F z).natDegree = p.natDegree := hp.natDegree_map _

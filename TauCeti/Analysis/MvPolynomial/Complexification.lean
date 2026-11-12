@@ -226,16 +226,17 @@ end MvPolynomial
 
 namespace Polynomial
 
-/-- The coefficients of a real multivariate polynomial complexified and evaluated along a family
-of points are analytic when every coordinate of the family is analytic. -/
-theorem analyticOnNhd_coeff_map_eval₂Hom {σ E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] (p : Polynomial (MvPolynomial σ ℝ)) {f : E → σ → ℂ} {S : Set E}
-    (hf : ∀ j, AnalyticOnNhd ℂ (fun z ↦ f z j) S) (i : ℕ) :
-    AnalyticOnNhd ℂ
-      (fun z ↦ (p.map (MvPolynomial.eval₂Hom Complex.ofRealHom (f z))).coeff i) S := by
+/-- The coefficients of a polynomial over multivariate polynomials, mapped along a ring
+homomorphism `g : R →+* 𝕜` and evaluated along a family of points, are analytic when every
+coordinate of the family is analytic. -/
+theorem analyticOnNhd_coeff_map_eval₂Hom {R σ E 𝕜 : Type*} [CommSemiring R]
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] (g : R →+* 𝕜)
+    (p : Polynomial (MvPolynomial σ R)) {f : E → σ → 𝕜} {S : Set E}
+    (hf : ∀ j, AnalyticOnNhd 𝕜 (fun z ↦ f z j) S) (i : ℕ) :
+    AnalyticOnNhd 𝕜 (fun z ↦ (p.map (MvPolynomial.eval₂Hom g (f z))).coeff i) S := by
   intro z hz
   simp only [coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map]
   simpa only [MvPolynomial.aeval_eq_eval] using
-    AnalyticAt.aeval_mvPolynomial (fun j ↦ hf j z hz) ((p.coeff i).map Complex.ofRealHom)
+    AnalyticAt.aeval_mvPolynomial (fun j ↦ hf j z hz) ((p.coeff i).map g)
 
 end Polynomial

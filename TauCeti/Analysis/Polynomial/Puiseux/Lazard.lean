@@ -152,7 +152,7 @@ theorem exists_complexification_isLazardEvaluator_nonmonic_laurent
     SimplyConnectedSpace.ofContractible _
   obtain ⟨R, hR, hfit, r, g, hr, hg, hfac, e, w, he, hw, hw0, hform⟩ :=
     TauCeti.Polynomial.exists_analyticOnNhd_nonmonic_laurent isOpen_ball hρ
-      (fun i _ ↦ p.analyticOnNhd_coeff_map_eval₂Hom hcoord i) hdeg hD (hu 0)
+      (fun i _ ↦ p.analyticOnNhd_coeff_map_eval₂Hom Complex.ofRealHom hcoord i) hdeg hD (hu 0)
       (fun b hb ↦ (hforms b hb 0).1)
       (hu 1) (fun b hb ↦ (hforms b hb 1).1) hL hC
   refine ⟨ρ, hρ, Φ, c, hrange ▸ hc, hΦ, hreal, hstar,
