@@ -43,7 +43,7 @@ theorem tendsto_rpow_mul_compoundPoissonMeasure_real_Ioi
     Tendsto (fun x : ℝ ↦ x ^ α * (compoundPoissonMeasure r μ).real (Ioi x)) atTop
       (𝓝 ((r : ℝ) * C)) := by
   simpa only [compoundPoissonMeasure_def, integral_natCast_poissonMeasure] using
-    Measure.tendsto_rpow_mul_bind_convolutionPower_real_Ioi hα hμ
+    Measure.tendsto_rpow_mul_bind_convolutionPower_real_Ioi hμ
       (integrable_natCast_rpow_poissonMeasure r (by linarith : 0 ≤ α + 1))
 
 /-- A power-law left-tail constant of the jump distribution is multiplied by the rate

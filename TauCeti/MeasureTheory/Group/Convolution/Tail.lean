@@ -267,11 +267,15 @@ theorem rpow_mul_convolutionPower_real_Ioi_le (μ : Measure ℝ) [IsProbabilityM
 multiplies a power-law tail constant by the mean count. Jumps may have either sign, and
 their left tail is unrestricted. The count measure need not be finite. -/
 theorem tendsto_rpow_mul_bind_convolutionPower_real_Ioi {μ : Measure ℝ}
-    [IsProbabilityMeasure μ] {ρ : Measure ℕ} {α C : ℝ} (hα : 0 < α)
+    [IsProbabilityMeasure μ] {ρ : Measure ℕ} {α C : ℝ}
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C))
     (hρ : Integrable (fun n : ℕ ↦ (n : ℝ) ^ (α + 1)) ρ) :
     Tendsto (fun x : ℝ ↦ x ^ α * (ρ.bind μ.convolutionPower).real (Ioi x)) atTop
       (𝓝 ((∫ n : ℕ, (n : ℝ) ∂ρ) * C)) := by
+  rcases le_or_gt α 0 with hα' | hα
+  · -- For a nonpositive exponent every weighted tail tends to zero, so `C = 0`.
+    obtain rfl := tendsto_nhds_unique hμ (μ.tendsto_rpow_mul_measureReal_Ioi_of_nonpos hα')
+    simpa using (ρ.bind μ.convolutionPower).tendsto_rpow_mul_measureReal_Ioi_of_nonpos hα'
   obtain ⟨K, hbound⟩ := μ.exists_rpow_mul_real_Ioi_le hα.le hμ
   -- The count moment dominates the normalized finite-sum tails, so their limits can be mixed.
   have h := tendsto_integral_filter_of_dominated_convergence (μ := ρ)
