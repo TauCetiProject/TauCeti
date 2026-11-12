@@ -66,7 +66,7 @@ and its map to `Hₙ(E|_{U ∪ V}, E₀|_{U ∪ V})` is an epimorphism when
 `Hₙ₋₁(E|_{U ∩ V}, E₀|_{U ∩ V})` vanishes (`TauCeti.epi_singularHomology_thomPairOver_union`). In
 the rank degree, where the homology below vanishes, this computes `Hᵣ(E|_{U ∪ V}, E₀|_{U ∪ V})`
 from the pairs over `U`, `V` and `U ∩ V`; this is used in
-`TauCeti.Topology.VectorBundle.Thom.Homology`.
+`TauCeti.Topology.VectorBundle.Thom.RankDegreeHomology`.
 
 ## Main results
 

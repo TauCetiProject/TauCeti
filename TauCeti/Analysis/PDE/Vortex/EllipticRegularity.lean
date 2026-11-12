@@ -41,6 +41,9 @@ right-hand side lies in `H^s`.
   the weak right inverse `Q` of `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`,
   it shows that `Q f ∈ H¹` at a bounded vortex, and with `f = 0` it shows that the weak `L²`
   kernel of `L_x` lies in `H¹`.
+* `exists_mem_sobolevFields_one_integral_inner_gaugeFixedAdjoint_eq`: at a bounded `C¹` plane
+  vortex with `|α| → 1`, every `f ∈ L²` is `L_x y` weakly for some `y ∈ H¹`, so the `H¹ → L²`
+  realization of `L_x` has zero cokernel.
 * `mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq`: the elliptic
   bootstrap. If `x` is smooth and its coordinates have bounded derivatives through order `k`, a
   weak `L²` solution of `L_x y = f` with `f ∈ H^k` lies in `H^(k+1)`. The multiplication by the
@@ -62,8 +65,8 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex MeasureTheory TemperedDistribution
-open scoped SchwartzMap LineDeriv RealInnerProductSpace ContDiff
+open Complex MeasureTheory TemperedDistribution Filter
+open scoped SchwartzMap LineDeriv RealInnerProductSpace ContDiff Topology
 
 /-! ### The zeroth-order part of `L_x` -/
 
@@ -205,6 +208,27 @@ theorem mem_sobolevFields_one_of_integral_inner_gaugeFixedAdjoint_eq
     mem_sobolevFields_zero_iff.2 (hf.sub hzo)
   simpa using mem_sobolevFields_add_one_of_integral_inner_gaugeFixedAdjoint_vacuumField_eq hy hg
     fun η hη hc ↦ integral_inner_gaugeFixedAdjoint_vacuumField_eq hy hf hzo hη hc (hweak η hη hc)
+
+/-- **At a bounded plane vortex, every `L²` field is weakly the image of an `H¹` field under
+`L_x`.** Let `x` be a bounded `C¹` solution of the plane vortex equation with `|α| → 1` at
+infinity. For every `f ∈ L²(ℂ; ℝ⁴)` there is `y ∈ H¹(ℂ; ℝ⁴)` with `L_x y = f` weakly:
+`∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly supported `C²` field `η`. -/
+theorem exists_mem_sobolevFields_one_integral_inner_gaugeFixedAdjoint_eq
+    {x f : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ 1 x) {C : ℝ} (hC : ∀ z, ‖x z‖ ≤ C)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hf : MemLp f 2 volume) :
+    ∃ y ∈ sobolevFields 1, ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η →
+      HasCompactSupport η → ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫ := by
+  obtain ⟨Q, hQ, -⟩ :=
+    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq (μ := volume) hx hsol hlim
+  have hQf (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+      ∫ z, ⟪Q (hf.toLp f) z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫ := by
+    rw [hQ _ η hη hηc]
+    exact integral_congr_ae (hf.coeFn_toLp.mono fun z hz ↦ by simp only [hz])
+  exact ⟨_, mem_sobolevFields_one_of_integral_inner_gaugeFixedAdjoint_eq
+    hx.continuous.aestronglyMeasurable (.of_forall hC) (Lp.memLp _) hf
+    fun η hη hηc ↦ hQf η (hη.of_le (by norm_cast)) hηc, hQf⟩
 
 /-- The zeroth-order coefficients at a smooth field whose coordinates have bounded derivatives
 through order `k` are smooth with bounded derivatives through order `k`. -/
