@@ -9,10 +9,10 @@ public import TauCeti.Probability.BrownianMotion.TimeIntegral
 public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.InnerProductSpace.LinearCombination
-import Mathlib.MeasureTheory.Measure.LevyConvergence
+import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
+import TauCeti.Probability.Distributions.Gaussian.Continuity
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
-import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.L2Space
 
@@ -26,17 +26,20 @@ construction needs only the finite-dimensional Brownian laws, not path regularit
 or a filtration. It is an integral of deterministic integrands, not a construction
 of integration for random predictable integrands.
 
-The construction completes finite linear combinations of initial-interval indicators.
-It uses `IsPreBrownianReal.toL2`, the generating-pi-system density theorem for `L²`,
-and Mathlib's `LinearMap.extendOfIsometry`. Every resulting integral has the centered
-Gaussian law with variance equal to the squared time-`L²` norm. The interval formulas
-and uniqueness among continuous linear maps characterize the construction; linearity,
+The integrals form a jointly Gaussian family (`isGaussianProcess_wienerIntegral`),
+with mean zero, covariance equal to the time-`L²` inner product, and variance equal to
+the squared time-`L²` norm. Interval formulas and uniqueness among continuous linear
+maps characterize the construction. Extension by zero to longer horizons and changes
+of Brownian version almost surely at each time preserve the integral. Linearity,
 isometry and preservation of inner products are provided by its bundled type.
 
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second
   edition, Springer, 1991, §3.2, deterministic integrands and the Wiener integral.
+* Central formal ingredients: `IsPreBrownianReal.toL2`,
+  `TauCeti.topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem`, and
+  `LinearMap.extendOfIsometry`.
 -/
 
 public section
@@ -112,7 +115,8 @@ theorem eq_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ≥0)
   have hA' (t : ℝ≥0) :
       A (indicatorConstLp 2 (measurableSet_Iic (a := t)) (measure_ne_top _ _) 1) =
         hB.toL2 (min t T) := by
-    rw [TauCeti.Probability.indicatorConstLp_Iic_min_timeMeasure, hA _ (min_le_right _ _)]
+    rw [← TauCeti.Probability.indicatorConstLp_Iic_min_timeMeasure,
+      hA _ (min_le_right _ _)]
   rw [wienerIntegral, LinearMap.toContinuousLinearMap_extendOfIsometry]
   exact (LinearMap.extendOfNorm_unique (denseRange_timeStep T) 1
     (by simp [norm_brownianStep]) A (by
@@ -133,7 +137,7 @@ theorem wienerIntegral_timeMeasureExtendLp (hB : IsPreBrownianReal B P)
     apply hB.eq_wienerIntegral S
     intro t ht
     simp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
-      TauCeti.Probability.timeMeasureExtendLp_indicatorConstLp_Iic hST ht,
+      TauCeti.Probability.timeMeasureExtendLp_indicatorConstLp_Iic, min_eq_left ht,
       wienerIntegral_indicatorConstLp_Iic, min_eq_left (ht.trans hST), one_smul]
   exact congrArg (fun A : Lp ℝ 2 (TauCeti.Probability.timeMeasure S) →L[ℝ] Lp ℝ 2 P ↦ A f) hmap
 
@@ -149,8 +153,8 @@ theorem wienerIntegral_congr (hB : IsPreBrownianReal B P) {B' : ℝ≥0 → Ω �
     min_eq_left ht, one_smul]
   exact Lp.ext ((hB.coeFn_toL2 t).trans ((h t ht).trans (hB'.coeFn_toL2 t).symm))
 
-/-- Integrating an interval indicator gives the corresponding Brownian increment,
-with both endpoints clipped to the horizon. -/
+/-- For `s ≤ t`, integrating a constant-height indicator of `(s,t]` gives the Brownian
+increment with both endpoints clipped to the horizon, scaled by the height `c`. -/
 @[simp]
 theorem wienerIntegral_indicatorConstLp_Ioc (hB : IsPreBrownianReal B P) (T : ℝ≥0)
     {s t : ℝ≥0} (hst : s ≤ t) (c : ℝ) :
@@ -249,11 +253,10 @@ private theorem hasLaw_brownianStep (hB : IsPreBrownianReal B P) (T : ℝ≥0)
   refine ⟨hgauss.aemeasurable, ?_⟩
   rw [hgauss.map_eq_gaussianReal, hmean]
   congr 1
-  rw [variance_eq_sub (Lp.memLp _), hmean, zero_pow two_ne_zero, sub_zero]
-  have hsq := Lp.integral_norm_sq_eq_norm_sq (brownianStep hB T v)
-  simp only [Real.norm_eq_abs, sq_abs] at hsq
-  simp only [Pi.pow_apply]
-  rw [hsq, norm_brownianStep]
+  have hvar : Var[brownianStep hB T v; P] = ‖timeStep T v‖ ^ 2 := by
+    simpa only [wienerIntegral, LinearMap.extendOfIsometry_eq] using
+      hB.variance_wienerIntegral T (timeStep T v)
+  rw [hvar]
   exact (Real.toNNReal_pow (norm_nonneg _) 2).trans (by simp)
 
 /-- The deterministic Wiener integral is centered Gaussian with variance equal to
@@ -271,15 +274,18 @@ theorem hasLaw_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ≥0)
       (hB.wienerIntegral T).continuous.tendsto f |>.comp hvlim
   have hd := (tendstoInMeasure_of_tendsto_Lp hw).tendstoInDistribution
     (fun n ↦ (Lp.memLp (brownianStep hB T (v n))).aemeasurable)
-  refine ⟨(Lp.memLp _).aemeasurable, Measure.ext_of_charFun (funext fun x ↦ ?_)⟩
-  have hlim := hd.tendsto_charFun x
-  simp only [(hasLaw_brownianStep hB T _).map_eq] at hlim
+  refine ⟨(Lp.memLp _).aemeasurable, ?_⟩
+  have hlim := hd.tendsto
+  have hlaw (n : ℕ) :
+      (⟨P.map (brownianStep hB T (v n)), inferInstance⟩ : ProbabilityMeasure ℝ) =
+        (gaussianReal 0 (‖timeStep T (v n)‖₊ ^ 2)).toProbabilityMeasure :=
+    Subtype.ext (hasLaw_brownianStep hB T (v n)).map_eq
+  simp only [hlaw] at hlim
   have hc : Continuous (fun g : Lp ℝ 2 (TauCeti.Probability.timeMeasure T) ↦
-      charFun (gaussianReal 0 (‖g‖₊ ^ 2)) x) := by
-    simp only [charFun_gaussianReal]
-    fun_prop
-  exact tendsto_nhds_unique hlim (by
-    simpa only [Function.comp_def] using hc.tendsto f |>.comp hvlim)
+      (gaussianReal 0 (‖g‖₊ ^ 2)).toProbabilityMeasure) :=
+    Continuous.gaussianReal continuous_const (continuous_nnNorm.pow 2)
+  exact congrArg (fun μ : ProbabilityMeasure ℝ ↦ (μ : Measure ℝ))
+    (tendsto_nhds_unique hlim (hc.tendsto f |>.comp hvlim))
 
 /-- The Wiener integrals form a jointly Gaussian family indexed by deterministic
 `L²` integrands. -/

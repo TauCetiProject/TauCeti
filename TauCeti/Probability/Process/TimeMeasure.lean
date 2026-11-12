@@ -16,6 +16,9 @@ public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 time, obtained by pulling back real Lebesgue measure along the coercion to `ℝ`.
 The origin has zero mass. Interval masses and restriction to shorter horizons are
 recorded explicitly for time-product measures used in stochastic integration.
+The isometry `timeMeasureExtendLp` extends finite-horizon `Lᵖ` functions by zero to
+longer horizons. Initial-interval indicator classes depend only on their endpoint
+clipped to the horizon; the extension lemmas describe their images.
 -/
 
 public section
@@ -90,9 +93,9 @@ theorem timeMeasure_restrict (T S : ℝ≥0) :
 /-- Initial-interval indicator classes only depend on the endpoint clipped to the horizon. -/
 theorem indicatorConstLp_Iic_min_timeMeasure {E : Type*} [NormedAddCommGroup E]
     (p : ℝ≥0∞) (T t : ℝ≥0) (c : E) :
-    indicatorConstLp (μ := timeMeasure T) p (measurableSet_Iic (a := t))
+    indicatorConstLp (μ := timeMeasure T) p (measurableSet_Iic (a := min t T))
         (measure_ne_top _ _) c =
-      indicatorConstLp p (measurableSet_Iic (a := min t T)) (measure_ne_top _ _) c := by
+      indicatorConstLp p (measurableSet_Iic (a := t)) (measure_ne_top _ _) c := by
   apply Lp.ext
   filter_upwards [indicatorConstLp_coeFn (μ := timeMeasure T) (p := p)
     (hs := measurableSet_Iic (a := t)) (hμs := measure_ne_top _ _) (c := c),
@@ -105,7 +108,7 @@ theorem indicatorConstLp_Iic_min_timeMeasure {E : Type*} [NormedAddCommGroup E]
 section ExtendLp
 
 variable {𝕜 E : Type*} [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E]
-  [IsBoundedSMul 𝕜 E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {S T : ℝ≥0}
+  [IsBoundedSMul 𝕜 E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {S T U : ℝ≥0}
 
 variable (𝕜) in
 /-- Extend a finite-horizon `Lᵖ` function by zero to a longer horizon, isometrically. -/
@@ -114,34 +117,72 @@ noncomputable def timeMeasureExtendLp (hST : S ≤ T) :
   extendByZeroLpₗᵢ 𝕜 (Measure.comap ((↑) : ℝ≥0 → ℝ) volume)
     measurableSet_Ioc (Ioc_subset_Ioc_right hST)
 
-/-- The horizon extension is represented by the indicator of the shorter horizon. -/
+/-- The horizon extension agrees `timeMeasure T`-almost everywhere with `f` on
+`(0,S]`, extended by zero outside that interval. -/
 theorem coeFn_timeMeasureExtendLp (hST : S ≤ T) (f : Lp E p (timeMeasure S)) :
     ⇑(timeMeasureExtendLp 𝕜 hST f) =ᵐ[timeMeasure T] (Ioc 0 S).indicator ⇑f := by
   exact coeFn_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc (Ioc_subset_Ioc_right hST) f
 
-/-- Extending an initial-interval indicator within the shorter horizon preserves it. -/
+/-- Extending to the same horizon is the identity. -/
 @[simp]
-theorem timeMeasureExtendLp_indicatorConstLp_Iic (hST : S ≤ T) {t : ℝ≥0}
-    (ht : t ≤ S) (c : E) :
+theorem timeMeasureExtendLp_self (f : Lp E p (timeMeasure S)) :
+    timeMeasureExtendLp 𝕜 le_rfl f = f :=
+  extendByZeroLpₗᵢ_self 𝕜 measurableSet_Ioc f
+
+/-- Two successive horizon extensions equal the direct extension. -/
+@[simp]
+theorem timeMeasureExtendLp_timeMeasureExtendLp (hST : S ≤ T) (hTU : T ≤ U)
+    (f : Lp E p (timeMeasure S)) :
+    timeMeasureExtendLp 𝕜 hTU (timeMeasureExtendLp 𝕜 hST f) =
+      timeMeasureExtendLp 𝕜 (hST.trans hTU) f :=
+  extendByZeroLpₗᵢ_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc measurableSet_Ioc
+    (Ioc_subset_Ioc_right hST) (Ioc_subset_Ioc_right hTU) f
+
+/-- The horizon extension restricts back to the original function almost everywhere. -/
+theorem coeFn_timeMeasureExtendLp_restrict (hST : S ≤ T) (f : Lp E p (timeMeasure S)) :
+    ⇑(timeMeasureExtendLp 𝕜 hST f) =ᵐ[timeMeasure S] ⇑f :=
+  coeFn_extendByZeroLpₗᵢ_restrict 𝕜 measurableSet_Ioc (Ioc_subset_Ioc_right hST) f
+
+/-- Any almost-everywhere representative can be used in the zero-extension formula. -/
+theorem coeFn_timeMeasureExtendLp_of_ae_eq (hST : S ≤ T)
+    {f : Lp E p (timeMeasure S)} {h : ℝ≥0 → E} (hf : ⇑f =ᵐ[timeMeasure S] h) :
+    ⇑(timeMeasureExtendLp 𝕜 hST f) =ᵐ[timeMeasure T] (Ioc 0 S).indicator h :=
+  (coeFn_timeMeasureExtendLp hST f).trans
+    (ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq measurableSet_Ioc).mp hf))
+
+/-- Extending an initial-interval indicator clips its endpoint to the shorter horizon. -/
+@[simp]
+theorem timeMeasureExtendLp_indicatorConstLp_Iic (hST : S ≤ T) (t : ℝ≥0) (c : E) :
     timeMeasureExtendLp 𝕜 hST
         (indicatorConstLp p (measurableSet_Iic (a := t)) (measure_ne_top _ _) c) =
-      indicatorConstLp p (measurableSet_Iic (a := t)) (measure_ne_top _ _) c := by
-  have hi : (Ioc 0 S).indicator ⇑(indicatorConstLp (μ := timeMeasure S) p
-      (measurableSet_Iic (a := t)) (measure_ne_top _ _) c) =ᵐ[timeMeasure T]
-      (Ioc 0 S).indicator ((Iic t).indicator (fun _ ↦ c)) :=
-    ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq measurableSet_Ioc).mp
-      (indicatorConstLp_coeFn (μ := timeMeasure S) (p := p)
-        (hs := measurableSet_Iic (a := t)) (hμs := measure_ne_top _ _) (c := c)))
+      indicatorConstLp p (measurableSet_Iic (a := min t S)) (measure_ne_top _ _) c := by
   apply Lp.ext
-  filter_upwards [coeFn_timeMeasureExtendLp (𝕜 := 𝕜) hST
-    (indicatorConstLp p (measurableSet_Iic (a := t)) (measure_ne_top _ _) c), hi,
+  filter_upwards [coeFn_timeMeasureExtendLp_of_ae_eq (𝕜 := 𝕜) hST
+    (indicatorConstLp_coeFn (p := p) (hs := measurableSet_Iic (a := t))
+      (hμs := measure_ne_top _ _) (c := c)),
     indicatorConstLp_coeFn (μ := timeMeasure T) (p := p)
-      (hs := measurableSet_Iic (a := t)) (hμs := measure_ne_top _ _) (c := c),
-    ae_mem_Ioc_timeMeasure T] with u he hi hc hu
-  rw [he, hi, hc]
-  by_cases hut : u ≤ t
-  · simp [hut, hu.1, hut.trans ht]
-  · simp [hut, indicator_apply]
+      (hs := measurableSet_Iic (a := min t S)) (hμs := measure_ne_top _ _) (c := c),
+    ae_mem_Ioc_timeMeasure T] with u he hc hu
+  rw [he, hc]
+  simp only [indicator_apply, mem_Ioc, mem_Iic, le_min_iff, hu.1, true_and]
+  by_cases hS : u ≤ S <;> by_cases ht : u ≤ t <;> simp [hS, ht]
+
+/-- Extending an interval indicator clips its upper endpoint to the shorter horizon. -/
+@[simp]
+theorem timeMeasureExtendLp_indicatorConstLp_Ioc (hST : S ≤ T) (s t : ℝ≥0) (c : E) :
+    timeMeasureExtendLp 𝕜 hST
+        (indicatorConstLp p (measurableSet_Ioc (a := s) (b := t)) (measure_ne_top _ _) c) =
+      indicatorConstLp p (measurableSet_Ioc (a := s) (b := min t S))
+        (measure_ne_top _ _) c := by
+  apply Lp.ext
+  filter_upwards [coeFn_timeMeasureExtendLp_of_ae_eq (𝕜 := 𝕜) hST
+    (indicatorConstLp_coeFn (p := p) (hs := measurableSet_Ioc (a := s) (b := t))
+      (hμs := measure_ne_top _ _) (c := c)),
+    indicatorConstLp_coeFn (μ := timeMeasure T) (p := p)
+      (hs := measurableSet_Ioc (a := s) (b := min t S))
+      (hμs := measure_ne_top _ _) (c := c)] with u he hc
+  rw [he, hc, indicator_indicator, Ioc_inter_Ioc]
+  simp [min_comm]
 
 end ExtendLp
 
