@@ -44,17 +44,16 @@ variable [TopologicalSpace E]
 
 /-- The open half-space to the right of the normal coordinate `a` in the ℓ² product `ℝ × E`. -/
 def normalHalfSpace (a : ℝ) : Opens (WithLp 2 (ℝ × E)) :=
-  ⟨{x | a < (WithLp.ofLp x).1}, isOpen_lt continuous_const (by fun_prop)⟩
+  ⟨{x | a < x.fst}, isOpen_lt continuous_const (by fun_prop)⟩
 
 /-- Membership in the normal-coordinate half-space is a strict inequality. -/
 @[simp]
 theorem mem_normalHalfSpace (a : ℝ) (x : WithLp 2 (ℝ × E)) :
-    x ∈ normalHalfSpace (E := E) a ↔ a < (WithLp.ofLp x).1 := Iff.rfl
+    x ∈ normalHalfSpace (E := E) a ↔ a < x.fst := Iff.rfl
 
 /-- As a set, the right normal half-space is `{x | a < x.fst}`. -/
 theorem coe_normalHalfSpace (a : ℝ) :
-    (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) =
-      {x | a < (WithLp.ofLp x).1} :=
+    (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) = {x | a < x.fst} :=
   Set.ext (mem_normalHalfSpace a)
 
 /-- The open region `{x | φ x.snd < x.fst}` above the graph of a continuous function
@@ -73,17 +72,33 @@ theorem coe_normalEpigraph (φ : C(E, ℝ)) :
     (normalEpigraph φ : Set (WithLp 2 (ℝ × E))) = {x | φ x.snd < x.fst} :=
   Set.ext (mem_normalEpigraph φ)
 
+/-- The region above the graph of a constant function `a` is the half-space `{a < t}`. -/
+@[simp]
+theorem normalEpigraph_const (a : ℝ) : normalEpigraph (.const E a) = normalHalfSpace a := by
+  ext x
+  simp
+
 /-- The region above the graph of `0` is the half-space `{0 < t}`. -/
 @[simp]
 theorem normalEpigraph_zero : normalEpigraph (0 : C(E, ℝ)) = normalHalfSpace 0 := by
-  ext x
-  simp
+  rw [← ContinuousMap.const_zero, normalEpigraph_const]
 
 end
 
 /-- The normal graph parametrization `y ↦ (φ y, y)` in `WithLp 2 (ℝ × E)`. -/
 def normalGraphEmbedding (φ : E → ℝ) (y : E) : WithLp 2 (ℝ × E) :=
   WithLp.toLp 2 (φ y, y)
+
+/-- The defining equation of the normal graph parametrization. -/
+theorem normalGraphEmbedding_apply (φ : E → ℝ) (y : E) :
+    normalGraphEmbedding φ y = WithLp.toLp 2 (φ y, y) :=
+  (rfl)
+
+/-- The underlying pair of the normal graph parametrization is `(φ y, y)`. -/
+@[simp]
+theorem ofLp_normalGraphEmbedding (φ : E → ℝ) (y : E) :
+    WithLp.ofLp (normalGraphEmbedding φ y) = (φ y, y) :=
+  (rfl)
 
 /-- The normal coordinate of the graph parametrization is the graphing function. -/
 @[simp]
@@ -109,35 +124,44 @@ theorem range_normalGraphEmbedding (φ : E → ℝ) :
   refine ⟨?_, fun hx ↦ ⟨x.snd, ?_⟩⟩
   · rintro ⟨y, rfl⟩
     simp
-  · simp [WithLp.ext_iff, Prod.ext_iff, normalGraphEmbedding, hx.symm]
+  · simp [WithLp.ext_iff, Prod.ext_iff, hx.symm]
 
 /-- The second projection is a `1`-Lipschitz inverse to the graph parametrization on its range. -/
-theorem antilipschitzWith_normalGraphEmbedding [PseudoMetricSpace E] (φ : E → ℝ) :
-    AntilipschitzWith 1 (normalGraphEmbedding φ) := by
-  refine AntilipschitzWith.of_le_mul_dist fun x y ↦ ?_
-  simpa only [NNReal.coe_one, one_mul, normalGraphEmbedding_snd] using
-    WithLp.dist_snd_le (normalGraphEmbedding φ x) (normalGraphEmbedding φ y)
+theorem antilipschitzWith_normalGraphEmbedding [PseudoEMetricSpace E] (φ : E → ℝ) :
+    AntilipschitzWith 1 (normalGraphEmbedding φ) := fun x y ↦ by
+  simpa only [ENNReal.coe_one, one_mul, normalGraphEmbedding_snd] using
+    WithLp.edist_snd_le (normalGraphEmbedding φ x) (normalGraphEmbedding φ y)
 
 /-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
-theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoMetricSpace E] {K : ℝ≥0} {φ : E → ℝ}
-    (hφ : LipschitzWith K φ) :
-    LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) := by
-  refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
-  have hx := dist_nonneg (x := φ x) (y := φ y)
-  have hy := dist_nonneg (x := x) (y := y)
+theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E] {K : ℝ≥0}
+    {φ : E → ℝ} (hφ : LipschitzWith K φ) :
+    LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) := fun x y ↦ by
+  set a := edist (φ x) (φ y)
+  set b := edist x y
   calc
-    dist (TauCeti.normalGraphEmbedding φ x) (TauCeti.normalGraphEmbedding φ y) =
-        √(dist (φ x) (φ y) ^ 2 + dist x y ^ 2) := by
-      simp [WithLp.prod_dist_eq_add, Real.sqrt_eq_rpow]
-    -- `a ^ 2 + b ^ 2 ≤ (a + b) ^ 2`, since `0 ≤ a * b`.
-    _ ≤ dist (φ x) (φ y) + dist x y := Real.sqrt_le_iff.2 ⟨by positivity,
-      by linarith [add_sq (dist (φ x) (φ y)) (dist x y), mul_nonneg hx hy]⟩
-    _ ≤ K * dist x y + dist x y := add_le_add (hφ.dist_le_mul x y) le_rfl
-    _ = (K + 1) * dist x y := by ring
+    edist (TauCeti.normalGraphEmbedding φ x) (TauCeti.normalGraphEmbedding φ y) =
+        (a ^ 2 + b ^ 2) ^ (1 / 2 : ℝ) := by
+      simp [WithLp.prod_edist_eq_add, a, b]
+    -- `a ^ 2 + b ^ 2 ≤ a ^ 2 + 2 * a * b + b ^ 2 = (a + b) ^ 2`.
+    _ ≤ ((a + b) ^ 2) ^ (1 / 2 : ℝ) := by
+      refine ENNReal.rpow_le_rpow ?_ (by norm_num)
+      rw [add_sq]
+      exact add_le_add le_self_add le_rfl
+    _ = a + b := by
+      rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
+      norm_num
+    _ ≤ K * b + b := add_le_add (hφ x y) le_rfl
+    _ = (K + 1) * b := by rw [add_mul, one_mul]
 
 section
 
 variable [TopologicalSpace E]
+
+/-- The normal graph parametrization of a continuous function is continuous. -/
+@[fun_prop]
+theorem _root_.Continuous.normalGraphEmbedding {φ : E → ℝ} (hφ : Continuous φ) :
+    Continuous (TauCeti.normalGraphEmbedding φ) :=
+  (WithLp.prod_continuous_toLp 2 ℝ E).comp (hφ.prodMk continuous_id)
 
 /-- A continuous normal graph is closed in the product `ℝ × E`, represented by `WithLp 2`. -/
 theorem _root_.Continuous.isClosed_range_normalGraphEmbedding {φ : E → ℝ} (hφ : Continuous φ) :
@@ -161,7 +185,7 @@ end
 
 section Linear
 
-variable [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+variable [TopologicalSpace E] [AddCommGroup E] [Module ℝ E]
 
 /-- The continuous linear graph map `x ↦ (A x, x)` associated to `A : E →L[ℝ] ℝ`. -/
 def _root_.ContinuousLinearMap.normalGraphL (A : E →L[ℝ] ℝ) :
@@ -170,13 +194,13 @@ def _root_.ContinuousLinearMap.normalGraphL (A : E →L[ℝ] ℝ) :
     A.prod (ContinuousLinearMap.id ℝ E)
 
 /-- The continuous linear graph map is the normal graph parametrization of `A`. -/
-@[simp]
 theorem _root_.ContinuousLinearMap.normalGraphL_apply (A : E →L[ℝ] ℝ) (x : E) :
     A.normalGraphL x = normalGraphEmbedding A x :=
   (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst A x).symm
     (normalGraphEmbedding_snd A x).symm
 
 /-- As a function, the continuous linear graph map is the normal graph parametrization of `A`. -/
+@[simp]
 theorem _root_.ContinuousLinearMap.coe_normalGraphL (A : E →L[ℝ] ℝ) :
     ⇑A.normalGraphL = normalGraphEmbedding A :=
   funext A.normalGraphL_apply

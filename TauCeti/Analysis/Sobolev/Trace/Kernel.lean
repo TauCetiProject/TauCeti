@@ -102,7 +102,7 @@ private theorem contDiffSMul_normalCutoff_normalTranslate {a s : ℝ} (hs : 0 < 
   · rw [normalCutoff_eq_one (by rw [div_mul_eq_mul_div, le_div_iff₀ hs]; linarith), one_mul]
   · have hnot : x + WithLp.toLp 2 (-s, (0 : E)) ∉ normalHalfSpace (E := E) a := by
       rw [mem_normalHalfSpace]
-      simp only [WithLp.ofLp_add, Prod.fst_add, WithLp.ofLp_fst, lt_add_neg_iff_add_lt, not_lt]
+      simp only [WithLp.add_fst, WithLp.toLp_fst, lt_add_neg_iff_add_lt, not_lt]
       linarith
     rw [hx3 hnot, mul_zero]
 

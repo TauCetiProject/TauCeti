@@ -309,10 +309,10 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
   obtain ⟨e, hee, ⟨c, hc, hcν⟩, he⟩ :=
     ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam
       (fun ξ => (hSA ξ).symm ▸ hA ξ) hν
-  have hinner (x : WithLp 2 (ℝ × E)) : ⟪x, ν⟫_ℝ = (WithLp.ofLp x).1 := by
+  have hinner (x : WithLp 2 (ℝ × E)) : ⟪x, ν⟫_ℝ = x.fst := by
     simp [ν, WithLp.prod_inner_apply]
   -- `(e y).fst = ⟪e y, ν⟫ = ⟪y, e† ν⟫ = c y.fst`
-  have hfst (y : WithLp 2 (ℝ × E)) : (WithLp.ofLp (e y)).1 = c * (WithLp.ofLp y).1 := by
+  have hfst (y : WithLp 2 (ℝ × E)) : (e y).fst = c * y.fst := by
     rw [← hinner, ← ContinuousLinearEquiv.coe_coe, ← ContinuousLinearMap.adjoint_inner_right,
       hcν, inner_smul_right, hinner]
   refine ⟨e, c, hee, he, fun a => ?_⟩
