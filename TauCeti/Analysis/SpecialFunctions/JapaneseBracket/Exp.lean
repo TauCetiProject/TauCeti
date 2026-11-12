@@ -81,6 +81,12 @@ decreases to `0`. -/
 noncomputable def boundedExpWeight (c ε : ℝ) (z : F) : ℝ :=
   Real.exp (c * √(1 + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(1 + ‖z‖ ^ 2)))
 
+/-- The defining formula `E / (1 + ε E)` of the bounded weight. -/
+theorem boundedExpWeight_def (c ε : ℝ) (z : F) :
+    boundedExpWeight c ε z =
+      Real.exp (c * √(1 + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(1 + ‖z‖ ^ 2))) :=
+  (rfl)
+
 /-- The bounded weight is the composition of `s ↦ s / (1 + ε s)` with the exponential weight. -/
 private theorem boundedExpWeight_eq_comp (c ε : ℝ) :
     boundedExpWeight (F := F) c ε =
@@ -102,7 +108,7 @@ theorem boundedExpWeight_le {c ε : ℝ} (hε : 0 ≤ ε) (z : F) :
 
 /-- For `ε > 0` the bounded weight is at most `ε⁻¹`. -/
 theorem boundedExpWeight_le_inv {c ε : ℝ} (hε : 0 < ε) (z : F) : boundedExpWeight c ε z ≤ ε⁻¹ := by
-  rw [boundedExpWeight, div_le_iff₀ (zero_lt_one.trans_le (one_le_one_add_mul_exp hε.le z)),
+  rw [boundedExpWeight_def, div_le_iff₀ (zero_lt_one.trans_le (one_le_one_add_mul_exp hε.le z)),
     inv_mul_eq_div, le_div_iff₀ hε]
   nlinarith [Real.exp_pos (c * √(1 + ‖z‖ ^ 2))]
 

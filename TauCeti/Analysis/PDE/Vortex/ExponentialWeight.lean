@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.RightInverse
 public import TauCeti.Analysis.PDE.Vortex.WeightedEstimate
-public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
-public import TauCeti.MeasureTheory.Function.Lp.Operator.Multiplication
+public import TauCeti.Analysis.Distribution.TestFunction.SmulLp
 
 /-!
 # Exponential decay of the least-norm weak solution at a plane vortex
@@ -65,31 +64,15 @@ namespace TauCeti.Vortex
 open MeasureTheory Filter
 open scoped RealInnerProductSpace Topology ENNReal NNReal BoundedContinuousFunction
 open BoundedContinuousFunction (smulLp coeFn_smulLp norm_smulLp_apply_le
-  norm_smulLp_apply_le_norm_smulLp_apply smulLp_add smulLp_smul smulLp_const smulLp_mul
-  smulLp_zero smulLp_one inner_smulLp_apply_left)
+  norm_smulLp_apply_le_of_abs_le smulLp_add smulLp_smul smulLp_const smulLp_zero smulLp_one
+  inner_smulLp_apply_left)
 open ENNReal (ofNat_ne_top)
-open TestFunction (ambientToLp coeFn_ambientToLp inner_ambientToLp norm_ambientToLp_sq smulLeftCLM
-  smulLeftCLM_apply)
+open TestFunction (ambientToLp ambientToLp_smulLeftCLM coeFn_ambientToLp inner_ambientToLp
+  norm_ambientToLp_sq smulLeftCLM smulLeftCLM_apply)
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- Multiplication by `φ` on `L²(ℂ; ℝ⁴)` is dominated by multiplication by any `ψ ≥ |φ|`. -/
-private theorem norm_smulLp_le_of_abs_le {φ ψ : ℂ →ᵇ ℝ} (h : ∀ z, |φ z| ≤ ψ z)
-    (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
-    ‖smulLp μ 2 ofNat_ne_top φ g‖ ≤ ‖smulLp μ 2 ofNat_ne_top ψ g‖ :=
-  norm_smulLp_apply_le_norm_smulLp_apply (fun z ↦ by
-    rw [Real.norm_eq_abs, Real.norm_eq_abs]
-    exact (h z).trans (le_abs_self _)) g
-
 /-! ### Test fields -/
-
-private theorem ambientToLp_smulLeftCLM (φ : ℂ →ᵇ ℝ) (hφ : ContDiff ℝ 2 φ) (η : TestField) :
-    ambientToLp 2 μ (smulLeftCLM hφ η) = smulLp μ 2 ofNat_ne_top φ (ambientToLp 2 μ η) := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_ambientToLp (p := 2) (ν := μ) (smulLeftCLM hφ η),
-    coeFn_smulLp ofNat_ne_top φ (ambientToLp 2 μ η),
-    coeFn_ambientToLp (p := 2) (ν := μ) η] with z h₁ h₂ h₃
-  rw [h₁, h₂, h₃, smulLeftCLM_apply]
 
 /-- The commutator of `L_x*` with multiplication by `φ` is the principal symbol at `dφ`, whose
 pointwise norm is `|dφ| |η|`. -/
@@ -115,19 +98,6 @@ private theorem norm_adjoint_smulLeftCLM_sub_le (hx : Continuous x) (φ ψ : ℂ
   gcongr
   exact hψ z
 
-private theorem contDiff_mul_self {φ : ℂ →ᵇ ℝ} (hφ : ContDiff ℝ 2 φ) : ContDiff ℝ 2 ⇑(φ * φ) := by
-  rw [FunLike.coe_mul]
-  exact hφ.mul hφ
-
-/-- The derivative of `φ²` is bounded by `2 ‖φ‖ |dφ|`. -/
-private theorem norm_fderiv_mul_self_le {φ : ℂ →ᵇ ℝ} (hφ : Differentiable ℝ φ) (z : ℂ) :
-    ‖fderiv ℝ ⇑(φ * φ) z‖ ≤ 2 * ‖φ‖ * ‖fderiv ℝ φ z‖ := by
-  rw [FunLike.coe_mul, fderiv_mul (hφ z) (hφ z)]
-  refine (norm_add_le _ _).trans ?_
-  rw [norm_smul, two_mul, add_mul]
-  have h := mul_le_mul_of_nonneg_right (φ.norm_coe_le_norm z) (norm_nonneg (fderiv ℝ φ z))
-  exact add_le_add h h
-
 /-- The pointwise norm `|dφ|` of the derivative of a `C²` function `φ` with `|dφ| ≤ C`, as a
 bounded continuous function. -/
 private def normFDeriv {φ : ℂ → ℝ} (hφ : ContDiff ℝ 2 φ) {C : ℝ}
@@ -144,22 +114,22 @@ private theorem normFDeriv_apply {φ : ℂ → ℝ} (hφ : ContDiff ℝ 2 φ) {C
 private theorem norm_sq_adjoint_smulLeftCLM (hx : Continuous x) (φ dφ : ℂ →ᵇ ℝ)
     (hφ : ContDiff ℝ 2 φ) (hdφ : ∀ z, dφ z = ‖fderiv ℝ φ z‖) (η : TestField) :
     ‖gaugeFixedAdjointToLp μ hx (smulLeftCLM hφ η)‖ ^ 2 =
-      ⟪gaugeFixedAdjointToLp μ hx (smulLeftCLM (contDiff_mul_self hφ) η),
+      ⟪gaugeFixedAdjointToLp μ hx (smulLeftCLM hφ (smulLeftCLM hφ η)),
           gaugeFixedAdjointToLp μ hx η⟫ +
         ‖smulLp μ 2 ofNat_ne_top dφ (ambientToLp 2 μ η)‖ ^ 2 := by
+  have hφφ : ⇑(smulLeftCLM hφ (smulLeftCLM hφ η)) = fun t ↦ φ t ^ 2 • η t :=
+    funext fun t ↦ by rw [smulLeftCLM_apply, smulLeftCLM_apply, smul_smul, sq]
   rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq, L2.inner_def, L2.inner_def,
     L2.inner_def, ← integral_add (L2.integrable_inner _ _) (L2.integrable_inner _ _)]
   refine integral_congr_ae ?_
   filter_upwards [coeFn_gaugeFixedAdjointToLp (μ := μ) hx (smulLeftCLM hφ η),
-    coeFn_gaugeFixedAdjointToLp (μ := μ) hx (smulLeftCLM (contDiff_mul_self hφ) η),
+    coeFn_gaugeFixedAdjointToLp (μ := μ) hx (smulLeftCLM hφ (smulLeftCLM hφ η)),
     coeFn_gaugeFixedAdjointToLp (μ := μ) hx η, coeFn_smulLp ofNat_ne_top dφ (ambientToLp 2 μ η),
     coeFn_ambientToLp (p := 2) (ν := μ) η] with z h₁ h₂ h₃ h₄ h₅
-  rw [h₁, h₂, h₃, h₄, h₅, funext (smulLeftCLM_apply hφ η),
-    funext (smulLeftCLM_apply (contDiff_mul_self hφ) η), real_inner_self_eq_norm_sq,
+  rw [h₁, h₂, h₃, h₄, h₅, hφφ, funext (smulLeftCLM_apply hφ η), real_inner_self_eq_norm_sq,
     norm_sq_gaugeFixedAdjoint_fun_smul x (hφ.differentiable (by norm_num) z)
       (η.contDiff.differentiable (by norm_num) z)]
-  simp only [← sq, FunLike.coe_pow, Pi.pow_apply, real_inner_self_eq_norm_sq, hdφ, norm_smul,
-    norm_norm, mul_pow]
+  simp only [real_inner_self_eq_norm_sq, hdφ, norm_smul, norm_norm, mul_pow]
 
 /-- The exterior estimate for `L_x*` applied to `φ η`, for `φ` vanishing on the disc of radius
 `R` outside which `|α|² / 4 ≥ a`. -/
@@ -229,44 +199,46 @@ private theorem tendsto_norm_sq_adjoint_smulLeftCLM (hx : Continuous x)
         ‖smulLp μ 2 ofNat_ne_top dφ u‖ ^ 2)) := by
   refine Tendsto.congr (fun n ↦ (norm_sq_adjoint_smulLeftCLM hx φ dφ hφ hdφ (η n)).symm) ?_
   refine Tendsto.add ?_ ((((smulLp μ 2 ofNat_ne_top dφ).continuous.tendsto u).comp hT).norm.pow 2)
-  set φ₂ : ℂ →ᵇ ℝ := φ * φ
-  set hφ₂ := contDiff_mul_self hφ
+  set Φ := smulLp μ 2 ofNat_ne_top φ (E := EuclideanSpace ℝ (Fin 4))
   set S := gaugeFixedAdjointToLp μ hx
   -- Split `⟪S (φ² η_n), S η_n⟫` into the weak pairing with `y` and an error term.
-  have hsplit (n : ℕ) : ⟪f, smulLp μ 2 ofNat_ne_top φ₂ (ambientToLp 2 μ (η n))⟫ +
-      ⟪S (smulLeftCLM hφ₂ (η n)), S (η n) - y⟫ =
-        ⟪S (smulLeftCLM hφ₂ (η n)), S (η n)⟫ := by
-    rw [inner_sub_right, real_inner_comm y, hweak, ambientToLp_smulLeftCLM]
+  have hsplit (n : ℕ) : ⟪f, Φ (Φ (ambientToLp 2 μ (η n)))⟫ +
+      ⟪S (smulLeftCLM hφ (smulLeftCLM hφ (η n))), S (η n) - y⟫ =
+        ⟪S (smulLeftCLM hφ (smulLeftCLM hφ (η n))), S (η n)⟫ := by
+    rw [inner_sub_right, real_inner_comm y, hweak, ambientToLp_smulLeftCLM (p := 2) ofNat_ne_top,
+      ambientToLp_smulLeftCLM (p := 2) ofNat_ne_top]
     ring
   refine Tendsto.congr hsplit ?_
-  have hφφ : ⟪smulLp μ 2 ofNat_ne_top φ f, smulLp μ 2 ofNat_ne_top φ u⟫ =
-      ⟪f, smulLp μ 2 ofNat_ne_top φ₂ u⟫ := by
+  have hφφ : ⟪Φ f, Φ u⟫ = ⟪f, Φ (Φ u)⟫ := by
     have hstar : star φ = φ := by
       ext z
       simp
-    rw [inner_smulLp_apply_left, hstar, smulLp_mul, mul_apply_eq_comp]
-  rw [← add_zero ⟪smulLp μ 2 ofNat_ne_top φ f, smulLp μ 2 ofNat_ne_top φ u⟫, hφφ]
+    rw [inner_smulLp_apply_left, hstar]
+  rw [← add_zero ⟪Φ f, Φ u⟫, hφφ]
   refine Tendsto.add (tendsto_const_nhds.inner
-    (((smulLp μ 2 ofNat_ne_top φ₂).continuous.tendsto u).comp hT)) ?_
+    ((Φ.continuous.tendsto _).comp ((Φ.continuous.tendsto u).comp hT))) ?_
   -- The error term tends to zero, since `S (φ² η_n)` stays bounded.
-  have hd (z : ℂ) : ‖fderiv ℝ φ₂ z‖ ≤ ((2 * ‖φ‖) • dφ) z := by
-    rw [smul_apply, smul_eq_mul, hdφ]
-    exact norm_fderiv_mul_self_le (hφ.differentiable (by norm_num)) z
-  have hbound (n : ℕ) : ‖S (smulLeftCLM hφ₂ (η n))‖ ≤
-      ‖φ₂‖ * ‖S (η n)‖ + ‖(2 * ‖φ‖) • dφ‖ * ‖ambientToLp 2 μ (η n)‖ := by
-    calc ‖S (smulLeftCLM hφ₂ (η n))‖
-        ≤ ‖smulLp μ 2 ofNat_ne_top φ₂ (S (η n))‖ +
-            ‖S (smulLeftCLM hφ₂ (η n)) - smulLp μ 2 ofNat_ne_top φ₂ (S (η n))‖ :=
+  have hbound (ζ : TestField) :
+      ‖S (smulLeftCLM hφ ζ)‖ ≤ ‖φ‖ * ‖S ζ‖ + ‖dφ‖ * ‖ambientToLp 2 μ ζ‖ := by
+    calc ‖S (smulLeftCLM hφ ζ)‖ ≤ ‖Φ (S ζ)‖ + ‖S (smulLeftCLM hφ ζ) - Φ (S ζ)‖ :=
           norm_le_insert' _ _
-      _ ≤ ‖φ₂‖ * ‖S (η n)‖ + ‖(2 * ‖φ‖) • dφ‖ * ‖ambientToLp 2 μ (η n)‖ :=
+      _ ≤ ‖φ‖ * ‖S ζ‖ + ‖dφ‖ * ‖ambientToLp 2 μ ζ‖ :=
           add_le_add (norm_smulLp_apply_le _ _)
-            ((norm_adjoint_smulLeftCLM_sub_le hx φ₂ _ hφ₂ hd _).trans
+            ((norm_adjoint_smulLeftCLM_sub_le hx φ dφ hφ (fun z ↦ (hdφ z).ge) ζ).trans
             (norm_smulLp_apply_le _ _))
+  have hbound₂ (n : ℕ) : ‖S (smulLeftCLM hφ (smulLeftCLM hφ (η n)))‖ ≤
+      ‖φ‖ * (‖φ‖ * ‖S (η n)‖ + ‖dφ‖ * ‖ambientToLp 2 μ (η n)‖) +
+        ‖dφ‖ * (‖φ‖ * ‖ambientToLp 2 μ (η n)‖) := by
+    refine (hbound _).trans (add_le_add (mul_le_mul_of_nonneg_left (hbound _) (norm_nonneg _))
+      (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)))
+    rw [ambientToLp_smulLeftCLM (p := 2) ofNat_ne_top]
+    exact norm_smulLp_apply_le _ _
   refine squeeze_zero_norm (fun n ↦ (abs_real_inner_le_norm _ _).trans
-    (mul_le_mul_of_nonneg_right (hbound n) (norm_nonneg _))) ?_
+    (mul_le_mul_of_nonneg_right (hbound₂ n) (norm_nonneg _))) ?_
   have h0 : Tendsto (fun n ↦ ‖S (η n) - y‖) atTop (𝓝 0) := by
     simpa using (tendsto_sub_nhds_zero_iff.2 hS).norm
-  simpa using (((hS.norm.const_mul ‖φ₂‖).add (hT.norm.const_mul ‖(2 * ‖φ‖) • dφ‖)).mul h0)
+  simpa using (((((hS.norm.const_mul ‖φ‖).add (hT.norm.const_mul ‖dφ‖)).const_mul ‖φ‖).add
+    ((hT.norm.const_mul ‖φ‖).const_mul ‖dφ‖)).mul h0)
 
 /-- **The exterior multiplier inequality.** For `φ` vanishing on the disc of radius `R` outside
 which `|α|² / 4 ≥ a`, `a ‖φ u‖² ≤ ⟪φ f, φ u⟫ + ‖|dφ| u‖²`. -/
@@ -285,7 +257,7 @@ private theorem mul_norm_sq_smulLp_le (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equ
       (𝓝 (a * ‖smulLp μ 2 ofNat_ne_top φ u‖ ^ 2)) := by
     refine Tendsto.congr (fun n ↦ ?_)
       (((((smulLp μ 2 ofNat_ne_top φ).continuous.tendsto u).comp hT).norm.pow 2).const_mul a)
-    rw [Function.comp_apply, ambientToLp_smulLeftCLM]
+    rw [Function.comp_apply, ambientToLp_smulLeftCLM (p := 2) ofNat_ne_top]
   exact le_of_tendsto_of_tendsto' hl
     (tendsto_norm_sq_adjoint_smulLeftCLM hx.continuous hT hS hweak φ dφ hφ hdφ) fun n ↦
       mul_norm_sq_smulLeftCLM_le hx hsol ha hR φ hφ hφR (η n)
@@ -359,12 +331,6 @@ private theorem le_mul_of_mul_sq_le {X F α A B : ℝ} (hF : 0 ≤ F) (hα : 0 <
     have := le_of_mul_le_mul_left h2 hX0
     nlinarith
 
-/-- `M U ≤ (M / c₀) F` from `U ≤ G / c₀` and `G ≤ F`; used with `U = ‖u‖` and `G = ‖f‖`. -/
-private theorem mul_le_div_mul_of_le_div {M c₀ U G F : ℝ} (hM : 0 ≤ M) (hc₀ : 0 < c₀)
-    (hU : U ≤ G / c₀) (hG : G ≤ F) : M * U ≤ M / c₀ * F := by
-  rw [div_mul_eq_mul_div, le_div_iff₀ hc₀]
-  nlinarith [(le_div_iff₀ hc₀).1 hU]
-
 /-- The constant in the weighted bound for the `L²` limit `u` of the approximating test fields
 (`norm_smulLp_weight_le`). -/
 private def limitConst (a c c₀ M₀ M₁ : ℝ) : ℝ :=
@@ -385,17 +351,6 @@ private theorem solutionConst_nonneg {c K : ℝ} (hc : 0 ≤ c) (hK : 0 ≤ K) :
     0 ≤ solutionConst c K := by
   unfold solutionConst
   positivity
-
-/-- The derivative of `(1 - β) w` is bounded by `c (1 - β) w + |dβ| w` when `|dw| ≤ c w`. -/
-private theorem norm_fderiv_one_sub_mul_le {β w : ℂ → ℝ} {c : ℝ} (hβ : Differentiable ℝ β)
-    (hw : Differentiable ℝ w) (hβ₁ : ∀ z, β z ≤ 1) (hw₀ : ∀ z, 0 ≤ w z)
-    (hdw : ∀ z, ‖fderiv ℝ w z‖ ≤ c * w z) (z : ℂ) :
-    ‖fderiv ℝ (fun t ↦ (1 - β t) * w t) z‖ ≤ c * ((1 - β z) * w z) + ‖fderiv ℝ β z‖ * w z := by
-  rw [fderiv_fun_mul ((hβ z).const_sub 1) (hw z), fderiv_const_sub]
-  refine (norm_add_le _ _).trans ?_
-  rw [norm_smul, norm_smul, norm_neg, Real.norm_of_nonneg (sub_nonneg.2 (hβ₁ z)),
-    Real.norm_of_nonneg (hw₀ z)]
-  nlinarith [mul_le_mul_of_nonneg_left (hdw z) (sub_nonneg.2 (hβ₁ z))]
 
 /-- **The exterior bound for the `L²` limit `u` of the approximating test fields.** Let `w` be a
 bounded `C²` weight with `|dw| ≤ c w`, `c² < a`, and let `β` be a cutoff equal to `1` on the
@@ -422,10 +377,14 @@ private theorem norm_smulLp_one_sub_mul_le (hx : ContDiff ℝ 1 x) (hsol : ∀ z
     ext t
     simp [φ]
   have hφ : ContDiff ℝ 2 φ := hφe ▸ (contDiff_const.sub hβ).mul hw
+  -- `|dφ| ≤ c (1 - β) w + |dβ| w`, using `|dw| ≤ c w`.
   have hdφ (z : ℂ) : ‖fderiv ℝ φ z‖ ≤ c * φ z + M₁ := by
-    rw [hφe]
-    exact (norm_fderiv_one_sub_mul_le (hβ.differentiable (by norm_num))
-      (hw.differentiable (by norm_num)) hβ₁ hw₀ hdw z).trans (by linarith [hdβw z])
+    rw [hφe, fderiv_fun_mul (((hβ.differentiable (by norm_num)) z).const_sub 1)
+      (hw.differentiable (by norm_num) z), fderiv_const_sub]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_smul, norm_smul, norm_neg, Real.norm_of_nonneg (sub_nonneg.2 (hβ₁ z)),
+      Real.norm_of_nonneg (hw₀ z)]
+    nlinarith [mul_le_mul_of_nonneg_left (hdw z) (sub_nonneg.2 (hβ₁ z)), hdβw z]
   have hφw (z : ℂ) : |φ z| ≤ w z := by
     rw [hφe, abs_of_nonneg (mul_nonneg (sub_nonneg.2 (hβ₁ z)) (hw₀ z))]
     nlinarith [hβ₀ z, hw₀ z]
@@ -440,15 +399,17 @@ private theorem norm_smulLp_one_sub_mul_le (hx : ContDiff ℝ 1 x) (hsol : ∀ z
       fun z hz ↦ by rw [hφe]; simp [hβR z hz]
   have hin : ⟪smulLp μ 2 ofNat_ne_top φ f, smulLp μ 2 ofNat_ne_top φ u⟫ ≤ F * X :=
     (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right
-      ((norm_smulLp_le_of_abs_le hφw f).trans hFw) (norm_nonneg _))
+      ((norm_smulLp_apply_le_of_abs_le hφw f).trans hFw) (norm_nonneg _))
   have hdu : ‖smulLp μ 2 ofNat_ne_top dφ u‖ ≤ c * X + M₁ * ‖u‖ := by
-    refine (norm_smulLp_le_of_abs_le (ψ := c • φ + .const ℂ M₁) (fun z ↦ ?_) u).trans ?_
+    refine (norm_smulLp_apply_le_of_abs_le (ψ := c • φ + .const ℂ M₁) (fun z ↦ ?_) u).trans ?_
     · simpa [dφ] using hdφ z
     · rw [smulLp_add, smulLp_smul, smulLp_const, _root_.add_apply, _root_.smul_apply,
         _root_.smul_apply, one_apply_eq_self]
       refine (norm_add_le _ _).trans ?_
       rw [norm_smul, norm_smul, Real.norm_of_nonneg hc, Real.norm_of_nonneg hM₁]
-  have hD := mul_le_div_mul_of_le_div hM₁ hc₀ hu hFf
+  have hD : M₁ * ‖u‖ ≤ M₁ / c₀ * F :=
+    (mul_le_mul_of_nonneg_left (hu.trans (div_le_div_of_nonneg_right hFf hc₀.le)) hM₁).trans_eq
+      (by ring)
   refine le_mul_of_mul_sq_le hF (by linarith) (by positivity) (by positivity) ?_
   have hX0 : 0 ≤ X := norm_nonneg _
   have hdu0 : 0 ≤ ‖smulLp μ 2 ofNat_ne_top dφ u‖ := norm_nonneg _
@@ -480,11 +441,13 @@ private theorem norm_smulLp_weight_le (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equ
       smulLp μ 2 ofNat_ne_top ((1 - β) * w) u + smulLp μ 2 ofNat_ne_top (β * w) u := by
     rw [← _root_.add_apply, ← smulLp_add, ← add_mul, sub_add_cancel, one_mul]
   have hβu : ‖smulLp μ 2 ofNat_ne_top (β * w) u‖ ≤ M₀ * ‖u‖ := by
-    refine (norm_smulLp_le_of_abs_le (ψ := .const ℂ M₀) (fun z ↦ ?_) u).trans ?_
+    refine (norm_smulLp_apply_le_of_abs_le (ψ := .const ℂ M₀) (fun z ↦ ?_) u).trans ?_
     · simpa [abs_of_nonneg (mul_nonneg (hβ₀ z) (hw₀ z))] using hβw z
     · rw [smulLp_const, _root_.smul_apply, one_apply_eq_self, norm_smul,
         Real.norm_of_nonneg hM₀]
-  have hM₀u := mul_le_div_mul_of_le_div hM₀ hc₀ hu hFf
+  have hM₀u : M₀ * ‖u‖ ≤ M₀ / c₀ * F :=
+    (mul_le_mul_of_nonneg_left (hu.trans (div_le_div_of_nonneg_right hFf hc₀.le)) hM₀).trans_eq
+      (by ring)
   rw [hsplit, limitConst]
   refine (norm_add_le _ _).trans ?_
   nlinarith
@@ -507,7 +470,7 @@ private theorem norm_smulLp_weight_le_of_norm_smulLp_le (hx : Continuous x) {c K
     exact (hdw z).trans (mul_le_mul_of_nonneg_left h1 hc)
   set dw : ℂ →ᵇ ℝ := normFDeriv hw hdwb
   have hdu : ‖smulLp μ 2 ofNat_ne_top dw u‖ ≤ c * (K * F) := by
-    refine (norm_smulLp_le_of_abs_le (ψ := c • w) (fun z ↦ ?_) u).trans ?_
+    refine (norm_smulLp_apply_le_of_abs_le (ψ := c • w) (fun z ↦ ?_) u).trans ?_
     · simpa [dw] using hdw z
     · rw [smulLp_smul, _root_.smul_apply, norm_smul, Real.norm_of_nonneg hc]
       exact mul_le_mul_of_nonneg_left hWu hc

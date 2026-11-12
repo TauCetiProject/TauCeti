@@ -151,13 +151,14 @@ theorem mulLp_mul (F G : X →ᵇ (E →L[𝕜] E)) :
 
 variable (μ p hp) in
 /-- Pointwise multiplication by a bounded continuous scalar function `φ`, as a bounded operator
-`f ↦ (x ↦ φ x • f x)` on `Lᵖ(X, E)` for `1 ≤ p < ∞`. -/
+`f ↦ (x ↦ φ x • f x)` on `Lᵖ(X, E)` for `1 ≤ p < ∞`. It is multiplication by the operator-valued
+symbol `x ↦ φ x • 1`, the image of `φ` under the algebra map `𝕜 → (E →L[𝕜] E)` applied
+pointwise. -/
 def smulLp (φ : X →ᵇ 𝕜) : Lp E p μ →L[𝕜] Lp E p μ :=
-  mulLp μ p hp <| .ofNormedAddCommGroup (β := E →L[𝕜] E)
-    (fun x ↦ φ x • ContinuousLinearMap.id 𝕜 E) (φ.continuous.smul continuous_const) ‖φ‖ fun x ↦ by
-      rw [norm_smul]
-      exact (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le).trans
-        (φ.norm_coe_le_norm x)
+  mulLp μ p hp <| AlgHom.compLeftContinuousBounded 𝕜 (Algebra.ofId 𝕜 (E →L[𝕜] E))
+    (AddMonoidHomClass.lipschitz_of_bound _ 1 fun c ↦ by
+      rw [Algebra.ofId_apply, norm_algebraMap, mul_comm]
+      exact mul_le_mul_of_nonneg_right ContinuousLinearMap.norm_id_le (norm_nonneg c)) φ
 
 variable (hp) in
 /-- Multiplication by a scalar function acts by pointwise multiplication almost everywhere. -/
@@ -165,7 +166,8 @@ theorem coeFn_smulLp (φ : X →ᵇ 𝕜) (f : Lp E p μ) :
     φ.smulLp μ p hp f =ᵐ[μ] fun x ↦ φ x • f x := by
   rw [smulLp]
   refine (coeFn_mulLp hp _ f).trans (.of_forall fun x ↦ ?_)
-  simp only [coe_ofNormedAddCommGroup, _root_.smul_apply, ContinuousLinearMap.id_apply]
+  simp only [AlgHom.compLeftContinuousBounded_apply_apply, Algebra.ofId_apply,
+    Algebra.algebraMap_eq_smul_one, _root_.smul_apply, one_apply_eq_self]
 
 /-- Multiplication by `φ` has norm at most the supremum norm of `φ`. -/
 theorem norm_smulLp_apply_le (φ : X →ᵇ 𝕜) (f : Lp E p μ) :
@@ -186,60 +188,49 @@ theorem norm_smulLp_apply_le_norm_smulLp_apply {φ ψ : X →ᵇ 𝕜} (h : ∀ 
 @[simp]
 theorem smulLp_add (φ ψ : X →ᵇ 𝕜) :
     (φ + ψ).smulLp μ p hp = φ.smulLp μ p hp + ψ.smulLp μ p hp (E := E) := by
-  ext1 f
-  rw [_root_.add_apply]
-  refine Lp.ext ?_
-  filter_upwards [coeFn_smulLp hp (φ + ψ) f, coeFn_smulLp hp φ f, coeFn_smulLp hp ψ f,
-    Lp.coeFn_add (φ.smulLp μ p hp f) (ψ.smulLp μ p hp f)] with x h₁ h₂ h₃ h₄
-  simp only [h₁, h₄, Pi.add_apply, h₂, h₃, add_apply, add_smul]
+  simp only [smulLp, map_add, mulLp_add]
 
 @[simp]
 theorem smulLp_smul (c : 𝕜) (φ : X →ᵇ 𝕜) :
     (c • φ).smulLp μ p hp = c • φ.smulLp μ p hp (E := E) := by
-  ext1 f
-  rw [_root_.smul_apply]
-  refine Lp.ext ?_
-  filter_upwards [coeFn_smulLp hp (c • φ) f, coeFn_smulLp hp φ f,
-    Lp.coeFn_smul c (φ.smulLp μ p hp f)] with x h₁ h₂ h₃
-  simp only [h₁, h₃, Pi.smul_apply, h₂, smul_apply, smul_eq_mul, mul_smul]
+  simp only [smulLp, map_smul, mulLp_smul]
+
+@[simp]
+theorem smulLp_zero : (0 : X →ᵇ 𝕜).smulLp μ p hp = (0 : Lp E p μ →L[𝕜] Lp E p μ) := by
+  simp only [smulLp, map_zero, mulLp_zero]
+
+/-- Multiplication by the constant function `1` is the identity operator. -/
+@[simp]
+theorem smulLp_one : (1 : X →ᵇ 𝕜).smulLp μ p hp = (1 : Lp E p μ →L[𝕜] Lp E p μ) := by
+  simp only [smulLp, map_one, mulLp_one]
 
 /-- Multiplication by a constant function is multiplication by the constant. -/
 @[simp]
 theorem smulLp_const (c : 𝕜) :
     (const X c).smulLp μ p hp = c • (1 : Lp E p μ →L[𝕜] Lp E p μ) := by
-  ext1 f
-  rw [_root_.smul_apply, one_apply_eq_self]
-  refine Lp.ext ?_
-  filter_upwards [coeFn_smulLp hp (const X c) f, Lp.coeFn_smul c f] with x h₁ h₂
-  simp only [h₁, h₂, const_apply, Pi.smul_apply]
-
-@[simp]
-theorem smulLp_zero : (0 : X →ᵇ 𝕜).smulLp μ p hp = (0 : Lp E p μ →L[𝕜] Lp E p μ) := by
-  ext1 f
-  refine Lp.ext ?_
-  filter_upwards [coeFn_smulLp hp (0 : X →ᵇ 𝕜) f,
-    Lp.coeFn_zero E p μ] with x h₁ h₂
-  simp only [h₁, h₂, zero_apply, Pi.zero_apply, zero_smul]
-
-/-- Multiplication by the constant function `1` is the identity operator. -/
-@[simp]
-theorem smulLp_one : (1 : X →ᵇ 𝕜).smulLp μ p hp = (1 : Lp E p μ →L[𝕜] Lp E p μ) := by
-  ext1 f
-  rw [one_apply_eq_self]
-  refine Lp.ext ?_
-  filter_upwards [coeFn_smulLp hp (1 : X →ᵇ 𝕜) f] with x h
-  simp only [h, FunLike.coe_one, Pi.one_apply, one_smul]
+  rw [← smulLp_one (hp := hp), ← smulLp_smul]
+  congr 1
+  ext x
+  simp
 
 /-- Multiplication operators by scalar functions compose by multiplying the functions. -/
 @[simp]
 theorem smulLp_mul (φ ψ : X →ᵇ 𝕜) :
     (φ * ψ).smulLp μ p hp = φ.smulLp μ p hp * ψ.smulLp μ p hp (E := E) := by
-  ext1 f
-  rw [mul_apply_eq_comp]
-  refine Lp.ext ?_
-  filter_upwards [coeFn_smulLp hp (φ * ψ) f, coeFn_smulLp hp φ (ψ.smulLp μ p hp f),
-    coeFn_smulLp hp ψ f] with x h₁ h₂ h₃
-  simp only [h₁, h₂, h₃, mul_apply, mul_smul]
+  simp only [smulLp, map_mul, mulLp_mul]
+
+section Real
+
+variable [NormedSpace ℝ E]
+
+/-- Multiplication by a real function `φ` is dominated by multiplication by any `ψ ≥ |φ|`. -/
+theorem norm_smulLp_apply_le_of_abs_le {φ ψ : X →ᵇ ℝ} (h : ∀ x, |φ x| ≤ ψ x) (f : Lp E p μ) :
+    ‖φ.smulLp μ p hp f‖ ≤ ‖ψ.smulLp μ p hp f‖ :=
+  norm_smulLp_apply_le_norm_smulLp_apply (fun x ↦ by
+    rw [Real.norm_eq_abs, Real.norm_eq_abs]
+    exact (h x).trans (le_abs_self _)) f
+
+end Real
 
 end Lp
 
@@ -264,13 +255,12 @@ theorem adjoint_mulLp (F : X →ᵇ (H →L[𝕜] H)) :
 theorem adjoint_smulLp (φ : X →ᵇ 𝕜) :
     ContinuousLinearMap.adjoint (φ.smulLp μ 2 ENNReal.ofNat_ne_top (E := H)) =
       (star φ).smulLp μ 2 ENNReal.ofNat_ne_top := by
-  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
-  rw [L2.inner_def, L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_smulLp ENNReal.ofNat_ne_top (star φ) f,
-    coeFn_smulLp ENNReal.ofNat_ne_top φ g] with x hF hG
-  rw [hF, hG, inner_smul_left, inner_smul_right, star_apply, RCLike.star_def,
-    RCLike.conj_conj]
+  rw [smulLp, smulLp, adjoint_mulLp]
+  congr 1
+  ext1 x
+  rw [star_apply, AlgHom.compLeftContinuousBounded_apply_apply,
+    AlgHom.compLeftContinuousBounded_apply_apply, Algebra.ofId_apply, Algebra.ofId_apply,
+    star_apply, algebraMap_star_comm]
 
 /-- Moving a scalar multiplication operator across the `L²` inner product conjugates its
 symbol. -/
