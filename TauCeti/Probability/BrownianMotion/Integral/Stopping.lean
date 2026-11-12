@@ -12,8 +12,8 @@ import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 /-!
 # Stopping Brownian integrands
 
-The expected and pathwise square-energy domains are stable under restriction to predictable
-sets, in particular to `[0,τ]` and `(σ,τ]` for stopping times on a raw filtration. These are
+The predictable-set restriction lemmas for the expected and pathwise square-energy domains
+specialize to `[0,τ]` and `(σ,τ]` for stopping times on a raw filtration. These are
 cutoff integrands, zero after the stopping time, not stopped processes retaining their last
 value. Neither completeness nor right continuity of the filtration is required.
 
@@ -39,23 +39,6 @@ namespace TauCeti
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {P : Measure Ω} {H : ℝ≥0 → Ω → ℝ} {σ τ : Ω → WithTop ℝ≥0}
-
-/-- Restriction to a predictable set preserves finite expected square energy. -/
-theorem BrownianIntegrable.indicator (hH : BrownianIntegrable ℱ P H)
-    {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) :
-    BrownianIntegrable ℱ P (fun t ω ↦ A.indicator (Function.uncurry H) (t, ω)) := by
-  refine ⟨hH.isStronglyPredictable.indicator hA, fun T ↦ ?_⟩
-  exact (hH.memLp T).indicator (ℱ.predictable_le_prod A hA).nullMeasurableSet
-
-/-- Restriction to a predictable set preserves finite pathwise square energy. -/
-theorem LocallyBrownianIntegrable.indicator (hH : LocallyBrownianIntegrable ℱ P H)
-    {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) :
-    LocallyBrownianIntegrable ℱ P (fun t ω ↦ A.indicator (Function.uncurry H) (t, ω)) := by
-  refine ⟨hH.isStronglyPredictable.indicator hA, ?_⟩
-  filter_upwards [hH.ae_memLp] with ω hω
-  intro T
-  exact (hω T).indicator ((ℱ.predictable_le_prod A hA).preimage
-    (measurable_id.prodMk measurable_const)).nullMeasurableSet
 
 /-- Killing an integrand after a stopping time preserves finite expected square energy.
 The value at the stopping time is retained. -/
