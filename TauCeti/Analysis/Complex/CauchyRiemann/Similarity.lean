@@ -93,8 +93,7 @@ private theorem absorb_apply_self (A : E →L[ℝ] E) (v : E) : absorb A v v = A
 private theorem norm_absorb_le (A : E →L[ℝ] E) (v : E) : ‖absorb A v‖ ≤ ‖A‖ := by
   rcases eq_or_ne v 0 with rfl | hv
   · simp [absorb]
-  · have hv' : 0 < ‖v‖ := norm_pos_iff.2 hv
-    rw [absorb, norm_smul, InnerProductSpace.norm_rankOne, norm_inv, norm_pow, Complex.norm_real,
+  · rw [absorb, norm_smul, InnerProductSpace.norm_rankOne, norm_inv, norm_pow, Complex.norm_real,
       norm_norm]
     calc (‖v‖ ^ 2)⁻¹ * (‖A v‖ * ‖v‖) ≤ (‖v‖ ^ 2)⁻¹ * (‖A‖ * ‖v‖ * ‖v‖) := by
           gcongr
