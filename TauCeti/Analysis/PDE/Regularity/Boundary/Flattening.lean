@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
-public import TauCeti.Analysis.PDE.Regularity.FlatBoundary
+public import TauCeti.Analysis.PDE.Regularity.Boundary.Flat
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
-import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Sobolev.W1p.Localization
