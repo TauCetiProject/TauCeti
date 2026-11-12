@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.OfCommRing
 public import Mathlib.CategoryTheory.Sites.LocallySurjective
 public import TauCeti.AlgebraicGeometry.Modules.Localization
+import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
 import TauCeti.AlgebraicGeometry.AffineScheme
 
 /-!
@@ -39,6 +40,9 @@ quasi-coherent.
 
 ## Main declarations
 
+* `PresheafOfModulesOfCommRing.exists_pow_smul_eq_zero_of_map_basicOpen_eq_zero`: if the
+  restrictions of `P` from `U` to `D(f)` and `D(f * g)` are localizations, a section of `P` over
+  `D(f)` vanishing on `D(f * g)` is killed by a power of `g`;
 * `AlgebraicGeometry.IsAffineOpen.bijective_app_basicOpen_of_isLocalizedModule`: a locally
   bijective morphism from a presheaf of modules whose restrictions to basic opens of an affine
   open `U` are localizations is bijective on the sections over every basic open of `U`;
@@ -57,45 +61,61 @@ open CategoryTheory Opposite TopologicalSpace
 
 universe u
 
-namespace AlgebraicGeometry.IsAffineOpen
+namespace PresheafOfModulesOfCommRing
+
+open AlgebraicGeometry
 
 variable {X : Scheme.{u}} {U : X.Opens}
 
-variable {P : PresheafOfModulesOfCommRing.{u} X.presheaf} {M : X.Modules}
-
-section
-
-variable (hP : ∀ f : Γ(X, U),
-  IsLocalizedModule (.powers f) (P.map (homOfLE (X.basicOpen_le f)).op).hom)
-include hP
-
-/-- A section of `P` over `D(f)` vanishing on `D(f * g)` is killed by a power of `g`. -/
-private lemma exists_pow_smul_eq_zero_of_map_eq_zero (f g : Γ(X, U))
+/-- **Clearing denominators in a presheaf of modules with localized sections.** If the
+restrictions of `P` from `U` to `D(f)` and to `D(f * g)` are localizations at the powers of `f`
+and of `f * g`, then a section of `P` over `D(f)` vanishing on `D(f * g)` is killed by a power
+of `g`. -/
+theorem exists_pow_smul_eq_zero_of_map_basicOpen_eq_zero
+    (P : PresheafOfModulesOfCommRing.{u} X.presheaf) (f g : Γ(X, U))
+    [IsLocalizedModule (.powers f) (P.map (homOfLE (X.basicOpen_le f)).op).hom]
+    [IsLocalizedModule (.powers (f * g)) (P.map (homOfLE (X.basicOpen_le (f * g))).op).hom]
     (w : P.obj (op (X.basicOpen f)))
     (hw : P.map (homOfLE ((X.basicOpen_mul f g).trans_le inf_le_left)).op w = 0) :
     ∃ n : ℕ, X.presheaf.map (homOfLE (X.basicOpen_le f)).op (g ^ n) • w = 0 := by
-  have := hP (f * g)
-  have := hP f
-  obtain ⟨⟨c, _, k, rfl⟩, hc⟩ := (hP f).surj w
-  let r := X.presheaf.map (homOfLE (X.basicOpen_le f)).op
-  -- the powers of `f` act on sections over `X.basicOpen f` through restriction
-  change r (f ^ k) • w = P.map _ c at hc
+  let ρ := (P.map (homOfLE (X.basicOpen_le f)).op).hom
+  obtain ⟨⟨c, _, k, rfl⟩, hc⟩ := IsLocalizedModule.surj (.powers f) ρ w
   have h₁ : P.map (homOfLE (X.basicOpen_le (f * g))).op c = 0 := by
+    -- the powers of `f` act on sections over `X.basicOpen f` through restriction
+    have hc : X.presheaf.map (homOfLE (X.basicOpen_le f)).op (f ^ k) • w =
+        P.map (homOfLE (X.basicOpen_le f)).op c := hc
     rw [← homOfLE_comp ((X.basicOpen_mul f g).trans_le inf_le_left) (X.basicOpen_le f), op_comp,
       PresheafOfModules.map_comp_apply, ← hc, PresheafOfModules.map_smul, hw, smul_zero]
     -- the zero of the restricted-scalars module is the zero of the sections
     rfl
   obtain ⟨⟨_, n, rfl⟩, hn⟩ := (IsLocalizedModule.eq_zero_iff (.powers (f * g))
     (f := (P.map (homOfLE (X.basicOpen_le (f * g))).op).hom)).1 h₁
-  have hn : (f * g) ^ n • c = 0 := hn
-  refine ⟨n, IsLocalizedModule.smul_injective (P.map (homOfLE (X.basicOpen_le f)).op).hom
-    (⟨f ^ (k + n), k + n, rfl⟩ : Submonoid.powers f) ?_⟩
-  -- the powers of `f` act on sections over `X.basicOpen f` through restriction
-  change r (f ^ (k + n)) • r (g ^ n) • w = r (f ^ (k + n)) • (0 : P.obj (op (X.basicOpen f)))
-  rw [smul_zero, smul_smul, ← map_mul, show f ^ (k + n) * g ^ n = (f * g) ^ n * f ^ k by ring,
-    map_mul, mul_smul, hc]
-  exact ((P.map (homOfLE (X.basicOpen_le f)).op).hom.map_smul ((f * g) ^ n) c).symm.trans
-    (by rw [hn, map_zero]; rfl)
+  exact ⟨n, IsLocalizedModule.Away.pow_smul_eq_zero_of_pow_smul_eq ρ hc hn⟩
+
+end PresheafOfModulesOfCommRing
+
+namespace AlgebraicGeometry.IsAffineOpen
+
+variable {X : Scheme.{u}} {U : X.Opens}
+
+variable {P : PresheafOfModulesOfCommRing.{u} X.presheaf} {M : X.Modules}
+
+/-- Restriction of `P` between basic opens of `U` is compatible with the actions of `Γ(X, U)`
+through restriction. -/
+private lemma map_smul_of_basicOpen_le {f t : Γ(X, U)} (h : X.basicOpen t ≤ X.basicOpen f)
+    (r : Γ(X, U)) (w : P.obj (op (X.basicOpen f))) :
+    P.map (homOfLE h).op (X.presheaf.map (homOfLE (X.basicOpen_le f)).op r • w) =
+      X.presheaf.map (homOfLE (X.basicOpen_le t)).op r • P.map (homOfLE h).op w := by
+  rw [PresheafOfModules.map_smul]
+  congr 1
+  exact (ConcreteCategory.comp_apply (X.presheaf.map (homOfLE (X.basicOpen_le f)).op)
+    (X.presheaf.map (homOfLE h).op) r).symm.trans (by rw [← Functor.map_comp]; rfl)
+
+section
+
+variable (hP : ∀ f : Γ(X, U),
+  IsLocalizedModule (.powers f) (P.map (homOfLE (X.basicOpen_le f)).op).hom)
+include hP
 
 /-- A locally injective morphism from `P` is injective on the sections over every basic open of
 `U`. -/
@@ -122,7 +142,8 @@ private lemma injective_app_basicOpen (hU : IsAffineOpen U) (φ : P ⟶ M.val)
       rw [← homOfLE_comp ((X.basicOpen_mul f g).trans_le inf_le_right) hg, op_comp,
         PresheafOfModules.map_comp_apply, hgx]
       exact map_zero (P.map _).hom
-    obtain ⟨n, hn⟩ := exists_pow_smul_eq_zero_of_map_eq_zero hP f g x hx₀
+    have := hP (f * g)
+    obtain ⟨n, hn⟩ := P.exists_pow_smul_eq_zero_of_map_basicOpen_eq_zero f g x hx₀
     exact ⟨n, Submodule.mem_colon_singleton.2 ((Submodule.mem_bot _).2 hn)⟩
   obtain ⟨n, hn⟩ := key
   exact IsLocalizedModule.smul_injective (P.map (homOfLE (X.basicOpen_le f)).op).hom
@@ -147,21 +168,22 @@ private lemma exists_forall_pow_smul_map_eq_zero (φ : P ⟶ M.val)
     have h₁ : φ.app (op (X.basicOpen (t * g))) (P.map i.op w) =
         M.presheaf.map i.op (M.presheaf.map (homOfLE htf).op z) :=
       (PresheafOfModules.naturality_apply φ i.op w).trans (congrArg _ hw)
+    -- both sides restrict `z` to `D(t * g)`
     have h₂ : M.presheaf.map i.op (M.presheaf.map (homOfLE htf).op z) = M.presheaf.map
         (homOfLE htg).op (M.presheaf.map
-          (homOfLE ((X.basicOpen_mul f g).trans_le inf_le_left)).op z) := by
-      rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← Functor.map_comp,
-        ← Functor.map_comp]
-      rfl
+          (homOfLE ((X.basicOpen_mul f g).trans_le inf_le_left)).op z) :=
+      (TopCat.Presheaf.restrict_restrict (F := M.presheaf) _ _ z).trans
+        (TopCat.Presheaf.restrict_restrict (F := M.presheaf) _ _ z).symm
     rw [h₁, h₂, hz, map_zero]
     exact (map_zero (φ.app _).hom).symm
-  obtain ⟨n, hn⟩ := exists_pow_smul_eq_zero_of_map_eq_zero hP t g w hwz
+  have := hP t
+  have := hP (t * g)
+  obtain ⟨n, hn⟩ := P.exists_pow_smul_eq_zero_of_map_basicOpen_eq_zero t g w hwz
   refine ⟨n, fun m' hm' ↦ ?_⟩
   let r := X.presheaf.map (homOfLE (X.basicOpen_le t)).op
   have h₁ : M.presheaf.map (homOfLE htf).op (g ^ m' • z) = r (g ^ m') • φ.app _ w := by
-    rw [M.basicOpen_smul_def, Scheme.Modules.map_smul, ← ConcreteCategory.comp_apply,
-      ← Functor.map_comp]
-    exact congrArg₂ (· • ·) rfl hw.symm
+    rw [M.map_smul_of_basicOpen_le htf, ← hw]
+    rfl
   have h₂ : (r (g ^ m') • w : P.obj (op (X.basicOpen t))) = 0 := by
     rw [← Nat.sub_add_cancel hm', pow_add, map_mul, mul_smul, hn, smul_zero]
   refine (h₁.trans ((φ.app _).hom.map_smul _ w).symm).trans ?_
@@ -235,22 +257,18 @@ private lemma exists_pow_smul_mem_range (hP : ∀ f : Γ(X, U),
     -- unique
     rw [← PresheafOfModules.map_comp_apply,
       show (homOfLE (X.basicOpen_le f)).op ≫ i₁.op = (homOfLE (X.basicOpen_le g)).op ≫ i₂.op
-        from rfl, PresheafOfModules.map_comp_apply, ← hak, PresheafOfModules.map_smul]
-    congr 1
-    exact (ConcreteCategory.comp_apply (X.presheaf.map (homOfLE (X.basicOpen_le g)).op)
-      (X.presheaf.map i₂.op) (g ^ k)).symm.trans (by rw [← Functor.map_comp]; rfl)
-  have e₂ : M.presheaf.map i₂.op (M.presheaf.map (homOfLE hg).op s) = M.presheaf.map i₁.op s := by
-    rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
-    rfl
-  have e₃ : M.presheaf.map i₁.op (g ^ k • s) = r (g ^ k) • M.presheaf.map i₁.op s := by
-    rw [M.basicOpen_smul_def, Scheme.Modules.map_smul, ← ConcreteCategory.comp_apply,
-      ← Functor.map_comp]
-    rfl
+        from rfl, PresheafOfModules.map_comp_apply, ← hak, map_smul_of_basicOpen_le]
+  have e₂ : M.presheaf.map i₂.op (M.presheaf.map (homOfLE hg).op s) = M.presheaf.map i₁.op s :=
+    TopCat.Presheaf.restrict_restrict (F := M.presheaf) _ _ s
+  -- over `D(f * g)`, `φ` carries the restriction of `b` to that of `s`
+  have e₃ : φ.app (op (X.basicOpen (f * g))) (P.map i₂.op b) = M.presheaf.map i₁.op s :=
+    (PresheafOfModules.naturality_apply φ i₂.op b).trans ((congrArg _ hb).trans e₂)
   have hz : M.presheaf.map i₁.op (basicOpenAppLinear φ f y - g ^ k • s) = 0 := by
     rw [map_sub, sub_eq_zero]
-    exact ((PresheafOfModules.naturality_apply φ i₁.op _).symm.trans (congrArg _ e₁)).trans
-      (((φ.app _).hom.map_smul _ _).trans ((congrArg _ ((PresheafOfModules.naturality_apply
-        φ i₂.op b).trans ((congrArg _ hb).trans e₂))).trans e₃.symm))
+    refine (PresheafOfModules.naturality_apply φ i₁.op y).symm.trans ((congrArg _ e₁).trans
+      (((φ.app _).hom.map_smul _ _).trans ?_))
+    rw [e₃]
+    exact (M.map_smul_of_basicOpen_le _ _ s).symm
   obtain ⟨m, hm⟩ := exists_pow_smul_eq_zero hP φ hU f g _ hz
   refine ⟨m + k, g ^ m • y, ?_⟩
   rw [map_smul, pow_add, mul_smul]
