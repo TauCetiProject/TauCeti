@@ -378,8 +378,7 @@ variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 omit [Nontrivial E] in
 /-- **Interior integrability at and above the dimension.** If `n ≤ p ≤ ∞`, where `n` is the
 dimension, and `V` has compact closure contained in the open set `Ω`, every `u ∈ W^{1,p}(Ω)` lies
-in `L^r(V)` for every finite `r`. For finite `p` this is the borderline Sobolev inequality, in the
-form `TauCeti.W1p.exists_eLpNorm_value_le_of_subcritical_gain`, since `1/p - 1/r < 1/n`. -/
+in `L^r(V)` for every finite `r`. -/
 theorem W1p.memLp_value_of_isCompact_closure_of_finrank_le (hp : (finrank ℝ E : ℝ≥0∞) ≤ p)
     {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) (r : ℝ≥0)
     (u : W1p μ Ω p) : MemLp (W1p.value u) r (μ.restrict V) := by

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
-import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
+public import TauCeti.Analysis.Sobolev.Wkp.PreciseRepresentative
 import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
 import TauCeti.Topology.Sets.Opens
 
@@ -30,8 +30,9 @@ whose estimates are stated for a continuous representative.
 ## The argument
 
 On an open set `V` with compact closure in `Ω`, every `W^{1,p}(Ω)` function lies in `L^q(V)` for
-every finite `q` (`TauCeti.W1p.memLp_value_of_isCompact_closure_of_finrank_le`): for finite `p`
-this is the borderline Sobolev inequality, since `1/p - 1/q < 1/n` when `n ≤ p`.
+every finite `q` (`TauCeti.W1p.memLp_value_of_isCompact_closure_of_finrank_le`). When `n ≥ 1`
+and `p ≤ q` are finite this is the borderline Sobolev inequality, since then
+`1/p - 1/q < 1/n`; smaller `q` follow because `V` has finite measure, and `n = 0` is trivial.
 The directional weak derivatives `∂ᵥu` of `u ∈ W^{2,p}(Ω)` lie in `W^{1,p}(Ω)`
 (`TauCeti.Wkp.exists_hasWeakLineDerivOn_value`), so `u` and all its first weak derivatives lie in
 `L^q(V)`, and `u` represents an element of `W^{1,q}(V)`
@@ -42,10 +43,8 @@ representative only depends on `u` near each point (`preciseRepresentative_congr
 
 ## Main declarations
 
-* `TauCeti.Wkp.ae_eq_preciseRepresentative`: a function of positive Sobolev order agrees almost
-  everywhere on `Ω` with its precise representative.
 * `TauCeti.Wkp.exists_w1p_value_ae_eq_of_isCompact_closure`: `W^{2,p}(Ω) ⊆ W^{1,q}(V)` for every
-  finite `q`, when `n ≤ p` and `V` has compact closure in `Ω`.
+  finite `q ≥ 1`, when `n ≤ p` and `V` is open with compact closure in `Ω`.
 * `TauCeti.Wkp.continuousOn_preciseRepresentative`: the precise representative of
   `u ∈ W^{2,p}(Ω)`, `n ≤ p`, is continuous on `Ω`.
 * `TauCeti.Wkp.exists_holderOnWith_preciseRepresentative_of_isCompact`: it is
@@ -69,17 +68,7 @@ namespace TauCeti
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
-  {Omega : Opens E}
-
-/-- **Sobolev functions agree with their precise representative.** For `u ∈ W^{k+1,p}(Ω)`, the
-value of `u` agrees almost everywhere on `Ω` with its precise representative, the limit of its
-averages over shrinking closed balls. -/
-theorem Wkp.ae_eq_preciseRepresentative {p : ℝ≥0∞} [Fact (1 ≤ p)] (k : ℕ)
-    (u : Wkp mu Omega p (k + 1)) :
-    Wkp.value (k + 1) u =ᵐ[mu.restrict Omega] preciseRepresentative mu (Wkp.value (k + 1) u) := by
-  simpa only [Wkp.value_firstOrder] using W1p.ae_eq_preciseRepresentative (Wkp.firstOrder k u)
-
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- **`W^{2,p}(Ω) ⊆ W^{1,q}(V)` for `n ≤ p`.** Let `n ≤ p ≤ ∞`, where `n` is the dimension, and let
 `V` be an open set with compact closure in `Ω`. Every `u ∈ W^{2,p}(Ω)` agrees almost everywhere
@@ -123,14 +112,16 @@ theorem Wkp.continuousOn_preciseRepresentative (hp : (finrank ℝ E : ℝ≥0∞
     (V.isOpen.mem_nhds (hxV rfl))).continuousWithinAt
 
 /-- **Hölder continuity of `W^{2,p}` functions for `p` at least the dimension.** If `n ≤ p ≤ ∞`,
-where `n` is the dimension, then for every finite `q > n` with `q ≥ 1` the precise representative
-of any `u ∈ W^{2,p}(Ω)` is Hölder continuous with exponent `1 - n / q` on every compact subset of
-`Ω`. -/
+where `n` is the dimension, then for every finite `q > n` the precise representative of any
+`u ∈ W^{2,p}(Ω)` is Hölder continuous with exponent `1 - n / q` on every compact subset of `Ω`. -/
 theorem Wkp.exists_holderOnWith_preciseRepresentative_of_isCompact
-    (hp : (finrank ℝ E : ℝ≥0∞) ≤ p) (u : Wkp mu Omega p 2) {q : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))]
+    (hp : (finrank ℝ E : ℝ≥0∞) ≤ p) (u : Wkp mu Omega p 2) {q : ℝ≥0}
     (hq : (finrank ℝ E : ℝ≥0∞) < q) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Omega) :
     ∃ C : ℝ≥0, HolderOnWith C ((1 : ℝ≥0∞) - finrank ℝ E / q).toNNReal
       (preciseRepresentative mu (Wkp.value 2 u)) K := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · exact ⟨0, Set.subsingleton_of_subsingleton.holderOnWith _ _ _⟩
+  have : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨(Nat.one_le_cast.2 finrank_pos).trans hq.le⟩
   obtain ⟨V, hKV, hVΩ, hVc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
   obtain ⟨w, hw⟩ := Wkp.exists_w1p_value_ae_eq_of_isCompact_closure hp u hVc hVΩ q
   obtain ⟨C, hC⟩ := W1p.exists_holderOnWith_preciseRepresentative_of_isCompact hq w hK hKV
