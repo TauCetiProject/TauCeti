@@ -65,36 +65,42 @@ theorem memLp_compensated_sq_sub (hN : IsFilteredPoissonProcess ℱ α N P) (t p
 /-- The second moment of the compensated count equals the elapsed Poisson intensity. -/
 theorem integral_compensated_sq (hN : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) :
     ∫ ω, (N t ω - (α : ℝ) * t) ^ 2 ∂P = (α : ℝ) * t := by
-  have hv := hN.variance_eval t
-  rw [variance_eq_integral (hN.measurable t).aemeasurable, hN.integral_eval] at hv
-  exact hv
+  simpa only [NNReal.coe_mul] using
+    (hN.hasLaw_eval t).integral_sub_sq_map_cast_poissonMeasure
+
+/-- The centered second moment of a Poisson increment equals its intensity. -/
+theorem integral_sub_sub_mul_sq (hN : IsFilteredPoissonProcess ℱ α N P) (hst : s ≤ t) :
+    ∫ ω, (N t ω - N s ω - (α : ℝ) * ((t : ℝ) - s)) ^ 2 ∂P =
+      (α : ℝ) * ((t : ℝ) - s) := by
+  simpa only [Pi.sub_apply, NNReal.coe_mul, NNReal.coe_sub hst] using
+    (hN.hasLaw_sub hst).integral_sub_sq_map_cast_poissonMeasure
+
+/-- A strongly measurable function of a future Poisson increment has conditional expectation
+equal to its mean given the past. -/
+theorem condExp_comp_sub_eq_integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] (hN : IsFilteredPoissonProcess ℱ α N P) (hst : s ≤ t)
+    {f : ℝ → E} (hf : StronglyMeasurable f) :
+    P[fun ω ↦ f (N t ω - N s ω) | ℱ s] =ᵐ[P] fun _ ↦ ∫ ω, f (N t ω - N s ω) ∂P := by
+  have := hN.isProbabilityMeasure
+  exact condExp_indep_eq (hN.measurable t |>.sub (hN.measurable s)).comap_le
+    (ℱ.le s) (hf.comp_measurable (comap_measurable (N t - N s))) (hN.indep_sub hst)
 
 /-- A future Poisson increment has conditional mean equal to its intensity given the past. -/
 theorem condExp_sub (hN : IsFilteredPoissonProcess ℱ α N P) (hst : s ≤ t) :
     P[N t - N s | ℱ s] =ᵐ[P] fun _ ↦ (α : ℝ) * ((t : ℝ) - s) := by
-  have := hN.isProbabilityMeasure
-  have h := condExp_indep_eq (hN.measurable t |>.sub (hN.measurable s)).comap_le
-    (ℱ.le s) (stronglyMeasurable_id.comp_measurable (comap_measurable (N t - N s)))
-    (hN.indep_sub hst)
-  simpa only [Function.id_comp,
-    integral_of_hasLaw_map_cast_poissonMeasure (hN.hasLaw_sub hst),
-    NNReal.coe_mul, NNReal.coe_sub hst] using h
+  have h := hN.condExp_comp_sub_eq_integral hst stronglyMeasurable_id
+  have hi : ∫ ω, N t ω - N s ω ∂P = (α : ℝ) * ((t : ℝ) - s) := by
+    simpa only [Pi.sub_apply, NNReal.coe_mul, NNReal.coe_sub hst] using
+      integral_of_hasLaw_map_cast_poissonMeasure (hN.hasLaw_sub hst)
+  exact h.trans (Filter.Eventually.of_forall fun _ ↦ hi)
 
 /-- A compensated Poisson increment has conditional second moment equal to its intensity. -/
 theorem condExp_sub_sub_mul_sq (hN : IsFilteredPoissonProcess ℱ α N P) (hst : s ≤ t) :
     P[fun ω ↦ (N t ω - N s ω - (α : ℝ) * ((t : ℝ) - s)) ^ 2 | ℱ s] =ᵐ[P]
       fun _ ↦ (α : ℝ) * ((t : ℝ) - s) := by
-  have := hN.isProbabilityMeasure
-  have hf : StronglyMeasurable (fun x : ℝ ↦ (x - (α : ℝ) * ((t : ℝ) - s)) ^ 2) := by
-    fun_prop
-  have h := condExp_indep_eq (hN.measurable t |>.sub (hN.measurable s)).comap_le
-    (ℱ.le s) (hf.comp_measurable (comap_measurable (N t - N s))) (hN.indep_sub hst)
-  have hv := variance_of_hasLaw_map_cast_poissonMeasure (hN.hasLaw_sub hst)
-  rw [variance_eq_integral (hN.measurable t |>.sub (hN.measurable s)).aemeasurable,
-    integral_of_hasLaw_map_cast_poissonMeasure (hN.hasLaw_sub hst),
-    NNReal.coe_mul, NNReal.coe_sub hst] at hv
-  simp only [Pi.sub_apply] at hv
-  simpa only [Function.comp_def, Pi.sub_apply, hv] using h
+  have h := hN.condExp_comp_sub_eq_integral hst
+    (f := fun x : ℝ ↦ (x - (α : ℝ) * ((t : ℝ) - s)) ^ 2) (by fun_prop)
+  exact h.trans (Filter.Eventually.of_forall fun _ ↦ hN.integral_sub_sub_mul_sq hst)
 
 /-- The compensated Poisson process `N t - α * t` is a martingale. -/
 theorem martingale_compensated (hN : IsFilteredPoissonProcess ℱ α N P) :
