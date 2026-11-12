@@ -265,7 +265,7 @@ private theorem quotient_mk_comp_val_surjective {I : Ideal R} (hI : I ≤ Ideal.
     by_contra hne
     obtain ⟨M, hM, hle⟩ := Ideal.exists_le_maximal _ ((Ideal.ne_top_iff_one _).mpr hne)
     have hIM : I.map (algebraMap R A') ≤ M :=
-      (Ideal.map_le_jacobson_bot_of_isIntegral hI).trans (sInf_le ⟨bot_le, hM⟩)
+      (Ideal.map_le_jacobson_of_isIntegral bot_le hI).trans (sInf_le ⟨bot_le, hM⟩)
     have hsM : Ideal.span {x : A' | (x : A) ∈ s} ≤ M := Ideal.span_le.mpr fun x hx ↦
       hM.isPrime.mem_of_pow_mem m (hle (Ideal.mem_sup_left (Ideal.subset_span ⟨x, hx, rfl⟩)))
     have heM : e ∈ M := by simpa using M.add_mem (hIM hea) (hsM ha)
