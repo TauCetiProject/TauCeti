@@ -104,10 +104,10 @@ theorem uniformIntegrable_renewalCountNat_div (hT : ∀ n, Measurable (T n))
     tendsto_id.congr fun x ↦ by simp only [id, sq, mul_self_div_self]
   have hu : UnifIntegrable (fun (t : Ici (1 : ℝ≥0)) ω ↦ (renewalCountNat T t ω : ℝ) / t) 1 P :=
     unifIntegrable_of_lintegral_ofReal_le hΦ hm ENNReal.coe_ne_top fun t ↦ hC t t.2
-  refine ⟨hu, 1 + C, fun t ↦ ?_⟩
+  refine ⟨hu, lt_of_le_of_lt (iSup_le fun t ↦ ?_) (ENNReal.coe_lt_top (r := 1 + C))⟩
   -- The bound `x ≤ 1 + x ^ 2` turns the second-moment bound into a first-moment bound.
   have hsq (x : ℝ) : x ≤ 1 + x ^ 2 := by nlinarith [sq_nonneg (x - 1)]
-  rw [eLpNorm_one_eq_lintegral_enorm (hm t)]
+  rw [eLpNorm_one_eq_lintegral_eNorm (hm t)]
   calc ∫⁻ ω, ‖(renewalCountNat T t ω : ℝ) / t‖ₑ ∂P
       ≤ ∫⁻ ω, 1 + ENNReal.ofReal (‖(renewalCountNat T t ω : ℝ) / t‖ ^ 2) ∂P := by
         refine lintegral_mono fun ω ↦ ?_
