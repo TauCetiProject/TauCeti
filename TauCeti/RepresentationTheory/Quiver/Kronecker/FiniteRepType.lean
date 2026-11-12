@@ -84,10 +84,8 @@ non-isomorphic, but over a finite field there are only finitely many of them.
 
 ## References
 
-This proves the `¬ IsFiniteRepType` half of the “Kronecker quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose other half -- the
-positive semidefinite Tits form `(a - b) ^ 2` with radical `(1, 1)` -- is
-`TauCeti.Quiver.Kronecker.titsForm_apply` and
+The Tits-form side of the same boundary -- the positive semidefinite Tits form `(a - b) ^ 2` with
+radical `(1, 1)` -- is `TauCeti.Quiver.Kronecker.titsForm_apply` and
 `TauCeti.Quiver.Kronecker.titsForm_eq_zero_iff_exists_smul`. See Derksen--Weyman, *An Introduction
 to Quiver Representations*, and Assem--Simson--Skowroński, *Elements of the Representation Theory
 of Associative Algebras I*, Ch. II.
