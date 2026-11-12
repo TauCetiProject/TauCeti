@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Abelian.Injective.Resolution
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 
@@ -56,44 +57,6 @@ variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
 
 namespace H
 
-/-- A global section of the sheaf of groups underlying an abelian sheaf `F` is compatible with the
-restriction maps of `F`. -/
-private lemma map_toAdd_symm_sections (F : Sheaf J AddCommGrpCat.{w})
-    (s : (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections) {U V : Cᵒᵖ}
-    (f : U ⟶ V) :
-    F.obj.map f ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U)).toAdd =
-      ((abelianSheafToGrpSheafObjEquiv F V).symm (s.1 V)).toAdd := by
-  have h := abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv F f
-    ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U))
-  rw [MulEquiv.apply_symm_apply] at h
-  rw [(s.2 f).symm.trans h, MulEquiv.symm_apply_apply, toAdd_ofAdd]
-
-/-- Morphisms from the constant presheaf `ℤ` to an abelian sheaf `F` are the global sections of
-`F`, through the image of `1`. -/
-private def constHomEquiv (F : Sheaf J AddCommGrpCat.{w}) :
-    ((Functor.const Cᵒᵖ).obj (of (ULift ℤ)) ⟶ F.obj) ≃
-      (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections where
-  toFun ψ := ⟨fun U ↦ abelianSheafToGrpSheafObjEquiv F U (.ofAdd (ψ.app U ⟨1⟩)), fun f ↦
-    (abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv F f _).trans
-      (congrArg (fun a ↦ abelianSheafToGrpSheafObjEquiv F _ (.ofAdd a))
-        (NatTrans.naturality_apply ψ f _).symm)⟩
-  invFun s :=
-    { app U := (uliftZMultiplesAddEquiv _).symm
-        ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U)).toAdd
-      naturality U V f := by
-        refine (uliftZMultiplesAddEquiv _).injective ?_
-        -- Both sides are evaluated at `1`; the section `s` is compatible with restriction.
-        exact ((uliftZMultiplesAddEquiv _).apply_symm_apply _).trans
-          ((map_toAdd_symm_sections F s f).symm.trans
-            (congrArg (F.obj.map f) ((uliftZMultiplesAddEquiv _).apply_symm_apply _).symm)) }
-  left_inv ψ := NatTrans.ext (funext fun U ↦ (uliftZMultiplesAddEquiv _).symm_apply_eq.2 (by
-    rw [MulEquiv.symm_apply_apply, toAdd_ofAdd]
-    -- `uliftZMultiplesAddEquiv` evaluates a morphism out of `ℤ` at `1`.
-    rfl))
-  right_inv s := Subtype.ext (funext fun U ↦
-    (congrArg (fun a ↦ abelianSheafToGrpSheafObjEquiv F U (.ofAdd a))
-      ((uliftZMultiplesAddEquiv _).apply_symm_apply _)).trans (by simp))
-
 variable [HasSheafify J AddCommGrpCat.{w}] [HasExt.{w'} (Sheaf J AddCommGrpCat.{w})]
 
 /-- The degree-zero cohomology `H⁰(F) = Hom(ℤ, F)` of an abelian sheaf `F` is the group of global
@@ -103,16 +66,10 @@ presheaf `ℤ` (`zeroMulEquivSections_apply_coe`). No terminal object of the sit
 for Mathlib's `CategoryTheory.Sheaf.H.equiv₀`. -/
 def zeroMulEquivSections (F : Sheaf J AddCommGrpCat.{w}) :
     Multiplicative (H F 0) ≃*
-      (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections where
-  toEquiv := Multiplicative.toAdd.trans <| (Ext.addEquiv₀.trans
-    ((sheafificationAdjunction J AddCommGrpCat.{w}).homAddEquiv _ F)).toEquiv.trans
-      (constHomEquiv F)
-  map_mul' x y := Subtype.ext (funext fun U ↦
-    (congrArg (fun a ↦ abelianSheafToGrpSheafObjEquiv F U (.ofAdd a))
-      (congrArg (fun ψ : (Functor.const Cᵒᵖ).obj (of (ULift.{w} ℤ)) ⟶
-          (sheafToPresheaf J AddCommGrpCat.{w}).obj F ↦ ψ.app U (ULift.up 1 : ULift ℤ))
-        (map_add (Ext.addEquiv₀.trans ((sheafificationAdjunction J AddCommGrpCat.{w}).homAddEquiv
-          _ F)) x.toAdd y.toAdd))).trans (map_mul (abelianSheafToGrpSheafObjEquiv F U) _ _))
+      (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections :=
+  (Ext.addEquiv₀.trans
+    ((sheafificationAdjunction J AddCommGrpCat.{w}).homAddEquiv _ F)).toMultiplicative.trans
+    (constIntHomMulEquivSections F)
 
 /-- The global section of `F` given by a class `x` in `H⁰(F)`: its value over `U` is the image
 of `1` under the morphism from the constant presheaf `ℤ` to `F` adjoint to `x`. -/
@@ -120,7 +77,7 @@ lemma zeroMulEquivSections_apply_coe (F : Sheaf J AddCommGrpCat.{w}) (x : H F 0)
     (zeroMulEquivSections F (.ofAdd x)).1 U = abelianSheafToGrpSheafObjEquiv F U (.ofAdd
       (((sheafificationAdjunction J AddCommGrpCat.{w}).homEquiv _ F (Ext.addEquiv₀ x)).app U
         ⟨1⟩)) :=
-  (rfl)
+  constIntHomMulEquivSections_apply_coe F _ U
 
 /-- The identification of `H⁰` with global sections is natural in the abelian sheaf. -/
 @[simp]
@@ -128,14 +85,14 @@ lemma zeroMulEquivSections_map {F G : Sheaf J AddCommGrpCat.{w}} (f : F ⟶ G) (
     (U : Cᵒᵖ) :
     (zeroMulEquivSections G (.ofAdd (H.map f 0 x))).1 U =
       ((abelianSheafToGrpSheaf J).map f).hom.app U ((zeroMulEquivSections F (.ofAdd x)).1 U) := by
-  have h := congrArg (fun φ ↦
-    ((sheafificationAdjunction J AddCommGrpCat.{w}).homEquiv _ G φ).app U (ULift.up 1 : ULift ℤ))
+  rw [zeroMulEquivSections_apply_coe, zeroMulEquivSections_apply_coe,
+    abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv]
+  have h := congrArg ((sheafificationAdjunction J AddCommGrpCat.{w}).homEquiv _ G)
     (H.addEquiv₀_map f x)
-  exact (congrArg (fun a ↦ abelianSheafToGrpSheafObjEquiv G U (.ofAdd a)) (h.trans
-    (congrArg (fun ψ : (Functor.const Cᵒᵖ).obj (of (ULift.{w} ℤ)) ⟶
-        (sheafToPresheaf J AddCommGrpCat.{w}).obj G ↦ ψ.app U (ULift.up 1 : ULift ℤ))
-      ((sheafificationAdjunction J AddCommGrpCat.{w}).homEquiv_naturality_right _ f)))).trans
-    (abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv f U _).symm
+  have h' := (sheafificationAdjunction J AddCommGrpCat.{w}).homEquiv_naturality_right
+    (Ext.addEquiv₀ x) f
+  exact congrArg (fun ψ ↦ abelianSheafToGrpSheafObjEquiv G U (.ofAdd (ψ.app U ⟨1⟩)))
+    (h.trans h')
 
 /-- The global section given by a difference `x' - x` in `H⁰(F)` is `s⁻¹ * s'`, for `s` and `s'`
 the global sections given by `x` and `x'`. -/
@@ -171,11 +128,11 @@ theorem connecting_eq_connecting_iff_δ_eq_δ (x x' : H S.X₃ 0) :
       (Subtype.ext (funext fun U ↦ ?_)))
     rw [H.zeroMulEquivSections_map, ofAdd_toAdd, MulEquiv.apply_symm_apply, hc,
       H.zeroMulEquivSections_sub]
-    -- Multiplication and inversion of global sections are computed objectwise.
-    rfl
+    exact ((GrpCat.sectionsπMonoidHom _ U).map_mul _ _).trans
+      (congrArg (· * _) ((GrpCat.sectionsπMonoidHom _ U).map_inv _))
   · rw [← H.zeroMulEquivSections_map, hz, H.zeroMulEquivSections_sub]
-    -- Multiplication and inversion of global sections are computed objectwise.
-    rfl
+    exact (((GrpCat.sectionsπMonoidHom _ U).map_mul _ _).trans
+      (congrArg (· * _) ((GrpCat.sectionsπMonoidHom _ U).map_inv _))).symm
 
 variable [Injective S.X₂]
 
@@ -212,14 +169,6 @@ end
 
 variable [EnoughInjectives (Sheaf J AddCommGrpCat.{w})]
 
-omit [HasExt.{w'} (Sheaf J AddCommGrpCat.{w})] [J.WEqualsLocallyBijective AddCommGrpCat.{w}] in
-/-- The short exact sequence `0 → F → I → I / F → 0` given by the chosen embedding of `F` into an
-injective abelian sheaf. -/
-private lemma shortExact_injectiveι (F : Sheaf J AddCommGrpCat.{w}) :
-    (ShortComplex.mk (Injective.ι F) (Limits.cokernel.π (Injective.ι F))
-      (Limits.cokernel.condition _)).ShortExact :=
-  .mk' (ShortComplex.exact_cokernel _) inferInstance inferInstance
-
 /-- The classes of torsors under an abelian sheaf `F` are in bijection with the sheaf cohomology
 `H¹(F)` (Stacks, Lemma 21.4.3 (03AJ)). The bijection is characterised by
 `equivSheafH_connecting`: for every short exact sequence `0 → F → B → Q → 0`, the class of the
@@ -228,18 +177,22 @@ torsor of lifts of a global section of `Q` goes to its image under the connectin
 construct it. -/
 def equivSheafH (F : Sheaf J AddCommGrpCat.{w}) :
     NonabelianH1 ((abelianSheafToGrpSheaf J).obj F) ≃ H F 1 :=
-  Equiv.ofBijective _ (bijective_toHOfInjective (shortExact_injectiveι F))
+  Equiv.ofBijective _
+    (bijective_toHOfInjective (Injective.exists_presentation F).choose.shortExact_shortComplex)
 
 /-- For a short exact sequence `0 → S.X₁ → S.X₂ → S.X₃ → 0` of abelian sheaves, `equivSheafH`
 sends the class of the torsor of lifts of the global section of `S.X₃` given by `x ∈ H⁰(S.X₃)`
 to `δ x ∈ H¹(S.X₁)`. -/
+@[simp]
 theorem equivSheafH_connecting {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS : S.ShortExact)
     (x : H S.X₃ 0) :
     equivSheafH S.X₁ (connecting hS.isGroupExtension (H.zeroMulEquivSections S.X₃ (.ofAdd x))) =
       H.δ hS 0 1 rfl x := by
   have := hS.mono_f
   have := hS.epi_g
-  let hS₀ := shortExact_injectiveι S.X₁
+  let hS₀ : (ShortComplex.mk (Injective.ι S.X₁) (Limits.cokernel.π (Injective.ι S.X₁))
+      (Limits.cokernel.condition _)).ShortExact :=
+    (Injective.exists_presentation S.X₁).choose.shortExact_shortComplex
   -- Compare `S` with the extension `0 → S.X₁ → I → I / S.X₁ → 0` defining `equivSheafH`, through
   -- an extension `β : S.X₂ ⟶ I` of the embedding into the injective sheaf `I`.
   let β : S.X₂ ⟶ Injective.under S.X₁ := Injective.factorThru (Injective.ι S.X₁) S.f
@@ -258,11 +211,21 @@ theorem equivSheafH_connecting {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (h
     _ fun U ↦ (H.zeroMulEquivSections_map γ x U).symm]
   exact toHOfInjective_connecting hS₀ _
 
+/-- The inverse comparison sends a cohomological connecting class to the class of its torsor
+of lifts. -/
+@[simp]
+theorem equivSheafH_symm_δ {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS : S.ShortExact)
+    (x : H S.X₃ 0) :
+    (equivSheafH S.X₁).symm (H.δ hS 0 1 rfl x) =
+      connecting hS.isGroupExtension (H.zeroMulEquivSections S.X₃ (.ofAdd x)) :=
+  (equivSheafH S.X₁).symm_apply_eq.2 (equivSheafH_connecting hS x).symm
+
 /-- `equivSheafH` sends the class of the trivial torsor to `0`. -/
 @[simp]
 theorem equivSheafH_one (F : Sheaf J AddCommGrpCat.{w}) : equivSheafH F 1 = 0 := by
-  have h := toHOfInjective_connecting (shortExact_injectiveι F) 0
-  rwa [ofAdd_zero, map_one, connecting_one, map_zero] at h
+  have h := toHOfInjective_connecting
+    (Injective.exists_presentation F).choose.shortExact_shortComplex 0
+  rwa [ofAdd_zero, _root_.map_one, connecting_one, map_zero] at h
 
 /-- The inverse of `equivSheafH` sends `0` to the class of the trivial torsor. -/
 @[simp]
