@@ -249,7 +249,7 @@ theorem zigzagWordPairing_hochschildDifferential_eq_zero {n : ℕ}
     zigzagWordPairing hns n a ((𝒵).hochschildDifferential 0 φ) = 0 := by
   rw [zigzagWordPairing_apply]
   simp only [zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_mem hφ _
-      fun i ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _,
+      fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _,
     map_sub, map_sum, mul_sub, Finset.mul_sum, Finset.sum_sub_distrib]
   rw [Finset.sum_comm, Finset.sum_eq_zero fun p _ ↦ sum_trace_inner_eq_zero p (hrel p)
     (fun d ↦ 𝔞 d) (fun d e he ↦ zigzagMk_ofArrow_mul_ofArrow_of_ne k G he)

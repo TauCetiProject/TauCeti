@@ -275,7 +275,7 @@ theorem measurable_ofReal_mul_deriv_mul_sub_mul {X : Type*} [MeasurableSpace X] 
     {w : X → ℝ≥0∞} (hg : Measurable g) (hw : Measurable w) (c : ℝ) :
     Measurable fun p : ℝ × X =>
       ENNReal.ofReal (c * deriv smoothTransition (c * (p.1 - g p.2))) * w p.2 := by
-  have hψ : Measurable (deriv smoothTransition) := measurable_deriv _
+  have _ : Measurable (deriv smoothTransition) := measurable_deriv _
   fun_prop
 
 /-- Integrating the weight `c ψ'(c (t - g x)) w x` over `x` and then over the level `t` gives
@@ -292,7 +292,7 @@ theorem lintegral_lintegral_ofReal_mul_deriv_mul_sub_mul {X : Type*} [Measurable
     rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
       lintegral_ofReal_deriv_mul_sub _ hc.ne', ← ENNReal.ofReal_mul hc.le,
       abs_of_pos hc, mul_inv_cancel₀ hc.ne', ENNReal.ofReal_one]
-  have hψ : Measurable (deriv smoothTransition) := measurable_deriv _
+  have _ : Measurable (deriv smoothTransition) := measurable_deriv _
   rw [lintegral_mul_const _ (by fun_prop), hk, one_mul]
 
 /-- Averaging a function `a` against the derivative `ψ'(c y - T)` of the smooth transition
@@ -449,8 +449,8 @@ theorem DifferentiableAt.enorm_fderiv_smoothTransition_mul_sub {E : Type*}
     ‖fderiv ℝ (fun y => Real.smoothTransition (c * (t - u y))) x‖ₑ =
       ENNReal.ofReal (c * deriv Real.smoothTransition (c * (t - u x))) * ‖fderiv ℝ u x‖ₑ := by
   rw [((hu.hasFDerivAt.const_sub t).const_mul c).smoothTransition.fderiv, smul_smul, mul_comm,
-    enorm_smul, enorm_neg,
-    Real.enorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
+    eNorm_smul, eNorm_neg,
+    Real.eNorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
 
 /-- If `u` is locally Lipschitz on `s`, then so is `ψ (c (u - t))` for the smooth transition
 function `ψ`. -/
@@ -527,7 +527,7 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
     (hcont.continuousOn (s := Icc (m / 4) m))
   refine ⟨Real.toNNReal (max C K), fun t => ?_⟩
-  rw [← NNReal.coe_le_coe, coe_nnnorm]
+  rw [← NNReal.coe_le_coe, coe_nnNorm]
   refine le_trans ?_ (Real.le_coe_toNNReal _)
   rcases lt_or_ge t (m / 4) with ht | ht
   · -- Below `m/4` the derivative vanishes.
