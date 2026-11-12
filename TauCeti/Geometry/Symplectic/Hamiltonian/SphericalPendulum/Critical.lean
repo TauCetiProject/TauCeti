@@ -131,8 +131,8 @@ private theorem lagrange_cases {q0 q1 q2 p0 p1 p2 l m a b : ℝ}
       have hp1 : p1 = 0 := (mul_eq_zero.1 (by linarith : l * p1 = 0)).resolve_left hl
       exact Or.inl ⟨hp0, hp1, rfl, by linarith⟩
     · right
-      set J := q0 * p1 - q1 * p0 with hJdef
-      set r := q0 ^ 2 + q1 ^ 2 with hrdef
+      set J := q0 * p1 - q1 * p0
+      set r := q0 ^ 2 + q1 ^ 2
       have hJ : l * J = -(m * r) := by linear_combination q0 * eb1 - q1 * eb0
       have hα : m * J = 2 * a * r := by linear_combination q0 * ea0 + q1 * ea1
       have h1 : r * (l ^ 2 + m ^ 2 * q2) = 0 := by

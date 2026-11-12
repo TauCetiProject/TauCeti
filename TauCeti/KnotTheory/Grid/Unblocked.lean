@@ -117,11 +117,8 @@ assignment, which `SignAssignment/Differential.lean` does.
 
 ## References
 
-This supplies `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and
-`∂² = 0`", specifically its "Then unblocked `GC⁻` over `𝔽₂[V₁,…,Vₙ]`" clause, together with the
-roadmap convention "Fix once whether differentials drop Maslov by 1 and preserve Alexander
-(unblocked)". The definitions and the bidegree computation follow Ozsváth--Stipsicz--Szabó, *Grid
-Homology for Knots and Links*, Chapter 4.6.
+The definitions and the bidegree computation follow Ozsváth--Stipsicz--Szabó, *Grid Homology for
+Knots and Links*, Chapter 4.6.
 -/
 
 public section

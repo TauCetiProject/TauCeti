@@ -145,7 +145,7 @@ end ChainMap
 
 section Bar
 
-variable {k G H : Type u} [CommRing k] [Group G] [Group H] [DecidableEq G] [DecidableEq H]
+variable {k G H : Type u} [CommRing k] [Group G] [Group H]
   {A : Rep.{u} k G} {B : Rep.{u} k H} (f : G →* H) (φ : A ⟶ res f B)
 
 /-- Change of groups on bar coinvariants is the coinvariant map of the relabelling chain map
@@ -165,7 +165,7 @@ end Bar
 
 section Naturality
 
-variable {k G H : Type u} [CommRing k] [Group G] [Group H] [DecidableEq G] [DecidableEq H]
+variable {k G H : Type u} [CommRing k] [Group G] [Group H]
   {A : Rep.{u} k G} {B : Rep.{u} k H} (f : G →* H) (φ : A ⟶ res f B)
   (P : ProjectiveResolution (Rep.trivial k G k)) (Q : ProjectiveResolution (Rep.trivial k H k))
   (α : P.complex ⟶ ((resFunctor f).mapHomologicalComplex _).obj Q.complex)

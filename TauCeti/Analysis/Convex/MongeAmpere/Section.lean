@@ -392,7 +392,6 @@ theorem exists_mul_measure_sq_le_mul_ofReal_pow :
   obtain ⟨hG'o, hfr', hconv', hcont'⟩ :=
     isOpen_frontier_convexOn_continuousOn_preimage_symm T hGo hv hvc
   have hG'b : Bornology.IsBounded G' := isBounded_ball.subset hT1
-  have h0 : (0 : E) ∈ G' := hTr (mem_ball_self hr)
   -- The comparison function `w y = (a / 2) (‖y‖² - r²)` with `aⁿ = λ d²`.
   set a := ((lam : ℝ) * d ^ 2) ^ (n⁻¹ : ℝ)
   have ha : 0 ≤ a := by positivity

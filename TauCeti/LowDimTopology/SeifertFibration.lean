@@ -270,7 +270,7 @@ variable {r : Setoid M}
 /-- Every fibre of a Seifert fibration is homeomorphic to a circle. -/
 theorem nonempty_homeomorph_circle (h : IsSeifertFibration r) (x : M) :
     Nonempty ({y | r x y} ≃ₜ Circle) := by
-  obtain ⟨p, q, hq, hpq, e, hx, he⟩ := h x
+  obtain ⟨p, q, hq, _, e, hx, he⟩ := h x
   obtain ⟨φ⟩ := SolidTorus.nonempty_homeomorph_circle hq.ne' (e x)
   exact ⟨(e.homeomorphOfImageSubsetSource (fun y hy ↦ he.source_saturated x hx y hy)
     (he.image_setOf_rel hx)).trans φ⟩
