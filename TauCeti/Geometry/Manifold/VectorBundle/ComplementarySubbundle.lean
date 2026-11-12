@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.VectorBundle.Prod
+import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
 /-!
 # Complementary smooth subbundles
@@ -75,23 +76,8 @@ theorem contMDiff_totalSpace_add (hV : HasLocalContMDiffSubbundleFrames IB n F �
   let := hW.fiberBundle
   let := hW.vectorBundle
   let := VectorBundle.restrictScalars 𝕜 𝕜' (ι' → 𝕜') fun x ↦ W x
-  intro v₀
-  -- The two summands, read in `E`, are `C^n`.
-  have h₁ := Bundle.contMDiffAt_totalSpace_iff.mp
-    ((hV.contMDiff_totalSpace_inclusion.comp Bundle.Prod.contMDiff_fst) v₀)
-  have h₂ := Bundle.contMDiffAt_totalSpace_iff.mp
-    ((hW.contMDiff_totalSpace_inclusion.comp Bundle.Prod.contMDiff_snd) v₀)
-  rw [Bundle.contMDiffAt_totalSpace_iff]
-  refine ⟨h₁.1, (h₁.2.add h₂.2).congr_of_eventuallyEq ?_⟩
-  have he := (trivializationAt F E v₀.proj).open_baseSet.mem_nhds
-    (FiberBundle.mem_baseSet_trivializationAt' v₀.proj)
-  filter_upwards [(FiberBundle.continuous_proj ((ι → 𝕜') × (ι' → 𝕜')) _).continuousAt
-    |>.preimage_mem_nhds he] with v hv
-  -- The fibre coordinate of the trivialization is linear on the fibre over `v.proj`.
-  have hlin (y : E v.proj) : (trivializationAt F E v₀.proj ⟨v.proj, y⟩).2 =
-      (trivializationAt F E v₀.proj).linearMapAt 𝕜 v.proj y := by
-    rw [(trivializationAt F E v₀.proj).coe_linearMapAt_of_mem hv]
-  simp only [Function.comp_apply, Pi.add_apply, hlin, map_add]
+  exact (hV.contMDiff_totalSpace_inclusion.comp Bundle.Prod.contMDiff_fst).add_sectionAlong
+    (hW.contMDiff_totalSpace_inclusion.comp Bundle.Prod.contMDiff_snd)
 
 end Add
 
@@ -101,7 +87,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
   {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {n : ℕ∞ω}
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {E : B → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]
   [TopologicalSpace (TotalSpace F E)] [∀ x, TopologicalSpace (E x)]
   [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul 𝕜 (E x)]
@@ -109,8 +95,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜
   {ι ι' : Type*} [Fintype ι] {V W : Π x, Submodule 𝕜 (E x)}
 
 /-- **Complementary smooth subbundles split a vector bundle.** Let `V` and `W` be families of
-subspaces of the fibres of a `C^n` vector bundle `E` with finite-dimensional model fibre, each with
-`C^n` local frames near every point, and complementary in every fibre. Then
+subspaces of the fibres of a `C^n` vector bundle `E`, each with `C^n` local frames near every point,
+and complementary in every fibre. Then
 `(x, v, w) ↦ (x, v + w)` is a `C^n` diffeomorphism from the total space of the direct-sum bundle
 `V ×ᵇ W`, each summand carrying the subbundle structure of
 `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`, onto the total space of `E`. -/
@@ -135,14 +121,16 @@ theorem exists_bundleDiffeomorph_prod_of_isCompl [Fintype ι']
   have : CompleteSpace 𝕜 := by
     let := IsRCLikeNormedField.rclike 𝕜
     infer_instance
-  -- On each fibre, `(v, w) ↦ v + w` is a linear equivalence of finite-dimensional Hausdorff
-  -- spaces, hence continuous: a trivialization identifies the fibre with the model `F`.
+  -- On each fibre, `(v, w) ↦ v + w` is a linear equivalence from a finite-dimensional space, which
+  -- has a basis given by the local frames, onto a Hausdorff space, which a trivialization
+  -- identifies with the model `F`; hence it is continuous.
   have hfib (x : B) : FiniteDimensional 𝕜 (V x × W x) ∧ T2Space (E x) := by
-    let e := (trivializationAt F E x).continuousLinearEquivAt 𝕜 x
-      (FiberBundle.mem_baseSet_trivializationAt' x)
-    have : FiniteDimensional 𝕜 (E x) := e.toLinearEquiv.symm.finiteDimensional
-    exact ⟨(Submodule.prodEquivOfIsCompl _ _ (hVW x)).symm.finiteDimensional,
-      e.toHomeomorph.isEmbedding.t2Space⟩
+    obtain ⟨_, -, hxV, _, hXV, -⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hV x
+    obtain ⟨_, -, hxW, _, hXW, -⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hW x
+    have := Module.Finite.of_basis (hXV.basis hxV)
+    have := Module.Finite.of_basis (hXW.basis hxW)
+    exact ⟨inferInstance, ((trivializationAt F E x).continuousLinearEquivAt 𝕜 x
+      (FiberBundle.mem_baseSet_trivializationAt' x)).toHomeomorph.isEmbedding.t2Space⟩
   refine ⟨bundleDiffeomorph (fun x ↦ have := (hfib x).1; have := (hfib x).2
     (Submodule.prodEquivOfIsCompl _ _ (hVW x)).toContinuousLinearEquiv) ?_, fun v ↦ ?_⟩
   · simpa only [LinearEquiv.coe_toContinuousLinearEquiv', Submodule.coe_prodEquivOfIsCompl']
