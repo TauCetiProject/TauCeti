@@ -390,11 +390,8 @@ theorem eval_wordMap (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (v 
 map. -/
 theorem wordMap_update {Y : Type*} [DecidableEq Y] (w : Y → GX G X) (y : Y) (c : GX G X)
     (v : X → H) :
-    wordMap ι (Function.update w y c) v = Function.update (wordMap ι w v) y (eval ι v c) := by
-  funext z
-  by_cases hz : z = y
-  · subst hz; simp
-  · simp [hz]
+    wordMap ι (Function.update w y c) v = Function.update (wordMap ι w v) y (eval ι v c) :=
+  Function.comp_update (eval ι v) w y c
 
 /-- Word maps compose in the opposite order to word homomorphisms. -/
 theorem wordMap_comp (σ : GHom (inl : G →* GX G Z) (inl : G →* GX G Y))

@@ -21,8 +21,9 @@ all occurrence counts, so they preserve quadratic and strictly quadratic systems
 `x ↦ a x b` preserves the number of occurrences of `x`, and of every variable occurring neither
 in `a` nor in `b`, but it may increase the other counts: `x ↦ x y` sends the quadratic word
 `x² y²` to `(x y)² y²`, in which `y` occurs four times (`not_isQuadratic_transvection`). The
-reduction to standard form therefore applies transvections only where they shorten the word, as
-in the passage from the Klein bottle word `x y x y⁻¹` to `x² y²`
+reduction to standard form therefore uses transvections only in combinations that keep the word
+quadratic. For instance the transvection `x ↦ x y⁻¹` followed by the inversion of `y` carries the
+Klein bottle word `x y x y⁻¹` to the standard word `x² y²` of the same length
 (`exists_standard_kleinBottle`).
 
 ## Main results
@@ -34,7 +35,7 @@ in the passage from the Klein bottle word `x y x y⁻¹` to `x² y²`
   no occurrence of `x`.
 * `occurrences_renameEquiv`, `occurrences_invertVar`, `occurrences_transvection`: the occurrence
   counts preserved by the elementary automorphisms.
-* `isQuadratic_map_iff`, `isStrictlyQuadratic_map_iff`: an isomorphism preserving occurrence
+* `isQuadratic_map_iff`, `isStrictlyQuadratic_map_iff`: an injective map preserving occurrence
   counts, up to a bijection of the variables, preserves quadratic and strictly quadratic systems.
 
 ## References
@@ -193,62 +194,68 @@ section IsQuadratic
 
 variable {S : Finset (GX G X)}
 
-private theorem sum_occurrences_map (φ : GX G X ≃* GX G Y) (σ : X ≃ Y)
+private theorem sum_occurrences_map (φ : GX G X ↪ GX G Y) (σ : X ≃ Y)
     (h : ∀ x w, occurrences (σ x) (φ w) = occurrences x w) (S : Finset (GX G X)) (y : Y) :
-    ∑ w ∈ S.map φ.toEquiv.toEmbedding, occurrences y w = ∑ w ∈ S, occurrences (σ.symm y) w := by
+    ∑ w ∈ S.map φ, occurrences y w = ∑ w ∈ S, occurrences (σ.symm y) w := by
   simp [← h]
 
-/-- An isomorphism `G[X] ≃* G[Y]` preserving the occurrence counts, up to a bijection of the
+/-- An injective map `G[X] → G[Y]` preserving the occurrence counts, up to a bijection of the
 variables, preserves quadratic systems. -/
-theorem isQuadratic_map_iff (φ : GX G X ≃* GX G Y) (σ : X ≃ Y)
+theorem isQuadratic_map_iff (φ : GX G X ↪ GX G Y) (σ : X ≃ Y)
     (h : ∀ x w, occurrences (σ x) (φ w) = occurrences x w) :
-    IsQuadratic (S.map φ.toEquiv.toEmbedding) ↔ IsQuadratic S := by
+    IsQuadratic (S.map φ) ↔ IsQuadratic S := by
   simp only [isQuadratic_iff, sum_occurrences_map φ σ h]
   exact σ.symm.forall_congr_right (q := fun x => ∑ w ∈ S, occurrences x w ≤ 2)
 
-/-- An isomorphism `G[X] ≃* G[Y]` preserving the occurrence counts, up to a bijection of the
+/-- An injective map `G[X] → G[Y]` preserving the occurrence counts, up to a bijection of the
 variables, preserves strictly quadratic systems. -/
-theorem isStrictlyQuadratic_map_iff (φ : GX G X ≃* GX G Y) (σ : X ≃ Y)
+theorem isStrictlyQuadratic_map_iff (φ : GX G X ↪ GX G Y) (σ : X ≃ Y)
     (h : ∀ x w, occurrences (σ x) (φ w) = occurrences x w) :
-    IsStrictlyQuadratic (S.map φ.toEquiv.toEmbedding) ↔ IsStrictlyQuadratic S := by
+    IsStrictlyQuadratic (S.map φ) ↔ IsStrictlyQuadratic S := by
   simp only [isStrictlyQuadratic_iff, sum_occurrences_map φ σ h]
   exact σ.symm.forall_congr_right
     (q := fun x => ∑ w ∈ S, occurrences x w = 0 ∨ ∑ w ∈ S, occurrences x w = 2)
 
 /-- Renaming the variables preserves quadratic systems. -/
+@[simp]
 theorem isQuadratic_map_renameEquiv (e : X ≃ Y) :
-    IsQuadratic (S.map (GX.renameEquiv G e).toEquiv.toEmbedding) ↔ IsQuadratic S :=
+    IsQuadratic (S.map (GX.renameEquiv G e : GX G X ≃ GX G Y).toEmbedding) ↔ IsQuadratic S :=
   isQuadratic_map_iff _ e (occurrences_renameEquiv e)
 
 /-- Renaming the variables preserves strictly quadratic systems. -/
+@[simp]
 theorem isStrictlyQuadratic_map_renameEquiv (e : X ≃ Y) :
-    IsStrictlyQuadratic (S.map (GX.renameEquiv G e).toEquiv.toEmbedding) ↔
+    IsStrictlyQuadratic (S.map (GX.renameEquiv G e : GX G X ≃ GX G Y).toEmbedding) ↔
       IsStrictlyQuadratic S :=
   isStrictlyQuadratic_map_iff _ e (occurrences_renameEquiv e)
 
 variable [DecidableEq X]
 
 /-- Inverting a variable preserves quadratic systems. -/
+@[simp]
 theorem isQuadratic_map_invertVar (x : X) :
-    IsQuadratic (S.map (GX.invertVar G x).toEquiv.toEmbedding) ↔ IsQuadratic S :=
+    IsQuadratic (S.map (GX.invertVar G x : GX G X ≃ GX G X).toEmbedding) ↔ IsQuadratic S :=
   isQuadratic_map_iff _ (.refl X) (occurrences_invertVar x)
 
 /-- Inverting a variable preserves strictly quadratic systems. -/
+@[simp]
 theorem isStrictlyQuadratic_map_invertVar (x : X) :
-    IsStrictlyQuadratic (S.map (GX.invertVar G x).toEquiv.toEmbedding) ↔
+    IsStrictlyQuadratic (S.map (GX.invertVar G x : GX G X ≃ GX G X).toEmbedding) ↔
       IsStrictlyQuadratic S :=
   isStrictlyQuadratic_map_iff _ (.refl X) (occurrences_invertVar x)
 
 /-- Multiplying a variable by coefficients preserves quadratic systems. -/
+@[simp]
 theorem isQuadratic_map_transvection_inl (x : X) (g h : G) :
     IsQuadratic (S.map (GX.transvection x (inl g) (inl h) (GX.inl_mem_avoiding x g)
-      (GX.inl_mem_avoiding x h)).toEquiv.toEmbedding) ↔ IsQuadratic S :=
+      (GX.inl_mem_avoiding x h) : GX G X ≃ GX G X).toEmbedding) ↔ IsQuadratic S :=
   isQuadratic_map_iff _ (.refl X) fun y => occurrences_transvection_inl x y g h
 
 /-- Multiplying a variable by coefficients preserves strictly quadratic systems. -/
+@[simp]
 theorem isStrictlyQuadratic_map_transvection_inl (x : X) (g h : G) :
     IsStrictlyQuadratic (S.map (GX.transvection x (inl g) (inl h) (GX.inl_mem_avoiding x g)
-      (GX.inl_mem_avoiding x h)).toEquiv.toEmbedding) ↔ IsStrictlyQuadratic S :=
+      (GX.inl_mem_avoiding x h) : GX G X ≃ GX G X).toEmbedding) ↔ IsStrictlyQuadratic S :=
   isStrictlyQuadratic_map_iff _ (.refl X) fun y => occurrences_transvection_inl x y g h
 
 end IsQuadratic
@@ -273,11 +280,12 @@ theorem exists_standard_kleinBottle :
 theorem not_isQuadratic_transvection :
     ¬IsQuadratic {(GX.transvection (0 : Fin 2) 1 (inr (.of 1)) (one_mem _) (by simp)
       (inr (.of 0) ^ 2 * inr (.of 1) ^ 2) : GX G (Fin 2))} := by
+  have h10 : (1 : Fin 2) ≠ 0 := by decide
   rw [isQuadratic_singleton]
   intro h
   have := (countP_toWord_snd_le_occurrences 1 _).trans (h 1)
   simp only [_root_.map_mul, map_pow, GX.transvection_inr_of_self, one_mul, snd_apply_inr,
-    GX.transvection_inr_of_of_ne _ _ (show (1 : Fin 2) ≠ 0 by decide)] at this
+    GX.transvection_inr_of_of_ne _ _ h10] at this
   revert this
   decide
 

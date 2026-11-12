@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupAlgGeom.ChangeOfCoordinates
+public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Group.Subgroup.Ker
 import Mathlib.GroupTheory.FreeGroup.Reduce
@@ -34,9 +34,6 @@ evaluation: a point `v` is a solution of `φ w = 1` exactly when the point obtai
 corresponding substitution is a solution of `w = 1`. The words in which `x` does not occur form
 the subgroup `GX.avoiding x`: they are the words unchanged by the substitution `x ↦ 1`, and their
 values do not depend on the coordinate `x` of a point.
-
-More generally a `G`-isomorphism `φ : G[X] ≃* G[Y]` induces a bijection `GX.imageEquivV` between
-the solutions of a system `S` and those of its image `φ S`.
 
 These are the automorphisms by which a strictly quadratic word is brought to a standard quadratic
 word in [IFT], §2.7, Lemma 1.
@@ -339,40 +336,5 @@ theorem eval_renameEquiv (v : Y → H) (e : X ≃ Y) (u : GX G X) :
   simp [renameEquiv_apply]
 
 end RenameEquiv
-
-/-! ### Solution sets -/
-
-section Solutions
-
-variable (φ : GX G X ≃* GX G Y) (hφ : ∀ g, φ (inl g) = inl g)
-
-/-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` induces a bijection between the solutions of a system
-`S` and the solutions of its image `φ S`: a solution `v` of `S` goes to the point with
-coordinates the values at `v` of the words `φ⁻¹ y`. -/
-noncomputable def imageEquivV (S : Set (GX G X)) : V ι S ≃ V ι (φ '' S) :=
-  (coordinateChangeEquiv ι (GHom.ofMulEquiv φ.symm (φ.symm_apply_coeff hφ))
-    (GHom.ofMulEquiv_bijective _ _)).subtypeEquiv fun v => by
-      rw [show φ '' S = φ.symm ⁻¹' S from φ.toEquiv.image_eq_preimage_symm S]
-      simpa using (wordMap_mem_V_iff ι (GHom.ofMulEquiv φ.symm (φ.symm_apply_coeff hφ))
-        (GHom.ofMulEquiv_bijective _ _).2 S v).symm
-
-@[simp]
-theorem imageEquivV_apply_coe (S : Set (GX G X)) (v : V ι S) :
-    (imageEquivV ι φ hφ S v : Y → H) = wordMap ι (fun y => φ.symm (inr (FreeGroup.of y))) v := by
-  simp [imageEquivV]
-
-@[simp]
-theorem imageEquivV_symm_apply_coe (S : Set (GX G X)) (v : V ι (φ '' S)) :
-    ((imageEquivV ι φ hφ S).symm v : X → H) = wordMap ι (fun x => φ (inr (FreeGroup.of x))) v := by
-  simp [imageEquivV]
-
-include hφ in
-/-- A point is a solution of the image `φ S` of a system under a `G`-isomorphism exactly when
-the point with coordinates its values at the words `φ x` is a solution of `S`. -/
-theorem mem_V_image_mulEquiv_iff (S : Set (GX G X)) (v : Y → H) :
-    v ∈ V ι (φ '' S) ↔ wordMap ι (fun x => φ (inr (FreeGroup.of x))) v ∈ V ι S := by
-  simpa using (Set.ext_iff.1 (preimage_wordMap_V_eq_V_image ι (GHom.ofMulEquiv φ hφ) S) v).symm
-
-end Solutions
 
 end TauCeti.GroupAlgGeom.GX
