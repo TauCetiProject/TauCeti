@@ -196,12 +196,9 @@ theorem normalSpaceTrivialization_symm_negativeSpectralProjection_apply [IsManif
     (hGg : ∀ u v, G u v = g.inner s ((i.normalSpaceTrivialization hn hdim s₀).symm s u)
       ((i.normalSpaceTrivialization hn hdim s₀).symm s v)) (u : P) :
     (i.normalSpaceTrivialization hn hdim s₀).symm s (Q.negativeSpectralProjection G u) =
-      (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
-        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s)
-        ((i.normalSpaceTrivialization hn hdim s₀).symm s u) := by
+      h.negativeNormalProjection hn g s ((i.normalSpaceTrivialization hn hdim s₀).symm s u) := by
   set e := i.normalSpaceTrivialization hn hdim s₀
-  set hc := h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s
-  set pr := (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s) hc
+  set pr := h.negativeNormalProjection hn g s
   let L := e.linearEquivAt ℝ s hs
   have hL (w : P) : L.symm w = e.symm s w := Trivialization.linearEquivAt_symm_apply ..
   have hQ' (w w' : P) : Q w w' = h.normalHessian hn s (L.symm w) (L.symm w') := by
@@ -229,16 +226,16 @@ theorem normalSpaceTrivialization_symm_negativeSpectralProjection_apply [IsManif
     simp only [p, LinearMap.coe_toContinuousLinearMap', LinearEquiv.conj_apply_apply,
       LinearEquiv.symm_apply_apply]
   have hmem (w : P) : L.symm (p w) ∈ h.negativeNormalSpace hn g s := by
-    rw [hp]; exact Submodule.projection_apply_mem hc _
+    rw [hp]; exact h.negativeNormalProjection_apply_mem hn g _
   have hmem' (w : P) : L.symm (w - p w) ∈ h.positiveNormalSpace hn g s := by
-    rw [map_sub, hp]; exact Submodule.sub_projection_mem hc _
+    rw [map_sub, hp]; exact h.sub_negativeNormalProjection_apply_mem hn g _
   have heq : p = Q.negativeSpectralProjection G := by
     refine (ContinuousLinearMap.eq_negativeSpectralProjection_iff hG hQsymm hQinj).2
       ⟨?_, fun w w' ↦ ?_, fun w w' ↦ ?_, fun w hw ↦ ?_, fun w hw ↦ ?_⟩
     · ext w
       apply L.symm.injective
       rw [mul_apply_eq_comp, hp, hp,
-        Submodule.projection_apply_of_mem_left hc (Submodule.projection_apply_mem hc _)]
+        h.negativeNormalProjection_apply_of_mem hn g (h.negativeNormalProjection_apply_mem hn g _)]
     · rw [hG']
       exact h.inner_eq_zero_of_mem_negativeNormalSpace hn g (hmem w) (hmem' w')
     · rw [hQ']
@@ -272,8 +269,7 @@ theorem exists_contMDiffOn_projection_negativeNormalSpace {k : ℕ∞ω} [IsMani
       ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k p (U ∩ (i.normalSpaceTrivialization hn hdim s₀).baseSet) ∧
       ∀ s ∈ U ∩ (i.normalSpaceTrivialization hn hdim s₀).baseSet, ∀ u,
         (i.normalSpaceTrivialization hn hdim s₀).symm s (p s u) =
-          (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
-            (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s)
+          h.negativeNormalProjection hn g s
             ((i.normalSpaceTrivialization hn hdim s₀).symm s u) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   set e := i.normalSpaceTrivialization hn hdim s₀

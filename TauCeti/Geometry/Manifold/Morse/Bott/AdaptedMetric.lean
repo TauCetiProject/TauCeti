@@ -133,6 +133,22 @@ private theorem adaptedForm_pos {s : S} {v : i.NormalSpace s hn} (hv : v ≠ 0) 
       (h.negativeNormalProjection_apply_mem hn g v) h0
     linarith
 
+/-- The bilinear form `adaptedForm` read in the coordinates of a basis of the normal space, where
+it is a continuous bilinear map of normed spaces. -/
+private def adaptedFormCoord (s : S) :
+    (Fin (finrank ℝ (i.NormalSpace s hn)) → ℝ) →L[ℝ]
+      (Fin (finrank ℝ (i.NormalSpace s hn)) → ℝ) →L[ℝ] ℝ :=
+  ((h.adaptedForm hn g s).compl₁₂
+    (Module.finBasis ℝ (i.NormalSpace s hn)).equivFun.symm.toLinearMap
+    (Module.finBasis ℝ (i.NormalSpace s hn)).equivFun.symm.toLinearMap).toContinuousBilinearMap
+
+@[simp]
+private theorem adaptedFormCoord_apply {s : S} (x y : Fin (finrank ℝ (i.NormalSpace s hn)) → ℝ) :
+    h.adaptedFormCoord hn g s x y =
+      h.adaptedForm hn g s ((Module.finBasis ℝ (i.NormalSpace s hn)).equivFun.symm x)
+        ((Module.finBasis ℝ (i.NormalSpace s hn)).equivFun.symm y) := by
+  simp [adaptedFormCoord]
+
 /-- **The fibre metric adapted to the normal Hessian.** For a Morse–Bott submanifold with a fibre
 metric `g` on its normal bundle, the fibre metric `(v, w) ↦ (Hess (v⁺, w⁺) - Hess (v⁻, w⁻)) / 2`,
 where `v⁻` and `v⁺` are the components of `v` in the negative and positive normal spaces relative
@@ -144,26 +160,25 @@ def adaptedMetric : RiemannianMetric fun s ↦ i.NormalSpace s hn where
   pos s v hv := by
     simpa only [LinearMap.toContinuousBilinearMap_apply] using h.adaptedForm_pos hn g hv
   continuousAt s := by
-    -- Read the form through the coordinates of a basis, where it is a continuous bilinear map of
-    -- normed spaces.
+    -- Read the form through the coordinates of a basis.
     let e := (Module.finBasis ℝ (i.NormalSpace s hn)).equivFun
-    let b := ((h.adaptedForm hn g s).compl₁₂ e.symm.toLinearMap
-      e.symm.toLinearMap).toContinuousBilinearMap
     have he : Continuous e := LinearMap.continuous_of_finiteDimensional e.toLinearMap
-    refine (((b.continuous.comp he).clm_apply he).congr fun v ↦ ?_).continuousAt
-    simp [b]
+    refine ((((h.adaptedFormCoord hn g s).continuous.comp he).clm_apply he).congr
+      fun v ↦ ?_).continuousAt
+    simp [e]
   isVonNBounded s := by
     -- In the coordinates of a basis, a positive definite form has a bounded unit set.
     let e := (Module.finBasis ℝ (i.NormalSpace s hn)).equivFun
-    let b := ((h.adaptedForm hn g s).compl₁₂ e.symm.toLinearMap
-      e.symm.toLinearMap).toContinuousBilinearMap
-    have hb : Bornology.IsVonNBounded ℝ {v | b v v < 1} :=
-      b.isVonNBounded_setOf_lt_one_of_pos fun v hv ↦ by
-        simpa [b] using h.adaptedForm_pos hn g (v := e.symm v) (by simpa using hv)
+    have hb : Bornology.IsVonNBounded ℝ {v | h.adaptedFormCoord hn g s v v < 1} :=
+      (h.adaptedFormCoord hn g s).isVonNBounded_setOf_lt_one_of_pos fun v hv ↦ by
+        rw [adaptedFormCoord_apply]
+        exact h.adaptedForm_pos hn g ((map_ne_zero_iff _ e.symm.injective).2 hv)
     refine (hb.image (LinearMap.toContinuousLinearMap e.symm.toLinearMap)).subset ?_
     intro v hv
     refine ⟨e v, ?_, by simp⟩
-    simpa [b] using hv
+    change h.adaptedFormCoord hn g s (e v) (e v) < 1
+    rw [adaptedFormCoord_apply, LinearEquiv.symm_apply_apply]
+    simpa using hv
 
 /-- The adapted metric is `(Hess (v⁺, w⁺) - Hess (v⁻, w⁻)) / 2`, with `v⁻ = P v` and
 `v⁺ = v - P v` for the projection `P` onto the negative normal space along the positive one. -/
@@ -329,30 +344,12 @@ theorem contMDiff_adaptedMetric (h : i.IsNondegenerateCriticalSubmanifold f) (hk
   set e := i.normalSpaceTrivialization hn hdim s₀
   have hs₀ : s₀ ∈ e.baseSet := i.mem_normalSpaceTrivialization_baseSet hn hdim s₀
   -- In the trivialization at `s₀`, the projections onto the negative normal spaces are a `C^k`
-  -- family `p` of idempotents, and the normal Hessian is a `C^k` family `Q` of bilinear forms.
+  -- family `p`, and the normal Hessian is a `C^k` family `Q` of bilinear forms.
   obtain ⟨p, hp, hps⟩ := h.exists_contMDiffOn_negativeNormalSpace_eq_map hn hk hf hdim g s₀
   simp only [normalSpaceFiberBundle_trivializationAt] at hp hps
   obtain ⟨Q, hQ, hQs⟩ :=
     h.toIsCriticalSubmanifold.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn
       (le_self_add.trans hk) hf hdim s₀
-  have hPe {s : S} (hs : s ∈ e.baseSet) (u : P) :
-      h.negativeNormalProjection hn g.toRiemannianMetric s (e.symm s u) = e.symm s (p s u) := by
-    obtain ⟨hidem, hneg, hpos, -⟩ := hps s hs
-    -- Split `u` along the range and the kernel of `p`.
-    have hu : e.symm s u = e.symm s (p s u) + e.symm s (u - p s u) := by
-      rw [← e.symmₗ_apply (R := ℝ) hs, ← e.symmₗ_apply (R := ℝ) hs, ← e.symmₗ_apply (R := ℝ) hs,
-        ← map_add, add_sub_cancel]
-    have h₁ : e.symm s (p s u) ∈ h.negativeNormalSpace hn g.toRiemannianMetric s := by
-      rw [hneg, ← e.symmₗ_apply (R := ℝ) hs]
-      exact Submodule.mem_map_of_mem (LinearMap.mem_range_self _ u)
-    have h₂ : e.symm s (u - p s u) ∈ h.positiveNormalSpace hn g.toRiemannianMetric s := by
-      rw [hpos, ← e.symmₗ_apply (R := ℝ) hs]
-      refine Submodule.mem_map_of_mem ?_
-      have hpp : p s (p s u) = p s u := by
-        simpa using congr($hidem.eq u)
-      simp [hpp]
-    rw [hu, map_add, h.negativeNormalProjection_apply_of_mem hn _ h₁,
-      (h.negativeNormalProjection_apply_eq_zero_iff hn _).mpr h₂, add_zero]
   -- The adapted metric reads as the same expression in `p` and `Q`.
   set φ : S → P →L[ℝ] P →L[ℝ] ℝ := fun s ↦ (2⁻¹ : ℝ) •
     ((ContinuousLinearMap.precomp ℝ (1 - p s)).comp ((Q s).comp (1 - p s)) -
@@ -372,12 +369,11 @@ theorem contMDiff_adaptedMetric (h : i.IsNondegenerateCriticalSubmanifold f) (hk
   have heq {s : S} (hs : s ∈ e.baseSet) (u v : P) :
       φ s u v = (h.adaptedMetric hn g.toRiemannianMetric).inner s (e.symm s u) (e.symm s v) := by
     have hsub (w : P) : e.symm s w - e.symm s (p s w) = e.symm s ((1 - p s) w) := by
-      rw [← e.symmₗ_apply (R := ℝ) hs, ← e.symmₗ_apply (R := ℝ) hs, ← e.symmₗ_apply (R := ℝ) hs,
-        ← map_sub]
-      rfl
+      rw [sub_apply, one_apply_eq_self, ← e.symmₗ_apply (R := ℝ) hs,
+        ← e.symmₗ_apply (R := ℝ) hs, ← e.symmₗ_apply (R := ℝ) hs, ← map_sub]
     have hQe (x y : P) : h.normalHessian hn s (e.symm s x) (e.symm s y) = Q s x y :=
       (hQs s hs x y).1
-    rw [adaptedMetric_inner, hPe hs, hPe hs, hsub, hsub, hQe, hQe]
+    rw [adaptedMetric_inner, ← (hps s hs).2.2.2.2.2, ← (hps s hs).2.2.2.2.2, hsub, hsub, hQe, hQe]
     simp only [φ, smul_apply, sub_apply,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply, smul_eq_mul]
     ring

@@ -88,7 +88,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-- In the preferred normal-bundle trivialization at `s₀`, the negative and positive normal
 spaces relative to a `C^k` fibre metric are the images of the range and of the kernel of a `C^k`
-family of projections of the fibre model. -/
+family of projections of the fibre model, which reads the projection onto the negative normal
+space along the positive one. -/
 theorem exists_contMDiffOn_negativeNormalSpace_eq_map
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
@@ -109,7 +110,9 @@ theorem exists_contMDiffOn_negativeNormalSpace_eq_map
         h.negativeNormalSpace hn g.toRiemannianMetric s = (p s).range.map (e.symmₗ ℝ s) ∧
         h.positiveNormalSpace hn g.toRiemannianMetric s = (p s).ker.map (e.symmₗ ℝ s) ∧
         finrank ℝ (p s).range = manifoldMorseIndex I f (i s) ∧
-        finrank ℝ (p s).ker = manifoldMorseIndex I (-f) (i s) := by
+        finrank ℝ (p s).ker = manifoldMorseIndex I (-f) (i s) ∧
+        ∀ u, e.symm s (p s u) =
+          h.negativeNormalProjection hn g.toRiemannianMetric s (e.symm s u) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -142,11 +145,24 @@ theorem exists_contMDiffOn_negativeNormalSpace_eq_map
     -- The underlying metric of `g` has the inner products of `g`, by definition.
     rfl
   have hL : (L : P →ₗ[ℝ] i.NormalSpace s hn) = e.symmₗ ℝ s := e.coe_linearEquivAt_symm ℝ hs
-  refine ⟨hidem, ?_, ?_, hrank, hnull⟩
-  · rw [IsCriticalSubmanifold.negativeNormalSpace_def, ← hL,
+  have hneg : h.negativeNormalSpace hn g.toRiemannianMetric s = (p s).range.map (e.symmₗ ℝ s) := by
+    rw [IsCriticalSubmanifold.negativeNormalSpace_def, ← hL,
       ← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ L, hgL, hL, hrange]
-  · rw [IsCriticalSubmanifold.positiveNormalSpace_def, ← hL,
+  have hpos : h.positiveNormalSpace hn g.toRiemannianMetric s = (p s).ker.map (e.symmₗ ℝ s) := by
+    rw [IsCriticalSubmanifold.positiveNormalSpace_def, ← hL,
       ← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ L, hgL, hL, hker]
+  refine ⟨hidem, hneg, hpos, hrank, hnull, fun u ↦ ?_⟩
+  -- Split `u` along the range and the kernel of `p s`.
+  have h₁ : e.symmₗ ℝ s (p s u) ∈ h.negativeNormalSpace hn g.toRiemannianMetric s :=
+    hneg ▸ Submodule.mem_map_of_mem (LinearMap.mem_range_self _ u)
+  have h₂ : e.symmₗ ℝ s (u - p s u) ∈ h.positiveNormalSpace hn g.toRiemannianMetric s := by
+    refine hpos ▸ Submodule.mem_map_of_mem ?_
+    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, ← mul_apply_eq_comp,
+      hidem.eq, sub_self]
+  rw [← e.symmₗ_apply (R := ℝ) hs, ← e.symmₗ_apply (R := ℝ) hs]
+  conv_rhs => rw [← add_sub_cancel (p s u) u]
+  rw [map_add, map_add, h.negativeNormalProjection_apply_of_mem hn _ h₁,
+    (h.negativeNormalProjection_apply_eq_zero_iff hn _).mpr h₂, add_zero]
 
 /-- **The negative normal bundle of a Morse–Bott submanifold.** Let `i` be a nondegenerate
 critical submanifold of `f`, with `f` of class `C^{k+2}` along it and `i` of class `C^{k+1}`, and
@@ -233,7 +249,7 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace
       (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).open_baseSet subset_rfl
       (A := fun s ↦ 1 - p s) ((contDiff_const.sub contDiff_id :
         ContDiff ℝ k fun A : P →L[ℝ] P ↦ 1 - A).contMDiff.comp_contMDiffOn hp)
-      (fun s hs ↦ (hker s hs ▸ (hps s hs).2.2.2.2).trans (hr s))
+      (fun s hs ↦ (hker s hs ▸ (hps s hs).2.2.2.2.1).trans (hr s))
       (mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀)
   exact ⟨U, hU, hs₀U, X, ⟨hX.continuousOn, hX.linearIndependent, fun hy ↦
     (hX.span_eq hy).trans (by rw [hker _ (hUe hy), (hps _ (hUe hy)).2.2.1])⟩, hXk⟩
@@ -306,9 +322,8 @@ theorem contMDiff_projection_negativeNormalSpace
     letI := i.normalSpaceVectorBundle hn hdim
     ContMDiff (J.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, P)) k
       (fun w : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦
-        TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) w.proj ((h.negativeNormalSpace hn
-          g.toRiemannianMetric w.proj).projection (h.positiveNormalSpace hn g.toRiemannianMetric
-            w.proj) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _ w.proj) w.2)) := by
+        TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) w.proj
+          (h.negativeNormalProjection hn g.toRiemannianMetric w.proj w.2)) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -330,21 +345,8 @@ theorem contMDiff_projection_negativeNormalSpace
   refine (hpw.clm_apply he).congr_of_eventuallyEq ?_
   filter_upwards [(FiberBundle.continuous_proj P _).continuousAt.preimage_mem_nhds
     (e.open_baseSet.mem_nhds hw₀)] with w hw
-  obtain ⟨hidem, hrange, hker, -, -⟩ := hps w.proj hw
-  -- Split the coordinate vector `y` of `w` along the range and the kernel of `p`.
-  set y := (e w).2
-  have hy : w.2 = e.symmₗ ℝ w.proj (p w.proj y) + e.symmₗ ℝ w.proj (y - p w.proj y) := by
-    rw [← map_add, add_sub_cancel, e.symmₗ_apply hw, e.symm_proj_apply w hw]
-  have hneg : e.symmₗ ℝ w.proj (p w.proj y) ∈
-      h.negativeNormalSpace hn g.toRiemannianMetric w.proj :=
-    hrange ▸ Submodule.mem_map_of_mem (LinearMap.mem_range_self _ y)
-  have hpos : e.symmₗ ℝ w.proj (y - p w.proj y) ∈
-      h.positiveNormalSpace hn g.toRiemannianMetric w.proj := by
-    refine hker ▸ Submodule.mem_map_of_mem ?_
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, ← mul_apply_eq_comp,
-      hidem.eq, sub_self]
-  rw [hy, map_add, Submodule.projection_apply_of_mem_left _ hneg,
-    (Submodule.projection_apply_eq_zero_iff _).mpr hpos, add_zero, e.symmₗ_apply hw]
+  have hy : w.2 = e.symm w.proj (e w).2 := (e.symm_proj_apply w hw).symm
+  rw [hy, ← (hps w.proj hw).2.2.2.2.2]
   exact congr_arg Prod.snd (e.apply_mk_symm hw _)
 
 /-- Projecting the normal bundle onto the positive normal bundle relative to a `C^k` fibre metric,
@@ -394,7 +396,7 @@ theorem contMDiff_projection_positiveNormalSpace
   have hlin (x : i.NormalSpace w.proj hn) : (e ⟨w.proj, x⟩).2 = e.linearMapAt ℝ w.proj x := by
     rw [e.coe_linearMapAt_of_mem hw]
   simp only [TotalSpace.mk', hlin]
-  rw [Submodule.projection_eq_self_sub_projection, map_sub]
+  rw [Submodule.projection_eq_self_sub_projection, map_sub, negativeNormalProjection_def]
 
 /-- **The negative normal bundle does not depend on the metric, up to isomorphism.** Let `i` be a
 nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}` along it, `i` of class
@@ -453,8 +455,10 @@ theorem exists_bundleDiffeomorph_negativeNormalSpace
             v.proj).toContinuousLinearEquiv v.2)) := fun v ↦
     (hV'.contMDiffAt_totalSpace_mk (b := TotalSpace.proj)
       ((contMDiff_projection_negativeNormalSpace hn h hk hf hdim g').comp
-        hV.contMDiff_totalSpace_inclusion v) fun _ ↦ Submodule.coe_mem _).congr_of_eventuallyEq
-      (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by simp)
+        hV.contMDiff_totalSpace_inclusion v) fun _ ↦
+          h.negativeNormalProjection_apply_mem hn _ _).congr_of_eventuallyEq
+      (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by
+        simp [negativeNormalProjection_def])
   exact ⟨bundleDiffeomorph (fun s ↦ (h.negativeNormalSpaceEquiv hn g.toRiemannianMetric
     g'.toRiemannianMetric s).toContinuousLinearEquiv) hΦ, fun v ↦ by simp⟩
 

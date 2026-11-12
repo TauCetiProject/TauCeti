@@ -239,6 +239,7 @@ theorem sub_negativeNormalProjection_apply_mem {s : S} (v : i.NormalSpace s hn) 
   Submodule.sub_projection_mem _ v
 
 /-- The projection fixes the negative normal space. -/
+@[simp]
 theorem negativeNormalProjection_apply_of_mem {s : S} {v : i.NormalSpace s hn}
     (hv : v ∈ h.negativeNormalSpace hn g s) : h.negativeNormalProjection hn g s v = v :=
   Submodule.projection_apply_of_mem_left _ hv

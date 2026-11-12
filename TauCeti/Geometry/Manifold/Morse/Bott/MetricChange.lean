@@ -244,11 +244,11 @@ theorem exists_contMDiffOn_normalMetricChange {k : ℕ∞ω} [IsManifold I (k + 
     have hL (w : P) : L.symm w = e.symm s w := Trivialization.linearEquivAt_symm_apply ..
     have hpL (w : P) : L.symm (p s w) = (h.negativeNormalSpace hn g s).projection
         (h.positiveNormalSpace hn g s) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s)
-        (L.symm w) := by rw [hL, hL, hpe s hs]
+        (L.symm w) := by rw [hL, hL, hpe s hs, negativeNormalProjection_def]
     have hpL' (w : P) : L.symm (p' s w) = (h.negativeNormalSpace hn g' s).projection
         (h.positiveNormalSpace hn g' s)
         (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s) (L.symm w) := by
-      rw [hL, hL, hpe' s hs]
+      rw [hL, hL, hpe' s hs, negativeNormalProjection_def]
     ext u
     apply L.symm.injective
     rw [hL (C s hs _ u), hC s hs, ← hL, LinearEquiv.coe_coe]
