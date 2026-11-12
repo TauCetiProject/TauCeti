@@ -26,8 +26,9 @@ nonzero covector `dg_x`, which is the tangent space of the hypersurface, a regul
 of `g` of the right dimension (`TauCeti.SmoothEmbedding.tangentRange_eq_ker_mfderiv`). The normal
 space is a line on which the Hessian has the sign of `φ''(c)`, so the Morse index along the
 hypersurface is `0` when `φ''(c) > 0`
-(`TauCeti.manifoldMorseIndex_scalar_comp_eq_zero_of_deriv_eq_zero`) and `1` when `φ''(c) < 0`
-(`TauCeti.SmoothEmbedding.manifoldMorseIndex_scalar_comp_of_neg`).
+(`TauCeti.manifoldMorseIndex_scalar_comp_eq_zero_of_iteratedDeriv_two_nonneg`) and `1` when
+`φ''(c) < 0` (`TauCeti.manifoldMorseIndex_scalar_comp_eq_one_of_iteratedDeriv_two_neg`); both
+hold pointwise.
 
 This produces Morse–Bott functions with critical submanifolds of positive dimension from Morse
 functions: for the height `h` on a round sphere, the critical latitudes of `φ ∘ h` are of this
@@ -38,8 +39,6 @@ kind (`TauCeti.Geometry.Manifold.Morse.Sphere.Bott`).
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_scalar_comp`: a regular hypersurface
   in a level `g = c` is a Morse–Bott critical submanifold of `φ ∘ g` when `φ'(c) = 0` and
   `φ''(c) ≠ 0`.
-* `TauCeti.SmoothEmbedding.manifoldMorseIndex_scalar_comp_of_neg`: if `φ''(c) < 0`, its Morse
-  index is `1`.
 
 ## References
 
@@ -53,7 +52,7 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.SmoothEmbedding
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M]
   {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -72,6 +71,7 @@ at each point of the hypersurface contains no vector outside its tangent space a
 `φ''(c) ≠ 0`. -/
 theorem isNondegenerateCriticalSubmanifold_scalar_comp (hφ'' : iteratedDeriv 2 φ c ≠ 0) :
     i.IsNondegenerateCriticalSubmanifold (φ ∘ g) := by
+  have : FiniteDimensional ℝ E := .of_finrank_pos (by omega)
   refine ⟨⟨fun s ↦ ?_, fun s ↦ ?_⟩, fun s v hv ↦ ?_⟩
   · rw [← hgi s] at hφ
     exact hφ.contMDiffAt.comp (i s) (hg s)
@@ -92,24 +92,5 @@ theorem isNondegenerateCriticalSubmanifold_scalar_comp (hφ'' : iteratedDeriv 2 
     rw [← i.tangentRange_eq_ker_mfderiv s hn (.of_forall hgi) (hreg s)
       (by rwa [finrank_self])] at hv0
     exact hv0
-
-/-- **The Morse index along a maximum level.** If `φ''(c) < 0`, the Morse index of `φ ∘ g` along a
-regular hypersurface in the level `g = c` is `1`, the dimension of the normal space. When
-`φ''(c) > 0` it is `0`, which holds at every point where `φ` is critical at the value of `g`
-(`TauCeti.manifoldMorseIndex_scalar_comp_eq_zero_of_deriv_eq_zero`). -/
-theorem manifoldMorseIndex_scalar_comp_of_neg [IsManifold I 2 M] (hφ'' : iteratedDeriv 2 φ c < 0)
-    (s : S) : manifoldMorseIndex I (φ ∘ g) (i s) = 1 := by
-  have hsum := (isNondegenerateCriticalSubmanifold_scalar_comp hn hg hgi hreg hdim hφ hφ'
-    hφ''.ne).manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank hn s
-  -- The coindex vanishes, since the Hessian `φ''(c) (dg)²` is nonpositive.
-  have hcoindex : manifoldMorseIndex I (-(φ ∘ g)) (i s) = 0 := by
-    rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian,
-      ← QuadraticForm.forall_nonpos_iff_sigPos_eq_zero]
-    intro v
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply,
-      criticalHessian_scalar_comp_apply_of_deriv_eq_zero (hg s) (hgi s ▸ hφ) (by rwa [hgi s]),
-      hgi s]
-    exact mul_nonpos_of_nonpos_of_nonneg hφ''.le (mul_self_nonneg _)
-  omega
 
 end TauCeti.SmoothEmbedding

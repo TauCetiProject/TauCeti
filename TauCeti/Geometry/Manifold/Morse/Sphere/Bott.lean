@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.ScalarComposition
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Degenerate
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # Morse–Bott functions of the height on the sphere
@@ -21,27 +22,33 @@ Morse indices.
   for `φ ∘ h` when `φ'(±1) ≠ 0`. The north pole has Morse index `n` when `φ'(1) > 0` and `0` when
   `φ'(1) < 0`; the south pole has index `0` when `φ'(-1) > 0` and `n` when `φ'(-1) < 0`.
 * **The latitudes.** Every level `h = c` with `c ≠ ±1` is a regular level of `h`
-  (`TauCeti.isRegularValue_sphereHeight`), hence an embedded hypersurface
+  (`TauCeti.isRegularValue_sphereHeight`), hence, when `n ≥ 1`, an embedded hypersurface
   (`TauCeti.isSmoothEmbedding_coe_regularLevel`). If `φ'(c) = 0` and `φ''(c) ≠ 0`, it is a
-  Morse–Bott critical submanifold of `φ ∘ h`, of Morse index `0` when `φ''(c) > 0` and `1` when
-  `φ''(c) < 0` (`TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_scalar_comp`).
+  Morse–Bott critical submanifold of `φ ∘ h`
+  (`TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_sphereHeight`). At each of its
+  points the Morse index is `0` when `φ''(c) > 0`
+  (`TauCeti.manifoldMorseIndex_scalar_comp_eq_zero_of_iteratedDeriv_two_nonneg`) and `1` when
+  `φ''(c) < 0` (`TauCeti.manifoldMorseIndex_comp_sphereHeight_eq_one_of_iteratedDeriv_two_neg`).
 
 Two examples are worked out, the standard test cases for Morse–Bott complexes on the sphere.
 
 * **Two caps.** For `f = h²` the critical set is the equator `h = 0` and the two poles
   (`TauCeti.criticalPoints_sq_comp_sphereHeight`). The equator is a Morse–Bott critical
-  submanifold of index `0`, and both poles are nondegenerate maxima, of index `n`.
-* **Four critical components.** For `f = b h - h³` with `0 < b < 3` put `a = √(b / 3)`, which lies
+  submanifold of index `0`, and both poles are nondegenerate critical points of index `n`.
+* **Four critical levels.** For `f = b h - h³` with `0 < b < 3` put `a = √(b / 3)`, which lies
   in `(0, 1)`. The critical set consists of the latitudes `h = -a` and `h = a` and the two poles
   (`TauCeti.criticalPoints_mul_sub_pow_three_comp_sphereHeight`). The latitude `h = -a` is a
   Morse–Bott critical submanifold of index `0` with value `-2ab/3`; the south pole is a
-  nondegenerate maximum of index `n` with value `1 - b`; the north pole is a nondegenerate minimum
-  of index `0` with value `b - 1`; and the latitude `h = a` is a Morse–Bott critical submanifold of
-  index `1` with value `2ab/3`. For `b = 5/4` these values are `-5a/6 < -1/4 < 1/4 < 5a/6`, and on
-  `S²` the negative normal ranks in this order are `0, 2, 0, 1`.
+  nondegenerate local maximum of index `n` with value `1 - b`; the north pole is a nondegenerate
+  local minimum of index `0` with value `b - 1`; and the latitude `h = a` is a Morse–Bott critical
+  submanifold of index `1` with value `2ab/3`. For `b = 5/4` these values are
+  `-5a/6 < -1/4 < 1/4 < 5a/6`. When `n ≥ 2` the latitudes are connected (this is not proved here),
+  so the critical set has four components, and on `S²` their negative normal ranks in this order
+  are `0, 2, 0, 1`.
 
-The latitude statements are made for any smooth embedding of a hypersurface into the level, such as
-the inclusion of the level with the atlas `TauCeti.regularLevelChartedSpace`.
+The Morse–Bott statements are made for any smooth embedding of a hypersurface into the level, such
+as, when `n ≥ 1`, the inclusion of the level with the atlas `TauCeti.regularLevelChartedSpace`.
+The Morse index statements are made pointwise.
 
 ## References
 
@@ -57,18 +64,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)] {φ : ℝ → ℝ}
-
-/-! ### Regular levels of the height -/
-
-/-- **Every level of the height except the poles is regular.** The only critical points of the
-height function are the poles, where its values are `1` and `-1`. -/
-theorem isRegularValue_sphereHeight (v : sphere (0 : E) 1) {c : ℝ} (hc₁ : c ≠ 1) (hc₂ : c ≠ -1) :
-    IsRegularValue (𝓡 n) 𝓘(ℝ) (sphereHeight v) c := by
-  refine isRegularValue_iff.2 fun x hx ↦ ?_
-  rw [isRegularPoint_iff_mvfderiv_ne_zero, Ne, mvfderiv_sphereHeight_eq_zero_iff]
-  rintro (rfl | rfl)
-  · exact hc₁ (hx.symm.trans (sphereHeight_self x))
-  · exact hc₂ (hx.symm.trans (sphereHeight_neg_self v))
 
 /-! ### The poles -/
 
@@ -142,38 +137,32 @@ theorem SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_sphereHeight (hk
     (fun s ↦ (isRegularValue_sphereHeight v hc₁ hc₂).isRegularPoint (hi s)) (by simpa using hdim)
     hφ hφ' hφ''
 
-/-- The Morse index of `φ ∘ h` along a hypersurface in a critical latitude `h = c` with
+/-- The Morse index of `φ ∘ h` at a point of a latitude `h = c`, `c ≠ ±1`, with `φ'(c) = 0` and
 `φ''(c) < 0` is `1`. -/
-theorem SmoothEmbedding.manifoldMorseIndex_comp_sphereHeight_of_neg (hk : k ≠ 0)
-    (hi : ∀ s, sphereHeight v (i s) = c) (hc₁ : c ≠ 1) (hc₂ : c ≠ -1)
-    (hdim : finrank ℝ E' + 1 = n) (hφ : ContDiffAt ℝ 2 φ c) (hφ' : deriv φ c = 0)
-    (hφ'' : iteratedDeriv 2 φ c < 0) (s : S) :
-    manifoldMorseIndex (𝓡 n) (φ ∘ sphereHeight v) (i s) = 1 :=
-  manifoldMorseIndex_scalar_comp_of_neg hk (fun s ↦ contMDiff_sphereHeight v _) hi
-    (fun s ↦ (isRegularValue_sphereHeight v hc₁ hc₂).isRegularPoint (hi s)) (by simpa using hdim)
-    hφ hφ' hφ'' s
+theorem manifoldMorseIndex_comp_sphereHeight_eq_one_of_iteratedDeriv_two_neg
+    {x : sphere (0 : E) 1} (hx : sphereHeight v x = c) (hc₁ : c ≠ 1) (hc₂ : c ≠ -1)
+    (hφ : ContDiffAt ℝ 2 φ c) (hφ' : deriv φ c = 0) (hφ'' : iteratedDeriv 2 φ c < 0) :
+    manifoldMorseIndex (𝓡 n) (φ ∘ sphereHeight v) x = 1 := by
+  subst hx
+  exact manifoldMorseIndex_scalar_comp_eq_one_of_iteratedDeriv_two_neg
+    (contMDiff_sphereHeight v x) ((isRegularValue_sphereHeight v hc₁ hc₂).isRegularPoint rfl)
+    hφ hφ' hφ''
 
 /-! ### Two caps: the function `h²` -/
-
-/-- The second derivative of `t²` is `2`. -/
-private theorem iteratedDeriv_two_sq (t : ℝ) : iteratedDeriv 2 (fun t : ℝ ↦ t ^ 2) t = 2 := by
-  have h : deriv (fun t : ℝ ↦ t ^ 2) = fun t ↦ 2 * t := funext fun t ↦ by simp
-  rw [iteratedDeriv_succ, iteratedDeriv_one, h]
-  simp
 
 /-- **The equator is a Morse–Bott critical submanifold of `h²`.** -/
 theorem SmoothEmbedding.isNondegenerateCriticalSubmanifold_sq_comp_sphereHeight (hk : k ≠ 0)
     (hi : ∀ s, sphereHeight v (i s) = 0) (hdim : finrank ℝ E' + 1 = n) :
     i.IsNondegenerateCriticalSubmanifold ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) :=
   i.isNondegenerateCriticalSubmanifold_comp_sphereHeight hk hi zero_ne_one (by norm_num) hdim
-    (by fun_prop) (by simp) (by simp [iteratedDeriv_two_sq])
+    (by fun_prop) (by simp) (by simp)
 
 /-- The Morse index of `h²` along the equator is `0`. -/
 theorem manifoldMorseIndex_sq_comp_sphereHeight_of_eq_zero {x : sphere (0 : E) 1}
     (hx : sphereHeight v x = 0) :
     manifoldMorseIndex (𝓡 n) ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) x = 0 :=
-  manifoldMorseIndex_scalar_comp_eq_zero_of_deriv_eq_zero (contMDiff_sphereHeight v x)
-    (by fun_prop) (by rw [hx]; simp) (by simp [iteratedDeriv_two_sq])
+  manifoldMorseIndex_scalar_comp_eq_zero_of_iteratedDeriv_two_nonneg (contMDiff_sphereHeight v x)
+    (by fun_prop) (by rw [hx]; simp) (by simp)
 
 /-- The north pole is a nondegenerate critical point of `h²`. -/
 theorem isManifoldNondegenerateCriticalPoint_sq_comp_sphereHeight_self (v : sphere (0 : E) 1) :
@@ -185,17 +174,17 @@ theorem isManifoldNondegenerateCriticalPoint_sq_comp_sphereHeight_neg (v : spher
     IsManifoldNondegenerateCriticalPoint (𝓡 n) ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) (-v) :=
   isManifoldNondegenerateCriticalPoint_comp_sphereHeight_neg v (by fun_prop) (by simp)
 
-/-- The north pole is a maximum of `h²`, of Morse index `n`. -/
+/-- The Morse index of `h²` at the north pole is `n`. -/
 theorem manifoldMorseIndex_sq_comp_sphereHeight_self (v : sphere (0 : E) 1) :
     manifoldMorseIndex (𝓡 n) ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) v = n :=
   manifoldMorseIndex_comp_sphereHeight_self_of_pos v (by fun_prop) (by simp)
 
-/-- The south pole is a maximum of `h²`, of Morse index `n`. -/
+/-- The Morse index of `h²` at the south pole is `n`. -/
 theorem manifoldMorseIndex_sq_comp_sphereHeight_neg (v : sphere (0 : E) 1) :
     manifoldMorseIndex (𝓡 n) ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) (-v) = n :=
   manifoldMorseIndex_comp_sphereHeight_neg_of_neg v (by fun_prop) (by simp)
 
-/-! ### Four critical components: the function `b h - h³` -/
+/-! ### Four critical levels: the function `b h - h³` -/
 
 variable {b : ℝ}
 
@@ -211,20 +200,36 @@ private theorem iteratedDeriv_two_mul_sub_pow_three (t : ℝ) :
   rw [iteratedDeriv_succ, iteratedDeriv_one, deriv_mul_sub_pow_three]
   exact (((hasDerivAt_pow 2 t).const_mul 3).const_sub b).deriv.trans (by ring)
 
+/-- For `0 ≤ b`, the square of the critical latitude `√(b / 3)` is `b / 3`. -/
+private theorem sq_sqrt_div_three (hb : 0 ≤ b) : √(b / 3) ^ 2 = b / 3 :=
+  Real.sq_sqrt (by positivity)
+
+/-- The derivative of `b t - t³` vanishes where `t² = b / 3`, in particular at `t = ±√(b / 3)`. -/
+private theorem deriv_mul_sub_pow_three_eq_zero_of_sq_eq {t : ℝ} (ht : t ^ 2 = b / 3) :
+    deriv (fun t : ℝ ↦ b * t - t ^ 3) t = 0 := by
+  simp only [deriv_mul_sub_pow_three, ht]
+  ring
+
 /-- For `0 < b < 3`, the critical latitude `√(b / 3)` lies strictly between `0` and `1`. -/
 private theorem sqrt_div_three_mem_Ioo (hb₀ : 0 < b) (hb₃ : b < 3) : √(b / 3) ∈ Ioo 0 1 :=
   ⟨Real.sqrt_pos.2 (by positivity), (Real.sqrt_lt' one_pos).2 (by linarith)⟩
 
-/-- **The critical points of `b h - h³`** are the latitudes `h = ±√(b / 3)` and the two poles. -/
+/-- For `0 < b`, the second derivative of `b t - t³` at `√(b / 3)` is negative. -/
+private theorem iteratedDeriv_two_mul_sub_pow_three_sqrt_neg (hb₀ : 0 < b) :
+    iteratedDeriv 2 (fun t : ℝ ↦ b * t - t ^ 3) √(b / 3) < 0 := by
+  rw [iteratedDeriv_two_mul_sub_pow_three]
+  linarith [Real.sqrt_pos.2 (by positivity : 0 < b / 3)]
+
+/-- **The critical points of `b h - h³`** for `0 ≤ b` are the latitudes `h = ±√(b / 3)` and the
+two poles. -/
 theorem criticalPoints_mul_sub_pow_three_comp_sphereHeight (hb : 0 ≤ b) (v : sphere (0 : E) 1) :
     criticalPoints (𝓡 n) ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v) =
       sphereHeight v ⁻¹' {-√(b / 3), √(b / 3)} ∪ {v, -v} := by
   rw [criticalPoints_comp_sphereHeight (by fun_prop)]
   congr 2
   ext t
-  have hsq : √(b / 3) ^ 2 = b / 3 := Real.sq_sqrt (by positivity)
   simp only [deriv_mul_sub_pow_three, mem_ofPred_eq, mem_insert_iff, mem_singleton_iff]
-  rw [← sq_eq_sq_iff_eq_or_eq_neg.trans or_comm, hsq]
+  rw [← sq_eq_sq_iff_eq_or_eq_neg.trans or_comm, sq_sqrt_div_three hb]
   constructor <;> intro h <;> linarith
 
 /-- The value of `b h - h³` at the north pole is `b - 1`. -/
@@ -238,77 +243,76 @@ theorem mul_sub_pow_three_comp_sphereHeight_neg (v : sphere (0 : E) 1) :
   simp only [comp_apply, sphereHeight_neg_self]
   ring
 
-/-- The value of `b h - h³` on the latitude `h = √(b / 3)` is `(2 b / 3) √(b / 3)`. -/
+/-- For `0 ≤ b`, the value of `b h - h³` on the latitude `h = √(b / 3)` is
+`(2 b / 3) √(b / 3)`. -/
 theorem mul_sub_pow_three_comp_sphereHeight_of_eq_sqrt (hb : 0 ≤ b) {x : sphere (0 : E) 1}
     (hx : sphereHeight v x = √(b / 3)) :
     ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v) x = 2 * b / 3 * √(b / 3) := by
-  have hsq : √(b / 3) ^ 2 = b / 3 := Real.sq_sqrt (by positivity)
   simp only [comp_apply, hx]
-  linear_combination -√(b / 3) * hsq
+  linear_combination -√(b / 3) * sq_sqrt_div_three hb
 
-/-- The value of `b h - h³` on the latitude `h = -√(b / 3)` is `-(2 b / 3) √(b / 3)`. -/
+/-- For `0 ≤ b`, the value of `b h - h³` on the latitude `h = -√(b / 3)` is
+`-(2 b / 3) √(b / 3)`. -/
 theorem mul_sub_pow_three_comp_sphereHeight_of_eq_neg_sqrt (hb : 0 ≤ b) {x : sphere (0 : E) 1}
     (hx : sphereHeight v x = -√(b / 3)) :
     ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v) x = -(2 * b / 3 * √(b / 3)) := by
-  have hsq : √(b / 3) ^ 2 = b / 3 := Real.sq_sqrt (by positivity)
   simp only [comp_apply, hx]
-  linear_combination √(b / 3) * hsq
+  linear_combination √(b / 3) * sq_sqrt_div_three hb
+
+namespace SmoothEmbedding
 
 /-- For `0 < b < 3`, the latitude `h = √(b / 3)` is a Morse–Bott critical submanifold of
 `b h - h³`. -/
-theorem SmoothEmbedding.isNondegenerateCriticalSubmanifold_mul_sub_pow_three_comp_sphereHeight
+theorem isNondegenerateCriticalSubmanifold_mul_sub_pow_three_comp_sphereHeight_of_eq_sqrt
     (hk : k ≠ 0) (hb₀ : 0 < b) (hb₃ : b < 3) (hi : ∀ s, sphereHeight v (i s) = √(b / 3))
     (hdim : finrank ℝ E' + 1 = n) :
     i.IsNondegenerateCriticalSubmanifold ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v) := by
   have ha := sqrt_div_three_mem_Ioo hb₀ hb₃
-  have hsq : √(b / 3) ^ 2 = b / 3 := Real.sq_sqrt (by positivity)
-  refine i.isNondegenerateCriticalSubmanifold_comp_sphereHeight hk hi ha.2.ne (by linarith [ha.1])
-    hdim (by fun_prop) ?_ ?_
-  · simp only [deriv_mul_sub_pow_three, hsq]
-    ring
-  · rw [iteratedDeriv_two_mul_sub_pow_three]
-    linarith [ha.1]
+  exact i.isNondegenerateCriticalSubmanifold_comp_sphereHeight hk hi ha.2.ne
+    (by linarith [ha.1]) hdim (by fun_prop)
+    (deriv_mul_sub_pow_three_eq_zero_of_sq_eq (sq_sqrt_div_three hb₀.le))
+    (iteratedDeriv_two_mul_sub_pow_three_sqrt_neg hb₀).ne
 
-/-- For `0 < b < 3`, the Morse index of `b h - h³` along the latitude `h = √(b / 3)` is `1`. -/
-theorem SmoothEmbedding.manifoldMorseIndex_mul_sub_pow_three_comp_sphereHeight (hk : k ≠ 0)
-    (hb₀ : 0 < b) (hb₃ : b < 3) (hi : ∀ s, sphereHeight v (i s) = √(b / 3))
-    (hdim : finrank ℝ E' + 1 = n) (s : S) :
-    manifoldMorseIndex (𝓡 n) ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v) (i s) = 1 := by
+end SmoothEmbedding
+
+/-- For `0 < b < 3`, the Morse index of `b h - h³` at a point of the latitude `h = √(b / 3)` is
+`1`. -/
+theorem manifoldMorseIndex_mul_sub_pow_three_comp_sphereHeight_of_eq_sqrt (hb₀ : 0 < b)
+    (hb₃ : b < 3) {x : sphere (0 : E) 1} (hx : sphereHeight v x = √(b / 3)) :
+    manifoldMorseIndex (𝓡 n) ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v) x = 1 := by
   have ha := sqrt_div_three_mem_Ioo hb₀ hb₃
-  have hsq : √(b / 3) ^ 2 = b / 3 := Real.sq_sqrt (by positivity)
-  refine i.manifoldMorseIndex_comp_sphereHeight_of_neg hk hi ha.2.ne (by linarith [ha.1]) hdim
-    (by fun_prop) ?_ ?_ s
-  · simp only [deriv_mul_sub_pow_three, hsq]
-    ring
-  · rw [iteratedDeriv_two_mul_sub_pow_three]
-    linarith [ha.1]
+  exact manifoldMorseIndex_comp_sphereHeight_eq_one_of_iteratedDeriv_two_neg hx ha.2.ne
+    (by linarith [ha.1]) (by fun_prop)
+    (deriv_mul_sub_pow_three_eq_zero_of_sq_eq (sq_sqrt_div_three hb₀.le))
+    (iteratedDeriv_two_mul_sub_pow_three_sqrt_neg hb₀)
+
+namespace SmoothEmbedding
 
 /-- For `0 < b < 3`, the latitude `h = -√(b / 3)` is a Morse–Bott critical submanifold of
 `b h - h³`. -/
-theorem SmoothEmbedding.isNondegenerateCriticalSubmanifold_mul_sub_pow_three_comp_sphereHeight_neg
+theorem isNondegenerateCriticalSubmanifold_mul_sub_pow_three_comp_sphereHeight_of_eq_neg_sqrt
     (hk : k ≠ 0) (hb₀ : 0 < b) (hb₃ : b < 3) (hi : ∀ s, sphereHeight v (i s) = -√(b / 3))
     (hdim : finrank ℝ E' + 1 = n) :
     i.IsNondegenerateCriticalSubmanifold ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v) := by
   have ha := sqrt_div_three_mem_Ioo hb₀ hb₃
-  have hsq : √(b / 3) ^ 2 = b / 3 := Real.sq_sqrt (by positivity)
   refine i.isNondegenerateCriticalSubmanifold_comp_sphereHeight hk hi (by linarith [ha.1])
-    (by linarith [ha.2]) hdim (by fun_prop) ?_ ?_
-  · simp only [deriv_mul_sub_pow_three, neg_sq, hsq]
-    ring
-  · rw [iteratedDeriv_two_mul_sub_pow_three]
-    linarith [ha.1]
+    (by linarith [ha.2]) hdim (by fun_prop)
+    (deriv_mul_sub_pow_three_eq_zero_of_sq_eq ((neg_sq _).trans (sq_sqrt_div_three hb₀.le))) ?_
+  rw [iteratedDeriv_two_mul_sub_pow_three]
+  linarith [ha.1]
 
-/-- For `0 < b < 3`, the Morse index of `b h - h³` along the latitude `h = -√(b / 3)` is `0`. -/
-theorem manifoldMorseIndex_mul_sub_pow_three_comp_sphereHeight_of_eq_neg_sqrt (hb₀ : 0 < b)
+end SmoothEmbedding
+
+/-- For `0 ≤ b`, the Morse index of `b h - h³` at a point of the latitude `h = -√(b / 3)` is
+`0`. -/
+theorem manifoldMorseIndex_mul_sub_pow_three_comp_sphereHeight_of_eq_neg_sqrt (hb : 0 ≤ b)
     {x : sphere (0 : E) 1} (hx : sphereHeight v x = -√(b / 3)) :
     manifoldMorseIndex (𝓡 n) ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v) x = 0 := by
-  have hsq : √(b / 3) ^ 2 = b / 3 := Real.sq_sqrt (by positivity)
-  refine manifoldMorseIndex_scalar_comp_eq_zero_of_deriv_eq_zero (contMDiff_sphereHeight v x)
-    (by fun_prop) ?_ ?_
-  · simp only [deriv_mul_sub_pow_three, hx, neg_sq, hsq]
-    ring
-  · rw [iteratedDeriv_two_mul_sub_pow_three, hx]
-    nlinarith [Real.sqrt_nonneg (b / 3)]
+  refine manifoldMorseIndex_scalar_comp_eq_zero_of_iteratedDeriv_two_nonneg
+    (contMDiff_sphereHeight v x) (by fun_prop)
+    (hx ▸ deriv_mul_sub_pow_three_eq_zero_of_sq_eq ((neg_sq _).trans (sq_sqrt_div_three hb))) ?_
+  rw [iteratedDeriv_two_mul_sub_pow_three, hx]
+  nlinarith [Real.sqrt_nonneg (b / 3)]
 
 /-- For `b ≠ 3`, the north pole is a nondegenerate critical point of `b h - h³`. -/
 theorem isManifoldNondegenerateCriticalPoint_mul_sub_pow_three_comp_sphereHeight_self
@@ -325,14 +329,14 @@ theorem isManifoldNondegenerateCriticalPoint_mul_sub_pow_three_comp_sphereHeight
   isManifoldNondegenerateCriticalPoint_comp_sphereHeight_neg v (by fun_prop)
     (by simpa [deriv_mul_sub_pow_three, sub_eq_zero] using hb)
 
-/-- For `b < 3`, the north pole is a minimum of `b h - h³`, of Morse index `0`. -/
+/-- For `b < 3`, the Morse index of `b h - h³` at the north pole, a local minimum, is `0`. -/
 theorem manifoldMorseIndex_mul_sub_pow_three_comp_sphereHeight_self (hb : b < 3)
     (v : sphere (0 : E) 1) :
     manifoldMorseIndex (𝓡 n) ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v) v = 0 :=
   manifoldMorseIndex_comp_sphereHeight_self_of_neg v (by fun_prop)
     (by simp only [deriv_mul_sub_pow_three]; linarith)
 
-/-- For `b < 3`, the south pole is a maximum of `b h - h³`, of Morse index `n`. -/
+/-- For `b < 3`, the Morse index of `b h - h³` at the south pole, a local maximum, is `n`. -/
 theorem manifoldMorseIndex_mul_sub_pow_three_comp_sphereHeight_neg (hb : b < 3)
     (v : sphere (0 : E) 1) :
     manifoldMorseIndex (𝓡 n) ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v) (-v) = n :=

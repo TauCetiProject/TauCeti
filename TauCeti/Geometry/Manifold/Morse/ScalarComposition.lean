@@ -41,8 +41,10 @@ assert properness of the reciprocal function or extension to a compactification.
   index at a critical point.
 * `TauCeti.criticalHessian_scalar_comp_apply_of_deriv_eq_zero`: where `φ` is critical at the value
   `f x`, the critical Hessian of `φ ∘ f` is `φ''(f x) df ⊗ df`.
-* `TauCeti.manifoldMorseIndex_scalar_comp_eq_zero_of_deriv_eq_zero`: there, if `φ''(f x) ≥ 0`, the
-  Morse index of `φ ∘ f` is `0`.
+* `TauCeti.manifoldMorseIndex_scalar_comp_eq_zero_of_iteratedDeriv_two_nonneg`: there, if
+  `φ''(f x) ≥ 0`, the Morse index of `φ ∘ f` is `0`.
+* `TauCeti.manifoldMorseIndex_scalar_comp_eq_one_of_iteratedDeriv_two_neg`: there, if
+  `φ''(f x) < 0` and `x` is a regular point of `f`, the Morse index of `φ ∘ f` is `1`.
 * `TauCeti.IsMorse.scalar_comp`: a scalar change with nonzero derivative preserves Morse functions.
 
 ## References
@@ -154,16 +156,56 @@ theorem criticalHessian_scalar_comp_apply_of_deriv_eq_zero [I.Boundaryless]
 
 /-- Where the value `f x` is a critical point of `φ` with `φ''(f x) ≥ 0`, the Morse index of
 `φ ∘ f` at `x` is `0`: its critical Hessian `φ''(f x) df ⊗ df` is nonnegative. -/
-theorem manifoldMorseIndex_scalar_comp_eq_zero_of_deriv_eq_zero [I.Boundaryless]
-    [FiniteDimensional ℝ E] (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hφ : ContDiffAt ℝ 2 φ (f x))
-    (hφ' : deriv φ (f x) = 0) (hφ'' : 0 ≤ iteratedDeriv 2 φ (f x)) :
+theorem manifoldMorseIndex_scalar_comp_eq_zero_of_iteratedDeriv_two_nonneg [I.Boundaryless]
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hφ : ContDiffAt ℝ 2 φ (f x)) (hφ' : deriv φ (f x) = 0)
+    (hφ'' : 0 ≤ iteratedDeriv 2 φ (f x)) :
     manifoldMorseIndex I (φ ∘ f) x = 0 := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · rw [manifoldMorseIndex_def, morseIndex_eq_zero_of_not_finiteDimensional hE]
   rw [manifoldMorseIndex_eq_sigNeg_criticalHessian,
     ← QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero]
   intro v
   rw [LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply,
     criticalHessian_scalar_comp_apply_of_deriv_eq_zero hf hφ hφ']
   exact mul_nonneg hφ'' (mul_self_nonneg _)
+
+/-- Where the value `f x` is a critical point of `φ` with `φ''(f x) < 0` and `x` is a regular
+point of `f`, the Morse index of `φ ∘ f` at `x` is `1`: its critical Hessian
+`φ''(f x) df ⊗ df` is nonpositive, and its kernel is the hyperplane `ker df`. -/
+theorem manifoldMorseIndex_scalar_comp_eq_one_of_iteratedDeriv_two_neg [I.Boundaryless]
+    [FiniteDimensional ℝ E] (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hreg : IsRegularPoint I 𝓘(ℝ) f x)
+    (hφ : ContDiffAt ℝ 2 φ (f x)) (hφ' : deriv φ (f x) = 0)
+    (hφ'' : iteratedDeriv 2 φ (f x) < 0) :
+    manifoldMorseIndex I (φ ∘ f) x = 1 := by
+  have hH := criticalHessian_scalar_comp_apply_of_deriv_eq_zero hf hφ hφ'
+  -- The coindex vanishes, since the Hessian is nonpositive.
+  have hpos : sigPos (criticalHessian I (φ ∘ f) x).toBilinForm.toQuadraticMap = 0 := by
+    rw [← QuadraticForm.forall_nonpos_iff_sigPos_eq_zero]
+    intro v
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply, hH]
+    exact mul_nonpos_of_nonpos_of_nonneg hφ''.le (mul_self_nonneg _)
+  -- The radical is `ker df`: pair a vector `v` with a vector `w` on which `df` is `1`.
+  have hrad : (criticalHessian I (φ ∘ f) x).toBilinForm.toQuadraticMap.radical =
+      (mfderiv I 𝓘(ℝ) f x).ker := by
+    rw [radical_toQuadraticMap_toBilinForm_criticalHessian (hφ.contMDiffAt.comp x hf),
+      ← ker_mvfderiv]
+    obtain ⟨w, hw⟩ := isRegularPoint_iff_surjective_mvfderiv.1 hreg 1
+    ext v
+    simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
+    refine ⟨fun hv ↦ ?_, fun hv ↦ ContinuousLinearMap.ext fun u ↦ ?_⟩
+    · have hvw := congr($hv w)
+      rw [hH, hw, mul_one, zero_apply] at hvw
+      exact (mul_eq_zero.1 hvw).resolve_left hφ''.ne
+    · rw [hH, hv, zero_mul, mul_zero, zero_apply]
+  have hsum := QuadraticForm.sigPos_add_sigNeg_add_radical
+    (Q := (criticalHessian I (φ ∘ f) x).toBilinForm.toQuadraticMap)
+  have hdim := hreg.finrank_ker_mfderiv_add_finrank
+  rw [hpos, hrad] at hsum
+  rw [Module.finrank_self] at hdim
+  rw [manifoldMorseIndex_eq_sigNeg_criticalHessian]
+  have : Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E := rfl
+  omega
 
 /-- A scalar change smooth near the values of a Morse function, with nonzero derivative there,
 preserves the property of being Morse on a set. -/
