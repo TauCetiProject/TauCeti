@@ -508,7 +508,7 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ] (X : Ω 
           rw [hω]
   have h_sq_eq : ∫ ω, μ₁ ω * μ₁ ω ∂μ = ∫ ω, μ₂ ω * μ₂ ω ∂μ := h_sq_eq_raw
   -- `μ₁ =ᵐ μ₂` from the polarisation `∫ (μ₂ - μ₁)² = ∫ μ₂² - 2 ∫ μ₂ μ₁ + ∫ μ₁² = 0`.
-  exact (ae_eq_of_integral_mul_eq_of_integral_sq_eq hμ₁sq_int hμ₂sq_int hμ₂μ₁_int
+  exact (ae_eq_of_integral_mul_eq_of_integral_sq_eq hμ₁sq_int hμ₂sq_int
     h_cross h_sq_eq).symm
 
 variable {Ω ι : Type*} [mΩ : MeasurableSpace Ω] [StandardBorelSpace Ω]
