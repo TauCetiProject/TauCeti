@@ -26,15 +26,18 @@ Write `p₀ = ν.real {0}`. This file combines the zero-inflation formulas of
 * the nonzero natural moments `(1 - w) E[X ^ n] / (1 - p₀)` of the real cast, its mean and
   variance, and its exponential-integrability domain, which is all of `ℝ` at `w = 1` and otherwise
   that of `ν` (the moment and mean identities are stated for Bochner integrals, which are `0` when
-  the integrand is not integrable; they are genuine finite moments at `w = 1`, where the hurdle law
-  is the point mass at zero, or when `ν` has them, and otherwise both sides vanish);
+  the integrand is not integrable; they are genuine finite moments of a probability law at `w = 1`,
+  where the hurdle law is the point mass at zero, or when `ν` is not the point mass at zero and has
+  them, and otherwise both sides vanish);
 * the cdf of the real cast and its quantile: zero up to the level `w`, and above it the quantile of
   `ν` at the level `p₀ + (u - w) / (1 - w) * (1 - p₀)`.
 
 At `w = 1` the hurdle law is the point mass at zero by `MeasureTheory.Measure.atomMixture_one`,
 even when `ν` is the point mass at zero and the truncated law vanishes. In that zero-base case
-with `w < 1` the hurdle law is not a probability law. The variance formula covers this boundary,
-while the cdf and quantile formulas assume that `ν` is not the point mass at zero.
+with `w < 1` the hurdle law `w δ₀` is not a probability law. The moment, mean and variance
+formulas cover this boundary: there both sides of the moment and mean formulas are `0`, the
+right-hand side through division by `1 - p₀ = 0` (`x / 0 = 0`). The cdf and quantile formulas assume
+that `ν` is not the point mass at zero.
 
 ## References
 
@@ -104,31 +107,25 @@ theorem integrableExpSet_id_map_natCast_cond_compl_zero_atomMixture_zero :
 
 /-- Every nonzero natural moment of the real cast of the hurdle law is the corresponding moment of
 `ν` rescaled by `(1 - w) / (1 - ν.real {0})`. This is an identity of Bochner integrals, which are
-`0` for a non-integrable integrand. It is the genuine moment identity at `w = 1`, where the hurdle
-law is the point mass at zero and both sides are `0`, or when `ν` has an `n`-th moment; when
-`w ≠ 1` and `ν` has no `n`-th moment, both sides vanish by non-integrability. -/
+`0` for a non-integrable integrand. It is the genuine moment identity of the hurdle probability law
+at `w = 1`, where that law is the point mass at zero and both sides are `0`, or when `ν {0} ≠ 1` and
+`ν` has an `n`-th moment. When `ν {0} = 1` and `w < 1`, both sides are `0`, the right-hand side
+through division by `1 - ν.real {0} = 0`; when `w ≠ 1` and `ν` has no `n`-th moment, both sides
+vanish by non-integrability. -/
 theorem integral_pow_map_natCast_cond_compl_zero_atomMixture_zero {n : ℕ} (hn : n ≠ 0) :
     ∫ x, x ^ n ∂((ν[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ) =
       (1 - (w : ℝ)) * (∫ x, x ^ n ∂ν.map (Nat.cast : ℕ → ℝ)) / (1 - ν.real {0}) := by
-  by_cases hν : Integrable (fun x : ℝ => x ^ n) (ν.map (Nat.cast : ℕ → ℝ))
-  swap
-  · -- Both moments are non-integrable (or the mixture is the point mass at zero): all vanish.
-    rw [integral_undef hν, mul_zero, zero_div, map_natCast_atomMixture_zero]
-    by_cases hw : w = 1
-    · simp [hw, hn]
-    refine integral_undef fun h ↦ hν ?_
-    rw [← integrable_map_natCast_cond_compl_zero_iff ν]
-    exact (integrable_atomMixture_iff _ _ hw).1 h
   rw [map_natCast_atomMixture_zero,
-    integral_atomMixture _ _ _ _ (integrable_map_natCast_cond_compl_zero_iff ν |>.2 hν),
-    integral_pow_map_natCast_cond_compl_zero ν hn, smul_eq_mul, smul_eq_mul, zero_pow hn,
-    mul_zero, zero_add, mul_div_assoc]
+    integral_atomMixture_of_eq_zero _ 0 w (f := fun x : ℝ => x ^ n) (zero_pow hn),
+    integral_pow_map_natCast_cond_compl_zero ν hn, smul_eq_mul, mul_div_assoc]
 
 /-- The mean of the real cast of the hurdle law is the mean of `ν` rescaled by
 `(1 - w) / (1 - ν.real {0})`. This is an identity of Bochner integrals, which are `0` for a
-non-integrable integrand. It is the genuine mean identity at `w = 1`, where the hurdle law is the
-point mass at zero and both sides are `0`, or when `ν` has a finite mean; when `w ≠ 1` and `ν` has
-no mean, both sides vanish by non-integrability. -/
+non-integrable integrand. It is the genuine mean identity of the hurdle probability law at `w = 1`,
+where that law is the point mass at zero and both sides are `0`, or when `ν {0} ≠ 1` and `ν` has a
+finite mean. When `ν {0} = 1` and `w < 1`, both sides are `0`, the right-hand side through
+division by `1 - ν.real {0} = 0`; when `w ≠ 1` and `ν` has no mean, both sides vanish by
+non-integrability. -/
 theorem integral_id_map_natCast_cond_compl_zero_atomMixture_zero :
     ∫ x, x ∂((ν[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ) =
       (1 - (w : ℝ)) * (∫ x, x ∂ν.map (Nat.cast : ℕ → ℝ)) / (1 - ν.real {0}) := by

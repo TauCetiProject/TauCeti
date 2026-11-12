@@ -207,4 +207,20 @@ theorem integral_atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSing
   · exact (integrable_dirac (by simp)).smul_measure (by simp)
   · exact hf.smul_measure (by simp)
 
+/-- Integrating a function that vanishes at the atom against an atom mixture gives `1 - w` times
+its integral against the base component. This is an identity of Bochner integrals: when `f` is not
+integrable for `μ`, both sides are `0` (at `w = 1` because the mixture is the point mass at `c`). -/
+theorem integral_atomMixture_of_eq_zero {α E : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] [NormedAddCommGroup E] [NormedSpace ℝ E] (μ : Measure α) (c : α)
+    (w : unitInterval) {f : α → E} (hf : f c = 0) :
+    ∫ x, f x ∂μ.atomMixture c w = (1 - (w : ℝ)) • ∫ x, f x ∂μ := by
+  by_cases hE : CompleteSpace E
+  swap
+  · rw [integral_of_not_completeSpace hE, integral_of_not_completeSpace hE, smul_zero]
+  by_cases hμ : Integrable f μ
+  · rw [integral_atomMixture μ c w f hμ, hf, smul_zero, zero_add]
+  by_cases hw : w = 1
+  · simp [hw, hf]
+  rw [integral_undef hμ, integral_undef ((integrable_atomMixture_iff μ c hw).not.2 hμ), smul_zero]
+
 end MeasureTheory.Measure
