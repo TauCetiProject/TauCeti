@@ -362,7 +362,7 @@ theorem IsCrosscut.exists_eq_filledHull_of_union_eq_closedBall (hτ : IsCrosscut
     (hAB' : A ∩ B = range τ) (hAτ : (A \ range τ).Nonempty) (hBτ : (B \ range τ).Nonempty) :
     ∃ α : Path x y, Injective α ∧ range α ⊆ sphere 0 1 ∧ IsJordanCurve (range τ ∪ range α) ∧
       A = filledHull (range τ ∪ range α) := by
-  obtain ⟨α, β, hα, hβ, hαβu, hαβi, hJα, hJβ, hdisj, hunion⟩ := exists_arcs_of_isCrosscut hτ
+  obtain ⟨α, β, hα, hβ, hαβu, _, hJα, hJβ, _, hunion⟩ := exists_arcs_of_isCrosscut hτ
   have hαs : range α ⊆ sphere 0 1 := hαβu ▸ subset_union_left
   have hβs : range β ⊆ sphere 0 1 := hαβu ▸ subset_union_right
   have hcover := filledHull_union_filledHull hτ hαβu hunion
