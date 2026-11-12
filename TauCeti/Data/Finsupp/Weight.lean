@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
 public import TauCeti.Data.Finsupp.Order
+import Mathlib.Data.Finsupp.Interval
 
 /-!
 # Weights of finitely supported functions
@@ -66,6 +67,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
+* `Finsupp.finite_weightedStrip`: the weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` is
+  finite. Polynomials in `Z = X 0` and `W = X 1` supported on it have `Z`-degree below `B`, which
+  is the condition under which the power substitution `Z ↦ X, W ↦ X ^ B` is injective.
 -/
 
 public section
@@ -297,5 +301,16 @@ theorem injOn_weight_vecCons_one (B : ℕ) :
     simpa [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ, Nat.div_eq_of_lt hν] using
       congrArg (· / B) h
   exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨h0, h1⟩)
+
+/-- The weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` of two-variable exponents is
+finite: it lies in the box `Iic (N, N)`. -/
+theorem finite_weightedStrip (B N : ℕ) :
+    {μ : Fin 2 →₀ ℕ | μ 0 < B ∧ weight ![1, B] μ < N}.Finite := by
+  refine (Set.finite_Iic (equivFunOnFinite.symm fun _ : Fin 2 ↦ N)).subset
+    fun μ ⟨h0, h1⟩ ↦ ?_
+  rw [weight_vecCons_one] at h1
+  -- Both entries are at most `N`: `μ 1 ≤ B * μ 1` because `B > μ 0 ≥ 0`.
+  have := Nat.le_mul_of_pos_left (μ 1) ((Nat.zero_le _).trans_lt h0)
+  refine Fin.forall_fin_two.mpr ⟨?_, ?_⟩ <;> simp <;> omega
 
 end Finsupp

@@ -33,7 +33,8 @@ interpolation matrix whose minors the arithmetic determinant method estimates.
 * `MvPolynomial.jetMatrix_apply_eq_eval`, `MvPolynomial.jetMatrix_apply`: the entry in row `i` and
   column `μ` is the jet `(∂^[d i] X^μ)(a i)`, a product of binomial coefficients and powers.
 * `MvPolynomial.hasseDerivRow_eq_jetMatrix`: the row `MvPolynomial.hasseDerivRow` of the degree
-  box (`TauCeti/RingTheory/MvPolynomial/Box.lean`) is a row of the jet matrix of the box, so
+  box (`TauCeti/RingTheory/MvPolynomial/Box.lean`) is a row of the jet matrix of the box. So for
+  points with coordinates in `R` (not in a general `R`-algebra `S`),
   `MvPolynomial.aeval_hasseDeriv_eq_sum` is the box case of `MvPolynomial.jetEval_eq_mulVec`.
 * `MvPolynomial.toMatrix_jetEval`, `MvPolynomial.jetEval_eq_mulVec`: `jetMatrix` is the matrix of
   `jetEval` in the monomial basis.
