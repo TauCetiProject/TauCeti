@@ -41,7 +41,7 @@ scheme-theoretic intersection: on a proper curve `C` over `k` with finite-dimens
 
 `(-D · C) = -dim_k Γ(D ∩ C, 𝒪_{D ∩ C})`.
 
-The finite scheme `D ∩ C` has finitely many points, and its length is the sum of the local
+The finite scheme `D ∩ C` has finitely many points, and its degree over `k` is the sum of the local
 intersection multiplicities of `D` and `C` at them, the lengths `ℓ(𝒪_{D ∩ C, z})` of the Artinian
 local rings of the intersection, weighted by the residue degrees `[κ(z) : k]`:
 
@@ -87,8 +87,8 @@ off-diagonal entries of the intersection matrix.
 * `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum`: `(D · C)` is the sum
   over the points `z` of `D ∩ C` of the local intersection multiplicities `ℓ(𝒪_{D ∩ C, z})` times
   the residue degrees `[κ(z) : k]`, and
-  `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_subschemeι_eq_finsum` writes these
-  multiplicities as `ℓ(𝒪_{X,x} ⧸ (I_D + I_C)_x)` for a closed subscheme `C` of `X`;
+  `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum_of_isClosedImmersion`
+  writes these multiplicities as `ℓ(𝒪_{X,x} ⧸ (I_D + I_C)_x)` for a closed subscheme `C` of `X`;
 * `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf`: `(D · C) = dim_k Γ(D ∩ C)` for
   an effective Cartier divisor `D` meeting a proper curve `C` properly, so that `(D · C) ≥ 0`
   (`LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg`), with equality exactly
@@ -215,24 +215,96 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf {I : X.IdealSheafData}
   rw [intersectionNumber_def, pullback_inv, hI.pullback_mk_toInvertibleSheaf hI']
   exact hI'.eulerDegree_inv_mk_toInvertibleSheaf k _ s
 
-/-- **The intersection number is a sum of local intersection multiplicities.** Let `D` be an
-effective Cartier divisor on `X` with ideal sheaf `I = 𝒪_X(-D)`, and let `C` be a proper curve over
-`k` with finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)` meeting `D` properly. Then the
-scheme-theoretic intersection `D ∩ C` has finitely many points, and
-`(D · C) = Σ_{z ∈ D ∩ C} [κ(z) : k] · ℓ(𝒪_{D ∩ C, z})`, where the length of the Artinian local ring
-`𝒪_{D ∩ C, z}` is the local intersection multiplicity of `D` and `C` at `z`. -/
+/-- **The intersection number is a sum of local intersection multiplicities.** For an effective
+Cartier divisor `D` with ideal sheaf `I` meeting the proper curve `C` properly, `(D · C)` is
+`Σ_y [κ(y) : k] · ℓ(𝒪_{C,y} ⧸ I_{ι(y)}𝒪_{C,y})`. Only the finitely many points of `D ∩ C`
+contribute to the sum over `C`. -/
 theorem intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum {I : X.IdealSheafData}
     (hI : I.IsEffectiveCartier) (hI' : (I.comap ι).IsEffectiveCartier) :
-    intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ = ∑ᶠ z : (I.comap ι).subscheme,
-      ((((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)).residueDegree z *
-        (Module.length ((I.comap ι).subscheme.presheaf.stalk z)
-          ((I.comap ι).subscheme.presheaf.stalk z)).toNat : ℕ) : ℤ) := by
+    intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ = ∑ᶠ y : C,
+      (((C ↘ Spec (.of k)).residueDegree y *
+        (Module.length (C.presheaf.stalk y)
+          (C.presheaf.stalk y ⧸ (I.stalkIdeal (ι y)).map (ι.stalkMap y).hom)).toNat : ℕ) : ℤ) := by
   have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) := hI'.isFinite_subschemeι_comp
-  -- A scheme finite over a field has finitely many points.
   have : Finite (I.comap ι).subscheme := Set.finite_univ_iff.mp <| by
     simpa using ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)).finite_preimage Set.finite_univ
   rw [intersectionNumber_inv_mk_toInvertibleSheaf k ι hI hI' default,
     Scheme.Hom.finrank_eq_finsum_residueDegree_mul_length, Nat.cast_finsum]
+  let F (y : C) : ℤ := ((C ↘ Spec (.of k)).residueDegree y *
+    (Module.length (C.presheaf.stalk y)
+      (C.presheaf.stalk y ⧸ (I.stalkIdeal (ι y)).map (ι.stalkMap y).hom)).toNat : ℕ)
+  calc
+    _ = ∑ᶠ z : (I.comap ι).subscheme, F ((I.comap ι).subschemeι z) := by
+      apply finsum_congr
+      intro z
+      dsimp only [F]
+      rw [Scheme.Hom.residueDegree_comp,
+        Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks (I.comap ι).subschemeι z,
+        mul_one,
+        Scheme.Hom.length_stalk_of_isClosedImmersion (I.comap ι).subschemeι z,
+        Scheme.IdealSheafData.ker_subschemeι, Scheme.IdealSheafData.stalkIdeal_comap]
+    _ = ∑ᶠ y ∈ Set.range (I.comap ι).subschemeι, F y :=
+      (finsum_mem_range (I.comap ι).subschemeι.isClosedEmbedding.injective).symm
+    _ = ∑ᶠ y : C, F y := by
+      apply finsum_congr
+      intro y
+      by_cases hy : y ∈ Set.range (I.comap ι).subschemeι
+      · simp only [hy, finsum_true]
+      · have ht : (I.comap ι).stalkIdeal y = ⊤ := by
+          by_contra h
+          apply hy
+          rw [Scheme.IdealSheafData.range_subschemeι]
+          exact ((I.comap ι).mem_support_iff_stalkIdeal_ne_top y).mpr h
+        rw [Scheme.IdealSheafData.stalkIdeal_comap] at ht
+        simp only [hy, finsum_false]
+        simp [F, ht]
+
+/-- For a closed curve immersion `ι`, the local intersection multiplicity is the length of
+`𝒪_{X,ι(y)} ⧸ (I_{ι(y)} + ker(ι)_{ι(y)})` over the ambient local ring. -/
+theorem intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum_of_isClosedImmersion
+    [IsClosedImmersion ι] {I : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) (hI' : (I.comap ι).IsEffectiveCartier) :
+    intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ = ∑ᶠ y : C,
+      (((C ↘ Spec (.of k)).residueDegree y *
+        (Module.length (X.presheaf.stalk (ι y))
+          (X.presheaf.stalk (ι y) ⧸
+            (I.stalkIdeal (ι y) ⊔ ι.ker.stalkIdeal (ι y)))).toNat : ℕ) : ℤ) := by
+  rw [intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum k ι hI hI']
+  apply finsum_congr
+  intro y
+  rw [← Scheme.Hom.ker_stalkMap_of_isClosedImmersion ι y,
+    Ideal.length_quotient_map_of_surjective _ (ι.stalkMap_surjective y)]
+
+/-- The ambient-point formula for a closed curve: if `f` computes its residue degrees over
+`k`, the intersection number is the sum over `X` of the ambient local quotient lengths
+weighted by `f.residueDegree`. Points outside the curve contribute zero. -/
+theorem intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum_of_residueDegree_eq
+    [IsClosedImmersion ι] {S : Scheme.{u}} (f : X ⟶ S)
+    (hf : ∀ y, (C ↘ Spec (.of k)).residueDegree y = f.residueDegree (ι y))
+    {I : X.IdealSheafData} (hI : I.IsEffectiveCartier)
+    (hI' : (I.comap ι).IsEffectiveCartier) :
+    intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ = ∑ᶠ x : X,
+      ((f.residueDegree x * (Module.length (X.presheaf.stalk x)
+        (X.presheaf.stalk x ⧸ (I.stalkIdeal x ⊔ ι.ker.stalkIdeal x))).toNat : ℕ) : ℤ) := by
+  rw [intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum_of_isClosedImmersion k ι hI hI']
+  simp_rw [hf]
+  let F (x : X) : ℤ := (f.residueDegree x * (Module.length (X.presheaf.stalk x)
+    (X.presheaf.stalk x ⧸ (I.stalkIdeal x ⊔ ι.ker.stalkIdeal x))).toNat : ℕ)
+  change (∑ᶠ y : C, F (ι y)) = ∑ᶠ x : X, F x
+  rw [← finsum_mem_range (f := F) ι.isClosedEmbedding.injective]
+  apply finsum_congr
+  intro x
+  by_cases hx : x ∈ Set.range ι
+  · simp only [hx, finsum_true]
+  · have ht : ι.ker.stalkIdeal x = ⊤ := by
+      by_contra h
+      apply hx
+      have hs := (ι.ker.mem_support_iff_stalkIdeal_ne_top x).mpr h
+      have hset : (ι.ker.support : Set X) = Set.range ι :=
+        ι.support_ker.trans ι.isClosedEmbedding.isClosed_range.closure_eq
+      exact hset ▸ hs
+    simp only [hx, finsum_false]
+    simp [F, ht]
 
 /-- **Effective Cartier divisors meeting a curve properly meet it nonnegatively.** Let `D` be an
 effective Cartier divisor on `X` with ideal sheaf `I = 𝒪_X(-D)`, and let `C` be a proper curve
@@ -475,33 +547,6 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf_comm (hD : D.IsEffectiveCart
 end Effective
 
 end Symmetric
-
-section Local
-
-variable {D E : X.IdealSheafData} [E.subscheme.Over (Spec (.of k))]
-  [IsProper (E.subscheme ↘ Spec (.of k))] [RelativeDimensionLE 1 (E.subscheme ↘ Spec (.of k))]
-  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial E.subscheme).obj 0)]
-  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial E.subscheme).obj 1)]
-
-/-- **Local intersection multiplicities on `X`.** Let `D` be an effective Cartier divisor on `X`
-with ideal sheaf `I_D`, and `E` a closed subscheme of `X` with ideal sheaf `I_E` which is a proper
-curve over `k` with finite-dimensional `H⁰` and `H¹` of its structure sheaf, meeting `D` properly.
-Then `(D · E) = Σ_x [κ(x) : k] · ℓ(𝒪_{X,x} ⧸ (I_D + I_E)_x)`, the sum over the finitely many points
-`x` of `D ∩ E`, where the length of `𝒪_{X,x} ⧸ (I_D + I_E)_x` over `𝒪_{X,x}` is the local
-intersection multiplicity of `D` and `E` at `x`. -/
-theorem intersectionNumber_inv_mk_toInvertibleSheaf_subschemeι_eq_finsum
-    (hD : D.IsEffectiveCartier) (hDE : (D.comap E.subschemeι).IsEffectiveCartier) :
-    intersectionNumber k E.subschemeι (mk hD.toInvertibleSheaf)⁻¹ =
-      ∑ᶠ z : (D.comap E.subschemeι).subscheme,
-        ((((D.comap E.subschemeι).subschemeι ≫ E.subscheme ↘ Spec (.of k)).residueDegree z *
-          (Module.length (X.presheaf.stalk (E.subschemeι ((D.comap E.subschemeι).subschemeι z)))
-            (X.presheaf.stalk (E.subschemeι ((D.comap E.subschemeι).subschemeι z)) ⧸
-              (D ⊔ E).stalkIdeal (E.subschemeι ((D.comap E.subschemeι).subschemeι z)))).toNat :
-            ℕ) : ℤ) := by
-  simp only [intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum k _ hD hDE,
-    Scheme.IdealSheafData.length_stalk_subscheme_comap_subschemeι]
-
-end Local
 
 section PrimeDivisor
 

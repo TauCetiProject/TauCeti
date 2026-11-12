@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.RingTheory.Artinian.Module
-public import Mathlib.RingTheory.LocalRing.Length
 public import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.RingTheory.TensorProduct.Quotient
@@ -21,12 +20,7 @@ Let `A` be a finite algebra over a field `k`. Then `A` is Artinian, hence the pr
 finitely many localizations `A_q` at primes, so every `A`-module `M` is the product of the
 `A_q ⊗[A] M`, and its `k`-dimension is the sum of theirs
 (`TauCeti.Module.finrank_eq_finsum_finrank_localization_tensorProduct`). For a quotient `A ⧸ 𝔞`
-the factors are the quotients `A_q ⧸ 𝔞 A_q` (`Ideal.finrank_quotient_eq_finsum`). When `A` is
-local, the `k`-dimension of an `A`-module `M` finite over `k` is its length times the degree of the
-residue field of `A` over `k` (`TauCeti.finrank_eq_length_mul_finrank_residueField`,
-a consequence of Mathlib's `IsLocalRing.length_restrictScalars`),
-so that the `k`-dimension of a finite `k`-algebra is the sum over its primes of the lengths of its
-local rings weighted by their residue degrees.
+the factors are the quotients `A_q ⧸ 𝔞 A_q` (`Ideal.finrank_quotient_eq_finsum`).
 
 The second half of the file is a local-to-global criterion for the additivity
 `dim A = dim (A ⧸ 𝔞) + dim (A ⧸ 𝔟)`. Over any finite-dimensional `k`-algebra `L`, multiplication
@@ -84,18 +78,6 @@ theorem finrank_eq_finsum_finrank_localization_tensorProduct :
   rw [(e.restrictScalars k).finrank_eq, Module.finrank_pi_fintype, finsum_eq_sum_of_fintype]
 
 end Module
-
-/-- **Dimension is length times residue degree.** Let `B` be a local algebra, finite over a field
-`k`, and `M` a `B`-module finite over `k`. Then `dim_k M = ℓ_B(M) · [κ(B) : k]`, where `κ(B)` is
-the residue field of `B`. -/
-theorem finrank_eq_length_mul_finrank_residueField (k B M : Type*) [Field k] [CommRing B]
-    [IsLocalRing B] [Algebra k B] [Module.Finite k B] [AddCommGroup M] [Module B M] [Module k M]
-    [IsScalarTower k B M] [Module.Finite k M] :
-    (finrank k M : ℕ∞) = Module.length B M * finrank k (IsLocalRing.ResidueField B) := by
-  rw [← Module.length_eq_finrank, IsLocalRing.length_restrictScalars k B M,
-    ← Module.length_eq_finrank,
-    Module.length_eq_of_surjective (R := IsLocalRing.ResidueField k)
-      (M := IsLocalRing.ResidueField B) IsLocalRing.residue_surjective]
 
 end TauCeti
 

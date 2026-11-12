@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 public import TauCeti.RingTheory.Artinian.Finrank
+public import TauCeti.RingTheory.Length
 public import TauCeti.RingTheory.Flat.Rank
 
 /-!
@@ -40,8 +41,9 @@ This dimension is computed point by point: `X` has finitely many points, each lo
 is Artinian, and the rank is the sum over the points `x` of the length of `𝒪_{X,x}` weighted by the
 residue degree `[κ(x) : K]`
 (`AlgebraicGeometry.Scheme.Hom.finrank_eq_finsum_residueDegree_mul_length`). For the intersection
-`D ∩ C` of two curves on a surface, this writes the length of the intersection as the sum of the
-local intersection multiplicities at its points.
+`D ∩ C` of two curves meeting properly on a regular surface over `K`, this writes the degree
+over `K` of the intersection as the sum of the local intersection multiplicities weighted by
+`[κ(x) : K]`.
 
 ## Main results
 
@@ -233,8 +235,8 @@ theorem Scheme.Hom.finrank_eq_finrank_of_field {K : Type u} [Field K] {X : Schem
   -- The rank of a free module is the constant function with value its `finrank`.
   rfl
 
-/-- **Over a field, the rank is a sum of local lengths.** Let `f : X ⟶ Spec K` be finite. Then `X`
-has finitely many points, and the rank of `f` is the sum over the points `x` of `X` of the length
+/-- **Over a field, the rank is a sum of local lengths.** Let `f : X ⟶ Spec K` be finite.
+Then the rank of `f` is the sum over the finitely many points `x` of `X` of the length
 of the Artinian local ring `𝒪_{X,x}` times the residue degree `[κ(x) : K]`. -/
 theorem Scheme.Hom.finrank_eq_finsum_residueDegree_mul_length {K : Type u} [Field K]
     {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [IsFinite f] (s : Spec (.of K)) :
@@ -265,15 +267,37 @@ theorem Scheme.Hom.finrank_eq_finsum_residueDegree_mul_length {K : Type u} [Fiel
   have : Module.Finite K (X.presheaf.stalk x) :=
     .of_surjective (IsScalarTower.toAlgHom K Γ(X, ⊤) (X.presheaf.stalk x)).toLinearMap
       (IsArtinianRing.localization_surjective (hU.primeIdealOf ⟨x, trivial⟩).asIdeal.primeCompl _)
-  have h : Module.finrank K (X.presheaf.stalk x) = (Module.length (X.presheaf.stalk x)
-      (X.presheaf.stalk x)).toNat *
-        Module.finrank K (IsLocalRing.ResidueField (X.presheaf.stalk x)) := by
-    simpa using congr($(TauCeti.finrank_eq_length_mul_finrank_residueField K
-      (X.presheaf.stalk x) (X.presheaf.stalk x)).toNat)
+  have h := TauCeti.finrank_eq_length_mul_finrank_residueField K
+    (X.presheaf.stalk x) (X.presheaf.stalk x)
   have he : e x = hU.primeIdealOf ⟨x, trivial⟩ := rfl
+  let : Algebra K (X.residueField x) := Algebra.compHom (X.residueField x)
+    ((X.Γevaluation x).hom.comp ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom)
   rw [f.residueDegree_eq_finrank, mul_comm, he, (φ.restrictScalars K).toLinearEquiv.finrank_eq]
-  -- The `K`-algebra structure on `κ(x)` in `residueDegree_eq_finrank` is, by definition, the
-  -- quotient of the `K`-algebra structure on `𝒪_{X,x}`.
-  exact h
+  let q := CommRingCat.ofHom (IsLocalRing.residue (X.presheaf.stalk x))
+  have : IsLocalHom q.hom := inferInstanceAs
+    (IsLocalHom (IsLocalRing.residue (X.presheaf.stalk x)))
+  let e := X.descResidueField q
+  have he : Function.Bijective e.hom := by
+    refine ⟨e.hom.injective, fun a ↦ ?_⟩
+    obtain ⟨t, ht⟩ := IsLocalRing.residue_surjective (R := X.presheaf.stalk x) a
+    refine ⟨X.residue x t, ?_⟩
+    change (X.residue x ≫ e) t = a
+    rw [show X.residue x ≫ e = q from Scheme.residue_descResidueField q]
+    exact ht
+  have hc : X.Γevaluation x ≫ e = X.presheaf.germ ⊤ x (TopologicalSpace.Opens.mem_top x) ≫ q := by
+    exact (congrArg (fun g ↦ g ≫ e)
+      (X.germ_residue x (TopologicalSpace.Opens.mem_top x)).symm).trans
+        ((Category.assoc _ _ _).trans
+          (congrArg (fun g ↦ X.presheaf.germ ⊤ x (TopologicalSpace.Opens.mem_top x) ≫ g)
+            (Scheme.residue_descResidueField q)))
+  refine h.trans (congrArg (fun n ↦
+    (Module.length (X.presheaf.stalk x) (X.presheaf.stalk x)).toNat * n) ?_)
+  refine (Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl K)
+    (RingEquiv.ofBijective e.hom he) ?_).symm
+  ext c
+  change algebraMap K (IsLocalRing.ResidueField (X.presheaf.stalk x)) c =
+    e.hom ((X.Γevaluation x).hom (algebraMap K Γ(X, ⊤) c))
+  rw [← CommRingCat.comp_apply, hc]
+  rfl
 
 end AlgebraicGeometry

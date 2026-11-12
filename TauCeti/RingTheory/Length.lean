@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.KrullDimension.Field
 public import Mathlib.RingTheory.Length
+public import Mathlib.RingTheory.LocalRing.Length
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
 -- Proof-only: `QuotSMulTop` supplies the transport used to prove `length_quotient_lsmul_congr`;
@@ -578,19 +579,28 @@ namespace Ideal
 /-- **Length of a quotient along a surjection.** For a surjective ring homomorphism `ψ : A → B`
 and an ideal `I` of `A`, the quotient `B ⧸ ψ(I)` has the same length over `B` as `A ⧸ (I + ker ψ)`
 over `A`, the two being identified by the semilinear bijection induced by `ψ`. -/
-theorem length_quotient_map_of_surjective {A B : Type*} [CommRing A] [CommRing B] (I : Ideal A)
+theorem length_quotient_map_of_surjective {A B : Type*} [Ring A] [Ring B] (I : Ideal A)
     {ψ : A →+* B} (hψ : Function.Surjective ψ) :
     Module.length B (B ⧸ I.map ψ) = Module.length A (A ⧸ (I ⊔ RingHom.ker ψ)) := by
-  have : RingHomSurjective ψ := ⟨hψ⟩
-  have hc := comap_map_of_surjective' ψ hψ I
-  have H : I ⊔ RingHom.ker ψ ≤ (I.map ψ).comap ψ := hc.ge
-  let g : (A ⧸ (I ⊔ RingHom.ker ψ)) →ₛₗ[ψ] B ⧸ I.map ψ :=
-    { toFun := quotientMap (I.map ψ) ψ H
-      map_add' := map_add _
-      map_smul' a q := by
-        obtain ⟨q, rfl⟩ := Quotient.mk_surjective q
-        simp [Algebra.smul_def, Quotient.algebraMap_eq] }
-  exact (LinearMap.length_eq_of_bijective g
-    ⟨quotientMap_injective' (H := H) hc.le, quotientMap_surjective (H := H) hψ⟩).symm
+  rw [Module.length_quotient, Module.length_quotient,
+    ← coheight_comap_of_surjective ψ hψ, comap_map_of_surjective' ψ hψ I]
 
 end Ideal
+
+namespace TauCeti
+
+/-- **Dimension is length times residue degree.** For a local algebra `B` over a field `k`
+and a `B`-module `M`, `dim_k M = ℓ_B(M) · [κ(B) : k]`, with infinite lengths and dimensions
+interpreted as zero by `toNat` and `finrank`. This follows from
+`IsLocalRing.length_restrictScalars`. -/
+theorem finrank_eq_length_mul_finrank_residueField (k B M : Type*) [Field k] [CommRing B]
+    [IsLocalRing B] [Algebra k B] [AddCommGroup M] [Module B M] [Module k M]
+    [IsScalarTower k B M] :
+    Module.finrank k M = (Module.length B M).toNat *
+      Module.finrank k (IsLocalRing.ResidueField B) := by
+  have h := IsLocalRing.length_restrictScalars k B M
+  rw [← Module.length_eq_of_surjective (R := IsLocalRing.ResidueField k)
+    (M := IsLocalRing.ResidueField B) IsLocalRing.residue_surjective] at h
+  simpa [Module.length_eq_rank, Module.finrank] using congr($(h).toNat)
+
+end TauCeti
