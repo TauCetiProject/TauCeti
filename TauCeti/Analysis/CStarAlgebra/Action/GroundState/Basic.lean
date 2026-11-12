@@ -140,8 +140,8 @@ theorem norm_le (hF : α.IsGroundStateFunction φ a b F) (hz : 0 ≤ z.im) :
 `z ↦ φ (a α_z(b))`. -/
 theorem apply_eq_apply_mul_entireExtension (hF : α.IsGroundStateFunction φ a b F)
     (hb : α.IsEntireAnalytic b) (hz : 0 ≤ z.im) : F z = φ (a * α.entireExtension b z) :=
-  hF.eqOn_of_apply_ofReal differentiable_apply_mul_entireExtension.continuous.continuousOn
-    differentiable_apply_mul_entireExtension.differentiableOn
+  hF.eqOn_of_apply_ofReal (differentiable_apply_mul_entireExtension α φ a b).continuous.continuousOn
+    (differentiable_apply_mul_entireExtension α φ a b).differentiableOn
     (fun t => by rw [hb.entireExtension_ofReal]) hz
 
 end IsGroundStateFunction
@@ -152,8 +152,8 @@ theorem isGroundStateFunction_apply_mul_entireExtension_iff (hb : α.IsEntireAna
     α.IsGroundStateFunction φ a b (fun z => φ (a * α.entireExtension b z)) ↔
       Bornology.IsBounded ((fun z => φ (a * α.entireExtension b z)) '' {z | 0 ≤ z.im}) :=
   ⟨fun h => h.isBounded_image, fun h =>
-    ⟨differentiable_apply_mul_entireExtension.continuous.continuousOn,
-      differentiable_apply_mul_entireExtension.differentiableOn, h,
+    ⟨(differentiable_apply_mul_entireExtension α φ a b).continuous.continuousOn,
+      (differentiable_apply_mul_entireExtension α φ a b).differentiableOn, h,
       fun t => by rw [hb.entireExtension_ofReal]⟩⟩
 
 /-! ### Closedness in the second coefficient -/
@@ -286,7 +286,7 @@ theorem IsGroundState.apply_entireExtension (hω : α.IsGroundState ω)
     · exact hω.norm_apply_entireExtension_le hb hw
     · have h := hω.norm_apply_entireExtension_le hb.star (z := (starRingEnd ℂ) w)
         (by simpa using hw)
-      rwa [entireExtension_star, Complex.conj_conj, map_star, norm_star, norm_star] at h
+      rwa [entireExtension_star α b, Complex.conj_conj, map_star, norm_star, norm_star] at h
   simpa [hg_def, hb.entireExtension_apply_zero] using hg.apply_eq_apply_of_bounded hrange z 0
 
 /-- **Ground states are invariant.** Every ground state `ω` is invariant under the dynamics:
@@ -313,13 +313,13 @@ theorem IsGroundState.apply_star_mul_entireExtension_mul_I_le (hω : α.IsGround
   set G : ℝ → ℂ := fun s => ω (star a * α.entireExtension a (s * I)) with hG_def
   set g : ℝ → ℝ := fun s => ‖G s‖
   have hGg (s : ℝ) : G s = g s := Complex.eq_coe_norm_of_nonneg
-    (apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action hinv s)
+    (apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action hinv a s)
   have hG0 : G 0 = ω (star a * a) := by simp [hG_def, ha.entireExtension_apply_zero]
   -- Cauchy–Schwarz with `a` and `α_{is}(a)` gives `g s ^ 2 ≤ g 0 * g (s + s)`
   have hcs (s : ℝ) : g s ^ 2 ≤ g 0 * g (s + s) := by
-    have hyy := apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action α a
+    have hyy := apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
       (φ := (ω : A →L[ℂ] ℂ)) (fun t b => by
-        simpa only [PositiveContinuousLinearMap.coe_toContinuousLinearMap] using hinv t b) s s
+        simpa only [PositiveContinuousLinearMap.coe_toContinuousLinearMap] using hinv t b) a s s
     rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap] at hyy
     have h := PositiveLinearMap.norm_map_star_mul_sq_le ω a (α.entireExtension a (s * I))
     rwa [hyy, ← hG0] at h
@@ -398,7 +398,7 @@ private theorem antitone_re_apply_star_entireExtension_mul_entireExtension
       ((ContinuousLinearMap.mul ℝ A).hasDerivAt_of_bilinear (fun _ => (hx t).star)
         fun _ => hx t)
   · have hW := h _ (isEntireAnalytic_entireExtension α b (t * v))
-    rw [generator_entireExtension] at hW
+    rw [generator_entireExtension α b] at hW
     set W := ω (star (x t) * deriv (α.entireExtension b) (t * v))
     have hy : ω (star (x t) * d t) = v * W := by
       rw [hd_def, mul_smul_comm, map_smul, smul_eq_mul]

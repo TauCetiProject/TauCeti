@@ -158,8 +158,8 @@ theorem norm_le (hF : α.IsKMSFunction β φ a b F) {z : ℂ} (hz : z ∈ im ⁻
 theorem apply_eq_apply_mul_entireExtension (hF : α.IsKMSFunction β φ a b F)
     (hb : α.IsEntireAnalytic b) {z : ℂ} (hz : z ∈ im ⁻¹' uIcc 0 β) :
     F z = φ (a * α.entireExtension b z) :=
-  hF.eqOn_of_apply_ofReal differentiable_apply_mul_entireExtension.continuous.continuousOn
-    differentiable_apply_mul_entireExtension.differentiableOn
+  hF.eqOn_of_apply_ofReal (differentiable_apply_mul_entireExtension α φ a b).continuous.continuousOn
+    (differentiable_apply_mul_entireExtension α φ a b).differentiableOn
     (fun t => by rw [hb.entireExtension_ofReal]) hz
 
 /-- **Analytic KMS identity.** If the pair `a, b` has a KMS function and `b` is entire analytic,
@@ -178,10 +178,10 @@ theorem isKMSFunction_apply_mul_entireExtension_iff (hb : α.IsEntireAnalytic b)
       ∀ t : ℝ, φ (a * α.entireExtension b (t + β * I)) =
         φ (α (Multiplicative.ofAdd t) b * a) := by
   refine ⟨fun h => h.apply_ofReal_add_mul_I, fun h => ⟨?_, ?_, ?_, ?_, h⟩⟩
-  · exact differentiable_apply_mul_entireExtension.continuous.continuousOn
-  · exact differentiable_apply_mul_entireExtension.differentiableOn
+  · exact (differentiable_apply_mul_entireExtension α φ a b).continuous.continuousOn
+  · exact (differentiable_apply_mul_entireExtension α φ a b).differentiableOn
   · simpa [image_image] using (φ.comp (ContinuousLinearMap.mul ℂ A a)).lipschitzWith.isBounded_image
-      (isBounded_image_im_preimage α b (s := uIcc 0 β) (Metric.isBounded_Icc _ _))
+      (isBounded_image_entireExtension_im_preimage α b (s := uIcc 0 β) (Metric.isBounded_Icc _ _))
   · exact fun t => by rw [hb.entireExtension_ofReal]
 
 section Pullback
@@ -283,7 +283,7 @@ theorem IsKMSState.apply_entireExtension (hω : α.IsKMSState β ω) (hβ : β �
   -- hence the range of `g` is its image of the strip `0 ≤ im z ≤ |β|`, which is bounded
   have hrange : Bornology.IsBounded (Set.range g) := by
     refine ((ω : A →L[ℂ] ℂ).lipschitzWith.isBounded_image
-      (isBounded_image_im_preimage α b (Metric.isBounded_Icc 0 |β|))).subset ?_
+      (isBounded_image_entireExtension_im_preimage α b (Metric.isBounded_Icc 0 |β|))).subset ?_
     rintro _ ⟨z, rfl⟩
     obtain ⟨y, hy, hzy⟩ := (hvert z.re).exists_mem_Ico₀ (abs_pos.mpr hβ) z.im
     refine ⟨α.entireExtension b (z.re + y * I), ⟨_, by simpa using Ico_subset_Icc_self hy, rfl⟩,
