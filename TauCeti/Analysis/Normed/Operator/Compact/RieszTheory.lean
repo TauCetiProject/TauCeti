@@ -227,7 +227,7 @@ theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub
   have : CompleteSpace 𝕜 := by
     let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
     infer_instance
-  set A : X →L[𝕜] X := 1 - K with hA
+  set A : X →L[𝕜] X := 1 - K
   obtain ⟨p, hp⟩ := hK.exists_range_pow_succ_eq_one_sub
   -- Then `ker (A ^ p)`, which is finite dimensional, together with `range A` spans `X`.
   have hcod : Codisjoint (LinearMap.ker ((A : X →ₗ[𝕜] X) ^ p))
