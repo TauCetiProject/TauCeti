@@ -17,9 +17,11 @@ in particular it retains all derivatives of nonlinear coordinate changes.
 For local sections, `SameJetAt.coordChange` treats simultaneous base changes and
 base-dependent nonlinear fibre changes. The converse, `sameJetAt_coordChange_iff`,
 uses inverse changes defined only as germs. Thus equality of finite jets of smooth
-local sections is independent of the bundle coordinates. Iterated derivatives of
-smooth maps are symmetric multilinear maps: ordered arguments here are evaluations
-of one derivative, not independent ordered-index jet coordinates.
+local sections is independent of the bundle coordinates. Over `ℝ` or `ℂ`, the
+derivatives of a `C^n` map through order `n` are symmetric multilinear maps: ordered
+arguments are evaluations of one derivative, not independent jet coordinates.
+Over a general nontrivially normed field, the results compare `iteratedFDeriv`
+directly and do not require symmetry.
 
 This file concerns equivalence of local sections in charts. It does not construct
 the global jet bundle, its smooth atlas, or realization of prescribed derivative tuples.
@@ -51,6 +53,7 @@ def SameJetAt (𝕜 : Type*) [NontriviallyNormedField 𝕜]
   ∀ i, i ≤ n → iteratedFDeriv 𝕜 i f x = iteratedFDeriv 𝕜 i g x
 
 /-- The derivative characterization of equality of finite jets. -/
+@[grind =]
 theorem sameJetAt_iff {n : ℕ} {f g : E → F} {x : E} :
     SameJetAt 𝕜 n f g x ↔
       ∀ i, i ≤ n → iteratedFDeriv 𝕜 i f x = iteratedFDeriv 𝕜 i g x := Iff.rfl
@@ -69,19 +72,38 @@ theorem symm (h : SameJetAt 𝕜 n f f' x) : SameJetAt 𝕜 n f' f x :=
   fun i hi ↦ (h i hi).symm
 
 /-- Equality of finite jets is transitive. -/
-@[trans]
 theorem trans {f'' : E → F} (h : SameJetAt 𝕜 n f f' x)
     (h' : SameJetAt 𝕜 n f' f'' x) : SameJetAt 𝕜 n f f'' x :=
   fun i hi ↦ (h i hi).trans (h' i hi)
 
 /-- Truncation preserves equality of jets. -/
-theorem mono (h : SameJetAt 𝕜 n f f' x) (hmn : m ≤ n) : SameJetAt 𝕜 m f f' x :=
+theorem of_le (h : SameJetAt 𝕜 n f f' x) (hmn : m ≤ n) : SameJetAt 𝕜 m f f' x :=
   fun i hi ↦ h i (hi.trans hmn)
 
+/-- Equal jets have equal derivatives through the specified order. -/
+theorem iteratedFDeriv_eq (h : SameJetAt 𝕜 n f f' x) {i : ℕ} (hi : i ≤ n) :
+    iteratedFDeriv 𝕜 i f x = iteratedFDeriv 𝕜 i f' x := h i hi
+
 /-- Equal jets have equal field values, also at order zero. -/
-theorem eq (h : SameJetAt 𝕜 n f f' x) : f x = f' x := by
+@[grind →]
+theorem apply_eq (h : SameJetAt 𝕜 n f f' x) : f x = f' x := by
   have h0 := congrArg (fun A ↦ A (fun i : Fin 0 ↦ Fin.elim0 i)) (h 0 (Nat.zero_le n))
   simpa only [iteratedFDeriv_zero_apply] using h0
+
+/-- Equal jets of positive order have equal first derivatives. -/
+theorem fderiv_eq (h : SameJetAt 𝕜 n f f' x) (hn : 1 ≤ n) :
+    fderiv 𝕜 f x = fderiv 𝕜 f' x := by
+  ext u
+  simpa only [iteratedFDeriv_one_apply] using
+    congrArg (fun A ↦ A (fun _ : Fin 1 ↦ u)) (h.iteratedFDeriv_eq hn)
+
+/-- Taking the derivative lowers the order of equal jets by one. -/
+theorem fderiv (h : SameJetAt 𝕜 (n + 1) f f' x) :
+    SameJetAt 𝕜 n (fderiv 𝕜 f) (fderiv 𝕜 f') x := by
+  intro i hi
+  apply (continuousMultilinearCurryRightEquiv' 𝕜 i E F).symm.injective
+  simpa only [iteratedFDeriv_succ_eq_comp_right, Function.comp_apply] using
+    h.iteratedFDeriv_eq (Nat.succ_le_succ hi)
 
 /-- The jet depends only on the germ of a local section. -/
 theorem _root_.Filter.EventuallyEq.sameJetAt (h : f =ᶠ[𝓝 x] f') : SameJetAt 𝕜 n f f' x :=
@@ -99,7 +121,7 @@ theorem comp (hf : SameJetAt 𝕜 n f f' x) (hg : SameJetAt 𝕜 n g g' (f x))
     SameJetAt 𝕜 n (g ∘ f) (g' ∘ f') x := by
   intro i hi
   rw [iteratedFDeriv_comp hcg hcf (by exact_mod_cast hi),
-    iteratedFDeriv_comp hcg' hcf' (by exact_mod_cast hi), ← hf.eq]
+    iteratedFDeriv_comp hcg' hcf' (by exact_mod_cast hi), ← hf.apply_eq]
   simp only [FormalMultilinearSeries.taylorComp]
   apply Finset.sum_congr rfl
   intro c _
@@ -131,37 +153,81 @@ theorem coordChange {h : E' → E} {a : E' × F → G} {y : E'}
     contDiffAt_id contDiffAt_id (hcf.comp y hh) (hcf'.comp y hh)
   exact hpair.comp (refl a _) (contDiffAt_id.prodMk (hcf.comp y hh))
     (contDiffAt_id.prodMk (hcf'.comp y hh)) ha
-    (by simpa only [hf.eq, Function.comp_apply, id_eq] using ha)
+    (by simpa only [hf.apply_eq, Function.comp_apply, id_eq] using ha)
 
 end SameJetAt
 
 /-- An order-zero jet records exactly the field value. -/
-@[simp]
+@[simp, grind =]
 theorem sameJetAt_zero_iff {f g : E → F} {x : E} : SameJetAt 𝕜 0 f g x ↔ f x = g x := by
   constructor
-  · exact SameJetAt.eq
+  · exact SameJetAt.apply_eq
   · intro h i hi
     obtain rfl : i = 0 := Nat.le_zero.mp hi
     ext v
     simp only [iteratedFDeriv_zero_apply, h]
 
-/-- Equality of finite jets is independent of smooth bundle coordinates. The base
-and fibre inverse identities are needed only as germs near the original point
-and field value; no global inverse or fibre-linear change is required. -/
+/-- Equality of successor-order jets amounts to equality of the lower jets and
+of the top derivatives. -/
+@[grind =]
+theorem sameJetAt_succ_iff {n : ℕ} {f g : E → F} {x : E} :
+    SameJetAt 𝕜 (n + 1) f g x ↔ SameJetAt 𝕜 n f g x ∧
+      iteratedFDeriv 𝕜 (n + 1) f x = iteratedFDeriv 𝕜 (n + 1) g x := by
+  constructor
+  · intro h
+    exact ⟨h.of_le (Nat.le_succ n), h.iteratedFDeriv_eq le_rfl⟩
+  · rintro ⟨h, htop⟩ i hi
+    by_cases hin : i ≤ n
+    · exact h.iteratedFDeriv_eq hin
+    · have : i = n + 1 := by omega
+      subst i
+      exact htop
+
+/-- Equality of successor-order jets is equality of values and of the jets of
+the derivative maps. No differentiability assumption is needed. -/
+theorem sameJetAt_succ_iff_fderiv {n : ℕ} {f g : E → F} {x : E} :
+    SameJetAt 𝕜 (n + 1) f g x ↔
+      f x = g x ∧ SameJetAt 𝕜 n (fderiv 𝕜 f) (fderiv 𝕜 g) x := by
+  constructor
+  · intro h
+    exact ⟨h.apply_eq, h.fderiv⟩
+  · rintro ⟨hval, hd⟩ i hi
+    cases i with
+    | zero =>
+      ext v
+      simp only [iteratedFDeriv_zero_apply, hval]
+    | succ i =>
+      simp only [iteratedFDeriv_succ_eq_comp_right, Function.comp_apply,
+        hd.iteratedFDeriv_eq (Nat.le_of_succ_le_succ hi)]
+
+/-- A first-order jet records exactly the value and the first derivative. -/
+@[simp, grind =]
+theorem sameJetAt_one_iff {f g : E → F} {x : E} :
+    SameJetAt 𝕜 1 f g x ↔ f x = g x ∧ fderiv 𝕜 f x = fderiv 𝕜 g x := by
+  rw [sameJetAt_succ_iff_fderiv, sameJetAt_zero_iff]
+
+/-- Equality of finite jets is independent of smooth bundle coordinates. Assume
+`C^n` regularity at the displayed points, `k (h y) = y`, and the base inverse germ
+`h ∘ k =ᶠ[𝓝 (h y)] id`. The same `b` is a left-inverse germ near
+`(h y, f (h y))`; the fibre change must also distinguish the two field values at
+`y` as expressed by `hinj`. No global inverse or fibre-linearity is required. -/
 theorem sameJetAt_coordChange_iff {n : ℕ} {h : E' → E} {k : E → E'}
     {a : E' × F → G} {b : E × G → F} {f f' : E → F} {y : E'}
     (hcf : ContDiffAt 𝕜 n f (h y)) (hcf' : ContDiffAt 𝕜 n f' (h y))
     (hh : ContDiffAt 𝕜 n h y) (hk : ContDiffAt 𝕜 n k (h y))
     (ha : ContDiffAt 𝕜 n a (y, f (h y)))
-    (ha' : ContDiffAt 𝕜 n a (y, f' (h y)))
     (hb : ContDiffAt 𝕜 n b (h y, a (y, f (h y))))
     (hbase : h ∘ k =ᶠ[𝓝 (h y)] id) (hpoint : k (h y) = y)
     (hfibre : (fun p : E × F ↦ b (p.1, a (k p.1, p.2))) =ᶠ[𝓝 (h y, f (h y))] Prod.snd)
-    (hfibre' : (fun p : E × F ↦ b (p.1, a (k p.1, p.2))) =ᶠ[𝓝 (h y, f' (h y))] Prod.snd) :
+    (hinj : a (y, f (h y)) = a (y, f' (h y)) → f (h y) = f' (h y)) :
     SameJetAt 𝕜 n (fun z ↦ a (z, f (h z))) (fun z ↦ a (z, f' (h z))) y ↔
       SameJetAt 𝕜 n f f' (h y) := by
   constructor
   · intro hj
+    have hval : f (h y) = f' (h y) := hinj hj.apply_eq
+    have ha' : ContDiffAt 𝕜 n a (y, f' (h y)) := hval ▸ ha
+    have hfibre' : (fun p : E × F ↦ b (p.1, a (k p.1, p.2)))
+        =ᶠ[𝓝 (h y, f' (h y))] Prod.snd := hval ▸ hfibre
     have ht := hj
     rw [← hpoint] at ht
     have hback := ht.coordChange
