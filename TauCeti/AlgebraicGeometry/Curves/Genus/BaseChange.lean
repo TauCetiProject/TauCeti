@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -86,9 +86,8 @@ theorem genus_eq_of_isPullback_of_isProper [IsProper (X ↘ Spec (.of k))]
     haveI := finiteDimensional_cohomology_trivial_of_isPullback_of_isProper H 1
     Y.genus K = X.genus k := by
   have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace (X ↘ Spec (.of k))
-  have : IsSeparated (terminal.from X) := by
-    rw [← terminal.comp_from (X ↘ Spec (.of k))]
-    infer_instance
+  have : QuasiSeparatedSpace X :=
+    quasiSeparatedSpace_of_quasiSeparated (X ↘ Spec (.of k))
   rw [Scheme.genus_def, Scheme.genus_def, finrank_cohomology_trivial_eq_of_isPullback H]
 
 include H in

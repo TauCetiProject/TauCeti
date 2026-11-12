@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -117,9 +117,8 @@ theorem relativePicardFiberDegree_relativePicardPresheafBaseChangeIso_hom_app
   have : CompactSpace ↥(pullback (ξ ≫ T.unop.hom) (pullback.fst g f)) :=
     (quasiCompact_iff_compactSpace (pullback.fst (ξ ≫ T.unop.hom) (pullback.fst g f))).mp
       inferInstance
-  have : IsSeparated (terminal.from (pullback (ξ ≫ T.unop.hom) (pullback.fst g f))) := by
-    rw [← terminal.comp_from (pullback.fst (ξ ≫ T.unop.hom) (pullback.fst g f))]
-    infer_instance
+  have : QuasiSeparatedSpace ↥(pullback (ξ ≫ T.unop.hom) (pullback.fst g f)) :=
+    quasiSeparatedSpace_of_quasiSeparated (pullback.fst (ξ ≫ T.unop.hom) (pullback.fst g f))
   have h := LineBundleClass.eulerDegree_pullback_of_isIso (k := Ω) e he₁
     (LineBundleClass.pullback (pullback.map (ξ ≫ T.unop.hom) (pullback.fst g f) T.unop.hom
       (pullback.fst g f) ξ (𝟙 _) (𝟙 S') (by simp) (by simp)) a)

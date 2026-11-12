@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -360,12 +360,12 @@ variable {k} {K : Type u} [Field K] [Algebra k K] {Y : Scheme.{u}} [Y.Over (Spec
 /-- **The degree is invariant under extension of the ground field.** For a field extension
 `K / k`, presented as a pullback square `Y = X ×_k K` with projection `g : Y ⟶ X`, the pullback
 `g^* E` of a vector bundle `E` of constant rank `r` has the same degree over `K` as `E` has over
-`k`. The scheme `X` need only be quasi-compact with affine diagonal, for instance proper over `k`;
+`k`. The scheme `X` need only be quasi-compact and quasi-separated, for instance proper over `k`;
 it need not be a curve, irreducible or geometrically connected. -/
 theorem vectorBundleDegree_baseChange
     (H : IsPullback g (Y ↘ Spec (.of K)) (X ↘ Spec (.of k))
       (Spec.map (CommRingCat.ofHom (algebraMap k K))))
-    [CompactSpace X] [IsAffineHom (pullback.diagonal (terminal.from X))] (E : FixedRank X r) :
+    [CompactSpace X] [QuasiSeparatedSpace X] (E : FixedRank X r) :
     vectorBundleDegree K ((pullback g).obj E) = vectorBundleDegree k E := by
   -- The pullback of the structure sheaf `𝒪_X` is the structure sheaf `𝒪_Y`.
   let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
