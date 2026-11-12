@@ -174,7 +174,7 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
   let π : Equiv.Perm ℕ := N.blockSwap
   let J : Finset ℕ := I.map (Equiv.toEmbedding π)
   set t : Set (ℕ × ℕ → α) := cylinder F S with ht
-  set t' : Set (ℕ × ℕ → α) := pairReindex π π ⁻¹' t with ht'
+  set t' : Set (ℕ × ℕ → α) := pairReindex π π ⁻¹' t
   have ht_meas : MeasurableSet t := by
     rw [ht]
     exact MeasurableSet.cylinder (α := fun _ : ℕ × ℕ => α) F hS

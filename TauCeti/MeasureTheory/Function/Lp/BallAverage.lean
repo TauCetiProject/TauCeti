@@ -285,7 +285,7 @@ theorem uniformEquicontinuous_ballAverage {ι : Type*} {u : ι → E → F}
   rcases le_or_gt r 0 with hr | hr
   · simp only [ballAverage_eq_zero_of_nonpos hr]
     rw [Metric.uniformEquicontinuous_iff]
-    exact fun c hc => ⟨1, one_pos, fun x y _ i => by simpa using hc⟩
+    exact fun c hc => ⟨1, one_pos, fun x y _ _ => by simpa using hc⟩
   set V : ℝ≥0∞ := mu (ball (0 : E) r)
   have hV0 : V ≠ 0 := (measure_ball_pos mu 0 hr).ne'
   have hVt : V ≠ ∞ := measure_ball_lt_top.ne
