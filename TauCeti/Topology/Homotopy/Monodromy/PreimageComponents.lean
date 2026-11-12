@@ -137,7 +137,8 @@ in `V`, so its monodromy is trivial. -/
 theorem eq_of_joinedIn_preimage (hp : IsCoveringMap p) {V : Set X}
     [SimplyConnectedSpace V] {v : X} {e e' : p ⁻¹' {v}}
     (h : JoinedIn (p ⁻¹' V) (e : E) (e' : E)) : e = e' := by
-  have hv : v ∈ V := (show p e = v from e.2) ▸ h.source_mem
+  have hv : v ∈ V :=
+    Set.mem_singleton_iff.mp (Set.mem_preimage.mp e.2) ▸ Set.mem_preimage.mp h.source_mem
   obtain ⟨g, rfl⟩ := (hp.joinedIn_preimage_iff hv e e').1 h
   rw [Subsingleton.elim g 1, map_one, ← IsCoveringMap.coe_monodromyPerm, map_one,
     Equiv.Perm.one_apply]
