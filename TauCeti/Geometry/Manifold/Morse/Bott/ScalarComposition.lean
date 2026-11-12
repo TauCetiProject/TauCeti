@@ -22,8 +22,9 @@ critical points of `φ ∘ g`, and it is a nondegenerate (Morse–Bott) critical
 The reason is the second-order chain rule: since `φ'(g x) = 0`, the critical Hessian of `φ ∘ g`
 at a point `x` of the hypersurface is `φ''(c) dg ⊗ dg`
 (`TauCeti.criticalHessian_scalar_comp_apply_of_deriv_eq_zero`). Its kernel is the kernel of the
-nonzero covector `dg_x`, which is the tangent space of the hypersurface, a regular piece of a level
-of `g` of the right dimension (`TauCeti.SmoothEmbedding.tangentRange_eq_ker_mfderiv`). The normal
+nonzero covector `dg_x` (`TauCeti.ker_criticalHessian_scalar_comp_of_deriv_eq_zero`), which is
+the tangent space of the hypersurface, a regular piece of a level of `g` of the right dimension
+(`TauCeti.SmoothEmbedding.tangentRange_eq_ker_mfderiv`). The normal
 space is a line on which the Hessian has the sign of `φ''(c)`, so the Morse index along the
 hypersurface is `0` when `φ''(c) > 0`
 (`TauCeti.manifoldMorseIndex_scalar_comp_eq_zero_of_iteratedDeriv_two_nonneg`) and `1` when
@@ -78,19 +79,11 @@ theorem isNondegenerateCriticalSubmanifold_scalar_comp (hφ'' : iteratedDeriv 2 
   · refine (mem_criticalPoints_scalar_comp_iff_or ((hg s).mdifferentiableAt two_ne_zero)
       ((hgi s ▸ hφ).differentiableAt two_ne_zero)).2 (.inl ?_)
     rwa [hgi s]
-  · -- Pair `v` with a vector `w` on which `dg` is `1`: the Hessian gives `φ''(c) dg(v) = 0`.
-    obtain ⟨w, hw⟩ := isRegularPoint_iff_surjective_mvfderiv.1 (hreg s) 1
-    have hvw : criticalHessian I (φ ∘ g) (i s) v w = 0 := by
-      have hv' : criticalHessian I (φ ∘ g) (i s) v = 0 := by
-        simpa using LinearMap.mem_ker.1 hv
-      rw [hv', zero_apply]
-    rw [criticalHessian_scalar_comp_apply_of_deriv_eq_zero (hg s) (hgi s ▸ hφ)
-      (by rwa [hgi s]), hw, mul_one, hgi s] at hvw
-    have hv0 : v ∈ (mfderiv I 𝓘(ℝ) g (i s)).ker := by
-      rw [← ker_mvfderiv]
-      exact (mul_eq_zero.1 hvw).resolve_left hφ''
+  · -- The kernel of the critical Hessian is `ker dg`, the tangent space of the hypersurface.
+    rw [ker_criticalHessian_scalar_comp_of_deriv_eq_zero (hg s) (hreg s) (hgi s ▸ hφ)
+      (by rwa [hgi s]) (by rwa [hgi s])] at hv
     rw [← i.tangentRange_eq_ker_mfderiv s hn (.of_forall hgi) (hreg s)
-      (by rwa [finrank_self])] at hv0
-    exact hv0
+      (by rwa [finrank_self])] at hv
+    exact hv
 
 end TauCeti.SmoothEmbedding

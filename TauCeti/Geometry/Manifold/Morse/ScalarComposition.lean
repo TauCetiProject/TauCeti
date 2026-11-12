@@ -43,6 +43,8 @@ assert properness of the reciprocal function or extension to a compactification.
   `f x`, the critical Hessian of `φ ∘ f` is `φ''(f x) df ⊗ df`.
 * `TauCeti.manifoldMorseIndex_scalar_comp_eq_zero_of_iteratedDeriv_two_nonneg`: there, if
   `φ''(f x) ≥ 0`, the Morse index of `φ ∘ f` is `0`.
+* `TauCeti.ker_criticalHessian_scalar_comp_of_deriv_eq_zero`: there, if `φ''(f x) ≠ 0` and `x` is
+  a regular point of `f`, the kernel of the critical Hessian of `φ ∘ f` is `ker df`.
 * `TauCeti.manifoldMorseIndex_scalar_comp_eq_one_of_iteratedDeriv_two_neg`: there, if
   `φ''(f x) < 0` and `x` is a regular point of `f`, the Morse index of `φ ∘ f` is `1`.
 * `TauCeti.IsMorse.scalar_comp`: a scalar change with nonzero derivative preserves Morse functions.
@@ -170,6 +172,26 @@ theorem manifoldMorseIndex_scalar_comp_eq_zero_of_iteratedDeriv_two_nonneg [I.Bo
     criticalHessian_scalar_comp_apply_of_deriv_eq_zero hf hφ hφ']
   exact mul_nonneg hφ'' (mul_self_nonneg _)
 
+/-- Where the value `f x` is a nondegenerate critical point of `φ` and `x` is a regular point of
+`f`, the kernel of the critical Hessian `φ''(f x) df ⊗ df` of `φ ∘ f` at `x` is the hyperplane
+`ker df`. -/
+theorem ker_criticalHessian_scalar_comp_of_deriv_eq_zero [I.Boundaryless]
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hreg : IsRegularPoint I 𝓘(ℝ) f x)
+    (hφ : ContDiffAt ℝ 2 φ (f x)) (hφ' : deriv φ (f x) = 0)
+    (hφ'' : iteratedDeriv 2 φ (f x) ≠ 0) :
+    (criticalHessian I (φ ∘ f) x).ker = (mfderiv I 𝓘(ℝ) f x).ker := by
+  have hH := criticalHessian_scalar_comp_apply_of_deriv_eq_zero hf hφ hφ'
+  rw [← ker_mvfderiv]
+  -- Pair a vector `v` with a vector `w` on which `df` is `1`.
+  obtain ⟨w, hw⟩ := isRegularPoint_iff_surjective_mvfderiv.1 hreg 1
+  ext v
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
+  refine ⟨fun hv ↦ ?_, fun hv ↦ ContinuousLinearMap.ext fun u ↦ ?_⟩
+  · have hvw := congr($hv w)
+    rw [hH, hw, mul_one, zero_apply] at hvw
+    exact (mul_eq_zero.1 hvw).resolve_left hφ''
+  · rw [hH, hv, zero_mul, mul_zero, zero_apply]
+
 /-- Where the value `f x` is a critical point of `φ` with `φ''(f x) < 0` and `x` is a regular
 point of `f`, the Morse index of `φ ∘ f` at `x` is `1`: its critical Hessian
 `φ''(f x) df ⊗ df` is nonpositive, and its kernel is the hyperplane `ker df`. -/
@@ -185,19 +207,11 @@ theorem manifoldMorseIndex_scalar_comp_eq_one_of_iteratedDeriv_two_neg [I.Bounda
     intro v
     rw [LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply, hH]
     exact mul_nonpos_of_nonpos_of_nonneg hφ''.le (mul_self_nonneg _)
-  -- The radical is `ker df`: pair a vector `v` with a vector `w` on which `df` is `1`.
+  -- The radical is `ker df`.
   have hrad : (criticalHessian I (φ ∘ f) x).toBilinForm.toQuadraticMap.radical =
       (mfderiv I 𝓘(ℝ) f x).ker := by
     rw [radical_toQuadraticMap_toBilinForm_criticalHessian (hφ.contMDiffAt.comp x hf),
-      ← ker_mvfderiv]
-    obtain ⟨w, hw⟩ := isRegularPoint_iff_surjective_mvfderiv.1 hreg 1
-    ext v
-    simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-    refine ⟨fun hv ↦ ?_, fun hv ↦ ContinuousLinearMap.ext fun u ↦ ?_⟩
-    · have hvw := congr($hv w)
-      rw [hH, hw, mul_one, zero_apply] at hvw
-      exact (mul_eq_zero.1 hvw).resolve_left hφ''.ne
-    · rw [hH, hv, zero_mul, mul_zero, zero_apply]
+      ker_criticalHessian_scalar_comp_of_deriv_eq_zero hf hreg hφ hφ' hφ''.ne]
   have hsum := QuadraticForm.sigPos_add_sigNeg_add_radical
     (Q := (criticalHessian I (φ ∘ f) x).toBilinForm.toQuadraticMap)
   have hdim := hreg.finrank_ker_mfderiv_add_finrank
