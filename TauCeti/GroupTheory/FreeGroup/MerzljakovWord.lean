@@ -76,6 +76,13 @@ theorem merzljakovBlock_eq (a b : α) (m : ℕ) :
     merzljakovBlock a b m = (b, true) :: (replicate m (a, true) ++ [(b, true)]) :=
   (rfl)
 
+/-- The Merzljakov word with exponents `m₁, …, m_n` is the letter `b` followed by the words
+`a^{m_i} b`. -/
+theorem merzljakovWord_eq (a b : α) (ms : List ℕ) :
+    merzljakovWord a b ms =
+      (b, true) :: ms.flatMap fun m ↦ replicate m (a, true) ++ [(b, true)] :=
+  (rfl)
+
 /-- The Merzljakov word with no exponents is the letter `b`. -/
 @[simp]
 theorem merzljakovWord_nil (a b : α) : merzljakovWord a b [] = [(b, true)] :=
@@ -177,12 +184,12 @@ private theorem exists_of_append_merzljakovBlock_append_eq (hab : a ≠ b) :
     omega
   | k :: ms, [], h => by
     have hab' : (a, true) ≠ (b, true) := by simpa using hab
-    obtain ⟨tl, htl⟩ : ∃ tl, merzljakovWord a b ms = (b, true) :: tl := ⟨_, rfl⟩
     rw [merzljakovWord_cons, merzljakovBlock_eq] at h
     replace h : replicate m (a, true) ++ (b, true) :: t =
         replicate k (a, true) ++ merzljakovWord a b ms := by simpa using h
     have h₁ := (replicate_prefix_of_append_cons_eq hab' h).length_le
-    have h₂ := (replicate_prefix_of_append_cons_eq hab' (htl ▸ h.symm)).length_le
+    have h₂ :=
+      (replicate_prefix_of_append_cons_eq hab' (merzljakovWord_eq a b ms ▸ h.symm)).length_le
     obtain rfl : m = k := by simp at h₁ h₂; omega
     exact ⟨[], ms, rfl, by simp, append_cancel_left h⟩
   | k :: ms, c :: s, h => by
@@ -215,9 +222,9 @@ theorem merzljakovBlock_isInfix_merzljakovWord (a b : α) (hm : m ∈ ms) :
   induction ms with
   | nil => simp at hm
   | cons k ms ih =>
-    obtain ⟨tl, htl⟩ : ∃ tl, merzljakovWord a b ms = (b, true) :: tl := ⟨_, rfl⟩
     rcases mem_cons.1 hm with rfl | hm
-    · exact ⟨[], tl, by simp [merzljakovWord_cons, merzljakovBlock_eq, htl]⟩
+    · refine ⟨[], ms.flatMap fun m ↦ replicate m (a, true) ++ [(b, true)], ?_⟩
+      simp [merzljakovWord_eq, merzljakovBlock_eq]
     · exact (ih hm).trans ⟨(b, true) :: replicate k (a, true), [], by simp [merzljakovWord_cons]⟩
 
 /-- Over distinct letters `a ≠ b`, the block `b a^m b` occurs in a Merzljakov word exactly when
@@ -284,7 +291,6 @@ private theorem exists_merzljakovBlock_isInfix_of_append_eq_flatten {s : List (�
     simp at this
   | _ :: _, [], _, _, hL => by simp at hL
   | u :: L, k :: ms, p, h, hL => by
-    obtain ⟨tl, htl⟩ : ∃ tl, merzljakovWord a b ms = (b, true) :: tl := ⟨_, rfl⟩
     have h' : (p ++ (b, true) :: replicate k (a, true)) ++ (merzljakovWord a b ms ++ s) =
         u ++ L.flatten := by simpa [merzljakovWord_cons] using h
     have ih (q : List (α × Bool)) (hq : q ++ merzljakovWord a b ms ++ s = L.flatten) :
@@ -299,7 +305,7 @@ private theorem exists_merzljakovBlock_isInfix_of_append_eq_flatten {s : List (�
     · cases c with
       | nil => exact ih [] (by simpa using hc')
       | cons x c =>
-        obtain rfl : (b, true) = x := by simpa [htl] using congrArg head? hc'
+        obtain rfl : (b, true) = x := by simpa using congrArg head? hc'
         exact ⟨k, mem_cons_self, u, mem_cons_self, p, c, by simp [hc, merzljakovBlock_eq]⟩
     · exact ih c (by simpa using hc'.symm)
 
