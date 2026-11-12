@@ -220,15 +220,26 @@ unitary `diag e` this computes the Souriau map of the graph. -/
 theorem symplecticGraphFrame_realify_diagonal_mul_transpose (e : n → ℂ) :
     symplecticGraphFrame (diagonal e).realify * (symplecticGraphFrame (diagonal e).realify)ᵀ =
       (2 : ℂ) • diagonal (Sum.elim e e) := by
-  have h2 := ofReal_sqrt_two_ne_zero
-  have hsq := ofReal_sqrt_two_sq
+  -- The diagonal blocks reduce to this scalar identity; the off-diagonal blocks cancel.
+  have hdiag (z : ℂ) :
+      (1 + z) * (1 + z) + Complex.I * (z - 1) * (Complex.I * (z - 1)) = 4 * z := by
+    linear_combination (z - 1) ^ 2 * Complex.I_mul_I
+  have hinv : (Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹ = 2⁻¹ := by
+    rw [← mul_inv, ← sq, ofReal_sqrt_two_sq]
   rw [symplecticGraphFrame_realify_diagonal, transpose_smul, Matrix.smul_mul, Matrix.mul_smul,
     smul_smul, fromBlocks_transpose, fromBlocks_multiply]
   simp only [diagonal_transpose, diagonal_mul_diagonal, diagonal_add]
   rw [← fromBlocks_diagonal]
-  -- Blockwise: `(1 + e)² + (i (e - 1))² = 4 e`, and the off-diagonal blocks cancel.
-  ext (i | i) (j | j) <;> rcases eq_or_ne i j with rfl | hij <;> simp [*] <;>
-    field_simp <;> ring_nf <;> simp [Complex.I_sq, hsq] <;> ring
+  ext (i | i) (j | j) <;> by_cases hij : i = j <;>
+    simp only [Matrix.smul_apply, fromBlocks_apply₁₁, fromBlocks_apply₁₂, fromBlocks_apply₂₁,
+      fromBlocks_apply₂₂, diagonal_apply, hij, ite_true, ite_false, Matrix.zero_apply, smul_eq_mul,
+      mul_zero]
+  · rw [hinv]
+    linear_combination 2⁻¹ * hdiag (e j)
+  · ring
+  · ring
+  · rw [hinv]
+    linear_combination 2⁻¹ * hdiag (e j)
 
 end Matrix
 
