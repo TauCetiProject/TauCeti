@@ -89,6 +89,14 @@ theorem measurable_sum_dirac {ι α : Type*} [Countable ι] [MeasurableSpace α]
   exact Measurable.tsum fun i => (Measure.measurable_coe hs).comp
     (Measure.measurable_dirac.comp (measurable_pi_apply i))
 
+/-- Summing a countable family of measures is measurable for the Giry measurable structure. -/
+@[fun_prop]
+theorem measurable_measure_sum {ι α : Type*} [Countable ι] [MeasurableSpace α] :
+    Measurable (Measure.sum : (ι → Measure α) → Measure α) := by
+  refine Measure.measurable_measure.2 fun s hs => ?_
+  simp only [Measure.sum_apply _ hs]
+  exact Measurable.tsum fun i => (Measure.measurable_coe hs).comp (measurable_pi_apply i)
+
 /-- Pushing a probability measure forward along a fixed measurable map is measurable for the Giry
 structure that `ProbabilityMeasure` inherits as a subtype of `Measure`. -/
 theorem measurable_probabilityMeasure_map {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]

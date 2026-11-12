@@ -60,16 +60,8 @@ theorem optionalMark_none : κ.optionalMark none = Measure.dirac 0 := (rfl)
 theorem optionalMark_some (x : X) :
     κ.optionalMark (some x) = ((Kernel.id ×ₖ κ) x).map Measure.dirac := (rfl)
 
-variable [IsMarkovKernel κ]
-
-/-- Marking an optional occurrence is a probability kernel, also when the ground
-or mark space is empty. -/
-instance : IsMarkovKernel κ.optionalMark where
-  isProbabilityMeasure x := by
-    cases x <;> simp only [optionalMark_none, optionalMark_some] <;> infer_instance
-
 /-- Integration against the law of one optional marked occurrence. -/
-theorem lintegral_optionalMark (x : Option X) {f : Measure (X × E) → ℝ≥0∞}
+theorem lintegral_optionalMark [IsSFiniteKernel κ] (x : Option X) {f : Measure (X × E) → ℝ≥0∞}
     (hf : Measurable f) :
     ∫⁻ μ, f μ ∂κ.optionalMark x =
       x.elim (f 0) (fun a => ∫⁻ e, f (Measure.dirac (a, e)) ∂κ a) := by
@@ -81,7 +73,16 @@ theorem lintegral_optionalMark (x : Option X) {f : Measure (X × E) → ℝ≥0�
     rw [optionalMark_some, MeasureTheory.lintegral_map hf Measure.measurable_dirac,
       Kernel.prod_apply, Kernel.id_apply, Measure.dirac_prod,
       MeasureTheory.lintegral_map hfd measurable_prodMk_left]
+    -- Beta reduction identifies `hfd` composed with `Prod.mk a` with the displayed integrand.
     rfl
+
+variable [IsMarkovKernel κ]
+
+/-- Marking an optional occurrence is a probability kernel, also when the ground
+or mark space is empty. -/
+instance : IsMarkovKernel κ.optionalMark where
+  isProbabilityMeasure x := by
+    cases x <;> simp only [optionalMark_none, optionalMark_some] <;> infer_instance
 
 /-- The law obtained by independently marking the present entries of an optional
 tuple and superposing the results. Absent entries contribute no points. -/
@@ -89,10 +90,7 @@ def optionalTupleMarking (ι : Type*) [Countable ι] :
     Kernel (ι → Option X) (Measure (X × E)) where
   toFun x := (Measure.infinitePi fun i => κ.optionalMark (x i)).map Measure.sum
   measurable' := by
-    have hs : Measurable (Measure.sum : (ι → Measure (X × E)) → Measure (X × E)) := by
-      simpa only [Function.comp_def, Measure.join_sum, Measure.join_dirac] using
-        Measure.measurable_join.comp TauCeti.MeasureTheory.measurable_sum_dirac
-    apply (Measure.measurable_map _ hs).comp
+    apply (Measure.measurable_map _ TauCeti.MeasureTheory.measurable_measure_sum).comp
     have hp : Measurable (fun x : ι → Option X => fun i =>
         (⟨κ.optionalMark (x i), inferInstance⟩ : ProbabilityMeasure (Measure (X × E)))) :=
       Measurable.of_eval fun i =>
@@ -110,13 +108,21 @@ instance (ι : Type*) [Countable ι] : IsMarkovKernel (κ.optionalTupleMarking �
     rw [optionalTupleMarking_apply]
     infer_instance
 
+/-- Nonnegative integration against optional tuple marking is integration over the
+independent optional marked occurrences followed by superposition. -/
+theorem lintegral_optionalTupleMarking {ι : Type*} [Countable ι] (x : ι → Option X)
+    {f : Measure (X × E) → ℝ≥0∞} (hf : Measurable f) :
+    ∫⁻ μ, f μ ∂κ.optionalTupleMarking ι x =
+      ∫⁻ z, f (Measure.sum z) ∂Measure.infinitePi (fun i => κ.optionalMark (x i)) := by
+  rw [optionalTupleMarking_apply,
+    MeasureTheory.lintegral_map hf TauCeti.MeasureTheory.measurable_measure_sum]
+
 /-- Bijectively relabeling optional occurrences leaves their marked law unchanged. -/
 theorem optionalTupleMarking_comp_equiv {ι ι' : Type*} [Countable ι] [Countable ι']
     (e : ι' ≃ ι) (x : ι → Option X) :
     κ.optionalTupleMarking ι' (x ∘ e) = κ.optionalTupleMarking ι x := by
-  have hs : Measurable (Measure.sum : (ι' → Measure (X × E)) → Measure (X × E)) := by
-    simpa only [Function.comp_def, Measure.join_sum, Measure.join_dirac] using
-      Measure.measurable_join.comp TauCeti.MeasureTheory.measurable_sum_dirac
+  have hs : Measurable (Measure.sum : (ι' → Measure (X × E)) → Measure (X × E)) :=
+    TauCeti.MeasureTheory.measurable_measure_sum
   have hmap := Measure.map_infinitePi_infinitePi_of_inj
     (P := fun i => κ.optionalMark (x i)) e.injective
   simp only [optionalTupleMarking_apply, Function.comp_apply]
@@ -132,12 +138,9 @@ theorem lintegral_expNeg_optionalTupleMarking {ι : Type*} [Countable ι]
     ∫⁻ μ, (ENNReal.expNeg (∫⁻ p, f p ∂μ) : ℝ≥0∞) ∂κ.optionalTupleMarking ι x =
       ∏' i, (x i).elim 1 (fun a =>
         ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a) := by
-  have hs : Measurable (Measure.sum : (ι → Measure (X × E)) → Measure (X × E)) := by
-    simpa only [Function.comp_def, Measure.join_sum, Measure.join_dirac] using
-      Measure.measurable_join.comp TauCeti.MeasureTheory.measurable_sum_dirac
   have hL : Measurable (fun μ : Measure (X × E) =>
       (ENNReal.expNeg (∫⁻ p, f p ∂μ) : ℝ≥0∞)) := by fun_prop
-  rw [optionalTupleMarking_apply, MeasureTheory.lintegral_map hL hs]
+  rw [lintegral_optionalTupleMarking κ x hL]
   have hind := iIndepFun_infinitePi (P := fun i => κ.optionalMark (x i))
     (X := fun _ μ => μ) (fun _ => measurable_id)
   rw [← Measure.laplaceFunctional_def,
@@ -153,35 +156,29 @@ theorem lintegral_expNeg_optionalTupleMarking {ι : Type*} [Countable ι]
 @[simp]
 theorem optionalTupleMarking_some {ι : Type*} [Countable ι] (x : ι → X) :
     κ.optionalTupleMarking ι (fun i => some (x i)) = κ.tupleMarking ι x := by
-  have hs : Measurable (Measure.sum : (ι → Measure (X × E)) → Measure (X × E)) := by
-    simpa only [Function.comp_def, Measure.join_sum, Measure.join_dirac] using
-      Measure.measurable_join.comp TauCeti.MeasureTheory.measurable_sum_dirac
+  have hs : Measurable (Measure.sum : (ι → Measure (X × E)) → Measure (X × E)) :=
+    TauCeti.MeasureTheory.measurable_measure_sum
   simp only [optionalTupleMarking_apply, optionalMark_some, tupleMarking_apply]
   rw [← Measure.infinitePi_map_pi _ (fun _ => Measure.measurable_dirac),
     Measure.map_map hs (by fun_prop)]
-  rfl
+  simp only [Function.comp_def]
 
 /-- An entirely absent tuple gives the empty configuration almost surely. -/
 @[simp]
 theorem optionalTupleMarking_none (ι : Type*) [Countable ι] :
     κ.optionalTupleMarking ι (fun _ => none) = Measure.dirac 0 := by
-  have hs : Measurable (Measure.sum : (ι → Measure (X × E)) → Measure (X × E)) := by
-    simpa only [Function.comp_def, Measure.join_sum, Measure.join_dirac] using
-      Measure.measurable_join.comp TauCeti.MeasureTheory.measurable_sum_dirac
-  simp [optionalTupleMarking_apply, Measure.infinitePi_dirac, Measure.map_dirac' hs]
+  simp [optionalTupleMarking_apply, Measure.infinitePi_dirac,
+    Measure.map_dirac' TauCeti.MeasureTheory.measurable_measure_sum]
 
 /-- The intensity of optional tuple marking is the sum of the individual marked
 occurrence laws. Absent entries have zero intensity. -/
 theorem bind_optionalTupleMarking {ι : Type*} [Countable ι] (x : ι → Option X) :
     (κ.optionalTupleMarking ι x).bind id =
       Measure.sum (fun i => (x i).elim 0 (fun a => (Kernel.id ×ₖ κ) a)) := by
-  have hs : Measurable (Measure.sum : (ι → Measure (X × E)) → Measure (X × E)) := by
-    simpa only [Function.comp_def, Measure.join_sum, Measure.join_dirac] using
-      Measure.measurable_join.comp TauCeti.MeasureTheory.measurable_sum_dirac
   ext s hset
-  rw [Measure.bind_apply hset measurable_id.aemeasurable, optionalTupleMarking_apply]
+  rw [Measure.bind_apply hset measurable_id.aemeasurable]
   simp only [id_eq]
-  rw [MeasureTheory.lintegral_map (Measure.measurable_coe hset) hs]
+  rw [lintegral_optionalTupleMarking κ x (Measure.measurable_coe hset)]
   simp only [Measure.sum_apply _ hset]
   have hm (i : ι) : Measurable (fun z : ι → Measure (X × E) => z i s) :=
     (Measure.measurable_coe hset).comp (measurable_pi_apply i)
@@ -207,13 +204,12 @@ theorem map_map_fst_optionalMark (x : Option X) :
   | some a =>
     rw [optionalMark_some, Measure.map_map (Measure.measurable_map _ measurable_fst)
       Measure.measurable_dirac]
-    simp only [Function.comp_def, Measure.map_dirac' measurable_fst]
-    have he := Measure.map_map (μ := (Kernel.id ×ₖ κ) a)
-      Measure.measurable_dirac measurable_fst
-    simp only [Function.comp_def] at he
-    rw [← he, ← Kernel.fst_apply, Kernel.fst_prod, Kernel.id_apply,
-      Measure.map_dirac' Measure.measurable_dirac]
-    rfl
+    have hground : ((Kernel.id ×ₖ κ) a).map Prod.fst = Measure.dirac a := by
+      rw [← Kernel.fst_apply, Kernel.fst_prod, Kernel.id_apply]
+    simpa only [Function.comp_def, Measure.map_dirac' measurable_fst, Option.elim_some,
+      hground, Measure.map_dirac' Measure.measurable_dirac] using
+      (Measure.map_map (μ := (Kernel.id ×ₖ κ) a)
+        Measure.measurable_dirac measurable_fst).symm
 
 /-- Forgetting every mark recovers the counting measure of the present entries,
 with multiplicities and with zero contribution from absent entries. -/
@@ -222,21 +218,20 @@ theorem map_map_fst_optionalTupleMarking {ι : Type*} [Countable ι]
     (x : ι → Option X) :
     (κ.optionalTupleMarking ι x).map (fun μ => μ.map Prod.fst) =
       Measure.dirac (Measure.sum fun i => (x i).elim 0 Measure.dirac) := by
-  have hs : Measurable (Measure.sum : (ι → Measure X) → Measure X) := by
-    simpa only [Function.comp_def, Measure.join_sum, Measure.join_dirac] using
-      Measure.measurable_join.comp TauCeti.MeasureTheory.measurable_sum_dirac
-  have ht : Measurable (Measure.sum : (ι → Measure (X × E)) → Measure (X × E)) := by
-    simpa only [Function.comp_def, Measure.join_sum, Measure.join_dirac] using
-      Measure.measurable_join.comp TauCeti.MeasureTheory.measurable_sum_dirac
+  have hs : Measurable (Measure.sum : (ι → Measure X) → Measure X) :=
+    TauCeti.MeasureTheory.measurable_measure_sum
+  have ht : Measurable (Measure.sum : (ι → Measure (X × E)) → Measure (X × E)) :=
+    TauCeti.MeasureTheory.measurable_measure_sum
   have hm : Measurable (fun z : ι → Measure (X × E) => fun i => (z i).map Prod.fst) := by
     exact Measurable.of_eval fun i =>
       (Measure.measurable_map _ measurable_fst).comp (measurable_pi_apply i)
   rw [optionalTupleMarking_apply,
     Measure.map_map (Measure.measurable_map _ measurable_fst) ht]
   simp_rw [Function.comp_def, Measure.map_sum measurable_fst.aemeasurable]
-  have he := Measure.map_map (μ := Measure.infinitePi fun i => κ.optionalMark (x i)) hs hm
-  simp only [Function.comp_def] at he
-  rw [← he, Measure.infinitePi_map_pi _ (fun _ => Measure.measurable_map _ measurable_fst)]
+  rw [← Function.comp_def Measure.sum
+      (fun z : ι → Measure (X × E) => fun i => (z i).map Prod.fst),
+    ← Measure.map_map hs hm,
+    Measure.infinitePi_map_pi _ (fun _ => Measure.measurable_map _ measurable_fst)]
   simp only [map_map_fst_optionalMark, Measure.infinitePi_dirac,
     Measure.map_dirac' hs]
 
@@ -254,9 +249,8 @@ theorem optionalTupleMarking_deterministic {ι : Type*} [Countable ι] {g : X �
     (Kernel.deterministic g hg).optionalTupleMarking ι x =
       Measure.dirac (Measure.sum fun i => (x i).elim 0
         (fun a => Measure.dirac (a, g a))) := by
-  have hs : Measurable (Measure.sum : (ι → Measure (X × E)) → Measure (X × E)) := by
-    simpa only [Function.comp_def, Measure.join_sum, Measure.join_dirac] using
-      Measure.measurable_join.comp TauCeti.MeasureTheory.measurable_sum_dirac
+  have hs : Measurable (Measure.sum : (ι → Measure (X × E)) → Measure (X × E)) :=
+    TauCeti.MeasureTheory.measurable_measure_sum
   have hc (a : Option X) : (Kernel.deterministic g hg).optionalMark a =
       Measure.dirac (a.elim 0 (fun b => Measure.dirac (b, g b))) := by
     cases a <;> simp [Kernel.prod_apply, Kernel.id_apply, Kernel.deterministic_apply,
