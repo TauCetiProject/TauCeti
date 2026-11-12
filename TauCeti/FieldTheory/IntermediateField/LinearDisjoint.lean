@@ -7,10 +7,11 @@ module
 
 public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.FieldTheory.Relrank
-public import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
 public import TauCeti.LinearAlgebra.LinearIndependent.Algebra
 public import TauCeti.RingTheory.AlgebraTower
 public import TauCeti.RingTheory.Algebraic.LinearIndependent
+
+import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
 
 /-!
 # Relative degrees under linearly disjoint base change
