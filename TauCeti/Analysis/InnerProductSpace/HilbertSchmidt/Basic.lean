@@ -157,12 +157,12 @@ theorem hilbertSchmidtEnergy_adjoint (T : E →L[𝕜] F) (b : HilbertBasis ι �
 
 omit [CompleteSpace E] [CompleteSpace F] in
 /-- **Basis independence of the Hilbert–Schmidt energy.** Any two Hilbert bases of the source give
-the same energy. Neither space needs to be complete: the source is complete as soon as it has a
-Hilbert basis, and the target may be replaced by its completion. -/
+the same energy. The target need not be complete. -/
 theorem hilbertSchmidtEnergy_indep (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
     (b' : HilbertBasis ι' 𝕜 E) :
     T.hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b' := by
   have := b.completeSpace
+  -- Replace the target by its completion, which is complete.
   rw [← hilbertSchmidtEnergy_toComplL_comp T b, ← hilbertSchmidtEnergy_toComplL_comp T b']
   obtain ⟨w, c, -⟩ := exists_hilbertBasis 𝕜 (UniformSpace.Completion F)
   rw [← hilbertSchmidtEnergy_adjoint _ b c, hilbertSchmidtEnergy_adjoint _ b' c]
@@ -197,7 +197,7 @@ omit [CompleteSpace E] [CompleteSpace F] in
 theorem enorm_sq_le_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     ‖T‖ₑ ^ 2 ≤ T.hilbertSchmidtEnergy b := by
   have := b.completeSpace
-  rw [← enorm_toComplL_comp T, ← hilbertSchmidtEnergy_toComplL_comp T b]
+  rw [← eNorm_toComplL_comp T, ← hilbertSchmidtEnergy_toComplL_comp T b]
   generalize (UniformSpace.Completion.toComplL : F →L[𝕜] UniformSpace.Completion F) ∘L T = T
   obtain ⟨w, c, -⟩ := exists_hilbertBasis 𝕜 (UniformSpace.Completion F)
   -- `‖T x‖ₑ² = ∑' j, ‖⟪T† cⱼ, x⟫‖ₑ² ≤ (∑' j, ‖T† cⱼ‖ₑ²) ‖x‖ₑ² = E_c(T†) ‖x‖ₑ²`.
@@ -248,6 +248,16 @@ computed in any Hilbert basis of the source. -/
 theorem hilbertSchmidtNorm_eq_toReal_rpow (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     T.hilbertSchmidtNorm = (T.hilbertSchmidtEnergy b ^ (1 / 2 : ℝ)).toReal := by
   rw [T.hilbertSchmidtNorm_eq_sqrt b, ← ENNReal.toReal_rpow, Real.sqrt_eq_rpow]
+
+omit [CompleteSpace F] in
+/-- Embedding the target into its completion does not change the Hilbert–Schmidt norm. -/
+@[simp]
+theorem hilbertSchmidtNorm_toComplL_comp (T : E →L[𝕜] F) :
+    ((UniformSpace.Completion.toComplL : F →L[𝕜] UniformSpace.Completion F) ∘L
+      T).hilbertSchmidtNorm = T.hilbertSchmidtNorm := by
+  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
+  rw [hilbertSchmidtNorm_eq_sqrt _ b, hilbertSchmidtNorm_eq_sqrt _ b,
+    hilbertSchmidtEnergy_toComplL_comp]
 
 omit [CompleteSpace F] in
 theorem hilbertSchmidtNorm_nonneg (T : E →L[𝕜] F) : 0 ≤ T.hilbertSchmidtNorm :=
