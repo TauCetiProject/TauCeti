@@ -12,9 +12,11 @@ public import Mathlib.Topology.CWComplex.Classical.Basic
 
 Let `W 0, W 1, …` be subsets of a space `X`, each carrying a classical CW structure, such that
 every cell of `W k` is a cell of `W (k + 1)` with the same characteristic map: this is recorded by
-maps `ι k n : cell (W k) n → cell (W (k + 1)) n` with `map n (ι k n i) = map n i`. If a subset of
-the union `⋃ k, W k` is closed as soon as it meets every stage in a closed set, then the union is a
-CW complex (`TauCeti.cwSubcomplexTowerUnion`). This holds when `X` carries the topology coherent
+maps `ι k n : cell (W k) n → cell (W (k + 1)) n` with `⇑(map n (ι k n i)) = ⇑(map n i)`. Only
+the characteristic maps as functions are compared, since the inverse of a partial equivalence
+`map n i` is arbitrary off its open cell. If a subset of the union `⋃ k, W k` is closed as soon as
+it meets every stage in a closed set, then the union is a CW complex
+(`TauCeti.cwSubcomplexTowerUnion`). This holds when `X` carries the topology coherent
 with the stages (`Topology.IsCoherentWith.isClosed_of_forall_isClosed_inter`), for instance when
 `X` is the union of the stages with the final topology.
 
@@ -109,7 +111,7 @@ theorem towerOrigin_of_isNewTowerCell :
   | 0, _, _, _ => rfl
   | _ + 1, _, i, hi => by rw [towerOrigin, dite_eq_right hi]
 
-variable {ι} (hι : ∀ k n (i : cell (W k) n), map n (ι k n i) = map n i)
+variable {ι} (hι : ∀ k n (i : cell (W k) n), ⇑(map n (ι k n i)) = ⇑(map n i))
 include hι
 
 /-- A cell of `W k`, seen as a cell of `W (k + 1)`, has the same open cell. -/
@@ -137,7 +139,7 @@ theorem towerOrigin_ι {k n : ℕ} (i : cell (W k) n) : towerOrigin ι (k + 1) (
 /-- The new cell from which a cell of `W k` comes has the same characteristic map. -/
 @[simp]
 theorem map_towerOrigin : ∀ (k : ℕ) {n : ℕ} (i : cell (W k) n),
-    map n (towerOrigin ι k i).2.1 = map n i
+    ⇑(map n (towerOrigin ι k i).2.1) = ⇑(map n i)
   | 0, _, _ => rfl
   | k + 1, n, i => by
     by_cases h : i ∈ range (ι k n)
@@ -305,7 +307,7 @@ omit hW in
 corresponds. -/
 @[simp]
 theorem map_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
-    map n ((towerStageCellEquiv hι k n).symm c) = map n c.1.2.1 := by
+    ⇑(map n ((towerStageCellEquiv hι k n).symm c)) = ⇑(map n c.1.2.1) := by
   conv_rhs => rw [← (towerStageCellEquiv hι k n).apply_symm_apply c]
   rw [coe_towerStageCellEquiv_apply, map_towerOrigin hι]
 
