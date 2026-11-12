@@ -105,6 +105,60 @@ private theorem quot_mk_eq_quot_mk_iff {i : ι} {p q : 𝔸.Path ⟨v₀⟩ ⟨t
   obtain ⟨_, _, h, hh, hpq⟩ := cosetRel_equivalence.eqvGen_iff.1 (Quot.eqvGen_exact hpq)
   exact ⟨h, hh, hpq⟩
 
+private theorem quot_mk_eq_quot_mk_of_homotopic {i : ι} {p q : 𝔸.Path ⟨v₀⟩ ⟨t i⟩}
+    (h : p.Homotopic q) : Quot.mk (CosetRel 𝔸 t H v₀) ⟨i, p⟩ = Quot.mk _ ⟨i, q⟩ :=
+  quot_mk_eq_quot_mk_iff.2 ⟨1, (H i).one_mem, h.trans (Path.Homotopic.one q).symm⟩
+
+/- The action of `π₁(𝔸, v₀)` on the classes by concatenation on the left, with its orbits and
+stabilizers; the actions on the vertices and on the darts of the Bass–Serre graph are its two
+instances. -/
+
+-- The index `i` of the class of a path ending at `t i`.
+private def cosetIndex : Quot (CosetRel 𝔸 t H v₀) → ι :=
+  Quot.lift Sigma.fst fun _ _ ⟨_, _, _, _, _⟩ ↦ rfl
+
+-- `π₁(𝔸, v₀)` acts on the classes by concatenation on the left, `q · p H_i = q p H_i`.
+private instance : SMul (π₁ 𝔸 v₀) (Quot (CosetRel 𝔸 t H v₀)) where
+  smul := π₁.lift (fun q ↦ Quot.lift (fun y ↦ Quot.mk _ ⟨y.1, q.comp y.2⟩)
+      fun _ _ ⟨_, _, h, hh, hpq⟩ ↦ quot_mk_eq_quot_mk_iff.2 ⟨h, hh, by simpa using hpq.comp_left q⟩)
+    fun _ _ h ↦ funext <| Quot.ind fun ⟨_, p⟩ ↦ quot_mk_eq_quot_mk_of_homotopic (h.comp_right p)
+
+private theorem quot_smul_mk (q : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩) {i : ι} (p : 𝔸.Path ⟨v₀⟩ ⟨t i⟩) :
+    π₁.mk q • Quot.mk (CosetRel 𝔸 t H v₀) ⟨i, p⟩ = Quot.mk _ ⟨i, q.comp p⟩ :=
+  congrFun (π₁.lift_mk _ _ q) _
+
+private instance : MulAction (π₁ 𝔸 v₀) (Quot (CosetRel 𝔸 t H v₀)) where
+  one_smul := Quot.ind fun ⟨_, p⟩ ↦ by rw [← π₁.mk_nil, quot_smul_mk, Quiver.Path.nil_comp]
+  mul_smul g h := π₁.induction_on g fun q ↦ π₁.induction_on h fun r ↦ Quot.ind fun ⟨_, p⟩ ↦ by
+    rw [← π₁.mk_comp, quot_smul_mk, quot_smul_mk, quot_smul_mk, Quiver.Path.comp_assoc]
+
+private theorem cosetIndex_smul (g : π₁ 𝔸 v₀) (x : Quot (CosetRel 𝔸 t H v₀)) :
+    cosetIndex (g • x) = cosetIndex x := by
+  induction g using π₁.induction_on with | h q => ?_
+  induction x using Quot.ind with | mk x => rw [quot_smul_mk q x.2]; rfl
+
+-- The orbits are the fibres of the index.
+private theorem mem_orbit_iff_cosetIndex {x y : Quot (CosetRel 𝔸 t H v₀)} :
+    y ∈ orbit (π₁ 𝔸 v₀) x ↔ cosetIndex y = cosetIndex x := by
+  refine ⟨fun ⟨g, hg⟩ ↦ hg ▸ cosetIndex_smul g x, fun h ↦ ?_⟩
+  induction x using Quot.ind with | mk x => ?_
+  induction y using Quot.ind with | mk y => ?_
+  obtain ⟨i, p⟩ := x
+  obtain ⟨_, q⟩ := y
+  obtain rfl := h
+  exact ⟨π₁.mk (q.comp p.reverse), (quot_smul_mk _ p).trans
+    (quot_mk_eq_quot_mk_of_homotopic (Path.homotopic_comp_reverse_iff.1 (.refl _)))⟩
+
+-- The stabilizer of the class `p H_i` is `p H_i p⁻¹`.
+private theorem stabilizer_quot_mk {i : ι} (p : 𝔸.Path ⟨v₀⟩ ⟨t i⟩) :
+    stabilizer (π₁ 𝔸 v₀) (Quot.mk (CosetRel 𝔸 t H v₀) ⟨i, p⟩) = (H i).map (π₁.vertexHom p) := by
+  ext g
+  induction g using π₁.induction_on with | h q => ?_
+  simp only [mem_stabilizer_iff, quot_smul_mk, quot_mk_eq_quot_mk_iff, Subgroup.mem_map,
+    π₁.vertexHom_apply, Path.comp_ofVertex, π₁.mk_eq_mk_iff]
+  exact exists_congr fun _ ↦ and_congr_right fun _ ↦
+    Path.homotopic_comp_reverse_iff.symm.trans ⟨.symm, .symm⟩
+
 variable (𝔸) in
 /-- The vertices of the Bass–Serre graph of `𝔸` at `v₀`: the classes `p A_a` of `𝔸`-paths `p`
 from `v₀` to a vertex `a`, where two paths `p` and `p'` ending at `a` give the same vertex when
@@ -136,7 +190,7 @@ theorem mk_eq_mk_iff {p q : 𝔸.Path ⟨v₀⟩ ⟨a⟩} : mk p = mk q ↔
 
 /-- Homotopic paths give the same vertex. -/
 theorem mk_eq_mk_of_homotopic {p q : 𝔸.Path ⟨v₀⟩ ⟨a⟩} (h : p.Homotopic q) : mk p = mk q :=
-  mk_eq_mk_iff.2 ⟨1, h.trans (Path.Homotopic.one q).symm⟩
+  quot_mk_eq_quot_mk_of_homotopic h
 
 /-- Appending a vertex group element to a path does not change its vertex, `p g A_a = p A_a`. -/
 @[simp] theorem mk_cons_vertex (p : 𝔸.Path ⟨v₀⟩ ⟨a⟩) (g : 𝔸.vertexGroup a) :
@@ -166,57 +220,35 @@ def lift {β : Sort*} (f : ∀ a : Γ.V, 𝔸.Path ⟨v₀⟩ ⟨a⟩ → β)
 
 /-- The vertex of `Γ` below a vertex `p A_a` of the Bass–Serre graph: the endpoint `a`. -/
 def proj : 𝔸.BassSerreVertex v₀ → Γ.V :=
-  lift (fun a _ ↦ a) fun _ _ _ _ _ ↦ rfl
+  cosetIndex
 
 /-- The vertex `p A_a` lies over the endpoint `a` of `p`. -/
 @[simp] theorem proj_mk (p : 𝔸.Path ⟨v₀⟩ ⟨a⟩) : (mk p).proj = a :=
   (rfl)
 
-/-- `π₁(𝔸, v₀)` acts on the vertices of the Bass–Serre graph by concatenation on the left,
-`q · p A_a = q p A_a`. -/
-instance : SMul (π₁ 𝔸 v₀) (𝔸.BassSerreVertex v₀) where
-  smul := π₁.lift (fun q ↦ lift (fun _ p ↦ mk (q.comp p)) fun _ p p' g h ↦
-      mk_eq_mk_iff.2 ⟨g, by simpa using h.comp_left q⟩)
-    fun _ _ h ↦ funext fun x ↦ induction_on x fun _ p ↦ by
-      simpa using mk_eq_mk_of_homotopic (h.comp_right p)
+/-- The action of `π₁(𝔸, v₀)` on the vertices of the Bass–Serre graph by concatenation on the
+left, `q · p A_a = q p A_a`. -/
+@[no_expose] instance : MulAction (π₁ 𝔸 v₀) (𝔸.BassSerreVertex v₀) :=
+  inferInstanceAs (MulAction (π₁ 𝔸 v₀) (Quot (CosetRel 𝔸 (fun a ↦ a) (fun _ ↦ ⊤) v₀)))
 
 /-- A closed path `q` at `v₀` sends the vertex `p A_a` to `q p A_a`. -/
 @[simp] theorem smul_mk (q : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩) (p : 𝔸.Path ⟨v₀⟩ ⟨a⟩) :
-    π₁.mk q • mk p = mk (q.comp p) := by
-  -- The action is defined through `π₁.lift`, which only computes on `π₁.mk q` by `lift_mk`.
-  change π₁.lift (β := 𝔸.BassSerreVertex v₀ → 𝔸.BassSerreVertex v₀) _ _ (π₁.mk q) (mk p) = _
-  rw [π₁.lift_mk, lift_mk]
-
-/-- The action of `π₁(𝔸, v₀)` on the vertices of the Bass–Serre graph by concatenation. -/
-instance : MulAction (π₁ 𝔸 v₀) (𝔸.BassSerreVertex v₀) where
-  one_smul x := induction_on x fun _ p ↦ by rw [← π₁.mk_nil, smul_mk, Quiver.Path.nil_comp]
-  mul_smul g h x := π₁.induction_on g fun q ↦ π₁.induction_on h fun r ↦
-    induction_on x fun _ p ↦ by rw [← π₁.mk_comp, smul_mk, smul_mk, smul_mk,
-      Quiver.Path.comp_assoc]
+    π₁.mk q • mk p = mk (q.comp p) :=
+  quot_smul_mk q _
 
 /-- The action of `π₁(𝔸, v₀)` preserves the projection to `Γ`. -/
 @[simp] theorem proj_smul (g : π₁ 𝔸 v₀) (y : 𝔸.BassSerreVertex v₀) : (g • y).proj = y.proj :=
-  π₁.induction_on g fun _ ↦ induction_on y fun _ _ ↦ by simp
+  cosetIndex_smul g y
 
 /-- Two vertices of the Bass–Serre graph lie in the same `π₁(𝔸, v₀)`-orbit exactly when they lie
 over the same vertex of `Γ`. -/
-theorem mem_orbit_iff {y z : 𝔸.BassSerreVertex v₀} : z ∈ orbit (π₁ 𝔸 v₀) y ↔ z.proj = y.proj := by
-  refine ⟨fun ⟨g, hg⟩ ↦ hg ▸ proj_smul g y, fun h ↦ ?_⟩
-  induction y using induction_on with | h a p => ?_
-  induction z using induction_on with | h b q => ?_
-  obtain rfl : b = a := h
-  refine _root_.MulAction.mem_orbit_iff.2 ⟨π₁.mk (q.comp p.reverse), ?_⟩
-  rw [smul_mk]
-  exact mk_eq_mk_of_homotopic (Path.homotopic_comp_reverse_iff.1 (.refl _))
+theorem mem_orbit_iff {y z : 𝔸.BassSerreVertex v₀} : z ∈ orbit (π₁ 𝔸 v₀) y ↔ z.proj = y.proj :=
+  mem_orbit_iff_cosetIndex
 
 /-- The stabilizer of the vertex `p A_a` is `p A_a p⁻¹`, the image of `π₁.vertexHom p`. -/
 theorem stabilizer_mk (p : 𝔸.Path ⟨v₀⟩ ⟨a⟩) :
-    stabilizer (π₁ 𝔸 v₀) (mk p) = (π₁.vertexHom p).range := by
-  ext g
-  induction g using π₁.induction_on with | h q => ?_
-  simp only [mem_stabilizer_iff, smul_mk, mk_eq_mk_iff, MonoidHom.mem_range, π₁.vertexHom_apply,
-    Path.comp_ofVertex, π₁.mk_eq_mk_iff]
-  exact exists_congr fun _ ↦ Path.homotopic_comp_reverse_iff.symm.trans ⟨.symm, .symm⟩
+    stabilizer (π₁ 𝔸 v₀) (mk p) = (π₁.vertexHom p).range :=
+  (stabilizer_quot_mk _).trans (MonoidHom.range_eq_map _).symm
 
 end BassSerreVertex
 
@@ -238,7 +270,7 @@ theorem mk_eq_mk_iff {p q : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩} : mk e p = mk e
 
 /-- Homotopic paths give the same dart. -/
 theorem mk_eq_mk_of_homotopic {p q : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩} (h : p.Homotopic q) : mk e p = mk e q :=
-  mk_eq_mk_iff.2 ⟨1, by simpa using h.trans (Path.Homotopic.one q).symm⟩
+  quot_mk_eq_quot_mk_of_homotopic h
 
 /-- Appending an element of `α_e(A_e)` to a path does not change its dart over `e`. -/
 @[simp] theorem mk_cons_α (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) (c : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
@@ -269,7 +301,7 @@ def lift {β : Sort*} (f : ∀ e : Γ.E, 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩ →
 
 /-- The dart of `Γ` below a dart of the Bass–Serre graph. -/
 def proj : 𝔸.BassSerreDart v₀ → Γ.E :=
-  lift (fun e _ ↦ e) fun _ _ _ _ _ ↦ rfl
+  cosetIndex
 
 /-- The dart over `e` given by `p` lies over `e`. -/
 @[simp] theorem proj_mk (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) : (mk e p).proj = e :=
@@ -373,30 +405,24 @@ variable {e : Γ.E}
     BassSerreVertex.mk (p.cons (Letter.dart (Γ.dart e))) :=
   (rfl)
 
-/-- `π₁(𝔸, v₀)` acts on the darts of the Bass–Serre graph by concatenation on the left. -/
-instance : SMul (π₁ 𝔸 v₀) (𝔸.BassSerreDart v₀) where
-  smul := π₁.lift (fun q ↦ lift (fun e p ↦ mk e (q.comp p)) fun _ p p' c h ↦
-      mk_eq_mk_iff.2 ⟨c, by simpa using h.comp_left q⟩)
-    fun _ _ h ↦ funext fun d ↦ induction_on d fun _ p ↦ by
-      simpa using mk_eq_mk_of_homotopic (h.comp_right p)
+/-- The target of a dart lies over the target of the dart of `Γ` below it. -/
+@[simp] theorem proj_tgt (d : 𝔸.BassSerreDart v₀) :
+    ((𝔸.bassSerreGraph v₀).tgt d).proj = Γ.tgt d.proj :=
+  induction_on d fun _ _ ↦ rfl
+
+/-- The action of `π₁(𝔸, v₀)` on the darts of the Bass–Serre graph by concatenation on the
+left. -/
+@[no_expose] instance : MulAction (π₁ 𝔸 v₀) (𝔸.BassSerreDart v₀) :=
+  inferInstanceAs (MulAction (π₁ 𝔸 v₀) (Quot (CosetRel 𝔸 Γ.src (fun e ↦ (𝔸.α e).range) v₀)))
 
 /-- A closed path `q` at `v₀` sends the dart over `e` given by `p` to the one given by `q p`. -/
 @[simp] theorem smul_mk (q : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩) (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) :
-    π₁.mk q • mk e p = mk e (q.comp p) := by
-  -- The action is defined through `π₁.lift`, which only computes on `π₁.mk q` by `lift_mk`.
-  change π₁.lift (β := 𝔸.BassSerreDart v₀ → 𝔸.BassSerreDart v₀) _ _ (π₁.mk q) (mk e p) = _
-  rw [π₁.lift_mk, lift_mk]
-
-/-- The action of `π₁(𝔸, v₀)` on the darts of the Bass–Serre graph by concatenation. -/
-instance : MulAction (π₁ 𝔸 v₀) (𝔸.BassSerreDart v₀) where
-  one_smul d := induction_on d fun _ p ↦ by rw [← π₁.mk_nil, smul_mk, Quiver.Path.nil_comp]
-  mul_smul g h d := π₁.induction_on g fun q ↦ π₁.induction_on h fun r ↦
-    induction_on d fun _ p ↦ by rw [← π₁.mk_comp, smul_mk, smul_mk, smul_mk,
-      Quiver.Path.comp_assoc]
+    π₁.mk q • mk e p = mk e (q.comp p) :=
+  quot_smul_mk q _
 
 /-- The action of `π₁(𝔸, v₀)` preserves the projection to `Γ`. -/
 @[simp] theorem proj_smul (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) : (g • d).proj = d.proj :=
-  π₁.induction_on g fun _ ↦ induction_on d fun _ _ ↦ by simp
+  cosetIndex_smul g d
 
 /-- The action of `π₁(𝔸, v₀)` commutes with taking sources. -/
 @[simp] theorem src_smul (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) : (g • d).src = g • d.src :=
@@ -406,6 +432,11 @@ instance : MulAction (π₁ 𝔸 v₀) (𝔸.BassSerreDart v₀) where
 @[simp] theorem rev_smul (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) : (g • d).rev = g • d.rev :=
   π₁.induction_on g fun _ ↦ induction_on d fun _ _ ↦ by simp
 
+/-- The action of `π₁(𝔸, v₀)` commutes with taking targets. -/
+@[simp] theorem tgt_smul (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) :
+    (𝔸.bassSerreGraph v₀).tgt (g • d) = g • (𝔸.bassSerreGraph v₀).tgt d :=
+  π₁.induction_on g fun _ ↦ induction_on d fun _ _ ↦ by simp
+
 /-- The action of `π₁(𝔸, v₀)` on the Bass–Serre graph has no inversions: no element maps a dart
 to its reverse. -/
 theorem smul_ne_rev (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) : g • d ≠ d.rev := fun h ↦
@@ -413,23 +444,13 @@ theorem smul_ne_rev (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) : g • 
 
 /-- Two darts of the Bass–Serre graph lie in the same `π₁(𝔸, v₀)`-orbit exactly when they lie
 over the same dart of `Γ`. -/
-theorem mem_orbit_iff {d d' : 𝔸.BassSerreDart v₀} : d' ∈ orbit (π₁ 𝔸 v₀) d ↔ d'.proj = d.proj := by
-  refine ⟨fun ⟨g, hg⟩ ↦ hg ▸ proj_smul g d, fun h ↦ ?_⟩
-  induction d using induction_on with | h e p => ?_
-  induction d' using induction_on with | h f q => ?_
-  obtain rfl : f = e := h
-  refine _root_.MulAction.mem_orbit_iff.2 ⟨π₁.mk (q.comp p.reverse), ?_⟩
-  rw [smul_mk]
-  exact mk_eq_mk_of_homotopic (Path.homotopic_comp_reverse_iff.1 (.refl _))
+theorem mem_orbit_iff {d d' : 𝔸.BassSerreDart v₀} : d' ∈ orbit (π₁ 𝔸 v₀) d ↔ d'.proj = d.proj :=
+  mem_orbit_iff_cosetIndex
 
 /-- The stabilizer of the dart over `e` given by `p` is `p α_e(A_e) p⁻¹`. -/
 theorem stabilizer_mk (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) :
-    stabilizer (π₁ 𝔸 v₀) (mk e p) = (𝔸.α e).range.map (π₁.vertexHom p) := by
-  ext g
-  induction g using π₁.induction_on with | h q => ?_
-  simp only [mem_stabilizer_iff, smul_mk, mk_eq_mk_iff, Subgroup.mem_map, MonoidHom.mem_range,
-    exists_exists_eq_and, π₁.vertexHom_apply, Path.comp_ofVertex, π₁.mk_eq_mk_iff]
-  exact exists_congr fun _ ↦ Path.homotopic_comp_reverse_iff.symm.trans ⟨.symm, .symm⟩
+    stabilizer (π₁ 𝔸 v₀) (mk e p) = (𝔸.α e).range.map (π₁.vertexHom p) :=
+  stabilizer_quot_mk _
 
 end BassSerreDart
 
@@ -447,15 +468,15 @@ def bassSerreAction : π₁ 𝔸 v₀ →* (𝔸.bassSerreGraph v₀).Aut where
     (fun d ↦ (MulAction.toPerm_apply _ d).trans (one_smul (π₁ 𝔸 v₀) d))
   map_mul' g h := SerreGraph.Aut.ext (fun y ↦ mul_smul g h y) (fun d ↦ mul_smul g h d)
 
-/-- The automorphism given by `g` acts on vertices as `g`. -/
-@[simp] theorem bassSerreAction_equivV (g : π₁ 𝔸 v₀) (y : 𝔸.BassSerreVertex v₀) :
-    (𝔸.bassSerreAction v₀ g).equivV y = g • y :=
-  MulAction.toPerm_apply g y
+/-- The automorphism given by `g` permutes the vertices as `g` does, `y ↦ g • y`. -/
+@[simp] theorem bassSerreAction_equivV (g : π₁ 𝔸 v₀) :
+    (𝔸.bassSerreAction v₀ g).equivV = MulAction.toPerm g :=
+  (rfl)
 
-/-- The automorphism given by `g` acts on darts as `g`. -/
-@[simp] theorem bassSerreAction_equivE (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) :
-    (𝔸.bassSerreAction v₀ g).equivE d = g • d :=
-  MulAction.toPerm_apply g d
+/-- The automorphism given by `g` permutes the darts as `g` does, `d ↦ g • d`. -/
+@[simp] theorem bassSerreAction_equivE (g : π₁ 𝔸 v₀) :
+    (𝔸.bassSerreAction v₀ g).equivE = MulAction.toPerm g :=
+  (rfl)
 
 variable (𝔸 v₀) in
 /-- The projection of the Bass–Serre graph to `Γ`: the vertex `p A_a` maps to `a`, and a dart over
