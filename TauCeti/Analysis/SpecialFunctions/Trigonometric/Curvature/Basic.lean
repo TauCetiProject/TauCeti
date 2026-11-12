@@ -196,18 +196,6 @@ theorem curvatureSine_nonneg {κ t : ℝ} (ht : 0 ≤ t)
   · rw [curvatureSine_of_neg hκ]
     exact div_nonneg (sinh_nonneg_iff.2 (mul_nonneg (sqrt_nonneg _) ht)) (sqrt_nonneg _)
 
-/-- In positive curvature the model sine vanishes at `π / √κ`, its first positive zero. -/
-@[simp]
-theorem curvatureSine_pi_div_sqrt {κ : ℝ} (hκ : 0 < κ) : curvatureSine κ (π / √κ) = 0 := by
-  rw [curvatureSine_of_pos hκ, mul_div_cancel₀ π (sqrt_pos.2 hκ).ne', sin_pi, zero_div]
-
-/-- In positive curvature the zeros of the model sine are the integer multiples of `π / √κ`. -/
-theorem curvatureSine_eq_zero_iff_of_pos {κ t : ℝ} (hκ : 0 < κ) :
-    curvatureSine κ t = 0 ↔ ∃ n : ℤ, n * π / √κ = t := by
-  have hs := (sqrt_pos.2 hκ).ne'
-  rw [curvatureSine_of_pos hκ, div_eq_zero_iff, or_iff_left hs, sin_eq_zero_iff]
-  exact exists_congr fun n ↦ by rw [div_eq_iff hs, mul_comm t]
-
 /-- In nonpositive curvature the model sine vanishes only at the origin. -/
 @[simp]
 theorem curvatureSine_eq_zero_iff_of_nonpos {κ t : ℝ} (hκ : κ ≤ 0) :
@@ -217,6 +205,22 @@ theorem curvatureSine_eq_zero_iff_of_nonpos {κ t : ℝ} (hκ : κ ≤ 0) :
     rw [curvatureSine_of_neg hκ, div_eq_zero_iff, or_iff_left hs, sinh_eq_zero, mul_eq_zero,
       or_iff_right hs]
   · simp
+
+/-- The zeros of the model sine are the integer multiples of `π / √κ`. In nonpositive curvature
+`√κ = 0`, so these all collapse to the origin. -/
+theorem curvatureSine_eq_zero_iff {κ t : ℝ} :
+    curvatureSine κ t = 0 ↔ ∃ n : ℤ, n * π / √κ = t := by
+  rcases lt_or_ge 0 κ with hκ | hκ
+  · have hs := (sqrt_pos.2 hκ).ne'
+    rw [curvatureSine_of_pos hκ, div_eq_zero_iff, or_iff_left hs, sin_eq_zero_iff]
+    exact exists_congr fun n ↦ by rw [div_eq_iff hs, mul_comm t]
+  · simp [curvatureSine_eq_zero_iff_of_nonpos hκ, sqrt_eq_zero_of_nonpos hκ, eq_comm]
+
+/-- The model sine vanishes at `π / √κ`, its first positive zero in positive curvature and the
+origin otherwise. -/
+@[simp]
+theorem curvatureSine_pi_div_sqrt (κ : ℝ) : curvatureSine κ (π / √κ) = 0 :=
+  curvatureSine_eq_zero_iff.2 ⟨1, by simp⟩
 
 private theorem curvatureSine_div_sq_mul_and_curvatureCosine_div_sq_mul_of_pos {κ c : ℝ}
     (hc : 0 < c) (t : ℝ) :

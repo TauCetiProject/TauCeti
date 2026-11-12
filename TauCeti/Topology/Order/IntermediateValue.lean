@@ -21,8 +21,8 @@ uniform order statements:
   in the open interval `Ioo a b`, with `a < b`, lies below `a` on all of `s` or above `b` on all
   of `s`.
 
-A continuous function on `Icc a b` which lies above `c` just to the right of `a` and is at most
-`c` somewhere in `Ioo a b` has a first such point, `ContinuousOn.exists_first_le_of_eventually_lt`.
+A continuous function on `Ioo a b` which lies above `c` just to the right of `a` and is at most
+`c` somewhere in `Ioo a b` has a least such point, `ContinuousOn.exists_mem_Ioo_le_and_forall_gt`.
 -/
 
 public section
@@ -76,12 +76,12 @@ theorem IsPreconnected.forall_le_or_forall_ge (hs : IsPreconnected s)
     isClosed_Ici hcover hdisj).imp (fun h x hx ↦ h (mem_image_of_mem f hx))
     fun h x hx ↦ h (mem_image_of_mem f hx)
 
-/-- A function continuous on `Icc a b`, eventually above `c` to the right of `a` and at most `c`
-somewhere in `Ioo a b`, has a first such point `t₁ ∈ Ioo a b`: `f t₁ ≤ c` and `c < f` on
+/-- A function continuous on `Ioo a b`, eventually above `c` to the right of `a` and at most `c`
+somewhere in `Ioo a b`, has a least such point `t₁ ∈ Ioo a b`: `f t₁ ≤ c` and `c < f` on
 `Ioo a t₁`. -/
-theorem ContinuousOn.exists_first_le_of_eventually_lt
+theorem ContinuousOn.exists_mem_Ioo_le_and_forall_gt
     [ConditionallyCompleteLinearOrder X] [OrderTopology X] {f : X → α} {a b : X} {c : α}
-    (hf : ContinuousOn f (Icc a b)) (hpos : ∀ᶠ r in 𝓝[>] a, c < f r)
+    (hf : ContinuousOn f (Ioo a b)) (hpos : ∀ᶠ r in 𝓝[>] a, c < f r)
     (hne : ∃ t ∈ Ioo a b, f t ≤ c) : ∃ t₁ ∈ Ioo a b, f t₁ ≤ c ∧ ∀ r ∈ Ioo a t₁, c < f r := by
   obtain ⟨t, ht, hft⟩ := hne
   set Z := Ioo a b ∩ {t | f t ≤ c}
@@ -94,6 +94,5 @@ theorem ContinuousOn.exists_first_le_of_eventually_lt
     ⟨lt_of_lt_of_le hu hut₁, (csInf_le hbdd ⟨ht, hft⟩).trans_lt ht.2⟩
   refine ⟨sInf Z, ht₁, ?_, fun r hr ↦ lt_of_not_ge fun h ↦
     hr.2.not_ge (csInf_le hbdd ⟨⟨hr.1, hr.2.trans ht₁.2⟩, h⟩)⟩
-  have hclosed := hf.preimage_isClosed_of_isClosed isClosed_Icc (isClosed_Iic (a := c))
-  have hZsub : Z ⊆ Icc a b ∩ f ⁻¹' Iic c := fun z hz ↦ ⟨Ioo_subset_Icc_self hz.1, hz.2⟩
-  exact (closure_minimal hZsub hclosed (csInf_mem_closure hZ hbdd)).2
+  exact ContinuousWithinAt.closure_le (csInf_mem_closure hZ hbdd)
+    ((hf _ ht₁).mono inter_subset_left) continuousWithinAt_const fun _ hz ↦ hz.2

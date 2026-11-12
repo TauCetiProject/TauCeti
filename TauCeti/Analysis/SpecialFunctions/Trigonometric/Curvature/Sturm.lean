@@ -34,6 +34,9 @@ range: `s_κ ≤ s_μ` on `[0, π / √κ]` when `μ ≤ κ`.
 
 ## Main results
 
+* `TauCeti.tendsto_div_curvatureSine_nhdsGT_zero`: `f / s_κ → a` at `0⁺`.
+* `TauCeti.monotoneOn_div_curvatureSine`: the quotient `f / s_κ` is monotone before the model
+  zero.
 * `TauCeti.mul_curvatureSine_le_of_hasDerivAt`: the Sturm comparison `a s_κ ≤ f`.
 * `TauCeti.mul_curvatureSine_le_of_pos`: the comparison for `a > 0` when the differential
   inequality is assumed only where `f > 0`.
@@ -57,7 +60,7 @@ open scoped Topology
 variable {κ a b t : ℝ} {f f' f'' : ℝ → ℝ}
 
 /-- A function vanishing at `0` with right derivative `a` there has `f / s_κ → a` at `0⁺`. -/
-private theorem tendsto_div_curvatureSine_nhdsGT_zero (hf0 : f 0 = 0)
+theorem tendsto_div_curvatureSine_nhdsGT_zero (hf0 : f 0 = 0)
     (hfa : HasDerivWithinAt f a (Ici 0) 0) :
     Tendsto (fun t ↦ f t / curvatureSine κ t) (𝓝[>] 0) (𝓝 a) := by
   have h := (hfa.tendsto_div_self_nhdsGT_zero hf0).div
@@ -112,13 +115,17 @@ private theorem wronskian_curvatureSine_nonneg
   have := hanti hr (right_mem_Ioc.2 ht₀.1) hr.2
   linarith
 
-/-- The Sturm comparison on an open interval, without assumptions at its right endpoint. -/
-private theorem mul_curvatureSine_le_of_mem_Ioo (hb : 0 < κ → b ≤ π / √κ)
-    (hf0 : f 0 = 0) (hfa : HasDerivWithinAt f a (Ici 0) 0)
+/-- **Sturm comparison**, quotient form. Let `f(0) = 0`, with right derivative `a` at `0`, and
+`f'' + κ f ≥ 0` on `(0, b)`, where `b ≤ π / √κ` if `κ > 0`. Then `f / s_κ` is monotone on `(0, b)`;
+by `tendsto_div_curvatureSine_nhdsGT_zero` it starts from the value `a`. -/
+theorem monotoneOn_div_curvatureSine (hb : 0 < κ → b ≤ π / √κ)
+    (hf0 : f 0 = 0) (hfa : HasDerivWithinAt f a (Icc 0 b) 0)
     (hf' : ∀ t ∈ Ioo 0 b, HasDerivAt f (f' t) t)
     (hf'' : ∀ t ∈ Ioo 0 b, HasDerivAt f' (f'' t) t)
-    (hineq : ∀ t ∈ Ioo 0 b, 0 ≤ f'' t + κ * f t) (ht : t ∈ Ioo 0 b) :
-    a * curvatureSine κ t ≤ f t := by
+    (hineq : ∀ t ∈ Ioo 0 b, 0 ≤ f'' t + κ * f t) :
+    MonotoneOn (fun r ↦ f r / curvatureSine κ r) (Ioo 0 b) := by
+  rcases le_or_gt b 0 with hb0 | hb0
+  · exact (Ioo_eq_empty_of_le hb0 ▸ subsingleton_empty).monotoneOn _
   have hs (r : ℝ) (hr : r ∈ Ioo 0 b) : 0 < curvatureSine κ r :=
     curvatureSine_pos hr.1 fun hκ ↦ hr.2.trans_le (hb hκ)
   -- The Wronskian of `f` and the model sine, and the derivative of their quotient.
@@ -136,25 +143,36 @@ private theorem mul_curvatureSine_le_of_mem_Ioo (hb : 0 < κ → b ≤ π / √�
       (fun r hr ↦ (hw r hr).continuousAt.continuousWithinAt)
       (fun r hr ↦ (hw r (interior_subset hr)).hasDerivWithinAt)
       (fun r hr ↦ mul_nonneg (hineq r (interior_subset hr)) (hs r (interior_subset hr)).le)
-  have hlim := tendsto_div_curvatureSine_nhdsGT_zero (κ := κ) hf0 hfa
-  -- The Wronskian is nonnegative, so `f / s_κ` is nondecreasing from its initial value `a`.
-  have hgmono : MonotoneOn (fun r ↦ f r / curvatureSine κ r) (Ioo 0 b) :=
-    monotoneOn_of_hasDerivWithinAt_nonneg (convex_Ioo 0 b)
-      (fun r hr ↦ (hg r hr).continuousAt.continuousWithinAt)
-      (fun r hr ↦ (hg r (interior_subset hr)).hasDerivWithinAt)
-      (fun r hr ↦ div_nonneg (wronskian_curvatureSine_nonneg hs hg hwmono hlim
-        (interior_subset hr)) (sq_nonneg _))
+  have hlim := tendsto_div_curvatureSine_nhdsGT_zero (κ := κ) hf0
+    ((hfa.mono Ioo_subset_Icc_self).Ioi_of_Ioo hb0).Ici_of_Ioi
+  -- The Wronskian is nonnegative, so `f / s_κ` is nondecreasing.
+  exact monotoneOn_of_hasDerivWithinAt_nonneg (convex_Ioo 0 b)
+    (fun r hr ↦ (hg r hr).continuousAt.continuousWithinAt)
+    (fun r hr ↦ (hg r (interior_subset hr)).hasDerivWithinAt)
+    (fun r hr ↦ div_nonneg (wronskian_curvatureSine_nonneg hs hg hwmono hlim
+      (interior_subset hr)) (sq_nonneg _))
+
+/-- The Sturm comparison on an open interval, without assumptions at its right endpoint. -/
+private theorem mul_curvatureSine_le_of_mem_Ioo (hb : 0 < κ → b ≤ π / √κ)
+    (hf0 : f 0 = 0) (hfa : HasDerivWithinAt f a (Icc 0 b) 0)
+    (hf' : ∀ t ∈ Ioo 0 b, HasDerivAt f (f' t) t)
+    (hf'' : ∀ t ∈ Ioo 0 b, HasDerivAt f' (f'' t) t)
+    (hineq : ∀ t ∈ Ioo 0 b, 0 ≤ f'' t + κ * f t) (ht : t ∈ Ioo 0 b) :
+    a * curvatureSine κ t ≤ f t := by
+  have hlim := tendsto_div_curvatureSine_nhdsGT_zero (κ := κ) hf0
+    ((hfa.mono Ioo_subset_Icc_self).Ioi_of_Ioo (ht.1.trans ht.2)).Ici_of_Ioi
+  have hgmono := monotoneOn_div_curvatureSine hb hf0 hfa hf' hf'' hineq
   have hat : a ≤ f t / curvatureSine κ t := by
     refine le_of_tendsto hlim ?_
     filter_upwards [Ioo_mem_nhdsGT ht.1] with r hr
     exact hgmono ⟨hr.1, hr.2.trans ht.2⟩ ht hr.2.le
-  exact (le_div_iff₀ (hs t ht)).1 hat
+  exact (le_div_iff₀ (curvatureSine_pos ht.1 fun hκ ↦ ht.2.trans_le (hb hκ))).1 hat
 
 /-- **Sturm comparison** with the model sine. Let `f` be continuous on `[0, b]`, with `f(0) = 0`,
 right derivative `a` at `0`, and `f'' + κ f ≥ 0` on `(0, b)`, where `b ≤ π / √κ` if `κ > 0`.
 Then `a s_κ(t) ≤ f(t)` for `t ∈ [0, b]`. No sign condition on `f` is required. -/
 theorem mul_curvatureSine_le_of_hasDerivAt (hb : 0 < κ → b ≤ π / √κ)
-    (hf : ContinuousOn f (Icc 0 b)) (hf0 : f 0 = 0) (hfa : HasDerivWithinAt f a (Ici 0) 0)
+    (hf : ContinuousOn f (Icc 0 b)) (hf0 : f 0 = 0) (hfa : HasDerivWithinAt f a (Icc 0 b) 0)
     (hf' : ∀ t ∈ Ioo 0 b, HasDerivAt f (f' t) t)
     (hf'' : ∀ t ∈ Ioo 0 b, HasDerivAt f' (f'' t) t)
     (hineq : ∀ t ∈ Ioo 0 b, 0 ≤ f'' t + κ * f t) (ht : t ∈ Icc 0 b) :
@@ -173,7 +191,7 @@ differential inequality only where `f` is positive. Let `f` be continuous on `[0
 where `f > 0`, where `b ≤ π / √κ` if `κ > 0`. Then `a s_κ(t) ≤ f(t)` for `t ∈ [0, b]`; in
 particular `f` has no zero in `(0, b)`. -/
 theorem mul_curvatureSine_le_of_pos (ha : 0 < a) (hb : 0 < κ → b ≤ π / √κ)
-    (hf : ContinuousOn f (Icc 0 b)) (hf0 : f 0 = 0) (hfa : HasDerivWithinAt f a (Ici 0) 0)
+    (hf : ContinuousOn f (Icc 0 b)) (hf0 : f 0 = 0) (hfa : HasDerivWithinAt f a (Icc 0 b) 0)
     (hf' : ∀ t ∈ Ioo 0 b, 0 < f t → HasDerivAt f (f' t) t)
     (hf'' : ∀ t ∈ Ioo 0 b, 0 < f t → HasDerivAt f' (f'' t) t)
     (hineq : ∀ t ∈ Ioo 0 b, 0 < f t → 0 ≤ f'' t + κ * f t) (ht : t ∈ Icc 0 b) :
@@ -183,12 +201,16 @@ theorem mul_curvatureSine_le_of_pos (ha : 0 < a) (hb : 0 < κ → b ≤ π / √
       (fun t ht ↦ hf'' t ht (hpos t ht)) (fun t ht ↦ hineq t ht (hpos t ht)) ht
   -- Otherwise apply the comparison before the first nonpositive value `t₁` of `f`.
   by_contra! hne
+  obtain ⟨t₀, ht₀, hft₀⟩ := hne
   have hεpos : ∀ᶠ r in 𝓝[>] 0, 0 < f r := by
-    simpa [hf0] using hfa.Ioi_of_Ici.eventually_nhdsGT_lt_of_pos ha
-  obtain ⟨t₁, ht₁, hft₁, hbelow⟩ := hf.exists_first_le_of_eventually_lt hεpos hne
+    simpa [hf0] using ((hfa.mono Ioo_subset_Icc_self).Ioi_of_Ioo
+      (ht₀.1.trans ht₀.2)).eventually_nhdsGT_lt_of_pos ha
+  obtain ⟨t₁, ht₁, hft₁, hbelow⟩ :=
+    (hf.mono Ioo_subset_Icc_self).exists_mem_Ioo_le_and_forall_gt hεpos ⟨t₀, ht₀, hft₀⟩
   have hmem (r : ℝ) (hr : r ∈ Ioo 0 t₁) : r ∈ Ioo 0 b := ⟨hr.1, hr.2.trans ht₁.2⟩
   have hcomp := mul_curvatureSine_le_of_hasDerivAt (b := t₁)
-    (fun hκ ↦ ht₁.2.le.trans (hb hκ)) (hf.mono (Icc_subset_Icc_right ht₁.2.le)) hf0 hfa
+    (fun hκ ↦ ht₁.2.le.trans (hb hκ)) (hf.mono (Icc_subset_Icc_right ht₁.2.le)) hf0
+    (hfa.mono (Icc_subset_Icc_right ht₁.2.le))
     (fun r hr ↦ hf' r (hmem r hr) (hbelow r hr)) (fun r hr ↦ hf'' r (hmem r hr) (hbelow r hr))
     (fun r hr ↦ hineq r (hmem r hr) (hbelow r hr)) (right_mem_Icc.2 ht₁.1.le)
   have hs := curvatureSine_pos ht₁.1 fun hκ ↦ ht₁.2.trans_le (hb hκ)
@@ -200,7 +222,7 @@ differential inequality only where `f` is positive. Let `f ≥ 0` be continuous 
 where `f > 0`, where `b ≤ π / √κ` if `κ > 0`. Then `a s_κ(t) ≤ f(t)` for `t ∈ [0, b]`. -/
 theorem mul_curvatureSine_le_of_nonneg (hb : 0 < κ → b ≤ π / √κ)
     (hf : ContinuousOn f (Icc 0 b)) (hfnonneg : ∀ t ∈ Icc 0 b, 0 ≤ f t) (hf0 : f 0 = 0)
-    (hfa : HasDerivWithinAt f a (Ici 0) 0)
+    (hfa : HasDerivWithinAt f a (Icc 0 b) 0)
     (hf' : ∀ t ∈ Ioo 0 b, 0 < f t → HasDerivAt f (f' t) t)
     (hf'' : ∀ t ∈ Ioo 0 b, 0 < f t → HasDerivAt f' (f'' t) t)
     (hineq : ∀ t ∈ Ioo 0 b, 0 < f t → 0 ≤ f'' t + κ * f t) (ht : t ∈ Icc 0 b) :
