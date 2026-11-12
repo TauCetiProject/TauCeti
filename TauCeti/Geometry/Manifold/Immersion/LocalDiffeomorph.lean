@@ -373,16 +373,26 @@ variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [Normed
   {Y : Type*} [TopologicalSpace Y] [ChartedSpace G Y]
   [IsManifold K n X] [IsManifold K' n Y] [BoundarylessManifold K X]
 
+omit [FiniteDimensional 𝕂 F] in
 /-- An immersion of a boundaryless manifold into a manifold modelled on a space of the same
 finite dimension is a local diffeomorphism. -/
 theorem _root_.Manifold.IsImmersion.isLocalDiffeomorph {g : X → Y} (hg : IsImmersion K K' n g)
     (hd : Module.finrank 𝕂 F = Module.finrank 𝕂 F') (hn : 1 ≤ n) :
     IsLocalDiffeomorph K K' n g := by
-  have := FiniteDimensional.complete 𝕂 F
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · exact fun x ↦ isEmptyElim x
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  -- The tangent space of `X` embeds in that of `Y`, so it is finite-dimensional.
+  have : FiniteDimensional 𝕂 F := by
+    have : FiniteDimensional 𝕂 (TangentSpace K' (g x₀)) :=
+      inferInstanceAs (FiniteDimensional 𝕂 F')
+    exact FiniteDimensional.of_injective (mfderiv K K' g x₀).toLinearMap
+      (hg.isDiffImmersionAt hn0 x₀).mfderiv_injective
+  have := FiniteDimensional.completeSpace 𝕂 F
   refine isLocalDiffeomorph_of_mfderiv_eq hg.contMDiff hn fun y ↦ ?_
   let L := (mfderiv K K' g y : TangentSpace K y →ₗ[𝕂] TangentSpace K' (g y))
   have hinj : Function.Injective L :=
-    (hg.isDiffImmersionAt (by rintro rfl; simp at hn) y).mfderiv_injective
+    (hg.isDiffImmersionAt hn0 y).mfderiv_injective
   exact ⟨(LinearEquiv.ofInjectiveOfFinrankEq L hinj hd).toContinuousLinearEquiv,
     ContinuousLinearMap.ext fun v ↦
       LinearMap.congr_fun (LinearEquiv.coe_ofInjectiveOfFinrankEq L hinj hd) v⟩

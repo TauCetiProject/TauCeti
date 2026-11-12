@@ -25,8 +25,8 @@ the form of `A` is at least `c + g` and that of `B` at most `c`, then `g ‖X‖
 reverse orientation follows in the same way. The proof evaluates the equation on unit vectors `v`
 with `‖X v‖` close to `‖X‖`. For such `v`, the Cauchy–Schwarz inequality for the positive
 semidefinite form `‖X‖² ⟪·, ·⟫ - ⟪X ·, X ·⟫`
-(`ContinuousLinearMap.sq_opNorm_sq_mul_re_inner_sub_re_inner_le`) makes `re ⟪X (B v), X v⟫` close
-to `‖X‖² re ⟪B v, v⟫`.
+(`ContinuousLinearMap.sq_mul_re_inner_sub_re_inner_sq_le_of_opNorm_le`) makes `re ⟪X (B v), X v⟫`
+close to `‖X‖² re ⟪B v, v⟫`.
 
 When `A` is symmetric, the equation diagonalises on eigenvectors: if `A u = α u` and `B v = β v`
 with `α` real and `β : 𝕜`, then `⟪u, (A X - X B) v⟫ = (α - β) ⟪u, X v⟫`. Only `E` needs an
@@ -142,7 +142,7 @@ theorem add_mul_norm_le_norm_comp_add_comp {α β : ℝ}
     have hYv : RCLike.re ⟪Y v, X v⟫_𝕜 =
         RCLike.re ⟪A (X v), X v⟫_𝕜 + RCLike.re ⟪X (B v), X v⟫_𝕜 := by
       simp [Y, inner_add_left]
-    have hCS := X.sq_opNorm_sq_mul_re_inner_sub_re_inner_le (B v) v
+    have hCS := X.sq_mul_re_inner_sub_re_inner_sq_le_of_opNorm_le le_rfl (B v) v
     rw [hv, one_pow, mul_one] at hCS
     have hD : ‖X‖ ^ 2 * RCLike.re ⟪B v, v⟫_𝕜 - RCLike.re ⟪X (B v), X v⟫_𝕜 ≤
         ‖B‖ * ‖X‖ * √(‖X‖ ^ 2 - ‖X v‖ ^ 2) := by
