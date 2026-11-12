@@ -26,10 +26,10 @@ If `2 ≠ 0` in `k`, graded commutativity of the cup product makes the square of
 class vanish (`TopCat.singularCup_self_eq_zero_of_odd`, from
 `TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity`), so in the middle degree `p` of an odd
 `p + p = n` the cup pairing is alternating (`TopCat.isAlt_singularCupPairing`, from
-`TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker`). If moreover `Hᵖ(X; k)` is
-finite-dimensional and capping with `μ` is injective on it, the pairing is a nondegenerate
-alternating form and `Hᵖ(X; k)` has even dimension
-(`TopCat.even_finrank_singularCohomology_of_injective_singularCapLinearMap`). The hypothesis on
+`TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker`). If moreover capping with `μ` is injective
+on `Hᵖ(X; k)`, the pairing is a nondegenerate alternating form and `finrank k Hᵖ(X; k)` is even
+(`TopCat.even_finrank_singularCohomology_of_injective_singularCapLinearMap`); when `Hᵖ(X; k)` is
+infinite-dimensional its `finrank` is `0`. The hypothesis on
 `2` cannot be dropped: over `𝔽₂`, the real projective plane has `H¹` of dimension one and capping
 with its mod two fundamental class is bijective. When capping with `μ` is bijective, the Betti
 numbers in the complementary degrees `p` and `q` agree
@@ -89,17 +89,21 @@ theorem injective_singularCapLinearMap_iff {p q n : ℕ} (h : p + q = n)
   exact forall_congr' fun α ↦ imp_congr_left (X.singularCapLinearMap_eq_zero_iff h μ α)
 
 /-- **Middle odd degree cohomology has even dimension under duality**: if `2 ≠ 0` in `k`,
-`p` is odd, `p + p = n`, `Hᵖ(X; k)` is finite-dimensional and capping with `μ ∈ Hₙ(X; k)` is
-injective on it, then the cup pairing on `μ` is a nondegenerate alternating form on `Hᵖ(X; k)`,
-so its dimension is even. The hypothesis on `2` is needed: the real projective plane over `𝔽₂`
-has `H¹` of dimension one. -/
+`p` is odd, `p + p = n` and capping with `μ ∈ Hₙ(X; k)` is injective on `Hᵖ(X; k)`, then the cup
+pairing on `μ` is a nondegenerate alternating form on `Hᵖ(X; k)`, so its `finrank` is even. No
+finiteness is assumed: an infinite-dimensional `Hᵖ(X; k)` has `finrank` zero. The hypothesis on
+`2` is needed: the real projective plane over `𝔽₂` has `H¹` of dimension one. -/
 theorem even_finrank_singularCohomology_of_injective_singularCapLinearMap (h2 : (2 : k) ≠ 0)
     {p n : ℕ} (hp : Odd p) (h : p + p = n)
     (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X)
-    [FiniteDimensional k (X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)]
     (hinj : Function.Injective (X.singularCapLinearMap h μ)) :
     Even (finrank k
       (X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)) := by
+  by_cases hfin : Module.Finite k
+      (X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
+  swap
+  · rw [finrank_of_not_finite hfin]
+    exact .zero
   have := invertibleOfNonzero h2
   refine (X.isAlt_singularCupPairing hp h μ).even_finrank_of_injective ?_ (finrank_self k)
   rw [injective_iff_map_eq_zero]
