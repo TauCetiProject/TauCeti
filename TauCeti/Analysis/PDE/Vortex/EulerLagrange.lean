@@ -22,9 +22,10 @@ is a weak solution of the reduced vortex equation `Δu = (exp (2u) h - 1) / 8 + 
 
 for every compactly supported `C¹` function `φ`.
 
-The potential `(1 / 16) ∫ h (exp (2u) - 1 - 2u)` of an element of `H¹(ℂ)` can be infinite, so `I`
-is not differentiable on all of `H¹(ℂ)`. At a point where `I` is finite, however, `h exp (2u)` is
-integrable on every set of finite measure
+The potential `(1 / 16) ∫ h (exp (2u) - 1 - 2u)` of an element of `H¹(ℂ)` is finite, but only by
+the exponential integrability of `H¹` functions in the plane
+(`TauCeti.Vortex.sobolevReducedFunctional_ne_top`), which the argument below does not use. At a
+point where `I` is finite, `h exp (2u)` is integrable on every set of finite measure
 (`TauCeti.Vortex.integrableOn_mul_exp_of_sobolevReducedFunctional_ne_top`): it differs from the
 integrable potential by `h (1 + 2u)`, and `h ≤ 1`. For a direction `v ∈ H¹(ℂ)` whose value is
 bounded and vanishes outside a set of finite measure, the expansion

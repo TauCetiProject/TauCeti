@@ -56,6 +56,7 @@ This is the decay at infinity that gives the reconstructed vortex its degree-`m`
 
 ## Main results
 
+* `TauCeti.Vortex.memLp_exp_two_mul_value_sub_one`: `exp (2w) - 1 ∈ L²(ℂ)` for `w ∈ H¹(ℂ)`.
 * `TauCeti.Vortex.memLp_reducedSource`: `reducedSource P w ∈ L²(ℂ)` for `w ∈ H¹(ℂ)`.
 * `TauCeti.Vortex.exists_wkp_value_ae_eq_of_forall_integral_reducedSource`: a weak solution in
   `H¹(ℂ)` of the reduced equation lies in `H²(ℂ)`.
@@ -95,25 +96,28 @@ theorem reducedSource_def (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) :
 
 variable {P : Polynomial ℂ}
 
+/-- For `w ∈ H¹(ℂ)`, `exp (2w) - 1 ∈ L²(ℂ)`: this is `TauCeti.W1p.memLp_exp_value_sub_one` for
+`2w`. -/
+theorem memLp_exp_two_mul_value_sub_one (u : W1p (volume : Measure ℂ) ⊤ 2) :
+    MemLp (fun z ↦ Real.exp (2 * W1p.value u z) - 1) 2 volume := by
+  have h2u : (W1p.value ((2 : ℝ) • u) : ℂ → ℝ) =ᵐ[volume] fun z ↦ 2 * W1p.value u z := by
+    have h := W1p.value_smul_ae (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2) 2 u
+    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
+    exact h.mono fun z hz ↦ by rw [hz, Pi.smul_apply, smul_eq_mul]
+  exact (W1p.memLp_exp_value_sub_one volume Complex.finrank_real_complex ((2 : ℝ) • u)).ae_eq
+    (h2u.mono fun z hz ↦ by simp only [hz])
+
 /-- **The source of the reduced equation is square integrable.** For a polynomial `P` of positive
 degree and `w ∈ H¹(ℂ)`, `(exp (2w) h - 1) / 8 + g ∈ L²(ℂ)`. -/
 theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure ℂ) ⊤ 2) :
     MemLp (reducedSource P (W1p.value u)) 2 volume := by
-  have hE : finrank ℝ ℂ = 2 := Complex.finrank_real_complex
   set h : ℂ → ℝ := backgroundWeight (P.eval ·)
   have hh0 (z : ℂ) : 0 ≤ h z := backgroundWeight_nonneg _ z
   have hh1 (z : ℂ) : h z ≤ 1 := by
     rw [show h z = _ from backgroundWeight_def _ z]
     exact div_le_one_of_le₀ (by linarith) (by positivity)
   have hhc : Continuous h := continuous_backgroundWeight P.continuous
-  -- `exp (2w) - 1 ∈ L²`, from the value of `2 • u`.
-  have h2u : (W1p.value ((2 : ℝ) • u) : ℂ → ℝ) =ᵐ[volume] fun z ↦ 2 * W1p.value u z := by
-    have h := W1p.value_smul_ae (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2) 2 u
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
-    exact h.mono fun z hz ↦ by rw [hz, Pi.smul_apply, smul_eq_mul]
-  have hexp : MemLp (fun z ↦ Real.exp (2 * W1p.value u z) - 1) 2 volume :=
-    (W1p.memLp_exp_value_sub_one volume hE ((2 : ℝ) • u)).ae_eq
-      (h2u.mono fun z hz ↦ by simp only [hz])
+  have hexp := memLp_exp_two_mul_value_sub_one u
   have htop : MemLp h ⊤ volume :=
     memLp_top_of_bound hhc.aestronglyMeasurable 1 (Eventually.of_forall fun z ↦ by
       rw [Real.norm_of_nonneg (hh0 z)]; exact hh1 z)

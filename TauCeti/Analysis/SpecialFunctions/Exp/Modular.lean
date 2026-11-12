@@ -28,6 +28,9 @@ vortices.
 * `Real.exp_two_mul_sub_one_sub_two_mul_nonneg`: for every real `t`, `0 ≤ exp (2t) - 1 - 2t`.
 * `Real.sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul`: for every real `t`,
   `√(1 + t²) - 1 ≤ exp (2t) - 1 - 2t`.
+* `Real.exp_two_mul_sub_one_sub_two_mul_le`: for every real `t`,
+  `exp (2t) - 1 - 2t ≤ t² + (exp (2t) - 1)²`, so the potential of a square integrable `t` with
+  `exp (2t) - 1` square integrable is integrable.
 -/
 
 public section
@@ -56,6 +59,16 @@ theorem sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul (t : ℝ) :
     have habs := sqrt_one_add_sq_sub_one_le_abs t
     rw [abs_of_nonpos ht] at habs
     nlinarith [exp_pos (2 * t)]
+
+/-- The potential `φ(t) = exp (2t) - 1 - 2t` is at most `t² + (exp (2t) - 1)²`. By convexity,
+`φ(0) ≥ φ(t) - t φ'(t)`, so `φ(t) ≤ 2t (exp (2t) - 1)`. -/
+theorem exp_two_mul_sub_one_sub_two_mul_le (t : ℝ) :
+    exp (2 * t) - 1 - 2 * t ≤ t ^ 2 + (exp (2 * t) - 1) ^ 2 := by
+  have h1 := add_one_le_exp (-(2 * t))
+  have h2 : exp (-(2 * t)) * exp (2 * t) = 1 := by
+    rw [← exp_add, neg_add_cancel, exp_zero]
+  have h3 := exp_pos (2 * t)
+  nlinarith [sq_nonneg (t - (exp (2 * t) - 1))]
 
 end Real
 
