@@ -701,7 +701,6 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
   have hE₁ : E₁ = F * M * (S : ℝ) ^ 2 := by
     simp only [E₁, E, F]
     ring
-  have hE₁0 : 0 < E₁ := hE₁ ▸ by positivity
   set Y₀ := ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu
   have hY₀ : 0 ≤ Y₀ := integral_nonneg fun x => by positivity
   rcases hY₀.eq_or_lt with hzero | hpos

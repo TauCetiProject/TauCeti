@@ -129,7 +129,6 @@ theorem apply_add_eq_zero_of_le_div_sub_rpow_mul_rpow {φ : ℝ → ℝ} {k₀ M
     fun j => apply_level_succ_le hM hd hrec j (hk₀ j)
   -- The choice of `d` makes the starting value small enough for geometric decay.
   set q : ℝ := 2 ^ (-(α / (β - 1)))
-  have hq0 : 0 ≤ q := by positivity
   have hq1 : q < 1 :=
     Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 (div_pos hα hβ1))
   have hbq : 2 ^ α * q ^ (β - 1) ≤ 1 := by
