@@ -252,10 +252,10 @@ private theorem kernelPerturbSeries_one (φ : C(K, ℍ)) {q₀ : ℍ} (hφ : ∀
     kernelPerturbSeries φ hφ 1 =
       (continuousMultilinearCurryFin1 ℝ ℍ C(K, ℝ)).symm (kernelPerturbLinear φ hφ) := rfl
 
-private theorem nnnorm_kernelPerturbSeries_add_three (φ : C(K, ℍ)) {q₀ : ℍ} (hφ : ∀ z, φ z ≠ q₀)
+private theorem nnNorm_kernelPerturbSeries_add_three (φ : C(K, ℍ)) {q₀ : ℍ} (hφ : ∀ z, φ z ≠ q₀)
     (n : ℕ) : ‖kernelPerturbSeries φ hφ (n + 3)‖₊ = 0 := by
   unfold kernelPerturbSeries
-  exact @nnnorm_zero (ℍ [×n + 3]→L[ℝ] C(K, ℝ)) _
+  exact @nnNorm_zero (ℍ [×n + 3]→L[ℝ] C(K, ℝ)) _
 
 /-- Continuous map `h ↦ (z ↦ (2 ⟪φ z - q₀, h⟫ - ‖h‖²) / ‖φ z - q₀‖²)` in `C(K, ℝ)`. -/
 private noncomputable def kernelPerturbMap (φ : C(K, ℍ)) {q₀ : ℍ} (hφ : ∀ z, φ z ≠ q₀) (h : ℍ) :
@@ -297,7 +297,7 @@ private theorem tsum_kernelPerturbSeries_lt_one (φ : C(K, ℍ)) {q₀ : ℍ} (h
     · intro k hk
       rw [Finset.mem_range, not_lt] at hk
       obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
-      rw [nnnorm_kernelPerturbSeries_add_three φ hφ j, zero_mul]
+      rw [nnNorm_kernelPerturbSeries_add_three φ hφ j, zero_mul]
   rw [htsum]
   push_cast
   have h1 : ‖kernelPerturbSeries φ hφ 1‖ ≤ 2 / δ := by

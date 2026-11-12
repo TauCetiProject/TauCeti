@@ -18,7 +18,7 @@ radius, losing a universal factor from counting compositions of `n`.
 By majorizing the sum over compositions directly through `compChangeOfVariables_sum`, no
 combinatoric loss occurs: whenever `r` lies below the inner radius and the positive-degree majorant
 `∑' k, ‖p (k + 1)‖₊ * r ^ (k + 1)` lies strictly below the outer radius `rg`, the tail majorant
-bounds `HasFPowerSeriesWithinOnBall.nnnorm_sub_le_tsum` and
+bounds `HasFPowerSeriesWithinOnBall.nnNorm_sub_le_tsum` and
 `HasFPowerSeriesWithinOnBall.mem_eball_of_tsum_lt` place `f (x + y)` inside the outer convergence
 ball, and adapting the partial-sum convergence argument of `HasFPowerSeriesWithinAt.comp` with
 `FormalMultilinearSeries.comp_summable_nnreal_of_tsum_lt` in place of `comp_summable_nnreal` shows
@@ -51,7 +51,7 @@ theorem comp_summable_nnreal_of_tsum_lt (q : FormalMultilinearSeries 𝕜 F G)
   let a (m : ℕ) : ℝ≥0 := ‖q m‖₊
   let w (k : ℕ) : ℝ≥0 := ‖p k‖₊ * r ^ k
   set S : ℝ≥0 := ∑' k : ℕ, w (k + 1)
-  have hqS : Summable fun m : ℕ ↦ a m * S ^ m := q.summable_nnnorm_mul_pow hq
+  have hqS : Summable fun m : ℕ ↦ a m * S ^ m := q.summable_nnNorm_mul_pow hq
   refine NNReal.summable_coe.1 <| summable_of_sum_le (fun _ ↦ by positivity)
     (c := ((∑' m : ℕ, a m * S ^ m : ℝ≥0) : ℝ)) fun s ↦ ?_
   obtain ⟨K, hK⟩ := (compPartialSumTarget_tendsto_atTop.eventually (eventually_ge_atTop s)).exists
@@ -64,7 +64,7 @@ theorem comp_summable_nnreal_of_tsum_lt (q : FormalMultilinearSeries 𝕜 F G)
         refine Finset.sum_le_sum fun ⟨n, c⟩ _ ↦ ?_
         calc ‖q.compAlongComposition p c‖₊ * r ^ n
           _ ≤ (a c.length * ∏ j, ‖p (c.blocksFun j)‖₊) * r ^ n :=
-              mul_le_mul' (q.compAlongComposition_nnnorm p c) le_rfl
+              mul_le_mul' (q.compAlongComposition_nnNorm p c) le_rfl
           _ = a c.length * ∏ j, w (c.blocksFun j) := by
               simp only [w, mul_assoc, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum,
                 c.sum_blocksFun]
@@ -106,7 +106,7 @@ open FormalMultilinearSeries
 /-- Positive-degree majorant bound for a formal multilinear series within `s`: if `f` has power
 series `p` within `s` on `eball x rf` and `∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)` is summable, then
 `‖f (x + y) - f x‖₊ ≤ ∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)`. -/
-theorem HasFPowerSeriesWithinOnBall.nnnorm_sub_le_tsum
+theorem HasFPowerSeriesWithinOnBall.nnNorm_sub_le_tsum
     {f : E → F} {p : FormalMultilinearSeries 𝕜 E F} {s : Set E} {x y : E} {rf : ℝ≥0∞}
     (hf : HasFPowerSeriesWithinOnBall f p s x rf)
     (h'y : x + y ∈ insert x s) (hy : y ∈ Metric.eball 0 rf)
@@ -122,13 +122,13 @@ theorem HasFPowerSeriesWithinOnBall.nnnorm_sub_le_tsum
 /-- Positive-degree majorant bound for a formal multilinear series on a ball: if `f` has power
 series `p` on `eball x rf` and `∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)` is summable, then
 `‖f (x + y) - f x‖₊ ≤ ∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)`. -/
-theorem HasFPowerSeriesOnBall.nnnorm_sub_le_tsum
+theorem HasFPowerSeriesOnBall.nnNorm_sub_le_tsum
     {f : E → F} {p : FormalMultilinearSeries 𝕜 E F} {x y : E} {rf : ℝ≥0∞}
     (hf : HasFPowerSeriesOnBall f p x rf) (hy : y ∈ Metric.eball 0 rf)
     (hp : Summable fun k : ℕ ↦ ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)) :
     ‖f (x + y) - f x‖₊ ≤ ∑' k : ℕ, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1) := by
   rw [← hasFPowerSeriesWithinOnBall_univ] at hf
-  exact hf.nnnorm_sub_le_tsum (Set.mem_insert_of_mem _ (Set.mem_univ _)) hy hp
+  exact hf.nnNorm_sub_le_tsum (Set.mem_insert_of_mem _ (Set.mem_univ _)) hy hp
 
 /-- If `f` has power series `p` within `s` on `eball x rf` and the positive-degree majorant
 `∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)` is summable and strictly smaller than `rg`, then `f (x + y)`
@@ -140,8 +140,8 @@ theorem HasFPowerSeriesWithinOnBall.mem_eball_of_tsum_lt
     (hp : Summable fun k : ℕ ↦ ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1))
     (hbound : ((∑' k : ℕ, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1) : ℝ≥0) : ℝ≥0∞) < rg) :
     f (x + y) ∈ Metric.eball (f x) rg := by
-  rw [Metric.mem_eball, edist_eq_enorm_sub, enorm_eq_nnnorm]
-  exact (ENNReal.coe_le_coe.2 (hf.nnnorm_sub_le_tsum h'y hy hp)).trans_lt hbound
+  rw [Metric.mem_eball, eDist_eq_eNorm_sub, eNorm_eq_nnNorm]
+  exact (ENNReal.coe_le_coe.2 (hf.nnNorm_sub_le_tsum h'y hy hp)).trans_lt hbound
 
 /-- If `f` has power series `p` on `eball x rf` and the positive-degree majorant
 `∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)` is summable and strictly smaller than `rg`, then `f (x + y)`
@@ -172,15 +172,15 @@ theorem HasFPowerSeriesWithinOnBall.comp {g : F → G} {f : E → F}
   r_le := ENNReal.le_of_forall_nnreal_lt fun r' hr' ↦
     q.le_comp_radius_of_tsum_lt p
       ((NNReal.summable_nat_add_iff 1).2
-        (p.summable_nnnorm_mul_pow (hr'.trans_le (hrf.trans hf.r_le))))
+        (p.summable_nnNorm_mul_pow (hr'.trans_le (hrf.trans hf.r_le))))
       ((hbound r' hr').trans_le hg.r_le)
   r_pos := hr
   hasSum {y} h'y hy := by
-    have hy_lt : (‖y‖₊ : ℝ≥0∞) < r := by simpa [edist_zero_right, enorm_eq_nnnorm] using hy
+    have hy_lt : (‖y‖₊ : ℝ≥0∞) < r := by simpa [edist_zero_right, eNorm_eq_nnNorm] using hy
     have y_mem : y ∈ Metric.eball 0 rf := Metric.eball_subset_eball hrf hy
     have hp_sum : Summable fun k : ℕ ↦ ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1) :=
       (NNReal.summable_nat_add_iff 1).2
-        (p.summable_nnnorm_mul_pow (hy_lt.trans_le (hrf.trans hf.r_le)))
+        (p.summable_nnNorm_mul_pow (hy_lt.trans_le (hrf.trans hf.r_le)))
     have fy_eball : f (x + y) ∈ Metric.eball (f x) rg :=
       hf.mem_eball_of_tsum_lt h'y y_mem hp_sum (hbound ‖y‖₊ hy_lt)
     have hr_comp :=
@@ -195,7 +195,7 @@ theorem HasFPowerSeriesWithinOnBall.comp {g : F → G} {f : E → F}
     have hB : Tendsto (fun n ↦ q.partialSum n (∑ a ∈ Finset.Ico 1 n, p a fun _ ↦ y))
         atTop (𝓝 (g (f (x + y)))) := by
       have hq_prod := hg.tendsto_partialSum_prod (y := f (x + y) - f x)
-        (by simpa [edist_eq_enorm_sub] using fy_eball) (by simpa using hs.insert x h'y)
+        (by simpa [eDist_eq_eNorm_sub] using fy_eball) (by simpa using hs.insert x h'y)
       rw [add_sub_cancel] at hq_prod
       exact hq_prod.comp hA
     have hC : Tendsto (fun n ↦ ∑ i ∈ compPartialSumTarget 0 n n,
