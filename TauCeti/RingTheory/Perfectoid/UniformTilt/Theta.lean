@@ -69,22 +69,6 @@ variable {p : ℕ} {B : Type*} [CommRing B] [Fact p.Prime] [UniformSpace B]
 
 local notation "𝕎" => WittVector p
 
-variable (p) in
-omit [Fact p.Prime] in
-include h in
-/-- A ring of integral elements is `p`-adically complete when `p` is topologically nilpotent. -/
-private theorem isAdicComplete_span_natCast :
-    IsAdicComplete (Ideal.span {(p : Bplus)}) Bplus :=
-  h.isAdicComplete_span_singleton_of_isTopologicallyNilpotent (by simpa using hpn.out)
-
-variable (p) in
-omit [Fact p.Prime] [IsUniformAddGroup B] [CompleteSpace B] in
-include h in
-/-- In a nonzero ring, `p` is not a unit of a ring of integral elements, being topologically
-nilpotent. -/
-private theorem fact_not_isUnit_natCast [Nontrivial B] : Fact (¬IsUnit (p : Bplus)) :=
-  ⟨h.not_isUnit_of_isTopologicallyNilpotent (by simpa using hpn.out)⟩
-
 section PreTilt
 
 variable [Fact (¬IsUnit (p : Bplus))]
@@ -94,16 +78,28 @@ variable (p) in
 isomorphism `B♭⁺ ≃+* PreTilt B⁺ p = lim_{x ↦ x ^ p} B⁺ ⧸ p`. This is `plusEquiv` for the ideal
 `(p)`, with Mathlib's `PreTilt` as target. -/
 noncomputable def plusEquivPreTilt : plusSubring p h ≃+* PreTilt Bplus p :=
-  have := isAdicComplete_span_natCast p h
+  have := h.isAdicComplete_span_natCast p hpn.out
   plusEquiv h (Ideal.span {(p : Bplus)})
+
+/-- `plusEquivPreTilt` is `plusEquiv` for the ideal `(p)`; this holds by definition, as
+`PreTilt B⁺ p` is defined to be `Perfection (B⁺ ⧸ p) p`. -/
+theorem plusEquivPreTilt_apply [IsAdicComplete (Ideal.span {(p : Bplus)}) Bplus]
+    (x : plusSubring p h) : plusEquivPreTilt p h x = plusEquiv h (Ideal.span {(p : Bplus)}) x :=
+  (rfl)
+
+/-- The inverse of `plusEquivPreTilt` is the inverse of `plusEquiv` for the ideal `(p)`. -/
+theorem plusEquivPreTilt_symm_apply [IsAdicComplete (Ideal.span {(p : Bplus)}) Bplus]
+    (y : PreTilt Bplus p) :
+    (plusEquivPreTilt p h).symm y = (plusEquiv h (Ideal.span {(p : Bplus)})).symm y :=
+  (rfl)
 
 /-- `plusEquivPreTilt` reduces every coordinate modulo `p`. -/
 @[simp]
 theorem coeff_plusEquivPreTilt (x : plusSubring p h) (n : ℕ) :
     PreTilt.coeff n (plusEquivPreTilt p h x) =
       Ideal.Quotient.mk _ ⟨coeff p B n x, mem_plusSubring_iff.mp x.2 n⟩ := by
-  have := isAdicComplete_span_natCast p h
-  exact coeff_plusEquiv h _ x n
+  have := h.isAdicComplete_span_natCast p hpn.out
+  rw [PreTilt.coeff_def, plusEquivPreTilt_apply, coeff_plusEquiv]
 
 variable [IsAdicComplete (Ideal.span {(p : Bplus)}) Bplus]
 
@@ -112,10 +108,11 @@ variable [IsAdicComplete (Ideal.span {(p : Bplus)}) Bplus]
 theorem plusSharp_plusEquivPreTilt_symm (y : PreTilt Bplus p) :
     plusSharp p h ((plusEquivPreTilt p h).symm y) = PreTilt.untilt y :=
   Subtype.ext <| by
-    have := isAdicComplete_span_natCast p h
-    rw [coe_plusSharp]
-    -- `plusEquivPreTilt` is `plusEquiv` for `(p)`, and `PreTilt.untilt` is the Teichmüller map
-    exact coeff_zero_plusEquiv_symm h _ y
+    rw [coe_plusSharp, plusEquivPreTilt_symm_apply]
+    refine (coeff_zero_plusEquiv_symm h _ y).trans ?_
+    -- `PreTilt.untilt` is the Teichmüller map of `PreTilt B⁺ p = Perfection (B⁺ ⧸ p) p`
+    unfold PreTilt.untilt
+    exact congrArg Subtype.val (congrFun Perfection.coe_teichmuller_eq_teichmuller₀ y).symm
 
 /-- **The sharp map is `PreTilt.untilt`**: under `B♭⁺ ≃+* PreTilt B⁺ p`, Mathlib's untilt
 `PreTilt B⁺ p → B⁺` is the sharp map `x ↦ x♯ = x⁽⁰⁾`. -/
@@ -131,7 +128,8 @@ Teichmüller representatives, as `B♭⁺ ≃+* PreTilt B⁺ p` is perfect of ch
 private theorem ringHom_ext_teichmuller [Nontrivial B] {S : Type*} [CommRing S]
     [IsHausdorff (Ideal.span {(p : S)}) S] {f g : 𝕎 (plusSubring p h) →+* S}
     (hfg : ∀ x, f (teichmuller p x) = g (teichmuller p x)) : f = g := by
-  have := fact_not_isUnit_natCast p h
+  have : Fact (¬IsUnit (p : Bplus)) :=
+    ⟨h.not_isUnit_natCast_of_isTopologicallyNilpotent p hpn.out⟩
   let e := plusEquivPreTilt p h
   -- compare `f` and `g` on `W(PreTilt B⁺ p)`, where the Teichmüller expansion applies
   have he : f.comp (WittVector.map e.symm.toRingHom) = g.comp (WittVector.map e.symm.toRingHom) :=
@@ -153,8 +151,9 @@ which `p` is topologically nilpotent, `∑ₙ [xₙ] pⁿ ↦ ∑ₙ xₙ♯ p�
 (`theta_eq_fontaineTheta`), and it is characterised by `θ_B [x] = x♯` (`theta_teichmuller`,
 `theta_unique`). -/
 noncomputable def theta : 𝕎 (plusSubring p h) →+* Bplus :=
-  have := fact_not_isUnit_natCast p h
-  have := isAdicComplete_span_natCast p h
+  have : Fact (¬IsUnit (p : Bplus)) :=
+    ⟨h.not_isUnit_natCast_of_isTopologicallyNilpotent p hpn.out⟩
+  have := h.isAdicComplete_span_natCast p hpn.out
   (WittVector.fontaineTheta Bplus p).comp (WittVector.map (plusEquivPreTilt p h).toRingHom)
 
 /-- `θ_B` is Mathlib's `fontaineTheta` under the identification `B♭⁺ ≃+* PreTilt B⁺ p`. -/
@@ -169,23 +168,25 @@ sharp. -/
 @[simp]
 theorem theta_teichmuller (x : plusSubring p h) :
     theta p h (teichmuller p x) = plusSharp p h x := by
-  have := fact_not_isUnit_natCast p h
-  have := isAdicComplete_span_natCast p h
+  have : Fact (¬IsUnit (p : Bplus)) :=
+    ⟨h.not_isUnit_natCast_of_isTopologicallyNilpotent p hpn.out⟩
+  have := h.isAdicComplete_span_natCast p hpn.out
   simp [theta_eq_fontaineTheta, WittVector.map_teichmuller, WittVector.fontaineTheta_teichmuller]
 
 /-- **Uniqueness of Fontaine's map**: `θ_B` is the only ring homomorphism `W(B♭⁺) → B⁺` sending
 the Teichmüller representative `[x]` to `x♯` for every `x ∈ B♭⁺`. -/
 theorem theta_unique (f : 𝕎 (plusSubring p h) →+* Bplus)
     (hf : ∀ x, f (teichmuller p x) = plusSharp p h x) : f = theta p h :=
-  have := isAdicComplete_span_natCast p h
+  have := h.isAdicComplete_span_natCast p hpn.out
   ringHom_ext_teichmuller h fun x ↦ by rw [hf, theta_teichmuller]
 
 /-- Fontaine's map is surjective when every element of `B⁺` is a `p`-th power modulo `p`, that is,
 when Frobenius is surjective on `B⁺ ⧸ p`; this holds when `B` is perfectoid. -/
 theorem surjective_theta (hF : ∀ x : Bplus, ∃ y, (p : Bplus) ∣ x - y ^ p) :
     Function.Surjective (theta p h) := by
-  have := fact_not_isUnit_natCast p h
-  have := isAdicComplete_span_natCast p h
+  have : Fact (¬IsUnit (p : Bplus)) :=
+    ⟨h.not_isUnit_natCast_of_isTopologicallyNilpotent p hpn.out⟩
+  have := h.isAdicComplete_span_natCast p hpn.out
   rw [theta_eq_fontaineTheta, RingHom.coe_comp]
   exact (surjective_fontaineTheta ((surjective_frobenius_modP_iff (p := p) Bplus).mpr hF)).comp
     (WittVector.map_surjective _ (plusEquivPreTilt p h).surjective)
@@ -201,7 +202,7 @@ into `C⁺`, `θ_C ∘ W(g♭) = g ∘ θ_B` on `W(B♭⁺)`. -/
 theorem theta_map (x : 𝕎 (plusSubring p h)) :
     (theta p hC (WittVector.map ((map (p := p) g hg).restrict _ _
       fun _ hy ↦ map_mem_plusSubring g hg hgplus hy) x) : C) = g (theta p h x) := by
-  have := isAdicComplete_span_natCast p hC
+  have := hC.isAdicComplete_span_natCast p Fact.out
   have hext : (theta p hC).comp (WittVector.map ((map (p := p) g hg).restrict _ _
       fun _ hy ↦ map_mem_plusSubring g hg hgplus hy)) =
       (g.restrict Bplus Cplus hgplus).comp (theta p h) :=

@@ -35,9 +35,11 @@ hypothesis used in the integral tilt and Fontaine's map.
 * `TauCeti.Huber.IsRingOfIntegralElements.isAdicComplete_span_singleton`: completeness for a
   pseudouniformiser.
 * `IsRingOfIntegralElements.isAdicComplete_span_singleton_of_isTopologicallyNilpotent`: in a
-  Tate ring, completeness for any topologically nilpotent element.
+  Tate ring, completeness for any topologically nilpotent element, and in particular `p`-adic
+  completeness (`isAdicComplete_span_natCast`) when `p` is topologically nilpotent.
 * `TauCeti.Huber.IsRingOfIntegralElements.not_isUnit_of_isTopologicallyNilpotent`: exclusion of
-  topologically nilpotent units in the plus ring.
+  topologically nilpotent units in the plus ring, such as `p`
+  (`not_isUnit_natCast_of_isTopologicallyNilpotent`).
 
 ## References
 
@@ -65,6 +67,14 @@ theorem IsRingOfIntegralElements.not_isUnit_of_isTopologicallyNilpotent
     [T2Space A] [Nontrivial A] (h : IsRingOfIntegralElements Aplus) {a : Aplus}
     (ha : IsTopologicallyNilpotent (a : A)) : ¬ IsUnit a :=
   Aplus.not_isUnit_of_isTopologicallyNilpotent h.isBounded ha
+
+/-- In a nonzero Hausdorff uniform ring in which `p` is topologically nilpotent, `p` is not a unit
+of any ring of integral elements. -/
+theorem IsRingOfIntegralElements.not_isUnit_natCast_of_isTopologicallyNilpotent
+    [T2Space A] [Nontrivial A]
+    (h : IsRingOfIntegralElements Aplus) (p : ℕ) (hp : IsTopologicallyNilpotent (p : A)) :
+    ¬ IsUnit (p : Aplus) :=
+  h.not_isUnit_of_isTopologicallyNilpotent (by simpa using hp)
 
 end TauCeti.Huber
 
@@ -105,6 +115,13 @@ theorem IsRingOfIntegralElements.isAdicComplete_span_singleton_of_isTopologicall
   · rw [Ideal.span_singleton_pow]
   · rw [pow_one, Ideal.span_singleton_le_span_singleton]
     exact dvd_pow_self a hn.ne'
+
+/-- A ring of integral elements in a complete Hausdorff uniform Tate ring is `p`-adically complete
+when `p` is topologically nilpotent. -/
+theorem IsRingOfIntegralElements.isAdicComplete_span_natCast [IsTateRing A]
+    (h : IsRingOfIntegralElements Aplus) (p : ℕ) (hp : IsTopologicallyNilpotent (p : A)) :
+    IsAdicComplete (Ideal.span {(p : Aplus)}) Aplus :=
+  h.isAdicComplete_span_singleton_of_isTopologicallyNilpotent (by simpa using hp)
 
 /-- Surjectivity of Frobenius modulo `p` in a ring of integral elements gives roots modulo
 `ϖ p` for every pseudouniformiser with `ϖ ^ p ∣ p` in that ring. -/
