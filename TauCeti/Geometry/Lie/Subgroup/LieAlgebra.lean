@@ -327,8 +327,7 @@ theorem lieSubalgebraOfSubgroup_eq_bot_of_isTotallyDisconnected {K : Subgroup G}
   let γ : ℝ → G := fun t ↦ mulInvariantExp (I := I) (G := G) (t • eG X)
   have hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ := contMDiff_mulInvariantExp_smul (eG X)
   have hγexp (t : ℝ) : γ t = lieExp (I := I) (t • X) := by
-    rw [lieExp_eq_mulInvariantExp]
-    simp only [map_smul, γ, eG]
+    simpa only [γ, eG] using (lieExp_smul_eq_mulInvariantExp X t).symm
   have hr : Set.range γ ⊆ K := by
     rintro _ ⟨t, rfl⟩
     exact hγexp t ▸ hX t

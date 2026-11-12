@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.SigmaCompact
 
 /-!
 # Basic facts about Lie groups
@@ -16,9 +17,16 @@ This file records lightweight consequences of the Lie-group regularity hierarchy
 ## Main results
 
 * `ModelWithCorners.t2Space_of_lieGroup`: a Lie group modeled on a normed space is Hausdorff.
+* `ModelWithCorners.secondCountableTopology_of_lieGroup`: a preconnected Lie group modeled on a
+  locally compact second-countable normed space is second countable.
 * `LieGroup.minSmoothness_of_isRCLikeNormedField`: over a field satisfying
   `IsRCLikeNormedField`, a `Cⁿ` Lie group is a `C^(minSmoothness 𝕜 n)` Lie group; Mathlib's
   tangent Lie algebra `GroupLieAlgebra` assumes regularity `minSmoothness 𝕜 3`.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
+  Proposition 7.14, pp.156–157.
 -/
 
 public section
@@ -36,6 +44,20 @@ theorem ModelWithCorners.t2Space_of_lieGroup (n : ℕ∞ω) [LieGroup I n G] : T
   have := I.t1Space G
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I n
   infer_instance
+
+/-- A preconnected Lie group is second countable when its normed model is locally compact
+and second countable. -/
+theorem ModelWithCorners.secondCountableTopology_of_lieGroup
+    (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) (G : Type*)
+    [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I n G]
+    [LocallyCompactSpace E] [SecondCountableTopology E] [PreconnectedSpace G] :
+    SecondCountableTopology G := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I n
+  let _ : LocallyCompactSpace H := I.locallyCompactSpace
+  let _ : LocallyCompactSpace G := ChartedSpace.locallyCompactSpace H G
+  let _ : SecondCountableTopology H := I.secondCountableTopology
+  let _ : SigmaCompactSpace G := IsTopologicalGroup.sigmaCompactSpace_of_preconnected
+  exact ChartedSpace.secondCountable_of_sigmaCompact H G
 
 /-- Over a field satisfying `IsRCLikeNormedField`, `minSmoothness 𝕜 n = n`, so a `Cⁿ` Lie group
 is a `C^(minSmoothness 𝕜 n)` Lie group. Mathlib's tangent Lie algebra `GroupLieAlgebra` assumes
