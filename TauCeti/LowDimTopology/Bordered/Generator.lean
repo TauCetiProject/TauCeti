@@ -324,15 +324,35 @@ theorem glue_alpha_inr (p : Point₂) :
 
 @[simp]
 theorem glue_beta_inl (p : Point₁) :
-    (glue H₁ H₂ e).beta (.inl p) = finSumFinEquiv (.inl (H₁.beta p)) :=
+    (glue H₁ H₂ e).beta (.inl p) = Fin.castAdd g₂ (H₁.beta p) :=
   (rfl)
 
 @[simp]
 theorem glue_beta_inr (p : Point₂) :
-    (glue H₁ H₂ e).beta (.inr p) = finSumFinEquiv (.inr (H₂.beta p)) :=
+    (glue H₁ H₂ e).beta (.inr p) = Fin.natAdd g₁ (H₂.beta p) :=
   (rfl)
 
 variable {H₁ H₂}
+
+/-- The points of the glued diagram on the `β`-circle `j` of the first diagram are the points of
+the first diagram on `j`. -/
+theorem glue_beta_eq_castAdd_iff (q : Point₁ ⊕ Point₂) (j : Fin g₁) :
+    (glue H₁ H₂ e).beta q = Fin.castAdd g₂ j ↔ ∃ p, q = .inl p ∧ H₁.beta p = j := by
+  rcases q with p | p
+  · simp
+  · simp only [glue_beta_inr, reduceCtorEq, false_and, exists_false, iff_false, Fin.ext_iff,
+      Fin.val_natAdd, Fin.val_castAdd]
+    omega
+
+/-- The points of the glued diagram on the `β`-circle `j` of the second diagram are the points of
+the second diagram on `j`. -/
+theorem glue_beta_eq_natAdd_iff (q : Point₁ ⊕ Point₂) (j : Fin g₂) :
+    (glue H₁ H₂ e).beta q = Fin.natAdd g₁ j ↔ ∃ p, q = .inr p ∧ H₂.beta p = j := by
+  rcases q with p | p
+  · simp only [glue_beta_inl, reduceCtorEq, false_and, exists_false, iff_false, Fin.ext_iff,
+      Fin.val_natAdd, Fin.val_castAdd]
+    omega
+  · simp
 
 theorem glue_beta_gluePoint (x₁ : H₁.Generator) (x₂ : H₂.Generator) (j : Fin (g₁ + g₂)) :
     (glue H₁ H₂ e).beta (gluePoint x₁ x₂ j) = j := by
@@ -416,21 +436,15 @@ theorem bijective_glue_alpha_comp_gluePoint_iff [Fintype Arc] [DecidableEq Arc]
 intersection point of the first diagram. -/
 noncomputable def glueLeftPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₁) : Point₁ :=
   ((glue H₁ H₂ e).betaPoint x (Fin.castAdd g₂ j)).getLeft (by
-    have h := (glue H₁ H₂ e).beta_betaPoint x (Fin.castAdd g₂ j)
-    rcases hq : (glue H₁ H₂ e).betaPoint x (Fin.castAdd g₂ j) with p | p
-    · rfl
-    · rw [hq, glue_beta_inr, ← finSumFinEquiv_apply_left, EmbeddingLike.apply_eq_iff_eq] at h
-      exact absurd h (by simp))
+    obtain ⟨p, hp, -⟩ := (glue_beta_eq_castAdd_iff e _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
+    simp [hp])
 
 /-- The point of a generator of the glued diagram on the `β`-circle `j` of the second diagram, an
 intersection point of the second diagram. -/
 noncomputable def glueRightPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₂) : Point₂ :=
   ((glue H₁ H₂ e).betaPoint x (Fin.natAdd g₁ j)).getRight (by
-    have h := (glue H₁ H₂ e).beta_betaPoint x (Fin.natAdd g₁ j)
-    rcases hq : (glue H₁ H₂ e).betaPoint x (Fin.natAdd g₁ j) with p | p
-    · rw [hq, glue_beta_inl, ← finSumFinEquiv_apply_right, EmbeddingLike.apply_eq_iff_eq] at h
-      exact absurd h (by simp)
-    · rfl)
+    obtain ⟨p, hp, -⟩ := (glue_beta_eq_natAdd_iff e _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
+    simp [hp])
 
 @[simp]
 theorem inl_glueLeftPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₁) :
@@ -444,15 +458,17 @@ theorem inr_glueRightPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₂) :
 
 theorem beta_glueLeftPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₁) :
     H₁.beta (glueLeftPoint e x j) = j := by
-  have h := (glue H₁ H₂ e).beta_betaPoint x (Fin.castAdd g₂ j)
-  rwa [← inl_glueLeftPoint, glue_beta_inl, ← finSumFinEquiv_apply_left,
-    EmbeddingLike.apply_eq_iff_eq, Sum.inl.injEq] at h
+  obtain ⟨p, hp, rfl⟩ :=
+    (glue_beta_eq_castAdd_iff e _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
+  rw [← inl_glueLeftPoint, Sum.inl.injEq] at hp
+  rw [hp]
 
 theorem beta_glueRightPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₂) :
     H₂.beta (glueRightPoint e x j) = j := by
-  have h := (glue H₁ H₂ e).beta_betaPoint x (Fin.natAdd g₁ j)
-  rwa [← inr_glueRightPoint, glue_beta_inr, ← finSumFinEquiv_apply_right,
-    EmbeddingLike.apply_eq_iff_eq, Sum.inr.injEq] at h
+  obtain ⟨p, hp, rfl⟩ :=
+    (glue_beta_eq_natAdd_iff e _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
+  rw [← inr_glueRightPoint, Sum.inr.injEq] at hp
+  rw [hp]
 
 /-- The generator of the first diagram cut out of a generator of the glued diagram: its points on
 the `β`-circles of the first diagram. -/
@@ -474,7 +490,7 @@ noncomputable def glueLeft (x : (glue H₁ H₂ e).Generator) : H₁.Generator w
     · refine ⟨H₁.beta p, ?_⟩
       have hp : glueLeftPoint e x (H₁.beta p) = p := by
         apply Sum.inl_injective
-        rw [inl_glueLeftPoint, ← finSumFinEquiv_apply_left, hβ, hq]
+        rw [inl_glueLeftPoint, hβ, hq]
       rw [hp]
       exact glueCurveLeft_injective (hj.trans (glueCurveLeft_inr c).symm)
     · rcases hp : H₂.alpha p with b | d <;> simp [hp] at hj
@@ -500,7 +516,7 @@ noncomputable def glueRight (x : (glue H₁ H₂ e).Generator) : H₂.Generator 
     · refine ⟨H₂.beta p, ?_⟩
       have hp : glueRightPoint e x (H₂.beta p) = p := by
         apply Sum.inr_injective
-        rw [inr_glueRightPoint, ← finSumFinEquiv_apply_right, hβ, hq]
+        rw [inr_glueRightPoint, hβ, hq]
       rw [hp]
       exact glueCurveRight_injective (hj.trans (glueCurveRight_inr c).symm)
 
