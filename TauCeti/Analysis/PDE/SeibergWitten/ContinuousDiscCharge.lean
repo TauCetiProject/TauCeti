@@ -115,7 +115,7 @@ theorem exists_int_eventually_circleWindingNumber_comp_eq {ι E : Type*}
     exact ⟨g, hg, fun w hw ↦ hgK w hw⟩
   have hσ'₂ : ContDiff ℝ 2 σ' := hσ'.of_le (by norm_cast)
   -- The charges of `σ'` stabilize: its translates by at most `δ / 2` stay within `δ` of `σ`.
-  have hoff (θ : ℝ) (p : E) (hp : p ∈ Metric.closedBall (0 : E) (δ / 2)) :
+  have hoff (θ : ℝ) (p : E) :
       σ' (circleMap z₀ r θ) + p = σ (circleMap z₀ r θ) +
         (σ' (circleMap z₀ r θ) - σ (circleMap z₀ r θ) + p) := by abel
   have hoff_mem (θ : ℝ) (p : E) (hp : p ∈ Metric.closedBall (0 : E) (δ / 2)) :
@@ -126,7 +126,7 @@ theorem exists_int_eventually_circleWindingNumber_comp_eq {ι E : Type*}
     linarith [norm_add_le (σ' (circleMap z₀ r θ) - σ (circleMap z₀ r θ)) p]
   obtain ⟨n, hn⟩ := exists_int_eventually_integral_cutoffCurrent_comp_closedBall_eq hr
     (half_pos hδ) hα hb hχ hχ₀ hσ'₂
-    (hbd.mono fun k hk p hp θ ↦ by rw [hoff θ p hp]; exact hk _ (hoff_mem θ p hp) θ) hlim
+    (hbd.mono fun k hk p hp θ ↦ by rw [hoff θ p]; exact hk _ (hoff_mem θ p hp) θ) hlim
   refine ⟨n, (hbd.and hn).mono fun k ⟨hk, hkn⟩ ↦ ?_⟩
   -- `σ'` is in the boundary region, so its winding number is its charge `n`.
   have hσ'n : circleWindingNumber (α k ∘ σ') z₀ r = n := by
