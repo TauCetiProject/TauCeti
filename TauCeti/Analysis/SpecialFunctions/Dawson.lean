@@ -36,9 +36,9 @@ The segment integral `z ∫₀¹ f(sz) ds` of an entire function `f` is a primit
 (`Differentiable.hasDerivAt_smul_integral_comp_mul`). This gives `F′` without differentiating
 under the integral sign.
 
-The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
-files `DLMF/ErrorFunctions/Basic/Functions.lean` and
-`DLMFMathlib/Analysis/Complex/SegmentPrimitive.lean`.
+The lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>) proves the corresponding results
+for its own definition of `F` in `DLMF/ErrorFunctions/Basic/Properties.lean`; the segment-primitive
+lemmas used here are adapted from its `DLMFMathlib/Analysis/Complex/SegmentPrimitive.lean`.
 -/
 
 public section
