@@ -7,9 +7,14 @@ module
 
 public import Mathlib.CategoryTheory.Category.Cat
 public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
+public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+import Mathlib.CategoryTheory.Equivalence
+import Mathlib.CategoryTheory.Whiskering
 
 /-!
-# Strong transformations into `Cat` with identity components
+# Strong transformations into `Cat` and pointwise equivalences
 
 A strong transformation between pseudofunctors into `Cat` that take the same values on objects
 can have identity components. Its naturality isomorphism at `f` is then determined by a natural
@@ -26,6 +31,12 @@ arbitrary `1`-morphisms, so that they apply by unification to goals whose `1`-mo
 of composite pseudofunctors, which `simp` and `rw` do not see through. The same reduction
 handles identity and composite transport cells. The file also evaluates the naturality cell
 of a composite strong transformation on objects, with the Cat endpoints made explicit.
+
+A strong transformation into `Cat` is an equivalence whenever its component functors are
+equivalences, for an arbitrary source bicategory. The equivalence
+`StrongTrans.equivalenceOfIsEquivalence` uses the chosen component quasi-inverses, units, and
+counits. Its inverse naturality is characterized by compatibility with those counits; the
+component equations allow callers to use the equivalence without unfolding its construction.
 -/
 
 public section
@@ -144,3 +155,315 @@ lemma comp_naturality_hom_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
 end Pseudofunctor.StrongTrans
 
 end CategoryTheory
+
+/-! ### Pointwise equivalences of strong transformations -/
+
+universe w₁ v₁ u₁
+namespace CategoryTheory.Pseudofunctor.StrongTrans
+
+open Bicategory
+
+variable {B : Type u₁} [Bicategory.{w₁, v₁} B] {F G : B ⥤ᵖ Cat.{v, w}}
+variable (η : F ⟶ G) [∀ a, (η.app a).toFunctor.IsEquivalence]
+
+/-- The inverse naturality isomorphism obtained by reflecting the counit-conjugated square
+through the fully faithful target component. -/
+private noncomputable def inverseNaturality {a b : B} (f : a ⟶ b) :
+    (G.map f).toFunctor ⋙ (η.app b).toFunctor.inv ≅
+      (η.app a).toFunctor.inv ⋙ (F.map f).toFunctor :=
+  ((Functor.whiskeringRight (G.obj a) (F.obj b) (G.obj b)).obj
+    (η.app b).toFunctor).preimageIso
+    (Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft _ (η.app b).toFunctor.asEquivalence.counitIso ≪≫
+      (G.map f).toFunctor.rightUnitor ≪≫
+      (G.map f).toFunctor.leftUnitor.symm ≪≫
+      Functor.isoWhiskerRight (η.app a).toFunctor.asEquivalence.counitIso.symm _ ≪≫
+      Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft _ (Cat.Hom.toNatIso (η.naturality f)).symm ≪≫
+      (Functor.associator _ _ _).symm)
+
+private lemma map_inverseNaturality_hom_app {a b : B} (f : a ⟶ b) (X : G.obj a) :
+    (η.app b).toFunctor.map ((η.inverseNaturality f).hom.app X) =
+      (η.app b).toFunctor.asEquivalence.counit.app ((G.map f).toFunctor.obj X) ≫
+        (G.map f).toFunctor.map ((η.app a).toFunctor.asEquivalence.counitInv.app X) ≫
+        (η.naturality f).inv.toNatTrans.app ((η.app a).toFunctor.inv.obj X) := by
+  have h := congrArg (fun t => t.app X)
+    (((Functor.whiskeringRight (G.obj a) (F.obj b) (G.obj b)).obj
+      (η.app b).toFunctor).map_preimage
+      (Functor.associator _ _ _ ≪≫
+        Functor.isoWhiskerLeft _ (η.app b).toFunctor.asEquivalence.counitIso ≪≫
+        (G.map f).toFunctor.rightUnitor ≪≫
+        (G.map f).toFunctor.leftUnitor.symm ≪≫
+        Functor.isoWhiskerRight (η.app a).toFunctor.asEquivalence.counitIso.symm _ ≪≫
+        Functor.associator _ _ _ ≪≫
+        Functor.isoWhiskerLeft _ (Cat.Hom.toNatIso (η.naturality f)).symm ≪≫
+        (Functor.associator _ _ _).symm).hom)
+  simpa [inverseNaturality] using! h
+
+@[reassoc]
+private lemma map_inverseNaturality_hom_app_comp {a b : B} (f : a ⟶ b) (X : G.obj a) :
+    (η.app b).toFunctor.map ((η.inverseNaturality f).hom.app X) ≫
+      (η.naturality f).hom.toNatTrans.app ((η.app a).toFunctor.inv.obj X) ≫
+        (G.map f).toFunctor.map ((η.app a).toFunctor.asEquivalence.counit.app X) =
+      (η.app b).toFunctor.asEquivalence.counit.app ((G.map f).toFunctor.obj X) := by
+  rw [map_inverseNaturality_hom_app]
+  simp [← Functor.map_comp]
+
+private lemma inverseNaturality_naturality {a b : B} {f g : a ⟶ b} (ξ : f ⟶ g)
+    (X : G.obj a) :
+    (η.app b).toFunctor.inv.map ((G.map₂ ξ).toNatTrans.app X) ≫
+      (η.inverseNaturality g).hom.app X =
+    (η.inverseNaturality f).hom.app X ≫
+      (F.map₂ ξ).toNatTrans.app ((η.app a).toFunctor.inv.obj X) := by
+  apply (η.app b).toFunctor.map_injective
+  apply (cancel_mono ((η.naturality g).hom.toNatTrans.app
+    ((η.app a).toFunctor.inv.obj X) ≫
+    (G.map g).toFunctor.map ((η.app a).toFunctor.asEquivalence.counit.app X))).mp
+  simp only [Functor.map_comp, Category.assoc]
+  erw [η.map_inverseNaturality_hom_app_comp]
+  have hn := congrArg (fun t => t.toNatTrans.app ((η.app a).toFunctor.inv.obj X))
+    (η.naturality_naturality ξ)
+  simp only [Cat.Hom₂.comp_app, Cat.whiskerRight_app, Cat.whiskerLeft_app] at hn
+  rw [reassoc_of% hn]
+  erw [← (G.map₂ ξ).toNatTrans.naturality,
+    η.map_inverseNaturality_hom_app_comp_assoc]
+  exact ((η.app b).toFunctor.asEquivalence.counit_naturality
+    ((G.map₂ ξ).toNatTrans.app X))
+
+private lemma inverseNaturality_id (a : B) (X : G.obj a) :
+    (η.inverseNaturality (𝟙 a)).hom.app X ≫
+      (F.mapId a).hom.toNatTrans.app ((η.app a).toFunctor.inv.obj X) =
+      (η.app a).toFunctor.inv.map ((G.mapId a).hom.toNatTrans.app X) := by
+  apply (η.app a).toFunctor.map_injective
+  apply (cancel_mono ((η.app a).toFunctor.asEquivalence.counit.app X)).mp
+  simp only [Functor.map_comp]
+  have h : (η.naturality (𝟙 a)).hom.toNatTrans.app ((η.app a).toFunctor.inv.obj X) ≫
+      (G.mapId a).hom.toNatTrans.app ((η.app a).toFunctor.obj
+        ((η.app a).toFunctor.inv.obj X)) =
+      (η.app a).toFunctor.map ((F.mapId a).hom.toNatTrans.app
+        ((η.app a).toFunctor.inv.obj X)) := by
+    rw [naturality_id_hom_app]
+    simp
+  rw [← h]
+  simp only [Category.assoc]
+  erw [← (G.mapId a).hom.toNatTrans.naturality,
+    η.map_inverseNaturality_hom_app_comp_assoc]
+  exact ((η.app a).toFunctor.asEquivalence.counit_naturality
+    ((G.mapId a).hom.toNatTrans.app X)).symm
+
+private lemma inverseNaturality_comp {a b c : B} (f : a ⟶ b) (g : b ⟶ c) (X : G.obj a) :
+    (η.inverseNaturality (f ≫ g)).hom.app X ≫
+      (F.mapComp f g).hom.toNatTrans.app ((η.app a).toFunctor.inv.obj X) =
+      (η.app c).toFunctor.inv.map ((G.mapComp f g).hom.toNatTrans.app X) ≫
+        (η.inverseNaturality g).hom.app ((G.map f).toFunctor.obj X) ≫
+          (F.map g).toFunctor.map ((η.inverseNaturality f).hom.app X) := by
+  apply (η.app c).toFunctor.map_injective
+  apply (cancel_mono ((η.naturality g).hom.toNatTrans.app
+    ((F.map f).toFunctor.obj ((η.app a).toFunctor.inv.obj X)) ≫
+      (G.map g).toFunctor.map ((η.naturality f).hom.toNatTrans.app
+        ((η.app a).toFunctor.inv.obj X)) ≫
+      (G.map g).toFunctor.map ((G.map f).toFunctor.map
+        ((η.app a).toFunctor.asEquivalence.counit.app X)))).mp
+  simp only [Functor.map_comp, Category.assoc]
+  have h : (η.app c).toFunctor.map ((F.mapComp f g).hom.toNatTrans.app
+        ((η.app a).toFunctor.inv.obj X)) ≫
+      (η.naturality g).hom.toNatTrans.app
+        ((F.map f).toFunctor.obj ((η.app a).toFunctor.inv.obj X)) ≫
+      (G.map g).toFunctor.map ((η.naturality f).hom.toNatTrans.app
+        ((η.app a).toFunctor.inv.obj X)) =
+      (η.naturality (f ≫ g)).hom.toNatTrans.app ((η.app a).toFunctor.inv.obj X) ≫
+        (G.mapComp f g).hom.toNatTrans.app
+          ((η.app a).toFunctor.obj ((η.app a).toFunctor.inv.obj X)) := by
+    rw [naturality_comp_hom_app]
+    simp
+  rw [reassoc_of% h]
+  erw [← (G.mapComp f g).hom.toNatTrans.naturality,
+    η.map_inverseNaturality_hom_app_comp_assoc]
+  have hn : (η.app c).toFunctor.map
+        ((F.map g).toFunctor.map ((η.inverseNaturality f).hom.app X)) ≫
+      (η.naturality g).hom.toNatTrans.app
+        ((F.map f).toFunctor.obj ((η.app a).toFunctor.inv.obj X)) =
+      (η.naturality g).hom.toNatTrans.app
+        ((η.app b).toFunctor.inv.obj ((G.map f).toFunctor.obj X)) ≫
+      (G.map g).toFunctor.map
+        ((η.app b).toFunctor.map ((η.inverseNaturality f).hom.app X)) :=
+    (η.naturality g).hom.toNatTrans.naturality ((η.inverseNaturality f).hom.app X)
+  rw [reassoc_of% hn]
+  have hf := congrArg (G.map g).toFunctor.map
+    (η.map_inverseNaturality_hom_app_comp f X)
+  simp only [Functor.map_comp] at hf
+  rw [hf, η.map_inverseNaturality_hom_app_comp]
+  exact ((η.app c).toFunctor.asEquivalence.counit_naturality
+    ((G.mapComp f g).hom.toNatTrans.app X)).symm
+
+private lemma inverse_unit_naturality {a b : B} (f : a ⟶ b) (X : F.obj a) :
+    (η.app b).toFunctor.asEquivalence.unit.app ((F.map f).toFunctor.obj X) ≫
+      (η.app b).toFunctor.inv.map ((η.naturality f).hom.toNatTrans.app X) ≫
+        (η.inverseNaturality f).hom.app ((η.app a).toFunctor.obj X) =
+      (F.map f).toFunctor.map ((η.app a).toFunctor.asEquivalence.unit.app X) := by
+  apply (η.app b).toFunctor.map_injective
+  apply (cancel_mono ((η.naturality f).hom.toNatTrans.app
+    ((η.app a).toFunctor.inv.obj ((η.app a).toFunctor.obj X)) ≫
+      (G.map f).toFunctor.map ((η.app a).toFunctor.asEquivalence.counit.app
+        ((η.app a).toFunctor.obj X)))).mp
+  simp only [Functor.map_comp, Category.assoc]
+  rw [η.map_inverseNaturality_hom_app_comp]
+  erw [(η.app b).toFunctor.asEquivalence.counit_naturality]
+  rw [← Category.assoc]
+  have ht (a : B) (Y : F.obj a) : (η.app a).toFunctor.map
+      ((η.app a).toFunctor.asEquivalence.unit.app Y) ≫
+      (η.app a).toFunctor.asEquivalence.counit.app ((η.app a).toFunctor.obj Y) = 𝟙 _ :=
+    (η.app a).toFunctor.asEquivalence.functor_unit_comp Y
+  erw [ht, Category.id_comp]
+  have hn : (η.app b).toFunctor.map ((F.map f).toFunctor.map
+        ((η.app a).toFunctor.asEquivalence.unit.app X)) ≫
+      (η.naturality f).hom.toNatTrans.app
+        ((η.app a).toFunctor.inv.obj ((η.app a).toFunctor.obj X)) =
+      (η.naturality f).hom.toNatTrans.app X ≫
+        (G.map f).toFunctor.map ((η.app a).toFunctor.map
+          ((η.app a).toFunctor.asEquivalence.unit.app X)) :=
+    (η.naturality f).hom.toNatTrans.naturality _
+  rw [reassoc_of% hn]
+  have ht' := congrArg (G.map f).toFunctor.map (ht a X)
+  simp only [Functor.map_comp, Functor.map_id] at ht'
+  rw [ht']
+  exact (Category.comp_id _).symm
+
+private lemma counit_modification {C D E E' : Cat.{v, w}}
+    (T : C ⟶ D) (U : E ⟶ E') (P : E ⟶ C) (Q : E' ⟶ D)
+    (R : C ⟶ E) (S : D ⟶ E') (m : T ≫ S ≅ R ≫ U) (n : U ≫ Q ≅ P ≫ T)
+    (ε : R ≫ P ≅ 𝟙 C) (ε' : S ≫ Q ≅ 𝟙 D)
+    (h : ∀ X, Q.toFunctor.map (m.hom.toNatTrans.app X) ≫
+      n.hom.toNatTrans.app (R.toFunctor.obj X) ≫ T.toFunctor.map (ε.hom.toNatTrans.app X) =
+      ε'.hom.toNatTrans.app (T.toFunctor.obj X)) :
+    T ◁ ε'.hom ≫ ((ρ_ T).hom ≫ (λ_ T).inv) =
+      ((α_ T S Q).inv ≫ m.hom ▷ Q ≫ (α_ R U Q).hom ≫
+        R ◁ n.hom ≫ (α_ R P T).inv) ≫ ε.hom ▷ T := by
+  ext X
+  simpa using (h X).symm
+
+private lemma unit_modification {C D E E' : Cat.{v, w}}
+    (T : C ⟶ D) (U : E ⟶ E') (P : C ⟶ E) (Q : D ⟶ E')
+    (R : E ⟶ C) (S : E' ⟶ D) (m : T ≫ Q ≅ P ≫ U) (n : U ≫ S ≅ R ≫ T)
+    (ι : 𝟙 C ≅ P ≫ R) (ι' : 𝟙 D ≅ Q ≫ S)
+    (h : ∀ X, ι'.hom.toNatTrans.app (T.toFunctor.obj X) ≫
+      S.toFunctor.map (m.hom.toNatTrans.app X) ≫ n.hom.toNatTrans.app (P.toFunctor.obj X) =
+      T.toFunctor.map (ι.hom.toNatTrans.app X)) :
+    T ◁ ι'.hom ≫ ((α_ T Q S).inv ≫ m.hom ▷ S ≫ (α_ P U S).hom ≫
+        P ◁ n.hom ≫ (α_ P R T).inv) =
+      ((ρ_ T).hom ≫ (λ_ T).inv) ≫ ι.hom ▷ T := by
+  ext X
+  simpa using h X
+
+/-- A strong transformation into `Cat` is an equivalence when each component functor is an
+equivalence. Its inverse has the chosen quasi-inverse component functors; its unit and counit
+are their chosen unit and counit isomorphisms. -/
+-- Expose the record projections so its dependent unit/counit component equations can be stated;
+-- its inverse naturality is characterized by compatibility with the component counits.
+@[expose] noncomputable def equivalenceOfIsEquivalence :
+    Bicategory.Equivalence F G where
+  hom := η
+  -- Keep the inverse data inline so exposing the record does not export proof-only helpers.
+  inv := {
+    app a := (η.app a).toFunctor.inv.toCatHom
+    naturality {a b} f := Cat.Hom.isoMk
+      (((Functor.whiskeringRight (G.obj a) (F.obj b) (G.obj b)).obj
+        (η.app b).toFunctor).preimageIso
+      (Functor.associator _ _ _ ≪≫
+        Functor.isoWhiskerLeft _ (η.app b).toFunctor.asEquivalence.counitIso ≪≫
+        (G.map f).toFunctor.rightUnitor ≪≫
+        (G.map f).toFunctor.leftUnitor.symm ≪≫
+        Functor.isoWhiskerRight (η.app a).toFunctor.asEquivalence.counitIso.symm _ ≪≫
+        Functor.associator _ _ _ ≪≫
+        Functor.isoWhiskerLeft _ (Cat.Hom.toNatIso (η.naturality f)).symm ≪≫
+        (Functor.associator _ _ _).symm))
+    naturality_naturality ξ := by
+      ext X
+      simpa using! η.inverseNaturality_naturality ξ X
+    naturality_id a := by
+      ext X
+      simpa using! η.inverseNaturality_id a X
+    naturality_comp f g := by
+      ext X
+      simpa using! η.inverseNaturality_comp f g X }
+  unit := isoMk (fun a => Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.unitIso)
+    (fun {a b} f => by
+      exact unit_modification _ _ _ _ _ _ _ _ _ _
+        (fun X => η.inverse_unit_naturality f X))
+  counit := isoMk (fun a => Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.counitIso)
+    (fun {a b} f => by
+      exact counit_modification _ _ _ _ _ _ _ _ _ _
+        (fun X => η.map_inverseNaturality_hom_app_comp f X))
+  left_triangle := by
+    apply Iso.ext
+    simp only [leftZigzagIso_hom, Iso.trans_hom, Iso.symm_hom]
+    have reduce {a b : B ⥤ᵖ Cat.{v, w}}
+        (f : a ⟶ b) (g : b ⟶ a) (ι : 𝟙 a ⟶ f ≫ g) (ε : g ≫ f ⟶ 𝟙 b) :
+        leftZigzag ι ε = ι ▷ f ≫ (α_ f g f).hom ≫ f ◁ ε := by
+      simp [leftZigzag, bicategoricalComp]
+    refine (reduce η _ _ _).trans ?_
+    apply homCategory.ext
+    intro a
+    simp only [homCategory_comp_as_app, whiskerRight_as_app, whiskerLeft_as_app,
+      associator_hom_as_app, leftUnitor_hom_as_app, rightUnitor_inv_as_app]
+    dsimp only [isoMk]
+    have key {C D : Cat.{v, w}} (P : C ⟶ D) [P.toFunctor.IsEquivalence] :
+        (Cat.Hom.isoMk P.toFunctor.asEquivalence.unitIso).hom ▷ P ≫
+          (α_ P P.toFunctor.inv.toCatHom P).hom ≫
+          P ◁ (Cat.Hom.isoMk P.toFunctor.asEquivalence.counitIso).hom =
+            (λ_ P).hom ≫ (ρ_ P).inv := by
+      ext X
+      simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
+        Cat.Hom.isoMk_hom, NatTrans.toCatHom₂_toNatTrans,
+        Cat.associator_hom_toNatTrans, Functor.associator_hom_app,
+        Cat.leftUnitor_hom_toNatTrans, Cat.rightUnitor_inv_toNatTrans,
+        Functor.leftUnitor_hom_app, Functor.rightUnitor_inv_app, Category.comp_id]
+      exact (congrArg (P.toFunctor.map (P.toFunctor.asEquivalence.unit.app X) ≫ ·)
+        (Category.id_comp (P.toFunctor.asEquivalence.counit.app (P.toFunctor.obj X)))).trans
+          (P.toFunctor.asEquivalence.functor_unit_comp X)
+    exact key (η.app a)
+
+/-- The forward strong transformation is the original one. -/
+@[simp]
+lemma equivalenceOfIsEquivalence_hom :
+    η.equivalenceOfIsEquivalence.hom = η := (rfl)
+
+/-- The inverse component is the chosen quasi-inverse of the original component. -/
+@[simp]
+lemma equivalenceOfIsEquivalence_inv_app (a : B) :
+    η.equivalenceOfIsEquivalence.inv.app a = (η.app a).toFunctor.inv.toCatHom := (rfl)
+
+-- Keep the unit/counit component equations named: their dependent carriers do not have a
+-- robust common simp normal form in importing modules.
+/-- The forward unit component is the chosen component unit. -/
+lemma equivalenceOfIsEquivalence_unit_hom_as_app (a : B) :
+    η.equivalenceOfIsEquivalence.unit.hom.as.app a =
+      (Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.unitIso).hom := (rfl)
+
+/-- The inverse unit component is the inverse of the chosen component unit. -/
+lemma equivalenceOfIsEquivalence_unit_inv_as_app (a : B) :
+    η.equivalenceOfIsEquivalence.unit.inv.as.app a =
+      (Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.unitIso).inv := (rfl)
+
+/-- The forward counit component is the chosen component counit. -/
+lemma equivalenceOfIsEquivalence_counit_hom_as_app (a : B) :
+    η.equivalenceOfIsEquivalence.counit.hom.as.app a =
+      (Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.counitIso).hom := (rfl)
+
+/-- The inverse counit component is the inverse of the chosen component counit. -/
+lemma equivalenceOfIsEquivalence_counit_inv_as_app (a : B) :
+    η.equivalenceOfIsEquivalence.counit.inv.as.app a =
+      (Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.counitIso).inv := (rfl)
+
+/-- The inverse naturality cell is the unique square compatible with the component counits. -/
+@[reassoc]
+lemma equivalenceOfIsEquivalence_inv_naturality_hom_app_comp
+    {a b : B} (f : a ⟶ b) (X : G.obj a) :
+    (η.app b).toFunctor.map
+        ((η.equivalenceOfIsEquivalence.inv.naturality f).hom.toNatTrans.app X) ≫
+      (η.naturality f).hom.toNatTrans.app ((η.app a).toFunctor.inv.obj X) ≫
+        (G.map f).toFunctor.map ((η.app a).toFunctor.asEquivalence.counit.app X) =
+      (η.app b).toFunctor.asEquivalence.counit.app ((G.map f).toFunctor.obj X) :=
+  η.map_inverseNaturality_hom_app_comp f X
+
+end CategoryTheory.Pseudofunctor.StrongTrans
