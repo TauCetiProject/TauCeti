@@ -55,12 +55,12 @@ For every `a < 1 / 4` this gives a Gårding inequality with a compact remainder
 
 For variations vanishing on the disc of radius `R` it gives the exterior bound
 `TauCeti.Vortex.exists_exterior_integral_norm_sq_gaugeFixedOperator_ge`, and in addition it
-controls the covariant gradient of the variation, which bounds the flat gradient up to the
-connection coefficients of the field (`TauCeti.Vortex.sum_norm_gradient_sq_le`). Combined with
-the compactness of `H¹ → L²` on the disc, an estimate of this form gives finite-dimensionality of
-the kernel and closedness of the range of `L_x` on the completed spaces. The radius and the
-constant depend on the vortex and on `a`. These are classical test-field estimates; no completed
-Fredholm realization is constructed here.
+controls the covariant gradient of the variation, which bounds the flat gradient up to the term
+`2 ‖x‖² ‖y‖²` given by the norm of the field (`TauCeti.Vortex.sum_norm_gradient_sq_le`).
+Combined with the compactness of `H¹ → L²` on the disc, an estimate of this form gives
+finite-dimensionality of the kernel and closedness of the range of `L_x` on the completed spaces.
+The radius and the constant depend on the vortex and on `a`. These are classical test-field
+estimates; no completed Fredholm realization is constructed here.
 
 ## References
 
@@ -132,8 +132,8 @@ theorem gaugeFixedGradientDensity_nonneg (x y : ℂ → EuclideanSpace ℝ (Fin 
   rw [gaugeFixedGradientDensity_def]
   positivity
 
-/-- The covariant gradient density controls the flat gradient of a variation, up to the
-connection coefficients of the field. -/
+/-- The covariant gradient density controls the flat gradient of a variation `y`, up to the term
+`2 ‖x z‖² ‖y z‖²` given by the norm of the field `x`. -/
 theorem sum_norm_gradient_sq_le (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ∑ j : Fin 4, ‖∇ (fun w ↦ y w j) z‖ ^ 2 ≤
       2 * gaugeFixedGradientDensity x y z + 2 * ‖x z‖ ^ 2 * ‖y z‖ ^ 2 := by

@@ -18,7 +18,6 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Topology.Algebra.Support
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Normed.Group.Pi
-import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 
 /-!
 # The gauge-fixed vortex operator on `H¹` has finite-dimensional kernel and closed range
@@ -51,8 +50,8 @@ At a `C¹` vortex `x` with `|α| → 1` and `∇₁ α → 0` at infinity and wi
 that its coordinates are bounded by `‖a‖`, the Gårding inequality
 `TauCeti.Vortex.exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le` bounds the
 covariant gradient and the `L²` norm of a test field by `‖L_x y‖²` and the `L²` norm of `y` on a
-disc. The covariant gradient controls the flat gradient up to the bounded connection
-(`TauCeti.Vortex.sum_norm_gradient_sq_le`), and test fields are dense in `H¹(ℂ)`
+disc. The covariant gradient controls the flat gradient up to the norm of the field, bounded by
+`‖a‖` (`TauCeti.Vortex.sum_norm_gradient_sq_le`), and test fields are dense in `H¹(ℂ)`
 (`TauCeti.W1p.denseRange_ofTestFunctionₗ_top`). This gives the coercive estimate
 (`TauCeti.Vortex.exists_norm_sq_le_mul_norm_sobolevGaugeFixedOperator_sq_add`)
 
@@ -112,28 +111,18 @@ theorem sobolevGaugeFixedOperator_apply_ae (a : Lp (EuclideanSpace ℝ (Fin 4)) 
     FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.proj_apply,
     W1p.gradientL_apply, W1p.valueL_apply]
-  -- `compLpL` applies as `compLp`; Mathlib records only the latter's a.e. formula.
   have hg : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
       (ContinuousLinearMap.compLpL 2 μ⊤
         (gaugeFixedFirstOrder.comp (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j))
           (W1p.gradient (y j))) z = gaugeFixedFirstOrder (Pi.single j (W1p.gradient (y j) z)) :=
-    ae_all_iff.2 fun j ↦ by
-      filter_upwards [(ContinuousLinearMap.coeFn_compLp' (gaugeFixedFirstOrder.comp
-        (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j)) (W1p.gradient (y j)) :
-          ContinuousLinearMap.compLpL 2 μ⊤ (gaugeFixedFirstOrder.comp
-            (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j)) (W1p.gradient (y j)) =ᵐ[μ⊤]
-              _)] with z hz
-      exact hz
+    ae_all_iff.2 fun j ↦ (gaugeFixedFirstOrder.comp
+      (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j)).coeFn_compLpL (W1p.gradient (y j))
   have hv : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
       (ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
         (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))) z =
           W1p.value (y j) z • EuclideanSpace.single j (1 : ℝ) :=
-    ae_all_iff.2 fun j ↦ by
-      filter_upwards [(ContinuousLinearMap.coeFn_compLp' (ContinuousLinearMap.toSpanSingleton ℝ
-        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j)) :
-          ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
-            (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j)) =ᵐ[μ⊤] _)] with z hz
-      exact hz
+    ae_all_iff.2 fun j ↦ (ContinuousLinearMap.toSpanSingleton ℝ
+      (EuclideanSpace.single j (1 : ℝ))).coeFn_compLpL (W1p.value (y j))
   set G := ∑ j : Fin 4, ContinuousLinearMap.compLpL 2 μ⊤
     (gaugeFixedFirstOrder.comp (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j))
       (W1p.gradient (y j))
@@ -210,33 +199,19 @@ private theorem norm_sq_le_integral_testField (φ : Fin 4 → 𝓓((⊤ : Opens 
       ∫ z, (‖(WithLp.toLp 2 fun j ↦ φ j z : EuclideanSpace ℝ (Fin 4))‖ ^ 2 +
         ∑ j : Fin 4, ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2) := by
   set y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2 := fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)
-  have hμ : μ⊤ = volume := by simp
-  -- Statements over `μ⊤` about functions transfer to `volume`; only the measure is rewritten.
-  have hae {P : ℂ → Prop} (h : ∀ᵐ z ∂μ⊤, P z) : ∀ᵐ z ∂(volume : Measure ℂ), P z := by
-    rwa [hμ] at h
-  have hint (f : ℂ → ℝ) : ∫ z, f z ∂μ⊤ = ∫ z, f z := by rw [hμ]
-  have hintg {f : ℂ → ℝ} (h : Integrable f μ⊤) : Integrable f := by rwa [hμ] at h
-  have hgrad (j : Fin 4) : W1p.gradient (y j) =ᵐ[volume] ∇ (φ j : ℂ → ℝ) := by
-    refine hae ?_
-    rw [W1p.gradient_ofTestFunctionₗ]
-    exact gradientTestFunctionLp_apply_ae 2 (φ j)
   have hφi (j : Fin 4) : Integrable (fun z ↦ φ j z ^ 2) :=
     ((φ j).continuous.pow 2).integrable_of_hasCompactSupport
       ((φ j).hasCompactSupport.comp_left (g := fun t : ℝ ↦ t ^ 2) (by simp) :
         HasCompactSupport fun z ↦ φ j z ^ 2)
   have hgi (j : Fin 4) : Integrable (fun z ↦ ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2) :=
-    (hintg (W1p.integrable_norm_gradient_sq (y j))).congr
-      ((hgrad j).mono fun z hz ↦ by simp only [hz])
-  have hval (j : Fin 4) : W1p.value (y j) =ᵐ[volume] φ j :=
-    hae (W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) (φ j))
+    ((continuous_gradient_testFunction (φ j)).norm.pow 2).integrable_of_hasCompactSupport
+      ((φ j).hasCompactSupport.gradient.comp_left (g := fun v : ℂ ↦ ‖v‖ ^ 2) (by simp) :
+        HasCompactSupport fun z ↦ ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2)
   have hnorm (j : Fin 4) :
       ‖y j‖ ^ 2 = (∫ z, φ j z ^ 2) + ∫ z, ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2 := by
-    have h₁ : ∫ z, W1p.value (y j) z ^ 2 = ∫ z, φ j z ^ 2 :=
-      integral_congr_ae ((hval j).mono fun z hz ↦ by simp only [hz])
-    have h₂ : ∫ z, ‖W1p.gradient (y j) z‖ ^ 2 = ∫ z, ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2 :=
-      integral_congr_ae ((hgrad j).mono fun z hz ↦ by simp only [hz])
-    rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq, ← W1p.integral_value_sq_eq_norm_value_sq,
-      ← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq, hint, hint, h₁, h₂]
+    simp only [y, W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq,
+      W1p.norm_value_ofTestFunctionₗ_top_sq, W1p.norm_gradient_ofTestFunctionₗ_top_sq,
+      norm_gradient_eq_norm_fderiv]
   refine (Pi.norm_pow_le_sum_norm_pow y two_ne_zero).trans (le_of_eq ?_)
   simp_rw [hnorm, Finset.sum_add_distrib]
   rw [← integral_finsetSum _ fun j _ ↦ hφi j, ← integral_finsetSum _ fun j _ ↦ hgi j,
@@ -245,6 +220,47 @@ private theorem norm_sq_le_integral_testField (φ : Fin 4 → 𝓓((⊤ : Opens 
   congr 1
   ext z
   simp [EuclideanSpace.real_norm_sq_eq]
+
+/-- On a field of test functions, the squared `L²` norm of the realization is the integral of the
+squared classical operator. -/
+private theorem norm_sobolevGaugeFixedOperator_ofTestFunctionₗ_sq
+    {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hax : a =ᵐ[μ⊤] x) (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
+    ‖sobolevGaugeFixedOperator a (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))‖ ^ 2 =
+      ∫ z, ‖gaugeFixedOperator x (fun z ↦ WithLp.toLp 2 fun j ↦ φ j z) z‖ ^ 2 := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  have h := sobolevGaugeFixedOperator_ofTestFunctionₗ_ae hax φ
+  simp only [Opens.coe_top, Measure.restrict_univ] at h ⊢
+  exact integral_congr_ae (h.mono fun z hz ↦ by simp only [hz])
+
+/-- The integral of the squared norm of a field of test functions over a closed disc is at most
+the sum of the integrals of the squared values of its coordinates over a larger open disc. -/
+private theorem integral_closedBall_norm_sq_testField_le (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ))
+    (R : ℝ) :
+    ∫ z in closedBall 0 R, ‖(WithLp.toLp 2 fun j ↦ φ j z : EuclideanSpace ℝ (Fin 4))‖ ^ 2 ≤
+      ∑ j, ∫ z in ball (0 : ℂ) (R + 1),
+        W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) z ^ 2 := by
+  have hc : Continuous fun z ↦ ‖(WithLp.toLp 2 fun j ↦ φ j z : EuclideanSpace ℝ (Fin 4))‖ ^ 2 :=
+    (((PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ (φ j).continuous)).norm.pow 2)
+  have hφ (j : Fin 4) : IntegrableOn (fun z ↦ φ j z ^ 2) (ball (0 : ℂ) (R + 1)) :=
+    (((φ j).continuous.pow 2).continuousOn.integrableOn_compact
+      (isCompact_closedBall (0 : ℂ) (R + 1))).mono_set ball_subset_closedBall
+  calc _ ≤ ∫ z in ball (0 : ℂ) (R + 1),
+          ‖(WithLp.toLp 2 fun j ↦ φ j z : EuclideanSpace ℝ (Fin 4))‖ ^ 2 :=
+        setIntegral_mono_set ((hc.continuousOn.integrableOn_compact
+            (isCompact_closedBall (0 : ℂ) (R + 1))).mono_set ball_subset_closedBall)
+          (ae_of_all _ fun z ↦ sq_nonneg _)
+          (closedBall_subset_ball (by linarith)).eventuallyLE
+    _ = ∑ j, ∫ z in ball (0 : ℂ) (R + 1), φ j z ^ 2 := by
+        rw [← integral_finsetSum _ fun j _ ↦ hφ j]
+        congr 1
+        ext z
+        simp [EuclideanSpace.real_norm_sq_eq]
+    _ = _ := by
+        refine Finset.sum_congr rfl fun j _ ↦ integral_congr_ae ?_
+        filter_upwards [ae_restrict_of_ae (W1p.value_ofTestFunctionₗ_top_ae (mu := volume)
+          (p := 2) (φ j))] with z hz
+        rw [hz]
 
 /-- The coercive estimate on fields of test functions, from the Gårding inequality. -/
 private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 4)}
@@ -261,11 +277,6 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
             W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) z ^ 2) := by
   set y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2 := fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)
   set Y : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun j ↦ φ j z
-  have hμ : μ⊤ = volume := by simp
-  -- Statements over `μ⊤` about functions transfer to `volume`; only the measure is rewritten.
-  have hae {P : ℂ → Prop} (h : ∀ᵐ z ∂μ⊤, P z) : ∀ᵐ z ∂(volume : Measure ℂ), P z := by
-    rwa [hμ] at h
-  have hint (f : ℂ → ℝ) : ∫ z, f z ∂μ⊤ = ∫ z, f z := by rw [hμ]
   have hY : ContDiff ℝ 2 Y := ((contDiff_piLp 2).2 fun j ↦ (φ j).contDiff).of_le (by simp)
   have hYc : HasCompactSupport Y :=
     (hasCompactSupport_pi_iff.2 fun j ↦ (φ j).hasCompactSupport).comp_left (g := WithLp.toLp 2)
@@ -286,44 +297,18 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
     have h₁ := sum_norm_gradient_sq_le x Y z
     have h₂ : ‖x z‖ ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (hM z) 2
     -- The coordinates of `Y` are the test functions themselves.
-    have h₃ : ∑ j : Fin 4, ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2 =
-        ∑ j : Fin 4, ‖∇ (fun w ↦ Y w j) z‖ ^ 2 := rfl
-    simp only [h₃]
+    have h₃ (j : Fin 4) : (fun w ↦ Y w j) = φ j := funext fun w ↦ by simp only [Y]
+    simp only [h₃] at h₁
     nlinarith [mul_le_mul_of_nonneg_right h₂ (sq_nonneg ‖Y z‖)]
-  -- The image of `y` is the classical operator applied to `Y`.
-  have hop : ∫ z, ‖gaugeFixedOperator x Y z‖ ^ 2 = ‖sobolevGaugeFixedOperator a y‖ ^ 2 := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq, hint]
-    refine integral_congr_ae ?_
-    filter_upwards [hae (sobolevGaugeFixedOperator_ofTestFunctionₗ_ae hax φ)] with z hz
-    rw [hz]
-  -- The integral over the disc is controlled by the restricted values.
-  have hdisc : ∫ z in closedBall 0 R, ‖Y z‖ ^ 2 ≤
-      ∑ j, ∫ z in ball (0 : ℂ) (R + 1), W1p.value (y j) z ^ 2 := by
-    have hval (j : Fin 4) : W1p.value (y j) =ᵐ[volume] φ j :=
-      hae (W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) (φ j))
-    calc ∫ z in closedBall 0 R, ‖Y z‖ ^ 2 ≤ ∫ z in ball (0 : ℂ) (R + 1), ‖Y z‖ ^ 2 :=
-          setIntegral_mono_set hYi.integrableOn (ae_of_all _ fun z ↦ sq_nonneg _)
-            (closedBall_subset_ball (by linarith)).eventuallyLE
-      _ = ∑ j, ∫ z in ball (0 : ℂ) (R + 1), φ j z ^ 2 := by
-          have hφ (j : Fin 4) : Continuous fun z ↦ φ j z ^ 2 := by fun_prop
-          rw [← integral_finsetSum _ fun j _ ↦ ((hφ j).continuousOn.integrableOn_compact
-            (isCompact_closedBall (0 : ℂ) (R + 1))).mono_set ball_subset_closedBall]
-          congr 1
-          ext z
-          simp [Y, EuclideanSpace.real_norm_sq_eq]
-      _ = ∑ j, ∫ z in ball (0 : ℂ) (R + 1), W1p.value (y j) z ^ 2 := by
-          refine Finset.sum_congr rfl fun j _ ↦ integral_congr_ae ?_
-          filter_upwards [ae_restrict_of_ae (hval j)] with z hz
-          rw [hz]
   have hGarding := hG Y (hY.of_le le_rfl) hYc
-  rw [hop] at hGarding
+  rw [← norm_sobolevGaugeFixedOperator_ofTestFunctionₗ_sq hax φ] at hGarding
   have hG0 : 0 ≤ ∫ z, gaugeFixedGradientDensity x Y z :=
     integral_nonneg fun z ↦ gaugeFixedGradientDensity_nonneg x Y z
   have hB0 : 0 ≤ ∫ z in closedBall 0 R, ‖Y z‖ ^ 2 := integral_nonneg fun z ↦ sq_nonneg _
   have hK : K * ∫ z in closedBall 0 R, ‖Y z‖ ^ 2 ≤
       max K 0 * ∑ j, ∫ z in ball (0 : ℂ) (R + 1), W1p.value (y j) z ^ 2 :=
     (mul_le_mul_of_nonneg_right (le_max_left K 0) hB0).trans
-      (mul_le_mul_of_nonneg_left hdisc (le_max_right K 0))
+      (mul_le_mul_of_nonneg_left (integral_closedBall_norm_sq_testField_le φ R) (le_max_right K 0))
   nlinarith [sq_nonneg M]
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
@@ -341,8 +326,8 @@ theorem exists_norm_sq_le_mul_norm_sobolevGaugeFixedOperator_sq_add (hx : ContDi
         ∑ j, ∫ z in ball (0 : ℂ) R, W1p.value (y j) z ^ 2) := by
   obtain ⟨R, hR, K, hG⟩ := exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le
     (μ := volume) hx hsol hlim hcov (a := 1 / 8) (by norm_num)
-  have : (μ⊤).IsOpenPosMeasure := by rw [show μ⊤ = volume by simp]; infer_instance
-  have hM := Lp.norm_le_norm_top_of_ae_eq_of_continuous hx.continuous hax
+  have hM (z : ℂ) : ‖x z‖ ≤ ‖a‖ :=
+    Lp.norm_le_norm_top_of_ae_eq_of_continuousAt hax hx.continuous.continuousAt
   set C := 8 * (1 + 2 * ‖a‖ ^ 2) * max 1 (max K 0) with hC
   have hC₀ : 0 ≤ 8 * (1 + 2 * ‖a‖ ^ 2) := by positivity
   refine ⟨R + 1, by linarith, C, mul_nonneg hC₀ (zero_le_one.trans (le_max_left _ _)), ?_⟩

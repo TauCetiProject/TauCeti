@@ -42,8 +42,6 @@ on a discrete group, consists of all bounded functions.
 
 ## Main results
 
-* `MeasureTheory.Lp.norm_le_norm_top_of_ae_eq_of_continuous`: when `μ` is positive on open sets,
-  a continuous representative of an `L∞` class is bounded everywhere by its norm.
 * `BoundedContinuousFunction.coeFn_toLpTop`: the class of `f` is almost everywhere `f`.
 * `BoundedContinuousFunction.toLp_top_eq_toLpTop`: for a finite measure it agrees with
   `BoundedContinuousFunction.toLp`.
@@ -62,18 +60,6 @@ noncomputable section
 
 open MeasureTheory Filter
 open scoped ENNReal BoundedContinuousFunction
-
-/-- If `μ` is positive on nonempty open sets, a continuous representative of an `L∞` class is
-bounded everywhere by its norm: the bound holds on a closed conull set, which is everything. -/
-theorem MeasureTheory.Lp.norm_le_norm_top_of_ae_eq_of_continuous {α E : Type*}
-    [TopologicalSpace α] [MeasurableSpace α] [NormedAddCommGroup E] {μ : Measure α}
-    [μ.IsOpenPosMeasure] {f : Lp E ∞ μ} {g : α → E} (hg : Continuous g) (hfg : f =ᵐ[μ] g)
-    (x : α) : ‖g x‖ ≤ ‖f‖ := by
-  have hae : ∀ᵐ x ∂μ, ‖g x‖ ≤ ‖f‖ := by
-    filter_upwards [hfg, Lp.ae_norm_le_norm_top f] with x hx h
-    exact hx ▸ h
-  have hclosed : IsClosed {x | ‖g x‖ ≤ ‖f‖} := isClosed_le (by fun_prop) (by fun_prop)
-  exact Set.eq_univ_iff_forall.1 (hclosed.ae_eq_univ_iff_eq.1 (ae_eq_univ.2 hae)) x
 
 namespace BoundedContinuousFunction
 
@@ -126,7 +112,8 @@ function is its supremum norm. -/
 @[simp]
 theorem norm_toLpTop (f : α →ᵇ E) : ‖toLpTop μ 𝕜 f‖ = ‖f‖ := by
   exact (norm_toLpTop_le μ f).antisymm ((norm_le (norm_nonneg _)).2
-    (Lp.norm_le_norm_top_of_ae_eq_of_continuous f.continuous (coeFn_toLpTop μ f)))
+    fun _ ↦ Lp.norm_le_norm_top_of_ae_eq_of_continuousAt (coeFn_toLpTop μ f)
+      f.continuous.continuousAt)
 
 /-- If `μ` is positive on nonempty open sets, a bounded continuous function is determined by its
 class in `L∞`. -/
