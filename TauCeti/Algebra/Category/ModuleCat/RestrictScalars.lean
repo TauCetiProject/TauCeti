@@ -107,7 +107,8 @@ theorem full_restrictScalars (f : R →+* S) (hf : Function.Surjective f) :
         map_add' := map_add g.hom
         map_smul' := fun s m ↦ by
           obtain ⟨r, rfl⟩ := hf s
-          exact g.hom.map_smul r m }, rfl⟩
+          rw [RingHom.id_apply, ← ModuleCat.restrictScalars.smul_def' f r m, map_smul,
+            ModuleCat.restrictScalars.smul_def] }, rfl⟩
 
 /-- Restricting scalars along a surjective ring homomorphism preserves and reflects the object
 property of being finitely generated. -/

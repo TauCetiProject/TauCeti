@@ -26,6 +26,12 @@ For a surjective ring map `φ : R ⟶ S` with kernel `I`, i.e. a closed immersio
 surjective with kernel `I Γ(M)` (`moduleSpecΓFunctor_map_unit_surjective`,
 `ker_moduleSpecΓFunctor_map_unit`), as `S ⊗_R Γ(M) = Γ(M) ⧸ I Γ(M)`.
 
+Through the extension/restriction-of-scalars adjunction, a morphism `φ^* N ⟶ N'` of modules on
+`Spec S` gives an `R`-linear map of global sections `Γ(N) ⟶ Γ(N')`
+(`moduleSpecΓPullbackAdjoint`); when `N` is quasicoherent, a square of such morphisms commutes
+exactly when the induced square of global sections does
+(`moduleSpecΓPullbackAdjoint_naturality_iff`).
+
 The construction uses `tildeFunctorCompPullbackIso`, the tilde/global-sections adjunction,
 and the extension/restriction-of-scalars adjunction. The characteristic equation identifies
 it with the map adjoint to pulling back global sections.
@@ -164,6 +170,50 @@ def moduleSpecΓPullbackIso (M : (Spec R).Modules) [M.IsQuasicoherent] :
 lemma moduleSpecΓPullbackIso_hom (M : (Spec R).Modules) [M.IsQuasicoherent] :
     (moduleSpecΓPullbackIso φ M).hom = (moduleSpecΓPullback φ).app M :=
   (rfl)
+
+/-- A morphism `e : φ^* N ⟶ N'` of modules on `Spec S`, read on global sections as an `R`-linear
+map `Γ(N) ⟶ Γ(N')`: the map adjoint to the base change `S ⊗_R Γ(N) ⟶ Γ(φ^* N)` followed by
+`Γ(e)`. It sends a section to its pullback followed by `e` (`moduleSpecΓPullbackAdjoint_apply`). -/
+def moduleSpecΓPullbackAdjoint {N : (Spec R).Modules} {N' : (Spec S).Modules}
+    (e : (pullback (Spec.map φ)).obj N ⟶ N') :
+    moduleSpecΓFunctor.obj N ⟶ (ModuleCat.restrictScalars φ.hom).obj (moduleSpecΓFunctor.obj N') :=
+  (ModuleCat.extendRestrictScalarsAdj φ.hom).homEquiv _ _
+    ((moduleSpecΓPullback φ).app N ≫ moduleSpecΓFunctor.map e)
+
+/-- `moduleSpecΓPullbackAdjoint φ e` pulls a section back along `Spec φ` and then applies `e`. -/
+lemma moduleSpecΓPullbackAdjoint_apply {N : (Spec R).Modules} {N' : (Spec S).Modules}
+    (e : (pullback (Spec.map φ)).obj N ⟶ N') (m : moduleSpecΓFunctor.obj N) :
+    moduleSpecΓPullbackAdjoint φ e m =
+      moduleSpecΓFunctor.map e
+        (dsimp% only [Functor.comp_obj] (moduleSpecΓFunctor (R := R)).map
+          ((pullbackPushforwardAdjunction (Spec.map φ)).unit.app N) m) := by
+  -- The adjoint map evaluates the base change at `1 ⊗ m`, then applies `e`.
+  exact congrArg (moduleSpecΓFunctor.map e).hom (moduleSpecΓPullback_app_one_tmul φ N m)
+
+/-- A square of module maps over `Spec φ` commutes exactly when the square of global sections it
+induces through `moduleSpecΓPullbackAdjoint` commutes. -/
+lemma moduleSpecΓPullbackAdjoint_naturality_iff {N₁ N₂ : (Spec R).Modules}
+    {N₁' N₂' : (Spec S).Modules} [N₁.IsQuasicoherent]
+    (e₁ : (pullback (Spec.map φ)).obj N₁ ⟶ N₁') (e₂ : (pullback (Spec.map φ)).obj N₂ ⟶ N₂')
+    (g : N₁ ⟶ N₂) (g' : N₁' ⟶ N₂') :
+    moduleSpecΓPullbackAdjoint φ e₁ ≫
+          (ModuleCat.restrictScalars φ.hom).map (moduleSpecΓFunctor.map g') =
+        moduleSpecΓFunctor.map g ≫ moduleSpecΓPullbackAdjoint φ e₂ ↔
+      (pullback (Spec.map φ)).map g ≫ e₂ = e₁ ≫ g' := by
+  have := isIso_moduleSpecΓPullback_app φ N₁
+  have hP := (moduleSpecΓPullback φ).naturality g
+  dsimp only [Functor.comp_map] at hP
+  calc
+    _ ↔ (moduleSpecΓPullback φ).app N₁ ≫ moduleSpecΓFunctor.map (e₁ ≫ g') =
+        (moduleSpecΓPullback φ).app N₁ ≫ moduleSpecΓFunctor.map ((pullback _).map g ≫ e₂) := by
+      -- Both squares are adjoint to squares out of `S ⊗_R Γ(N₁)`.
+      rw [moduleSpecΓPullbackAdjoint, moduleSpecΓPullbackAdjoint,
+        ← Adjunction.homEquiv_naturality_right, ← Adjunction.homEquiv_naturality_left,
+        Equiv.apply_eq_iff_eq, reassoc_of% hP]
+      simp only [Category.assoc, Functor.map_comp]
+    _ ↔ moduleSpecΓFunctor.map (e₁ ≫ g') =
+        moduleSpecΓFunctor.map ((pullback (Spec.map φ)).map g ≫ e₂) := cancel_epi _
+    _ ↔ _ := (moduleSpecΓFunctor_map_bijective _ _).1.eq_iff.trans eq_comm
 
 variable {φ}
 

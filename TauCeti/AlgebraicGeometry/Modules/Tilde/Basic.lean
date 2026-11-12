@@ -55,8 +55,8 @@ out of `M~` is determined by where it sends the global sections coming from `M`.
   is finitely generated and projective;
 * `TauCeti.AlgebraicGeometry.tilde_hom_ext`: a morphism out of `M~` is determined by its values
   on the global sections coming from `M`;
-* `TauCeti.AlgebraicGeometry.moduleSpecΓFunctor_map_bijective`: morphisms of quasi-coherent
-  modules on `Spec R` are the `R`-linear maps of their global sections.
+* `AlgebraicGeometry.Scheme.Modules.moduleSpecΓFunctor_map_bijective`: morphisms of
+  quasi-coherent modules on `Spec R` are the `R`-linear maps of their global sections.
 
 ## References
 
@@ -354,7 +354,8 @@ theorem tilde_hom_ext {M : ModuleCat.{u} R} {N : (Spec R).Modules}
 /-- **Global sections are fully faithful on quasi-coherent modules on an affine scheme.** A
 morphism from a quasi-coherent `𝒪_{Spec R}`-module `M ≅ Γ(M)~` to any `𝒪_{Spec R}`-module `N` is
 the same as an `R`-linear map `Γ(M) ⟶ Γ(N)`, by the tilde/global-sections adjunction. -/
-theorem moduleSpecΓFunctor_map_bijective (M N : (Spec R).Modules) [M.IsQuasicoherent] :
+theorem _root_.AlgebraicGeometry.Scheme.Modules.moduleSpecΓFunctor_map_bijective
+    (M N : (Spec R).Modules) [M.IsQuasicoherent] :
     Function.Bijective (moduleSpecΓFunctor.map : (M ⟶ N) → _) := by
   let ε := (tilde.adjunction (R := R)).counit.app M
   have : IsIso ε := Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent M

@@ -29,10 +29,11 @@ affine scheme (`isFiniteAdicSystem_sectionsTower_obj`). Morphisms of coherent fo
 on an affine scheme with modules over its ring, and a family of linear maps compatible with the
 transitions of the towers is compatible with the reduction isomorphisms. Thus
 `finiteSectionsTower I` is a fully faithful functor from coherent formal modules on `spf I` to the
-`I`-adic systems with finite first term. This is the affine half of the description of coherent
-modules on the formal completion of a Noetherian scheme by finite modules over completed rings
-(Stacks, Lemma 30.23.1); over an `I`-adically complete Noetherian ring, the finite `I`-adic systems
-are in turn the finite modules (`TauCeti.ModuleTower.finiteReduction_isEquivalence`).
+`I`-adic systems with finite first term, for any commutative ring `R`. This is one ingredient of
+Stacks, Lemma 30.23.1, which identifies coherent formal modules on `Spf` of an `I`-adically complete
+Noetherian ring with its finite modules: that equivalence also needs `finiteSectionsTower I` to be
+essentially surjective for Noetherian `R`, and that finite `I`-adic systems are the finite modules
+(`TauCeti.ModuleTower.finiteReduction_isEquivalence`).
 
 ## Main definitions
 
@@ -63,38 +64,24 @@ namespace TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule
 
 noncomputable section
 
-/-! ### The adjoint base change of global sections -/
-
-section BaseChange
-
-variable {S T : CommRingCat.{u}} (ψ : S ⟶ T)
-
-/-- A morphism `e : ψ^* N ⟶ N'` of modules on `Spec T`, read on global sections as an
-`S`-linear map `Γ(N) ⟶ Γ(N')`: the map adjoint to the base change `T ⊗ Γ(N) ⟶ Γ(ψ^* N)` followed
-by `e`. -/
-private abbrev sectionsMap {N : (Spec S).Modules} {N' : (Spec T).Modules}
-    (e : (Scheme.Modules.pullback (Spec.map ψ)).obj N ⟶ N') :
-    moduleSpecΓFunctor.obj N ⟶ (ModuleCat.restrictScalars ψ.hom).obj (moduleSpecΓFunctor.obj N') :=
-  (ModuleCat.extendRestrictScalarsAdj ψ.hom).homEquiv _ _
-    ((CommRingCat.Hom.moduleSpecΓPullback ψ).app N ≫ moduleSpecΓFunctor.map e)
-
-/-- A square of module maps over `Spec ψ` commutes exactly when the square of global sections it
-induces commutes. -/
-private lemma sectionsMap_naturality_iff {N₁ N₂ : (Spec S).Modules} {N₁' N₂' : (Spec T).Modules}
-    [hN₁ : N₁.IsQuasicoherent]
+/-- `moduleSpecΓPullbackAdjoint_naturality_iff` after further restriction of scalars along
+`f : A →+* S` and `f' = ψ ∘ f`: the restricted square of global sections still commutes exactly
+when the square of module maps does. -/
+private lemma restrictScalars_moduleSpecΓPullbackAdjoint_naturality_iff {A : Type u} [CommRing A]
+    {S T : CommRingCat.{u}} (ψ : S ⟶ T) (f : A →+* S) (f' : A →+* T) (hf : f' = ψ.hom.comp f)
+    {N₁ N₂ : (Spec S).Modules} {N₁' N₂' : (Spec T).Modules} [hN₁ : N₁.IsQuasicoherent]
     (e₁ : (Scheme.Modules.pullback (Spec.map ψ)).obj N₁ ⟶ N₁')
     (e₂ : (Scheme.Modules.pullback (Spec.map ψ)).obj N₂ ⟶ N₂') (g : N₁ ⟶ N₂) (g' : N₁' ⟶ N₂') :
-    sectionsMap ψ e₁ ≫ (ModuleCat.restrictScalars ψ.hom).map (moduleSpecΓFunctor.map g') =
-        moduleSpecΓFunctor.map g ≫ sectionsMap ψ e₂ ↔
+    ((ModuleCat.restrictScalars f).map (ψ.moduleSpecΓPullbackAdjoint e₁) ≫
+          (ModuleCat.restrictScalarsComp'App f ψ.hom f' hf _).inv) ≫
+          (ModuleCat.restrictScalars f').map (moduleSpecΓFunctor.map g') =
+        (ModuleCat.restrictScalars f).map (moduleSpecΓFunctor.map g) ≫
+          (ModuleCat.restrictScalars f).map (ψ.moduleSpecΓPullbackAdjoint e₂) ≫
+          (ModuleCat.restrictScalarsComp'App f ψ.hom f' hf _).inv ↔
       (Scheme.Modules.pullback (Spec.map ψ)).map g ≫ e₂ = e₁ ≫ g' := by
-  have := CommRingCat.Hom.isIso_moduleSpecΓPullback_app ψ N₁
-  have hP := (CommRingCat.Hom.moduleSpecΓPullback ψ).naturality g
-  dsimp only [Functor.comp_map] at hP
-  rw [← Adjunction.homEquiv_naturality_right, ← Adjunction.homEquiv_naturality_left,
-    Equiv.apply_eq_iff_eq, reassoc_of% hP, Category.assoc, cancel_epi, ← Functor.map_comp,
-    ← Functor.map_comp, (moduleSpecΓFunctor_map_bijective _ _).1.eq_iff, eq_comm]
-
-end BaseChange
+  rw [Category.assoc, ← ModuleCat.restrictScalarsComp'App_inv_naturality, ← Functor.map_comp_assoc,
+    ← Functor.map_comp_assoc, cancel_mono, (ModuleCat.restrictScalars f).map_injective.eq_iff,
+    ψ.moduleSpecΓPullbackAdjoint_naturality_iff]
 
 /-! ### The tower of global sections -/
 
@@ -113,10 +100,9 @@ def sectionsTower : CoherentFormalModule (spf I) ⥤ ModuleTower.{u} R where
     (X := fun n ↦ (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1)))).obj
       (moduleSpecΓFunctor.obj (M.obj n)))
     fun n ↦ (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1 + 1)))).map
-        ((ModuleCat.extendRestrictScalarsAdj _).homEquiv _ _
-          ((CommRingCat.Hom.moduleSpecΓPullback (CommRingCat.ofHom (Ideal.Quotient.factor
-            (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))))).app (M.obj (n + 1)) ≫
-            moduleSpecΓFunctor.map (M.transitionIso n).hom)) ≫
+        ((CommRingCat.ofHom (Ideal.Quotient.factor
+          (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1))))).moduleSpecΓPullbackAdjoint
+            (M.transitionIso n).hom) ≫
       (ModuleCat.restrictScalarsComp'App _ _ _
         (Ideal.Quotient.factor_comp_mk (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))).symm
         _).inv
@@ -124,10 +110,9 @@ def sectionsTower : CoherentFormalModule (spf I) ⥤ ModuleTower.{u} R where
     (fun n ↦ (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1)))).map
       (moduleSpecΓFunctor.map (f.app n))) fun n ↦ by
     rw [Functor.ofOpSequence_map_homOfLE_succ, Functor.ofOpSequence_map_homOfLE_succ]
-    ext x
-    exact congrArg (fun h ↦ h.hom x) ((sectionsMap_naturality_iff _
+    exact (restrictScalars_moduleSpecΓPullbackAdjoint_naturality_iff _ _ _ _
       (hN₁ := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation (M.obj (n + 1)))
-      (M.transitionIso n).hom (N.transitionIso n).hom (f.app (n + 1)) (f.app n)).2 (f.naturality n))
+      (M.transitionIso n).hom (N.transitionIso n).hom (f.app (n + 1)) (f.app n)).2 (f.naturality n)
   -- `simp` cannot see through `NatTrans.ofOpSequence` here, whose components are only
   -- definitionally the images of the levelwise maps.
   map_id M := by
@@ -162,8 +147,11 @@ theorem sectionsTower_obj_transition_apply (M : CoherentFormalModule (spf I)) (n
           ((spf I).ι n)).unit.app (M.obj (n + 1))) x) := by
   rw [ModuleTower.transition_def]
   simp only [sectionsTower, Functor.ofOpSequence_map_homOfLE_succ]
-  exact congrArg (moduleSpecΓFunctor.map (M.transitionIso n).hom).hom
-    (CommRingCat.Hom.moduleSpecΓPullback_app_one_tmul _ (M.obj (n + 1)) x)
+  -- The transition is `moduleSpecΓPullbackAdjoint` up to `restrictScalars` and
+  -- `restrictScalarsComp'App`, which do not change underlying maps. These cannot be unfolded by
+  -- `rw`: the goal only typechecks after identifying the level `(spf I).X n` with
+  -- `Spec (R ⧸ I ^ (n + 1))`.
+  exact CommRingCat.Hom.moduleSpecΓPullbackAdjoint_apply _ (M.transitionIso n).hom x
 
 /-- **The global sections of a coherent formal module on `spf I` form a finite `I`-adic system.**
 Each transition `Γ(M (n + 1)) ⟶ Γ(M n)` is surjective with kernel `I ^ (n + 1) Γ(M (n + 1))`, and
@@ -194,10 +182,11 @@ theorem isFiniteAdicSystem_sectionsTower_obj (M : CoherentFormalModule (spf I)) 
         ((SetLike.ext_iff.1 (@CommRingCat.Hom.ker_moduleSpecΓFunctor_map_unit _ _
           (CommRingCat.ofHom _) (hφ n) _ (hq (n + 1))) x).1 h) (fun k hk y _ ↦ ?_)
         (fun _ _ ↦ Submodule.add_mem _)
-    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective k
-    have hr : r ∈ I ^ (n + 1) := by
-      rw [RingHom.mem_ker] at hk
-      exact Ideal.Quotient.eq_zero_iff_mem.1 hk
+    replace hk : k ∈ RingHom.ker (Ideal.Quotient.factor
+        (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))) := hk
+    rw [Ideal.Quotient.factor_ker,
+      Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective] at hk
+    obtain ⟨r, hr, rfl⟩ := hk
     exact Submodule.smul_mem_smul (M := ((sectionsTower I).obj M).obj (op (n + 1))) (n := y) hr
       Submodule.mem_top
   · -- `I ^ (n + 1)` kills the sections of `M n`, a module over `R ⧸ I ^ (n + 1)`.
@@ -211,7 +200,7 @@ theorem isFiniteAdicSystem_sectionsTower_obj (M : CoherentFormalModule (spf I)) 
 
 instance : (sectionsTower I).Faithful where
   map_injective {M N} _ _ h := hom_ext fun n ↦
-    (@moduleSpecΓFunctor_map_bijective _ (M.obj n) (N.obj n)
+    (@Scheme.Modules.moduleSpecΓFunctor_map_bijective _ (M.obj n) (N.obj n)
       (SheafOfModules.instIsQuasicoherentOfIsFinitePresentation (M.obj n))).1
         ((ModuleCat.restrictScalars _).map_injective (congrArg (·.app (op n)) h))
 
@@ -219,21 +208,20 @@ instance : (sectionsTower I).Full where
   map_surjective {M N} τ := by
     have hfull (n : ℕ) := (Ideal.Quotient.mk (I ^ (n + 1))).full_restrictScalars
       Ideal.Quotient.mk_surjective
-    choose f hf using fun n ↦ (@moduleSpecΓFunctor_map_bijective _ (M.obj n) (N.obj n)
-      (SheafOfModules.instIsQuasicoherentOfIsFinitePresentation (M.obj n))).2
-        (@Functor.preimage _ _ _ _ _ _ _ (hfull n) (τ.app (op n)))
+    choose f hf using fun n ↦
+      (@Scheme.Modules.moduleSpecΓFunctor_map_bijective _ (M.obj n) (N.obj n)
+        (SheafOfModules.instIsQuasicoherentOfIsFinitePresentation (M.obj n))).2
+          (@Functor.preimage _ _ _ _ _ _ _ (hfull n) (τ.app (op n)))
     have hτ (n : ℕ) : (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1)))).map
         (moduleSpecΓFunctor.map (f n)) = τ.app (op n) := by
       have := hfull n
       exact (congrArg (ModuleCat.restrictScalars _).map (hf n)).trans (Functor.map_preimage _ _)
     refine ⟨{ app := f, naturality := fun n ↦ ?_ }, NatTrans.ext (funext fun n ↦ hτ n.unop)⟩
-    refine (sectionsMap_naturality_iff _
-      (hN₁ := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation (M.obj (n + 1)))
-      (M.transitionIso n).hom (N.transitionIso n).hom (f (n + 1)) (f n)).1 ?_
-    ext x
-    have h := congrArg (fun h ↦ h.hom x) (τ.naturality (homOfLE (Nat.le_succ n)).op)
+    have h := τ.naturality (homOfLE (Nat.le_succ n)).op
     simp only [sectionsTower, Functor.ofOpSequence_map_homOfLE_succ, ← hτ] at h
-    exact h
+    exact (restrictScalars_moduleSpecΓPullbackAdjoint_naturality_iff _ _ _ _
+      (hN₁ := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation (M.obj (n + 1)))
+      (M.transitionIso n).hom (N.transitionIso n).hom (f (n + 1)) (f n)).1 h
 
 /-- The tower of global sections of a coherent formal module on `spf I`, as an `I`-adic system with
 finite first term (`isFiniteAdicSystem_sectionsTower_obj`). It is fully faithful. -/
