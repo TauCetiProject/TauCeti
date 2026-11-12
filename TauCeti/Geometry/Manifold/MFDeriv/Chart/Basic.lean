@@ -766,7 +766,7 @@ theorem _root_.ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm {f : M 
       fun hd ↦ hf ((mdifferentiableAt_iff_of_mem_source hx' hfx').2 ⟨hc, hd⟩)
     rw [mfderiv_zero_of_not_mdifferentiableAt hf,
       fderivWithin_zero_of_not_differentiableWithinAt hd]
-    ext w
+    ext _
     exact (map_zero (tangentCoordChange I' (f x) α (f x))).symm
 
 end ManifoldCharts
