@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Coalgebra.Comodule.Antipode
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 
 /-!
@@ -104,89 +105,6 @@ instance IsRelativeHopfModule.self : IsRelativeHopfModule R H A A where
       | tmul b h' => simp
 
 end Defs
-
-/-! ### Antipode identities for comodules -/
-
-section Antipode
-
-variable {R H N : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
-  [AddCommMonoid N] [Module R N]
-
-variable (R H N) in
-/-- `(n ⊗ c) ⊗ h ↦ S c * h ⊗ n`. -/
-private noncomputable def shear : (N ⊗[R] H) ⊗[R] H →ₗ[R] H ⊗[R] N :=
-  (TensorProduct.comm R N H).toLinearMap ∘ₗ
-    (LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).rTensor H).lTensor N ∘ₗ
-    (TensorProduct.assoc R N H H).toLinearMap
-
-private theorem shear_tmul (n : N) (c h : H) :
-    shear R H N ((n ⊗ₜ c) ⊗ₜ h) = (HopfAlgebra.antipode R c * h) ⊗ₜ[R] n := by
-  simp [shear]
-
-variable [Comodule R H N]
-
-variable (R H N) in
-/-- `h ⊗ n ↦ (1 ⊗ h) • coact n = ∑ n₀ ⊗ h n₁`. -/
-private noncomputable def mulCoact : H ⊗[R] N →ₗ[R] N ⊗[R] H :=
-  TensorProduct.lift ((LinearMap.lTensorHom N ∘ₗ LinearMap.mul R H).compl₂
-    (Comodule.coact (R := R) (C := H)))
-
-private theorem mulCoact_tmul (h : H) (n : N) :
-    mulCoact R H N (h ⊗ₜ n) =
-      (LinearMap.mulLeft R h).lTensor N (Comodule.coact (R := R) (C := H) n) :=
-  (rfl)
-
-/-- `∑ (1 ⊗ S n₁ h) • coact n₀ = n ⊗ h`. -/
-private theorem mulCoact_shear_coact (n : N) (h : H) :
-    mulCoact R H N (shear R H N (Comodule.coact (R := R) (C := H) n ⊗ₜ h)) = n ⊗ₜ h := by
-  -- `(m ⊗ c) ⊗ d ↦ m ⊗ h (c S d)`, to be evaluated on `(coact ⊗ id) (coact n) = ∑ n₀ ⊗ Δ n₁`.
-  let K : (N ⊗[R] H) ⊗[R] H →ₗ[R] N ⊗[R] H :=
-    (LinearMap.mulLeft R h ∘ₗ LinearMap.mul' R H ∘ₗ
-      (HopfAlgebra.antipode R).lTensor H).lTensor N ∘ₗ (TensorProduct.assoc R N H H).toLinearMap
-  have hK (t : N ⊗[R] H) : mulCoact R H N (shear R H N (t ⊗ₜ h)) =
-      K ((Comodule.coact (R := R) (C := H)).rTensor H t) := by
-    induction t with
-    | add t t' ht ht' => simp only [TensorProduct.add_tmul, map_add, ht, ht']
-    | tmul m c =>
-      rw [shear_tmul, mulCoact_tmul, LinearMap.rTensor_tmul]
-      induction Comodule.coact (R := R) (C := H) m with
-      | add t t' ht ht' => simp only [TensorProduct.add_tmul, map_add, ht, ht']
-      | tmul m' c' => simp [K, mul_comm]
-  rw [hK, ← (TensorProduct.assoc R N H H).symm_apply_apply
-    ((Comodule.coact (R := R) (C := H)).rTensor H (Comodule.coact n)), Comodule.coassoc_apply]
-  simp only [K, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
-    ← LinearMap.lTensor_comp_apply, LinearMap.comp_assoc, HopfAlgebra.mul_antipode_lTensor_comul]
-  rw [← LinearMap.comp_assoc, LinearMap.lTensor_comp_apply, Comodule.lTensor_counit_coact]
-  simp
-
-/-- The shear of `(1 ⊗ h) • coact m = ∑ m₀ ⊗ h m₁` is `∑ S m₁ h m₂ ⊗ m₀ = h ⊗ m`. -/
-private theorem shear_mulCoact (h : H) (m : N) :
-    shear R H N ((Comodule.coact (R := R) (C := H)).rTensor H (mulCoact R H N (h ⊗ₜ m))) =
-      h ⊗ₜ[R] m := by
-  have hshear : shear R H N ∘ₗ (LinearMap.mulLeft R h).lTensor (N ⊗[R] H) ∘ₗ
-      (TensorProduct.assoc R N H H).symm.toLinearMap =
-      (LinearMap.mulLeft R h ∘ₗ LinearMap.mul' R H ∘ₗ
-        (HopfAlgebra.antipode R).rTensor H).rTensor N ∘ₗ
-          (TensorProduct.comm R N (H ⊗[R] H)).toLinearMap := by
-    refine TensorProduct.ext_threefold' fun n x y ↦ ?_
-    simp [shear, mul_left_comm]
-  rw [mulCoact_tmul, ← LinearMap.comp_apply (g := (LinearMap.mulLeft R h).lTensor N),
-    LinearMap.rTensor_comp_lTensor, ← LinearMap.lTensor_comp_rTensor, LinearMap.comp_apply,
-    ← (TensorProduct.assoc R N H H).symm_apply_apply
-      ((Comodule.coact (R := R) (C := H)).rTensor H (Comodule.coact m)), Comodule.coassoc_apply]
-  have := congr($hshear ((Coalgebra.comul (R := R) (A := H)).lTensor N (Comodule.coact m)))
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at this
-  have hm : m = TensorProduct.rid R N ((Coalgebra.counit (R := R) (A := H)).lTensor N
-      (Comodule.coact (R := R) (C := H) m)) := by simp
-  rw [this]
-  conv_rhs => rw [hm]
-  induction Comodule.coact (R := R) (C := H) m with
-  | add t t' ht ht' => simp only [map_add, ht, ht', TensorProduct.tmul_add]
-  | tmul n c =>
-    simp [HopfAlgebra.mul_antipode_rTensor_comul_apply, ← Algebra.commutes, ← Algebra.smul_def,
-      TensorProduct.smul_tmul]
-
-end Antipode
 
 /-! ### The Galois map and the coinvariants -/
 
@@ -382,17 +300,18 @@ private theorem translationAct_tmul (h : H) (n : N) :
   (rfl)
 
 private theorem galoisMap_translationAct (t : H ⊗[R] N) :
-    galoisMap B N hB (translationAct N hβ t) = mulCoact R H N t := by
+    galoisMap B N hB (translationAct N hβ t) = Comodule.mulCoact R H N t := by
   induction t with
   | add t t' ht ht' => simp only [map_add, ht, ht']
   | tmul h n =>
     rw [translationAct_tmul, galoisMap_actOne, galoisMap_translation, tensorSMul_one_tmul,
-      mulCoact_tmul]
+      Comodule.mulCoact_tmul]
 
 variable (N) in
 /-- The inverse of the Galois map of `N`: `n ⊗ h ↦ ∑ β⁻¹(1 ⊗ S n₁ h) • (1 ⊗ n₀)`. -/
 private noncomputable def galoisMapInv : N ⊗[R] H →ₗ[R] A ⊗[B] N :=
-  translationAct N hβ ∘ₗ shear R H N ∘ₗ (Comodule.coact (R := R) (C := H)).rTensor H
+  translationAct N hβ ∘ₗ Comodule.antipodeShear R H N ∘ₗ
+    (Comodule.coact (R := R) (C := H)).rTensor H
 
 private theorem galoisMap_galoisMapInv (y : N ⊗[R] H) :
     galoisMap B N hB (galoisMapInv N hβ y) = y := by
@@ -400,12 +319,12 @@ private theorem galoisMap_galoisMapInv (y : N ⊗[R] H) :
   | add y y' hy hy' => simp only [map_add, hy, hy']
   | tmul n h =>
     simp only [galoisMapInv, LinearMap.comp_apply, LinearMap.rTensor_tmul,
-      galoisMap_translationAct, mulCoact_shear_coact]
+      galoisMap_translationAct, Comodule.mulCoact_antipodeShear_coact]
 
 omit [IsRelativeHopfModule R H A N] [IsScalarTower R B N] in
 private theorem galoisMapInv_mulCoact (h : H) (m : N) :
-    galoisMapInv N hβ (mulCoact R H N (h ⊗ₜ m)) = translationAct N hβ (h ⊗ₜ m) := by
-  simp only [galoisMapInv, LinearMap.comp_apply, shear_mulCoact]
+    galoisMapInv N hβ (Comodule.mulCoact R H N (h ⊗ₜ m)) = translationAct N hβ (h ⊗ₜ m) := by
+  simp only [galoisMapInv, LinearMap.comp_apply, Comodule.antipodeShear_mulCoact]
 
 /-- `h ⊗ x ↦ β⁻¹(1 ⊗ h) (1 ⊗ x)`. -/
 private noncomputable def untwist : H ⊗[R] A →ₗ[R] A ⊗[B] A :=
@@ -417,21 +336,22 @@ private theorem untwist_tmul (h : H) (x : A) :
   (rfl)
 
 private theorem galoisMap_untwist (t : H ⊗[R] A) :
-    ComoduleAlgebra.galoisMap B hB (untwist hβ t) = mulCoact R H A t := by
+    ComoduleAlgebra.galoisMap B hB (untwist hβ t) = Comodule.mulCoact R H A t := by
   induction t with
   | add t t' ht ht' => simp only [map_add, ht, ht']
   | tmul h x =>
     rw [untwist_tmul, map_mul, galoisMap_translation, ComoduleAlgebra.galoisMap_tmul,
-      ← Algebra.TensorProduct.one_def, one_mul, mulCoact_tmul]
+      ← Algebra.TensorProduct.one_def, one_mul, Comodule.mulCoact_tmul]
     induction Comodule.coact (R := R) (C := H) x with
     | add w w' hw hw' => simp only [mul_add, map_add, hw, hw']
     | tmul y h' => simp
 
 /-- The element `a ⊗ 1` of `A ⊗[B] A` is `∑ β⁻¹(1 ⊗ S a₁) (1 ⊗ a₀)`. -/
-private theorem untwist_shear_coact (a : A) :
-    untwist hβ (shear R H A (Comodule.coact (R := R) (C := H) a ⊗ₜ 1)) = a ⊗ₜ[B] (1 : A) := by
+private theorem untwist_antipodeShear_coact (a : A) :
+    untwist hβ (Comodule.antipodeShear R H A (Comodule.coact (R := R) (C := H) a ⊗ₜ 1)) =
+      a ⊗ₜ[B] (1 : A) := by
   apply hβ.1
-  rw [galoisMap_untwist, mulCoact_shear_coact, ComoduleAlgebra.galoisMap_tmul,
+  rw [galoisMap_untwist, Comodule.mulCoact_antipodeShear_coact, ComoduleAlgebra.galoisMap_tmul,
     ComoduleAlgebra.coact_one, mul_one]
 
 omit [IsRelativeHopfModule R H A N] [IsScalarTower R B N] in
@@ -452,7 +372,7 @@ private theorem galoisMapInv_surjective : Function.Surjective (galoisMapInv N h�
   | tmul a n =>
     have h : a ⊗ₜ[B] n = actOne R B N ((a ⊗ₜ[B] (1 : A)) ⊗ₜ[R] n) := by
       rw [actOne_tmul, one_smul]
-    rw [h, ← untwist_shear_coact hβ]
+    rw [h, ← untwist_antipodeShear_coact hβ]
     exact key n _
 
 include hβ in
