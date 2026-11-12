@@ -372,7 +372,7 @@ theorem sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq {ι : Type*} [Fintype ι]
   have hint (g : 𝓢(E, F)) : Integrable (fun ξ ↦ ‖𝓕 g ξ‖ ^ 2) :=
     ((𝓕 g).memLp 2).integrable_norm_pow two_ne_zero
   simp only [hF]
-  simp_rw [← integral_finsetSum _ fun i _ ↦ hint _]
+  simp_rw [← integral_finsetSum _ fun _ _ ↦ hint _]
   rw [← integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint _]
   refine integral_congr_ae (Filter.Eventually.of_forall fun ξ ↦ ?_)
   have hsum : ∑ i, ∑ j, (⟪ξ, b i⟫ * ⟪ξ, b j⟫) ^ 2 = (‖ξ‖ ^ 2) ^ 2 := by

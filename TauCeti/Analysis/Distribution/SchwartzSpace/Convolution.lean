@@ -39,8 +39,8 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
   `SchwartzMap.convolution` with `𝓕⁻ σ`.
 * `SchwartzMap.fourierMultiplierCLM_apply_eq_integral`: the same, pointwise, as an integral.
 * `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`: the `Lᵖ` bound `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
-* `SchwartzMap.integrable_fourierInv_sub_smul`: for `u ∈ L²`, the convolution integral
-  `∫ 𝓕⁻ σ (x - y) • u y` converges absolutely at every `x`.
+* `SchwartzMap.integrable_sub_smul`: for a Schwartz function `f` and `u ∈ Lᵖ`, `1 ≤ p ≤ ∞`, the
+  convolution integral `∫ f (x - y) • u y` converges absolutely at every `x`.
 * `SchwartzMap.integrable_uncurry_sub_smul_smul`: for `u ∈ Lᵖ` and `v ∈ L^q`, the integrand
   `(x, y) ↦ (ψ (x - y) • u y) • (θ x • v x)` is integrable on `E × E`.
 * `SchwartzMap.fourierInv_convolution`: the inverse Fourier transform of a convolution is the
@@ -97,14 +97,17 @@ theorem eLpNorm_fourierMultiplierCLM_le (σ : 𝓢(E, ℂ)) (φ : 𝓢(E, F)) {p
     φ.continuous.aestronglyMeasurable hp).trans ?_
   grw [opENorm_lsmul_le, one_mul]
 
-/-- The convolution integral of an `L²` function against the inverse Fourier transform of a
-Schwartz function converges absolutely at every point. -/
-theorem integrable_fourierInv_sub_smul {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
-    (σ : 𝓢(E, ℂ)) (u : Lp G 2 (volume : Measure E)) (x : E) :
-    Integrable (fun y ↦ 𝓕⁻ σ (x - y) • u y) := by
-  have hK : MemLp (fun y ↦ 𝓕⁻ σ (x - y)) 2 volume :=
-    ((𝓕⁻ σ).memLp 2 volume).comp_measurePreserving (volume.measurePreserving_sub_left x)
-  exact memLp_one_iff_integrable.1 (hK.smul (Lp.memLp u))
+/-- The convolution integral of an `Lᵖ` function, `1 ≤ p ≤ ∞`, against a Schwartz function
+converges absolutely at every point. -/
+theorem integrable_sub_smul {𝕜 V G : Type*} [NormedField 𝕜] [NormedSpace ℝ 𝕜]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V]
+    [BorelSpace V] [NormedAddCommGroup G] [NormedSpace 𝕜 G] {μ : Measure V} [μ.IsAddHaarMeasure]
+    (f : 𝓢(V, 𝕜)) {p : ℝ≥0∞} (hp : 1 ≤ p) {u : V → G} (hu : MemLp u p μ) (x : V) :
+    Integrable (fun y ↦ f (x - y) • u y) μ := by
+  have := ENNReal.HolderConjugate.conjExponent hp
+  have hf : MemLp (fun y ↦ f (x - y)) p.conjExponent μ :=
+    (f.memLp _ μ).comp_measurePreserving (μ.measurePreserving_sub_left x)
+  exact memLp_one_iff_integrable.1 (hf.smul hu)
 
 omit [CompleteSpace F] in
 /-- For Schwartz functions `ψ`, `θ` and `u ∈ Lᵖ`, `v ∈ L^q` with `1 ≤ p, q`, the integrand

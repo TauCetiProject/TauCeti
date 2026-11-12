@@ -60,10 +60,8 @@ itself are those pinned in `TauCeti.Hodge.IsPolarization`.
 * `TauCeti.Hodge.IsPolarization.comp`: positive definiteness makes a polarizing form pull back to a
   polarizing form along an injective morphism of Hodge structures.
 
-This is the Hermitian carrier targeted in Layer L1 of
-`TauCetiRoadmap/HodgeStructures/README.md`, the form through which the polarization is used in
-Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink, *Mixed
-Hodge Structures*, §2.
+The Hodge form is the form through which the polarization is used in Voisin, *Hodge Theory and
+Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink, *Mixed Hodge Structures*, §2.
 -/
 
 public section
