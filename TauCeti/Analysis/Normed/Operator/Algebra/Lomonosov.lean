@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Normed.Operator.Algebra.Transitive
 public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
 public import Mathlib.Analysis.Complex.Basic
 import TauCeti.Analysis.Convex.SchauderFixedPoint
-import Mathlib.Analysis.Convex.PartitionOfUnity
-import Mathlib.Topology.EMetricSpace.Paracompact
 import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
@@ -50,8 +48,9 @@ Choose `x₀` with `K x₀ ≠ 0` and a closed ball `B = closedBall x₀ ρ` on 
 above `‖K x₀‖ / 2`. The closure `S` of `K '' B` is compact and avoids `0`, so by transitivity it
 is covered by finitely many open sets `{y | a y ∈ ball x₀ ρ}`, `a ∈ A`. Averaging the `a (K x)`
 with a partition of unity on `S` subordinate to this cover defines a continuous map of `B` into
-itself whose image has compact closure. Its Schauder fixed point `x` is nonzero, and the
-corresponding real combination of the chosen `a` lies in `A` and sends `K x` to `x`.
+itself whose image has compact closure. Its Schauder fixed point `x`
+(`TauCeti.exists_sum_smul_apply_apply_eq_self`) is nonzero, and the corresponding real
+combination of the chosen `a` lies in `A` and sends `K x` to `x`.
 
 ## References
 
@@ -67,41 +66,6 @@ open Metric Set Module End
 namespace Subalgebra
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-/-- The fixed-point step of Lomonosov's lemma: if finitely many operators `f i` send every point
-of a compact set `S ⊇ K '' closedBall x₀ ρ` into `ball x₀ ρ`, then some `x` in the closed ball is
-a real combination of the vectors `f i (K x)`. -/
-private theorem exists_eq_sum_smul_apply_apply {ι : Type*} [Fintype ι] (f : ι → E →L[𝕜] E)
-    {K : E →L[𝕜] E} (hK : Continuous K) {S : Set E} (hS : IsCompact S) {x₀ : E} {ρ : ℝ}
-    (hρ : 0 ≤ ρ) (hKS : MapsTo K (closedBall x₀ ρ) S) (hcover : S ⊆ ⋃ i, f i ⁻¹' ball x₀ ρ) :
-    ∃ x ∈ closedBall x₀ ρ, ∃ c : ι → ℝ, ∑ i, (c i : 𝕜) • f i (K x) = x := by
-  let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
-  have : IsScalarTower ℝ 𝕜 E := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  -- A partition of unity `w` on `S` subordinate to the cover averages the `f i` into a
-  -- continuous self-map `Ψ` of the closed ball.
-  obtain ⟨w, hw⟩ := PartitionOfUnity.exists_isSubordinate hS.isClosed
-    (fun i ↦ f i ⁻¹' ball x₀ ρ) (fun i ↦ isOpen_ball.preimage (f i).continuous) hcover
-  set Ψ : E → E := fun x ↦ ∑ᶠ i, w i (K x) • f i (K x)
-  have hΨc : ContinuousOn Ψ (closedBall x₀ ρ) :=
-    ((w.continuous_finsum_smul fun i _ _ ↦ (f i).continuous.continuousAt).comp hK).continuousOn
-  have hΨB : MapsTo Ψ (closedBall x₀ ρ) (closedBall x₀ ρ) := fun x hx ↦
-    w.finsum_smul_mem_convex (g := fun i y ↦ f i y) (hKS hx)
-      (fun i hi ↦ ball_subset_closedBall (hw i (subset_tsupport _ hi))) (convex_closedBall x₀ ρ)
-  -- The image of `Ψ` lies in the compact image of `[0, 1]^ι × S` under `F`.
-  set F : (ι → ℝ) × E → E := fun p ↦ ∑ i, p.1 i • f i p.2
-  have hΨK : IsCompact (closure (Ψ '' closedBall x₀ ρ)) := by
-    have hcpt : IsCompact (F '' (univ.pi (fun _ : ι ↦ Icc (0 : ℝ) 1) ×ˢ S)) :=
-      ((isCompact_univ_pi fun _ ↦ isCompact_Icc).prod hS).image (by fun_prop)
-    refine hcpt.of_isClosed_subset isClosed_closure (closure_minimal ?_ hcpt.isClosed)
-    rintro _ ⟨x, hx, rfl⟩
-    exact ⟨(fun i ↦ w i (K x), K x), ⟨fun i _ ↦ ⟨w.nonneg i _, w.le_one i _⟩, hKS hx⟩,
-      (finsum_eq_sum_of_fintype _).symm⟩
-  obtain ⟨x, hxB, hfix⟩ := TauCeti.schauderFixedPoint_closedConvex_continuousOn isClosed_closedBall
-    (convex_closedBall x₀ ρ) (nonempty_closedBall.2 hρ) hΨc hΨB hΨK
-  refine ⟨x, hxB, fun i ↦ w i (K x), ?_⟩
-  calc ∑ i, (w i (K x) : 𝕜) • f i (K x) = Ψ x := by
-        simp only [Ψ, finsum_eq_sum_of_fintype, RCLike.real_smul_eq_coe_smul (K := 𝕜)]
-    _ = x := hfix
 
 /-- **Lomonosov's lemma**: for a transitive unital algebra `A` of continuous linear operators on a
 real or complex normed space and a nonzero compact operator `K`, some `a ∈ A` and some nonzero `x`
@@ -136,19 +100,24 @@ theorem IsTransitive.exists_apply_apply_eq_self {A : Subalgebra 𝕜 (E →L[�
     exact mem_iUnion.2 ⟨a, by rwa [mem_preimage, mem_ball, dist_comm]⟩
   obtain ⟨t, ht⟩ := hScpt.elim_finite_subcover (fun a : A ↦ (a : E →L[𝕜] E) ⁻¹' ball x₀ ρ)
     (fun a ↦ isOpen_ball.preimage (a : E →L[𝕜] E).continuous) hcover
-  -- The fixed-point step gives `x` and a real combination `a` of the chosen operators.
-  obtain ⟨x, hxB, c, hc⟩ := exists_eq_sum_smul_apply_apply (fun i : t ↦ ((i : A) : E →L[𝕜] E))
-    K.continuous hScpt hρ0.le (fun x hx ↦ subset_closure (mem_image_of_mem K hx))
+  -- The fixed-point step, over `ℝ`, gives `x` and a real combination `a` of the chosen operators.
+  let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  have : IsScalarTower ℝ 𝕜 E := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  obtain ⟨x, hxB, c, -, -, hc⟩ := TauCeti.exists_sum_smul_apply_apply_eq_self isClosed_closedBall
+    (convex_closedBall x₀ ρ) (nonempty_closedBall.2 hρ0.le)
+    (f := fun i : t ↦ ((i : A) : E →L[𝕜] E)) (fun i ↦ ((i : A) : E →L[𝕜] E).continuous)
+    K.continuous.continuousOn hScpt (fun x hx ↦ subset_closure (mem_image_of_mem K hx))
     (fun y hy ↦ by
       obtain ⟨a, ha, hya⟩ := mem_iUnion₂.1 (ht hy)
-      exact mem_iUnion.2 ⟨⟨a, ha⟩, hya⟩)
+      exact mem_iUnion.2 ⟨⟨a, ha⟩, ball_subset_interior_closedBall hya⟩)
   refine ⟨∑ i : t, (c i : 𝕜) • ((i : A) : E →L[𝕜] E),
     A.sum_mem fun i _ ↦ A.smul_mem (i : A).2 _, x, ?_, ?_⟩
   · rintro rfl
     have h := hlow hxB
     rw [map_zero, norm_zero] at h
     linarith
-  · simpa only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply] using hc
+  · simpa only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply,
+      RCLike.real_smul_eq_coe_smul (K := 𝕜)] using hc
 
 end Subalgebra
 
