@@ -44,11 +44,17 @@ variable (𝕜) in
 def differentialOneForm (f : V → F) : V → V [⋀^Fin 1]→L[𝕜] F :=
   fun x ↦ ofSubsingletonLIE (0 : Fin 1) (fderiv 𝕜 f x)
 
-/-- Evaluating the one-form `df` on a vector agrees with evaluating the Fréchet differential. -/
+/-- The one-form `df` at `x` is the Fréchet differential of `f` at `x`, viewed as a one-form. -/
+lemma differentialOneForm_def (f : V → F) :
+    differentialOneForm 𝕜 f = fun x ↦ ofSubsingletonLIE (0 : Fin 1) (fderiv 𝕜 f x) :=
+  (rfl)
+
+/-- Evaluating the one-form `df` on a one-element family of vectors agrees with evaluating the
+Fréchet differential on its only vector. -/
 @[simp]
-lemma differentialOneForm_apply (f : V → F) (x v : V) :
-    differentialOneForm 𝕜 f x (fun _ ↦ v) = fderiv 𝕜 f x v := by
-  simp [differentialOneForm]
+lemma differentialOneForm_apply (f : V → F) (x : V) (v : Fin 1 → V) :
+    differentialOneForm 𝕜 f x v = fderiv 𝕜 f x (v 0) := by
+  simp [differentialOneForm_def]
 
 /-- The one-form `df` is the exterior derivative of the zero-form associated to `f`. -/
 lemma differentialOneForm_eq_extDeriv (f : V → F) :
@@ -56,30 +62,34 @@ lemma differentialOneForm_eq_extDeriv (f : V → F) :
       extDeriv (fun x ↦ constOfIsEmpty 𝕜 V (Fin 0) (f x)) := by
   funext x
   rw [extDeriv_constOfIsEmpty]
-  simp [differentialOneForm]
+  simp [differentialOneForm_def]
 
 /-- The differential one-form is differentiable at `x` exactly when the derivative of `f` is. -/
+@[simp]
 lemma differentiableAt_differentialOneForm_iff {f : V → F} {x : V} :
     DifferentiableAt 𝕜 (differentialOneForm 𝕜 f) x ↔ DifferentiableAt 𝕜 (fderiv 𝕜 f) x :=
   (ofSubsingletonLIE (𝕜 := 𝕜) (E := V) (F := F) (0 : Fin 1)).comp_differentiableAt_iff
+
+/-- The derivative of `df` is the second derivative of `f`, transported along the identification
+of continuous linear maps with one-forms. This holds whether or not `fderiv 𝕜 f` is
+differentiable, since `df` is `fderiv 𝕜 f` composed with a linear isometry equivalence. -/
+lemma fderiv_differentialOneForm (f : V → F) (x : V) :
+    fderiv 𝕜 (differentialOneForm 𝕜 f) x =
+      (ofSubsingletonLIE (𝕜 := 𝕜) (E := V) (F := F) (0 : Fin 1) : _ →L[𝕜] _).comp
+        (fderiv 𝕜 (fderiv 𝕜 f) x) := by
+  rw [differentialOneForm_def]
+  exact LinearIsometryEquiv.comp_fderiv _
 
 /-- The exterior derivative of `df` vanishes at every point where the second derivative of `f` is
 symmetric; no differentiability of `df` is needed. -/
 lemma extDeriv_differentialOneForm_apply_eq_zero {f : V → F} {x : V}
     (hf : IsSymmSndFDerivAt 𝕜 f x) :
     extDeriv (differentialOneForm 𝕜 f) x = 0 := by
-  -- `df` is `fderiv 𝕜 f` composed with a linear isometry equivalence, so its derivative is the
-  -- second derivative of `f`, whether or not that exists.
-  have hd : fderiv 𝕜 (differentialOneForm 𝕜 f) x =
-      (ofSubsingletonLIE (𝕜 := 𝕜) (E := V) (F := F) (0 : Fin 1) : _ →L[𝕜] _).comp
-        (fderiv 𝕜 (fderiv 𝕜 f) x) := by
-    unfold differentialOneForm
-    exact LinearIsometryEquiv.comp_fderiv _
   ext v
   have hv : v = ![v 0, v 1] := by
     funext i
     fin_cases i <;> rfl
-  conv_lhs => rw [hv, extDeriv_apply_pair, hd]
+  conv_lhs => rw [hv, extDeriv_apply_pair, fderiv_differentialOneForm]
   simp [hf.eq (v 0) (v 1)]
 
 /-- If `f` is `C^n` and `m + 1 ≤ n`, then its differential one-form is `C^m`. -/
