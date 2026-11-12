@@ -39,7 +39,9 @@ area of a closed loop is the symplectic area of the cone `r x(t)` bounding it
 vanishes when `u` vanishes on the edges `s = a` and `s = b` of the rectangle, which is
 `TauCeti.SymplecticForm.integral_symplecticForm_fderiv_Icc_prod_Icc_eq_zero`.
 Reparametrizing one period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its
-area over `[-π, π]` (`TauCeti.SymplecticForm.loopArea_comp_sub_mul`).
+area over `[-π, π]` (`TauCeti.SymplecticForm.loopArea_comp_sub_mul`); in particular a circle
+traversed clockwise has minus the loop area of the counterclockwise circle
+(`TauCeti.SymplecticForm.loopArea_comp_circleMap_sub_mul`).
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
 Pairing bounded loops with functions whose norms have vanishing mean over `[0, 1]` gives
@@ -205,6 +207,18 @@ theorem loopArea_comp_add_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
   rw [h, intervalIntegral.integral_neg,
     intervalIntegral.integral_comp_neg (fun θ ↦ ω (g θ) (deriv g θ)), neg_neg]
   ring
+
+/-- **The loop area of a circle traversed clockwise.** The loop `t ↦ u(c + r e^{i(θ₀ - 2πt)})`,
+which runs once clockwise around the circle of radius `r` about `c`, has minus the loop area of
+the counterclockwise loop `t ↦ u(c + r e^{2πit})`. -/
+theorem loopArea_comp_circleMap_sub_mul (ω : SymplecticForm V) (u : ℂ → V) (c : ℂ) (r θ₀ : ℝ) :
+    ω.loopArea (fun t ↦ u (circleMap c r (θ₀ - 2 * π * t))) =
+      -ω.loopArea (fun t ↦ u (circleMap c r (2 * π * t))) := by
+  have hg : Function.Periodic (fun θ ↦ u (circleMap c r θ)) (2 * π) :=
+    (periodic_circleMap c r).comp u
+  have h := ω.loopArea_comp_add_mul hg 0
+  simp only [zero_add] at h
+  rw [ω.loopArea_comp_sub_mul hg θ₀, h]
 
 /-- **The loop area of a loop traversed backwards.** If `x` is `1`-periodic, the loop
 `t ↦ x(-t)` has the opposite loop area. -/

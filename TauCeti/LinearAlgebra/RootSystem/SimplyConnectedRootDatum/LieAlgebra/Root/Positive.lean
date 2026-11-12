@@ -41,6 +41,7 @@ open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid}
+
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
 variable (M : AddSubgroup V)
@@ -83,13 +84,7 @@ theorem map_iSup_posRoots_chevalleyRootSubgroup_conj_kostantWeylGL
     (chevalleyRootSubgroup ρ M hM hnil
       ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
         (t.simpleIndex ht i)) A).range := by
-  have hsplit : posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
-      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i}) ∪
-        {t.simpleIndex ht i} := by
-    exact (Set.sdiff_union_of_subset (Set.singleton_subset_iff.mpr
-      ((mem_posRoots _ _ _).mpr
-        (RootPairing.Base.isPos_of_mem_support (simpleIndex_mem_support i))))).symm
-  conv_lhs => rw [hsplit, iSup_union]
+  conv_lhs => rw [posRoots_eq_diff_union_simpleIndex i, iSup_union]
   simp only [iSup_singleton, Subgroup.map_sup,
     map_range_chevalleyRootSubgroup_conj_kostantWeylGL,
     (Subgroup.mem_normalizer_iff_map_conj_eq.mp
