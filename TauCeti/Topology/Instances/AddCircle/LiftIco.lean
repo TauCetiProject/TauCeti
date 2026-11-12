@@ -45,21 +45,13 @@ theorem liftIco_coe_apply_of_mem_Icc (hf : f a = f (a + p)) {x : 𝕜} (hx : x �
     exact liftIoc_coe_apply ⟨lt_add_of_pos_right a hp.out, le_rfl⟩
 
 /-- The range of the lift of `f` to `AddCircle p` is the image of `[a, a + p)` under `f`. -/
-theorem range_liftIco : range (liftIco p a f) = f '' Ico a (a + p) := by
+@[simp] theorem range_liftIco : range (liftIco p a f) = f '' Ico a (a + p) := by
   rw [← image_univ, ← coe_image_Ico_eq p a, image_image]
   exact image_congr fun _ hx ↦ liftIco_coe_apply hx
 
 /-- The lift of `f` to `AddCircle p` is injective exactly when `f` is injective on the
 fundamental interval `[a, a + p)`. -/
-theorem injective_liftIco_iff : Injective (liftIco p a f) ↔ InjOn f (Ico a (a + p)) := by
-  refine ⟨fun h x hx y hy hxy ↦ ?_, fun h x y hxy ↦ ?_⟩
-  · rw [← liftIco_coe_apply (f := f) hx, ← liftIco_coe_apply (f := f) hy] at hxy
-    exact (coe_eq_coe_iff_of_mem_Ico hx hy).1 (h hxy)
-  · obtain ⟨s, hs, rfl⟩ : ∃ s ∈ Ico a (a + p), (s : AddCircle p) = x :=
-      ⟨equivIco p a x, (equivIco p a x).2, coe_equivIco⟩
-    obtain ⟨t, ht, rfl⟩ : ∃ t ∈ Ico a (a + p), (t : AddCircle p) = y :=
-      ⟨equivIco p a y, (equivIco p a y).2, coe_equivIco⟩
-    rw [liftIco_coe_apply hs, liftIco_coe_apply ht] at hxy
-    rw [h hs ht hxy]
+@[simp] theorem injective_liftIco_iff : Injective (liftIco p a f) ↔ InjOn f (Ico a (a + p)) := by
+  exact ((equivIco p a).injective_comp _).trans Set.injOn_iff_injective.symm
 
 end AddCircle
