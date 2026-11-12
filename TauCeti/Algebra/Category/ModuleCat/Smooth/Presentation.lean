@@ -36,11 +36,6 @@ namespace TauCeti
 
 variable {A : Type*} [Ring A] {ι : Type*} {J : ι → Submodule A A}
 
-/-- The index type of a family of ideals with a smooth module is nonempty, since the zero vector
-is annihilated by some ideal of the family. -/
-theorem nonempty_of_smoothModules {M : ModuleCat A} (hM : smoothModules J M) : Nonempty ι :=
-  ⟨(smoothModules_iff.1 hM 0).choose⟩
-
 /-- Finitely many vectors of a smooth module have a common annihilating ideal in a
 downward directed family. This does not assert a uniform annihilator for the
 whole module. -/
