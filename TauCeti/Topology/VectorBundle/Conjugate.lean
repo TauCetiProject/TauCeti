@@ -40,7 +40,7 @@ boundary condition.
   Colloquium Publications **52**, 2012, Appendix C.3.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -64,7 +64,8 @@ instance instTopologicalSpaceTotalSpace :
 
 /-- The identity of total spaces, `E → ConjugateBundle E`, as a homeomorphism covering the
 identity of the base. -/
-def toConjHomeomorph : TotalSpace F E ≃ₜ TotalSpace (Conjugate F) (ConjugateBundle E) where
+@[expose] def toConjHomeomorph :
+    TotalSpace F E ≃ₜ TotalSpace (Conjugate F) (ConjugateBundle E) where
   toFun p := ⟨p.proj, toConj p.2⟩
   invFun p := ⟨p.proj, ofConj p.2⟩
   left_inv _ := rfl
@@ -87,7 +88,8 @@ variable {F E}
 `TauCeti.Conjugate.toConjL`. -/
 theorem toConjHomeomorph_mk [∀ x, AddCommGroup (E x)] [∀ x, Module ℂ (E x)]
     [∀ x, TopologicalSpace (E x)] (x : B) (v : E x) :
-    toConjHomeomorph F E ⟨x, v⟩ = ⟨x, toConjL v⟩ := rfl
+    toConjHomeomorph F E ⟨x, v⟩ = ⟨x, toConjL v⟩ := by
+  rw [toConjHomeomorph_apply, coe_toConjL]
 
 end ConjugateBundle
 
@@ -100,12 +102,12 @@ variable [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E : B → Type*}
 
 /-- A trivialization of `E`, read as a trivialization of the conjugate bundle with model fibre
 `Conjugate F`. -/
-def _root_.Bundle.Trivialization.conjugate (e : Trivialization F (π F E)) :
+@[expose] def _root_.Bundle.Trivialization.conjugate (e : Trivialization F (π F E)) :
     Trivialization (Conjugate F) (π (Conjugate F) (ConjugateBundle E)) :=
   e
 
 @[simp] theorem _root_.Bundle.Trivialization.baseSet_conjugate (e : Trivialization F (π F E)) :
-    e.conjugate.baseSet = e.baseSet := rfl
+    e.conjugate.baseSet = e.baseSet := (rfl)
 
 @[simp] theorem _root_.Bundle.Trivialization.source_conjugate (e : Trivialization F (π F E)) :
     e.conjugate.source = toConjHomeomorph F E '' e.source :=
@@ -117,7 +119,7 @@ theorem _root_.Bundle.Trivialization.conjugate_apply (e : Trivialization F (π F
     (p : TotalSpace (Conjugate F) (ConjugateBundle E)) :
     e.conjugate p =
       ((e ((toConjHomeomorph F E).symm p)).1, toConj (e ((toConjHomeomorph F E).symm p)).2) :=
-  rfl
+  (rfl)
 
 theorem _root_.Bundle.Trivialization.conjugate_injective :
     Function.Injective (Trivialization.conjugate : Trivialization F (π F E) → _) :=
@@ -139,7 +141,7 @@ instance instFiberBundle : FiberBundle (Conjugate F) (ConjugateBundle E) :=
 
 @[simp] theorem trivializationAt_eq (x : B) :
     trivializationAt (Conjugate F) (ConjugateBundle E) x = (trivializationAt F E x).conjugate :=
-  rfl
+  (rfl)
 
 @[simp] theorem conjugate_mem_trivializationAtlas_iff {e : Trivialization F (π F E)} :
     e.conjugate ∈ trivializationAtlas (Conjugate F) (ConjugateBundle E) ↔
@@ -167,8 +169,8 @@ instance _root_.Bundle.Trivialization.instIsLinearConjugate (e : Trivialization 
   linear b hb :=
     { map_add v w := (e.linear ℂ hb).map_add (ofConj v) (ofConj w)
       map_smul c v := by
-        change toConj (e ⟨b, ofConj (c • v)⟩).2 = c • toConj (e ⟨b, ofConj v⟩).2
-        rw [ofConj_smul, (e.linear ℂ hb).map_smul, toConj_smul, Complex.conj_conj] }
+        simp only [Trivialization.conjugate_apply, toConjHomeomorph_symm_apply, ofConj_smul,
+          (e.linear ℂ hb).map_smul, toConj_smul, Complex.conj_conj] }
 
 /-- The coordinate changes of the conjugate bundle are the conjugates of those of `E`. -/
 theorem _root_.Bundle.Trivialization.coordChangeL_conjugate (e e' : Trivialization F (π F E))
@@ -230,11 +232,21 @@ def conjugateConjugateHomeomorph :
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
+variable {F E}
+
+@[simp] theorem conjugateConjugateHomeomorph_apply
+    (p : TotalSpace (Conjugate (Conjugate F)) (ConjugateBundle (ConjugateBundle E))) :
+    conjugateConjugateHomeomorph F E p = ⟨p.proj, ofConj (ofConj p.2)⟩ := (rfl)
+
+@[simp] theorem conjugateConjugateHomeomorph_symm_apply (p : TotalSpace F E) :
+    (conjugateConjugateHomeomorph F E).symm p = ⟨p.proj, toConj (toConj p.2)⟩ := (rfl)
+
 /-- On each fibre, the identification of the double conjugate with `E` is the complex-linear
 equivalence `TauCeti.Conjugate.conjugateConjugateL`. -/
 theorem conjugateConjugateHomeomorph_mk [∀ x, AddCommGroup (E x)] [∀ x, Module ℂ (E x)]
     [∀ x, TopologicalSpace (E x)] (x : B) (v : Conjugate (Conjugate (E x))) :
-    conjugateConjugateHomeomorph F E ⟨x, v⟩ = ⟨x, conjugateConjugateL v⟩ := rfl
+    conjugateConjugateHomeomorph F E ⟨x, v⟩ = ⟨x, conjugateConjugateL v⟩ := by
+  rw [conjugateConjugateHomeomorph_apply, conjugateConjugateL_apply]
 
 end DoubleConjugate
 
@@ -254,12 +266,24 @@ def prodHomeomorph :
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
+variable {F₁ E₁ F₂ E₂}
+
+@[simp] theorem prodHomeomorph_apply
+    (p : TotalSpace (Conjugate (F₁ × F₂)) (ConjugateBundle (E₁ ×ᵇ E₂))) :
+    prodHomeomorph F₁ E₁ F₂ E₂ p = ⟨p.proj, (toConj (ofConj p.2).1, toConj (ofConj p.2).2)⟩ :=
+  (rfl)
+
+@[simp] theorem prodHomeomorph_symm_apply
+    (p : TotalSpace (Conjugate F₁ × Conjugate F₂) (ConjugateBundle E₁ ×ᵇ ConjugateBundle E₂)) :
+    (prodHomeomorph F₁ E₁ F₂ E₂).symm p = ⟨p.proj, toConj (ofConj p.2.1, ofConj p.2.2)⟩ := (rfl)
+
 /-- On each fibre, the identification of the conjugate of a direct sum is the complex-linear
 equivalence `TauCeti.Conjugate.prodL`. -/
 theorem prodHomeomorph_mk [∀ x, AddCommGroup (E₁ x)] [∀ x, Module ℂ (E₁ x)]
     [∀ x, TopologicalSpace (E₁ x)] [∀ x, AddCommGroup (E₂ x)] [∀ x, Module ℂ (E₂ x)]
     [∀ x, TopologicalSpace (E₂ x)] (x : B) (v : Conjugate (E₁ x × E₂ x)) :
-    prodHomeomorph F₁ E₁ F₂ E₂ ⟨x, v⟩ = ⟨x, prodL v⟩ := rfl
+    prodHomeomorph F₁ E₁ F₂ E₂ ⟨x, v⟩ = ⟨x, prodL v⟩ := by
+  rw [prodHomeomorph_apply, prodL_apply]
 
 end Prod
 

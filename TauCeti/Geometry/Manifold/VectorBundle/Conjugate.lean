@@ -18,13 +18,13 @@ vector bundle structure and its trivializations are those of `E`. The identity o
 then a `C^n` diffeomorphism covering the identity of the base and conjugate-linear on each fibre
 (`TauCeti.ConjugateBundle.toConjDiffeomorph`).
 
-Over a complex base the conjugate of a holomorphic bundle is not holomorphic: its coordinate
-changes are the complex conjugates of those of `E`. Smoothness is therefore only asserted over a
-real base, which is the setting of the doubled bundle of a bundle pair over a bordered Riemann
-surface.
+Over a complex base, the coordinate changes of the conjugate are the complex conjugates of those
+of `E`, so conjugation does not in general preserve holomorphicity over the same complex base.
+Smoothness is therefore only asserted over a real base, which is the setting of the doubled bundle
+of a bundle pair over a bordered Riemann surface.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -56,9 +56,9 @@ def toConjDiffeomorph :
   contMDiff_invFun := contMDiff_id
 
 @[simp] theorem toConjDiffeomorph_apply (p : TotalSpace F E) :
-    toConjDiffeomorph IB n F E p = toConjHomeomorph F E p := rfl
+    toConjDiffeomorph IB n F E p = toConjHomeomorph F E p := (rfl)
 
 @[simp] theorem toConjDiffeomorph_symm_apply (p : TotalSpace (Conjugate F) (ConjugateBundle E)) :
-    (toConjDiffeomorph IB n F E).symm p = (toConjHomeomorph F E).symm p := rfl
+    (toConjDiffeomorph IB n F E).symm p = (toConjHomeomorph F E).symm p := (rfl)
 
 end TauCeti.ConjugateBundle

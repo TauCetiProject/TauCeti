@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Analysis.Complex.Basic
-public import TauCeti.LinearAlgebra.TotallyReal.Complex
+public import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
 # The complex conjugate of a complex vector space
@@ -21,8 +21,9 @@ conjugate-linear map `V → W` becomes a complex-linear map `V → Conjugate W`
 (`LinearMap.toConjugate`), conjugating twice gives back `V`, and conjugation commutes with
 products.
 
-Totally real subspaces only see the real structure and the multiplication by `i` up to sign, so
-a real subspace of `V` is (maximal) totally real exactly when it is so in `Conjugate V`.
+A real subspace of `V` is read as a real subspace of `Conjugate V` (`Submodule.conjugate`); the
+totally real subspaces of `V` and `Conjugate V` correspond under it
+(`TauCeti.Analysis.Normed.Module.Conjugate.TotallyReal`).
 
 ## Design
 
@@ -46,19 +47,16 @@ non-definitionally-equal real module structures on `Conjugate V` when the scalar
   `TauCeti.Conjugate.ofConj`.
 * `TauCeti.Conjugate.toConjₗ`, `TauCeti.Conjugate.toConjL`: the identity as a conjugate-linear
   (continuous) equivalence; `TauCeti.Conjugate.toConjL'` is the identity as a real-linear one.
-* `LinearMap.toConjugate`: a conjugate-linear map as a complex-linear map into the conjugate;
-  for the conjugation of a maximal totally real subspace it agrees with the identity exactly on
-  that subspace (`LinearMap.toConjugate_conjugationOfMaximalTotallyReal_eq_iff`).
+* `LinearMap.toConjugate`: a conjugate-linear map as a complex-linear map into the conjugate.
 * `ContinuousLinearMap.conjugate`: the conjugate of a continuous complex-linear map, an isometry.
 * `TauCeti.Conjugate.conjugateConjugateL`: `Conjugate (Conjugate V) ≃L[ℂ] V`.
 * `TauCeti.Conjugate.prodL`: `Conjugate (V × W) ≃L[ℂ] Conjugate V × Conjugate W`.
-* `Submodule.conjugate`, `Submodule.isMaximalTotallyReal_conjugate_iff`: a real subspace is
-  maximal totally real in `V` exactly when it is so in `Conjugate V`.
+* `Submodule.conjugate`: a real subspace of `V`, read as a real subspace of `Conjugate V`.
 * `TauCeti.Conjugate.complexConjL`: complex conjugation is a complex-linear isomorphism
   `ℂ ≃L[ℂ] Conjugate ℂ`; it agrees with the identity exactly on the real line.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -68,17 +66,17 @@ namespace TauCeti
 
 /-- The complex conjugate of a complex module `V`: the same additive group, real structure,
 topology and norm, with complex scalars acting through complex conjugation. -/
-def Conjugate (V : Type*) : Type _ := V
+@[expose] def Conjugate (V : Type*) : Type _ := V
 
 namespace Conjugate
 
 variable {V W : Type*}
 
 /-- The identity map from `V` to its conjugate. -/
-def toConj : V ≃ Conjugate V := Equiv.refl _
+@[expose] def toConj : V ≃ Conjugate V := Equiv.refl _
 
 /-- The identity map from the conjugate of `V` to `V`. -/
-def ofConj : Conjugate V ≃ V := Equiv.refl _
+@[expose] def ofConj : Conjugate V ≃ V := Equiv.refl _
 
 @[simp] theorem toConj_symm : (toConj : V ≃ Conjugate V).symm = ofConj := rfl
 @[simp] theorem ofConj_symm : (ofConj : Conjugate V ≃ V).symm = toConj := rfl
@@ -123,9 +121,9 @@ def toConjₗ' [Module ℝ V] : V ≃ₗ[ℝ] Conjugate V where
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
-@[simp] theorem coe_toConjₗ' [Module ℝ V] : ⇑(toConjₗ' : V ≃ₗ[ℝ] Conjugate V) = toConj := rfl
+@[simp] theorem coe_toConjₗ' [Module ℝ V] : ⇑(toConjₗ' : V ≃ₗ[ℝ] Conjugate V) = toConj := (rfl)
 @[simp] theorem coe_toConjₗ'_symm [Module ℝ V] :
-    ⇑(toConjₗ' : V ≃ₗ[ℝ] Conjugate V).symm = ofConj := rfl
+    ⇑(toConjₗ' : V ≃ₗ[ℝ] Conjugate V).symm = ofConj := (rfl)
 
 variable [Module ℂ V]
 
@@ -150,9 +148,9 @@ def toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V where
   map_add' _ _ := rfl
   map_smul' := toConj_smul
 
-@[simp] theorem coe_toConjₗ : ⇑(toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V) = toConj := rfl
+@[simp] theorem coe_toConjₗ : ⇑(toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V) = toConj := (rfl)
 @[simp] theorem coe_toConjₗ_symm :
-    ⇑(toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V).symm = ofConj := rfl
+    ⇑(toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V).symm = ofConj := (rfl)
 
 end AddCommGroup
 
@@ -168,9 +166,9 @@ def toConjHomeomorph [TopologicalSpace V] : V ≃ₜ Conjugate V where
   continuous_invFun := continuous_id
 
 @[simp] theorem coe_toConjHomeomorph [TopologicalSpace V] :
-    ⇑(toConjHomeomorph : V ≃ₜ Conjugate V) = toConj := rfl
+    ⇑(toConjHomeomorph : V ≃ₜ Conjugate V) = toConj := (rfl)
 @[simp] theorem coe_toConjHomeomorph_symm [TopologicalSpace V] :
-    ⇑(toConjHomeomorph : V ≃ₜ Conjugate V).symm = ofConj := rfl
+    ⇑(toConjHomeomorph : V ≃ₜ Conjugate V).symm = ofConj := (rfl)
 
 theorem continuous_toConj [TopologicalSpace V] : Continuous (toConj : V → Conjugate V) :=
   continuous_id
@@ -224,10 +222,9 @@ instance instFiniteReal [AddCommGroup V] [Module ℝ V] [Module.Finite ℝ V] :
     Module.Finite ℝ (Conjugate V) :=
   ‹Module.Finite ℝ V›
 
-instance instFiniteComplex [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V]
-    [Module.Finite ℂ V] : Module.Finite ℂ (Conjugate V) :=
-  have : Module.Finite ℝ V := .trans ℂ V
-  .of_restrictScalars_finite ℝ ℂ _
+instance instFiniteComplex [AddCommGroup V] [Module ℂ V] [Module.Finite ℂ V] :
+    Module.Finite ℂ (Conjugate V) :=
+  .of_surjective toConjₗ.toLinearMap toConjₗ.surjective
 
 section TopologicalModule
 
@@ -239,9 +236,9 @@ def toConjL [Module ℂ V] : V ≃L⋆[ℂ] Conjugate V where
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
-@[simp] theorem coe_toConjL [Module ℂ V] : ⇑(toConjL : V ≃L⋆[ℂ] Conjugate V) = toConj := rfl
+@[simp] theorem coe_toConjL [Module ℂ V] : ⇑(toConjL : V ≃L⋆[ℂ] Conjugate V) = toConj := (rfl)
 @[simp] theorem coe_toConjL_symm [Module ℂ V] :
-    ⇑(toConjL : V ≃L⋆[ℂ] Conjugate V).symm = ofConj := rfl
+    ⇑(toConjL : V ≃L⋆[ℂ] Conjugate V).symm = ofConj := (rfl)
 
 /-- The identity map `V → Conjugate V` as a continuous real-linear equivalence. -/
 def toConjL' [Module ℝ V] : V ≃L[ℝ] Conjugate V where
@@ -249,9 +246,9 @@ def toConjL' [Module ℝ V] : V ≃L[ℝ] Conjugate V where
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
-@[simp] theorem coe_toConjL' [Module ℝ V] : ⇑(toConjL' : V ≃L[ℝ] Conjugate V) = toConj := rfl
+@[simp] theorem coe_toConjL' [Module ℝ V] : ⇑(toConjL' : V ≃L[ℝ] Conjugate V) = toConj := (rfl)
 @[simp] theorem coe_toConjL'_symm [Module ℝ V] :
-    ⇑(toConjL' : V ≃L[ℝ] Conjugate V).symm = ofConj := rfl
+    ⇑(toConjL' : V ≃L[ℝ] Conjugate V).symm = ofConj := (rfl)
 
 end TopologicalModule
 
@@ -274,17 +271,7 @@ def toConjugate (f : V →ₗ⋆[ℂ] W) : V →ₗ[ℂ] Conjugate W where
   map_smul' c v := by simp
 
 @[simp] theorem toConjugate_apply (f : V →ₗ⋆[ℂ] W) (v : V) : f.toConjugate v = toConj (f v) :=
-  rfl
-
-/-- The complex-linear map `V → Conjugate V` attached to the conjugation of a maximal totally real
-subspace agrees with the identity exactly on that subspace. This is the gluing datum identifying
-a fibre with its conjugate along a totally real boundary condition. -/
-theorem toConjugate_conjugationOfMaximalTotallyReal_eq_iff [Module ℝ V] [IsScalarTower ℝ ℂ V]
-    {U : Type*} [AddCommGroup U] [Module ℝ U] (f : U →ₗ[ℝ] V) (hf : Function.Injective f)
-    (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ) f.range)
-    (v : V) : (f.conjugationOfMaximalTotallyReal hf hmax).toConjugate v = toConj v ↔
-      v ∈ f.range := by
-  rw [toConjugate_apply, toConj_inj, conjugationOfMaximalTotallyReal_eq_self_iff]
+  (rfl)
 
 end LinearMap
 
@@ -304,21 +291,21 @@ def conjugate (f : V →L[ℂ] W) : Conjugate V →L[ℂ] Conjugate W where
   cont := f.continuous
 
 @[simp] theorem conjugate_apply (f : V →L[ℂ] W) (v : Conjugate V) :
-    f.conjugate v = toConj (f (ofConj v)) := rfl
+    f.conjugate v = toConj (f (ofConj v)) := (rfl)
 
 @[simp] theorem conjugate_add [ContinuousAdd W] (f g : V →L[ℂ] W) :
     (f + g).conjugate = f.conjugate + g.conjugate :=
-  rfl
+  (rfl)
 
 @[simp] theorem conjugate_sub [IsTopologicalAddGroup W] (f g : V →L[ℂ] W) :
     (f - g).conjugate = f.conjugate - g.conjugate :=
-  rfl
+  (rfl)
 
-@[simp] theorem conjugate_id : (ContinuousLinearMap.id ℂ V).conjugate = .id ℂ _ := rfl
+@[simp] theorem conjugate_id : (ContinuousLinearMap.id ℂ V).conjugate = .id ℂ _ := (rfl)
 
 theorem conjugate_comp {U : Type*} [AddCommGroup U] [Module ℂ U] [TopologicalSpace U]
     (g : W →L[ℂ] U) (f : V →L[ℂ] W) : (g.comp f).conjugate = g.conjugate.comp f.conjugate :=
-  rfl
+  (rfl)
 
 end TopologicalModule
 
@@ -366,10 +353,10 @@ def conjugateConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V where
   continuous_invFun := continuous_id
 
 @[simp] theorem conjugateConjugateL_apply (v : Conjugate (Conjugate V)) :
-    conjugateConjugateL v = ofConj (ofConj v) := rfl
+    conjugateConjugateL v = ofConj (ofConj v) := (rfl)
 
 @[simp] theorem conjugateConjugateL_symm_apply (v : V) :
-    (conjugateConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V).symm v = toConj (toConj v) := rfl
+    (conjugateConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V).symm v = toConj (toConj v) := (rfl)
 
 /-- The conjugate of a product is the product of the conjugates. -/
 def prodL : Conjugate (V × W) ≃L[ℂ] Conjugate V × Conjugate W where
@@ -383,21 +370,21 @@ def prodL : Conjugate (V × W) ≃L[ℂ] Conjugate V × Conjugate W where
   continuous_invFun := continuous_id
 
 @[simp] theorem prodL_apply (v : Conjugate (V × W)) :
-    prodL v = (toConj (ofConj v).1, toConj (ofConj v).2) := rfl
+    prodL v = (toConj (ofConj v).1, toConj (ofConj v).2) := (rfl)
 
 @[simp] theorem prodL_symm_apply (v : Conjugate V × Conjugate W) :
-    (prodL : Conjugate (V × W) ≃L[ℂ] _).symm v = toConj (ofConj v.1, ofConj v.2) := rfl
+    (prodL : Conjugate (V × W) ≃L[ℂ] _).symm v = toConj (ofConj v.1, ofConj v.2) := (rfl)
 
 end TauCeti.Conjugate
 
-/-! ### Totally real subspaces -/
+/-! ### Real subspaces -/
 
 namespace Submodule
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
 /-- A real subspace of `V`, read as a real subspace of `Conjugate V`. -/
-def conjugate (L : Submodule ℝ V) : Submodule ℝ (Conjugate V) :=
+@[expose] def conjugate (L : Submodule ℝ V) : Submodule ℝ (Conjugate V) :=
   L.map (toConjₗ' : V ≃ₗ[ℝ] Conjugate V).toLinearMap
 
 @[simp] theorem mem_conjugate {L : Submodule ℝ V} {v : Conjugate V} :
@@ -406,37 +393,6 @@ def conjugate (L : Submodule ℝ V) : Submodule ℝ (Conjugate V) :=
 
 theorem toConj_mem_conjugate {L : Submodule ℝ V} {v : V} : toConj v ∈ L.conjugate ↔ v ∈ L :=
   mem_conjugate
-
-variable [Module ℂ V] [IsScalarTower ℝ ℂ V]
-
-/-- Multiplication by `i` on the conjugate is multiplication by `-i` on `V`, so it has the same
-images of real subspaces. -/
-theorem conjugate_map_lsmul_I (L : Submodule ℝ V) :
-    L.conjugate.map ((LinearMap.lsmul ℂ (Conjugate V) Complex.I).restrictScalars ℝ) =
-      (L.map ((LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ)).conjugate := by
-  have h : (LinearMap.lsmul ℂ (Conjugate V) Complex.I).restrictScalars ℝ ∘ₗ
-      (toConjₗ' : V ≃ₗ[ℝ] Conjugate V).toLinearMap =
-        (toConjₗ' : V ≃ₗ[ℝ] Conjugate V).toLinearMap ∘ₗ
-          (-(LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ) := by
-    ext v
-    simp [← neg_smul]
-  rw [conjugate, conjugate, ← Submodule.map_comp, h, Submodule.map_comp, Submodule.map_neg]
-
-/-- A real subspace is totally real in `V` exactly when it is totally real in `Conjugate V`. -/
-theorem isTotallyReal_conjugate_iff {L : Submodule ℝ V} :
-    IsTotallyReal ((LinearMap.lsmul ℂ (Conjugate V) Complex.I).restrictScalars ℝ) L.conjugate ↔
-      IsTotallyReal ((LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ) L := by
-  rw [isTotallyReal_iff, isTotallyReal_iff, conjugate_map_lsmul_I]
-  exact disjoint_map_orderIso_iff (Submodule.orderIsoMapComap toConjₗ')
-
-/-- A real subspace is maximal totally real in `V` exactly when it is maximal totally real in
-`Conjugate V`. -/
-theorem isMaximalTotallyReal_conjugate_iff {L : Submodule ℝ V} :
-    IsMaximalTotallyReal ((LinearMap.lsmul ℂ (Conjugate V) Complex.I).restrictScalars ℝ)
-        L.conjugate ↔
-      IsMaximalTotallyReal ((LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ) L := by
-  rw [isMaximalTotallyReal_iff, isMaximalTotallyReal_iff, conjugate_map_lsmul_I]
-  exact ((Submodule.orderIsoMapComap toConjₗ').isCompl_iff).symm
 
 end Submodule
 
@@ -455,7 +411,7 @@ def complexConjL : ℂ ≃L[ℂ] Conjugate ℂ where
   continuous_toFun := Complex.continuous_conj
   continuous_invFun := Complex.continuous_conj
 
-@[simp] theorem complexConjL_apply (z : ℂ) : complexConjL z = toConj (conj z) := rfl
+@[simp] theorem complexConjL_apply (z : ℂ) : complexConjL z = toConj (conj z) := (rfl)
 
 /-- The complex-linear isomorphism `complexConjL` agrees with the identity `ℂ → Conjugate ℂ`
 exactly on the real line, the fixed set of complex conjugation. -/
