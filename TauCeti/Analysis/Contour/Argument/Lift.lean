@@ -52,7 +52,7 @@ API does not expose.
 
 Adapted from `WindingInteger.lean` in the AINTLIB `LeanModularForms` development. Prerequisite for
 the integer-valuedness and local constancy of the generalized winding number, hence for the homology
-Cauchy theorem (roadmap `homologyCauchyTheorem`) and the generalized residue theorem.
+Cauchy theorem (`homologyCauchyTheorem`) and the generalized residue theorem.
 -/
 
 public section

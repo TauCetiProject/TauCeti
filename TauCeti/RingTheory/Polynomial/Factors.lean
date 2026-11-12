@@ -14,6 +14,7 @@ import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.PrincipalIdealDomain
+import TauCeti.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 
 /-!
 # The monic irreducible factors of a polynomial over a field
@@ -270,23 +271,12 @@ lemma sum_natDegree_normalizedFactors (g : K[X]) :
   · rw [← natDegree_multiset_prod _ (zero_notMem_normalizedFactors g)]
     exact natDegree_eq_of_degree_eq (degree_eq_degree_of_associated (prod_normalizedFactors hg))
 
-/-- A polynomial over a field with exactly one normalized irreducible factor, counted with
-multiplicity, is irreducible. -/
-lemma irreducible_of_card_normalizedFactors_eq_one {g : K[X]}
-    (h : (normalizedFactors g).card = 1) : Irreducible g := by
-  obtain ⟨q, hq⟩ := Multiset.card_eq_one.mp h
-  have hg : g ≠ 0 := by rintro rfl; simp at h
-  have hprod := prod_normalizedFactors hg
-  rw [hq, Multiset.prod_singleton] at hprod
-  exact hprod.irreducible
-    (irreducible_of_normalized_factor q (hq ▸ Multiset.mem_singleton_self q))
-
 /-- The degrees of the normalized irreducible factors of a polynomial over a field form the
 singleton `{g.natDegree}` exactly when the polynomial is irreducible. -/
 @[simp]
 lemma map_natDegree_normalizedFactors_eq_singleton_iff {g : K[X]} :
     (normalizedFactors g).map natDegree = {g.natDegree} ↔ Irreducible g := by
-  refine ⟨fun h ↦ irreducible_of_card_normalizedFactors_eq_one ?_, fun h ↦ ?_⟩
+  refine ⟨fun h ↦ card_normalizedFactors_eq_one_iff.mp ?_, fun h ↦ ?_⟩
   · simpa using congrArg Multiset.card h
   · rw [normalizedFactors_irreducible h, Multiset.map_singleton, natDegree_normalize]
 
