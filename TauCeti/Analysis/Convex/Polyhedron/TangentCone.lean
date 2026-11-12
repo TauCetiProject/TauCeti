@@ -32,9 +32,13 @@ open scoped Topology NNReal
 
 namespace TauCeti
 
-variable {E ι : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+section
+
+variable {𝕜 E ι : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [TopologicalSpace 𝕜] [OrderClosedTopology 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
   [Finite ι]
-  {f : ι → Module.Dual ℝ E} {c : ι → ℝ} {x : E}
+  {f : ι → Module.Dual 𝕜 E} {c : ι → 𝕜} {x : E}
 
 /-- Near a point of a finite polyhedron, only its active inequalities constrain membership. -/
 theorem eventually_mem_polyhedron_iff (hf : ∀ j, Continuous (f j))
@@ -48,7 +52,7 @@ theorem eventually_mem_polyhedron_iff (hf : ∀ j, Continuous (f j))
     · exact Eventually.of_forall fun _ h ↦ (h hj).elim
     · have hlt : c j < f j x :=
         (mem_polyhedron.1 hx j).lt_of_ne (Ne.symm (fun h ↦ hj (mem_activeSet.2 h)))
-      exact ((hf j).continuousAt.eventually (lt_mem_nhds hlt)).mono fun _ h _ ↦ h
+      exact ((hf j).continuousAt.eventually (Ioi_mem_nhds hlt)).mono fun _ h _ ↦ h
   filter_upwards [hslack] with y hy
   constructor
   · intro hyP j hj
@@ -63,7 +67,11 @@ theorem eventually_mem_polyhedron_iff (hf : ∀ j, Continuous (f j))
       linarith
     · exact (hy j hj).le
 
-variable [IsTopologicalAddGroup E] [ContinuousSMul ℝ E]
+end
+
+variable {E ι : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+  [Finite ι] [IsTopologicalAddGroup E] [ContinuousSMul ℝ E]
+  {f : ι → Module.Dual ℝ E} {c : ι → ℝ} {x : E}
 
 /-- The positive tangent cone of a finite polyhedron is cut out by the homogeneous active
 inequalities. This holds in any real topological vector space, provided the defining functionals are
