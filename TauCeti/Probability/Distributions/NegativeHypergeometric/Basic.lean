@@ -125,6 +125,7 @@ theorem negativeHypergeometricWeight_toReal (k : ℕ) :
 
 /-- The real value of a negative hypergeometric weight vanishes when the success count exceeds the
 population size. -/
+@[simp]
 theorem negativeHypergeometricWeight_toReal_of_lt (hK : N < K) (k : ℕ) :
     (negativeHypergeometricWeight N K r k).toReal = 0 := by
   simp [negativeHypergeometricWeight_toReal, Nat.choose_eq_zero_of_lt hK]
