@@ -44,7 +44,7 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 
 /-- Ordered evaluation of one polynomial in each basis generator, as a multilinear map. -/
 private noncomputable def orderedPolynomialEvaluation :
-    MultilinearMap R (fun _ : Fin n => R[X]) U :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => R[X]) U :=
   (MultilinearMap.mkPiAlgebraFin R n U).compLinearMap
     (fun i => (aeval (_root_.UniversalEnvelopingAlgebra.ι R (b i))).toLinearMap)
 
