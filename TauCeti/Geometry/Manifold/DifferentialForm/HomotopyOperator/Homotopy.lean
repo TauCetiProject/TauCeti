@@ -36,8 +36,6 @@ this is the homotopy invariance of flux (`TauCeti.Diffeotopy.fluxForm_sub_fluxFo
 
 ## Main results
 
-* `TauCeti.homotopyOperator_mpullback_fst`: the homotopy operator vanishes on forms pulled back
-  from `M` along the projection `M × [0, 1] → M`.
 * `TauCeti.mextDeriv_homotopyOperator_homotopyOperator_mpullback`: for a closed form `σ` and a
   homotopy `G` from `f` to `g` stationary at both time ends, `d (h (h (G^* σ))) = h (f^* σ) -
   h (g^* σ)`.
@@ -62,16 +60,6 @@ variable {E H M F : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
-
-/-- The homotopy operator vanishes on every form pulled back from `M` along the projection
-`M × [0, 1] → M`: the derivative of the projection kills the unit time vector `∂ₜ`. -/
-@[simp]
-theorem homotopyOperator_mpullback_fst (α : RoughForm I M F (k + 1)) :
-    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I (Prod.fst : M × Icc (0 : ℝ) 1 → M) α) = 0 := by
-  funext x
-  refine homotopyOperator_apply_eq_zero fun t v ↦ ?_
-  rw [mpullback_apply, mfderiv_fst]
-  exact (α x).map_coord_zero 0 rfl
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]

@@ -55,6 +55,8 @@ the unit tangent vector at every time.
 * `TauCeti.homotopyOperator`: the homotopy operator `h`.
 * `TauCeti.IsSmoothForm.homotopyOperator`: `h` preserves `C^r` regularity.
 * `TauCeti.homotopyOperator_add`: `h` is additive on continuous forms.
+* `TauCeti.homotopyOperator_mpullback_fst`: `h` vanishes on forms pulled back from `M` along the
+  projection `M × [0, 1] → M`.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id`: `h` commutes with pullback along `g × id` for
   a map `g` with invertible derivatives.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id_of_isSmoothForm`: the same for a continuous form
@@ -134,6 +136,16 @@ theorem homotopyOperator_apply_eq_zero
     (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))
       fun i ↦ ((w i : E), (0 : EuclideanSpace ℝ (Fin 1)))) = 0
   exact h _ _
+
+/-- The homotopy operator vanishes on every form pulled back from `M` along the projection
+`M × [0, 1] → M`: the derivative of the projection kills the unit time vector `∂ₜ`. -/
+@[simp]
+theorem homotopyOperator_mpullback_fst (α : RoughForm I M F (k + 1)) :
+    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I (Prod.fst : M × Icc (0 : ℝ) 1 → M) α) = 0 := by
+  funext x
+  refine homotopyOperator_apply_eq_zero fun t v ↦ ?_
+  rw [mpullback_apply, mfderiv_fst]
+  exact (α x).map_coord_zero 0 rfl
 
 /-- The homotopy operator of the zero form is zero. -/
 @[simp]
