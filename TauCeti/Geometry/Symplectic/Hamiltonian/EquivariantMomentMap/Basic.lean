@@ -511,6 +511,8 @@ end IsEquivariantMomentMap
 
 namespace IsEquivariantMomentMap
 
+variable [CompleteSpace E] [CompleteSpace E']
+
 /-- **The differential of a group-level moment map is equivariant**:
 `dμ_{g • x} (d(g •)_x v) = Ad*_g (dμ_x v)`. -/
 theorem differential_smul_mfderiv (h : σ.IsEquivariantMomentMap μ) (g : G) (x : M)
