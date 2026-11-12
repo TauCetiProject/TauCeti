@@ -38,7 +38,9 @@ on `T`.
   and the range of `U` is the closure of the range of `T`.
 * `ContinuousLinearMap.adjoint_polarFactor_comp_polarFactor`,
   `ContinuousLinearMap.polarFactor_comp_adjoint_polarFactor`: the initial and final projections;
-  `U† U = 1` when `T` is injective and `U U† = 1` when `T` has dense range.
+  `U† U = 1` when `T` is injective and `U U† = 1` when `T` has dense range, so that
+  `ContinuousLinearMap.isInvertible_polarFactor_of_injective_of_denseRange`: `U` is invertible
+  when both hold.
 * `ContinuousLinearMap.polarFactor_smul`: the polar factor of `c T` is `(c / ‖c‖) U`.
 * `ContinuousLinearMap.eq_polarFactor_iff`: uniqueness of the polar factor.
 * `ContinuousLinearMap.modulus_adjoint`: `|T†| = T U†`.
@@ -152,6 +154,12 @@ theorem polarFactor_comp_adjoint_polarFactor_of_denseRange (hT : DenseRange T) :
     exact hT
   simp [polarFactor_comp_adjoint_polarFactor, h, Submodule.starProjection_top']
 
+/-- The polar factor of an injective operator with dense range is unitary, hence invertible. -/
+theorem isInvertible_polarFactor_of_injective_of_denseRange (hT : Function.Injective T)
+    (hT' : DenseRange T) : T.polarFactor.IsInvertible :=
+  .of_inverse (T.polarFactor_comp_adjoint_polarFactor_of_denseRange hT')
+    (T.adjoint_polarFactor_comp_polarFactor_of_injective hT)
+
 variable {T} in
 /-- **Uniqueness of the polar factor.** A bounded operator `V` with `V |T| = T` that vanishes on
 `ker T` is the polar factor of `T`. It is not assumed to be a partial isometry. -/
@@ -190,6 +198,7 @@ theorem polarFactor_zero : (0 : E →L[𝕜] F).polarFactor = 0 :=
   (eq_polarFactor (by simp) fun _ _ ↦ rfl).symm
 
 /-- Scaling an operator by `c` scales its polar factor by the phase `c / ‖c‖`. -/
+@[simp]
 theorem polarFactor_smul (c : 𝕜) : (c • T).polarFactor = (c / ‖c‖) • T.polarFactor := by
   rcases eq_or_ne c 0 with rfl | hc
   · simp

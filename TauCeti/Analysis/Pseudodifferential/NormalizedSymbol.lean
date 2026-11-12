@@ -96,10 +96,9 @@ theorem adjoint_comp_coefficient_normalize (x : X) (ξ : E) :
       ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1 := by
   rcases eq_or_ne ξ 0 with rfl | hξ
   · simp
-  rw [coefficient_normalize, ← Complex.coe_smul, map_smulₛₗ, ContinuousLinearMap.smul_comp,
-    ContinuousLinearMap.comp_smul,
+  simp [← Complex.coe_smul, map_smulₛₗ ContinuousLinearMap.adjoint,
     ContinuousLinearMap.adjoint_polarFactor_comp_polarFactor_of_injective _ (ha x ξ hξ), smul_smul,
-    Complex.conj_ofReal, ← Complex.ofReal_mul, ← sq]
+    sq]
 
 /-- **Second normalization identity.** For an elliptic symbol, `a♯ a♯† = ‖ξ‖²`. -/
 theorem coefficient_normalize_comp_adjoint (hell : a.IsElliptic) (x : X) (ξ : E) :
@@ -107,11 +106,9 @@ theorem coefficient_normalize_comp_adjoint (hell : a.IsElliptic) (x : X) (ξ : E
       ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1 := by
   rcases eq_or_ne ξ 0 with rfl | hξ
   · simp
-  rw [coefficient_normalize, ← Complex.coe_smul, map_smulₛₗ, ContinuousLinearMap.smul_comp,
-    ContinuousLinearMap.comp_smul,
+  simp [← Complex.coe_smul, map_smulₛₗ ContinuousLinearMap.adjoint,
     ContinuousLinearMap.polarFactor_comp_adjoint_polarFactor_of_denseRange _
-      (isElliptic_iff_bijective.1 hell x ξ hξ).surjective.denseRange,
-    smul_smul, Complex.conj_ofReal, ← Complex.ofReal_mul, ← sq]
+      (isElliptic_iff_bijective.1 hell x ξ hξ).surjective.denseRange, smul_smul, sq]
 
 /-- The normalization of an elliptic symbol is elliptic. -/
 theorem isElliptic_normalize (hell : a.IsElliptic) : (a.normalize ha).IsElliptic := by
@@ -152,9 +149,8 @@ theorem adjoint_normalize [FiniteDimensional ℂ W]
     (a.normalize ha).adjoint = a.adjoint.normalize ha' := by
   ext1
   funext p
-  rw [coefficient_adjoint, coefficient_normalize, coefficient_normalize, coefficient_adjoint,
-    ContinuousLinearMap.polarFactor_adjoint, ← Complex.coe_smul, ← Complex.coe_smul,
-    map_smulₛₗ, Complex.conj_ofReal]
+  simp [← Complex.coe_smul, map_smulₛₗ ContinuousLinearMap.adjoint,
+    ContinuousLinearMap.polarFactor_adjoint]
 
 /-- **Homotopy to the normalization.** For an elliptic symbol of degree `1`, every symbol
 `(1 - t) a + t a♯` with `0 ≤ t ≤ 1` on the straight line from `a` to its normalization is elliptic.
@@ -168,9 +164,8 @@ theorem isElliptic_lineMap_normalize (a : HomogeneousSymbol X E V W 1) (hell : a
   have hinj : Function.Injective A := hell.injective x ξ hξ
   -- The polar factor `U` is unitary, hence invertible.
   have hU : A.polarFactor.IsInvertible :=
-    .of_inverse (ContinuousLinearMap.polarFactor_comp_adjoint_polarFactor_of_denseRange A
-      (isElliptic_iff_bijective.1 hell x ξ hξ).surjective.denseRange)
-      (ContinuousLinearMap.adjoint_polarFactor_comp_polarFactor_of_injective A hinj)
+    A.isInvertible_polarFactor_of_injective_of_denseRange hinj
+      (isElliptic_iff_bijective.1 hell x ξ hξ).surjective.denseRange
   -- The right factor `P = (1 - t) |A| + t ‖ξ‖` is strictly positive.
   set P : V →L[ℂ] V := (1 - t) • A.modulus + (t * ‖ξ‖) • 1
   have hmod : IsStrictlyPositive A.modulus := IsStrictlyPositive.iff_of_unital.2
@@ -180,11 +175,8 @@ theorem isElliptic_lineMap_normalize (a : HomogeneousSymbol X E V W 1) (hell : a
     · exact IsStrictlyPositive.add_nonneg (IsStrictlyPositive.smul (sub_pos.2 ht1) hmod)
         (smul_nonneg (mul_nonneg ht.1 (norm_nonneg ξ)) zero_le_one)
     · simpa [P] using isStrictlyPositive_one.smul (norm_pos_iff.2 hξ)
-  obtain ⟨u, hu⟩ := hP.isUnit
-  have hPinv : P.IsInvertible := ⟨ContinuousLinearEquiv.unitsEquiv ℂ V u, by
-    ext v
-    rw [← hu]
-    exact ContinuousLinearEquiv.unitsEquiv_apply ℂ V u v⟩
+  have hPinv : P.IsInvertible :=
+    .of_inverse (Ring.mul_inverse_cancel P hP.isUnit) (Ring.inverse_mul_cancel P hP.isUnit)
   -- Factor the symbol on the line as `U P`.
   have hfac : (AffineMap.lineMap a (a.normalize hell.injective) t).coefficient (x, ξ) =
       A.polarFactor ∘L P := by

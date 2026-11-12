@@ -28,8 +28,6 @@ principal symbol.
 
 ## Main results
 
-* `ContinuousLinearMap.isUnit_modulus_iff_injective`: `|T|` is invertible exactly when `T` is
-  injective.
 * `ContinuousLinearMap.contDiffOn_modulus`: the modulus is smooth on the injective operators.
 * `ContinuousLinearMap.contDiffOn_polarFactor`: the polar factor is smooth on the injective
   operators.
@@ -45,13 +43,6 @@ namespace ContinuousLinearMap
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V]
   [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
-
-/-- In finite dimension the modulus `|T|` of an operator is invertible exactly when `T` is
-injective. -/
-theorem isUnit_modulus_iff_injective {T : V →L[ℂ] W} :
-    IsUnit T.modulus ↔ Function.Injective T := by
-  rw [isUnit_iff_isUnit_toLinearMap, LinearMap.isUnit_iff_ker_eq_bot, ker_modulus,
-    LinearMap.ker_eq_bot, coe_coe]
 
 /-- The modulus `T ↦ |T| = √(T† T)` is smooth on the injective operators out of a
 finite-dimensional complex inner product space. -/

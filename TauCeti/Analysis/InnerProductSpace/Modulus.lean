@@ -49,7 +49,9 @@ No finite dimension is assumed. For linear maps between finite-dimensional space
   `T† T`; in particular `ContinuousLinearMap.IsPositive.modulus_eq`: a positive operator is its
   own modulus.
 * `ContinuousLinearMap.norm_modulus_apply`: `‖|T| x‖ = ‖T x‖`; consequently
-  `ContinuousLinearMap.ker_modulus`: `ker |T| = ker T`,
+  `ContinuousLinearMap.ker_modulus`: `ker |T| = ker T`, so that in finite dimension
+  `ContinuousLinearMap.isUnit_modulus_iff_injective`: `|T|` is invertible exactly when `T` is
+  injective,
   `ContinuousLinearMap.topologicalClosure_range_modulus`: the closure of the range of `|T|` is
   `(ker T)ᗮ`, and
   `ContinuousLinearMap.norm_modulus`: `‖|T|‖ = ‖T‖`.
@@ -161,11 +163,11 @@ theorem modulus_neg (T : E →L[𝕜] F) : (-T).modulus = T.modulus :=
   (eq_modulus_iff.2 ⟨T.isPositive_modulus, by simp⟩).symm
 
 /-- Scaling an operator scales its modulus by the absolute value: `|c T| = ‖c‖ |T|`. -/
+@[simp]
 theorem modulus_smul (c : 𝕜) (T : E →L[𝕜] F) : (c • T).modulus = (‖c‖ : 𝕜) • T.modulus := by
   refine (eq_modulus_iff.2 ⟨T.isPositive_modulus.smul_of_nonneg (RCLike.ofReal_nonneg.2
     (norm_nonneg c)), ?_⟩).symm
-  rw [map_smulₛₗ adjoint, smul_comp, comp_smul, smul_comp, comp_smul, modulus_comp_modulus,
-    smul_smul, smul_smul, ← RCLike.ofReal_mul, ← sq, RCLike.ofReal_pow, ← RCLike.conj_mul]
+  simp [map_smulₛₗ adjoint, smul_smul, RCLike.mul_conj, sq]
 
 /-- The modulus is natural under linear isometric equivalences of the source and target:
 `|e₁ T e₂⁻¹| = e₂ |T| e₂⁻¹`. In particular the modulus commutes with conjugation by a linear
@@ -207,6 +209,13 @@ theorem ker_modulus (T : E →L[𝕜] F) : T.modulus.ker = T.ker := by
   ext x
   simp only [LinearMap.mem_ker, coe_coe, ← norm_eq_zero (a := T.modulus x),
     ← norm_eq_zero (a := T x), norm_modulus_apply]
+
+/-- In finite dimension the modulus `|T|` of an operator is invertible exactly when `T` is
+injective. -/
+theorem isUnit_modulus_iff_injective [FiniteDimensional 𝕜 E] {T : E →L[𝕜] F} :
+    IsUnit T.modulus ↔ Function.Injective T := by
+  rw [isUnit_iff_isUnit_toLinearMap, LinearMap.isUnit_iff_ker_eq_bot, ker_modulus,
+    LinearMap.ker_eq_bot, coe_coe]
 
 /-- The orthogonal complement of the range of the modulus is the kernel of the operator. -/
 @[simp]
