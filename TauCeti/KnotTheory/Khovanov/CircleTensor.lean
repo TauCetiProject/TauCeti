@@ -190,7 +190,7 @@ variable {σ τ : Type*} [Fintype σ] [DecidableEq τ]
 
 /-- The merge map along `f` sends the basis vector of a labelling `l` to the pure tensor carrying,
 on each circle `j`, the power of `ε` counting the `X`-labels of `l` on the fibre of `j`. -/
-theorem fiberwiseMul_circleBasis_eq_tprod [Finite τ] (f : σ → τ) (l : σ → Bool) :
+theorem fiberwiseMul_circleBasis_eq_tprod (f : σ → τ) (l : σ → Bool) :
     fiberwiseMul (R := R) (A := fun _ ↦ R[ε]) f (circleBasis R σ l) =
       ⨂ₜ[R] j, (ε : R[ε]) ^ #{i | f i = j ∧ l i = true} := by
   rw [circleBasis_apply, fiberwiseMul_tprod_eq_tprod_prod]

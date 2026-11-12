@@ -44,6 +44,7 @@ open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid}
+
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
 variable (M : AddSubgroup V)
@@ -51,14 +52,6 @@ variable (hM : ∀ u ∈ kostantForm (t.lieBasis ht).rootGenerator (t.lieBasis h
   ∀ v ∈ M, ρ u v ∈ M)
 variable (hnil : ∀ i, IsNilpotent
   (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))))
-
-private theorem posRoots_eq_diff_singleton_union_simpleIndex (i : Fin t.rank) :
-    posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
-      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i}) ∪
-        {t.simpleIndex ht i} :=
-  (Set.sdiff_union_of_subset (Set.singleton_subset_iff.mpr
-    ((mem_posRoots _ _ _).mpr
-      (RootPairing.Base.isPos_of_mem_support (simpleIndex_mem_support i))))).symm
 
 -- Match the tensor product to the integral algebra structure of the value ring.
 attribute [local instance high] Algebra.toModule
@@ -79,7 +72,7 @@ theorem mem_iSup_posRoots_iff_exists_mul_simpleRoot
           (chevalleyRootSubgroup ρ M hM hnil γ A).range),
         ∃ a : Multiplicative A,
           v * chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A a = g := by
-  conv_lhs => rw [posRoots_eq_diff_singleton_union_simpleIndex i, iSup_union, iSup_singleton]
+  conv_lhs => rw [posRoots_eq_diff_union_simpleIndex i, iSup_union, iSup_singleton]
   rw [Subgroup.mem_sup_of_right_le_normalizer_left hnorm]
   constructor
   · rintro ⟨v, hv, _, ⟨a, rfl⟩, heq⟩
@@ -118,7 +111,7 @@ theorem map_iSup_posRoots_chevalleyRootSubgroup_conj_kostantWeylGL
     (chevalleyRootSubgroup ρ M hM hnil
       ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
         (t.simpleIndex ht i)) A).range := by
-  conv_lhs => rw [posRoots_eq_diff_singleton_union_simpleIndex i, iSup_union]
+  conv_lhs => rw [posRoots_eq_diff_union_simpleIndex i, iSup_union]
   simp only [iSup_singleton, Subgroup.map_sup,
     map_range_chevalleyRootSubgroup_conj_kostantWeylGL,
     (Subgroup.mem_normalizer_iff_map_conj_eq.mp

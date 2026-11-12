@@ -409,6 +409,15 @@ theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : 
     (α : SmoothForm I M ℝ k) : hodgeStar (-o) hkl α = -hodgeStar o hkl α :=
   Subtype.ext (RoughForm.hodgeStar_neg_orientation o hkl α)
 
+/-- The Hodge star of smooth forms commutes with multiplication by a smooth function,
+`⋆(f α) = f ⋆α`. -/
+@[simp]
+theorem hodgeStar_funSMulₗ (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k) :
+    hodgeStar o hkl (funSMulₗ f α) = funSMulₗ f (hodgeStar o hkl α) :=
+  Subtype.ext <| funext fun x ↦ by
+    simp only [coe_hodgeStar, RoughForm.hodgeStar_apply, coe_funSMulₗ, map_smul]
+
 end SmoothForm
 
 end Theorems
