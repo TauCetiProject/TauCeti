@@ -221,6 +221,12 @@ theorem hamiltonianVectorField_eq_zero_of_eventuallyEq {x : M} {c : ℝ}
   rw [hamiltonianVectorField_def, h.mvfderiv_eq]
   simp [mvfderiv_const]
 
+/-- The Hamiltonian vector field vanishes at every point where the Hamiltonian is not
+differentiable, by the convention `mfderiv = 0` there. -/
+theorem hamiltonianVectorField_eq_zero_of_not_mdifferentiableAt {x : M}
+    (h : ¬MDifferentiableAt I 𝓘(ℝ) f x) : σ.hamiltonianVectorField f x = 0 := by
+  simp [hamiltonianVectorField_def, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt h]
+
 /-- The Hamiltonian vector field is additive on differentiable functions. -/
 theorem hamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
     (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
@@ -315,6 +321,13 @@ theorem eval₂_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace
 theorem apply_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace I x) :
     σ.1 x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v := by
   rw [← SmoothBundleForm.eval₂_apply, h.eval₂_hamiltonianVectorField]
+
+/-- Pairing `a - X_f` with `b` under `σ`: `σ(a - X_f, b) = -σ(b, a) - df(b)`. This is the
+integrand of the first variation of the action functional. -/
+theorem apply_sub_hamiltonianVectorField (f : M → ℝ) (x : M) (a b : TangentSpace I x) :
+    σ.1 x ![a - σ.hamiltonianVectorField f x, b] = -σ.1 x ![b, a] - mvfderiv I f x b := by
+  rw [← SmoothBundleForm.eval₂_apply, ← SmoothBundleForm.eval₂_apply, ← flat_apply, map_sub,
+    sub_apply, flat_apply, flat_apply, h.eval₂_hamiltonianVectorField, SmoothBundleForm.eval₂_swap]
 
 /-- The Hamiltonian vector field of `f` is a Hamiltonian vector field of `f`. -/
 theorem isHamiltonianVectorField_hamiltonianVectorField (f : M → ℝ) :

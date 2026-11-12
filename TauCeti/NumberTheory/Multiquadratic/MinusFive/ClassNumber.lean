@@ -16,7 +16,7 @@ import TauCeti.RingTheory.Norm.Quadratic
 # The class number of `ℚ(√-5)`
 
 This file proves that the imaginary quadratic field `ℚ(√-5)` has class number `2`, the
-class-group calculation in the first genus-field worked example of the multiquadratic roadmap.
+class-group calculation in the genus-field worked example for `ℚ(√-5)`.
 
 The proof uses Minkowski's theorem in the form
 `NumberField.exists_ideal_in_class_of_norm_le`.  Since the discriminant is `-20` and there is one

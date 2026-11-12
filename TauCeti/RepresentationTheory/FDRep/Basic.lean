@@ -95,6 +95,8 @@ of `Representation.Equiv` apply to isomorphic objects.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
 * `FDRep.ofShrinkEquiv`: `FDRep.ofShrink ρ` carries a representation equivalent to `ρ`, whence
   `FDRep.finrank_ofShrink` and `FDRep.character_ofShrink`.
+* `FDRep.biprod_total_hom_hom_hom`: the identity of `X ⊞ Y` splits as the sum of the two
+  biproduct idempotents, read on the underlying linear maps.
 * `FDRep.char_biprod`: the character is additive on biproducts.
 * `FDRep.char_tensorUnit`: the character of the tensor unit is the constant function `1`.
 * `FDRep.char_mul_of_mem_ker_left`: the character is constant on the cosets of its kernel.
@@ -376,30 +378,36 @@ private theorem trace_comp_of_retraction {X B : FDRep k G} (i : X ⟶ B) (p : B 
   rw [LinearMap.trace_comp_comm', ← hom_hom_hom_comm i g, ← LinearMap.comp_assoc, hpi]
   simp [FDRep.character]
 
+/-- On underlying linear maps, the identity of `X ⊞ Y` is the sum of the two idempotents
+`biprod.inl ∘ biprod.fst` and `biprod.inr ∘ biprod.snd`: this is
+`CategoryTheory.Limits.biprod.total` read through the bundling of `FDRep`, the way
+`FDRep.hom_hom_hom_comm` reads equivariance. -/
+theorem biprod_total_hom_hom_hom (X Y : FDRep k G) :
+    (biprod.inl : X ⟶ X ⊞ Y).hom.hom.hom ∘ₗ (biprod.fst : X ⊞ Y ⟶ X).hom.hom.hom
+      + (biprod.inr : Y ⟶ X ⊞ Y).hom.hom.hom ∘ₗ (biprod.snd : X ⊞ Y ⟶ Y).hom.hom.hom
+      = LinearMap.id := by
+  have h := congrArg (fun t : (X ⊞ Y) ⟶ (X ⊞ Y) => t.hom.hom.hom)
+    (biprod.total (X := X) (Y := Y))
+  simp only [Action.id_hom] at h
+  exact h
+
 /-- **The character is additive on biproducts.** Together with `FDRep.char_iso` and
 `FDRep.char_tensor` this is what makes the character a ring homomorphism out of the representation
 ring; see `TauCeti.repRingCharacter`.
 
 The proof splits the identity of `X ⊞ Y` as the sum of the two idempotents
-`biprod.inl ∘ biprod.fst` and `biprod.inr ∘ biprod.snd` (`CategoryTheory.Limits.biprod.total`) and
+`biprod.inl ∘ biprod.fst` and `biprod.inr ∘ biprod.snd` (`FDRep.biprod_total_hom_hom_hom`) and
 evaluates the trace of `ρ g` against each summand with `FDRep.trace_comp_of_retraction`. -/
 @[simp]
 theorem char_biprod (X Y : FDRep k G) : (X ⊞ Y).character = X.character + Y.character := by
   ext g
-  have htot : (biprod.inl : X ⟶ X ⊞ Y).hom.hom.hom ∘ₗ (biprod.fst : X ⊞ Y ⟶ X).hom.hom.hom
-      + (biprod.inr : Y ⟶ X ⊞ Y).hom.hom.hom ∘ₗ (biprod.snd : X ⊞ Y ⟶ Y).hom.hom.hom
-      = LinearMap.id := by
-    have h := congrArg (fun t : (X ⊞ Y) ⟶ (X ⊞ Y) => t.hom.hom.hom)
-      (biprod.total (X := X) (Y := Y))
-    simp only [Action.id_hom] at h
-    exact h
   have hsplit : (X ⊞ Y).ρ g
       = ((X ⊞ Y).ρ g ∘ₗ (biprod.inl : X ⟶ X ⊞ Y).hom.hom.hom)
           ∘ₗ (biprod.fst : X ⊞ Y ⟶ X).hom.hom.hom
         + ((X ⊞ Y).ρ g ∘ₗ (biprod.inr : Y ⟶ X ⊞ Y).hom.hom.hom)
           ∘ₗ (biprod.snd : X ⊞ Y ⟶ Y).hom.hom.hom := by
-    rw [LinearMap.comp_assoc, LinearMap.comp_assoc, ← LinearMap.comp_add, htot,
-      LinearMap.comp_id]
+    rw [LinearMap.comp_assoc, LinearMap.comp_assoc, ← LinearMap.comp_add,
+      biprod_total_hom_hom_hom, LinearMap.comp_id]
   rw [FDRep.character, hsplit, map_add,
     trace_comp_of_retraction biprod.inl biprod.fst biprod.inl_fst,
     trace_comp_of_retraction biprod.inr biprod.snd biprod.inr_snd, Pi.add_apply]

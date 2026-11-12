@@ -41,7 +41,6 @@ theorem exists_pos_period_le_nhds {x : X} (hx : ∃ s, ϕ s x ≠ x) :
   obtain ⟨ε, hε, hεu⟩ := Metric.mem_nhds_iff.mp hu
   refine ⟨ε, hε, U, hU, fun y hy T hT hfix ↦ ?_⟩
   by_contra h
-  have hTε : T < ε := lt_of_not_ge h
   -- An integer multiple of a small period lies within ε of the nonreturn time s.
   obtain ⟨k, hk, -⟩ := existsUnique_zsmul_near_of_pos hT s
   have hk' : (k : ℝ) * T ≤ s ∧ s < (k : ℝ) * T + T := by

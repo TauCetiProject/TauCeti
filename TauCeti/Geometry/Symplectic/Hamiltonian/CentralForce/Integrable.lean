@@ -383,7 +383,7 @@ theorem poissonBracket_centralForceEnergyMomentum_comp_subtypeVal [FiniteDimensi
       (hdiff i) (hdiff j),
     SymplecticForm.poissonBracket_constSmooth]
   have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum (m := m)
-    hU' hq (b 0) (b 1)
+    (U := U) (x := (x : V × V)) (b 0) (b 1)
   fin_cases i <;> fin_cases j
   · exact SymplecticForm.poissonBracket_self _ _ _
   · exact h
