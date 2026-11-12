@@ -110,7 +110,6 @@ theorem IsTotallyReal.exists_le_isMaximalTotallyReal (hJ : J.comp J = -LinearMap
 subspace. -/
 theorem exists_mem_isMaximalTotallyReal (hJ : J.comp J = -LinearMap.id) (v : E) :
     ∃ L, v ∈ L ∧ IsMaximalTotallyReal J L := by
-  have hJJ : ∀ w, J (J w) = -w := fun w ↦ by simpa using LinearMap.congr_fun hJ w
   have hline : IsTotallyReal J (K ∙ v) := by
     rw [isTotallyReal_iff, Submodule.disjoint_def]
     intro z hz hzJ
