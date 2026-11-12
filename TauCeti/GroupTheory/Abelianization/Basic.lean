@@ -64,7 +64,7 @@ theorem mulEquiv_ext {M : Type*} [Monoid M] {e e' : Group.Abelianization G ≃* 
 /-- **The abelianization of a product** of two groups is the product of their abelianizations:
 the class of `(g, h)` corresponds to the pair of the classes of `g` and `h`. -/
 def prodMulEquiv {H : Type*} [Group H] :
-    Abelianization (G × H) ≃* Abelianization G × Abelianization H :=
+    Group.Abelianization (G × H) ≃* Group.Abelianization G × Group.Abelianization H :=
   (QuotientGroup.quotientMulEquivOfEq (by
     simp only [commutator_def, ← Subgroup.top_prod_top, Subgroup.commutator_prod_prod])).trans
     (QuotientGroup.prodMulEquiv _ _)

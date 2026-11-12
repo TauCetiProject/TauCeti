@@ -119,7 +119,7 @@ theorem opMulEquiv_symm_op (g : DeckGroup) :
 def abelianizationMulEquiv : Group.Abelianization DeckGroup ≃* Multiplicative (ℤ × ℤ × ℤ) :=
   Group.Abelianization.prodMulEquiv.trans <|
     (HeisenbergGroup.abelianizationMulEquiv.prodCongr
-      Group.Abelianization.equivOfComm.symm).trans <|
+        Group.Abelianization.equivOfComm.symm).trans <|
       (MulEquiv.prodMultiplicative (ℤ × ℤ) ℤ).symm.trans
         (AddEquiv.prodAssoc (M := ℤ) (N := ℤ) (P := ℤ)).toMultiplicative
 

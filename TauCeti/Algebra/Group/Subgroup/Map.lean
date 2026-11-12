@@ -284,8 +284,8 @@ The derived-subgroup instance of `Subgroup.congrOfMapEq_trans`, and a `simp` lem
 right: `MulEquiv.commutatorCongr` does not unfold, so that general lemma never fires on this
 left-hand side. Both map equalities are supplied internally, so a use site names only `e` and
 `f`. `MulEquiv.commutatorCongr_refl` and `MulEquiv.commutatorCongr_symm` are the companion
-identity and inverse statements; Mathlib's `Group.abelianizationCongr_trans` is the same coherence
-for the abelianization. -/
+identity and inverse statements; Mathlib's `Group.abelianizationCongr_trans` is the same
+coherence for the abelianization. -/
 @[simp]
 theorem _root_.MulEquiv.commutatorCongr_trans (e : G ≃* H) (f : H ≃* K) :
     (MulEquiv.commutatorCongr e).trans (MulEquiv.commutatorCongr f) =
