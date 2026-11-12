@@ -443,7 +443,7 @@ theorem exists_trivialization_baseSet_eq_univ_associatedCore_iff_eq_one [Connect
           (TotalSpace F (hp.associatedCore ρ).Fiber) ∧ e.baseSet = univ) ↔ ρ = 1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸
     hp.exists_trivialization_baseSet_eq_univ_associatedCore_one⟩
-  obtain ⟨e, helinear, he, hbase⟩ := h
+  obtain ⟨e, -, he, hbase⟩ := h
   obtain ⟨y₀⟩ : Nonempty E := inferInstance
   ext g v
   let e₀ := (hp.associatedCore ρ).localTriv y₀
