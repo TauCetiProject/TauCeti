@@ -106,10 +106,11 @@ theorem cayley_stabilizer_dart (e : (cayley α).E) : stabilizer (FreeGroup α) e
 @[simp] theorem cayley_isHyperbolic_iff {g : FreeGroup α} : (cayley α).IsHyperbolic g ↔ g ≠ 1 :=
   (not_iff_comm.mp (not_isHyperbolic_iff.trans cayley_isElliptic_iff)).symm
 
-/-- The Cayley tree is relative to the trivial edge family and the trivial elliptic family. -/
-theorem cayley_isRelative : (cayley α).IsRelative {⊥} {⊥} :=
-  isRelative_iff.mpr ⟨fun e => cayley_stabilizer_dart e,
-    fun _ hH => hH ▸ isEllipticSubgroup_bot _⟩
+/-- The Cayley tree is relative to any family of subgroups containing the trivial subgroup and any
+family of trivial subgroups. -/
+theorem cayley_isRelative {𝒜 ℋ : Set (Subgroup (FreeGroup α))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    (cayley α).IsRelative 𝒜 ℋ :=
+  isRelative_of_forall_stabilizer_eq_bot h𝒜 hℋ cayley_stabilizer_vertex
 
 /-- The Cayley tree of a free group is a minimal tree. -/
 theorem cayley_isMinimal : (cayley α).IsMinimal := by
@@ -167,8 +168,7 @@ theorem cayley_translationLength_of_mul_of_mul_inv_of (a b : α) :
 trivial subgroup and relative to at most the trivial subgroup. -/
 theorem cayley_isJSJ {𝒜 ℋ : Set (Subgroup (FreeGroup α))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
     (cayley α).IsJSJ 𝒜 ℋ :=
-  .of_forall_stabilizer_eq_bot cayley_isMinimal
-    (cayley_isRelative.mono (Set.singleton_subset_iff.mpr h𝒜) hℋ) cayley_stabilizer_vertex
+  .of_forall_stabilizer_eq_bot cayley_isMinimal (cayley_isRelative h𝒜 hℋ) cayley_stabilizer_vertex
 
 /-- Over a family of subgroups containing the trivial subgroup, relative to at most the trivial
 subgroup, a tree of a free group (with vertices and darts in the universe of the basis) is a JSJ
@@ -176,12 +176,8 @@ tree exactly when it is minimal and its vertex stabilizers are trivial: the JSJ 
 of a free group is the space of its minimal free actions. -/
 theorem isJSJ_iff_forall_stabilizer_eq_bot_freeGroup {T : GTree.{u, u} (FreeGroup α)}
     {𝒜 ℋ : Set (Subgroup (FreeGroup α))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
-    T.IsJSJ 𝒜 ℋ ↔ T.IsMinimal ∧ ∀ x : T.V, stabilizer (FreeGroup α) x = ⊥ := by
-  rw [(cayley_isJSJ h𝒜 hℋ).isJSJ_iff_forall_stabilizer_eq_bot cayley_stabilizer_vertex]
-  -- A tree with trivial vertex stabilizers is relative: a dart stabilizer fixes its source.
-  refine and_congr_right fun _ => ⟨fun h => h.2, fun h => ⟨isRelative_iff.mpr ⟨fun e => ?_,
-    fun _ hH => hℋ hH ▸ T.isEllipticSubgroup_bot⟩, h⟩⟩
-  rwa [le_bot_iff.mp ((T.stabilizer_dart_le_stabilizer_src e).trans (h _).le)]
+    T.IsJSJ 𝒜 ℋ ↔ T.IsMinimal ∧ ∀ x : T.V, stabilizer (FreeGroup α) x = ⊥ :=
+  (cayley_isJSJ h𝒜 hℋ).isJSJ_iff_forall_stabilizer_eq_bot cayley_stabilizer_vertex
 
 end GTree
 
