@@ -669,14 +669,13 @@ theorem fderivWithin_comp_extChartAt_symm {f : M → F} {x : M} (α : M)
     -- The tangent spaces of normed model spaces reduce to their underlying normed spaces.
     convert! h using 1
   · -- Off the differentiable locus both sides are `0`.
-    have hiff := mdifferentiableWithinAt_iff_source_of_mem_maximalAtlas (s := univ) (f := f)
-      (I' := 𝓘(𝕜, F)) (IsManifold.chart_mem_maximalAtlas (I := I) α) hx'
-    rw [mdifferentiableWithinAt_univ, preimage_univ, univ_inter,
-      mdifferentiableWithinAt_iff_differentiableWithinAt] at hiff
-    rw [← extChartAt] at hiff
+    have hiff : MDifferentiableAt I 𝓘(𝕜, F) f x ↔ DifferentiableWithinAt 𝕜
+        (f ∘ (extChartAt I α).symm) (range I) (extChartAt I α x) :=
+      (mdifferentiableAt_iff_source_of_mem_source hx').trans
+        mdifferentiableWithinAt_iff_differentiableWithinAt
     rw [fderivWithin_zero_of_not_differentiableWithinAt (mt hiff.mpr hf),
       mfderiv_zero_of_not_mdifferentiableAt hf]
-    rfl
+    exact (ContinuousLinearMap.zero_comp _).symm
 
 /-- In a preferred chart, a manifold derivative from a normed source gives the ordinary
 coordinate derivative by composing with the tangent chart. -/
@@ -853,7 +852,7 @@ theorem _root_.ContinuousAt.fderiv_chartAt_comp {g : F → N} {x : F}
       ((mdifferentiableAt_iff g x).2 ⟨hc, by
         simpa [writtenInExtChartAt, differentiableWithinAt_univ] using hd⟩)
     rw [mfderiv_zero_of_not_mdifferentiableAt hg, fderiv_zero_of_not_differentiableAt hd]
-    rfl
+    exact (ContinuousLinearMap.zero_comp _).symm
 
 end ModelSpaceSource
 
