@@ -134,6 +134,10 @@ in the coroot span. -/
 def cartanCenter : Submodule K H := LinearMap.ker R.rootEvaluation
 
 omit [Fintype I] in
+/-- The Cartan center is the kernel of evaluation against all the simple roots. -/
+theorem cartanCenter_def : R.cartanCenter = LinearMap.ker R.rootEvaluation := (rfl)
+
+omit [Fintype I] in
 @[simp]
 theorem mem_cartanCenter_iff (h : H) : h ∈ R.cartanCenter ↔ ∀ i, R.root i h = 0 := by
   simp [cartanCenter, LinearMap.mem_ker, funext_iff]

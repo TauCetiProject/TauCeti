@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
 # Bases and ranks of the graded pieces of a monoid algebra
@@ -31,6 +32,8 @@ infinite fibre, as is the rank of a free module of infinite rank.
   `single m 1` with `f m = i`.
 * `AddMonoidAlgebra.finrank_gradeBy`: the rank of the piece of grade `i` is the number of
   elements of `M` of grade `i`.
+* `TauCeti.homogeneousUnitDegrees_gradeBy`: for the group algebra `R[G]` graded by an additive
+  homomorphism `f : G →+ ι`, the homogeneous unit degrees are the range of `f`.
 -/
 
 public section
@@ -68,3 +71,27 @@ theorem finrank_gradeBy [StrongRankCondition R] (f : M → ι) (i : ι) :
   Module.finrank_eq_nat_card_basis (basisGradeBy R f i)
 
 end AddMonoidAlgebra
+
+namespace TauCeti
+
+open AddMonoidAlgebra
+
+variable {ι G : Type*} [AddGroup ι] [AddGroup G]
+
+/-- For the group algebra `R[G]` over a nontrivial commutative semiring, graded by an additive
+homomorphism `f : G →+ ι` (so that `single g r` has degree `f g`), the degrees of the homogeneous
+units are the range of `f`: each `single g 1` is a homogeneous unit of degree `f g`, and a nonzero
+element of degree `d` has a monomial of degree `d`. -/
+@[simp]
+theorem homogeneousUnitDegrees_gradeBy (R : Type*) [CommSemiring R] [Nontrivial R]
+    (f : G →+ ι) : homogeneousUnitDegrees (gradeBy R f) = f.range := by
+  refine le_antisymm (homogeneousUnitDegrees_le_iff.mpr fun u d hu ↦ ?_) fun d ⟨g, hg⟩ ↦ ?_
+  · obtain ⟨g, hg⟩ : (u : R[G]).coeff.support.Nonempty := by
+      rw [Finsupp.support_nonempty_iff, Ne, ← coeff_zero, coeff_inj]
+      exact u.ne_zero
+    exact ⟨g, (mem_gradeBy_iff R f d _).mp hu hg⟩
+  · let v : R[G]ˣ := ⟨single g 1, single (-g) 1, by simp [AddMonoidAlgebra.one_def],
+      by simp [AddMonoidAlgebra.one_def]⟩
+    exact mem_homogeneousUnitDegrees_of_mem (u := v) (hg ▸ single_mem_gradeBy _ _ _)
+
+end TauCeti

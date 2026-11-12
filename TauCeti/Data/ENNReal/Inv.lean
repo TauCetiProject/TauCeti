@@ -151,7 +151,6 @@ theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} 
     ENNReal.ofReal (d ^ n / n) / m * ENNReal.ofReal (n * a) =
       ENNReal.ofReal (a * d ^ n / m.toReal) := by
   have hmpos : 0 < m.toReal := toReal_pos hm₀ hm_top
-  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 hn
   conv_lhs => rw [← ofReal_toReal hm_top]
   rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
   congr 1

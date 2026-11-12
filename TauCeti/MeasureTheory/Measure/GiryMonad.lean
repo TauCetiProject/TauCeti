@@ -69,25 +69,29 @@ theorem measurableSpace_comap_eq_comap_eval {Ω : Type*} (N : Ω → Measure X) 
 
 variable {Ω ι : Type*} [MeasurableSpace Ω] {P : Measure Ω} {N : Ω → Measure X}
 
-/-- On any countable family of measurable sets with finite average mass, almost every
-realization has finite mass on every set in that family. -/
+/-- On any countable family of sets with finite average mass, almost every realization has finite
+mass on every set in that family. -/
 theorem ae_forall_measure_lt_top_of_bind [Countable ι]
-    (hN : AEMeasurable N P) {s : ι → Set X} (hs : ∀ i, MeasurableSet (s i))
+    (hN : AEMeasurable N P) {s : ι → Set X}
     (hfinite : ∀ i, P.bind N (s i) < ∞) :
     ∀ᵐ ω ∂P, ∀ i, N ω (s i) < ∞ := by
   rw [ae_all_iff]
   intro i
-  apply ae_lt_top' (f := fun ω => N ω (s i))
-    ((Measure.measurable_coe (hs i)).comp_aemeasurable hN)
-  rw [← bind_apply (hs i) hN]
-  exact (hfinite i).ne
+  have hs := measurableSet_toMeasurable (P.bind N) (s i)
+  have h : ∀ᵐ ω ∂P, N ω (toMeasurable (P.bind N) (s i)) < ∞ := by
+    apply ae_lt_top' (f := fun ω => N ω (toMeasurable (P.bind N) (s i)))
+      ((Measure.measurable_coe hs).comp_aemeasurable hN)
+    rw [← bind_apply hs hN, measure_toMeasurable]
+    exact (hfinite i).ne
+  filter_upwards [h] with ω hω
+  exact (measure_mono (subset_toMeasurable (P.bind N) (s i))).trans_lt hω
 
 /-- A random measure whose average is sigma-finite is almost surely sigma-finite.
 The sample measure need not be finite, and no topology on either space is needed. -/
 theorem ae_sigmaFinite_of_bind (hN : AEMeasurable N P) [SigmaFinite (P.bind N)] :
     ∀ᵐ ω ∂P, SigmaFinite (N ω) := by
   filter_upwards [ae_forall_measure_lt_top_of_bind hN
-    (measurableSet_spanningSets (P.bind N)) (measure_spanningSets_lt_top (P.bind N))]
+    (measure_spanningSets_lt_top (P.bind N))]
     with ω hω
   let S : (N ω).FiniteSpanningSetsIn {s | MeasurableSet s} :=
     ⟨spanningSets (P.bind N), measurableSet_spanningSets (P.bind N), hω,
@@ -111,7 +115,7 @@ theorem exists_measurable_ae_eq_sigmaFinite_of_bind (hN : AEMeasurable N P)
     exact MeasurableSet.iInter fun n => measurableSet_lt
       ((Measure.measurable_coe (hs n)).comp hm) measurable_const
   have hae : ∀ᵐ ω ∂P, ω ∈ good :=
-    ae_forall_measure_lt_top_of_bind hm.aemeasurable hs fun n => by
+    ae_forall_measure_lt_top_of_bind hm.aemeasurable fun n => by
       rw [hbind]
       exact measure_spanningSets_lt_top (P.bind N) n
   refine ⟨good.indicator N', hm.indicator hgood, ?_, ?_⟩

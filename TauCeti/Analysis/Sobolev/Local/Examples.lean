@@ -595,7 +595,7 @@ theorem memWkpLoc_sqrt_im_iff :
   · intro hp
     refine memWkpLoc_succ_iff.2
       ⟨(by fun_prop : Continuous fun z : ℂ => √z.im).continuousOn.memLpLoc, D, hDU,
-        memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hKU hK => ?_)⟩
+        memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hKU _ => ?_)⟩
     have hKR : K ⊆ Icc (-1) 1 ×ℂ Icc 0 1 := fun z hz => by
       have hz1 : ‖z‖ < 1 := mem_ball_zero_iff.1 (hKU hz).1
       have hre := (Complex.abs_re_le_norm z).trans hz1.le
