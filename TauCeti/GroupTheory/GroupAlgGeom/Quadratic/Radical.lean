@@ -33,16 +33,16 @@ the equation `x ^ n d = 1` in `TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet`.
 
 ## Main results
 
-* `TauCeti.GroupAlgGeom.Quadratic.Standard.Rad_toWord_nonorientableCoeff_one_zero`: if `b² = d`,
-  the radical of `x² d` is the normal closure of `x b`.
-* `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_sq_eq_and_Rad_toWord_nonorientableCoeff_one_zero`:
-  if `x² d = 1` has a solution in `G`, then `d = b²` for some `b` and the radical is the normal
+The names below are in the namespace `TauCeti.GroupAlgGeom.Quadratic`.
+
+* `Standard.Rad_toWord_nonorientableCoeff_one_zero_eq_normalClosure`: if `b² = d`, the radical of
+  `x² d` is the normal closure of `x b`.
+* `Standard.exists_sq_eq_and_Rad_toWord_nonorientableCoeff_one_zero_eq_normalClosure`: if
+  `x² d = 1` has a solution in `G`, then `d = b²` for some `b` and the radical is the normal
   closure of `x b`.
-* `TauCeti.GroupAlgGeom.Quadratic.Standard.normalClosure_toWord_nonorientableCoeff_one_zero_ne_Rad`:
-  over a group with unique roots, the radical of `x² d = 1` is not the normal closure of the
-  equation.
-* `TauCeti.GroupAlgGeom.Quadratic.rad_sq_mul_sq`: over `F(a, b)`, the radical of `x² a²` is the
-  normal closure of `x a`.
+* `Standard.normalClosure_toWord_nonorientableCoeff_one_zero_ne_Rad`: over a group with unique
+  roots, the radical of `x² d = 1` is not the normal closure of the equation.
+* `rad_sq_mul_sq`: over `F(a, b)`, the radical of `x² a²` is the normal closure of `x a`.
 
 ## References
 
@@ -68,8 +68,8 @@ variable {x : Fin 1 → X} {z : Fin 0 → X} {inj : (Sum.elim x z).Injective} {c
 /-- Over a group `H` with unique roots and injective coefficients, the radical of the
 one-variable standard quadratic equation `x² d = 1` with `d = b²` is the normal closure of
 `x b`. -/
-theorem Rad_toWord_nonorientableCoeff_one_zero [Subsingleton X] [HasUniqueRoots H] {ι : G →* H}
-    (hι : Function.Injective ι) {b : G} (hb : b ^ 2 = d) :
+theorem Rad_toWord_nonorientableCoeff_one_zero_eq_normalClosure [Subsingleton X] [HasUniqueRoots H]
+    {ι : G →* H} (hι : Function.Injective ι) {b : G} (hb : b ^ 2 = d) :
     Rad ι {(nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord} =
       normalClosure {inr (FreeGroup.of (x 0)) * inl b} := by
   subst hb
@@ -78,13 +78,14 @@ theorem Rad_toWord_nonorientableCoeff_one_zero [Subsingleton X] [HasUniqueRoots 
 /-- If the one-variable standard quadratic equation `x² d = 1` over a group `G` with unique roots
 has a solution in `G`, then `d = b²` for some `b ∈ G`, and the radical of the equation is the
 normal closure of `x b`. -/
-theorem exists_sq_eq_and_Rad_toWord_nonorientableCoeff_one_zero [Subsingleton X] [HasUniqueRoots G]
+theorem exists_sq_eq_and_Rad_toWord_nonorientableCoeff_one_zero_eq_normalClosure
+    [Subsingleton X] [HasUniqueRoots G]
     (hS : (V (.id G) {(nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord}).Nonempty) :
     ∃ b : G, b ^ 2 = d ∧
       Rad (.id G) {(nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord} =
         normalClosure {inr (FreeGroup.of (x 0)) * inl b} := by
   rw [toWord_nonorientableCoeff_one_zero] at hS ⊢
-  exact exists_pow_eq_and_Rad_pow_mul_inl two_ne_zero hS
+  exact exists_pow_eq_and_Rad_pow_mul_inl_eq_normalClosure two_ne_zero hS
 
 /-- Over a group `G` with unique roots, the radical of the standard quadratic equation `x² d = 1`
 is not the normal closure of the equation. -/

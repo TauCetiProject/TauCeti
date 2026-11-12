@@ -74,10 +74,10 @@ normal closure of `x ^ n` when `n ≠ 1`.
   with unique roots, the equations `u ^ n * w ^ n = 1` (`n ≠ 0`) and `u * w = 1` have the same
   solutions, hence the same radical.
 * `TauCeti.GroupAlgGeom.Rad_pow_mul_inl_pow_eq_normalClosure`,
-  `TauCeti.GroupAlgGeom.exists_pow_eq_and_Rad_pow_mul_inl`: over a group `H` with unique roots
-  and injective coefficients, the radical of the one-variable equation `x ^ n * b ^ n`
-  (`n ≠ 0`) is the normal closure of `x * b`; if `x ^ n * d = 1` has a solution in `G`, then
-  `d = b ^ n` for some `b ∈ G`.
+  `TauCeti.GroupAlgGeom.exists_pow_eq_and_Rad_pow_mul_inl_eq_normalClosure`: over a group `H`
+  with unique roots and injective coefficients, the radical of the one-variable equation
+  `x ^ n * b ^ n` (`n ≠ 0`) is the normal closure of `x * b`; if `x ^ n * d = 1` has a solution
+  in `G`, then `d = b ^ n` for some `b ∈ G`.
 * `TauCeti.GroupAlgGeom.inr_of_mul_inl_notMem_normalClosure_pow_mul_inl`,
   `TauCeti.GroupAlgGeom.normalClosure_pow_mul_inl_ne_Rad`: for `n ≠ 1`, the element `x * b` does
   not lie in the normal closure of `x ^ n * d`, whatever the coefficients `b` and `d`; hence over
@@ -748,7 +748,8 @@ theorem Rad_pow_mul_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (u w : GX G 
 
 /-- For injective coefficients, the radical of the one-variable equation `x * b = 1` is its
 normal closure: the quotient `G[x] ⧸ ncl(x b)` is `G` itself. -/
-theorem Rad_inr_of_mul_inl [Subsingleton X] (hι : Function.Injective ι) (x : X) (b : G) :
+theorem Rad_inr_of_mul_inl_eq_normalClosure [Subsingleton X] (hι : Function.Injective ι) (x : X)
+    (b : G) :
     Rad ι {(inr (of x) : GX G X) * inl b} = normalClosure {inr (of x) * inl b} := by
   have := uniqueOfSubsingleton x
   have hV : V ι {(inr (of x) : GX G X) * inl b} = {ι ∘ fun _ => b⁻¹} := by
@@ -762,13 +763,14 @@ one-variable equation `x ^ n * b ^ n = 1` (`n ≠ 0`) is the normal closure of `
 theorem Rad_pow_mul_inl_pow_eq_normalClosure [Subsingleton X] [HasUniqueRoots H]
     (hι : Function.Injective ι) {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
     Rad ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = normalClosure {inr (of x) * inl b} := by
-  rw [map_pow, Rad_pow_mul_pow hn, Rad_inr_of_mul_inl hι]
+  rw [map_pow, Rad_pow_mul_pow hn, Rad_inr_of_mul_inl_eq_normalClosure hι]
 
 /-- If the one-variable equation `x ^ n * d = 1` (`n ≠ 0`) has a solution in a group `G` with
 unique roots, then `d = b ^ n` for some `b ∈ G`, and the radical of the equation is the normal
 closure of `x * b`. -/
-theorem exists_pow_eq_and_Rad_pow_mul_inl [Subsingleton X] [HasUniqueRoots G] {n : ℕ}
-    (hn : n ≠ 0) {x : X} {d : G} (hV : (V (.id G) {(inr (of x) : GX G X) ^ n * inl d}).Nonempty) :
+theorem exists_pow_eq_and_Rad_pow_mul_inl_eq_normalClosure [Subsingleton X] [HasUniqueRoots G]
+    {n : ℕ} (hn : n ≠ 0) {x : X} {d : G}
+    (hV : (V (.id G) {(inr (of x) : GX G X) ^ n * inl d}).Nonempty) :
     ∃ b : G, b ^ n = d ∧
       Rad (.id G) {(inr (of x) : GX G X) ^ n * inl d} = normalClosure {inr (of x) * inl b} := by
   obtain ⟨v, hv⟩ := hV
