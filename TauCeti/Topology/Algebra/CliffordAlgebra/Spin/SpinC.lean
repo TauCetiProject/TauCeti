@@ -90,27 +90,29 @@ theorem continuous_ofCircle : Continuous (ofCircle Q hQ) := by
   exact h.congr fun z ↦ (ofCircle_apply Q hQ z).symm
 
 /-- The determinant character as a continuous homomorphism on the Spinᶜ quotient. -/
-def detCharacter : spinCGroup Q hQ →ₜ* Circle where
+def detContinuousMonoidHom : spinCGroup Q hQ →ₜ* Circle where
   toMonoidHom := det Q hQ
   continuous_toFun := continuous_det Q hQ
 
 /-- The weight-one central circle as a continuous homomorphism into the Spinᶜ quotient. -/
-def centralCircle : Circle →ₜ* spinCGroup Q hQ where
+def ofCircleContinuousMonoidHom : Circle →ₜ* spinCGroup Q hQ where
   toMonoidHom := ofCircle Q hQ
   continuous_toFun := continuous_ofCircle Q hQ
 
 /-- The bundled determinant character is the original quotient determinant. -/
 @[simp]
-theorem detCharacter_apply (x : spinCGroup Q hQ) : detCharacter Q hQ x = det Q hQ x := (rfl)
+theorem detContinuousMonoidHom_apply (x : spinCGroup Q hQ) :
+    detContinuousMonoidHom Q hQ x = det Q hQ x := (rfl)
 
 /-- The bundled central inclusion is the original weight-one circle inclusion. -/
 @[simp]
-theorem centralCircle_apply (z : Circle) : centralCircle Q hQ z = ofCircle Q hQ z := (rfl)
+theorem ofCircleContinuousMonoidHom_apply (z : Circle) :
+    ofCircleContinuousMonoidHom Q hQ z = ofCircle Q hQ z := (rfl)
 
 /-- The determinant restricted to the central circle is the square character. -/
 @[simp]
-theorem detCharacter_comp_centralCircle :
-    (detCharacter Q hQ).comp (centralCircle Q hQ) =
+theorem detContinuousMonoidHom_comp_ofCircleContinuousMonoidHom :
+    (detContinuousMonoidHom Q hQ).comp (ofCircleContinuousMonoidHom Q hQ) =
       (ContinuousMonoidHom.id Circle) ^ 2 := by
   ext z
   simp [ContinuousMonoidHom.pow_apply, det_ofCircle]

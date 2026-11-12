@@ -118,11 +118,11 @@ local instance : NormedSpace ℝ (S →L[ℂ] S) :=
 
 /-- Along a determinant parameter with velocity `a`, the half-spin action has operator-norm
 derivative `(ia/2) Id` times the phase at time `t`. Differentiation is over `ℝ`. -/
-theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_realDetLieLift (a t : ℝ) :
+theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift (a t : ℝ) :
     HasDerivAt (fun s : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε
-      (lieExp (spinCGroup.realDetLieLift 4 hpos (s * a))))
+      (lieExp (s • spinCGroup.realDetLieLift 4 hpos a)))
       ((Complex.I * (a / 2) * (Circle.exp (t * a / 2) : ℂ)) • (1 : S →L[ℂ] S)) t := by
-  simp only [spinCGroup.lieExp_realDetLieLift, realSpinCHalfSpinSmoothHom_ofCircle,
+  simp only [spinCGroup.lieExp_smul_realDetLieLift, realSpinCHalfSpinSmoothHom_ofCircle,
     Circle.coe_exp]
   have harg : HasDerivAt (fun s : ℝ ↦ ((s * a / 2 : ℝ) : ℂ) * Complex.I)
       (((a / 2 : ℝ) : ℂ) * Complex.I) t := by
@@ -134,6 +134,14 @@ theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_realDetLieLift (a t : ℝ) 
   · congr 1
     push_cast
     ring
+
+/-- At the identity the determinant ray acts infinitesimally by `(ia/2) Id`. -/
+theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift_zero (a : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε
+      (lieExp (s • spinCGroup.realDetLieLift 4 hpos a)))
+      ((Complex.I * (a / 2)) • (1 : S →L[ℂ] S)) 0 := by
+  simpa using
+    hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift o hQ b ρ ε a 0
 
 end DeterminantDerivative
 
