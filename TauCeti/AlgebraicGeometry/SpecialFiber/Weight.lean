@@ -43,6 +43,8 @@ That the weight `wᵢ` of the `i`-th component divides the `i`-th row of the int
 * `AlgebraicGeometry.Scheme.Hom.isField_globalSections_subscheme_closure_singleton`: the global
   functions on `C` form a field.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberWeight_pos`: the weight is positive.
+* `AlgebraicGeometry.Scheme.Hom.FiniteDimensionalComponentCohomology`: the components of the
+  special fibre have finite-dimensional `H⁰` and `H¹` of their structure sheaves.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberWeight_mul_finrank_cohomology_one`:
   `w_C · dim_{κ_C} H¹(C, 𝒪_C) = dim_k H¹(C, 𝒪_C)`.
 
@@ -107,6 +109,27 @@ theorem specialFiberWeight_pos {x : X} (hx : toBase x = closedPoint R)
     Module.nontrivial_of_finrank_eq_succ
       Scheme.Modules.finrank_globalSections_cohomology_zero_trivial_eq_one
   exact Module.finrank_pos
+
+/-- The irreducible components of the special fibre of a scheme `X` over a local ring `R` have
+finite-dimensional cohomology: for every codimension-one point `η` of `X` in the special fibre,
+the closure `C` of `η`, with its reduced structure, has `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)`
+finite-dimensional over the residue field of `R`. These are the hypotheses under which the
+intersection numbers of the components, and hence
+`AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix`, have the properties of a numerical
+type. -/
+structure FiniteDimensionalComponentCohomology : Prop where
+  /-- `H⁰` of the structure sheaf of every component is finite-dimensional. -/
+  finiteDimensional_zero : ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
+    letI := subschemeOverResidueField
+      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
+    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 0)
+  /-- `H¹` of the structure sheaf of every component is finite-dimensional. -/
+  finiteDimensional_one : ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
+    letI := subschemeOverResidueField
+      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
+    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1)
 
 variable [IsProper toBase]
 

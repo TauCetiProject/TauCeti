@@ -46,8 +46,6 @@ The combinatorial theory of `TauCeti.NumericalType`, such as its signed genus
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.FiniteDimensionalComponentCohomology`: the components of the
-  special fibre have finite-dimensional `H⁰` and `H¹` of their structure sheaves.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType`: the numerical type of the special
   fibre of a regular model.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_multiplicity`,
@@ -66,7 +64,8 @@ codimension-one points of `X` in the special fibre that indexes
 for those points.
 
 The two finiteness hypotheses are bundled in the structure
-`AlgebraicGeometry.Scheme.Hom.FiniteDimensionalComponentCohomology` rather than passed to the
+`AlgebraicGeometry.Scheme.Hom.FiniteDimensionalComponentCohomology`, from
+`TauCeti.AlgebraicGeometry.SpecialFiber.Weight`, rather than passed to the
 definition as two separate hypotheses. A hypothesis whose statement contains a proof term, here
 the closedness of `closure {η}`, has that proof abstracted into an auxiliary lemma when it is a
 binder of a definition, and the kernel then compares it, inside large cohomology types, with the
@@ -93,27 +92,6 @@ universe u
 namespace AlgebraicGeometry.Scheme.Hom
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
-
-/-- The irreducible components of the special fibre of a scheme `X` over a local ring `R` have
-finite-dimensional cohomology: for every codimension-one point `η` of `X` in the special fibre,
-the closure `C` of `η`, with its reduced structure, has `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)`
-finite-dimensional over the residue field of `R`. These are the hypotheses under which the
-intersection numbers of the components, and hence
-`AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix`, have the properties of a numerical
-type. -/
-structure FiniteDimensionalComponentCohomology : Prop where
-  /-- `H⁰` of the structure sheaf of every component is finite-dimensional. -/
-  finiteDimensional_zero : ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
-    letI := subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
-    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 0)
-  /-- `H¹` of the structure sheaf of every component is finite-dimensional. -/
-  finiteDimensional_one : ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
-    letI := subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
-    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1)
 
 variable [Ring.DimensionLEOne R] [IsIntegral X] [IsNoetherian X]
   [TauCeti.AlgebraicGeometry.IsRegular X] [IsProper toBase] [Flat toBase]
