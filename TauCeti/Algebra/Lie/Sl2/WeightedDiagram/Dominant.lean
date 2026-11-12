@@ -42,8 +42,8 @@ element of a triple whose neutral element is dominant for `b`.
 
 Consequently every `Int(L)`-orbit of neutral elements of `sl₂` triples meets the finite set
 `RootPairing.Base.dominantNeutralElements b`, so there are only finitely many such orbits, at most
-`3 ^ rank`. This does not say that the dominant element in an orbit is unique, so it does not
-yet give a weighted Dynkin diagram attached to an orbit.
+`3 ^ rank`. That each orbit meets it exactly once is proved in
+`TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Orbit`.
 
 ## Main results
 
