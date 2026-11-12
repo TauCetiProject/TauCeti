@@ -444,6 +444,7 @@ theorem singularHomologyπ_mapFundamentalClass (f : C(M, X)) :
 /-- **Fundamental classes are natural under homeomorphisms**: a homeomorphism `e : N ≃ₜ M`
 carries the fundamental class of the pulled-back orientation `o.comap` of `N` to the fundamental
 class of `o`. -/
+@[simp]
 theorem mapFundamentalClass_comap {N : Type} [TopologicalSpace N] [T2Space N] [ChartedSpace E N]
     [CompactSpace N] (e : N ≃ₜ M) :
     (o.comap e.isOpenEmbedding).mapFundamentalClass hn (e : C(N, M)) = o.fundamentalClass hn := by
