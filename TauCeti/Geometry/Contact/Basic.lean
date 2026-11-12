@@ -280,9 +280,7 @@ theorem isContactFormAt_inChartAt_iff [IsManifold I 1 M] {α : RoughForm I M ℝ
   have hval : α.inChartAt x₀ (extChartAt I x₀ x₀) = α x₀ := α.inChartAt_extChartAt_self x₀
   -- The model range is a neighbourhood of the chart image of an interior point, so the
   -- exterior derivative within it is the flat exterior derivative.
-  have hnhds : Set.range I ∈ 𝓝 (extChartAt I x₀ x₀) :=
-    Filter.mem_of_superset (isOpen_interior.mem_nhds (I.isInteriorPoint_iff.1 hx₀))
-      (interior_subset.trans (extChartAt_target_subset_range x₀))
+  have hnhds : Set.range I ∈ 𝓝 (extChartAt I x₀ x₀) := range_mem_nhds_isInteriorPoint hx₀
   have hd : mextDeriv (I := 𝓘(ℝ, E)) (α.inChartAt x₀) (extChartAt I x₀ x₀) = mextDeriv α x₀ := by
     refine (mextDeriv_eq_extDeriv (E := E) (F := ℝ) (k := 1) (α.inChartAt x₀) _).trans ?_
     rw [mextDeriv_def, ← extDerivWithin_univ,

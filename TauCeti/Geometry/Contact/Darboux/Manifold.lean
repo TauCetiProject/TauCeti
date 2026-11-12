@@ -102,7 +102,7 @@ theorem IsContactFormAt.exists_darbouxChart_of_isInteriorPoint {α : RoughForm I
           ![mvfderiv I chart x v] = g x * α x ![v] := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  set e := extChartAt I x₀ with he
+  set e := extChartAt I x₀
   -- The chart coordinates of the interior points of the chart target lying over `U`.
   set W : Set E := interior e.target ∩ e.symm ⁻¹' U
   have hW : IsOpen W :=
@@ -111,53 +111,28 @@ theorem IsContactFormAt.exists_darbouxChart_of_isInteriorPoint {α : RoughForm I
   have hy₀W : e x₀ ∈ W :=
     ⟨I.isInteriorPoint_iff.1 hx₀, by rw [mem_preimage, extChartAt_to_inv]; exact hx₀U⟩
   -- On `W`, the coordinate expression of `α` is smooth.
-  have hη : ContDiffOn ℝ ∞ (α.inChartAt x₀) W := by
-    intro z hz
-    have hzt : z ∈ e.target := interior_subset hz.1
-    have hloc := α.contDiffWithinAt_range_inChartAt_of_contMDiffAt
-      ((hα _ hz.2).contMDiffAt (hU.mem_nhds hz.2))
-    have hrange : range I ∈ 𝓝 z :=
-      mem_of_superset (isOpen_interior.mem_nhds hz.1)
-        (interior_subset.trans (extChartAt_target_subset_range x₀))
-    exact ((α.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt hzt
-      (mem_extChartAt_source _) hloc).contDiffAt hrange).contDiffWithinAt
+  have hη : ContDiffOn ℝ ∞ (α.inChartAt x₀) W := α.contDiffOn_inChartAt_of_contMDiffOn hU hα x₀
   -- The contact Darboux theorem on the model space, around the chart image of `x₀`.
   obtain ⟨n, Φ, g, hΦ₀, hev⟩ :=
     exists_diffeomorph_eventually_innerProductContactForm_apply_fderiv_eq_mul (r := ⊤) le_top hW
       hy₀W (hη.of_le (by simp)) ((isContactFormAt_inChartAt_iff hx₀).2 hc)
   obtain ⟨V₁, hV₁, hV₁o, hy₀V₁⟩ := eventually_nhds_iff.1 hev
   -- The chart: `Φ` after the extended chart, restricted to the inverse image of `V₁ ∩ W`.
-  set S : Set M := e.source ∩ e ⁻¹' (V₁ ∩ W)
-  have hS : IsOpen S := isOpen_extChartAt_preimage' x₀ (hV₁o.inter hW)
-  have hS_sub : S ⊆ (extChartPartialDiffeomorph I ∞ x₀).source := by
-    rw [extChartPartialDiffeomorph_source]
-    exact inter_subset_inter_right _ (preimage_mono fun _ hy ↦ hy.2.1)
-  set chart := ((extChartPartialDiffeomorph I ∞ x₀).restrOpen S hS).trans Φ.toPartialDiffeomorph
-  have hsrc : chart.source = S := by
-    simp [chart, inter_eq_right.2 hS_sub]
-  have hcoe : ⇑chart = ⇑Φ ∘ ⇑e := by
-    funext y
-    simp [chart, e]
-  have hmvf (x : M) (hx : x ∈ S) (v : TangentSpace I x) :
-      mvfderiv I chart x v = fderiv ℝ Φ (e x) (mvfderiv I e x v) := by
-    have hx_chart : x ∈ (chartAt H x₀).source := by
-      simpa only [he, extChartAt_source] using hx.1
-    rw [hcoe, mvfderiv_comp_apply_of_differentiableAt (Φ.differentiable (by simp) _)
-      (mdifferentiableAt_extChartAt hx_chart)]
+  obtain ⟨chart, hsrc, hcoe, hmvf⟩ := exists_partialDiffeomorph_comp_extChartAt I ∞ x₀
+    (hV₁o.inter hW) (fun _ hy ↦ hy.2.1) (by simp) Φ
   refine ⟨n, chart, fun x ↦ g (e x), hsrc ▸ ⟨mem_extChartAt_source x₀, hy₀V₁, hy₀W⟩,
-    fun x hx ↦ ?_, by rw [hcoe, Function.comp_apply, hΦ₀], fun x hx ↦ ?_⟩
+    fun x hx ↦ ?_, by rw [hcoe, hΦ₀], fun x hx ↦ ?_⟩
   · rw [hsrc] at hx
     have hU' := hx.2.2.2
     rwa [mem_preimage, e.left_inv hx.1] at hU'
-  · rw [hsrc] at hx
-    obtain ⟨hg, hΦ⟩ := hV₁ _ hx.2.1
+  · have hxS := hsrc ▸ hx
+    obtain ⟨hg, hΦ⟩ := hV₁ _ hxS.2.1
     refine ⟨hg, fun v ↦ ?_⟩
     have hvec : (fun i ↦ mvfderiv I e x (![v] i)) = ![mvfderiv I e x v] := by
       ext i
       fin_cases i
       rfl
-    rw [hmvf x hx v, show chart x = Φ (e x) from congrFun hcoe x, hΦ,
-      RoughForm.apply_eq_inChartAt_mvfderiv α hx.1, hvec]
+    rw [hmvf x hx v, hcoe, hΦ, RoughForm.apply_eq_inChartAt_mvfderiv α hxS.1, hvec]
 
 /-- **The contact Darboux theorem at an interior point.** Around any interior point `x₀` of a
 manifold with a smooth contact form `α`, there are `n`, a smooth partial diffeomorphism `chart`
