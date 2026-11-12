@@ -56,8 +56,7 @@ the composition operator and the pointwise Birkhoff averages of a representative
   expectation tends to `0`. This is the shape a consumer integrating against a bounded weight
   wants, and it needs no integrability hypothesis of its own.
 
-The `Exchangeability` roadmap records this identification as the Layer 5 milestone
-`proj_eq_condexp`, whose migration source is the `Ergodic` subtree of
+The same identification is `proj_eq_condexp` in the `Ergodic` subtree of
 `cameronfreer/exchangeability`. Nothing here is a port: the statements are for an arbitrary
 measure-preserving map rather than the path-space shift, and the proofs consume Mathlib's
 `condExpL2` and von Neumann mean ergodic theorem.

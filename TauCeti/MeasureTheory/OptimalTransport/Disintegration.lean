@@ -174,6 +174,7 @@ theorem ae_exists_condKernel_eq_dirac (hπ : IsCoupling π μ ν) {s : Set (X ×
     simpa using (congrArg (fun m : Measure Y ↦ m Set.univ) hae).symm
   rw [hae, hy1, one_smul]
 
+omit [Nonempty Y] in
 /-- Two finite couplings with the same source marginal, concentrated on a common set whose
 sections are `μ`-almost all subsingletons, are equal. In particular their target marginals
 agree. -/
@@ -181,6 +182,9 @@ theorem eq_of_ae_mem_of_subsingleton {π' : Measure (X × Y)} {ν' : Measure Y}
     (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ ν') {s : Set (X × Y)}
     (hs : ∀ᵐ z ∂π, z ∈ s) (hs' : ∀ᵐ z ∂π', z ∈ s)
     (hsub : ∀ᵐ x ∂μ, {y | (x, y) ∈ s}.Subsingleton) : π = π' := by
+  rcases isEmpty_or_nonempty Y with hY | _
+  · have : IsEmpty (X × Y) := ⟨fun z ↦ hY.false z.2⟩
+    exact Subsingleton.elim _ _
   let _ : IsFiniteMeasure μ := by
     rw [← hπ.fst_eq]
     infer_instance
@@ -249,6 +253,7 @@ theorem ae_exists_condKernel_eq_dirac (π : Coupling μ ν) {s : Set (X × Y)}
       π.1.toMeasure.condKernel x = Measure.dirac y :=
   π.2.ae_exists_condKernel_eq_dirac hs hsub
 
+omit [Nonempty Y] in
 /-- Bundled couplings with the same source and almost everywhere the same uniquely determined
 partner in a set have equal underlying plan measures. -/
 theorem eq_of_ae_mem_of_subsingleton {ν' : ProbabilityMeasure Y}

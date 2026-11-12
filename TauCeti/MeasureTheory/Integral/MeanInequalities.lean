@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
@@ -30,10 +31,15 @@ turns Hölder's inequality into
 `L¹` norm of the weight. With `w` the deviation of a coefficient from a constant, this is how a
 mean oscillation enters the error estimates of frozen-coefficient arguments.
 
+The file also records the weighted Young inequality for a pairing,
+`∫ w ⟪G, η⟫ ≤ (δ / 2) ∫ w ‖η‖² + (2 δ)⁻¹ ∫ w ‖G‖²` for a nonnegative weight `w` and `δ > 0`,
+which absorbs a pairing into a coercive term in energy estimates.
+
 ## Main declarations
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
 * `TauCeti.integral_mul_le_L1_mul_Lq_of_le`: Hölder's inequality with a bounded weight.
+* `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 
 ## References
 
@@ -46,7 +52,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 variable {β : Type*} [MeasurableSpace β] {ν : Measure β}
 
@@ -116,5 +122,35 @@ theorem integral_mul_le_L1_mul_Lq_of_le [IsFiniteMeasure ν] {p q K : ℝ}
         rw [← Real.rpow_add_one' hx.1 (by linarith [hpq.lt]), sub_add_cancel]
     _ ≤ K ^ (p - 1) * w x :=
         mul_le_mul_of_nonneg_right (Real.rpow_le_rpow hx.1 hx.2 hpq.sub_one_pos.le) hx.1
+
+/-- **Weighted Young inequality for a pairing.** For a nonnegative weight `w` and `δ > 0`,
+
+`∫ w ⟪G, η⟫ ≤ (δ / 2) ∫ w ‖η‖² + (2 δ)⁻¹ ∫ w ‖G‖²`,
+
+provided the two integrals on the right exist. -/
+theorem integral_mul_inner_le {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    {w : β → ℝ} {G η : β → F} (hw : ∀ z, 0 ≤ w z)
+    (hη : Integrable (fun z ↦ w z * ‖η z‖ ^ 2) ν) (hG : Integrable (fun z ↦ w z * ‖G z‖ ^ 2) ν)
+    {δ : ℝ} (hδ : 0 < δ) :
+    ∫ z, w z * ⟪G z, η z⟫_ℝ ∂ν ≤
+      δ / 2 * (∫ z, w z * ‖η z‖ ^ 2 ∂ν) + 1 / (2 * δ) * ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by
+  have i₁ := hη.const_mul (δ / 2)
+  have i₂ := hG.const_mul (1 / (2 * δ))
+  rw [← integral_const_mul, ← integral_const_mul, ← integral_add i₁ i₂]
+  by_cases hi : Integrable (fun z ↦ w z * ⟪G z, η z⟫_ℝ) ν
+  · refine integral_mono hi (i₁.add i₂) fun z ↦ ?_
+    have h := real_inner_le_norm (G z) (η z)
+    have hq : ‖G z‖ * ‖η z‖ ≤ δ / 2 * ‖η z‖ ^ 2 + 1 / (2 * δ) * ‖G z‖ ^ 2 := by
+      have e : δ / 2 * ‖η z‖ ^ 2 + 1 / (2 * δ) * ‖G z‖ ^ 2 =
+          (δ ^ 2 * ‖η z‖ ^ 2 + ‖G z‖ ^ 2) / (2 * δ) := by
+        field_simp
+      rw [e, le_div_iff₀ (by positivity)]
+      nlinarith [sq_nonneg (δ * ‖η z‖ - ‖G z‖)]
+    have := mul_le_mul_of_nonneg_left (h.trans hq) (hw z)
+    linarith
+  · rw [integral_undef hi]
+    exact integral_nonneg fun z ↦ by
+      have := hw z
+      positivity
 
 end TauCeti

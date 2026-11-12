@@ -192,13 +192,9 @@ theorem coe_negHamiltonianₗ (φ : SmoothForm I M ℝ 0) (x : M) :
       -σ.hamiltonianVectorField (fun y ↦ φ.1 y 0) x := by
   -- Both sides are `-(σ♭)⁻¹` of the differential `d(φ)`, read once as a form and once through
   -- `mvfderiv`.
-  have hd : SmoothForm.degreeOneEquiv (mextDerivₗ I 0 φ) x = mvfderiv I (fun y ↦ φ.1 y 0) x := by
-    ext v
-    rw [SmoothForm.degreeOneEquiv_apply_apply, mextDerivₗ_apply, RoughForm.eq_ofFunction φ.1,
-      mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
-    simp only [RoughForm.ofFunction_apply]
   simp only [negHamiltonianₗ, LinearMap.coe_mk, AddHom.coe_mk, ContMDiffSection.coe_neg,
-    Pi.neg_apply, interiorEquiv_symm_apply, hd, hamiltonianVectorField_def]
+    Pi.neg_apply, interiorEquiv_symm_apply, SmoothForm.degreeOneEquiv_mextDerivₗ,
+    hamiltonianVectorField_def]
 
 /-- The contraction of `-X_f` is `-df`. -/
 @[simp]

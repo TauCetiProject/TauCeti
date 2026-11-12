@@ -113,7 +113,7 @@ theorem exists_isOpen_eLpNorm_restrict_sub_le_mul_eLpNorm_mgradient [LindelofSpa
   have hv : ContDiffOn ℝ 1 (fun y ↦ u (φ.symm y)) B :=
     (hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn.mono hrt
   rw [← ENNReal.ofReal_eq_coe_nnreal]
-  refine eLpNorm_le_eLpNorm_of_lintegral_rpow_le (by positivity) (zero_lt_one.trans_le hp).ne' hp'
+  refine eLpNorm_le_eLpNorm_of_lintegral_rpow_le (by positivity) hp'
     (hu.continuous.sub continuous_const).aestronglyMeasurable ?_
   simp only [enorm_norm]
   -- The density and the derivative comparisons on `B` contribute the factor
