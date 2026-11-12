@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
@@ -23,12 +24,15 @@ adjoint type A₁ over ℚ. All results hold over every commutative ring. We cal
 subgroup `borelSubgroup`; we do not identify it with all points of a Borel subgroup scheme
 or assert maximal solvability here. No ordered-product normal form for `U` is assumed.
 The opposite-intersection theorem also shows that a negative root element in `B` must be
-the identity; this detects when a simple Weyl conjugate leaves `B`.
+the identity; this detects when a simple Weyl conjugate leaves `B`. Over every nontrivial
+commutative ring, the simple-root element with additive parameter one witnesses that each
+pinned simple Weyl representative conjugates some element of `B` outside `B`. This is the
+noncontainment required by the last Tits-system axiom, without assuming a Bruhat decomposition.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemmas 17 and 18.
-* R. W. Carter, *Simple Groups of Lie Type*, §5.3.
+* R. W. Carter, *Simple Groups of Lie Type*, §5.3 and §8.1.
 -/
 
 public section
@@ -169,5 +173,18 @@ theorem weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff
   rw [D.weylElement_conj_rootSubgroupPoints,
     D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots A hneg,
     ← D.weylElement_conj_rootSubgroupPoints, conj_eq_one_iff]
+
+/-- Every pinned simple Weyl representative conjugates some element of the positive Borel
+outside that Borel, for every Chevalley datum over a nontrivial commutative ring. -/
+theorem exists_weylElement_conj_notMem_borelSubgroup [Nontrivial A] (i : Fin t.rank) :
+    ∃ b : D.borelSubgroup A,
+      D.weylElement (t.simpleIndex ht i) A 1 * b.val *
+        (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ ∉ D.borelSubgroup A := by
+  have hpos : t.simpleIndex ht i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
+    support_subset_posRoots _ _ (t.simpleIndex_mem_support i)
+  refine ⟨⟨D.rootSubgroupPoints (t.simpleIndex ht i) A (Multiplicative.ofAdd 1),
+    D.positivePoints_le_borelSubgroup A (D.rootSubgroupPoints_mem_positivePoints A hpos _)⟩, ?_⟩
+  rw [D.weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff]
+  exact D.rootSubgroupPoints_ofAdd_one_ne_one A (t.simpleIndex ht i)
 
 end TauCeti.DynkinType.ChevalleyDatum
