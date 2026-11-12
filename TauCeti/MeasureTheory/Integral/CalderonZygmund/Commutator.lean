@@ -61,10 +61,10 @@ and the three terms are compared with the constant `-∫ K c z (h₂ z) dz` on `
   `k` converges.
 
 Integrating this estimate, with the `Lᵖ` bounds for the maximal function for `q < p`, leads to the
-Coifman–Rochberg–Weiss theorem. The Fefferman–Stein inequality available here
-(`TauCeti.eLpNorm_le_eLpNorm_sharpMaximalFunction`) assumes that its argument lies in `L^p₀` for
-some `1 ≤ p₀ ≤ p`, which is not known a priori for `[b, T] f`; completing the argument requires a
-suitable a priori version of that inequality together with an approximation or truncation argument.
+Coifman–Rochberg–Weiss theorem. The case `p₀ = p` of the Fefferman–Stein inequality
+`TauCeti.eLpNorm_le_eLpNorm_sharpMaximalFunction`, for functions in `Lᵖ`, is the form needed there.
+The remaining step is to show that `[b, T] f ∈ Lᵖ`, for example by truncating `b` and
+approximating `f`.
 
 ## Main declarations
 

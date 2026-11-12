@@ -317,8 +317,7 @@ private theorem ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top {g : (ι �
 /-- **Lebesgue's differentiation theorem along dyadic cubes**: for a locally integrable `g`, at
 almost every `x` the averages of `g` over the dyadic cubes containing `x` converge to `g x` as the
 level tends to `-∞`. -/
-theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg : AEMeasurable g)
-    (hg' : ∀ K, IsCompact K → ∫⁻ x in K, g x ≠ ∞) :
+theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg : LocallyIntegrable g) :
     ∀ᵐ x, Tendsto (fun k => ⨍⁻ y in dyadicCube k (dyadicIndex k x), g y ∂volume) atBot
       (𝓝 (g x)) := by
   -- On each cube `Q` of level `0`, apply the integrable case to `g` restricted to `Q`; the cubes
@@ -328,9 +327,10 @@ theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg 
     have hm := measurableSet_dyadicCube (0 : ℤ) m
     have hint : ∫⁻ x, (dyadicCube 0 m).indicator g x ≠ ∞ := by
       rw [lintegral_indicator hm]
-      exact ne_top_of_le_ne_top (hg' _ (isCompact_closedBall _ _))
-        (lintegral_mono_set (dyadicCube_subset_closedBall 0 m))
-    filter_upwards [ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top (hg.indicator hm) hint]
+      refine ne_top_of_le_ne_top ?_ (lintegral_mono_set (dyadicCube_subset_closedBall 0 m))
+      simpa only [enorm_eq_self] using (hg.integrableOn_isCompact (isCompact_closedBall _ _)).2.ne
+    filter_upwards [ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top
+      (hg.aestronglyMeasurable.aemeasurable.indicator hm) hint]
       with x hx hxm
     rw [indicator_of_mem hxm] at hx
     refine hx.congr' ?_

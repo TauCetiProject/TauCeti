@@ -287,14 +287,16 @@ theorem ae_le_of_forall_notMem_calderonZygmundCubes [Nonempty ι] (hg : AEMeasur
     (hp : 1 ≤ p) (hg' : ∫⁻ x, g x ^ p ≠ ∞) (ht : t ≠ 0) :
     ∀ᵐ x, (∀ q ∈ calderonZygmundCubes g t, x ∉ dyadicCube q.1 q.2) → g x ≤ t := by
   -- `g` is locally integrable, since `∫_K g ≤ |K| + ∫ g ^ p`.
-  have hloc (K : Set (ι → ℝ)) (hK : IsCompact K) : ∫⁻ x in K, g x ≠ ∞ := by
-    refine ne_top_of_le_ne_top (b := volume K + ∫⁻ x, g x ^ p)
-      (ENNReal.add_ne_top.2 ⟨hK.measure_lt_top.ne, hg'⟩)
+  have hloc : LocallyIntegrable g := by
+    refine locallyIntegrable_iff.2 fun K hK => ⟨hg.aestronglyMeasurable.restrict, ?_⟩
+    simp only [HasFiniteIntegral, enorm_eq_self]
+    refine lt_of_le_of_lt (b := volume K + ∫⁻ x, g x ^ p)
       ((lintegral_le_measure_univ_add_lintegral_rpow g hp).trans ?_)
+      (ENNReal.add_lt_top.2 ⟨hK.measure_lt_top, hg'.lt_top⟩)
     rw [Measure.restrict_apply_univ]
     gcongr
     exact Measure.restrict_le_self
-  filter_upwards [ae_tendsto_setLAverage_dyadicCube hg hloc] with x hx hnot
+  filter_upwards [ae_tendsto_setLAverage_dyadicCube hloc] with x hx hnot
   refine le_of_tendsto hx (Eventually.of_forall fun k => le_of_not_gt fun hlt => ?_)
   obtain ⟨q, hq, -, hsub⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage hp hg' ht hlt
   exact hnot q hq (hsub (mem_dyadicCube_dyadicIndex k x))
