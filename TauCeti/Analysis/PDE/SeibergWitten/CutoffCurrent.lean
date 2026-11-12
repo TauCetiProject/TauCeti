@@ -116,7 +116,8 @@ The phase form `Im (α⁻¹ dα)` (`TauCeti.phaseForm`) and the twisted differen
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.covariantDeriv b α`: the covariant derivative `dα + i b α`.
+* `TauCeti.SeibergWitten.covariantDeriv b α`: the covariant derivative `dα + i b α`, also for
+  sections with values in a complex vector space.
 * `TauCeti.SeibergWitten.covariantPhaseForm b α`: the phase form `τ = Im (α⁻¹ dα) + b`.
 * `TauCeti.SeibergWitten.cutoffPhaseForm χ b α`: the one-form `χ(|α|²) τ`.
 * `TauCeti.SeibergWitten.cutoffCurrent χ b α`: the two-form `Θ = -db + d(χ(|α|²) τ)`.
@@ -147,16 +148,25 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-! ### The covariant derivative and the covariant phase form -/
 
-/-- The covariant derivative `∇_a α = dα + i b α` of a section `α` of the trivial line for the
-imaginary connection form `a = i b`. -/
-def covariantDeriv (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) : E →L[ℝ] ℂ :=
-  fderiv ℝ α x + ((ofSubsingletonLIE (0 : Fin 1)).symm (b x)).smulRight (I * α x)
+/-- The covariant derivative `∇_a α = dα + i b α` of a section `α` of the trivial bundle with
+fibre a complex vector space `F`, for the imaginary connection form `a = i b`. For `F = ℂ` this is
+a section of the trivial line; for `F` a Clifford module it is a spinor field twisted by the line.
+-/
+def covariantDeriv {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → F) (x : E) : E →L[ℝ] F :=
+  fderiv ℝ α x + ((ofSubsingletonLIE (0 : Fin 1)).symm (b x)).smulRight (I • α x)
+
+/-- The covariant derivative of a vector-valued section evaluated on a vector. -/
+theorem covariantDeriv_apply_eq_add_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → F) (x v : E) :
+    covariantDeriv b α x v = fderiv ℝ α x v + b x (fun _ ↦ v) • I • α x := by
+  simp [covariantDeriv, ofSubsingletonLIE_symm_apply]
 
 /-- The covariant derivative evaluated on a vector. -/
 @[simp]
 theorem covariantDeriv_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x v : E) :
     covariantDeriv b α x v = fderiv ℝ α x v + I * b x (fun _ ↦ v) * α x := by
-  simp [covariantDeriv, ofSubsingletonLIE_symm_apply]
+  simp [covariantDeriv_apply_eq_add_smul]
   ring
 
 /-- The covariant derivative of a `C¹` section for a continuous connection form is
