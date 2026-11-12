@@ -80,6 +80,36 @@ noncomputable section
 open Set
 open scoped ENNReal NNReal
 
+namespace HolderWith
+
+variable {E F : Type*} [PseudoEMetricSpace E] [PseudoEMetricSpace F]
+  {C α : ℝ≥0} {g : ℝ → F}
+
+/-- An `α / 2`-Hölder function of time is `α`-Hölder on parabolic space-time, with the
+same constant. -/
+theorem comp_parabolicTime (hg : HolderWith C (α / 2) g) :
+    HolderWith C α (fun p : TauCeti.ParabolicSpaceTime E ↦ g p.time) := by
+  intro p q
+  calc
+    edist (g p.time) (g q.time) ≤ C * edist p.time q.time ^ ((α / 2 : ℝ≥0) : ℝ) := hg p.time q.time
+    _ = C * (edist p.time q.time ^ (1 / 2 : ℝ)) ^ (α : ℝ) := by
+      rw [← ENNReal.rpow_mul]
+      congr 2
+      push_cast
+      ring
+    _ ≤ C * edist p q ^ (α : ℝ) := by
+      gcongr
+      exact TauCeti.ParabolicSpaceTime.edist_time_rpow_le p q
+
+/-- Restricting a time-only `α / 2`-Hölder function to a parabolic slab preserves its
+constant and gives parabolic exponent `α`. -/
+theorem comp_parabolicTime_slab (hg : HolderWith C (α / 2) g) (a b : ℝ) :
+    HolderWith C α (fun p : TauCeti.ParabolicSpaceTime.slab (E := E) a b ↦
+      g (p : TauCeti.ParabolicSpaceTime E).time) :=
+  ((hg.comp_parabolicTime (E := E)).holderOnWith _).holderWith
+
+end HolderWith
+
 namespace TauCeti.ParabolicSpaceTime
 
 variable {E F : Type*} {a b : ℝ}

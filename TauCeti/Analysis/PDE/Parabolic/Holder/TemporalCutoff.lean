@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
-import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
 # Temporal cutoffs in the order-two parabolic Hölder space
@@ -49,31 +49,25 @@ private theorem holderWith_scaled_time_deriv {M : ℝ≥0}
     HolderWith (M * (δ ^ (-1 - (α : ℝ) / 2)).toNNReal) α
       (fun p : ParabolicSpaceTime.slab (E := E) a b ↦
         δ⁻¹ * deriv smoothTransition (((p : ParabolicSpaceTime E).time - s) / δ)) := by
+  suffices hscaled : HolderWith (M * (δ ^ (-1 - (α : ℝ) / 2)).toNNReal) (α / 2)
+      (fun t : ℝ ↦ δ⁻¹ * deriv smoothTransition ((t - s) / δ)) from
+    hscaled.comp_parabolicTime_slab a b
   apply holderOnWith_univ.1
   apply HolderOnWith.of_dist_le
-  intro p _ q _
-  have hd := hM.dist_le (((p : ParabolicSpaceTime E).time - s) / δ)
-    (((q : ParabolicSpaceTime E).time - s) / δ)
-  have htime := ParabolicSpaceTime.sqrt_abs_time_sub_le_dist
-    (p : ParabolicSpaceTime E) (q : ParabolicSpaceTime E)
-  have hpow : |(p : ParabolicSpaceTime E).time - (q : ParabolicSpaceTime E).time| ^
-      ((α : ℝ) / 2) ≤ dist p q ^ (α : ℝ) := by
-    rw [rpow_div_two_eq_sqrt _ (abs_nonneg _)]
-    exact rpow_le_rpow (sqrt_nonneg _) htime α.coe_nonneg
-  rw [NNReal.coe_mul, Real.coe_toNNReal _ (rpow_nonneg hδ.le _)]
+  intro t _ r _
+  have hd := hM.dist_le ((t - s) / δ) ((r - s) / δ)
+  rw [NNReal.coe_mul, Real.coe_toNNReal _ (rpow_nonneg hδ.le _), NNReal.coe_div,
+    NNReal.coe_ofNat]
   simp only [Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos (inv_pos.2 hδ)]
   calc
-    δ⁻¹ * |deriv smoothTransition (((p : ParabolicSpaceTime E).time - s) / δ) -
-        deriv smoothTransition (((q : ParabolicSpaceTime E).time - s) / δ)| ≤
-        δ⁻¹ * (M * (|(p : ParabolicSpaceTime E).time -
-          (q : ParabolicSpaceTime E).time| / δ) ^ ((α : ℝ) / 2)) := by
+    δ⁻¹ * |deriv smoothTransition ((t - s) / δ) -
+        deriv smoothTransition ((r - s) / δ)| ≤
+        δ⁻¹ * (M * (|t - r| / δ) ^ ((α : ℝ) / 2)) := by
       gcongr
       simpa [Real.dist_eq, ← sub_div, sub_sub_sub_cancel_right, abs_div, abs_of_pos hδ] using hd
-    _ = M * δ ^ (-1 - (α : ℝ) / 2) *
-        |(p : ParabolicSpaceTime E).time - (q : ParabolicSpaceTime E).time| ^ ((α : ℝ) / 2) := by
+    _ = M * δ ^ (-1 - (α : ℝ) / 2) * |t - r| ^ ((α : ℝ) / 2) := by
       rw [div_rpow (abs_nonneg _) hδ.le, rpow_sub hδ, rpow_neg_one]
       ring
-    _ ≤ M * δ ^ (-1 - (α : ℝ) / 2) * dist p q ^ (α : ℝ) := by gcongr
 
 omit [NormedSpace ℝ E] in
 private theorem exists_scaled_time_deriv {M : ℝ≥0}
@@ -110,10 +104,15 @@ private theorem exists_scaled_time_deriv {M : ℝ≥0}
 /-- **Temporal cutoffs with parabolic scaling.** For `α ≤ 2`, one constant works for every
 transition interval `[s, s + δ]` and every closed time slab. The cutoff is zero before the
 transition, one afterwards, has zero spatial derivatives, and its order-two norm is bounded
-by `1 + M / δ + M δ^(-1 - α/2)`. In particular it is `O(δ^(-1 - α/2))` as `δ ↓ 0`. -/
+by `1 + M / δ + M δ^(-1 - α/2)`. Its value and time derivative are given explicitly by the
+rescaled smooth transition and its derivative. In particular the norm is `O(δ^(-1 - α/2))`
+as `δ ↓ 0`. -/
 theorem exists_temporal_cutoff (hα : α ≤ 2) :
     ∃ M : ℝ, 0 ≤ M ∧ ∀ {δ : ℝ}, 0 < δ → ∀ (s a b : ℝ) (hab : a < b),
       ∃ χ : ParabolicC2HolderSpace α E ℝ hab,
+        (∀ p, χ p = smoothTransition (((p : ParabolicSpaceTime E).time - s) / δ)) ∧
+        (∀ p, timeDerivL χ p =
+          δ⁻¹ * deriv smoothTransition (((p : ParabolicSpaceTime E).time - s) / δ)) ∧
         (∀ p, χ p ∈ Icc 0 1) ∧
         (∀ p : ParabolicSpaceTime.slab (E := E) a b,
           (p : ParabolicSpaceTime E).time ≤ s → χ p = 0) ∧
@@ -163,8 +162,9 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
   have hχ (p : ParabolicSpaceTime.slab (E := E) a b) :
       χ p = f (p : ParabolicSpaceTime E).time := by
     simp only [χ, mk_apply, u, BoundedContinuousFunction.coe_ofNormedAddCommGroup]
-  refine ⟨χ, ?_, ?_, ?_, by simp only [χ, spatialFDerivL_mk],
+  refine ⟨χ, hχ, ?_, ?_, ?_, ?_, by simp only [χ, spatialFDerivL_mk],
     by simp only [χ, spatialSecondFDerivL_mk], ?_⟩
+  · simpa only [χ, timeDerivL_mk] using hv
   · intro p
     rw [hχ]
     exact ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
