@@ -415,17 +415,6 @@ private theorem exists_forall_sq_norm_value_sq_le (R : ℝ) :
     nlinarith [sq_nonneg C₀]
   exact sq_le_mul_one_add_pow_three (by positivity) (by positivity) (by positivity) hW1 hk2
 
-/-- A nonconstant polynomial has modulus at least one outside some closed disc. -/
-private theorem exists_forall_one_le_norm_eval (hm : 0 < P.natDegree) :
-    ∃ R : ℝ, ∀ z ∉ closedBall (0 : ℂ) R, 1 ≤ ‖P.eval z‖ := by
-  obtain ⟨R, -, hR⟩ := (hasBasis_cobounded_compl_closedBall (0 : ℂ)).eventually_iff.mp
-    (by
-      rw [cobounded_eq_cocompact]
-      exact (P.tendsto_norm_atTop (Polynomial.natDegree_pos_iff_degree_pos.mp hm)
-        tendsto_norm_cocompact_atTop).eventually_ge_atTop 1 :
-      ∀ᶠ z in Bornology.cobounded ℂ, 1 ≤ ‖P.eval z‖)
-  exact ⟨R, hR⟩
-
 /-- **Uniform coercivity of Taubes's functional on `H¹(ℂ)`.** Let `R` and `K` be constants. There
 is a constant `C` such that for every polynomial `P` of degree at least one with `‖P‖ ≥ 1` outside
 the closed disc of radius `R` and with linear coefficient
@@ -491,7 +480,7 @@ theorem exists_le_two_mul_sobolevReducedFunctional_add (hm : 0 < P.natDegree) :
       ((‖W1p.gradient u‖ ^ 2 / 2 + (∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
         (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) / 16 : ℝ) : EReal) ≤
         2 * sobolevReducedFunctional P u + C := by
-  obtain ⟨R, hR⟩ := exists_forall_one_le_norm_eval hm
+  obtain ⟨R, hR⟩ := Polynomial.exists_forall_one_le_norm_eval hm
   obtain ⟨C, hC⟩ := exists_forall_le_two_mul_sobolevReducedFunctional_add R
     (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) ^ 2)
@@ -556,7 +545,7 @@ level `t`, the elements `u ∈ H¹(ℂ)` with `I(u) ≤ t` are bounded in `H¹(�
 `TauCeti.Vortex.sobolevReducedFunctional P`. -/
 theorem exists_norm_le_of_sobolevReducedFunctional_le (hm : 0 < P.natDegree) (t : ℝ) :
     ∃ C : ℝ, ∀ u : W1p (volume : Measure ℂ) ⊤ 2, sobolevReducedFunctional P u ≤ t → ‖u‖ ≤ C := by
-  obtain ⟨R, hR⟩ := exists_forall_one_le_norm_eval hm
+  obtain ⟨R, hR⟩ := Polynomial.exists_forall_one_le_norm_eval hm
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_sobolevReducedFunctional_le R
     (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) ^ 2) t

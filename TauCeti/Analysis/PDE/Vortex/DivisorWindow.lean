@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Vortex.Decay
 public import TauCeti.Analysis.PDE.Vortex.Existence
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.InnerProductSpace.Laplacian.MeanValueInequality
@@ -51,7 +50,8 @@ representative of a minimizer of Taubes's functional `I_P`; its squared modulus 
    (`TauCeti.le_one_div_two_add_integral_sq_div_add_of_neg_le_laplacian`) bounds `w` above by
    its `L²` norm. Then `Δw ≤ exp (2 sup w) / 8 + A`, and the same inequality for `-w` bounds `w`
    below. Hence `|w| ≤ M` uniformly (`TauCeti.Vortex.exists_forall_abs_le_of_laplacian_eq`), and
-   `|α|² ≥ exp (-2M) / 2` outside the disc of radius `R + 1`.
+   `|α|² ≥ exp (-2M) / 2` outside the disc of radius `R + 1`
+   (`TauCeti.Vortex.exists_forall_le_sq_norm_sectionValue`).
 3. **Exterior decay.** Outside that disc `-log |α|²` is a subsolution of `-Δ + c₀²` for
    `4 c₀² = exp (-2M) / 2`, so it decays at the rate `c₀` with uniform constants
    (`TauCeti.Vortex.neg_log_normSq_le_mul_exp_of_le_normSq`). Past a uniform radius this forces
@@ -64,6 +64,9 @@ The degree-zero case is the vacuum, with `|α| = 1`.
 * `TauCeti.Vortex.exists_forall_abs_le_of_laplacian_eq`: the smooth solution of the reduced
   equation obtained from a minimizer of Taubes's functional is bounded, uniformly over divisors
   in a fixed disc.
+* `TauCeti.Vortex.exists_forall_le_sq_norm_sectionValue`: outside a disc containing the zeros,
+  the squared modulus `|α|²` of a smooth framed vortex is bounded below, uniformly over divisors
+  in that disc.
 * `TauCeti.Vortex.exists_forall_one_sub_normSq_le_mul_exp`: the modulus defect of a smooth framed
   vortex decays like `K exp (-c |z|)`, for every `c < 1 / 2`, with `K` uniform over divisors in a
   fixed disc.
@@ -235,11 +238,8 @@ theorem exists_forall_abs_le_of_laplacian_eq (m : ℕ) (hm : 0 < m) (R : ℝ) :
     rw [natDegree_multiset_prod_X_sub_C_eq_card, hDm]
     exact hm
   -- `‖P‖ ≥ 1` outside the disc of radius `R' + 1`.
-  have hP1 : ∀ z ∉ closedBall (0 : ℂ) (R' + 1), 1 ≤ ‖P.eval z‖ := fun z hz ↦ by
-    have hz' : R' + 1 < ‖z‖ := by simpa using hz
-    calc (1 : ℝ) = 1 ^ Multiset.card D := (one_pow _).symm
-      _ ≤ (‖z‖ - R') ^ Multiset.card D := pow_le_pow_left₀ zero_le_one (by linarith) _
-      _ ≤ _ := pow_le_norm_eval_multiset_prod_X_sub_C hD' (by linarith)
+  have hP1 : ∀ z ∉ closedBall (0 : ℂ) (R' + 1), 1 ≤ ‖P.eval z‖ := fun z hz ↦
+    one_le_norm_eval_multiset_prod_X_sub_C hD' (by simpa using (not_le.1 (by simpa using hz)).le)
   -- The uniform `H¹` bound gives `∫ w² ≤ B²`.
   have huB := hB P hdeg hP1 (hK D hDm hm hD' hR') u hu
   have hwL : MemLp w 2 := (W1p.memLp_value u).ae_eq huw
@@ -296,12 +296,6 @@ section Framed
 
 variable {m : ℕ}
 
-/-- Smooth framed gauges preserve the squared modulus `|α|²` of the section. -/
-private theorem sq_norm_sectionValue_smul (u : framedGaugeGroup)
-    (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    ‖sectionValue (u • y) z‖ ^ 2 = ‖sectionValue y z‖ ^ 2 := by
-  rw [framedGaugeGroup_smul, sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
-
 /-- A smooth framed vortex of degree zero has `|α| = 1`: it is gauge equivalent to the vacuum. -/
 private theorem sq_norm_sectionValue_eq_one (x : framedVortexSubMulAction 0) (z : ℂ) :
     ‖sectionValue x z‖ ^ 2 = 1 := by
@@ -315,7 +309,7 @@ private theorem sq_norm_sectionValue_eq_one (x : framedVortexSubMulAction 0) (z 
   obtain ⟨v, hv⟩ := framedVortexDivisor_eq_framedVortexDivisor_iff.1
     ((Sym.eq_nil_of_card_zero _).trans (Sym.eq_nil_of_card_zero _).symm :
       framedVortexDivisor x = framedVortexDivisor ⟨_, hvac⟩)
-  rw [← hv, SubMulAction.val_smul, sq_norm_sectionValue_smul]
+  rw [← hv, SubMulAction.val_smul, norm_sectionValue_smul]
   simp [sectionValue_amplitudeField]
 
 /-- A smooth framed vortex of degree `m ≥ 1` with divisor `D` has squared modulus
@@ -342,20 +336,42 @@ private theorem exists_sq_norm_sectionValue_eq (hm : 0 < m) (x : framedVortexSub
   obtain ⟨u, hu⟩ := exists_forall_sobolevReducedFunctional_le hdeg
   obtain ⟨w, hw, huw, hΔ⟩ :=
     exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctional_le hdeg hu
-  obtain ⟨hy, hysol, hyfr, hyD⟩ := contDiff_amplitudeField_prod_X_sub_C_and_isZeroMultiplicity hm D
-    hw ((W1p.memLp_value u).ae_eq huw) hΔ
+  obtain ⟨hy, hysol, hyfr, hyD⟩ :=
+    contDiff_equation_eq_zero_isZeroMultiplicity_amplitudeField_prod_X_sub_C hm D hw
+      ((W1p.memLp_value u).ae_eq huw) hΔ
   -- The reconstructed vortex has divisor `D`, so it is gauge equivalent to `x`.
   set y : framedVortexSubMulAction m := ⟨_, mem_framedVortexSubMulAction.2 ⟨hy, hysol, hyfr⟩⟩
   obtain ⟨v, hv⟩ := framedVortexDivisor_eq_framedVortexDivisor_iff.1
     (framedVortexDivisor_eq_iff (x := y) (D := D) |>.2 hyD).symm
   refine ⟨u, w, (hu 0).trans_eq sobolevReducedFunctional_zero, hw, huw, hΔ, fun z ↦ ?_⟩
-  rw [← hv, SubMulAction.val_smul, sq_norm_sectionValue_smul, sectionValue_amplitudeField,
-    norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le, mul_pow,
-    ← Real.exp_nat_mul, ← exp_two_mul_backgroundAmplitude_mul_sq_norm, ← mul_assoc,
-    ← Real.exp_add]
-  congr 2
-  push_cast
-  ring
+  rw [← hv, SubMulAction.val_smul, norm_sectionValue_smul,
+    sq_norm_sectionValue_amplitudeField_backgroundAmplitude_add]
+
+/-- **A uniform lower bound for `|α|²` on a window of divisors.** Let `m` be a degree and `R` a
+radius. There is a constant `δ > 0` such that every smooth framed degree-`m` vortex whose zeros
+all lie in the closed disc of radius `R` has `δ ≤ |α(z)|²` whenever `R + 1 ≤ |z|`. -/
+theorem exists_forall_le_sq_norm_sectionValue (m : ℕ) (R : ℝ) :
+    ∃ δ, 0 < δ ∧ ∀ x : framedVortexSubMulAction m, (∀ a ∈ framedVortexDivisor x, ‖a‖ ≤ R) →
+      ∀ z, R + 1 ≤ ‖z‖ → δ ≤ ‖sectionValue x z‖ ^ 2 := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · -- The vacuum has `|α| = 1`.
+    exact ⟨1, one_pos, fun x _ z _ ↦ (sq_norm_sectionValue_eq_one x z).ge⟩
+  obtain ⟨M, hM⟩ := exists_forall_abs_le_of_laplacian_eq m hm R
+  refine ⟨Real.exp (-(2 * M)) / 2, by positivity, fun x hx z hz ↦ ?_⟩
+  obtain ⟨u, w, hu, hw, huw, hΔ, hs⟩ := exists_sq_norm_sectionValue_eq hm x
+  have hD : ∀ a ∈ (framedVortexDivisor x : Multiset ℂ), ‖a‖ ≤ R :=
+    fun a ha ↦ hx a (Sym.mem_coe.1 ha)
+  have hwM := hM _ Sym.card_coe hD u hu w (hw.of_le (by simp)) huw hΔ z
+  rw [hs z]
+  have hP1 := one_le_norm_eval_multiset_prod_X_sub_C hD hz
+  have hh : 1 / 2 ≤ backgroundWeight
+      (((framedVortexDivisor x : Multiset ℂ).map fun a ↦ X - C a).prod).eval z := by
+    rw [backgroundWeight_def, le_div_iff₀ (by positivity)]
+    nlinarith
+  have he : Real.exp (-(2 * M)) ≤ Real.exp (2 * w z) :=
+    Real.exp_le_exp.mpr (by linarith [(abs_le.mp hwM).1])
+  calc Real.exp (-(2 * M)) / 2 = Real.exp (-(2 * M)) * (1 / 2) := by ring
+    _ ≤ _ := mul_le_mul he hh (by norm_num) (Real.exp_pos _).le
 
 /-- **Uniform exponential decay of the modulus defect on a window of divisors.** Let `m` be a
 degree, `R` a radius and `c < 1 / 2` a rate. There is a constant `K` such that every smooth
@@ -368,47 +384,12 @@ theorem exists_forall_one_sub_normSq_le_mul_exp (m : ℕ) (R : ℝ) {c : ℝ} (h
     ∃ K, ∀ x : framedVortexSubMulAction m, (∀ a ∈ framedVortexDivisor x, ‖a‖ ≤ R) →
       ∀ z, 1 - 4 * ((x : ℂ → EuclideanSpace ℝ (Fin 4)) z 2 ^ 2 +
         (x : ℂ → EuclideanSpace ℝ (Fin 4)) z 3 ^ 2) ≤ K * Real.exp (-(c * ‖z‖)) := by
-  rcases Nat.eq_zero_or_pos m with rfl | hm
-  · -- The vacuum has `|α| = 1`.
-    refine ⟨0, fun x _ z ↦ ?_⟩
-    rw [← sq_norm_sectionValue, sq_norm_sectionValue_eq_one]
-    simp
-  obtain ⟨M, hM⟩ := exists_forall_abs_le_of_laplacian_eq m hm R
+  obtain ⟨δ₀, hδ₀, hlow⟩ := exists_forall_le_sq_norm_sectionValue m R
   set R' := max R 0
-  set M' := max M 0
   -- Outside the disc of radius `R' + 1`, `|α|² ≥ δ`.
-  set δ := Real.exp (-(2 * M')) / 2
-  have hδ : 0 < δ := by positivity
-  have hδ1 : δ ≤ 1 := by
-    have : Real.exp (-(2 * M')) ≤ 1 := Real.exp_le_one_iff.mpr (by
-      have := le_max_right M 0
-      linarith)
-    simp only [δ]
-    linarith
-  have hlow : ∀ x : framedVortexSubMulAction m, (∀ a ∈ framedVortexDivisor x, ‖a‖ ≤ R) →
-      ∀ z, R' + 1 ≤ ‖z‖ → δ ≤ 4 * ((x : ℂ → EuclideanSpace ℝ (Fin 4)) z 2 ^ 2 +
-        (x : ℂ → EuclideanSpace ℝ (Fin 4)) z 3 ^ 2) := by
-    intro x hx z hz
-    obtain ⟨u, w, hu, hw, huw, hΔ, hs⟩ := exists_sq_norm_sectionValue_eq hm x
-    have hD : ∀ a ∈ (framedVortexDivisor x : Multiset ℂ), ‖a‖ ≤ R :=
-      fun a ha ↦ hx a (Sym.mem_coe.1 ha)
-    have hwM := hM _ Sym.card_coe hD u hu w (hw.of_le (by simp)) huw hΔ z
-    rw [← sq_norm_sectionValue, hs z]
-    set P := ((framedVortexDivisor x : Multiset ℂ).map fun a ↦ X - C a).prod
-    have hP1 : 1 ≤ ‖P.eval z‖ := by
-      calc (1 : ℝ) = 1 ^ Multiset.card (framedVortexDivisor x : Multiset ℂ) := (one_pow _).symm
-        _ ≤ (‖z‖ - R') ^ Multiset.card (framedVortexDivisor x : Multiset ℂ) :=
-          pow_le_pow_left₀ zero_le_one (by linarith) _
-        _ ≤ _ := pow_le_norm_eval_multiset_prod_X_sub_C
-          (fun a ha ↦ (hD a ha).trans (le_max_left _ _)) (by linarith [le_max_right R 0])
-    have hh : 1 / 2 ≤ backgroundWeight P.eval z := by
-      rw [backgroundWeight_def, le_div_iff₀ (by positivity)]
-      nlinarith
-    have he : Real.exp (-(2 * M')) ≤ Real.exp (2 * w z) :=
-      Real.exp_le_exp.mpr (by linarith [(abs_le.mp hwM).1, le_max_left M 0])
-    calc δ = Real.exp (-(2 * M')) * (1 / 2) := by ring
-      _ ≤ Real.exp (2 * w z) * backgroundWeight P.eval z :=
-        mul_le_mul he hh (by norm_num) (Real.exp_pos _).le
+  set δ := min δ₀ 1
+  have hδ : 0 < δ := lt_min hδ₀ one_pos
+  have hδ1 : δ ≤ 1 := min_le_right _ _
   -- The rates and radii of the two comparison steps, independent of the vortex.
   set c' := max c (1 / 4)
   have hc'0 : 0 < c' := lt_max_of_lt_right (by norm_num)
@@ -426,19 +407,12 @@ theorem exists_forall_one_sub_normSq_le_mul_exp (m : ℕ) (R : ℝ) {c : ℝ} (h
   have h4c'1 : 4 * c' ^ 2 < 1 := by nlinarith
   set M₁ := -Real.log (4 * c' ^ 2)
   have hM₁ : 0 < M₁ := neg_pos.mpr (Real.log_neg h4c'0 h4c'1)
-  set T := M₀ / (c₀ * M₁)
-  have hT0 : 0 ≤ T := by positivity
-  have hT : M₀ * Real.exp (-(c₀ * T)) ≤ M₁ := by
-    have hcT : c₀ * T = M₀ / M₁ := by
-      simp only [T]
-      field_simp
-    rw [Real.exp_neg, ← div_eq_mul_inv, div_le_iff₀ (Real.exp_pos _)]
-    calc M₀ ≤ M₁ * (c₀ * T + 1) := by
-          rw [hcT, mul_add, mul_div_cancel₀ _ hM₁.ne']
-          linarith
-      _ ≤ M₁ * Real.exp (c₀ * T) := by
-          gcongr
-          exact Real.add_one_le_exp _
+  -- `M₀ exp (-c₀ T) → 0`, so it is at most `M₁` for some `T ≥ 0`.
+  obtain ⟨T, hT0, hT⟩ : ∃ T, 0 ≤ T ∧ M₀ * Real.exp (-(c₀ * T)) ≤ M₁ := by
+    have h : Tendsto (fun T ↦ M₀ * Real.exp (-(c₀ * T))) atTop (𝓝 0) := by
+      simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+        (tendsto_id.const_mul_atTop hc₀)).const_mul M₀
+    exact ((eventually_ge_atTop 0).and (h.eventually (ge_mem_nhds hM₁))).exists
   set R₁ := R₀ + T
   have hR₁ : 0 < R₁ := by positivity
   refine ⟨max M₁ 1 * Real.exp (c' * R₁), fun x hx z ↦ ?_⟩
@@ -452,7 +426,10 @@ theorem exists_forall_one_sub_normSq_le_mul_exp (m : ℕ) (R : ℝ) {c : ℝ} (h
   have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hfr
   set s : ℂ → ℝ := fun z ↦ 4 * ((x : ℂ → EuclideanSpace ℝ (Fin 4)) z 2 ^ 2 +
     (x : ℂ → EuclideanSpace ℝ (Fin 4)) z 3 ^ 2)
-  have hlowx : ∀ z, R₀ ≤ ‖z‖ → δ ≤ s z := hlow x hx
+  have hlowx : ∀ z, R₀ ≤ ‖z‖ → δ ≤ s z := fun z hz ↦ by
+    have h := hlow x hx z (by linarith [le_max_left R 0])
+    rw [sq_norm_sectionValue] at h
+    exact (min_le_left _ _).trans h
   have hpos : ∀ z, R₀ ≤ ‖z‖ → 0 < s z := fun z hz ↦ hδ.trans_le (hlowx z hz)
   -- First step: decay at the rate `c₀` outside the disc of radius `R₀`.
   have hstep₁ : ∀ z, R₀ ≤ ‖z‖ → -Real.log (s z) ≤ M₀ * Real.exp (-(c₀ * (‖z‖ - R₀))) :=

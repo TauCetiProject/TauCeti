@@ -62,9 +62,9 @@ All in the namespace `TauCeti.Vortex`:
   `u₀ + w` and `P` is a smooth framed degree-`m` vortex.
 * `exists_contDiff_memLp_laplacian_eq_reduced`: for a polynomial of positive degree, the reduced
   vortex equation has a smooth square-integrable solution tending to zero at infinity.
-* `contDiff_amplitudeField_prod_X_sub_C_and_isZeroMultiplicity`: every smooth square-integrable
-  solution `w` of the reduced equation for `P = ∏_{a ∈ D} (X - a)` reconstructs a smooth framed
-  vortex with divisor `D`.
+* `contDiff_equation_eq_zero_isZeroMultiplicity_amplitudeField_prod_X_sub_C`: every smooth
+  square-integrable solution `w` of the reduced equation for `P = ∏_{a ∈ D} (X - a)` reconstructs
+  a smooth framed vortex with divisor `D`.
 * `exists_contDiff_equation_eq_zero_isZeroMultiplicity`: every `D ∈ Sym ℂ m` is the zero divisor
   of a smooth vortex with the degree-`m` end framing.
 * `framedVortexSubMulAction`: the smooth framed degree-`m` vortices, preserved by smooth framed
@@ -194,8 +194,8 @@ equation `Δw = (exp (2w) h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²`, `h = �
 reconstructed from the amplitude `u₀ + w`, `u₀` the background amplitude, and the section `P` is
 smooth, solves the vortex equations, has the degree-`m` end framing, and its section vanishes
 exactly at the points of `D`, to the order of their multiplicities. -/
-theorem contDiff_amplitudeField_prod_X_sub_C_and_isZeroMultiplicity {m : ℕ} (hm : 0 < m)
-    (D : Sym ℂ m) {w : ℂ → ℝ} (hw : ContDiff ℝ ∞ w) (hwp : MemLp w 2)
+theorem contDiff_equation_eq_zero_isZeroMultiplicity_amplitudeField_prod_X_sub_C {m : ℕ}
+    (hm : 0 < m) (D : Sym ℂ m) {w : ℂ → ℝ} (hw : ContDiff ℝ ∞ w) (hwp : MemLp w 2)
     (hΔ : ∀ z, Δ w z = (Real.exp (2 * w z) *
         backgroundWeight ((D : Multiset ℂ).map fun a ↦ X - C a).prod.eval z - 1) / 8 +
       2 * ‖deriv ((D : Multiset ℂ).map fun a ↦ X - C a).prod.eval z‖ ^ 2 /
@@ -207,7 +207,7 @@ theorem contDiff_amplitudeField_prod_X_sub_C_and_isZeroMultiplicity {m : ℕ} (h
       IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
   set P : ℂ[X] := ((D : Multiset ℂ).map fun a ↦ X - C a).prod with hP
   have hPf : P.eval = fun w ↦ ((D : Multiset ℂ).map fun a ↦ w - a).prod :=
-    funext fun w ↦ by simp [hP, eval_multiset_prod, Multiset.map_map]
+    funext (eval_multiset_prod_X_sub_C _)
   have hdeg : P.natDegree = m := by
     rw [hP, natDegree_multiset_prod_X_sub_C_eq_card]
     exact D.2
@@ -251,7 +251,8 @@ theorem exists_contDiff_equation_eq_zero_isZeroMultiplicity {m : ℕ} (D : Sym �
       rw [natDegree_multiset_prod_X_sub_C_eq_card, Sym.card_coe]
       exact hm
     obtain ⟨w, hw, hwp, -, hΔ⟩ := exists_contDiff_memLp_laplacian_eq_reduced hm'
-    exact ⟨_, contDiff_amplitudeField_prod_X_sub_C_and_isZeroMultiplicity hm D hw hwp hΔ⟩
+    exact ⟨_,
+      contDiff_equation_eq_zero_isZeroMultiplicity_amplitudeField_prod_X_sub_C hm D hw hwp hΔ⟩
 
 /-! ### The moduli of framed vortices -/
 

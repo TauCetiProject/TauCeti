@@ -40,14 +40,17 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
   zero at infinity.
 * `Polynomial.memLp_inv_one_add_norm_eval_sq`: `(1 + ‖P‖²)⁻¹` is square integrable when `P` is
   nonconstant.
+* `Polynomial.exists_forall_one_le_norm_eval`: a nonconstant `P` has `‖P‖ ≥ 1` outside some
+  closed disc.
 
 The growth is controlled explicitly by a disc containing the roots. For
 `P = ∏_{a ∈ D} (X - a)` with `‖a‖ ≤ R`, `(‖z‖ - R)ᵐ ≤ ‖P z‖ ≤ (‖z‖ + R)ᵐ` for `‖z‖ ≥ R`, and the
 Cauchy estimate on the unit circle gives `‖P' z‖ ≤ (‖z‖ + R + 1)ᵐ`
 (`Polynomial.norm_eval_multiset_prod_X_sub_C_le`,
 `Polynomial.pow_le_norm_eval_multiset_prod_X_sub_C`,
-`Polynomial.norm_derivative_eval_multiset_prod_X_sub_C_le`). These bounds depend on the roots only
-through `R`.
+`Polynomial.norm_derivative_eval_multiset_prod_X_sub_C_le`). In particular `‖P z‖ ≥ 1` for
+`‖z‖ ≥ R + 1` (`Polynomial.one_le_norm_eval_multiset_prod_X_sub_C`). These bounds depend on the
+roots only through `R`.
 -/
 
 public section
@@ -209,13 +212,25 @@ theorem memLp_inv_one_add_norm_eval_sq (hm : 0 < P.natDegree) :
     exact pow_le_pow_right₀ h₁ (by omega)
   linarith [hpow.trans ha]
 
+/-- A nonconstant complex polynomial has modulus at least one outside some closed disc. -/
+theorem exists_forall_one_le_norm_eval (hm : 0 < P.natDegree) :
+    ∃ R : ℝ, ∀ z ∉ Metric.closedBall (0 : ℂ) R, 1 ≤ ‖P.eval z‖ := by
+  obtain ⟨R, -, hR⟩ := (Metric.hasBasis_cobounded_compl_closedBall (0 : ℂ)).eventually_iff.mp
+    (by
+      rw [Metric.cobounded_eq_cocompact]
+      exact (P.tendsto_norm_atTop (natDegree_pos_iff_degree_pos.mp hm)
+        tendsto_norm_cocompact_atTop).eventually_ge_atTop 1 :
+      ∀ᶠ z in Bornology.cobounded ℂ, 1 ≤ ‖P.eval z‖)
+  exact ⟨R, hR⟩
+
+/-- Evaluating `∏_{a ∈ D} (X - a)` at `z` gives `∏_{a ∈ D} (z - a)`. -/
+theorem eval_multiset_prod_X_sub_C {S : Type*} [CommRing S] (D : Multiset S) (z : S) :
+    ((D.map fun a ↦ X - C a).prod).eval z = (D.map fun a ↦ z - a).prod := by
+  simp [eval_multiset_prod, Multiset.map_map]
+
 section RootBound
 
 variable {𝕜 : Type*} [NormedField 𝕜] {D : Multiset 𝕜} {R : ℝ}
-
-private theorem eval_multiset_prod_X_sub_C (D : Multiset 𝕜) (z : 𝕜) :
-    ((D.map fun a ↦ X - C a).prod).eval z = (D.map fun a ↦ z - a).prod := by
-  simp [eval_multiset_prod, Multiset.map_map]
 
 /-- A polynomial whose roots lie in the closed disc of radius `R` grows at most like
 `(‖z‖ + R)ᵐ`. -/
@@ -237,6 +252,12 @@ theorem pow_le_norm_eval_multiset_prod_X_sub_C (hD : ∀ a ∈ D, ‖a‖ ≤ R)
     _ ≤ (D.map fun a ↦ ‖z - a‖).prod :=
         Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ sub_nonneg.mpr hz)
           fun a ha ↦ by linarith [norm_sub_norm_le z a, hD a ha]
+
+/-- A polynomial whose roots lie in the closed disc of radius `R` has modulus at least one outside
+the closed disc of radius `R + 1`. -/
+theorem one_le_norm_eval_multiset_prod_X_sub_C (hD : ∀ a ∈ D, ‖a‖ ≤ R) {z : 𝕜}
+    (hz : R + 1 ≤ ‖z‖) : 1 ≤ ‖((D.map fun a ↦ X - C a).prod).eval z‖ :=
+  (one_le_pow₀ (by linarith)).trans (pow_le_norm_eval_multiset_prod_X_sub_C hD (by linarith))
 
 end RootBound
 
