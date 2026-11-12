@@ -32,27 +32,35 @@ surjective exactly when `W^u(p)` and `W^s(q)` meet transversally at `y`. So the 
 condition, stated with tangent spaces, is the regularity of every trajectory in the sense of
 Fredholm theory.
 
-The bridge is the variational equation: for `v ∈ E`, `w(s) = Dφ_s(y) v` solves
-`w' = -Hess f(φ s y) w`. The tangent space of the stable set is carried along the trajectory by
-`Dφ_s(y)`, so we must show that `v ∈ T_y W^s(q)` exactly when `w` is square integrable on
-`[0, ∞)`.
+The comparison goes through the variational equation: for `v ∈ E`, `w(s) = Dφ_s(y) v` is the
+solution of `w' = -Hess f(φ s y) w` with initial value `v`. The tangent space of the stable set
+is carried along the trajectory by `Dφ_s(y)`, so we show that `T_y W^s(q)` is the space
+`TauCeti.squareIntegrableSolutionsOn _ (Ioi 0)` of initial values of the solutions that are square
+integrable on `(0, ∞)`.
 
 * Near `q` the stable set is straightened by a chart tangent to the identity at `q`
   (`TauCeti.IsNondegenerateCriticalPoint.exists_stableSet_chart_hasFDerivAt_id`), onto the
   positive spectral subspace of `Hess f(q)`, on which the Hessian form is coercive. So for large
   `s`, the tangent vector `w(s)` has `⟪w(s), Hess f(q) w(s)⟫ ≥ 0`, and the Lyapunov argument of
   `TauCeti.memLp_restrict_Ici_of_eventually_inner_nonneg` makes `w` square integrable.
-* Conversely, at a late time `T` the square-integrable solutions miss the negative spectral
-  subspace of `Hess f(q)`, by `TauCeti.eventually_not_memLp_restrict_Ici_of_inner_neg`, so they
-  form a space of dimension at most `dim E - ind q`, the dimension of `T_y W^s(q)`.
+* Both spaces have dimension `dim E - ind q`
+  (`TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_stableSet_add_morseIndex` and
+  `IsIntegralCurve.finrank_squareIntegrableSolutionsOn_Ioi_hessianOperator_add_morseIndex`), so
+  the inclusion is an equality.
 
 The unstable set is treated in the same way at `-∞`. A square-integrable solution on the whole
 line is one that is square integrable on both half-lines, which identifies the kernel of `D`
-(`TauCeti.squareIntegrableSolutions`) with `T_y W^u(p) ∩ T_y W^s(q)`. Comparing dimensions with
-the index `ind p - ind q` of `D` gives the surjectivity criterion.
+(`TauCeti.squareIntegrableSolutions`) with `T_y W^u(p) ∩ T_y W^s(q)`. With these identifications
+`IsIntegralCurve.surjective_trajectoryOperator_hessianOperator_iff_sup_eq_top` becomes the
+surjectivity criterion.
 
 ## Main results
 
+* `IsNondegenerateCriticalPoint.span_tangentConeAt_stableSet_eq_squareIntegrableSolutionsOn`
+  and `IsNondegenerateCriticalPoint.span_tangentConeAt_unstableSet_eq_squareIntegrableSolutionsOn`
+  (in namespace `TauCeti`):
+  the tangent space of the stable (unstable) set is the space of initial values of the solutions
+  of the linearized equation that are square integrable in forward (backward) time.
 * `TauCeti.IsNondegenerateCriticalPoint.mem_span_tangentConeAt_stableSet_iff_memLp` and
   `TauCeti.IsNondegenerateCriticalPoint.mem_span_tangentConeAt_unstableSet_iff_memLp`: a vector is
   tangent to the stable (unstable) set exactly when its image under the derivative of the flow is
@@ -101,53 +109,117 @@ private theorem continuous_hessianOperator_negativeGradientFlow (hf : LipschitzW
     ((contDiff_negativeGradientFlow f hf hfs).continuous.comp
       (continuous_id.prodMk continuous_const))
 
-/-- The initial values `v` for which `s ↦ Dφ_s(y) v` lies in `L²(μ)`. -/
-private def memLpSolutions (hf : LipschitzWith K (∇ f)) (y : E) (μ : Measure ℝ) :
-    Submodule ℝ E where
-  carrier := {v | MemLp (fun s ↦ fderiv ℝ (negativeGradientFlow f hf s) y v) 2 μ}
-  add_mem' {v w} hv hw := by simpa only [mem_ofPred_eq, map_add, Pi.add_def] using hv.add hw
-  zero_mem' := by
-    simpa only [mem_ofPred_eq, map_zero, Pi.zero_def] using (MemLp.zero : MemLp (0 : ℝ → E) 2 μ)
-  smul_mem' c v hv := by
-    simpa only [mem_ofPred_eq, map_smul, Pi.smul_def] using hv.const_smul c
-
-private theorem mem_memLpSolutions (hf : LipschitzWith K (∇ f)) {y : E} {μ : Measure ℝ} {v : E} :
-    v ∈ memLpSolutions hf y μ ↔ MemLp (fun s ↦ fderiv ℝ (negativeGradientFlow f hf s) y v) 2 μ :=
-  Iff.rfl
-
-/-- **The square-integrable solutions miss a subspace of the wrong sign.** Suppose that at a time
-`T` no solution of the linearized equation with `⟪w T, B (w T)⟫ < 0` lies in `L²(μ)`, and that
-the form of `B` is negative definite on `U`. Then `Dφ_T(y)` maps the initial values of the
-square-integrable solutions to a subspace disjoint from `U`, so their dimensions add up to at
-most `dim E`. -/
-private theorem finrank_memLpSolutions_add_finrank_le (hf : LipschitzWith K (∇ f))
-    (hfs : ContDiff ℝ 2 f) (y : E) {μ : Measure ℝ} {B : E →L[ℝ] E} {U : Submodule ℝ E} {c : ℝ}
-    (hc : 0 < c) (hU : ∀ u ∈ U, ⟪B u, u⟫ ≤ -(c * ‖u‖ ^ 2)) {T : ℝ}
-    (hT : ∀ w : ℝ → E,
-      (∀ s, HasDerivAt w (-hessianOperator f (negativeGradientFlow f hf s y) (w s)) s) →
-        ⟪w T, B (w T)⟫ < 0 → ¬ MemLp w 2 μ) :
-    Module.finrank ℝ (memLpSolutions hf y μ) + Module.finrank ℝ U ≤ Module.finrank ℝ E := by
-  have hd (t : ℝ) (z : E) : DifferentiableAt ℝ (negativeGradientFlow f hf t) z :=
-    differentiable_negativeGradientFlow_apply f hf hfs t z
-  obtain ⟨L, hL⟩ := (negativeGradientFlow f hf).isInvertible_fderiv (t := T) (x := y)
-    (hd _ _) (hd _ _)
-  have hdisj : Disjoint ((memLpSolutions hf y μ).map (L : E →ₗ[ℝ] E)) U := by
-    rw [Submodule.disjoint_def]
-    rintro _ ⟨v, hv, rfl⟩ hu
-    by_contra hne
-    have hneg := hU _ hu
-    have hpos : 0 < c * ‖(L : E →ₗ[ℝ] E) v‖ ^ 2 := by positivity
-    refine hT _ (hasDerivAt_fderiv_negativeGradientFlow_apply hf hfs y v) ?_
-      (mem_memLpSolutions hf |>.1 hv)
-    rw [real_inner_comm, ← hL, ContinuousLinearEquiv.coe_coe]
-    -- The coercions of `L` to a linear map and to a function agree definitionally.
-    have hLv : (L : E →ₗ[ℝ] E) v = L v := rfl
-    rw [hLv] at hneg hpos
-    linarith
-  have h := Submodule.finrank_add_finrank_le_of_disjoint hdisj
-  rwa [LinearEquiv.finrank_map_eq L.toLinearEquiv] at h
+/-- The solution of the linearized equation with initial value `v` is `s ↦ Dφ_s(y) v`, so `v` is
+the initial value of a solution square integrable on `S` exactly when that one is. -/
+private theorem mem_squareIntegrableSolutionsOn_hessianOperator_negativeGradientFlow
+    (hf : LipschitzWith K (∇ f)) (hfs : ContDiff ℝ 2 f) (y : E) {S : Set ℝ} {v : E} :
+    v ∈ squareIntegrableSolutionsOn
+        (fun s ↦ hessianOperator f (negativeGradientFlow f hf s y)) S ↔
+      MemLp (fun s ↦ fderiv ℝ (negativeGradientFlow f hf s) y v) 2 (volume.restrict S) := by
+  have hw := hasDerivAt_fderiv_negativeGradientFlow_apply hf hfs y v
+  have hw0 : fderiv ℝ (negativeGradientFlow f hf 0) y v = v := by simp [Flow.map_zero]
+  rw [mem_squareIntegrableSolutionsOn]
+  refine ⟨fun ⟨w, hw0', hws, hw2⟩ ↦ ?_, fun h ↦ ⟨_, hw0, hw, h⟩⟩
+  -- A solution is determined by its initial value.
+  have hweq : w = fun s ↦ fderiv ℝ (negativeGradientFlow f hf s) y v :=
+    (continuous_hessianOperator_negativeGradientFlow hf hfs y).neg.eq_of_hasDerivAt_clm_apply
+      (t₀ := 0) hws hw (hw0'.trans hw0.symm)
+  exact hweq ▸ hw2
 
 namespace IsNondegenerateCriticalPoint
+
+/-- **The tangent space of a stable set is the space of stable linearized solutions.** Let `q` be
+a nondegenerate critical point of a `C²` function with globally Lipschitz gradient, and `y` a
+point of its stable set. The tangent space at `y` of the stable set of `q` consists of the initial
+values of the solutions of the linearized equation `w' = -Hess f(φ s y) w` that are square
+integrable on `(0, ∞)`. -/
+theorem span_tangentConeAt_stableSet_eq_squareIntegrableSolutionsOn
+    (hq : IsNondegenerateCriticalPoint f q) (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hy : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
+    Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) =
+      squareIntegrableSolutionsOn (fun s ↦ hessianOperator f (negativeGradientFlow f hf s y))
+        (Ioi 0) := by
+  set φ := negativeGradientFlow f hf with hφ
+  set B := hessianOperator f q
+  have hBsym := hq.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
+  obtain ⟨α, hα, hBα⟩ := hq.exists_pos_mul_norm_le_hessianOperator
+  have hA : Tendsto (fun s ↦ hessianOperator f (φ s y)) atTop (𝓝 B) :=
+    ((hfs.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.tendsto q).comp
+      (Flow.mem_stableSet.1 hy)
+  have hd (t : ℝ) (z : E) : DifferentiableAt ℝ (φ t) z :=
+    differentiable_negativeGradientFlow_apply f hf hfs t z
+  obtain ⟨c, hc, hcs, -⟩ := hq.contDiffAt.exists_pos_mul_norm_sq_le_inner_hessianOperator
+  have hγ : IsIntegralCurve (fun s ↦ φ s y) (fun _ x ↦ -∇ f x) :=
+    (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y
+  refine Submodule.eq_of_le_of_finrank_le (fun v hv ↦ ?_) ?_
+  -- Tangent vectors give solutions that are square integrable on `[0, ∞)`.
+  · rw [mem_squareIntegrableSolutionsOn_hessianOperator_negativeGradientFlow hf hfs]
+    obtain ⟨e, hqe, hed, heC, heCs, heS⟩ :=
+      hq.exists_stableSet_chart_hasFDerivAt_id (n := 1) hfs hf
+    have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
+      (Submodule.closed_of_finiteDimensional _) (B := B) hqe hed heC heCs hc hcs
+    refine (memLp_restrict_Ici_of_eventually_inner_nonneg hA hBsym hα hBα
+      (hasDerivAt_fderiv_negativeGradientFlow_apply hf hfs y v) ?_ 0).mono_measure
+      (Measure.restrict_mono Ioi_subset_Ici_self le_rfl)
+    filter_upwards [(Flow.mem_stableSet.1 hy).eventually hcone] with s hs
+    rw [real_inner_comm]
+    refine hs (Flow.isInvariant_stableSet φ q s hy) _ ?_
+    rw [Flow.span_tangentConeAt_apply (Flow.isInvariant_stableSet φ q) (hd _ _) (hd _ _)]
+    exact Submodule.mem_map_of_mem hv
+  -- Both spaces have dimension `dim E - ind q`.
+  · have h₁ := hγ.finrank_squareIntegrableSolutionsOn_Ioi_hessianOperator_add_morseIndex hfs hq
+      (Flow.mem_stableSet.1 hy)
+    have h₂ := hq.finrank_span_tangentConeAt_stableSet_add_morseIndex hfs hf hy
+    rw [← hφ] at h₂
+    omega
+
+/-- **The tangent space of an unstable set is the space of unstable linearized solutions.** Let
+`p` be a nondegenerate critical point of a `C²` function with globally Lipschitz gradient, and `y`
+a point of its unstable set. The tangent space at `y` of the unstable set of `p` consists of the
+initial values of the solutions of the linearized equation `w' = -Hess f(φ s y) w` that are
+square integrable on `(-∞, 0)`. -/
+theorem span_tangentConeAt_unstableSet_eq_squareIntegrableSolutionsOn
+    (hp : IsNondegenerateCriticalPoint f p) (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hy : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p) :
+    Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) =
+      squareIntegrableSolutionsOn (fun s ↦ hessianOperator f (negativeGradientFlow f hf s y))
+        (Iio 0) := by
+  set φ := negativeGradientFlow f hf with hφ
+  set B := hessianOperator f p
+  have hBsym := hp.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
+  obtain ⟨α, hα, hBα⟩ := hp.exists_pos_mul_norm_le_hessianOperator
+  have hA : Tendsto (fun s ↦ hessianOperator f (φ s y)) atBot (𝓝 B) :=
+    ((hfs.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.tendsto p).comp
+      (Flow.mem_unstableSet.1 hy)
+  have hd (t : ℝ) (z : E) : DifferentiableAt ℝ (φ t) z :=
+    differentiable_negativeGradientFlow_apply f hf hfs t z
+  obtain ⟨c, hc, -, hcu⟩ := hp.contDiffAt.exists_pos_mul_norm_sq_le_inner_hessianOperator
+  have hγ : IsIntegralCurve (fun s ↦ φ s y) (fun _ x ↦ -∇ f x) :=
+    (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y
+  refine Submodule.eq_of_le_of_finrank_le (fun v hv ↦ ?_) ?_
+  -- Tangent vectors give solutions that are square integrable on `(-∞, 0]`.
+  · rw [mem_squareIntegrableSolutionsOn_hessianOperator_negativeGradientFlow hf hfs]
+    obtain ⟨e, hpe, hed, heC, heCs, heS⟩ :=
+      hp.exists_unstableSet_chart_hasFDerivAt_id (n := 1) hfs hf
+    have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
+      (Submodule.closed_of_finiteDimensional _) (B := -B) hpe hed heC heCs hc fun u hu ↦ by
+        rw [neg_apply, inner_neg_left]
+        linarith [hcu u hu]
+    refine (memLp_restrict_Iic_of_eventually_inner_nonpos hA hBsym hα hBα
+      (hasDerivAt_fderiv_negativeGradientFlow_apply hf hfs y v) ?_ 0).mono_measure
+      (Measure.restrict_mono Iio_subset_Iic_self le_rfl)
+    filter_upwards [(Flow.mem_unstableSet.1 hy).eventually hcone] with s hs
+    have h := hs (Flow.isInvariant_unstableSet φ p s hy) (fderiv ℝ (φ s) y v) (by
+      rw [Flow.span_tangentConeAt_apply (Flow.isInvariant_unstableSet φ p) (hd _ _) (hd _ _)]
+      exact Submodule.mem_map_of_mem hv)
+    rw [neg_apply, inner_neg_left, real_inner_comm] at h
+    linarith
+  -- Both spaces have dimension `ind p`.
+  · have h₁ := hγ.finrank_squareIntegrableSolutionsOn_Iio_hessianOperator hfs hp
+      (Flow.mem_unstableSet.1 hy)
+    have h₂ := hp.finrank_span_tangentConeAt_unstableSet hfs hf hy
+    rw [← hφ] at h₂
+    omega
 
 /-- **Tangent vectors of a stable set decay along the flow.** Let `q` be a nondegenerate critical
 point of a `C²` function with globally Lipschitz gradient, and `y` a point of its stable set. A
@@ -159,42 +231,9 @@ theorem mem_span_tangentConeAt_stableSet_iff_memLp (hq : IsNondegenerateCritical
     (hy : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) {v : E} :
     v ∈ Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) ↔
       MemLp (fun s ↦ fderiv ℝ (negativeGradientFlow f hf s) y v) 2 (volume.restrict (Ici 0)) := by
-  set φ := negativeGradientFlow f hf with hφ
-  set B := hessianOperator f q
-  have hBsym := hq.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
-  obtain ⟨α, hα, hBα⟩ := hq.exists_pos_mul_norm_le_hessianOperator
-  have hA : Tendsto (fun s ↦ hessianOperator f (φ s y)) atTop (𝓝 B) :=
-    ((hfs.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.tendsto q).comp
-      (Flow.mem_stableSet.1 hy)
-  have hw (v : E) := hasDerivAt_fderiv_negativeGradientFlow_apply hf hfs y v
-  have hd (t : ℝ) (z : E) : DifferentiableAt ℝ (φ t) z :=
-    differentiable_negativeGradientFlow_apply f hf hfs t z
-  obtain ⟨c, hc, hcs, hcu⟩ := hq.contDiffAt.exists_pos_mul_norm_sq_le_inner_hessianOperator
-  -- Tangent vectors give solutions that are square integrable on `[0, ∞)`.
-  have hle : Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet φ q) y) ≤
-      memLpSolutions hf y (volume.restrict (Ici 0)) := by
-    intro v hv
-    obtain ⟨e, hqe, hed, heC, heCs, heS⟩ :=
-      hq.exists_stableSet_chart_hasFDerivAt_id (n := 1) hfs hf
-    have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
-      (Submodule.closed_of_finiteDimensional _) (B := B) hqe hed heC heCs hc hcs
-    refine memLp_restrict_Ici_of_eventually_inner_nonneg hA hBsym hα hBα (hw v) ?_ 0
-    filter_upwards [(Flow.mem_stableSet.1 hy).eventually hcone] with s hs
-    rw [real_inner_comm]
-    refine hs (Flow.isInvariant_stableSet φ q s hy) _ ?_
-    rw [Flow.span_tangentConeAt_apply (Flow.isInvariant_stableSet φ q) (hd _ _) (hd _ _)]
-    exact Submodule.mem_map_of_mem hv
-  -- At a late time `T`, the square-integrable solutions miss the negative spectral subspace.
-  have hfin : Module.finrank ℝ (memLpSolutions hf y (volume.restrict (Ici 0))) + morseIndex f q ≤
-      Module.finrank ℝ E := by
-    obtain ⟨T, hT⟩ := (eventually_not_memLp_restrict_Ici_of_inner_neg hA hBsym hα hBα 0).exists
-    rw [← hq.contDiffAt.finrank_unstableLinearSubspace]
-    exact finrank_memLpSolutions_add_finrank_le hf hfs y hc hcu hT
-  have heq := Submodule.eq_of_le_of_finrank_le hle (by
-    have := hq.finrank_span_tangentConeAt_stableSet_add_morseIndex hfs hf hy
-    rw [← hφ] at this
-    omega)
-  rw [heq, mem_memLpSolutions]
+  rw [hq.span_tangentConeAt_stableSet_eq_squareIntegrableSolutionsOn hfs hf hy,
+    mem_squareIntegrableSolutionsOn_hessianOperator_negativeGradientFlow hf hfs,
+    Measure.restrict_congr_set Ioi_ae_eq_Ici]
 
 /-- **Tangent vectors of an unstable set decay along the flow in backward time.** Let `p` be a
 nondegenerate critical point of a `C²` function with globally Lipschitz gradient, and `y` a point
@@ -206,50 +245,9 @@ theorem mem_span_tangentConeAt_unstableSet_iff_memLp (hp : IsNondegenerateCritic
     (hy : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p) {v : E} :
     v ∈ Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ↔
       MemLp (fun s ↦ fderiv ℝ (negativeGradientFlow f hf s) y v) 2 (volume.restrict (Iic 0)) := by
-  set φ := negativeGradientFlow f hf with hφ
-  set B := hessianOperator f p
-  have hBsym := hp.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
-  obtain ⟨α, hα, hBα⟩ := hp.exists_pos_mul_norm_le_hessianOperator
-  have hA : Tendsto (fun s ↦ hessianOperator f (φ s y)) atBot (𝓝 B) :=
-    ((hfs.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.tendsto p).comp
-      (Flow.mem_unstableSet.1 hy)
-  have hw (v : E) := hasDerivAt_fderiv_negativeGradientFlow_apply hf hfs y v
-  have hd (t : ℝ) (z : E) : DifferentiableAt ℝ (φ t) z :=
-    differentiable_negativeGradientFlow_apply f hf hfs t z
-  obtain ⟨c, hc, hcs, hcu⟩ := hp.contDiffAt.exists_pos_mul_norm_sq_le_inner_hessianOperator
-  -- Tangent vectors give solutions that are square integrable on `(-∞, 0]`.
-  have hle : Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet φ p) y) ≤
-      memLpSolutions hf y (volume.restrict (Iic 0)) := by
-    intro v hv
-    obtain ⟨e, hpe, hed, heC, heCs, heS⟩ :=
-      hp.exists_unstableSet_chart_hasFDerivAt_id (n := 1) hfs hf
-    have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
-      (Submodule.closed_of_finiteDimensional _) (B := -B) hpe hed heC heCs hc fun u hu ↦ by
-        rw [neg_apply, inner_neg_left]
-        linarith [hcu u hu]
-    refine memLp_restrict_Iic_of_eventually_inner_nonpos hA hBsym hα hBα (hw v) ?_ 0
-    filter_upwards [(Flow.mem_unstableSet.1 hy).eventually hcone] with s hs
-    have h := hs (Flow.isInvariant_unstableSet φ p s hy) (fderiv ℝ (φ s) y v) (by
-      rw [Flow.span_tangentConeAt_apply (Flow.isInvariant_unstableSet φ p) (hd _ _) (hd _ _)]
-      exact Submodule.mem_map_of_mem hv)
-    rw [neg_apply, inner_neg_left, real_inner_comm] at h
-    linarith
-  -- At an early time `T`, the square-integrable solutions miss the positive spectral subspace.
-  have hfin : Module.finrank ℝ (memLpSolutions hf y (volume.restrict (Iic 0))) +
-      Module.finrank ℝ hp.contDiffAt.stableLinearSubspace ≤ Module.finrank ℝ E := by
-    obtain ⟨T, hT⟩ := (eventually_not_memLp_restrict_Iic_of_inner_pos hA hBsym hα hBα 0).exists
-    -- Backward time is the forward-time argument for `-B`.
-    refine finrank_memLpSolutions_add_finrank_le hf hfs y (B := -B) hc (fun u hu ↦ ?_)
-      fun w hw' hneg ↦ hT w hw' (by simpa [inner_neg_right] using hneg)
-    rw [neg_apply, inner_neg_left]
-    linarith [hcs u hu]
-  have heq := Submodule.eq_of_le_of_finrank_le hle (by
-    have := hp.finrank_span_tangentConeAt_unstableSet hfs hf hy
-    rw [← hφ] at this
-    have := hp.finrank_stableLinearSubspace_add_morseIndex
-    have := morseIndex_le_finrank (f := f) (x := p)
-    omega)
-  rw [heq, mem_memLpSolutions]
+  rw [hp.span_tangentConeAt_unstableSet_eq_squareIntegrableSolutionsOn hfs hf hy,
+    mem_squareIntegrableSolutionsOn_hessianOperator_negativeGradientFlow hf hfs,
+    Measure.restrict_congr_set Iio_ae_eq_Iic]
 
 end IsNondegenerateCriticalPoint
 
@@ -266,29 +264,10 @@ theorem squareIntegrableSolutions_hessianOperator_negativeGradientFlow
     squareIntegrableSolutions (fun s ↦ hessianOperator f (negativeGradientFlow f hf s y)) =
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
         Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
-  set φ := negativeGradientFlow f hf
-  have hAc := continuous_hessianOperator_negativeGradientFlow hf hfs y
-  have hw (v : E) := hasDerivAt_fderiv_negativeGradientFlow_apply hf hfs y v
-  have hw0 (v : E) : fderiv ℝ (φ 0) y v = v := by simp [φ, Flow.map_zero]
-  have hwc (v : E) : Continuous fun s ↦ fderiv ℝ (φ s) y v :=
-    continuous_iff_continuousAt.2 fun s ↦ (hw v s).continuousAt
-  ext v
-  rw [mem_squareIntegrableSolutions, Submodule.mem_inf,
-    hp.mem_span_tangentConeAt_unstableSet_iff_memLp hfs hf hyu,
-    hq.mem_span_tangentConeAt_stableSet_iff_memLp hfs hf hys]
-  constructor
-  · rintro ⟨w, rfl, hws, hw2⟩
-    -- A solution is determined by its initial value, so `w` is `s ↦ Dφ_s(y) (w 0)`.
-    have hweq : w = fun s ↦ fderiv ℝ (φ s) y (w 0) :=
-      hAc.neg.eq_of_hasDerivAt_clm_apply (t₀ := 0) hws (hw (w 0)) (hw0 (w 0)).symm
-    rw [← hweq]
-    exact ⟨hw2.restrict _, hw2.restrict _⟩
-  · rintro ⟨hbot, htop⟩
-    refine ⟨_, hw0 v, hw v, (memLp_two_iff_integrable_sq_norm (hwc v).aestronglyMeasurable).2 ?_⟩
-    have hIic := (memLp_two_iff_integrable_sq_norm (hwc v).aestronglyMeasurable).1 hbot
-    have hIci := (memLp_two_iff_integrable_sq_norm (hwc v).aestronglyMeasurable).1 htop
-    rw [← integrableOn_univ, ← Iic_union_Ici (a := (0 : ℝ))]
-    exact IntegrableOn.union hIic hIci
+  rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi
+      (continuous_hessianOperator_negativeGradientFlow hf hfs y),
+    hp.span_tangentConeAt_unstableSet_eq_squareIntegrableSolutionsOn hfs hf hyu,
+    hq.span_tangentConeAt_stableSet_eq_squareIntegrableSolutionsOn hfs hf hys]
 
 /-- **The kernel of the linearized operator.** Let `y` lie on a trajectory from a nondegenerate
 critical point `p` to a nondegenerate critical point `q` of a `C²` function with globally
@@ -311,7 +290,6 @@ theorem finrank_ker_trajectoryOperator_hessianOperator_negativeGradientFlow
       (continuous_hessianOperator_negativeGradientFlow hf hfs y) AL hAL,
     squareIntegrableSolutions_hessianOperator_negativeGradientFlow hp hq hfs hf hyu hys]
 
-open WeakDerivStep in
 /-- **The linearized operator is onto exactly at transverse trajectories.** Let `f` be a `C²`
 function with globally Lipschitz gradient on a finite-dimensional real inner product space, and
 `y` a point on a negative-gradient trajectory from a nondegenerate critical point `p` to a
@@ -330,43 +308,10 @@ theorem surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
         Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) =
           ⊤ := by
-  have hγ : IsIntegralCurve (fun s ↦ negativeGradientFlow f hf s y) (fun _ x ↦ -∇ f x) :=
-    (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y
-  have hbot := Flow.mem_unstableSet.1 hyu
-  have htop := Flow.mem_stableSet.1 hys
-  have hindex := hγ.index_trajectoryOperator_hessianOperator hfs hp hq hbot htop hAL
-  have hclosed := (hγ.isFredholm_trajectoryOperator_hessianOperator hfs hp hq hbot htop
-    hAL).isClosed_range
-  -- The Hessian is symmetric, so the coefficient is its own pointwise adjoint.
-  have hadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
-      AL s = ContinuousLinearMap.adjoint (AL s) := by
-    filter_upwards [hAL] with s hs
-    rw [hs]
-    exact hfs.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric.clm_adjoint_eq.symm
-  -- The kernel of the formal adjoint is finite dimensional: it is a space of solutions of a linear
-  -- equation on `E`.
-  have hA := (continuous_hessianOperator_negativeGradientFlow hf hfs y).neg
-  have := (kerTrajectoryOperatorEquiv hA (-AL) (by
-    filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
-    simp only [hs, Pi.neg_apply, hAs])).symm.finiteDimensional
-  rw [index_trajectoryOperator_of_isClosed_range hadj hclosed,
-    finrank_ker_trajectoryOperator_hessianOperator_negativeGradientFlow hp hq hfs hf hyu hys
-      hAL] at hindex
-  rw [surjective_trajectoryOperator_iff_ker_neg_eq_bot hadj hclosed, ← Submodule.finrank_eq_zero]
-  -- Compare dimensions: `dim (Tᵘ ⊔ Tˢ) + dim (Tᵘ ⊓ Tˢ) = ind p + (dim E - ind q)`.
-  have hsum := Submodule.finrank_sup_add_finrank_inf_eq
-    (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y))
-    (Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y))
-  have hu := hp.finrank_span_tangentConeAt_unstableSet hfs hf hyu
-  have hs := hq.finrank_span_tangentConeAt_stableSet_add_morseIndex hfs hf hys
-  have hle := Submodule.finrank_le
-    (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
-      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y))
-  constructor
-  · intro h0
-    exact Submodule.eq_top_of_finrank_eq (by omega)
-  · intro htop
-    rw [htop, finrank_top] at hsum
-    omega
+  rw [hp.span_tangentConeAt_unstableSet_eq_squareIntegrableSolutionsOn hfs hf hyu,
+    hq.span_tangentConeAt_stableSet_eq_squareIntegrableSolutionsOn hfs hf hys]
+  exact ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y
+    ).surjective_trajectoryOperator_hessianOperator_iff_sup_eq_top hfs hp hq
+      (Flow.mem_unstableSet.1 hyu) (Flow.mem_stableSet.1 hys) hAL
 
 end TauCeti
