@@ -41,6 +41,8 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 * `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`: the `Lᵖ` bound `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
 * `SchwartzMap.integrable_fourierInv_sub_smul`: for `u ∈ L²`, the convolution integral
   `∫ 𝓕⁻ σ (x - y) • u y` converges absolutely at every `x`.
+* `SchwartzMap.integrable_uncurry_sub_smul_smul`: for `u ∈ Lᵖ` and `v ∈ L^q`, the integrand
+  `(x, y) ↦ (ψ (x - y) • u y) • (θ x • v x)` is integrable on `E × E`.
 * `SchwartzMap.fourierInv_convolution`: the inverse Fourier transform of a convolution is the
   pairing of the inverse Fourier transforms.
 * `SchwartzMap.fourier_pairing`, `SchwartzMap.fourier_pairing_apply`: the Fourier transform of a
@@ -103,6 +105,52 @@ theorem integrable_fourierInv_sub_smul {G : Type*} [NormedAddCommGroup G] [Norme
   have hK : MemLp (fun y ↦ 𝓕⁻ σ (x - y)) 2 volume :=
     ((𝓕⁻ σ).memLp 2 volume).comp_measurePreserving (volume.measurePreserving_sub_left x)
   exact memLp_one_iff_integrable.1 (hK.smul (Lp.memLp u))
+
+omit [CompleteSpace F] in
+/-- For Schwartz functions `ψ`, `θ` and `u ∈ Lᵖ`, `v ∈ L^q` with `1 ≤ p, q`, the integrand
+`(x, y) ↦ (ψ (x - y) • u y) • (θ x • v x)` is integrable on `E × E`. This is the integrand of the
+pairing of `(ψ ⋆ u) • v` with `θ` before the convolution integral is evaluated, so it justifies
+exchanging the order of integration there. For fixed `x` the integral in `y` is at most
+`‖ψ‖_{p'} ‖u‖_p` by Hölder's inequality, and `θ • v` is integrable. -/
+theorem integrable_uncurry_sub_smul_smul {p q : ℝ≥0∞} [hp : Fact (1 ≤ p)] [hq : Fact (1 ≤ q)]
+    (ψ θ : 𝓢(E, ℂ)) (u : Lp ℂ p (volume : Measure E)) (v : Lp F q (volume : Measure E)) :
+    Integrable (Function.uncurry fun x y ↦ (ψ (x - y) • u y) • (θ x • v x))
+      ((volume : Measure E).prod volume) := by
+  have hθv : Integrable (fun x ↦ θ x • v x) := by
+    have : (1 - q⁻¹)⁻¹.HolderConjugate q :=
+      (ENNReal.HolderConjugate.inv_one_sub_inv' hq.out).symm
+    exact memLp_one_iff_integrable.1 ((θ.memLp (1 - q⁻¹)⁻¹ (μ := volume)).smul (Lp.memLp v))
+  have hmeas : AEStronglyMeasurable (Function.uncurry fun x y ↦ (ψ (x - y) • u y) • (θ x • v x))
+      ((volume : Measure E).prod volume) :=
+    ((ψ.continuous.comp (continuous_fst.sub continuous_snd)).aestronglyMeasurable.smul
+      (Lp.aestronglyMeasurable u).comp_snd).smul
+      ((θ.continuous.comp continuous_fst).aestronglyMeasurable.smul
+        (Lp.aestronglyMeasurable v).comp_fst)
+  refine ⟨hmeas, ?_⟩
+  have : (1 - p⁻¹)⁻¹.HolderTriple p 1 := (ENNReal.HolderConjugate.inv_one_sub_inv' hp.out).symm
+  set C := eLpNorm ψ (1 - p⁻¹)⁻¹ volume * eLpNorm u p volume
+  have hC : C < ∞ := ENNReal.mul_lt_top (ψ.eLpNorm_lt_top _ volume) (Lp.eLpNorm_lt_top u)
+  have hinner : ∀ x, ∫⁻ y, ‖(ψ (x - y) • u y) • (θ x • v x)‖ₑ ≤ C * ‖θ x • v x‖ₑ := fun x ↦ by
+    simp_rw [enorm_smul _ (θ x • v x)]
+    rw [lintegral_mul_const' _ _ enorm_ne_top]
+    gcongr
+    have hψx : AEStronglyMeasurable (fun y ↦ ψ (x - y)) volume :=
+      (ψ.continuous.comp (continuous_sub_left x)).aestronglyMeasurable
+    calc ∫⁻ y, ‖ψ (x - y) • u y‖ₑ = eLpNorm ((fun y ↦ ψ (x - y)) • ⇑u) 1 volume := by
+          simp only [eLpNorm_one_eq_lintegral_enorm (hψx.smul (Lp.aestronglyMeasurable u)),
+            Pi.smul_apply']
+      _ ≤ eLpNorm (fun y ↦ ψ (x - y)) (1 - p⁻¹)⁻¹ volume * eLpNorm u p volume :=
+          eLpNorm_smul_le_mul_eLpNorm hψx (Lp.aestronglyMeasurable u)
+      _ = C := by
+          have h := eLpNorm_comp_measurePreserving (p := (1 - p⁻¹)⁻¹)
+            ψ.continuous.aestronglyMeasurable (volume.measurePreserving_sub_left x)
+          rw [Function.comp_def] at h
+          rw [h]
+  rw [HasFiniteIntegral, lintegral_prod _ hmeas.enorm]
+  calc ∫⁻ x, ∫⁻ y, ‖Function.uncurry (fun x y ↦ (ψ (x - y) • u y) • (θ x • v x)) (x, y)‖ₑ
+      ≤ ∫⁻ x, C * ‖θ x • v x‖ₑ := lintegral_mono hinner
+    _ = C * ∫⁻ x, ‖θ x • v x‖ₑ := lintegral_const_mul' _ _ hC.ne
+    _ < ∞ := ENNReal.mul_lt_top hC hθv.2
 
 section Bilinear
 

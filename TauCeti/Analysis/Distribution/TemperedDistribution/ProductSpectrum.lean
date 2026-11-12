@@ -28,7 +28,7 @@ tempered distributions on a finite-dimensional real inner product space `E`: wri
 * If `u ∈ Lᵖ` and `v ∈ L^q` have Fourier transforms vanishing outside compact sets `K₁` and `K₂`,
   and `1/r = 1/p + 1/q` with `r ≥ 1`, then the Fourier transform of the product `u • v ∈ Lʳ`
   vanishes outside `K₁ + K₂` (`MeasureTheory.Lp.isVanishingOn_fourier_smul`). For balls the radii
-  and the centres add (`MeasureTheory.Lp.isVanishingOn_fourier_smul_closedBall`).
+  and the centres add (`MeasureTheory.Lp.isVanishingOn_fourier_smul_compl_closedBall`).
 
 This is the spectral localization behind Bony's paraproduct decomposition: the dyadic blocks of a
 bounded function, or of an element of a Besov space, are `L^∞` functions with spectra in balls and
@@ -63,7 +63,7 @@ by `‖ψ‖_{p'} ‖u‖_p` by Hölder's inequality, and `𝓕 φ • v` is int
   whose spectrum lies in `K` adds `K` to the spectrum.
 * `MeasureTheory.Lp.isVanishingOn_fourier_smul`: the spectrum of a product of two `Lᵖ` functions
   with compact spectra lies in the sum of their spectra.
-* `MeasureTheory.Lp.isVanishingOn_fourier_smul_closedBall`: the same for spectra in balls.
+* `MeasureTheory.Lp.isVanishingOn_fourier_smul_compl_closedBall`: the same for spectra in balls.
 
 ## References
 
@@ -116,50 +116,6 @@ theorem isVanishingOn_fourier_smulLeftCLM {u : 𝓢'(E, F)} {s K : Set E}
 end TemperedDistribution
 
 namespace MeasureTheory.Lp
-
-omit [CompleteSpace F] in
-/-- The integrand `(x, y) ↦ (ψ (x - y) • u y) • (θ x • v x)` of the pairing of `u • v` with `θ`,
-after `u` is written as the convolution `ψ ⋆ u`, is integrable on `E × E`: for fixed `x` the
-integral in `y` is at most `‖ψ‖_{p'} ‖u‖_p` by Hölder's inequality, and `θ • v` is integrable. -/
-private theorem integrable_smul_smul {p q : ℝ≥0∞} [hp : Fact (1 ≤ p)] [hq : Fact (1 ≤ q)]
-    (ψ θ : 𝓢(E, ℂ)) (u : Lp ℂ p (volume : Measure E)) (v : Lp F q (volume : Measure E)) :
-    Integrable (uncurry fun x y ↦ (ψ (x - y) • u y) • (θ x • v x))
-      ((volume : Measure E).prod volume) := by
-  have hθv : Integrable (fun x ↦ θ x • v x) := by
-    have : (1 - q⁻¹)⁻¹.HolderConjugate q :=
-      (ENNReal.HolderConjugate.inv_one_sub_inv' hq.out).symm
-    exact memLp_one_iff_integrable.1 ((θ.memLp (1 - q⁻¹)⁻¹ (μ := volume)).smul (Lp.memLp v))
-  have hmeas : AEStronglyMeasurable (uncurry fun x y ↦ (ψ (x - y) • u y) • (θ x • v x))
-      ((volume : Measure E).prod volume) :=
-    ((ψ.continuous.comp (continuous_fst.sub continuous_snd)).aestronglyMeasurable.smul
-      (Lp.aestronglyMeasurable u).comp_snd).smul
-      ((θ.continuous.comp continuous_fst).aestronglyMeasurable.smul
-        (Lp.aestronglyMeasurable v).comp_fst)
-  refine ⟨hmeas, ?_⟩
-  have : (1 - p⁻¹)⁻¹.HolderTriple p 1 := (ENNReal.HolderConjugate.inv_one_sub_inv' hp.out).symm
-  set C := eLpNorm ψ (1 - p⁻¹)⁻¹ volume * eLpNorm u p volume
-  have hC : C < ∞ := ENNReal.mul_lt_top (ψ.eLpNorm_lt_top _ volume) (Lp.eLpNorm_lt_top u)
-  have hinner : ∀ x, ∫⁻ y, ‖(ψ (x - y) • u y) • (θ x • v x)‖ₑ ≤ C * ‖θ x • v x‖ₑ := fun x ↦ by
-    simp_rw [enorm_smul _ (θ x • v x)]
-    rw [lintegral_mul_const' _ _ enorm_ne_top]
-    gcongr
-    have hψx : AEStronglyMeasurable (fun y ↦ ψ (x - y)) volume :=
-      (ψ.continuous.comp (continuous_sub_left x)).aestronglyMeasurable
-    calc ∫⁻ y, ‖ψ (x - y) • u y‖ₑ = eLpNorm ((fun y ↦ ψ (x - y)) • ⇑u) 1 volume := by
-          simp only [eLpNorm_one_eq_lintegral_enorm (hψx.smul (Lp.aestronglyMeasurable u)),
-            Pi.smul_apply']
-      _ ≤ eLpNorm (fun y ↦ ψ (x - y)) (1 - p⁻¹)⁻¹ volume * eLpNorm u p volume :=
-          eLpNorm_smul_le_mul_eLpNorm hψx (Lp.aestronglyMeasurable u)
-      _ = C := by
-          have h := eLpNorm_comp_measurePreserving (p := (1 - p⁻¹)⁻¹)
-            ψ.continuous.aestronglyMeasurable (volume.measurePreserving_sub_left x)
-          rw [Function.comp_def] at h
-          rw [h]
-  rw [HasFiniteIntegral, lintegral_prod _ hmeas.enorm]
-  calc ∫⁻ x, ∫⁻ y, ‖uncurry (fun x y ↦ (ψ (x - y) • u y) • (θ x • v x)) (x, y)‖ₑ
-      ≤ ∫⁻ x, C * ‖θ x • v x‖ₑ := lintegral_mono hinner
-    _ = C * ∫⁻ x, ‖θ x • v x‖ₑ := lintegral_const_mul' _ _ hC.ne
-    _ < ∞ := ENNReal.mul_lt_top hC hθv.2
 
 /-- **The spectrum of a product.** Let `u ∈ Lᵖ` and `v ∈ L^q` have Fourier transforms vanishing
 outside compact sets `K₁` and `K₂`, and let `1/r = 1/p + 1/q` with `r ≥ 1`. Then the Fourier
@@ -231,14 +187,14 @@ theorem isVanishingOn_fourier_smul {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (
         filter_upwards [coeFn_lpSMul (r := r) u v, hconv] with x hx hxc
         rw [hx, Pi.smul_apply', hxc, integral_smul_const, smul_comm]
     _ = ∫ y, ∫ x, (ψ (x - y) • u y) • (𝓕 φ x • v x) :=
-        integral_integral_swap (integrable_smul_smul ψ (𝓕 φ) u v)
+        integral_integral_swap (ψ.integrable_uncurry_sub_smul_smul (𝓕 φ) u v)
     _ = 0 := by simp only [hzero, integral_zero]
 
 /-- **The spectrum of a product of band-limited functions.** If `u ∈ Lᵖ` and `v ∈ L^q` have Fourier
 transforms vanishing outside the closed balls of radii `R₁, R₂ ≥ 0` about `a` and `b`, and
 `1/r = 1/p + 1/q` with `r ≥ 1`, then the Fourier transform of `u • v ∈ Lʳ` vanishes outside the
 closed ball of radius `R₁ + R₂` about `a + b`. -/
-theorem isVanishingOn_fourier_smul_closedBall {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+theorem isVanishingOn_fourier_smul_compl_closedBall {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
     [Fact (1 ≤ r)] [p.HolderTriple q r] {u : Lp ℂ p (volume : Measure E)}
     {v : Lp F q (volume : Measure E)} {a b : E} {R₁ R₂ : ℝ} (hR₁ : 0 ≤ R₁) (hR₂ : 0 ≤ R₂)
     (hu : IsVanishingOn (𝓕 (u : 𝓢'(E, ℂ)) : 𝓢'(E, ℂ)) (closedBall a R₁)ᶜ)
