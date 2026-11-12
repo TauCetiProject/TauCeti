@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
+import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
@@ -44,6 +45,8 @@ line.
   matrix is monotone and preserves nonnegativity.
 * `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
   positive one.
+* `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
+  coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
 -/
 
@@ -146,5 +149,32 @@ theorem mulVec_pos (hA : ∀ i j, 0 < A i j) (hy : 0 ≤ y) (hy0 : y ≠ 0) (i :
     ⟨j, Finset.mem_univ j, mul_pos (hA i j) ((hy j).lt_of_ne' hj)⟩
 
 end StrictOrderedSemiring
+
+section Ring
+
+variable {n : ℕ} {R : Type*} [Ring R]
+
+/-- If `A *ᵥ u = 0` and `u (Fin.last n)` is a unit, then the submatrix of `A` omitting its last
+column sends `fun i => x i.castSucc - u i.castSucc * (u (last))⁻¹ * x (last)` to `A *ᵥ x`. -/
+theorem submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero {m : Type*}
+    (A : Matrix m (Fin (n + 1)) R) {u : Fin (n + 1) → R} (hu : A *ᵥ u = 0)
+    (huunit : IsUnit (u (Fin.last n))) (x : Fin (n + 1) → R) :
+    (A.submatrix id Fin.castSucc) *ᵥ (fun i => x i.castSucc -
+      u i.castSucc * ((huunit.unit⁻¹ : Rˣ) : R) * x (Fin.last n)) = A *ᵥ x := by
+  have hcol (i : m) : A i (Fin.last n) =
+      -(∑ j : Fin n, A i j.castSucc * u j.castSucc) * ((huunit.unit⁻¹ : Rˣ) : R) := by
+    have h := congrFun hu i
+    simp only [mulVec, dotProduct, Pi.zero_apply, Fin.sum_univ_castSucc] at h
+    calc A i (Fin.last n) = A i (Fin.last n) * u (Fin.last n) * ((huunit.unit⁻¹ : Rˣ) : R) := by
+          rw [mul_assoc, huunit.mul_val_inv, mul_one]
+      _ = _ := by rw [eq_neg_of_add_eq_zero_right h]
+  ext i
+  simp only [mulVec, dotProduct, submatrix_apply, id_eq, Fin.sum_univ_castSucc, hcol, mul_sub,
+    Finset.sum_sub_distrib, neg_mul, ← sub_eq_add_neg]
+  congr 1
+  rw [Finset.sum_mul, Finset.sum_mul]
+  exact Finset.sum_congr rfl fun _ _ => by simp only [mul_assoc]
+
+end Ring
 
 end Matrix

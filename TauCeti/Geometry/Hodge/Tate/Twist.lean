@@ -27,9 +27,7 @@ morphisms. A polarizing form for `V` polarizes `V(m)` unchanged: subtracting the
 does not change the symmetry sign, while both the filtration indices and the exponent in the
 Hodge–Riemann positivity relation shift compatibly.
 
-This is the Tate-twist companion in Layer L0 of
-`TauCetiRoadmap/HodgeStructures/README.md`. The convention follows Voisin,
-*Hodge Theory and Complex Algebraic Geometry I*, §§7.1–7.2.
+The convention follows Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §§7.1–7.2.
 
 ## Main declarations
 
