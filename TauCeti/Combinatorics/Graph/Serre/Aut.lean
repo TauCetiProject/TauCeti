@@ -176,11 +176,13 @@ open scoped Pointwise in
   have key : ∀ (ψ : Γ.Aut) {S : Set Γ.V}, Γ.IsConvex S → Γ.IsConvex (ψ • S) := by
     refine fun ψ S hS => isConvex_iff.mpr fun a ha b hb p hp e he => ?_
     rw [Set.mem_smul_set_iff_inv_smul_mem] at ha hb ⊢
+    -- The image of `p` under `ψ⁻¹` joins the translates of its endpoints through `ψ⁻¹ • e`.
+    have hobj (v : Γ.V) : ψ⁻¹.toHom.toPrefunctor.obj v = ψ⁻¹ • v := by
+      rw [Hom.toPrefunctor_obj, toHom_mapV]
     have he' : ψ⁻¹ • e ∈ Path.darts Γ (ψ⁻¹.toHom.toPrefunctor.mapPath p) := by
-      rw [Hom.darts_mapPath]
-      exact List.mem_map_of_mem he
-    have hsrc := isConvex_iff.mp hS (ψ⁻¹.toHom.toPrefunctor.obj a) ha
-      (ψ⁻¹.toHom.toPrefunctor.obj b) hb _
+      rw [Hom.darts_mapPath, List.mem_map]
+      exact ⟨e, he, toHom_mapE ψ⁻¹ e⟩
+    have hsrc := isConvex_iff.mp hS _ (by rwa [hobj]) _ (by rwa [hobj]) _
       ((Hom.isReduced_mapPath_iff Γ _ ψ⁻¹.toHom_mapE_injective p).mpr hp) _ he'
     rwa [src_smul] at hsrc
   exact ⟨fun h => by simpa only [inv_smul_smul] using key φ⁻¹ h, key φ⟩
