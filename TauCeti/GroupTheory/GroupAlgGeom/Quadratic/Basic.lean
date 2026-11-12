@@ -281,7 +281,7 @@ coefficients are deleted, is a lower bound for the number of occurrences of `x` 
 theorem countP_toWord_snd_le_occurrences [DecidableEq X] (x : X) (w : GX G X) :
     ((snd w).toWord.countP fun p => p.1 = x) ≤ occurrences x w := by
   refine le_occurrences x (fun u => (snd u).toWord.countP fun p => p.1 = x) (fun u v => ?_)
-    (fun g => by simp) (by simp [FreeGroup.toWord_of]) ?_ (fun y hy => ⟨?_, ?_⟩) w
+    (fun _ => by simp) (by simp [FreeGroup.toWord_of]) ?_ (fun y hy => ⟨?_, ?_⟩) w
   · rw [map_mul, ← List.countP_append]
     exact (FreeGroup.toWord_mul_sublist _ _).countP_le
   · simp [FreeGroup.toWord_inv, FreeGroup.toWord_of, FreeGroup.invRev]
@@ -496,6 +496,15 @@ theorem constant_nonorientableCoeff {x : Fin n → X} (hn : 0 < n)
     (nonorientableCoeff n m hn x z inj c hc d hd).constant = d := (rfl)
 
 theorem toWord_def (S : Standard G X) : S.toWord = S.atoms.prod * inl S.constant := (rfl)
+
+/-- The standard quadratic equation of type (4) with one square and no conjugated coefficient is
+`x² d = 1`. -/
+@[simp]
+theorem toWord_nonorientableCoeff_one_zero {x : Fin 1 → X} {z : Fin 0 → X} {c : Fin 0 → G}
+    (inj : (Sum.elim x z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord =
+      inr (FreeGroup.of (x 0)) ^ 2 * inl d := by
+  simp [toWord_def]
 
 theorem atomicRank_def (S : Standard G X) : S.atomicRank = S.atoms.length := (rfl)
 

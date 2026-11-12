@@ -161,6 +161,11 @@ def IsSegment (σ : Set X) (x y : X) : Prop :=
 
 variable {d}
 
+theorem isSegment_iff {σ : Set X} {x y : X} :
+    d.IsSegment σ x y ↔ ∃ f : Λ → X, f 0 = x ∧ f (d x y) = y ∧
+      d.IsometricOn f (Icc 0 (d x y)) ∧ f '' Icc 0 (d x y) = σ :=
+  Iff.rfl
+
 /-- Segments are the isometric images of closed intervals of `Λ`, with endpoints the images of
 the endpoints. -/
 theorem isSegment_iff_exists_Icc {σ : Set X} {x y : X} :
@@ -349,6 +354,9 @@ end Int
 /-- `d` is geodesic: any two points are joined by a segment. -/
 def IsGeodesic (d : LambdaMetric Λ X) : Prop :=
   ∀ x y : X, ∃ σ, d.IsSegment σ x y
+
+theorem isGeodesic_iff : d.IsGeodesic ↔ ∀ x y : X, ∃ σ, d.IsSegment σ x y :=
+  Iff.rfl
 
 /-- `d` makes `X` a `Λ`-tree: `X` is nonempty and geodesic, two segments meeting only in a common
 endpoint have a segment as union (T2), and two segments with a common endpoint intersect in a
