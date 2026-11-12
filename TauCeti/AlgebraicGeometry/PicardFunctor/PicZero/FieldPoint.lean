@@ -88,23 +88,12 @@ theorem relativePicardFiberDegree_mk_eq_eulerDegree {Ω : Type u} [Field Ω]
   let _ : Algebra L Ω := (Spec.preimage ξ).hom.toAlgebra
   have hξ : Spec.map (CommRingCat.ofHom (algebraMap L Ω)) = ξ := by
     rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, Spec.map_preimage]
-  -- `X_L` is quasi-compact with affine diagonal, as a base change of `f`.
+  -- `X_L` is quasi-compact and quasi-separated, as a base change of `f`.
   have : CompactSpace ↥(pullback g f) :=
     (quasiCompact_iff_compactSpace (pullback.fst g f)).mp inferInstance
-  have : IsAffineHom (pullback.diagonal (terminal.from (pullback g f))) := by
-    -- Instance search does not find these closure properties of `@IsAffineHom` and its diagonal.
-    have : MorphismProperty.RespectsIso @IsAffineHom.{u} :=
-      MorphismProperty.IsStableUnderBaseChange.respectsIso
-    have : MorphismProperty.IsStableUnderComposition @IsAffineHom.{u} :=
-      MorphismProperty.IsMultiplicative.toIsStableUnderComposition
-    have : (MorphismProperty.diagonal @IsAffineHom.{u}).IsStableUnderBaseChange :=
-      MorphismProperty.IsStableUnderBaseChange.diagonal
-    have : (MorphismProperty.diagonal @IsAffineHom.{u}).IsStableUnderComposition :=
-      MorphismProperty.diagonal_isStableUnderComposition
-    rw [← terminal.comp_from (pullback.fst g f)]
-    exact MorphismProperty.comp_mem (MorphismProperty.diagonal @IsAffineHom) _ _
-      (MorphismProperty.pullback_fst g f ‹IsAffineHom (pullback.diagonal f)›)
-      (inferInstanceAs (IsAffineHom (pullback.diagonal (terminal.from (Spec (.of L))))))
+  have : QuasiSeparated f := ⟨inferInstance⟩
+  have : QuasiSeparatedSpace ↥(pullback g f) :=
+    quasiSeparatedSpace_of_quasiSeparated (pullback.fst g f)
   -- The fibre over `ξ` is the base change of `X_L` along `ξ`.
   have hsnd : pullback.map (ξ ≫ g) f g f ξ (𝟙 X) (𝟙 S) (by simp) (by simp) ≫ pullback.snd g f =
       pullback.snd (ξ ≫ g) f := by
