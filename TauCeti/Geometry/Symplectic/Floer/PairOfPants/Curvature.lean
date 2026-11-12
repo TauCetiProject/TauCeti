@@ -600,10 +600,9 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endChart
     intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul]
 
 /-- **The energy identity on an end piece, for a manifold target.** Over the end piece
-`1 ≤ ±s ≤ R` of the end `q`, over which the Floer energy density is integrable, the Floer energy
-is the symplectic area, plus `±β(R - 1)` times the integral of `H_q(t)` over the boundary circle
-`±s = R`, minus the integrated curvature, for a map `u` which is `C¹` on an open set containing
-the truncation `S_R`. -/
+`1 ≤ ±s ≤ R` of the end `q`, the Floer energy is the symplectic area, plus `±β(R - 1)` times the
+integral of `H_q(t)` over the boundary circle `±s = R`, minus the integrated curvature, for a map
+`u` which is `C¹` on an open set containing the truncation `S_R`. -/
 private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {u : ℝ × ℝ → M}
