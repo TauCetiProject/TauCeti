@@ -584,7 +584,7 @@ private theorem suspendedStasheff_eq_smul {G : InternalGrading R M}
       apply_comp_subword_of_mem (f := fun r ↦ m (r + 1)) (h := fun r ↦ m (r + 1))
         hFm hm hFm (q := 1) (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)) hx d a ha,
     Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun s hs ↦
-      apply_algebra_splice_of_mem (f := fun r ↦ m (r + 1)) hFm (Finset.mem_Icc.1 hs).1
+      apply_algebra_splice_of_mem (f := fun r ↦ m (r + 1)) hFm
         (by have := (Finset.mem_Icc.1 hs).2; have := Finset.mem_range.1 hp; omega) hx d a ha]
   simp only [← Finset.smul_sum, ← smul_add]
 
