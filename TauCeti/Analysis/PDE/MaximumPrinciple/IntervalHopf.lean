@@ -732,7 +732,7 @@ private theorem intervalIntegral_abs_le (hx : x₀ < x₁)
         rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_of_le hy.1.le]
     _ ≤ Real.exp L * U * ∫ z in Ioo x₀ x₁, |d z - q z * b z| :=
         mul_le_mul_of_nonneg_left (setIntegral_mono_set he.abs
-          (.of_forall fun _ ↦ abs_nonneg _) (Ioc_subset_Ioo_right hy.2).eventuallyLE)
+          (.of_forall fun _ ↦ abs_nonneg _) (ae_of_all _ (Ioc_subset_Ioo_right hy.2)))
           (by positivity)
 
 /-- The Hopf lemma for a weak supersolution, given an integrating factor `q` with `q a = c`. -/
