@@ -21,6 +21,12 @@ from its restriction to the zero section and its derivatives along the fibres. I
 these are the two parts of the differential of the normal exponential in the tubular
 neighbourhood theorem.
 
+In the preferred charts the zero section has derivative the first summand inclusion
+(`TauCeti.Bundle.hasMFDerivAt_zeroSection`), and the fibre over `b`, parametrized by the model
+fibre through the trivialization at `b`, has derivative the second summand inclusion
+(`TauCeti.Bundle.hasMFDerivAt_mk_trivializationAt_symm`); it is `C^n`
+(`TauCeti.Bundle.contMDiff_mk_trivializationAt_symm`).
+
 The horizontal computation generalizes Mathlib's
 `TangentBundle.tangentMap_tangentBundle_pure`, by Sébastien Gouëzel and Floris van Doorn,
 from tangent bundles to vector bundles. The vertical computation uses the scalar-curve case
@@ -96,11 +102,11 @@ theorem zeroSectionTangentEquiv_symm_inr (b : B) (v : V b) :
       (mem_baseSet_trivializationAt F V b)]
   exact (one_smul 𝕜 _).symm
 
-/-- In preferred tangent coordinates, the differential of the zero section is the first
-summand inclusion. -/
-theorem mfderiv_zeroSection (b : B) :
-    mfderiv I (I.prod 𝓘(𝕜, F)) (zeroSection F V) b =
-      ContinuousLinearMap.inl 𝕜 (TangentSpace I b) F := by
+/-- In preferred tangent coordinates, the zero section has derivative the first summand
+inclusion. -/
+theorem hasMFDerivAt_zeroSection (b : B) :
+    HasMFDerivAt I (I.prod 𝓘(𝕜, F)) (zeroSection F V) b
+      (ContinuousLinearMap.inl 𝕜 (TangentSpace I b) F) := by
   -- In the preferred charts the zero section is the first summand inclusion.
   have key : ∀ y ∈ (extChartAt I b).target,
       (extChartAt I b).symm y ∈ (trivializationAt F V b).baseSet →
@@ -118,12 +124,66 @@ theorem mfderiv_zeroSection (b : B) :
   have hb : (extChartAt I b).symm (extChartAt I b b) ∈ (trivializationAt F V b).baseSet := by
     rw [extChartAt_to_inv]
     exact mem_baseSet_trivializationAt F V b
-  refine HasMFDerivAt.mfderiv ⟨(Trivialization.continuous_zeroSection 𝕜 (E := V)).continuousAt, ?_⟩
+  refine ⟨(Trivialization.continuous_zeroSection 𝕜 (E := V)).continuousAt, ?_⟩
   refine (ContinuousLinearMap.inl 𝕜 E F).hasFDerivAt.hasFDerivWithinAt.congr_of_eventuallyEq
     ?_ (key _ (mem_extChartAt_target b) hb)
   filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem (I := I) (mem_extChartAt_target b),
     nhdsWithin_le_nhds ((continuousAt_extChartAt_symm b).eventually
       ((trivializationAt F V b).open_baseSet.mem_nhds hb))] with y hy hs using key y hy hs
+
+/-- In preferred tangent coordinates, the differential of the zero section is the first
+summand inclusion. -/
+theorem mfderiv_zeroSection (b : B) :
+    mfderiv I (I.prod 𝓘(𝕜, F)) (zeroSection F V) b =
+      ContinuousLinearMap.inl 𝕜 (TangentSpace I b) F :=
+  (hasMFDerivAt_zeroSection b).mfderiv
+
+variable (𝕜) in
+include 𝕜 in
+/-- The fibre over `b`, parametrized by the model fibre through the trivialization at `b`, passes
+through the zero vector at `0`. -/
+theorem mk_trivializationAt_symm_zero (b : B) :
+    (⟨b, (trivializationAt F V b).symm b 0⟩ : TotalSpace F V) = zeroSection F V b := by
+  rw [← (trivializationAt F V b).symmL_apply (R := 𝕜) (mem_baseSet_trivializationAt F V b),
+    map_zero]
+  rfl
+
+omit [∀ b, Module 𝕜 (V b)] [VectorBundle 𝕜 F V] in
+/-- The fibre over `b`, parametrized by the model fibre through the trivialization at `b`, is
+`C^n`: in that trivialization it is the identity of the model fibre. -/
+theorem contMDiff_mk_trivializationAt_symm {n : WithTop ℕ∞} (b : B) :
+    ContMDiff 𝓘(𝕜, F) (I.prod 𝓘(𝕜, F)) n
+      (fun w : F ↦ (⟨b, (trivializationAt F V b).symm b w⟩ : TotalSpace F V)) := fun _ ↦
+  contMDiffAt_totalSpace.mpr ⟨contMDiffAt_const, contMDiffAt_id.congr_of_eventuallyEq
+    (Eventually.of_forall fun w ↦ congrArg Prod.snd
+      ((trivializationAt F V b).apply_mk_symm (mem_baseSet_trivializationAt F V b) w))⟩
+
+/-- The fibre over `b`, parametrized by the model fibre through the trivialization at `b`, has
+derivative the second summand inclusion at every point: in the preferred charts it is
+`w ↦ (φ b, w)`. -/
+theorem hasMFDerivAt_mk_trivializationAt_symm (b : B) (w₀ : F) :
+    HasMFDerivAt 𝓘(𝕜, F) (I.prod 𝓘(𝕜, F))
+      (fun w : F ↦ (⟨b, (trivializationAt F V b).symm b w⟩ : TotalSpace F V)) w₀
+      (ContinuousLinearMap.inr 𝕜 (TangentSpace I b) F) := by
+  set e := trivializationAt F V b
+  have hb : b ∈ e.baseSet := mem_baseSet_trivializationAt F V b
+  -- In the preferred charts the parametrized fibre is the second summand inclusion, shifted by
+  -- the chart image of `b`.
+  have key : writtenInExtChartAt 𝓘(𝕜, F) (I.prod 𝓘(𝕜, F)) w₀
+      (fun w : F ↦ (⟨b, e.symm b w⟩ : TotalSpace F V)) = fun w ↦ (extChartAt I b b, w) := by
+    funext w
+    simp only [writtenInExtChartAt, Function.comp_apply, FiberBundle.extChartAt,
+      extChartAt_model_space_eq_id, PartialEquiv.refl_symm, PartialEquiv.refl_coe, id_eq,
+      PartialEquiv.trans_apply, PartialEquiv.prod_coe]
+    -- The partial equivalence and the trivialization have the same underlying function.
+    change (extChartAt I b (e ⟨b, e.symm b w⟩).1, (e ⟨b, e.symm b w⟩).2) = _
+    rw [e.apply_mk_symm hb]
+  have hcont : Continuous fun w : F ↦ (⟨b, e.symm b w⟩ : TotalSpace F V) := by
+    refine (FiberBundle.totalSpaceMk_isInducing F V b).continuous.comp ?_
+    exact (e.symmL 𝕜 b).continuous.congr fun w ↦ e.symmL_apply hb w
+  refine ⟨hcont.continuousAt, ?_⟩
+  rw [key]
+  exact ((hasFDerivAt_const _ _).prodMk (hasFDerivAt_id _)).hasFDerivWithinAt
 
 /-- The differential of the zero section is the horizontal summand of the canonical
 splitting. -/
