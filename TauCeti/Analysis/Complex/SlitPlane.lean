@@ -39,7 +39,8 @@ is a principal logarithm.
 ## Main declarations
 
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
-* `TauCeti.mem_slitPlane_of_norm_one_sub_lt`, `TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`
+* `TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`,
+  `TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.re_pos_of_norm_sub_one_lt_one`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
@@ -85,7 +86,7 @@ theorem div_sub_mem_slitPlane_of_dist_lt_dist
 /-- If the triangle inequality `‖1 - w‖ ≤ 1 + ‖w‖` is strict at `w`, then `w` lies in the slit
 plane. Indeed equality holds exactly on the nonpositive reals, where `‖1 - w‖` and `1 + ‖w‖` are
 both `1 - w.re`, and those are exactly the points the slit plane omits. -/
-theorem mem_slitPlane_of_norm_one_sub_lt {w : ℂ} (h : ‖1 - w‖ < 1 + ‖w‖) :
+theorem mem_slitPlane_of_norm_one_sub_lt_one_add {w : ℂ} (h : ‖1 - w‖ < 1 + ‖w‖) :
     w ∈ slitPlane := by
   by_contra hw
   rw [mem_slitPlane_iff] at hw
@@ -101,14 +102,14 @@ theorem mem_slitPlane_of_norm_one_sub_lt {w : ℂ} (h : ‖1 - w‖ < 1 + ‖w�
 
 /-- **The symmetric Rouché condition.** If the triangle inequality `‖a - b‖ ≤ ‖a‖ + ‖b‖` is
 strict, then `b / a` lies in the slit plane: dividing by `‖a‖ > 0` gives the hypothesis of
-`TauCeti.mem_slitPlane_of_norm_one_sub_lt`. -/
+`TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`. -/
 theorem div_mem_slitPlane_of_norm_sub_lt_add {a b : ℂ} (h : ‖a - b‖ < ‖a‖ + ‖b‖) :
     b / a ∈ slitPlane := by
   have ha : a ≠ 0 := by
     rintro rfl
     simp at h
   have hpos : (0 : ℝ) < ‖a‖ := norm_pos_iff.2 ha
-  refine mem_slitPlane_of_norm_one_sub_lt ?_
+  refine mem_slitPlane_of_norm_one_sub_lt_one_add ?_
   have e : (1 : ℂ) - b / a = (a - b) / a := by field_simp
   rw [e, norm_div, norm_div, div_lt_iff₀ hpos]
   have e2 : (1 + ‖b‖ / ‖a‖) * ‖a‖ = ‖a‖ + ‖b‖ := by
