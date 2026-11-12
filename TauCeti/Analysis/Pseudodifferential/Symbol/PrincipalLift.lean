@@ -345,7 +345,6 @@ theorem exists_seminorm_cutoffSymbol_le (χ : FrequencyCutoff (CoordinateSpace n
   choose B hB using fun i => χ.exists_bound_iteratedFDeriv (E := CoordinateSpace n) i
   have hB0 (i : ℕ) : 0 ≤ B i := (norm_nonneg _).trans (hB i 0)
   set D : ℝ := 2 ^ k * 2 ^ (|m - k| / 2)
-  have hD : 0 ≤ D := by positivity
   refine ⟨∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * B i * D,
     Finset.sum_nonneg fun i _ => by have := hB0 i; positivity, fun a => ?_⟩
   set S := ∑ i ∈ Finset.range (k + 1), ∑ w : Fin (k - i) → Fin n,
