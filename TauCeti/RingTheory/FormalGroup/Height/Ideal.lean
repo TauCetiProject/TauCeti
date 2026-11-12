@@ -38,14 +38,14 @@ of the Hopf algebroid in `TauCeti.RingTheory.FormalGroup.CoordinateChange.HopfAl
 Through Quillen's identification of `L` with `MU_*`, these are the ideals `I_(p,n)` in the
 hypothesis of Landweber's exact functor theorem.
 
-The class of `v_n` modulo `I_n` does not depend on the coordinate either. Modulo `I_n(F) + I_n(G)`
-both `p`-series begin in degree `pⁿ`, so a homomorphism `F → G` with linear coefficient `u`
-relates their coefficients `a` and `b` of `X^(pⁿ)` by `b u^(pⁿ) ≡ u a`
-(`TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_sub_mem_heightIdeal`), and a strict
-isomorphism preserves the class of `v_n`
-(`TauCeti.FormalGroupIso.coeff_nsmulSeries_sub_mem_heightIdeal_of_isStrict`). Over `L` this is the
-congruence `η_R(v_n) ≡ η_L(v_n)` modulo `I_n`
-(`TauCeti.LazardRing.rightUnit_sub_C_mem_map_heightIdeal`).
+The class of `v_n` modulo `I_n` depends on the coordinate only through its linear coefficient.
+Modulo `I_n(F) + I_n(G)` both `p`-series begin in degree `pⁿ`, so a homomorphism `F → G` with
+linear coefficient `u` relates their coefficients `a` and `b` of `X^(pⁿ)` by `b u^(pⁿ) ≡ u a`
+(`TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_sub_mem_heightIdeal_sup`).
+In particular a strict isomorphism (`u = 1`) preserves the class of `v_n`
+(`TauCeti.FormalGroupIso.coeff_nsmulSeries_sub_mem_heightIdeal_of_isStrict`), while a general
+coordinate change can scale it. Over `L` this is the congruence `η_R(v_n) ≡ η_L(v_n)` modulo `I_n`
+(`TauCeti.LazardRing.rightUnit_coeff_nsmulSeries_sub_C_mem_map_heightIdeal`).
 
 ## Main definitions
 
@@ -148,7 +148,7 @@ theorem TauCeti.FormalGroupIso.heightIdeal_eq {R : Type*} [CommRing R] {F G : Fo
 homomorphism of formal group laws from `F` to `G` with linear coefficient `u`, and `a` and `b` are
 the coefficients of `X^(pⁿ)` in `[p]_F` and `[p]_G`, then `b u^(pⁿ) ≡ u a` modulo
 `I_n(F) + I_n(G)`. -/
-theorem TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_sub_mem_heightIdeal
+theorem TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_sub_mem_heightIdeal_sup
     {R : Type*} [CommRing R] {F G : FormalGroup R} (f : FormalGroupHom F G) (p n : ℕ) :
     PowerSeries.coeff (p ^ n) (G.nsmulSeries p) * PowerSeries.coeff 1 f.toPowerSeries ^ (p ^ n) -
         PowerSeries.coeff 1 f.toPowerSeries * PowerSeries.coeff (p ^ n) (F.nsmulSeries p) ∈
@@ -163,7 +163,7 @@ theorem TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_sub_mem_heigh
     (f.map (Ideal.Quotient.mk I)).coeff_nsmulSeries_mul_coeff_one_pow_of_le_order p
       (hle F le_sup_left) (hle G le_sup_right)
 
-/-- **Coordinate independence of `v_n` modulo `I_n`.** If `e` is a strict isomorphism of formal
+/-- **Strict isomorphisms preserve `v_n` modulo `I_n`.** If `e` is a strict isomorphism of formal
 group laws from `F` to `G`, then the coefficients of `X^(pⁿ)` in `[p]_F` and `[p]_G` agree modulo
 the height ideal `I_n(F) = I_n(G)`. -/
 theorem TauCeti.FormalGroupIso.coeff_nsmulSeries_sub_mem_heightIdeal_of_isStrict
@@ -171,7 +171,7 @@ theorem TauCeti.FormalGroupIso.coeff_nsmulSeries_sub_mem_heightIdeal_of_isStrict
     (p n : ℕ) :
     PowerSeries.coeff (p ^ n) (G.nsmulSeries p) - PowerSeries.coeff (p ^ n) (F.nsmulSeries p) ∈
       F.heightIdeal p n := by
-  have h := e.toHom.coeff_nsmulSeries_mul_coeff_one_pow_sub_mem_heightIdeal p n
+  have h := e.toHom.coeff_nsmulSeries_mul_coeff_one_pow_sub_mem_heightIdeal_sup p n
   rwa [FormalGroupIso.IsStrict.coeff_one, one_pow, mul_one, one_mul, ← e.heightIdeal_eq,
     sup_idem] at h
 

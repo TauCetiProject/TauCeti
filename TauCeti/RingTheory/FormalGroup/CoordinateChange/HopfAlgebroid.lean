@@ -61,13 +61,17 @@ groupoid law in the group of strict coordinates. In the tensor model, the compos
   `μ (c ⊗ id) Δ = η_R ε` and `μ (id ⊗ c) Δ = η_L ε`.
 * `TauCeti.LazardRing.map_rightUnit_heightIdeal`: the height ideals `I_n` of the Lazard ring
   (`FormalGroup.heightIdeal`) are invariant ideals: `η_R(I_n) Γ = η_L(I_n) Γ`.
-* `TauCeti.LazardRing.rightUnit_sub_C_mem_map_heightIdeal`: `η_R(v_n) ≡ η_L(v_n)` modulo `I_n Γ`,
-  where `v_n` is the coefficient of `X^(pⁿ)` in the `p`-series of the universal formal group law.
+* `TauCeti.LazardRing.rightUnit_coeff_nsmulSeries_sub_C_mem_map_heightIdeal`:
+  `η_R(v_n) ≡ η_L(v_n)` modulo `I_n Γ`, where `v_n` is the coefficient of `X^(pⁿ)` in the
+  `p`-series of the universal formal group law.
 
 ## References
 
 * D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Appendix A1.1
-  (Hopf algebroids) and A2.1 (the Hopf algebroid `(L, LB)`).
+  (Hopf algebroids) and A2.1 (the Hopf algebroid `(L, LB)`), and Chapter 4 (the invariant ideals
+  `I_n` and the primitivity of `v_n` modulo `I_n`).
+* P. S. Landweber, *Homological properties of comodules over `MU_*(MU)` and `BP_*(BP)`*,
+  Amer. J. Math. 98 (1976), 591–610.
 * J. Lurie, *Chromatic Homotopy Theory* (Harvard lecture notes, 2010), Lecture 3.
 -/
 
@@ -399,7 +403,7 @@ theorem map_rightUnit_heightIdeal (p n : ℕ) :
 /-- **The right unit fixes `v_n` modulo `I_n`.** Let `v_n ∈ L` be the coefficient of `X^(pⁿ)` in
 the `p`-series of the universal formal group law. Then `η_R(v_n) ≡ η_L(v_n)` modulo the extension of
 the height ideal `I_n` to `L[b₁, b₂, …]`, so the class of `v_n` modulo `I_n` is primitive. -/
-theorem rightUnit_sub_C_mem_map_heightIdeal (p n : ℕ) :
+theorem rightUnit_coeff_nsmulSeries_sub_C_mem_map_heightIdeal (p n : ℕ) :
     rightUnit (PowerSeries.coeff (p ^ n) (formalGroup.nsmulSeries p)) -
         C (PowerSeries.coeff (p ^ n) (formalGroup.nsmulSeries p)) ∈
       (formalGroup.heightIdeal p n).map C := by
