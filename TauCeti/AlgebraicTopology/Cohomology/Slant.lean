@@ -38,6 +38,14 @@ by the class of a point of `X` is a class of degree two on `Y`, and the slant by
 class of degree one on `Y`; these are the point and loop classes of universal line bundles over
 moduli spaces.
 
+The slant product by the class `[x₀]` of a point is restriction to the slice `{x₀} × Y`:
+`φ / [x₀] = ι_{x₀}^* φ` for the inclusion `ι_{x₀} : y ↦ (x₀, y)`
+(`TopCat.singularSlant_singularHomology₀Section`). By naturality `φ / [x₀]` is the slant of the
+pullback of `φ` to `pt × Y` by the class of the point, and every class on `pt × Y` is pulled back
+from `Y`. Since the class of a point depends only on its path component, so does the restriction
+(`TopCat.singularCohomologyMap_lift_const_eq_of_joined`). So the point class `c₁(U) / [x₀]` of a
+line bundle `U` on `X × Y` is the restriction of `c₁(U)` to `{x₀} × Y`.
+
 On classes pulled back from one factor the slant product is computed by the cohomology of a point:
 
 * a class `pr₁^* a` pulled back from `X` has `pr₁^* a / x = 0` whenever `q ≠ 0`
@@ -102,6 +110,10 @@ cup product `pr₁^* a ⌣ pr₂^* c` are those of the cross product `a × c`
   pulled back from `Y` by the class of a point of `X`, restated for the point classes
   `TauCeti.singularHomology₀Section` in
   `TopCat.singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_self`.
+* `TopCat.singularSlant_singularHomology₀Section`: the slant product by the class of a point is
+  restriction to the slice through the point, and
+  `TopCat.singularCohomologyMap_lift_const_eq_of_joined`: this restriction depends only on the
+  path component of the point.
 * `TopCat.singularSlant_eq_slant`: through Eilenberg–Zilber, the slant product is the slant
   product on the tensor product of singular chain complexes.
 * `TopCat.singularSlant_singularCross`, `TopCat.singularSlant_singularCross_of_ne` and
@@ -354,6 +366,60 @@ theorem singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_se
       ((toSSet.obj X).ιChainComplex (TopCat.toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp)) r)
     hu b
 
+/-- **The slant product by the class of a point is restriction to the slice**: for the class
+`[x₀] ∈ H₀(X; R)` of a point `x₀` with coefficient `r`, along a coefficient map `u : R ⊗ S ⟶ S`
+with `u (r ⊗ s) = s`, the slant product `φ / [x₀]` of `φ ∈ H^q(X × Y; S, M)` is the restriction
+of `φ` along the inclusion `y ↦ (x₀, y)` of the slice `{x₀} × Y`. For a line bundle `U` on
+`X × Y`, the point class `c₁(U) / [x₀]` is thus the restriction of `c₁(U)` to `{x₀} × Y`. -/
+theorem singularSlant_singularHomology₀Section (X Y : TopCat.{w}) (u : R ⊗ S ⟶ S) (q : ℕ)
+    (x₀ : X) (r : R) (hu : ∀ s, u (r ⊗ₜ s) = s) (φ : (X ⊗ Y).singularCohomology S k M q) :
+    singularSlant k M X Y u 0 q q (zero_add q) (TauCeti.singularHomology₀Section R x₀ r) φ =
+      TopCat.singularCohomologyMap
+        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y x₀)) (𝟙 Y)) q φ := by
+  -- `[x₀]` is the image of the point class of `pt` under `f : pt ⟶ X`, so by naturality `φ / [x₀]`
+  -- is the slant by `[pt]` of `(f × 𝟙)^* φ`. On `pt × Y` every class is pulled back from `Y`
+  -- along the projection, whose inverse is `s : Y ⟶ pt × Y`, and slanting a pulled-back class by
+  -- `[pt]` returns it.
+  let P := TopCat.of PUnit.{w + 1}
+  let f : P ⟶ X := ofHom (ContinuousMap.const P x₀)
+  let s : Y ⟶ P ⊗ Y :=
+    CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y PUnit.unit)) (𝟙 Y)
+  have hs : CartesianMonoidalCategory.snd P Y ≫ s = 𝟙 _ := by
+    -- the first components are maps into the point
+    refine CartesianMonoidalCategory.hom_ext _ _ ?_ (by simp [s])
+    ext
+  have hf : s ≫ (f ⊗ₘ 𝟙 Y) =
+      CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y x₀)) (𝟙 Y) := by
+    refine CartesianMonoidalCategory.hom_ext _ _ ?_ (by simp [s])
+    ext y
+    simp [s, f]
+  have hx : TauCeti.singularHomology₀Section R x₀ r =
+      ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj R).map f
+        (TauCeti.singularHomology₀Section R PUnit.unit r) :=
+    (ConcreteCategory.congr_hom (TauCeti.singularHomology₀Section_naturality R f PUnit.unit) r).symm
+  have hφ : TopCat.singularCohomologyMap (f ⊗ₘ 𝟙 Y) q φ =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd P Y) q
+        (TopCat.singularCohomologyMap s q (TopCat.singularCohomologyMap (f ⊗ₘ 𝟙 Y) q φ)) := by
+    rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hs,
+      TopCat.singularCohomologyMap_id, ModuleCat.id_apply]
+  have h := singularSlant_naturality M f (𝟙 Y) u 0 q q (zero_add q)
+    (TauCeti.singularHomology₀Section R PUnit.unit r) φ
+  rw [TopCat.singularCohomologyMap_id, ModuleCat.id_apply, ← hx, hφ,
+    singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_self M P Y u q _ r hu] at h
+  rw [← h, ← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hf]
+
+/-- **Restrictions to slices through joined points agree**: if `x` and `y` are joined by a path,
+then the restrictions of `φ ∈ H^q(X × Y; S, M)` to the slices `{x} × Y` and `{y} × Y` agree, since
+both are slant products by point classes and `[x] = [y]`. -/
+theorem singularCohomologyMap_lift_const_eq_of_joined (X Y : TopCat.{w}) (q : ℕ) {x y : X}
+    (h : Joined x y) (φ : (X ⊗ Y).singularCohomology S k M q) :
+    TopCat.singularCohomologyMap
+        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y x)) (𝟙 Y)) q φ =
+      TopCat.singularCohomologyMap
+        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y y)) (𝟙 Y)) q φ := by
+  rw [← singularSlant_singularHomology₀Section M X Y (λ_ S).hom q x (1 : k) (fun s ↦ by simp),
+    ← singularSlant_singularHomology₀Section M X Y (λ_ S).hom q y (1 : k) (fun s ↦ by simp),
+    TauCeti.singularHomology₀Section_eq_of_joined _ h]
 
 /-- **The slant product through Eilenberg–Zilber**: slanting a class `φ` of `X × Y` by `x` is
 slanting its image `shuffle^* φ` in the cohomology of `Hom(C(X; R) ⊗ C(Y; S), M)` by `x` along the
