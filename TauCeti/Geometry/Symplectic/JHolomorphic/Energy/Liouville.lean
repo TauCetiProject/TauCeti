@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Convergence
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
