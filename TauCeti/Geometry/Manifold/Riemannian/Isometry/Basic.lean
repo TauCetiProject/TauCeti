@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
-public import Mathlib.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Smooth Riemannian isometries
@@ -21,8 +21,8 @@ The pointwise condition says that the pullback of the metric on the target is th
 source; see J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Chapter 2. Isometries
 preserve tangent-vector norms and the Riemannian length `pathELength` of every curve.
 
-Each element of a group acting on `M` by smooth maps whose differentials preserve the metric is a
-smooth Riemannian isometry (`TauCeti.RiemannianIsometry.ofSMul`).
+An element of a group acting on `M` by smooth maps, whose differential preserves the metric, is a
+smooth Riemannian isometry (`TauCeti.RiemannianIsometry.constSMul`).
 -/
 
 public section
@@ -276,23 +276,64 @@ section SMul
 
 variable {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
 
-/-- Every element of a group acting by smooth maps whose differentials preserve the metric, as a
-Riemannian isometry of `M`. -/
-def ofSMul
-    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
-      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w) (a : G) :
+/-- An element `a` of a group acting by smooth maps, whose differential preserves the metric, as a
+Riemannian isometry of `M`. Its underlying diffeomorphism is `Diffeomorph.constSmul`. -/
+def constSMul (a : G)
+    (ha : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w) :
     RiemannianIsometry I I M M where
-  toEquiv := MulAction.toPerm a
-  contMDiff_toFun := contMDiff_const_smul a
-  contMDiff_invFun := contMDiff_const_smul a⁻¹
-  inner_mfderiv' := hG a
+  toDiffeomorph := Diffeomorph.constSmul I ∞ a
+  inner_mfderiv' := by
+    rw [Diffeomorph.coe_constSmul]
+    exact ha
 
+variable {a : G}
+  {ha : ∀ (y : M) (v w : TangentSpace I y),
+    inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w}
+
+/-- The underlying diffeomorphism of `constSMul a ha` is `Diffeomorph.constSmul I ∞ a`. -/
 @[simp]
-theorem coe_ofSMul
-    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
-      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w) (a : G) :
-    ⇑(ofSMul hG a) = (a • ·) :=
+theorem toDiffeomorph_constSMul :
+    (constSMul a ha).toDiffeomorph = Diffeomorph.constSmul I ∞ a :=
   (rfl)
+
+/-- The isometry given by `a` is the function `x ↦ a • x`. -/
+@[simp]
+theorem coe_constSMul : ⇑(constSMul a ha) = (a • ·) := by
+  rw [← coe_toDiffeomorph, toDiffeomorph_constSMul, Diffeomorph.coe_constSmul]
+
+/-- The inverse of the isometry given by `a` is the function `x ↦ a⁻¹ • x`. -/
+@[simp]
+theorem coe_constSMul_symm : ⇑(constSMul a ha).symm = (a⁻¹ • ·) := by
+  rw [coe_symm, toDiffeomorph_constSMul, Diffeomorph.coe_constSmul_symm]
+
+/-- The inverse of the isometry given by `a` is the isometry given by `a⁻¹`. -/
+theorem symm_constSMul
+    (ha' : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a⁻¹ • ·) y v) (mfderiv I I (a⁻¹ • ·) y w) = inner ℝ v w) :
+    (constSMul a ha).symm = constSMul a⁻¹ ha' := by
+  ext x
+  simp
+
+/-- The identity element acts by the identity isometry. -/
+@[simp]
+theorem constSMul_one
+    (h : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I ((1 : G) • ·) y v) (mfderiv I I ((1 : G) • ·) y w) = inner ℝ v w) :
+    constSMul (1 : G) h = RiemannianIsometry.refl I M := by
+  ext x
+  simp
+
+/-- The isometry given by a product is the composite of the isometries given by the factors, the
+right-hand factor acting first. -/
+theorem constSMul_mul {b : G}
+    (hb : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (b • ·) y v) (mfderiv I I (b • ·) y w) = inner ℝ v w)
+    (hab : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I ((a * b) • ·) y v) (mfderiv I I ((a * b) • ·) y w) = inner ℝ v w) :
+    constSMul (a * b) hab = (constSMul b hb).trans (constSMul a ha) := by
+  ext x
+  simp [mul_smul]
 
 end SMul
 

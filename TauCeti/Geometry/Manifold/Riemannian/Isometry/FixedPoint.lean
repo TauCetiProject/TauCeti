@@ -6,32 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Exponential
-import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent
 
 /-!
 # Equivariant exponential charts at fixed points of isometric actions
 
-Let a group `G` act on a Riemannian manifold `M` by smooth maps whose differentials preserve the
-metric, and let `x` be a point fixed by every element of `G`. Each element then acts by a
-Riemannian isometry (`TauCeti.RiemannianIsometry.ofSMul`), and its differential at `x` is a linear
-isometry of `T_x M`. Isometries intertwine exponential maps, so
+Let `a` be an element of a group `G` acting on a Riemannian manifold `M` by smooth maps, whose
+differential preserves the metric, and let `x` be a point with `a • x = x`. Then `a` acts by a
+Riemannian isometry (`TauCeti.RiemannianIsometry.constSMul`), its differential `d(a •)_x` is a
+linear isometry of `T_x M` leaving every ball about the origin invariant
+(`TauCeti.mfderiv_smul_image_ball_of_smul_eq`), and isometries intertwine exponential maps:
+`exp_x (d(a •)_x v) = a • exp_x v` (`TauCeti.riemannianExp_mfderiv_smul_of_smul_eq`), so `a`
+leaves `exp_x '' ball 0 r` invariant (`TauCeti.smul_riemannianExp_image_ball_of_smul_eq`). These
+lemmas, and their versions without a fixed point, live in the `Isometry.Tangent` and
+`Isometry.Exponential` modules.
 
-`a • exp_x v = exp_x (d(a •)_x v)`
-
-for every `v : T_x M` and every `a : G` with `a • x = x`
-(`TauCeti.riemannianExp_mfderiv_smul_of_smul_eq`). More generally, without a fixed point,
-`exp_{a • x} (d(a •)_x v) = a • exp_x v`
-(`TauCeti.riemannianExp_mfderiv_smul`), the differential `d(a •)_x` maps balls about the origin of
-`T_x M` onto the balls of the same radius in `T_{a • x} M` (`TauCeti.mfderiv_smul_image_ball`), and
-so `a` carries `exp_x '' ball 0 r` onto `exp_{a • x} '' ball 0 r`
-(`TauCeti.smul_riemannianExp_image_ball`). Consequently every normal ball at `x` is
-`G`-invariant, its normal neighbourhood `exp_x '' ball 0 r` is a `G`-invariant open neighbourhood
-of `x`, and the exponential map is a `G`-equivariant diffeomorphism between them, with the tangent
-representation `a ↦ d(a •)_x` acting on the ball
-(`TauCeti.exists_isNormalDomain_ball_riemannianExp_mfderiv_smul`). Its differential at the origin
-is the identity (`TauCeti.Manifold.mfderiv_riemannianExp_zero`).
+This file adds the inverse chart. On a normal domain `U` at `x` mapped into itself by `d(a •)_x`,
+the Riemannian logarithm intertwines `a` with its differential on the normal neighbourhood
+`exp_x '' U`: `log_x (a • y) = d(a •)_x (log_x y)` (`TauCeti.riemannianLog_smul_of_smul_eq`).
+Consequently, if every element of `G` acts isometrically and fixes `x`, there is a normal ball
+`B = ball 0 r` at `x` that is invariant under every `d(a •)_x`, whose normal neighbourhood
+`exp_x '' B` is a `G`-invariant open neighbourhood of `x`, and on which `exp_x` and `log_x`
+intertwine the tangent action `a ↦ d(a •)_x` on `B` with the action of `G` on `exp_x '' B`
+(`TauCeti.exists_isNormalDomain_ball_riemannianExp_mfderiv_smul`). The differential of `exp_x` at
+the origin is the identity (`TauCeti.Manifold.mfderiv_riemannianExp_zero`).
 
 This is the equivariant local model at a fixed point. For a compact group the hypothesis is met by
 the Haar average of any smooth metric (`TauCeti.exists_contMDiffRiemannianMetric_inner_mfderiv`),
@@ -65,45 +63,48 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless] [T2Space M]
 
-/-- At a point `x` fixed by an element `a` of an isometric action, the exponential map intertwines
-`a` with its differential: `exp_x (d(a •)_x v) = a • exp_x v`. -/
-theorem riemannianExp_mfderiv_smul_of_smul_eq
-    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
+/-- At a point `x` fixed by `a`, if the differential of the action of `a` preserves the metric and
+maps a normal domain `U` at `x` into itself, then the Riemannian logarithm intertwines `a` with its
+differential on the normal neighbourhood `exp_x '' U`: `log_x (a • y) = d(a •)_x (log_x y)`. -/
+theorem riemannianLog_smul_of_smul_eq {a : G}
+    (ha : ∀ (y : M) (v w : TangentSpace I y),
       inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
-    {x : M} (a : G) (hx : a • x = x) (v : TangentSpace I x) :
-    riemannianExp I M x (mfderiv I I (a • ·) x v) = a • riemannianExp I M x v := by
-  have h := riemannianExp_mfderiv_smul hG a x v
-  rw [hx] at h
-  exact h
-
-/-- At a point `x` fixed by an element `a` of an isometric action, the image under `exp_x` of every
-ball about the origin of `T_x M` is invariant under `a`. -/
-theorem smul_riemannianExp_image_ball_of_smul_eq
-    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
-      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
-    {x : M} (a : G) (hx : a • x = x) (r : ℝ) :
-    a • (riemannianExp I M x '' ball 0 r) = riemannianExp I M x '' ball 0 r := by
-  have h := smul_riemannianExp_image_ball hG a x r
-  rw [hx] at h
-  exact h
+    {x : M} (hx : a • x = x) {U : Set (TangentSpace I x)} (hU : IsNormalDomain I M x U)
+    (hUa : MapsTo (mfderiv I I (a • ·) x) U U) {y : M} (hy : y ∈ riemannianExp I M x '' U) :
+    riemannianLog I M x U (a • y) = mfderiv I I (a • ·) x (riemannianLog I M x U y) := by
+  obtain ⟨v, hv, rfl⟩ := hy
+  rw [← riemannianExp_mfderiv_smul_of_smul_eq ha hx v, hU.riemannianLog_riemannianExp hv,
+    hU.riemannianLog_riemannianExp (hUa hv)]
 
 /-- **Equivariant exponential charts at a fixed point.** Let `G` act on `M` by smooth maps whose
 differentials preserve the metric, and let `x` be fixed by `G`. There is `r > 0` such that the
-ball `B` of radius `r` about the origin of `T_x M` is a normal domain at `x`, and the exponential
-map `exp_x : B → exp_x '' B` is a `G`-equivariant diffeomorphism onto a `G`-invariant open
-neighbourhood of `x`: `exp_x (d(a •)_x v) = a • exp_x v`. -/
+ball `B` of radius `r` about the origin of `T_x M` is a normal domain at `x` (so `exp_x` restricts
+to a diffeomorphism from `B` onto `exp_x '' B`), `B` is invariant under every differential
+`d(a •)_x`, its image `exp_x '' B` is a `G`-invariant open neighbourhood of `x`, and `exp_x` and
+the logarithm `log_x` on `exp_x '' B` intertwine the two actions:
+`exp_x (d(a •)_x v) = a • exp_x v` and `log_x (a • y) = d(a •)_x (log_x y)`. -/
 theorem exists_isNormalDomain_ball_riemannianExp_mfderiv_smul
     (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
       inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
     {x : M} (hx : ∀ a : G, a • x = x) :
     ∃ r : ℝ, 0 < r ∧ Manifold.IsNormalDomain I M x (ball 0 r) ∧
       IsOpen (riemannianExp I M x '' ball 0 r) ∧ x ∈ riemannianExp I M x '' ball 0 r ∧
+      (∀ a : G,
+        mfderiv I I (a • ·) x '' ball (0 : TangentSpace I x) r = ball (0 : TangentSpace I x) r) ∧
       (∀ a : G, a • (riemannianExp I M x '' ball 0 r) = riemannianExp I M x '' ball 0 r) ∧
-      ∀ (a : G) (v : TangentSpace I x),
-        riemannianExp I M x (mfderiv I I (a • ·) x v) = a • riemannianExp I M x v := by
+      (∀ (a : G) (v : TangentSpace I x),
+        riemannianExp I M x (mfderiv I I (a • ·) x v) = a • riemannianExp I M x v) ∧
+      ∀ (a : G), ∀ y ∈ riemannianExp I M x '' ball 0 r,
+        riemannianLog I M x (ball 0 r) (a • y) =
+          mfderiv I I (a • ·) x (riemannianLog I M x (ball 0 r) y) := by
   obtain ⟨r, hr, hU⟩ := Manifold.exists_isNormalDomain_ball (I := I) (M := M) x
-  refine ⟨r, hr, hU, hU.isOpen_image, ⟨0, mem_ball_self hr, riemannianExp_zero x⟩,
-    fun a ↦ smul_riemannianExp_image_ball_of_smul_eq hG a (hx a) r,
-    fun a ↦ riemannianExp_mfderiv_smul_of_smul_eq hG a (hx a)⟩
+  have hball (a : G) := mfderiv_smul_image_ball_of_smul_eq (hG a) (hx a) r
+  refine ⟨r, hr, hU, hU.isOpen_image, hU.self_mem_image, hball,
+    fun a ↦ smul_riemannianExp_image_ball_of_smul_eq (hG a) (hx a) r,
+    fun a ↦ riemannianExp_mfderiv_smul_of_smul_eq (hG a) (hx a),
+    fun a _ hy ↦ riemannianLog_smul_of_smul_eq (hG a) (hx a) hU ?_ hy⟩
+  intro v hv
+  rw [← hball a]
+  exact mem_image_of_mem _ hv
 
 end TauCeti
