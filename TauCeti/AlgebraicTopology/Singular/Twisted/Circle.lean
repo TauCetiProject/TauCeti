@@ -150,14 +150,15 @@ def circleTwistedHomologyIsoGroupHomology (n : ℕ) :
 theorem isZero_circleTwistedHomology_add_two (n : ℕ) :
     Limits.IsZero (twistedHomology (circleLocalSystem k A) (n + 2)) :=
   (Rep.InfiniteCyclicGroup.isZero_groupHomology_add_two A
-    Multiplicative.mem_zpowers_ofAdd_one n).of_iso (circleTwistedHomologyIsoGroupHomology A (n + 2))
+    Multiplicative.mem_zpowers_ofAdd_one_int n).of_iso
+      (circleTwistedHomologyIsoGroupHomology A (n + 2))
 
 /-- **The first homology of the circle with local coefficients** is the module of invariants of
 the monodromy, `H₁(S¹; A) ≅ A^ℤ`. -/
 def circleTwistedHomologyOneIso :
     twistedHomology (circleLocalSystem k A) 1 ≅ ModuleCat.of k A.ρ.invariants :=
   circleTwistedHomologyIsoGroupHomology A 1 ≪≫
-    Rep.InfiniteCyclicGroup.groupHomologyOneIso A Multiplicative.mem_zpowers_ofAdd_one
+    Rep.InfiniteCyclicGroup.groupHomologyOneIso A Multiplicative.mem_zpowers_ofAdd_one_int
 
 /-- **The zeroth homology of the circle with local coefficients** is the module of coinvariants of
 the monodromy `T`, `H₀(S¹; A) ≅ A / (T - 1) A`. -/
@@ -165,7 +166,7 @@ def circleTwistedHomologyZeroIso :
     twistedHomology (circleLocalSystem k A) 0 ≅
       ModuleCat.of k (A ⧸ LinearMap.range (A.ρ (Multiplicative.ofAdd 1) - LinearMap.id)) :=
   circleTwistedHomologyIsoGroupHomology A 0 ≪≫
-    Rep.InfiniteCyclicGroup.groupHomologyZeroIso A Multiplicative.mem_zpowers_ofAdd_one
+    Rep.InfiniteCyclicGroup.groupHomologyZeroIso A Multiplicative.mem_zpowers_ofAdd_one_int
 
 /-- The sign representation of `ℤ` on `ℤ`, in which `n` acts by `(-1)ⁿ`. Its local system
 `circleLocalSystem ℤ intSignRep` is the rank-one integral system on the circle with monodromy
@@ -181,8 +182,8 @@ lemma intSignRep_ρ_ofAdd_one : intSignRep.ρ (Multiplicative.ofAdd 1) = -Linear
 
 /-- The sign representation of `ℤ` on `ℤ` has no nonzero invariants. -/
 lemma invariants_intSignRep : intSignRep.ρ.invariants = ⊥ := by
-  rw [Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub _ _ Multiplicative.mem_zpowers_ofAdd_one,
-    intSignRep_ρ_ofAdd_one]
+  rw [Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub _ _
+    Multiplicative.mem_zpowers_ofAdd_one_int, intSignRep_ρ_ofAdd_one]
   ext x
   simp only [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.neg_apply, LinearMap.id_coe, id_eq,
     Submodule.mem_bot]
