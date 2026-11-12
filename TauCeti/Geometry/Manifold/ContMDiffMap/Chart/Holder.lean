@@ -180,7 +180,7 @@ theorem chartHolderNorm_smul (c : 𝕜) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
 @[simp]
 theorem chartHolderNorm_neg (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
     chartHolderNorm x K k hk α (-f) = chartHolderNorm x K k hk α f := by
-  rw [← neg_one_smul 𝕜 f, chartHolderNorm_smul, nnnorm_neg, nnnorm_one, one_mul]
+  rw [← neg_one_smul 𝕜 f, chartHolderNorm_smul, nnNorm_neg, nnNorm_one, one_mul]
 
 /-- **Hölder estimate.** On a map whose coordinate derivative is Hölder, the Hölder seminorm
 bounds the oscillation of the `k`th coordinate derivative on `K`. -/
@@ -398,7 +398,7 @@ private theorem norm_smul_eq (a : 𝕜) (f : A.CkHolderSpace k α F) : ‖a • 
   rw [norm_def, norm_def, map_smul, map_smul_eq_mul, mul_add, Finset.mul_sum]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [ContMDiffMap.chartHolderNorm_smul, NNReal.coe_mul, coe_nnnorm]
+  rw [ContMDiffMap.chartHolderNorm_smul, NNReal.coe_mul, coe_nnNorm]
 
 /-- The `C^{k,α}` norm vanishes only at zero. -/
 private theorem norm_eq_zero_iff' (f : A.CkHolderSpace k α F) : ‖f‖ = 0 ↔ f = 0 := by
