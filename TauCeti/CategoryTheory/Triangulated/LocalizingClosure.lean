@@ -45,7 +45,9 @@ categories.
 * `CategoryTheory.ObjectProperty.isStableUnderRetracts_of_isClosedUnderProducts_nat`: the dual
   statement for countable products, assuming `IsTriangulatedClosed₃`.
 * `CategoryTheory.ObjectProperty.localizingClosure_le_iff`,
-  `CategoryTheory.ObjectProperty.colocalizingClosure_le_iff`: the universal properties.
+  `CategoryTheory.ObjectProperty.colocalizingClosure_le_iff`: the universal properties. The
+  subcategory compared with need not be assumed closed under isomorphisms: closure under finite
+  coproducts (respectively products) already implies it.
 * `CategoryTheory.ObjectProperty.triangEnvelope_le_localizingClosure`,
   `CategoryTheory.ObjectProperty.triangEnvelope_le_colocalizingClosure`: the thick closure is
   contained in the localizing and in the colocalizing closure.
@@ -122,14 +124,21 @@ lemma le_localizingClosure : P ≤ P.localizingClosure :=
   fun X hX ↦ (P.prop_localizingClosure_iff X).2 fun _ hPQ _ _ _ ↦ hPQ X hX
 
 variable {P} in
+/-- The localizing closure of `P` is contained in every triangulated subcategory containing `P`
+and closed under coproducts indexed by `Type v`. Such a subcategory is closed under finite
+coproducts, hence under isomorphisms (`IsClosedUnderBinaryCoproducts.closedUnderIsomorphisms`). -/
 lemma localizingClosure_le {Q : ObjectProperty C} [Q.IsTriangulated]
-    [Q.IsClosedUnderIsomorphisms] [∀ J : Type v, Q.IsClosedUnderColimitsOfShape (Discrete J)]
+    [∀ J : Type v, Q.IsClosedUnderColimitsOfShape (Discrete J)]
     (h : P ≤ Q) : P.localizingClosure ≤ Q :=
-  fun X hX ↦ (P.prop_localizingClosure_iff X).1 hX Q h inferInstance inferInstance inferInstance
+  have := IsClosedUnderFiniteCoproducts.of_isClosedUnderColimitsOfShape (P := Q)
+    fun (_ : Type v) _ ↦ inferInstance
+  fun X hX ↦ (P.prop_localizingClosure_iff X).1 hX Q h inferInstance
+    (IsClosedUnderBinaryCoproducts.closedUnderIsomorphisms Q) inferInstance
 
-/-- The universal property of the localizing closure. -/
+/-- The universal property of the localizing closure. Isomorphism closure of `Q` is not assumed:
+it follows from closure under coproducts. -/
 lemma localizingClosure_le_iff {Q : ObjectProperty C} [Q.IsTriangulated]
-    [Q.IsClosedUnderIsomorphisms] [∀ J : Type v, Q.IsClosedUnderColimitsOfShape (Discrete J)] :
+    [∀ J : Type v, Q.IsClosedUnderColimitsOfShape (Discrete J)] :
     P.localizingClosure ≤ Q ↔ P ≤ Q :=
   ⟨(P.le_localizingClosure).trans, localizingClosure_le⟩
 
@@ -193,14 +202,21 @@ lemma le_colocalizingClosure : P ≤ P.colocalizingClosure :=
   fun X hX ↦ (P.prop_colocalizingClosure_iff X).2 fun _ hPQ _ _ _ ↦ hPQ X hX
 
 variable {P} in
+/-- The colocalizing closure of `P` is contained in every triangulated subcategory containing `P`
+and closed under products indexed by `Type v`. Such a subcategory is closed under finite
+products, hence under isomorphisms (`IsClosedUnderBinaryProducts.closedUnderIsomorphisms`). -/
 lemma colocalizingClosure_le {Q : ObjectProperty C} [Q.IsTriangulated]
-    [Q.IsClosedUnderIsomorphisms] [∀ J : Type v, Q.IsClosedUnderLimitsOfShape (Discrete J)]
+    [∀ J : Type v, Q.IsClosedUnderLimitsOfShape (Discrete J)]
     (h : P ≤ Q) : P.colocalizingClosure ≤ Q :=
-  fun X hX ↦ (P.prop_colocalizingClosure_iff X).1 hX Q h inferInstance inferInstance inferInstance
+  have := IsClosedUnderFiniteProducts.of_isClosedUnderLimitsOfShape (P := Q)
+    fun (_ : Type v) _ ↦ inferInstance
+  fun X hX ↦ (P.prop_colocalizingClosure_iff X).1 hX Q h inferInstance
+    (IsClosedUnderBinaryProducts.closedUnderIsomorphisms Q) inferInstance
 
-/-- The universal property of the colocalizing closure. -/
+/-- The universal property of the colocalizing closure. Isomorphism closure of `Q` is not
+assumed: it follows from closure under products. -/
 lemma colocalizingClosure_le_iff {Q : ObjectProperty C} [Q.IsTriangulated]
-    [Q.IsClosedUnderIsomorphisms] [∀ J : Type v, Q.IsClosedUnderLimitsOfShape (Discrete J)] :
+    [∀ J : Type v, Q.IsClosedUnderLimitsOfShape (Discrete J)] :
     P.colocalizingClosure ≤ Q ↔ P ≤ Q :=
   ⟨(P.le_colocalizingClosure).trans, colocalizingClosure_le⟩
 

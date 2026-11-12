@@ -776,7 +776,7 @@ theorem conjugateTateIso_one (r : ℤ) :
     L.conjugateTateIso F 1 r = eqToIso (by rw [conjugate_one]) := by
   refine Iso.ext ?_
   have key := L.tateCohomologyMap_eq_conjugateTateIso_hom F 1 L.conjugate_one
-    (Rep.isIntertwiningMap_id (L.rep F))
+    (L.rep F).ρ.isIntertwiningMap_id
     (fun u v huv ↦ congrArg QuotientGroup.mk (Subtype.ext (by simpa using huv.symm)))
     (fun x ↦ by simp) r
   rw [TateCohomology.map_id] at key

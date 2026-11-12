@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.Geometry.Toric.Algebraic.Cone.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Ray.Basic
 
 /-!
@@ -50,7 +50,6 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} {σ : PointedCone ℝ V}
 
 /-- A primitive lattice generator of a ray is a primitive lattice vector pointing along the ray. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 def IsPrimitiveGenerator (i : N →+ V) {σ : PointedCone ℝ V}
     (ρ : ToricRay σ) (v : N) : Prop :=
   i v ∈ ρ ∧ IsPrimitive v

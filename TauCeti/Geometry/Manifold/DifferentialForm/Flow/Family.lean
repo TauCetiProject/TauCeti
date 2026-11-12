@@ -413,8 +413,9 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
     exact (congrArg (fun f ↦ mpullback I I f (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α) x)
       h).trans (congrFun (mpullback_id _) x)
   rw [← hP0]
-  exact eq_exp_integral_smul_of_hasDerivAt_smul (V := E [⋀^Fin k]→L[ℝ] F) isOpen_univ
-    ordConnected_univ hcont.continuousOn hP (mem_univ s) (mem_univ t)
+  exact eq_exp_integral_smul_of_hasDerivWithinAt_smul (V := E [⋀^Fin k]→L[ℝ] F)
+    ordConnected_univ hcont.continuousOn (fun u hu ↦ (hP u hu).hasDerivWithinAt) (mem_univ s)
+    (mem_univ t)
 
 /-- **Moser's principle for families of forms**, invariance case. Let `X` be a jointly `C²`
 time-dependent vector field with complete suspension and time-dependent flow `φ`, and let `α` be

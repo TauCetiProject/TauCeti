@@ -57,8 +57,6 @@ theorem endpoint_toPLPath_eq_last_add_sum (π : LSPath P b lam) (f : M →+ V) :
     π.time_zero, Rat.cast_zero, zero_smul, zero_add, Fin.succ_castSucc]
   abel
 
-variable [P.flip.IsReduced]
-
 /-- The endpoint of an LS path of dominant shape differs from its last orbit weight by the
 image of an integral root-lattice vector. This is a lattice statement, not only integrality
 of scalar pairings. -/
