@@ -539,8 +539,6 @@ theorem RoughForm.toDensity_inChartAt (l : Manifold.OrientationLift I M (Fin m))
       exact l.compatible α x x hα hxx
     have hsq : (l.signAt x x : ℝ) * l.signAt x x = 1 := by
       exact_mod_cast Int.isUnit_mul_self (l.signAt x x).isUnit
-    have hsq' : (l.signAt α x : ℝ) * l.signAt α x = 1 := by
-      exact_mod_cast Int.isUnit_mul_self (l.signAt α x).isUnit
     have habs : |D.toLinearMap.det| = (l.signAt α x : ℝ) * (l.signAt x x : ℝ) *
         D.toLinearMap.det := by
       rw [← abs_of_pos hD, abs_mul, abs_mul, abs_intCast_units, abs_intCast_units, one_mul, one_mul]
