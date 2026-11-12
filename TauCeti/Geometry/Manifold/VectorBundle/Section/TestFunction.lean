@@ -148,23 +148,12 @@ theorem chartTestSection_injective : Function.Injective (e.chartTestSection c hc
 /-- Extension preserves the exact nonzero locus, transported by the inverse chart. -/
 theorem support_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
     {x | (e.chartTestSection c hc hce φ).1 x ≠ 0} = c.symm '' Function.support φ := by
+  rw [c.symm_image_eq_source_inter_preimage ((subset_tsupport φ).trans φ.tsupport_subset)]
   ext x
   by_cases hx : x ∈ c.source
-  · rw [mem_ofPred_eq, chartTestSection_apply_of_mem e c hc hce φ hx]
-    constructor
-    · intro h
-      refine ⟨c x, ?_, c.left_inv hx⟩
-      intro hz
-      exact h (by simp [hz])
-    · rintro ⟨y, hy, hxy⟩ hz
-      have hyt := φ.tsupport_subset (subset_tsupport φ hy)
-      have heq : c x = y := by rw [← hxy, c.right_inv hyt]
-      have := congrArg (e.continuousLinearMapAt ℝ x) hz
-      exact hy (by simpa [e.continuousLinearMapAt_symmL (hce hx), heq] using this)
-  · simp only [chartTestSection_apply_of_notMem e c hc hce φ hx,
-      ne_self_iff_false, mem_ofPred_eq, false_iff, mem_image, not_exists, not_and]
-    intro y hy hxy
-    exact hx (hxy ▸ c.map_target (φ.tsupport_subset (subset_tsupport φ hy)))
+  · simp [hx, ← (e.continuousLinearEquivAt ℝ x (hce hx)).map_eq_zero_iff,
+      e.coe_continuousLinearEquivAt_eq (hce hx)]
+  · simp [hx]
 
 /-- Extension preserves the exact closed support, transported by the inverse chart. -/
 @[simp]
