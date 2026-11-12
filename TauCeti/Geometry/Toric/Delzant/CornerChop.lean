@@ -68,6 +68,9 @@ dimension hypothesis is needed.
   `TauCeti.Toric.none_mem_activeSet_cornerChop_iff`: its old and new facets.
 * `TauCeti.Toric.notMem_facetPolyhedron_cornerChop`: the chopped corner is removed.
 * `TauCeti.Toric.IsSmoothVertex.exists_coord`: coordinates relative to a smooth vertex.
+* `TauCeti.Toric.lt_apply_of_sum_le`, `TauCeti.Toric.eventually_forall_notMem_mul_sum_abs_lt`:
+  for small depths, the constraints inactive at the corner stay inactive on the small simplex
+  at the corner.
 * `TauCeti.Toric.IsDelzant.eventually_isDelzant_cornerChop`: small corner chops of a Delzant
   polytope at a vertex are Delzant polytopes.
 
@@ -246,8 +249,9 @@ private theorem sum_sub_pos (hxs : ∀ j ∈ s, c j ≤ x (i (u j))) (hxv : x �
 
 /-- **Slack on the small simplex at the corner.** If `ε` is small compared with the slack of every
 constraint inactive at the corner, then every constraint inactive at the corner stays inactive at
-the points of the simplex `{y j ≥ 0, ∑ j, y j ≤ ε}`. -/
-private theorem lt_apply_of_sum_le
+the points of the simplex `{y j ≥ 0, ∑ j, y j ≤ ε}`, in the coordinates `y j = ⟨x, u j⟩ - c j`,
+`j ∈ s`, relative to the corner. -/
+theorem lt_apply_of_sum_le
     (hε : ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k)
     (hxs : ∀ j ∈ s, c j ≤ x (i (u j))) (hxε : ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε) {k : ι}
     (hk : k ∉ s) : c k < x (i (u k)) := by
@@ -397,6 +401,19 @@ private theorem isSmoothVertex_cornerChop_of_none_mem
 
 end Vertices
 
+/-! ### Small depths -/
+
+/-- Every sufficiently small depth `ε > 0` is small compared with the slack at the corner `v` of
+each constraint outside `s`, as `TauCeti.Toric.lt_apply_of_sum_le` requires. -/
+theorem eventually_forall_notMem_mul_sum_abs_lt [Finite ι] {v : StrongDual ℝ V}
+    (w : ι → StrongDual ℝ V) (hslack : ∀ k ∉ s, 0 < v (i (u k)) - c k) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k := by
+  refine eventually_all.2 fun k ↦ ?_
+  by_cases hk : k ∈ s
+  · exact Eventually.of_forall fun _ h ↦ absurd hk h
+  refine (((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const
+    (hslack k hk)).filter_mono nhdsWithin_le_nhds |>.mono fun ε hε _ ↦ hε
+
 /-! ### Small corner chops are Delzant -/
 
 /-- A point with the coordinates `ε / #s` relative to the corner lies only on the new facet. -/
@@ -469,13 +486,8 @@ theorem IsDelzant.eventually_isDelzant_cornerChop [Finite ι] (hi : IsIntegralLa
     sub_pos.2 ((hvP k).lt_of_ne fun h ↦ hk ((hsA k).2 h.symm))
   have h₁ : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ j, ε < ∑ k ∈ s, (y j (i (u k)) - c k) :=
     eventually_all.2 fun j ↦ (eventually_lt_nhds (hdepth j)).filter_mono nhdsWithin_le_nhds
-  have h₂ : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k := by
-    refine eventually_all.2 fun k ↦ ?_
-    by_cases hk : k ∈ s
-    · exact Eventually.of_forall fun _ h ↦ absurd hk h
-    refine (((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const
-      (hslack k hk)).filter_mono nhdsWithin_le_nhds |>.mono fun ε hε _ ↦ hε
-  filter_upwards [self_mem_nhdsWithin, h₁, h₂] with ε (hε0 : 0 < ε) hεy hε
+  filter_upwards [self_mem_nhdsWithin, h₁, eventually_forall_notMem_mul_sum_abs_lt w hslack]
+    with ε (hε0 : 0 < ε) hεy hε
   refine ⟨hΔ.isBounded.subset facetPolyhedron_cornerChop_subset, fun x hx' ↦ ?_, fun o ↦ ?_⟩
   · by_cases hnone : ∑ j ∈ s, (x (i (u j)) - c j) = ε
     · exact isSmoothVertex_cornerChop_of_none_mem hw hx hε hsp hcard.le hx' hε0 hnone

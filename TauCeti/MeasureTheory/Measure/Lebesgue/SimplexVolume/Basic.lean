@@ -45,6 +45,10 @@ exponential-moment bound `TauCeti.simplexVolume_le_exp_mul_pow`,
 * `TauCeti.simplexVolume_mono`, `TauCeti.simplexVolume_nonneg`, `TauCeti.simplexVolume_le_one`.
 * `TauCeti.simplexVolume_le_exp_mul_pow` and `TauCeti.simplexVolume_le_exp_neg`: the
   exponential-moment bound and the tail bound.
+* `TauCeti.simplexVolume_eq_pow_div_factorial`: `V_m(t) = t ^ m / m!` for `0 ≤ t ≤ 1`.
+* `TauCeti.volume_setOf_nonneg_sum_le`, `TauCeti.volume_setOf_nonneg_sum_lt`: the corner simplex
+  `{x ∈ ℝ^κ | 0 ≤ x, ∑ k, x k ≤ a}` has volume `a ^ n / n!` for `n = #κ`, and so does its
+  half-open version.
 -/
 
 public section
@@ -155,5 +159,92 @@ theorem simplexVolume_le_exp_neg (m : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
     _ = Real.exp (-(6 * m * ε ^ 2)) := by
         rw [← Real.exp_nat_mul, ← Real.exp_add]
         ring_nf
+
+/-! ### The corner simplex -/
+
+/-- `V_m(t) = t ^ m / m!` for `0 ≤ t ≤ 1`. On or below the hyperplane `∑ j, x j = 1`, the cube
+imposes no constraint beyond nonnegativity, and only the first truncated power in the Irwin–Hall
+cdf survives. -/
+theorem simplexVolume_eq_pow_div_factorial (m : ℕ) {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) :
+    simplexVolume m t = t ^ m / m.factorial := by
+  rcases m.eq_zero_or_pos with rfl | hm
+  · simpa using simplexVolume_eq_one_of_le (m := 0) (by simpa using ht₀)
+  rw [simplexVolume_eq_cdf_irwinHallMeasure, Probability.cdf_irwinHallMeasure_eq hm,
+    Finset.sum_range_succ', Finset.sum_eq_zero fun k _ ↦ ?_]
+  · simp [max_eq_left ht₀]
+  · rw [max_eq_right (by push_cast; linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]),
+      zero_pow hm.ne', mul_zero]
+
+open scoped Pointwise in
+/-- The corner simplex of size `a ≥ 0` is the dilation by `a` of the corner simplex of size `1`. -/
+private theorem setOf_nonneg_sum_le_eq_smul (κ : Type*) [Fintype κ] {a : ℝ} (ha : 0 ≤ a) :
+    {x : κ → ℝ | (∀ k, 0 ≤ x k) ∧ ∑ k, x k ≤ a} =
+      a • {x : κ → ℝ | (∀ k, 0 ≤ x k) ∧ ∑ k, x k ≤ 1} := by
+  rcases ha.eq_or_lt with rfl | ha
+  · rw [zero_smul_set ⟨0, by simp⟩]
+    ext x
+    simp only [mem_ofPred_eq, mem_zero]
+    refine ⟨fun ⟨hx, hsum⟩ ↦ funext fun k ↦ ?_, fun hx ↦ by simp [hx]⟩
+    exact (Finset.sum_eq_zero_iff_of_nonneg fun k _ ↦ hx k).1
+      (le_antisymm hsum (Finset.sum_nonneg fun k _ ↦ hx k)) k (Finset.mem_univ k)
+  · ext x
+    rw [mem_smul_set_iff_inv_smul_mem₀ ha.ne']
+    simp only [mem_ofPred_eq, Pi.smul_apply, smul_eq_mul, ← Finset.mul_sum]
+    rw [inv_mul_le_iff₀ ha, mul_one]
+    exact and_congr_left' (forall_congr' fun k ↦ by rw [mul_nonneg_iff_of_pos_left (inv_pos.2 ha)])
+
+/-- **The volume of the corner simplex.** For `0 ≤ a`, the simplex
+`{x ∈ ℝ^κ | 0 ≤ x k for every k, ∑ k, x k ≤ a}` has volume `a ^ n / n!`, where `n = #κ`. -/
+theorem volume_setOf_nonneg_sum_le (κ : Type*) [Fintype κ] {a : ℝ} (ha : 0 ≤ a) :
+    volume {x : κ → ℝ | (∀ k, 0 ≤ x k) ∧ ∑ k, x k ≤ a} =
+      ENNReal.ofReal (a ^ Fintype.card κ / (Fintype.card κ).factorial) := by
+  set m := Fintype.card κ
+  -- The unit corner simplex of `ℝ ^ m` is the part of the unit cube below `∑ j, x j = 1`.
+  have hfin : {x : Fin m → ℝ | (∀ j, 0 ≤ x j) ∧ ∑ j, x j ≤ 1} =
+      Icc (0 : Fin m → ℝ) 1 ∩ {x | ∑ j, x j ≤ 1} := by
+    ext x
+    simp only [mem_ofPred_eq, mem_inter_iff, mem_Icc, Pi.le_def, Pi.zero_apply, Pi.one_apply]
+    refine ⟨fun ⟨hx, hsum⟩ ↦ ⟨⟨hx, fun j ↦ ?_⟩, hsum⟩, fun ⟨⟨hx, _⟩, hsum⟩ ↦ ⟨hx, hsum⟩⟩
+    exact (Finset.single_le_sum (fun k _ ↦ hx k) (Finset.mem_univ j)).trans hsum
+  have hunit : volume {x : Fin m → ℝ | (∀ j, 0 ≤ x j) ∧ ∑ j, x j ≤ 1} =
+      ENNReal.ofReal (1 / m.factorial) := by
+    have h1 := simplexVolume_eq_pow_div_factorial m zero_le_one le_rfl
+    rw [one_pow, simplexVolume_def, ← hfin, measureReal_def] at h1
+    rw [← h1, ENNReal.ofReal_toReal]
+    exact measure_ne_top_of_subset (hfin ▸ inter_subset_left)
+      (isCompact_Icc.measure_ne_top (μ := (volume : Measure (Fin m → ℝ))))
+  -- Transport along a bijection `Fin m ≃ κ`, then dilate by `a`.
+  have hκ : volume {x : κ → ℝ | (∀ k, 0 ≤ x k) ∧ ∑ k, x k ≤ 1} =
+      ENNReal.ofReal (1 / m.factorial) := by
+    let e : Fin m ≃ κ := (Fintype.equivFin κ).symm
+    have hp := volume_preserving_arrowCongr' e (MeasurableEquiv.refl ℝ) (MeasurePreserving.id _)
+    have happ (x : Fin m → ℝ) (k : κ) :
+        MeasurableEquiv.arrowCongr' e (MeasurableEquiv.refl ℝ) x k = x (e.symm k) := by
+      simp [MeasurableEquiv.arrowCongr', Equiv.arrowCongr', Equiv.arrowCongr]
+    rw [← hp.measure_preimage_equiv, ← hunit]
+    congr 1
+    ext x
+    simp only [mem_preimage, mem_ofPred_eq, happ]
+    exact and_congr (e.symm.surjective.forall (p := fun j ↦ 0 ≤ x j)).symm
+      (by rw [e.symm.sum_comp x])
+  rw [setOf_nonneg_sum_le_eq_smul κ ha, Measure.addHaar_smul_of_nonneg volume ha, hκ,
+    Module.finrank_fintype_fun_eq_card, ← ENNReal.ofReal_mul (pow_nonneg ha m), mul_one_div]
+
+/-- **The volume of the half-open corner simplex.** For `0 < a`, the set
+`{x ∈ ℝ^κ | 0 ≤ x k for every k, ∑ k, x k < a}` has volume `a ^ n / n!`, where `n = #κ`: it
+contains the corner simplices of every size `t < a`. -/
+theorem volume_setOf_nonneg_sum_lt (κ : Type*) [Fintype κ] {a : ℝ} (ha : 0 < a) :
+    volume {x : κ → ℝ | (∀ k, 0 ≤ x k) ∧ ∑ k, x k < a} =
+      ENNReal.ofReal (a ^ Fintype.card κ / (Fintype.card κ).factorial) := by
+  refine le_antisymm ?_ ?_
+  · rw [← volume_setOf_nonneg_sum_le κ ha.le]
+    exact measure_mono fun x hx ↦ ⟨hx.1, hx.2.le⟩
+  have hc : Continuous fun t : ℝ ↦
+      ENNReal.ofReal (t ^ Fintype.card κ / (Fintype.card κ).factorial) :=
+    ENNReal.continuous_ofReal.comp (by fun_prop)
+  refine le_of_tendsto (hc.continuousAt.tendsto.mono_left (nhdsWithin_le_nhds (s := Iio a))) ?_
+  filter_upwards [Ioo_mem_nhdsLT ha] with t ht
+  rw [← volume_setOf_nonneg_sum_le κ ht.1.le]
+  exact measure_mono fun x hx ↦ ⟨hx.1, hx.2.trans_lt ht.2⟩
 
 end TauCeti
