@@ -69,6 +69,15 @@ convergent subsequences of translates and applies the results of this file to th
 nondegeneracy of the orbits, the convergence of the whole half-cylinder rather than a sequence of
 translates, and the exponential decay along the end are not treated here.
 
+Conversely, the windows that keep a fixed amount of energy produce nonstationary limits. If maps
+`f i`, such as translates of Floer cylinders, converge locally uniformly on an open set containing
+`[a, b] × [0, 1]` to `g`, with derivatives bounded along the loops `s = a` and `s = b`, and their
+energy over `[a, b] × [0, 1]` is frequently at least `ε > 0`, then the loops of `g` at `s = a` and
+`s = b` differ (`SymplecticForm.exists_apply_ne_apply_of_tendstoLocallyUniformlyOn`). This
+separates the nonstationary levels of a broken limit from the necks between them. It needs no
+convergence of the derivatives, since the energy over the window is a difference of actions of its
+boundary loops (`SymplecticForm.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn`).
+
 ## Main results
 
 * `SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`: the limit of the translates is
@@ -79,6 +88,8 @@ translates, and the exponential decay along the end are not treated here.
   stationary Floer cylinder.
 * `SymplecticForm.tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add`: the actions of
   the end loops converge to the action of the limit loop.
+* `SymplecticForm.exists_apply_ne_apply_of_tendstoLocallyUniformlyOn`: windows that keep a fixed
+  amount of energy have limits whose boundary loops differ.
 
 ## References
 
@@ -580,5 +591,57 @@ theorem tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add
     · simp [γ, (hasDerivAt_slice_right (hv t ht)).deriv]
 
 end Action
+
+section Nonstationary
+
+variable {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated] {f : ι → ℝ × ℝ → V}
+  {g : ℝ × ℝ → V} {a b L ε : ℝ}
+
+/-- **Windows that keep a fixed amount of energy have nonstationary limits.** Let `H` be a `C¹`
+time-dependent Hamiltonian, and let the maps `f i` be eventually `C²` on an open set `U` containing
+`[a, b] × [0, 1]`, with `f i (s, 1) = f i (s, 0)` for `s ∈ [a, b]` and with derivatives bounded by
+`L` along the loops `s = a` and `s = b`. Suppose that the `f i` converge locally uniformly on `U` to
+`g`, and that frequently their Floer energy over `[a, b] × [0, 1]` for `K = H_t dt` is at least
+`ε > 0`. Then the loops of `g` at `s = a` and at `s = b` differ. In particular `g` is not
+independent of `s` on the window, so it is not a stationary cylinder over an orbit.
+
+The `f i` are typically translates `z ↦ u_i(z + (σ_i, 0))` of Floer cylinders, with `U` the
+complement of the bubbling points of a compactness theorem, and `[a, b]` a window in which the
+energy of the translates does not go to zero. This is the property that distinguishes the
+nonstationary levels of a broken limit from the necks between them, along which the energy does go
+to zero and the translates converge to stationary cylinders
+(`TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`). No convergence of the
+derivatives is assumed: the energy over the window is the difference of the actions of its two
+boundary loops, and uniform convergence of loops of bounded speed to a common limit makes such
+differences tend to zero
+(`TauCeti.SymplecticForm.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn`). -/
+theorem exists_apply_ne_apply_of_tendstoLocallyUniformlyOn (hH : ContDiff ℝ 1 (uncurry H))
+    (hU : IsOpen U) (hf : ∀ᶠ i in l, ContDiffOn ℝ 2 (f i) U) (hab : a ≤ b)
+    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ᶠ i in l, ∀ s ∈ Icc a b, f i (s, 1) = f i (s, 0))
+    (hL : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ (f i) (a, t)‖ ≤ L ∧ ‖fderiv ℝ (f i) (b, t)‖ ≤ L)
+    (hlim : TendstoLocallyUniformlyOn f g l U) (hε : 0 < ε)
+    (hE : ∃ᶠ i in l, ε ≤ ∫ z in Icc a b ×ˢ Icc 0 1,
+      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (f i) z) :
+    ∃ t ∈ Icc (0 : ℝ) 1, g (a, t) ≠ g (b, t) := by
+  -- Along each boundary loop of the window the convergence is uniform.
+  have hslice (s : ℝ) (hs : s ∈ Icc a b) :
+      TendstoUniformlyOn (fun i t ↦ f i (s, t)) (fun t ↦ g (s, t)) l (Icc 0 1) := by
+    set γ : ℝ → ℝ × ℝ := fun t ↦ (s, t)
+    have hK : IsCompact (γ '' Icc 0 1) := isCompact_Icc.image (by fun_prop)
+    have hKU : γ '' Icc 0 1 ⊆ U := by
+      rintro _ ⟨t, ht, rfl⟩
+      exact hRU ⟨hs, ht⟩
+    simpa [comp_def, γ] using
+      (((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hK).1
+        (hlim.mono hKU)).comp γ).mono (subset_preimage_image γ _)
+  by_contra! hg
+  -- If the two loops of `g` agreed, the energy over the window would tend to zero.
+  have h := ω.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn hH hU hf hab hRU hper hL
+    (hslice a ⟨le_rfl, hab⟩) ((hslice b ⟨hab, le_rfl⟩).congr_right fun t ht ↦ (hg t ht).symm)
+  obtain ⟨i, hi, hlt⟩ := (hE.and_eventually (h.eventually (gt_mem_nhds hε))).exists
+  exact hlt.not_ge hi
+
+end Nonstationary
 
 end TauCeti.SymplecticForm
