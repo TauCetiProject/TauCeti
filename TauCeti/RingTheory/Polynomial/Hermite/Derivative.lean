@@ -39,9 +39,7 @@ consume. The parity theorem records `Hₙ(-x) = (-1)ⁿ Hₙ(x)` in any ring.
 
 public section
 
-namespace TauCeti
-
-open Polynomial
+namespace Polynomial
 
 /-- **Lowering (derivative) identity for the Hermite polynomials.** Differentiating the
 `(n + 1)`-st probabilists' Hermite polynomial lowers the index:
@@ -49,7 +47,7 @@ open Polynomial
 
 This is not a `simp` lemma because its left-hand side is already reduced by the `n`-indexed
 form `Polynomial.derivative_hermite`. -/
-theorem _root_.Polynomial.derivative_hermite_succ (n : ℕ) :
+theorem derivative_hermite_succ (n : ℕ) :
     derivative (hermite (n + 1)) = (n + 1) • hermite n := by
   induction n with
   | zero => simp
@@ -61,7 +59,7 @@ theorem _root_.Polynomial.derivative_hermite_succ (n : ℕ) :
 /-- The Hermite derivative identity restated at index `n`: `H'ₙ = n · Hₙ₋₁`. For `n = 0` both sides
 vanish (`H₀ = 1`). -/
 @[simp]
-theorem _root_.Polynomial.derivative_hermite (n : ℕ) :
+theorem derivative_hermite (n : ℕ) :
     derivative (hermite n) = n • hermite (n - 1) := by
   cases n with
   | zero => simp
@@ -71,7 +69,7 @@ theorem _root_.Polynomial.derivative_hermite (n : ℕ) :
 `n (n-1) ⋯ (n-k+1)` times `H_{n-k}`. For `k > n` the descending factorial is `0` and both sides
 vanish. -/
 @[simp]
-theorem _root_.Polynomial.iterate_derivative_hermite (n k : ℕ) :
+theorem iterate_derivative_hermite (n k : ℕ) :
     derivative^[k] (hermite n) = n.descFactorial k • hermite (n - k) := by
   induction k with
   | zero => simp
@@ -82,7 +80,7 @@ theorem _root_.Polynomial.iterate_derivative_hermite (n k : ℕ) :
 /-- **Three-term recurrence for the Hermite polynomials.** Eliminating the derivative from Mathlib's
 defining recursion `hermite_succ` gives the classical relation `H_{n+2} = X·H_{n+1} - (n+1)·Hₙ`,
 i.e. `H_{m+1} = X·H_m - m·H_{m-1}`. -/
-theorem _root_.Polynomial.hermite_add_two (n : ℕ) :
+theorem hermite_add_two (n : ℕ) :
     hermite (n + 2) = X * hermite (n + 1) - (n + 1) • hermite n := by
   rw [hermite_succ (n + 1), derivative_hermite_succ]
 
@@ -90,7 +88,7 @@ theorem _root_.Polynomial.hermite_add_two (n : ℕ) :
 
 /-- **Parity of the Hermite polynomials.** `Hₙ(-x) = (-1)ⁿ Hₙ(x)` in any ring. -/
 @[simp]
-theorem _root_.Polynomial.hermite_aeval_neg {R : Type*} [Ring R] (n : ℕ) (x : R) :
+theorem hermite_aeval_neg {R : Type*} [Ring R] (n : ℕ) (x : R) :
     aeval (-x) (hermite n) = (-1) ^ n * aeval x (hermite n) := by
   rw [aeval_eq_sum_range, aeval_eq_sum_range, Finset.mul_sum]
   refine Finset.sum_congr rfl fun k _ => ?_
@@ -99,4 +97,4 @@ theorem _root_.Polynomial.hermite_aeval_neg {R : Type*} [Ring R] (n : ℕ) (x : 
   · rw [neg_pow, mul_smul_comm, neg_one_pow_congr (Nat.even_add.mp h).symm]
   · simp [coeff_hermite_of_odd_add h]
 
-end TauCeti
+end Polynomial

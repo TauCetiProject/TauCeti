@@ -34,11 +34,6 @@ a canonical linear map from the ordinary tangent space to the algebraic point de
   derivation depends only on the germ of a smooth function at its basepoint.
 * `Derivation.apply_congr_of_eventuallyEq`: derivations of smooth functions are local operators.
 * `tangentToPointDerivation_mfderiv`: this association commutes with differentials.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The Lie algebra and the tangent space at `1`".
 -/
 
 public section
@@ -130,15 +125,6 @@ theorem tangentToPointDerivation_injective
   rw [hd] at hfv
   exact hfv
 
-/-- The constant smooth map `algebraMap ℝ C^∞⟮…⟯ s` takes the value `s` at every point.
-
-The algebra structure on smooth maps is pointwise, so this holds by unfolding; stating it gives
-that normalization a name, so the proofs below need not rely on it silently. -/
-private theorem algebraMap_contMDiffMap_apply {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (s : ℝ) (y : E) :
-    (algebraMap ℝ C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯ s) y = s :=
-  rfl
-
 /-- **Subtracting its value at the base point does not change a derivation**, since the constant
 subtracted off is annihilated by `D`. -/
 private theorem derivation_sub_algebraMap {E : Type*} [NormedAddCommGroup E]
@@ -174,7 +160,7 @@ private theorem derivation_mul_sub_algebraMap {E : Type*} [NormedAddCommGroup E]
   change D (p * r) = p x * D r + r x * D p at hleibniz
   have hrx : r x = 0 := by
     rw [hr]
-    simp [algebraMap_contMDiffMap_apply]
+    simp
   rw [hleibniz, hrx, hr, derivation_sub_algebraMap, zero_mul, add_zero]
 
 private theorem tangentToPointDerivation_surjective_model

@@ -113,11 +113,34 @@ theorem exists_endCoord_inf_neg {w : ℂ} (hw : w ≠ 0) :
   rw [hk]
   ring
 
+/-- Away from the centre of the end at `∞`, a function of period one takes the same value at the
+angular coordinate of `w` as at the angular coordinate of `-w` shifted by `1/2`. -/
+theorem apply_im_endCoord_inf_neg_add_half {α : Type*} {f : ℝ → α} (hf : Function.Periodic f 1)
+    {w : ℂ} (hw : w ≠ 0) : f ((inf.endCoord (-w)).im + 1 / 2) = f (inf.endCoord w).im := by
+  obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
+  have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
+    simp [hk]
+    ring
+  rw [him]
+  simpa using hf.int_mul (k + 1) (inf.endCoord w).im
+
 end TauCeti.ThricePuncturedSphere.Puncture
 
 namespace TauCeti.ThricePuncturedSphere
 
 open Puncture
+
+/-- A point at distance at least `r + 1/2` from a real number `c` within distance `r` of both
+inputs `0` and `1` is at distance at least `1/2` from both inputs. -/
+theorem half_le_norm_of_le_norm_sub {c r : ℝ} (h₀ : |c| ≤ r) (h₁ : |c - 1| ≤ r) {w : ℂ}
+    (hw : r + 1 / 2 ≤ ‖w - c‖) : 1 / 2 ≤ ‖w‖ ∧ 1 / 2 ≤ ‖w - 1‖ := by
+  have hc₁ : ‖(c : ℂ) - 1‖ = |c - 1| := by
+    rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+  have hw₀ := norm_sub_le w (c : ℂ)
+  have hw₁ := norm_sub_le (w - 1) ((c : ℂ) - 1)
+  rw [Complex.norm_real, Real.norm_eq_abs] at hw₀
+  rw [sub_sub_sub_cancel_right, hc₁] at hw₁
+  constructor <;> linarith
 
 /-- The truncation of the thrice-punctured sphere `S = ℂ ∖ {0, 1}` with its output end recentred
 at `c`: the closed disc `‖w - c‖ ≤ 2 exp (2πR)`, bounded by the circle `s = -R` of the end at `∞`

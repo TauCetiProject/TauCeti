@@ -668,7 +668,7 @@ theorem relEntropy_nonneg_of_nonneg {P Q : Matrix ι κ ℝ} (hQ : ∀ i j, 0 �
     intro i j
     rcases (hP i j).eq_or_lt with h | h
     · simp [hQP i j h.symm, ← h]
-    · linarith [Real.mul_log_sub_mul_log_ge (P i j) (Q i j) h (hQ i j)]
+    · linarith [Real.mul_log_sub_mul_log_ge h (hQ i j)]
   calc (0 : ℝ) = ∑ i, ∑ j, (Q i j - P i j) := by simp [Finset.sum_sub_distrib, hmass]
     _ ≤ relEntropy Q P := by
       rw [relEntropy_def]
@@ -1025,7 +1025,7 @@ theorem relEntropyDual_le_relEntropy {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K
   have hcell : ∑ i, ∑ j, (Q i j - R i j) ≤ relEntropy Q R := by
     rw [relEntropy_def]
     exact Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => by
-      linarith [Real.mul_log_sub_mul_log_ge (R i j) (Q i j) (hRpos i j) (hQ0 i j)]
+      linarith [Real.mul_log_sub_mul_log_ge (hRpos i j) (hQ0 i j)]
   simp only [Finset.sum_sub_distrib, hQ.sum_sum_eq] at hcell
   linarith
 

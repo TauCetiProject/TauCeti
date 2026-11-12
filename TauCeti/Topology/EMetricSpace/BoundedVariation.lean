@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Group.Uniform
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
 public import Mathlib.Order.Interval.Set.ProjIcc
 public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.UnitInterval
+import Mathlib.Topology.Order.IsLUB
 
 /-!
 # Limits of total variation bounds
@@ -20,10 +22,13 @@ addition and subtraction, shows that the variation is unchanged by postcompositi
 that preserves the distances between the values of the function, and proves bounded variation of
 constant extensions from closed intervals.
 Total variation on continuous maps is lower semicontinuous for the compact-open topology,
-allowing measurable path-space applications.
+allowing measurable path-space applications. Nested finite subsets recover the full extended
+variation, while containing any prescribed sequence of finite subsets.
 
 ## Main results
 
+* `eVariationOn.eq_iSup_finset`: variation is the supremum over finite subsets.
+* `eVariationOn.exists_monotone_finset_tendsto`: nested finite subsets recover variation.
 * `ContinuousMap.lowerSemicontinuous_eVariationOn`: lower semicontinuity on continuous path space.
 * `TauCeti.eVariationOn_le_liminf_of_eventually_le`: an eventual bound on the total variations of
   a family of maps bounds the total variation of a pointwise limit by the `liminf` of the bounds.
@@ -33,6 +38,9 @@ allowing measurable path-space applications.
   the values of a function does not change its variation.
 * `BoundedVariationOn.IccExtend`: constant extension from a closed interval preserves bounded
   variation.
+* `TauCeti.eVariationOn_id_unitInterval` and `LipschitzWith.eVariationOn_unitInterval_le`: the
+  identity of the unit interval has total variation `1`, so a `C`-Lipschitz map on the unit
+  interval has total variation at most `C`.
 -/
 
 public section
@@ -78,7 +86,29 @@ theorem eVariationOn_le_liminf_of_eventually_le {ι : Type*} {l : Filter ι} {s 
   filter_upwards [eVariationOn.lowerSemicontinuous_aux hf hv, hu] with i hi hui
   exact hi.trans_le hui
 
+open scoped unitInterval
+
+/-- The inclusion of the unit interval into `ℝ` has total variation `1`. This is the simp-normal
+form of `TauCeti.eVariationOn_id_unitInterval`. -/
+@[simp]
+theorem eVariationOn_subtypeVal_unitInterval : eVariationOn (Subtype.val : I → ℝ) univ = 1 := by
+  rw [← Function.id_comp Subtype.val,
+    eVariationOn.comp_eq_of_monotoneOn id Subtype.val (fun _ _ _ _ h ↦ h), image_univ,
+    Subtype.range_coe_subtype, ofPred_mem_eq, unitInterval, eVariationOn_id_Icc, sub_zero,
+    ENNReal.ofReal_one]
+
+/-- The identity of the unit interval has total variation `1`. -/
+theorem eVariationOn_id_unitInterval : eVariationOn (id : I → I) univ = 1 := by
+  rw [eVariationOn_subtypeVal_comp, Function.comp_id, eVariationOn_subtypeVal_unitInterval]
+
 end TauCeti
+
+open scoped NNReal unitInterval in
+/-- A `C`-Lipschitz map on the unit interval has total variation at most `C`. -/
+theorem LipschitzWith.eVariationOn_unitInterval_le {X : Type*} [PseudoEMetricSpace X]
+    {f : I → X} {C : ℝ≥0} (hf : LipschitzWith C f) : eVariationOn f univ ≤ C := by
+  simpa only [Function.comp_id, TauCeti.eVariationOn_id_unitInterval, mul_one] using
+    hf.lipschitzOnWith.comp_eVariationOn_le (mapsTo_id univ)
 
 namespace eVariationOn
 
@@ -148,7 +178,7 @@ theorem eVariationOn.add_le :
     _ ≤ ∑ i ∈ Finset.range n,
         (edist (f (u (i + 1))) (f (u i)) + edist (g (u (i + 1))) (g (u i))) := by
       apply Finset.sum_le_sum
-      intro i hi
+      intro i _
       exact edist_add_add_le (f (u (i + 1))) (g (u (i + 1))) (f (u i)) (g (u i))
     _ ≤ _ := by
       rw [Finset.sum_add_distrib]
@@ -188,3 +218,61 @@ theorem LocallyBoundedVariationOn.sub
   fun a b ha hb ↦ (hf a b ha hb).sub (hg a b ha hb)
 
 end AdditionSubtraction
+
+namespace eVariationOn
+
+open scoped Topology
+
+variable {α E : Type*} [LinearOrder α] [TopologicalSpace E] [WeakPseudoEMetricSpace E]
+
+/-- Total variation is the supremum of variations on finite subsets of the domain. -/
+theorem eq_iSup_finset (f : α → E) (s : Set α) :
+    eVariationOn f s = ⨆ p : {p : Finset α // (p : Set α) ⊆ s},
+      eVariationOn f (p.1 : Set α) := by
+  classical
+  apply le_antisymm
+  · refine iSup_le fun ⟨n, u, hu, hus⟩ ↦ ?_
+    let p := (Finset.range (n + 1)).image u
+    have hp : (p : Set α) ⊆ s := by
+      intro x hx
+      obtain ⟨i, _, rfl⟩ := Finset.mem_image.mp hx
+      exact hus i
+    exact (sum_le_of_monotoneOn_Iic (hu.monotoneOn _) (fun i hi ↦ by
+      simp only [p, Finset.mem_coe, Finset.mem_image, Finset.mem_range]
+      exact ⟨i, by omega, rfl⟩)).trans
+      (le_iSup (fun p : {p : Finset α // (p : Set α) ⊆ s} ↦
+        eVariationOn f (p.1 : Set α)) ⟨p, hp⟩)
+  · exact iSup_le fun p ↦ mono f p.2
+
+/-- Nested finite subsets recover the full extended variation. A prescribed finite set may be
+adjoined at each stage; this does not require any regularity of the function. -/
+theorem exists_monotone_finset_tendsto (f : α → E) (s : Set α) (q : ℕ → Finset α)
+    (hq : ∀ n, (q n : Set α) ⊆ s) :
+    ∃ p : ℕ → Finset α, Monotone p ∧ (∀ n, (p n : Set α) ⊆ s) ∧
+      (∀ n, q n ⊆ p n) ∧
+      Tendsto (fun n ↦ eVariationOn f (p n : Set α)) atTop (𝓝 (eVariationOn f s)) := by
+  classical
+  let S := {p : Finset α // (p : Set α) ⊆ s}
+  let v : S → ℝ≥0∞ := fun p ↦ eVariationOn f (p.1 : Set α)
+  have hne : (range v).Nonempty := ⟨v ⟨∅, by simp⟩, mem_range_self _⟩
+  obtain ⟨w, _, _, hw, hmem⟩ := (isLUB_iSup (f := v)).exists_seq_monotone_tendsto hne
+  choose r hr using hmem
+  let p (n : ℕ) := (Finset.range (n + 1)).biUnion fun i ↦ (r i).1 ∪ q i
+  have hmono : Monotone p := by
+    intro i j hij x hx
+    obtain ⟨k, hk, hx⟩ := Finset.mem_biUnion.mp hx
+    exact Finset.mem_biUnion.mpr ⟨k, Finset.range_mono (by omega) hk, hx⟩
+  have hp (n : ℕ) : (p n : Set α) ⊆ s := by
+    intro x hx
+    obtain ⟨i, _, hi⟩ := Finset.mem_biUnion.mp hx
+    exact (Finset.mem_union.mp hi).elim (fun h ↦ (r i).2 h) (fun h ↦ hq i h)
+  have hrp (n : ℕ) : (r n).1 ⊆ p n := fun x hx ↦
+    Finset.mem_biUnion.mpr ⟨n, by simp, Finset.mem_union_left _ hx⟩
+  refine ⟨p, hmono, hp, fun n x hx ↦
+    Finset.mem_biUnion.mpr ⟨n, by simp, Finset.mem_union_right _ hx⟩, ?_⟩
+  rw [eq_iSup_finset f s]
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le hw tendsto_const_nhds
+    (fun n ↦ (hr n).symm ▸ mono f (hrp n))
+    (fun n ↦ (mono f (hp n)).trans_eq (eq_iSup_finset f s))
+
+end eVariationOn

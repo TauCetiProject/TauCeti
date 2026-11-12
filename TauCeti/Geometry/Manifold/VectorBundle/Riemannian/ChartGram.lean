@@ -440,9 +440,22 @@ theorem contMDiffAt_chartDualFrame (α : M) {y : M}
 
 end Smooth
 
+end Tensor
+end Riemannian
+
+namespace Riemannian
+namespace Tensor
+
 section Derivative
 
-variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+/-! The derivative formulas assume a `C²` manifold; the `C¹` structure that the chart frame and
+the Gram matrix ask for is derived from it. -/
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- **The derivative of the chart metric.** For a connection `∇` compatible with the metric, the
 derivative along `v` of the metric coefficient `gᵢⱼ = ⟪eᵢ, eⱼ⟫` in the chart frame at `α` is
