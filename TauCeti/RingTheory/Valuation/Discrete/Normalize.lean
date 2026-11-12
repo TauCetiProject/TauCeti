@@ -89,6 +89,17 @@ theorem ordIndex_pos_of_ord_pos {f : F} (hf : 0 < ord v f) : 0 < ordIndex v :=
   (Nat.sInf_mem (s := {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n})
     ⟨(ord v f).toNat, by omega, f, by omega⟩).1
 
+/-- The index is at most every positive order attained by the valuation. -/
+theorem ordIndex_le_ord {f : F} (hf : 0 < ord v f) : (ordIndex v : ℤ) ≤ ord v f := by
+  have := ordIndex_le v (n := (ord v f).toNat) (by omega) (f := f) (by omega)
+  omega
+
+/-- A valuation of index zero attains no positive order. -/
+theorem ord_nonpos_of_ordIndex_eq_zero (h : ordIndex v = 0) (f : F) : ord v f ≤ 0 := by
+  by_contra hf
+  have := ordIndex_pos_of_ord_pos v (not_le.mp hf)
+  omega
+
 /-- A surjective valuation has index `1`, the least positive integer order. -/
 @[simp]
 theorem ordIndex_eq_one_of_surjective (hv : Function.Surjective v) : ordIndex v = 1 := by
@@ -116,19 +127,23 @@ theorem ordIndex_eq_mul_of_forall_ord_eq (w : _root_.Valuation F ℤᵐ⁰) {e :
   · rcases Nat.eq_zero_or_pos (ordIndex w) with hb | hb
     · rw [hb, mul_zero]
       by_contra ha
-      exact absurd (ordIndex_pos_of_ord_pos w (hfpos (not_le.mp ha))) (by omega)
+      have := ord_nonpos_of_ordIndex_eq_zero w hb f
+      have := hfpos (not_le.mp ha)
+      omega
     · exact ordIndex_le v (Nat.mul_pos (Nat.pos_of_ne_zero he) hb)
         (by rw [hord g, hg, Nat.cast_mul])
   · rcases Nat.eq_zero_or_pos (ordIndex v) with ha | ha
     · rw [ha]
       have : ordIndex w = 0 := by
         by_contra hb
-        exact absurd (ordIndex_pos_of_ord_pos v (hgpos (Nat.pos_of_ne_zero hb))) (by omega)
+        have := ord_nonpos_of_ordIndex_eq_zero v ha g
+        have := hgpos (Nat.pos_of_ne_zero hb)
+        omega
       simp [this]
-    · have hm := hfpos ha
-      refine (Nat.mul_le_mul_left e (ordIndex_le w (n := (ord w f).toNat) (by omega)
-        (f := f) (by omega))).trans ?_
-      rw [← Nat.cast_le (α := ℤ), Nat.cast_mul, Int.toNat_of_nonneg hm.le, ← hord f, hf]
+    · have : ((e * ordIndex w : ℕ) : ℤ) ≤ ordIndex v := by
+        rw [Nat.cast_mul, ← hf, hord f]
+        exact mul_le_mul_of_nonneg_left (ordIndex_le_ord w (hfpos ha)) he'.le
+      exact_mod_cast this
 
 end Ring
 
