@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Matrix.Contraction
@@ -17,22 +18,26 @@ import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
 
 /-!
-# Krylov–Safonov estimates for strong supersolutions
+# Krylov–Safonov power decay for strong supersolutions
 
-The measure estimate and the power decay of Krylov and Safonov in
-`TauCeti.Analysis.PDE.Regularity.KrylovSafonov` are proved for classical supersolutions: `C²`
-functions with `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` at every point. Their constants depend only on the dimension
-and on the ellipticity ratio, and nothing is assumed of the coefficients beyond uniform
-ellipticity, not even measurability. This file transfers such estimates to strong
-supersolutions: functions `u ∈ W^{2,n}(B(c, R))`, `n` the dimension, with a representative `ū`
-continuous on `closedBall c R`, satisfying `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` only almost everywhere, for the
-weak Hessian `D²u`.
+The power decay of Krylov and Safonov,
+`TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul` in
+`TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay`, is proved for classical
+supersolutions: `C²` functions with `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` at every point. Its constants depend only
+on the dimension and on the ellipticity ratio, and nothing is assumed of the coefficients beyond
+uniform ellipticity, not even measurability. This file approximates strong supersolutions by
+classical ones and uses the approximation to transfer the power decay to them: to functions
+`u ∈ W^{2,n}(B(c, R))`, for an additive Haar measure `μ` and `n` the dimension, with a
+representative `ū` continuous on `closedBall c R`, satisfying `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` only almost
+everywhere, for the weak Hessian `D²u`. The power decay is an input to the weak Harnack
+inequality, the Harnack inequality and the interior Hölder estimate for `W^{2,n}` strong
+solutions.
 
 ## The approximation
 
 A strong supersolution is approximated by classical ones on the same closed ball
 (`TauCeti.PDE.exists_forall_abs_sub_le_and_eLpNorm_posPart_le_of_wkp`). Mollifying `u` at radius
-`δ` gives a smooth function `w` whose Hessian is the mollified weak Hessian
+`δ` gives a smooth function `w` whose Hessian is the mollified weak Hessian `ψ * D²u`
 (`TauCeti.Wkp.fderiv_gradient_smoothField_value`), but only at points whose `δ`-ball lies in
 `B(c, R)`. To keep the full ball, the mollification is precomposed with the homothety
 `A = AffineMap.homothety c s`, `A x = c + s • (x - c)`, `s < 1`, which maps `closedBall c R`
@@ -40,31 +45,33 @@ into the region where this holds:
 `v = w ∘ A` is smooth near `closedBall c R`, and for the coefficients `a ∘ A`, which are
 uniformly elliptic with the same constants,
 
-`∑ᵢⱼ aⁱʲ(A x) ∂ᵢ∂ⱼv(x) = s² ∑ᵢⱼ aⁱʲ(A x) (D²w)ᵢⱼ(A x) ≤ s² (f + K |D²w - D²u|)(A x)`
+`∑ᵢⱼ aⁱʲ(A x) ∂ᵢ∂ⱼv(x) = s² ∑ᵢⱼ aⁱʲ(A x) (ψ * D²u)ᵢⱼ(A x) ≤ s² (f⁺ + K ‖ψ * D²u - D²u‖)(A x)`
 
 almost everywhere, with `K = n² Λ` (`Matrix.abs_sum_sum_mul_apply_single_le`). The `Lⁿ` norm of
-the right-hand side over `B(c, R)` is at
-most `s (‖f⁺‖_{Lⁿ} + K ‖D²w - D²u‖_{Lⁿ})`: precomposing with `A` costs the factor `s⁻¹` in `Lⁿ`,
-since `A` contracts volume by `sⁿ`. As `δ → 0` the mollified Hessians converge to `D²u` in `Lⁿ`
-(`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`), and as `s → 1` the functions `v` converge to
-`ū` uniformly on `closedBall c R`, by the uniform continuity of `ū` there. The factor `s < 1` on
-`‖f⁺‖` leaves room for the error term, so a smallness condition `R ‖f⁺‖_{Lⁿ} ≤ ε₀ λ` survives the
-approximation with the same `ε₀`.
+the right-hand side over `B(c, R)` is at most `s (‖f⁺‖_{Lⁿ} + K ‖ψ * D²u - D²u‖_{Lⁿ})`:
+precomposing with `A` costs the factor `s⁻¹` in `Lⁿ`, since `A` contracts volume by `sⁿ`
+(`MeasureTheory.Measure.eLpNorm_comp_homothety_restrict_le`). As `δ → 0` the mollified Hessians
+converge to `D²u` in `Lⁿ` (`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`), and as `s → 1` the
+functions `v` converge to `ū` uniformly on `closedBall c R`, by the uniform continuity of `ū`
+there. The factor `s < 1` on `‖f⁺‖` leaves room for the error term, so a smallness condition
+`R ‖f⁺‖_{Lⁿ} ≤ ε₀ λ` survives the approximation with the same `ε₀`.
 
 ## The power decay
 
-For the `L^ε` estimate (`TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`)
+For the `L^ε` estimate (`TauCeti.PDE.exists_addHaar_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`)
 the approximant `v`, within `η` of `ū`, is normalized to `(v + η) / (1 + 2η)`. This is
 nonnegative where `ū` is, at most `1` where `ū ≤ 1`, and at least `ū / (1 + 2η)`, so the classical
 power decay for it bounds `|{ū ≥ t} ∩ Q₀|` by `C (t / (1 + 2η))^(-ε) |Q₀|`. Letting `η → 0` gives
-the estimate for `ū` with the constants of the classical statement.
+the estimate for `ū`. The classical statement is for Lebesgue measure; an additive Haar measure is
+`μ = k • volume`, whose `Lⁿ` norms are `k^(1/n)` times those for `volume`, so the smallness
+constant `ε₀` is rescaled by `k^(1/n)` and both sides of the estimate by `k`.
 
 ## Main declarations
 
 * `TauCeti.PDE.exists_forall_abs_sub_le_and_eLpNorm_posPart_le_of_wkp`: a strong supersolution on
   a ball is a uniform limit of `C²` functions which are classical supersolutions for homothetic
   coefficients, with right-hand sides whose positive parts are controlled in `Lⁿ`.
-* `TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`: **the power decay of
+* `TauCeti.PDE.exists_addHaar_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`: **the power decay of
   Krylov and Safonov for strong supersolutions**.
 
 ## References
@@ -126,31 +133,78 @@ private theorem ofReal_mul_eLpNorm_posPart_const_mul_le {F f : α → ℝ} {b R 
 
 end Smallness
 
+section Homothety
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A homothety of ratio `s ≥ 0` about `c` scales the distance to `c` by `s`. -/
+private theorem dist_homothety_center_of_nonneg (c x : E) {s : ℝ} (hs : 0 ≤ s) :
+    dist (AffineMap.homothety c s x) c = s * dist x c := by
+  rw [dist_homothety_center, Real.norm_eq_abs, abs_of_nonneg hs, dist_comm]
+
+/-- A homothety of ratio `0 ≤ s ≤ 1` maps a ball about its centre into itself. -/
+private theorem mapsTo_homothety_ball (c : E) {s R : ℝ} (hs0 : 0 ≤ s) (hs1 : s ≤ 1) :
+    MapsTo (AffineMap.homothety c s) (ball c R) (ball c R) := fun x hx ↦ by
+  rw [mem_ball, dist_homothety_center_of_nonneg c x hs0]
+  exact (mul_le_of_le_one_left dist_nonneg hs1).trans_lt hx
+
+/-- A homothety of ratio `0 ≤ s ≤ 1` maps a closed ball about its centre into itself. -/
+private theorem mapsTo_homothety_closedBall (c : E) {s R : ℝ} (hs0 : 0 ≤ s) (hs1 : s ≤ 1) :
+    MapsTo (AffineMap.homothety c s) (closedBall c R) (closedBall c R) := fun x hx ↦ by
+  rw [mem_closedBall, dist_homothety_center_of_nonneg c x hs0]
+  exact (mul_le_of_le_one_left dist_nonneg hs1).trans hx
+
+end Homothety
+
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-omit [DecidableEq ι] in
-/-- Precomposition with the homothety of ratio `0 < s ≤ 1` about `c` costs at most the factor
-`s⁻¹` in `Lⁿ(B(c, R))`, `n` the dimension. -/
-private theorem eLpNorm_comp_homothety_ball_le {c : EuclideanSpace ℝ ι} {R s : ℝ} (hR : 0 ≤ R)
-    (hs0 : 0 < s) (hs1 : s ≤ 1) (hn : Fintype.card ι ≠ 0) (q : EuclideanSpace ℝ ι → ℝ) :
-    eLpNorm (q ∘ AffineMap.homothety c s) (Fintype.card ι) (volume.restrict (ball c R)) ≤
-      ENNReal.ofReal s⁻¹ * eLpNorm q (Fintype.card ι) (volume.restrict (ball c R)) := by
-  set n := Fintype.card ι
-  have hpre : AffineMap.homothety c s ⁻¹' ball c (s * R) = ball c R := by
-    ext x
-    simp only [mem_preimage, mem_ball, dist_homothety_center, Real.norm_eq_abs, abs_of_pos hs0]
-    rw [dist_comm c x]
-    exact mul_lt_mul_iff_right₀ hs0
-  have hC : (ENNReal.ofReal |(s ^ Module.finrank ℝ (EuclideanSpace ℝ ι))⁻¹|) ^
-      (1 / (n : ℝ≥0∞)).toReal =
-      ENNReal.ofReal s⁻¹ := by
-    rw [finrank_euclideanSpace, abs_of_pos (by positivity), one_div, ENNReal.toReal_inv,
-      ENNReal.toReal_natCast, ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity),
-      Real.inv_rpow (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul hs0.le,
-      mul_inv_cancel₀ (by exact_mod_cast hn), Real.rpow_one]
-  rw [← hpre, Measure.eLpNorm_comp_homothety_restrict_preimage volume q c hs0.ne', hC, hpre]
-  exact mul_le_mul_right (eLpNorm_mono_measure q (Measure.restrict_mono
-    (ball_subset_ball (x := c) (mul_le_of_le_one_left hR hs1)) le_rfl)) _
+/-- **The operator of a nearby Hessian.** If `∑ᵢⱼ aⁱʲ Hⱼᵢ ≤ y` and `|aⁱʲ| ≤ Λ`, then
+`∑ᵢⱼ aⁱʲ H'ⱼᵢ ≤ y + n² Λ ‖H' - H‖`, `n` the dimension. -/
+private theorem sum_mul_apply_single_le_add_mul_norm_sub {A : Matrix ι ι ℝ} {Lam y : ℝ}
+    {H H' : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι} (hA : ∀ i j, |A i j| ≤ Lam)
+    (hH : ∑ i, ∑ j, A i j * H (EuclideanSpace.single j 1) i ≤ y) :
+    ∑ i, ∑ j, A i j * H' (EuclideanSpace.single j 1) i ≤
+      y + (Fintype.card ι : ℝ) ^ 2 * Lam * ‖H' - H‖ := by
+  have hsplit : ∑ i, ∑ j, A i j * H' (EuclideanSpace.single j 1) i =
+      ∑ i, ∑ j, A i j * H (EuclideanSpace.single j 1) i +
+        ∑ i, ∑ j, A i j * (H' - H) (EuclideanSpace.single j 1) i := by
+    simp only [sub_apply, PiLp.sub_apply, mul_sub, Finset.sum_sub_distrib]
+    ring
+  have hsum : ∑ i, ∑ j, |A i j| ≤ (Fintype.card ι : ℝ) ^ 2 * Lam := by
+    refine (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ hA i j).trans_eq ?_
+    simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+    ring
+  have hD := (le_abs_self _).trans (Matrix.abs_sum_sum_mul_apply_single_le A (H' - H))
+  rw [hsplit]
+  nlinarith [norm_nonneg (H' - H)]
+
+/-- **The Hessian of a homothetic mollification.** On `B(c, R)`, the Hessian of the mollification
+`ψ * u` composed with the homothety of ratio `s > 0` about `c` is `s²` times the mollified weak
+Hessian at the image point, provided the bump radius is below `(1 - s) R`. -/
+private theorem fderiv_fderiv_smoothField_comp_homothety_apply
+    {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {R s : ℝ} {c : EuclideanSpace ℝ ι} (u : Wkp μ ⟨ball c R, isOpen_ball⟩ p 2) (hs0 : 0 < s)
+    (ψ : ContDiffBump (0 : EuclideanSpace ℝ ι)) (hψ : ψ.rOut < (1 - s) * R)
+    {x : EuclideanSpace ℝ ι} (hx : x ∈ ball c R) (i j : ι) :
+    fderiv ℝ (fderiv ℝ (Wkp.smoothField ψ (Wkp.value 2 u) ∘ AffineMap.homothety c s)) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
+      s ^ 2 * Wkp.smoothField ψ (Wkp.iteratedGradient 1 u) (AffineMap.homothety c s x)
+        (EuclideanSpace.single j 1) i := by
+  have hw : ContDiff ℝ 2 (Wkp.smoothField ψ (Wkp.value 2 u)) :=
+    contDiff_infty.1 (Wkp.contDiff_smoothField _ _) 2
+  -- The image point lies in `B(c, s R)`, whose `ψ.rOut`-neighbourhood stays in `B(c, R)`.
+  have hAx : dist (AffineMap.homothety c s x) c < R - ψ.rOut := by
+    rw [mem_ball] at hx
+    rw [dist_homothety_center_of_nonneg c x hs0.le]
+    nlinarith
+  rw [fderiv_fderiv_comp_homothety, smul_apply, smul_apply, smul_eq_mul,
+    ← hessianOperator_single_apply hw.contDiffAt i j,
+    ← fderiv_gradient, Wkp.fderiv_gradient_smoothField_value u ψ
+      (Filter.eventually_of_mem (isOpen_ball.mem_nhds (mem_ball.2 hAx)) fun y hy z hz ↦ by
+        rw [TopologicalSpace.Opens.coe_mk, mem_ball]
+        rw [mem_ball] at hy
+        rw [mem_closedBall] at hz
+        linarith [dist_triangle z y c])]
 
 /-- **The homothetic mollification of a strong supersolution.** Let `u ∈ W^{2,n}(B(c, R))` satisfy
 `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere in `B(c, R)` for its weak Hessian `H`, with `|aⁱʲ| ≤ Λ`,
@@ -158,24 +212,25 @@ let `0 < s < 1`, and let `ψ` be a bump of radius below `(1 - s) R`. Then the mo
 `w = ψ * u` composed with the homothety `A` of ratio `s` about `c` is a classical supersolution in
 `B(c, R)` for the coefficients `a ∘ A`, with a right-hand side `F` such that
 `‖F⁺‖_{Lⁿ} ≤ s ‖f⁺‖_{Lⁿ} + s n² Λ ‖ψ * H - H‖_{Lⁿ}`, all norms on `B(c, R)`. -/
-private theorem exists_sum_mul_fderiv_fderiv_smoothField_comp_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
+private theorem exists_sum_mul_fderiv_fderiv_smoothField_comp_le
+    {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp : p = Fintype.card ι) {R Lam s : ℝ} {c : EuclideanSpace ℝ ι}
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {f : EuclideanSpace ℝ ι → ℝ}
-    (u : Wkp volume ⟨ball c R, isOpen_ball⟩ p 2) (hs0 : 0 < s) (hs1 : s < 1)
+    (u : Wkp μ ⟨ball c R, isOpen_ball⟩ p 2) (hs0 : 0 < s) (hs1 : s < 1)
     (ψ : ContDiffBump (0 : EuclideanSpace ℝ ι)) (hψ : ψ.rOut < (1 - s) * R)
     (ha : ∀ x ∈ ball c R, ∀ i j, |a x i j| ≤ Lam)
-    (hsuper : ∀ᵐ x ∂volume.restrict (ball c R),
+    (hsuper : ∀ᵐ x ∂μ.restrict (ball c R),
       ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i ≤ f x) :
     ∃ F : EuclideanSpace ℝ ι → ℝ,
       (∀ x ∈ ball c R, ∑ i, ∑ j, a (AffineMap.homothety c s x) i j *
           fderiv ℝ (fderiv ℝ (Wkp.smoothField ψ (Wkp.value 2 u) ∘ AffineMap.homothety c s)) x
             (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ F x) ∧
-      eLpNorm (fun x ↦ (F x)⁺) (Fintype.card ι) (volume.restrict (ball c R)) ≤
+      eLpNorm (fun x ↦ (F x)⁺) (Fintype.card ι) (μ.restrict (ball c R)) ≤
         ENNReal.ofReal s * eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
-          (volume.restrict (ball c R)) + ENNReal.ofReal (s * ((Fintype.card ι : ℝ) ^ 2 * Lam)) *
+          (μ.restrict (ball c R)) + ENNReal.ofReal (s * ((Fintype.card ι : ℝ) ^ 2 * Lam)) *
             eLpNorm (Wkp.smoothField ψ (Wkp.iteratedGradient 1 u) -
               (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ ι → _)) (Fintype.card ι)
-              (volume.restrict (ball c R)) := by
+              (μ.restrict (ball c R)) := by
   subst hp
   set n := Fintype.card ι
   have hn1 : 1 ≤ (n : ℝ≥0∞) := Fact.out
@@ -186,92 +241,61 @@ private theorem exists_sum_mul_fderiv_fderiv_smoothField_comp_le {p : ℝ≥0∞
   set K := (n : ℝ) ^ 2 * Lam
   have hK : 0 ≤ K := by positivity
   set A := AffineMap.homothety c s
-  have hAc (x : EuclideanSpace ℝ ι) : dist (A x) c = s * dist x c := by
-    rw [dist_homothety_center, Real.norm_eq_abs, abs_of_pos hs0, dist_comm]
   set H := Wkp.iteratedGradient 1 u
-  set w := Wkp.smoothField ψ (Wkp.value 2 u)
-  have hw : ContDiff ℝ 2 w := contDiff_infty.1 (Wkp.contDiff_smoothField _ _) 2
-  -- On `B(c, R)`, the Hessian of `w ∘ A` is `s²` times the mollified weak Hessian at `A x`: the
-  -- points `A x` lie in `B(c, s R)`, whose `ψ.rOut`-neighbourhood stays in `B(c, R)`.
   set Hψ := Wkp.smoothField ψ H
-  have hhess {x : EuclideanSpace ℝ ι} (hx : x ∈ ball c R) (i j : ι) :
-      fderiv ℝ (fderiv ℝ (w ∘ A)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
-        s ^ 2 * Hψ (A x) (EuclideanSpace.single j 1) i := by
-    have hAx : dist (A x) c < R - ψ.rOut := by
-      rw [mem_ball] at hx
-      rw [hAc]
-      nlinarith
-    rw [fderiv_fderiv_comp_homothety_apply c s hw.contDiffAt, smul_eq_mul,
-      ← hessianOperator_single_apply hw.contDiffAt i j, ← fderiv_gradient,
-      Wkp.fderiv_gradient_smoothField_value u ψ
-        (Filter.eventually_of_mem (isOpen_ball.mem_nhds (mem_ball.2 hAx)) fun y hy z hz ↦ by
-          rw [TopologicalSpace.Opens.coe_mk, mem_ball]
-          rw [mem_ball] at hy
-          rw [mem_closedBall] at hz
-          linarith [dist_triangle z y c])]
-  -- Almost everywhere in `B(c, R)`, the mollified Hessian satisfies the inequality up to the
-  -- error `K ‖D y‖`, where `D = Hψ - H`.
   set D := Hψ - (H : EuclideanSpace ℝ ι → _)
-  have hsuper' : ∀ᵐ y ∂volume.restrict (ball c R),
-      ∑ i, ∑ j, a y i j * Hψ y (EuclideanSpace.single j 1) i ≤ f y + K * ‖D y‖ := by
-    filter_upwards [hsuper, ae_restrict_mem measurableSet_ball] with y hy hyB
-    have hsplit : ∑ i, ∑ j, a y i j * Hψ y (EuclideanSpace.single j 1) i =
-        ∑ i, ∑ j, a y i j * H y (EuclideanSpace.single j 1) i +
-          ∑ i, ∑ j, a y i j * D y (EuclideanSpace.single j 1) i := by
-      simp only [D, Pi.sub_apply, sub_apply, PiLp.sub_apply, mul_sub,
-        Finset.sum_sub_distrib]
-      ring
-    have hsum : ∑ i, ∑ j, |a y i j| ≤ K := by
-      refine (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ ha y hyB i j).trans_eq ?_
-      simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, K, n]
-      ring
-    have hD := (le_abs_self _).trans (Matrix.abs_sum_sum_mul_apply_single_le (a y) (D y))
-    rw [hsplit]
-    nlinarith [norm_nonneg (D y)]
-  -- `A` is quasi-measure-preserving and maps `B(c, R)` into itself, so the operator `G` of `w ∘ A`
-  -- is at most `s² g ∘ A` almost everywhere in `B(c, R)`, with `g = f⁺ + K ‖D‖`.
-  have hqmp : QuasiMeasurePreserving A volume volume := ⟨by
-    rw [show ⇑A = fun y ↦ s • (y - c) + c by funext y; simp [A, AffineMap.homothety_apply]]
-    fun_prop, Measure.absolutelyContinuous_of_le_smul
-      (Measure.map_addHaar_homothety volume c hs0.ne').le⟩
+  -- `A` is quasi-measure-preserving and maps `B(c, R)` into itself. So almost everywhere in
+  -- `B(c, R)` the operator `G` of `w ∘ A`, `w = ψ * u`, is `s²` times the operator of the mollified
+  -- weak Hessian at `A x`, hence at most `s² g (A x)` with `g = f⁺ + K ‖D‖`, `D = Hψ - H`.
+  have hqmp : QuasiMeasurePreserving A μ μ :=
+    ⟨(AffineMap.homothety_continuous c s).measurable, Measure.absolutelyContinuous_of_le_smul
+      (Measure.map_addHaar_homothety μ c hs0.ne').le⟩
   set G : EuclideanSpace ℝ ι → ℝ := fun x ↦ ∑ i, ∑ j, a (A x) i j *
-    fderiv ℝ (fderiv ℝ (w ∘ A)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  set g : EuclideanSpace ℝ ι → ℝ := fun y ↦ (f y)⁺ + K * ‖D y‖
+    fderiv ℝ (fderiv ℝ (Wkp.smoothField ψ (Wkp.value 2 u) ∘ A)) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1)
+  set g : EuclideanSpace ℝ ι → ℝ := (fun y ↦ (f y)⁺) + K • fun y ↦ ‖D y‖
   have hg0 (y : EuclideanSpace ℝ ι) : 0 ≤ (s ^ 2 • g) y := by
-    simp only [Pi.smul_apply, smul_eq_mul, g]
+    simp only [Pi.smul_apply, Pi.add_apply, smul_eq_mul, g]
     positivity
-  have hpt : ∀ᵐ x ∂volume.restrict (ball c R), G x ≤ (s ^ 2 • g) (A x) := by
-    have h := hqmp.ae ((ae_restrict_iff' measurableSet_ball).1 hsuper')
+  have hpt : ∀ᵐ x ∂μ.restrict (ball c R), G x ≤ (s ^ 2 • g) (A x) := by
+    have h := hqmp.ae ((ae_restrict_iff' measurableSet_ball).1 hsuper)
     filter_upwards [ae_restrict_of_ae h, ae_restrict_mem measurableSet_ball] with x hx hxB
-    have hAB : A x ∈ ball c R := by
-      rw [mem_ball] at hxB ⊢
-      rw [hAc]
-      nlinarith [dist_nonneg (x := x) (y := c)]
+    have hAB : A x ∈ ball c R := mapsTo_homothety_ball c hs0.le hs1.le hxB
     have hsum : G x = s ^ 2 * ∑ i, ∑ j, a (A x) i j * Hψ (A x) (EuclideanSpace.single j 1) i := by
-      simp only [G, hhess hxB, Finset.mul_sum]
+      simp only [G, A, fderiv_fderiv_smoothField_comp_homothety_apply u hs0 ψ hψ hxB,
+        Finset.mul_sum]
       exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
     rw [hsum, Pi.smul_apply, smul_eq_mul]
     gcongr
-    exact (hx hAB).trans (by simp only [g]; gcongr; exact le_posPart _)
+    refine (sum_mul_apply_single_le_add_mul_norm_sub (ha _ hAB) (hx hAB)).trans ?_
+    simp only [g, D, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul]
+    gcongr
+    exact le_posPart _
   -- Take `F = max G (s² g ∘ A)`, which is `s² g ∘ A` almost everywhere.
   refine ⟨fun x ↦ max (G x) ((s ^ 2 • g) (A x)), fun x _ ↦ le_max_left _ _, ?_⟩
-  have hae : (fun x ↦ (max (G x) ((s ^ 2 • g) (A x)))⁺) =ᵐ[volume.restrict (ball c R)]
+  have hae : (fun x ↦ (max (G x) ((s ^ 2 • g) (A x)))⁺) =ᵐ[μ.restrict (ball c R)]
       (s ^ 2 • g) ∘ A := by
     filter_upwards [hpt] with x hx
     rw [max_eq_right hx, posPart_eq_self.2 (hg0 _), Function.comp_apply]
   rw [eLpNorm_congr_ae hae]
-  have hDm : AEStronglyMeasurable D (volume.restrict (ball c R)) :=
+  have hDm : AEStronglyMeasurable D (μ.restrict (ball c R)) :=
     (Wkp.contDiff_smoothField _ _).continuous.aestronglyMeasurable.sub (Lp.aestronglyMeasurable _)
-  calc _ ≤ ENNReal.ofReal s⁻¹ * eLpNorm (s ^ 2 • g) n (volume.restrict (ball c R)) :=
-        eLpNorm_comp_homothety_ball_le hR.le hs0 hs1.le (by positivity) _
+  -- Precomposing with `A` costs the factor `s⁻¹` in `Lⁿ(B(c, R))`.
+  have hC : (ENNReal.ofReal |(s ^ Module.finrank ℝ (EuclideanSpace ℝ ι))⁻¹|) ^
+      (1 / (n : ℝ≥0∞)).toReal = ENNReal.ofReal s⁻¹ := by
+    rw [finrank_euclideanSpace, ← inv_pow, abs_of_pos (by positivity),
+      ENNReal.ofReal_pow (by positivity), one_div, ENNReal.toReal_inv, ENNReal.toReal_natCast,
+      ENNReal.pow_rpow_inv_natCast (by positivity)]
+  calc _ ≤ ENNReal.ofReal s⁻¹ * eLpNorm (s ^ 2 • g) n (μ.restrict (ball c R)) :=
+        (Measure.eLpNorm_comp_homothety_restrict_le μ _ c hs0.ne' _
+          (mapsTo_homothety_ball c hs0.le hs1.le)).trans_eq (by rw [hC])
     _ ≤ ENNReal.ofReal s⁻¹ * (ENNReal.ofReal (s ^ 2) *
-          (eLpNorm (fun y ↦ (f y)⁺) n (volume.restrict (ball c R)) +
-            ENNReal.ofReal K * eLpNorm D n (volume.restrict (ball c R)))) := by
+          (eLpNorm (fun y ↦ (f y)⁺) n (μ.restrict (ball c R)) +
+            ENNReal.ofReal K * eLpNorm D n (μ.restrict (ball c R)))) := by
         rw [eLpNorm_const_smul, Real.enorm_of_nonneg (by positivity)]
         gcongr
         refine (eLpNorm_add_le hn1).trans_eq ?_
-        rw [show (fun y ↦ K * ‖D y‖) = K • fun y ↦ ‖D y‖ from rfl, eLpNorm_const_smul,
-          eLpNorm_norm _ hDm, Real.enorm_of_nonneg hK]
+        rw [eLpNorm_const_smul, eLpNorm_norm _ hDm, Real.enorm_of_nonneg hK]
     _ = _ := by
         have h1 : ENNReal.ofReal s⁻¹ * ENNReal.ofReal (s ^ 2) = ENNReal.ofReal s := by
           rw [← ENNReal.ofReal_mul (by positivity)]
@@ -279,29 +303,30 @@ private theorem exists_sum_mul_fderiv_fderiv_smoothField_comp_le {p : ℝ≥0∞
           field_simp
         rw [← mul_assoc, h1, mul_add, ← mul_assoc, ← ENNReal.ofReal_mul hs0.le]
 
-/-- **Approximating a strong supersolution by classical ones.** Let `u ∈ W^{2,n}(B(c, R))`, `n`
-the dimension, have a representative `ū` continuous on `closedBall c R`, and let
-`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere in `B(c, R)` for the weak Hessian of `u`, with coefficients
-`|aⁱʲ| ≤ Λ` there. For every `η > 0` there is `0 < s < 1` such that, for every `ε > 0`, some
-`C²` function `v` lies within `η` of `ū` on `closedBall c R` and is a classical supersolution,
-`∑ᵢⱼ aⁱʲ(c + s • (x - c)) ∂ᵢ∂ⱼv(x) ≤ F x` at every point of `B(c, R)`, for the coefficients
-precomposed with the homothety `AffineMap.homothety c s` and a right-hand side `F` with
-`‖F⁺‖_{Lⁿ(B(c, R))} ≤ s ‖f⁺‖_{Lⁿ(B(c, R))} + ε`. -/
-theorem exists_forall_abs_sub_le_and_eLpNorm_posPart_le_of_wkp {p : ℝ≥0∞} [Fact (1 ≤ p)]
+/-- **Approximating a strong supersolution by classical ones.** Let `μ` be an additive Haar
+measure, let `u ∈ W^{2,n}(B(c, R))`, `n` the dimension, have a representative `ū` continuous on
+`closedBall c R`, and let `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere in `B(c, R)` for the weak Hessian
+of `u`, with coefficients `|aⁱʲ| ≤ Λ` there. For every `η > 0` there is `0 < s < 1` such that, for
+every `ε > 0`, some `C²` function `v` lies within `η` of `ū` on `closedBall c R` and is a classical
+supersolution, `∑ᵢⱼ aⁱʲ(c + s • (x - c)) ∂ᵢ∂ⱼv(x) ≤ F x` at every point of `B(c, R)`, for the
+coefficients precomposed with the homothety `AffineMap.homothety c s` and a right-hand side `F`
+with `‖F⁺‖_{Lⁿ(B(c, R))} ≤ s ‖f⁺‖_{Lⁿ(B(c, R))} + ε`. -/
+theorem exists_forall_abs_sub_le_and_eLpNorm_posPart_le_of_wkp
+    {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp : p = Fintype.card ι) {R Lam η : ℝ} {c : EuclideanSpace ℝ ι}
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {ū f : EuclideanSpace ℝ ι → ℝ}
-    (u : Wkp volume ⟨ball c R, isOpen_ball⟩ p 2) (hR : 0 < R) (hη : 0 < η)
+    (u : Wkp μ ⟨ball c R, isOpen_ball⟩ p 2) (hR : 0 < R) (hη : 0 < η)
     (ha : ∀ x ∈ ball c R, ∀ i j, |a x i j| ≤ Lam) (hcont : ContinuousOn ū (closedBall c R))
-    (hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (ball c R)] ū)
-    (hsuper : ∀ᵐ x ∂volume.restrict (ball c R),
+    (hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[μ.restrict (ball c R)] ū)
+    (hsuper : ∀ᵐ x ∂μ.restrict (ball c R),
       ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i ≤ f x) :
     ∃ s : ℝ, 0 < s ∧ s < 1 ∧ ∀ ε > 0, ∃ v F : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ 2 v ∧
       (∀ x ∈ closedBall c R, |v x - ū x| ≤ η) ∧
       (∀ x ∈ ball c R, ∑ i, ∑ j, a (AffineMap.homothety c s x) i j *
           fderiv ℝ (fderiv ℝ v) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ F x) ∧
-      eLpNorm (fun x ↦ (F x)⁺) (Fintype.card ι) (volume.restrict (ball c R)) ≤
+      eLpNorm (fun x ↦ (F x)⁺) (Fintype.card ι) (μ.restrict (ball c R)) ≤
         ENNReal.ofReal s * eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
-          (volume.restrict (ball c R)) + ENNReal.ofReal ε := by
+          (μ.restrict (ball c R)) + ENNReal.ofReal ε := by
   subst hp
   -- `ū` is uniformly continuous on the compact ball.
   obtain ⟨ρ, hρ, hρū⟩ := Metric.uniformContinuousOn_iff.1
@@ -318,26 +343,21 @@ theorem exists_forall_abs_sub_le_and_eLpNorm_posPart_le_of_wkp {p : ℝ≥0∞} 
       _ < ρ := half_lt_self hρ
   refine ⟨s, hs0, hs1, fun ε hε ↦ ?_⟩
   set A := AffineMap.homothety c s
-  have hAc (x : EuclideanSpace ℝ ι) : dist (A x) c = s * dist x c := by
-    rw [dist_homothety_center, Real.norm_eq_abs, abs_of_pos hs0, dist_comm]
   have hAx (x : EuclideanSpace ℝ ι) : dist (A x) x = (1 - s) * dist x c := by
     rw [dist_homothety_self, Real.norm_eq_abs, abs_of_pos (sub_pos.2 hs1), dist_comm]
   -- Mollifiers whose radii decrease to `0`, all below `r = min ((1 - s) R) ρ`; choose one for
   -- which the error `s n² Λ ‖ψ * H - H‖_{Lⁿ}` of the homothetic mollification is below `ε`.
   set r := min ((1 - s) * R) ρ
   have hr : 0 < r := lt_min (mul_pos (sub_pos.2 hs1) hR) hρ
-  set φ : ℕ → ContDiffBump (0 : EuclideanSpace ℝ ι) := fun k ↦
-    ⟨r / (2 * ((k : ℝ) + 2)), r / ((k : ℝ) + 2), by positivity, by
-      have : (0 : ℝ) < (k : ℝ) + 2 := by positivity
-      exact div_lt_div_of_pos_left hr this (by linarith)⟩
-  have hφr (k : ℕ) : (φ k).rOut < r :=
-    div_lt_self hr (by linarith [(k.cast_nonneg : (0 : ℝ) ≤ k)])
-  have hφ0 : Tendsto (fun k ↦ (φ k).rOut) atTop (𝓝 0) :=
-    tendsto_const_nhds.div_atTop (tendsto_atTop_add_const_right _ 2 tendsto_natCast_atTop_atTop)
+  set φ : ℕ → ContDiffBump (0 : EuclideanSpace ℝ ι) := ContDiffBump.shrinking (half_pos hr)
+  have hφr (k : ℕ) : (φ k).rOut < r := by
+    rw [ContDiffBump.rOut_shrinking]
+    exact (div_le_self (half_pos hr).le (le_add_of_nonneg_left k.cast_nonneg)).trans_lt
+      (half_lt_self hr)
   set K := (Fintype.card ι : ℝ) ^ 2 * |Lam|
   obtain ⟨k, hk⟩ := (ENNReal.tendsto_nhds_zero.1
-    (Wkp.tendsto_eLpNorm_smoothField_sub (ENNReal.natCast_ne_top _) hφ0
-      (Wkp.iteratedGradient 1 u))
+    (Wkp.tendsto_eLpNorm_smoothField_sub (ENNReal.natCast_ne_top _)
+      (ContDiffBump.tendsto_rOut_shrinking (half_pos hr)) (Wkp.iteratedGradient 1 u))
     (ENNReal.ofReal (ε / (s * K + 1)))
     (by simp only [gt_iff_lt, ENNReal.ofReal_pos]; positivity)).exists
   set ψ := φ k
@@ -345,19 +365,14 @@ theorem exists_forall_abs_sub_le_and_eLpNorm_posPart_le_of_wkp {p : ℝ≥0∞} 
   obtain ⟨F, hF, hFn⟩ := exists_sum_mul_fderiv_fderiv_smoothField_comp_le rfl u hs0 hs1 ψ hψ
     (fun x hx i j ↦ (ha x hx i j).trans (le_abs_self Lam)) hsuper
   set w := Wkp.smoothField ψ (Wkp.value 2 u)
-  have hAsmooth : ContDiff ℝ 2 A := by
-    rw [show ⇑A = fun y ↦ s • (y - c) + c by funext y; simp [A, AffineMap.homothety_apply]]
-    fun_prop
-  refine ⟨w ∘ A, F, (contDiff_infty.1 (Wkp.contDiff_smoothField _ _) 2).comp hAsmooth,
-    fun x hx ↦ ?_, hF, ?_⟩
+  refine ⟨w ∘ A, F, (contDiff_infty.1 (Wkp.contDiff_smoothField _ _) 2).comp
+    (contDiff_homothety c s), fun x hx ↦ ?_, hF, ?_⟩
   · -- `w (A x)` is within `η / 2` of `ū (A x)`, which is within `η / 2` of `ū x`.
+    have hAB : A x ∈ closedBall c R := mapsTo_homothety_closedBall c hs0.le hs1.le hx
     rw [mem_closedBall] at hx
     have hsub : ball (A x) ψ.rOut ⊆ ball c R := fun z hz ↦ by
       rw [mem_ball] at hz ⊢
-      nlinarith [dist_triangle z (A x) c, hAc x]
-    have hAB : A x ∈ closedBall c R := by
-      rw [mem_closedBall, hAc]
-      nlinarith
+      nlinarith [dist_triangle z (A x) c, dist_homothety_center_of_nonneg c x hs0.le]
     have h1 : dist (w (A x)) (ū (A x)) ≤ η / 2 :=
       Wkp.dist_smoothField_le ψ hū hsub fun y hy ↦
         (hρū y (ball_subset_closedBall (hsub hy)) (A x) hAB (by
@@ -374,53 +389,86 @@ theorem exists_forall_abs_sub_le_and_eLpNorm_posPart_le_of_wkp {p : ℝ≥0∞} 
     rw [mul_div_assoc', div_le_iff₀ (by positivity)]
     nlinarith [mul_nonneg hs0.le (by positivity : (0 : ℝ) ≤ K)]
 
+/-- A bound `m ≤ C (t / (1 + 2η))^(-ε) V`, `V < ∞`, for every `η > 0` passes to the limit
+`η → 0`. -/
+private theorem le_ofReal_mul_rpow_of_forall_pos {m V : ℝ≥0∞} {C t ε : ℝ} (ht : 0 < t)
+    (hV : V ≠ ⊤) (h : ∀ η > 0, m ≤ ENNReal.ofReal (C * (t / (1 + 2 * η)) ^ (-ε)) * V) :
+    m ≤ ENNReal.ofReal (C * t ^ (-ε)) * V := by
+  have hcontη : ContinuousAt (fun η : ℝ ↦ C * (t / (1 + 2 * η)) ^ (-ε)) 0 :=
+    continuousAt_const.mul ((continuousAt_const.div (by fun_prop) (by norm_num)).rpow_const
+      (Or.inl (by norm_num [ht.ne'])))
+  have hlim : Tendsto (fun η : ℝ ↦ ENNReal.ofReal (C * (t / (1 + 2 * η)) ^ (-ε)) * V)
+      (𝓝[>] 0) (𝓝 (ENNReal.ofReal (C * t ^ (-ε)) * V)) := by
+    refine ENNReal.Tendsto.mul_const ?_ (Or.inr hV)
+    have h := (ENNReal.continuous_ofReal.tendsto _).comp hcontη.tendsto
+    simp only [mul_zero, add_zero, div_one, Function.comp_def] at h
+    exact h.mono_left nhdsWithin_le_nhds
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun η hη ↦ h η hη)
+
+omit [DecidableEq ι] in
+/-- The `Lᵖ` seminorm for an additive Haar measure `μ = k • volume` is `k^(1 / p)` times the `Lᵖ`
+seminorm for `volume`. -/
+private theorem eLpNorm_restrict_addHaar_eq (μ : Measure (EuclideanSpace ℝ ι))
+    [μ.IsAddHaarMeasure] (g : EuclideanSpace ℝ ι → ℝ) (p : ℝ≥0∞) (S : Set (EuclideanSpace ℝ ι)) :
+    eLpNorm g p (μ.restrict S) =
+      (μ.addHaarScalarFactor volume : ℝ≥0∞) ^ (1 / p).toReal * eLpNorm g p (volume.restrict S) := by
+  conv_lhs => rw [μ.isAddLeftInvariant_eq_smul volume, Measure.restrict_smul,
+    ← Measure.coe_nnreal_smul]
+  rw [eLpNorm_smul_measure_of_ne_zero (by simpa using
+    (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'), smul_eq_mul]
+
 /-- **Power decay of the superlevel sets of a strong supersolution**, the `L^ε` estimate of Krylov
 and Safonov for `W^{2,n}` functions (Gilbarg–Trudinger, Section 9.7; Caffarelli–Cabré, Lemma 4.6).
-Let `κ > 0`. There are constants `C > 0`, `ε > 0` and `ε₀ > 0`, depending only on the dimension
-and on `κ`, with the following property. Let `Q₀` be a dyadic cube of level `k` with centre `c`,
-and let `R ≥ 4 · 2ᵏ √n`. Let the coefficient matrix `a` be uniformly elliptic on `B(c, R)` with
-constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(B(c, R))` have a representative `ū` continuous and
-nonnegative on `closedBall c R`, with `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere in `B(c, R)` for the
-weak Hessian of `u` and `R ‖f⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ`. If `ū ≤ 1` somewhere in
-`B(c, 2 · 2ᵏ √n)`, then `|{ū ≥ t} ∩ Q₀| ≤ C t^(-ε) |Q₀|` for every `t > 0`. The constants are
-those of the classical statement `TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul`.
--/
-theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp {p : ℝ≥0∞} [Fact (1 ≤ p)]
+Let `μ` be an additive Haar measure and `κ > 0`. There are constants `C > 0`, `ε > 0` and
+`ε₀ > 0`, depending only on the dimension, on `κ` and on `μ`, with the following property. Let `Q₀`
+be a dyadic cube of level `k` with centre `c`, and let `R ≥ 4 · 2ᵏ √n`. Let the coefficient matrix
+`a` be uniformly elliptic on `B(c, R)` with constants `λ ≤ Λ ≤ κ λ`, and let
+`u ∈ W^{2,n}(B(c, R))` have a representative `ū` continuous and nonnegative on `closedBall c R`,
+with `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere in `B(c, R)` for the weak Hessian of `u` and
+`R ‖f⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ`. If `ū ≤ 1` somewhere in `B(c, 2 · 2ᵏ √n)`, then
+`μ({ū ≥ t} ∩ Q₀) ≤ C t^(-ε) μ(Q₀)` for every `t > 0`. -/
+theorem exists_addHaar_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp
+    (μ : Measure (EuclideanSpace ℝ ι)) [μ.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp : p = Fintype.card ι) {κ : ℝ} (hκ : 0 < κ) :
     ∃ C ε ε₀ : ℝ, 0 < C ∧ 0 < ε ∧ 0 < ε₀ ∧
       ∀ ⦃lam Lam R : ℝ⦄ ⦃k : ℤ⦄ ⦃m : ι → ℤ⦄ ⦃c : EuclideanSpace ℝ ι⦄
         ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃ū f : EuclideanSpace ℝ ι → ℝ⦄
-        (u : Wkp volume ⟨ball c R, isOpen_ball⟩ p 2),
+        (u : Wkp μ ⟨ball c R, isOpen_ball⟩ p 2),
         c = WithLp.toLp 2 (fun i ↦ ((m i : ℝ) + 2⁻¹) * 2 ^ k) →
         4 * 2 ^ k * √(Fintype.card ι) ≤ R →
         UniformlyEllipticOn (ball c R) a lam Lam → Lam ≤ κ * lam →
         ContinuousOn ū (closedBall c R) →
-        (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (ball c R)] ū →
+        (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[μ.restrict (ball c R)] ū →
         (∀ x ∈ closedBall c R, 0 ≤ ū x) →
-        (∀ᵐ x ∂volume.restrict (ball c R), ∑ i, ∑ j, a x i j *
+        (∀ᵐ x ∂μ.restrict (ball c R), ∑ i, ∑ j, a x i j *
           Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i ≤ f x) →
         ENNReal.ofReal R * eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
-          (volume.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) →
+          (μ.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) →
         (∃ x ∈ ball c (2 * 2 ^ k * √(Fintype.card ι)), ū x ≤ 1) →
-        ∀ ⦃t : ℝ⦄, 0 < t → volume ({x | t ≤ ū x} ∩ WithLp.ofLp ⁻¹' dyadicCube k m) ≤
+        ∀ ⦃t : ℝ⦄, 0 < t → μ ({x | t ≤ ū x} ∩ WithLp.ofLp ⁻¹' dyadicCube k m) ≤
           ENNReal.ofReal (C * t ^ (-ε)) *
-            volume (WithLp.ofLp ⁻¹' dyadicCube k m : Set (EuclideanSpace ℝ ι)) := by
+            μ (WithLp.ofLp ⁻¹' dyadicCube k m : Set (EuclideanSpace ℝ ι)) := by
   subst hp
   have hn1 : 1 ≤ (Fintype.card ι : ℝ≥0∞) := Fact.out
   have : Nonempty ι := Fintype.card_pos_iff.1 (by exact_mod_cast hn1)
   obtain ⟨C, ε, ε₀, hC, hε, hε₀, H⟩ :=
     exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul (ι := ι) hκ
-  refine ⟨C, ε, ε₀, hC, hε, hε₀, ?_⟩
+  -- `μ = k • volume`, so the `Lⁿ` norms for `μ` are `θ = k^(1 / n)` times those for `volume`; the
+  -- smallness constant absorbs `θ`.
+  have hk : 0 < μ.addHaarScalarFactor volume :=
+    Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume
+  set θ : ℝ≥0∞ := (μ.addHaarScalarFactor volume : ℝ≥0∞) ^ (1 / (Fintype.card ι : ℝ≥0∞)).toReal
+  have hθ0 : θ ≠ 0 := (ENNReal.rpow_pos (by exact_mod_cast hk) ENNReal.coe_ne_top).ne'
+  have hθtop : θ ≠ ⊤ := ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.coe_ne_top
+  have hθpos : 0 < θ.toReal := ENNReal.toReal_pos hθ0 hθtop
+  refine ⟨C, ε, ε₀ * θ.toReal, hC, hε, mul_pos hε₀ hθpos, ?_⟩
   intro lam Lam R k m c a ū f u hc hR ha hLam hcont hū hnonneg hsuper hf hx t ht
-  -- For each `η > 0`, apply the classical estimate to a normalized classical approximant at the
-  -- level `t / (1 + 2η)` (`key`), then let `η → 0`.
   have hR0 : 0 < R := lt_of_lt_of_le (by positivity) hR
   have hlam : 0 < lam := ha.pos
   set Q := (WithLp.ofLp ⁻¹' dyadicCube k m : Set (EuclideanSpace ℝ ι))
   -- The cube lies in `B(c, R)`.
   have hQ : Q ⊆ ball c R := fun x hx ↦ by
-    have h := dist_toLp_lt_of_mem_dyadicCube (show WithLp.ofLp x ∈ dyadicCube k m from hx)
-      (centre_mem_dyadicCube k m)
+    have h := dist_toLp_lt_of_mem_dyadicCube (mem_preimage.1 hx) (centre_mem_dyadicCube k m)
     rw [WithLp.toLp_ofLp, ← hc] at h
     rw [mem_ball]
     nlinarith
@@ -429,30 +477,36 @@ theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp {p : ℝ≥0�
     rw [mem_ball] at hx₀
     rw [mem_closedBall]
     nlinarith
-  -- For every `η > 0`, the classical power decay for a normalized approximant `w` of `ū` bounds
-  -- the superlevel set of `t` by `C (t / (1 + 2η))^(-ε) |Q₀|`.
-  have key : ∀ η > 0, volume ({x | t ≤ ū x} ∩ Q) ≤
-      ENNReal.ofReal (C * (t / (1 + 2 * η)) ^ (-ε)) * volume Q := by
-    intro η hη
+  -- The estimate for `volume`: for every `η > 0`, the classical power decay for a normalized
+  -- classical approximant `w` of `ū` bounds the superlevel set of `t` by
+  -- `C (t / (1 + 2η))^(-ε) |Q₀|`; then let `η → 0`.
+  have hvol : volume ({x | t ≤ ū x} ∩ Q) ≤ ENNReal.ofReal (C * t ^ (-ε)) * volume Q := by
+    refine le_ofReal_mul_rpow_of_forall_pos ht ((measure_mono hQ).trans_lt measure_ball_lt_top).ne
+      fun η hη ↦ ?_
     obtain ⟨s, hs0, hs1, happrox⟩ := exists_forall_abs_sub_le_and_eLpNorm_posPart_le_of_wkp rfl u
       hR0 hη (fun x hx i j ↦ ha.abs_apply_le hx i j) hcont hū hsuper
     obtain ⟨v, F, hv, hvū, hvF, hF⟩ :=
-      happrox ((1 - s) * ε₀ * lam / R) (by have := sub_pos.2 hs1; positivity)
+      happrox ((1 - s) * (ε₀ * θ.toReal) * lam / R) (by have := sub_pos.2 hs1; positivity)
     have hη2 : 0 < 1 + 2 * η := by positivity
     set w : EuclideanSpace ℝ ι → ℝ := (1 + 2 * η)⁻¹ • fun x ↦ v x + η
+    have hv' : (fderiv ℝ fun x ↦ v x + η) = fderiv ℝ v := funext fun _ ↦ fderiv_add_const η
     have hw2 (x : EuclideanSpace ℝ ι) :
         fderiv ℝ (fderiv ℝ w) x = (1 + 2 * η)⁻¹ • fderiv ℝ (fderiv ℝ v) x := by
-      rw [fderiv_fderiv_const_smul, show (fderiv ℝ fun x ↦ v x + η) = fderiv ℝ v from
-        funext fun _ ↦ fderiv_add_const η]
-    have hA (x : EuclideanSpace ℝ ι) (hx : x ∈ ball c R) :
-        AffineMap.homothety c s x ∈ ball c R := by
-      rw [mem_ball, dist_homothety_center, Real.norm_eq_abs, abs_of_pos hs0, dist_comm]
-      rw [mem_ball] at hx
-      nlinarith [dist_nonneg (x := x) (y := c)]
+      rw [fderiv_fderiv_const_smul, hv']
+    have hA := mapsTo_homothety_ball (R := R) c hs0.le hs1.le
+    -- The smallness condition for the normalized right-hand side, first for `μ`, then for
+    -- `volume`.
+    have hsmall : ENNReal.ofReal R * eLpNorm (fun x ↦ ((1 + 2 * η)⁻¹ * F x)⁺)
+        (Fintype.card ι) (volume.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) := by
+      have h := ofReal_mul_eLpNorm_posPart_const_mul_le (inv_pos.2 hη2).le
+        (inv_le_one_of_one_le₀ (by linarith)) hR0 hs0 hs1 (by positivity) hF hf
+      rw [eLpNorm_restrict_addHaar_eq, mul_right_comm ε₀, ENNReal.ofReal_mul (by positivity),
+        ENNReal.ofReal_toReal hθtop, mul_left_comm, mul_comm _ θ] at h
+      exact (ENNReal.mul_le_mul_iff_right hθ0 hθtop).1 h
     have h := H (lam := lam) (Lam := Lam) (a := fun x ↦ a (AffineMap.homothety c s x)) (u := w)
       (f := fun x ↦ (1 + 2 * η)⁻¹ * F x) hc hR
-      (UniformlyEllipticOn.of_bounds ha.pos ha.le (fun x hx ξ ↦ ha.lower_bound (hA x hx) ξ)
-        fun x hx ζ ξ ↦ ha.upper_bound (hA x hx) ζ ξ) hLam
+      (UniformlyEllipticOn.of_bounds ha.pos ha.le (fun x hx ξ ↦ ha.lower_bound (hA hx) ξ)
+        fun x hx ζ ξ ↦ ha.upper_bound (hA hx) ζ ξ) hLam
       ((continuous_const.smul (hv.continuous.add continuous_const)).continuousOn)
       ((contDiff_const.smul (hv.add contDiff_const)).contDiffOn)
       (fun x hx ↦ by
@@ -464,8 +518,7 @@ theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp {p : ℝ≥0�
         simp only [hw2, smul_apply, smul_eq_mul, mul_left_comm _ (1 + 2 * η)⁻¹, ← Finset.mul_sum]
         gcongr
         exact hvF x hx)
-      (ofReal_mul_eLpNorm_posPart_const_mul_le (inv_pos.2 hη2).le
-        (inv_le_one_of_one_le₀ (by linarith)) hR0 hs0 hs1 (by positivity) hF hf)
+      hsmall
       ⟨x₀, hx₀, by
         have := (abs_le.1 (hvū x₀ hx₀R)).2
         simp only [w, Pi.smul_apply, smul_eq_mul]
@@ -480,18 +533,10 @@ theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp {p : ℝ≥0�
     rw [div_eq_inv_mul]
     gcongr
     linarith
-  -- Let `η → 0`.
-  have hQfin : volume Q ≠ ⊤ := ((measure_mono hQ).trans_lt measure_ball_lt_top).ne
-  have hcontη : ContinuousAt (fun η : ℝ ↦ C * (t / (1 + 2 * η)) ^ (-ε)) 0 :=
-    continuousAt_const.mul ((continuousAt_const.div (by fun_prop) (by norm_num)).rpow_const
-      (Or.inl (by norm_num [ht.ne'])))
-  have hlim : Tendsto (fun η : ℝ ↦ ENNReal.ofReal (C * (t / (1 + 2 * η)) ^ (-ε)) * volume Q)
-      (𝓝[>] 0) (𝓝 (ENNReal.ofReal (C * t ^ (-ε)) * volume Q)) := by
-    refine ENNReal.Tendsto.mul_const ?_ (Or.inr hQfin)
-    have h := (ENNReal.continuous_ofReal.tendsto _).comp hcontη.tendsto
-    simp only [mul_zero, add_zero, div_one, Function.comp_def] at h
-    exact h.mono_left nhdsWithin_le_nhds
-  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun η hη ↦ key η hη)
+  -- Transfer to `μ = k • volume`.
+  rw [μ.isAddLeftInvariant_eq_smul volume, Measure.coe_nnreal_smul_apply,
+    Measure.coe_nnreal_smul_apply, mul_left_comm]
+  exact mul_le_mul_right hvol _
 
 end PDE
 

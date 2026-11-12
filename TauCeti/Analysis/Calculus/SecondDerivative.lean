@@ -14,6 +14,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
@@ -68,8 +69,10 @@ Morse-theoretic definitions that use them.
 * `TauCeti.eventually_fderiv_ne`: where the second derivative is invertible, the differential
   avoids any prescribed value on a punctured neighbourhood of the point.
 * `TauCeti.fderiv_fderiv_comp_apply`: the second-order chain rule for `C²` maps.
-* `TauCeti.fderiv_fderiv_comp_homothety_apply`: precomposing with a homothety of ratio `r`
-  multiplies the second derivative by `r²`.
+* `TauCeti.contDiff_homothety`: a homothety is smooth.
+* `TauCeti.fderiv_comp_homothety`, `TauCeti.fderiv_fderiv_comp_homothety`: the derivative and the
+  second derivative of `f ∘ AffineMap.homothety c r` at `x` are `r` and `r²` times those of `f` at
+  `AffineMap.homothety c r x`.
 * `TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero`: for `C²` maps, where the differential of
   the outer function vanishes, the second derivative of a composition is the pullback of the
   second derivative along the differential of the inner function.
@@ -195,23 +198,30 @@ theorem fderiv_fderiv_comp_apply_of_fderiv_eq_zero {f : E → G} {φ : F → E} 
       fderiv 𝕜 (fderiv 𝕜 f) (φ b) (fderiv 𝕜 φ b v) (fderiv 𝕜 φ b w) := by
   simp [fderiv_fderiv_comp_apply hf hφ, hc]
 
-/-- **The second derivative under a homothety.** Precomposing a map that is `C²` at
-`AffineMap.homothety c r x` with the homothety of ratio `r` about `c` multiplies its second
-derivative at `x` by `r²`. -/
-theorem fderiv_fderiv_comp_homothety_apply {f : E → G} (c : E) (r : 𝕜) {x : E}
-    (hf : ContDiffAt 𝕜 2 f (AffineMap.homothety c r x)) (v w : E) :
-    fderiv 𝕜 (fderiv 𝕜 (f ∘ AffineMap.homothety c r)) x v w =
-      r ^ 2 • fderiv 𝕜 (fderiv 𝕜 f) (AffineMap.homothety c r x) v w := by
-  have hh : ⇑(AffineMap.homothety c r) = fun y ↦ r • (y - c) + c := by
-    funext y
-    simp [AffineMap.homothety_apply]
-  -- The homothety has constant derivative `r • id`, hence vanishing second derivative.
-  have hd : fderiv 𝕜 (AffineMap.homothety c r) = fun _ ↦ r • ContinuousLinearMap.id 𝕜 E := by
-    rw [hh]
-    funext y
-    exact ((((hasFDerivAt_id y).sub_const c).const_smul r).add_const c).fderiv
-  rw [fderiv_fderiv_comp_apply hf (by rw [hh]; fun_prop), hd, fderiv_fun_const]
-  simp [pow_two, smul_smul]
+/-- A homothety is smooth. -/
+theorem contDiff_homothety (c : E) (r : 𝕜) {n : WithTop ℕ∞} :
+    ContDiff 𝕜 n (AffineMap.homothety c r) :=
+  (⟨AffineMap.homothety c r, AffineMap.homothety_continuous c r⟩ : E →ᴬ[𝕜] E).contDiff
+
+/-- **The derivative under a homothety.** The derivative of `f ∘ AffineMap.homothety c r` at `x`
+is `r` times the derivative of `f` at `AffineMap.homothety c r x`. No differentiability of `f` is
+needed: for `r ≠ 0` the homothety is invertible, and for `r = 0` both sides vanish. -/
+theorem fderiv_comp_homothety (f : E → F) (c : E) (r : 𝕜) (x : E) :
+    fderiv 𝕜 (f ∘ AffineMap.homothety c r) x = r • fderiv 𝕜 f (AffineMap.homothety c r x) := by
+  simp only [AffineMap.coe_homothety, vsub_eq_sub, vadd_eq_add, Function.comp_def]
+  rw [fderiv_comp_sub (f := fun z ↦ f (r • z + c)),
+    fderiv_comp_smul (f := fun z ↦ f (z + c)), fderiv_comp_add_right]
+
+/-- **The second derivative under a homothety.** The second derivative of
+`f ∘ AffineMap.homothety c r` at `x` is `r²` times the second derivative of `f` at
+`AffineMap.homothety c r x`. No differentiability of `f` is needed. -/
+theorem fderiv_fderiv_comp_homothety (f : E → G) (c : E) (r : 𝕜) (x : E) :
+    fderiv 𝕜 (fderiv 𝕜 (f ∘ AffineMap.homothety c r)) x =
+      r ^ 2 • fderiv 𝕜 (fderiv 𝕜 f) (AffineMap.homothety c r x) := by
+  have h : fderiv 𝕜 (f ∘ AffineMap.homothety c r) = r • (fderiv 𝕜 f ∘ AffineMap.homothety c r) :=
+    funext (fderiv_comp_homothety f c r)
+  rw [h, fderiv_const_smul_field (𝕜 := 𝕜) r (f := fderiv 𝕜 f ∘ AffineMap.homothety c r),
+    Pi.smul_apply, fderiv_comp_homothety, smul_smul, pow_two]
 
 /-- The second derivative of the restriction `y ↦ f (a, y)` of a `C²` map on a product to a fibre
 is the second derivative of `f` evaluated on fibre directions. -/

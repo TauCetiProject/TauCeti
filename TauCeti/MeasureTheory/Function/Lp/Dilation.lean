@@ -39,8 +39,11 @@ the factor `|r ^ n|^(-1 / p)`. The codomain only needs a continuous extended nor
   `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
 * `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity
   for the `Lᵖ` seminorms on `e ⁻¹' s` and on `s`.
-* `MeasureTheory.Measure.eLpNorm_comp_homothety_restrict_preimage`: the identity for a homothety,
-  on the preimage of a set.
+* `MeasureTheory.Measure.eLpNorm_comp_homothety` and
+  `MeasureTheory.Measure.eLpNorm_comp_homothety_restrict_preimage`: the same identities for a
+  homothety.
+* `MeasureTheory.Measure.eLpNorm_comp_homothety_restrict_le`: the resulting bound for a
+  homothety on a set that it maps into itself.
 -/
 
 public section
@@ -91,16 +94,23 @@ theorem eLpNorm_comp_homothety_restrict_preimage (u : E → G) (x : E) {r : ℝ}
     (p : ℝ≥0∞) {s : Set E} :
     eLpNorm (u ∘ AffineMap.homothety x r) p (μ.restrict (AffineMap.homothety x r ⁻¹' s)) =
       ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| ^ (1 / p).toReal * eLpNorm u p (μ.restrict s) := by
-  have he : MeasurableEmbedding (AffineMap.homothety x r) := by
-    have h : ⇑(AffineMap.homothety x r) = (Homeomorph.subRight x).trans
-        ((Homeomorph.smulOfNeZero r hr).trans (Homeomorph.addRight x)) := by
-      funext y
-      simp [AffineMap.homothety_apply]
-    rw [h]
-    exact Homeomorph.measurableEmbedding _
+  have he : MeasurableEmbedding (AffineMap.homothety x r) :=
+    (AffineEquiv.homothetyUnitsMulHom x (Units.mk0 r hr)).toContinuousAffineEquiv.toHomeomorph
+      |>.measurableEmbedding
   rw [← he.eLpNorm_map_measure, ← he.restrict_map, map_addHaar_homothety μ x hr, restrict_smul,
     eLpNorm_smul_measure_of_ne_zero
       (ENNReal.ofReal_pos.2 (abs_pos.2 (inv_ne_zero (pow_ne_zero _ hr)))).ne', smul_eq_mul]
+
+/-- **Homothety contraction of the `Lᵖ` seminorm on an invariant set:** if the homothety of ratio
+`r ≠ 0` about `x` maps `s` into itself, then composing with it multiplies the `Lᵖ` seminorm on `s`,
+against an additive Haar measure, by at most `|r ^ n|^(-1 / p)`, where `n` is the dimension of
+`E`. For instance `s` may be a ball centred at `x` and `0 < |r| ≤ 1`. -/
+theorem eLpNorm_comp_homothety_restrict_le (u : E → G) (x : E) {r : ℝ} (hr : r ≠ 0)
+    (p : ℝ≥0∞) {s : Set E} (hs : Set.MapsTo (AffineMap.homothety x r) s s) :
+    eLpNorm (u ∘ AffineMap.homothety x r) p (μ.restrict s) ≤
+      ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| ^ (1 / p).toReal * eLpNorm u p (μ.restrict s) := by
+  rw [← eLpNorm_comp_homothety_restrict_preimage μ u x hr p]
+  exact eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl)
 
 /-- **Linear change of variables in the `Lᵖ` seminorm:** composing with a linear automorphism `e`
 multiplies the `Lᵖ` seminorm against an additive Haar measure by `|det e|^(-1 / p)`. The exponent
@@ -109,6 +119,14 @@ theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p 
     eLpNorm (u ∘ e) p μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
       eLpNorm u p μ := by
   simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
+
+/-- **Homothety change of variables in the `Lᵖ` seminorm:** composing with the homothety of ratio
+`r ≠ 0` about `x` multiplies the `Lᵖ` seminorm against an additive Haar measure by
+`|r ^ n|^(-1 / p)`, where `n` is the dimension of `E`. -/
+theorem eLpNorm_comp_homothety (u : E → G) (x : E) {r : ℝ} (hr : r ≠ 0) (p : ℝ≥0∞) :
+    eLpNorm (u ∘ AffineMap.homothety x r) p μ =
+      ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| ^ (1 / p).toReal * eLpNorm u p μ := by
+  simpa using eLpNorm_comp_homothety_restrict_preimage μ u x hr p (s := Set.univ)
 
 variable {μ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
   {r s : ℝ}
