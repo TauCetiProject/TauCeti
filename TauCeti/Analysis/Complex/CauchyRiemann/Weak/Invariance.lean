@@ -25,8 +25,11 @@ For a holomorphic map `φ` with nonvanishing derivative `φ' = a + b i`, the wea
 Hence `∂ₛ(u ∘ φ) + J ∂ₜ(u ∘ φ) = a (D 1 + J D i) + b (D i - J D 1)`, and when `J² = -1` the
 second bracket is `-J η` (`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`). The
 pulled back map solves the equation with the same field `J ∘ φ` and the inhomogeneous term
-`a η(φ z, x) - b J(φ z, x) η(φ z, x)`. Since `η` enters as the coordinate form of `2ν(∂ₛ)`, this
-is the coordinate form of `2ν(dφ ∂ₛ)`; for `η = 0` the equation is unchanged, and for real
+`a η(φ z, x) - b J(φ z, x) η(φ z, x)`. In invariant form the equation says that the
+`J`-antilinear part `½ (du + J du j)` of `du` is a given `J`-antilinear one-form `ν`
+(McDuff–Salamon, Section 3.1), and since `j ∂ₛ = ∂ₜ`, the term `η` is the coordinate form of
+`2ν(∂ₛ)`. The antilinear part of `d(u ∘ φ)` is `ν ∘ dφ` and `dφ ∂ₛ = a ∂ₛ + b ∂ₜ`, so the new
+term is the coordinate form of `2ν(dφ ∂ₛ)`. For `η = 0` the equation is unchanged, and for real
 dilations `z ↦ c z + b` the term is simply scaled by `c`, with no hypothesis on `J`.
 
 Almost-everywhere identities are transported along `φ` with
