@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Basic
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+
 /-!
 # Hilbert–Schmidt energy and approximation numbers
 
@@ -142,7 +144,7 @@ private theorem sum_range_singularValue_sq_le (T : E →L[𝕜] F) (b : HilbertB
       ((δ * ∑ n ∈ Finset.range k, (2 * T.singularValue n + 1) : ℝ≥0) : ℝ≥0∞) := by
   -- A compression `C` with `aₙ(T) ≤ aₙ(C) + δ` for `n < k` gives
   -- `aₙ(T)² ≤ aₙ(C)² + δ (2 aₙ(T) + 1)`, while `∑ₙ aₙ(C)² = E(C) ≤ E_b(T)`.
-  have := b.repr.toIsometryEquiv.completeSpace
+  have := b.completeSpace
   obtain ⟨V, _, hV⟩ := (TauCeti.HasMinMaxLowerBound.of_completeSpace (𝕜 := 𝕜) (E := E)
     (F := F)).exists_singularValue_le_compression T k (δ := δ) (by exact_mod_cast hδ)
   set C := (V.map (T : E →ₗ[𝕜] F)).orthogonalProjectionOnto.comp (T.comp V.subtypeL)

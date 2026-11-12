@@ -58,7 +58,7 @@ These are the norm estimates behind the Hilbert–Schmidt class of operators: it
 * `ContinuousLinearMap.hilbertSchmidtEnergy_smul` and `ContinuousLinearMap.hilbertSchmidtNorm_smul`:
   homogeneity, `E_b(c • T) = ‖c‖ₑ² E_b(T)` and `‖c • T‖_HS = ‖c‖ ‖T‖_HS`.
 * `ContinuousLinearMap.hilbertSchmidtNorm_adjoint`: `‖T†‖_HS = ‖T‖_HS`, for every operator.
-* `ContinuousLinearMap.hilbertSchmidtNorm_add_le`: `‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS` for operators of
+* `ContinuousLinearMap.hilbertSchmidtNorm_add_le`: `‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS` when `S` has
   finite energy.
 * `ContinuousLinearMap.norm_le_hilbertSchmidtNorm` and
   `ContinuousLinearMap.hilbertSchmidtNorm_comp_comp_le`: domination of the operator norm and the
@@ -296,27 +296,16 @@ Hilbert–Schmidt norm is then `0` by convention. -/
 theorem hilbertSchmidtNorm_add_le (S T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
     (hS : S.hilbertSchmidtEnergy b ≠ ∞) :
     (S + T).hilbertSchmidtNorm ≤ S.hilbertSchmidtNorm + T.hilbertSchmidtNorm := by
-  by_cases hT : T.hilbertSchmidtEnergy b = ∞
-  · have hST : (S + T).hilbertSchmidtEnergy b = ∞ := by
-      by_contra h
-      have h1 := rpow_hilbertSchmidtEnergy_add_le (S + T) (-S) b
-      rw [show S + T + -S = T by abel, hT, ← neg_one_smul 𝕜 S, hilbertSchmidtEnergy_smul] at h1
-      simp only [eNorm_neg, eNorm_one, one_pow, one_mul] at h1
-      have hfin : ∀ U : E →L[𝕜] F, U.hilbertSchmidtEnergy b ≠ ∞ →
-          U.hilbertSchmidtEnergy b ^ (1 / 2 : ℝ) ≠ ∞ := fun U hU ↦
-        ENNReal.rpow_ne_top_of_nonneg (by positivity) hU
-      exact (ENNReal.add_ne_top.2 ⟨hfin _ h, hfin _ hS⟩)
-        (top_le_iff.1 (by simpa [ENNReal.top_rpow_of_pos] using h1))
-    rw [hilbertSchmidtNorm_eq_sqrt _ b, hST]
-    simp only [ENNReal.toReal_top, Real.sqrt_zero]
-    exact add_nonneg (hilbertSchmidtNorm_nonneg _) (hilbertSchmidtNorm_nonneg _)
-  have hfin (U : E →L[𝕜] F) (hU : U.hilbertSchmidtEnergy b ≠ ∞) :
-      U.hilbertSchmidtEnergy b ^ (1 / 2 : ℝ) ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg (by positivity) hU
   simp only [hilbertSchmidtNorm_eq_toReal_rpow _ b]
-  rw [← ENNReal.toReal_add (hfin S hS) (hfin T hT)]
-  exact ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hfin S hS, hfin T hT⟩)
-    (rpow_hilbertSchmidtEnergy_add_le S T b)
+  have hS' : S.hilbertSchmidtEnergy b ^ (1 / 2 : ℝ) ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_nonneg (by positivity) hS
+  refine ENNReal.toReal_le_add_of_top_imp_top (rpow_hilbertSchmidtEnergy_add_le S T b)
+    (absurd · hS') (not_imp_not.1 fun hST ↦ ?_)
+  -- `T = (S + T) + (-S)`, so `T` has finite energy when `S + T` does.
+  have h1 := rpow_hilbertSchmidtEnergy_add_le (S + T) (-S) b
+  rw [add_neg_cancel_comm, ← neg_one_smul 𝕜 S, hilbertSchmidtEnergy_smul, eNorm_neg, eNorm_one,
+    one_pow, one_mul] at h1
+  exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hST, hS'⟩) h1
 
 omit [CompleteSpace F] in
 /-- **Hilbert–Schmidt domination of the operator norm.** An operator of finite energy satisfies

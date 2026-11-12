@@ -124,13 +124,13 @@ theorem image_completion_ball {f : E →SL[σ₁₂] F} (hf₁ : ‖f‖ ≤ 1)
     f.completion '' Metric.ball 0 r = Metric.ball 0 r :=
   image_ball_eq_ball (f.norm_completion.trans_le hf₁) (ball_subset_image_completion_ball hf) r
 
+omit [RingHomIsometric σ₁₂] in
 /-- Composing a bounded semilinear map with the embedding of its codomain into the completion does
 not change its operator norm. -/
 @[simp]
 theorem norm_toComplL_comp (f : E →SL[σ₁₂] F) :
     ‖(Completion.toComplL : F →L[𝕜₂] Completion F) ∘SL f‖ = ‖f‖ := by
-  rw [← Completion.toContinuousLinearMap_toComplₗᵢ,
-    LinearIsometry.norm_toContinuousLinearMap_comp]
+  simp only [norm_def, comp_apply, Completion.coe_toComplL, Completion.norm_coe]
 
 /-- Composing a bounded semilinear map with the embedding of its codomain into the completion does
 not change its operator `ℝ≥0∞`-norm. -/
