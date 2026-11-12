@@ -7,7 +7,10 @@ module
 
 public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
+import Mathlib.Algebra.FiniteSupport.Basic
+import Mathlib.Algebra.GroupWithZero.Indicator
 import Mathlib.RingTheory.RingHom.Surjective
+import TauCeti.RingTheory.Ideal.Quotient.Semilocal
 import TauCeti.RingTheory.Length
 
 /-!
@@ -169,6 +172,44 @@ theorem support_ord_subset {B : Type*} [CommRing B] (b : B) :
   intro m hm
   by_contra hbm
   exact hm (Ring.ord_of_isUnit ((IsLocalization.AtPrime.isUnit_to_map_iff _ _ b).2 hbm))
+
+section LocalLengthDecomposition
+
+variable {A B : Type*} [CommRing A] [IsDomain A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+  [CommRing B] [IsDomain B] [Algebra A B] [Module.Finite A B]
+
+/-- **The length of `B ⧸ bB` as a sum of local orders** (Fulton, *Intersection Theory*,
+Appendix A.3). Let `A` be a local Noetherian domain of dimension at most one and `B` a domain
+finite over `A`. For `b ≠ 0`,
+`length_A (B ⧸ bB) = Σ_m ord_{B_m}(b) [κ(B_m) : κ(A)]`, the sum over the maximal ideals `m` of `B`
+(only those containing `b` contribute), with the residue degree `[κ(B_m) : κ(A)]` read as the
+`A`-length of `κ(B_m)`. -/
+theorem length_quotient_span_singleton_eq_finsum_ord [IsLocalRing A] {b : B} (hb : b ≠ 0) :
+    Module.length A (B ⧸ Ideal.span {b}) =
+      ∑ᶠ m : MaximalSpectrum B, Ring.ord (Localization.AtPrime m.asIdeal) (algebraMap B _ b) *
+        Module.length A (IsLocalRing.ResidueField (Localization.AtPrime m.asIdeal)) := by
+  set G : MaximalSpectrum B → ℕ∞ := fun m ↦
+    Ring.ord (Localization.AtPrime m.asIdeal) (algebraMap B _ b) *
+      Module.length A (IsLocalRing.ResidueField (Localization.AtPrime m.asIdeal))
+  -- The maximal ideals of `B ⧸ bB` are those of `B` containing `b`.
+  let c : MaximalSpectrum (B ⧸ Ideal.span {b}) → MaximalSpectrum B := fun q ↦
+    ⟨q.asIdeal.comap (Ideal.Quotient.mk _),
+      Ideal.comap_isMaximal_of_surjective _ Ideal.Quotient.mk_surjective⟩
+  have hc : Function.Injective c := fun q q' h ↦ MaximalSpectrum.ext
+    (Ideal.comap_injective_of_surjective _ Ideal.Quotient.mk_surjective
+      (congrArg MaximalSpectrum.asIdeal h))
+  have hsupp : Function.support G ⊆ Set.range c := by
+    intro m hm
+    have hbm : b ∈ m.asIdeal := support_ord_subset b (Function.support_mul_subset_left _ _ hm)
+    obtain ⟨q, hq⟩ := exists_maximalSpectrum_comap_mk_eq hbm
+    exact ⟨q, MaximalSpectrum.ext hq⟩
+  have hG : ∑ᶠ m, G m = ∑ᶠ q, G (c q) := by
+    rw [← finsum_mem_range hc, finsum_mem_def, Set.indicator_eq_self.2 hsupp]
+  rw [length_quotient_span_singleton_eq_finsum hb, hG]
+  refine finsum_congr fun q ↦ ?_
+  rw [length_localization_quotient_span_singleton, Ideal.length_residueField_localization_quotient]
+
+end LocalLengthDecomposition
 
 section Localization
 

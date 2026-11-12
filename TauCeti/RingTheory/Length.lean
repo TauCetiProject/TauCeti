@@ -14,9 +14,11 @@ public import Mathlib.RingTheory.OrderOfVanishing.Basic
 -- no statement in this file mentions it.
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
+import Mathlib.RingTheory.LocalRing.Length
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 import Mathlib.RingTheory.Localization.Ideal
 import Mathlib.RingTheory.QuotSMulTop
+import Mathlib.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # General facts about the length of a module
@@ -332,6 +334,41 @@ theorem isArtinianRing_quotient_span_singleton (A : Type*) {B : Type*} [CommRing
   have : IsArtinian A (B ⧸ Ideal.span {b}) :=
     (isFiniteLength_iff_isNoetherian_isArtinian.1 (isFiniteLength_quotient_span_singleton hb)).2
   exact isArtinian_of_tower A inferInstance
+
+section LocalLengthDecomposition
+
+variable {A B : Type*} [CommRing A] [IsDomain A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+  [CommRing B] [IsDomain B] [Algebra A B] [Module.Finite A B]
+
+/-- **The length of `B ⧸ bB` is a sum of local lengths** (Fulton, *Intersection Theory*,
+Appendix A.3, second step). For a local Noetherian domain `A` of dimension at most one, a domain
+`B` finite over `A`, and `b ≠ 0`, write `C = B ⧸ bB`. Then
+`length_A C = Σ_q length_{C_q} C_q * length_A κ(C_q)`, summed over the maximal ideals `q` of `C`. -/
+theorem length_quotient_span_singleton_eq_finsum [IsLocalRing A] {b : B} (hb : b ≠ 0) :
+    Module.length A (B ⧸ Ideal.span {b}) =
+      ∑ᶠ q : MaximalSpectrum (B ⧸ Ideal.span {b}),
+        Module.length (Localization.AtPrime q.asIdeal) (Localization.AtPrime q.asIdeal) *
+          Module.length A (IsLocalRing.ResidueField (Localization.AtPrime q.asIdeal)) := by
+  set C := B ⧸ Ideal.span {b}
+  have : IsArtinianRing C := isArtinianRing_quotient_span_singleton A hb
+  have := Fintype.ofFinite (MaximalSpectrum C)
+  rw [((MaximalSpectrum.toPiLocalizationEquiv C).toLinearEquiv.restrictScalars A).length_eq,
+    Module.length_pi_of_fintype, finsum_eq_sum_of_fintype]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  -- The maximal ideal of `C_q` lies over the maximal ideal of `A`, since `C` is integral over `A`.
+  have : IsLocalHom (algebraMap A (Localization.AtPrime q.asIdeal)) := by
+    refine ((IsLocalRing.local_hom_tfae _).out 1 5).2 ?_
+    have hq : (IsLocalRing.maximalIdeal (Localization.AtPrime q.asIdeal)).comap
+        (algebraMap C (Localization.AtPrime q.asIdeal)) = q.asIdeal :=
+      Localization.AtPrime.under_maximalIdeal
+    rw [IsScalarTower.algebraMap_eq A C (Localization.AtPrime q.asIdeal), ← Ideal.comap_comap, hq]
+    exact IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A q.asIdeal)
+  rw [IsLocalRing.length_restrictScalars A (Localization.AtPrime q.asIdeal)
+    (Localization.AtPrime q.asIdeal), Module.length_eq_of_surjective
+      (M := IsLocalRing.ResidueField (Localization.AtPrime q.asIdeal))
+      (IsLocalRing.residue_surjective (R := A))]
+
+end LocalLengthDecomposition
 
 section LocalRing
 

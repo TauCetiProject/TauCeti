@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.Length.Determinant
 import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.Algebra.GroupWithZero.Indicator
 import Mathlib.Data.ENat.BigOperators
-import Mathlib.RingTheory.LocalRing.Length
 import TauCeti.RingTheory.Ideal.Quotient.Semilocal
 import TauCeti.RingTheory.Localization.FiniteDimensional
 import TauCeti.RingTheory.OrderOfVanishing
@@ -98,83 +97,6 @@ theorem ordFrac_norm_eq_coe_of_length_eq {b : B} (hb : b ≠ 0) {n : ℕ}
       exact ⟨b * a, ⟨a, mul_comm a b⟩, by rw [LinearEquiv.ofInjective_apply]; simp [φ, f]⟩
   rw [← (Submodule.Quotient.equiv _ _ e he).length_eq,
     (Submodule.Quotient.restrictScalarsEquiv A (Ideal.span {b})).length_eq, hn]
-
-section Local
-
-variable {A B : Type*} [CommRing A] [IsDomain A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
-  [CommRing B] [IsDomain B] [Algebra A B] [Module.Finite A B]
-
-/-- **The length of `B ⧸ bB` is a sum of local lengths** (Fulton, *Intersection Theory*,
-Appendix A.3, second step). For a local Noetherian domain `A` of dimension at most one, a domain
-`B` finite over `A`, and `b ≠ 0`, write `C = B ⧸ bB`. Then
-`length_A C = Σ_q length_{C_q} C_q * length_A κ(C_q)`, summed over the maximal ideals `q` of `C`. -/
-theorem length_quotient_span_singleton_eq_finsum [IsLocalRing A] {b : B} (hb : b ≠ 0) :
-    Module.length A (B ⧸ Ideal.span {b}) =
-      ∑ᶠ q : MaximalSpectrum (B ⧸ Ideal.span {b}),
-        Module.length (Localization.AtPrime q.asIdeal) (Localization.AtPrime q.asIdeal) *
-          Module.length A (IsLocalRing.ResidueField (Localization.AtPrime q.asIdeal)) := by
-  set C := B ⧸ Ideal.span {b}
-  have : IsArtinianRing C := isArtinianRing_quotient_span_singleton A hb
-  have := Fintype.ofFinite (MaximalSpectrum C)
-  rw [((MaximalSpectrum.toPiLocalizationEquiv C).toLinearEquiv.restrictScalars A).length_eq,
-    Module.length_pi_of_fintype, finsum_eq_sum_of_fintype]
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
-  -- The maximal ideal of `C_q` lies over the maximal ideal of `A`, since `C` is integral over `A`.
-  have : IsLocalHom (algebraMap A (Localization.AtPrime q.asIdeal)) := by
-    refine ((IsLocalRing.local_hom_tfae _).out 1 5).2 ?_
-    have hq : (IsLocalRing.maximalIdeal (Localization.AtPrime q.asIdeal)).comap
-        (algebraMap C (Localization.AtPrime q.asIdeal)) = q.asIdeal :=
-      Localization.AtPrime.under_maximalIdeal
-    rw [IsScalarTower.algebraMap_eq A C (Localization.AtPrime q.asIdeal), ← Ideal.comap_comap, hq]
-    exact IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A q.asIdeal)
-  rw [IsLocalRing.length_restrictScalars A (Localization.AtPrime q.asIdeal)
-    (Localization.AtPrime q.asIdeal), Module.length_eq_of_surjective
-      (M := IsLocalRing.ResidueField (Localization.AtPrime q.asIdeal))
-      (IsLocalRing.residue_surjective (R := A))]
-
-/-- **The length of `B ⧸ bB` as a sum of local orders** (Fulton, *Intersection Theory*,
-Appendix A.3). Let `A` be a local Noetherian domain of dimension at most one and `B` a domain
-finite over `A`. For `b ≠ 0`,
-`length_A (B ⧸ bB) = Σ_m ord_{B_m}(b) [κ(B_m) : κ(A)]`, the sum over the maximal ideals `m` of `B`
-(only those containing `b` contribute), with the residue degree `[κ(B_m) : κ(A)]` read as the
-`A`-length of `κ(B_m)`. -/
-theorem length_quotient_span_singleton_eq_finsum_ord [IsLocalRing A] {b : B} (hb : b ≠ 0) :
-    Module.length A (B ⧸ Ideal.span {b}) =
-      ∑ᶠ m : MaximalSpectrum B, Ring.ord (Localization.AtPrime m.asIdeal) (algebraMap B _ b) *
-        Module.length A (IsLocalRing.ResidueField (Localization.AtPrime m.asIdeal)) := by
-  set G : MaximalSpectrum B → ℕ∞ := fun m ↦
-    Ring.ord (Localization.AtPrime m.asIdeal) (algebraMap B _ b) *
-      Module.length A (IsLocalRing.ResidueField (Localization.AtPrime m.asIdeal))
-  -- The maximal ideals of `B ⧸ bB` are those of `B` containing `b`.
-  let c : MaximalSpectrum (B ⧸ Ideal.span {b}) → MaximalSpectrum B := fun q ↦
-    ⟨q.asIdeal.comap (Ideal.Quotient.mk _),
-      Ideal.comap_isMaximal_of_surjective _ Ideal.Quotient.mk_surjective⟩
-  have hc : Function.Injective c := fun q q' h ↦ MaximalSpectrum.ext
-    (Ideal.comap_injective_of_surjective _ Ideal.Quotient.mk_surjective
-      (congrArg MaximalSpectrum.asIdeal h))
-  have hsupp : Function.support G ⊆ Set.range c := by
-    intro m hm
-    have hbm : b ∈ m.asIdeal := support_ord_subset b (Function.support_mul_subset_left _ _ hm)
-    obtain ⟨q, hq⟩ := exists_maximalSpectrum_comap_mk_eq hbm
-    exact ⟨q, MaximalSpectrum.ext hq⟩
-  have hG : ∑ᶠ m, G m = ∑ᶠ q, G (c q) := by
-    rw [← finsum_mem_range hc, finsum_mem_def, Set.indicator_eq_self.2 hsupp]
-  rw [length_quotient_span_singleton_eq_finsum hb, hG]
-  refine finsum_congr fun q ↦ ?_
-  rw [length_localization_quotient_span_singleton, Ideal.length_residueField_localization_quotient]
-
-end Local
-
-/-- For a domain `B` finite over a Noetherian domain `A` of dimension at most one, a nonzero
-`b : B` lies in only finitely many maximal ideals of `B`. -/
-theorem finite_setOf_mem_maximalSpectrum (A : Type*) {B : Type*} [CommRing A] [IsDomain A]
-    [IsNoetherianRing A] [Ring.KrullDimLE 1 A] [CommRing B] [IsDomain B] [Algebra A B]
-    [Module.Finite A B] {b : B} (hb : b ≠ 0) :
-    {m : MaximalSpectrum B | b ∈ m.asIdeal}.Finite := by
-  have := isArtinianRing_quotient_span_singleton A hb
-  have h := ((Ideal.span {b}).finite_setOfPred_isMaximal_and_le).preimage
-      (f := MaximalSpectrum.asIdeal) (fun _ _ _ _ h ↦ MaximalSpectrum.ext h)
-  exact h.subset fun m hm ↦ ⟨m.isMaximal, (Ideal.span_singleton_le_iff_mem _).2 hm⟩
 
 section Fraction
 
