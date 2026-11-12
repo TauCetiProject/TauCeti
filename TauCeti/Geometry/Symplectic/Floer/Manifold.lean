@@ -1194,15 +1194,15 @@ theorem hamiltonianCurvature_perturbationPullback_eq_deriv_mul (ω : SmoothTwoFo
     (hUo : IsOpen U)
     (hs : ∀ w ∈ U, perturbationPullback φ Ks Kt stdComplexLineReal w = 0)
     (ht : ∀ w ∈ U, perturbationPullback φ Ks Kt stdComplexLineImag w = fun x ↦ P w.1 * Hφ w.2 x)
-    (hP : Differentiable ℝ P) (hH : ∀ x, Differentiable ℝ fun t ↦ Hφ t x) {w : ℝ × ℝ}
-    (hw : w ∈ U) (x : M) :
+    {w : ℝ × ℝ} (hw : w ∈ U) {x : M} (hP : DifferentiableAt ℝ P w.1)
+    (hH : DifferentiableAt ℝ (fun t ↦ Hφ t x) w.2) :
     ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
         (perturbationPullback φ Ks Kt stdComplexLineImag) w x =
       deriv P w.1 * Hφ w.2 x := by
   have hev : ∀ᶠ w' in 𝓝 w, w' ∈ U := hUo.mem_nhds hw
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0)
     (Kt' := fun w y ↦ P w.1 * Hφ w.2 y) (hev.mono hs) (hev.mono ht)]
-  exact ω.hamiltonianCurvature_continuation (hP _) (hH x _)
+  exact ω.hamiltonianCurvature_continuation hP hH
 
 /-- Along a map `u` continuous on a set containing `φ(U)`, the curvature, in the coordinates of
 `φ`, of a datum whose pullback along `φ` is `P(s) H(t) dt` on an open set `U` is continuous
@@ -1217,9 +1217,9 @@ private theorem continuousOn_hamiltonianCurvature_perturbationPullback (ω : Smo
   (((hP.continuous_deriv le_rfl).comp continuous_fst).continuousOn.mul
     (hH.continuous.comp_continuousOn (continuousOn_snd.prodMk
       (hu.comp hφ.continuousOn hUV)))).congr fun _ hw ↦
-    ω.hamiltonianCurvature_perturbationPullback_eq_deriv_mul hUo hs ht
-      (hP.differentiable one_ne_zero)
-      (fun x ↦ (hH.curry_left (y := x)).contDiff.differentiable one_ne_zero) hw _
+    ω.hamiltonianCurvature_perturbationPullback_eq_deriv_mul hUo hs ht hw
+      (hP.differentiable one_ne_zero _)
+      ((hH.curry_left (y := _)).contDiff.differentiable one_ne_zero _)
 
 /-- **The curvature over the image of a rectangle is integrable.** Let `K` be a datum whose
 pullback along a `C²` orientation-preserving change of coordinates `φ` is the continuation datum
