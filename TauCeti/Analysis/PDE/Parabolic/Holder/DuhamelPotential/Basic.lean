@@ -24,11 +24,12 @@ This is the value component of the classical inhomogeneous heat solution operato
 Hölder regularity of the forcing controls the value's parabolic seminorm; time regularity is
 not needed for that estimate.
 
-`heatDuhamelPotentialFDerivL` is the gradient component, for complete codomains. It sends bounded
-continuous forcing on `E × [0,T]` to the spatial gradient `D w` of its Duhamel potential `w`, as a
-bounded continuous field on the slab, with operator norm at most `C √T` for a constant `C`
-independent of `T`. Its continuity is `TauCeti.continuousOn_fderiv_heatDuhamelPotential`; no
-Hölder regularity of the forcing is needed. It is the spatial derivative of the Duhamel potential
+`heatDuhamelPotentialFDerivL` is the gradient component. It sends bounded continuous forcing on
+`E × [0,T]` to the spatial gradient `D w` of its Duhamel potential `w`, as a bounded continuous
+field on the slab, with operator norm at most `C √T` for a constant `C` independent of `T`. Its
+continuity is `TauCeti.continuousOn_fderiv_heatDuhamelPotential`; no Hölder regularity of the
+forcing is needed, and no completeness of the codomain (for incomplete codomains the potential,
+hence the operator, is zero). It is the spatial derivative of the Duhamel potential
 (`hasFDerivAt_heatDuhamelPotentialFDerivL`); for Hölder forcing it is therefore the spatial
 derivative of the value field (`hasFDerivAt_heatDuhamelPotentialHolderL`), which is the gradient
 identity required of a map in the order-two space `ParabolicC2HolderSpace`.
@@ -218,14 +219,11 @@ theorem norm_heatDuhamelPotentialHolderL_le (hα : 0 < α) (hα₂ : α ≤ 2) :
 
 section Gradient
 
-variable [CompleteSpace F]
-
 /-- A local shortcut for bounded gradient fields, keeping instance search shallow. -/
 local instance : NormedAddCommGroup (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
 /-- A local shortcut for scalar operations on bounded gradient fields. -/
 local instance : NormedSpace ℝ (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
 
-omit [CompleteSpace F] in
 /-- At every nonnegative time the Duhamel potential is differentiable in space. -/
 private theorem differentiable_potential (f : slab (E := E) 0 T →ᵇ F) {t : ℝ} (ht : 0 ≤ t) :
     Differentiable ℝ (heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s) t) := by
@@ -566,6 +564,17 @@ private theorem hasFDerivAt_fderiv (hα₀ : 0 < α) (f : HolderSpace α (slab (
     (ae_of_all _ fun s => holderWith_forcing f s) hα₀ ht
   exact ((h.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num) x).hasFDerivAt
 
+/-- The constant of the operator-norm bound, depending only on `α`, `E` and `F`. -/
+private def duhamelConstant (hα₀ : 0 < α) (hα₁ : α < 1) : ℝ :=
+  2 + gradientConstant (E := E) (F := F) +
+    2 * (‖traceL (E := E) (F := F)‖ + 1) * (hessianConstant (E := E) (F := F) hα₀ hα₁ : ℝ)
+
+private theorem duhamelConstant_nonneg (hα₀ : 0 < α) (hα₁ : α < 1) :
+    0 ≤ duhamelConstant (E := E) (F := F) hα₀ hα₁ := by
+  have := gradientConstant_nonneg (E := E) (F := F)
+  unfold duhamelConstant
+  positivity
+
 variable [CompleteSpace F]
 
 /-- A local shortcut for bounded gradient fields, keeping instance search shallow. -/
@@ -606,17 +615,6 @@ private theorem potentialTwo_apply (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 
     potentialTwo hα₀ hα₁ hT f p =
       heatDuhamelPotentialHolderL hα₀ (hα₁.trans one_lt_two).le f p := by
   rw [potentialTwo, ParabolicC2HolderSpace.mk_apply, HolderSpace.toBoundedContinuousFunction_apply]
-
-/-- The constant of the operator-norm bound, depending only on `α`, `E` and `F`. -/
-private def duhamelConstant (hα₀ : 0 < α) (hα₁ : α < 1) : ℝ :=
-  2 + gradientConstant (E := E) (F := F) +
-    2 * (‖traceL (E := E) (F := F)‖ + 1) * (hessianConstant (E := E) (F := F) hα₀ hα₁ : ℝ)
-
-private theorem duhamelConstant_nonneg (hα₀ : 0 < α) (hα₁ : α < 1) :
-    0 ≤ duhamelConstant (E := E) (F := F) hα₀ hα₁ := by
-  have := gradientConstant_nonneg (E := E) (F := F)
-  unfold duhamelConstant
-  positivity
 
 private theorem norm_potentialTwo_le (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
     (f : HolderSpace α (slab (E := E) 0 T) F) :

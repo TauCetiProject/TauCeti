@@ -392,11 +392,15 @@ theorem intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith
 /-- **The first derivative of the Duhamel potential.** For `f` jointly measurable and essentially
 bounded on `(0, t) × E`, the derivatives of `w(t, ·)` of order at most one are computed under
 the time integral: `D^k w(t, x) = ∫₀ᵗ D^k (K_{t-s} ⋆ f(s, ·))(x) ds`. -/
-theorem iteratedFDeriv_heatDuhamelPotential [CompleteSpace F]
-    (hf : StronglyMeasurable (Function.uncurry f))
+theorem iteratedFDeriv_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncurry f))
     (hfM : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) (ht : 0 < t) {k : ℕ} (hk : k ≤ 1) :
     iteratedFDeriv ℝ k (heatDuhamelPotential f t) =
       fun x => ∫ s in 0..t, iteratedFDeriv ℝ k (heatKernel (t - s) ⋆ f s) x := by
+  by_cases hF : CompleteSpace F
+  swap
+  · rw [heatDuhamelPotential_eq_zero_of_not_completeSpace hF]
+    funext x
+    simp [convolution_eq_zero_of_not_completeSpace hF]
   obtain ⟨bound, hb, hub⟩ := exists_bounds_one hfM ht
   rw [heatDuhamelPotential_eq_fun]
   exact iteratedFDeriv_intervalIntegral (ae_contDiff_heatKernel_convolution hfM ht 1)
@@ -458,7 +462,7 @@ theorem contDiff_heatDuhamelPotential_of_holderWith
 /-- **The gradient bound for the Duhamel potential.** There is a constant `C`, depending only on
 the dimension, such that `‖D w(t, x)‖ ≤ C M √t` whenever `f` is jointly measurable and
 `‖f(s, y)‖ ≤ M` for almost every `y`, for almost every `0 < s < t`. -/
-theorem exists_norm_fderiv_heatDuhamelPotential_le [CompleteSpace F] :
+theorem exists_norm_fderiv_heatDuhamelPotential_le :
     ∃ C, ∀ {f : ℝ → E → F} {M t : ℝ}, StronglyMeasurable (Function.uncurry f) →
       (∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) → 0 < t → ∀ x,
         ‖fderiv ℝ (heatDuhamelPotential f t) x‖ ≤ C * M * √t := by
