@@ -190,7 +190,7 @@ theorem eq_zero_of_abs_le (h : IsShortestPair L v w) {a c : ℝ} (ha : |a| ≤ 1
         nlinarith
       · -- The triangle inequality is strict, since `a • v` and `c • w` are independent.
         have hray : ¬SameRay ℝ (a • v) (c • w) := fun hray ↦ by
-          obtain ⟨r₁, r₂, hr₁, hr₂, hr⟩ := hray.exists_pos (smul_ne_zero ha0 h.left_ne_zero)
+          obtain ⟨r₁, r₂, hr₁, _, hr⟩ := hray.exists_pos (smul_ne_zero ha0 h.left_ne_zero)
             (smul_ne_zero hc0 h.right_ne_zero)
           have := (LinearIndependent.pair_iff.1 h.linearIndependent) (r₁ * a) (-(r₂ * c)) (by
             rw [neg_smul, ← sub_eq_add_neg, mul_smul, mul_smul, hr, sub_self])
