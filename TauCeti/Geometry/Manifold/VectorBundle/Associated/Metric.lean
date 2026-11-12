@@ -68,7 +68,7 @@ private theorem contMDiff_innerSL :
       (fun b ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) b
         (innerForm (G := G) (P := P) (F := F) b)) := by
   intro x
-  rw [contMDiffAt_section]
+  rw [contMDiffAt_section_iff]
   let C : F →L[ℝ] F →L[ℝ] ℝ := innerSL ℝ
   have hc : ContMDiffAt IB 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ) n (fun _ : B ↦ C) x :=
     contMDiffAt_const
@@ -111,8 +111,8 @@ theorem _root_.ContMDiffWithinAt.inner_associatedBundle
     (hw : ContMDiffWithinAt IM (IB.prod 𝓘(ℝ, F)) n
       (fun m ↦ (⟨b m, w m⟩ : TotalSpace F (AssociatedBundle G P F))) s x) :
     ContMDiffWithinAt IM 𝓘(ℝ, 𝕜) n (fun m ↦ ⟪v m, w m⟫_𝕜) s x := by
-  obtain ⟨hb, hv'⟩ := (contMDiffWithinAt_totalSpace.mp hv)
-  have hw' := (contMDiffWithinAt_totalSpace.mp hw).2
+  obtain ⟨hb, hv'⟩ := (contMDiffWithinAt_totalSpace_iff.mp hv)
+  have hw' := (contMDiffWithinAt_totalSpace_iff.mp hw).2
   have hx := mem_baseSet_trivializationAt G P (b x)
   have hmem := hb.continuousWithinAt.preimage_mem_nhdsWithin
     ((trivializationAt G P (b x)).open_baseSet.mem_nhds hx)

@@ -565,7 +565,7 @@ theorem iteratedCoeff_one (x z : X) :
 /-- Evaluating a multilinear map on the iterate `δᵏ` sums it over the paths. -/
 @[simp]
 theorem lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
-    (f : MultilinearMap R (fun _ : Fin k => A) P) (x z : X) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin k => A) P) (x z : X) :
     PiTensorProduct.lift f (N.iteratedCoeff k x z) =
       ∑ r : Fin (k + 1) → X with r 0 = x ∧ r (Fin.last k) = z,
         f fun t => N.coeff (r t.castSucc) (r t.succ) := by
@@ -574,7 +574,7 @@ theorem lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
 /-- Summing multilinear maps evaluated on the iterates `δᵏ x` over the starting generators `x`
 sums over all the paths ending at `z`. -/
 theorem sum_lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
-    (f : X → MultilinearMap R (fun _ : Fin k => A) P) (z : X) :
+    (f : X → MultilinearMap (RingHom.id R) (fun _ : Fin k => A) P) (z : X) :
     ∑ x, PiTensorProduct.lift (f x) (N.iteratedCoeff k x z) =
       ∑ r : Fin (k + 1) → X with r (Fin.last k) = z,
         f (r 0) fun t => N.coeff (r t.castSucc) (r t.succ) := by
@@ -588,7 +588,7 @@ theorem sum_lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : �
 /-- The iterate `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`: evaluating a multilinear map on `δᵏ⁺¹ x` evaluates it on
 a first coefficient `coeff x y`, followed by `δᵏ y`. -/
 theorem lift_iteratedCoeff_succ {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
-    (f : MultilinearMap R (fun _ : Fin (k + 1) => A) P) (x z : X) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) => A) P) (x z : X) :
     PiTensorProduct.lift f (N.iteratedCoeff (k + 1) x z) =
       ∑ y, PiTensorProduct.lift (f.curryLeft (N.coeff x y)) (N.iteratedCoeff k y z) := by
   rw [sum_lift_iteratedCoeff, lift_iteratedCoeff, Finset.sum_filter, Finset.sum_filter,
