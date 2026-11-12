@@ -136,7 +136,7 @@ theorem contMDiffOn_succ_of_alongCurveWithin
   rw [Nat.cast_add, Nat.cast_one, contDiffWithinAt_succ_iff_hasFDerivWithinAt' (by simp)]
   have hbase : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
     (hγ t ht).continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx)
-  have hdeq := eventuallyEq_sectionCoord_alongCurveWithin cov γ V hs ht hx
+  have hdeq := eventuallyEq_sectionCoord_alongCurveWithin cov γ V hx
     ((hV t ht).of_le (by exact_mod_cast hn))
   refine ⟨{r | r ∈ s ∧ γ r ∈ e.baseSet ∧
     d r = alongCurveInChartWithin cov γ V s (γ t) r}, ?_, ?_, by simp, fun r ↦
