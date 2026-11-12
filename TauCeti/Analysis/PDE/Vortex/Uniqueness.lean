@@ -17,11 +17,11 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 
 In the coordinates of `TauCeti.Vortex.equation`, a field `x = (b₁, b₂, p, q)` has connection
 `a = i (b₁ ds + b₂ dt)` and section `α = 2 (p + i q)`. Let `x` and `y` be solutions of the plane
-vortex equation on the whole plane with `|α| → 1` at infinity, where the connection of `x` is
-continuous, the connection of `y` is differentiable and the sections of `y` are `C²`, and suppose
-that their sections differ by a nowhere-vanishing `C²` factor, `α_x = h α_y` (so the sections of
-`x` are `C²` too), while the zero set of `α_y` has empty interior. Then `x` is the phase gauge
-transform of `y` by a `C²` phase `f` with `h = exp (i f)`
+vortex equation on the whole plane with `|α| → 1` at infinity, where the connections of `x` and
+`y` are continuous and the sections of `y` are `C²`, and suppose that their sections differ by a
+nowhere-vanishing `C²` factor, `α_x = h α_y` (so the sections of `x` are `C²` too), while the zero
+set of `α_y` has empty interior. Then `x` is the phase gauge transform of `y` by a `C²` phase `f`
+with `h = exp (i f)`
 (`TauCeti.Vortex.exists_eq_phaseGauge_of_forall_section_eq_mul`).
 
 The argument is Taubes's. Away from the zeros of `α_y`, the scalar equations
@@ -172,16 +172,17 @@ theorem norm_eq_one_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (
     (Real.eq_one_of_pos_of_log_eq_zero (lt_of_le_of_ne (by positivity) (hh₀' z).symm) hw₀)
 
 /-- **Uniqueness of plane vortices with the same zeros, modulo gauge.** Let `x` and `y` be
-solutions of the vortex equation on the plane with `|α| → 1` at infinity, where the connection of
-`x` is continuous, the connection of `y` is differentiable and the sections of `y` are `C²`, whose
-sections satisfy `α_x = h α_y` for a nowhere-vanishing `C²` function `h` (so the sections of `x`
-are `C²` too, being the real and imaginary parts of `h α_y`), and suppose the zero set of `α_y`
-has empty interior. Then `h = exp (i f)` for a `C²` real phase `f`, and `x` is the phase gauge
-transform of `y` by `f`; in particular the connection of `x` is differentiable as well. -/
+solutions of the vortex equation on the plane with `|α| → 1` at infinity, where the connections of
+`x` and `y` are continuous and the sections of `y` are `C²`, whose sections satisfy `α_x = h α_y`
+for a nowhere-vanishing `C²` function `h` (so the sections of `x` are `C²` too, being the real and
+imaginary parts of `h α_y`), and suppose the zero set of `α_y` has empty interior. Then
+`h = exp (i f)` for a `C²` real phase `f`, and `x` is the phase gauge transform of `y` by `f`. The
+holomorphicity rows of the gauge transform involve the connection only through its values, so no
+differentiability of either connection is needed. -/
 theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
     {h : ℂ → ℂ}
     (hxb₁ : Continuous (fun w ↦ x w 0)) (hxb₂ : Continuous (fun w ↦ x w 1))
-    (hyb₁ : Differentiable ℝ (fun w ↦ y w 0)) (hyb₂ : Differentiable ℝ (fun w ↦ y w 1))
+    (hyb₁ : Continuous (fun w ↦ y w 0)) (hyb₂ : Continuous (fun w ↦ y w 1))
     (hyp : ContDiff ℝ 2 (fun w ↦ y w 2)) (hyq : ContDiff ℝ 2 (fun w ↦ y w 3))
     (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0)
     (hxlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
@@ -194,10 +195,7 @@ theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSp
     hxlim hylim hh hh₀ hα hdense
   obtain ⟨f, hf, hhf⟩ := exists_contDiff_eq_exp_ofReal_mul_I hh hnorm
   refine ⟨f, hf, hhf, ?_⟩
-  -- The gauge transform of `y` has the section of `x` and solves the vortex equation.
-  have hyd (z : ℂ) (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ y w i) z := by
-    fin_cases i
-    exacts [hyb₁ z, hyb₂ z, hyp.differentiable two_ne_zero z, hyq.differentiable two_ne_zero z]
+  -- The gauge transform of `y` has the section of `x` and satisfies the holomorphicity rows.
   have hsec (z : ℂ) : x z 2 = phaseGauge y f z 2 ∧ x z 3 = phaseGauge y f z 3 := by
     have h₂ := congrArg re (hα z)
     have h₃ := congrArg im (hα z)
@@ -210,11 +208,21 @@ theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSp
     (fun z ↦ ⟨by simp [hxsol z], by simp [hxsol z]⟩) (fun z ↦ ?_)
     (fun z ↦ (hsec z).1) (fun z ↦ (hsec z).2) ?_
   · simp only [phaseGauge_apply_zero]
-    exact hyb₁.continuous.sub (hfd.clm_apply continuous_const)
+    exact hyb₁.sub (hfd.clm_apply continuous_const)
   · simp only [phaseGauge_apply_one]
-    exact hyb₂.continuous.sub (hfd.clm_apply continuous_const)
-  · have hsol := (equation_phaseGauge_eq_zero_iff (hyd z) hf.contDiffAt).2 (hysol z)
-    exact ⟨by simp [hsol], by simp [hsol]⟩
+    exact hyb₂.sub (hfd.clm_apply continuous_const)
+  · -- These rows differentiate only the sections, which are `C²`, and not the connection.
+    have hf' := hf.differentiable two_ne_zero z
+    have hp := hyp.differentiable two_ne_zero z
+    have hq := hyq.differentiable two_ne_zero z
+    have h₁ : equation y z 1 = 0 := by simp [hysol z]
+    have h₂ : equation y z 2 = 0 := by simp [hysol z]
+    simp only [equation_apply_one, equation_apply_two] at h₁ h₂
+    simp [fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul, hp, hq, hf'.cos, hf'.sin,
+      fderiv_cos hf', fderiv_sin hf']
+    constructor
+    · linear_combination Real.cos (f z) * h₁ - Real.sin (f z) * h₂
+    · linear_combination Real.sin (f z) * h₁ + Real.cos (f z) * h₂
   · -- `α_x` and `α_y` have the same modulus, so they have the same zeros.
     refine hdense.mono fun z hz ↦ ?_
     have hsq : phaseGauge y f z 2 ^ 2 + phaseGauge y f z 3 ^ 2 = y z 2 ^ 2 + y z 3 ^ 2 := by
@@ -269,7 +277,7 @@ theorem existsUnique_framedGaugeGroup_smul_eq (hx : ContDiff ℝ ∞ x) (hy : Co
     rw [sectionValue_apply, sectionValue_apply] at this
     linear_combination this / 2
   obtain ⟨f, hf, hhf, hxy⟩ := exists_eq_phaseGauge_of_forall_section_eq_mul (hxi 0).continuous
-    (hxi 1).continuous (hd _ (hyi 0)) (hd _ (hyi 1)) (contDiff_infty.1 (hyi 2) 2)
+    (hxi 1).continuous (hyi 0).continuous (hyi 1).continuous (contDiff_infty.1 (hyi 2) 2)
     (contDiff_infty.1 (hyi 3) 2) hxsol hysol hxlim hylim (contDiff_infty.1 hh 2) hh₀ hα' hdense'
   -- The gauge `exp (i f)` is `h`, which is smooth and tends to one at infinity.
   have hcoe (w : ℂ) : ((Circle.exp (f w) : Circle) : ℂ) = h w := by
