@@ -28,7 +28,7 @@ gauge-fixed operator `L₀ = gaugeFixedOperator vacuumField` has constant coeffi
 tempered distributions it is a bijection `H^(s+1) → H^s` for every `s`
 (`TauCeti.Vortex.memSobolev_temperedVacuumOperator_iff`). For a `C¹` field `y ∈ H^s`, `s ≥ 1`,
 the classical first derivatives of `y` lie in `L²` and are its distributional derivatives
-(`TemperedDistribution.lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff`), so the
+(`TauCeti.lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff`), so the
 classical expression `L₀ y` is the tempered vacuum operator applied to `y`. Consequently, if
 `L₀ y ∈ H^s` then `y ∈ H^(s+1)` (`TauCeti.Vortex.mem_sobolevFields_add_one_of_gaugeFixedOperator`).
 
