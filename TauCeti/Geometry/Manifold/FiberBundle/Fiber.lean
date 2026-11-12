@@ -57,6 +57,14 @@ noncomputable def fiberChartedSpace (hn : 1 ≤ n) (b : B) :
   regularFiberChartedSpace hn (contMDiff_proj n F P IB IF)
     BoundarylessManifold.isInteriorPoint (isRegularValue_proj hn b)
 
+/-- The bundle-fibre atlas is the regular-fibre atlas of the projection. This equation
+allows reuse of the regular-fibre API without unfolding the bundle-fibre atlas. -/
+theorem fiberChartedSpace_eq_regularFiberChartedSpace (hn : 1 ≤ n) (b : B) :
+    fiberChartedSpace (F := F) (P := P) (IB := IB) (IF := IF) hn b =
+      regularFiberChartedSpace hn (contMDiff_proj n F P IB IF)
+        BoundarylessManifold.isInteriorPoint (isRegularValue_proj hn b) :=
+  (rfl)
+
 local notation "K" => 𝓘(ℝ, Fin (Module.finrank ℝ (EB × EF) - Module.finrank ℝ EB) → ℝ)
 
 /-- A fibre with the regular-fibre atlas of the bundle projection is a `C^n` manifold. -/
