@@ -39,7 +39,10 @@ side, and conversely.
 
 * `TauCeti.primesOver_maximalIdeal_eq_singleton`: `𝓂[L]` is the unique prime of `𝒪[L]`
   above `𝓂[K]`.
-* `TauCeti.inertiaDegree_eq_of_algEquiv`: residue degree is an isomorphism invariant.
+* `TauCeti.inertiaDegree_eq_of_algEquiv`, `TauCeti.ramificationIndex_eq_of_algEquiv`,
+  `TauCeti.wildRamificationExponent_eq_of_algEquiv`, and
+  `TauCeti.tameRamificationIndex_eq_of_algEquiv`: residue degree, ramification index, wild
+  ramification exponent, and tame index are invariant under `K`-algebra equivalence.
 * `TauCeti.inertiaDegree_eq_inertiaDeg`: the intrinsic residue degree agrees with
   `Ideal.inertiaDeg` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_mul_inertiaDegree`: the fundamental identity `e · f = [L : K]`.

@@ -43,8 +43,9 @@ filtration.
 * `TauCeti.IsTamelyRamified`, `TauCeti.IsWildlyRamified`: the residue characteristic does not
   divide, respectively divides, the ramification index.
 * `TauCeti.IsTotallyRamified`: the ramification index equals the degree, `e(L/K) = [L : K]`.
-* `TauCeti.tameRamificationIndex` and `TauCeti.wildRamificationExponent`: the factors
-  `e = ε * p ^ w`, where `p` is the residue characteristic and `p ∤ ε`. Here `w` is not the
+* `TauCeti.tameRamificationIndex`: the prime-to-`p` factor `ε` in `e = ε * p ^ w`, where `p`
+  is the residue characteristic and `p ∤ ε`.
+* `TauCeti.wildRamificationExponent`: the `p`-adic exponent `w` in this factorization, not the
   different exponent or Serre's wild exponent. In towers, tame indices multiply and wild
   ramification exponents add.
 
@@ -82,6 +83,14 @@ filtration.
   is nonzero in the residue field of `K`.
 * `TauCeti.isTamelyRamified_iff_isUnit_natCast`: `L/K` is tamely ramified exactly when `e(L/K)`
   is a unit in `𝒪[L]`.
+* `TauCeti.tameRamificationIndex_mul_pow_wildRamificationExponent`: `e = ε * p ^ w`.
+* `TauCeti.tameRamificationIndex_eq_and_wildRamificationExponent_eq_iff`: uniqueness of the
+  prime-to-`p` factor `ε` and the `p`-adic exponent `w`.
+* `TauCeti.wildRamificationExponent_eq_zero_iff` and
+  `TauCeti.tameRamificationIndex_eq_ramificationIndex_iff`: tameness is equivalent to `w = 0`
+  and to `ε = e`.
+* `TauCeti.wildRamificationExponent_tower` and `TauCeti.tameRamificationIndex_tower`: wild
+  ramification exponents add and tame indices multiply in a tower.
 
 ## Implementation notes
 
@@ -92,9 +101,10 @@ about it assumes compatibility, which makes the restricted valuation trivial on 
 `𝒪[K]` and hence a power of `v_K`. The multiplicativity theorem `ramificationIndex_tower` is the
 exception: it assumes compatibility only for the top step `M/L`, as it compares indices through
 the valuations of `L` and `M` and never uses a valuation of `K`. The tame tower results
-`isTamelyRamified_tower_iff` and `IsTamelyRamified.tower_bot` still require the compatible bottom
-step `L/K` and its residue field. The tame and wild parts also have unconditional defining
-formulas and factorization; positivity and their characterizations assume compatibility.
+`isTamelyRamified_tower_iff`, `IsTamelyRamified.tower_bot`, `wildRamificationExponent_tower`,
+and `tameRamificationIndex_tower` still require the compatible bottom step `L/K` and its residue
+field. The tame index and wild ramification exponent also have unconditional defining formulas
+and factorization; positivity and their characterizations assume compatibility.
 Finiteness of `L/K` is used by no statement in this file.
 
 ## References
@@ -711,12 +721,14 @@ theorem tameRamificationIndex_pos : 0 < tameRamificationIndex K L := by
   exact Nat.ordCompl_pos _ (ramificationIndex_pos (K := K) (L := L)).ne'
 
 /-- The residue characteristic does not divide the tame index. -/
+@[simp]
 theorem not_dvd_tameRamificationIndex : ¬ ringChar 𝓀[K] ∣ tameRamificationIndex K L := by
   rw [tameRamificationIndex_eq_ordCompl]
   exact Nat.not_dvd_ordCompl (CharP.prime_ringChar 𝓀[K])
     (ramificationIndex_pos (K := K) (L := L)).ne'
 
-/-- The tame and wild parts are uniquely determined by their prime-to-`p` factorization. -/
+/-- The prime-to-`p` factor and the `p`-adic exponent are uniquely determined by
+`e = ε * p ^ w` with `p ∤ ε`. -/
 theorem tameRamificationIndex_eq_and_wildRamificationExponent_eq_iff {ε w : ℕ} :
     tameRamificationIndex K L = ε ∧ wildRamificationExponent K L = w ↔
       ¬ ringChar 𝓀[K] ∣ ε ∧ ε * ringChar 𝓀[K] ^ w = ramificationIndex K L := by
@@ -734,9 +746,10 @@ theorem tameRamificationIndex_eq_and_wildRamificationExponent_eq_iff {ε w : ℕ
     exact (Nat.pow_right_injective (CharP.prime_ringChar 𝓀[K]).two_le)
       (Nat.eq_of_mul_eq_mul_left (ht ▸ tameRamificationIndex_pos K L) hpow)
 
-/-- A power of the residue characteristic divides `e` exactly up to the wild exponent. -/
+/-- A power of the residue characteristic divides `e` exactly up to the wild ramification
+exponent. -/
 @[simp]
-theorem pow_ringChar_dvd_ramificationIndex_iff {n : ℕ} :
+theorem ringChar_pow_dvd_ramificationIndex_iff {n : ℕ} :
     ringChar 𝓀[K] ^ n ∣ ramificationIndex K L ↔ n ≤ wildRamificationExponent K L := by
   rw [wildRamificationExponent_def]
   exact (CharP.prime_ringChar 𝓀[K]).pow_dvd_iff_le_factorization ramificationIndex_pos.ne'
