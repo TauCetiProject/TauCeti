@@ -322,6 +322,19 @@ end Seminorm
 
 section Topology
 
+/-- If `ϖ ∈ A₀` and some positive power `ϖ ^ (-n)` lies in `A₀`, then so does every `ϖ ^ (-m)`. -/
+private theorem coe_zpow_neg_mem_of_pos (hϖ : (ϖ : A) ∈ A₀) {n : ℤ} (hn : 0 < n)
+    (h : ((ϖ ^ (-n) : Aˣ) : A) ∈ A₀) (m : ℕ) : ((ϖ ^ (-(m : ℤ)) : Aˣ) : A) ∈ A₀ := by
+  have e : (ϖ ^ (-(n * m : ℤ)) : Aˣ) = (ϖ ^ (-n)) ^ m := by
+    rw [← zpow_natCast, ← zpow_mul]
+    congr 1
+    ring
+  have h2 : ((ϖ ^ (-(n * m : ℤ)) : Aˣ) : A) * 1 ∈ A₀ := by
+    rw [e, mul_one, Units.val_pow_eq_pow_val]
+    exact pow_mem h m
+  simpa using zpow_neg_mul_mem_of_le hϖ (x := 1) (m := (m : ℤ)) (n := n * m)
+    (by nlinarith [Int.natCast_nonneg m]) h2
+
 variable [TopologicalSpace A]
   (hb : (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True)
     (fun n ↦ {x | ((ϖ ^ (-(n : ℤ)) : Aˣ) : A) * x ∈ A₀}))
@@ -329,6 +342,13 @@ include hb
 
 private theorem mem_nhds_zero_of_hasBasis : (A₀ : Set A) ∈ 𝓝 (0 : A) := by
   simpa using hb.mem_of_mem (i := 0) trivial
+
+/-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero in an `R₀` space, then the
+closure of zero consists of the elements lying in every `ϖ ^ n A₀`. -/
+private theorem mem_closure_zero_iff_forall [R0Space A] {x : A} :
+    x ∈ closure ({0} : Set A) ↔ ∀ n : ℕ, ((ϖ ^ (-(n : ℤ)) : Aˣ) : A) * x ∈ A₀ := by
+  rw [R0Space.closure_singleton, hb.ker]
+  simp
 
 /-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero and multiplication is
 separately continuous, then every element of `A` is moved into `A₀` by some power of `ϖ`. -/
@@ -395,8 +415,7 @@ theorem tateGauge_eq_zero_iff [SeparatelyContinuousMul A] [R0Space A] (ha : 1 < 
     (hϖ : (ϖ : A) ∈ A₀) {x : A} :
     tateGauge A₀ ϖ a x = 0 ↔ x ∈ closure ({0} : Set A) := by
   rw [tateGauge_eq_zero_iff_forall hϖ (exists_zpow_mul_mem_of_hasBasis hb x) ha,
-    R0Space.closure_singleton, hb.ker]
-  simp
+    mem_closure_zero_iff_forall hb]
 
 /-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero and `ϖ ∈ A₀`, then the
 Tate gauge separates points exactly when `A` is Hausdorff. -/
@@ -417,16 +436,10 @@ theorem tateGauge_one [T1Space A] [Nontrivial A] (ha : 1 < a)
   have hnpos : 0 < n := by
     by_contra h
     exact absurd hn' (not_lt.2 (one_le_zpow₀ ha.le (by omega)))
-  have key (m : ℕ) : ((ϖ ^ (-(m : ℤ)) : Aˣ) : A) * 1 ∈ A₀ := by
-    have h1 : ((ϖ ^ (-n) : Aˣ) : A) ∈ A₀ := by simpa using hn
-    have h2 : ((ϖ ^ (-(n * m : ℤ)) : Aˣ) : A) ∈ A₀ := by
-      rw [show -(n * m : ℤ) = -n * m by ring, zpow_mul, zpow_natCast, Units.val_pow_eq_pow_val]
-      exact pow_mem h1 m
-    refine zpow_neg_mul_mem_of_le hϖ (n := n * m) (by nlinarith [Int.natCast_nonneg m]) ?_
-    simpa using h2
+  -- a gauge below one forces `1 ∈ closure {0} = {0}`, which is absurd
   have h1 : (1 : A) ∈ closure ({0} : Set A) := by
-    rw [R0Space.closure_singleton, hb.ker]
-    simpa using key
+    refine (mem_closure_zero_iff_forall hb).2 fun m ↦ ?_
+    simpa using coe_zpow_neg_mem_of_pos hϖ hnpos (by simpa using hn) m
   rw [closure_singleton] at h1
   exact one_ne_zero h1
 
