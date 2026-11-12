@@ -63,6 +63,7 @@ seminorms in the sense of Mathlib's `GroupSeminormClass`, and `map_mul_le_add`, 
   freeness.
 * `TauCeti.LyndonLength.isFree_zero_iff`: the zero length function is free only on the trivial
   group.
+* `TauCeti.LyndonLength.isRegular_zero`: the zero length function is regular.
 * `TauCeti.LyndonLength.IsFree.sq_ne_one`: a group with a free Lyndon length function has no
   elements of order two. In particular `TauCeti.LyndonLength.discrete` is not free on `ℤ/2`.
 * `TauCeti.LyndonLength.isFree_absLength`, `TauCeti.LyndonLength.isRegular_absLength`: the
@@ -329,6 +330,13 @@ theorem isFree_zero_iff : (0 : LyndonLength G Λ).IsFree ↔ Subsingleton G := b
   · rw [coe_eq_gromovProduct_iff]
     simp
   · exact absurd (Subsingleton.elim g 1) hg
+
+omit [IsOrderedAddMonoid Λ] in
+/-- The zero length function is regular. Together with `TauCeti.LyndonLength.isFree_zero_iff`, it
+is a regular Lyndon length function that is not free on any nontrivial group. -/
+@[simp]
+theorem isRegular_zero : (0 : LyndonLength G Λ).IsRegular := fun g f =>
+  ⟨1, g, f, by simp, by simp, by simp, by simp, by simp [gromovProduct]⟩
 
 variable (G) in
 /-- The length function on `G` that is `0` at the identity and `1` elsewhere. -/
