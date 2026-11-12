@@ -239,9 +239,9 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
     exists_lintegral_lintegral_enorm_inner_schrodingerPropagator_sub_le (r' := r') hq hpq hqr
   refine ⟨C, fun F G hF hG => ?_⟩
   calc _ ≤ ∫⁻ t, ‖∫ s in Set.Iio t, ⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ :=
-        enorm_integral_le_lintegral_enorm _
+        eNorm_integral_le_lintegral_eNorm _
     _ ≤ ∫⁻ t, ∫⁻ s in Set.Iio t, ‖⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ :=
-        lintegral_mono fun t ↦ enorm_integral_le_lintegral_enorm _
+        lintegral_mono fun t ↦ eNorm_integral_le_lintegral_eNorm _
     _ ≤ ∫⁻ t, ∫⁻ s, ‖⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ :=
         lintegral_mono fun t ↦ setLIntegral_le_lintegral _ _
     _ ≤ _ := hC F G hF hG
