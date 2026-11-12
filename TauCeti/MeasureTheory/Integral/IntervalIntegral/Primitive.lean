@@ -34,6 +34,12 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
+* `TauCeti.intervalIntegral.intervalIntegrable_of_integrableOn_Ioo`: a function integrable on
+  `(a, b)` is interval integrable between any two points of `[a, b]`.
+* `TauCeti.intervalIntegral.norm_intervalIntegral_le_setIntegral_norm` and
+  `TauCeti.intervalIntegral.norm_intervalIntegral_le_abs_intervalIntegral`: the integral between
+  two points of `[a, b]` is bounded by the `L¹(a, b)` norm, and by the integral of a function
+  dominating `‖f‖` almost everywhere on `(a, b)`.
 * `TauCeti.intervalIntegral.eLpNorm_primitive_le` and
   `TauCeti.intervalIntegral.eLpNorm_primitive_le_mul_eLpNorm`: on a bounded interval `(a, b)`,
   the primitive based at a point of `[a, b]` is bounded by the `L¹(a, b)` norm of `f`, so its
@@ -87,6 +93,37 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
   simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
 
+omit [NormedSpace ℝ E] in
+/-- A function integrable on the open interval `(a, b)` is interval integrable between any two
+points of `[a, b]`. -/
+theorem intervalIntegrable_of_integrableOn_Ioo (hf : IntegrableOn f (Ioo a b)) {s t : ℝ}
+    (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) : IntervalIntegrable f volume s t :=
+  ((intervalIntegrable_iff_integrableOn_Ioo_of_le (hs.1.trans hs.2)).2 hf).mono_set
+    (uIcc_subset_uIcc (Icc_subset_uIcc hs) (Icc_subset_uIcc ht))
+
+/-- The integral of `f` between two points of `[a, b]` is bounded by the `L¹(a, b)` norm of `f`. -/
+theorem norm_intervalIntegral_le_setIntegral_norm (hf : IntegrableOn f (Ioo a b)) {s t : ℝ}
+    (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖∫ x in s..t, f x‖ ≤ ∫ x in Ioo a b, ‖f x‖ := by
+  have hf' : IntegrableOn f (Icc a b) := by rwa [integrableOn_Icc_iff_integrableOn_Ioo]
+  calc ‖∫ x in s..t, f x‖ ≤ ∫ x in Ι s t, ‖f x‖ :=
+        _root_.intervalIntegral.norm_integral_le_integral_norm_uIoc
+    _ ≤ ∫ x in Icc a b, ‖f x‖ :=
+        setIntegral_mono_set hf'.norm (Eventually.of_forall fun _ ↦ norm_nonneg _)
+          (uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)).eventuallyLE
+    _ = ∫ x in Ioo a b, ‖f x‖ := integral_Icc_eq_integral_Ioo
+
+/-- If `‖f‖ ≤ g` almost everywhere on `(a, b)`, with `g` integrable there, then the integral of `f`
+between two points of `[a, b]` is bounded by the integral of `g` between them. -/
+theorem norm_intervalIntegral_le_abs_intervalIntegral {g : ℝ → ℝ}
+    (hg : IntegrableOn g (Ioo a b)) (hfg : ∀ᵐ x ∂volume.restrict (Ioo a b), ‖f x‖ ≤ g x)
+    {s t : ℝ} (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖∫ x in s..t, f x‖ ≤ |∫ x in s..t, g x| := by
+  rw [restrict_Ioo_eq_restrict_Icc] at hfg
+  exact _root_.intervalIntegral.norm_integral_le_abs_of_norm_le
+    (ae_restrict_of_ae_restrict_of_subset (uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)) hfg)
+    (intervalIntegrable_of_integrableOn_Ioo hg hs ht)
+
 /-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s` of a function integrable on
 `(a, b)`, based at a point `t₀` of `[a, b]`, is at most `(b - a) ^ (1 / p)` times the `L¹(a, b)`
 norm of `f`: the primitive is bounded by `∫ s in (a, b), ‖f s‖` at every point. -/
@@ -94,19 +131,10 @@ theorem eLpNorm_primitive_le {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Io
     (ht₀ : t₀ ∈ Icc a b) :
     eLpNorm (fun t ↦ ∫ s in t₀..t, f s) p (volume.restrict (Ioo a b)) ≤
       volume (Ioo a b) ^ p.toReal⁻¹ * eLpNorm f 1 (volume.restrict (Ioo a b)) := by
-  have hf' : IntegrableOn f (Icc a b) := by rwa [integrableOn_Icc_iff_integrableOn_Ioo]
   have hbound : ∀ᵐ t ∂volume.restrict (Ioo a b),
       ‖∫ s in t₀..t, f s‖ ≤ ∫ s in Ioo a b, ‖f s‖ := by
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-    -- The oriented interval between `t₀` and `t` lies in `[a, b]`.
-    have hsub : Ι t₀ t ⊆ Icc a b := uIoc_subset_uIcc.trans
-      (uIcc_subset_Icc ht₀ (Ioo_subset_Icc_self ht))
-    calc ‖∫ s in t₀..t, f s‖ ≤ ∫ s in Ι t₀ t, ‖f s‖ :=
-          _root_.intervalIntegral.norm_integral_le_integral_norm_uIoc
-      _ ≤ ∫ s in Icc a b, ‖f s‖ :=
-          setIntegral_mono_set hf'.norm (Eventually.of_forall fun _ ↦ norm_nonneg _)
-            hsub.eventuallyLE
-      _ = ∫ s in Ioo a b, ‖f s‖ := integral_Icc_eq_integral_Ioo
+    exact norm_intervalIntegral_le_setIntegral_norm hf ht₀ (Ioo_subset_Icc_self ht)
   have hm : AEStronglyMeasurable (fun t ↦ ∫ s in t₀..t, f s) (volume.restrict (Ioo a b)) :=
     ((continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).mono
       Ioo_subset_Icc_self).aestronglyMeasurable measurableSet_Ioo
