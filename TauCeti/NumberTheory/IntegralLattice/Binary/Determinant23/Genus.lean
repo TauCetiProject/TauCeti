@@ -49,7 +49,7 @@ the standard lattice in a sublattice of index `3` in each. Neighbors at a prime 
 
 ## Main results
 
-* `TauCeti.IntegralLattice.IsPosDef.nonempty_isometry_binaryDeterminant23_or`: a positive
+* `IsPosDef.nonempty_isometry_binaryDeterminant23Principal_or_binaryDeterminant23`: a positive
   definite even lattice of rank two and determinant `23` is isometric to `!![2, 1; 1, 12]` or to
   `!![4, 1; 1, 6]`.
 * `TauCeti.IntegralLattice.sameGenus_binaryDeterminant23_binaryDeterminant23Principal`: the two
@@ -132,43 +132,6 @@ theorem binaryDeterminant23Principal_primPart :
     binaryDeterminant23Principal_primPart]
   norm_num [BinaryQuadraticForm.discrim_def, discrim]
 
-/-- Its Gram determinant is 23. -/
-@[simp] theorem binaryDeterminant23Principal_determinant :
-    binaryDeterminant23Principal.determinant = 23 := by
-  rw [determinant_eq_gramDet _ binaryDeterminant23PrincipalBasis, gramDet_def,
-    gramMatrix_binaryDeterminant23PrincipalBasis]
-  norm_num [Matrix.det_fin_two]
-
-/-- The lattice `!![2, 1; 1, 12]` is even. -/
-theorem binaryDeterminant23Principal_isEven : binaryDeterminant23Principal.IsEven := by
-  rw [isEven_iff_basis _ binaryDeterminant23PrincipalBasis]
-  intro i
-  fin_cases i <;> simp [integralNorm_apply, ← gramMatrix_apply, Int.even_iff]
-
-/-- The bilinear form of `!![2, 1; 1, 12]` in coordinates. -/
-theorem binaryDeterminant23Principal_form_apply (x y : Fin 2 → ℚ) :
-    binaryDeterminant23Principal.form x y =
-      2 * x 0 * y 0 + x 0 * y 1 + x 1 * y 0 + 12 * x 1 * y 1 := by
-  rw [binaryDeterminant23Principal, form_ofGramMatrix_basisFun_apply]
-  simp [principal23Matrix, Fin.sum_univ_two]
-  ring
-
-/-- The lattice `!![2, 1; 1, 12]` is positive definite. -/
-theorem binaryDeterminant23Principal_isPosDef : binaryDeterminant23Principal.IsPosDef := by
-  rw [isPosDef_iff]
-  intro x hx
-  rw [binaryDeterminant23Principal_form_apply]
-  have hx' : x 0 ≠ 0 ∨ x 1 ≠ 0 := by
-    by_contra! h
-    apply hx
-    ext i
-    fin_cases i <;> simp [h]
-  rcases hx' with h | h
-  · have := sq_pos_of_ne_zero h
-    nlinarith [sq_nonneg (x 0 + x 1), sq_nonneg (x 1)]
-  · have := sq_pos_of_ne_zero h
-    nlinarith [sq_nonneg (x 0 + x 1), sq_nonneg (x 0)]
-
 /-- The first basis vector of `!![2, 1; 1, 12]` has norm two. -/
 theorem binaryDeterminant23Principal_integralNorm_basis_zero :
     binaryDeterminant23Principal.integralNorm (binaryDeterminant23PrincipalBasis 0) = 2 := by
@@ -186,33 +149,13 @@ instance : IsEmpty (Isometry binaryDeterminant23Principal binaryDeterminant23) :
 
 /-! ## Classification by reduction -/
 
-/-- The reduced forms `ax² + bxy + cy²` of discriminant `-92` with `a` and `b` even are
+/-- The reduced forms of discriminant `-92` with even leading coefficient are
 `2x² + 2xy + 12y²` and `4x² ± 2xy + 6y²`. -/
-private theorem eq_of_isReducedForm_of_discrim_eq {a b c : ℤ}
-    (hr : IsReducedForm ⟨a, b, c⟩) (hd : b ^ 2 - 4 * a * c = -92) (ha : Even a)
-    (hb : Even b) :
-    (a = 2 ∧ b = 2 ∧ c = 12) ∨ (a = 4 ∧ b = 2 ∧ c = 6) ∨ (a = 4 ∧ b = -2 ∧ c = 6) := by
-  obtain ⟨hba, hac, hsign⟩ := isReducedForm_iff.mp hr
-  dsimp only at hba hac hsign
-  have hbb := sq_le_sq' (neg_le_of_abs_le hba) (le_of_abs_le hba)
-  have ha0 : 0 ≤ a := (abs_nonneg b).trans hba
-  have haa := mul_le_mul_of_nonneg_left hac ha0
-  have ha5 : a ≤ 5 := by nlinarith
-  have hb1 : -a ≤ b := neg_le_of_abs_le hba
-  have hb2 : b ≤ a := le_of_abs_le hba
-  have hsign' : b ≠ -a ∨ 0 ≤ b := by
-    by_cases h : b = -a
-    · exact Or.inr (hsign (Or.inl (by rw [h, abs_neg, abs_of_nonneg ha0])))
-    · exact Or.inl h
-  rw [sq] at hd
-  clear hr hba hsign hbb haa
-  obtain ⟨k, rfl⟩ := ha
-  obtain ⟨m, rfl⟩ := hb
-  have hk0 : 0 ≤ k := by omega
-  have hk2 : k ≤ 2 := by omega
-  have hm0 : -2 ≤ m := by omega
-  have hm2 : m ≤ 2 := by omega
-  interval_cases k <;> interval_cases m <;> omega
+private theorem eq_of_mem_reducedForms_92 :
+    ∀ f ∈ reducedForms 92, f.a % 2 = 0 →
+      (f.a = 2 ∧ f.b = 2 ∧ f.c = 12) ∨
+      (f.a = 4 ∧ f.b = 2 ∧ f.c = 6) ∨ (f.a = 4 ∧ f.b = -2 ∧ f.c = 6) := by
+  decide +kernel
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] {L : IntegralLattice V}
 
@@ -232,15 +175,13 @@ private theorem IsPosDef.exists_binaryNormForm_eq_of_determinant_eq_23 (hL : L.I
   obtain ⟨b', hb'⟩ := L.exists_binaryNormForm_eq_smul b γ
   have hr : IsReducedForm (L.binaryNormForm b') := by
     simpa only [hb', SubMulAction.val_smul] using hγ
-  have hdisc := L.discrim_binaryNormForm b'
-  rw [hd, BinaryQuadraticForm.discrim_def, discrim] at hdisc
   have hea : Even (L.binaryNormForm b').a := by
     simpa only [binaryNormForm_a, gramMatrix_apply, ← integralNorm_apply] using
       (L.isEven_iff_basis b').mp he 0
-  have heb : Even (L.binaryNormForm b').b := by
-    rw [binaryNormForm_b]
-    exact even_two_mul _
-  rcases eq_of_isReducedForm_of_discrim_eq hr (by linear_combination hdisc) hea heb with
+  have hmem : L.binaryNormForm b' ∈ reducedForms 92 :=
+    (mem_reducedForms (by decide : 92 ≠ 0)).mpr
+      ⟨by rw [discrim_binaryNormForm, hd]; norm_num, hr⟩
+  rcases eq_of_mem_reducedForms_92 _ hmem (Int.even_iff.mp hea) with
     ⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩
   · exact ⟨b', Or.inl (BinaryQuadraticForm.ext ha hb hc)⟩
   · exact ⟨b', Or.inr (BinaryQuadraticForm.ext ha hb hc)⟩
@@ -253,8 +194,8 @@ private theorem IsPosDef.exists_binaryNormForm_eq_of_determinant_eq_23 (hL : L.I
 /-- **Classification of the even binary lattices of determinant 23.** A positive definite even
 lattice of rank two and determinant `23` is isometric to `!![2, 1; 1, 12]` or to
 `!![4, 1; 1, 6]`. -/
-theorem IsPosDef.nonempty_isometry_binaryDeterminant23_or (hL : L.IsPosDef) (he : L.IsEven)
-    (hn : finrank ℤ L = 2) (hd : L.determinant = 23) :
+theorem IsPosDef.nonempty_isometry_binaryDeterminant23Principal_or_binaryDeterminant23
+    (hL : L.IsPosDef) (he : L.IsEven) (hn : finrank ℤ L = 2) (hd : L.determinant = 23) :
     Nonempty (Isometry L binaryDeterminant23Principal) ∨
       Nonempty (Isometry L binaryDeterminant23) := by
   obtain ⟨b, hb | hb⟩ := hL.exists_binaryNormForm_eq_of_determinant_eq_23 he hn hd
@@ -284,7 +225,7 @@ private noncomputable def neighborBasis : Basis (Fin 2) ℚ (Fin 2 → ℚ) :=
     (by simp)
 
 private theorem neighborBasis_apply (i : Fin 2) : neighborBasis i = neighborVectors i := by
-  simp [neighborBasis, basisOfLinearIndependentOfCardEqFinrank']
+  exact congrFun (coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _) i
 
 /-- The lattice spanned by `(2/3, -1/3), (-1/3, -4/3)`, with Gram matrix `!![2, 1; 1, 12]`. -/
 private noncomputable def neighborLattice : IntegralLattice (Fin 2 → ℚ) :=
@@ -341,6 +282,22 @@ theorem sameGenus_binaryDeterminant23_binaryDeterminant23Principal :
   rw [gramMatrix_binaryDeterminant23PrincipalBasis]
   exact gramMatrix_ofGramMatrix _ _ _
 
+/-- Its Gram determinant is 23. -/
+@[simp] theorem binaryDeterminant23Principal_determinant :
+    binaryDeterminant23Principal.determinant = 23 :=
+  sameGenus_binaryDeterminant23_binaryDeterminant23Principal.determinant_eq.symm.trans
+    binaryDeterminant23_determinant
+
+/-- The lattice `!![2, 1; 1, 12]` is even. -/
+theorem binaryDeterminant23Principal_isEven : binaryDeterminant23Principal.IsEven :=
+  sameGenus_binaryDeterminant23_binaryDeterminant23Principal.isEven_iff.mp
+    binaryDeterminant23_isEven
+
+/-- The lattice `!![2, 1; 1, 12]` is positive definite. -/
+theorem binaryDeterminant23Principal_isPosDef : binaryDeterminant23Principal.IsPosDef :=
+  sameGenus_binaryDeterminant23_binaryDeterminant23Principal.isPosDef_iff.mp
+    binaryDeterminant23_isPosDef
+
 /-! ## Classes, proper classes and masses -/
 
 /-- **The genus of `!![4, 1; 1, 6]` consists of two classes**, those of `!![2, 1; 1, 12]` and
@@ -355,7 +312,8 @@ theorem genusClasses_binaryDeterminant23 :
     isometryClass_eq_isometryClass_iff]
   constructor
   · intro h
-    rcases (h.isPosDef_iff.mp binaryDeterminant23_isPosDef).nonempty_isometry_binaryDeterminant23_or
+    rcases IsPosDef.nonempty_isometry_binaryDeterminant23Principal_or_binaryDeterminant23
+      (h.isPosDef_iff.mp binaryDeterminant23_isPosDef)
       (h.isEven_iff.mp binaryDeterminant23_isEven)
       (h.finrank_eq.symm.trans (by rw [finrank_carrier, Module.finrank_fin_fun]))
       (h.determinant_eq.symm.trans binaryDeterminant23_determinant) with e | e
