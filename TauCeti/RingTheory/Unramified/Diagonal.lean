@@ -28,8 +28,9 @@ The complementary idempotent, Mathlib's `Algebra.FormallyUnramified.elem`, is ch
 the two properties defining it: it annihilates every `1 ⊗ s - s ⊗ 1` and multiplies to `1`
 (`TauCeti.Algebra.FormallyUnramified.eq_elem`). This makes it computable in examples, and shows
 that it is invariant under the swap of the two tensor factors. For the split algebra `κ → R` it is
-`∑ₖ eₖ ⊗ eₖ`, the indicator of the diagonal of `κ × κ`. It is also transported by algebra
-isomorphisms (`TauCeti.Algebra.FormallyUnramified.map_elem`) and commutes with base change: the
+`∑ₖ eₖ ⊗ eₖ`, the indicator of the diagonal of `κ × κ`. It is also transported by surjective
+algebra maps (`TauCeti.Algebra.FormallyUnramified.map_elem_of_surjective`), in particular by
+isomorphisms (`TauCeti.Algebra.FormallyUnramified.map_elem`), and commutes with base change: the
 diagonal idempotent of `T ⊗[R] S` over `T` is the image of that of `S` over `R`
 (`TauCeti.Algebra.FormallyUnramified.productMap_elem_baseChange`), as the diagonal of `Spec S`
 pulls back to the diagonal of its base change.
@@ -171,6 +172,24 @@ theorem elem_pi (R κ : Type*) [CommRing R] [Fintype κ] [DecidableEq κ] :
       one_mul, hs, TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', sub_self]
   · simp [← Pi.single_mul, Finset.univ_sum_single, Pi.one_def]
 
+/-- The diagonal idempotent is transported by surjective algebra maps: a surjection
+`f : S →ₐ[R] S'` sends the diagonal idempotent of `S ⊗[R] S` to that of `S' ⊗[R] S'`. -/
+theorem map_elem_of_surjective {R S S' : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S] [CommRing S'] [Algebra R S']
+    [Algebra.EssFiniteType R S'] [Algebra.FormallyUnramified R S'] {f : S →ₐ[R] S'}
+    (hf : Function.Surjective f) :
+    Algebra.TensorProduct.map f f (Algebra.FormallyUnramified.elem R S) =
+      Algebra.FormallyUnramified.elem R S' := by
+  refine eq_elem (fun s' ↦ ?_) ?_
+  · obtain ⟨s, rfl⟩ := hf s'
+    simpa using congrArg (Algebra.TensorProduct.map f f)
+      (Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (R := R) s)
+  · have hcomm : (Algebra.TensorProduct.lmul' R).comp (Algebra.TensorProduct.map f f) =
+        f.comp (Algebra.TensorProduct.lmul' R) :=
+      Algebra.TensorProduct.ext' fun a b ↦ by simp
+    rw [← AlgHom.comp_apply, hcomm, AlgHom.comp_apply, Algebra.FormallyUnramified.lmul_elem,
+      map_one]
+
 /-- The diagonal idempotent is transported by algebra isomorphisms: an isomorphism
 `e : S ≃ₐ[R] S'` sends the diagonal idempotent of `S ⊗[R] S` to that of `S' ⊗[R] S'`. -/
 @[simp]
@@ -178,17 +197,8 @@ theorem map_elem {R S S' : Type*} [CommRing R] [CommRing S] [Algebra R S]
     [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S] [CommRing S'] [Algebra R S']
     [Algebra.EssFiniteType R S'] [Algebra.FormallyUnramified R S'] (e : S ≃ₐ[R] S') :
     Algebra.TensorProduct.map e.toAlgHom e.toAlgHom (Algebra.FormallyUnramified.elem R S) =
-      Algebra.FormallyUnramified.elem R S' := by
-  refine eq_elem (fun s' ↦ ?_) ?_
-  · obtain ⟨s, rfl⟩ := e.surjective s'
-    simpa using congrArg (Algebra.TensorProduct.map e.toAlgHom e.toAlgHom)
-      (Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (R := R) s)
-  · have hcomm : (Algebra.TensorProduct.lmul' R).comp
-        (Algebra.TensorProduct.map e.toAlgHom e.toAlgHom) =
-        e.toAlgHom.comp (Algebra.TensorProduct.lmul' R) :=
-      Algebra.TensorProduct.ext' fun a b ↦ by simp
-    rw [← AlgHom.comp_apply, hcomm, AlgHom.comp_apply, Algebra.FormallyUnramified.lmul_elem,
-      map_one]
+      Algebra.FormallyUnramified.elem R S' :=
+  map_elem_of_surjective e.surjective
 
 section BaseChange
 
@@ -236,7 +246,7 @@ private theorem productMap_includeLeft_includeRight_elem :
 /-- The diagonal idempotent commutes with base change: for `T`-algebra maps `f, g` out of
 `T ⊗[R] S`, the image of the diagonal idempotent of `T ⊗[R] S` over `T` under `f ⊗ g` is the
 image of the diagonal idempotent of `S` over `R` under the restrictions of `f` and `g` to `S`. -/
-theorem productMap_elem_baseChange {C : Type*} [CommRing C] [Algebra T C] [Algebra R C]
+theorem productMap_elem_baseChange {C : Type*} [CommSemiring C] [Algebra T C] [Algebra R C]
     [IsScalarTower R T C] (f g : T ⊗[R] S →ₐ[T] C) :
     Algebra.TensorProduct.productMap f g (Algebra.FormallyUnramified.elem T (T ⊗[R] S)) =
       Algebra.TensorProduct.productMap

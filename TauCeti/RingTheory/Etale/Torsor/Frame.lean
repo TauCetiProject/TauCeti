@@ -27,6 +27,9 @@ the algebra splits, `T ⊗[R] S ≃ₐ[T] (ι → T)` (Mathlib's
 `ι → T` is the trivial torsor `Perm ι → T` (`TauCeti.Algebra.FrameAlgebra.permEquiv`). Both
 identifications are equivariant, so `TauCeti.Algebra.IsFiniteEtaleTorsor.of_baseChange_algEquiv_pi`
 applies.
+The splitting cover is stated for `S` in the universe of `R`. A finite algebra is isomorphic to
+one in that universe (`Shrink`), and the frame algebra is invariant under isomorphisms
+(`TauCeti.Algebra.FrameAlgebra.congr`), so the result holds for `S` in any universe.
 
 ## Main results
 
@@ -51,10 +54,9 @@ namespace TauCeti.Algebra.FrameAlgebra
 
 attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction
 
-/-- **The frame algebra is a torsor.** For a finite étale `R`-algebra `S` of constant rank
-`Fintype.card ι`, the frame algebra of `ι`-tuples of pairwise distinct points of `S` is a finite
-étale `Perm ι`-torsor over `R`. -/
-theorem isFiniteEtaleTorsor {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+/-- `TauCeti.Algebra.FrameAlgebra.isFiniteEtaleTorsor` for `R` and `S` in the same universe, in
+which Mathlib's splitting cover `Algebra.IsFiniteSplit.exists_tensorProduct_of_etale` applies. -/
+private theorem isFiniteEtaleTorsor_aux {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
     [Algebra.Etale R S] [Module.Finite R S] {ι : Type*} [Fintype ι] [DecidableEq ι]
     (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
     IsFiniteEtaleTorsor (Equiv.Perm ι) R (FrameAlgebra R S ι) := by
@@ -63,8 +65,10 @@ theorem isFiniteEtaleTorsor {R S : Type u} [CommRing R] [CommRing S] [Algebra R 
   obtain ⟨T, _, _, _, _, _, hT⟩ := Algebra.IsFiniteSplit.exists_tensorProduct_of_etale h
   obtain ⟨m, ⟨f⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T (T ⊗[R] S)
   have : Nontrivial T := (FaithfulSMul.algebraMap_injective R T).nontrivial
+  have : Module.Free T (T ⊗[R] S) := .of_equiv f.toLinearEquiv.symm
   obtain rfl : m = Fintype.card ι := by
-    simpa using TauCeti.Module.card_eq_of_rankAtStalk_eq_of_linearEquiv h f.toLinearEquiv
+    simpa using f.toLinearEquiv.finrank_eq.symm.trans
+      (TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq h)
   -- Over `T`, the frame algebra is that of the split algebra `ι → T`, the trivial torsor.
   let g : T ⊗[R] S ≃ₐ[T] (ι → T) :=
     f.trans (AlgEquiv.piCongrLeft' T (fun _ ↦ T) (Fintype.equivFin ι).symm)
@@ -73,5 +77,22 @@ theorem isFiniteEtaleTorsor {R S : Type u} [CommRing R] [CommRing S] [Algebra R 
     fun σ x τ ↦ ?_
   rw [AlgEquiv.trans_apply, AlgEquiv.trans_apply, baseChangeEquiv_smul, congr_smul, permEquiv_smul,
     AlgEquiv.trans_apply, AlgEquiv.trans_apply]
+
+/-- **The frame algebra is a torsor.** For a finite étale `R`-algebra `S` of constant rank
+`Fintype.card ι`, the frame algebra of `ι`-tuples of pairwise distinct points of `S` is a finite
+étale `Perm ι`-torsor over `R`. -/
+theorem isFiniteEtaleTorsor {R : Type u} {S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    [Algebra.Etale R S] [Module.Finite R S] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
+    IsFiniteEtaleTorsor (Equiv.Perm ι) R (FrameAlgebra R S ι) := by
+  -- The finite algebra `S` is isomorphic to an algebra in the universe of `R`, and the frame
+  -- algebra is invariant under isomorphisms.
+  have : Small.{u} S := Module.Finite.small R S
+  let e : Shrink.{u} S ≃ₐ[R] S := Shrink.algEquiv R S
+  have : Algebra.Etale R (Shrink.{u} S) := .of_equiv e.symm
+  have : Module.Finite R (Shrink.{u} S) := .equiv e.symm.toLinearEquiv
+  have := isFiniteEtaleTorsor_aux (ι := ι)
+    ((Module.rankAtStalk_eq_of_equiv e.toLinearEquiv).trans h)
+  exact .of_algEquiv (FrameAlgebra.congr ι e) (FrameAlgebra.congr_smul e)
 
 end TauCeti.Algebra.FrameAlgebra

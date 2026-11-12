@@ -538,25 +538,26 @@ section BaseChange
 
 variable {R S ι} (T : Type*) [CommRing T] [Algebra R T]
 
-omit [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S] in
+omit [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S] [Fintype ι] [DecidableEq ι] in
 /-- Base change of the tensor power restricted to `1 ⊗ (⨂[R] _ : ι, S)`, as an `R`-algebra map. -/
-private theorem baseChangeAlgEquiv_one_tmul_eq_comp (x : ⨂[R] _ : ι, S) :
+private theorem baseChangeAlgEquiv_one_tmul_eq_comp [Finite ι] (x : ⨂[R] _ : ι, S) :
     PiTensorProduct.baseChangeAlgEquiv T (fun _ : ι ↦ S) ((1 : T) ⊗ₜ[R] x) =
       ((PiTensorProduct.baseChangeAlgEquiv (R := R) T (fun _ : ι ↦ S)).toAlgHom.restrictScalars
         R).comp Algebra.TensorProduct.includeRight x := by
   rw [AlgHom.comp_apply, AlgHom.restrictScalars_apply, Algebra.TensorProduct.includeRight_apply,
     AlgEquiv.toAlgHom_apply]
 
+omit [Fintype ι] in
 /-- Base change sends `δᵢⱼ` to `δᵢⱼ`: the locus where the points in the slots `i` and `j` agree
 pulls back to the corresponding locus for `T ⊗[R] S` over `T`. -/
 @[simp]
-theorem baseChangeAlgEquiv_one_tmul_tensorPowDiagonal (i j : ι) :
+theorem baseChangeAlgEquiv_one_tmul_tensorPowDiagonal [Finite ι] (i j : ι) :
     PiTensorProduct.baseChangeAlgEquiv T (fun _ : ι ↦ S) ((1 : T) ⊗ₜ[R] tensorPowDiagonal R S i j) =
       tensorPowDiagonal T (T ⊗[R] S) i j := by
   rw [baseChangeAlgEquiv_one_tmul_eq_comp, map_tensorPowDiagonal, tensorPowDiagonal,
     FormallyUnramified.productMap_elem_baseChange]
   congr 2 <;> exact AlgHom.ext fun a ↦
-    PiTensorProduct.baseChangeAlgEquiv_one_tmul_singleAlgHom T (fun _ ↦ S) _ a
+    PiTensorProduct.baseChangeAlgEquiv_tmul_singleAlgHom T (fun _ ↦ S) 1 _ a
 
 /-- Base change sends `ε` to `ε`: the locus of tuples of pairwise distinct points pulls back to the
 corresponding locus for `T ⊗[R] S` over `T`. -/
@@ -589,6 +590,22 @@ theorem FrameAlgebra.baseChangeEquiv_tmul_mk (t : T) (x : ⨂[R] _ : ι, S) :
       Ideal.Quotient.mk _ (PiTensorProduct.baseChangeAlgEquiv T (fun _ ↦ S) (t ⊗ₜ x)) := by
   rw [baseChangeEquiv, AlgEquiv.trans_apply, Algebra.TensorProduct.tensorQuotientEquiv_apply_tmul,
     Ideal.quotientEquivAlg_mk]
+
+/-- The inverse of `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` sends the class of `y` to the
+image of the inverse base change of `y` under the quotient map in the right factor. -/
+@[simp]
+theorem FrameAlgebra.baseChangeEquiv_symm_mk (y : ⨂[T] _ : ι, (T ⊗[R] S)) :
+    (FrameAlgebra.baseChangeEquiv R S ι T).symm (Ideal.Quotient.mk _ y) =
+      Algebra.TensorProduct.map (AlgHom.id T T) (Ideal.Quotient.mkₐ R _)
+        ((PiTensorProduct.baseChangeAlgEquiv T fun _ ↦ S).symm y) := by
+  rw [AlgEquiv.symm_apply_eq]
+  obtain ⟨z, rfl⟩ := (PiTensorProduct.baseChangeAlgEquiv T fun _ ↦ S).surjective y
+  rw [AlgEquiv.symm_apply_apply]
+  induction z using TensorProduct.inductionOn with
+  | tmul t x =>
+    rw [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, Ideal.Quotient.mkₐ_eq_mk,
+      baseChangeEquiv_tmul_mk]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
 /-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` is equivariant, for the permutations acting on

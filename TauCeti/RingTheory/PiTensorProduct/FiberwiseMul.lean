@@ -40,6 +40,7 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
 
 * `PiTensorProduct.productMap_tprod`, `PiTensorProduct.productMap_singleAlgHom`: the values of
   `PiTensorProduct.productMap` on pure tensors and on the factor inclusions.
+* `PiTensorProduct.eq_productMap_iff`: the universal property of `PiTensorProduct.productMap`.
 * `PiTensorProduct.fiberwiseMul_tprod`, `PiTensorProduct.fiberwiseMul_singleAlgHom`: its values on
   pure tensors and on the factor inclusions.
 * `PiTensorProduct.fiberwiseMul_id`, `PiTensorProduct.fiberwiseMul_comp`: functoriality in `f`.
@@ -104,6 +105,28 @@ theorem productMap_singleAlgHom [DecidableEq ι] (f : ∀ i, A i →ₐ[R] B) (i
 theorem productMap_comp_singleAlgHom [DecidableEq ι] (f : ∀ i, A i →ₐ[R] B) (i : ι) :
     (productMap f).comp (singleAlgHom i) = f i :=
   AlgHom.ext (productMap_singleAlgHom f i)
+
+/-- An algebra map into a commutative algebra is the `PiTensorProduct.productMap` of its
+restrictions to the factor inclusions. -/
+@[simp]
+theorem productMap_comp_singleAlgHom_self [DecidableEq ι] (g : (⨂[R] i, A i) →ₐ[R] B) :
+    productMap (fun i ↦ g.comp (singleAlgHom i)) = g :=
+  algHom_ext fun i ↦ productMap_comp_singleAlgHom _ i
+
+/-- The universal property of `PiTensorProduct.productMap f`: it is the unique algebra map
+restricting to `f i` on the factor inclusion at `i`. -/
+theorem eq_productMap_iff [DecidableEq ι] {f : ∀ i, A i →ₐ[R] B} {g : (⨂[R] i, A i) →ₐ[R] B} :
+    g = productMap f ↔ ∀ i, g.comp (singleAlgHom i) = f i :=
+  ⟨by rintro rfl i; exact productMap_comp_singleAlgHom f i,
+    fun h ↦ algHom_ext fun i ↦ by rw [h, productMap_comp_singleAlgHom]⟩
+
+/-- Composing `PiTensorProduct.productMap f` with an algebra map `φ` is the
+`PiTensorProduct.productMap` of the composites `φ ∘ f i`. -/
+theorem comp_productMap {B' : Type*} [CommSemiring B'] [Algebra R B'] (φ : B →ₐ[R] B')
+    (f : ∀ i, A i →ₐ[R] B) : φ.comp (productMap f) = productMap fun i ↦ φ.comp (f i) := by
+  classical
+  exact algHom_ext fun i ↦ by
+    rw [AlgHom.comp_assoc, productMap_comp_singleAlgHom, productMap_comp_singleAlgHom]
 
 end ProductMap
 

@@ -139,6 +139,16 @@ theorem congrAlgEquiv_trans {ι : Type*} {A B C : ι → Type*} [∀ i, Semiring
     | smul_tprod r x => simp
     | add x y hx hy => rw [map_add, map_add, hx, hy]
 
+/-- Applying algebra equivalences slotwise commutes with reindexing the slots. -/
+theorem congrAlgEquiv_reindexAlgEquiv {ι κ : Type*} {A B : ι → Type*} [∀ i, Semiring (A i)]
+    [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
+    (f : ∀ i, A i ≃ₐ[R] B i) (e : ι ≃ κ) (x : ⨂[R] i, A i) :
+    congrAlgEquiv (fun j ↦ f (e.symm j)) (reindexAlgEquiv A e x) =
+      reindexAlgEquiv B e (congrAlgEquiv f x) := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r x => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 /-- `PiTensorProduct.congrAlgEquiv e` sends the factor inclusion at `i` to the factor inclusion at
 `i` composed with `e i`. It is a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite
 the factor inclusion first. -/
@@ -175,6 +185,10 @@ noncomputable def permAlgEquiv : Equiv.Perm ι →* (⨂[R] _ : ι, A) ≃ₐ[R]
 
 variable {A}
 
+/-- A permutation `σ` acts on a tensor power by reindexing the factors along `σ`. -/
+theorem permAlgEquiv_eq_reindexAlgEquiv (σ : Equiv.Perm ι) :
+    permAlgEquiv (R := R) A σ = reindexAlgEquiv (fun _ ↦ A) σ := (rfl)
+
 /-- The underlying linear equivalence of a permutation of the factors is tensor reindexing. -/
 @[simp]
 theorem permAlgEquiv_toLinearEquiv (σ : Equiv.Perm ι) :
@@ -197,10 +211,8 @@ theorem permAlgEquiv_singleAlgHom [DecidableEq ι] (σ : Equiv.Perm ι) (i : ι)
 theorem congrAlgEquiv_permAlgEquiv {B : Type*} [Semiring B] [Algebra R B] (e : A ≃ₐ[R] B)
     (σ : Equiv.Perm ι) (x : ⨂[R] _ : ι, A) :
     congrAlgEquiv (fun _ ↦ e) (permAlgEquiv A σ x) =
-      permAlgEquiv B σ (congrAlgEquiv (fun _ ↦ e) x) := by
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r x => simp [Function.comp_def]
-  | add x y hx hy => simp only [map_add, hx, hy]
+      permAlgEquiv B σ (congrAlgEquiv (fun _ ↦ e) x) :=
+  congrAlgEquiv_reindexAlgEquiv (fun _ ↦ e) σ x
 
 end Perm
 
