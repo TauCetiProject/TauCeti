@@ -35,9 +35,10 @@ needed for the statements below.
   (`TauCeti.LivesOverFundamentalClass.of_homologyMap`). With `σ = p` and `p' = id`, a class lives
   over the fundamental class as soon as its image in `Hₖ(M)` does
   (`TauCeti.LivesOverFundamentalClass.of_homologyMap_proj`).
-* **Sections.** For a section `s` of `p`, the localization of `s_* β` is the image under `s` of
-  the localization of `β`. So a class `α` with `p_* α = 0` that lives over the fundamental class
-  keeps doing so after subtracting any class `s_* β`
+* **Sections.** For a section `s` of `p`, the composite `p_* ∘ s_*` is the identity on homology
+  (`TauCeti.homologyMap_comp_homologyMap_of_comp_eq_id`), and the localization of `s_* β` is the
+  image under `s` of the localization of `β`. So a class `α` with `p_* α = 0` that lives over the
+  fundamental class keeps doing so after subtracting any class `s_* β`
   (`TauCeti.LivesOverFundamentalClass.sub_homologyMap_section`), and some class lives over the
   fundamental class modulo the classes `s_* β` exactly when some class with `p_* α = 0` lives over
   it (`TauCeti.exists_forall_livesOverFundamentalClass_sub_iff`). For the evaluation fibration
@@ -114,6 +115,14 @@ theorem homologyMap_comp_fiberLocalization (σ : C(E, E')) {p : E → M} {p' : E
   simp only [TopPair.ofSubsetMap_fst] at h'
   rw [localHomologyMap_def]
   exact h'
+
+/-- A section `s` of `p : E → M` induces a section on singular homology: `p_* ∘ s_* = id`. -/
+theorem homologyMap_comp_homologyMap_of_comp_eq_id [TopologicalSpace M] (p : C(E, M))
+    (s : C(M, E)) (hs : p.comp s = ContinuousMap.id M) (k : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k ≫
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k = 𝟙 _ := by
+  rw [← SSet.homologyMap_comp, ← CategoryTheory.Functor.map_comp, ← TopCat.ofHom_comp, hs,
+    TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id]
 
 /-- For the identity of `M`, the localization at the fibre over `b` is the quotient map to
 `Hₖ(M, M ∖ M)` followed by restriction to the local homology `Hₖ(M, M ∖ {b})` at `b`. -/
@@ -207,9 +216,8 @@ theorem LivesOverFundamentalClass.sub_homologyMap_section [TopologicalSpace M] (
   have hs' : (p ∘ s : M → M) = id := congrArg DFunLike.coe hs
   have hps : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom
       ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom β) = β := by
-    rw [← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← CategoryTheory.Functor.map_comp,
-      ← TopCat.ofHom_comp,
-      hs, TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id, ModuleCat.id_apply]
+    rw [← ModuleCat.comp_apply, homologyMap_comp_homologyMap_of_comp_eq_id R p s hs,
+      ModuleCat.id_apply]
   intro h
   rw [map_sub, sub_eq_zero] at h
   -- The localization of `β` at the point `b` of `M` vanishes.
@@ -239,9 +247,8 @@ theorem exists_forall_livesOverFundamentalClass_sub_iff [TopologicalSpace M] (p 
   refine ⟨fun ⟨α, hα⟩ ↦
     ⟨_, ?_, hα ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)⟩,
     fun ⟨α, hα₀, hα⟩ ↦ ⟨α, hα.sub_homologyMap_section R p s hs hα₀⟩⟩
-  rw [map_sub, ← ModuleCat.comp_apply (SSet.homologyMap _ R k), ← SSet.homologyMap_comp,
-    ← CategoryTheory.Functor.map_comp, ← TopCat.ofHom_comp, hs, TopCat.ofHom_id,
-    CategoryTheory.Functor.map_id, SSet.homologyMap_id, ModuleCat.id_apply, sub_self]
+  rw [map_sub, ← ModuleCat.comp_apply (SSet.homologyMap _ R k),
+    homologyMap_comp_homologyMap_of_comp_eq_id R p s hs, ModuleCat.id_apply, sub_self]
 
 end LivesOver
 
