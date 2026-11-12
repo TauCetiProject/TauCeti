@@ -82,7 +82,6 @@ theorem map_cholesky_comap_lkjMeasure (hη : 0 < η) :
       ((partialCorrelationGram_def z).symm.trans
         (coe_correlationMatrix_correlationCoordinatesOfPartialCorrelation
           (fun ij ↦ (hz ij).le)).symm))).symm
-  apply propext
   constructor
   · rintro ⟨A, hAs, hA⟩
     have hAeq : A = ⟨f z, hpos⟩ := Subtype.ext hA

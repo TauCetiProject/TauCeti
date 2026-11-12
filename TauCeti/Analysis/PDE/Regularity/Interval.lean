@@ -222,7 +222,7 @@ theorem ae_abs_gradient_le_of_forall_integral_eq (hx : x₀ < x₁) {lam M : ℝ
     refine (intervalIntegral.abs_integral_le_integral_abs ht.1.le).trans ?_
     rw [intervalIntegral.integral_of_le ht.1.le]
     exact setIntegral_mono_set hf.abs (ae_of_all _ fun _ => abs_nonneg _)
-      (Ioc_subset_Ioo_right ht.2).eventuallyLE
+      (Ioc_subset_Ioo_right ht.2).eventuallySubset
   have hΦi : IntegrableOn (fun t => ∫ s in x₀..t, f s) (Ioo x₀ x₁) :=
     Integrable.of_bound
       (((TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
