@@ -239,7 +239,10 @@ theorem integral_fderiv_apply_preimage_ball_eq_neg_loopArea (ω : SymplecticForm
     ring
   -- Stokes' formula on the closed disc.
   rw [setIntegral_congr_set hae, integral_fderiv_apply_preimage_closedBall ω 0 (by positivity) hu,
-    loopArea_cylindricalEndLift ω (fun w ↦ u (e w)) zero R, endCenter_zero, hρ, circleArea,
-    neg_neg]
+    loopArea_cylindricalEndLift ω (fun w ↦ u (e w)) zero R, endCenter_zero, hρ, neg_neg]
+  have h := ω.loopArea_comp_add_mul (g := fun θ ↦ u (e (circleMap 0 ρ θ)))
+    ((periodic_circleMap 0 ρ).comp fun w ↦ u (e w)) 0
+  simp only [zero_add] at h
+  exact h.symm
 
 end TauCeti.SymplecticForm
