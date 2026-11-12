@@ -12,8 +12,9 @@ public import Mathlib.ModelTheory.Complexity
 
 Mathlib's `FirstOrder.Language.BoundedFormula.iSup` and `FirstOrder.Language.BoundedFormula.iInf`
 form the disjunction and conjunction of a finite family of formulas. This file shows that both are
-quantifier-free when every member of the family is. Conversely, an implication, a negation, a
-conjunction, a disjunction or a biconditional is quantifier-free only when its constituents are.
+quantifier-free when every member of the family is, as are the disjunction and conjunction of a
+list of quantifier-free formulas. Conversely, an implication, a negation, a conjunction, a
+disjunction or a biconditional is quantifier-free only when its constituents are.
 
 In an algebraic language, every atomic formula holds in a subsingleton structure: atomic
 formulas can only assert equality of terms. Every homomorphism preserves atomic formulas
@@ -34,29 +35,33 @@ namespace FirstOrder.Language.BoundedFormula.IsQF
 
 variable {L : Language} {α β : Type*} {n : ℕ}
 
-/-- A finite disjunction of quantifier-free formulas is quantifier-free. -/
-theorem iSup [Finite β] {f : β → L.BoundedFormula α n} (hf : ∀ b, (f b).IsQF) :
-    (BoundedFormula.iSup f).IsQF := by
-  -- Mirror the Fintype.ofFinite instance chosen by BoundedFormula.iSup;
-  -- its finite-connective goal then reduces to the corresponding list fold.
-  let _ := Fintype.ofFinite β
-  suffices ∀ l : List β, (l.map f).foldr (· ⊔ ·) ⊥ |>.IsQF from this _
-  intro l
+/-- The disjunction of a list of quantifier-free formulas is quantifier-free. -/
+theorem foldr_sup {l : List (L.BoundedFormula α n)} (hl : ∀ φ ∈ l, φ.IsQF) :
+    (l.foldr (· ⊔ ·) ⊥).IsQF := by
   induction l with
   | nil => exact isQF_bot
-  | cons b l ih => exact (hf b).sup ih
+  | cons φ l ih =>
+    rw [List.forall_mem_cons] at hl
+    exact hl.1.sup (ih hl.2)
+
+/-- The conjunction of a list of quantifier-free formulas is quantifier-free. -/
+theorem foldr_inf {l : List (L.BoundedFormula α n)} (hl : ∀ φ ∈ l, φ.IsQF) :
+    (l.foldr (· ⊓ ·) ⊤).IsQF := by
+  induction l with
+  | nil => exact top
+  | cons φ l ih =>
+    rw [List.forall_mem_cons] at hl
+    exact hl.1.inf (ih hl.2)
+
+/-- A finite disjunction of quantifier-free formulas is quantifier-free. -/
+theorem iSup [Finite β] {f : β → L.BoundedFormula α n} (hf : ∀ b, (f b).IsQF) :
+    (BoundedFormula.iSup f).IsQF :=
+  foldr_sup <| by simp [hf]
 
 /-- A finite conjunction of quantifier-free formulas is quantifier-free. -/
 theorem iInf [Finite β] {f : β → L.BoundedFormula α n} (hf : ∀ b, (f b).IsQF) :
-    (BoundedFormula.iInf f).IsQF := by
-  -- Mirror the Fintype.ofFinite instance chosen by BoundedFormula.iInf;
-  -- its finite-connective goal then reduces to the corresponding list fold.
-  let _ := Fintype.ofFinite β
-  suffices ∀ l : List β, (l.map f).foldr (· ⊓ ·) ⊤ |>.IsQF from this _
-  intro l
-  induction l with
-  | nil => exact top
-  | cons b l ih => exact (hf b).inf ih
+    (BoundedFormula.iInf f).IsQF :=
+  foldr_inf <| by simp [hf]
 
 end FirstOrder.Language.BoundedFormula.IsQF
 

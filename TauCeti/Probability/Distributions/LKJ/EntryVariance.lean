@@ -73,7 +73,6 @@ private def entryFactor (i k : Fin p) (ij : strictLowerTriangle p) (x : ℝ) : �
 
 private theorem abs_entryFactor_le_one (i k : Fin p) (ij : strictLowerTriangle p)
     {x : ℝ} (hx : |x| ≤ 1) : |entryFactor i k ij x| ≤ 1 := by
-  have hs : 0 ≤ 1 - x ^ 2 := sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).mpr hx)
   have hs' : Real.sqrt (1 - x ^ 2) ≤ 1 := by
     rw [Real.sqrt_le_one]
     nlinarith [sq_nonneg x]
@@ -203,7 +202,7 @@ private theorem residual_moment_product (hη : 0 < η) (i k : Fin p) (hk : k ≤
     refine ⟨⟨(i, j), ?_⟩, ?_, rfl⟩
     · exact (Fin.mk_lt_mk.mpr hnk).trans_le hk
     · exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, rfl, hnk⟩
-  · intro ij hij
+  · intro ij _
     have ht := twice_shape_add_one (η := η) ij
     have hn : 2 * lkjPartialCorrelationShape p η ij = D - ij.1.2.val - 1 := by
       dsimp only [D]

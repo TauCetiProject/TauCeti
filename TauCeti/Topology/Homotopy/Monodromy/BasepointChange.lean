@@ -26,9 +26,7 @@ image subgroups.
 
 The proof combines Mathlib's path-conjugation isomorphism for fundamental groups with its
 path-lifting and monodromy API, packaged for recovered subgroups in
-`TauCeti.Topology.Homotopy.Monodromy.Basic`. This is the path-level compatibility needed by
-the pointed and unpointed parts of Stage 2, items 7 and 8, of
-`TauCetiRoadmap/UniversalCovers/README.md`; the convention is the usual one from Hatcher,
+`TauCeti.Topology.Homotopy.Monodromy.Basic`. The convention is the usual one from Hatcher,
 *Algebraic Topology*, Section 1.3.
 -/
 
