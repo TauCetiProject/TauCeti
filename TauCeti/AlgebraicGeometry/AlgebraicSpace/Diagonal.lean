@@ -149,11 +149,14 @@ theorem locallyOfFiniteType_diag (hF : RepresentableDiagonal F) (ha : EtaleAtlas
     MorphismProperty.IsStableUnderBaseChange.respectsIso
   have : IsZariskiLocalAtTarget @LocallyOfFiniteType.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtTarget _
-  -- Mathlib's fpqc-to-fppf instance in `Mathlib.AlgebraicGeometry.Morphisms.FlatDescent` is
-  -- only found with the transparency option it is declared under.
+  -- Instance search does not unify `@LocallyOfFiniteType` with the predicate of Mathlib's
+  -- fpqc-to-fppf descent instance, so apply that instance to a generic predicate first.
   have : MorphismProperty.DescendsAlong @LocallyOfFiniteType.{u}
-      (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) := by
-    set_option backward.isDefEq.respectTransparency.types false in exact inferInstance
+      (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) :=
+    (fun (P : MorphismProperty Scheme.{u}) [P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact)]
+      [IsZariskiLocalAtTarget P] ↦ (inferInstance :
+        P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation)))
+      @LocallyOfFiniteType
   refine presheaf_of_forall_exists_cover (Q := @Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation)
     hF fun T g ↦ ?_
   set hr := ha.relativelyRepresentable
