@@ -33,13 +33,14 @@ and the symmetric factor is the logarithm `log √(Aᵀ A)` of its positive pola
 
 Both decompositions instantiate `Subgroup.cartanHomeomorph`, which needs two inputs. The subgroup
 must be closed under transposition, and an exponential `exp X` of a symmetric matrix `X` may lie
-in `H` only when the whole line `exp (t X)` does. The second input holds because the exponential is
-injective on symmetric matrices (`Matrix.IsHermitian.exp_eq_exp_iff`) and `J` is orthogonal:
+in `H` only when the whole line `exp (t X)` does. The second input holds because the logarithm
+inverts the exponential on symmetric matrices:
 
-* `exp X` commutes with `J` exactly when `X` does, since `J (exp X) J⁻¹ = exp (J X J⁻¹)` with
-  `J X J⁻¹` symmetric (`Matrix.IsHermitian.commute_exp_iff`);
+* `exp X` commutes with `J` exactly when `X` does, since `X = log (exp X)` lies in the functional
+  calculus of `exp X` (`Matrix.IsHermitian.commute_exp_iff`);
 * `exp X` is symplectic exactly when `X ∈ 𝔰𝔭(2n, ℝ)`, since then
-  `exp (-X) = (exp X)⁻¹ = J (exp X)ᵀ J⁻¹ = exp (J X J⁻¹)`
+  `exp X = (exp X)ᵀ = J (exp X)⁻¹ J⁻¹ = exp (J (-X) J⁻¹)` with `J (-X) J⁻¹` symmetric, as `J` is
+  orthogonal, and the exponential is injective on symmetric matrices
   (`Matrix.IsHermitian.exp_mem_symplecticGroup_iff`).
 
 The compact factor `{u ∈ O(2n) | u ∈ H}` produced by the generic theorem is then identified with
@@ -47,8 +48,6 @@ The compact factor `{u ∈ O(2n) | u ∈ H}` produced by the generic theorem is 
 
 ## Main results
 
-* `Matrix.IsHermitian.exp_mem_symplecticGroup_iff`: a symmetric matrix has symplectic exponential
-  exactly when it lies in `𝔰𝔭(2n, ℝ)`.
 * `TauCeti.GLSymplectic.cartanHomeomorph`: the Cartan decomposition
   `U(n) × (𝔰𝔭(2n, ℝ) ∩ Sym) ≃ₜ Sp(2n, ℝ)`, with
   `TauCeti.GLSymplectic.unitaryGroupEquivSymplecticInfOrthogonal_cartanHomeomorph_symm_apply_fst`
@@ -72,37 +71,6 @@ noncomputable section
 
 open TauCeti
 open scoped MatrixOrder
-
-namespace Matrix
-
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-namespace IsHermitian
-
-variable {X : Matrix (n ⊕ n) (n ⊕ n) ℝ}
-
-/-- **A symmetric real matrix has symplectic exponential exactly when it lies in the symplectic
-Lie algebra** `𝔰𝔭(2n, ℝ)`. -/
-theorem exp_mem_symplecticGroup_iff (hX : X.IsHermitian) :
-    NormedSpace.exp X ∈ symplecticGroup n ℝ ↔ X ∈ LieAlgebra.Symplectic.sp n ℝ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by
-    simpa using (forall_exp_smul_mem_symplecticGroup_iff_mem_sp X).2 h 1⟩
-  have hXt : Xᵀ = X := by simpa [conjTranspose_eq_transpose_of_trivial] using hX.eq
-  -- `J X J⁻¹ = J X Jᴴ` is symmetric, as `J` is orthogonal.
-  have hJX : (J n ℝ * X * (J n ℝ)⁻¹).IsHermitian := by
-    have h := isHermitian_mul_mul_conjTranspose (J n ℝ) hX
-    rwa [← star_eq_conjTranspose, star_J, ← J_inv] at h
-  have hconj : -X = J n ℝ * X * (J n ℝ)⁻¹ := by
-    -- `exp (-X) = (exp X)⁻¹ = J (exp X)ᵀ J⁻¹ = exp (J X J⁻¹)`, and both exponents are symmetric.
-    rw [← (hX.neg).exp_eq_exp_iff hJX, Matrix.exp_conj _ _ (isUnit_J n ℝ), Matrix.exp_neg,
-      SymplecticGroup.inv_eq_symplectic_inv _ h, ← Matrix.exp_transpose, hXt, J_inv]
-    simp
-  rw [LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_J_conj_neg, hXt, Matrix.mul_neg,
-    Matrix.neg_mul, ← hconj, neg_neg]
-
-end IsHermitian
-
-end Matrix
 
 open Matrix Matrix.GeneralLinearGroup
 
@@ -220,7 +188,7 @@ def realifyCartanHomeomorph :
   have hline {x : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hx : x.IsHermitian) :
       (∀ t : ℝ, expUnit (t • x) ∈ (realify n ℂ).range) ↔ Commute (J n ℝ) x := by
     simp only [mem_range_realify_iff, expUnit_coe]
-    exact ⟨fun h ↦ (hx.commute_exp_iff (J_mem_unitaryGroup n ℝ)).1 (by simpa using h 1),
+    exact ⟨fun h ↦ hx.commute_exp_iff.1 (by simpa using h 1),
       fun h t ↦ (h.smul_right t).exp_right⟩
   let eP : {X : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ) //
         Commute (J n ℝ) (X : Matrix (n ⊕ n) (n ⊕ n) ℝ)} ≃ₜ
@@ -233,8 +201,7 @@ def realifyCartanHomeomorph :
   exact ((realifyUnitaryHomeomorph (inf_comm (realify n ℂ).range _ ▸
       unitarySubgroup_inf_range_realify)).prodCongr eP).trans
     ((realify n ℂ).range.cartanHomeomorph (fun _ ↦ star_mem_range_realify) fun x hx h ↦
-      (hline hx.isHermitian).2 ((IsHermitian.commute_exp_iff hx.isHermitian
-        (J_mem_unitaryGroup n ℝ)).1
+      (hline hx.isHermitian).2 ((IsHermitian.commute_exp_iff hx.isHermitian).1
         (by simpa using mem_range_realify_iff.1 h)))
 
 /-- The Cartan decomposition map of the realified `GL(n, ℂ)` sends `(U, X)` to
