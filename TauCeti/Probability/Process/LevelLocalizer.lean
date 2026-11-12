@@ -17,8 +17,8 @@ a finite level. Its entrance event is determined by its value at the current tim
 stopping times on the original filtration, without completeness or right continuity of the
 filtration. Starting below the level makes the stopping time strictly later than the start.
 For continuous paths, the hit is exact and the entire stopped process is bounded by the level.
-Levels tending to infinity give a localizing sequence (`IsLocalizingSequence`) whenever the
-process is finite at every finite time almost surely.
+Increasing levels tending to the top element give a localizing sequence (`IsLocalizingSequence`)
+whenever the process is finite at every finite time almost surely.
 
 These results apply to continuous accumulated-energy processes used to localize stochastic
 integrands. Extended values are retained: a path may reach infinity in finite time, but such a
