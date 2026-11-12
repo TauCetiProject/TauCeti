@@ -112,7 +112,7 @@ private theorem norm_value_sub_setAverage_restrictL_ofTestFunctionₗ_le (hp : p
   have havg : (⨍ y in S, W1p.value w y ∂mu) = ⨍ y in S, phi y ∂mu :=
     average_congr (haeU.filter_mono (ae_mono (Measure.restrict_mono hSU le_rfl)))
   have hmain := eLpNorm_sub_setAverage_le_of_convex (μ := mu) (u := fun x ↦ (phi : E → ℝ) x)
-    U.isOpen hUc hUb (phi.contDiff.of_le (by simp)).contDiffOn hSU hS0
+    hUc hUb (phi.contDiff.of_le (by simp)).contDiffOn hSU hS0
     (Fact.out : (1 : ℝ≥0∞) ≤ p) hp
   have hkey : ‖W1p.value w - Lp.const p (mu.restrict (U : Set E))
       (⨍ y in S, W1p.value w y ∂mu)‖ₑ ≤ ENNReal.ofReal C * ‖W1p.gradient w‖ₑ := by
