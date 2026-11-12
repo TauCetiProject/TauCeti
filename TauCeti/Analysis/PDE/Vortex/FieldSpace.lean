@@ -418,6 +418,15 @@ theorem tendsto_normSq_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m :
     Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) :=
   tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow (tendsto_sectionValue_mul_inv_pow hs hx hcont)
 
+/-- For `s > 1`, the section of a continuous field in `A_m^s` is nonzero somewhere, since its
+squared modulus tends to one at infinity. -/
+theorem exists_sectionValue_ne_zero_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ}
+    {s : ℝ} (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
+    (hcont : Continuous x) : ∃ z, sectionValue x z ≠ 0 := by
+  obtain ⟨z, hz⟩ :=
+    ((tendsto_normSq_of_mem_framedFieldSpace hs hx hcont).eventually_ne one_ne_zero).exists
+  exact ⟨z, fun h ↦ hz (by rw [(sectionValue_eq_zero_iff x z).1 h]; norm_num)⟩
+
 /-- **The modulus bound in the affine field space.** For `s > 1`, every vortex in `A_m^s` with
 continuous connection and `C²` section satisfies `|α| ≤ 1` everywhere. -/
 theorem normSq_le_one_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
