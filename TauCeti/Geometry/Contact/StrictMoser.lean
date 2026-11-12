@@ -37,8 +37,11 @@ The contact flat map `v ↦ ι_v dα + α(v) α` (`TauCeti.SmoothForm.contactFla
   (`TauCeti.SmoothForm.IsContactForm.exists_apply_eq_and_mextDeriv_add_eq_iff`), and then the
   solution is the strict contact-Moser vector
   (`TauCeti.SmoothForm.IsContactForm.eq_strictContactMoserVectorField_iff`);
-* where `h` solves the Reeb-direction equation, `L_X α = β`
-  (`TauCeti.SmoothForm.IsContactForm.mlieDerivForm_strictContactMoserVectorField`), and every
+* if `h` is `C²` and solves the Reeb-direction equation everywhere, then `L_X α = β`
+  (`TauCeti.SmoothForm.IsContactForm.mlieDerivForm_strictContactMoserVectorField`); at a single
+  point `x` it suffices that `X` is differentiable at `x` and `h` solves the Reeb-direction
+  equation near `x`
+  (`TauCeti.SmoothForm.IsContactForm.mlieDerivForm_strictContactMoserVectorField_apply`); every
   differentiable `X` with `L_X α = β` arises in this way from `h = α(X)`
   (`TauCeti.SmoothForm.IsContactForm.mlieDerivForm_eq_iff_eq_strictContactMoserVectorField`);
 * where `h` solves the Reeb-direction equation, the strict field is the horizontal
@@ -105,9 +108,11 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-- The **strict contact-Moser vector field** of a one-form `α`, a one-form `β` and a function
 `h`: the inverse contact flat map applied to `β - dh + h α`. For a contact form in finite
-dimensions, at points where `h` solves the Reeb-direction equation `R_α h = β(R_α)`, it is the
-unique vector `X` with `α(X) = h` and `ι_X dα + dh = β`
-(`TauCeti.SmoothForm.IsContactForm.eq_strictContactMoserVectorField_iff`), so that `L_X α = β`.
+dimensions, at a point `x` where `h` solves the Reeb-direction equation `R_α h = β(R_α)`, it is
+the unique vector `X` with `α(X) = h` and `ι_X dα + dh = β`
+(`TauCeti.SmoothForm.IsContactForm.eq_strictContactMoserVectorField_iff`). If moreover `h` solves
+the Reeb-direction equation near `x` and the field is differentiable at `x`, then `L_X α = β` at
+`x` (`TauCeti.SmoothForm.IsContactForm.mlieDerivForm_strictContactMoserVectorField_apply`).
 The inverse is `ContinuousLinearMap.inverse`, so the definition is zero wherever the contact flat
 map is not invertible. -/
 def strictContactMoserVectorField (α β : SmoothForm I M ℝ 1) (h : M → ℝ) (x : M) :
@@ -392,8 +397,8 @@ variable (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 1) (h : ℝ × 
 /-- The **strict Moser vector field** of a smooth family of one-forms `α_t = ι_t^* α` on `M`,
 represented by a one-form `α` on `ℝ × M`, and of a time-dependent function `h_t = h (t, ·)`. At
 time `t` it is the strict contact-Moser vector field of `α_t`, of `-∂_t α_t` and of `h_t`. When
-`α_t` is a contact form and `h_t` solves `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))`, it is the unique
-vector field `X_t` with `α_t(X_t) = h_t` and `L_(X_t) α_t + ∂_t α_t = 0`
+the `α_t` are contact forms on a finite-dimensional manifold, `h` is smooth and every `h_t` solves
+`R_(α_t) h_t = -(∂_t α_t)(R_(α_t))`, it satisfies `L_(X_t) α_t + ∂_t α_t = 0`
 (`TauCeti.SmoothForm.mlieDerivForm_strictMoserVectorField_add`). -/
 def strictMoserVectorField (t : ℝ) (x : M) : TangentSpace I x :=
   (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).strictContactMoserVectorField
