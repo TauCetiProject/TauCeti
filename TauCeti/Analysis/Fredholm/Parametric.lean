@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import Mathlib.LinearAlgebra.Isomorphisms
+import TauCeti.Topology.Constructions.Basic
 
 /-!
 # The parameter projection of a universal linearization
@@ -93,8 +94,9 @@ The Fredholm statement additionally assumes that `D₁` is Fredholm, that `E` an
 `𝕜`-modules with `E` having continuous addition and `Λ` continuous negation (for instance normed
 spaces), and that `F` has continuous addition. Its closed range is the preimage of the closed range
 of `D₁`, its kernel inherits a continuous projection from that of `D₁`, and strictness comes from
-the openness of the pullback of the quotient map `E → range D₁` along `l ↦ D₂ (-l)`. No
-completeness of the spaces or of the scalar field is required.
+openness onto the range: `D₁` is open onto its range, the kernel of `D₁.coprod D₂` is the fibre
+product of `D₁` and `l ↦ D₂ (-l)`, and open maps are stable under pullback. No completeness of the
+spaces or of the scalar field is required.
 
 ## Main declarations
 
@@ -117,6 +119,8 @@ completeness of the spaces or of the scalar field is required.
   projection is surjective exactly when `D₁` is.
 * `ContinuousLinearMap.index_parameterProj`: for a surjective total linearization, the
   projection has the same index as `D₁`.
+* `ContinuousLinearMap.isOpenMap_rangeFactorization_parameterProj`: the projection is open onto
+  its range when `D₁` is.
 * `ContinuousLinearMap.isFredholm_parameterProj`: when `E` has continuous addition and `Λ`
   continuous negation, if `D₁` is Fredholm then the projection is Fredholm.
 * `ContinuousLinearMap.kerCoprodMap`, `ContinuousLinearMap.exact_kerCoprodMap` and
@@ -264,11 +268,9 @@ theorem range_parameterProj :
     parameterProj_apply]
   constructor
   · rintro ⟨⟨⟨x, m⟩, hk⟩, rfl⟩
-    exact ⟨-x, by
-      rw [map_neg]
-      exact neg_eq_of_add_eq_zero_right (by simpa using hk)⟩
+    exact ⟨-x, by rw [map_neg, (mem_ker_coprod_iff D₁ D₂ x m).1 hk, map_neg, neg_neg]⟩
   · rintro ⟨x, hx⟩
-    exact ⟨⟨(-x, l), by simp [hx]⟩, rfl⟩
+    exact ⟨⟨(-x, l), (mem_ker_coprod_iff D₁ D₂ _ _).2 (by rw [map_neg, map_neg, hx])⟩, rfl⟩
 
 /-- The map `Λ → F ⧸ range D₁` induced by `D₂`: it measures how far the infinitesimal effect of a
 parameter direction is from being achievable by moving the solution. -/
@@ -609,41 +611,19 @@ variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
 variable (D₁ : E →L[𝕜] F) (D₂ : Λ →L[𝕜] F)
 
 /-- The parameter projection of the kernel of `D₁.coprod D₂` is open onto its range as soon as
-`D₁` is open onto its range. Indeed, this kernel is the pullback of the open map
-`D₁ : E → range D₁` along `l ↦ D₂ (-l)`. -/
+`D₁` is open onto its range: this kernel is the fibre product of `D₁` and `l ↦ D₂ (-l)`, and open
+maps are stable under pullback (`Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`). -/
 theorem isOpenMap_rangeFactorization_parameterProj
-    (hopen : IsOpenMap ((D₁ : E →ₗ[𝕜] F).rangeRestrict)) :
+    (hopen : IsOpenMap (Set.rangeFactorization D₁)) :
     IsOpenMap (Set.rangeFactorization (parameterProj D₁ D₂)) := by
-  intro W hW
-  rw [isOpen_iff_mem_nhds]
-  rintro _ ⟨k, hk, rfl⟩
-  obtain ⟨T, hT, rfl⟩ := isOpen_induced_iff.1 hW
-  obtain ⟨U, V, hU, hV, hkU, hkV, hUV⟩ := isOpen_prod_iff.1 hT k.1.1 k.1.2 hk
-  obtain ⟨O, hO, hOU⟩ := isOpen_induced_iff.1 (hopen U hU)
-  have hk0 : D₁ k.1.1 = D₂ (-k.1.2) := (mem_ker_coprod_iff D₁ D₂ _ _).1 k.2
-  refine Filter.mem_of_superset
-    (((hV.preimage continuous_subtype_val).inter (hO.preimage
-      (D₂.continuous.comp (continuous_neg.comp continuous_subtype_val)))).mem_nhds
-        ⟨hkV, ?_⟩) ?_
-  · have hmem : D₂ (-k.1.2) ∈ (D₁ : E →ₗ[𝕜] F).range :=
-      ⟨k.1.1, hk0⟩
-    have : (⟨D₂ (-k.1.2), hmem⟩ : (D₁ : E →ₗ[𝕜] F).range) ∈ Subtype.val ⁻¹' O := by
-      rw [hOU]
-      exact ⟨k.1.1, hkU, Subtype.ext hk0⟩
-    exact Set.mem_preimage.2 this
-  · rintro r ⟨hrV, hrO⟩
-    obtain ⟨y, hy⟩ := r.2
-    have hy0 : D₁ y.1.1 = D₂ (-y.1.2) := (mem_ker_coprod_iff D₁ D₂ _ _).1 y.2
-    have hyr : y.1.2 = r.1 := by simpa only [parameterProj_apply] using hy
-    have hmem : D₂ (-r.1) ∈ (D₁ : E →ₗ[𝕜] F).range :=
-      ⟨y.1.1, by simpa [hyr] using hy0⟩
-    obtain ⟨x, hxU, hx⟩ : (⟨D₂ (-r.1), hmem⟩ : (D₁ : E →ₗ[𝕜] F).range) ∈
-        (D₁ : E →ₗ[𝕜] F).rangeRestrict '' U := by
-      rw [← hOU]
-      exact hrO
-    have hx' : D₁ x = D₂ (-r.1) := congrArg Subtype.val hx
-    refine ⟨⟨(x, r.1), (mem_ker_coprod_iff D₁ D₂ _ _).2 hx'⟩, hUV ⟨hxU, hrV⟩,
-      Subtype.ext (parameterProj_apply D₁ D₂ _)⟩
+  have hproj : ⇑(parameterProj D₁ D₂) = Prod.snd ∘ Subtype.val :=
+    funext (parameterProj_apply D₁ D₂)
+  rw [hproj]
+  refine Topology.IsInducing.subtypeVal.isOpenMap_rangeFactorization_snd_comp
+    (g := fun l ↦ D₂ (-l)) ?_ hopen (by fun_prop)
+  ext ⟨x, l⟩
+  simpa only [Subtype.range_val_subtype, Set.mem_ofPred_eq, SetLike.mem_coe] using
+    mem_ker_coprod_iff D₁ D₂ x l
 
 end OpenMap
 
@@ -671,9 +651,10 @@ theorem isFredholm_parameterProj (hD₁ : IsFredholm D₁) :
       hD₁.isClosed_range.preimage D₂.continuous
   refine ⟨?_, hclosed, finiteDimensional_ker_parameterProj D₁ D₂,
     finiteDimensional_quotient_range_parameterProj D₁ D₂, ?_⟩
-  · -- Strictness: the projection is open onto its range, by pullback of the open map `D₁`.
+  · -- Strictness: `D₁` is a quotient map onto its range, hence open onto it (`LinearMap.range D₁`
+    -- has carrier `Set.range D₁`), and the projection inherits this by pullback.
     have hq : Topology.IsQuotientMap ((D₁ : E →ₗ[𝕜] F).rangeRestrict) := hD₁.isStrictMap
-    have hopen : IsOpenMap ((D₁ : E →ₗ[𝕜] F).rangeRestrict) :=
+    have hopen : IsOpenMap (Set.rangeFactorization D₁) :=
       (AddMonoidHom.isOpenQuotientMap_of_isQuotientMap hq).isOpenMap
     rw [Topology.isStrictMap_iff_isQuotientMap_rangeFactorization]
     exact IsOpenMap.isQuotientMap (isOpenMap_rangeFactorization_parameterProj D₁ D₂ hopen)
