@@ -520,11 +520,9 @@ stage `m + 1`. -/
 theorem _root_.TopCat.Hom.exists_killingStageIncl_comp_eq {m : ℕ}
     (g : (killingStage n X x m).1 ⟶ Z)
     (hZ : ∀ k, m = k + 1 → n ≤ k → Subsingleton (π_ k Z (g (killingStage n X x m).2))) :
-    ∃ g' : (killingStage n X x (m + 1)).1 ⟶ Z, killingStageIncl n X x m ≫ g' = g := by
-  choose F hF using fun i ↦
-    (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).1
-      (nullhomotopic_killingAttachingMaps_comp (m := m) g hZ i)
-  exact ⟨cellAttachmentLift _ g F fun i ↦ (hF i).symm, cellAttachmentIncl_lift _ _ _ _⟩
+    ∃ g' : (killingStage n X x (m + 1)).1 ⟶ Z, killingStageIncl n X x m ≫ g' = g :=
+  (exists_cellAttachmentIncl_comp_eq_iff_nullhomotopic _ g).2 fun i ↦
+    nullhomotopic_killingAttachingMaps_comp (m := m) g hZ i
 
 /-- The extensions of a map `f : X ⟶ Z` over the successive stages of the tower, each extending
 the previous one by `TopCat.Hom.exists_killingStageIncl_comp_eq`. They all send the base point of

@@ -83,18 +83,9 @@ theorem nullhomotopic_relationAttach_comp
   obtain ⟨g, hr⟩ := r
   -- The attaching map `relationAttach A n ψ ⟨g, hr⟩` is `g` by definition.
   change (g ≫ f).hom.Nullhomotopic
-  let g' : C(Metric.sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1, wedge A n) :=
-    g.hom.comp ⟨ULift.up, continuous_uliftUp⟩
-  let p : Ω^ (Fin (n + 2)) (wedge A n) (g' (sphereNorthPole (n + 2))) :=
-    (GenLoop.sphereEquiv (n + 2) _ _).symm ⟨g', rfl⟩
-  have hp : GenLoop.diskBoundaryMap p = g := by
-    have h := congrArg Subtype.val ((GenLoop.sphereEquiv (n + 2) _ _).apply_symm_apply
-      (⟨g', rfl⟩ : {f : C(Metric.sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1, wedge A n) //
-        f (sphereNorthPole (n + 2)) = g' (sphereNorthPole (n + 2))}))
-    rw [GenLoop.coe_sphereEquiv_apply] at h
-    ext s
-    rw [GenLoop.diskBoundaryMap_apply]
-    exact DFunLike.congr_fun h s.down
+  let p : Ω^ (Fin (n + 2)) (wedge A n) (g ⟨sphereNorthPole (n + 2)⟩) :=
+    (GenLoop.sphereEquiv (n + 2) _ _).symm ⟨g.hom.comp ⟨ULift.up, continuous_uliftUp⟩, rfl⟩
+  have hp : GenLoop.diskBoundaryMap p = g := GenLoop.diskBoundaryMap_sphereEquiv_symm g
   -- The Hurewicz class of `p` is, up to sign, the class of the relation, so it lies in `ker ψ`.
   obtain ⟨ε, hε⟩ := exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n + 1)
   have hker : (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 ∈ LinearMap.ker ψ := by
@@ -128,7 +119,8 @@ theorem exists_cellAttachmentIncl_comp_eq_iff
     map_zero]
 
 /-- **The extension is bijective on `πₙ₊₂`.** Let `F : Y → Z` extend `f : W → Z` over the
-presentation complex, where the homotopy groups of `Z` at `F y` vanish below dimension `n + 2`. If
+presentation complex, where the homotopy groups of `Z` at the image `z` of the base point vanish
+below dimension `n + 2`. If
 the map `Hₙ₊₂(W; ℤ) → Hₙ₊₂(Z; ℤ)` induced by `f` is surjective with kernel the kernel of `ψ`, then
 `F` induces a bijection `πₙ₊₂(Y) → πₙ₊₂(Z)`. -/
 theorem bijective_homotopyGroupMap_of_ker_eq {z : Z}
