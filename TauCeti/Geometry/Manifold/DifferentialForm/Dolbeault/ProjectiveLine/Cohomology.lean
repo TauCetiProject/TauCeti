@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ProjectiveLin
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.RemovableSingularity
-import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.LocalExactness
+import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ModelSpace
 
 /-!
 # Dolbeault cohomology of the projective line

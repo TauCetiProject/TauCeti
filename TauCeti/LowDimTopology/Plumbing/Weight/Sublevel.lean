@@ -62,10 +62,7 @@ to `k + 2 · A m` shifts it by `-χ_k(m)`, and spin^c conjugation leaves it fixe
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-whose target is "Némethi's lattice (co)homology `ℍ⁻`/`ℍ⁰` as a `ℤ[U]`-module from lattice points
-and weight functions … and `d`-invariant analogues": the sublevel sets treated here are the ones
-that filtration is taken over. See Némethi,
+The sublevel-set filtration of lattice homology follows Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/

@@ -170,8 +170,6 @@ theorem map_sq_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v :
     (uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫ ^ 2) =
       (betaMeasure (1 / 2) (((Module.finrank ℝ E : ℝ) - 1) / 2)).map
         (fun x ↦ ‖v‖ ^ 2 * x) := by
-  have ha : 0 < ((Module.finrank ℝ E : ℝ) - 1) / 2 :=
-    div_pos (sub_pos.mpr (by exact_mod_cast (lt_of_lt_of_le (by norm_num : 1 < 2) hd))) two_pos
   calc
     _ = ((uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫)).map
         (fun y ↦ y ^ 2) := by
