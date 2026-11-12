@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.MeasureTheory.Covering.Besicovitch
 
 /-!
@@ -55,10 +56,10 @@ proves their basic properties.
   `⨍_{closedBall x r} ‖ν_s - ν_s x‖ d|Dχ_s| → 0`
   (`TauCeti.tendsto_setLIntegral_enorm_outerNormal_sub_div`). The averages of the unit vectors
   `ν_s` tend to the unit vector `ν_s x`, and for unit vectors `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)`.
-  The perimeter measure of a set `B ⊆ S` is at most the pairing of `Dχ_s` with a field
-  that is a multiple `a • ν_s x`, `0 ≤ a ≤ 1`, equal to `ν_s x` on `B` and zero off `S`, plus the
-  error `∫_S ‖ν_s - ν_s x‖ d|Dχ_s|`
-  (`TauCeti.measureReal_le_integral_inner_outerNormal_add`).
+  For a unit vector `ν` and measurable sets `B ⊆ S` with `|Dχ_s| S < ∞`, a measurable field `ψ`
+  with `‖ψ‖ ≤ 1` and `⟪ψ, ν⟫ ≥ 0` on `S`, equal to `ν` on `B` and zero off `S`, gives
+  `|Dχ_s| B ≤ ∫ ⟪ψ, ν_s⟫ d|Dχ_s| + ∫_S ‖ν_s - ν‖ d|Dχ_s|`, where the first term is the pairing of
+  `-Dχ_s` with `ψ` (`TauCeti.variationMeasure_real_le_integral_inner_outerNormal_add`).
 * The reduced boundary and the outer normal only depend on `s` almost everywhere on `Ω`
   (`TauCeti.reducedBoundary_congr_ae`, `TauCeti.outerNormal_congr_ae`); in particular
   `∂*(s ∩ Ω) = ∂*s` (`TauCeti.reducedBoundary_inter_opens`). When `μ` is an additive
@@ -455,49 +456,50 @@ theorem outerNormal_compl [μ.IsAddHaarMeasure] (hx : x ∈ reducedBoundary μ �
   simp only [setAverage_polarDensity_compl]
   rw [(tendsto_setAverage_polarDensity hx).neg.limUnder_eq, neg_neg]
 
-open scoped Distributions in
-/-- The perimeter measure of a set `B ⊆ S` is at most the pairing of `Dχ_s` with a field `ψ` that
-is a multiple `a • ν`, `0 ≤ a ≤ 1`, of `ν = ν_s x`, equals `ν` on `B` and vanishes off `S`, plus
-the error `∫_S ‖ν_s - ν‖ d|Dχ_s|`. -/
-theorem measureReal_le_integral_inner_outerNormal_add {ψ : 𝓓(Ω, E)} {B S : Set Ω}
-    (hBm : MeasurableSet B) (hSm : MeasurableSet S) (hBS : B ⊆ S)
-    (hSfin : variationMeasure μ Ω (s.indicator 1) S ≠ ∞)
-    (hψ : ∀ y, ∃ a ∈ Icc (0 : ℝ) 1, ψ y = a • outerNormal μ Ω s x)
-    (hψB : ∀ y : Ω, y ∈ B → ψ y = outerNormal μ Ω s x) (hψS : ∀ y : Ω, y ∉ S → ψ y = 0)
-    (hν : ‖outerNormal μ Ω s x‖ = 1) :
+/-- **Testing the perimeter measure with a field close to a unit vector.** Let `ν` be a unit
+vector, let `B ⊆ S` be measurable sets with `|Dχ_s| S < ∞`, and let `ψ` be a measurable field with
+`‖ψ‖ ≤ 1` and `⟪ψ, ν⟫ ≥ 0` on `S`, `ψ = ν` on `B` and `ψ = 0` off `S`. Then
+
+`|Dχ_s| B ≤ ∫ ⟪ψ, ν_s⟫ d|Dχ_s| + ∫_S ‖ν_s - ν‖ d|Dχ_s|`,
+
+where `∫ ⟪ψ, ν_s⟫ d|Dχ_s|` is the pairing of `-Dχ_s` with `ψ`. -/
+theorem variationMeasure_real_le_integral_inner_outerNormal_add {ν : E} (hν : ‖ν‖ = 1)
+    {B S : Set Ω} (hBm : MeasurableSet B) (hSm : MeasurableSet S) (hBS : B ⊆ S)
+    (hSfin : variationMeasure μ Ω (s.indicator 1) S ≠ ∞) {ψ : Ω → E}
+    (hψm : AEStronglyMeasurable ψ (variationMeasure μ Ω (s.indicator 1)))
+    (hψ1 : ∀ y ∈ S, ‖ψ y‖ ≤ 1) (hψ0 : ∀ y ∈ S, 0 ≤ ⟪ψ y, ν⟫) (hψB : ∀ y ∈ B, ψ y = ν)
+    (hψS : ∀ y ∉ S, ψ y = 0) :
     (variationMeasure μ Ω (s.indicator 1)).real B ≤
       ∫ y, ⟪ψ y, outerNormal μ Ω s y⟫ ∂variationMeasure μ Ω (s.indicator 1) +
-        ∫ y in S, ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖
-          ∂variationMeasure μ Ω (s.indicator 1) := by
+        ∫ y in S, ‖outerNormal μ Ω s y - ν‖ ∂variationMeasure μ Ω (s.indicator 1) := by
   set lam := variationMeasure μ Ω (s.indicator 1)
-  set ν := outerNormal μ Ω s x
   have hBfin : lam B ≠ ∞ := ne_top_of_le_ne_top hSfin (measure_mono hBS)
-  have hint : Integrable (fun y : Ω => ⟪ψ y, outerNormal μ Ω s y⟫) lam :=
-    (integrable_inner_polarDensity ψ.continuous ψ.hasCompactSupport ψ.tsupport_subset).neg.congr
-      (by filter_upwards [ae_outerNormal_eq] with y hy; simp [hy, inner_neg_right])
+  have hνS := integrableOn_outerNormal hSfin
+  -- `|⟪ψ, ν_s⟫| ≤ ‖ν_s‖` on `S`, and `⟪ψ, ν_s⟫` vanishes off `S`.
+  have hint : Integrable (fun y : Ω => ⟪ψ y, outerNormal μ Ω s y⟫) lam := by
+    refine IntegrableOn.integrable_of_forall_notMem_eq_zero (s := S) ?_ fun y hy => by
+      simp [hψS y hy]
+    refine hνS.norm.mono' (hψm.restrict.inner hνS.aestronglyMeasurable) ?_
+    filter_upwards [ae_restrict_mem hSm] with y hy
+    exact (norm_inner_le_norm _ _).trans (mul_le_of_le_one_left (norm_nonneg _) (hψ1 y hy))
   have hg : IntegrableOn (fun y : Ω => ‖outerNormal μ Ω s y - ν‖) S lam :=
-    ((integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)).norm
+    (hνS.sub (integrableOn_const hSfin)).norm
   rw [← integral_indicator hSm, ← integral_add hint (hg.integrable_indicator hSm),
     ← integral_indicator_one hBm]
   refine integral_mono ((integrable_indicator_iff hBm).2 (integrableOn_const hBfin))
     (hint.add (hg.integrable_indicator hSm)) fun y => ?_
-  -- For unit vectors, `⟪a • ν, ν_s⟫ + ‖ν_s - ν‖ ≥ a`, since `⟪ν, ν_s⟫ ≥ 1 - ‖ν_s - ν‖`.
-  have hkey : 1 - ‖outerNormal μ Ω s y - ν‖ ≤ ⟪ν, outerNormal μ Ω s y⟫ := by
-    have h := abs_real_inner_le_norm ν (outerNormal μ Ω s y - ν)
-    have h' : ⟪ν, outerNormal μ Ω s y⟫ = 1 + ⟪ν, outerNormal μ Ω s y - ν⟫ := by
-      rw [inner_sub_right, real_inner_self_eq_norm_sq, hν]
-      ring
-    rw [hν, one_mul] at h
-    linarith [neg_abs_le ⟪ν, outerNormal μ Ω s y - ν⟫]
   have hnorm := norm_nonneg (outerNormal μ Ω s y - ν)
-  obtain ⟨a, ⟨ha0, ha1⟩, hψa⟩ := hψ y
   by_cases hyB : y ∈ B
   · rw [indicator_of_mem hyB, indicator_of_mem (hBS hyB), hψB y hyB, Pi.one_apply]
-    linarith
+    linarith [one_sub_norm_sub_le_inner hν (outerNormal μ Ω s y)]
   rw [indicator_of_notMem hyB]
   by_cases hyS : y ∈ S
-  · rw [indicator_of_mem hyS, hψa, real_inner_smul_left]
-    nlinarith
+  · -- `⟪ψ, ν_s⟫ = ⟪ψ, ν⟫ + ⟪ψ, ν_s - ν⟫ ≥ -‖ψ‖ ‖ν_s - ν‖ ≥ -‖ν_s - ν‖`.
+    rw [indicator_of_mem hyS]
+    have h1 := neg_abs_le ⟪ψ y, outerNormal μ Ω s y - ν⟫
+    have h2 := abs_real_inner_le_norm (ψ y) (outerNormal μ Ω s y - ν)
+    rw [inner_sub_right] at h1 h2
+    nlinarith [mul_le_mul_of_nonneg_right (hψ1 y hyS) hnorm, hψ0 y hyS]
   · simp [indicator_of_notMem hyS, hψS y hyS]
 
 end TauCeti

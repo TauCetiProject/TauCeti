@@ -23,8 +23,10 @@ zero. A one-sided domain inclusion gives the corresponding localization inequali
 
 Combined with translation invariance, the perimeter in `ball 0 R` of the blow-up
 `(fun y => x + r • y) ⁻¹' s` is `r / r ^ n` times the perimeter of `s` in `ball x (r * R)`
-(`TauCeti.perimeter_ball_zero_preimage_add_smul`). Since the half-space `{y | ⟪y, ν⟫ < 0}` is a
-cone, its perimeter in `ball 0 (t * R)` is `t ^ (n - 1)` times its perimeter in `ball 0 R`
+(`TauCeti.perimeter_ball_zero_preimage_add_smul`). For `t > 0` and in positive dimension, the
+perimeter of `t • s` in `ball 0 (t * R)` is `t ^ (n - 1)` times that of `s` in `ball 0 R`
+(`TauCeti.perimeter_ball_zero_smul`). Since the half-space `{y | ⟪y, ν⟫ < 0}` is a cone, for
+`t > 0` its perimeter in `ball 0 (t * R)` is `t ^ (n - 1)` times its perimeter in `ball 0 R`
 (`TauCeti.perimeter_ball_zero_mul_setOf_inner_lt`).
 
 The proof uses the divergence of a dilated test vector field and change of variables for an
@@ -179,23 +181,37 @@ theorem perimeter_ball_zero_preimage_add_smul {x : E} (hr : 0 < r) (R : ℝ) :
   · intro y hy
     simpa [norm_smul, abs_of_pos hr, inv_mul_lt_iff₀ hr] using hy
 
+/-- Dilating a set by a ratio `t > 0` scales its perimeter in `ball 0 R` to `t ^ (n - 1)` times
+the perimeter in `ball 0 (t * R)` of the dilated set, against an additive Haar measure, where
+`n = dim E ≥ 1`. -/
+theorem perimeter_ball_zero_smul [Nontrivial E] {t : ℝ} (ht : 0 < t) (R : ℝ) :
+    perimeter μ ⟨Metric.ball 0 (t * R), Metric.isOpen_ball⟩ (t • s) =
+      ENNReal.ofReal (t ^ (Module.finrank ℝ E - 1)) *
+        perimeter μ ⟨Metric.ball 0 R, Metric.isOpen_ball⟩ s := by
+  refine perimeter_smul ht (fun y hy => ?_) fun y hy => ?_
+  · simpa [norm_smul, abs_of_pos ht, mul_lt_mul_iff_right₀ ht] using hy
+  · simpa [norm_smul, abs_of_pos ht, inv_mul_lt_iff₀ ht] using hy
+
 open scoped RealInnerProductSpace in
-/-- The half-space `{y | ⟪y, ν⟫ < 0}` is a cone, so against an additive Haar measure its perimeter
-in `ball 0 (t * R)` is `t ^ (n - 1)` times its perimeter in `ball 0 R`, where `n = dim E`. -/
-theorem perimeter_ball_zero_mul_setOf_inner_lt [Nontrivial E] (ν : E) {t : ℝ} (ht : 0 < t)
-    (R : ℝ) :
+/-- The half-space `{y | ⟪y, ν⟫ < 0}` is a cone, so for `t > 0` its perimeter in `ball 0 (t * R)`
+is `t ^ (n - 1)` times its perimeter in `ball 0 R`, against an additive Haar measure, where
+`n = dim E`. -/
+theorem perimeter_ball_zero_mul_setOf_inner_lt (ν : E) {t : ℝ} (ht : 0 < t) (R : ℝ) :
     perimeter μ ⟨Metric.ball 0 (t * R), Metric.isOpen_ball⟩ {y | ⟪y, ν⟫ < 0} =
       ENNReal.ofReal (t ^ (Module.finrank ℝ E - 1)) *
         perimeter μ ⟨Metric.ball 0 R, Metric.isOpen_ball⟩ {y | ⟪y, ν⟫ < 0} := by
-  have hpre : (fun y => (0 : E) + t • y) ⁻¹' {y : E | ⟪y, ν⟫ < 0} = {y | ⟪y, ν⟫ < 0} := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In dimension zero the half-space is empty.
+    have hH : {y : E | ⟪y, ν⟫ < 0} = ∅ := by
+      ext y
+      simp [Subsingleton.elim y 0]
+    simp [hH]
+  have hH : t • {y : E | ⟪y, ν⟫ < 0} = {y | ⟪y, ν⟫ < 0} := by
     ext y
-    simp only [zero_add, mem_preimage, mem_ofPred_eq, real_inner_smul_left]
-    exact ⟨fun h => neg_of_mul_neg_right h ht.le, fun h => mul_neg_of_pos_of_neg ht h⟩
-  have h := perimeter_ball_zero_preimage_add_smul (μ := μ) (s := {y : E | ⟪y, ν⟫ < 0})
-    (x := 0) ht R
-  rw [hpre] at h
-  have hscale : t ^ (Module.finrank ℝ E - 1) * (t / t ^ Module.finrank ℝ E) = 1 := by
-    rw [mul_div_assoc', pow_sub_one_mul Module.finrank_pos.ne', div_self (by positivity)]
-  rw [h, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), hscale, ENNReal.ofReal_one, one_mul]
+    rw [mem_smul_set_iff_inv_smul_mem₀ ht.ne', mem_ofPred_eq, mem_ofPred_eq, real_inner_smul_left]
+    exact ⟨fun h => neg_of_mul_neg_right h (inv_pos.2 ht).le,
+      fun h => mul_neg_of_pos_of_neg (inv_pos.2 ht) h⟩
+  have h := perimeter_ball_zero_smul (μ := μ) (s := {y : E | ⟪y, ν⟫ < 0}) ht R
+  rwa [hH] at h
 
 end TauCeti
