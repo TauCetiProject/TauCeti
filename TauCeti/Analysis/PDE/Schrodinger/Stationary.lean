@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Sobolev.W1p.Basic
-import Mathlib.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TestFunction.Lp
@@ -55,12 +54,12 @@ which is unique among weak solutions in `L²(E)`.
   by `P` preserves the Sobolev scale. At `s = 0`, boundedness of `P` suffices, so a weak `L²`
   solution with `g ∈ L²` lies in `H²(E)`
   (`TauCeti.mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq`).
-* **Uniqueness.** Passing from test functions to all of `H¹(E) = W^{1,2}(E)` by density
-  (`TauCeti.W1p.denseRange_ofTestFunctionₗ_top`), the form `∫ ⟪∇u, ∇v⟫ + ∫ P u v` is coercive on
-  `H¹(E)`
+* **Uniqueness.** The Schrödinger form `TauCeti.schrodingerForm`, `∫ ⟪∇u, ∇v⟫ + ∫ P u v`, is
+  coercive on `H¹(E) = W^{1,2}(E)`
   (`TauCeti.exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq`). A weak `L²`
-  solution of `-Δh + P h = 0` lies in `H²(E) ⊆ H¹(E)` and is orthogonal to `H¹(E)` for this
-  form, so it vanishes; two weak `L²` solutions for the same `g` thus agree almost everywhere
+  solution of `-Δh + P h = 0` lies in `H²(E) ⊆ H¹(E)` and, by density of test functions
+  (`TauCeti.W1p.denseRange_ofTestFunctionₗ_top`), is orthogonal to `H¹(E)` for this form, so it
+  vanishes; two weak `L²` solutions for the same `g` thus agree almost everywhere
   (`TauCeti.ae_eq_of_integral_mul_neg_laplacian_add_mul_eq`).
 
 Together, every `g ∈ L²(E)` has a weak solution `h ∈ H²(E)`
@@ -83,8 +82,6 @@ equation `Δη = P η` for `η = δα / α` describes the infinitesimal deformat
   solutions lie in `H²(E)`.
 * `TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`: existence of
   an `H²` weak solution for every `L²` right-hand side.
-* `TauCeti.exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq`: coercivity of
-  the Schrödinger form, `c ‖u‖²_{H¹} ≤ ‖∇u‖₂² + ∫ P u²`.
 * `TauCeti.ae_eq_of_integral_mul_neg_laplacian_add_mul_eq`: two weak `L²` solutions agree almost
   everywhere.
 * `TauCeti.integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im`: real weak solutions
@@ -277,10 +274,8 @@ private theorem neg_laplacian_add_eq {P h g : E → ℝ} (hh : MemLp h 2 volume)
     integral_congr_ae (Eventually.of_forall fun z ↦ mul_comm _ _)
   rw [e2]
   rw [e1, e3] at hw
-  push_cast
-  rw [← Complex.ofReal_neg, ← Complex.ofReal_add, ← Complex.ofReal_add, ← Complex.ofReal_sub]
-  congr 1
-  linarith
+  exact_mod_cast (by linarith : -(∫ z, h z * Δ (φ : E → ℝ) z) + ∫ z, φ z * h z =
+    (∫ z, φ z * g z) + (∫ z, φ z * h z) - ∫ z, φ z * (P z * h z))
 
 /-- **Weak solutions of the stationary Schrödinger equation gain two derivatives.** If `h`, `P h`
 and `g` lie in `H^s(E)` and `-Δh + P h = g` weakly, that is `∫ h (-Δφ + P φ) = ∫ g φ` for every
@@ -346,122 +341,6 @@ open TopologicalSpace
 open scoped Distributions
 
 variable {P : E → ℝ}
-
-/-- Multiplication by an essentially bounded potential, as a bounded operator on `L²(E)`. -/
-private noncomputable def potentialMul (hP : MemLp P ⊤ (volume : Measure E)) :
-    Lp ℝ 2 ((volume : Measure E).restrict (⊤ : Opens E)) →L[ℝ]
-      Lp ℝ 2 ((volume : Measure E).restrict (⊤ : Opens E)) :=
-  (ContinuousLinearMap.lsmul ℝ ℝ).holderL _ ⊤ 2 2 ((hP.restrict _).toLp P)
-
-private theorem potentialMul_ae (hP : MemLp P ⊤ (volume : Measure E))
-    (f : Lp ℝ 2 ((volume : Measure E).restrict (⊤ : Opens E))) :
-    potentialMul hP f =ᵐ[volume] fun z ↦ P z * f z := by
-  have h := (ContinuousLinearMap.lsmul ℝ ℝ).coeFn_holder (r := 2) ((hP.restrict _).toLp P) f
-  have h' := (hP.restrict ((⊤ : Opens E) : Set E)).coeFn_toLp
-  simp only [Opens.coe_top, Measure.restrict_univ] at h h'
-  filter_upwards [h, h'] with z hz hz'
-  simp only [potentialMul, ContinuousLinearMap.holderL_apply_apply, hz, hz',
-    ContinuousLinearMap.lsmul_apply, smul_eq_mul]
-
-/-- The Schrödinger form `(u, v) ↦ ⟪∇u, ∇v⟫ + ⟪u, P v⟫` on `H¹(E)`. -/
-private noncomputable def schrodingerForm (hP : MemLp P ⊤ (volume : Measure E)) :
-    W1p (volume : Measure E) ⊤ 2 →L[ℝ] W1p (volume : Measure E) ⊤ 2 →L[ℝ] ℝ :=
-  LinearMap.mkContinuous₂
-    (LinearMap.mk₂ ℝ (fun u v ↦ ⟪W1p.gradient u, W1p.gradient v⟫ +
-        ⟪W1p.value u, potentialMul hP (W1p.value v)⟫)
-      (fun u u' v ↦ by
-        simp only [← W1p.gradientL_apply, ← W1p.valueL_apply, map_add, inner_add_left]; ring)
-      (fun c u v ↦ by
-        simp only [← W1p.gradientL_apply, ← W1p.valueL_apply, map_smul, real_inner_smul_left,
-          smul_eq_mul]; ring)
-      (fun u v v' ↦ by
-        simp only [← W1p.gradientL_apply, ← W1p.valueL_apply, map_add, inner_add_right]; ring)
-      (fun c u v ↦ by
-        simp only [← W1p.gradientL_apply, ← W1p.valueL_apply, map_smul, real_inner_smul_right,
-          smul_eq_mul]; ring))
-    (1 + ‖potentialMul hP‖) fun u v ↦ by
-      simp only [LinearMap.mk₂_apply]
-      have h1 := abs_real_inner_le_norm (W1p.gradient u) (W1p.gradient v)
-      have h2 := abs_real_inner_le_norm (W1p.value u) (potentialMul hP (W1p.value v))
-      have h3 := (potentialMul hP).le_opNorm (W1p.value v)
-      have hgu := W1p.norm_gradient_le u
-      have hgv := W1p.norm_gradient_le v
-      have hvu := W1p.norm_value_le u
-      have hvv := W1p.norm_value_le v
-      rw [Real.norm_eq_abs]
-      refine (abs_add_le _ _).trans ?_
-      have _ := norm_nonneg (potentialMul hP)
-      calc _ ≤ ‖W1p.gradient u‖ * ‖W1p.gradient v‖ +
-            ‖W1p.value u‖ * (‖potentialMul hP‖ * ‖W1p.value v‖) := by
-            gcongr
-            exact h2.trans (mul_le_mul_of_nonneg_left h3 (norm_nonneg _))
-        _ ≤ ‖u‖ * ‖v‖ + ‖u‖ * (‖potentialMul hP‖ * ‖v‖) := by gcongr
-        _ = (1 + ‖potentialMul hP‖) * ‖u‖ * ‖v‖ := by ring
-
-private theorem schrodingerForm_apply (hP : MemLp P ⊤ (volume : Measure E))
-    (u v : W1p (volume : Measure E) ⊤ 2) :
-    schrodingerForm hP u v = (∫ z, ⟪W1p.gradient u z, W1p.gradient v z⟫) +
-      ∫ z, P z * (W1p.value u z * W1p.value v z) := by
-  simp only [schrodingerForm, LinearMap.mkContinuous₂_apply, LinearMap.mk₂_apply, L2.inner_def,
-    Opens.coe_top, Measure.restrict_univ]
-  congr 1
-  refine integral_congr_ae ?_
-  filter_upwards [potentialMul_ae hP (W1p.value v)] with z hz
-  rw [hz, real_inner_eq_re_inner, RCLike.inner_apply, conj_trivial, RCLike.re_to_real]
-  ring
-
-private theorem schrodingerForm_self (hP : MemLp P ⊤ (volume : Measure E))
-    (u : W1p (volume : Measure E) ⊤ 2) :
-    schrodingerForm hP u u = ‖W1p.gradient u‖ ^ 2 + ∫ z, P z * W1p.value u z ^ 2 := by
-  rw [schrodingerForm_apply, ← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
-  simp only [Opens.coe_top, Measure.restrict_univ, real_inner_self_eq_norm_sq, sq]
-
-/-- The Poincaré inequality for the Schrödinger form, extended from test functions to all of
-`H¹(E)` by density. -/
-private theorem mul_norm_value_sq_le_schrodingerForm [Nontrivial E]
-    (hP : MemLp P ⊤ (volume : Measure E)) (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
-    (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z) :
-    ∃ c > 0, ∀ u : W1p (volume : Measure E) ⊤ 2,
-      c * ‖W1p.value u‖ ^ 2 ≤ schrodingerForm hP u u := by
-  obtain ⟨c, hc, hgap⟩ :=
-    exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
-      (μ := volume) (F := ℝ) (hP.locallyIntegrable le_top) hP₀ ha hPa
-  refine ⟨c, hc, fun u ↦ ?_⟩
-  refine (W1p.denseRange_ofTestFunctionₗ_top (mu := volume) (p := 2) (by norm_num)).induction_on
-    u (isClosed_le (continuous_const.mul
-      (((W1p.valueL (mu := volume) (Omega := ⊤) (p := 2)).continuous.congr
-        W1p.valueL_apply).norm.pow 2))
-      ((schrodingerForm hP).continuous₂.comp
-      (continuous_id.prodMk continuous_id))) fun φ ↦ ?_
-  have hv := W1p.value_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ
-  rw [schrodingerForm_self, W1p.norm_value_ofTestFunctionₗ_top_sq,
-    W1p.norm_gradient_ofTestFunctionₗ_top_sq]
-  have h := hgap φ (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
-  simp only [Real.norm_eq_abs, sq_abs] at h
-  convert h using 2
-  exact integral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])
-
-/-- **Coercivity of the Schrödinger form on `H¹(E)`.** Let `P` be essentially bounded, almost
-everywhere nonnegative, and almost everywhere at least `a > 0` outside the closed ball of radius
-`R`. Then there is `c > 0` with `c ‖u‖²_{H¹} ≤ ‖∇u‖₂² + ∫ P u²` for every `u ∈ H¹(E)`. -/
-theorem exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq [Nontrivial E]
-    (hP : MemLp P ⊤ (volume : Measure E)) (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
-    (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z) :
-    ∃ c > 0, ∀ u : W1p (volume : Measure E) ⊤ 2,
-      c * ‖u‖ ^ 2 ≤ ‖W1p.gradient u‖ ^ 2 + ∫ z, P z * W1p.value u z ^ 2 := by
-  obtain ⟨c, hc, hgap⟩ := mul_norm_value_sq_le_schrodingerForm hP hP₀ ha hPa
-  refine ⟨min 1 c / 2, by positivity, fun u ↦ ?_⟩
-  have hgap := hgap u
-  rw [schrodingerForm_self] at hgap
-  have hpot : 0 ≤ ∫ z, P z * W1p.value u z ^ 2 :=
-    integral_nonneg_of_ae (hP₀.mono fun z hz ↦ by positivity)
-  have h1 : min 1 c ≤ 1 := min_le_left _ _
-  have h2 : min 1 c ≤ c := min_le_right _ _
-  have _ : 0 ≤ min 1 c := le_min zero_le_one hc.le
-  rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
-  nlinarith [sq_nonneg ‖W1p.value u‖, sq_nonneg ‖W1p.gradient u‖,
-    mul_le_mul_of_nonneg_right h2 (sq_nonneg ‖W1p.value u‖),
-    mul_le_mul_of_nonneg_right h1 (sq_nonneg ‖W1p.gradient u‖)]
 
 /-- For `u ∈ H¹(E)`, testing `u` against `-Δφ + P φ` is the Schrödinger form of `u` and `φ`. -/
 private theorem integral_value_mul_eq_schrodingerForm (hP : MemLp P ⊤ (volume : Measure E))
@@ -532,17 +411,17 @@ theorem ae_eq_of_integral_mul_neg_laplacian_add_mul_eq [Nontrivial E]
       simpa only [Pi.zero_apply, zero_mul, integral_zero] using hd φ hφ hc
   obtain ⟨w, hw⟩ :=
     exists_w1p_value_ae_eq_of_mem_realSobolevFunctions (by norm_num) (by norm_num) (by norm_num) h2
-  -- The Poincaré inequality forces the value of `w` to vanish.
+  -- The Poincaré inequality on `H¹(E)` forces `w` to vanish.
   have hw0 : schrodingerForm hP w w = 0 := schrodingerForm_eq_zero hP (fun φ hφ hc ↦ by
     rw [← hd φ hφ hc]
     exact integral_congr_ae (hw.mono fun z hz ↦ by simp only [hz])) w
-  obtain ⟨c, hc, hgap⟩ := mul_norm_value_sq_le_schrodingerForm hP hP₀ ha hPa
+  obtain ⟨c, hc, hgap⟩ :=
+    exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq hP hP₀ ha hPa
   have hn : W1p.value w = 0 := by
     have := hgap w
-    rw [hw0] at this
-    have hsq : ‖W1p.value w‖ ^ 2 = 0 :=
-      le_antisymm (nonpos_of_mul_nonpos_right this hc) (sq_nonneg _)
-    exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hsq)
+    rw [← schrodingerForm_self hP, hw0] at this
+    have hsq : ‖w‖ ^ 2 = 0 := le_antisymm (nonpos_of_mul_nonpos_right this hc) (sq_nonneg _)
+    rw [← W1p.valueL_apply, norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hsq), map_zero]
   have h0 : (W1p.value w : E → ℝ) =ᵐ[volume] 0 := by
     rw [hn]
     simpa only [Opens.coe_top, Measure.restrict_univ] using

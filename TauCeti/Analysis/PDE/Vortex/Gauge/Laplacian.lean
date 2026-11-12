@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Stationary
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
-public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
+public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 
@@ -28,9 +28,9 @@ solution of `d₀* d₀ u = g`, that is `∫ u · d₀* d₀ φ = ∫ g φ` for 
 
 The potential `p² + q²` vanishes at the zeros of `α`, but for a continuous field of the affine
 space `A_m^s = x_m + H^s`, `s > 1`, it tends to `1 / 4` at infinity
-(`TauCeti.Vortex.tendsto_normSq_of_mem_framedFieldSpace`). This file proves that the gauge
-Laplacian is then an isomorphism from `H^(j+2)(ℂ)` onto `H^j(ℂ)` whenever `x ∈ A_m^k` with
-`j ≤ k` and `k ≥ 2`.
+(`TauCeti.Vortex.tendsto_normSq_of_mem_framedFieldSpace`). This file proves that, whenever
+`x ∈ A_m^k` with `j ≤ k` and `k ≥ 2`, for every `g ∈ H^j(ℂ)` the equation `d₀* d₀ u = g` has a
+weak solution in `L²(ℂ)` which is unique up to null sets and lies in `H^(j+2)(ℂ)`.
 
 * Uniqueness (`TauCeti.Vortex.ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq`): two weak
   solutions in `L²(ℂ)` agree almost everywhere, by the coercivity of the gauge Laplacian on
@@ -41,7 +41,9 @@ Laplacian is then an isomorphism from `H^(j+2)(ℂ)` onto `H^j(ℂ)` whenever `x
   potential is bounded. After that, multiplication by the coordinates `p, q` of a field of `A_m^k`
   preserves `H^n(ℂ)` for `1 < n ≤ k`
   (`TauCeti.Vortex.mul_mem_realSobolevFunctions_of_mem_framedFieldSpace`), so the potential term
-  is as regular as the solution, and the resolvent of the Laplacian gains two derivatives at each
+  is as regular as the solution
+  (`TauCeti.Vortex.sq_add_sq_mul_mem_realSobolevFunctions_of_mem_framedFieldSpace`), and the
+  resolvent of the Laplacian gains two derivatives at each
   step (`TauCeti.mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq`).
 * Existence
   (`TauCeti.Vortex.exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq`):
@@ -50,11 +52,13 @@ Laplacian is then an isomorphism from `H^(j+2)(ℂ)` onto `H^j(ℂ)` whenever `x
   (`TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`) and the
   regularity above.
 
-For `j = k - 1` this is the invertibility of `d₀* d₀ : H^(k+1)(ℂ) → H^(k-1)(ℂ)` at a field
-`x₀ ∈ A_m^k`, the linearization at the identity of the Coulomb gauge condition
+For `j = k - 1` this gives unique weak solvability of `d₀* d₀ u = g` with an `H^(k+1)(ℂ)`
+solution for every `g ∈ H^(k-1)(ℂ)`, at a field `x₀ ∈ A_m^k`. This is the analytic input for the
+invertibility of the linearization at the identity of the Coulomb gauge condition
 `d₀* (u · x₀ - x₀) = 0` for the action of the Sobolev framed gauge group `G_(k+1)`
 (`TauCeti.Vortex.sobolevGaugeGroup`). The statements are about functions, not bounded operators
-between completed spaces; no slice or quotient is constructed here.
+between completed spaces: packaging the solution as an inverse operator remains to be done, and no
+slice or quotient is constructed here.
 
 ## References
 
@@ -102,6 +106,20 @@ private theorem potential_bounds {s : ℝ} (hs : 1 < s) (hx : x ∈ framedFieldS
     have h0 : 0 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by positivity
     rw [Real.norm_eq_abs, abs_of_nonneg h0]
     exact le_max_of_le_right (by linarith)
+
+/-- At a field of `A_m^n`, `n > 1`, multiplication by the potential `p² + q²` of the gauge
+Laplacian preserves `H^n(ℂ)`. -/
+theorem sq_add_sq_mul_mem_realSobolevFunctions_of_mem_framedFieldSpace {n : ℕ} (hn : 1 < n)
+    (hx : x ∈ framedFieldSpace f m n) {u : ℂ → ℝ} (hu : u ∈ realSobolevFunctions ℂ n 2) :
+    (fun z ↦ (x z 2 ^ 2 + x z 3 ^ 2) * u z) ∈ realSobolevFunctions ℂ n 2 := by
+  have h2 := mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn hx 2
+    (mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn hx 2 hu)
+  have h3 := mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn hx 3
+    (mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn hx 3 hu)
+  convert add_mem h2 h3 using 1
+  ext z
+  simp only [Pi.add_apply]
+  ring
 
 /-- **The gauge Laplacian is a Schrödinger operator.** Testing a function `u` against the gauge
 Laplacian `d₀* d₀ φ` of a `C²` function `φ` is testing it against `-Δφ + (p² + q²) φ`. -/
@@ -163,18 +181,10 @@ theorem mem_realSobolevFunctions_of_integral_mul_gaugeAdjoint_gaugeDirection_eq 
       realSobolevFunctions_mono (by norm_num) (by norm_num)
         (by exact_mod_cast (by omega : N ≤ n + 2)) hu'
     have hVu : (fun z ↦ (x z 2 ^ 2 + x z 3 ^ 2) * u z) ∈
-        realSobolevFunctions ℂ ((n + 1 : ℕ) : ℝ) 2 := by
-      have h2 := mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hN2 hxN 2
-        (mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hN2 hxN 2 huN)
-      have h3 := mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hN2 hxN 3
-        (mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hN2 hxN 3 huN)
-      have hsum : (fun z ↦ (x z 2 ^ 2 + x z 3 ^ 2) * u z) ∈ realSobolevFunctions ℂ (N : ℝ) 2 := by
-        convert add_mem h2 h3 using 1
-        ext z
-        simp only [Pi.add_apply]
-        ring
-      exact realSobolevFunctions_mono (by norm_num) (by norm_num)
-        (by exact_mod_cast (by omega : n + 1 ≤ N)) hsum
+        realSobolevFunctions ℂ ((n + 1 : ℕ) : ℝ) 2 :=
+      realSobolevFunctions_mono (by norm_num) (by norm_num)
+        (by exact_mod_cast (by omega : n + 1 ≤ N))
+        (sq_add_sq_mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hN2 hxN huN)
     have hun : u ∈ realSobolevFunctions ℂ ((n + 1 : ℕ) : ℝ) 2 :=
       realSobolevFunctions_mono (by norm_num) (by norm_num) (by push_cast; linarith) hu'
     have hgn : g ∈ realSobolevFunctions ℂ ((n + 1 : ℕ) : ℝ) 2 :=
@@ -182,7 +192,7 @@ theorem mem_realSobolevFunctions_of_integral_mul_gaugeAdjoint_gaugeDirection_eq 
     exact_mod_cast mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq hun
       hVu hgn heq
 
-/-- **The gauge Laplacian is onto `H^j(ℂ)`.** Let `x` be a continuous field of `A_m^k`, `k ≥ 2`,
+/-- **Existence for the gauge Laplacian.** Let `x` be a continuous field of `A_m^k`, `k ≥ 2`,
 and `j ≤ k`. For every `g ∈ H^j(ℂ)` there is `u ∈ H^(j+2)(ℂ)` with `d₀* d₀ u = g` weakly:
 `∫ u · d₀* d₀ φ = ∫ g φ` for every compactly supported `C²` function `φ`. By
 `TauCeti.Vortex.ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq` it is unique up to null
