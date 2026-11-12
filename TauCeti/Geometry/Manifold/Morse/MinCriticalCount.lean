@@ -38,9 +38,10 @@ connected manifold with finitely many components
 (`TauCeti.minCriticalCount_eq_sum_connectedComponents`): a smooth function restricts to smooth
 functions on the pieces, and smooth functions on the pieces glue to a smooth function. On a compact
 boundaryless manifold of positive dimension every component is a compact manifold with at least two
-points, so `c(M)` is at least twice the number of components
-(`TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`), and a manifold carrying a smooth
-function with fewer than four critical points is preconnected
+points, so every continuous function has at least twice as many critical points as there are
+components (`TauCeti.two_mul_card_connectedComponents_le_totalCriticalCount`), hence so does `c(M)`
+(`TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`), and a manifold carrying a
+continuous function with fewer than four critical points is preconnected
 (`TauCeti.preconnectedSpace_of_totalCriticalCount_lt_four`).
 
 ## Main declarations
@@ -57,7 +58,8 @@ function with fewer than four critical points is preconnected
 * `TauCeti.minCriticalCount_sphere`: the minimum is `2` on every sphere.
 * `TauCeti.minCriticalCount_eq_sum` and `TauCeti.minCriticalCount_eq_sum_connectedComponents`:
   the minimum is additive over finite disjoint open covers and over connected components.
-* `TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`: each component of a compact
+* `TauCeti.two_mul_card_connectedComponents_le_totalCriticalCount` and
+  `TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`: each component of a compact
   boundaryless manifold of positive dimension contributes at least two critical points.
 * `TauCeti.preconnectedSpace_of_totalCriticalCount_lt_four`: fewer than four critical points force
   such a manifold to be preconnected.
@@ -120,17 +122,19 @@ theorem minCriticalCount_eq_sum {ι : Type*} [Fintype ι] (U : ι → Opens M)
     minCriticalCount I M = ∑ i, minCriticalCount I (U i) := by
   refine le_antisymm ?_ (le_minCriticalCount_iff.2 fun f hf ↦ ?_)
   · -- Glue smooth functions `g i` on the `U i` with `c(U i)` critical points into one function
-    -- `F` on `M`, reading `F x` from the piece `U (idx x)` containing `x`.
+    -- `F` on `M`, agreeing with `g i` on `U i`.
     choose g hg hgc using fun i ↦ exists_totalCriticalCount_eq_minCriticalCount (I := I) (M := U i)
-    choose idx hidx using fun x : M ↦ Opens.mem_iSup.1 (hU.symm ▸ Opens.mem_top x : x ∈ ⨆ i, U i)
-    have hg_eq {i j : ι} {x : M} (hi : x ∈ U i) (hj : x ∈ U j) : g j ⟨x, hj⟩ = g i ⟨x, hi⟩ := by
-      obtain rfl : j = i := by_contra fun h ↦ disjoint_left.1 (Opens.coe_disjoint.2 (hd h)) hj hi
+    have hcover : ⋃ i, (U i : Set M) = univ := by rw [← Opens.coe_iSup, hU, Opens.coe_top]
+    have hg_eq (i j : ι) (x : M) (hi : x ∈ U i) (hj : x ∈ U j) : g i ⟨x, hi⟩ = g j ⟨x, hj⟩ := by
+      obtain rfl : i = j := by_contra fun h ↦ disjoint_left.1 (Opens.coe_disjoint.2 (hd h)) hi hj
       rfl
-    set F : M → ℝ := fun x ↦ g (idx x) ⟨x, hidx x⟩
-    have hF (i : ι) : (F ∘ Subtype.val : U i → ℝ) = g i := funext fun x ↦ hg_eq x.2 (hidx x)
+    set F : M → ℝ := liftCover (fun i ↦ (U i : Set M)) g hg_eq hcover
+    have hF (i : ι) : (F ∘ Subtype.val : U i → ℝ) = g i :=
+      funext fun x ↦ liftCover_coe (S := fun i ↦ (U i : Set M)) (hf := hg_eq) (hS := hcover) x
     have hFs : ContMDiff I 𝓘(ℝ) ∞ F := fun x ↦ by
-      rw [← contMDiffAt_subtype_iff (U := U (idx x)) (x := ⟨x, hidx x⟩)]
-      exact (hF (idx x) ▸ hg (idx x)).contMDiffAt
+      obtain ⟨i, hi⟩ := mem_iUnion.1 (hcover.symm ▸ mem_univ x : x ∈ ⋃ i, (U i : Set M))
+      rw [← contMDiffAt_subtype_iff (U := U i) (x := ⟨x, hi⟩)]
+      exact (hF i ▸ hg i).contMDiffAt
     calc minCriticalCount I M ≤ totalCriticalCount I F := minCriticalCount_le hFs
       _ = ∑ i, minCriticalCount I (U i) := by
         rw [totalCriticalCount_eq_sum U hd hU]
@@ -164,17 +168,17 @@ least two critical points, so `2 ≤ c(M)`. -/
 theorem two_le_minCriticalCount [Nontrivial M] : 2 ≤ minCriticalCount I M :=
   le_minCriticalCount_iff.2 fun _ hf ↦ two_le_totalCriticalCount hf.continuous
 
-/-- On a compact boundaryless manifold of positive dimension, every smooth function has at least
-two critical points on each connected component, so `c(M)` is at least twice the number of
-components. -/
-theorem two_mul_card_connectedComponents_le_minCriticalCount [Nontrivial E] :
-    2 * ENat.card (ConnectedComponents M) ≤ minCriticalCount I M := by
+/-- On a compact boundaryless manifold of positive dimension, every continuous function has at
+least two critical points on each connected component, so its critical count is at least twice the
+number of components. -/
+theorem two_mul_card_connectedComponents_le_totalCriticalCount [Nontrivial E] (hf : Continuous f) :
+    2 * ENat.card (ConnectedComponents M) ≤ totalCriticalCount I f := by
   have : LocallyConnectedSpace H := I.toHomeomorph.locallyConnectedSpace
   have : LocallyConnectedSpace M := ChartedSpace.locallyConnectedSpace H M
   have : PerfectSpace H := perfectSpace_iff_forall_not_isolated.2 fun x ↦ by
     simpa using (PerfectSpace.not_isolated (I.toHomeomorph x)).map I.toHomeomorph.symm
   have := Fintype.ofFinite (ConnectedComponents M)
-  rw [minCriticalCount_eq_sum_connectedComponents, ENat.card_eq_coe_fintype_card, mul_comm,
+  rw [totalCriticalCount_eq_sum_connectedComponents, ENat.card_eq_coe_fintype_card, mul_comm,
     ← nsmul_eq_mul, ← Finset.card_univ, ← Finset.sum_const]
   refine Finset.sum_le_sum fun C _ ↦ ?_
   -- Each component is a nonempty compact boundaryless manifold with no isolated points.
@@ -183,14 +187,21 @@ theorem two_mul_card_connectedComponents_le_minCriticalCount [Nontrivial E] :
   have : Nontrivial (ConnectedComponents.mk x).opens := ChartedSpace.nontrivial (H := H)
   have : CompactSpace (ConnectedComponents.mk x).opens :=
     isCompact_iff_compactSpace.1 (ConnectedComponents.isClopen_opens _).isClosed.isCompact
-  exact two_le_minCriticalCount
+  exact two_le_totalCriticalCount (hf.comp continuous_subtype_val)
 
-/-- A compact boundaryless manifold of positive dimension carrying a smooth function with fewer
+/-- On a compact boundaryless manifold of positive dimension, `c(M)` is at least twice the number
+of connected components. -/
+theorem two_mul_card_connectedComponents_le_minCriticalCount [Nontrivial E] :
+    2 * ENat.card (ConnectedComponents M) ≤ minCriticalCount I M :=
+  le_minCriticalCount_iff.2 fun _ hf ↦
+    two_mul_card_connectedComponents_le_totalCriticalCount hf.continuous
+
+/-- A compact boundaryless manifold of positive dimension carrying a continuous function with fewer
 than four critical points is preconnected, hence connected when nonempty: each connected component
 carries at least two of the critical points. -/
 theorem preconnectedSpace_of_totalCriticalCount_lt_four [Nontrivial E]
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (h4 : totalCriticalCount I f < 4) : PreconnectedSpace M := by
-  have hle := two_mul_card_connectedComponents_le_minCriticalCount.trans (minCriticalCount_le hf)
+    (hf : Continuous f) (h4 : totalCriticalCount I f < 4) : PreconnectedSpace M := by
+  have hle := two_mul_card_connectedComponents_le_totalCriticalCount (I := I) hf
   have : Subsingleton (ConnectedComponents M) := by
     rw [← ENat.card_le_one_iff_subsingleton]
     by_contra! h
