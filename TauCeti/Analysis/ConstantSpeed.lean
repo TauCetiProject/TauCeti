@@ -51,36 +51,6 @@ theorem HasConstantSpeedOnWith.lipschitzOnWith {E : Type*} [PseudoEMetricSpace E
   simpa only [edist_dist, Real.dist_eq, abs_of_nonpos (sub_nonpos.mpr hxy), neg_sub]
     using hdist.trans_eq hmul
 
-/-- For a function of bounded variation on `s`, two cumulative variations from the same base point
-differ by at most the total variation on `s`. The base point and the two endpoints are arbitrary:
-every cumulative variation from `a` lies between minus the variation on the part of `s` below `a`
-and the variation on the part above `a`, and these two variations add up to at most the total. -/
-theorem variationOnFromTo.abs_sub_le_eVariationOn {α E : Type*} [LinearOrder α]
-    [TopologicalSpace E] [WeakPseudoEMetricSpace E] {f : α → E} {s : Set α}
-    (hf : BoundedVariationOn f s) {a x y : α} :
-    |variationOnFromTo f s a x - variationOnFromTo f s a y| ≤ (eVariationOn f s).toReal := by
-  have hLR : (eVariationOn f (s ∩ Iic a)).toReal + (eVariationOn f (s ∩ Ici a)).toReal ≤
-      (eVariationOn f s).toReal := by
-    rw [← ENNReal.toReal_add (hf.mono inter_subset_left) (hf.mono inter_subset_left)]
-    exact ENNReal.toReal_mono hf <| (eVariationOn.add_le_union f (s := s ∩ Iic a)
-      (t := s ∩ Ici a) fun _ hu _ hv ↦ hu.2.trans hv.2).trans <|
-        eVariationOn.mono f (union_subset inter_subset_left inter_subset_left)
-  have hmem (z : α) : -(eVariationOn f (s ∩ Iic a)).toReal ≤ variationOnFromTo f s a z ∧
-      variationOnFromTo f s a z ≤ (eVariationOn f (s ∩ Ici a)).toReal := by
-    rcases le_total a z with h | h
-    · rw [variationOnFromTo.eq_of_le f s h]
-      exact ⟨(neg_nonpos.2 ENNReal.toReal_nonneg).trans ENNReal.toReal_nonneg,
-        ENNReal.toReal_mono (hf.mono inter_subset_left)
-          (eVariationOn.mono f (inter_subset_inter_right s Icc_subset_Ici_self))⟩
-    · rw [variationOnFromTo.eq_of_ge f s h]
-      exact ⟨neg_le_neg (ENNReal.toReal_mono (hf.mono inter_subset_left)
-          (eVariationOn.mono f (inter_subset_inter_right s Icc_subset_Iic_self))),
-        (neg_nonpos.2 ENNReal.toReal_nonneg).trans ENNReal.toReal_nonneg⟩
-  obtain ⟨hx₁, hx₂⟩ := hmem x
-  obtain ⟨hy₁, hy₂⟩ := hmem y
-  rw [abs_le]
-  constructor <;> linarith
-
 /-- The extended diameter of the set of cumulative variations from any base point is at most the
 total variation on `s`. -/
 theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [TopologicalSpace E]
