@@ -466,6 +466,7 @@ theorem inverseRegularizedIncompleteBeta_eq_zero
 
 /-- Outside the positive shape parameters, the inverse regularized incomplete beta function is
 identically zero. -/
+@[simp]
 theorem inverseRegularizedIncompleteBeta_of_not_pos (h : ¬(0 < a ∧ 0 < b)) :
     inverseRegularizedIncompleteBeta a b = 0 :=
   funext fun _ => inverseRegularizedIncompleteBeta_eq_zero fun h' => h ⟨h'.1, h'.2.1⟩
