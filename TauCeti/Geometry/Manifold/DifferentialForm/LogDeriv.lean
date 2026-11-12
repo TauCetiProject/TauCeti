@@ -214,7 +214,7 @@ theorem contMDiffAt_mlogDeriv {n : WithTop ℕ∞} {u : M → ℂ} {x : M}
     (hu : ContMDiffAt I 𝓘(ℝ, ℂ) (n + 1) u x) (hx : u x ≠ 0) :
     ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℂ)) n
       (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℂ) y (mlogDeriv I u y)) x := by
-  rw [Bundle.contMDiffAt_section]
+  rw [Bundle.contMDiffAt_section_iff]
   have hd := (ContinuousAlternatingMap.ofSubsingletonLIE
     (𝕜 := ℝ) (E := E) (F := ℂ) (0 : Fin 1)).toContinuousLinearEquiv.contDiff
     |>.comp_contMDiffAt (hu.mfderiv_const (m := n) le_rfl)
