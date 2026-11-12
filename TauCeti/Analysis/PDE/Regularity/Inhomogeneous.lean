@@ -517,7 +517,7 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
         D * (R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) +
           R ^ (2 - (Fintype.card ι : ℝ) / r) *
             (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam) := by
-  obtain ⟨K, hK, hsplit⟩ := exists_forall_energyFormH1_eq_zero_ae_abs_sub_le (mu := mu) hr hrn
+  obtain ⟨K, -, hsplit⟩ := exists_forall_energyFormH1_eq_zero_ae_abs_sub_le (mu := mu) hr hrn
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le (mu := mu) (lam := lam) (Lam := Lam)
   refine ⟨D * max 1 K, by positivity, ?_⟩
@@ -631,7 +631,6 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence [Nonempty ι
           K * ρ ^ (1 - (Fintype.card ι : ℝ) / q) *
             (eLpNorm F q (mu.restrict (ball x₀ ρ))).toReal / lam := by
   set n : ℝ := (Fintype.card ι : ℝ)
-  have hn : (0 : ℝ) < n := Nat.cast_pos.2 Fintype.card_pos
   obtain ⟨C, hC, hstamp⟩ := exists_ae_abs_value_le_mul_div_mul_rpow_divergence (mu := mu) hq hqn
   set e : ℝ := n⁻¹ - (q : ℝ)⁻¹
   refine ⟨C * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e,
@@ -717,7 +716,7 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp_divergence [Nonempty ι] {lam La
         D * (R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) +
           R ^ (1 - (Fintype.card ι : ℝ) / q) *
             (eLpNorm F q (mu.restrict (ball x₀ R))).toReal / lam) := by
-  obtain ⟨K, hK, hsplit⟩ :=
+  obtain ⟨K, -, hsplit⟩ :=
     exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence (mu := mu) hq hqn
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le (mu := mu) (lam := lam) (Lam := Lam)
