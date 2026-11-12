@@ -8,25 +8,26 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.DoubleBond
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Orthogonal
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
-import Mathlib.GroupTheory.QuotientGroup.Basic
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
-# The Weyl quotient of simply-laced Chevalley data
+# The Weyl quotient of Chevalley data outside type G₂
 
-For every Chevalley datum of simply-laced type over a field, the kernel of its Weyl
+For every Chevalley datum of type other than G₂ over a field, the kernel of its Weyl
 projection is exactly its actual character-lattice torus. Consequently the quotient of
 `weylSubgroup` by that torus is the Weyl group of the pinned root datum. The equivalence
 sends the class of each pinned simple Weyl representative to its simple reflection.
 
-The argument uses the native rank-one square and single-bond braid relations. Modulo the
-torus, the pinned representatives satisfy the Coxeter presentation; the induced map back
+The argument uses the native rank-one square, single-bond and double-bond braid relations.
+Modulo the torus, the pinned representatives satisfy the Coxeter presentation; the induced map back
 from the Weyl group is inverse to the quotient projection. No point-generation theorem,
 Bruhat decomposition, infinitude assumption, or surjectivity of the full-weight torus
 parametrization is needed. In particular, the result applies to adjoint data and finite
-fields. Multiply-laced types require the additional length-four and length-six relations.
+fields. Type G₂ still requires the additional length-six relation.
 
 ## References
 
@@ -67,7 +68,8 @@ private theorem simpleClass_commute (i j : Fin t.rank) (hij : t.cartanMatrix i j
   have h : D.simpleLift A i * D.simpleLift A j = D.simpleLift A j * D.simpleLift A i := by
     apply Subtype.ext
     exact (D.commute_weylElement_simpleIndex A i j hij 1 1).eq
-  exact congrArg (QuotientGroup.mk' H) h
+  simpa only [commute_iff_eq, simpleClass, map_mul, QuotientGroup.mk'_apply] using
+    congrArg (QuotientGroup.mk' H) h
 
 private theorem simpleClass_braid (i j : Fin t.rank)
     (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -1) :
@@ -77,9 +79,50 @@ private theorem simpleClass_braid (i j : Fin t.rank)
       D.simpleLift A j * D.simpleLift A i * D.simpleLift A j := by
     apply Subtype.ext
     exact D.weylElement_braid_of_cartanMatrix_eq_neg_one i j hij hji A
-  exact congrArg (QuotientGroup.mk' H) h
+  simpa only [simpleClass, map_mul, QuotientGroup.mk'_apply] using
+    congrArg (QuotientGroup.mk' H) h
 
-private theorem simpleClass_liftable (hs : t.IsSimplyLaced) :
+private theorem simpleClass_pow_three (i j : Fin t.rank)
+    (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -1) :
+    (D.simpleClass A i * D.simpleClass A j) ^ 3 = 1 := by
+  have hb := D.simpleClass_braid A i j hij hji
+  calc
+    _ = (D.simpleClass A i * D.simpleClass A j * D.simpleClass A i) *
+        (D.simpleClass A j * D.simpleClass A i * D.simpleClass A j) := by
+      simp only [pow_succ, pow_zero]
+      group
+    _ = D.simpleClass A j * D.simpleClass A i *
+        (D.simpleClass A j * D.simpleClass A j) *
+        D.simpleClass A i * D.simpleClass A j := by rw [hb]; group
+    _ = D.simpleClass A j * (D.simpleClass A i * D.simpleClass A i) *
+        D.simpleClass A j := by rw [D.simpleClass_mul_self]; group
+    _ = 1 := by rw [D.simpleClass_mul_self, mul_one, D.simpleClass_mul_self]
+
+private theorem simpleClass_pow_four (i j : Fin t.rank)
+    (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -2) :
+    (D.simpleClass A i * D.simpleClass A j) ^ 4 = 1 := by
+  have hb : (D.simpleClass A i * D.simpleClass A j) ^ 2 =
+      (D.simpleClass A j * D.simpleClass A i) ^ 2 := by
+    have h : D.simpleLift A i * D.simpleLift A j * D.simpleLift A i * D.simpleLift A j =
+        D.simpleLift A j * D.simpleLift A i * D.simpleLift A j * D.simpleLift A i := by
+      apply Subtype.ext
+      exact D.weylElement_braid_of_cartanMatrix_eq_neg_two i j hij hji A
+    simpa only [simpleClass, map_mul, QuotientGroup.mk'_apply, pow_two, mul_assoc] using
+      congrArg (QuotientGroup.mk' H) h
+  have hinv (k : Fin t.rank) : (D.simpleClass A k)⁻¹ = D.simpleClass A k :=
+    inv_eq_of_mul_eq_one_left (D.simpleClass_mul_self A k)
+  calc
+    _ = (D.simpleClass A i * D.simpleClass A j) ^ 2 *
+        (D.simpleClass A i * D.simpleClass A j) ^ 2 := by group
+    _ = (D.simpleClass A j * D.simpleClass A i) ^ 2 *
+        (D.simpleClass A i * D.simpleClass A j) ^ 2 :=
+      congrArg (fun z => z * (D.simpleClass A i * D.simpleClass A j) ^ 2) hb
+    _ = ((D.simpleClass A i * D.simpleClass A j) ^ 2)⁻¹ *
+        (D.simpleClass A i * D.simpleClass A j) ^ 2 := by
+      rw [← inv_pow, mul_inv_rev, hinv, hinv]
+    _ = 1 := inv_mul_cancel _
+
+private theorem simpleClass_liftable (hs : t ≠ .G2) :
     (coxeterMatrixOfBase (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)).IsLiftable
       (fun i => D.simpleClass A ((t.simpleSupportEquivSimplyConnectedBase ht).symm i)) := by
   intro a b
@@ -95,31 +138,65 @@ private theorem simpleClass_liftable (hs : t.IsSimplyLaced) :
   by_cases h : i = j
   · subst j
     simp only [D.simpleClass_mul_self, one_pow]
-  have hsym : t.cartanMatrix j i = t.cartanMatrix i j := hs.isSymm_cartanMatrix.apply _ _
-  rcases ((isSimplyLaced_cartanMatrix_iff_of_valid ht).mpr hs) h with hij | hij
-  · rw [hij, hsym, hij, mul_zero, coxeterOrder_zero,
-      (D.simpleClass_commute A i j hij).mul_pow]
+  -- Outside G₂ the off-diagonal entries are 0, -1 or -2. The finite-type
+  -- product bound and symmetric zero pattern leave just the four pairs below.
+  have hentry (k l : Fin t.rank) (hkl : k ≠ l) :
+      t.cartanMatrix k l ∈ ({0, -1, -2} : Set ℤ) := by
+    by_cases hsl : t.IsSimplyLaced
+    · rcases ((isSimplyLaced_cartanMatrix_iff_of_valid ht).mpr hsl) hkl with hk | hk <;>
+        simp [hk]
+    · cases t with
+      | B n =>
+        -- Expose the reduced index type so the matrix entry rules can match.
+        change Fin n at k l
+        simp only [cartanMatrix_B, CartanMatrix.B, Matrix.of_apply]
+        split_ifs <;> simp_all
+      | C n =>
+        -- As in type B, the dependent indices reduce to Fin n.
+        change Fin n at k l
+        simp only [cartanMatrix_C, CartanMatrix.C, Matrix.of_apply]
+        split_ifs <;> simp_all
+      | F4 =>
+        -- Reduce the dependent indices before checking the fixed finite matrix.
+        change Fin 4 at k l
+        rw [cartanMatrix_F4]
+        fin_cases k <;> fin_cases l <;> first | exact (hkl rfl).elim | decide
+      | G2 => exact (hs rfl).elim
+      | _ => exact (hsl (by simp)).elim
+  have hp := cartanMatrix_mul_cartanMatrix_mem_of_ne (t.simplyConnectedRootDatum ht)
+    (t.simplyConnectedBase ht) (e.injective.ne h)
+  simp only [e, cartanMatrix_simplyConnectedBase_apply] at hp
+  have hz := t.cartanMatrix_apply_eq_zero_iff_symm i j
+  have hpairs :
+      (t.cartanMatrix i j = 0 ∧ t.cartanMatrix j i = 0) ∨
+      (t.cartanMatrix i j = -1 ∧ t.cartanMatrix j i = -1) ∨
+      (t.cartanMatrix i j = -1 ∧ t.cartanMatrix j i = -2) ∨
+      (t.cartanMatrix i j = -2 ∧ t.cartanMatrix j i = -1) := by
+    have hi := hentry i j h
+    have hj := hentry j i (Ne.symm h)
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hi hj hp
+    rcases hi with hi | hi | hi <;> rcases hj with hj | hj | hj <;> simp_all
+  rcases hpairs with ⟨hij, hji⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩
+  · rw [hij, zero_mul, coxeterOrder_zero, (D.simpleClass_commute A i j hij).mul_pow]
     simp only [pow_two, D.simpleClass_mul_self, one_mul]
-  · simp only [hij, hsym, neg_mul_neg, one_mul, coxeterOrder_one]
-    have hb := D.simpleClass_braid A i j hij (hsym.trans hij)
+  · simpa only [hij, hji, neg_mul_neg, one_mul, coxeterOrder_one] using
+      D.simpleClass_pow_three A i j hij hji
+  · simpa only [hij, hji, neg_mul_neg, one_mul, coxeterOrder_two] using
+      D.simpleClass_pow_four A i j hij hji
+  · simp only [hij, hji, neg_mul_neg, mul_one, coxeterOrder_two]
     calc
-      _ = (D.simpleClass A i * D.simpleClass A j * D.simpleClass A i) *
-          (D.simpleClass A j * D.simpleClass A i * D.simpleClass A j) := by
+      _ = D.simpleClass A i * (D.simpleClass A j * D.simpleClass A i) ^ 4 *
+          (D.simpleClass A i)⁻¹ := by
         simp only [pow_succ, pow_zero]
         group
-      _ = D.simpleClass A j * D.simpleClass A i *
-          (D.simpleClass A j * D.simpleClass A j) *
-          D.simpleClass A i * D.simpleClass A j := by rw [hb]; group
-      _ = D.simpleClass A j * (D.simpleClass A i * D.simpleClass A i) *
-          D.simpleClass A j := by rw [D.simpleClass_mul_self]; group
-      _ = 1 := by rw [D.simpleClass_mul_self, mul_one, D.simpleClass_mul_self]
+      _ = 1 := by rw [D.simpleClass_pow_four A j i hji hij]; group
 
-private def quotientSection (hs : t.IsSimplyLaced) :
+private def quotientSection (hs : t ≠ .G2) :
     (t.simplyConnectedRootDatum ht).weylGroup →* Q :=
   (weylCoxeterSystem (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)).lift
     ⟨_, D.simpleClass_liftable A hs⟩
 
-private theorem quotientSection_simple (hs : t.IsSimplyLaced) (i : Fin t.rank) :
+private theorem quotientSection_simple (hs : t ≠ .G2) (i : Fin t.rank) :
     D.quotientSection A hs
         (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) =
       D.simpleClass A i := by
@@ -139,7 +216,7 @@ variable (K : Type*) [Field K]
 local notation "Nₖ" => D.weylSubgroup K
 local notation "Hₖ" => Subgroup.subgroupOf (MonoidHom.range (D.torusPoints K)) Nₖ
 
-private theorem quotientSection_weylProjection (hs : t.IsSimplyLaced) (g : Nₖ) :
+private theorem quotientSection_weylProjection (hs : t ≠ .G2) (g : Nₖ) :
     D.quotientSection K hs (D.weylProjection K g) = QuotientGroup.mk' Hₖ g := by
   have hdense : Subgroup.closure ((D.weylSubgroup K).subtype ⁻¹'
       (Set.range (D.torusPoints K) ∪
@@ -149,7 +226,8 @@ private theorem quotientSection_weylProjection (hs : t.IsSimplyLaced) (g : Nₖ)
   have hf : (D.quotientSection K hs).comp (D.weylProjection K) = QuotientGroup.mk' Hₖ := by
     apply MonoidHom.eq_of_eqOn_dense hdense
     rintro ⟨x, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
-    · simp only [MonoidHom.comp_apply, D.weylProjection_torusPoints, map_one]
+    · simp only [MonoidHom.comp_apply, D.weylProjection_torusPoints, map_one,
+        QuotientGroup.mk'_apply]
       exact ((QuotientGroup.eq_one_iff (N := Hₖ) _).mpr ⟨s, rfl⟩).symm
     · simp only [MonoidHom.comp_apply, D.weylProjection_weylElement,
         D.quotientSection_simple]
@@ -158,9 +236,9 @@ private theorem quotientSection_weylProjection (hs : t.IsSimplyLaced) (g : Nₖ)
       rfl
   exact DFunLike.congr_fun hf g
 
-/-- In simply-laced type, the Weyl projection has kernel exactly the actual torus,
+/-- Outside type G₂, the Weyl projection has kernel exactly the actual torus,
 regarded as a subgroup of the subgroup generated by the torus and Weyl representatives. -/
-theorem ker_weylProjection_of_isSimplyLaced (hs : t.IsSimplyLaced) :
+theorem ker_weylProjection_of_ne_G2 (hs : t ≠ .G2) :
     (D.weylProjection K).ker = Hₖ := by
   ext g
   constructor
@@ -173,21 +251,39 @@ theorem ker_weylProjection_of_isSimplyLaced (hs : t.IsSimplyLaced) :
       Subtype.ext hsg.symm
     rw [hg, MonoidHom.mem_ker, D.weylProjection_torusPoints]
 
-/-- The quotient of a simply-laced Chevalley datum's Weyl subgroup by its actual torus
-is the Weyl group of the pinned root datum, over every field. -/
-def weylQuotientEquivOfIsSimplyLaced (hs : t.IsSimplyLaced) :
+/-- The quotient of a Chevalley datum's Weyl subgroup by its actual torus is the Weyl
+group of the pinned root datum, over every field, outside type G₂. -/
+def weylQuotientEquivOfNeG2 (hs : t ≠ .G2) :
     Nₖ ⧸ Hₖ ≃* (t.simplyConnectedRootDatum ht).weylGroup :=
-  (QuotientGroup.quotientMulEquivOfEq (D.ker_weylProjection_of_isSimplyLaced K hs).symm).trans
+  (QuotientGroup.quotientMulEquivOfEq (D.ker_weylProjection_of_ne_G2 K hs).symm).trans
     (QuotientGroup.quotientKerEquivOfSurjective (D.weylProjection K)
       (D.weylProjection_surjective K))
 
 /-- The Weyl quotient equivalence is induced by the native Weyl projection. -/
 @[simp]
-theorem weylQuotientEquivOfIsSimplyLaced_mk (hs : t.IsSimplyLaced) (g : Nₖ) :
-    D.weylQuotientEquivOfIsSimplyLaced K hs (QuotientGroup.mk g) = D.weylProjection K g := by
-  simp only [weylQuotientEquivOfIsSimplyLaced, MulEquiv.trans_apply,
-    QuotientGroup.quotientMulEquivOfEq_mk]
-  exact QuotientGroup.kerLift_mk (D.weylProjection K) g
+theorem weylQuotientEquivOfNeG2_mk (hs : t ≠ .G2) (g : Nₖ) :
+    D.weylQuotientEquivOfNeG2 K hs (QuotientGroup.mk g) = D.weylProjection K g := by
+  simp only [weylQuotientEquivOfNeG2, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk,
+    TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
+
+/-- The inverse Weyl quotient equivalence sends a Weyl projection to its quotient class. -/
+@[simp]
+theorem weylQuotientEquivOfNeG2_symm_apply (hs : t ≠ .G2) (g : Nₖ) :
+    (D.weylQuotientEquivOfNeG2 K hs).symm (D.weylProjection K g) =
+      QuotientGroup.mk g := by
+  apply (D.weylQuotientEquivOfNeG2 K hs).symm_apply_eq.mpr
+  exact (D.weylQuotientEquivOfNeG2_mk K hs g).symm
+
+/-- The inverse Weyl quotient equivalence sends a pinned simple reflection to the class
+of its pinned Weyl representative. -/
+@[simp↓]
+theorem weylQuotientEquivOfNeG2_symm_ofIdx (hs : t ≠ .G2) (i : Fin t.rank) :
+    (D.weylQuotientEquivOfNeG2 K hs).symm
+        (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) =
+      QuotientGroup.mk
+        ⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩ := by
+  rw [← D.weylProjection_weylElement K i, D.weylQuotientEquivOfNeG2_symm_apply]
 
 end
 
