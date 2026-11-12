@@ -24,10 +24,14 @@ recovery sequence built from a countable neighbourhood basis. It complements Mat
 `Filter.extraction_forall_of_eventually`, which meets the requirements along a subsequence
 instead.
 
-The second statement is the diagonal extraction of a subsequence along which countably many
-sequences converge at once (`TauCeti.extraction_forall_exists_tendsto`): if every subsequence of
-each of the sequences `x j` has a convergent further subsequence, a single subsequence makes all of
-them converge. It is the compactness step of the Arzelà–Ascoli theorem.
+The second statement is the diagonal extraction of a subsequence with countably many properties
+at once (`TauCeti.extraction_forall_of_eventually_eq_comp`): if every subsequence has a further
+subsequence with the property `P j`, a single subsequence has all of them. The properties need only
+pass to sequences eventually equal to reindexings `n ↦ y (ρ n)` with `ρ → ∞`, as convergence and
+eventual bounds do. For convergence of countably many sequences
+(`TauCeti.extraction_forall_exists_tendsto`) it is the compactness step of the Arzelà–Ascoli
+theorem; for convergence off bubbling points on the windows of an exhaustion it is the step that
+passes Gromov compactness from compact windows to a whole domain.
 
 Finally, a sequence converges along `atTop` exactly when it does so along real (or other floor
 semiring) cutoffs `x ↦ u ⌊x⌋₊` (`TauCeti.tendsto_comp_natFloor_iff`). This compares limits of
@@ -66,25 +70,27 @@ theorem exists_tendsto_atTop_of_forall_eventually {P : ℕ → ℕ → Prop}
       (fun j hj ↦ ?_) _ le_rfl)
     rwa [Nat.le_zero.1 hj]
 
-/-- **Diagonal extraction.** Let `x j : ℕ → X` be countably many sequences and `l y` the filter of
-a convergence to `y` on `X`. If every subsequence of every `x j` has a further subsequence
-converging to some point, then one subsequence makes every `x j` converge. -/
-theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : ℕ → ℕ → X}
-    (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ →
-      ∃ y, ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ Tendsto (fun n ↦ x j (ψ (ψ' n))) atTop (l y)) :
-    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∀ j, ∃ y, Tendsto (fun n ↦ x j (ψ n)) atTop (l y) := by
-  choose y ψ' hψ' hy using h
-  -- `θ j` is the subsequence along which `x 0, …, x j` converge, each refining the previous one.
+/-- **Diagonal extraction for properties of tails.** Let `P j` be countably many properties of
+sequences in `X` that are inherited by every sequence eventually equal to a reindexing `y ∘ ρ` with
+`ρ → ∞`, as limits and eventual bounds are. If every subsequence of `x` has a further subsequence
+with the property `P j`, then one subsequence of `x` has all the properties `P j`. -/
+theorem extraction_forall_of_eventually_eq_comp {X : Type*} {x : ℕ → X}
+    {P : ℕ → (ℕ → X) → Prop}
+    (hP : ∀ j (y z : ℕ → X) (ρ : ℕ → ℕ), P j y → Tendsto ρ atTop atTop →
+      (∀ᶠ n in atTop, z n = y (ρ n)) → P j z)
+    (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ → ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ P j (fun n ↦ x (ψ (ψ' n)))) :
+    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∀ j, P j (fun n ↦ x (ψ n)) := by
+  choose ψ' hψ' hP' using h
+  -- `θ j` is the subsequence with the properties `P 0, …, P j`, each refining the previous one.
   let θ : ℕ → {ψ : ℕ → ℕ // StrictMono ψ} := fun j ↦ Nat.rec
     ⟨ψ' 0 id strictMono_id, hψ' 0 id strictMono_id⟩
     (fun j θj ↦ ⟨θj.1 ∘ ψ' (j + 1) θj.1 θj.2, θj.2.comp (hψ' (j + 1) θj.1 θj.2)⟩) j
   have hθ0 : (θ 0).1 = ψ' 0 id strictMono_id := rfl
   have hθsucc j : (θ (j + 1)).1 = (θ j).1 ∘ ψ' (j + 1) (θ j).1 (θ j).2 := rfl
-  have hθ j : ∃ z, Tendsto (fun n ↦ x j ((θ j).1 n)) atTop (l z) := by
+  have hθ j : P j (fun n ↦ x ((θ j).1 n)) := by
     cases j with
-    | zero => exact ⟨_, by simpa only [hθ0, id] using hy 0 id strictMono_id⟩
-    | succ j =>
-      exact ⟨_, by simpa only [hθsucc, Function.comp_apply] using hy (j + 1) (θ j).1 (θ j).2⟩
+    | zero => simpa only [hθ0, id] using hP' 0 id strictMono_id
+    | succ j => simpa only [hθsucc, Function.comp_apply] using hP' (j + 1) (θ j).1 (θ j).2
   -- Every later `θ n` is a subsequence of `θ j`.
   have hsub j n (hjn : j ≤ n) a : ∃ b, a ≤ b ∧ (θ n).1 a = (θ j).1 b := by
     induction n, hjn using Nat.le_induction generalizing a with
@@ -96,12 +102,23 @@ theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : �
   refine ⟨fun n ↦ (θ n).1 n, strictMono_nat_of_lt_succ fun n ↦ ?_, fun j ↦ ?_⟩
   · rw [hθsucc]
     exact (θ n).2.monotone ((hψ' _ _ _).id_le _) |>.trans_lt' ((θ n).2 n.lt_succ_self)
-  · obtain ⟨z, hz⟩ := hθ j
-    choose m hm using fun n ↦ hsub j (max j n) (le_max_left _ _) (max j n)
-    refine ⟨z, (hz.comp (tendsto_atTop_mono (fun n ↦ (le_max_right j n).trans (hm n).1)
-      tendsto_id)).congr' ?_⟩
+  · choose m hm using fun n ↦ hsub j (max j n) (le_max_left _ _) (max j n)
+    refine hP j _ _ m (hθ j) (tendsto_atTop_mono (fun n ↦ (le_max_right j n).trans (hm n).1)
+      tendsto_id) ?_
     filter_upwards [eventually_ge_atTop j] with n hn
-    simp only [Function.comp_apply, ← (hm n).2, max_eq_right hn]
+    simp only [← (hm n).2, max_eq_right hn]
+
+/-- **Diagonal extraction.** Let `x j : ℕ → X` be countably many sequences and `l y` the filter of
+a convergence to `y` on `X`. If every subsequence of every `x j` has a further subsequence
+converging to some point, then one subsequence makes every `x j` converge. -/
+theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : ℕ → ℕ → X}
+    (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ →
+      ∃ y, ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ Tendsto (fun n ↦ x j (ψ (ψ' n))) atTop (l y)) :
+    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∀ j, ∃ y, Tendsto (fun n ↦ x j (ψ n)) atTop (l y) :=
+  extraction_forall_of_eventually_eq_comp (x := fun k j ↦ x j k)
+    (P := fun j y ↦ ∃ z, Tendsto (fun n ↦ y n j) atTop (l z))
+    (fun j _ _ ρ ⟨z, hz⟩ hρ hyz ↦ ⟨z, (hz.comp hρ).congr' <| hyz.mono fun n hn ↦ by simp [hn]⟩)
+    fun j ψ hψ ↦ let ⟨y, ψ', hψ', hy⟩ := h j ψ hψ; ⟨ψ', hψ', y, hy⟩
 
 /-- A sequence `u` converges along `atTop` if and only if its values `u ⌊x⌋₊` at the natural
 floors of `x` converge as `x → ∞` in a floor semiring such as `ℝ`. -/
