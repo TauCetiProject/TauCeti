@@ -29,6 +29,9 @@ the family of nonemptiness assertions `∀ x, Nonempty (x₀ ⟶ x)` rather than
 space, whose fundamental groupoid comes with paths from a chosen basepoint, and the equivalence
 of the two formulations is not needed.
 
+Only the property that every morphism of `C` is an isomorphism is used, so `C` is a category with
+`[IsGroupoid C]` rather than a bundled `CategoryTheory.Groupoid`; no chosen inverse is involved.
+
 ## Main declarations
 
 * `TauCeti.Groupoid.natTrans_ext`: a natural transformation is determined by its component at the
@@ -52,7 +55,7 @@ open CategoryTheory
 
 namespace TauCeti.Groupoid
 
-variable {C : Type u} [CategoryTheory.Groupoid.{v} C] {D : Type w} [Category.{t} D]
+variable {C : Type u} [Category.{v} C] [IsGroupoid C] {D : Type w} [Category.{t} D]
   {F G : C ⥤ D} {x₀ : C} (hconn : ∀ x : C, Nonempty (x₀ ⟶ x))
 
 include hconn in
@@ -71,7 +74,7 @@ theorem natIso_ext {α β : F ≅ G} (h : α.app x₀ = β.app x₀) : α = β :
 
 /-- A chosen isomorphism from the weakly initial object `x₀` to an arbitrary object. -/
 private def chosenIso (x : C) : x₀ ≅ x :=
-  (CategoryTheory.Groupoid.isoEquivHom x₀ x).symm (hconn x).some
+  asIso (hconn x).some
 
 /-- An `End x₀`-equivariant morphism between the values of two functors at a weakly initial
 object of a groupoid extends to a natural transformation.
