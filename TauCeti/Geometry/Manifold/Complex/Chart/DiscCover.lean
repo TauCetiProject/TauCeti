@@ -16,8 +16,8 @@ public import TauCeti.Topology.OpenPartialHomeomorph.ChartOpens
 A compact Riemann surface is covered by finitely many coordinate discs
 `(e i).chartDisc (c i) (r i)` of holomorphic charts with `closedBall (c i) (3 * r i)` in the chart
 target (`TauCeti.exists_finite_chartDisc_cover`). By
-`OpenPartialHomeomorph.closure_chartDisc_subset`, the discs of radii `r i`, `2 * r i` and
-`3 * r i` form three nested finite covers, each closure compact in the next.
+`OpenPartialHomeomorph.isCompact_closure_chartDisc_and_subset`, the discs of radii `r i`,
+`2 * r i` and `3 * r i` form three nested finite covers, each closure compact in the next.
 -/
 
 public section
@@ -32,8 +32,9 @@ variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘
 
 /-- **Finite nested coordinate-disc covers.** A compact Riemann surface is covered by finitely many
 coordinate discs `(e i).chartDisc (c i) (r i)` of holomorphic charts with
-`closedBall (c i) (3 * r i) ⊆ (e i).target`. By `OpenPartialHomeomorph.closure_chartDisc_subset`
-the discs of radii `r i`, `2 * r i` and `3 * r i` are nested, each closure compact in the next. -/
+`closedBall (c i) (3 * r i) ⊆ (e i).target`. By
+`OpenPartialHomeomorph.isCompact_closure_chartDisc_and_subset` the discs of radii `r i`,
+`2 * r i` and `3 * r i` are nested, each closure compact in the next. -/
 theorem exists_finite_chartDisc_cover [CompactSpace X] :
     ∃ (ι : Type u) (_ : Finite ι) (e : ι → OpenPartialHomeomorph X ℂ) (c : ι → ℂ) (r : ι → ℝ),
       (∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) ∧ (∀ i, 0 < r i) ∧

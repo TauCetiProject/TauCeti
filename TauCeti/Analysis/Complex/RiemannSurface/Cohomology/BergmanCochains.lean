@@ -59,8 +59,8 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.RiemannSurface
 
-open OpenPartialHomeomorph (chartRead_mono isCompact_closure_chartRead map_mem_chartRead
-  mem_chartRead)
+open OpenPartialHomeomorph (chartRead_mono isCompact_closure_chartRead_and_subset
+  map_mem_chartRead mem_chartRead)
 
 variable {X : Type} [TopologicalSpace X] {e : OpenPartialHomeomorph X ℂ} {V V' : Opens X}
 
@@ -210,8 +210,12 @@ theorem isCompactOperator_restrictCochains₁ (hK : ∀ i, IsCompact (closure (W
     fun x hx ↦ ⟨hKW i (closure_mono inter_subset_left hx),
       hKW j (closure_mono inter_subset_right hx)⟩
   exact BergmanSpace.isCompactOperator_restrictPi₂ (F := ℂ)
-    (fun i j ↦ (isCompact_closure_chartRead (inf_subset_source hW i j) (hKij i j) (hKWij i j)).1)
-    fun i j ↦ (isCompact_closure_chartRead (inf_subset_source hW i j) (hKij i j) (hKWij i j)).2
+    (fun i j ↦
+      (isCompact_closure_chartRead_and_subset (inf_subset_source hW i j) (hKij i j)
+        (hKWij i j)).1)
+    fun i j ↦
+      (isCompact_closure_chartRead_and_subset (inf_subset_source hW i j) (hKij i j)
+        (hKWij i j)).2
 
 /-- If each `closure (W' i)` is compact and lies in `W i`, restriction of square-integrable
 cocycles is a compact operator. -/

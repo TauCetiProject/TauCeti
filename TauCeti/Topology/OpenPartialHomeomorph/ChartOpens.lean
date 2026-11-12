@@ -17,11 +17,11 @@ For an open partial homeomorphism `e : X → Y`, this file introduces two famili
 * `OpenPartialHomeomorph.chartRead`: the open `e (V ∩ e.source)` of `Y` read from an open `V` of
   `X`, written as `e.target ∩ e.symm ⁻¹' V`. When `Y` is Hausdorff and `closure V'` is compact and
   lies in `V ⊆ e.source`, the read open of `V'` has compact closure inside that of `V`
-  (`OpenPartialHomeomorph.isCompact_closure_chartRead`).
+  (`OpenPartialHomeomorph.isCompact_closure_chartRead_and_subset`).
 * `OpenPartialHomeomorph.chartDisc`: for a metric codomain, the coordinate disc
   `e.source ∩ e ⁻¹' ball c r`. When `Y` is proper and `closedBall c r ⊆ e.target`, its closure is
   compact and lies in every coordinate disc of larger radius
-  (`OpenPartialHomeomorph.closure_chartDisc_subset`).
+  (`OpenPartialHomeomorph.isCompact_closure_chartDisc_and_subset`).
 -/
 
 public noncomputable section
@@ -60,7 +60,7 @@ theorem map_mem_chartRead (hV : (V : Set X) ⊆ e.source) {x : X} (hx : x ∈ V)
 
 /-- If `closure V'` is compact and lies in `V ⊆ e.source`, the open read from `V'` has compact
 closure inside the open read from `V`. -/
-theorem isCompact_closure_chartRead [T2Space Y] (hV : (V : Set X) ⊆ e.source)
+theorem isCompact_closure_chartRead_and_subset [T2Space Y] (hV : (V : Set X) ⊆ e.source)
     (hK : IsCompact (closure (V' : Set X))) (hKV : closure (V' : Set X) ⊆ V) :
     IsCompact (closure (e.chartRead V' : Set Y)) ∧
       closure (e.chartRead V' : Set Y) ⊆ e.chartRead V := by
@@ -97,7 +97,8 @@ theorem chartDisc_subset_source {c : Y} {r : ℝ} : (e.chartDisc c r : Set X) �
 
 /-- If `closedBall c r` lies in the chart target, the coordinate disc of radius `r` has compact
 closure, contained in the coordinate disc of any larger radius. -/
-theorem closure_chartDisc_subset [T2Space X] [ProperSpace Y] {c : Y} {r s : ℝ}
+theorem isCompact_closure_chartDisc_and_subset [T2Space X] [ProperSpace Y] {c : Y}
+    {r s : ℝ}
     (hr : Metric.closedBall c r ⊆ e.target) (hrs : r < s) :
     IsCompact (closure (e.chartDisc c r : Set X)) ∧
       closure (e.chartDisc c r : Set X) ⊆ e.chartDisc c s := by
