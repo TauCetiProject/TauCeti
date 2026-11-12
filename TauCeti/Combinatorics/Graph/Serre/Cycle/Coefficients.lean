@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Cycle.Basis
-public import TauCeti.Combinatorics.Graph.Serre.Cycle.Coordinates
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
@@ -21,8 +20,7 @@ Spanning-forest bases prove the comparison is bijective. The coordinate formula 
 it is independent of the forest and carries integral fundamental cycles to the fundamental
 cycles over the new coefficient ring. No finiteness, connectedness or orientation assumption
 is needed; loops and parallel edges are retained. On a loop, the integral unit cycle reduces
-to the binary unit cycle on the same loop, in finitely supported and in finite-function
-coordinates.
+to the binary unit cycle on the same loop.
 
 ## References
 
@@ -111,16 +109,5 @@ unit chain on a dart is an integral cycle exactly when the dart is a loop
   classical
   ext f
   simp [Finsupp.single_apply]
-
--- Not `@[simp]`: `simp` already proves it from `cycleSpaceFinsuppEquiv_apply`,
--- `cycleLatticeModTwoEquiv_one_tmul_single` and `Finsupp.linearEquivFunOnFinite_single`.
-/-- The integral unit cycle on a dart reduces to the binary unit cycle on the same dart in
-finite-function coordinates. -/
-theorem cycleSpaceFinsuppEquiv_cycleLatticeModTwoEquiv_one_tmul_single [Finite Γ.V]
-    [Finite O] [DecidableEq O] (e : O) (hc : Finsupp.single e 1 ∈ Γ.cycleLattice O) :
-    (Γ.cycleSpaceFinsuppEquiv O
-      (Γ.cycleLatticeModTwoEquiv O (1 ⊗ₜ[ℤ] ⟨Finsupp.single e 1, hc⟩))).val =
-        Pi.single e 1 := by
-  simp
 
 end TauCeti.SerreGraph

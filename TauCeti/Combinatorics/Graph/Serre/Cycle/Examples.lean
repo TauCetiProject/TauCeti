@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Cycle.Basis
+import TauCeti.Combinatorics.Graph.Serre.Cycle.Coefficients
+import TauCeti.Combinatorics.Graph.Serre.Cycle.Coordinates
 
 /-!
 # Cycle modules of roses and of the segment
@@ -16,7 +18,9 @@ arbitrary ring, the cycle ranks over any ring with the strong rank condition, su
 integers and `ZMod 2`.
 
 Every dart of a rose is a loop. Its incidence boundary is therefore zero, every chain is a
-cycle, the cycle rank is the number of petals, and the only spanning forest is empty.
+cycle, the cycle rank is the number of petals, and the only spanning forest is empty. The
+integral unit cycle on a petal reduces modulo two to the binary unit cycle, in finitely
+supported and in finite-function coordinates.
 
 The positive dart of the segment is a spanning forest of itself. The segment therefore has
 no nonzero cycle and a single component.
@@ -63,6 +67,15 @@ theorem finrank_ker_incidenceBoundary_rose [StrongRankCondition R] :
   exact Nat.card_congr
     ⟨fun e => e.1.1, fun a => ⟨(a, true), rfl⟩, fun ⟨⟨_, _⟩, h⟩ => by cases h; rfl,
       fun _ => rfl⟩
+
+/- The integral unit cycle on a petal reduces modulo two to the binary unit cycle, in finitely
+supported coordinates (`cycleLatticeModTwoEquiv_one_tmul_single`) and in finite-function
+coordinates. -/
+example [Finite O] [DecidableEq α] (e : O) :
+    ((rose α).cycleSpaceFinsuppEquiv O ((rose α).cycleLatticeModTwoEquiv O
+      (1 ⊗ₜ[ℤ] ⟨Finsupp.single e 1, (single_mem_cycleLattice_iff e).mpr rfl⟩))).val =
+        Pi.single e 1 := by
+  simp
 
 end Rose
 
