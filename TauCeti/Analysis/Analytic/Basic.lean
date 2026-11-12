@@ -42,7 +42,7 @@ theorem tendstoUniformlyOn_inv_pow_smul_sub_partialSum (hp : HasFPowerSeriesAt f
     TendstoUniformlyOn
       (fun (t : 𝕜) (y : E) ↦ (t ^ k)⁻¹ • (f (x + t • y) - p.partialSum k (t • y)))
       (fun y ↦ p k fun _ ↦ y) (𝓝[≠] 0) s := by
-  obtain ⟨R, hR, hsR⟩ := hs.subset_closedBall_lt 0 0
+  obtain ⟨R, -, hsR⟩ := hs.subset_closedBall_lt 0 0
   obtain ⟨C, hC, hO⟩ := (hp.isBigO_sub_partialSum_pow (k + 1)).exists_pos
   obtain ⟨δ, hδ, hbound⟩ := Metric.eventually_nhds_iff_ball.1 hO.bound
   rw [Metric.tendstoUniformlyOn_iff]

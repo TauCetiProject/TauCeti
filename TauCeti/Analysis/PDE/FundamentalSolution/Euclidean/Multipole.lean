@@ -97,7 +97,7 @@ theorem exists_forall_hasFPowerSeriesOnBall_newtonianKernel (n : ℕ) :
       newtonianKernel_smul, norm_inv, Real.norm_of_nonneg hs.le, Real.inv_rpow hs.le,
       smul_eq_mul, ← mul_assoc, mul_inv_cancel₀ (Real.rpow_pos_of_pos hs _).ne', one_mul]
   have hu : ‖u‖₊ ≤ ‖a‖₊⁻¹ := by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_inv, coe_nnnorm]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_inv, coe_nnNorm]
     refine (norm_smul_le s⁻¹ Q.toLinearIsometry.toContinuousLinearMap).trans ?_
     rw [norm_inv, norm_norm]
     exact mul_le_of_le_one_right (by positivity) (LinearIsometry.norm_toContinuousLinearMap_le _)
@@ -106,10 +106,10 @@ theorem exists_forall_hasFPowerSeriesOnBall_newtonianKernel (n : ℕ) :
   have ha' : (‖a‖₊ : ℝ≥0∞) ≠ 0 := by simpa using ha
   refine ⟨_, hser.mono (ENNReal.mul_pos (ENNReal.coe_ne_zero.2 (by simpa using hc0.ne')) ha') ?_⟩
   -- The radius `r / ‖u‖ₑ` is at least `c ‖a‖`, as `‖u‖ ≤ ‖a‖⁻¹`.
-  rw [ENNReal.le_div_iff_mul_le (Or.inr hpr.r_pos.ne') (Or.inl enorm_ne_top)]
+  rw [ENNReal.le_div_iff_mul_le (Or.inr hpr.r_pos.ne') (Or.inl eNorm_ne_top)]
   calc (c : ℝ≥0∞) * ‖a‖₊ * ‖u‖ₑ ≤ c * ‖a‖₊ * (‖a‖₊ : ℝ≥0∞)⁻¹ := by
         gcongr
-        rw [← ofReal_norm, ← coe_nnnorm, ENNReal.ofReal_coe_nnreal, ← ENNReal.coe_inv
+        rw [← ofReal_norm, ← coe_nnNorm, ENNReal.ofReal_coe_nnreal, ← ENNReal.coe_inv
           (by simpa using ha)]
         exact ENNReal.coe_le_coe.2 hu
     _ = c := by rw [mul_assoc, ENNReal.mul_inv_cancel ha' ENNReal.coe_ne_top, mul_one]
