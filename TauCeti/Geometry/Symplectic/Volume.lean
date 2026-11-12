@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
 import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
 import TauCeti.Geometry.Symplectic.Darboux.Basis
-import TauCeti.LinearAlgebra.Determinant.Prod
+import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Alternating.TopDegree
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
@@ -154,7 +154,8 @@ private theorem det_reindex_prod_sumElim (b : Basis (Fin n × Fin 2) ℝ E)
         Fin.castAdd (2 * m) (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)) (i, a)) := by
       ext
       simp [finProdFinEquiv]
-    simp only [Function.comp_apply, hi, finSumFinEquiv_symm_apply_castAdd, Sum.elim_inl]
+    simp only [Function.comp_apply, hi, finSumFinEquiv_symm_apply_castAdd, Sum.elim_inl,
+      LinearMap.inl_apply]
   · have hj : Fin.cast (mul_add 2 n m) (finProdFinEquiv.trans (finCongr (Nat.mul_comm (n + m) 2))
         ((Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _))
           (Sum.inr (j, a)))) =
@@ -162,7 +163,8 @@ private theorem det_reindex_prod_sumElim (b : Basis (Fin n × Fin 2) ℝ E)
       ext
       simp [finProdFinEquiv]
       ring
-    simp only [Function.comp_apply, hj, finSumFinEquiv_symm_apply_natAdd, Sum.elim_inr]
+    simp only [Function.comp_apply, hj, finSumFinEquiv_symm_apply_natAdd, Sum.elim_inr,
+      LinearMap.inr_apply]
 
 /-- **The top power of a direct sum of two-forms.** For two-forms `ω₁` on a space `E` of
 dimension `2 n` and `ω₂` on a space `F` of dimension `2 m`, the top power of their direct sum

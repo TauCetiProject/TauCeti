@@ -145,10 +145,9 @@ theorem mem_riemannRochSpace_of_pow_mem {n : ℕ} {D E : Divisor k F}
   have hord := (mem_riemannRochSpace_iff_neg_le_ord (pow_ne_zero n h0)).mp hf P
   rw [P.ord_pow] at hord
   have := hDE P
-  rcases Nat.eq_zero_or_pos n with rfl | hn
+  rcases Nat.eq_zero_or_pos n with rfl | _
   · simp at hord this
     omega
-  have hn' : (0 : ℤ) < n := by exact_mod_cast hn
   nlinarith
 
 /-- Membership in `L(nP)` for a single place `P`: a nonzero function lies in `L(nP)` exactly when

@@ -89,7 +89,7 @@ theorem renewalMeasure_map_succ_apply_singleton (μ : Measure ℕ) [SFinite μ] 
     | zero => simp [Kernel.one_def, Kernel.id_apply]
     | succ n =>
       rw [renewalMeasure_map_succ_apply_succ, countdownKernel_pow_succ_apply_zero]
-      exact Finset.sum_congr rfl fun j hj ↦ by rw [ih (n - j) (by omega)]
+      exact Finset.sum_congr rfl fun j _ ↦ by rw [ih (n - j) (by omega)]
 
 /-- For any integer gap law without a zero atom, reset with the gap minus one. Its renewal
 mass is the corresponding countdown zero-state transition mass, including time zero. -/

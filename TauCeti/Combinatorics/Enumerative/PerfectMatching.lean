@@ -76,11 +76,6 @@ travel.
   two orbits to the product with `T`. When `T` and the matching attain the Euler bound
   `Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le`, so does the reconnected matching
   (`TauCeti.PerfectMatching.orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq`).
-
-## References
-
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9.
 -/
 
 public section
