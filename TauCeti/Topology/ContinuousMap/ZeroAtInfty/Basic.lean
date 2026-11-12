@@ -247,13 +247,19 @@ theorem compLeftFamily_apply (u : α → E →L[𝕜] F) (hu : ∀ e, Continuous
     (hC : ∃ C, ∀ x, ‖u x‖ ≤ C) (f : C₀(α, E)) (x : α) :
     compLeftFamily u hu hC f x = u x (f x) := (rfl)
 
-/-- A nonnegative uniform bound `C` for the family `u` is also a bound for its pointwise
-action. -/
+/-- A uniform bound `C` for the family `u` is also a bound for its pointwise action. -/
 theorem norm_compLeftFamily_apply_le (u : α → E →L[𝕜] F) (hu : ∀ e, Continuous fun x => u x e)
-    (hC : ∃ C, ∀ x, ‖u x‖ ≤ C) {C : ℝ} (hC₀ : 0 ≤ C) (hCu : ∀ x e, ‖u x e‖ ≤ C * ‖e‖)
-    (f : C₀(α, E)) : ‖compLeftFamily u hu hC f‖ ≤ C * ‖f‖ :=
-  (norm_le (by positivity)).2 fun x ↦
-    (hCu x (f x)).trans (mul_le_mul_of_nonneg_left (norm_coe_le_norm f x) hC₀)
+    (hC : ∃ C, ∀ x, ‖u x‖ ≤ C) {C : ℝ} (hCu : ∀ x e, ‖u x e‖ ≤ C * ‖e‖)
+    (f : C₀(α, E)) : ‖compLeftFamily u hu hC f‖ ≤ C * ‖f‖ := by
+  rcases le_or_gt 0 C with hC₀ | hC₀
+  · exact (norm_le (by positivity)).2 fun x ↦
+      (hCu x (f x)).trans (mul_le_mul_of_nonneg_left (norm_coe_le_norm f x) hC₀)
+  · have hf : ∀ x, ‖f x‖ = 0 := fun x ↦ by
+      have h1 := (norm_nonneg (u x (f x))).trans (hCu x (f x))
+      nlinarith [norm_nonneg (f x)]
+    have h0 : ‖f‖ = 0 := le_antisymm ((norm_le le_rfl).2 fun x ↦ (hf x).le) (norm_nonneg _)
+    rw [h0, mul_zero]
+    exact (norm_le le_rfl).2 fun x ↦ by simpa [hf x] using (hCu x (f x))
 
 end Family
 

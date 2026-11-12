@@ -807,17 +807,28 @@ theorem boundaryMap_apply_snd (hT : IsBoundedAnalyticFamily T T₀ T₁)
   ZeroAtInftyContinuousMap.compLeftFamily_apply _ _ _ _ _
 
 omit [T1Space V] [T1Space W] in
-/-- If the boundary operators `T₀ t` and `T₁ t` are bounded by `M₀, M₁ ≥ 0`, their action on
+/-- If the boundary operators `T₀ t` and `T₁ t` are bounded by `M₀` and `M₁`, their action on
 boundary traces is bounded by `max M₀ M₁`. -/
 theorem norm_boundaryMap_apply_le (hT : IsBoundedAnalyticFamily T T₀ T₁) {M₀ M₁ : ℝ}
-    (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁) (h₀ : ∀ t x, ‖T₀ t x‖ ≤ M₀ * ‖x‖)
-    (h₁ : ∀ t x, ‖T₁ t x‖ ≤ M₁ * ‖x‖) (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)) :
-    ‖hT.boundaryMap g‖ ≤ max M₀ M₁ * ‖g‖ :=
-  norm_prod_le_iff.2
-    ⟨(ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ hM₀ h₀ g.1).trans
-      (mul_le_mul (le_max_left _ _) (norm_fst_le g) (norm_nonneg _) (by positivity)),
-    (ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ hM₁ h₁ g.2).trans
-      (mul_le_mul (le_max_right _ _) (norm_snd_le g) (norm_nonneg _) (by positivity))⟩
+    (h₀ : ∀ t x, ‖T₀ t x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ t x, ‖T₁ t x‖ ≤ M₁ * ‖x‖)
+    (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)) : ‖hT.boundaryMap g‖ ≤ max M₀ M₁ * ‖g‖ := by
+  have ha : ‖(hT.boundaryMap g).1‖ ≤ M₀ * ‖g.1‖ :=
+    ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ h₀ g.1
+  have hb : ‖(hT.boundaryMap g).2‖ ≤ M₁ * ‖g.2‖ :=
+    ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ h₁ g.2
+  rcases le_or_gt 0 (max M₀ M₁) with hM | hM
+  · exact norm_prod_le_iff.2
+      ⟨ha.trans (mul_le_mul (le_max_left _ _) (norm_fst_le g) (norm_nonneg _) hM),
+        hb.trans (mul_le_mul (le_max_right _ _) (norm_snd_le g) (norm_nonneg _) hM)⟩
+  · -- negative bounds force both endpoints, hence `g`, to vanish
+    obtain ⟨hM₀, hM₁⟩ := max_lt_iff.1 hM
+    have ha₀ := norm_nonneg (hT.boundaryMap g).1
+    have hb₀ := norm_nonneg (hT.boundaryMap g).2
+    have hg : ‖g‖ = 0 := le_antisymm (norm_prod_le_iff.2
+      ⟨by nlinarith [norm_nonneg g.1], by nlinarith [norm_nonneg g.2]⟩) (norm_nonneg _)
+    rw [hg, mul_zero]
+    exact norm_prod_le_iff.2 ⟨ha.trans (by nlinarith [norm_nonneg g.1, norm_fst_le g]),
+      hb.trans (by nlinarith [norm_nonneg g.2, norm_snd_le g])⟩
 
 /-- **Bounded analytic families preserve admissible functions.** If `F` is admissible with
 boundary traces `g = (g₀, g₁)` and `c` is an entire function bounded on the closed strip, then
@@ -938,10 +949,10 @@ private theorem norm_scaleFactor_smul_analyticMap_mk_le (hT : IsBoundedAnalyticF
   refine (norm_le_of_toSum_eq hθ hg'
     (by rw [map_smul, toSum_analyticMap, toSum_mk, stripEval_apply])).trans
     (norm_prod_le_iff.2 ⟨?_, ?_⟩)
-  · simpa using ((ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ zero_le_one hS₀
-      _).trans_eq (one_mul _)).trans (norm_fst_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)))
-  · simpa using ((ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ zero_le_one hS₁
-      _).trans_eq (one_mul _)).trans (norm_snd_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)))
+  · simpa using ((ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ hS₀ _).trans_eq
+      (one_mul _)).trans (norm_fst_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)))
+  · simpa using ((ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ hS₁ _).trans_eq
+      (one_mul _)).trans (norm_snd_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)))
 
 /-- `ComplexMethodSpace.norm_analyticMap_le` for strictly positive bounds. -/
 private theorem norm_analyticMap_le_of_pos (hT : IsBoundedAnalyticFamily T T₀ T₁)
