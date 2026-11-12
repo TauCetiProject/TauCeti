@@ -316,8 +316,7 @@ private lemma emptyIso_hom_naturality (hp : serreFibrations p) (hp' : serreFibra
   have hgι : g ≫ ι' = ι ≫ f := by
     ext x
     exact hg x
-  have hH : H.map g ≫ H.map ι' = H.map ι ≫ H.map f :=
-    (H.map_comp _ _).symm.trans ((congrArg H.map hgι).trans (H.map_comp _ _))
+  have hH : H.map g ≫ H.map ι' = H.map ι ≫ H.map f := ((CommSq.mk hgι).map H).w
   have hπ := TopPair.singularHomologyπ_naturality
     (subspaceComplPairMap f (proj_apply_of_comp_eq hf) (⊤ : Submodule ℝ V)) (ModuleCat.of R R) n
   rw [subspaceComplPairMap_fst] at hπ

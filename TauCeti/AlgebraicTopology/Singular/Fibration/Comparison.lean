@@ -91,7 +91,12 @@ variable (hf : f ≫ p' = p)
 private def preimagePairMap {S T : Set B} (hST : S ⊆ T) :
     TopPair.ofInclusion (X := E) (preimage_mono (f := p) hST) ⟶
       TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST) :=
-  TopPair.ofHom (TopCat.Hom.preimageMap hf T) (TopCat.Hom.preimageMap hf S) rfl
+  TopPair.ofHom (TopCat.Hom.preimageMap hf T) (TopCat.Hom.preimageMap hf S)
+    (TopCat.Hom.preimageMap_comp_ofHom_inclusion hf hST)
+
+private lemma preimagePairMap_fst {S T : Set B} (hST : S ⊆ T) :
+    TopPair.Hom.fst (preimagePairMap hf hST) = TopCat.Hom.preimageMap hf T :=
+  rfl
 
 end Preimage
 
@@ -101,19 +106,13 @@ section Cells
 
 variable [T2Space B] {C D : Set B} [RelCWComplex C D] (hf : f ≫ p' = p)
 
-/-- The map `Pⱼ ⟶ P'ⱼ` of the pullbacks along the characteristic map of the `n`-cell `j` induced
-by a map `f` over `B`. -/
-private def cellDiskPullbackHom (n : ℕ) (j : cell C n) :
-    (cellDiskPullbackPair p C n j).fst ⟶ (cellDiskPullbackPair p' C n j).fst :=
-  _root_.TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, f x.1.2),
-      x.2.trans (ConcreteCategory.congr_hom hf x.1.2).symm⟩,
-    (by fun_prop : Continuous fun x : (cellDiskPullbackPair p C n j).fst ↦ (x.1.1, f x.1.2)
-      ).subtype_mk _⟩
-
-/-- The map of pairs `(Pⱼ, ∂Pⱼ) ⟶ (P'ⱼ, ∂P'ⱼ)` induced by a map `f` over `B`. -/
+/-- The map of pairs `(Pⱼ, ∂Pⱼ) ⟶ (P'ⱼ, ∂P'ⱼ)` of the pullbacks along the characteristic map of
+the `n`-cell `j` induced by a map `f` over `B`. -/
 private def cellDiskPullbackPairHom (n : ℕ) (j : cell C n) :
     cellDiskPullbackPair p C n j ⟶ cellDiskPullbackPair p' C n j :=
-  TopPair.ofSubsetMap (cellDiskPullbackHom hf n j) fun _ hx ↦ hx
+  TopPair.ofSubsetMap (_root_.TopCat.pullbackMapOfCompEq (cellULiftMap C n j) hf)
+    (TopCat.Hom.mapsTo_preimage_of_comp_eq
+      (_root_.TopCat.pullbackMapOfCompEq_comp_pullbackFst (cellULiftMap C n j) hf) _)
 
 /-- The map of pairs `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹)) ⟶ (p'⁻¹(Xⁿ), p'⁻¹(Xⁿ⁻¹))` induced by a map `f` over
 `B` commutes with the projections from the pullbacks along the characteristic maps of the cells. -/
@@ -123,12 +122,17 @@ private lemma cellDiskPullbackPairMap_comp_preimagePairMap (n : ℕ) (j : cell C
       cellDiskPullbackPairHom hf n j ≫ cellDiskPullbackPairMap p' C n j :=
   TopPair.hom_ext_of_fst _ (by
     ext x
-    exact Subtype.ext (((TopCat.Hom.coe_preimageMap_apply hf _ _).trans
-      (congrArg f (coe_cellDiskPullbackPairMap_fst_apply n j x))).trans
-      ((coe_cellDiskPullbackPairMap_fst_apply (p := p') n j
-        (TopPair.Hom.fst (cellDiskPullbackPairHom hf n j) x)).trans
-        (congrArg (fun y : (cellDiskPullbackPair p' C n j).fst ↦ (y.1.2 : E'))
-          (TopPair.ofSubsetMap_fst_apply (cellDiskPullbackHom hf n j) _ x))).symm))
+    apply Subtype.ext
+    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, preimagePairMap_fst, cellDiskPullbackPairHom,
+      TopPair.ofSubsetMap_fst]
+    -- Both sides send a point `x` of `Pⱼ` to `f x.1.2`.
+    calc ((TopCat.Hom.preimageMap hf _ (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j) x) : E'))
+        = f (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j) x).1 :=
+          TopCat.Hom.coe_preimageMap_apply hf _ _
+      _ = f x.1.2 := congrArg f (coe_cellDiskPullbackPairMap_fst_apply n j x)
+      _ = (_root_.TopCat.pullbackMapOfCompEq (cellULiftMap C n j) hf x).1.2 :=
+          congrArg Prod.snd (_root_.TopCat.coe_pullbackMapOfCompEq_apply _ hf x).symm
+      _ = _ := (coe_cellDiskPullbackPairMap_fst_apply (p := p') n j _).symm)
 
 variable (hp : serreFibrations p) (hp' : serreFibrations p') (R : Type u) [Ring R]
 include hp hp'
@@ -153,37 +157,34 @@ private lemma isIso_singularHomologyMap_cellDiskPullbackPairHom (sq : CommSq f p
       (isZero_singularHomology_preimage_sphere R hP' (by simpa using hm)).isoZero
   obtain ⟨q, rfl⟩ := Nat.exists_eq_add_of_le' hm
   let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
-  have hfP : cellDiskPullbackHom hf n j ≫ _root_.TopCat.pullbackFst (cellULiftMap C n j) p' =
-      _root_.TopCat.pullbackFst (cellULiftMap C n j) p :=
-    rfl
+  have hfP := _root_.TopCat.pullbackMapOfCompEq_comp_pullbackFst (cellULiftMap C n j) hf
   -- The map of fibres over the centre of the disk.
-  let g : _root_.TopCat.of (_root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹'
-        {x | (x : ULift.{u} (Fin n → ℝ)) = 0}) ⟶
-      _root_.TopCat.of (_root_.TopCat.pullbackFst (cellULiftMap C n j) p' ⁻¹'
-        {x | (x : ULift.{u} (Fin n → ℝ)) = 0}) :=
-    _root_.TopCat.ofHom ⟨fun x ↦ ⟨cellDiskPullbackHom hf n j x.1, x.2⟩,
-      ((cellDiskPullbackHom hf n j).hom.continuous.comp continuous_subtype_val).subtype_mk _⟩
+  let g := TopCat.Hom.preimageMap hfP {x | (x : ULift.{u} (Fin n → ℝ)) = 0}
   -- Through the identifications of the fibres over the centres, `g` is the fibre map of `f`.
   let e := _root_.TopCat.isoOfHomeo (X := _root_.TopCat.of
       (_root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹' {x | (x : ULift.{u} (Fin n → ℝ)) = 0}))
     (Y := p.fiber (map n j 0)) (cellDiskPullbackFiberHomeomorph p C n j)
   let e' := _root_.TopCat.isoOfHomeo (X := _root_.TopCat.of
       (_root_.TopCat.pullbackFst (cellULiftMap C n j) p' ⁻¹' {x | (x : ULift.{u} (Fin n → ℝ)) = 0}))
-    (Y := p'.fiber (map n j 0)) (cellDiskPullbackFiberHomeomorph p' C n j)
+    (Y := p'.fiber ((𝟙 B : B ⟶ B) (map n j 0))) (cellDiskPullbackFiberHomeomorph p' C n j)
   have hge : g ≫ e'.hom = e.hom ≫ sq.fiberMap (map n j 0) := by
     ext x
-    exact (coe_cellDiskPullbackFiberHomeomorph_apply (p := p') n j (g x)).trans
-      ((congrArg f (coe_cellDiskPullbackFiberHomeomorph_apply (p := p) n j x)).symm.trans
-        (sq.fiberMap_apply_coe _ _).symm)
+    -- Both sides send `x` to `f x.1.1.2`.
+    calc (cellDiskPullbackFiberHomeomorph p' C n j (g x) : E') = (g x).1.1.2 :=
+          coe_cellDiskPullbackFiberHomeomorph_apply n j (g x)
+      _ = (_root_.TopCat.pullbackMapOfCompEq (cellULiftMap C n j) hf x.1).1.2 := by
+          rw [TopCat.Hom.coe_preimageMap_apply]
+      _ = f x.1.1.2 := by rw [_root_.TopCat.coe_pullbackMapOfCompEq_apply]
+      _ = f (cellDiskPullbackFiberHomeomorph p C n j x) :=
+          congrArg f (coe_cellDiskPullbackFiberHomeomorph_apply n j x).symm
+      _ = sq.fiberMap (map n j 0) (cellDiskPullbackFiberHomeomorph p C n j x) :=
+          (sq.fiberMap_apply_coe _ _).symm
   have hHg : IsIso (H.map g) := by
-    have : IsIso (H.map g ≫ H.map e'.hom) := by
-      have h : H.map g ≫ H.map e'.hom = H.map e.hom ≫ H.map (sq.fiberMap (map n j 0)) :=
-        (H.map_comp _ _).symm.trans ((congrArg H.map hge).trans (H.map_comp _ _))
-      rw [h]
-      exact @IsIso.comp_isIso _ _ _ _ _ _ _ (Functor.map_isIso H e.hom) (hfib q rfl)
-    exact IsIso.of_isIso_comp_right (H.map g) (H.map e'.hom)
-  have nat := singularHomologyPreimageSphereIso_hom_naturality R hP hP' hfP g (fun _ ↦ rfl) q
-    (q + n) (by simp)
+    have := hfib q rfl
+    rw [← isIso_comp_right_iff _ (H.map e'.hom), ← H.map_comp, hge, H.map_comp]
+    infer_instance
+  have nat := singularHomologyPreimageSphereIso_hom_naturality R hP hP' hfP g
+    (TopCat.Hom.coe_preimageMap_apply hfP _) q (q + n) (by simp)
   have : TopPair.singularHomologyMap (cellDiskPullbackPairHom hf n j) (ModuleCat.of R R) (q + n) =
       (singularHomologyPreimageSphereIso R hP q (q + n) (by simp)).hom ≫ H.map g ≫
         (singularHomologyPreimageSphereIso R hP' q (q + n) (by simp)).inv := by
@@ -262,8 +263,11 @@ private lemma isIso_singularHomologyMap_preimageMap_skeletonLT
     exact TopPair.isIso_homologyMap_fst_of_isIso (ModuleCat.of R R)
       (preimagePairMap hf (skeletonLT_subset_skeletonLT_succ C n)) k inferInstance
       (isIso_singularHomologyMap_preimageMap_skeletonLT hfib n k) (hrel k)
-      fun m _ ↦ @IsIso.mono_of_iso _ _ _ _ _
-        (isIso_singularHomologyMap_preimageMap_skeletonLT hfib n m)
+      fun m _ ↦ by
+        have : IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map (TopPair.Hom.snd
+            (preimagePairMap hf (skeletonLT_subset_skeletonLT_succ C n)))) (ModuleCat.of R R) m) :=
+          isIso_singularHomologyMap_preimageMap_skeletonLT hfib n m
+        infer_instance
 
 /-- **A map of Serre fibrations which is a homology isomorphism on the fibres is one over a CW
 complex in the base.** Let `p : E ⟶ B` and `p' : E' ⟶ B` be Serre fibrations, `f : E ⟶ E'` a map
@@ -319,27 +323,12 @@ private theorem isIso_singularHomologyMap_of_commSq_of_cwComplex (sq : CommSq f 
     (_root_.TopCat.isIso_iff_isHomeomorph _).2
       ⟨continuous_subtype_val, (isOpen_univ.preimage q.hom.continuous).isOpenMap_subtype_val,
         Subtype.val_injective, fun x ↦ ⟨⟨x, trivial⟩, rfl⟩⟩
-  have hsq : H.map (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
-        _root_.TopCat.of (p ⁻¹' univ) ⟶ E) ≫ H.map f =
-      H.map (TopCat.Hom.preimageMap hf univ) ≫
-        H.map (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
-          _root_.TopCat.of (p' ⁻¹' univ) ⟶ E') := by
-    have hcomm : (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
-          _root_.TopCat.of (p ⁻¹' univ) ⟶ E) ≫ f =
-        TopCat.Hom.preimageMap hf univ ≫
-          (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
-            _root_.TopCat.of (p' ⁻¹' univ) ⟶ E') :=
-      rfl
-    exact (H.map_comp _ _).symm.trans ((congrArg H.map hcomm).trans (H.map_comp _ _))
   have := hι E p
   have := hι E' p'
-  have : IsIso (H.map (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
-      _root_.TopCat.of (p ⁻¹' univ) ⟶ E) ≫ H.map f) := by
-    rw [hsq]
-    exact @IsIso.comp_isIso _ _ _ _ _ _ _ h inferInstance
-  exact IsIso.of_isIso_comp_left
-    (H.map (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
-      _root_.TopCat.of (p ⁻¹' univ) ⟶ E)) (H.map f)
+  rw [← isIso_comp_left_iff (H.map (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
+      _root_.TopCat.of (p ⁻¹' univ) ⟶ E)), ← H.map_comp,
+    ← TopCat.Hom.preimageMap_comp_ofHom_val hf univ, H.map_comp]
+  exact IsIso.comp_isIso' h inferInstance
 
 end Base
 
@@ -374,44 +363,30 @@ theorem isIso_singularHomologyMap_of_commSq (sq : CommSq f p p' (𝟙 B))
     (isWeakHomotopyEquivalence_sigmaCWApproximationMap B).comp
       h.symm.isWeakHomotopyEquivalence
   -- The map of the pulled-back fibrations induced by `f`.
-  let fP : _root_.TopCat.of {x : _root_.TopCat.of C × E // g x.1 = p x.2} ⟶
-      _root_.TopCat.of {x : _root_.TopCat.of C × E' // g x.1 = p' x.2} :=
-    _root_.TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, f x.1.2),
-        x.2.trans (ConcreteCategory.congr_hom hf x.1.2).symm⟩,
-      (by fun_prop : Continuous fun x : {x : _root_.TopCat.of C × E // g x.1 = p x.2} ↦
-        (x.1.1, f x.1.2)).subtype_mk _⟩
-  let sqP : CommSq fP (_root_.TopCat.pullbackFst g p) (_root_.TopCat.pullbackFst g p')
-      (𝟙 _) := ⟨rfl⟩
+  let sqP : CommSq (_root_.TopCat.pullbackMapOfCompEq g hf) (_root_.TopCat.pullbackFst g p)
+      (_root_.TopCat.pullbackFst g p') (𝟙 _) :=
+    ⟨(_root_.TopCat.pullbackMapOfCompEq_comp_pullbackFst g hf).trans (Category.comp_id _).symm⟩
   have hP := isIso_singularHomologyMap_of_commSq_of_cwComplex
     (mem_serreFibrations_pullbackFst hp g) (mem_serreFibrations_pullbackFst hp' g) R sqP
     (fun b q ↦ ?_) k
   · -- On total spaces, the projections from the pullbacks are weak homotopy equivalences.
     let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj (ModuleCat.of R R)
-    have h₁ := (isWeakHomotopyEquivalence_pullbackSnd hp hg).isIso_singularHomologyMap
-      (ModuleCat.of R R) k
-    have h₂ := (isWeakHomotopyEquivalence_pullbackSnd hp' hg).isIso_singularHomologyMap
-      (ModuleCat.of R R) k
-    have hcomm : fP ≫ _root_.TopCat.pullbackSnd g p' = _root_.TopCat.pullbackSnd g p ≫ f := rfl
-    have : IsIso (H.map (_root_.TopCat.pullbackSnd g p) ≫ H.map f) := by
-      rw [(H.map_comp _ _).symm.trans ((congrArg H.map hcomm).symm.trans (H.map_comp _ _))]
-      exact @IsIso.comp_isIso _ _ _ _ _ _ _ hP h₂
-    exact @IsIso.of_isIso_comp_left _ _ _ _ _ _ _ h₁ this
+    have h₁ : IsIso (H.map (_root_.TopCat.pullbackSnd g p)) :=
+      (isWeakHomotopyEquivalence_pullbackSnd hp hg).isIso_singularHomologyMap (ModuleCat.of R R) k
+    have h₂ : IsIso (H.map (_root_.TopCat.pullbackSnd g p')) :=
+      (isWeakHomotopyEquivalence_pullbackSnd hp' hg).isIso_singularHomologyMap (ModuleCat.of R R) k
+    rw [← isIso_comp_left_iff (H.map (_root_.TopCat.pullbackSnd g p)), ← H.map_comp,
+      ← _root_.TopCat.pullbackMapOfCompEq_comp_pullbackSnd g hf, H.map_comp]
+    exact IsIso.comp_isIso' hP h₂
   · -- On fibres, the pullbacks have the fibres of `p` and `p'`.
     let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
-    have hcomm : sqP.fiberMap b ≫ (p'.fiberPullbackFstIso g b).hom =
-        (p.fiberPullbackFstIso g b).hom ≫ sq.fiberMap (g b) := by
-      ext x
-      exact (TopCat.Hom.fiberPullbackFstIso_hom_apply_coe p' g b _).trans
-        ((congrArg (fun y : {x : _root_.TopCat.of C × E' // g x.1 = p' x.2} ↦ y.1.2)
-          (sqP.fiberMap_apply_coe b x)).trans
-        ((congrArg f (TopCat.Hom.fiberPullbackFstIso_hom_apply_coe p g b x)).symm.trans
-          (sq.fiberMap_apply_coe _ _).symm))
-    have : IsIso (H.map (sqP.fiberMap b) ≫ H.map (p'.fiberPullbackFstIso g b).hom) := by
-      rw [(H.map_comp _ _).symm.trans ((congrArg H.map hcomm).trans (H.map_comp _ _))]
-      exact @IsIso.comp_isIso _ _ _ _ _ _ _ (H.mapIso (p.fiberPullbackFstIso g b)).isIso_hom
-        (hfib (g b) q)
-    exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ _
-      (H.mapIso (p'.fiberPullbackFstIso g b)).isIso_hom this
+    -- Through the identifications of the fibres, the fibre map of the pullbacks is that of `f`.
+    -- The fibre map of `sqP` lands over `(𝟙 _) b` rather than `b`, so `rw` cannot move `IsIso`
+    -- across this square; compare the two maps as isomorphic arrows instead.
+    have hcomm := (CommSq.mk (TopCat.Hom.fiberPullbackFstIso_hom_naturality g sq sqP b)).map H
+    exact ((MorphismProperty.isomorphisms _).arrow_mk_iso_iff (Arrow.isoMk
+      (H.mapIso (p.fiberPullbackFstIso g b)) (H.mapIso (p'.fiberPullbackFstIso g b))
+      hcomm.w.symm)).2 (hfib (g b) q)
 
 omit hp' in
 /-- **A Serre fibration whose fibres have the homology of a point is a homology isomorphism.** Let
@@ -438,10 +413,8 @@ theorem isIso_singularHomologyMap_of_isIso_fiber_to_point
   -- The map from the fibre of `p` to a point factors through the fibre map.
   have hfac : sq.fiberMap b ≫ t = _root_.TopCat.isTerminalPUnit.from (p.fiber b) :=
     _root_.TopCat.isTerminalPUnit.hom_ext _ _
-  have : IsIso (H.map (sq.fiberMap b) ≫ H.map t) := by
-    rw [(H.map_comp _ _).symm.trans (congrArg H.map hfac)]
-    exact hfib b q
-  exact IsIso.of_isIso_comp_right _ (H.map t)
+  rw [← isIso_comp_right_iff _ (H.map t), ← H.map_comp, hfac]
+  exact hfib b q
 
 end Arbitrary
 

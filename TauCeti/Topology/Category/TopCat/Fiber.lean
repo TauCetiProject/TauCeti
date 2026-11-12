@@ -61,7 +61,7 @@ lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B}
 
 /-- The restriction `p⁻¹(S) ⟶ p'⁻¹(S)` of a map `f` over `B`, that is with `f ≫ p' = p`, to the
 parts over a subset `S` of `B`. -/
-@[expose] def preimageMap {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B} {f : E ⟶ E'}
+def preimageMap {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B} {f : E ⟶ E'}
     (hf : f ≫ p' = p) (S : Set B) : TopCat.of (p ⁻¹' S) ⟶ TopCat.of (p' ⁻¹' S) :=
   TopCat.ofHom ⟨(mapsTo_preimage_of_comp_eq hf S).restrict,
     f.hom.continuous.restrict (mapsTo_preimage_of_comp_eq hf S)⟩
@@ -69,6 +69,24 @@ parts over a subset `S` of `B`. -/
 @[simp]
 lemma coe_preimageMap_apply {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B} {f : E ⟶ E'}
     (hf : f ≫ p' = p) (S : Set B) (x : TopCat.of (p ⁻¹' S)) : (preimageMap hf S x : E') = f x :=
+  (rfl)
+
+/-- The restriction of a map `f` over `B` to the parts over `S` commutes with the inclusions of
+these parts into `E` and `E'`. -/
+@[reassoc]
+lemma preimageMap_comp_ofHom_val {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B} {f : E ⟶ E'}
+    (hf : f ≫ p' = p) (S : Set B) :
+    preimageMap hf S ≫ TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ =
+      TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ f :=
+  (rfl)
+
+/-- For `S ⊆ T`, the restrictions of a map `f` over `B` to the parts over `S` and over `T` commute
+with the inclusions `p⁻¹(S) ⊆ p⁻¹(T)` and `p'⁻¹(S) ⊆ p'⁻¹(T)`. -/
+@[reassoc]
+lemma preimageMap_comp_ofHom_inclusion {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B}
+    {f : E ⟶ E'} (hf : f ≫ p' = p) {S T : Set B} (hST : S ⊆ T) :
+    preimageMap hf S ≫ TopCat.ofHom (ContinuousMap.inclusion (Set.preimage_mono hST)) =
+      TopCat.ofHom (ContinuousMap.inclusion (Set.preimage_mono hST)) ≫ preimageMap hf T :=
   (rfl)
 
 /-- The composite of two maps with finite fibres has finite fibres. -/
