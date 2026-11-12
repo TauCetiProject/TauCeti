@@ -199,7 +199,7 @@ theorem norm_coeff_det_le_of_natDegree_le_one {M : Matrix ι ι R[X]} {r : ι �
     ‖M.det.coeff m‖ ≤ c := by
   rw [det_apply, finsetSum_coeff]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hc fun σ _ ↦ ?_
-  rw [coeff_smul, norm_units_zsmul]
+  rw [AddMonoidAlgebra.coeff_smul_apply, norm_units_zsmul]
   refine TauCeti.norm_coeff_prod_le_of_natDegree_le_one (fun i _ ↦ hdeg _ _) (fun i _ ↦ h₀ _ _)
     (fun i _ ↦ h₁ _ _) hc fun t _ ht ↦ ?_
   simpa only [prod_map, Equiv.coe_toEmbedding] using
