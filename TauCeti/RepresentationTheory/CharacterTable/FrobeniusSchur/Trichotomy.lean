@@ -238,10 +238,8 @@ In characteristic `p` this is an identity of residues only. -/
 theorem finrank_invariantForms_eq_finrank_invariants_tprod_self_cast (ρ : Representation k G V) :
     (finrank k (invariantForms ρ) : k) =
       (finrank k (Representation.tprod ρ ρ).invariants : k) := by
-  have : Finite G := by
-    by_contra hG
-    have := not_finite_iff_infinite.mp hG
-    exact Invertible.ne_zero (Nat.card G : k) (by simp)
+  have : Finite G :=
+    Nat.finite_of_card_ne_zero fun h => Invertible.ne_zero (Nat.card G : k) (by simp [h])
   have : Fintype G := Fintype.ofFinite G
   rw [(invariantFormsEquivIntertwiningMapDual ρ).finrank_eq,
     ← Representation.card_inv_mul_sum_char_mul_char_eq_finrank,
