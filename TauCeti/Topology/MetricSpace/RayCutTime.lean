@@ -272,33 +272,42 @@ theorem not_subset_or_infEDist_lt_of_rayCutTime_lt
   · exact Or.inl hprefix
 
 /-- **Upper semicontinuity of the cut time of a family of rays.** Let `Γ` be a family of rays from
-`S` with time domains `T`, each `1`-Lipschitz on the prefixes `[0, u] ⊆ T p` with `u ≤ R` and with
-its cut time in its time domain. Suppose that for every `t ∈ [0, R]` the parameters whose time
+`S` with time domains `T`, each `1`-Lipschitz on the prefixes `[0, u] ⊆ T p` with `u ≤ R`.
+Suppose that for every `t ∈ (0, R)` the parameters whose time
 domain contains `[0, t]` form a closed set, on which the position at time `t` is continuous. Then
 the cut time is upper semicontinuous in the parameter. -/
 theorem upperSemicontinuous_rayCutTime {P : Type*} [TopologicalSpace P] {Γ : P → ℝ → X}
     {T : P → Set ℝ} (hΓ : ∀ p, ∀ u ≤ R, Icc 0 u ⊆ T p → LipschitzOnWith 1 (Γ p) (Icc 0 u))
     (hR : 0 ≤ R) (h0T : ∀ p, 0 ∈ T p) (h0S : ∀ p, Γ p 0 ∈ S)
-    (hcut : ∀ p, rayCutTime (Γ p) S (T p) R ∈ T p)
-    (hT : ∀ t ∈ Icc 0 R, IsClosed {p | Icc 0 t ⊆ T p})
-    (hc : ∀ t ∈ Icc 0 R, ContinuousOn (fun p ↦ Γ p t) {p | Icc 0 t ⊆ T p}) :
+    (hT : ∀ t ∈ Ioo 0 R, IsClosed {p | Icc 0 t ⊆ T p})
+    (hc : ∀ t ∈ Ioo 0 R, ContinuousOn (fun p ↦ Γ p t) {p | Icc 0 t ⊆ T p}) :
     UpperSemicontinuous fun p ↦ rayCutTime (Γ p) S (T p) R := by
   have hI (p : P) : rayCutTime (Γ p) S (T p) R ∈ Icc 0 R := rayCutTime_mem_Icc hR (h0T p) (h0S p)
   rw [upperSemicontinuous_iff_isClosed_preimage]
   intro t
-  rcases lt_or_ge t 0 with ht0 | ht0
+  rcases le_or_gt t 0 with ht0 | ht0
   · convert isClosed_univ
-    exact eq_univ_of_forall fun p ↦ ht0.le.trans (hI p).1
+    exact eq_univ_of_forall fun p ↦ ht0.trans (hI p).1
   rcases le_or_gt t R with htR | htR
-  · have ht : t ∈ Icc 0 R := ⟨ht0, htR⟩
-    have heq : (fun p ↦ rayCutTime (Γ p) S (T p) R) ⁻¹' Ici t =
-        {p | Icc 0 t ⊆ T p} ∩ {p | infEDist (Γ p t) S = ENNReal.ofReal t} := by
+  · have heq : (fun p ↦ rayCutTime (Γ p) S (T p) R) ⁻¹' Ici t =
+        ⋂ s ∈ Ioo 0 t,
+          {p | Icc 0 s ⊆ T p} ∩ {p | infEDist (Γ p s) S = ENNReal.ofReal s} := by
       ext p
-      rw [mem_preimage, mem_Ici, le_rayCutTime_iff (hΓ p) hR (h0T p) (h0S p) (hcut p) ht0]
-      simp only [mem_rayMinimizingTimes, ht, true_and, mem_inter_iff, mem_ofPred_eq]
+      simp only [mem_preimage, mem_Ici, mem_iInter, mem_inter_iff, mem_ofPred_eq]
+      constructor
+      · intro hp s hs
+        exact (mem_rayMinimizingTimes_of_lt_rayCutTime (hΓ p) hR (h0T p) (h0S p)
+          hs.1.le (hs.2.trans_le hp)).2
+      · intro hp
+        by_contra hlt
+        obtain ⟨s, hcs, hst⟩ := exists_between (lt_of_not_ge hlt)
+        have hs := hp s ⟨(hI p).1.trans_lt hcs, hst⟩
+        exact hcs.not_ge (le_rayCutTime ⟨⟨(hI p).1.trans hcs.le, hst.le.trans htR⟩, hs⟩)
     rw [heq]
-    exact (continuous_infEDist.comp_continuousOn (hc t ht)).preimage_isClosed_of_isClosed
-      (hT t ht) isClosed_singleton
+    refine isClosed_biInter fun s hs ↦ ?_
+    have hsR : s ∈ Ioo 0 R := ⟨hs.1, hs.2.trans_le htR⟩
+    exact (continuous_infEDist.comp_continuousOn (hc s hsR)).preimage_isClosed_of_isClosed
+      (hT s hsR) isClosed_singleton
   · convert isClosed_empty
     exact eq_empty_of_forall_notMem fun p hp ↦ (htR.trans_le hp).not_ge (hI p).2
 
@@ -340,10 +349,8 @@ theorem upperSemicontinuous_rayCutTime_preimage {P : Type*} [TopologicalSpace P]
     (hc : ∀ t ∈ Icc 0 R, Continuous fun p ↦ Γ p t) :
     UpperSemicontinuous fun p ↦ rayCutTime (Γ p) S (Γ p ⁻¹' D) R :=
   upperSemicontinuous_rayCutTime (fun p _ hu _ ↦ (hΓ p).mono (Icc_subset_Icc_right hu)) hR h0D
-    h0S (fun p ↦ (rayCutTime_preimage_mem_rayMinimizingTimes hD hR (hΓ p) (h0S p)
-      (h0D p)).2.1 (right_mem_Icc.mpr (rayCutTime_mem_Icc hR (h0D p) (h0S p)).1))
-    (fun _ ht ↦ hD.setOfPred_mapsTo fun u hu ↦ hc u ⟨hu.1, hu.2.trans ht.2⟩)
-    fun t ht ↦ (hc t ht).continuousOn
+    h0S (fun _ ht ↦ hD.setOfPred_mapsTo fun u hu ↦ hc u ⟨hu.1, hu.2.trans ht.2.le⟩)
+    fun t ht ↦ (hc t ⟨ht.1.le, ht.2.le⟩).continuousOn
 
 end ClosedSet
 

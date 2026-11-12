@@ -27,14 +27,17 @@ continuous family of initial vectors, the parameters whose geodesic is defined a
 `[0, t]` form a closed set
 (`TauCeti.Manifold.isClosed_setOfPred_Icc_subset_geodesicInterval_inter_preimage`), and the cut
 time is an upper semicontinuous, hence measurable, function of the parameter.
+Measurability alone only requires `K` to be closed, using the measurable prefix conditions in
+`TauCeti.Manifold.measurableSet_setOfPred_Icc_subset_geodesicInterval_and_mapsTo`.
 
 ## Main results
 
 * `TauCeti.Manifold.rayCutTime_maximalGeodesic_mem_rayMinimizingTimes`: the cut time of a geodesic
   in a compact set is attained.
-* `TauCeti.Manifold.upperSemicontinuous_rayCutTime_maximalGeodesic` and
-  `TauCeti.Manifold.measurable_rayCutTime_maximalGeodesic`: the cut time in a compact set is an
-  upper semicontinuous, hence measurable, function of the initial vector along a continuous family.
+* `TauCeti.Manifold.upperSemicontinuous_rayCutTime_maximalGeodesic`: the cut time in a compact set
+  is upper semicontinuous along a continuous family of initial vectors.
+* `TauCeti.Manifold.measurable_rayCutTime_maximalGeodesic`: the cut time in a closed set is
+  measurable along a continuous family of initial vectors.
 -/
 
 public section
@@ -99,26 +102,50 @@ theorem upperSemicontinuous_rayCutTime_maximalGeodesic (hZ : Continuous Z) (hK :
     UpperSemicontinuous fun q ↦ rayCutTime (maximalGeodesic I M (Z q).proj (Z q).2) S
       (geodesicInterval I M (Z q).proj (Z q).2 ∩ maximalGeodesic I M (Z q).proj (Z q).2 ⁻¹' K)
       R := by
-  have hmem (q : P) := mem_rayMinimizingTimes.1 <|
-    rayCutTime_maximalGeodesic_mem_rayMinimizingTimes (v := (Z q).2) hK (hv q) hR (hZS q) (hZK q)
   refine upperSemicontinuous_rayCutTime (fun q u _ hu ↦ (lipschitzOnWith_maximalGeodesic.mono
       (hu.trans inter_subset_left)).weaken (mod_cast hv q)) hR
-    (fun q ↦ (hmem q).2.1 (left_mem_Icc.2 (hmem q).1.1))
+    (fun q ↦ ⟨zero_mem_geodesicInterval, by rw [mem_preimage, maximalGeodesic_zero]; exact hZK q⟩)
     (fun q ↦ by rw [maximalGeodesic_zero]; exact hZS q)
-    (fun q ↦ (hmem q).2.1 (right_mem_Icc.2 (hmem q).1.1))
     (fun t _ ↦ isClosed_setOfPred_Icc_subset_geodesicInterval_inter_preimage hZ hK t)
     fun t ht q hq ↦ (continuousAt_maximalGeodesic_comp hZ.continuousAt continuousAt_const
-      (hq (right_mem_Icc.2 ht.1)).1).continuousWithinAt
+      (hq (right_mem_Icc.2 ht.1.le)).1).continuousWithinAt
 
-/-- The cut time in a compact set `K` of the maximal geodesics of a continuous family of tangent
+/-- The cut time in a closed set `K` of the maximal geodesics of a continuous family of tangent
 vectors of norm at most one, based at points of `S` and of `K`, is a measurable function of the
 parameter. -/
 theorem measurable_rayCutTime_maximalGeodesic [MeasurableSpace P] [OpensMeasurableSpace P]
-    (hZ : Continuous Z) (hK : IsCompact K) (hv : ∀ q, ‖(Z q).2‖ ≤ 1) (hR : 0 ≤ R)
+    (hZ : Continuous Z) (hK : IsClosed K) (hv : ∀ q, ‖(Z q).2‖ ≤ 1) (hR : 0 ≤ R)
     (hZS : ∀ q, (Z q).proj ∈ S) (hZK : ∀ q, (Z q).proj ∈ K) :
     Measurable fun q ↦ rayCutTime (maximalGeodesic I M (Z q).proj (Z q).2) S
       (geodesicInterval I M (Z q).proj (Z q).2 ∩ maximalGeodesic I M (Z q).proj (Z q).2 ⁻¹' K)
-      R :=
-  (upperSemicontinuous_rayCutTime_maximalGeodesic hZ hK hv hR hZS hZK).measurable
+      R := by
+  refine measurable_rayCutTime (fun q u _ hu ↦ (lipschitzOnWith_maximalGeodesic.mono
+      (hu.trans inter_subset_left)).weaken (mod_cast hv q)) hR
+    (fun q ↦ ⟨zero_mem_geodesicInterval, by rw [mem_preimage, maximalGeodesic_zero]; exact hZK q⟩)
+    (fun q ↦ by rw [maximalGeodesic_zero]; exact hZS q) ?_
+  intro r
+  by_cases hr : (r : ℝ) ∈ Icc 0 R
+  · let A : Set P := {q | Icc 0 (r : ℝ) ⊆ geodesicInterval I M (Z q).proj (Z q).2 ∩
+        maximalGeodesic I M (Z q).proj (Z q).2 ⁻¹' K}
+    have hA : MeasurableSet A := by
+      simpa only [A, subset_inter_iff, mapsTo_iff_subset_preimage] using
+        measurableSet_setOfPred_Icc_subset_geodesicInterval_and_mapsTo hZ hK (r : ℝ)
+    have hc : ContinuousOn (fun q ↦ infEDist (maximalGeodesic I M (Z q).proj (Z q).2 r) S) A :=
+      continuous_infEDist.comp_continuousOn fun q hq ↦
+        (continuousAt_maximalGeodesic_comp hZ.continuousAt continuousAt_const
+          (hq (right_mem_Icc.2 hr.1)).1).continuousWithinAt
+    obtain ⟨C, hC, heq⟩ := continuousOn_iff_isClosed.1 hc
+      {ENNReal.ofReal (r : ℝ)} isClosed_singleton
+    have hmin : {q | (r : ℝ) ∈ rayMinimizingTimes
+        (maximalGeodesic I M (Z q).proj (Z q).2) S
+        (geodesicInterval I M (Z q).proj (Z q).2 ∩ maximalGeodesic I M (Z q).proj (Z q).2 ⁻¹' K)
+        R} = C ∩ A := by
+      rw [← heq]
+      ext q
+      simp only [mem_rayMinimizingTimes, hr, true_and, mem_inter_iff, mem_preimage,
+        mem_singleton_iff, mem_ofPred_eq, A, and_comm]
+    rw [hmin]
+    exact hC.measurableSet.inter hA
+  · simp only [mem_rayMinimizingTimes, hr, false_and, ofPred_false, MeasurableSet.empty]
 
 end TauCeti.Manifold
