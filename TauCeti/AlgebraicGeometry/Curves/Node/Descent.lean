@@ -8,10 +8,11 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.Node.Fiber
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Descent
+public import TauCeti.AlgebraicGeometry.Morphisms.Unramified.SourceDescent
 import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 
 /-!
-# Nodal relative curves satisfy fpqc descent
+# Descent of nodal relative curves
 
 A morphism whose base change along a surjective, flat and quasi-compact morphism is at worst
 nodal of relative dimension one is itself at worst nodal of relative dimension one. Together
@@ -28,12 +29,20 @@ the fibrewise criterion `atWorstNodalOfRelativeDimensionOne_iff_flat_and_fiberTo
 reduces the question to flatness and finite presentation, which descend, and to the fibres, which
 are base changes of each other along extensions of residue fields.
 
+For a curve already known to be syntomic of relative dimension one over an affine base,
+nodality can also be checked after an étale surjection of the source. Its singular subscheme
+pulls back along that surjection, and unramifiedness descends along the resulting flat
+surjection of singular subschemes. This statement assumes syntomicity on the original curve;
+it does not prove descent of syntomicity along an étale cover of the source.
+
 ## Main results
 
 * `AffineAtWorstNodalOfRelativeDimensionOne.of_isPullback_of_faithfullyFlat`: over an affine
   base, nodality descends along faithfully flat extensions of the base ring.
 * `AtWorstNodalOfRelativeDimensionOne.descendsAlong_surjective_inf_flat_inf_quasicompact`:
   nodality descends along surjective, flat, quasi-compact morphisms.
+* `affineAtWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_surjective`: among syntomic
+  relative curves, nodality is detected by étale surjections of the source.
 
 ## References
 
@@ -50,6 +59,43 @@ namespace TauCeti.AlgebraicGeometry
 universe u
 
 variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R'] {X X' : Scheme.{u}}
+
+/-- For a syntomic relative curve over an affine base, nodality descends along an étale
+surjection of the source. The syntomicity hypothesis concerns the original curve. -/
+theorem AffineAtWorstNodalOfRelativeDimensionOne.of_comp_surjective
+    {f : X ⟶ Spec (.of R)} [SyntomicOfRelativeDimension 1 f]
+    (g : X' ⟶ X) [Etale g] [Surjective g]
+    (h : AffineAtWorstNodalOfRelativeDimensionOne (g ≫ f)) :
+    AffineAtWorstNodalOfRelativeDimensionOne f := by
+  let : X.Over (Spec (.of R)) := ⟨f⟩
+  let : X'.Over (Spec (.of R)) := ⟨g ≫ f⟩
+  have : g.IsOver (Spec (.of R)) := ⟨rfl⟩
+  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) :=
+    inferInstanceAs (SyntomicOfRelativeDimension 1 f)
+  have : SyntomicOfRelativeDimension 1 (X' ↘ Spec (.of R)) := h.syntomic
+  let q := (X'.singularLocus R).subschemeMap (X.singularLocus R) g
+    (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
+      (Scheme.singularLocus_eq_comap_of_etale g).ge)
+  have H : IsPullback (X'.singularLocus R).subschemeι q g
+      (X.singularLocus R).subschemeι :=
+    Scheme.isPullback_singularLocus_subschemeι_of_etale (R := R) g
+  have : Etale q := MorphismProperty.of_isPullback H inferInstance
+  have : Surjective q := MorphismProperty.of_isPullback H inferInstance
+  have : Unramified ((X'.singularLocus R).subschemeι ≫ g ≫ f) := by
+    simpa only [Category.assoc] using h.unramified_singularLocus
+  have : Unramified (q ≫ (X.singularLocus R).subschemeι ≫ f) := by
+    rwa [← H.w_assoc]
+  exact AffineAtWorstNodalOfRelativeDimensionOne.mk inferInstance
+    (Unramified.of_comp_surjective q ((X.singularLocus R).subschemeι ≫ f))
+
+/-- Among syntomic relative curves over an affine base, nodality can be checked after an
+étale surjection of the source. No quasi-compactness condition is imposed on the cover. -/
+theorem affineAtWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_surjective
+    (f : X ⟶ Spec (.of R)) [SyntomicOfRelativeDimension 1 f]
+    (g : X' ⟶ X) [Etale g] [Surjective g] :
+    AffineAtWorstNodalOfRelativeDimensionOne f ↔
+      AffineAtWorstNodalOfRelativeDimensionOne (g ≫ f) :=
+  ⟨fun h ↦ h.comp_of_etale g, fun h ↦ h.of_comp_surjective g⟩
 
 /-- Over an affine base, nodality descends along a faithfully flat extension `R → R'` of the base
 ring: if the base change of `X` to `R'` is a nodal relative curve, so is `X`. This is the converse
