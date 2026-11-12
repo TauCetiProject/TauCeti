@@ -68,19 +68,9 @@ private theorem lift_cartanEquivDual_eq_of_smul_eq {q : _root_.SymmetricAlgebra 
   rw [← LieSubalgebra.map_lieInvariants_lieCartanRestriction H] at hq
   obtain ⟨p, hp, rfl⟩ := Subalgebra.mem_map.mp hq
   -- evaluating the polynomial function `κ p` on `L` at a point of `H` evaluates the restriction
-  have heval (z : H) : lift (Dual.eval K L z) (killingSymmetricEquiv K L p) =
-      lift (cartanEquivDual H z) (lieCartanRestriction H p) := by
-    have hres : lift (Dual.eval K L z) = (lift (Dual.eval K H z)).comp
-        (_root_.SymmetricAlgebra.map K H.incl.toLinearMap.dualMap) :=
-      algHom_ext (LinearMap.ext fun φ ↦ by simp)
-    have hdual : (lift (Dual.eval K H z)).comp
-        (_root_.SymmetricAlgebra.map K (cartanEquivDual H).toLinearMap) =
-          lift (cartanEquivDual H z) :=
-      algHom_ext (LinearMap.ext fun h ↦ by
-        simpa [cartanEquivDual_apply_apply_eq_killingForm] using LinearMap.trace_mul_comm K _ _)
-    rw [hres, AlgHom.comp_apply, map_dualMap_killingSymmetricEquiv, ← AlgHom.comp_apply, hdual]
-  rw [← heval, ← heval, ← hxy, lift_eval_smul_of_mem_intLieAlgebra hg
-    ((killingSymmetricEquiv_mem_lieInvariants_iff K L).mpr hp)]
+  rw [← lift_eval_killingSymmetricEquiv, ← lift_eval_killingSymmetricEquiv, ← hxy,
+    lift_eval_smul_of_mem_intLieAlgebra hg
+      ((killingSymmetricEquiv_mem_lieInvariants_iff K L).mpr hp)]
 
 /-- **Elements of a Cartan subalgebra conjugate under `Int(L)` are Weyl-conjugate.** If an inner
 automorphism `g ∈ Int(L)` carries `x ∈ H` to `y ∈ H`, then some element `w` of the Weyl group of
@@ -94,10 +84,8 @@ theorem exists_coweightEquiv_eq_of_smul_eq {g : LinearMap.GeneralLinearGroup K L
   refine ⟨w, ?_⟩
   -- the Killing duality is Weyl-equivariant
   have h := weylGroupCorootRep_cartanEquivDual_symm w (cartanEquivDual H x)
-  rw [LinearEquiv.symm_apply_apply, ← hw, inv_smul_smul, LinearEquiv.symm_apply_apply] at h
-  -- the coroot representation at the opposite of `w` is `coweightEquiv w` by the definition of
-  -- Mathlib's action of `Autᵐᵒᵖ` on coweights, for which Mathlib states no unfolding lemma
-  exact h
+  rwa [RootPairing.weylGroupCorootRep_equivOp_apply, LinearEquiv.symm_apply_apply, ← hw,
+    inv_smul_smul, LinearEquiv.symm_apply_apply] at h
 
 /-- **`Int(L)`-conjugacy on a Cartan subalgebra is Weyl conjugacy.** Two elements `x, y` of `H` are
 conjugate under the group `Int(L)` of inner automorphisms exactly when some element of the Weyl

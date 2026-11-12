@@ -37,6 +37,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   automorphism, and in particular a Weyl-group element, carries the coroot functional of a root to
   the coroot functional of its image.
 * `RootPairing.weylGroupToPerm_ofIdx_apply` evaluates the action of a simple reflection.
+* `RootPairing.weylGroupCorootRep_equivOp_apply` says the coroot representation of the Weyl
+  group is its action `RootPairing.Equiv.coweightEquiv` on coweights.
 * `RootPairing.weylGroupToPerm_neg` says the action commutes with root negation.
 * `RootPairing.reflection_indexNeg_neg` says the reflection in `-β` is the reflection in `β`.
 * `RootPairing.root_weylGroupToPerm_eq_add` says the action preserves decompositions of roots as
@@ -187,6 +189,12 @@ theorem weylGroupToPerm_injective
 Use this explicitly: `MonoidHom.domRestrict_apply` already simplifies its left-hand side. -/
 lemma weylGroupToPerm_apply (w : P.weylGroup) (i : ι) :
     P.weylGroupToPerm w i = (w : P.Aut).indexEquiv i :=
+  rfl
+
+/-- The coroot representation of the Weyl group, at the opposite of `w`, is the action
+`RootPairing.Equiv.coweightEquiv` of `w` on coweights. -/
+lemma weylGroupCorootRep_equivOp_apply (w : P.weylGroup) (x : N) :
+    P.weylGroupCorootRep (Subgroup.equivOp _ w) x = (w : P.Aut).coweightEquiv x :=
   rfl
 
 /-- The Weyl-group permutation of a simple reflection is the corresponding root-index

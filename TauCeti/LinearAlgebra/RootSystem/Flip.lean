@@ -51,7 +51,8 @@ construction of the Langlands dual group with its Galois action.
 * `RootPairing.Equiv.toLinearMap_weightEquiv_autFlip`: `f` and `autFlip P f` preserve the
   pairing of weights with coweights.
 * `RootPairing.Equiv.autFlip_reflection`: `autFlip` sends the reflection in a root to the
-  reflection of the flipped pairing in the same index.
+  reflection of the flipped pairing in the same index, so it maps the Weyl group of `P` onto that
+  of `P.flip` (`RootPairing.Equiv.map_weylGroup_autFlip`).
 * `RootPairing.Equiv.autFlip_mem_stabilizer_iff`: `autFlip P f` stabilizes a set of root indices,
   such as the support of a base and hence of its flip, exactly when `f` does.
 
@@ -317,6 +318,14 @@ theorem autFlip_reflection (i : ι) :
   apply weightHom_injective
   ext x
   simp [LinearEquiv.symm_apply_eq, ← coreflection_eq_flip_reflection]
+
+/-- **`autFlip` maps the Weyl group of `P` onto the Weyl group of `P.flip`**, since it sends each
+reflection of `P` to the corresponding reflection of `P.flip`
+(`RootPairing.Equiv.autFlip_reflection`). -/
+@[simp]
+theorem map_weylGroup_autFlip :
+    P.weylGroup.map (autFlip P : P.Aut →* P.flip.Aut) = P.flip.weylGroup := by
+  rw [← MonoidHom.domRestrict_range, range_domRestrict_weylGroup autFlip_reflection, weylGroup]
 
 end Equiv
 

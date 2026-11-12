@@ -27,8 +27,8 @@ dominant one in its Weyl orbit
 `Int(L)`-orbits of neutral elements are in bijection with the dominant neutral elements, and
 their number is the number of dominant neutral elements.
 
-By Kostant's conjugacy theorem (`IsSl2Triple.exists_lieEquiv_apply_eq`), triples whose
-nilpositive elements are `Int(L)`-conjugate have `Int(L)`-conjugate neutral elements. Hence every
+By Kostant's conjugacy theorem, triples whose nilpositive elements are `Int(L)`-conjugate have
+`Int(L)`-conjugate neutral elements (`IsSl2Triple.mem_orbit_of_mem_orbit`). Hence every
 nonzero `ad`-nilpotent element `e` determines a unique dominant neutral element: the neutral
 element of a triple whose nilpositive element is conjugate to `e`. Its simple-root values, the
 labels `RootPairing.Base.weightedDynkinDiagram`, are the weighted Dynkin diagram of the orbit of
@@ -37,8 +37,6 @@ addressed here.
 
 ## Main results
 
-* `IsSl2Triple.mem_orbit_of_mem_orbit`: triples with `Int(L)`-conjugate nilpositive elements have
-  `Int(L)`-conjugate neutral elements.
 * `RootPairing.Base.eq_of_smul_eq_of_mem_dominantNeutralElements`: two dominant neutral elements
   conjugate under `Int(L)` are equal.
 * `RootPairing.Base.injOn_orbit_dominantNeutralElements` and
@@ -59,31 +57,6 @@ addressed here.
 public section
 
 open LieAlgebra LieAlgebra.IsKilling TauCeti
-
-namespace IsSl2Triple
-
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
-  [FiniteDimensional K L]
-
-/-- **Conjugate nilpositive elements have conjugate neutral elements.** If the nilpositive elements
-of two `sl₂` triples `(h, e, f)` and `(h', e', f')` are conjugate under `Int(L)`, so are their
-neutral elements. -/
-theorem mem_orbit_of_mem_orbit {h e f h' e' f' : L} (t : IsSl2Triple h e f)
-    (t' : IsSl2Triple h' e' f') (he : e' ∈ MulAction.orbit (intLieAlgebra K L) e) :
-    h' ∈ MulAction.orbit (intLieAlgebra K L) h := by
-  obtain ⟨g, rfl⟩ := he
-  -- `g` carries the first triple to a triple sharing its nilpositive element with the second,
-  -- and Kostant's conjugacy theorem conjugates that triple to the second one
-  obtain ⟨φ, hφ, -, hφh, -⟩ :=
-    exists_lieEquiv_apply_eq (K := K) (t.smul_of_mem_intLieAlgebra g.2) t'
-  have hφ' := map_expAdSubgroup_le_intLieAlgebra (K := K) _ ⟨_, hφ, rfl⟩
-  refine ⟨⟨_, hφ'⟩ * g, ?_⟩
-  dsimp only
-  rw [mul_smul, Subgroup.mk_smul, Subgroup.smul_def, ← hφh, Units.smul_def,
-    Module.End.smul_def, ← LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv]
-  simp
-
-end IsSl2Triple
 
 namespace RootPairing.Base
 
