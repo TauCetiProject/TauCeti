@@ -111,7 +111,8 @@ variable [MeasurableSpace E] [BorelSpace E]
 attribute [local instance] finrank_euclideanSpace_fin_succ_fact Complex.finrank_real_complex_fact
 
 /-- A space of dimension `2 + 1` is finite dimensional, so its unit sphere is compact. -/
-local instance : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 2
+local instance finiteDimensional_of_finrank_eq_two_add_one : FiniteDimensional ℝ E :=
+  .of_fact_finrank_eq_succ 2
 
 /-- **The area of the two-sphere is `4π`.** The measure `|vol|` of the volume form of the unit
 sphere of an oriented three-dimensional inner product space gives the whole sphere measure `4π`. -/
