@@ -18,8 +18,8 @@ For a nonlattice interarrival law on the nonnegative half-line, the renewal mass
 an interval of fixed length tends to its length times the reciprocal extended mean.
 Equivalently, the corresponding increment of the renewal function has this limit.
 The inverse is taken before conversion to a real number, so infinite mean gives
-limit zero. Genuine zero increments are allowed, and intervals are left-open and
-right-closed, retaining arrivals at the upper endpoint.
+limit zero. Interarrival laws with an atom at zero are allowed, provided `F {0} < 1`.
+Intervals are left-open and right-closed, retaining arrivals at the upper endpoint.
 
 The compactness of translated renewal measures, harmonicity of their vague limits,
 and nonlattice harmonic-measure rigidity identify each subsequential limit as a
@@ -100,19 +100,7 @@ theorem tendsto_renewalFunction_add_sub (hF : F {0} < 1) (hNL : ¬ F.IsLattice)
     Tendsto (fun t : ℝ≥0 => (F.renewalFunction (t + u)).toReal -
       (F.renewalFunction t).toReal) atTop
       (𝓝 (((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹).toReal * (u : ℝ))) := by
-  have := F.isLocallyFiniteMeasure_renewalMeasure hF
-  convert F.tendsto_renewalMeasure_real_Ioc hF hNL u using 1
-  ext t
-  have he : F.renewalMeasure (Iic (t + u)) =
-      F.renewalMeasure (Iic t) + F.renewalMeasure (Ioc t (t + u)) := by
-    rw [← Iic_union_Ioc_eq_Iic (le_self_add : t ≤ t + u),
-      measure_union (Iic_disjoint_Ioc le_rfl) measurableSet_Ioc]
-  have hre := congrArg ENNReal.toReal he
-  rw [ENNReal.toReal_add measure_Iic_lt_top.ne measure_Ioc_lt_top.ne,
-    renewalMeasure_Iic, renewalMeasure_Iic,
-    ENNReal.toReal_add ENNReal.one_ne_top (F.renewalFunction_lt_top hF _).ne,
-    ENNReal.toReal_add ENNReal.one_ne_top (F.renewalFunction_lt_top hF _).ne] at hre
-  simp only [measureReal_def]
-  linarith
+  simpa only [F.toReal_renewalFunction_add_sub hF] using
+    F.tendsto_renewalMeasure_real_Ioc hF hNL u
 
 end MeasureTheory.Measure

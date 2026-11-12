@@ -251,6 +251,24 @@ theorem isLocallyFiniteMeasure_renewalMeasure (hμ : μ {0} < 1) :
     IsLocallyFiniteMeasure μ.renewalMeasure :=
   ⟨fun t ↦ ⟨Iic (t + 1), Iic_mem_nhds (lt_add_one t), renewalMeasure_Iic_lt_top μ hμ _⟩⟩
 
+/-- The real increment of the renewal function over a window is its renewal mass.
+The artificial arrival at zero is excluded, and genuine zero-time arrivals cancel. -/
+theorem toReal_renewalFunction_add_sub (hμ : μ {0} < 1) (t u : ℝ≥0) :
+    (μ.renewalFunction (t + u)).toReal - (μ.renewalFunction t).toReal =
+      μ.renewalMeasure.real (Ioc t (t + u)) := by
+  have hmass (v : ℝ≥0) : μ.renewalMeasure.real (Iic v) =
+      1 + (μ.renewalFunction v).toReal := by
+    simp [measureReal_def, renewalMeasure_Iic, ENNReal.toReal_add,
+      (μ.renewalFunction_lt_top hμ v).ne]
+  have hset : Iic (t + u) \ Iic t = Ioc t (t + u) := by
+    ext x
+    simp [and_comm]
+  have he := measureReal_sdiff (μ := μ.renewalMeasure)
+    (Iic_subset_Iic.2 (le_self_add : t ≤ t + u)) measurableSet_Iic
+    (μ.renewalMeasure_Iic_lt_top hμ (t + u)).ne
+  rw [hset, hmass, hmass] at he
+  linarith
+
 /-- **Right continuity of the renewal function** of a probability measure on `ℝ≥0`. For the point
 mass at zero the renewal function is constantly infinite. -/
 theorem continuousWithinAt_renewalFunction_Ici (t : ℝ≥0) :
