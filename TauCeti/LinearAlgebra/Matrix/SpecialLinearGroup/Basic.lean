@@ -55,8 +55,9 @@ proof is independent of the source's.
   reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
 * `Matrix.SpecialLinearGroup.mem_ker_map_intCast_zmod_iff`: an element of `SL(ι, ℤ)` lies in
   the kernel of reduction modulo `N` iff it is congruent to the identity modulo `N` entrywise.
-* `Matrix.SpecialLinearGroup.map_comp`: base change along a composite is the composite of the
-  base changes. With Mathlib's `Matrix.SpecialLinearGroup.map_id`, these functor laws support
+* `Matrix.SpecialLinearGroup.map_intCast_coe`: entrywise coefficient maps commute with scalar
+  extension of an integer matrix. With Mathlib's functor laws
+  `Matrix.SpecialLinearGroup.map_comp_map` and `Matrix.SpecialLinearGroup.map_id`, this supports
   whole-matrix reduction arguments such as the level antitonicity of the principal congruence
   subgroups.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
@@ -131,20 +132,12 @@ theorem coe_ne_zero {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype
     [DecidableEq n] [Nonempty n] (A : SpecialLinearGroup n R) : (A : Matrix n n R) ≠ 0 := fun h ↦
   A.det_ne_zero (by rw [h, det_zero])
 
-/-- **Functoriality of the induced map on special linear groups, composition law.** Base change
-along `f` and then along `g` is base change along `g ∘ f`, so a composite of induced maps is
-again a single induced map. -/
-@[simp]
-theorem map_comp {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] {n : Type*} [Fintype n]
-    [DecidableEq n] (f : R →+* S) (g : S →+* T) :
-    (map (n := n) g).comp (map f) = map (g.comp f) := rfl
-
 /-- Entrywise coefficient mapping commutes with scalar extension of an integer matrix. -/
 @[simp]
 theorem map_intCast_coe {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
     [DecidableEq n] (f : R →+* S) (g : SpecialLinearGroup n ℤ) :
     map f (g : SpecialLinearGroup n R) = (g : SpecialLinearGroup n S) := by
-  rw [← MonoidHom.comp_apply, map_comp,
+  rw [← MonoidHom.comp_apply, map_comp_map,
     RingHom.ext_int (f.comp (Int.castRingHom R)) (Int.castRingHom S)]
 
 /-- The inclusion into the general linear group commutes with entrywise ring maps. -/
