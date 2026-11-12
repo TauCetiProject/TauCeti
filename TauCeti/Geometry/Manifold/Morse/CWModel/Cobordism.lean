@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.CWModel
+import TauCeti.Dynamics.Flow.Basic
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
 
 /-!
@@ -38,8 +39,9 @@ cancel on `f⁻¹(a)`, so the resulting homotopy equivalence is exactly the incl
 ## Main results
 
 * `TauCeti.IsMorse.exists_relCWComplex_homotopyEquiv_band`: **the relative CW model of a regular
-  cobordism.** `f⁻¹[a, b]` is homotopy equivalent, relative to `f⁻¹(a)`, to a CW complex relative
-  to a copy of `f⁻¹(a)` with one `m`-cell for each critical point of index `m` in the band.
+  cobordism.** `f⁻¹[a, b]` is homotopy equivalent to a CW complex relative to a copy of `f⁻¹(a)`
+  with one `m`-cell for each critical point of index `m` in the band, by a homotopy equivalence
+  restricting to the inclusion on `f⁻¹(a)`.
 * `TauCeti.IsMorse.exists_relCWComplex_homotopyEquiv_upperBand`: the relative CW model of
   `f⁻¹[a, b]` relative to its outgoing boundary `f⁻¹(b)`, with one `m`-cell for each critical
   point of index `dim M - m` in the band.
@@ -69,35 +71,17 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ}
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- Two maps into a space `Z` embedded in `M` which send each `y` to the flow line of `p y` at the
-times `τ₀ y` and `τ₁ y` are homotopic, provided the flow line stays in `Z` at the times in
-between. -/
-private theorem homotopic_of_flow {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
-    (φ : Flow ℝ M) {ι : Z → M} (hι : IsEmbedding ι) {F₀ F₁ : C(Y, Z)} {p : Y → M}
-    (hp : Continuous p) {τ₀ τ₁ : Y → ℝ} (hτ₀ : Continuous τ₀) (hτ₁ : Continuous τ₁)
-    (hF₀ : ∀ y, ι (F₀ y) = φ (τ₀ y) (p y)) (hF₁ : ∀ y, ι (F₁ y) = φ (τ₁ y) (p y))
-    (hZ : ∀ y, ∀ t ∈ Icc (0 : ℝ) 1, φ ((1 - t) * τ₀ y + t * τ₁ y) (p y) ∈ range ι) :
-    F₀.Homotopic F₁ := by
-  choose G hG using fun q : unitInterval × Y ↦ hZ q.2 q.1 q.1.2
-  refine ⟨⟨⟨G, ?_⟩, fun y ↦ ?_, fun y ↦ ?_⟩⟩
-  · rw [hι.continuous_iff, Function.comp_def]
-    simp_rw [hG]
-    exact φ.continuous (by fun_prop) (hp.comp continuous_snd)
-  · exact hι.injective ((hG (0, y)).trans (by simp [hF₀]))
-  · exact hι.injective ((hG (1, y)).trans (by simp [hF₁]))
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- **The collar of a regular level as a sublevel of the open superlevel.** Let `φ` be a flow
 moving `f` at unit speed through a collar `f⁻¹[a, s]`, `a < s`, and let `V` be the open set
-`{a < f}`. Pushing the level `f⁻¹(a)` up to the middle `(a + s) / 2` of the collar is a homotopy
-equivalence onto the sublevel `f⁻¹(a, s]` of `V`, whose inverse flows each point down to
+`{a < f}`. Pushing the level `f⁻¹(a)` up to the middle level `(a + s) / 2` of the collar is a
+homotopy equivalence onto the sublevel `f⁻¹(a, s]` of `V`, whose inverse flows each point down to
 `f⁻¹(a)`. -/
 private theorem exists_homotopyEquiv_level_sublevel (hfc : Continuous f) (φ : Flow ℝ M)
     {a s : ℝ} (has : a < s)
     (hφ : ∀ y t, f y ∈ Icc a s → f y - t ∈ Icc a s → f (φ t y) = f y - t)
     (V : TopologicalSpace.Opens M) (hV : ∀ x, x ∈ V ↔ a < f x) :
     ∃ h₀ : f ⁻¹' {a} ≃ₕ {y : V | (f ∘ Subtype.val) y ≤ s},
-      ∀ x, ((h₀ x : V) : M) = φ (a - (a + s) / 2) x := by
+      ∀ x, ((h₀ x : V) : M) = φ (a - (a + s) / 2) x ∧ f ((h₀ x : V) : M) = (a + s) / 2 := by
   set m := (a + s) / 2 with hm
   have hup (x : f ⁻¹' {a}) : f (φ (a - m) x) = m := by
     have hx : f x = a := x.2
@@ -111,18 +95,18 @@ private theorem exists_homotopyEquiv_level_sublevel (hfc : Continuous f) (φ : F
     ring
   let up : C(f ⁻¹' {a}, {y : V | (f ∘ Subtype.val) y ≤ s}) :=
     ⟨fun x ↦ ⟨⟨φ (a - m) x, (hV _).2 (by rw [hup]; linarith)⟩,
-      show f _ ≤ s by rw [hup]; linarith⟩, by fun_prop⟩
+      by simp only [mem_ofPred_eq, Function.comp_apply, hup]; linarith⟩, by fun_prop⟩
   let down : C({y : V | (f ∘ Subtype.val) y ≤ s}, f ⁻¹' {a}) :=
     ⟨fun y ↦ ⟨φ (f (p₀ y) - a) (p₀ y), hdown y⟩, by fun_prop⟩
-  refine ⟨⟨up, down, ?_, ?_⟩, fun x ↦ rfl⟩
+  refine ⟨⟨up, down, ?_, ?_⟩, fun x ↦ ⟨rfl, hup x⟩⟩
   · -- Flowing up and back down is the identity of `f⁻¹(a)`.
-    refine homotopic_of_flow φ IsEmbedding.subtypeVal continuous_subtype_val continuous_const
+    refine φ.homotopic_of_eq_apply IsEmbedding.subtypeVal continuous_subtype_val continuous_const
       continuous_const (τ₀ := fun _ ↦ 0) (τ₁ := fun _ ↦ 0) (fun x ↦ ?_) (fun x ↦ by simp)
       fun x t _ ↦ ⟨x, by simp⟩
     simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, up, down, p₀, Flow.map_zero_apply]
     rw [hup, ← Flow.map_add, show m - a + (a - m) = 0 by ring, Flow.map_zero_apply]
   · -- Flowing down and back up moves `f⁻¹(a, s]` to the level `m` along its flow lines.
-    refine homotopic_of_flow φ (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal)
+    refine φ.homotopic_of_eq_apply (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal)
       p₀.continuous (by fun_prop) continuous_const (τ₀ := fun y ↦ f (p₀ y) - m)
       (τ₁ := fun _ ↦ 0) (fun y ↦ ?_) (fun y ↦ by simp [p₀]) fun y t ht ↦ ?_
     · simp only [Function.comp_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk, up, down]
@@ -134,8 +118,8 @@ private theorem exists_homotopyEquiv_level_sublevel (hfc : Continuous f) (φ : F
     have hf' : f (φ ((1 - t) * (f (p₀ y) - m)) (p₀ y)) =
         f (p₀ y) - (1 - t) * (f (p₀ y) - m) :=
       hφ _ _ ⟨hya.le, hys⟩ ⟨by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩
-    refine ⟨⟨⟨_, (hV _).2 ?_⟩, show f _ ≤ s from ?_⟩, rfl⟩ <;>
-      rw [hf'] <;> nlinarith [ht.1, ht.2]
+    refine ⟨⟨⟨_, (hV _).2 ?_⟩, ?_⟩, rfl⟩ <;>
+      simp only [mem_ofPred_eq, Function.comp_apply, hf'] <;> nlinarith [ht.1, ht.2]
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- **Removing the bottom level of a band.** Let `φ` be a flow moving `f` at unit speed through a
@@ -196,12 +180,12 @@ private theorem exists_homotopyEquiv_sublevel_band (hfc : Continuous f) (φ : Fl
     ⟨fun y ↦ ⟨⟨φ (-(1 * θ y)) y, (hV _).2 <| by
         obtain ⟨h₁, -, -, h₄⟩ := hθ _ y.2.1 y.2.2 1 ⟨zero_le_one, le_rfl⟩
         rw [h₁, one_mul]
-        exact h₄⟩, show f _ ≤ b by
+        exact h₄⟩, by
         obtain ⟨h₁, -, h₃, -⟩ := hθ _ y.2.1 y.2.2 1 ⟨zero_le_one, le_rfl⟩
-        rw [h₁]
+        simp only [mem_ofPred_eq, Function.comp_apply, h₁]
         exact h₃⟩, by fun_prop⟩
   -- `k` is homotopic to the inclusion, which has the homotopy inverse `ρ`.
-  have hk : k.Homotopic incl := homotopic_of_flow φ IsEmbedding.subtypeVal p₁.continuous
+  have hk : k.Homotopic incl := φ.homotopic_of_eq_apply IsEmbedding.subtypeVal p₁.continuous
     (hσc.comp p₁.continuous) continuous_const (τ₀ := fun y ↦ σ (p₁ y)) (τ₁ := fun _ ↦ 0)
     (fun y ↦ rfl) (fun y ↦ by simp [incl])
     fun y t ht ↦ by
@@ -209,15 +193,14 @@ private theorem exists_homotopyEquiv_sublevel_band (hfc : Continuous f) (φ : Fl
         ⟨by linarith [ht.2], by linarith [ht.1]⟩
       simp only [mul_zero, add_zero]
       exact ⟨⟨_, h₁ ▸ h₂, h₁ ▸ h₃⟩, rfl⟩
-  have hρ₁ : (incl.comp ρ).Homotopic (ContinuousMap.id _) := homotopic_of_flow φ
+  have hρ₁ : (incl.comp ρ).Homotopic (ContinuousMap.id _) := φ.homotopic_of_eq_apply
     IsEmbedding.subtypeVal continuous_subtype_val (by fun_prop) continuous_const
     (τ₀ := fun y ↦ -(1 * θ y)) (τ₁ := fun _ ↦ 0) (fun y ↦ rfl) (fun y ↦ by simp)
     fun y t ht ↦ by
       obtain ⟨h₁, h₂, h₃, -⟩ := hθ _ y.2.1 y.2.2 (1 - t) ⟨by linarith [ht.2], by linarith [ht.1]⟩
       rw [mul_zero, add_zero, show (1 - t) * -(1 * θ y) = -((1 - t) * θ y) by ring]
-      exact ⟨⟨_, show a ≤ f _ by rw [h₁]; linarith [y.2.1], show f _ ≤ b by rw [h₁]; exact h₃⟩,
-        rfl⟩
-  have hρ₂ : (ρ.comp incl).Homotopic (ContinuousMap.id _) := homotopic_of_flow φ
+      exact ⟨⟨_, by rw [h₁]; linarith [y.2.1], by rw [h₁]; exact h₃⟩, rfl⟩
+  have hρ₂ : (ρ.comp incl).Homotopic (ContinuousMap.id _) := φ.homotopic_of_eq_apply
     (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal) p₁.continuous
     (by fun_prop) continuous_const (τ₀ := fun y ↦ -(1 * θ (p₁ y))) (τ₁ := fun _ ↦ 0)
     (fun y ↦ rfl) (fun y ↦ by simp [p₁])
@@ -226,15 +209,14 @@ private theorem exists_homotopyEquiv_sublevel_band (hfc : Continuous f) (φ : Fl
         ⟨by linarith [ht.2], by linarith [ht.1]⟩
       rw [mul_zero, add_zero, show (1 - t) * -(1 * θ (p₁ y)) = -((1 - t) * θ (p₁ y)) by ring]
       exact ⟨⟨⟨_, (hV _).2 (by rw [h₁]; linarith [(hp₁ y).1])⟩,
-        show f _ ≤ b by rw [h₁]; exact h₃⟩, rfl⟩
+        by simp only [mem_ofPred_eq, Function.comp_apply, h₁]; exact h₃⟩, rfl⟩
   refine ⟨⟨k, ρ, ((ContinuousMap.Homotopic.refl ρ).comp hk).trans hρ₂,
     (hk.comp (ContinuousMap.Homotopic.refl ρ)).trans hρ₁⟩, fun y hy ↦ ?_⟩
   -- At the middle level of the collar `σ` is the distance to `a`.
-  change φ (σ (p₁ y)) (p₁ y) = _
-  have hy' : f (p₁ y) = (a + s) / 2 := hy
-  simp only [σ, hy']
-  rw [show s - (a + s) / 2 = (a + s) / 2 - a by ring, min_self, max_eq_right (by linarith)]
-  rfl
+  have hσy : σ (y : V) = (a + s) / 2 - a := by
+    simp only [σ, hy]
+    rw [show s - (a + s) / 2 = (a + s) / 2 - a by ring, min_self, max_eq_right (by linarith)]
+  simp only [k, p₁, ContinuousMap.coe_mk, hσy]
 
 /-- **The relative CW model of a regular cobordism.** Let `f` be a Morse function and `a ≤ b`
 regular values of `f` with compact band `f⁻¹[a, b]`. Then the band is homotopy equivalent to a CW
@@ -316,11 +298,10 @@ theorem IsMorse.exists_relCWComplex_homotopyEquiv_band (hf : IsMorse I f) {a b :
     ⟨fun i ↦ (e i).trans ((Equiv.emptySum _ _).trans (c i))⟩⟩
   -- On the level `f⁻¹(a)` the push up and the push down cancel.
   have hx : ((h' (ι x) : V) : M) = φ (a - (a + s) / 2) x := (congrArg Subtype.val (hh x)).trans
-    (hh₀ x)
-  have hxa : f x = a := x.2
+    (hh₀ x).1
   have hm : f ((h' (ι x) : V) : M) = (a + s) / 2 := by
-    rw [hx, hφ _ _ ⟨hxa.ge, by linarith⟩ ⟨by linarith, by linarith⟩, hxa]
-    ring
+    rw [hh x]
+    exact (hh₀ x).2
   rw [ContinuousMap.HomotopyEquiv.trans_apply, hk _ hm, hx, ← Flow.map_add,
     show (a + s) / 2 - a + (a - (a + s) / 2) = 0 by ring, Flow.map_zero_apply]
 

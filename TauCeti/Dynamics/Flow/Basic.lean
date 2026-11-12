@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Flow
+public import Mathlib.Topology.Homotopy.Basic
 import Mathlib.Topology.Compactness.Compact
 
 /-!
@@ -89,5 +90,22 @@ theorem exists_forall_exists_mem_Ioo_apply_mem [AddMonoid τ] [LinearOrder τ] [
   obtain ⟨σ, hσ, hσW⟩ := h x hx
   obtain ⟨T, hT⟩ := exists_gt σ
   exact Set.mem_iUnion.2 ⟨T, σ, ⟨hσ, hT⟩, hσW⟩
+
+/-- **Homotopy along flow lines.** Two maps into a space `Z` embedded in `α` which send each `y` to
+the flow line of `p y` at the times `τ₀ y` and `τ₁ y` are homotopic, provided the flow line stays
+in `Z` at the times in between. -/
+theorem homotopic_of_eq_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (ϕ : Flow ℝ α) {ι : Z → α} (hι : Topology.IsEmbedding ι) {F₀ F₁ : C(Y, Z)} {p : Y → α}
+    (hp : Continuous p) {τ₀ τ₁ : Y → ℝ} (hτ₀ : Continuous τ₀) (hτ₁ : Continuous τ₁)
+    (hF₀ : ∀ y, ι (F₀ y) = ϕ (τ₀ y) (p y)) (hF₁ : ∀ y, ι (F₁ y) = ϕ (τ₁ y) (p y))
+    (hZ : ∀ y, ∀ t ∈ Set.Icc (0 : ℝ) 1, ϕ ((1 - t) * τ₀ y + t * τ₁ y) (p y) ∈ Set.range ι) :
+    F₀.Homotopic F₁ := by
+  choose G hG using fun q : unitInterval × Y ↦ hZ q.2 q.1 q.1.2
+  refine ⟨⟨⟨G, ?_⟩, fun y ↦ ?_, fun y ↦ ?_⟩⟩
+  · rw [hι.continuous_iff, Function.comp_def]
+    simp_rw [hG]
+    exact ϕ.continuous (by fun_prop) (hp.comp continuous_snd)
+  · exact hι.injective ((hG (0, y)).trans (by simp [hF₀]))
+  · exact hι.injective ((hG (1, y)).trans (by simp [hF₁]))
 
 end Flow
