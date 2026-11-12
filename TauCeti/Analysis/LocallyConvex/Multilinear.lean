@@ -37,7 +37,7 @@ omit [Fintype ι] in
 vanishes whenever one source seminorm vanishes. The source seminorms need not be norms. -/
 theorem multilinearMap_seminorm_eq_zero_of_box [Finite ι]
     (p : ∀ i, Seminorm 𝕜 (E i)) (q : Seminorm 𝕜 F)
-    (f : MultilinearMap 𝕜 E F) {ε : ι → ℝ} (hε : ∀ i, 0 < ε i)
+    (f : MultilinearMap (RingHom.id 𝕜) E F) {ε : ι → ℝ} (hε : ∀ i, 0 < ε i)
     (hf : ∀ x, (∀ i, p i (x i) < ε i) → q (f x) ≤ 1)
     (x : ∀ i, E i) (i : ι) (hi : p i (x i) = 0) : q (f x) = 0 := by
   classical
@@ -58,8 +58,8 @@ theorem multilinearMap_seminorm_eq_zero_of_box [Finite ι]
       rcases eq_or_ne j i with rfl | hji
       · simpa [map_smul_eq_mul, hi] using hε j
       · simpa [hji] using hax j
-    rwa [f.map_smul_univ, map_smul_eq_mul, Finset.prod_update_of_mem (Finset.mem_univ i),
-      norm_mul, mul_assoc] at this
+    simpa only [f.map_smul_univ, map_smul_eq_mul, RingHom.id_apply,
+      Finset.prod_update_of_mem (Finset.mem_univ i), norm_mul, mul_assoc] using this
   by_contra hne
   have hpos : 0 < K * q (f x) := mul_pos hK ((apply_nonneg q _).lt_of_ne' hne)
   obtain ⟨t, ht⟩ := NormedField.exists_lt_norm 𝕜 (K * q (f x))⁻¹
@@ -69,7 +69,7 @@ theorem multilinearMap_seminorm_eq_zero_of_box [Finite ι]
 The constant is explicit after choosing any scalar whose norm exceeds one. -/
 theorem multilinearMap_seminorm_le_of_box
     (p : ∀ i, Seminorm 𝕜 (E i)) (q : Seminorm 𝕜 F)
-    (f : MultilinearMap 𝕜 E F) {ε : ι → ℝ} (hε : ∀ i, 0 < ε i)
+    (f : MultilinearMap (RingHom.id 𝕜) E F) {ε : ι → ℝ} (hε : ∀ i, 0 < ε i)
     (hf : ∀ x, (∀ i, p i (x i) < ε i) → q (f x) ≤ 1)
     {c : 𝕜} (hc : 1 < ‖c‖) (x : ∀ i, E i) :
     q (f x) ≤ (∏ i, ‖c‖ / ε i) * ∏ i, p i (x i) := by
@@ -99,7 +99,8 @@ continuous seminorm. -/
 theorem exists_multilinearMap_seminorm_bound
     {σ : ι → Type*} (p : ∀ i, SeminormFamily 𝕜 (E i) (σ i))
     [∀ i, TopologicalSpace (E i)] (hp : ∀ i, WithSeminorms (p i))
-    (q : Seminorm 𝕜 F) (f : MultilinearMap 𝕜 E F) (hf : ContinuousAt (fun x => q (f x)) 0) :
+    (q : Seminorm 𝕜 F) (f : MultilinearMap (RingHom.id 𝕜) E F)
+    (hf : ContinuousAt (fun x => q (f x)) 0) :
     ∃ (s : ∀ i, Finset (σ i)) (C : NNReal),
       ∀ x, q (f x) ≤ (C : ℝ) * ∏ i, (s i).sup (p i) (x i) := by
   classical
@@ -137,7 +138,7 @@ theorem exists_bilinearMap_seminorm_bound {E₁ E₂ σ₁ σ₂ : Type*} [AddCo
   obtain ⟨s₂, ε₂, hε₂, hs₂⟩ := (hp₂.mem_nhds_iff 0 U₂).mp hU₂
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
   -- `B` as a multilinear map of two variables in `E₁ × E₂`, through the two projections.
-  let f : MultilinearMap 𝕜 (fun _ : Fin 2 ↦ E₁ × E₂) F :=
+  let f : MultilinearMap (RingHom.id 𝕜) (fun _ : Fin 2 ↦ E₁ × E₂) F :=
     { toFun v := B (v 0).1 (v 1).2
       map_update_add' v i x y := by
         fin_cases i <;> simp

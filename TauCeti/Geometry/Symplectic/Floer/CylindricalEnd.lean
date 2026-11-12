@@ -303,11 +303,11 @@ theorem exists_lipschitzOnWith_of_lintegral_ne_top
   obtain ⟨M, hM⟩ := exists_forall_norm_fderiv_le_of_lintegral_ne_top hW hJ hX hK hKW hJsq hJ1 hJI
     hX1 hXI hab hu hper hCR huK hfin
   have hU : IsOpen {z : ℂ | a < z.re} := isOpen_lt continuous_const continuous_re
-  refine ⟨Real.toNNReal M, (convex_halfSpace_re_ge b).lipschitzOnWith_of_nnnorm_fderiv_le (𝕜 := ℝ)
+  refine ⟨Real.toNNReal M, (convex_halfSpace_re_ge b).lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ)
     (fun z hz ↦ ?_) (fun z hz ↦ ?_)⟩
   · have hz' : z ∈ {z : ℂ | a < z.re} := hab.trans_le hz
     exact (hu.differentiableOn (by norm_num) z hz').differentiableAt (hU.mem_nhds hz')
-  · rw [← NNReal.coe_le_coe, coe_nnnorm]
+  · rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact (hM z hz).trans (Real.le_coe_toNNReal M)
 
 end TauCeti.Floer
@@ -500,12 +500,12 @@ theorem exists_lipschitzOnWith_of_floer (hH : ContDiff ℝ 3 (uncurry H))
     ∃ L : ℝ≥0, LipschitzOnWith L u (Ici b ×ˢ univ) := by
   obtain ⟨M, hM⟩ := exists_forall_norm_fderiv_le_of_floer hH hHper hW hJ hJper hK hKW hJt hu hper
     huK hfloer hE hab
-  refine ⟨Real.toNNReal M, ((convex_Ici b).prod convex_univ).lipschitzOnWith_of_nnnorm_fderiv_le
+  refine ⟨Real.toNNReal M, ((convex_Ici b).prod convex_univ).lipschitzOnWith_of_nnNorm_fderiv_le
     (𝕜 := ℝ) (fun z hz ↦ ?_) (fun z hz ↦ ?_)⟩
   · have hz' : z ∈ Ioi a ×ˢ (univ : Set ℝ) := ⟨hab.trans_le hz.1, mem_univ _⟩
     exact (hu.differentiableOn (by norm_num) z hz').differentiableAt
       ((isOpen_Ioi.prod isOpen_univ).mem_nhds hz')
-  · rw [← NNReal.coe_le_coe, coe_nnnorm]
+  · rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact (hM z hz.1).trans (Real.le_coe_toNNReal M)
 
 /-- **A finite-energy Floer half-cylinder breaks off an orbit along every sequence.** Under the

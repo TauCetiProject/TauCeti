@@ -134,7 +134,7 @@ private theorem lintegral_edist_le (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {
     (hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const
   simp_rw [perturbedFDeriv_cylindrical_apply_stdComplexLineReal]
   rw [Measure.volume_eq_prod, setLIntegral_prod_symm (fun z ↦ ‖fderiv ℝ u z (1, 0)‖ₑ)
-    ((hcont.mono hR).enorm.aemeasurable (measurableSet_Icc.prod measurableSet_Icc))]
+    ((hcont.mono hR).eNorm.aemeasurable (measurableSet_Icc.prod measurableSet_Icc))]
   refine setLIntegral_mono' measurableSet_Icc fun t ht ↦ ?_
   have hmem {r : ℝ} (hr : r ∈ uIcc α β) : (r, t) ∈ U := hR ⟨by rwa [uIcc_of_le hαβ] at hr, ht⟩
   -- The fundamental theorem of calculus along the segment `[α, β] × {t}`.
@@ -143,9 +143,9 @@ private theorem lintegral_edist_le (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {
       ((hu.differentiableOn one_ne_zero _ (hmem hr)).differentiableAt (hU.mem_nhds (hmem hr)))
   have hint : IntervalIntegrable (fun r ↦ fderiv ℝ u (r, t) (1, 0)) volume α β :=
     (hcont.comp (by fun_prop) fun r hr ↦ hmem hr).intervalIntegrable
-  rw [edist_eq_enorm_sub, ← intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint,
+  rw [eDist_eq_eNorm_sub, ← intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint,
     intervalIntegral.integral_of_le hαβ]
-  exact (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono_set Ioc_subset_Icc_self)
+  exact (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono_set Ioc_subset_Icc_self)
 
 /-- Along a vertical segment `{r} × [t₁, t₂]` the defect of `u` from the integral equation of the
 Hamiltonian flow is the integral of the `t`-component `∂_t u - X_{H_t}(u)` of the perturbed
@@ -166,7 +166,7 @@ private theorem lintegral_enorm_sub_sub_integral_le (hH : ContDiff ℝ 1 (uncurr
   simp_rw [perturbedFDeriv_cylindrical_apply_stdComplexLineImag]
   rw [Measure.volume_eq_prod, setLIntegral_prod
     (fun z ↦ ‖fderiv ℝ u z (0, 1) - ω.hamiltonianVectorField (H z.2) (u z)‖ₑ)
-    (((hcont.sub hcontX).mono hR).enorm.aemeasurable (measurableSet_Icc.prod measurableSet_Icc))]
+    (((hcont.sub hcontX).mono hR).eNorm.aemeasurable (measurableSet_Icc.prod measurableSet_Icc))]
   refine setLIntegral_mono' measurableSet_Icc fun r hr ↦ ?_
   dsimp only
   have hsub : uIcc t₁ t₂ ⊆ Icc 0 1 := uIcc_subset_Icc ⟨ht₁, ht.trans ht₂⟩ ⟨ht₁.trans ht, ht₂⟩
@@ -182,7 +182,7 @@ private theorem lintegral_enorm_sub_sub_integral_le (hH : ContDiff ℝ 1 (uncurr
     (hcontX.comp (by fun_prop) fun t htm ↦ hmem htm).intervalIntegrable
   rw [← intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint,
     ← intervalIntegral.integral_sub hint hintX, intervalIntegral.integral_of_le ht]
-  exact (enorm_integral_le_lintegral_enorm _).trans
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
     (lintegral_mono_set (Ioc_subset_Icc_self.trans (Icc_subset_Icc ht₁ ht₂)))
 
 end Segments
@@ -265,8 +265,8 @@ private theorem tendsto_lintegral_enorm_perturbedFDeriv (hEU : E ⊆ U)
       (volume.restrict (Icc (a + s k) (b + s k) ×ˢ Icc (0 : ℝ) 1)) :=
     (hg.mono (hk.trans hEU)).aestronglyMeasurable (measurableSet_Icc.prod measurableSet_Icc)
   have hL := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := 2) one_le_two hmeas
-  rw [eLpNorm_one_eq_lintegral_enorm hmeas,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top hmeas,
+  rw [eLpNorm_one_eq_lintegral_eNorm hmeas,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hmeas,
     Measure.restrict_apply_univ, hvol] at hL
   convert hL using 3 <;> norm_num
 
@@ -451,7 +451,7 @@ private theorem sub_sub_integral_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
       rwa [preimage_add_const_Icc, add_sub_cancel_right, add_sub_cancel_right] at hT
     · exact eventually_ae_enorm_sub_sub_integral_le_add hΦ ht₁ ht ht₂ hUC hΦUC hFc hvK hstat ε hε
   rw [setLIntegral_const, Real.volume_Icc, sub_zero, ENNReal.ofReal_one, mul_one] at hzero
-  exact enorm_eq_zero.1 hzero
+  exact eNorm_eq_zero.1 hzero
 
 /-- **The limit of translated Floer cylinders is a Hamiltonian orbit.** Under the hypotheses of
 `TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`, and for a jointly `C¹`

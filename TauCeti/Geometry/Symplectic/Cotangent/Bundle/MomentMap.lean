@@ -144,7 +144,7 @@ theorem contMDiff_momentMap_apply (ξ : GroupLieAlgebra IG G) :
     (SmoothForm.degreeOneEquiv (liouvilleForm I M)).contMDiff
     (contMDiff_fundamentalVectorField (I' := I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (m := ∞) (n := ∞)
       (by simp) ξ)
-  refine fun z ↦ (contMDiffAt_totalSpace.1 (h z)).2.congr_of_eventuallyEq
+  refine fun z ↦ (contMDiffAt_totalSpace_iff.1 (h z)).2.congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun y ↦ ?_)
   simp only [Trivial.eq_trivialization _ ℝ, Trivial.trivialization_apply,
     SmoothForm.degreeOneEquiv_apply_apply, ← Matrix.vec_single_eq_const,

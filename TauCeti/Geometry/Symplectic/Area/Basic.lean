@@ -67,7 +67,7 @@ theorem integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
     (ω : SymplecticForm V) {u : ℂ → V} {D : Set ℂ}
     (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) D) :
     IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) D := by
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let : MeasurableSpace V := borel V
   let : BorelSpace V := ⟨rfl⟩
   let B := ω.toBilinForm.toContinuousBilinearMap

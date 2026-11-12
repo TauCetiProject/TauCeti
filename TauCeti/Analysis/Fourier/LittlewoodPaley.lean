@@ -501,15 +501,15 @@ theorem exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le [Nontrivial V]
       ENNReal.tsum_eq_iSup_nat' (tendsto_add_atTop_nat 1)]
   have hmeas : ∀ n, AEMeasurable (G n) := fun n ↦
     (Finset.aemeasurable_fun_sum _ fun j _ ↦
-      (Lp.aestronglyMeasurable _).enorm.pow_const 2).pow_const _
+      (Lp.aestronglyMeasurable _).eNorm.pow_const 2).pow_const _
   have hmono : ∀ x, Monotone fun n ↦ G n x := fun x a b hab ↦ ENNReal.rpow_le_rpow
     (Finset.sum_le_sum_of_subset (Finset.range_mono (by omega))) (by norm_num)
   simp_rw [hG]
   rw [eLpNorm_iSup_eq_iSup_eLpNorm hmeas (.of_forall hmono)]
-  refine iSup_le fun n ↦ (eLpNorm_mono_enorm_ae (hmeas n).aestronglyMeasurable ?_).trans (hC n f)
+  refine iSup_le fun n ↦ (eLpNorm_mono_eNorm_ae (hmeas n).aestronglyMeasurable ?_).trans (hC n f)
   -- Pointwise, `G n` is the `ℓ²` norm of `(Δ₀ f, …, Δₙ f)`.
   filter_upwards [coeFn_sqFun φ n f] with x hx
-  rw [hx, enorm_eq_self, lp.enorm_sum_single]
+  rw [hx, eNorm_eq_self, lp.enorm_sum_single]
 
 
 /-! ### The reverse inequality -/
@@ -605,7 +605,7 @@ private theorem enorm_inner_sum_fourierMultiplierCLM_le {L : ℕ}
   set M : ℕ → Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V) :=
     fun j ↦ Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume)
   have hmeas : ∀ j k, AEMeasurable (fun x ↦ ‖M j f x‖ₑ * ‖M k g x‖ₑ) :=
-    fun j k ↦ (Lp.aestronglyMeasurable _).enorm.mul (Lp.aestronglyMeasurable _).enorm
+    fun j k ↦ (Lp.aestronglyMeasurable _).eNorm.mul (Lp.aestronglyMeasurable _).eNorm
   calc ‖⟪∑ j ∈ Finset.range (N + 1), M j f, g⟫_ℂ‖ₑ
       = ‖∑ j ∈ Finset.range (N + 1), ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
           ∫ x, ⟪M j f x, M k g x⟫_ℂ‖ₑ := by
@@ -615,9 +615,9 @@ private theorem enorm_inner_sum_fourierMultiplierCLM_le {L : ℕ}
         simp only [M, L2.inner_def]
     _ ≤ ∑ j ∈ Finset.range (N + 1), ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
           ∫⁻ x, ‖M j f x‖ₑ * ‖M k g x‖ₑ :=
-        (enorm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ (enorm_sum_le _ _).trans
-          (Finset.sum_le_sum fun k _ ↦ (enorm_integral_le_lintegral_enorm _).trans
-            (lintegral_mono fun x ↦ enorm_inner_le_enorm _ _)))
+        (eNorm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ (eNorm_sum_le _ _).trans
+          (Finset.sum_le_sum fun k _ ↦ (eNorm_integral_le_lintegral_eNorm _).trans
+            (lintegral_mono fun x ↦ eNorm_inner_le_eNorm _ _)))
     _ = ∫⁻ x, ∑ j ∈ Finset.range (N + 1), ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
           ‖M j f x‖ₑ * ‖M k g x‖ₑ := by
         rw [lintegral_finsetSum' _ fun j _ ↦ Finset.aemeasurable_fun_sum _ fun k _ ↦ hmeas j k]
@@ -640,7 +640,7 @@ private theorem enorm_inner_le_mul_lintegral {L : ℕ}
         (∑' j, ‖Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
           (∑' k, ‖Lp.fourierMultiplierCLM F ((symbol φ k).toLp ∞ volume) g x‖ₑ ^ 2) ^
             (2⁻¹ : ℝ) :=
-  le_of_tendsto' ((continuous_enorm.tendsto _).comp
+  le_of_tendsto' ((continuous_eNorm.tendsto _).comp
     ((tendsto_sum_fourierMultiplierCLM φ f).inner tendsto_const_nhds))
     (enorm_inner_sum_fourierMultiplierCLM_le φ hL · f g)
 
@@ -685,7 +685,7 @@ theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow [N
   set S : Lp F 2 (volume : Measure V) → V → ℝ≥0∞ := fun f x ↦
     (∑' j, ‖Lp.fourierMultiplierCLM F ((symbol φ j).toLp ∞ volume) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)
   have hS : ∀ f, AEMeasurable (S f) := fun f ↦
-    (AEMeasurable.tsum fun j ↦ (Lp.aestronglyMeasurable _).enorm.pow_const 2).pow_const _
+    (AEMeasurable.tsum fun j ↦ (Lp.aestronglyMeasurable _).eNorm.pow_const 2).pow_const _
   -- By duality, it suffices to bound the pairing of `f` with a bounded `g` of finite-measure
   -- support, which is an element `G` of `L²`.
   refine (Lp.aestronglyMeasurable f).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
@@ -698,13 +698,13 @@ theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow [N
     exact integral_congr_ae (hGg.mono fun x hx ↦ by simp only [hx])
   -- Hölder's inequality and the square function inequality at the exponent `q` for `G`.
   have hHolder : ∫⁻ x, S f x * S G x ≤ eLpNorm (S f) p volume * eLpNorm (S G) q volume := by
-    have h := eLpNorm_le_eLpNorm_mul_eLpNorm_of_enorm_of_pos (μ := volume) (p := p) (q := q)
+    have h := eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm_of_pos (μ := volume) (p := p) (q := q)
       (r := 1) (fun a b : ℝ≥0∞ ↦ a * b) 1 (f := S f) (g := S G)
       (fun _ _ ↦ ((hS f).mul (hS G)).aestronglyMeasurable)
       (ae_of_all _ fun x ↦ by simp) zero_lt_one
-    rw [eLpNorm_one_eq_lintegral_enorm (f := fun x ↦ S f x * S G x)
+    rw [eLpNorm_one_eq_lintegral_eNorm (f := fun x ↦ S f x * S G x)
       ((hS f).mul (hS G)).aestronglyMeasurable] at h
-    simpa only [enorm_eq_self, one_mul] using h
+    simpa only [eNorm_eq_self, one_mul] using h
   have hSG : eLpNorm (S G) q volume ≤ C * eLpNorm g q volume := by
     rw [← eLpNorm_congr_ae hGg]
     exact hC _ (fun j ↦ (symbol φ j).coeFn_toLp ∞ volume |>.mono fun ξ h ↦ by

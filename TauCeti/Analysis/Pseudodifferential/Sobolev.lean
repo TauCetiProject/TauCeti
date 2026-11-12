@@ -517,22 +517,22 @@ private theorem HasCompactSpatialSupport.enorm_smul_fourier_quantizeSchwartzValu
       ∫⁻ ζ, ENNReal.ofReal (2 ^ (|s - m| / 2) * C₀ * (2 * π) ^ |m| *
           (1 + ‖ξ - ζ‖) ^ (-((N : ℝ) - |s - m|))) *
         ‖(((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ‖ₑ := by
-  rw [ha.fourier_quantizeSchwartzValue, enorm_smul]
+  rw [ha.fourier_quantizeSchwartzValue, eNorm_smul]
   calc ‖(((1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ)‖ₑ *
         ‖∫ ζ, 𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) (𝓕 u ζ)‖ₑ
       ≤ ‖(((1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ)‖ₑ *
         ∫⁻ ζ, ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) (𝓕 u ζ)‖ₑ := by
         gcongr
-        exact enorm_integral_le_lintegral_enorm _
+        exact eNorm_integral_le_lintegral_eNorm _
     _ = ∫⁻ ζ, ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) *
           ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) (𝓕 u ζ)‖) := by
-        rw [← lintegral_const_mul' _ _ enorm_ne_top]
+        rw [← lintegral_const_mul' _ _ eNorm_ne_top]
         refine lintegral_congr fun ζ ↦ ?_
         rw [ENNReal.ofReal_mul (by positivity), ofReal_norm, ← ofReal_norm, Complex.norm_real,
           Real.norm_of_nonneg (by positivity)]
     _ ≤ _ := by
         refine lintegral_mono fun ζ ↦ ?_
-        rw [enorm_smul, ← ofReal_norm, ← ofReal_norm, Complex.norm_real,
+        rw [eNorm_smul, ← ofReal_norm, ← ofReal_norm, Complex.norm_real,
           Real.norm_of_nonneg (by positivity), ← ENNReal.ofReal_mul (by positivity),
           ← ENNReal.ofReal_mul (by positivity)]
         exact ENNReal.ofReal_le_ofReal (rpow_mul_norm_fourier_apply_le hC₀ hdecay ξ ζ (𝓕 u ζ))
@@ -591,7 +591,7 @@ private theorem HasCompactSpatialSupport.eLpNorm_smul_fourier_quantizeSchwartzVa
   have hgmeas : AEStronglyMeasurable
       (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ) :=
     ((hw s).smul (𝓕 u).continuous).aestronglyMeasurable
-  have hschur := TauCeti.eLpNorm_lintegral_mul_le hkmeas hgmeas.enorm
+  have hschur := TauCeti.eLpNorm_lintegral_mul_le hkmeas hgmeas.eNorm
     (p := 2) one_le_two (A := A) (B := A)
     (.of_forall fun x ↦ (lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (B * k η)) x).trans
       hint |>.le)
@@ -599,12 +599,12 @@ private theorem HasCompactSpatialSupport.eLpNorm_smul_fourier_quantizeSchwartzVa
       hint |>.le)
   calc _ ≤ eLpNorm (fun ξ ↦ ∫⁻ ζ, ENNReal.ofReal (B * k (ξ - ζ)) *
           ‖(((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ‖ₑ) 2 volume :=
-        eLpNorm_mono_enorm ((hw (s - m)).smul
+        eLpNorm_mono_eNorm ((hw (s - m)).smul
           (ha.integrable_quantizeSchwartzValue u).continuous_fourier).aestronglyMeasurable
-          fun ξ ↦ by rw [enorm_eq_self]; exact hpt ξ
+          fun ξ ↦ by rw [eNorm_eq_self]; exact hpt ξ
     _ ≤ _ := hschur
     _ = _ := by
-        rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num), eLpNorm_enorm _ hgmeas,
+        rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num), eLpNorm_eNorm _ hgmeas,
           sub_add_cancel, ENNReal.rpow_one]
 
 /-- **The Sobolev estimate on Schwartz functions.** For a symbol `a` of order `m` with compact

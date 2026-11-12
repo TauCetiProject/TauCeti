@@ -90,7 +90,7 @@ private theorem lintegral_cauchyKernelL_le {c w : ℂ} (r R : ℝ≥0)
     (hw : w ∈ closedBall c (R : ℝ)) :
     ∫⁻ z, ‖cauchyKernelL (F := F) w z‖ₑ ∂(volume.restrict (closedBall c r)) ≤
       (2 * (r + R) : ℝ≥0) := by
-  rw [← ofReal_integral_norm_eq_lintegral_enorm (integrableOn_cauchyKernelL c w r),
+  rw [← ofReal_integral_norm_eq_lintegral_eNorm (integrableOn_cauchyKernelL c w r),
     ← ENNReal.ofReal_coe_nnreal]
   apply ENNReal.ofReal_le_ofReal
   have hi := (Complex.locallyIntegrable_sub_inv w).integrableOn_isCompact
