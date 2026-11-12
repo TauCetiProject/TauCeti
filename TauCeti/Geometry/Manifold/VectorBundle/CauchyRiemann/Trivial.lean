@@ -28,7 +28,7 @@ real valued `g`. The complementary operator `∂ σ = dσ - ∂bar σ = (dσ)^{1
 * `TauCeti.SmoothAlmostComplexStructure.delFunction`: the operator `σ ↦ (dσ)^{1,0}` on
   `F`-valued functions.
 * `TauCeti.SmoothAlmostComplexStructure.delFunction_add_dbarFunction`,
-  `TauCeti.SmoothAlmostComplexStructure.delFunction_apply_apply`: `dσ = ∂ σ + ∂bar σ`, and
+  `TauCeti.SmoothAlmostComplexStructure.delFunction_apply_almostComplex`: `dσ = ∂ σ + ∂bar σ`, and
   `∂ σ` is a `(1,0)`-form.
 
 ## References
@@ -108,7 +108,7 @@ theorem delFunction_add_dbarFunction (σ : M → F) (x : M) :
   sub_add_cancel _ _
 
 /-- `∂ σ` is a `(1,0)`-form: it is complex linear, `∂ σ (j v) = i • ∂ σ (v)`. -/
-theorem delFunction_apply_apply (σ : M → F) (x : M) (v : TangentSpace I x) :
+theorem delFunction_apply_almostComplex (σ : M → F) (x : M) (v : TangentSpace I x) :
     j.delFunction σ x (j x v) = Complex.I • j.delFunction σ x v := by
   have hjj : j x (j x v) = -v := by
     simp [← ContinuousLinearMap.comp_apply, j.square_neg x]
