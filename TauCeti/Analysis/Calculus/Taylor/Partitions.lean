@@ -44,7 +44,7 @@ theorem sub_sum_taylor_two_eq_sum_sub_taylorWithinEval (f : ℝ → ℝ) (x : �
   rw [← Finset.sum_range_sub (fun i ↦ f (x i)) n, ← Finset.sum_sub_distrib,
     Finset.mul_sum, ← Finset.sum_sub_distrib]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   rw [taylorWithinEval_univ_two]
   ring
 
@@ -96,7 +96,6 @@ theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {a b K : ℝ}
       1 / 2 * ∑ i ∈ Finset.range (n k),
         deriv (deriv f) (x k i) * (x k (i + 1) - x k i) ^ 2) l (𝓝 0) := by
   simp_rw [sub_sum_taylor_two_eq_sum_sub_taylorWithinEval]
-  have hK : 0 ≤ max K 0 := le_max_right _ _
   apply Metric.tendsto_nhds.2
   intro ε hε
   obtain ⟨η, hη, hTaylor⟩ := exists_pos_forall_abs_sub_taylorWithinEval_two_le

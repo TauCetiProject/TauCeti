@@ -117,9 +117,7 @@ lemma prespectralSpace_of_isClopen_generateFrom (htU : t = generateFrom U)
   exact isCompact_sInter_of_isClopen_generateFrom htU hcomp hU hfU
 
 /-- A set that is quasi-compact and open for the generated topology is clopen for the witness
-topology: it is a finite union of finite intersections of members of `U`. This is the bridge
-between the generated and witness topologies that the constructible-topology identification
-of a patch presentation consumes. -/
+topology: it is a finite union of finite intersections of members of `U`. -/
 lemma isClopen_of_isCompact_of_isOpen_generateFrom (htU : t = generateFrom U)
     (hU : ∀ s ∈ U, @IsClopen X t' s) {V : Set X} (hV : IsCompact V)
     (hVo : IsOpen V) : @IsClopen X t' V := by
@@ -145,46 +143,30 @@ lemma quasiSeparatedSpace_of_isClopen_generateFrom (htU : t = generateFrom U)
 (Wedhorn, Lemma 3.29). -/
 lemma quasiSober_of_isClopen_generateFrom (htU : t = generateFrom U)
     (hcomp : @CompactSpace X t') (hU : ∀ s ∈ U, @IsClopen X t' s) : QuasiSober X := by
+  have hB := isTopologicalBasis_sInter_of_patch htU
+  -- the witness topology `t'` is finer than the generated topology `t`, since every member
+  -- of `U` is witness-open
+  have hle : t' ≤ t := htU ▸ le_generateFrom fun s hs ↦ @IsClopen.isOpen X t' s (hU s hs)
   refine ⟨fun {Z} hZ hZc ↦ ?_⟩
-  -- if no point of `Z` is generic, cover `Z` by the witness-open complements of basic opens
-  -- avoiding each point; a finite subcover then contradicts irreducibility
-  by_contra hng
-  rw [not_exists] at hng
-  -- for every point of `Z` there is a basic open meeting `Z` but avoiding the point
-  have key : ∀ z : Z, ∃ b ∈ (fun f ↦ ⋂₀ f) '' { f : Set (Set X) | f.Finite ∧ f ⊆ U },
-      (z : X) ∉ b ∧ (Z ∩ b).Nonempty := by
-    rintro ⟨z, hz⟩
-    have hnsub : ¬ Z ⊆ closure {z} := fun hsub ↦
-      hng z (subset_antisymm (closure_minimal (Set.singleton_subset_iff.mpr hz) hZc) hsub)
-    obtain ⟨w, hwZ, hwn⟩ := Set.not_subset.mp hnsub
-    obtain ⟨b, hb, hwb, hbV⟩ :=
-      (isTopologicalBasis_sInter_of_patch htU).exists_subset_of_mem_open hwn
-        isClosed_closure.isOpen_compl
-    exact ⟨b, hb, fun hzb ↦ hbV hzb (subset_closure (Set.mem_singleton z)), w, hwZ, hwb⟩
-  choose b hbmem hbz hbne using key
-  -- `Z` is closed, hence compact, for the witness topology
-  have hZc' : @IsClosed X t' Z := by
-    have hle : t' ≤ t := htU ▸ le_generateFrom fun s hs ↦ @IsClopen.isOpen X t' s (hU s hs)
-    exact (@isOpen_compl_iff X Z t').mp (hZc.isOpen_compl.mono hle)
-  have hZcomp : @IsCompact X t' Z := @IsClosed.isCompact X t' Z hcomp hZc'
-  -- extract a finite subcover of `Z` by complements of the chosen basic opens
-  obtain ⟨T, hT⟩ := @IsCompact.elim_finite_subcover X t' Z Z hZcomp (fun z ↦ (b z)ᶜ)
-    (fun z ↦ @IsClopen.isOpen X t' _ (@IsClopen.compl X t' _ (isClopen_patch_of_mem_basis
-      hU (hbmem z))))
-    (fun x hx ↦ Set.mem_iUnion.mpr ⟨⟨x, hx⟩, hbz ⟨x, hx⟩⟩)
-  -- the basic opens all meet the irreducible `Z`, so their finite intersection meets `Z`
-  classical
-  obtain ⟨x, hxZ, hxB⟩ := isIrreducible_iff_sInter.mp hZ (T.image b)
-    (by
-      rintro _ h
-      obtain ⟨z, -, rfl⟩ := Finset.mem_image.mp h
-      exact (isTopologicalBasis_sInter_of_patch htU).isOpen (hbmem z))
-    (by
-      rintro _ h
-      obtain ⟨z, -, rfl⟩ := Finset.mem_image.mp h
-      exact hbne z)
-  obtain ⟨z, hzT, hxz⟩ := Set.mem_iUnion₂.mp (hT hxZ)
-  exact hxz (hxB (b z) (Finset.mem_coe.mpr (Finset.mem_image_of_mem b hzT)))
+  -- `Z` is closed for the generated topology, hence for the finer witness topology, and so
+  -- compact for the compact witness topology
+  have hZcomp : @IsCompact X t' Z := @IsClosed.isCompact X t' Z hcomp (hZc.mono hle)
+  -- the basic opens of the generated topology that meet `Z` are witness-clopen, hence
+  -- witness-closed, and any finitely many of them have a common point in the irreducible `Z`;
+  -- by witness compactness of `Z` some `x ∈ Z` lies in all of them
+  obtain ⟨x, hxZ, hx⟩ := @IsCompact.nonempty_inter_sInter X t' Z hZcomp
+    {b | b ∈ (fun f ↦ ⋂₀ f) '' { f : Set (Set X) | f.Finite ∧ f ⊆ U } ∧ (Z ∩ b).Nonempty}
+    (fun b hb ↦ @IsClopen.isClosed X t' _ (isClopen_patch_of_mem_basis hU hb.1))
+    fun a ha haf ↦ by
+      classical
+      simpa only [Set.Finite.coe_toFinset] using isIrreducible_iff_sInter.mp hZ haf.toFinset
+        (fun b hb ↦ hB.isOpen (ha (haf.mem_toFinset.mp hb)).1)
+        fun b hb ↦ (ha (haf.mem_toFinset.mp hb)).2
+  -- `x` is a generic point of `Z`: the closure of `{x}` lies in the closed set `Z`, and every
+  -- basic open around a point `w ∈ Z` meets `Z`, so contains `x`, putting `w` in that closure
+  refine ⟨x, isGenericPoint_def.mpr <| subset_antisymm
+    (closure_minimal (Set.singleton_subset_iff.mpr hxZ) hZc) fun w hw ↦ ?_⟩
+  exact hB.mem_closure_iff.mpr fun o ho hwo ↦ ⟨x, hx o ⟨ho, w, hw, hwo⟩, Set.mem_singleton x⟩
 
 /-- **Wedhorn, Proposition 3.31** (*Adic Spaces*, arXiv:1910.05934v1): a T0 topology generated
 by a family of clopen subsets of a compact space is spectral. -/

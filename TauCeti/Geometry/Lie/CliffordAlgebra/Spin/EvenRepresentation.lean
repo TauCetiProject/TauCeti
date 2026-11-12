@@ -114,7 +114,7 @@ private theorem spinToEvenHom_continuous (n : ℕ) : Continuous (spinToEvenHom n
 
 local instance completeEven (n : ℕ) :
     CompleteSpace (CliffordAlgebra.even (realCliffordForm n 0)) :=
-  FiniteDimensional.complete ℝ _
+  FiniteDimensional.completeSpace ℝ _
 
 /-- The smooth inclusion of the closed compact-Spin carrier into the units of the real even
 Clifford algebra. -/
