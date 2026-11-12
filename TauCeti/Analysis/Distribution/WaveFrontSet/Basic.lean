@@ -510,7 +510,7 @@ supported. -/
 private theorem contDiff_and_hasCompactSupport_restrict (V : Submodule ℝ E) (φ : 𝓓(Ω, ℂ)) :
     ContDiff ℝ ∞ (fun v : V => φ v) ∧ HasCompactSupport (fun v : V => φ v) :=
   ⟨φ.contDiff.comp V.subtypeL.contDiff, φ.hasCompactSupport.comp_isClosedEmbedding
-    (V.isClosedEmbedding_subtype V.closed_of_finiteDimensional)⟩
+    (V.isClosedEmbedding_subtype V.isClosed_of_finiteDimensional)⟩
 
 /-- The localized Fourier transform of the surface measure of a subspace `V`, that is, Lebesgue
 measure of `V` pushed forward to `E`, is the Fourier transform on `V` of the restriction of the
@@ -520,7 +520,7 @@ theorem localFourier_ofFun_one_map_subtype (V : Submodule ℝ E) (φ : 𝓓(Ω, 
     (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).localFourier φ η =
       𝓕 (fun v : V => φ v) (V.orthogonalProjectionOnto η) := by
   have hce : Topology.IsClosedEmbedding ((↑) : V → E) :=
-    V.isClosedEmbedding_subtype V.closed_of_finiteDimensional
+    V.isClosedEmbedding_subtype V.isClosed_of_finiteDimensional
   -- The pushed-forward measure is finite on compact sets, so constants are locally integrable.
   have := MeasureTheory.Measure.isFiniteMeasureOnCompacts_map_of_isProperMap MeasureTheory.volume
     hce.isProperMap
@@ -538,7 +538,7 @@ private theorem isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem (V : Subm
     {x : E} (hx : x ∈ Ω) (hxV : x ∉ V) (ξ : E) :
     (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).IsMicrolocallySmoothAt x ξ := by
   obtain ⟨φ, hφ, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
-    (inter_mem (V.closed_of_finiteDimensional.isOpen_compl.mem_nhds hxV) (Ω.isOpen.mem_nhds hx))
+    (inter_mem (V.isClosed_of_finiteDimensional.isOpen_compl.mem_nhds hxV) (Ω.isOpen.mem_nhds hx))
     inter_subset_right (1 : ℂ)
   -- The cutoff vanishes on `V`, so the localized Fourier transform vanishes identically.
   have hg : (fun v : V => φ v) = 0 :=
