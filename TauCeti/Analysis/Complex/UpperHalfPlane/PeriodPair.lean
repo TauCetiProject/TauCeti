@@ -55,7 +55,9 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 
 ## Main results
 
-* `UpperHalfPlane.hasSum_weierstrassP_periodPair`: the series over integer pairs.
+* `UpperHalfPlane.hasSum_weierstrassP_periodPair`,
+  `UpperHalfPlane.hasSum_derivWeierstrassP_periodPair`: the series of `℘` and `℘'` over integer
+  pairs.
 * `UpperHalfPlane.intCast_mul_smul_add_intCast`: the lattice points of `γ z` in terms of those
   of `z`.
 * `UpperHalfPlane.weierstrassP_periodPair_smul`: the modular transformation law.
@@ -225,6 +227,14 @@ theorem hasSum_weierstrassZeta_periodPair (z : ℍ) (x : ℂ) :
     HasSum (fun y : Fin 2 → ℤ ↦ 1 / (x - (y 0 * z + y 1)) + 1 / ((y 0 : ℂ) * z + y 1) +
       x / ((y 0 : ℂ) * z + y 1) ^ 2) (z.periodPair.weierstrassZeta x) := by
   have h := z.periodPair.hasSum_weierstrassZeta x
+  rw [← (latticeEquiv z).hasSum_iff] at h
+  simpa only [Function.comp_def, coe_latticeEquiv] using h
+
+/-- **The Weierstrass derivative of `ℤ z + ℤ` as a series over integer pairs**:
+`℘'(x; ℤ z + ℤ) = ∑_y -2 / (x - (y₀ z + y₁))³`, the series converging absolutely. -/
+theorem hasSum_derivWeierstrassP_periodPair (z : ℍ) (x : ℂ) :
+    HasSum (fun y : Fin 2 → ℤ ↦ -2 / (x - (y 0 * z + y 1)) ^ 3) (℘'[z.periodPair] x) := by
+  have h := z.periodPair.hasSum_derivWeierstrassP x
   rw [← (latticeEquiv z).hasSum_iff] at h
   simpa only [Function.comp_def, coe_latticeEquiv] using h
 
@@ -456,6 +466,17 @@ namespace TauCeti.UpperHalfPlane
 
 open EisensteinSeries Filter
 open scoped Topology Manifold
+
+/-- Subtracting the lattice point `y₀ z + y₁` from the division point `(b₀ z + b₁) / N` and
+scaling by `N` gives the point of the integer pair `b - N y`. -/
+lemma intCast_sub_nsmul_mul_add_intCast {N : ℕ} [NeZero N] (b y : Fin 2 → ℤ) (z : ℂ) :
+    ((b - N • y) 0 : ℂ) * z + (b - N • y) 1 =
+      N * (((b 0 : ℂ) * z + b 1) / N - (y 0 * z + y 1)) := by
+  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  simp only [Pi.sub_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply, Int.cast_sub,
+    Int.cast_mul, Int.cast_natCast]
+  field_simp
+  ring
 
 /-- The lattice series of `ζ` at the division point `(b₀ z + b₁) / M` converges locally uniformly
 in `z`. -/
