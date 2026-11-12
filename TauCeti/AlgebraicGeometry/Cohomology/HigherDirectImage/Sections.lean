@@ -7,23 +7,20 @@ module
 
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
-public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Restrict
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Sheafify
 import TauCeti.AlgebraicGeometry.Cohomology.Localization
-import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
 import TauCeti.CategoryTheory.Sites.DenseSubsite
 
 /-!
-# Sections of higher direct images over affine opens
+# Sections of higher direct images over an affine target
 
-Let `f : X ⟶ Y` be a quasi-compact quasi-separated morphism of schemes and `M` a quasi-coherent
-sheaf on `X`. Over an affine open `V` of `Y`, the sections of the higher direct image `R^p f_* M`
-are the cohomology `H^p(f⁻¹ V, M)`
-(`AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsIso`). For an affine target `Y`, the
-canonical comparison map `H^p(f⁻¹ U, M) ⟶ Γ(U, R^p f_* M)`
-(`AlgebraicGeometry.Scheme.Hom.toHigherDirectImageSections`), from the presheaf
-`U ↦ H^p(f⁻¹ U, M)` to its sheafification, is bijective on `U = Y` and on every basic open
-`U = D(g)` (`AlgebraicGeometry.Scheme.Hom.bijective_toHigherDirectImageSections_basicOpen`).
+Let `f : X ⟶ Y` be a quasi-compact quasi-separated morphism of schemes to an affine scheme and
+`M` a quasi-coherent sheaf on `X`. The canonical comparison map
+`H^p(f⁻¹ U, M) ⟶ Γ(U, R^p f_* M)` (`AlgebraicGeometry.Scheme.Hom.toHigherDirectImageSections`),
+from the presheaf `U ↦ H^p(f⁻¹ U, M)` to its sheafification, is bijective on `U = Y` and on every
+basic open `U = D(g)`
+(`AlgebraicGeometry.Scheme.Hom.bijective_toHigherDirectImageSections_basicOpen`). So the sections
+of the higher direct image `R^p f_* M` over these opens are the cohomology `H^p(f⁻¹ U, M)`.
 
 The proof follows Hartshorne, Proposition III.8.5. For `Y` affine, the restriction maps
 `H^p(f⁻¹ Y, M) ⟶ H^p(f⁻¹ D(g), M)` are localizations at the powers of `g`
@@ -31,8 +28,7 @@ The proof follows Hartshorne, Proposition III.8.5. For `Y` affine, the restricti
 the basic opens the presheaf `U ↦ H^p(f⁻¹ U, M)` is isomorphic to the sheaf associated to the
 `Γ(Y, ⊤)`-module `H^p(X, M)`. A presheaf that agrees with a sheaf on a basis has the sections of
 that sheaf over the basic opens
-(`CategoryTheory.Functor.IsCoverDense.bijective_toSheafify_app`). For an arbitrary target, the
-formation of `R^p f_* M` commutes with restriction to the affine open `V`.
+(`CategoryTheory.Functor.IsCoverDense.bijective_toSheafify_app`).
 
 ## Main declarations
 
@@ -42,9 +38,7 @@ formation of `R^p f_* M` commutes with restriction to the affine open `V`.
 * `AlgebraicGeometry.Scheme.Hom.bijective_toHigherDirectImageSections_basicOpen`,
   `AlgebraicGeometry.Scheme.Hom.bijective_toHigherDirectImageSections_top`: it is bijective over
   the basic opens of an affine target and over the target itself, so it is an isomorphism there
-  (`AlgebraicGeometry.Scheme.Hom.isIso_toHigherDirectImageSections_top`);
-* `AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsIso`: `Γ(V, R^p f_* M) ≅ H^p(f⁻¹ V, M)`
-  for every affine open `V` of the target.
+  (`AlgebraicGeometry.Scheme.Hom.isIso_toHigherDirectImageSections_top`).
 
 ## References
 
@@ -277,25 +271,5 @@ instance isIso_toHigherDirectImageSections_top [QuasiCompact f] [QuasiSeparated 
   (ConcreteCategory.isIso_iff_bijective _).2 (bijective_toHigherDirectImageSections_top f M p)
 
 end Affine
-
-/-- **Higher direct images over affine opens.** For a quasi-compact quasi-separated morphism
-`f : X ⟶ Y`, a quasi-coherent `M` and an affine open `V` of `Y`, the sections of `R^p f_* M` over
-`V` are `H^p(f⁻¹ V, M)`. The isomorphism restricts to `V`
-(`AlgebraicGeometry.Scheme.Hom.higherDirectImageRestrictIso`), applies
-`AlgebraicGeometry.Scheme.Hom.bijective_toHigherDirectImageSections_top` to `f ∣_ V`, and
-identifies the cohomology of the open subscheme `f⁻¹ V` with that of the open subset. -/
-def higherDirectImageSectionsIso [QuasiCompact f] [QuasiSeparated f] [M.IsQuasicoherent]
-    {V : Y.Opens} (hV : IsAffineOpen V) :
-    ((toSheaf Y).obj ((f.higherDirectImage p).obj M)).obj.obj (op V) ≅
-      cohomologyOn M p (f ⁻¹ᵁ V) :=
-  haveI : IsAffine V := hV
-  eqToIso (by rw [Scheme.Opens.ι_image_top]; rfl) ≪≫
-    (Scheme.Modules.restrictAppIso V.ι _ ⊤).symm ≪≫
-    ((sheafToPresheaf _ _).mapIso
-      ((toSheaf V).mapIso ((f.higherDirectImageRestrictIso V p).app M))).app (op ⊤) ≪≫
-    (asIso (toHigherDirectImageSections (f ∣_ V) (M.restrict (f ⁻¹ᵁ V).ι) p ⊤)).symm ≪≫
-    cohomologyOnTopIso _ p ≪≫
-    (Scheme.Modules.cohomologyOnOpensRangeIso (f ⁻¹ᵁ V).ι M p).symm ≪≫
-    eqToIso (congrArg (cohomologyOn M p) (Scheme.Opens.opensRange_ι _))
 
 end AlgebraicGeometry.Scheme.Hom
