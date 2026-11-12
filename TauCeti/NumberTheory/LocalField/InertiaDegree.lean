@@ -145,6 +145,22 @@ theorem ramificationIndex_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
     ramificationIndex_mul_inertiaDegree K M]
   exact e.toLinearEquiv.finrank_eq
 
+variable (K L) in
+/-- The wild ramification exponent is an invariant of the extension up to algebra equivalence. -/
+theorem wildRamificationExponent_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
+    wildRamificationExponent K L = wildRamificationExponent K M := by
+  simp only [wildRamificationExponent_def, ramificationIndex_eq_of_algEquiv K L M e]
+
+variable (K L) in
+/-- The tame ramification index is an invariant of the extension up to algebra equivalence. -/
+theorem tameRamificationIndex_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
+    tameRamificationIndex K L = tameRamificationIndex K M := by
+  simp only [tameRamificationIndex_eq_ordCompl, ramificationIndex_eq_of_algEquiv K L M e]
+
 /-- **Denominators of base-normalised valuations divide the degree.** If `α` has valuation
 `v_K(x) / q`, in lowest terms, for the valuation of `L` extending `v_K`, then `q ∣ [L : K]`: it
 divides `e(L/K)`, which divides `e(L/K) · f(L/K) = [L : K]`. -/

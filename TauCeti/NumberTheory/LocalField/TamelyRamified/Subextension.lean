@@ -61,7 +61,8 @@ theorem finrank_fixedField_lowerRamificationGroup_one :
         ringChar 𝓀[K] ^ (ramificationIndex K L).factorization (ringChar 𝓀[K]) := by
   rw [IntermediateField.finrank_eq_fixingSubgroup_index,
     IntermediateField.fixingSubgroup_fixedField, Subgroup.index_eq_card_div]
-  rw [IsGalois.card_aut_eq_finrank, natCard_lowerRamificationGroup_one]
+  rw [IsGalois.card_aut_eq_finrank, natCard_lowerRamificationGroup_one,
+    wildRamificationExponent_def]
 
 end TauCeti.LocalFieldsRamification
 

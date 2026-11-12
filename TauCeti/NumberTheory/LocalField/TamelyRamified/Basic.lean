@@ -25,7 +25,8 @@ residue characteristic `p` does not divide `e = e(L/K)`.
 
 When `L/K` is Galois, tameness is read off the lower ramification filtration: the wild inertia
 group `G_1` is the Sylow `p`-subgroup of the inertia group `G_0`, whose order is `e`, so `G_1` is
-trivial exactly when `L/K` is tamely ramified.
+trivial exactly when `L/K` is tamely ramified. More generally, the tame index is the order of
+`G_0 / G_1` and divides `#𝓀[L] - 1`, while `#G_1 = p ^ wildRamificationExponent K L`.
 
 When `L/K` is moreover totally ramified, `e(L/K) = [L : K]`, this file proves the structure
 theorem for such extensions: `L` is obtained from `K` by adjoining an `e`-th root of a
@@ -98,9 +99,10 @@ variable (K L) in
 `#G_1(L/K) = p ^ (v_p e(L/K))`. -/
 theorem natCard_lowerRamificationGroup_one [Module.Finite K L] [IsGalois K L] :
     Nat.card (lowerRamificationGroup K L 1) =
-      ringChar 𝓀[K] ^ (ramificationIndex K L).factorization (ringChar 𝓀[K]) := by
+      ringChar 𝓀[K] ^ wildRamificationExponent K L := by
   have : CharP 𝓀[L] (ringChar 𝓀[K]) := Algebra.ringChar_eq 𝓀[K] 𝓀[L] ▸ ringChar.charP 𝓀[L]
-  rw [← natCard_lowerRamificationGroup_zero K L, lowerRamificationGroup_def,
+  rw [wildRamificationExponent_def, ← natCard_lowerRamificationGroup_zero K L,
+    lowerRamificationGroup_def,
     lowerRamificationGroup_def]
   exact natCard_ramificationGroup_one _ _
 
@@ -118,6 +120,47 @@ theorem lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified [Module.Finite K 
   exact ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero _ _
 
 end LocalFieldsRamification
+
+section Indices
+
+open LocalFieldsRamification
+
+variable (K L) [IsGalois K L]
+
+/-- The tame index is the order of the quotient of inertia by wild inertia. -/
+theorem tameRamificationIndex_eq_natCard_lowerRamificationGroup_zero_quotient_one
+    [Module.Finite K L] :
+    tameRamificationIndex K L = Nat.card
+      (lowerRamificationGroup K L 0 ⧸
+        (lowerRamificationGroup K L 1).subgroupOf (lowerRamificationGroup K L 0)) := by
+  rw [← Subgroup.index_eq_card, Subgroup.index_eq_card_div,
+    Nat.card_congr (Subgroup.subgroupOfEquivOfLe
+      (lowerRamificationGroup_antitone K L (by omega : (0 : ℤ) ≤ 1))).toEquiv,
+    natCard_lowerRamificationGroup_zero, natCard_lowerRamificationGroup_one]
+  exact tameRamificationIndex_def K L
+
+/-- The relative index of wild inertia in inertia is the tame ramification index. -/
+theorem relIndex_lowerRamificationGroup_one_zero [Module.Finite K L] :
+    (lowerRamificationGroup K L 1).relIndex (lowerRamificationGroup K L 0) =
+      tameRamificationIndex K L := by
+  rw [tameRamificationIndex_eq_natCard_lowerRamificationGroup_zero_quotient_one,
+    Subgroup.relIndex, Subgroup.index_eq_card]
+
+/-- The tame index divides the order of the multiplicative group of the residue field of `L`. -/
+theorem tameRamificationIndex_dvd_card_residueField_sub_one :
+    tameRamificationIndex K L ∣ Nat.card 𝓀[L] - 1 := by
+  have := finite_of_valuativeExtension K L
+  rw [tameRamificationIndex_eq_natCard_lowerRamificationGroup_zero_quotient_one]
+  rw [lowerRamificationGroup_def, lowerRamificationGroup_def]
+  exact card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one L (L ≃ₐ[K] L)
+
+/-- The tame index divides `q ^ f - 1`, where `q` is the residue cardinality of the base. -/
+theorem tameRamificationIndex_dvd_card_pow_inertiaDegree_sub_one :
+    tameRamificationIndex K L ∣ Nat.card 𝓀[K] ^ inertiaDegree K L - 1 := by
+  rw [← natCard_residueField K L]
+  exact tameRamificationIndex_dvd_card_residueField_sub_one K L
+
+end Indices
 
 open LocalFieldsRamification in
 /-- **The tame ramification index divides `q - 1`.** For a tamely ramified finite Galois extension
