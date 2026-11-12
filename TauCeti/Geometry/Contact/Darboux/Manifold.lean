@@ -32,9 +32,14 @@ smooth partial diffeomorphism `chart` from `M` to `ℝⁿ × ℝⁿ × ℝ`, wit
 So `chart` pulls `α_std` back to the positive multiple `g α` of `α`. In particular it carries
 `ker α` onto `ker α_std` and preserves the coorientations defined by `α` and `α_std`. Applied to the
 contact form `-α`, the same theorem gives a chart reversing the coorientation. Only the contact
-condition at `x₀` and the smoothness of `α` near `x₀` are assumed. The global versions for smooth
+condition at `x₀` and the smoothness of `α` near `x₀` are assumed. When `M` has dimension `2 n + 1`,
+the chart lands in `ℝⁿ × ℝⁿ × ℝ` for this prescribed `n`
+(`TauCeti.IsContactFormAt.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint`). On boundaryless
+manifolds every point is interior (`TauCeti.IsContactFormAt.exists_darbouxChart` and
+`TauCeti.IsContactFormAt.exists_darbouxChart_of_finrank_eq`). The global versions for smooth
 contact forms are `TauCeti.SmoothForm.IsContactForm.exists_darbouxChart_of_isInteriorPoint` and,
-on boundaryless manifolds, `TauCeti.SmoothForm.IsContactForm.exists_darbouxChart`.
+on boundaryless manifolds, `TauCeti.SmoothForm.IsContactForm.exists_darbouxChart`, each with a
+`_of_finrank_eq` variant prescribing the dimension.
 
 A contact structure need not be the kernel of any global one-form, and need not be cooriented. For a
 smooth contact distribution `ξ` (`TauCeti.IsContactDistribution`), the local defining forms of `ξ`
@@ -56,11 +61,20 @@ to the inverse image of a neighbourhood on which this identity holds.
 
 * `TauCeti.IsContactFormAt.exists_darbouxChart_of_isInteriorPoint`: Darboux charts for a locally
   defined one-form which is a contact form at an interior point.
+* `TauCeti.IsContactFormAt.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint`: the same, with the
+  dimension `n` of the model `ℝⁿ × ℝⁿ × ℝ` prescribed by `dim M = 2 n + 1`.
+* `TauCeti.IsContactFormAt.exists_darbouxChart`,
+  `TauCeti.IsContactFormAt.exists_darbouxChart_of_finrank_eq`: the same on boundaryless manifolds.
 * `TauCeti.SmoothForm.IsContactForm.exists_darbouxChart_of_isInteriorPoint`,
   `TauCeti.SmoothForm.IsContactForm.exists_darbouxChart`: Darboux charts for smooth contact forms.
 * `TauCeti.IsContactDistribution.exists_darbouxChart_of_isInteriorPoint`,
   `TauCeti.IsContactDistribution.exists_darbouxChart`: contact charts for smooth contact
   distributions, with no contact form or coorientation chosen.
+* `TauCeti.SmoothForm.IsContactForm.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint`,
+  `TauCeti.SmoothForm.IsContactForm.exists_darbouxChart_of_finrank_eq`,
+  `TauCeti.IsContactDistribution.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint`,
+  `TauCeti.IsContactDistribution.exists_darbouxChart_of_finrank_eq`: the same, with the dimension
+  `n` of the model prescribed by `dim M = 2 n + 1`.
 
 ## References
 
@@ -141,6 +155,42 @@ theorem IsContactFormAt.exists_darbouxChart_of_isInteriorPoint {α : RoughForm I
       rfl
     rw [hmvf x hx v, hcoe, hΦ, RoughForm.apply_eq_inChartAt_mvfderiv α hxS.1, hvec]
 
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
+/-- A partial diffeomorphism from a manifold of dimension `2 n + 1` to `ℝᵐ × ℝᵐ × ℝ` with nonempty
+source forces `m = n`: its differential at a point of the source is a linear isomorphism between
+the two model spaces. -/
+private theorem eq_of_finrank_eq_of_mem_source {m n : ℕ}
+    (chart : PartialDiffeomorph I
+      𝓘(ℝ, EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin m) × ℝ) M
+      (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin m) × ℝ) ∞)
+    {x : M} (hx : x ∈ chart.source) (hn : finrank ℝ E = 2 * n + 1) : m = n := by
+  have hL : finrank ℝ E =
+      finrank ℝ (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin m) × ℝ) :=
+    ((chart.isLocalDiffeomorphAt _ _ _ hx).mfderivToContinuousLinearEquiv
+      (by simp)).toLinearEquiv.finrank_eq
+  rw [finrank_prod, finrank_prod, finrank_euclideanSpace_fin, finrank_self] at hL
+  omega
+
+/-- **The contact Darboux theorem at an interior point, in dimension `2 n + 1`.** On a manifold of
+dimension `2 n + 1`, the contact Darboux chart of a local contact form at an interior point lands
+in `ℝⁿ × ℝⁿ × ℝ` for this `n`. -/
+theorem IsContactFormAt.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint
+    {α : RoughForm I M ℝ 1} {U : Set M} {x₀ : M} (hc : IsContactFormAt α x₀) {n : ℕ}
+    (hn : finrank ℝ E = 2 * n + 1) (hU : IsOpen U) (hx₀U : x₀ ∈ U)
+    (hα : ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) ∞
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U)
+    (hx₀ : I.IsInteriorPoint x₀) :
+    ∃ (chart : PartialDiffeomorph I
+        𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) M
+        (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
+      x₀ ∈ chart.source ∧ chart.source ⊆ U ∧ chart x₀ = 0 ∧
+      ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
+          ![mvfderiv I chart x v] = g x * α x ![v] := by
+  obtain ⟨m, chart, g, -, hx₀', h⟩ := hc.exists_darbouxChart_of_isInteriorPoint hU hx₀U hα hx₀
+  obtain rfl := eq_of_finrank_eq_of_mem_source chart hx₀' hn
+  exact ⟨chart, g, hx₀', h⟩
+
 /-- **The contact Darboux theorem at an interior point.** Around any interior point `x₀` of a
 manifold with a smooth contact form `α`, there are `n` with `dim E = 2n + 1`, a smooth partial
 diffeomorphism `chart` from `M` to `ℝⁿ × ℝⁿ × ℝ` with `x₀ ∈ chart.source` and `chart x₀ = 0`, and
@@ -188,9 +238,81 @@ theorem IsContactDistribution.exists_darbouxChart_of_isInteriorPoint
     ContinuousLinearMap.coe_coe, ← mvfderiv_apply_eq_mfderiv_apply, RoughForm.mem_ker,
     (hchart x hx).2 v, mul_eq_zero, or_iff_right (hchart x hx).1.ne']
 
+/-- **The contact Darboux theorem at an interior point, in dimension `2 n + 1`.** On a manifold of
+dimension `2 n + 1` with a smooth contact form, the contact Darboux chart at an interior point lands
+in `ℝⁿ × ℝⁿ × ℝ` for this `n`. -/
+theorem SmoothForm.IsContactForm.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint
+    {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) {n : ℕ} (hn : finrank ℝ E = 2 * n + 1)
+    {x₀ : M} (hx₀ : I.IsInteriorPoint x₀) :
+    ∃ (chart : PartialDiffeomorph I
+        𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) M
+        (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
+      x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
+      ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
+          ![mvfderiv I chart x v] = g x * α.1 x ![v] := by
+  obtain ⟨m, chart, g, -, hx₀', h⟩ := hα.exists_darbouxChart_of_isInteriorPoint hx₀
+  obtain rfl := eq_of_finrank_eq_of_mem_source chart hx₀' hn
+  exact ⟨chart, g, hx₀', h⟩
+
+/-- **The contact Darboux theorem for contact structures at an interior point, in dimension
+`2 n + 1`.** On a manifold of dimension `2 n + 1` with a smooth contact distribution, the contact
+chart at an interior point lands in `ℝⁿ × ℝⁿ × ℝ` for this `n`. -/
+theorem IsContactDistribution.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint
+    {D : Π x : M, Submodule ℝ (TangentSpace I x)} (hD : IsContactDistribution I ∞ D) {n : ℕ}
+    (hn : finrank ℝ E = 2 * n + 1) {x₀ : M} (hx₀ : I.IsInteriorPoint x₀) :
+    ∃ (chart : PartialDiffeomorph I
+        𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) M
+        (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞),
+      x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
+      ∀ x ∈ chart.source, D x =
+        ((innerProductContactForm (EuclideanSpace ℝ (Fin n))).kerDistribution (chart x)).comap
+          (mfderiv I 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) chart
+            x).toLinearMap := by
+  obtain ⟨m, chart, -, hx₀', h⟩ := hD.exists_darbouxChart_of_isInteriorPoint hx₀
+  obtain rfl := eq_of_finrank_eq_of_mem_source chart hx₀' hn
+  exact ⟨chart, hx₀', h⟩
+
 section Boundaryless
 
 variable [BoundarylessManifold I M]
+
+/-- **The contact Darboux theorem** for a locally defined one-form on a boundaryless manifold. Let
+`α` be a one-form, smooth on an open set `U`, which is a contact form at `x₀ ∈ U`. Then there are
+`n` with `dim E = 2n + 1`, a smooth partial diffeomorphism `chart` from `M` to `ℝⁿ × ℝⁿ × ℝ`
+with `x₀ ∈ chart.source ⊆ U` and `chart x₀ = 0`, and a function `g`, positive on `chart.source`,
+such that `chart` pulls the standard contact form `dz - Σᵢ pᵢ dqᵢ` back to `g α` on
+`chart.source`. -/
+theorem IsContactFormAt.exists_darbouxChart {α : RoughForm I M ℝ 1} {U : Set M} {x₀ : M}
+    (hc : IsContactFormAt α x₀) (hU : IsOpen U) (hx₀U : x₀ ∈ U)
+    (hα : ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) ∞
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U) :
+    ∃ (n : ℕ) (chart : PartialDiffeomorph I
+        𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) M
+        (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
+      finrank ℝ E = 2 * n + 1 ∧ x₀ ∈ chart.source ∧ chart.source ⊆ U ∧ chart x₀ = 0 ∧
+      ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
+          ![mvfderiv I chart x v] = g x * α x ![v] :=
+  hc.exists_darbouxChart_of_isInteriorPoint hU hx₀U hα BoundarylessManifold.isInteriorPoint
+
+/-- **The contact Darboux theorem in dimension `2 n + 1`.** On a boundaryless manifold of dimension
+`2 n + 1`, the contact Darboux chart of a local contact form lands in `ℝⁿ × ℝⁿ × ℝ` for this
+`n`. -/
+theorem IsContactFormAt.exists_darbouxChart_of_finrank_eq {α : RoughForm I M ℝ 1} {U : Set M}
+    {x₀ : M} (hc : IsContactFormAt α x₀) {n : ℕ} (hn : finrank ℝ E = 2 * n + 1) (hU : IsOpen U)
+    (hx₀U : x₀ ∈ U)
+    (hα : ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) ∞
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U) :
+    ∃ (chart : PartialDiffeomorph I
+        𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) M
+        (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
+      x₀ ∈ chart.source ∧ chart.source ⊆ U ∧ chart x₀ = 0 ∧
+      ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
+          ![mvfderiv I chart x v] = g x * α x ![v] :=
+  hc.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint hn hU hx₀U hα
+    BoundarylessManifold.isInteriorPoint
 
 /-- **The contact Darboux theorem.** Around every point `x₀` of a boundaryless manifold with a
 smooth contact form `α`, there are `n` with `dim E = 2n + 1`, a smooth partial diffeomorphism
@@ -224,6 +346,36 @@ theorem IsContactDistribution.exists_darbouxChart
           (mfderiv I 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) chart
             x).toLinearMap :=
   hD.exists_darbouxChart_of_isInteriorPoint BoundarylessManifold.isInteriorPoint
+
+/-- **The contact Darboux theorem in dimension `2 n + 1`.** On a boundaryless manifold of dimension
+`2 n + 1` with a smooth contact form, the contact Darboux chart lands in `ℝⁿ × ℝⁿ × ℝ` for this
+`n`. -/
+theorem SmoothForm.IsContactForm.exists_darbouxChart_of_finrank_eq {α : SmoothForm I M ℝ 1}
+    (hα : α.IsContactForm) {n : ℕ} (hn : finrank ℝ E = 2 * n + 1) (x₀ : M) :
+    ∃ (chart : PartialDiffeomorph I
+        𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) M
+        (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞) (g : M → ℝ),
+      x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
+      ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
+          ![mvfderiv I chart x v] = g x * α.1 x ![v] :=
+  hα.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint hn BoundarylessManifold.isInteriorPoint
+
+/-- **The contact Darboux theorem for contact structures in dimension `2 n + 1`.** On a
+boundaryless manifold of dimension `2 n + 1` with a smooth contact distribution, the contact chart
+lands in `ℝⁿ × ℝⁿ × ℝ` for this `n`. -/
+theorem IsContactDistribution.exists_darbouxChart_of_finrank_eq
+    {D : Π x : M, Submodule ℝ (TangentSpace I x)} (hD : IsContactDistribution I ∞ D) {n : ℕ}
+    (hn : finrank ℝ E = 2 * n + 1) (x₀ : M) :
+    ∃ (chart : PartialDiffeomorph I
+        𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) M
+        (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞),
+      x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
+      ∀ x ∈ chart.source, D x =
+        ((innerProductContactForm (EuclideanSpace ℝ (Fin n))).kerDistribution (chart x)).comap
+          (mfderiv I 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) chart
+            x).toLinearMap :=
+  hD.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint hn BoundarylessManifold.isInteriorPoint
 
 end Boundaryless
 
