@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Multiplication
 public import TauCeti.Analysis.Sobolev.Local.Norm
+import TauCeti.Data.ENNReal.Mul
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -49,29 +50,6 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {Ω : Opens ℂ} {p q : ℝ≥0}
 
-omit [FiniteDimensional ℝ G] in
-/-- To bound `L` by `C ‖B‖ a b` with `C ≠ 0`, it suffices to treat finite `a` and `b`, provided `L`
-vanishes when `B`, `a` or `b` does: otherwise the right side is infinite. -/
-private theorem le_mul_enorm_mul_mul_of_ne_top {L a b C : ℝ≥0∞} {B : F →L[ℝ] G →L[ℝ] H}
-    (hC : C ≠ 0) (hB : B = 0 → L = 0) (ha : a = 0 → L = 0) (hb : b = 0 → L = 0)
-    (hfin : a ≠ ∞ → b ≠ ∞ → L ≤ C * ‖B‖ₑ * a * b) : L ≤ C * ‖B‖ₑ * a * b := by
-  by_cases hB0 : B = 0
-  · exact (hB hB0).le.trans zero_le
-  by_cases ha0 : a = 0
-  · exact (ha ha0).le.trans zero_le
-  by_cases hb0 : b = 0
-  · exact (hb hb0).le.trans zero_le
-  -- `enorm_ne_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
-  have hCB : C * ‖B‖ₑ ≠ 0 := mul_ne_zero hC (ofReal_norm B ▸
-    (ENNReal.ofReal_pos.2 ((norm_nonneg B).lt_of_ne' (mt B.opNorm_zero_iff.1 hB0))).ne')
-  by_cases hat : a = ∞
-  · rw [hat, ENNReal.mul_top hCB, ENNReal.top_mul hb0]
-    exact le_top
-  by_cases hbt : b = ∞
-  · rw [hbt, ENNReal.mul_top (mul_ne_zero hCB ha0)]
-    exact le_top
-  exact hfin hat hbt
-
 /-- **Local bound for order-zero mixed products.** For `p > 2`, `1 ≤ q ≤ p` and a compact
 `K ⊆ Ω`, there are an open `W` between `K` and `Ω` with compact closure in `Ω` and a constant `C`
 such that `‖B(f, g)‖_{L^q(K)} ≤ C ‖B‖ ‖f‖_{Lᵖ(K)} ‖g‖_{W^{1,q}(W)}` for every continuous bilinear
@@ -91,9 +69,10 @@ theorem exists_eLpNorm_bilin_le_eLpNormWkp_one (hp : 2 < p) (hqp : q ≤ p)
   have hvanish (h : (fun z => B (f z) (g z)) =ᵐ[volume.restrict K] 0) :
       eLpNorm (fun z => B (f z) (g z)) q (volume.restrict K) = 0 := by
     rw [eLpNorm_congr_ae h, eLpNorm_zero]
-  refine le_mul_enorm_mul_mul_of_ne_top (by simp)
-    (fun hB => hvanish (.of_forall fun z => by simp [hB])) (fun hf0 => hvanish ?_)
-    (fun hg0 => hvanish ?_) fun hf hg => ?_
+  refine ENNReal.le_mul_mul_of_ne_top (fun hCB => hvanish (.of_forall fun z => ?_))
+    (fun hf0 => hvanish ?_) (fun hg0 => hvanish ?_) fun hf hg => ?_
+  · -- `enorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
+    simp [B.opNorm_zero_iff.1 <| (norm_nonneg B).antisymm' <| by simpa [← ofReal_norm] using hCB]
   · filter_upwards [(eLpNorm_eq_zero_iff (by simpa using (zero_lt_two.trans hp).ne')).1 hf0]
       with z hz
     simp [hz]
@@ -141,9 +120,10 @@ theorem exists_eLpNormWkp_one_bilin_le [FiniteDimensional ℝ F] [CompleteSpace 
   have hvanish (h : (fun z => B (f z) (g z)) =ᵐ[volume.restrict W] 0) :
       eLpNormWkp q K 1 (fun z => B (f z) (g z)) = 0 := by
     rw [eLpNormWkp_congr_ae (ae_mono hKm h), eLpNormWkp_zero_fun]
-  refine le_mul_enorm_mul_mul_of_ne_top (by simp)
-    (fun hB => hvanish (.of_forall fun z => by simp [hB])) (fun hf0 => hvanish ?_)
-    (fun hg0 => hvanish ?_) fun hf hg => ?_
+  refine ENNReal.le_mul_mul_of_ne_top (fun hCB => hvanish (.of_forall fun z => ?_))
+    (fun hf0 => hvanish ?_) (fun hg0 => hvanish ?_) fun hf hg => ?_
+  · -- `enorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
+    simp [B.opNorm_zero_iff.1 <| (norm_nonneg B).antisymm' <| by simpa [← ofReal_norm] using hCB]
   · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hp0 hf0] with z hz
     simp [hz]
   · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hq0 hg0] with z hz
