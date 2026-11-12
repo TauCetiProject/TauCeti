@@ -21,6 +21,11 @@ of an abelian factor are never conjugate in the free product.
 
 * `Monoid.Coprod.isConj_inl_iff`, `Monoid.Coprod.isConj_inr_iff`: two elements of a factor are
   conjugate in the free product if and only if they are conjugate in the factor.
+
+## Implementation notes
+
+Both results are `simp` lemmas of priority `high`, so that in free products of groups they apply
+before `isConj_iff` unfolds `IsConj`.
 -/
 
 public section
@@ -31,13 +36,13 @@ variable {M N : Type*} [Monoid M] [Monoid N]
 
 /-- Two elements of `M` are conjugate in the free product `M ∗ N` if and only if they are
 conjugate in `M`. -/
-@[simp]
+@[simp high]
 theorem isConj_inl_iff {a b : M} : IsConj (inl a : M ∗ N) (inl b) ↔ IsConj a b :=
   ⟨fun h => by simpa using fst.map_isConj h, (inl : M →* M ∗ N).map_isConj⟩
 
 /-- Two elements of `N` are conjugate in the free product `M ∗ N` if and only if they are
 conjugate in `N`. -/
-@[simp]
+@[simp high]
 theorem isConj_inr_iff {a b : N} : IsConj (inr a : M ∗ N) (inr b) ↔ IsConj a b :=
   ⟨fun h => by simpa using snd.map_isConj h, (inr : N →* M ∗ N).map_isConj⟩
 

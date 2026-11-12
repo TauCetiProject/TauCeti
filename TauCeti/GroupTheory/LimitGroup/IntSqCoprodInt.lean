@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Coprod.Finiteness
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Discrimination
+public import TauCeti.GroupTheory.LimitGroup.MarkedGroup
 import TauCeti.GroupTheory.Coprod.Conj
+import TauCeti.GroupTheory.LimitGroup.Characterization
 
 /-!
 # The free product `ℤ² ∗ ℤ`
@@ -15,11 +18,12 @@ import TauCeti.GroupTheory.Coprod.Conj
 The free product `ℤ² ∗ ℤ = ⟨a, b, t | [a, b] = 1⟩` of the free abelian group `ℤ²` on `a = (1, 0)`
 and `b = (0, 1)` with the infinite cyclic group on `t` is the extension
 `F(a, t) ∗_{⟨a⟩} (⟨a⟩ × ⟨b⟩)` of the centralizer `⟨a⟩` of the basis element `a` of the free group
-`F(a, t)`. By Baumslag's theorem it is therefore fully residually free. Unlike in a free group, not
-every centralizer of a nontrivial element is cyclic: the centralizer of every nontrivial element
-of the factor `ℤ²`, for instance of `(1, 0)`, is that factor `ℤ²`. Equivalently, the equation
-`[x, (1, 0)] = 1` over `ℤ² ∗ ℤ` has exactly the solutions `x ∈ ℤ²`. Distinct elements of `ℤ²`,
-such as `(1, 0)` and `(0, 1)`, are not conjugate in `ℤ² ∗ ℤ`.
+`F(a, t)`. By Baumslag's theorem it is therefore fully residually free, and, being finitely
+generated, a limit group. Unlike in a free group, not every centralizer of a nontrivial element
+is cyclic: the centralizer of every nontrivial element of the factor `ℤ²`, for instance of
+`(1, 0)`, is that factor `ℤ²`. Equivalently, the equation `[x, (1, 0)] = 1` over `ℤ² ∗ ℤ` has
+exactly the solutions `x ∈ ℤ²`. Distinct elements of `ℤ²`, such as `(1, 0)` and `(0, 1)`, are not
+conjugate in `ℤ² ∗ ℤ`.
 
 ## Main definitions
 
@@ -30,11 +34,13 @@ such as `(1, 0)` and `(0, 1)`, are not conjugate in `ℤ² ∗ ℤ`.
 ## Main results
 
 * `TauCeti.LimitGroup.IntSqCoprodInt.isFullyResiduallyFree`: `ℤ² ∗ ℤ` is fully residually free.
+* `TauCeti.LimitGroup.IntSqCoprodInt.isLimitGroup`: `ℤ² ∗ ℤ` is a limit group.
 * `TauCeti.LimitGroup.IntSqCoprodInt.centralizer_inl_eq_range_inl`: the centralizer of a
   nontrivial element of the factor `ℤ²` is that factor.
 * `TauCeti.LimitGroup.IntSqCoprodInt.not_isCyclic_centralizer_inl`: the centralizer of an element
   of the factor `ℤ²` is not cyclic.
-* `TauCeti.LimitGroup.IntSqCoprodInt.not_isConj_inl`: `(1, 0)` and `(0, 1)` are not conjugate.
+* `TauCeti.LimitGroup.IntSqCoprodInt.not_isConj_inl_of_ne`: distinct elements of the factor `ℤ²`,
+  such as `(1, 0)` and `(0, 1)`, are not conjugate.
 * `TauCeti.LimitGroup.IntSqCoprodInt.V_singleton_commutator_inl`: over `ℤ² ∗ ℤ`, the solutions of
   the equation `[x, v] = 1` for a nontrivial `v ∈ ℤ²` are exactly the elements of `ℤ²`.
 
@@ -165,6 +171,10 @@ theorem isFullyResiduallyFree : IsFullyResiduallyFree IntSqCoprodInt :=
     (FreeGroup.of_ne_one 0)).of_injective (f := equivCentralizerExt.toMonoidHom)
     equivCentralizerExt.injective
 
+/-- `ℤ² ∗ ℤ` is a limit group: it is finitely generated and fully residually free. -/
+theorem isLimitGroup : IsLimitGroup IntSqCoprodInt :=
+  isFullyResiduallyFree.isLimitGroup
+
 /-- The exponent sum of `a` in `F(a, t)`. -/
 private def expA : FreeGroup (Fin 2) →* Multiplicative ℤ :=
   FreeGroup.lift ![.ofAdd 1, 1]
@@ -246,10 +256,11 @@ theorem not_isCyclic_centralizer_inl (v : Multiplicative (ℤ × ℤ)) :
   not_isAddCyclic_prod_of_infinite_nontrivial ℤ ℤ <| isCyclic_multiplicative_iff.1 <|
     (MonoidHom.ofInjective inl_injective).isCyclic.2 this
 
-/-- The elements `(1, 0)` and `(0, 1)` of the factor `ℤ²` are not conjugate in `ℤ² ∗ ℤ`. -/
-theorem not_isConj_inl : ¬IsConj (inl (.ofAdd (1, 0)) : IntSqCoprodInt) (inl (.ofAdd (0, 1))) := by
-  rw [isConj_inl_iff, isConj_iff_eq]
-  simp
+/-- Distinct elements of the factor `ℤ²`, such as `(1, 0)` and `(0, 1)`, are not conjugate in
+`ℤ² ∗ ℤ`. -/
+theorem not_isConj_inl_of_ne {u v : Multiplicative (ℤ × ℤ)} (h : u ≠ v) :
+    ¬IsConj (inl u : IntSqCoprodInt) (inl v) := by
+  simpa
 
 /-- Over `ℤ² ∗ ℤ`, the solutions of the equation `[x, v] = 1` in one variable `x`, for a nontrivial
 `v` in the factor `ℤ²` such as `(1, 0)`, are exactly the elements of `ℤ²`. -/
