@@ -13,10 +13,11 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 # Limits of translated Floer cylinders in a manifold
 
 Along a cylindrical end of a Floer trajectory, or of a pair of pants, a solution with finite
-energy breaks off Hamiltonian orbits: translating it further and further along the end, the
-translates converge to a stationary cylinder `(s, t) ↦ x(t)` over a Hamiltonian orbit `x`. This
-file identifies such limits for a manifold target `M`, such as a closed symplectic manifold, with
-a nondegenerate two-form `ω`. It is the manifold counterpart of
+energy breaks off Hamiltonian orbits. This file shows that whenever the translates of such a
+solution further and further along the end converge in the sense specified below, the limit is a
+stationary cylinder `(s, t) ↦ x(t)` over a Hamiltonian orbit segment `x`. It treats a manifold
+target `M`, such as a closed symplectic manifold, with a nondegenerate two-form `ω`; it assumes the
+convergence and does not establish it. It is the manifold counterpart of
 `TauCeti.Geometry.Symplectic.Floer.Breaking`, which treats a symplectic vector space.
 
 Let `u` solve the Floer equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` for the cylindrical
@@ -37,7 +38,7 @@ convergence that compactness of Floer solutions with bounded derivatives provide
   (`SmoothTwoForm.IsNondegenerate.eq_of_tendsto_mfderiv_comp_add`), by the characterization of
   stationary Floer cylinders by their zero energy
   (`SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff`);
-* `x(t) = v(0, t)` is an orbit of the Hamiltonian vector field, `x'(t) = X_{H_t}(x(t))` for
+* `x(t) = v(0, t)` is an orbit segment of the Hamiltonian vector field, `x'(t) = X_{H_t}(x(t))` for
   `t ∈ [0, 1]` (`SmoothTwoForm.IsNondegenerate.hasMFDerivAt_of_tendsto_mfderiv_comp_add`), and the
   perturbed derivative `dv - X_K(v)` vanishes on the strip, so `v` is the stationary Floer cylinder
   over `x` (`SmoothTwoForm.IsNondegenerate.perturbedMFDeriv_eq_zero_of_tendsto_mfderiv_comp_add`).
@@ -46,8 +47,9 @@ On a manifold the energy density `ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t})` is i
 no norm of the derivative without a choice of metric; the convergence of the derivatives is
 therefore convergence in the tangent bundle, and the structures `J_t` enter through their
 continuity in tangent coordinates (`ContinuousLinearMap.inCoordinates`). The convergence of the
-translates, the convergence of the whole end rather than a sequence of translates, and the limits
-of the capped actions of the end loops are not treated here.
+translates, the convergence of the whole end rather than a sequence of translates, and, for ends
+with periodic boundary conditions making `x` a loop, the limits of the capped actions of the end
+loops are not treated here.
 
 ## Main results
 
@@ -58,7 +60,7 @@ of the capped actions of the end loops are not treated here.
 * `SmoothTwoForm.IsNondegenerate.eq_of_tendsto_mfderiv_comp_add`: the limit of the translates is
   independent of `s`.
 * `SmoothTwoForm.IsNondegenerate.hasMFDerivAt_of_tendsto_mfderiv_comp_add`: the limit is a
-  Hamiltonian orbit.
+  Hamiltonian orbit segment.
 * `SmoothTwoForm.IsNondegenerate.perturbedMFDeriv_eq_zero_of_tendsto_mfderiv_comp_add`: the limit is
   a stationary Floer cylinder.
 
@@ -329,8 +331,8 @@ private theorem IsNondegenerate.mfderiv_eq_of_tendsto_mfderiv_comp_add (hω : ω
   rw [AlmostComplexStructure.apply_apply, map_zero, neg_eq_zero] at h'
   exact sub_eq_zero.1 h'
 
-/-- **The limit of translated Floer cylinders is a Hamiltonian orbit.** Under the hypotheses of
-`TauCeti.SmoothTwoForm.IsNondegenerate.eq_of_tendsto_mfderiv_comp_add`, the loop
+/-- **The limit of translated Floer cylinders is a Hamiltonian orbit segment.** Under the
+hypotheses of `TauCeti.SmoothTwoForm.IsNondegenerate.eq_of_tendsto_mfderiv_comp_add`, the curve
 `x(t) = v (0, t)` solves `x'(t) = X_{H_t}(x(t))` for every `t ∈ [0, 1]`. -/
 theorem IsNondegenerate.hasMFDerivAt_of_tendsto_mfderiv_comp_add (hω : ω.IsNondegenerate)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hU : IsOpen U)
