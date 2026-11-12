@@ -72,6 +72,7 @@ variable {n : Type v} [Fintype n] [DecidableEq n]
 
 /-- A permutation matrix is unitary: its conjugate transpose is the permutation matrix of the
 inverse permutation. -/
+@[simp]
 theorem permMatrix_mem_unitary (σ : Equiv.Perm n) :
     σ.permMatrix R ∈ unitary (Matrix n n R) := by
   simp [Unitary.mem_iff, star_eq_conjTranspose, ← permMatrix_mul]
