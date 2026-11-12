@@ -61,6 +61,11 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
 
 ## Main declarations
 
+* `TauCeti.PDE.posSemidef_neg_fderiv_fderiv`: where the second derivative of a `C²` function is
+  nonpositive on the diagonal, for instance at a local maximum, the negated Hessian matrix is
+  positive semidefinite.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_nonpos`: where the second derivative of a `C²` function is
+  nonpositive on the diagonal, the principal part of an elliptic operator is nonpositive.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_nonpos_of_isLocalMax`: at a local maximum of a `C²` function,
   the principal part of an elliptic operator is nonpositive.
 * `TauCeti.PDE.not_isLocalMax_of_sum_mul_fderiv_fderiv_add_fderiv_pos`: a strict subsolution of
@@ -69,8 +74,12 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   a strict subsolution of `L`, with an explicit lower bound for `L w`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_add_smul`,
   `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_const_mul`: the principal part commutes with multiplication
+  by a constant.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
+* `TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`: the principal part only sees the
+  symmetric part of the coefficient matrix.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -106,14 +115,13 @@ open Matrix RealInnerProductSpace
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- **The principal part at a local maximum.** If the matrix `A` has nonnegative quadratic form
-and `f` is `C²` at a local maximum `x`, then `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) ≤ 0`. The matrix need not be
-symmetric. -/
-theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
-    (hA : ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ A.toQuadraticForm' ξ) {f : EuclideanSpace ℝ ι → ℝ}
-    {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x) (hmax : IsLocalMax f x) :
-    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
-      (EuclideanSpace.single j 1) ≤ 0 := by
+/-- **The negated Hessian matrix.** If `f` is `C²` at `x` and its second derivative there is
+nonpositive on the diagonal, `D²f(x)(w, w) ≤ 0` for every `w`, as at a local maximum, then the
+negated Hessian matrix `(-∂ᵢ∂ⱼf(x))ᵢⱼ` is positive semidefinite. -/
+theorem posSemidef_neg_fderiv_fderiv {f : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι}
+    (hf : ContDiffAt ℝ 2 f x) (hneg : ∀ w, fderiv ℝ (fderiv ℝ f) x w w ≤ 0) :
+    (Matrix.of fun i j ↦ -fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1)).PosSemidef := by
   let H := fderiv ℝ (fderiv ℝ f) x
   -- The Hessian in coordinates.
   have hH (v w : EuclideanSpace ℝ ι) :
@@ -124,22 +132,34 @@ theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
       _root_.sum_apply, _root_.smul_apply, smul_eq_mul, Finset.mul_sum]
     exact Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
       by ring)
+  refine .of_dotProduct_mulVec_nonneg ?_ fun v ↦ ?_
+  · ext i j
+    simpa using hf.isSymmSndFDerivAt (by simp) (EuclideanSpace.single j 1)
+      (EuclideanSpace.single i 1)
+  · have h := hneg (WithLp.toLp 2 v)
+    rw [hH] at h
+    have : star v ⬝ᵥ ((Matrix.of fun i j ↦ -H (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1)) *ᵥ v) = -∑ i, ∑ j, v i * v j *
+        H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+      simp only [dotProduct, mulVec, star_trivial, of_apply, Finset.mul_sum,
+        ← Finset.sum_neg_distrib]
+      exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+    linarith
+
+/-- **The principal part at a point of nonpositive Hessian.** If the matrix `A` has nonnegative
+quadratic form, `f` is `C²` at `x` and `D²f(x)(w, w) ≤ 0` for every `w`, then
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) ≤ 0`. The matrix need not be symmetric. -/
+theorem sum_mul_fderiv_fderiv_nonpos {A : Matrix ι ι ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ A.toQuadraticForm' ξ) {f : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x)
+    (hneg : ∀ w, fderiv ℝ (fderiv ℝ f) x w w ≤ 0) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) ≤ 0 := by
+  let H := fderiv ℝ (fderiv ℝ f) x
   -- The negated Hessian matrix is positive semidefinite, hence a sum of rank-one matrices.
   let M : Matrix ι ι ℝ :=
     Matrix.of fun i j ↦ -H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  have hM : M.PosSemidef := by
-    refine .of_dotProduct_mulVec_nonneg ?_ fun v ↦ ?_
-    · ext i j
-      simpa [M] using hf.isSymmSndFDerivAt (by simp) (EuclideanSpace.single j 1)
-        (EuclideanSpace.single i 1)
-    · have h := fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax (WithLp.toLp 2 v)
-      rw [hH] at h
-      have : star v ⬝ᵥ (M *ᵥ v) = -∑ i, ∑ j, v i * v j *
-          H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
-        simp only [M, dotProduct, mulVec, star_trivial, of_apply, Finset.mul_sum,
-          ← Finset.sum_neg_distrib]
-        exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-      linarith
+  have hM : M.PosSemidef := posSemidef_neg_fderiv_fderiv hf hneg
   obtain ⟨m, v, hv⟩ := Matrix.posSemidef_iff_eq_sum_vecMulVec.mp hM
   have hMv (i j : ι) : H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
       -∑ k, v k i * v k j := by
@@ -159,6 +179,16 @@ theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
             Finset.sum_congr rfl fun _ _ ↦ by ring
   rw [key, neg_nonpos]
   exact Finset.sum_nonneg fun k _ ↦ by simpa using hA (WithLp.toLp 2 (v k))
+
+/-- **The principal part at a local maximum.** If the matrix `A` has nonnegative quadratic form
+and `f` is `C²` at a local maximum `x`, then `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) ≤ 0`. The matrix need not be
+symmetric. -/
+theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ A.toQuadraticForm' ξ) {f : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x) (hmax : IsLocalMax f x) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) ≤ 0 :=
+  sum_mul_fderiv_fderiv_nonpos hA hf (fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax)
 
 /-- **Strict interior obstruction.** If `A` has nonnegative quadratic form, `f` is `C²` at `x`
 and `0 < ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) + ∂_v f(x)`, then `f` has no local maximum at `x`. The direction `v` is
@@ -245,6 +275,17 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_neg (A : Matrix ι ι ℝ)
   have h : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
   simp only [h, fderiv_neg, _root_.neg_apply, mul_neg, Finset.sum_neg_distrib, neg_add]
 
+/-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ` commutes with multiplication by a constant. -/
+theorem sum_mul_fderiv_fderiv_const_mul (A : Matrix ι ι ℝ) (u : EuclideanSpace ℝ ι → ℝ)
+    (r : ℝ) (x : EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y ↦ r * u y) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
+      r * ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ u) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  have h : (fun y ↦ r * u y) = r • u := rfl
+  simp only [h, fderiv_fderiv_const_smul, _root_.smul_apply, smul_eq_mul, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+
 /-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the squared norm `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`. -/
 theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
     {x v : EuclideanSpace ℝ ι} :
@@ -253,6 +294,24 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
       fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x v = 2 * A.trace + 2 * ⟪x, v⟫ := by
   simp only [fderiv_fderiv_norm_sq_apply]
   simp [EuclideanSpace.inner_single_left, Matrix.trace, Finset.mul_sum, mul_comm]
+
+/-- Since the Hessian of a `C²` function is symmetric, the principal part `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf` only sees
+the symmetric part `(A + Aᵀ) / 2` of the coefficient matrix. -/
+theorem sum_coefficientSymmetricPart_mul_fderiv_fderiv {A : Matrix ι ι ℝ}
+    {f : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x) :
+    ∑ i, ∑ j, coefficientSymmetricPart A i j * fderiv ℝ (fderiv ℝ f) x
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) := by
+  have hsymm := hf.isSymmSndFDerivAt (by simp)
+  have hswap : ∑ i, ∑ j, A j i * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) = ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by rw [hsymm]
+  simp only [coefficientSymmetricPart_apply, add_div, add_mul, Finset.sum_add_distrib,
+    div_mul_eq_mul_div, ← Finset.sum_div]
+  rw [hswap, add_halves]
 
 variable [Nonempty ι]
 
@@ -497,7 +556,6 @@ theorem le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier
   have hg (y : EuclideanSpace ℝ ι) : g y = m + F / lam * Real.exp (α * d) - r * w y := by
     simp only [g, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
-  have hα : 1 ≤ α := le_add_of_nonneg_left (div_nonneg hβ hlam.le)
   have hFl : 0 ≤ F / lam := div_nonneg hF hlam.le
   -- On `K`, `F / λ ≤ r w ≤ (F / λ) exp (α d)`, so `m ≤ g ≤ m + (exp (α d) - 1) F / λ`.
   have hrwK (y : EuclideanSpace ℝ ι) (hy : y ∈ K) :

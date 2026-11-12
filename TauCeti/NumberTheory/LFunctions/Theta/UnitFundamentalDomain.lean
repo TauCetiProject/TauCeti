@@ -22,6 +22,7 @@ This file sets up that action and its fundamental domains:
 
 * `archNorm y = ∏_w y_w ^ mult w` is the norm of a parameter, so that a complex place counts
   twice. It is the determinant of the quadratic form `x ↦ ∑_w y_w |x_w|²` on the mixed space.
+  The parameter `(mult w ^ 2)_w` has norm `16 ^ r₂` (`archNorm_mult_sq`).
 * `unitScale u y` is the action `y_w ↦ |u|_w² y_w` of a unit. It preserves the norm
   (`archNorm_unitScale`), and its kernel on parameters with nonzero coordinates is the torsion
   (`unitScale_eq_self_iff`).
@@ -153,6 +154,16 @@ theorem archNorm_smul (c : ℝ) (y : realSpace K) :
     archNorm (c • y) = c ^ Module.finrank ℚ K * archNorm y := by
   simp [archNorm_apply, mul_pow, prod_mul_distrib, prod_pow_eq_pow_sum, sum_mult_eq]
 
+variable (K) in
+/-- The norm of `(mult w ^ 2)_w` is `16 ^ r₂`: a complex place contributes `(2 ^ 2) ^ 2`. -/
+theorem archNorm_mult_sq :
+    archNorm (fun w : InfinitePlace K ↦ (mult w : ℝ) ^ 2) = 16 ^ nrComplexPlaces K := by
+  classical
+  rw [archNorm_apply, prod_eq_prod_mul_prod]
+  simp only [mult_isReal, mult_isComplex, Nat.cast_one, one_pow, Finset.prod_const_one, one_mul,
+    Finset.prod_const, Finset.card_univ, nrComplexPlaces]
+  norm_num
+
 @[fun_prop]
 theorem continuous_archNorm : Continuous (archNorm : realSpace K → ℝ) :=
   (continuous_finsetProd univ fun w _ ↦ (continuous_apply w).pow (mult w)).congr
@@ -264,18 +275,25 @@ theorem surfaceMul_symm (c : normOneSurface K) :
 /-- A point of the norm-one hypersurface with coordinates at most `C` has inverse coordinates at
 most `C ^ [K : ℚ]`: the other coordinates cannot make up for a small one. -/
 theorem inv_le_pow_finrank_of_mem_normOneSurface {y : realSpace K} (hy : y ∈ normOneSurface K)
-    {C : ℝ} (hC : 1 ≤ C) (hyC : ∀ w, y w ≤ C) (w : InfinitePlace K) :
+    {C : ℝ} (hyC : ∀ w, y w ≤ C) (w : InfinitePlace K) :
     (y w)⁻¹ ≤ C ^ Module.finrank ℚ K := by
   classical
-  have h1 : 1 ≤ C ^ Module.finrank ℚ K := one_le_pow₀ hC
+  -- the coordinatewise bound `y v ≤ C` bounds every partial product
+  have hbound (s : Finset (InfinitePlace K)) : ∏ v ∈ s, y v ^ mult v ≤ ∏ v ∈ s, C ^ mult v :=
+    prod_le_prod₀ (fun v _ ↦ pow_nonneg (hy.1 v).le _)
+      fun v _ ↦ pow_le_pow_left₀ (hy.1 v).le (hyC v) _
+  -- the full product is the norm `1`, so `1 ≤ C ^ [K : ℚ]`
+  have h1 : 1 ≤ C ^ Module.finrank ℚ K := by
+    have h := hbound univ
+    rwa [← archNorm_apply, hy.2, prod_pow_eq_pow_sum, sum_mult_eq] at h
+  have hC : 1 ≤ C :=
+    (one_le_pow_iff_of_nonneg ((hy.1 w).le.trans (hyC w)) Module.finrank_pos.ne').1 h1
   have hmul := mul_prod_erase univ (fun v ↦ y v ^ mult v) (mem_univ w)
   rw [← archNorm_apply, hy.2] at hmul
   have hpow : (y w)⁻¹ ^ mult w ≤ C ^ Module.finrank ℚ K := by
     rw [inv_pow, inv_eq_of_mul_eq_one_right hmul, ← sum_mult_eq, ← prod_pow_eq_pow_sum]
     calc ∏ v ∈ univ.erase w, y v ^ mult v
-        ≤ ∏ v ∈ univ.erase w, C ^ mult v :=
-          prod_le_prod₀ (fun v _ ↦ pow_nonneg (hy.1 v).le _)
-            fun v _ ↦ pow_le_pow_left₀ (hy.1 v).le (hyC v) _
+        ≤ ∏ v ∈ univ.erase w, C ^ mult v := hbound _
       _ ≤ C ^ mult w * ∏ v ∈ univ.erase w, C ^ mult v :=
           le_mul_of_one_le_left (prod_nonneg fun v _ ↦ by positivity) (one_le_pow₀ hC)
       _ = ∏ v, C ^ mult v := mul_prod_erase univ (fun v ↦ C ^ mult v) (mem_univ w)
@@ -293,7 +311,7 @@ theorem exists_forall_mem_Icc_of_isBounded {D : Set (realSpace K)} (hD : IsBound
   · have hle (v : InfinitePlace K) : y v ≤ max C 1 :=
       (Real.le_norm_self _).trans ((norm_le_pi_norm y v).trans ((hC y hy).trans (le_max_left _ _)))
     rw [inv_le_comm₀ (by positivity) (hyS.1 w)]
-    exact inv_le_pow_finrank_of_mem_normOneSurface hyS hC' hle w
+    exact inv_le_pow_finrank_of_mem_normOneSurface hyS hle w
   · exact (Real.le_norm_self _).trans ((norm_le_pi_norm y w).trans ((hC y hy).trans
       ((le_max_left _ _).trans (le_self_pow₀ hC' Module.finrank_pos.ne'))))
 

@@ -17,6 +17,7 @@ import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Morrey's inequality for `C¹` functions
@@ -156,7 +157,7 @@ theorem enorm_sub_setAverage_le_of_starConvex_of_finrank_lt [CompleteSpace F] (h
   refine (enorm_sub_setAverage_le_of_starConvex hΩ hu hx hD hS hS₀).trans ?_
   gcongr
   exact setLIntegral_mul_enorm_sub_rpow_one_sub_finrank_le hD
-    (hcont.enorm.aemeasurable hΩ.measurableSet) hp
+    (hcont.eNorm.aemeasurable hΩ.measurableSet) hp
 
 /-- **The Morrey potential estimate on a convex domain.** If `u` is `C¹` on a bounded convex
 open set `Ω`, `x ∈ Ω`, and `p` exceeds the dimension `n` of the space, then for every `S ⊆ Ω`
@@ -204,7 +205,7 @@ theorem enorm_sub_le_of_mem_ball_of_finrank_lt [CompleteSpace F] {z : E} {r : �
   have hn : (1 : ℝ) ≤ n := by exact_mod_cast finrank_pos
   have hpn : (n : ℝ) < p := by exact_mod_cast hp
   have hK : 0 ≤ K := div_nonneg (mul_nonneg (by positivity) (by linarith)) (by linarith)
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos μ 0 one_pos
   -- The constant: the mean-value factor `(2 r) ^ n / (n μ(ball z r))` is `2 ^ n / (n ω)`.
   have hmeasure : μ (ball z r) = ENNReal.ofReal (r ^ n * ω) := by
     rw [Measure.addHaar_ball_of_pos μ z hr, ← ofReal_measureReal measure_ball_lt_top.ne,
@@ -237,7 +238,7 @@ theorem enorm_sub_le_of_mem_ball_of_finrank_lt [CompleteSpace F] {z : E} {r : �
       ← ENNReal.ofReal_add (mul_nonneg hX hY) (mul_nonneg hX hY), hreal]
   calc
     ‖u x - u y‖ₑ ≤ ‖u x - ⨍ v in ball z r, u v ∂μ‖ₑ + ‖u y - ⨍ v in ball z r, u v ∂μ‖ₑ := by
-      simpa only [edist_eq_enorm_sub] using edist_triangle_right (u x) (u y) _
+      simpa only [eDist_eq_eNorm_sub] using edist_triangle_right (u x) (u y) _
     _ ≤ _ := add_le_add (hmean x hx) (hmean y hy)
     _ = _ := hconst
 
@@ -301,7 +302,7 @@ theorem holderWith_of_contDiff_of_finrank_lt [CompleteSpace F] (hu : ContDiff �
   intro x y
   have hdist : edist x y ^ (1 - n / (p : ℝ)) =
       ENNReal.ofReal (‖x - y‖ ^ (1 - n / (p : ℝ))) := by
-    rw [edist_eq_enorm_sub, ← ofReal_norm (x - y),
+    rw [eDist_eq_eNorm_sub, ← ofReal_norm (x - y),
       ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hα0]
   have hcoefficient :
       (↑(Real.toNNReal (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
@@ -321,7 +322,7 @@ theorem holderWith_of_contDiff_of_finrank_lt [CompleteSpace F] (hu : ContDiff �
             (2 * ‖x - y‖) ^ (1 - n / (p : ℝ)) := by
     rw [mul_assoc _ (2 ^ _), ← Real.mul_rpow zero_le_two (norm_nonneg _)]
   calc
-    edist (u x) (u y) = ‖u x - u y‖ₑ := edist_eq_enorm_sub _ _
+    edist (u x) (u y) = ‖u x - u y‖ₑ := eDist_eq_eNorm_sub _ _
     _ ≤ ENNReal.ofReal (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
         (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
           (2 * ‖x - y‖) ^ (1 - n / (p : ℝ))) * eLpNorm (fderiv ℝ u) p μ :=

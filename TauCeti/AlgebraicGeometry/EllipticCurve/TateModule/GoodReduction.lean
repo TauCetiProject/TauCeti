@@ -77,6 +77,7 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [IsUnramified K L]
   [DecidableEq L] {W : WeierstrassCurve K} [W.IsElliptic] [IsIntegral 𝒪[K] W]
 
+omit [W.IsElliptic] in
 /-- **Full torsion over an unramified extension is bounded at bad reduction** (Silverman AEC
 VII.7.1). Let `L/K` be an unramified extension of nonarchimedean local fields, and suppose that
 Tate's algorithm, run with a uniformiser `ϖ` of `K`, stops on the integral model of `W` at a
@@ -97,7 +98,7 @@ theorem le_componentCount_of_natCard_torsionBy_eq {ϖ : 𝒪[K]} (hϖ : Irreduci
   have : HenselianLocalRing A := inferInstanceAs (HenselianLocalRing 𝒪[L])
   let : Algebra 𝒪[K] A := inferInstanceAs (Algebra 𝒪[K] 𝒪[L])
   have hmodel := integralModel_baseChange (R := 𝒪[K]) (S := A) (L := L)
-    (RingHom.ext coe_algebraMap_integerRing) W
+    (RingHom.ext (Valuation.HasExtension.val_algebraMap (vA := valuation L))) W
   have hϖA : maximalIdeal A = Ideal.span {algebraMap 𝒪[K] A ϖ} :=
     (IsUnramified.irreducible_algebraMap hϖ).maximalIdeal_eq
   -- Tate's algorithm stops at `s` on the integral model over `A`: divisibility by powers of `ϖ`
@@ -112,7 +113,7 @@ theorem le_componentCount_of_natCard_torsionBy_eq {ϖ : 𝒪[K]} (hϖ : Irreduci
     have hint := Valuation.valuationSubring.integers (valuation L)
     have hdvd : algebraMap 𝒪[K] A ϖ ∣ (integralModel A (W⁄L)).Δ := by
       rw [hmodel, map_Δ]
-      exact map_dvd _ ((hs.dvd_Δ_iff hϖ.prime).2 hs₀)
+      exact map_dvd _ (hs.dvd_Δ_iff.2 hs₀)
     have hunit : ¬ IsUnit (algebraMap 𝒪[K] A ϖ) :=
       (mem_maximalIdeal _).1 (hϖA ▸ Ideal.mem_span_singleton_self _)
     rw [← integralModel_Δ_eq A (W⁄L)]
@@ -167,7 +168,7 @@ theorem hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one {ℓ : ℕ} [F
     rw [← Ideal.mem_span_singleton, ← hϖ.maximalIdeal_eq]
     exact (mem_maximalIdeal _).2 hunit
   have hs₀ : s ≠ .I 0 := by
-    rw [← hs.dvd_Δ_iff hϖ.prime, integralModel_baseChange_smul, variableChange_Δ]
+    rw [← hs.dvd_Δ_iff, integralModel_baseChange_smul, variableChange_Δ]
     exact dvd_mul_of_dvd_right hΔ _
   -- Let `n = ℓ ^ k` with `k` the number of components of `s`, and `M = K(E[n])`.
   set k := s.componentCount

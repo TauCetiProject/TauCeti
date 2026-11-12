@@ -23,12 +23,16 @@ The comparison subtracts the constant value of the weight at the interval endpoi
 The resulting weight is negative inside the interval and positive outside, so its
 indicator on the interval is pointwise minimal. Equality detects membership away from
 the two endpoints, which have zero Lebesgue measure.
+
+On a subset of `closedBall 0 R`, for any measure, the second moment is at most `R²` times the
+measure, and it is `R²`-Lipschitz for the measure of symmetric differences
+(`TauCeti.lintegral_norm_sq_le_add_of_subset_closedBall`).
 -/
 
 public noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal
+open scoped ENNReal symmDiff
 
 namespace TauCeti
 
@@ -55,6 +59,31 @@ theorem measure_ne_top_of_lintegral_norm_sq_ne_top {E : Type*} [NormedAddCommGro
   exact ((measure_mono hsub).trans_lt ((measure_union_le _ _).trans_lt
     (ENNReal.add_lt_top.mpr ⟨Metric.isBounded_closedBall.measure_lt_top,
       lt_of_le_of_lt htail (lt_top_iff_ne_top.mpr hmoment)⟩))).ne
+
+/-- On a subset of `closedBall 0 R`, the second moment is at most `R²` times the measure. -/
+theorem lintegral_norm_sq_le_mul_of_subset_closedBall {E : Type*} [SeminormedAddGroup E]
+    [MeasurableSpace E] {μ : Measure E} {s : Set E} {R : ℝ}
+    (hs : s ⊆ Metric.closedBall 0 R) :
+    ∫⁻ x in s, ENNReal.ofReal (‖x‖ ^ 2) ∂μ ≤ ENNReal.ofReal (R ^ 2) * μ s := by
+  calc ∫⁻ x in s, ENNReal.ofReal (‖x‖ ^ 2) ∂μ ≤ ∫⁻ _ in s, ENNReal.ofReal (R ^ 2) ∂μ :=
+        setLIntegral_mono measurable_const fun x hx => ENNReal.ofReal_le_ofReal <|
+          pow_le_pow_left₀ (norm_nonneg x) (mem_closedBall_zero_iff.1 (hs hx)) 2
+    _ = ENNReal.ofReal (R ^ 2) * μ s := setLIntegral_const _ _
+
+/-- On subsets of `closedBall 0 R`, the second moment `∫_s ‖x‖²` is `R²`-Lipschitz for the measure
+of symmetric differences. -/
+theorem lintegral_norm_sq_le_add_of_subset_closedBall {E : Type*} [SeminormedAddGroup E]
+    [MeasurableSpace E] {μ : Measure E} {s : Set E} (t : Set E) {R : ℝ}
+    (hs : s ⊆ Metric.closedBall 0 R) :
+    ∫⁻ x in s, ENNReal.ofReal (‖x‖ ^ 2) ∂μ ≤
+      (∫⁻ x in t, ENNReal.ofReal (‖x‖ ^ 2) ∂μ) + ENNReal.ofReal (R ^ 2) * μ (s ∆ t) := by
+  calc ∫⁻ x in s, ENNReal.ofReal (‖x‖ ^ 2) ∂μ
+      ≤ ∫⁻ x in t ∪ s \ t, ENNReal.ofReal (‖x‖ ^ 2) ∂μ := lintegral_mono_set (by simp)
+    _ ≤ (∫⁻ x in t, ENNReal.ofReal (‖x‖ ^ 2) ∂μ) + ∫⁻ x in s \ t, ENNReal.ofReal (‖x‖ ^ 2) ∂μ :=
+        lintegral_union_le _ _ _
+    _ ≤ (∫⁻ x in t, ENNReal.ofReal (‖x‖ ^ 2) ∂μ) + ENNReal.ofReal (R ^ 2) * μ (s ∆ t) := by
+        grw [lintegral_norm_sq_le_mul_of_subset_closedBall (sdiff_subset.trans hs), symmDiff_def,
+          ← subset_union_left]
 
 private theorem integrableOn_closedBall_add_sq (a r : ℝ) :
     IntegrableOn (fun t : ℝ ↦ a + t ^ 2) (Metric.closedBall (0 : ℝ) r) volume :=

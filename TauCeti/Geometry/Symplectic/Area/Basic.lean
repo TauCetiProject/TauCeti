@@ -13,6 +13,8 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Geometry.Symplectic.Duality
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 
 /-!
@@ -35,7 +37,11 @@ formula says that the symplectic area of `u` is `a(u(b, ·)) - a(u(a, ·))`
 area of a closed loop is the symplectic area of the cone `r x(t)` bounding it
 (`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_smul_eq_loopArea`). Reparametrizing one
 period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its area over `[-π, π]`
-(`TauCeti.SymplecticForm.loopArea_comp_sub_mul`).
+(`TauCeti.SymplecticForm.loopArea_comp_sub_mul`); in particular a circle traversed clockwise has
+minus the loop area of the counterclockwise circle
+(`TauCeti.SymplecticForm.loopArea_comp_circleMap_sub_mul`).
+The area of `u` vanishes when `u` vanishes on the slices `s = a` and `s = b`
+(`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic`).
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
 Pairing bounded loops with functions whose norms have vanishing mean over `[0, 1]` gives
@@ -65,7 +71,7 @@ theorem integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
     (ω : SymplecticForm V) {u : ℂ → V} {D : Set ℂ}
     (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) D) :
     IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) D := by
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let : MeasurableSpace V := borel V
   let : BorelSpace V := ⟨rfl⟩
   let B := ω.toBilinForm.toContinuousBilinearMap
@@ -107,6 +113,15 @@ theorem tendsto_integral_apply_of_tendsto_integral_norm [FiniteDimensional ℝ V
   refine (hω _ _).trans ?_
   gcongr
   exact hy i t
+
+/-- The area density of a map which is `C¹` near a compact set is integrable on it. -/
+theorem integrableOn_fderiv_apply_of_contDiffAt [FiniteDimensional ℝ V] (ω : SymplecticForm V)
+    {v : ℂ → V} {K : Set ℂ} (hK : IsCompact K) (hv : ∀ z ∈ K, ContDiffAt ℝ 1 v z) :
+    IntegrableOn (fun z ↦ ω (fderiv ℝ v z 1) (fderiv ℝ v z I)) K := by
+  have hcont : ContinuousOn (fderiv ℝ v) K := fun z hz ↦
+    ((hv z hz).continuousAt_fderiv one_ne_zero).continuousWithinAt
+  exact (ω.continuousOn_apply_comp (hcont.clm_apply continuousOn_const)
+    (hcont.clm_apply continuousOn_const)).integrableOn_compact hK
 
 /-- **Stokes' formula for symplectic area on a rectangle.** If `u` is `C²` at every point of the
 rectangle `Icc a b ⊆ ℝ × ℝ`, its symplectic area over the rectangle is the integral of the
@@ -160,9 +175,7 @@ theorem loopArea_comp_sub_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
     rw [deriv_comp_mul_left (2 * π) (fun x ↦ g (θ₀ - x)) t, deriv_comp_const_sub, smul_neg,
       neg_smul]
   have hper : Function.Periodic (fun θ ↦ ω (g θ) (deriv g θ)) (2 * π) := fun θ ↦ by
-    have hd : deriv g (θ + 2 * π) = deriv g θ := by
-      rw [← deriv_comp_add_const, show (fun x ↦ g (x + 2 * π)) = g from funext hg]
-    simp only [hd, hg θ]
+    simp only [hg.deriv θ, hg θ]
   -- Substitute `θ = θ₀ - 2πt`, then shift the period interval to `[-π, π]`.
   have hsub := intervalIntegral.integral_comp_sub_mul (fun θ ↦ ω (g θ) (deriv g θ))
     (a := 0) (b := 1) (mul_ne_zero two_ne_zero Real.pi_ne_zero) θ₀
@@ -175,6 +188,49 @@ theorem loopArea_comp_sub_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
   rw [loopArea_def]
   simp only [hderiv, hsmul, intervalIntegral.integral_const_mul, hsub, hshift, smul_eq_mul]
   field_simp
+
+/-- **The loop area of a circle traversed forwards.** If `g` is `2π`-periodic, the loop
+`t ↦ g(θ₀ + 2πt)` runs once through a period of `g`, so its loop area is the area
+`½ ∫_{-π}^{π} ω(g(θ), g'(θ)) dθ` of `g` over one period. -/
+theorem loopArea_comp_add_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Function.Periodic g (2 * π))
+    (θ₀ : ℝ) :
+    ω.loopArea (fun t ↦ g (θ₀ + 2 * π * t)) =
+      (1 / 2 : ℝ) * ∫ θ in -π..π, ω (g θ) (deriv g θ) := by
+  -- Traverse the reflected function `θ ↦ g(-θ)` backwards.
+  have hg' : Function.Periodic (fun θ ↦ g (-θ)) (2 * π) := fun θ ↦ by
+    simp only
+    rw [show -(θ + 2 * π) = -θ - 2 * π by ring, ← hg (-θ - 2 * π), sub_add_cancel]
+  have h := ω.loopArea_comp_sub_mul hg' (-θ₀)
+  have hloop : (fun t ↦ g (-(-θ₀ - 2 * π * t))) = fun t ↦ g (θ₀ + 2 * π * t) :=
+    funext fun t ↦ congrArg g (by ring)
+  simp only [hloop, deriv_comp_neg, map_neg] at h
+  rw [h, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun θ ↦ ω (g θ) (deriv g θ)), neg_neg]
+  ring
+
+/-- **The loop area of a circle traversed clockwise.** The loop `t ↦ u(c + r e^{i(θ₀ - 2πt)})`,
+which runs once clockwise around the circle of radius `r` about `c`, has minus the loop area of
+the counterclockwise loop `t ↦ u(c + r e^{2πit})`. -/
+theorem loopArea_comp_circleMap_sub_mul (ω : SymplecticForm V) (u : ℂ → V) (c : ℂ) (r θ₀ : ℝ) :
+    ω.loopArea (fun t ↦ u (circleMap c r (θ₀ - 2 * π * t))) =
+      -ω.loopArea (fun t ↦ u (circleMap c r (2 * π * t))) := by
+  have hg : Function.Periodic (fun θ ↦ u (circleMap c r θ)) (2 * π) :=
+    (periodic_circleMap c r).comp u
+  have h := ω.loopArea_comp_add_mul hg 0
+  simp only [zero_add] at h
+  rw [ω.loopArea_comp_sub_mul hg θ₀, h]
+
+/-- **The loop area of a loop traversed backwards.** If `x` is `1`-periodic, the loop
+`t ↦ x(-t)` has the opposite loop area. -/
+theorem loopArea_comp_neg (ω : SymplecticForm V) {x : ℝ → V} (hx : Function.Periodic x 1) :
+    ω.loopArea (fun t ↦ x (-t)) = -ω.loopArea x := by
+  have hper : Function.Periodic (fun t ↦ ω (x t) (deriv x t)) 1 := fun t ↦ by
+    simp only [hx t, hx.deriv t]
+  have h := hper.intervalIntegral_add_eq (-1) 0
+  rw [neg_add_cancel, zero_add] at h
+  simp only [loopArea_def, deriv_comp_neg, map_neg, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun t ↦ ω (x t) (deriv x t)), neg_zero, h]
+  ring
 
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
 
@@ -219,6 +275,18 @@ theorem integral_symplecticForm_fderiv_eq_loopArea_sub (ω : SymplecticForm V) (
   rw [loopArea_def, loopArea_def, stdComplexLineReal_eq, stdComplexLineImag_eq, harea]
   ring
 
+/-- **The symplectic area of a cylinder with vanishing ends.** Let `u` be `C²` near
+`[a, b] × [0, 1]`, with `u(s, 1) = u(s, 0)` for `s ∈ [a, b]`, and let `u` vanish on the slices
+`s = a` and `s = b`. Then the symplectic area of `u` over the rectangle is zero. -/
+theorem integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic (ω : SymplecticForm V)
+    (hab : a ≤ b) (hu : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 2 u z)
+    (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0)) (ha : ∀ t, u (a, t) = 0)
+    (hb : ∀ t, u (b, t) = 0) :
+    ∫ z in Icc a b ×ˢ Icc 0 1,
+      ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) = 0 := by
+  rw [ω.integral_symplecticForm_fderiv_eq_loopArea_sub hab hu hper]
+  simp only [ha, hb, loopArea_const, sub_self]
+
 /-- **The loop area is the area of a cap.** For a loop `x` that is `C²` near `[0, 1]` with
 `x 1 = x 0`, the symplectic area of the cone `D(r, t) = r x(t)` over `[0, 1] × [0, 1]`, a disc
 bounding `x`, is the loop area of `x`. -/
@@ -241,7 +309,7 @@ the outer boundary action minus the inner boundary action for the primitive `λ�
 This identity does not require any regularity on the inner disc or a holomorphicity hypothesis. -/
 theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
     (ω : SymplecticForm V) {u : ℂ → V} (z₀ : ℂ) {a b : ℝ}
-    (ha : 0 < a) (hab : a ≤ b)
+    (ha : 0 ≤ a) (hab : a ≤ b)
     (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 2 u z) :
     ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
       ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
@@ -260,10 +328,10 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
         fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) := by
     have hm : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
       simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-        abs_of_nonneg (le_trans ha.le hr.1)] using (mem_Icc.mp hr)
+        abs_of_nonneg (le_trans ha hr.1)] using (mem_Icc.mp hr)
     exact (((hu _ hm).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
       (hasDerivAt_circleMap z₀ r θ)).deriv
-  have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha.le hab hu
+  have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha hab hu
   simp only [hskew, integral_const_mul] at hgreen
   simp only [hB, ← hcircle b ⟨hab, le_rfl⟩, ← hcircle a ⟨le_rfl, hab⟩] at hgreen
   linarith

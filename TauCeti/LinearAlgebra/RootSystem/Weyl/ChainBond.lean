@@ -7,7 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.CoverBond
 
+import TauCeti.Data.Finset.Max
 import TauCeti.Data.Rat.NumDenDvd
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Bond gcds and `a`-chains of saturated chains in `W / W_λ`
@@ -383,6 +385,7 @@ theorem bondGcd_eq_zero_iff (hlam : lam ∈ dominantChamber P b)
   have := h ⟨0, Nat.pos_of_ne_zero hC⟩ (Finset.mem_univ _)
   omega
 
+omit [P.flip.IsReduced] in
 /-- **The bond gcd divides the change of every integral linear form along the chain.** If
 `C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is a saturated chain of `W / W_λ`, then `d(C)` divides
 `f (x₀ λ) - f (x_l λ)` for every integral linear form `f` on the weight lattice: each cover changes
@@ -390,6 +393,7 @@ the weight by its bond times a root. -/
 theorem bondGcd_dvd_sub (hlam : lam ∈ dominantChamber P b)
     (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam))
     (f : Module.Dual ℤ M) : (bondGcd lam C : ℤ) ∣ f (C.head.1 • lam) - f (C.last.1 • lam) := by
+  have := P.flip_isReduced
   induction C using RelSeries.inductionOn with
   | singleton y => simp
   | cons C x hx ih =>
@@ -403,6 +407,7 @@ theorem bondGcd_dvd_sub (hlam : lam ∈ dominantChamber P b)
 
 /-! ### Integrality along `a`-chains -/
 
+omit [P.flip.IsReduced] in
 /-- **Integral linear forms on the two ends of an `a`-chain differ by an `a`-integral amount.** If
 `C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is an `a`-chain of `W / W_λ`, then `a (f (x₀ λ) - f (x_l λ))` is an
 integer for every integral linear form `f` on the weight lattice, for instance for the pairing
@@ -415,6 +420,7 @@ theorem IsAChain.exists_mul_sub_eq_intCast (hlam : lam ∈ dominantChamber P b)
     ((Int.natCast_dvd_natCast.mpr (isAChain_iff_den_dvd_bondGcd.mp hC)).trans
       (bondGcd_dvd_sub hlam C f))
 
+omit [P.flip.IsReduced] in
 /-- Along an `a`-chain, the scaled difference of its endpoint weights is an actual root-lattice
 vector, in every characteristic-zero linear realization. This retains the lattice information,
 not only its values under integral linear forms. -/
@@ -424,6 +430,7 @@ theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
     (hC : IsAChain a lam C) {𝕜 V : Type*} [Field 𝕜] [CharZero 𝕜]
     [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) :
     ∃ m ∈ P.rootSpan ℤ, (a : 𝕜) • (f (C.head.1 • lam) - f (C.last.1 • lam)) = f m := by
+  have := P.flip_isReduced
   induction C using RelSeries.inductionOn' with
   | singleton y => exact ⟨0, Submodule.zero_mem _, by simp⟩
   | snoc C y hy ih =>
@@ -502,6 +509,7 @@ the `j`-th break, paired with an integral linear form `f`, is the vertex height
 `∑_{k < j} (t_{k+1} - t_k) f (τ_k λ)`. The results below need only the chains, not the order of
 the cosets or of the times, except where stated. -/
 
+omit [P.flip.IsReduced] in
 /-- **Heights at breaks, up to integers.** If consecutive orbit weights `τ_k λ` and `τ_{k+1} λ` are
 joined by `t_{k+1}`-chains for `k + 1 < s` and `t_0 = 0`, then for `j < s` the height
 `∑_{k ≤ j} (t_{k+1} - t_k) f (τ_k λ)` at the break `t_{j+1}` differs from `t_{j+1} f (τ_j λ)` by
@@ -544,6 +552,7 @@ theorem exists_sum_coroot'_eq_intCast_of_isAChain (hlam : lam ∈ dominantChambe
   rw [hhead] at hz₂
   exact ⟨z₁ + z₂, by push_cast; linear_combination hz₁ + hz₂⟩
 
+omit [P.flip.IsReduced] in
 /-- **The endpoint of a Lakshmibai–Seshadri path is integral.** With the chains of
 `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, if the final time `t_s` is an integer (for a
 Lakshmibai–Seshadri path, `t_s = 1`), then the final height `∑_{k < s} (t_{k+1} - t_k) f (τ_k λ)`
@@ -700,7 +709,6 @@ theorem sum_coroot'_lt_sum_coroot'_succ_of_isAChain (hlam : lam ∈ dominantCham
     obtain ⟨q, hq, hqj | ⟨n, hn⟩⟩ :=
       exists_isLeast_sum_coroot'_Icc_of_isAChain hlam ht hchain hmono hs i hjs.le
     · have hqle : q ≤ H (j + 1) := hq.2 ⟨j + 1, ⟨by omega, by omega⟩, rfl⟩
-      have hqj' : q = H j := hqj
       linarith
     · obtain ⟨k, ⟨hjk, hks⟩, hkq⟩ := hq.1
       have hqle : q ≤ H (j + 1) := hq.2 ⟨j + 1, ⟨by omega, by omega⟩, rfl⟩
@@ -739,7 +747,6 @@ theorem add_one_le_sum_coroot'_of_isAChain (hlam : lam ∈ dominantChamber P b)
   obtain ⟨q, hq, hqk | ⟨n, hn⟩⟩ :=
     exists_isLeast_sum_coroot'_Icc_of_isAChain hlam ht hchain hmono hs i (hk₁j.trans hjs)
   · have hqj : q ≤ H j := hq.2 ⟨j, ⟨hk₁j, hjs⟩, rfl⟩
-    have hqk' : q = H k₁ := hqk
     linarith
   · obtain ⟨k, ⟨hk₁k, hks⟩, hkq⟩ := hq.1
     have hqj : q ≤ H j := hq.2 ⟨j, ⟨hk₁j, hjs⟩, rfl⟩
@@ -784,14 +791,13 @@ theorem exists_strictly_rising_of_isAChain (hlam : lam ∈ dominantChamber P b)
   -- The integral minimum `z` of `H`, and the last vertex `k₀` where it is attained.
   obtain ⟨z, hz⟩ := exists_isLeast_sum_coroot'_eq_intCast_of_isAChain hlam ht hchain hmono hs i
   obtain ⟨k, hk, hkz⟩ := hz.1
-  classical
-  set k₀ := Nat.findGreatest (fun k ↦ H k = z) s
-  have hk₀s : k₀ ≤ s := Nat.findGreatest_le s
-  have hk₀z : H k₀ = z := Nat.findGreatest_spec (P := fun k ↦ H k = z) (Set.mem_Iic.mp hk) hkz
-  have habove : ∀ k, k₀ < k → k ≤ s → H k₀ < H k := by
-    intro k hk₀k hks
-    rw [hk₀z]
-    exact lt_of_le_of_ne (hz.2 ⟨k, hks, rfl⟩) (Ne.symm (Nat.findGreatest_is_greatest hk₀k hks))
+  obtain ⟨k₀, hk₀s, hmin, hlast⟩ :=
+    (Finset.Iic s).exists_last_min_image H ⟨0, by simp⟩
+  simp only [Finset.mem_Iic] at hk₀s hmin hlast
+  have hk₀z : H k₀ = z := le_antisymm
+    ((hmin k hk).trans_eq hkz) (hz.2 ⟨k₀, hk₀s, rfl⟩)
+  have habove : ∀ k, k₀ < k → k ≤ s → H k₀ < H k :=
+    fun k hk₀k hks ↦ hlast k hks hk₀k
   -- The first vertex `k₁` after `k₀` at which the height is at least `H k₀ + 1`.
   have hHs : H k₀ + 1 ≤ H s := by
     obtain ⟨j, hj, hjs⟩ := hgap

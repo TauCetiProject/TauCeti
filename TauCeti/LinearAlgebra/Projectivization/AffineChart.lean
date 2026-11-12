@@ -32,9 +32,13 @@ of complex projective space are built.
 
 * `Projectivization.affineOpen i`: the points whose `i`-th homogeneous coordinate is nonzero;
   `Projectivization.iUnion_affineOpen` says that these sets cover projective space.
+* `Projectivization.instNontrivial`: projective space over at least two coordinates has at least
+  two points.
 * `Projectivization.affineChart i`: the affine chart `U_i ≃ Fin n → K` by homogeneous ratios.
 * `Projectivization.affineChart_mk` and `Projectivization.affineChart_symm_apply`: the chart and
   its inverse in homogeneous coordinates.
+* `Projectivization.rep_div_rep_eq_insertNth_affineChart`: homogeneous ratios on the chart of `j`
+  as coordinates of `[Fin.insertNth j 1 z]`.
 * `Projectivization.affineChart_symm_zero`: the centre of the chart of `i` is the coordinate point
   `[eᵢ]`, which lies in no other standard affine open
   (`Projectivization.mk_single_mem_affineOpen_iff`).
@@ -112,6 +116,13 @@ theorem mk_single_injective :
 
 end AffineOpen
 
+/-- Projective space over a coordinate space with at least two coordinates has at least two points:
+the coordinate points of two distinct indices differ. -/
+instance instNontrivial {K : Type*} [DivisionRing K] {ι : Type*} [Nontrivial ι] :
+    Nontrivial (ℙ K (ι → K)) := by
+  classical
+  exact mk_single_injective.nontrivial
+
 variable {K : Type*} [Field K] {n : ℕ}
 
 /-- The standard affine chart of projective space at the coordinate `i`: on the affine open where
@@ -153,6 +164,16 @@ the `i`-th one. Outside the chart domain both sides are `0`. -/
 theorem affineChart_mk (i : Fin (n + 1)) (v : Fin (n + 1) → K) (hv : v ≠ 0) :
     affineChart i (mk K v hv) = fun j ↦ v (i.succAbove j) / v i :=
   (rfl)
+
+/-- On the chart `j`, the ratio `x.rep i / x.rep j` is the `i`-th homogeneous coordinate of
+`[1 : z]` in the coordinate positions of the chart `j`, for `z` the affine coordinates of `x`. -/
+theorem rep_div_rep_eq_insertNth_affineChart (i : Fin (n + 1)) {j : Fin (n + 1)}
+    {x : ℙ K (Fin (n + 1) → K)} (hj : x ∈ affineOpen j) :
+    x.rep i / x.rep j = Fin.insertNth (α := fun _ ↦ K) j 1 (affineChart j x) i := by
+  have hx : x = mk K x.rep x.rep_ne_zero := (mk_rep x).symm
+  conv_rhs => rw [hx, affineChart_mk,
+    Fin.insertNth_one_div_eq_inv_smul j _ ((mem_affineOpen_iff j x).1 hj)]
+  simp [div_eq_inv_mul]
 
 /-- The inverse of the standard affine chart sends `z` to `[Fin.insertNth i 1 z]`. -/
 @[simp]

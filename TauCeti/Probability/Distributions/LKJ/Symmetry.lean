@@ -132,6 +132,14 @@ theorem map_symmetricCongruenceLinearMap_diagonal_lkjMeasure {s : Fin p → ℝ}
   rw [Matrix.det_diagonal, ← Finset.prod_pow]
   exact Finset.prod_eq_one fun i _ ↦ by rw [← sq_abs, hs i, one_pow]
 
+/-- Diagonal sign congruence preserves the LKJ law. -/
+private theorem hasLaw_symmetricCongruenceLinearMap_diagonal_lkjMeasure {s : Fin p → ℝ}
+    (hs : ∀ i, |s i| = 1) :
+    HasLaw (Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s))
+      (lkjMeasure p η) (lkjMeasure p η) :=
+  ⟨(LinearMap.continuous_of_finiteDimensional _).measurable.aemeasurable,
+    map_symmetricCongruenceLinearMap_diagonal_lkjMeasure p η hs⟩
+
 /-! ### The mean -/
 
 /-- Every entry of an LKJ matrix is integrable: it lies in `[-1, 1]` almost surely. -/
@@ -155,16 +163,11 @@ private theorem integral_coe_apply_lkjMeasure_of_ne {i j : Fin p} (hij : i ≠ j
         (R : Matrix (Fin p) (Fin p) ℝ) i j ∂lkjMeasure p η = 0 := by
   set s : Fin p → ℝ := fun k ↦ if k = i then -1 else 1
   have hs : ∀ k, |s k| = 1 := fun k ↦ by by_cases hk : k = i <;> simp [s, hk]
-  have h := integral_map (μ := lkjMeasure p η)
-    (φ := Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s))
-    (f := fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      (R : Matrix (Fin p) (Fin p) ℝ) i j)
-    (LinearMap.continuous_of_finiteDimensional _).measurable.aemeasurable
-    (selfAdjoint.measurable_coe_apply i j).aestronglyMeasurable
-  rw [map_symmetricCongruenceLinearMap_diagonal_lkjMeasure p η hs] at h
-  simp only [Matrix.coe_symmetricCongruenceLinearMap_apply, Matrix.diagonal_transpose,
-    Matrix.mul_diagonal, Matrix.diagonal_mul, s, hij.symm, ↓reduceIte, neg_one_mul, mul_one,
-    integral_neg] at h
+  have h := (hasLaw_symmetricCongruenceLinearMap_diagonal_lkjMeasure
+    (p := p) (η := η) hs).integral_comp
+      (selfAdjoint.measurable_coe_apply i j).aestronglyMeasurable
+  simp only [Function.comp_apply, Matrix.coe_symmetricCongruenceLinearMap_diagonal_apply,
+    s, hij.symm, ↓reduceIte, neg_one_mul, mul_one, integral_neg] at h
   linarith
 
 /-- The entrywise mean of an LKJ matrix is the identity matrix. -/
@@ -264,17 +267,9 @@ theorem covariance_apply_map_partialCorrelationGram_pi
     cov[fun R : Matrix (Fin p) (Fin p) ℝ ↦ R ij.1.1 ij.1.2,
         fun R : Matrix (Fin p) (Fin p) ℝ ↦ R kl.1.1 kl.1.2;
       (Measure.pi μ).map partialCorrelationGram] = 0 := by
-  have hp : ij.1 ≠ kl.1 := Subtype.coe_injective.ne hne
   have hij := ij.2
   have hkl := kl.2
-  obtain ⟨v, hv, hvk, hvl⟩ : ∃ v : Fin p,
-      (v = ij.1.1 ∨ v = ij.1.2) ∧ v ≠ kl.1.1 ∧ v ≠ kl.1.2 := by
-    by_cases h : ij.1.1 = kl.1.1 ∨ ij.1.1 = kl.1.2
-    · refine ⟨ij.1.2, Or.inr rfl, ?_, ?_⟩
-      all_goals rcases h with h | h
-      all_goals intro h'
-      all_goals first | exact hp (Prod.ext h h') | omega
-    · exact ⟨ij.1.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
+  obtain ⟨v, hv, hvk, hvl⟩ := strictLowerTriangle.exists_index_ne_ne_of_ne hne
   let s : Fin p → ℝ := fun k ↦ if k = v then -1 else 1
   have hs : ∀ k, |s k| = 1 := by intro k; simp [s]; split_ifs <;> norm_num
   have hsign : s ij.1.1 * s ij.1.2 = -1 := by
@@ -312,9 +307,10 @@ theorem memLp_apply_map_partialCorrelationGram_pi_betaMeasure
   have (ij : strictLowerTriangle p) : IsProbabilityMeasure (betaMeasure (a ij) (a ij)) :=
     isProbabilityMeasureBeta (ha ij) (ha ij)
   refine MemLp.of_bound (by fun_prop) 1 ?_
-  filter_upwards [ae_abs_le_one_pi_centered_betaMeasure ha] with z hz
+  filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
+  have hz' : ∀ ij, |z ij| ≤ 1 := fun ij ↦ le_of_lt (hz ij)
   exact (posSemidef_partialCorrelationGram z).norm_le_one_of_apply_self_eq_one
-    (partialCorrelationGram_apply_self hz i) (partialCorrelationGram_apply_self hz j)
+    (partialCorrelationGram_apply_self hz' i) (partialCorrelationGram_apply_self hz' j)
 
 /-- The entrywise mean of the independent centered symmetric Beta Gram law is the identity.
 The shapes may vary independently across all strictly lower positions. -/
@@ -334,8 +330,8 @@ theorem integral_apply_map_partialCorrelationGram_pi_betaMeasure
     calc
       _ = ∫ _, (1 : ℝ) ∂(Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map
           (fun x ↦ -1 + 2 * x)) := integral_congr_ae <|
-        (ae_abs_le_one_pi_centered_betaMeasure ha).mono fun z hz ↦
-          partialCorrelationGram_apply_self hz i
+        (ae_abs_lt_one_pi_centered_betaMeasure ha).mono fun z hz ↦
+          partialCorrelationGram_apply_self (fun ij ↦ le_of_lt (hz ij)) i
       _ = 1 := by simp
   · rw [ite_eq_right hij]
     exact integral_apply_map_partialCorrelationGram_pi_of_ne _ hij

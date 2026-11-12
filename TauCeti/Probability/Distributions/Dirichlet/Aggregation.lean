@@ -26,6 +26,8 @@ variance of their total, which is again a case of it.
 ## Main results
 
 * `TauCeti.Probability.map_euclideanFiberSum_dirichletMeasure` is the aggregation law.
+* `TauCeti.Probability.map_reindex_dirichletMeasure` transports the law under coordinate
+  equivalences.
 
 Its random-variable form is `MeasureTheory.MeasurePreserving.fun_comp_hasLaw` applied to the
 aggregation law.
@@ -71,9 +73,7 @@ theorem map_euclideanFiberSum_dirichletMeasure [DecidableEq κ] {f : ι → κ}
       dirichletMeasure fun j ↦ ∑ i with f i = j, a i := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · have hκ : IsEmpty κ := ⟨fun j ↦ (hf j).elim fun i _ ↦ isEmptyElim i⟩
-    rw [dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.mpr hι) h.1,
-      dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.mpr hκ) h.1,
-      Measure.map_zero]
+    rw [dirichletMeasure_of_isEmpty, dirichletMeasure_of_isEmpty, Measure.map_zero]
   · have : Nonempty κ := ⟨f (Classical.arbitrary ι)⟩
     have hpos (j : κ) : 0 < ∑ i with f i = j, a i := by
       obtain ⟨i₀, hi₀⟩ := hf j
@@ -87,6 +87,25 @@ theorem map_euclideanFiberSum_dirichletMeasure [DecidableEq κ] {f : ι → κ}
       Measure.map_map (measurable_euclideanFiberSum f) measurable_dirichletNormalize, hcompose,
       ← Measure.map_map measurable_dirichletNormalize hmap,
       map_funOnFinite_map_pi_gammaMeasure hf ha one_pos]
+
+/-- Reindexing a Dirichlet vector by an equivalence reindexes its concentration vector. For
+invalid concentration vectors both sides are the zero measure. -/
+theorem map_reindex_dirichletMeasure {e : ι ≃ κ} {a : ι → ℝ} :
+    (dirichletMeasure a).map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e) =
+      dirichletMeasure (a ∘ e.symm) := by
+  classical
+  by_cases ha : ∀ i, 0 < a i
+  swap
+  · rw [dirichletMeasure_eq_zero_of_invalid fun h ↦ ha h.2,
+      dirichletMeasure_eq_zero_of_invalid fun h ↦ ha fun i ↦ by simpa using h.2 (e i),
+      Measure.map_zero]
+  have h := map_euclideanFiberSum_dirichletMeasure e.surjective ha
+  have hf : euclideanFiberSum e = LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e := by
+    funext x
+    ext j
+    simp [euclideanFiberSum_apply, LinearIsometryEquiv.piLpCongrLeft_apply,
+      ← e.eq_symm_apply, Finset.sum_filter]
+  simpa [hf, ← e.eq_symm_apply, Finset.sum_filter, Function.comp_def] using h
 
 end Probability
 

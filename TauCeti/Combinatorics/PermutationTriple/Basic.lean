@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Perm
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Tactic.Group
 public import TauCeti.GroupTheory.Perm.Centralizer
+import TauCeti.GroupTheory.GroupAction.Closure
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
@@ -63,9 +64,6 @@ same order. The reverse convention is common in the literature and in databases 
 -/
 
 open Equiv
-
--- The signatures and proof outlines below follow the formal prototype `Suggested.lean` of the
--- Tau Ceti `BelyiMaps` roadmap.
 
 public section
 

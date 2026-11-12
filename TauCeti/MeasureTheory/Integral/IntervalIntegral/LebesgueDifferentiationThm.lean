@@ -45,8 +45,7 @@ theorem ae_tendsto_setLIntegral_uIoc_div {f : ℝ → ℝ≥0∞} {a b : ℝ}
       Tendsto (fun s ↦ (∫⁻ r in Ι t s, f r) / edist s t) (𝓝[≠] t) (𝓝 (f t)) := by
   wlog hab : a ≤ b generalizing a b
   · rw [uIoc_comm] at hf hfin
-    rw [uIcc_comm]
-    exact this hf hfin (le_of_not_ge hab)
+    exact uIcc_comm b a ▸ this hf hfin (le_of_not_ge hab)
   rw [uIoc_of_le hab] at hf hfin
   rw [uIcc_of_le hab]
   set g := (Ioc a b).indicator f
@@ -55,12 +54,11 @@ theorem ae_tendsto_setLIntegral_uIoc_div {f : ℝ → ℝ≥0∞} {a b : ℝ}
   filter_upwards [(vitaliFamily (volume : Measure ℝ) 1).ae_tendsto_lintegral_div hg hgfin,
     volume.ae_ne a, volume.ae_ne b] with t ht hta htb htab
   -- `t` is an interior point of `[a, b]`, so `Ioc a b` contains every short interval around it.
-  have hmem : t ∈ Ioo a b := ⟨lt_of_le_of_ne htab.1 hta.symm, lt_of_le_of_ne htab.2 htb⟩
+  have hmem : t ∈ Ioo a b := ⟨htab.1.lt_of_ne' hta, htab.2.lt_of_ne htb⟩
   have hg_eq {u v : ℝ} (hu : a ≤ u) (hv : v ≤ b) :
       ∫⁻ r in Icc u v, g r = ∫⁻ r in Ioc u v, f r := by
-    rw [setLIntegral_congr Ioc_ae_eq_Icc.symm]
-    exact setLIntegral_congr_fun measurableSet_Ioc fun r hr ↦
-      indicator_of_mem (Ioc_subset_Ioc hu hv hr) f
+    rw [setLIntegral_congr Ioc_ae_eq_Icc.symm, setLIntegral_indicator measurableSet_Ioc,
+      inter_eq_right.2 (Ioc_subset_Ioc hu hv)]
   have hgt : g t = f t := indicator_of_mem (Ioo_subset_Ioc_self hmem) f
   rw [hgt] at ht
   rw [← nhdsLT_sup_nhdsGT]

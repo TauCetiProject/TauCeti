@@ -184,10 +184,10 @@ private theorem contMDiff_warpedProdTangentInner
         (RiemannianMetric.warpedProdTangentInner g₁.toRiemannianMetric f g₂.toRiemannianMetric
           p)) :=
   fun p₀ ↦ by
-    rw [contMDiffAt_section]
+    rw [contMDiffAt_section_iff]
     have h₁ := g₁.contMDiff p₀.1
     have h₂ := g₂.contMDiff p₀.2
-    rw [contMDiffAt_section] at h₁ h₂
+    rw [contMDiffAt_section_iff] at h₁ h₂
     have hf₂ : ContMDiffAt (I.prod J) 𝓘(ℝ) n (fun q : M × N ↦ f q.1 ^ 2) p₀ :=
       ((hf p₀.1).comp p₀ contMDiffAt_fst).pow 2
     have h := contMDiffAt_const (c := (ContinuousLinearMap.coprodEquivL ℝ :
@@ -322,6 +322,19 @@ theorem IsWarpedProduct.tangentSpaceProdLinearIsometryEquiv_symm_apply {f : M �
     (h.tangentSpaceProdLinearIsometryEquiv p hf).symm v =
       (tangentSpaceProdEquiv p).symm (v.ofLp.1, (f p.1)⁻¹ • v.ofLp.2) :=
   (rfl)
+
+
+/-- Where the warping function vanishes, a warped product has no vertical vectors, because the
+installed metric is positive definite. -/
+theorem IsWarpedProduct.eq_zero_of_warping_eq_zero {f : M → ℝ}
+    (h : IsWarpedProduct I J N f) {p : M × N} (hf₀ : f p.1 = 0) (a : TangentSpace J p.2) :
+    a = 0 := by
+  let e := tangentSpaceProdEquiv (I := I) (J := J) p
+  have h0 : e.symm (0, a) = 0 := by
+    rw [← inner_self_eq_zero (𝕜 := ℝ), h.inner_eq]
+    simp only [e, ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, hf₀,
+      zero_pow two_ne_zero, zero_mul, add_zero]
+  simpa using congrArg (fun x => (e x).2) h0
 
 end TangentIsometry
 

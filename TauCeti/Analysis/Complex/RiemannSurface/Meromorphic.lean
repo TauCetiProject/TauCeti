@@ -51,9 +51,10 @@ and products add the two divisor bounds.
   where the function tends to zero.
 * `TauCeti.RiemannSurface.MeromorphicAt.eventually_contMDiffAt`: a meromorphic function is
   holomorphic on a punctured neighbourhood of its centre.
-* `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt` and
-  `TauCeti.RiemannSurface.meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt`: a holomorphic
-  function is meromorphic, of nonnegative order.
+* `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt`: a holomorphic function is
+  meromorphic.
+* `TauCeti.RiemannSurface.meromorphicOrderAt_nonneg_of_continuousAt`: a function continuous at `x`
+  has nonnegative order there.
 * `TauCeti.RiemannSurface.MeromorphicAt.comp` and `TauCeti.RiemannSurface.meromorphicOrderAt_comp`:
   pullback along a holomorphic map, with the order formula.
 * `TauCeti.RiemannSurface.meromorphicAt_const`, `TauCeti.RiemannSurface.MeromorphicAt.add`,
@@ -189,10 +190,15 @@ theorem meromorphicAt_of_eventually_mdifferentiableAt [CompleteSpace E]
     (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) : MeromorphicAt f x :=
   (analyticAt_comp_chartAt_symm hf).meromorphicAt
 
-/-- A function holomorphic near `x` has nonnegative order at `x`. -/
-theorem meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt [CompleteSpace E]
-    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) : 0 ≤ meromorphicOrderAt f x :=
-  (analyticAt_comp_chartAt_symm hf).meromorphicOrderAt_nonneg
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- A function continuous at `x` has nonnegative order at `x`. -/
+theorem meromorphicOrderAt_nonneg_of_continuousAt (hf : ContinuousAt f x) :
+    0 ≤ meromorphicOrderAt f x := by
+  by_cases hm : MeromorphicAt f x
+  · refine (_root_.tendsto_nhds_iff_meromorphicOrderAt_nonneg hm).1 ⟨f x, ?_⟩
+    exact (hf.tendsto.comp
+      ((chartAt ℂ x).tendsto_symm (mem_chart_source ℂ x))).mono_left nhdsWithin_le_nhds
+  · rw [meromorphicOrderAt_of_not_meromorphicAt hm]
 
 /-! ### Pullback along a holomorphic map -/
 
@@ -221,19 +227,16 @@ theorem meromorphicOrderAt_comp (hF : MeromorphicAt F (φ x))
   have hF' : _root_.MeromorphicAt (F ∘ (chartAt ℂ (φ x)).symm)
       (chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm (chartAt ℂ x x)))) := by
     rwa [(chartAt ℂ x).left_inv hcx]
-  have hmult := natCast_localMultiplicity hφ hnc
-  -- The representative of `φ` is not constant near `chartAt ℂ x x`, since its recentred order of
-  -- vanishing is the finite local multiplicity of `φ`.
-  have hnc' : ¬ EventuallyConst (fun z ↦ chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm z)))
-      (𝓝 (chartAt ℂ x x)) := by
-    rw [eventuallyConst_iff_analyticOrderAt_sub_eq_top]
-    simp [(chartAt ℂ x).left_inv hcx, ← hmult]
+  have hnc' := not_eventuallyConst_chartAt_comp_comp_chartAt_symm hφ hnc
   rw [meromorphicOrderAt, _root_.meromorphicOrderAt_congr
       ((comp_comp_chartAt_symm_eventuallyEq (H := ℂ) (H' := ℂ) F
         hφ.self_of_nhds.continuousAt).filter_mono nhdsWithin_le_nhds),
     hF'.meromorphicOrderAt_comp (g := fun z ↦ chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm z)))
       (analyticAt_chartAt_comp_comp_chartAt_symm hφ) hnc']
-  simp [meromorphicOrderAt, (chartAt ℂ x).left_inv hcx, ← hmult]
+  simp only [(chartAt ℂ x).left_inv hcx,
+    ← natCast_localMultiplicity hφ.self_of_nhds.continuousAt hnc,
+    ENat.map_natCast, WithTop.coe_natCast]
+  simp only [meromorphicOrderAt]
 
 end IsManifold
 
@@ -282,15 +285,19 @@ theorem MeromorphicAt.sub (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
   rw [Pi.sub_comp]
   exact hf.sub hg
 
-/-- The order of a sum of meromorphic functions on a Riemann surface is at least the minimum of
-their orders. -/
-theorem meromorphicOrderAt_add
-    (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
+/-- The order of a sum on a Riemann surface is at least the minimum of the orders of the summands,
+when the second summand is meromorphic. If `f` is not meromorphic then neither is `f + g`, and both
+`meromorphicOrderAt f x` and `meromorphicOrderAt (f + g) x` are the junk value `0`. -/
+theorem meromorphicOrderAt_add (hg : MeromorphicAt g x) :
     min (meromorphicOrderAt f x) (meromorphicOrderAt g x) ≤
       meromorphicOrderAt (f + g) x := by
-  rw [meromorphicAt_def] at hf hg
-  simp only [meromorphicOrderAt_def, Pi.add_comp]
-  exact _root_.meromorphicOrderAt_add hf hg
+  by_cases hf : MeromorphicAt f x
+  · rw [meromorphicAt_def] at hf hg
+    simp only [meromorphicOrderAt_def, Pi.add_comp]
+    exact _root_.meromorphicOrderAt_add hf hg
+  · have hfg : ¬ MeromorphicAt (f + g) x := fun h ↦ hf (by simpa using h.sub hg)
+    rw [meromorphicOrderAt_of_not_meromorphicAt hf, meromorphicOrderAt_of_not_meromorphicAt hfg]
+    exact min_le_left _ _
 
 /-- Negation preserves the meromorphic order at a point of a Riemann surface. -/
 theorem meromorphicOrderAt_neg : meromorphicOrderAt f x = meromorphicOrderAt (-f) x := by

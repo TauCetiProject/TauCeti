@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 public import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
+public import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 -- Private: used only to turn the finite-dimensional algebraic splitting into a continuous
 -- projection; the public API exposes the resulting continuous linear map.
 import Mathlib.Analysis.Normed.Module.Complemented
@@ -43,6 +44,8 @@ remainder of the negative-gradient field, supplied by
 * `ContDiffAt.map_neg_hessianOperator_stableLinearSubspace_le` and
   `ContDiffAt.map_neg_hessianOperator_unstableLinearSubspace_le`: both subspaces are invariant
   under the negative-gradient linearization `-hessianOperator f x`.
+* `ContDiffAt.exists_pos_mul_norm_sq_le_inner_hessianOperator`: the Hessian form is coercive on
+  the stable subspace and anticoercive on the unstable subspace, with a common constant.
 * `ContDiffAt.isCompl_unstableLinearSubspace_stableLinearSubspace`: when the Hessian is injective
   these subspaces are complementary, so the tangent space is their direct sum.
 * `ContDiffAt.finrank_unstableLinearSubspace`: the unstable dimension is the Morse index.
@@ -164,38 +167,30 @@ theorem disjoint_unstableLinearSubspace_stableLinearSubspace (hf : ContDiffAt �
   exact hf.isSelfAdjoint_hessianOperator.isSymmetric
     |>.disjoint_negativeSpectralSubspace_positiveSpectralSubspace rfl
 
+/-- **The Hessian form is coercive on the stable and anticoercive on the unstable subspace.** At a
+`C²` point there is `c > 0` with `c ‖u‖ ^ 2 ≤ ⟪Hess f(x) u, u⟫` on the stable linear subspace and
+`⟪Hess f(x) u, u⟫ ≤ -(c ‖u‖ ^ 2)` on the unstable linear subspace. This does not require
+nondegeneracy: the zero eigenspace belongs to neither subspace. -/
+theorem exists_pos_mul_norm_sq_le_inner_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
+    ∃ c > 0, (∀ u ∈ hf.stableLinearSubspace, c * ‖u‖ ^ 2 ≤ ⟪hessianOperator f x u, u⟫_ℝ) ∧
+      ∀ u ∈ hf.unstableLinearSubspace, ⟪hessianOperator f x u, u⟫_ℝ ≤ -(c * ‖u‖ ^ 2) := by
+  have hT := hf.isSelfAdjoint_hessianOperator.isSymmetric
+  obtain ⟨c, hc, hceig⟩ := hT.exists_pos_forall_le_abs_eigenvalues rfl
+  refine ⟨c, hc, fun u hu ↦ ?_, fun u hu ↦ ?_⟩
+  · simpa using hT.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace rfl
+      (fun i hi ↦ by simpa [abs_of_pos hi] using hceig i hi.ne') hu
+  · simpa using hT.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace rfl
+      (fun i hi ↦ by simpa [abs_of_neg hi] using hceig i hi.ne) hu
+
 /-- In the Hessian eigenbasis, the number of negative eigenvalues, counted with multiplicity, is
 the Morse index. -/
 theorem morseIndex_eq_ncard_hessianOperator_eigenvalues_neg (hf : ContDiffAt ℝ 2 f x) :
     morseIndex f x =
       {i | hf.isSelfAdjoint_hessianOperator.isSymmetric.eigenvalues rfl i < 0}.ncard := by
-  let hT := hf.isSelfAdjoint_hessianOperator.isSymmetric
-  let b := hT.eigenvectorBasis rfl
-  have horth : (QuadraticMap.associated (hessianQuadraticForm f x)).IsOrthoᵢ b := by
-    rw [LinearMap.isOrthoᵢ_def]
-    intro i j hij
-    rw [associated_hessianQuadraticForm hf, ContinuousLinearMap.toBilinForm_apply,
-      ← inner_hessianOperator_left]
-    have heigen : hessianOperator f x (b i) =
-        (hT.eigenvalues rfl i : ℝ) • b i := by
-      exact hT.apply_eigenvectorBasis rfl i
-    rw [heigen, real_inner_smul_left, orthonormal_iff_ite.mp b.orthonormal i j]
-    simp [hij]
-  have hequiv : QuadraticMap.Equivalent (hessianQuadraticForm f x)
-      (QuadraticMap.weightedSumSquares ℝ fun i ↦ hessianQuadraticForm f x (b i)) :=
-    ⟨QuadraticForm.isometryEquivWeightedSumSquares (hessianQuadraticForm f x) b.toBasis horth⟩
-  have hweights : (fun i ↦ hessianQuadraticForm f x (b i)) = hT.eigenvalues rfl := by
-    funext i
-    rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left]
-    have heigen : hessianOperator f x (b i) =
-        (hT.eigenvalues rfl i : ℝ) • b i := by
-      exact hT.apply_eigenvectorBasis rfl i
-    rw [heigen, real_inner_smul_left, orthonormal_iff_ite.mp b.orthonormal i i]
-    simp
-  rw [hweights] at hequiv
   rw [morseIndex_def]
-  simpa only [hT] using
-    QuadraticForm.sigNeg_of_equiv_weightedSumSquares hequiv
+  exact hf.isSelfAdjoint_hessianOperator.isSymmetric.sigNeg_eq_ncard_eigenvalues_neg rfl
+    fun v ↦ by rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left,
+      ContinuousLinearMap.coe_coe]
 
 /-- The dimension of the unstable linear subspace at a `C²` point is its Morse index. -/
 @[simp]
@@ -262,8 +257,8 @@ noncomputable def stableProjection (hf : ContDiffAt ℝ 2 f x)
   hf.stableLinearSubspace.projectionL hf.unstableLinearSubspace
     (Submodule.IsCompl.isTopCompl_of_isClosed
       (hf.isCompl_unstableLinearSubspace_stableLinearSubspace hker).symm
-      hf.stableLinearSubspace.closed_of_finiteDimensional
-      hf.unstableLinearSubspace.closed_of_finiteDimensional)
+      hf.stableLinearSubspace.isClosed_of_finiteDimensional
+      hf.unstableLinearSubspace.isClosed_of_finiteDimensional)
 
 /-- The range of the stable projection is the stable linear subspace. -/
 @[simp]

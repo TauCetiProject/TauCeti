@@ -29,8 +29,8 @@ open scoped MeasureTheory
 namespace ProbabilityTheory
 
 variable {Ω ι α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [AddCommMonoid α]
-  [MeasurableAdd₂ α] {P : Measure Ω} [IsProbabilityMeasure P]
-  {μ : Measure α} [IsProbabilityMeasure μ] {X : ι → Ω → α}
+  [MeasurableAdd₂ α] {P : Measure Ω}
+  {μ : Measure α} {X : ι → Ω → α}
 
 /-- A finite sum of independent random variables with common law `μ` has law the corresponding
 convolution power of `μ`. -/
@@ -38,6 +38,7 @@ theorem iIndepFun.hasLaw_finset_sum_convolutionPower (hindep : iIndepFun X P)
     (hX : ∀ i, HasLaw (X i) μ P) (s : Finset ι) :
     HasLaw (∑ i ∈ s, X i) (μ.convolutionPower s.card) P := by
   classical
+  have := hindep.isProbabilityMeasure
   induction s using Finset.induction_on with
   | empty =>
       simp only [Finset.card_empty, Measure.convolutionPower_zero]
@@ -45,6 +46,7 @@ theorem iIndepFun.hasLaw_finset_sum_convolutionPower (hindep : iIndepFun X P)
   | @insert i s hi ih =>
       have hindep' : IndepFun (∑ j ∈ s, X j) (X i) P :=
         hindep.indepFun_finsetSum_of_notMem₀ (fun j => (hX j).aemeasurable) hi
+      have : IsProbabilityMeasure μ := (hX i).isProbabilityMeasure_iff.mp ‹_›
       have hsum := IndepFun.hasLaw_add ih (hX i) hindep'
       simpa [Finset.sum_insert hi, Finset.card_insert_of_notMem hi,
         Measure.convolutionPower_succ, add_comm] using hsum

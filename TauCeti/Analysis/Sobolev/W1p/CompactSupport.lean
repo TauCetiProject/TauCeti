@@ -58,6 +58,10 @@ Neither `ψ` nor `w` need have compact support, so it applies to unbounded `Ω` 
   boundary values.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport`: multiplication by a
   compactly supported cutoff lands in `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.exists_clm_w1p0_apply_eq_contDiffSMul`: multiplication by a compactly supported
+  cutoff inside `Ω` is a continuous linear map `W^{1,p}(Ω) → W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.valueL_comp_restrictL_eq_comp_cutoff`: restricting to `V` and taking values agrees
+  with cutting off by a function equal to one on `V`, taking values on `Ω` and restricting in `Lᵖ`.
 * `TauCeti.W1p.testFunctionSMulComp_mem_w1p0Submodule`: the product `φ G(u)` of a test function
   with a composition lands in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.restrictL_contDiffSMul_mem_w1p0Submodule`: a whole-space Sobolev function times a
@@ -149,19 +153,7 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
   have hsub : (Omega : Set E) ⊆ ((⊤ : Opens E) : Set E) := by simp
   have humu : ∀ᵐ x ∂mu, x ∈ (Omega : Set E) → x ∉ K → W1p.value u x = 0 :=
     (ae_restrict_iff' hmeas).1 hu
-  -- the weak gradient vanishes off `K` as well, because `u` vanishes on the open set `Ω \ K`
-  have hgrad : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.gradient u x = 0 := by
-    set V : Opens E := ⟨(Omega : Set E) \ K, Omega.isOpen.sdiff hK.isClosed⟩
-    have hVmeas : MeasurableSet (V : Set E) := V.isOpen.measurableSet
-    have hvalV : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0 := by
-      rw [ae_restrict_iff' hVmeas]
-      filter_upwards [humu] with x hx hxV
-      exact hx hxV.1 hxV.2
-    have hgradV := (ae_restrict_iff' hVmeas).1
-      (W1p.gradient_ae_eq_zero_of_value_ae_eq_zero (V := V) Set.sdiff_subset hvalV)
-    rw [ae_restrict_iff' hmeas]
-    filter_upwards [hgradV] with x hx hxO hxK
-    exact hx ⟨hxO, hxK⟩
+  have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed hK.isClosed hu
   -- the zero-extension of `u` to the whole space is again a Sobolev function
   have hweak : HasWeakFDerivOn mu ⊤
       ((extendByZeroLpₗᵢ ℝ mu hmeas hsub (W1p.value u) : E → ℝ))
@@ -183,7 +175,7 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
     rw [hwdef, W1p.value_mk]
     exact coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.value u)
   -- a smooth cutoff, equal to one on `K` and compactly supported inside `Ω`
-  obtain ⟨chi, M, hchi, -, hchi_one_nhds, hchi_cpt, hchi_ts, hM0, hchiM_all,
+  obtain ⟨chi, M, hchi, -, hchi_one_nhds, _, hchi_ts, hM0, hchiM_all,
     hchigradM_all⟩ := hK.exists_contDiff_cutoff_with_bounds Omega.isOpen hKO
   have hchi_one : ∀ x ∈ K, chi x = 1 := fun x hx => by
     have hx' : x ∈ chi ⁻¹' ({1} : Set ℝ) := interior_subset (hchi_one_nhds hx)
@@ -208,12 +200,10 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
       rw [hzero, smul_zero]
   -- so the extension is a cutoff product, whose restriction to `Ω` is `u`
   have hmem := W1p.restrictL_contDiffSMul_mem_w1p0Submodule hp hchi hM0 hchiM hchigradM hchi_ts w
-  have hwu : W1p.restrictL le_top w = u := by
-    refine W1p.ext_value (Lp.ext ?_)
-    filter_upwards [W1p.value_restrictL_ae le_top w,
-      hvalw.filter_mono (ae_mono (Measure.restrict_mono hsub le_rfl)), ae_restrict_mem hmeas]
-      with x h1 h2 hx
-    rw [h1, h2, indicator_of_mem hx]
+  have hwu : W1p.restrictL le_top w = u := W1p.restrictL_eq_of_value_ae_eq le_top (by
+    filter_upwards [hvalw.filter_mono (ae_mono (Measure.restrict_mono hsub le_rfl)),
+      ae_restrict_mem hmeas] with x h2 hx
+    rw [h2, indicator_of_mem hx])
   rwa [hLw, hwu] at hmem
 
 /-! ### Multiplication by a compactly supported cutoff -/
@@ -231,6 +221,46 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (hp : p ≠ (∞
   refine W1p.mem_w1p0Submodule_of_isCompact hp hcpt hts ?_
   filter_upwards [W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u] with x hx hxK
   rw [hx, image_eq_zero_of_notMem_tsupport hxK, zero_smul]
+
+/-- Multiplication by a smooth compactly supported cutoff inside `Ω` is a continuous linear map
+`W^{1,p}(Ω) → W^{1,p}_0(Ω)`, with the expected underlying function. -/
+theorem W1p.exists_clm_w1p0_apply_eq_contDiffSMul (hp : p ≠ (∞ : ℝ≥0∞)) {psi : E → ℝ}
+    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M) (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M)
+    (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M) (hcpt : HasCompactSupport psi)
+    (hts : tsupport psi ⊆ (Omega : Set E)) :
+    ∃ cutoff : W1p mu Omega p →L[ℝ] W1p0 mu Omega p, ∀ u : W1p mu Omega p,
+      (cutoff u : W1p mu Omega p) = W1p.contDiffSMul psi hpsi hM hpsiM hgradM u := by
+  refine ⟨ContinuousLinearMap.codRestrict (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM)
+      (w1p0Submodule mu Omega p).toSubmodule (fun u => ?_), fun u => ?_⟩
+  · rw [W1p.contDiffSMulL_apply]
+    exact W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport hp hpsi hM hpsiM hgradM
+      hcpt hts u
+  · simp only [ContinuousLinearMap.coe_codRestrict_apply, W1p.contDiffSMulL_apply]
+
+/-- Restricting to `V ≤ Ω` and taking values agrees with cutting off by a function equal to one
+on `V`, taking values on `Ω` and restricting to `V` in `Lᵖ`. -/
+theorem W1p.valueL_comp_restrictL_eq_comp_cutoff {V : Opens E} (hV : V ≤ Omega) {psi : E → ℝ}
+    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M) (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M)
+    (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M) (hOne : ∀ x ∈ (V : Set E), psi x = 1)
+    (cutoff : W1p mu Omega p →L[ℝ] W1p0 mu Omega p)
+    (cutoff_apply : ∀ u : W1p mu Omega p,
+      (cutoff u : W1p mu Omega p) = W1p.contDiffSMul psi hpsi hM hpsiM hgradM u)
+    (res : Lp ℝ p (mu.restrict (Omega : Set E)) →L[ℝ] Lp ℝ p (mu.restrict (V : Set E)))
+    (hres : ∀ f, res f =ᵐ[mu.restrict (V : Set E)] f) :
+    (W1p.valueL (mu := mu) (Omega := V) (p := p)).comp (W1p.restrictL hV) =
+      (res.comp (W1p0.valueL (mu := mu) (Omega := Omega) (p := p))).comp cutoff := by
+  ext u
+  filter_upwards [W1p.value_restrictL_ae hV u, hres (W1p0.valueL (cutoff u)),
+    (W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u).filter_mono
+      (ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hV))),
+    ae_restrict_mem V.isOpen.measurableSet] with x hleft hres hmul hx
+  have hres' : (res (W1p.value (cutoff u : W1p mu Omega p)) : E → ℝ) x =
+      (W1p.value (cutoff u : W1p mu Omega p) : E → ℝ) x := by
+    simpa only [W1p0.valueL_apply] using hres
+  rw [ContinuousLinearMap.comp_apply, W1p.valueL_apply, hleft,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    W1p0.valueL_apply, hres']
+  rw [cutoff_apply u, hmul, hOne x hx, one_smul]
 
 /-- **The product of a test function with a composition lies in `W^{1,p}_0(Ω)`.**  The product
 `φ G(u)` of a test function `φ ∈ C_c^∞(Ω)` with the composition `G(u)` of any

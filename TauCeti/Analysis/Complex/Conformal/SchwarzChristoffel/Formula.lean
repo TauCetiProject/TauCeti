@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Prevertex
 
 -- Non-public: the boundary-arc continuation of the pre-Schwarzian derivative and the passage from
 -- decay along the upper half-plane to decay at infinity are used only in the proof.
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Contour.PolarPart.PartialFraction
@@ -143,14 +144,14 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
       InjOn f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
       (∀ z ∈ Metric.ball (x : ℂ) r, z.im = 0 → ((f z - q) / b).im = 0) ∧
       ∀ z ∈ Metric.ball (x : ℂ) r, 0 < z.im → 0 < ((f z - q) / b).im)
-    (hvertex : ∀ i, (e i ∈ Ioo (-1 : ℝ) 1 ∧ ∃ r > 0, ∃ b : ℂ, b ≠ 0 ∧
+    (hvertex : ∀ i, (e i ∈ Ioo (-1 : ℝ) 1 ∧ ∃ r > 0, ∃ b : ℂ,
       ContinuousOn f (Metric.ball ((a i : ℝ) : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
       InjOn f (Metric.ball ((a i : ℝ) : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
       (∀ z ∈ Metric.ball ((a i : ℝ) : ℂ) r, 0 < z.im →
         |((f z - f (a i : ℂ)) / b).arg| < (e i + 1) * Real.pi / 2) ∧
       ∀ z ∈ Metric.ball ((a i : ℝ) : ℂ) r, z.im = 0 → f z ≠ f (a i : ℂ) →
         |((f z - f (a i : ℂ)) / b).arg| = (e i + 1) * Real.pi / 2) ∨
-      (e i ∈ Ioo (-3 : ℝ) (-1) ∧ ∃ r > 0, ∃ c b : ℂ, b ≠ 0 ∧ ∃ g : ℂ → ℂ,
+      (e i ∈ Ioo (-3 : ℝ) (-1) ∧ ∃ r > 0, ∃ c b : ℂ, ∃ g : ℂ → ℂ,
         EqOn g (fun z => b / (f z - c))
           (Metric.ball ((a i : ℝ) : ℂ) r ∩ {z : ℂ | 0 < z.im}) ∧
         g (a i : ℂ) = 0 ∧
@@ -160,7 +161,7 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
           |(g z).arg| < (-e i - 1) * Real.pi / 2) ∧
         ∀ z ∈ Metric.ball ((a i : ℝ) : ℂ) r, z.im = 0 → g z ≠ 0 →
           |(g z).arg| = (-e i - 1) * Real.pi / 2) ∨
-      (e i = -1 ∧ ∃ r > 0, ∃ c b : ℂ, b ≠ 0 ∧ ∃ g : ℂ → ℂ,
+      (e i = -1 ∧ ∃ r > 0, ∃ c b : ℂ, ∃ g : ℂ → ℂ,
         EqOn g (fun z => exp ((f z - c) / b))
           (Metric.ball ((a i : ℝ) : ℂ) r ∩ {z : ℂ | 0 < z.im}) ∧
         g (a i : ℂ) = 0 ∧
@@ -181,9 +182,8 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
     EqOn f (fun z => deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
       schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
   have hfin : (range fun i => ((a i : ℝ) : ℂ)).Finite := finite_range _
-  have hre : (range fun i => ((a i : ℝ) : ℂ)) ⊆ {z : ℂ | z.im = 0} := by
-    rintro _ ⟨i, rfl⟩
-    simp
+  have hre : (range fun i => ((a i : ℝ) : ℂ)) ⊆ {z : ℂ | z.im = 0} :=
+    fun _ ⟨i, hi⟩ => by simp [← hi]
   -- Reflection across the boundary sides continues the pre-Schwarzian derivative off the
   -- prevertices.
   obtain ⟨φ, hφd, hφf, hφconj⟩ :=
@@ -196,47 +196,45 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
   have hpole : ∀ i, Tendsto (fun z => (z - ((a i : ℝ) : ℂ)) * φ z)
       (𝓝[≠] ((a i : ℝ) : ℂ)) (𝓝 ((e i : ℝ) : ℂ)) := by
     intro i
-    have hdiff : ((range fun j => ((a j : ℝ) : ℂ)) \ {((a i : ℝ) : ℂ)}).Finite := hfin.sdiff
-    obtain ⟨ρ, hρ, hsub⟩ :=
-      Metric.isOpen_iff.mp hdiff.isClosed.isOpen_compl ((a i : ℝ) : ℂ) (by simp)
+    obtain ⟨ρ, hρ, hsub⟩ := Metric.isOpen_iff.mp
+      (hfin.sdiff (t := {((a i : ℝ) : ℂ)})).isClosed.isOpen_compl ((a i : ℝ) : ℂ) (by simp)
     have hφρ : DifferentiableOn ℂ φ (Metric.ball ((a i : ℝ) : ℂ) ρ \ {((a i : ℝ) : ℂ)}) :=
       hφd.mono fun z hz hzS => hsub hz.1 ⟨hzS, hz.2⟩
     have hball (r : ℝ) : MapsTo (starRingEnd ℂ) (Metric.ball ((a i : ℝ) : ℂ) r)
-        (Metric.ball ((a i : ℝ) : ℂ) r) := fun z hz => by
-      rw [Metric.mem_ball, ← Complex.conj_ofReal, Complex.dist_conj_conj]
-      exact hz
-    rcases hvertex i with ⟨hei, r, hr, b, hb, hcont, hinj, hsector, hrays⟩ |
-      ⟨hei, r, hr, c, b, hb, g, hgf, hg0, hgc, hgi, hsector, hrays⟩ |
-      ⟨hei, r, hr, c, b, hb, g, hgf, hg0, hgc, hgr, hgu, hgi⟩ |
-      ⟨hei, r, hr, ρ', c, b, hb, hfc, hfi, hp, hU⟩
+        (Metric.ball ((a i : ℝ) : ℂ) r) := fun z hz => conj_mem_ball_of_im_eq_zero (by simp) hz
+    rcases hvertex i with ⟨hei, r, hr, b, hcont, hinj, hsector, hrays⟩ |
+      ⟨hei, r, hr, c, b, g, hgf, hg0, hgc, hgi, hsector, hrays⟩ |
+      ⟨hei, r, hr, c, b, g, hgf, hg0, hgc, hgr, hgu, hgi⟩ |
+      ⟨hei, r, _, ρ', c, b, hb, hfc, hfi, hp, hU⟩
     · have hcast : ((e i : ℝ) : ℂ) = ((e i + 1 : ℝ) : ℂ) - 1 := by push_cast; ring
       rw [hcast]
       exact tendsto_sub_mul_nhdsNE_of_sector (φ := φ) (f := f) (x := a i) (r := ρ)
         (β := e i + 1) (Ω := Metric.ball ((a i : ℝ) : ℂ) r) (b := b) hρ hφρ
         (fun z _ => hφconj z) (hφf.mono inter_subset_left)
-        ⟨by linarith [hei.1], by linarith [hei.2]⟩ hb Metric.isOpen_ball (hball r)
+        ⟨by linarith [hei.1], by linarith [hei.2]⟩ Metric.isOpen_ball (hball r)
         (Metric.mem_ball_self hr) hcont (hf.mono inter_subset_right) hinj hsector hrays
     · have hcast : ((e i : ℝ) : ℂ) = -((-e i - 1 : ℝ) : ℂ) - 1 := by push_cast; ring
       rw [hcast]
       exact tendsto_sub_mul_nhdsNE_of_eqOn_div (x := a i) (β := -e i - 1) hρ hφρ
         (fun z _ => hφconj z) (hφf.mono inter_subset_left)
-        ⟨by linarith [hei.2], by linarith [hei.1]⟩ hb Metric.isOpen_ball (hball r)
+        ⟨by linarith [hei.2], by linarith [hei.1]⟩ Metric.isOpen_ball (hball r)
         (Metric.mem_ball_self hr) (hf.mono inter_subset_right) hgf hg0 hgc hgi hsector hrays
     · rw [hei, ofReal_neg, ofReal_one]
       exact tendsto_sub_mul_nhdsNE_of_eqOn_exp (x := a i) hρ hφρ (fun z _ => hφconj z)
-        (hφf.mono inter_subset_left) hb Metric.isOpen_ball (hball r) (Metric.mem_ball_self hr)
+        (hφf.mono inter_subset_left) Metric.isOpen_ball (hball r) (Metric.mem_ball_self hr)
         (hf.mono inter_subset_right) hgf hg0 hgc hgr hgu hgi
     · rw [hei, ofReal_neg, ofReal_ofNat]
       exact tendsto_sub_mul_nhdsNE_of_halfStripExterior hρ hφρ (fun z _ => hφconj z)
-        (hφf.mono inter_subset_left) hr hb (hf.mono inter_subset_right) hfc hfi hp hU
+        (hφf.mono inter_subset_left) hb (hf.mono inter_subset_right) hfc hfi hp hU
   -- The finite limit of `z * f'' / f'` at infinity makes it decay there.
   have hdecay : Tendsto φ (cobounded ℂ) (𝓝 0) := by
     refine tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet hinfty ?_
       (Eventually.of_forall hφconj) hφf
     filter_upwards [isBounded_def.mp hfin.isBounded] with z hz _
-    exact ((hφd z hz).differentiableAt (hfin.isClosed.isOpen_compl.mem_nhds hz)).continuousAt
+    exact ((hφd z hz).differentiableAt
+      (hfin.isClosed.isOpen_compl.mem_nhds hz)).continuousAt.continuousWithinAt
   -- Partial fractions and integration then recover `f` itself.
-  exact eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto a e ha z₀ hf hfn hφd hφf hpole
+  exact eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto a e ha z₀ hfn hφd hφf hpole
     hdecay
 
 end TauCeti

@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import TauCeti.CategoryTheory.Exact.Resolution.Basic
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
+import TauCeti.Algebra.Homology.ShortComplex.Splitting
 
 /-!
 # Relative projectives in an exact category, and the horseshoe lemma
@@ -107,9 +108,6 @@ identifies its kernel in one step.
   `Mathlib/Algebra/Homology/ShortComplex/ShortExact.lean`, whose
   `CategoryTheory.ShortComplex.ShortExact.splittingOfProjective` is the balanced-category
   ancestor of `TauCeti.ExactStructure.splittingOfProjective`.
-* [The Tau Ceti Grothendieck groups, Cartan maps, and Euler forms roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GrothendieckEulerForms/README.md),
-  Layer 3, whose projective-resolution calculus requires the horseshoe lemma and whose subsequent
-  finite-resolution applications require the resulting extension-closed object property.
 -/
 
 public section
@@ -553,18 +551,17 @@ section Resolutions
 
 variable {P : ObjectProperty C}
 
-/-- **A property consisting of projectives is extension closed**, as soon as it is replete and
-closed under binary biproducts: a conflation whose third term is projective splits, so its middle
-term is the biproduct of the two outer ones.
+/-- **A property consisting of projectives is extension closed**, as soon as it is closed under
+binary products: a conflation whose third term is projective splits, so its middle term is the
+biproduct of the two outer ones.
 
 Together with `TauCeti.ExactStructure.fullSubcategory` this equips the objects satisfying `P`
 with an induced exact structure — necessarily the split one, by
 `TauCeti.ExactStructure.fullSubcategory_eq_split`. -/
-theorem isExtensionClosed_of_le_isProjective [P.IsClosedUnderIsomorphisms]
-    [P.IsClosedUnderBinaryProducts] (hP : P ≤ E.isProjective) : E.IsExtensionClosed P where
+theorem isExtensionClosed_of_le_isProjective [P.IsClosedUnderBinaryProducts]
+    (hP : P ≤ E.isProjective) : E.IsExtensionClosed P where
   prop_X₂ hS h₁ h₃ :=
-    P.prop_of_iso (E.splittingOfProjective hS (hP _ h₃)).isoBinaryBiproduct.symm
-      (P.prop_biprod_of_isClosedUnderBinaryProducts h₁ h₃)
+    P.prop_of_isLimit_binaryFan (E.splittingOfProjective hS (hP _ h₃)).isLimitBinaryFan h₁ h₃
 
 /-- A property containing a zero object and closed under binary products is automatically
 replete, by `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_containsZero`; so the

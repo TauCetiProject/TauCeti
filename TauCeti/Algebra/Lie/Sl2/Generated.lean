@@ -61,9 +61,6 @@ irreducibility.
 
 ## References
 
-This supports the Clebsch-Gordan item of Layer 0 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972],
   §7.2.
 -/
@@ -136,7 +133,8 @@ theorem lieSpan_singleton_toSubmodule_eq_span_fin (htop : t.toLieSubalgebra K = 
     (P : t.HasPrimitiveVectorWith m (n : K)) :
     (LieSubmodule.lieSpan K L {m}).toSubmodule =
       Submodule.span K (Set.range fun i : Fin (n + 1) ↦ (toEnd K L M f ^ (i : ℕ)) m) := by
-  rw [lieSpan_singleton_toSubmodule_eq_span htop P, span_range_pow_toEnd_f_eq_span_range_fin P]
+  rw [lieSpan_singleton_toSubmodule_eq_span htop P,
+    Module.End.span_range_pow_apply_eq_span_range_fin _ (P.pow_toEnd_f_eq_zero_of_eq_nat rfl)]
 
 /-- The ladder coefficients picked up on the way up a weight string of length `n + 1` are nonzero
 in characteristic zero. -/

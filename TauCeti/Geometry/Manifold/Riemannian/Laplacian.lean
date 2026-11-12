@@ -16,6 +16,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -185,7 +186,7 @@ theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
     funext y
     exact inner_mgradient (I := I) (f := f) (x := y) (W y)
   rw [hinner'] at hinner
-  have hinner'' :
+  have _ :
       mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) =
         inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x (V x))
             (W x) +
@@ -236,6 +237,36 @@ theorem hessian_symm [IsManifold I 2 M]
   -- The two directional-derivative equations now differ only by the torsion equation.
   rw [hessianVW, hessianWV]
   linarith [hbracket, htw_mvfderiv]
+
+/-- The Hessian divided by a nonvanishing function `f`: for the Levi-Civita connection `D`,
+`(Y f / f) (X f / f) + X (Y f / f) - (D_X Y) f / f = Hess f(X,Y) / f` where `f` does not
+vanish. -/
+theorem hessian_div_eq_mvfderiv_add [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) {Y : Π x : M, TangentSpace I x} (hY : MDiffAt (T% Y) x)
+    (hf₀ : f x ≠ 0) (X : Π x : M, TangentSpace I x) :
+    (mvfderiv I f x (Y x) / f x) * (mvfderiv I f x (X x) / f x) +
+        mvfderiv I (fun x ↦ mvfderiv I f x (Y x) / f x) x (X x) -
+        mvfderiv I f x (CovariantDerivative.leviCivitaConnection I M Y x (X x)) / f x =
+      hessian I f x (X x) (Y x) / f x := by
+  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := 2) (by simp)
+  have hfx : MDiffAt f x := hf.mdifferentiableAt (by simp)
+  have hdY : MDiffAt (fun x ↦ mvfderiv I f x (Y x)) x :=
+    mdifferentiableAt_mvfderiv_apply (n := 2) hf (by simp) hY
+  rw [hessian_apply_eq_mvfderiv_sub x hf X Y hY]
+  have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) x (X x) =
+      -(f x ^ 2)⁻¹ * mvfderiv I f x (X x) := by
+    simpa only [Function.comp_def, fderiv_inv, ContinuousLinearMap.toSpanSingleton_apply,
+      smul_eq_mul, mul_comm] using
+      (mvfderiv_comp_apply_of_differentiableAt
+        (differentiableAt_inv hf₀) hfx (X x))
+  simp only [div_eq_mul_inv]
+  rw [mvfderiv_fun_mul (g := fun x ↦ (f x)⁻¹) hdY (hfx.inv hf₀)]
+  simp only [add_apply, smul_apply, smul_eq_mul, hinv]
+  field_simp [hf₀]
+  ring
 
 end HessianSymmetry
 
@@ -662,10 +693,26 @@ theorem laplaceBeltrami_sq_le_finrank_mul_sum_hessian_sq
   exact Finset.sum_le_sum fun i _ ↦ Finset.single_le_sum
     (f := fun j ↦ hessian I f x (b i) (b j) ^ 2) (fun j _ ↦ sq_nonneg _) (Finset.mem_univ i)
 
+/-- If the Hessian of `f` at `x` is `c` times the metric, then `Δ f x = n c`, where `n` is the
+dimension. -/
+theorem laplaceBeltrami_eq_finrank_mul_of_hessian_eq_mul_inner
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} {x : M} {c : ℝ}
+    (h : ∀ v w : TangentSpace I x, hessian I f x v w = c * inner ℝ v w) :
+    laplaceBeltrami I f x = Module.finrank ℝ E * c := by
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [laplaceBeltrami_eq_sum_hessian I f x b]
+  simp only [h, ← Finset.mul_sum]
+  rw [b.sum_inner_self, Fintype.card_fin, finrank_tangentSpace]
+  ring
+
 /-! ### Linear coordinates -/
 
 /-- **The Hessian in linear coordinates.** On a finite-dimensional real normed space `F` whose
-Riemannian metric is the field of bilinear forms `g`, differentiable at `x`, the Hessian of a
+Riemannian metric is the field of bilinear forms `g`, the Hessian of a
 function `f` that is `C²` at `x` is `Hess f(u, v) = D²f(u, v) - Df(Γ(u, v))`, where `Γ` is
 `TauCeti.Manifold.christoffelSecondKind g`. Tangent vectors are read in the model space through
 `tangentSpaceCastModel`. -/
@@ -676,7 +723,7 @@ theorem hessian_model_space_eq_fderiv_sub_christoffelSecondKind
     {g : F → F →L[ℝ] F →L[ℝ] ℝ}
     (hg : ∀ y (v w : TangentSpace 𝓘(ℝ, F) y), inner ℝ v w =
       g y (tangentSpaceCastModel 𝓘(ℝ, F) y v) (tangentSpaceCastModel 𝓘(ℝ, F) y w))
-    {x : F} (hgx : DifferentiableAt ℝ g x) {f : F → ℝ} (hf : ContDiffAt ℝ 2 f x) (u v : F) :
+    {x : F} {f : F → ℝ} (hf : ContDiffAt ℝ 2 f x) (u v : F) :
     hessian 𝓘(ℝ, F) f x ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm u)
         ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm v) =
       fderiv ℝ (fderiv ℝ f) x u v - fderiv ℝ f x (christoffelSecondKind g x u v) := by
@@ -691,8 +738,8 @@ theorem hessian_model_space_eq_fderiv_sub_christoffelSecondKind
     -- `NormedSpace.fromTangentSpace z` is `tangentSpaceCastModel 𝓘(ℝ, F) z` by definition.
     simp [NormedSpace.fromTangentSpace]
   -- The Levi-Civita derivative of the constant field `C v` in the direction `u` is `Γ(u, v)`.
-  have hΓ := leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind (V := C v) hg
-    hgx (differentiableAt_const v) u
+  have hΓ := leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind
+    (V := C v) (x := x) hg (differentiableAt_const v) u
   -- Read in the model space, the constant field `C v` is the constant map `v`.
   have h0 : fderiv ℝ (C v) x = 0 := fderiv_const_apply (x := x) v
   have hD : DifferentiableAt ℝ (fderiv ℝ f) x :=

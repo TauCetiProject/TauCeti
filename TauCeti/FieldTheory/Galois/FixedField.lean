@@ -73,9 +73,8 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.fixedField_fixingSubgroup`: the correspondence over an intermediate field
   with Galois extension above it, without a Galois assumption on the original base
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
-* `IntermediateField.finiteDimensional_fixedField`, `IntermediateField.isGalois_fixedField` and
-  `IntermediateField.finrank_fixedField_eq_natCard`: Artin's theorem on the fixed field of a finite
-  subgroup, with no hypothesis on `M / K`
+* `IntermediateField.finiteDimensional_fixedField` and `IntermediateField.isGalois_fixedField`:
+  Artin's theorem on the fixed field of a finite subgroup, with no hypothesis on `M / K`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
@@ -112,20 +111,32 @@ theorem mem_fixedField_zpowers_iff (σ : M ≃ₐ[K] M) (x : M) :
   rw [mem_fixedField_iff, Subgroup.forall_mem_zpowers]
   exact (MulAction.mem_fixedBy_zpowers_iff_mem_fixedBy (g := σ) (a := x))
 
-/-- The degree of a cyclic fixed field times the order of its generator is the total degree. -/
-theorem finrank_fixedField_zpowers_mul_orderOf [FiniteDimensional K M]
-    (σ : M ≃ₐ[K] M) :
+/-- The degree of a cyclic fixed field times the order of its generator is the total degree. When
+`σ` has infinite order, `M / K` is infinite-dimensional and both sides are `0`. -/
+theorem finrank_fixedField_zpowers_mul_orderOf (σ : M ≃ₐ[K] M) :
     Module.finrank K (fixedField (Subgroup.zpowers σ)) * orderOf σ = Module.finrank K M := by
-  rw [← Nat.card_zpowers, ← finrank_fixedField_eq_card, Module.finrank_mul_finrank]
+  by_cases hfin : Finite (Subgroup.zpowers σ)
+  · have := Fintype.ofFinite (Subgroup.zpowers σ)
+    have h : Module.finrank (fixedField (Subgroup.zpowers σ)) M = orderOf σ := by
+      rw [← Nat.card_zpowers, Nat.card_eq_fintype_card]
+      exact FixedPoints.finrank_eq_card (Subgroup.zpowers σ) M
+    rw [← h, Module.finrank_mul_finrank]
+  · have hσ : orderOf σ = 0 := by
+      rw [orderOf_eq_zero_iff, ← finite_zpowers]
+      exact hfin
+    rw [hσ, mul_zero]
+    by_contra hne
+    have : FiniteDimensional K M := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero (Ne.symm hne))
+    exact hfin inferInstance
 
 /-- The Galois connection between fixing subgroups and fixed intermediate fields. -/
 theorem fixingSubgroup_fixedField_gc :
     GaloisConnection
       (OrderDual.toDual ∘
-        (IntermediateField.fixingSubgroup : IntermediateField K M → Subgroup (M ≃ₐ[K] M)))
-      ((IntermediateField.fixedField : Subgroup (M ≃ₐ[K] M) → IntermediateField K M) ∘
+        (fixingSubgroup : IntermediateField K M → Subgroup (M ≃ₐ[K] M)))
+      ((fixedField : Subgroup (M ≃ₐ[K] M) → IntermediateField K M) ∘
         OrderDual.ofDual) :=
-  fun E H ↦ (IntermediateField.le_fixedField_iff_le_fixingSubgroup H.ofDual E).symm
+  fun E H ↦ (le_fixedField_iff_le_fixingSubgroup H.ofDual E).symm
 
 /-- An intermediate field is the fixed field of its fixers whenever the extension above it
 is Galois. No Galois or algebraicity assumption on the original base is needed. -/
@@ -265,7 +276,7 @@ theorem fixingSubgroup_iSup {ι : Sort*} (E : ι → IntermediateField K M) :
   ext σ
   rw [Subgroup.mem_iInf]
   exact ⟨fun h i ↦ fixingSubgroup_antitone (le_iSup E i) h,
-    by simp [← Subgroup.zpowers_le, ← IntermediateField.le_fixedField_iff_le_fixingSubgroup]⟩
+    by simp [← Subgroup.zpowers_le, ← le_fixedField_iff_le_fixingSubgroup]⟩
 
 /-- **The fixing subgroup of an algebraic intermediate field is closed** for the Krull topology:
 `E` is the join of the simple extensions it contains, each of them finite over `K`, so
@@ -320,18 +331,6 @@ theorem fixingSubgroup_inf_separableClosure (E : IntermediateField K M)
     rw [← map_pow]
     exact hσ _ (mem_inf.mpr ⟨_root_.pow_mem hx _, hyS⟩)
   exact iterateFrobenius_inj M (ringExpChar K) n hpow
-
-/-- **Artin's theorem, degree form**: the degree of `M` over the field fixed by a finite group of
-automorphisms is the order of the group.
-
-Mathlib's `IntermediateField.finrank_fixedField_eq_card` is the same conclusion under
-`[FiniteDimensional K M]`, which a subgroup of the automorphism group of an infinite extension does
-not supply. -/
-theorem finrank_fixedField_eq_natCard (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
-    Module.finrank (fixedField H) M = Nat.card H := by
-  have := Fintype.ofFinite H
-  rw [Nat.card_eq_fintype_card]
-  exact FixedPoints.finrank_eq_card H M
 
 /-- **An intermediate field of finite degree has a finite fixing subgroup**, being a copy of the
 automorphism group of a finite extension. -/
@@ -427,11 +426,11 @@ theorem adjoin_eq_top_of_fixedField_stabilizer [IsGalois K M] (x : M) :
   have hx' : IsAlgebraic K x' :=
     (isAlgebraic_algebraMap_iff (algebraMap E M).injective).mp (Algebra.IsAlgebraic.isAlgebraic x)
   have htop : K⟮x'⟯ = ⊤ := by
-    apply IntermediateField.map_injective E.val
+    apply map_injective E.val
     rw [adjoin_map, Set.image_singleton, ← AlgHom.fieldRange_eq_map, fieldRange_val]
     exact (fixedField_stabilizer_eq_adjoin_simple x).symm
   have h := adjoin_simple_toSubalgebra_of_isAlgebraic hx'
-  rw [htop, IntermediateField.top_toSubalgebra] at h
+  rw [htop, top_toSubalgebra] at h
   exact h.symm
 
 section Restriction
@@ -492,7 +491,7 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
   constructor
   · intro h
     refine ⟨σ.symm x, fun g hg ↦ ?_, by simp⟩
-    have hx := h (MulAut.conj σ g) (Subgroup.mem_map_of_mem _ hg)
+    have hx := h (MulAut.conj σ g) (mem_map_of_mem _ hg)
     simpa [MulAut.conj_apply] using congrArg σ.symm hx
   · rintro ⟨y, hy, rfl⟩ g ⟨h, hh, rfl⟩
     simpa [MulAut.conj_apply] using congrArg σ (hy h hh)
@@ -509,8 +508,8 @@ No faithfulness is asked of the action: `FixedPoints.toAlgAut_surjective` needs 
 and cyclicity passes along any surjection. A non-faithful action simply presents the Galois group
 as a proper quotient of `G`, which is cyclic all the same. -/
 theorem isCyclic_algEquiv (G F : Type*) [Group G] [Field F] [MulSemiringAction G F] [Finite G]
-    [IsCyclic G] : IsCyclic (F ≃ₐ[FixedPoints.subfield G F] F) :=
-  isCyclic_of_surjective _ (FixedPoints.toAlgAut_surjective G F)
+    [IsCyclic G] : IsCyclic (F ≃ₐ[subfield G F] F) :=
+  isCyclic_of_surjective _ (toAlgAut_surjective G F)
 
 end FixedPoints
 
@@ -547,8 +546,8 @@ is what a tower argument needs when it must produce an equation between automorp
 between their values. -/
 @[simp]
 theorem restrictScalars_toFixedFieldAlgEquiv (σ : M ≃ₐ[K] M) :
-    AlgEquiv.restrictScalars K σ.toFixedFieldAlgEquiv = σ :=
-  AlgEquiv.ext fun x ↦ toFixedFieldAlgEquiv_apply σ x
+    restrictScalars K σ.toFixedFieldAlgEquiv = σ :=
+  ext fun x ↦ toFixedFieldAlgEquiv_apply σ x
 
 /-- **And, for finite `⟨σ⟩`, it generates.** The automorphisms of `M` fixing `M ^ ⟨σ⟩` are exactly
 the powers of `σ.toFixedFieldAlgEquiv`.
@@ -579,19 +578,25 @@ theorem zpowers_toFixedFieldAlgEquiv_eq_top (σ : M ≃ₐ[K] M) [Finite (Subgro
 /-- **The automorphism group of `M` over `M ^ ⟨σ⟩` has order `orderOf σ`.** The automorphisms of
 `M` fixing the field cut out by `⟨σ⟩` number exactly the order of `σ`.
 
-Only the generated subgroup `⟨σ⟩` need be finite: `M / K` is asked to be neither finite nor
-Galois, so this applies to an automorphism of finite order of an arbitrary extension. -/
+`M / K` is asked to be neither finite nor Galois, so this applies to an automorphism of an
+arbitrary extension; when `σ` has infinite order both sides are `0`, the group being infinite. -/
 -- Not a `simp` lemma: `simpNF` rejects it. Normalising the left-hand side sends `simp` after
--- `Fintype Gal(M/M ^ ⟨σ⟩)`, and with only `Finite (Subgroup.zpowers σ)` in scope that instance
+-- `Fintype Gal(M/M ^ ⟨σ⟩)`, and without a `Finite (Subgroup.zpowers σ)` instance that instance
 -- search exhausts its heartbeat budget instead of failing, so the lemma could never fire.
-theorem card_algEquiv_fixedField_zpowers (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers σ)] :
+theorem card_algEquiv_fixedField_zpowers (σ : M ≃ₐ[K] M) :
     Nat.card (M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M) = orderOf σ := by
   have horder : orderOf (toFixedFieldAlgEquiv σ) = orderOf σ := by
-    rw [← orderOf_injective (AlgEquiv.restrictScalarsHom K)
-      (AlgEquiv.restrictScalarsHom_injective K) (toFixedFieldAlgEquiv σ),
-      AlgEquiv.restrictScalarsHom_apply, restrictScalars_toFixedFieldAlgEquiv]
-  rw [← Subgroup.card_top (G := M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M),
-    ← zpowers_toFixedFieldAlgEquiv_eq_top σ, Nat.card_zpowers, horder]
+    rw [← orderOf_injective (restrictScalarsHom K)
+      (restrictScalarsHom_injective K) (toFixedFieldAlgEquiv σ),
+      restrictScalarsHom_apply, restrictScalars_toFixedFieldAlgEquiv]
+  by_cases hfin : Finite (Subgroup.zpowers σ)
+  · rw [← Subgroup.card_top (G := M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M),
+      ← zpowers_toFixedFieldAlgEquiv_eq_top σ, Nat.card_zpowers, horder]
+  · have hσ : orderOf σ = 0 := by
+      rw [orderOf_eq_zero_iff, ← finite_zpowers]
+      exact hfin
+    rw [hσ]
+    simpa only [horder, hσ, zero_dvd_iff] using orderOf_dvd_natCard (toFixedFieldAlgEquiv σ)
 
 /-- Every automorphism of `M` over `M ^ ⟨σ⟩` commutes with every other when `⟨σ⟩` is finite.
 Neither finiteness nor Galoisness of `M / K` is required. -/
@@ -605,11 +610,35 @@ theorem fixedField_zpowers_mul_comm (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowe
 Neither finiteness nor Galoisness of `M / K` is required. -/
 theorem restrictScalars_mem_zpowers (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers σ)]
     (τ : M ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] M) :
-    AlgEquiv.restrictScalars K τ ∈ Subgroup.zpowers σ := by
+    restrictScalars K τ ∈ Subgroup.zpowers σ := by
   refine (IntermediateField.fixingSubgroup_fixedField_of_finite (Subgroup.zpowers σ)).le ?_
   rw [IntermediateField.mem_fixingSubgroup_iff]
   intro x hx
   exact τ.commutes ⟨x, hx⟩
+
+
+/-- The `m`-th roots `τ` of `σ` in `Gal(M/E)`, where `E = M ^ ⟨σ⟩`, that, read over `K`, lie in a
+set `S` correspond to the `m`-th roots of `σ` in `S ∩ ⟨σ⟩`. -/
+theorem card_fixedField_pow_roots (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers σ)]
+    (S : Set (M ≃ₐ[K] M)) (m : ℕ) :
+    Nat.card {τ : M ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] M //
+        τ ^ m = σ.toFixedFieldAlgEquiv ∧ restrictScalars K τ ∈ S} =
+      Nat.card {w : M ≃ₐ[K] M // w ∈ S ∧ w ∈ Subgroup.zpowers σ ∧ w ^ m = σ} := by
+  refine Nat.card_congr (Equiv.ofBijective (fun τ ↦ ⟨restrictScalars K τ.1, τ.2.2,
+    σ.restrictScalars_mem_zpowers τ.1, ?_⟩) ⟨?_, ?_⟩)
+  · rw [← restrictScalarsHom_apply, ← map_pow, τ.2.1,
+      restrictScalarsHom_apply, restrictScalars_toFixedFieldAlgEquiv]
+  · intro τ₁ τ₂ h
+    exact Subtype.ext (restrictScalars_injective K (congrArg Subtype.val h))
+  · rintro ⟨w, hwC, ⟨k, rfl⟩, hwm⟩
+    have hk : restrictScalars K (σ.toFixedFieldAlgEquiv ^ k) = σ ^ k := by
+      rw [← restrictScalarsHom_apply, map_zpow, restrictScalarsHom_apply,
+        restrictScalars_toFixedFieldAlgEquiv]
+    refine ⟨⟨σ.toFixedFieldAlgEquiv ^ k, ?_, hk ▸ hwC⟩, Subtype.ext hk⟩
+    apply restrictScalars_injective K
+    rw [← restrictScalarsHom_apply, map_pow, restrictScalarsHom_apply, hk,
+      restrictScalars_toFixedFieldAlgEquiv]
+    exact hwm
 
 end AlgEquiv
 

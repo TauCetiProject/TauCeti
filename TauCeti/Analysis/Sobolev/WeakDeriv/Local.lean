@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Topology.Separation.Regular
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.MeasureTheory.Function.Gluing
+import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Locality of weak derivatives
@@ -19,15 +20,20 @@ are compact and contained in the domain. No boundary regularity or boundedness o
 is needed. Thus completeness, local integrability, and the test-function identities defining
 the weak derivative can be verified on relatively compact subdomains.
 
-In finite-dimensional domains, a fixed candidate is a weak derivative if it is one near every
-point. In particular weak derivatives can be checked on any open cover, including overlapping
-covers of unbounded domains. The open-cover equivalences assume a complete codomain, since an
-empty cover cannot supply the completeness required by the weak-derivative predicate.
+For arbitrary normed domains, a fixed candidate is a weak derivative if it is one near every
+point, and the existence of a weak Fréchet derivative is local. In particular weak derivatives can
+be checked on any open cover, including overlapping covers of unbounded domains. When the domain is
+not finite dimensional, every test function vanishes, so the test-function identities hold
+trivially and only completeness and local integrability remain to be glued. The open-cover
+equivalences assume a complete codomain, since an empty cover cannot supply the completeness
+required by the weak-derivative predicate.
 
-When the measurable space is the Borel one, local weak Fréchet derivative fields need not be
-given by a fixed global candidate: uniqueness makes them agree almost everywhere on overlaps,
-and they assemble into a global weak derivative. A countable subcover suffices even when the
-original cover is uncountable.
+In a finite-dimensional domain with its Borel measurable space, local weak Fréchet derivative
+fields need not be given by a fixed global candidate: uniqueness makes them agree almost
+everywhere on overlaps, and they assemble into a global weak derivative. A countable subcover
+suffices even when the original cover is uncountable. Among the locality and gluing results, this
+uniqueness-based gluing is the only one that needs finite dimension; the cutoff theorem
+`HasWeakFDerivOn.exists_open_memLp_indicator` below also assumes it.
 
 ## Main results
 
@@ -37,6 +43,9 @@ original cover is uncountable.
 * `hasWeakLineDerivOn_iSup_iff` and `hasWeakFDerivOn_iSup_iff`: open-cover locality.
 * `exists_hasWeakFDerivOn_iSup`: gluing local derivative fields up to almost-everywhere equality.
 * `exists_hasWeakFDerivOn_iff_locally`: local existence is equivalent to global existence.
+* `HasWeakFDerivOn.exists_open_memLp_indicator`: a compact subset of the domain has an open
+  neighborhood on which the weakly differentiable pair is integrable, with compactly supported
+  zero extension.
 
 ## Attribution
 
@@ -109,7 +118,7 @@ end RelativelyCompact
 
 section OpenCover
 
-variable [FiniteDimensional ℝ E] [OpensMeasurableSpace E] [CompleteSpace F]
+variable [OpensMeasurableSpace E] [CompleteSpace F]
 
 /-- A fixed candidate weak directional derivative can be checked on open neighborhoods of
 each point. Neither the measure nor the neighborhoods need be finite. -/
@@ -131,6 +140,13 @@ theorem hasWeakLineDerivOn_iff_locally :
       have hi := hV.locallyIntegrableOn_deriv x hxV
       rw [V.isOpen.nhdsWithin_eq hxV] at hi
       exact hi.filter_mono nhdsWithin_le_nhds
+    by_cases hfd : FiniteDimensional ℝ E
+    swap
+    · -- Without finite dimension there are no nonzero test functions.
+      refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hu', fun φ ↦ ?_⟩
+      have hφ : (φ : E → ℝ) = 0 :=
+        (φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous).resolve_right hfd
+      simp [hφ]
     let T : 𝓓(Ω, ℝ) →+ F := AddMonoidHom.ofClass (
       (TestFunction.integralAgainstBilinCLM (ContinuousLinearMap.lsmul ℝ ℝ) μ u).comp
         (TestFunction.lineDerivCLM ℝ v : 𝓓(Ω, ℝ) →L[ℝ] 𝓓(Ω, ℝ)) +
@@ -223,6 +239,7 @@ theorem exists_hasWeakFDerivOn_iSup {ι : Type*} (V : ι → Opens E)
   obtain ⟨U, hU⟩ := hex
   exact ⟨U, hU, fun i ↦ (hU.mono (le_iSup V i)).ae_eq (h i)⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- Existence of a weak Fréchet derivative is local. Local fields are not required to agree
 pointwise, and no candidate global derivative needs to be chosen in advance. -/
 theorem exists_hasWeakFDerivOn_iff_locally :
@@ -233,15 +250,27 @@ theorem exists_hasWeakFDerivOn_iff_locally :
   · rintro ⟨U, hU⟩ x hx
     exact ⟨Ω, hx, U, hU⟩
   · intro h
-    choose V hxV W hW using fun x : Ω ↦ h x x.2
-    obtain ⟨U, hU, -⟩ := exists_hasWeakFDerivOn_iSup V W hW
-    refine ⟨U, hU.mono fun x hx ↦ ?_⟩
-    exact (le_iSup V ⟨x, hx⟩) (hxV ⟨x, hx⟩)
+    by_cases hfd : FiniteDimensional ℝ E
+    · choose V hxV W hW using fun x : Ω ↦ h x x.2
+      obtain ⟨U, hU, -⟩ := exists_hasWeakFDerivOn_iSup V W hW
+      refine ⟨U, hU.mono fun x hx ↦ ?_⟩
+      exact (le_iSup V ⟨x, hx⟩) (hxV ⟨x, hx⟩)
+    · -- Without finite dimension there are no nonzero test functions, so `0` works.
+      refine ⟨0, hasWeakFDerivOn_iff_locally.2 fun x hx ↦ ?_⟩
+      obtain ⟨V, hxV, U, hU⟩ := h x hx
+      refine ⟨V, hxV, hasWeakFDerivOn_iff.2 fun v ↦ ?_⟩
+      have hv := hU.hasWeakLineDerivOn v
+      refine hasWeakLineDerivOn_iff_testFunction.2
+        ⟨hv.completeSpace, hv.locallyIntegrableOn,
+          (integrable_zero E F μ).locallyIntegrable.locallyIntegrableOn _, fun φ ↦ ?_⟩
+      have hφ : (φ : E → ℝ) = 0 :=
+        (φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous).resolve_right hfd
+      simp [hφ]
 
 end Gluing
 
 /-- Weak directional derivatives on two open sets glue on their union. -/
-theorem HasWeakLineDerivOn.sup [FiniteDimensional ℝ E] [OpensMeasurableSpace E]
+theorem HasWeakLineDerivOn.sup [OpensMeasurableSpace E]
     {V : Opens E} (hΩ : HasWeakLineDerivOn μ Ω u u' v)
     (hV : HasWeakLineDerivOn μ V u u' v) : HasWeakLineDerivOn μ (Ω ⊔ V) u u' v := by
   have := hΩ.completeSpace
@@ -251,9 +280,42 @@ theorem HasWeakLineDerivOn.sup [FiniteDimensional ℝ E] [OpensMeasurableSpace E
   · exact ⟨V, hx, hV⟩
 
 /-- Weak Fréchet derivatives on two open sets glue on their union. -/
-theorem HasWeakFDerivOn.sup [FiniteDimensional ℝ E] [OpensMeasurableSpace E]
+theorem HasWeakFDerivOn.sup [OpensMeasurableSpace E]
     {V : Opens E} {U : E → E →L[ℝ] F} (hΩ : HasWeakFDerivOn μ Ω u U)
     (hV : HasWeakFDerivOn μ V u U) : HasWeakFDerivOn μ (Ω ⊔ V) u U := by
   exact hasWeakFDerivOn_iff.2 fun v ↦ (hΩ.hasWeakLineDerivOn v).sup (hV.hasWeakLineDerivOn v)
+
+section Cutoff
+
+open Metric
+
+variable [FiniteDimensional ℝ E] [BorelSpace E]
+
+/-- **The cutoff of a weakly differentiable pair.** If `u` has weak derivative `D` on the open
+set `V` and `K ⊆ V` is compact, there is an open neighbourhood `O ⊆ V` of `K`, containing the
+`δ`-balls around the points of `K`, on which `u` and `D` are integrable, so that their zero
+extensions from `O` are `L¹`, and the zero extension of `u` has compact support. -/
+theorem HasWeakFDerivOn.exists_open_memLp_indicator {V : Opens E} {u : E → F}
+    {D : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ V u D) {K : Set E} (hK : IsCompact K)
+    (hKV : K ⊆ V) :
+    ∃ δ > 0, ∃ O : Opens E, K ⊆ O ∧ (O : Set E) ⊆ V ∧ (∀ x ∈ K, ball x δ ⊆ O) ∧
+      MemLp u 1 (μ.restrict O) ∧ MemLp D 1 (μ.restrict O) ∧
+      MemLp ((O : Set E).indicator u) 1 μ ∧ MemLp ((O : Set E).indicator D) 1 μ ∧
+      HasCompactSupport ((O : Set E).indicator u) := by
+  obtain ⟨δ, hδ, hδV⟩ := hK.exists_cthickening_subset_open V.isOpen hKV
+  obtain ⟨O, hO⟩ : ∃ O : Opens E, (O : Set E) = thickening δ K := ⟨⟨_, isOpen_thickening⟩, rfl⟩
+  have hOV : (O : Set E) ⊆ cthickening δ K := hO ▸ thickening_subset_cthickening δ K
+  have hu : MemLp u 1 (μ.restrict O) := memLp_one_iff_integrable.2 <|
+    (h.locallyIntegrableOn.integrableOn_compact_subset hδV hK.cthickening).mono_set hOV
+  have hD : MemLp D 1 (μ.restrict O) := memLp_one_iff_integrable.2 <|
+    (h.locallyIntegrableOn_deriv.integrableOn_compact_subset hδV hK.cthickening).mono_set hOV
+  exact ⟨δ, hδ, O, hO ▸ self_subset_thickening hδ K, hOV.trans hδV,
+    fun x hx => hO ▸ ball_subset_thickening hx δ, hu, hD,
+    (memLp_indicator_iff_restrict (f := u) O.isOpen.measurableSet.nullMeasurableSet).2 hu,
+    (memLp_indicator_iff_restrict (f := D) O.isOpen.measurableSet.nullMeasurableSet).2 hD,
+    HasCompactSupport.intro' hK.cthickening isClosed_cthickening fun y hy =>
+      indicator_of_notMem (fun hyO => hy (hOV hyO)) u⟩
+
+end Cutoff
 
 end TauCeti

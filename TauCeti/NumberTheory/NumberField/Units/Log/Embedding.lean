@@ -238,14 +238,13 @@ theorem sum_abs_logEmbedding_le_two_mul_logHeight₁ (u : (𝓞 L)ˣ) :
   exact le_add_of_nonneg_right (abs_nonneg _)
 
 open Classical in
-/-- Twice the relative logarithmic height of a unit is at most twice the `ℓ¹` norm of its
-logarithmic embedding. -/
-theorem two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding (u : (𝓞 L)ˣ) :
-    2 * Height.logHeight₁ (u : L) ≤
-      2 * ∑ w, |logEmbedding L (Additive.ofMul u) w| := by
-  rw [two_mul_logHeight₁_eq_sum_abs_logEmbedding]
-  nlinarith [Finset.abs_sum_le_sum_abs (fun w ↦ logEmbedding L (Additive.ofMul u) w)
-    Finset.univ]
+/-- The relative logarithmic height of a unit is at most the `ℓ¹` norm of its logarithmic
+embedding. -/
+theorem logHeight₁_le_sum_abs_logEmbedding (u : (𝓞 L)ˣ) :
+    Height.logHeight₁ (u : L) ≤ ∑ w, |logEmbedding L (Additive.ofMul u) w| := by
+  have h := two_mul_logHeight₁_eq_sum_abs_logEmbedding u
+  have := Finset.abs_sum_le_sum_abs (fun w ↦ logEmbedding L (Additive.ofMul u) w) Finset.univ
+  linarith
 
 open Classical in
 /-- The supremum norm of the logarithmic embedding of a unit is at most its relative
@@ -255,10 +254,7 @@ theorem norm_logEmbedding_le_logHeight₁ (u : (𝓞 L)ˣ) :
   rw [pi_norm_le_iff_of_nonneg (by positivity)]
   intro w
   rw [Real.norm_eq_abs, logEmbedding_component]
-  have h := TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁
-    (Sum.inr w.1) (u : L)
-  simpa [TauCeti.GlobalNumberFields.normalizedAbsValue_inr, Real.log_pow, abs_mul,
-    Nat.abs_cast] using h
+  exact InfinitePlace.abs_mult_mul_log_le_logHeight₁ w.1 _
 
 open Classical in
 /-- The relative logarithmic height of a unit is bounded by the unit rank times the supremum
@@ -285,7 +281,7 @@ theorem absLogHeight₁_le_sum_abs_logEmbedding_div_finrank (u : (𝓞 L)ˣ) :
       (∑ w, |logEmbedding L (Additive.ofMul u) w|) / Module.finrank ℚ L := by
   rw [NumberField.absLogHeight₁_eq_div]
   refine div_le_div_of_nonneg_right ?_ (by positivity)
-  nlinarith [two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding u]
+  exact logHeight₁_le_sum_abs_logEmbedding u
 
 open Classical in
 /-- The relative logarithmic height of a unit equals the sum of the positive parts of the kept
@@ -327,8 +323,6 @@ theorem logHeight₁_eq_sum_posPart_logEmbedding_iff (u : (𝓞 L)ˣ) :
     nlinarith
   · intro h
     have hlog := (Real.log_nonpos_iff (by positivity)).mpr h
-    have hmult : (0 : ℝ) < (w₀ (K := L)).mult := by
-      exact_mod_cast InfinitePlace.mult_pos
     nlinarith
 
 open Classical in

@@ -92,6 +92,7 @@ private theorem mem_integers_of_ord_eq_one (ht : P.ord t = 1) : t ∈ P.integers
   rw [mem_integers_iff_ord_nonneg, ht]
   norm_num
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The ratio `σ t / t` by which an automorphism fixing `P` moves a uniformizer is a unit at `P`. -/
 private theorem ord_apply_mul_inv (ht : P.ord t = 1) (g : P.integers.decompositionSubgroup F) :
     P.ord ((g : F' ≃ₐ[F] F') t * t⁻¹) = 0 := by
@@ -100,6 +101,7 @@ private theorem ord_apply_mul_inv (ht : P.ord t = 1) (g : P.integers.decompositi
     ord_decompositionSubgroup_apply F P g]
   ring
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 private theorem apply_mul_inv_mem_integers (ht : P.ord t = 1)
     (g : P.integers.decompositionSubgroup F) :
     (g : F' ≃ₐ[F] F') t * t⁻¹ ∈ P.integers := by
@@ -115,6 +117,7 @@ private theorem residue_apply_eq {g : P.integers.decompositionSubgroup F}
   rw [residue_eq_iff_sub_mem_filtration_one, hy]
   simpa using (mem_ramificationGroup_iff F P).mp hg x x.2
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 private theorem residue_apply_mul_inv_ne_zero (ht : P.ord t = 1)
     (g : P.integers.decompositionSubgroup F) :
     IsLocalRing.residue P.integers
@@ -154,6 +157,7 @@ noncomputable def tameCharacter (ht : P.ord t = 1) :
       rw [map_mul, map_inv₀]
       field_simp [(_root_.map_ne_zero σ).mpr ht0])
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The value of the tame character at `σ`, computed on any representative `y` of `σ t / t`
 in `𝒪_P`. -/
 theorem coe_tameCharacter_of_eq (ht : P.ord t = 1) (g : ramificationGroup F P 0)
@@ -162,6 +166,7 @@ theorem coe_tameCharacter_of_eq (ht : P.ord t = 1) (g : ramificationGroup F P 0)
     (tameCharacter F P ht g : P.ResidueField) = IsLocalRing.residue P.integers y :=
   congrArg _ (Subtype.ext hy.symm)
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The kernel of the tame character** (Stichtenoth, Proposition 3.8.5): `σ` has trivial tame
 character exactly when it fixes the uniformizer `t` modulo `𝔪_P²`. -/
 theorem tameCharacter_eq_one_iff (ht : P.ord t = 1) (g : ramificationGroup F P 0) :
@@ -183,6 +188,7 @@ theorem tameCharacter_eq_one_iff (ht : P.ord t = 1) (g : ramificationGroup F P 0
     have h2 := P.mul_mem_filtration h (P.mem_filtration_ord t⁻¹)
     rwa [ord_inv, ht, show (2 : ℤ) + -1 = 1 by norm_num] at h2
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The tame character does not depend on the uniformizer.** -/
 theorem tameCharacter_eq_of_ord_eq_one {t' : F'} (ht : P.ord t = 1) (ht' : P.ord t' = 1) :
     tameCharacter F P ht = tameCharacter F P ht' := by
@@ -217,6 +223,7 @@ theorem tameCharacter_eq_of_ord_eq_one {t' : F'} (ht : P.ord t = 1) (ht' : P.ord
     exact mul_inv_cancel₀ hu0
   rw [hsplit, map_mul, map_mul, hres, mul_assoc, hunit, mul_one]
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The tame character is trivial on the first ramification group: an automorphism moving every
 function integral at `P` by an element of `𝔪_P²` in particular fixes `t` modulo `𝔪_P²`. -/
 theorem ramificationGroup_one_subgroupOf_le_ker_tameCharacter (ht : P.ord t = 1) :
@@ -235,12 +242,14 @@ noncomputable def tameCharacterGraded (ht : P.ord t = 1) :
   QuotientGroup.lift _ (tameCharacter F P ht)
     (ramificationGroup_one_subgroupOf_le_ker_tameCharacter F P ht)
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The induced tame character evaluated on the class of an inertia automorphism. -/
 @[simp]
 theorem tameCharacterGraded_mk (ht : P.ord t = 1) (g : ramificationGroup F P 0) :
     tameCharacterGraded F P ht (QuotientGroup.mk g) = tameCharacter F P ht g := by
   rw [tameCharacterGraded, QuotientGroup.lift_mk]
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The induced tame character does not depend on the choice of uniformizer. -/
 theorem tameCharacterGraded_eq_of_ord_eq_one {t' : F'} (ht : P.ord t = 1)
     (ht' : P.ord t' = 1) :
@@ -294,6 +303,60 @@ private theorem apply_coe_eval_map (g : P.integers.decompositionSubgroup F)
   rw [hψ] at h
   simpa using h
 
+omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
+/-- **The Taylor step.**  If `d = g z - z` lies in `𝔪_P` and the derivative of `f` at `z` is a unit
+modulo `𝔪_P`, then `f (g z) - f z = d · u` in `F'` for a unit `u` of `𝒪_P`. -/
+private theorem exists_isUnit_eval_smul_sub_eval (fS : Polynomial P.integers) (z : P.integers)
+    (g : P.integers.decompositionSubgroup F)
+    (hder : IsLocalRing.residue P.integers ((derivative fS).eval z) ≠ 0)
+    (hd1 : ((g • z - z : P.integers) : F') ∈ P.filtration 1) :
+    ∃ u : P.integers, IsUnit u ∧
+      ((fS.eval (g • z) : P.integers) : F') - ((fS.eval z : P.integers) : F') =
+        ((g • z - z : P.integers) : F') * (u : F') := by
+  set d : P.integers := g • z - z
+  obtain ⟨K, hK⟩ := binomExpansion fS z d
+  rw [add_sub_cancel] at hK
+  set u : P.integers := (derivative fS).eval z + K * d with hu
+  have hunit : IsUnit u := by
+    rw [← IsLocalRing.notMem_maximalIdeal, ← IsLocalRing.residue_eq_zero_iff, hu, map_add,
+      map_mul]
+    have hd0 : IsLocalRing.residue P.integers d = 0 := by
+      rw [← map_zero (IsLocalRing.residue P.integers), residue_eq_iff_sub_mem_filtration_one]
+      simpa using hd1
+    rw [hd0, mul_zero, add_zero]
+    exact hder
+  -- `f(σ z) - f(z) = d · u` in `𝒪_P`.
+  have hdu : ((fS.eval (g • z) : P.integers) : F') - ((fS.eval z : P.integers) : F') =
+      (d : F') * (u : F') := by
+    have h : fS.eval (g • z) - fS.eval z = d * u := by
+      rw [hK, hu]
+      ring
+    exact_mod_cast congrArg Subtype.val h
+  exact ⟨u, hunit, hdu⟩
+
+omit [Algebra.IsIntegral F F'] in
+omit [Algebra k F] [IsScalarTower k F F'] in
+/-- An element of the inertia group that fixes a uniformizer `t` modulo `𝔪_P²` moves every element
+of `𝔪_P` by an element of `𝔪_P²`. -/
+private theorem apply_sub_mem_filtration_two {g : P.integers.decompositionSubgroup F}
+    (ht : P.ord t = 1) (hg0 : ∀ x ∈ P.integers, (g : F' ≃ₐ[F] F') x - x ∈ P.filtration 1)
+    (hgt : (g : F' ≃ₐ[F] F') t - t ∈ P.filtration 2) {w : F'} (hw1 : w ∈ P.filtration 1) :
+    (g : F' ≃ₐ[F] F') w - w ∈ P.filtration 2 := by
+  have ht0 := ne_zero_of_ord_eq_one P ht
+  set σ : F' ≃ₐ[F] F' := (g : F' ≃ₐ[F] F')
+  have hv : t⁻¹ * w ∈ P.integers :=
+    mul_mem_integers_of_mem_filtration (by rw [ord_inv, ht]) hw1
+  have hσv : σ (t⁻¹ * w) ∈ P.integers := (mem_integers_decompositionSubgroup_apply F P g).mpr hv
+  have hsplit : σ w - w = (σ t - t) * σ (t⁻¹ * w) + t * (σ (t⁻¹ * w) - t⁻¹ * w) := by
+    rw [map_mul, map_inv₀]
+    field_simp [(_root_.map_ne_zero σ).mpr ht0]
+    ring
+  rw [hsplit]
+  refine Submodule.add_mem _ ?_ ?_
+  · simpa using P.mul_mem_filtration hgt (P.mem_filtration_zero_iff.mpr hσv)
+  · have h := P.mul_mem_filtration (P.mem_filtration_ord t) (hg0 _ hv)
+    rwa [ht, show (1 : ℤ) + 1 = 2 by norm_num] at h
+
 /- An automorphism in `G_0(P)` fixing a uniformizer modulo `𝔪_P²` lies in `G_1(P)` when the residue
 extension is separable.  The value `z(P)` of a function `z` integral at `P` is a simple root of a
 polynomial `f₀` over `F_{P ∩ F}`; lift `f₀` to `f` over `𝒪_{P ∩ F}`.  Taylor expansion gives
@@ -305,7 +368,6 @@ private theorem mem_ramificationGroup_one_of_sub_mem_filtration_two
     (hgt : (g : F' ≃ₐ[F] F') t - t ∈ P.filtration 2) :
     g ∈ ramificationGroup F P 1 := by
   set σ : F' ≃ₐ[F] F' := (g : F' ≃ₐ[F] F')
-  have ht0 := ne_zero_of_ord_eq_one P ht
   have hg0 : ∀ x ∈ P.integers, σ x - x ∈ P.filtration 1 := fun x hx ↦ by
     simpa using (mem_ramificationGroup_iff F P).mp hg x hx
   rw [mem_ramificationGroup_iff, show ((1 : ℕ) : ℤ) + 1 = 2 by norm_num]
@@ -324,47 +386,19 @@ private theorem mem_ramificationGroup_one_of_sub_mem_filtration_two
     exact (Algebra.IsSeparable.isSeparable _ _).aeval_derivative_ne_zero (minpoly.aeval _ _)
   -- Taylor expansion of `f` at `z` with increment `d = σ z - z`.
   set d : P.integers := g • z - z with hd
-  obtain ⟨K, hK⟩ := binomExpansion fS z d
-  rw [add_sub_cancel] at hK
   have hdcoe : (d : F') = σ x - x := by
     rw [hd, show ((g • z - z : P.integers) : F') = ((g • z : P.integers) : F') - (z : F') from rfl,
       ValuationSubring.coe_decompositionSubgroup_smul]
   have hd1 : (d : F') ∈ P.filtration 1 := hdcoe ▸ hg0 x hx
-  set u : P.integers := (derivative fS).eval z + K * d with hu
-  have hunit : IsUnit u := by
-    rw [← IsLocalRing.notMem_maximalIdeal, ← IsLocalRing.residue_eq_zero_iff, hu, map_add,
-      map_mul]
-    have hd0 : IsLocalRing.residue P.integers d = 0 := by
-      rw [← map_zero (IsLocalRing.residue P.integers), residue_eq_iff_sub_mem_filtration_one]
-      simpa using hd1
-    rw [hd0, mul_zero, add_zero]
-    exact hder
-  -- `f(σ z) - f(z) = d · u` in `𝒪_P`.
-  have hdu : ((fS.eval (g • z) : P.integers) : F') - ((fS.eval z : P.integers) : F') =
-      (d : F') * (u : F') := by
-    have h : fS.eval (g • z) - fS.eval z = d * u := by
-      rw [hK, hu]
-      ring
-    exact_mod_cast congrArg Subtype.val h
+  obtain ⟨u, hunit, hdu⟩ := exists_isUnit_eval_smul_sub_eval F P fS z g hder hd1
+  rw [← hd] at hdu
   -- `σ (f z) - f z ∈ 𝔪_P²`, writing `f z = t v` with `v` integral at `P`.
   set w : F' := ((fS.eval z : P.integers) : F') with hw
   have hw1 : w ∈ P.filtration 1 := by
     have := (residue_eq_iff_sub_mem_filtration_one (y := fS.eval z) (z := 0)).mp
       (by rw [hroot, map_zero])
     simpa using this
-  have hv : t⁻¹ * w ∈ P.integers :=
-    mul_mem_integers_of_mem_filtration (by rw [ord_inv, ht]) hw1
-  have hσv : σ (t⁻¹ * w) ∈ P.integers := (mem_integers_decompositionSubgroup_apply F P g).mpr hv
-  have hσw : σ w - w ∈ P.filtration 2 := by
-    have hsplit : σ w - w = (σ t - t) * σ (t⁻¹ * w) + t * (σ (t⁻¹ * w) - t⁻¹ * w) := by
-      rw [map_mul, map_inv₀]
-      field_simp [(_root_.map_ne_zero σ).mpr ht0]
-      ring
-    rw [hsplit]
-    refine Submodule.add_mem _ ?_ ?_
-    · simpa using P.mul_mem_filtration hgt (P.mem_filtration_zero_iff.mpr hσv)
-    · have h := P.mul_mem_filtration (P.mem_filtration_ord t) (hg0 _ hv)
-      rwa [ht, show (1 : ℤ) + 1 = 2 by norm_num] at h
+  have hσw := apply_sub_mem_filtration_two F P ht hg0 hgt hw1
   rw [hw, apply_coe_eval_map, hdu] at hσw
   -- Divide by the unit `u`.
   obtain ⟨u', hu'⟩ := hunit.exists_right_inv

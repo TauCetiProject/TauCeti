@@ -129,11 +129,11 @@ private theorem dualityMap_zModTwist_one_bijective :
   have he : Function.Bijective e := e₀.bijective
   have hH := explicitCoeff2_bijective G (ZMod p) (f := e) he
   exact ⟨dualityMap0_bijective_of_injective_of_forall_nsmul_eq_zero e hM he.1 (fun y _ ↦ he.2 y)
-      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap0_bijective htriv M hM),
+      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap0_bijective M hM),
     dualityMap1_bijective_of_injective_of_forall_nsmul_eq_zero e hM he.1 (fun y _ ↦ he.2 y)
-      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap1_bijective htriv M hM),
+      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap1_bijective M hM),
     dualityMap2_bijective_of_injective_of_forall_nsmul_eq_zero e hM he.1 (fun y _ ↦ he.2 y)
-      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap2_bijective htriv M hM)⟩
+      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap2_bijective M hM)⟩
 
 include hi
 
@@ -200,7 +200,7 @@ private theorem dualityMap_zModTwist_devissage :
   hG.isProP.dualityMap0_bijective_dualityMap1_bijective_dualityMap2_injective _
     (ZModTwist.moduleBaer _ i) (hG.moduleBaer_H2_zModTwist_demushkinCharacter i)
     (fun A _ _ _ _ _ _ hA _ hAi ↦ hG.dualityMap_zModTwist_of_natCard_eq i A hA hAi) M
-    (isPPrimaryTorsion_iff.2 fun m ↦ ⟨i, hM m⟩) hM
+    (fun m ↦ ⟨i, hM m⟩) hM
 
 /-- **Tate's duality map `α₀` of an infinite Demushkin group with coefficients `I(χ)/pⁱ` is
 bijective** on every finite discrete `G`-module `M` killed by `pⁱ`:

@@ -6,19 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 
 /-!
-# Real iterated derivatives of the complex exponential
+# Derivatives of exponential functions
 
 Viewed as a function of a real vector variable, `Complex.exp` has the same iterated derivatives
 as it has over `ℂ`, restricted to real scalars. Since every complex derivative of `exp` is `exp`,
 every real iterated derivative of `Complex.exp` at `z` has norm `‖exp z‖`. This is the input a
 Faà di Bruno bound needs for compositions `Complex.exp ∘ f` with a real-differentiable `f`.
 
+For a function `f` on `ℝ`, `f ∘ exp` is differentiable at `y` exactly when `f` is differentiable
+at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypothesis on `f`.
+
 ## Main results
 
+* `TauCeti.differentiableAt_comp_exp_iff`: `f ∘ exp` is differentiable at `y` exactly when `f` is
+  differentiable at `exp y`.
+* `TauCeti.deriv_comp_exp`: `(f ∘ exp)'(y) = e^y • f'(e^y)`, unconditionally.
 * `TauCeti.norm_iteratedFDeriv_real_cexp`: every real iterated derivative of `Complex.exp` at `z`
   has norm `‖exp z‖`.
 * `ContinuousLinearMap.norm_iteratedFDeriv_cexp_comp_le`: for a real-linear map `ℓ` to `ℂ`, the
@@ -26,6 +33,21 @@ Faà di Bruno bound needs for compositions `Complex.exp ∘ f` with a real-diffe
 -/
 
 public section
+
+namespace Real
+
+/-- The derivative of an exponential with linear exponent. -/
+@[simp] theorem deriv_exp_mul (a x : ℝ) :
+    deriv (fun y : ℝ => exp (a * y)) x = a * exp (a * x) := by
+  simpa [mul_comm] using (((hasDerivAt_id x).const_mul a).exp).deriv
+
+/-- The norm of the Fréchet derivative of an exponential with linear exponent. -/
+@[simp] theorem norm_fderiv_exp_mul (a x : ℝ) :
+    ‖fderiv ℝ (fun y : ℝ => exp (a * y)) x‖ = |a| * exp (a * x) := by
+  rw [← norm_deriv_eq_norm_fderiv, deriv_exp_mul, Real.norm_eq_abs, abs_mul,
+    abs_of_pos (exp_pos _)]
+
+end Real
 
 namespace TauCeti
 
@@ -36,6 +58,32 @@ theorem norm_iteratedFDeriv_real_cexp (n : ℕ) (z : ℂ) :
       (𝕜 := ℝ),
     Function.comp_apply, ContinuousMultilinearMap.norm_restrictScalars,
     norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, Complex.iter_deriv_exp]
+
+section ExpComp
+
+open Real Filter Topology
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {y : ℝ}
+
+/-- `f ∘ exp` is differentiable at `y` exactly when `f` is differentiable at `exp y`. -/
+@[simp]
+theorem differentiableAt_comp_exp_iff :
+    DifferentiableAt ℝ (fun y ↦ f (exp y)) y ↔ DifferentiableAt ℝ f (exp y) := by
+  refine ⟨fun h ↦ ?_, fun hf ↦ hf.comp y differentiableAt_exp⟩
+  have h' : DifferentiableAt ℝ (fun y ↦ f (exp y)) (log (exp y)) := by simpa using h
+  refine (h'.comp (exp y) (differentiableAt_log (exp_pos y).ne')).congr_of_eventuallyEq ?_
+  filter_upwards [eventually_gt_nhds (exp_pos y)] with z hz
+  simp [exp_log hz]
+
+/-- The chain rule for `f ∘ exp`, with no differentiability hypothesis: where `f` is not
+differentiable at `exp y`, neither is `f ∘ exp` at `y`, and both sides are `0`. -/
+theorem deriv_comp_exp : deriv (fun y ↦ f (exp y)) y = exp y • deriv f (exp y) := by
+  by_cases hf : DifferentiableAt ℝ f (exp y)
+  · exact (hf.hasDerivAt.scomp y (hasDerivAt_exp y)).deriv
+  · rw [deriv_zero_of_not_differentiableAt hf, smul_zero,
+      deriv_zero_of_not_differentiableAt (mt differentiableAt_comp_exp_iff.1 hf)]
+
+end ExpComp
 
 end TauCeti
 

@@ -33,6 +33,10 @@ moment maps of Hamiltonian group actions are equivariant.
 
 ## Main results
 
+* `TauCeti.Lie.coadjointRepresentation_eq_one`: the coadjoint action of a commutative Lie group is
+  trivial.
+* `TauCeti.Lie.coadjointRepresentation_apply_comp_tangentAd`: the translate `Ad*_g ν` pulls back
+  along the adjoint automorphism `Ad_g` to `ν`.
 * `TauCeti.Lie.contMDiff_coadjointRepresentation_apply`: for a smooth real Lie group with
   finite-dimensional model, each component `g ↦ (Ad*_g ν) ξ` of the coadjoint action is smooth.
 * `TauCeti.Lie.mvfderiv_coadjointRepresentation_apply_one`: the derivative at the identity of
@@ -86,11 +90,39 @@ theorem coadjointRepresentation_apply (g : G) (ν : Module.Dual 𝕜 (GroupLieAl
     coadjointRepresentation 𝕜 I G g ν X = ν (adjointContinuousLinearMap (I := I) g⁻¹ X) :=
   (rfl)
 
+/-- **The coadjoint action of a commutative Lie group is trivial**, since its adjoint action is
+(`TauCeti.Lie.adjointContinuousLinearMap_eq_id`). -/
+@[simp]
+theorem coadjointRepresentation_eq_one [IsMulCommutative G] (g : G) :
+    coadjointRepresentation 𝕜 I G g = 1 := by
+  ext ν X
+  simp
+
+section TangentAd
+
+variable [CompleteSpace E] [LieGroup I (minSmoothness 𝕜 3) G]
+
+/-- The translate `Ad*_g ν = ν ∘ Ad_{g⁻¹}` pulls back along the adjoint automorphism `Ad_g` to
+`ν`. -/
+@[simp]
+theorem coadjointRepresentation_apply_comp_tangentAd (g : G)
+    (ν : Module.Dual 𝕜 (GroupLieAlgebra I G)) :
+    (coadjointRepresentation 𝕜 I G g ν).comp
+        ((tangentAd (I := I) g : GroupLieAlgebra I G →ₗ⁅𝕜⁆ GroupLieAlgebra I G) :
+          GroupLieAlgebra I G →ₗ[𝕜] GroupLieAlgebra I G) = ν := by
+  ext X
+  simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, tangentAd_apply,
+    coadjointRepresentation_apply]
+  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
+    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+
+end TangentAd
+
 section Smooth
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
 
@@ -99,6 +131,7 @@ group with finite-dimensional model is smooth. -/
 theorem contMDiff_coadjointRepresentation_apply (ν : Module.Dual ℝ (GroupLieAlgebra I G))
     (ξ : GroupLieAlgebra I G) :
     ContMDiff I 𝓘(ℝ) ∞ fun g : G ↦ coadjointRepresentation ℝ I G g ν ξ := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   -- `GroupLieAlgebra I G` is the model space `E`, on which the functional `ν` is continuous.
   refine ((LinearMap.toContinuousLinearMap (show E →ₗ[ℝ] ℝ from ν)).contDiff.comp_contMDiff
     ((contMDiff_tangentAd_apply_const (I := I) (G := G) (show E from ξ)).comp
@@ -114,6 +147,7 @@ coadjoint action, in the direction `η`, is `ν ⁅ξ, η⁆`. -/
 theorem mvfderiv_coadjointRepresentation_apply_one (ν : Module.Dual ℝ (GroupLieAlgebra I G))
     (ξ η : GroupLieAlgebra I G) :
     mvfderiv I (fun g : G ↦ coadjointRepresentation ℝ I G g ν ξ) 1 η = ν ⁅ξ, η⁆ := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   simp only [coadjointRepresentation_apply, ← tangentAd_apply]
   -- `GroupLieAlgebra I G` reduces definitionally to the model `E`; the `show E from` ascriptions
   -- below expose that model to the manifold derivative API and view `ν` as a linear functional

@@ -46,9 +46,9 @@ finite-dimensional continuous representations alone.
 ## Implementation notes
 
 The conjugating automorphism is not asked to be canonical:
-`TauCeti.exists_continuousLinearEquiv_inner_map_map` chooses an eigenbasis of the Gram operator,
-and only its existence is exported. Nothing downstream needs more, since the unitary structure it
-produces is unique up to a unitary equivalence anyway.
+`TauCeti.exists_continuousLinearEquiv_inner_map_map` exports only its existence. Nothing
+downstream needs more, since the unitary structure it produces is unique up to a unitary
+equivalence anyway.
 
 Finite dimensionality enters only through that standardization, which is proved by the spectral
 theorem; the Gram operator itself is built for an arbitrary Hilbert-space carrier.
@@ -70,12 +70,10 @@ namespace ContRepresentation
 section Unitarization
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-  [FiniteDimensional 𝕜 V]
+  [CompactSpace G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 private local instance instCompleteSpaceUnitaryModel : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 /-- **A finite-dimensional continuous representation of a compact group is conjugate to a unitary
 one.** There is a continuous linear automorphism `e` of the carrier for which the transported
@@ -87,6 +85,7 @@ that form (`TauCeti.exists_continuousLinearEquiv_inner_map_map`) conjugates the 
 form into unitarity of `A⁻¹ ∘ π · ∘ A`. -/
 theorem exists_isUnitary_congr (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     ∃ e : V ≃L[𝕜] V, IsUnitary (ContinuousLinearEquiv.congr e π) := by
+  borelize G
   obtain ⟨A, hA⟩ := exists_continuousLinearEquiv_inner_map_map (π.gramOperator hπ)
     (π.isSymmetric_gramOperator hπ) fun _ hv ↦ π.re_inner_gramOperator_self_pos hπ hv
   -- The same standardization with the Gram operator on the second argument, which is the side
@@ -129,7 +128,7 @@ namespace TauCeti
 section Representative
 
 variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [CompactSpace G]
 
 /-- **The representative functions of a compact group are the matrix coefficients of its unitary
 finite-dimensional continuous representations.** Restricting the representations allowed in the

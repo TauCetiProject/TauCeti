@@ -25,8 +25,13 @@ symbols.
 Since `(-1) * (-1) = 1`, every multiplicative character satisfies `χ (-1) * χ (-1) = 1`
 (`MulChar.apply_neg_one_mul_self`), so `χ (-1) = ±1` when the coefficients form a domain.
 
+The trivial character is quadratic (`MulChar.isQuadratic_one`).
+
 Pushing a character along an injective ring homomorphism of the coefficients preserves its order
 (`MulChar.orderOf_ringHomComp`).
+
+Quadratic characters are closed under multiplication (`MulChar.IsQuadratic.mul`), and hence a
+finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`).
 -/
 
 public section
@@ -68,6 +73,28 @@ theorem orderOf_ringHomComp {R R' R'' : Type*} [CommMonoid R] [CommRing R'] [Com
     {f : R' →+* R''} (hf : Function.Injective f) (χ : MulChar R R') :
     orderOf (χ.ringHomComp f) = orderOf χ := by
   rw [← ringHomCompHom_apply, orderOf_injective _ (injective_ringHomComp hf)]
+
+/-- The product of two quadratic characters is quadratic. -/
+theorem IsQuadratic.mul {M R : Type*} [CommMonoid M] [CommRing R] {χ ψ : MulChar M R}
+    (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic) : (χ * ψ).IsQuadratic := by
+  intro a
+  rw [mul_apply]
+  rcases hχ a with h | h | h <;> rcases hψ a with h' | h' | h' <;> simp [h, h']
+
+/-- The trivial character is quadratic. -/
+@[simp]
+theorem isQuadratic_one {M R : Type*} [CommMonoid M] [CommRing R] :
+    (1 : MulChar M R).IsQuadratic := by
+  intro a
+  by_cases ha : IsUnit a
+  · exact Or.inr (Or.inl (one_apply ha))
+  · exact Or.inl (map_nonunit 1 ha)
+
+/-- A finite product of quadratic characters is quadratic. -/
+theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
+    {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
+    (∏ i ∈ s, χ i).IsQuadratic :=
+  Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) isQuadratic_one hχ
 
 section Transport
 

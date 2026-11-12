@@ -47,7 +47,7 @@ private theorem exists_eigenvector_span_chain (μ : ℕ → 𝕜) (hinj : Functi
   have hmono : Monotone V := fun _ _ h ↦ span_mono (Set.image_mono (Set.Iio_subset_Iio h))
   have hclosed (n : ℕ) : IsClosed (V n : Set E) := by
     have := FiniteDimensional.span_of_finite 𝕜 ((Set.finite_Iio n).image v)
-    exact (V n).closed_of_finiteDimensional
+    exact (V n).isClosed_of_finiteDimensional
   have hstrict (n : ℕ) : V n < V (n + 1) := by
     refine (hmono (Nat.le_succ n)).lt_of_ne ?_
     intro heq
@@ -95,10 +95,8 @@ private theorem not_injective_eigenvalues_of_norm_ge (hK : IsCompactOperator K)
     rw [heq, norm_smul]
     exact (hnorm n).trans (le_mul_of_one_le_right (norm_nonneg _) (hfsep n y hy))
   obtain ⟨m, n, hmn, hlt⟩ := hK.exists_dist_lt_of_norm_le hfnorm hε
-  rw [dist_eq_norm] at hlt
-  rcases lt_or_gt_of_ne hmn with hmn | hnm
-  · exact (not_lt_of_ge (hsep m n hmn)) (by rwa [norm_sub_rev] at hlt)
-  · exact (not_lt_of_ge (hsep n m hnm)) hlt
+  rw [dist_eq_norm'] at hlt
+  exact (hsep m n hmn).not_gt hlt
 
 /-- A compact operator has only finitely many eigenvalues whose norm is at least a fixed
 positive number. The ambient normed space need not be complete. -/

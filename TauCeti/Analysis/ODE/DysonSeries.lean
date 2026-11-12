@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import TauCeti.Analysis.ODE.Caratheodory
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.SmoothSeries
+import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
@@ -51,10 +53,16 @@ one-parameter automorphism groups of C⋆-algebras.
   depends continuously on the parameter, jointly with the time.
 * `TauCeti.dysonSeriesLeft`: the Dyson series in the opposite algebra, solving
   `Γ' t = p t * Γ t` (`TauCeti.hasDerivAt_dysonSeriesLeft`), and factoring as
-  `Γ (t + d) = Γ t * Γ d` for a path of period `d` (`TauCeti.dysonSeriesLeft_add_of_periodic`).
+  `Γ (t + d) = Γ t * Γ d` for a path of period `d` (`TauCeti.dysonSeriesLeft_add_of_periodic`),
+  hence `Γ (n d) = Γ d ^ n` (`TauCeti.dysonSeriesLeft_natCast_mul_of_periodic`).
 * `TauCeti.eq_dysonSeriesLeft_apply`: for a path of bounded operators, every solution of the
   time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
+* `TauCeti.periodic_dysonSeriesLeft_apply_iff`: for a periodic path of bounded operators, such a
+  solution is periodic exactly when its initial value is fixed by the propagator over one period.
+* `TauCeti.apply_dysonSeriesLeft_apply_dysonSeriesLeft`: the propagator of a continuous path
+  that is skew for a continuous bilinear map `B` preserves `B`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
+* `TauCeti.dysonSeriesLeft_const`: the left series of a constant path `a` is `t ↦ exp (t • a)`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
@@ -288,11 +296,14 @@ theorem eq_mul_dysonSeries (hp : Continuous p) {f : ℝ → B}
 
 section Star
 
-variable [StarRing B] [StarModule ℝ B] [ContinuousStar B]
+variable [StarRing B] [ContinuousStar B]
 
 /-- The Dyson series of a skew-adjoint path is unitary. -/
 theorem dysonSeries_mem_unitary (hp : Continuous p) (hskew : ∀ t, star (p t) = -p t) (t : ℝ) :
     dysonSeries p t ∈ unitary B := by
+  -- Continuity of `star` makes it commute with real scalars.
+  have : StarModule ℝ B :=
+    ⟨fun r x => by simpa using map_real_smul (starAddEquiv : B ≃+ B) continuous_star r x⟩
   have hΓ := hasDerivAt_dysonSeries hp
   have hΓstar (t : ℝ) :
       HasDerivAt (fun s => star (dysonSeries p s)) (-(p t * star (dysonSeries p t))) t :=
@@ -351,6 +362,14 @@ theorem eq_dysonSeriesLeft_mul (hp : Continuous p) {f : ℝ → B}
     (t₀ := 0) (by simp)) t
   simpa [mul_assoc] using (hasDerivAt_dysonSeriesLeft hp t).mul_const (f 0)
 
+/-- **The Dyson series of a constant path is the exponential.** For the constant path `a`, the
+solution of `Γ' t = a * Γ t` with `Γ 0 = 1` is `Γ t = exp (t • a)`. -/
+@[simp]
+theorem dysonSeriesLeft_const (a : B) (t : ℝ) :
+    dysonSeriesLeft (fun _ ↦ a) t = NormedSpace.exp (t • a) := by
+  simpa using (eq_dysonSeriesLeft_mul continuous_const
+    (fun t ↦ hasDerivAt_exp_smul_const' (𝕂 := ℝ) a t) t).symm
+
 /-- For a periodic path, the left Dyson series over a translated period factors through the
 left Dyson series over one period: `Γ (t + d) = Γ t * Γ d`. -/
 theorem dysonSeriesLeft_add_of_periodic (hp : Continuous p) {d : ℝ}
@@ -358,6 +377,17 @@ theorem dysonSeriesLeft_add_of_periodic (hp : Continuous p) {d : ℝ}
     dysonSeriesLeft p (t + d) = dysonSeriesLeft p t * dysonSeriesLeft p d := by
   simpa using eq_dysonSeriesLeft_mul hp (f := fun t => dysonSeriesLeft p (t + d))
     (fun t => by simpa [hper t] using (hasDerivAt_dysonSeriesLeft hp (t + d)).comp_add_const t d) t
+
+/-- For a periodic path, the left Dyson series over `n` periods is the `n`-th power of the left
+Dyson series over one period: `Γ (n d) = Γ d ^ n`. For a propagator this says that the return
+map of the `n`-fold iterated loop is the `n`-th power of the return map. -/
+theorem dysonSeriesLeft_natCast_mul_of_periodic (hp : Continuous p) {d : ℝ}
+    (hper : Function.Periodic p d) (n : ℕ) :
+    dysonSeriesLeft p (n * d) = dysonSeriesLeft p d ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [Nat.cast_succ, add_one_mul, dysonSeriesLeft_add_of_periodic hp hper, ih,
+      pow_succ]
 
 /-- The Dyson series of `-p` is a left inverse of the left Dyson series of `p`:
 `dysonSeries (-p) t * dysonSeriesLeft p t = 1`. -/
@@ -428,6 +458,28 @@ theorem hasDerivAt_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Conti
     (t : ℝ) :
     HasDerivAt (fun t => dysonSeriesLeft M t x) (M t (dysonSeriesLeft M t x)) t := by
   simpa using (hasDerivAt_dysonSeriesLeft hM t).clm_apply (hasDerivAt_const t x)
+
+/-- For a continuous path `M` of period `d`, the solution `t ↦ dysonSeriesLeft M t x` of
+`w' t = M t (w t)` has period `d` exactly when `x` is fixed by the propagator over one period. -/
+theorem periodic_dysonSeriesLeft_apply_iff {M : ℝ → X →L[ℝ] X} (hM : Continuous M) {d : ℝ}
+    (hper : Function.Periodic M d) (x : X) :
+    Function.Periodic (fun t => dysonSeriesLeft M t x) d ↔ dysonSeriesLeft M d x = x := by
+  refine ⟨fun h => by simpa [dysonSeriesLeft_zero] using h 0, fun h t => ?_⟩
+  simp only [dysonSeriesLeft_add_of_periodic hM hper t, mul_apply_eq_comp, h]
+
+/-- **The propagator of a skew path preserves the bilinear form.** If `M` is a continuous path of
+bounded operators with `B (M r u) w + B u (M r w) = 0`, then the propagator of
+`w' t = M t (w t)` preserves `B`. -/
+theorem apply_dysonSeriesLeft_apply_dysonSeriesLeft {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] (B : X →L[ℝ] X →L[ℝ] W)
+    (hskew : ∀ r u w, B (M r u) w + B u (M r w) = 0) (t : ℝ) (u w : X) :
+    B (dysonSeriesLeft M t u) (dysonSeriesLeft M t w) = B u w := by
+  have hd (r : ℝ) : HasDerivAt (fun q => B (dysonSeriesLeft M q u) (dysonSeriesLeft M q w)) 0 r :=
+    (B.hasDerivAt_of_bilinear (fun _ => hasDerivAt_dysonSeriesLeft_apply hM u r)
+      (fun _ => hasDerivAt_dysonSeriesLeft_apply hM w r)).congr_deriv (by rw [add_comm, hskew])
+  have hc := is_const_of_deriv_eq_zero (fun r => (hd r).differentiableAt)
+    (fun r => (hd r).deriv) t 0
+  simpa [dysonSeriesLeft_zero] using hc
 
 /-- **Variation of constants.** For continuous `M` and `f`, the map
 `w t = Ψ t (x + ∫₀ᵗ Ψ(s)⁻¹ (f s) ds)`, where `Ψ = dysonSeriesLeft M` and

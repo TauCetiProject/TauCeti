@@ -43,12 +43,12 @@ value on its own; the arc is a reparametrised `circleMap`.
 ## Main results
 
 * `TauCeti.Contour.windingNumber_closedModelSector` — its winding number about `z₀`
-  is `α / 2π`, for every `0 ≤ α`. This is the roadmap's acceptance criterion.
+  is `α / 2π`, for every `0 ≤ α`.
 * `TauCeti.Contour.windingNumber_closedModelSector_eq_half` and
   `TauCeti.Contour.windingNumber_closedModelSector_eq_one_div_six` — the `½` at a smooth crossing
   and the `1/6` at a `π/3` corner, the two values the valence formula consumes.
 
-This is Layer 1 of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3).
+This is an ingredient of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3).
 
 ## References
 
@@ -233,10 +233,10 @@ private theorem norm_modelSector_dirs (φ α : ℝ) :
 /-- **The swept-arc curve has winding number `α / 2π` about its corner.** The two radial segments
 contribute nothing and the arc contributes its swept angle.
 
-This holds for every `0 ≤ α`, and is the roadmap's acceptance criterion. The curve is the
-Hungerbühler–Wasem model sector of *interior angle* `α` only for `0 < α < 2π`: at `α = 0` the two
-radii coincide, and at `α ≥ 2π` the arc wraps — `α = 4π` traverses the circle twice, giving winding
-`2`. At both ends the formula stands; it is the corner reading that lapses. -/
+This holds for every `0 ≤ α`. The curve is the Hungerbühler–Wasem model sector of *interior angle*
+`α` only for `0 < α < 2π`: at `α = 0` the two radii coincide, and at `α ≥ 2π` the arc wraps —
+`α = 4π` traverses the circle twice, giving winding `2`. At both ends the formula stands; it is the
+corner reading that lapses. -/
 @[simp]
 theorem windingNumber_closedModelSector {z₀ : ℂ} {r : ℝ} (hr : 0 < r) (φ : ℝ) {α : ℝ} (hα : 0 ≤ α) :
     windingNumber (modelSector z₀ r φ α) (-r) (r + α) z₀ = (α : ℂ) / (2 * (Real.pi : ℂ)) := by
@@ -246,11 +246,8 @@ theorem windingNumber_closedModelSector {z₀ : ℂ} {r : ℝ} (hr : 0 < r) (φ 
   have hcirc_diff : ∀ u ∈ uIcc (1 * r + (φ - r)) (1 * (r + α) + (φ - r)),
       DifferentiableAt ℝ (circleMap z₀ r) u := fun u _ => differentiable_circleMap z₀ r u
   have hcirc_deriv : ContinuousOn (deriv (circleMap z₀ r))
-      (uIcc (1 * r + (φ - r)) (1 * (r + α) + (φ - r))) := by
-    have hd : deriv (circleMap z₀ r) = fun θ => circleMap 0 r θ * Complex.I :=
-      funext fun θ => deriv_circleMap z₀ r θ
-    rw [hd]
-    exact ((continuous_circleMap 0 r).mul continuous_const).continuousOn
+      (uIcc (1 * r + (φ - r)) (1 * (r + α) + (φ - r))) :=
+    (Complex.continuous_deriv_circleMap z₀ r).continuousOn
   have hcirc_avoid : ∀ u ∈ uIcc (1 * r + (φ - r)) (1 * (r + α) + (φ - r)),
       circleMap z₀ r u ≠ z₀ := fun _ _ => circleMap_ne_center hrne
   have hpv_corner : CauchyPVExistsAt (modelSector z₀ r φ α) (-r) r (fun z => (z - z₀)⁻¹) z₀ :=

@@ -61,6 +61,8 @@ the fibre `G` of the trivial bundle cannot also be a torsor for the right action
 * `TauCeti.PrincipalBundle.division`: the division map of a principal bundle, with
   `TauCeti.PrincipalBundle.smul_division` and `TauCeti.PrincipalBundle.division_eq_iff`.
 * `Bundle.Trivialization.coordChange_eq_mul`: transition maps are left multiplications.
+* `Bundle.Trivialization.coordChange_one_mul_coordChange_one`: the transition functions form a
+  cocycle.
 * `Continuous.totalSpaceMk_smul` and `Continuous.division`: continuity of the action and of the
   division map.
 * `TauCeti.PrincipalBundle.trivializationOfSection`: the equivariant trivialization determined by a
@@ -108,6 +110,12 @@ theorem apply_smul (hb : b ∈ e.baseSet) (p : P b) (g : G) :
     e ⟨b, op g • p⟩ = (b, (e ⟨b, p⟩).2 * g) :=
   Prod.ext (e.coe_coe_fst hb) (e.snd_apply_smul hb p g)
 
+/-- The fibrewise inverse of an equivariant trivialization turns right multiplication on the fibre
+coordinate into the right action on a fibre over its base set. -/
+theorem symm_apply_mul [∀ x, Nonempty (P x)] (hb : b ∈ e.baseSet) (v g : G) :
+    e.symm b (v * g) = op g • e.symm b v := by
+  rw [← e.symm_apply_apply_mk hb (op g • e.symm b v), e.snd_apply_smul hb, e.apply_mk_symm hb]
+
 /-- The inverse of an equivariant trivialization sends `(b, g)` to `s • g`, where `s` is the point
 over `b` with fibre coordinate `1`. -/
 theorem symm_apply_eq_smul (hb : b ∈ e.baseSet) (g : G) :
@@ -142,7 +150,23 @@ theorem coordChange_eq_mul (e' : Trivialization G (π G P)) [e'.IsEquivariant]
     rwa [e.proj_symm_apply' h]
   rw [coordChange, e.symm_apply_eq_smul h, e'.snd_apply_smul hs, TotalSpace.eta, coordChange]
 
+/-- **Transition functions of equivariant trivializations form a cocycle.** Over a point of the
+three base sets, the transition functions `b ↦ e.coordChange e' b 1` satisfy
+`c₂₃ * c₁₂ = c₁₃`. -/
+theorem coordChange_one_mul_coordChange_one (e₁ e₂ e₃ : Trivialization G (π G P))
+    [e₂.IsEquivariant] [e₃.IsEquivariant] (h₁ : b ∈ e₁.baseSet) (h₂ : b ∈ e₂.baseSet)
+    (h₃ : b ∈ e₃.baseSet) :
+    e₂.coordChange e₃ b 1 * e₁.coordChange e₂ b 1 = e₁.coordChange e₃ b 1 := by
+  rw [← e₂.coordChange_eq_mul e₃ h₂ h₃, e₁.coordChange_coordChange e₂ e₃ h₁ h₂]
+
 end Bundle.Trivialization
+
+/-- The inverse of an equivalence from `G` that intertwines right multiplication with a right
+action of `G` intertwines them too. -/
+theorem Equiv.symm_op_smul_of_equivariant {G X : Type*} [Group G] [MulAction Gᵐᵒᵖ X]
+    (e : G ≃ X) (he : ∀ v g : G, e (v * g) = op g • e v) (g : G) (x : X) :
+    e.symm (op g • x) = e.symm x * g := by
+  rw [Equiv.symm_apply_eq, he, Equiv.apply_symm_apply]
 
 namespace TauCeti
 
@@ -212,9 +236,10 @@ theorem division_eq_of_mem_baseSet {e : Trivialization G (π G P)} [e.IsEquivari
     (hb : b ∈ e.baseSet) (p q : P b) : division G p q = (e ⟨b, p⟩).2⁻¹ * (e ⟨b, q⟩).2 :=
   division_eq_iff.2 (e.op_inv_mul_smul hb p q)
 
+omit [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
 @[simp]
-theorem division_self (p : P b) : division G p p = 1 :=
-  division_eq_iff.2 (by simp)
+theorem division_self (p : P b) : division G p p = 1 := by
+  simp only [division, inv_mul_cancel]
 
 @[simp]
 theorem division_smul_right (p q : P b) (g : G) : division G p (op g • q) = division G p q * g :=
@@ -224,10 +249,12 @@ theorem division_smul_right (p q : P b) (g : G) : division G p (op g • q) = di
 theorem division_smul_left (p q : P b) (g : G) : division G (op g • p) q = g⁻¹ * division G p q :=
   division_eq_iff.2 (by rw [op_mul, mul_smul, op_inv, inv_smul_smul, smul_division])
 
+omit [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
 @[simp]
-theorem division_mul_division (p q r : P b) : division G p q * division G q r = division G p r :=
-  (division_eq_iff.2 (by rw [op_mul, mul_smul, smul_division, smul_division])).symm
+theorem division_mul_division (p q r : P b) : division G p q * division G q r = division G p r := by
+  simp only [division, mul_assoc, mul_inv_cancel_left]
 
+omit [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
 @[simp]
 theorem inv_division (p q : P b) : (division G p q)⁻¹ = division G q p := by
   rw [inv_eq_iff_mul_eq_one, division_mul_division, division_self]

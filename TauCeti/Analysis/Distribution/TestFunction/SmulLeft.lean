@@ -31,6 +31,9 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
 ## Main declarations
 
 * `TestFunction.smulLeftCLM`: multiplication `φ ↦ f φ` of test functions by a smooth function.
+* `TestFunction.exists_coe_eq_clm_apply_of_tsupport_inter_subset`: the pairing `x ↦ A x (φ x)`
+  of a test function on `Ω'` with a smooth operator field is a test function on any open `Ω`
+  containing `tsupport A ∩ Ω'`.
 * `TestFunction.oneFormWedgeCLM`: the wedge `ω ↦ α ∧ ω` of test forms with a smooth one-form.
 * `TestFunction.norm_oneFormWedgeCLM_apply_le`: the pointwise bound
   `‖(α ∧ ω) x‖ ≤ (k + 1) ‖α x‖ ‖ω x‖`, with its extended-norm form
@@ -38,6 +41,9 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
 * `TestFunction.extDerivCLM_smulLeftCLM`: the Leibniz rule `d (f ω) = df ∧ ω + f dω`.
 * `ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM`: the boundary of a smooth multiple of
   a current, `∂(fT) = f ∂T - T ⌞ df`.
+* `ContDiffMapSupportedIn.seminorm_bilinLeftCLM_mul_le`: the Leibniz bound
+  `N_i(χ g) ≤ 2 ^ k N_k(χ) M` for the product of a complex smooth function `χ` supported in a
+  compact set with a smooth function `g` whose derivatives of order at most `k` are bounded by `M`.
 
 ## References
 
@@ -98,6 +104,29 @@ theorem smulLeftCLM_monoCLM (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω', F)) :
 
 end SmulLeft
 
+section ClmApply
+
+open Function Set
+open scoped ContDiff
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- **Pairing a test function with a `C^n` operator field from a smaller open set.** If
+`A : E → F →L[ℝ] G` is `C^n` with `tsupport A ∩ Ω' ⊆ Ω` and `φ` is a `C^n` test function on `Ω'`,
+then `x ↦ A x (φ x)` is a `C^n` test function on `Ω`, whether or not `Ω' ≤ Ω`. This covers a
+scalar multiple `f φ` (take `A x = f x • id`) and the pairing `Df φ` with a derivative. -/
+theorem exists_coe_eq_clm_apply_of_tsupport_inter_subset {A : E → F →L[ℝ] G}
+    (hA : ContDiff ℝ n A) (h : tsupport A ∩ Ω' ⊆ Ω) (φ : 𝓓^{n}(Ω', F)) :
+    ∃ ψ : 𝓓^{n}(Ω, G), ⇑ψ = fun x => A x (φ x) := by
+  have hsupp : support (fun x => A x (φ x)) ⊆ support A ∩ support φ :=
+    fun x hx => ⟨fun h0 => hx (by simp [h0]), fun h0 => hx (by simp [h0])⟩
+  exact ⟨⟨fun x => A x (φ x), hA.clm_apply φ.contDiff,
+    φ.hasCompactSupport.mono fun x hx => (hsupp hx).2,
+    (closure_mono hsupp |>.trans (closure_inter_subset_inter_closure _ _)).trans
+      ((inter_subset_inter_right _ φ.tsupport_subset).trans h)⟩, rfl⟩
+
+end ClmApply
+
 section OneFormWedge
 
 variable {α : E → E →L[ℝ] ℝ}
@@ -126,7 +155,7 @@ theorem norm_oneFormWedgeCLM_apply_le (hα : ContDiff ℝ n α) (ω : 𝓓^{n}(�
 theorem enorm_oneFormWedgeCLM_apply_le (hα : ContDiff ℝ n α)
     (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :
     ‖oneFormWedgeCLM hα ω x‖ₑ ≤ (k + 1) * ‖α x‖ₑ * ‖ω x‖ₑ := by
-  simp only [enorm_eq_nnnorm]
+  simp only [eNorm_eq_nnNorm]
   exact_mod_cast norm_oneFormWedgeCLM_apply_le hα ω x
 
 /-- The wedge with a smooth one-form does not enlarge the support of a test form. -/
@@ -189,3 +218,36 @@ theorem comp_smulLeftCLM_comp_extDerivCLM
   simp [extDerivCLM_smulLeftCLM hf ω]
 
 end ContinuousLinearMap
+
+namespace ContDiffMapSupportedIn
+
+open TopologicalSpace
+open scoped ContDiff Distributions
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Compacts E}
+
+/-- The `C^i` seminorms, `i ≤ k`, of `χ g` are bounded by `2 ^ k N_k(χ) M` when `M` bounds the
+derivatives of `g` of order at most `k`. -/
+theorem seminorm_bilinLeftCLM_mul_le (χ : 𝓓_{K}(E, ℂ)) {g : E → ℂ} (hg : ContDiff ℝ ∞ g)
+    {k : ℕ} {M : ℝ} (hM : ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j g x‖ ≤ M) {i : ℕ} (hi : i ≤ k) :
+    N[ℂ]_{K, i} (bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) hg χ) ≤
+      2 ^ k * ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ * M := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0 (Nat.zero_le k) 0)
+  refine (ContDiffMapSupportedIn.seminorm_top_le_iff ℂ (by positivity) i _).2 fun x _ ↦ ?_
+  rw [bilinLeftCLM_apply]
+  simp only [ContinuousLinearMap.mul_apply']
+  refine (norm_iteratedFDeriv_mul_le χ.contDiff hg x (mod_cast le_top)).trans ?_
+  calc _ ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) *
+        ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ * M := by
+        gcongr with j hj
+        · exact (norm_iteratedFDeriv_apply_le_seminorm_top ℂ).trans
+            (Seminorm.le_finset_sup_apply (Finset.mem_Iic.2
+              ((Finset.mem_range_succ_iff.1 hj).trans hi)))
+        · exact hM _ ((Nat.sub_le i j).trans hi) x
+    _ = 2 ^ i * ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ * M := by
+        rw [← Finset.sum_mul, ← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose]
+        push_cast
+        ring
+    _ ≤ _ := by gcongr; exact one_le_two
+
+end ContDiffMapSupportedIn

@@ -24,8 +24,7 @@ transferred to the *coordinate* process under `pathLaw μ X`, so an argument may
 and its conclusion carried back. It needs no finiteness hypothesis: contractability is a family of
 finite-dimensional map equalities.
 
-The bridges realize the Layer 0 roadmap item asking for process-level ↔ path-law bridges in both
-directions. They reuse the existing `FullyExchangeable` path-law bridge from
+The bridges reuse the existing `FullyExchangeable` path-law bridge from
 `FullyExchangeable.lean` and the contractability bridge from `Contractability.lean`; no
 measure-theoretic infrastructure is vendored.
 -/
@@ -68,12 +67,12 @@ theorem fullyExchangeable_of_exchangeableLaw_pathLaw {μ : Measure Ω} {X : ℕ 
     FullyExchangeable μ X :=
   (fullyExchangeable_iff_exchangeableLaw_pathLaw μ hX_meas).2 hρ
 
-/-- A process whose path law is exchangeable is finitely exchangeable under a finite base law. -/
+/-- A process whose path law is exchangeable is finitely exchangeable. -/
 theorem exchangeable_of_exchangeableLaw_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
-    [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ)
+    (hX_meas : ∀ i, AEMeasurable (X i) μ)
     (hρ : ExchangeableLaw (pathLaw μ X)) :
     Exchangeable μ X :=
-  (exchangeable_iff_exchangeableLaw_pathLaw hX_meas).2 hρ
+  (fullyExchangeable_of_exchangeableLaw_pathLaw hX_meas hρ).exchangeable hX_meas
 
 /-- A contractable process has a contractable path law. -/
 theorem Contractable.contractableLaw_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
@@ -89,10 +88,10 @@ theorem contractable_iff_contractableLaw_pathLaw {μ : Measure Ω} {X : ℕ → 
 
 /-- If a process has a contractable path law, then the process is contractable. -/
 theorem contractable_of_contractableLaw_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
-    [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ)
+    (hX_meas : ∀ i, AEMeasurable (X i) μ)
     (hρ : ContractableLaw (pathLaw μ X)) :
     Contractable μ X :=
-  (contractable_iff_contractableLaw_pathLaw hX_meas).2 hρ
+  contractable_of_forall_map_reindex_pathLaw hX_meas (contractableLaw_iff.1 hρ)
 
 /-- **The coordinate process under a contractable process's path law is contractable.** This is the
 form path-space arguments need: transfer the hypothesis to `pathLaw μ X`, work there — path space

@@ -87,7 +87,7 @@ private theorem norm_gelfond_auxiliary_le (l β : ℂ) {q : ℕ} {η : Fin q →
     rw [norm_mul, norm_mul]
     gcongr
   calc ‖∑ a, ∑ b, η a b * Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * β) * l * w)‖
-      ≤ ∑ a : Fin q, ∑ b : Fin q, A * Real.exp (q * (1 + ‖β‖) * ‖l‖ * T) :=
+      ≤ ∑ _ : Fin q, ∑ _ : Fin q, A * Real.exp (q * (1 + ‖β‖) * ‖l‖ * T) :=
         (norm_sum_le _ _).trans (sum_le_sum fun a _ ↦ (norm_sum_le _ _).trans
           (sum_le_sum fun b _ ↦ hterm a b))
     _ = (q * q : ℕ) * (A * Real.exp (q * (1 + ‖β‖) * ‖l‖ * T)) := by
@@ -109,7 +109,6 @@ private theorem norm_gelfond_auxiliary_le_sqrt (l β : ℂ) (c : ℝ) {m n q r :
   set S := √(r : ℝ)
   have hr' : (1 : ℝ) ≤ r := by exact_mod_cast hn.trans hnr
   have hr₀ : (0 : ℝ) ≤ r := by linarith
-  have hS : 1 ≤ S := Real.one_le_sqrt.mpr hr'
   have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
   have hc' : 1 ≤ max 1 |c| := le_max_left _ _
   -- `q ^ 2 ≤ 2 m r` and `q √r ≤ 2 m r`.
@@ -142,7 +141,6 @@ private theorem norm_gelfond_auxiliary_le_sqrt (l β : ℂ) (c : ℝ) {m n q r :
       Real.exp ((1 + ‖β‖) * ‖l‖ * (6 * m ^ 2)) ^ r := by
     rw [← Real.exp_nat_mul]
     refine Real.exp_le_exp.2 ?_
-    have hβl : 0 ≤ (1 + ‖β‖) * ‖l‖ := by positivity
     calc (q : ℝ) * (1 + ‖β‖) * ‖l‖ * (3 * m * S) = (1 + ‖β‖) * ‖l‖ * (3 * m * (q * S)) := by
           ring
       _ ≤ (1 + ‖β‖) * ‖l‖ * (3 * m * (2 * m * r)) := by gcongr
@@ -150,43 +148,29 @@ private theorem norm_gelfond_auxiliary_le_sqrt (l β : ℂ) (c : ℝ) {m n q r :
   refine (norm_gelfond_auxiliary_le l β (fun a b ↦ (hη a b).trans hA) hw).trans ?_
   gcongr
 
-/-- Schwarz's lemma at the zeros `1, …, m`: if `f` is entire, bounded by `M` on the circle of
-radius `3 m √r`, and vanishes to order `r ≥ 1` at each of the points `1, …, m`, then
-`‖f⁽ʳ⁾(t₀)‖ √r ^ (m r) ≤ r! M` for every `1 ≤ t₀ ≤ m`. The zero `t₀` contributes the factor
-`r! / (3 m √r - t₀) ^ r ≤ r! / √r ^ r`, and each of the other `m - 1` zeros `t` a factor
-`(|t₀ - t| / (3 m √r - t)) ^ r ≤ √r ^ (-r)`. -/
-private theorem norm_iteratedDeriv_mul_sqrt_pow_le {f : ℂ → ℂ} (hf : ∀ z, AnalyticAt ℂ f z)
-    {m r t₀ : ℕ} {M : ℝ} (hr : 1 ≤ r)
-    (hzero : ∀ k < r, ∀ t ∈ Icc 1 m, iteratedDeriv k f t = 0) (ht₀ : t₀ ∈ Icc 1 m)
-    (hM : ∀ w ∈ sphere (0 : ℂ) (3 * m * √(r : ℝ)), ‖f w‖ ≤ M) :
-    ‖iteratedDeriv r f t₀‖ * √(r : ℝ) ^ (m * r) ≤ r.factorial * M := by
-  set S := √(r : ℝ)
-  have hS : 1 ≤ S := Real.one_le_sqrt.mpr (by exact_mod_cast hr)
+/-- The natural numbers `1, …, m`, viewed in `ℂ`, have norm at most `m`. -/
+private theorem norm_le_of_mem_image_Icc {m : ℕ} {x : ℂ}
+    (hx : x ∈ (Icc 1 m).image fun t : ℕ ↦ (t : ℂ)) : ‖x‖ ≤ m := by
+  obtain ⟨t, ht, rfl⟩ := mem_image.mp hx
+  rw [Complex.norm_natCast]
+  exact_mod_cast (mem_Icc.mp ht).2
+
+/-- The zeros `1, …, m` other than `t₀` contribute a product of factors
+`(|t₀ - x| / (3 m S - |x|)) ^ r`, each at most `S⁻¹ ^ r` when `1 ≤ S`. -/
+private theorem prod_erase_norm_sub_div_pow_le {m r t₀ : ℕ} {S : ℝ} (hS : 1 ≤ S)
+    (ht₀ : t₀ ∈ Icc 1 m) :
+    ∏ x ∈ ((Icc 1 m).image fun t : ℕ ↦ (t : ℂ)).erase (t₀ : ℂ),
+        (‖(t₀ : ℂ) - x‖ / (3 * m * S - ‖x‖)) ^ r ≤ S⁻¹ ^ (r * (m - 1)) := by
   have hS₀ : 0 < S := by linarith
-  set T := 3 * m * S
-  have hm : 1 ≤ m := (mem_Icc.mp ht₀).1.trans (mem_Icc.mp ht₀).2
-  have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
-  -- The `m` zeros `1, …, m` of order `r` lie in the disc, at distance at least `2 m S` from
-  -- the circle.
   set s : Finset ℂ := (Icc 1 m).image fun t : ℕ ↦ (t : ℂ)
-  have hk : ∀ x ∈ s, (((fun _ ↦ r) x : ℕ) : ℕ∞) ≤ analyticOrderAt f x := by
-    simp only [s, mem_image]
-    rintro _ ⟨t, ht, rfl⟩
-    exact (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero (hf _)).mpr
-      fun k hk ↦ hzero k hk t ht
-  have hsm (x : ℂ) (hx : x ∈ s) : ‖x‖ ≤ m := by
-    obtain ⟨t, ht, rfl⟩ := mem_image.mp hx
-    rw [Complex.norm_natCast]
-    exact_mod_cast (mem_Icc.mp ht).2
+  set T := 3 * m * S
+  have hm' : (1 : ℝ) ≤ m := by
+    exact_mod_cast (mem_Icc.mp ht₀).1.trans (mem_Icc.mp ht₀).2
+  have hsm (x : ℂ) (hx : x ∈ s) : ‖x‖ ≤ m := norm_le_of_mem_image_Icc hx
   have hTx (x : ℂ) (hx : x ∈ s) : 2 * m * S ≤ T - ‖x‖ := by
     have := hsm x hx
     nlinarith
-  have hs : (s : Set ℂ) ⊆ ball 0 T := fun x hx ↦ by
-    rw [mem_ball, dist_zero_right]
-    exact (hsm x hx).trans_lt (by nlinarith)
   have ht₀s : (t₀ : ℂ) ∈ s := mem_image.mpr ⟨t₀, ht₀, rfl⟩
-  have hmain := norm_iteratedDeriv_le_mul_prod_div_pow (fun z _ ↦ hf z) hk hs hM ht₀s
-  simp only [sub_zero] at hmain
   -- Each zero other than `t₀` contributes at most `S⁻¹ ^ r`.
   have hnonneg (x : ℂ) (hx : x ∈ s.erase (t₀ : ℂ)) :
       0 ≤ (‖(t₀ : ℂ) - x‖ / (T - ‖x‖)) ^ r := by
@@ -206,17 +190,48 @@ private theorem norm_iteratedDeriv_mul_sqrt_pow_le {f : ℂ → ℂ} (hf : ∀ z
   have hcard : (s.erase (t₀ : ℂ)).card = m - 1 := by
     rw [card_erase_of_mem ht₀s, card_image_of_injective _ Nat.cast_injective, Nat.card_Icc,
       Nat.add_sub_cancel]
-  have hprod : ∏ x ∈ s.erase (t₀ : ℂ), (‖(t₀ : ℂ) - x‖ / (T - ‖x‖)) ^ r ≤
-      S⁻¹ ^ (r * (m - 1)) := by
-    refine (prod_le_prod₀ hnonneg hfactor).trans_eq ?_
-    rw [prod_const, hcard, ← pow_mul]
+  refine (prod_le_prod₀ hnonneg hfactor).trans_eq ?_
+  rw [prod_const, hcard, ← pow_mul]
+
+/-- Schwarz's lemma at the zeros `1, …, m`: if `f` is entire, bounded by `M` on the circle of
+radius `3 m √r`, and vanishes to order `r ≥ 1` at each of the points `1, …, m`, then
+`‖f⁽ʳ⁾(t₀)‖ √r ^ (m r) ≤ r! M` for every `1 ≤ t₀ ≤ m`. The zero `t₀` contributes the factor
+`r! / (3 m √r - t₀) ^ r ≤ r! / √r ^ r`, and each of the other `m - 1` zeros `t` a factor
+`(|t₀ - t| / (3 m √r - t)) ^ r ≤ √r ^ (-r)`. -/
+private theorem norm_iteratedDeriv_mul_sqrt_pow_le {f : ℂ → ℂ} (hf : ∀ z, AnalyticAt ℂ f z)
+    {m r t₀ : ℕ} {M : ℝ} (hr : 1 ≤ r)
+    (hzero : ∀ k < r, ∀ t ∈ Icc 1 m, iteratedDeriv k f t = 0) (ht₀ : t₀ ∈ Icc 1 m)
+    (hM : ∀ w ∈ sphere (0 : ℂ) (3 * m * √(r : ℝ)), ‖f w‖ ≤ M) :
+    ‖iteratedDeriv r f t₀‖ * √(r : ℝ) ^ (m * r) ≤ r.factorial * M := by
+  set S := √(r : ℝ)
+  have hS : 1 ≤ S := Real.one_le_sqrt.mpr (by exact_mod_cast hr)
+  set T := 3 * m * S
+  have hm : 1 ≤ m := (mem_Icc.mp ht₀).1.trans (mem_Icc.mp ht₀).2
+  have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
+  -- The `m` zeros `1, …, m` of order `r` lie in the disc, at distance at least `2 m S` from
+  -- the circle.
+  set s : Finset ℂ := (Icc 1 m).image fun t : ℕ ↦ (t : ℂ)
+  have hk : ∀ x ∈ s, (((fun _ ↦ r) x : ℕ) : ℕ∞) ≤ analyticOrderAt f x := by
+    simp only [s, mem_image]
+    rintro _ ⟨t, ht, rfl⟩
+    exact (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero (hf _)).mpr
+      fun k hk ↦ hzero k hk t ht
+  have hs : (s : Set ℂ) ⊆ ball 0 T := fun x hx ↦ by
+    rw [mem_ball, dist_zero_right]
+    exact (norm_le_of_mem_image_Icc hx).trans_lt (by nlinarith)
+  have ht₀s : (t₀ : ℂ) ∈ s := mem_image.mpr ⟨t₀, ht₀, rfl⟩
+  have hmain := norm_iteratedDeriv_le_mul_prod_div_pow (fun z _ ↦ hf z) hk hs hM ht₀s
+  simp only [sub_zero] at hmain
+  -- Each zero other than `t₀` contributes at most `S⁻¹ ^ r`.
+  have hprod := prod_erase_norm_sub_div_pow_le (m := m) (r := r) (t₀ := t₀) hS ht₀
   have hTt₀ : S ≤ T - ‖(t₀ : ℂ)‖ := by
-    have := hTx _ ht₀s
+    have := norm_le_of_mem_image_Icc ht₀s
     nlinarith
   have hM₀ : 0 ≤ M := (norm_nonneg _).trans (hM T (by
     rw [mem_sphere_zero_iff_norm, Complex.norm_real, Real.norm_of_nonneg (by positivity)]))
   have h₁ : ‖iteratedDeriv r f t₀‖ ≤ r.factorial * M / S ^ r * S⁻¹ ^ (r * (m - 1)) := by
-    refine hmain.trans (mul_le_mul ?_ hprod (prod_nonneg hnonneg) (by positivity))
+    refine hmain.trans ((mul_le_mul_of_nonneg_left hprod
+      (div_nonneg (by positivity) (pow_nonneg (by linarith) _))).trans ?_)
     gcongr
   obtain ⟨m', rfl⟩ := Nat.exists_eq_add_of_le' hm
   simp only [Nat.add_sub_cancel] at h₁
@@ -238,7 +253,6 @@ private theorem le_pow_mul_rpow_of_mul_sqrt_pow_le {D c' E : ℝ} {m r : ℕ} (h
     D ≤ (4 * (m + 1) * c' * E) ^ r * (r : ℝ) ^ (((3 - m : ℝ) * r + 1) / 2) := by
   set S := √(r : ℝ)
   have hr₀ : (0 : ℝ) < r := by exact_mod_cast hr
-  have hS₀ : 0 < S := Real.sqrt_pos.mpr hr₀
   have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
   have hfact : (r.factorial : ℝ) ≤ S ^ (2 * r) := by
     rw [pow_mul, sq, Real.mul_self_sqrt hr₀.le]

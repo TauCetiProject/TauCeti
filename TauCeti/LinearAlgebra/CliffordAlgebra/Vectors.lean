@@ -186,17 +186,14 @@ theorem ι_ne_one [Nontrivial R] (m : M) : ι Q m ≠ 1 := by
   rw [← map_one (algebraMap R (CliffordAlgebra Q)), Ne, ι_eq_algebraMap_iff]
   exact one_ne_zero ∘ And.right
 
+omit [Invertible (2 : R)] in
 /-- **The vectors of a Clifford algebra are disjoint from its scalars.** Together with
 `TauCeti.Algebra.wordFiltration_one`, which writes the first step of the degree filtration as
 `1 ⊔ LinearMap.range (ι Q)`, this is what makes that step a direct sum of `R` and `M`; see
 `CliffordAlgebra.filtrationOneEquiv`. -/
 theorem ι_range_disjoint_one :
-    Disjoint (LinearMap.range (ι Q)) (1 : Submodule R (CliffordAlgebra Q)) := by
-  rw [Submodule.disjoint_def]
-  rintro _ ⟨m, rfl⟩ hx
-  obtain ⟨r, hr⟩ := Submodule.mem_one.mp hx
-  rw [eq_comm, ι_eq_algebraMap_iff] at hr
-  rw [hr.1, map_zero]
+    Disjoint (LinearMap.range (ι Q)) (1 : Submodule R (CliffordAlgebra Q)) :=
+  Disjoint.mono (range_ι_le_evenOdd_one Q) (one_le_evenOdd_zero Q) (evenOdd_isCompl Q).disjoint.symm
 
 /-! ### The vector equivalence -/
 

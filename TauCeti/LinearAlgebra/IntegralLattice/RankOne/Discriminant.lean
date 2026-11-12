@@ -175,7 +175,9 @@ theorem rankOneDiscriminantEquiv_zsmul_rankOneClass (k : ℤ) :
     rankOneDiscriminantEquiv a (k • rankOneClass a) = (k : ZMod a.natAbs) := by
   rw [map_zsmul, rankOneDiscriminantEquiv_rankOneClass, zsmul_eq_mul, mul_one]
 
-/-- The discriminant group of `⟨a⟩` has `|a|` elements. -/
+omit [NeZero a] in
+/-- The discriminant group of `⟨a⟩` has `|a|` elements, as a `Nat.card`: for `a = 0` the group is
+infinite and both sides are `0`. -/
 theorem natCard_rankOne_discriminantGroup :
     Nat.card (rankOne a).DiscriminantGroup = a.natAbs := by
   rw [natCard_discriminantGroup, rankOne_discriminant]

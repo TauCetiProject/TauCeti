@@ -178,10 +178,10 @@ end Defect
 
 namespace SmoothTwoForm
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
-  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
   [ContMDiffSMul I I' ∞ G M]
@@ -191,6 +191,10 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace
 local instance lieGroupOne : LieGroup I 1 G :=
   LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness ℝ 3)
     ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
+
+section Complete
+
+variable [CompleteSpace E] [CompleteSpace E']
 
 variable (σ) in
 /-- `μ : M → 𝔤*` is a **group-level moment map** of the smooth action of `G` on `(M, σ)` when it
@@ -336,11 +340,17 @@ theorem isEquivariantMomentMap_iff_exists_eq_add [PreconnectedSpace M]
 
 end IsEquivariantMomentMap
 
+end Complete
+
 /-! ### The infinitesimal defect -/
 
 namespace IsMomentMap
 
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+
+section CompleteSpace
+
+variable [CompleteSpace E']
 
 /-- Each component `g ↦ θ(g, x)(ξ)` of the defect of a moment map is smooth. -/
 private theorem contMDiff_momentDefect_apply
@@ -396,8 +406,7 @@ theorem momentDefect_eq_of_mem_connectedComponent [PreconnectedSpace M]
     |>.isLocallyConstant_of_mfderiv_eq_zero (fun g ↦ ?_)
     |>.apply_eq_of_isPreconnected isPreconnected_connectedComponent hk mem_connectedComponent
   rw [← mvfderiv_eq_zero_iff]
-  refine mfderiv_eq_zero_of_mfderiv_mul_left_one_eq_zero
-    ((h.contMDiff_momentDefect_apply x₀ ξ).mdifferentiableAt (by simp)) ?_
+  refine mfderiv_eq_zero_of_mfderiv_mul_left_one_eq_zero ?_
   rw [← mvfderiv_eq_zero_iff]
   /- Near `g`, the defect is `θ(g k)(ξ) = θ(g)(ξ) + θ(k)(Ad_{g⁻¹} ξ)`, whose derivative in `k`
   at `1` vanishes because the cocycle does. -/
@@ -438,6 +447,8 @@ theorem isEquivariantMomentMap_of_momentCocycle_eq_zero [PreconnectedSpace G]
     h.momentDefect_eq_zero_of_mem_connectedComponent_one hσ hc
       (by simp [PreconnectedSpace.connectedComponent_eq_univ])⟩)
 
+end CompleteSpace
+
 /-! ### Locally free points are regular -/
 
 variable [T2Space M] [BoundarylessManifold I' M] [FiniteDimensional ℝ E']
@@ -469,7 +480,7 @@ end IsMomentMap
 
 namespace IsEquivariantMomentMap
 
-variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+variable [FiniteDimensional ℝ E] [CompleteSpace E'] [LieGroup I ∞ G]
 
 /-- **A group-level moment map is infinitesimally equivariant**: its cocycle vanishes at every
 point, `σ(ξ_M, η_M) = μ_{⁅ξ, η⁆}`. The defect of an equivariant moment map vanishes identically,
@@ -489,7 +500,7 @@ end IsEquivariantMomentMap
 
 namespace IsMomentMap
 
-variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+variable [FiniteDimensional ℝ E] [CompleteSpace E'] [LieGroup I ∞ G]
 
 /-- **Equivariance over a disconnected group.** Let `G` act by symplectomorphisms of a
 preconnected manifold, and let `S ⊆ G` meet every connected component of `G`. A moment map of the

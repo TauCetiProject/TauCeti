@@ -62,6 +62,7 @@ All in the namespace `TauCeti.Yamabe`.
 * `yamabeQuotient_nonneg_of_scalarCurvature_nonneg`: nonnegative scalar curvature gives
   nonnegative quotients, without regularity assumptions on `u`.
 * `yamabeQuotient_smul`: `Q_g(c u) = Q_g(u)` for `c ≠ 0`.
+* `yamabeQuotient_one`: on a compact manifold, `Q_g(1) = (∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`.
 * `hasDerivAt_yamabeQuotient_add_smul`: the first variation of `Q_g`.
 * `forall_hasDerivAt_yamabeQuotient_add_smul_iff_exists_conformalLaplacian_eq`: the Euler–Lagrange
   equation `L_g u = λ |u| ^ (pₙ - 2) u` characterizes the critical points of `Q_g`.
@@ -117,14 +118,16 @@ theorem yamabeQuotient_def (u : M → ℝ) :
 
 variable {I}
 
-/-- Nonnegative scalar curvature makes the total Yamabe quotient nonnegative in dimension
-`n > 2`, even without regularity or integrability assumptions on the function. -/
-theorem yamabeQuotient_nonneg_of_scalarCurvature_nonneg (hn : 2 < finrank ℝ E) (u : M → ℝ)
+/-- Nonnegative scalar curvature makes the total Yamabe quotient nonnegative, even without
+regularity or integrability assumptions on the function. In dimension `n = 2` the coefficient and
+exponent are junk values of the real division by zero; for `n = 0, 1` they are the algebraic
+extensions of the formulas `4 (n - 1) / (n - 2)` and `2 n / (n - 2)`. -/
+theorem yamabeQuotient_nonneg_of_scalarCurvature_nonneg (u : M → ℝ)
     (hS : ∀ x, 0 ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) :
     0 ≤ yamabeQuotient I u := by
   rw [yamabeQuotient_def]
   exact div_nonneg (integral_nonneg fun x ↦ add_nonneg
-    (mul_nonneg (conformalCoefficient_pos hn).le (sq_nonneg _))
+    (mul_nonneg (conformalCoefficient_nonneg _) (sq_nonneg _))
     (mul_nonneg (hS x) (sq_nonneg _)))
     (Real.rpow_nonneg (integral_nonneg fun x ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
 
@@ -152,6 +155,16 @@ theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} {c : ℝ} (
   rw [Real.mul_rpow (Real.rpow_nonneg (abs_nonneg _) _)
       (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _), hc2,
     mul_div_mul_left _ _ (pow_ne_zero 2 hc)]
+
+/-- On a compact manifold of dimension `n`, the Yamabe quotient of the constant function `1` is
+the volume-normalized total scalar curvature `(∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`. -/
+@[simp]
+theorem yamabeQuotient_one [CompactSpace M] :
+    yamabeQuotient I (fun _ : M ↦ (1 : ℝ)) =
+      (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
+        ∂riemannianVolume I M) /
+        riemannianTotalVolume I M ^ (2 / criticalExponent (finrank ℝ E)) := by
+  simp [yamabeQuotient_def, mgradient_const, riemannianTotalVolume_def]
 
 /-! ### The first variation -/
 
@@ -272,7 +285,6 @@ theorem hasDerivAt_yamabeQuotient_add_smul (hn : 2 < finrank ℝ E) {u v : M →
   convert hQ using 1
   have hQu : yamabeQuotient I u = E₀ / N ^ (2 / p) := yamabeQuotient_def I u
   rw [hQu, Real.rpow_sub_one hN0.ne']
-  have hpos : 0 < N ^ (2 / p) := Real.rpow_pos_of_pos hN0 _
   have hp0 : p ≠ 0 := by linarith
   field_simp
 
@@ -352,7 +364,6 @@ private theorem hasDerivAt_yamabeQuotient_add_smul_eq_integral (hn : 2 < finrank
     ring
   rw [hsplit, integral_sub hL (hJ.const_mul _), integral_const_mul,
     ← integral_mul_conformalLaplacian hv (HasCompactSupport.of_compactSpace v) hu]
-  have hpos : 0 < N ^ (2 / p) := Real.rpow_pos_of_pos hN0 _
   field_simp
 
 /-- **The Euler–Lagrange equation of the Yamabe quotient.** On a closed manifold of dimension

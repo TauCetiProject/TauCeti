@@ -106,7 +106,6 @@ local instance factSplitsSplittingField (f : F[X]) :
     Fact ((f.map (algebraMap F f.SplittingField)).Splits) :=
   ⟨SplittingField.splits f⟩
 
--- Formalization source: `TauCetiRoadmap/PolynomialGaloisGroups/Suggested.lean`.
 /-- The Galois group of `f` carries the transitive-group label `j` of degree `n`: `f` is
 separable of degree `n`, and some numbering of its roots in the splitting field by `Fin n` carries
 the image of the Galois action on the roots to a conjugate of the reference subgroup
@@ -129,13 +128,14 @@ theorem isPretransitive_map_range_galActionHom_iff (hsep : f.Separable) (hdeg : 
     isPretransitive_range_toPermHom_iff]
   exact isPretransitive_iff_irreducible f.SplittingField hsep hdeg
 
-/-- Construct a Galois label from one numbering of the roots that exhibits it. -/
-theorem HasGaloisLabel.mk (hsep : f.Separable) (hdeg : f.natDegree = n)
-    (e : f.rootSet f.SplittingField ≃ Fin n)
+/-- Construct a Galois label from one numbering of the roots that exhibits it. The degree of the
+separable polynomial `f` is the number of its roots, so it is `n`. -/
+theorem HasGaloisLabel.mk (hsep : f.Separable) (e : f.rootSet f.SplittingField ≃ Fin n)
     (he : TransitiveGroupLabel j
       ((Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom)) :
     HasGaloisLabel f j :=
-  ⟨hsep, hdeg, e, he⟩
+  ⟨hsep, by rw [← card_rootSet_eq_natDegree hsep (SplittingField.splits f), Fintype.card_congr e,
+    Fintype.card_fin], e, he⟩
 
 /-- A polynomial with a label is separable. -/
 theorem HasGaloisLabel.separable (h : HasGaloisLabel f j) : f.Separable :=
@@ -387,7 +387,7 @@ theorem hasGaloisLabel_one_iff (j : TransitiveGroupIndex 1) :
     rw [separable_iff_derivative_ne_zero (irreducible_of_degree_eq_one
       ((degree_eq_iff_natDegree_eq_of_pos one_pos).mpr hdeg))]
     intro h0
-    have h := congrArg (coeff · 0) h0
+    have h := congrArg (AddMonoidAlgebra.coeff · 0) h0
     simp only [coeff_derivative, coeff_zero, zero_add, Nat.cast_zero, mul_one] at h
     have hf : f ≠ 0 := by rintro rfl; simp at hdeg
     exact hf (leadingCoeff_eq_zero.mp (by rwa [leadingCoeff, hdeg]))

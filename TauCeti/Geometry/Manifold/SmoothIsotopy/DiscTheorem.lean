@@ -72,7 +72,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 if `f` and `g` both have centre `p`, map into the preimage of a Euclidean ball about `chartAt E p p`
 that lies in the target of the chart, and their derivatives read in the chart have determinants of
 positive product, then they are smoothly isotopic relative to the centre. -/
-private theorem exists_smoothIsotopy_of_mapsTo_chart {p : M} {r : ℝ} (hr : 0 < r)
+private theorem exists_smoothIsotopy_of_mapsTo_chart {p : M} {r : ℝ}
     (hball : Euclidean.ball (chartAt E p p) r ⊆ (chartAt E p).target)
     (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) (hf0 : f 0 = p) (hg0 : g 0 = p)
     (hf : ∀ x, f x ∈ (chartAt E p).source ∩ chartAt E p ⁻¹' Euclidean.ball (chartAt E p p) r)
@@ -87,8 +87,8 @@ private theorem exists_smoothIsotopy_of_mapsTo_chart {p : M} {r : ℝ} (hr : 0 <
   set G := g.transChart hφ hgφ
   have hF (x : E) : F x = φ (f x) := transChart_apply ..
   have hG (x : E) : G x = φ (g x) := transChart_apply ..
-  obtain ⟨L, hLball, hL0⟩ := F.exists_smoothIsotopy_mapsTo_ball (c := φ p) hr G (by rw [hF, hf0])
-    (by rw [hG, hg0]) (fun x => hF x ▸ (hf x).2) (fun x => hG x ▸ (hg x).2)
+  obtain ⟨L, hLball, hL0⟩ := F.exists_smoothIsotopy_mapsTo_ball (c := φ p) (r := r) G
+    (by rw [hF, hf0]) (by rw [hG, hg0]) (fun x => hF x ▸ (hf x).2) (fun x => hG x ▸ (hg x).2)
     (by rwa [coe_transChart, coe_transChart])
   let L' := L.postcomp φ.symm (s := φ.target) (fun q => hball (hLball q))
     (fun y hy => φ.isLocalDiffeomorphAt_symm_of_mem_maximalAtlas hφ hy)
@@ -133,19 +133,17 @@ theorem exists_smoothIsotopy_of_det_chartAt_mul_pos
     rw [compRadialContraction_apply]
     exact hk _ (radialContraction_mem_ball 0 x hδ)
   -- The shrinking has derivative the identity at `0`, so the orientations are unchanged.
-  have hd (k : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) (hk : k 0 = p) :
+  have hd (k : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) :
       fderiv ℝ (φ ∘ k.compRadialContraction le_rfl ha) 0 = fderiv ℝ (φ ∘ k) 0 := by
     rw [coe_compRadialContraction, ← Function.comp_assoc]
-    refine fderiv_comp_radialContraction_self 0 _ ?_
-    simpa only [hk] using
-      (k.contMDiff.mdifferentiableAt (by simp) (x := 0)).differentiableAt_chartAt_comp
+    exact fderiv_comp_radialContraction_self 0 _
   -- Step 2: the disc theorem in the chart, for the shrunken embeddings.
-  obtain ⟨L, hL0⟩ := exists_smoothIsotopy_of_mapsTo_chart hr hball
+  obtain ⟨L, hL0⟩ := exists_smoothIsotopy_of_mapsTo_chart hball
     (f.compRadialContraction le_rfl ha) (g.compRadialContraction le_rfl ha)
     (by rw [compRadialContraction_apply, radialContraction_self])
     (by rw [compRadialContraction_apply, radialContraction_self, ← hcentre])
     (hU₁ f fun x hx => (hδU hx).1) (hU₁ g fun x hx => (hδU hx).2)
-    (by rwa [hd f rfl, hd g hcentre.symm])
+    (by rwa [hd f, hd g])
   -- Step 3: undo the shrinking of the sources.
   refine ⟨((f.compRadialContractionIsotopy le_rfl ha).trans L le_rfl).trans
     (g.compRadialContractionIsotopy le_rfl ha).symm le_rfl, fun t => ?_⟩

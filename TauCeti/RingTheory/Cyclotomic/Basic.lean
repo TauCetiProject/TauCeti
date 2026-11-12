@@ -539,18 +539,23 @@ theorem reduceRingHom_apply (p : ℕ) [Fact p.Prime] [NeZero e]
     reduceRingHom p r hr x = reduce p r x := by
   rw [reduceRingHom, evalRingHom_eq_evalCoeffs, reduce]
 
-/-- For a prime `p`, reduction at a primitive `e`-th root in `ZMod p` sends the distinguished
+/-- Reduction at a root of the cyclotomic polynomial, over any modulus, sends the distinguished
 generator `ζ` to that root. -/
 @[simp]
-theorem reduce_zeta (p : ℕ) [Fact p.Prime] [NeZero e] (r : ZMod p) (hr : IsPrimitiveRoot r e) :
+theorem reduce_zeta {p : ℕ} {r : ZMod p}
+    (hr : (cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) r = 0) :
     reduce p r (zeta e) = r := by
-  rw [← reduceRingHom_apply p r hr, reduceRingHom, evalRingHom_zeta]
+  rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hr, evalRingHom_zeta]
 
 /-! ## The distinguished complex embedding -/
 
 /-- The distinguished complex `e`-th root of unity `exp (2πi/e)`.  It is primitive for `e ≠ 0`
 (`TauCeti.Cyclotomic.isPrimitiveRoot_complexRoot`); at `e = 0` it is `exp 0 = 1`. -/
 noncomputable def complexRoot (e : ℕ) : ℂ := Complex.exp (2 * Real.pi * Complex.I / e)
+
+/-- The defining equation `complexRoot e = exp (2πi/e)` of the distinguished complex root. -/
+theorem complexRoot_def (e : ℕ) : complexRoot e = Complex.exp (2 * Real.pi * Complex.I / e) :=
+  (rfl)
 
 /-- For nonzero `e`, the distinguished root `TauCeti.Cyclotomic.complexRoot e` is a primitive
 `e`-th root of unity.  Which primitive root it is, and hence which embedding

@@ -281,7 +281,6 @@ theorem mem_terminalSelfPairs_of_right_eq_left
   obtain ⟨hr, hP⟩ := (G.mem_rectanglePentagonDecompositions C D).1 hD
   have hrectangle := ((G.mem_unblockedRectangles _).1 hr).1
   have hpentagon := ((G.mem_pentagons _).1 hP).1
-  have hone := D.hasOneCommonSide_of_right_eq_left hcommon hother
   obtain ⟨hfirstRight, hsecondRight, hbottom, -⟩ :=
     D.rightLeftSelfRecut_geometry hcommon hother hrectangle hpentagon hturn
   set E := D.rightLeftSelfRecut hcommon hother hrectangle hpentagon hturn
@@ -297,9 +296,8 @@ theorem mem_terminalSelfPairs_of_right_eq_left
     simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
       D.toRectangleDecomposition_middle, D.toRectangleDecomposition_second_toGridRectangle]
       using hpentagon
-  have hback := hrecut.symm hone hfirst hsecond
+  have hback := hrecut.symm hfirst hsecond
   have hEone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (D.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   rw [← hErect] at hfirstRight hsecondRight hbottom
   have hEright : E.rectangle.right = finRotate n C.column := by
     simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right]
@@ -354,8 +352,7 @@ theorem mem_terminalSelfPairs_iff_sides
     obtain ⟨hcounted₀, hcommon₀, hcol₀⟩ := (G.mem_terminalSelfPairSources C D₀).1 hD₀
     obtain ⟨hr₀, hP₀⟩ := (G.mem_rectanglePentagonDecompositions C D₀).1 hcounted₀
     have hpentagon₀ := ((G.mem_pentagons _).1 hP₀).1
-    have hone₀ := D₀.hasOneCommonSide_of_right_eq_right hcommon₀ (Grid.ne_left_of_mem_cIoo hcol₀)
-    have hsymm := hrecut.symm hone₀
+    have hsymm := hrecut.symm
       (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D₀.toRectangleDecomposition_first_toGridRectangle] using
           ((G.mem_unblockedRectangles _).1 hr₀).1)
@@ -363,7 +360,6 @@ theorem mem_terminalSelfPairs_iff_sides
         D₀.toRectangleDecomposition_middle, D₀.toRectangleDecomposition_second_toGridRectangle]
         using hpentagon₀)
     have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hsymm
-      (D₀.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone₀)
     have hcommon : D.rectangle.right = D.pentagon.left :=
       D₀.right_eq_left_of_isRecut_of_right_eq_right hcommon₀ hcol₀ hrecut
     have hother : D.rectangle.left ≠ D.pentagon.right := fun h =>

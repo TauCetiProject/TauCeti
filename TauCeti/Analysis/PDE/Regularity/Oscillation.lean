@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.LowerOrder
 import Mathlib.Analysis.SpecialFunctions.Log.Base
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Oscillation decay for weak solutions (De Giorgi)
@@ -152,7 +153,7 @@ theorem exists_ae_value_le_sub_mul_sub_lowerOrder [Nonempty ι] {θ : ℝ} (hθ 
   set D := D₀ * (1 + σ ^ 2) ^ Fintype.card ι
   set ω := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
   have hω : 0 < ω :=
-    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos mu 0 one_pos
   -- After `j` steps of the level-set decay, local boundedness halves the remaining gap.
   set j : ℕ := ⌈(4 * D ^ 2 * C * ω) ^ 2⌉₊
   have hj : 4 * D ^ 2 * C * ω ≤ √j :=

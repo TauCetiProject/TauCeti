@@ -61,6 +61,8 @@ lemmas downstream modules should use.
 
 * `injHomDensity_eq_labelledCopyCount_div` — the injective density in terms of Mathlib's counting
   primitive;
+* `injHomDensity_ne_zero_iff` — the injective density is nonzero exactly when an embedded copy of
+  the pattern lies in the host;
 * `homDensityFin_nonneg`, `homDensityFin_le_one`, `injHomDensity_nonneg`, `injHomDensity_le_one` —
   both densities lie in `[0, 1]`, unconditionally. The degenerate cases are included: when the host
   is empty and the pattern is not, numerator and denominator both vanish and `x / 0 = 0` gives `0`.
@@ -130,6 +132,23 @@ theorem injHomDensity_eq_labelledCopyCount_div :
       (G.labelledCopyCount F : ℝ) / ((Fintype.card W).descFactorial (Fintype.card V) : ℝ) := by
   rw [injHomDensity_def, F.card_injective_hom_eq_labelledCopyCount G]
 
+/-- A host graph has nonzero injective homomorphism density exactly when some embedded copy of the
+pattern lies in it. -/
+theorem injHomDensity_ne_zero_iff :
+    injHomDensity F G ≠ 0 ↔ ∃ f : V ↪ W, F.map f ≤ G := by
+  classical
+  by_cases hVW : Fintype.card V ≤ Fintype.card W
+  · have hd : ((Fintype.card W).descFactorial (Fintype.card V) : ℝ) ≠ 0 := by
+      exact_mod_cast (Nat.descFactorial_pos.mpr hVW).ne'
+    rw [injHomDensity_def, SimpleGraph.card_injective_hom_eq_sum_map_le]
+    simp [hd]
+  · -- no embedding exists, and the falling factorial in the denominator vanishes
+    have hz : (Fintype.card W).descFactorial (Fintype.card V) = 0 :=
+      Nat.descFactorial_eq_zero_iff_lt.2 (not_le.1 hVW)
+    simp only [injHomDensity_def, hz, Nat.cast_zero, div_zero, ne_eq, not_true_eq_false, false_iff,
+      not_exists]
+    exact fun f _ => hVW (Fintype.card_le_of_embedding f)
+
 /-! ### Both densities lie in `[0, 1]` -/
 
 /-- The homomorphism density is nonnegative. -/
@@ -167,7 +186,8 @@ theorem injHomDensity_le_one : injHomDensity F G ≤ 1 := by
 a homomorphism, and the power `|V(G)| ^ |V(F)|` counts them. -/
 @[simp]
 theorem homDensityFin_bot_left [Nonempty W] : homDensityFin (⊥ : SimpleGraph V) G = 1 := by
-  rw [homDensityFin_def, G.card_bot_hom, Nat.cast_pow]
+  rw [homDensityFin_def, G.card_bot_hom, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
+    Nat.cast_pow]
   exact div_self (pow_ne_zero _ (Nat.cast_ne_zero.2 Fintype.card_ne_zero))
 
 /-- The injective homomorphism density in a complete host with at least `|V(F)|` vertices is `1`:
@@ -176,7 +196,8 @@ them. -/
 @[simp]
 theorem injHomDensity_top_right (h : Fintype.card V ≤ Fintype.card W) :
     injHomDensity F (⊤ : SimpleGraph W) = 1 := by
-  rw [injHomDensity_def, F.card_injective_hom_top]
+  rw [injHomDensity_def, F.card_injective_hom_top, Nat.card_eq_fintype_card,
+    Nat.card_eq_fintype_card]
   exact div_self (Nat.cast_ne_zero.2 (Nat.descFactorial_eq_zero_iff_lt.not.2 h.not_gt))
 
 /-! ### Complete patterns: cliques, edges and triangles -/

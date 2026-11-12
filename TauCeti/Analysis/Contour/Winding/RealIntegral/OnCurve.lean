@@ -323,12 +323,12 @@ private theorem intervalIntegrable_realWindingIntegrand_of_crossing_windows {γ 
         (h_imm.continuousOn.mono (uIcc_of_le hab).ge)
         h_imm.isPiecewiseC1On.intervalIntegrable_deriv hm_pos hA hlu hu h_far').2
   exact sorted_crossing_gluing_induction h_piece (fun _ _ _ _ _ h₁ h₂ ↦ h₁.trans h₂)
-    (T.sort (· ≤ ·)) (Finset.sortedLT_sort T) (fun _ ↦ hρ_pos.le) a le_rfl hab
+    (T.sort (· ≤ ·)) (Finset.sortedLT_sort T) a le_rfl hab
     (fun t ht ↦ by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).1])
     (fun t ht ↦ by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).2])
     (fun t ht t' ht' hne ↦ (h_pair t ((Finset.mem_sort _).mp ht) t'
       ((Finset.mem_sort _).mp ht') hne).le)
-    (fun t ht ↦ hρ_lip_int t ((Finset.mem_sort _).mp ht) ρ hρ_pos
+    (fun t ht _ ↦ hρ_lip_int t ((Finset.mem_sort _).mp ht) ρ hρ_pos
       (hρ_le_ρlip t ((Finset.mem_sort _).mp ht)))
     (fun u hu h_avoid ↦ hm u hu fun t ht ↦ h_avoid t ((Finset.mem_sort _).mpr ht))
 
@@ -366,7 +366,7 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
   have hγ_cont : ContinuousOn γ (Icc a b) := h_imm.continuousOn.mono (uIcc_of_le hab).ge
   have h_int_tr : ∀ ε : ℝ, 0 < ε → IntervalIntegrable
       (fun t ↦ if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0) volume a b :=
-    fun _ hε ↦ intervalIntegrable_inv_sub_truncated h_imm.continuousOn
+    fun _ hε ↦ intervalIntegrable_inv_sub_truncated
       h_imm.isPiecewiseC1On.intervalIntegrable_deriv hε
   -- Each crossing gets a window radius carrying its bounded, integrable and principal-value facts.
   choose! R hR_pos hR_bdd hR_int hR_win using fun t₀ (ht₀ : t₀ ∈ T) ↦
@@ -387,7 +387,6 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
   -- exactly that real part built in already (`exists_radius_perWindow_tendsto_log_norm_add_arg`).
   obtain ⟨L, hHCPV, hRe0⟩ := exists_hasCauchyPVAt_re_eq_of_perWindow_tendsto_of_interiorDisjoint
     (g := fun z ↦ (z - s)⁻¹) (Ψ := fun t ↦ Real.log ‖γ t - s‖) hab T
-    (fun _ ↦ hρ_pos.le)
     (fun t ht ↦ by linarith [(h_endpts t ht).1])
     (fun t ht ↦ by linarith [(h_endpts t ht).2])
     (fun t ht t' ht' hne ↦ (h_pair t ht t' ht' hne).le)

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.TubularNeighborhood.LocalCoordinates
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Basic
 public import TauCeti.Topology.MetricSpace.Lebesgue
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Tubular neighbourhoods in a Euclidean space
@@ -299,6 +300,44 @@ theorem mem_normalSubspace_iff {f : M → V} {x : M} {v : V} :
   ⟨fun h u => Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ u) h,
     fun h _ ⟨u, hu⟩ => hu ▸ inner_eq_zero_symm.mp (h u)⟩
 
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+variable (I) in
+/-- The orthogonal complement of `(mvfderiv I f x).range` in a real inner product space `V` is
+`TauCeti.normalSubspace I f x`. -/
+theorem orthogonal_range_mvfderiv_eq_normalSubspace (f : M → V) (x : M) :
+    (mvfderiv I f x).rangeᗮ = normalSubspace I f x := by
+  have hr : (mvfderiv I f x).range = (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).range := by
+    ext w
+    simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe]
+    refine ⟨?_, ?_⟩
+    · rintro ⟨v, rfl⟩
+      exact ⟨tangentSpaceCastModel I x v, by rw [mvfderiv_apply_eq_mfderiv_apply]; rfl⟩
+    · rintro ⟨v, rfl⟩
+      exact ⟨(tangentSpaceCastModel I x).symm v, by rw [mvfderiv_apply_eq_mfderiv_apply]; rfl⟩
+  rw [normalSubspace, hr]
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- Membership in `TauCeti.normalSubspace I f x` in terms of `mvfderiv I f x`. -/
+theorem mem_normalSubspace_iff_mvfderiv {f : M → V} {x : M} {v : V} :
+    v ∈ normalSubspace I f x ↔ ∀ u : TangentSpace I x, ⟪v, mvfderiv I f x u⟫_ℝ = 0 := by
+  rw [← orthogonal_range_mvfderiv_eq_normalSubspace]
+  refine ⟨fun h u => Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ u) h,
+    fun h _ ⟨u, hu⟩ => hu ▸ inner_eq_zero_symm.mp (h u)⟩
+
+omit [FiniteDimensional ℝ V] in
+variable (I) in
+/-- When the model space `E` is finite-dimensional, `(mvfderiv I f x).range` is finite-dimensional
+and hence complete, so `TauCeti.normalSubspace I f x` has an orthogonal projection even when the
+ambient inner product space `V` is not complete. -/
+instance instHasOrthogonalProjectionNormalSubspace (f : M → V) (x : M) :
+    (normalSubspace I f x).HasOrthogonalProjection := by
+  rw [← orthogonal_range_mvfderiv_eq_normalSubspace]
+  have : FiniteDimensional ℝ (TangentSpace I x) :=
+    Module.Finite.equiv (tangentSpaceCastModel I x).symm.toLinearEquiv
+  have : FiniteDimensional ℝ (mvfderiv I f x).range :=
+    Module.Finite.range (mvfderiv I f x : TangentSpace I x →ₗ[ℝ] V)
+  infer_instance
+
 variable (I) in
 /-- The normal vectors along `f : M → V` of length less than `ε`, as a subset of `M × V`. -/
 def normalTube (f : M → V) (ε : ℝ) : Set (M × V) :=
@@ -362,6 +401,7 @@ theorem normalSubspace_eq_of_mem_source [IsManifold I 1 M] {f : M → V} {x y : 
   congr 1
   exact LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr L.surjective)
 
+omit [FiniteDimensional ℝ E] in
 /-- The local tubular neighbourhood theorem on `M`: around every point there is an open set `W`
 and a radius `δ` such that the normal map is injective, and sends relatively open sets to open
 sets, on the normal vectors of length less than `δ` at points of `W`. -/
@@ -373,6 +413,8 @@ theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
       ∀ O : Set (M × V), IsOpen O →
         IsOpen ((fun p : M × V => f p.1 + p.2) '' (O ∩ {p | p.1 ∈ W ∧ p ∈ normalTube I f δ})) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
+  have : FiniteDimensional ℝ E :=
+    Module.Finite.of_injective (mfderiv I 𝓘(ℝ, V) f x₀ : E →L[ℝ] V).toLinearMap (himm x₀)
   set e := extChartAt I x₀
   set g : E → V := f ∘ e.symm
   have hgd : ContDiffOn ℝ 2 g e.target :=
@@ -424,6 +466,7 @@ theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
         exact hv
       · simp [g]
 
+omit [FiniteDimensional ℝ E] in
 /-- **Tubular neighbourhood theorem** for a compact `C²` embedded submanifold of a Euclidean
 space: for some `ε > 0`, the map `(x, v) ↦ f x + v` is an open embedding of the normal vectors of
 length less than `ε` into `V`. -/
@@ -431,6 +474,8 @@ theorem exists_isOpenEmbedding_normalTube [I.Boundaryless] [IsManifold I 2 M] [C
     {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hinj : Injective f) :
     ∃ ε > 0, IsOpenEmbedding ((normalTube I f ε).domRestrict fun p : M × V => f p.1 + p.2) := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨_⟩⟩
+  · exact ⟨1, one_pos, .of_isEmpty _⟩
   choose W hWo hxW δ hδ hinjOn hopen using exists_injOn_isOpen_image_normalTube hf himm
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover W hWo
     (fun x _ => mem_iUnion.mpr ⟨x, hxW x⟩)
@@ -499,6 +544,7 @@ theorem isEmbedding_totalSpace_normalSubspace {F : Type*} (f : M → V) :
   obtain ⟨rfl, h⟩ := h
   rw [Subtype.ext h]
 
+omit [FiniteDimensional ℝ E] in
 /-- **Tubular neighbourhood theorem** for a compact `C²` embedded submanifold of a Euclidean
 space, as `IsTubularNeighborhood` data: for some `ε > 0`, the normal vectors of length less than
 `ε`, in the total space of the normal bundle, are mapped by `(x, v) ↦ f x + v` homeomorphically

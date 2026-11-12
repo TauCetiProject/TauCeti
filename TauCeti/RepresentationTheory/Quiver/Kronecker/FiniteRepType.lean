@@ -84,10 +84,8 @@ non-isomorphic, but over a finite field there are only finitely many of them.
 
 ## References
 
-This proves the `¬ IsFiniteRepType` half of the “Kronecker quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose other half -- the
-positive semidefinite Tits form `(a - b) ^ 2` with radical `(1, 1)` -- is
-`TauCeti.Quiver.Kronecker.titsForm_apply` and
+The Tits-form side of the same boundary -- the positive semidefinite Tits form `(a - b) ^ 2` with
+radical `(1, 1)` -- is `TauCeti.Quiver.Kronecker.titsForm_apply` and
 `TauCeti.Quiver.Kronecker.titsForm_eq_zero_iff_exists_smul`. See Derksen--Weyman, *An Introduction
 to Quiver Representations*, and Assem--Simson--Skowroński, *Elements of the Representation Theory
 of Associative Algebras I*, Ch. II.
@@ -213,7 +211,7 @@ private theorem jordanApp_root_mul (h : a₀ ≠ a₁)
 private theorem jordanApp_eq_mulRight (h : a₀ ≠ a₁)
     (e : kroneckerJordanRep k a₁ n ⟶ kroneckerJordanRep k a₁ n) :
     jordanApp e = LinearMap.mulRight k (jordanApp e 1) :=
-  AdjoinRoot.eq_mulRight_of_root_mul (monic_X_pow (R := k) (n + 1)) (jordanApp_root_mul h e)
+  AdjoinRoot.eq_mulRight_of_root_mul (jordanApp_root_mul h e)
 
 /-- **An endomorphism of a Jordan block is determined by its component at the source vertex**: the
 component at the target agrees with it, by `app_tgt_eq_app_src`. -/

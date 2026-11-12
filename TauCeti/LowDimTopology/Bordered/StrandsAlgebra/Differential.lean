@@ -179,10 +179,10 @@ private theorem mem_chains_swap {p q : α × α}
       (φ.resolve q).resolve p = (φ.resolve p).resolve q := by
   obtain ⟨h₁, h₂, h₃, h₄⟩ := h
   obtain ⟨hp, hq, hc⟩ := mem_chains_iff.1 hx
-  have hq' : q ∈ φ.inversions := (mem_inversions_resolve_iff_of_ne hp h₁ h₂ h₃ h₄).1 hq
+  have hq' : q ∈ φ.inversions := (mem_inversions_resolve_iff_of_ne h₁ h₂ h₃ h₄).1 hq
   have hp' : p ∈ (φ.resolve q).inversions :=
-    (mem_inversions_resolve_iff_of_ne hq' h₁.symm h₃.symm h₂.symm h₄.symm).2 hp
-  have he := resolve_resolve_comm hp hq' h₁ h₂ h₃ h₄
+    (mem_inversions_resolve_iff_of_ne h₁.symm h₃.symm h₂.symm h₄.symm).2 hp
+  have he := resolve_resolve_comm (φ := φ) (p := p) (q := q) h₁ h₂ h₃ h₄
   exact ⟨mem_chains_iff.2 ⟨hq', hp', he ▸ hc⟩, he.symm⟩
 
 /-- **The three-cycle pairing of chains.** For strands starting at distinct `s`, `u`, `w`, if
@@ -308,7 +308,7 @@ private theorem chainPartner_spec {x : (_ : α × α) × (α × α)} (hx : x ∈
   obtain ⟨hp, hq, -⟩ := mem_chains_iff.1 hx
   have hpq : p ≠ q := by
     rintro rfl
-    exact notMem_inversions_resolve_self hp hq
+    exact notMem_inversions_resolve_self hq
   obtain ⟨s, u, w, hsu, hsw, huw, rfl, rfl⟩ :=
     exists_min_max_of_share_coord (mem_inversions.1 hp).1 (mem_inversions.1 hq).1 hpq hd
   obtain ⟨hxor, hqr, hrp⟩ := chains_three_cycle hsu hsw huw hx
@@ -366,6 +366,22 @@ theorem differential_of (φ : StrandDiagram α) :
 @[simp]
 theorem differential_idem (s : Finset α) : differential R α (idem s) = 0 := by
   simp [idem_def, differential_of]
+
+/-- The coefficient of `χ` in the differential of `x` is the sum of the coefficients of the
+diagrams having `χ` as the resolution of a resolvable crossing. -/
+theorem repr_differential_apply [Fintype (StrandDiagram α)] (x : StrandsAlgebra R α)
+    (χ : StrandDiagram α) :
+    (basis R α).repr (differential R α x) χ = ∑ φ, ∑ q : α × α,
+      if q ∈ φ.resolvableInversions ∧ φ.resolve q = χ then (basis R α).repr x φ else 0 := by
+  conv_lhs => rw [← (basis R α).sum_repr x]
+  simp only [map_sum, map_smul, basis_apply, differential_of, Finset.sum_apply',
+    Finsupp.smul_apply, smul_eq_mul, mul_sum]
+  refine sum_congr rfl fun φ _ ↦ ?_
+  simp only [ite_and]
+  rw [Fintype.sum_ite_mem]
+  refine sum_congr rfl fun q _ ↦ ?_
+  rw [← basis_apply, Module.Basis.repr_self, Finsupp.single_apply]
+  split_ifs <;> simp
 
 /-- A sum over the resolvable crossings of `σ` as a sum over all increasing pairs of starting
 points. -/

@@ -29,8 +29,8 @@ open scoped Manifold ContDiff
 
 variable {𝕜 : Type*} [RCLike 𝕜]
   {E E' H G M N : Type*}
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [CompleteSpace E']
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [TopologicalSpace H] [TopologicalSpace G]
   {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' G}
   [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace G N]

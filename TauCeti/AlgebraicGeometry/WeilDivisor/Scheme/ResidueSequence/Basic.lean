@@ -84,7 +84,7 @@ private lemma exists_algebraMap_eq_mul
     (hs : s ∈ sections (D + WeilDivisor.ofPoint y) U) :
     ∃ r : X.presheaf.stalk (y : X),
       algebraMap _ X.functionField r = g * Scheme.rationalFunctionsEquiv U s := by
-  refine Scheme.exists_algebraMap_stalk_eq_of_ord_nonneg y.property ?_
+  refine Scheme.exists_algebraMap_stalk_eq_of_ord_nonneg ?_
   rcases eq_or_ne (Scheme.rationalFunctionsEquiv U s) 0 with hf | hf
   · simp [hf]
   · have h := (mem_sections_iff.mp hs).resolve_left hf y hy
@@ -390,7 +390,7 @@ private lemma exists_toSkyscraperResidueField_app_eq_of_mem
     have hb := Scheme.ord_germToFunctionField_nonneg b hyW
     rw [X.algebraMap_germ_eq_germToFunctionField hyW] at ha0
     rw [hf, X.algebraMap_germ_eq_germToFunctionField hyW, Scheme.ord_mul (Units.ne_zero _) ha0,
-      Units.val_inv_eq_inv_val, Scheme.ord_inv, hg, WeilDivisor.coeff_add,
+      Units.val_inv_eq_inv_val, AlgebraicGeometry.Scheme.ord_inv, hg, WeilDivisor.coeff_add,
       WeilDivisor.coeff_ofPoint_self]
     omega
   obtain ⟨V, i, hyV, hV⟩ := (exists_map_mem_sections_iff_codimensionOne (D + WeilDivisor.ofPoint y)
@@ -539,16 +539,9 @@ theorem eulerCharBelow_sheaf_add_ofPoint (hclosed : IsClosed ({(y : X)} : Set X)
         (hD := by interval_cases i <;> assumption))
       (LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, LinearMap.zero_apply])
   refine h.trans ?_
-  rw [Scheme.Modules.eulerCharBelow_two k S.X₃]
-  have h₀ : Module.finrank k (Scheme.Modules.Cohomology S.X₃ 0) =
-      (X ↘ Spec (.of k)).residueDegree y := by
-    dsimp only [S]
-    rw [residueShortComplex_X₃]
-    rw [Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections]
-    exact Scheme.finrank_cohomology_zero_skyscraperResidueField k (y : X)
-  rw [h₀, Module.finrank_zero_of_subsingleton, Nat.cast_zero, sub_zero]
   dsimp only [S]
-  rw [residueShortComplex_X₁]
+  rw [residueShortComplex_X₁, residueShortComplex_X₃,
+    Scheme.eulerCharBelow_skyscraperResidueField]
 
 end Cohomology
 

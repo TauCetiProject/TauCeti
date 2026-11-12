@@ -84,7 +84,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [ChartedSpace H'' M''] [IsManifold I'' 1 M''] [FiniteDimensional ℝ E'']
   {ι : Type*} [Fintype ι]
 
-omit [FiniteDimensional ℝ E'] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
 /-- Let `f` be a map that is `C¹` at `a` and whose derivative at each `x` near `a` is the
 equivalence `D x`, and let `ω x` be an orientation of the tangent space of `M'` at `f x`, locally
 constant near `a` when read in the preferred trivialization at `f a`. Then the orientations of the
@@ -144,13 +144,19 @@ theorem eventually_mapOrientation_map_symm_eq {f : M → M'} {a : M}
   have hbase : ∀ᶠ x in 𝓝 a, x ∈ e.baseSet := e.open_baseSet.mem_nhds ha
   have hfbase : ∀ᶠ x in 𝓝 a, f x ∈ e'.baseSet :=
     hf.continuousAt.preimage_mem_nhds (e'.open_baseSet.mem_nhds hfa)
-  filter_upwards [hω, hpos, hbase, hfbase, hD] with x hωx hKx hx₀ hfx hDx hx
+  filter_upwards [hω, hpos, hbase, hfbase, hD] with x hωx hKx _ hfx hDx hx
   rw [hread x hx hfx, hread a ha hfa, hωx hfx]
   set ω' := e'.mapOrientation ι hfa (ω a)
   set η := _root_.Orientation.map ι (T a ha hfa).symm.toLinearEquiv ω'
   set L := (T x hx hfx).trans (T a ha hfa).symm
   -- The change of reading `L = (T a)⁻¹ ∘ T x` fixes `η`, since its determinant is positive.
   have hfix : _root_.Orientation.map ι L.toLinearEquiv η = η := by
+    by_cases hE : FiniteDimensional ℝ E
+    swap
+    · -- Without finite dimension `ι` is empty, and every orientation of an empty family is fixed.
+      have : IsEmpty ι := by
+        rw [← Fintype.card_eq_zero_iff, hι, Module.finrank_of_not_finite hE]
+      exact _root_.Orientation.map_of_isEmpty ι η _
     refine (_root_.Orientation.map_eq_iff_det_pos η _ hι).mpr ?_
     convert hKx using 2
     ext v
@@ -251,6 +257,7 @@ theorem pullback_comp (o'' : Orientation I'' M'' ι) {g : M' → M''} (hg : Cont
     (isOrientationPreservingAt_pullback o'' hg hdg hι' (f x)).comp
       (isOrientationPreservingAt_pullback _ hf hdf hι x)
 
+omit [FiniteDimensional ℝ E'] in
 /-- **Orientations descend along local diffeomorphisms.** Let `f : M → M'` be a `C^n` local
 diffeomorphism at `a`, `n ≠ 0`, and let `ω y` be an orientation of the tangent space of `M'` at
 each `y`. If near `a` the derivative of `f` carries the tangent orientations of an orientation `o`
@@ -268,6 +275,9 @@ theorem _root_.IsLocalDiffeomorphAt.eventually_mapOrientation_eq {n : WithTop �
           (FiberBundle.mem_baseSet_trivializationAt' (f a)) (ω (f a)) := by
   have hn : n ≠ 0 := NeZero.ne n
   have hn1 : 1 ≤ n := ENat.one_le_iff_ne_zero_withTop.mpr hn
+  -- The model space of `M'` is linearly equivalent to that of `M` through the derivative of `f`.
+  have : FiniteDimensional ℝ E' :=
+    LinearEquiv.finiteDimensional (hf.mfderivToContinuousLinearEquiv hn).toLinearEquiv
   set g := hf.localInverse
   have hga : g (f a) = a := hf.localInverse_left_inv hf.localInverse_mem_target
   have hg : ContinuousAt g (f a) := hf.continuousAt_localInverse

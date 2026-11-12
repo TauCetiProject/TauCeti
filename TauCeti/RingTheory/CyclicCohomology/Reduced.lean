@@ -68,8 +68,8 @@ def scalarCyclicRestriction (n : ℕ) :
 theorem scalarCyclicRestriction_apply (n : ℕ) (phi : cyclicCochains R A M n)
     (a : Fin (n + 1) → R) :
     (scalarCyclicRestriction R A M n phi :
-        MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) a =
-      (phi : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+        MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) a =
+      (phi : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M)
         (fun i ↦ algebraMap R A (a i)) := by
   simp only [scalarCyclicRestriction, coe_cyclicCochainsMap_apply,
     MultilinearMap.compLinearMap_apply]
@@ -90,7 +90,7 @@ scalars. -/
 @[simp]
 theorem mem_reducedCyclicCochains_iff_forall {n : ℕ} {phi : cyclicCochains R A M n} :
     phi ∈ reducedCyclicCochains R A M n ↔ ∀ a : Fin (n + 1) → R,
-      (phi : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+      (phi : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M)
         (fun i ↦ algebraMap R A (a i)) = 0 := by
   rw [mem_reducedCyclicCochains_iff, Subtype.ext_iff, MultilinearMap.ext_iff]
   simp
@@ -471,8 +471,7 @@ theorem map_mk (f : A →ₐ[R] B) {n : ℕ} (phi : reducedCyclicCocycles R B M 
     HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
   congr 1
   apply (reducedCyclicCochainComplex R A M).moduleCat_iCycles_injective n
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i,
-    ConcreteCategory.comp_apply, iCycles_toCycles, iCycles_toCycles,
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, iCycles_toCycles, iCycles_toCycles,
     -- Insert a `hom ≫ inv` pair so that the elementwise `reducedCyclicCochainComplexMap_f_apply`,
     -- which is stated through `reducedCyclicCochainComplexXIso`, can fire.
     ← Iso.hom_inv_id_apply (reducedCyclicCochainComplexXIso R A M n)

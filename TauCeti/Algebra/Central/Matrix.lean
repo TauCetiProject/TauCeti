@@ -17,19 +17,17 @@ the centre of `Matrix ι ι D` is the image of the centre of `D` under the scala
 `Matrix.scalarAlgHom`, which is injective as soon as `ι` is nonempty, so the centre of `D` is `⊥`
 whenever the centre of `Matrix ι ι D` is.
 
-* `TauCeti.Algebra.IsCentral.of_matrix`: if `Matrix ι ι D` is central over `K`, then so is `D`;
-* `TauCeti.Algebra.isCentral_matrix_iff` packages this with Mathlib's converse.
+* `Algebra.IsCentral.of_matrix`: if `Matrix ι ι D` is central over `K`, then so is `D`;
+* `Algebra.isCentral_matrix_iff` packages this with Mathlib's converse.
 
 ## Implementation notes
 
-`TauCeti.Algebra.IsCentral.of_matrix` is deliberately *not* an instance: its hypothesis mentions
+`Algebra.IsCentral.of_matrix` is deliberately *not* an instance: its hypothesis mentions
 `Matrix ι ι D` while its conclusion mentions only `D`, so instance search could not run it
 backwards, and the index type `ι` is unconstrained by the goal.
 -/
 
 public section
-
-namespace TauCeti
 
 namespace Algebra
 
@@ -63,5 +61,3 @@ theorem isCentral_matrix_iff :
   ⟨fun _ ↦ IsCentral.of_matrix K D ι, fun _ ↦ Algebra.IsCentral.matrix K D ι⟩
 
 end Algebra
-
-end TauCeti

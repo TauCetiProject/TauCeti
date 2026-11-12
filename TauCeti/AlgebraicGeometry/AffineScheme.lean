@@ -66,8 +66,6 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.isIso_SpecMap_morphismRestrict_basicOpen_of_injective`: for an `R`-algebra `B`
   embedded in a localization of `R` away from `a`, the morphism `Spec B ⟶ Spec R` restricts to an
   isomorphism over `D(a)`.
-* `AlgebraicGeometry.IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf`: on an affine open, a
-  point lies in the basic open of a section iff the section is not in the point's prime ideal.
 * `AlgebraicGeometry.IsAffineOpen.span_setOf_basicOpen_mem_sieve_eq_top`: the basic opens of an
   affine open `U` lying in a covering sieve of `U` are defined by functions generating the unit
   ideal of `Γ(X, U)`.
@@ -279,16 +277,6 @@ theorem isIso_SpecMap_morphismRestrict_basicOpen_of_injective {R B : Type u} {S 
     (SpecMapRestrictBasicOpenIso (CommRingCat.ofHom (algebraMap R B)) a)).mpr
     (inferInstanceAs (IsIso (Spec.map _)))
 
-/-- On an affine open `V`, a point `x ∈ V` lies in the basic open of a section `r` iff `r` is not
-in the prime ideal of `Γ(X, V)` corresponding to `x`. -/
-theorem IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf {X : Scheme.{u}} {x : X}
-    {V : X.Opens} (hV : IsAffineOpen V) (hx : x ∈ V) (r : Γ(X, V)) :
-    x ∈ X.basicOpen r ↔ r ∉ (hV.primeIdealOf ⟨x, hx⟩).asIdeal := by
-  let := X.presheaf.algebra_section_stalk ⟨x, hx⟩
-  have := hV.isLocalization_stalk ⟨x, hx⟩
-  exact (X.mem_basicOpen r x hx).trans
-    (IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x) _ r)
-
 /-- The basic opens of an affine open `U` that lie in a covering sieve of `U` (for the Zariski
 topology) are defined by functions generating the unit ideal of `Γ(X, U)`. -/
 theorem IsAffineOpen.span_setOf_basicOpen_mem_sieve_eq_top {X : Scheme.{u}} {U : X.Opens}
@@ -300,6 +288,38 @@ theorem IsAffineOpen.span_setOf_basicOpen_mem_sieve_eq_top {X : Scheme.{u}} {U :
   obtain ⟨V, i, hi, hxV⟩ := hS x hx
   obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ hx
   exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨f, S.downward_closed hi (homOfLE hfV)⟩, hxf⟩
+
+/-- The map `Spec R ⟶ U ⊆ S` induced by the structure map of a `Γ(S, U)`-algebra `R` on an
+affine open `U` sends a point `u` of `Spec R` over the prime `s` of `Γ(S, U)` to `s`. -/
+theorem IsAffineOpen.spec_algebraMap_comp_fromSpec_apply {S : Scheme.{u}} {U : S.Opens}
+    (hU : IsAffineOpen U) {s : S} (hs : s ∈ U) (R : Type u) [CommRing R] [Algebra Γ(S, U) R]
+    (u : Spec ↧R) [u.asIdeal.LiesOver (hU.primeIdealOf ⟨s, hs⟩).asIdeal] :
+    (Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec) u = s := by
+  rw [Scheme.Hom.comp_apply]
+  refine Eq.trans ?_ (hU.fromSpec_primeIdealOf ⟨s, hs⟩)
+  congr 1
+  exact PrimeSpectrum.ext <| (congrArg PrimeSpectrum.asIdeal
+    (Spec.map_apply (CommRingCat.ofHom (algebraMap Γ(S, U) R)) u)).trans
+    (Ideal.over_def u.asIdeal _).symm
+
+/-- Uniqueness of the point `g v` of `g(D(e))` over `u`: if an open immersion `g` from `Spec A`
+into a scheme `Y` over `Spec R` is compatible with `R → A`, a point `g z` of `g(D(e))` over `u`
+has `z` over the prime `u` with `e ∉ z`, so `z = v` if `v` is the only such prime. -/
+theorem Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq {R A : Type u} [CommRing R] [CommRing A]
+    [Algebra R A] {Y : Scheme.{u}} (p : Y ⟶ Spec ↧R) (g : Spec ↧A ⟶ Y) [IsOpenImmersion g]
+    (hgp : g ≫ p = Spec.map (CommRingCat.ofHom (algebraMap R A)))
+    (e : A) (u : Spec ↧R) (v : Spec ↧A)
+    (huniq : ∀ P'' : Ideal A, P''.IsPrime → P''.LiesOver u.asIdeal → e ∉ P'' → P'' = v.asIdeal)
+    (hv : g v ∈ g ''ᵁ PrimeSpectrum.basicOpen e) (w : g ''ᵁ PrimeSpectrum.basicOpen e)
+    (hw : p w.1 = u) : w = ⟨g v, hv⟩ := by
+  obtain ⟨z, hz, hzw⟩ := w.2
+  have hzu : Spec.map (CommRingCat.ofHom (algebraMap R A)) z = u := by
+    rw [← hgp, Scheme.Hom.comp_apply]
+    exact hzw.symm ▸ hw
+  have : z.asIdeal.LiesOver u.asIdeal :=
+    ⟨congr(($hzu).asIdeal).symm.trans (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ z))⟩
+  obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
+  exact Subtype.ext hzw.symm
 
 end AlgebraicGeometry
 

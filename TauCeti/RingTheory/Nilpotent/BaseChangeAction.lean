@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Nilpotent.Exp
+public import TauCeti.RingTheory.Nilpotent.Exp.Basic
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 import TauCeti.Algebra.BigOperators.Finset.Range
@@ -28,9 +28,9 @@ of every commutative ring acts on `R ⊗[ℤ] M` by `R`-linear automorphisms.
 
 This is the base-ring-valued form of a root subgroup action in the Chevalley--Demazure
 construction, and an arbitrary-ring analogue of the earlier integer exponential from
-`TauCeti/RingTheory/Nilpotent/Exp.lean`. The new content here is that the integral divided-power
-operators make the same family available over every parameter ring, even when the ring has positive
-characteristic.
+`TauCeti/RingTheory/Nilpotent/Exp/Basic.lean`. The new content here is that the integral
+divided-power operators make the same family available over every parameter ring, even when the
+ring has positive characteristic.
 
 ## Main definitions and results
 
@@ -175,8 +175,8 @@ noncomputable def integralExpZSMul (x : A) (M : S)
     (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (hx : IsNilpotent x) (t : ℤ) :
     M ≃ₗ[ℤ] M :=
   integralUnitRestrict (nilpotentExpUnit (hx.smul t)) M
-    (fun _ hv => by simpa using exp_zsmul_smul_mem hx hM t hv)
-    (fun _ hv => by simpa [neg_zsmul] using exp_zsmul_smul_mem hx hM (-t) hv)
+    (fun _ hv => by simpa using exp_zsmul_smul_mem hM t hv)
+    (fun _ hv => by simpa [neg_zsmul] using exp_zsmul_smul_mem hM (-t) hv)
 
 @[simp]
 theorem coe_integralExpZSMul_apply (x : A) (M : S)

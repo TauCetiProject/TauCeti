@@ -51,13 +51,12 @@ noncomputable def regularFiberRestrictDiffeomorph (hm : 1 ≤ m) (hf : ContMDiff
     letI := regularFiberChartedSpace hm hf hc hreg
     letI := regularFiberChartedSpace (f := fun x : U ↦ f x) hm
       (hf.comp contMDiff_subtype_val) hc
-      (hreg.restrict (fun x _ ↦ hf.mdifferentiable (ENat.one_le_iff_ne_zero_withTop.mp hm) x) U)
+      (hreg.restrict U)
     {x : U // f x = c} ≃ₘ^m⟮𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ),
       𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ)⟯
       (Opens.comap ⟨(Subtype.val : {x : M // f x = c} → M), continuous_subtype_val⟩ U) := by
   let hfU : ContMDiff I J m (fun x : U ↦ f x) := hf.comp contMDiff_subtype_val
-  let hrU := hreg.restrict
-    (fun x _ ↦ hf.mdifferentiable (ENat.one_le_iff_ne_zero_withTop.mp hm) x) U
+  let hrU := hreg.restrict U
   letI := regularFiberChartedSpace hm hf hc hreg
   letI := regularFiberChartedSpace hm hfU hc hrU
   haveI := isManifold_regularFiber hm hf hc hreg
@@ -100,7 +99,7 @@ theorem regularFiberRestrictDiffeomorph_symm_apply (hm : 1 ≤ m) (hf : ContMDif
     letI := regularFiberChartedSpace hm hf hc hreg
     letI := regularFiberChartedSpace (f := fun x : U ↦ f x) hm
       (hf.comp contMDiff_subtype_val) hc
-      (hreg.restrict (fun x _ ↦ hf.mdifferentiable (ENat.one_le_iff_ne_zero_withTop.mp hm) x) U)
+      (hreg.restrict U)
     (regularFiberRestrictDiffeomorph hm hf hc hreg U).symm x = ⟨⟨x.1.1, x.2⟩, x.1.2⟩ :=
   (rfl)
 

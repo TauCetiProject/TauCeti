@@ -39,11 +39,14 @@ inverted chart (`OnePoint.mdifferentiableAt_iff_of_eq_infty`).
 * `OnePoint.affineChart` and `OnePoint.invChart`: the two charts of `OnePoint 𝕜`.
 * `OnePoint.instChartedSpace`: the charted space structure, with preferred charts
   `OnePoint.chartAt_coe` and `OnePoint.chartAt_infty`.
-* `OnePoint.instIsManifold`: the analytic manifold structure.
+* `OnePoint.instIsManifold`: the analytic manifold structure, whose maximal atlas contains both
+  charts (`OnePoint.affineChart_mem_maximalAtlas` and `OnePoint.invChart_mem_maximalAtlas`).
 * `OnePoint.contMDiff_coe` and `OnePoint.contMDiff_invChart_symm`: the inverses of the two charts,
   the inclusion `𝕜 → OnePoint 𝕜` and `w ↦ w⁻¹` (with `0 ↦ ∞`), are analytic.
 * `OnePoint.mdifferentiableAt_iff_of_ne_infty`, `OnePoint.mdifferentiableAt_iff_of_eq_infty`
   and `OnePoint.mdifferentiableAt_coe_comp_iff`: differentiability of maps into `OnePoint 𝕜`.
+* `OnePoint.mfderiv_apply_eq_of_hasDerivAt`: the derivative of a self-map of `OnePoint 𝕜`, read
+  in the preferred charts, from the derivative of its chart expression.
 
 ## References
 
@@ -260,6 +263,20 @@ instance instIsManifold : IsManifold 𝓘(𝕜) ω (OnePoint 𝕜) := by
     simp [invChart_symm_of_ne_zero (hsub hw)]
   · exact hself _
 
+/-- The affine chart belongs to the maximal atlas of `OnePoint 𝕜` at every regularity. -/
+theorem affineChart_mem_maximalAtlas {n : ℕ∞ω} :
+    (affineChart : OpenPartialHomeomorph (OnePoint 𝕜) 𝕜) ∈
+      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) := by
+  simpa only [chartAt_coe] using
+    IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜)) (n := n) ((0 : 𝕜) : OnePoint 𝕜)
+
+/-- The inverted chart belongs to the maximal atlas of `OnePoint 𝕜` at every regularity. -/
+theorem invChart_mem_maximalAtlas {n : ℕ∞ω} :
+    (invChart : OpenPartialHomeomorph (OnePoint 𝕜) 𝕜) ∈
+      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) := by
+  simpa only [chartAt_infty] using
+    IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜)) (n := n) (∞ : OnePoint 𝕜)
+
 /-! ### Differentiable maps into the projective line
 
 For `𝕜 = ℂ`, differentiability of a map into `OnePoint ℂ` is holomorphy into the Riemann sphere.
@@ -312,6 +329,20 @@ theorem mdifferentiableAt_iff_of_eq_infty {f : M → OnePoint 𝕜} {x : M}
       ContinuousAt f x ∧ MDifferentiableAt I 𝓘(𝕜) (invChart ∘ f) x := by
   rw [mdifferentiableAt_iff_target, hx]
   simp only [mfld_simps, chartAt_infty]
+
+/-- The derivative of a self-map of the projective line, read in the preferred charts at a point and
+at its image, is multiplication by the derivative of the chart expression. -/
+theorem mfderiv_apply_eq_of_hasDerivAt {f : OnePoint 𝕜 → OnePoint 𝕜} {x : OnePoint 𝕜}
+    (hf : MDifferentiableAt 𝓘(𝕜) 𝓘(𝕜) f x) {φ : 𝕜 → 𝕜} {c : 𝕜}
+    (hφ : chartAt 𝕜 (f x) ∘ f ∘ (chartAt 𝕜 x).symm =ᶠ[𝓝 (chartAt 𝕜 x x)] φ)
+    (hc : HasDerivAt φ c (chartAt 𝕜 x x)) (v : 𝕜) :
+    mfderiv 𝓘(𝕜) 𝓘(𝕜) f x v = (c * v : 𝕜) := by
+  rw [hf.mfderiv_abuse]
+  have hw : writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x f = chartAt 𝕜 (f x) ∘ f ∘ (chartAt 𝕜 x).symm := by
+    ext; simp [writtenInExtChartAt]
+  simp only [hw, modelWithCornersSelf_coe, range_id, fderivWithin_univ, extChartAt_coe,
+    Function.comp_apply, id_eq, hφ.fderiv_eq, hc.hasFDerivAt.fderiv]
+  exact (ContinuousLinearMap.toSpanSingleton_apply 𝕜 c v).trans (mul_comm v c)
 
 end Proper
 

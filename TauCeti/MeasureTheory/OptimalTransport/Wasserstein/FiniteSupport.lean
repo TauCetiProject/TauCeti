@@ -74,6 +74,9 @@ the whole ball of radius `0` around its atom, so it is not finite.
 * `TauCeti.WassersteinSpace.dense_setOfPred_ae_mem_finset` — the finitely supported laws are dense
   in `P_p (X)` on a pseudometric ground space with `[StandardBorelSpace X]`, `[BorelSpace X]`,
   and `[SecondCountableTopology X]`;
+* `TauCeti.exists_natWeights_wassersteinEDist_le` — all three steps combined: a law of finite
+  moment is within `3 * δ` of a law with natural multiplicities on finitely many terms of a dense
+  sequence.
 * `TauCeti.wassersteinQuantizationError` and `TauCeti.tendsto_wassersteinQuantizationError` — the
   `N`-point quantization error and its convergence to `0`.
 
@@ -121,16 +124,33 @@ section Perturbation
 variable [PseudoEMetricSpace X]
 
 /-- **Perturbing the weights of a finitely supported law.** If the weights `b` are below the
-weights `a` away from a distinguished point `x₀` of the carrier and the two total masses agree,
-then all the excess mass travels to `x₀`, so the transport cost is at most the `L^p` seminorm of
-the distance to `x₀` against the excess measure. -/
+weights `a` away from a distinguished point `x₀` (which need not lie in the carrier `s`) and the
+two total masses agree, then all the excess mass travels to `x₀`, so the transport cost is at most
+the `L^p` seminorm of the distance to `x₀` against the excess measure. -/
 theorem wassersteinEDist_sum_smul_dirac_le
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (p : ℝ≥0∞) {s : Finset X} {x₀ : X}
-    (hx₀ : x₀ ∈ s) {a b : X → ℝ≥0∞} (hab : ∀ y ∈ s, y ≠ x₀ → b y ≤ a y)
+    {a b : X → ℝ≥0∞} (hab : ∀ y ∈ s, y ≠ x₀ → b y ≤ a y)
     (hfin : ∀ y ∈ s, y ≠ x₀ → a y ≠ ∞) (hsum : ∑ x ∈ s, b x = ∑ x ∈ s, a x) :
     wassersteinEDist p (∑ x ∈ s, a x • Measure.dirac x) (∑ x ∈ s, b x • Measure.dirac x) ≤
       eLpNorm (fun x ↦ edist x x₀) p (∑ y ∈ s, (a y - b y) • Measure.dirac y) := by
   classical
+  by_cases hx₀ : x₀ ∈ s
+  swap
+  · -- away from the carrier the weights agree, so the two laws coincide
+    have hba : ∀ y ∈ s, b y ≤ a y := fun y hy ↦ hab y hy fun h ↦ hx₀ (h ▸ hy)
+    have hfin' : ∑ x ∈ s, b x ≠ ∞ :=
+      ne_top_of_le_ne_top (ENNReal.sum_ne_top.2 fun y hy ↦ hfin y hy fun h ↦ hx₀ (h ▸ hy))
+        (Finset.sum_le_sum hba)
+    have hsplit : ∑ x ∈ s, a x = ∑ x ∈ s, b x + ∑ x ∈ s, (a x - b x) := by
+      rw [← Finset.sum_add_distrib]
+      exact Finset.sum_congr rfl fun y hy ↦ (add_tsub_cancel_of_le (hba y hy)).symm
+    have hzero : ∑ x ∈ s, (a x - b x) = 0 := by
+      refine (ENNReal.add_right_inj hfin').1 ?_
+      rw [← hsplit, hsum, add_zero]
+    have hab_eq : ∀ y ∈ s, a y = b y := fun y hy ↦
+      le_antisymm (tsub_eq_zero_iff_le.1 (Finset.sum_eq_zero_iff.1 hzero y hy)) (hba y hy)
+    rw [Finset.sum_congr rfl fun y hy ↦ by rw [hab_eq y hy]]
+    exact (wassersteinEDist_self_of_measurable_edist hd p _).trans_le (zero_le)
   have hab' : ∀ y ∈ s.erase x₀, b y ≤ a y := fun y hy ↦
     hab y (Finset.mem_of_mem_erase hy) (Finset.ne_of_mem_erase hy)
   have hsplit : ∀ c : X → ℝ≥0∞,
@@ -225,7 +245,7 @@ theorem exists_nat_weights_wassersteinEDist_le
     rw [hsm, Finset.smul_sum]
     exact Finset.sum_congr rfl fun x _ ↦ (smul_smul _ _ _)
   rw [hν_eq, htarget]
-  refine (wassersteinEDist_sum_smul_dirac_le hd p hx₀ hab (fun y _ _ ↦ measure_ne_top ν _)
+  refine (wassersteinEDist_sum_smul_dirac_le hd p hab (fun y _ _ ↦ measure_ne_top ν _)
     (hb_sum.trans ha_sum.symm)).trans ((ENNReal.rpow_le_rpow_iff ht).1 ?_)
   -- the excess mass is at most `1 / M` at each atom, so its `L^p` seminorm is below `ε`
   rw [eLpNorm_rpow_eq_lintegral hp0 hp (f := fun x ↦ edist x x₀)
@@ -246,7 +266,7 @@ end NatWeights
 
 section DenseRange
 
-variable [PseudoMetricSpace X] [OpensMeasurableSpace X] {u : ℕ → X}
+variable [PseudoMetricSpace X] {u : ℕ → X}
 
 /-- **Quantizing to a dense sequence.** A probability measure is within any prescribed accuracy
 of its pushforward along a measurable map taking values in the range of a dense sequence: sending
@@ -259,14 +279,20 @@ theorem exists_map_range_wassersteinEDist_le
   classical
   have hidx : ∀ x : X, ∃ i, dist x (u i) < δ := fun x ↦ Metric.denseRange_iff.1 hu x δ hδ
   have hidx_meas : Measurable fun x ↦ Nat.find (hidx x) :=
-    measurable_find hidx fun _ ↦ measurableSet_ball
+    measurable_find hidx fun k ↦ by
+      have hball : {x | dist x (u k) < δ} =
+          (fun x ↦ edist x (u k)) ⁻¹' Set.Iio (ENNReal.ofReal δ) := by
+        ext x
+        simp [edist_dist, ENNReal.ofReal_lt_ofReal_iff hδ]
+      rw [hball]
+      exact (hd.comp (measurable_id.prodMk measurable_const)) measurableSet_Iio
   have hT_meas : Measurable fun x ↦ u (Nat.find (hidx x)) :=
     Measurable.of_discrete.comp hidx_meas
   refine ⟨fun x ↦ u (Nat.find (hidx x)), hT_meas, fun x ↦ ⟨_, rfl⟩, ?_⟩
   have hdisp : Measurable fun x ↦ edist x (u (Nat.find (hidx x))) :=
     hd.comp (measurable_id.prodMk hT_meas)
   refine (wassersteinEDist_map_le hd hT_meas.aemeasurable p).trans ?_
-  refine le_trans (eLpNorm_mono_enorm hdisp.aestronglyMeasurable
+  refine le_trans (eLpNorm_mono_eNorm hdisp.aestronglyMeasurable
     (g := fun _ : X ↦ ENNReal.ofReal δ) fun x ↦ ?_) ?_
   · simpa [edist_dist] using ENNReal.ofReal_le_ofReal (Nat.find_spec (hidx x)).le
   · rcases eq_or_ne p 0 with rfl | hp0
@@ -335,7 +361,7 @@ theorem exists_eLpNorm_edist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabili
       eLpNorm_rpow_eq_lintegral hp0 hp_top hf_meas.aemeasurable, withDensity_apply _ (hA_meas n)]
   calc eLpNorm (fun x ↦ edist x (T x)) p μ
       ≤ eLpNorm ((fun _ : X ↦ ENNReal.ofReal δ) + (A n).indicator f) p μ :=
-        eLpNorm_mono_enorm
+        eLpNorm_mono_eNorm
           (measurable_edist.comp (measurable_id.prodMk hT_meas)).aestronglyMeasurable
           fun x ↦ by simpa using hbound x
     _ ≤ ENNReal.ofReal δ + ENNReal.ofReal δ := by
@@ -400,6 +426,50 @@ theorem dense_setOfPred_ae_mem_finset (hp_top : p ≠ ∞) :
   linarith
 
 end WassersteinSpace
+
+section NatWeightsDense
+
+/-- Approximation by laws with rational weights on a dense sequence: a law of finite `p`-moment is
+within `3 * δ` in `W_p` of a law with natural multiplicities on finitely many terms of the
+dense sequence `u`, by the three imported approximation steps (finite support, moving the atoms
+onto terms of `u`, rounding the weights) each costing `δ`. -/
+theorem exists_natWeights_wassersteinEDist_le [PseudoMetricSpace X] [StandardBorelSpace X]
+    [BorelSpace X] {u : ℕ → X} (hu : DenseRange u) (hp1 : 1 ≤ p)
+    (hp_top : p ≠ ∞)
+    {μ : Measure X} [IsProbabilityMeasure μ] (hμ : HasFiniteMoment p μ) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ (S : Finset X) (m : X → ℕ), (∀ x ∈ S, x ∈ Set.range u) ∧ 0 < ∑ x ∈ S, m x ∧
+      wassersteinEDist p μ
+        ((∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x) ≤
+        ENNReal.ofReal (3 * δ) := by
+  classical
+  have : TopologicalSpace.SeparableSpace X := ⟨⟨Set.range u, Set.countable_range u, hu⟩⟩
+  have hδ' : ENNReal.ofReal δ ≠ 0 := by simpa using hδ
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
+  -- step one: approximate by a law carried by a finite set
+  obtain ⟨s, ν₁, hν₁, hnull₁, -, hle₁⟩ := exists_ae_mem_finset_wassersteinEDist_le hp1 hp_top hμ hδ'
+  -- step two: move its atoms onto terms of the dense sequence
+  have : IsProbabilityMeasure ν₁ := hν₁
+  obtain ⟨T, hT, hTu, hle₂⟩ := exists_map_range_wassersteinEDist_le measurable_edist hu hδ ν₁ p
+  have hν₂ : IsProbabilityMeasure (ν₁.map T) := inferInstance
+  have hnull₂ : (ν₁.map T) ((↑(s.image T) : Set X)ᶜ) = 0 := by
+    rw [Measure.map_apply hT (s.image T).measurableSet.compl]
+    refine measure_mono_null (fun x hx ↦ ?_) hnull₁
+    simp only [Finset.coe_image, mem_preimage, mem_compl_iff, mem_image, Finset.mem_coe,
+      not_exists, not_and] at hx ⊢
+    exact fun hxs ↦ hx x hxs rfl
+  -- step three: round the weights to a common denominator
+  obtain ⟨m, hmpos, hle₃⟩ :=
+    exists_nat_weights_wassersteinEDist_le (ν := ν₁.map T) measurable_edist hp0 hp_top hnull₂ hδ'
+  refine ⟨s.image T, m, fun x hx ↦ ?_, hmpos, ?_⟩
+  · obtain ⟨y, -, rfl⟩ := Finset.mem_image.1 hx
+    exact hTu y
+  · refine (wassersteinEDist_triangle measurable_edist hp1 μ ν₁ _).trans ?_
+    refine (add_le_add hle₁ ((wassersteinEDist_triangle measurable_edist hp1 ν₁ (ν₁.map T) _).trans
+      (add_le_add hle₂ hle₃))).trans_eq ?_
+    rw [← ENNReal.ofReal_add hδ.le hδ.le, ← ENNReal.ofReal_add hδ.le (by positivity)]
+    ring_nf
+
+end NatWeightsDense
 
 section Quantization
 
