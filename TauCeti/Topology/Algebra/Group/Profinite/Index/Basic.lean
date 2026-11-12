@@ -119,7 +119,7 @@ theorem _root_.Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup (H : Subgroup 
     obtain ⟨N, hNU, hN⟩ := U.1.exists_openNormalSubgroup_le_of_index_ne_zero hU
     have hsup : (H ⊔ N.toSubgroup).index ≠ 0 :=
       ne_zero_of_dvd_ne_zero hN (Subgroup.index_dvd_of_le le_sup_right)
-    refine (Subgroup.padicValNat_index_le_of_le (sup_le U.2 hNU) hsup ℓ).trans ?_
+    refine (Nat.cast_le.mpr (Subgroup.padicValNat_index_le_of_le (sup_le U.2 hNU) hsup ℓ)).trans ?_
     rw [← H.index_map_mk'_eq_index_sup N.toSubgroup]
     exact le_iSup (fun M : OpenNormalSubgroup G ↦
       (padicValNat ℓ (H.map (QuotientGroup.mk' M.toSubgroup)).index : ℕ∞)) N
@@ -146,7 +146,7 @@ theorem _root_.OpenSubgroup.profiniteIndex_apply_eq_padicValNat (U : OpenSubgrou
     Subgroup.profiniteIndex U.toSubgroup ℓ = (padicValNat ℓ U.toSubgroup.index : ℕ∞) := by
   have : Fact ℓ.val.Prime := ⟨ℓ.prop⟩
   rw [Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup]
-  exact le_antisymm (iSup_le fun V ↦ Subgroup.padicValNat_index_le_of_le V.2 hU ℓ)
+  exact le_antisymm (iSup_le fun V ↦ Nat.cast_le.mpr (Subgroup.padicValNat_index_le_of_le V.2 hU ℓ))
     (le_iSup_of_le (⟨U, le_rfl⟩ : {V : OpenSubgroup G // U.toSubgroup ≤ V.toSubgroup}) le_rfl)
 
 /-- **An open subgroup of prime-power index has that supernatural prime power as its index.**
