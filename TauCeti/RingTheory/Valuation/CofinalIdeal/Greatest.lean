@@ -321,14 +321,11 @@ theorem isGreatestIdealCofinal_closure_singleton_of_span {v : Valuation A Γ₀}
   refine ⟨hmem, fun K hK ↦ ?_⟩
   -- maximality: `h ^ n` is attained on `I`, and generates the same subgroup as `h`
   have := le_closure_singleton_of_idealCofinalFor hatt hK
-  obtain rfl | hn := eq_or_ne n 0
-  · -- `n = 0` is impossible: the closure of `h ^ 0 = 1` is trivial, but `h < 1`
-    have hh := le_closure_singleton_of_idealCofinalFor hatt hmem
-      (TauCeti.ConvexSubgroup.subset_closure _ rfl)
-    obtain ⟨m, hm⟩ := TauCeti.ConvexSubgroup.mem_closure_singleton.mp hh
-    simp only [pow_zero, mabs_one, one_pow, mabs_le_one] at hm
-    exact (hlt.ne hm).elim
-  · rwa [TauCeti.ConvexSubgroup.closure_singleton_pow hn] at this
+  -- `n = 0` is impossible: `1` cannot be a cofinal value
+  have hn : n ≠ 0 := by
+    rintro rfl
+    exact (idealCofinalFor_iff_forall_isCofinalElement.mp hK _ hatt).lt_one.ne (pow_zero h)
+  rwa [TauCeti.ConvexSubgroup.closure_singleton_pow hn] at this
 
 /-- Under Wedhorn's disjointness hypothesis the class of a generator stays out of `cΓ_v`: were
 it inside, so would be its `n`-th power, which is the class of `t ^ n ∈ I` — exactly the
