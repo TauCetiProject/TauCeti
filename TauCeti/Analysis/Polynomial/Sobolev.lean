@@ -215,8 +215,7 @@ private theorem memLp_re_weightTerm {n : ℕ} {A B : ℂ[X]}
   filter_upwards [hK] with z hz
   have hre : |(weightTerm P n A B z).re| ≤ ‖weightTerm P n A B z‖ := Complex.abs_re_le_norm _
   rw [Pi.pow_apply, Real.norm_eq_abs, abs_pow, Real.norm_of_nonneg (by positivity),
-    Real.rpow_neg (by positivity), show (4 : ℝ) = ((4 : ℕ) : ℝ) by norm_num, Real.rpow_natCast,
-    ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
+    Real.rpow_neg (by positivity), Real.rpow_ofNat, ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
   calc |(weightTerm P n A B z).re| ^ 2 * (1 + ‖z‖) ^ 4
       ≤ ‖weightTerm P n A B z‖ ^ 2 * (1 + ‖z‖) ^ 4 := by gcongr
     _ = (‖weightTerm P n A B z‖ * (1 + ‖z‖) ^ 2) ^ 2 := by ring
@@ -229,7 +228,7 @@ theorem re_mem_realSobolevFunctions_of_add_two_le {n : ℕ} {A B : ℂ[X]}
     (h : A.natDegree + B.natDegree + 2 ≤ 2 * P.natDegree * n) (k : ℕ) :
     (fun z ↦ ((((1 + ‖P.eval z‖ ^ 2)⁻¹ ^ n : ℝ) : ℂ) * (conj (A.eval z) * B.eval z)).re) ∈
       realSobolevFunctions ℂ k 2 := by
-  change (fun z ↦ (weightTerm P n A B z).re) ∈ realSobolevFunctions ℂ k 2
+  simp only [← weightTerm.eq_1]
   induction k generalizing n A B with
   | zero =>
     rw [Nat.cast_zero, mem_realSobolevFunctions_zero_iff]
@@ -251,13 +250,13 @@ theorem re_mem_realSobolevFunctions_of_add_two_le {n : ℕ} {A B : ℂ[X]}
     · have := natDegree_mul_le (p := P) (q := A)
       have := natDegree_C_mul_le (-(n : ℂ) * v) (derivative P * B)
       have := natDegree_mul_le (p := derivative P) (q := B)
-      rw [show 2 * P.natDegree * (n + 1) = 2 * P.natDegree * n + 2 * P.natDegree by ring]
+      rw [mul_add_one]
       generalize 2 * P.natDegree * n = M at h ⊢
       omega
     · have := natDegree_mul_le (p := P) (q := B)
       have := natDegree_C_mul_le (-(n : ℂ) * v) (derivative P * A)
       have := natDegree_mul_le (p := derivative P) (q := A)
-      rw [show 2 * P.natDegree * (n + 1) = 2 * P.natDegree * n + 2 * P.natDegree by ring]
+      rw [mul_add_one]
       generalize 2 * P.natDegree * n = M at h ⊢
       omega
     · have := natDegree_C_mul_le v (derivative A)
