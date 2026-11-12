@@ -150,7 +150,7 @@ infinity, the first-order form of `z ∘ φ = c z + O(z²)` (Silverman IV.4). -/
 theorem leadingCoeff_num_xRatFunc_mul_sq : φ.xRatFunc.num.leadingCoeff * c ^ 2 = 1 := by
   set N := φ.xRatFunc.num
   set D := φ.xRatFunc.denom
-  set d := D.natDegree with hd
+  set d := D.natDegree
   have hN : N.natDegree = d + 1 := natDegree_num_xRatFunc_eq_succ_of_eq_smul hc hc0 h2
   have hN0 : N.leadingCoeff ≠ 0 :=
     leadingCoeff_ne_zero.mpr (ne_zero_of_natDegree_gt (n := d) (by omega))
