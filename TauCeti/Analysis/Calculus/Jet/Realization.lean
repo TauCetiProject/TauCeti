@@ -44,39 +44,71 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+/-- The formal multilinear series with coefficient `A i / i!` in each prescribed order
+`i ≤ r`, and zero coefficients in all higher orders. -/
+noncomputable def finiteJetSeries (r : ℕ)
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) : FormalMultilinearSeries 𝕜 E F :=
+  fun n ↦ if h : n < r + 1 then (n.factorial : 𝕜)⁻¹ • A ⟨n, h⟩ else 0
+
+/-- The coefficient of the finite jet series in a prescribed order. -/
+theorem finiteJetSeries_apply (r : ℕ)
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (i : Fin (r + 1)) :
+    finiteJetSeries r A i.val = (i.val.factorial : 𝕜)⁻¹ • A i := by
+  simp [finiteJetSeries, i.isLt]
+
+/-- The coefficients above the prescribed jet order vanish. -/
+theorem finiteJetSeries_eq_zero_of_le (r : ℕ)
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (n : ℕ) (hn : r + 1 ≤ n) :
+    finiteJetSeries r A n = 0 := by
+  simp [finiteJetSeries, not_lt.mpr hn]
+
 /-- The factorial-normalized finite Taylor sum associated with a tuple `A`, centered at `x`.
 The tuple contains precisely the orders from zero through `r`. In characteristic zero,
 `iteratedFDeriv_finiteJetPolynomial` realizes every symmetric tuple as its derivatives. -/
 noncomputable def finiteJetPolynomial (r : ℕ)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x y : E) : F :=
-  ∑ i : Fin (r + 1), (i.val.factorial : 𝕜)⁻¹ • A i (fun _ ↦ y - x)
+  (finiteJetSeries r A).partialSum (r + 1) (y - x)
 
 /-- Evaluation of the finite jet polynomial as its finite Taylor sum. -/
 theorem finiteJetPolynomial_apply (r : ℕ)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x y : E) :
     finiteJetPolynomial r A x y =
-      ∑ i : Fin (r + 1), (i.val.factorial : 𝕜)⁻¹ • A i (fun _ ↦ y - x) := (rfl)
+      ∑ i : Fin (r + 1), (i.val.factorial : 𝕜)⁻¹ • A i (fun _ ↦ y - x) := by
+  rw [finiteJetPolynomial, FormalMultilinearSeries.partialSum, ← Fin.sum_univ_eq_sum_range]
+  simp only [finiteJetSeries_apply, smul_apply]
+
+private theorem finiteJetPolynomial_hasFiniteFPowerSeriesOnBall (r : ℕ)
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x : E) :
+    HasFiniteFPowerSeriesOnBall (finiteJetPolynomial r A x) (finiteJetSeries r A) x
+      (r + 1) ⊤ := by
+  have hp := ((finiteJetSeries r A).hasFiniteFPowerSeriesOnBall_of_finite
+    (finiteJetSeries_eq_zero_of_le r A)).comp_sub x
+  simp only [zero_add] at hp
+  convert hp using 1
+  ext y
+  rw [finiteJetPolynomial, FormalMultilinearSeries.sum_of_finite _
+    (finiteJetSeries_eq_zero_of_le r A)]
 
 /-- The value of the finite Taylor polynomial at its center is its order-zero datum. -/
 @[simp]
 theorem finiteJetPolynomial_self (r : ℕ)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x : E) :
-    finiteJetPolynomial r A x x = A ⟨0, Nat.zero_lt_succ r⟩ (fun _ ↦ 0) := by
-  rw [finiteJetPolynomial_apply, Fin.sum_univ_succ]
-  have hz (i : Fin r) : A i.succ (fun _ ↦ (0 : E)) = 0 :=
-    (A i.succ).map_coord_zero ⟨0, Nat.zero_lt_succ i.val⟩ rfl
-  simp only [sub_self, hz]
-  simp
-  rfl
+    finiteJetPolynomial r A x x = A 0 0 := by
+  rw [← (finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x).toHasFPowerSeriesOnBall.coeff_zero
+    (0 : Fin 0 → E)]
+  change finiteJetSeries r A 0 0 = A ⟨0, Nat.zero_lt_succ r⟩ 0
+  simpa only [Nat.factorial_zero, Nat.cast_one, inv_one, one_smul]
+    using congrArg (fun f : E [×0]→L[𝕜] F ↦ f 0)
+      (finiteJetSeries_apply r A ⟨0, Nat.zero_lt_succ r⟩)
 
 /-- The finite Taylor polynomial is smooth (and in fact analytic). -/
 theorem contDiff_finiteJetPolynomial (r : ℕ)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x : E) :
     ContDiff 𝕜 ω (finiteJetPolynomial r A x) := by
-  apply ContDiff.sum
-  intro i _
-  exact ((A i).contDiff.comp (contDiff_pi.2 fun _ ↦
-    contDiff_id.sub contDiff_const)).const_smul _
+  rw [contDiff_iff_contDiffAt]
+  intro y
+  exact ((finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x).cpolynomialAt_of_mem
+    (by simp)).contDiffAt
 
 /-- Every prescribed symmetric derivative of the finite Taylor polynomial has the
 specified value at its center. Symmetry is invariance under permutations of the slots. -/
@@ -86,49 +118,35 @@ theorem iteratedFDeriv_finiteJetPolynomial (r : ℕ)
     (hA : ∀ i (v : Fin i.val → E) (σ : Equiv.Perm (Fin i.val)), A i (v ∘ σ) = A i v)
     (x : E) (i : Fin (r + 1)) :
     iteratedFDeriv 𝕜 i.val (finiteJetPolynomial r A x) x = A i := by
-  let p : FormalMultilinearSeries 𝕜 E F := fun n ↦
-    if h : n < r + 1 then (n.factorial : 𝕜)⁻¹ • A ⟨n, h⟩ else 0
-  have hp : HasFiniteFPowerSeriesOnBall (finiteJetPolynomial r A x) p x (r + 1) ⊤ := by
-    apply HasFiniteFPowerSeriesOnBall.mk' ?_ ENNReal.zero_lt_top ?_
-    · intro n hn
-      dsimp [p]
-      rw [dite_eq_right (not_lt.mpr hn)]
-    · intro y _
-      rw [finiteJetPolynomial_apply, ← Fin.sum_univ_eq_sum_range]
-      apply Finset.sum_congr rfl
-      intro n _
-      dsimp [p]
-      rw [dite_eq_left n.isLt]
-      simp
+  have hp := finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x
   ext v
   rw [hp.toHasFPowerSeriesOnBall.iteratedFDeriv_eq_sum
     ((contDiff_finiteJetPolynomial r A x).contDiffOn.analyticOn)]
-  simp only [p, dite_eq_left i.isLt, smul_apply, Fin.eta]
+  simp only [finiteJetSeries_apply, smul_apply]
   have hsym (σ : Equiv.Perm (Fin i.val)) :
       A i (fun j ↦ v (σ j)) = A i v := hA i v σ
   simp_rw [hsym]
   simp [Fintype.card_perm, nsmul_eq_mul, ← smul_assoc,
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero i.val)]
 
-/-- A finite symmetric jet whose value belongs to a bundle-chart domain is realized
-by a smooth polynomial whose graph stays in that domain near the center. -/
-theorem exists_contDiff_iteratedFDeriv_eq_mem (r : ℕ) [CharZero 𝕜]
+/-- A finite symmetric jet whose value belongs to an arbitrary open subset of `E × F` is
+realized by an analytic smooth function whose graph stays in that subset near the center. -/
+theorem exists_contDiff_iteratedFDeriv_eq_eventually_mem (r : ℕ) [CharZero 𝕜]
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F)
     (hA : ∀ i (v : Fin i.val → E) (σ : Equiv.Perm (Fin i.val)), A i (v ∘ σ) = A i v)
     (x : E) {u : Set (E × F)} (hu : IsOpen u)
-    (hx : (x, A ⟨0, Nat.zero_lt_succ r⟩ (fun _ ↦ 0)) ∈ u) :
-    ∃ f : E → F, ContDiff 𝕜 ∞ f ∧
+    (hx : (x, A 0 0) ∈ u) :
+    ∃ f : E → F, ContDiff 𝕜 ω f ∧
       (∀ i : Fin (r + 1), iteratedFDeriv 𝕜 i.val f x = A i) ∧
       ∀ᶠ y in 𝓝 x, (y, f y) ∈ u := by
-  refine ⟨finiteJetPolynomial r A x, (contDiff_finiteJetPolynomial r A x).of_le le_top,
+  refine ⟨finiteJetPolynomial r A x, contDiff_finiteJetPolynomial r A x,
     iteratedFDeriv_finiteJetPolynomial r A hA x, ?_⟩
   have hmem : (x, finiteJetPolynomial r A x x) ∈ u := by simpa using hx
   exact (continuousAt_id.prodMk
     (contDiff_finiteJetPolynomial r A x).continuous.continuousAt).eventually (hu.mem_nhds hmem)
 
 /-- On a finite-dimensional real base, any finite symmetric jet is realized by a
-smooth function with compact support in an arbitrarily prescribed neighborhood.
-Multiplication by a cutoff equal to one nearby preserves every prescribed derivative. -/
+smooth function with compact support in an arbitrarily prescribed neighborhood. -/
 theorem exists_contDiff_hasCompactSupport_iteratedFDeriv_eq
     {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F] (r : ℕ)
