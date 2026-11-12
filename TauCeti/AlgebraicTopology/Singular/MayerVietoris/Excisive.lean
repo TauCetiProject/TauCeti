@@ -15,7 +15,7 @@ public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 Two subsets `A` and `B` of a space `X` form an *excisive couple* when the chains `C(A) + C(B)` of
 the singular simplices lying in `A` or in `B`, the chains of the small singular subcomplex
 `X.smallSingularSubcomplex ![A, B]`, include into the singular chains of `X` by a
-quasi-isomorphism. The small-chain theorem says this when the interiors of `A` and `B` cover `X`
+quasi-isomorphism. The small-chain theorem says this when `A` and `B` are open and cover `X`
 (`TauCeti.quasiIso_chainComplexMap_smallSingularSubcomplex_ι`), and the Mayer–Vietoris sequence
 then holds for `A` and `B`.
 
@@ -82,15 +82,15 @@ theorem quasiIso_chainComplexMap_smallSingularSubcomplex_ι_of_nhds {A B U V : S
       φ₁ ≫ TopCat.toSSet.map
         (TopCat.ofHom (ContinuousMap.inclusion (Set.inter_subset_left (t := V)))) := by
     -- Both composites are the inclusion `A ∩ B ⊆ U`.
-    simp only [φ₁, φ₂, ← Functor.map_comp]
-    rfl
+    simp only [φ₁, φ₂, ← Functor.map_comp, ← TopCat.ofHom_comp,
+      ContinuousMap.inclusion_comp_inclusion]
   have hl : TopCat.toSSet.map
         (TopCat.ofHom (ContinuousMap.inclusion (Set.inter_subset_right (s := A)))) ≫ φ₃ =
       φ₁ ≫ TopCat.toSSet.map
         (TopCat.ofHom (ContinuousMap.inclusion (Set.inter_subset_right (s := U)))) := by
     -- Both composites are the inclusion `A ∩ B ⊆ V`.
-    simp only [φ₁, φ₃, ← Functor.map_comp]
-    rfl
+    simp only [φ₁, φ₃, ← Functor.map_comp, ← TopCat.ofHom_comp,
+      ContinuousMap.inclusion_comp_inclusion]
   have hr : TopCat.toSmallSingularSubcomplex ![A, B] (Matrix.cons_val_zero A ![B]).superset ≫ φ₄ =
       φ₂ ≫ TopCat.toSmallSingularSubcomplex ![U, V] (Matrix.cons_val_zero U ![V]).superset :=
     TopCat.toSmallSingularSubcomplex_comp_smallSingularSubcomplexMap _ _ _ _ hf _ _
