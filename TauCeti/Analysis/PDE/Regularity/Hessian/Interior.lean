@@ -286,7 +286,7 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_ad
               lpNorm (Wkp.value 2 u) p (volume.restrict (ball x₀ R))) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · -- In dimension zero the weak Hessian lives in a zero space, so the left side vanishes.
-    refine ⟨0, 1, one_pos, fun {A lam} hlam _ {Omega x₀ r R} _ _ {a b c ε Λ β γ} _ _ _ _ _ _ _ _
+    refine ⟨0, 1, one_pos, fun {A lam} _ _ {Omega x₀ r R} _ _ {a b c ε Λ β γ} _ _ _ _ _ _ _ _
       u f _ => ?_⟩
     have hz : lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict (ball x₀ r)) = 0 := by
       have h : lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict (ball x₀ r)) =
