@@ -238,7 +238,8 @@ theorem antipode_comul_antidistrib_apply (c : C) :
   LinearMap.congr_fun antipode_comul_antidistrib c
 
 /-- The identity `Σ (S c₂)₁ ⊗ c₁ (S c₂)₂ = S c ⊗ 1`: comultiplying the antipode of the second
-leg and multiplying its first factor into the first leg leaves `S c ⊗ 1`. -/
+leg, moving its first factor to the first leg, and multiplying its second factor on the left by
+the original first leg leaves `S c ⊗ 1`. -/
 theorem lTensor_mul'_leftComm_comul_antipode_comul (c : C) :
     (LinearMap.mul' R C).lTensor C (TensorProduct.leftComm R C C C
       ((Coalgebra.comul ∘ₗ antipode R).lTensor C (Coalgebra.comul c))) =
@@ -271,21 +272,9 @@ theorem lTensor_mul'_leftComm_comul_antipode_comul (c : C) :
 theorem mul'_rTensor_mul'_map_antipode_comul {g : C →ₗ[R] C} (c : C) :
     LinearMap.mul' R C ((LinearMap.mul' R C ∘ₗ TensorProduct.map g (antipode R) ∘ₗ
       Coalgebra.comul).rTensor C (Coalgebra.comul c)) = g c := by
-  have hz (z : C ⊗[R] (C ⊗[R] C)) :
-      LinearMap.mul' R C ((LinearMap.mul' R C ∘ₗ TensorProduct.map g (antipode R)).rTensor C
-          ((TensorProduct.assoc R C C C).symm z)) =
-        LinearMap.mul' R C (TensorProduct.map g
-          (LinearMap.mul' R C ∘ₗ (antipode R).rTensor C) z) := by
-    induction z with
-    | add z z' hz hz' => simp only [map_add, hz, hz']
-    | tmul a w =>
-      induction w with
-      | add w w' hw hw' => simp only [tmul_add, map_add, hw, hw']
-      | tmul b c => simp [mul_assoc]
-  rw [← LinearMap.comp_assoc, LinearMap.rTensor_comp_apply, ← Coalgebra.coassoc_symm_apply, hz,
-    LinearMap.map_lTensor, LinearMap.comp_assoc, mul_antipode_rTensor_comul,
-    ← LinearMap.map_lTensor, Coalgebra.lTensor_counit_comul]
-  simp
+  have h : toConv g * toConv (antipode R) * toConv LinearMap.id = toConv g := by
+    rw [mul_assoc, LinearMap.antipode_mul_id, mul_one]
+  exact congrArg (fun f : WithConv (C →ₗ[R] C) ↦ f c) h
 
 /-- The antipode of a commutative and cocommutative Hopf algebra, as a bialgebra
 endomorphism. Contravariantly, this represents inversion on a commutative affine group. -/

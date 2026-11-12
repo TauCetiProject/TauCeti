@@ -23,13 +23,15 @@ exactly the right cointegrals (`TauCeti.mem_fixedSubcomodule_dual_iff`).
 Over a field the fundamental theorem of Hopf modules then gives
 `dim H = dim H* = dim (right cointegrals) · dim H`, so the right cointegrals of a
 finite-dimensional Hopf algebra form a line (`TauCeti.finrank_rightCointegrals`). This is the
-theorem of Larson and Sweedler. A nonzero cointegral supplies the hypothesis of the results in
-`TauCeti.Algebra.HopfAlgebra.Frobenius`, so the antipode is bijective
-(`TauCeti.HopfAlgebra.antipode_bijective_of_finiteDimensional`) and the left and right integrals
-form lines (`TauCeti.finrank_leftIntegral`, `TauCeti.finrank_rightIntegral`). Precomposition
-with the antipode then exchanges right and left cointegrals
-(`TauCeti.isLeftCointegral_comp_antipode`, `TauCeti.isRightCointegral_comp_antipode`), so the
-left cointegrals form a line too (`TauCeti.finrank_leftCointegrals`).
+theorem of Larson and Sweedler. Right and left cointegrals are the right and left invariant
+integrals of `TauCeti.Algebra.HopfAlgebra.Integral`, so the results of
+`TauCeti.Algebra.HopfAlgebra.Frobenius` apply: every nonzero cointegral is a Frobenius functional
+(`TauCeti.IsRightCointegral.isFrobeniusFunctional`, `TauCeti.exists_isFrobeniusFunctional`), the
+antipode is bijective (`TauCeti.HopfAlgebra.antipode_bijective_of_finiteDimensional`) and the
+left and right integrals form lines (`TauCeti.finrank_leftIntegral`,
+`TauCeti.finrank_rightIntegral`). The left cointegrals are the left integrals of the
+finite-dimensional Hopf algebra `TauCeti.ConvolutionDual k H`, so they form a line too
+(`TauCeti.finrank_leftCointegrals`).
 
 ## References
 
@@ -68,6 +70,24 @@ theorem dualMulLeftAct_tmul_apply (φ : Module.Dual R H) (h x : H) :
   simp [dualMulLeftAct]
 
 end Algebra
+
+section Bialgebra
+
+variable [Bialgebra R H]
+
+/-- Right cointegrals are exactly the right invariant integrals: both predicates state
+`Σ φ(h₁) h₂ = φ(h) 1`. -/
+theorem isRightCointegral_iff_isRightInvariantIntegral {φ : Module.Dual R H} :
+    IsRightCointegral φ ↔ φ.IsRightInvariantIntegral := by
+  rw [isRightCointegral_def, LinearMap.isRightInvariantIntegral_iff]
+
+/-- Left cointegrals are exactly the left invariant integrals: both predicates state
+`Σ φ(h₂) h₁ = φ(h) 1`. -/
+theorem isLeftCointegral_iff_isLeftInvariantIntegral {φ : Module.Dual R H} :
+    IsLeftCointegral φ ↔ φ.IsLeftInvariantIntegral := by
+  rw [isLeftCointegral_def, LinearMap.isLeftInvariantIntegral_iff]
+
+end Bialgebra
 
 variable [HopfAlgebra R H]
 
@@ -184,6 +204,7 @@ variable {k H : Type*} [Field k] [Ring H] [HopfAlgebra k H] [FiniteDimensional k
 
 /-- **Larson–Sweedler.** The right cointegrals of a finite-dimensional Hopf algebra over a field
 form a one-dimensional space. -/
+@[simp]
 theorem finrank_rightCointegrals : Module.finrank k (rightCointegrals k H) = 1 := by
   have h := (isHopfModuleAction_dualMulLeftAct (R := k) (H := H)).finrank_eq
   rw [Subspace.dual_finrank_eq, ← Subcomodule.finrank_toSubmodule,
@@ -202,90 +223,56 @@ theorem exists_isRightCointegral_ne_zero :
   obtain ⟨φ, hφ, h0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
   exact ⟨φ, (mem_rightCointegrals φ).mp hφ, h0⟩
 
-/-- A nonzero right cointegral is a right invariant integral in the sense of
-`LinearMap.IsRightInvariantIntegral`; the two predicates state the same equation. -/
-private theorem exists_isRightInvariantIntegral_ne_zero :
-    ∃ φ : Module.Dual k H, φ.IsRightInvariantIntegral ∧ φ ≠ 0 := by
+/-- A nonzero right cointegral of a finite-dimensional Hopf algebra over a field is a Frobenius
+functional. -/
+theorem IsRightCointegral.isFrobeniusFunctional {φ : Module.Dual k H}
+    (hφ : IsRightCointegral φ) (h0 : φ ≠ 0) : φ.IsFrobeniusFunctional :=
+  (isRightCointegral_iff_isRightInvariantIntegral.mp hφ).isFrobeniusFunctional h0
+
+/-- A nonzero left cointegral of a finite-dimensional Hopf algebra over a field is a Frobenius
+functional. -/
+theorem IsLeftCointegral.isFrobeniusFunctional {φ : Module.Dual k H}
+    (hφ : IsLeftCointegral φ) (h0 : φ ≠ 0) : φ.IsFrobeniusFunctional :=
+  (isLeftCointegral_iff_isLeftInvariantIntegral.mp hφ).isFrobeniusFunctional h0
+
+/-- A finite-dimensional Hopf algebra over a field is a Frobenius algebra: it has a Frobenius
+functional, namely any nonzero right cointegral. -/
+theorem exists_isFrobeniusFunctional : ∃ φ : Module.Dual k H, φ.IsFrobeniusFunctional := by
   obtain ⟨φ, hφ, h0⟩ := exists_isRightCointegral_ne_zero (k := k) (H := H)
-  exact ⟨φ, LinearMap.isRightInvariantIntegral_iff.mpr ((isRightCointegral_def φ).mp hφ), h0⟩
+  exact ⟨φ, hφ.isFrobeniusFunctional h0⟩
 
 /-- **Larson–Sweedler.** The antipode of a finite-dimensional Hopf algebra over a field is
 bijective. -/
 theorem HopfAlgebra.antipode_bijective_of_finiteDimensional :
     Function.Bijective (HopfAlgebra.antipode k : H → H) := by
-  obtain ⟨φ, hφ, h0⟩ := exists_isRightInvariantIntegral_ne_zero (k := k) (H := H)
-  exact hφ.antipode_bijective h0
+  obtain ⟨φ, hφ, h0⟩ := exists_isRightCointegral_ne_zero (k := k) (H := H)
+  exact (isRightCointegral_iff_isRightInvariantIntegral.mp hφ).antipode_bijective h0
 
 /-- The left integrals of a finite-dimensional Hopf algebra over a field form a one-dimensional
 space. -/
+@[simp]
 theorem finrank_leftIntegral : Module.finrank k (leftIntegral k H) = 1 := by
-  obtain ⟨φ, hφ, h0⟩ := exists_isRightInvariantIntegral_ne_zero (k := k) (H := H)
+  obtain ⟨φ, hφ, h0⟩ := exists_isRightCointegral_ne_zero (k := k) (H := H)
   exact (hφ.isFrobeniusFunctional h0).finrank_leftIntegral
 
 /-- The right integrals of a finite-dimensional Hopf algebra over a field form a one-dimensional
 space. -/
+@[simp]
 theorem finrank_rightIntegral : Module.finrank k (rightIntegral k H) = 1 := by
-  obtain ⟨φ, hφ, h0⟩ := exists_isRightInvariantIntegral_ne_zero (k := k) (H := H)
+  obtain ⟨φ, hφ, h0⟩ := exists_isRightCointegral_ne_zero (k := k) (H := H)
   exact (hφ.isFrobeniusFunctional h0).finrank_rightIntegral
 
-/-- Precomposition with the antipode sends right cointegrals to left cointegrals. -/
-theorem isLeftCointegral_comp_antipode {φ : Module.Dual k H} (hφ : IsRightCointegral φ) :
-    IsLeftCointegral (φ ∘ₗ HopfAlgebra.antipode k) := by
-  rw [isLeftCointegral_def]
-  intro x
-  apply (HopfAlgebra.antipode_bijective_of_finiteDimensional (k := k) (H := H)).1
-  have hw (w : H ⊗[k] H) :
-      HopfAlgebra.antipode k (TensorProduct.rid k H
-        ((φ ∘ₗ HopfAlgebra.antipode k).lTensor H w)) =
-        TensorProduct.lid k H (φ.rTensor H (TensorProduct.map (HopfAlgebra.antipode k)
-          (HopfAlgebra.antipode k) (TensorProduct.comm k H H w))) := by
-    induction w with
-    | add w w' hw hw' => simp only [map_add, hw, hw']
-    | tmul a b => simp
-  rw [hw, ← TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply,
-    (isRightCointegral_def φ).mp hφ]
-  simp
-
-/-- Precomposition with the antipode sends left cointegrals to right cointegrals. -/
-theorem isRightCointegral_comp_antipode {φ : Module.Dual k H} (hφ : IsLeftCointegral φ) :
-    IsRightCointegral (φ ∘ₗ HopfAlgebra.antipode k) := by
-  rw [isRightCointegral_def]
-  intro x
-  apply (HopfAlgebra.antipode_bijective_of_finiteDimensional (k := k) (H := H)).1
-  have hw (w : H ⊗[k] H) :
-      HopfAlgebra.antipode k (TensorProduct.lid k H
-        ((φ ∘ₗ HopfAlgebra.antipode k).rTensor H w)) =
-        TensorProduct.rid k H (φ.lTensor H (TensorProduct.map (HopfAlgebra.antipode k)
-          (HopfAlgebra.antipode k) (TensorProduct.comm k H H w))) := by
-    induction w with
-    | add w w' hw hw' => simp only [map_add, hw, hw']
-    | tmul a b => simp
-  rw [hw, ← TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply,
-    (isLeftCointegral_def φ).mp hφ]
-  simp
-
 /-- The left cointegrals of a finite-dimensional Hopf algebra over a field form a
-one-dimensional space. -/
+one-dimensional space: they are the left integrals of `ConvolutionDual k H`. -/
+@[simp]
 theorem finrank_leftCointegrals : Module.finrank k (leftCointegrals k H) = 1 := by
-  have hinj : Function.Injective (HopfAlgebra.antipode k (A := H)).dualMap :=
-    LinearMap.dualMap_injective_of_surjective
-      (HopfAlgebra.antipode_bijective_of_finiteDimensional (k := k) (H := H)).2
-  have hle : Module.finrank k (leftCointegrals k H) ≤ Module.finrank k (rightCointegrals k H) :=
-    LinearMap.finrank_le_finrank_of_injective
-      (f := ((HopfAlgebra.antipode k (A := H)).dualMap.domRestrict _).codRestrict
-        (rightCointegrals k H) fun φ ↦ (mem_rightCointegrals _).mpr <| by
-          rw [LinearMap.domRestrict_apply, LinearMap.dualMap_apply']
-          exact isRightCointegral_comp_antipode ((mem_leftCointegrals _).mp φ.2))
-      fun φ ψ h ↦ Subtype.ext (hinj (congrArg Subtype.val h))
-  have hge : Module.finrank k (rightCointegrals k H) ≤ Module.finrank k (leftCointegrals k H) :=
-    LinearMap.finrank_le_finrank_of_injective
-      (f := ((HopfAlgebra.antipode k (A := H)).dualMap.domRestrict _).codRestrict
-        (leftCointegrals k H) fun φ ↦ (mem_leftCointegrals _).mpr <| by
-          rw [LinearMap.domRestrict_apply, LinearMap.dualMap_apply']
-          exact isLeftCointegral_comp_antipode ((mem_rightCointegrals _).mp φ.2))
-      fun φ ψ h ↦ Subtype.ext (hinj (congrArg Subtype.val h))
-  rw [finrank_rightCointegrals] at hle hge
-  exact le_antisymm hle hge
+  have h : (leftIntegral k (ConvolutionDual k H)).map
+      (WithConv.linearEquiv k (Module.Dual k H)).toLinearMap = leftCointegrals k H := by
+    ext φ
+    rw [Submodule.mem_map_equiv, mem_leftCointegrals, isLeftCointegral_iff_convMul,
+      mem_leftIntegral_iff]
+    simp
+  rw [← h, LinearEquiv.finrank_map_eq, finrank_leftIntegral]
 
 end Field
 

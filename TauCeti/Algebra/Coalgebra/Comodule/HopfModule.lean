@@ -41,7 +41,8 @@ finite-dimensional Hopf algebra it produces cointegrals.
 * `TauCeti.Comodule.IsHopfModuleAction.act_rTensor_hopfModuleProj_coact`: the reconstruction
   `Σ P(m₀) • m₁ = m`.
 * `TauCeti.Comodule.IsHopfModuleAction.fixedTensorEquiv`: the fundamental theorem
-  `M^{co H} ⊗ H ≃ M`.
+  `M^{co H} ⊗ H ≃ M`, which is `H`-linear (`act_fixedTensorEquiv_tmul`) and colinear
+  (`coact_fixedTensorEquiv`).
 * `TauCeti.Comodule.IsHopfModuleAction.finrank_eq`: `dim M = dim M^{co H} · dim H` over a field.
 
 ## References
@@ -116,6 +117,11 @@ variable [Semiring H] [HopfAlgebra R H] [AddCommMonoid M] [Module R M] [Comodule
 /-- The projection `m ↦ Σ m₀ • S(m₁)` of a Hopf module onto its fixed vectors. -/
 noncomputable def _root_.LinearMap.hopfModuleProj (act : M ⊗[R] H →ₗ[R] M) : M →ₗ[R] M :=
   act ∘ₗ (HopfAlgebra.antipode R).lTensor M ∘ₗ coact
+
+/-- The projection `hopfModuleProj` as a composite of linear maps. -/
+theorem _root_.LinearMap.hopfModuleProj_def (act : M ⊗[R] H →ₗ[R] M) :
+    act.hopfModuleProj = act ∘ₗ (HopfAlgebra.antipode R).lTensor M ∘ₗ coact :=
+  (rfl)
 
 /-- Unfolding `hopfModuleProj`: it applies the antipode to the coefficient of the coaction and
 then acts. -/
@@ -253,7 +259,44 @@ theorem fixedTensorEquiv_tmul (hact : IsHopfModuleAction act)
     hact.fixedTensorEquiv (n ⊗ₜ h) = act ((n : M) ⊗ₜ h) :=
   (rfl)
 
+/-- `fixedTensorEquiv` is `H`-linear for the right action on the second factor of
+`M^{co H} ⊗ H`: `(n ⊗ a) • h ↦ (n • a) • h`. -/
+theorem act_fixedTensorEquiv_tmul (hact : IsHopfModuleAction act)
+    (x : (fixedSubcomodule R H M).toSubmodule ⊗[R] H) (h : H) :
+    act (hact.fixedTensorEquiv x ⊗ₜ h) =
+      hact.fixedTensorEquiv ((LinearMap.mul' R H).lTensor _
+        (TensorProduct.assoc R _ H H (x ⊗ₜ h))) := by
+  induction x with
+  | add x y hx hy => simp only [add_tmul, map_add, hx, hy]
+  | tmul n a => simp [hact.act_act]
+
+/-- `fixedTensorEquiv` is colinear for the cofree coaction `n ⊗ a ↦ Σ (n ⊗ a₁) ⊗ a₂` on
+`M^{co H} ⊗ H`. -/
+theorem coact_fixedTensorEquiv (hact : IsHopfModuleAction act)
+    (x : (fixedSubcomodule R H M).toSubmodule ⊗[R] H) :
+    coact (hact.fixedTensorEquiv x) =
+      hact.fixedTensorEquiv.toLinearMap.rTensor H
+        ((TensorProduct.assoc R _ H H).symm (Coalgebra.comul.lTensor _ x)) := by
+  induction x with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul n a =>
+    rw [fixedTensorEquiv_tmul, hact.coact_act_of_mem_fixedSubcomodule
+      (Subcomodule.mem_toSubmodule.mp n.2), LinearMap.lTensor_tmul]
+    induction Coalgebra.comul (R := R) a with
+    | add u w hu hw => simp only [tmul_add, map_add, hu, hw]
+    | tmul b c => simp
+
+/-- The inverse of `fixedTensorEquiv` is `m ↦ Σ P(m₀) ⊗ m₁`, with `P` corestricted to the fixed
+subcomodule. -/
+theorem fixedTensorEquiv_symm_apply (hact : IsHopfModuleAction act) (m : M) :
+    hact.fixedTensorEquiv.symm m =
+      (act.hopfModuleProj.codRestrict (fixedSubcomodule R H M).toSubmodule
+        fun m ↦ Subcomodule.mem_toSubmodule.mpr
+          (hact.hopfModuleProj_mem_fixedSubcomodule m)).rTensor H (coact m) :=
+  (rfl)
+
 /-- The inverse of `fixedTensorEquiv` is `m ↦ Σ P(m₀) ⊗ m₁`. -/
+@[simp]
 theorem rTensor_subtype_fixedTensorEquiv_symm (hact : IsHopfModuleAction act) (m : M) :
     (fixedSubcomodule R H M).toSubmodule.subtype.rTensor H (hact.fixedTensorEquiv.symm m) =
       act.hopfModuleProj.rTensor H (coact m) := by
