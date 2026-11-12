@@ -427,7 +427,7 @@ theorem _root_.TauCeti.Symbol.HasCompactSpatialSupport.hasCompactInputSupport_of
     {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport) :
     (ofRight b).HasCompactInputSupport := by
   obtain ⟨L, hL, hLb⟩ := Symbol.hasCompactSpatialSupport_iff.mp hb
-  exact ⟨L, hL, fun x y hy ξ ↦ hLb y hy ξ⟩
+  exact ⟨L, hL, fun _ y hy ξ ↦ hLb y hy ξ⟩
 
 /-- For an amplitude with compact input support, the estimates hold for all input positions,
 uniformly for output positions in a compact set. -/

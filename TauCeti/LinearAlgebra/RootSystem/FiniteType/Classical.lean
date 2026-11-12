@@ -352,7 +352,7 @@ the chain rows are then triangular on the coordinates below the top. -/
 private lemma simpleCorootsD_vecMul_injective (k : ℕ) :
     Function.Injective (simpleCorootsD k).vecMul := by
   refine (injective_iff_map_eq_zero (simpleCorootsD k).vecMulLinear.toAddMonoidHom).2 fun x hx ↦ ?_
-  set M := simpleCorootsD k with hM
+  set M := simpleCorootsD k
   have hx' : x ᵥ* M = 0 := by
     calc
       x ᵥ* M = M.vecMulLinear x := (Matrix.vecMulLinear_apply M x).symm
