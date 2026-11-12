@@ -1084,7 +1084,7 @@ theorem typeABoxMapOfHom_apply_eq_map_zero (N : TypeDStructure d ι X)
     N.typeABoxMapOfHom f φ z = f.map 0 ![] (φ z) := by
   rw [typeABoxMapOfHom_apply_eq_sum (K := K + 1) _ _ fun n hn => hK n (by omega), sum_range_succ',
     sum_eq_zero fun n _ => by simp [hf], zero_add, ← (Equiv.funUnique (Fin 1) X).symm.sum_comp]
-  simp [Subsingleton.elim (fun l : Fin 0 => _) ![]]
+  simp [Subsingleton.elim (fun _ : Fin 0 => _) ![]]
 
 /-- **The identity morphism induces the identity**, for a bounded type `D` structure. -/
 theorem typeABoxMapOfHom_id_of_isBounded [CharP R 2] (N : TypeDStructure d ι X)
