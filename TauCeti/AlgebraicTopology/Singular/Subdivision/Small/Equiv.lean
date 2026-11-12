@@ -65,12 +65,6 @@ namespace TauCeti
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] (R : C)
   {X : TopCat.{w}} {ι : Type*} (U : ι → Set X)
 
--- The chain inclusion is the coproduct map induced by an injective map of simplices.
-local instance (n : ℕ) :
-    Mono ((SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n) :=
-  inferInstanceAs (Mono ((sigmaConst.obj R).map
-    ((X.smallSingularSubcomplex U).ι.app (Opposite.op ⦋n⦌))))
-
 /-- The subgroup of the singular `n`-chains of `X` with coefficients in `R` consisting of the
 chains that factor through the chains subordinate to the family `U`. -/
 def smallSingularChains (n : ℕ) :
@@ -359,62 +353,26 @@ private theorem exists_comp_eq_ιChainComplex_comp_singularSmallApprox {n : ℕ}
   (mem_smallSingularChains_iff _).1
     (mem_smallSingularChains_ιChainComplex_comp_singularSmallApprox R U hU hcov σ)
 
-/-- The degreewise factorisation of the small-chain approximation through the chains subordinate
-to `U`, obtained by choosing a factorisation on each summand. -/
-private def smallSingularRetractionX (n : ℕ) :
-    ((TopCat.toSSet.obj X).chainComplex R).X n ⟶
-      ((X.smallSingularSubcomplex U : SSet).chainComplex R).X n :=
-  Cofan.IsColimit.desc ((TopCat.toSSet.obj X).isColimitChainComplexXCofan R n) fun σ ↦
-    (exists_comp_eq_ιChainComplex_comp_singularSmallApprox R U hU hcov σ).choose
-
-@[reassoc]
-private lemma ιChainComplex_smallSingularRetractionX {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) :
-    (TopCat.toSSet.obj X).ιChainComplex σ ≫ smallSingularRetractionX R U hU hcov n =
-      (exists_comp_eq_ιChainComplex_comp_singularSmallApprox R U hU hcov σ).choose :=
-  Cofan.IsColimit.fac _ _ σ
-
-@[reassoc (attr := simp)]
-private lemma smallSingularRetractionX_comp_ι (n : ℕ) :
-    smallSingularRetractionX R U hU hcov n ≫
-        (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n =
-      (singularSmallApprox R U).f n := by
-  ext σ
-  rw [← Category.assoc, ιChainComplex_smallSingularRetractionX]
-  exact (exists_comp_eq_ιChainComplex_comp_singularSmallApprox R U hU hcov σ).choose_spec
-
 /-- **The retraction of singular chains onto the chains subordinate to an open cover.** -/
 def smallSingularRetraction :
     (TopCat.toSSet.obj X).chainComplex R ⟶
-      (X.smallSingularSubcomplex U : SSet).chainComplex R where
-  f := smallSingularRetractionX R U hU hcov
-  comm' i j _ := by
-    apply (cancel_mono ((SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f j)).1
-    rw [Category.assoc, ← HomologicalComplex.Hom.comm, ← Category.assoc,
-      smallSingularRetractionX_comp_ι, Category.assoc, smallSingularRetractionX_comp_ι,
-      HomologicalComplex.Hom.comm]
-
-@[simp]
-private lemma smallSingularRetraction_f (n : ℕ) :
-    (smallSingularRetraction R U hU hcov).f n = smallSingularRetractionX R U hU hcov n := (rfl)
+      (X.smallSingularSubcomplex U : SSet).chainComplex R :=
+  SSet.chainComplexMapRetraction _ R fun _ σ ↦
+    exists_comp_eq_ιChainComplex_comp_singularSmallApprox R U hU hcov σ
 
 @[reassoc (attr := simp)]
 lemma smallSingularRetraction_comp_ι :
     smallSingularRetraction R U hU hcov ≫
-        SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R = singularSmallApprox R U := by
-  ext n : 1
-  exact smallSingularRetractionX_comp_ι R U hU hcov n
+        SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R = singularSmallApprox R U :=
+  SSet.chainComplexMapRetraction_comp _ R _
 
 /-! ### The inclusion is a chain homotopy equivalence -/
 
 @[reassoc (attr := simp)]
 lemma ι_comp_smallSingularRetraction :
     SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R ≫
-      smallSingularRetraction R U hU hcov = 𝟙 _ := by
-  have : Mono (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) :=
-    HomologicalComplex.mono_of_mono_f _ inferInstance
-  apply (cancel_mono (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R)).1
-  rw [Category.assoc, smallSingularRetraction_comp_ι, ι_comp_singularSmallApprox,
-    Category.id_comp]
+      smallSingularRetraction R U hU hcov = 𝟙 _ :=
+  SSet.chainComplexMap_comp_chainComplexMapRetraction _ R _ (ι_comp_singularSmallApprox R U)
 
 /-- **Chains subordinate to an open cover are a deformation retract of all singular chains.**
 The inclusion of the chains subordinate to an open cover `U` into the singular chain complex is a
@@ -422,19 +380,18 @@ chain homotopy equivalence, whose homotopy inverse `TauCeti.smallSingularRetract
 strict retraction. -/
 def smallSingularChainHomotopyEquiv :
     HomotopyEquiv ((X.smallSingularSubcomplex U : SSet).chainComplex R)
-      ((TopCat.toSSet.obj X).chainComplex R) where
-  hom := SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R
-  inv := smallSingularRetraction R U hU hcov
-  homotopyHomInvId := Homotopy.ofEq (ι_comp_smallSingularRetraction R U hU hcov)
-  homotopyInvHomId := (Homotopy.ofEq (smallSingularRetraction_comp_ι R U hU hcov)).trans
-    (singularSmallApproxHomotopy R U).symm
+      ((TopCat.toSSet.obj X).chainComplex R) :=
+  SSet.chainComplexMapHomotopyEquiv _ R
+    (fun _ σ ↦ exists_comp_eq_ιChainComplex_comp_singularSmallApprox R U hU hcov σ)
+    (singularSmallApproxHomotopy R U) (ι_comp_singularSmallApprox R U)
 
 /-- The forward map of the small-chain homotopy equivalence is the inclusion of the chains
 subordinate to the cover. -/
 @[simp]
 lemma smallSingularChainHomotopyEquiv_hom :
     (smallSingularChainHomotopyEquiv R U hU hcov).hom =
-      SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R := (rfl)
+      SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R :=
+  SSet.chainComplexMapHomotopyEquiv_hom _ R _ _ _
 
 /-- The isomorphism on homology induced by the inclusion of the chains subordinate to an open
 cover.  Since the inclusion is natural in the covered space, so is this isomorphism, whereas the
@@ -447,7 +404,8 @@ def smallSingularHomologyIso [CategoryWithHomology C] (n : ℕ) :
 @[simp]
 lemma smallSingularHomologyIso_hom [CategoryWithHomology C] (n : ℕ) :
     (smallSingularHomologyIso R U hU hcov n).hom = HomologicalComplex.homologyMap
-      (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) n := (rfl)
+      (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) n :=
+  congrArg (HomologicalComplex.homologyMap · n) (smallSingularChainHomotopyEquiv_hom R U hU hcov)
 
 /-- The small-chain homology isomorphism is natural under maps carrying members of one cover
 into members of another. -/

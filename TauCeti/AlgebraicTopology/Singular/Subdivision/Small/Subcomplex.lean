@@ -66,13 +66,6 @@ namespace TauCeti
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] (R : C)
   {X : TopCat.{w}} (S : (TopCat.toSSet.obj X).Subcomplex) {ι : Type*} (U : ι → Set X)
 
--- The chain inclusion is the coproduct map induced by an injective map of simplices.
-local instance (n : ℕ) : Mono ((SSet.chainComplexMap
-    (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R).f n) :=
-  inferInstanceAs (Mono ((sigmaConst.obj R).map
-    ((SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)).app
-      (op ⦋n⦌))))
-
 variable [S.IsAffineStable]
 
 /-! ### The small-chain approximation on `S` -/
@@ -113,6 +106,7 @@ lemma subcomplexSmallApproxHom_ι (i j : ℕ) :
       (subcomplexSubdivisionChainMap_ι R S) (subcomplexSubdivisionHomotopy_hom_ι R S),
     SSet.ι_chainComplexMap_f_assoc, SSet.ι_chainComplexMap_f_assoc,
     ιChainComplex_singularSmallApproxHom]
+  -- `S.ι.app _ σ` is `σ.1` by definition of `Subfunctor.ι`.
   rfl
 
 /-- The small-chain approximation of the chains of `S`: Hatcher's operator `ρ = 1 - ∂D - D∂`,
@@ -152,7 +146,8 @@ lemma subcomplexSmallApprox_ι :
     Category.comp_id, Preadditive.add_comp, Preadditive.comp_add, ← dNext_comp_right,
     ← prevD_comp_right, h, dNext_comp_left, prevD_comp_left]
 
-/-- The approximation operator kills the chains of `S` that are already subordinate to `U`. -/
+/-- The chain-homotopy operator `D` of the small-chain approximation vanishes on the chains of `S`
+already subordinate to `U`. -/
 lemma homOfLE_comp_subcomplexSmallApproxHom (i j : ℕ) :
     (SSet.chainComplexMap
         (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R).f i ≫
@@ -200,61 +195,32 @@ theorem exists_comp_eq_ιChainComplex_comp_subcomplexSmallApprox {n : ℕ}
   refine SSet.Subcomplex.exists_comp_chainComplexMap_homOfLE_eq_of_comp_eq R S _ (h := g₀) ?_
   rw [hg₀, Category.assoc, ← HomologicalComplex.comp_f, subcomplexSmallApprox_ι,
     HomologicalComplex.comp_f, SSet.ι_chainComplexMap_f_assoc]
+  -- `S.ι.app _ σ` is `σ.1` by definition of `Subfunctor.ι`.
   rfl
 
 /-! ### The retraction onto the chains of `S` subordinate to the cover -/
 
-/-- The degreewise factorisation of the small-chain approximation of `S` through the chains of
-`S` subordinate to `U`, obtained by choosing a factorisation on each summand. -/
-private def subcomplexSmallRetractionX (n : ℕ) :
-    ((S : SSet).chainComplex R).X n ⟶
-      ((S ⊓ X.smallSingularSubcomplex U).toSSet.chainComplex R).X n :=
-  Cofan.IsColimit.desc ((S : SSet).isColimitChainComplexXCofan R n) fun σ ↦
-    (exists_comp_eq_ιChainComplex_comp_subcomplexSmallApprox R S U hU hcov σ).choose
-
-private lemma ιChainComplex_subcomplexSmallRetractionX {n : ℕ} (σ : (S : SSet) _⦋n⦌) :
-    (S : SSet).ιChainComplex σ ≫ subcomplexSmallRetractionX R S U hU hcov n =
-      (exists_comp_eq_ιChainComplex_comp_subcomplexSmallApprox R S U hU hcov σ).choose :=
-  Cofan.IsColimit.fac _ _ σ
-
-@[reassoc (attr := simp)]
-private lemma subcomplexSmallRetractionX_comp_homOfLE (n : ℕ) :
-    subcomplexSmallRetractionX R S U hU hcov n ≫ (SSet.chainComplexMap
-        (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R).f n =
-      (subcomplexSmallApprox R S U).f n := by
-  ext σ
-  rw [← Category.assoc, ιChainComplex_subcomplexSmallRetractionX]
-  exact (exists_comp_eq_ιChainComplex_comp_subcomplexSmallApprox R S U hU hcov σ).choose_spec
-
 /-- **The retraction of the chains of `S` onto the chains of `S` subordinate to an open
 cover.** -/
 def subcomplexSmallRetraction :
-    (S : SSet).chainComplex R ⟶ (S ⊓ X.smallSingularSubcomplex U).toSSet.chainComplex R where
-  f := subcomplexSmallRetractionX R S U hU hcov
-  comm' i j _ := by
-    apply (cancel_mono ((SSet.chainComplexMap
-      (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R).f j)).1
-    rw [Category.assoc, ← HomologicalComplex.Hom.comm, ← Category.assoc,
-      subcomplexSmallRetractionX_comp_homOfLE, Category.assoc,
-      subcomplexSmallRetractionX_comp_homOfLE, HomologicalComplex.Hom.comm]
+    (S : SSet).chainComplex R ⟶ (S ⊓ X.smallSingularSubcomplex U).toSSet.chainComplex R :=
+  SSet.chainComplexMapRetraction _ R fun _ σ ↦
+    exists_comp_eq_ιChainComplex_comp_subcomplexSmallApprox R S U hU hcov σ
 
 @[reassoc (attr := simp)]
 lemma subcomplexSmallRetraction_comp_homOfLE :
     subcomplexSmallRetraction R S U hU hcov ≫ SSet.chainComplexMap
         (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R =
-      subcomplexSmallApprox R S U := by
-  ext n : 1
-  exact subcomplexSmallRetractionX_comp_homOfLE R S U hU hcov n
+      subcomplexSmallApprox R S U :=
+  SSet.chainComplexMapRetraction_comp _ R _
 
 @[reassoc (attr := simp)]
 lemma homOfLE_comp_subcomplexSmallRetraction :
     SSet.chainComplexMap
         (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R ≫
-      subcomplexSmallRetraction R S U hU hcov = 𝟙 _ := by
-  apply (cancel_mono (SSet.chainComplexMap
-    (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R)).1
-  rw [Category.assoc, subcomplexSmallRetraction_comp_homOfLE R S U hU hcov,
-    homOfLE_comp_subcomplexSmallApprox, Category.id_comp]
+      subcomplexSmallRetraction R S U hU hcov = 𝟙 _ :=
+  SSet.chainComplexMap_comp_chainComplexMapRetraction _ R _
+    (homOfLE_comp_subcomplexSmallApprox R S U)
 
 /-! ### The inclusion is a chain homotopy equivalence -/
 
@@ -264,20 +230,18 @@ the inclusion of the chains of the simplices of `S` lying in a member of `U` int
 a strict retraction. -/
 def subcomplexSmallChainHomotopyEquiv :
     HomotopyEquiv ((S ⊓ X.smallSingularSubcomplex U).toSSet.chainComplex R)
-      ((S : SSet).chainComplex R) where
-  hom := SSet.chainComplexMap
-    (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R
-  inv := subcomplexSmallRetraction R S U hU hcov
-  homotopyHomInvId := Homotopy.ofEq (homOfLE_comp_subcomplexSmallRetraction R S U hU hcov)
-  homotopyInvHomId := (Homotopy.ofEq (subcomplexSmallRetraction_comp_homOfLE R S U hU hcov)).trans
-    (subcomplexSmallApproxHomotopy R S U).symm
+      ((S : SSet).chainComplex R) :=
+  SSet.chainComplexMapHomotopyEquiv _ R
+    (fun _ σ ↦ exists_comp_eq_ιChainComplex_comp_subcomplexSmallApprox R S U hU hcov σ)
+    (subcomplexSmallApproxHomotopy R S U) (homOfLE_comp_subcomplexSmallApprox R S U)
 
 /-- The forward map of the small-chain homotopy equivalence of `S` is the inclusion of the chains
 of `S` subordinate to the cover. -/
 @[simp]
 lemma subcomplexSmallChainHomotopyEquiv_hom :
     (subcomplexSmallChainHomotopyEquiv R S U hU hcov).hom = SSet.chainComplexMap
-      (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R := (rfl)
+      (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R :=
+  SSet.chainComplexMapHomotopyEquiv_hom _ R _ _ _
 
 /-- The isomorphism on homology induced by the inclusion of the chains of `S` subordinate to an
 open cover. -/
@@ -291,7 +255,8 @@ lemma subcomplexSmallHomologyIso_hom [CategoryWithHomology C] (n : ℕ) :
     (subcomplexSmallHomologyIso R S U hU hcov n).hom = HomologicalComplex.homologyMap
       (SSet.chainComplexMap
         (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R) n :=
-  (rfl)
+  congrArg (HomologicalComplex.homologyMap · n)
+    (subcomplexSmallChainHomotopyEquiv_hom R S U hU hcov)
 
 /-- The inclusion of the chains of `S` subordinate to an open cover is a quasi-isomorphism. -/
 theorem quasiIso_chainComplexMap_homOfLE_inf_smallSingularSubcomplex [CategoryWithHomology C] :
