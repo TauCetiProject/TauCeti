@@ -294,11 +294,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_
       ∫ w in B, (SmoothBundleForm.eval₂ ω ((u ∘ realChart (q.plumbingMap L)) w)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ realChart (q.plumbingMap L)) w stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ realChart (q.plumbingMap L)) w stdComplexLineImag) : ℝ) := by
-    have h₀ (v : ℝ × ℝ) : perturbationPullback (realChart (q.plumbingMap L))
-        (fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ)) (fun _ _ ↦ 0) v = fun _ _ ↦ 0 := by
-      funext w x
-      simp [perturbationPullback_apply]
-    simpa only [h₀, floerEnergyDensity_zero] using
+    simpa only [perturbationPullback_zero, floerEnergyDensity_zero] using
       ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0) hBm
         (realChart_injective (q.plumbingMap_injective L)).injOn
         (fun w _ ↦ (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w)
