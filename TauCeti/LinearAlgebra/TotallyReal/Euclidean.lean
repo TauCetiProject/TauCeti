@@ -355,7 +355,7 @@ theorem mem_lagrangianChart {S : Matrix n n ℝ} {v : EuclideanSpace ℂ n} :
       mem_realSubspace.1 hx]
   · intro hv
     let y : EuclideanSpace ℂ n := WithLp.toLp 2 fun j ↦ ((v j).im : ℂ)
-    refine ⟨y, mem_realSubspace.2 fun j ↦ by simp [y], ?_⟩
+    refine ⟨y, mem_realSubspace.2 fun _ ↦ by simp [y], ?_⟩
     ext i
     apply Complex.ext
     · simp [lagrangianChartFrame_mulVec_apply, y, hv i, Complex.re_sum]
