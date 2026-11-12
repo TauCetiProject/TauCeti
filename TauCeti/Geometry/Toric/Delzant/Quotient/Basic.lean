@@ -63,6 +63,8 @@ The smooth structure on `M_Δ` and its reduced symplectic form are not construct
   torus `(ℝ / 2πℤ)^ι / N_Δ`.
 * `TauCeti.Toric.DelzantQuotient.reducedMomentMap`: the moment map `M_Δ → V*` of the residual
   torus.
+* `TauCeti.Toric.DelzantQuotient.lift`: the descent to `M_Δ` of a function on the level invariant
+  under the kernel torus.
 
 ## Main results
 
@@ -142,6 +144,19 @@ theorem mk_vadd_of_mem_ker {θ : ι → AddCircle (2 * π)} (hθ : θ ∈ (facet
     (x : delzantLevel i u c) : mk (θ +ᵥ x) = mk x :=
   mk_eq_mk_iff.2 ⟨θ, hθ, rfl⟩
 
+/-- A function on the level that is invariant under the kernel torus descends to the Delzant
+quotient. -/
+def lift {β : Type*} (f : delzantLevel i u c → β)
+    (hf : ∀ θ ∈ (facetTorusHom i u (2 * π)).ker, ∀ x, f (θ +ᵥ x) = f x) :
+    DelzantQuotient i u c → β :=
+  AddAction.orbitRelQuotientLift f fun θ x ↦ hf θ θ.2 x
+
+@[simp]
+theorem lift_mk {β : Type*} (f : delzantLevel i u c → β)
+    (hf : ∀ θ ∈ (facetTorusHom i u (2 * π)).ker, ∀ x, f (θ +ᵥ x) = f x) (x : delzantLevel i u c) :
+    lift f hf (mk x) = f x :=
+  AddAction.orbitRelQuotientLift_mk x
+
 /-- The projection from the level onto the Delzant quotient is an open quotient map. -/
 theorem isOpenQuotientMap_mk : IsOpenQuotientMap (mk (i := i) (u := u) (c := c)) :=
   AddAction.isOpenQuotientMap_quotientMk
@@ -149,6 +164,12 @@ theorem isOpenQuotientMap_mk : IsOpenQuotientMap (mk (i := i) (u := u) (c := c))
 @[fun_prop]
 theorem continuous_mk : Continuous (mk (i := i) (u := u) (c := c)) :=
   isOpenQuotientMap_mk.continuous
+
+theorem continuous_lift {β : Type*} [TopologicalSpace β] {f : delzantLevel i u c → β}
+    (hf : ∀ θ ∈ (facetTorusHom i u (2 * π)).ker, ∀ x, f (θ +ᵥ x) = f x) (hc : Continuous f) :
+    Continuous (lift f hf) :=
+  isOpenQuotientMap_mk.isQuotientMap.continuous_iff.2 (by
+    simpa only [Function.comp_def, lift_mk] using hc)
 
 /-! ### The residual torus action -/
 
