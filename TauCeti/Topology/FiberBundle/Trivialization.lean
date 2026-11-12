@@ -17,7 +17,9 @@ An arbitrary family of trivializations over pairwise disjoint open base sets glu
 trivialization over their union, with the same forward and inverse maps on each constituent.
 The coordinate change between two trivializations is jointly continuous in the base point and the
 fibre coordinate over the overlap of their base sets, which makes the transition functions of a
-fibre bundle continuous.
+fibre bundle continuous. By the tube lemma, the points of a closed set over the base set with
+coordinates in a fixed compact subset of the model fibre lie over a relatively closed subset of the
+base set.
 Finally, the inverse of a trivialization undoes a coordinate change into it, and over a point
 of its base set a trivialization is an equivalence between the fibre and the model fibre.
 
@@ -29,6 +31,8 @@ of its base set a trivialization is an equivalence between the fibre and the mod
   space lies over a finite union of preferred trivializing base sets.
 * `Bundle.Trivialization.continuousOn_coordChange`: coordinate changes are jointly continuous over
   the overlap of the base sets.
+* `Bundle.Trivialization.isClosed_image_union_compl_baseSet`: the points of a closed set over the
+  base set with coordinates in a compact set lie over a set which is closed in the base set.
 * `Bundle.Trivialization.symm_mk_coordChange`: the inverse of `e₂` undoes the coordinate change
   from `e₁` to `e₂`, landing on the point with the original fibre coordinate in `e₁`.
 * `Bundle.Trivialization.equivAt`: a trivialization as an equivalence between the fibre over a
@@ -81,6 +85,45 @@ theorem continuousOn_coordChange (e₁ e₂ : Trivialization F proj) :
     (e₂.toOpenPartialHomeomorph.continuousOn.comp hsymm hmaps)).congr
     fun p hp ↦ ?_
   simp only [Function.comp_apply, e₂.coe_coe, ← e₁.mk_coordChange e₂ hp.1.1 hp.1.2 p.2]
+
+/-- **A tube lemma for a trivialization.** Let `T` be a closed set and `K` a compact subset of the
+model fibre. The images of the points of `T` over the base set of a trivialization `e` whose
+`e`-coordinates lie in `K`, together with the complement of the base set, form a closed set. -/
+theorem isClosed_image_union_compl_baseSet (e : Trivialization F proj) {K : Set F}
+    (hK : IsCompact K) {T : Set Z} (hT : IsClosed T) :
+    IsClosed (proj '' (T ∩ e.source ∩ e ⁻¹' (univ ×ˢ K)) ∪ e.baseSetᶜ) := by
+  rw [← isOpen_compl_iff, isOpen_iff_mem_nhds]
+  intro b hb
+  simp only [compl_union, compl_compl, mem_inter_iff, mem_compl_iff] at hb
+  obtain ⟨hbT, hbU⟩ := hb
+  -- In coordinates, `T` is a relatively closed subset `G` of the target of `e`, and the compact
+  -- set `{b} × K` misses its closure.
+  set G := e.target ∩ e.toOpenPartialHomeomorph.symm ⁻¹' T
+  have hsub : {b} ×ˢ K ⊆ (closure G)ᶜ ∩ (e.baseSet ×ˢ univ) := by
+    rintro ⟨b', w⟩ ⟨hb', hw⟩
+    rw [mem_singleton_iff] at hb'
+    subst hb'
+    have htgt : (b', w) ∈ e.target := e.mem_target.2 hbU
+    refine ⟨fun hcl ↦ hbT ?_, hbU, mem_univ _⟩
+    have hT' : e.toOpenPartialHomeomorph.symm (b', w) ∈ T := by
+      refine hT.closure_subset (closure_mono ?_
+        (mem_closure_image (e.continuousAt_symm htgt) hcl))
+      rintro _ ⟨p, hp, rfl⟩
+      exact hp.2
+    refine ⟨e.toOpenPartialHomeomorph.symm (b', w), ⟨⟨hT', e.map_target htgt⟩, ?_⟩,
+      e.proj_symm_apply htgt⟩
+    rw [mem_preimage, e.apply_symm_apply htgt]
+    exact ⟨mem_univ _, hw⟩
+  obtain ⟨u, v, hu, -, hbu, hKv, huv⟩ := generalized_tube_lemma isCompact_singleton hK
+    (isClosed_closure.isOpen_compl.inter (e.open_baseSet.prod isOpen_univ)) hsub
+  filter_upwards [hu.mem_nhds (hbu rfl), e.open_baseSet.mem_nhds hbU] with b' hb'u hb'U
+  simp only [compl_union, compl_compl, mem_inter_iff, mem_compl_iff]
+  refine ⟨?_, hb'U⟩
+  rintro ⟨p, ⟨⟨hpT, hpsrc⟩, -, hpK⟩, rfl⟩
+  have hep : e p ∈ u ×ˢ v := ⟨by rw [e.coe_fst hpsrc]; exact hb'u, hKv hpK⟩
+  exact (huv hep).1 (subset_closure ⟨e.map_source hpsrc, by
+    rw [mem_preimage, ← e.coe_coe, e.toOpenPartialHomeomorph.left_inv hpsrc]
+    exact hpT⟩)
 
 end Bundle.Trivialization
 

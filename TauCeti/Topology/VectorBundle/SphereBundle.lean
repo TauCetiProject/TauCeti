@@ -90,6 +90,18 @@ theorem sphereBundle_subset_zeroSectionCompl : sphereBundle F E ⊆ zeroSectionC
 
 variable [TopologicalSpace (TotalSpace F E)]
 
+variable {F E} in
+/-- For a continuous fibre norm, the disc bundle is closed in the total space. -/
+theorem isClosed_discBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    IsClosed (discBundle F E) :=
+  isClosed_le hnorm continuous_const
+
+variable {F E} in
+/-- For a continuous fibre norm, the sphere bundle is closed in the total space. -/
+theorem isClosed_sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    IsClosed (sphereBundle F E) :=
+  isClosed_eq hnorm continuous_const
+
 /-- The disc-sphere pair `(D(E), S(E))` of a bundle with normed fibres. -/
 abbrev discSpherePair : TopPair.{w} :=
   TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) (sphereBundle_subset_discBundle F E)

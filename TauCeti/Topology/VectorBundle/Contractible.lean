@@ -37,7 +37,11 @@ closed unit ball of `F`, by a homeomorphism carrying the unit sphere bundle `S(E
 
 These are the product structures used to build cells of disc bundles over a CW complex: pulled
 back along the characteristic map of a cell `Dᵠ → X`, a rank `r` bundle becomes
-`Dᵠ × (Dʳ, Sʳ⁻¹)`.
+`Dᵠ × (Dʳ, Sʳ⁻¹)`. Without pulling the fibre metric back, the same conclusion is reached along any
+continuous map `χ` from a contractible paracompact R₁ space: the pullback of `E` along `χ` is
+trivial, which gives a continuous frame of the fibres `E (χ x)`, and Gram–Schmidt in each fibre
+(`Continuous.gramSchmidtNormed_bundle`) makes it a continuous orthonormal frame
+(`TauCeti.exists_continuous_orthonormalBasis_of_contractibleSpace`).
 
 ## Main results
 
@@ -50,6 +54,8 @@ back along the characteristic map of a cell `Dᵠ → X`, a rank `r` bundle beco
   by fibrewise linear isometries.
 * `TauCeti.exists_homeomorph_discBundle_prod_closedBall_of_contractibleSpace`: its disc and sphere
   bundles form the product pair `B × (D(F), S(F))`.
+* `TauCeti.exists_continuous_orthonormalBasis_of_contractibleSpace`: along a map from a contractible
+  paracompact R₁ space, such a bundle has a continuous orthonormal frame.
 
 ## References
 
@@ -167,6 +173,52 @@ theorem exists_homeomorph_prod_of_contractibleSpace :
   exact e.apply_eq_prod_continuousLinearEquivAt ℝ b (he ▸ mem_univ b) v
 
 end Riemannian
+
+section Frame
+
+variable {X : Type*} [TopologicalSpace X] [R1Space X] [ParacompactSpace X] [ContractibleSpace X]
+  {B : Type*} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {E : B → Type*} [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace ℝ (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [IsContinuousRiemannianBundle F E]
+
+variable (F E) in
+/-- **Orthonormal frames along a map from a contractible space.** Along a continuous map `χ` from
+a contractible paracompact R₁ space, a finite-rank real vector bundle with a continuous fibre metric
+has a continuous orthonormal frame: orthonormal bases `d x` of the fibres `E (χ x)`, indexed by
+`Fin (Module.finrank ℝ F)`, each of whose vectors depends continuously on `x` in the total space. -/
+theorem exists_continuous_orthonormalBasis_of_contractibleSpace (χ : C(X, B)) :
+    ∃ d : ∀ x, OrthonormalBasis (Fin (Module.finrank ℝ F)) ℝ (E (χ x)),
+      ∀ i, Continuous fun x ↦ TotalSpace.mk' F (χ x) (d x i) := by
+  -- The map `χ` is null-homotopic, so its pullback is isomorphic to a product bundle.
+  obtain ⟨y, hy⟩ : χ.Nullhomotopic := by
+    simpa using (id_nullhomotopic X).comp_right χ
+  obtain ⟨Φ, -, hΦ'⟩ := hy.exists_continuousLinearEquiv_pullback (𝕜 := ℝ) (F := F) (E := E)
+  let e₀ := trivializationAt F E y
+  have hy₀ : y ∈ e₀.baseSet := mem_baseSet_trivializationAt F E y
+  let Ψ : ∀ x, E (χ x) ≃L[ℝ] F := fun x ↦ (Φ x).trans (e₀.continuousLinearEquivAt ℝ y hy₀)
+  let c := Module.finBasis ℝ F
+  -- The frame `x ↦ Ψ⁻¹ (c i)` is continuous and a basis in every fibre.
+  have hv (i : Fin (Module.finrank ℝ F)) :
+      Continuous fun x ↦ TotalSpace.mk' F (χ x) ((Ψ x).symm (c i)) := by
+    have hι : Continuous fun x : X ↦ TotalSpace.mk' F
+        (E := ((ContinuousMap.const X y : C(X, B)) : X → B) *ᵖ E) x
+        ((e₀.continuousLinearEquivAt ℝ y hy₀).symm (c i)) :=
+      Pullback.continuous_iff.2 ⟨continuous_id, (continuous_const : Continuous fun _ : X ↦
+        TotalSpace.mk' F y ((e₀.continuousLinearEquivAt ℝ y hy₀).symm (c i)))⟩
+    exact (Pullback.continuous_lift F E χ).comp (hΦ'.comp hι)
+  let b : ∀ x, Module.Basis (Fin (Module.finrank ℝ F)) ℝ (E (χ x)) := fun x ↦
+    c.map (Ψ x).symm.toLinearEquiv
+  refine ⟨fun x ↦ OrthonormalBasis.mk
+    (InnerProductSpace.gramSchmidtNormed_orthonormal (b x).linearIndependent)
+    (by rw [InnerProductSpace.span_gramSchmidtNormed_range, InnerProductSpace.span_gramSchmidt,
+      (b x).span_eq]), fun i ↦ ?_⟩
+  have hb (x : X) : ⇑(b x) = fun i ↦ (Ψ x).symm (c i) := funext fun i ↦ by simp [b]
+  simpa [hb] using Continuous.gramSchmidtNormed_bundle (b := χ) hv
+    (fun x ↦ hb x ▸ (b x).linearIndependent) i
+
+end Frame
 
 section Disc
 
