@@ -156,7 +156,7 @@ theorem exists_isSpectralFlowPotential {a b : ℝ} (hA : ContinuousOn A (Icc a b
   · exact ⟨0, fun t ht ↦ absurd (ht.1.trans ht.2) (not_le.2 hba)⟩
   refine isPreconnected_Icc.induction₂'
     (fun x y ↦ x ≤ y → ∃ F, IsSpectralFlowPotential A (Icc x y) F) (fun x hx ↦ ?_)
-    (fun x y z hx hy hz hxy hyz hxz ↦ ?_) (left_mem_Icc.2 hab) (right_mem_Icc.2 hab) hab
+    (fun x y z _ hy hz hxy hyz hxz ↦ ?_) (left_mem_Icc.2 hab) (right_mem_Icc.2 hab) hab
   · -- Near `x`, a single window works, and its eigenvalue count is a potential.
     obtain ⟨r, hr⟩ := hw x hx
     have hsa : ∀ᶠ u in 𝓝[Icc a b] x, IsSelfAdjoint (A u) :=
@@ -170,7 +170,7 @@ theorem exists_isSpectralFlowPotential {a b : ℝ} (hA : ContinuousOn A (Icc a b
       · exact uIcc_subset_Icc hx hyI (hpq ht)
     filter_upwards [mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds x hε),
       eventually_mem_nhdsWithin] with y hy hyI
-    exact ⟨fun hxy ↦ hloc hy hyI (Icc_subset_uIcc), fun hyx ↦ hloc hy hyI (Icc_subset_uIcc')⟩
+    exact ⟨fun _ ↦ hloc hy hyI Icc_subset_uIcc, fun _ ↦ hloc hy hyI Icc_subset_uIcc'⟩
   · -- Potentials on adjacent intervals glue; on nested intervals they restrict.
     rcases le_total x y with hxy' | hyx
     · rcases le_total y z with hyz' | hzy
