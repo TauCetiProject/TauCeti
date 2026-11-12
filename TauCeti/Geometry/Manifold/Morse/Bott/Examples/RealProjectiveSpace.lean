@@ -160,44 +160,22 @@ theorem criticalPoints_projectiveHyperplaneMomentFunction :
     criticalPoints 𝓘(ℝ, Fin N → ℝ) (projectiveHyperplaneMomentFunction N) =
       insert (mk ℝ (Pi.single (Fin.last N) 1) (by simp)) (affineOpen (Fin.last N))ᶜ := by
   ext x
-  induction x using Projectivization.ind with | h v hv =>
-  rw [projectiveHyperplaneMomentFunction, mk_mem_criticalPoints_projectiveMomentFunction_iff,
-    ← projectiveHyperplaneMomentFunction, mem_insert_iff, mem_compl_iff, mk_mem_affineOpen_iff,
-    not_not]
-  by_cases hN : v (Fin.last N) = 0
+  rw [mem_insert_iff, mem_compl_iff]
+  by_cases hx : x ∈ affineOpen (Fin.last N)
+  · -- In the affine open the weight `0` of the last coordinate is simple, so the only critical
+    -- point there is `[e_N]`.
+    rw [projectiveHyperplaneMomentFunction_def,
+      mem_criticalPoints_projectiveMomentFunction_iff (fun i hi ↦ by simp [hi]) hx]
+    simp [hx]
   · -- On the hyperplane the value is `1`, the weight of every coordinate that can be nonzero.
-    have h1 : projectiveHyperplaneMomentFunction N (mk ℝ v hv) = 1 := by
-      rw [projectiveHyperplaneMomentFunction_mk, hN]
-      simp
-    simp only [hN, or_true, iff_true, h1]
+    simp only [hx, not_false_eq_true, or_true, iff_true]
+    induction x using Projectivization.ind with | h v hv =>
+    rw [projectiveHyperplaneMomentFunction_def, mk_mem_criticalPoints_projectiveMomentFunction_iff,
+      ← projectiveHyperplaneMomentFunction_def, projectiveHyperplaneMomentFunction_eq_one_iff.2 hx]
     intro j
     by_cases hj : j = Fin.last N
-    · exact .inl (hj ▸ hN)
+    · exact .inl (by simpa [hj, mk_mem_affineOpen_iff] using hx)
     · exact .inr (by simp [hj])
-  · simp only [hN, or_false]
-    constructor
-    · -- The last coordinate is nonzero, so the value is its weight `0`, and every other
-      -- coordinate, of weight `1`, vanishes.
-      intro h
-      have hlast : (0 : ℝ) = projectiveHyperplaneMomentFunction N (mk ℝ v hv) := by
-        simpa [hN] using h (Fin.last N)
-      have h0 := hlast.symm
-      refine (mk_eq_mk_iff' ℝ _ _ hv (by simp)).2 ⟨v (Fin.last N), funext fun j ↦ ?_⟩
-      by_cases hj : j = Fin.last N
-      · subst hj
-        simp
-      · have := h j
-        simp only [h0, hj, ite_false, one_ne_zero, or_false] at this
-        simp [hj, this]
-    · intro h
-      obtain ⟨a, ha⟩ := (mk_eq_mk_iff' ℝ _ _ hv (by simp)).1 h
-      have h0 : projectiveHyperplaneMomentFunction N (mk ℝ v hv) = 0 := by
-        rw [h, projectiveHyperplaneMomentFunction, projectiveMomentFunction_mk_single]
-        simp
-      intro j
-      by_cases hj : j = Fin.last N
-      · exact .inr (by simp [hj, h0])
-      · exact .inl (by simp [← ha, hj])
 
 /-- **The Morse index at the coordinate points of the critical hyperplane.** At each coordinate
 point `[eₖ]`, `k < N`, of the critical hyperplane `{v_N = 0}`, the Morse index is `1`: the only
@@ -227,18 +205,11 @@ theorem contractibleSpace_sublevel_projectiveHyperplaneMomentFunction {c : ℝ} 
   set X := {x | projectiveHyperplaneMomentFunction N x ≤ c}
   set Z : Set (Fin N → ℝ) := {z | (∑ j, z j ^ 2) / (1 + ∑ j, z j ^ 2) ≤ c} with hZdef
   have hZ : affineChart (Fin.last N) '' (X ∩ affineOpen (Fin.last N)) = Z := by
+    rw [inter_comm, ← affineChart_source, PartialEquiv.image_source_inter_eq', affineChart_target,
+      univ_inter]
     ext z
-    constructor
-    · rintro ⟨x, ⟨hxX, hxU⟩, rfl⟩
-      have hx := (affineChart (K := ℝ) (Fin.last N)).left_inv (by simpa using hxU)
-      rw [hZdef, mem_ofPred_eq, ← projectiveHyperplaneMomentFunction_affineChart_symm, hx]
-      exact hxX
-    · intro hz
-      refine ⟨(affineChart (Fin.last N)).symm z, ⟨?_, ?_⟩,
-        (affineChart (Fin.last N)).right_inv (by simp)⟩
-      · rw [mem_ofPred_eq, projectiveHyperplaneMomentFunction_affineChart_symm]
-        exact hz
-      · simp
+    simp only [X, Z, mem_preimage, mem_ofPred_eq,
+      projectiveHyperplaneMomentFunction_affineChart_symm]
   -- The function `s ↦ s / (1 + s)` is monotone on `s ≥ 0`, and scaling `z` by `b ∈ [0, 1]`
   -- scales `‖z‖₂²` by `b² ≤ 1`.
   have hstar : StarConvex ℝ 0 Z := by
