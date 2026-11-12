@@ -42,6 +42,9 @@ difference of dimensions of spaces of square-integrable solutions is
 * `TauCeti.squareIntegrableSolutions_sub_smul_id_le`: for a bounded-below weight `w`, the
   square-integrable solutions of `u' + (A - w') u = 0` have initial values among those of
   `v' + A v = 0`.
+* `TauCeti.mem_squareIntegrableSolutions_withLp_iff` and
+  `TauCeti.squareIntegrableSolutions_eq_bot_of_withLp`: for a block-diagonal family on an `Lᵖ`
+  product, square-integrable solutions split coordinatewise.
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_of_trajectoryOperator_eq_zero`: an element of the
   kernel of `D_A` has a classical solution of `v' = -A v` as representative.
 * `TauCeti.WeakDerivStep.exists_trajectoryOperator_ae_eq_of_hasDerivAt`: an `Lᵖ` classical
@@ -156,6 +159,64 @@ theorem squareIntegrableSolutions_sub_smul_id_le {A : ℝ → F →L[ℝ] F} {w 
       Real.norm_of_nonneg (Real.exp_pos _).le]
     gcongr
     exact hm ⟨s, rfl⟩
+
+/-- **Square-integrable solutions of a block-diagonal equation split coordinatewise.** If
+`A : ℝ → WithLp p (E × G) →L[ℝ] WithLp p (E × G)` acts as `(A₁ s, A₂ s)` on the two factors of an
+`Lᵖ` product, then a pair `(x, y)` is the initial value of a square-integrable solution of
+`v' + A v = 0` if and only if `x` and `y` are initial values of square-integrable solutions of
+`v₁' + A₁ v₁ = 0` and `v₂' + A₂ v₂ = 0`. -/
+theorem mem_squareIntegrableSolutions_withLp_iff {E G : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {A₁ : ℝ → E →L[ℝ] E} {A₂ : ℝ → G →L[ℝ] G}
+    {A : ℝ → WithLp p (E × G) →L[ℝ] WithLp p (E × G)}
+    (hA : ∀ s z, A s z = WithLp.toLp p (A₁ s z.fst, A₂ s z.snd))
+    {z : WithLp p (E × G)} :
+    z ∈ squareIntegrableSolutions A ↔
+      z.fst ∈ squareIntegrableSolutions A₁ ∧ z.snd ∈ squareIntegrableSolutions A₂ := by
+  constructor
+  · rintro ⟨v, rfl, hv, hv2⟩
+    refine ⟨⟨fun s ↦ (v s).fst, rfl, fun s ↦ ?_,
+        hv2.continuousLinearMap_comp (WithLp.fstL p ℝ E G)⟩,
+      ⟨fun s ↦ (v s).snd, rfl, fun s ↦ ?_,
+        hv2.continuousLinearMap_comp (WithLp.sndL p ℝ E G)⟩⟩
+    · simpa [Function.comp_def, hA] using (WithLp.fstL p ℝ E G).hasFDerivAt.comp_hasDerivAt s (hv s)
+    · simpa [Function.comp_def, hA] using (WithLp.sndL p ℝ E G).hasFDerivAt.comp_hasDerivAt s (hv s)
+  · rintro ⟨⟨v₁, hx, hv₁, hv₁2⟩, ⟨v₂, hy, hv₂, hv₂2⟩⟩
+    let e := (WithLp.prodContinuousLinearEquiv p ℝ E G).symm
+    let i₁ : E →L[ℝ] WithLp p (E × G) := e.toContinuousLinearMap.comp (.inl ℝ E G)
+    let i₂ : G →L[ℝ] WithLp p (E × G) := e.toContinuousLinearMap.comp (.inr ℝ E G)
+    have hfun : ((fun s ↦ i₁ (v₁ s)) + fun s ↦ i₂ (v₂ s)) =
+        fun s ↦ WithLp.toLp p (v₁ s, v₂ s) := by
+      funext s
+      apply WithLp.ofLp_injective p
+      ext <;> simp [i₁, i₂, e]
+    refine ⟨fun s ↦ WithLp.toLp p (v₁ s, v₂ s), ?_, fun s ↦ ?_, ?_⟩
+    · apply WithLp.ofLp_injective p
+      exact Prod.ext hx hy
+    · have h := (i₁.hasFDerivAt.comp_hasDerivAt s (hv₁ s)).add
+        (i₂.hasFDerivAt.comp_hasDerivAt s (hv₂ s))
+      rw [Function.comp_def, Function.comp_def, hfun] at h
+      refine h.congr_deriv ?_
+      apply WithLp.ofLp_injective p
+      ext <;> simp [i₁, i₂, e, hA]
+    · exact hfun ▸ (hv₁2.continuousLinearMap_comp i₁).add (hv₂2.continuousLinearMap_comp i₂)
+
+/-- If both diagonal blocks of `A` on `WithLp p (E × G)` have no nonzero square-integrable
+solutions, neither does `A`. -/
+theorem squareIntegrableSolutions_eq_bot_of_withLp {E G : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {A₁ : ℝ → E →L[ℝ] E} {A₂ : ℝ → G →L[ℝ] G}
+    {A : ℝ → WithLp p (E × G) →L[ℝ] WithLp p (E × G)}
+    (hA : ∀ s z, A s z = WithLp.toLp p (A₁ s z.fst, A₂ s z.snd))
+    (h₁ : squareIntegrableSolutions A₁ = ⊥) (h₂ : squareIntegrableSolutions A₂ = ⊥) :
+    squareIntegrableSolutions A = ⊥ := by
+  rw [eq_bot_iff]
+  intro z hz
+  rw [mem_squareIntegrableSolutions_withLp_iff hA, h₁, h₂, Submodule.mem_bot, Submodule.mem_bot]
+    at hz
+  rw [Submodule.mem_bot]
+  apply WithLp.ofLp_injective p
+  exact Prod.ext hz.1 hz.2
 
 end TauCeti
 

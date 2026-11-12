@@ -8,10 +8,14 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
+public import TauCeti.Analysis.Calculus.Morse.Index
+public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Analysis.Calculus.Morse.Stable
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.Morse.NormSq
+import TauCeti.Analysis.Calculus.Morse.Prod
 
 /-!
 # The split quadratic model of a Morse flow
@@ -35,14 +39,21 @@ and Hessian determine the corresponding linearized gradient flow and its contrac
 
 ## Main declarations
 
-* `TauCeti.splitQuadratic`: the standard split quadratic function.
-* `TauCeti.gradient_splitQuadratic`: its gradient is `(x, -y)`.
+* `TauCeti.splitQuadratic` and `TauCeti.contDiff_splitQuadratic`: the standard split quadratic
+  function and its smoothness on inner product spaces.
+* `TauCeti.gradient_splitQuadratic` and `TauCeti.hessianOperator_splitQuadratic_apply`: its
+  gradient and Hessian operator are `(x, -y)`.
+* `TauCeti.hessianQuadraticForm_splitQuadratic_apply` and `TauCeti.morseIndex_splitQuadratic`:
+  its Hessian quadratic form is `‖x‖² - ‖y‖²`, and in finite dimensions its Morse index is
+  `dim Eᵤ`.
 * `TauCeti.lipschitzWith_gradient_splitQuadratic`: its gradient is globally `1`-Lipschitz.
 * `TauCeti.isNondegenerateCriticalPoint_splitQuadratic_zero`: the origin is nondegenerate.
 * `TauCeti.splitQuadraticFlow`: its explicit negative-gradient flow.
 * `Flow.isNegativeGradient_splitQuadraticFlow`: the flow solves the negative-gradient equation.
-* `TauCeti.negativeGradientFlow_splitQuadratic`: the general construction of the negative gradient
-  flow returns this explicit flow.
+* `TauCeti.negativeGradientFlow_splitQuadratic` and
+  `TauCeti.eq_splitQuadraticFlow_of_isIntegralCurve`: the general construction of the negative
+  gradient flow returns this explicit flow, and every negative-gradient trajectory is one of its
+  flow lines.
 * `Flow.stableSet_splitQuadraticFlow_zero`: the stable set is the first coordinate plane.
 * `Flow.unstableSet_splitQuadraticFlow_zero`: the unstable set is the second coordinate plane.
 
@@ -154,6 +165,69 @@ theorem isNondegenerateCriticalPoint_splitQuadratic_zero
   simp [B, BEquiv, half, e, splitQuadratic, WithLp.prod_inner_apply]
   ring
 
+/-- The split quadratic function is smooth on any product of real inner product spaces. -/
+theorem contDiff_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
+    {n : WithTop ℕ∞} :
+    ContDiff ℝ n (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) :=
+  (((contDiff_norm_sq ℝ).comp (WithLp.fstL 2 ℝ Eₛ Eᵤ).contDiff).sub
+    ((contDiff_norm_sq ℝ).comp (WithLp.sndL 2 ℝ Eₛ Eᵤ).contDiff)).div_const 2
+
+/-- The Hessian operator of the split quadratic function is the involution `(x, y) ↦ (x, -y)` at
+every point. -/
+@[simp]
+theorem hessianOperator_splitQuadratic_apply [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
+    [CompleteSpace Eₛ] [CompleteSpace Eᵤ] (z v : WithLp 2 (Eₛ × Eᵤ)) :
+    hessianOperator (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) z v =
+      WithLp.toLp 2 (v.fst, -v.snd) := by
+  let L : WithLp 2 (Eₛ × Eᵤ) →L[ℝ] WithLp 2 (Eₛ × Eᵤ) :=
+    (WithLp.prodContinuousLinearEquiv 2 ℝ Eₛ Eᵤ).symm.toContinuousLinearMap.comp
+      ((WithLp.fstL 2 ℝ Eₛ Eᵤ).prod (-WithLp.sndL 2 ℝ Eₛ Eᵤ))
+  have hgrad : ∇ (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) = L := by
+    funext w
+    rw [gradient_splitQuadratic]
+    rfl
+  rw [← fderiv_gradient, hgrad, L.fderiv]
+  rfl
+
+/-- The Hessian quadratic form of the split quadratic function is `‖v.fst‖² - ‖v.snd‖²` at every
+point. -/
+theorem hessianQuadraticForm_splitQuadratic_apply [InnerProductSpace ℝ Eₛ]
+    [InnerProductSpace ℝ Eᵤ] (z v : WithLp 2 (Eₛ × Eᵤ)) :
+    hessianQuadraticForm (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) z v =
+      ‖v.fst‖ ^ 2 - ‖v.snd‖ ^ 2 := by
+  have heq : (splitQuadratic : WithLp 2 (Eₛ × Eᵤ) → ℝ) =
+      (2 : ℝ)⁻¹ • separatedSum (fun x : Eₛ ↦ ‖x‖ ^ 2) (-(fun y : Eᵤ ↦ ‖y‖ ^ 2)) := by
+    funext w
+    simp [splitQuadratic]
+    ring
+  rw [heq, hessianQuadraticForm_smul, smul_apply,
+    hessianQuadraticForm_separatedSum_apply (g := -(fun y : Eᵤ ↦ ‖y‖ ^ 2))
+      (contDiff_norm_sq ℝ).contDiffAt (contDiff_norm_sq ℝ).contDiffAt.neg,
+    hessianQuadraticForm_neg, neg_apply, hessianQuadraticForm_norm_sq, hessianQuadraticForm_norm_sq,
+    smul_eq_mul]
+  ring
+
+/-- On finite-dimensional inner product spaces, the Morse index of the split quadratic function at
+every point is the dimension of the negative factor `Eᵤ`. -/
+@[simp]
+theorem morseIndex_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
+    [FiniteDimensional ℝ Eₛ] [FiniteDimensional ℝ Eᵤ] (z : WithLp 2 (Eₛ × Eᵤ)) :
+    morseIndex (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) z = Module.finrank ℝ Eᵤ := by
+  have heq : (splitQuadratic : WithLp 2 (Eₛ × Eᵤ) → ℝ) =
+      (2 : ℝ)⁻¹ • separatedSum (fun x : Eₛ ↦ ‖x‖ ^ 2) (-(fun y : Eᵤ ↦ ‖y‖ ^ 2)) := by
+    funext w
+    simp [splitQuadratic]
+    ring
+  rw [heq, morseIndex_def, hessianQuadraticForm_smul,
+    QuadraticForm.sigNeg_smul_of_pos _ (by positivity), ← morseIndex_def,
+    morseIndex_separatedSum (g := -(fun y : Eᵤ ↦ ‖y‖ ^ 2))
+      (contDiff_norm_sq ℝ).contDiffAt (contDiff_norm_sq ℝ).contDiffAt.neg,
+    morseIndex_norm_sq, zero_add,
+    ← neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
+  intro u hu
+  rw [neg_apply, hessianQuadraticForm_neg, neg_apply, neg_neg, hessianQuadraticForm_norm_sq]
+  exact mul_pos two_pos (pow_pos (norm_pos_iff.2 hu) 2)
+
 end Quadratic
 
 section Flow
@@ -235,6 +309,18 @@ theorem negativeGradientFlow_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerP
   have h0 : splitQuadraticFlow (Eₛ := Eₛ) (Eᵤ := Eᵤ) 0 z = z := _root_.Flow.map_zero_apply _ z
   rw [h0] at h
   exact h.symm
+
+/-- Every negative-gradient trajectory of `splitQuadratic` is a flow line of
+`splitQuadraticFlow`. -/
+theorem eq_splitQuadraticFlow_of_isIntegralCurve [InnerProductSpace ℝ Eₛ]
+    [InnerProductSpace ℝ Eᵤ] [CompleteSpace Eₛ] [CompleteSpace Eᵤ]
+    {γ : ℝ → WithLp 2 (Eₛ × Eᵤ)}
+    (hγ : IsIntegralCurve γ fun _ z ↦ -∇ (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) z) :
+    γ = fun t ↦ splitQuadraticFlow t (γ 0) := by
+  funext t
+  have h := eq_negativeGradientFlow (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ))
+    lipschitzWith_gradient_splitQuadratic hγ t
+  rwa [negativeGradientFlow_splitQuadratic] at h
 
 end TauCeti
 

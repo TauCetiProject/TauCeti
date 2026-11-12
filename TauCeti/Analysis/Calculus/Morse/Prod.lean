@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
+public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
@@ -39,13 +40,16 @@ pair of gradients. The results above transfer to it through
 * `TauCeti.morseIndex_comp_fst_add_comp_snd`: the Morse index of a separated sum is the sum of
   the Morse indices of the summands.
 * `TauCeti.separatedSum`: the separated sum on the `L²` product.
-* `TauCeti.gradient_separatedSum` and `TauCeti.lipschitzWith_gradient_separatedSum`: its gradient is
-  the pair of gradients, and is Lipschitz when both gradients are.
-* `IsIntegralCurve.separatedSum`: pairs of negative gradient trajectories of the summands are
-  negative gradient trajectories of the separated sum.
-* `TauCeti.isNondegenerateCriticalPoint_separatedSum_iff` and `TauCeti.morseIndex_separatedSum`:
-  its nondegenerate critical points are the pairs of nondegenerate critical points, with additive
-  Morse index.
+* `TauCeti.gradient_separatedSum`, `TauCeti.lipschitzWith_gradient_separatedSum`, and
+  `TauCeti.hessianOperator_separatedSum_apply`: its gradient is the pair of gradients, is Lipschitz
+  when both gradients are, and its Hessian operator acts block-diagonally.
+* `IsIntegralCurve.separatedSum` and `TauCeti.isIntegralCurve_separatedSum_iff`: negative gradient
+  trajectories of the separated sum are exactly the pairs of negative gradient trajectories of the
+  summands.
+* `TauCeti.hessianQuadraticForm_separatedSum_apply`,
+  `TauCeti.isNondegenerateCriticalPoint_separatedSum_iff`, and `TauCeti.morseIndex_separatedSum`:
+  its Hessian quadratic form is the sum of the Hessians of the summands, and its nondegenerate
+  critical points are the pairs of nondegenerate critical points, with additive Morse index.
 
 ## References
 
@@ -124,7 +128,7 @@ end CompFstAddCompSnd
 section SeparatedSum
 
 open Set
-open scoped Gradient NNReal
+open scoped Gradient NNReal Topology
 
 section Defs
 
@@ -215,9 +219,69 @@ theorem _root_.IsIntegralCurve.separatedSum {γ₁ : ℝ → E} {γ₂ : ℝ →
   rw [gradient_separatedSum (z := WithLp.toLp 2 (γ₁ s, γ₂ s)) (hf s) (hg s), WithLp.toLp_fst,
     WithLp.toLp_snd, ← Prod.neg_mk, WithLp.toLp_neg]
 
+/-- **A curve is a negative gradient trajectory of a separated sum if and only if its two
+components are negative gradient trajectories of the summands.** Unlike
+`TauCeti.negativeGradientFlow_separatedSum_apply`, this requires no global Lipschitz hypothesis on
+either gradient. -/
+theorem isIntegralCurve_separatedSum_iff {γ : ℝ → WithLp 2 (E × F)}
+    (hf : ∀ s, DifferentiableAt ℝ f (γ s).fst) (hg : ∀ s, DifferentiableAt ℝ g (γ s).snd) :
+    IsIntegralCurve γ (fun _ z ↦ -∇ (separatedSum f g) z) ↔
+      IsIntegralCurve (fun s ↦ (γ s).fst) (fun _ x ↦ -∇ f x) ∧
+        IsIntegralCurve (fun s ↦ (γ s).snd) (fun _ y ↦ -∇ g y) := by
+  constructor
+  · intro h
+    refine ⟨fun s ↦ ?_, fun s ↦ ?_⟩
+    · have h₁ := (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (h s)
+      simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using h₁
+    · have h₂ := (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (h s)
+      simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using h₂
+  · rintro ⟨h₁, h₂⟩
+    have hpair := h₁.separatedSum h₂ hf hg
+    refine fun s ↦ (hpair s).congr_of_eventuallyEq (.of_forall fun t ↦ ?_)
+    apply WithLp.ofLp_injective
+    exact Prod.eta _
+
+/-- **The Hessian operator of a separated sum acts block-diagonally.** -/
+@[simp]
+theorem hessianOperator_separatedSum_apply {z : WithLp 2 (E × F)} (hf : ContDiffAt ℝ 2 f z.fst)
+    (hg : ContDiffAt ℝ 2 g z.snd) (v : WithLp 2 (E × F)) :
+    hessianOperator (separatedSum f g) z v =
+      WithLp.toLp 2 (hessianOperator f z.fst v.fst, hessianOperator g z.snd v.snd) := by
+  have hdf : ∀ᶠ x in 𝓝 z.fst, DifferentiableAt ℝ f x :=
+    ((hf.of_le (by norm_num)).eventually (by simp)).mono fun _ hx ↦
+      hx.differentiableAt one_ne_zero
+  have hdg : ∀ᶠ y in 𝓝 z.snd, DifferentiableAt ℝ g y :=
+    ((hg.of_le (by norm_num)).eventually (by simp)).mono fun _ hy ↦
+      hy.differentiableAt one_ne_zero
+  have hev : ∇ (separatedSum f g) =ᶠ[𝓝 z]
+      fun w ↦ (WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm (∇ f w.fst, ∇ g w.snd) := by
+    filter_upwards [(WithLp.fstL 2 ℝ E F).continuous.continuousAt.eventually hdf,
+      (WithLp.sndL 2 ℝ E F).continuous.continuousAt.eventually hdg] with w hwf hwg
+    exact gradient_separatedSum hwf hwg
+  have hF := (WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm.hasFDerivAt.comp z
+    ((hf.hasFDerivAt_gradient.comp z (WithLp.fstL 2 ℝ E F).hasFDerivAt).prodMk
+      (hg.hasFDerivAt_gradient.comp z (WithLp.sndL 2 ℝ E F).hasFDerivAt))
+  rw [← fderiv_gradient, (hF.congr_of_eventuallyEq hev).fderiv]
+  rfl
+
 end Gradient
 
 section Critical
+
+/-- **The Hessian quadratic form of a separated sum is the sum of the Hessians of the summands.** -/
+theorem hessianQuadraticForm_separatedSum_apply {z v : WithLp 2 (E × F)}
+    (hf : ContDiffAt ℝ 2 f z.fst) (hg : ContDiffAt ℝ 2 g z.snd) :
+    hessianQuadraticForm (separatedSum f g) z v =
+      hessianQuadraticForm f z.fst v.fst + hessianQuadraticForm g z.snd v.snd := by
+  let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
+  have hsum : ContDiffAt ℝ 2 (f ∘ Prod.fst + g ∘ Prod.snd) (e z) :=
+    (ContDiffAt.comp (e z) hf contDiffAt_fst).add (ContDiffAt.comp (e z) hg contDiffAt_snd)
+  have hH := (e : WithLp 2 (E × F) →L[ℝ] E × F).hessianQuadraticForm_comp hsum
+  simp only [ContinuousLinearEquiv.coe_coe] at hH
+  have hez : e z = (z.fst, z.snd) := rfl
+  rw [separatedSum_eq_comp, hH, QuadraticMap.comp_apply, hez,
+    hessianQuadraticForm_comp_fst_add_comp_snd hf hg]
+  rfl
 
 /-- **Nondegenerate critical points of a separated sum** are the pairs of nondegenerate critical
 points of the summands. -/
