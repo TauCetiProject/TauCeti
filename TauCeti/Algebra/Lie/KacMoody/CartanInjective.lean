@@ -21,7 +21,7 @@ The proof follows Kac. Fix a functional `μ` on `H`. On the tensor algebra `T(V)
 with basis `(vᵢ)`, modelled as `List I →₀ K`, let `fⱼ` act by left multiplication by `vⱼ`, let
 `x ∈ H` act on `vⱼ₁ ⊗ ⋯ ⊗ vⱼₙ` by the scalar `μ x - Σₖ αⱼₖ x`, and define `eᵢ` recursively by
 `eᵢ 1 = 0` and `eᵢ (vⱼ ⊗ w) = vⱼ ⊗ eᵢ w + δᵢⱼ hᵢ w`. These operators satisfy the Chevalley
-relations: they define a representation of Kac's auxiliary Lie algebra `𝔤̃(A)`
+relations: they define a representation of Kac's auxiliary Lie algebra $\tilde{\mathfrak g}(A)$
 [Kac, proof of Theorem 1.2]. For a generalized Cartan matrix, each `fₖ` commutes with the raising
 Serre relator `(ad eᵢ) ^ (1 - Aᵢⱼ) eⱼ` and each `eₖ` with the lowering one
 (`TauCeti.KacMoody.SatisfiesChevalleyRelations.lie_negative_ad_pow_lie_positive_positive`, the
@@ -35,7 +35,8 @@ every `μ`, so `x = 0`.
 ## Main definitions
 
 * `TauCeti.KacMoody.SatisfiesChevalleyRelations`: a linear map on `H` and two families in a Lie
-  algebra satisfying every defining relation except Serre's, the relations of `𝔤̃(A)`.
+  algebra satisfying every defining relation except Serre's, the relations of
+  $\tilde{\mathfrak g}(A)$.
 
 ## Main results
 
@@ -50,8 +51,8 @@ every `μ`, so `x = 0`.
 ## References
 
 * V. G. Kac, *Infinite-dimensional Lie algebras*, third edition, Cambridge University Press,
-  1990: the proof of Theorem 1.2 (the representation of `𝔤̃(A)` on `T(V)`) and §3.3 (Serre's
-  relators commute with the opposite generators).
+  1990: the proof of Theorem 1.2 (the representation of $\tilde{\mathfrak g}(A)$ on `T(V)`) and
+  §3.3 (Serre's relators commute with the opposite generators).
 -/
 
 public section
@@ -69,7 +70,7 @@ variable {L : Type*} [LieRing L] [LieAlgebra K L]
 /-- A linear map `φ : H → L` and families `E`, `F` of elements of a Lie algebra `L` *satisfy the
 Chevalley relations* of the realization `R` when they satisfy every defining relation of the
 Kac–Moody algebra of `R` except Serre's relations. These are the relations of Kac's auxiliary
-Lie algebra `𝔤̃(A)`. -/
+Lie algebra $\tilde{\mathfrak g}(A)$. -/
 structure SatisfiesChevalleyRelations (φ : H →ₗ[K] L) (E F : I → L) : Prop where
   /-- The image of `H` is abelian. -/
   lie_cartan_cartan : ∀ x y, ⁅φ x, φ y⁆ = 0
