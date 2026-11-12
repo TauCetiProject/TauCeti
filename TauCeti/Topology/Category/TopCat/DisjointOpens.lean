@@ -29,7 +29,9 @@ The application is to Hausdorffness of cell complexes: two points separated by o
 separated after a map which extends disjoint open sets.
 
 * `TauCeti.TopCat.t2Space_of_isColimit`: the colimit of a filtered diagram of Hausdorff spaces is
-  Hausdorff if the maps to the colimit extend disjoint open sets.
+  Hausdorff if the maps to the colimit extend disjoint open sets. For a sequence it suffices that
+  the maps of the sequence do (`TauCeti.TopCat.t2Space_of_isColimit_of_map_succ`), since the maps to
+  the colimit are their transfinite compositions.
 * `TauCeti.TopCat.t2Space_of_isPushout`: attaching a regular Hausdorff space `B` to a Hausdorff
   space along a map `m : A ⟶ B` with closed range which extends disjoint open sets gives a
   Hausdorff space.
@@ -207,6 +209,16 @@ theorem t2Space_of_isColimit {J : Type*} [Category J] [IsFilteredOrEmpty J] {F :
     exact hx'
   rw [← hy, ← hy'] at hyy' ⊢
   exact exists_disjoint_isOpen_apply (h _) hyy'
+
+/-- The colimit of a sequence of Hausdorff spaces is Hausdorff if the maps
+`F n ⟶ F (n + 1)` of the sequence extend disjoint open sets. -/
+theorem t2Space_of_isColimit_of_map_succ {F : ℕ ⥤ TopCat.{u}} [∀ n, T2Space (F.obj n)]
+    (hF : ∀ n : ℕ, extendsDisjointOpens (F.map (homOfLE n.le_succ))) {c : Cocone F}
+    (hc : IsColimit c) : T2Space c.pt :=
+  -- The maps to the colimit are transfinite compositions of the maps of the sequence.
+  t2Space_of_isColimit hc fun n ↦ MorphismProperty.TransfiniteCompositionOfShape.mem_incl_app
+    (W := extendsDisjointOpens) (J := ℕ) (f := c.ι.app 0)
+    { F := F, isoBot := Iso.refl _, incl := c.ι, isColimit := hc, map_mem := fun n _ ↦ hF n } n
 
 section Pushout
 

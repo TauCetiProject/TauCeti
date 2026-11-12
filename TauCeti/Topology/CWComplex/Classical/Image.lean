@@ -31,6 +31,13 @@ The axioms transfer because `f` is a homeomorphism onto its image: the inverse o
 characteristic map on its open cell is continuous because `f` is an embedding, and the weak
 topology transfers because `f` is a closed map.
 
+The characteristic map of a cell of the image is the partial equivalence determined by the function
+`f ∘ map n i` on the open unit ball, so it depends on nothing else
+(`Topology.IsClosedEmbedding.map_relCWComplex_eq_map_relCWComplex`). Thus a cell of `C` which is
+also, through a second closed embedding, a cell of another CW complex with the same characteristic
+function has literally the same characteristic map in `Y`, as the union of a tower of CW complexes
+requires.
+
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
@@ -50,10 +57,12 @@ universe u
 variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y}
   (hf : IsClosedEmbedding f) {C D : Set X} [RelCWComplex C D] {C' D' : Set Y}
 
-/-- The characteristic map of a cell of `C`, followed by `f`. -/
+/-- The characteristic map of a cell of `C`, followed by `f`. It is the partial equivalence
+determined by the function `f ∘ map n i` on the open unit ball, so that it depends on nothing else
+(`Topology.IsClosedEmbedding.map_relCWComplex_eq_map_relCWComplex`). -/
 private def imageCellMap (n : ℕ) (i : cell C n) : PartialEquiv (Fin n → ℝ) Y :=
-  haveI : Nonempty X := ⟨map n i 0⟩
-  (map n i).trans (hf.injective.injOn.toPartialEquiv f univ)
+  (hf.injective.comp_injOn ((map n i).injOn.mono (source_eq n i).ge)).toPartialEquiv
+    (f ∘ map n i) (ball 0 1)
 
 private lemma coe_imageCellMap (n : ℕ) (i : cell C n) : ⇑(hf.imageCellMap n i) = f ∘ map n i :=
   rfl
@@ -63,9 +72,8 @@ private lemma image_imageCellMap (n : ℕ) (i : cell C n) (S : Set (Fin n → �
   rw [coe_imageCellMap, image_comp]
 
 private lemma source_imageCellMap (n : ℕ) (i : cell C n) :
-    (hf.imageCellMap n i).source = ball 0 1 := by
-  have : Nonempty X := ⟨map n i 0⟩
-  simp [imageCellMap, source_eq]
+    (hf.imageCellMap n i).source = ball 0 1 :=
+  rfl
 
 private lemma continuousOn_symm_imageCellMap (n : ℕ) (i : cell C n) :
     ContinuousOn (hf.imageCellMap n i).symm (hf.imageCellMap n i).target := by
@@ -74,8 +82,17 @@ private lemma continuousOn_symm_imageCellMap (n : ℕ) (i : cell C n) :
     refine hf.isInducing.continuousOn_iff.2 (continuousOn_id.congr fun y hy ↦ ?_)
     obtain ⟨x, hx, rfl⟩ := hy
     exact invFunOn_eq ⟨x, hx, rfl⟩
-  rw [imageCellMap, PartialEquiv.coe_trans_symm, PartialEquiv.trans_target]
-  exact (continuousOn_symm n i).comp (hinv.mono inter_subset_left) fun y hy ↦ hy.2
+  -- On the image of the open ball, the inverse is the inverse of `map n i` after that of `f`.
+  refine ((continuousOn_symm n i).comp (hinv.mono ?_) ?_).congr ?_
+  · rintro _ ⟨x, -, rfl⟩
+    exact mem_image_of_mem f (mem_univ _)
+  · rintro _ ⟨x, hx, rfl⟩
+    rw [Function.comp_apply, hf.injective.injOn.leftInvOn_invFunOn (mem_univ _)]
+    exact (map n i).map_source ((source_eq n i).symm ▸ hx)
+  · rintro _ ⟨x, hx, rfl⟩
+    rw [← hf.coe_imageCellMap n i, (hf.imageCellMap n i).left_inv hx, Function.comp_apply,
+      coe_imageCellMap, Function.comp_apply, hf.injective.injOn.leftInvOn_invFunOn (mem_univ _),
+      (map n i).left_inv ((source_eq n i).symm ▸ hx)]
 
 /-- **The image of a relative CW complex under a closed embedding.** If `f` is a closed embedding
 and `C` is a CW complex relative to `D`, then `C' = f '' C` is a CW complex relative to
@@ -155,5 +172,22 @@ lemma cellFrontier_relCWComplex (n : ℕ) (i : @cell Y _ C' D' (hf.relCWComplex 
     @cellFrontier Y _ C' D' (hf.relCWComplex hC hD) n i =
       f '' cellFrontier n (hf.relCWComplexCellEquiv hC hD n i) :=
   hf.image_imageCellMap n _ _
+
+omit hC hD in
+/-- **The characteristic maps of images depend only on their underlying functions.** Two cells of
+images of relative CW complexes under closed embeddings `f` and `g` into the same space have the
+same characteristic map, as a partial equivalence, as soon as the characteristic maps of the
+original cells followed by `f` and `g` agree as functions. -/
+lemma map_relCWComplex_eq_map_relCWComplex {X' : Type u} [TopologicalSpace X'] {g : X' → Y}
+    (hg : IsClosedEmbedding g) {E F : Set X'} [RelCWComplex E F] {E' F' : Set Y}
+    (hC : f '' C = C') (hD : f '' D = D') (hE : g '' E = E') (hF : g '' F = F') {n : ℕ}
+    (i : @cell Y _ C' D' (hf.relCWComplex hC hD) n) (j : @cell Y _ E' F' (hg.relCWComplex hE hF) n)
+    (h : f ∘ map n (hf.relCWComplexCellEquiv hC hD n i) =
+      g ∘ map n (hg.relCWComplexCellEquiv hE hF n j)) :
+    @map Y _ C' D' (hf.relCWComplex hC hD) n i = @map Y _ E' F' (hg.relCWComplex hE hF) n j := by
+  have hsymm : invFunOn (f ∘ map n (hf.relCWComplexCellEquiv hC hD n i)) (ball 0 1) =
+      invFunOn (g ∘ map n (hg.relCWComplexCellEquiv hE hF n j)) (ball 0 1) := by
+    rw [h]
+  exact PartialEquiv.ext (congrFun h) (congrFun hsymm) rfl
 
 end Topology.IsClosedEmbedding

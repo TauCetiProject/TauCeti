@@ -5,7 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.Topology.CWComplex.Classical.Basic
+public import TauCeti.Topology.Category.TopCat.Limits.Basic
+import TauCeti.Topology.Category.TopCat.ClosedEmbedding
+import TauCeti.Topology.CWComplex.Classical.Image
+import TauCeti.Topology.Coherent
 
 /-!
 # The union of a tower of CW complexes
@@ -32,6 +37,14 @@ Every cell of `W k` is the image of a unique new cell of a stage `k' ≤ k`
 the stages up to `k` (`TauCeti.towerStageCellEquiv`). In a Hausdorff space each stage is therefore
 a subcomplex of the union (`TauCeti.cwSubcomplexTowerUnionSubcomplex`).
 
+The same holds for a sequence `F 0 → F 1 → ⋯` of CW complexes along closed embeddings carrying
+cells to cells, which need not be given as subsets of a common space: their colimit in `TopCat` is
+a CW complex whose cells are those of `F 0` and the cells of each `F (k + 1)` not coming from
+`F k`, with the characteristic maps of the stages followed by the maps to the colimit
+(`TauCeti.exists_cwComplex_of_isColimit`). The stages are read inside the colimit as the images of
+the maps to it, which are closed embeddings, and the colimit carries the topology coherent with
+these images.
+
 ## Main definitions
 
 * `TauCeti.IsNewTowerCell`: the cells of a stage which do not come from the previous stage.
@@ -40,6 +53,11 @@ a subcomplex of the union (`TauCeti.cwSubcomplexTowerUnionSubcomplex`).
 * `TauCeti.towerStageCellEquiv`: the `n`-cells of a stage are the cells of the union born at the
   stages up to it.
 * `TauCeti.cwSubcomplexTowerUnionSubcomplex`: each stage is a subcomplex of the union.
+
+## Main results
+
+* `TauCeti.exists_cwComplex_of_isColimit`: the colimit of a sequence of CW complexes along
+  cellular closed embeddings is a CW complex.
 
 ## References
 
@@ -372,5 +390,65 @@ theorem mem_cwSubcomplexTowerUnionSubcomplex_I_iff [T2Space X] {k n : ℕ}
       (cwSubcomplexTowerUnionSubcomplex hι hW k) n ↔
       (cwSubcomplexTowerUnionCellEquiv hι hW n c).1 ≤ k :=
   Iff.rfl
+
+end TauCeti
+
+namespace TauCeti
+
+open CategoryTheory Limits
+
+variable {F : ℕ ⥤ TopCat.{u}} [∀ n, CWComplex (univ : Set (F.obj n))]
+
+/-- **The colimit of a tower of CW complexes.** Let `F` be a sequence of CW complexes whose maps
+`F n ⟶ F (n + 1)` are closed embeddings carrying cells to cells: `ι n m` sends an `m`-cell `i` of
+`F n` to an `m`-cell of `F (n + 1)` whose characteristic map is that of `i` followed by the map of
+the sequence. Then a colimit of `F` is a CW complex. Its `m`-cells are the `m`-cells of `F 0` and,
+for each `n`, the `m`-cells of `F (n + 1)` which do not come from `F n`, and their characteristic
+maps are those in the stages followed by the maps to the colimit. -/
+theorem exists_cwComplex_of_isColimit (hF : ∀ n : ℕ, IsClosedEmbedding (F.map (homOfLE n.le_succ)))
+    (ι : ∀ n m, cell (univ : Set (F.obj n)) m → cell (univ : Set (F.obj (n + 1))) m)
+    (hι : ∀ n m i x, map m (ι n m i) x = F.map (homOfLE n.le_succ) (map m i x))
+    {c : Cocone F} (hc : IsColimit c) :
+    ∃ (_ : CWComplex (univ : Set c.pt)) (e : ∀ m, cell (univ : Set c.pt) m ≃
+        cell (univ : Set (F.obj 0)) m ⊕ Σ n, {i : cell (univ : Set (F.obj (n + 1))) m //
+          i ∉ range (ι n m)}),
+      (∀ m i, ⇑(map m ((e m).symm (.inl i))) = c.ι.app 0 ∘ map m i) ∧
+        ∀ m n i, ⇑(map m ((e m).symm (.inr ⟨n, i⟩))) = c.ι.app (n + 1) ∘ map m i.1 := by
+  -- The maps to the colimit are closed embeddings, and the stages are read as their images.
+  have hce (n : ℕ) : IsClosedEmbedding (c.ι.app n) :=
+    TopCat.isClosedEmbedding_ι_of_isColimit
+      (fun _ _ ↦ TopCat.isClosedEmbedding_map_of_isWellOrderContinuous F fun n _ ↦ hF n) hc n
+  let A (n : ℕ) : Set c.pt := range (c.ι.app n)
+  let _ (n : ℕ) : CWComplex (A n) :=
+    @RelCWComplex.toCWComplex _ _ (A n) ((hce n).relCWComplex image_univ (image_empty _))
+  let cA (n m : ℕ) : cell (A n) m ≃ cell (univ : Set (F.obj n)) m :=
+    (hce n).relCWComplexCellEquiv image_univ (image_empty _) m
+  let ιA (n m : ℕ) (i : cell (A n) m) : cell (A (n + 1)) m := (cA (n + 1) m).symm (ι n m (cA n m i))
+  have hιA (n m : ℕ) (i : cell (A n) m) : map m (ιA n m i) = map m i :=
+    (hce (n + 1)).map_relCWComplex_eq_map_relCWComplex (hce n) image_univ (image_empty _)
+      image_univ (image_empty _) (ιA n m i) i <| funext fun x ↦ by
+        simp only [Function.comp_apply, ιA, cA, Equiv.apply_symm_apply, hι]
+        rw [← ConcreteCategory.comp_apply, Cocone.w]
+  let _ : CWComplex (⋃ n, A n) := cwSubcomplexTowerUnion hιA fun B _ hB ↦
+    (TopCat.isCoherentWith_range_ι_of_isColimit hc).isClosed_of_forall_isClosed_inter
+      (forall_mem_range.2 hB)
+  let _ : CWComplex (univ : Set c.pt) := @RelCWComplex.toCWComplex _ _ univ
+    (IsClosedEmbedding.id.relCWComplex (C := ⋃ n, A n)
+      (by rw [image_id, TopCat.iUnion_range_ι_of_isColimit hc]) (image_empty _))
+  -- A cell of `A (n + 1)` is new when it does not come from `F n`.
+  let N (n m : ℕ) : {i : cell (A (n + 1)) m // IsNewTowerCell ιA (n + 1) i} ≃
+      {i : cell (univ : Set (F.obj (n + 1))) m // i ∉ range (ι n m)} :=
+    (cA (n + 1) m).subtypeEquiv fun i ↦ by
+      rw [isNewTowerCell_succ_iff, not_iff_not]
+      constructor
+      · rintro ⟨i', rfl⟩
+        exact ⟨cA n m i', by simp [ιA]⟩
+      · rintro ⟨i', hi'⟩
+        exact ⟨(cA n m).symm i', by simp [ιA, hi']⟩
+  refine ⟨‹_›, fun m ↦ (IsClosedEmbedding.id.relCWComplexCellEquiv _ _ m).trans <|
+    (cwSubcomplexTowerUnionCellEquiv hιA _ m).trans <| (Equiv.sigmaNatSucc _).trans <|
+      Equiv.sumCongr ((Equiv.subtypeUnivEquiv fun i ↦ isNewTowerCell_zero ιA i).trans (cA 0 m))
+        (Equiv.sigmaCongrRight fun n ↦ N n m), fun m i ↦ ?_, fun m n i ↦ ?_⟩ <;>
+  simp [cA, N, Equiv.sigmaNatSucc, Equiv.sigmaCongrRight, Sigma.map]
 
 end TauCeti
