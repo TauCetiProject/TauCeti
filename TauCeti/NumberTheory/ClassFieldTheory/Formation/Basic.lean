@@ -128,11 +128,6 @@ open CategoryTheory Representation
 
 namespace TauCeti.ClassFieldTheory
 
--- Provenance: the signatures of the formation type and normal-layer structure below, and of
--- `level`, `rep`, `norm` and the
--- cohomology carriers, follow the blueprint `Suggested.lean` of the Tau Ceti `ClassFieldTheory`
--- roadmap (`TauCetiRoadmap/ClassFieldTheory/README.md` and `Suggested.lean`).
-
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
 /-! ### Formations and their levels -/
@@ -692,7 +687,6 @@ theorem tateHZeroEquivNormQuotient_H0π (x : (L.rep F).ρ.invariants) :
   have h := TateCohomology.H0π_comp_H0IsoNormQuotient_hom_apply (L.rep F) x
   simp [tateHZeroEquivNormQuotient, h]
 
--- Specified by the class field theory roadmap, `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
 /-- The **zero-dimensional Tate class** `a₀` of an element `a` of the ground level `A^U`: the class
 of `a` in the degree-zero Tate group `H^0(U/V, A^V)`, reading `a` as an invariant of the
 coefficient module `A^V`. -/

@@ -83,7 +83,7 @@ theorem norm_siegelFunction_le_exp (r : Fin 2 → ℝ) {τ : ℂ} (hτ : 0 < τ.
     ‖siegelFunction r τ‖ ≤ ‖cexp (2 * π * I * τ)‖ ^ (bernoulliFun 2 (r 0) / 2) *
       Real.exp ((‖cexp (2 * π * I * τ)‖ ^ r 0 + ‖cexp (2 * π * I * τ)‖ ^ (1 - r 0)) /
         (1 - ‖cexp (2 * π * I * τ)‖)) := by
-  set A := ‖cexp (2 * π * I * τ)‖ with hA_def
+  set A := ‖cexp (2 * π * I * τ)‖
   have hq : A < 1 := UpperHalfPlane.norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩
   have hA : 0 < A := norm_pos_iff.2 (Complex.exp_ne_zero _)
   -- `|1 - w| ≤ 1 + |w| ≤ e^{|w|}`, and `A^a + (A^{1+a} + A^{1-a}) / (1 - A)` simplifies.
@@ -158,7 +158,6 @@ theorem le_norm_siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im)
     4096 * ‖cexp (2 * π * I * τ)‖ *
       (1 - ‖cexp (2 * π * I * τ)‖ / (1 - 2 * ‖cexp (2 * π * I * τ)‖)) ^ 24 ≤
       ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ := by
-  have hA := norm_nonneg (cexp (2 * π * I * τ))
   have h := norm_tprod_one_add_pow_sub_one_le (by linarith : 2 * ‖cexp (2 * π * I * τ)‖ < 1)
   have hε : 0 ≤ 1 - ‖cexp (2 * π * I * τ)‖ / (1 - 2 * ‖cexp (2 * π * I * τ)‖) := by
     rw [sub_nonneg, div_le_one (by linarith)]

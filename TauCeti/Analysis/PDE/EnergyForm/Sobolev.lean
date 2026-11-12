@@ -16,17 +16,16 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 /-!
 # The divergence-form energy form on `H¹(Ω)`, and Gårding's inequality
 
-Lane D, item 16 of `TauCetiRoadmap/PDE/README.md` asks for the weak energy form
+This file defines the weak energy form
 
 `a(u, v) = ∫_Ω aⁱʲ ∂ⱼu ∂ᵢv + bⁱ ∂ᵢu v + c u v`
 
-of a divergence-form operator `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`, together with **Gårding's
+of a divergence-form operator `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`, and proves **Gårding's
 inequality** `a(u, u) ≥ α‖u‖²_{H¹} - β‖u‖²_{L²}` and the lower bounds used to establish
-coercivity on `H¹₀(Ω)` under suitable hypotheses. The pointwise and raw-jet halves of that
-program are already in place: `TauCeti.PDE.energyIntegrand` is the
+coercivity on `H¹₀(Ω)` under suitable hypotheses. `TauCeti.PDE.energyIntegrand` is the
 pointwise jet form and `TauCeti.PDE.energyFormIntegral` its integral against a measure, stated
-for raw jet fields `X → ℝ × EuclideanSpace ℝ ι` because the Sobolev space was a separate
-prerequisite. That prerequisite is now `TauCeti.W1p`, and this file joins the two.
+for raw jet fields `X → ℝ × EuclideanSpace ℝ ι`; this file joins them with the Sobolev space
+`TauCeti.W1p`.
 
 ## The energy form on Sobolev functions
 
@@ -68,8 +67,8 @@ and it *is* coercivity once its constant is positive, for which
 supplies the sufficient smallness condition `βP < λ` relating the drift to the ellipticity and
 the domain; with no drift there is no smallness condition at all. The
 condition is what this estimate needs, not a proof that coercivity fails without it; when
-coercivity is genuinely unavailable, the Fredholm alternative (Lane D, item 18) takes the place
-of Lax--Milgram.
+coercivity is genuinely unavailable, the Fredholm alternative
+(`TauCeti/Analysis/PDE/FredholmAlternative.lean`) takes the place of Lax--Milgram.
 
 Boundedness is the other half of the pair the energy method needs, and it comes from the
 pointwise operator-norm bound `Λ + β + γ` on the energy integrand together with Cauchy--Schwarz
@@ -84,10 +83,10 @@ constant `min (λ - ε) (δ - β²/(4ε))` for a suitable `ε`, independently of
 supplies both lower bounds and does not package an `IsCoercive` proof; that packaging is
 `TauCeti.PDE.isCoercive_energyFormH1L0` in `TauCeti/Analysis/PDE/DirichletProblem.lean`.
 
-Everything is stated with explicit constants `λ, Λ, β, γ, P`, as the roadmap's standing
-hypotheses require, and coefficient bounds are inline hypotheses `∀ x ∈ Ω, ‖b x‖ ≤ β` rather
-than a bespoke predicate. No boundary regularity of `Ω` is used anywhere: the Poincaré
-hypothesis is carried explicitly, and the interior estimates do not see the boundary.
+Everything is stated with explicit constants `λ, Λ, β, γ, P`, and coefficient bounds are
+inline hypotheses `∀ x ∈ Ω, ‖b x‖ ≤ β` rather than a bespoke predicate. No boundary regularity
+of `Ω` is used anywhere: the Poincaré hypothesis is carried explicitly, and the interior
+estimates do not see the boundary.
 
 ## Main declarations
 
@@ -113,8 +112,8 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
 * `TauCeti.PDE.UniformlyEllipticOn.norm_energyFormH1_le`: boundedness of the energy form, with
   explicit constant `Λ + β + γ`.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self`: Gårding's inequality on `H¹(Ω)`.
-* `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_norm`: the equivalent roadmap form
-  with an `H¹` norm and a negative `L²` term.
+* `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_norm`: the equivalent form with an
+  `H¹` norm and a negative `L²` term.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_norm_of_norm_le`: the same form
   with no sign condition on the mass coefficient, only a bound `‖c‖ ≤ γ`.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_of_mass_lower_bound`: the bound
@@ -132,16 +131,16 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
   `TauCeti.PDE.UniformlyEllipticOn.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift`: the
   corresponding `H¹`-norm lower bound for any function satisfying a Poincaré inequality.
 * `TauCeti.PDE.norm_energyFormH1L_le_of_bounds`: the bundled form's operator-norm bound, stated
-  from upper coefficient bounds without requiring lower ellipticity.
+  from almost-everywhere upper coefficient bounds without requiring lower ellipticity.
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_subset_slab` and
   `TauCeti.PDE.UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_subset_ball`: lower bounds on
   `H¹₀(Ω)` for a domain trapped in a slab, or in a ball.
 
 ## References
 
-Lane D, item 16 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans, *Partial Differential
-Equations*, Section 6.2 (energy estimates and Gårding's inequality); D. Gilbarg and
-N. Trudinger, *Elliptic Partial Differential Equations of Second Order*, Chapter 8.
+L. C. Evans, *Partial Differential Equations*, Section 6.2 (energy estimates and Gårding's
+inequality); D. Gilbarg and N. Trudinger, *Elliptic Partial Differential Equations of Second
+Order*, Chapter 8.
 -/
 
 public section
@@ -421,6 +420,21 @@ theorem energyFormH1_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
       ∫ x in Omega, energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x) ∂mu :=
   energyFormIntegral_def _ _ _ _ _ _
 
+/-- The energy form on `H¹(Ω)` only sees the coefficients almost everywhere on `Ω`. -/
+theorem energyFormH1_congr_ae {a a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b b' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c c' : EuclideanSpace ℝ ι → ℝ}
+    (ha : a =ᵐ[mu.restrict Omega] a') (hb : b =ᵐ[mu.restrict Omega] b')
+    (hc : c =ᵐ[mu.restrict Omega] c') (u v : W1p mu Omega 2) :
+    energyFormH1 a b c u v = energyFormH1 a' b' c' u v :=
+  energyFormIntegral_congr_ae _ _ _ _ _ _ ha hb hc .rfl .rfl
+
+/-- The energy form on `H¹(Ω)` is homogeneous in the coefficient triple `(a, b, c)`. -/
+theorem energyFormH1_smul_coefficients (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ) (r : ℝ)
+    (u v : W1p mu Omega 2) :
+    energyFormH1 (r • a) (r • b) (r • c) u v = r * energyFormH1 a b c u v :=
+  energyFormIntegral_smul _ _ _ _ _ _ r
+
 /-- **Measurability of the energy form in a parameter.** If the coefficients of a
 divergence-form operator depend on a parameter `t` and are jointly a.e. strongly measurable in
 `(t, x)`, then for fixed `u, v ∈ H¹(Ω)` the energy form `t ↦ a_t(u, v)` is a.e. strongly
@@ -638,7 +652,8 @@ theorem integrable_energyIntegrand_jetField
     (u v : W1p mu Omega 2) :
     Integrable (fun x => energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x))
       (mu.restrict Omega) := by
-  refine (integrable_bilinear_apply_of_memLp hcoeff (jetLpL u) (jetLpL v)).congr ?_
+  refine (hcoeff.integrable_bilinear_apply (Lp.memLp (jetLpL u))
+    (Lp.memLp (jetLpL v))).congr ?_
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
 
@@ -704,18 +719,41 @@ theorem energyFormH1_add_right
   rw [← energyFormH1L_apply hcoeff, map_add]
   simp only [energyFormH1L_apply]
 
-/-- Boundedness of the Sobolev energy form from upper bounds alone. No lower ellipticity
-hypothesis is needed. -/
+/-- Subtractivity of the Sobolev energy form in its right argument. -/
+theorem energyFormH1_sub_right
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (u v w : W1p mu Omega 2) :
+    energyFormH1 a b c u (v - w) = energyFormH1 a b c u v - energyFormH1 a b c u w := by
+  rw [← energyFormH1L_apply hcoeff, map_sub]
+  simp only [energyFormH1L_apply]
+
+/-- **Subtractivity of the Sobolev energy form in its coefficients.** For two essentially
+bounded coefficient fields, the energy form of the difference of the coefficient triples is the
+difference of the energy forms; this is the `H¹` form of `energyFormIntegral_sub`. It turns an
+`L^∞` bound on the difference of two sets of coefficients into a bound on the difference of their
+energy forms. -/
+theorem energyFormH1_sub {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c' : EuclideanSpace ℝ ι → ℝ}
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff' : MemLp (fun x => energyIntegrand (a' x) (b' x) (c' x)) ⊤ (mu.restrict Omega))
+    (u v : W1p mu Omega 2) :
+    energyFormH1 (a - a') (b - b') (c - c') u v =
+      energyFormH1 a b c u v - energyFormH1 a' b' c' u v :=
+  energyFormIntegral_sub (h := integrable_energyIntegrand_jetField hcoeff u v)
+    (h' := integrable_energyIntegrand_jetField hcoeff' u v)
+
+/-- Boundedness of the Sobolev energy form from almost-everywhere upper bounds on `Ω` alone. No
+lower ellipticity hypothesis is needed. -/
 theorem norm_energyFormH1_le_of_bounds
     (hLam : 0 ≤ Lam)
-    (ha_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
+    (ha_bound : ∀ᵐ x ∂mu.restrict Omega,
       ∀ eta xi : EuclideanSpace ℝ ι,
         |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
-    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma)
     (u v : W1p mu Omega 2) :
     ‖energyFormH1 a b c u v‖ ≤ (Lam + beta + gamma) * (‖u‖ * ‖v‖) := by
-  rcases (Omega : Set (EuclideanSpace ℝ ι)).eq_empty_or_nonempty with hΩ | ⟨x, hx⟩
+  rcases eq_zero_or_neZero (mu.restrict Omega) with hΩ | hΩ
   · have hnorm : ∀ w : W1p mu Omega 2, ‖w‖ = 0 := fun w => by
       have h0 : ‖W1p.value w‖ = 0 := by
         simp [Lp.norm_def, hΩ]
@@ -725,31 +763,30 @@ theorem norm_energyFormH1_le_of_bounds
     have hform : energyFormH1 a b c u v = 0 := by
       simp [energyFormH1_def, hΩ]
     rw [hform, hnorm u, norm_zero, zero_mul, mul_zero]
-  have hbeta : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x hx)
-  have hgamma : 0 ≤ gamma := (norm_nonneg _).trans (hc_bound x hx)
-  have hmem := ae_mem_restrict (mu := mu) (Omega := Omega)
+  obtain ⟨x, hbx, hcx⟩ := (hb_bound.and hc_bound).exists
+  have hbeta : 0 ≤ beta := (norm_nonneg _).trans hbx
+  have hgamma : 0 ≤ gamma := (norm_nonneg _).trans hcx
   have hconst : 0 ≤ Lam + beta + gamma := by linarith
   have hmul : Integrable (fun x => ‖jetField u x‖ * ‖jetField v x‖) (mu.restrict Omega) :=
     (memLp_jetField u).norm.integrable_mul (memLp_jetField v).norm
   have key := norm_energyFormIntegral_le_of_bounds (μ := mu.restrict Omega)
     (a := a) (b := b) (c := c) (U := jetField u) (V := jetField v)
-    hLam (hmem.mono fun x hx => ha_bound x hx) (hmem.mono hb_bound) (hmem.mono hc_bound)
-      (hmul.const_mul (Lam + beta + gamma))
+    hLam ha_bound hb_bound hc_bound (hmul.const_mul (Lam + beta + gamma))
   refine key.trans ?_
   rw [integral_const_mul]
   exact mul_le_mul_of_nonneg_left (integral_norm_jetField_mul_le u v) hconst
 
-/-- The operator norm of the bundled Sobolev energy form is controlled by the coefficient
-upper bounds. -/
+/-- The operator norm of the bundled Sobolev energy form is controlled by almost-everywhere
+coefficient upper bounds on `Ω`. -/
 theorem norm_energyFormH1L_le_of_bounds
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hLam : 0 ≤ Lam)
-    (ha_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
+    (ha_bound : ∀ᵐ x ∂mu.restrict Omega,
       ∀ eta xi : EuclideanSpace ℝ ι,
         |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
     (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma)
-    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) :
+    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma) :
     ‖energyFormH1L hcoeff‖ ≤ Lam + beta + gamma := by
   refine (energyFormH1L hcoeff).opNorm_le_bound₂ (by linarith) ?_
   intro u v
@@ -904,8 +941,9 @@ theorem norm_energyFormH1_le
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
     (u v : W1p mu Omega 2) :
     ‖energyFormH1 a b c u v‖ ≤ (Lam + beta + gamma) * (‖u‖ * ‖v‖) :=
-  norm_energyFormH1_le_of_bounds h.upper_nonneg (fun _x hx eta xi => h.upper_bound hx eta xi)
-    hb_bound hc_bound u v
+  norm_energyFormH1_le_of_bounds h.upper_nonneg
+    (ae_mem_restrict.mono fun _x hx eta xi => h.upper_bound hx eta xi)
+    (ae_mem_restrict.mono hb_bound) (ae_mem_restrict.mono hc_bound) u v
 
 /-- Gårding's inequality with a mass floor and any positive Young parameter `ε`. The
 coefficients `λ - ε` and `δ - β²/(4ε)` can both be positive exactly when `β² < 4λδ`.
@@ -977,8 +1015,7 @@ theorem garding_energyFormH1_self
   simpa only [sub_eq_add_neg, zero_add, neg_mul] using
     garding_energyFormH1_self_of_mass_lower_bound h ha hb hc hb_bound hc_bound hc_nonneg u
 
-/-- **Gårding's inequality in the roadmap's `H¹`-norm form.** This is the equivalent
-restatement
+/-- **Gårding's inequality in `H¹`-norm form.** This is the equivalent restatement
 
 `(λ/2)‖u‖²_{H¹} - (λ/2 + β²/2λ)‖u‖²_{L²} ≤ a(u,u)`.
 -/

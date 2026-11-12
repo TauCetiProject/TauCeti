@@ -169,10 +169,8 @@ theorem one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient (hx 
       (1 + sphereHeight v x) / (1 - sphereHeight v x) * Real.exp (-(2 * t)) := by
   set h : ℝ → ℝ := fun s ↦ sphereHeight v (maximalIntegralCurve
     (-mgradient (𝓡 n) (sphereHeight v)) x s) with h_def
-  have hint :=
-    Ici_subset_maximalIntegralCurveInterval_neg_mgradient_sphereHeight (n := n) (v := v) (x := x)
   have h0 : h 0 = sphereHeight v x := by
-    simp only [h_def, maximalIntegralCurve_zero (hint self_mem_Ici)]
+    simp only [h_def, maximalIntegralCurve_zero]
   -- `g = (1 + h) / (1 - h) * exp (2 s)` has derivative zero on `[0, ∞)`.
   set g : ℝ → ℝ := fun s ↦ (1 + h s) / (1 - h s) * Real.exp (2 * s) with g_def
   have hg : ∀ s, 0 ≤ s → HasDerivAt g 0 s := by

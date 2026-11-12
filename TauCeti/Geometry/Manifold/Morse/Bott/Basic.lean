@@ -47,10 +47,14 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`: Morse–Bott critical submanifolds.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isNondegenerateCriticalSubmanifold_iff`:
   nondegeneracy of the submanifold is nondegeneracy of the normal Hessian.
-* `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.sigNeg_normalHessian`: the Morse
-  index is the negative index of inertia of the normal Hessian.
+* `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.injective_of_normalHessian_eq`: a
+  bilinear form representing the normal Hessian through a linear equivalence is nondegenerate.
+* `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.sigNeg_normalHessian`: the Morse index is the
+  negative index of inertia of the normal Hessian.
 * `IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank`:
   index plus coindex is the codimension.
+* `IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_add_manifoldMorseIndex_neg`: index plus
+  coindex is the dimension of the normal space.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_iff_of_subsingleton`: in dimension
   zero, Morse–Bott means Morse.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd`: the model example, the
@@ -199,6 +203,43 @@ theorem ker_normalHessian_eq_bot_iff (s : S) :
       (criticalHessian I f (i s)).ker ≤ i.tangentRange s hn := by
   rw [h.ker_normalHessian, ← LinearMap.le_ker_iff_map, normalClass_ker]
 
+/-- The tangent space of a critical submanifold lies in the radical of the quadratic form of the
+critical Hessian. -/
+private theorem tangentRange_le_radical_criticalHessian (s : S) :
+    i.tangentRange s hn ≤ (criticalHessian I f (i s)).toBilinForm.toQuadraticMap.radical := by
+  have : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
+  rw [LinearMap.BilinForm.radical_toQuadraticMap _
+    (isSymm_toBilinForm_criticalHessian (h.contMDiffAt s))]
+  exact h.tangentRange_le_ker_toBilinForm hn s
+
+/-- The quadratic form of the normal Hessian is the quadratic form of the critical Hessian
+descended to the quotient by the tangent space of the submanifold. -/
+private theorem toQuadraticMap_normalHessian (s : S) :
+    (h.normalHessian hn s).toQuadraticMap =
+      (criticalHessian I f (i s)).toBilinForm.toQuadraticMap.lift (i.tangentRange s hn)
+        (h.tangentRange_le_radical_criticalHessian hn s) := by
+  ext p
+  obtain ⟨v, rfl⟩ := i.normalClass_surjective s hn p
+  rw [LinearMap.BilinMap.toQuadraticMap_apply, normalHessian_normalClass, normalClass_def]
+  exact (QuadraticMap.lift_mk (h.tangentRange_le_radical_criticalHessian hn s) v).symm
+
+variable [FiniteDimensional ℝ E]
+
+/-- **The Morse index along a critical submanifold** is the negative index of inertia of its
+normal Hessian: the tangent directions lie in the radical of the critical Hessian, so passing to
+the normal space does not change its negative index. -/
+theorem sigNeg_normalHessian (s : S) :
+    sigNeg (h.normalHessian hn s).toQuadraticMap = manifoldMorseIndex I f (i s) := by
+  rw [manifoldMorseIndex_eq_sigNeg_criticalHessian, h.toQuadraticMap_normalHessian hn s]
+  exact QuadraticForm.sigNeg_lift _ _ (h.tangentRange_le_radical_criticalHessian hn s)
+
+/-- The positive index of inertia of the normal Hessian of a critical submanifold is the Morse
+index of `-f`. -/
+theorem sigPos_normalHessian (s : S) :
+    sigPos (h.normalHessian hn s).toQuadraticMap = manifoldMorseIndex I (-f) (i s) := by
+  rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian, h.toQuadraticMap_normalHessian hn s]
+  exact QuadraticForm.sigPos_lift _ _ (h.tangentRange_le_radical_criticalHessian hn s)
+
 end IsCriticalSubmanifold
 
 namespace IsNondegenerateCriticalSubmanifold
@@ -225,33 +266,21 @@ theorem radical_criticalHessian (s : S) :
 theorem ker_normalHessian (s : S) : LinearMap.ker (h.normalHessian hn s) = ⊥ :=
   (h.toIsCriticalSubmanifold.ker_normalHessian_eq_bot_iff hn s).mpr (h.ker_criticalHessian_le s)
 
-/-- The quadratic form of the normal Hessian is the quadratic form of the critical Hessian
-descended to the quotient by its radical, the tangent space of the submanifold. -/
-private theorem toQuadraticMap_normalHessian (s : S) :
-    (h.normalHessian hn s).toQuadraticMap =
-      (criticalHessian I f (i s)).toBilinForm.toQuadraticMap.lift (i.tangentRange s hn)
-        (h.radical_criticalHessian hn s).ge := by
-  ext p
-  obtain ⟨v, rfl⟩ := i.normalClass_surjective s hn p
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, IsCriticalSubmanifold.normalHessian_normalClass,
-    normalClass_def]
-  exact (QuadraticMap.lift_mk (h.radical_criticalHessian hn s).ge v).symm
+/-- A bilinear form `Q` representing the normal Hessian of a Morse–Bott critical submanifold at `s`
+through a linear equivalence `L` is nondegenerate: `u ↦ Q u` is injective. -/
+theorem injective_of_normalHessian_eq {s : S} {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
+    (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) : Injective Q := by
+  refine (injective_iff_map_eq_zero Q).mpr fun u hu ↦ ?_
+  -- `L u` pairs to zero with every normal vector, so it lies in the trivial kernel.
+  have hker : L u ∈ LinearMap.ker (h.normalHessian hn s) := by
+    rw [LinearMap.mem_ker]
+    ext p
+    obtain ⟨v, rfl⟩ := L.surjective p
+    rw [hQ, hu, zero_apply, LinearMap.zero_apply]
+  rwa [h.ker_normalHessian hn s, Submodule.mem_bot, map_eq_zero_iff _ L.injective] at hker
 
 variable [FiniteDimensional ℝ E]
-
-/-- **The Morse index of a Morse–Bott critical submanifold** is the negative index of inertia of
-its normal Hessian. -/
-theorem sigNeg_normalHessian (s : S) :
-    sigNeg (h.normalHessian hn s).toQuadraticMap = manifoldMorseIndex I f (i s) := by
-  rw [manifoldMorseIndex_eq_sigNeg_criticalHessian, h.toQuadraticMap_normalHessian hn s]
-  exact QuadraticForm.sigNeg_lift _ _ (h.radical_criticalHessian hn s).ge
-
-/-- The positive index of inertia of the normal Hessian of a Morse–Bott critical submanifold is the
-Morse index of `-f`. -/
-theorem sigPos_normalHessian (s : S) :
-    sigPos (h.normalHessian hn s).toQuadraticMap = manifoldMorseIndex I (-f) (i s) := by
-  rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian, h.toQuadraticMap_normalHessian hn s]
-  exact QuadraticForm.sigPos_lift _ _ (h.radical_criticalHessian hn s).ge
 
 include hn in
 /-- **Index plus coindex is the codimension.** At each point of a Morse–Bott critical
@@ -268,6 +297,18 @@ theorem manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank (s : S) :
     ← manifoldMorseIndex_neg_eq_sigPos_criticalHessian] at hsig
   -- `TangentSpace I (i s)` is by definition the model space `E`.
   have hE : Module.finrank ℝ (TangentSpace I (i s)) = Module.finrank ℝ E := rfl
+  omega
+
+/-- **Index plus coindex is the normal dimension.** At each point of a Morse–Bott critical
+submanifold, the Morse indices of `f` and `-f` add up to the dimension of the normal space. -/
+theorem manifoldMorseIndex_add_manifoldMorseIndex_neg (s : S) :
+    manifoldMorseIndex I f (i s) + manifoldMorseIndex I (-f) (i s) =
+      Module.finrank ℝ (i.NormalSpace s hn) := by
+  have hsum := h.manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank hn s
+  have hnormal := i.finrank_normalSpace_add_finrank s hn
+  -- The tangent spaces of `S` and `M` are by definition the model spaces `E'` and `E`.
+  have hE : Module.finrank ℝ (TangentSpace I (i s)) = Module.finrank ℝ E := rfl
+  have hE' : Module.finrank ℝ (TangentSpace J s) = Module.finrank ℝ E' := rfl
   omega
 
 end IsNondegenerateCriticalSubmanifold

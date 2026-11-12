@@ -49,8 +49,6 @@ here.
 ## References
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Lemma 3.15.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "Distinctness and completeness".
 -/
 
 public section

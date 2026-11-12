@@ -102,15 +102,13 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
       stdComplexLineReal ζ = fun _ ↦ 0 := by
     funext x
     rw [perturbationPullback_endChart, equivRealProdCLM_symm_stdComplexLineReal,
-      pairOfPantsEndComponent_one_of_pos (hH q) hpos]
+      pairOfPantsEndComponent_one_of_pos hpos]
   have hKt : perturbationPullback (endChart q)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       stdComplexLineImag ζ = H q ζ.2 := by
-    funext x
     rw [perturbationPullback_endChart, equivRealProdCLM_symm_stdComplexLineImag,
-      pairOfPantsEndComponent_I_of_pos (hH q) hpos,
-      smoothTransition.one_of_one_le (by linarith), one_mul]
+      pairOfPantsEndComponent_I_of_two_le (hH q) hζ]
   have heq : ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H q w.2) (u ∘ endChart q) ζ =
       ω.floerEnergyDensity
         (perturbationPullback (endChart q)
@@ -121,9 +119,8 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           stdComplexLineImag)
-        (u ∘ endChart q) ζ := by
-    simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
-      perturbedFDeriv_apply_stdComplexLineImag, hKs, hKt]
+        (u ∘ endChart q) ζ :=
+    ω.floerEnergyDensity_congr_perturbation _ hKs.symm hKt.symm
   rw [heq, hpb]
   exact mul_nonneg (det_fderiv_endChart_nonneg q ζ) (ω.floerEnergyDensity_nonneg hJ hfloer)
 
@@ -144,31 +141,16 @@ theorem monotoneOn_hamiltonianAction_endChart (ω : SymplecticForm V)
     MonotoneOn (fun s ↦ ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t))))
       {s | 2 ≤ q.endSign * s} := by
   intro c hc d hd hcd
-  set U : Set (ℝ × ℝ) := {ζ | 1 < q.endSign * ζ.1}
-  have hUo : IsOpen U := isOpen_lt continuous_const (continuous_const.mul continuous_fst)
   -- Every point of the rectangle `[c, d] × [0, 1]` lies in the part `±s ≥ 2` of the end.
   have hmem {s : ℝ} (hs : s ∈ Icc c d) : 2 ≤ q.endSign * s := by
     rw [mem_ofPred_eq] at hc hd
     rcases endSign_eq_one_or_eq_neg_one q with h | h <;> rw [h] at hc hd ⊢ <;> linarith [hs.1, hs.2]
-  have hRU : Icc c d ×ˢ Icc 0 1 ⊆ U := fun ζ hζ ↦ by
-    simp only [U, mem_ofPred_eq]
-    linarith [hmem hζ.1]
-  have hv : ContDiffOn ℝ 2 (u ∘ endChart q) U :=
-    hu.comp (contDiff_endChart q 2).contDiffOn fun ζ hζ ↦
-      endChart_mem_thricePuncturedSphereReal (by
-        simp only [U, mem_ofPred_eq] at hζ
-        linarith)
-  have hper (s : ℝ) : (u ∘ endChart q) (s, 1) = (u ∘ endChart q) (s, 0) := by
-    simp only [comp_apply, endChart_mk]
-    simpa using congrArg (fun w ↦ u (Complex.equivRealProdCLM w))
-      (q.periodic_cylindricalEndLift s 0)
   -- The energy over the rectangle is the change of action, and it is nonnegative.
-  have h := ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub (hHs q) hUo hv hcd hRU
-    fun s _ ↦ hper s
+  have h := ω.integral_floerEnergyDensity_endChart_eq_hamiltonianAction_sub (hHs q) hu q hcd
+    fun s hs ↦ by linarith [hmem hs]
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
     fun ζ (hζ : ζ ∈ Icc c d ×ˢ Icc 0 1) ↦ floerEnergyDensity_endChart_nonneg ω hH hHs hu (hmem hζ.1)
       (hJ ζ (hmem hζ.1)) (hfloer ζ (hmem hζ.1))
-  simp only [comp_apply] at h
   linarith
 
 /-- In the parametrization `R ↦ ±R` of the ends by their signed longitudinal coordinate, the
@@ -185,9 +167,8 @@ private theorem monotoneOn_endSign_mul_hamiltonianAction (ω : SymplecticForm V)
         u (endChart q ζ) : ℝ × ℝ →ₗ[ℝ] V)) :
     MonotoneOn (fun R ↦ q.endSign * ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
       (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) (Ici 2) := by
-  intro R₁ hR₁ R₂ hR₂ hR
+  intro R₁ hR₁ R₂ _ hR
   have hR₁' : (2 : ℝ) ≤ R₁ := hR₁
-  have hR₂' : (2 : ℝ) ≤ R₂ := hR₂
   have hle := ω.monotoneOn_hamiltonianAction_endChart hH hHs hu hJ hfloer
   simp only [← endChart_mk]
   rcases endSign_eq_one_or_eq_neg_one q with h | h
@@ -226,11 +207,8 @@ theorem sum_endSign_mul_hamiltonianAction_le (ω : SymplecticForm V)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z) := by
-  have hTS : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
-    fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
-  have hTm : MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
-    ((isCompact_truncation R).isClosed.preimage
-      Complex.equivRealProdCLM.symm.continuous).measurableSet
+  have hTS := preimage_truncation_subset_thricePuncturedSphereReal R
+  have hTm := measurableSet_preimage_truncation R
   -- The signed sum of the end actions is the energy over the truncation `S_R` plus the
   -- integrated curvature.
   have hid : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.floerEnergyDensity

@@ -8,6 +8,10 @@ module
 public import Mathlib.Algebra.Order.Floor.Ring
 public import Mathlib.Algebra.Ring.Periodic
 
+import Mathlib.Basic.Finite.Prod
+import Mathlib.Data.Int.Interval
+import Mathlib.Data.Set.Finite.Range
+
 /-!
 # Floors and decompositions into intervals
 
@@ -20,7 +24,8 @@ fractional part of `t`.
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
 the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every point `x` lies in the
 interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its index between
-`⌈-R / δ⌉ - 1` and `⌊R / δ⌋`.
+`⌈-R / δ⌉ - 1` and `⌊R / δ⌋`. Rounding up to the multiples of `δ` moves a point by less than
+`δ`, and on a finite index type only finitely many rounded families have entries in `[-R, R]`.
 
 ## Main results
 
@@ -31,6 +36,8 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
+* `TauCeti.exists_finset_forall_exists_le_lt_add`: finitely many families round up, by less
+  than `δ` in each entry, every family with entries in `[-R, R]`.
 * `TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq`: for `t > 0`, nonnegative elements `a`, `b`
   with `⌊a * t⌋₊ = ⌊b * t⌋₊` differ by less than `1 / t`.
 -/
@@ -79,6 +86,27 @@ theorem mem_Icc_ceil_floor_of_mem_Icc (hδ : 0 < δ) {R x : K} {m : ℤ}
   · refine Int.le_floor.2 ?_
     rw [le_div_iff₀ hδ]
     linarith [hx.1]
+
+/-- **Rounding up to a grid.** For a step `δ > 0` and a bound `R`, finitely many families on a
+finite index type round up every family `a` with entries in `[-R, R]`: some `c` among them has
+`a k ≤ c k < a k + δ` for every `k`. The families are those with entries `δ m`,
+`m ∈ [⌈-R / δ⌉, ⌈R / δ⌉]`, and `c k = δ ⌈a k / δ⌉`. -/
+theorem exists_finset_forall_exists_le_lt_add {κ : Type*} [Finite κ] (hδ : 0 < δ) (R : K) :
+    ∃ T : Finset (κ → K), ∀ a : κ → K, (∀ k, |a k| ≤ R) →
+      ∃ c ∈ T, ∀ k, a k ≤ c k ∧ c k < a k + δ := by
+  classical
+  refine ⟨(Set.finite_range fun (g : κ → Set.Icc ⌈-R / δ⌉ ⌈R / δ⌉) k ↦ δ * (g k : ℤ)).toFinset,
+    fun a ha ↦ ⟨fun k ↦ δ * ⌈a k / δ⌉, ?_, fun k ↦ ⟨?_, ?_⟩⟩⟩
+  · -- rounding up preserves the bounds `-R ≤ a k ≤ R`
+    refine (Set.Finite.mem_toFinset _).2 ⟨fun k ↦ ⟨⌈a k / δ⌉, ?_, ?_⟩, rfl⟩ <;>
+      refine Int.ceil_mono (div_le_div_of_nonneg_right ?_ hδ.le)
+    exacts [(abs_le.1 (ha k)).1, (abs_le.1 (ha k)).2]
+  · dsimp only
+    rw [mul_comm, ← div_le_iff₀ hδ]
+    exact Int.le_ceil _
+  · dsimp only
+    rw [mul_comm, ← lt_div_iff₀ hδ, add_div, div_self hδ.ne']
+    exact Int.ceil_lt_add_one _
 
 /-- For `t > 0`, two nonnegative elements `a`, `b` of an ordered field with the same natural
 floor of `x * t` differ by less than `1 / t`: on the nonnegative half-line the cells of the grid of

@@ -95,8 +95,6 @@ theorem coe_mem_target_of_norm_lt {r δ : ℝ}
   have hr : 0 < r := by linarith [norm_nonneg (φ.coord w), hδr w hw]
   simpa using hrT _ ((hδr w hw).trans (half_lt_self hr))
 
-variable [FiniteDimensional ℝ E]
-
 /-- The small cube of a Morse chart, where the coordinates and the chart value are small, is
 open. -/
 theorem isOpen_smallCube (ε δ : ℝ) :
@@ -287,7 +285,6 @@ theorem range_stableParam (hδ : 0 < δ) {ε : ℝ} (hε0 : 0 < ε)
 theorem isImmersionAt_stableParam_of_norm_lt {v : φ.stableSubspace}
     (hv : ‖v‖ < δ) : IsImmersionAt 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) ∞ (hX.stableParam φ δ) v := by
   -- Near `0` the parametrization is the inverse of the chart, restricted to the stable subspace.
-  have hδ : 0 < δ := (norm_nonneg v).trans_lt hv
   obtain ⟨N, hN⟩ := φ.stableSubspace.exists_isCompl
   have hball : IsOpen (ball (0 : φ.stableSubspace) δ) := isOpen_ball
   refine (IsImmersionAtOfComplement.mk_of_charts (F := N)
@@ -394,7 +391,7 @@ are a Morse chart `φ` at `x` and a scale `δ` for which `stableParam φ δ` is 
 the stable subspace of `φ` with image `W^s(x)`, sending `0` to `x`, whose derivative at `0`, read in
 the chart, is the inclusion of the stable subspace, and which carries the scaling `v ↦ e^{-s} v` to
 the time-`s` map of the flow. -/
-theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem exists_stableParam
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
     ∃ (φ : MorseChart E f x) (δ : ℝ),
       IsSmoothEmbedding 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) ∞ (hX.stableParam φ δ) ∧
@@ -405,10 +402,9 @@ theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
         hX.stableParam φ δ (Real.exp (-s) • v) = hX.flow s (hX.stableParam φ δ v) := by
   obtain ⟨φ, hφ⟩ := hX.exists_morseChart x hx
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
-  obtain ⟨ε, hε0, hε⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
+  obtain ⟨ε, hε0, hε⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
   set A := ‖(φ.coordL : E →L[ℝ] Fin (Module.finrank ℝ E) → ℝ)‖
   set δ := min ε (r / 2) / (A + 1)
-  have hc : 0 < min ε (r / 2) := lt_min hε0 (half_pos hr)
   have hA : 0 < A + 1 := by positivity
   have hδ : 0 < δ := by positivity
   have hsmall (w : φ.stableSubspace) (hw : ‖w‖ < δ) : ‖φ.coord w‖ < min ε (r / 2) := by
@@ -429,11 +425,11 @@ theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
 
 /-- **Below the top index, the stable manifold is not a point.** If the Morse index of a critical
 point `q` is less than the dimension, some point other than `q` flows into `q`. -/
-theorem exists_mem_stableSet_ne (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {q : M}
+theorem exists_mem_stableSet_ne {q : M}
     (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f q < Module.finrank ℝ E) :
     ∃ y ∈ hX.flow.stableSet q, y ≠ q := by
-  obtain ⟨φ, δ, hemb, hrange, h0, -, -⟩ := hX.exists_stableParam hf hq
+  obtain ⟨φ, δ, hemb, hrange, h0, -, -⟩ := hX.exists_stableParam hq
   have hL := φ.finrank_stableSubspace_add_manifoldMorseIndex
   obtain ⟨u, hu⟩ : ∃ u : φ.stableSubspace, u ≠ 0 :=
     (Module.finrank_pos_iff_exists_ne_zero (R := ℝ) (M := φ.stableSubspace)).1 (by omega)

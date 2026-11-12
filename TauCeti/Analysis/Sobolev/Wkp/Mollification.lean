@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.Mollification.Interior
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Interior mollification of higher weak derivatives
@@ -28,7 +29,8 @@ normalized bump with the zero extension of a field in `Lᵖ(Ω)`. It is smooth o
 mollified weak gradient and weak Hessian (`TauCeti.Wkp.gradient_smoothField`,
 `TauCeti.Wkp.fderiv_gradient_smoothField_value`); and the mollification of a function agreeing
 with a continuous `v` stays close to `v` where `v` varies little
-(`TauCeti.Wkp.dist_smoothField_le`).
+(`TauCeti.Wkp.dist_smoothField_le`). `TauCeti.Wkp.smoothField_eq_zero_of_notMem_add_closedBall`
+locates its support near the set off which the field vanishes.
 These are the inputs for passing estimates from smooth functions to strong `W^{2,p}` solutions.
 
 The classical argument is in L. C. Evans, *Partial Differential Equations*, §5.3.1.
@@ -41,7 +43,7 @@ noncomputable section
 namespace TauCeti.Wkp
 
 open Filter MeasureTheory Set TopologicalSpace
-open scoped ContDiff Convolution ENNReal Gradient Topology
+open scoped ContDiff Convolution ENNReal Gradient Pointwise Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -218,6 +220,31 @@ theorem contDiff_smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ
     (Lp.memLp f)
   exact phi.hasCompactSupport_normed.contDiff_convolution_left
     (ContinuousLinearMap.lsmul ℝ ℝ) phi.contDiff_normed (hmem.locallyIntegrable Fact.out)
+
+omit [Fact (1 ≤ p)] in
+/-- A mollified field vanishes at every point whose bump ball misses the set off which the field
+vanishes. -/
+theorem smoothField_eq_zero_of_notMem_add_closedBall {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F]
+    (phi : ContDiffBump (0 : E)) {K : Set E} (f : Lp F p (mu.restrict Omega))
+    (hf : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → f x = 0) {y : E}
+    (hy : y ∉ K + Metric.closedBall (0 : E) phi.rOut) :
+    smoothField phi f y = 0 := by
+  have hae : (Omega : Set E).indicator (f : E → F) =ᵐ[mu]
+      K.indicator ((Omega : Set E).indicator (f : E → F)) := by
+    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 hf] with x hx
+    by_cases hxK : x ∈ K
+    · rw [indicator_of_mem hxK]
+    · rw [indicator_of_notMem hxK]
+      by_cases hxO : x ∈ (Omega : Set E)
+      · rw [indicator_of_mem hxO, hx hxO hxK]
+      · exact indicator_of_notMem hxO _
+  rw [smoothField_def, convolution_congr _ (EventuallyEq.refl _ _) hae]
+  refine Function.notMem_support.1 fun hmem => hy ?_
+  obtain ⟨a, ha, b, hb, rfl⟩ := support_convolution_subset _ hmem
+  rw [ContDiffBump.support_normed_eq] at ha
+  have hbK : b ∈ K := support_indicator_subset hb
+  exact ⟨b, hbK, a, Metric.ball_subset_closedBall ha, add_comm b a⟩
 
 /-- Where the bump stays in `Ω`, the derivative of the mollified order-`k+1` weak derivative of
 `u ∈ W^{k+2,p}(Ω)` is the mollified order-`k+2` weak derivative. -/

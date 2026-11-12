@@ -125,11 +125,6 @@ that it can be an `OpenSubgroup G` and be compared with the other subgroups of a
   (1952), 294–297.
 -/
 
--- The signatures of `LayerRestriction`, `relativeDegree`, `subgroupLayer` and `subgroupGalEquiv`
--- below follow the Tau Ceti `ClassFieldTheory` blueprint, `README.md` and `Suggested.lean`, which
--- write down the restriction relation between two normal layers and the subgroup-indexed system
--- of intermediate layers formalised here.
-
 public noncomputable section
 
 open CategoryTheory

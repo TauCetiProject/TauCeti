@@ -103,7 +103,7 @@ private theorem smul_vertex_eq (hP : P.carrier = dirichletDomain Γ p)
         (h : PSL(2, ℝ)) • leftHalfPlane (P.sideGeodesic i) := by
       rw [hs, leftHalfPlane_mul_dilation, sideGeodesic_def, sideGeodesic_def, vertex_smul,
         vertex_smul, leftHalfPlane_geodesicFromTo_smul _ (P.vertex_ne_vertex_add_one i)]
-    refine notMem_leftHalfPlane_of_range_eq_perpBisector hhp.symm hbis
+    refine notMem_leftHalfPlane_of_range_eq_perpBisector hbis
       ((P.mem_interior_carrier_iff p).1 hpint j) ?_
     rw [hleft]
     exact smul_mem_smul_set ((P.mem_interior_carrier_iff p).1 hpint i)
@@ -188,9 +188,10 @@ theorem existsUnique_sidePairing_of_carrier_eq_dirichletDomain
     P.side_injective (by rw [← τ.map_smul_side, ← σ.map_smul_side, hmap])
   exact SidePairing.ext (Equiv.ext hpairτ) (funext hmap)
 
+omit [ProperlyDiscontinuousSMul Γ ℍ] in
 /-- **Distinct translates of the interior of a Dirichlet polygon are disjoint.** If the carrier
-of `P` is the Dirichlet domain of a properly discontinuous `Γ`, centred at a point with trivial
-stabilizer, then every nonidentity element of `Γ` moves the interior of `P` off itself. -/
+of `P` is the Dirichlet domain of `Γ`, centred at a point with trivial stabilizer, then every
+nonidentity element of `Γ` moves the interior of `P` off itself. -/
 theorem disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain
     (hP : P.carrier = dirichletDomain Γ p) (hp : p ∈ TauCeti.freeLocus Γ ℍ) (γ : Γ)
     (hγ : γ ≠ 1) : Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier) := by

@@ -17,15 +17,17 @@ import TauCeti.RingTheory.TensorProduct.IsBaseChange
 /-!
 # Totally real subspaces of complex modules
 
-This file gives an elementary example of a totally real real subspace of a complex module and
-develops the complex-linear algebra of maximal totally real subspaces. A real basis of such a
-subspace is a complex basis of the ambient space. Complex-linear automorphisms act transitively on
-these subspaces, and an endomorphism preserving one has real determinant. An injective real-linear
-map onto a maximal totally real subspace exhibits the ambient module as its complexification, and
-that subspace is exactly the fixed locus of a unique conjugate-linear involution.
+This file gives elementary examples of totally real real subspaces of complex modules, among them
+the real line `ℝ ⊆ ℂ`, and develops the complex-linear algebra of maximal totally real subspaces.
+A real basis of such a subspace is a complex basis of the ambient space. Complex-linear
+automorphisms act transitively on these subspaces, and an endomorphism preserving one has real
+determinant. An injective real-linear map onto a maximal totally real subspace exhibits the ambient
+module as its complexification, and that subspace is exactly the fixed locus of a unique
+conjugate-linear involution.
 
 ## Main declarations
 
+* `TauCeti.isMaximalTotallyReal_span_one`: the real line `ℝ ⊆ ℂ` is maximal totally real.
 * `TauCeti.IsTotallyReal.linearIndependent_complex`: real-linearly independent vectors of a
   totally real subspace are complex-linearly independent.
 * `TauCeti.IsMaximalTotallyReal.complexBasis`: a real basis of a maximal totally real subspace,
@@ -75,6 +77,32 @@ theorem isTotallyReal_range_pi_smulRight {v : ι → ℂ} :
   · have h' : (σ i : ℂ) * Complex.I = τ i := mul_right_cancel₀ hi (by rw [← h]; ring)
     have hτ : τ i = 0 := by simpa using (congrArg Complex.re h').symm
     simp [hτ]
+
+/-- The real line `ℝ ⊆ ℂ`, the real span of `1`, is a maximal totally real subspace of `ℂ`: every
+complex number is uniquely `a + i b` with `a, b` real. -/
+theorem isMaximalTotallyReal_span_one :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ ℂ Complex.I).restrictScalars ℝ)
+      (Submodule.span ℝ {(1 : ℂ)}) := by
+  have hmap : (Submodule.span ℝ {(1 : ℂ)}).map
+      ((LinearMap.lsmul ℂ ℂ Complex.I).restrictScalars ℝ) = Submodule.span ℝ {Complex.I} := by
+    rw [Submodule.map_span, Set.image_singleton]
+    simp
+  rw [isMaximalTotallyReal_iff, hmap]
+  constructor
+  · rw [Submodule.disjoint_def]
+    intro z hz hz'
+    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hz
+    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.1 hz'
+    have := congrArg Complex.re hb
+    simp only [Complex.real_smul, Complex.mul_re, Complex.ofReal_re, Complex.I_re, mul_zero,
+      Complex.ofReal_im, Complex.I_im, mul_one, sub_self] at this
+    simp [← this]
+  · rw [codisjoint_iff, eq_top_iff]
+    intro z _
+    refine Submodule.mem_sup.2 ⟨z.re • 1,
+      Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _),
+      z.im • Complex.I, Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _), ?_⟩
+    apply Complex.ext <;> simp
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E]
   {L : Submodule ℝ E}
@@ -298,6 +326,17 @@ theorem map_linearEquiv (A : E ≃ₗ[ℂ] E) :
   rw [isMaximalTotallyReal_iff, ← Submodule.map_comp, hcomm, Submodule.map_comp]
   exact Submodule.isCompl_map (A.restrictScalars ℝ) hL.isCompl
 
+omit hL in
+/-- If a complex-linear automorphism carries `L` onto a maximal totally real subspace `L'`, then
+`L` is maximal totally real. -/
+theorem of_map_linearEquiv {L' : Submodule ℝ E}
+    (hL' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L')
+    (A : E ≃ₗ[ℂ] E) (h : L' = L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ)) :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L := by
+  have h' : L'.map ((A.symm : E →ₗ[ℂ] E).restrictScalars ℝ) = L :=
+    (Submodule.map_symm_eq_iff (A.restrictScalars ℝ)).2 h.symm
+  simpa only [h'] using hL'.map_linearEquiv A.symm
+
 /-- A maximal totally real subspace has real dimension equal to the complex dimension of the
 ambient module. -/
 theorem finrank_eq_finrank_complex : finrank ℝ L = finrank ℂ E := by
@@ -389,8 +428,7 @@ theorem IsMaximalTotallyReal.projection_sum_smul {ι : Type*} [Fintype ι]
     conv_lhs => rw [← Complex.re_add_im (c i)]
     rw [add_smul, mul_smul, hr, hr]
   rw [hsplit, map_add,
-    Submodule.projection_apply_of_mem_right hL.isCompl
-      ⟨_, L.sum_mem fun i _ ↦ L.smul_mem _ (hv i), rfl⟩, add_zero,
+    hL.projection_map_of_mem (L.sum_mem fun i _ ↦ L.smul_mem _ (hv i)), add_zero,
     Submodule.projection_apply_of_mem_left hL.isCompl (L.sum_mem fun i _ ↦ L.smul_mem _ (hv i))]
 
 end TauCeti
