@@ -103,6 +103,8 @@ computed in any chart, also on manifolds with boundary or corners
   which `f` is differentiable is nondegenerate exactly when `det (1 - df_x) ≠ 0`.
 * `TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`: `det (1 - df_x)` at a fixed
   point can be computed in any chart.
+* `TauCeti.isNondegenerateFixedPt_iff_injective_sub_id_of_hasFDerivWithinAt`: so can
+  nondegeneracy, as injectivity of `B - 1` for the derivative `B` of the coordinate expression.
 
 ## References
 
@@ -525,5 +527,29 @@ theorem det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm [IsManifold I 1 
   rw [hchart, hconj, LinearMap.det_conj, hD.fixedPointDerivative_eq]
   -- Both sides are `det (1 - D)`, computed on `E` and on `T_x M`, which is `E` by definition.
   rfl
+
+/-- **Nondegeneracy read in a chart.** Let `x` be a fixed point of `f`, at which `f` is
+differentiable, lying in the extended chart at `x'`. If the coordinate expression of `f` in that
+chart has derivative `B` at `x` within the range of the model, then `x` is nondegenerate exactly
+when `B - 1` is injective. The manifold may have boundary or corners. -/
+theorem isNondegenerateFixedPt_iff_injective_sub_id_of_hasFDerivWithinAt [FiniteDimensional 𝕜 E]
+    [IsManifold I 1 M] {x' : M} (hx : IsFixedPt f x) (hf : MDifferentiableAt I I f x)
+    (hsrc : x ∈ (extChartAt I x').source) {B : E →L[𝕜] E}
+    (hB : HasFDerivWithinAt (extChartAt I x' ∘ f ∘ (extChartAt I x').symm) B (range I)
+      (extChartAt I x' x)) :
+    IsNondegenerateFixedPt I f x ↔ Injective (B - ContinuousLinearMap.id 𝕜 E) := by
+  have hfd : fderivWithin 𝕜 (extChartAt I x' ∘ f ∘ (extChartAt I x').symm) (range I)
+      (extChartAt I x' x) = B :=
+    hB.fderivWithin (I.uniqueDiffOn _
+      (extChartAt_target_subset_range x' ((extChartAt I x').map_source hsrc)))
+  have : FiniteDimensional 𝕜 (TangentSpace I x) := ‹FiniteDimensional 𝕜 E›
+  rw [isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, hx⟩ hf,
+    ← det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm ⟨x, hx⟩ hf hsrc, hfd, Ne,
+    LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, LinearMap.ker_eq_bot',
+    injective_iff_map_eq_zero]
+  -- Both sides say that `B` fixes no nonzero vector.
+  refine forall_congr' fun w ↦ imp_congr_left ?_
+  rw [← neg_eq_zero]
+  simp
 
 end TauCeti
