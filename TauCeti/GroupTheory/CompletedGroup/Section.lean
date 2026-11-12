@@ -57,6 +57,12 @@ theorem completedGroupAutEquiv_hom_app (g : completedGroup F) (j : ℕᵒᵖ) :
   rw [completedGroupAutEquiv_def, MulEquiv.trans_apply, singleObjSectionAutEquiv_hom_app]
   exact sectionsSubgroupEquiv_apply_val F g (op k)
 
+/-- Each inverse fiber arrow is the inverse of the corresponding finite-order projection. -/
+@[simp]
+theorem completedGroupAutEquiv_inv_app (g : completedGroup F) (j : ℕᵒᵖ) :
+    (completedGroupAutEquiv F g).asIso.inv.app j = (projection j.unop g)⁻¹ := by
+  simpa using completedGroupAutEquiv_hom_app F g⁻¹ j
+
 /-- Recovering a completed group element from a label retains every finite projection. -/
 @[simp]
 theorem projection_completedGroupAutEquiv_symm (a : Aut F.singleObjSection) (k : ℕ) :

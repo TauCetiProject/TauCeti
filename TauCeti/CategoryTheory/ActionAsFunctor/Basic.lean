@@ -76,15 +76,23 @@ noncomputable def limitEquivFixedPoints :
 the unique object of `SingleObj G`. -/
 @[simp]
 theorem coe_limitEquivFixedPoints (s : limit (actionAsFunctor G X)) :
-    (limitEquivFixedPoints G X s : X) = limit.π (actionAsFunctor G X) (SingleObj.star G) s :=
-  SingleObj.Types.limitEquivFixedPoints_apply_coe _ s
+    (limitEquivFixedPoints G X s : X) = limit.π (actionAsFunctor G X) (SingleObj.star G) s := by
+  rw [limitEquivFixedPoints]
+  -- `erw` unfolds `(actionAsFunctor G X).obj _` to `X` across the subtype equivalence.
+  erw [Equiv.trans_apply, Equiv.subtypeEquivRight_apply_coe]
+  exact SingleObj.Types.limitEquivFixedPoints_apply_coe _ s
 
 /-- The inverse of `CategoryTheory.actionAsFunctor.limitEquivFixedPoints` sends a fixed point to
 the family constant at it. -/
 @[simp]
 theorem limit_π_limitEquivFixedPoints_symm (x : MulAction.fixedPoints G X) (j : SingleObj G) :
-    limit.π (actionAsFunctor G X) j ((limitEquivFixedPoints G X).symm x) = (x : X) :=
-  Types.limitEquivSections_symm_apply (actionAsFunctor G X) _ j
+    limit.π (actionAsFunctor G X) j ((limitEquivFixedPoints G X).symm x) = (x : X) := by
+  rw [limitEquivFixedPoints]
+  -- `erw` unfolds `(actionAsFunctor G X).obj _` to `X` across the subtype equivalence.
+  erw [Equiv.symm_trans_apply]
+  simp only [SingleObj.Types.limitEquivFixedPoints_symm_apply, Types.limitEquivSections_symm_apply,
+    SingleObj.Types.sections.equivFixedPoints_symm_apply_coe]
+  exact Equiv.subtypeEquivRight_symm_apply_coe _ x
 
 /-- A multiplicative action, viewed as a functor on `SingleObj G`, is faithful exactly when the
 action is faithful. -/
