@@ -315,7 +315,7 @@ private theorem exists_unique_isRepartition_of_complementary_col_cut
                 E.first.left = D.first.left ∧ E.second.left = D.second.right)) := by
   have hab : D.first.left ≠ D.first.right := D.first.left_ne_right
   have had := D.first_left_ne_second_right_of_left_eq_left hleft
-  obtain ⟨hmid_first, -⟩ := D.middle_apply_of_left_eq_left hleft hright
+  obtain ⟨_, -⟩ := D.middle_apply_of_left_eq_left hleft hright
   have hD1 := D.first.toGridRectangle_eq
   have hD2 := D.toGridRectangle_second_of_left_eq_left hleft hright
   obtain ⟨E, ⟨hmidE, hE1left, hE1right, hE2left, hE2right⟩, hE1, hE2, hEfirst, hEsecond⟩ :=
@@ -377,9 +377,7 @@ theorem exists_isRepartition_of_isEmpty_of_left_eq_left (D : GridRectangleDecomp
                 E.first.left = D.first.left ∧ E.second.left = D.second.right)) := by
   -- The three side columns, the target state and the two old rectangles, all read in the source
   -- state `x`.
-  have hab : D.first.left ≠ D.first.right := D.first.left_ne_right
-  have had := D.first_left_ne_second_right_of_left_eq_left hleft
-  obtain ⟨hmid_first, hmid_second⟩ := D.middle_apply_of_left_eq_left hleft hright
+  obtain ⟨_, hmid_second⟩ := D.middle_apply_of_left_eq_left hleft hright
   have hmid : D.middle = x.swapColumns D.first.left D.first.right :=
     D.first.target_eq_swapColumns
   have hz : z = (x.swapColumns D.first.left D.first.right).swapColumns D.first.left

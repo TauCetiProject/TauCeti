@@ -38,6 +38,15 @@ coherent formal modules on `X.formalCompletion I`, sends `M` to the system of it
 condition preserved by pullback along arbitrary morphisms of schemes, which is why the levels are
 required to be finitely presented rather than merely coherent.
 
+Coherent formal modules pull back along morphisms `g : 𝔛 ⟶ 𝔜` of adic thickening systems, level by
+level. Pulling back along the morphism of formal completions induced by the inclusion of an open
+subscheme `U ⊆ X` restricts a coherent formal module on `X/V(I)` to `U/V(I|_U)`, and being an
+isomorphism is a local property: a morphism of coherent formal modules on `X/V(I)` is an
+isomorphism as soon as its restrictions to the members of an open cover of `X` are. This is how
+statements about the category of coherent formal modules on the formal completion of a Noetherian
+scheme reduce to affine opens, where it is described by finite modules over the completed ring
+(Stacks, Lemmas 30.23.1 and 30.23.2).
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule`: inverse systems of
@@ -51,8 +60,20 @@ required to be finitely presented rather than merely coherent.
   levelwise cokernel of a morphism, a cokernel by
   `CoherentFormalModule.cokernelIsColimit`; a morphism is an epimorphism if and only if it is one at
   every level (`CoherentFormalModule.epi_iff_forall_epi_app`).
+* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.pullback`: the pullback of
+  coherent formal modules along a morphism of adic thickening systems, an additive functor
+  preserving epimorphisms.
 * `AlgebraicGeometry.Scheme.formalCompletion.completionFunctor`: the completion functor from
   finitely presented `𝒪_X`-modules to coherent formal modules on the formal completion.
+
+## Main results
+
+* `CoherentFormalModule.isIso_iff_of_isOpenCover_opensRange`: a morphism of coherent formal
+  modules is an isomorphism if and only if its pullbacks along a family of morphisms of adic
+  thickening systems that are levelwise open covers are.
+* `AlgebraicGeometry.Scheme.formalCompletion.isIso_iff_of_isOpenCover`: a morphism of coherent
+  formal modules on `X/V(I)` is an isomorphism if and only if its restrictions to the formal
+  completions of the members of an open cover of `X` are.
 
 ## References
 
@@ -342,6 +363,91 @@ end
 
 end Cokernels
 
+/-! ### Pullback along morphisms of adic thickening systems -/
+
+section Pullback
+
+noncomputable section
+
+variable {𝔜 : AdicThickeningSystem.{u}}
+
+/-- The pullback of a coherent formal module on `𝔜` along a morphism `g : 𝔛 ⟶ 𝔜` of adic
+thickening systems: its `n`-th level is the pullback of the `n`-th level along `g.app n`, which is
+finitely presented, and its reduction isomorphisms are those of the original module, transported
+along the squares `𝔛.ι n ≫ g.app (n + 1) = g.app n ≫ 𝔜.ι n`. For the morphism of formal
+completions induced by an open immersion, this is the restriction of a coherent formal module to an
+open subscheme. -/
+-- `@[expose]` is forced by dependent typing: without the levels of `(pullback g).obj M` reducing
+-- definitionally to pullbacks of the levels of `M`, `pullback_obj_transitionIso_hom` and
+-- `pullback_map_app` do not typecheck.
+@[expose]
+def pullback (g : 𝔛 ⟶ 𝔜) : CoherentFormalModule 𝔜 ⥤ CoherentFormalModule 𝔛 where
+  obj M :=
+    { obj n := (Scheme.Modules.pullback (g.app n)).obj (M.obj n)
+      isFinitePresentation _ := inferInstance
+      transitionIso n :=
+        (Scheme.Modules.pullbackComp _ _ ≪≫ Scheme.Modules.pullbackCongr (g.naturality n) ≪≫
+            (Scheme.Modules.pullbackComp _ _).symm).app (M.obj (n + 1)) ≪≫
+          (Scheme.Modules.pullback (g.app n)).mapIso (M.transitionIso n) }
+  map {M N} φ :=
+    { app n := (Scheme.Modules.pullback (g.app n)).map (φ.app n)
+      naturality n := by
+        simp only [Iso.trans_hom, Iso.app_hom, Functor.mapIso_hom, Category.assoc]
+        rw [← Functor.comp_map, NatTrans.naturality_assoc, Functor.comp_map, ← Functor.map_comp,
+          Hom.naturality, Functor.map_comp] }
+  map_id M := hom_ext fun n ↦ (Scheme.Modules.pullback (g.app n)).map_id (M.obj n)
+  map_comp φ ψ := hom_ext fun n ↦
+    (Scheme.Modules.pullback (g.app n)).map_comp (φ.app n) (ψ.app n)
+
+@[simp]
+theorem pullback_obj_obj (g : 𝔛 ⟶ 𝔜) (M : CoherentFormalModule 𝔜) (n : ℕ) :
+    ((pullback g).obj M).obj n = (Scheme.Modules.pullback (g.app n)).obj (M.obj n) :=
+  (rfl)
+
+@[simp]
+theorem pullback_obj_transitionIso_hom (g : 𝔛 ⟶ 𝔜) (M : CoherentFormalModule 𝔜) (n : ℕ) :
+    (((pullback g).obj M).transitionIso n).hom =
+      (Scheme.Modules.pullbackComp (𝔛.ι n) (g.app (n + 1))).hom.app (M.obj (n + 1)) ≫
+        (Scheme.Modules.pullbackCongr (g.naturality n)).hom.app (M.obj (n + 1)) ≫
+          (Scheme.Modules.pullbackComp (g.app n) (𝔜.ι n)).inv.app (M.obj (n + 1)) ≫
+            (Scheme.Modules.pullback (g.app n)).map (M.transitionIso n).hom :=
+  (rfl)
+
+@[simp]
+theorem pullback_map_app (g : 𝔛 ⟶ 𝔜) {M N : CoherentFormalModule 𝔜} (φ : M ⟶ N) (n : ℕ) :
+    ((pullback g).map φ).app n = (Scheme.Modules.pullback (g.app n)).map (φ.app n) :=
+  (rfl)
+
+/-- Pullback of coherent formal modules is additive, since pullback of modules is additive at
+every level. -/
+instance pullback_additive (g : 𝔛 ⟶ 𝔜) : (pullback g).Additive where
+  map_add := hom_ext fun _ ↦ (Scheme.Modules.pullback _).map_add
+
+/-- Pullback of coherent formal modules preserves epimorphisms, since these are the levelwise
+epimorphisms and pullback of modules is a left adjoint. -/
+instance pullback_preservesEpimorphisms (g : 𝔛 ⟶ 𝔜) : (pullback g).PreservesEpimorphisms where
+  preserves φ _ := (epi_iff_forall_epi_app _).mpr fun n ↦ by
+    have := (epi_iff_forall_epi_app φ).mp ‹_› n
+    exact Functor.map_epi (Scheme.Modules.pullback (g.app n)) (φ.app n)
+
+/-- **Isomorphisms of coherent formal modules are local.** Let `g i : 𝔘 i ⟶ 𝔛` be morphisms of
+adic thickening systems such that at every level `n` the components `(g i).app n` are open
+immersions whose images cover `𝔛.X n`. Then a morphism of coherent formal modules on `𝔛` is an
+isomorphism if and only if its pullbacks along all `g i` are. -/
+theorem isIso_iff_of_isOpenCover_opensRange {ι : Type*} {𝔘 : ι → AdicThickeningSystem.{u}}
+    (g : ∀ i, 𝔘 i ⟶ 𝔛) [∀ i n, IsOpenImmersion ((g i).app n)]
+    (hg : ∀ n, TopologicalSpace.IsOpenCover fun i ↦ ((g i).app n).opensRange)
+    {M N : CoherentFormalModule 𝔛} (φ : M ⟶ N) :
+    IsIso φ ↔ ∀ i, IsIso ((pullback (g i)).map φ) := by
+  refine ⟨fun _ _ ↦ inferInstance, fun h ↦ (isIso_iff_forall_isIso_app φ).mpr fun n ↦ ?_⟩
+  refine (Scheme.Modules.isIso_iff_of_isOpenCover_opensRange _ (hg n) _).mpr fun i ↦ ?_
+  rw [← pullback_map_app]
+  exact (isIso_iff_forall_isIso_app _).mp (h i) n
+
+end
+
+end Pullback
+
 end CoherentFormalModule
 
 end TauCeti.AlgebraicGeometry.AdicThickeningSystem
@@ -396,5 +502,17 @@ theorem completionFunctor_map_app {M N : FinitelyPresentedSheaf X} (φ : M ⟶ N
 /-- The completion functor is additive, since pullback of modules is additive at every level. -/
 instance completionFunctor_additive : (completionFunctor X I).Additive where
   map_add := CoherentFormalModule.hom_ext fun _ ↦ (Modules.pullback _).map_add
+
+/-- **Isomorphisms of coherent formal modules on a formal completion are local on the scheme.** For
+an open cover `U` of `X`, a morphism of coherent formal modules on `X/V(I)` is an isomorphism if
+and only if its restrictions to the formal completions `U i/V(I|_{U i})` are. -/
+theorem isIso_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
+    (hU : TopologicalSpace.IsOpenCover U) {M N : CoherentFormalModule (X.formalCompletion I)}
+    (φ : M ⟶ N) :
+    IsIso φ ↔ ∀ i, IsIso ((CoherentFormalModule.pullback (map (I := I.comap (U i).ι)
+      (U i).ι le_rfl)).map φ) :=
+  CoherentFormalModule.isIso_iff_of_isOpenCover_opensRange _ (fun n ↦ by
+    simp only [opensRange_map_app, Scheme.Opens.opensRange_ι]
+    exact hU.comap (toScheme X I n).base.hom) φ
 
 end AlgebraicGeometry.Scheme.formalCompletion

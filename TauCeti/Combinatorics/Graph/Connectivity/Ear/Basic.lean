@@ -110,6 +110,16 @@ theorem toWalk_fst_mem (e : G.Ear H) : e.toWalk.1 ∈ V(H) := by
   | «open» _ _ _ start_mem => exact start_mem
   | «closed» _ _ _ base_mem => exact base_mem
 
+/-- The ending vertex of an ear belongs to its base graph. -/
+theorem toWalk_snd_mem (e : G.Ear H) : e.toWalk.2.1 ∈ V(H) := by
+  cases e with
+  | «open» h walk isPath start_mem end_mem endpoints_ne internal_new edges_new =>
+      rw [toWalk_open]
+      exact end_mem
+  | «closed» h walk isCycle base_mem internal_new edges_new =>
+      rw [toWalk_closed]
+      exact base_mem
+
 /-- Ears are equal when they have the same kind and the same endpoint-indexed walk. -/
 @[ext]
 theorem ext (e f : G.Ear H) (hkind : e.kind = f.kind) (hwalk : e.toWalk = f.toWalk) :
@@ -156,6 +166,13 @@ theorem edgeSet_toGraph (e : G.Ear H) :
     E(e.toGraph) = {f | f ∈ e.toWalk.2.2.edges} :=
   e.toWalk.2.2.edgeSet_walkGraph
 
+/-- Every edge traversed by an ear belongs to the graph traced by that ear. -/
+theorem edges_subset_edgeSet_toGraph (e : G.Ear H) :
+    ∀ f ∈ e.toWalk.2.2.edges, f ∈ E(e.toGraph) := by
+  intro f hf
+  rw [edgeSet_toGraph]
+  exact hf
+
 /-- The base of an ear is a subgraph of its ambient graph. -/
 theorem base_le : ∀ _e : G.Ear H, H ≤ G
   | .open hHG .. => hHG
@@ -167,6 +184,16 @@ theorem length_pos : ∀ e : G.Ear H, 0 < e.toWalk.2.2.length
       Nat.pos_of_ne_zero fun h ↦ endpoints_ne (walk.eq_of_length_eq_zero h)
   | .closed _ _walk isCycle _ _ _ =>
       Nat.pos_of_ne_zero fun h ↦ isCycle.not_nil ((Walk.length_eq_zero_iff.mp h))
+
+/-- The underlying walk of an ear is a trail. -/
+theorem isTrail (e : G.Ear H) : e.toWalk.2.2.IsTrail := by
+  cases e with
+  | «open» h walk isPath start_mem end_mem endpoints_ne internal_new edges_new =>
+      rw [toWalk_open]
+      exact isPath.isTrail
+  | «closed» h walk isCycle base_mem internal_new edges_new =>
+      rw [toWalk_closed]
+      exact isCycle.isTrail
 
 /-- The graph traced by an ear is a subgraph of its ambient graph. -/
 theorem toGraph_le (e : G.Ear H) : e.toGraph ≤ G :=
@@ -201,6 +228,10 @@ theorem base_le_add (e : G.Ear H) : H ≤ e.add :=
 /-- The graph traced by an ear is a subgraph of the result of adjoining it. -/
 theorem toGraph_le_add (e : G.Ear H) : e.toGraph ≤ e.add :=
   e.compatible.right_le_union
+
+/-- Adjoining an ear is the compatible union of its base and traced graph. -/
+theorem add_eq_union (e : G.Ear H) : e.add = e.compatible.union :=
+  (rfl)
 
 /-- Every edge traversed by an ear belongs to the graph obtained by adjoining the ear. -/
 theorem edges_toWalk_subset_edgeSet_add (e : G.Ear H) {f : β}
@@ -237,6 +268,13 @@ theorem edge_notMem_base (e : G.Ear H) {f : β} (hf : f ∈ e.toWalk.2.2.edges) 
   cases e with
   | «open» _ _ _ _ _ _ _ edges_new => exact edges_new f hf
   | «closed» _ _ _ _ _ edges_new => exact edges_new f hf
+
+/-- The edge set traced by an ear is disjoint from the edge set of its base graph. -/
+theorem disjoint_edgeSet_toGraph (e : G.Ear H) : Disjoint E(H) E(e.toGraph) := by
+  rw [Set.disjoint_left]
+  intro f hfH hfEar
+  rw [e.edgeSet_toGraph] at hfEar
+  exact e.edge_notMem_base hfEar hfH
 
 /-- The edges of an ear are disjoint from those of a walk in its base graph. -/
 theorem edges_disjoint_of_le_base (e : G.Ear H) {x y : α} (q : H.Walk x y) :

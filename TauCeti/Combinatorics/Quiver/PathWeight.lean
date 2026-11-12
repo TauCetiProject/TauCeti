@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Hom.Defs
+public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.Combinatorics.Quiver.Path.Weight
 
 /-!
@@ -26,6 +27,7 @@ multiplicative weights.
 * `Prefunctor.weight_mapPath`: the multiplicative analogue for monoid-valued weights.
 * `Quiver.Path.map_weight`: a monoid homomorphism applied to a weight is the weight of the
   composed arrow weight.
+* `Quiver.Path.weight_ofAdd`: a weight valued in `Multiplicative M` is the additive weight.
 -/
 
 public section
@@ -80,3 +82,15 @@ theorem weight_mapPath {N : Type*} [Monoid N] (φ : V ⥤q W)
   | cons p e ih => simp [ih]
 
 end Prefunctor
+
+namespace Quiver.Path
+
+/-- A multiplicative weight valued in `Multiplicative M` is the additive weight of the underlying
+additive arrow weights. -/
+theorem weight_ofAdd (w : ∀ {a b : V}, (a ⟶ b) → M) {a b : V} (p : Quiver.Path a b) :
+    p.weight (fun e => Multiplicative.ofAdd (w e)) = Multiplicative.ofAdd (p.addWeight w) := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp [ih]
+
+end Quiver.Path
