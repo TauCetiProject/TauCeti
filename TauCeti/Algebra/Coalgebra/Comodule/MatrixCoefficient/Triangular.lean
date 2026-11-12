@@ -10,8 +10,6 @@ public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.RingTheory.Coalgebra.GroupLike
 public import Mathlib.RingTheory.Bialgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.GroupLike
-public import TauCeti.LinearAlgebra.Matrix.Triangular
-import Mathlib.RingTheory.Bialgebra.GroupLike
 import Mathlib.Data.Finset.Max
 
 /-!
@@ -26,12 +24,13 @@ For a Hopf algebra, this coefficient is a unit. Thus the projective orbit of the
 avoids a hyperplane, the affine-chart input to the fixed-point argument for solvable groups.
 The coefficient calculation itself needs only a coalgebra.
 
-A coalgebra morphism into a bialgebra spanned by its group-like elements that sends the diagonal
-coefficients of an upper-unitriangular basis to `1` sends the whole coefficient matrix to the
-identity matrix (`TauCeti.Comodule.map_coefficientMatrix_eq_one_of_isUpperUnitriangular`): the
-comultiplication `Δ cᵢⱼ = ∑ₗ cᵢₗ ⊗ cₗⱼ` and an induction on `j - i` exhibit each image of an
-off-diagonal coefficient as a primitive element, and such a bialgebra has none but `0`
-(`TauCeti.Subcoalgebra.eq_zero_of_comul_eq_of_groupLikeSetSpan_eq_top`).
+Over a domain, a coalgebra morphism into a torsion-free bialgebra spanned by its group-like
+elements that sends the diagonal coefficients of an upper-triangular basis to `1` sends the whole
+coefficient matrix to the identity matrix
+(`Module.Basis.map_coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top`): the
+comultiplication `Δ cᵢⱼ = ∑ₗ cᵢₗ ⊗ cₗⱼ` and an induction on the column `j` exhibit each image of
+an off-diagonal coefficient as a primitive element, and such a bialgebra has none but `0`
+(`TauCeti.Subcoalgebra.eq_zero_of_groupLikeSetSpan_eq_top_of_comul_eq_tmul_add_tmul`).
 -/
 
 public section
@@ -102,63 +101,60 @@ theorem exists_isGroupLikeElem_matrixCoefficient_of_isUpperTriangular
 
 end GroupLike
 
-end Module.Basis
-
-namespace TauCeti.Comodule
+section GroupLikeSpan
 
 open scoped TensorProduct
 
-universe u v
+variable {R : Type u} {H : Type v} {K : Type w} {M : Type x} {ι : Type*}
+  [CommRing R] [IsDomain R] [AddCommMonoid H] [Module R H] [Coalgebra R H]
+  [Ring K] [Bialgebra R K] [Module.IsTorsionFree R K]
+  [AddCommMonoid M] [Module R M] [Comodule R H M]
+  [Finite ι] [LinearOrder ι]
 
-variable {k : Type u} {H : Type*} {K : Type v} {M : Type*}
-variable [Field k] [Semiring H] [Module k H] [Coalgebra k H]
-variable [Ring K] [Bialgebra k K]
-variable [AddCommGroup M] [Module k M] [Comodule k H M]
-
-/-- **A coalgebra morphism to a group-like-spanned bialgebra trivializes an upper-unitriangular
-representation.** If `f` preserves `1` on the diagonal coefficients, then it sends the
-coefficient matrix of an upper-unitriangular basis to the identity matrix. -/
-theorem map_coefficientMatrix_eq_one_of_isUpperUnitriangular {n : ℕ}
-    (b : Module.Basis (Fin n) k M)
-    (hb : (coefficientMatrix (C := H) b).IsUpperUnitriangular)
-    (hK : Subcoalgebra.groupLikeSetSpan (R := k) (C := K) Set.univ = ⊤)
-    (f : H →ₗc[k] K) (hf : ∀ i, f (coefficientMatrix (C := H) b i i) = 1) :
+/-- **A coalgebra morphism to a group-like-spanned bialgebra trivializes an upper-triangular
+representation.** Over a domain, let `K` be a torsion-free bialgebra spanned by its group-like
+elements. If `f` sends the diagonal coefficients of an upper-triangular basis to `1`, then it sends
+the whole coefficient matrix to the identity matrix. -/
+theorem map_coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top
+    (b : Module.Basis ι R M) (hb : (coefficientMatrix (C := H) b).IsUpperTriangular)
+    (hK : Subcoalgebra.groupLikeSetSpan (R := R) (C := K) Set.univ = ⊤)
+    (f : H →ₗc[R] K) (hf : ∀ i, f (coefficientMatrix (C := H) b i i) = 1) :
     (coefficientMatrix (C := H) b).map f = 1 := by
+  classical
+  let _ : Fintype ι := Fintype.ofFinite ι
   -- Entries below the diagonal vanish, and the diagonal maps to `1`.
-  have hlow {i j : Fin n} (h : j < i) : f (coefficientMatrix (C := H) b i j) = 0 := by
-    rw [hb.isUpperTriangular h, map_zero]
-  -- Above the diagonal, induct on the distance `j - i` to the diagonal.
-  suffices h : ∀ d : ℕ, ∀ i j : Fin n, (j : ℕ) - i = d → i < j →
-      f (coefficientMatrix (C := H) b i j) = 0 by
-    ext i j
-    rw [Matrix.map_apply]
-    rcases lt_trichotomy i j with hij | rfl | hij
-    · rw [Matrix.one_apply_ne hij.ne, h _ i j rfl hij]
-    · rw [Matrix.one_apply_eq, hf]
-    · rw [Matrix.one_apply_ne hij.ne', hlow hij]
-  intro d
-  induction d using Nat.strong_induction_on with
-  | _ d ih =>
-    intro i j hd hij
-    refine Subcoalgebra.eq_zero_of_comul_eq_of_groupLikeSetSpan_eq_top hK
-      ⟨1, IsGroupLikeElem.one⟩ ?_
-    dsimp only
-    rw [← CoalgHomClass.map_comp_comul_apply, comul_coefficientMatrix_eq_sum, map_sum]
-    simp only [TensorProduct.map_tmul, CoalgHom.coe_linearMapOfClass]
-    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ j),
-      ← Finset.add_sum_erase _ _ (Finset.mem_erase.mpr ⟨hij.ne, Finset.mem_univ i⟩)]
-    -- The intermediate terms vanish: below the diagonal, or by the inductive hypothesis.
-    have hrest : ∑ l ∈ (Finset.univ.erase j).erase i,
-        f (coefficientMatrix (C := H) b i l) ⊗ₜ[k] f (coefficientMatrix (C := H) b l j) = 0 := by
-      refine Finset.sum_eq_zero fun l hl ↦ ?_
-      simp only [Finset.mem_erase] at hl
-      rcases lt_or_gt_of_ne hl.1 with hl' | hl'
-      · rw [hlow hl', TensorProduct.zero_tmul]
-      rcases lt_or_gt_of_ne hl.2.1 with hl'' | hl''
-      · rw [ih ((j : ℕ) - l) (by omega) l j rfl hl'', TensorProduct.tmul_zero]
-      · rw [hlow hl'', TensorProduct.tmul_zero]
-    have hi := hf i
-    have hj := hf j
-    rw [hrest, hi, hj, add_zero, add_comm]
+  have hlow {i j : ι} (h : j < i) : f (coefficientMatrix (C := H) b i j) = 0 := by
+    rw [hb h, map_zero]
+  -- Above the diagonal, fix the row `i` and induct on the column `j`.
+  have hup (i j : ι) : i < j → f (coefficientMatrix (C := H) b i j) = 0 := by
+    induction j using WellFoundedLT.induction with
+    | _ j ih =>
+      intro hij
+      refine Subcoalgebra.eq_zero_of_groupLikeSetSpan_eq_top_of_comul_eq_tmul_add_tmul hK
+        (Bialgebra.comul_one (R := R) (A := K)) ?_
+      rw [← CoalgHomClass.map_comp_comul_apply, comul_coefficientMatrix_eq_sum, map_sum]
+      simp only [TensorProduct.map_tmul, CoalgHom.coe_linearMapOfClass]
+      rw [← Finset.add_sum_erase _ _ (Finset.mem_univ j),
+        ← Finset.add_sum_erase _ _ (Finset.mem_erase.mpr ⟨hij.ne, Finset.mem_univ i⟩)]
+      -- The intermediate terms vanish: below the diagonal, or by the inductive hypothesis.
+      have hrest : ∑ l ∈ (Finset.univ.erase j).erase i,
+          f (coefficientMatrix (C := H) b i l) ⊗ₜ[R] f (coefficientMatrix (C := H) b l j) =
+            0 := by
+        refine Finset.sum_eq_zero fun l hl ↦ ?_
+        simp only [Finset.mem_erase] at hl
+        rcases lt_or_gt_of_ne hl.1 with hl' | hl'
+        · rw [hlow hl', TensorProduct.zero_tmul]
+        rcases lt_or_gt_of_ne hl.2.1 with hl'' | hl''
+        · rw [ih l hl'' hl', TensorProduct.zero_tmul]
+        · rw [hlow hl'', TensorProduct.tmul_zero]
+      rw [hrest, hf i, hf j, add_zero, add_comm]
+  ext i j
+  rw [Matrix.map_apply]
+  rcases lt_trichotomy i j with hij | rfl | hij
+  · rw [Matrix.one_apply_ne hij.ne, hup i j hij]
+  · rw [Matrix.one_apply_eq, hf]
+  · rw [Matrix.one_apply_ne hij.ne', hlow hij]
 
-end TauCeti.Comodule
+end GroupLikeSpan
+
+end Module.Basis
