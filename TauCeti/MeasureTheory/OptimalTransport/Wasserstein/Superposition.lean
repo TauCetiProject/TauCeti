@@ -104,7 +104,7 @@ private theorem exists_dense_eqOn_map_eval_lintegral_curveAction_le (hp1 : 1 < p
     exists_map_IccExtend_eq_lintegral_curveAction_le hp hab hμ (N := 2 ^ n) (by positivity)
   set ηs : ℕ → ProbabilityMeasure C(Icc a b, E) := fun n ↦ ⟨η n, hηP n⟩
   set D := {t : Icc a b | ∃ n k : ℕ, k ≤ 2 ^ n ∧ (t : ℝ) = a + k * ((b - a) / 2 ^ n)}
-  have hDd : Dense D := dense_setOfPred_eq_add_mul_div_two_pow hab
+  have hDd : Dense D := dense_setOfPred_eq_add_mul_div_two_pow hab.le
   -- At a dyadic time, the time marginals of the polygonal laws are eventually the value of `μ`.
   have hD (t : Icc a b) (ht : t ∈ D) : ∃ m, ∀ n ≥ m,
       (η n).map (fun γ : C(Icc a b, E) ↦ γ t) = ((μ t : ProbabilityMeasure E) : Measure E) := by
@@ -169,13 +169,12 @@ private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace 
       (∀ t ∈ Icc a b, η.map (fun γ : C(Icc a b, E) ↦ IccExtend hab.le γ t) =
         ((μ t : ProbabilityMeasure E) : Measure E)) ∧
       ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂η = curveAction p.toReal μ a b := by
-  have hr : 1 < p.toReal := by simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp).2 hp1
   obtain ⟨D, hDd, ηlim, hAClim, hlelim, hmargD⟩ :=
     exists_dense_eqOn_map_eval_lintegral_curveAction_le hp1 hp hab hμ hA
   -- Both curves of time marginals are continuous, so they agree on `[a, b]`.
   have hcont_η : Continuous fun t : Icc a b ↦ ηlim.map fun γ : C(Icc a b, E) ↦ γ t :=
-    ηlim.continuous_map_of_forall_continuous (fun s ↦ (continuous_eval_const s).aemeasurable)
-      fun γ ↦ γ.continuous
+    ηlim.continuous_map_of_ae_continuous (fun s ↦ (continuous_eval_const s).aemeasurable)
+      (ae_of_all _ fun γ ↦ γ.continuous)
   have hcont_μ : Continuous fun t : Icc a b ↦ (μ t : ProbabilityMeasure E) :=
     WassersteinSpace.continuous_toProbabilityMeasure.comp
       (hμ.continuousOn'.comp_continuous continuous_subtype_val fun t ↦ by
@@ -242,14 +241,16 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
     rwa [IccExtend_val] at hγ
   obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense (Icc a b)
   -- The pullback of `η` along postcomposition with `ι` to the paths in `X` represents `μ`.
-  obtain ⟨hprob, hηX⟩ := isProbabilityMeasure_comap_postcomp ι hι.isClosedEmbedding η hηP
-    hDc hDd fun t _ ↦ hD t
-  set Φ : C(Icc a b, X) → C(Icc a b, E) := (⟨ι, hι.continuous⟩ : C(X, E)).comp
-  have hΦ : MeasurableEmbedding Φ := (ContinuousMap.continuous_postcomp _).measurableEmbedding
-    (ContinuousMap.postcomp_injective _ hι.injective)
+  let g : C(X, E) := ⟨ι, hι.continuous⟩
+  have hg : IsClosedEmbedding g := hι.isClosedEmbedding
+  have hprob := isProbabilityMeasure_comap_postcomp_of_dense hg η hDc hDd fun t _ ↦ hD t
+  have hηX := map_comap_postcomp_of_dense hg η hDc hDd fun t _ ↦ hD t
+  set Φ : C(Icc a b, X) → C(Icc a b, E) := g.comp
+  have hΦ : MeasurableEmbedding Φ :=
+    (ContinuousMap.isClosedEmbedding_postcomp g hg).measurableEmbedding
   have hΦIcc (γ : C(Icc a b, X)) : IccExtend hab.le (Φ γ) = ι ∘ IccExtend hab.le γ := by
     ext t
-    simp [Φ, IccExtend_apply]
+    simp [Φ, g, IccExtend_apply]
   set ηX := η.comap Φ
   have hAC : ∀ᵐ γ : C(Icc a b, X) ∂ηX,
       AbsolutelyContinuousOnInterval (IccExtend hab.le γ) a b := by

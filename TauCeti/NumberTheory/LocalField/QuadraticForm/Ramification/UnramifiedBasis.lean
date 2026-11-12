@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Field.Basic
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Defect.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Quadratic
 
@@ -40,6 +41,23 @@ open ValuativeRel
 
 namespace TauCeti
 
+/-- The discriminant `t² - 4c` of the integral coefficients `t = 2b/s`, `c = (b² - u)/s²` is a
+unit, when `2` has the valuation of `s ≠ 0` and `u` has valuation `1`. -/
+private theorem isUnit_sq_sub_four_mul_of_valuation_two {K : Type*} [Field K] [ValuativeRel K]
+    {s u b : K} (hs : s ≠ 0) (hu : valuation K u = 1) (hv2 : valuation K 2 = valuation K s)
+    {t c : 𝒪[K]} (ht : (t : K) = 2 * b / s) (hc : (c : K) = (b ^ 2 - u) / s ^ 2) :
+    IsUnit (t ^ 2 - 4 * c) := by
+  refine (Valuation.Integers.isUnit_iff_valuation_eq_one
+    (Valuation.integer.integers (valuation K))).mpr ?_
+  have hval : ((t ^ 2 - 4 * c : 𝒪[K]) : K) = 2 ^ 2 * u / s ^ 2 := by
+    have h4 : ((4 : 𝒪[K]) : K) = 4 := map_ofNat (algebraMap 𝒪[K] K) 4
+    simp only [AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow, MulMemClass.coe_mul, h4, ht, hc]
+    field_simp
+    ring
+  rw [Algebra.algebraMap_ofSubsemiring_apply, hval, map_div₀, map_mul, hu, mul_one, map_pow,
+    map_pow, hv2]
+  exact div_self (pow_ne_zero _ ((Valuation.ne_zero_iff _).mpr hs))
+
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
@@ -65,14 +83,8 @@ theorem exists_basis_integerRing_of_defectExponent_eq_two_mul_natCastValuation
   have hπ0 : (π : K) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
   have hvπ : valuation K (π : K) ≠ 0 := (Valuation.ne_zero_iff _).mpr hπ0
   have hπe : (π : K) ^ e ≠ 0 := pow_ne_zero e hπ0
-  -- `x ∉ K`, because `u` is not a square.
-  have hx : x ∉ Set.range (algebraMap K L) := by
-    rintro ⟨y, rfl⟩
-    rw [← map_pow, (algebraMap K L).injective.eq_iff] at hx2
-    have hy : y ≠ 0 := by
-      rintro rfl
-      exact u.ne_zero (by simpa using hx2.symm)
-    exact hsq ⟨Units.mk0 y hy, Units.ext (by simpa [sq] using hx2.symm)⟩
+  have hx := notMem_range_algebraMap_of_sq_eq_of_not_isSquare
+    (Units.isSquare_coe_iff.not.mpr hsq) hx2
   -- An attained approximation `b²` of `u`, of order `2e`.
   obtain ⟨b, y, hy, hyd⟩ := exists_defectExponent_eq hsq
   rw [hd, WithTop.coe_inj] at hyd
@@ -84,14 +96,9 @@ theorem exists_basis_integerRing_of_defectExponent_eq_two_mul_natCastValuation
   have hv2 : valuation K 2 = valuation K (π : K) ^ e := by
     simpa using valuation_natCast_eq_pow hπ 2 h2
   -- `b` is integral, since `b² = u - (u - b²)` with both terms integral.
-  have hb : valuation K b ≤ 1 := by
-    have hyle : valuation K (y : K) ≤ 1 := hyv ▸ pow_le_one₀ zero_le
-      (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ).le
-    have hb2 : valuation K (b ^ 2) ≤ 1 := by
-      rw [show b ^ 2 = (u : K) - y by rw [hy]; ring]
-      exact (Valuation.map_sub _ _ _).trans (max_le hu.le hyle)
-    rw [map_pow] at hb2
-    exact (pow_le_one_iff_of_nonneg zero_le two_ne_zero).mp hb2
+  have hyle : valuation K (y : K) ≤ 1 := hyv ▸ pow_le_one₀ zero_le
+    (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ).le
+  have hb : valuation K b ≤ 1 := valuation_le_one_of_sub_sq_le_one hu.le (hy ▸ hyle)
   -- The coefficients `t = 2b/π^e` and `c = (b² - u)/π^{2e}` are integral.
   have htv : valuation K (2 * b / (π : K) ^ e) = valuation K b := by
     rw [map_div₀, map_mul, hv2, map_pow, mul_div_cancel_left₀ _ (pow_ne_zero _ hvπ)]
@@ -101,19 +108,11 @@ theorem exists_basis_integerRing_of_defectExponent_eq_two_mul_natCastValuation
   let t : 𝒪[K] := ⟨2 * b / (π : K) ^ e, htv.le.trans hb⟩
   let c : 𝒪[K] := ⟨(b ^ 2 - u) / (π : K) ^ (2 * e), hcv.le⟩
   -- The discriminant `t² - 4c = 4u/π^{2e}` is a unit.
-  have hdisc : IsUnit (t ^ 2 - 4 * c) := by
-    refine (Valuation.Integers.isUnit_iff_valuation_eq_one
-      (Valuation.integer.integers (valuation K))).mpr ?_
-    have hval : ((t ^ 2 - 4 * c : 𝒪[K]) : K) = 2 ^ 2 * u / ((π : K) ^ e) ^ 2 := by
-      have h4 : ((4 : 𝒪[K]) : K) = 4 := map_ofNat (algebraMap 𝒪[K] K) 4
-      simp only [t, c, AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow, MulMemClass.coe_mul, h4]
-      field_simp
-      ring
-    rw [Algebra.algebraMap_ofSubsemiring_apply, hval, map_div₀, map_mul, hu, mul_one]
-    simp only [map_pow, hv2]
-    exact div_self (pow_ne_zero _ (pow_ne_zero _ hvπ))
+  have hdisc : IsUnit (t ^ 2 - 4 * c) :=
+    isUnit_sq_sub_four_mul_of_valuation_two hπe hu (hv2.trans (map_pow _ _ _).symm) rfl
+      (by rw [← pow_mul'])
   obtain ⟨B, h0, h1, htr, hn⟩ := exists_basis_integerRing_of_sq_eq_of_isUnit_discrim
-    (s := (π : K) ^ e) (t := t) (c := c) hx hx2 hπe (mul_div_cancel₀ (2 * b) hπe).symm
+    (s := (π : K) ^ e) (t := t) (c := c) hx hx2 (mul_div_cancel₀ (2 * b) hπe).symm
     (by rw [← pow_mul, mul_comm e 2]; exact (mul_div_cancel₀ _ (pow_ne_zero _ hπ0)).symm) hdisc
   exact ⟨B, h0, h1, htr, hn⟩
 

@@ -50,7 +50,6 @@ assumption on them, and the fibre `F`, total space `E`, and base `B` may lie in 
 
 * A. Dold, *Partitions of unity in the theory of fibrations*, Ann. of Math. (2) 78 (1963),
   223–255, Theorem 4.8.
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Theorem 4.42.
 -/
 
 public section

@@ -1100,6 +1100,36 @@ lemma twistedChainComplexMap_f_ι_apply (k : ℕ) (σ : (TopCat.toSSet.obj X) _�
       (ιTwistedChainComplex L k ((TopCat.toSSet.map f).app _ σ)).hom x :=
   congrArg (fun φ ↦ φ.hom x) (ιTwistedChainComplex_twistedChainComplexMap_f f L k σ)
 
+/-- Along an injective map, the coefficient of a pushed-forward chain on the image of a simplex
+is the coefficient of the original chain on that simplex. -/
+@[reassoc (attr := simp)]
+lemma twistedChainComplexMap_f_comp_twistedChainComplexCoeff [Mono f] {k : ℕ}
+    (τ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    (twistedChainComplexMap f L).f k ≫
+        twistedChainComplexCoeff L ((TopCat.toSSet.map f).app _ τ) =
+      twistedChainComplexCoeff ((pullback f.hom).obj L) τ := by
+  refine twistedChainComplex_hom_ext _ fun σ ↦ ?_
+  rw [ιTwistedChainComplex_twistedChainComplexMap_f_assoc]
+  -- The fibres of `L` at the image vertex and of the pullback at the original vertex agree only
+  -- definitionally, so the two sides are compared through `Eq.trans` rather than rewriting.
+  by_cases h : σ = τ
+  · subst h
+    exact (ιTwistedChainComplex_twistedChainComplexCoeff L _).trans
+      (ιTwistedChainComplex_twistedChainComplexCoeff ((pullback f.hom).obj L) σ).symm
+  · exact (ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L
+      fun h' ↦ h (injective_of_mono ((TopCat.toSSet.map f).app _) h')).trans
+        (ιTwistedChainComplex_twistedChainComplexCoeff_of_ne ((pullback f.hom).obj L) h).symm
+
+/-- Along an injective map, the coefficient of a pushed-forward chain on the image of a simplex
+is the coefficient of the original chain on that simplex. -/
+@[simp]
+lemma twistedChainComplexCoeff_twistedChainComplexMap_f_apply [Mono f] {k : ℕ}
+    (τ : (TopCat.toSSet.obj X) _⦋k⦌) (c : ((pullback f.hom).obj L).twistedChainComplex.X k) :
+    (twistedChainComplexCoeff L ((TopCat.toSSet.map f).app _ τ)).hom
+        (((twistedChainComplexMap f L).f k).hom c) =
+      (twistedChainComplexCoeff ((pullback f.hom).obj L) τ).hom c :=
+  congrArg (fun φ ↦ φ.hom c) (twistedChainComplexMap_f_comp_twistedChainComplexCoeff f L τ)
+
 /-- The map on twisted homology induced by a continuous map, from the homology of `X` twisted by
 the pullback system to the homology of `Y` twisted by `L`. -/
 abbrev twistedHomologyMap (k : ℕ) :
