@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Modulus
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The polar decomposition of a bounded operator
@@ -194,6 +195,7 @@ theorem polarFactor_zero : (0 : E →L[𝕜] F).polarFactor = 0 :=
 
 /-- Scaling an operator by `c` scales its polar factor by the phase `c / ‖c‖`, which is `0` when
 `c = 0`. -/
+@[simp]
 theorem polarFactor_smul (c : 𝕜) (T : E →L[𝕜] F) :
     (c • T).polarFactor = (c / ‖c‖ : 𝕜) • T.polarFactor := by
   rcases eq_or_ne c 0 with rfl | hc
@@ -272,7 +274,7 @@ theorem polarFactor_eq_comp_inverse (hT : IsUnit T.modulus) :
 /-- The polar factor of an invertible operator is invertible. -/
 @[simp]
 theorem isUnit_polarFactor (T : E →L[𝕜] E) (hT : IsUnit T) : IsUnit T.polarFactor := by
-  have hP := (T.isStrictlyPositive_modulus_of_isUnit hT).isUnit
+  have hP := (isStrictlyPositive_modulus_of_isInvertible (isInvertible_iff_isUnit.mpr hT)).isUnit
   exact hP.mul_right_iff.mp (by simpa only [mul_def, polarFactor_comp_modulus] using hT)
 
 /-- The polar factor `U` of an endomorphism `T` satisfies `‖T - U‖ ≤ ‖|T| - 1‖`. -/

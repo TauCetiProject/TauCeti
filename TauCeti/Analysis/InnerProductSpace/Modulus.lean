@@ -118,14 +118,6 @@ theorem commute_modulus_of_commute {T : E →L[𝕜] F} {S : E →L[𝕜] E}
     (h : Commute S (T† ∘L T)) : Commute S T.modulus :=
   (h.symm.cfcₙ_nnreal NNReal.sqrt).symm
 
-/-- The modulus of an invertible operator is strictly positive. -/
-theorem isStrictlyPositive_modulus_of_isUnit (T : E →L[𝕜] E) (hT : IsUnit T) :
-    IsStrictlyPositive T.modulus := by
-  refine ⟨T.modulus_nonneg, ?_⟩
-  rw [modulus, CFC.isUnit_sqrt_iff _
-    (nonneg_iff_isPositive.mpr T.isPositive_adjoint_comp_self)]
-  exact (isUnit_star.mpr hT).mul hT
-
 /-- The source Gram operator `T† T` of an invertible operator is strictly positive. -/
 theorem isStrictlyPositive_adjoint_comp_self_of_isInvertible {T : E →L[𝕜] F}
     (hT : T.IsInvertible) : IsStrictlyPositive (T† ∘L T) :=

@@ -36,8 +36,8 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 open scoped ContDiff NNReal MatrixOrder ComplexOrder Matrix.Norms.L2Operator
 
 /-- Every real power is smooth on the strictly positive operators in finite dimension,
-including real analyticity. Smoothness is within the positive cone, not on an open subset
-of all operators. -/
+including analyticity over `𝕜` (real over `ℝ`, complex over `ℂ`). Smoothness is within the
+positive cone, not on an open subset of all operators. -/
 theorem contDiffOn_rpow (s : ℝ) {n : ℕ∞ω} :
     ContDiffOn 𝕜 n (fun A : E →L[𝕜] E ↦ A ^ s) {A | IsStrictlyPositive A} := by
   let b := stdOrthonormalBasis 𝕜 E
@@ -69,7 +69,7 @@ theorem contDiffOn_rpow (s : ℝ) {n : ℕ∞ω} :
       exact spectrum.zero_notMem ℝ≥0 (hA.isUnit.map e.symm) (hx0 ▸ hx)))).continuousWithinAt)
 
 /-- The native positive square root is smooth on the strictly positive operators in
-finite dimension, including real analyticity. -/
+finite dimension, including analyticity over `𝕜` (real over `ℝ`, complex over `ℂ`). -/
 theorem contDiffOn_sqrt {n : ℕ∞ω} :
     ContDiffOn 𝕜 n (CFC.sqrt : (E →L[𝕜] E) → (E →L[𝕜] E))
       {A | IsStrictlyPositive A} := by
