@@ -13,7 +13,9 @@ public import TauCeti.Combinatorics.Graph.Serre.Tree
 
 The Serre graph `SerreGraph.noEdge V` has the vertices `V` and no darts. Its only paths are the
 empty ones, so every vertex is a connected component by itself: its underlying multigraph is
-`Graph.noEdge Set.univ _` and has `Nat.card V` components.
+`Graph.noEdge Set.univ _`, whose connected components correspond bijectively to the vertices.
+Accordingly its component count `Graph.componentCount`, which is `0` when there are infinitely
+many components, equals `Nat.card V`, which is `0` when `V` is infinite.
 
 Two boundary cases separate the notions of connectedness. The empty graph `noEdge PEmpty` is
 preconnected, vacuously, but it is neither connected nor a tree and it has no component:
@@ -41,8 +43,9 @@ variable {V : Type u}
 theorem toGraph_noEdge : (noEdge.{u, v} V).toGraph = Graph.noEdge Set.univ _ :=
   Graph.ext (by simp) fun q _ _ => isEmptyElim ((noEdge V).edge_surjective q).choose
 
-/-- In a graph without edges every vertex is a connected component by itself, so the underlying
-multigraph has as many components as there are vertices. -/
+/-- In a graph without edges every vertex is a connected component by itself, so the connected
+components of the underlying multigraph correspond bijectively to the vertices and the component
+count is `Nat.card V`; both sides are `0` when `V` is infinite. -/
 @[simp] theorem componentCount_toGraph_noEdge :
     (noEdge.{u, v} V).toGraph.componentCount = Nat.card V := by
   rw [Graph.componentCount_def]

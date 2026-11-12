@@ -77,7 +77,9 @@ have the same index: parallel edges remain distinct. -/
   have key : ∀ e f : α × Bool, e = f ∨ e = (f.1, !f.2) ↔ e.1 = f.1 := by
     rintro ⟨a, x⟩ ⟨b, y⟩
     cases x <;> cases y <;> simp
-  exact ((parallelGraph α).edge_eq_iff e f).trans (key e f)
+  -- The darts of `parallelGraph α` are, by definition, the pairs in `α × Bool`.
+  rw [edge_eq_iff, parallelGraph_rev]
+  exact key e f
 
 /-- Every undirected edge of a graph of parallel edges joins the two vertices. -/
 @[simp] theorem parallelGraph_edgeEnds (q : (parallelGraph α).Edge) :
@@ -97,7 +99,10 @@ have the same index: parallel edges remain distinct. -/
   · refine (parallelGraph α).preconnected_of_forall_nonempty_path false fun b => ?_
     cases b
     · exact ⟨.nil⟩
-    · exact ⟨((parallelGraph α).dart (a, false)).toPath⟩
+    · -- The dart `(a, false)` runs from `false` to `true` by `parallelGraph_src` and
+      -- `parallelGraph_tgt`, used through `rfl`: they cannot rewrite a literal pair, whose type
+      -- is `α × Bool` rather than `(parallelGraph α).E`.
+      exact ⟨((parallelGraph α).dart (a, false)).toPath⟩
 
 /-- A graph of parallel edges is connected exactly when it has an edge. -/
 @[simp] theorem parallelGraph_connected_iff : (parallelGraph α).Connected ↔ Nonempty α := by
@@ -124,6 +129,8 @@ distinct. -/
     Path.IsReduced (parallelGraph α) (parallelLoop a b) ↔ a ≠ b := by
   refine (Path.isReduced_iff_isChain _ _).trans ?_
   rw [darts_parallelLoop]
+  -- The reverse of the dart `(a, false)` is `(a, true)` by `parallelGraph_rev`, used through
+  -- `rfl`: the darts listed here are literal pairs, of type `α × Bool`.
   exact List.isChain_pair.trans (not_congr ⟨fun h => (congrArg Prod.fst h).symm, fun h => h ▸ rfl⟩)
 
 /-- A graph with two distinct parallel edges is not acyclic. -/
@@ -141,12 +148,17 @@ theorem parallelGraph_not_isAcyclic {a b : α} (hab : a ≠ b) : ¬(parallelGrap
     cases p with
     | nil =>
       -- A single dart is not closed: its ends `f.1.2` and `!f.1.2` differ.
-      exact absurd (f.2.2.trans f.2.1.symm) (Bool.not_ne_self f.1.2)
+      have h := f.2.2.trans f.2.1.symm
+      rw [parallelGraph_tgt, parallelGraph_src] at h
+      exact absurd h (Bool.not_ne_self _)
     | cons p e =>
       -- With a single edge, a dart following `e` can only be its reverse.
-      have h : f.1 = (parallelGraph α).rev e.1 :=
-        Prod.ext (Subsingleton.elim _ _) (f.2.1.trans e.2.2.symm)
-      exact absurd h ((Path.isReduced_cons_cons _ p e f).mp hp).2
+      have h := f.2.1.trans e.2.2.symm
+      rw [parallelGraph_src, parallelGraph_tgt] at h
+      have hf : f.1 = (parallelGraph α).rev e.1 := by
+        rw [parallelGraph_rev]
+        exact Prod.ext (Subsingleton.elim _ _) h
+      exact absurd hf ((Path.isReduced_cons_cons _ p e f).mp hp).2
 
 /-- A graph of parallel edges is a tree exactly when it has exactly one edge. -/
 @[simp] theorem parallelGraph_isTree_iff :
