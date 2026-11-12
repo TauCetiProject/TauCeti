@@ -40,7 +40,7 @@ variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
 noncomputable def product : GradedModuleCat.{v} 𝒜 := by
   let G := fun j ↦ (M j).grading
   let P := InternalGrading.productScalarSubmodule G 𝒜
-  let H : InternalGrading k P := InternalGrading.product G
+  let H : InternalGrading k P ℤ := InternalGrading.product G
   letI : SetLike.GradedSMul 𝒜 H.piece :=
     ⟨fun {_ _} a x ha hx ↦
       (InternalGrading.mem_product_piece_iff G _ _).mpr fun j ↦

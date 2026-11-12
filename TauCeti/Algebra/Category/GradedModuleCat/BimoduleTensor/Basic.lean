@@ -55,7 +55,7 @@ universe v vM vN uk uA uB uC
 
 variable {k : Type uk} {A : Type uA} {B : Type uB}
   [CommRing k] [Ring A] [Ring B] [Algebra k A] [Algebra k B]
-  (Γ : InternalGrading k A) (Δ : InternalGrading k B)
+  (Γ : InternalGrading k A ℤ) (Δ : InternalGrading k B ℤ)
 
 /-- The left action obtained by restricting the envelope action to its first factor. -/
 local instance (M : GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) : Module A M :=
@@ -217,7 +217,7 @@ theorem mem_bimoduleModuleTensorObj_piece_iff {p : ℤ} {z : bimoduleModuleTenso
 
 /-- A linear map shifts internal degrees if it does so on homogeneous pure left-module tensors. -/
 theorem bimoduleModuleTensorObj_map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module k Q]
-    (H : InternalGrading k Q) (f : bimoduleModuleTensorObj Γ Δ M N →ₗ[k] Q) (s : ℤ)
+    (H : InternalGrading k Q ℤ) (f : bimoduleModuleTensorObj Γ Δ M N →ₗ[k] Q) (s : ℤ)
     (hf : ∀ {p q : ℤ} {m : M} {n : N},
       m ∈ M.grading.piece p → n ∈ N.grading.piece q →
         f (bimoduleModuleTensorTmul Γ Δ M N m n) ∈ H.piece (p + q + s))
@@ -488,7 +488,7 @@ instance : Functor.Linear k
 
 end ModuleTensor
 
-variable {C : Type uC} [Ring C] [Algebra k C] (Θ : InternalGrading k C)
+variable {C : Type uC} [Ring C] [Algebra k C] (Θ : InternalGrading k C ℤ)
 
 local notation "E" => A ⊗[k] Cᵐᵒᵖ
 
@@ -653,7 +653,7 @@ theorem mem_bimoduleTensorObj_piece_iff {p : ℤ} {z : bimoduleTensorObj Γ Δ �
 
 /-- A linear map shifts the degree of every tensor if it does so on homogeneous pure tensors. -/
 theorem bimoduleTensorObj_map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module k Q]
-    (H : InternalGrading k Q) (f : bimoduleTensorObj Γ Δ Θ M N →ₗ[k] Q) (s : ℤ)
+    (H : InternalGrading k Q ℤ) (f : bimoduleTensorObj Γ Δ Θ M N →ₗ[k] Q) (s : ℤ)
     (hf : ∀ {p q : ℤ} {m : M} {n : N},
       m ∈ M.grading.piece p → n ∈ N.grading.piece q →
         f (bimoduleTensorTmul Γ Δ Θ M N m n) ∈ H.piece (p + q + s))
@@ -1002,7 +1002,7 @@ universe w uA
 /-- The category of graded bimodules over the graded algebra `A` with internal grading `Ξ`:
 the graded modules over the enveloping grading `Ξ.tensorProduct Ξ.opposite`. -/
 abbrev GradedBimoduleCat (k : Type w) [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-    (Ξ : InternalGrading k A) :=
+    (Ξ : InternalGrading k A ℤ) :=
   GradedModuleCat.{max uA w} (Ξ.tensorProduct Ξ.opposite).piece
 
 end TauCeti
