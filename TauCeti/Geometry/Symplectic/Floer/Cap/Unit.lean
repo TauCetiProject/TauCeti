@@ -304,8 +304,8 @@ identity of
 `TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_left`, suppose
 that every class counted by `K` satisfies the index condition
 `μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + 1` of rigid members of the family, so that `K` lowers the cochain
-degree by one. Then for every cocycle `a` of the cylinder differential of cochain degree `e`, the
-difference `a ⋆ e - Φ a` is the coboundary of `K(a)` in cochain degree `e`. The differentials are
+degree by one. Then for every cocycle `a` of the cylinder differential of cochain degree `f`, the
+difference `a ⋆ e - Φ a` is the coboundary of `K(a)` in cochain degree `f`. The differentials are
 the ground-ring linear maps of the cylinder counts, for any potential bounds of their kernels. -/
 theorem novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_left
     {μ₁ : (Σ i, P₁ i) → ℤ} (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
@@ -318,15 +318,15 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_
     (hδ₀ : ∀ p p',
       mapKernelOfMatrix r₀ r₀ (fun k l => coefficientComparison q hq (D₀ k l)) p p' ≠ 0 →
         F₀ p' ≤ F₀ p + C₀)
-    {e : ℤ} {a : NovikovModule R F₁}
+    {f : ℤ} {a : NovikovModule R F₁}
     (ha : a ∈ (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _)).cocycles
-      (gradeBy R F₁ fun p => n - μ₁ p) e) :
+      (gradeBy R F₁ fun p => n - μ₁ p) f) :
     novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
           (fun i j k => coefficientComparison q hq (Q i j k)) a
           ((coordinates hF₂ r₂).symm fun j => coefficientComparison q hq (E j)) -
         novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i l => coefficientComparison q hq (Φ i l)) a ∈
       (kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀ r₀ r₀ _)).coboundaries
-        (gradeBy R F₀ fun p => n - μ₀ p) e := by
+        (gradeBy R F₀ fun p => n - μ₀ p) f := by
   rw [LinearMap.mem_cocycles_iff, ← novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁] at ha
   refine LinearMap.mem_coboundaries_iff.2 ⟨_,
     novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy r₁ r₀ q hq hμ₁ hμ₀ hF₁ hF₀ hK
@@ -365,13 +365,13 @@ include hμ hK
 class-indexed counts `Q`, with the first input graded by `n - μ₁` and a common complex as its
 second input and its output, as a ground-ring bilinear map for any potential bound of its kernel,
 induce a product on the cohomology of the cylinder differentials, with degree shift `ε`. Let `e`
-be a cocycle of the first input of degree `i` which is the combination of the counts `E` of PSS
+be a cocycle of the first input of degree `d₁` which is the combination of the counts `E` of PSS
 planes. Suppose the series obey the unit identity
 `∑ᵢ Eᵢ Qᵢⱼₗ - [j = l] = ∑ₘ Kⱼₘ Dₘₗ + ∑ₘ Dⱼₘ Kₘₗ` of
 `TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_right` with
 the stationary cylinders as the continuation cylinders, and that `K` satisfies the index
 condition of rigid members of the family. Then the class of `e` is a left identity for the
-product on cohomology: `[e] ⋆ y = y` for every class `y` of degree `j`, where `i + j + ε = j`. -/
+product on cohomology: `[e] ⋆ y = y` for every class `y` of degree `d`, where `d₁ + d + ε = d`. -/
 theorem cohomologyProduct_kernelProduct_coefficientComparison_unit_mk [Fintype ι₁]
     {μ₁ : (Σ i, P₁ i) → ℤ}
     (Q : ι₁ → ι → ι → NovikovSeries R G ωG) (E : ι₁ → NovikovSeries R G ωG)
@@ -395,13 +395,13 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_unit_mk [Fintype �
             (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _) a) b +
           negOnePowCast R i • kernelProduct hnQ (kernelOfMatrix_mem hF r₁ r r _) a
             (kernelMap hδ (mapKernelOfMatrix_mem hF r r _) b)}
-    {i j : ℤ} (hij : i + j + ε = j)
+    {d₁ d : ℤ} (hij : d₁ + d + ε = d)
     (e : (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _)).cocycles
-      (gradeBy R F₁ fun p => n - μ₁ p) i)
+      (gradeBy R F₁ fun p => n - μ₁ p) d₁)
     (he : (e : NovikovModule R F₁) =
       (coordinates hF₁ r₁).symm fun i => coefficientComparison q hq (E i))
     (y : (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cohomology
-      (gradeBy R F fun p => n - μ p) j) :
+      (gradeBy R F fun p => n - μ p) d) :
     LinearMap.cohomologyProduct (kernelProduct hnQ (kernelOfMatrix_mem hF r₁ r r _)) hQdeg hQL hij
       (Submodule.Quotient.mk e) y = y := by
   induction y using Submodule.Quotient.induction_on with
@@ -421,13 +421,13 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_unit_mk [Fintype �
 class-indexed counts `Q`, with a common complex as its first input and its output and the second
 input graded by `n - μ₂`, as a ground-ring bilinear map for any potential bound of its kernel,
 induce a product on the cohomology of the cylinder differentials, with degree shift `ε`. Let `e`
-be a cocycle of the second input of degree `j` which is the combination of the counts `E` of PSS
+be a cocycle of the second input of degree `d₂` which is the combination of the counts `E` of PSS
 planes. Suppose the series obey the unit identity
 `∑ⱼ Eⱼ Qᵢⱼₗ - [i = l] = ∑ₘ Kᵢₘ Dₘₗ + ∑ₘ Dᵢₘ Kₘₗ` of
 `TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_left` with
 the stationary cylinders as the continuation cylinders, and that `K` satisfies the index
 condition of rigid members of the family. Then the class of `e` is a right identity for the
-product on cohomology: `x ⋆ [e] = x` for every class `x` of degree `i`, where `i + j + ε = i`. -/
+product on cohomology: `x ⋆ [e] = x` for every class `x` of degree `d`, where `d + d₂ + ε = d`. -/
 theorem cohomologyProduct_kernelProduct_coefficientComparison_mk_unit [Fintype ι₂]
     {μ₂ : (Σ j, P₂ j) → ℤ}
     (Q : ι → ι₂ → ι → NovikovSeries R G ωG) (E : ι₂ → NovikovSeries R G ωG)
@@ -451,11 +451,11 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_mk_unit [Fintype �
             (kernelMap hδ (mapKernelOfMatrix_mem hF r r _) a) b +
           negOnePowCast R i • kernelProduct hnQ (kernelOfMatrix_mem hF r r₂ r _) a
             (kernelMap hδ₂ (mapKernelOfMatrix_mem hF₂ r₂ r₂ _) b)}
-    {i j : ℤ} (hij : i + j + ε = i)
+    {d d₂ : ℤ} (hij : d + d₂ + ε = d)
     (x : (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cohomology
-      (gradeBy R F fun p => n - μ p) i)
+      (gradeBy R F fun p => n - μ p) d)
     (e : (kernelMap hδ₂ (mapKernelOfMatrix_mem hF₂ r₂ r₂ _)).cocycles
-      (gradeBy R F₂ fun p => n - μ₂ p) j)
+      (gradeBy R F₂ fun p => n - μ₂ p) d₂)
     (he : (e : NovikovModule R F₂) =
       (coordinates hF₂ r₂).symm fun j => coefficientComparison q hq (E j)) :
     LinearMap.cohomologyProduct (kernelProduct hnQ (kernelOfMatrix_mem hF r r₂ r _)) hQdeg hQL hij
