@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Floer.Rotation
 public import TauCeti.Geometry.Symplectic.Floer.Stationary
 public import TauCeti.MeasureTheory.Measure.Strip
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
@@ -49,9 +50,8 @@ compactness or transversality is asserted.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.perturbedMFDeriv_comp_add_right`,
-  `TauCeti.SmoothTwoForm.floerEnergyDensity_comp_add_right`: the perturbed derivative and the
-  energy density commute with translations of the domain.
+* `TauCeti.SmoothTwoForm.floerEnergyDensity_comp_add_right`: the energy density commutes with
+  translations of the domain.
 * `IsNondegenerate.existsUnique_arctanCenter_stripMeasure_comp_add_right_eq_zero`:
   each translation orbit of a nonstationary finite-energy Floer cylinder meets the slice of center
   zero exactly once.
@@ -78,16 +78,6 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
 /-! ### Translations of the domain -/
 
 section Translation
-
-/-- The perturbed derivative commutes with translations of the domain: translating the map and
-the perturbation data by `v` translates the perturbed derivative by `v`. No differentiability is
-needed. -/
-theorem perturbedMFDeriv_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
-    (u : ℝ × ℝ → M) (v z : ℝ × ℝ) :
-    ω.perturbedMFDeriv (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
-      ω.perturbedMFDeriv Ks Kt u (z + v) := by
-  refine ContinuousLinearMap.ext fun a ↦ ?_
-  rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, mfderiv_comp_add_right_apply]
 
 /-- The Floer energy density commutes with translations of the domain. -/
 theorem floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
