@@ -16,6 +16,7 @@ import Mathlib.Analysis.SpecialFunctions.Sigmoid
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Algebra.Order.Floor.Digits
 import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
+import TauCeti.MeasureTheory.Integral.Lebesgue.Cumulative
 import TauCeti.MeasureTheory.Integral.Lebesgue.OrdConnected
 
 /-!
@@ -30,7 +31,7 @@ the pairing of an operator kernel `K(t, s)` applied to `f(s)` with `g(t)`, for i
 
 which holds whenever the untruncated operator `f ↦ ∫ K(·, s) f(s) ds` is bounded from `Lᵖ` to
 `L^{r'}`, by testing it on `1_I f` against `1_J g`. The **Christ–Kiselev lemma** says that if
-`1 / p + 1 / r > 1`, that is `p < r'`, then the truncation to `s < t` is bounded too:
+`1 ≤ r` and `1 / p + 1 / r > 1`, that is `p < r'`, then the truncation to `s < t` is bounded too:
 
 `‖∫_{s < t} β‖ ≤ (1 - 2^{-δ})⁻¹ A ‖f‖_p ‖g‖_r`, where `δ = 1 / p + 1 / r - 1`
 (`TauCeti.enorm_setIntegral_fst_lt_snd_le`).
@@ -191,18 +192,6 @@ private theorem rpow_div_two_pow_mul_le {a b : ℝ} (ha : 0 ≤ a) (X : ℝ≥0�
           ← ENNReal.rpow_add _ _ two_ne_zero ENNReal.ofNat_ne_top]
         ring_nf
 
-/-- The integral of `h` over `[s, t]` is the increment of its cumulative integral. -/
-private theorem setLIntegral_Icc_le {h : ℝ → ℝ≥0∞} (hm : ∫⁻ x, h x ≠ ∞) {s t : ℝ} (hst : s ≤ t) :
-    ∫⁻ x in Icc s t, h x ≤
-      ENNReal.ofReal ((∫⁻ x in Iic t, h x).toReal - (∫⁻ x in Iic s, h x).toReal) := by
-  have hIoc : (∫⁻ x in Iic s, h x) + ∫⁻ x in Ioc s t, h x = ∫⁻ x in Iic t, h x := by
-    rw [← lintegral_union measurableSet_Ioc (disjoint_left.2 fun x hx hx' => not_le.2 hx'.1 hx),
-      Iic_union_Ioc_eq_Iic hst]
-  have hs : ∫⁻ x in Iic s, h x ≠ ∞ := ne_top_of_le_ne_top hm (setLIntegral_le_lintegral _ _)
-  have hne : ∫⁻ x in Ioc s t, h x ≠ ∞ := ne_top_of_le_ne_top hm (setLIntegral_le_lintegral _ _)
-  rw [setLIntegral_congr Ioc_ae_eq_Icc.symm, ← hIoc, ENNReal.toReal_add hs hne,
-    add_sub_cancel_left, ENNReal.ofReal_toReal hne]
-
 /-- The dyadic pieces of `φ` carry little mass when `φ` grows at least as fast as the cumulative
 integral of `h` divided by `M`. -/
 private theorem setLIntegral_level_le {h : ℝ → ℝ≥0∞} (hm : ∫⁻ x, h x ≠ ∞) (hφ : Monotone φ)
@@ -211,7 +200,12 @@ private theorem setLIntegral_level_le {h : ℝ → ℝ≥0∞} (hm : ∫⁻ x, h
     (h0 : ∀ s, 0 ≤ φ s) (n j : ℕ) :
     ∫⁻ x in level φ n j, h x ≤ ENNReal.ofReal M / 2 ^ n := by
   refine setLIntegral_le_of_ordConnected (ordConnected_level hφ n j) fun s hs t ht hst => ?_
-  refine (setLIntegral_Icc_le hm hst).trans ?_
+  -- The integral over `[s, t]` is the increment of the cumulative integral.
+  have hfin (u : ℝ) : ∫⁻ x in Iic u, h x ≠ ∞ :=
+    ne_top_of_le_ne_top hm (setLIntegral_le_lintegral _ _)
+  rw [setLIntegral_congr Ioc_ae_eq_Icc.symm, setLIntegral_Ioc_eq_sub (hfin s),
+    ← ENNReal.ofReal_toReal (ENNReal.sub_ne_top (hfin t)),
+    ENNReal.toReal_sub_of_le (lintegral_mono_set (Iic_subset_Iic.2 hst)) (hfin t)]
   have h2 : (0 : ℝ) < 2 ^ n := by positivity
   rw [← ENNReal.ofReal_toReal (a := 2 ^ n) (by simp), ← ENNReal.ofReal_div_of_pos (by simp),
     ENNReal.toReal_pow, ENNReal.toReal_ofNat]
@@ -220,8 +214,8 @@ private theorem setLIntegral_level_le {h : ℝ → ℝ≥0∞} (hm : ∫⁻ x, h
   rw [Nat.floor_eq_iff (mul_nonneg h2.le (h0 s))] at hs
   rw [Nat.floor_eq_iff (mul_nonneg h2.le (h0 t))] at ht
   rw [le_div_iff₀ h2]
-  nlinarith [mul_le_mul_of_nonneg_right (hinc s t hst) h2.le,
-    mul_lt_mul_of_pos_left (show 2 ^ n * φ t - 2 ^ n * φ s < 1 by linarith [hs.1, ht.2]) hM]
+  have hwidth : 2 ^ n * φ t - 2 ^ n * φ s < 1 := by linarith [hs.1, ht.2]
+  nlinarith [mul_le_mul_of_nonneg_right (hinc s t hst) h2.le, mul_lt_mul_of_pos_left hwidth hM]
 
 /-- **The normalized mass function.** If `h` has finite integral `m`, then for every `ε > 0` there
 is a strictly increasing `φ : ℝ → [0, 1)` whose dyadic pieces `I_{n, j}` each carry at most
