@@ -25,6 +25,8 @@ so that `η = δα / α` wherever `α ≠ 0`. Following Samols and Taubes, these
 kernel of the gauge-fixed operator `L_x = d₀* ⊕ d₁` of a vortex to the scalar Schrödinger
 equation `Δη = P η`.
 
+* `contDiff_logVariation`, `logVariation_congr_nhds`: the logarithmic variation of a `Cⁿ⁺¹`
+  function at a `Cⁿ` field is `Cⁿ`, and at a point it depends only on the germ of `η`.
 * `logVariation_add`, `logVariation_smul`, `logVariation_sub`: the logarithmic variation is
   real-linear in differentiable `η` (pointwise: `logVariation_add_apply`).
 * `gaugeFixedOperator_logVariation`: at every field, writing `E = ∂bar_a α` for the complex
@@ -55,9 +57,9 @@ with `|α|² → 1` at infinity) it suffices that `y ∈ L²`, which gives `η �
 `δα / α` differ by a `C²` function, so such a kernel element is determined by the singular part
 of `δα / α` at the zeros of `α`. This is the vanishing step behind the injectivity half of the
 identification of the kernel of `L_x` with the tangent space of the divisor space `Sym^m ℂ`
-through the principal parts of `δα / α`. The principal-part map itself, which needs the local
-structure of `δα / α` at a zero of `α`, and the construction of a kernel element with prescribed
-principal parts are not treated here.
+through the principal parts of `δα / α`. The principal-part map itself is
+`TauCeti.Vortex.principalPartMap`, and kernel elements with prescribed principal parts are
+constructed in `TauCeti.Analysis.PDE.Vortex.TangentKernel`.
 
 ## References
 
@@ -116,6 +118,31 @@ theorem logVariation_apply_three (x : ℂ → EuclideanSpace ℝ (Fin 4)) (η : 
 theorem sectionValue_logVariation (x : ℂ → EuclideanSpace ℝ (Fin 4)) (η : ℂ → ℂ) (z : ℂ) :
     sectionValue (logVariation x η) z = sectionValue x z * η z := by
   apply Complex.ext <;> simp [sectionValue_apply] <;> ring
+
+/-- The logarithmic variation at a point depends only on the germ of `η` there. -/
+theorem logVariation_congr_nhds (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η ζ : ℂ → ℂ} {z : ℂ}
+    (h : η =ᶠ[𝓝 z] ζ) : logVariation x η z = logVariation x ζ z := by
+  have hre : (fun w ↦ (η w).re) =ᶠ[𝓝 z] fun w ↦ (ζ w).re := h.mono fun w hw ↦ by simp only [hw]
+  have him : (fun w ↦ (η w).im) =ᶠ[𝓝 z] fun w ↦ (ζ w).im := h.mono fun w hw ↦ by simp only [hw]
+  simp only [logVariation, hre.fderiv_eq, him.fderiv_eq, h.eq_of_nhds]
+
+/-- The logarithmic variation of a `Cⁿ⁺¹` function at a `Cⁿ` field is `Cⁿ`. -/
+theorem contDiff_logVariation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {η : ℂ → ℂ} {n : WithTop ℕ∞}
+    (hx : ContDiff ℝ n x) (hη : ContDiff ℝ (n + 1) η) : ContDiff ℝ n (logVariation x η) := by
+  have hxi (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) := contDiff_euclidean.mp hx i
+  have hre : ContDiff ℝ (n + 1) (fun w ↦ (η w).re) := reCLM.contDiff.comp hη
+  have him : ContDiff ℝ (n + 1) (fun w ↦ (η w).im) := imCLM.contDiff.comp hη
+  have hd (f : ℂ → ℝ) (hf : ContDiff ℝ (n + 1) f) (v : ℂ) :
+      ContDiff ℝ n (fun z ↦ fderiv ℝ f z v) :=
+    (hf.fderiv_right le_rfl).clm_apply contDiff_const
+  have hre' : ContDiff ℝ n (fun w ↦ (η w).re) := hre.of_le le_self_add
+  have him' : ContDiff ℝ n (fun w ↦ (η w).im) := him.of_le le_self_add
+  refine contDiff_euclidean.mpr fun i ↦ ?_
+  fin_cases i
+  · simpa using ((hd _ him 1).neg.sub (hd _ hre I))
+  · simpa using (hd _ hre 1).sub (hd _ him I)
+  · simpa using ((hxi 2).mul hre').sub ((hxi 3).mul him')
+  · simpa using ((hxi 2).mul him').add ((hxi 3).mul hre')
 
 /-- The connection variation of the logarithmic variation of a differentiable `η` is
 `δb₁ + i δb₂ = 2 i ∂bar η`. -/

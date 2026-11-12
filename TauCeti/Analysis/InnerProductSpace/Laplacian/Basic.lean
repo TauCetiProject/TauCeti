@@ -482,6 +482,22 @@ theorem _root_.ContDiffAt.laplacian_fun_mul_complex {f g : ℂ → ℝ} {x : ℂ
   rw [hgrad]
   ring
 
+open Complex in
+/-- The Laplacian of `u + i v` for real functions `u` and `v` twice differentiable at the point
+is `Δu + i Δv`. -/
+theorem _root_.ContDiffAt.laplacian_ofReal_add_ofReal_mul_I {u v : E → ℝ} {x : E}
+    (hu : ContDiffAt ℝ 2 u x) (hv : ContDiffAt ℝ 2 v x) :
+    Δ (fun y ↦ (u y : ℂ) + v y * I) x = Δ u x + Δ v x * I := by
+  have hu' : ContDiffAt ℝ 2 (ofRealCLM ∘ u) x := ofRealCLM.contDiff.contDiffAt.comp x hu
+  have hv' : ContDiffAt ℝ 2 (ofRealCLM ∘ v) x := ofRealCLM.contDiff.contDiffAt.comp x hv
+  have hv'' : ContDiffAt ℝ 2 (I • (ofRealCLM ∘ v)) x := hv'.const_smul I
+  have e : (fun y ↦ (u y : ℂ) + v y * I) = ofRealCLM ∘ u + I • (ofRealCLM ∘ v) := by
+    funext y
+    simp [mul_comm]
+  rw [e, hu'.laplacian_add hv'', laplacian_smul _ hv', hu.laplacian_CLM_comp_left,
+    hv.laplacian_CLM_comp_left]
+  simp [mul_comm]
+
 open Filter Gradient Topology in
 /-- **The chain rule for the Laplacian.** For a scalar function `q` twice differentiable at `x`
 and a real function `F` twice differentiable at `q x`,

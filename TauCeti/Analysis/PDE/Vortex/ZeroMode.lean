@@ -81,7 +81,7 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-- The potential `P = |α|² / 4` of a field whose section has unit modulus at infinity is
 bounded. -/
-private theorem memLp_top_potential (hx : Continuous x)
+theorem memLp_top_potential (hx : Continuous x)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     MemLp (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) ⊤ volume := by
   have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
