@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.DiscMollification
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Contour.Winding.Integer
 import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
@@ -219,26 +220,6 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_zero {E : Type*} [NormedAddCom
 
 /-! ### Independence of the cutoff and additivity over subdiscs -/
 
-/-- If `α` has no zero on a compact set `K`, there is a `C¹` cutoff vanishing near `0` that is
-`1` near `|α|²` at every point of `K`: `|α|²` is bounded below on `K` by some `ε > 0`, and the
-cutoff can switch from `0` to `1` between `ε / 4` and `ε / 2`. -/
-private theorem exists_cutoff_eventuallyEq_one {X : Type*} [TopologicalSpace X] {α : X → ℂ}
-    {K : Set X} (hK : IsCompact K) (hα : ContinuousOn α K) (hne : ∀ z ∈ K, α z ≠ 0) :
-    ∃ χ' : ℝ → ℝ, ContDiff ℝ 1 χ' ∧ χ' =ᶠ[𝓝 0] 0 ∧ ∀ z ∈ K, χ' =ᶠ[𝓝 (normSq (α z))] 1 := by
-  obtain ⟨ε, hε, hεK⟩ := hK.exists_forall_le' (continuous_normSq.comp_continuousOn hα)
-    fun z hz ↦ normSq_pos.2 (hne z hz)
-  refine ⟨fun t ↦ Real.smoothTransition (4 * t / ε - 1),
-    Real.smoothTransition.contDiff.comp (by fun_prop), ?_, fun z hz ↦ ?_⟩
-  · filter_upwards [Iio_mem_nhds (show (0 : ℝ) < ε / 4 by positivity)] with t (ht : t < ε / 4)
-    refine Real.smoothTransition.zero_of_nonpos ?_
-    rw [sub_nonpos, div_le_one hε]
-    linarith
-  · have hz' : ε ≤ normSq (α z) := hεK z hz
-    filter_upwards [Ioi_mem_nhds (show ε / 2 < normSq (α z) by linarith)] with t (ht : ε / 2 < t)
-    refine Real.smoothTransition.one_of_one_le ?_
-    rw [le_sub_iff_add_le, le_div_iff₀ hε]
-    linarith
-
 /-- **The disc charge does not depend on the cutoff.** If two `C¹` cutoffs `χ` and `χ'`, both
 vanishing near `0`, take the value `1` along `α` of the boundary circle of a closed disc in the
 plane, then their cutoff currents have the same integral over the disc: both integrals are `2π`
@@ -295,7 +276,13 @@ theorem integral_cutoffCurrent_closedBall_eq_sum {ι : Type*} {α : ℂ → ℂ}
       exact hsphere (hρ i hi) (hbds i hi) z hz
   -- A cutoff `χ'` that is `1` near `|α|²` along `K` has a cutoff current vanishing on `K`, and
   -- every boundary circle is admissible for it.
-  obtain ⟨χ', hχ', hχ'₀, hχ'₁⟩ := exists_cutoff_eventuallyEq_one hKc hα.continuous.continuousOn hKne
+  obtain ⟨χ', hχ', -, hχ'₁, -, hχ'U⟩ :=
+    (hKc.image (continuous_normSq.comp hα.continuous)).exists_contDiff_cutoff_eventuallyEq_one
+      isOpen_compl_singleton (image_subset_iff.2 fun z hz ↦ (normSq_pos.2 (hKne z hz)).ne')
+  replace hχ' : ContDiff ℝ 1 χ' := hχ'.of_le (by simp)
+  have hχ'₀ : χ' =ᶠ[𝓝 0] 0 := notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hχ'U h rfl
+  replace hχ'₁ (z : ℂ) (hz : z ∈ K) : χ' =ᶠ[𝓝 (normSq (α z))] 1 :=
+    hχ'₁ _ (mem_image_of_mem _ hz)
   have hbd' {z₁ : ℂ} {R : ℝ} (hR : 0 ≤ R) (h : Metric.sphere z₁ R ⊆ K) (θ : ℝ) :
       χ' (normSq (α (circleMap z₁ R θ))) = 1 :=
     (hχ'₁ _ (h (circleMap_mem_sphere z₁ hR θ))).eq_of_nhds
