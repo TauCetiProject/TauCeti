@@ -37,10 +37,11 @@ local frames of the normal spaces
 (`TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace`). By the smooth local frame
 criterion `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle` the normal spaces,
 with the subspace topology of `f *ᵖ TN`, therefore form a `C^m` subbundle `ν_f` of `f *ᵖ TN` of
-rank `dim N - dim M`. No compactness, injectivity of `f`, boundarylessness or choice of normal
-frame is assumed. The identity map has zero normal spaces and a constant map has the whole
-ambient tangent space as normal space (`TauCeti.orthogonalNormalSpace_id`,
-`TauCeti.orthogonalNormalSpace_const`).
+rank `dim N - dim M` (`TauCeti.orthogonalNormalFiberBundle`,
+`TauCeti.orthogonalNormalVectorBundle`, `TauCeti.orthogonalNormalContMDiffVectorBundle`). No
+compactness, injectivity of `f`, boundarylessness or choice of normal frame is assumed. The
+identity map has zero normal spaces and a constant map has the whole ambient tangent space as
+normal space (`TauCeti.orthogonalNormalSpace_id`, `TauCeti.orthogonalNormalSpace_const`).
 
 ## References
 
@@ -242,5 +243,54 @@ theorem hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace {r : ℕ} {f : C^
     omega
   exact hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range _
     (contMDiff_starProjection_orthogonalNormalSpace hinj hm) hrange hfin
+
+/-! ### The normal bundle `ν_f` -/
+
+variable (I J) in
+/-- The total space of the normal spaces of `f : M → N` carries the subspace topology
+(`TauCeti.subbundleTopology`) of the pulled-back tangent bundle `f *ᵖ TN`. The model-fibre
+parameter `P` of `Bundle.TotalSpace` plays no role. -/
+instance instTopologicalSpaceTotalSpaceOrthogonalNormalSpace (P : Type*) (f : M → N) :
+    TopologicalSpace (TotalSpace P fun x ↦ orthogonalNormalSpace I J f x) :=
+  subbundleTopology V (E := f *ᵖ (TangentSpace J)) (orthogonalNormalSpace I J f)
+
+omit [FiniteDimensional ℝ E] in
+/-- **The normal bundle `ν_f` of an immersion.** For a `C^n` immersion `f` with `m + 1 ≤ n`, a
+`C^m` ambient metric and `dim N = dim M + r`, the normal spaces `orthogonalNormalSpace I J f`
+form a fibre bundle over `M` with model fibre `Fin r → ℝ`, carrying the subspace topology from
+`f *ᵖ TN` (`TauCeti.HasLocalContMDiffSubbundleFrames.fiberBundle`). Install this definition
+locally with `letI`. -/
+@[instance_reducible]
+def orthogonalNormalFiberBundle {r : ℕ} {f : C^n⟮I, M; J, N⟯}
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) :
+    FiberBundle (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x :=
+  (hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace hinj hm hr).fiberBundle
+
+omit [FiniteDimensional ℝ E] in
+/-- **The normal bundle `ν_f` is a topological vector bundle.** Its local frame trivializations
+are linear with continuous coordinate changes. -/
+theorem orthogonalNormalVectorBundle {r : ℕ} {f : C^n⟮I, M; J, N⟯}
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) :
+    letI := orthogonalNormalFiberBundle hinj hm hr
+    VectorBundle ℝ (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x :=
+  (hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace hinj hm hr).vectorBundle
+
+omit [FiniteDimensional ℝ E] in
+/-- **The normal bundle `ν_f` is a `C^m` vector bundle**, a `C^m` subbundle of `f *ᵖ TN` of rank
+`r = dim N - dim M`, by the smooth local frame criterion
+`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`. -/
+theorem orthogonalNormalContMDiffVectorBundle {r : ℕ} {f : C^n⟮I, M; J, N⟯}
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) :
+    letI := orthogonalNormalFiberBundle hinj hm hr
+    letI := orthogonalNormalVectorBundle hinj hm hr
+    ContMDiffVectorBundle m (Fin r → ℝ) (fun x ↦ orthogonalNormalSpace I J f x) I := by
+  let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le (le_self_add.trans hm)⟩
+  let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
+  let : ContMDiffVectorBundle m V (f *ᵖ (TangentSpace J)) I :=
+    ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
+  exact (hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace hinj hm hr).contMDiffVectorBundle
 
 end TauCeti

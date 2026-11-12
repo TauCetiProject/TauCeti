@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Riemannian
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+public import TauCeti.Geometry.Manifold.Riemannian.Immersion.NormalBundle
 import Mathlib.Geometry.Manifold.VectorBundle.Pullback
-import TauCeti.Geometry.Manifold.Riemannian.Immersion.NormalBundle
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 
 /-!
@@ -49,6 +49,24 @@ variable {E V P H G M N : Type*}
   {n : ℕ∞ω}
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
 
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
+/-- The orthogonal complement of the tangent range of an embedding is its normal space
+`TauCeti.orthogonalNormalSpace` as an immersion. -/
+theorem orthogonal_tangentRange_eq_orthogonalNormalSpace (f : SmoothEmbedding I J n M N) (x : M)
+    (hn : n ≠ 0) : (f.tangentRange x hn)ᗮ = orthogonalNormalSpace I J f x := by
+  rw [orthogonalNormalSpace_def]
+  refine congrArg _ (Submodule.ext fun v ↦ ?_)
+  simp only [mem_tangentRange_iff, LinearMap.mem_range, ContinuousLinearMap.coe_coe]
+
+omit [FiniteDimensional ℝ E] in
+/-- The orthogonal representative of the normal class of an ambient vector is its orthogonal
+projection onto the normal space `TauCeti.orthogonalNormalSpace`. -/
+theorem normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace
+    (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) (v : TangentSpace J (f x)) :
+    f.normalRepresentative x hn (f.normalClass x hn v) =
+      (orthogonalNormalSpace I J f x).starProjection v := by
+  simp only [normalRepresentative_normalClass, orthogonal_tangentRange_eq_orthogonalNormalSpace]
+
 variable {m : ℕ∞ω} [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]
 
@@ -68,8 +86,8 @@ theorem contMDiff_normalRepresentative_normalClass
   have hP := contMDiff_starProjection_orthogonalNormalSpace (f := fn)
     (f.isImmersion.mfderiv_injective hn) hm
   exact ((Pullback.contMDiff_lift fc fc.contMDiff).comp hP).congr fun p =>
-    congrArg (TotalSpace.mk (f p.proj)) ((f.normalRepresentative_normalClass p.proj hn p.2).trans
-      (by dsimp only; rw [orthogonalNormalSpace_def]; rfl))
+    congrArg (TotalSpace.mk (f p.proj))
+      (f.normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace p.proj hn p.2)
 
 /-- The map taking an intrinsic normal vector to its orthogonal representative in the ambient
 tangent bundle is `C^m` for a `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. -/
