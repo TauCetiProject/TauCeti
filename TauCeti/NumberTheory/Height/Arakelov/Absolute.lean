@@ -129,7 +129,7 @@ theorem absoluteProjectiveTupleHeight_le_absoluteHeight2 {x : ι → F} (hx : x 
   · obtain ⟨E, _, y, rfl⟩ := exists_numberField_comp halg
     have hy : y ≠ 0 := by
       rintro rfl
-      exact hx (by ext i; simp)
+      exact hx (by ext _; simp)
     rw [absoluteProjectiveTupleHeight_comp, RingHom.absoluteHeight2_comp, absoluteHeight2_eq]
     exact absoluteProjectiveTupleHeight_le_height2 hy
   · obtain ⟨i, hi⟩ := not_forall.mp halg

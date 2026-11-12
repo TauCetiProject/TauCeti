@@ -192,7 +192,7 @@ theorem isPullback_blowupChart_fromSpec {U : X.Opens} (hU : IsAffineOpen U) :
 generated for every affine open `U` of `X`, then `Bl_I X ⟶ X` is proper. -/
 theorem isProper_blowupToBase (hI : ∀ U : X.affineOpens, (I.ideal U).FG) :
     IsProper I.blowupToBase := by
-  refine CommMon.isProper_relativeProjToBase (fun U hU ↦ ?_) (fun U hU ↦ ?_)
+  refine CommMon.isProper_relativeProjToBase (fun U hU ↦ ?_) (fun U _ ↦ ?_)
   · exact Algebra.FiniteType.equiv (reesAlgebra.finiteType_of_fg (hI ⟨U, hU⟩))
       (I.reesAlgebraSectionsEquiv hU).symm
   · -- the unit `𝒪_X ⟶ I⁰` of the Rees algebra is an isomorphism, so `Γ(I⁰, U) ≅ Γ(X, U)`
