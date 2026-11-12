@@ -69,7 +69,7 @@ theorem isConj_iff_eq_rank_one (e : F ≃ₜ* freeProP p (Fin 1)) {y z : F} :
     IsConj y z ↔ y = z := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ IsConj.refl y⟩
   obtain ⟨c, rfl⟩ := isConj_iff.mp h
-  have hc : c * y = y * c := e.injective (by simpa using (freeProP.commute_of_subsingleton _ _).eq)
+  have hc : c * y = y * c := e.injective (by simpa using mul_comm' (e c) (e y))
   rw [hc, mul_inv_cancel_right]
 
 variable [Fact p.Prime] [IsTopologicalGroup F] [CompactSpace F] [TotallyDisconnectedSpace F]
