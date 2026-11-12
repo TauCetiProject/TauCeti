@@ -12,15 +12,16 @@ import Mathlib.Algebra.Field.Periodic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import TauCeti.Analysis.Calculus.Deriv.AddCircle
 
 /-!
 # The boundary interpolation isotopy of the annulus strip
 
 The closed annulus `(ℝ / ℤ) × [0, 1]` is covered by the strip `ℝ × [0, 1]`, with deck
-translation `T (x, y) = (x + 1, y)`. A diffeomorphism of the annulus preserving both boundary
-circles has boundary maps whose lifts are increasing degree-one maps `b₀, b₁ : ℝ → ℝ`, that is
-elements of `CircleDeg1Lift`. Interpolating them linearly in the height `y`, and then linearly
-in time from the identity, gives the maps
+translation `T (x, y) = (x + 1, y)`. An orientation-preserving diffeomorphism of the annulus
+preserving both boundary circles has boundary maps whose lifts are increasing degree-one maps
+`b₀, b₁ : ℝ → ℝ`, that is elements of `CircleDeg1Lift`. Interpolating them linearly in the
+height `y`, and then linearly in time from the identity, gives the maps
 
 `B_t (x, y) = ((1 - t) x + t ((1 - y) b₀ x + y b₁ x), y)`
 
@@ -39,9 +40,11 @@ when `b₀` and `b₁` are `C¹`, since `b₀'` and `b₁'` are periodic, and wh
 contains `[0, 1] × [0, 1]`, as a convex combination of positive numbers is positive. For `(t, y)`
 in this set the horizontal map is an increasing degree-one bijection of `ℝ`
 (`CircleDeg1Lift.bijective_stripInterpolation_fst`). Its inverse
-`CircleDeg1Lift.stripInterpolationInv b₀ b₁ t` is `C^n` jointly in `t` and the point when `b₀`
-and `b₁` are `C^n` (`CircleDeg1Lift.contDiffOn_stripInterpolationInv`), by the inverse function
-theorem for smooth families of diffeomorphisms (`ContDiffOn.parametric_invFun`). Hence, for
+`CircleDeg1Lift.stripInterpolationInv b₀ b₁ t` also commutes with `T`
+(`CircleDeg1Lift.stripInterpolationInv_mk_add_one`) and is `C^n` jointly in `t` and the point when
+`b₀` and `b₁` are `C^n` (`CircleDeg1Lift.contDiffOn_stripInterpolationInv`), by the inverse
+function theorem for smooth families of diffeomorphisms
+(`ContDiffOn.parametric_invFun_of_injective`). Hence, for
 `0 ≤ t ≤ 1`, the maps `B_t` are bijections of the closed strip
 (`CircleDeg1Lift.bijOn_stripInterpolation`) with positive `x`-derivative, depending smoothly on
 `t` together with their inverses: a smooth isotopy from the identity to a map with boundary lifts
@@ -63,6 +66,8 @@ neighbourhood of the strip on which `(t, y)` lies in the domain.
   neighbourhood of `[0, 1] × [0, 1]`.
 * `CircleDeg1Lift.stripInterpolationInv_stripInterpolation`,
   `CircleDeg1Lift.stripInterpolation_stripInterpolationInv`: the inverse laws.
+* `CircleDeg1Lift.stripInterpolationInv_mk_add_one`: the inverse commutes with the deck
+  translation.
 * `CircleDeg1Lift.contDiffOn_stripInterpolationInv`: `(t, p) ↦ B_t⁻¹ p` is `C^n`.
 * `CircleDeg1Lift.bijOn_stripInterpolation`: for `0 ≤ t ≤ 1`, `B_t` is a bijection of the closed
   strip `ℝ × [0, 1]`.
@@ -82,12 +87,6 @@ open Function Set Filter
 open scoped Topology
 
 namespace CircleDeg1Lift
-
-/-- The derivative of a degree-one lift is `1`-periodic. -/
-theorem periodic_deriv (f : CircleDeg1Lift) : Periodic (deriv f) 1 := fun x ↦ by
-  rw [← deriv_comp_add_const]
-  simp_rw [map_add_one]
-  exact deriv_add_const 1
 
 variable (b₀ b₁ : CircleDeg1Lift) {n : WithTop ℕ∞} {t y : ℝ}
 
@@ -180,8 +179,12 @@ theorem isOpen_stripInterpolationDomain (h₀ : ContDiff ℝ 1 b₀) (h₁ : Con
     have := h₀.continuous_deriv le_rfl
     have := h₁.continuous_deriv le_rfl
     fun_prop
+  have hper₀ := AddCircle.periodic_deriv_of_lift
+    (fun x ↦ (h₀.differentiable one_ne_zero x).hasDerivAt) b₀.map_add_one
+  have hper₁ := AddCircle.periodic_deriv_of_lift
+    (fun x ↦ (h₁.differentiable one_ne_zero x).hasDerivAt) b₁.map_add_one
   have hper : ∀ q, Periodic (h q) 1 := fun q x ↦ by
-    simp only [h, b₀.periodic_deriv x, b₁.periodic_deriv x]
+    simp only [h, hper₀ x, hper₁ x]
   refine isOpen_iff_mem_nhds.2 fun q₀ hq₀ ↦ ?_
   have hK : ∀ᶠ q in 𝓝 q₀, ∀ x ∈ Icc (0 : ℝ) 1, 0 < h q x :=
     isCompact_Icc.eventually_forall_of_forall_eventually fun x _ ↦
@@ -201,10 +204,7 @@ theorem Icc_prod_Icc_subset_stripInterpolationDomain (h₀ : ∀ x, 0 < deriv b�
     rcases hy₁.lt_or_eq with hy₁ | rfl
     · nlinarith [h₀ x, h₁ x]
     · simpa using h₁ x
-  rcases ht₁.lt_or_eq with ht₁ | rfl
-  · dsimp only
-    nlinarith
-  · simpa using hD
+  exact AddCircle.one_sub_add_mul_pos ht₀ ht₁ hD
 
 variable {b₀ b₁}
 
@@ -256,6 +256,19 @@ theorem stripInterpolation_stripInterpolationInv (h₀ : Differentiable ℝ b₀
     b₀.stripInterpolation b₁ t (b₀.stripInterpolationInv b₁ t p) = p :=
   Prod.ext (rightInverse_invFun (bijective_stripInterpolation_fst h₀ h₁ h).2 p.1) rfl
 
+/-- On a horizontal line whose parameters lie in the domain, the inverse of the boundary
+interpolation commutes with the deck translation `(x, y) ↦ (x + 1, y)` of the annulus. -/
+theorem stripInterpolationInv_mk_add_one (h₀ : Differentiable ℝ b₀) (h₁ : Differentiable ℝ b₁)
+    {x y : ℝ} (h : (t, y) ∈ b₀.stripInterpolationDomain b₁) :
+    b₀.stripInterpolationInv b₁ t (x + 1, y) = b₀.stripInterpolationInv b₁ t (x, y) + (1, 0) := by
+  set q := b₀.stripInterpolationInv b₁ t (x, y)
+  have hq : b₀.stripInterpolation b₁ t (q + (1, 0)) = (x + 1, y) := by
+    have e : q + (1, 0) = (q.1 + 1, q.2) := Prod.ext rfl (add_zero _)
+    rw [e, stripInterpolation_mk_add_one, Prod.mk.eta,
+      stripInterpolation_stripInterpolationInv h₀ h₁ h, Prod.mk_add_mk, add_zero]
+  rw [← hq]
+  exact stripInterpolationInv_stripInterpolation h₀ h₁ (by simpa [q] using h)
+
 /-- **The inverse of the boundary interpolation is smooth.** For `C^n` lifts `b₀`, `b₁` with
 `1 ≤ n`, the map `(t, p) ↦ B_t⁻¹ p` is `C^n` on the open set of `(t, (x, y))` with `(t, y)` in the
 domain of the boundary interpolation. -/
@@ -270,7 +283,7 @@ theorem contDiffOn_stripInterpolationInv (hn : 1 ≤ n) (h₀ : ContDiff ℝ n b
   set g : (ℝ × ℝ) × ℝ → ℝ := fun r ↦ (b₀.stripInterpolation b₁ r.1.1 (r.2, r.1.2)).1
   have hσ : ContDiff ℝ n fun r : (ℝ × ℝ) × ℝ ↦ (r.1.1, (r.2, r.1.2)) := by fun_prop
   have hg : ContDiff ℝ n g := contDiff_fst.comp ((contDiff_stripInterpolation b₀ b₁ h₀ h₁).comp hσ)
-  have hinv := hg.contDiffOn.parametric_invFun
+  have hinv := hg.contDiffOn.parametric_invFun_of_injective
     (isOpen_stripInterpolationDomain b₀ b₁ (h₀.of_le hn) (h₁.of_le hn)) hn
     (fun q hq ↦ bijective_stripInterpolation_fst hd₀ hd₁ hq) fun q hq x u v huv ↦ by
       have hd : HasDerivAt (fun x ↦ g (q, x)) _ x :=
