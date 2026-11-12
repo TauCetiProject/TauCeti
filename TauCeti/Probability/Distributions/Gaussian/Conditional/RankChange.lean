@@ -38,45 +38,58 @@ public section
 noncomputable section
 
 open Filter Matrix MeasureTheory ProbabilityTheory Topology
-open scoped NNReal RealInnerProductSpace
 
 namespace TauCeti.Probability
 
 /-- The covariance matrix of the singular Gaussian pair `(Z, tZ)`, where `Z` is standard
 Gaussian. -/
 def gaussianRankChangeCovariance (t : ℝ) : Matrix (Unit ⊕ Unit) (Unit ⊕ Unit) ℝ :=
-  let v : Unit ⊕ Unit → ℝ := Sum.elim (fun _ ↦ 1) (fun _ ↦ t)
-  Matrix.vecMulVec v v
+  Matrix.vecMulVec (Sum.elim (fun _ ↦ 1) fun _ ↦ t) (Sum.elim (fun _ ↦ 1) fun _ ↦ t)
+
+/-- `gaussianRankChangeCovariance t` is the outer product of the vector `(1, t)` with itself. -/
+theorem gaussianRankChangeCovariance_eq_vecMulVec (t : ℝ) :
+    gaussianRankChangeCovariance t =
+      Matrix.vecMulVec (Sum.elim (fun _ ↦ 1) fun _ ↦ t) (Sum.elim (fun _ ↦ 1) fun _ ↦ t) := by
+  rw [gaussianRankChangeCovariance]
 
 /-- The first-coordinate variance in `gaussianRankChangeCovariance` is one. -/
 @[simp]
 theorem gaussianRankChangeCovariance_inl_inl (t : ℝ) (i j : Unit) :
     gaussianRankChangeCovariance t (Sum.inl i) (Sum.inl j) = 1 := by
-  simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply]
+  simp [gaussianRankChangeCovariance_eq_vecMulVec, Matrix.vecMulVec_apply]
 
 /-- The covariance from the first coordinate to the observed coordinate is `t`. -/
 @[simp]
 theorem gaussianRankChangeCovariance_inl_inr (t : ℝ) (i j : Unit) :
     gaussianRankChangeCovariance t (Sum.inl i) (Sum.inr j) = t := by
-  simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply]
+  simp [gaussianRankChangeCovariance_eq_vecMulVec, Matrix.vecMulVec_apply]
 
 /-- The covariance from the observed coordinate to the first coordinate is `t`. -/
 @[simp]
 theorem gaussianRankChangeCovariance_inr_inl (t : ℝ) (i j : Unit) :
     gaussianRankChangeCovariance t (Sum.inr i) (Sum.inl j) = t := by
-  simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply]
+  simp [gaussianRankChangeCovariance_eq_vecMulVec, Matrix.vecMulVec_apply]
 
 /-- The observed-coordinate variance in `gaussianRankChangeCovariance` is `t²`. -/
 @[simp]
 theorem gaussianRankChangeCovariance_inr_inr (t : ℝ) (i j : Unit) :
     gaussianRankChangeCovariance t (Sum.inr i) (Sum.inr j) = t ^ 2 := by
-  simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply, pow_two]
+  simp [gaussianRankChangeCovariance_eq_vecMulVec, Matrix.vecMulVec_apply, pow_two]
 
 /-- The covariance matrix of `(Z, tZ)` is positive semidefinite for every real `t`. -/
 theorem posSemidef_gaussianRankChangeCovariance (t : ℝ) :
     (gaussianRankChangeCovariance t).PosSemidef := by
-  simpa [gaussianRankChangeCovariance] using Matrix.posSemidef_vecMulVec_self_star
+  simpa [gaussianRankChangeCovariance_eq_vecMulVec] using Matrix.posSemidef_vecMulVec_self_star
     (Sum.elim (fun _ : Unit ↦ (1 : ℝ)) fun _ : Unit ↦ t)
+
+/-- The covariance matrix of `(Z, tZ)` depends continuously on `t`. -/
+theorem continuous_gaussianRankChangeCovariance : Continuous gaussianRankChangeCovariance := by
+  have hv : Continuous fun t : ℝ ↦ (Sum.elim (fun _ ↦ 1) fun _ ↦ t : Unit ⊕ Unit → ℝ) := by
+    refine continuous_pi fun i ↦ ?_
+    rcases i with _ | _
+    · exact continuous_const
+    · exact continuous_id
+  exact (hv.matrix_vecMulVec hv).congr fun t ↦ (gaussianRankChangeCovariance_eq_vecMulVec t).symm
 
 /-- The joint Gaussian laws of `(Z, tZ)` vary weakly continuously with `t`, including when the
 observed covariance drops rank at `t = 0`. -/
@@ -84,21 +97,8 @@ theorem continuous_multivariateGaussian_gaussianRankChangeCovariance :
     Continuous (fun t : ℝ ↦
       (multivariateGaussian (0 : EuclideanSpace ℝ (Unit ⊕ Unit))
         (gaussianRankChangeCovariance t)).toProbabilityMeasure) := by
-  apply Continuous.multivariateGaussian continuous_const
-  · let v : ℝ → Unit ⊕ Unit → ℝ := fun t ↦ Sum.elim (fun _ ↦ 1) (fun _ ↦ t)
-    have hv : Continuous v := by
-      apply continuous_pi
-      intro i
-      rcases i with _ | _
-      · exact continuous_const
-      · exact continuous_id'
-    have hcov : gaussianRankChangeCovariance =
-        fun t ↦ Matrix.vecMulVec (v t) (v t) := by
-      funext t
-      rfl
-    rw [hcov]
-    exact hv.matrix_vecMulVec hv
-  · exact posSemidef_gaussianRankChangeCovariance
+  exact Continuous.multivariateGaussian continuous_const continuous_gaussianRankChangeCovariance
+    posSemidef_gaussianRankChangeCovariance
 
 /-- At a nonzero rank parameter, observing `tZ = 0` determines `Z = 0`, so the displayed
 pseudoinverse conditional kernel is the point mass at zero. -/
@@ -110,13 +110,7 @@ theorem gaussianCondKernel_gaussianRankChangeCovariance_zero_of_ne_zero {t : ℝ
     (0 : EuclideanSpace ℝ (Unit ⊕ Unit))
     (posSemidef_gaussianRankChangeCovariance t) 0
     (v₁ := 1) (v₂ := t ^ 2) (ρ := t / |t|)]
-  · simp only [PiLp.zero_apply, sub_zero, mul_zero, add_zero]
-    rw [div_pow, sq_abs, div_self (pow_ne_zero 2 ht)]
-    simp only [PUnit.default_eq_unit, sub_self, mul_zero, Real.toNNReal_zero,
-      gaussianReal_zero_var, Measure.map_dirac]
-    have hsingle : EuclideanSpace.single () (0 : ℝ) = 0 :=
-      (PiLp.single_eq_zero_iff 2 _).mpr rfl
-    rw [hsingle]
+  · simp [ht, div_pow, gaussianReal_zero_var, (PiLp.single_eq_zero_iff 2 ()).mpr rfl]
   · simp
   · simp [pow_two]
   · simp [Real.sqrt_sq_eq_abs]
@@ -169,16 +163,6 @@ theorem not_continuousAt_gaussianCondKernel_gaussianRankChangeCovariance_zero_ze
       (μ : Measure (EuclideanSpace ℝ Unit))) heq
     simpa only [F, δ, Measure.coe_toProbabilityMeasure,
       gaussianCondKernel_gaussianRankChangeCovariance_zero_zero] using hcoe
-  have hchar := congrArg
-    (fun μ : Measure (EuclideanSpace ℝ Unit) ↦
-      charFun μ (EuclideanSpace.single default 1)) hmeasure
-  rw [charFun_multivariateGaussian Matrix.PosSemidef.one, charFun_dirac] at hchar
-  have hquad :
-      (EuclideanSpace.single (default : Unit) (1 : ℝ)).ofLp ⬝ᵥ
-          (EuclideanSpace.single (default : Unit) (1 : ℝ)).ofLp = 1 := by
-    simp [dotProduct]
-  norm_num [hquad] at hchar
-  have hnorm := congrArg norm hchar
-  norm_num [Complex.norm_exp] at hnorm
+  exact one_ne_zero ((multivariateGaussian_eq_dirac_iff 0 Matrix.PosSemidef.one).mp hmeasure)
 
 end TauCeti.Probability
