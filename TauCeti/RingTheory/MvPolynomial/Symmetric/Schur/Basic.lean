@@ -279,7 +279,7 @@ theorem mapDomain_rowLenWeight (h : μ.colLen 0 ≤ N) :
 
 /-- For a shape taller than the alphabet the row-length exponent records only the rows the
 alphabet reaches, so its degree falls short of the number of cells. -/
-private theorem degree_rowLenWeight_lt (h : N < μ.colLen 0) :
+theorem degree_rowLenWeight_lt (h : N < μ.colLen 0) :
     (rowLenWeight N μ).degree < μ.card := by
   rw [Finsupp.degree_eq_sum]
   simp only [rowLenWeight_apply]
@@ -404,6 +404,13 @@ theorem schurPoly_eq_rename (μ : n.Partition) :
 `Fintype.equivFin σ`: the image of `TauCeti.rowLenWeight` of the Young diagram of `ν`. -/
 noncomputable def partWeight (σ : Type*) [Fintype σ] {n : ℕ} (ν : n.Partition) : σ →₀ ℕ :=
   Finsupp.mapDomain (Fintype.equivFin σ).symm (rowLenWeight (Fintype.card σ) (ofPartition ν))
+
+/-- `TauCeti.partWeight σ ν` is the image of `TauCeti.rowLenWeight` of the Young diagram of `ν`
+under the reindexing `(Fintype.equivFin σ).symm`. -/
+theorem partWeight_eq_mapDomain (ν : n.Partition) :
+    partWeight σ ν = Finsupp.mapDomain (Fintype.equivFin σ).symm
+      (rowLenWeight (Fintype.card σ) (ofPartition ν)) := by
+  rw [partWeight]
 
 @[simp]
 theorem partWeight_apply (ν : n.Partition) (x : σ) :

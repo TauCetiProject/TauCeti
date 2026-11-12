@@ -252,7 +252,7 @@ theorem ncard_morseBrokenTrajectoryPairs (hdf : MDifferentiable 𝓘(ℝ, E) �
   · intro w hw
     obtain ⟨x, hx, t₁, t₂, ht₁, ht₂⟩ :=
       hX.exists_mem_morseBrokenTrajectorySet_of_mem_morseBrokenTrajectoryPairs hdf hw
-    obtain ⟨q, hq, hpq, hqr, -, hyc, -, hzc⟩ := hw
+    obtain ⟨q, _, _, _, -, hyc, -, hzc⟩ := hw
     obtain ⟨hpq', hqr', hz₁, hz₂⟩ := mem_morseBrokenTrajectorySet'.1 hx
     -- The level points of the two components are the given pair.
     refine ⟨x, hx, Prod.ext ?_ ?_⟩
@@ -380,7 +380,7 @@ theorem exists_nhds_homeomorph_of_mem_morseTrajectoryPairs {p r : M}
     ∃ N ∈ 𝓝 (⟨w, hw⟩ : closure (hX.morseTrajectoryPairs p r c₁ c₂)),
       ∃ V : Set ℝ, IsOpen V ∧ Nonempty (V ≃ₜ N) := by
   have hpr : p ≠ r := by rintro rfl; omega
-  obtain ⟨Φ, hΦ⟩ := hX.exists_homeomorph_morseTrajectoryPairs
+  obtain ⟨Φ, _⟩ := hX.exists_homeomorph_morseTrajectoryPairs
     (hf.contMDiff.mdifferentiable (by simp)) hpr hr₂ (h₂₁.trans h₁p)
   -- The level slice is a manifold modelled on a line `L`.
   obtain ⟨L, hL, C, -, -⟩ := h.exists_unstableSet_inter_stableSet_level_isManifold hf hpr
