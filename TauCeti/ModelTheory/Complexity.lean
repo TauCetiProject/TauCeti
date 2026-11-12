@@ -12,8 +12,8 @@ public import Mathlib.ModelTheory.Complexity
 
 Mathlib's `FirstOrder.Language.BoundedFormula.iSup` and `FirstOrder.Language.BoundedFormula.iInf`
 form the disjunction and conjunction of a finite family of formulas. This file shows that both are
-quantifier-free when every member of the family is. Conversely, an implication, a conjunction or
-a disjunction is quantifier-free only when its constituents are.
+quantifier-free when every member of the family is. Conversely, an implication, a negation, a
+conjunction, a disjunction or a biconditional is quantifier-free only when its constituents are.
 
 In an algebraic language, every atomic formula holds in a subsingleton structure: atomic
 formulas can only assert equality of terms. Every homomorphism preserves atomic formulas
@@ -24,7 +24,8 @@ injectivity, which only the converse implication needs.
 Translating a formula along a language homomorphism (`FirstOrder.Language.LHom.onBoundedFormula`)
 keeps it atomic, quantifier-free or universal, and quantifying all bound variables of a universal
 formula (`FirstOrder.Language.BoundedFormula.alls`) gives a universal formula. These let universal
-sentences of a language be read in an extension by constants.
+sentences of a language be read in an extension by constants. Substituting terms for the free
+variables (`FirstOrder.Language.BoundedFormula.subst`) keeps a formula atomic or quantifier-free.
 -/
 
 public section
@@ -86,6 +87,16 @@ theorem isQF_sup_iff : (φ ⊔ ψ).IsQF ↔ φ.IsQF ∧ ψ.IsQF :=
     obtain ⟨h, hψ⟩ := isQF_imp_iff.1 h
     exact ⟨(isQF_imp_iff.1 h).1, hψ⟩, fun h => h.1.sup h.2⟩
 
+/-- A negation is quantifier-free exactly when the negated formula is. -/
+@[simp]
+theorem isQF_not_iff : φ.not.IsQF ↔ φ.IsQF :=
+  isQF_imp_iff.trans (and_iff_left isQF_bot)
+
+/-- A biconditional is quantifier-free exactly when its two sides are. -/
+@[simp]
+theorem isQF_iff_iff : (φ.iff ψ).IsQF ↔ φ.IsQF ∧ ψ.IsQF :=
+  isQF_inf_iff.trans <| by simp only [isQF_imp_iff, and_comm (a := ψ.IsQF), and_self]
+
 end FirstOrder.Language.BoundedFormula
 
 namespace FirstOrder.Language.BoundedFormula
@@ -130,6 +141,19 @@ theorem IsQF.onBoundedFormula (h : φ.IsQF) (ϕ : L →ᴸ L') :
   induction h with
   | falsum => exact IsQF.falsum
   | of_isAtomic h => exact (h.onBoundedFormula ϕ).isQF
+  | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
+
+/-- Substituting terms for the free variables of an atomic formula gives an atomic formula. -/
+theorem IsAtomic.subst {β : Type*} (h : φ.IsAtomic) (tf : α → L.Term β) :
+    (φ.subst tf).IsAtomic :=
+  IsAtomic.recOn h (fun _ _ => IsAtomic.equal _ _) fun _ _ => IsAtomic.rel _ _
+
+/-- Substituting terms for the free variables of a quantifier-free formula gives a
+quantifier-free formula. -/
+theorem IsQF.subst {β : Type*} (h : φ.IsQF) (tf : α → L.Term β) : (φ.subst tf).IsQF := by
+  induction h with
+  | falsum => exact IsQF.falsum
+  | of_isAtomic h => exact (h.subst tf).isQF
   | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
 
 /-- Translating a universal formula along a language homomorphism gives a universal formula. -/
