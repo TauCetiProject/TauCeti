@@ -18,11 +18,12 @@ For an upper-triangular matrix `M = (a b; 0 d)`, substitution on degree-`w` bina
 triangular in the monomial basis. Its diagonal entries are `aⁱdʷ⁻ⁱ`, independently of `b`, so
 its trace is the Eichler--Selberg weight polynomial `P_{w+2}(a+d,ad)`.
 
-This file also evaluates Popa--Zagier's explicit Hecke element on the canonical
-upper-triangular representatives `FixedDetMatrices.reps n`. Its coefficient is `1` in the
-interior of the interval `0 ≤ b ≤ d-a`, `1/2` at a non-scalar endpoint, `1/6` at a scalar
-matrix, and `0` outside the interval. Combining the coefficient and trace calculations gives
-the contribution of each representative to the ambient binary-form trace.
+This file also evaluates Popa--Zagier's explicit Hecke element on upper-triangular matrices
+`(a b; 0 d)` with `0 < a`, in particular on the canonical representatives
+`FixedDetMatrices.reps n`. Its coefficient is `1` in the interior of the interval
+`0 ≤ b ≤ d-a`, `1/2` at a non-scalar endpoint, `1/6` at a scalar matrix, and `0` outside the
+interval. Combining the coefficient and trace calculations gives the contribution of each such
+matrix to the ambient binary-form trace.
 
 ## Main results
 
