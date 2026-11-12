@@ -11,6 +11,7 @@ import TauCeti.Analysis.Convex.SchauderFixedPoint
 public import TauCeti.Analysis.PDE.DirichletProblem.Interval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 import TauCeti.Topology.ContinuousMap.Ascoli
 import Mathlib.Topology.MetricSpace.Equicontinuity
@@ -68,13 +69,6 @@ namespace TauCeti.PDE
 
 variable {x₀ x₁ lam M : ℝ} {G : ℝ → ℝ} {g₀ g₁ : ℝ}
 
-/-- A function integrable on `(x₀, x₁)` is interval integrable between any two points of
-`[x₀, x₁]`. -/
-private theorem intervalIntegrable_of_integrableOn_Ioo {h : ℝ → ℝ}
-    (hh : IntegrableOn h (Ioo x₀ x₁)) (y z : Icc x₀ x₁) : IntervalIntegrable h volume y z :=
-  ((integrableOn_Icc_iff_integrableOn_Ioo (μ := volume)).2 hh |>.mono_set
-    (uIcc_subset_Icc y.2 z.2)).intervalIntegrable
-
 /-- **Compactness of the frozen-solution map.** Let `a i`, for `i ∈ ι`, be coefficients with
 uniform bounds `λ ≤ a i ≤ M`. The solutions of the linear problems with coefficients `a i` form a
 relatively compact subset of `C([x₀, x₁])`: their derivatives are all dominated by one integrable
@@ -94,7 +88,6 @@ theorem isCompact_closure_range_intervalDirichletSolution {ι : Type*} (hx : x�
       |intervalDirichletSlope x₀ x₁ g₀ g₁ G (a i) t| ≤ H t :=
     fun i => ae_abs_intervalDirichletSlope_le hlam ((haM i).mono fun _ h => h.1)
       (abs_intervalDirichletFluxConst_le hx hlam g₀ g₁ (ha i) (haM i) hG)
-  have hII := @intervalIntegrable_of_integrableOn_Ioo x₀ x₁
   let x₀' : Icc x₀ x₁ := ⟨x₀, left_mem_Icc.2 hx.le⟩
   -- The common modulus of continuity `Ψ = ∫_{x₀}^x H` and the common bound.
   set Ψ : ℝ → ℝ := fun y => ∫ t in x₀..y, H t with hΨdef
@@ -104,10 +97,13 @@ theorem isCompact_closure_range_intervalDirichletSolution {ι : Type*} (hx : x�
       intervalDirichletSolution hx.le g₀ g₁ (hs i) z| ≤ |Ψ y - Ψ z| := by
     intro i y z
     rw [intervalDirichletSolution_apply, intervalDirichletSolution_apply, add_sub_add_left_eq_sub,
-      intervalIntegral.integral_interval_sub_left (hII (hs i) x₀' y) (hII (hs i) x₀' z), hΨdef,
-      intervalIntegral.integral_interval_sub_left (hII hH x₀' y) (hII hH x₀' z)]
+      intervalIntegral.integral_interval_sub_left ((hs i).intervalIntegrable_of_mem_Icc x₀'.2 y.2)
+        ((hs i).intervalIntegrable_of_mem_Icc x₀'.2 z.2), hΨdef,
+      intervalIntegral.integral_interval_sub_left (hH.intervalIntegrable_of_mem_Icc x₀'.2 y.2)
+        (hH.intervalIntegrable_of_mem_Icc x₀'.2 z.2)]
     refine (Real.norm_eq_abs _).symm.trans_le
-      (intervalIntegral.norm_integral_le_abs_of_norm_le ?_ (hII hH z y))
+      (intervalIntegral.norm_integral_le_abs_of_norm_le ?_
+        (hH.intervalIntegrable_of_mem_Icc z.2 y.2))
     have h := hsH i
     rw [restrict_Ioo_eq_restrict_Icc] at h
     exact ae_restrict_of_ae_restrict_of_subset
@@ -159,8 +155,8 @@ theorem continuous_intervalDirichletSolution {X : Type*} [TopologicalSpace X] [S
   refine (ContinuousMap.norm_le _ (integral_nonneg fun _ => abs_nonneg _)).2 fun y => ?_
   rw [Function.comp_apply, ContinuousMap.sub_apply, intervalDirichletSolution_apply,
     intervalDirichletSolution_apply, add_sub_add_left_eq_sub,
-    ← intervalIntegral.integral_sub (intervalIntegrable_of_integrableOn_Ioo (hs _) x₀' y)
-      (intervalIntegrable_of_integrableOn_Ioo (hs _) x₀' y),
+    ← intervalIntegral.integral_sub ((hs (vn n)).intervalIntegrable_of_mem_Icc x₀'.2 y.2)
+      ((hs v).intervalIntegrable_of_mem_Icc x₀'.2 y.2),
     Real.norm_eq_abs, intervalIntegral.integral_of_le y.2.1, ← integral_Icc_eq_integral_Ioo]
   refine abs_integral_le_integral_abs.trans (setIntegral_mono_set ?_
     (ae_of_all _ fun _ => abs_nonneg _)
