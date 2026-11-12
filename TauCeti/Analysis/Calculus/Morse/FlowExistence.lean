@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Dynamics.Flow.OfLipschitz
-public import TauCeti.Dynamics.Flow.Stable
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Dynamics.Flow.Variational
 
@@ -54,9 +53,6 @@ Lyapunov descent along every orbit.
 * `TauCeti.eq_centeredNegativeGradientFlow_of_isIntegralCurveOn`: uniqueness in displacement
   coordinates on a time set containing the interval from zero to the chosen time.
 * `TauCeti.negativeGradientFlow_congr`: it does not depend on the chosen Lipschitz bound.
-* `TauCeti.negativeGradientFlow_neg`: the flow of `-f` is the reversed flow of `f`.
-* `TauCeti.unstableSet_negativeGradientFlow_eq_stableSet_neg`: hence the unstable sets of `f` are
-  the stable sets of `-f`.
 * `TauCeti.negativeGradientFlow_apply_eq_of_gradient_eq`: negative-gradient flows agree at time `t`
   on `y` when the gradients agree along the orbit segment from `0` to `t`.
 * `TauCeti.forall_negativeGradientFlow_eq_self_iff`: its rest points are the zeros of `∇ f`.
@@ -235,26 +231,6 @@ different constants, produce the same negative gradient flow. -/
 theorem negativeGradientFlow_congr (f : E → ℝ) {K' : ℝ≥0} (hf : LipschitzWith K (∇ f))
     (hf' : LipschitzWith K' (∇ f)) : negativeGradientFlow f hf = negativeGradientFlow f hf' :=
   flowOfLipschitz_congr hf.neg hf'.neg
-
-/-- **The negative gradient flow of `-f` runs the flow of `f` backwards.** -/
-theorem negativeGradientFlow_neg (hf : LipschitzWith K (∇ f)) (hf' : LipschitzWith K (∇ (-f))) :
-    negativeGradientFlow (-f) hf' = (negativeGradientFlow f hf).reverse := by
-  refine Flow.ext fun t x ↦ ?_
-  -- The reversed orbit `τ ↦ φ_{-τ} x` solves `γ' = ∇ f (γ) = -∇ (-f) (γ)`.
-  have hrev : IsIntegralCurve (fun τ ↦ negativeGradientFlow f hf (-τ) x)
-      (fun _ y ↦ -∇ (-f) y) := fun τ ↦ by
-    simpa [Function.comp_def] using
-      ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x (-τ)).scomp τ
-        (hasDerivAt_neg τ)
-  simpa using (eq_negativeGradientFlow (-f) hf' hrev t).symm
-
-/-- **The unstable set of `f` is the stable set of `-f`**, since the negative gradient flow of `-f`
-is the reversed flow of `f`. -/
-theorem unstableSet_negativeGradientFlow_eq_stableSet_neg (hf : LipschitzWith K (∇ f))
-    (hf' : LipschitzWith K (∇ (-f))) (x : E) :
-    Flow.unstableSet (negativeGradientFlow f hf) x =
-      Flow.stableSet (negativeGradientFlow (-f) hf') x := by
-  rw [negativeGradientFlow_neg hf hf', Flow.stableSet_reverse]
 
 /-- **The rest points of the negative gradient flow are the zeros of `∇ f`**, that is, the
 critical points of a differentiable `f`. -/

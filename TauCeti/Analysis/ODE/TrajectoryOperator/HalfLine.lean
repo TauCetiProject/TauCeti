@@ -27,9 +27,9 @@ determined by their values at time `0`, and three subspaces of `E` record their 
   intersection of the first two (`TauCeti.squareIntegrableSolutionsOn_Iio_inf_Ioi`) and models the
   kernel of the trajectory operator `D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)`.
 
-For the linearization `A(s) = Hess f(γ s)` along a gradient trajectory `γ` from `p` to `q`, the
-stable and unstable solutions are the tangent spaces at `γ 0` of the stable set of `q` and of the
-unstable set of `p` (`TauCeti.Analysis.Calculus.Morse.MorseSmale.Fredholm`).
+For the linearization `A(s) = Hess f(γ s)` along a gradient trajectory `γ` from `p` to `q`,
+classically the stable and unstable solutions are the tangent spaces at `γ 0` of the stable set of
+`q` and of the unstable set of `p`; that identification is not formalized here.
 
 For a continuous family of symmetric operators with invertible limits `A±` at `±∞` this file
 computes their dimensions and identifies the cokernel of `D_A` with the failure of the stable and
@@ -43,10 +43,6 @@ unstable solutions to span `E`:
   (`TauCeti.squareIntegrableSolutions_neg_eq_orthogonal_sup`);
 * hence `D_A` is surjective exactly when the stable and unstable solutions span `E`
   (`TauCeti.WeakDerivStep.surjective_trajectoryOperator_iff_sup_eq_top`).
-
-A solution along which `A` is eventually coercive, `c ‖v‖² ≤ ⟪A v, v⟫` with `c > 0`, decays
-exponentially, so it is a stable solution
-(`TauCeti.mem_squareIntegrableSolutionsOn_Ioi_of_eventually_mul_norm_sq_le_inner`).
 
 For the linearized gradient flow the last statement is the linear half of the classical fact that
 the linearized operator is onto exactly when the unstable and stable sets meet transversally along
@@ -234,54 +230,6 @@ theorem squareIntegrableSolutionsOn_neg_le_orthogonal
   simp_rw [hconst] at hint
   rw [integrableOn_const_iff, hs] at hint
   simpa using hint
-
-/-- **Coercivity along a solution forces decay.** If a solution of `v' + A v = 0` eventually
-satisfies `c ‖v‖² ≤ ⟪A v, v⟫` with `c > 0`, then `‖v‖²` decays like `exp (-2 c τ)`, so its initial
-value is a stable solution. -/
-theorem mem_squareIntegrableSolutionsOn_Ioi_of_eventually_mul_norm_sq_le_inner {v : ℝ → E}
-    (hv : ∀ τ, HasDerivAt v (-A τ (v τ)) τ) {c : ℝ} (hc : 0 < c)
-    (hA : ∀ᶠ τ in atTop, c * ‖v τ‖ ^ 2 ≤ ⟪A τ (v τ), v τ⟫_ℝ) :
-    v 0 ∈ squareIntegrableSolutionsOn A (Ioi 0) := by
-  obtain ⟨T, hT⟩ := eventually_atTop.1 hA
-  have hvc : Continuous v := continuous_iff_continuousAt.2 fun τ ↦ (hv τ).continuousAt
-  refine ⟨v, rfl, hv, ?_⟩
-  rw [memLp_two_iff_integrable_sq_norm hvc.aestronglyMeasurable]
-  -- `g τ = exp (2 c τ) ‖v τ‖²` has derivative `2 exp (2 c τ) (c ‖v‖² - ⟪A v, v⟫) ≤ 0` after `T`.
-  set g : ℝ → ℝ := fun τ ↦ Real.exp (2 * c * τ) * ‖v τ‖ ^ 2 with hg
-  have hgd (τ : ℝ) : HasDerivAt g (Real.exp (2 * c * τ) * (2 * c) * ‖v τ‖ ^ 2 +
-      Real.exp (2 * c * τ) * (2 * ⟪v τ, -A τ (v τ)⟫_ℝ)) τ := by
-    have h1 : HasDerivAt (fun τ ↦ Real.exp (2 * c * τ)) (Real.exp (2 * c * τ) * (2 * c)) τ := by
-      simpa using ((hasDerivAt_id τ).const_mul (2 * c)).exp
-    exact h1.mul (hv τ).norm_sq
-  have hanti : AntitoneOn g (Ici T) := by
-    refine antitoneOn_of_deriv_nonpos (convex_Ici T)
-      (fun τ _ ↦ (hgd τ).continuousAt.continuousWithinAt)
-      (fun τ _ ↦ (hgd τ).differentiableAt.differentiableWithinAt) fun τ hτ ↦ ?_
-    rw [interior_Ici] at hτ
-    rw [(hgd τ).deriv, inner_neg_right, real_inner_comm]
-    have := hT τ (le_of_lt hτ)
-    have he := Real.exp_pos (2 * c * τ)
-    nlinarith
-  have hbound (τ : ℝ) (hτ : T ≤ τ) : ‖v τ‖ ^ 2 ≤ g T * Real.exp (-2 * c * τ) := by
-    have he : Real.exp (2 * c * τ) * Real.exp (-2 * c * τ) = 1 := by
-      rw [← Real.exp_add]; simp [neg_mul]
-    calc ‖v τ‖ ^ 2 = g τ * Real.exp (-2 * c * τ) := by
-          simp only [hg]
-          rw [mul_comm (Real.exp (2 * c * τ)), mul_assoc, he, mul_one]
-      _ ≤ g T * Real.exp (-2 * c * τ) :=
-          mul_le_mul_of_nonneg_right (hanti (mem_Ici.2 le_rfl) hτ hτ) (Real.exp_pos _).le
-  -- Split `(0, ∞)` at `T`: a compact piece and an exponentially decaying tail.
-  have hsplit : Ioi (0 : ℝ) ⊆ Icc 0 T ∪ Ioi T := fun τ hτ ↦ by
-    rcases le_or_gt τ T with h | h
-    · exact Or.inl ⟨le_of_lt hτ, h⟩
-    · exact Or.inr h
-  refine IntegrableOn.mono_set (IntegrableOn.union ?_ ?_) hsplit
-  · exact ((hvc.norm.pow 2).continuousOn).integrableOn_compact isCompact_Icc
-  · refine Integrable.mono' ((integrableOn_exp_mul_Ioi (a := -2 * c) (by linarith) T).const_mul
-      (g T)) (hvc.norm.pow 2).aestronglyMeasurable ?_
-    refine (ae_restrict_iff' measurableSet_Ioi).2 (.of_forall fun τ hτ ↦ ?_)
-    rw [Real.norm_of_nonneg (sq_nonneg _)]
-    exact hbound τ (le_of_lt hτ)
 
 end InnerProduct
 

@@ -44,8 +44,8 @@ remainder of the negative-gradient field, supplied by
 * `ContDiffAt.map_neg_hessianOperator_stableLinearSubspace_le` and
   `ContDiffAt.map_neg_hessianOperator_unstableLinearSubspace_le`: both subspaces are invariant
   under the negative-gradient linearization `-hessianOperator f x`.
-* `ContDiffAt.exists_pos_forall_mul_norm_sq_le_inner_hessianOperator`: the Hessian is bounded
-  below by a positive multiple of the squared norm on the stable linear subspace.
+* `ContDiffAt.exists_pos_mul_norm_sq_le_inner_hessianOperator`: the Hessian form is coercive on
+  the stable subspace and anticoercive on the unstable subspace, with a common constant.
 * `ContDiffAt.isCompl_unstableLinearSubspace_stableLinearSubspace`: when the Hessian is injective
   these subspaces are complementary, so the tangent space is their direct sum.
 * `ContDiffAt.finrank_unstableLinearSubspace`: the unstable dimension is the Morse index.
@@ -167,6 +167,21 @@ theorem disjoint_unstableLinearSubspace_stableLinearSubspace (hf : ContDiffAt �
   exact hf.isSelfAdjoint_hessianOperator.isSymmetric
     |>.disjoint_negativeSpectralSubspace_positiveSpectralSubspace rfl
 
+/-- **The Hessian form is coercive on the stable and anticoercive on the unstable subspace.** At a
+`C²` point there is `c > 0` with `c ‖u‖ ^ 2 ≤ ⟪Hess f(x) u, u⟫` on the stable linear subspace and
+`⟪Hess f(x) u, u⟫ ≤ -(c ‖u‖ ^ 2)` on the unstable linear subspace. This does not require
+nondegeneracy: the zero eigenspace belongs to neither subspace. -/
+theorem exists_pos_mul_norm_sq_le_inner_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
+    ∃ c > 0, (∀ u ∈ hf.stableLinearSubspace, c * ‖u‖ ^ 2 ≤ ⟪hessianOperator f x u, u⟫_ℝ) ∧
+      ∀ u ∈ hf.unstableLinearSubspace, ⟪hessianOperator f x u, u⟫_ℝ ≤ -(c * ‖u‖ ^ 2) := by
+  have hT := hf.isSelfAdjoint_hessianOperator.isSymmetric
+  obtain ⟨c, hc, hceig⟩ := hT.exists_pos_forall_le_abs_eigenvalues rfl
+  refine ⟨c, hc, fun u hu ↦ ?_, fun u hu ↦ ?_⟩
+  · simpa using hT.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace rfl
+      (fun i hi ↦ by simpa [abs_of_pos hi] using hceig i hi.ne') hu
+  · simpa using hT.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace rfl
+      (fun i hi ↦ by simpa [abs_of_neg hi] using hceig i hi.ne) hu
+
 /-- In the Hessian eigenbasis, the number of negative eigenvalues, counted with multiplicity, is
 the Morse index. -/
 theorem morseIndex_eq_ncard_hessianOperator_eigenvalues_neg (hf : ContDiffAt ℝ 2 f x) :
@@ -206,19 +221,6 @@ theorem stableLinearSubspace_eq_pointSpectralSubspace (hf : ContDiffAt ℝ 2 f x
     hf.isSelfAdjoint_hessianOperator.isSymmetric.pointSpectralSubspace_eq_eigenvectorSpan rfl,
     LinearMap.IsSymmetric.mem_eigenvectorSpan_iff]
   simp only [mem_Ioi, subset_def, Finset.mem_coe, mem_ofPred_eq]
-
-/-- **The Hessian is coercive on the stable linear subspace.** At a `C²` point there is `α > 0`
-with `α ‖s‖² ≤ ⟪Hess f(x) s, s⟫` for every stable vector `s`: below all the positive eigenvalues
-of the Hessian. -/
-theorem exists_pos_forall_mul_norm_sq_le_inner_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
-    ∃ α > 0, ∀ s ∈ hf.stableLinearSubspace,
-      α * ‖s‖ ^ 2 ≤ ⟪hessianOperator f x s, s⟫_ℝ := by
-  have hT := hf.isSelfAdjoint_hessianOperator.isSymmetric
-  obtain ⟨α, hα, hle⟩ := hT.exists_pos_forall_le_eigenvalues rfl
-  refine ⟨α, hα, fun s hs ↦ ?_⟩
-  rw [hf.stableLinearSubspace_eq_pointSpectralSubspace,
-    hT.pointSpectralSubspace_eq_eigenvectorSpan rfl, hT.eigenvectorSpan_eq_spanIndices] at hs
-  simpa using hT.le_re_inner_apply_self_of_mem_spanIndices rfl (fun i hi ↦ hle i hi) hs
 
 /-- The Morse index at a `C²` point is the dimension of the point-spectral subspace of the
 Hessian for the negative eigenvalues. -/

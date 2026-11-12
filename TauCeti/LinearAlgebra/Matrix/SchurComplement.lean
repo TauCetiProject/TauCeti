@@ -79,9 +79,9 @@ theorem PosSemidef.schur_complement₂₂ [Fintype n]
     ext (i | i) (j | j) <;> simp [conjTranspose_apply]
   have hsub : (A - B * P * Bᴴ).submatrix e e =
       A.submatrix e e - B.submatrix e id * P * (B.submatrix e id)ᴴ := by
-    rw [Matrix.submatrix_sub, Pi.sub_apply, Pi.sub_apply,
-      Matrix.submatrix_mul _ _ _ id _ Function.bijective_id,
-      Matrix.submatrix_mul _ _ _ id _ Function.bijective_id, Matrix.conjTranspose_submatrix]
+    rw [submatrix_sub, Pi.sub_apply, Pi.sub_apply,
+      submatrix_mul _ _ _ id _ Function.bijective_id,
+      submatrix_mul _ _ _ id _ Function.bijective_id, conjTranspose_submatrix]
     simp
   have hcancel : B.submatrix e id * P * D * P = B.submatrix e id * P := by
     simpa only [Matrix.mul_assoc] using congrArg (B.submatrix e id * ·) hPDP
@@ -159,7 +159,7 @@ theorem inv_add_vecMulVec (A : Matrix n n R) (hA : IsUnit A) (u v : n → R)
   rw [hUV, hinv] at h
   rw [h]
   congr 1
-  simp only [Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_assoc,
+  simp only [Matrix.mul_smul, Matrix.mul_one, smul_mul, Matrix.mul_assoc,
     hUV, mul_vecMulVec, vecMulVec_mul]
 
 end RankOne
