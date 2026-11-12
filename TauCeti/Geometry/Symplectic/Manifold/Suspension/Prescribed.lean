@@ -55,7 +55,7 @@ finite-dimensional parameter manifold, with `M` second-countable, a closed set `
 `K₀` outside `U`
 (`TauCeti.SmoothMappingTorus.exists_verticalFamily_eqOn`). Descending, the block structures `J λ` on
 `X_φ` depend smoothly on `λ`, are compatible with `Ω = ds ∧ dt + σ_v` when `φ` preserves `σ`, and
-have vertical part `K₁` over `A` and `K₀` outside `U`
+have vertical part `K₁` over `A` and `K₀` outside `U` and wherever `K₁` is `K₀`
 (`TauCeti.SmoothMappingTorus.exists_suspensionAlmostComplexStructure_eqOn`).
 
 No `φ`-invariant structure is needed, and the prescribed family need not extend smoothly beyond
@@ -144,9 +144,12 @@ private theorem cutoffFamily_of_eq_zero {l : Λ} {p : (ℝ × ℝ) × M}
   hσn.cutoffInterp_of_eq_zero _ _ _ _ (n := (l, p)) h
 
 /-- Where the prescribed family is the background family, so is the cutoff family. -/
-private theorem cutoffFamily_of_eq {l : Λ} {p : (ℝ × ℝ) × M} (h : K₁ l p = K₀ l p) :
-    cutoffFamily hσn hK₀c hK₁c ρ hρ l p = K₀ l p :=
-  hσn.cutoffInterp_of_eq _ _ _ _ (n := (l, p)) h
+private theorem cutoffFamily_of_eq {l : Λ} {p : (ℝ × ℝ) × M}
+    (h : (l, suspensionCover φ p) ∈ U → K₁ l p = K₀ l p) :
+    cutoffFamily hσn hK₀c hK₁c ρ hρ l p = K₀ l p := by
+  by_cases hU : (l, suspensionCover φ p) ∈ U
+  · exact hσn.cutoffInterp_of_eq _ _ _ _ (n := (l, p)) (h hU)
+  · exact cutoffFamily_of_notMem hσn hK₀c hK₁c ρ hρ hU
 
 /-- Over the preimage of `U`, the cutoff family acts by the Cayley path expression in the
 operators of `K₀` and `K₁`. -/
@@ -294,7 +297,7 @@ theorem exists_verticalFamily_eq_of_cutoff (ρ : Λ × (UnitAddCircle × SmoothM
       (∀ l p, (hσn.symplecticFormAt p.2).Compatible (K l p)) ∧
       (∀ l p, ρ (l, suspensionCover φ p) = 1 → K l p = K₁ l p) ∧
       (∀ l p, ρ (l, suspensionCover φ p) = 0 → K l p = K₀ l p) ∧
-      (∀ l p, K₁ l p = K₀ l p → K l p = K₀ l p) :=
+      (∀ l p, ((l, suspensionCover φ p) ∈ U → K₁ l p = K₀ l p) → K l p = K₀ l p) :=
   ⟨cutoffFamily hσn hK₀c hK₁c ρ hρ,
     contMDiff_cutoffFamily hσn hK₀c hK₁c ρ hρ hU hK₀ hK₁ hsρ hsupp,
     cutoffFamily_add_fst hσn hK₀c hK₁c ρ hρ hs₀ hs₁,
@@ -326,7 +329,7 @@ theorem exists_verticalFamily_eqOn [IsManifold IΛ ∞ Λ] [FiniteDimensional �
       (∀ l p, (hσn.symplecticFormAt p.2).Compatible (K l p)) ∧
       (∀ l p, (l, suspensionCover φ p) ∈ A → K l p = K₁ l p) ∧
       (∀ l p, (l, suspensionCover φ p) ∉ U → K l p = K₀ l p) ∧
-      (∀ l p, K₁ l p = K₀ l p → K l p = K₀ l p) := by
+      (∀ l p, ((l, suspensionCover φ p) ∈ U → K₁ l p = K₀ l p) → K l p = K₀ l p) := by
   have : LocallyCompactSpace HΛ := IΛ.locallyCompactSpace
   have : LocallyCompactSpace Λ := ChartedSpace.locallyCompactSpace HΛ Λ
   have : LocallyCompactSpace H := I.locallyCompactSpace
@@ -369,7 +372,8 @@ theorem exists_verticalFamily_eqOn_seamFamily [IsManifold IΛ ∞ Λ] [FiniteDim
       (∀ l p, (hσn.symplecticFormAt p.2).Compatible (K l p)) ∧
       (∀ l p, (l, suspensionCover φ p) ∈ A → K l p = K₁ l p) ∧
       (∀ l p, (l, suspensionCover φ p) ∉ U → K l p = seamFamily hσ (hJ₀ l) p) ∧
-      (∀ l p, K₁ l p = seamFamily hσ (hJ₀ l) p → K l p = seamFamily hσ (hJ₀ l) p) :=
+      (∀ l p, ((l, suspensionCover φ p) ∈ U → K₁ l p = seamFamily hσ (hJ₀ l) p) →
+        K l p = seamFamily hσ (hJ₀ l) p) :=
   exists_verticalFamily_eqOn hσn (contMDiff_seamFamily_family hσ hJ₀ hJ₀s)
     (fun l ↦ seamFamily_add_fst hσ (hJ₀ l)) (fun l ↦ mfderiv_symm_seamFamily hσ (hJ₀ l))
     (fun l ↦ compatible_seamFamily hσ (hJ₀ l) hσn) hU hK₁ hs₁ ht₁ hK₁c hA hAU
@@ -380,8 +384,8 @@ hypotheses of `exists_verticalFamily_eqOn`, there is a family `J λ` of almost c
 `X_φ = (ℝ / ℤ) × Y_φ`, jointly smooth in `(λ, y)` and each compatible with
 `Ω = ds ∧ dt + σ_v`, which in the coordinates `(s, t, x)` sends `a ∂_s + b ∂_t + v` to
 `-b ∂_s + a ∂_t + K₁ λ ((s, t), x) v` over the closed set `A`, and to
-`-b ∂_s + a ∂_t + K₀ λ ((s, t), x) v` outside `U`. In particular, over `A` and outside `U`,
-`J λ` sends `∂_s` to the suspension vector field. -/
+`-b ∂_s + a ∂_t + K₀ λ ((s, t), x) v` outside `U` and wherever `K₁ λ` is `K₀ λ`. In particular,
+over `A` and outside `U`, `J λ` sends `∂_s` to the suspension vector field. -/
 theorem exists_suspensionAlmostComplexStructure_eqOn [IsManifold IΛ ∞ Λ] [FiniteDimensional ℝ EΛ]
     [T2Space Λ] [SecondCountableTopology Λ] [SecondCountableTopology M]
     (hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ)
@@ -414,13 +418,23 @@ theorem exists_suspensionAlmostComplexStructure_eqOn [IsManifold IΛ ∞ Λ] [Fi
                   ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v)))) =
             (Manifold.tangentSpaceProdEquiv _).symm
               (-b, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
+                ((Manifold.tangentSpaceProdEquiv (t, x)).symm (a, K₀ l ((s, t), x) v)))) ∧
+      (∀ l (s t : ℝ) (x : M),
+        ((l, ((s : UnitAddCircle), mk φ t x)) ∈ U → K₁ l ((s, t), x) = K₀ l ((s, t), x)) →
+        ∀ (a b : ℝ) (v : TangentSpace I x),
+          J l ((s : UnitAddCircle), mk φ t x)
+              ((Manifold.tangentSpaceProdEquiv _).symm
+                (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
+                  ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v)))) =
+            (Manifold.tangentSpaceProdEquiv _).symm
+              (-b, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
                 ((Manifold.tangentSpaceProdEquiv (t, x)).symm (a, K₀ l ((s, t), x) v)))) := by
-  obtain ⟨K, hK, hs, ht, hc, hloc, hbg, -⟩ := exists_verticalFamily_eqOn hσn hK₀ hs₀ ht₀ hK₀c hU hK₁
-    hs₁ ht₁ hK₁c hA hAU
+  obtain ⟨K, hK, hs, ht, hc, hloc, hbg, heq⟩ := exists_verticalFamily_eqOn hσn hK₀ hs₀ ht₀ hK₀c hU
+    hK₁ hs₁ ht₁ hK₁c hA hAU
   refine ⟨fun l ↦ suspensionAlmostComplexStructure φ
       (hK.comp (contMDiff_const.prodMk contMDiff_id)) (hs l) (ht l),
     contMDiff_suspensionAlmostComplexStructure_family φ hK hs ht,
-    fun l ↦ compatible_suspensionAlmostComplexStructure φ _ _ _ hσn (hc l), ?_, ?_⟩
+    fun l ↦ compatible_suspensionAlmostComplexStructure φ _ _ _ hσn (hc l), ?_, ?_, ?_⟩
   · intro l s t x h a b v
     refine (suspensionAlmostComplexStructure_mk φ _ _ _ s t x a b v).trans ?_
     dsimp only [id]
@@ -429,5 +443,9 @@ theorem exists_suspensionAlmostComplexStructure_eqOn [IsManifold IΛ ∞ Λ] [Fi
     refine (suspensionAlmostComplexStructure_mk φ _ _ _ s t x a b v).trans ?_
     dsimp only [id]
     rw [hbg l ((s, t), x) (by rwa [suspensionCover_apply])]
+  · intro l s t x h a b v
+    refine (suspensionAlmostComplexStructure_mk φ _ _ _ s t x a b v).trans ?_
+    dsimp only [id]
+    rw [heq l ((s, t), x) fun hU ↦ h (by rwa [suspensionCover_apply] at hU)]
 
 end TauCeti.SmoothMappingTorus
