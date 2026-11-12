@@ -222,8 +222,8 @@ def quotIsotropyEquivOrbitTangent :
 
 @[simp]
 theorem coe_quotIsotropyEquivOrbitTangent_mk (Z : 𝔤) :
-    (a.quotIsotropyEquivOrbitTangent x (Submodule.Quotient.mk Z) : TangentSpace I x) = a Z x :=
-  (rfl)
+    (a.quotIsotropyEquivOrbitTangent x (Submodule.Quotient.mk Z) : TangentSpace I x) = a Z x := by
+  simp [quotIsotropyEquivOrbitTangent]
 
 /-- For a subspace `𝔨` of `𝔤`, the orbit map `Z ↦ Z_M(x)` identifies `𝔨 ⧸ (𝔨 ∩ 𝔤_x)` with the
 subspace `𝔨 · x` of the orbit tangent space. -/
@@ -235,8 +235,8 @@ def quotIsotropyEquivMap (p : Submodule ℝ 𝔤) :
 
 @[simp]
 theorem coe_quotIsotropyEquivMap_mk (p : Submodule ℝ 𝔤) (Z : p) :
-    (a.quotIsotropyEquivMap x p (Submodule.Quotient.mk Z) : TangentSpace I x) = a Z x :=
-  (rfl)
+    (a.quotIsotropyEquivMap x p (Submodule.Quotient.mk Z) : TangentSpace I x) = a Z x := by
+  simp [quotIsotropyEquivMap]
 
 /-- Where the action is locally free, the orbit tangent space has the dimension of `𝔤`. -/
 theorem finrank_orbitTangent_of_isotropy_eq_bot (h : a.isotropy x = ⊥) :

@@ -69,9 +69,8 @@ action, compactness of `H`, closedness of `σ` nor a moment map is needed for th
   `dim (W ∩ W^σ) + dim 𝔤_x = dim 𝔨`.
 * `TauCeti.SmoothTwoForm.IsMomentMap.finrank_symplecticSlice_add_finrank_add_finrank`:
   `dim V + dim 𝔤 + dim 𝔨 = dim M + 2 dim 𝔤_x`.
-* `TauCeti.tangentRepresentation_mem_orbitTangent_fundamental`,
-  `TauCeti.SmoothTwoForm.IsNondegenerate.tangentRepresentation_mem_orthogonal_orbitTangent`: the
-  stabilizer of `x` preserves the orbit tangent space `W` at `x` and its symplectic complement.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.tangentRepresentation_mem_orthogonal_orbitTangent`: the
+  stabilizer of `x` preserves the symplectic complement `W^σ` of the orbit tangent space.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticSliceRepresentation_mk`: the stabilizer acts on
   the slice by `[u] ↦ [dh_x u]`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectomorphism_symplecticSliceRepresentation`: the
@@ -157,8 +156,7 @@ theorem coe_quotEquivOrbitTangentInfOrthogonal_mk (hc : σ.momentCocycle a μ x 
     (Z : (lieAnnihilator ℝ 𝔤 (μ x)).toSubmodule) :
     (h.quotEquivOrbitTangentInfOrthogonal hc (Submodule.Quotient.mk Z) : TangentSpace I x) =
       a Z x := by
-  rw [quotEquivOrbitTangentInfOrthogonal, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
-    InfinitesimalAction.coe_quotIsotropyEquivMap_mk]
+  simp [quotEquivOrbitTangentInfOrthogonal]
 
 /-- Where the cocycle of a moment map vanishes, `dim (W ∩ W^σ) + dim 𝔤_x = dim 𝔤_{μ(x)}` for the
 orbit tangent space `W = 𝔤 · x`. -/
@@ -207,60 +205,9 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
   [ContMDiffSMul I I' ∞ G M]
 
-/-- The tangent adjoint maps only need a `C¹` Lie group. -/
-local instance : LieGroup I 1 G :=
-  LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness ℝ 3)
-    ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
-
-/-- **The stabilizer preserves the orbit tangent space.** The tangent representation
-`g ↦ dg_x` of the stabilizer of `x` maps the orbit tangent space `𝔤 · x` of the fundamental vector
-fields into itself, since `dg_x` carries `ξ_M(x)` to `(Ad_g ξ)_M(x)`. -/
-theorem tangentRepresentation_mem_orbitTangent_fundamental {x : M}
-    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I' I' (fun y : M ↦ g • y) x)
-    (g : stabilizer G x) {v : TangentSpace I' x}
-    (hv : v ∈ (InfinitesimalAction.fundamental I G I' M).orbitTangent x) :
-    tangentRepresentation hd g v ∈ (InfinitesimalAction.fundamental I G I' M).orbitTangent x := by
-  obtain ⟨ξ, rfl⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ x).1 hv
-  have h := (InfinitesimalAction.fundamental I G I' M).mem_orbitTangent x
-    (Lie.adjointContinuousLinearMap (g : G) ξ)
-  -- `dg_x ξ_M(x) = (Ad_g ξ)_M(g • x)`, read in `T_x M` through `g • x = x`.
-  have key : tangentRepresentation hd g (fundamentalVectorField I' ξ x) =
-      fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) x := by
-    rw [tangentRepresentation_apply]
-    exact (mfderiv_smul_fundamentalVectorField (g : G) ξ x).trans (congrArg
-      (fun y ↦ (fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) y : E')) g.2)
-  rw [InfinitesimalAction.fundamental_apply] at h ⊢
-  rwa [key]
-
 namespace SmoothTwoForm
 
 variable {σ : SmoothTwoForm I' M} {x : M}
-
-omit [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] [CompleteSpace E'] [IsManifold I' ∞ M] in
-include I in
-/-- Each element of the stabilizer of `x` acts by a map differentiable at `x`. -/
-private theorem mdifferentiableAt_smul (x : M) :
-    ∀ g ∈ stabilizer G x, MDifferentiableAt I' I' (fun y : M ↦ g • y) x := fun g _ ↦
-  (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := ∞) g).mdifferentiableAt
-    (by simp)
-
-include I in
-/-- The tangent representation of the stabilizer of `x`, as linear automorphisms of `T_x M`. -/
-private def tangentAut (x : M) : stabilizer G x →* TangentSpace I' x ≃ₗ[ℝ] TangentSpace I' x :=
-  (LinearMap.GeneralLinearGroup.generalLinearEquiv ℝ (TangentSpace I' x)).toMonoidHom.comp
-    (tangentRepresentation (mdifferentiableAt_smul (I := I) x)).toRepresentation.asGroupHom
-
-omit [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] [CompleteSpace E'] [IsManifold I' ∞ M] in
-include I in
-private theorem tangentAut_apply
-    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I' I' (fun y : M ↦ g • y) x)
-    (g : stabilizer G x) (v : TangentSpace I' x) :
-    tangentAut (I := I) x g v = tangentRepresentation hd g v := by
-  simp only [tangentAut, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv, Representation.asGroupHom_apply,
-    ContRepresentation.toMonoidHom_apply]
-  -- The two differentiability proofs agree by proof irrelevance.
-  rfl
 
 namespace IsNondegenerate
 
@@ -273,11 +220,10 @@ include hσG
 omit [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] [CompleteSpace E'] in
 private theorem isSymplectomorphism_tangentAut (g : stabilizer G x) :
     SymplecticForm.IsSymplectomorphism (hσ.symplecticFormAt x) (hσ.symplecticFormAt x)
-      (tangentAut (I := I) x g) :=
+      (tangentAut (mdifferentiableAt_smul_of_mem_stabilizer I (n := ∞) (by simp) x) g) :=
   SymplecticForm.isSymplectomorphism_iff.2 fun u v ↦ by
-    have hd := mdifferentiableAt_smul (I := I) (I' := I') (G := G) x
-    rw [tangentAut_apply (I := I) hd, tangentAut_apply (I := I) hd]
-    exact hσ.symplecticFormAt_tangentRepresentation (IG := I) hσG hd g u v
+    rw [tangentAut_apply, tangentAut_apply]
+    exact hσ.symplecticFormAt_tangentRepresentation (IG := I) hσG _ g u v
 
 /-- **The stabilizer preserves the symplectic complement of the orbit.** If the stabilizer of `x`
 preserves a nondegenerate two-form `σ`, its tangent representation `g ↦ dg_x` maps the
@@ -293,9 +239,8 @@ theorem tangentRepresentation_mem_orthogonal_orbitTangent
   -- Write `w = dg_x w'` with `w' = d(g⁻¹)_x w`, again an orbit direction, and use that `dg_x`
   -- preserves `σ_x`.
   have hw' := tangentRepresentation_mem_orbitTangent_fundamental hd g⁻¹ hw
-  have hgw : tangentRepresentation hd g (tangentRepresentation hd g⁻¹ w) = w := by
-    rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
-  rw [← hgw, hσ.symplecticFormAt_tangentRepresentation (IG := I) hσG hd g]
+  rw [← tangentRepresentation_apply_inv_apply hd g w,
+    hσ.symplecticFormAt_tangentRepresentation (IG := I) hσG hd g]
   exact SymplecticForm.mem_orthogonal_iff.1 hu _ hw'
 
 /-- **The stabilizer representation on the symplectic slice.** If the stabilizer `H = G_x` of a
@@ -307,11 +252,11 @@ def symplecticSliceRepresentation :
     stabilizer G x →*
       hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x ≃ₗ[ℝ]
         hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x :=
-  (hσ.symplecticFormAt x).reducedSpaceRepresentation (tangentAut (I := I) x)
-    (isSymplectomorphism_tangentAut hσ hσG) _ fun g u hu ↦ by
-      have hd := mdifferentiableAt_smul (I := I) (I' := I') (G := G) x
-      rw [tangentAut_apply (I := I) hd]
-      exact hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG hd g hu
+  (hσ.symplecticFormAt x).reducedSpaceRepresentation
+    (tangentAut (mdifferentiableAt_smul_of_mem_stabilizer I (n := ∞) (by simp) x))
+    (isSymplectomorphism_tangentAut (I := I) hσ hσG) _ fun g u hu ↦ by
+      rw [tangentAut_apply]
+      exact hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g hu
 
 /-- The stabilizer acts on the symplectic slice by `[u] ↦ [dh_x u]`. -/
 @[simp]
@@ -324,7 +269,7 @@ theorem symplecticSliceRepresentation_mk
       Submodule.Quotient.mk ⟨tangentRepresentation hd g u,
         hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG hd g u.2⟩ := by
   rw [symplecticSliceRepresentation, SymplecticForm.reducedSpaceRepresentation_apply_mk]
-  simp only [tangentAut_apply (I := I) hd]
+  simp only [tangentAut_apply]
 
 /-- The stabilizer of `x` acts on the symplectic slice by linear symplectomorphisms of its reduced
 symplectic form. -/

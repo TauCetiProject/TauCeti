@@ -41,11 +41,15 @@ orbifold as a quotient of its frame bundle by an orthogonal group.
 
 * `TauCeti.tangentRepresentation`: the representation of the stabilizer of `x` on `T_x M` by
   derivatives at `x`.
+* `TauCeti.tangentAut`: the tangent representation as a homomorphism to the linear automorphisms
+  of `T_x M`.
 
 ## Main results
 
 * `TauCeti.mfderiv_smul_comp_tangentRepresentation`: the tangent representations at `x` and
   `h • x` are intertwined by the derivative of `h • ·`.
+* `TauCeti.mdifferentiableAt_smul_of_mem_stabilizer`: a `C^n` action of a manifold group, with
+  `n ≠ 0`, satisfies the differentiability hypothesis of the tangent representation.
 * `TauCeti.continuous_tangentRepresentation`: for a jointly `C¹` action of a manifold group, the
   tangent representation is continuous.
 * `TauCeti.tangentRepresentation_eq_one_iff`, `TauCeti.ker_tangentRepresentation`: the kernel of
@@ -105,6 +109,35 @@ theorem tangentRepresentation_apply
     tangentRepresentation hd g = mfderiv I I (fun y : M ↦ (g : G) • y) x :=
   (rfl)
 
+/-- `dg_x` undoes `d(g⁻¹)_x` on `T_x M`. -/
+theorem tangentRepresentation_apply_inv_apply
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) (v : TangentSpace I x) :
+    tangentRepresentation hd g (tangentRepresentation hd g⁻¹ v) = v := by
+  simp [← mul_apply_eq_comp, ← map_mul, -tangentRepresentation_apply]
+
+/-- `d(g⁻¹)_x` undoes `dg_x` on `T_x M`. -/
+theorem tangentRepresentation_inv_apply_apply
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) (v : TangentSpace I x) :
+    tangentRepresentation hd g⁻¹ (tangentRepresentation hd g v) = v := by
+  simpa only [inv_inv] using tangentRepresentation_apply_inv_apply hd g⁻¹ v
+
+/-- The tangent representation of the stabilizer of `x`, as a homomorphism to the group of linear
+automorphisms of `T_x M`. -/
+noncomputable def tangentAut
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
+    stabilizer G x →* TangentSpace I x ≃ₗ[𝕜] TangentSpace I x :=
+  (LinearMap.GeneralLinearGroup.generalLinearEquiv 𝕜 (TangentSpace I x)).toMonoidHom.comp
+    (tangentRepresentation hd).toRepresentation.asGroupHom
+
+@[simp]
+theorem tangentAut_apply
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) (v : TangentSpace I x) :
+    tangentAut hd g v = tangentRepresentation hd g v :=
+  (rfl)
+
 /-- **Conjugation of tangent representations along an orbit.** The derivative at `x` of the action
 of `h` intertwines the tangent representation at `x` with the tangent representation at `h • x`,
 along the conjugation isomorphism `g ↦ h * g * h⁻¹` between the stabilizers. -/
@@ -158,6 +191,14 @@ theorem continuous_tangentRepresentation (IG : ModelWithCorners 𝕜 F HG) [IsMa
       rfl (g.2.trans g₀.2.symm)).trans (tangentRepresentation_apply hd g).symm
   rw [← hcomp]
   exact h.comp continuous_subtype_val.continuousAt
+
+omit [IsManifold I 1 M] in
+/-- For a `C^n` action of a manifold group `G` with `n ≠ 0`, each element of the stabilizer of `x`
+acts by a map differentiable at `x`. This is the hypothesis of `TauCeti.tangentRepresentation`. -/
+theorem mdifferentiableAt_smul_of_mem_stabilizer (IG : ModelWithCorners 𝕜 F HG)
+    {n : WithTop ℕ∞} [ContMDiffSMul IG I n G M] (hn : n ≠ 0) (x : M) :
+    ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x := fun g _ ↦
+  (ContMDiffSMul.contMDiff_const_smul (I := IG) (I' := I) (n := n) g).mdifferentiableAt hn
 
 end Continuity
 
