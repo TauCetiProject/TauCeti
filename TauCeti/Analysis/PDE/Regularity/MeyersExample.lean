@@ -169,7 +169,6 @@ private theorem abs_dotProduct_meyersCoefficient_mulVec_le_sq (hμ : 1 ≤ μ)
   have hcross : t * (2 * μ ^ 2 * ⟪ξ, x⟫_ℝ + t * ‖x‖ ^ 2) ≤ 0 := by
     rcases eq_or_ne x 0 with rfl | hx
     · simp [ht]
-    have hx2 : ‖x‖ ^ 2 ≠ 0 := by positivity
     have h : t * (2 * μ ^ 2 * ⟪ξ, x⟫_ℝ + t * ‖x‖ ^ 2) =
         (1 - μ ^ 2) * (1 + μ ^ 2) / ‖x‖ ^ 2 * ⟪x, ξ⟫_ℝ ^ 2 := by
       rw [ht, real_inner_comm ξ x]
