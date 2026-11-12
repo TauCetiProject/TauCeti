@@ -67,7 +67,7 @@ theorem finiteJetSeries_apply (r : ℕ)
 
 /-- The order-zero coefficient is the prescribed zero-linear map. -/
 @[simp]
-theorem finiteJetSeries_zero (r : ℕ)
+theorem finiteJetSeries_apply_zero (r : ℕ)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :
     finiteJetSeries r A 0 = A 0 := by
   have hcoeff := finiteJetSeries_apply r A (0 : Fin (r + 1))
@@ -98,7 +98,7 @@ theorem finiteJetPolynomial_apply (r : ℕ)
 
 /-- The finite Taylor polynomial has its prescribed factorial-normalized finite power series
 on the whole space, expressed as a ball of infinite radius about its center. -/
-theorem finiteJetPolynomial_hasFiniteFPowerSeriesOnBall (r : ℕ)
+theorem hasFiniteFPowerSeriesOnBall_finiteJetPolynomial (r : ℕ)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x : E) :
     HasFiniteFPowerSeriesOnBall (finiteJetPolynomial r A x) (finiteJetSeries r A) x
       (r + 1) ⊤ := by
@@ -115,9 +115,9 @@ theorem finiteJetPolynomial_hasFiniteFPowerSeriesOnBall (r : ℕ)
 theorem finiteJetPolynomial_self (r : ℕ)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x : E) :
     finiteJetPolynomial r A x x = A 0 0 := by
-  rw [← (finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x).toHasFPowerSeriesOnBall.coeff_zero
+  rw [← (hasFiniteFPowerSeriesOnBall_finiteJetPolynomial r A x).toHasFPowerSeriesOnBall.coeff_zero
     (0 : Fin 0 → E)]
-  rw [finiteJetSeries_zero]
+  rw [finiteJetSeries_apply_zero]
   -- Both presentations of the empty input tuple are definitionally equal.
   rfl
 
@@ -127,7 +127,7 @@ theorem contDiff_finiteJetPolynomial (r : ℕ)
     ContDiff 𝕜 n (finiteJetPolynomial r A x) := by
   rw [contDiff_iff_contDiffAt]
   intro y
-  exact ((finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x).cpolynomialAt_of_mem
+  exact ((hasFiniteFPowerSeriesOnBall_finiteJetPolynomial r A x).cpolynomialAt_of_mem
     (by simp)).contDiffAt
 
 /-- All derivatives above the prescribed jet order vanish everywhere, without any symmetry
@@ -138,7 +138,7 @@ theorem iteratedFDeriv_finiteJetPolynomial_eq_zero_of_le (r : ℕ)
     (hn : r + 1 ≤ n) :
     iteratedFDeriv 𝕜 n (finiteJetPolynomial r A x) = 0 := by
   funext y
-  have hp := (finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x).changeOrigin
+  have hp := (hasFiniteFPowerSeriesOnBall_finiteJetPolynomial r A x).changeOrigin
     (y := y - x) (by simp)
   rw [add_sub_cancel] at hp
   rw [← iteratedFDerivWithin_univ]
@@ -157,7 +157,7 @@ theorem iteratedFDeriv_finiteJetPolynomial_self (r : ℕ)
     iteratedFDeriv 𝕜 i.val (finiteJetPolynomial r A x) x = A i := by
   -- Mathlib's HasFPowerSeriesOnBall.iteratedFDeriv_eq_sum accounts for permutation
   -- multiplicities in every order, including order zero.
-  have hp := finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x
+  have hp := hasFiniteFPowerSeriesOnBall_finiteJetPolynomial r A x
   ext v
   rw [hp.toHasFPowerSeriesOnBall.iteratedFDeriv_eq_sum
     ((contDiff_finiteJetPolynomial r A x (n := ω)).contDiffOn.analyticOn)]
