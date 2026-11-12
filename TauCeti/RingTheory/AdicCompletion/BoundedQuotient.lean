@@ -15,8 +15,9 @@ then so is `M`. Neither finite generation nor Noetherianity is needed: the filtr
 induced by `I ^ n • M` and by `I ^ n • P` are cofinal, with a uniform shift of `k`.
 Separatedness and precompleteness also pass separately from `P` to `M`.
 
-In particular, over a complete Noetherian ring, a module receiving a map from a finite module
-with cokernel annihilated by an ideal power is complete. The target module need not be finite.
+In particular, over an `I`-adically complete Noetherian ring, a module receiving a map from a
+finite module with cokernel annihilated by a power of `I` is `I`-adically complete. The target
+module need not be finite.
 This is the completeness step in the comparison of sections on a punctured spectrum with
 formal sections: the image of the original finite module is finite, and its cokernel is the
 first local cohomology module.
@@ -35,26 +36,31 @@ variable {R : Type*} [CommRing R] {I : Ideal R} {M : Type*} [AddCommGroup M] [Mo
 
 namespace Submodule
 
-/-- If a submodule is adically separated and its quotient is annihilated by an ideal power,
-then the ambient module is adically separated. -/
-theorem isHausdorff_of_pow_smul_top_le (P : Submodule R M) [IsHausdorff I P] {k : ℕ}
+/-- If `I ^ k • M ⊆ P`, shifting by `k` compares the ambient `I`-adic filtration with that
+of `P`. -/
+theorem pow_add_smul_top_le_pow_smul (P : Submodule R M) {I : Ideal R} {k : ℕ}
+    (hk : I ^ k • (⊤ : Submodule R M) ≤ P) (n : ℕ) :
+    I ^ (n + k) • (⊤ : Submodule R M) ≤ I ^ n • P := by
+  rw [pow_add, mul_smul]
+  exact smul_mono_right _ hk
+
+/-- If a submodule is `I`-adically separated and its quotient is annihilated by a power of `I`,
+then the ambient module is `I`-adically separated. -/
+theorem isHausdorff_of_pow_smul_top_le (P : Submodule R M) {I : Ideal R}
+    [IsHausdorff I P] {k : ℕ}
     (hk : I ^ k • (⊤ : Submodule R M) ≤ P) : IsHausdorff I M := by
-  have hle (n : ℕ) : I ^ (n + k) • (⊤ : Submodule R M) ≤ I ^ n • P := by
-    rw [pow_add, mul_smul]
-    exact smul_mono_right _ hk
   refine ⟨fun x hx ↦ ?_⟩
   let y : P := ⟨x, hk (SModEq.zero.mp (hx k))⟩
   have hy : y = 0 := IsHausdorff.haus' (I := I) y fun n ↦
-    SModEq.zero.mpr ((mem_smul_top_iff _ _ _).mpr (hle n (SModEq.zero.mp (hx (n + k)))))
+    SModEq.zero.mpr ((mem_smul_top_iff _ _ _).mpr
+      (P.pow_add_smul_top_le_pow_smul hk n (SModEq.zero.mp (hx (n + k)))))
   exact congrArg P.subtype hy
 
-/-- If a submodule is adically precomplete and its quotient is annihilated by an ideal power,
-then the ambient module is adically precomplete. -/
-theorem isPrecomplete_of_pow_smul_top_le (P : Submodule R M) [IsPrecomplete I P] {k : ℕ}
+/-- If a submodule is `I`-adically precomplete and its quotient is annihilated by a power of `I`,
+then the ambient module is `I`-adically precomplete. -/
+theorem isPrecomplete_of_pow_smul_top_le (P : Submodule R M) {I : Ideal R}
+    [IsPrecomplete I P] {k : ℕ}
     (hk : I ^ k • (⊤ : Submodule R M) ≤ P) : IsPrecomplete I M := by
-  have hle (n : ℕ) : I ^ (n + k) • (⊤ : Submodule R M) ≤ I ^ n • P := by
-    rw [pow_add, mul_smul]
-    exact smul_mono_right _ hk
   refine ⟨fun x hx ↦ ?_⟩
   -- Translate a tail of the Cauchy sequence into `P`, where it has a limit.
   let y (n : ℕ) : P := ⟨x (n + k) - x k,
@@ -62,7 +68,7 @@ theorem isPrecomplete_of_pow_smul_top_le (P : Submodule R M) [IsPrecomplete I P]
   have hy {m n : ℕ} (hmn : m ≤ n) :
       y m ≡ y n [SMOD (I ^ m • ⊤ : Submodule R P)] := by
     rw [SModEq.sub_mem, mem_smul_top_iff]
-    exact hle m (by
+    exact P.pow_add_smul_top_le_pow_smul hk m (by
       simpa only [Submodule.coe_sub, y, sub_sub_sub_cancel_right] using
         SModEq.sub_mem.mp (hx (Nat.add_le_add_right hmn k)))
   obtain ⟨z, hz⟩ := IsPrecomplete.prec (inferInstance : IsPrecomplete I P) @hy
@@ -72,17 +78,19 @@ theorem isPrecomplete_of_pow_smul_top_le (P : Submodule R M) [IsPrecomplete I P]
   have h' := h.mono (smul_mono_right (I ^ n) le_top)
   simpa only [subtype_apply, y, add_sub_cancel] using (SModEq.refl (x k)).add h'
 
-/-- A complete submodule with quotient annihilated by an ideal power makes the ambient module
-complete as well. -/
-theorem isAdicComplete_of_pow_smul_top_le (P : Submodule R M) [IsAdicComplete I P] {k : ℕ}
+/-- An `I`-adically complete submodule with quotient annihilated by a power of `I` makes the
+ambient module `I`-adically complete as well. -/
+theorem isAdicComplete_of_pow_smul_top_le (P : Submodule R M) {I : Ideal R}
+    [IsAdicComplete I P] {k : ℕ}
     (hk : I ^ k • (⊤ : Submodule R M) ≤ P) : IsAdicComplete I M where
   toIsHausdorff := Submodule.isHausdorff_of_pow_smul_top_le P hk
   toIsPrecomplete := Submodule.isPrecomplete_of_pow_smul_top_le P hk
 
 end Submodule
 
-/-- Over a complete Noetherian ring, a module receiving a map from a finite module with
-cokernel annihilated by an ideal power is complete. No finiteness of the target is required. -/
+/-- Over an `I`-adically complete Noetherian ring, a module receiving a map from a finite module
+with cokernel annihilated by a power of `I` is `I`-adically complete. No finiteness of the target
+is required. -/
 theorem LinearMap.isAdicComplete_of_finite_of_pow_smul_top_le_range
     [IsNoetherianRing R] [IsAdicComplete I R] {N : Type*} [AddCommGroup N] [Module R N]
     [Module.Finite R N] (f : N →ₗ[R] M) {k : ℕ}
