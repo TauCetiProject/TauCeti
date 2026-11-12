@@ -116,7 +116,7 @@ variable {C} in
 /-- A complex concentrated in two adjacent degrees is bounded. -/
 lemma bounded_double [HasZeroMorphisms C] [HasZeroObject C] {X₀ X₁ : C} (f : X₀ ⟶ X₁) {i j : ℤ}
     (h : (ComplexShape.up ℤ).Rel i j) : bounded C (HomologicalComplex.double f h) := by
-  have h : i + 1 = j := h
+  have hij : i + 1 = j := by rwa [ComplexShape.up_Rel] at h
   exact (CochainComplex.bounded_iff C _).2 ⟨i, j,
     (isStrictlyGE_iff _ _).2 fun _ hk ↦ HomologicalComplex.isZero_double_X _ _ _ (by lia) (by lia),
     (isStrictlyLE_iff _ _).2 fun _ hk ↦ HomologicalComplex.isZero_double_X _ _ _ (by lia) (by lia)⟩

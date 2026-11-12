@@ -17,11 +17,6 @@ and replacing only the first vertex.
 
 ## Main results
 
-* `CategoryTheory.Pretriangulated.Triangle.mor₁_eq_of_iso`,
-  `CategoryTheory.Pretriangulated.Triangle.mor₂_eq_of_iso` and
-  `CategoryTheory.Pretriangulated.Triangle.mor₃_eq_of_iso`: the morphisms of a triangle are those
-  of an isomorphic triangle conjugated by the components of the isomorphism.
-
 * `CategoryTheory.Pretriangulated.distinguished_mk_of_iso`: a triangle transported along
   isomorphisms of its three vertices is distinguished.
 * `CategoryTheory.Pretriangulated.distinguished_mk_of_iso₁`: a triangle transported along an
@@ -35,29 +30,6 @@ open CategoryTheory CategoryTheory.Limits
 universe v u
 
 namespace CategoryTheory.Pretriangulated
-
-section Iso
-
-variable {D : Type*} [Category D] [HasShift D ℤ] {T T' : Triangle D}
-
-/-- In an isomorphism of triangles `e : T ≅ T'`, the first morphism of `T` is that of `T'`
-conjugated by the components of `e`. -/
-theorem Triangle.mor₁_eq_of_iso (e : T ≅ T') : T.mor₁ = e.hom.hom₁ ≫ T'.mor₁ ≫ e.inv.hom₂ := by
-  rw [← reassoc_of% e.hom.comm₁, Iso.hom_inv_id_triangle_hom₂, Category.comp_id]
-
-/-- In an isomorphism of triangles `e : T ≅ T'`, the second morphism of `T` is that of `T'`
-conjugated by the components of `e`. -/
-theorem Triangle.mor₂_eq_of_iso (e : T ≅ T') : T.mor₂ = e.hom.hom₂ ≫ T'.mor₂ ≫ e.inv.hom₃ := by
-  rw [← reassoc_of% e.hom.comm₂, Iso.hom_inv_id_triangle_hom₃, Category.comp_id]
-
-/-- In an isomorphism of triangles `e : T ≅ T'`, the third morphism of `T` is that of `T'`
-conjugated by the components of `e`, the first one shifted. -/
-theorem Triangle.mor₃_eq_of_iso (e : T ≅ T') :
-    T.mor₃ = e.hom.hom₃ ≫ T'.mor₃ ≫ e.inv.hom₁⟦(1 : ℤ)⟧' := by
-  rw [← reassoc_of% e.hom.comm₃, ← Functor.map_comp, Iso.hom_inv_id_triangle_hom₁,
-    Functor.map_id, Category.comp_id]
-
-end Iso
 
 variable {C : Type u} [Category.{v} C] [HasZeroObject C] [HasShift C ℤ] [Preadditive C]
   [∀ n : ℤ, (shiftFunctor C n).Additive] [Pretriangulated C]

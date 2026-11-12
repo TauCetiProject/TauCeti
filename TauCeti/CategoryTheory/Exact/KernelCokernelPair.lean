@@ -48,8 +48,9 @@ category with homology the notion coincides with Mathlib's
 * `TauCeti.IsKernelCokernelPair.op`, `TauCeti.isKernelCokernelPair_op_iff` and
   `TauCeti.isKernelCokernelPair_unop_iff`: the notion is self-dual, which is what makes the
   Bühler axioms transport to the opposite category.
-* `TauCeti.IsKernelCokernelPair.isPushout_of_isZero`: the cokernel square of a kernel–cokernel
-  pair against a zero object is a pushout.
+* `CategoryTheory.IsPushout.of_isColimit_cokernelCofork` and
+  `TauCeti.IsKernelCokernelPair.isPushout_of_isZero`: the square of a cokernel, or of the
+  deflation of a kernel–cokernel pair, against a zero object is a pushout.
 * `TauCeti.IsKernelCokernelPair.of_isIso_f_of_isZero` and
   `TauCeti.IsKernelCokernelPair.of_isIso_g_of_isZero`: an isomorphism is both an inflation and
   a deflation.
@@ -91,6 +92,25 @@ gratuitously assume a preadditive category with a zero object.
 -/
 
 public section
+
+namespace CategoryTheory.IsPushout
+
+open Limits
+
+/-- **The square of a cokernel against a zero object is a pushout**: if `g : X₂ ⟶ X₃` is a
+cokernel of `f : X₁ ⟶ X₂` and `Y` is a zero object, the square with `X₁ ⟶ Y ⟶ X₃` is a pushout
+square. -/
+theorem of_isColimit_cokernelCofork {C : Type*} [Category* C] [HasZeroMorphisms C]
+    {X₁ X₂ X₃ Y : C} {f : X₁ ⟶ X₂} {g : X₂ ⟶ X₃} {w : f ≫ g = 0}
+    (hg : IsColimit (CokernelCofork.ofπ g w)) (hY : IsZero Y) :
+    IsPushout f (0 : X₁ ⟶ Y) g (0 : Y ⟶ X₃) :=
+  of_isColimit' ⟨by simp [w]⟩ (PushoutCocone.IsColimit.mk _
+    (fun s ↦ (CokernelCofork.IsColimit.desc' hg s.inl (by simpa using s.condition)).1)
+    (fun _ ↦ (CokernelCofork.IsColimit.desc' hg _ _).2) (fun _ ↦ hY.eq_of_src _ _)
+    (fun _ _ hm _ ↦ Cofork.IsColimit.hom_ext hg
+      (hm.trans (CokernelCofork.IsColimit.desc' hg _ _).2.symm)))
+
+end CategoryTheory.IsPushout
 
 namespace TauCeti
 
@@ -177,13 +197,8 @@ end Factorizations
 kernel–cokernel pair `X₁ ⟶ X₂ ⟶ X₃` and a zero object `Y`, the square with `X₁ ⟶ Y ⟶ X₃` is a
 pushout square, as `X₂ ⟶ X₃` is a cokernel of `X₁ ⟶ X₂`. -/
 theorem isPushout_of_isZero (h : IsKernelCokernelPair S) {Y : C} (hY : IsZero Y) :
-    IsPushout S.f (0 : S.X₁ ⟶ Y) S.g (0 : Y ⟶ S.X₃) := by
-  have := h.epi_g
-  refine IsPushout.of_isColimit' (⟨by simp⟩ : CommSq S.f (0 : S.X₁ ⟶ Y) S.g 0)
-    (PushoutCocone.IsColimit.mk _ (fun s ↦ h.desc s.inl (by simpa using s.condition))
-      (fun s ↦ h.g_desc _ _) (fun s ↦ hY.eq_of_src _ _) (fun s m hm _ ↦ ?_))
-  rw [← cancel_epi S.g]
-  exact hm.trans (h.g_desc _ _).symm
+    IsPushout S.f (0 : S.X₁ ⟶ Y) S.g (0 : Y ⟶ S.X₃) :=
+  IsPushout.of_isColimit_cokernelCofork h.gIsCokernel hY
 
 open ZeroObject in
 /-- **A kernel–cokernel pair has homology** in a category with a zero object: the cycles are the
