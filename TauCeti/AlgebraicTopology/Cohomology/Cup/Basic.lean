@@ -47,7 +47,7 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
   coefficients `TopCat.singularCohomologyChainCoefficientMap`.
 * `TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TopCat.singularCup_assoc`:
   associativity of the cup product of cochains and on cohomology, with
-  `TopCat.singularCup_assoc_unit` the case of coefficients in a commutative ring.
+  `TopCat.singularCup_assoc_tensorUnit` the case of coefficients in the monoidal unit.
 * `TopCat.cupCochain_constCochain_left`, `TopCat.cupCochain_constCochain_right`,
   `TopCat.singularCup_constSingularCocycle_left` and
   `TopCat.singularCup_constSingularCocycle_right`: the unit laws.
@@ -293,14 +293,15 @@ lemma singularCup_assoc (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
   simp only [TauCeti.ChainComplex.iCycles_cupCycles]
   exact TopCat.cupCochain_alexanderWhitneyDiagonal_assoc X hu hμ h₁₂ h h₂₃ h' _ _ _
 
-/-- **Associativity of the cup product with coefficients in a commutative ring** `k`: the case of
-`TopCat.singularCup_assoc` for the cohomology `H^*(X; k)` with coefficients the monoidal unit `k`
-of `ModuleCat k`, the left unitor as coefficient morphism and as pairing. -/
-lemma singularCup_assoc_unit (X : TopCat.{w}) (k : Type w) [CommRing k] {p q r m m' n : ℕ}
+/-- **Associativity of the cup product with coefficients in the monoidal unit**: the case of
+`TopCat.singularCup_assoc` for classes `a`, `b` with coefficients in the monoidal unit `𝟙_ C` and
+`c` with coefficients in `𝟙_ C` and `M`, the left unitors as coefficient morphisms and as pairings.
+For `C := ModuleCat k` and `M := k` it is associativity of the cup product on `H^*(X; k)`. -/
+lemma singularCup_assoc_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] {M : C} {p q r m m' n : ℕ}
     (h₁₂ : p + q = m) (h : m + r = n) (h₂₃ : q + r = m') (h' : p + m' = n)
-    (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (b : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)
-    (c : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) r) :
+    (a : X.singularCohomology (𝟙_ C) k (𝟙_ C) p) (b : X.singularCohomology (𝟙_ C) k (𝟙_ C) q)
+    (c : X.singularCohomology (𝟙_ C) k M r) :
     X.singularCup k (λ_ _).inv (λ_ _).hom m r n h
         (X.singularCup k (λ_ _).inv (λ_ _).hom p q m h₁₂ a b) c =
       X.singularCup k (λ_ _).inv (λ_ _).hom p m' n h' a
