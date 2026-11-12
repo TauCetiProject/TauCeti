@@ -238,6 +238,14 @@ theorem characterCore_def (χ : G →* 𝕜ˣ) :
       hp.associatedCore ((Units.map (algebraMap 𝕜 (𝕜 →L[𝕜] 𝕜)).toMonoidHom).comp χ) :=
   (rfl)
 
+/-- The scalar representation induced by a character is trivial exactly when the character is
+trivial. -/
+theorem _root_.MonoidHom.characterRepresentation_eq_one_iff (χ : G →* 𝕜ˣ) :
+    (Units.map (algebraMap 𝕜 (𝕜 →L[𝕜] 𝕜)).toMonoidHom).comp χ = 1 ↔ χ = 1 := by
+  simpa only [MonoidHom.comp_one] using
+    (MonoidHom.cancel_left (f₁ := χ) (f₂ := 1) (Units.map_injective
+      (FaithfulSMul.algebraMap_injective 𝕜 (𝕜 →L[𝕜] 𝕜))))
+
 /-- The transitions of the line bundle of `χ` multiply by the values of `χ`. -/
 @[simp]
 theorem characterCore_coordChange_apply (χ : G →* 𝕜ˣ) (e e' : E) (x : X) (v : 𝕜) :
@@ -337,6 +345,20 @@ theorem localTriv_associatedCore_apply_snd (σ : ∀ x, (hp.associatedCore ρ).F
     VectorBundleCore.localTriv_apply, hz]
   exact (hp.associatedCore_coordChange_localInverseAt ρ ((hp.associatedCore ρ).mem_baseSet_at x)
     hx (σ x)).symm
+
+/-- Near `y`, the coordinates in the chart through `y`, pulled back along `p`, agree with
+the equivariant function of the section. -/
+theorem eventuallyEq_localTriv_associatedSectionEquiv
+    (σ : ∀ x, (hp.associatedCore ρ).Fiber x) (y : E) :
+    ((fun x ↦ ((hp.associatedCore ρ).localTriv y ⟨x, σ x⟩).2) ∘ p) =ᶠ[𝓝 y]
+      (hp.associatedSectionEquiv ρ σ : E → F) := by
+  set s := hp.isLocalHomeomorph.localInverseAt y
+  filter_upwards [s.open_target.mem_nhds (hp.isLocalHomeomorph.self_mem_localInverseAt_target)]
+    with z hz
+  have hsource := s.map_target hz
+  have hinv := s.right_inv hz
+  rw [hp.isLocalHomeomorph.localInverseAt_symm] at hsource hinv
+  rw [Function.comp_apply, localTriv_associatedCore_apply_snd _ _ _ hsource, hinv]
 
 /-- The section attached to an equivariant function `f` reads as `x ↦ f (localInverseAt y x)` in
 the chart through `y`. -/

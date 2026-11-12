@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Complex
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+public import TauCeti.Geometry.Manifold.VectorBundle.Core.Trivial
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Topology.Covering.AssociatedBundle
 
@@ -98,12 +99,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [ChartedSpace HB X] [Group G] [MulAction G E] {p : E → X} (hp : IsQuotientCoveringMap p G)
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] (ρ : G →* (F →L[𝕜] F)ˣ) {n m : ℕ∞ω}
 
-private theorem characterRepresentation_eq_one_iff (χ : G →* 𝕜ˣ) :
-    (Units.map (algebraMap 𝕜 (𝕜 →L[𝕜] 𝕜)).toMonoidHom).comp χ = 1 ↔ χ = 1 := by
-  simpa only [MonoidHom.comp_one] using
-    (MonoidHom.cancel_left (f₁ := χ) (f₂ := 1) (Units.map_injective
-      (FaithfulSMul.algebraMap_injective 𝕜 (𝕜 →L[𝕜] 𝕜))))
-
 /-- The bundle associated with a representation of the deck group has locally constant
 transitions, so it is a `C^n` vector bundle for every model of the base and every regularity. -/
 instance isContMDiff_associatedCore : (hp.associatedCore ρ).IsContMDiff IB n where
@@ -116,20 +111,6 @@ instance isContMDiff_characterCore (χ : G →* 𝕜ˣ) :
     (hp.characterCore χ).IsContMDiff IB n := by
   rw [characterCore_def]
   infer_instance
-
-/-- Near `y`, the coordinates in the chart through `y`, pulled back along `p`, agree with
-the equivariant function of the section. -/
-theorem eventuallyEq_localTriv_associatedSectionEquiv
-    (σ : ∀ x, (hp.associatedCore ρ).Fiber x) (y : E) :
-    ((fun x ↦ ((hp.associatedCore ρ).localTriv y ⟨x, σ x⟩).2) ∘ p) =ᶠ[𝓝 y]
-      (hp.associatedSectionEquiv ρ σ : E → F) := by
-  set s := hp.isLocalHomeomorph.localInverseAt y
-  filter_upwards [s.open_target.mem_nhds (hp.isLocalHomeomorph.self_mem_localInverseAt_target)]
-    with z hz
-  have hsource := s.map_target hz
-  have hinv := s.right_inv hz
-  rw [hp.isLocalHomeomorph.localInverseAt_symm] at hsource hinv
-  rw [Function.comp_apply, localTriv_associatedCore_apply_snd _ _ _ hsource, hinv]
 
 /-- A section whose equivariant function upstairs is constant is `C^m` for every regularity,
 since its coordinates in each designated trivialization are constant. -/
@@ -159,62 +140,9 @@ theorem exists_trivialization_baseSet_eq_univ_associatedCore_one :
   let Z := hp.associatedCore (1 : G →* (F →L[𝕜] F)ˣ)
   have hcoord (i j : E) (x : X) (v : F) : Z.coordChange i j x v = v := by
     simp [Z]
-  let e : Trivialization F (π F Z.Fiber) :=
-    { toFun := fun q ↦ (q.proj, q.2)
-      invFun := fun q ↦ ⟨q.1, q.2⟩
-      source := univ
-      target := univ
-      map_source' := fun _ _ ↦ mem_univ _
-      map_target' := fun _ _ ↦ mem_univ _
-      left_inv' := fun _ _ ↦ rfl
-      right_inv' := fun _ _ ↦ rfl
-      open_source := isOpen_univ
-      open_target := isOpen_univ
-      continuousOn_toFun := by
-        apply Continuous.continuousOn
-        refine continuous_iff_continuousAt.2 fun q ↦ ?_
-        convert (Z.localTrivAt q.proj).continuousAt
-          (Z.mem_source_at q.proj q.2) using 1
-        funext z
-        change (z.proj, z.2) =
-          (z.proj, Z.coordChange (Z.indexAt z.proj) (Z.indexAt q.proj) z.proj z.2)
-        exact congrArg (fun v : F ↦ (z.proj, v)) (hcoord _ _ _ z.2).symm
-      continuousOn_invFun := by
-        apply Continuous.continuousOn
-        refine continuous_iff_continuousAt.2 fun q ↦ ?_
-        rw [FiberBundle.continuousAt_totalSpace]
-        exact ⟨continuousAt_fst, by
-          simpa only [Z.trivializationAt, VectorBundleCore.localTrivAt,
-            VectorBundleCore.localTriv_apply, hcoord] using
-            (continuousAt_snd : ContinuousAt (fun z : X × F ↦ z.2) q)⟩
-      baseSet := univ
-      open_baseSet := isOpen_univ
-      source_eq := by simp
-      target_eq := by simp
-      proj_toFun := fun _ _ ↦ rfl }
-  have heapply (q : Z.TotalSpace) : e q = (q.proj, q.2) := rfl
-  have hesymm (x : X) (v : F) : e.symm x v = v := by
-    rw [e.symm_apply (mem_univ x)]
-    rfl
-  have : e.IsLinear 𝕜 := ⟨fun _ _ ↦ (LinearMap.id : F →ₗ[𝕜] F).isLinear⟩
-  refine ⟨e, inferInstance, ?_, rfl⟩
-  refine (Trivialization.mem_maximalAtlas_contMDiffFiberwiseLinear_iff IB n e).2 ?_
-  rintro e' ⟨i, rfl⟩
-  have h₁ (x : X) (hx : x ∈ e.baseSet ∩ (Z.localTriv i).baseSet) :
-      (e.coordChangeL 𝕜 (Z.localTriv i) x : F →L[𝕜] F) = ContinuousLinearMap.id 𝕜 F := by
-    ext v
-    change e.coordChangeL 𝕜 (Z.localTriv i) x v = v
-    rw [Trivialization.coordChangeL_apply _ _ hx]
-    change Z.coordChange (Z.indexAt x) i x (e.symm x v) = v
-    rw [hesymm, hcoord]
-  have h₂ (x : X) (hx : x ∈ e.baseSet ∩ (Z.localTriv i).baseSet) :
-      ((Z.localTriv i).coordChangeL 𝕜 e x : F →L[𝕜] F) = ContinuousLinearMap.id 𝕜 F := by
-    ext v
-    change (Z.localTriv i).coordChangeL 𝕜 e x v = v
-    rw [Trivialization.coordChangeL_apply _ _ ⟨hx.2, hx.1⟩]
-    rw [heapply, VectorBundleCore.localTriv_symm_apply Z i hx.2]
-    exact hcoord _ _ _ _
-  exact ⟨contMDiffOn_const.congr h₁, contMDiffOn_const.congr h₂⟩
+  exact ⟨Z.globalTrivializationOfCoordChangeEqId hcoord, inferInstance,
+    Z.globalTrivializationOfCoordChangeEqId_mem_maximalAtlas hcoord,
+    Z.globalTrivializationOfCoordChangeEqId_baseSet hcoord⟩
 
 /-- The line bundle of the trivial character has a global trivialization in its maximal `C^n`
 atlas, for every quotient covering. -/
@@ -424,7 +352,7 @@ theorem eq_zero_of_mdifferentiable_section_characterCore [PreconnectedSpace E] {
   rw [characterCore_def]
   intro σ hσ
   refine hp.eq_zero_of_mdifferentiable_section_associatedCore _ hpd (finrank_self ℂ) ?_ hσ
-  exact fun hρ ↦ hχ ((characterRepresentation_eq_one_iff χ).1 hρ)
+  exact fun hρ ↦ hχ (χ.characterRepresentation_eq_one_iff.1 hρ)
 
 /-- If `p` is differentiable with compact preconnected complex covering manifold `E`, the
 line bundle of a nontrivial character over `X` has no nonzero `C^m` section when `m ≠ 0`. -/
@@ -459,11 +387,10 @@ theorem exists_trivialization_baseSet_eq_univ_associatedCore_iff_eq_one [Connect
   obtain ⟨v', hv'G, hv'⟩ :=
     (hp.contMDiff_section_associatedCore_iff_exists_eq_const ρ hpd hn).1 hσ
   have hv : v' = v := by
-    have h := congrFun hv' y₀
-    rw [associatedSectionEquiv_apply_coe] at h
-    change (e₀ ⟨p y₀, e.symm (p y₀) ((e ⟨p y₀, e₀.symm (p y₀) v⟩).2)⟩).2 = v' at h
-    rw [e.symm_apply_apply_mk (hx _), e₀.apply_mk_symm hy₀] at h
-    exact h.symm
+    simpa only [associatedSectionEquiv_apply_coe, Function.const_apply, σ, w,
+      e.symm_apply_apply_mk (hx _), e₀,
+      ((hp.associatedCore ρ).localTriv y₀).apply_mk_symm hy₀] using
+      (congrFun hv' y₀).symm
   simpa only [hv, MonoidHom.one_apply, Units.val_one, one_apply_eq_self] using hv'G g
 
 /-- If `p` is differentiable with compact connected complex covering manifold `E`, the line
@@ -477,6 +404,6 @@ theorem exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one [Connecte
           (TotalSpace ℂ (hp.characterCore χ).Fiber) ∧ e.baseSet = univ) ↔ χ = 1 := by
   rw [characterCore_def,
     hp.exists_trivialization_baseSet_eq_univ_associatedCore_iff_eq_one _ hpd hn]
-  exact characterRepresentation_eq_one_iff χ
+  exact χ.characterRepresentation_eq_one_iff
 
 end IsQuotientCoveringMap
