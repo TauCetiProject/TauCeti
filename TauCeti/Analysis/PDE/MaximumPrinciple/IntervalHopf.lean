@@ -667,7 +667,7 @@ private theorem exists_pos_mul_le_of_integratingFactor (hx : x₀ < x₁)
     push Not at hA
     refine absurd hpos (not_forall_pos_of_flux_le hx u hlam ha hb
       (C := Real.exp L * Real.exp L * ∫ z in Ioo x₀ x₁, |d z - q z * b z|)
-      (by positivity) hu₀ fun h hh hh₁ U hU hvU ↦ ?_)
+      (by positivity) hu₀ fun h _ hh₁ U hU hvU ↦ ?_)
     filter_upwards [hE] with y hy hyh
     have hyI : y ∈ Ioo x₀ x₁ := ⟨hyh.1, hyh.2.trans (by linarith)⟩
     have hKU := intervalIntegral_abs_le hx u hq he hyI (U := U) fun z hz ↦ by
@@ -677,8 +677,6 @@ private theorem exists_pos_mul_le_of_integratingFactor (hx : x₀ < x₁)
         · exact (hpos z ⟨hz', hz.2.trans_lt hyI.2⟩).le
       rw [abs_of_nonneg hz0]
       exact hvU z ⟨hz.1, hz.2.trans hyh.2.le⟩
-    have hD : 0 ≤ ∫ z in Ioo x₀ x₁, |d z - q z * b z| :=
-      setIntegral_nonneg measurableSet_Ioo fun _ _ ↦ abs_nonneg _
     exact (le_exp_mul_of_integratingFactor_mul_le hq (by positivity)
       ((hA y hyI (hy hyI)).trans hKU)).trans_eq (by ring)
 
