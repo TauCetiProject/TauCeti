@@ -74,9 +74,13 @@ there is one. The instance `One Λ` is not used, because it need not be that ele
 * `TauCeti.InfWord.take_append_drop`: `w.take β ++ w.drop β = w`.
 * `TauCeti.InfWord.take_append`, `TauCeti.InfWord.drop_append`: the segments of a concatenation.
 * `TauCeti.InfWord.take_take`, `TauCeti.InfWord.drop_drop`: segments of segments.
+* `TauCeti.InfWord.append_eq_append_iff`: two factorisations of one word differ by a common
+  middle piece.
 * `TauCeti.InfWord.inv_take`, `TauCeti.InfWord.inv_drop`: inversion exchanges initial and final
   segments, `(w.take β)⁻¹ = w⁻¹.drop (|w| - β)`.
 * `TauCeti.InfWord.isReduced_append_iff`: the criterion for a concatenation to be reduced.
+* `TauCeti.InfWord.isReduced_inv_append_iff`: `u⁻¹ ++ v` is reduced exactly when `u`, `v` are
+  reduced and, when both are nonempty, their first letters differ.
 * `TauCeti.InfWord.isReduced_inv`, `TauCeti.InfWord.IsReduced.take`,
   `TauCeti.InfWord.IsReduced.drop`: inverses and segments of reduced words are reduced.
 * `TauCeti.InfWord.isReduced_ofFun_const`: the constant word `x^α` is reduced.
@@ -567,6 +571,18 @@ theorem take_append_length (u v : InfWord Λ X) : (u ++ v).take u.length = u := 
 theorem drop_append_length (u v : InfWord Λ X) : (u ++ v).drop u.length = v := by
   rw [drop_append_of_le_length _ le_rfl, drop_length, empty_append]
 
+/-- Two factorisations `a ++ b = c ++ d` of one word: the shorter of `a`, `c` is an initial
+segment of the longer one, and the difference is a common middle piece. -/
+theorem append_eq_append_iff {a b c d : InfWord Λ X} : a ++ b = c ++ d ↔
+    (∃ e, c = a ++ e ∧ b = e ++ d) ∨ ∃ e, a = c ++ e ∧ d = e ++ b := by
+  have key {a b c d : InfWord Λ X} (h : a ++ b = c ++ d) (hl : a.length ≤ c.length) :
+      ∃ e, c = a ++ e ∧ b = e ++ d := by
+    refine ⟨c.drop a.length, ?_, by rw [← drop_append_of_le_length d hl, ← h, drop_append_length]⟩
+    conv_lhs => rw [← c.take_append_drop a.length]
+    rw [← take_append_of_le_length d hl, ← h, take_append_length]
+  refine ⟨fun h => (le_total a.length c.length).imp (key h) (key h.symm), ?_⟩
+  rintro (⟨e, rfl, rfl⟩ | ⟨e, rfl, rfl⟩) <;> simp
+
 end Group
 
 section Discrete
@@ -694,6 +710,26 @@ theorem isReduced_append_iff : (u ++ v).IsReduced ↔ u.IsReduced ∧ v.IsReduce
 
 theorem IsReduced.drop (h : w.IsReduced) (β : Λ) : (w.drop β).IsReduced :=
   IsReduced.right_of_append (u := w.take β) (by rwa [take_append_drop])
+
+/-- The concatenation `u⁻¹ ++ v` is reduced exactly when `u` and `v` are reduced and, if both are
+nonempty, their first letters differ. -/
+theorem isReduced_inv_append_iff : (u⁻¹ ++ v).IsReduced ↔ u.IsReduced ∧ v.IsReduced ∧
+    (0 < u.length → 0 < v.length → v.letter (Order.succ 0) ≠ u.letter (Order.succ 0)) := by
+  rw [isReduced_append_iff, isReduced_inv, length_inv, letter_inv,
+    Order.succ_eq_add_succ_zero u.length, add_sub_cancel_left, Option.map_map]
+  simp [Function.comp_def, Prod.map]
+
+/-- `w⁻¹ ++ w` is reduced only for the empty word. -/
+@[simp]
+theorem isReduced_inv_append_self_iff : (w⁻¹ ++ w).IsReduced ↔ w = empty Λ X := by
+  refine ⟨fun h => not_not.1 fun hw => ?_, fun h => by simp [h]⟩
+  have h0 := length_pos_iff.2 hw
+  exact (isReduced_inv_append_iff.1 h).2.2 h0 h0 rfl
+
+/-- `w ++ w⁻¹` is reduced only for the empty word. -/
+@[simp]
+theorem isReduced_append_inv_self_iff : (w ++ w⁻¹).IsReduced ↔ w = empty Λ X := by
+  simpa [inv_eq_iff_eq_inv] using isReduced_inv_append_self_iff (w := w⁻¹)
 
 end Discrete
 
