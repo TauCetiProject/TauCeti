@@ -35,11 +35,11 @@ characteristic zero.
 ## Main definitions
 
 * `TauCeti.SurfaceGroup.Orientable.closedAbelianizationEquiv`:
-  `Abelianization S⁺(g, 0) ≃* ℤ ^ (Fin g ⊕ Fin g)`, sending the classes of `aᵢ` and `bᵢ` to the
-  standard basis vectors at `Sum.inl i` and `Sum.inr i`.
+  `Group.Abelianization S⁺(g, 0) ≃* ℤ ^ (Fin g ⊕ Fin g)`, sending the classes of `aᵢ` and `bᵢ`
+  to the standard basis vectors at `Sum.inl i` and `Sum.inr i`.
 * `TauCeti.SurfaceGroup.Nonorientable.closedAbelianizationEquiv`:
-  `Abelianization S⁻(g + 1, 0) ≃* ℤ ^ g × ℤ / 2`, sending the class of `cᵢ` to the standard basis
-  vector `(eᵢ, 0)` for `i ≤ g` and the class of `c_{g+1}` to `(-(e₁ + ⋯ + e_g), 1)`.
+  `Group.Abelianization S⁻(g + 1, 0) ≃* ℤ ^ g × ℤ / 2`, sending the class of `cᵢ` to the standard
+  basis vector `(eᵢ, 0)` for `i ≤ g` and the class of `c_{g+1}` to `(-(e₁ + ⋯ + e_g), 1)`.
 
 ## Main results
 
@@ -65,10 +65,10 @@ namespace Orientable
 The abelianization of `S⁺(g, 0)` is `ℤ ^ (Fin g ⊕ Fin g)`, written multiplicatively, with the
 classes of `aᵢ` and `bᵢ` as the standard basis vectors at `Sum.inl i` and `Sum.inr i`. -/
 def closedAbelianizationEquiv (g : ℕ) :
-    Abelianization (Orientable g 0) ≃* Multiplicative (Fin g ⊕ Fin g → ℤ) :=
+    Group.Abelianization (Orientable g 0) ≃* Multiplicative (Fin g ⊕ Fin g → ℤ) :=
   MonoidHom.toMulEquiv
     -- In a commutative group the commutators of the closed orientable surface word vanish.
-    (Abelianization.lift <| lift (fun i ↦ .ofAdd (Pi.single (.inl i) 1))
+    (Group.Abelianization.lift <| lift (fun i ↦ .ofAdd (Pi.single (.inl i) 1))
       (fun i ↦ .ofAdd (Pi.single (.inr i) 1)) Fin.elim0 (by simp [orientableWord_def]))
     (AddMonoidHom.toMultiplicativeLeft (Fintype.linearCombination ℤ <|
       Sum.elim (fun i ↦ .ofMul (.of (a g 0 i))) fun i ↦ .ofMul (.of (b g 0 i))).toAddMonoidHom)
@@ -135,14 +135,15 @@ private theorem nonorientableWord_crosscapClass (g : ℕ) :
 
 /-- In the abelianization of `S⁻(g, 0)` twice the sum of the classes of the crosscaps is zero. -/
 private theorem two_nsmul_sum_of_c (g : ℕ) :
-    2 • ∑ i, Additive.ofMul (Abelianization.of (c g 0 i)) = 0 := by
+    2 • ∑ i, Additive.ofMul (Group.Abelianization.of (c g 0 i)) = 0 := by
   simpa [nonorientableWord_def, map_list_prod, List.map_ofFn, Function.comp_def, List.prod_ofFn,
     Finset.prod_pow, ← ofMul_pow, ← ofMul_prod] using
-    congrArg (fun x ↦ Additive.ofMul (Abelianization.of x)) (nonorientableWord_c_peripheral g 0)
+    congrArg (fun x ↦ Additive.ofMul (Group.Abelianization.of x))
+      (nonorientableWord_c_peripheral g 0)
 
 /-- The homomorphism from `ℤ / 2` to the abelianization of `S⁻(g, 0)` sending the generator to the
 sum of the classes of the crosscaps, which has order dividing two. -/
-private def torsionHom (g : ℕ) : ZMod 2 →+ Additive (Abelianization (Nonorientable g 0)) :=
+private def torsionHom (g : ℕ) : ZMod 2 →+ Additive (Group.Abelianization (Nonorientable g 0)) :=
   ZMod.lift 2 ⟨zmultiplesHom _ (∑ i, .ofMul (.of (c g 0 i))), by
     rw [zmultiplesHom_apply, natCast_zsmul, two_nsmul_sum_of_c]⟩
 
@@ -159,9 +160,10 @@ abelianization of `S⁻(g + 1, 0)` is `(Fin g → ℤ) × ZMod 2`, written multi
 `c_{g+1}` is `(-(e₁ + ⋯ + e_g), 1)`; the torsion element `(0, 1)` is the class of
 `c₁ ⋯ c_{g+1}`. -/
 def closedAbelianizationEquiv (g : ℕ) :
-    Abelianization (Nonorientable (g + 1) 0) ≃* Multiplicative ((Fin g → ℤ) × ZMod 2) :=
+    Group.Abelianization (Nonorientable (g + 1) 0) ≃* Multiplicative ((Fin g → ℤ) × ZMod 2) :=
   MonoidHom.toMulEquiv
-    (Abelianization.lift (lift (crosscapClass g) Fin.elim0 (nonorientableWord_crosscapClass g)))
+    (Group.Abelianization.lift <|
+      lift (crosscapClass g) Fin.elim0 (nonorientableWord_crosscapClass g))
     (AddMonoidHom.toMultiplicativeLeft <| AddMonoidHom.coprod
       (Fintype.linearCombination ℤ fun i ↦ .ofMul (.of (c (g + 1) 0 i.castSucc))).toAddMonoidHom
       (torsionHom (g + 1)))
