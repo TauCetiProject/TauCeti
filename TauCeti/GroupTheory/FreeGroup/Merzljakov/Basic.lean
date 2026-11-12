@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.FreeGroup.MerzljakovWord
+public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Word
+public import TauCeti.Order.WellFounded.Basic
 
 /-!
 # Merzljakov tuples
 
 Merzljakov's theorem concerns a sentence `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (s = 1)` which holds in
 a free group `F(A)`. Its proof substitutes for the universally quantified variables a tuple of
-*Merzljakov words* `g i = b a^{m₁} b ⋯ a^{m_n} b`, chosen one after the other together with
-witnesses `h i` for the existentially quantified variables, in such a way that no block `b a^m b`
-of `g i` occurs in an earlier word `g j` or in an earlier witness `h j`; here `a ≠ b` are two
-letters of `A`. A block of `g i` can then be recognised in the equality `s(g, h) = 1`: it comes
-from an occurrence of `x i`, and from nothing that was chosen before `g i`.
+*Merzljakov words* `g i = b a^{m₁} b ⋯ a^{m_n} b`, where `a ≠ b` are two letters of `A`, chosen
+one after the other together with witnesses `h i` for the existentially quantified variables.
+They are chosen so that a block `b a^m b` of `g i` occurs in no other word `g j`, and neither the
+block nor its formal inverse occurs in a witness `h j` chosen before `g i`, that is with `j < i`.
 
 This file defines the conditions on such a tuple and proves that tuples satisfying them exist.
 The witnesses are the values `h = f g` of Skolem functions `f` of the sentence: a function from
@@ -36,6 +36,8 @@ a witness is an arbitrary element of the free group and may contain the inverse 
 * `FreeGroup.exists_isMerzljakovTuple`: for all Skolem functions respecting the order of the
   quantifiers there is a tuple of Merzljakov words, each with a prescribed number of blocks,
   which satisfies Merzljakov's conditions relative to the values of the Skolem functions.
+* `FreeGroup.isMerzljakovTuple_iff_toWord`: Merzljakov's conditions in terms of the reduced words
+  `FreeGroup.toWord` of the witnesses.
 * `FreeGroup.IsMerzljakovTuple.not_merzljakovBlock_isInfix_merzljakovWord`: over distinct letters
   `a ≠ b`, no block of a word of a Merzljakov tuple occurs in another word of the tuple.
 
@@ -50,14 +52,16 @@ public section
 
 namespace FreeGroup
 
-open List Function
+open List
 
 variable {α : Type*} {k : ℕ} {a b : α}
 
 /-- Merzljakov's conditions on a tuple of exponent lists `ms`, relative to elements
 `h₀, …, h_{k-1}` of the free group: the exponents of each list are pairwise distinct, lists with
 different indices are disjoint, and for `j < i` no block `b a^m b` with `m` in `ms i`, and no
-formal inverse of such a block, occurs in the reduced word of `h j`.
+formal inverse of such a block, occurs in the reduced word of `h j`. The reduced word is given
+as any reduced `w` with `mk w = h j`, so that no decidable equality on `α` is needed; see
+`FreeGroup.isMerzljakovTuple_iff_toWord` for the formulation with `FreeGroup.toWord`.
 
 When `a ≠ b`, disjointness of the lists `ms i` and `ms j` says that no block of the Merzljakov
 word with exponents `ms i` occurs in the one with exponents `ms j`; see
@@ -66,7 +70,7 @@ word with exponents `ms i` occurs in the one with exponents `ms j`; see
 structure IsMerzljakovTuple (a b : α) (ms : Fin k → List ℕ) (h : Fin k → FreeGroup α) : Prop where
   /-- The exponents of each word are pairwise distinct. -/
   nodup (i : Fin k) : (ms i).Nodup
-  /-- Words with different indices have no exponent in common. -/
+  /-- A word has no exponent in common with an earlier word. -/
   disjoint {i j : Fin k} (hij : j < i) : (ms i).Disjoint (ms j)
   /-- No block of a word occurs in an earlier witness. -/
   not_isInfix {i j : Fin k} (hij : j < i) {m : ℕ} (hm : m ∈ ms i) {w : List (α × Bool)}
@@ -91,7 +95,34 @@ theorem not_merzljakovBlock_isInfix_merzljakovWord (hms : IsMerzljakovTuple a b 
     ¬ merzljakovBlock a b m <:+: merzljakovWord a b (ms j) :=
   fun hmj ↦ hms.disjoint_of_ne hij hm ((merzljakovBlock_isInfix_merzljakovWord_iff hab).1 hmj)
 
+variable [DecidableEq α]
+
+/-- No block of a word of a Merzljakov tuple occurs in the reduced word of an earlier witness. -/
+theorem not_isInfix_toWord (hms : IsMerzljakovTuple a b ms h) {i j : Fin k} (hij : j < i)
+    {m : ℕ} (hm : m ∈ ms i) : ¬ merzljakovBlock a b m <:+: (h j).toWord :=
+  hms.not_isInfix hij hm isReduced_toWord mk_toWord
+
+/-- No formal inverse of a block of a word of a Merzljakov tuple occurs in the reduced word of an
+earlier witness. -/
+theorem not_invRev_isInfix_toWord (hms : IsMerzljakovTuple a b ms h) {i j : Fin k} (hij : j < i)
+    {m : ℕ} (hm : m ∈ ms i) : ¬ invRev (merzljakovBlock a b m) <:+: (h j).toWord :=
+  hms.not_invRev_isInfix hij hm isReduced_toWord mk_toWord
+
 end IsMerzljakovTuple
+
+/-- Merzljakov's conditions, with the reduced words of the witnesses given by
+`FreeGroup.toWord`. -/
+theorem isMerzljakovTuple_iff_toWord [DecidableEq α] {ms : Fin k → List ℕ}
+    {h : Fin k → FreeGroup α} :
+    IsMerzljakovTuple a b ms h ↔ (∀ i, (ms i).Nodup) ∧
+      (∀ {i j : Fin k}, j < i → (ms i).Disjoint (ms j)) ∧
+      (∀ {i j : Fin k}, j < i → ∀ m ∈ ms i, ¬ merzljakovBlock a b m <:+: (h j).toWord) ∧
+      ∀ {i j : Fin k}, j < i → ∀ m ∈ ms i, ¬ invRev (merzljakovBlock a b m) <:+: (h j).toWord := by
+  refine ⟨fun hms ↦ ⟨hms.nodup, hms.disjoint, fun hij _ ↦ hms.not_isInfix_toWord hij,
+    fun hij _ ↦ hms.not_invRev_isInfix_toWord hij⟩, fun ⟨hnodup, hdisj, hinf, hinv⟩ ↦
+    ⟨hnodup, hdisj, fun hij _ hm _ hw hwh ↦ ?_, fun hij _ hm _ hw hwh ↦ ?_⟩⟩ <;>
+  rw [hw.eq_of_mk_eq isReduced_toWord (hwh.trans mk_toWord.symm)]
+  exacts [hinf hij _ hm, hinv hij _ hm]
 
 /-- For given exponent lists `ms j` and elements `h j` of the free group there are `N` pairwise
 distinct exponents which occur in no `ms j` and whose blocks and inverse blocks occur in no
@@ -115,37 +146,6 @@ private theorem exists_nodup_forall_not_isInfix (a b : α) (N : ℕ) (ms : Fin k
   · exact hav m hm (invRev w) (Set.mem_iUnion.2 ⟨j, .inr (.inr ⟨w, ⟨hw, hwh⟩, rfl⟩)⟩)
       (by rwa [← invRev_isInfix_invRev, invRev_invRev])
 
-/-- The first `n` words of a Merzljakov tuple can be chosen: the conditions relating the word
-with index `i` to the earlier words and witnesses hold for all `i < n`. -/
-private theorem exists_forall_lt_isMerzljakovTuple (a b : α) (N : ℕ)
-    (f : (Fin k → FreeGroup α) → Fin k → FreeGroup α)
-    (hf : ∀ i x x', (∀ j ≤ i, x j = x' j) → f x i = f x' i) {n : ℕ} (hn : n ≤ k) :
-    ∃ ms : Fin k → List ℕ, (∀ i, (ms i).length = N) ∧ (∀ i, (ms i).Nodup) ∧
-      ∀ i j : Fin k, j < i → i < n → ∀ m ∈ ms i, m ∉ ms j ∧
-        ∀ w, IsReduced w → mk w = f (fun i ↦ mk (merzljakovWord a b (ms i))) j →
-          ¬ merzljakovBlock a b m <:+: w ∧ ¬ invRev (merzljakovBlock a b m) <:+: w := by
-  induction n with
-  | zero => exact ⟨fun _ ↦ range N, by simp, fun _ ↦ nodup_range, by simp⟩
-  | succ n ih =>
-    obtain ⟨ms, hlen, hnodup, hms⟩ := ih (Nat.le_of_succ_le hn)
-    obtain ⟨l, hl, hl', hav⟩ := exists_nodup_forall_not_isInfix a b N ms
-      (f fun i ↦ mk (merzljakovWord a b (ms i)))
-    -- Replacing the word with index `n` does not change the witnesses with smaller indices.
-    have hf' (j : Fin k) (hj : j < ⟨n, hn⟩) :
-        f (fun i ↦ mk (merzljakovWord a b (update ms ⟨n, hn⟩ l i))) j =
-          f (fun i ↦ mk (merzljakovWord a b (ms i))) j :=
-      hf j _ _ fun j' hj' ↦ by simp [update_of_ne (hj'.trans_lt hj).ne]
-    refine ⟨update ms ⟨n, hn⟩ l,
-      (forall_update_iff ms fun _ x ↦ x.length = N).2 ⟨hl, fun i _ ↦ hlen i⟩,
-      (forall_update_iff ms fun _ x ↦ x.Nodup).2 ⟨hl', fun i _ ↦ hnodup i⟩, fun i j hji hi ↦ ?_⟩
-    · have hj : j < ⟨n, hn⟩ := hji.trans_le (Fin.le_def.2 (Nat.le_of_lt_succ hi))
-      rw [update_of_ne hj.ne, hf' j hj]
-      obtain rfl | hi' := eq_or_ne i ⟨n, hn⟩
-      · rw [update_self]
-        exact fun m hm ↦ hav m hm j
-      · rw [update_of_ne hi']
-        exact hms i j hji (lt_of_le_of_ne (Nat.le_of_lt_succ hi) (Fin.val_ne_of_ne hi'))
-
 /-- For Skolem functions `f` respecting the order of the quantifiers and every `N`, there are
 exponent lists of length `N` whose Merzljakov words `g i`, together with the witnesses `f g i`,
 satisfy Merzljakov's conditions. -/
@@ -153,10 +153,29 @@ theorem exists_isMerzljakovTuple (a b : α) (N : ℕ) (f : (Fin k → FreeGroup 
     (hf : ∀ i x x', (∀ j ≤ i, x j = x' j) → f x i = f x' i) :
     ∃ ms : Fin k → List ℕ, (∀ i, (ms i).length = N) ∧
       IsMerzljakovTuple a b ms (f fun i ↦ mk (merzljakovWord a b (ms i))) := by
-  obtain ⟨ms, hlen, hnodup, hms⟩ := exists_forall_lt_isMerzljakovTuple a b N f hf le_rfl
-  exact ⟨ms, hlen, hnodup, fun {i} _ hij _ hm hmj ↦ (hms i _ hij i.2 _ hm).1 hmj,
-    fun {i} _ hij _ hm _ hw hwh ↦ ((hms i _ hij i.2 _ hm).2 _ hw hwh).1,
-    fun {i} _ hij _ hm _ hw hwh ↦ ((hms i _ hij i.2 _ hm).2 _ hw hwh).2⟩
+  -- An admissible exponent list with index `i`, given the lists with smaller indices.
+  let V (ms : Fin k → List ℕ) (i : Fin k) (l : List ℕ) : Prop :=
+    l.length = N ∧ l.Nodup ∧ ∀ j < i, ∀ m ∈ l, m ∉ ms j ∧
+      ∀ w, IsReduced w → mk w = f (fun i ↦ mk (merzljakovWord a b (ms i))) j →
+        ¬ merzljakovBlock a b m <:+: w ∧ ¬ invRev (merzljakovBlock a b m) <:+: w
+  suffices hex : ∃ ms, ∀ i, V ms i (ms i) by
+    obtain ⟨ms, hms⟩ := hex
+    exact ⟨ms, fun i ↦ (hms i).1, fun i ↦ (hms i).2.1,
+      fun {i} _ hij _ hm hmj ↦ ((hms i).2.2 _ hij _ hm).1 hmj,
+      fun {i} _ hij _ hm _ hw hwh ↦ (((hms i).2.2 _ hij _ hm).2 _ hw hwh).1,
+      fun {i} _ hij _ hm _ hw hwh ↦ (((hms i).2.2 _ hij _ hm).2 _ hw hwh).2⟩
+  refine wellFounded_lt.exists_forall_of_forall_exists V ?_ fun i ms _ ↦ ?_
+  · -- The witnesses with indices `j < i` depend only on the lists with indices `j' ≤ j`.
+    rintro i l ms ms' hms ⟨hl, hnodup, hav⟩
+    refine ⟨hl, hnodup, fun j hj ↦ ?_⟩
+    have hf' : f (fun i ↦ mk (merzljakovWord a b (ms i))) j =
+        f (fun i ↦ mk (merzljakovWord a b (ms' i))) j :=
+      hf j _ _ fun j' hj' ↦ by rw [hms j' (hj'.trans_lt hj)]
+    rw [← hms j hj, ← hf']
+    exact hav j hj
+  · obtain ⟨l, hl, hnodup, hav⟩ := exists_nodup_forall_not_isInfix a b N ms
+      (f fun i ↦ mk (merzljakovWord a b (ms i)))
+    exact ⟨l, hl, hnodup, fun j _ m hm ↦ hav m hm j⟩
 
 /-- For the sentence `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (y₀ = x₀ ∧ … ∧ y_{k-1} = x_{k-1})` the
 witnesses are the Merzljakov words themselves: there are Merzljakov words `g i`, each with `N`
