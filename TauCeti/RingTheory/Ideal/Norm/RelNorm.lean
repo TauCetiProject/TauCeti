@@ -11,9 +11,10 @@ public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 /-!
 # Coefficients of a relative norm
 
-For a finite torsion-free extension `A → B` of Dedekind domains and a maximal ideal `p`
-of `A`, the coefficient of `Ideal.relNorm A I` at `p` is determined by the coefficients of `I` at
-the primes of `B` above `p`, each weighted by a residue degree:
+For a finite torsion-free extension `A → B` of Dedekind domains whose extension of fraction
+fields is separable, and a prime ideal `p` of `A`, the coefficient of `Ideal.relNorm A I` at `p` is
+determined by the coefficients of `I` at the primes of `B` above `p`, each weighted by a residue
+degree:
 
 `mult_p(relNorm A I) = Σ_{P ∣ p} f(P / p) · mult_P(I)`.
 
@@ -38,9 +39,11 @@ open Ideal UniqueFactorizationMonoid
 
 namespace TauCeti
 
+attribute [local instance] FractionRing.liftAlgebra
+
 variable {A B : Type*} [CommRing A] [IsDedekindDomain A] [CommRing B] [IsDedekindDomain B]
   [Algebra A B] [Module.Finite A B] [Module.IsTorsionFree A B]
-  [PerfectField (FractionRing A)]
+  [Algebra.IsSeparable (FractionRing A) (FractionRing B)]
 
 section Prime
 
@@ -67,8 +70,8 @@ private theorem multiplicity_relNorm_of_not_liesOver (p : Ideal A) [p.IsMaximal]
 
 /-- **The coefficients of the relative norm of a prime.** Only the prime itself contributes, and
 only when it lies over `p`, where it contributes its residue degree. -/
-private theorem multiplicity_relNorm_prime (p : Ideal A) [p.IsMaximal] (hp : p ≠ ⊥)
-    (P : Ideal B) (hP0 : P ≠ ⊥) [P.IsPrime] :
+private theorem multiplicity_relNorm_prime (p : Ideal A) [p.IsMaximal]
+    [Fintype (p.primesOver B)] (hp : p ≠ ⊥) (P : Ideal B) (hP0 : P ≠ ⊥) [P.IsPrime] :
     multiplicity p (relNorm A P) =
       ∑ Q ∈ (p.primesOver B).toFinset, Q.inertiaDeg A * multiplicity Q P := by
   classical
@@ -94,8 +97,8 @@ end Prime
 
 /-- **The coefficients of a relative norm at a nonzero maximal ideal.** This is
 `multiplicity_relNorm` away from the zero ideal. -/
-private theorem multiplicity_relNorm_of_ne_bot (p : Ideal A) [p.IsMaximal] (hp : p ≠ ⊥)
-    {I : Ideal B} (hI : I ≠ ⊥) :
+private theorem multiplicity_relNorm_of_ne_bot (p : Ideal A) [p.IsMaximal]
+    [Fintype (p.primesOver B)] (hp : p ≠ ⊥) {I : Ideal B} (hI : I ≠ ⊥) :
     multiplicity p (relNorm A I) =
       ∑ P ∈ (p.primesOver B).toFinset, P.inertiaDeg A * multiplicity P I := by
   classical
@@ -133,11 +136,12 @@ private theorem multiplicity_relNorm_of_ne_bot (p : Ideal A) [p.IsMaximal] (hp :
         (mul_ne_zero hP0 hJ)), Nat.mul_add]
 
 variable (B) in
-/-- **The coefficients of a relative norm.** For an ideal `I` of `B` and a maximal
+/-- **The coefficients of a relative norm.** For an ideal `I` of `B` and a prime
 ideal `p` of `A`, the coefficient of `relNorm A I` at `p` is the sum, over the primes
 `P` of `B` above `p`, of the coefficient of `I` at `P` weighted by the residue degree of `P`
 over `p`. -/
-theorem multiplicity_relNorm (p : Ideal A) [p.IsMaximal] {I : Ideal B} :
+theorem multiplicity_relNorm (p : Ideal A) [p.IsPrime] [Fintype (p.primesOver B)]
+    {I : Ideal B} :
     multiplicity p (relNorm A I) =
       ∑ P ∈ (p.primesOver B).toFinset, P.inertiaDeg A * multiplicity P I := by
   rcases eq_or_ne I ⊥ with rfl | hI
@@ -153,7 +157,9 @@ theorem multiplicity_relNorm (p : Ideal A) [p.IsMaximal] {I : Ideal B} :
     have : P.LiesOver ⊥ := (Set.mem_toFinset.mp hP).2
     rw [Ideal.eq_bot_of_liesOver_bot A P,
       show multiplicity (⊥ : Ideal B) I = 0 from multiplicity_zero_left _, Nat.mul_zero]
-  · exact multiplicity_relNorm_of_ne_bot p hp hI
+  · -- A nonzero prime of a Dedekind domain is maximal.
+    have := ‹p.IsPrime›.isMaximal hp
+    exact multiplicity_relNorm_of_ne_bot p hp hI
 
 end TauCeti
 
