@@ -25,7 +25,7 @@ from partition identities to stochastic change-of-variables formulas.
 
 Only pre-Brownian laws are needed for the moment and convergence estimates; a measurable
 modification supplies the natural filtration. No path continuity or usual conditions are
-required. Repeated dates and empty grids are allowed. The maxima here range over trading
+required. Repeated dates and empty grids are allowed. The maxima here range over grid
 dates, not over the intervening continuous-time paths.
 
 ## References
@@ -54,12 +54,26 @@ theorem quadraticSumSubTime_def {Ω : Type*} (B : ℝ≥0 → Ω → ℝ) (τ : 
       ∑ i ∈ range n, ((B (τ (i + 1)) ω - B (τ i) ω) ^ 2 - ((τ (i + 1) : ℝ) - τ i)) :=
   (rfl)
 
+/-- Evaluate the time-centered quadratic sum as a sum of centered squared increments. -/
+theorem quadraticSumSubTime_apply {Ω : Type*} (B : ℝ≥0 → Ω → ℝ) (τ : ℕ → ℝ≥0)
+    (n : ℕ) (ω : Ω) :
+    quadraticSumSubTime B τ n ω =
+      ∑ i ∈ range n, ((B (τ (i + 1)) ω - B (τ i) ω) ^ 2 - ((τ (i + 1) : ℝ) - τ i)) :=
+  (rfl)
+
+/-- Separate the squared increments from their telescoping time correction. -/
+theorem quadraticSumSubTime_eq_sum_sub {Ω : Type*} (B : ℝ≥0 → Ω → ℝ)
+    (τ : ℕ → ℝ≥0) (n : ℕ) (ω : Ω) :
+    quadraticSumSubTime B τ n ω =
+      (∑ i ∈ range n, (B (τ (i + 1)) ω - B (τ i) ω) ^ 2) - ((τ n : ℝ) - τ 0) := by
+  rw [quadraticSumSubTime_apply, sum_sub_distrib, sum_range_sub (fun i ↦ (τ i : ℝ))]
+
 /-- Express the centered prefix sum using the uncentered quadratic sum. -/
 theorem quadraticSumSubTime_eq_quadraticSum_sub {Ω : Type*} (B : ℝ≥0 → Ω → ℝ)
     (τ : ℕ → ℝ≥0) (n : ℕ) (ω : Ω) :
     quadraticSumSubTime B τ n ω = quadraticSum B (fun i : Fin (n + 1) ↦ τ i) ω -
       ((τ n : ℝ) - τ 0) := by
-  rw [quadraticSumSubTime, sum_sub_distrib, sum_range_sub (fun i ↦ (τ i : ℝ))]
+  rw [quadraticSumSubTime_eq_sum_sub]
   simp only [quadraticSum_def, sum_range, Fin.val_succ, Fin.val_castSucc]
 
 /-- The empty prefix has zero centered quadratic sum. -/
@@ -137,11 +151,10 @@ theorem integral_quadraticSumSubTime (hB : IsPreBrownianReal B P) (n : ℕ)
   · apply sum_eq_zero
     intro i hi
     have hi := mem_range.mp hi
-    rw [integral_sub ((hB.memLp_sq_sub _ _).integrable one_le_two) (integrable_const _),
-      hB.integral_sq_sub_of_le (hτ (by simp; omega) (by simp; omega) (Nat.le_succ i))]
-    simp
+    exact hB.integral_sq_sub_sub_eq_zero
+      (hτ (by simp; omega) (by simp; omega) (Nat.le_succ i))
   · intro i _
-    exact ((hB.memLp_sq_sub _ _).integrable one_le_two).sub (integrable_const _)
+    exact hB.memLp_sq_sub_sub.integrable one_le_two
 
 /-- The second moment of a Brownian time-centered quadratic sum is twice the sum of
 squared cell lengths. -/
@@ -154,16 +167,6 @@ theorem integral_sq_quadraticSumSubTime (hB : IsPreBrownianReal B P) (n : ℕ)
       (Set.mem_Iic.2 (Nat.le_of_lt_succ j.isLt)) h
   simpa only [quadraticSumSubTime_eq_quadraticSum_sub, Fin.val_last, Fin.val_zero,
     Fin.val_succ, Fin.val_castSucc, sum_range] using hB.integral_sq_quadraticSum_sub hfin
-
-/-- A cell-length bound controls the second moment of the time-centered quadratic sum. -/
-theorem integral_sq_quadraticSumSubTime_le (hB : IsPreBrownianReal B P) (n : ℕ)
-    (hτ : MonotoneOn τ (Set.Iic n)) {δ : ℝ}
-    (hmesh : ∀ i < n, (τ (i + 1) : ℝ) - τ i ≤ δ) :
-    ∫ ω, quadraticSumSubTime B τ n ω ^ 2 ∂P ≤ 2 * ((τ n : ℝ) - τ 0) * δ := by
-  rw [hB.integral_sq_quadraticSumSubTime n hτ, mul_assoc]
-  exact mul_le_mul_of_nonneg_left
-    (sum_range_sq_sub_le (fun i ↦ (τ i : ℝ)) n
-      (fun _ hi _ hj hij ↦ NNReal.coe_le_coe.mpr (hτ hi hj hij)) hmesh) (by norm_num)
 
 end ProbabilityTheory.IsPreBrownianReal
 
@@ -293,7 +296,7 @@ theorem tendsto_integral_sq_partialSups_abs_quadraticSumSubTime (hB : IsPreBrown
         (le_max_right _ _)
 
 /-- Maximal prefix errors converge in probability along every bounded-horizon vanishing-mesh
-family. Unlike convergence of the terminal sum alone, this controls every trading date. -/
+family. Unlike convergence of the terminal sum alone, this controls every grid date. -/
 theorem tendstoInMeasure_partialSups_abs_quadraticSumSubTime (hB : IsPreBrownianReal B P)
     {ι : Type*} {l : Filter ι} {N : ι → ℕ} {grid : ι → ℕ → ℝ≥0}
     (ht : ∀ k, MonotoneOn (grid k) (Set.Iic (N k)))
@@ -302,14 +305,11 @@ theorem tendstoInMeasure_partialSups_abs_quadraticSumSubTime (hB : IsPreBrownian
     (hδ : Tendsto δ l (𝓝 0)) :
     TendstoInMeasure P
       (fun k ↦ partialSups (fun j ω ↦ |quadraticSumSubTime B (grid k) j ω|) (N k)) l 0 := by
-  refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
-  have hlim := ENNReal.continuous_ofReal.continuousAt.tendsto.comp
-    ((hB.tendsto_integral_sq_partialSups_abs_quadraticSumSubTime ht hT hmesh hδ).div_const (ε ^ 2))
-  simp only [zero_div, ENNReal.ofReal_zero, Function.comp_def] at hlim
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-    (fun _ ↦ zero_le) fun k ↦ ?_
-  simpa only [Pi.sub_apply, Pi.zero_apply, sub_zero, Real.norm_eq_abs, sq_abs] using
-    TauCeti.meas_ge_le_integral_norm_sq_div_sq
-      (hB.memLp_partialSups_abs_quadraticSumSubTime (grid k) (N k)).norm.integrable_sq hε
+  apply tendstoInMeasure_of_tendsto_integral_norm_sq
+  · exact Eventually.of_forall fun k ↦ by
+      simpa only [Pi.zero_apply, sub_zero] using
+        (hB.memLp_partialSups_abs_quadraticSumSubTime (grid k) (N k)).norm.integrable_sq
+  · simpa only [Pi.zero_apply, sub_zero, Real.norm_eq_abs, sq_abs] using
+      hB.tendsto_integral_sq_partialSups_abs_quadraticSumSubTime ht hT hmesh hδ
 
 end ProbabilityTheory.IsPreBrownianReal

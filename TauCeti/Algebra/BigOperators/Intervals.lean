@@ -22,8 +22,8 @@ import Mathlib.Tactic.Ring
 /-!
 # Sums over intervals of natural numbers and integers
 
-On a finite nondecreasing grid, squared cell lengths sum to at most elapsed time times
-any upper bound on the cell lengths.
+Along a monotone prefix in an ordered ring, the sum of squared successive differences
+`t (i + 1) - t i` is bounded by the endpoint difference `t n - t 0` times any common upper bound.
 
 A sum `∑ k ∈ Ico m (n + 1), f k` whose summands split as `f m = β m`, `f n = γ n`, and
 `f k = γ k + β k` for `m < k < n` regroups as the sum over `m ≤ k < n` of the adjacent pairs
@@ -40,6 +40,8 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 
 ## Main results
 
+* `Finset.sum_range_sq_sub_le`: bound the sum of squared successive differences along a
+  monotone prefix by its endpoint difference times a common upper bound.
 * `Finset.sum_Ico_eq_sum_Ico_add`: the regrouping of `∑ k ∈ Ico m (n + 1), f k` into the pairs
   `β k + γ (k + 1)`.
 * `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
@@ -58,9 +60,9 @@ public section
 
 namespace Finset
 
-/-- On a finite nondecreasing prefix, the sum of squared cell lengths is at most
-elapsed time times any upper bound on the cell lengths. -/
-theorem sum_range_sq_sub_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+/-- Along a monotone prefix, the sum of squared successive differences is at most the
+endpoint difference times any common upper bound on the successive differences. -/
+theorem sum_range_sq_sub_le {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
     (t : ℕ → R) (n : ℕ) (ht : MonotoneOn t (Set.Iic n)) {δ : R}
     (hmesh : ∀ i < n, t (i + 1) - t i ≤ δ) :
     ∑ i ∈ range n, (t (i + 1) - t i) ^ 2 ≤ (t n - t 0) * δ := by

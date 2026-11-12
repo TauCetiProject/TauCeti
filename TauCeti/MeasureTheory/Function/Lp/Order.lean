@@ -28,6 +28,14 @@ open scoped ENNReal
 
 namespace MeasureTheory
 
+/-- The supremum of a nonempty finite family of `Lᵖ` functions is in `Lᵖ`. -/
+theorem memLp_finset_sup' {α E ι : Type*} [MeasurableSpace α] {μ : Measure α}
+    {p : ℝ≥0∞} [NormedAddCommGroup E] [Lattice E] [HasSolidNorm E]
+    [IsOrderedAddMonoid E] {s : Finset ι} (hs : s.Nonempty) {f : ι → α → E}
+    (hf : ∀ j ∈ s, MemLp (f j) p μ) : MemLp (s.sup' hs f) p μ :=
+  Finset.sup'_induction _ _ (p := fun g ↦ MemLp g p μ)
+    (fun _ hf _ hg ↦ hf.sup hg) hf
+
 /-- A finite running supremum of `Lᵖ` functions is in `Lᵖ`. -/
 theorem MemLp.partialSups {α E ι : Type*} {m : MeasurableSpace α} {μ : Measure α}
     {p : ℝ≥0∞} [NormedAddCommGroup E] [Lattice E] [HasSolidNorm E]
@@ -35,8 +43,7 @@ theorem MemLp.partialSups {α E ι : Type*} {m : MeasurableSpace α} {μ : Measu
     {f : ι → α → E} {i : ι} (hf : ∀ j ≤ i, MemLp (f j) p μ) :
     MemLp (partialSups f i) p μ := by
   rw [partialSups_apply]
-  exact Finset.sup'_induction _ _ (p := fun g ↦ MemLp g p μ)
-    (fun _ hf _ hg ↦ hf.sup hg) (fun j hj ↦ hf j (Finset.mem_Iic.mp hj))
+  exact memLp_finset_sup' _ (fun j hj ↦ hf j (Finset.mem_Iic.mp hj))
 
 end MeasureTheory
 
