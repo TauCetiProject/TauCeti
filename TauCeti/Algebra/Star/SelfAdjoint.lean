@@ -88,6 +88,4 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
     (hR : IsSelfAdjoint R) (hRRinv : R * Rinv = 1) : IsSelfAdjoint Rinv := by
   have hstar : star Rinv * R = 1 := by
     simpa only [star_mul, hR.star_eq, star_one] using congrArg star hRRinv
-  calc star Rinv = star Rinv * (R * Rinv) := by rw [hRRinv, mul_one]
-    _ = (star Rinv * R) * Rinv := (mul_assoc _ _ _).symm
-    _ = Rinv := by rw [hstar, one_mul]
+  exact left_inv_eq_right_inv hstar hRRinv

@@ -38,6 +38,8 @@ this order makes `E →L[𝕜] E` a star-ordered ring. At `𝕜 = ℂ` all of th
 on the complex `C⋆`-algebra `E →L[ℂ] E`, and at `𝕜 = ℝ` it is supplied by
 `ContinuousLinearMap.instContinuousFunctionalCalculusRealIsSelfAdjoint`. Completeness of `E`,
 automatic in finite dimension, is assumed because Mathlib's adjoint on `E →L[𝕜] E` requires it.
+The exception is `LinearMap.toContinuousLinearMap_operatorAbs_eq_modulus`, which needs none of
+these instances, only completeness of the target space.
 
 ## Main results
 

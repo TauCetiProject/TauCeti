@@ -87,10 +87,9 @@ theorem conj_add_star_of_lyapunov [CompleteSpace E]
     (hlyap : C * W + star W * C = B + B) :
     R * W * Rinv + star (R * W * Rinv) =
       Rinv * B * Rinv + Rinv * B * Rinv := by
-  have hstar : star Rinv * R = 1 := by
-    simpa only [star_mul, hR.star_eq, star_one] using congrArg star hRRinv
   have hRinv := hR.of_mul_eq_one hRRinv
-  have hRinvR : Rinv * R = 1 := by rw [← hRinv.star_eq]; exact hstar
+  have hRinvR : Rinv * R = 1 := by
+    simpa only [star_mul, hR.star_eq, hRinv.star_eq, star_one] using congrArg star hRRinv
   have hleft : Rinv * C = R := by rw [← hRR, ← mul_assoc, hRinvR, one_mul]
   have hright : C * Rinv = R := by rw [← hRR, mul_assoc, hRRinv, mul_one]
   have hconj : Rinv * (C * W + star W * C) * Rinv =
