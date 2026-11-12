@@ -49,7 +49,8 @@ theorem LocallyBrownianIntegrable.mul_of_locally_bounded
     (hH : LocallyBrownianIntegrable ℱ P H) (hX : IsStronglyPredictable ℱ X)
     (hb : ∀ᵐ ω ∂P, ∀ T : ℝ≥0, ∃ C : ℝ, ∀ t ≤ T, ‖X t ω‖ ≤ C) :
     LocallyBrownianIntegrable ℱ P (fun t ω ↦ H t ω * X t ω) := by
-  refine ⟨StronglyMeasurable.mul hH.isStronglyPredictable hX, ?_⟩
+  refine ⟨hH.isStronglyPredictable.mul hX, ?_⟩
+  -- Predictability is strong measurability of the uncurried process for ℱ.predictable.
   have hm : StronglyMeasurable (Function.uncurry X) :=
     hX.mono ℱ.predictable_le_prod
   filter_upwards [hH.ae_memLp, hb] with ω hω hbω
@@ -87,11 +88,20 @@ theorem LocallyBrownianIntegrable.div_of_ae_continuous
     (hne : ∀ᵐ ω ∂P, ∀ t, X t ω ≠ 0) :
     LocallyBrownianIntegrable ℱ P (fun t ω ↦ H t ω / X t ω) := by
   have hi : IsStronglyPredictable ℱ (fun t ω ↦ (X t ω)⁻¹) :=
-    hX.measurable.inv.stronglyMeasurable
+    hX.inv₀
   have hic : ∀ᵐ ω ∂P, Continuous (fun t ↦ (X t ω)⁻¹) := by
     filter_upwards [hc, hne] with ω hω hnω
     exact hω.inv₀ hnω
   simpa only [div_eq_mul_inv] using hH.mul_of_ae_continuous hi hic
+
+end TauCeti
+
+namespace MeasureTheory.IsStronglyPredictable
+
+open TauCeti
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
+  {P : Measure Ω} {X : ℝ≥0 → Ω → ℝ}
 
 /-- A predictable process with almost-surely continuous paths has finite pathwise square
 energy on every finite horizon, without any moment assumption. -/
@@ -102,7 +112,7 @@ theorem locallyBrownianIntegrable_of_ae_continuous (hX : IsStronglyPredictable �
     locallyBrownianIntegrable_const_iff.2 stronglyMeasurable_const
   simpa only [one_mul] using hone.mul_of_ae_continuous hX hc
 
-end TauCeti
+end MeasureTheory.IsStronglyPredictable
 
 namespace MeasureTheory.StronglyAdapted
 
@@ -115,8 +125,8 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
 Continuity is pointwise here, so the original process is literally predictable. -/
 theorem locallyBrownianIntegrable_of_continuous (hX : StronglyAdapted ℱ X)
     (hc : ∀ ω, Continuous (fun t ↦ X t ω)) : LocallyBrownianIntegrable ℱ P X :=
-  TauCeti.locallyBrownianIntegrable_of_ae_continuous
-    (hX.isStronglyPredictable_of_continuous hc) (.of_forall hc)
+  (hX.isStronglyPredictable_of_continuous hc).locallyBrownianIntegrable_of_ae_continuous
+    (.of_forall hc)
 
 /-- An adapted process with almost-surely continuous paths has an indistinguishable locally
 Brownian-integrable version on the same raw filtration. This does not impose any moment
@@ -126,7 +136,7 @@ theorem exists_locallyBrownianIntegrable_indist_of_ae_continuous (hX : StronglyA
     ∃ Y : ℝ≥0 → Ω → ℝ, LocallyBrownianIntegrable ℱ P Y ∧ Y ≡ᵐ[P] X := by
   obtain ⟨Y, hY, heq⟩ := hX.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
     (hc.mono fun _ hω ↦ hω.isLeftContinuous)
-  refine ⟨Y, TauCeti.locallyBrownianIntegrable_of_ae_continuous hY ?_, heq⟩
+  refine ⟨Y, hY.locallyBrownianIntegrable_of_ae_continuous ?_, heq⟩
   filter_upwards [hc, heq] with ω hω heqω
   exact hω.congr fun t ↦ (heqω t).symm
 
