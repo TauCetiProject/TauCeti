@@ -89,22 +89,6 @@ theorem continuous_ballProdHeight :
   ((continuous_norm.comp (continuous_subtype_val.comp continuous_snd)).subtype_mk _).prodMk
     continuous_fst
 
-omit [NormedSpace ℝ F] in
-/-- The height reached by the radial projection of `(‖y‖, x)` is at most `‖y‖`. -/
-private theorem ballRadialProjection_ballProdHeight_fst_le
-    (p : closedBall (0 : E) 1 × closedBall (0 : F) 1) :
-    (ballRadialProjection (ballProdHeight p)).1 ≤ ‖(p.2 : F)‖ := by
-  have hs := mem_closedBall_zero_iff.1 p.2.2
-  have hx := mem_closedBall_zero_iff.1 p.1.2
-  have hd : 0 < 2 - ‖(p.2 : F)‖ := by linarith
-  have hd₁ : 2 - ‖(p.2 : F)‖ ≤ max (2 - ‖(p.2 : F)‖) (2 * ‖(p.1 : E)‖) := le_max_left _ _
-  have hd₂ : max (2 - ‖(p.2 : F)‖) (2 * ‖(p.1 : E)‖) ≤ 2 :=
-    max_le (by linarith [norm_nonneg (p.2 : F)]) (by linarith)
-  rw [ballRadialProjection_def, ballRadialDen_def]
-  simp only [ballProdHeight]
-  rw [sub_le_comm, le_div_iff₀ (hd.trans_le hd₁)]
-  nlinarith
-
 /-- **The retraction of a handle onto its core and its attaching region.** For a point `(x, y)`
 of the product of the closed unit balls of `E` and `F`, project `(‖y‖, x)` radially from the point
 `(2, 0)` onto the bottom and sides of the cylinder `I × B` over the ball `B` of `E`
@@ -127,7 +111,7 @@ private theorem ballProdRetraction_coeff_mem (p : closedBall (0 : E) 1 × closed
     0 ≤ (ballRadialProjection (ballProdHeight p)).1 / ‖(p.2 : F)‖ ∧
       (ballRadialProjection (ballProdHeight p)).1 / ‖(p.2 : F)‖ ≤ 1 := by
   have h0 := (ballRadialProjection_spec (ballProdHeight p)).1.1
-  have h1 := ballRadialProjection_ballProdHeight_fst_le p
+  have h1 : _ ≤ ‖(p.2 : F)‖ := ballRadialProjection_fst_le (ballProdHeight p)
   refine ⟨div_nonneg h0 (norm_nonneg _), ?_⟩
   rcases (norm_nonneg (p.2 : F)).eq_or_lt with h | h
   · simp [← h]
@@ -230,19 +214,6 @@ private abbrev diskBoundaryHomeomorph' (n : ℕ) :
     TopCat.diskBoundary.{u} n ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
   Homeomorph.ulift
 
-/-- A point of the boundary of the disc `TopCat.disk n` is the same point of the closed unit ball
-as of the unit sphere. -/
-private theorem coe_diskHomeomorph_diskBoundaryInclusion (n : ℕ)
-    (s : TopCat.diskBoundary.{u} n) :
-    (diskHomeomorph n (TopCat.diskBoundaryInclusion n s) : EuclideanSpace ℝ (Fin n)) =
-      diskBoundaryHomeomorph' n s :=
-  coe_diskBoundaryInclusion_apply_down n s
-
-/-- The centre of the disc `TopCat.disk n` is the centre `0` of the closed unit ball. -/
-private theorem coe_diskHomeomorph_diskCenter (n : ℕ) :
-    (diskHomeomorph n (diskCenter.{u} n) : EuclideanSpace ℝ (Fin n)) = 0 :=
-  coe_diskCenter_down n
-
 /-- The handle `D^k × D^m` is the product of two closed unit balls. -/
 private abbrev handleHomeomorph (k m : ℕ) :
     TopCat.disk.{u} k × TopCat.disk.{u} m ≃ₜ
@@ -254,13 +225,14 @@ private theorem handleHomeomorph_diskBoundaryInclusion_mem
     (s : TopCat.diskBoundary.{u} k × TopCat.disk.{u} m) :
     ((handleHomeomorph k m (TopCat.diskBoundaryInclusion k s.1, s.2)).1 :
       EuclideanSpace ℝ (Fin k)) ∈ sphere 0 1 := by
-  rw [Homeomorph.coe_prodCongr, Prod.map_fst, coe_diskHomeomorph_diskBoundaryInclusion]
-  exact (diskBoundaryHomeomorph' k s.1).2
+  rw [Homeomorph.coe_prodCongr, Prod.map_fst]
+  exact (coe_diskBoundaryInclusion_apply_down k s.1).symm ▸ (diskBoundaryHomeomorph' k s.1).2
 
 /-- A point `(w, 0)` of the core `D^k × {0}` has second coordinate `0`. -/
 private theorem handleHomeomorph_diskCenter (w : TopCat.disk.{u} k) :
     ((handleHomeomorph k m (w, diskCenter.{u} m)).2 : EuclideanSpace ℝ (Fin m)) = 0 := by
-  rw [Homeomorph.coe_prodCongr, Prod.map_snd, coe_diskHomeomorph_diskCenter]
+  rw [Homeomorph.coe_prodCongr, Prod.map_snd]
+  exact coe_diskCenter_down m
 
 /-- The retraction `TauCeti.ballProdRetraction` of a handle, read on a point of the handle. -/
 private abbrev handleRetraction (p : TopCat.disk.{u} k × TopCat.disk.{u} m) :
@@ -397,14 +369,16 @@ private theorem exists_handle_desc
           TopCat.diskBoundaryInclusion (k i) ((diskBoundaryHomeomorph' (k i)).symm ⟨_, hp₂⟩) := by
         apply (diskHomeomorph (k i)).injective
         ext1
-        rw [Homeomorph.apply_symm_apply, coe_diskHomeomorph_diskBoundaryInclusion,
-          Homeomorph.apply_symm_apply]
+        rw [Homeomorph.apply_symm_apply]
+        exact ((coe_diskBoundaryInclusion_apply_down (k i)
+          ((diskBoundaryHomeomorph'.{u} (k i)).symm ⟨_, hp₂⟩)).trans
+          (congrArg Subtype.val ((diskBoundaryHomeomorph'.{u} (k i)).apply_symm_apply _))).symm
       have hm : (diskHomeomorph (m i)).symm
           ⟨(handleRetraction p).2, (ballProdRetraction_mem _).2.1⟩ = diskCenter.{u} (m i) := by
         apply (diskHomeomorph (m i)).injective
         ext1
-        rw [Homeomorph.apply_symm_apply, coe_diskHomeomorph_diskCenter]
-        exact hp₁
+        rw [Homeomorph.apply_symm_apply]
+        exact hp₁.trans (coe_diskCenter_down _).symm
       have hw := hQ.w_apply (Sigma.ι (fun i ↦ TopCat.diskBoundary.{u} (k i)) i
         ((diskBoundaryHomeomorph' (k i)).symm ⟨_, hp₂⟩))
       simp only [ConcreteCategory.comp_apply, Sigma.ι_comp_desc_apply, Sigma.ι_map_apply] at hw
