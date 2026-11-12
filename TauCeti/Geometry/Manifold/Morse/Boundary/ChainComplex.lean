@@ -187,11 +187,7 @@ theorem finrank_morseComplex_X (n : ℕ) :
   -- The carrier of `ModuleCat.of (ZMod 2) A` is `A` itself; rewriting it with `ModuleCat.coe_of`
   -- is blocked by the module instance depending on it.
   refine (finrank_finsupp_self (R := ZMod 2)).trans ?_
-  rw [← Nat.card_eq_fintype_card, Nat.card_congr (Equiv.subtypeSubtypeEquivSubtypeInter
-    (· ∈ criticalPoints 𝓘(ℝ, E) f) (manifoldMorseIndex 𝓘(ℝ, E) f · = n)), criticalCount_def,
-    ← ncard_def]
-  exact Nat.card_coe_set_eq
-    {x | x ∈ criticalPoints 𝓘(ℝ, E) f ∧ manifoldMorseIndex 𝓘(ℝ, E) f x = n}
+  rw [← Nat.card_eq_fintype_card, natCard_eq_toNat_criticalCount]
 
 /-- The Morse chain complex vanishes above the dimension of `M`. -/
 theorem isZero_morseComplex_X_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :
@@ -247,20 +243,16 @@ Morse homology in degree `n` has dimension the number of critical points of inde
 theorem finrank_homology_morseComplex_of_morseBoundary_eq_zero (h0 : h.morseBoundary hf = 0)
     (n : ℕ) :
     finrank (ZMod 2) ((h.morseComplex hf).homology n) = (criticalCount 𝓘(ℝ, E) f n).toNat := by
-  have hd (i : ℕ) : (h.morseComplex hf).d (i + 1) i = 0 := by
-    rw [morseComplex_d, h.morseBoundaryAt_eq_zero_of_morseBoundary_eq_zero hf h0,
-      ModuleCat.ofHom_zero]
-    -- Both sides are the zero morphism; they differ only in how the terms are written.
-    rfl
-  have := h.finite_morseComplex_X hf n
-  rw [← h.finrank_morseComplex_X hf n]
-  cases n with
-  | zero =>
-    rw [ChainComplex.finrank_X_zero, hd, ModuleCat.hom_zero, LinearMap.range_zero, finrank_bot,
-      add_zero]
-  | succ n =>
-    rw [ChainComplex.finrank_X_succ, hd, hd, ModuleCat.hom_zero, ModuleCat.hom_zero,
-      LinearMap.range_zero, LinearMap.range_zero, finrank_bot, finrank_bot, add_zero, add_zero]
+  have hd (i j : ℕ) : (h.morseComplex hf).d i j = 0 := by
+    by_cases hij : (ComplexShape.down ℕ).Rel i j
+    · obtain rfl : j + 1 = i := hij
+      rw [morseComplex_d, h.morseBoundaryAt_eq_zero_of_morseBoundary_eq_zero hf h0,
+        ModuleCat.ofHom_zero]
+      -- Both sides are the zero morphism; they differ only in how the terms are written.
+      rfl
+    · exact (h.morseComplex hf).shape i j hij
+  rw [(h.morseComplex hf).finrank_homology_eq_finrank_X_of_d_eq_zero n (hd _ _) (hd _ _),
+    h.finrank_morseComplex_X hf]
 
 end IsMorseSmale
 
