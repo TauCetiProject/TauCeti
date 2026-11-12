@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.HermitianSignature.RegularCrossings
+public import TauCeti.Analysis.Matrix.HermitianSignature.Matrix
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization
-import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.FDeriv.Linear
+import TauCeti.Analysis.Matrix.HermitianSignature.RegularCrossings
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
 /-!
@@ -38,14 +37,10 @@ combines the localization axiom
 half the change of the signature of `A`, with the regular-crossing formula for the signature of a
 path of symmetric forms,
 `ContinuousLinearMap.sigPos_sub_sigNeg_sub_sigPos_sub_sigNeg_eq_crossingForm_add_two_mul_finsum`,
-applied to the bilinear forms `(x, y) ↦ x ⬝ᵥ A t *ᵥ y`.
+applied to the bilinear forms `(x, y) ↦ x ⬝ᵥ A t *ᵥ y` (`Matrix.toContinuousLinearMap₂'`).
 
 Matrices carry no preferred norm, so the derivative of `A` at a crossing is asked for entry by
 entry.
-
-## Main definitions
-
-* `Matrix.crossingForm`: the quadratic form of `A'` on the kernel of `A`.
 
 ## Main results
 
@@ -67,103 +62,6 @@ open scoped unitInterval
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- The **crossing form** of a square matrix `A` and a matrix `A'`: the quadratic form
-`x ↦ x ⬝ᵥ A' *ᵥ x` restricted to the kernel of `A`. For a path of symmetric matrices `A` with
-derivative `A'` at a parameter where `A` is singular, it is the crossing form of Robbin and Salamon
-of the path of graphs `{x + i A x}` relative to `ℝⁿ`. -/
-noncomputable def crossingForm {R : Type*} [CommRing R] (A A' : Matrix n n R) :
-    QuadraticForm R (LinearMap.ker A.mulVecLin) :=
-  A'.toQuadraticForm'.restrict (LinearMap.ker A.mulVecLin)
-
-@[simp]
-theorem crossingForm_apply {R : Type*} [CommRing R] (A A' : Matrix n n R)
-    (x : LinearMap.ker A.mulVecLin) : crossingForm A A' x = (x : n → R) ⬝ᵥ A' *ᵥ x := by
-  simp [crossingForm, toQuadraticForm', toLinearMap₂'_apply']
-
-/-! ### Matrices as continuous bilinear forms -/
-
-/-- The continuous bilinear form `(x, y) ↦ x ⬝ᵥ M *ᵥ y` of a real matrix. -/
-private noncomputable def bilin (M : Matrix n n ℝ) : (n → ℝ) →L[ℝ] (n → ℝ) →L[ℝ] ℝ :=
-  (toLinearMap₂' ℝ M).toContinuousBilinearMap
-
-private theorem bilin_apply (M : Matrix n n ℝ) (x y : n → ℝ) : bilin M x y = x ⬝ᵥ M *ᵥ y := by
-  simp [bilin, toLinearMap₂'_apply']
-
-private theorem toBilinForm_bilin (M : Matrix n n ℝ) :
-    (bilin M).toBilinForm = toLinearMap₂' ℝ M :=
-  LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap _
-
-private theorem toQuadraticMap_bilin (M : Matrix n n ℝ) :
-    (bilin M).toBilinForm.toQuadraticMap = M.toQuadraticForm' := by
-  rw [toBilinForm_bilin]
-  -- `Matrix.toQuadraticForm'` is by definition the quadratic map of `Matrix.toLinearMap₂'`.
-  rfl
-
-private theorem nondegenerate_bilin_iff (M : Matrix n n ℝ) :
-    (bilin M).toBilinForm.Nondegenerate ↔ M.det ≠ 0 := by
-  rw [toBilinForm_bilin]
-  exact LinearMap.nondegenerate_toLinearMap₂'_iff_det_ne_zero
-
-private theorem isSymm_bilin {M : Matrix n n ℝ} (hM : M.IsHermitian) :
-    (bilin M).toBilinForm.IsSymm := by
-  have hT : Mᵀ = M := by rw [← conjTranspose_eq_transpose_of_trivial, hM.eq]
-  refine ⟨fun x y ↦ ?_⟩
-  simp only [ContinuousLinearMap.toBilinForm_apply, bilin_apply]
-  rw [dotProduct_mulVec, ← mulVec_transpose, hT, dotProduct_comm]
-
-/-- The kernel of the bilinear form of a symmetric matrix is the kernel of the matrix. -/
-private theorem ker_bilin {M : Matrix n n ℝ} (hM : M.IsHermitian) :
-    (bilin M).ker = LinearMap.ker M.mulVecLin := by
-  have hT : Mᵀ = M := by rw [← conjTranspose_eq_transpose_of_trivial, hM.eq]
-  have hxy (x y : n → ℝ) : bilin M x y = (M *ᵥ x) ⬝ᵥ y := by
-    rw [bilin_apply, dotProduct_mulVec, ← mulVec_transpose, hT]
-  ext x
-  rw [LinearMap.mem_ker, LinearMap.mem_ker, mulVecLin_apply, ContinuousLinearMap.coe_coe]
-  constructor
-  · intro h
-    funext i
-    have hi : bilin M x (Pi.single i 1) = 0 := by simp [h]
-    rwa [hxy, dotProduct_single, mul_one] at hi
-  · intro h
-    ext y
-    simp [hxy, h]
-
-/-- The crossing form of the bilinear forms of `A` and `A'` is the crossing form of `A` and `A'`,
-read on the same kernel. -/
-private noncomputable def crossingFormBilinIsometryEquiv {A : Matrix n n ℝ} (hA : A.IsHermitian)
-    (A' : Matrix n n ℝ) :
-    (ContinuousLinearMap.crossingForm (bilin A) (bilin A')).IsometryEquiv (crossingForm A A') :=
-  ⟨LinearEquiv.ofEq _ _ (ker_bilin hA), fun v ↦ by simp [bilin_apply]⟩
-
-/-- The bilinear forms of matrices, as a continuous linear map on the entries. -/
-private noncomputable def bilinCLM : (n → n → ℝ) →L[ℝ] (n → ℝ) →L[ℝ] (n → ℝ) →L[ℝ] ℝ :=
-  LinearMap.toContinuousLinearMap
-    { toFun M := bilin (of M)
-      map_add' M N := by
-        ext x y
-        simp [bilin_apply, ← of_add_of, add_mulVec, dotProduct_add]
-      map_smul' c M := by
-        ext x y
-        simp [bilin_apply, ← smul_of, smul_mulVec, dotProduct_smul] }
-
-/-- Entrywise derivatives of a path of matrices give the derivative of its bilinear forms. -/
-private theorem hasDerivWithinAt_bilin {A : ℝ → Matrix n n ℝ} {A' : Matrix n n ℝ} {s : Set ℝ}
-    {t : ℝ} (h : ∀ i j, HasDerivWithinAt (fun r ↦ A r i j) (A' i j) s t) :
-    HasDerivWithinAt (fun r ↦ bilin (A r)) (bilin A') s t := by
-  have hA : HasDerivWithinAt (fun r ↦ of.symm (A r)) (of.symm A') s t :=
-    hasDerivWithinAt_pi.2 fun i ↦ hasDerivWithinAt_pi.2 fun j ↦ h i j
-  have hΦ := ContinuousLinearMap.hasFDerivAt (𝕜 := ℝ) (E := n → n → ℝ)
-    (F := (n → ℝ) →L[ℝ] (n → ℝ) →L[ℝ] ℝ) (f := bilinCLM) (x := of.symm (A t))
-  exact HasFDerivAt.comp_hasDerivWithinAt (𝕜 := ℝ) (F := n → n → ℝ)
-    (E := (n → ℝ) →L[ℝ] (n → ℝ) →L[ℝ] ℝ) t hΦ hA
-
-private theorem continuousOn_bilin {A : ℝ → Matrix n n ℝ} {s : Set ℝ} (hA : ContinuousOn A s) :
-    ContinuousOn (fun r ↦ bilin (A r)) s := by
-  have h : ContinuousOn (fun r ↦ of.symm (A r)) s :=
-    continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦
-      (continuous_id.matrix_elem i j).comp_continuousOn hA
-  exact bilinCLM.continuous.comp_continuousOn h
 
 namespace UnitaryGroup
 
@@ -198,25 +96,31 @@ theorem maslovIndex_eq_crossingForm_add_finsum_of_souriau_eq_cayley {U V : unita
   -- The signature formula for the bilinear forms of `A`.
   have hsig :=
     ContinuousLinearMap.sigPos_sub_sigNeg_sub_sigPos_sub_sigNeg_eq_crossingForm_add_two_mul_finsum
-    (V := fun t ↦ bilin (A t)) (V' := fun t ↦ bilin (A' t)) zero_lt_one (continuousOn_bilin hAc)
-    (fun t ht ↦ isSymm_bilin (hA t ht))
-    (fun t ht hnt ↦ hasDerivWithinAt_bilin
-      (hd t ht (not_not.1 fun h ↦ hnt ((nondegenerate_bilin_iff _).2 h))))
-    (fun t ht hnt ↦ (crossingFormBilinIsometryEquiv (hA t ht) (A' t)).nondegenerate_iff.2
-      (hreg t ht (not_not.1 fun h ↦ hnt ((nondegenerate_bilin_iff _).2 h))))
+    (V := fun t ↦ (A t).toContinuousLinearMap₂') (V' := fun t ↦ (A' t).toContinuousLinearMap₂')
+    zero_lt_one (continuousOn_toContinuousLinearMap₂' hAc)
+    (fun t ht ↦ isSymm_toBilinForm_toContinuousLinearMap₂' (hA t ht).isSymm)
+    (fun t ht hnt ↦ hasDerivWithinAt_toContinuousLinearMap₂' (hd t ht (not_not.1 fun h ↦
+      hnt ((nondegenerate_toBilinForm_toContinuousLinearMap₂'_iff _).2 h))))
+    (fun t ht hnt ↦ (crossingFormIsometryEquiv (hA t ht).isSymm (A' t)).nondegenerate_iff.2
+      (hreg t ht (not_not.1 fun h ↦
+        hnt ((nondegenerate_toBilinForm_toContinuousLinearMap₂'_iff _).2 h))))
   have hΓ (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
-      (sigPos (ContinuousLinearMap.crossingForm (bilin (A t)) (bilin (A' t))) : ℤ) -
-          sigNeg (ContinuousLinearMap.crossingForm (bilin (A t)) (bilin (A' t))) =
+      (sigPos (ContinuousLinearMap.crossingForm (A t).toContinuousLinearMap₂'
+          (A' t).toContinuousLinearMap₂') : ℤ) -
+          sigNeg (ContinuousLinearMap.crossingForm (A t).toContinuousLinearMap₂'
+            (A' t).toContinuousLinearMap₂') =
         (sigPos (crossingForm (A t) (A' t)) : ℤ) - sigNeg (crossingForm (A t) (A' t)) := by
-    have h : QuadraticMap.Equivalent _ _ := ⟨crossingFormBilinIsometryEquiv (hA t ht) (A' t)⟩
+    have h : QuadraticMap.Equivalent _ _ := ⟨crossingFormIsometryEquiv (hA t ht).isSymm (A' t)⟩
     rw [h.sigPos_eq, h.sigNeg_eq]
   have hsum : ∑ᶠ t ∈ Ioo (0 : ℝ) 1,
-        ((sigPos (ContinuousLinearMap.crossingForm (bilin (A t)) (bilin (A' t))) : ℤ) -
-          sigNeg (ContinuousLinearMap.crossingForm (bilin (A t)) (bilin (A' t)))) =
+        ((sigPos (ContinuousLinearMap.crossingForm (A t).toContinuousLinearMap₂'
+            (A' t).toContinuousLinearMap₂') : ℤ) -
+          sigNeg (ContinuousLinearMap.crossingForm (A t).toContinuousLinearMap₂'
+            (A' t).toContinuousLinearMap₂')) =
       ∑ᶠ t ∈ Ioo (0 : ℝ) 1,
         ((sigPos (crossingForm (A t) (A' t)) : ℤ) - sigNeg (crossingForm (A t) (A' t))) :=
     finsum_mem_congr rfl fun t ht ↦ hΓ t (Ioo_subset_Icc_self ht)
-  simp only [toQuadraticMap_bilin, hΓ 0 h0, hΓ 1 h1, hsum] at hsig
+  simp only [toQuadraticMap_toBilinForm_toContinuousLinearMap₂', hΓ 0 h0, hΓ 1 h1, hsum] at hsig
   rw [hloc, signature_def, signature_def, ← Int.cast_sub, hsig]
   push_cast
   ring

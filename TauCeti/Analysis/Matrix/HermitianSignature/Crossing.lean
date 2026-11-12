@@ -374,15 +374,6 @@ theorem sigPos_add_sigNeg_add_finrank_ker {B : E →L[ℝ] E →L[ℝ] ℝ}
   have h := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := B.toBilinForm.toQuadraticMap)
   rwa [LinearMap.BilinForm.radical_toQuadraticMap _ hB, ker_toBilinForm] at h
 
-omit [FiniteDimensional ℝ E] in
-/-- A symmetric form whose quadratic form has trivial radical is nondegenerate. -/
-private theorem nondegenerate_of_radical_eq_bot {B : E →L[ℝ] E →L[ℝ] ℝ}
-    (hB : B.toBilinForm.IsSymm) (h : B.toBilinForm.toQuadraticMap.radical = ⊥) :
-    B.toBilinForm.Nondegenerate := by
-  rw [← QuadraticMap.nondegenerate_iff_radical_eq_bot, ← QuadraticMap.nondegenerate_associated_iff,
-    QuadraticMap.associated_left_inverse (S := ℝ) hB.eq] at h
-  exact h
-
 /-- **The signature just after a regular crossing.** Let `V` be a path of continuous bilinear
 forms, symmetric at `t₀` and with right derivative `V'` there, whose crossing form at `t₀` is
 nondegenerate. For `t > t₀` close to `t₀`, the signature of `V t` is the signature of `V t₀` plus
@@ -429,7 +420,8 @@ theorem eventually_nhdsGT_nondegenerate_of_crossingForm_nondegenerate
     ∀ᶠ t in 𝓝[>] t₀, (V t).toBilinForm.Nondegenerate := by
   filter_upwards [eventually_nhdsGT_sigNeg_eq_and_radical_eq_bot hsymm₀ hV hreg, hsymm]
     with t ht hts
-  exact nondegenerate_of_radical_eq_bot hts ht.2
+  exact (LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff hts).1
+    (QuadraticMap.nondegenerate_iff_radical_eq_bot.2 ht.2)
 
 /-- **Regular crossings are isolated on the left.** A path of continuous bilinear forms, symmetric
 just before `t₀` and at `t₀`, with left derivative at `t₀` and nondegenerate crossing form there, is
@@ -441,7 +433,8 @@ theorem eventually_nhdsLT_nondegenerate_of_crossingForm_nondegenerate
     ∀ᶠ t in 𝓝[<] t₀, (V t).toBilinForm.Nondegenerate := by
   filter_upwards [eventually_nhdsLT_sigNeg_eq_and_radical_eq_bot hsymm₀ hV hreg, hsymm]
     with t ht hts
-  exact nondegenerate_of_radical_eq_bot hts ht.2
+  exact (LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff hts).1
+    (QuadraticMap.nondegenerate_iff_radical_eq_bot.2 ht.2)
 
 /-- **Regular crossings are isolated.** A path of symmetric continuous bilinear forms,
 differentiable at `t₀` with nondegenerate crossing form there, is nondegenerate at every `t ≠ t₀`

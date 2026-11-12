@@ -214,18 +214,7 @@ theorem sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm (hab : a ≤ 
 
 /-! ### Degenerate endpoints -/
 
-/-- A nondegenerate symmetric form has positive and negative indices adding up to the dimension
-of the space. -/
-private theorem sigPos_add_sigNeg_toBilinForm {B : E →L[ℝ] E →L[ℝ] ℝ} (hsymm : B.toBilinForm.IsSymm)
-    (hB : B.toBilinForm.Nondegenerate) :
-    sigPos B.toBilinForm.toQuadraticMap + sigNeg B.toBilinForm.toQuadraticMap =
-      Module.finrank ℝ E := by
-  have hker : B.ker = ⊥ := by
-    rw [← ker_toBilinForm]
-    exact LinearMap.separatingLeft_iff_ker_eq_bot.1 hB.1
-  have h := sigPos_add_sigNeg_add_finrank_ker hsymm
-  rwa [hker, finrank_bot, add_zero] at h
-
+omit [FiniteDimensional ℝ E] in
 /-- Two nondegenerate symmetric forms with the same negative index have the same signature. -/
 private theorem sigPos_sub_sigNeg_eq_of_sigNeg_eq {B C : E →L[ℝ] E →L[ℝ] ℝ}
     (hBs : B.toBilinForm.IsSymm) (hB : B.toBilinForm.Nondegenerate) (hCs : C.toBilinForm.IsSymm)
@@ -233,8 +222,10 @@ private theorem sigPos_sub_sigNeg_eq_of_sigNeg_eq {B C : E →L[ℝ] E →L[ℝ]
     (h : sigNeg B.toBilinForm.toQuadraticMap = sigNeg C.toBilinForm.toQuadraticMap) :
     (sigPos B.toBilinForm.toQuadraticMap : ℤ) - sigNeg B.toBilinForm.toQuadraticMap =
       (sigPos C.toBilinForm.toQuadraticMap : ℤ) - sigNeg C.toBilinForm.toQuadraticMap := by
-  have hB' := sigPos_add_sigNeg_toBilinForm hBs hB
-  have hC' := sigPos_add_sigNeg_toBilinForm hCs hC
+  have hB' := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _
+    ((LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff hBs).2 hB)
+  have hC' := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _
+    ((LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff hCs).2 hC)
   omega
 
 /-- Near a nondegenerate point `t₀` of a path continuous and symmetric on `s`, the path is
@@ -367,8 +358,12 @@ theorem sigPos_sub_sigNeg_sub_sigPos_sub_sigNeg_eq_crossingForm_add_two_mul_fins
       exact hnt (hau ⟨ht.1, h.trans_lt (ht₁u.trans_le (min_le_left _ _))⟩).2
     · by_contra! h
       exact hnt (hlb ⟨(le_max_left _ _).trans_lt (hlt₂.trans_le h), ht.2⟩).2
-  have hd₁ := sigPos_add_sigNeg_toBilinForm (hsymm t₁ (hsub (left_mem_Icc.2 ht₁₂.le))) hnd₁
-  have hd₂ := sigPos_add_sigNeg_toBilinForm (hsymm t₂ (hsub (right_mem_Icc.2 ht₁₂.le))) hnd₂
+  have hd₁ := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _
+    ((LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff
+      (hsymm t₁ (hsub (left_mem_Icc.2 ht₁₂.le)))).2 hnd₁)
+  have hd₂ := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _
+    ((LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff
+      (hsymm t₂ (hsub (right_mem_Icc.2 ht₁₂.le)))).2 hnd₂)
   rw [hsum]
   omega
 
