@@ -60,7 +60,8 @@ compactness.
 
 Without nondegeneracy the orbit `y_q` is obtained along a sequence `s_n`, while the convergence of
 the actions holds along the whole end. Convergence of the whole end to a single orbit, which needs
-nondegenerate orbits and a bound on the derivative, is not treated here.
+nondegenerate orbits and a bound on the derivative, is proved in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence`.
 
 ## References
 
@@ -221,7 +222,7 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
   -- The closed band differs from the open one by a null set.
   have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] s := by
     rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) Ioo_ae_eq_Icc.symm
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc.symm
   -- On the open band the energy density is the Jacobian times the energy density of `u`.
   have hdens : ∀ ζ ∈ s, ω.floerEnergyDensity (fun _ _ ↦ 0)
       (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ =

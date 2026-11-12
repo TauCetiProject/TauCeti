@@ -32,6 +32,8 @@ coisotropic and Lagrangian submanifolds of the factors are again of the same kin
   nondegenerate product, whose tangent-space forms are the linear direct sums.
 * `TauCeti.SmoothTwoForm.isClosed_prod`, `TauCeti.SmoothTwoForm.IsSymplectic.prod`: closed,
   respectively symplectic, factors give a closed, respectively symplectic, product.
+* `TauCeti.SmoothTwoForm.mpullback_prodMap_prod`: the pullback of the product form along a product
+  map is the product of the pullbacks.
 
 ## References
 
@@ -128,5 +130,21 @@ theorem isClosed_prod (hσ : σ.IsClosed) (hτ : τ.IsClosed) : (prod σ τ).IsC
 theorem IsSymplectic.prod (hσ : σ.IsSymplectic) (hτ : τ.IsSymplectic) :
     (prod σ τ).IsSymplectic :=
   ⟨isClosed_prod hσ.isClosed hτ.isClosed, hσ.isNondegenerate.prod hτ.isNondegenerate⟩
+
+/-- **Naturality of the product form.** Pulling `pr₁*σ + pr₂*τ` back along a product map
+`f × g` gives the product of the pullbacks `f*σ` and `g*τ`. -/
+theorem mpullback_prodMap_prod {E₀ H₀ M₀ F₀ H₀' N₀ : Type*}
+    [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [TopologicalSpace H₀]
+    {I₀ : ModelWithCorners ℝ E₀ H₀} [TopologicalSpace M₀] [ChartedSpace H₀ M₀] [IsManifold I₀ ∞ M₀]
+    [NormedAddCommGroup F₀] [NormedSpace ℝ F₀] [TopologicalSpace H₀']
+    {J₀ : ModelWithCorners ℝ F₀ H₀'} [TopologicalSpace N₀] [ChartedSpace H₀' N₀]
+    [IsManifold J₀ ∞ N₀] {f : M₀ → M} {g : N₀ → N} (hf : ContMDiff I₀ I ∞ f)
+    (hg : ContMDiff J₀ J ∞ g) (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) :
+    SmoothForm.mpullback (Prod.map f g) (hf.prodMap hg) (prod σ τ) =
+      prod (SmoothForm.mpullback f hf σ) (SmoothForm.mpullback g hg τ) := by
+  simp only [prod_def, map_add, SmoothForm.mpullback_mpullback]
+  -- `Prod.fst ∘ Prod.map f g` is `f ∘ Prod.fst` by definition, and similarly for the second
+  -- factor; the smoothness proofs carried by `mpullback` agree by proof irrelevance.
+  rfl
 
 end TauCeti.SmoothTwoForm

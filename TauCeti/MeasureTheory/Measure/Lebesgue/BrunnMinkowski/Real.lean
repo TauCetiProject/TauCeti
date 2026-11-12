@@ -6,6 +6,7 @@ Authors: Weiyi Wang, Jonathan Ho, The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.Algebra.Group.Pointwise
 
 /-!
 # One-dimensional Brunn–Minkowski inequality
@@ -109,22 +110,15 @@ theorem volume_add_volume_le_of_nullMeasurableSet {A B : Set ℝ} (hAn : A.Nonem
     (hBn : B.Nonempty) (hBm : NullMeasurableSet B volume) :
     volume A + volume B ≤ volume (A + B) := by
   obtain ⟨b, hb⟩ := hBn
-  -- For compact `K`, an open set `U ⊇ A + K` of almost minimal volume contains `V + K`, where
-  -- the open set `V` of translations carrying `K` into `U` contains `A`.
+  -- For compact `K`, an open set `U ⊇ A + K` of almost minimal volume contains `V + K` for an
+  -- open set `V ⊇ A`.
   have hcpt {K : Set ℝ} (hKn : K.Nonempty) (hK : IsCompact K) :
       volume A + volume K ≤ volume (A + K) := by
     refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
     obtain ⟨U, hAKU, hU, hUr⟩ := (A + K).exists_isOpen_lt_of_lt r hr
-    have hAV : A ⊆ (Uᶜ + -K)ᶜ := by
-      rintro x hx ⟨u, hu, k, hk, rfl⟩
-      exact hu (hAKU ⟨u + k, hx, -k, hk, by simp⟩)
-    have hVKU : (Uᶜ + -K)ᶜ + K ⊆ U := by
-      rintro _ ⟨v, hv, k, hk, rfl⟩
-      by_contra h
-      exact hv ⟨v + k, h, -k, by simpa, by simp⟩
-    calc volume A + volume K ≤ volume (Uᶜ + -K)ᶜ + volume K := by gcongr
-      _ ≤ volume ((Uᶜ + -K)ᶜ + K) := volume_add_volume_le (hAn.mono hAV)
-          (hU.isClosed_compl.add_right_of_isCompact hK.neg).isOpen_compl.measurableSet hKn
+    obtain ⟨V, hV, hAV, hVKU⟩ := hK.exists_isOpen_superset_add_subset hU hAKU
+    calc volume A + volume K ≤ volume V + volume K := by gcongr
+      _ ≤ volume (V + K) := volume_add_volume_le (hAn.mono hAV) hV.measurableSet hKn
           hK.measurableSet
       _ ≤ r := (measure_mono hVKU).trans hUr.le
   -- Inner regularity of a measurable representative of `B` reduces to the compact case.

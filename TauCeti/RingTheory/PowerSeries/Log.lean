@@ -193,6 +193,21 @@ theorem logOf_one : logOf (1 : A⟦X⟧) = 0 := by
   have h := logOf_mul (A := A) (f := 1) (g := 1) (by simp) (by simp)
   rwa [mul_one, left_eq_add] at h
 
+/-- The formal logarithm turns finite products into sums, when every factor has constant
+coefficient one. -/
+theorem logOf_prod {ι : Type*} {s : Finset ι} {f : ι → A⟦X⟧}
+    (hf : ∀ i ∈ s, constantCoeff (f i) = 1) :
+    logOf (∏ i ∈ s, f i) = ∑ i ∈ s, logOf (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    have hs : ∀ i ∈ s, constantCoeff (f i) = 1 := fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)
+    rw [Finset.prod_insert ha, Finset.sum_insert ha,
+      logOf_mul (hf a (Finset.mem_insert_self a s))
+        (by rw [map_prod]; exact Finset.prod_eq_one hs),
+      ih hs]
+
 /-! ## Logarithms of linear and quadratic polynomials -/
 
 /-- The logarithm of `1 - c X` is `-∑ cⁿ Xⁿ / n`. -/
