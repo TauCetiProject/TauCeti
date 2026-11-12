@@ -122,6 +122,32 @@ theorem mtangentConeAt_eq_tangentConeAt (s : Set E) (y : E) :
     mtangentConeAt 𝓘(𝕜, E) s y = tangentConeAt 𝕜 s y := by
   simp [mtangentConeAt_def]
 
+/-- **The tangent cone of a product contains the product of the tangent cones**, after taking
+spans: a tangent vector `u` to `s` at `x` and a tangent vector `w` to `t` at `y` combine to the
+tangent vector `(u, w)` to `s ×ˢ t` at `(x, y)`. -/
+theorem span_mtangentConeAt_prod_le {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [TopologicalSpace H'] [TopologicalSpace N] [ChartedSpace H' N] {I' : ModelWithCorners 𝕜 E' H'}
+    {s : Set M} {t : Set N} {x : M} {y : N} (hx : x ∈ s) (hy : y ∈ t) :
+    (Submodule.span 𝕜 (mtangentConeAt I s x)).prod (Submodule.span 𝕜 (mtangentConeAt I' t y)) ≤
+      Submodule.span 𝕜 (mtangentConeAt (I.prod I') (s ×ˢ t) (x, y)) := by
+  have hsub : ((extChartAt I x).symm ⁻¹' s ∩ range I) ×ˢ ((extChartAt I' y).symm ⁻¹' t ∩ range I')
+      ⊆ (extChartAt (I.prod I') (x, y)).symm ⁻¹' (s ×ˢ t) ∩ range (I.prod I') := by
+    rintro ⟨u, w⟩ ⟨⟨hu, hu'⟩, hw, hw'⟩
+    rw [extChartAt_prod, ModelWithCorners.range_prod]
+    exact ⟨⟨hu, hw⟩, hu', hw'⟩
+  have hx' : extChartAt I x x ∈ closure ((extChartAt I x).symm ⁻¹' s ∩ range I) :=
+    subset_closure ⟨by rwa [mem_preimage, extChartAt_to_inv], mem_range_self _⟩
+  have hy' : extChartAt I' y y ∈ closure ((extChartAt I' y).symm ⁻¹' t ∩ range I') :=
+    subset_closure ⟨by rwa [mem_preimage, extChartAt_to_inv], mem_range_self _⟩
+  rw [LinearMap.prod_eq_sup_map, sup_le_iff, Submodule.map_span, Submodule.map_span]
+  constructor
+  · refine Submodule.span_mono ((subset_tangentConeAt_prod_left hy').trans ?_)
+    rw [mtangentConeAt_def, extChartAt_prod]
+    exact tangentConeAt_mono (by rw [← extChartAt_prod]; exact hsub)
+  · refine Submodule.span_mono ((subset_tangentConeAt_prod_right hx').trans ?_)
+    rw [mtangentConeAt_def, extChartAt_prod]
+    exact tangentConeAt_mono (by rw [← extChartAt_prod]; exact hsub)
+
 end Defs
 
 end TauCeti

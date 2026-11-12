@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+public import TauCeti.Geometry.Manifold.Instances.ProdModel
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -31,6 +32,9 @@ is what makes the bracket of product fields split.
 ## Main definitions
 
 * `TauCeti.Manifold.prodVectorField`: the vector field `(X, Y)` on `M × N`.
+* `TauCeti.Manifold.prodModelVectorField`: the same field for manifolds modelled on normed spaces
+  `E` and `E'`, with values in the tangent spaces of `M × N` charted on `E × E'` by
+  `TauCeti.prodModelChartedSpace`.
 
 ## Main results
 
@@ -38,7 +42,8 @@ is what makes the bracket of product fields split.
   `TauCeti.Manifold.prodVectorField_neg`: product fields are linear in the pair of their factors.
 * `TauCeti.Manifold.mdifferentiableAt_prodVectorField`,
   `TauCeti.Manifold.contMDiffAt_prodVectorField` and `TauCeti.Manifold.contMDiff_prodVectorField`:
-  regularity of product fields.
+  regularity of product fields; `TauCeti.Manifold.contMDiff_prodModelVectorField` for the model
+  `𝓘(𝕜, E × E')`.
 * `TauCeti.Manifold.mlieBracket_prodVectorField`: the Lie bracket of product fields is the product
   of the Lie brackets.
 * `TauCeti.Manifold.mlieBracket_prodVectorField_horizontal_vertical`: horizontal and vertical
@@ -141,6 +146,49 @@ theorem mdifferentiableAt_prodVectorField (hX : MDifferentiableAt I I.tangent (T
     ((hX.comp p mdifferentiableAt_fst).prodMk (hY.comp p mdifferentiableAt_snd))
 
 end Regularity
+
+section ProdModel
+
+/-! ### Product fields on products of manifolds modelled on normed spaces -/
+
+variable {P Q : Type*} [TopologicalSpace P] [ChartedSpace E P] [TopologicalSpace Q]
+  [ChartedSpace E' Q]
+
+attribute [local instance low] prodModelChartedSpace
+
+variable (X : Π x : P, TangentSpace 𝓘(𝕜, E) x) (Y : Π y : Q, TangentSpace 𝓘(𝕜, E') y) in
+/-- The vector field `(X, Y)` on `P × Q`, for manifolds modelled on normed spaces `E` and `E'`,
+with its values in the tangent spaces of `P × Q` charted on `E × E'` by
+`TauCeti.prodModelChartedSpace`. Pointwise it is `TauCeti.Manifold.prodVectorField X Y`, whose
+values lie in the tangent spaces for the product model `𝓘(𝕜, E).prod 𝓘(𝕜, E')`. -/
+def prodModelVectorField : Π p : P × Q, TangentSpace 𝓘(𝕜, E × E') p :=
+  fun p ↦ (X p.1, Y p.2)
+
+/-- The value of a product field at `p` is the pair of the values of its factors. -/
+@[simp]
+theorem prodModelVectorField_apply (X : Π x : P, TangentSpace 𝓘(𝕜, E) x)
+    (Y : Π y : Q, TangentSpace 𝓘(𝕜, E') y) (p : P × Q) :
+    prodModelVectorField X Y p = (X p.1, Y p.2) :=
+  (rfl)
+
+attribute [local instance] isManifold_prodModelChartedSpace
+
+/-- A product of `C^n` vector fields is `C^n` for the model `𝓘(𝕜, E × E')`. -/
+theorem contMDiff_prodModelVectorField [IsManifold 𝓘(𝕜, E) 1 P] [IsManifold 𝓘(𝕜, E') 1 Q]
+    {n : ℕ∞ω} {X : Π x : P, TangentSpace 𝓘(𝕜, E) x} {Y : Π y : Q, TangentSpace 𝓘(𝕜, E') y}
+    (hX : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, E).tangent n (T% X))
+    (hY : ContMDiff 𝓘(𝕜, E') 𝓘(𝕜, E').tangent n (T% Y)) :
+    ContMDiff 𝓘(𝕜, E × E') 𝓘(𝕜, E × E').tangent n (T% (prodModelVectorField X Y)) := by
+  -- The tangent bundle depends on the manifold instance, so the model is generalized before it is
+  -- identified with the product model.
+  have key : ∀ (I : ModelWithCorners 𝕜 (E × E') (E × E')) [IsManifold I 1 (P × Q)],
+      I = 𝓘(𝕜, E).prod 𝓘(𝕜, E') → ContMDiff I I.tangent n
+        (fun p ↦ (⟨p, prodModelVectorField X Y p⟩ : TangentBundle I (P × Q))) := by
+    rintro I _ rfl
+    exact contMDiff_prodVectorField hX hY
+  exact key _ modelWithCornersSelf_prod
+
+end ProdModel
 
 /-! ### The Lie bracket of product vector fields -/
 
