@@ -129,8 +129,7 @@ distance. -/
 private theorem wassersteinEDist_two_sq (α β : Measure ℝ) [IsProbabilityMeasure α]
     [IsProbabilityMeasure β] :
     wassersteinEDist 2 α β ^ 2 = ∫⁻ t in Ioo (0 : ℝ) 1, ‖α.quantile t - β.quantile t‖ₑ ^ 2 := by
-  simpa using wassersteinEDist_rpow_eq_lintegral_rpow_enorm_quantile_sub one_le_two
-    ENNReal.ofNat_ne_top α β
+  simpa using wassersteinEDist_rpow_eq_lintegral_rpow_enorm_quantile_sub one_le_two α β
 
 section Wasserstein
 

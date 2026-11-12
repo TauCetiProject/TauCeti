@@ -78,7 +78,7 @@ theorem casimir_eq_e_mul_f :
   match_scalars
   · rfl
   all_goals
-    rcases eq_or_ne (q - q⁻¹) 0 with hd | hd
+    rcases eq_or_ne (q - q⁻¹) 0 with hd | _
     · simp [hd]
     · field_simp
       ring

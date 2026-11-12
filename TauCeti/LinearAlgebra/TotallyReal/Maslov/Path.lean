@@ -135,7 +135,7 @@ noncomputable def trans (Λ Γ : TotallyRealPath E) (h : Λ 1 = Γ 0) : TotallyR
     else Γ ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.2.2⟩⟩
   exists_frame := by
     obtain ⟨L₀, hL₀, A, hAc, hA⟩ := Λ.exists_frame
-    obtain ⟨L₁, hL₁, B, hBc, hB⟩ := Γ.exists_frame
+    obtain ⟨L₁, _, B, hBc, hB⟩ := Γ.exists_frame
     -- After `Λ`, follow the frame `C s = B s ∘ (B 0)⁻¹ ∘ A 1`, which starts at `A 1` and carries
     -- `L₀` along `Γ`.
     let C (s : I) : E ≃L[ℂ] E := (A 1).trans ((B 0).symm.trans (B s))
