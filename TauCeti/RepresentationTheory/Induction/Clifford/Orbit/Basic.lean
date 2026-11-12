@@ -42,6 +42,12 @@ exists at all: each of the orbit and isotypic-component statements below takes s
 hypothesis, except `TauCeti.Representation.exists_isAtom_forall_nonempty_linearEquiv_conjSubrep`,
 the packaged form of the theorem, which assumes finite-dimensionality and produces one.
 
+That the constituents share one multiplicity is proved in
+`TauCeti/RepresentationTheory/Induction/Clifford/Multiplicity.lean` from the single-orbit
+statements below.  The decomposition of the restriction into equally many copies of each conjugate
+of one constituent, indexed by the cosets of its inertia group, is not proved here; it is
+`FDRep.clifford_restrict_iso` in `TauCeti/RepresentationTheory/Induction/Clifford/Equivalence.lean`.
+
 ## Main statements
 
 * `TauCeti.Representation.exists_nonempty_linearEquiv_conjSubrep`: **Clifford's theorem, single
@@ -73,14 +79,6 @@ Reading the translate through `TauCeti.Representation.conjSubrepEquiv` turns eac
 into the classical one about the conjugate representation `{}^g V`.
 
 ## References
-
-This file proves the **single-orbit** half of the **Clifford's theorem** milestone of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`: "its irreducible
-`N`-constituents form a single `G`-orbit".  That the constituents share one multiplicity is the
-other half, proved in `TauCeti/RepresentationTheory/Induction/Clifford/Multiplicity.lean` from the
-single-orbit statements below.  What remains of the milestone is the packaged decomposition
-`Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V` indexed by a transversal of the inertia group, which is not proved
-here.
 
 The mathematics is the classical argument of C. W. Curtis and I. Reiner, *Representation Theory of
 Finite Groups and Associative Algebras*, §49.

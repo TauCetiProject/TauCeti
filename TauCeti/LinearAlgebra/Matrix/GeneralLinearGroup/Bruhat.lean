@@ -87,24 +87,19 @@ as a new definition for `B * {w} * B`: the two are definitionally the same set, 
 Mathlib's spelling is what lets the results be read directly as statements about
 `DoubleCoset.Quotient`, which is the form the Mackey criterion asks for.
 
-The `GL2` prefix on `TauCeti.GL2WeylElement` follows the naming that
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md` uses for this family of objects
-(`GL2Borel`, `GL2PrincipalSeries`, `GL2Steinberg`, `GL2NonSplitTorus`), and matches
-`TauCeti.GL2Borel` in the file this one builds on.
+The `GL2` prefix on `TauCeti.GL2WeylElement` follows the naming shared by this family of objects
+(`TauCeti.GL2Borel`, `TauCeti.GL2PrincipalSeries`, `TauCeti.GL2Steinberg`,
+`TauCeti.GL2NonSplitTorus`), and matches `TauCeti.GL2Borel` in the file this one builds on.
 
 ## References
 
-This supplies the double-coset decomposition `B \ GL₂ / B` that the principal-series milestone of
-Layer 9 ("the representation theory of `GL₂(𝔽_q)`") of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md` needs: its target
-`simple_GL2PrincipalSeries_iff`, the irreducibility of `Ind_B^{GL₂}(α ⊗ β)` for `α ≠ β`, is read
-off the Mackey criterion, whose double-coset sum this decomposition evaluates. It is the rank-one
-case of the Bruhat decomposition named in Layer 8 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`; the general statement is J. E.
-Humphreys, *Linear Algebraic Groups*, GTM 21, §28.3, whose Theorem is
-`G = ⨆_{σ ∈ W} B σ B` with `B σ B = B τ B` only for `σ = τ`. See also W. Fulton and J. Harris,
-*Representation Theory: A First Course*, GTM 129, §5.2, and J.-P. Serre, *Linear Representations
-of Finite Groups*, GTM 42, §7.3.
+The irreducibility of the principal series `Ind_B^{GL₂}(α ⊗ β)` for `α ≠ β`
+(`TauCeti.simple_GL2PrincipalSeries_iff`) is read off the Mackey criterion, whose double-coset sum
+the decomposition `B \ GL₂ / B` evaluates. The decomposition is the rank-one case of the Bruhat
+decomposition; the general statement is J. E. Humphreys, *Linear Algebraic Groups*, GTM 21, §28.3,
+whose Theorem is `G = ⨆_{σ ∈ W} B σ B` with `B σ B = B τ B` only for `σ = τ`. See also W. Fulton
+and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2, and J.-P. Serre, *Linear
+Representations of Finite Groups*, GTM 42, §7.3.
 -/
 
 public section
