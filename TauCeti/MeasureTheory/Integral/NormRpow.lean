@@ -39,6 +39,7 @@ at most `|x - Re e| ^ s`.
 
 * `TauCeti.integrableOn_norm_rpow_ball`: integrability on a centred ball, and
   `TauCeti.integrableOn_norm_rpow_ball_iff`: its converse on a nontrivial space.
+* `TauCeti.memLp_norm_rpow_ball`: `Lᵖ` membership on a centred ball, for `-d < s p`.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
@@ -82,6 +83,20 @@ theorem integrableOn_norm_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ
   · filter_upwards with x
     rw [neg_neg, one_mul, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
   · exact (by fun_prop : Measurable fun x : E => ‖x‖ ^ s).aestronglyMeasurable
+
+/-- The kernel `x ↦ ‖x‖ ^ s` is `Lᵖ` on every ball centred at the origin when `p ≠ ∞` and
+`-dim E < s p`. -/
+theorem memLp_norm_rpow_ball {s : ℝ} {p : ENNReal} (hp : p ≠ ⊤)
+    (hs : -(Module.finrank ℝ E : ℝ) < s * p.toReal) {R : ℝ} :
+    MemLp (fun x : E => ‖x‖ ^ s) p (mu.restrict (ball 0 R)) := by
+  have hmeas : AEStronglyMeasurable (fun x : E => ‖x‖ ^ s) (mu.restrict (ball 0 R)) :=
+    (by fun_prop : Measurable fun x : E => ‖x‖ ^ s).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hmeas
+  refine (integrable_norm_rpow_iff hmeas hp0 hp).1 ((integrableOn_norm_rpow_ball hs).congr
+    (Filter.Eventually.of_forall fun x => ?_))
+  dsimp only
+  rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_mul (norm_nonneg _)]
 
 /-- On a nontrivial space, the kernel `x ↦ ‖x‖ ^ s` is integrable on a ball of positive radius
 centred at the origin exactly when `-dim E < s`. -/

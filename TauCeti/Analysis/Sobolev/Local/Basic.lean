@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
+import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.ReImTopology
 
 /-!
@@ -31,7 +32,7 @@ multiplication of local `Lᵖ` functions by continuous factors (with extension b
 supported in the domain), decreasing the integrability exponent, and decreasing the derivative
 order. On an open set, local `Lᵖ` membership is detected on the open subsets with compact closure
 inside it. Smoothness on an open neighbourhood gives membership, without requiring a global smooth
-extension.
+extension; in particular, so does holomorphy on an open neighbourhood.
 On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane the interior is
 `Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`). No boundary trace is asserted here;
 extension across the real axis is in `TauCeti.Analysis.Sobolev.Local.Reflection`. On open
@@ -435,5 +436,12 @@ theorem _root_.ContDiffOn.memWkpLoc [CompleteSpace F]
       intro z hz
       exact (hf.differentiableOn (by simp)).differentiableAt (Ω.isOpen.mem_nhds hz)
     exact hweak.mono (interior_subset.trans hU)
+
+/-- A holomorphic map on an open set `Ω` is in every local Sobolev class on every subset of `Ω`,
+for every exponent: it is smooth on `Ω`. -/
+theorem _root_.DifferentiableOn.memWkpLoc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {f : ℂ → E} (hf : DifferentiableOn ℂ f Ω) (hU : U ⊆ Ω)
+    (k : ℕ) : MemWkpLoc p U k f :=
+  ((hf.contDiffOn Ω.isOpen (n := k)).restrict_scalars ℝ).memWkpLoc hU
 
 end TauCeti
