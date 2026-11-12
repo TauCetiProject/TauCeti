@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
-public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Subspace
 public import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -40,16 +40,7 @@ the component remains in that component. -/
 instance instSemilocallySimplyConnectedSpaceSubtypePathComponent
     [SemilocallySimplyConnectedSpace X] :
     SemilocallySimplyConnectedSpace (pathComponent x₀) :=
-  ⟨fun a => by
-    obtain ⟨U, hU, hloop⟩ := semilocallySimplyConnectedAt_def.mp
-      (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (a : X))
-    refine semilocallySimplyConnectedAt_def.mpr
-      ⟨Subtype.val ⁻¹' U, continuous_subtype_val.tendsto a hU, fun γ hγ => ?_⟩
-    apply homotopic_pathComponent_of_map_subtypeVal_homotopic x₀
-    rw [Path.map_refl]
-    refine hloop (γ.map continuous_subtype_val) ?_
-    rintro _ ⟨t, rfl⟩
-    exact hγ ⟨t, rfl⟩⟩
+  .subtype_of_pathComponent_subset fun _ hx ↦ (pathComponent_congr hx).subset
 
 /-- A fibre of the quotient to connected components is semilocally simply connected when the
 ambient space is locally path-connected and semilocally simply connected. -/

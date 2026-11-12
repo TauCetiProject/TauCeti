@@ -36,7 +36,9 @@ Finally, the constant maps embed `Y` in `C(X, Y)` whenever `X` is nonempty
 (`ContinuousMap.isEmbedding_const`): evaluation at any point is a continuous left inverse.
 Postcomposition with a closed embedding `g` is a closed embedding
 (`ContinuousMap.isClosedEmbedding_postcomp`): its range consists of the maps with values in the
-closed range of `g`, a condition closed under pointwise limits.
+closed range of `g`, a condition closed under pointwise limits. Dually, when `X` is compact,
+postcomposition with an open embedding is an open embedding
+(`ContinuousMap.isOpenEmbedding_postcomp`): having values in an open set is an open condition.
 -/
 
 public section
@@ -130,5 +132,14 @@ theorem isClosedEmbedding_postcomp (g : C(Y, Z)) (hg : Topology.IsClosedEmbeddin
   refine ⟨isEmbedding_postcomp g hg.isEmbedding, ?_⟩
   simp only [range_postcomp g hg.isInducing, Set.ofPred_forall]
   exact isClosed_iInter fun x ↦ hg.isClosed_range.preimage (continuous_eval_const x)
+
+/-- If `X` is compact and `g : C(Y, Z)` is an open embedding, then the composition
+`ContinuousMap.comp g : C(X, Y) → C(X, Z)` is an open embedding too. -/
+theorem isOpenEmbedding_postcomp [CompactSpace X] (g : C(Y, Z))
+    (hg : Topology.IsOpenEmbedding g) :
+    Topology.IsOpenEmbedding (g.comp : C(X, Y) → C(X, Z)) := by
+  refine ⟨isEmbedding_postcomp g hg.isEmbedding, ?_⟩
+  rw [range_postcomp g hg.isInducing]
+  simpa only [Set.range_subset_iff] using isOpen_setOfPred_range_subset (X := X) hg.isOpen_range
 
 end ContinuousMap
