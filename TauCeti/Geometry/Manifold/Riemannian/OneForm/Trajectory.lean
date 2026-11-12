@@ -114,11 +114,11 @@ theorem IsSmoothForm.exists_isMIntegralCurve_neg_metricDual [IsManifold I 2 M]
     [T2Space M] [BoundarylessManifold I M] [CompactSpace M]
     (hα : IsSmoothForm I 1 α) (x : M) :
     ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurve γ (-α.metricDual) := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   have hv := hα.contMDiff_neg_metricDual
   refine ⟨maximalIntegralCurve (-α.metricDual) x, ?_, isMIntegralCurve_maximalIntegralCurve hv⟩
-  exact maximalIntegralCurve_zero (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt)
+  exact maximalIntegralCurve_zero
 
 end TauCeti
