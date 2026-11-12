@@ -6,26 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
+public import TauCeti.Analysis.Contour.Crossing.Excision
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Jordan
 public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.MeasureTheory.Integral.CircleIntegral
-import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Contour.Winding.Number.Circle
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 import TauCeti.Topology.JordanCurve.Interval
 
 /-!
 # Crosscuts of a disk closed up by circle arcs
 
-Let `c` be an injective piecewise `C¹` arc on `[a, b]` whose interior lies in the open disk of
-center `z₀` and radius `r`, and whose endpoints `c b = circleMap z₀ r α` and
+Let `c` be an injective absolutely continuous arc on `[a, b]` whose interior lies in the open disk
+of center `z₀` and radius `r`, and whose endpoints `c b = circleMap z₀ r α` and
 `c a = circleMap z₀ r β` lie on the boundary circle. The loop `TauCeti.Contour.arcLoop` follows `c`
 and then returns from `c b` to `c a` along the arc of the circle from the angle `α` to the angle
 `β`. When `α < β < α + 2π`, there are two such loops: the one closed by the counterclockwise arc
 from `α` to `β`, and the one closed by the clockwise arc from `α` to `β - 2π`.
 
-Both loops are simple closed piecewise `C¹` curves. At every point of the open disk off the arc,
-their winding numbers differ by that of the full circle, which is one. Together with the Jordan
+Both loops are simple closed absolutely continuous curves. If `c` is piecewise `C¹`, so are the
+loops. At every point of the open disk off the arc, their winding numbers differ by that of the
+full circle, which is one. Together with the Jordan
 index theorem this shows that the loop closed by the counterclockwise arc is positively oriented,
 the loop closed by the clockwise arc is negatively oriented, and every point of the open disk off
 the arc lies in exactly one of the two filled hulls.
@@ -33,6 +35,7 @@ the arc lies in exactly one of the two filled hulls.
 ## Main results
 
 * `TauCeti.Contour.arcLoop`: the arc `c` followed by a circle arc.
+* `AbsolutelyContinuousOnInterval.arcLoop`: closing the arc preserves absolute continuity.
 * `TauCeti.Contour.isJordanCurve_image_arcLoop`: the trace of the loop is a Jordan curve.
 * `TauCeti.Contour.windingNumber_arcLoop_eq_add_one`: the winding numbers of the two loops differ
   by one on the open disk off the arc.
@@ -60,7 +63,7 @@ namespace TauCeti.Contour
 /-- The loop which follows `c` up to the parameter `b` and then, on `[b, b + 1]`, the arc of the
 circle of center `z₀` and radius `r` from the angle `α` to the angle `β`. -/
 def arcLoop (c : ℝ → ℂ) (b : ℝ) (z₀ : ℂ) (r α β : ℝ) (s : ℝ) : ℂ :=
-  if s ≤ b then c s else circleMap z₀ r (α + (s - b) * (β - α))
+  if s ≤ b then c s else circleCap z₀ r b (b + 1) α β s
 
 variable {c : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} {r α β : ℝ}
 
@@ -71,13 +74,13 @@ theorem arcLoop_of_le {s : ℝ} (hs : s ≤ b) : arcLoop c b z₀ r α β s = c 
 /-- After the parameter `b`, the loop is the affinely reparametrized circle. -/
 @[simp]
 theorem arcLoop_of_lt {s : ℝ} (hs : b < s) :
-    arcLoop c b z₀ r α β s = circleMap z₀ r (α + (s - b) * (β - α)) := ite_eq_right hs.not_ge
+    arcLoop c b z₀ r α β s = circleMap z₀ r (α + (s - b) * (β - α)) := by
+  simp [arcLoop, hs.not_ge, circleCap_apply, mul_comm]
 
 /-- At the parameter `b + 1`, the loop reaches the point of angle `β` of the circle. -/
 theorem arcLoop_add_one : arcLoop c b z₀ r α β (b + 1) = circleMap z₀ r β := by
-  rw [arcLoop_of_lt (lt_add_one b)]
-  congr 1
-  ring
+  rw [arcLoop, ite_eq_right (lt_add_one b).not_ge,
+    circleCap_right z₀ r (lt_add_one b).ne α β]
 
 /-- The loop agrees with the arc `c` near every parameter before `b`. -/
 theorem arcLoop_eventuallyEq_of_lt {s : ℝ} (hs : s < b) : arcLoop c b z₀ r α β =ᶠ[𝓝 s] c :=
@@ -96,18 +99,32 @@ theorem arcLoop_eq_arcLoop_add_one (hab : a ≤ b) (ha : c a = circleMap z₀ r 
 /-- Closing a piecewise `C¹` arc by a circle arc gives a piecewise `C¹` loop. -/
 theorem isPiecewiseC1On_arcLoop (hc : IsPiecewiseC1On c a b) (hab : a ≤ b)
     (hb : c b = circleMap z₀ r α) : IsPiecewiseC1On (arcLoop c b z₀ r α β) a (b + 1) := by
-  have harc : IsPiecewiseC1On (fun s => circleMap z₀ r (α + (s - b) * (β - α))) b (b + 1) :=
-    IsPiecewiseC1On.of_contDiffOn ((contDiff_circleMap z₀ r).comp (by fun_prop)).contDiffOn
+  have harc : IsPiecewiseC1On (circleCap z₀ r b (b + 1) α β) b (b + 1) :=
+    IsPiecewiseC1On.of_contDiffOn (contDiff_circleCap z₀ r b (b + 1) α β).contDiffOn
   exact hc.if_le harc hab (by linarith) (by simpa using hb)
 
 /-- From the parameter `b` on, the loop is the affinely reparametrized circle, provided the arc `c`
 ends at the point of angle `α`. -/
 theorem eqOn_arcLoop_Ici (hb : c b = circleMap z₀ r α) :
-    EqOn (arcLoop c b z₀ r α β) (fun s => circleMap z₀ r (α + (s - b) * (β - α))) (Ici b) := by
+    EqOn (arcLoop c b z₀ r α β) (circleCap z₀ r b (b + 1) α β) (Ici b) := by
   intro s hs
   rcases (mem_Ici.mp hs).eq_or_lt with rfl | hsb
-  · simp [hb]
-  · exact arcLoop_of_lt hsb
+  · simp [arcLoop, hb]
+  · exact ite_eq_right hsb.not_ge
+
+/-- Closing an absolutely continuous arc by a circle arc gives an absolutely continuous loop. -/
+theorem _root_.AbsolutelyContinuousOnInterval.arcLoop (hc : AbsolutelyContinuousOnInterval c a b)
+    (hab : a ≤ b) (hb : c b = circleMap z₀ r α) :
+    AbsolutelyContinuousOnInterval (TauCeti.Contour.arcLoop c b z₀ r α β) a (b + 1) := by
+  have hleft : AbsolutelyContinuousOnInterval (TauCeti.Contour.arcLoop c b z₀ r α β) a b :=
+    hc.congr fun s hs => by
+      rw [uIcc_of_le hab] at hs
+      exact (arcLoop_of_le hs.2).symm
+  have harc := (contDiff_circleCap z₀ r b (b + 1) α β).contDiffOn.absolutelyContinuousOnInterval
+    (a := b) (b := b + 1)
+  exact hleft.trans (harc.congr fun s hs => by
+    rw [uIcc_of_le (le_add_of_nonneg_right zero_le_one)] at hs
+    exact (eqOn_arcLoop_Ici hb hs.1).symm)
 
 /-- Closing a continuous arc by a circle arc gives a continuous loop. -/
 theorem continuousOn_arcLoop (hc : ContinuousOn c (Icc a b)) (hab : a ≤ b)
@@ -115,7 +132,7 @@ theorem continuousOn_arcLoop (hc : ContinuousOn c (Icc a b)) (hab : a ≤ b)
   rw [← Icc_union_Icc_eq_Icc hab (le_add_of_nonneg_right zero_le_one)]
   refine ContinuousOn.union_of_isClosed (hc.congr fun s hs => arcLoop_of_le hs.2) ?_
     isClosed_Icc isClosed_Icc
-  exact ((continuous_circleMap z₀ r).comp (by fun_prop)).continuousOn.congr
+  exact (contDiff_circleCap z₀ r b (b + 1) α β).continuous.continuousOn.congr
     ((eqOn_arcLoop_Ici hb).mono Icc_subset_Ici_self)
 
 /-- The trace of the loop is the trace of the arc together with the circle arc. -/
@@ -132,7 +149,10 @@ theorem image_arcLoop (hab : a ≤ b) (hb : c b = circleMap z₀ r α) :
     simp [hf]
   rw [uIcc_of_le (hab.trans hb1), ← Icc_union_Icc_eq_Icc hab hb1, image_union,
     image_congr fun s (hs : s ∈ Icc a b) => arcLoop_of_le hs.2,
-    image_congr fun s (hs : s ∈ Icc b (b + 1)) => eqOn_arcLoop_Ici hb (Icc_subset_Ici_self hs),
+    image_congr (g := fun s => circleMap z₀ r (α + (s - b) * (β - α)))
+      fun s (hs : s ∈ Icc b (b + 1)) =>
+        (eqOn_arcLoop_Ici hb (Icc_subset_Ici_self hs)).trans
+          (by simp [circleCap_apply, mul_comm]),
     hcircle, image_comp,
     ← uIcc_of_le hb1, AffineMap.image_uIcc, hf, hf]
   simp
@@ -261,7 +281,7 @@ private theorem integral_arcLoop_arc {z : ℂ} :
 
 /-- The winding numbers of the loops closed by the circle arcs from `α` to `β` and from `α` to
 `β - 2π` differ by one at every point of the open disk off the arc `c`. -/
-theorem windingNumber_arcLoop_eq_add_one (hab : a ≤ b) (hc : IsPiecewiseC1On c a b)
+theorem windingNumber_arcLoop_eq_add_one (hab : a ≤ b) (hc : AbsolutelyContinuousOnInterval c a b)
     (hb : c b = circleMap z₀ r α) {z : ℂ} (hz : z ∈ ball z₀ r) (hzc : z ∉ c '' Icc a b) :
     windingNumber (arcLoop c b z₀ r α β) a (b + 1) z =
       windingNumber (arcLoop c b z₀ r α (β - 2 * π)) a (b + 1) z + 1 := by
@@ -270,11 +290,11 @@ theorem windingNumber_arcLoop_eq_add_one (hab : a ≤ b) (hc : IsPiecewiseC1On c
         deriv (arcLoop c b z₀ r α δ) s) +
         ∫ θ in α..δ, (circleMap z₀ r θ - z)⁻¹ * (circleMap 0 r θ * I)) := by
     intro δ
-    have hL := isPiecewiseC1On_arcLoop (β := δ) hc hab hb
+    have hL := hc.arcLoop (β := δ) hab hb
     have havoid : ∀ t ∈ uIcc a (b + 1), arcLoop c b z₀ r α δ t ≠ z := fun t ht h =>
       notMem_image_arcLoop hab hb hz hzc ⟨t, ht, h⟩
     have hint := intervalIntegrable_inv_sub_mul_deriv hL.continuousOn havoid
-      hL.intervalIntegrable_deriv
+      hL.intervalIntegrable_deriv_of_finiteDimensional
     have h1 : uIcc a b ⊆ uIcc a (b + 1) := by
       rw [uIcc_of_le hab, uIcc_of_le (by linarith)]
       exact Icc_subset_Icc le_rfl (by linarith)
@@ -312,7 +332,8 @@ section Orientation
 variable {δ : ℝ}
 
 open scoped Classical in
-private theorem windingNumber_arcLoop_eq_ite (hab : a < b) (hc : IsPiecewiseC1On c a b)
+private theorem windingNumber_arcLoop_eq_ite (hab : a < b)
+    (hc : AbsolutelyContinuousOnInterval c a b)
     (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r)
     (ha : c a = circleMap z₀ r δ) (hb : c b = circleMap z₀ r α) (hαδ : α ≠ δ)
     (hδα : |δ - α| < 2 * π) {z : ℂ} (hz : z ∈ ball z₀ r) (hzc : z ∉ c '' Icc a b) :
@@ -320,7 +341,7 @@ private theorem windingNumber_arcLoop_eq_ite (hab : a < b) (hc : IsPiecewiseC1On
       if z ∈ filledHull (arcLoop c b z₀ r α δ '' uIcc a (b + 1)) then
         (jordanSign (arcLoop c b z₀ r α δ) a (b + 1) : ℂ) else 0 := by
   have hr : 0 < r := pos_of_mem_ball hz
-  have hL := (isPiecewiseC1On_arcLoop (β := δ) hc hab.le hb).absolutelyContinuousOnInterval
+  have hL := hc.arcLoop (β := δ) hab.le hb
   have hcl := arcLoop_eq_arcLoop_add_one (α := α) hab.le ha
   split_ifs with hzH
   · exact hL.windingNumber_eq_jordanSign_of_mem_filledHull_sdiff (by linarith) hcl
@@ -328,12 +349,12 @@ private theorem windingNumber_arcLoop_eq_ite (hab : a < b) (hc : IsPiecewiseC1On
   · exact hL.windingNumber_eq_zero_of_notMem_filledHull hcl hzH
 
 private theorem jordanSign_arcLoop_eq_one_or_neg_one (hab : a < b)
-    (hc : IsPiecewiseC1On c a b) (hinj : InjOn c (Icc a b))
+    (hc : AbsolutelyContinuousOnInterval c a b) (hinj : InjOn c (Icc a b))
     (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r) (hr : 0 < r) (ha : c a = circleMap z₀ r δ)
     (hb : c b = circleMap z₀ r α) (hαδ : α ≠ δ) (hδα : |δ - α| < 2 * π) :
     jordanSign (arcLoop c b z₀ r α δ) a (b + 1) = 1 ∨
       jordanSign (arcLoop c b z₀ r α δ) a (b + 1) = -1 :=
-  (isPiecewiseC1On_arcLoop (β := δ) hc hab.le hb).absolutelyContinuousOnInterval
+  (hc.arcLoop (β := δ) hab.le hb)
     |>.jordanSign_eq_one_or_neg_one (by linarith) (arcLoop_eq_arcLoop_add_one hab.le ha)
       (injOn_arcLoop hinj hin hr ha hb hαδ hδα)
 
@@ -354,7 +375,7 @@ private theorem exists_mem_ball_arcLoop (hab : a < b) (hc : ContinuousOn c (Icc 
   exact Or.inl h
 
 private theorem jordanSign_arcLoop_and_mem_filledHull_iff (hab : a < b)
-    (hc : IsPiecewiseC1On c a b) (hinj : InjOn c (Icc a b))
+    (hc : AbsolutelyContinuousOnInterval c a b) (hinj : InjOn c (Icc a b))
     (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r) (ha : c a = circleMap z₀ r β)
     (hb : c b = circleMap z₀ r α) (hαβ : α < β) (hβα : β < α + 2 * π) :
     jordanSign (arcLoop c b z₀ r α β) a (b + 1) = 1 ∧
@@ -412,7 +433,7 @@ private theorem jordanSign_arcLoop_and_mem_filledHull_iff (hab : a < b)
   · omega
 
 /-- The loop closed by the counterclockwise circle arc from `α` to `β` is positively oriented. -/
-theorem jordanSign_arcLoop_eq_one (hab : a < b) (hc : IsPiecewiseC1On c a b)
+theorem jordanSign_arcLoop_eq_one (hab : a < b) (hc : AbsolutelyContinuousOnInterval c a b)
     (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r)
     (ha : c a = circleMap z₀ r β) (hb : c b = circleMap z₀ r α) (hαβ : α < β)
     (hβα : β < α + 2 * π) :
@@ -420,7 +441,8 @@ theorem jordanSign_arcLoop_eq_one (hab : a < b) (hc : IsPiecewiseC1On c a b)
   (jordanSign_arcLoop_and_mem_filledHull_iff hab hc hinj hin ha hb hαβ hβα).1
 
 /-- The loop closed by the clockwise circle arc from `α` to `β - 2π` is negatively oriented. -/
-theorem jordanSign_arcLoop_sub_two_pi_eq_neg_one (hab : a < b) (hc : IsPiecewiseC1On c a b)
+theorem jordanSign_arcLoop_sub_two_pi_eq_neg_one (hab : a < b)
+    (hc : AbsolutelyContinuousOnInterval c a b)
     (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r)
     (ha : c a = circleMap z₀ r β) (hb : c b = circleMap z₀ r α) (hαβ : α < β)
     (hβα : β < α + 2 * π) :
@@ -429,7 +451,7 @@ theorem jordanSign_arcLoop_sub_two_pi_eq_neg_one (hab : a < b) (hc : IsPiecewise
 
 /-- Every point of the open disk off the arc `c` lies in exactly one of the filled hulls of the
 loops closed by the counterclockwise and the clockwise circle arcs. -/
-theorem mem_filledHull_arcLoop_iff_notMem (hab : a < b) (hc : IsPiecewiseC1On c a b)
+theorem mem_filledHull_arcLoop_iff_notMem (hab : a < b) (hc : AbsolutelyContinuousOnInterval c a b)
     (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r)
     (ha : c a = circleMap z₀ r β) (hb : c b = circleMap z₀ r α) (hαβ : α < β)
     (hβα : β < α + 2 * π) {z : ℂ} (hz : z ∈ ball z₀ r) (hzc : z ∉ c '' Icc a b) :
