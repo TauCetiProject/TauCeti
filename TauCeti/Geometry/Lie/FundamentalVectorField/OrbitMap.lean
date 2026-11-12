@@ -28,8 +28,8 @@ fundamental fields at `g • x`. Its image is the orbit tangent space
 
 Along an orbit the isotropy algebras are conjugate, `𝔤_{g • x} = Ad_g 𝔤_x`
 (`TauCeti.isotropy_fundamental_smul`), and the orbit tangent spaces correspond under the
-differential of `y ↦ g • y`. So the **rank of the orbit map** is constant on `G`: for
-finite-dimensional `G`,
+differential of `y ↦ g • y` (`TauCeti.orbitTangent_fundamental_smul`). So the **rank of the orbit
+map** is constant on `G`: for finite-dimensional `G`,
 
 `rank d(h ↦ h • x)_g + dim 𝔤_x = dim 𝔤`.
 
@@ -43,7 +43,6 @@ an immersion, respectively a submersion.
 
 * `TauCeti.mfderiv_smul_const_apply`: the differential of the orbit map at `g` is that of the orbit
   map of `g • x` at the identity, precomposed with the differential of right translation by `g⁻¹`.
-* `TauCeti.orbitTangent_fundamental_smul`: `T_{g • x}(G • x) = d(y ↦ g • y)_x (T_x(G • x))`.
 * `TauCeti.range_mfderiv_smul_const`: the image of the differential of the orbit map at `g` is the
   orbit tangent space at `g • x`.
 * `TauCeti.mfderiv_smul_const_mulRightInvariantVectorField_eq_zero_iff`: its kernel consists of the
@@ -82,50 +81,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
   [ContMDiffSMul I I' ∞ G M]
 
 attribute [local instance] lieGroupOne
-
-/-- The orbit maps and translations only need a `C¹` action. -/
-local instance contMDiffSMulOneOfInfty : ContMDiffSMul I I' 1 G M :=
-  ContMDiffSMul.of_le (M := M) ENat.LEInfty.out
-
-/-! ### Conjugacy along an orbit -/
-
-/-- **The orbit tangent spaces along an orbit correspond**: the differential of `y ↦ g • y` at `x`
-carries the orbit tangent space at `x` onto that at `g • x`. -/
-theorem orbitTangent_fundamental_smul (g : G) (x : M) :
-    (InfinitesimalAction.fundamental I G I' M).orbitTangent (g • x) =
-      ((InfinitesimalAction.fundamental I G I' M).orbitTangent x).map
-        (mfderiv I' I' (fun y : M ↦ g • y) x).toLinearMap := by
-  ext v
-  simp only [Submodule.mem_map, InfinitesimalAction.mem_orbitTangent_iff,
-    InfinitesimalAction.fundamental_apply, ContinuousLinearMap.coe_coe]
-  constructor
-  · rintro ⟨ξ, rfl⟩
-    refine ⟨_, ⟨Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ, rfl⟩, ?_⟩
-    rw [mfderiv_smul_fundamentalVectorField,
-      Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv]
-  · rintro ⟨_, ⟨ξ, rfl⟩, rfl⟩
-    exact ⟨_, (mfderiv_smul_fundamentalVectorField g ξ x).symm⟩
-
-/-- The orbit tangent spaces along an orbit have the same dimension. -/
-@[simp]
-theorem finrank_orbitTangent_fundamental_smul (g : G) (x : M) :
-    Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent (g • x)) =
-      Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) := by
-  have hinv : (mfderiv I' I' (fun y : M ↦ g • y) x).IsInvertible :=
-    (Diffeomorph.smul I I' 1 g).isInvertible_mfderiv one_ne_zero
-  rw [orbitTangent_fundamental_smul]
-  exact (Submodule.equivMapOfInjective _ hinv.injective _).finrank_eq.symm
-
-/-- The fundamental vector fields span the tangent space at `g • x` exactly when they span it at
-`x`. -/
-@[simp]
-theorem orbitTangent_fundamental_smul_eq_top_iff (g : G) (x : M) :
-    (InfinitesimalAction.fundamental I G I' M).orbitTangent (g • x) = ⊤ ↔
-      (InfinitesimalAction.fundamental I G I' M).orbitTangent x = ⊤ := by
-  obtain ⟨e, he⟩ : (mfderiv I' I' (fun y : M ↦ g • y) x).IsInvertible :=
-    (Diffeomorph.smul I I' 1 g).isInvertible_mfderiv one_ne_zero
-  rw [orbitTangent_fundamental_smul, ← he]
-  exact Submodule.map_eq_top_iff (e := e.toLinearEquiv)
+attribute [local instance] contMDiffSMulOneOfInfty
 
 /-! ### The differential of the orbit map -/
 
