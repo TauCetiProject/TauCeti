@@ -264,14 +264,17 @@ theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     coordinateDeriv_eq_iteratedFDeriv α hf, coordinateDeriv_eq_iteratedFDeriv α hg,
     iteratedFDeriv_add_apply hf.contDiffAt hg.contDiffAt, add_apply]
 
-theorem coordinateDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommClass ℝ R A]
-    [ContinuousConstSMul R A] (α : List (Fin n)) {f : CoordinateSpace n → A}
-    (hf : ContDiff ℝ α.length f) (c : R) :
+/-- Scalar multiples commute with coordinate derivatives, with no smoothness assumption. -/
+@[simp]
+theorem coordinateDeriv_const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
+    [SMulCommClass ℝ 𝕜 A] (α : List (Fin n)) (f : CoordinateSpace n → A) (c : 𝕜) :
     coordinateDeriv α (c • f) = c • coordinateDeriv α f := by
-  funext x
-  rw [Pi.smul_apply, coordinateDeriv_eq_iteratedFDeriv α (f := c • f) (hf.const_smul c),
-    coordinateDeriv_eq_iteratedFDeriv α hf, iteratedFDeriv_const_smul_apply hf.contDiffAt,
-    smul_apply]
+  induction α generalizing f with
+  | nil => rfl
+  | cons j js ih =>
+    funext x
+    rw [coordinateDeriv_cons, ih, Pi.smul_apply, coordinateDeriv_cons]
+    simp only [fderiv_const_smul_field, Pi.smul_apply, smul_apply]
 
 @[simp]
 theorem coordinateDeriv_neg (α : List (Fin n)) (f : CoordinateSpace n → A) :
@@ -722,18 +725,17 @@ theorem mixedDeriv_add (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ b) (α �
     (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _)
     (contDiff_infty.1 (contDiff_coordinateDeriv_slice hb β ξ) _), Pi.add_apply]
 
-theorem mixedDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommClass ℝ R A]
-    [ContinuousConstSMul R A] (ha : ContDiff ℝ ∞ a) (c : R) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
+/-- Scalar multiples commute with mixed derivatives, with no smoothness assumption. -/
+@[simp]
+theorem mixedDeriv_const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
+    [SMulCommClass ℝ 𝕜 A] (c : 𝕜) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (c • a) x ξ = c • mixedDeriv α β a x ξ := by
   have h : (fun y => coordinateDeriv β (fun η => (c • a) (y, η)) ξ) =
       c • fun y => coordinateDeriv β (fun η => a (y, η)) ξ := by
     funext y
-    exact congrFun
-      (coordinateDeriv_const_smul β (contDiff_infty.1 (ha.comp (contDiff_prodMk_right y)) _) c) ξ
+    exact congrFun (coordinateDeriv_const_smul β (fun η => a (y, η)) c) ξ
   simp only [mixedDeriv_def]
-  rw [h, coordinateDeriv_const_smul α
-    (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _), Pi.smul_apply]
+  rw [h, coordinateDeriv_const_smul α, Pi.smul_apply]
 
 @[simp]
 theorem mixedDeriv_neg (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
@@ -750,7 +752,7 @@ theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (0 : CoordinateSpace n × CoordinateSpace n → A) x ξ = 0 := by
   have h : (fun y => coordinateDeriv β (fun η => (0 : CoordinateSpace n × CoordinateSpace n → A)
       (y, η)) ξ) = 0 := by
-    funext y
+    funext _
     exact congrFun (coordinateDeriv_zero β) ξ
   rw [mixedDeriv_def, h, coordinateDeriv_zero, Pi.zero_apply]
 
@@ -822,12 +824,12 @@ theorem norm_mixedDeriv_add_le (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ 
   rw [mixedDeriv_add ha hb, add_mul]
   exact (norm_add_le _ _).trans (add_le_add haC hbD)
 
-/-- A bound `C * w` on a mixed derivative of smooth `a` gives the bound `(‖c‖ * C) * w` on the
+/-- A bound `C * w` on a mixed derivative of `a` gives the bound `(‖c‖ * C) * w` on the
 mixed derivative of `c • a`. -/
 theorem norm_mixedDeriv_smul_le {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
-    [SMulCommClass ℝ 𝕜 A] (ha : ContDiff ℝ ∞ a) (c : 𝕜) (haC : ‖mixedDeriv α β a x ξ‖ ≤ C * w) :
+    [SMulCommClass ℝ 𝕜 A] (c : 𝕜) (haC : ‖mixedDeriv α β a x ξ‖ ≤ C * w) :
     ‖mixedDeriv α β (c • a) x ξ‖ ≤ (‖c‖ * C) * w := by
-  rw [mixedDeriv_const_smul ha, norm_smul, mul_assoc]
+  rw [mixedDeriv_const_smul, norm_smul, mul_assoc]
   exact mul_le_mul_of_nonneg_left haC (norm_nonneg c)
 
 end Linear
@@ -1037,10 +1039,7 @@ theorem norm_mixedDeriv_comp_snd_smul_le (hψ : ContDiff ℝ ∞ ψ) (ha : ContD
   have hpos (η : CoordinateSpace n) :
       coordinateDeriv α (fun y => ψ η • a (y, η)) x =
         ψ η • coordinateDeriv α (fun y => a (y, η)) x := by
-    have h := coordinateDeriv_const_smul α (f := fun y => a (y, η))
-      ((ha.comp (contDiff_id.prodMk (contDiff_const (c := η)))).of_le
-        (by exact_mod_cast le_top)) (ψ η)
-    exact congrFun h x
+    exact congrFun (coordinateDeriv_const_smul α (fun y => a (y, η)) (ψ η)) x
   rw [mixedDeriv_eq_coordinateDeriv_snd hf]
   simp only [hpos]
   refine (norm_coordinateDeriv_smul_le β (hψ.of_le (by exact_mod_cast le_top))

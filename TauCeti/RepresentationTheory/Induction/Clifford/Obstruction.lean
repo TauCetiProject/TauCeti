@@ -230,7 +230,7 @@ theorem exists_isProjectiveInertiaExtension :
   classical
   obtain ⟨ρ, hρ1, hρmul, hρconj, hιmul⟩ := exists_linearEquiv_inertia_apply_mul_inclusion A hScalar
   set M := N.subgroupOf (inertia A)
-  set ι : N →* inertia A := Subgroup.inclusion (le_inertia A) with hι
+  set ι : N →* inertia A := Subgroup.inclusion (le_inertia A)
   have hρι (n : N) (x : A) : ρ (ι n) x = A.ρ n x := by
     simpa [hρ1] using hρmul 1 n x
   -- By Schur's lemma `ρ` is a projective representation.
