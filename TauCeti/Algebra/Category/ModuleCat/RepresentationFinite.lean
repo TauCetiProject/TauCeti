@@ -226,6 +226,18 @@ theorem skeletonFiniteIndecomposableEquivSkeletonFiniteIndecomposable_toSkeleton
       (f.trans ULift.moduleEquiv.{u, v', v}.symm)).toModuleIso⟩⟩
 
 variable (A) in
+/-- The inverse of the universe-change correspondence is the universe-change correspondence in the
+other direction. -/
+@[simp]
+theorem skeletonFiniteIndecomposableEquivSkeletonFiniteIndecomposable_symm [Small.{v} A]
+    [Small.{v'} A] :
+    (skeletonFiniteIndecomposableEquivSkeletonFiniteIndecomposable.{v, v', u} A).symm =
+      skeletonFiniteIndecomposableEquivSkeletonFiniteIndecomposable.{v', v, u} A := by
+  rw [skeletonFiniteIndecomposableEquivSkeletonFiniteIndecomposable,
+    skeletonFiniteIndecomposableEquivSkeletonFiniteIndecomposable, Equiv.symm_trans,
+    Equiv.symm_symm]
+
+variable (A) in
 /-- **The number of finitely generated indecomposable modules does not depend on the universe** of
 the modules, among the universes in which the ring is small. -/
 theorem card_skeleton_finite_indecomposable_eq_card_skeleton_finite_indecomposable [Small.{v} A]
@@ -298,6 +310,23 @@ theorem skeletonFiniteIndecomposableModulesEquiv_toSkeleton_eq_toSkeleton_iff
   rw [skeletonFiniteIndecomposableModulesEquiv, Functor.objEquiv, Equiv.ofBijective_apply,
     Functor.mapSkeleton_obj_toSkeleton, ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso,
     congrFiniteIndecomposable, congrFullSubcategory_functor_obj_obj]
+
+/-- The inverse of the correspondence induced by an equivalence of module categories is the
+correspondence induced by the inverse equivalence. -/
+@[simp]
+theorem skeletonFiniteIndecomposableModulesEquiv_symm (e : ModuleCat.{v} A ≌ ModuleCat.{v'} B) :
+    e.skeletonFiniteIndecomposableModulesEquiv.symm =
+      e.symm.skeletonFiniteIndecomposableModulesEquiv := by
+  refine Equiv.ext fun x ↦ ?_
+  obtain ⟨N, rfl⟩ : ∃ N, toSkeleton N = x := ⟨_, toSkeleton_fromSkeleton_obj x⟩
+  obtain ⟨M, hM⟩ : ∃ M, e.symm.skeletonFiniteIndecomposableModulesEquiv (toSkeleton N) =
+      toSkeleton M :=
+    ⟨_, (toSkeleton_fromSkeleton_obj _).symm⟩
+  rw [Equiv.symm_apply_eq, hM, eq_comm,
+    skeletonFiniteIndecomposableModulesEquiv_toSkeleton_eq_toSkeleton_iff]
+  obtain ⟨f⟩ := (skeletonFiniteIndecomposableModulesEquiv_toSkeleton_eq_toSkeleton_iff _).mp hM
+  -- `M` is the class of `e.inverse.obj N`, and `e.functor` takes it back to `N`.
+  exact ⟨e.functor.mapIso f.symm ≪≫ e.counitIso.app N.obj⟩
 
 /-- **Rings with equivalent module categories have equally many finitely generated indecomposable
 modules** up to isomorphism. No linearity of the equivalence is needed, and the two module
@@ -403,6 +432,19 @@ theorem maximalSpectrumEquivSkeletonFiniteIndecomposable_apply_eq_toSkeleton_iff
   rw [maximalSpectrumEquivSkeletonFiniteIndecomposable, Equiv.trans_apply,
     Equiv.ofBijective_apply,
     skeletonFiniteIndecomposableEquivSkeletonFiniteIndecomposable_toSkeleton_eq_toSkeleton_iff]
+
+variable {R} in
+/-- The maximal ideal corresponding to the class of `N` is the annihilator of `N`. -/
+@[simp]
+theorem maximalSpectrumEquivSkeletonFiniteIndecomposable_symm_toSkeleton_asIdeal
+    [IsSemisimpleRing R] [Small.{v} R]
+    (N : ObjectProperty.FullSubcategory
+      fun N : ModuleCat.{v} R ↦ Module.Finite R N ∧ Indecomposable N) :
+    ((maximalSpectrumEquivSkeletonFiniteIndecomposable.{v, u} R).symm (toSkeleton N)).asIdeal =
+      Module.annihilator R N.obj := by
+  obtain ⟨f⟩ := maximalSpectrumEquivSkeletonFiniteIndecomposable_apply_eq_toSkeleton_iff.mp
+    ((maximalSpectrumEquivSkeletonFiniteIndecomposable.{v, u} R).apply_symm_apply (toSkeleton N))
+  rw [← f.annihilator_eq, Ideal.annihilator_quotient]
 
 /-- **Over a commutative semisimple ring the finitely generated indecomposable modules are counted
 by the maximal ideals**: they are the simple modules `R ⧸ m`, pairwise non-isomorphic. The modules
