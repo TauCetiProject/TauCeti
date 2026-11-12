@@ -153,10 +153,16 @@ theorem gramSym2Deriv_surjective {v : Fin k → E} (hv : Orthonormal ℝ v) :
 variable {E k} in
 /-- At an orthonormal family, the derivative of the Gram map has index
 `k n - (k + 1).choose 2`, where `n = finrank ℝ E` and `(k + 1).choose 2` is the number of
-unordered pairs of indices. The truncated subtraction is harmless: the index is the dimension
-of the kernel, as the derivative is surjective. When `E` is infinite-dimensional and `k > 0` the
-kernel is infinite-dimensional too, and both sides are `0`; for `k = 0` the domain and the kernel
-are zero-dimensional and both sides vanish as well. -/
+unordered pairs of indices.
+
+For finite-dimensional `E` the truncated subtraction is harmless: the derivative is surjective,
+so the index is the genuine dimension `k n - (k + 1).choose 2` of the kernel.
+
+For infinite-dimensional `E` the statement is a convention. If `k = 0`, the domain and the kernel
+are zero-dimensional and both sides vanish. If `k > 0`, the kernel is infinite-dimensional, so
+its `Module.finrank` is the junk value `0`, and the right-hand side is `0` because
+`finrank ℝ E = 0` (also a junk value) and natural subtraction truncates
+`0 - (k + 1).choose 2 = 0`. -/
 theorem index_gramSym2Deriv {v : Fin k → E} (hv : Orthonormal ℝ v) :
     (gramSym2Deriv E k v).index = (k * finrank ℝ E - (k + 1).choose 2 : ℕ) := by
   have h₁ := (gramSym2Deriv E k v).index_of_surjective (gramSym2Deriv_surjective hv)
