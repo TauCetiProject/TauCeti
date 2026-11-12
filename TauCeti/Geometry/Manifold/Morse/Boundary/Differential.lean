@@ -92,7 +92,6 @@ include h hf in
 the broken index-two trajectories `morseBrokenTrajectorySet p r` are even in number. -/
 theorem even_ncard_morseBrokenTrajectorySet (p r : criticalPoints 𝓘(ℝ, E) f) :
     Even (hX.morseBrokenTrajectorySet p r).ncard := by
-  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   rcases (hX.morseBrokenTrajectorySet p r).eq_empty_or_nonempty with h0 | ⟨⟨q, z₁, z₂⟩, hx⟩
   · simp [h0]
   -- A broken trajectory forces `ind p = ind r + 2` and `f r < f p`.
@@ -101,10 +100,10 @@ theorem even_ncard_morseBrokenTrajectorySet (p r : criticalPoints 𝓘(ℝ, E) f
       a ≠ b := by
     rintro rfl; omega
   have hlt : f r < f p :=
-    (hX.value_lt_of_mem_morseTrajectorySlice hdf (hne hqr) hz₂).trans
-      (hX.value_lt_of_mem_morseTrajectorySlice hdf (hne hpq) hz₁)
+    (hX.value_lt_of_mem_morseTrajectorySlice (hne hqr) hz₂).trans
+      (hX.value_lt_of_mem_morseTrajectorySlice (hne hpq) hz₁)
   obtain ⟨c₁, c₂, hr₂, h₂₁, h₁p, hgap⟩ := hf.exists_lt_lt_forall_mem_Ioo hlt
-  rw [← hX.ncard_morseBrokenTrajectoryPairs hdf p r hr₂ h₁p hgap]
+  rw [← hX.ncard_morseBrokenTrajectoryPairs p r hr₂ h₁p hgap]
   exact h.even_ncard_morseBrokenTrajectoryPairs hf (by omega) hr₂ h₂₁ h₁p hgap
 
 /-- **The mod-two Morse boundary squares to zero.** For a Morse function on a compact
