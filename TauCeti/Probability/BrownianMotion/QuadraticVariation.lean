@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
 public import TauCeti.Probability.Process.QuadraticVariation
-import TauCeti.Probability.Moments.Chebyshev
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Algebra.BigOperators.Fin
-import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
 # Brownian quadratic sums on deterministic partitions
@@ -100,19 +100,12 @@ theorem integral_sq_quadraticSum_sub_le (hB : IsPreBrownianReal B P) (ht : Monot
     ∫ ω, (quadraticSum B t ω - ((t (Fin.last n) : ℝ) - t 0)) ^ 2 ∂P ≤
       2 * ((t (Fin.last n) : ℝ) - t 0) * δ := by
   rw [hB.integral_sq_quadraticSum_sub ht, mul_assoc]
-  let s (i : ℕ) : ℝ := t ⟨min i n, Nat.lt_succ_of_le (min_le_right i n)⟩
-  have hs : MonotoneOn s (Set.Iic n) := fun i _ j _ hij ↦
-    NNReal.coe_le_coe.mpr (ht (min_le_min_right n hij))
-  have hbound := sum_range_sq_sub_le s n hs (δ := δ) (fun i hi ↦ by
-    simpa only [s, min_eq_left (by omega : i + 1 ≤ n), min_eq_left hi.le,
-      Fin.succ_mk, Fin.castSucc_mk] using! hmesh ⟨i, hi⟩)
-  have hsfin (i : Fin (n + 1)) : s i = (t i : ℝ) := by
-    simp only [s, min_eq_left (Nat.le_of_lt_succ i.isLt)]
-  rw [sum_range] at hbound
-  -- Display the natural indices as Fin.succ/castSucc values so that hsfin rewrites both terms.
-  change (∑ i : Fin n, (s i.succ - s i.castSucc) ^ 2) ≤
-    (s (Fin.last n) - s (0 : Fin (n + 1))) * δ at hbound
-  exact mul_le_mul_of_nonneg_left (by simpa only [hsfin] using! hbound) (by norm_num)
+  have hbound := sum_sq_le_sum_mul (s := univ)
+    (f := fun i : Fin n ↦ (t i.succ : ℝ) - t i.castSucc)
+    (fun i _ ↦ sub_nonneg.mpr (NNReal.coe_le_coe.mpr (ht (Fin.castSucc_le_succ i))))
+    (fun i _ ↦ hmesh i)
+  rw [Fin.sum_univ_succ_sub_castSucc (fun i ↦ (t i : ℝ))] at hbound
+  exact mul_le_mul_of_nonneg_left hbound (by norm_num)
 
 /-- Brownian quadratic sums converge in mean square to the elapsed time along every
 vanishing-mesh family of deterministic partitions of a fixed interval. -/

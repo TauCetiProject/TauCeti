@@ -11,7 +11,7 @@ public import TauCeti.Probability.Process.Filtration.Comp
 public import TauCeti.MeasureTheory.Function.Lp.Order
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Probability.Martingale.MaximalInequality.L2
-import TauCeti.Probability.Moments.Chebyshev
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
 # Maximal errors of Brownian quadratic sums

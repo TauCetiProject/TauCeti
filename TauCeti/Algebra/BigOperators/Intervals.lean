@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import TauCeti.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Order.SuccPred.Int
 import Mathlib.Tactic.Abel
@@ -66,15 +66,12 @@ theorem sum_range_sq_sub_le {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing
     (t : ℕ → R) (n : ℕ) (ht : MonotoneOn t (Set.Iic n)) {δ : R}
     (hmesh : ∀ i < n, t (i + 1) - t i ≤ δ) :
     ∑ i ∈ range n, (t (i + 1) - t i) ^ 2 ≤ (t n - t 0) * δ := by
-  calc
-    _ ≤ ∑ i ∈ range n, (t (i + 1) - t i) * δ := by
-      apply sum_le_sum
-      intro i hi
-      have hi := mem_range.mp hi
-      have hpos : 0 ≤ t (i + 1) - t i :=
-        sub_nonneg.mpr (ht (by simp; omega) (by simp; omega) (Nat.le_succ i))
-      simpa only [pow_two] using mul_le_mul_of_nonneg_left (hmesh i hi) hpos
-    _ = _ := by rw [← sum_mul, sum_range_sub]
+  simpa only [sum_range_sub] using
+    sum_sq_le_sum_mul (s := range n) (f := fun i ↦ t (i + 1) - t i)
+      (fun i hi ↦ sub_nonneg.mpr
+        (ht (by have := mem_range.mp hi; simp only [Set.mem_Iic]; omega)
+          (by have := mem_range.mp hi; simp only [Set.mem_Iic]; omega) (Nat.le_succ i)))
+      (fun i hi ↦ hmesh i (mem_range.mp hi))
 
 /-- If `m < n`, the summands `f m = β m`, `f n = γ n`, and `f k = γ k + β k` for
 `m < k < n` regroup as the adjacent pairs `β k + γ (k + 1)` over `m ≤ k < n`. -/
