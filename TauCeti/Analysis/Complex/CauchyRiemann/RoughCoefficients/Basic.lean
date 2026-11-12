@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.Normed.Operator.Bilinear
 
 /-!
 # The coefficient of the differentiated Cauchy–Riemann system
@@ -21,6 +21,7 @@ pointwise and records its elementary algebra.
 
 * `TauCeti.differentiatedCRCoefficient`: the coefficient `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`,
   as a function of `S` and of the derivative `DJ` of `J` at a point.
+* `TauCeti.differentiatedCRCoefficientL`: `S₂` as a continuous linear map of the pair `(S, DJ)`.
 * `TauCeti.differentiatedCRCoefficient_ne_prodMap`: `S₂ ≠ diag(S, S)` as soon as `∂_s J ≠ 0`.
 
 The differentiated system itself is `TauCeti.crOperator_differentiated_system` for `C²` maps and
@@ -52,6 +53,25 @@ noncomputable def differentiatedCRCoefficient (S : V →L[ℝ] V) (DJ : ℂ →L
 theorem differentiatedCRCoefficient_apply (S : V →L[ℝ] V) (DJ : ℂ →L[ℝ] V →L[ℝ] V) (x : V × V) :
     differentiatedCRCoefficient S DJ x = (S x.1 + DJ 1 x.2, S x.2 + DJ I x.2) := by
   simp [differentiatedCRCoefficient]
+
+/-- The coefficient `S₂` depends continuously and linearly on the pair `(S, DJ)`. -/
+noncomputable def differentiatedCRCoefficientL :
+    (V →L[ℝ] V) × (ℂ →L[ℝ] V →L[ℝ] V) →L[ℝ] (V × V →L[ℝ] V × V) :=
+  let coprodL := (ContinuousLinearMap.coprodEquivL (𝕜 := ℝ) (E := V) (F := V) (G := V)
+    ℝ).toContinuousLinearMap
+  let fst := ContinuousLinearMap.fst ℝ (V →L[ℝ] V) (ℂ →L[ℝ] V →L[ℝ] V)
+  let snd := ContinuousLinearMap.snd ℝ (V →L[ℝ] V) (ℂ →L[ℝ] V →L[ℝ] V)
+  let ev (v : ℂ) := (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) v).comp snd
+  (ContinuousLinearMap.prodL (𝕜 := ℝ) (E := V × V) (F := V) (G := V)
+    ℝ).toContinuousLinearMap.comp
+    ((coprodL.comp (fst.prod (ev 1))).prod (coprodL.comp ((0 : _ →L[ℝ] V →L[ℝ] V).prod
+      (fst + ev I))))
+
+/-- `differentiatedCRCoefficientL` evaluates to `differentiatedCRCoefficient`. -/
+@[simp]
+theorem differentiatedCRCoefficientL_apply (x : (V →L[ℝ] V) × (ℂ →L[ℝ] V →L[ℝ] V)) :
+    differentiatedCRCoefficientL x = differentiatedCRCoefficient x.1 x.2 := by
+  ext <;> simp [differentiatedCRCoefficientL]
 
 /-- **Check: the coupling term cannot be dropped.** If `∂_s J ≠ 0` at a point, then the coefficient
 `S₂` differs from the plausible wrong `diag(S, S)`: its first row contains `∂_s J`. -/

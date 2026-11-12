@@ -37,8 +37,8 @@ mixed-exponent products of higher order and is not addressed here.
 
 ## Main declarations
 
-* `TauCeti.memWkpLoc_one_partials_of_memWkpLoc_two`: `Ξ = (∂_s ξ, ∂_t ξ) ∈ W^{1,q}_loc` for
-  `ξ ∈ W^{2,q}_loc`.
+* `TauCeti.MemWkpLoc.memWkpLoc_partials_of_hasWeakFDerivOn`: `Ξ = (∂_s ξ, ∂_t ξ) ∈ W^{k,q}_loc`
+  for `ξ ∈ W^{k+1,q}_loc`.
 * `TauCeti.ae_differentiated_cauchyRiemann`: the differentiated system, almost everywhere.
 * `TauCeti.MemWkpLoc.differentiatedCRCoefficient`: the regularity of `S₂`.
 * `TauCeti.memLpLoc_differentiatedCR_rightSide`: the right side is locally `L^q`.
@@ -67,11 +67,11 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 variable [FiniteDimensional ℝ V] {Ω : Opens ℂ} {k : ℕ}
 
-/-- **The partial derivatives of a `W^{2,q}_loc` map.** For a weak derivative `Dξ` of
-`ξ ∈ W^{2,q}_loc`, the pair `Ξ = (∂_s ξ, ∂_t ξ) = (Dξ(·) 1, Dξ(·) I)` is in `W^{1,q}_loc`. -/
-theorem memWkpLoc_one_partials_of_memWkpLoc_two {q : ℝ≥0∞} {ξ : ℂ → V} {Dξ : ℂ → ℂ →L[ℝ] V}
-    (hξ : MemWkpLoc q Ω 2 ξ) (hDξ : HasWeakFDerivOn volume Ω ξ Dξ) :
-    MemWkpLoc q Ω 1 (fun z => (Dξ z 1, Dξ z I)) := by
+/-- **The partial derivatives of a `W^{k+1,q}_loc` map.** For a weak derivative `Dξ` of
+`ξ ∈ W^{k+1,q}_loc`, the pair `Ξ = (∂_s ξ, ∂_t ξ) = (Dξ(·) 1, Dξ(·) I)` is in `W^{k,q}_loc`. -/
+theorem MemWkpLoc.memWkpLoc_partials_of_hasWeakFDerivOn {q : ℝ≥0∞} {ξ : ℂ → V}
+    {Dξ : ℂ → ℂ →L[ℝ] V} (hξ : MemWkpLoc q Ω (k + 1) ξ) (hDξ : HasWeakFDerivOn volume Ω ξ Dξ) :
+    MemWkpLoc q Ω k (fun z => (Dξ z 1, Dξ z I)) := by
   have h := hξ.memWkpLoc_of_hasWeakFDerivOn hDξ
   exact (h.clm_comp (ContinuousLinearMap.apply ℝ V 1)).prodMk
     (h.clm_comp (ContinuousLinearMap.apply ℝ V I))
@@ -82,7 +82,7 @@ weak derivative `Dη`. If `∂_s ξ + J ∂_t ξ + S ξ = η` almost everywhere 
 derivative `DΞ` of `Ξ = (∂_s ξ, ∂_t ξ)` satisfies, almost everywhere on `Ω`,
 `∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)`,
 with `J₂ = diag(J, J)` and `S₂ = TauCeti.differentiatedCRCoefficient S DJ`.
-Such a `DΞ` exists by `TauCeti.memWkpLoc_one_partials_of_memWkpLoc_two`. -/
+Such a `DΞ` exists by `TauCeti.MemWkpLoc.memWkpLoc_partials_of_hasWeakFDerivOn`. -/
 theorem ae_differentiated_cauchyRiemann {p q : ℝ≥0} (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
     {J S : ℂ → V →L[ℝ] V} {DJ DS : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ η : ℂ → V}
     {Dξ Dη : ℂ → ℂ →L[ℝ] V} {DΞ : ℂ → ℂ →L[ℝ] V × V}
@@ -152,14 +152,8 @@ theorem MemWkpLoc.differentiatedCRCoefficient {p : ℝ≥0∞} {J S : ℂ → V 
     {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} (hS : MemWkpLoc p Ω k S) (hJ : MemWkpLoc p Ω (k + 1) J)
     (hDJ : HasWeakFDerivOn volume Ω J DJ) :
     MemWkpLoc p Ω k (fun z => TauCeti.differentiatedCRCoefficient (S z) (DJ z)) := by
-  let L : ((V →L[ℝ] V) × (ℂ →L[ℝ] V →L[ℝ] V)) →ₗ[ℝ] (V × V →L[ℝ] V × V) :=
-    { toFun := fun x => TauCeti.differentiatedCRCoefficient x.1 x.2
-      map_add' := fun x y => by
-        ext <;> simp [add_add_add_comm]
-      map_smul' := fun c x => by
-        ext <;> simp [smul_add] }
-  simpa [L] using (hS.prodMk (hJ.memWkpLoc_of_hasWeakFDerivOn hDJ)).clm_comp
-    (LinearMap.toContinuousLinearMap L)
+  simpa using (hS.prodMk (hJ.memWkpLoc_of_hasWeakFDerivOn hDJ)).clm_comp
+    differentiatedCRCoefficientL
 
 /-- **The right side of the differentiated system is locally `L^q`.** For `p > 2`, `1 ≤ q ≤ p`,
 `S ∈ W^{1,p}_loc(Ω)` with weak derivative `DS` and `ξ, η ∈ W^{1,q}_loc(Ω)` with `η` having weak
