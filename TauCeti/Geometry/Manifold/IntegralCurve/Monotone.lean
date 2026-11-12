@@ -26,7 +26,8 @@ vector fields, which are allowed to vanish away from the region being deformed.
 
 If instead `df(v) = 0` along an integral curve defined on a preconnected set of times, then
 `f` is constant along it. This is the conservation statement behind first integrals of a vector
-field.
+field. The same holds for a map `g` into another manifold with `dg(v) = 0` along an integral curve
+on an open preconnected set of times: the curve then stays in one fibre of `g`.
 
 If `df(v) > 0` is only known at the points of `γ` on a level `f⁻¹(c)`, then `γ` crosses that level
 only upwards: once `f (γ a) ≥ c`, it stays in `{f > c}` at every later time, and once
@@ -43,6 +44,8 @@ constant curve.
   at which `df(v) < 0`.
 * `IsMIntegralCurveOn.apply_eq_of_mvfderiv_apply_eq_zero`: `f` is constant along `γ` when
   `df(v) = 0` along it.
+* `IsMIntegralCurveOn.apply_eq_of_mfderiv_apply_eq_zero`: a manifold-valued map `g` is constant
+  along `γ` when `dg(v) = 0` along it.
 * `IsMIntegralCurveOn.lt_apply_of_le_apply`, `IsMIntegralCurveOn.apply_lt_of_apply_le`: `γ` crosses
   a level of `f` only upwards when `df(v) > 0` along that level.
 * `IsMIntegralCurve.apply_eq_of_forall_eq_zero`: an integral curve along which the vector field
@@ -113,6 +116,41 @@ theorem apply_eq_of_mvfderiv_apply_eq_zero {s : Set ℝ} (hγ : IsMIntegralCurve
   have hconv : Convex ℝ s := Real.convex_iff_isPreconnected.2 hs'
   simpa [sub_eq_zero] using hconv.norm_image_sub_le_of_norm_hasDerivWithin_le
     (f' := fun _ ↦ 0) (C := 0) hd (fun _ _ ↦ by simp) ht₀ ht
+
+/-- **Constancy of a manifold-valued map along an integral curve.** If `g : M → N` is
+differentiable along an integral curve `γ` of `v` on an open preconnected set of times `s`, such as
+an open interval, and `dg(v) = 0` along `γ` on `s`, then `g` is constant along `γ` on `s`: the
+curve stays in one fibre of `g`. -/
+theorem apply_eq_of_mfderiv_apply_eq_zero {F H' N : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [IsManifold J 1 N] {g : M → N} {s : Set ℝ}
+    (hγ : IsMIntegralCurveOn γ v s) (hs : IsOpen s) (hs' : IsPreconnected s)
+    (hg : ∀ t ∈ s, MDifferentiableAt I J g (γ t))
+    (hvg : ∀ t ∈ s, mfderiv I J g (γ t) (v (γ t)) = 0) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    g (γ t) = g (γ t₀) := by
+  -- The derivative of `g ∘ γ` at a time `u ∈ s` sends `r` to `r • dg(v) = 0`, so it vanishes.
+  have hd (u : ℝ) (hu : u ∈ s) :
+      MDifferentiableAt 𝓘(ℝ, ℝ) J (g ∘ γ) u ∧ mfderiv 𝓘(ℝ, ℝ) J (g ∘ γ) u = 0 := by
+    have hγu := (hγ u hu).hasMFDerivAt (hs.mem_nhds hu)
+    refine ⟨(hg u hu).comp u hγu.mdifferentiableAt, ?_⟩
+    rw [mfderiv_comp u (hg u hu) hγu.mdifferentiableAt, hγu.mfderiv]
+    refine ContinuousLinearMap.ext fun (r : ℝ) ↦ ?_
+    -- The composite sends `r` to `dg (r • v)`; the tangent space of `ℝ` at `u` is `ℝ` itself, so
+    -- this unfolding is definitional.
+    calc (mfderiv I J g (γ u)).comp ((1 : ℝ →L[ℝ] ℝ).smulRight (v (γ u))) r
+        = mfderiv I J g (γ u) (r • v (γ u)) := rfl
+      _ = 0 := by rw [map_smul, hvg u hu, smul_zero]
+  -- So `g ∘ γ` is locally constant on the open set `s`, hence constant on its preconnected
+  -- subtype.
+  have hloc (u : ℝ) (hu : u ∈ s) : (g ∘ γ) =ᶠ[𝓝 u] fun _ ↦ (g ∘ γ) u :=
+    MDifferentiableOn.eventuallyEq_const_of_mfderiv_eq_zero
+      (fun w hw ↦ (hd w hw).1.mdifferentiableWithinAt) hs (fun w hw ↦ (hd w hw).2) hu
+  have hlc : IsLocallyConstant (s.domRestrict (g ∘ γ)) := by
+    rw [IsLocallyConstant.iff_eventually_eq]
+    rintro ⟨u, hu⟩
+    exact (continuous_subtype_val.tendsto (⟨u, hu⟩ : s)).eventually (hloc u hu)
+  have : PreconnectedSpace s := Subtype.preconnectedSpace hs'
+  exact hlc.apply_eq_of_preconnectedSpace ⟨t, ht⟩ ⟨t₀, ht₀⟩
 
 variable {s : Set ℝ} {c a b : ℝ}
 
