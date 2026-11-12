@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Taylor.Parameter
+import TauCeti.Analysis.Normed.Group.UniformContinuity
 public import TauCeti.Probability.BrownianMotion.QuadraticVariation
 
 /-!
@@ -81,29 +82,20 @@ theorem tendstoInMeasure_sum_sub_taylorWithinEval_two_param
   obtain ⟨L, hL⟩ := (isCompact_Icc.image hc).bddBelow
   obtain ⟨R, hR⟩ := (isCompact_Icc.image hc).bddAbove
   have hgrid (j : ℕ) (i : Fin (N (k j) + 1)) : grid (k j) i ∈ Icc a b := by
-    constructor
-    · rw [← ha (k j)]; exact ht _ (Fin.zero_le i)
-    · rw [← hb (k j)]; exact ht _ (Fin.le_last i)
+    simpa only [ha, hb] using (ht (k j)).mapsTo_Icc ⟨Fin.zero_le i, Fin.le_last i⟩
   have hstate (j : ℕ) (i : Fin (N (k j) + 1)) : B (grid (k j) i) ω ∈ Icc L R :=
     ⟨hL ⟨_, hgrid j i, rfl⟩, hR ⟨_, hgrid j i, rfl⟩⟩
   -- Uniform continuity controls all increments simultaneously, even on nonnested grids.
   let d := fun j ↦ ‖fun i : Fin (N (k j)) ↦
     B (grid (k j) i.succ) ω - B (grid (k j) i.castSucc) ω‖
-  have hd : Tendsto d atTop (𝓝 0) := by
-    apply Metric.tendsto_nhds.2
-    intro ε hε
-    obtain ⟨η, hη, hosc⟩ := Metric.uniformContinuousOn_iff.1
-      (isCompact_Icc.uniformContinuousOn_of_continuous hc.continuousOn) (ε / 2) (half_pos hε)
-    filter_upwards [(tendsto_order.1 (hδ.comp hk)).2 η hη] with j hj
-    rw [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _)]
-    apply lt_of_le_of_lt _ (half_lt_self hε)
-    apply (pi_norm_le_iff_of_nonneg (half_pos hε).le).2
-    intro i
-    apply le_of_lt
-    exact hosc _ (hgrid j i.succ) _ (hgrid j i.castSucc) (by
-      rw [NNReal.dist_eq, abs_of_nonneg (sub_nonneg.mpr (by
-        exact_mod_cast ht (k j) (Fin.castSucc_le_succ i)))]
-      exact (hmesh (k j) i).trans_lt hj)
+  have hd : Tendsto d atTop (𝓝 0) :=
+    (isCompact_Icc.uniformContinuousOn_of_continuous hc.continuousOn).tendsto_norm_sub_of_dist_le
+      (Eventually.of_forall fun j i ↦ hgrid j i.castSucc)
+      (Eventually.of_forall fun j i ↦ hgrid j i.succ)
+      (Eventually.of_forall fun j i ↦ by
+        rw [NNReal.dist_eq, abs_of_nonneg (sub_nonneg.mpr (by
+          exact_mod_cast ht (k j) (Fin.castSucc_le_succ i)))]
+        exact hmesh (k j) i) (hδ.comp hk)
   have hbound : ∀ᶠ j in atTop, ∑ i : Fin (N (k j)),
       (B (grid (k j) i.succ) ω - B (grid (k j) i.castSucc) ω) ^ 2 ≤ (b : ℝ) - a + 1 :=
     ((tendsto_order.1 hQω).2 _ (lt_add_one _)).mono fun j h ↦ by

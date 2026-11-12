@@ -33,31 +33,6 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- The spatial quadratic Taylor remainder is uniformly small on a compact parameter/state
-cylinder when the spatial second derivative is jointly continuous there. -/
-theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le_param
-    {A : Type*} [PseudoMetricSpace A] {s : Set A} (hs : IsCompact s)
-    {f : A → ℝ → ℝ} {a b : ℝ}
-    (hf : ∀ u ∈ s, ∀ z ∈ Icc a b, ContDiffAt ℝ 2 (f u) z)
-    (h₂ : ContinuousOn (fun p : A × ℝ ↦ iteratedDeriv 2 (f p.1) p.2) (s ×ˢ Icc a b))
-    {ε : ℝ} (hε : 0 < ε) :
-    ∃ δ > 0, ∀ u ∈ s, ∀ x ∈ Icc a b, ∀ y ∈ Icc a b, |y - x| < δ →
-      |f u y - taylorWithinEval (f u) 2 univ x y| ≤ ε * (y - x) ^ 2 := by
-  obtain ⟨δ, hδ, hosc⟩ := Metric.uniformContinuousOn_iff.1
-    ((hs.prod isCompact_Icc).uniformContinuousOn_of_continuous h₂) ε hε
-  refine ⟨δ, hδ, fun u hu x hx y hy hxy ↦ ?_⟩
-  have hbound := abs_sub_taylorWithinEval_two_le_of_oscillation (ε := ε)
-    (fun z hz ↦ hf u hu z (uIcc_subset_Icc hx hy hz)) (fun z hz ↦ ?_)
-  · exact hbound.trans (by gcongr; linarith)
-  · have hzx : dist (u, z) (u, x) < δ := by
-      rw [Prod.dist_eq]
-      exact max_lt (by simpa using hδ) (by
-        simpa only [Real.dist_eq] using
-          (abs_sub_left_of_mem_uIcc (uIoo_subset_uIcc_self hz)).trans_lt hxy)
-    apply le_of_lt
-    simpa only [Real.dist_eq] using
-      hosc (u, z) ⟨hu, uIcc_subset_Icc hx hy (uIoo_subset_uIcc_self hz)⟩ (u, x) ⟨hu, hx⟩ hzx
-
 /-- Spatial Taylor remainders with changing parameters tend to zero along finite grids whose
 increments vanish and whose quadratic sums are eventually bounded. Parameters may vary
 arbitrarily in a fixed compact set, without converging or being ordered. -/
