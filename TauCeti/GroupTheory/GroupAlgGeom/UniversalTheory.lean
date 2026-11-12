@@ -7,10 +7,8 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import TauCeti.ModelTheory.Algebra.Group.Basic
-public import TauCeti.ModelTheory.Complexity
 import Mathlib.Data.Int.Cast.Lemmas
 import TauCeti.GroupTheory.FiniteAbelian.TorsionFree
-import TauCeti.ModelTheory.Algebra.Group.ExistentialUniversal
 
 /-!
 # Discrimination preserves universal sentences
