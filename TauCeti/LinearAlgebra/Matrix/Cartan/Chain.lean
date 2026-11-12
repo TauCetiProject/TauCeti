@@ -48,6 +48,22 @@ Representation Theory*, §11.4, and Bourbaki, *Lie Groups and Lie Algebras, Chap
 
 public section
 
+namespace CartanMatrix
+
+/-- The unique double entry in the type-B Cartan matrix is the oriented last edge. -/
+lemma B_apply_eq_neg_two_iff {n : ℕ} (i j : Fin n) :
+    B n i j = -2 ↔ i.val + 2 = n ∧ j.val + 1 = n := by
+  simp only [B, Matrix.of_apply]
+  split_ifs <;> simp_all <;> omega
+
+/-- Negative entries in the type-B Cartan matrix are exactly consecutive pairs of indices. -/
+lemma B_apply_neg_iff {n : ℕ} (i j : Fin n) :
+    B n i j < 0 ↔ i.val + 1 = j.val ∨ j.val + 1 = i.val := by
+  simp only [B, Matrix.of_apply, Fin.ext_iff]
+  split_ifs <;> omega
+
+end CartanMatrix
+
 namespace TauCeti
 
 /-- The Cartan-matrix entry of a **chain of type `B`** between the positions `s` and `t`, the last
