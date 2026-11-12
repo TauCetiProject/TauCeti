@@ -300,28 +300,20 @@ def rhombusMatrix (R : Type*) [Ring R] (n : ℕ) : Matrix (Rhombus n) (Vertex n)
   fun r => Pi.single r.1.2.1 1 + Pi.single r.1.2.2.2 1 -
     (Pi.single r.1.1 1 + Pi.single r.1.2.2.1 1)
 
-private theorem sum_single_one_mul {n : ℕ} {R : Type*} [Ring R] (p : Vertex n)
-    (f : Vertex n → R) : (∑ q : Vertex n, (Pi.single p (1 : R) : Vertex n → R) q * f q) = f p := by
-  rw [Finset.sum_eq_single p]
-  · simp
-  · intro q _ hqp; simp [Pi.single_eq_of_ne hqp]
-  · exact fun hp => absurd (Finset.mem_univ p) hp
-
 @[simp] theorem eqMatrix_mulVec_inl {n : ℕ} {R : Type*} [Ring R] (f : Vertex n → R) :
-    (eqMatrix R n *ᵥ f) (Sum.inl ()) = f (Vertex.cornerA n) := by
-  simpa [Matrix.mulVec_apply_eq_sum, eqMatrix] using sum_single_one_mul (Vertex.cornerA n) f
+    (eqMatrix R n *ᵥ f) (Sum.inl ()) = f (Vertex.cornerA n) :=
+  single_one_dotProduct (Vertex.cornerA n) f
 
 @[simp] theorem eqMatrix_mulVec_inr {n : ℕ} {R : Type*} [Ring R] (f : Vertex n → R)
     (s : Fin 3) (i : Fin n) :
     (eqMatrix R n *ᵥ f) (Sum.inr (s, i)) = boundaryLinear ℤ n R f s i := by
-  simp only [Matrix.mulVec_apply_eq_sum, eqMatrix, Pi.sub_apply, sub_mul, Finset.sum_sub_distrib,
-    sum_single_one_mul, boundaryLinear_apply]
+  simp only [Matrix.mulVec, eqMatrix, sub_dotProduct, single_one_dotProduct, boundaryLinear_apply]
 
 @[simp] theorem rhombusMatrix_mulVec_apply {n : ℕ} {R : Type*} [Ring R] (f : Vertex n → R)
     (r : Rhombus n) :
     (rhombusMatrix R n *ᵥ f) r = -rhombusSlack f r.1.1 r.1.2.1 r.1.2.2.1 r.1.2.2.2 := by
-  simp only [Matrix.mulVec_apply_eq_sum, rhombusMatrix, Pi.sub_apply, Pi.add_apply, sub_mul,
-    add_mul, Finset.sum_sub_distrib, Finset.sum_add_distrib, sum_single_one_mul, rhombusSlack_def]
+  simp only [Matrix.mulVec, rhombusMatrix, sub_dotProduct, add_dotProduct, single_one_dotProduct,
+    rhombusSlack_def]
   abel
 
 /-- Over any ring `R`, `eqMatrix R n` is the base change of `eqMatrix ℤ n`. -/
@@ -796,8 +788,9 @@ theorem hiveCount_two_std_std_det :
     (productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![1, 1], by decide⟩)
   omega
 
-/-- Rank-`2` lower-coordinate exclusion check: `λ = μ = (1, 0)` and `γ = (3, -1)` satisfy
-`(λ + μ).Dominates γ`, yet `γ₂ = -1 < 0 = λ₂ + μ₂`, so `last_le_of_productBoundary` excludes it. -/
+/-- Rank-`2` exclusion check: `λ = μ = (1, 0)` and `γ = (3, -1)` have equal total degree
+`|λ| + |μ| = 2 = |γ|` but violate both `(λ + μ).Dominates γ` (`γ₁ = 3 > 2 = λ₁ + μ₁`) and the
+last-coordinate bound `λ₂ + μ₂ ≤ γ₂` (`0 ≤ -1`), so `last_le_of_productBoundary` excludes `γ`. -/
 theorem hiveCount_two_std_std_three_neg_one :
     hiveCount
       (productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![3, -1], by decide⟩) = 0 := by
