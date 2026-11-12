@@ -488,7 +488,6 @@ private lemma exists_norm_integrandFDeriv_le (hc : c.IsUniform) (R : ℝ) :
       _ = 2 * π * C * B * (‖y‖ * ‖u y‖) * ‖h‖ := by ring
   calc _ ≤ 2 * π * D * ‖u y‖ * ‖h‖ + 2 * π * C * B * (‖y‖ * ‖u y‖) * ‖h‖ := add_le_add h₁ h₂
     _ ≤ (2 * π * D + 2 * π * C * B) * (‖u y‖ + ‖y‖ ^ 1 * ‖u y‖) * ‖h‖ := by
-        have hB0 : 0 ≤ B := by positivity
         have hexp : (2 * π * D + 2 * π * C * B) * (‖u y‖ + ‖y‖ ^ 1 * ‖u y‖) * ‖h‖ =
             2 * π * D * ‖u y‖ * ‖h‖ + 2 * π * C * B * (‖y‖ * ‖u y‖) * ‖h‖ +
               (2 * π * D * (‖y‖ * ‖u y‖) * ‖h‖ + 2 * π * C * B * ‖u y‖ * ‖h‖) := by ring
