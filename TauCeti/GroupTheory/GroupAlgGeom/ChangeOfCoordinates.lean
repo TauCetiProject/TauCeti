@@ -36,8 +36,8 @@ centralizer of `ι g`, onto themselves.
   `V_H(S)` onto `V_H(σ⁻¹(S))`.
 * `TauCeti.GroupAlgGeom.mem_V_image_mulEquiv_iff`: membership in the solutions of the image of a
   system under a `G`-isomorphism.
-* `TauCeti.GroupAlgGeom.image_coordinateChangeEquiv_V_singleton_commutatorElement`: the change of
-  coordinates `x ↦ x g` carries the solutions of `[x, g] = 1` onto themselves.
+* `TauCeti.GroupAlgGeom.image_transvection_V_singleton_commutatorElement`: the transvection
+  `x ↦ x g` carries the solutions of `[x, g] = 1` onto themselves.
 
 ## References
 
@@ -228,7 +228,7 @@ open scoped commutatorElement
 
 /-- The change of coordinates `x ↦ x g` of `G[x]`, the transvection `GX.transvection () 1 (inl g)`,
 carries the solutions of `[x, g] = 1`, the centralizer of `ι g`, onto themselves. -/
-theorem image_coordinateChangeEquiv_V_singleton_commutatorElement (g : G) :
+theorem image_transvection_V_singleton_commutatorElement (g : G) :
     coordinateChangeEquiv ι
         (GHom.ofMulEquiv (GX.transvection () 1 (inl g) (one_mem _) (GX.inl_mem_avoiding () g))
           (GX.transvection_inl _ _))
