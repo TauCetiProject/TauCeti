@@ -60,12 +60,6 @@ open CategoryTheory AlgebraicGeometry Opposite
 
 universe u
 
-private instance locallyOfFiniteType_respectsIso :
-    MorphismProperty.RespectsIso (@LocallyOfFiniteType) := by
-  rw [HasRingHomProperty.eq_affineLocally @LocallyOfFiniteType]
-  exact affineLocally_respectsIso (@RingHom.FiniteType)
-    RingHom.finiteType_respectsIso
-
 /-- The object property on affine group schemes over `Spec S` selecting those whose structural
 morphism is locally of finite type. Since both the group scheme and the base are affine, these
 are precisely the affine group schemes of finite type over `S`. -/

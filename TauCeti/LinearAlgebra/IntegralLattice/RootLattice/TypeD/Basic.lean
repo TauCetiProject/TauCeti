@@ -325,37 +325,24 @@ theorem checkerboardLattice_form_single_sub_single (x : Fin n → ℚ) (i j : Fi
     (checkerboardLattice n).form x (Pi.single i (1 : ℚ) - Pi.single j (1 : ℚ)) = x i - x j := by
   rw [map_sub, checkerboardLattice_form_single, checkerboardLattice_form_single, mul_one, mul_one]
 
-section
-variable [NeZero n]
-
-/-- The final coordinate index `n - 1` of `Fin n`.  The Conway–Sloane vector class of the
-checkerboard discriminant group is the standard vector at this index. -/
-def checkerboardLastIndex : Fin n := ⟨n - 1, Nat.sub_lt (NeZero.pos n) Nat.one_pos⟩
-
-/-- The underlying natural number of the final coordinate index is `n - 1`. -/
-@[simp]
-theorem checkerboardLastIndex_val : ((checkerboardLastIndex n : Fin n) : ℕ) = n - 1 := (rfl)
-
 variable {n} in
 /-- **The dual of the checkerboard lattice**: a rational vector pairs integrally with every
 lattice vector exactly when all of its coordinate differences are integers and its doubled last
 coordinate is an integer.  Equivalently the dual lattice is `ℤⁿ ∪ (s + ℤⁿ)` for the
 half-sum `s`. -/
 @[simp]
-theorem mem_checkerboardLattice_dualCarrier_iff (y : Fin n → ℚ) :
+theorem mem_checkerboardLattice_dualCarrier_iff [NeZero n] (y : Fin n → ℚ) :
     y ∈ (checkerboardLattice n).dualCarrier ↔
-      (∀ i, ∃ z : ℤ, y i - y (checkerboardLastIndex n) = (z : ℚ)) ∧
-        ∃ z : ℤ, 2 * y (checkerboardLastIndex n) = (z : ℚ) := by
+      (∀ i, ∃ z : ℤ, y i - y ⊤ = (z : ℚ)) ∧ ∃ z : ℤ, 2 * y ⊤ = (z : ℚ) := by
   rw [IntegralLattice.dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
   simp only [checkerboardLattice_carrier, Submodule.mem_one]
   constructor
   · intro hy
     refine ⟨fun i ↦ ?_, ?_⟩
-    · obtain ⟨w, hw⟩ :=
-        hy _ (single_sub_single_mem_checkerboardCarrier n i (checkerboardLastIndex n))
+    · obtain ⟨w, hw⟩ := hy _ (single_sub_single_mem_checkerboardCarrier n i ⊤)
       rw [checkerboardLattice_form_single_sub_single] at hw
       exact ⟨w, by simpa using hw.symm⟩
-    · obtain ⟨w, hw⟩ := hy _ (single_two_mem_checkerboardCarrier n (checkerboardLastIndex n))
+    · obtain ⟨w, hw⟩ := hy _ (single_two_mem_checkerboardCarrier n ⊤)
       rw [checkerboardLattice_form_single, mul_comm] at hw
       exact ⟨w, by simpa using hw.symm⟩
   · rintro ⟨hdiff, t, ht⟩ x hx
@@ -364,15 +351,13 @@ theorem mem_checkerboardLattice_dualCarrier_iff (y : Fin n → ℚ) :
     choose z hz using hint
     refine ⟨(∑ i, d i * z i) + t * m, ?_⟩
     rw [checkerboardLattice_form_apply]
-    have hsplit : ∑ i, y i * x i =
-        (∑ i, (y i - y (checkerboardLastIndex n)) * x i) +
-          y (checkerboardLastIndex n) * ∑ i, x i := by
+    have hsplit : ∑ i, y i * x i = (∑ i, (y i - y ⊤) * x i) + y ⊤ * ∑ i, x i := by
       rw [Finset.mul_sum, ← Finset.sum_add_distrib]
       exact Finset.sum_congr rfl fun i _ ↦ by ring
-    have hfirst : ∑ i, (y i - y (checkerboardLastIndex n)) * x i = ((∑ i, d i * z i : ℤ) : ℚ) := by
+    have hfirst : ∑ i, (y i - y ⊤) * x i = ((∑ i, d i * z i : ℤ) : ℚ) := by
       push_cast
       exact Finset.sum_congr rfl fun i _ ↦ by rw [hd i, hz i]
-    have hsecond : y (checkerboardLastIndex n) * ∑ i, x i = (t : ℚ) * m := by
+    have hsecond : y ⊤ * ∑ i, x i = (t : ℚ) * m := by
       rw [hm, ← ht]
       ring
     rw [hsplit, hfirst, hsecond]
@@ -380,17 +365,17 @@ theorem mem_checkerboardLattice_dualCarrier_iff (y : Fin n → ℚ) :
     push_cast
     ring
 
-end
-
 /-! ## The three nontrivial discriminant classes -/
 
-/-- The Conway–Sloane vector representative `v = eₙ` of the checkerboard discriminant group. -/
-def checkerboardVector [NeZero n] : Fin n → ℚ := Pi.single (checkerboardLastIndex n) 1
+/-- The Conway–Sloane vector representative `v = eₙ` of the checkerboard discriminant group: the
+standard vector at the last coordinate index `⊤ : Fin n`, whose value is `n - 1`. -/
+def checkerboardVector [NeZero n] : Fin n → ℚ := Pi.single ⊤ 1
 
 /-- The Conway–Sloane spinor representative `s = (e₁ + ⋯ + eₙ) / 2`. -/
 def checkerboardSpinor : Fin n → ℚ := fun _ ↦ 1 / 2
 
-/-- The Conway–Sloane cospinor representative `c = s - eₙ`. -/
+/-- The Conway–Sloane cospinor representative `c = s - eₙ`, where `eₙ` is the standard vector at
+the last coordinate index `⊤ : Fin n`. -/
 def checkerboardCospinor [NeZero n] : Fin n → ℚ := checkerboardSpinor n - checkerboardVector n
 
 variable {n}
@@ -398,7 +383,7 @@ variable {n}
 /-- The coordinates of the vector representative. -/
 @[simp]
 theorem checkerboardVector_apply [NeZero n] (i : Fin n) :
-    checkerboardVector n i = if i = checkerboardLastIndex n then 1 else 0 := by
+    checkerboardVector n i = if i = ⊤ then 1 else 0 := by
   rw [checkerboardVector, Pi.single_apply]
 
 /-- The coordinates of the spinor representative. -/
@@ -409,16 +394,16 @@ theorem checkerboardSpinor_apply (i : Fin n) : checkerboardSpinor n i = 1 / 2 :=
 /-- The coordinates of the cospinor representative. -/
 @[simp]
 theorem checkerboardCospinor_apply [NeZero n] (i : Fin n) :
-    checkerboardCospinor n i = 1 / 2 - if i = checkerboardLastIndex n then 1 else 0 := by
+    checkerboardCospinor n i = 1 / 2 - if i = ⊤ then 1 else 0 := by
   rw [checkerboardCospinor, Pi.sub_apply, checkerboardSpinor_apply, checkerboardVector_apply]
 
 /-- The vector representative lies in the dual lattice. -/
 theorem checkerboardVector_mem_dualCarrier [NeZero n] :
     checkerboardVector n ∈ (checkerboardLattice n).dualCarrier := by
   rw [mem_checkerboardLattice_dualCarrier_iff]
-  refine ⟨fun i ↦ ⟨if i = checkerboardLastIndex n then 0 else -1, ?_⟩, 2, by simp⟩
+  refine ⟨fun i ↦ ⟨if i = ⊤ then 0 else -1, ?_⟩, 2, by simp⟩
   simp only [checkerboardVector_apply]
-  rcases eq_or_ne i (checkerboardLastIndex n) with h | h <;> simp [h]
+  rcases eq_or_ne i ⊤ with h | h <;> simp [h]
 
 /-- The spinor representative lies in the dual lattice. -/
 theorem checkerboardSpinor_mem_dualCarrier :
@@ -440,15 +425,12 @@ theorem checkerboardCospinor_mem_dualCarrier [NeZero n] :
 /-! ## Pairings among the representatives -/
 
 /-- The last coordinate of the vector representative is `1`. -/
-theorem checkerboardVector_checkerboardLastIndex [NeZero n] :
-    checkerboardVector n (checkerboardLastIndex n) = 1 := by
+theorem checkerboardVector_top [NeZero n] : checkerboardVector n ⊤ = 1 := by
   simp [checkerboardVector]
 
 /-- The last coordinate of the cospinor representative is `-1 / 2`. -/
-theorem checkerboardCospinor_checkerboardLastIndex [NeZero n] :
-    checkerboardCospinor n (checkerboardLastIndex n) = -(1 / 2) := by
-  rw [checkerboardCospinor, Pi.sub_apply, checkerboardSpinor_apply,
-    checkerboardVector_checkerboardLastIndex]
+theorem checkerboardCospinor_top [NeZero n] : checkerboardCospinor n ⊤ = -(1 / 2) := by
+  rw [checkerboardCospinor, Pi.sub_apply, checkerboardSpinor_apply, checkerboardVector_top]
   ring
 
 /-- The coordinate sum of the vector representative is `1`. -/
@@ -470,7 +452,7 @@ theorem sum_checkerboardCospinor [NeZero n] :
 /-- Pairing an arbitrary vector against the vector representative reads off its last
 coordinate. -/
 theorem checkerboardLattice_form_checkerboardVector [NeZero n] (x : Fin n → ℚ) :
-    (checkerboardLattice n).form x (checkerboardVector n) = x (checkerboardLastIndex n) := by
+    (checkerboardLattice n).form x (checkerboardVector n) = x ⊤ := by
   rw [checkerboardVector, checkerboardLattice_form_single, mul_one]
 
 /-- Pairing an arbitrary vector against the spinor representative halves its coordinate sum. -/
@@ -481,15 +463,14 @@ theorem checkerboardLattice_form_checkerboardSpinor (x : Fin n → ℚ) :
 
 /-- Pairing an arbitrary vector against the cospinor representative. -/
 theorem checkerboardLattice_form_checkerboardCospinor [NeZero n] (x : Fin n → ℚ) :
-    (checkerboardLattice n).form x (checkerboardCospinor n) =
-      (∑ i, x i) / 2 - x (checkerboardLastIndex n) := by
+    (checkerboardLattice n).form x (checkerboardCospinor n) = (∑ i, x i) / 2 - x ⊤ := by
   rw [checkerboardCospinor, map_sub, checkerboardLattice_form_checkerboardSpinor,
     checkerboardLattice_form_checkerboardVector]
 
 /-- **The vector representative has norm one.** -/
 theorem checkerboardLattice_form_checkerboardVector_self [NeZero n] :
     (checkerboardLattice n).form (checkerboardVector n) (checkerboardVector n) = 1 := by
-  rw [checkerboardLattice_form_checkerboardVector, checkerboardVector_checkerboardLastIndex]
+  rw [checkerboardLattice_form_checkerboardVector, checkerboardVector_top]
 
 /-- **The spinor representative has norm `n / 4`.** -/
 theorem checkerboardLattice_form_checkerboardSpinor_self :
@@ -502,7 +483,7 @@ theorem checkerboardLattice_form_checkerboardCospinor_self [NeZero n] :
     (checkerboardLattice n).form (checkerboardCospinor n) (checkerboardCospinor n) =
       (n : ℚ) / 4 := by
   rw [checkerboardLattice_form_checkerboardCospinor, sum_checkerboardCospinor,
-    checkerboardCospinor_checkerboardLastIndex]
+    checkerboardCospinor_top]
   ring
 
 /-- The vector and spinor representatives pair to `1 / 2`. -/
@@ -618,9 +599,9 @@ theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_c
   | _ y =>
     obtain ⟨hdiff, t, ht⟩ := (mem_checkerboardLattice_dualCarrier_iff (y : Fin n → ℚ)).mp y.2
     choose d hd using hdiff
-    have hone : ∑ i : Fin n, (if i = checkerboardLastIndex n then (1 : ℤ) else 0) = 1 := by simp
+    have hone : ∑ i : Fin n, (if i = ⊤ then (1 : ℤ) else 0) = 1 := by simp
     rcases Int.even_or_odd t with ⟨a, ha⟩ | ⟨a, ha⟩
-    · have hlast : (y : Fin n → ℚ) (checkerboardLastIndex n) = (a : ℚ) := by
+    · have hlast : (y : Fin n → ℚ) ⊤ = (a : ℚ) := by
         rw [ha] at ht
         push_cast at ht
         linarith
@@ -633,14 +614,14 @@ theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_c
         exact mem_checkerboardCarrier_of (fun i ↦ d i + a) hyi hS
       · refine Or.inr (Or.inl ?_)
         refine checkerboard_mk_eq_mk_of y.2 checkerboardVector_mem_dualCarrier
-          (fun i ↦ d i + a - if i = checkerboardLastIndex n then 1 else 0) (fun i ↦ ?_) ?_
+          (fun i ↦ d i + a - if i = ⊤ then 1 else 0) (fun i ↦ ?_) ?_
         · rw [hyi i, checkerboardVector_apply]
           push_cast
           split_ifs <;> ring
         · rw [Finset.sum_sub_distrib, hone]
           obtain ⟨k, hk⟩ := hS
           exact ⟨k, by omega⟩
-    · have hlast : (y : Fin n → ℚ) (checkerboardLastIndex n) = (a : ℚ) + 1 / 2 := by
+    · have hlast : (y : Fin n → ℚ) ⊤ = (a : ℚ) + 1 / 2 := by
         rw [ha] at ht
         push_cast at ht
         linarith
@@ -655,7 +636,7 @@ theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_c
         ring
       · refine Or.inr (Or.inr (Or.inr ?_))
         refine checkerboard_mk_eq_mk_of y.2 checkerboardCospinor_mem_dualCarrier
-          (fun i ↦ d i + a + if i = checkerboardLastIndex n then 1 else 0) (fun i ↦ ?_) ?_
+          (fun i ↦ d i + a + if i = ⊤ then 1 else 0) (fun i ↦ ?_) ?_
         · rw [hyi i, checkerboardCospinor_apply]
           push_cast
           split_ifs <;> ring
@@ -695,23 +676,20 @@ theorem checkerboardVector_notMem_checkerboardCarrier :
 /-- The spinor representative is not a lattice vector: its coordinates are half-integral. -/
 theorem checkerboardSpinor_notMem_checkerboardCarrier :
     checkerboardSpinor n ∉ checkerboardCarrier n :=
-  notMem_checkerboardCarrier_of_two_mul_odd (checkerboardLastIndex n) 0
+  notMem_checkerboardCarrier_of_two_mul_odd ⊤ 0
     (by rw [checkerboardSpinor_apply]; norm_num)
 
 /-- The cospinor representative is not a lattice vector. -/
 theorem checkerboardCospinor_notMem_checkerboardCarrier :
     checkerboardCospinor n ∉ checkerboardCarrier n :=
-  notMem_checkerboardCarrier_of_two_mul_odd (checkerboardLastIndex n) (-1)
-    (by rw [checkerboardCospinor_checkerboardLastIndex]; norm_num)
+  notMem_checkerboardCarrier_of_two_mul_odd ⊤ (-1)
+    (by rw [checkerboardCospinor_top]; norm_num)
 
 /-- The cospinor and vector representatives differ by a half-integral vector. -/
 theorem checkerboardCospinor_sub_checkerboardVector_notMem_checkerboardCarrier :
     checkerboardCospinor n - checkerboardVector n ∉ checkerboardCarrier n :=
-  notMem_checkerboardCarrier_of_two_mul_odd (checkerboardLastIndex n) (-2)
-    (by
-      rw [Pi.sub_apply, checkerboardCospinor_checkerboardLastIndex,
-        checkerboardVector_checkerboardLastIndex]
-      norm_num)
+  notMem_checkerboardCarrier_of_two_mul_odd ⊤ (-2)
+    (by rw [Pi.sub_apply, checkerboardCospinor_top, checkerboardVector_top]; norm_num)
 
 /-- The spinor and cospinor representatives differ by a vector of odd coordinate sum. -/
 theorem checkerboardSpinor_sub_checkerboardCospinor_notMem_checkerboardCarrier :
@@ -842,7 +820,7 @@ theorem two_zsmul_checkerboardVectorClass [NeZero n] :
     (2 : ℤ) • checkerboardVectorClass n = 0 := by
   rw [checkerboardVectorClass, ← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff,
     checkerboardLattice_carrier]
-  convert single_two_mem_checkerboardCarrier n (checkerboardLastIndex n) using 1
+  convert single_two_mem_checkerboardCarrier n ⊤ using 1
   ext i
   simp [checkerboardVector, Pi.single_apply]
 
@@ -885,8 +863,7 @@ theorem two_zsmul_checkerboardSpinorClass_of_odd (hn : Odd n) :
   obtain ⟨k, hk⟩ := hn
   rw [← sub_eq_zero, checkerboardSpinorClass, checkerboardVectorClass, ← Submodule.Quotient.mk_smul,
     ← Submodule.Quotient.mk_sub, discriminantGroup_mk_eq_zero_iff, checkerboardLattice_carrier]
-  refine mem_checkerboardCarrier_of (fun i ↦ 1 - if i = checkerboardLastIndex n then 1 else 0)
-    (fun i ↦ ?_) ⟨k, ?_⟩
+  refine mem_checkerboardCarrier_of (fun i ↦ 1 - if i = ⊤ then 1 else 0) (fun i ↦ ?_) ⟨k, ?_⟩
   · simp only [Submodule.coe_sub, Submodule.coe_smul, Pi.sub_apply, Pi.smul_apply,
       checkerboardSpinor_apply, checkerboardVector_apply]
     simp only [zsmul_eq_mul]
