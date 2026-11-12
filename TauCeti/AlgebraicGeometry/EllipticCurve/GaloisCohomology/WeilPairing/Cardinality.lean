@@ -7,14 +7,14 @@ module
 
 public import Mathlib.NumberTheory.LocalField.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Isogeny
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Cardinality
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Cardinality
 
 /-!
 # The order of second local isogeny cohomology
 
 For an isogeny `φ` of degree invertible in a nonarchimedean local field `K`, local Tate
-duality identifies the order of `H²(K, E₁[φ])` with the order of `H⁰(K, E₂[φ̂])`.
+duality identifies the order of `H²(K, E₁[φ])` with the order of the rational dual kernel
+`E₂(K)[φ̂]`.
 
 This is a cohomology order needed when comparing the local Kummer images of
 an isogeny and its dual with their annihilators. No rationality assumption is imposed on
@@ -38,7 +38,8 @@ variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
   (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : K))
 
 include hn in
-/-- Local duality computes second cohomology from the rational invariants of the dual kernel. -/
+/-- For an isogeny `φ` of degree invertible in a nonarchimedean local field `K`,
+`#H²(K, E₁[φ]) = #E₂(K)[φ̂]`. -/
 theorem natCard_H2_kerCoeff [DecidableEq K] :
     Nat.card (H2 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) =
       Nat.card (ofIsogeny φ.dual).pointMapHom.ker := by

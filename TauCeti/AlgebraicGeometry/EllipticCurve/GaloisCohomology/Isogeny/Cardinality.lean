@@ -27,7 +27,7 @@ namespace TauCeti.Isogeny
 
 open WeierstrassCurve ContCohomology Hom
 
-variable {K : Type} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
+variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
 
 /-- The geometric kernel coefficient module of a separable isogeny has order equal to its degree. -/

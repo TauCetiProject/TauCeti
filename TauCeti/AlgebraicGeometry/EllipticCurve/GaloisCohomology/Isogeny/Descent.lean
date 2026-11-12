@@ -94,7 +94,8 @@ abbrev mapSeparableClosure (f : Hom W₁.toAffine W₂.toAffine) :
   f.map (algebraMap K (SeparableClosure K))
 
 open scoped Classical in
-/-- The point map of an isogeny over `Kˢ` agrees with its base-changed point homomorphism. -/
+/-- The point map of a separable isogeny over `Kˢ` agrees with its base-changed point
+homomorphism. -/
 theorem pointMap_mapSeparableClosure_ofIsogeny_eq_toPointHom
     (φ : Isogeny W₁.toAffine W₂.toAffine)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
@@ -180,7 +181,8 @@ theorem coe_smul_kerCoeff (σ : AbsoluteGaloisGroup K) (P : f.KerCoeff) :
 instance KerCoeff.instContinuousSMul : ContinuousSMul (AbsoluteGaloisGroup K) f.KerCoeff :=
   AddSubgroup.restrictDistribMulAction_continuousSMul _ fun σ _ ↦ smul_mem_kerCoeff σ
 
-/-- Rational kernel points are exactly the Galois invariants of the geometric kernel. -/
+/-- Rational kernel points are exactly the Galois invariants of the separable-closure kernel
+`E₁(Kˢ)[f]`. -/
 def kerPointMapEquivInvariants [DecidableEq K] (f : Hom W₁.toAffine W₂.toAffine) :
     f.pointMapHom.ker ≃+ H0 (AbsoluteGaloisGroup K) f.KerCoeff := by
   classical
