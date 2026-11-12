@@ -426,7 +426,7 @@ variable {B : Type w} {F : Type*} {E : B → Type w} [TopologicalSpace (TotalSpa
 
 /-- The first two maps of the Mayer–Vietoris sequence of the Thom pairs over `U` and `V` in
 homology compose to zero: both composites are the restriction from `U ∩ V` to `U ∪ V`. -/
-theorem singularHomology_thomPairOver_mayerVietoris_zero (n : ℕ) :
+theorem singularHomology_thomPairOver_mayerVietoris_comp_eq_zero (n : ℕ) :
     biprod.lift (TopPair.singularHomologyMap (thomPairOverMap F E inter_subset_left) R n)
         (-TopPair.singularHomologyMap (thomPairOverMap F E inter_subset_right) R n) ≫
       biprod.desc
@@ -465,8 +465,8 @@ components the restriction from `U ∩ V` to `U` and minus the restriction to `V
 is the sum of the restrictions to `U ∪ V`. -/
 theorem singularHomology_thomPairOver_mayerVietoris_exact (hU : IsOpen U) (hV : IsOpen V)
     (n : ℕ) :
-    (ShortComplex.mk _ _ (singularHomology_thomPairOver_mayerVietoris_zero (F := F) (E := E)
-      (U := U) (V := V) R n)).Exact := by
+    (ShortComplex.mk _ _ (singularHomology_thomPairOver_mayerVietoris_comp_eq_zero (F := F)
+      (E := E) (U := U) (V := V) R n)).Exact := by
   obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
   refine (ShortComplex.exact_iff_of_iso ?_).2 (TopCat.pairMayerVietoris_exact₂ R
     (X := TopCat.of (TotalSpace F E)) inter_subset_left inter_subset_left hA hB hC hD n)

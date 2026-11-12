@@ -372,8 +372,8 @@ private theorem isIso_thomPairOverSingularHomologyFinrankInv_union {U V : Set B}
     IsIso (thomPairOverSingularHomologyFinrankInv K F E (U ∪ V)) := by
   let ψ := thomPairOverSingularHomologyFinrankInv K F E
   let H₀ := (singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)
-  let S := ShortComplex.mk _ _ (singularHomology_thomPairOver_mayerVietoris_zero (F := F) (E := E)
-    (U := U) (V := V) (ModuleCat.of K K) (finrank ℝ F))
+  let S := ShortComplex.mk _ _ (singularHomology_thomPairOver_mayerVietoris_comp_eq_zero
+    (F := F) (E := E) (U := U) (V := V) (ModuleCat.of K K) (finrank ℝ F))
   have hS : S.Exact :=
     singularHomology_thomPairOver_mayerVietoris_exact (ModuleCat.of K K) hU hV _
   have : Epi S.g := epi_singularHomology_thomPairOver_union (ModuleCat.of K K) hU hV hUV
