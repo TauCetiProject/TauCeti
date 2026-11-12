@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
-import TauCeti.RepresentationTheory.OfMulAction.LeftRegular
+import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
 # Tensor coinvariants with a retract of the regular representation
@@ -42,6 +42,8 @@ tensor product of a tensor power with a Specht module with a Schur functor.
 
 * `Representation.coinvariantsKer_tprod_eq_span`: the coinvariant kernel of a tensor product
   is spanned by the balancing relations.
+* `Representation.IntertwiningMap.coinvariantsKer_le_ker_tprodContraction`: the contraction
+  vanishes on the coinvariant kernel.
 * `Representation.IntertwiningMap.ker_tprodContraction` and
   `Representation.IntertwiningMap.range_tprodContraction`: for a retract of the regular
   representation, the kernel of the contraction is the coinvariant kernel and its image is the
@@ -105,11 +107,30 @@ noncomputable def tprodContraction (τ : Representation k G V) : V ⊗[k] W →�
   ofCoinvariantsTprodLeftRegular τ ∘ₗ
     Coinvariants.map (τ.tprod ρ) (τ.tprod (leftRegular k G)) (i.lTensor τ) ∘ₗ Coinvariants.mk _
 
+/-- The contraction as the composite of the coinvariant projection, the map induced by `i` and
+the identification `(V ⊗ k[G])_G ≅ V`. -/
+theorem tprodContraction_def (τ : Representation k G V) :
+    i.tprodContraction τ = ofCoinvariantsTprodLeftRegular τ ∘ₗ
+      Coinvariants.map (τ.tprod ρ) (τ.tprod (leftRegular k G)) (i.lTensor τ) ∘ₗ
+        Coinvariants.mk _ :=
+  (rfl)
+
+/-- The contraction vanishes on the coinvariant kernel: it factors through `(V ⊗ W)_G`. -/
+theorem coinvariantsKer_le_ker_tprodContraction (τ : Representation k G V) :
+    Coinvariants.ker (τ.tprod ρ) ≤ LinearMap.ker (i.tprodContraction τ) := by
+  rw [tprodContraction_def, ← LinearMap.comp_assoc]
+  exact (Submodule.ker_mkQ _).ge.trans (LinearMap.ker_le_ker_comp _ _)
+
+/-- The contraction is `G`-invariant: it is unchanged by the action of `τ ⊗ ρ`. -/
+theorem tprodContraction_tprod_apply (τ : Representation k G V) (g : G) (x : V ⊗[k] W) :
+    i.tprodContraction τ (τ.tprod ρ g x) = i.tprodContraction τ x := by
+  simp only [tprodContraction_def, LinearMap.comp_apply, Coinvariants.mk_self_apply]
+
 /-- The contraction sends `v ⊗ w` to the action of the antipode of `i w` on `v`. -/
 @[simp]
 theorem tprodContraction_tmul (v : V) (w : W) :
     i.tprodContraction τ (v ⊗ₜ w) = τ.asAlgebraHom (HopfAlgebra.antipode k (i w)) v := by
-  simp [tprodContraction, ofCoinvariantsTprodLeftRegular_mk_tmul]
+  simp [tprodContraction_def, ofCoinvariantsTprodLeftRegular_mk_tmul]
 
 variable {i} {p : (leftRegular k G).IntertwiningMap ρ}
 
@@ -127,7 +148,7 @@ theorem ker_tprodContraction (h : p.comp i = .id ρ) :
   have hinj : Function.Injective
       (Coinvariants.map (τ.tprod ρ) (τ.tprod (leftRegular k G)) (i.lTensor τ)) :=
     Function.LeftInverse.injective fun x => congrArg (fun f => f x) key
-  rw [tprodContraction, ← LinearMap.comp_assoc, LinearMap.ker_comp_of_ker_eq_bot]
+  rw [tprodContraction_def, ← LinearMap.comp_assoc, LinearMap.ker_comp_of_ker_eq_bot]
   · exact Submodule.ker_mkQ _
   · rw [LinearMap.ker_eq_bot]
     exact (coinvariantsTprodLeftRegularLEquiv τ).injective.comp hinj

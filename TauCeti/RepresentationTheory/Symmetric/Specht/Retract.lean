@@ -9,8 +9,8 @@ public import TauCeti.RepresentationTheory.Symmetric.Specht.Complex
 -- Non-public: the retract is built from the ideal presentation of the Specht module and from
 -- base-change and transport identities; the statement only mentions the complex Specht module,
 -- the regular representation and the Young symmetrizer.
-import TauCeti.RepresentationTheory.BaseChange.LeftRegular
-import TauCeti.RepresentationTheory.OfMulAction.LeftRegular
+import TauCeti.RepresentationTheory.BaseChange
+import TauCeti.RepresentationTheory.OfMulAction
 import TauCeti.RepresentationTheory.Symmetric.Specht.Comparison
 import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Idempotent
 
