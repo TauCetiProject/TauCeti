@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.QuasiIso
 public import TauCeti.Algebra.Homology.Homotopy
-public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Homotopy
+public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Chains
 
 /-!
 # Chains subordinate to a cover are a deformation retract of all singular chains
@@ -101,7 +101,7 @@ lemma smallSingularChains.comp_singularPrismX {n : ℕ}
     f ≫ singularPrismX R X n ∈ smallSingularChains R U (n + 1) := by
   obtain ⟨g, rfl⟩ := (mem_smallSingularChains_iff _).1 hf
   exact (mem_smallSingularChains_iff _).2
-    ⟨g ≫ smallSingularPrismX R U n, by simp⟩
+    ⟨g ≫ subcomplexPrismX R (X.smallSingularSubcomplex U) n, by simp⟩
 
 /-- Barycentric subdivision preserves chains subordinate to `U`. -/
 lemma smallSingularChains.comp_singularSubdivisionX {n : ℕ}
@@ -110,7 +110,7 @@ lemma smallSingularChains.comp_singularSubdivisionX {n : ℕ}
     f ≫ singularSubdivisionX R X n ∈ smallSingularChains R U n := by
   obtain ⟨g, rfl⟩ := (mem_smallSingularChains_iff _).1 hf
   exact (mem_smallSingularChains_iff _).2
-    ⟨g ≫ smallSingularSubdivisionX R U n, by simp⟩
+    ⟨g ≫ subcomplexSubdivisionX R (X.smallSingularSubcomplex U) n, by simp⟩
 
 /-- Once a chain has become subordinate to `U` after `m` subdivisions, it stays subordinate
 after any larger number of subdivisions. -/

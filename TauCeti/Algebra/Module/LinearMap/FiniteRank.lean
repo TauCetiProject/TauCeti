@@ -162,37 +162,27 @@ surjective (the Fredholm alternative for finite-rank perturbations of the identi
 theorem HasFiniteRange.injective_one_add_iff_surjective {F : V →ₗ[K] V} (hF : F.HasFiniteRange) :
     Function.Injective (1 + F : V →ₗ[K] V) ↔ Function.Surjective (1 + F : V →ₗ[K] V) := by
   have : Module.Finite K (range F) := Module.Finite.iff_fg.mpr hF
-  have hmaps : ∀ r ∈ range F, (1 + F) r ∈ range F := fun r hr ↦
-    (range F).add_mem hr (mem_range_self F r)
-  have hgv (a : range F) : ((1 + F).restrict hmaps a : V) = a + F a := by
-    rw [coe_restrict_apply, LinearMap.add_apply, one_apply_eq_self]
+  have hmaps : ∀ x ∈ range F, (1 + F) x ∈ range F := fun x hx ↦
+    add_mem hx (mem_range_self F x)
+  -- Since `(1 + F) x - x = F x ∈ range F`, the preimage of `range F` under `1 + F` is `range F`.
+  have hmem : ∀ x, (1 + F) x ∈ range F → x ∈ range F := fun x hx ↦ by
+    simpa using sub_mem hx (mem_range_self F x)
+  -- On the finite-dimensional invariant subspace `range F`, injectivity and surjectivity of
+  -- `1 + F` agree.
+  have key := injOn_iff_surjOn hmaps
   constructor
-  · intro hinj y
-    obtain ⟨⟨r, hr⟩, hgr⟩ := (LinearMap.injective_iff_surjective (f := (1 + F).restrict hmaps)).mp
-      (fun a b hab ↦ Subtype.ext (hinj (by simpa [hgv] using congrArg Subtype.val hab)))
-      ⟨F y, mem_range_self F y⟩
-    have hr' : (1 + F) r = F y := by simpa [hgv] using congrArg Subtype.val hgr
-    exact ⟨y - r, by rw [map_sub, hr']; simp⟩
-  · intro hsurj
-    have hker : ∀ x, (1 + F) x = 0 → x ∈ range F := fun x hx ↦ by
-      have : x = -F x := eq_neg_of_add_eq_zero_left (by simpa using hx)
-      rw [this]
-      exact (range F).neg_mem (mem_range_self F x)
-    have hg : Function.Surjective ((1 + F).restrict hmaps) := by
-      rintro ⟨r, hr⟩
-      obtain ⟨x, hx⟩ := hsurj r
-      have hxR : x ∈ range F := by
-        have : x = r - F x := by rw [← hx]; simp
-        rw [this]
-        exact (range F).sub_mem hr (mem_range_self F x)
-      exact ⟨⟨x, hxR⟩, Subtype.ext (by simpa [hgv] using hx)⟩
-    have hginj := (LinearMap.injective_iff_surjective (f := (1 + F).restrict hmaps)).mpr hg
-    rw [← ker_eq_bot, Submodule.eq_bot_iff]
-    intro x hx
-    have hxR := hker x hx
-    have : (1 + F).restrict hmaps ⟨x, hxR⟩ = (1 + F).restrict hmaps 0 :=
-      Subtype.ext (by simpa [hgv] using hx)
-    simpa using congrArg Subtype.val (hginj this)
+  · -- Solve `(1 + F) r = F y` inside `range F`; then `(1 + F) (y - r) = y`.
+    intro hinj y
+    obtain ⟨r, -, hr⟩ := key.mp hinj.injOn (mem_range_self F y)
+    exact ⟨y - r, by rw [map_sub, hr]; simp⟩
+  · -- By `hmem`, every preimage of a point of `range F` already lies in `range F`.
+    intro hsurj
+    have hsurjOn : Set.SurjOn (1 + F : V →ₗ[K] V) (range F) (range F) := fun r hr ↦ by
+      obtain ⟨x, rfl⟩ := hsurj r
+      exact ⟨x, hmem _ hr, rfl⟩
+    -- A kernel vector lies in `range F` by `hmem`, where `1 + F` is injective.
+    refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
+    exact key.mpr hsurjOn (hmem x (hx ▸ zero_mem _)) (zero_mem _) (by simpa using hx)
 
 /-- For a linear equivalence `e` and a linear map `w` with finitely generated range, `e + w` is
 injective if and only if it is surjective. -/
@@ -202,8 +192,7 @@ theorem HasFiniteRange.injective_equiv_add_iff_surjective {W : Type*} [AddCommGr
     Function.Injective ((e : V →ₗ[K] W) + w) ↔ Function.Surjective ((e : V →ₗ[K] W) + w) := by
   have h : (e : V →ₗ[K] W) + w = (e : V →ₗ[K] W) ∘ₗ (1 + (e.symm : W →ₗ[K] V) ∘ₗ w) := by
     ext; simp
-  rw [h, coe_comp]
-  refine (e.toEquiv.comp_injective _).trans (Iff.trans ?_ (e.toEquiv.comp_surjective _).symm)
+  rw [h, coe_comp, LinearEquiv.coe_coe, EquivLike.comp_injective, EquivLike.comp_surjective]
   exact (hw.comp_left _).injective_one_add_iff_surjective
 
 end DivisionRing

@@ -191,11 +191,15 @@ theorem perronSolution_eq_of_isBarrier (hΩ : IsOpen Ω) (hb : Bornology.IsBound
   tendsto_nhds_unique (tendsto_pure_nhds _ ξ)
     ((tendsto_perronSolution_of_isBarrier hΩ hb hg hw hgξ).mono_left (pure_le_nhdsWithin hξ))
 
+omit [Nontrivial E] in
 /-- If every boundary point of the bounded open set `Ω` admits a barrier, the Perron solution of
 boundary data `g` continuous on `frontier Ω` is continuous on `closure Ω`. -/
 theorem continuousOn_perronSolution (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
     (hreg : ∀ ξ ∈ frontier Ω, ∃ w, IsBarrier Ω ξ w) (hg : ContinuousOn g (frontier Ω)) :
     ContinuousOn (perronSolution Ω g) (closure Ω) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In the trivial space every function is continuous.
+    exact Set.subsingleton_of_subsingleton.continuousOn _
   have hgb : Bornology.IsBounded (g '' frontier Ω) :=
     ((hb.isCompact_closure.of_isClosed_subset isClosed_frontier
       frontier_subset_closure).image_of_continuousOn hg).isBounded
