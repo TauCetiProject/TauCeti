@@ -82,7 +82,7 @@ theorem real_inner_I_smul_loopOperator_comm
     (a b : CircleSobolev 1 F) :
     inner ℝ (I • loopOperator T S a) (inclusion zero_le_one b) =
       inner ℝ (inclusion zero_le_one a) (I • loopOperator T S b) := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   have hmul (c : CircleSobolev 1 F) : I • mulLoop T (by norm_num) S c =
       ofContinuousMap T (I • ContinuousMap.applyContinuousLinearMap S
         (toContinuousMap T (by norm_num) c)) := by
@@ -113,7 +113,7 @@ theorem exists_hilbertBasis_I_smul_loopOperator_eq_smul
     ∃ (ι : Type u) (b : HilbertBasis ι ℝ (CircleSobolev 0 F)) (a : ι → CircleSobolev 1 F)
       (lam : ι → ℝ) (c : ℝ), 0 < c ∧ ∀ i, inclusion zero_le_one (a i) = b i ∧
         c ≤ |lam i| ∧ I • loopOperator T S (a i) = lam i • b i := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   obtain ⟨e, he⟩ := hL
   -- `R x = L_S⁻¹ (-J₀ x)` inverts `A`, and `K = R` followed by the inclusion is compact.
   set R : CircleSobolev 0 F →L[ℝ] CircleSobolev 1 F :=
@@ -164,7 +164,7 @@ theorem I_smul_loopOperator_eq_smul_iff (a : CircleSobolev 1 F) (lam : ℝ) :
       HasDerivAt (fun y : ℝ ↦ toContinuousMap T (by norm_num) a y)
         (S x (toContinuousMap T (by norm_num) a x) -
           lam • I • toContinuousMap T (by norm_num) a x) x := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   -- `A a = λ a` is `L_{S'} a = 0` for the shifted loop `S' = S - λ J₀`.
   set S' : C(AddCircle T, F →L[ℝ] F) :=
     S - lam • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ F) with hS'

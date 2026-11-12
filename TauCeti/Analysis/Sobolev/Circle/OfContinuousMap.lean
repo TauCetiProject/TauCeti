@@ -261,7 +261,7 @@ measure. -/
 theorem inner_ofContinuousMap (f g : C(AddCircle T, F)) :
     inner ℂ (ofContinuousMap T f) (ofContinuousMap T g) =
       ∫ x, inner ℂ (f x) (g x) ∂AddCircle.haarAddCircle := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   set e := stdOrthonormalBasis ℂ F
   -- The coordinates of a loop in the orthonormal basis `e`, and their Fourier coefficients.
   let φ (h : C(AddCircle T, F)) (j) : C(AddCircle T, ℂ) :=
