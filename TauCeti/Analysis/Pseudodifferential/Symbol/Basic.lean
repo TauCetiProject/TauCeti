@@ -650,21 +650,6 @@ theorem exists_bound_fderiv_coefficient (a : Symbol n V W m) (K : Set (Coordinat
   gcongr
   exact Finset.single_le_sum (fun i _ ↦ hC0 i) (Finset.mem_univ j)
 
-/-- Every Fréchet derivative of a symbol of order `m`, in the position and the frequency jointly,
-is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in the position. -/
-theorem exists_norm_iteratedFDeriv_coefficient_le (a : Symbol n V W m)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (k : ℕ) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-      ‖iteratedFDeriv ℝ k a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  choose A hA0 hA using fun r : Fin k → Fin n ⊕ Fin n => a.exists_bound K hK
-    ((List.ofFn r).filterMap Sum.getLeft?) ((List.ofFn r).filterMap Sum.getRight?)
-  refine ⟨∑ r, A r, Finset.sum_nonneg fun r _ => hA0 r, fun x hx ξ => ?_⟩
-  refine (norm_iteratedFDeriv_le_sum_mixedDeriv (a.contDiff_coefficient.of_le (by simp))
-    x ξ).trans ?_
-  rw [Finset.sum_mul]
-  exact Finset.sum_le_sum fun r _ => (hA r x hx ξ).trans <| mul_le_mul_of_nonneg_left
-    (rpow_weight_le_rpow_weight ξ (sub_le_self m (Nat.cast_nonneg _))) (hA0 r)
-
 /-- The symbol estimates of `a` bound the Fréchet derivatives in `ξ` of each position derivative
 `∂_x^α a(x, ξ)`: the `i`-th one is at most `G ⟨ξ⟩^(m - i)` for `x` in a compact set. -/
 theorem exists_norm_iteratedFDeriv_coordinateDeriv_le (a : Symbol n V W m)
