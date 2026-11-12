@@ -37,9 +37,11 @@ of the cup product write the Leray–Hirsch map of `c` as that of `b` after the 
 `a ↦ (∑ a_{p,i} ⌣ γ_{p,i;p',i'})`, whose coefficients lie in `H^{p - p'}(X; k)`. This coefficient
 map is block triangular for the fibre degree. Its diagonal blocks are the matrices of degree-zero
 classes `γ_{p,i;p,i'} ∈ H⁰(X; k)` whose values at a point `x` form the change of basis matrix from
-`b` to the restrictions of `c` to the fibre over `x`. Since these are invertible at every point,
-the diagonal blocks are invertible (`TopCat.exists_singularCup_matrix_eq_one`, applied on each path
-component), and the coefficient map is an invertible block diagonal map times a unipotent one.
+`b` to the restrictions of `c` to the fibre over `x`
+(`TopCat.singularCohomologyMap_prodFibreInclusion_lerayHirschProd`). Since these are invertible
+at every point, the diagonal blocks are invertible (`TopCat.exists_singularCup_matrix_eq_one`,
+applied on each path component), and the coefficient map is an invertible block diagonal map times
+a unipotent one.
 
 ## References
 
@@ -373,11 +375,12 @@ private lemma lerayHirschProdOfClasses_eq (n : ℕ)
 /-- **The restriction of the Leray–Hirsch map of a basis to a fibre**: restricting the image of `g`
 to the fibre over `x` gives the combination of the basis with coefficients the values at `x` of
 the base-degree-zero components of `g`. -/
-private lemma singularCohomologyMap_prodFibreInclusion_lerayHirschProd (x : X) (p : ℕ)
+theorem singularCohomologyMap_prodFibreInclusion_lerayHirschProd (x : X) (p : ℕ)
     [Fintype (ι p)]
     (b : ∀ p, Module.Basis (ι p) k
       (F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p))
-    (g : LHSource k X ι p) :
+    (g : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.1.1,
+      X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
     TopCat.singularCohomologyMap (prodFibreInclusion X F x) p (lerayHirschProd X F p b g) =
       ∑ i', singularCohomologyZeroEval x (g ⟨⟨(p, 0), add_zero p⟩, i'⟩) • b p i' := by
   -- In positive degrees the constant map induces zero.
