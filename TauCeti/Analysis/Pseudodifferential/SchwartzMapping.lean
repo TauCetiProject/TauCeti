@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 
 /-!
@@ -524,11 +525,6 @@ private lemma hasFDerivAt_profile (hc : c.IsUniform) (u : 𝓢(CoordinateSpace n
   rw [Metric.mem_ball, dist_eq_norm] at hζ
   linarith
 
-/-- The coordinate function `y ↦ y_j`, as a complex-valued function of temperate growth. -/
-private lemma hasTemperateGrowth_coord (j : Fin n) :
-    (fun y : CoordinateSpace n ↦ ((y j : ℝ) : ℂ)).HasTemperateGrowth :=
-  (Complex.ofRealCLM.comp (EuclideanSpace.proj j)).hasTemperateGrowth
-
 /-- **Leibniz rule in the frequency.** The partial derivative `∂_{ζ_j}` of the profile falls either
 on the phase, multiplying the input by `-2πi y_j`, or on the frequency variable of the symbol. -/
 private lemma coordinateDeriv_profile (hc : c.IsUniform) (u : 𝓢(CoordinateSpace n, V))
@@ -549,7 +545,9 @@ private lemma coordinateDeriv_profile (hc : c.IsUniform) (u : 𝓢(CoordinateSpa
       (2 * π : ℂ) • (𝐞 (-⟪y, ζ⟫) • (Symbol.frequencyDeriv j c).coefficient (y, (2 * π) • ζ) (u y)) +
         (-2 * π * Complex.I) • (𝐞 (-⟪y, ζ⟫) • c.coefficient (y, (2 * π) • ζ)
           (SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ ((y j : ℝ) : ℂ)) u y)) := by
-    rw [integrandFDeriv_apply, SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_coord j),
+    rw [integrandFDeriv_apply, SchwartzMap.smulLeftCLM_apply_apply
+        (g := fun y : CoordinateSpace n ↦ ((y j : ℝ) : ℂ))
+        (Complex.ofRealCLM.comp (EuclideanSpace.proj j)).hasTemperateGrowth,
       ← fderiv_coefficient_slice_single, map_smul, EuclideanSpace.inner_single_right]
     simp only [one_mul, conj_trivial, smul_apply, map_smul, Circle.smul_def,
       smul_smul]
@@ -587,16 +585,6 @@ private lemma contDiff_profile (hc : c.IsUniform) (u : 𝓢(CoordinateSpace n, V
       exact (fderiv ℝ (profile c u) ζ).apply_eq_sum_single h
     rw [hsum]
     exact ContDiff.sum fun j _ ↦ (hj j).const_smul (h j)
-
-/-- The derivative of the phase `y ↦ exp(-2πi ⟪y, ζ⟫)` in the direction `y_j`. -/
-private lemma hasLineDerivAt_fourierChar_neg_inner (ζ : CoordinateSpace n) (j : Fin n)
-    (y : CoordinateSpace n) :
-    HasLineDerivAt ℝ (fun y ↦ (𝐞 (-⟪y, ζ⟫) : ℂ))
-      ((-2 * π * Complex.I * (ζ j : ℂ)) * 𝐞 (-⟪y, ζ⟫)) y (EuclideanSpace.single j 1) := by
-  convert (hasFDerivAt_fourierChar_neg_bilinear_left (innerSL ℝ) y ζ).hasLineDerivAt
-    (EuclideanSpace.single j (1 : ℝ)) using 1 <;>
-    simp [innerSL_apply_apply ℝ, EuclideanSpace.inner_single_right]
-  ring
 
 /-- The derivative of `y ↦ c(y, ξ) u(y)` in the direction `y_j` falls either on the symbol or on
 the input. -/
@@ -637,7 +625,8 @@ private lemma smul_profile (hc : c.IsUniform) (u : 𝓢(CoordinateSpace n, V)) (
       simp [Circle.smul_def, mul_smul]))
     ((hint₁.add hint₂).congr (.of_forall fun y ↦ by simp [Circle.smul_def, smul_add]))
     (hint.congr (.of_forall fun y ↦ by simp [Circle.smul_def]))
-    (fun y _ ↦ hasLineDerivAt_fourierChar_neg_inner ζ j y)
+    (fun y _ ↦ by simpa [EuclideanSpace.inner_single_left] using
+      Real.hasLineDerivAt_fourierChar_neg_inner ζ (EuclideanSpace.single j 1) y)
     (fun y _ ↦ hasLineDerivAt_coefficient_apply c u ((2 * π) • ζ) j y)
   have h₁ : ∫ y, ContinuousLinearMap.lsmul ℝ ℂ (𝐞 (-⟪y, ζ⟫) : ℂ)
       ((Symbol.spatialDeriv j c).coefficient (y, (2 * π) • ζ) (u y) +
