@@ -325,7 +325,7 @@ theorem exists_projection_exponential_bounds_of_aeval_eq_zero (A : E →L[ℝ] E
       hvanish]) hps
   -- The backward bound on the kernel of `P` is the forward bound for `-A`, the projection
   -- `1 - P` and the polynomial `pᵤ(-X)`.
-  obtain ⟨K₂, α₂, hK₂, hα₂, h₂⟩ := exists_norm_exp_smul_apply_le_of_aeval_mul_eq_zero
+  obtain ⟨K₂, α₂, _, hα₂, h₂⟩ := exists_norm_exp_smul_apply_le_of_aeval_mul_eq_zero
     (A := -A) hP.one_sub ((Commute.one_right _).sub_right hAP).neg_left (p := pu.comp (-X))
     (by rw [aeval_comp, map_neg, aeval_X, neg_neg, hP1, ← map_mul,
       show pu * (a * ps) = a * p by rw [← hmul]; ring, hvanish])

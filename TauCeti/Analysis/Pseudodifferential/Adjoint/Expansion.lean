@@ -277,7 +277,7 @@ private theorem hasDerivAt_scaledAdjoint
     HasDerivAt (fun t ↦ scaledAdjoint a t x ξ)
       ((-Complex.I) • ∑ j, scaledAdjoint (spatialDeriv j (frequencyDeriv j a)) t₀ x ξ) t₀ := by
   have hb (j : Fin n) := (ha.frequencyDeriv j).spatialDeriv j
-  choose C hC0 hC using fun j ↦ exists_norm_shiftIntegrand_le (hb j)
+  choose C _ hC using fun j ↦ exists_norm_shiftIntegrand_le (hb j)
   have hball : ∀ t ∈ Metric.ball t₀ 1, |t * (2 * π)| ≤ 4 * π := fun t ht ↦ by
     rw [Metric.mem_ball, Real.dist_eq] at ht
     have := abs_sub_abs_le_abs_sub t t₀
