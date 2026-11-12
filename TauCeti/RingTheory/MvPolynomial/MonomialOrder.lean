@@ -42,7 +42,7 @@ the images of the generators of the Lazard ring in a polynomial ring.
 
 * `MonomialOrder.degree_eq_of_forall_lt`, `MonomialOrder.degree_eq_of_forall_mem_lt`: strict
   comparisons preserving the leading exponent, including comparisons on a set containing the
-  support and original leading exponent.
+  support.
 * `MonomialOrder.leadingCoeff_eq_of_degree_eq`, `MonomialOrder.leadingTerm_eq_of_degree_eq`,
   `MonomialOrder.sPolynomial_eq_of_degree_eq`: orders agreeing on leading exponents also agree
   on the corresponding leading coefficients, leading terms and S-polynomials.
@@ -92,7 +92,7 @@ the images of the generators of the Lazard ring in a polynomial ring.
 * `MonomialOrder.coeff_aeval_of_forall_le`, `MonomialOrder.degree_aeval_le_of_forall_le`: if all
   exponents `w` of `P` have `A w ≼ e`, then the coefficient of `X^e` in `aeval c P` is the sum of
   the coefficients of `P` at the `w` with `A w = e`, and `aeval c P` has leading exponent at
-  most `e`.
+  most `e` (the latter for any family `c`, monic or not).
 * `MonomialOrder.algebraicIndependent_of_degree_eq_single`: polynomials `yᵢ` whose leading
   monomial is `Xᵢ` are algebraically independent.
 -/
@@ -679,18 +679,20 @@ theorem coeff_aeval_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial �
     rw [degree_aeval_monomial_one hc]
     exact lt_of_le_of_ne (hP w hw) fun h' ↦ h (m.toSyn.injective h')
 
-/-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
-`P` satisfies `A w ≼ e`, then `aeval c P` has leading exponent at most `e`. -/
-theorem degree_aeval_le_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial ι R}
-    {e : σ →₀ ℕ}
+/-- Write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of `P` satisfies `A w ≼ e`,
+then `aeval c P` has leading exponent at most `e`. The family `c` need not be monic. -/
+theorem degree_aeval_le_of_forall_le {P : MvPolynomial ι R} {e : σ →₀ ℕ}
     (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] e) :
     m.degree (aeval c P) ≼[m] e := by
   classical
-  refine m.degree_le_iff.2 fun d hd ↦ le_of_not_gt fun hlt ↦ ?_
-  rw [mem_support_iff, coeff_aeval_of_forall_le hc fun w hw ↦ (hP w hw).trans hlt.le] at hd
-  refine hd (Finset.sum_eq_zero fun w hw ↦ ?_)
-  rw [Finset.mem_filter] at hw
-  exact absurd (hP w hw.1) (by rw [hw.2]; exact not_le_of_gt hlt)
+  conv_lhs => rw [P.as_sum, map_sum]
+  refine m.degree_sum_le.trans (Finset.sup_le fun w hw ↦ ?_)
+  rw [aeval_monomial, algebraMap_eq]
+  refine (m.degree_mul_le.trans ?_).trans (hP w hw)
+  rw [degree_C, zero_add, Finsupp.prod, Finsupp.linearCombination_apply, Finsupp.sum, map_sum]
+  refine m.degree_prod_le.trans ?_
+  rw [map_sum]
+  exact Finset.sum_le_sum fun i _ ↦ m.degree_pow_le _
 
 end Substitution
 

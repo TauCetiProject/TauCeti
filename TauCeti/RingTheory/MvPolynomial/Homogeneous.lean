@@ -44,9 +44,8 @@ homogeneous of degree `n`. Conversely, `MvPolynomial.homogeneousComponent_one_eq
 degree-one component of a polynomial in finitely many variables as the linear form
 `∑ i, c i • X i` whose coefficients `c i` are the coefficients of the variables `X i`.
 The top component of a nonzero polynomial is nonzero
-(`MvPolynomial.homogeneousComponent_totalDegree_ne_zero`). With no variables there are no
-homogeneous polynomials of positive degree
-(`MvPolynomial.homogeneousSubmodule_succ_eq_bot_of_isEmpty`).
+(`MvPolynomial.homogeneousComponent_totalDegree_ne_zero`). With no variables every homogeneous
+polynomial of positive degree is zero (`MvPolynomial.homogeneousSubmodule_succ_eq_bot_of_isEmpty`).
 Finally, `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul` averages over the `n`-th
 roots of unity: if scaling the point by every `n`-th root of unity `ζ ^ j` scales the value by
 `(ζ ^ j) ^ a`, only the homogeneous components of degree congruent to `a` modulo `n` contribute.
@@ -277,16 +276,13 @@ theorem homogeneousComponent_one_eq_sum [Fintype σ] (φ : MvPolynomial σ R) :
     rintro rfl
     simp at hd
 
-/-- With no variables, the only homogeneous polynomials are the constants of degree `0`. -/
+/-- With no variables, every homogeneous polynomial of positive degree is zero. -/
 @[simp]
 theorem homogeneousSubmodule_succ_eq_bot_of_isEmpty [IsEmpty σ] (n : ℕ) :
     homogeneousSubmodule σ R (n + 1) = ⊥ := by
   refine eq_bot_iff.2 fun p hp ↦ ?_
-  rw [mem_homogeneousSubmodule] at hp
-  rw [Submodule.mem_bot]
-  ext d
-  by_contra h
-  simpa [Subsingleton.elim d 0] using hp h
+  rw [Submodule.mem_bot, eq_C_of_isEmpty p,
+    ((mem_homogeneousSubmodule _ _).1 hp).coeff_eq_zero (by simp), map_zero]
 
 end CommSemiring
 

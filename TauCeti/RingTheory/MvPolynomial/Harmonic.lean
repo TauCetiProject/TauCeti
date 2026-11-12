@@ -27,8 +27,10 @@ identity give
 `Δ (r² q) = r² Δ q + (2n + 4e) q`,
 
 and hence, for `h ∈ H_l`, `Δ (r^(2(k+1)) h) = 2(k+1)(2l + n + 2k) r^(2k) h`.
-Over a field of characteristic zero and with at least one variable, the operator
-`q ↦ Δ (r² q)` is bijective on `P_e`, which yields the **Fischer decomposition**
+With at least one variable and coefficients in which multiplication by a positive integer is
+injective, the operator `q ↦ Δ (r² q)` is injective, so a harmonic polynomial divisible by `r²`
+is zero. Over a field of characteristic zero it is therefore bijective on `P_e`, which yields the
+**Fischer decomposition**
 
 `P_(e+2) = H_(e+2) ⊕ r² P_e`,
 
@@ -53,7 +55,8 @@ notation class `Laplacian`, so that this file stays purely algebraic.
 * `MvPolynomial.laplacian_normSq_pow_mul`: `Δ (r^(2(k+1)) h) = 2(k+1)(2l + n + 2k) r^(2k) h`
   for `h ∈ H_l`.
 * `MvPolynomial.eq_zero_of_laplacian_normSq_mul_eq_zero` and
-  `MvPolynomial.exists_laplacian_normSq_mul_eq`: `q ↦ Δ (r² q)` is bijective on `P_e`.
+  `MvPolynomial.exists_laplacian_normSq_mul_eq`: `q ↦ Δ (r² q)` is injective, and bijective on
+  `P_e` over a field of characteristic zero.
 * `MvPolynomial.harmonicSubmodule_sup_map_mulLeft_normSq` and
   `MvPolynomial.disjoint_ker_laplacian_range_mulLeft_normSq`: the Fischer decomposition
   `P_(e+2) = H_(e+2) ⊕ r² P_e`.
@@ -144,6 +147,11 @@ theorem eval_normSq (x : σ → R) : eval x (normSq σ R) = ∑ i, x i ^ 2 := by
 theorem isHomogeneous_normSq : (normSq σ R).IsHomogeneous 2 :=
   IsHomogeneous.sum _ _ _ fun i _ ↦ (isHomogeneous_X R i).pow 2
 
+/-- With no variables, `r² = 0`. -/
+@[simp]
+private theorem normSq_eq_zero_of_isEmpty [IsEmpty σ] : normSq σ R = 0 := by
+  simp [normSq_def]
+
 /-- `normSq` is a nonzero polynomial as soon as there is a variable. -/
 theorem normSq_ne_zero [Nontrivial R] [Nonempty σ] : normSq σ R ≠ 0 := by
   classical
@@ -222,6 +230,12 @@ theorem harmonicSubmodule_le_homogeneousSubmodule (d : ℕ) :
     harmonicSubmodule σ R d ≤ homogeneousSubmodule σ R d :=
   inf_le_left
 
+/-- With no variables, every harmonic polynomial of positive degree is zero. -/
+@[simp]
+private theorem harmonicSubmodule_succ_eq_bot_of_isEmpty [IsEmpty σ] (n : ℕ) :
+    harmonicSubmodule σ R (n + 1) = ⊥ := by
+  simp [harmonicSubmodule]
+
 /-- In degree at most one every homogeneous polynomial is harmonic. -/
 theorem harmonicSubmodule_eq_of_le_one {d : ℕ} (hd : d ≤ 1) :
     harmonicSubmodule σ R d = homogeneousSubmodule σ R d :=
@@ -235,61 +249,46 @@ theorem finrank_harmonicSubmodule_of_le_one [StrongRankCondition R] {d : ℕ} (h
 
 end Harmonic
 
-section Fischer
+section Injective
 
-variable {K : Type*} [Field K] [Fintype σ]
-
-instance (d : ℕ) : FiniteDimensional K (harmonicSubmodule σ K d) :=
-  Submodule.finiteDimensional_of_le (harmonicSubmodule_le_homogeneousSubmodule d)
-
-/-- With no variables, there are no harmonic polynomials of positive degree. -/
-private theorem harmonicSubmodule_succ_eq_bot_of_isEmpty [IsEmpty σ] (n : ℕ) :
-    harmonicSubmodule σ K (n + 1) = ⊥ :=
-  le_bot_iff.1 ((harmonicSubmodule_le_homogeneousSubmodule _).trans
-    (homogeneousSubmodule_succ_eq_bot_of_isEmpty (R := K) n).le)
-
-variable [CharZero K] [Nonempty σ]
+variable [Fintype σ] [HasUniqueDiv R]
 
 /-- If `Δ (r² q) + m q = 0` for `q` homogeneous and `m` a natural number, then `q = 0`: the
 operator `q ↦ Δ (r² q)` has no eigenvalue `-m`. -/
-private theorem eq_zero_of_laplacian_normSq_mul_add_nsmul_eq_zero {e : ℕ} :
-    ∀ {q : MvPolynomial σ K} {m : ℕ}, q.IsHomogeneous e →
-      laplacian (normSq σ K * q) + m • q = 0 → q = 0 := by
+private theorem eq_zero_of_laplacian_normSq_mul_add_nsmul_eq_zero [Nonempty σ] {e : ℕ} :
+    ∀ {q : MvPolynomial σ R} {m : ℕ}, q.IsHomogeneous e →
+      laplacian (normSq σ R * q) + m • q = 0 → q = 0 := by
   induction e using Nat.strong_induction_on with
   | _ e ih =>
   intro q m hq h
   rw [laplacian_normSq_mul hq, add_assoc, ← add_smul] at h
   set N := 2 * Fintype.card σ + 4 * e + m
-  have hN : (N : K) ≠ 0 := by
+  have hN : N ≠ 0 := by
     have : 0 < Fintype.card σ := Fintype.card_pos
-    exact_mod_cast (show 0 < N by omega).ne'
-  -- Solving for `q` exhibits it as `r² q'` with `q' = -N⁻¹ Δ q`.
-  have hq' : q = normSq σ K * (-(N : K)⁻¹ • laplacian q) := by
-    have h1 : (N : K) • q = -(normSq σ K * laplacian q) := by
-      rw [Nat.cast_smul_eq_nsmul]
-      exact eq_neg_of_add_eq_zero_right h
-    rw [mul_smul_comm, neg_smul, ← smul_neg, ← h1, inv_smul_smul₀ hN]
+    omega
+  -- Once `Δ q = 0`, the equation reads `N q = 0`.
+  suffices hΔ : laplacian q = 0 by
+    rw [hΔ, mul_zero, zero_add] at h
+    ext d
+    exact nsmul_right_injective hN <| by
+      simpa [-nsmul_eq_mul] using congrArg (fun p ↦ p.coeff d) h
   rcases lt_or_ge e 2 with he | he
-  · rw [hq', hq.laplacian_eq_zero_of_le_one (by omega), smul_zero, mul_zero]
-  obtain ⟨e', rfl⟩ : ∃ e', e = e' + 2 := ⟨e - 2, by omega⟩
-  obtain ⟨q', hq'e, rfl⟩ : ∃ q', q'.IsHomogeneous e' ∧ q = normSq σ K * q' := by
-    refine ⟨_, ?_, hq'⟩
-    rw [← mem_homogeneousSubmodule]
-    exact Submodule.smul_mem _ _ (by simpa using hq.laplacian)
-  -- Then `r² (Δ (r² q') + N q') = 0`, an equation of the same shape in degree `e'`.
-  rw [← mul_smul_comm, ← mul_add, mul_eq_zero, or_iff_right (normSq_ne_zero σ K)] at h
-  rw [ih e' (by omega) hq'e h, mul_zero]
+  · exact hq.laplacian_eq_zero_of_le_one (by omega)
+  -- Applying `Δ` gives `Δ (r² Δ q) + N Δ q = 0`, an equation of the same shape in degree `e - 2`.
+  exact @ih (e - 2) (by omega) _ N hq.laplacian <| by
+    simpa only [map_add, map_nsmul, map_zero] using congrArg laplacian h
 
-/-- **Injectivity of `q ↦ Δ (r² q)`**: over a field of characteristic zero and with at least one
-variable, if `Δ (r² q) = 0`, then `q = 0`. -/
-theorem eq_zero_of_laplacian_normSq_mul_eq_zero {q : MvPolynomial σ K}
-    (h : laplacian (normSq σ K * q) = 0) : q = 0 := by
+/-- **Injectivity of `q ↦ Δ (r² q)`**: with at least one variable and coefficients in which
+multiplication by a positive integer is injective (for instance a field of characteristic zero),
+if `Δ (r² q) = 0`, then `q = 0`. -/
+theorem eq_zero_of_laplacian_normSq_mul_eq_zero [Nonempty σ] {q : MvPolynomial σ R}
+    (h : laplacian (normSq σ R * q) = 0) : q = 0 := by
   -- The operator preserves the degree, so it vanishes on each homogeneous component of `q`.
-  have ht (i : ℕ) : (laplacian (normSq σ K * homogeneousComponent i q)).IsHomogeneous i := by
+  have ht (i : ℕ) : (laplacian (normSq σ R * homogeneousComponent i q)).IsHomogeneous i := by
     simpa [add_comm] using
-      ((isHomogeneous_normSq σ K).mul (homogeneousComponent_isHomogeneous i q)).laplacian
+      ((isHomogeneous_normSq σ R).mul (homogeneousComponent_isHomogeneous i q)).laplacian
   have hc (d : ℕ) : homogeneousComponent d q = 0 := by
-    have hd : laplacian (normSq σ K * homogeneousComponent d q) = 0 := by
+    have hd : laplacian (normSq σ R * homogeneousComponent d q) = 0 := by
       have := congrArg (homogeneousComponent d) h
       conv_lhs at this => rw [← sum_homogeneousComponent q]
       simp only [Finset.mul_sum, map_sum] at this
@@ -303,6 +302,28 @@ theorem eq_zero_of_laplacian_normSq_mul_eq_zero {q : MvPolynomial σ K}
       (homogeneousComponent_isHomogeneous d q) (by simpa using hd)
   rw [← sum_homogeneousComponent q]
   exact Finset.sum_eq_zero fun d _ ↦ hc d
+
+/-- **The Fischer decomposition**, disjointness: a harmonic polynomial divisible by `r²` is
+zero. -/
+theorem disjoint_ker_laplacian_range_mulLeft_normSq :
+    Disjoint (LinearMap.ker (laplacian : MvPolynomial σ R →ₗ[R] MvPolynomial σ R))
+      (LinearMap.range (LinearMap.mulLeft R (normSq σ R))) := by
+  rcases isEmpty_or_nonempty σ with hσ | hσ
+  · simp
+  rw [Submodule.disjoint_def]
+  rintro _ hΔ ⟨q, rfl⟩
+  rw [LinearMap.mulLeft_apply, eq_zero_of_laplacian_normSq_mul_eq_zero hΔ, mul_zero]
+
+end Injective
+
+section Fischer
+
+variable {K : Type*} [Field K] [Fintype σ]
+
+instance (d : ℕ) : FiniteDimensional K (harmonicSubmodule σ K d) :=
+  Submodule.finiteDimensional_of_le (harmonicSubmodule_le_homogeneousSubmodule d)
+
+variable [CharZero K] [Nonempty σ]
 
 /-- **Surjectivity of `q ↦ Δ (r² q)`**: over a field of characteristic zero and with at least one
 variable, every homogeneous polynomial `p` of degree `e` is `Δ (r² q)` for a homogeneous
@@ -321,20 +342,6 @@ theorem exists_laplacian_normSq_mul_eq {p : MvPolynomial σ K} {e : ℕ} (hp : p
   exact ⟨q, q.2, congrArg Subtype.val hq⟩
 
 omit [Nonempty σ] in
-/-- **The Fischer decomposition**, disjointness: a harmonic polynomial divisible by `r²` is
-zero. -/
-theorem disjoint_ker_laplacian_range_mulLeft_normSq :
-    Disjoint (LinearMap.ker (laplacian : MvPolynomial σ K →ₗ[K] MvPolynomial σ K))
-      (LinearMap.range (LinearMap.mulLeft K (normSq σ K))) := by
-  rcases isEmpty_or_nonempty σ with hσ | hσ
-  · have h0 : normSq σ K = 0 := by simp [normSq_def]
-    have hz : LinearMap.mulLeft K (normSq σ K) = 0 := by ext; simp [h0]
-    simp [hz]
-  rw [Submodule.disjoint_def]
-  rintro _ hΔ ⟨q, rfl⟩
-  rw [LinearMap.mulLeft_apply, eq_zero_of_laplacian_normSq_mul_eq_zero hΔ, mul_zero]
-
-omit [Nonempty σ] in
 /-- **The Fischer decomposition**: every homogeneous polynomial of degree `e + 2` is the sum of a
 harmonic one and `r²` times a homogeneous polynomial of degree `e`. The sum is direct by
 `MvPolynomial.disjoint_ker_laplacian_range_mulLeft_normSq`. -/
@@ -343,9 +350,7 @@ theorem harmonicSubmodule_sup_map_mulLeft_normSq (e : ℕ) :
         (homogeneousSubmodule σ K e).map (LinearMap.mulLeft K (normSq σ K)) =
       homogeneousSubmodule σ K (e + 2) := by
   rcases isEmpty_or_nonempty σ with hσ | hσ
-  · have h0 : normSq σ K = 0 := by simp [normSq_def]
-    have hz : LinearMap.mulLeft K (normSq σ K) = 0 := by ext; simp [h0]
-    simp [hz, harmonicSubmodule_succ_eq_bot_of_isEmpty (σ := σ) (K := K) (e + 1)]
+  · simp
   refine le_antisymm (sup_le (harmonicSubmodule_le_homogeneousSubmodule _) ?_) fun p hp ↦ ?_
   · rintro _ ⟨q, hq, rfl⟩
     simpa [add_comm] using (isHomogeneous_normSq σ K).mul hq
@@ -364,17 +369,6 @@ theorem homogeneousSubmodule_eq_iSup_map_mulLeft_normSq_pow (d : ℕ) :
     homogeneousSubmodule σ K d =
       ⨆ k ≤ d / 2,
         (harmonicSubmodule σ K (d - 2 * k)).map (LinearMap.mulLeft K (normSq σ K ^ k)) := by
-  rcases isEmpty_or_nonempty σ with hσ | _
-  · -- With no variables, `r² = 0` and every homogeneous polynomial is harmonic.
-    have hH (n : ℕ) : harmonicSubmodule σ K n = homogeneousSubmodule σ K n :=
-      inf_eq_left.2 fun p _ ↦ by simp [laplacian_apply]
-    refine le_antisymm (le_iSup₂_of_le 0 (Nat.zero_le _) fun p hp ↦ ?_) (iSup₂_le fun k hk ↦ ?_)
-    · exact ⟨p, by simpa [hH] using hp, by simp⟩
-    · rintro _ ⟨q, hq, rfl⟩
-      have hq' : q.IsHomogeneous (d - 2 * k) := (mem_homogeneousSubmodule _ _).1 (hH _ ▸ hq)
-      rw [LinearMap.mulLeft_apply, mem_homogeneousSubmodule]
-      simpa [show 2 * k + (d - 2 * k) = d by omega] using
-        ((isHomogeneous_normSq σ K).pow k).mul hq'
   induction d using Nat.strong_induction_on with
   | _ d ih =>
   rcases lt_or_ge d 2 with hd | hd
@@ -404,12 +398,14 @@ theorem finrank_harmonicSubmodule_add_finrank (e : ℕ) :
 
 omit [Nonempty σ] in
 /-- **The dimension of the harmonic polynomials** of degree `e + 2` in `n` variables is
-`n.multichoose (e + 2) - n.multichoose e`, that is `C(n + e + 1, e + 2) - C(n + e - 1, e)`. -/
+`n.multichoose (e + 2) - n.multichoose e`, that is `C(n + e + 1, e + 2) - C(n + e - 1, e)` for
+`n ≥ 1`. With no variables both sides are `0`; for `e = 0` the right side is then `0 - 1`, which
+is `0` by truncated subtraction in `ℕ`. -/
 theorem finrank_harmonicSubmodule_add_two (e : ℕ) :
     Module.finrank K (harmonicSubmodule σ K (e + 2)) =
       (Fintype.card σ).multichoose (e + 2) - (Fintype.card σ).multichoose e := by
   rcases isEmpty_or_nonempty σ with hσ | hσ
-  · simp [harmonicSubmodule_succ_eq_bot_of_isEmpty (σ := σ) (K := K) (e + 1)]
+  · simp
   have h := finrank_harmonicSubmodule_add_finrank (σ := σ) (K := K) e
   rw [TauCeti.finrank_homogeneousSubmodule_eq_multichoose,
     TauCeti.finrank_homogeneousSubmodule_eq_multichoose] at h

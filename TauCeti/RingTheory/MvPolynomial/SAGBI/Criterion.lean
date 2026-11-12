@@ -227,7 +227,7 @@ private theorem degree_aeval_mem_closure (hc : ∀ i, m.Monic (c i)) {u v : J �
     exact ih _ (hlt w₀ hw₀) (A w₀) (by rwa [hP']) hmax rfl
   · -- Otherwise the leading exponent of `aeval c P` is `δ`, a value of `A`.
     have hdeg : m.degree (aeval c P) = δ := m.toSyn.injective <|
-      le_antisymm (degree_aeval_le_of_forall_le hc hPδ) (m.le_degree (mem_support_iff.2 htop))
+      le_antisymm (degree_aeval_le_of_forall_le hPδ) (m.le_degree (mem_support_iff.2 htop))
     rw [coeff_aeval_of_forall_le hc hPδ] at htop
     obtain ⟨w, hw, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero htop
     rw [hdeg, ← (Finset.mem_filter.1 hw).2]
