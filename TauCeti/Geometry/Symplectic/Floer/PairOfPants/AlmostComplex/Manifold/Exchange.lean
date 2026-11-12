@@ -118,6 +118,58 @@ private theorem almostComplexStructureAt_inputAlmostComplex (w : ℂ) (x : M) :
   · simp
   · simp [update_of_ne hq]
 
+/-- Far from both inputs, the input part is the base structure `J₀`. -/
+private theorem inputAlmostComplex_eq_base {w : ℂ} (hw₀ : 1 / 2 ≤ ‖w‖) (hw₁ : 1 / 2 ≤ ‖w - 1‖) :
+    inputAlmostComplex h₀ J hJ w = J₀ :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_inputAlmostComplex]
+    exact Floer.pairOfPantsAlmostComplex_update_inf_base_eq
+      (hJb := fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ q t) x) (h₀.compatibleAt x)
+      hw₀ hw₁ ()
+
+omit [FiniteDimensional ℝ E] in
+/-- The input structures of `J`, with the output structure replaced by `J₀`, inherit periodicity
+and joint `C^n` regularity on `ℝ × M` from `J`. -/
+private theorem periodic_and_contMDiff_update_inf {n : ℕ∞ω} [ENat.LEInfty n]
+    (hJp : ∀ q, Periodic (J q) 1)
+    (hJs : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2 ((J q p.1).toEndomorphism p.2))) (q : Puncture) :
+    Periodic (update J inf (fun _ => J₀) q) 1 ∧
+      ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+        (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
+          (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+          p.2 ((update J inf (fun _ => J₀) q p.1).toEndomorphism p.2)) :=
+  (forall_update_iff J fun _ g => Periodic g 1 ∧
+    ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2 ((g p.1).toEndomorphism p.2))).2
+    ⟨⟨fun _ => rfl, (J₀.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp contMDiff_snd⟩,
+      fun q _ => ⟨hJp q, hJs q⟩⟩ q
+
+/-- The input part is `C^n` along `C^n` families of domain points of `S` and target points, for
+period-one end structures which are jointly `C^n` on `ℝ × M`. -/
+private theorem contMDiffAt_inputAlmostComplex {F G N : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [TopologicalSpace G] {I' : ModelWithCorners ℝ F G} [TopologicalSpace N]
+    [ChartedSpace G N] {n : ℕ∞ω} [ENat.LEInfty n] (hJp : ∀ q, Periodic (J q) 1)
+    (hJs : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2 ((J q p.1).toEndomorphism p.2)))
+    {f : N → ℂ} {b : N → M} {y₀ : N} (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀)
+    (hb : ContMDiffAt I' I n b y₀) (hS : f y₀ ≠ 0 ∧ f y₀ ≠ 1) :
+    ContMDiffAt I' (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun y => TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+        (b y) ((inputAlmostComplex h₀ J hJ (f y)).toEndomorphism (b y))) y₀ :=
+  have h := periodic_and_contMDiff_update_inf (J₀ := J₀) J hJp hJs
+  contMDiffAt_endWeightedAlmostComplex h₀ _ _ (hb := hb)
+    (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q 1 hf (ne_endCenter hS q))
+    fun q => q.contMDiffAt_toEndomorphism_comp_im_endCoord (h q).1 (h q).2 hf hb
+      (ne_endCenter hS q)
+
 /-- **The input-exchange family of almost complex structures on a manifold.** For `c ∈ ℝ`,
 relative to a `σ`-compatible base structure `J₀`, this is the pair-of-pants structure of the input
 structures of `J` (with output structure `J₀`) on the disc `‖w - c‖ ≤ 2 exp (2π)`, and the negative
@@ -277,26 +329,7 @@ theorem contMDiffAt_exchangeAlmostComplex {F G N : Type*} [NormedAddCommGroup F]
   have hdist : ContinuousAt (fun y => ‖f y - (c y : ℂ)‖) y₀ := hfc.continuousAt.norm
   rcases lt_or_ge ‖f y₀ - c y₀‖ (2 * Real.exp (2 * π)) with hlt | hge
   · -- Near the disc the family is the pair-of-pants structure of the input structures.
-    have hin : ContMDiffAt I' (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
-        (fun y => TotalSpace.mk' (E →L[ℝ] E)
-          (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-          (b y) ((inputAlmostComplex h₀ J hJ (f y)).toEndomorphism (b y))) y₀ := by
-      have hJp' : ∀ q, Periodic (update J inf (fun _ => J₀) q) 1 :=
-        (forall_update_iff J fun _ g => Periodic g 1).2 ⟨fun _ => rfl, fun q _ => hJp q⟩
-      have hJs' : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
-          (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
-            (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-            p.2 ((update J inf (fun _ => J₀) q p.1).toEndomorphism p.2)) :=
-        (forall_update_iff J fun _ g => ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
-          (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
-            (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-            p.2 ((g p.1).toEndomorphism p.2))).2
-          ⟨(J₀.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp contMDiff_snd,
-            fun q _ => hJs q⟩
-      exact contMDiffAt_endWeightedAlmostComplex h₀ _ _ (hb := hb)
-        (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q 1 hf (ne_endCenter hS q))
-        fun q => q.contMDiffAt_toEndomorphism_comp_im_endCoord (hJp' q) (hJs' q) hf hb
-          (ne_endCenter hS q)
+    have hin := contMDiffAt_inputAlmostComplex h₀ J hJ hJp hJs hf hb hS
     refine hin.congr_of_eventuallyEq ?_
     filter_upwards [hdist.eventually (gt_mem_nhds hlt)] with y hy
     simp only [exchangeAlmostComplex, hy.le, ↓reduceIte]
@@ -319,13 +352,7 @@ theorem contMDiffAt_exchangeAlmostComplex {F G N : Type*} [NormedAddCommGroup F]
       obtain ⟨hw₀, hw₁⟩ := half_le_norm_of_le_norm_sub (r := 2) (w := f y)
         (abs_le.2 ⟨by linarith [hcy'.1], hcy'.2.le⟩)
         (abs_le.2 ⟨by linarith [hcy'.1], by linarith [hcy'.2]⟩) (by linarith)
-      have hin : inputAlmostComplex h₀ J hJ (f y) = J₀ :=
-        SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
-          rw [almostComplexStructureAt_inputAlmostComplex]
-          exact Floer.pairOfPantsAlmostComplex_update_inf_base_eq
-            (hJb := fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ q t) x) (h₀.compatibleAt x)
-            hw₀ hw₁ ()
-      simp only [exchangeAlmostComplex, hle, ↓reduceIte, hin,
+      simp only [exchangeAlmostComplex, hle, ↓reduceIte, inputAlmostComplex_eq_base h₀ J hJ hw₀ hw₁,
         negativePlaneAlmostComplex_eq_of_norm_le h₀ (J inf) (hJ inf) hle]
     · simp only [exchangeAlmostComplex_of_lt_norm h₀ J hJ hgt]
 
