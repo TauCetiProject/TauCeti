@@ -213,9 +213,10 @@ private theorem house_pow_le_of_le {x : K} {X : ℝ} (hx : house x ≤ X) (n : �
 most `H` and `y` has house at most `L H`, then for `i ≤ D` and `i + s + t ≤ n` the entry
 `x ^ (n - (i + s + t)) y ^ i z ^ s w ^ t` has house at most `L ^ D H ^ n`. -/
 theorem house_schneider_entry_le {x y z w : K} {L H : ℝ} (hx : house x ≤ H)
-    (hy : house y ≤ L * H) (hz : house z ≤ H) (hw : house w ≤ H) (hL : 1 ≤ L) (hH : 0 ≤ H)
+    (hy : house y ≤ L * H) (hz : house z ≤ H) (hw : house w ≤ H) (hL : 1 ≤ L)
     {i s t n D : ℕ} (hi : i ≤ D) (hn : i + s + t ≤ n) :
     house (x ^ (n - (i + s + t)) * y ^ i * (z ^ s * w ^ t)) ≤ L ^ D * H ^ n := by
+  have hH : 0 ≤ H := (house_nonneg x).trans hx
   have h := house_mul_le_of_le (house_mul_le_of_le (house_pow_le_of_le hx (n - (i + s + t)))
       (house_pow_le_of_le hy i)) (house_mul_le_of_le (house_pow_le_of_le hz s)
       (house_pow_le_of_le hw t))
@@ -264,13 +265,12 @@ theorem exists_intCast_pow_mul_schneider_term (α β γ : K) :
     rw [house_intCast, house_nat_mul]
     push_cast
     rw [abs_mul, Nat.abs_cast]
-    have hβH : |(c₀ : ℝ)| + house ((c₀ : K) * β) ≤ H := by linarith
     nlinarith
   have hc₀H' : house (c₀ : K) ≤ H := by rwa [house_intCast, Int.cast_abs]
   have hαH : house ((c₀ : K) * α) ≤ H := by linarith
   have hγH : house ((c₀ : K) * γ) ≤ H := by linarith
   have h := house_schneider_entry_le (s := u * j) (t := v * j) (n := N) hc₀H' hwH hαH hγH
-    (by exact_mod_cast hB) (by linarith) (le_refl k) hN
+    (by exact_mod_cast hB) (le_refl k) hN
   refine le_of_eq_of_le ?_ h
   obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le hN
   rw [Nat.add_sub_cancel_left]
@@ -355,7 +355,6 @@ theorem house_schneider_value_le {α β γ : K} {H A : ℝ} (hH : 1 ≤ H) (hα 
       D₁ * D₂ * A * (2 * B) ^ D₁ * H ^ (D₁ + 2 * B * D₂) := by
   have hu' : (u : ℝ) ≤ B := by exact_mod_cast hu
   have hv' : (v : ℝ) ≤ B := by exact_mod_cast hv
-  have hB' : (1 : ℝ) ≤ B := by exact_mod_cast hB
   have hw : house ((u : K) + v * β) ≤ (2 * B : ℕ) * H := by
     refine (house_add_le _ _).trans ?_
     rw [← mul_one (u : K), house_nat_mul, house_nat_mul, ← Int.cast_one, house_intCast]
@@ -371,7 +370,7 @@ theorem house_schneider_value_le {α β γ : K} {H A : ℝ} (hH : 1 ≤ H) (hα 
       rw [← Int.cast_one, house_intCast]
       simpa using hH
     have he := house_schneider_entry_le h1 hw hα hγ
-      (by exact_mod_cast (by omega : 1 ≤ 2 * B)) (by linarith) i.is_lt.le hk
+      (by exact_mod_cast (by omega : 1 ≤ 2 * B)) i.is_lt.le hk
     rw [one_pow, one_mul] at he
     rw [mul_assoc]
     exact house_mul_le_of_le (by rw [house_intCast, Int.cast_abs]; exact ha i j) he
@@ -399,7 +398,6 @@ private theorem schneider_exponent_add_le {c₁ H : ℝ} {c L D₁ D₂ : ℕ} (
   have hlogL : 1 / 2 ≤ Real.log L := by
     linarith [Real.log_two_gt_d9, Real.log_le_log (by norm_num) hL']
   have hD₁ : (0 : ℝ) ≤ D₁ := D₁.cast_nonneg
-  have hD₂ : (0 : ℝ) ≤ D₂ := D₂.cast_nonneg
   have hlogH := Real.log_nonneg hH
   have hlogc : 0 ≤ Real.log (2 * c + 2) := Real.log_nonneg (by linarith [c.cast_nonneg' (α := ℝ)])
   have hE : 0 ≤ E := by positivity

@@ -269,6 +269,13 @@ theorem timeDependentFlowOf_self (X : ℝ → (x : M) → TangentSpace I x) (s :
     timeDependentFlowOf X s s x = x := by
   rw [timeDependentFlowOf_def, sub_self, flowOf_zero]
 
+/-- The linearized time-dependent flow from time `s` to time `s` is the identity. -/
+@[simp]
+theorem mfderiv_timeDependentFlowOf_self (X : ℝ → (x : M) → TangentSpace I x) (s : ℝ) (x : M) :
+    mfderiv I I (timeDependentFlowOf X s s) x = ContinuousLinearMap.id ℝ (TangentSpace I x) := by
+  have hid : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
+  rw [hid, mfderiv_id]
+
 /-- If a triple `((s, t), x)` lies in the domain of the time-dependent flow, so does
 `((s, s), x)`. -/
 theorem mem_timeDependentFlowDomain_self_of_mem {X : ℝ → (x : M) → TangentSpace I x} {s t : ℝ}

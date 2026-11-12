@@ -39,7 +39,7 @@ theorem surjective_commutatorMap_of_torus_iterate_eq_pow
     (f : (ι → Kˣ) →* (ι → Kˣ)) {m Q : ℕ} (hQ : 1 < Q)
     (hf : ∀ t, (⇑f)^[m] t = t ^ Q) :
     Function.Surjective (commutatorMap f) := by
-  apply f.surjective_commutatorMap_of_iterate_eq_pow (by omega) hf
+  apply f.surjective_commutatorMap_of_iterate_eq_pow hf
   exact RootableBy.surjective_pow (ι → Kˣ) ℕ (by omega)
 
 /-- The Lang map is surjective for a power map of exponent greater than one twisted

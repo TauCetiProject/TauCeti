@@ -565,7 +565,7 @@ private theorem separated_inl_inr [T2Space M] [T2Space N] [ProperSpace E]
     ⟨x, fun ⟨v, _, hv⟩ ↦ hx ⟨v, hv⟩, rfl⟩, ⟨y, fun ⟨v, _, hv⟩ ↦ hy ⟨v, hv⟩, rfl⟩, ?_⟩
   · refine Set.disjoint_left.2 ?_
     rintro _ ⟨x', hx', rfl⟩ ⟨y', hy', hxy⟩
-    obtain ⟨v, hv, hvx, hvy⟩ := (inl_eq_inr_iff h₁.injective h₂.injective).1 hxy.symm
+    obtain ⟨v, _, hvx, hvy⟩ := (inl_eq_inr_iff h₁.injective h₂.injective).1 hxy.symm
     simp only [mem_preimage, mem_compl_iff, ← hvx, ← hvy] at hx' hy'
     refine hy' ⟨_, ?_, rfl⟩
     have hv1 : 1 < ‖v‖ := not_le.1 fun h ↦ hx' ⟨v, by simpa using h, rfl⟩

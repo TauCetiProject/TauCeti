@@ -8,14 +8,17 @@ module
 public import TauCeti.Probability.Distributions.Stable.DensityConvolution
 import Mathlib.MeasureTheory.Measure.Portmanteau
 import TauCeti.Analysis.Convolution.Positivity
+import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.Probability.Distributions.Stable.Approximation.Centering
 import TauCeti.Probability.Distributions.Stable.Compensation
 import TauCeti.Probability.Distributions.Stable.SmallJump.Limit
 
 /-!
-# Support and density positivity of stable laws
+# Support, singularity, and density positivity of stable laws
 
-A positive-scale stable law has topological support all of `ℝ`, except in the fully skewed
+A zero-scale stable law is a Dirac mass at its location, so its support is the corresponding
+singleton and it is singular with respect to Lebesgue measure. A positive-scale stable law has
+topological support all of `ℝ`, except in the fully skewed
 cases of shape below one. Those are supported on a half-line ending at the `S₁` location
 `d = stableS1Location α β s m`: on `[d, ∞)` at skewness `1`, and on `(-∞, d]` at skewness `-1`.
 In particular, fully skewed laws of shape at least one have full support, even though all of
@@ -39,6 +42,8 @@ even before either density is known to be positive in the interior of its suppor
 
 ## Main results
 
+* `TauCeti.Probability.support_stableMeasure_zero_scale` and
+  `TauCeti.Probability.mutuallySingular_stableMeasure_zero_scale` describe the atomic boundary.
 * `TauCeti.Probability.support_stableMeasure_of_abs_lt_one` and
   `TauCeti.Probability.support_stableMeasure_of_one_le` give full topological support.
 * `TauCeti.Probability.support_stableMeasure_one_of_lt_one` and
@@ -68,6 +73,23 @@ open scoped Convolution ENNReal NNReal Pointwise Topology
 namespace TauCeti.Probability
 
 variable {α β : ℝ} {s : ℝ≥0}
+
+/-! ### Zero-scale boundary -/
+
+/-- A valid zero-scale stable law has topological support equal to its singleton location. -/
+theorem support_stableMeasure_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (m : ℝ) :
+    (stableMeasure α β 0 m).support = {m} := by
+  rw [stableMeasure_zero_scale hα hβ, Measure.support_dirac, closure_singleton]
+
+/-- Every zero-scale stable measure is singular with respect to Lebesgue measure. For invalid
+shape or skewness parameters, this is the singularity of the zero measure. -/
+theorem mutuallySingular_stableMeasure_zero_scale (m : ℝ) :
+    stableMeasure α β 0 m ⟂ₘ volume := by
+  by_cases h : α ∈ Ioc 0 2 ∧ |β| ≤ 1
+  · rw [stableMeasure_zero_scale h.1 h.2]
+    exact mutuallySingular_dirac m volume
+  · rw [stableMeasure_of_not_valid h]
+    exact Measure.MutuallySingular.zero_left
 
 /-! ### Reduction to the standardized law -/
 

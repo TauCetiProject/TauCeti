@@ -191,6 +191,12 @@ instance : SymmetricCategory (FiniteRankBundleCore 𝕜 B) where
       ← kroneckerComm_symm]
     exact (kroneckerComm 𝕜 A.rank D.rank).coe_symm_comp_coe
 
+/-- The monoidal braiding is the constant isomorphism induced by the Kronecker swap. -/
+theorem braiding_def (A D : FiniteRankBundleCore 𝕜 B) :
+    (β_ A D) =
+      constIso (fun _ => Set.inter_comm _ _) (kroneckerComm 𝕜 A.rank D.rank)
+        (fun _ _ _ _ _ => kroneckerComm_comp_kronecker _ _) := (rfl)
+
 @[simp] theorem fiberMap_braiding_hom (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
     (β_ A D).hom.fiberMap x = (kroneckerComm 𝕜 A.rank D.rank).toContinuousLinearMap :=
   fiberMap_tensorComm_hom A D x
