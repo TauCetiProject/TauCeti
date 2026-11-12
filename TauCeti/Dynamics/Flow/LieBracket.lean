@@ -148,10 +148,11 @@ theorem flowOfLipschitz_comm_of_lieBracket_eq_zero_on (hw : LipschitzWith L w) {
   simpa only [Flow.map_zero_apply] using eq_flowOfLipschitz_of_isIntegralCurveOn hw hγ le_rfl
 
 /-- **Short-time commutation of flows with bracket vanishing near a point.** Let `Φ` and `Ψ` be
-the flows of `v` and of a globally Lipschitz differentiable field `w`. If `[v, w]` vanishes on a
-neighbourhood of `a`, then `Φ_s (Ψ_t y) = Ψ_t (Φ_s y)` for all `(s, t, y)` near `(0, 0, a)`. -/
-theorem eventually_flowOfLipschitz_comm (hw : LipschitzWith L w) (hwd : Differentiable ℝ w)
-    {a : E} (hvw : lieBracket ℝ v w =ᶠ[𝓝 a] 0) :
+the flows of `v` and of a globally Lipschitz field `w`. If `w` is differentiable and `[v, w]`
+vanishes on a neighbourhood of `a`, then `Φ_s (Ψ_t y) = Ψ_t (Φ_s y)` for all `(s, t, y)` near
+`(0, 0, a)`. -/
+theorem eventually_flowOfLipschitz_comm (hw : LipschitzWith L w) {a : E}
+    (hwd : ∀ᶠ y in 𝓝 a, DifferentiableAt ℝ w y) (hvw : lieBracket ℝ v w =ᶠ[𝓝 a] 0) :
     ∀ᶠ q : ℝ × ℝ × E in 𝓝 (0, 0, a),
       flowOfLipschitz v hv q.1 (flowOfLipschitz w hw q.2.1 q.2.2) =
         flowOfLipschitz w hw q.2.1 (flowOfLipschitz v hv q.1 q.2.2) := by
@@ -160,20 +161,25 @@ theorem eventually_flowOfLipschitz_comm (hw : LipschitzWith L w) (hwd : Differen
     (flowOfLipschitz v hv).continuous continuous_fst
       ((flowOfLipschitz w hw).continuous (continuous_fst.comp continuous_snd)
         (continuous_snd.comp continuous_snd))
-  -- A ball around `(0, 0, a)` whose points `(σ, τ, y)` send `Φ_σ (Ψ_τ y)` where `[v, w] = 0`.
+  -- A ball around `(0, 0, a)` whose points `(σ, τ, y)` send `Φ_σ (Ψ_τ y)` where `w` is
+  -- differentiable and `[v, w] = 0`.
   have hmem : ∀ᶠ q : ℝ × ℝ × E in 𝓝 (0, 0, a),
-      lieBracket ℝ v w (flowOfLipschitz v hv q.1 (flowOfLipschitz w hw q.2.1 q.2.2)) = 0 :=
+      DifferentiableAt ℝ w (flowOfLipschitz v hv q.1 (flowOfLipschitz w hw q.2.1 q.2.2)) ∧
+        lieBracket ℝ v w (flowOfLipschitz v hv q.1 (flowOfLipschitz w hw q.2.1 q.2.2)) = 0 :=
     have hvw' : ∀ᶠ y in 𝓝 (flowOfLipschitz v hv 0 (flowOfLipschitz w hw 0 a)),
-        lieBracket ℝ v w y = 0 := by
+        DifferentiableAt ℝ w y ∧ lieBracket ℝ v w y = 0 := by
       simp only [Flow.map_zero_apply]
-      exact hvw
+      exact hwd.and hvw
     (hc.tendsto (0, 0, a)).eventually hvw'
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.1 hmem
   filter_upwards [Metric.ball_mem_nhds _ hε] with q hq
   -- The ball contains `(σ, τ, q.2.2)` for `σ ∈ [[0, q.1]]` and `τ ∈ [[0, q.2.1]]`.
-  refine flowOfLipschitz_comm_of_lieBracket_eq_zero_on hv hvs hw (fun _ _ _ _ ↦ hwd _)
-    fun σ hσ τ hτ ↦
-    hball (y := (σ, τ, q.2.2)) (lt_of_le_of_lt ?_ hq)
+  have hmem' : ∀ σ ∈ Set.uIcc 0 q.1, ∀ τ ∈ Set.uIcc 0 q.2.1,
+      DifferentiableAt ℝ w (flowOfLipschitz v hv σ (flowOfLipschitz w hw τ q.2.2)) ∧
+        lieBracket ℝ v w (flowOfLipschitz v hv σ (flowOfLipschitz w hw τ q.2.2)) = 0 :=
+    fun σ hσ τ hτ ↦ hball (y := (σ, τ, q.2.2)) (lt_of_le_of_lt ?_ hq)
+  · exact flowOfLipschitz_comm_of_lieBracket_eq_zero_on hv hvs hw
+      (fun σ hσ τ hτ ↦ (hmem' σ hσ τ hτ).1) fun σ hσ τ hτ ↦ (hmem' σ hσ τ hτ).2
   have hσ' : dist σ 0 ≤ dist q.1 0 := by
     simpa [Real.dist_eq] using Set.abs_sub_left_of_mem_uIcc hσ
   have hτ' : dist τ 0 ≤ dist q.2.1 0 := by

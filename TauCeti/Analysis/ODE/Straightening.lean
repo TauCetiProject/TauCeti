@@ -292,7 +292,8 @@ theorem exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero {n : 
     simpa [hΦ] using ODE.contDiff_globalSolution (g i) (hgK i) (hg i)
   have hcomm (i j : ι) (hji : j ≠ i) : ∀ᶠ q : ℝ × ℝ × E in 𝓝 (0, 0, a),
       Φ j q.1 (Φ i q.2.1 q.2.2) = Φ i q.2.1 (Φ j q.1 q.2.2) :=
-    eventually_flowOfLipschitz_comm (hgK j) (hg1 j) (hgK i) ((hg i).differentiable (by simp))
+    eventually_flowOfLipschitz_comm (hgK j) (hg1 j) (hgK i)
+      (.of_forall ((hg i).differentiable (by simp)))
       (((hgw j).lieBracket_vectorField (hgw i)).trans (hbr hji))
   -- Functionals `P` dual to the `u i`, and the flow-box coordinates `ψ`.
   obtain ⟨P₀, hP₀⟩ := (Fintype.linearCombination ℝ u).exists_leftInverse_of_injective
