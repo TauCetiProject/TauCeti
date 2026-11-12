@@ -68,8 +68,8 @@ cocharacter map, and `TauCeti.DynkinType.typeAGraphAut` bundles it with the indu
 the `n * (n + 1)` root indices as an element of `RootPairing.Aut`. It restricts to the reversal
 `Fin.revPerm` on the Bourbaki-numbered simple roots, which is `TauCeti.graphPermA n`, the
 permutation that
-`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean` pins for the `²Aₙ` family; that module
-is deliberately not imported here, since only the `Fin`-level reversal is used.
+`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean` pins for the `²Aₙ` family; that
+module is deliberately not imported here, since only the `Fin`-level reversal is used.
 
 The sign in `e_a ↦ -e_{rev a}` is forced: `e_a ↦ e_{rev a}` sends `αᵢ = e_i - e_{i+1}` to
 `e_{rev i} - e_{rev (i + 1)} = -α_{rev i}`, a negative root, so it does not preserve the base. The

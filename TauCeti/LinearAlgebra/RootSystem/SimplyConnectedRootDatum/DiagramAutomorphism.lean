@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 
@@ -41,7 +41,7 @@ image of the corresponding relation on `σ` under the homomorphism
 
 The group of node permutations that the construction consumes is
 `TauCeti.DynkinType.diagramSymmetry`, pinned in
-`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`.
+`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean`.
 
 ## Main definitions
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.Basic

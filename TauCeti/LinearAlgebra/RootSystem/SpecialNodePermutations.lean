@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Classical
 public import TauCeti.LinearAlgebra.RootSystem.RootLength
 
 /-!
@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.RootSystem.RootLength
 
 A *graph automorphism* of a Dynkin diagram is a permutation of its Bourbaki-numbered nodes
 preserving the standard Cartan matrix; those are pinned in
-`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`, and each of them lifts to an
+`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean`, and each of them lifts to an
 automorphism of the pinned group scheme of the type. This file is about the other kind of node
 permutation, the one that *transposes* the Cartan matrix while exchanging the long and the short
 simple roots:
@@ -64,7 +64,7 @@ that construction, stated against the pinned Bourbaki numbering of
 
 * `TauCeti.DynkinType.isSpecialNodePerm_B2`, `TauCeti.DynkinType.isSpecialNodePerm_F4` and
   `TauCeti.DynkinType.isSpecialNodePerm_G2`: the three special node permutations, taken from the
-  pinned length permutations of `TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`.
+  pinned length permutations of `TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean`.
 * `TauCeti.DynkinType.exists_isSpecialNodePerm_iff`: **a valid Dynkin type admits a special node
   permutation exactly when it is `B₂`, `F₄` or `G₂`.**
 * `TauCeti.DynkinType.IsSpecialNodePerm.unique` and
@@ -242,17 +242,6 @@ identity is the only permutation of its nodes preserving its standard Cartan mat
 composite of one special node permutation with the inverse of another preserves the Cartan matrix,
 uniqueness follows. -/
 
-/-- The identity is the only permutation of the two `B₂` nodes preserving its Cartan matrix, the
-`B₂` matrix being asymmetric. -/
-theorem eq_one_of_cartanMatrix_B2 {ρ : Equiv.Perm (Fin 2)}
-    (h : ∀ i j : Fin 2, (B 2).cartanMatrix (ρ i) (ρ j) = (B 2).cartanMatrix i j) : ρ = 1 := by
-  have key : ∀ f : Fin 2 → Fin 2,
-      (∀ p : Fin 2 × Fin 2, CartanMatrix.B 2 (f p.1) (f p.2) = CartanMatrix.B 2 p.1 p.2) →
-      ∀ i, f i = i := by decide
-  refine Equiv.ext fun i => ?_
-  rw [Equiv.Perm.one_apply]
-  exact key ρ (fun p => by simpa using h p.1 p.2) i
-
 /-- The identity is the only permutation of the two `G₂` nodes preserving its Cartan matrix, the
 `G₂` matrix being asymmetric. -/
 theorem eq_one_of_cartanMatrix_G2 {ρ : Equiv.Perm (Fin 2)}
@@ -302,7 +291,7 @@ theorem IsSpecialNodePerm.unique {t : DynkinType} (ht : t.Valid)
     σ = τ := by
   have hmul : τ⁻¹ * σ = 1 := by
     rcases (exists_isSpecialNodePerm_iff ht).mp ⟨σ, hσ⟩ with rfl | rfl | rfl
-    · exact eq_one_of_cartanMatrix_B2 (hσ.cartanMatrix_apply_inv_mul hτ)
+    · exact eq_one_of_cartanMatrix_B (hσ.cartanMatrix_apply_inv_mul hτ)
     · exact eq_one_of_cartanMatrix_F4 (hσ.cartanMatrix_apply_inv_mul hτ)
     · exact eq_one_of_cartanMatrix_G2 (hσ.cartanMatrix_apply_inv_mul hτ)
   rw [← one_mul σ, ← mul_inv_cancel τ, mul_assoc, hmul, mul_one]
