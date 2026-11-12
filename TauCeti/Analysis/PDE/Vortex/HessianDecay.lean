@@ -164,7 +164,6 @@ theorem abs_mixedDifference_le_mul_exp {R c c₁ K L : ℝ} (hR : 0 < R) (hc : 0
       (hab _ _ hd' hd hb' hb) (hab _ _ hc₀' hc₀ ha' ha)
     -- The first differences, from `hdiff`.
     set E := Real.exp (-(c₁ * ‖y‖))
-    have hE : 0 ≤ E := (Real.exp_pos _).le
     have hca : |ℓ (y + k) - ℓ y| ≤ K * ‖k‖ * E := by
       simpa using hdiff y 0 k hy (by simp) hk
     have hba : |ℓ (y + h) - ℓ y| ≤ K * ‖h‖ * E := by
@@ -234,7 +233,6 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-- The case `0 < c` of `exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp`. -/
 private theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp_of_pos
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
@@ -242,22 +240,21 @@ private theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp_of_po
     ∃ K, ∀ᶠ z in cocompact ℂ,
       ‖fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) z‖ ≤
         K * Real.exp (-(c * ‖z‖)) := by
-  set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2) with hs
-  set ℓ : ℂ → ℝ := fun z ↦ Real.log (s z) with hℓ
+  set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
+  set ℓ : ℂ → ℝ := fun z ↦ Real.log (s z)
   have hscd : ContDiff ℝ 2 s := contDiff_normSq hp hq
   set c₁ := (c + 1 / 2) / 2 with hc₁
   have hcc₁ : c < c₁ := by linarith
   have hc₁' : c₁ < 1 / 2 := by linarith
   -- Beyond `R₁` the gradient of `ℓ` decays at the rate `c₁`; beyond `R₂`, `|α|²` is close to `1`.
-  obtain ⟨K₀, hK₀⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim
-    hc₁'
+  obtain ⟨K₀, hK₀⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hp hq hsol hlim hc₁'
   obtain ⟨R₁, -, hR₁⟩ := hasBasis_cobounded_norm.eventually_iff.mp
     (cobounded_eq_cocompact (α := ℂ) ▸ hK₀)
   have hθ : max (4 * c₁ ^ 2) (Real.exp (-1)) < 1 :=
     max_lt (by nlinarith) (Real.exp_lt_one_iff.mpr (by norm_num))
   obtain ⟨R₂, -, hR₂⟩ := hasBasis_cobounded_norm.eventually_iff.mp
     (cobounded_eq_cocompact (α := ℂ) ▸ hlim.eventually (lt_mem_nhds hθ))
-  set R := max (max R₁ R₂) 0 + 3 with hR
+  set R := max (max R₁ R₂) 0 + 3
   have hR₀ : 0 < R := by positivity
   have hRmax : ∀ w : ℂ, R - 2 ≤ ‖w‖ → max (max R₁ R₂) 0 ≤ ‖w‖ := fun w hw ↦ by linarith
   have hRR₁ : ∀ w : ℂ, R - 2 ≤ ‖w‖ → R₁ ≤ ‖w‖ := fun w hw ↦
@@ -272,12 +269,12 @@ private theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp_of_po
     hscd.contDiffAt.log (hpos w hw).ne'
   have hΔ : ∀ w : ℂ, R - 2 ≤ ‖w‖ → Δ ℓ w = (Real.exp (ℓ w) - 1) / 4 := fun w hw ↦ by
     rw [hexp w hw]
-    exact laplacian_log_normSq_of_equation_eq_zero (hb₁ w) (hb₂ w) hp.contDiffAt hq.contDiffAt
+    exact laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt
       (right_ne_zero_of_mul (hpos w hw).ne') (Eventually.of_forall hsol)
   have hge : ∀ w : ℂ, R - 2 ≤ ‖w‖ → -1 ≤ ℓ w := fun w hw ↦
     (Real.le_log_iff_exp_le (hpos w hw)).mpr ((le_max_right _ _).trans (hsR w hw).le)
   have hle : ∀ w : ℂ, R - 2 ≤ ‖w‖ → ℓ w ≤ 0 := fun w hw ↦
-    Real.log_nonpos (hpos w hw).le (normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim w)
+    Real.log_nonpos (hpos w hw).le (normSq_le_one_of_tendsto hp hq hsol hlim w)
   have hmass : ∀ w : ℂ, R - 2 ≤ ‖w‖ → 4 * c₁ ^ 2 ≤ Real.exp (ℓ w) := fun w hw ↦ by
     rw [hexp w hw]
     exact (le_max_left _ _).trans (hsR w hw).le
@@ -286,7 +283,7 @@ private theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp_of_po
     rwa [Real.log_one] at h
   -- The first differences of `ℓ` decay, and its mixed second differences are bounded on the
   -- circle `|z| = R`.
-  set K := max K₀ 0 * Real.exp (2 * c₁) with hK
+  set K := max K₀ 0 * Real.exp (2 * c₁)
   have hK₀' : 0 ≤ K := by positivity
   have hdiff : ∀ y u v : ℂ, R ≤ ‖y‖ → ‖u‖ ≤ 1 → ‖v‖ ≤ 1 →
       |ℓ (y + u + v) - ℓ (y + u)| ≤ K * ‖v‖ * Real.exp (-(c₁ * ‖y‖)) := fun y u v hy hu hv ↦
@@ -298,11 +295,10 @@ private theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp_of_po
   have hd2 : ∀ w : ℂ, R - 2 ≤ ‖w‖ → ContDiffAt ℝ 1 (fderiv ℝ ℓ) w := fun w hw ↦
     (hℓcd w hw).fderiv_right (m := 1) (by norm_num)
   -- Combine the mixed-difference decay with the two limiting arguments.
-  set C := L + 3 * K ^ 2 / (4 * (c₁ ^ 2 - c ^ 2)) with hC
+  set C := L + 3 * K ^ 2 / (4 * (c₁ ^ 2 - c ^ 2))
   have hgap : 0 < c₁ ^ 2 - c ^ 2 := by
     rw [sq_sub_sq]
     exact mul_pos (by linarith) (sub_pos.mpr hcc₁)
-  have hC₀ : 0 ≤ C := by positivity
   refine ⟨C * Real.exp (c * R), ?_⟩
   filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop R] with w hw
   set E := Real.exp (-(c * (‖w‖ - R)))
@@ -324,7 +320,6 @@ private theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp_of_po
 vortex on the whole plane whose section satisfies `|α| → 1` at infinity has
 `‖D² log |α|²‖ ≤ K exp (-c |z|)`, for every rate `c < 1 / 2`. -/
 theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
@@ -332,8 +327,8 @@ theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp
     ∃ K, ∀ᶠ z in cocompact ℂ,
       ‖fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) z‖ ≤
         K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp_of_pos hb₁ hb₂ hp
-    hq hsol hlim (lt_max_of_lt_right (by norm_num : (0 : ℝ) < 1 / 4))
+  obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp_of_pos hp hq
+    hsol hlim (lt_max_of_lt_right (by norm_num : (0 : ℝ) < 1 / 4))
     (max_lt hc (by norm_num))
   refine ⟨max K 0, hK.mono fun z hz ↦ hz.trans ?_⟩
   gcongr

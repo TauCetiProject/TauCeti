@@ -485,7 +485,7 @@ private theorem norm_fderiv_sub_referenceField_le
         m * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) := by
   set F := x - referenceField f m with hF_def
   set s : ℂ → ℝ := fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2) with hs_def
-  set ℓ : ℂ → ℝ := fun w ↦ Real.log (s w) with hℓ_def
+  set ℓ : ℂ → ℝ := fun w ↦ Real.log (s w)
   have hx : ∀ i, Differentiable ℝ (fun w ↦ x w i) := fun i ↦ by
     fin_cases i
     exacts [hb₁, hb₂, hp.differentiable (by norm_num), hq.differentiable (by norm_num)]
@@ -664,9 +664,9 @@ theorem exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp
     ∃ K, ∀ᶠ z in cocompact ℂ,
       ‖fderiv ℝ (x - referenceField f m) z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
   obtain ⟨K₁, hK₁⟩ :=
-    exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
-  obtain ⟨K₂, hK₂⟩ := exists_norm_fderiv_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
-  obtain ⟨K₃, hK₃⟩ := exists_one_sub_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
+    exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp hp hq hsol hlim hc
+  obtain ⟨K₂, hK₂⟩ := exists_norm_fderiv_normSq_le_mul_exp hp hq hsol hlim hc
+  obtain ⟨K₃, hK₃⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc
   obtain ⟨R₀, -, hR₀⟩ :=
     hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸ hphase)
   obtain ⟨R₂, -, hR₂⟩ := hasBasis_cobounded_norm.eventually_iff.mp
@@ -678,7 +678,7 @@ theorem exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp
   have h := norm_fderiv_sub_referenceField_le hb₁ hb₂ hp hq hsol f (le_max_right _ _)
     (fun w hw ↦ hR₀ (((le_max_left R₀ R₂).trans (le_max_left _ _)).trans hw.le))
     (fun w hw ↦ (hR₂ (((le_max_right R₀ R₂).trans (le_max_left _ _)).trans hw.le)).le)
-    (normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim) hzR
+    (normSq_le_one_of_tendsto hp hq hsol hlim) hzR
   have h₃ := mul_le_mul_of_nonneg_left (hK₃ z) (Nat.cast_nonneg (α := ℝ) m)
   calc ‖fderiv ℝ (x - referenceField f m) z‖ ≤ _ := h
     _ ≤ K₁ * Real.exp (-(c * ‖z‖)) + K₂ * Real.exp (-(c * ‖z‖)) +
