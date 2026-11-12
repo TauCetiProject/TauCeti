@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Mathlib.LinearAlgebra.Basis.VectorSpace
+public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Geometry.Symplectic.Lagrangian.TotallyReal
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
@@ -57,8 +57,8 @@ advance.
 ## Main results
 
 * `TauCeti.IsMaximalTotallyReal.normalPrimitive_apply_of_mem`: `β` vanishes along `L`.
-* `TauCeti.IsMaximalTotallyReal.normalPrimitive_eq_compatibleForm`: `β_x(ζ)` is the metric pairing
-  of `J (x - P x)` with `ζ`.
+* `TauCeti.IsMaximalTotallyReal.normalPrimitive_apply_eq_compatibleForm_map_sub_projection`:
+  `β_x(ζ)` is the metric pairing of `J (x - P x)` with `ζ`.
 * `TauCeti.IsMaximalTotallyReal.sq_normalPrimitive_apply_le`: `β_x(ζ)² ≤ |x - a|² |ζ|²` for every
   `a ∈ L`.
 * `TauCeti.IsMaximalTotallyReal.symplecticForm_tames`,
@@ -67,10 +67,13 @@ advance.
   `TauCeti.IsMaximalTotallyReal.associatedBilinForm_symplecticForm`: `σ` tames `J`, is compatible
   with `J` when `g` is symmetric on `L`, makes `L` Lagrangian, and has metric the compatible form
   of `g`.
-* `TauCeti.isMaximalTotallyReal_iff_exists_compatible_isLagrangian`: on a finite-dimensional space,
-  `L` is maximal totally real exactly when it is Lagrangian for some symplectic form compatible
-  with `J`.
-* `TauCeti.IsMaximalTotallyReal.extDeriv_normalPrimitiveForm_apply`: `dβ = σ`.
+* `TauCeti.IsMaximalTotallyReal.exists_compatible_isLagrangian` and
+  `TauCeti.isMaximalTotallyReal_iff_exists_compatible_isLagrangian`: a maximal totally real
+  subspace is Lagrangian for some symplectic form compatible with `J`, and on a finite-dimensional
+  space this characterizes maximal totally real subspaces.
+* `TauCeti.IsMaximalTotallyReal.extDeriv_normalPrimitiveForm_apply` and
+  `TauCeti.IsMaximalTotallyReal.extDeriv_normalPrimitiveForm_apply_eq_symplecticForm`:
+  `dβ(v, w) = β_v(w) - β_w(v)`, that is, `dβ = σ`.
 
 ## References
 
@@ -120,7 +123,7 @@ theorem normalPrimitive_apply_map_of_mem (x : V) {b : V} (hb : b ∈ L) :
 /-- The normal primitive is the pairing of `J ν` with `ζ` for the compatible form of `g`, where
 `ν = x - P x` is the normal component of `x`. Since `J ν = -J⁻¹ ν`, this is the formula
 `β_x(ζ) = -g(J⁻¹ ν, P ζ)`. -/
-theorem normalPrimitive_eq_compatibleForm (x ζ : V) :
+theorem normalPrimitive_apply_eq_compatibleForm_map_sub_projection (x ζ : V) :
     hL.normalPrimitive g x ζ =
       hL.compatibleForm g (J (x - L.projection (L.map J.toLinearMap) hL.isCompl x)) ζ := by
   set P := L.projection (L.map J.toLinearMap) hL.isCompl
@@ -172,7 +175,7 @@ variable {g}
 /-- The symplectic form `σ(v, w) = β_v(w) - β_w(v)` of a maximal totally real subspace, for a
 bilinear form `g` positive on `L`; here `β` is `TauCeti.IsMaximalTotallyReal.normalPrimitive`.
 It tames `J` and makes `L` Lagrangian, and it is the exterior derivative of `β`
-(`TauCeti.IsMaximalTotallyReal.extDeriv_normalPrimitiveForm_apply`). -/
+(`TauCeti.IsMaximalTotallyReal.extDeriv_normalPrimitiveForm_apply_eq_symplecticForm`). -/
 def symplecticForm (hg : ∀ a ∈ L, a ≠ 0 → 0 < g a a) : SymplecticForm V where
   toBilinForm := hL.normalPrimitive g - LinearMap.flip (hL.normalPrimitive g)
   isAlt v := by simp
@@ -251,20 +254,25 @@ theorem symplecticForm_compatible (hsymm : ∀ a ∈ L, ∀ b ∈ L, g a b = g b
   .of_tames (hL.symplecticForm_invariant hsymm) (hL.symplecticForm_tames hg)
 
 include hL in
-/-- A maximal totally real subspace of a finite-dimensional space is Lagrangian for some symplectic
-form compatible with `J`. -/
-theorem exists_compatible_isLagrangian [FiniteDimensional ℝ V] :
+/-- A maximal totally real subspace is Lagrangian for some symplectic form compatible with `J`. -/
+theorem exists_compatible_isLagrangian :
     ∃ ω : SymplecticForm V, ω.Compatible J ∧ ω.IsLagrangian L := by
+  classical
   -- Any inner product on `V` will do; take the dot product in a basis.
-  let e := (Module.finBasis ℝ V).equivFun
-  let g : LinearMap.BilinForm ℝ V := (Matrix.toBilin' 1).compl₁₂ e.toLinearMap e.toLinearMap
-  have hge (v w : V) : g v w = e v ⬝ᵥ e w := by simp [g, Matrix.toBilin'_apply']
+  let b := Module.Basis.ofVectorSpace ℝ V
+  let g : LinearMap.BilinForm ℝ V := b.toDual
   have hsymm (v : V) (_ : v ∈ L) (w : V) (_ : w ∈ L) : g v w = g w v := by
-    rw [hge, hge, dotProduct_comm]
+    have hflip : LinearMap.flip g = g := LinearMap.ext_basis b b fun i j ↦ by
+      simp only [g, LinearMap.flip_apply, Module.Basis.toDual_apply, eq_comm]
+    exact LinearMap.congr_fun₂ hflip w v
   have hpos : ∀ a ∈ L, a ≠ 0 → 0 < g a a := fun a _ ha ↦ by
-    rw [hge]
-    exact lt_of_le_of_ne (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg _)
-      (Ne.symm ((not_congr dotProduct_self_eq_zero).2 ((LinearEquiv.map_ne_zero_iff e).2 ha)))
+    have hsq : g a a = ∑ i ∈ (b.repr a).support, b.repr a i * b.repr a i := by
+      nth_rw 1 [← b.linearCombination_repr a]
+      simp only [g, Finsupp.linearCombination_apply, Finsupp.sum, map_sum, map_smul,
+        LinearMap.sum_apply, LinearMap.smul_apply, Module.Basis.toDual_apply_right, smul_eq_mul]
+    rw [hsq]
+    exact Finset.sum_pos (fun i hi ↦ mul_self_pos.2 (Finsupp.mem_support_iff.1 hi))
+      (Finsupp.support_nonempty_iff.2 ((LinearEquiv.map_ne_zero_iff b.repr).2 ha))
   exact ⟨hL.symplecticForm hpos, hL.symplecticForm_compatible hsymm,
     hL.isLagrangian_symplecticForm hpos⟩
 
@@ -289,14 +297,20 @@ theorem normalPrimitiveForm_apply (x : V) (v : Fin 1 → V) :
     hL.normalPrimitiveForm g x v = hL.normalPrimitive g x (v 0) := by
   simp [normalPrimitiveForm]
 
+/-- The exterior derivative of the normal primitive: `dβ(v, w) = β_v(w) - β_w(v)`. -/
+theorem extDeriv_normalPrimitiveForm_apply (x : V) (v : Fin 2 → V) :
+    extDeriv (hL.normalPrimitiveForm g) x v =
+      hL.normalPrimitive g (v 0) (v 1) - hL.normalPrimitive g (v 1) (v 0) := by
+  rw [normalPrimitiveForm, ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply]
+  simp [← mul_sub]
+
 variable {g} in
 /-- **The symplectic form of `L` is the exterior derivative of the normal primitive**:
 `dβ = σ`. -/
-theorem extDeriv_normalPrimitiveForm_apply
+theorem extDeriv_normalPrimitiveForm_apply_eq_symplecticForm
     (hg : ∀ a ∈ L, a ≠ 0 → 0 < g a a) (x : V) (v : Fin 2 → V) :
     extDeriv (hL.normalPrimitiveForm g) x v = hL.symplecticForm hg (v 0) (v 1) := by
-  rw [normalPrimitiveForm, ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply]
-  simp [← mul_sub]
+  rw [extDeriv_normalPrimitiveForm_apply, symplecticForm_apply]
 
 end Normed
 
