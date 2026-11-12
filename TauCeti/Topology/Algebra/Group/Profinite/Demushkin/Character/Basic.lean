@@ -99,7 +99,7 @@ private theorem existsUnique_character_forall_crossedHom_single_eq_zero [Finite 
   -- The matrix of the degree-one form in the dual basis of the generators, lifted to `ℤ_p` and
   -- transposed; its determinant is a unit because the form is nondegenerate.
   set M : Matrix X X ℤ_[p] := ((LinearMap.BilinForm.toMatrix (dualBasis p X)
-    (degreeOneForm (gradedMk p (freeProP p X) 1 n))).map (ZMod.cast : ZMod p → ℤ_[p]))ᵀ with hM
+    (degreeOneForm (gradedMk p (freeProP p X) 1 n))).map (ZMod.cast : ZMod p → ℤ_[p]))ᵀ
   have hMdet : IsUnit M.det := isUnit_det_transpose_map_cast _
     ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (dualBasis p X)).1 hnd)
   -- The character of `F` with values `v` on the generators, for `v ≡ 1 mod p`.
