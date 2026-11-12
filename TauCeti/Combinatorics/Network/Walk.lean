@@ -518,7 +518,6 @@ private theorem IsPath.exists_isPath_interior_notMem {A B : Set V} :
         List.Subset.refl _, List.Subset.refl _, hA, hB⟩
     push Not at hB
     obtain ⟨v, hv, hvt, hvB⟩ := hB
-    have hvs : v ≠ s := fun h ↦ hsB (h ▸ hvB)
     -- No later `A`-vertex exists, so recurse on the prefix ending at this earlier `B`-vertex.
     obtain ⟨p₁, p₂, rfl⟩ : ∃ (p₁ : ArrowWalk Q s v) (p₂ : ArrowWalk Q v t), p = p₁.comp p₂ :=
       @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨Q⟩ _ _ p _ hv
