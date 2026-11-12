@@ -47,6 +47,16 @@ theorem IsPoissonRandomMeasure.acceptance [SFinite Q]
   simpa only [Measure.map_fst_restrict_prod_eq_withDensity Λ Q hA] using
     (hM.restrict hA).map measurable_fst
 
+/-- Selecting a measurable mark set from a product-intensity Poisson measure and projecting
+onto the ground space multiplies the intensity by the mass of that mark set. -/
+theorem IsPoissonRandomMeasure.acceptance_prod [SFinite Q]
+    (hM : IsPoissonRandomMeasure P M (Λ.prod Q))
+    {A : Set E} (hA : MeasurableSet A) :
+    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ A)).map Prod.fst)
+      (Q A • Λ) := by
+  simpa only [mk_preimage_prod_right (mem_univ _), withDensity_const] using
+    hM.acceptance (MeasurableSet.univ.prod hA)
+
 /-- Accepting a Lebesgue mark `u` exactly when `u ≤ f x` produces a Poisson random measure
 with intensity `Λ.withDensity f`, including at zero and infinite values of `f`. -/
 theorem IsPoissonRandomMeasure.acceptance_le

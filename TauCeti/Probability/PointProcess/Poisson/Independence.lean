@@ -105,6 +105,20 @@ theorem IsPoissonRandomMeasure.iIndepFun_restrict (h : IsPoissonRandomMeasure P 
   funext i ω a
   exact (hrec (N ω) i a).symm
 
+/-- Projected restrictions to disjoint mark sets are mutually independent random measures,
+for the full evaluation sigma-field. -/
+theorem IsPoissonRandomMeasure.iIndepFun_map_fst_restrict_prod
+    {E : Type*} [MeasurableSpace E] {M : Ω → Measure (X × E)}
+    {Λ : Measure (X × E)} (h : IsPoissonRandomMeasure P M Λ)
+    {A : ι → Set E} (hA : ∀ i, MeasurableSet (A i))
+    (hd : Pairwise fun i j ↦ Disjoint (A i) (A j)) :
+    ProbabilityTheory.iIndepFun
+      (fun i ω ↦ ((M ω).restrict (univ ×ˢ A i)).map Prod.fst) P := by
+  have hi := h.iIndepFun_restrict (fun i ↦ MeasurableSet.univ.prod (hA i))
+    (fun i j hij ↦ (hd hij).set_prod_right univ univ)
+  exact hi.comp (fun _ μ ↦ μ.map Prod.fst)
+    (fun _ ↦ Measure.measurable_map _ measurable_fst)
+
 /-- Restrictions of a Poisson random measure to two disjoint measurable sets are independent
 as random measures for the full evaluation sigma-field. -/
 theorem IsPoissonRandomMeasure.indepFun_restrict (h : IsPoissonRandomMeasure P N Λ)

@@ -57,6 +57,27 @@ open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
+/-- Evaluating a projected mark restriction amounts to counting the corresponding rectangle. -/
+@[simp]
+theorem map_fst_restrict_univ_prod_apply {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] (μ : Measure (α × β)) (A : Set β)
+    {s : Set α} (hs : MeasurableSet s) :
+    ((μ.restrict (Set.univ ×ˢ A)).map Prod.fst) s = μ (s ×ˢ A) := by
+  rw [map_apply measurable_fst hs, ← Set.prod_univ,
+    restrict_apply (hs.prod MeasurableSet.univ)]
+  simp only [Set.prod_inter_prod, Set.inter_univ, Set.univ_inter]
+
+/-- A first marginal is locally finite when the joint measure is locally finite and the
+second space is compact. -/
+theorem isLocallyFiniteMeasure_map_fst {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] [TopologicalSpace α] [TopologicalSpace β] [OpensMeasurableSpace α]
+    [T2Space α] [WeaklyLocallyCompactSpace α] [CompactSpace β] (μ : Measure (α × β))
+    [IsLocallyFiniteMeasure μ] : IsLocallyFiniteMeasure (μ.map Prod.fst) := by
+  have : IsFiniteMeasureOnCompacts (μ.map Prod.fst) := ⟨fun K hK ↦ by
+    rw [map_apply measurable_fst hK.measurableSet, ← Set.prod_univ]
+    exact (hK.prod isCompact_univ).measure_lt_top⟩
+  infer_instance
+
 /-- Projecting the part of a product measure in a measurable set gives the first measure
 weighted by the masses of the vertical sections. Only the second factor must be s-finite. -/
 theorem map_fst_restrict_prod_eq_withDensity {α β : Type*} [MeasurableSpace α]
