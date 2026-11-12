@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.Algebra.Module.BilinearForm
 
-import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
@@ -80,16 +79,12 @@ inverse `0` when `1 - J₀ J₁` is not invertible on either side. -/
 theorem toContinuousLinearMap_cayley (J₀ J₁ : AlmostComplexStructure V) {A B : V →L[ℝ] V}
     (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J₁.toLinearMap) :
     LinearMap.toContinuousLinearMap (J₀.cayley J₁) = cayleyFormula A B := by
-  apply ContinuousLinearMap.coe_injective
-  have : IsLocalHom (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ) (M₁ := V)) :=
-    ⟨fun _ h ↦ ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr h⟩
-  have hinv := map_ringInverse (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ) (M₁ := V))
-    (1 - A * B)
-  simp only [ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one, map_mul] at hinv
-  rw [cayley_eq_cayleyFormula, LinearMap.coe_toContinuousLinearMap,
-    cayleyFormula_def, cayleyFormula_def, ContinuousLinearMap.toLinearMap_neg,
-    ContinuousLinearMap.toLinearMap_mul, hinv]
-  simp [hA, hB]
+  have hA' : LinearMap.toContinuousLinearMap J₀.toLinearMap = A :=
+    ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hA])
+  have hB' : LinearMap.toContinuousLinearMap J₁.toLinearMap = B :=
+    ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hB])
+  rw [← hA', ← hB', cayley_eq_cayleyFormula]
+  exact map_cayleyFormula (Module.End.toContinuousLinearMap V) J₀.toLinearMap J₁.toLinearMap
 
 end AlmostComplexStructure
 
