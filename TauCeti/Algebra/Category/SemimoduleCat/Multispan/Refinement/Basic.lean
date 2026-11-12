@@ -49,7 +49,7 @@ def compatibleMap : I.compatibleFamilies →ₗ[R] (D.index I).compatibleFamilie
   (D.index I).piCompatibleFamilies
     (fun j => LinearMap.proj j.1 ∘ₗ I.compatibleFamilies.subtype) (by
       intro x b
-      rcases b with (⟨b, a⟩ | ⟨j, e⟩)
+      rcases b with (⟨b, _⟩ | ⟨j, e⟩)
       · exact I.mem_compatibleFamilies_iff_forall_mem_range.mp x.property b
       · refine ⟨x.val j, ?_⟩
         simp only [SemimoduleCat.hom_id, LinearMap.prod_apply, Function.prod_apply,
@@ -198,7 +198,7 @@ omit [∀ j, Nonempty (D.chambers j)] in
 theorem index_jointly_injective
     (hinj : ∀ b, Function.Injective ((I.fst b).hom.prod (I.snd b).hom)) :
     ∀ b, Function.Injective (((D.index I).fst b).hom.prod ((D.index I).snd b).hom) := by
-  rintro (⟨b, c⟩ | ⟨j, e⟩)
+  rintro (⟨b, _⟩ | ⟨j, e⟩)
   · exact hinj b
   · intro x y h
     simpa only [index_fst_edge, SemimoduleCat.hom_id, LinearMap.prod_apply, Function.prod_apply,
