@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.Slicing.Measurability
+public import TauCeti.Analysis.BoundedVariation.Slicing.Basic
 import TauCeti.Analysis.BoundedVariation.Real
 
 /-!
@@ -21,9 +21,10 @@ Consequently, for any null-measurable family `A` of noninterval sections,
 `2 volume D + 2 volume A ≤ perimeter volume ⊤ s`.
 
 The weighted version retains the transverse divergence pairing in the joint slicing inequality.
-It localizes the extra cost to `A`. The full family of noninterval sections is null-measurable,
-so both bounds apply to it by taking `hA := nullMeasurableSet_noninterval_lineSection hs hfin e he`
-and `hbad := .of_forall fun _ ↦ id`.
+It localizes the extra cost to `A`. After importing
+`TauCeti.Analysis.BoundedVariation.Slicing.Measurability`, the full family of noninterval sections
+is null-measurable, so both bounds apply to it by taking
+`hA := nullMeasurableSet_noninterval_lineSection hs hfin e he` and `hbad := .of_forall fun _ ↦ id`.
 
 ## References
 
