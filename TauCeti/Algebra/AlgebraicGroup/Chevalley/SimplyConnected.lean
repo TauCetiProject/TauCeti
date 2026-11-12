@@ -107,7 +107,6 @@ The basis of its weight lattice is the standard basis of fundamental weights. -/
     (LinearEquiv.ofTop _ (t.span_range_scWeight_eq_top ht)).symm
 
 /-- The dimension of the full-weight datum is the size of its existing weight basis. -/
-@[simp]
 theorem scChevalleyDatum_dim : (t.scChevalleyDatum ht).dim = t.scWeightBasisCard ht :=
   (rfl)
 
