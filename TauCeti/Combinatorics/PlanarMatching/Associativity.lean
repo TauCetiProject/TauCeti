@@ -134,7 +134,8 @@ private theorem appendFn_of_le_of_lt {k l q : ℕ} (φ ψ : ℕ → ℕ) (h : k 
 
 private theorem appendFn_of_le {k l q : ℕ} (φ ψ : ℕ → ℕ) (h : k + l ≤ q) :
     appendFn k l φ ψ q = q := by
-  simp [appendFn, Nat.not_lt.mpr h, show ¬q < k by omega]
+  have hk : ¬q < k := by omega
+  simp [appendFn, Nat.not_lt.mpr h, hk]
 
 /-! ### Splicing and erasing commute -/
 
@@ -281,8 +282,9 @@ private theorem splice_splice {φ : ℕ → ℕ} (hφ : ∀ z, φ (φ z) = z) {a
   have e₃ : splice a φ (b + 1) = rejoin φ a (φ (b + 1)) := splice_of_ne _ (by omega) (by omega)
   have e₄ : splice a φ b = rejoin φ a (φ b) := splice_of_ne _ (by omega) (by omega)
   have i₁ : ∀ u v, φ u = v → φ v = u := fun u v h => by rw [← h, hφ]
-  rcases (show φ z = a ∨ φ z = a + 1 ∨ φ z = b ∨ φ z = b + 1 ∨
-      (φ z ≠ a ∧ φ z ≠ a + 1 ∧ φ z ≠ b ∧ φ z ≠ b + 1) by omega) with h | h | h | h | h
+  have hcases : φ z = a ∨ φ z = a + 1 ∨ φ z = b ∨ φ z = b + 1 ∨
+      (φ z ≠ a ∧ φ z ≠ a + 1 ∧ φ z ≠ b ∧ φ z ≠ b + 1) := by omega
+  rcases hcases with h | h | h | h | h
   · have := i₁ z a h; have := i₁ (b + 1) a; have := i₁ (b + 1) (a + 1); have := i₁ b a
     have := i₁ b (a + 1)
     rw [h, rejoin_of_ne (a := b) (v := a) _ (by omega) (by omega), rejoin_of_eq_left _ rfl, e₁,
@@ -441,10 +443,11 @@ private theorem contractFn_glueFn {a : ℕ} :
   | j + 1, c, K, x, hac, hK => by
     obtain ⟨y, hy⟩ := exists_pv_eq_contractFn x (a := c + 2 + j) (by omega)
     obtain ⟨ih₁, ih₂⟩ := contractFn_glueFn j c (K - 2) y hac (by omega)
+    have hc : c + 2 + j = c + j + 2 := by omega
     have e₁ : contractFn a (pv y) = contractFn (c + j) (contractFn a (pv x)) := by
-      rw [hy, show c + 2 + j = c + j + 2 by omega, contractFn_contractFn x (by omega) (by omega)]
+      rw [hy, hc, contractFn_contractFn x (by omega) (by omega)]
     have e₂ := circleInd_contractFn x (a := a) (b := c + j) (by omega) (by omega)
-    rw [show c + j + 2 = c + 2 + j by omega, ← hy] at e₂
+    rw [← hc, ← hy] at e₂
     simp only [glueFn, glueCircles]
     rw [← hy, ih₁, e₁]
     refine ⟨rfl, ?_⟩
@@ -462,7 +465,8 @@ private theorem glueFn_glueFn {n j : ℕ} :
     obtain ⟨h₁, h₂⟩ := contractFn_glueFn (a := n + m) j (n + 2 * m + d) K x (by omega)
       (by omega)
     obtain ⟨ih₁, ih₂⟩ := glueFn_glueFn (n := n) (j := j) m d (K - 2) y (by omega)
-    rw [show n + 2 * m + d + 2 = n + 2 * (m + 1) + d by omega, ← hy] at h₁ h₂
+    have hm : n + 2 * m + d + 2 = n + 2 * (m + 1) + d := by omega
+    rw [hm, ← hy] at h₁ h₂
     simp only [glueFn, glueCircles]
     rw [h₁, ← hy, ih₁]
     refine ⟨rfl, ?_⟩
@@ -487,10 +491,11 @@ private theorem contractFn_appendFn_left {k l : ℕ} (x : PlanarMatching k) (y :
   have hs' : skipN a q = q + 2 := skipN_of_le (by omega)
   rw [hs']
   by_cases h₂ : q < k - 2 + l
-  · have := pv_lt y (show q + 2 - k < l by omega)
+  · have hq : q + 2 - k < l := by omega
+    have hq' : q - (k - 2) = q + 2 - k := by omega
+    have := pv_lt y hq
     rw [appendFn_of_le_of_lt _ _ (by omega) h₂, appendFn_of_le_of_lt _ _ (by omega) (by omega),
-      rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega),
-      show q - (k - 2) = q + 2 - k by omega]
+      rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega), hq']
     omega
   · rw [appendFn_of_le _ _ (by omega), appendFn_of_le _ _ (by omega),
       rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega)]
@@ -575,9 +580,10 @@ private theorem glueFn_appendFn_left {n r : ℕ} (z : PlanarMatching r) :
   | m + 1, K, x, hK => by
     obtain ⟨y, hy⟩ := exists_pv_eq_contractFn x (a := n + m) (by omega)
     obtain ⟨ih₁, ih₂⟩ := glueFn_appendFn_left (n := n) z m (K - 2) y (by omega)
+    have hK' : K - 2 - 2 * m = K - 2 * (m + 1) := by omega
     simp only [glueFn, glueCircles]
     rw [contractFn_appendFn_left x z (by omega), ← hy, ← ih₁, ih₂,
-      circleInd_appendFn_left _ _ (by omega), show K - 2 - 2 * m = K - 2 * (m + 1) by omega]
+      circleInd_appendFn_left _ _ (by omega), hK']
     exact ⟨rfl, rfl⟩
 
 private theorem glueFn_appendFn_right {k n : ℕ} (w : PlanarMatching k) :
@@ -589,9 +595,10 @@ private theorem glueFn_appendFn_right {k n : ℕ} (w : PlanarMatching k) :
   | m + 1, K, x, hK => by
     obtain ⟨y, hy⟩ := exists_pv_eq_contractFn x (a := n + m) (by omega)
     obtain ⟨ih₁, ih₂⟩ := glueFn_appendFn_right (n := n) w m (K - 2) y (by omega)
+    have hK' : K - 2 - 2 * m = K - 2 * (m + 1) := by omega
     simp only [glueFn, glueCircles]
     rw [Nat.add_assoc k n m, contractFn_appendFn_right w x (by omega), ← hy, ← ih₁, ih₂,
-      circleInd_appendFn_right _ _ (by omega), show K - 2 - 2 * m = K - 2 * (m + 1) by omega]
+      circleInd_appendFn_right _ _ (by omega), hK']
     exact ⟨rfl, rfl⟩
 
 end PlanarMatching
@@ -611,9 +618,11 @@ theorem comp_assoc (f : TLDiagram n m) (g : TLDiagram m p) (h : TLDiagram p q) :
     (g.matching.append h.matching) (by omega)
   have hG := glueFn_glueFn (n := n) (j := p) m 0 (n + m + (m + p + (p + q)))
     (f.matching.append (g.matching.append h.matching)) (by omega)
-  rw [show n + m + (m + p) - 2 * m = n + p by omega, pv_append_eq] at hL
-  rw [show m + p + (p + q) - 2 * p = m + q by omega, pv_append_eq, ← appendFn_assoc,
-    show n + m + m = n + 2 * m by omega] at hR
+  have e₁ : n + m + (m + p) - 2 * m = n + p := by omega
+  have e₂ : m + p + (p + q) - 2 * p = m + q := by omega
+  have e₃ : n + m + m = n + 2 * m := by omega
+  rw [e₁, pv_append_eq] at hL
+  rw [e₂, pv_append_eq, ← appendFn_assoc, e₃] at hR
   rw [pv_append_eq, pv_append_eq, ← appendFn_assoc] at hG
   simp only [Nat.add_zero] at hG
   ext : 1
