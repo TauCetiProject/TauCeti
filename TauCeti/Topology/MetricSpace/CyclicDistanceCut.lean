@@ -10,6 +10,8 @@ public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 public import Mathlib.Topology.MetricSpace.Pseudo.Pi
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Cyclic tuples with bounded consecutive distances
 
@@ -113,22 +115,18 @@ theorem cons_mem_cyclicDistanceCut {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2)
   intro i
   refine Fin.cases ?_ (fun j ↦ ?_) i
   · -- The closing edge `(q₀, qₙ)` is the closing edge of `q`.
-    have hlast : (0 : Fin (n + 2)) - 1 = (Fin.last n).succ := by
-      rw [sub_eq_iff_eq_add, Fin.succ_last, Fin.last_add_one]
     have hq0 := hq 0
-    rw [show (0 : Fin (n + 1)) - 1 = Fin.last n by rw [sub_eq_iff_eq_add, Fin.last_add_one]]
-      at hq0
-    rw [hlast, Fin.cons_zero, Fin.cons_succ]
+    rw [Fin.zero_sub_one_eq_last] at hq0
+    rw [Fin.zero_sub_one_eq_last, ← Fin.succ_last, Fin.cons_zero, Fin.cons_succ]
     exact hq0.trans h₀
-  · rw [show j.succ - 1 = j.castSucc by rw [sub_eq_iff_eq_add, Fin.coeSucc_eq_succ],
-      Fin.cons_succ]
+  · rw [Fin.succ_sub_one_eq_castSucc, Fin.cons_succ]
     refine Fin.cases ?_ (fun k ↦ ?_) j
     · -- The new edge `(q₀, q₀)` has length zero.
       rw [Fin.castSucc_zero, Fin.cons_zero, dist_self]
       exact (nonneg_of_mem_cyclicDistanceCut hq 0).trans (h 0)
     · -- The edge `(qₖ₊₁, qₖ)` is an edge of `q`.
       have hk := hq k.succ
-      rw [show k.succ - 1 = k.castSucc by rw [sub_eq_iff_eq_add, Fin.coeSucc_eq_succ]] at hk
+      rw [Fin.succ_sub_one_eq_castSucc] at hk
       rw [← Fin.succ_castSucc, Fin.cons_succ]
       exact hk.trans (h _)
 
