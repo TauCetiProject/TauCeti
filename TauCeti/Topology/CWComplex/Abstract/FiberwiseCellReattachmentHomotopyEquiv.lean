@@ -321,8 +321,7 @@ private theorem undoCell_zero (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
             min_eq_left (show 4 * ‖w.down.1‖ - 1 ≤ 2 - 2 * ‖w.down.1‖ by linarith),
             min_eq_left (show 4 * ‖w.down.1‖ - 1 ≤ 1 by linarith)]
           ring)
-        (by rw [hs, hvn, hv, smul_smul, mul_inv_rev, mul_assoc, inv_mul_cancel₀ two_ne_zero,
-          mul_one])]
+        (by rw [hs, hvn, hv, smul_smul]; congr 1; field_simp)]
       exact congrArg (fun a ↦ fiberwiseCellAttachmentIncl α₁ (p, a))
         (Subtype.ext (hKK' i t p s).symm)
   · -- On the annulus `1/2 ≤ ‖w‖` the homotopy is read at time `2 - 2‖w‖`, and the second
@@ -488,15 +487,15 @@ private theorem fiberwiseCellReattachment_eq_comp_fiberwiseCellAttachmentIso
           (endAttachingMap_eq α₀ χ₀ χ₁ hχ₀ h K hK)).hom := by
   refine fiberwiseCellAttachment_hom_ext α₁ (fun x ↦ ?_) fun i x ↦ ?_
   · rw [ConcreteCategory.comp_apply, fiberwiseCellReattachment_fiberwiseCellAttachmentIncl,
-      fiberwiseCellReattachment_fiberwiseCellAttachmentIncl,
-      fiberwiseCellAttachmentIso_hom_fiberwiseCellAttachmentIncl]
+      fiberwiseCellReattachment_fiberwiseCellAttachmentIncl, fiberwiseCellAttachmentIso_hom,
+      fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentIncl]
   obtain ⟨p, w⟩ := x
   rw [ConcreteCategory.comp_apply]
   rcases le_total ‖w.down.1‖ (1 / 2) with hw | hw
   · have hv := TopCat.coe_reattachmentRadial_of_norm_le hw
     rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le (hw := hw) (hv := hv),
       fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le (hw := hw) (hv := hv),
-      fiberwiseCellAttachmentIso_hom_fiberwiseCellAttachmentCell]
+      fiberwiseCellAttachmentIso_hom, fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentCell]
     simp only [ContinuousMap.snd_apply]
   · obtain ⟨s, hs⟩ : ∃ s : TopCat.diskBoundary.{u} (k i), s.down.1 = ‖w.down.1‖⁻¹ • w.down.1 :=
       ⟨TopCat.annulusDir (by norm_num) ⟨w, hw⟩, TopCat.coe_annulusDir _ _⟩
@@ -506,7 +505,7 @@ private theorem fiberwiseCellReattachment_eq_comp_fiberwiseCellAttachmentIso
         (hs := hs),
       fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm (hw := hw) (ht := ht)
         (hs := hs),
-      fiberwiseCellAttachmentIso_hom_fiberwiseCellAttachmentIncl]
+      fiberwiseCellAttachmentIso_hom, fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentIncl]
     simp only [castHomotopy, ContinuousMap.Homotopy.cast_apply]
 
 /-- **The fiberwise reattachment map is a homotopy equivalence over `P`, relative to `P × A`.**
@@ -560,25 +559,26 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp
   refine ⟨J.inv ≫ E₁, ?_, fun y ↦ ?_, ⟨F₁.cast ?_ rfl, fun t y ↦ hF₁ t y⟩, ?_⟩
   · ext x
     rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-      fiberwiseCellAttachmentIso_inv_fiberwiseCellAttachmentIncl,
+      fiberwiseCellAttachmentIso_inv, fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentIncl,
       fiberwiseCellReattachment_fiberwiseCellAttachmentIncl]
   · rw [ConcreteCategory.comp_apply, fiberwiseCellAttachmentProj_fiberwiseCellReattachment,
-      fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIso_inv]
+      fiberwiseCellAttachmentIso_inv, fiberwiseCellAttachmentProj_fiberwiseCellAttachmentReparam]
   · -- `E ≫ E' = E₀ ≫ J ≫ J⁻¹ ≫ E₁ = E₀ ≫ E₁`.
     rw [hE, Category.assoc, Iso.hom_inv_id_assoc]
   -- `E' ≫ E = J⁻¹ ≫ (E₁ ≫ E₀) ≫ J`, and `E₁ ≫ E₀` is homotopic to the identity.
   have hS : range (fiberwiseCellAttachmentIncl α₀) ⊆
       J.inv.hom ⁻¹' range (fiberwiseCellAttachmentIncl α) := by
     rintro _ ⟨x, rfl⟩
-    exact ⟨x, (fiberwiseCellAttachmentIso_inv_fiberwiseCellAttachmentIncl ..).symm⟩
+    exact ⟨x, by rw [fiberwiseCellAttachmentIso_inv,
+      fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentIncl]⟩
   refine ⟨(((F₀.precomp J.inv.hom).mono hS).compContinuousMap J.hom.hom).cast
     (by rw [hE]; ext y; simp only [ContinuousMap.comp_apply, TopCat.hom_comp, E₀, E₁])
     (by ext y; simp),
     fun t y ↦ ?_⟩
   rw [ContinuousMap.HomotopyRel.cast_apply, ContinuousMap.HomotopyRel.compContinuousMap_apply,
     ContinuousMap.HomotopyRel.mono_apply, ContinuousMap.HomotopyRel.precomp_apply]
-  exact ((fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIso_hom ..).trans (hF₀ t _)).trans
-    (fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIso_inv ..)
+  rw [fiberwiseCellAttachmentIso_hom, fiberwiseCellAttachmentProj_fiberwiseCellAttachmentReparam,
+    hF₀, fiberwiseCellAttachmentIso_inv, fiberwiseCellAttachmentProj_fiberwiseCellAttachmentReparam]
 
 end HomotopyEquiv
 
