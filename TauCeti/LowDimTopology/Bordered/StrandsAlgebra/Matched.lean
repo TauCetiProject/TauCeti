@@ -567,10 +567,9 @@ theorem matchedChoices_nonempty_iff {h : Finset β} :
   refine ⟨fun ⟨U, hU⟩ ↦ (mem_matchedChoices.1 hU).1 ▸ image_subset_image (subset_univ U),
     fun hh ↦ ?_⟩
   classical
-  obtain ⟨u, -, hu, hus⟩ := Set.SurjOn.exists_subset_injOn_image_eq (s := Set.univ) (f := M)
-    (t := (h : Set β)) fun b hb ↦ by simpa using hh hb
-  refine ⟨u.toFinset, mem_matchedChoices.2 ⟨coe_injective ?_, by simpa using hu⟩⟩
-  simpa using hus
+  obtain ⟨u, -, hu, hus⟩ :=
+    exists_subset_injOn_image_eq_of_surjOn Set.univ h fun b hb ↦ by simpa using hh hb
+  exact ⟨u, mem_matchedChoices.2 ⟨hus, hu⟩⟩
 
 variable (M) in
 /-- The element `a(ρ, h)` of the algebra of the matching `M`: the sum of the diagrams obtained from
