@@ -36,9 +36,14 @@ form is symplectic (`TauCeti.isSymplectic_sphericalPendulumSymplecticForm`).
 The ambient Hamiltonian vector field of `H`, `(p, -e₃)`, is not tangent to the phase space, so the
 dynamics of the pendulum is not the restriction of the ambient dynamics. The ambient Hamiltonian
 vector field of `J` is the infinitesimal rotation `(R q, R p)` about the vertical axis, with
-`R z = (-z₂, z₁, 0)`, and it is tangent to the phase space. Hence the bracket of the restrictions
-of `H` and `J` is the ambient bracket `{H, J}(q, p) = dH (R q, R p) = ⟪p, R p⟫ + (R q)₃ = 0`
+`R z = (-z₂, z₁, 0)`, and it is tangent to the phase space
+(`TauCeti.hamiltonianVectorField_angularMomentum_mem_ker_fderiv_sphericalPendulumConstraint`). So
+the Hamiltonian vector field of the restriction of `J` is this rotation
+(`TauCeti.mfderiv_coe_sphericalPendulumPhaseSpace_hamiltonianVectorField_angularMomentum`), and
+the bracket of the restrictions of `H` and `J` is the ambient bracket
+`{H, J}(q, p) = dH (R q, R p) = ⟪p, R p⟫ + (R q)₃ = 0`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp_of_mem_range`,
+`TauCeti.stdSymplecticForm_poissonBracket_sphericalPendulumHamiltonian_angularMomentum`,
 `TauCeti.poissonBracket_sphericalPendulumHamiltonian_angularMomentum_comp_subtypeVal`).
 
 The critical points of `F = (H, J)` on the phase space all have vertical momentum `p₃ = 0`
@@ -50,7 +55,7 @@ completely integrable system on the phase space
 (`TauCeti.isIntegrableSystem_sphericalPendulumEnergyMomentum`). Since the energy is proper, the
 Hamiltonian vector fields of `H` and `J` on the phase space are complete
 (`isCompleteVectorField_hamiltonianVectorField_sphericalPendulumHamiltonian_comp_subtypeVal`,
-`TauCeti.isCompleteVectorField_hamiltonianVectorField_angularMomentum_comp_subtypeVal`).
+`TauCeti.isCompleteVectorField_hamiltonianVectorField_angularMomentum_sphericalPendulumPhaseSpace`).
 
 Identifying covectors on the sphere with tangent vectors by the round metric, the restriction of
 `ω₀` is the canonical symplectic form of the cotangent bundle of the sphere; that comparison is not
@@ -60,6 +65,8 @@ made here.
 
 * `TauCeti.sphericalPendulumSymplecticForm`: the restriction of `ω₀` to the phase space.
 * `TauCeti.isSymplectic_sphericalPendulumSymplecticForm`: it is symplectic.
+* `TauCeti.mfderiv_coe_sphericalPendulumPhaseSpace_hamiltonianVectorField_angularMomentum`: the
+  Hamiltonian vector field of `J` on the phase space is the rotation `(R q, R p)`.
 * `TauCeti.poissonBracket_sphericalPendulumHamiltonian_angularMomentum_comp_subtypeVal`:
   `{H, J} = 0` on the phase space.
 * `TauCeti.dense_setOf_isRegularPoint_sphericalPendulumEnergyMomentum`: the regular points of
@@ -67,7 +74,7 @@ made here.
 * `TauCeti.isIntegrableSystem_sphericalPendulumEnergyMomentum`: the spherical pendulum is a
   completely integrable system.
 * `isCompleteVectorField_hamiltonianVectorField_sphericalPendulumHamiltonian_comp_subtypeVal`,
-  `TauCeti.isCompleteVectorField_hamiltonianVectorField_angularMomentum_comp_subtypeVal`: the
+  `isCompleteVectorField_hamiltonianVectorField_angularMomentum_sphericalPendulumPhaseSpace`: the
   Hamiltonian flows of `H` and `J` are complete.
 
 ## References
@@ -113,8 +120,8 @@ theorem eval₂_sphericalPendulumSymplecticForm (x : sphericalPendulumPhaseSpace
         (mfderiv 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))
           Subtype.val x w) := by
   rw [sphericalPendulumSymplecticForm_def, SmoothForm.eval₂_mpullback,
-    SymplecticForm.fromTangentSpace_constSmooth_apply]
-  rfl
+    SymplecticForm.fromTangentSpace_constSmooth_apply, NormedSpace.fromTangentSpace_apply,
+    NormedSpace.fromTangentSpace_apply]
 
 /-- The tangent space `{(a, b) : ⟪q, a⟫ = 0, ⟪q, b⟫ + ⟪a, p⟫ = 0}` of the level of the constraint
 map through `(q, p)`, `q ≠ 0`, is a symplectic subspace of `ℝ³ × ℝ³`: it meets its `ω₀`-orthogonal
@@ -170,7 +177,7 @@ theorem isSymplectic_sphericalPendulumSymplecticForm :
 /-- The ambient Hamiltonian vector of the vertical angular momentum, the infinitesimal rotation
 `(R q, R p)` about the vertical axis, lies in the kernel of the differential of the constraint map:
 the rotations preserve `‖q‖²` and `⟪q, p⟫`. -/
-private theorem hamiltonianVectorField_angularMomentum_mem_ker
+theorem hamiltonianVectorField_angularMomentum_mem_ker_fderiv_sphericalPendulumConstraint
     (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) :
     (stdSymplecticForm (V := EuclideanSpace ℝ (Fin 3))).hamiltonianVectorField
         (angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)) x ∈
@@ -182,6 +189,50 @@ private theorem hamiltonianVectorField_angularMomentum_mem_ker
     Prod.mk_eq_zero]
   constructor <;> ring
 
+/-- The energy and the vertical angular momentum Poisson-commute on `ℝ³ × ℝ³`: the derivative of the
+energy along the infinitesimal rotation `(R q, R p)` is `⟪p, R p⟫ + (R q)₃ = 0`. -/
+theorem stdSymplecticForm_poissonBracket_sphericalPendulumHamiltonian_angularMomentum
+    (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) :
+    (stdSymplecticForm (V := EuclideanSpace ℝ (Fin 3))).poissonBracket sphericalPendulumHamiltonian
+      (angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)) x = 0 := by
+  have hH : HasFDerivAt sphericalPendulumHamiltonian
+      ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ sphericalPendulumEnergyMomentum x)) x := by
+    convert ((contDiff_sphericalPendulumEnergyMomentum (n := 1)).differentiable one_ne_zero
+      x).hasFDerivAt.fst using 1
+    exact funext fun y ↦ (fst_sphericalPendulumEnergyMomentum y).symm
+  rw [SymplecticForm.poissonBracket_eq_fderiv,
+    stdSymplecticForm_hamiltonianVectorField_angularMomentum, hH.fderiv,
+    ContinuousLinearMap.comp_apply, fderiv_sphericalPendulumEnergyMomentum_apply]
+  simp [inner_sub_right, inner_smul_right, EuclideanSpace.inner_single_right]
+  ring
+
+/-- **The Hamiltonian vector field of the vertical angular momentum on the phase space** is the
+infinitesimal rotation `(R q, R p)` about the vertical axis: the differential of the inclusion of
+the phase space carries it to the ambient Hamiltonian vector field of the vertical angular
+momentum. -/
+theorem mfderiv_coe_sphericalPendulumPhaseSpace_hamiltonianVectorField_angularMomentum
+    (x : sphericalPendulumPhaseSpace) :
+    mfderiv 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))
+        Subtype.val x (sphericalPendulumSymplecticForm.hamiltonianVectorField
+          (fun y ↦ angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
+            (y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))) x) =
+      (stdSymplecticForm (V := EuclideanSpace ℝ (Fin 3))).hamiltonianVectorField
+        (angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)) x := by
+  have hk : (SymplecticForm.constSmooth stdSymplecticForm).hamiltonianVectorField
+      (angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)) x ∈
+        (mfderiv 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))
+          Subtype.val x).range := by
+    rw [range_mfderiv_coe_sphericalPendulumPhaseSpace,
+      SymplecticForm.hamiltonianVectorField_constSmooth]
+    exact hamiltonianVectorField_angularMomentum_mem_ker_fderiv_sphericalPendulumConstraint _
+  simpa only [Function.comp_def, SymplecticForm.hamiltonianVectorField_constSmooth] using
+    isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
+      |>.mfderiv_hamiltonianVectorField_comp_of_mem_range
+        (SymplecticForm.isNondegenerate_constSmooth _)
+        isSmoothEmbedding_coe_sphericalPendulumPhaseSpace.contMDiff
+        sphericalPendulumSymplecticForm_def.symm
+        (hasFDerivAt_angularMomentum _ _ _).differentiableAt.mdifferentiableAt hk
+
 /-- **The energy and the vertical angular momentum of the spherical pendulum Poisson-commute** for
 its symplectic form. The rotations about the vertical axis are tangent to the phase space and
 preserve the energy. -/
@@ -192,38 +243,17 @@ theorem poissonBracket_sphericalPendulumHamiltonian_angularMomentum_comp_subtype
         (y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))) x = 0 := by
   have hF := (contDiff_sphericalPendulumEnergyMomentum (n := 1)).differentiable one_ne_zero
     (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))
-  have hH : HasFDerivAt sphericalPendulumHamiltonian
-      ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ sphericalPendulumEnergyMomentum x)) x := by
-    convert hF.hasFDerivAt.fst using 1
-    exact funext fun y ↦ (fst_sphericalPendulumEnergyMomentum y).symm
-  have hJ : HasFDerivAt (angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1))
-      ((ContinuousLinearMap.snd ℝ ℝ ℝ).comp (fderiv ℝ sphericalPendulumEnergyMomentum x)) x := by
-    convert hF.hasFDerivAt.snd using 1
-    exact funext fun y ↦ (snd_sphericalPendulumEnergyMomentum y).symm
   -- The bracket is the ambient one, since the ambient Hamiltonian vector of `J` is tangent.
-  rw [show (fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumHamiltonian y) =
-      sphericalPendulumHamiltonian ∘ Subtype.val from rfl,
-    show (fun y : sphericalPendulumPhaseSpace ↦
-        angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
-          (y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))) =
-      angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1) ∘ Subtype.val
-      from rfl,
-    isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate.poissonBracket_comp_of_mem_range
-      (SymplecticForm.isNondegenerate_constSmooth _)
+  have h := isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
+    |>.poissonBracket_comp_of_mem_range (SymplecticForm.isNondegenerate_constSmooth _)
       isSmoothEmbedding_coe_sphericalPendulumPhaseSpace.contMDiff
-      sphericalPendulumSymplecticForm_def.symm hH.differentiableAt.mdifferentiableAt
-      hJ.differentiableAt.mdifferentiableAt (by
-        rw [range_mfderiv_coe_sphericalPendulumPhaseSpace,
-          SymplecticForm.hamiltonianVectorField_constSmooth]
-        exact hamiltonianVectorField_angularMomentum_mem_ker _),
-    SymplecticForm.poissonBracket_constSmooth, SymplecticForm.poissonBracket_eq_fderiv,
-    stdSymplecticForm_hamiltonianVectorField_angularMomentum, hH.fderiv,
-    ContinuousLinearMap.comp_apply, fderiv_sphericalPendulumEnergyMomentum_apply]
-  simp only [inner_sub_right, inner_smul_right, EuclideanSpace.inner_single_right,
-    RCLike.conj_to_real, PiLp.sub_apply, PiLp.smul_apply, PiLp.single_apply,
-    smul_eq_mul]
-  simp
-  ring
+      sphericalPendulumSymplecticForm_def.symm
+      (g := sphericalPendulumHamiltonian) (by simpa using hF.fst.mdifferentiableAt)
+      (hasFDerivAt_angularMomentum _ _ _).differentiableAt.mdifferentiableAt (by
+        rw [SymplecticForm.hamiltonianVectorField_constSmooth]
+        exact ⟨_, mfderiv_coe_sphericalPendulumPhaseSpace_hamiltonianVectorField_angularMomentum x⟩)
+  rwa [Function.comp_def, Function.comp_def, SymplecticForm.poissonBracket_constSmooth,
+    stdSymplecticForm_poissonBracket_sphericalPendulumHamiltonian_angularMomentum] at h
 
 /-! ### Density of the regular points -/
 
@@ -370,7 +400,7 @@ theorem isCompleteVectorField_hamiltonianVectorField_sphericalPendulumHamiltonia
 /-- **The rotation flow of the spherical pendulum is complete**: the energy is a proper first
 integral of the vertical angular momentum, so the Hamiltonian vector field of the vertical angular
 momentum on the phase space is complete. -/
-theorem isCompleteVectorField_hamiltonianVectorField_angularMomentum_comp_subtypeVal :
+theorem isCompleteVectorField_hamiltonianVectorField_angularMomentum_sphericalPendulumPhaseSpace :
     IsCompleteVectorField (sphericalPendulumSymplecticForm.hamiltonianVectorField
       fun y ↦ angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
         (y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))) := by
