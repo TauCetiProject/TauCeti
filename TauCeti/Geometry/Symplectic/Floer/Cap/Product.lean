@@ -55,6 +55,10 @@ on the completed capped modules. This file proves:
   (`TauCeti.Floer.grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero`), and the product
   preserves the cochain degree `n - μ` and its residues
   (`TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_mem_map_cochain_gradeBy`).
+* **Degree of cylinder counts from the index.** If every class counted by a matrix of cylinder
+  counts `M` satisfies `μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + ε`, its map sends cochain degree `e` to
+  `e - ε` (`TauCeti.Floer.novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy`): `ε = -1`
+  for the differential, `0` for continuation maps and `1` for homotopies.
 * **Change of reference caps.** Moving the reference caps by lifts `g₁, g₂, g₀ ∈ G` multiplies
   the generating series by `q^(g₀ - g₁ - g₂)` and leaves the kernel, hence the product, unchanged
   (`TauCeti.Floer.kernelOfMatrix_coefficientComparison_vadd`).
@@ -238,6 +242,80 @@ theorem grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero (p₁ : Σ i,
   linarith
 
 end Grading
+
+section Map
+
+variable {μ₁ : (Σ i, P₁ i) → ℤ} {μ₀ : (Σ k, P₀ k) → ℤ}
+  (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
+  (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨k, D⟩) {ε : ℤ}
+
+section Semiring
+
+variable [Semiring R]
+
+/-- **The kernel of class-indexed counts of cylinders on capped generators.** Its coefficient at
+capped generators `D₁` and `D₀` of the orbits `i` and `k` is the finite sum of the counts over all
+classes `A` with `q A = (D₁ - r₁) - (D₀ - r₀)`: the cylinders from `D₁` whose glued output cap is
+`D₀`. -/
+theorem mapKernelOfMatrix_coefficientComparison_apply (M : ι₁ → ι₀ → NovikovSeries R G ωG)
+    {i : ι₁} {k : ι₀} (D₁ : P₁ i) (D₀ : P₀ k) :
+    mapKernelOfMatrix r₁ r₀ (fun i k => coefficientComparison q hq (M i k)) ⟨i, D₁⟩ ⟨k, D₀⟩ =
+      ∑ᶠ A ∈ q ⁻¹' {(D₁ -ᵥ r₁ i) - (D₀ -ᵥ r₀ k)}, (M i k).coeff A := by
+  refine (mapKernelOfMatrix_apply r₁ r₀ _ D₁ D₀).trans ?_
+  rw [coefficientComparison_apply, coeff_map]
+  refine finsum_mem_congr ?_ fun _ _ => rfl
+  ext A
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, AddMonoidHom.neg_apply,
+    neg_eq_iff_eq_neg, neg_sub]
+
+include hμ₁ hμ₀ in
+/-- **Degree of the kernel of cylinder counts from the index.** If the gradings obey the recapping
+law and every class with nonzero count satisfies `μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + ε` relative to the
+reference caps, then the kernel has raw degree `ε` at all capped generators. For rigid
+continuation cylinders `ε = 0`, for rigid Floer cylinders `ε = -1`, and for the rigid members of a
+one-parameter family of cylinders `ε = 1`. -/
+theorem grading_eq_of_mapKernelOfMatrix_coefficientComparison_ne_zero
+    {M : ι₁ → ι₀ → NovikovSeries R G ωG}
+    (hM : ∀ i k, ∀ A ∈ (M i k).support, μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + ε)
+    (p₁ : Σ i, P₁ i) (p₀ : Σ k, P₀ k)
+    (h : mapKernelOfMatrix r₁ r₀ (fun i k => coefficientComparison q hq (M i k)) p₁ p₀ ≠ 0) :
+    μ₀ p₀ = μ₁ p₁ + ε := by
+  obtain ⟨i, D₁⟩ := p₁
+  obtain ⟨k, D₀⟩ := p₀
+  rw [mapKernelOfMatrix_coefficientComparison_apply] at h
+  obtain ⟨A, hA, hne⟩ := exists_ne_zero_of_finsum_mem_ne_zero h
+  have hd := hM i k A (mem_support.2 hne)
+  rw [Set.mem_preimage, Set.mem_singleton_iff] at hA
+  rw [hA, map_sub] at hd
+  have e₁ := hμ₁ i (D₁ -ᵥ r₁ i) (r₁ i)
+  have e₀ := hμ₀ k (D₀ -ᵥ r₀ k) (r₀ k)
+  rw [vsub_vadd] at e₁ e₀
+  linarith
+
+end Semiring
+
+include hμ₁ hμ₀ in
+/-- **The map of cylinder counts shifts cochain degree.** Under the index condition of
+`TauCeti.Floer.grading_eq_of_mapKernelOfMatrix_coefficientComparison_ne_zero`, the map of
+class-indexed counts sends combinations of cochain degree `e = n - μ₁` to combinations of cochain
+degree `e - ε`. -/
+theorem novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy [CommSemiring R]
+    [Finite ι₁] [Finite ι₀] {F₁ : (Σ i, P₁ i) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+    (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+    (hF₀ : ∀ k γ (D : P₀ k), F₀ ⟨k, γ +ᵥ D⟩ = F₀ ⟨k, D⟩ - (-area ω c) γ)
+    {M : ι₁ → ι₀ → NovikovSeries R G ωG}
+    (hM : ∀ i k, ∀ A ∈ (M i k).support, μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + ε)
+    {n e : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ (fun p => n - μ₁ p) e) :
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (M i k)) a ∈
+      gradeBy R F₀ (fun p => n - μ₀ p) (e - ε) := by
+  obtain ⟨C, hm⟩ := exists_potential_le_of_mapKernelOfMatrix_ne_zero hF₁ hF₀ r₁ r₀
+    (fun i k => coefficientComparison q hq (M i k))
+  rw [novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hm, sub_eq_add_neg]
+  refine kernelMap_mem_gradeBy _ _ (fun p₁ p₀ h => ?_) ha
+  rw [grading_eq_of_mapKernelOfMatrix_coefficientComparison_ne_zero r₁ r₀ q hq hμ₁ hμ₀ hM p₁ p₀ h]
+  ring
+
+end Map
 
 section Product
 
