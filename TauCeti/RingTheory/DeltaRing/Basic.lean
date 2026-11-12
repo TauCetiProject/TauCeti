@@ -61,7 +61,7 @@ theorem natCast_mul_addCorrection [hp : Fact p.Prime] (x y : A) :
   have hsum : (x + y) ^ p = x ^ p + y ^ p +
       ∑ i ∈ Finset.Ioo 0 p, x ^ i * y ^ (p - i) * (p.choose i : A) := by
     rw [add_pow, Finset.range_eq_Ico, Finset.sum_Ico_succ_top (Nat.zero_le p),
-      ← Finset.Ioo_insert_left hp0, Finset.sum_insert Finset.left_notMem_Ioo]
+      ← Finset.insert_left_Ioo hp0, Finset.sum_insert Finset.left_notMem_Ioo]
     simp only [pow_zero, Nat.sub_zero, Nat.choose_zero_right, Nat.cast_one, mul_one, one_mul,
       Nat.sub_self, Nat.choose_self]
     ring
