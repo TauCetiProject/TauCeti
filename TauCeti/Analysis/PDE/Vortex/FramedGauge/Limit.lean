@@ -46,10 +46,11 @@ lies in the Sobolev gauge group `G_(k+1)`
 uniformly to an element of `G_(k+1)`
 (`TauCeti.Vortex.exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniformly`). The
 orbit relation of `G_(k+1)` on `A_m^k` is therefore closed under locally uniform convergence of
-continuous fields (`TauCeti.Vortex.mem_orbit_sobolevGaugeGroup_of_tendstoLocallyUniformly`), the
-property that makes the quotient `A_m^k / G_(k+1)` Hausdorff. The fields `x i`, `y i` and the gauges
-`u i` need not lie in `A_m^k` or `G_(k+1)`. Convergence of the gauges in the `H^(k+1)` norm and the
-slice theorem are not treated here.
+continuous fields (`TauCeti.Vortex.mem_orbit_sobolevGaugeGroup_of_tendstoLocallyUniformly`). This
+is the input to the Hausdorff property of the quotient `A_m^k / G_(k+1)`, once convergence in
+`H^k` is known to give locally uniform convergence of continuous representatives; that step is not
+treated here. The fields `x i`, `y i` and the gauges `u i` need not lie in `A_m^k` or `G_(k+1)`.
+Convergence of the gauges in the `H^(k+1)` norm and the slice theorem are not treated here either.
 
 ## References
 
@@ -124,25 +125,15 @@ private theorem uniformCauchySeqOn_closedBall_of_tendstoUniformlyOn_gaugeForm
   obtain ⟨⟨hω₁, hc₁⟩, hω₂, hc₂⟩ := hp
   have hC (w : ℂ) (hw : w ∈ closedBall z₀ R) :
       ‖gaugeForm (u p.1) w - gaugeForm (u p.2) w‖ ≤ 2 * δ := by
-    have h1 := hω₁ w hw
-    have h2 := hω₂ w hw
-    rw [dist_eq_norm] at h1 h2
-    calc ‖gaugeForm (u p.1) w - gaugeForm (u p.2) w‖
-        = ‖(ω w - gaugeForm (u p.2) w) - (ω w - gaugeForm (u p.1) w)‖ := by
-          congr 1
-          abel
-      _ ≤ ‖ω w - gaugeForm (u p.2) w‖ + ‖ω w - gaugeForm (u p.1) w‖ := norm_sub_le _ _
-      _ ≤ 2 * δ := by linarith
+    rw [← dist_eq_norm]
+    linarith [hω₁ w hw, hω₂ w hw,
+      dist_triangle_left (gaugeForm (u p.1) w) (gaugeForm (u p.2) w) (ω w)]
   have hmv := norm_coe_sub_coe_le_of_norm_gaugeForm_sub_le (convex_closedBall z₀ R)
     (fun w _ ↦ hu p.1 w) (fun w _ ↦ hu p.2 w) hC (mem_closedBall_self
       (dist_nonneg.trans (mem_closedBall.1 hz))) hz
   have hz₀ : ‖(u p.1 z₀ : ℂ) - u p.2 z₀‖ < ε / 2 := by
-    rw [dist_eq_norm] at hc₁ hc₂
-    calc ‖(u p.1 z₀ : ℂ) - u p.2 z₀‖ = ‖((u p.1 z₀ : ℂ) - c) - ((u p.2 z₀ : ℂ) - c)‖ := by
-          congr 1
-          abel
-      _ ≤ ‖(u p.1 z₀ : ℂ) - c‖ + ‖(u p.2 z₀ : ℂ) - c‖ := norm_sub_le _ _
-      _ < ε / 2 := by linarith
+    rw [← dist_eq_norm]
+    linarith [dist_triangle_right (u p.1 z₀ : ℂ) (u p.2 z₀) c]
   have hzR : ‖z - z₀‖ ≤ |R| + 1 := by
     rw [← dist_eq_norm]
     exact (mem_closedBall.1 hz).trans
@@ -382,10 +373,10 @@ theorem exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniform
     exact_mod_cast contDiff_coe_of_contDiff_gaugeForm hvd hω
   exact mem_sobolevGaugeGroup_of_mem_framedFieldSpace (by omega) hxA hv2 (hv ▸ hyA)
 
-/-- **The orbit relation of `G_(k+1)` on `A_m^k` is closed**, `k ≥ 3`: if continuous fields
-`x`, `y` of `A_m^k` are locally uniform limits of fields `x i` and `y i` of `A_m^k` lying in one
-`G_(k+1)`-orbit, then `x` and `y` lie in one `G_(k+1)`-orbit. The instance `Fact (1 < k)` is the
-one under which `G_(k+1)` acts on `A_m^k`. -/
+/-- **The orbit relation of `G_(k+1)` on `A_m^k` is closed under locally uniform convergence**,
+`k ≥ 3`: if continuous fields `x`, `y` of `A_m^k` are locally uniform limits of fields `x i` and
+`y i` of `A_m^k` lying in one `G_(k+1)`-orbit, then `x` and `y` lie in one `G_(k+1)`-orbit. The
+instance `Fact (1 < k)` is the one under which `G_(k+1)` acts on `A_m^k`. -/
 theorem mem_orbit_sobolevGaugeGroup_of_tendstoLocallyUniformly [l.NeBot] {k : ℕ} [Fact (1 < k)]
     (hk : 2 < k) {hs : 1 < (k : ℝ) + 1} {f : ContDiffBump (0 : ℝ)} {m : ℕ}
     {xs ys : ι → framedFieldSpace f m k} {x y : framedFieldSpace f m k}

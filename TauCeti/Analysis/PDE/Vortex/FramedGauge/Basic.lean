@@ -421,23 +421,30 @@ theorem contDiff_gaugeForm {u : ℂ → Circle}
       (hu.fderiv_right (by simp)))
 
 /-- **A gauge is one order smoother than its logarithmic derivative.** If `u` is differentiable
-and `Im (u⁻¹ du)` is `C^n`, then `u` is `C^(n+1)`, because `du = i u Im (u⁻¹ du)`. -/
+and `Im (u⁻¹ du)` is `C^n`, `n ≤ ∞`, then `u` is `C^(n+1)`, because `du = i u Im (u⁻¹ du)`. -/
 theorem contDiff_coe_of_contDiff_gaugeForm {u : ℂ → Circle}
-    (hu : Differentiable ℝ (fun z ↦ (u z : ℂ))) {n : ℕ} (hω : ContDiff ℝ n (gaugeForm u)) :
+    (hu : Differentiable ℝ (fun z ↦ (u z : ℂ))) {n : ℕ∞} (hω : ContDiff ℝ n (gaugeForm u)) :
     ContDiff ℝ (n + 1) (fun z ↦ (u z : ℂ)) := by
   have hfd : fderiv ℝ (fun w ↦ (u w : ℂ)) = fun z ↦ (gaugeForm u z).smulRight ((u z : ℂ) * I) :=
     funext (fderiv_coe_eq_smulRight_gaugeForm u)
-  induction n with
-  | zero =>
-    refine contDiff_succ_iff_fderiv.2 ⟨hu, fun h ↦ by simp at h, ?_⟩
-    rw [hfd]
-    exact hω.smulRight (contDiff_zero.2 (hu.continuous.mul continuous_const))
-  | succ n ih =>
-    have hu' : ContDiff ℝ (n + 1 : ℕ) (fun z ↦ (u z : ℂ)) := by
-      exact_mod_cast ih (hω.of_le (by norm_cast; omega))
-    refine contDiff_succ_iff_fderiv.2 ⟨hu, fun h ↦ by simp at h, ?_⟩
-    rw [hfd]
-    exact hω.smulRight (hu'.mul contDiff_const)
+  have hfin (n : ℕ) (hω : ContDiff ℝ n (gaugeForm u)) :
+      ContDiff ℝ (n + 1) (fun z ↦ (u z : ℂ)) := by
+    induction n with
+    | zero =>
+      refine contDiff_succ_iff_fderiv.2 ⟨hu, fun h ↦ by simp at h, ?_⟩
+      rw [hfd]
+      exact hω.smulRight (contDiff_zero.2 (hu.continuous.mul continuous_const))
+    | succ n ih =>
+      have hu' : ContDiff ℝ (n + 1 : ℕ) (fun z ↦ (u z : ℂ)) := by
+        exact_mod_cast ih (hω.of_le (by norm_cast; omega))
+      refine contDiff_succ_iff_fderiv.2 ⟨hu, fun h ↦ by simp at h, ?_⟩
+      rw [hfd]
+      exact hω.smulRight (hu'.mul contDiff_const)
+  induction n using ENat.recTopCoe with
+  | top =>
+    refine contDiff_infty.2 fun m ↦ (hfin m (hω.of_le (by exact_mod_cast le_top))).of_le ?_
+    exact_mod_cast le_self_add
+  | coe n => exact_mod_cast hfin n hω
 
 /-- A `C²` gauge has a differentiable logarithmic derivative. -/
 theorem differentiableAt_gaugeForm {u : ℂ → Circle} {z : ℂ}
