@@ -205,4 +205,3 @@ instance isAbelianRays_truncatedGrading [IsAbelianRays d ℒ] (k : ℕ) :
     (fun n => (d.truncatedGrading_eq ℒ k n).le)
 
 end TauCeti.PositiveDegrees
-

@@ -88,4 +88,3 @@ theorem map_truncationMap_raySubmodule {k l : ℕ} (h : k ≤ l)
   simp only [raySubmodule_def, Submodule.map_iSup, map_truncationMap_wall]
 
 end TauCeti.DirectedWallSpaces
-

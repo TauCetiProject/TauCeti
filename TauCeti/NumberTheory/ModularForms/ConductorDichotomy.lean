@@ -200,7 +200,7 @@ theorem eq_zero_of_not_forall_apply_eq_one_of_unitsMap_eq_one {l : ℕ} [NeZero 
   · -- at level `0` the reduction `(ZMod 0)ˣ → (ZMod (0 / l))ˣ` is the identity, so `hχ` fails
     refine absurd ?_ hχ
     intro u hu
-    have h0 : ∀ (n : ℕ) (hn : n = 0) (h : n ∣ 0), ZMod.unitsMap h u = 1 → u = 1 := by
+    have h0 : ∀ (n : ℕ) (_ : n = 0) (h : n ∣ 0), ZMod.unitsMap h u = 1 → u = 1 := by
       rintro n rfl h
       simp [ZMod.unitsMap_self]
     rw [h0 _ (Nat.zero_div l) _ hu, map_one]

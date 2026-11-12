@@ -177,7 +177,7 @@ theorem signDecomposition_mem (K : Submodule R L)
   classical
   rw [signDecomposition_apply]
   apply K.sum_mem
-  intro n hn
+  intro n _
   split
   · exact hK n hx
   · exact K.zero_mem
