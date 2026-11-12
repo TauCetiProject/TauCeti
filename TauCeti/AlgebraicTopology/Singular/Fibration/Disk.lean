@@ -312,14 +312,6 @@ private lemma emptyIso_hom_naturality (hp : serreFibrations p) (hp' : serreFibra
   let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)
   let ι := (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ∈ ({0} : Set V)})).map
   let ι' := (TopPair.ofSubset (p' ⁻¹' {x : K | (x : V) ∈ ({0} : Set V)})).map
-  have hι : IsIso (H.map ι) :=
-    TopPair.isIso_homologyMap_map_of_isZero _ _
-      (isZero_of_starConvex R hp hK h₀ (starConvex_singleton (0 : V)) rfl (n + 1))
-      (isZero_of_starConvex R hp hK h₀ (starConvex_singleton (0 : V)) rfl n)
-  have hι' : IsIso (H.map ι') :=
-    TopPair.isIso_homologyMap_map_of_isZero _ _
-      (isZero_of_starConvex R hp' hK h₀ (starConvex_singleton (0 : V)) rfl (n + 1))
-      (isZero_of_starConvex R hp' hK h₀ (starConvex_singleton (0 : V)) rfl n)
   -- On the fibres, `g` followed by the inclusion is the inclusion followed by `f`.
   have hgι : g ≫ ι' = ι ≫ f := by
     ext x
