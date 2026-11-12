@@ -201,10 +201,14 @@ theorem _root_.Continuous.planeRotation {X : Type*} [TopologicalSpace X] {ι : X
     {c : X → Circle} (hι : Continuous fun x ↦ (ι x).toContinuousLinearMap) (hc : Continuous c) :
     Continuous fun x ↦ (((ι x).planeRotation (c x)).toContinuousLinearEquiv : E →L[ℝ] E) := by
   -- The coordinate `planeCoord (ι x)` pairs a vector with the images `ι x 1` and `ι x I`.
-  have hinner (w a : ℂ) : Continuous fun x ↦ (innerSL ℝ (ι x w)).smulRight a :=
-    ((ContinuousLinearMap.smulRightL ℝ E ℂ).continuous.comp
-      ((innerSL ℝ).continuous.comp (hι.clm_apply continuous_const))).clm_apply continuous_const
-  have hcoord : Continuous fun x ↦ planeCoord (ι x) := (hinner 1 1).add (hinner I I)
+  have hinner (w a : ℂ) : Continuous fun x ↦ (innerSL ℝ (ι x w)).smulRight a := by
+    have hw : Continuous fun x ↦ ι x w := by
+      simpa only [coe_toContinuousLinearMap] using hι.clm_apply continuous_const
+    exact ((ContinuousLinearMap.smulRightL ℝ E ℂ).continuous.comp
+      ((innerSL ℝ).continuous.comp hw)).clm_apply continuous_const
+  have hcoord : Continuous fun x ↦ planeCoord (ι x) := by
+    unfold planeCoord
+    exact (hinner 1 1).add (hinner I I)
   have hmul : Continuous fun x ↦ ContinuousLinearMap.mul ℝ ℂ ((c x : ℂ) - 1) :=
     (ContinuousLinearMap.mul ℝ ℂ).continuous.comp
       ((continuous_subtype_val.comp hc).sub continuous_const)
