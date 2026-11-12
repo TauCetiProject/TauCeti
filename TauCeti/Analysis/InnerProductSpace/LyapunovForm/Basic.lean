@@ -34,9 +34,13 @@ in `TauCeti.Analysis.InnerProductSpace.LyapunovForm.Hyperbolic`.
 
 * `ContinuousLinearMap.HasLyapunovForm`: `A` has a Lyapunov form, unfolded by
   `ContinuousLinearMap.hasLyapunovForm_iff`.
+* `ContinuousLinearMap.isSymmetric_neg_and_forall_le_inner_neg_apply_neg_apply`: `-S` is a
+  Lyapunov form of `-A` whenever `S` is one of `A`, with the same constant;
+  `ContinuousLinearMap.HasLyapunovForm.neg` is the corresponding statement for `HasLyapunovForm`.
 * `ContinuousLinearMap.hasLyapunovForm_of_isSymmetric`: a symmetric operator bounded below has a
   Lyapunov form; `ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric` applies this to a
-  limit of symmetric operators.
+  limit of symmetric operators, and `ContinuousLinearMap.hasLyapunovForm_sub_smul_id_of_isSymmetric`
+  to its shifts `A - c • id` with `|c|` below the bound.
 * `ContinuousLinearMap.HasLyapunovForm.exists_eventually_nhds`: one Lyapunov form serves every
   operator close enough to `A`; `ContinuousLinearMap.isOpen_setOf_hasLyapunovForm` is the
   corresponding openness statement.
@@ -80,6 +84,21 @@ theorem hasLyapunovForm_iff : A.HasLyapunovForm ↔
     ∃ S : E →L[ℝ] E, (S : E →ₗ[ℝ] E).IsSymmetric ∧ ∃ c > 0, ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ :=
   Iff.rfl
 
+/-- **Negating a Lyapunov form.** If `S` is a Lyapunov form of `A` with constant `c`, then `-S`
+is one of `-A` with the same constant. Along the flow of `A` this reverses time. -/
+theorem isSymmetric_neg_and_forall_le_inner_neg_apply_neg_apply {S : E →L[ℝ] E} {c : ℝ}
+    (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (hcS : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) :
+    ((-S : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric ∧ ∀ v, c * ‖v‖ ^ 2 ≤ ⟪(-S) ((-A) v), v⟫_ℝ := by
+  refine ⟨?_, fun v ↦ by simpa only [neg_apply, map_neg, neg_neg] using hcS v⟩
+  rw [toLinearMap_neg]
+  exact hS.neg
+
+/-- If `A` has a Lyapunov form, then so does `-A`. -/
+theorem HasLyapunovForm.neg (h : A.HasLyapunovForm) : (-A).HasLyapunovForm := by
+  obtain ⟨S, hS, c, hc, hcS⟩ := h
+  obtain ⟨hS', hcS'⟩ := isSymmetric_neg_and_forall_le_inner_neg_apply_neg_apply hS hcS
+  exact ⟨-S, hS', c, hc, hcS'⟩
+
 /-- **A symmetric operator bounded below has a Lyapunov form**, namely `S = A` with `c = α²`. -/
 theorem hasLyapunovForm_of_isSymmetric (hA : (A : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α)
     (hgap : ∀ v, α * ‖v‖ ≤ ‖A v‖) : A.HasLyapunovForm := by
@@ -97,6 +116,19 @@ theorem hasLyapunovForm_of_tendsto_of_isSymmetric {ι : Type*} {l : Filter ι} [
     {α : ℝ} (hα : 0 < α) (hgap : ∀ v, α * ‖v‖ ≤ ‖A v‖) : A.HasLyapunovForm :=
   hasLyapunovForm_of_isSymmetric (isClosed_setOf_isSymmetric.mem_of_tendsto hlim (.of_forall hF))
     hα hgap
+
+/-- **A symmetric operator bounded below keeps a Lyapunov form under small shifts.** If `A` is
+symmetric with `α ‖v‖ ≤ ‖A v‖` and `|c| < α`, then `A - c • id` is symmetric with
+`(α - |c|) ‖v‖ ≤ ‖(A - c • id) v‖`, so it has a Lyapunov form. -/
+theorem hasLyapunovForm_sub_smul_id_of_isSymmetric (hA : (A : E →ₗ[ℝ] E).IsSymmetric) {α c : ℝ}
+    (hgap : ∀ v, α * ‖v‖ ≤ ‖A v‖) (hc : |c| < α) :
+    (A - c • ContinuousLinearMap.id ℝ E).HasLyapunovForm := by
+  refine hasLyapunovForm_of_isSymmetric (fun x y ↦ ?_) (sub_pos.2 hc) fun v ↦ ?_
+  · simp [inner_sub_left, inner_sub_right, real_inner_smul_left, real_inner_smul_right,
+      hA.apply_clm x y]
+  · calc (α - |c|) * ‖v‖ = α * ‖v‖ - ‖c • v‖ := by rw [norm_smul, Real.norm_eq_abs]; ring
+      _ ≤ ‖A v‖ - ‖c • v‖ := by linarith [hgap v]
+      _ ≤ ‖(A - c • ContinuousLinearMap.id ℝ E) v‖ := by simpa using norm_sub_norm_le (A v) (c • v)
 
 /-- **A Lyapunov form survives small perturbations.** If `A` has a Lyapunov form, then a single
 symmetric `S` and a single constant `c > 0` satisfy `c ‖v‖² ≤ ⟪S (B v), v⟫` for every `B`

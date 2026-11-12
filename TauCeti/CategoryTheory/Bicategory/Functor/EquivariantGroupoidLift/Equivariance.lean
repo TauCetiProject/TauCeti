@@ -159,7 +159,6 @@ lemma toLiftTransportIso_hom_app_comp_transportCommIso {p q : Γ} (g : p ⟶ q)
   -- Name the inverse-comparison carriers in the prescribed fibers.
   let y : fiber actions p := (N.toLift.fiberEquivalence p).inverse.obj x
   let ε : y ⟶ x := (N.toLift.fiberEquivalence p).counit.app x
-  let εi : x ⟶ y := (N.toLift.fiberEquivalence p).counitInv.app x
   let z : fiber actions p := (N.toLift.fiberEquivalence p).inverse.obj ((act actions p a).obj x)
   let εa : z ⟶ (act actions p a).obj x :=
     (N.toLift.fiberEquivalence p).counit.app ((act actions p a).obj x)

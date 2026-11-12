@@ -85,7 +85,7 @@ variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ
   [ContinuousStar R]
 
 local instance finiteDimensionalCompleteSpaceUnitary : CompleteSpace R :=
-  FiniteDimensional.complete ℝ R
+  FiniteDimensional.completeSpace ℝ R
 
 /-- In the canonical algebra coordinates of the Lie algebra of `Rˣ`, an element generates a
 one-parameter subgroup of unitaries exactly when it is skew-adjoint. -/
@@ -94,6 +94,9 @@ one-parameter subgroup of unitaries exactly when it is skew-adjoint. -/
 theorem forall_lieExp_mem_unitarySubgroup_iff_mem_skewAdjoint (x : R) :
     (∀ t : ℝ, lieExp ((unitsLieAlgebraLieEquiv (R := R)).symm (t • x)) ∈
         unitarySubgroup Rˣ) ↔ x ∈ skewAdjoint R := by
+  -- A continuous additive involution is real-linear, so `star` is automatically `ℝ`-semilinear.
+  have : StarModule ℝ R :=
+    ⟨fun r x ↦ by simpa using map_real_smul (starAddEquiv (R := R)) continuous_star r x⟩
   rw [forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff,
     ← forall_exp_smul_mem_unitary_iff_mem_skewAdjoint]
   simp only [mem_unitarySubgroup_iff, Units.unitary_eq, Submonoid.mem_comap,
