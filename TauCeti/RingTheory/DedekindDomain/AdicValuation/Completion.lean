@@ -48,7 +48,9 @@ Everything here concerns one completion. The comparison of two completions along
 * `IsDedekindDomain.HeightOneSpectrum.isOpen_setOf_valued_le`: a closed valuation ball of `K_v`
   around the origin is open.
 * `IsDedekindDomain.HeightOneSpectrum.isAdic_maximalIdeal_adicCompletionIntegers`: the subspace
-  topology on `𝒪_v` is the `𝔪`-adic one.
+  topology on `𝒪_v` is the `𝔪`-adic one. The instances
+  `isLinearTopology_adicCompletionIntegers` and `fact_isAdic_maximalIdeal_adicCompletionIntegers`
+  (in the same namespace) record this for formal-group points with parameters in `𝔪`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_valued_sub_le`: every element of `𝒪_v` is
   congruent to an element of `R` modulo any power of the maximal ideal, so `R` is dense in `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.denseRange_algebraMap_adicCompletionIntegers`: the
@@ -406,6 +408,17 @@ theorem isAdic_maximalIdeal_adicCompletionIntegers :
     IsAdic (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K)) :=
   isAdic_iff.mpr ⟨isOpen_maximalIdeal_pow_adicCompletionIntegers (K := K) v,
     fun _ hs ↦ exists_maximalIdeal_pow_subset_of_mem_nhds (K := K) v hs⟩
+
+/-- `𝒪_v` is linearly topologized: its topology is the `𝔪`-adic one. -/
+instance isLinearTopology_adicCompletionIntegers :
+    IsLinearTopology (v.adicCompletionIntegers K) (v.adicCompletionIntegers K) :=
+  v.isAdic_maximalIdeal_adicCompletionIntegers (K := K) ▸ Ideal.isLinearTopology _
+
+/-- `isAdic_maximalIdeal_adicCompletionIntegers` as an instance, for the APIs that take
+`IsAdic` as a `Fact`, such as the points of a formal group with parameters in `𝔪`. -/
+instance fact_isAdic_maximalIdeal_adicCompletionIntegers :
+    Fact (IsAdic (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K))) :=
+  ⟨v.isAdic_maximalIdeal_adicCompletionIntegers⟩
 
 /-- `𝒪_v` is complete: it is a closed subset of the complete field `K_v`. -/
 instance completeSpace_adicCompletionIntegers : CompleteSpace (v.adicCompletionIntegers K) :=

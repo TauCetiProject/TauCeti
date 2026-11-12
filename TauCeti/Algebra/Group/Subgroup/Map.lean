@@ -66,8 +66,9 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `MonoidHom.closure_preimage_eq_of_injective`, `AddMonoidHom.closure_preimage_eq_of_injective`:
   taking subgroup closure commutes with preimage under an injective homomorphism when the
   generating set lies in its range.
-* `AddMonoidHom.map_eq_of_map_le_of_map_le_map_nsmul`: homomorphisms inverse up to `n`
-  identify subgroup images when the target subgroup has no nonzero `n`-torsion.
+* `MonoidHom.map_eq_of_map_le_of_map_le_map_pow` and
+  `AddMonoidHom.map_eq_of_map_le_of_map_le_map_nsmul`: homomorphisms inverse up to `n` identify
+  subgroup images when the target subgroup has no nontrivial `n`-torsion.
 -/
 
 public section
@@ -485,25 +486,30 @@ theorem QuotientGroup.congrOfSurjectiveOfKerLe_mk (ψ : G →* H)
 
 end TauCeti
 
-namespace AddMonoidHom
+namespace MonoidHom
 
-variable {A B : Type*} [AddCommGroup A] [AddCommGroup B]
+variable {A B : Type*} [CommGroup A] [Group B]
 
-/-- **The image of a subgroup under a homomorphism invertible up to `n`**: let `f : A →+ B` and
-`g : B →+ A` satisfy `g ∘ f = n` and `f ∘ g = n`, and let `U ≤ A` and `V ≤ B` be subgroups with
-`f(U) ≤ V` and `g(V) ≤ n U`. If `V` has no nonzero `n`-torsion, then `f(U) = V`. -/
-theorem map_eq_of_map_le_of_map_le_map_nsmul (f : A →+ B) (g : B →+ A) {n : ℕ}
-    (hgf : ∀ a, g (f a) = n • a) (hfg : ∀ b, f (g b) = n • b) {U : AddSubgroup A}
-    {V : AddSubgroup B} (hUV : U.map f ≤ V) (hVU : V.map g ≤ U.map (nsmulAddMonoidHom n))
-    (hV : Function.Injective (fun x : V ↦ n • x)) : U.map f = V := by
+/-- **The image of a subgroup under a homomorphism invertible up to `n`**: let `f : A →* B` and
+`g : B →* A` satisfy `g ∘ f = (·) ^ n` and `f ∘ g = (·) ^ n`, and let `U ≤ A` and `V ≤ B` be
+subgroups with `f(U) ≤ V` and `g(V) ≤ Uⁿ`. If `V` has no nontrivial `n`-torsion, then
+`f(U) = V`. -/
+@[to_additive
+  /-- **The image of a subgroup under a homomorphism invertible up to `n`**: let `f : A →+ B` and
+  `g : B →+ A` satisfy `g ∘ f = n` and `f ∘ g = n`, and let `U ≤ A` and `V ≤ B` be subgroups with
+  `f(U) ≤ V` and `g(V) ≤ n U`. If `V` has no nonzero `n`-torsion, then `f(U) = V`. -/]
+theorem map_eq_of_map_le_of_map_le_map_pow (f : A →* B) (g : B →* A) {n : ℕ}
+    (hgf : ∀ a, g (f a) = a ^ n) (hfg : ∀ b, f (g b) = b ^ n) {U : Subgroup A}
+    {V : Subgroup B} (hUV : U.map f ≤ V) (hVU : V.map g ≤ U.map (powMonoidHom n))
+    (hV : Function.Injective (fun x : V ↦ x ^ n)) : U.map f = V := by
   refine le_antisymm hUV fun b hb ↦ ?_
-  -- `g b = n • a = g (f a)` for some `a ∈ U`, so `b - f a ∈ V` is killed by `g`, hence by `n`
+  -- `g b = a ^ n = g (f a)` for some `a ∈ U`, so `b (f a)⁻¹ ∈ V` is killed by `g`, hence by `n`
   obtain ⟨a, ha, hab⟩ := hVU ⟨b, hb, rfl⟩
-  have hg : g (b - f a) = 0 := by
-    rw [map_sub, hgf, ← hab, nsmulAddMonoidHom_apply, sub_self]
-  have hd : (⟨b - f a, sub_mem hb (hUV ⟨a, ha, rfl⟩)⟩ : V) = 0 :=
-    hV (Subtype.ext (by simp only [AddSubgroup.coe_nsmul, ZeroMemClass.coe_zero, nsmul_zero,
-      ← hfg, hg, map_zero]))
-  exact ⟨a, ha, (sub_eq_zero.mp (congrArg Subtype.val hd)).symm⟩
+  have hg : g (b * (f a)⁻¹) = 1 := by
+    rw [map_mul, map_inv, hgf, ← hab, powMonoidHom_apply, mul_inv_cancel]
+  have hd : (⟨b * (f a)⁻¹, mul_mem hb (inv_mem (hUV ⟨a, ha, rfl⟩))⟩ : V) = 1 :=
+    hV (Subtype.ext (by simp only [Subgroup.coe_pow, OneMemClass.coe_one, one_pow,
+      ← hfg, hg, map_one]))
+  exact ⟨a, ha, (mul_inv_eq_one.mp (congrArg Subtype.val hd)).symm⟩
 
-end AddMonoidHom
+end MonoidHom

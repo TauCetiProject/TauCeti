@@ -23,7 +23,9 @@ Write `q = #κ(u)` and let `E_ns` be the nonsingular points of the reduced equat
 
 `[E(F_u) : E_(k+1)(F_u)] = q^k · #E_ns(κ(u)) · [E(F_u) : E₀(F_u)]`.
 
-For a minimal equation the last factor is the local Tamagawa number. This formula separates
+For a minimal equation the last factor is the local Tamagawa number. Multiplication by `n` with
+`n O_u = 𝔪_u ^ e` and `e < k` has image of index `q ^ e` in `E_k(F_u)`
+(`WeierstrassCurve.index_range_nsmul_formalPointFiltration`). This formula separates
 the formal, reduced, and component-group factors in the index, as needed when comparing the
 local cokernel of an isogeny with its effect on deep formal subgroups. No minimality is needed
 for the index formula for an integral equation; minimality enters the Tamagawa interpretation
@@ -49,7 +51,6 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 
 local notation "O_u" => u.adicCompletionIntegers F
 local notation "F_u" => u.adicCompletion F
-local notation "m_u" => maximalIdeal O_u
 local notation "R_u" =>
   Valuation.valuationSubring
     (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ)))
@@ -63,12 +64,6 @@ private local instance : HenselianLocalRing R_u := inferInstanceAs (HenselianLoc
 
 private local instance [Finite (A ⧸ u.asIdeal)] : Finite (ResidueField R_u) :=
   inferInstanceAs (Finite (ResidueField O_u))
-
-local instance isLinearTopology_index : IsLinearTopology O_u O_u :=
-  u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
-
-private local instance fact_isAdic_index : Fact (IsAdic m_u) :=
-  ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
 
 variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
   [(C.baseChange (u.adicCompletion F)).IsElliptic]
@@ -87,6 +82,17 @@ theorem relIndex_formalPointFiltration {j : ℕ} (hj : j ≠ 0) (k : ℕ) :
     AddSubgroup.relIndex_map_map_of_injective _ _ (C.formalPointHomAdicCompletion_injective u),
     FormalGroupPoint.relIndex_filtration hj (Nat.le_add_right j k),
     TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add]
+
+open scoped Classical in
+/-- **The index of `n E_k(F_u)` in `E_k(F_u)`**: if `n O_u = 𝔪_u ^ e` with `e < k`, then
+`[E_k(F_u) : n E_k(F_u)] = q ^ e`, as `n E_k(F_u) = E_(k+e)(F_u)`. -/
+theorem index_range_nsmul_formalPointFiltration {n e k : ℕ}
+    (hn : Ideal.span {(n : O_u)} = maximalIdeal O_u ^ e) (hek : e < k) :
+    (nsmulAddMonoidHom (α := C.formalPointFiltration u k) n).range.index =
+      Nat.card (ResidueField O_u) ^ e := by
+  rw [← AddSubgroup.addSubgroupOf_map_nsmulAddMonoidHom_eq_range,
+    C.map_nsmul_formalPointFiltration u hn hek, ← AddSubgroup.relIndex,
+    C.relIndex_formalPointFiltration u (by omega)]
 
 open scoped Classical in
 /-- Each step beyond `E₁` contributes one residue-field factor to the index. -/

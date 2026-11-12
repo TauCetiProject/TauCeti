@@ -38,6 +38,8 @@ as a `ℤ`-module: `AddSubgroup.index_range_nsmul` gives `n ^ finrank ℤ M`. Th
   cross-multiplied form is asserted: nothing here forces `G[n]` finite or the indices nonzero, and
   `Nat.card` and `Subgroup.index` are both `0` on infinite arguments, so neither ratio need be
   defined.
+* `Subgroup.subgroupOf_ker_powMonoidHom` and its additive form
+  `AddSubgroup.addSubgroupOf_ker_nsmulAddMonoidHom`: `G[n] ∩ U = U[n]` inside `U`.
 * `MulEquiv.map_ker_powMonoidHom`, `MulEquiv.card_ker_powMonoidHom` and
   `MulEquiv.index_range_powMonoidHom`, with their additive forms
   `AddEquiv.map_ker_nsmulAddMonoidHom`, `AddEquiv.card_ker_nsmulAddMonoidHom` and
@@ -83,6 +85,17 @@ namespace Subgroup
 
 variable {G : Type*} [CommGroup G]
 
+/-- The `n`-torsion of `G` met with a subgroup `U` is the `n`-torsion of `U`: `G[n] ∩ U = U[n]` as
+subgroups of `U`. This is the kernel counterpart of Mathlib's
+`Subgroup.subgroupOf_map_powMonoidHom_eq_range`. -/
+@[to_additive /-- The `n`-torsion of `G` met with a subgroup `U` is the `n`-torsion of `U`:
+`G[n] ∩ U = U[n]` as subgroups of `U`. This is the kernel counterpart of Mathlib's
+`AddSubgroup.addSubgroupOf_map_nsmulAddMonoidHom_eq_range`. -/]
+theorem subgroupOf_ker_powMonoidHom (U : Subgroup G) (n : ℕ) :
+    (powMonoidHom (α := G) n).ker.subgroupOf U = (powMonoidHom (α := U) n).ker := by
+  ext
+  simp [mem_subgroupOf, Subtype.ext_iff]
+
 /-- **For a subgroup `U` of finite index in a commutative group `G` and any `n`,
 `(G : Gⁿ) * #U[n] = #G[n] * (U : Uⁿ)`,** where `Gⁿ` is the subgroup of `n`-th powers and `G[n]`
 the `n`-torsion subgroup. This is the cross-multiplied form of "`(G : Gⁿ) / #G[n]` is unchanged
@@ -109,9 +122,9 @@ theorem index_range_pow_mul_card_ker (U : Subgroup G) [U.FiniteIndex] (n : ℕ) 
   have hmap : (U.map φG).index = φU.range.index * U.index := by
     rw [← relIndex_mul_index hBU, relIndex, subgroupOf_map_powMonoidHom_eq_range]
   -- `U ⊓ G[n]` is `U[n]`
-  have hker : Nat.card ↥(U ⊓ φG.ker) = Nat.card φU.ker :=
-    Nat.card_congr ⟨fun x ↦ ⟨⟨x, x.2.1⟩, Subtype.ext x.2.2⟩,
-      fun y ↦ ⟨y, (y : U).2, congrArg Subtype.val y.2⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
+  have hker : Nat.card ↥(U ⊓ φG.ker) = Nat.card φU.ker := by
+    rw [inf_comm, ← subgroupOf_map_subtype, card_map_of_injective U.subtype_injective,
+      subgroupOf_ker_powMonoidHom]
   -- `(G : Gⁿ) · (G : U) · #(U ⊓ G[n]) = (G : Uⁿ) · #G[n]`; cancel `(G : U)`
   have h := φG.index_range_mul_index_mul_card_inf_ker U
   rw [hmap, hker] at h

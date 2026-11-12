@@ -88,16 +88,6 @@ section DividingN
 
 local notation "m_u" => maximalIdeal O_u
 
--- Named: anonymous `local instance`s here get the same generated names as the ones in
--- `FormalGroup/Point/Torsion/Basic.lean`, and the names used in
--- `FormalGroup/Point/Torsion/Free.lean` are already taken in this module's imports.
-private local instance isLinearTopology_adicCompletionIntegers_dividingN :
-    IsLinearTopology O_u O_u :=
-  u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
-
-private local instance fact_isAdic_maximalIdeal_dividingN : Fact (IsAdic m_u) :=
-  ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
-
 open scoped Classical in
 /-- On a minimal integral model `C`, the image of `Ê(𝔪_u ^ (e + 1))` in `E₁(F_u)`, where
 `(n) = 𝔪_u ^ e`, has finite index, has no nonzero `n`-torsion, and contains `n` times itself with
@@ -109,16 +99,9 @@ private theorem exists_finiteIndex_injective_nsmul_of_isMinimal
     ∃ U : AddSubgroup (C.baseChange F_u).toAffine.Point, U.FiniteIndex ∧
       Function.Injective (fun P : U ↦ n • P) ∧
       (nsmulAddMonoidHom (α := U) n).range.index = Nat.card (O_u ⧸ Ideal.span {(n : O_u)}) := by
-  let V := FormalGroupPoint.filtration C m_u (e + 1)
-  let ι := C.formalPointHomAdicCompletion u
-  have hι : Function.Injective ι := C.formalPointHomAdicCompletion_injective u
-  let φ : V ≃+ C.formalPointFiltration u (e + 1) :=
-    (V.equivMapOfInjective ι hι).trans
-      (AddEquiv.addSubgroupCongr (C.formalPointFiltration_def u _).symm)
   refine ⟨C.formalPointFiltration u (e + 1), inferInstance, ?_, ?_⟩
   · exact nsmul_formalPointFiltration_injective u C hne (Nat.lt_succ_self e)
-  · rw [← AddEquiv.index_range_nsmulAddMonoidHom φ,
-      FormalGroupPoint.index_range_nsmul_filtration hne (Nat.lt_succ_self e), hne,
+  · rw [C.index_range_nsmul_formalPointFiltration u hne (Nat.lt_succ_self e), hne,
       TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
 
 end DividingN

@@ -20,6 +20,7 @@ import TauCeti.GroupTheory.Index.PrimaryComponent
 import TauCeti.GroupTheory.Index.Map
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.LeadingTerm
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
+import TauCeti.Algebra.Order.GroupWithZero.WithZeroInt
 
 /-!
 # The local cokernel of an isogeny at a finite place
@@ -302,16 +303,6 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 
 local notation "O_u" => u.adicCompletionIntegers F
 local notation "F_u" => u.adicCompletion F
-local notation "m_u" => maximalIdeal O_u
-
--- Named: anonymous `local instance`s here get the same generated names as the ones in
--- `FormalGroup/Point/Torsion/Basic.lean`.
-local instance isLinearTopology_adicCompletionIntegers_formalLevels :
-    IsLinearTopology O_u O_u :=
-  u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
-
-local instance fact_isAdic_maximalIdeal_formalLevels : Fact (IsAdic m_u) :=
-  ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
 
 variable {C₁ C₂ : WeierstrassCurve (u.adicCompletionIntegers F)}
   [(C₁.baseChange (u.adicCompletion F)).IsElliptic]
@@ -352,26 +343,16 @@ private theorem map_pointMapHom_formalPointFiltration_le {c : F_u} (hc0 : c ≠ 
   rw [hv, ← mul_pow, mul_comm, hjk]
   exact hP
 
+variable (φ) in
 open scoped Classical in
-/-- **An isogeny is injective on the deep levels**: if `deg φ` is nonzero in `A`, then for all
-large `k` the kernel of `φ` meets `E_k(F_u)` trivially. -/
-theorem eventually_formalPointFiltration_inf_ker_pointMapHom_eq_bot (hn : (φ.degree : A) ≠ 0) :
+/-- **An isogeny is injective on the deep levels**: for all large `k` the kernel of `φ` meets
+`E_k(F_u)` trivially, as the kernel is finite. -/
+theorem eventually_formalPointFiltration_inf_ker_pointMapHom_eq_bot :
     ∀ᶠ k : ℕ in atTop,
       C₁.formalPointFiltration u k ⊓
-        (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ := by
-  obtain ⟨e, hne⟩ := u.exists_span_algebraMap_adicCompletionIntegers_eq_maximalIdeal_pow (K := F) hn
-  rw [map_natCast] at hne
-  filter_upwards [eventually_gt_atTop e] with k hek
-  refine eq_bot_iff.mpr fun P ⟨hP, hφP⟩ ↦ ?_
-  have hφ : (Hom.ofIsogeny φ).pointMap P = 0 := by
-    rw [← Hom.pointMapHom_apply]
-    exact AddMonoidHom.mem_ker.mp hφP
-  -- `deg φ • P = φ̂ (φ P) = 0`
-  have h : (⟨P, hP⟩ : C₁.formalPointFiltration u k) = 0 :=
-    nsmul_formalPointFiltration_injective u C₁ hne hek <| Subtype.ext <| by
-      simp only [AddSubgroup.coe_nsmul, smul_zero, ZeroMemClass.coe_zero]
-      rw [← pointMap_dual_pointMap, hφ, Hom.pointMap_zero]
-  exact (AddSubgroup.mem_bot).mpr (congrArg Subtype.val h)
+        (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
+  have := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
+  C₁.eventually_formalPointFiltration_inf_eq_bot u _
 
 open scoped Classical in
 /-- **An isogeny maps the deep levels onto levels**: let `φ` pull the invariant differential back
@@ -404,16 +385,8 @@ theorem eventually_map_pointMapHom_formalPointFiltration_eq {c : F_u}
     (Valued.v : Valuation F_u ℤᵐ⁰)
   obtain ⟨R₂, hR₂⟩ := exists_valuation_xCoord_pointMap_mul_sq hc' hc'0 h2
     (Valued.v : Valuation F_u ℤᵐ⁰)
-  -- every value of `ℤᵐ⁰` lies below `exp m ^ 2` for all large `m`
-  have hexp (R : ℤᵐ⁰) : ∃ N : ℕ, ∀ m : ℕ, N ≤ m → R < exp (m : ℤ) ^ 2 := by
-    rcases eq_or_ne R 0 with rfl | hR
-    · exact ⟨0, fun m _ ↦ pow_pos (zero_lt_iff.mpr exp_ne_zero) 2⟩
-    refine ⟨(log R).toNat + 1, fun m hm ↦ ?_⟩
-    rw [← exp_log hR, ← exp_nsmul, exp_lt_exp, nsmul_eq_mul]
-    push_cast
-    omega
-  obtain ⟨N₁, hN₁⟩ := hexp R₁
-  obtain ⟨N₂, hN₂⟩ := hexp R₂
+  obtain ⟨N₁, hN₁⟩ := eventually_atTop.mp (TauCeti.eventually_lt_exp_pow R₁ two_ne_zero)
+  obtain ⟨N₂, hN₂⟩ := eventually_atTop.mp (TauCeti.eventually_lt_exp_pow R₂ two_ne_zero)
   -- in additive terms, `log (v c) + log (v c') = -e`
   have hlog : log (Valued.v c) + log (Valued.v c') = -e := by
     rw [← exp_inj, exp_add, exp_log hvc, exp_log hvc', hcc']
@@ -460,7 +433,7 @@ theorem eventually_index_range_pointMapHom_mul_index_formalPointFiltration {c : 
         (C₂.formalPointFiltration u j).index *
           Nat.card (Hom.ofIsogeny φ).pointMapHom.ker := by
   filter_upwards [eventually_map_pointMapHom_formalPointFiltration_eq u hc h2 hn,
-    eventually_formalPointFiltration_inf_ker_pointMapHom_eq_bot u hn] with k hmap hker j hjk
+    eventually_formalPointFiltration_inf_ker_pointMapHom_eq_bot u φ] with k hmap hker j hjk
   have h := (Hom.ofIsogeny φ).pointMapHom.index_range_mul_index_mul_card_inf_ker
     (C₁.formalPointFiltration u k)
   rwa [hker, AddSubgroup.card_bot, mul_one, hmap j hjk] at h

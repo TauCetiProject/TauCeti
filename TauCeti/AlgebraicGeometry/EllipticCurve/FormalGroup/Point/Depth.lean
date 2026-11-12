@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Filtration
 import TauCeti.Algebra.Group.Equiv.Pow
+import TauCeti.Algebra.Order.GroupWithZero.WithZeroInt
 
 /-!
 # The formal filtration of `E(F_u)` and the valuation of `x`
@@ -38,6 +39,8 @@ The formal-group statements on multiplication by `n` carry over to these levels:
   `E_k(F_u)` above.
 * `WeierstrassCurve.map_nsmul_formalPointFiltration`: `n E_k(F_u) = E_(k+e)(F_u)`.
 * `WeierstrassCurve.nsmul_formalPointFiltration_injective`: `E_k(F_u)` has no nonzero `n`-torsion.
+* `WeierstrassCurve.eventually_formalPointFiltration_inf_eq_bot`: a finite subgroup of `E(F_u)`
+  meets `E_k(F_u)` trivially for all large `k`.
 
 ## References
 
@@ -57,16 +60,6 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 local notation "O_u" => u.adicCompletionIntegers F
 local notation "F_u" => u.adicCompletion F
 local notation "m_u" => IsLocalRing.maximalIdeal O_u
-
--- Named: anonymous `local instance`s here get the same generated names as the ones in
--- `FormalGroup/Point/Torsion/Basic.lean`, and the names used in
--- `FormalGroup/Point/Torsion/Free.lean` are already taken in this module's imports.
-local instance isLinearTopology_adicCompletionIntegers_depth :
-    IsLinearTopology O_u O_u :=
-  u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
-
-local instance fact_isAdic_maximalIdeal_depth : Fact (IsAdic m_u) :=
-  ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
 
 variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
   [(C.baseChange (u.adicCompletion F)).IsElliptic]
@@ -94,11 +87,10 @@ theorem mem_formalPointFiltration_iff (k : ℕ) (P : (C.baseChange F_u).toAffine
 open scoped Classical in
 /-- The formal parametrisation preserves and reflects the depth of a parameter. -/
 @[simp]
-theorem formalPoint_mem_formalPointFiltration_iff (k : ℕ)
-    (t : FormalGroupPoint C m_u) :
-    C.formalPoint (K := F_u) (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) t.property ∈
-        C.formalPointFiltration u k ↔ (t : O_u) ∈ m_u ^ k := by
-  rw [← C.formalPointHomAdicCompletion_apply u t, C.mem_formalPointFiltration_iff u]
+theorem formalPoint_mem_formalPointFiltration_iff (k : ℕ) {t : O_u} (ht : t ∈ m_u) :
+    C.formalPoint (K := F_u) (u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)) ht ∈
+        C.formalPointFiltration u k ↔ t ∈ m_u ^ k := by
+  rw [← C.formalPointHomAdicCompletion_apply u ⟨t, ht⟩, C.mem_formalPointFiltration_iff u]
   simp only [(C.formalPointHomAdicCompletion_injective u).eq_iff, exists_eq_right]
 
 open scoped Classical in
@@ -201,5 +193,19 @@ theorem nsmul_formalPointFiltration_injective {n e k : ℕ}
   exact ((AddSubgroup.equivMapOfInjective _ _
     (C.formalPointHomAdicCompletion_injective u)).injective_nsmul_iff n).mp
       (FormalGroupPoint.nsmul_filtration_injective hn hek)
+
+open scoped Classical in
+/-- **A finite subgroup meets the deep levels trivially**: if `H` is a finite subgroup of
+`E(F_u)`, then `E_k(F_u) ∩ H = 0` for all large `k`, since a nonzero point of `H` leaves
+`E_k(F_u)` once `exp k ^ 2` exceeds the valuation of its `x`-coordinate. -/
+theorem eventually_formalPointFiltration_inf_eq_bot
+    (H : AddSubgroup (C.baseChange F_u).toAffine.Point) [Finite H] :
+    ∀ᶠ k : ℕ in Filter.atTop, C.formalPointFiltration u k ⊓ H = ⊥ := by
+  have h (P : H) : ∀ᶠ k : ℕ in Filter.atTop, P.1 ∈ C.formalPointFiltration u k → P.1 = 0 := by
+    filter_upwards [TauCeti.eventually_lt_exp_pow (Valued.v (Affine.Point.xCoord P.1))
+      two_ne_zero, Filter.eventually_ne_atTop 0] with k hk hk0 hP
+    exact ((C.mem_formalPointFiltration_iff_valuation_xCoord u hk0).mp hP).resolve_right hk.not_ge
+  filter_upwards [Filter.eventually_all.mpr h] with k hk
+  exact eq_bot_iff.mpr fun P ⟨hPk, hPH⟩ ↦ (AddSubgroup.mem_bot).mpr (hk ⟨P, hPH⟩ hPk)
 
 end WeierstrassCurve
