@@ -15,10 +15,10 @@ The shifted Laplacian `-Δ + m` is a model for divergence-form energy estimates.
 `energyIntegrand 1 0 m U U` has lower bound `min 1 m * ‖U‖²` for arbitrary real mass `m`.
 This file integrates that estimate for raw value-gradient jet fields.
 
-These are still below the weak-derivative Sobolev-space layer: the inputs are arbitrary jet
-fields `U : X → ℝ × EuclideanSpace ℝ n`, and the statements carry the Bochner-integrability
-hypotheses needed to compare scalar integrals.  Once `H¹`/`W^{1,2}` jets are available, these
-lemmas become the concrete coercive lower bounds for the shifted Dirichlet form.
+The inputs are arbitrary jet fields `U : X → ℝ × EuclideanSpace ℝ n` rather than Sobolev
+functions, and the statements carry the Bochner-integrability hypotheses needed to compare scalar
+integrals. For the jet field of an `H¹` function they bound the shifted Dirichlet form from
+below; for a positive constant mass the bound is coercive.
 
 ## Main declarations
 
