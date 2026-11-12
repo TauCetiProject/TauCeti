@@ -430,7 +430,6 @@ lemma differentiableOn_schwarzReflection_inter_im_ne_zero_of_symmetric {Ω : Set
   · apply (differentiableWithinAt_congr_set ?_).mp (hlower z ⟨hz.1, hzneg⟩)
     filter_upwards [
       (isOpen_lt Complex.continuous_im continuous_const).mem_nhds hzneg] with w hw
-    apply propext
     constructor
     · rintro ⟨hwΩ, _⟩
       exact ⟨hwΩ, ne_of_lt hw⟩
@@ -439,7 +438,6 @@ lemma differentiableOn_schwarzReflection_inter_im_ne_zero_of_symmetric {Ω : Set
   · apply (differentiableWithinAt_congr_set ?_).mp (hupper z ⟨hz.1, hzpos⟩)
     filter_upwards [
       (isOpen_lt continuous_const Complex.continuous_im).mem_nhds hzpos] with w hw
-    apply propext
     constructor
     · rintro ⟨hwΩ, _⟩
       exact ⟨hwΩ, ne_of_gt hw⟩

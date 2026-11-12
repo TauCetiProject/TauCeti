@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
+public import TauCeti.Analysis.Pseudodifferential.Composition.Sobolev
 
 /-!
 # Interior elliptic regularity on Bessel-potential spaces
@@ -32,7 +33,9 @@ of `Op(a)`:
   `m` derivatives that `Op(a)` takes away.
 * `TauCeti.Symbol.exists_norm_smulLeftCLM_le`: the **interior estimate**
   `‖ψ u‖_{H^{s + m}} ≤ C (‖Op(p) u‖_{H^s} + ‖u‖_{H^r})` on `H^{s + m}`, for every `r ≤ s + m`,
-  with a constant `C` independent of `u`.
+  with a constant `C` independent of `u`. For symbols with a left inverse at large frequencies
+  near the support of `ψ`, the same estimate is
+  `TauCeti.Symbol.exists_norm_smulLeftCLM_le_of_eventually_comp_eq_id`.
 
 ## The local parametrix
 
@@ -45,8 +48,9 @@ of `a`. With the asymptotic expansion of the composition symbol, `q # p` therefo
 
 `q # p = ψ + R` with `R` smoothing.
 
-On Bessel-potential spaces `Op(q # p) = Op(q) ∘ Op(p)` (`TauCeti.Symbol.quantizeSobolev_sharp`)
-and `Op(ψ)` is the multiplication by `ψ` (`TauCeti.Symbol.quantizeSobolev_ofSpatial_smul`), so
+On Bessel-potential spaces `Op(q # p) = Op(q) ∘ Op(p)`
+(`TauCeti.Symbol.toDistr_quantizeSobolev_sharp`) and `Op(ψ)` is the multiplication by `ψ`
+(`TauCeti.Symbol.toDistr_quantizeSobolev_ofSpatial_smul_id`), so
 
 `ψ u = Op(q) (Op(p) u) - Op(R) u`.
 
@@ -117,28 +121,22 @@ private theorem exists_toDistr_quantizeSobolev_localize
             (p.quantizeSobolev hp r u)).toDistr - (R.quantizeSobolev hR r u).toDistr := by
   have hψ' : ContDiff ℝ ∞ (ψ : CoordinateSpace n → ℂ) := ψ.smooth ⊤
   set ψs := ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ'.smul contDiff_const)
-  have hψs : ψs.HasCompactSpatialSupport :=
-    (hasCompactSpatialSupport_ofSpatial_iff _).2 hψ.smul_right
+  have hψs : ψs.HasCompactSpatialSupport := hasCompactSpatialSupport_ofSpatial_smul_id hψ
   have hq := hasCompactSpatialSupport_localize hψ b
   have hqp := hq.sharp hp
   have hsmooth := isSmoothing_sharp_sub_ofSpatial hab hψ' (coefficient_localize ψ b) hp hpa
   obtain ⟨R, hR⟩ := isSmoothing_iff.1 hsmooth μ
-  have hRc : R.HasCompactSpatialSupport :=
-    (hqp.sub (hψs.inclusion _)).of_coefficient_eq hR
+  have hS := hqp.sub (hψs.inclusion (neg_add_cancel m).ge)
+  have hRc : R.HasCompactSpatialSupport := hS.of_coefficient_eq hR
   refine ⟨R, hRc, fun r u ↦ ?_⟩
-  have hcomp := congrArg (fun T ↦ (T u).toDistr) (quantizeSobolev_sharp hq hp hqp r)
-  have hsub := congrArg (fun T ↦ (T u).toDistr)
-    (quantizeSobolev_sub hqp (hψs.inclusion (neg_add_cancel m).ge) (hqp.sub (hψs.inclusion _)) r)
   -- `Op(ψ) u` is the multiplication `ψ u`.
   have hmul : (((ψs.inclusion (neg_add_cancel m).ge).quantizeSobolev
       (hψs.inclusion _) r) u).toDistr = smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr := by
-    simp only [quantizeSobolev_inclusion _ hψs, ψs, quantizeSobolev_ofSpatial_smul,
-      ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
-      BesselPotentialSpace.toDistr_smulLeftCLM]
-  simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
-    sub_apply, BesselPotentialSpace.toDistr_sub, hmul] at hcomp hsub
-  rw [toDistr_quantizeSobolev_of_coefficient_eq hRc (hqp.sub (hψs.inclusion _)) hR r u, hsub,
-    ← hcomp]
+    rw [toDistr_quantizeSobolev_congr (coefficient_inclusion _ _) _ hψs rfl,
+      toDistr_quantizeSobolev_ofSpatial_smul_id, BesselPotentialSpace.toDistr_smulLeftCLM]
+  rw [toDistr_quantizeSobolev_congr hR hRc hS rfl,
+    toDistr_quantizeSobolev_sub_apply hqp (hψs.inclusion _) hS, hmul,
+    toDistr_quantizeSobolev_sharp hq hp]
   abel
 
 /-- **Interior elliptic regularity.** Let `b` be a formal left parametrix of the symbol `a` of
@@ -154,7 +152,8 @@ theorem memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev
     (hu : MemSobolev s 2 (p.quantizeSobolev hp r u).toDistr) :
     MemSobolev (s + m) 2 (smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr) := by
   obtain ⟨R, hR, hψu⟩ := exists_toDistr_quantizeSobolev_localize hab hψ hp hpa (r - (s + m))
-  rw [hψu r u, toDistr_quantizeSobolev_congr _
+  have hq := hasCompactSpatialSupport_localize hψ b
+  rw [hψu r u, toDistr_quantizeSobolev_congr rfl hq hq
     (MemSobolev.toBesselPotentialSpace_toDistr hu).symm]
   have hmem {t : ℝ} (f : H^{t}(CoordinateSpace n, V)) (ht : t = s + m) :
       MemSobolev (s + m) 2 f.toDistr :=
@@ -195,7 +194,7 @@ theorem exists_norm_smulLeftCLM_le
       BesselPotentialSpace.toDistr_copy _ (by ring), BesselPotentialSpace.toDistr_copy _ (by ring),
       hψu (s + m) u]
     congr 1
-    exact toDistr_quantizeSobolev_congr hR (by simp)
+    exact toDistr_quantizeSobolev_congr rfl hR hR (by simp)
   calc ‖BesselPotentialSpace.smulLeftCLM (s + m) ψ u‖ ≤ ‖X‖ + ‖Y‖ := hXY ▸ norm_sub_le X Y
     _ ≤ ‖Q‖ * ‖p.quantizeSobolev hp (s + m) u‖ + ‖T‖ * ‖BesselPotentialSpace.inclusion hr u‖ := by
       rw [hnorm, hnorm]

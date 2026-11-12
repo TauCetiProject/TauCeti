@@ -19,6 +19,7 @@ counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 * `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
+* `Unitization.map_surjective`: the induced map of a surjective homomorphism is surjective.
 -/
 
 public section
@@ -32,52 +33,49 @@ variable {R A B C : Type*} [CommSemiring R]
 
 /-- The unital algebra homomorphism between forced unitizations induced by a homomorphism of
 nonunital algebras. -/
-noncomputable def map (f : A →ₙₐ[R] B) : Unitization R A →ₐ[R] Unitization R B :=
+def map (f : A →ₙₐ[R] B) : Unitization R A →ₐ[R] Unitization R B :=
   lift ((inrNonUnitalAlgHom R B).comp f)
 
 /-- The induced map of unitizations restricts to the original nonunital algebra homomorphism. -/
 @[simp]
-theorem map_inr (f : A →ₙₐ[R] B) (a : A) : map (R := R) f (inr a) = inr (f a) := by
-  simp [map]
+theorem map_inr (f : A →ₙₐ[R] B) (a : A) : map f (inr a) = inr (f a) := by simp [map]
 
 /-- The induced map of unitizations is the identity on scalars. -/
 @[simp]
 theorem map_inl (f : A →ₙₐ[R] B) (r : R) :
-    map f (inl r : Unitization R A) = algebraMap R (Unitization R B) r := by
-  simp [map]
+    map f (inl r : Unitization R A) = algebraMap R (Unitization R B) r := by simp [map]
 
 /-- The scalar component of the induced map of unitizations is unchanged. -/
 @[simp]
-theorem fst_map (f : A →ₙₐ[R] B) (x : Unitization R A) :
-    (map (R := R) f x).fst = x.fst := by
-  rw [← inl_fst_add_inr_snd_eq x, map_add]
-  simp [algebraMap_eq_inl]
+theorem fst_map (f : A →ₙₐ[R] B) (x : Unitization R A) : (map f x).fst = x.fst := by
+  simp [map, algebraMap_eq_inl]
 
 /-- The nonunital-algebra component of the induced map of unitizations is obtained by applying the
 original homomorphism. -/
 @[simp]
-theorem snd_map (f : A →ₙₐ[R] B) (x : Unitization R A) :
-    (map (R := R) f x).snd = f x.snd := by
-  rw [← inl_fst_add_inr_snd_eq x, map_add]
-  simp [algebraMap_eq_inl]
+theorem snd_map (f : A →ₙₐ[R] B) (x : Unitization R A) : (map f x).snd = f x.snd := by
+  simp [map, algebraMap_eq_inl]
 
 /-- The induced map of forced unitizations preserves the augmentation `(r, a) ↦ r`. -/
 @[simp]
 theorem fstHom_comp_map (f : A →ₙₐ[R] B) : (fstHom R B).comp (map f) = fstHom R A :=
   AlgHom.ext fun x ↦ by simp
 
+/-- A surjective homomorphism of nonunital algebras induces a surjective homomorphism of forced
+unitizations: `(r, b)` is the image of `(r, a)` for any preimage `a` of `b`. -/
+theorem map_surjective {f : A →ₙₐ[R] B} (hf : Function.Surjective f) :
+    Function.Surjective (map f) := fun y ↦ by
+  obtain ⟨a, ha⟩ := hf y.snd
+  exact ⟨inl y.fst + inr a,
+    Unitization.ext (by rw [fst_map]; simp) (by rw [snd_map]; simp [ha])⟩
+
 /-- The identity homomorphism induces the identity homomorphism of forced unitizations. -/
 @[simp]
-theorem map_id : map (R := R) (NonUnitalAlgHom.id R A) = AlgHom.id R (Unitization R A) := by
-  apply algHom_ext''
-  intro a
-  simp
+theorem map_id : map (NonUnitalAlgHom.id R A) = AlgHom.id R (Unitization R A) :=
+  algHom_ext'' fun _ ↦ by simp
 
 /-- Unitization preserves composition of nonunital algebra homomorphisms. -/
-theorem map_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) :
-    map (R := R) (g.comp f) = (map (R := R) g).comp (map (R := R) f) := by
-  apply algHom_ext''
-  intro a
-  simp
+theorem map_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) : map (g.comp f) = (map g).comp (map f) :=
+  algHom_ext'' fun _ ↦ by simp
 
 end Unitization
