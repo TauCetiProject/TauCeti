@@ -186,7 +186,6 @@ theorem le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow {M A B N θ : ℝ} (hθ0
 theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} (m : ℕ) (hs : 0 ≤ s) (hu : 0 ≤ u)
     (hM : s ^ (m + 2) * u ≤ M) :
     s ^ m * u ≤ M ^ ((m : ℝ) / (m + 2)) * u ^ ((2 : ℝ) / (m + 2)) := by
-  have hm : (0 : ℝ) < m + 2 := by positivity
   have hsplit : s ^ m * u = (s ^ (m + 2) * u) ^ ((m : ℝ) / (m + 2)) * u ^ ((2 : ℝ) / (m + 2)) := by
     rw [mul_rpow (by positivity) hu, ← rpow_natCast s (m + 2), ← rpow_mul hs,
       mul_assoc, ← rpow_add' hu (by field_simp; positivity)]

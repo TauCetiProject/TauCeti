@@ -490,8 +490,6 @@ private theorem le_mul_add_mul_of_two_mul_card_div {κ lam Lam R : ℝ}
   have hκ : 0 < κ := by
     by_contra h
     nlinarith [ha.le]
-  have hC₀ : 0 < C₀ := by positivity
-  have hF : 0 ≤ F := ENNReal.toReal_nonneg
   have hNq : 0 ≤ Nq := ENNReal.toReal_nonneg
   have hvc : ContinuousOn (fun y ↦ η y * u y) (closedBall c R) :=
     ((contDiff_one_sub_norm_sq_sub_div c R (k := 0)).pow _).continuous.continuousOn.mul hcont
@@ -508,8 +506,6 @@ private theorem le_mul_add_mul_of_two_mul_card_div {κ lam Lam R : ℝ}
       nlinarith [norm_nonneg (x - c)]
     linarith
   have hη0 : 0 < η x := (by positivity : (0 : ℝ) < (3 / 4) ^ (m + 2)).trans_le hηx
-  have hRHS : 0 ≤ (m + 2) / 2 * C₀ * (R / lam * F) +
-      (C₀ * K * κ) ^ (((m : ℝ) + 2) / 2) * (R ^ (-(((m : ℝ) + 2) / 2)) * Nq) := by positivity
   rcases le_or_gt M 0 with hM | hM
   · -- If `v ≤ 0`, then `u ≤ 0` on `B(c, R / 2)`.
     have hux : u x ≤ 0 := nonpos_of_mul_nonpos_right (hvx.trans hM) hη0
