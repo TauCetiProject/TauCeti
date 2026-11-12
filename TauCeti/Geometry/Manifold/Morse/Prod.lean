@@ -209,6 +209,9 @@ theorem mem_criticalPoints_comp_snd_iff {p : M × V} :
       mvfderiv (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) p w = fderiv ℝ q p.2 w.2 := by
     rw [mvfderiv_comp_apply p hq.mdifferentiableAt mdifferentiableAt_snd, mfderiv_snd,
       mvfderiv_eq_fderiv_apply]
+    -- The tangent space of `M × V` at `p` is by definition the product of the tangent spaces, so
+    -- `ContinuousLinearMap.snd` applied to `w` is `w.2` by `ContinuousLinearMap.snd_apply`, which
+    -- is proved by `rfl`; `rw` cannot see through the `TangentSpace` wrapper.
     rfl
   rw [mem_criticalPoints, mem_criticalPoints_iff_fderiv_eq_zero]
   constructor
@@ -217,8 +220,7 @@ theorem mem_criticalPoints_comp_snd_iff {p : M × V} :
     simpa using (hd ((0 : E), w)).symm.trans (congr($h ((0 : E), w)).trans (zero_apply _))
   · intro h
     ext w
-    rw [hd, h]
-    rfl
+    rw [hd, h, zero_apply, zero_apply]
 
 /-- The critical set of `(x, v) ↦ q v` on `M × V` is `M` times the critical set of `q`. -/
 theorem criticalPoints_comp_snd :
@@ -236,13 +238,8 @@ theorem manifoldMorseIndex_comp_snd [FiniteDimensional ℝ E] [FiniteDimensional
   have hsum : (fun _ : M ↦ (0 : ℝ)) ∘ Prod.fst + q ∘ Prod.snd = q ∘ Prod.snd := by
     funext p
     simp
-  -- The zero function has zero Hessian, hence index zero.
-  have hzero : manifoldMorseIndex I (fun _ : M ↦ (0 : ℝ)) x = 0 := by
-    rw [manifoldMorseIndex_def, morseIndex_def]
-    exact (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp fun w ↦ by
-      simp [Function.comp_def, hessianQuadraticForm_apply]
   rw [← hsum, manifoldMorseIndex_comp_fst_add_comp_snd contDiffAt_const (by simpa using hq),
-    hzero, manifoldMorseIndex_modelSpace, zero_add]
+    manifoldMorseIndex_const, manifoldMorseIndex_modelSpace, zero_add]
 
 end CompSnd
 

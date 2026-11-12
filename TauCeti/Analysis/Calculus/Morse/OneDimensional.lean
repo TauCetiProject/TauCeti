@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.Linearization
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Calculus.SecondDerivative
 
@@ -32,8 +33,9 @@ of one variable.
 * `TauCeti.morseIndex_real_of_neg` and `TauCeti.morseIndex_real_of_pos`: the Morse index is `1`
   where the second derivative is negative (a local maximum at a critical point) and `0` where it is
   positive (a local minimum at a critical point).
-* `TauCeti.not_isNondegenerateCriticalPoint_pow_four`: `0` is a degenerate critical point of
-  `y ↦ y⁴`.
+* `TauCeti.isNondegenerateCriticalPoint_sq` and
+  `TauCeti.not_isNondegenerateCriticalPoint_pow_four`: `0` is a nondegenerate critical point of
+  `y ↦ y²` and a degenerate one of `y ↦ y⁴`.
 -/
 
 public section
@@ -89,6 +91,10 @@ theorem morseIndex_real_of_pos (hpos : 0 < iteratedDeriv 2 f t) : morseIndex f t
   morseIndex_eq_zero_of_posDef fun v hv ↦ by
     rw [hessianQuadraticForm_real_apply]
     nlinarith [pow_pos (abs_pos.2 hv) 2, sq_abs v]
+
+/-- `0` is a nondegenerate critical point of `y ↦ y²`: the second derivative is `2` there. -/
+theorem isNondegenerateCriticalPoint_sq : IsNondegenerateCriticalPoint (fun y : ℝ ↦ y ^ 2) 0 :=
+  (isNondegenerateCriticalPoint_real_iff (by fun_prop)).2 (by simp)
 
 /-- `0` is a degenerate critical point of `y ↦ y⁴`: the second derivative vanishes there. -/
 theorem not_isNondegenerateCriticalPoint_pow_four :
