@@ -192,10 +192,9 @@ theorem contractibleActionSpectrum_smul_eq (h : σ.IsNondegenerate) (hω : IsWea
     (hF : MDifferentiable I 𝓘(ℝ) F) (hs : 0 < s)
     (hno : ∀ c, ¬σ.HasContractibleClosedCharacteristicOfPeriodLE univ F c s) :
     σ.contractibleActionSpectrum (fun _ ↦ s • F) = (fun x ↦ -(s * F x)) '' criticalPoints I F := by
-  have hω₀ : IsSmoothForm I 0 σ.1 := σ.isSmoothForm.of_le (by simp)
   have haction (x : M) :
       contractibleLoopAction σ.1 (fun _ ↦ s • F) (fun _ ↦ x) = -(s * F x) := by
-    simp [IsWeaklyExact.contractibleLoopAction_const hω₀ hω]
+    simp [hω.contractibleLoopAction_const]
   rw [contractibleActionSpectrum_eq_image hω]
   ext a
   constructor
