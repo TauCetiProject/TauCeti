@@ -27,13 +27,19 @@ public section
 
 namespace Submodule
 
+/-- The dual coannihilator of a set's span is the intersection of its kernels. -/
+theorem dualCoannihilator_span {R M : Type*}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] (s : Set (Module.Dual R M)) :
+    (span R s).dualCoannihilator = ⨅ f ∈ s, f.ker := by
+  ext v
+  rw [← SetLike.mem_coe, coe_dualCoannihilator_span]
+  simp only [Set.mem_ofPred_eq, mem_iInf, LinearMap.mem_ker]
+
 /-- The dual coannihilator of a family's span is the intersection of its kernels. -/
 @[simp]
 theorem dualCoannihilator_span_range {R M : Type*} {ι : Sort*}
     [CommSemiring R] [AddCommMonoid M] [Module R M] (f : ι → Module.Dual R M) :
     (span R (Set.range f)).dualCoannihilator = ⨅ j, (f j).ker := by
-  ext v
-  rw [← SetLike.mem_coe, coe_dualCoannihilator_span]
-  simp only [Set.mem_ofPred_eq, Set.forall_mem_range, mem_iInf, LinearMap.mem_ker]
+  rw [dualCoannihilator_span, iInf_range]
 
 end Submodule

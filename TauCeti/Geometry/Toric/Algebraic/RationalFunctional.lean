@@ -114,15 +114,13 @@ theorem exists_rat_apply (hf : IsRationalFunctional h f) (n : N) :
 
 /-- A rational functional has the same kernel as an integral character's real
 extension. The zero functional is allowed, using the zero character. -/
-theorem exists_ker_eq_realCharacter (hf : IsRationalFunctional h f) :
-    ∃ m : Module.Dual ℤ N, f.ker = (h.realCharacter m.toAddMonoidHom).ker := by
+theorem exists_ker_eq_ker_realCharacter (hf : IsRationalFunctional h f) :
+    ∃ m : N →+ ℤ, f.ker = (h.realCharacter m).ker := by
   obtain ⟨q, m, rfl⟩ := hf
   by_cases hq : q = 0
   · refine ⟨0, ?_⟩
-    rw [hq, Rat.cast_zero, zero_smul]
-    have hz : (0 : Module.Dual ℤ N).toAddMonoidHom = 0 := (rfl)
-    rw [hz, map_zero]
-  · exact ⟨m, LinearMap.ker_smul _ (q : ℝ) (by exact_mod_cast hq)⟩
+    simp [hq]
+  · exact ⟨m.toAddMonoidHom, LinearMap.ker_smul _ (q : ℝ) (by exact_mod_cast hq)⟩
 
 section Maps
 

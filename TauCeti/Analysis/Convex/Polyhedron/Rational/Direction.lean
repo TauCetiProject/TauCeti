@@ -33,7 +33,8 @@ open Set
 
 namespace TauCeti.IsRationalNormalPolyhedron
 
-variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
+  [TopologicalSpace V]
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i} {P : Set V}
 
 /-- A nonempty rational-normal polyhedron of codimension `k` has exactly `k`
@@ -42,11 +43,11 @@ offsets, redundant inequalities, unboundedness and lineality are allowed. -/
 theorem exists_direction_eq_iInf_ker (hP : IsRationalNormalPolyhedron h P)
     (hne : P.Nonempty) {k : ℕ}
     (hdim : Module.finrank ℝ (affineSpan ℝ P).direction + k = Module.finrank ℝ V) :
-    ∃ m : Fin k → Module.Dual ℤ N,
-      LinearIndependent ℝ (fun j => h.realCharacter (m j).toAddMonoidHom) ∧
+    ∃ m : Fin k → (N →+ ℤ),
+      LinearIndependent ℝ (fun j => h.realCharacter (m j)) ∧
       (affineSpan ℝ P).direction =
-        ⨅ j, (h.realCharacter (m j).toAddMonoidHom).ker := by
-  /- The proof uses `AffineMap.direction_affineSpan_setOf_forall_le` to identify the
+        ⨅ j, (h.realCharacter (m j)).ker := by
+  /- The proof uses `TauCeti.direction_affineSpan_setOf_forall_le` to identify the
   active equations, then Mathlib's `Submodule.exists_fun_fin_finrank_span_eq`
   and dual-coannihilator dimension formula to extract independent equations. -/
   classical
@@ -55,14 +56,14 @@ theorem exists_direction_eq_iInf_ker (hP : IsRationalNormalPolyhedron h P)
   have hcarrier : Q.carrier = {x | ∀ j, Q.inequality j x ≤ 0} :=
     Set.ext fun _ => RationalAffinePolyhedron.mem_carrier
   let I := {j : Fin Q.numConstraints // ∀ x ∈ Q.carrier, Q.inequality j x = 0}
-  have hrows (j : I) := (Q.rational_linear j.val).exists_ker_eq_realCharacter
+  have hrows (j : I) := (Q.rational_linear j.val).exists_ker_eq_ker_realCharacter
   choose m hm using hrows
-  let f : I → Module.Dual ℝ V := fun j => h.realCharacter (m j).toAddMonoidHom
+  let f : I → Module.Dual ℝ V := fun j => h.realCharacter (m j)
   have hdir : (affineSpan ℝ Q.carrier).direction = ⨅ j, (f j).ker := by
     simp_rw [f, ← hm]
     simpa only [I, iInf_subtype, hcarrier, Set.mem_ofPred_eq,
       ContinuousAffineMap.coe_toAffineMap] using
-      AffineMap.direction_affineSpan_setOf_forall_le
+      TauCeti.direction_affineSpan_setOf_forall_le
         (fun j => (Q.inequality j).toAffineMap) (hcarrier ▸ hne)
   have hcoann : (Submodule.span ℝ (range f)).dualCoannihilator =
       (affineSpan ℝ Q.carrier).direction :=
@@ -76,21 +77,37 @@ theorem exists_direction_eq_iInf_ker (hP : IsRationalNormalPolyhedron h P)
   rw [hrank] at hex
   obtain ⟨b, hb, hspan, hlin⟩ := hex
   choose a ha using hb
-  have heq : (fun j => h.realCharacter (m (a j)).toAddMonoidHom) = b := funext ha
+  have heq : (fun j => h.realCharacter (m (a j))) = b := funext ha
   refine ⟨fun j => m (a j), heq.symm ▸ hlin, ?_⟩
   · rw [← hcoann, ← hspan, Submodule.dualCoannihilator_span_range, ← heq]
 
+/-- A codimension-one rational-normal polyhedron has direction equal to the
+kernel of a nonzero integral character. The affine offsets need not be rational. -/
+theorem exists_direction_eq_ker (hP : IsRationalNormalPolyhedron h P)
+    (hne : P.Nonempty)
+    (hdim : Module.finrank ℝ (affineSpan ℝ P).direction + 1 = Module.finrank ℝ V) :
+    ∃ m : N →+ ℤ, m ≠ 0 ∧ (affineSpan ℝ P).direction = (h.realCharacter m).ker := by
+  obtain ⟨m, hlin, hdir⟩ := hP.exists_direction_eq_iInf_ker hne hdim
+  refine ⟨m 0, ?_, ?_⟩
+  · intro hm
+    exact hlin.ne_zero 0 (by simp [hm])
+  · simpa using hdir
+
 /-- A codimension-two rational-normal polyhedron has tangent space cut out by
-two integral characters. The affine offsets need not be rational. -/
+two integral characters with independent real extensions. The affine offsets
+need not be rational. -/
 theorem exists_direction_eq_inf_ker (hP : IsRationalNormalPolyhedron h P)
     (hne : P.Nonempty)
     (hdim : Module.finrank ℝ (affineSpan ℝ P).direction + 2 = Module.finrank ℝ V) :
-    ∃ m n : Module.Dual ℤ N, (affineSpan ℝ P).direction =
-      (h.realCharacter m.toAddMonoidHom).ker ⊓ (h.realCharacter n.toAddMonoidHom).ker := by
-  obtain ⟨m, _, hdir⟩ := hP.exists_direction_eq_iInf_ker hne hdim
-  refine ⟨m 0, m 1, ?_⟩
-  rw [hdir]
-  ext v
-  simp only [Submodule.mem_iInf, Submodule.mem_inf, LinearMap.mem_ker, Fin.forall_fin_two]
+    ∃ m n : N →+ ℤ, LinearIndependent ℝ ![h.realCharacter m, h.realCharacter n] ∧
+      (affineSpan ℝ P).direction = (h.realCharacter m).ker ⊓ (h.realCharacter n).ker := by
+  obtain ⟨m, hlin, hdir⟩ := hP.exists_direction_eq_iInf_ker hne hdim
+  refine ⟨m 0, m 1, ?_, ?_⟩
+  · convert hlin using 1
+    ext j
+    fin_cases j <;> simp
+  · rw [hdir]
+    ext v
+    simp only [Submodule.mem_iInf, Submodule.mem_inf, LinearMap.mem_ker, Fin.forall_fin_two]
 
 end TauCeti.IsRationalNormalPolyhedron
