@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Sites.Point.ConstantSheaf
 public import TauCeti.CategoryTheory.Sites.Point.Over
 
 /-!
@@ -32,15 +33,17 @@ constant, and the fibre of a constant sheaf with value `M` is `M`.
   which `F` is constant with value satisfying `P`.
 * `CategoryTheory.Sheaf.IsLocallyConstantIn`: `F` is locally constant with values in `P`.
 * `CategoryTheory.Sheaf.isLocallyConstantIn_constantSheaf`: a constant sheaf is locally constant.
+* `CategoryTheory.Sheaf.isLocallyConstantIn_iff_of_isTerminal`: on a site with a terminal object
+  `T`, local constancy only needs to be checked over `T`.
 * `CategoryTheory.Sheaf.IsLocallyConstantIn.exists_sheafFiber_iso`: the fibres of a locally
-  constant sheaf satisfy `P`.
+  constant sheaf are isomorphic to objects satisfying `P`.
 
 ## References
 
-* A. Grothendieck, J.-L. Verdier, *SGA 4*, Exposé IX, §2, for locally constant sheaves on a site.
+* M. Artin, *SGA 4*, Exposé IX, §2, for locally constant sheaves on a site.
 -/
 
-@[expose] public section
+public section
 
 universe w v u u' v'
 
@@ -62,6 +65,19 @@ def locallyConstantSieve (F : Sheaf J A) (X : C) : Sieve X where
       ((Over.map g).sheafPushforwardContinuous A _ _).mapIso e ≪≫
         ((constantSheaf J A).obj M).pushforwardOverMapIso g⟩⟩
 
+@[simp]
+lemma locallyConstantSieve_apply (F : Sheaf J A) {X Y : C} (f : Y ⟶ X) :
+    F.locallyConstantSieve P X f ↔
+      ∃ M, P M ∧ Nonempty (F.over Y ≅ ((constantSheaf J A).obj M).over Y) :=
+  Iff.rfl
+
+/-- Whether `F` is constant over `Y ⟶ X` does not depend on `X`, so the sieves of local constancy
+are stable under pullback. -/
+@[simp]
+lemma pullback_locallyConstantSieve (F : Sheaf J A) {X Z : C} (g : Z ⟶ X) :
+    (F.locallyConstantSieve P X).pullback g = F.locallyConstantSieve P Z :=
+  Sieve.ext fun _ _ ↦ Iff.rfl
+
 variable {P} in
 lemma locallyConstantSieve_mono {Q : ObjectProperty A} (h : P ≤ Q) (F : Sheaf J A) (X : C) :
     F.locallyConstantSieve P X ≤ F.locallyConstantSieve Q X :=
@@ -80,6 +96,17 @@ morphisms `Y ⟶ X` such that `F.over Y` is isomorphic to the restriction to `Ov
 constant sheaf with value some `M` satisfying `P`. -/
 def IsLocallyConstantIn (F : Sheaf J A) : Prop :=
   ∀ X : C, F.locallyConstantSieve P X ∈ J X
+
+lemma isLocallyConstantIn_iff (F : Sheaf J A) :
+    F.IsLocallyConstantIn J P ↔ ∀ X : C, F.locallyConstantSieve P X ∈ J X :=
+  Iff.rfl
+
+/-- On a site with a terminal object `T`, a sheaf is locally constant as soon as it is so over
+`T`, since the sieves of local constancy are stable under pullback. -/
+lemma isLocallyConstantIn_iff_of_isTerminal (F : Sheaf J A) {T : C} (hT : IsTerminal T) :
+    F.IsLocallyConstantIn J P ↔ F.locallyConstantSieve P T ∈ J T :=
+  ⟨fun hF ↦ hF T, fun h X ↦
+    F.pullback_locallyConstantSieve P (hT.from X) ▸ J.pullback_stable (hT.from X) h⟩
 
 variable {P}
 

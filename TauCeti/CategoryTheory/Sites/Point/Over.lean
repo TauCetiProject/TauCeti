@@ -6,13 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Filtered.Final
-public import Mathlib.CategoryTheory.Limits.Connected
-public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.Point.Over
-public import Mathlib.CategoryTheory.Sites.Point.Skyscraper
 
 /-!
-# Fibres at a point of restrictions and of constant sheaves
+# Fibres at a point of restrictions
 
 Let `Φ` be a point of a site `(C, J)`, let `X : C` and let `x : Φ.fiber.obj X`. Mathlib's
 `CategoryTheory.GrothendieckTopology.Point.over` is the induced point `Φ.over x` of the site
@@ -20,27 +17,21 @@ Let `Φ` be a point of a site `(C, J)`, let `X : C` and let `x : Φ.fiber.obj X`
 change its fibre: the fibre at `Φ.over x` of the restriction `F.over X` is the fibre of `F` at
 `Φ` (`CategoryTheory.GrothendieckTopology.Point.sheafFiberOverIso`). The reason is that the
 category of elements of the fibre functor of `Φ.over x` is the slice of the category of elements
-of `Φ.fiber` over `(X, x)`, and the projection from a slice of a cofiltered category is initial.
-
-It also computes the fibre of a constant sheaf: the fibre at any point of the constant sheaf with
-value `M` is `M` (`CategoryTheory.GrothendieckTopology.Point.sheafFiberConstantSheafIso`), since
-the category of elements of a fibre functor is cofiltered, hence connected.
+of `Φ.fiber` over `(X, x)` (Mathlib's `FunctorToTypes.fromOverFunctorElementsEquivalence`), and
+the projection from a slice of a cofiltered category is initial.
 
 ## Main declarations
 
 * `CategoryTheory.GrothendieckTopology.Point.presheafFiberOverNatIso`,
   `CategoryTheory.GrothendieckTopology.Point.sheafFiberOverNatIso`: the fibre at `Φ.over x` of
   the restriction to `Over X` is the fibre at `Φ`, naturally.
-* `CategoryTheory.GrothendieckTopology.Point.presheafFiberConstIso`,
-  `CategoryTheory.GrothendieckTopology.Point.sheafFiberConstantSheafIso`: the fibre of a constant
-  presheaf or of a constant sheaf with value `M` is `M`.
 
 ## References
 
 * A. Grothendieck, J.-L. Verdier, *SGA 4*, Exposé IV, §6.8, for points of a localized topos.
 -/
 
-@[expose] public section
+public section
 
 universe w v u u' v'
 
@@ -48,24 +39,23 @@ open CategoryTheory Limits Opposite
 
 namespace CategoryTheory.GrothendieckTopology.Point
 
-variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
-  (Φ : Point.{w} J) {A : Type u'} [Category.{v'} A]
-
-section Over
-
-variable [LocallySmall.{w} C] {X : C} (x : Φ.fiber.obj X)
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C} [LocallySmall.{w} C]
+  (Φ : Point.{w} J) {A : Type u'} [Category.{v'} A] {X : C} (x : Φ.fiber.obj X)
 
 /-- The functor from the category of elements of the fibre functor of `Φ.over x` to the category
 of elements of `Φ.fiber`, sending a point `y` of `Y : Over X` lying over `x` to the point `y` of
-`Y.left`. It identifies the source with the slice over `(X, x)`. -/
+`Y.left`. Under Mathlib's `FunctorToTypes.fromOverFunctorElementsEquivalence Φ.fiber x`, it
+corresponds to the projection `Over.forget (Φ.fiber.elementsMk X x)` from the slice over `(X, x)`;
+it is spelled out here because that equivalence is not exposed, so the composite does not reduce
+to `Φ.fiber.elementsMk Y.left y`. -/
 @[simps]
-def overElementsForget : (Φ.over x).fiber.Elements ⥤ Φ.fiber.Elements where
+private def overElementsForget : (Φ.over x).fiber.Elements ⥤ Φ.fiber.Elements where
   obj u := Φ.fiber.elementsMk u.obj.left u.val.1
   map f := Functor.Elements.homMk f.hom.left (congrArg Subtype.val f.map_val)
 
 /-- The projection from the slice of the cofiltered category `Φ.fiber.Elements` over `(X, x)` is
 initial. -/
-instance initial_overElementsForget : (Φ.overElementsForget x).Initial :=
+private instance initial_overElementsForget : (Φ.overElementsForget x).Initial :=
   Functor.initial_of_exists_of_isCofiltered _
     (fun d ↦
       let b := IsCofiltered.minToRight d (Φ.fiber.elementsMk X x)
@@ -114,54 +104,43 @@ lemma toPresheafFiber_presheafFiberOverIso_inv (P : Cᵒᵖ ⥤ A) (Y : Over X)
 variable (A) in
 /-- Restricting presheaves to `Over X` and taking the fibre at `Φ.over x` is the fibre functor of
 `Φ`. -/
-@[simps!]
 noncomputable def presheafFiberOverNatIso :
     (Functor.whiskeringLeft _ _ A).obj (Over.forget X).op ⋙ (Φ.over x).presheafFiber ≅
       Φ.presheafFiber :=
   NatIso.ofComponents (Φ.presheafFiberOverIso x) fun {P Q} f ↦
     (Φ.over x).presheafFiber_hom_ext fun Y y ↦ by simp [toPresheafFiber_naturality_assoc]
 
+@[simp]
+lemma presheafFiberOverNatIso_hom_app (P : Cᵒᵖ ⥤ A) :
+    (Φ.presheafFiberOverNatIso A x).hom.app P = (Φ.presheafFiberOverIso x P).hom :=
+  (rfl)
+
+@[simp]
+lemma presheafFiberOverNatIso_inv_app (P : Cᵒᵖ ⥤ A) :
+    (Φ.presheafFiberOverNatIso A x).inv.app P = (Φ.presheafFiberOverIso x P).inv :=
+  (rfl)
+
 variable (A) in
 /-- **The fibre of a restriction.** Restricting sheaves to `Over X` and taking the fibre at
 `Φ.over x` is the fibre functor of `Φ`. -/
-@[simps!]
 noncomputable def sheafFiberOverNatIso :
     J.overPullback A X ⋙ (Φ.over x).sheafFiber ≅ Φ.sheafFiber :=
   Functor.isoWhiskerLeft (sheafToPresheaf J A) (Φ.presheafFiberOverNatIso A x)
+
+@[simp]
+lemma sheafFiberOverNatIso_hom_app (F : Sheaf J A) :
+    (Φ.sheafFiberOverNatIso A x).hom.app F = (Φ.presheafFiberOverIso x F.obj).hom :=
+  (rfl)
+
+@[simp]
+lemma sheafFiberOverNatIso_inv_app (F : Sheaf J A) :
+    (Φ.sheafFiberOverNatIso A x).inv.app F = (Φ.presheafFiberOverIso x F.obj).inv :=
+  (rfl)
 
 /-- The fibre at `Φ.over x` of the restriction `F.over X` of a sheaf is the fibre of `F` at
 `Φ`. -/
 noncomputable abbrev sheafFiberOverIso (F : Sheaf J A) :
     (Φ.over x).sheafFiber.obj (F.over X) ≅ Φ.sheafFiber.obj F :=
   (Φ.sheafFiberOverNatIso A x).app F
-
-end Over
-
-section Constant
-
-variable [HasColimitsOfSize.{w, w} A]
-
-/-- The fibre of the constant presheaf with value `M` is `M`, because the category of elements of
-the fibre functor of a point is cofiltered, hence connected. -/
-noncomputable def presheafFiberConstIso (M : A) :
-    Φ.presheafFiber.obj ((Functor.const Cᵒᵖ).obj M) ≅ M :=
-  (colimit.isColimit _).coconePointUniqueUpToIso (isColimitConstCocone _ M)
-
-/-- Under `presheafFiberConstIso`, every germ of the constant presheaf is the identity of `M`. -/
-@[reassoc (attr := simp)]
-lemma toPresheafFiber_presheafFiberConstIso_hom (M : A) (X : C) (x : Φ.fiber.obj X) :
-    Φ.toPresheafFiber X x ((Functor.const Cᵒᵖ).obj M) ≫ (Φ.presheafFiberConstIso M).hom =
-      𝟙 M :=
-  (colimit.isColimit _).comp_coconePointUniqueUpToIso_hom _ _
-
-variable [HasWeakSheafify J A] [HasProducts.{w} A]
-
-/-- **The fibre of a constant sheaf.** The fibre at any point of the constant sheaf with value
-`M` is `M`. -/
-noncomputable def sheafFiberConstantSheafIso (M : A) :
-    Φ.sheafFiber.obj ((constantSheaf J A).obj M) ≅ M :=
-  (Φ.presheafToSheafCompSheafFiberIso A).app _ ≪≫ Φ.presheafFiberConstIso M
-
-end Constant
 
 end CategoryTheory.GrothendieckTopology.Point

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.AlgebraicGeometry.Sites.EtalePoint
+public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
 public import TauCeti.Algebra.Category.ModuleCat.ForgetCorepresentable
 public import TauCeti.CategoryTheory.Sites.LocallyConstant
 
@@ -18,33 +18,39 @@ Let `S` be a scheme and `Λ` a ring. This file studies sheaves of `Λ`-modules o
 site of `S` through their stalks at geometric points, and defines finite lisse sheaves.
 
 A geometric point `s : Spec Ω ⟶ S`, with `Ω` a separably closed field, is a point
-`AlgebraicGeometry.Scheme.pointSmallEtale s` of the small étale site (Mathlib). Its fibre functor
-on sheaves of `Λ`-modules is the stalk functor `AlgebraicGeometry.Scheme.etaleStalk Λ s`, with
-values in `Λ`-modules. Its underlying set is the stalk of the underlying sheaf of sets. The stalk
-functor is exact, and the stalks at a family of geometric points meeting every point of `S` are
-jointly conservative, because the corresponding points of the étale site form a conservative
-family (Mathlib's `AlgebraicGeometry.Scheme.isConservative_pointSmallEtale`). Hence exactness of
-a sequence of étale sheaves of modules can be tested on stalks.
+`AlgebraicGeometry.Scheme.pointSmallEtale s` of the small étale site (Mathlib). Its fibre
+functor on sheaves of `Λ`-modules is the stalk functor
+`TauCeti.AlgebraicGeometry.Scheme.etaleStalk Λ s`, with values in `Λ`-modules. Its underlying set
+is the stalk of the underlying sheaf of sets. The stalk functor is exact, and the stalks at a
+family of geometric points meeting every point of `S` are jointly conservative, because the
+corresponding points of the étale site form a conservative family (Mathlib's
+`AlgebraicGeometry.Scheme.isConservative_pointSmallEtale`). Hence exactness of a sequence of étale
+sheaves of modules can be tested on stalks.
 
 A sheaf of `Λ`-modules is *finite lisse* if it is étale locally isomorphic to the constant sheaf
-on a finitely generated `Λ`-module (`AlgebraicGeometry.Scheme.IsFiniteLisse`); for a finite ring
+on a finitely generated `Λ`-module (`CategoryTheory.Sheaf.IsFiniteLisse`); for a finite ring
 `Λ` these are the étale locally constant sheaves with finite fibres. Its stalks are finitely
 generated `Λ`-modules. No invertibility hypothesis on `Λ` is needed.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.etaleStalk`: the stalk at a geometric point, as a functor to
+* `TauCeti.AlgebraicGeometry.Scheme.etaleStalk`: the stalk at a geometric point, as a functor to
   `Λ`-modules.
-* `AlgebraicGeometry.Scheme.etaleStalkCompForgetIso`: the underlying set of the stalk is the
-  stalk of the underlying sheaf of sets.
-* `AlgebraicGeometry.Scheme.shortExact_map_etaleStalk`: stalks preserve short exact sequences.
-* `AlgebraicGeometry.Scheme.isIso_of_forall_isIso_etaleStalk`: a morphism of étale sheaves of
-  modules which is an isomorphism on all geometric stalks is an isomorphism.
-* `AlgebraicGeometry.Scheme.exact_iff_forall_exact_map_etaleStalk`: a short complex of étale
-  sheaves of modules is exact if and only if it is exact on all geometric stalks.
-* `AlgebraicGeometry.Scheme.IsFiniteLisse`: finite lisse étale sheaves of modules.
-* `AlgebraicGeometry.Scheme.IsFiniteLisse.finite_etaleStalk`: the stalks of a finite lisse sheaf
-  are finitely generated.
+* `TauCeti.AlgebraicGeometry.Scheme.etaleStalkCompForgetIso`: the underlying set of the stalk is
+  the stalk of the underlying sheaf of sets.
+* `TauCeti.AlgebraicGeometry.Scheme.shortExact_map_etaleStalk`: stalks preserve short exact
+  sequences.
+* `TauCeti.AlgebraicGeometry.Scheme.jointlyReflectIsomorphisms_etaleStalk`,
+  `TauCeti.AlgebraicGeometry.Scheme.isIso_of_forall_isIso_etaleStalk`: stalks at geometric points
+  whose images cover `S` jointly reflect isomorphisms.
+* `CategoryTheory.ShortComplex.exact_iff_exact_map_etaleStalk`,
+  `CategoryTheory.ShortComplex.shortExact_iff_shortExact_map_etaleStalk`: a short complex of étale
+  sheaves of modules is (short) exact if and only if it is so on the stalks at a family of
+  geometric points whose images cover `S`; `exact_iff_forall_exact_map_etaleStalk` and
+  `shortExact_iff_forall_shortExact_map_etaleStalk` use all geometric points.
+* `CategoryTheory.Sheaf.IsFiniteLisse`: finite lisse étale sheaves of modules.
+* `CategoryTheory.Sheaf.IsFiniteLisse.finite_etaleStalk`: the stalks of a finite lisse sheaf are
+  finitely generated.
 
 ## References
 
@@ -54,13 +60,13 @@ generated `Λ`-modules. No invertibility hypothesis on `Λ` is needed.
   sheaves.
 -/
 
-@[expose] public section
+public section
 
 universe u
 
-open CategoryTheory Limits Opposite
+open CategoryTheory Limits Opposite AlgebraicGeometry Scheme
 
-namespace AlgebraicGeometry.Scheme
+namespace TauCeti.AlgebraicGeometry.Scheme
 
 variable {S : Scheme.{u}} (Λ : Type u) [Ring Λ]
 
@@ -81,6 +87,32 @@ noncomputable def etaleStalkCompForgetIso :
       sheafCompose (smallEtaleTopology S) (CategoryTheory.forget (ModuleCat.{u} Λ)) ⋙
         (pointSmallEtale s).sheafFiber :=
   ((pointSmallEtale s).sheafFiberCompIso (CategoryTheory.forget (ModuleCat.{u} Λ))).symm
+
+variable {Λ}
+
+/-- Under the inverse of `etaleStalkCompForgetIso`, the germ of a section of the underlying sheaf
+of sets is the underlying element of its germ as a section of the sheaf of `Λ`-modules. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+lemma toPresheafFiber_etaleStalkCompForgetIso_inv_app
+    (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) (U : S.Etale)
+    (u : (pointSmallEtale s).fiber.obj U) :
+    (pointSmallEtale s).toPresheafFiber U u (F.obj ⋙ CategoryTheory.forget (ModuleCat.{u} Λ)) ≫
+        (etaleStalkCompForgetIso Λ s).inv.app F =
+      (CategoryTheory.forget (ModuleCat.{u} Λ)).map
+        ((pointSmallEtale s).toPresheafFiber U u F.obj) :=
+  (pointSmallEtale s).toPresheafFiber_presheafFiberCompIso_hom_app _ U u F.obj
+
+/-- Under `etaleStalkCompForgetIso`, the underlying element of the germ of a section of a sheaf of
+`Λ`-modules is its germ as a section of the underlying sheaf of sets. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+lemma toPresheafFiber_etaleStalkCompForgetIso_hom_app
+    (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) (U : S.Etale)
+    (u : (pointSmallEtale s).fiber.obj U) :
+    (CategoryTheory.forget (ModuleCat.{u} Λ)).map
+        ((pointSmallEtale s).toPresheafFiber U u F.obj) ≫ (etaleStalkCompForgetIso Λ s).hom.app F =
+      (pointSmallEtale s).toPresheafFiber U u (F.obj ⋙ CategoryTheory.forget (ModuleCat.{u} Λ)) :=
+  ((Iso.comp_inv_eq ((etaleStalkCompForgetIso Λ s).app F)).1
+    (toPresheafFiber_etaleStalkCompForgetIso_inv_app s F U u)).symm
 
 /-- **Stalks are exact.** The stalk functor at a geometric point sends short exact sequences of
 étale sheaves of `Λ`-modules to short exact sequences of `Λ`-modules. -/
@@ -113,34 +145,69 @@ isomorphism as soon as it induces isomorphisms on the stalks at all geometric po
 theorem isIso_of_forall_isIso_etaleStalk {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
     (φ : F ⟶ G) (h : ∀ (Ω : Type u) [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S),
       IsIso ((etaleStalk Λ s).map φ)) :
-    IsIso φ :=
-  have := fun x : S ↦ h _ ((SpecToEquivOfField (SeparableClosure (S.residueField x)) _).2
-      ⟨x, CommRingCat.ofHom (algebraMap (S.residueField x) _)⟩)
-  (jointlyReflectIsomorphisms_etaleStalk (fun x : S ↦
-    (SpecToEquivOfField (SeparableClosure (S.residueField x)) _).2
-      ⟨x, CommRingCat.ofHom (algebraMap (S.residueField x) _)⟩) (by
-        ext x
-        simp)).isIso φ
-
-/-- **Exactness is tested on stalks.** A short complex of étale sheaves of `Λ`-modules on `S` is
-exact if and only if it is exact on the stalks at all geometric points. -/
-theorem exact_iff_forall_exact_map_etaleStalk
-    (T : ShortComplex (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) :
-    T.Exact ↔ ∀ (Ω : Type u) [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S),
-      (T.map (etaleStalk Λ s)).Exact := by
-  refine ⟨fun hT _ _ _ s ↦ hT.map _, fun h ↦ ?_⟩
-  rw [ShortComplex.exact_iff_isZero_homology]
-  have : IsIso (0 : T.homology ⟶ T.homology) := isIso_of_forall_isIso_etaleStalk _ fun Ω _ _ s ↦ by
-    have hz : IsZero ((etaleStalk Λ s).obj T.homology) :=
-      ((ShortComplex.exact_iff_isZero_homology _).1 (h Ω s)).of_iso
-        (T.mapHomologyIso (etaleStalk Λ s)).symm
-    rw [Functor.map_zero]
-    exact ⟨0, hz.eq_of_src _ _, hz.eq_of_src _ _⟩
-  rw [IsZero.iff_id_eq_zero, ← IsIso.inv_hom_id (0 : T.homology ⟶ T.homology), comp_zero]
+    IsIso φ := by
+  rw [((isConservativeFamilyOfPoints_pointSmallEtale' S).jointlyReflectIsomorphisms
+    (ModuleCat.{u} Λ)).isIso_iff]
+  rintro ⟨_, ⟨_⟩⟩
+  exact h _ _
 
 end Conservative
 
-section Lisse
+end TauCeti.AlgebraicGeometry.Scheme
+
+namespace CategoryTheory.ShortComplex
+
+open TauCeti.AlgebraicGeometry.Scheme
+
+variable {S : Scheme.{u}} {Λ : Type u} [Ring Λ]
+  (T : ShortComplex (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)))
+
+/-- **Exactness is tested on stalks.** A short complex of étale sheaves of `Λ`-modules on `S` is
+exact if and only if it is exact on the stalks at a family of geometric points whose images
+cover `S`. -/
+theorem exact_iff_exact_map_etaleStalk {ι : Type*} {Ω : ι → Type u} [∀ i, Field (Ω i)]
+    [∀ i, IsSepClosed (Ω i)] (s : ∀ i, Spec (.of (Ω i)) ⟶ S)
+    (hs : ⋃ i, Set.range (s i) = .univ) :
+    T.Exact ↔ ∀ i, (T.map (etaleStalk Λ (s i))).Exact :=
+  (jointlyReflectIsomorphisms_etaleStalk s hs).exact_iff T
+
+/-- A short complex of étale sheaves of `Λ`-modules on `S` is short exact if and only if it is
+short exact on the stalks at a family of geometric points whose images cover `S`. -/
+theorem shortExact_iff_shortExact_map_etaleStalk {ι : Type*} {Ω : ι → Type u}
+    [∀ i, Field (Ω i)] [∀ i, IsSepClosed (Ω i)] (s : ∀ i, Spec (.of (Ω i)) ⟶ S)
+    (hs : ⋃ i, Set.range (s i) = .univ) :
+    T.ShortExact ↔ ∀ i, (T.map (etaleStalk Λ (s i))).ShortExact :=
+  (jointlyReflectIsomorphisms_etaleStalk s hs).shortExact_iff T
+
+/-- A short complex of étale sheaves of `Λ`-modules on `S` is exact if and only if it is exact on
+the stalks at all geometric points. -/
+theorem exact_iff_forall_exact_map_etaleStalk :
+    T.Exact ↔ ∀ (Ω : Type u) [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S),
+      (T.map (etaleStalk Λ s)).Exact := by
+  refine ⟨fun hT _ _ _ s ↦ hT.map _, fun h ↦ ?_⟩
+  rw [((isConservativeFamilyOfPoints_pointSmallEtale' S).jointlyReflectIsomorphisms
+    (ModuleCat.{u} Λ)).exact_iff]
+  rintro ⟨_, ⟨_⟩⟩
+  exact h _ _
+
+/-- A short complex of étale sheaves of `Λ`-modules on `S` is short exact if and only if it is
+short exact on the stalks at all geometric points. -/
+theorem shortExact_iff_forall_shortExact_map_etaleStalk :
+    T.ShortExact ↔ ∀ (Ω : Type u) [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S),
+      (T.map (etaleStalk Λ s)).ShortExact := by
+  refine ⟨fun hT _ _ _ s ↦ shortExact_map_etaleStalk s hT, fun h ↦ ?_⟩
+  rw [((isConservativeFamilyOfPoints_pointSmallEtale' S).jointlyReflectIsomorphisms
+    (ModuleCat.{u} Λ)).shortExact_iff]
+  rintro ⟨_, ⟨_⟩⟩
+  exact h _ _
+
+end CategoryTheory.ShortComplex
+
+namespace CategoryTheory.Sheaf
+
+open TauCeti.AlgebraicGeometry.Scheme
+
+variable {S : Scheme.{u}} {Λ : Type u} [Ring Λ]
 
 /-- An étale sheaf of `Λ`-modules on `S` is *finite lisse* if it is étale locally isomorphic to the
 constant sheaf on a finitely generated `Λ`-module: every étale `S`-scheme is covered by étale
@@ -148,25 +215,21 @@ maps `V ⟶ U` over which the sheaf is the constant sheaf on a finitely generate
 abbrev IsFiniteLisse (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) : Prop :=
   F.IsLocallyConstantIn (smallEtaleTopology S) fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M
 
-variable {Λ}
-
 /-- The constant étale sheaf on a finitely generated `Λ`-module is finite lisse. -/
 theorem isFiniteLisse_constantSheaf (M : ModuleCat.{u} Λ) [Module.Finite Λ M] :
-    IsFiniteLisse Λ ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj M) :=
-  Sheaf.isLocallyConstantIn_constantSheaf (P := fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M) ‹_›
+    ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj M).IsFiniteLisse :=
+  isLocallyConstantIn_constantSheaf (P := fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M) ‹_›
 
 theorem IsFiniteLisse.of_iso {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
-    (e : F ≅ G) (hF : IsFiniteLisse Λ F) : IsFiniteLisse Λ G :=
-  Sheaf.IsLocallyConstantIn.of_iso e hF
+    (e : F ≅ G) (hF : F.IsFiniteLisse) : G.IsFiniteLisse :=
+  IsLocallyConstantIn.of_iso e hF
 
 /-- The stalks of a finite lisse étale sheaf of `Λ`-modules at geometric points are finitely
 generated `Λ`-modules. -/
 theorem IsFiniteLisse.finite_etaleStalk {F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
-    (hF : IsFiniteLisse Λ F) {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S) :
+    (hF : F.IsFiniteLisse) {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S) :
     Module.Finite Λ ((etaleStalk Λ s).obj F) := by
-  obtain ⟨M, hM, ⟨e⟩⟩ := Sheaf.IsLocallyConstantIn.exists_sheafFiber_iso hF (pointSmallEtale s)
+  obtain ⟨M, hM, ⟨e⟩⟩ := IsLocallyConstantIn.exists_sheafFiber_iso hF (pointSmallEtale s)
   exact Module.Finite.equiv e.symm.toLinearEquiv
 
-end Lisse
-
-end AlgebraicGeometry.Scheme
+end CategoryTheory.Sheaf
