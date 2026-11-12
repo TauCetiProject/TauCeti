@@ -18,9 +18,8 @@ hive they are antitone, so an integer hive determines three native dominant weig
 The sum of all entries of the three boundary weights is zero. Before imposing hive
 inequalities, the boundary restriction is a linear map on the entire space of labellings.
 
-The boundary dominance proof adds the two unit rhombi sharing the inward triangle
-at an edge point. The conventions follow Knutson–Tao, *The honeycomb model of
-GLₙ(ℂ) tensor products I*, Appendix 2.
+The conventions follow Knutson–Tao, *The honeycomb model of GLₙ(ℂ) tensor
+products I*, Appendix 2.
 -/
 
 public section
@@ -117,6 +116,8 @@ private theorem edgeAB_midpoint_inequality {k : ℕ} {h : Vertex (k + 2) → R}
     convert add_le_add h1 h2 using 1 <;> dsimp only [u, v, e] <;> abel
   simpa only [he, hA, hB] using (add_le_add_iff_right _).mp hs
 
+/- The boundary dominance proof adds the two unit rhombi sharing the inward triangle
+at an edge point. -/
 /-- The clockwise differences on each side of a hive labelling are antitone.
 This holds for arbitrary ordered abelian group values and without normalization. -/
 theorem IsHive.boundary_antitone {h : Vertex n → R} (hh : IsHive h) (s : Fin 3) :
