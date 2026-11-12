@@ -86,6 +86,7 @@ def quantizeUniformOrderZero (a : Symbol n V W 0) (ha : a.IsUniform) :
     (SchwartzMap.toBesselPotentialSpaceCLM (E := CoordinateSpace n) (F := V) 0 2).toLinearMap
 
 /-- On Schwartz functions, the bounded extension of `Op(a)` is `Op(a)`. -/
+@[simp]
 theorem quantizeUniformOrderZero_toBesselPotentialSpaceCLM (ha : a.IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) :
     a.quantizeUniformOrderZero ha (SchwartzMap.toBesselPotentialSpaceCLM 0 2 u) =
@@ -97,7 +98,6 @@ theorem quantizeUniformOrderZero_toBesselPotentialSpaceCLM (ha : a.IsUniform)
 
 /-- On a Schwartz function `u`, the bounded extension of `Op(a)` to `H^0` gives the tempered
 distribution of the function `Op(a) u = quantizeSchwartzValue a.coefficient u`. -/
-@[simp]
 theorem toDistr_quantizeUniformOrderZero_toBesselPotentialSpaceCLM_apply (ha : a.IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)) :
     (a.quantizeUniformOrderZero ha (SchwartzMap.toBesselPotentialSpaceCLM 0 2 u)).toDistr φ =
