@@ -118,12 +118,10 @@ theorem cutoffInterp_of_eq {n : N} (h : K₁ n = K₀ n) :
     cutoffInterp hσn hK₀ hK₁ ρ hρ n = K₀ n := by
   by_cases hW : n ∈ W
   · rw [cutoffInterp_of_mem hσn hK₀ hK₁ ρ hρ hW]
-    refine (hK₀ n).eq_of_cayley_eq
-      ((hK₀ n).compatible_cayleyInterp (V := E) (hK₁ n hW) _).tames (hK₀ n).tames
-      (((hK₀ n).cayley_cayleyInterp (V := E) (hK₁ n hW) _).trans ?_)
+    generalize hK₁ n hW = h₁
+    revert h₁
     rw [h]
-    exact (congrArg (ρ n • ·) (AlmostComplexStructure.cayley_self (V := E) _)).trans
-      ((smul_zero _).trans (AlmostComplexStructure.cayley_self _).symm)
+    exact fun h₁ => (hK₀ n).cayleyInterp_self (V := E) h₁ (hρ n)
   · exact cutoffInterp_of_notMem hσn hK₀ hK₁ ρ hρ hW
 
 /-- Over `W`, cutoff interpolation is the Cayley path expression in the operators of `K₀` and
