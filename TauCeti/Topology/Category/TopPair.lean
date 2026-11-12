@@ -38,6 +38,9 @@ with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of t
 A continuous map into the ambient space of a pair with values in the subspace corestricts to a
 continuous map into the subspace, `TopPair.liftSnd`, because the subspace is embedded.
 
+For `S ⊆ T`, the identity of `X` carries `X ∖ T` into `X ∖ S` (`TopCat.mapsTo_id_compl`), so it
+is a map of pairs `(X, X ∖ T) ⟶ (X, X ∖ S)`.
+
 For subsets `A ⊆ X` and `B ⊆ Y`, the preimages `A × Y` and `X × B` of `A` and `B` under the
 projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product of pairs. Each is open
 in the union when `A`, respectively `B`, is open
@@ -412,6 +415,10 @@ end IsCompact
 namespace TopCat
 
 open MonoidalCategory CartesianMonoidalCategory
+
+/-- For `S ⊆ T`, the identity of `X` carries `X ∖ T` into `X ∖ S`. -/
+lemma mapsTo_id_compl {X : TopCat.{u}} {S T : Set X} (h : S ⊆ T) : Set.MapsTo (𝟙 X) Tᶜ Sᶜ :=
+  fun _ hx hS ↦ hx (h hS)
 
 section Preimage
 

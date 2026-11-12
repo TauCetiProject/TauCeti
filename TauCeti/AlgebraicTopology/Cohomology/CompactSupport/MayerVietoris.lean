@@ -205,16 +205,6 @@ lemma compactSupportCohomologyMayerVietorisToBiprod_fromBiprod (n : ℕ) :
 
 variable {R k M U V}
 
-omit [T2Space X] in
-/-- A compact subset of `X` lying in an open set `U` is the image of a compact subset of `U`. -/
-private lemma exists_compacts_map_inclusion'_eq {U : Opens X} {K : Compacts X}
-    (hK : (K : Set X) ⊆ U) :
-    ∃ K' : Compacts ((Opens.toTopCat X).obj U),
-      (K'.map (Opens.inclusion' U) (map_continuous _) : Set X) = K := by
-  obtain ⟨K', hK'⟩ := (Compacts.range_map U.isOpenEmbedding.isInducing).ge
-    (show (K : Set X) ⊆ Set.range (Opens.inclusion' U) by rwa [Opens.set_range_inclusion'])
-  exact ⟨K', congrArg SetLike.coe hK'⟩
-
 /-- The heart of exactness of the Mayer–Vietoris sequence of cohomology with compact supports at
 `Hⁿ_c(U) ⊞ Hⁿ_c(V)`: if the extensions of `x ∈ Hⁿ_c(U)` and `y ∈ Hⁿ_c(V)` to `X = U ∪ V` cancel,
 then `x` and `-y` are the extensions of one class of `Hⁿ_c(U ∩ V)`. Represent `x` and `y` on

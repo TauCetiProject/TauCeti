@@ -71,10 +71,9 @@ cochains (`SSetPair.quasiIso_cochainComplexMap`).
   `TopCat.isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion`: for `U` and `V`
   open in `U ∪ V`, the cochains of `X` relative to its singular simplices lying in `U` or in `V`
   compute the cohomology of `(X, U ∪ V)`.
-* `TopCat.singularCohomologyComplRestrict`: the restriction `Hⁿ(X, X ∖ S) ⟶ Hⁿ(X, X ∖ T)` for
-  `S ⊆ T`, and `TopCat.exists_singularCohomologyComplRestrict_eq_of_add_eq_zero`: exactness at the
-  middle term of the Mayer–Vietoris sequence of the pairs `(X, X ∖ S)` and `(X, X ∖ T)` for closed
-  sets `S` and `T`.
+* `TopCat.exists_singularCohomologyComplRestrict_eq_of_add_eq_zero`: exactness at the middle term
+  of the Mayer–Vietoris sequence of the pairs `(X, X ∖ S)` and `(X, X ∖ T)` for closed sets `S`
+  and `T`, stated with the restrictions `TopCat.singularCohomologyComplRestrict`.
 
 ## References
 
@@ -689,28 +688,7 @@ lemma singularCohomologyPairMayerVietorisδ_naturality_of_subset (n m : ℕ)
 
 section Compl
 
-/-- For `S ⊆ T`, the identity of `X` carries `X ∖ T` into `X ∖ S`. -/
-lemma mapsTo_id_compl {S T : Set X} (h : S ⊆ T) : Set.MapsTo (𝟙 X) Tᶜ Sᶜ :=
-  fun _ hx hS ↦ hx (h hS)
-
-/-- The restriction `Hⁿ(X, X ∖ S) ⟶ Hⁿ(X, X ∖ T)` for `S ⊆ T`, induced by the identity of `X`. -/
-abbrev singularCohomologyComplRestrict {S T : Set X} (h : S ⊆ T) (n : ℕ) :
-    (TopPair.ofSubset Sᶜ).singularCohomology R k M n ⟶
-      (TopPair.ofSubset Tᶜ).singularCohomology R k M n :=
-  TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl h)) n
-
 variable {R k M}
-
-/-- Restricting from the complement of `S` to the complement of `T`, then to the complement of
-`Q`, is restricting from the complement of `S` to the complement of `Q`. -/
-@[simp]
-lemma singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict {S T Q : Set X}
-    (h : S ⊆ T) (h' : T ⊆ Q) (n : ℕ) (a : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
-    singularCohomologyComplRestrict R k M h' n (singularCohomologyComplRestrict R k M h n a) =
-      singularCohomologyComplRestrict R k M (h.trans h') n a := by
-  rw [← TopPair.singularCohomologyMap_comp_apply,
-    TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (mapsTo_id_compl (h.trans h'))
-      (Category.id_comp _)]
 
 /-- **Mayer–Vietoris for the complements of two closed sets**, exactness at the middle term: if
 `a ∈ Hⁿ(X, X ∖ S)` and `b ∈ Hⁿ(X, X ∖ T)` restrict to classes of `Hⁿ(X, X ∖ (S ∪ T))` with sum
@@ -748,6 +726,12 @@ lemma exists_singularCohomologyComplRestrict_eq_of_add_eq_zero {S T : Set X} (hS
   have hjB : _ ≫ eU.hom = eD.hom ≫ _ :=
     TopPair.ofInclusionMap_inclusion_comp_ofInclusionIsoOfSubset_hom _ _ _ _ Set.subset_union_right
       (fun _ hx ↦ Set.subset_union_right hx) (mapsTo_id_compl Set.inter_subset_right)
+  -- the four squares, evaluated at cohomology classes
+  have hsq {P Q P' Q' : TopPair.{w}} {f : P ⟶ Q} {g : Q ⟶ Q'} {f' : P ⟶ P'} {g' : P' ⟶ Q'}
+      (hfg : f ≫ g = f' ≫ g') (y : Q'.singularCohomology R k M n) :
+      TopPair.singularCohomologyMap f n (TopPair.singularCohomologyMap g n y) =
+        TopPair.singularCohomologyMap f' n (TopPair.singularCohomologyMap g' n y) := by
+    simp only [← TopPair.singularCohomologyMap_comp_apply, hfg]
   -- apply the Mayer–Vietoris sequence of the pairs `(univ, X ∖ S)` and `(univ, X ∖ T)`
   have hA : IsOpen ((↑) ⁻¹' (Set.univ : Set X) : Set ↥((Set.univ : Set X) ∪ Set.univ)) := by
     simp
@@ -768,12 +752,10 @@ lemma exists_singularCohomologyComplRestrict_eq_of_add_eq_zero {S T : Set X} (hS
   simp only [ConcreteCategory.comp_apply] at hinl hinr hfst hsnd
   obtain ⟨q, hq⟩ := hex ((biprod.inl : HC ⟶ HC ⊞ HD) (TopPair.singularCohomologyMap eC.hom n a) +
     (biprod.inr : HD ⟶ HC ⊞ HD) (-TopPair.singularCohomologyMap eD.hom n b)) (by
-      dsimp only
-      rw [map_add, hinl, hinr]
-      simp only [map_neg, ModuleCat.hom_neg, LinearMap.neg_apply, neg_neg]
-      rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
-        hiA, hiB, TopPair.singularCohomologyMap_comp_apply,
-        TopPair.singularCohomologyMap_comp_apply, ← map_add, h, map_zero])
+      dsimp only [HC, HD]
+      simp only [map_add, map_neg, hinl, hinr, ModuleCat.hom_neg, LinearMap.neg_apply, neg_neg,
+        hsq hiA, hsq hiB]
+      rw [← map_add, h, map_zero])
   -- transport the solution back along the identifications of pairs
   let z := TopPair.singularCohomologyMap eU.inv n q
   have hz : TopPair.singularCohomologyMap eU.hom n z = q := by
@@ -786,12 +768,10 @@ lemma exists_singularCohomologyComplRestrict_eq_of_add_eq_zero {S T : Set X} (hS
       eD.hom n) :=
     ((TopPair.singularCohomologyFunctor R k M n).mapIso eD.op).toLinearEquiv.injective
   refine ⟨z, hinjC ?_, hinjD ?_⟩
-  · rw [← TopPair.singularCohomologyMap_comp_apply, ← hjA, TopPair.singularCohomologyMap_comp_apply,
-      hz, ← hfst, hq, map_add, ModuleCat.biprod_inl_fst_apply, ModuleCat.biprod_inr_fst_apply,
-      add_zero]
-  · rw [← TopPair.singularCohomologyMap_comp_apply, ← hjB, TopPair.singularCohomologyMap_comp_apply,
-      hz, ← hsnd, hq, map_add, ModuleCat.biprod_inl_snd_apply, ModuleCat.biprod_inr_snd_apply,
-      zero_add, map_neg]
+  · rw [← hsq hjA, hz, ← hfst, hq]
+    simp [HC, HD]
+  · rw [← hsq hjB, hz, ← hsnd, hq]
+    simp [HC, HD]
 
 end Compl
 
