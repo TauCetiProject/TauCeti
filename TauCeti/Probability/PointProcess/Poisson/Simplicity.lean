@@ -13,13 +13,16 @@ import TauCeti.Probability.Distributions.Poisson.SmallRate
 import Mathlib.Order.Interval.Set.Union
 
 /-!
-# Simplicity of atomless Poisson random measures
+# Simplicity of Poisson random measures with atomless intensity
 
 A Poisson random measure with σ-finite intensity having null singletons on a countably
 separated measurable space almost surely has mass at most one at every location,
-simultaneously. In particular, this gives simplicity of homogeneous and inhomogeneous
-atomless temporal Poisson random measures without pathwise integrality or local finiteness
-hypotheses on the realizations.
+simultaneously. In particular, this gives simplicity of temporal Poisson random measures
+with homogeneous or inhomogeneous σ-finite intensity having null singletons, without
+pathwise integrality or local finiteness hypotheses on the realizations. Simplicity rules
+out multiplicities in point configurations and, together with local finiteness and no point
+at zero, supports passing between a temporal point measure and strictly ordered occurrence
+times.
 
 The assertion is not obtained by intersecting the individual full-measure events at
 uncountably many locations. Finite intensity pieces are injected into Cantor space and
