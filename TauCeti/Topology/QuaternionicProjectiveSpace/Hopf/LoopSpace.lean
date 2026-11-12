@@ -187,27 +187,12 @@ theorem isWeakHomotopyEquivalence_hopfProduct
   have : PathConnectedSpace (MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v)) :=
     (MooreLoopSpace.pathConnectedSpace_iff_subsingleton_pi1 _).2
       (HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton_congr.2 inferInstance)
-  rw [ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective (1, 1)]
-  intro k
   -- The product sends the base point to the unit; the homotopy groups are compared there.
-  have h1 : hopfProduct v j (1, 1) = 1 := by simp [hj]
-  have key : ∀ {y} (h : hopfProduct v j (1, 1) = y),
-      Function.Bijective (HomotopyGroup.map (N := Fin k) (x := (1, 1)) (hopfProduct v j) h) →
-        Function.Bijective
-          (HomotopyGroup.map (N := Fin k) (x := (1, 1)) (hopfProduct v j) rfl) := by
-    rintro y rfl hb
-    exact hb
-  refine key h1 ?_
-  rcases k with _ | m
-  · -- Degree zero: both spaces are path connected.
-    have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero ((1, 1) :
-      sphere (0 : ℍ) 1 ×
-        MooreLoopSpace (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) v)).1 inferInstance
-    have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero
-      (1 : MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v))).1 inferInstance
-    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩
-  · -- Positive degrees: `j_*` splits the exact sequence of the looped Hopf fibration.
-    exact HomotopyGroup.bijective_map_mul_of_bijective_comp hj
+  -- In positive degrees `j_*` splits the exact sequence of the looped Hopf fibration.
+  exact ContinuousMap.isWeakHomotopyEquivalence_of_forall_bijective_succ
+    (x := ((1, 1) : sphere (0 : ℍ) 1 ×
+      MooreLoopSpace (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) v)) (y := 1) (by simp [hj])
+    fun m ↦ HomotopyGroup.bijective_map_mul_of_bijective_comp hj
       (map_one (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl)) (loopHopfBoundary v m)
       (hjb m)
       (injective_map_mooreLoopSpaceMap v m fun c ↦

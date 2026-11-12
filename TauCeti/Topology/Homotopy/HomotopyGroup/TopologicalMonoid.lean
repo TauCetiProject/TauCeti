@@ -38,6 +38,8 @@ fundamental-group case of which is `FundamentalGroup.cast_map_prod_mul`.
 ## Main results
 
 * `HomotopyGroup.map_mul_prod`: `(f * g)_* (a × b) = f_* a * g_* b`.
+* `HomotopyGroup.map_mul_eq_comp_prodEquiv`: the same formula, as an equation of functions through
+  the coordinates `HomotopyGroup.prodEquiv`.
 * `HomotopyGroup.bijective_map_mul_of_bijective_of_subsingleton`,
   `HomotopyGroup.bijective_map_mul_of_subsingleton_of_bijective`: the pointwise product is
   bijective on a homotopy group if one factor is and the source group of the other is trivial.
@@ -100,43 +102,19 @@ theorem map_mul_prod (f : C(X, M)) (g : C(Y, M)) (hf : f x = 1) (hg : g y = 1)
   rw [← map_mul_prod_one_right f g hf hg, ← map_mul_prod_one_left f g hf hg, ← map_mul,
     ← prod_mul, mul_one, one_mul]
 
+/-- **The pointwise product acts on homotopy groups through the coordinates.** Reading a class
+of `X × Y` through its coordinates `(a, b)`, the pointwise product `(p, q) ↦ f p * g q` sends it to
+`f_* a * g_* b`. -/
+theorem map_mul_eq_comp_prodEquiv (f : C(X, M)) (g : C(Y, M)) (hf : f x = 1) (hg : g y = 1) :
+    map (N := N) (f.comp ContinuousMap.fst * g.comp ContinuousMap.snd : C(X × Y, M))
+        (mul_comp_fst_comp_snd_apply_eq_one hf hg) =
+      (fun ab ↦ map f hf ab.1 * map g hg ab.2) ∘ prodEquiv x y := by
+  funext c
+  obtain ⟨⟨a, b⟩, rfl⟩ := (prodEquiv x y).symm.surjective c
+  rw [prodEquiv_symm_apply, map_mul_prod f g hf hg]
+  simp
+
 end Group
-
-/-- The pointwise product `(p, q) ↦ f p * g q` induces a bijection on a homotopy group of positive
-dimension if `f` does and the corresponding homotopy group of `Y` is trivial. -/
-theorem bijective_map_mul_of_bijective_of_subsingleton [Nonempty N] {f : C(X, M)} {g : C(Y, M)}
-    (hf : f x = 1) (hg : g y = 1) (hfb : Function.Bijective (map (N := N) f hf))
-    [Subsingleton (HomotopyGroup N Y y)] :
-    Function.Bijective (map (N := N) (f.comp ContinuousMap.fst * g.comp ContinuousMap.snd :
-      C(X × Y, M)) (mul_comp_fst_comp_snd_apply_eq_one hf hg)) := by
-  classical
-  have : Unique (HomotopyGroup N Y y) := uniqueOfSubsingleton 1
-  have h : map (N := N) (f.comp ContinuousMap.fst * g.comp ContinuousMap.snd : C(X × Y, M))
-      (mul_comp_fst_comp_snd_apply_eq_one hf hg) = map f hf ∘ Prod.fst ∘ prodEquiv x y := by
-    funext c
-    obtain ⟨⟨a, b⟩, rfl⟩ := (prodEquiv x y).symm.surjective c
-    rw [prodEquiv_symm_apply, map_mul_prod f g hf hg, Subsingleton.elim b 1, map_one, mul_one]
-    simp
-  rw [h]
-  exact hfb.comp ((Equiv.prodUnique _ _).bijective.comp (prodEquiv x y).bijective)
-
-/-- The pointwise product `(p, q) ↦ f p * g q` induces a bijection on a homotopy group of positive
-dimension if `g` does and the corresponding homotopy group of `X` is trivial. -/
-theorem bijective_map_mul_of_subsingleton_of_bijective [Nonempty N] {f : C(X, M)} {g : C(Y, M)}
-    (hf : f x = 1) (hg : g y = 1) [Subsingleton (HomotopyGroup N X x)]
-    (hgb : Function.Bijective (map (N := N) g hg)) :
-    Function.Bijective (map (N := N) (f.comp ContinuousMap.fst * g.comp ContinuousMap.snd :
-      C(X × Y, M)) (mul_comp_fst_comp_snd_apply_eq_one hf hg)) := by
-  classical
-  have : Unique (HomotopyGroup N X x) := uniqueOfSubsingleton 1
-  have h : map (N := N) (f.comp ContinuousMap.fst * g.comp ContinuousMap.snd : C(X × Y, M))
-      (mul_comp_fst_comp_snd_apply_eq_one hf hg) = map g hg ∘ Prod.snd ∘ prodEquiv x y := by
-    funext c
-    obtain ⟨⟨a, b⟩, rfl⟩ := (prodEquiv x y).symm.surjective c
-    rw [prodEquiv_symm_apply, map_mul_prod f g hf hg, Subsingleton.elim a 1, map_one, one_mul]
-    simp
-  rw [h]
-  exact hgb.comp ((Equiv.uniqueProd _ _).bijective.comp (prodEquiv x y).bijective)
 
 /-- **The pointwise product splits a homotopy group.** The pointwise product `(p, q) ↦ f p * g q`
 induces a bijection on a homotopy group of positive dimension if some homomorphism `ψ` out of the
@@ -151,14 +129,7 @@ theorem bijective_map_mul_of_bijective_comp [DecidableEq N] [Nonempty N] {G : Ty
     Function.Bijective (map (N := N) (f.comp ContinuousMap.fst * g.comp ContinuousMap.snd :
       C(X × Y, M)) (mul_comp_fst_comp_snd_apply_eq_one hf hg)) := by
   have hψg (b : HomotopyGroup N Y y) : ψ (map g hg b) = 1 := (hker _).2 ⟨b, rfl⟩
-  have h : map (N := N) (f.comp ContinuousMap.fst * g.comp ContinuousMap.snd : C(X × Y, M))
-      (mul_comp_fst_comp_snd_apply_eq_one hf hg) =
-        (fun ab ↦ map f hf ab.1 * map g hg ab.2) ∘ prodEquiv x y := by
-    funext c
-    obtain ⟨⟨a, b⟩, rfl⟩ := (prodEquiv x y).symm.surjective c
-    rw [prodEquiv_symm_apply, map_mul_prod f g hf hg]
-    simp
-  rw [h]
+  rw [map_mul_eq_comp_prodEquiv f g hf hg]
   refine Function.Bijective.comp ⟨fun ⟨a, b⟩ ⟨a', b'⟩ hab ↦ ?_, fun c ↦ ?_⟩
     (prodEquiv x y).bijective
   · -- `ψ` kills the second factor, so it recovers the first; cancelling it recovers the second.
@@ -170,5 +141,34 @@ theorem bijective_map_mul_of_bijective_comp [DecidableEq N] [Nonempty N] {G : Ty
       simp only [Function.comp_apply] at ha
       rw [_root_.map_mul, _root_.map_inv, ha, inv_mul_cancel])
     exact ⟨(a, b), by simp [hb]⟩
+
+/-- The pointwise product `(p, q) ↦ f p * g q` induces a bijection on a homotopy group of positive
+dimension if `f` does and the corresponding homotopy group of `Y` is trivial. -/
+theorem bijective_map_mul_of_bijective_of_subsingleton [Nonempty N] {f : C(X, M)} {g : C(Y, M)}
+    (hf : f x = 1) (hg : g y = 1) (hfb : Function.Bijective (map (N := N) f hf))
+    [Subsingleton (HomotopyGroup N Y y)] :
+    Function.Bijective (map (N := N) (f.comp ContinuousMap.fst * g.comp ContinuousMap.snd :
+      C(X × Y, M)) (mul_comp_fst_comp_snd_apply_eq_one hf hg)) := by
+  classical
+  -- The identity of `π(M)` is split by `f_*`, and its kernel is the image of the trivial group.
+  refine bijective_map_mul_of_bijective_comp hf hg (MonoidHom.id _) hfb
+    (Function.injective_of_subsingleton _) fun c ↦ ⟨?_, ?_⟩
+  · rintro rfl
+    exact ⟨1, map_one g hg⟩
+  · rintro ⟨b, rfl⟩
+    rw [MonoidHom.id_apply, Subsingleton.elim b 1, map_one]
+
+/-- The pointwise product `(p, q) ↦ f p * g q` induces a bijection on a homotopy group of positive
+dimension if `g` does and the corresponding homotopy group of `X` is trivial. -/
+theorem bijective_map_mul_of_subsingleton_of_bijective [Nonempty N] {f : C(X, M)} {g : C(Y, M)}
+    (hf : f x = 1) (hg : g y = 1) [Subsingleton (HomotopyGroup N X x)]
+    (hgb : Function.Bijective (map (N := N) g hg)) :
+    Function.Bijective (map (N := N) (f.comp ContinuousMap.fst * g.comp ContinuousMap.snd :
+      C(X × Y, M)) (mul_comp_fst_comp_snd_apply_eq_one hf hg)) := by
+  classical
+  -- The trivial homomorphism to `Unit` is split by `f_*`, and its kernel is the image of `g_*`.
+  exact bijective_map_mul_of_bijective_comp hf hg (1 : HomotopyGroup N M 1 →* Unit)
+    ⟨Function.injective_of_subsingleton _, fun _ ↦ ⟨1, Subsingleton.elim _ _⟩⟩ hgb.1
+    fun c ↦ iff_of_true (Subsingleton.elim _ _) (hgb.2 c)
 
 end HomotopyGroup

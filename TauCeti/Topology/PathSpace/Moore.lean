@@ -475,15 +475,6 @@ theorem rescale_zero (γ : MoorePath X) : γ.rescale 0 = refl γ.source :=
   ext (by rw [length_rescale, length_refl]) fun t ↦ by
     rw [rescale_apply, div_zero, refl_apply, source_def]
 
-/-- Rescaling is continuous in the path and in the length, for nonzero lengths. -/
-@[fun_prop]
-theorem _root_.Continuous.moorePath_rescale {f : Y → MoorePath X} {g : Y → ℝ≥0}
-    (hf : Continuous f) (hg : Continuous g) (h0 : ∀ y, g y ≠ 0) :
-    Continuous fun y ↦ (f y).rescale (g y) := by
-  refine continuous_iff.2 ⟨hg, ?_⟩
-  simp only [rescale_apply]
-  fun_prop (disch := exact fun p ↦ h0 p.1)
-
 /-- Rescaling is continuous in the path and in the length, also where the length vanishes,
 provided the paths rescaled to length zero are constant. -/
 theorem _root_.Continuous.moorePath_rescale_of_forall_eq_source {f : Y → MoorePath X}
@@ -511,6 +502,13 @@ theorem _root_.Continuous.moorePath_rescale_of_forall_eq_source {f : Y → Moore
       ((hf.comp continuous_fst).continuousAt.prodMk
         (((continuous_length.comp (hf.comp continuous_fst)).mul continuous_snd).continuousAt.div
           (hg.comp continuous_fst).continuousAt hp))
+
+/-- Rescaling is continuous in the path and in the length, for nonzero lengths. -/
+@[fun_prop]
+theorem _root_.Continuous.moorePath_rescale {f : Y → MoorePath X} {g : Y → ℝ≥0}
+    (hf : Continuous f) (hg : Continuous g) (h0 : ∀ y, g y ≠ 0) :
+    Continuous fun y ↦ (f y).rescale (g y) :=
+  hf.moorePath_rescale_of_forall_eq_source hg fun y hy ↦ absurd hy (h0 y)
 
 end MoorePath
 

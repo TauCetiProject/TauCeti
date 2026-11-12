@@ -110,24 +110,11 @@ theorem isWeakHomotopyEquivalence_hopfProduct (hn : n ≠ 0)
   have : PathConnectedSpace (MooreLoopSpace (ComplexProjectiveSpace n) (mk n v)) :=
     (MooreLoopSpace.pathConnectedSpace_iff_subsingleton_pi1 _).2
       (HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton_congr.2 inferInstance)
-  rw [ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective (1, 1)]
-  intro k
   -- The product sends the base point to the unit; the homotopy groups are compared there.
-  have h1 : hopfProduct v j (1, 1) = 1 := by simp [hj]
-  have key : ∀ {y} (h : hopfProduct v j (1, 1) = y),
-      Function.Bijective (HomotopyGroup.map (N := Fin k) (x := (1, 1)) (hopfProduct v j) h) →
-        Function.Bijective
-          (HomotopyGroup.map (N := Fin k) (x := (1, 1)) (hopfProduct v j) rfl) := by
-    rintro y rfl hb
-    exact hb
-  refine key h1 ?_
-  rcases k with _ | _ | k
-  · -- Degree zero: both spaces are path connected.
-    have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero ((1, 1) :
-      Circle × MooreLoopSpace (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v)).1 inferInstance
-    have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero
-      (1 : MooreLoopSpace (ComplexProjectiveSpace n) (mk n v))).1 inferInstance
-    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩
+  refine ContinuousMap.isWeakHomotopyEquivalence_of_forall_bijective_succ
+    (x := ((1, 1) : Circle × MooreLoopSpace (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v))
+    (y := 1) (by simp [hj]) fun k ↦ ?_
+  rcases k with _ | k
   · -- Degree one: `π₁(ΩS²ⁿ⁺¹) = π₂(S²ⁿ⁺¹)` vanishes and `j` is bijective.
     have := (MooreLoopSpace.subsingleton_homotopyGroup_iff v 1).2 (hS 2 (by omega))
     exact HomotopyGroup.bijective_map_mul_of_bijective_of_subsingleton hj
