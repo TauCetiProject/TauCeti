@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.FundamentalVectorField.Right
 public import TauCeti.Geometry.Manifold.FiberBundle.Principal.Equivariant
-public import TauCeti.Geometry.Manifold.FiberBundle.Pullback
+public import TauCeti.Geometry.Manifold.FiberBundle.Pullback.Basic
 
 /-!
 # Fundamental vector fields on smooth principal bundles

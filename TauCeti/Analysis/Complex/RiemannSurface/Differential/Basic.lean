@@ -542,7 +542,7 @@ theorem coeff_mvfderiv_eventuallyEq (hf : RiemannSurface.MeromorphicAt f x) :
   filter_upwards [hf.eventually_analyticAt, nhdsWithin_le_nhds ((chartAt ℂ x).open_target.mem_nhds
     ((chartAt ℂ x).map_source (mem_chart_source ℂ x)))] with z hz hzt
   exact coeff_mvfderiv (chart_mem_maximalAtlas x) hzt
-    (TauCeti.mdifferentiableAt_symm_of_differentiableAt_comp (chart_mem_maximalAtlas x) hzt
+    (TauCeti.mdifferentiableAt_of_differentiableAt_comp_symm (chart_mem_maximalAtlas x) hzt
       hz.differentiableAt)
 
 /-- Near a point where `f` is holomorphic, the coefficient of `df` in the chart at that point is
