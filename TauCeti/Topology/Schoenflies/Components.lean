@@ -118,7 +118,7 @@ variable {b : sphere (0 : E) 1 × ℝ → sphere (0 : F) 1}
 /-- The two sides of a bicollar of a sphere `Sᵐ⁻¹` in `Sᵐ`, `m ≥ 2`, lie in two disjoint open
 sets covering the complement of its image, which are the two connected components of that
 complement. -/
-private theorem exists_connectedComponentIn_eq (hb : IsBicollar σ b)
+theorem exists_connectedComponentIn_eq (hb : IsBicollar σ b)
     (hEF : finrank ℝ F = finrank ℝ E + 1) (hE : 1 < finrank ℝ E) :
     ∃ A B : Set (sphere (0 : F) 1), IsOpen A ∧ IsOpen B ∧ Disjoint A B ∧
       (range σ)ᶜ = A ∪ B ∧ MapsTo b (univ ×ˢ Ioi 0) A ∧ MapsTo b (univ ×ˢ Iio 0) B ∧
