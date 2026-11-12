@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
 public import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
-import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
@@ -779,20 +779,9 @@ theorem exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (hH : ContDiff �
       rw [Prod.norm_mk, norm_one, norm_zero, max_eq_left zero_le_one, mul_one]
       exact hL z (mem_Ioi.1 hz.1).le))
     hxper hx hnd hux
-  -- A Lipschitz constant for `X_{H_t}` on a ball containing `K` and the orbit.
-  obtain ⟨R, hR⟩ := (hK.union (hxper.compact_of_continuous one_ne_zero hxc)).isBounded
-    |>.subset_closedBall 0
-  obtain ⟨Lx, hLx⟩ := (ω.contDiff_hamiltonianVectorField_uncurry (n := 1)
-    hH2).contDiffOn.exists_lipschitzOnWith one_ne_zero
-    ((convex_Icc (0 : ℝ) 1).prod (convex_closedBall (0 : V) R))
-    (isCompact_Icc.prod (isCompact_closedBall (0 : V) R))
-  have hlip (t : ℝ) {y y' : V} (hy : y ∈ closedBall 0 R) (hy' : y' ∈ closedBall 0 R) :
-      ‖ω.hamiltonianVectorField (H t) y - ω.hamiltonianVectorField (H t) y'‖ ≤
-        Lx * ‖y - y'‖ := by
-    have hft : Int.fract t ∈ Icc (0 : ℝ) 1 := ⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
-    have h := hLx.norm_sub_le (mk_mem_prod hft hy) (mk_mem_prod hft hy')
-    rw [← hHper.apply_fract t]
-    simpa [Prod.norm_mk] using h
+  -- A Lipschitz constant for every `X_{H_t}` on `K` and the orbit.
+  obtain ⟨Lx, hLx⟩ := ω.exists_forall_lipschitzOnWith_hamiltonianVectorField hH2 hHper
+    (hK.union (hxper.compact_of_continuous one_ne_zero hxc)).isBounded
   set M' := max M 0
   refine ⟨min κ₁ κ₂, lt_min hκ₁ hκ₂, (1 + M') * max C₁ 0 + Lx * max C₂ 0,
     (h₁.and (h₂.and (eventually_ge_atTop (max (a + 1) 0)))).mono fun s ⟨hs₁, hs₂, hs⟩ t ↦ ?_⟩
@@ -800,18 +789,6 @@ theorem exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (hH : ContDiff �
   have hs0 : 0 ≤ s := (le_max_right _ _).trans hs
   set D := fderiv ℝ u (s, t) -
     (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))
-  -- The operator norm on `ℝ × ℝ` is at most the sum of the norms on the coordinate vectors.
-  have hnorm : ‖D‖ ≤ ‖D (1, 0)‖ + ‖D (0, 1)‖ := by
-    refine D.opNorm_le_bound (by positivity) fun p ↦ ?_
-    have hp : D p = p.1 • D (1, 0) + p.2 • D (0, 1) := by
-      simpa [stdComplexLineReal_eq, stdComplexLineImag_eq] using
-        D.toLinearMap.apply_stdComplexLine p
-    rw [hp]
-    refine (norm_add_le _ _).trans ?_
-    rw [norm_smul, norm_smul, add_mul, mul_comm ‖D (1, 0)‖, mul_comm ‖D (0, 1)‖]
-    gcongr
-    · exact norm_fst_le p
-    · exact norm_snd_le p
   -- The Floer equation: `∂ₜu - X_{H_t}(u) = J_t(u) ∂ₛu`.
   have hdef : fderiv ℝ u (s, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (s, t)) =
       J t (u (s, t)) (fderiv ℝ u (s, t) (1, 0)) := by
@@ -828,7 +805,7 @@ theorem exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (hH : ContDiff �
       simp [D]
     rw [h]
     refine norm_add_le_of_le (((hcM t _ (huK s hsa t) _).2).trans ?_)
-      (hlip t (hR (Or.inl (huK s hsa t))) (hR (Or.inr (mem_range_self t))))
+      ((hLx t).norm_sub_le (Or.inl (huK s hsa t)) (Or.inr (mem_range_self t)))
     gcongr
     exact le_max_left _ _
   have he₁ : Real.exp (-(κ₁ * s)) ≤ Real.exp (-(min κ₁ κ₂ * s)) :=
@@ -846,7 +823,8 @@ theorem exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (hH : ContDiff �
   calc ‖D‖ ≤ ‖fderiv ℝ u (s, t) (1, 0)‖ +
         (M' * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖) := by
         rw [← hD₁]
-        exact hnorm.trans (add_le_add le_rfl (hD₁ ▸ hD₂))
+        exact D.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one.trans
+          (add_le_add le_rfl (hD₁ ▸ hD₂))
     _ = (1 + M') * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖ := by ring
     _ ≤ (1 + M') * (max C₁ 0 * Real.exp (-(min κ₁ κ₂ * s))) +
         Lx * (max C₂ 0 * Real.exp (-(min κ₁ κ₂ * s))) := by gcongr
