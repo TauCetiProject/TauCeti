@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Singularity
-public import TauCeti.CategoryTheory.Exact.Stable.Triangulated
+public import TauCeti.CategoryTheory.Exact.Stable.Pretriangulated
 
 /-!
 # Chen's functor is a triangle functor
