@@ -185,6 +185,57 @@ private theorem exists_ball_subset_toOpenPartialHomeomorph_target {L : E ≃L[�
   rw [mem_ball] at hy
   linarith [dist_triangle_right y (g x₀) y₀]
 
+omit [CompleteSpace E] in
+/-- If `Φ i → Φ₀` in `C^n` at `x₀ ∈ s`, with `1 ≤ n`, the maps `C^n` on the open set `s`, and
+`D Φ₀ (x₀) = L` invertible, then there are one constant `c` below `‖L⁻¹‖⁻¹` and one ball around
+`x₀` inside `s` on which `Φ₀` and, eventually along `l`, every `Φ i` approximate `L` with
+constant `c`. -/
+private theorem exists_ball_approximatesLinearOn {Φ : ι → E → F} {Φ₀ : E → F} {s : Set E}
+    {x₀ : E} (hs : IsOpen s) (hx₀ : x₀ ∈ s) (hn : 1 ≤ n)
+    (hΦ : ∀ᶠ i in l, ContDiffOn 𝕜 n (Φ i) s) (hΦ₀ : ContDiffOn 𝕜 n Φ₀ s)
+    (hconv : TendstoContDiffAt 𝕜 n Φ Φ₀ l x₀) {L : E ≃L[𝕜] F}
+    (hL : (L : E →L[𝕜] F) = fderiv 𝕜 Φ₀ x₀) :
+    ∃ c : ℝ≥0, (Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹) ∧ ∃ r > 0, ball x₀ r ⊆ s ∧
+      ApproximatesLinearOn Φ₀ (L : E →L[𝕜] F) (ball x₀ r) c ∧
+      ∀ᶠ i in l, ApproximatesLinearOn (Φ i) (L : E →L[𝕜] F) (ball x₀ r) c := by
+  have hn' : ((n : ℕ) : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (by omega : n ≠ 0)
+  set c : ℝ≥0 := ‖(L.symm : F →L[𝕜] E)‖₊⁻¹ / 2
+  -- The constant `c` is admissible, and every map near `L` is within `c` of it.
+  obtain ⟨hc, hnear⟩ : (Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹) ∧
+      ∀ᶠ q in 𝓝 (L : E →L[𝕜] F), ‖q - (L : E →L[𝕜] F)‖₊ ≤ c := by
+    rcases L.subsingleton_or_nnnorm_symm_pos with hE | hpos
+    · refine ⟨Or.inl hE, Eventually.of_forall fun q ↦ ?_⟩
+      have : q - L = 0 := ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0]
+      simp [this]
+    · refine ⟨Or.inr (NNReal.half_lt_self (inv_ne_zero hpos.ne')), ?_⟩
+      filter_upwards [closedBall_mem_nhds (L : E →L[𝕜] F)
+        (show (0 : ℝ) < c by positivity)] with q hq
+      rw [← NNReal.coe_le_coe, coe_nnnorm, ← dist_eq_norm]
+      exact hq
+  -- The derivatives of the family and of the limit stay within `c` of `L` near `x₀`.
+  have hev : ∀ᶠ p in l ×ˢ 𝓝 x₀, ‖fderiv 𝕜 (Φ p.1) p.2 - (L : E →L[𝕜] F)‖₊ ≤ c := by
+    have h := hconv.tendsto_fderiv hn
+    rw [← hL] at h
+    exact h.eventually hnear
+  have hev₀ : ∀ᶠ x in 𝓝 x₀, ‖fderiv 𝕜 Φ₀ x - (L : E →L[𝕜] F)‖₊ ≤ c := by
+    have h := ((hΦ₀.contDiffAt (hs.mem_nhds hx₀)).continuousAt_fderiv hn').tendsto
+    rw [← hL] at h
+    exact h.eventually hnear
+  obtain ⟨pa, hpa, pb, hpb, hpab⟩ := eventually_prod_iff.mp hev
+  obtain ⟨r, hr, hrb⟩ := Metric.eventually_nhds_iff_ball.mp
+    ((hpb.and hev₀).and (hs.mem_nhds hx₀))
+  have hrs : ball x₀ r ⊆ s := fun x hx ↦ (hrb x hx).2
+  -- By the mean value inequality, a map `C^n` on `s` with derivative near `L` approximates `L`.
+  have happrox (g : E → F) (hg : ContDiffOn 𝕜 n g s)
+      (hgb : ∀ x ∈ ball x₀ r, ‖fderiv 𝕜 g x - (L : E →L[𝕜] F)‖₊ ≤ c) :
+      ApproximatesLinearOn g (L : E →L[𝕜] F) (ball x₀ r) c := by
+    let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+    exact (convex_ball x₀ r).approximatesLinearOn_of_nnnorm_fderiv_sub_le
+      (fun x hx ↦ (hg.contDiffAt (hs.mem_nhds (hrs hx))).differentiableAt hn') hgb
+  refine ⟨c, hc, r, hr, hrs, happrox Φ₀ hΦ₀ fun x hx ↦ (hrb x hx).1.2, ?_⟩
+  filter_upwards [hΦ, hpa] with i h1 h2
+  exact happrox (Φ i) h1 fun x hx ↦ hpab h2 (hrb x hx).1.1
+
 /-- **The inverse function theorem for a converging family.** Let `Φ i → Φ₀` in `C^n` at every
 point of an open set `s`, with `1 ≤ n`, the maps `Φ i` eventually `C^n` on `s`, and `D Φ₀`
 invertible at `x₀ ∈ s`. Then `Φ₀` and, eventually along `l`, all the `Φ i` restrict to partial
@@ -204,40 +255,8 @@ theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F
       ∀ y ∈ T, TendstoContDiffAt 𝕜 n (fun i ↦ ⇑(e i).symm) e₀.symm l y := by
   classical
   obtain ⟨L, hL⟩ := hinv
-  have hn' : ((n : ℕ) : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (by omega : n ≠ 0)
-  set c : ℝ≥0 := ‖(L.symm : F →L[𝕜] E)‖₊⁻¹ / 2 with hc_def
-  have hc : Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹ :=
-    L.subsingleton_or_nnnorm_symm_pos.imp id fun h ↦ NNReal.half_lt_self (inv_ne_zero h.ne')
-  -- The derivatives of the family and of the limit stay within `c` of `L` near `x₀`.
-  have hnear : ∀ᶠ q in 𝓝 (L : E →L[𝕜] F), ‖q - (L : E →L[𝕜] F)‖₊ ≤ c := by
-    rcases L.subsingleton_or_nnnorm_symm_pos with hE | hpos
-    · refine Eventually.of_forall fun q ↦ ?_
-      have : q - L = 0 := ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0]
-      simp [this]
-    · filter_upwards [closedBall_mem_nhds (L : E →L[𝕜] F)
-        (show (0 : ℝ) < c by positivity)] with q hq
-      rw [← NNReal.coe_le_coe, coe_nnnorm, ← dist_eq_norm]
-      exact hq
-  have hev : ∀ᶠ p in l ×ˢ 𝓝 x₀, ‖fderiv 𝕜 (Φ p.1) p.2 - (L : E →L[𝕜] F)‖₊ ≤ c := by
-    have h := (hconv x₀ hx₀).tendsto_fderiv hn
-    rw [← hL] at h
-    exact h.eventually hnear
-  have hev₀ : ∀ᶠ x in 𝓝 x₀, ‖fderiv 𝕜 Φ₀ x - (L : E →L[𝕜] F)‖₊ ≤ c := by
-    have h := ((hΦ₀.contDiffAt (hs.mem_nhds hx₀)).continuousAt_fderiv hn').tendsto
-    rw [← hL] at h
-    exact h.eventually hnear
-  obtain ⟨pa, hpa, pb, hpb, hpab⟩ := eventually_prod_iff.mp hev
-  obtain ⟨r, hr, hrb⟩ := Metric.eventually_nhds_iff_ball.mp
-    ((hpb.and hev₀).and (hs.mem_nhds hx₀))
-  have hrs : ball x₀ r ⊆ s := fun x hx ↦ (hrb x hx).2
-  -- Every map that is `C^n` on `s` with derivative near `L` on the ball approximates `L` there.
-  have happrox (g : E → F) (hg : ContDiffOn 𝕜 n g s)
-      (hgb : ∀ x ∈ ball x₀ r, ‖fderiv 𝕜 g x - (L : E →L[𝕜] F)‖₊ ≤ c) :
-      ApproximatesLinearOn g (L : E →L[𝕜] F) (ball x₀ r) c := by
-    let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
-    exact (convex_ball x₀ r).approximatesLinearOn_of_nnnorm_fderiv_sub_le
-      (fun x hx ↦ (hg.contDiffAt (hs.mem_nhds (hrs hx))).differentiableAt hn') hgb
-  have h₀a := happrox Φ₀ hΦ₀ fun x hx ↦ (hrb x hx).1.2
+  obtain ⟨c, hc, r, hr, hrs, h₀a, hΦa⟩ :=
+    exists_ball_approximatesLinearOn hs hx₀ hn hΦ hΦ₀ (hconv x₀ hx₀) hL
   set e₀ := h₀a.toOpenPartialHomeomorph Φ₀ (ball x₀ r) hc isOpen_ball with he₀_def
   have h₀c : ContDiffOn 𝕜 n e₀.symm e₀.target :=
     h₀a.contDiffOn_toOpenPartialHomeomorph_symm hc isOpen_ball (hΦ₀.mono hrs)
@@ -252,16 +271,17 @@ theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F
   obtain ⟨ρ, hρ, hρT⟩ := exists_ball_subset_toOpenPartialHomeomorph_target hr hc (Φ₀ x₀)
   have hΦx₀ : Tendsto (fun i ↦ Φ i x₀) l (𝓝 (Φ₀ x₀)) :=
     (hconv x₀ hx₀).tendsto.comp (tendsto_id.prodMk tendsto_const_nhds)
-  have hgood : ∀ᶠ i in l, ContDiffOn 𝕜 n (Φ i) s ∧ pa i ∧ dist (Φ i x₀) (Φ₀ x₀) < ρ := by
-    filter_upwards [hΦ, hpa, hΦx₀.eventually (ball_mem_nhds _ hρ)] with i h1 h2 h3
+  have hgood : ∀ᶠ i in l, ContDiffOn 𝕜 n (Φ i) s ∧
+      ApproximatesLinearOn (Φ i) (L : E →L[𝕜] F) (ball x₀ r) c ∧ dist (Φ i x₀) (Φ₀ x₀) < ρ := by
+    filter_upwards [hΦ, hΦa, hΦx₀.eventually (ball_mem_nhds _ hρ)] with i h1 h2 h3
     exact ⟨h1, h2, h3⟩
   -- Properties of the good members of the family.
-  have hgood' : ∀ i, ContDiffOn 𝕜 n (Φ i) s ∧ pa i ∧ dist (Φ i x₀) (Φ₀ x₀) < ρ →
+  have hgood' : ∀ i, ContDiffOn 𝕜 n (Φ i) s ∧
+      ApproximatesLinearOn (Φ i) (L : E →L[𝕜] F) (ball x₀ r) c ∧ dist (Φ i x₀) (Φ₀ x₀) < ρ →
       ApproximatesLinearOn (e i) (L : E →L[𝕜] F) (ball x₀ r) c ∧ ⇑(e i) = Φ i ∧
         (e i).source = ball x₀ r ∧ ContDiffOn 𝕜 n (e i).symm (e i).target ∧
         ball (Φ₀ x₀) ρ ⊆ (e i).target := by
-    rintro i ⟨h1, h2, h3⟩
-    have hia := happrox (Φ i) h1 fun x hx ↦ hpab h2 (hrb x hx).1.1
+    rintro i ⟨h1, hia, h3⟩
     have hei : e i = hia.toOpenPartialHomeomorph (Φ i) (ball x₀ r) hc isOpen_ball := by
       simp [e, hia]
     have hec : ⇑(e i) = Φ i := by rw [hei, ApproximatesLinearOn.toOpenPartialHomeomorph_coe]
