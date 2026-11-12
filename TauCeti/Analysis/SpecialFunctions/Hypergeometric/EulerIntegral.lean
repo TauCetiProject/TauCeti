@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
-public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.Topology.Order.ProjIcc
 public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 public import TauCeti.Analysis.Complex.SlitPlane
@@ -74,8 +73,8 @@ theorem intervalIntegrable_eulerIntegrand (a : ℂ) {b c z : ℂ}
     (by simpa only [uIcc_of_le zero_le_one] using continuousOn_eulerKernel a hz)
 
 /-- For fixed `b` and `c` in the convergence region, the unnormalized Euler integral is
-jointly holomorphic in its first parameter and its argument. -/
-theorem analyticOnNhd_integral_eulerIntegral_a_z {b c : ℂ} (hb : 0 < b.re)
+jointly holomorphic in its first parameter and its argument, away from the cut `[1, ∞)`. -/
+private theorem analyticOnNhd_integral_eulerIntegrand {b c : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ =>
       ∫ t : ℝ in 0..1, (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
@@ -96,7 +95,8 @@ theorem analyticOnNhd_integral_eulerIntegral_a_z {b c : ℂ} (hb : 0 < b.re)
     · exact analyticAt_const.sub ((analyticAt_snd.comp analyticAt_fst).mul analyticAt_snd)
     · exact (analyticAt_fst.comp analyticAt_fst).neg
     · exact one_sub_mul_ofReal_mem_slitPlane hp ht
-  have hweight := (betaIntegral_convergent (v := c - b) hb (sub_pos.mpr hbc)).1
+  have hweight := ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
+    (betaIntegral_convergent (v := c - b) hb (by simpa using sub_pos.mpr hbc))).integrable
   have h := TauCeti.analyticAt_integral_smul
     (μ := volume.restrict (Ioc (0 : ℝ) 1))
     (g := fun t : ℝ => (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1))
@@ -110,49 +110,11 @@ theorem analyticOnNhd_integral_eulerIntegral_a_z {b c : ℂ} (hb : 0 < b.re)
 
 /-- Euler's normalized integral is jointly holomorphic in `(a, z)` for fixed
 `0 < b.re < c.re`, on the principal cut plane in `z`. -/
-theorem analyticOnNhd_eulerIntegral_a_z {b c : ℂ} (hb : 0 < b.re)
+theorem analyticOnNhd_eulerIntegral {b c : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ => eulerIntegral p.1 b c p.2)
       {p | 1 - p.2 ∈ slitPlane} := by
-  exact analyticOnNhd_const.mul (analyticOnNhd_integral_eulerIntegral_a_z hb hbc)
-
-/-- For fixed endpoint exponents in the convergence region, Euler's integral is
-jointly continuous in the first parameter and the argument, away from the cut. -/
-theorem continuousOn_eulerIntegral {b c : ℂ} (hb : 0 < b.re) (hcb : b.re < c.re) :
-    ContinuousOn (fun p : ℂ × ℂ => eulerIntegral p.1 b c p.2)
-      {p | 1 - p.2 ∈ slitPlane} := by
-  let U : Set (ℂ × ℂ) := {p | 1 - p.2 ∈ slitPlane}
-  have hU : IsOpen U := isOpen_slitPlane.preimage (by fun_prop)
-  have hβ := betaIntegral_convergent (v := c - b) hb (by simpa using sub_pos.mpr hcb)
-  intro p hp
-  obtain ⟨K, hK, hpK, hKU⟩ := exists_compact_subset hU hp
-  have hKnhds : K ∈ 𝓝 p := mem_interior_iff_mem_nhds.mp hpK
-  -- Compactness controls the nonsingular kernel uniformly near both parameters.
-  have hk : ContinuousOn (fun q : (ℂ × ℂ) × ℝ =>
-      (1 - q.1.2 * q.2) ^ (-q.1.1)) (K ×ˢ Icc 0 1) := by
-    refine ContinuousOn.cpow (by fun_prop) (by fun_prop) fun q hq => ?_
-    exact one_sub_mul_ofReal_mem_slitPlane (hKU hq.1) hq.2
-  obtain ⟨M, hM⟩ := (hK.prod isCompact_Icc).exists_bound_of_continuousOn hk
-  have hi : ContinuousAt (fun q : ℂ × ℂ =>
-      ∫ t : ℝ in 0..1, (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
-        (1 - q.2 * t) ^ (-q.1)) p := by
-    refine intervalIntegral.continuousAt_of_dominated_interval
-      (bound := fun t => ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)‖ * M)
-      ?_ ?_ (hβ.norm.mul_const M) ?_
-    · filter_upwards [hKnhds] with q hq
-      exact (intervalIntegrable_eulerIntegrand q.1 hb hcb
-        (hKU hq)).aestronglyMeasurable_restrict_uIoc
-    · filter_upwards [hKnhds] with q hq
-      refine ae_of_all _ fun t ht => ?_
-      simp only [uIoc_of_le zero_le_one, mem_Ioc] at ht
-      rw [norm_mul]
-      exact mul_le_mul_of_nonneg_left (hM (q, t) ⟨hq, ht.1.le, ht.2⟩) (norm_nonneg _)
-    · refine ae_of_all _ fun t ht => ?_
-      simp only [uIoc_of_le zero_le_one, mem_Ioc] at ht
-      apply ContinuousAt.mul continuousAt_const
-      apply ContinuousAt.cpow (by fun_prop) (by fun_prop)
-      exact one_sub_mul_ofReal_mem_slitPlane hp ⟨ht.1.le, ht.2⟩
-  exact (hi.const_mul _).continuousWithinAt
+  exact analyticOnNhd_const.mul (analyticOnNhd_integral_eulerIntegrand hb hbc)
 
 /-- With first parameter zero the normalized Euler integral is constant, even when
 its argument lies on the cut. This statement does not identify a continued function there. -/
