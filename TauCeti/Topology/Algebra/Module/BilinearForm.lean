@@ -19,6 +19,7 @@ import Mathlib.Topology.Instances.Matrix
 -- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Module.QuadraticMap
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
 /-!
 # Nondegeneracy of the bilinear form of a continuous linear map into the dual
@@ -160,8 +161,8 @@ makes it a linear equivalence onto its range, and the dual has the same finite d
 space, so that range is everything. -/
 theorem _root_.ContinuousLinearMap.isInvertible_of_injective
     (hinj : Function.Injective L) : L.IsInvertible :=
-  ⟨((L : E →ₗ[𝕜] E →L[𝕜] 𝕜).linearEquivOfInjective hinj
-      ContinuousLinearMap.dual_finrank_eq.symm).toContinuousLinearEquiv, by ext v; simp⟩
+  ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq L
+    ContinuousLinearMap.dual_finrank_eq.symm hinj
 
 /-- In finite dimensions a surjective continuous linear map into the dual is invertible: the dual
 has the same finite dimension as the space, so surjectivity forces injectivity. -/

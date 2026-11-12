@@ -73,7 +73,7 @@ theorem bounded_induction {motive : CochainComplex C ℤ → Prop}
     intro K _ _
     exact zero K ((IsZero.iff_id_eq_zero _).2 (HomologicalComplex.hom_ext _ _ fun i ↦
       (K.isZero_X_of_notMem_Icc a (a - 1) (n := i) (by simp)).eq_of_src _ _))
-  | succ b hb ih =>
+  | succ b _ ih =>
     intro K _ hK
     exact step K b ((CochainComplex.bounded_iff _ _).2 ⟨a, b + 1, inferInstance, hK⟩) hK
       (ih _ inferInstance inferInstance)
@@ -137,7 +137,7 @@ theorem prop_quotient_obj (K : CochainComplex.Bounded C)
     refine P.prop_of_isZero (IsZero.of_full_of_faithful_of_isZero (ι C) _ ?_)
     rw [ObjectProperty.ι_obj, quotient_obj_obj]
     exact Functor.map_isZero _ hK0
-  · intro K b hK _ ih hK' hP
+  · intro K b _ _ ih hK' hP
     obtain ⟨T, hT, ⟨e₁⟩, ⟨e₂⟩, ⟨e₃⟩⟩ := exists_distTriang_top K hK' b
     -- The truncation has the terms of `K` in degrees `≤ b` and zero terms above.
     have h₃ := ih (CochainComplex.bounded_stupidTrunc_embeddingUpIntLE hK' b) fun n ↦ by

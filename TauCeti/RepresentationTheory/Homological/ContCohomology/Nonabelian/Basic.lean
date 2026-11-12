@@ -125,7 +125,7 @@ theorem apply_inv (f : Cocycle G A) (g : G) : f g⁻¹ = g⁻¹ • (f g)⁻¹ :
 
 /-- The trivial cocycle `g ↦ 1`. -/
 instance : One (Cocycle G A) :=
-  ⟨⟨fun _ ↦ 1, continuous_const, fun g h ↦ by simp⟩⟩
+  ⟨⟨fun _ ↦ 1, continuous_const, fun g _ ↦ by simp⟩⟩
 
 @[simp]
 theorem one_apply (g : G) : (1 : Cocycle G A) g = 1 :=
