@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -515,20 +514,17 @@ theorem covariantDerivative_symm_comp_apply_symm_bundle
     Filter.eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦ by rw [e.apply_mk_symm hy]
   have hσ : MDiffAt (T% (fun y ↦ e.symm y (g y))) x :=
     (e.mdifferentiableAt_section_iff I _ hx).2 (hg.congr_of_eventuallyEq hread)
-  have hcoeff (i : ι) : mvfderiv I ((LinearMap.piApply (e.localFrameCoeff I b i))
-      (fun y ↦ e.symm y (g y))) x (eT.symm x u) = b.coord i (mvfderiv I g x (eT.symm x u)) := by
-    have heq : (LinearMap.piApply (e.localFrameCoeff I b i)) (fun y ↦ e.symm y (g y)) =ᶠ[𝓝 x]
-        ((b.coord i).toContinuousLinearMap ∘ g) := by
-      filter_upwards [hread, e.open_baseSet.mem_nhds hx] with y hy hyb
-      simp [e.localFrameCoeff_eq_coeff (I := I) (b := b) (s := fun y ↦ e.symm y (g y)) hyb, hy]
-    rw [heq.mvfderiv_eq, mvfderiv_comp_apply_of_differentiableAt
-      (b.coord i).toContinuousLinearMap.differentiableAt hg, ContinuousLinearMap.fderiv,
-      LinearMap.coe_toContinuousLinearMap']
+  have hcoeff (i : ι) :
+      (fun y ↦ e.localFrameCoeff I b i y (e.symm y (g y))) =ᶠ[𝓝 x] fun y ↦ b.coord i (g y) := by
+    filter_upwards [hread, e.open_baseSet.mem_nhds hx] with y hy hyb
+    simp [e.localFrameCoeff_eq_coeff (I := I) (b := b) (s := fun y ↦ e.symm y (g y)) hyb, hy]
+  -- `frameCovariantDerivative_eq_symmL_comp` takes the derivative with codomain `F`, which is
+  -- definitionally `TangentSpace 𝓘(𝕜, F) (g x)`, where `mvfderiv` and `mfderiv` coincide.
+  have hg' : HasMFDerivAt I 𝓘(𝕜, F) g x (mvfderiv I g x) := hg.hasMFDerivAt
   have hframe : frameCovariantDerivative I b e (fun y ↦ e.symm y (g y)) x (eT.symm x u) =
       e.symm x (mvfderiv I g x (eT.symm x u)) := by
-    rw [frameCovariantDerivative_apply]
-    simp_rw [hcoeff, ← symmL_basis_eq_localFrame b hx, ← map_smul, ← map_sum]
-    simp only [Basis.coord_apply, b.sum_repr, e.symmL_apply (R := 𝕜) hx]
+    rw [frameCovariantDerivative_eq_symmL_comp b hg' hcoeff hx,
+      ContinuousLinearMap.comp_apply, e.symmL_apply (R := 𝕜) hx]
   have hchris : christoffelForm b hcov x (e.symm x (g x)) (eT.symm x u) =
       e.symm x (bundleChristoffelMap b eT hcov x (g x) u) := by
     rw [bundleChristoffelMap_apply b eT hcov, e.symmL_apply (R := 𝕜) hx,
