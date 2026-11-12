@@ -15,13 +15,15 @@ import Mathlib.Analysis.Normed.Module.Completion
 # The Henstock–Kurzweil fundamental theorem of calculus
 
 The `GP` integral agrees with the Henstock–Kurzweil integral on one-dimensional boxes.
-For a continuous Banach-valued function `f` with derivative `f'` outside a countable exceptional
-set, the Henstock–Kurzweil integral of `f'` equals `f b - f a`. The derivative need not be
-Bochner integrable, and its values at the exceptions are arbitrary.
+For a continuous function `f` with values in a real normed space (not necessarily complete) and
+derivative `f'` outside a countable exceptional set, the Henstock–Kurzweil integral of `f'` equals
+`f b - f a`. The derivative need not be Bochner integrable, and its values at the exceptions are
+arbitrary.
 
-The FTC is derived from Mathlib's `BoxIntegral.hasIntegral_GP_pderiv` using the GP–Henstock
-equivalence in dimension one. Finite exceptional sets, such as break points of piecewise
-differentiable parametrizations, are a special case of the countable hypothesis.
+The FTC is derived from Mathlib's `BoxIntegral.hasIntegral_GP_pderiv`, applied in the completion
+of the codomain, using the GP–Henstock equivalence in dimension one. Finite exceptional sets,
+such as break points of piecewise differentiable parametrizations, are a special case of the
+countable hypothesis.
 -/
 
 public section

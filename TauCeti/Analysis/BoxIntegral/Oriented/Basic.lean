@@ -245,9 +245,9 @@ theorem hasHenstockIntervalIntegral_zero (a b : ℝ) :
   simpa only [Pi.zero_def, smul_zero] using hasHenstockIntervalIntegral_const (0 : E) a b
 
 /-- A linear isometry `e : E →ₗᵢ[ℝ] F` preserves and reflects the oriented Henstock integral with a
-prescribed value: `e ∘ f` has integral `e y` if and only if `f` has integral `y`. The integral sums
-of `e ∘ f` are the images of those of `f`. This does not assert that every integral of `e ∘ f` is
-of this form, since an integral in `F` need not lie in the range of `e`. -/
+prescribed value: `e ∘ f` has integral `e y` if and only if `f` has integral `y`. This does not
+assert that every integral of `e ∘ f` is of this form, since an integral in `F` need not lie in the
+range of `e`. -/
 protected theorem _root_.LinearIsometry.hasHenstockIntervalIntegral_comp_iff {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] (e : E →ₗᵢ[ℝ] F) :
     HasHenstockIntervalIntegral (fun t ↦ e (f t)) a b (e y) ↔

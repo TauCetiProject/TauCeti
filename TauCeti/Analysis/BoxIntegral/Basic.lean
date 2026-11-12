@@ -32,10 +32,9 @@ protected theorem LinearMap.integralSum_toSMul_comp (e : E →ₗ[ℝ] F) {I : B
   simp only [integralSum, BoxAdditiveMap.toSMul_apply, map_sum, map_smul]
 
 /-- A linear isometry `e : E →ₗᵢ[ℝ] F` preserves and reflects the box integral against `vol.toSMul`
-with a prescribed value: `e ∘ g` has integral `e z` if and only if `g` has integral `z`. The
-integral sums of `e ∘ g` are the images of those of `g`, and `e` preserves distances. This does not
-assert that every integral of `e ∘ g` is of this form, since an integral in `F` need not lie in the
-range of `e`. -/
+with a prescribed value: `e ∘ g` has integral `e z` if and only if `g` has integral `z`. This does
+not assert that every integral of `e ∘ g` is of this form, since an integral in `F` need not lie in
+the range of `e`. -/
 protected theorem LinearIsometry.hasIntegral_toSMul_comp_iff [Fintype ι] (e : E →ₗᵢ[ℝ] F)
     {I : Box ι} {l : IntegrationParams} {g : (ι → ℝ) → E} {vol : ι →ᵇᵃ ℝ} {z : E} :
     HasIntegral I l (fun x ↦ e (g x)) vol.toSMul (e z) ↔ HasIntegral I l g vol.toSMul z := by
