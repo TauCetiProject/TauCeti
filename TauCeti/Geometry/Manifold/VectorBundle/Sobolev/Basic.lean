@@ -456,7 +456,7 @@ theorem eq_of_ae_eq_coord {w w' : C.sobolevSections μ p k} {s : S}
 
 variable {C μ p k} in
 /-- Two elements of the Sobolev sections with almost everywhere equal chart data are equal. -/
-theorem eq_of_chartValueL_ae {w w' : C.sobolevSections μ p k}
+theorem eq_of_chartValueL_ae_eq {w w' : C.sobolevSections μ p k}
     (h : ∀ i, C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.chartValueL μ p k i w') :
     w = w' := by
   obtain ⟨s, hs⟩ := C.exists_section μ p k w'
@@ -499,7 +499,8 @@ theorem lowerOrderL_apply (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n)
 theorem chartValueL_coe_lowerOrderL (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n) :
     C.chartValueL μ p k i (C.lowerOrderL μ p k w) = C.chartValueL μ p (k + 1) i w := by
   rw [← C.chartValueL_lowerOrderL μ p k i w]
-  congr 1
+  refine congrArg (C.chartValueL μ p k i) (funext fun i' ↦ funext fun j ↦ ?_)
+  rw [lowerOrderL_apply, Wkp.lowerOrderL_apply]
 
 section Components
 
@@ -606,6 +607,15 @@ is read off from the function of any chart containing the point. -/
       A.coord_eq_coordChange _ hov, A.transition_chart hx, A.coord_chart _ (hidx x),
       (A.triv (idx x)).apply_mk_symm (A.dom_subset_baseSet _ (hidx x))]
     rfl
+
+@[simp]
+theorem sectionChartData_image (i : Fin A.n) : A.sectionChartData.image i = A.image i :=
+  rfl
+
+@[simp]
+theorem sectionChartData_overlap (i i' : Fin A.n) :
+    A.sectionChartData.overlap i i' = A.overlap i i' :=
+  rfl
 
 theorem sectionChartData_transition_of_mem {i i' : Fin A.n} {y : E} (hy : y ∈ A.overlap i i') :
     A.sectionChartData.transition i i' y = A.transition i i' y := by

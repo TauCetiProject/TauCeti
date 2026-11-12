@@ -145,6 +145,10 @@ section HomImage
 variable {A} {h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F₂ V₂ (A.center i)).baseSet}
 
 @[simp]
+theorem chart_hom (i : Fin A.n) : (A.hom (𝕜 := 𝕜) h).chart i = A.chart i :=
+  rfl
+
+@[simp]
 theorem image_hom (i : Fin A.n) : (A.hom (𝕜 := 𝕜) h).image i = A.image i :=
   image_ofBaseSet i
 
