@@ -55,6 +55,9 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
 * `TauCeti.SectionChartData.sobolevSections`: the tuples of chartwise Sobolev components of
   sections.
 * `TauCeti.SectionChartData.lowerOrderL`: the continuous inclusion of order `k + 1` into order `k`.
+* `TauCeti.SectionChartData.constMapL`: a fibrewise map of sections read in every chart as a
+  constant linear map `L` of the model fibre, applied to the Sobolev sections by the matrix of `L`
+  (`TauCeti.SectionChartData.chartValueL_constMapL_ae`).
 * `TauCeti.SectionChartData.ofComponents`: the linear map into the Sobolev sections from a space of
   sections with chartwise Sobolev components.
 * `TauCeti.FiniteBundleAtlas.sectionChartData`: the chart data of a finite bundle atlas.
@@ -485,6 +488,100 @@ theorem lowerOrderL_apply (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n)
       Wkp.lowerOrder k ((w : C.SobolevData μ p (k + 1)) i j) := by
   rw [← Wkp.lowerOrderL_apply]
   rfl
+
+/-- The chart data of `C.lowerOrderL μ p k w` are those of `w`. -/
+theorem chartValueL_lowerOrderL_coe (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n) :
+    C.chartValueL μ p k i (C.lowerOrderL μ p k w) = C.chartValueL μ p (k + 1) i w := by
+  rw [← C.chartValueL_lowerOrderL μ p k i w]
+  refine congrArg (C.chartValueL μ p k i) (funext fun i ↦ funext fun j ↦ ?_)
+  rw [lowerOrderL_apply, Wkp.lowerOrderL_apply]
+
+section ConstMap
+
+/-- Applies the constant matrix of a linear map `L` of the model fibre, in the basis
+`Module.finBasis ℝ F`, to the components of a tuple in every chart. -/
+def constMapData (L : F →L[ℝ] F) : C.SobolevData μ p k →L[ℝ] C.SobolevData μ p k :=
+  ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi fun j ↦
+    ∑ j', (finBasis ℝ F).repr (L (finBasis ℝ F j')) j •
+      ((ContinuousLinearMap.proj (R := ℝ)
+        (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp μ (C.image i) p k) j').comp
+        (ContinuousLinearMap.proj (R := ℝ)
+          (φ := fun i : Fin C.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (C.image i) p k) i))
+
+/-- The components of `constMapData L w` in chart `i` are those of `w` combined by the matrix of
+`L`. -/
+theorem constMapData_apply (L : F →L[ℝ] F) (w : C.SobolevData μ p k) (i : Fin C.n)
+    (j : Fin (finrank ℝ F)) :
+    constMapData C μ p k L w i j = ∑ j', (finBasis ℝ F).repr (L (finBasis ℝ F j')) j • w i j' := by
+  simp [constMapData]
+
+/-- The chart data of `constMapData L w` are those of `w` composed with `L`. -/
+theorem chartValueL_constMapData_ae (L : F →L[ℝ] F) (w : C.SobolevData μ p k)
+    (i : Fin C.n) :
+    C.chartValueL μ p k i (constMapData C μ p k L w) =ᵐ[μ.restrict (C.image i)]
+      fun y ↦ L (C.chartValueL μ p k i w y) := by
+  have hval (j : Fin (finrank ℝ F)) :
+      (Wkp.value k (constMapData C μ p k L w i j) : E → ℝ) =ᵐ[μ.restrict (C.image i)]
+        fun y ↦ ∑ j', (finBasis ℝ F).repr (L (finBasis ℝ F j')) j * Wkp.value k (w i j') y := by
+    rw [constMapData_apply]
+    filter_upwards [Wkp.value_finsetSum_ae k Finset.univ
+      (fun j' ↦ (finBasis ℝ F).repr (L (finBasis ℝ F j')) j • w i j'),
+      ae_all_iff.2 fun j' ↦ (Wkp.value_smul k ((finBasis ℝ F).repr (L (finBasis ℝ F j')) j)
+        (w i j')).symm ▸ Lp.coeFn_smul _ (Wkp.value k (w i j'))] with y hy hs
+    rw [hy]
+    exact Finset.sum_congr rfl fun j' _ ↦ by rw [hs j', Pi.smul_apply, smul_eq_mul]
+  filter_upwards [C.chartValueL_apply_ae μ p k i (constMapData C μ p k L w),
+    C.chartValueL_apply_ae μ p k i w, ae_all_iff.2 hval] with y h₁ h₂ h₃
+  rw [h₁, h₂, map_sum]
+  simp_rw [h₃, map_smul, Finset.sum_smul, mul_smul]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j' _ ↦ ?_
+  conv_rhs => rw [← (finBasis ℝ F).sum_repr (L (finBasis ℝ F j')), Finset.smul_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ smul_comm _ _ _
+
+variable {C} in
+/-- A fibrewise map `Ψ` of sections whose chart readings are a constant linear map `L` of the model
+fibre, applied to the Sobolev sections: the components in every chart are transformed by the
+matrix of `L`. -/
+def constMapL (L : F →L[ℝ] F) (Ψ : S → S)
+    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y)) :
+    C.sobolevSections μ p k →L[ℝ] C.sobolevSections μ p k :=
+  ((constMapData C μ p k L).comp (C.sobolevSections μ p k).subtypeL).codRestrict _ fun w ↦ by
+    obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.2
+    refine (C.mem_sobolevSections_iff μ p k).2 ⟨Ψ s, fun i ↦ ?_⟩
+    filter_upwards [chartValueL_constMapData_ae C μ p k L w i, hs i,
+      ae_restrict_mem (C.image i).isOpen.measurableSet] with y h hsy hy
+    rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, h, hsy, hΨ i s y hy]
+
+variable {C} in
+/-- The components of `constMapL μ p k L Ψ hΨ w` are those of `constMapData C μ p k L w`. -/
+theorem coe_constMapL {L : F →L[ℝ] F} {Ψ : S → S}
+    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
+    (w : C.sobolevSections μ p k) :
+    (constMapL μ p k L Ψ hΨ w : C.SobolevData μ p k) = constMapData C μ p k L w :=
+  (rfl)
+
+variable {C} in
+/-- The chart data of `constMapL μ p k L Ψ hΨ w` are those of `w` composed with `L`. -/
+theorem chartValueL_constMapL_ae {L : F →L[ℝ] F} {Ψ : S → S}
+    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
+    (w : C.sobolevSections μ p k) (i : Fin C.n) :
+    C.chartValueL μ p k i (constMapL μ p k L Ψ hΨ w) =ᵐ[μ.restrict (C.image i)]
+      fun y ↦ L (C.chartValueL μ p k i w y) :=
+  chartValueL_constMapData_ae C μ p k L w i
+
+variable {C} in
+/-- Forgetting the highest derivative commutes with a constant fibre map. -/
+theorem lowerOrderL_constMapL {L : F →L[ℝ] F} {Ψ : S → S}
+    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
+    (w : C.sobolevSections μ p (k + 1)) :
+    C.lowerOrderL μ p k (constMapL μ p (k + 1) L Ψ hΨ w) =
+      constMapL μ p k L Ψ hΨ (C.lowerOrderL μ p k w) := by
+  refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
+  rw [lowerOrderL_apply, coe_constMapL, coe_constMapL]
+  simp only [constMapData_apply, lowerOrderL_apply, ← Wkp.lowerOrderL_apply, map_sum, map_smul]
+
+end ConstMap
 
 section Components
 

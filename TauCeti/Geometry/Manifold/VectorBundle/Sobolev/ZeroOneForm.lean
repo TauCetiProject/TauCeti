@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 public import TauCeti.Topology.VectorBundle.RestrictScalars
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 
@@ -79,102 +79,6 @@ universe u
 
 namespace TauCeti
 
-namespace SectionChartData
-
-section ConstMap
-
-variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {S : Type*} [AddCommGroup S] [Module ℝ S]
-  (C : SectionChartData E F S) (μ : Measure E) [μ.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)]
-  (k : ℕ)
-
-/-- Applies the constant matrix of a linear map `L` of the model fibre, in the basis
-`Module.finBasis ℝ F`, to the components of a tuple in every chart. -/
-private def constMapData (L : F →L[ℝ] F) : C.SobolevData μ p k →L[ℝ] C.SobolevData μ p k :=
-  ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi fun j ↦
-    ∑ j', (finBasis ℝ F).repr (L (finBasis ℝ F j')) j •
-      ((ContinuousLinearMap.proj (R := ℝ)
-        (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp μ (C.image i) p k) j').comp
-        (ContinuousLinearMap.proj (R := ℝ)
-          (φ := fun i : Fin C.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (C.image i) p k) i))
-
-private theorem constMapData_apply (L : F →L[ℝ] F) (w : C.SobolevData μ p k) (i : Fin C.n)
-    (j : Fin (finrank ℝ F)) :
-    constMapData C μ p k L w i j = ∑ j', (finBasis ℝ F).repr (L (finBasis ℝ F j')) j • w i j' := by
-  simp [constMapData]
-
-/-- The chart data of `constMapData L w` are those of `w` composed with `L`. -/
-private theorem chartValueL_constMapData_ae (L : F →L[ℝ] F) (w : C.SobolevData μ p k)
-    (i : Fin C.n) :
-    C.chartValueL μ p k i (constMapData C μ p k L w) =ᵐ[μ.restrict (C.image i)]
-      fun y ↦ L (C.chartValueL μ p k i w y) := by
-  have hval (j : Fin (finrank ℝ F)) :
-      (Wkp.value k (constMapData C μ p k L w i j) : E → ℝ) =ᵐ[μ.restrict (C.image i)]
-        fun y ↦ ∑ j', (finBasis ℝ F).repr (L (finBasis ℝ F j')) j * Wkp.value k (w i j') y := by
-    rw [constMapData_apply]
-    filter_upwards [Wkp.value_finsetSum_ae k Finset.univ
-      (fun j' ↦ (finBasis ℝ F).repr (L (finBasis ℝ F j')) j • w i j'),
-      ae_all_iff.2 fun j' ↦ (Wkp.value_smul k ((finBasis ℝ F).repr (L (finBasis ℝ F j')) j)
-        (w i j')).symm ▸ Lp.coeFn_smul _ (Wkp.value k (w i j'))] with y hy hs
-    rw [hy]
-    exact Finset.sum_congr rfl fun j' _ ↦ by rw [hs j', Pi.smul_apply, smul_eq_mul]
-  filter_upwards [C.chartValueL_apply_ae μ p k i (constMapData C μ p k L w),
-    C.chartValueL_apply_ae μ p k i w, ae_all_iff.2 hval] with y h₁ h₂ h₃
-  rw [h₁, h₂, map_sum]
-  simp_rw [h₃, map_smul, Finset.sum_smul, mul_smul]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun j' _ ↦ ?_
-  conv_rhs => rw [← (finBasis ℝ F).sum_repr (L (finBasis ℝ F j')), Finset.smul_sum]
-  exact Finset.sum_congr rfl fun j _ ↦ smul_comm _ _ _
-
-variable {C} in
-/-- A fibrewise map `Ψ` of sections whose chart readings are a constant linear map `L` of the model
-fibre, applied to the Sobolev sections: the components in every chart are transformed by the
-matrix of `L`. -/
-private def constMapL (L : F →L[ℝ] F) (Ψ : S → S)
-    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y)) :
-    C.sobolevSections μ p k →L[ℝ] C.sobolevSections μ p k :=
-  ((constMapData C μ p k L).comp (C.sobolevSections μ p k).subtypeL).codRestrict _ fun w ↦ by
-    obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.2
-    refine (C.mem_sobolevSections_iff μ p k).2 ⟨Ψ s, fun i ↦ ?_⟩
-    filter_upwards [chartValueL_constMapData_ae C μ p k L w i, hs i,
-      ae_restrict_mem (C.image i).isOpen.measurableSet] with y h hsy hy
-    rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, h, hsy, hΨ i s y hy]
-
-variable {C} in
-private theorem chartValueL_constMapL_ae {L : F →L[ℝ] F} {Ψ : S → S}
-    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
-    (w : C.sobolevSections μ p k) (i : Fin C.n) :
-    C.chartValueL μ p k i (constMapL μ p k L Ψ hΨ w) =ᵐ[μ.restrict (C.image i)]
-      fun y ↦ L (C.chartValueL μ p k i w y) :=
-  chartValueL_constMapData_ae C μ p k L w i
-
-variable {C} in
-private theorem lowerOrderL_constMapL {L : F →L[ℝ] F} {Ψ : S → S}
-    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
-    (w : C.sobolevSections μ p (k + 1)) :
-    C.lowerOrderL μ p k (constMapL μ p (k + 1) L Ψ hΨ w) =
-      constMapL μ p k L Ψ hΨ (C.lowerOrderL μ p k w) := by
-  refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
-  rw [lowerOrderL_apply]
-  change Wkp.lowerOrder k (constMapData C μ p (k + 1) L w i j) =
-    constMapData C μ p k L (C.lowerOrderL μ p k w) i j
-  simp only [constMapData_apply, lowerOrderL_apply, ← Wkp.lowerOrderL_apply, map_sum, map_smul]
-
-/-- The chart data of `C.lowerOrderL μ p k w` are those of `w`. -/
-private theorem chartValueL_lowerOrderL_coe (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n) :
-    C.chartValueL μ p k i (C.lowerOrderL μ p k w) = C.chartValueL μ p (k + 1) i w := by
-  rw [← C.chartValueL_lowerOrderL μ p k i w]
-  congr 1
-  funext i j
-  rw [lowerOrderL_apply, Wkp.lowerOrderL_apply]
-
-end ConstMap
-
-end SectionChartData
-
 section ZeroOne
 
 open SmoothAlmostComplexStructure
@@ -193,60 +97,42 @@ local instance instVectorBundleRealZeroOneForm : VectorBundle ℝ F V :=
 /-! ### The `(0,1)`-projection on the model fibre -/
 
 variable (F) in
-/-- The `(0,1)`-projection `η ↦ ½ (η + i • η ∘ i)` of real linear maps `ℂ →L[ℝ] F`. -/
+/-- The `(0,1)`-projection `η ↦ ½ (η + i • η ∘ i)` of real linear maps `ℂ →L[ℝ] F`: the complex
+antilinear part `TauCeti.complexAntilinearPartLinearMap` for multiplication by `i` on `ℂ` and on
+`F`, on continuous linear maps. -/
 private def modelZeroOnePart : (ℂ →L[ℝ] F) →L[ℝ] (ℂ →L[ℝ] F) :=
   LinearMap.toContinuousLinearMap
-    { toFun := fun η ↦ (2⁻¹ : ℝ) • (η + Complex.I • η.comp (Complex.I • ContinuousLinearMap.id ℝ ℂ))
-      map_add' := fun η η' ↦ by
-        simp only [ContinuousLinearMap.add_comp, smul_add]
-        abel
-      map_smul' := fun c η ↦ by
-        ext v
-        simp only [ContinuousLinearMap.smul_comp, add_apply,
-          FunLike.coe_smul, Pi.smul_apply, RingHom.id_apply, smul_add,
-          smul_comm Complex.I c, smul_comm (2⁻¹ : ℝ) c] }
+    ((LinearMap.toContinuousLinearMap : (ℂ →ₗ[ℝ] F) ≃ₗ[ℝ] ℂ →L[ℝ] F).toLinearMap ∘ₗ
+      complexAntilinearPartLinearMap (DistribSMul.toLinearMap ℝ ℂ Complex.I)
+        (DistribSMul.toLinearMap ℝ F Complex.I) ∘ₗ ContinuousLinearMap.coeLM ℝ)
+
+private theorem toLinearMap_modelZeroOnePart (η : ℂ →L[ℝ] F) :
+    (modelZeroOnePart F η : ℂ →ₗ[ℝ] F) = complexAntilinearPart
+      (DistribSMul.toLinearMap ℝ ℂ Complex.I) (DistribSMul.toLinearMap ℝ F Complex.I) η :=
+  rfl
 
 private theorem modelZeroOnePart_apply (η : ℂ →L[ℝ] F) (v : ℂ) :
-    modelZeroOnePart F η v = (2⁻¹ : ℝ) • (η v + Complex.I • η (Complex.I • v)) := by
-  simp [modelZeroOnePart]
-
-private theorem I_smul_I_smul {W : Type*} [AddCommGroup W] [Module ℂ W] (w : W) :
-    Complex.I • Complex.I • w = -w := by
-  rw [smul_smul, Complex.I_mul_I, neg_one_smul]
+    modelZeroOnePart F η v = (2⁻¹ : ℝ) • (η v + Complex.I • η (Complex.I • v)) :=
+  (LinearMap.congr_fun (toLinearMap_modelZeroOnePart η) v).trans
+    (complexAntilinearPart_apply _ _ _ v)
 
 /-- A real linear map `ℂ →L[ℝ] F` is fixed by the `(0,1)`-projection exactly when it is complex
 antilinear. -/
 private theorem modelZeroOnePart_eq_self_iff {η : ℂ →L[ℝ] F} :
     modelZeroOnePart F η = η ↔ ∀ v, η (Complex.I • v) = -(Complex.I • η v) := by
-  constructor
-  · intro h v
-    have hv := congr($h (Complex.I • v))
-    rw [modelZeroOnePart_apply, I_smul_I_smul, map_neg, smul_neg] at hv
-    linear_combination (norm := module) (-2 : ℝ) • hv
-  · intro h
-    ext v
-    rw [modelZeroOnePart_apply, h, smul_neg, I_smul_I_smul, _root_.neg_neg]
-    module
+  rw [← ContinuousLinearMap.coe_inj, toLinearMap_modelZeroOnePart]
+  refine ⟨fun h ↦ (h ▸ complexAntilinearPart_isComplexAntilinear
+    Complex.toLinearMap_I_comp_toLinearMap_I Complex.toLinearMap_I_comp_toLinearMap_I _).apply,
+    fun h ↦ (isComplexAntilinear_of_apply h).complexAntilinearPart_eq
+      Complex.toLinearMap_I_comp_toLinearMap_I⟩
 
 /-- The `(0,1)`-projection of a real linear map `ℂ →L[ℝ] F` is complex antilinear. -/
 private theorem modelZeroOnePart_antilinear (η : ℂ →L[ℝ] F) (v : ℂ) :
-    modelZeroOnePart F η (Complex.I • v) = -(Complex.I • modelZeroOnePart F η v) := by
-  simp only [modelZeroOnePart_apply, I_smul_I_smul, map_neg, smul_neg, smul_add,
-    smul_comm Complex.I (2⁻¹ : ℝ)]
-  module
+    modelZeroOnePart F η (Complex.I • v) = -(Complex.I • modelZeroOnePart F η v) :=
+  (toLinearMap_modelZeroOnePart η ▸ complexAntilinearPart_isComplexAntilinear
+    Complex.toLinearMap_I_comp_toLinearMap_I Complex.toLinearMap_I_comp_toLinearMap_I _).apply v
 
 /-! ### Chart readings of `(0,1)`-forms -/
-
-omit [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M] [FiniteDimensional ℝ F]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
-/-- The real trivializations of a complex vector bundle are complex linear. -/
-private theorem continuousLinearMapAt_complex_smul (c : M) (x : M) (a : ℂ) (v : V x) :
-    (trivializationAt F V c).continuousLinearMapAt ℝ x (a • v) =
-      a • (trivializationAt F V c).continuousLinearMapAt ℝ x v := by
-  have h (v : V x) : (trivializationAt F V c).continuousLinearMapAt ℝ x v =
-      (trivializationAt F V c).continuousLinearMapAt ℂ x v := by
-    simp only [Trivialization.continuousLinearMapAt_apply, Trivialization.coe_linearMapAt]
-  rw [h, h, map_smul]
 
 variable (A : FiniteBundleAtlas ℂ M F V)
 
@@ -263,25 +149,19 @@ private theorem coord_tangentHom_zeroOnePart (i : Fin A.n)
       a • (tangentBundleCore 𝓘(ℝ, ℂ) M).coordChange (achart ℂ (A.center i))
         (achart ℂ ((A.chart i).symm y)) ((A.chart i).symm y) v :=
     tangentCoordChange_smul ℝ (𝕜' := ℂ) ⟨hx, mem_chart_source ℂ _⟩ a v
-  dsimp only [FiniteBundleAtlas.tangentHom]
-  erw [FiniteBundleAtlas.coord_hom (𝕜 := ℝ) A.tangent A.closure_dom_subset_baseSet,
-    FiniteBundleAtlas.coord_hom (𝕜 := ℝ) A.tangent A.closure_dom_subset_baseSet]
+  rw [FiniteBundleAtlas.coord_tangentHom, FiniteBundleAtlas.coord_tangentHom]
   ext v
   simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
     modelZeroOnePart_apply, zeroOnePart_apply]
+  -- `TangentSpace 𝓘(ℝ, ℂ) x` is `ℂ` by definition but carries no `ℂ`-action, so the readings of
+  -- tangent vectors, the complex linearity `hS` of the real tangent coordinate change and the
+  -- almost complex structure `v ↦ i • v` can only be matched up to this definitional equality:
+  -- `erw` rewrites the coordinate change, whose coercion is to `TangentSpace`, by its `ℂ`-valued
+  -- form, and the final `rfl` identifies `(i • id) w` on `TangentSpace` with `i • w` on `ℂ`.
   erw [TangentBundle.symmL_trivializationAt_eq_core hx, hS]
-  rw [map_smul, map_add, continuousLinearMapAt_complex_smul, toEndomorphism_ofComplexManifold]
+  rw [map_smul, map_add, Trivialization.coe_continuousLinearMapAt_restrictScalars ℝ ℂ, map_smul,
+    toEndomorphism_ofComplexManifold]
   rfl
-
-/-- Composition on both sides with continuous linear equivalences is injective. -/
-private theorem eq_of_comp_eq_comp {X Y G : Type*} [AddCommGroup X] [Module ℝ X]
-    [TopologicalSpace X] [AddCommGroup Y] [Module ℝ Y] [TopologicalSpace Y] [AddCommGroup G]
-    [Module ℝ G] [TopologicalSpace G] (T : Y ≃L[ℝ] G) (S : X ≃L[ℝ] ℂ) {φ ψ : X →L[ℝ] Y}
-    (h : (T : Y →L[ℝ] G).comp (φ.comp (S.symm : ℂ →L[ℝ] X)) =
-      (T : Y →L[ℝ] G).comp (ψ.comp (S.symm : ℂ →L[ℝ] X))) : φ = ψ := by
-  ext w
-  have hw := congr(T.symm ($h (S w)))
-  simpa using hw
 
 /-- On the image of a chart, a one-form is read as a complex antilinear map exactly when it is a
 `(0,1)`-form at the corresponding point. -/
@@ -291,23 +171,19 @@ private theorem isZeroOneForm_iff_coord_tangentHom (i : Fin A.n)
       ∀ v, A.tangentHom.coord i θ y (Complex.I • v) =
         -(Complex.I • A.tangentHom.coord i θ y v) := by
   rw [← modelZeroOnePart_eq_self_iff, ← coord_tangentHom_zeroOnePart A i θ hy,
-    ← zeroOnePart_eq_self_iff]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · erw [FiniteBundleAtlas.coord_def, FiniteBundleAtlas.coord_def]
-    exact congrArg (fun e ↦ (A.tangentHom.triv i ⟨(A.chart i).symm y, e⟩).2) h
+    ← zeroOnePart_eq_self_iff, FiniteBundleAtlas.coord_tangentHom,
+    FiniteBundleAtlas.coord_tangentHom]
+  refine ⟨fun h ↦ by rw [h], fun h ↦ ?_⟩
   -- The reading at `y` is injective: both trivializations are isomorphisms at the point.
   have hdom := A.symm_mem_dom hy
   have h₁ : (A.chart i).symm y ∈
-      (trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ)) (A.tangent.center i)).baseSet := by
+      (trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ)) (A.center i)).baseSet := by
     rw [TangentBundle.trivializationAt_baseSet]
     exact A.dom_subset_chart_source i hdom
-  have h₂ : (A.chart i).symm y ∈ (trivializationAt F V (A.tangent.center i)).baseSet :=
+  have h₂ : (A.chart i).symm y ∈ (trivializationAt F V (A.center i)).baseSet :=
     A.dom_subset_baseSet i hdom
-  dsimp only [FiniteBundleAtlas.tangentHom] at h
-  erw [FiniteBundleAtlas.coord_hom (𝕜 := ℝ) A.tangent A.closure_dom_subset_baseSet,
-    FiniteBundleAtlas.coord_hom (𝕜 := ℝ) A.tangent A.closure_dom_subset_baseSet,
-    ContinuousLinearMap.inCoordinates_eq h₁ h₂, ContinuousLinearMap.inCoordinates_eq h₁ h₂] at h
-  exact eq_of_comp_eq_comp _ _ h
+  rw [ContinuousLinearMap.inCoordinates_eq h₁ h₂, ContinuousLinearMap.inCoordinates_eq h₁ h₂] at h
+  exact (ContinuousLinearEquiv.arrowCongrEquiv _ _).injective h
 
 omit [FiniteDimensional ℝ F] [∀ x, ContinuousSMul ℂ (V x)] in
 variable {A} in
@@ -521,9 +397,8 @@ omit [∀ x, ContinuousSMul ℂ (V x)] in
 @[simp]
 theorem coe_zeroOneLowerOrderL (w : zeroOneSobolevSections A μ p (k + 1)) :
     (zeroOneLowerOrderL A μ p k w : SobolevSection A.tangentHom μ p k) =
-      A.tangentHom.sectionChartData.lowerOrderL μ p k w := by
-  simp only [zeroOneLowerOrderL]
-  rfl
+      A.tangentHom.sectionChartData.lowerOrderL μ p k w :=
+  ContinuousLinearMap.coe_codRestrict_apply _ _ _ _
 
 /-- The `(0,1)`-projection commutes with forgetting the highest derivative. -/
 theorem zeroOneLowerOrderL_zeroOnePartSobolevL (w : SobolevSection A.tangentHom μ p (k + 1)) :

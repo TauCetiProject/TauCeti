@@ -14,7 +14,10 @@ Along a normed field extension `𝕜' ⊆ 𝕜`, scalar restriction `(G →L[�
 isometry. Consequently, any `VectorBundle 𝕜 G W` restricts to a `VectorBundle 𝕜' G W` sharing the
 exact same total-space topology and trivialization atlas (`VectorBundle.restrictScalars`), and
 conversely any `VectorBundle 𝕜' G W` whose atlas trivializations are `𝕜`-linear upgrades to a
-`VectorBundle 𝕜 G W` (`VectorBundle.ofLinear`).
+`VectorBundle 𝕜 G W` (`VectorBundle.ofLinear`). A trivialization that is linear over both fields
+has the same continuous linear map at every point over either field
+(`Bundle.Trivialization.coe_continuousLinearMapAt_restrictScalars`), so the `𝕜'`-linear map is
+`𝕜`-linear.
 -/
 
 public section
@@ -58,5 +61,24 @@ theorem ofLinear [VectorBundle 𝕜' G W]
       Trivialization.restrictScalars_coordChangeL 𝕜' 𝕜 e e'
 
 end VectorBundle
+
+namespace Bundle.Trivialization
+
+variable {B : Type*} [TopologicalSpace B] (𝕜' 𝕜 : Type*) [NontriviallyNormedField 𝕜']
+  [NontriviallyNormedField 𝕜] {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜' G]
+  [NormedSpace 𝕜 G]
+  {W : B → Type*} [∀ x, AddCommMonoid (W x)] [∀ x, Module 𝕜' (W x)] [∀ x, Module 𝕜 (W x)]
+  [TopologicalSpace (TotalSpace G W)] [∀ x, TopologicalSpace (W x)] [FiberBundle G W]
+
+/-- A trivialization that is linear over both `𝕜'` and `𝕜` has the same continuous linear map at
+every point over either field. In particular the `𝕜'`-linear map of a trivialization of a
+`VectorBundle 𝕜 G W`, restricted to `𝕜'` by `VectorBundle.restrictScalars`, is `𝕜`-linear. -/
+theorem coe_continuousLinearMapAt_restrictScalars (e : Trivialization G (π G W)) [e.IsLinear 𝕜']
+    [e.IsLinear 𝕜] (b : B) :
+    ⇑(e.continuousLinearMapAt 𝕜' b) = e.continuousLinearMapAt 𝕜 b := by
+  ext v
+  simp only [continuousLinearMapAt_apply, coe_linearMapAt]
+
+end Bundle.Trivialization
 
 end
