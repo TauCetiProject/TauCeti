@@ -11,7 +11,7 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 # A transcribed presentation of the Suzuki sporadic group
 
 This file carries the `Suz` row of the sporadic presentation data. It records the presentation
-`GPLTable.Suz.1` from Rolf Lindenbergh's Group Presentations Library as a
+`GPLTable.Suz.1` from Roderik Lindenbergh's Group Presentations Library as a
 `TauCeti.GroupPresentation`, together with the exact source, generator convention, transcription
 notes, expected counts, and decidable checks on the transcription.
 
