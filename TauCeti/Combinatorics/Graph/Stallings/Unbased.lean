@@ -145,6 +145,14 @@ def toGraphHom (f : UnbasedIso S T) : S.graph.Hom T.graph where
 @[simp] theorem toGraphHom_mapE (f : UnbasedIso S T) (e : S.graph.E) :
     f.toGraphHom.mapE e = f.dartEquiv e := (rfl)
 
+/-- The vertex map of an unbased isomorphism is injective. -/
+theorem toGraphHom_mapV_injective (f : UnbasedIso S T) : Function.Injective f.toGraphHom.mapV :=
+  f.vertexEquiv.injective
+
+/-- The dart map of an unbased isomorphism is injective. -/
+theorem toGraphHom_mapE_injective (f : UnbasedIso S T) : Function.Injective f.toGraphHom.mapE :=
+  f.dartEquiv.injective
+
 /-- The identity unbased isomorphism. -/
 def refl (S : StallingsGraph α) : UnbasedIso S S where
   vertexEquiv := Equiv.refl _

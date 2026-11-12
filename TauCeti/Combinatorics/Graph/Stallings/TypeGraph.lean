@@ -97,18 +97,22 @@ theorem mem_cyclicDarts_of_mem_typeVertices {a : S.graph.V} (ha : a ∈ S.typeVe
   · rw [S.graph.isAcyclic_iff.mp h a p hp] at he
     simp at he
 
-/-- The type graph, based at one of its vertices `u`: the subgraph on the darts on cyclically
-reduced closed paths and the vertices `S.typeVertices`, with the labels of the ambient graph. -/
-@[expose] def typeGraph (u : S.typeVertices) : StallingsGraph α where
-  graph := S.graph.subgraph S.typeVertices S.graph.cyclicDarts (fun _ => S.src_mem_typeVertices)
+/-- The underlying graph of the type graph: the subgraph on the darts on cyclically reduced
+closed paths and the vertices `S.typeVertices`. -/
+abbrev typeSubgraph : SerreGraph :=
+  S.graph.subgraph S.typeVertices S.graph.cyclicDarts (fun _ => S.src_mem_typeVertices)
     fun e => (S.graph.rev_mem_cyclicDarts_iff e).mpr
+
+/-- The type graph, based at one of its vertices `u`: the graph `S.typeSubgraph` with the labels
+of the ambient graph. -/
+@[expose] def typeGraph (u : S.typeVertices) : StallingsGraph α where
+  graph := S.typeSubgraph
   base := u
   label := fun e => S.label e.1
   label_rev := fun e => S.label_rev e.1
 
-@[simp] theorem typeGraph_graph (u : S.typeVertices) :
-    (S.typeGraph u).graph = S.graph.subgraph S.typeVertices S.graph.cyclicDarts
-      (fun _ => S.src_mem_typeVertices) fun e => (S.graph.rev_mem_cyclicDarts_iff e).mpr := (rfl)
+@[simp] theorem typeGraph_graph (u : S.typeVertices) : (S.typeGraph u).graph = S.typeSubgraph :=
+  (rfl)
 
 @[simp] theorem typeGraph_base (u : S.typeVertices) : (S.typeGraph u).base = u := (rfl)
 
@@ -121,8 +125,7 @@ reduced closed paths and the vertices `S.typeVertices`, with the labels of the a
 
 /-- Inclusion of the type graph into the ambient graph, based at the same vertex. -/
 def typeInclusion (u : S.typeVertices) : (S.typeGraph u).Hom (S.withBase u.1) where
-  graphHom := S.graph.subgraphInclusion S.typeVertices S.graph.cyclicDarts
-    (fun _ => S.src_mem_typeVertices) fun e => (S.graph.rev_mem_cyclicDarts_iff e).mpr
+  graphHom := (S.graph.subgraphInclusion _ _ _ _ : S.typeSubgraph.Hom S.graph)
   map_base := rfl
   map_label := fun _ => rfl
 
@@ -138,8 +141,7 @@ def typeInclusion (u : S.typeVertices) : (S.typeGraph u).Hom (S.withBase u.1) wh
   refine le_antisymm ?_ fun g hg => ?_
   · exact ((S.typeInclusion u).subgroup_le_subgroup_mapV a).trans (S.subgroup_withBase u.1 a.1).le
   · obtain ⟨p, hp, rfl⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
-    obtain ⟨q, hq⟩ := S.graph.exists_subgraph_path S.typeVertices S.graph.cyclicDarts
-      (fun _ => S.src_mem_typeVertices) (fun e => (S.graph.rev_mem_cyclicDarts_iff e).mpr) p
+    obtain ⟨q, hq⟩ : ∃ q : S.typeSubgraph.Path a a, _ := S.graph.exists_subgraph_path _ _ _ _ p
       (fun e he => S.mem_cyclicDarts_of_mem_typeVertices a.2 hp he) a.2 a.2
     -- The graph morphism underlying `typeInclusion` is this subgraph inclusion.
     exact (S.typeGraph u).mem_subgroup_iff.mpr ⟨q, ((S.typeInclusion u).read_mapPath q).symm.trans
@@ -162,17 +164,13 @@ section Invariance
 
 variable {S} {T : StallingsGraph α}
 
-private theorem UnbasedIso.injective_mapE (f : UnbasedIso S T) :
-    Function.Injective f.toGraphHom.mapE :=
-  fun x y h => f.dartEquiv.injective (by simpa using h)
-
 private theorem UnbasedIso.dartEquiv_mem_cyclicDarts (f : UnbasedIso S T) {e : S.graph.E}
     (he : e ∈ S.graph.cyclicDarts) : f.dartEquiv e ∈ T.graph.cyclicDarts := by
-  simpa using f.toGraphHom.map_mem_cyclicDarts _ f.injective_mapE he
+  simpa using f.toGraphHom.map_mem_cyclicDarts _ f.toGraphHom_mapE_injective he
 
 private theorem UnbasedIso.vertexEquiv_mem_cyclicVertices (f : UnbasedIso S T) {a : S.graph.V}
     (ha : a ∈ S.graph.cyclicVertices) : f.vertexEquiv a ∈ T.graph.cyclicVertices := by
-  simpa using f.toGraphHom.map_mem_cyclicVertices _ f.injective_mapE ha
+  simpa using f.toGraphHom.map_mem_cyclicVertices _ f.toGraphHom_mapE_injective ha
 
 /-- An isomorphism of labelled graphs preserves the darts on cyclically reduced closed paths. -/
 @[simp] theorem UnbasedIso.dartEquiv_mem_cyclicDarts_iff (f : UnbasedIso S T) (e : S.graph.E) :

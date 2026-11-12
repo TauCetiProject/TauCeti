@@ -9,7 +9,6 @@ public import TauCeti.Combinatorics.Graph.Serre.Core
 public import TauCeti.Combinatorics.Graph.Serre.Tree
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 
-import TauCeti.Combinatorics.Graph.Serre.Dist
 import TauCeti.Data.List.Chain
 
 /-!
@@ -36,11 +35,10 @@ The main results are:
   base vertex is reachable from `v` lies in the based core at `v`;
 * `SerreGraph.mem_cyclicDarts_core_iff` and `SerreGraph.mem_cyclicVertices_core_iff`: passing to
   a based core does not change the darts and vertices on cyclically reduced closed paths;
-* `SerreGraph.Preconnected.exists_isReduced_path_to_cyclicVertices`,
-  `SerreGraph.IsCore.notMem_cyclicDarts_iff` and `SerreGraph.IsCore.notMem_cyclicVertices_iff`:
+* `SerreGraph.IsCore.notMem_cyclicDarts_iff` and `SerreGraph.IsCore.notMem_cyclicVertices_iff`:
   in a core that is not acyclic, the darts and vertices on no cyclically reduced closed path are
   those of a path hanging from the base vertex, which meets the cyclically reduced closed paths
-  only at its end.
+  only at its end. Such a reduced path exists by `SerreGraph.Preconnected.exists_isReduced_path`.
 
 This is the graph-theoretic content of the type of a core graph, obtained from a based core by
 deleting the path that hangs from the base vertex: for a core graph with at least one dart, the
@@ -380,8 +378,7 @@ private theorem Path.IsCyclicallyReduced.exists_core_path {v : Γ.V} {a : (Γ.co
     ∃ q : (Γ.core v).Path a a, Path.IsCyclicallyReduced (Γ.core v) q ∧
       (Γ.coreInclusion v).toPrefunctor.mapPath q = c := by
   obtain ⟨q₀⟩ := Γ.core_reachable v a
-  obtain ⟨q, rfl⟩ := Γ.exists_subgraph_path _ _ (fun _ => Γ.src_mem_coreVertices v)
-    (fun e => (Γ.rev_mem_coreDarts_iff v e).mpr) c
+  obtain ⟨q, rfl⟩ : ∃ q : (Γ.core v).Path a a, _ := Γ.exists_subgraph_path _ _ _ _ c
     (fun e he => hc.mem_coreDarts ((Γ.coreInclusion v).toPrefunctor.mapPath q₀) he) a.2 a.2
   exact ⟨q, ((Γ.coreInclusion v).isCyclicallyReduced_mapPath_iff _ Subtype.val_injective q).mp hc,
     rfl⟩
@@ -520,17 +517,6 @@ theorem IsCore.mem_cyclicVertices_of_ne {v : Γ.V} (hΓ : Γ.IsCore v) {e f : Γ
     simpa using hef
 
 /-! ### The hanging path of a core -/
-
-/-- **The hanging path.** In a preconnected graph that is not acyclic, every vertex `v` is
-joined to a vertex on a cyclically reduced closed path by a reduced path whose darts all start at
-vertices on no such path. For a core based at `v` this is the path hanging from `v`. -/
-theorem Preconnected.exists_isReduced_path_to_cyclicVertices (hΓ : Γ.Preconnected) (v : Γ.V)
-    (h : ¬ Γ.IsAcyclic) :
-    ∃ (w : Γ.V) (p : Γ.Path v w), w ∈ Γ.cyclicVertices ∧ Path.IsReduced Γ p ∧
-      ∀ e ∈ Path.darts Γ p, Γ.src e ∉ Γ.cyclicVertices := by
-  obtain ⟨_, rfl, w, hw, p, hp, h⟩ := hΓ.exists_isReduced_path (Set.singleton_nonempty v)
-    (Set.nonempty_iff_ne_empty.mpr (mt Γ.cyclicVertices_eq_empty_iff.mp h))
-  exact ⟨w, p, hw, hp, fun e he => (h e he).2⟩
 
 /-- Let `p` be a path from the base vertex of a core to a vertex on a cyclically reduced closed
 path, all of whose darts start at vertices on no such path: the path hanging from the base vertex.

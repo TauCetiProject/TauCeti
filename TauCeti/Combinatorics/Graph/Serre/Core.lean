@@ -158,9 +158,9 @@ theorem core_reachable (a : (Γ.core v).V) :
   · exact ⟨.nil⟩
   · obtain ⟨p, hp, he⟩ := he
     obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
-    obtain ⟨q', _⟩ := Γ.exists_subgraph_path _ _ (fun _ => Γ.src_mem_coreVertices v)
-      (fun e => (Γ.rev_mem_coreDarts_iff v e).mpr) q (fun f hf => ⟨_, hp, by simp [hf]⟩)
-      (by simp) ha
+    obtain ⟨q', -⟩ : ∃ q' : (Γ.core v).Path (Γ.coreBase v) ⟨_, ha⟩, _ :=
+      Γ.exists_subgraph_path (Γ.coreVertices v) (Γ.coreDarts v) _ _ q
+        (fun f hf => ⟨_, hp, by simp [hf]⟩) _ ha
     exact ⟨q'⟩
 
 /-- A graph is a core at `v` if every vertex is reachable from `v` and every dart lies on a
