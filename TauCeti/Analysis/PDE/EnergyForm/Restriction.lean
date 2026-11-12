@@ -90,6 +90,12 @@ private theorem jetField_extendByZeroL_ae (hU : U ≤ Omega) (v : W1p0 mu U 2) :
   · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, indicator_of_notMem hxU]
     rfl
 
+/-- On `U ⊆ Ω`, the jet field of the restriction `w|_U` of `w ∈ H¹(Ω)` is that of `w`. -/
+private theorem jetField_restrictL_ae (hU : U ≤ Omega) (w : W1p mu Omega 2) :
+    jetField (W1p.restrictL hU w) =ᵐ[mu.restrict U] jetField w := by
+  filter_upwards [W1p.value_restrictL_ae hU w, W1p.gradient_restrictL_ae hU w] with x hx hy
+  rw [jetField_apply, jetField_apply, hx, hy]
+
 /-- **The energy form of a restriction.** For open sets `U ⊆ Ω`, `u ∈ H¹(Ω)` and `v ∈ H¹₀(U)`,
 the energy form on `U` of the restriction `u|_U` against `v` equals the energy form on `Ω` of `u`
 against the zero extension of `v`. -/
@@ -101,10 +107,7 @@ theorem energyFormH1_restrictL (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
   have hUm := U.isOpen.measurableSet
   have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
   have hjet := jetField_extendByZeroL_ae (mu := mu) hU v
-  -- On `U`, the jet field of the restriction is that of `u`.
-  have hjetU : jetField (W1p.restrictL hU u) =ᵐ[mu.restrict U] jetField u := by
-    filter_upwards [W1p.value_restrictL_ae hU u, W1p.gradient_restrictL_ae hU u] with x hx hy
-    rw [jetField_apply, jetField_apply, hx, hy]
+  have hjetU := jetField_restrictL_ae hU u
   rw [energyFormH1_def, energyFormH1_def]
   calc ∫ x in U, energyIntegrand (a x) (b x) (c x) (jetField (W1p.restrictL hU u) x)
           (jetField (v : W1p mu U 2) x) ∂mu
@@ -146,9 +149,7 @@ theorem energyFormH1_extendByZeroL_left (a : EuclideanSpace ℝ ι → Matrix ι
   have hUm := U.isOpen.measurableSet
   have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
   have hjet := jetField_extendByZeroL_ae (mu := mu) hU u
-  have hjetU : jetField (W1p.restrictL hU w) =ᵐ[mu.restrict U] jetField w := by
-    filter_upwards [W1p.value_restrictL_ae hU w, W1p.gradient_restrictL_ae hU w] with x hx hy
-    rw [jetField_apply, jetField_apply, hx, hy]
+  have hjetU := jetField_restrictL_ae hU w
   rw [energyFormH1_def, energyFormH1_def]
   calc ∫ x in Omega, energyIntegrand (a x) (b x) (c x)
           (jetField (W1p0.extendByZeroL hU u : W1p mu Omega 2) x) (jetField w x) ∂mu
