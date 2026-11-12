@@ -21,8 +21,10 @@ Let `f : E → F` be harmonic at a point `x` of a finite-dimensional real inner 
 Each homogeneous term `y ↦ pₖ (y, …, y)` is then harmonic on all of `E`
 (`HasFPowerSeriesAt.harmonicAt_apply`), and so is every Taylor polynomial `p.partialSum n`
 (`HasFPowerSeriesAt.harmonicAt_partialSum`). Combined with the convergence of
-the partial sums (`HasFPowerSeriesOnBall.tendstoUniformlyOn`), a harmonic function is, near each
-point, a uniform limit of polynomial functions harmonic on the whole space. This is how
+the partial sums (`HasFPowerSeriesOnBall.tendstoUniformlyOn`), a harmonic function admitting a
+power series is, near each point, a uniform limit of polynomial functions harmonic on the whole
+space. This applies to every harmonic function with values in a finite-dimensional space, which
+is analytic (`InnerProductSpace.HarmonicAt.analyticAt`). This is how
 functionals annihilating every function harmonic on an open set are seen to annihilate the
 expansions of potentials whose poles lie far away.
 

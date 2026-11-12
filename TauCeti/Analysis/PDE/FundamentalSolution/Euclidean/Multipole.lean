@@ -6,18 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Basic
+public import TauCeti.Analysis.MvPolynomial.PolynomialSpace
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
+import TauCeti.Analysis.InnerProductSpace.Harmonic.IteratedFDeriv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Taylor
 
 /-!
 # The exterior multipole expansion of the Newtonian kernel
 
 The Newtonian kernel `Gₙ(y) = (n (n - 2) ωₙ)⁻¹ ‖y‖²⁻ⁿ` is real analytic away from its pole, and
-its power series at a point `a ≠ 0` converges on a ball whose radius is a fixed multiple of `‖a‖`
+its power series at a point `a ≠ 0` converges on a ball whose radius is a fixed multiple `c ‖a‖`,
+with `0 < c < 1`, so that the ball excludes the pole
 (`TauCeti.exists_forall_hasFPowerSeriesOnBall_newtonianKernel`). The constant depends only on
 the dimension: `Gₙ` is invariant under orthogonal maps and homogeneous under dilations, so every
 point `a ≠ 0` is carried to a fixed unit vector by a dilation composed with a reflection, which
@@ -34,20 +37,24 @@ where `Pₖ` is a homogeneous polynomial function of degree `k` which is harmoni
 (`TauCeti.exists_forall_hasFPowerSeriesOnBall_newtonianKernel_sub`). Its terms are harmonic
 because they are the Taylor terms of a harmonic function
 (`HasFPowerSeriesAt.harmonicAt_apply`). Consequently, on a ball of radius a fixed multiple of
-`‖x‖`, the kernel with pole `x` is a uniform limit of polynomial functions harmonic everywhere
-(`TauCeti.exists_forall_tendstoUniformlyOn_newtonianKernel_sub`). A functional that annihilates
-the restrictions of all functions harmonic on an open set therefore annihilates the kernels whose
-poles lie far enough away; this is the step at infinity in the duality proof of harmonic Runge
-approximation.
+`‖x‖`, the kernel with pole `x` is the limit of the partial sums of this expansion, polynomial
+functions of degree at most `N` harmonic everywhere, uniformly together with all derivatives
+(`exists_harmonicAt_mem_polynomialsDegLE_tendstoUniformlyOn_iteratedFDeriv_newtonianKernel_sub`).
+The convergence of the derivatives comes from the interior derivative estimates for harmonic
+functions (`TendstoLocallyUniformlyOn.iteratedFDeriv_of_harmonicOnNhd`). A functional that
+annihilates the restrictions of all functions harmonic on an open set therefore annihilates the
+kernels whose poles lie far enough away; this is the step at infinity in the duality proof of
+harmonic Runge approximation.
 
 ## Main declarations
 
 * `TauCeti.exists_forall_hasFPowerSeriesOnBall_newtonianKernel`: the kernel has a power series
-  at each `a ≠ 0` converging on a ball of radius `c ‖a‖`.
+  at each `a ≠ 0` converging on a ball of radius `c ‖a‖`, where `0 < c < 1`.
 * `TauCeti.exists_forall_hasFPowerSeriesOnBall_newtonianKernel_sub`: the exterior multipole
   expansion `Gₙ(x - y) = ∑ₖ Pₖ(y)` with harmonic homogeneous terms.
-* `TauCeti.exists_forall_tendstoUniformlyOn_newtonianKernel_sub`: uniform approximation of the
-  kernel with a distant pole by polynomial functions harmonic everywhere.
+* `exists_harmonicAt_mem_polynomialsDegLE_tendstoUniformlyOn_iteratedFDeriv_newtonianKernel_sub`:
+  approximation of the kernel with a distant pole by polynomial functions harmonic everywhere,
+  uniformly with all derivatives.
 
 ## References
 
@@ -63,21 +70,21 @@ open scoped NNReal ENNReal
 namespace TauCeti
 
 /-- **The Newtonian kernel has power series on balls proportional to the distance to the pole.**
-There is a constant `c > 0`, depending only on the dimension, such that at every point `a ≠ 0`
-the kernel `Gₙ` has a power series converging on the ball of radius `c ‖a‖` about `a`. -/
+There is a constant `0 < c < 1`, depending only on the dimension, such that at every point
+`a ≠ 0` the kernel `Gₙ` has a power series converging on the ball of radius `c ‖a‖` about `a`. -/
 theorem exists_forall_hasFPowerSeriesOnBall_newtonianKernel (n : ℕ) :
-    ∃ c : ℝ≥0, 0 < c ∧ ∀ a : EuclideanSpace ℝ (Fin n), a ≠ 0 →
+    ∃ c : ℝ≥0, 0 < c ∧ c < 1 ∧ ∀ a : EuclideanSpace ℝ (Fin n), a ≠ 0 →
       ∃ p : FormalMultilinearSeries ℝ (EuclideanSpace ℝ (Fin n)) ℝ,
         HasFPowerSeriesOnBall (newtonianKernel n) p a (c * ‖a‖₊) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · exact ⟨1, one_pos, fun a ha ↦ absurd (Subsingleton.elim a 0) ha⟩
+  · exact ⟨1 / 2, by norm_num, by norm_num, fun a ha ↦ absurd (Subsingleton.elim a 0) ha⟩
   -- A power series at a fixed unit vector `e`.
   set e : EuclideanSpace ℝ (Fin n) := EuclideanSpace.single ⟨0, hn⟩ 1
   have he : ‖e‖ = 1 := by simp [e]
   have he0 : e ≠ 0 := norm_ne_zero_iff.1 (by rw [he]; exact one_ne_zero)
   obtain ⟨p, r, hpr⟩ := (harmonicAt_newtonianKernel n he0).analyticAt
-  obtain ⟨c, hc0, hcr⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hpr.r_pos
-  refine ⟨c, mod_cast hc0, fun a ha ↦ ?_⟩
+  obtain ⟨c, hc0, hcr⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 (lt_min hpr.r_pos one_pos)
+  refine ⟨c, mod_cast hc0, mod_cast (lt_min_iff.1 hcr).2, fun a ha ↦ ?_⟩
   -- The map `u = ‖a‖⁻¹ • Q`, with `Q` the reflection exchanging `e` and `a / ‖a‖`, sends `a` to
   -- `e`, and `Gₙ = ‖a‖ ^ (2 - n) • (Gₙ ∘ u)`.
   set s : ℝ := ‖a‖
@@ -113,19 +120,19 @@ theorem exists_forall_hasFPowerSeriesOnBall_newtonianKernel (n : ℕ) :
           (by simpa using ha)]
         exact ENNReal.coe_le_coe.2 hu
     _ = c := by rw [mul_assoc, ENNReal.mul_inv_cancel ha' ENNReal.coe_ne_top, mul_one]
-    _ ≤ r := hcr.le
+    _ ≤ r := (lt_min_iff.1 hcr).1.le
 
-/-- **The exterior multipole expansion of the Newtonian kernel.** There is a constant `c > 0`,
-depending only on the dimension, such that for every pole `x ≠ 0` the function
+/-- **The exterior multipole expansion of the Newtonian kernel.** There is a constant
+`0 < c < 1`, depending only on the dimension, such that for every pole `x ≠ 0` the function
 `y ↦ Gₙ(x - y)` has a power series `∑ₖ Pₖ` at the origin converging on the ball of radius
 `c ‖x‖`, whose homogeneous terms `Pₖ(y) = pₖ (y, …, y)` are harmonic on the whole space. -/
 theorem exists_forall_hasFPowerSeriesOnBall_newtonianKernel_sub (n : ℕ) :
-    ∃ c : ℝ≥0, 0 < c ∧ ∀ x : EuclideanSpace ℝ (Fin n), x ≠ 0 →
+    ∃ c : ℝ≥0, 0 < c ∧ c < 1 ∧ ∀ x : EuclideanSpace ℝ (Fin n), x ≠ 0 →
       ∃ p : FormalMultilinearSeries ℝ (EuclideanSpace ℝ (Fin n)) ℝ,
         HasFPowerSeriesOnBall (fun y ↦ newtonianKernel n (x - y)) p 0 (c * ‖x‖₊) ∧
           ∀ k z, HarmonicAt (fun y ↦ p k fun _ ↦ y) z := by
-  obtain ⟨c, hc, hser⟩ := exists_forall_hasFPowerSeriesOnBall_newtonianKernel n
-  refine ⟨c, hc, fun x hx ↦ ?_⟩
+  obtain ⟨c, hc, hc1, hser⟩ := exists_forall_hasFPowerSeriesOnBall_newtonianKernel n
+  refine ⟨c, hc, hc1, fun x hx ↦ ?_⟩
   obtain ⟨p, hp⟩ := hser (-x) (neg_ne_zero.2 hx)
   have hfun : (fun y ↦ newtonianKernel n (y - x)) = fun y ↦ newtonianKernel n (x - y) := by
     funext y
@@ -136,29 +143,52 @@ theorem exists_forall_hasFPowerSeriesOnBall_newtonianKernel_sub (n : ℕ) :
   simpa [hfun] using harmonicAt_newtonianKernel_sub n (Ne.symm hx : (0 : _) ≠ x)
 
 /-- **Harmonic polynomial approximation of the Newtonian kernel with a distant pole.** There is a
-constant `c > 0`, depending only on the dimension, such that for every pole `x ≠ 0` the function
-`y ↦ Gₙ(x - y)` is, on the closed ball of radius `c ‖x‖` about the origin, the uniform limit of
-a sequence of polynomial functions harmonic on the whole space: the partial sums of its exterior
-multipole expansion. -/
-theorem exists_forall_tendstoUniformlyOn_newtonianKernel_sub (n : ℕ) :
-    ∃ c : ℝ, 0 < c ∧ ∀ x : EuclideanSpace ℝ (Fin n), x ≠ 0 →
+constant `0 < c < 1`, depending only on the dimension, such that for every pole `x ≠ 0` there are
+functions `P N`, harmonic on the whole space and polynomial of degree at most `N`, whose iterated
+derivatives of every order `k` converge uniformly on the closed ball of radius `c ‖x‖` about the
+origin to the `k`-th iterated derivative of `y ↦ Gₙ(x - y)`. -/
+theorem
+    exists_harmonicAt_mem_polynomialsDegLE_tendstoUniformlyOn_iteratedFDeriv_newtonianKernel_sub
+    (n : ℕ) :
+    ∃ c : ℝ, 0 < c ∧ c < 1 ∧ ∀ x : EuclideanSpace ℝ (Fin n), x ≠ 0 →
       ∃ P : ℕ → EuclideanSpace ℝ (Fin n) → ℝ, (∀ N z, HarmonicAt (P N) z) ∧
-        TendstoUniformlyOn P (fun y ↦ newtonianKernel n (x - y)) atTop
+        (∀ N, P N ∈ polynomialsDegLE (Fin n) N) ∧
+        ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
+          (iteratedFDeriv ℝ k fun y ↦ newtonianKernel n (x - y)) atTop
           (closedBall 0 (c * ‖x‖)) := by
-  obtain ⟨c, hc, hser⟩ := exists_forall_hasFPowerSeriesOnBall_newtonianKernel_sub n
-  refine ⟨c / 2, by positivity, fun x hx ↦ ?_⟩
+  obtain ⟨c, hc, hc1, hser⟩ := exists_forall_hasFPowerSeriesOnBall_newtonianKernel_sub n
+  have hc1' : (c : ℝ) < 1 := mod_cast hc1
+  refine ⟨c / 2, by positivity, by linarith, fun x hx ↦ ?_⟩
   obtain ⟨p, hp, hharm⟩ := hser x hx
-  refine ⟨p.partialSum, fun N z ↦ HarmonicAt.sum fun k _ ↦ hharm k z, ?_⟩
-  have hx' : 0 < ‖x‖₊ := by simpa using hx
-  have hlt : ((3 / 4 * c * ‖x‖₊ : ℝ≥0) : ℝ≥0∞) < c * ‖x‖₊ := by
-    rw [← ENNReal.coe_mul, ENNReal.coe_lt_coe, mul_assoc]
-    exact mul_lt_of_lt_one_left (by positivity) (by norm_num)
-  refine ((hp.tendstoUniformlyOn hlt).mono fun y hy ↦ ?_).congr_right ?_
-  · rw [mem_ball_zero_iff]
-    refine (mem_closedBall_zero_iff.1 hy).trans_lt ?_
-    push_cast
-    have : (0 : ℝ) < c * ‖x‖ := by positivity
+  have hx' : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have hP (N : ℕ) : HarmonicOnNhd (p.partialSum N) univ :=
+    fun z _ ↦ HarmonicAt.sum fun k _ ↦ hharm k z
+  -- The kernel is harmonic on the ball of convergence, which excludes the pole since `c < 1`.
+  have hG : HarmonicOnNhd (fun y ↦ newtonianKernel n (x - y)) (ball 0 (c * ‖x‖)) := by
+    intro y hy
+    have hyx : y ≠ x := by
+      rintro rfl
+      rw [mem_ball_zero_iff] at hy
+      nlinarith
+    have hfun : (fun z ↦ newtonianKernel n (z - x)) = fun z ↦ newtonianKernel n (x - z) := by
+      funext z
+      exact newtonianKernel_sub_comm n z x
+    simpa [hfun] using harmonicAt_newtonianKernel_sub n hyx
+  refine ⟨p.partialSum, fun N z ↦ hP N z (mem_univ z), fun N ↦ ?_, fun k ↦ ?_⟩
+  · have hsum : p.partialSum N = ∑ k ∈ Finset.range N, fun y ↦ p k fun _ ↦ y := by
+      ext y
+      simp [FormalMultilinearSeries.partialSum]
+    rw [hsum]
+    refine Submodule.sum_mem _ fun k hk ↦
+      polynomialsDegLE_mono (Fin n) (Finset.mem_range.1 hk).le ?_
+    simpa using (p k).toMultilinearMap.apply_const_mem_polynomialsDegLE
+  · have hlim := hp.tendstoLocallyUniformlyOn
+    rw [← ENNReal.coe_mul, Metric.eball_coe, NNReal.coe_mul, coe_nnNorm] at hlim
+    simp only [zero_add] at hlim
+    refine (tendstoLocallyUniformlyOn_iff_forall_isCompact isOpen_ball).1
+      (hlim.iteratedFDeriv_of_harmonicOnNhd (.of_forall fun N ↦ (hP N).mono (subset_univ _))
+        hG isOpen_ball k) _ (closedBall_subset_ball ?_) (isCompact_closedBall 0 _)
+    have : (0 : ℝ) < c * ‖x‖ := mul_pos (mod_cast hc) hx'
     linarith
-  · exact fun y _ ↦ by simp
 
 end TauCeti

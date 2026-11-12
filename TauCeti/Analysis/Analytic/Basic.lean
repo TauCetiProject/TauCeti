@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Basic
 import TauCeti.Analysis.Analytic.ConvergenceRadius
+import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 
 /-!
 # The leading term of a rescaled Taylor remainder
