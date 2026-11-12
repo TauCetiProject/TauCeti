@@ -127,8 +127,7 @@ private theorem sum_rectanglePentagonSameSideOrder_eq (x : GridState n) :
       apply GridRectanglePentagonDecomposition.toRectangleDecomposition_injective
       ext <;> simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
         GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
-        GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
-        GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right, *]
+        GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left, *]
     rw [Finset.sum_eq_single_of_mem D₀ hD₀ fun D hD hne => (hne (huniq D hD)).elim,
       G.rectanglePentagonWeight_of_mem_rectanglePentagonSameSideOrder C R D₀ hD₀,
       (hgeom D₀ hD₀).2.2.2.2.1]
@@ -186,8 +185,7 @@ private theorem sum_pentagonRectangleSameSideOrder_eq (x : GridState n) :
       apply GridPentagonRectangleDecomposition.toRectangleDecomposition_injective
       ext <;> simp only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,
         GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right,
-        GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left,
-        GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right, *]
+        GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left, *]
     rw [Finset.sum_eq_single_of_mem D₀ hD₀ fun D hD hne => (hne (huniq D hD)).elim,
       G.pentagonRectangleWeight_of_mem_pentagonRectangleSameSideOrder C R D₀ hD₀,
       (hgeom D₀ hD₀).2.2.2.2.1]
@@ -249,10 +247,10 @@ private theorem sum_rectangleInitialPentagonSameSideOrder_eq (x : GridState n) :
       · simpa [D₀, GridRectangleBetween.top_def] using hX
     have huniq : ∀ D ∈ G.rectangleInitialPentagonSameSideOrder C x, D = D₀ := by
       intro D hD
-      obtain ⟨h₁, h₂, h₃, h₄, -⟩ := hgeom D hD
-      obtain ⟨h₁', h₂', h₃', h₄', -⟩ := hgeom D₀ hD₀
+      obtain ⟨h₁, h₂, h₃, -, -⟩ := hgeom D hD
+      obtain ⟨h₁', h₂', h₃', -, -⟩ := hgeom D₀ hD₀
       exact GridRectangleInitialPentagonDecomposition.ext (GridRectangleDecomposition.ext
-        (h₁.trans h₁'.symm) (h₂.trans h₂'.symm) (h₃.trans h₃'.symm) (h₄.trans h₄'.symm))
+        (h₁.trans h₁'.symm) (h₂.trans h₂'.symm) (h₃.trans h₃'.symm))
     rw [Finset.sum_eq_single_of_mem D₀ hD₀ fun D hD hne => (hne (huniq D hD)).elim,
       G.rectangleInitialPentagonWeight_of_mem_rectangleInitialPentagonSameSideOrder C R D₀ hD₀,
       (hgeom D₀ hD₀).2.2.2.2.1]
@@ -314,10 +312,10 @@ private theorem sum_initialPentagonRectangleSameSideOrder_eq (x : GridState n) :
       · simpa [D₀, GridRectangleBetween.bottom_def] using hX
     have huniq : ∀ D ∈ G.initialPentagonRectangleSameSideOrder C x, D = D₀ := by
       intro D hD
-      obtain ⟨h₁, h₂, h₃, h₄, -⟩ := hgeom D hD
-      obtain ⟨h₁', h₂', h₃', h₄', -⟩ := hgeom D₀ hD₀
+      obtain ⟨h₁, h₂, h₃, -, -⟩ := hgeom D hD
+      obtain ⟨h₁', h₂', h₃', -, -⟩ := hgeom D₀ hD₀
       exact GridInitialPentagonRectangleDecomposition.ext (GridRectangleDecomposition.ext
-        (h₁.trans h₁'.symm) (h₂.trans h₂'.symm) (h₃.trans h₃'.symm) (h₄.trans h₄'.symm))
+        (h₁.trans h₁'.symm) (h₂.trans h₂'.symm) (h₃.trans h₃'.symm))
     rw [Finset.sum_eq_single_of_mem D₀ hD₀ fun D hD hne => (hne (huniq D hD)).elim,
       G.initialPentagonRectangleWeight_of_mem_initialPentagonRectangleSameSideOrder C R D₀ hD₀,
       (hgeom D₀ hD₀).2.2.2.2.1]
@@ -392,8 +390,8 @@ private theorem sum_rectanglePentagonOppositeSideOrder_eq (x : GridState n) :
           GridRectangleBetween.ofSwapColumns_bottom, hd, hs]
     have huniq : ∀ D ∈ G.rectanglePentagonOppositeSideOrder C x, D = D₀ := by
       intro D hD
-      obtain ⟨h₁, h₂, h₃, h₄, -⟩ := hgeom D hD
-      obtain ⟨h₁', h₂', h₃', h₄', -⟩ := hgeom D₀ hD₀
+      obtain ⟨h₁, -, h₃, h₄, -⟩ := hgeom D hD
+      obtain ⟨h₁', -, h₃', h₄', -⟩ := hgeom D₀ hD₀
       have hr : D.rectangle.right = D₀.rectangle.right := x.toPerm.injective (h₄.trans h₄'.symm)
       apply GridRectanglePentagonDecomposition.toRectangleDecomposition_injective
       exact GridRectangleDecomposition.ext (by simp only [
@@ -402,8 +400,6 @@ private theorem sum_rectanglePentagonOppositeSideOrder_eq (x : GridState n) :
           GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right] using hr)
         (by simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
           h₃, h₃'] using hr)
-        (by simp only [
-          GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right, h₂, h₂'])
     rw [Finset.sum_eq_single_of_mem D₀ hD₀ fun D hD hne => (hne (huniq D hD)).elim,
       G.rectanglePentagonWeight_of_mem_rectanglePentagonOppositeSideOrder C R D₀ hD₀]
   next h =>
@@ -463,11 +459,11 @@ private theorem sum_initialPentagonRectangleOppositeSideOrder_eq (x : GridState 
           GridRectangleBetween.ofSwapColumns_bottom, hf, hs]
     have huniq : ∀ D ∈ G.initialPentagonRectangleOppositeSideOrder C x, D = D₀ := by
       intro D hD
-      obtain ⟨h₁, h₂, h₃, h₄, -⟩ := hgeom D hD
-      obtain ⟨h₁', h₂', h₃', h₄', -⟩ := hgeom D₀ hD₀
+      obtain ⟨h₁, -, h₃, h₄, -⟩ := hgeom D hD
+      obtain ⟨h₁', -, h₃', h₄', -⟩ := hgeom D₀ hD₀
       have hr : D.first.right = D₀.first.right := x.toPerm.injective (h₄.trans h₄'.symm)
       exact GridInitialPentagonRectangleDecomposition.ext (GridRectangleDecomposition.ext
-        (h₁.trans h₁'.symm) hr (h₃.trans (hr.trans h₃'.symm)) (h₂.trans h₂'.symm))
+        (h₁.trans h₁'.symm) hr (h₃.trans (hr.trans h₃'.symm)))
     rw [Finset.sum_eq_single_of_mem D₀ hD₀ fun D hD hne => (hne (huniq D hD)).elim,
       G.initialPentagonRectangleWeight_of_mem_initialPentagonRectangleOppositeSideOrder C R D₀ hD₀]
   next h =>
@@ -533,11 +529,11 @@ private theorem sum_rectangleInitialPentagonOppositeSideOrder_eq (x : GridState 
           GridRectangleBetween.ofSwapColumns_bottom, hc, hs]
     have huniq : ∀ D ∈ G.rectangleInitialPentagonOppositeSideOrder C x, D = D₀ := by
       intro D hD
-      obtain ⟨h₁, h₂, h₃, h₄, -⟩ := hgeom D hD
-      obtain ⟨h₁', h₂', h₃', h₄', -⟩ := hgeom D₀ hD₀
+      obtain ⟨h₁, h₂, -, h₄, -⟩ := hgeom D hD
+      obtain ⟨h₁', h₂', -, h₄', -⟩ := hgeom D₀ hD₀
       have hl : D.first.left = D₀.first.left := x.toPerm.injective (h₄.trans h₄'.symm)
       exact GridRectangleInitialPentagonDecomposition.ext (GridRectangleDecomposition.ext
-        hl (h₁.trans h₁'.symm) (h₂.trans h₂'.symm) (h₃.trans (hl.trans h₃'.symm)))
+        hl (h₁.trans h₁'.symm) (h₂.trans h₂'.symm))
     rw [Finset.sum_eq_single_of_mem D₀ hD₀ fun D hD hne => (hne (huniq D hD)).elim,
       G.rectangleInitialPentagonWeight_of_mem_rectangleInitialPentagonOppositeSideOrder C R D₀
         hD₀]
@@ -593,8 +589,8 @@ private theorem sum_pentagonRectangleOppositeSideOrder_eq (x : GridState n) :
           GridPentagonBetween.ofSwapColumns_left, hc, hs]
     have huniq : ∀ D ∈ G.pentagonRectangleOppositeSideOrder C x, D = D₀ := by
       intro D hD
-      obtain ⟨h₁, h₂, h₃, h₄, -⟩ := hgeom D hD
-      obtain ⟨h₁', h₂', h₃', h₄', -⟩ := hgeom D₀ hD₀
+      obtain ⟨h₁, h₂, -, h₄, -⟩ := hgeom D hD
+      obtain ⟨h₁', h₂', -, h₄', -⟩ := hgeom D₀ hD₀
       have hl : D.pentagon.left = D₀.pentagon.left := x.toPerm.injective (h₄.trans h₄'.symm)
       apply GridPentagonRectangleDecomposition.toRectangleDecomposition_injective
       exact GridRectangleDecomposition.ext (by
@@ -604,9 +600,6 @@ private theorem sum_pentagonRectangleOppositeSideOrder_eq (x : GridState n) :
           GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right, h₁, h₁'])
         (by simp only [
           GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left, h₂, h₂'])
-        (by simpa only [
-          GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right, h₃, h₃']
-            using hl)
     rw [Finset.sum_eq_single_of_mem D₀ hD₀ fun D hD hne => (hne (huniq D hD)).elim,
       G.pentagonRectangleWeight_of_mem_pentagonRectangleOppositeSideOrder C R D₀ hD₀]
   next h =>
