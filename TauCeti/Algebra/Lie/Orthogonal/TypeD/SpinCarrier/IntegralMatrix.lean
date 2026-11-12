@@ -160,8 +160,7 @@ parities. -/
 theorem rootIntMatrix_eq_zero_of_card_ne (k : Fin n ⊕ Fin n) {a b : Fin (dimension n)}
     (hab : ((signSet n a).card : ZMod 2) ≠ (signSet n b).card) :
     rootIntMatrix n hn k a b = 0 := by
-  have hmem := (polarization n).typeDSpinRep_rootGenerator_mem_evenOdd (polarizationBasis n) hn
-    (TauCeti.splitEvenPolarization_line ℚ n) k
+  have hmem := (polarization n).typeDSpinRep_rootGenerator_mem_evenOdd (polarizationBasis n) hn k
     ((polarizationBasis n).exteriorAlgebra_mem_evenOdd_card (signSet n b))
   rw [← coe_latticeBasis, ← rep, rep_rootGenerator_latticeBasis_eq_sum] at hmem
   have hcoord :=

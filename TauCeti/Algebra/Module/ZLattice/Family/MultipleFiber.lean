@@ -94,7 +94,6 @@ variable {Y Λ E Γ : Type*} [AddCommGroup Λ] [AddCommGroup E] [Group Γ] [MulA
   (hequiv : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
   (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
   {y : Y} (hy : ∀ g : Γ, g • y = y)
 
@@ -103,20 +102,20 @@ fibre over a fixed point `y` lying in one orbit of the affine action on the fami
 of the action on the fibre, so the map `T_y / Γ → X / Γ`, `[[v]] ↦ [[y, v]]`, is injective. -/
 theorem orbitRelQuotientMap_torusFamilyFiberMulActionHom_injective :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
     Injective (MulActionHom.orbitRelQuotientMap
-      (torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbone hbmul hy)) := by
+      (torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbmul hy)) := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
   intro q q' h
   induction q using Quotient.inductionOn with | h z =>
   induction q' using Quotient.inductionOn with | h z' =>
   simp only [MulActionHom.orbitRelQuotientMap_mk, coe_torusFamilyFiberMulActionHom,
     Quotient.eq, orbitRel_apply, mem_orbit_iff] at h ⊢
   obtain ⟨g, hg⟩ := h
-  rw [← torusFamilyFiberMap_smul R hone hmul P ρ hequiv b hb hbone hbmul hy] at hg
+  rw [← torusFamilyFiberMap_smul R hone hmul P ρ hequiv b hb hbmul hy] at hg
   exact ⟨g, torusFamilyFiberMap_injective P y hg⟩
 
 /-- **The image of the fibre over a fixed point.** The image of the map
@@ -124,14 +123,14 @@ theorem orbitRelQuotientMap_torusFamilyFiberMulActionHom_injective :
 over `y`. -/
 theorem range_orbitRelQuotientMap_torusFamilyFiberMulActionHom :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
     range (MulActionHom.orbitRelQuotientMap
-      (torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbone hbmul hy)) =
+      (torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbmul hy)) =
       Quotient.mk _ '' {x | torusFamilyProjection P x = y} := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
   rw [← Quotient.mk_surjective.range_comp, MulActionHom.orbitRelQuotientMap_comp_mk, range_comp,
     coe_torusFamilyFiberMulActionHom, range_torusFamilyFiberMap]
 
@@ -148,7 +147,6 @@ variable {Y Λ E Γ : Type*} [AddCommGroup Λ] [Group Γ] [MulAction Γ Y] [Topo
   (hequiv : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
   (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
   {y : Y} (hy : ∀ g : Γ, g • y = y) (hcont : ∀ l, Continuous fun y ↦ P y l)
 
@@ -159,30 +157,30 @@ the subspace topology of the family, on which the action is continuous. -/
 theorem continuousConstSMul_torusFamilyFiberMulAction
     (hRc : ∀ g : Γ, Continuous fun p : Y × E ↦ R g p.1 p.2)
     (hbc : letI := periodAddAction P; ∀ g, Continuous (b g)) :
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
     ContinuousConstSMul Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     hcont hRc hbc
   exact (isEmbedding_torusFamilyFiberMap P y hcont).isInducing.continuousConstSMul id
-    fun {g z} ↦ torusFamilyFiberMap_smul R hone hmul P ρ hequiv b hb hbone hbmul hy g z
+    fun {g z} ↦ torusFamilyFiberMap_smul R hone hmul P ρ hequiv b hb hbmul hy g z
 
 include hcont in
 /-- The action on the fibre over a fixed point is properly discontinuous whenever the action on
 the base is: the inclusion of the fibre is continuous and equivariant, and the affine action on
 the family is properly discontinuous. -/
 theorem properlyDiscontinuousSMul_torusFamilyFiberMulAction [ProperlyDiscontinuousSMul Γ Y] :
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
     ProperlyDiscontinuousSMul Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-  have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+  have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb
     hbmul
   exact (isEmbedding_torusFamilyFiberMap P y hcont).continuous.properlyDiscontinuousSMul
-    (torusFamilyFiberMap_smul R hone hmul P ρ hequiv b hb hbone hbmul hy)
+    (torusFamilyFiberMap_smul R hone hmul P ρ hequiv b hb hbmul hy)
 
 end Topology
 
@@ -200,7 +198,6 @@ variable {Y : Type*} [TopologicalSpace Y] {Λ : Type*} [AddCommGroup Λ]
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
   (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
   {y : Y} (hy : ∀ g : Γ, g • y = y)
 
@@ -216,17 +213,17 @@ noncomputable def torusFamilyFiberQuotientChartedSpace (hcont : ∀ l, Continuou
     (hRc : ∀ g : Γ, Continuous fun p : Y × E ↦ R g p.1 p.2)
     (hbc : letI := periodAddAction P; ∀ g, Continuous (b g))
     (hfree : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E))) :
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
     ChartedSpace E
       (orbitRel.Quotient Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E)) :=
-  letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-  haveI := continuousConstSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+  haveI := continuousConstSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul
     hy hcont hRc hbc
-  haveI := properlyDiscontinuousSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone
+  haveI := properlyDiscontinuousSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb
     hbmul hy hcont
-  haveI := isCancelSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy hfree
+  haveI := isCancelSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy hfree
   haveI := (AddAction.isOpenQuotientMap_quotientMk (Γ := LinearMap.range (P y))
     (T := E)).locallyCompactSpace
   MulAction.instChartedSpaceQuotient (H := E)
@@ -251,14 +248,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {EY : Type*} [NormedAddCo
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
   (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
   (hR : ∀ g : Γ, ContMDiff (I.prod 𝓘(𝕜, E)) 𝓘(𝕜, E) n fun p : Y × E ↦ R g p.1 p.2)
   (hbc : letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
     ∀ g, ContMDiff I (I.prod 𝓘(𝕜, E)) n (b g))
   (hfree : letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
   {y : Y} (hy : ∀ g : Γ, g • y = y)
 
@@ -269,9 +265,9 @@ include hR in
 linear-part evaluations of the affine action are `C^n`: on representatives, `g` acts by
 `v ↦ R g y v + β` for a representative `β` of its translation part. -/
 theorem contMDiffConstSMul_torusFamilyFiberMulAction :
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
     ContMDiffConstSMul 𝓘(𝕜, E) n Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) := by
-  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
+  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
   refine ⟨fun g ↦ ?_⟩
   obtain ⟨β, hβ⟩ := Quotient.exists_rep (torusFamilyFiberTranslationPart P b hb (hy g))
   refine Submodule.contMDiff_orbitRelQuotient_of_comp_mk (f := fun v ↦ R g y v + β)
@@ -279,14 +275,14 @@ theorem contMDiffConstSMul_torusFamilyFiberMulAction :
   rw [comp_apply, torusFamilyFiberMulAction_smul, AddEquiv.affineEquiv_apply,
     torusFamilyFiberLinearPart_mk, ← hβ, comp_apply, Submodule.orbitRelQuotient_mk_add]
 
-omit [IsManifold I n Y] in
+omit [IsManifold I n Y] [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- The orbit map `T_y → T_y / Γ` is a `C^n` local diffeomorphism, and `T_y / Γ` is a `C^n`
 manifold. -/
 private theorem isLocalDiffeomorph_torusFamilyFiberQuotient_mk_and_isManifold :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul hy
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
     IsLocalDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, E) n
         (Quotient.mk (orbitRel Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E))) ∧
@@ -294,18 +290,18 @@ private theorem isLocalDiffeomorph_torusFamilyFiberQuotient_mk_and_isManifold :
         (orbitRel.Quotient Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E)) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-  have := continuousConstSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
+  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+  have := continuousConstSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
     (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) fun g ↦ (hbc g).continuous
   have := (AddAction.isOpenQuotientMap_quotientMk (Γ := LinearMap.range (P y))
     (T := E)).locallyCompactSpace
-  have := properlyDiscontinuousSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone
+  have := properlyDiscontinuousSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb
     hbmul hy fun l ↦ (hP l).continuous
-  have := isCancelSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy hfree
-  have := contMDiffConstSMul_torusFamilyFiberMulAction P R ρ hequiv b hb hone hmul hbone hbmul hR hy
+  have := isCancelSMul_torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy hfree
+  have := contMDiffConstSMul_torusFamilyFiberMulAction P R ρ hequiv b hb hone hmul hbmul hR hy
   exact ⟨isLocalDiffeomorph_quotientMk, instIsManifoldQuotient⟩
 
-omit [IsManifold I n Y] in
+omit [IsManifold I n Y] [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The orbit space of the fibre over a fixed point is a manifold.** Let `Γ` act properly
 discontinuously on `Y`, fixing `y`, and freely on the family of tori `X = (Y × E)/Λ` of a `C^n`
 family of full lattices by an affine cocycle with `C^n` linear-part evaluations and translation
@@ -314,59 +310,60 @@ manifold modelled on `E`. Over `ℂ` with holomorphic data and `n = ω`, it is a
 theorem isManifold_torusFamilyFiberQuotient :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul hy
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
     IsManifold 𝓘(𝕜, E) n
       (orbitRel.Quotient Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E)) :=
   (isLocalDiffeomorph_torusFamilyFiberQuotient_mk_and_isManifold P hinj hP R ρ hequiv b hb hone
-    hmul hbone hbmul hR hbc hfree hy).2
+    hmul hbmul hR hbc hfree hy).2
 
-omit [IsManifold I n Y] in
+omit [IsManifold I n Y] [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The orbit map of the fibre over a fixed point is a local diffeomorphism.** Under the
 hypotheses of `TauCeti.isManifold_torusFamilyFiberQuotient`, the orbit map `T_y → T_y / Γ` is a
 `C^n` local diffeomorphism. -/
 theorem isLocalDiffeomorph_torusFamilyFiberQuotient_mk :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul hy
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
     IsLocalDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, E) n
       (Quotient.mk (orbitRel Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E))) :=
   (isLocalDiffeomorph_torusFamilyFiberQuotient_mk_and_isManifold P hinj hP R ρ hequiv b hb hone
-    hmul hbone hbmul hR hbc hfree hy).1
+    hmul hbmul hR hbc hfree hy).1
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The fibre over a fixed point maps smoothly to the quotient.** Under the hypotheses of
 `TauCeti.isManifold_torusFamilyFiberQuotient`, the map `T_y / Γ → X / Γ`, `[[v]] ↦ [[y, v]]`, is
 `C^n`; over `ℂ` with holomorphic data and `n = ω`, it is holomorphic. -/
 theorem contMDiff_orbitRelQuotientMap_torusFamilyFiberMulActionHom :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
+      hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
       (fun g ↦ (hbc g).continuous) hfree
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul hy
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
     ContMDiff 𝓘(𝕜, E) (I.prod 𝓘(𝕜, E)) n (MulActionHom.orbitRelQuotientMap
-      (torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbone hbmul hy)) := by
+      (torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbmul hy)) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   let _ := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
+      hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
       (fun g ↦ (hbc g).continuous) hfree
-  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-  let _ := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbone hbmul hy
+  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+  let _ := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul hy
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
   -- Through the orbit map of `T_y`, a surjective local diffeomorphism, the map reads as the
   -- inclusion of the fibre followed by the orbit map of `X`.
-  rw [← (isLocalDiffeomorph_torusFamilyFiberQuotient_mk P hinj hP R ρ hequiv b hb hone hmul hbone
+  rw [← (isLocalDiffeomorph_torusFamilyFiberQuotient_mk P hinj hP R ρ hequiv b hb hone hmul
       hbmul hR hbc hfree hy).contMDiff_comp_iff Quotient.mk_surjective le_rfl,
     MulActionHom.orbitRelQuotientMap_comp_mk, coe_torusFamilyFiberMulActionHom]
-  exact (isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul hbone
+  exact (isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul
     hbmul hR hbc hfree).contMDiff.comp (contMDiff_torusFamilyFiberMap P hinj hP y)
 
 end Regularity
@@ -389,17 +386,17 @@ variable {𝕜 : Type*} [RCLike 𝕜] {EY : Type*} [NormedAddCommGroup EY] [Norm
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
   (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
   (hR : ∀ g : Γ, ContMDiff (I.prod 𝓘(𝕜, E)) 𝓘(𝕜, E) n fun p : Y × E ↦ R g p.1 p.2)
   (hbc : letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
     ∀ g, ContMDiff I (I.prod 𝓘(𝕜, E)) n (b g))
   (hfree : letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
   {y : Y} (hy : ∀ g : Γ, g • y = y)
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The fibre over a fixed point immerses into the quotient.** Under the hypotheses of
 `TauCeti.isManifold_torusFamilyFiberQuotient`, over `ℝ` or `ℂ`, for a boundaryless
 finite-dimensional model of `Y` and `n ≥ 1`, the map `T_y / Γ → X / Γ`, `[[v]] ↦ [[y, v]]`, is a
@@ -407,41 +404,42 @@ finite-dimensional model of `Y` and `n ≥ 1`, the map `T_y / Γ → X / Γ`, `[
 theorem isImmersion_orbitRelQuotientMap_torusFamilyFiberMulActionHom (hn : 1 ≤ n) :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
+      hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
       (fun g ↦ (hbc g).continuous) hfree
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul hy
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
     IsImmersion 𝓘(𝕜, E) (I.prod 𝓘(𝕜, E)) n (MulActionHom.orbitRelQuotientMap
-      (torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbone hbmul hy)) := by
+      (torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbmul hy)) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   let _ := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
+      hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
       (fun g ↦ (hbc g).continuous) hfree
-  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-  let _ := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbone hbmul hy
+  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+  let _ := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul hy
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
-  have := isManifold_torusFamilyAffineQuotient P hinj hP R ρ hequiv b hb hone hmul hbone hbmul hR
+  have := isManifold_torusFamilyAffineQuotient P hinj hP R ρ hequiv b hb hone hmul hbmul hR
     hbc hfree
-  have := isManifold_torusFamilyFiberQuotient P hinj hP R ρ hequiv b hb hone hmul hbone hbmul hR
+  have := isManifold_torusFamilyFiberQuotient P hinj hP R ρ hequiv b hb hone hmul hbmul hR
     hbc hfree hy
   -- Through the orbit map of `T_y`, a local diffeomorphism, the map reads as the inclusion of the
   -- fibre, an immersion, followed by the orbit map of `X`, a local diffeomorphism.
   have himm := isImmersion_isLocalDiffeomorphAt_comp (fun _ ↦
-    isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul hbone
+    isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul
       hbmul hR hbc hfree _) (isImmersion_torusFamilyFiberMap P hinj hP hn y)
-  rw [← coe_torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbone hbmul hy,
+  rw [← coe_torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbmul hy,
     ← MulActionHom.orbitRelQuotientMap_comp_mk] at himm
   refine isImmersion_iff_forall_isImmersionAt.2 fun q ↦ ?_
   induction q using Quotient.inductionOn with | h z =>
   exact (isImmersionAt_comp_isLocalDiffeomorphAt_iff
-    (isLocalDiffeomorph_torusFamilyFiberQuotient_mk P hinj hP R ρ hequiv b hb hone hmul hbone hbmul
+    (isLocalDiffeomorph_torusFamilyFiberQuotient_mk P hinj hP R ρ hequiv b hb hone hmul hbmul
       hR hbc hfree hy z)).1 (himm.isImmersionAt z)
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The fibre over a fixed point embeds into the quotient.** Under the hypotheses of
 `TauCeti.isManifold_torusFamilyFiberQuotient`, over `ℝ` or `ℂ`, for a boundaryless
 finite-dimensional model of `Y` and `n ≥ 1`, the map `T_y / Γ → X / Γ`, `[[v]] ↦ [[y, v]]`, is a
@@ -452,38 +450,38 @@ holomorphic data and `n = ω`, it embeds the compact complex manifold `T_y / Γ`
 theorem isSmoothEmbedding_orbitRelQuotientMap_torusFamilyFiberMulActionHom (hn : 1 ≤ n) :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
+      hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
       (fun g ↦ (hbc g).continuous) hfree
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul hy
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
     IsSmoothEmbedding 𝓘(𝕜, E) (I.prod 𝓘(𝕜, E)) n (MulActionHom.orbitRelQuotientMap
-      (torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbone hbmul hy)) := by
+      (torusFamilyFiberMulActionHom R hone hmul P ρ hequiv b hb hbmul hy)) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   let _ := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
+      hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
       (fun g ↦ (hbc g).continuous) hfree
-  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul hy
-  let _ := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbone hbmul hy
+  let _ := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul hy
+  let _ := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul hy
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
   -- The orbit space of `X` is Hausdorff, and the compact torus quotient `T_y / Γ` maps
   -- continuously and injectively into it.
   have := continuousConstVAdd_periodAddAction P fun l ↦ (hP l).continuous
   have := t2Space_torusFamily P (fun l ↦ (hP l).continuous) hinj
   have := (AddAction.isOpenQuotientMap_quotientMk (Γ := Λ) (T := Y × E)).locallyCompactSpace
-  have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone
+  have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb
     hbmul
-  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) fun g ↦ (hbc g).continuous
   refine ⟨isImmersion_orbitRelQuotientMap_torusFamilyFiberMulActionHom P hinj hP R ρ hequiv b hb
-    hone hmul hbone hbmul hR hbc hfree hy hn, ?_⟩
+    hone hmul hbmul hR hbc hfree hy hn, ?_⟩
   exact ((contMDiff_orbitRelQuotientMap_torusFamilyFiberMulActionHom P hinj hP R ρ hequiv b hb hone
-    hmul hbone hbmul hR hbc hfree hy).continuous.isClosedEmbedding
-      (orbitRelQuotientMap_torusFamilyFiberMulActionHom_injective R hone hmul P ρ hequiv b hb hbone
+    hmul hbmul hR hbc hfree hy).continuous.isClosedEmbedding
+      (orbitRelQuotientMap_torusFamilyFiberMulActionHom_injective R hone hmul P ρ hequiv b hb
         hbmul hy)).isEmbedding
 
 end Embedding
@@ -504,7 +502,6 @@ variable {m : ℕ} [NeZero m] {r : ℝ} {Λ : Type*} [AddCommGroup Λ] {E : Type
   (hone : ∀ (z : rootsOfUnityBall m r) (v : E), R 1 z v = v)
   (hmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r) (v : E),
     R (g * h) z v = R g (h • z) (R h z v))
-  (hbone : ∀ z : rootsOfUnityBall m r, b 1 z = Quotient.mk _ (z, 0))
   (hbmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
     b (g * h) z = torusFamilyAffineMap R P ρ hequiv b hb g (b h z))
 
@@ -516,17 +513,17 @@ the disc and an affine action of the `m`-th roots of unity lifting the rotations
 theorem range_orbitRelQuotientMap_torusFamilyFiberMulActionHom_rootsOfUnityBall
     {u₀ : rootsOfUnityBall m r} (hu₀ : (u₀ : ℂ) = 0) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul
       fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g
     range (MulActionHom.orbitRelQuotientMap (torusFamilyFiberMulActionHom R hone hmul P ρ hequiv
-      b hb hbone hbmul fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g)) =
-      torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul ⁻¹' {0} := by
+      b hb hbmul fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g)) =
+      torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul ⁻¹' {0} := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   rw [torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift R hone hmul P ρ hequiv b
-      hb hbone hbmul, preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero P R ρ hequiv b
-      hb hone hmul hbone hbmul hu₀, range_orbitRelQuotientMap_torusFamilyFiberMulActionHom,
+      hb hbmul, preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero P R ρ hequiv b
+      hb hone hmul hbmul hu₀, range_orbitRelQuotientMap_torusFamilyFiberMulActionHom,
     ← range_torusFamilyFiberMap, ← range_comp, ← Quotient.mk_surjective.range_comp]
   exact congrArg range (funext fun v ↦ by rw [comp_apply, comp_apply, torusFamilyFiberMap_mk])
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.FiberBundle.Associated
+public import TauCeti.Topology.FiberBundle.Associated.Basic
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
