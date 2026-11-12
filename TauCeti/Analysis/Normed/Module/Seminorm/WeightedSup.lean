@@ -58,6 +58,11 @@ def weightedSup : Seminorm 𝕜 E :=
           (norm_nonneg c))
       (mul_nonneg (norm_nonneg c) (iSup_norm_div_nonneg L w hw a)))
 
+/-- The seminorm `weightedSup L w hw hL` is the supremum of `‖L i a‖ / w i`. -/
+@[simp]
+theorem weightedSup_apply (a : E) : weightedSup L w hw hL a = ⨆ i, ‖L i a‖ / w i :=
+  (rfl)
+
 /-- The seminorm `weightedSup L w hw hL` is a constant in the estimates `‖L i a‖ ≤ C * w i`. -/
 theorem norm_le_weightedSup (a : E) (i : ι) : ‖L i a‖ ≤ weightedSup L w hw hL a * w i :=
   (div_le_iff₀ (hw i)).1 (le_ciSup (bddAbove_range_norm_div L w hw hL a) i)
