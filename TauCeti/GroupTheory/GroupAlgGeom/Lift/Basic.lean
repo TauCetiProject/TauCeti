@@ -366,7 +366,7 @@ theorem isGenericFamily_empty_iff : IsGenericFamily ι S ∅ ↔ Subsingleton H 
   have : Subsingleton (CoordGroup ι S) := QuotientGroup.subsingleton_iff.2 hRad
   refine subsingleton_of_forall_eq 1 fun h₀ => by_contra fun hh₀ => ?_
   obtain ⟨w, -, hw⟩ := (hc (n := 1) 1).hasLiftNe (W := inr (FreeGroup.of (Sum.inr 0))) <|
-    isCompatibleNe_iff.2 fun v hv => ⟨fun _ => h₀, by simp, by simpa using hh₀⟩
+    isCompatibleNe_iff.2 fun v _ => ⟨fun _ => h₀, by simp, by simpa using hh₀⟩
   exact hw (Subsingleton.elim _ _)
 
 /-- Over a nontrivial group the empty family of solutions is not generic. -/
