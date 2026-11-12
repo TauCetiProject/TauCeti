@@ -41,9 +41,10 @@ original graded pieces under the quotient map.
 * R. P. Stanley, *Invariants of finite groups and their applications to combinatorics*,
   Bull. Amer. Math. Soc. (N.S.) **1** (1979), §3.
 
-The proof uses the graded multiplication projection formula
-  `DirectSum.coe_decompose_mul_of_left_mem_of_le` and the short-exact-sequence
-  dimension formula `Function.Exact.finrank_eq_add`.
+Homogeneity of `f` alone gives exactness: in each degree the kernel of the quotient map is
+the set of multiples of `f` from the appropriate lower degree. Regularity of `f` is what makes
+multiplication by `f` injective, so that this exact sequence becomes a short exact sequence
+and yields the dimension identity.
 -/
 
 public section
