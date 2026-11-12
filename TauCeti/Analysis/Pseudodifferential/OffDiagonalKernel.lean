@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Kernel
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Dyadic
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.SpecificLimits.DyadicSum
 
 /-!
 # The kernel of a pseudodifferential operator off the diagonal
@@ -32,6 +34,17 @@ This defines the off-diagonal kernel `TauCeti.Symbol.offDiagonalKernel a`. It do
 (`TauCeti.Symbol.quantizationKernel_frequencyLaplacian`), and for `m < -n` it is the absolutely
 convergent kernel itself.
 
+Near the diagonal the kernel is singular, and for symbols whose estimates are uniform in the
+position its size is controlled by the order: if `m + n > 0`, then
+`‖K(x, y)‖ ≤ C ‖x - y‖ ^ (-(m + n))`. For `m = 0` this is the size estimate of a
+Calderón–Zygmund kernel, one of the hypotheses under which an operator bounded on `L²` is bounded
+on `Lᵖ` for `1 < p < ∞`. The proof cuts `a` into its Littlewood–Paley pieces
+`aⱼ(x, ξ) = ψⱼ(ξ) a(x, ξ)` (`TauCeti.Symbol.littlewoodPaleyPiece`). The kernel is the sum of their
+absolutely convergent kernels, and at the scale `2^j` the kernel of `aⱼ` has size `(2^j)^(m + n)`
+and decays rapidly beyond the distance `2^{-j}`. Summing these bounds over the dyadic scales
+(`TauCeti.sum_min_zpow_mul_rpow_neg_le`), the scales `2^j ≤ ‖x - y‖⁻¹` dominate and give
+`‖x - y‖ ^ (-(m + n))`.
+
 ## Main results
 
 * `TauCeti.Symbol.offDiagonalKernel_eq`: the off-diagonal kernel is
@@ -43,11 +56,21 @@ convergent kernel itself.
 * `TauCeti.Symbol.exists_norm_offDiagonalKernel_le`: `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x` in a
   compact set, for every `N` with `m - 2N < -n`; in particular the kernel decays faster than any
   power of `‖x - y‖` as `y → ∞`.
+* `TauCeti.Symbol.IsSmoothing.offDiagonalKernel_eq_quantizationKernel`: for a smoothing symbol it
+  is the absolutely convergent kernel.
+* `TauCeti.Symbol.hasSum_quantizationKernel_littlewoodPaleyPiece`: off the diagonal it is the sum
+  of the kernels of the Littlewood–Paley pieces.
+* `Symbol.IsUniform.exists_one_add_mul_pow_mul_norm_quantizationKernel_littlewoodPaleyPiece_le`:
+  for a uniform symbol, `(1 + 2^j ‖x - y‖)^N ‖K_{aⱼ}(x, y)‖ ≤ C (2^j)^(m + n)`.
+* `TauCeti.Symbol.IsUniform.exists_norm_offDiagonalKernel_le_rpow`: **the size estimate**,
+  `‖K(x, y)‖ ≤ C ‖x - y‖ ^ (-(m + n))` for a uniform symbol with `m + n > 0`.
 
 ## References
 
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §1.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
+* E. M. Stein, *Harmonic Analysis*, Princeton University Press, 1993, Chapter VI, §4.1,
+  Proposition 1 (the kernel estimates for symbols of order `m`, by dyadic decomposition).
 -/
 
 public section
@@ -212,6 +235,205 @@ theorem exists_norm_offDiagonalKernel_le (a : Symbol n V W m) {K : Set (Coordina
     one_div_mul_eq_div]
   gcongr
   exact hk.trans (mul_le_mul_of_nonneg_left hint (by positivity))
+
+/-- For a smoothing symbol, the off-diagonal kernel is the absolutely convergent kernel
+`TauCeti.quantizationKernel`. -/
+theorem IsSmoothing.offDiagonalKernel_eq_quantizationKernel {a : Symbol n V W m}
+    (ha : a.IsSmoothing) {x y : CoordinateSpace n} (hxy : x ≠ y) :
+    offDiagonalKernel a x y = quantizationKernel a.coefficient x y := by
+  obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha (-n - 1)
+  set N := ⌊(m + n) / 2⌋₊ + 1
+  have hN : (-n - 1 : ℝ) - 2 * N < -n := by
+    have : (0 : ℝ) ≤ N := N.cast_nonneg
+    linarith
+  -- Compare with a representative `b` of order `-n - 1`; the root-namespace lemma for symbols of
+  -- order below `-n` is shadowed here by the name of this theorem.
+  rw [offDiagonalKernel_eq a (sub_two_mul_floor_lt m n) hxy, ← hb,
+    ← TauCeti.Symbol.offDiagonalKernel_eq_quantizationKernel b (by linarith) hxy,
+    offDiagonalKernel_eq b hN hxy,
+    coefficient_frequencyLaplacianPow_congr hb N]
+
+/-! ### The size of the kernel near the diagonal -/
+
+section Size
+
+open Filter Metric Set
+
+variable (φ : ContDiffBump (0 : CoordinateSpace n))
+
+/-- **Littlewood–Paley decomposition of the off-diagonal kernel.** Off the diagonal, the kernel
+of a symbol `a` is the sum of the absolutely convergent kernels of its Littlewood–Paley pieces
+`aⱼ(x, ξ) = ψⱼ(ξ) a(x, ξ)`. -/
+theorem hasSum_quantizationKernel_littlewoodPaleyPiece (a : Symbol n V W m)
+    {x y : CoordinateSpace n} (hxy : x ≠ y) :
+    HasSum (fun j => quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x y)
+      (offDiagonalKernel a x y) := by
+  set N := ⌊(m + n) / 2⌋₊ + 1
+  have hN : m - 2 * N < -n := sub_two_mul_floor_lt m n
+  -- Off the diagonal every kernel is `(-1)^N ‖x - y‖^(-2N)` times the kernel of `Δ_ξ^N`.
+  have hpiece : (fun j => quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x y) =
+      fun j => ((-1) ^ N / ‖x - y‖ ^ (2 * N)) •
+        quantizationKernel (frequencyLaplacianPow N (a.littlewoodPaleyPiece φ j)).coefficient x y :=
+    funext fun j => by
+      rw [← (a.isSmoothing_littlewoodPaleyPiece φ j).offDiagonalKernel_eq_quantizationKernel hxy,
+        offDiagonalKernel_eq _ hN hxy]
+  rw [hpiece, offDiagonalKernel_eq a hN hxy]
+  refine HasSum.const_smul _ ?_
+  -- The kernel integrals of the pieces are summable in norm, since `m - 2N + n < 0`.
+  obtain ⟨C, -, hC⟩ :=
+    a.exists_integral_norm_frequencyLaplacianPow_littlewoodPaleyPiece_le φ isCompact_singleton N
+  set g : ℕ → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W :=
+    fun j => (frequencyLaplacianPow N (a.littlewoodPaleyPiece φ j)).coefficient
+  have hF_int (j : ℕ) :
+      Integrable fun ζ : CoordinateSpace n => 𝐞 ⟪ζ, x - y⟫ • g j (x, (2 * π) • ζ) :=
+    integrable_quantizationKernel_integrand
+      ((frequencyLaplacianPow N (a.littlewoodPaleyPiece φ j)).integrable_coefficient hN x) y
+  have hs : m - 2 * N + n < 0 := by linarith
+  have hgeo : Summable fun j : ℕ => ((2 : ℝ) ^ j) ^ (m - 2 * N + n) := by
+    have h := summable_geometric_of_lt_one (by positivity : (0 : ℝ) ≤ 2 ^ (m - 2 * N + n))
+      (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two hs)
+    refine h.congr fun j => ?_
+    rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, mul_comm, Real.rpow_mul zero_le_two,
+      Real.rpow_natCast]
+  have hF_sum : Summable fun j => ∫ ζ, ‖𝐞 ⟪ζ, x - y⟫ • g j (x, (2 * π) • ζ)‖ := by
+    refine Summable.of_nonneg_of_le (fun j => integral_nonneg fun _ => norm_nonneg _)
+      (fun j => ?_) ((hgeo.mul_left C).mul_left |((2 * π) ^ n)⁻¹|)
+    simp_rw [Circle.norm_smul (E := V →L[ℂ] W)]
+    rw [Measure.integral_comp_smul (μ := volume) (f := fun ξ => ‖g j (x, ξ)‖),
+      finrank_euclideanSpace_fin,
+      smul_eq_mul]
+    gcongr
+    exact hC j x rfl
+  convert hasSum_integral_of_summable_integral_norm hF_int hF_sum using 1
+  · exact funext fun j => quantizationKernel_def _ _ _
+  rw [quantizationKernel_def]
+  refine integral_congr_ae (ae_of_all _ fun ζ => ?_)
+  simp_rw [Circle.smul_def]
+  exact ((hasSum_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece φ a N x
+    ((2 * π) • ζ)).const_smul _).tsum_eq.symm
+
+/-- **The kernels of the Littlewood–Paley pieces.** For a uniform symbol `a` of order `m` and every
+`N`, the kernel of the `j`-th piece satisfies `(1 + 2^j ‖x - y‖)^N ‖K_{aⱼ}(x, y)‖ ≤ C (2^j)^(m + n)`
+uniformly in `j`, `x` and `y`: at the frequency scale `2^j` the kernel has size `(2^j)^(m + n)`
+and decays rapidly beyond the distance `2^{-j}` from the diagonal. -/
+theorem IsUniform.exists_one_add_mul_pow_mul_norm_quantizationKernel_littlewoodPaleyPiece_le
+    {a : Symbol n V W m} (ha : a.IsUniform) (N : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ (j : ℕ) x y,
+      (1 + 2 ^ j * ‖x - y‖) ^ N *
+          ‖quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x y‖ ≤
+        C * ((2 : ℝ) ^ j) ^ (m + n) := by
+  obtain ⟨C₀, hC₀, h₀⟩ := ha.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le φ [] []
+  choose C₁ hC₁ h₁ using fun k : Fin n =>
+    ha.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le φ [] (List.replicate N k)
+  set A := C₀ + ∑ k, C₁ k
+  have hA : 0 ≤ A := add_nonneg hC₀ (Finset.sum_nonneg fun k _ => hC₁ k)
+  refine ⟨2 ^ N * (1 + √n ^ N) * ((2 * π) ^ n)⁻¹ * A, by positivity, fun j x y => ?_⟩
+  -- Apply the scale-invariant decay estimate at the scale `R = 2^{-j}`, to a representative of the
+  -- piece of order `-n - 1`.
+  obtain ⟨b, hb⟩ := isSmoothing_iff.1 (a.isSmoothing_littlewoodPaleyPiece φ j) (-n - 1)
+  have h2j : (0 : ℝ) < 2 ^ j := by positivity
+  have key := b.one_add_norm_div_pow_mul_norm_quantizationKernel_le (x := x) (by linarith)
+    (inv_pos.2 h2j) (A := A * ((2 : ℝ) ^ j) ^ (m + n)) N ?_ ?_ y
+  · rw [hb, div_inv_eq_mul, mul_comm ‖x - y‖] at key
+    exact key.trans_eq (by ring)
+  · rw [hb]
+    have h := h₀ j x
+    simp only [mixedDeriv_nil_nil, List.length_nil, CharP.cast_eq_zero, sub_zero] at h
+    exact h.trans (by gcongr; exact le_add_of_nonneg_right (Finset.sum_nonneg fun k _ => hC₁ k))
+  · intro k
+    rw [hb]
+    refine (h₁ k j x).trans ?_
+    rw [List.length_replicate, show m - N + n = m + n + -(N : ℝ) by ring,
+      Real.rpow_add h2j, Real.rpow_neg h2j.le, Real.rpow_natCast, ← inv_pow, ← mul_assoc]
+    gcongr
+    exact (Finset.single_le_sum (fun k _ => hC₁ k) (Finset.mem_univ k)).trans
+      (le_add_of_nonneg_left hC₀)
+
+/-- **The size estimate for the kernel of a uniform symbol.** If `a` is a symbol of order `m`
+whose estimates are uniform in the position, with `m + n > 0`, then its kernel off the diagonal
+satisfies
+
+`‖K(x, y)‖ ≤ C ‖x - y‖ ^ (-(m + n))` for all `x`, `y`.
+
+For `m = 0` this is the size estimate of a Calderón–Zygmund kernel. The bound follows by summing
+the estimates of the Littlewood–Paley pieces over the dyadic scales: the pieces at frequencies
+`2^j ≤ ‖x - y‖⁻¹` contribute their sizes `(2^j)^(m + n)`, and the higher ones decay. -/
+theorem IsUniform.exists_norm_offDiagonalKernel_le_rpow {a : Symbol n V W m} (ha : a.IsUniform)
+    (hm : 0 < m + n) :
+    ∃ C, 0 ≤ C ∧ ∀ x y, ‖offDiagonalKernel a x y‖ ≤ C * ‖x - y‖ ^ (-(m + n)) := by
+  set s := m + n
+  let φ : ContDiffBump (0 : CoordinateSpace n) := ⟨1, 2, one_pos, one_lt_two⟩
+  obtain ⟨N, hN⟩ := exists_nat_gt s
+  obtain ⟨C, hC0, hC⟩ :=
+    ha.exists_one_add_mul_pow_mul_norm_quantizationKernel_littlewoodPaleyPiece_le φ N
+  -- The per-scale bounds are `min (b^j u) ((b^j u)^(-δ))` with `b = 2^s`, `u = ‖x - y‖^s` and
+  -- `δ = (N - s) / s`, which sum to at most `B` over every finite set of scales.
+  set b : ℝ := 2 ^ s
+  have hb : 1 < b := Real.one_lt_rpow one_lt_two hm
+  set δ := (N - s) / s with hδ_def
+  have hδ : 0 < δ := div_pos (by linarith) hm
+  set B := (1 - b⁻¹)⁻¹ + (1 - b ^ (-δ))⁻¹
+  have hB : 0 ≤ B := by
+    have h₁ := sub_pos.2 (inv_lt_one_of_one_lt₀ hb)
+    have h₂ := sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg hb (neg_neg_of_pos hδ))
+    positivity
+  refine ⟨C * B, mul_nonneg hC0 hB, fun x y => ?_⟩
+  rcases eq_or_ne x y with rfl | hxy
+  · rw [offDiagonalKernel_self, norm_zero, sub_self, norm_zero,
+      Real.zero_rpow (neg_ne_zero.2 hm.ne'), mul_zero]
+  set r := ‖x - y‖
+  have hr : 0 < r := norm_pos_iff.2 (sub_ne_zero.2 hxy)
+  have hterm (j : ℕ) : ‖quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x y‖ ≤
+      C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) := by
+    set K := ‖quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x y‖
+    set t := (2 : ℝ) ^ j * r
+    have ht : 0 < t := by positivity
+    have hK := hC j x y
+    have hbt : b ^ (j : ℤ) * r ^ s = t ^ s := by
+      rw [zpow_natCast, Real.mul_rpow (by positivity) hr.le]
+      congr 1
+      rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, mul_comm, Real.rpow_mul zero_le_two,
+        Real.rpow_natCast]
+    have h2j : ((2 : ℝ) ^ j) ^ s = r ^ (-s) * t ^ s := by
+      have hrs := (Real.rpow_pos_of_pos hr s).ne'
+      rw [Real.mul_rpow (by positivity) hr.le, Real.rpow_neg hr.le]
+      field_simp
+    have htδ : (t ^ s) ^ (-δ) = t ^ (s - N) := by
+      rw [← Real.rpow_mul ht.le, hδ_def]
+      congr 1
+      field_simp [hm.ne']
+      ring
+    rw [hbt, htδ, mul_min_of_nonneg _ _ (by positivity)]
+    refine le_min ?_ ?_
+    · -- Near the diagonal, `‖K‖ ≤ C (2^j)^s`.
+      calc K ≤ (1 + t) ^ N * K :=
+            le_mul_of_one_le_left (norm_nonneg _) (one_le_pow₀ (by linarith))
+        _ ≤ C * ((2 : ℝ) ^ j) ^ s := hK
+        _ = C * r ^ (-s) * t ^ s := by rw [h2j, mul_assoc]
+    · -- Away from it, `t^N ‖K‖ ≤ C (2^j)^s`.
+      rw [Real.rpow_sub ht, Real.rpow_natCast, ← mul_div_assoc, le_div_iff₀ (by positivity),
+        mul_comm K]
+      calc t ^ N * K ≤ (1 + t) ^ N * K := by gcongr; linarith
+        _ ≤ C * ((2 : ℝ) ^ j) ^ s := hK
+        _ = C * r ^ (-s) * t ^ s := by rw [h2j, mul_assoc]
+  have hsum (S : Finset ℕ) :
+      ∑ j ∈ S, C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) ≤
+        C * r ^ (-s) * B := by
+    rw [← Finset.mul_sum]
+    gcongr
+    have h := sum_min_zpow_mul_rpow_neg_le hb hδ (r ^ s) (S.map Nat.castEmbedding)
+    rwa [Finset.sum_map] at h
+  have hnonneg : 0 ≤ fun j : ℕ =>
+      C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) :=
+    fun j => (norm_nonneg _).trans (hterm j)
+  calc ‖offDiagonalKernel a x y‖
+      ≤ ∑' j : ℕ, C * r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) :=
+        (a.hasSum_quantizationKernel_littlewoodPaleyPiece φ hxy).norm_le_of_bounded
+          (summable_of_sum_le hnonneg hsum).hasSum hterm
+    _ ≤ C * r ^ (-s) * B := Real.tsum_le_of_sum_le hnonneg hsum
+    _ = C * B * r ^ (-s) := by ring
+
+end Size
 
 end Symbol
 
