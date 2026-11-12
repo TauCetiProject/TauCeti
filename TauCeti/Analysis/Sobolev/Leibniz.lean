@@ -21,9 +21,9 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 # The product rule for weak derivatives
 
 A weak derivative is additive and commutes with scalars
-(`TauCeti.HasWeakLineDerivOn.add`, `TauCeti.HasWeakLineDerivOn.const_smul`), but Lane A of the PDE
-roadmap needs one more algebraic rule before it can localize: multiplication by a *variable*
-smooth factor.  This file proves it.  For a smooth `ψ : E → ℝ` and a weakly differentiable `u`,
+(`TauCeti.HasWeakLineDerivOn.add`, `TauCeti.HasWeakLineDerivOn.const_smul`), but localization
+needs one more algebraic rule: multiplication by a *variable* smooth factor.  This file proves it.
+For a smooth `ψ : E → ℝ` and a weakly differentiable `u`,
 
 `∂_v (ψ u) = ψ ∂_v u + (∂_v ψ) u`
 
@@ -62,10 +62,10 @@ bounded, an `Lᵖ` weak derivative of `u` gives one of `ψ u`
 
 ## Why this is the localization tool
 
-`ψ` will be a cutoff.  Multiplying by one is how a global statement about `W^{k,p}(Ω)` is reduced
-to a local one: it is the first step of the Meyers–Serrin `H = W` density theorem and of the
-extension operator (Lane A.2 and A.6 of `TauCetiRoadmap/PDE/README.md`), and it is what turns an
-interior estimate into an estimate on a compactly contained subdomain (Lane E.20).  The second
+Typically `ψ` is a cutoff.  Multiplying by one is how a global statement about `W^{k,p}(Ω)` is
+reduced to a local one: it is the first step of the Meyers–Serrin `H = W` density theorem and of
+the extension operator, and it is what turns an interior estimate into an estimate on a compactly
+contained subdomain.  The second
 summand `(∂_v ψ) u` is exactly the error such an argument has to absorb, so having it with an
 explicit, non-asymptotic formula is the point.
 

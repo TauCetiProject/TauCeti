@@ -57,10 +57,9 @@ the codomain is restricted along `nthRootClass_pow`. Neither step is taken here:
 the `n`-th root map, the torsion bound and the kernel description, and states no exactness or
 finiteness result.
 
-These are ingredients for `TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (Mordell–Weil), whose
-weak Mordell–Weil argument needs the Selmer group `K(S, n)` of
-`Mathlib.RingTheory.DedekindDomain.SelmerGroup` to be finite; Mathlib leaves that finiteness as a
-`TODO` and the roadmap assigns it to this repository. The finiteness proof is not in this file.
+These are ingredients for the finiteness of the Selmer group `K(S, n)` of
+`Mathlib.RingTheory.DedekindDomain.SelmerGroup`, which the weak Mordell–Weil theorem needs and
+which Mathlib leaves as a `TODO`. The finiteness proof is not in this file.
 
 None of the definitions here is `@[expose]`: the interface is the membership, coefficient and
 coercion lemmas, not the construction bodies. The characteristic lemmas that hold by
@@ -70,7 +69,7 @@ the bodies stay unexposed. Do not "simplify" them back.
 
 Adapted from Michael Stoll's elliptic-curves formalisation
 (`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/FractionalIdeal.lean`
-at the roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's
+at `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's
 convention for adapted material, the upstream authorship is credited here rather than in the
 copyright header. The `n`-th root is built here by dividing the coefficients of a Weil divisor and
 transporting along `fractionalIdealDivisorAddEquiv`, where the source builds it from its own

@@ -138,8 +138,8 @@ theorem HasWeakLineDerivOn.bilin_self {B : V →L[ℝ] V →L[ℝ] ℝ} (hB : B.
     HasWeakLineDerivOn μ Ω (fun x ↦ B (u x) (u x)) (fun x ↦ 2 * u' x (u x)) v := by
   have hΩm : NullMeasurableSet (Ω : Set E) μ := Ω.isOpen.measurableSet.nullMeasurableSet
   -- Extend `u` and `u'` by zero; the extensions are `L²` on the whole space.
-  set U : E → V := (Ω : Set E).indicator u with hU_def
-  set U' : E → StrongDual ℝ V := (Ω : Set E).indicator u' with hU'_def
+  set U : E → V := (Ω : Set E).indicator u
+  set U' : E → StrongDual ℝ V := (Ω : Set E).indicator u'
   have hU : MemLp U 2 μ := (memLp_indicator_iff_restrict (f := u) hΩm).2 hu
   have hU' : MemLp U' 2 μ := (memLp_indicator_iff_restrict (f := u') hΩm).2 hu'
   have hUloc : LocallyIntegrable U μ := hU.locallyIntegrable one_le_two

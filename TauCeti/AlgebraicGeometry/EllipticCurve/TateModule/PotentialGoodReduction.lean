@@ -274,7 +274,8 @@ theorem hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one
   let := finiteIntermediateFieldTopology K (AlgebraicClosure K) M
   have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) M
   have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) M
-  refine .intro 𝒪[K] M 𝒪[M] (RingHom.ext fun x ↦ coe_algebraMap_integerRing x) ?_
+  refine .intro 𝒪[K] M 𝒪[M]
+    (RingHom.ext fun x ↦ Valuation.HasExtension.val_algebraMap (vA := valuation M) x) ?_
   -- The minimal model of `W` over `𝒪[M]` is `C • W⁄M` for a change of variables `C`.
   obtain ⟨C, hC⟩ := (W⁄M).exists_smul_eq_minimal 𝒪[M]
   rw [← hC]
