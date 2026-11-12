@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
-import TauCeti.GroupTheory.FreeGroup.Commuting
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
 /-!
