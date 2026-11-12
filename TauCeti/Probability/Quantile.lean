@@ -265,7 +265,6 @@ theorem cdf_le_iff_quantile_le (μ ν : Measure ℝ) :
     exact (le_cdf_quantile ν hu1).trans (hcdf _)
   · intro hquant x
     by_contra hle
-    have hlt : cdf μ x < cdf ν x := lt_of_not_ge hle
     let u := (cdf μ x + cdf ν x) / 2
     have hu0 : 0 < u := by
       dsimp [u]
@@ -591,7 +590,7 @@ theorem upperQuantile_eq_quantile_of_continuousWithinAt (μ : Measure ℝ) (h0 :
 /-- The upper quantile function is monotone on the levels where it is an honest generalized
 inverse. -/
 theorem monotoneOn_upperQuantile (μ : Measure ℝ) : MonotoneOn μ.upperQuantile (Ioo 0 1) := by
-  rintro s ⟨hs0, hs1⟩ t ⟨_, ht1⟩ hst
+  rintro s ⟨hs0, _⟩ t ⟨_, ht1⟩ hst
   exact csInf_le_csInf (bddBelow_setOf_lt_cdf μ hs0) (nonempty_setOf_lt_cdf μ ht1)
     fun _ hx ↦ hst.trans_lt hx
 

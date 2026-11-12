@@ -23,15 +23,15 @@ inverse is that of `e.symm`. `TauCeti.AlgebraicTopology.FundamentalGroup.Basic` 
 composition and identity transport laws for `mapOfEq`, which also serve as the general transport
 facts for basepoint-adjusted induced maps.
 
-For nested subspaces, the induced isomorphisms commute with inclusions. The two subspace
-naturality squares are public so that other fundamental-group diagrams can reuse this transport.
+For a subspace `S` of a subspace `C` of `X`, the canonical homeomorphism between the preimage of
+`S` in `C` and `S` itself commutes, on fundamental groups, with the inclusions of nested subspaces
+and with the inclusion into `C`. These two naturality squares let a fundamental-group diagram of
+subspaces of `C` be transported to the corresponding subspaces of `X`.
 
-Transporting a fundamental-group computation across a homeomorphism is the group-level tool behind
-computing fundamental groups of spaces identified with already-known ones: for example the
-fundamental group of the unit circle `Circle ⊆ ℂ` is read off from the additive-circle computation
-through Mathlib's `AddCircle.homeomorphCircle`, and the same transport feeds the computation of
-`π₁(ℝPⁿ)`. The construction mirrors `FundamentalGroup.prodMulEquiv`, the analogous
-product-group isomorphism used in the torus computation.
+Transporting a fundamental-group computation across a homeomorphism computes the fundamental
+group of a space identified with an already-known one: for example the fundamental group of the
+unit circle `Circle ⊆ ℂ` is read off from the additive-circle computation through Mathlib's
+`AddCircle.homeomorphCircle`, and that of the real projective line from the circle.
 
 ## Main declarations
 
@@ -46,33 +46,27 @@ public section
 
 namespace FundamentalGroup
 
-variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
-variable {x : X} {y : Y} {z : Z}
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
 
 /-- A homeomorphism `e : X ≃ₜ Y` carrying `x` to `y` induces an isomorphism of fundamental groups
 `π₁(X, x) ≃* π₁(Y, y)`. The forward map is `FundamentalGroup.mapOfEq` of `e`; the inverse is
 `FundamentalGroup.mapOfEq` of `e.symm`. -/
 noncomputable def homeomorphMulEquivOfEq (e : X ≃ₜ Y) (h : e x = y) :
     FundamentalGroup X x ≃* FundamentalGroup Y y where
-  toFun := FundamentalGroup.mapOfEq ⟨e, e.continuous⟩ h
-  invFun := FundamentalGroup.mapOfEq ⟨e.symm, e.symm.continuous⟩ (e.symm_apply_eq.mpr h.symm)
-  left_inv p :=
-    mapOfEq_mapOfEq_of_comp_eq_id ⟨e.symm, e.symm.continuous⟩ ⟨e, e.continuous⟩ h
-      (e.symm_apply_eq.mpr h.symm) (ContinuousMap.ext fun t => e.symm_apply_apply t) p
-  right_inv q :=
-    mapOfEq_mapOfEq_of_comp_eq_id ⟨e, e.continuous⟩ ⟨e.symm, e.symm.continuous⟩
-      (e.symm_apply_eq.mpr h.symm) h (ContinuousMap.ext fun t => e.apply_symm_apply t) q
-  map_mul' := (FundamentalGroup.mapOfEq ⟨e, e.continuous⟩ h).map_mul
+  __ := mapOfEq (e : C(X, Y)) h
+  invFun := mapOfEq (e.symm : C(Y, X)) (e.symm_apply_eq.mpr h.symm)
+  left_inv := mapOfEq_mapOfEq_of_comp_eq_id _ _ h _ e.symm_comp_toContinuousMap
+  right_inv := mapOfEq_mapOfEq_of_comp_eq_id _ _ _ h e.toContinuousMap_comp_symm
 
 @[simp]
 theorem homeomorphMulEquivOfEq_apply (e : X ≃ₜ Y) (h : e x = y) (p : FundamentalGroup X x) :
-    homeomorphMulEquivOfEq e h p = FundamentalGroup.mapOfEq ⟨e, e.continuous⟩ h p :=
+    homeomorphMulEquivOfEq e h p = mapOfEq (e : C(X, Y)) h p :=
   (rfl)
 
 @[simp]
 theorem homeomorphMulEquivOfEq_symm_apply (e : X ≃ₜ Y) (h : e x = y)
     (q : FundamentalGroup Y y) : (homeomorphMulEquivOfEq e h).symm q =
-      FundamentalGroup.mapOfEq ⟨e.symm, e.symm.continuous⟩ (e.symm_apply_eq.mpr h.symm) q :=
+      mapOfEq (e.symm : C(Y, X)) (e.symm_apply_eq.mpr h.symm) q :=
   (rfl)
 
 /-- A homeomorphism `e : X ≃ₜ Y` induces an isomorphism of fundamental groups
@@ -83,14 +77,13 @@ noncomputable def homeomorphMulEquiv (e : X ≃ₜ Y) (x : X) :
 
 @[simp]
 theorem homeomorphMulEquiv_apply (e : X ≃ₜ Y) (x : X) (p : FundamentalGroup X x) :
-    homeomorphMulEquiv e x p =
-      FundamentalGroup.mapOfEq ⟨e, e.continuous⟩ rfl p :=
+    homeomorphMulEquiv e x p = mapOfEq (e : C(X, Y)) rfl p :=
   (rfl)
 
 @[simp]
 theorem homeomorphMulEquiv_symm_apply (e : X ≃ₜ Y) (x : X) (q : FundamentalGroup Y (e x)) :
     (homeomorphMulEquiv e x).symm q =
-      FundamentalGroup.mapOfEq ⟨e.symm, e.symm.continuous⟩ (e.symm_apply_apply x) q :=
+      mapOfEq (e.symm : C(Y, X)) (e.symm_apply_apply x) q :=
   (rfl)
 
 end FundamentalGroup
@@ -108,14 +101,14 @@ open CategoryTheory Set
 /-- Inclusions between nested subspaces commute on fundamental groups after the canonical
 homeomorphisms that forget the containing subspace. -/
 theorem subspace_inclusion_square {C S T : Set X}
-    (hSC : S ⊆ C) (hTC : T ⊆ C) (hST : S ⊆ T) (x : X) (hxS : x ∈ S) :
+    (hTC : T ⊆ C) (hST : S ⊆ T) (x : X) (hxS : x ∈ S) :
     let S' : Set C := Subtype.val ⁻¹' S
     let T' : Set C := Subtype.val ⁻¹' T
     let eS : S' ≃ₜ S := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
-      (fun s hs => ⟨⟨s, hSC hs⟩, rfl⟩)
+      (fun s hs => ⟨⟨s, hTC (hST hs)⟩, rfl⟩)
     let eT : T' ≃ₜ T := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
       (fun t ht => ⟨⟨t, hTC ht⟩, rfl⟩)
-    let x' : C := ⟨x, hSC hxS⟩
+    let x' : C := ⟨x, hTC (hST hxS)⟩
     GrpCat.ofHom (FundamentalGroup.map
         (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')) ⟨x', hxS⟩) ≫
         (FundamentalGroup.homeomorphMulEquivOfEq eT rfl).toGrpIso.hom =
@@ -135,13 +128,13 @@ theorem subspace_inclusion_square {C S T : Set X}
     FundamentalGroup.homeomorphMulEquivOfEq_apply,
     ← FundamentalGroup.mapOfEq_rfl (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')),
     ← FundamentalGroup.mapOfEq_rfl (ContinuousMap.inclusion hST)]
-  exact (FundamentalGroup.mapOfEq_comp ⟨eT, eT.continuous⟩
+  exact (FundamentalGroup.mapOfEq_comp (eT : C(T', T))
     (ContinuousMap.inclusion (preimage_mono hST : S' ⊆ T')) rfl rfl p).trans
     ((FundamentalGroup.mapOfEq_congr
-      (f₂ := (ContinuousMap.inclusion hST).comp ⟨eS, eS.continuous⟩)
+      (f₂ := (ContinuousMap.inclusion hST).comp (eS : C(S', S)))
       (by ext z; rfl) _ _ p).trans
       (FundamentalGroup.mapOfEq_comp (ContinuousMap.inclusion hST)
-        ⟨eS, eS.continuous⟩ rfl rfl p).symm)
+        (eS : C(S', S)) rfl rfl p).symm)
 
 /-- Inclusion of a nested subspace into its ambient subspace factors through the canonical
 homeomorphism that forgets one subtype layer. -/
@@ -167,7 +160,7 @@ theorem subspace_subtypeVal_square {C S : Set X}
   -- The canonical homeomorphism forgets the outer subtype, so composing it with
   -- inclusion is definitionally the subtype-value map.
   exact (FundamentalGroup.mapOfEq_comp (ContinuousMap.inclusion hSC)
-    ⟨eS, eS.continuous⟩ rfl rfl p).symm
+    (eS : C(S', S)) rfl rfl p).symm
 
 end Subspace
 

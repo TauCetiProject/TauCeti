@@ -171,7 +171,7 @@ theorem _root_.Module.Basis.exists_mass_integral_wedge_le_of_le_mul_max_one_sub
     image_eq_zero_of_notMem_tsupport fun h ↦ hx (ζ.tsupport_subset h)
   have h := hI Ω.isOpen.measurableSet hΩ hr hC hCr hδ hL1 hβ hω hωΩ hζΩ hζ
   rw [one_mul] at h
-  rw [Real.enorm_eq_ofReal_abs]
+  rw [Real.eNorm_eq_ofReal_abs]
   exact ENNReal.ofReal_le_ofReal h
 
 /-! ### Solutions of the large-parameter equations in a unitary frame -/
@@ -239,8 +239,7 @@ theorem exists_mass_integral_wedge_le_of_add_hodgeStar_eq (h₀ : J (e 0) = e 1)
     ((ae_restrict_iff' Ω.isOpen.measurableSet).2 (Filter.Eventually.of_forall fun x hx ↦ ?_))
     ((LinearMap.continuous_of_finiteDimensional
       (alternatingFormEquiv V 2).toLinearMap).comp_aestronglyMeasurable hF) (fun x hx ↦ ?_) m
-  · have hm : 0 ≤ max (1 - ‖φ x‖ ^ 2) 0 := le_max_right _ _
-    calc ‖β x‖ ^ 2 ≤ K / r * max (1 - ‖φ x‖ ^ 2) 0 + K / r ^ 2 := hβK x hx
+  · calc ‖β x‖ ^ 2 ≤ K / r * max (1 - ‖φ x‖ ^ 2) 0 + K / r ^ 2 := hβK x hx
       _ ≤ C' / r * max (1 - ‖φ x‖ ^ 2) 0 + C' / r ^ 2 := by gcongr
   · have hm : 0 ≤ max (1 - ‖φ x‖ ^ 2) 0 := le_max_right _ _
     have hFx := norm_le_of_add_hodgeStar_eq h₀ h₂₃ hQ hkl he (hφ x hx) (hβ x hx) hρ h₂ hr1
@@ -373,7 +372,7 @@ theorem norm_le_mul_max_one_sub_add_of_inner_ιMulti_eq {Θ F η : ⋀[ℝ]^2 V}
   have hMD : 2 * M * ‖Dα‖ ^ 2 ≤ 2 * M * (C * r * w + C) :=
     mul_le_mul_of_nonneg_left hDα (by positivity)
   have hCrw : 0 ≤ C * (r * w) := mul_nonneg hC hrw
-  have hMCrw : 0 ≤ M * (C * (r * w)) := mul_nonneg hM hCrw
+  have _ : 0 ≤ M * (C * (r * w)) := mul_nonneg hM hCrw
   have hNrw : 0 ≤ N * (r * w) := mul_nonneg hN hrw
   nlinarith
 
@@ -419,7 +418,7 @@ theorem integral_norm_le_of_inner_ιMulti_eq [IsFiniteMeasure μ] {F η Θ : X �
   refine integral_le_of_le_mul_max_one_sub hr0 (by positivity) hCr hδ (hL1.trans hCC) ?_
     (.of_forall fun x ↦ norm_nonneg _) ?_
   · filter_upwards [hβK] with x hx
-    have hm : 0 ≤ max (1 - ‖φ x‖ ^ 2) 0 := le_max_right _ _
+    have _ : 0 ≤ max (1 - ‖φ x‖ ^ 2) 0 := le_max_right _ _
     calc ‖β x‖ ^ 2 ≤ C / r * max (1 - ‖φ x‖ ^ 2) 0 + C / r ^ 2 := hx
       _ ≤ _ := by gcongr
   · filter_upwards [hφ, hβ, hF, hη, hFm, hΘ, hφβ, hβK, hDα] with x hφx hβx hFx hηx hFmx hΘx
@@ -475,7 +474,7 @@ theorem exists_mass_integral_wedge_le_of_inner_ιMulti_eq [MeasurableSpace V] [B
     ((ae_restrict_iff' Ω.isOpen.measurableSet).2 (Filter.Eventually.of_forall fun x hx ↦ ?_))
     ((LinearMap.continuous_of_finiteDimensional
       (alternatingFormEquiv V 2).toLinearMap).comp_aestronglyMeasurable hΘm) (fun x hx ↦ ?_) m
-  · have hm : 0 ≤ max (1 - ‖φ x‖ ^ 2) 0 := le_max_right _ _
+  · have _ : 0 ≤ max (1 - ‖φ x‖ ^ 2) 0 := le_max_right _ _
     calc ‖β x‖ ^ 2 ≤ C / r * max (1 - ‖φ x‖ ^ 2) 0 + C / r ^ 2 := hβK x hx
       _ ≤ C' / r * max (1 - ‖φ x‖ ^ 2) 0 + C' / r ^ 2 := by gcongr
   · exact (norm_alternatingFormEquiv_le _).trans

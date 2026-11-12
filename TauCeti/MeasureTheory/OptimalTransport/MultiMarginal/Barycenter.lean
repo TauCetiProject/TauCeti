@@ -420,15 +420,15 @@ theorem isMinOn_sum_mul_wassersteinEDist_rpow_map (hp0 : p ≠ 0) (hp : p ≠ �
   intro ν (hν : IsProbabilityMeasure ν)
   obtain ⟨γ', hγ', hle⟩ := exists_isMultiCoupling_lintegral_iInf_le (w := w) hp0 hp μ ν
   refine (sum_mul_wassersteinEDist_rpow_map_le measurable_edist hp0 hp hγ hT).trans ?_
-  simp only [(hTb _).sum_mul_edist_rpow_eq_iInf hp0 hp]
+  simp only [(hTb _).sum_mul_edist_rpow_eq_iInf]
   exact (isMinOn_iff.1 hmin γ' hγ').trans hle
 
-/-- **The multi-marginal problem has a solution.** On a Polish metric space, for `1 ≤ p < ∞` and
+/-- **The multi-marginal problem has a solution.** On a Polish metric space, for `1 ≤ p` and
 weights summing to `1`, some multi-marginal coupling of the laws `μ j` minimizes the
 multi-marginal cost `∫ inf_z ∑ j, w j * d(z, x j) ^ p dγ`. The cost is continuous by
 `TauCeti.continuous_iInf_frechetPower_sum_smul_dirac`, so this is an instance of
 `TauCeti.exists_isMultiCoupling_isMinOn_lintegral`. -/
-theorem exists_isMultiCoupling_isMinOn_lintegral_iInf (hp : 1 ≤ p) (hp_top : p ≠ ∞)
+theorem exists_isMultiCoupling_isMinOn_lintegral_iInf (hp : 1 ≤ p)
     (hw : ∑ j, w j = 1) (μ : J → Measure X) [∀ j, IsProbabilityMeasure (μ j)] :
     ∃ γ : Measure (J → X), Measure.IsMultiCoupling γ μ ∧
       IsMinOn (fun γ' ↦ ∫⁻ x, ⨅ z, ∑ j, (w j : ℝ≥0∞) * edist z (x j) ^ p.toReal ∂γ')
@@ -436,7 +436,7 @@ theorem exists_isMultiCoupling_isMinOn_lintegral_iInf (hp : 1 ≤ p) (hp_top : p
   have : Nonempty J := by
     by_contra hJ
     simp [not_nonempty_iff.1 hJ] at hw
-  have hc := continuous_iInf_frechetPower_sum_smul_dirac (X := X) hp hp_top hw
+  have hc := continuous_iInf_frechetPower_sum_smul_dirac (X := X) hp hw
   simp only [frechetPower_sum_smul_dirac, ENNReal.smul_def, smul_eq_mul] at hc
   exact exists_isMultiCoupling_isMinOn_lintegral (fun _ ↦ isTightMeasureSet_singleton)
     hc.lowerSemicontinuous
@@ -466,7 +466,7 @@ theorem iInf_sum_mul_wassersteinEDist_rpow_eq (hp : 1 ≤ p) (hp_top : p ≠ ∞
   · have := hγ.isProbabilityMeasure j₀
     refine (iInf₂_le (γ.map T) (inferInstance : IsProbabilityMeasure (γ.map T))).trans ?_
     refine (sum_mul_wassersteinEDist_rpow_map_le measurable_edist hp0 hp_top hγ hT).trans_eq ?_
-    simp only [(hTb _).sum_mul_edist_rpow_eq_iInf hp0 hp_top]
+    simp only [(hTb _).sum_mul_edist_rpow_eq_iInf]
   · obtain ⟨γ, hγ, hle⟩ := exists_isMultiCoupling_lintegral_iInf_le (w := w) hp0 hp_top μ ν
     exact (iInf₂_le γ hγ).trans hle
 
@@ -483,7 +483,7 @@ theorem WassersteinSpace.exists_isFrechetBarycenter_sum_smul_dirac [Fact (1 ≤ 
   set μ' := fun j ↦ ((μ j : ProbabilityMeasure X) : Measure X)
   obtain ⟨j₀, -, hj₀⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
   obtain ⟨T, hT, hTb⟩ := exists_measurable_isFrechetBarycenter_sum_smul_dirac (X := X) hp hp_top hw
-  obtain ⟨γ, hγ, hmin⟩ := exists_isMultiCoupling_isMinOn_lintegral_iInf hp hp_top hw μ'
+  obtain ⟨γ, hγ, hmin⟩ := exists_isMultiCoupling_isMinOn_lintegral_iInf hp hw μ'
   have := hγ.isProbabilityMeasure j₀
   have hν₀ : IsProbabilityMeasure (γ.map T) := inferInstance
   have hνmin := isMinOn_sum_mul_wassersteinEDist_rpow_map hp0 hp_top hγ hmin hT hTb
@@ -525,7 +525,7 @@ theorem WassersteinSpace.exists_ae_isFrechetBarycenter_sum_smul_dirac [Fact (1 �
   set f : X × (J → X) → ℝ≥0∞ := fun q ↦ ∑ j, (w j : ℝ≥0∞) * edist q.1 (q.2 j) ^ p.toReal
   set c : (J → X) → ℝ≥0∞ := fun x ↦ ⨅ z, ∑ j, (w j : ℝ≥0∞) * edist z (x j) ^ p.toReal
   have hc : Continuous c := by
-    have := continuous_iInf_frechetPower_sum_smul_dirac (X := X) hp hp_top hw
+    have := continuous_iInf_frechetPower_sum_smul_dirac (X := X) hp hw
     simpa only [frechetPower_sum_smul_dirac, ENNReal.smul_def, smul_eq_mul] using this
   have hm (j : J) : Measurable fun q : X × (J → X) ↦ edist q.1 (q.2 j) ^ p.toReal := by
     fun_prop
@@ -551,7 +551,7 @@ theorem WassersteinSpace.exists_ae_isFrechetBarycenter_sum_smul_dirac [Fact (1 �
     ae_eq_of_ae_le_of_lintegral_le (.of_forall hcf) (ne_top_of_le_ne_top hfin
       (lintegral_mono hcf)) hf.aemeasurable hle
   filter_upwards [hae] with q hq
-  exact (isFrechetBarycenter_sum_smul_dirac_iff hp0 hp_top).2 hq.symm
+  exact (isFrechetBarycenter_sum_smul_dirac_iff hp_top).2 hq.symm
 
 end Proper
 

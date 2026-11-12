@@ -70,7 +70,7 @@ theorem card_le_sum_of_forall_not_reachable_deleteVerts [DecidableEq α] {A B : 
       (reachable_deleteVerts_iff_exists_walk.2 ⟨P i, hA (ha i), hi⟩)
   choose f hf hfX using h
   rw [← card_univ, card_eq_sum_card_fiberwise fun i _ ↦ hfX i]
-  refine sum_le_sum fun x hx ↦ (card_le_card fun i hi ↦ ?_).trans (hP x)
+  refine sum_le_sum fun x _ ↦ (card_le_card fun i hi ↦ ?_).trans (hP x)
   simp only [mem_filter, mem_univ, true_and] at hi ⊢
   exact hi ▸ hf i
 
