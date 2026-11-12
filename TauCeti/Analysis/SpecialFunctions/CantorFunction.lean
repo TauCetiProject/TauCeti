@@ -289,10 +289,10 @@ theorem cantorReparam_zero : cantorReparam 0 = 0 := by
 theorem cantorReparam_one : cantorReparam 1 = 1 := by
   simp [cantorReparam_apply]
 
-/-- The increasing homeomorphism `cantorReparam` is not absolutely continuous on `[0, 1]`, since
-the Cantor function `2 * cantorReparam t - t` is not. -/
+/-- The increasing homeomorphism `cantorReparam` is not absolutely continuous on `[0, 1]`. -/
 theorem not_absolutelyContinuousOnInterval_cantorReparam :
     ¬ AbsolutelyContinuousOnInterval cantorReparam 0 1 := fun h ↦
+  -- Otherwise the Cantor function `2 * cantorReparam t - t` would be absolutely continuous.
   not_absolutelyContinuousOnInterval_cantorFunction <|
     ((h.const_mul 2).sub LipschitzWith.id.lipschitzOnWith.absolutelyContinuousOnInterval).congr
       fun t _ ↦ by simp only [Pi.sub_apply, cantorReparam_apply, id]; ring

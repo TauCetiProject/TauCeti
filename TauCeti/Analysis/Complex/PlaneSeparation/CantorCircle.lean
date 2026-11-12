@@ -95,11 +95,11 @@ theorem boundedVariationOn_cantorCircle : BoundedVariationOn cantorCircle (Icc 0
   rw [BoundedVariationOn, eVariationOn_cantorCircle]
   exact ENNReal.ofReal_ne_top
 
-/-- `cantorCircle` is not absolutely continuous on `[0, 1]`. On each half of the parameter
-interval the angle stays in an open arc of length `2π`, so absolute continuity of the curve would
-pass to the angle, and hence to `TauCeti.cantorReparam`. -/
+/-- `cantorCircle` is not absolutely continuous on `[0, 1]`. -/
 theorem not_absolutelyContinuousOnInterval_cantorCircle :
     ¬ AbsolutelyContinuousOnInterval cantorCircle 0 1 := fun h ↦ by
+  -- On each half of the parameter interval the angle stays in an open arc of length `2π`, so
+  -- absolute continuity of the curve would pass to the angle, and hence to `cantorReparam`.
   set u := cantorReparam.symm (1 / 2)
   have hu : cantorReparam u = 1 / 2 := cantorReparam.apply_symm_apply _
   have hu₀ : 0 ≤ u := by

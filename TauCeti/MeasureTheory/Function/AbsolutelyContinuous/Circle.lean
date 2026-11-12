@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 
@@ -62,16 +61,12 @@ theorem absolutelyContinuousOnInterval_circleMap_comp_iff {c : ℂ} {R θ₀ a b
     simp only [mul_im, ofReal_re, I_im, mul_one, ofReal_im, I_re, mul_zero, add_zero]
     rw [(toIocMod_eq_self _).2 ⟨by linarith, by linarith⟩]
     linarith
-  refine (h.comp_of_contDiffAt (φ := fun z ↦ (log ((z - c) * w)).im + θ₀)
-    fun _ ⟨t, ht, hzt⟩ ↦ ?_).congr fun t ht ↦ ?_
-  · subst hzt
-    have hlin : ContDiffAt ℝ 1 (fun z : ℂ ↦ (z - c) * w) (circleMap c R (θ t)) :=
-      (contDiffAt_id.sub contDiffAt_const).mul contDiffAt_const
-    have hlog' : ContDiffAt ℝ 1 log ((circleMap c R (θ t) - c) * w) :=
-      (contDiffAt_log (hslit ht)).restrict_scalars ℝ
-    exact (imCLM.contDiff.contDiffAt.comp _ (hlog'.comp (f := fun z ↦ (z - c) * w) _ hlin)).add
-      contDiffAt_const
-  · simp only [Function.comp_apply, hlog ht]
-    simp
+  have hσ : AbsolutelyContinuousOnInterval (fun t ↦ (circleMap c R (θ t) - c) * w) a b :=
+    ((h.sub (LipschitzWith.const c).lipschitzOnWith.absolutelyContinuousOnInterval).const_smul
+      w).congr fun t _ ↦ by simp [mul_comm w]
+  refine ((imCLM.lipschitzWith.comp_absolutelyContinuousOnInterval (hσ.clog fun _ ↦ hslit)).add
+    (LipschitzWith.const θ₀).lipschitzOnWith.absolutelyContinuousOnInterval).congr fun t ht ↦ ?_
+  simp only [Pi.add_apply, Function.comp_apply, hlog ht]
+  simp
 
 end TauCeti
