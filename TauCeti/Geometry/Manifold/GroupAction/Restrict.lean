@@ -15,10 +15,10 @@ import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 Let a group `G` act on a manifold `M` by a `C^n` map `G × M → M`
 (`ContMDiffSMul I I' n G M`). If `i : Z → M` is a `C^n` embedding intertwining an action of `G` on
 `Z` with the action on `M`, then the action on `Z` is `C^n`
-(`ContMDiffSMul.of_isSmoothEmbedding`). The main case is the inclusion of an invariant embedded
-submanifold, with the induced action of a `SubMulAction`. The proof is the smooth universal
-property of a smooth embedding (`Manifold.IsSmoothEmbedding.contMDiff_iff_comp`): a map into `Z` is
-`C^n` once its composite with `i` is `C^n`.
+(`Manifold.IsSmoothEmbedding.contMDiffSMul`). The main case is the inclusion of an invariant
+embedded submanifold, with the induced action of a `SubMulAction`. The proof is the smooth
+universal property of a smooth embedding (`Manifold.IsSmoothEmbedding.contMDiff_iff_comp`): a
+map into `Z` is `C^n` once its composite with `i` is `C^n`.
 
 Restricting the group instead is Mathlib's `MulAction.contMDiffSMul_compHom`: a subgroup of `G`
 with a manifold structure for which its inclusion is `C^n`, such as a closed subgroup of a Lie
@@ -44,14 +44,14 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] {n : ℕ∞ω}
 
-namespace ContMDiffSMul
+namespace Manifold.IsSmoothEmbedding
 
 /-- **Restricting a smooth action to an invariant embedded submanifold.** If `i : Z → M` is a
 `C^n` embedding which intertwines an action of `G` on `Z` with a `C^n` action of `G` on `M`, then
 the action on `Z` is `C^n`. -/
 @[to_additive /-- If `i : Z → M` is a `C^n` embedding which intertwines an additive action of `G`
 on `Z` with a `C^n` additive action of `G` on `M`, then the additive action on `Z` is `C^n`. -/]
-theorem of_isSmoothEmbedding {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [SMul G M]
+theorem contMDiffSMul {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [SMul G M]
     {EZ : Type*} [NormedAddCommGroup EZ] [NormedSpace 𝕜 EZ]
     {HZ : Type*} [TopologicalSpace HZ] {IZ : ModelWithCorners 𝕜 EZ HZ}
     {Z : Type*} [TopologicalSpace Z] [ChartedSpace HZ Z] [SMul G Z] [ContMDiffSMul I I' n G M]
@@ -64,4 +64,4 @@ theorem of_isSmoothEmbedding {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
     exact hi.contMDiff_iff_comp.2 <|
       hcomp ▸ contMDiff_fst.smul (hi.isImmersion.contMDiff.comp contMDiff_snd)
 
-end ContMDiffSMul
+end Manifold.IsSmoothEmbedding

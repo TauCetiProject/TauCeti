@@ -187,7 +187,7 @@ theorem contMDiffSMul_levelSubMulAction (h : σ.IsEquivariantMomentMap μ)
   have : ContMDiffSMul J I' ∞ ((Lie.coadjointRepresentation ℝ I G).stabilizer c) M :=
     MulAction.contMDiffSMul_compHom
       (f := ((Lie.coadjointRepresentation ℝ I G).stabilizer c).subtype) hGc
-  ContMDiffSMul.of_isSmoothEmbedding hZ fun g z ↦ SubMulAction.val_smul g z
+  hZ.contMDiffSMul fun g z ↦ SubMulAction.val_smul g z
 
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
