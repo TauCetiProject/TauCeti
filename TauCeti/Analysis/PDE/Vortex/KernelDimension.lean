@@ -8,26 +8,33 @@ module
 public import TauCeti.Analysis.PDE.Vortex.LogVariation
 public import TauCeti.Analysis.PDE.Vortex.PrincipalPart
 public import TauCeti.Analysis.PDE.Vortex.TranslationKernel
+import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # The dimension of the kernel of the gauge-fixed operator at a plane vortex
 
-At a plane vortex `x = (a, α)` the gauge-fixed linearization `L_x = d₀* ⊕ d₁`
-(`TauCeti.Vortex.gaugeFixedOperator`) is expected to have kernel the tangent space of the moduli
-space `Sym^m ℂ` of degree-`m` vortices, of real dimension `2 m`. This file proves the upper bound
-`2 m` at every degree, and the identification itself in degrees zero and one, for the space
-`gaugeFixedKernel x` of square-integrable `C²` classical solutions of `L_x y = 0`.
+Let `x` be a field whose holomorphicity rows `∂bar_a α = 0` vanish, with `|α| → 1` at infinity,
+and let the zeros of its section `α`, counted with multiplicity, form the effective divisor `D`.
+This file proves that every real vector space of `C²` square-integrable solutions `y` of
+`L_x y = 0`, for the gauge-fixed operator `L_x = d₀* ⊕ d₁` (`gaugeFixedOperator`), has dimension
+at most `2 |D|` (`TauCeti.Vortex.finrank_le_two_mul_card_of_gaugeFixedOperator_eq_zero`). For a
+vortex with the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1` the bound is `2m`
+(`TauCeti.Vortex.finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow`). Only the
+holomorphicity rows of the vortex equation are used.
 
-**The upper bound.** For a kernel element `y = (δa, δα)`, the quotient `η = δα / α` is a
-`C²` function plus a meromorphic function with poles at the zeros of `α`, of order at most their
-multiplicities. Its principal parts, `m` complex numbers in total, define a real-linear map on
-the kernel (`TauCeti.Vortex.principalPartMap`). This map is injective: a kernel element whose
-principal parts vanish has `δα = α η` with `η` of class `C²`, so `η` solves `Δη = |φ|² η` on the
-whole plane and is square integrable, hence vanishes, and so does `y`
-(`TauCeti.Vortex.eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto`).
-Hence `dim_ℝ gaugeFixedKernel x ≤ 2 m` (`finrank_gaugeFixedKernel_le`). Only the holomorphicity
-rows of the vortex equation and the degree-`m` end framing `α (z / |z|)⁻ᵐ → 1` enter.
+This is the upper bound in Taubes's identification of the kernel of `L_x` with the real tangent
+space `ℂᵐ` of the divisor space `Sym^m ℂ`, following Samols. The last two rows of `L_x y = 0` are
+the holomorphicity rows of the linearized equation, so the section variation decomposes as
+`δα = α G + e^ν H` with `H` entire, and the derivatives of `H` at the zeros of `α` record the
+principal parts of `δα / α` (`TauCeti.Vortex.principalPartMap`). This real-linear map to `ℂ^|D|`
+is injective (`TauCeti.Vortex.principalPartMap_injective`) as soon as every kernel element with
+`δα = α η`, `η` of class `C²`, vanishes. That is the vanishing theorem
+`TauCeti.Vortex.eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto`.
+
+The second part of the file studies the whole space `gaugeFixedKernel x` of square-integrable
+`C²` classical solutions of `L_x y = 0`, of real dimension at most `2 m`
+(`finrank_gaugeFixedKernel_le`).
 
 **The lower bound from translations.** At a vortex of positive degree the section has a zero,
 so the covariant translations `y_v = (ι_v F_a, ∇_v α)` form a two-dimensional subspace of the
@@ -48,6 +55,12 @@ which are not constructed here.
 
 ## Main results
 
+* `TauCeti.Vortex.finiteDimensional_of_gaugeFixedOperator_eq_zero` and
+  `TauCeti.Vortex.finrank_le_two_mul_card_of_gaugeFixedOperator_eq_zero`: a space of `C²`
+  square-integrable kernel elements is finite dimensional, of dimension at most `2 |D|`.
+* `TauCeti.Vortex.finiteDimensional_of_tendsto_sectionValue_mul_inv_pow` and
+  `TauCeti.Vortex.finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow`: the same for a vortex
+  framed in degree `m`, with bound `2m`.
 * `TauCeti.Vortex.finrank_gaugeFixedKernel_le`: `dim_ℝ ker L_x ≤ 2 m` at a framed degree-`m`
   field satisfying the holomorphicity rows.
 * `TauCeti.Vortex.two_le_finrank_gaugeFixedKernel`: `2 ≤ dim_ℝ ker L_x` at a framed vortex of
@@ -63,14 +76,129 @@ which are not constructed here.
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Progress in Physics 2, Birkhäuser, 1980,
   Chapter III.
 -/
-
 public section
 
 namespace TauCeti.Vortex
 
-open Complex Filter MeasureTheory Module Topology
+open Complex Filter MeasureTheory Module
+open scoped Topology
 
-variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
+variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+  {D : Multiset ℂ} {V : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))}
+
+omit [μ.IsAddHaarMeasure] in
+/-- A `C²` kernel element of `L_x` has `C²` components and satisfies the holomorphicity rows of
+the linearized equation, which are the last two rows of `L_x y = 0`. -/
+private theorem forall_mem_linearizedEquation_eq_zero
+    (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0) :
+    ∀ y ∈ V, ContDiff ℝ 2 (fun w ↦ y w 0) ∧ ContDiff ℝ 2 (fun w ↦ y w 1) ∧
+      Differentiable ℝ (fun w ↦ y w 2) ∧ Differentiable ℝ (fun w ↦ y w 3) ∧
+      ∀ w, linearizedEquation x y w 1 = 0 ∧ linearizedEquation x y w 2 = 0 := by
+  intro y hy
+  obtain ⟨hy, -, hker⟩ := hV y hy
+  have hi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ y w i :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy
+  refine ⟨hi 0, hi 1, (hi 2).differentiable (by norm_num), (hi 3).differentiable (by norm_num),
+    fun w ↦ ⟨?_, ?_⟩⟩
+  · rw [← gaugeFixedOperator_apply_two, hker w, PiLp.zero_apply]
+  · rw [← gaugeFixedOperator_apply_three, hker w, PiLp.zero_apply]
+
+/-- **The principal-part map on the kernel.** For a space `V` of `C²` square-integrable kernel
+elements, the principal-part map `TauCeti.Vortex.principalPartMap` gives an injective real-linear
+map from `V` to `ℂ^|D|`. -/
+private theorem exists_injective_linearMap (hx : ContDiff ℝ 2 x)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
+    (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0) :
+    ∃ Φ : V →ₗ[ℝ] Multiset.ToType D → ℂ, Function.Injective Φ := by
+  have hi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hx
+  have hp := (hi 2).differentiable (by norm_num)
+  have hq := (hi 3).differentiable (by norm_num)
+  have hlin := forall_mem_linearizedEquation_eq_zero hV
+  -- An integrating factor `ν` with `∂bar ν = (b₂ - i b₁) / 2`.
+  obtain ⟨ν, hν, hνeq⟩ :=
+    exists_contDiff_conjWirtingerDeriv_apply_one_eq (by norm_num) (contDiff_connectionCoeff
+      (hi 0) (hi 1))
+  have hdec (y) (hy : y ∈ V) : ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
+      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w := by
+    obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := hlin y hy
+    obtain ⟨G, hG, H, hH, hGH⟩ := exists_sectionValue_eq_mul_add_exp_mul (k := 2) (by norm_num)
+      hp hq hhol (hν.differentiable (by norm_num)) hνeq h₁ h₂ h₃ h₄ h₅
+    exact ⟨G, hG.continuous, H, hH, hGH⟩
+  exact ⟨principalPartMap hD hν.continuous hdec,
+    principalPartMap_injective (k := 2) (by norm_num) (hi 0) (hi 1) hp hq hhol hD hν hνeq hlin hdec
+      fun y hy η hη hyη ↦ eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto
+        (hx.of_le (by norm_num)) hhol hlim (hV y hy).1.continuous (hV y hy).2.1 (hV y hy).2.2 hη
+        hyη⟩
+
+/-- **Kernel elements of the gauge-fixed operator form a finite-dimensional space.** Let `x` be a
+`C²` field with vanishing holomorphicity rows and `|α|² → 1` at infinity, whose section has zero
+divisor `D`. Then every real vector space of `C²` square-integrable solutions of `L_x y = 0` is
+finite dimensional. -/
+theorem finiteDimensional_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ 2 x)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
+    (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0) :
+    FiniteDimensional ℝ V :=
+  let ⟨Φ, hΦ⟩ := exists_injective_linearMap hx hhol hlim hD hV
+  FiniteDimensional.of_injective Φ hΦ
+
+/-- **The kernel of the gauge-fixed operator at a vortex has dimension at most `2 |D|`.** Let `x`
+be a `C²` field with vanishing holomorphicity rows and `|α|² → 1` at infinity, whose section has
+zero divisor `D`. Then every real vector space of `C²` square-integrable solutions of `L_x y = 0`
+has dimension at most twice the degree of `D`. -/
+theorem finrank_le_two_mul_card_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ 2 x)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
+    (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0) :
+    Module.finrank ℝ V ≤ 2 * Multiset.card D := by
+  obtain ⟨Φ, hΦ⟩ := exists_injective_linearMap hx hhol hlim hD hV
+  refine (LinearMap.finrank_le_finrank_of_injective hΦ).trans_eq ?_
+  rw [Module.finrank_pi_fintype, Finset.sum_const, Complex.finrank_real_complex, smul_eq_mul,
+    Finset.card_univ, Multiset.card_coe, mul_comm]
+
+/-- **Kernel elements at a framed vortex form a finite-dimensional space.** At a `C²` field with
+vanishing holomorphicity rows and the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, every real
+vector space of `C²` square-integrable solutions of `L_x y = 0` is finite dimensional. -/
+theorem finiteDimensional_of_tendsto_sectionValue_mul_inv_pow {m : ℕ} (hx : ContDiff ℝ 2 x)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0) :
+    FiniteDimensional ℝ V := by
+  have hi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hx
+  exact finiteDimensional_of_forall_sectionValue_eq_mul_eq_zero (k := 2) (by norm_num) (hi 0)
+    (hi 1) ((hi 2).differentiable (by norm_num)) ((hi 3).differentiable (by norm_num)) hhol hframe
+    (forall_mem_linearizedEquation_eq_zero hV) fun y hy η hη hyη ↦
+      eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto
+        (hx.of_le (by norm_num)) hhol (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
+        (hV y hy).1.continuous (hV y hy).2.1 (hV y hy).2.2 hη hyη
+
+/-- **The kernel of the gauge-fixed operator at a framed vortex has dimension at most `2m`.** At a
+`C²` field with vanishing holomorphicity rows and the degree-`m` end framing
+`α(z) (z / |z|)⁻ᵐ → 1`, every real vector space of `C²` square-integrable solutions of
+`L_x y = 0` has dimension at most `2m`, the real dimension of the divisor space `Sym^m ℂ`. -/
+theorem finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow {m : ℕ} (hx : ContDiff ℝ 2 x)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0) :
+    Module.finrank ℝ V ≤ 2 * m := by
+  have hi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hx
+  exact finrank_le_two_mul_of_forall_sectionValue_eq_mul_eq_zero (k := 2) (by norm_num) (hi 0)
+    (hi 1) ((hi 2).differentiable (by norm_num)) ((hi 3).differentiable (by norm_num)) hhol hframe
+    (forall_mem_linearizedEquation_eq_zero hV) fun y hy η hη hyη ↦
+      eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto
+        (hx.of_le (by norm_num)) hhol (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
+        (hV y hy).1.continuous (hV y hy).2.1 (hV y hy).2.2 hη hyη
+
+/-! ### The kernel as a subspace -/
+
+variable {y : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-- **The `L²` kernel of the gauge-fixed operator.** The real vector space of `C²` variations `y`
 that are square integrable and solve `L_x y = 0` classically at every point. -/
@@ -90,8 +218,6 @@ theorem mem_gaugeFixedKernel :
       ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0 :=
   Iff.rfl
 
-/-! ### The upper bound `2 m` -/
-
 section UpperBound
 
 variable {m : ℕ} (hx : ContDiff ℝ 2 x) (hhol : ∀ z, equation x z 1 = 0 ∧ equation x z 2 = 0)
@@ -99,43 +225,18 @@ variable {m : ℕ} (hx : ContDiff ℝ 2 x) (hhol : ∀ z, equation x z 1 = 0 ∧
 
 include hx hhol hframe
 
-/-- Finite dimensionality and the bound `dim ≤ 2 m` for the kernel, from the injectivity of the
-principal-part map on it. -/
-private theorem finiteDimensional_and_finrank_gaugeFixedKernel_le :
-    FiniteDimensional ℝ (gaugeFixedKernel x) ∧ finrank ℝ (gaugeFixedKernel x) ≤ 2 * m := by
-  have hxi (i : Fin 4) : ContDiff ℝ (2 : ℕ∞) fun w ↦ x w i := contDiff_euclidean.mp hx i
-  have hdx (i : Fin 4) : Differentiable ℝ fun w ↦ x w i := (hxi i).differentiable two_ne_zero
-  -- Kernel elements have `C²` coordinates and satisfy the linearized holomorphicity rows.
-  have hV (y : ℂ → EuclideanSpace ℝ (Fin 4)) (hy : y ∈ gaugeFixedKernel x) :
-      ContDiff ℝ (2 : ℕ∞) (fun w ↦ y w 0) ∧ ContDiff ℝ (2 : ℕ∞) (fun w ↦ y w 1) ∧
-        Differentiable ℝ (fun w ↦ y w 2) ∧ Differentiable ℝ (fun w ↦ y w 3) ∧
-        ∀ w, linearizedEquation x y w 1 = 0 ∧ linearizedEquation x y w 2 = 0 := by
-    obtain ⟨hyc, -, hker⟩ := hy
-    have hyi (i : Fin 4) : ContDiff ℝ (2 : ℕ∞) fun w ↦ y w i := contDiff_euclidean.mp hyc i
-    exact ⟨hyi 0, hyi 1, (hyi 2).differentiable two_ne_zero, (hyi 3).differentiable two_ne_zero,
-      fun w ↦ ⟨by simpa using congrArg (· 2) (hker w), by simpa using congrArg (· 3) (hker w)⟩⟩
-  -- A kernel element whose section variation is divisible by `α` vanishes.
-  have hdiv (y : ℂ → EuclideanSpace ℝ (Fin 4)) (hy : y ∈ gaugeFixedKernel x) (η : ℂ → ℂ)
-      (hη : ContDiff ℝ (2 : ℕ∞) η) (hyη : ∀ z, sectionValue y z = sectionValue x z * η z) :
-      y = 0 :=
-    eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto (μ := volume)
-      (hx.of_le one_le_two) hhol (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
-      hy.1.continuous hy.2.1 hy.2.2 hη hyη
-  exact ⟨finiteDimensional_of_forall_sectionValue_eq_mul_eq_zero (by norm_num) (hxi 0) (hxi 1)
-      (hdx 2) (hdx 3) hhol hframe hV hdiv,
-    finrank_le_two_mul_of_forall_sectionValue_eq_mul_eq_zero (by norm_num) (hxi 0) (hxi 1)
-      (hdx 2) (hdx 3) hhol hframe hV hdiv⟩
-
 /-- **The kernel of `L_x` is finite dimensional** at a `C²` field satisfying the holomorphicity
 rows of the vortex equation with the degree-`m` end framing. -/
 theorem finiteDimensional_gaugeFixedKernel : FiniteDimensional ℝ (gaugeFixedKernel x) :=
-  (finiteDimensional_and_finrank_gaugeFixedKernel_le hx hhol hframe).1
+  finiteDimensional_of_tendsto_sectionValue_mul_inv_pow (μ := volume) hx hhol hframe
+    fun _ hy ↦ hy
 
 /-- **The kernel of `L_x` has real dimension at most `2 m`**, the real dimension of the tangent
 space of `Sym^m ℂ`, at a `C²` field satisfying the holomorphicity rows of the vortex equation with
 the degree-`m` end framing `α (z / |z|)⁻ᵐ → 1`. -/
 theorem finrank_gaugeFixedKernel_le : finrank ℝ (gaugeFixedKernel x) ≤ 2 * m :=
-  (finiteDimensional_and_finrank_gaugeFixedKernel_le hx hhol hframe).2
+  finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow (μ := volume) hx hhol hframe
+    fun _ hy ↦ hy
 
 end UpperBound
 
