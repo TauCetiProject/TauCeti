@@ -350,6 +350,11 @@ theorem archHaar_surfacePart_preimage_inter {A : Set (normOneSurface K)}
   rw [← archHaar_toSurface_preimage_inter hA hB]
   exact measure_congr ((toSurface_preimage_ae_eq A).symm.inter (Filter.EventuallyEqSet.refl _ _))
 
+/-- Radial scaling is measurable in the surface point and the radial parameter. -/
+theorem measurable_surfaceScale_prod :
+    Measurable fun p : normOneSurface K × ℝ ↦ surfaceScale (p.1 : realSpace K) p.2 :=
+  continuous_surfaceScale.measurable.comp (measurable_subtype_coe.prodMap measurable_id)
+
 /-- **The decomposition `dy / y = d*x × dt / t`** (Neukirch VII §5): the multiplicative Haar measure
 of the archimedean parameters is the image of the product of `surfaceHaar K` and `dt / t` under
 `(x, t) ↦ x t^(1/n)`, `n = [K : ℚ]`. -/
@@ -358,14 +363,12 @@ theorem archHaar_eq_map :
       fun p : normOneSurface K × ℝ ↦ surfaceScale (p.1 : realSpace K) p.2 := by
   have hΨ : Measurable fun y : realSpace K ↦ (toSurface y, archNorm y) :=
     measurable_toSurface.prodMk continuous_archNorm.measurable
-  have hΦ : Measurable fun p : normOneSurface K × ℝ ↦ surfaceScale (p.1 : realSpace K) p.2 :=
-    continuous_surfaceScale.measurable.comp (measurable_subtype_coe.prodMap measurable_id)
   have hprod : (surfaceHaar K).prod multHaar =
       (archHaar K).map fun y ↦ (toSurface y, archNorm y) :=
     prod_eq fun s t hs ht ↦ by
       rw [map_apply hΨ (hs.prod ht), mk_preimage_prod,
         archHaar_toSurface_preimage_inter hs ht]
-  rw [hprod, map_map hΦ hΨ]
+  rw [hprod, map_map measurable_surfaceScale_prod hΨ]
   conv_lhs => rw [← map_id (μ := archHaar K)]
   refine map_congr ?_
   filter_upwards [ae_archHaar_pos] with y hy

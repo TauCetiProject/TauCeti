@@ -106,7 +106,6 @@ local instance factSplitsSplittingField (f : F[X]) :
     Fact ((f.map (algebraMap F f.SplittingField)).Splits) :=
   ⟨SplittingField.splits f⟩
 
--- Formalization source: `TauCetiRoadmap/PolynomialGaloisGroups/Suggested.lean`.
 /-- The Galois group of `f` carries the transitive-group label `j` of degree `n`: `f` is
 separable of degree `n`, and some numbering of its roots in the splitting field by `Fin n` carries
 the image of the Galois action on the roots to a conjugate of the reference subgroup
