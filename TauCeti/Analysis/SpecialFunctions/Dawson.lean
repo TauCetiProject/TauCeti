@@ -128,7 +128,6 @@ theorem dawson_mul_I (y : ℝ) :
     ring_nf
     rw [I_sq]
     ring
-  have hpi : (√π : ℝ) ≠ 0 := Real.sqrt_ne_zero'.mpr Real.pi_pos
   rw [dawson_def, hint, hsq, ← ofReal_exp, Real.erf_def]
   push_cast
   field_simp
