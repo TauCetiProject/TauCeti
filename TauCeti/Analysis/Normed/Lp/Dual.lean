@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 import Mathlib.Analysis.Normed.Operator.Mul
+import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
 
 /-!
 # The continuous dual of `ℓᵖ`
@@ -36,8 +36,8 @@ action of its functionals accessible through coordinates.
   power of its norm.
 * `ContinuousLinearMap.memℓp_lp_single`: the coordinate values of a functional on `ℓ^q` form an
   `ℓᵖ` family.
-* `ContinuousLinearMap.norm_le_of_forall_eq_lp_single`: an `ℓᵖ` family of coordinate values of a
-  functional on `ℓ^q` has norm at most the norm of the functional.
+* `ContinuousLinearMap.norm_le_opNorm_of_forall_eq_lp_single`: an `ℓᵖ` family of coordinate
+  values of a functional on `ℓ^q` has norm at most the norm of the functional.
 * `lp.dualEquiv`: the isometric equivalence `ℓᵖ ≃ₗᵢ (ℓ^q)*`.
 * `ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`: the norm of a functional on ℓ¹ is the
   supremum of the norms of its coordinate values.
@@ -164,13 +164,6 @@ theorem sum_norm_lp_single_rpow_le (hp : p ≠ ∞) (f : StrongDual 𝕜 (lp (fu
         rw [← Real.rpow_mul hv₀.le, h.symm.sub_one_mul_conj, hv]
     _ ≤ ‖f‖ ^ p.toReal := Real.rpow_le_rpow (by positivity) hle hp₀.le
 
-end ContinuousLinearMap
-
-namespace ContinuousLinearMap
-
-variable {𝕜 ι : Type*} [RCLike 𝕜] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-  [p.HolderConjugate q] [DecidableEq ι]
-
 /-- The coordinate values of a functional on `ℓ^q` form an `ℓᵖ` family. -/
 theorem memℓp_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) :
     Memℓp (fun i ↦ f (lp.single q i 1)) p := by
@@ -182,7 +175,7 @@ theorem memℓp_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) :
 
 /-- An `ℓᵖ` family of coordinate values of a functional on `ℓ^q` has norm at most the norm of the
 functional. -/
-theorem norm_le_of_forall_eq_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q))
+theorem norm_le_opNorm_of_forall_eq_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q))
     (a : lp (fun _ : ι ↦ 𝕜) p) (ha : ∀ i, a i = f (lp.single q i 1)) : ‖a‖ ≤ ‖f‖ := by
   rcases eq_or_ne p ∞ with rfl | hp
   · exact lp.norm_le_of_forall_le (norm_nonneg f) fun i ↦ ha i ▸ f.norm_apply_lp_single_le i
@@ -213,7 +206,7 @@ def dualEquiv (hq : q ≠ ∞) :
       Pi.single_apply, mul_ite, mul_one, mul_zero, tsum_ite_eq]
   have hnorm (a : lp (fun _ : ι ↦ 𝕜) p) : ‖P a‖ = ‖a‖ := by
     refine le_antisymm ((P.le_opNorm a).trans ?_)
-      ((P a).norm_le_of_forall_eq_lp_single a fun i ↦ (hP a i).symm)
+      ((P a).norm_le_opNorm_of_forall_eq_lp_single a fun i ↦ (hP a i).symm)
     simpa using mul_le_mul_of_nonneg_right
       (norm_dualPairing (p := p) (q := q) (fun _ : ι ↦ ContinuousLinearMap.mul 𝕜 𝕜)
         (fun _ ↦ hmul)) (norm_nonneg a)
