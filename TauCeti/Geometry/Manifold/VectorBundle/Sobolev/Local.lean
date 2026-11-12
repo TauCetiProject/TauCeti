@@ -42,9 +42,12 @@ every trivialization of the trivialization atlas
 (`TauCeti.memWkpLoc_trivialization_comp_chart_symm_of_contMDiff`); the corresponding element of
 `W^{k,p}(V)` is `TauCeti.SobolevSection.ofContMDiffSection`.
 
-The localizations of elements of `W^{k,p}(V)` are taken in the charts and trivializations of the
-atlas `A`. Localizing them in other charts, such as isothermal charts of a Riemann surface, needs
-the invariance of the local classes under changes of variables and is not treated here.
+The localizations of elements of `W^{k,p}(V)` are taken here in the charts and trivializations of
+the atlas `A`. For orders `k ≤ 1`, localization in every chart of the maximal `C¹` atlas, such as
+an isothermal chart of a Riemann surface, and every trivialization of the trivialization atlas is
+`TauCeti.SobolevSection.memWkpLoc_trivialization_comp_chart_symm`, with converse
+`TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm`, in
+`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart`.
 
 ## Main results
 
