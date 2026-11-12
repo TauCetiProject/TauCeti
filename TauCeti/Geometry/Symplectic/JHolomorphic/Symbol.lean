@@ -140,4 +140,34 @@ theorem cauchyRiemannSymbolEquiv_apply (J : AlmostComplexStructure V)
     cauchyRiemannSymbolEquiv J ℓ hℓ q =
       cauchyRiemannSymbolAntilinear (AlmostComplexStructure.ofComplexModule ℂ) J ℓ q := (rfl)
 
+/-- The inverse symbol recovers the section value explicitly from evaluation at `1`. -/
+@[simp]
+theorem cauchyRiemannSymbolEquiv_symm_apply (J : AlmostComplexStructure V)
+    (ℓ : ℂ →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0)
+    (f : complexAntilinearMaps (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+      J.toLinearMap) :
+    (cauchyRiemannSymbolEquiv J ℓ hℓ).symm f =
+      (ℓ Complex.I ^ 2 + ℓ 1 ^ 2)⁻¹ •
+        (ℓ Complex.I • f.val 1 + ℓ 1 • J (f.val 1)) := by
+  have hpair : ℓ Complex.I ^ 2 + ℓ 1 ^ 2 ≠ 0 := by
+    intro h
+    obtain ⟨hI, h₁⟩ := sq_add_sq_eq_zero.1 h
+    apply hℓ
+    apply Complex.basisOneI.ext
+    intro i
+    fin_cases i <;> simp [Complex.coe_basisOneI, h₁, hI]
+  have heval := congrArg (fun g : complexAntilinearMaps
+      (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap J.toLinearMap ↦ g.val 1)
+    ((cauchyRiemannSymbolEquiv J ℓ hℓ).apply_symm_apply f)
+  simp only [cauchyRiemannSymbolEquiv_apply, cauchyRiemannSymbolAntilinear_apply,
+    cauchyRiemannSymbol_apply, AlmostComplexStructure.ofComplexModule_apply,
+    smul_eq_mul, mul_one] at heval
+  rw [← heval]
+  simp only [J.apply_sub, J.apply_smul, J.apply_apply]
+  have heq (q : V) :
+      ℓ Complex.I • (ℓ Complex.I • q - ℓ 1 • J q) +
+        ℓ 1 • (ℓ Complex.I • J q - ℓ 1 • -q) =
+      (ℓ Complex.I ^ 2 + ℓ 1 ^ 2) • q := by module
+  rw [heq, smul_smul, inv_mul_cancel₀ hpair, one_smul]
+
 end TauCeti
