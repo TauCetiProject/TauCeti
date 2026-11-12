@@ -13,9 +13,9 @@ public import TauCeti.Algebra.Homology.DG.Module.Right.QuasiIso
 
 A morphism of DG `(A, B)`-bimodules whose underlying chain map has an inverse up to homotopy is a
 quasi-isomorphism of the underlying DG right `B`-modules
-(`TauCeti.DGBimoduleCat.isQuasiIso_forgetToRightModuleCat_map_of_homotopyInverse`). As for right
-modules (`TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyInverse`), the inverse and the homotopies
-need only be linear over the ground ring.
+(`TauCeti.DGBimoduleCat.isQuasiIso_forgetToRightModuleCat_map_of_homotopyInverse`). It is the
+right-module criterion `TauCeti.DGRightModuleCat.isQuasiIso_of_homotopyInverse` applied to the
+forgotten morphism: the inverse and the homotopies need only be linear over the ground ring.
 
 The statement is phrased on the bundled bimodules, with their own differentials. The module
 structures of the forgotten right modules are then those carried by the bundled objects, and no
@@ -49,6 +49,6 @@ theorem isQuasiIso_forgetToRightModuleCat_map_of_homotopyInverse
     (hK : ∀ x, g (φ x) = x + X.differential (K x) + K (X.differential x))
     (hL : ∀ y, φ (g y) = y + Y.differential (L y) + L (Y.differential y)) :
     DGRightModuleCat.IsQuasiIso (forgetToRightModuleCat.map φ) :=
-  DGRightModuleHom.isQuasiIso_of_homotopyInverse _ g K L hg hK hL
+  DGRightModuleCat.isQuasiIso_of_homotopyInverse (forgetToRightModuleCat.map φ) g K L hg hK hL
 
 end TauCeti.DGBimoduleCat

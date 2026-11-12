@@ -235,6 +235,29 @@ theorem tensorMap_zero_left (g : N ⟶ N') : tensorMap (0 : M ⟶ M') g = 0 := b
 theorem tensorMap_zero_right (f : M ⟶ M') : tensorMap f (0 : N ⟶ N') = 0 := by
   simpa only [zero_smul] using tensorMap_smul_right (0 : R) f (0 : N ⟶ N')
 
+/-- **Homotopies in the first factor.** If equivariant maps satisfy `f₁ = d ∘ k + k ∘ d + f₂`
+for an equivariant map `k` of degree `-1`, and `g` commutes with the differentials, then
+`f₁ ⊗ g = d ∘ (k ⊗ g) + (k ⊗ g) ∘ d + f₂ ⊗ g` for the differentials of the tensor products. This
+is `TauCeti.BalancedTensorProduct.map_eq_leibnizDifferential_comp_map_add_map_comp_add` stated on
+the bundled bimodules, with their own differentials, so that applying it to concrete bimodules
+needs no instance search on their carriers. -/
+theorem map_eq_tensorObj_differential_comp_map_add_map_comp_add {f₁ f₂ k : M →ₗ[R] M'}
+    {g : N →ₗ[R] N'} (hf₁ : ∀ (b : B) m, f₁ (op b • m) = op b • f₁ m)
+    (hf₂ : ∀ (b : B) m, f₂ (op b • m) = op b • f₂ m)
+    (hk : ∀ (b : B) m, k (op b • m) = op b • k m) (hg : ∀ (b : B) n, g (b • n) = b • g n)
+    (hk₁ : LinearMap.IsHomogeneous k M.grading M'.grading (-1))
+    (hfk : f₁ = M'.differential ∘ₗ k + k ∘ₗ M.differential + f₂)
+    (hgd : N'.differential ∘ₗ g = g ∘ₗ N.differential) :
+    BalancedTensorProduct.map f₁ g hf₁ hg =
+      (tensorObj M' N').differential ∘ₗ BalancedTensorProduct.map k g hk hg +
+        BalancedTensorProduct.map k g hk hg ∘ₗ (tensorObj M N).differential +
+        BalancedTensorProduct.map f₂ g hf₂ hg := by
+  rw [show (tensorObj M N).differential = _ from
+      differential_eq_leibnizDifferential M.isDGRightModule N.isDGLeftModule,
+    show (tensorObj M' N').differential = _ from
+      differential_eq_leibnizDifferential M'.isDGRightModule N'.isDGLeftModule]
+  exact map_eq_leibnizDifferential_comp_map_add_map_comp_add _ _ _ _ hg hf₁ hf₂ hk hk₁ hfk hgd
+
 /-- The ordinary balanced tensor product as a bifunctor on DG bimodules.
 The abbreviation keeps its object maps definitionally equal to `tensorObj`, so that
 its morphisms act on the balanced carriers without transports. -/
