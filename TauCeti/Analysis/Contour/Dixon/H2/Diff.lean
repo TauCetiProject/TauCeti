@@ -30,9 +30,9 @@ analyticity of Dixon's glued function.
 
 Adapted from `dixonH2_differentiableAt` / `dixonH2_differentiableAt_of_regular` in `DixonDiff.lean`
 of the AINTLIB `LeanModularForms` development, restated for a raw `γ : ℝ → ℂ` on an oriented
-interval and phrased without any integrability hypothesis (weaker than a continuous `f` and a
-separately integrable derivative). See J. D. Dixon, *A brief proof of Cauchy's integral theorem*
-(1971).
+interval and phrased without any integrability hypothesis: the source assumes a continuous `f` and
+an integrable `deriv γ`, and neither is needed here. See J. D. Dixon, *A brief proof of Cauchy's
+integral theorem* (1971).
 -/
 
 public section
