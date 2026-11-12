@@ -90,9 +90,9 @@ strictly unital module.
 (`TauCeti.TypeDStructure.typeABoxMapOfHom`). It is the off-diagonal component of the box tensor
 differential of the mapping cone of `f` (`TauCeti.UngradedAInfinityRightModuleHom.cone`), which is
 block triangular with diagonal blocks the box tensor differentials of `M` and `M'`; since that
-differential squares to zero, `∂' ∘ T_f = T_f ∘ ∂` under either boundedness hypothesis. The
-identity morphism induces the identity, and an `A`-linear chain map `g` of differential modules
-induces `φ ↦ g ∘ φ`.
+differential squares to zero, `∂' ∘ T_f = T_f ∘ ∂` under either boundedness hypothesis. For a
+bounded type `D` structure, the identity morphism induces the identity. For any type `D` structure,
+an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
 
 ## Main definitions
 
@@ -148,8 +148,9 @@ induces `φ ↦ g ∘ φ`.
 * `TauCeti.TypeDStructure.typeABoxMapOfHom_apply_eq_sum`: the induced map as a finite sum over
   paths of generators.
 * `TauCeti.TypeDStructure.typeABoxMapOfHom_id_of_isBounded` and
-  `TauCeti.TypeDStructure.typeABoxMapOfHom_toUngradedAInfinityRightModuleHom`: the identity induces
-  the identity, and a chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
+  `TauCeti.TypeDStructure.typeABoxMapOfHom_toUngradedAInfinityRightModuleHom`: for a bounded type
+  `D` structure, the identity induces the identity; for any type `D` structure, a chain map `g` of
+  differential modules induces `φ ↦ g ∘ φ`.
 
 ## References
 

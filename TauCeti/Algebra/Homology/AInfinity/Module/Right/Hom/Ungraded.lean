@@ -22,8 +22,8 @@ algebra `A` with a linear map `d`, with operations `m_{n+1}` and `m'_{n+1}`. A *
 (`TauCeti.UngradedAInfinityRightModuleHom`). Over a ring of characteristic two these are the
 relations of an `A∞` morphism, as in Lipshitz, Ozsváth and Thurston (§2.1): every Koszul sign
 is `1`. Their length-zero case says that `f₁` is a chain map for `m₁` and `m'₁`. These are the
-morphisms of type `A` modules of bordered Heegaard Floer homology, along which box tensor products
-are functorial (`TauCeti.LowDimTopology.Bordered.TypeA`). Tau Ceti's morphisms of graded `A∞`
+morphisms of type `A` modules of bordered Heegaard Floer homology, which induce chain maps of box
+tensor products (`TauCeti.LowDimTopology.Bordered.TypeA`). Tau Ceti's morphisms of graded `A∞`
 modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules are ungraded.
 
 * **Mapping cones.** The relations of a morphism make the operations
