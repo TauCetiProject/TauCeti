@@ -45,7 +45,8 @@ tangent vector of `M` with `(f^* σ)(u, ·) = σ(v, df_x ·)`; it exists and is 
 (`TauCeti.SmoothEmbedding.symplecticNormalRepresentative_normalClass_eq_sub_mfderiv_inverse`).
 Inverting the flat map of the pulled-back form `f^* σ` along `M` therefore makes the
 representatives depend smoothly on the base point and the normal vector: for a `C^n` embedding
-the map from the normal bundle to the ambient tangent bundle is `C^m` when `m + 1 ≤ n`
+the map from the normal bundle to the ambient tangent bundle is `C^m` when `m + 1 ≤ n` and
+`m + 1 ≤ ∞` (so `m` is finite or `∞`, not analytic)
 (`TauCeti.SmoothEmbedding.contMDiff_symplecticNormalRepresentative`). As for the orthogonal
 representatives of a Riemannian metric
 (`TauCeti.SmoothEmbedding.contMDiff_normalRepresentative`), this is an instance of
@@ -72,10 +73,12 @@ is used.
   normal classes as their representatives, equivalently as any representative of the first class
   against the symplectic representative of the second.
 * `TauCeti.SmoothEmbedding.contMDiff_symplecticNormalRepresentative_normalClass`: for a `C^n`
-  embedding and `m + 1 ≤ n`, the symplectic projection, the symplectic representative of the
-  normal class of an ambient tangent vector, is `C^m` on the pulled-back ambient tangent bundle.
-* `TauCeti.SmoothEmbedding.contMDiff_symplecticNormalRepresentative`: for a `C^n` embedding and
-  `m + 1 ≤ n`, the symplectic representatives are `C^m` on the normal bundle.
+  embedding with `m + 1 ≤ n` and `m + 1 ≤ ∞` (so `m` is not analytic), the symplectic
+  projection, the symplectic representative of the normal class of an ambient tangent vector, is
+  `C^m` on the pulled-back ambient tangent bundle.
+* `TauCeti.SmoothEmbedding.contMDiff_symplecticNormalRepresentative`: for a `C^n` embedding with
+  `m + 1 ≤ n` and `m + 1 ≤ ∞` (so `m` is not analytic), the symplectic representatives are `C^m`
+  on the normal bundle.
 
 ## References
 
@@ -261,8 +264,7 @@ theorem symplecticNormalRepresentative_normalClass_eq_sub_mfderiv_inverse
     rw [ContinuousLinearMap.coe_coe]
     have hpair := DFunLike.congr_fun (hinv.self_apply_inverse ((flat σ (f x) v).comp d)) w
     rw [ContinuousLinearMap.comp_apply, flat_apply, ha] at hpair
-    rw [IsNondegenerate.symplecticFormAt_apply, ← flat_apply, map_sub, sub_apply, flat_apply,
-      flat_apply]
+    rw [IsNondegenerate.symplecticFormAt_apply, SmoothBundleForm.eval₂_sub_left]
     exact sub_eq_zero.2 hpair.symm
   · rw [map_sub, normalClass_mfderiv, sub_zero]
 
@@ -317,8 +319,7 @@ theorem symplecticNormalForm_normalClass (f : SmoothEmbedding I J n M N)
     (f.normalClass_symplecticNormalRepresentative h x hn (f.normalClass x hn v))
   rw [← sub_add_cancel (f.symplecticNormalRepresentative h x hn (f.normalClass x hn v)) v,
     ← hu, ContinuousLinearMap.coe_coe]
-  simp only [← flat_apply, map_add, add_apply]
-  rw [flat_apply, eval₂_mfderiv_symplecticNormalRepresentative, zero_add]
+  rw [SmoothBundleForm.eval₂_add_left, eval₂_mfderiv_symplecticNormalRepresentative, zero_add]
 
 /-- On classes of vectors of the symplectic complement, the normal symplectic form is `σ`. -/
 theorem symplecticNormalForm_normalClass_normalClass (f : SmoothEmbedding I J n M N)
@@ -341,7 +342,8 @@ variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] {m : ℕ∞ω}
 /-- **Smooth symplectic projection.** The symplectic representative of the normal class of an
 ambient tangent vector, the projection onto the symplectic complement of the tangent space along
 it, is `C^m` on the pulled-back ambient tangent bundle for a `C^n` symplectic submanifold
-embedding with `m + 1 ≤ n`. Both the base point and the ambient tangent vector may vary. -/
+embedding with `m + 1 ≤ n` and `m + 1 ≤ ∞` (so `m` is finite or `∞`, not analytic). Both the
+base point and the ambient tangent vector may vary. -/
 theorem contMDiff_symplecticNormalRepresentative_normalClass (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (hn : n ≠ 0) (hm : m + 1 ≤ n) (hm' : m + 1 ≤ ∞) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
@@ -378,7 +380,8 @@ variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimension
 
 /-- **Smooth symplectic representatives.** The map taking an intrinsic normal vector of a
 symplectic submanifold embedding to its symplectic representative in the ambient tangent bundle
-is `C^m` for a `C^n` embedding with `m + 1 ≤ n`. -/
+is `C^m` for a `C^n` embedding with `m + 1 ≤ n` and `m + 1 ≤ ∞` (so `m` is finite or `∞`, not
+analytic). -/
 theorem contMDiff_symplecticNormalRepresentative (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (hn : n ≠ 0) (hm : m + 1 ≤ n) (hm' : m + 1 ≤ ∞)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) :
