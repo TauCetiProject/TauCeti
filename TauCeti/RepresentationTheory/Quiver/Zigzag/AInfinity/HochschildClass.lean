@@ -665,10 +665,10 @@ theorem zigzagBacktrackPairing_obstruction (a : Matrix G.Dart G.Dart k)
     Units.val_one, Int.cast_one, one_mul, one_mul]
 
 omit [Fintype G.Dart] in
-/-- **Higher loop operations are Hochschild cocycles.** The obstruction of the loop
-deformation with coefficients `c` on walks of length `n + 2`, that is its operation of arity
-`n + 2`, is a Hochschild cocycle of the strict zigzag algebra, since the two agree up to arity
-`n + 1`. -/
+/-- **Loop obstructions are Hochschild cocycles.** The obstruction of the loop deformation with
+coefficients `c` on walks of length `n + 2` is a Hochschild cocycle of the strict zigzag algebra,
+since the two agree up to arity `n + 1`. For `n ≥ 1` this obstruction is the operation of arity
+`n + 2` of the loop deformation; for `n = 0` it vanishes. -/
 theorem hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra {n : ℕ}
     (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) :
     (𝒵).hochschildDifferential 1
@@ -694,9 +694,10 @@ theorem hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra {n : ℕ}
       (fun r hr hrn ↦ hm r hr (by omega)) hz
 
 omit [Fintype G.Dart] in
-/-- **A higher loop operation which is not a coboundary gives a nonzero Hochschild class.** If the
-operation of arity `n + 2` of a loop deformation, a Hochschild cocycle of the strict zigzag algebra
-by `TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`, is not the Hochschild
+/-- **A loop obstruction which is not a coboundary gives a nonzero Hochschild class.** If the
+obstruction of a loop deformation in arity `n + 2` (for `n ≥ 1`, its operation of arity `n + 2`), a
+Hochschild cocycle of the strict zigzag algebra by
+`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`, is not the Hochschild
 differential of any suspended cochain of degree zero, then `HH^{n + 2, -n}(Z, Z) ≠ 0`. -/
 theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction {n : ℕ}
     (c : (Fin (n + 2) → G.Dart) →₀ k)
