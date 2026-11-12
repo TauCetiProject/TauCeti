@@ -65,6 +65,8 @@ block of the same sign to its inertia.
   one critical point of each index `dim_ℝ 𝕜 * j` with `j ≤ n`, and none of any other index.
 * `TauCeti.criticalCount_projectiveMomentFunction_real`: on `ℝℙⁿ` with distinct weights there is
   one critical point of each index `j ≤ n`.
+* `TauCeti.subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real`: in particular, no
+  two of them have the same index.
 * `TauCeti.manifoldMorseIndex_projectiveMomentFunction_natCast_complex`: on `ℂℙⁿ` with the
   standard weights, `[eₖ]` has index `2 * k`.
 
@@ -519,7 +521,7 @@ theorem manifoldMorseIndex_projectiveMomentFunction (w : Fin (n + 1) → ℝ) (k
   have himage : k.succAbove '' {j | (w ∘ k.succAbove) j < w k} = {i | w i < w k} := by
     ext i
     simp only [mem_image, mem_ofPred_eq, comp_apply]
-    refine ⟨fun ⟨j, hj, hji⟩ ↦ hji ▸ hj, fun hi ↦ ?_⟩
+    refine ⟨fun ⟨_, hj, hji⟩ ↦ hji ▸ hj, fun hi ↦ ?_⟩
     obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq (x := i) (y := k) fun h ↦ (h ▸ hi).false
     exact ⟨j, hi, rfl⟩
   rw [← himage, Fin.succAbove_right_injective.injOn.ncard_image]
@@ -592,6 +594,19 @@ theorem criticalCount_projectiveMomentFunction_real {w : Fin (n + 1) → ℝ} (h
     criticalCount 𝓘(ℝ, Fin n → ℝ) (projectiveMomentFunction ℝ w) j = if j ≤ n then 1 else 0 := by
   simp only [criticalCount_projectiveMomentFunction hw, Module.finrank_self, one_mul,
     encard_setOf_ncard_setOf_lt_eq hw, Nat.card_eq_fintype_card, Fintype.card_fin, Nat.lt_succ_iff]
+
+/-- For pairwise distinct weights, at most one critical point of the moment function on `ℝℙⁿ` has
+a given index. -/
+theorem subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real
+    {w : Fin (n + 1) → ℝ} (hw : Injective w) (j : ℕ) :
+    {x | mfderiv 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ) (projectiveMomentFunction ℝ w) x = 0 ∧
+      manifoldMorseIndex 𝓘(ℝ, Fin n → ℝ) (projectiveMomentFunction ℝ w) x = j}.Subsingleton := by
+  rw [← encard_le_one_iff_subsingleton]
+  have h := criticalCount_projectiveMomentFunction_real hw j
+  rw [criticalCount_def] at h
+  simp only [mem_criticalPoints_iff_mfderiv_eq_zero] at h
+  rw [h]
+  split_ifs <;> simp
 
 /-! ### The standard weights -/
 

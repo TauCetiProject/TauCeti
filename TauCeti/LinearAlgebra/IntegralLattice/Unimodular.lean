@@ -41,7 +41,6 @@ than reproving Smith normal form.
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layers 1 and 2.
 -/
 
 public section

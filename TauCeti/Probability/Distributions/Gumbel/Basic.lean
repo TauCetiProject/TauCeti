@@ -139,7 +139,6 @@ theorem gumbelMeasure_Iic (hs : 0 < s) (m x : ℝ) :
     rw [← Real.le_log_iff_exp_le he]
     have hrewrite : -((x - m) / s) = (m - x) / s := by ring
     rw [hrewrite, div_le_iff₀ hs]
-    apply propext
     constructor <;> intro h <;> linarith
   have hsingleton : expMeasure 1 {Real.exp (-((x - m) / s))} = 0 := by
     rw [expMeasure_eq_withDensity]

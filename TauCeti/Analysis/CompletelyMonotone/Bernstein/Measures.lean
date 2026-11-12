@@ -62,8 +62,6 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
-
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013).
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions* (de Gruyter, 2nd ed. 2012), Ch. 1.
 -/

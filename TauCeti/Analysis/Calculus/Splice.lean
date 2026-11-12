@@ -248,7 +248,8 @@ theorem injOn_and_injective_fderiv_spliceAlong_fst {k l : ℝ × ℝ → Y}
       (hdk u hu) (hdl u hu) (hbound u hu).1.le (hbound u hu).2.le hlk
   choose! h' hh' hh'A using hderiv
   obtain ⟨hinj, hinj'⟩ :=
-    (convex_setOf_abs_fst_lt (W := ℝ) ρ).injOn_and_injective_of_norm_hasFDerivAt_sub_le hP hh'
+    (convex_setOf_abs_fst_lt (W := ℝ) ρ).injOn_and_injective_of_norm_hasFDerivWithin_sub_le hP
+      (fun u hu => (hh' u hu).hasFDerivWithinAt)
       fun u hu => (mul_le_mul_of_nonneg_left (hh'A u hu) (norm_nonneg P)).trans hPε
   exact ⟨hinj, fun u hu => (hh' u hu).fderiv ▸ hinj' u hu⟩
 
