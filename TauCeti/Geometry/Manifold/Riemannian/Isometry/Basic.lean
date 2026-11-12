@@ -278,7 +278,7 @@ variable {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
 
 /-- Every element of a group acting by smooth maps whose differentials preserve the metric, as a
 Riemannian isometry of `M`. -/
-@[expose] def ofSMul
+def ofSMul
     (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
       inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w) (a : G) :
     RiemannianIsometry I I M M where

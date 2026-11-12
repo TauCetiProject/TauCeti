@@ -144,8 +144,10 @@ theorem riemannianExp_mfderiv_smul
     (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
       inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
     (a : G) (x : M) (v : TangentSpace I x) :
-    riemannianExp I M (a • x) (mfderiv I I (a • ·) x v) = a • riemannianExp I M x v :=
-  (RiemannianIsometry.ofSMul hG a).riemannianExp_mfderiv x v
+    riemannianExp I M (a • x) (mfderiv I I (a • ·) x v) = a • riemannianExp I M x v := by
+  have h := (RiemannianIsometry.ofSMul hG a).riemannianExp_mfderiv x v
+  rw [RiemannianIsometry.coe_ofSMul] at h
+  exact h
 
 /-- An isometric action carries the image under `exp_x` of the ball of radius `r` about the
 origin onto the image under `exp_{a • x}` of the ball of the same radius. -/
