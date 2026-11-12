@@ -39,8 +39,7 @@ such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
 * `TauCeti.ClosedUnitPath`, `TauCeti.circleMapHomeomorphClosedUnitPath`:
   `C(Circle, Q) ≃ₜ {p : C(I, Q) // p 0 = p 1}`.
 * `TauCeti.basedMapCircleOneHomeomorphPath`: `BasedMap Circle Q 1 x ≃ₜ Path x x`.
-* `ContinuousMap.toLoop`: the loop `t ↦ f(e^{2πit})` at `f 1` of a circle map `f`, a right
-  inverse of `Path.toCircle` (`ContinuousMap.toLoop_toCircle`); `Path.continuous_toCircle`.
+* `Path.continuous_toCircle`: reading loops as circle maps is continuous.
 * `Path.joined_toCircle_iff_homotopicWith`: two loops are joined in `C(Circle, Q)` exactly when
   they are homotopic through closed paths `I → Q`.
 * `TauCeti.contractibleLoops`, `TauCeti.basepointContractibleLoop`: the contractible free loops
@@ -313,28 +312,6 @@ end TauCeti
 section FreeLoop
 
 variable {X : Type*} [TopologicalSpace X]
-
-namespace ContinuousMap
-
-/-- The loop `t ↦ f(e^{2πit})` at `f 1` of a free loop `f : S¹ → X`. It is a right inverse of
-`Path.toCircle` (`ContinuousMap.toLoop_toCircle`). -/
-def toLoop (f : C(Circle, X)) : Path (f 1) (f 1) where
-  toContinuousMap := f.comp TauCeti.unitToCircle
-  source' := by simp
-  target' := by simp
-
-@[simp]
-theorem toLoop_apply (f : C(Circle, X)) (t : I) : f.toLoop t = f (TauCeti.unitToCircle t) :=
-  (rfl)
-
-/-- A free loop is recovered from its loop at `f 1` by `Path.toCircle`. -/
-@[simp]
-theorem toLoop_toCircle (f : C(Circle, X)) : f.toLoop.toCircle = f := by
-  ext z
-  obtain ⟨t, rfl⟩ := TauCeti.unitToCircle_surjective z
-  rw [Path.toCircle_unitToCircle, toLoop_apply]
-
-end ContinuousMap
 
 namespace Path
 

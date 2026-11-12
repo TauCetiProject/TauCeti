@@ -11,7 +11,7 @@ public import TauCeti.Topology.MappingSpace.FreeLoop
 public import TauCeti.Topology.PathComponent
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
 import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
-import TauCeti.Topology.MappingSpace.Sphere.LoopFamily
+import TauCeti.Topology.Homotopy.Path
 
 /-!
 # Path components of the free loop space
