@@ -41,11 +41,15 @@ elliptic operator applied to it, in
 ## Main declarations
 
 * `TauCeti.PDE.upperContactSet`: the upper contact set of `u` on `Ω`.
+* `TauCeti.PDE.mem_upperContactSet_of_forall_le_add_inner`: on a superlevel set `S ⊆ Ω`, contact
+  points with small slopes are contact points on `Ω`.
 * `TauCeti.PDE.norm_le_of_forall_le_add_inner`: supporting slopes of a bounded function at a
   point with a ball around it are bounded.
-* `TauCeti.PDE.mem_upperContactSet_of_frequently`: upper contact sets are upper semicontinuous
-  along pointwise convergent sequences of functions uniformly bounded on growing sets `Vₖ`,
-  which is how the estimate passes from smooth approximations to their limit.
+* `TauCeti.PDE.exists_mem_forall_le_add_inner_of_frequently`: supporting slopes in a closed set
+  persist along pointwise convergent sequences of functions uniformly bounded on growing sets
+  `Vₖ`, which is how the estimate passes from smooth approximations to their limit.
+* `TauCeti.PDE.mem_upperContactSet_of_frequently`: hence upper contact sets are upper
+  semicontinuous along such sequences.
 * `TauCeti.PDE.mem_upperContactSet_iff_gradient`: on an open set where `u` is differentiable,
   the supporting slope at a contact point is the gradient.
 * `TauCeti.PDE.measurableSet_upperContactSet`: for `u` of class `C¹` on an open set, the upper
@@ -56,9 +60,13 @@ elliptic operator applied to it, in
   operator is positive.
 * `TauCeti.PDE.ball_subset_image_gradient_upperContactSet`: the ball of radius
   `(u x - m) / diam Ω` lies in the gradient image of the upper contact set.
-* `TauCeti.PDE.addHaar_image_gradient_upperContactSet_le`: the measure of that gradient image is
-  at most the integral of `|det D²u|` over the upper contact set.
-* `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_hessianOperator`: the two combined.
+* `TauCeti.PDE.addHaar_image_gradient_le_lintegral_abs_det_hessianOperator`: the measure of the
+  gradient image of a measurable subset of `Ω` is at most the integral of `|det D²u|` over it.
+* `TauCeti.PDE.addHaar_ball_le_lintegral_inter_preimage_abs_det_hessianOperator`: the two
+  combined, for the slopes in a ball of radius `r ≤ (u x - m) / diam Ω`: `μ (ball 0 r)` is at most
+  the integral of `|det D²u|` over the contact points where `‖∇ u‖ < r`.
+* `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_hessianOperator`: the case
+  `r = (u x - m) / diam Ω`, over the whole upper contact set.
 
 ## References
 
@@ -93,6 +101,26 @@ theorem mem_upperContactSet :
 
 theorem upperContactSet_subset : upperContactSet u Ω ⊆ Ω := fun _ hy => hy.1
 
+/-- **Contact points on a subset.** Let `x ∈ S ⊆ Ω` with `Ω` bounded, and let `u ≤ c` on `Ω \ S`.
+If the affine function with slope `p` through `(y, u y)` lies above `u` on `S`, and
+`‖p‖ diam Ω ≤ u x - c`, then it lies above `u` on all of `Ω`, so `y` is in the upper contact set
+of `u` on `Ω`. Applied to a superlevel set `S = {u > c}`, this says that contact points on `S` with
+small slopes are contact points on `Ω`. -/
+theorem mem_upperContactSet_of_forall_le_add_inner {S : Set E} {c : ℝ}
+    (hΩb : Bornology.IsBounded Ω) (hSΩ : S ⊆ Ω) (hc : ∀ z ∈ Ω, z ∉ S → u z ≤ c) (hxS : x ∈ S)
+    (hyS : y ∈ S) (hpc : ‖p‖ * diam Ω ≤ u x - c) (hsupp : ∀ z ∈ S, u z ≤ u y + ⟪p, z - y⟫) :
+    y ∈ upperContactSet u Ω := by
+  refine ⟨hSΩ hyS, p, fun z hz => ?_⟩
+  by_cases hzS : z ∈ S
+  · exact hsupp z hzS
+  -- Off `S`, `u ≤ c`, while the affine function is at least `u x - ‖p‖ diam Ω ≥ c` on `Ω`.
+  have hpzx : -(‖p‖ * diam Ω) ≤ ⟪p, z - x⟫ := neg_le_of_abs_le ((abs_real_inner_le_norm p
+    (z - x)).trans (mul_le_mul_of_nonneg_left ((dist_eq_norm z x).symm.trans_le
+      (dist_le_diam_of_mem hΩb hz (hSΩ hxS))) (norm_nonneg p)))
+  have hxy := hsupp x hxS
+  rw [inner_sub_right] at hpzx hxy ⊢
+  linarith [hc z hz hzS]
+
 /-- **Supporting slopes are bounded.** If an affine function with slope `p` touches `u` from above
 at `x` on a set `Ω` containing `ball x r`, and `|u| ≤ M` on `Ω`, then `‖p‖ ≤ 4 M / r`. -/
 theorem norm_le_of_forall_le_add_inner {r M : ℝ} (hr : 0 < r) (hball : ball x r ⊆ Ω)
@@ -118,6 +146,34 @@ theorem norm_le_of_forall_le_add_inner {r M : ℝ} (hr : 0 < r) (hball : ball x 
   have h2 := neg_abs_le (u y) |>.trans' (neg_le_neg (hM y hy))
   linarith
 
+/-- **Limits of supporting slopes.** Let `uₖ` converge pointwise to `u` on `Ω`, and let `Vₖ` be
+sets such that every point of `Ω` lies in `Vₖ` for all large `k`, a fixed ball around `x ∈ Ω` lies
+in `Vₖ` for all large `k`, and the `uₖ` are eventually bounded on `Vₖ` uniformly in `k`. If for
+infinitely many `k` an affine function with slope in a closed set `K` touches `uₖ` from above at
+`x` on `Vₖ`, then an affine function with slope in `K` touches `u` from above at `x` on `Ω`. -/
+theorem exists_mem_forall_le_add_inner_of_frequently [ProperSpace E] {us : ℕ → E → ℝ}
+    {V : ℕ → Set E} {K : Set E} {r M : ℝ} (hK : IsClosed K) (hr : 0 < r)
+    (hball : ∀ᶠ k in atTop, ball x r ⊆ V k) (hmem : ∀ y ∈ Ω, ∀ᶠ k in atTop, y ∈ V k)
+    (hM : ∀ᶠ k in atTop, ∀ y ∈ V k, |us k y| ≤ M)
+    (hconv : ∀ y ∈ Ω, Tendsto (fun k => us k y) atTop (𝓝 (u y))) (hx : x ∈ Ω)
+    (hfreq : ∃ᶠ k in atTop, ∃ p ∈ K, ∀ y ∈ V k, us k y ≤ us k x + ⟪p, y - x⟫) :
+    ∃ p ∈ K, ∀ y ∈ Ω, u y ≤ u x + ⟪p, y - x⟫ := by
+  obtain ⟨φ, hφ, hφx⟩ := extraction_of_frequently_atTop hfreq
+  choose P hPK hP using hφx
+  -- Along the extracted subsequence the slopes are eventually bounded, so a further
+  -- subsequence of them converges, and its limit lies in the closed set `K`.
+  have hPb : ∀ᶠ j in atTop, P j ∈ closedBall (0 : E) (4 * M / r) := by
+    filter_upwards [hφ.tendsto_atTop.eventually (hball.and hM)] with j ⟨hb, hMj⟩
+    exact mem_closedBall_zero_iff.2 (norm_le_of_forall_le_add_inner hr hb hMj (hP j))
+  obtain ⟨p, -, ψ, hψ, hPψ⟩ :=
+    tendsto_subseq_of_frequently_bounded isBounded_closedBall hPb.frequently
+  have hk : Tendsto (φ ∘ ψ) atTop atTop := hφ.tendsto_atTop.comp hψ.tendsto_atTop
+  refine ⟨p, hK.mem_of_tendsto hPψ (Eventually.of_forall fun j => hPK (ψ j)), fun y hy =>
+    le_of_tendsto_of_tendsto ((hconv y hy).comp hk)
+      (((hconv x hx).comp hk).add (hPψ.inner tendsto_const_nhds)) ?_⟩
+  filter_upwards [hk.eventually (hmem y hy)] with j hj
+  exact hP (ψ j) y hj
+
 /-- **Upper semicontinuity of upper contact sets.** Let `uₖ` converge pointwise to `u` on `Ω`, and
 let `Vₖ` be sets such that every point of `Ω` lies in `Vₖ` for all large `k`, a fixed ball around
 `x ∈ Ω` lies in `Vₖ` for all large `k`, and the `uₖ` are eventually bounded on `Vₖ` uniformly in
@@ -128,21 +184,9 @@ theorem mem_upperContactSet_of_frequently [ProperSpace E] {us : ℕ → E → �
     (hmem : ∀ y ∈ Ω, ∀ᶠ k in atTop, y ∈ V k) (hM : ∀ᶠ k in atTop, ∀ y ∈ V k, |us k y| ≤ M)
     (hconv : ∀ y ∈ Ω, Tendsto (fun k => us k y) atTop (𝓝 (u y))) (hx : x ∈ Ω)
     (hfreq : ∃ᶠ k in atTop, x ∈ upperContactSet (us k) (V k)) :
-    x ∈ upperContactSet u Ω := by
-  obtain ⟨φ, hφ, hφx⟩ := extraction_of_frequently_atTop hfreq
-  choose P hP using fun j => (hφx j).2
-  -- Along the extracted subsequence the slopes are eventually bounded, so a further
-  -- subsequence of them converges.
-  have hPb : ∀ᶠ j in atTop, P j ∈ closedBall (0 : E) (4 * M / r) := by
-    filter_upwards [hφ.tendsto_atTop.eventually (hball.and hM)] with j ⟨hb, hMj⟩
-    exact mem_closedBall_zero_iff.2 (norm_le_of_forall_le_add_inner hr hb hMj (hP j))
-  obtain ⟨p, -, ψ, hψ, hPψ⟩ :=
-    tendsto_subseq_of_frequently_bounded isBounded_closedBall hPb.frequently
-  have hk : Tendsto (φ ∘ ψ) atTop atTop := hφ.tendsto_atTop.comp hψ.tendsto_atTop
-  refine ⟨hx, p, fun y hy => le_of_tendsto_of_tendsto ((hconv y hy).comp hk)
-    (((hconv x hx).comp hk).add (hPψ.inner tendsto_const_nhds)) ?_⟩
-  filter_upwards [hk.eventually (hmem y hy)] with j hj
-  exact hP (ψ j) y hj
+    x ∈ upperContactSet u Ω :=
+  ⟨hx, (exists_mem_forall_le_add_inner_of_frequently isClosed_univ hr hball hmem hM hconv hx
+    (hfreq.mono fun _ h => h.2.imp fun p hp => ⟨mem_univ p, hp⟩)).imp fun _ h => h.2⟩
 
 /-- **The Hessian on the upper contact set.** At a point of the upper contact set of a function
 that is `C²` on an open set, the second derivative is nonpositive on the diagonal:
@@ -235,15 +279,35 @@ theorem ball_subset_image_gradient_upperContactSet {m : ℝ} (hΩb : Bornology.I
 
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
-/-- The measure of the gradient image of the upper contact set of a function `C²` on an open set
-is at most the integral of the absolute Hessian determinant over the upper contact set. -/
-theorem addHaar_image_gradient_upperContactSet_le (hΩ : IsOpen Ω) (hu : ContDiffOn ℝ 2 u Ω) :
-    μ (∇ u '' upperContactSet u Ω) ≤
-      ∫⁻ y in upperContactSet u Ω, ENNReal.ofReal |(hessianOperator u y).det| ∂μ :=
-  addHaar_image_le_lintegral_abs_det_fderiv μ
-    (measurableSet_upperContactSet hΩ (hu.of_le (by norm_num))) fun _ hy =>
-      (hu.contDiffAt (hΩ.mem_nhds
-        (upperContactSet_subset hy))).hasFDerivAt_gradient.hasFDerivWithinAt
+/-- For a function `C²` on an open set `Ω`, the measure of the gradient image of a measurable
+`s ⊆ Ω` is at most the integral of the absolute Hessian determinant over `s`. -/
+theorem addHaar_image_gradient_le_lintegral_abs_det_hessianOperator {s : Set E} (hΩ : IsOpen Ω)
+    (hu : ContDiffOn ℝ 2 u Ω) (hs : MeasurableSet s) (hsΩ : s ⊆ Ω) :
+    μ (∇ u '' s) ≤ ∫⁻ y in s, ENNReal.ofReal |(hessianOperator u y).det| ∂μ :=
+  addHaar_image_le_lintegral_abs_det_fderiv μ hs fun _ hy =>
+    (hu.contDiffAt (hΩ.mem_nhds (hsΩ hy))).hasFDerivAt_gradient.hasFDerivWithinAt
+
+/-- **The Aleksandrov measure estimate for bounded slopes.** Let `Ω` be bounded and open, let `u`
+be continuous on `closure Ω` and `C²` in `Ω`, and let `m` bound `u` on `frontier Ω`. For `x ∈ Ω`,
+`r ≤ (u x - m) / diam Ω` and every additive Haar measure `μ`, `μ (ball 0 r)` is at most the
+integral of `|det D²u|` over the points of the upper contact set at which `‖∇ u‖ < r`. -/
+theorem addHaar_ball_le_lintegral_inter_preimage_abs_det_hessianOperator {m r : ℝ}
+    (hΩb : Bornology.IsBounded Ω) (hΩ : IsOpen Ω) (hcont : ContinuousOn u (closure Ω))
+    (hu : ContDiffOn ℝ 2 u Ω) (hm : ∀ z ∈ frontier Ω, u z ≤ m) (hx : x ∈ Ω)
+    (hr : r ≤ (u x - m) / diam Ω) :
+    μ (ball 0 r) ≤
+      ∫⁻ y in upperContactSet u Ω ∩ ∇ u ⁻¹' ball 0 r,
+        ENNReal.ofReal |(hessianOperator u y).det| ∂μ := by
+  have hs : MeasurableSet (upperContactSet u Ω ∩ ∇ u ⁻¹' ball 0 r) :=
+    (measurableSet_upperContactSet hΩ (hu.of_le (by norm_num))).inter
+      (measurable_gradient u measurableSet_ball)
+  calc μ (ball 0 r) ≤ μ (∇ u '' (upperContactSet u Ω ∩ ∇ u ⁻¹' ball 0 r)) := by
+        rw [image_inter_preimage]
+        exact measure_mono (subset_inter ((ball_subset_ball hr).trans
+          (ball_subset_image_gradient_upperContactSet hΩb hΩ hcont
+            (hu.differentiableOn two_ne_zero) hm hx)) subset_rfl)
+    _ ≤ _ := addHaar_image_gradient_le_lintegral_abs_det_hessianOperator μ hΩ hu hs
+        (inter_subset_left.trans upperContactSet_subset)
 
 /-- **The Aleksandrov measure estimate** (Gilbarg–Trudinger, Lemma 9.2). Let `Ω` be bounded and
 open, let `u` be continuous on `closure Ω` and `C²` in `Ω`, and let `m` bound `u` on
@@ -254,9 +318,8 @@ theorem addHaar_ball_le_lintegral_abs_det_hessianOperator {m : ℝ}
     (hu : ContDiffOn ℝ 2 u Ω) (hm : ∀ z ∈ frontier Ω, u z ≤ m) (hx : x ∈ Ω) :
     μ (ball 0 ((u x - m) / diam Ω)) ≤
       ∫⁻ y in upperContactSet u Ω, ENNReal.ofReal |(hessianOperator u y).det| ∂μ :=
-  (measure_mono (ball_subset_image_gradient_upperContactSet hΩb hΩ hcont
-    (hu.differentiableOn two_ne_zero) hm hx)).trans
-    (addHaar_image_gradient_upperContactSet_le μ hΩ hu)
+  (addHaar_ball_le_lintegral_inter_preimage_abs_det_hessianOperator μ hΩb hΩ hcont hu hm hx
+    le_rfl).trans (lintegral_mono_set inter_subset_left)
 
 end PDE
 
