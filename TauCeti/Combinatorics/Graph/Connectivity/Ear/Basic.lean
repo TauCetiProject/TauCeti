@@ -478,6 +478,21 @@ theorem isVertexStart_iff (d : G.EarDecomposition H) :
     d.IsVertexStart ↔ ∃ v : V(G), d.initial = Graph.noEdge {v.1} β :=
   Iff.rfl
 
+/-- Reindex the target graph of an ear decomposition along `H = H'` without changing any data
+fields. -/
+@[expose, reducible]
+def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') : G.EarDecomposition H' where
+  length := d.length
+  graphAfter := d.graphAfter
+  start := d.start
+  earAt := d.earAt
+  earAt_fst := d.earAt_fst
+  graphAfter_succ := d.graphAfter_succ
+  graphAfter_last := d.graphAfter_last.trans h
+
+@[simp]
+theorem copy_rfl (d : G.EarDecomposition H) : d.copy rfl = d := rfl
+
 /-- Characterization of an open ear decomposition by its initial data and ear kinds. -/
 theorem isOpen_iff (d : G.EarDecomposition H) :
     d.IsOpen ↔ d.start.IsCycle ∧ ∀ i, d.kindAt i = .open :=
