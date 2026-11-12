@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.FreeGroup.Commuting
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
+import TauCeti.Algebra.Group.Subgroup.Centralizer
 
 /-!
 # Centralizers in free groups
@@ -26,6 +27,8 @@ free basis.
 
 * `FreeGroup.mem_zpowers_of_of_commute`: an element commuting with a generator `of a` is a power
   of `of a`.
+* `FreeGroup.centralizer_singleton_of`: the centralizer of a generator `of a` is the cyclic
+  subgroup it generates.
 * `FreeGroup.eq_one_of_commute_of_of_commute_of`: an element commuting with two distinct generators
   is trivial.
 * `FreeGroup.center_eq_bot_of_nontrivial`: the centre of a free group on at least two generators
@@ -63,6 +66,12 @@ theorem mem_zpowers_of_of_commute {a : α} {z : FreeGroup α} (h : Commute z (of
   have hra : r = of a ^ n := by rw [hr, ← zpow_mul, hn, zpow_one]
   rw [hra, ← zpow_mul]
   exact Subgroup.zpow_mem_zpowers _ _
+
+/-- The centralizer of a generator `of a` of a free group is the cyclic subgroup it generates. -/
+theorem centralizer_singleton_of (a : α) : Subgroup.centralizer {of a} = Subgroup.zpowers (of a) :=
+  le_antisymm
+    (fun _ hz => mem_zpowers_of_of_commute (Subgroup.mem_centralizer_singleton_iff.1 hz))
+    (Subgroup.zpowers_le_centralizer_singleton _)
 
 /-- An element of a free group commuting with two distinct generators is trivial. -/
 theorem eq_one_of_commute_of_of_commute_of {a b : α} (hab : a ≠ b) {z : FreeGroup α}

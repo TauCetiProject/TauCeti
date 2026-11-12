@@ -38,6 +38,8 @@ the bound on the regulator.
 * `Matrix.abv_det_le_prod_of_le` and `Matrix.abv_det_le_prod_of_le'`: for nonarchimedean `abv`,
   entrywise row bounds `b i` or column bounds `b j` give `abv A.det ≤ ∏ i, b i` and
   `abv A.det ≤ ∏ j, b j`.
+* `Matrix.abv_det_le_one_of_isNonarchimedean`, `Matrix.abv_det_eq_one_of_mul_eq_one`: unit-ball
+  determinant specializations for a nonarchimedean absolute value.
 * `Matrix.abv_det_le_factorial_mul_of_forall_perm`: a bound on each permutation product gives
   the same bound on the determinant, multiplied by the factorial of the matrix size.
 -/
@@ -111,6 +113,27 @@ theorem abv_det_le_prod_of_le (A : Matrix n n R) {abv : AbsoluteValue R S}
     abv A.det ≤ ∏ i, b i := by
   simpa only [det_transpose, transpose_apply] using
     abv_det_le_prod_of_le' Aᵀ habv fun i j => hA j i
+
+/-- A square matrix with entries in the nonarchimedean unit ball has determinant in the unit
+ball. -/
+theorem abv_det_le_one_of_isNonarchimedean {A : Matrix n n R} {abv : AbsoluteValue R S}
+    (habv : IsNonarchimedean abv) (hA : ∀ i j, abv (A i j) ≤ 1) :
+    abv A.det ≤ 1 :=
+  (A.abv_det_le_prod_of_le' habv hA).trans_eq prod_const_one
+
+/-- If `A * B = 1` and both `A` and `B` have entries in the nonarchimedean unit ball, then
+`abv A.det = 1`. -/
+theorem abv_det_eq_one_of_mul_eq_one [Nontrivial R] {A B : Matrix n n R} {abv : AbsoluteValue R S}
+    (habv : IsNonarchimedean abv) (hAB : A * B = 1) (hA : ∀ i j, abv (A i j) ≤ 1)
+    (hB : ∀ i j, abv (B i j) ≤ 1) :
+    abv A.det = 1 := by
+  refine le_antisymm (A.abv_det_le_one_of_isNonarchimedean habv hA) ?_
+  have hmul : abv A.det * abv B.det = 1 := by
+    rw [← map_mul, ← det_mul, hAB, det_one, map_one]
+  calc (1 : S) = abv A.det * abv B.det := hmul.symm
+    _ ≤ abv A.det * 1 :=
+      mul_le_mul_of_nonneg_left (B.abv_det_le_one_of_isNonarchimedean habv hB) (abv.nonneg _)
+    _ = abv A.det := mul_one _
 
 /-- A uniform bound on the absolute values of all permutation products bounds the determinant
 by the same bound times the factorial of the matrix size. Unlike an entrywise bound, this can
