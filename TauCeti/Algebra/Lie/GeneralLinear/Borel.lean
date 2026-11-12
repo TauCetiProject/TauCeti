@@ -503,7 +503,7 @@ instance isNilpotent_strictUpperTriangular :
   -- The k-th filtration term vanishes at distances at most k above the diagonal.
   let F (k : ℕ) : Submodule R (strictUpperTriangular R n) :=
     { carrier := {A | ∀ i j, (e j : ℕ) < (e i : ℕ) + k + 1 → (A : Matrix n n R) i j = 0}
-      zero_mem' := by intro i j hij; rfl
+      zero_mem' := by intro i j _; rfl
       add_mem' := by intro A B hA hB i j hij; simp [hA i j hij, hB i j hij]
       smul_mem' := by intro c A hA i j hij; simp [hA i j hij] }
   have hbracket (k) (A B : strictUpperTriangular R n) (hB : B ∈ F k) :

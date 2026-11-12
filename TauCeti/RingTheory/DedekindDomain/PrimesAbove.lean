@@ -33,8 +33,8 @@ The Selmer group of the fraction field of `B` relative to these primes is
 
 * `IsDedekindDomain.HeightOneSpectrum.liesOver_under`: the `LiesOver` instance relating a prime
   to its contraction, which the `under`-indexed results downstream need.
-* `IsDedekindDomain.HeightOneSpectrum.under_eq_of_liesOver`: a prime lying over `v` contracts
-  to `v`.
+* `IsDedekindDomain.HeightOneSpectrum.under_eq_iff_liesOver`: a prime contracts to `v` exactly
+  when it lies over `v`.
 * `IsDedekindDomain.HeightOneSpectrum.under_surjective`: every height one prime of `R` lies
   under one of `B`.
 * `IsDedekindDomain.HeightOneSpectrum.under_under`: contraction through a tower agrees with
@@ -83,13 +83,14 @@ stated at `under R w` and consuming a `LiesOver` hypothesis, such as
 `HeightOneSpectrum.valuation_liesOver`, do not fire without it. -/
 instance liesOver_under (w : HeightOneSpectrum B) :
     w.asIdeal.LiesOver (under R w).asIdeal :=
-  ⟨rfl⟩
+  ⟨under_asIdeal R w⟩
 
 variable {R B} in
-/-- A height one prime of `B` lying over the height one prime `v` of `R` contracts to `v`. -/
-theorem under_eq_of_liesOver {v : HeightOneSpectrum R} {w : HeightOneSpectrum B}
-    (hw : w.asIdeal.LiesOver v.asIdeal) : under R w = v :=
-  asIdeal_injective hw.over.symm
+/-- A height one prime of `B` contracts to the height one prime `v` of `R` exactly when it lies
+over `v`. -/
+theorem under_eq_iff_liesOver {v : HeightOneSpectrum R} {w : HeightOneSpectrum B} :
+    under R w = v ↔ w.asIdeal.LiesOver v.asIdeal := by
+  rw [HeightOneSpectrum.ext_iff, under_asIdeal, Ideal.liesOver_iff, eq_comm]
 
 /-- **Every height one prime of `R` lies under one of `B`**, for an integral extension of domains
 with injective algebra map: contraction `HeightOneSpectrum B → HeightOneSpectrum R` is
@@ -122,25 +123,20 @@ def liesOverTowerEquiv (v : HeightOneSpectrum A) :
     (Σ w : {w : HeightOneSpectrum R // w.asIdeal.LiesOver v.asIdeal},
       {u : HeightOneSpectrum C // u.asIdeal.LiesOver w.1.asIdeal}) ≃
       {u : HeightOneSpectrum C // u.asIdeal.LiesOver v.asIdeal} where
-  toFun p := by
-    let _ : p.2.1.asIdeal.LiesOver p.1.1.asIdeal := p.2.2
-    let _ : p.1.1.asIdeal.LiesOver v.asIdeal := p.1.2
-    exact ⟨p.2.1, Ideal.LiesOver.trans p.2.1.asIdeal p.1.1.asIdeal v.asIdeal⟩
-  invFun u := by
-    let w := u.1.under R
-    have hw : w.asIdeal.LiesOver v.asIdeal := ⟨by
-      dsimp [w]
-      rw [under_asIdeal, Ideal.under_under]
-      exact u.2.over⟩
-    exact ⟨⟨w, hw⟩, ⟨u.1, inferInstance⟩⟩
-  left_inv p := by
-    rcases p with ⟨⟨w, hw⟩, ⟨u, hu⟩⟩
-    let _ : u.asIdeal.LiesOver w.asIdeal := hu
-    have h : u.under R = w := asIdeal_injective hu.over.symm
-    subst w
+  toFun p :=
+    have := p.1.2
+    have := p.2.2
+    ⟨p.2.1, .trans p.2.1.asIdeal p.1.1.asIdeal v.asIdeal⟩
+  invFun u :=
+    have := u.2
+    ⟨⟨u.1.under R, .tower_bot u.1.asIdeal _ v.asIdeal⟩, ⟨u.1, inferInstance⟩⟩
+  left_inv := by
+    rintro ⟨⟨w, hw⟩, ⟨u, hu⟩⟩
+    obtain rfl := under_eq_iff_liesOver.mpr hu
     rfl
-  right_inv u := Subtype.ext (by rfl)
+  right_inv _ := rfl
 
+/-- `liesOverTowerEquiv` keeps the top prime of the pair. -/
 @[simp]
 theorem liesOverTowerEquiv_apply (v : HeightOneSpectrum A)
     (p : Σ w : {w : HeightOneSpectrum R // w.asIdeal.LiesOver v.asIdeal},
@@ -174,10 +170,12 @@ def primesAbove (S : Set (HeightOneSpectrum R)) : Set (HeightOneSpectrum B) :=
 lemma mem_primesAbove_iff (S : Set (HeightOneSpectrum R)) (w : HeightOneSpectrum B) :
     w ∈ primesAbove R B S ↔ under R w ∈ S := Iff.rfl
 
+/-- Taking the primes above a set of primes of `R` is monotone. -/
 lemma primesAbove_mono {S T : Set (HeightOneSpectrum R)} (hST : S ⊆ T) :
     primesAbove R B S ⊆ primesAbove R B T :=
   Set.preimage_mono hST
 
+/-- No prime of `B` lies above the empty set of primes. -/
 @[simp]
 lemma primesAbove_empty : primesAbove R B (∅ : Set (HeightOneSpectrum R)) = ∅ :=
   Set.preimage_empty
@@ -205,12 +203,8 @@ lemma primesAbove_finite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R
     [FaithfulSMul R B] {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
     (primesAbove R B S).Finite := by
   refine hS.preimage' fun v _ ↦ ?_
-  have : Finite (under R (B := B) ⁻¹' {v}) :=
-    Finite.of_injective
-      (fun w ↦ (⟨w.1, ⟨congrArg asIdeal (Set.mem_singleton_iff.mp w.2).symm⟩⟩ :
-        {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}))
-      (fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
-  exact Set.toFinite _
+  simp only [Set.preimage, Set.mem_singleton_iff, under_eq_iff_liesOver]
+  exact Set.finite_coe_iff.mp (finite_liesOver B v)
 
 /-- Only finitely many primes of `B` contract to each prime of `R`, so contraction tends to the
 cofinite filter along the cofinite filter. -/

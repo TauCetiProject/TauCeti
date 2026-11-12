@@ -41,7 +41,6 @@ sequence for the steps `k < M` stay below `1`. -/
 theorem exists_div_pow_lt_and_forall_mul_pow_lt_one [ExistsAddOfLE K] {r s p : K} (hr : 1 < r)
     (hsr : s < r) (hp : 0 < p) :
     ∃ M : ℕ, 0 < M ∧ s / r ^ M < p ∧ ∀ k < M, s / r ^ M * r ^ k < 1 := by
-  have hr0 : 0 < r := zero_lt_one.trans hr
   obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (s / p) hr
   refine ⟨m + 1, m.succ_pos, ?_, fun k hk => ?_⟩
   · rw [div_lt_iff₀ (by positivity), ← div_lt_iff₀' hp]

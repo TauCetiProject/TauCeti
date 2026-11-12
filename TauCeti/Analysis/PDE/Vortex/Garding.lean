@@ -209,10 +209,7 @@ variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
 /-- The potential along a compactly supported continuous variation is integrable. -/
 theorem integrable_gaugeFixedPotential (hx : ContDiff ℝ 1 x) (hy : Continuous y)
     (hyc : HasCompactSupport y) : Integrable (fun z ↦ gaugeFixedPotential x z (y z)) μ := by
-  have hxi := (contDiff_piLp 2).1 hx
   have := hx.continuous
-  have hdx (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
-    ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   rw [funext fun z ↦ gaugeFixedPotential_eq (hx.differentiable one_ne_zero z) (y z)]
   refine Continuous.integrable_of_hasCompactSupport (by fun_prop)
     (hyc.mono' <| Function.support_subset_iff'.2 fun z hz ↦ ?_)
@@ -222,8 +219,6 @@ theorem integrable_gaugeFixedPotential (hx : ContDiff ℝ 1 x) (hy : Continuous 
 theorem integrable_gaugeFixedGradientDensity (hx : Continuous x) (hy : ContDiff ℝ 1 y)
     (hyc : HasCompactSupport y) : Integrable (gaugeFixedGradientDensity x y) μ := by
   have := hy.continuous
-  have hdy (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
-    (((contDiff_piLp 2).1 hy i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   refine Continuous.integrable_of_hasCompactSupport ?_
     (hyc.mono' <| Function.support_subset_iff'.2 fun z hz ↦ ?_)
   · simp only [funext (gaugeFixedGradientDensity_def x y)]
@@ -236,8 +231,6 @@ integrable. -/
 private theorem integrable_jacobianForm_fderiv (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y) :
     Integrable (fun z ↦ jacobianForm (fderiv ℝ y z 1) (fderiv ℝ y z I)) μ := by
   have hdi (z : ℂ) := (hy.differentiable one_ne_zero z).fderiv_piLp_apply
-  have hdy (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
-    (((contDiff_piLp 2).1 hy i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   refine Continuous.integrable_of_hasCompactSupport ?_
     (hyc.mono' <| Function.support_subset_iff'.2 fun z hz ↦ ?_)
   · simp only [jacobianForm, LinearMap.mk₂_apply, ← hdi]

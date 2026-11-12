@@ -103,6 +103,9 @@ of `M ⊠ N`. With the roles of `N` and `N'` exchanged, a homotopy equivalence o
 type `D` structures induces maps of box tensor products which are mutually inverse up to chain
 homotopies of `M ⊠ N` and `M ⊠ N'`.
 
+The maps of box tensor products induced by morphisms of `A∞` modules are in
+`TauCeti.LowDimTopology.Bordered.TypeA.Hom`.
+
 ## Main definitions
 
 * `TauCeti.TypeDStructure.typeABoxDifferential`: the box tensor differential of an `A∞` module
@@ -162,7 +165,6 @@ homotopies of `M ⊠ N` and `M ⊠ N'`.
 * `TauCeti.TypeDStructure.typeABoxTensorMap_typeABoxTensorMap_add_eq_of_act_eq_zero` and its
   `_of_lt` version: if `F * G` is homotopic to the identity morphism through `H`, `T_G ∘ T_F` is
   chain homotopic to the identity of `M ⊠ N`, through the homotopy `K + T_H` of `M ⊠ N`.
-
 ## References
 
 * R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer.

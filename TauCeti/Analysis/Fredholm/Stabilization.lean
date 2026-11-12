@@ -89,10 +89,10 @@ theorem IsInvertible.prod_coprod_coprod {Λ Λ₃ G : Type*} [NormedAddCommGroup
     exact (congrArg (· z) he).symm
   -- The inverse solves `T x + D₂ l = y - D₃ l₃` and `q (x, l) = g` for `(x, l)`.
   let S : F × G × Λ₃ →L[𝕜] (F × G) × Λ₃ :=
-    ((ContinuousLinearMap.fst 𝕜 F (G × Λ₃) - D₃ ∘L ContinuousLinearMap.snd 𝕜 G Λ₃ ∘L
-        ContinuousLinearMap.snd 𝕜 F (G × Λ₃)).prod
-      (ContinuousLinearMap.fst 𝕜 G Λ₃ ∘L ContinuousLinearMap.snd 𝕜 F (G × Λ₃))).prod
-      (ContinuousLinearMap.snd 𝕜 G Λ₃ ∘L ContinuousLinearMap.snd 𝕜 F (G × Λ₃))
+    ((fst 𝕜 F (G × Λ₃) - D₃ ∘L snd 𝕜 G Λ₃ ∘L
+        snd 𝕜 F (G × Λ₃)).prod
+      (fst 𝕜 G Λ₃ ∘L snd 𝕜 F (G × Λ₃))).prod
+      (snd 𝕜 G Λ₃ ∘L snd 𝕜 F (G × Λ₃))
   let inv : F × G × Λ₃ →L[𝕜] E × Λ × Λ₃ :=
     (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).toContinuousLinearMap ∘L
       ((e.symm : F × G →L[𝕜] E × Λ).prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L S
@@ -109,6 +109,29 @@ theorem IsInvertible.prod_coprod_coprod {Λ Λ₃ G : Type*} [NormedAddCommGroup
     have h2 := hq (y - D₃ m, g)
     simp only [coprod_apply] at h1
     simp [inv, S, ← add_assoc, h1, h2]
+
+omit [CompleteSpace 𝕜] in
+/-- **Kernel charts under a change of models.** A kernel coordinate `q` of the stabilization of `T`
+by `D₂` stays a kernel coordinate after replacing the stabilizing space `Λ` and the coordinate
+space `G` by isomorphic spaces `Λ'` and `G'`: the stabilization by `D₂ ∘ eΛ` paired with
+`(x, l) ↦ eG (q (x, eΛ l))` is invertible. -/
+theorem IsInvertible.prod_coprod_comp {Λ Λ' G G' : Type*} [NormedAddCommGroup Λ]
+    [NormedSpace 𝕜 Λ] [NormedAddCommGroup Λ'] [NormedSpace 𝕜 Λ'] [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] [NormedAddCommGroup G'] [NormedSpace 𝕜 G']
+    {T : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G}
+    (h : ((T.coprod D₂).prod q).IsInvertible) (eΛ : Λ' ≃L[𝕜] Λ) (eG : G ≃L[𝕜] G') :
+    ((T.coprod (D₂ ∘L (eΛ : Λ' →L[𝕜] Λ))).prod
+      ((eG : G →L[𝕜] G') ∘L q ∘L (ContinuousLinearMap.id 𝕜 E).prodMap (eΛ : Λ' →L[𝕜] Λ))
+      ).IsInvertible := by
+  have hcomp : (T.coprod (D₂ ∘L (eΛ : Λ' →L[𝕜] Λ))).prod
+      ((eG : G →L[𝕜] G') ∘L q ∘L (ContinuousLinearMap.id 𝕜 E).prodMap (eΛ : Λ' →L[𝕜] Λ)) =
+      ((ContinuousLinearEquiv.refl 𝕜 F).prodCongr eG : F × G →L[𝕜] F × G') ∘L
+        ((T.coprod D₂).prod q) ∘L
+        ((ContinuousLinearEquiv.refl 𝕜 E).prodCongr eΛ : E × Λ' →L[𝕜] E × Λ) := by
+    ext <;> simp
+  rw [hcomp]
+  exact (IsInvertible.comp (isInvertible_equiv (f := (ContinuousLinearEquiv.refl 𝕜 F).prodCongr eG))
+    h).comp (isInvertible_equiv (f := (ContinuousLinearEquiv.refl 𝕜 E).prodCongr eΛ))
 
 variable [CompleteSpace E] [CompleteSpace F]
   {X : Type*} [TopologicalSpace X] {T : X → E →L[𝕜] F} {x₀ : X}
@@ -133,7 +156,7 @@ theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (
   obtain ⟨S, hSD, hS⟩ := Submodule.exists_le_isTopCompl_of_dense hT₀.isClosed_range hD
   have : FiniteDimensional 𝕜 S :=
     ((T x₀).range.quotientEquivOfIsCompl S hS.isCompl).finiteDimensional
-  have : IsClosed (S : Set F) := S.closed_of_finiteDimensional
+  have : IsClosed (S : Set F) := S.isClosed_of_finiteDimensional
   let A : X → (E × S) →L[𝕜] F := fun x ↦ (T x).coprod S.subtypeL
   have hsurj : Surjective (A x₀) := by
     apply LinearMap.range_eq_top.mp
@@ -148,5 +171,20 @@ theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (
   have hA : ContinuousAt A x₀ := hT.continuousLinearMapCoprod continuousAt_const
   obtain ⟨U, hU, hx₀, hUinv⟩ := exists_isOpen_isInvertible_prod hA hinv
   exact ⟨S, hSD, hS.symm, inferInstance, q, U, hU, hx₀, hUinv⟩
+
+/-- **Kernel charts with standard models.** A Fredholm operator between Banach spaces has a finite
+stabilization by `𝕜ⁿ` with a kernel coordinate in `𝕜ᵐ`: some `D₂ : 𝕜ⁿ →L[𝕜] F` and
+`q : E × 𝕜ⁿ →L[𝕜] 𝕜ᵐ` make the pair `(T.coprod D₂).prod q` invertible. -/
+theorem IsFredholm.exists_isInvertible_prod_coprod {T : E →L[𝕜] F}
+    (hT : IsFredholm T) :
+    ∃ (n m : ℕ) (D₂ : (Fin n → 𝕜) →L[𝕜] F) (q : E × (Fin n → 𝕜) →L[𝕜] (Fin m → 𝕜)),
+      ((T.coprod D₂).prod q).IsInvertible := by
+  obtain ⟨S, -, -, hS, q, U, -, hTU, hU⟩ :=
+    hT.exists_stabilization_kernel_coordinates (X := E →L[𝕜] F) (T := fun S ↦ S)
+      continuousAt_id (D := ⊤) (by simp)
+  have h : ((T.coprod S.subtypeL).prod q).IsInvertible := hU T hTU
+  have := (hT.coprod_of_finiteDimensional S.subtypeL).finite_ker
+  exact ⟨Module.finrank 𝕜 S, Module.finrank 𝕜 ((T.coprod S.subtypeL).ker), _, _,
+    h.prod_coprod_comp (.ofFinrankEq (by simp)) (.ofFinrankEq (by simp))⟩
 
 end ContinuousLinearMap
