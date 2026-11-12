@@ -5,21 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.RootSystem.Hom
 public import TauCeti.Algebra.Lie.Chevalley.Basic
-public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
-public import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
 
 import TauCeti.Algebra.Lie.Hom
+import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
 
 /-!
 # Universal property, symmetries, and transport of full-Cartan Chevalley Lie algebras
 
 This file develops sign twists (`ChevalleyConstants.twist`, `ChevalleyLieAlgebra.twistLieEquiv`),
 Cartan-pairing transport (`ChevalleyConstants.reindex`), the universal property and Chevalley
-involution (`ChevalleyLieAlgebra.liftLieHom`, `ChevalleyLieAlgebra.chevalleyInvolution`), and
-covariant functoriality (`ChevalleyLieAlgebra.mapLieHom`, `ChevalleyLieAlgebra.mapLieEquiv`,
-`ChevalleyLieAlgebra.equivOfRootPairingEquiv`) over arbitrary cocharacter lattices `Y` without
-splitting central and coroot summands.
+involution (`liftLieHom`, `chevalleyInvolution`), and functoriality (`mapLieHom`, `mapLieEquiv`,
+`equivOfRootPairingEquiv`) over arbitrary cocharacter lattices `Y`.
 
 ## References
 
@@ -37,25 +35,22 @@ namespace ChevalleyConstants
 
 section Twist
 
-variable {ι X Y : Type*} [Finite ι] [AddCommGroup X] [AddCommGroup Y] {P : RootPairing ι ℤ X Y}
+variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y] {P : RootPairing ι ℤ X Y}
 
-open Classical in
 private noncomputable def twistConst (P : RootPairing ι ℤ X Y) (N : ι → ι → ℤ) (s : ι → ℤˣ)
     (i j : ι) : ℤ :=
-  if h : ∃ k, P.root k = P.root i + P.root j then ((s i * s j * s h.choose : ℤˣ) : ℤ) * N i j else 0
+  P.rootSumElim i j fun k _ ↦ ((s i * s j * s k : ℤˣ) : ℤ) * N i j
 
-omit [Finite ι] in
 private theorem twistConst_of_root_eq_add {N : ι → ι → ℤ} {s : ι → ℤˣ} {i j k : ι}
     (hk : P.root k = P.root i + P.root j) :
-    twistConst P N s i j = ((s i * s j * s k : ℤˣ) : ℤ) * N i j := by
-  classical
-  have hex : ∃ m, P.root m = P.root i + P.root j := ⟨k, hk⟩
-  rw [twistConst, dite_eq_left hex, P.root.injective (hex.choose_spec.trans hk.symm)]
+    twistConst P N s i j = ((s i * s j * s k : ℤˣ) : ℤ) * N i j :=
+  P.rootSumElim_of_root_eq_add hk _
 
-omit [Finite ι] in
 private theorem twistConst_of_notMem_range {N : ι → ι → ℤ} {s : ι → ℤˣ} {i j : ι}
-    (hnot : P.root i + P.root j ∉ range P.root) : twistConst P N s i j = 0 := by
-  classical exact dite_eq_right fun ⟨k, hk⟩ ↦ hnot ⟨k, hk⟩
+    (hnot : P.root i + P.root j ∉ range P.root) : twistConst P N s i j = 0 :=
+  P.rootSumElim_of_notMem_range hnot _
+
+variable [Finite ι]
 
 private theorem tripleRootCoeff_twistConst (c : P.ChevalleyConstants) (s : ι → ℤˣ)
     (hs : ∀ i, s (P.reflectionPerm i i) = s i) (i j k l : ι) :
@@ -71,8 +66,8 @@ private theorem tripleRootCoeff_twistConst (c : P.ChevalleyConstants) (s : ι �
           Int.units_mul_self, Int.units_mul_self, one_mul]
       rw [ite_eq_left rfl, hunit, Units.val_one, one_mul]
     · rw [ite_eq_right hli, mul_zero]
-  · by_cases hex : ∃ m, P.root m = P.root j + P.root k
-    · obtain ⟨m, hm⟩ := hex
+  · by_cases hmem : P.root j + P.root k ∈ range P.root
+    · obtain ⟨m, hm⟩ := hmem
       rw [P.tripleRootCoeff_of_root_eq_add _ hm, P.tripleRootCoeff_of_root_eq_add _ hm]
       by_cases hlm : P.root l = P.root i + P.root m
       · rw [ite_eq_left hlm, ite_eq_left hlm, twistConst_of_root_eq_add hlm,
@@ -82,9 +77,8 @@ private theorem tripleRootCoeff_twistConst (c : P.ChevalleyConstants) (s : ι �
               (s i * s j * s k * s l) * (s m * s m) by ac_rfl, Int.units_mul_self, mul_one]]
         simp only [Units.val_mul]; ring
       · rw [ite_eq_right hlm, ite_eq_right hlm, mul_zero]
-    · have hnot : P.root j + P.root k ∉ range P.root := fun ⟨m, hm⟩ ↦ hex ⟨m, hm⟩
-      rw [P.tripleRootCoeff_of_notMem_of_add_ne_zero _ hnot hjk0,
-        P.tripleRootCoeff_of_notMem_of_add_ne_zero _ hnot hjk0, mul_zero]
+    · rw [P.tripleRootCoeff_of_notMem_of_add_ne_zero _ hmem hjk0,
+        P.tripleRootCoeff_of_notMem_of_add_ne_zero _ hmem hjk0, mul_zero]
 
 /-- **Sign twist of Chevalley structure constants** by opposition-invariant signs `s : ι → ℤˣ`. -/
 noncomputable def twist (c : P.ChevalleyConstants) (s : ι → ℤˣ)
@@ -92,31 +86,28 @@ noncomputable def twist (c : P.ChevalleyConstants) (s : ι → ℤˣ)
   structConst := twistConst P c.structConst s
   structConst_eq_zero_of_notMem_range _ _ := twistConst_of_notMem_range
   structConst_swap i j := by
-    by_cases hex : ∃ k, P.root k = P.root i + P.root j
-    · obtain ⟨k, hk⟩ := hex
+    by_cases hmem : P.root i + P.root j ∈ range P.root
+    · obtain ⟨k, hk⟩ := hmem
       rw [twistConst_of_root_eq_add (hk.trans (add_comm _ _)), twistConst_of_root_eq_add hk,
         c.structConst_swap i j, mul_comm (s j) (s i), mul_neg]
-    · have hnot : P.root i + P.root j ∉ range P.root := fun ⟨k, hk⟩ ↦ hex ⟨k, hk⟩
-      rw [twistConst_of_notMem_range (add_comm (P.root i) _ ▸ hnot),
-        twistConst_of_notMem_range hnot, neg_zero]
+    · rw [twistConst_of_notMem_range (add_comm (P.root i) _ ▸ hmem),
+        twistConst_of_notMem_range hmem, neg_zero]
   natAbs_structConst hk := by
     rw [twistConst_of_root_eq_add hk, Int.natAbs_mul, Int.units_natAbs, one_mul,
       c.natAbs_structConst hk]
   structConst_reflectionPerm i j := by
-    by_cases hex : ∃ k, P.root k = P.root i + P.root j
-    · obtain ⟨k, hk⟩ := hex
+    by_cases hmem : P.root i + P.root j ∈ range P.root
+    · obtain ⟨k, hk⟩ := hmem
       rw [twistConst_of_root_eq_add (P.root_reflectionPerm_self_eq_add_of_root_eq_add hk),
         twistConst_of_root_eq_add hk, hs i, hs j, hs k, c.structConst_reflectionPerm, mul_neg]
-    · have hnot : P.root i + P.root j ∉ range P.root := fun ⟨k, hk⟩ ↦ hex ⟨k, hk⟩
-      rw [twistConst_of_notMem_range (mt (P.root_reflectionPerm_add_mem_range_iff i j).mp hnot),
-        twistConst_of_notMem_range hnot, neg_zero]
+    · rw [twistConst_of_notMem_range (mt (P.root_reflectionPerm_add_mem_range_iff i j).mp hmem),
+        twistConst_of_notMem_range hmem, neg_zero]
   coroot_jacobi {i j k} h0 := by
-    rw [twistConst_of_root_eq_add (root_reflectionPerm_self_eq_add_of_add_add_eq_zero h0),
-      twistConst_of_root_eq_add
-        (root_reflectionPerm_self_eq_add_of_add_add_eq_zero (i := j) (by rw [← h0]; abel)),
-      twistConst_of_root_eq_add
-        (root_reflectionPerm_self_eq_add_of_add_add_eq_zero (i := k) (by rw [← h0]; abel)),
-      hs i, hs j, hs k, show s j * s k * s i = s i * s j * s k by ac_rfl,
+    have h0' (a) {b d : ι} (h : P.root a + P.root b + P.root d = 0) :=
+      twistConst_of_root_eq_add (N := c.structConst) (s := s)
+        (root_reflectionPerm_self_eq_add_of_add_add_eq_zero h)
+    rw [h0' i h0, h0' j (by rw [← h0]; abel), h0' k (by rw [← h0]; abel), hs i, hs j, hs k,
+      show s j * s k * s i = s i * s j * s k by ac_rfl,
       show s k * s i * s j = s i * s j * s k by ac_rfl,
       mul_smul, mul_smul, mul_smul, ← smul_add, ← smul_add, c.coroot_jacobi h0, smul_zero]
   root_jacobi i j k l := by
@@ -145,11 +136,10 @@ end Twist
 
 section Reindex
 
-variable {ι ι₂ X Y X₂ Y₂ : Type*} [Finite ι] [Finite ι₂]
+variable {ι ι₂ X Y X₂ Y₂ : Type*} [Finite ι]
   [AddCommGroup X] [AddCommGroup Y] [AddCommGroup X₂] [AddCommGroup Y₂]
   {P : RootPairing ι ℤ X Y} {P₂ : RootPairing ι₂ ℤ X₂ Y₂}
 
-omit [Finite ι₂] in
 private theorem tripleRootCoeff_comp_symm (e : ι ≃ ι₂)
     (he : ∀ i j, P₂.pairing (e i) (e j) = P.pairing i j) (N : ι → ι → ℤ) (i j k l : ι) :
     P₂.tripleRootCoeff (fun a b ↦ N (e.symm a) (e.symm b)) (e i) (e j) (e k) (e l) =
@@ -161,14 +151,15 @@ private theorem tripleRootCoeff_comp_symm (e : ι ≃ ι₂)
         ((root_add_eq_zero_iff_of_pairingIn e heIn j k).mpr hjk0),
       P.tripleRootCoeff_of_add_eq_zero _ hjk0, he i j, e.injective.eq_iff]
   · have hjk0₂ := mt (root_add_eq_zero_iff_of_pairingIn e heIn j k).mp hjk0
-    by_cases hex : ∃ m, P.root m = P.root j + P.root k
-    · obtain ⟨m, hm⟩ := hex
+    by_cases hmem : P.root j + P.root k ∈ range P.root
+    · obtain ⟨m, hm⟩ := hmem
       rw [P₂.tripleRootCoeff_of_root_eq_add _ ((root_eq_add_iff_of_pairingIn e heIn m j k).mpr hm),
         P.tripleRootCoeff_of_root_eq_add _ hm, root_eq_add_iff_of_pairingIn e heIn l i m]; simp
-    · have hnot : P.root j + P.root k ∉ range P.root := fun ⟨m, hm⟩ ↦ hex ⟨m, hm⟩
-      rw [P₂.tripleRootCoeff_of_notMem_of_add_ne_zero _
-          (mt (root_add_mem_range_iff_of_pairingIn e heIn j k).mp hnot) hjk0₂,
-        P.tripleRootCoeff_of_notMem_of_add_ne_zero _ hnot hjk0]
+    · rw [P₂.tripleRootCoeff_of_notMem_of_add_ne_zero _
+          (mt (root_add_mem_range_iff_of_pairingIn e heIn j k).mp hmem) hjk0₂,
+        P.tripleRootCoeff_of_notMem_of_add_ne_zero _ hmem hjk0]
+
+variable [Finite ι₂]
 
 /-- **Transport of Chevalley structure constants along a Cartan-matching root bijection `e`.** -/
 def reindex (c : P.ChevalleyConstants) (e : ι ≃ ι₂)
@@ -190,15 +181,11 @@ def reindex (c : P.ChevalleyConstants) (e : ι ≃ ι₂)
         c.structConst_reflectionPerm i j
     coroot_jacobi {i₂ j₂ k₂} h0₂ := by
       obtain ⟨i, rfl⟩ := e.surjective i₂; obtain ⟨j, rfl⟩ := e.surjective j₂
-      obtain ⟨k, rfl⟩ := e.surjective k₂
-      simp only [Equiv.symm_apply_apply]
-      have hc (x) : P₂.coroot x ∈ P₂.corootSpan ℤ := Submodule.subset_span (mem_range_self _)
-      refine P₂.eq_zero_of_mem_corootSpan_of_forall_root'_eq_zero
-        (add_mem (add_mem (Submodule.smul_mem _ _ (hc _)) (Submodule.smul_mem _ _ (hc _)))
-          (Submodule.smul_mem _ _ (hc _))) fun r₂ ↦ ?_
-      obtain ⟨r, rfl⟩ := e.surjective r₂
-      simpa only [map_add, map_zsmul, map_zero, root_coroot_eq_pairing, he] using congrArg
-        (P.root' r) (c.coroot_jacobi ((root_add_add_eq_zero_iff_of_pairingIn e heIn i j k).mp h0₂))
+      obtain ⟨k, rfl⟩ := e.surjective k₂; simp only [Equiv.symm_apply_apply]
+      refine (P₂.zsmul_add_zsmul_add_zsmul_coroot_eq_zero_iff _ _ _ _ _ _).mpr fun s₂ ↦ ?_
+      obtain ⟨s, rfl⟩ := e.surjective s₂
+      simpa only [heIn] using (P.zsmul_add_zsmul_add_zsmul_coroot_eq_zero_iff _ _ _ _ _ _).mp
+        (c.coroot_jacobi ((root_add_add_eq_zero_iff_of_pairingIn e heIn i j k).mp h0₂)) s
     root_jacobi i₂ j₂ k₂ l₂ := by
       obtain ⟨i, rfl⟩ := e.surjective i₂; obtain ⟨j, rfl⟩ := e.surjective j₂
       obtain ⟨k, rfl⟩ := e.surjective k₂; obtain ⟨l, rfl⟩ := e.surjective l₂
@@ -220,8 +207,7 @@ namespace ChevalleyLieAlgebra
 variable {ι X Y : Type*} [Finite ι] [AddCommGroup X] [AddCommGroup Y]
   {P : RootPairing ι ℤ X Y} (c : P.ChevalleyConstants)
 
-/-- The unique `ℤ`-linear map out of `ChevalleyLieAlgebra c` sending `Y` via `γ` and `eᵢ` to `r i`.
--/
+/-- Unique `ℤ`-linear map out of `ChevalleyLieAlgebra c` sending `Y` via `γ` and `eᵢ` to `r i`. -/
 noncomputable def liftLinear {M : Type*} [AddCommGroup M] (γ : Y →ₗ[ℤ] M) (r : ι → M) :
     ChevalleyLieAlgebra c →ₗ[ℤ] M :=
   (γ.coprod (Finsupp.linearCombination ℤ r)) ∘ₗ (equivProd c).toLinearMap
@@ -254,17 +240,15 @@ noncomputable def liftLieHom {L : Type*} [LieRing L] (γ : Y →ₗ[ℤ] L) (r :
         refine linearMap_ext (fun y₁ ↦ linearMap_ext (fun y₂ ↦ ?_) fun j ↦ ?_)
           fun i ↦ linearMap_ext (fun y₂ ↦ ?_) fun j ↦ ?_ <;>
           simp only [LinearMap.mk₂_apply, lhs, rhs, f, liftLinear_cartan, liftLinear_root]
-        · rw [cartan_lie_cartan, map_zero, hcc]
-        · rw [cartan_lie_root, map_smul, liftLinear_root, hcr]
-        · rw [root_lie_cartan, map_neg, map_smul, liftLinear_root, ← lie_skew (r i) (γ y₂), hcr]
+        · simp [hcc]
+        · simp [hcr]
+        · simp [← lie_skew (r i) (γ y₂), hcr]
         · rw [root_lie_root]
           by_cases h0 : P.root i + P.root j = 0
-          · rw [rootBracket_of_add_eq_zero c h0, liftLinear_cartan, hopp h0]
-          · by_cases hex : ∃ k, P.root k = P.root i + P.root j
-            · obtain ⟨k, hk⟩ := hex
-              rw [rootBracket_of_root_eq_add c hk, map_smul, liftLinear_root, hsum hk]
-            · have hnot : P.root i + P.root j ∉ range P.root := fun ⟨k, hk⟩ ↦ hex ⟨k, hk⟩
-              rw [rootBracket_of_notMem_of_add_ne_zero c hnot h0, map_zero, hzero hnot h0]
+          · simp [rootBracket_of_add_eq_zero c h0, hopp h0]
+          · by_cases hmem : P.root i + P.root j ∈ range P.root
+            · obtain ⟨k, hk⟩ := hmem; simp [rootBracket_of_root_eq_add c hk, hsum hk]
+            · simp [rootBracket_of_notMem_of_add_ne_zero c hmem h0, hzero hmem h0]
       simpa [lhs, rhs] using congr($key x y) }
 
 @[simp] theorem liftLieHom_cartan {L : Type*} [LieRing L] (γ : Y →ₗ[ℤ] L) (r : ι → L)
@@ -279,15 +263,6 @@ variable {c} in
 theorem lieHom_ext {L : Type*} [LieRing L] {f g : ChevalleyLieAlgebra c →ₗ⁅ℤ⁆ L}
     (hc : ∀ y, f (cartan c y) = g (cartan c y)) (hr : ∀ i, f (root c i) = g (root c i)) : f = g :=
   LieHom.ext fun x ↦ LinearMap.congr_fun (linearMap_ext hc hr) x
-
-private noncomputable def lieEquivOfHoms {ι₂ X₂ Y₂ : Type*} [Finite ι₂] [AddCommGroup X₂]
-    [AddCommGroup Y₂] {P₂ : RootPairing ι₂ ℤ X₂ Y₂} {c₁ : P.ChevalleyConstants}
-    {c₂ : P₂.ChevalleyConstants} (f : ChevalleyLieAlgebra c₁ →ₗ⁅ℤ⁆ ChevalleyLieAlgebra c₂)
-    (g : ChevalleyLieAlgebra c₂ →ₗ⁅ℤ⁆ ChevalleyLieAlgebra c₁)
-    (hleft : g.comp f = LieHom.id) (hright : f.comp g = LieHom.id) :
-    ChevalleyLieAlgebra c₁ ≃ₗ⁅ℤ⁆ ChevalleyLieAlgebra c₂ :=
-  { toLieHom := f, invFun := g, left_inv := fun x ↦ congr($hleft x),
-    right_inv := fun x ↦ congr($hright x) }
 
 /-- **The Chevalley involution** of `ChevalleyLieAlgebra c` (`H_y ↦ -H_y`, `eᵢ ↦ -e_{-i}`). -/
 noncomputable def chevalleyInvolution : ChevalleyLieAlgebra c ≃ₗ⁅ℤ⁆ ChevalleyLieAlgebra c :=
@@ -304,21 +279,22 @@ noncomputable def chevalleyInvolution : ChevalleyLieAlgebra c ≃ₗ⁅ℤ⁆ Ch
         simp [root_lie_root_of_notMem_of_add_ne_zero c
           (mt (P.root_reflectionPerm_add_mem_range_iff i j).mp hnot)
           (fun h0 ↦ hne (by simpa [← neg_add_rev, add_comm] using h0))])
-  have hneg (i : ι) : P.reflectionPerm (P.reflectionPerm i i) (P.reflectionPerm i i) = i :=
-    P.indexNeg.neg_neg i
-  have hinv : φ.comp φ = LieHom.id := lieHom_ext (by simp [φ]) fun i ↦ by simp [φ, hneg i]
-  lieEquivOfHoms φ φ hinv hinv
+  have hinv : φ.comp φ = .id := lieHom_ext (by simp [φ]) fun i ↦ by
+    simpa [φ] using congrArg (root c) (P.indexNeg.neg_neg i)
+  LieEquiv.ofLieHoms φ φ hinv hinv
 
 @[simp] theorem chevalleyInvolution_cartan (y : Y) :
-    chevalleyInvolution c (cartan c y) = -cartan c y := by
-  simp [chevalleyInvolution, lieEquivOfHoms]
+    chevalleyInvolution c (cartan c y) = -cartan c y := by simp [chevalleyInvolution]
 
-@[simp] theorem chevalleyInvolution_root (i : ι) :
-    chevalleyInvolution c (root c i) = -root c (P.reflectionPerm i i) := by
-  simp [chevalleyInvolution, lieEquivOfHoms]
+@[simp] theorem chevalleyInvolution_root (i : ι) : chevalleyInvolution c (root c i) =
+    -root c (P.reflectionPerm i i) := by simp [chevalleyInvolution]
 
-@[simp] theorem chevalleyInvolution_apply_apply (x : ChevalleyLieAlgebra c) :
-    chevalleyInvolution c (chevalleyInvolution c x) = x := (chevalleyInvolution c).left_inv x
+@[simp] theorem chevalleyInvolution_symm : (chevalleyInvolution c).symm = chevalleyInvolution c :=
+  by simp [chevalleyInvolution]
+
+@[simp] theorem chevalleyInvolution_chevalleyInvolution (x : ChevalleyLieAlgebra c) :
+    chevalleyInvolution c (chevalleyInvolution c x) = x := by
+  simpa using (chevalleyInvolution c).symm_apply_apply x
 
 variable {c} in
 private noncomputable def twistLieHomOfEq {c₁ c₂ : P.ChevalleyConstants} (s : ι → ℤˣ)
@@ -341,25 +317,20 @@ private noncomputable def twistLieHomOfEq {c₁ c₂ : P.ChevalleyConstants} (s 
       rw [smul_lie, lie_smul, root_lie_root_of_notMem_of_add_ne_zero c₂ hnot hne, smul_zero,
         smul_zero])
 
-/-- **Lie isomorphism induced by an opposition-invariant sign twist**
-(`H_y ↦ H_y`, `eᵢ ↦ s i • eᵢ`). -/
+/-- **Lie isomorphism from an opposition-invariant sign twist** (`H_y ↦ H_y`, `eᵢ ↦ s i • eᵢ`). -/
 noncomputable def twistLieEquiv (s : ι → ℤˣ) (hs : ∀ i, s (P.reflectionPerm i i) = s i) :
     ChevalleyLieAlgebra (c.twist s hs) ≃ₗ⁅ℤ⁆ ChevalleyLieAlgebra c :=
-  let toHom := twistLieHomOfEq (c₁ := c.twist s hs) (c₂ := c) s hs rfl
-  let invHom := twistLieHomOfEq (c₁ := c) (c₂ := c.twist s hs) s hs (c.twist_twist s hs).symm
-  lieEquivOfHoms toHom invHom
-    (lieHom_ext (by simp [toHom, invHom, twistLieHomOfEq])
-      fun i ↦ by simp [toHom, invHom, twistLieHomOfEq, smul_smul])
-    (lieHom_ext (by simp [toHom, invHom, twistLieHomOfEq])
-      fun i ↦ by simp [toHom, invHom, twistLieHomOfEq, smul_smul])
+  LieEquiv.ofLieHoms (twistLieHomOfEq s hs rfl) (twistLieHomOfEq s hs (c.twist_twist s hs).symm)
+    (lieHom_ext (by simp [twistLieHomOfEq]) fun _ ↦ by simp [twistLieHomOfEq, smul_smul])
+    (lieHom_ext (by simp [twistLieHomOfEq]) fun _ ↦ by simp [twistLieHomOfEq, smul_smul])
 
 @[simp] theorem twistLieEquiv_cartan (s : ι → ℤˣ) (hs : ∀ i, s (P.reflectionPerm i i) = s i)
-    (y : Y) : twistLieEquiv c s hs (cartan (c.twist s hs) y) = cartan c y := by
-  simp [twistLieEquiv, twistLieHomOfEq, lieEquivOfHoms]
+    (y : Y) : twistLieEquiv c s hs (cartan _ y) = cartan c y := by
+  simp [twistLieEquiv, twistLieHomOfEq]
 
 @[simp] theorem twistLieEquiv_root (s : ι → ℤˣ) (hs : ∀ i, s (P.reflectionPerm i i) = s i)
-    (i : ι) : twistLieEquiv c s hs (root (c.twist s hs) i) = (s i : ℤ) • root c i := by
-  simp [twistLieEquiv, twistLieHomOfEq, lieEquivOfHoms]
+    (i : ι) : twistLieEquiv c s hs (root _ i) = (s i : ℤ) • root c i := by
+  simp [twistLieEquiv, twistLieHomOfEq]
 
 @[simp] theorem twistLieEquiv_symm_cartan (s : ι → ℤˣ) (hs : ∀ i, s (P.reflectionPerm i i) = s i)
     (y : Y) : (twistLieEquiv c s hs).symm (cartan c y) = cartan (c.twist s hs) y :=
@@ -370,17 +341,8 @@ noncomputable def twistLieEquiv (s : ι → ℤˣ) (hs : ∀ i, s (P.reflectionP
   rw [(twistLieEquiv c s hs).symm_apply_eq, map_smul, twistLieEquiv_root, smul_smul,
     Int.units_coe_mul_self, one_smul]
 
-section Map
-
 variable {ι₂ X₂ Y₂ : Type*} [Finite ι₂] [AddCommGroup X₂] [AddCommGroup Y₂]
   {P₂ : RootPairing ι₂ ℤ X₂ Y₂} (c₂ : P₂.ChevalleyConstants)
-
-omit [Finite ι] [Finite ι₂] in
-private theorem pairingIn_eq_of_hpair_hcoroot {γ : Y →ₗ[ℤ] Y₂} {e : ι → ι₂}
-    (hpair : ∀ i y, P₂.toLinearMap (P₂.root (e i)) (γ y) = P.toLinearMap (P.root i) y)
-    (hcoroot : ∀ i, γ (P.coroot i) = P₂.coroot (e i)) (i j : ι) :
-    P₂.pairingIn ℤ (e i) (e j) = P.pairingIn ℤ i j := by
-  simpa [hcoroot j, P₂.root_coroot_eq_pairing, P.root_coroot_eq_pairing] using hpair i (P.coroot j)
 
 /-- **Covariant functoriality of `ChevalleyLieAlgebra`** along `γ : Y →ₗ[ℤ] Y₂` and `e : ι ≃ ι₂`. -/
 noncomputable def mapLieHom (γ : Y →ₗ[ℤ] Y₂) (e : ι ≃ ι₂)
@@ -389,7 +351,7 @@ noncomputable def mapLieHom (γ : Y →ₗ[ℤ] Y₂) (e : ι ≃ ι₂)
     (hconst : ∀ i j, P.root i + P.root j ∈ range P.root →
       c₂.structConst (e i) (e j) = c.structConst i j) :
     ChevalleyLieAlgebra c →ₗ⁅ℤ⁆ ChevalleyLieAlgebra c₂ :=
-  let heIn := pairingIn_eq_of_hpair_hcoroot hpair hcoroot
+  let heIn := pairingIn_eq_of_toLinearMap_of_map_coroot hpair hcoroot
   liftLieHom c (cartan c₂ ∘ₗ γ) (fun i ↦ root c₂ (e i)) (fun _ _ ↦ by simp)
     (fun _ _ ↦ by simp [hpair])
     (fun {i j} h0 ↦ by
@@ -415,7 +377,7 @@ noncomputable def mapLieEquiv (γ : Y ≃ₗ[ℤ] Y₂) (e : ι ≃ ι₂)
     (hconst : ∀ i j, P.root i + P.root j ∈ range P.root →
       c₂.structConst (e i) (e j) = c.structConst i j) :
     ChevalleyLieAlgebra c ≃ₗ⁅ℤ⁆ ChevalleyLieAlgebra c₂ :=
-  let heIn := pairingIn_eq_of_hpair_hcoroot (γ := γ.toLinearMap) hpair hcoroot
+  let heIn := pairingIn_eq_of_toLinearMap_of_map_coroot (γ := γ.toLinearMap) hpair hcoroot
   let f := mapLieHom c c₂ γ.toLinearMap e hpair hcoroot hconst
   let g := mapLieHom c₂ c γ.symm.toLinearMap e.symm
     (fun i₂ y₂ ↦ by simpa using (hpair (e.symm i₂) (γ.symm y₂)).symm)
@@ -423,16 +385,23 @@ noncomputable def mapLieEquiv (γ : Y ≃ₗ[ℤ] Y₂) (e : ι ≃ ι₂)
     (fun i₂ j₂ hmem₂ ↦ by
       obtain ⟨i, rfl⟩ := e.surjective i₂; obtain ⟨j, rfl⟩ := e.surjective j₂
       simpa using (hconst i j ((root_add_mem_range_iff_of_pairingIn e heIn i j).mp hmem₂)).symm)
-  lieEquivOfHoms f g (lieHom_ext (by simp [f, g]) (by simp [f, g]))
+  LieEquiv.ofLieHoms f g (lieHom_ext (by simp [f, g]) (by simp [f, g]))
     (lieHom_ext (by simp [f, g]) (by simp [f, g]))
 
 @[simp] theorem mapLieEquiv_cartan (γ : Y ≃ₗ[ℤ] Y₂) (e : ι ≃ ι₂) (hpair) (hcoroot) (hconst)
     (y : Y) : mapLieEquiv c c₂ γ e hpair hcoroot hconst (cartan c y) = cartan c₂ (γ y) := by
-  simp [mapLieEquiv, lieEquivOfHoms]
+  simp [mapLieEquiv]
 
 @[simp] theorem mapLieEquiv_root (γ : Y ≃ₗ[ℤ] Y₂) (e : ι ≃ ι₂) (hpair) (hcoroot) (hconst) (i : ι) :
-    mapLieEquiv c c₂ γ e hpair hcoroot hconst (root c i) = root c₂ (e i) := by
-  simp [mapLieEquiv, lieEquivOfHoms]
+    mapLieEquiv c c₂ γ e hpair hcoroot hconst (root c i) = root c₂ (e i) := by simp [mapLieEquiv]
+
+@[simp] theorem mapLieEquiv_symm_cartan (γ : Y ≃ₗ[ℤ] Y₂) (e : ι ≃ ι₂) (hpair) (hcoroot) (hconst)
+    (y₂ : Y₂) : (mapLieEquiv c c₂ γ e hpair hcoroot hconst).symm (cartan c₂ y₂) =
+      cartan c (γ.symm y₂) := by simp [mapLieEquiv]
+
+@[simp] theorem mapLieEquiv_symm_root (γ : Y ≃ₗ[ℤ] Y₂) (e : ι ≃ ι₂) (hpair) (hcoroot) (hconst)
+    (i₂ : ι₂) : (mapLieEquiv c c₂ γ e hpair hcoroot hconst).symm (root c₂ i₂) =
+      root c (e.symm i₂) := by simp [mapLieEquiv]
 
 /-- **Transport of `ChevalleyLieAlgebra` along a root-pairing equivalence `g : P.Equiv P₂`.** -/
 noncomputable def equivOfRootPairingEquiv (g : P.Equiv P₂) :
@@ -450,14 +419,20 @@ noncomputable def equivOfRootPairingEquiv (g : P.Equiv P₂) :
     (fun _ _ _ ↦ by simp)
 
 @[simp] theorem equivOfRootPairingEquiv_cartan (g : P.Equiv P₂) (y : Y) :
-    equivOfRootPairingEquiv c g (cartan c y) = cartan _ (g.coweightEquiv.symm y) := by
-  simp [equivOfRootPairingEquiv]
+    equivOfRootPairingEquiv c g (cartan c y) = cartan _ (g.coweightEquiv.symm y) :=
+  mapLieEquiv_cartan c _ _ _ _ _ _ y
 
 @[simp] theorem equivOfRootPairingEquiv_root (g : P.Equiv P₂) (i : ι) :
-    equivOfRootPairingEquiv c g (root c i) = root _ (g.indexEquiv i) := by
-  simp [equivOfRootPairingEquiv]
+    equivOfRootPairingEquiv c g (root c i) = root _ (g.indexEquiv i) :=
+  mapLieEquiv_root c _ _ _ _ _ _ i
 
-end Map
+@[simp] theorem equivOfRootPairingEquiv_symm_cartan (g : P.Equiv P₂) (y₂ : Y₂) :
+    (equivOfRootPairingEquiv c g).symm (cartan _ y₂) = cartan c (g.coweightEquiv y₂) :=
+  mapLieEquiv_symm_cartan c _ _ _ _ _ _ y₂
+
+@[simp] theorem equivOfRootPairingEquiv_symm_root (g : P.Equiv P₂) (i₂ : ι₂) :
+    (equivOfRootPairingEquiv c g).symm (root _ i₂) = root c (g.indexEquiv.symm i₂) :=
+  mapLieEquiv_symm_root c _ _ _ _ _ _ i₂
 
 end ChevalleyLieAlgebra
 

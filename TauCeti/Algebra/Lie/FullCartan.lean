@@ -16,11 +16,10 @@ import Mathlib.Tactic.Module
 # The generic full-Cartan Lie carrier
 
 Both `Matrix.FullShellLieAlgebra` and `RootPairing.ChevalleyLieAlgebra` realize a `ℤ`-Lie algebra on
-`Y × (Φ →₀ ℤ)` for an arbitrary abelian Cartan group `Y` (retaining central directions and torsion
-with no chosen splitting of the coroot span) and root index type `Φ`. This file factors out
-`TauCeti.FullCartan Y Φ`, its generators `cartan` and `root`, `linearMap_ext`, `bracketBilin`, and
-the generator-reduction Lie axioms (`bracketBilin_skew`, `bracketBilin_self`,
-`bracketBilin_jacobi`, `bracketBilin_leibniz`).
+`Y × (Φ →₀ ℤ)` for an abelian Cartan group `Y` (retaining central directions and torsion with no
+chosen splitting) and root index type `Φ`. This file factors out `TauCeti.FullCartan Y Φ`, `cartan`,
+`root`, `linearMap_ext`, `bracketBilin`, and generator-reduction Lie axioms (`bracketBilin_skew`,
+`bracketBilin_self`, `bracketBilin_jacobi`, `bracketBilin_leibniz`).
 
 ## References
 
@@ -36,8 +35,6 @@ one free `ℤ`-line for each root index in `Φ`. -/
 @[expose] def FullCartan (Y Φ : Type*) : Type _ := Y × (Φ →₀ ℤ)
 
 namespace FullCartan
-
-section Carrier
 
 variable (Y Φ : Type*) [AddCommGroup Y]
 
@@ -77,12 +74,6 @@ theorem linearMap_ext {N : Type*} [AddCommGroup N] {f g : FullCartan Y Φ →ₗ
   have key : f ∘ₗ (equivProd Y Φ).symm.toLinearMap = g ∘ₗ (equivProd Y Φ).symm.toLinearMap :=
     LinearMap.prod_ext (LinearMap.ext hc) (Finsupp.lhom_ext' fun a ↦ LinearMap.ext_ring (hr a))
   simpa using congr($key ∘ₗ (equivProd Y Φ).toLinearMap)
-
-end Carrier
-
-section Bracket
-
-variable {Y Φ : Type*} [AddCommGroup Y]
 
 private noncomputable def cartanAction (w : Φ → Y →ₗ[ℤ] ℤ) :
     Y →ₗ[ℤ] (Φ →₀ ℤ) →ₗ[ℤ] FullCartan Y Φ :=
@@ -133,8 +124,7 @@ root generators (allowing `2`-torsion in `Y`). -/
 theorem bracketBilin_self (hswap : ∀ a b, rb b a = -rb a b) (hself : ∀ a, rb a a = 0)
     (x : FullCartan Y Φ) : bracketBilin w rb x x = 0 := by
   let q : FullCartan Y Φ →+ FullCartan Y Φ :=
-    { toFun u := bracketBilin w rb u u
-      map_zero' := by simp
+    { toFun u := bracketBilin w rb u u, map_zero' := by simp
       map_add' u v := by
         simp only [map_add, LinearMap.add_apply, bracketBilin_skew hswap u v]; abel }
   exact congr($(linearMap_ext (f := q.toIntLinearMap) (g := 0) (by simp [q])
@@ -202,8 +192,6 @@ theorem bracketBilin_leibniz (x y z : FullCartan Y Φ) :
     ← sub_eq_zero, ← bracketBilin_jacobi hswap hweight hjacobi x y z]; abel
 
 end Jacobi
-
-end Bracket
 
 end FullCartan
 

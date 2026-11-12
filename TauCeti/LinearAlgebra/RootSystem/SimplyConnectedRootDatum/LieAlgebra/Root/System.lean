@@ -231,8 +231,7 @@ private theorem chainBotCoeff_rootSystem_rootEquiv (α β : Fin t.numRoots) :
     (rootSystem (t.cartanSubalgebra ht)).chainBotCoeff (t.rootEquiv ht α) (t.rootEquiv ht β) =
       (t.rationalRootSystem ht).chainBotCoeff α β := by
   simp only [rootEquiv_eq_indexEquiv]
-  exact (t.rationalRootSystemEquiv ht).toHom.chainBotCoeff_indexEquiv
-    (t.rationalRootSystemEquiv ht).bijective_weightMap.injective α β
+  exact (t.rationalRootSystemEquiv ht).toHom.chainBotCoeff_indexEquiv α β
 
 /-- The Lie-weight root string agrees with the Killing root system's, read at enumerated roots. -/
 private theorem chainBotCoeff_eq_rootSystem_chainBotCoeff {α β : Fin t.numRoots}

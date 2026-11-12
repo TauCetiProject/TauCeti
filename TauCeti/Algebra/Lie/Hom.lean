@@ -10,7 +10,8 @@ public import Mathlib.Algebra.Lie.Basic
 /-!
 # Intertwining Lie algebra homomorphisms
 
-Basic simp and intertwining lemmas for `LieHom` and `LieEquiv`: coercion of `LieEquiv.mk`,
+Basic constructors, simp, and intertwining lemmas for `LieHom` and `LieEquiv`: coercion of
+`LieEquiv.mk`, construction of `LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`),
 composition of intertwining homomorphisms, and intertwining of inverse equivalences.
 -/
 
@@ -40,6 +41,24 @@ namespace LieEquiv
 theorem coe_mk (f : L →ₗ⁅R⁆ M) (invFun h₁ h₂) :
     ((⟨f, invFun, h₁, h₂⟩ : L ≃ₗ⁅R⁆ M) : L → M) = f :=
   (rfl)
+
+/-- Construct a `LieEquiv` from two mutually inverse `LieHom`s. -/
+def ofLieHoms (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ L)
+    (h₁ : g.comp f = LieHom.id) (h₂ : f.comp g = LieHom.id) : L ≃ₗ⁅R⁆ M where
+  toLieHom := f
+  invFun := g
+  left_inv x := congr($h₁ x)
+  right_inv x := congr($h₂ x)
+
+@[simp]
+theorem ofLieHoms_apply (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ L) (h₁ h₂) (x : L) :
+    ofLieHoms f g h₁ h₂ x = f x :=
+  (rfl)
+
+@[simp]
+theorem symm_ofLieHoms (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ L) (h₁ h₂) :
+    (ofLieHoms f g h₁ h₂).symm = ofLieHoms g f h₂ h₁ := by
+  ext x; rfl
 
 variable {f : L →ₗ⁅R⁆ L} {g : M →ₗ⁅R⁆ M} {k : N →ₗ⁅R⁆ N}
 

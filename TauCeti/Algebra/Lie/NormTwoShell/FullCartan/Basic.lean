@@ -344,6 +344,12 @@ theorem rootBracket_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (a b : B.
     rootBracket D b a = -rootBracket D a b := by
   rw [rootBracket, ShellLieAlgebra.rootBracket_swap hB hdiag, map_neg, toFull_rootBracket]
 
+/-- **Alternation of the root bracket**, for a symmetric `B` with even diagonal. -/
+theorem rootBracket_self (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (a : B.normTwoShell) :
+    rootBracket D a a = 0 := by
+  simpa [ShellLieAlgebra.root_lie_root] using
+    congr(toFull D $(ShellLieAlgebra.lie_self hB hdiag (ShellLieAlgebra.root B a)))
+
 /-- **Antisymmetry of the bracket**, for a symmetric `B` with even diagonal. -/
 protected theorem lie_skew (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i))
     (x y : FullShellLieAlgebra D) : ⁅y, x⁆ = -⁅x, y⁆ :=
@@ -353,10 +359,7 @@ protected theorem lie_skew (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i))
 `2`-torsion, so this is not a consequence of antisymmetry alone. -/
 protected theorem lie_self (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i))
     (x : FullShellLieAlgebra D) : ⁅x, x⁆ = 0 :=
-  TauCeti.FullCartan.bracketBilin_self (rootBracket_swap hB hdiag)
-    (fun a ↦ show rootBracket D a a = (0 : FullShellLieAlgebra D) by
-      simpa [ShellLieAlgebra.root_lie_root] using
-        congr(toFull D $(ShellLieAlgebra.lie_self hB hdiag (ShellLieAlgebra.root B a)))) x
+  TauCeti.FullCartan.bracketBilin_self (rootBracket_swap hB hdiag) (rootBracket_self hB hdiag) x
 
 /-! ### The Jacobi identity -/
 
