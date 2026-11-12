@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
-public import Mathlib.RingTheory.LocalRing.Quotient
 public import Mathlib.Topology.Algebra.Valued.ValuativeRel
 
 /-!
@@ -16,7 +15,7 @@ For a discretely valued field `K` and irreducible `c ∈ 𝒪[K]`, membership in
 `valuation K x ≤ valuation K c ^ n` (`TauCeti.mem_maximalIdeal_pow_iff_valuation_le`). Left
 multiplication by `r₀ ∈ 𝒪[K]` of valuation `valuation K c ^ d` shifts congruence modulo `𝓂[K] ^ M`
 to `𝓂[K] ^ (d + M)` (`TauCeti.mul_sub_mem_maximalIdeal_pow_iff`) and induces an injective linear map
-`TauCeti.mulLeftMaximalIdealPowQuotient`. When `𝓀[K]` is finite, `y ↦ y ^ 2 - y` is a bijection on
+`TauCeti.mulLeftMaximalIdealPowQuotient`. The Artin–Schreier map `y ↦ y ^ 2 - y` is a bijection on
 maximal-ideal classes in `𝒪[K] ⧸ 𝓂[K] ^ (m + 1)` (`TauCeti.artinSchreierMaximalIdealQuotientEquiv`).
 
 ## References
@@ -76,17 +75,35 @@ theorem mulLeftMaximalIdealPowQuotient_injective {c r₀ : 𝒪[K]} (hc : Irredu
   rw [mulLeftMaximalIdealPowQuotient_mk, mulLeftMaximalIdealPowQuotient_mk, Ideal.Quotient.eq] at h
   exact Ideal.Quotient.eq.mpr ((mul_sub_mem_maximalIdeal_pow_iff hc hvr₀ hN s₁ s₂).mp h)
 
+private theorem exists_mem_maximalIdeal_sq_sub_sub_mem_pow {b : 𝒪[K]} (hb : b ∈ 𝓂[K]) :
+    ∀ m : ℕ, ∃ s ∈ 𝓂[K], s ^ 2 - s - b ∈ 𝓂[K] ^ (m + 1)
+  | 0 => ⟨0, zero_mem _, by
+      simpa only [zero_add, pow_one, zero_pow two_ne_zero, sub_zero, zero_sub] using neg_mem hb⟩
+  | m + 1 => by
+    obtain ⟨s, hs, hδ⟩ := exists_mem_maximalIdeal_sq_sub_sub_mem_pow hb m
+    obtain ⟨u, hu⟩ := IsLocalRing.isUnit_one_sub_self_of_mem_nonunits (2 * s)
+      ((IsLocalRing.mem_maximalIdeal _).mp (Ideal.mul_mem_left _ 2 hs))
+    let h : 𝒪[K] := (s ^ 2 - s - b) * ↑u⁻¹
+    have hh : h ∈ 𝓂[K] ^ (m + 1) := Ideal.mul_mem_right _ _ hδ
+    have hhm : h ∈ 𝓂[K] := Ideal.pow_le_self (Nat.succ_ne_zero m) hh
+    refine ⟨s + h, add_mem hs hhm, ?_⟩
+    have hu' : (1 - 2 * s) * h = s ^ 2 - s - b := by
+      dsimp only [h]; rw [← hu, mul_left_comm, Units.mul_inv, mul_one]
+    rw [show (s + h) ^ 2 - (s + h) - b = (s ^ 2 - s - b) - (1 - 2 * s) * h + h * h by ring,
+      hu', sub_self, zero_add, pow_succ]
+    exact Ideal.mul_mem_mul hh hhm
+
 /-- On the maximal-ideal classes in `𝒪[K] ⧸ 𝓂[K] ^ (m + 1)`, the Artin–Schreier polynomial
 `y ↦ y ^ 2 - y` is a bijection. -/
 def artinSchreierMaximalIdealQuotientEquiv (K : Type*) [Field K] [ValuativeRel K]
-    [IsDiscreteValuationRing 𝒪[K]] [Finite 𝓀[K]] (m : ℕ) :
+    [IsDiscreteValuationRing 𝒪[K]] (m : ℕ) :
     {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
       Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0} ≃
     {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
       Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0} :=
   Equiv.ofBijective
     (fun x ↦ ⟨x.1 ^ 2 - x.1, by rw [map_sub, map_pow, x.2, zero_pow two_ne_zero, sub_self]⟩)
-    (Finite.injective_iff_bijective.mp fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ h ↦ by
+    (show Function.Bijective _ from ⟨fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ h ↦ by
       obtain ⟨s₁, rfl⟩ := Ideal.Quotient.mk_surjective y₁
       obtain ⟨s₂, rfl⟩ := Ideal.Quotient.mk_surjective y₂
       have hmem : (s₁ - s₂) * (s₁ + s₂ - 1) ∈ 𝓂[K] ^ (m + 1) := by
@@ -98,14 +115,21 @@ def artinSchreierMaximalIdealQuotientEquiv (K : Type*) [Field K] [ValuativeRel K
             (Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy₁))
             (Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy₂))))).neg
       exact Subtype.ext
-        (Ideal.Quotient.eq.mpr (((𝓂[K] ^ (m + 1)).mul_unit_mem_iff_mem hw).mp hmem)))
+        (Ideal.Quotient.eq.mpr (((𝓂[K] ^ (m + 1)).mul_unit_mem_iff_mem hw).mp hmem)),
+    fun ⟨y, hy⟩ ↦ by
+      obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective y
+      have hb : b ∈ 𝓂[K] := Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy)
+      obtain ⟨s, hs, hmem⟩ := exists_mem_maximalIdeal_sq_sub_sub_mem_pow hb m
+      refine ⟨⟨Ideal.Quotient.mk _ s, ?_⟩, Subtype.ext ?_⟩
+      · rw [Ideal.Quotient.factor_mk, Ideal.Quotient.eq_zero_iff_mem]; exact hs
+      · simpa only [← map_pow, ← map_sub] using Ideal.Quotient.eq.mpr hmem⟩)
 
 /-- Evaluating `artinSchreierMaximalIdealQuotientEquiv` applies `y ↦ y ^ 2 - y`. -/
 @[simp]
-theorem coe_artinSchreierMaximalIdealQuotientEquiv_apply [Finite 𝓀[K]] (m : ℕ)
+theorem coe_artinSchreierMaximalIdealQuotientEquiv_apply (m : ℕ)
     (x : {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
       Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0}) :
     (artinSchreierMaximalIdealQuotientEquiv K m x : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1)) = x.1 ^ 2 - x.1 := by
-  simp only [artinSchreierMaximalIdealQuotientEquiv, Equiv.ofBijective_apply]
+  rw [artinSchreierMaximalIdealQuotientEquiv, Equiv.coe_ofBijective]
 
 end TauCeti

@@ -136,6 +136,16 @@ def unitFiltrationSquareCosetHom (h2 : (2 : K) ≠ 0) (k : ℕ) :
       map_one' := by ext; simp
       map_mul' := fun x y ↦ by ext; simp [mul_pow] }
 
+/-- `unitFiltrationSquareCosetHom` sends `z` to the coset of `z ^ 2`. -/
+@[simp]
+theorem unitFiltrationSquareCosetHom_apply (h2 : (2 : K) ≠ 0) (k : ℕ)
+    (z : unitFiltration K (natCastValuation K 2 h2 - k)) :
+    unitFiltrationSquareCosetHom h2 k z =
+      QuotientGroup.mk ⟨(z : Kˣ) ^ 2,
+        Nat.mul_sub 2 _ k ▸ sq_mem_unitFiltration_two_mul h2 (Nat.sub_le _ _) z.2⟩ := by
+  rw [unitFiltrationSquareCosetHom, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
+    MonoidHom.coe_mk, OneHom.coe_mk]
+
 /-- The range of `unitFiltrationSquareCosetHom` consists of the cosets represented by squares in
 `Kˣ`. -/
 theorem range_unitFiltrationSquareCosetHom (h2 : (2 : K) ≠ 0) (k : ℕ) :
@@ -146,13 +156,13 @@ theorem range_unitFiltrationSquareCosetHom (h2 : (2 : K) ≠ 0) (k : ℕ) :
       {q | ∃ u : unitFiltration K (2 * natCastValuation K 2 h2 - 2 * k),
         QuotientGroup.mk u = q ∧ IsSquare (u : Kˣ)} := by
   ext q
-  refine ⟨fun ⟨z, hz⟩ ↦ hz ▸ ⟨⟨(z : Kˣ) ^ 2, _⟩, rfl, ⟨z.1, sq z.1⟩⟩, ?_⟩
+  refine ⟨fun ⟨z, hz⟩ ↦ hz ▸ ⟨_, (unitFiltrationSquareCosetHom_apply h2 k z).symm, ⟨z.1, sq z.1⟩⟩,
+    ?_⟩
   rintro ⟨u, rfl, ⟨z, hz⟩⟩
   have hz2 : z ^ 2 = u.1 := by simpa only [sq] using hz.symm
   refine ⟨⟨z, mem_unitFiltration_of_sq_mem_two_mul h2 (Nat.sub_le _ _)
     (by rw [Nat.mul_sub, hz2]; exact u.2)⟩, ?_⟩
-  dsimp only [unitFiltrationSquareCosetHom]
-  rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply]
+  rw [unitFiltrationSquareCosetHom_apply]
   exact congrArg QuotientGroup.mk (Subtype.ext hz2)
 
 /-- `U(K, v_K(2) + 1)` lies in the kernel of `unitFiltrationSquareCosetHom`. -/
@@ -165,9 +175,8 @@ theorem unitFiltration_succ_le_ker_unitFiltrationSquareCosetHom (h2 : (2 : K) �
   have hz2 : (z : Kˣ) ^ 2 ∈ unitFiltration K (e + 1 + e) := by
     rw [← map_powMonoidHom_unitFiltration_of_prime Nat.prime_two h2 (i := e + 1) (by omega)]
     exact ⟨(z : Kˣ), Subgroup.mem_subgroupOf.mp hz, rfl⟩
-  dsimp only [unitFiltrationSquareCosetHom]
-  rw [MonoidHom.mem_ker, MonoidHom.comp_apply, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff,
-    Subgroup.mem_subgroupOf, MonoidHom.coe_mk, OneHom.coe_mk]
+  rw [MonoidHom.mem_ker, unitFiltrationSquareCosetHom_apply, QuotientGroup.eq_one_iff,
+    Subgroup.mem_subgroupOf]
   rwa [show 2 * natCastValuation K 2 h2 + 1 = e + 1 + e by omega]
 
 /-- `U(K, v_K(2) + 1)` has relative index `2` inside the kernel of
@@ -186,7 +195,7 @@ theorem relIndex_unitFiltration_ker_unitFiltrationSquareCosetHom (h2 : (2 : K) �
       Valuation.map_neg, hv2]
     exact pow_le_pow_right_of_le_one' hπ1.le (Nat.sub_le e k)
   let negOne : (unitFiltrationSquareCosetHom h2 k).ker := ⟨⟨-1, hneg1_mem⟩, by
-    simp [unitFiltrationSquareCosetHom, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]⟩
+    simp [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]⟩
   rw [Subgroup.relIndex, Subgroup.index_eq_two_iff_exists_notMem_and]
   refine ⟨negOne, fun hmem ↦ ?_, fun w ↦ ?_⟩
   · have h1 := Subgroup.mem_subgroupOf.mp (Subgroup.mem_subgroupOf.mp hmem)
@@ -195,8 +204,9 @@ theorem relIndex_unitFiltration_ker_unitFiltrationSquareCosetHom (h2 : (2 : K) �
     exact (pow_lt_pow_right_of_lt_one₀ (Valuation.integer.v_irreducible_pos hπ) hπ1
       (Nat.lt_succ_self e)).not_ge h1
   · have hw2 : (w.1.1 : Kˣ) ^ 2 ∈ unitFiltration K (2 * e + 1) := by
-      simpa [unitFiltrationSquareCosetHom, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]
-        using w.2
+      have hw_ker := MonoidHom.mem_ker.mp w.2
+      rwa [unitFiltrationSquareCosetHom_apply, QuotientGroup.eq_one_iff,
+        Subgroup.mem_subgroupOf] at hw_ker
     refine (mem_or_neg_mem_unitFiltration_succ_of_sq_mem h2 hw2).symm.imp
       (fun hw_neg ↦ ?_) id
     simpa only [Subgroup.mem_subgroupOf, negOne, Subgroup.coe_mul, mul_neg, mul_one] using hw_neg

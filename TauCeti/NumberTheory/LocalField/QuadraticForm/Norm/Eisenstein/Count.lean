@@ -7,7 +7,9 @@ module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Eisenstein.Basic
 
+import Mathlib.Data.Set.Card
 import TauCeti.NumberTheory.LocalField.IntegerRing.Quotient
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.SquareClass
 import TauCeti.NumberTheory.LocalField.Squares
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Square
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Quotient
@@ -26,8 +28,8 @@ Over a nonarchimedean local field `K` (`2 ≠ 0`) with irreducible `c ∈ 𝒪[K
 deep enough shows `eisensteinNormSquareSubgroup K ht hc.mem_maximalIdeal` has
 `#𝓀[K] ^ natCastValuation K 2 h2` elements (`TauCeti.natCard_eisensteinNormSquareSubgroup`) and
 index `2` in `TauCeti.unitSquareClasses K` (`TauCeti.relIndex_eisensteinNormSquareSubgroup`):
-* For `valuation K t < valuation K 2`, completing the square reduces to `t = 0`, where the `1`-fibre
-  on `𝒪[K] ⧸ 𝓂[K] ^ v_K(2)` is trivial.
+* For `valuation K t < valuation K 2`, completing the square reduces to `t = 0`, where
+  `1 + c v² = 1 - (-c) v²` reduces to `TauCeti.ncard_range_uniformizerNormSquareClass`.
 * For `valuation K 2 ≤ valuation K t`, factoring `t = c r₀` and writing `r = r₀ s` turns
   `1 - t r + c r²` into `1 + c r₀² (s² - s)`, splitting around `s = 0, 1`
   (`TauCeti.mem_maximalIdeal_or_one_sub_mem_of_isSquare_one_add_mul_sq_sub`) and counting the
@@ -286,63 +288,21 @@ theorem natCard_artinSchreier_square_maximalIdeal_quotient (h2 : (2 : K) ≠ 0) 
   rw [hsplit, Nat.card_congr (artinSchreierMaximalIdealSquareEquiv h2 hc hk hvβ)]
   exact two_mul_natCard_squareCosets_unitFiltration h2 hk
 
-private theorem eisensteinNormSquareClass_eq_one_of_mem_unitFiltration (h2 : (2 : K) ≠ 0)
-    {t c : 𝒪[K]} (ht : t ∈ 𝓂[K]) (hc : c ∈ 𝓂[K]) {r : 𝒪[K]}
-    (hu : eisensteinNormUnit K ht hc r ∈ unitFiltration K (2 * dyadicLevel K h2 + 1)) :
-    eisensteinNormSquareClass K ht hc r = 1 :=
-  (eisensteinNormSquareClass_def ht hc r).trans <|
-    (squareClassHom_eq_one_iff _).mpr (Subgroup.mem_square.mp (unitFiltration_le_square h2 hu))
-
-private theorem eisensteinNormSquareClass_zero_t_eq_one_iff (h2 : (2 : K) ≠ 0) {c : 𝒪[K]}
-    (hc : Irreducible c) (r : 𝒪[K]) :
-    eisensteinNormSquareClass K (zero_mem 𝓂[K]) hc.mem_maximalIdeal r = 1 ↔
-      r ∈ 𝓂[K] ^ natCastValuation K 2 h2 := by
-  set e := natCastValuation K 2 h2
-  have hc1 : valuation K (c : K) < 1 := Valuation.integer.v_irreducible_lt_one hc
-  constructor
-  · intro hsq
-    by_contra hr
-    have hr0 : r ≠ 0 := fun h ↦ hr (h ▸ zero_mem _)
-    obtain ⟨ρ, hrv⟩ := exists_valuation_eq_pow_irreducible (valuation K) hr0 hc
-    have hρlt : ρ < e := not_le.mp fun hge ↦
-      hr ((mem_maximalIdeal_pow_iff_valuation_le hc e).mpr
-        (hrv ▸ pow_le_pow_right_of_le_one' hc1.le hge))
-    obtain ⟨ξ, hξ⟩ :=
-      (eisensteinNormSquareClass_eq_one_iff (zero_mem 𝓂[K]) hc.mem_maximalIdeal r).mp hsq
-    apply valuation_sq_sub_one_ne_pow_odd h2 hc hρlt ξ
-    have hξ' : 1 + (c : K) * (r : K) ^ 2 = ξ ^ 2 := by simpa [sq] using hξ
-    rw [show ξ ^ 2 - 1 = (c : K) * (r : K) ^ 2 by linear_combination -hξ',
-      map_mul, map_pow, hrv, ← pow_mul, ← pow_succ']
-    congr 1; omega
-  · intro hr
-    refine eisensteinNormSquareClass_eq_one_of_mem_unitFiltration h2 _ _ ?_
-    rw [dyadicLevel_def, mem_unitFiltration_succ_valuation (2 * e) _ c hc, map_pow]
-    simp only [coe_eisensteinNormUnit, ZeroMemClass.coe_zero, zero_mul, sub_zero,
-      add_sub_cancel_left, map_mul, map_pow]
-    refine (mul_le_mul' le_rfl (pow_le_pow_left₀ zero_le
-      ((mem_maximalIdeal_pow_iff_valuation_le hc e).mp hr) 2)).trans_eq ?_
-    rw [← pow_mul, ← pow_succ']; congr 1; omega
-
 private theorem natCard_eisensteinNormSquareSubgroup_zero (h2 : (2 : K) ≠ 0) {c : 𝒪[K]}
     (hc : Irreducible c) :
     Nat.card (eisensteinNormSquareSubgroup K (zero_mem 𝓂[K]) hc.mem_maximalIdeal) =
       Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
-  set e := natCastValuation K 2 h2
-  have hIe (r : 𝒪[K]) (hr : r ∈ 𝓂[K] ^ e) :
-      eisensteinNormSquareClass K (zero_mem 𝓂[K]) hc.mem_maximalIdeal r = 1 :=
-    (eisensteinNormSquareClass_zero_t_eq_one_iff h2 hc r).mpr hr
-  have hprod := natCard_quotient_eq_mul_natCard_eisenstein_fiber
-    (zero_mem 𝓂[K]) hc.mem_maximalIdeal (𝓂[K] ^ e) hIe
-  have h1 : Nat.card {x : 𝒪[K] ⧸ 𝓂[K] ^ e //
-      eisensteinNormSquareClassQuotient (zero_mem 𝓂[K]) hc.mem_maximalIdeal _ hIe x = 1} = 1 :=
-    Nat.card_eq_one_iff_exists.mpr ⟨⟨0, by rw [← map_zero (Ideal.Quotient.mk _),
-      eisensteinNormSquareClassQuotient_mk, eisensteinNormSquareClass_zero]⟩, fun ⟨x, hx⟩ ↦ by
-      obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
-      rw [eisensteinNormSquareClassQuotient_mk] at hx
-      exact Subtype.ext (Ideal.Quotient.eq_zero_iff_mem.mpr
-        ((eisensteinNormSquareClass_zero_t_eq_one_iff h2 hc r).mp hx))⟩
-  rw [h1, mul_one, TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow] at hprod
-  exact hprod.symm
+  have hc' : Irreducible (-c) := irreducible_of_valuation_eq hc (by simp)
+  have hfun : eisensteinNormSquareClass K (zero_mem 𝓂[K]) hc.mem_maximalIdeal =
+      uniformizerNormSquareClass K hc' := funext fun r ↦ by
+    rw [eisensteinNormSquareClass_def, uniformizerNormSquareClass_def]
+    exact congrArg squareClassHom (Units.ext (by simp [coe_eisensteinNormUnit]))
+  have hrange : (eisensteinNormSquareSubgroup K (zero_mem 𝓂[K]) hc.mem_maximalIdeal :
+      Set (Kˣ ⧸ Subgroup.square Kˣ)) = Set.range (uniformizerNormSquareClass K hc') := by
+    rw [coe_eisensteinNormSquareSubgroup, hfun]
+  rw [Nat.card_congr (Equiv.subtypeEquivRight fun q ↦ by rw [← SetLike.mem_coe, hrange]),
+    Nat.card_coe_set_eq]
+  exact ncard_range_uniformizerNormSquareClass h2 hc'
 
 private theorem exists_irreducible_sub_sq_of_lt (h2 : (2 : K) ≠ 0) {t c : 𝒪[K]}
     (hc : Irreducible c) (hlt : valuation K (t : K) < valuation K (2 : K)) :
@@ -431,7 +391,8 @@ private theorem eisensteinNormSquareClass_eq_one_of_mem_pow (h2 : (2 : K) ≠ 0)
     rw [← hcr₀, Subring.coe_mul, map_mul, hvr₀, ← pow_succ', show e - k - 1 + 1 = e - k by omega]
   intro r hr
   have hrv := (mem_maximalIdeal_pow_iff_valuation_le hc N).mp hr
-  refine eisensteinNormSquareClass_eq_one_of_mem_unitFiltration h2 ht hc.mem_maximalIdeal ?_
+  refine (eisensteinNormSquareClass_def ht hc.mem_maximalIdeal r).trans <|
+    (squareClassHom_eq_one_iff _).mpr (Subgroup.mem_square.mp (unitFiltration_le_square h2 ?_))
   rw [dyadicLevel_def, mem_unitFiltration_succ_valuation (2 * e) _ c hc, map_pow,
     show (eisensteinNormUnit K ht hc.mem_maximalIdeal r : K) - 1 =
       -(t : K) * (r : K) + (c : K) * (r : K) ^ 2 by rw [coe_eisensteinNormUnit]; ring]
