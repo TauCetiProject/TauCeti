@@ -131,10 +131,9 @@ theorem omega_pow_card_ne_star (hr : IsSquare r) :
     rw [pow_card_eq_algebraMap_re] at him
     simp at him
   rcases Nat.even_or_odd (Nat.card F) with heven | hodd
-  · rw [← Nat.two_mul_div_two_of_even heven, pow_mul, sq, omega_mul_omega_eq_algebraMap,
-      map_zero, zero_mul, add_zero, ← map_pow (algebraMap F (QuadraticAlgebra F r 0)),
-      algebraMap_eq, im_C] at him
-    simp at him
+  · -- `ω ^ Q = (ω ^ 2) ^ (Q / 2)` is the scalar `r ^ (Q / 2)`, whose second coordinate is `0`.
+    rw [← Nat.two_mul_div_two_of_even heven, pow_mul] at him
+    simp [sq, omega_mul_omega_eq_algebraMap, ← map_pow] at him
   · rw [pow_card_eq_self_of_square hodd hr hr0, im_omega] at him
     exact Ring.two_ne_zero (ringChar_ne_two_of_odd_card hodd) (by linear_combination him)
 

@@ -62,19 +62,27 @@ namespace QuadraticAlgebra
 
 variable {r : ℤ} {p : ℕ} [Fact p.Prime]
 
+/-- Reduction modulo `p` lands in `QuadraticAlgebra (ZMod p) r (Int.castRingHom (ZMod p) 0)`,
+whose parameter is `0` only propositionally. A statement proved for every element of
+`QuadraticAlgebra (ZMod p) r 0` therefore holds for every element of that algebra. -/
+private theorem forall_of_intCastRingHom_zero
+    {P : ∀ b : ZMod p, QuadraticAlgebra (ZMod p) (r : ZMod p) b → Prop} (h : ∀ w, P 0 w)
+    (w : QuadraticAlgebra (ZMod p) (r : ZMod p) (Int.castRingHom (ZMod p) 0)) :
+    P (Int.castRingHom (ZMod p) 0) w := by
+  have key : ∀ b : ZMod p, b = 0 → ∀ w, P b w := by
+    rintro _ rfl
+    exact h
+  exact key _ (map_zero _) w
+
 /-- **The commuting square.** For a prime `p` modulo which `r` is not a square, reduction modulo
 `p` sends `z ^ p` to the conjugate of the reduction of `z`, which is the reduction of `star z`. -/
 theorem mapRingHom_intCastRingHom_pow_eq_star (hr : ¬IsSquare (r : ZMod p))
     (z : QuadraticAlgebra ℤ r 0) :
     mapRingHom (Int.castRingHom (ZMod p)) r 0 (z ^ p) =
       star (mapRingHom (Int.castRingHom (ZMod p)) r 0 z) := by
-  -- The reduced parameter `Int.castRingHom (ZMod p) 0` is `0` only propositionally.
-  have key : ∀ b : ZMod p, b = 0 → ∀ w : QuadraticAlgebra (ZMod p) (r : ZMod p) b,
-      w ^ p = star w := by
-    rintro _ rfl w
-    simpa only [Nat.card_zmod] using pow_card_eq_star hr w
   rw [map_pow]
-  exact key _ (map_zero _) _
+  exact forall_of_intCastRingHom_zero (P := fun _ w ↦ w ^ p = star w)
+    (fun w ↦ by simpa only [Nat.card_zmod] using pow_card_eq_star hr w) _
 
 /-- **The integral Frobenius congruence.** For an integer `r`, a prime `p` modulo which `r` is not
 a square (so `p` is odd, `TauCeti.FiniteField.odd_card_of_not_isSquare`), and every
@@ -93,17 +101,12 @@ theorem re_pow_modEq (hp : p ≠ 2) (z : QuadraticAlgebra ℤ r 0) :
   have hodd : Odd (Nat.card (ZMod p)) := by
     rw [Nat.card_zmod]
     exact (Fact.out : p.Prime).odd_of_ne_two hp
-  -- The reduced parameter `Int.castRingHom (ZMod p) 0` is `0` only propositionally.
-  have key : ∀ b : ZMod p, b = 0 → ∀ w : QuadraticAlgebra (ZMod p) (r : ZMod p) b,
-      (w ^ p).re = w.re := by
-    rintro _ rfl w
-    have h := pow_card_eq_mk hodd w
-    rw [Nat.card_zmod] at h
-    rw [h]
-  have h := key _ (map_zero _) (mapRingHom (Int.castRingHom (ZMod p)) r 0 z)
-  rw [← map_pow] at h
-  rw [← ZMod.intCast_eq_intCast_iff]
-  exact h
+  -- Over `ℤ/p` the `p`-th power map fixes the first coordinate.
+  have h := forall_of_intCastRingHom_zero (P := fun _ w ↦ (w ^ p).re = w.re)
+    (fun w ↦ by simpa only [Nat.card_zmod] using congrArg re (pow_card_eq_mk hodd w))
+    (mapRingHom (Int.castRingHom (ZMod p)) r 0 z)
+  rw [← map_pow, re_mapRingHom_intCastRingHom, re_mapRingHom_intCastRingHom] at h
+  exact (ZMod.intCast_eq_intCast_iff _ _ _).mp h
 
 /-- The second coordinate of the Frobenius congruence: `(z ^ p).im ≡ -z.im` modulo `p`. -/
 theorem im_pow_modEq (hr : ¬IsSquare (r : ZMod p)) (z : QuadraticAlgebra ℤ r 0) :
@@ -119,12 +122,9 @@ theorem omega_pow_sub_star_notMem_span_natCast (hr : IsSquare (r : ZMod p)) :
     (ω : QuadraticAlgebra ℤ r 0) ^ p - star ω ∉ Ideal.span {(p : QuadraticAlgebra ℤ r 0)} := by
   rw [← ker_mapRingHom_intCastRingHom, RingHom.mem_ker, map_sub, map_pow, mapRingHom_star,
     mapRingHom_omega]
-  -- The reduced parameter `Int.castRingHom (ZMod p) 0` is `0` only propositionally.
-  suffices key : ∀ b : ZMod p, b = 0 →
-      (ω : QuadraticAlgebra (ZMod p) (r : ZMod p) b) ^ p - star ω ≠ 0 from
-    key _ (map_zero _)
-  rintro _ rfl h
-  exact omega_pow_card_ne_star hr (by rwa [Nat.card_zmod, ← sub_eq_zero])
+  exact forall_of_intCastRingHom_zero (r := r)
+    (P := fun b _ ↦ (ω : QuadraticAlgebra (ZMod p) (r : ZMod p) b) ^ p - star ω ≠ 0)
+    (fun _ h ↦ omega_pow_card_ne_star hr (by rwa [Nat.card_zmod, ← sub_eq_zero])) ω
 
 /-- **The congruence characterizes the nonsquares.** For a prime `p`, every `z ∈ ℤ[√r]` satisfies
 `z ^ p ≡ star z` modulo `p` exactly when `r` is not a square modulo `p`. -/
