@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Smooth radial exponential weights
@@ -14,7 +15,8 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 For `b > 0`, the weight `exp(c √(b + ‖z‖²))` is smooth on any real inner product space. The
 norm of its derivative is `|c| ‖z‖ / √(b + ‖z‖²)` times the weight, so it is bounded by `|c|`
 times the weight, and by an arbitrarily small multiple of the weight on a fixed ball once `b` is
-large. The usual choice is `b = 1`.
+large. The usual choice is `b = 1`, and changing `b` changes the weight by at most a constant
+factor.
 -/
 
 public section
@@ -64,5 +66,18 @@ theorem norm_fderiv_exp_mul_sqrt_add_norm_sq_le (c : ℝ) (hb : 0 < b) (z : E) :
     exact (Real.le_sqrt (norm_nonneg z) hp.le).2 (by linarith)
   rw [norm_fderiv_exp_mul_sqrt_add_norm_sq c hb]
   exact mul_le_of_le_one_right (by positivity) hq
+
+omit [InnerProductSpace ℝ E] in
+/-- Changing the regularization parameter changes the radial exponential weight by at most the
+factor `exp(|c| √|s - t|)`, uniformly in `z`, since the square root is `1/2`-Hölder. -/
+theorem exp_mul_sqrt_add_norm_sq_le (c s t : ℝ) (z : E) :
+    Real.exp (c * √(s + ‖z‖ ^ 2)) ≤
+      Real.exp (|c| * √|s - t|) * Real.exp (c * √(t + ‖z‖ ^ 2)) := by
+  rw [← Real.exp_add, Real.exp_le_exp]
+  have hd := Real.abs_sqrt_sub_sqrt_le (s + ‖z‖ ^ 2) (t + ‖z‖ ^ 2)
+  rw [add_sub_add_right_eq_sub] at hd
+  have h := (abs_le.mp ((abs_mul c _).symm ▸
+    mul_le_mul_of_nonneg_left hd (abs_nonneg c))).2
+  linarith [mul_sub c (√(s + ‖z‖ ^ 2)) (√(t + ‖z‖ ^ 2))]
 
 end TauCeti
