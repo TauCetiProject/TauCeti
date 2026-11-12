@@ -25,8 +25,7 @@ Lie algebra morphism and characterizes its image: it consists exactly of the cou
 derivations of `H` which vanish on `I`.
 
 Thus the Lie algebra of the closed subgroup is canonically a Lie subalgebra of the Lie algebra of
-the ambient group. This is the coordinate-Hopf-algebra form of the ReductiveGroups roadmap's
-Layer 2 target "the Lie algebra of a closed subgroup".
+the ambient group.
 
 ## Main declarations
 
