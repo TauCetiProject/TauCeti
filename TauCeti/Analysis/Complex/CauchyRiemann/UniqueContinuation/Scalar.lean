@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
 public import TauCeti.Analysis.Complex.Wirtinger.Similarity.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The scalar similarity principle as a similarity factorization

@@ -23,7 +23,9 @@ controls variation of inverse operators by variation of the original operators.
 
 Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
 of `c • f` is `c⁻¹ • f.inverse`; this is how the inverse of a positively homogeneous family of
-maps is seen to be homogeneous of the opposite degree.
+maps is seen to be homogeneous of the opposite degree. Scaling the identity by a nonzero scalar `c`
+from a group with zero acting on the space, such as complex multiplication on `ℂ` viewed as a
+real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`).
 
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
@@ -136,6 +138,20 @@ theorem inverse_smul (c : 𝕜) (f : M →L[𝕜] M₂) : (c • f).inverse = c�
     map_smul, smul_apply]
 
 end Smul
+
+section SMulId
+
+variable {R S M : Type*} [Semiring R] [GroupWithZero S] [TopologicalSpace M] [AddCommMonoid M]
+  [Module R M] [DistribMulAction S M] [SMulCommClass R S M] [ContinuousConstSMul S M]
+
+/-- Scaling the identity by a nonzero scalar `c` is invertible, with inverse scaling by `c⁻¹`. The
+scalars need not commute with operators: for example, multiplication by a nonzero complex number
+is an invertible real-linear map of `ℂ`. -/
+theorem isUnit_smul_id_of_ne_zero {c : S} (hc : c ≠ 0) : IsUnit (c • ContinuousLinearMap.id R M) :=
+  ⟨⟨c • ContinuousLinearMap.id R M, c⁻¹ • ContinuousLinearMap.id R M,
+    by ext; simp [hc], by ext; simp [hc]⟩, rfl⟩
+
+end SMulId
 
 section ProdMap
 

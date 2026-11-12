@@ -51,9 +51,6 @@ and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the in
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). An operator bounded below
 is invertible if a sufficiently nearby operator is invertible
 (`ContinuousLinearMap.isUnit_of_forall_mul_norm_le_of_norm_sub_lt`).
-Scaling the identity by a nonzero scalar `c` from a group with zero acting on the space, such as
-complex multiplication on `ℂ` viewed as a real-linear map, is invertible
-(`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`).
 A family of operators continuous at a point and invertible there changes the size of a
 function near that point only up to constant factors (`TauCeti.isTheta_clm_apply_of_isUnit`).
 
@@ -316,20 +313,6 @@ theorem isUnit_of_forall_mul_norm_le_of_norm_sub_lt [CompleteSpace E]
   exact (u.ofNearby A hnear).isUnit
 
 end Inverse
-
-section SMulId
-
-variable {R S M : Type*} [Semiring R] [GroupWithZero S] [TopologicalSpace M] [AddCommMonoid M]
-  [Module R M] [DistribMulAction S M] [SMulCommClass R S M] [ContinuousConstSMul S M]
-
-/-- Scaling the identity by a nonzero scalar `c` is invertible, with inverse scaling by `c⁻¹`. The
-scalars need not commute with operators: for example, multiplication by a nonzero complex number
-is an invertible real-linear map of `ℂ`. -/
-theorem isUnit_smul_id_of_ne_zero {c : S} (hc : c ≠ 0) : IsUnit (c • ContinuousLinearMap.id R M) :=
-  ⟨⟨c • ContinuousLinearMap.id R M, c⁻¹ • ContinuousLinearMap.id R M,
-    by ext; simp [hc], by ext; simp [hc]⟩, rfl⟩
-
-end SMulId
 
 /-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm
 at most one is bounded by `#s * ‖A‖`. Along an orthonormal basis this bounds the trace of `A` by
