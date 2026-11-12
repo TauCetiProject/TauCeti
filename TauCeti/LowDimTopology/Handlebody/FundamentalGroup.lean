@@ -12,7 +12,7 @@ public import TauCeti.LowDimTopology.Handlebody.Basic
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
-import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.FundamentalGroup.FrontierProduct
 import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.AlgebraicTopology.FundamentalGroup.PlaneMinusPoints
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
@@ -38,15 +38,15 @@ radially in to its boundary circle, and all other points stay put. The fundament
 punctured plane is free on the punctures
 (`TauCeti.nonempty_fundamentalGroup_compl_mulEquiv_freeGroup`).
 
-The boundary surface of the handlebody, its frontier in `ℂ × ℝ`, carries its fundamental group:
-the handlebody deformation retracts vertically onto its top face, which lies in the boundary
-surface. Moreover the boundary surface is a deformation retract of an open neighbourhood of it in
-the handlebody, namely the complement of a core sheet at height `0`, at distance at least `1 / 4`
-from the boundary circles of the planar surface. Near the boundary circles, the deformation
-moves points radially towards the nearest circle and vertically away from height `0`, along rays
-from the edge of the core sheet; elsewhere it moves points vertically. These are the inputs for
-the Seifert–van Kampen argument showing that the fundamental group of either handlebody of a
-Heegaard splitting surjects onto that of the manifold.
+The boundary surface of the handlebody, its frontier in `ℂ × ℝ`, carries its fundamental group, as
+the boundary of any cylinder `s ×ˢ [a, b]` with closed base `s` does
+(`TauCeti.fundamentalGroupMap_frontier_prod_Icc_surjective`). Moreover the boundary surface is a
+deformation retract of an open neighbourhood of it in the handlebody, namely the complement of a
+core sheet at height `0`, at distance at least `1 / 4` from the boundary circles of the planar
+surface. Near the boundary circles, the deformation moves points radially towards the nearest circle
+and vertically away from height `0`, along rays from the edge of the core sheet; elsewhere it moves
+points vertically. These are the inputs for the Seifert–van Kampen argument showing that the
+fundamental group of either handlebody of a Heegaard splitting surjects onto that of the manifold.
 
 ## Main results
 
@@ -93,7 +93,6 @@ private theorem mem_planarSurface_iff {z : ℂ} :
 
 private theorem norm_holeCenter_le (k : Fin g) : ‖(holeCenter g k : ℂ)‖ ≤ g - 1 := by
   have hk : ((k : ℕ) : ℝ) + 1 ≤ g := by exact_mod_cast k.isLt
-  have hk₀ : (0 : ℝ) ≤ (k : ℕ) := Nat.cast_nonneg _
   rw [Complex.norm_real, Real.norm_eq_abs, abs_le, holeCenter]
   constructor <;> linarith
 
@@ -644,7 +643,7 @@ private theorem boundaryDeform_spec {p : ℂ × ℝ} (hp : p ∈ handlebody g) (
       boundaryLevel g (boundaryDeform g τ p) =
         (1 + τ * ((boundaryLevel g p)⁻¹ - 1)) * boundaryLevel g p := by
   set m := boundaryLevel g p with hm_def
-  set s := τ * (m⁻¹ - 1) with hs_def
+  set s := τ * (m⁻¹ - 1)
   have hm₁ : m ≤ 1 := boundaryLevel_le_one hp
   have hinv : 1 ≤ m⁻¹ := one_le_inv₀ hm |>.2 hm₁
   have hs : 0 ≤ s := mul_nonneg hτ₀ (by linarith)
@@ -820,42 +819,26 @@ theorem exists_deformation_frontier_handlebody (g : ℕ) :
 
 /-- **The boundary surface carries the fundamental group of the handlebody.** At every point of
 the boundary surface of the standard handlebody, the inclusion of the boundary surface induces a
-surjection of fundamental groups: the handlebody deformation retracts vertically onto its top
-face, which lies in the boundary surface. -/
+surjection of fundamental groups. The handlebody is the cylinder `planarSurface g ×ˢ [-1, 1]`, so
+this is a case of `TauCeti.fundamentalGroupMap_frontier_prod_Icc_surjective`. -/
 theorem fundamentalGroup_map_frontier_handlebody_surjective
     (x : {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)}) :
     Function.Surjective (FundamentalGroup.map
       (ContinuousMap.subtypeVal {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)}) x) := by
-  have : PathConnectedSpace {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)} :=
-    isPathConnected_iff_pathConnectedSpace.1 <|
-      (isPathConnected_frontier_handlebody g).preimage_coe (isClosed_handlebody g).frontier_subset
-  -- The top face is a weak deformation retract of the handlebody.
-  have hTH : planarSurface g ×ˢ {(1 : ℝ)} ⊆ handlebody g := fun q hq ↦
-    mem_handlebody.2 ⟨hq.1, by rw [mem_singleton_iff.1 hq.2]; norm_num⟩
-  let e := ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction hTH
-    (fun q : unitInterval × handlebody g ↦ ((q.2 : ℂ × ℝ).1,
-      (q.2 : ℂ × ℝ).2 + q.1 * (1 - (q.2 : ℂ × ℝ).2))) (by fun_prop)
-    (fun q ↦ by
-      obtain ⟨hz, ht⟩ := mem_handlebody.1 q.2.2
-      refine mem_handlebody.2 ⟨hz, ⟨?_, ?_⟩⟩ <;> nlinarith [q.1.2.1, q.1.2.2, ht.1, ht.2])
-    (fun x ↦ by simp) (fun x ↦ ⟨(mem_handlebody.1 x.2).1, by simp⟩)
-    (fun t x hx ↦ by
-      obtain ⟨hz, ht⟩ := hx
-      rw [mem_singleton_iff.1 ht]
-      exact ⟨hz, by simp⟩)
-  let j : C(planarSurface g ×ˢ {(1 : ℝ)},
-      {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)}) :=
-    ⟨fun q ↦ ⟨⟨q, hTH q.2⟩, mem_frontier_of_abs_eq_one q.2.1
-      (by rw [mem_singleton_iff.1 q.2.2, abs_one])⟩, by fun_prop⟩
-  have hfac : (ContinuousMap.subtypeVal _).comp j = e.toFun := ContinuousMap.ext fun q ↦
-    Subtype.ext (ContinuousMap.HomotopyEquiv.coe_ofWeakDeformationRetraction_apply _ _ _ _ _ _ _
-      q).symm
-  let q₀ : planarSurface g ×ˢ {(1 : ℝ)} :=
-    ⟨(((g + 1 : ℝ) : ℂ), 1), outer_mem_planarSurface, mem_singleton 1⟩
-  -- The bijection induced by the inclusion of the top face factors through the boundary surface.
-  have hbij := e.fundamentalGroup_map_bijective q₀
-  rw [← hfac, _root_.FundamentalGroup.map_comp, MonoidHom.coe_comp] at hbij
-  exact FundamentalGroup.map_surjective_of_path _ (PathConnectedSpace.somePath (j q₀) x)
-    hbij.2.of_comp
+  -- The cylinder statement, transported along `handlebody g = planarSurface g ×ˢ [-1, 1]`; the
+  -- inclusion depends on the closedness proof, whose type also mentions the subset.
+  have hcyl : ∀ (K : Set (ℂ × ℝ)) (hK : IsClosed K), K = planarSurface g ×ˢ Icc (-1 : ℝ) 1 →
+      ∀ z : frontier K, Function.Surjective
+        (FundamentalGroup.map (ContinuousMap.inclusion hK.frontier_subset) z) := by
+    rintro K hK rfl
+    exact fundamentalGroupMap_frontier_prod_Icc_surjective (isCompact_planarSurface g).isClosed
+  have h := hcyl _ (isClosed_handlebody g) (Set.ext fun _ ↦ mem_handlebody) ⟨x.1.1, x.2⟩
+  -- The inclusion of the frontier factors through the boundary surface inside the handlebody.
+  let φ : C(frontier (handlebody g), {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)}) :=
+    ⟨fun z ↦ ⟨⟨z, (isClosed_handlebody g).frontier_subset z.2⟩, z.2⟩, by fun_prop⟩
+  rw [show ContinuousMap.inclusion (isClosed_handlebody g).frontier_subset =
+    (ContinuousMap.subtypeVal _).comp φ from rfl, _root_.FundamentalGroup.map_comp,
+    MonoidHom.coe_comp] at h
+  exact h.of_comp
 
 end TauCeti
