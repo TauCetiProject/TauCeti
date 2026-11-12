@@ -140,12 +140,17 @@ theorem isClosed_of_isLocallyClosed_of_genericPoint_notMem [TopologicalSpace.Noe
     isClosed_singleton_of_ne_genericPoint hX fun h ↦ hgs (h ▸ hz)
 
 /-- On a Noetherian irreducible scheme of dimension at most one, a closed set which does not
-contain the generic point is finite: all of its points are closed points. -/
+contain the generic point is finite: all of its points have codimension one, and a proper closed
+subset contains only finitely many points of codimension one. -/
 theorem finite_of_isClosed_of_genericPoint_notMem [TopologicalSpace.NoetherianSpace X]
     (hX : topologicalKrullDim X ≤ 1) {s : Set X} (hs : IsClosed s)
-    (hgs : genericPoint X ∉ s) : s.Finite :=
-  hs.finite_of_subset_closedPoints fun _ hz ↦
-    isClosed_singleton_of_ne_genericPoint hX fun h ↦ hgs (h ▸ hz)
+    (hgs : genericPoint X ∉ s) : s.Finite := by
+  have : QuasiSober s := hs.isClosedEmbedding_subtypeVal.quasiSober
+  refine (TopologicalSpace.NoetherianSpace.finite_coheight_one_of_closure_ne_univ
+    (p := s) ?_).subset fun x hx ↦
+      ⟨hx, (coheight_eq_one_iff_ne_genericPoint hX).mpr fun h ↦ hgs (h ▸ hx)⟩
+  rw [hs.closure_eq]
+  exact fun h ↦ hgs (h ▸ Set.mem_univ _)
 
 /-- On an irreducible scheme, an open which does not contain the generic point is empty: the
 generic point generizes every point, so it lies in every nonempty open. -/

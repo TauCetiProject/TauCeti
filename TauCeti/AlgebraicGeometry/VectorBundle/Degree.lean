@@ -90,10 +90,11 @@ Stacks, Lemma 0AYZ).
   and a vector bundle `V` of rank `s`, `deg (V ⊗ E₂) = deg (V ⊗ E₁) + s · χ(X, T)`, with curve
   version
   `FixedRank.vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_isCurveOver`;
-* `FixedRank.vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite`: the
-  same formula for a quotient `T` supported on finitely many points of a scheme locally of finite
-  type over `k`, with curve version
-  `vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_of_isCurveOver`;
+* `FixedRank.vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support`:
+  the same formula for a quotient `T` supported on finitely many points of a scheme locally of
+  finite type over `k`, with curve version
+`vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support_of_isCurveOver`
+  on proper integral curves;
 * `FixedRank.vectorBundleDegree_baseChange`: the degree of the pullback of `E` to `X_K` for a
   field extension `K / k` is the degree of `E`;
 * `FixedRank.vectorBundleDegree_twist_toInvertibleSheaf`: `deg E(-D) = deg E - r · deg D` for an
@@ -377,7 +378,7 @@ bundles of the same constant rank and the quotient `T` is supported on finitely 
 `V` be a vector bundle of constant rank `s` such that `H¹(X, V ⊗ E₁)`, `H⁰(X, V ⊗ E₂)` and
 `H¹(X, V ⊗ E₂)` are finite-dimensional and `H²(X, V ⊗ E₁) = 0`. Then
 `deg (V ⊗ E₂) = deg (V ⊗ E₁) + s · χ(X, T)`. -/
-theorem vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite
+theorem vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support
     [LocallyOfFiniteType (X ↘ Spec (.of k))] {g : E₂.obj.obj ⟶ T} {w : f ≫ g = 0}
     (hS : (ShortComplex.mk f g w).ShortExact)
     (hT : {x : X | Nontrivial (T.presheaf.stalk x)}.Finite) {s : ℕ} (V : FixedRank X s)
@@ -402,7 +403,8 @@ same constant rank and the quotient `T` is supported on finitely many points. Th
 bundle `V` of constant rank `s`, `deg (V ⊗ E₂) = deg (V ⊗ E₁) + s · χ(X, T)`. A quotient whose
 stalk at the generic point vanishes has finite support
 (`Scheme.Modules.finite_setOf_nontrivial_stalk_of_subsingleton_stalk_genericPoint`). -/
-theorem vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_of_isCurveOver
+theorem
+  vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support_of_isCurveOver
     [X.IsCurveOver k]
     [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
     {g : E₂.obj.obj ⟶ T} {w : f ≫ g = 0} (hS : (ShortComplex.mk f g w).ShortExact)
@@ -412,8 +414,8 @@ theorem vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_fin
   have := finiteDimensional_cohomology_of_isCurveOver k (V.tensor E₁).obj.obj 1
   have := finiteDimensional_cohomology_of_isCurveOver k (V.tensor E₂).obj.obj 0
   have := finiteDimensional_cohomology_of_isCurveOver k (V.tensor E₂).obj.obj 1
-  exact vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite k hS hT V
-    (subsingleton_cohomology_of_two_le_of_isCurveOver k (V.tensor E₁).obj.obj 2 le_rfl)
+  exact vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support k hS hT
+    V (subsingleton_cohomology_of_two_le_of_isCurveOver k (V.tensor E₁).obj.obj 2 le_rfl)
 
 end Modification
 
