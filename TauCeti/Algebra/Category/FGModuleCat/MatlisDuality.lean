@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
-public import TauCeti.Algebra.Category.ModuleCat.MatlisDual
+public import TauCeti.Algebra.Category.ModuleCat.MatlisDual.Basic
 public import TauCeti.RingTheory.Artinian.FiniteLength
 public import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 
@@ -15,8 +15,9 @@ public import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 
 Let `R` be a commutative Artinian ring with an injective hull `E` of `R ⧸ J(R)`, and let `A` be an
 Artin `R`-algebra. This file restricts the Matlis dual `D_R = Hom_R(-, E)` of
-`TauCeti/Algebra/Category/ModuleCat/MatlisDual.lean` to an anti-equivalence between the finitely
-generated left `A`-modules and the finitely generated right `A`-modules, the modules over `Aᵐᵒᵖ`.
+`TauCeti/Algebra/Category/ModuleCat/MatlisDual/Basic.lean` to an anti-equivalence between the
+finitely generated left `A`-modules and the finitely generated right `A`-modules, the modules over
+`Aᵐᵒᵖ`.
 
 ## Main definitions
 

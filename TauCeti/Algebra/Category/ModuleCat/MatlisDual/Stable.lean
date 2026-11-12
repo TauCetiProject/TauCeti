@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import TauCeti.Algebra.Category.ModuleCat.MatlisDual
+public import TauCeti.Algebra.Category.ModuleCat.MatlisDual.Basic
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Opposite
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Functor
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
@@ -22,13 +22,14 @@ import Mathlib.Algebra.Category.ModuleCat.Projective
 Let `A` be an algebra over a commutative ring `R` and `E` an injective `R`-module, with
 `D = Hom_R(-, E)`. The dual of a projective right `A`-module is an injective left `A`-module, so
 `D` carries maps through projectives to maps through injectives. It therefore descends to a
-functor from right `A`-modules modulo projectives to the opposite of left `A`-modules modulo
+functor from the opposite of right `A`-modules modulo projectives to left `A`-modules modulo
 injectives.
 
 ## Main definitions
 
 * `TauCeti.stableMatlisDualOp`: the Matlis dual on stable categories.
-* `TauCeti.stableMatlisDualOpCompIso`: it is compatible with `D` through the quotient functors.
+* `TauCeti.projectiveStableFunctorOpCompStableMatlisDualOpIso`: it is compatible with `D` through
+  the quotient functors, with components `TauCeti.stableMatlisDualOpObjIso`.
 
 ## Main results
 
@@ -77,14 +78,23 @@ theorem projectiveStableIdeal_op_le_comap_matlisDualOp :
   · rw [← Functor.map_comp, ← op_comp, ← h]
     rfl
 
-/-- **The Matlis dual on stable categories**: `D = Hom_R(-, E)` as a functor from right
-`A`-modules modulo projectives, contravariantly, to left `A`-modules modulo injectives. -/
+/-- **The Matlis dual on stable categories**: `D = Hom_R(-, E)` as a functor from the opposite of
+right `A`-modules modulo projectives to left `A`-modules modulo injectives. -/
 def stableMatlisDualOp :
     ((ExactStructure.abelian (ModuleCat.{max u v} Aᵐᵒᵖ)).ProjectiveStableCategory)ᵒᵖ ⥤
       (ExactStructure.abelian (ModuleCat.{max u v} A)).InjectiveStableCategory :=
   (MorphismIdeal.opQuotientEquivalence _).inverse ⋙
     MorphismIdeal.map _ _ (ModuleCat.matlisDualOp R E)
       (projectiveStableIdeal_op_le_comap_matlisDualOp R E)
+
+/-- The stable Matlis dual is the Matlis dual induced on the quotients, after identifying the
+quotient of the opposite with the opposite of the quotient. -/
+theorem stableMatlisDualOp_def :
+    stableMatlisDualOp R E (A := A) =
+      (MorphismIdeal.opQuotientEquivalence _).inverse ⋙
+        MorphismIdeal.map _ _ (ModuleCat.matlisDualOp R E)
+          (projectiveStableIdeal_op_le_comap_matlisDualOp R E) :=
+  (rfl)
 
 instance : (stableMatlisDualOp R E (A := A)).Additive := by
   unfold stableMatlisDualOp
@@ -93,18 +103,14 @@ instance : (stableMatlisDualOp R E (A := A)).Additive := by
 /-- **The stable Matlis dual is the Matlis dual on representatives**: passing to right modules
 modulo projectives and then applying the stable Matlis dual is naturally isomorphic to applying
 `D` and then passing to left modules modulo injectives. -/
-def stableMatlisDualOpCompIso :
+def projectiveStableFunctorOpCompStableMatlisDualOpIso :
     (ExactStructure.abelian (ModuleCat.{max u v} Aᵐᵒᵖ)).projectiveStableFunctor.op ⋙
         stableMatlisDualOp R E ≅
       ModuleCat.matlisDualOp R E ⋙
         (ExactStructure.abelian (ModuleCat.{max u v} A)).injectiveStableFunctor := by
   let I := (ExactStructure.abelian (ModuleCat.{max u v} Aᵐᵒᵖ)).projectiveStableIdeal
   have h : I.quotientFunctor.op = I.op.quotientFunctor ⋙ I.opQuotientEquivalence.functor := by
-    rw [MorphismIdeal.opQuotientEquivalence_functor, I.opQuotientFunctor_eq_lift fun X Y f hf ↦ by
-      rw [Functor.mem_kerIdeal_hom]
-      apply Quiver.Hom.unop_inj
-      simpa using (I.quotientFunctor_map_eq_zero_iff).2 ((I.mem_op_hom f).mp hf)]
-    exact (CategoryTheory.Quotient.lift_spec _ _ _).symm
+    simp
   exact Functor.isoWhiskerRight (eqToIso h).compInverseIso _ ≪≫
     eqToIso (MorphismIdeal.quotientFunctor_comp_map _ _ _ _)
 
@@ -114,10 +120,31 @@ def stableMatlisDualOpObjIso (N : ModuleCat.{max u v} Aᵐᵒᵖ) :
         (op ((ExactStructure.abelian (ModuleCat.{max u v} Aᵐᵒᵖ)).projectiveStableFunctor.obj N)) ≅
       (ExactStructure.abelian (ModuleCat.{max u v} A)).injectiveStableFunctor.obj
         ((ModuleCat.matlisDualOp R E).obj (op N)) :=
-  (stableMatlisDualOpCompIso R E).app (op N)
+  (projectiveStableFunctorOpCompStableMatlisDualOpIso R E).app (op N)
+
+@[simp]
+theorem projectiveStableFunctorOpCompStableMatlisDualOpIso_app (N : ModuleCat.{max u v} Aᵐᵒᵖ) :
+    (projectiveStableFunctorOpCompStableMatlisDualOpIso R E).app (op N) =
+      stableMatlisDualOpObjIso R E N :=
+  (rfl)
+
+@[simp]
+theorem projectiveStableFunctorOpCompStableMatlisDualOpIso_hom_app
+    (N : ModuleCat.{max u v} Aᵐᵒᵖ) :
+    (projectiveStableFunctorOpCompStableMatlisDualOpIso R E).hom.app (op N) =
+      (stableMatlisDualOpObjIso R E N).hom :=
+  (rfl)
+
+@[simp]
+theorem projectiveStableFunctorOpCompStableMatlisDualOpIso_inv_app
+    (N : ModuleCat.{max u v} Aᵐᵒᵖ) :
+    (projectiveStableFunctorOpCompStableMatlisDualOpIso R E).inv.app (op N) =
+      (stableMatlisDualOpObjIso R E N).inv :=
+  (rfl)
 
 /-- **The stable Matlis dual of the class of a map is the class of its dual**, through
 `stableMatlisDualOpObjIso`. -/
+@[simp, reassoc]
 theorem stableMatlisDualOp_map_projectiveStableFunctor_map {N N' : ModuleCat.{max u v} Aᵐᵒᵖ}
     (f : N ⟶ N') :
     (stableMatlisDualOp R E).map
@@ -126,6 +153,6 @@ theorem stableMatlisDualOp_map_projectiveStableFunctor_map {N N' : ModuleCat.{ma
         (ExactStructure.abelian (ModuleCat.{max u v} A)).injectiveStableFunctor.map
           ((ModuleCat.matlisDualOp R E).map f.op) ≫
         (stableMatlisDualOpObjIso R E N).inv :=
-  (NatIso.naturality_2 (stableMatlisDualOpCompIso R E) f.op).symm
+  (NatIso.naturality_2 (projectiveStableFunctorOpCompStableMatlisDualOpIso R E) f.op).symm
 
 end TauCeti

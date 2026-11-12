@@ -278,13 +278,29 @@ section MatlisDual
 /-- **The translate of a presentation is a Matlis dual with values in the base.** For a
 `k`-algebra `A` and a map `p₁ : P₁ → P₀`, `TauCeti.AuslanderReitenTranslate k p₁` is the Matlis
 dual `Hom_k(Tr p₁, k)`, with the same action of `A`. -/
-def AuslanderReitenTranslate.linearEquivMatlisDual {k : Type*} [CommRing k] [Algebra k A]
+def AuslanderReitenTranslate.linearEquivMatlisDual (k : Type*) [CommRing k] [Algebra k A]
     {P₀ P₁ : Type*} [AddCommGroup P₀] [Module A P₀] [AddCommGroup P₁] [Module A P₁]
     (p₁ : P₁ →ₗ[A] P₀) :
     AuslanderReitenTranslate k p₁ ≃ₗ[A] MatlisDual k k (AuslanderReitenTranspose p₁) :=
   { (MatlisDual.equivLinearMap k k (AuslanderReitenTranspose p₁)).symm with
     map_smul' := fun a φ ↦ MatlisDual.ext fun x ↦ by
       simp [MatlisDual.smul_apply, AuslanderReitenTranslate.smul_apply] }
+
+@[simp]
+theorem AuslanderReitenTranslate.equivLinearMap_linearEquivMatlisDual (k : Type*) [CommRing k]
+    [Algebra k A] {P₀ P₁ : Type*} [AddCommGroup P₀] [Module A P₀] [AddCommGroup P₁] [Module A P₁]
+    (p₁ : P₁ →ₗ[A] P₀) (φ : AuslanderReitenTranslate k p₁) :
+    MatlisDual.equivLinearMap k k (AuslanderReitenTranspose p₁)
+      (AuslanderReitenTranslate.linearEquivMatlisDual k p₁ φ) = φ :=
+  (MatlisDual.equivLinearMap k k (AuslanderReitenTranspose p₁)).apply_symm_apply φ
+
+@[simp]
+theorem AuslanderReitenTranslate.linearEquivMatlisDual_symm_apply (k : Type*) [CommRing k]
+    [Algebra k A] {P₀ P₁ : Type*} [AddCommGroup P₀] [Module A P₀] [AddCommGroup P₁] [Module A P₁]
+    (p₁ : P₁ →ₗ[A] P₀) (ψ : MatlisDual k k (AuslanderReitenTranspose p₁)) :
+    (AuslanderReitenTranslate.linearEquivMatlisDual k p₁).symm ψ =
+      MatlisDual.equivLinearMap k k (AuslanderReitenTranspose p₁) ψ :=
+  (rfl)
 
 end MatlisDual
 
