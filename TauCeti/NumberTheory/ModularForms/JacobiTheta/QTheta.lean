@@ -12,7 +12,7 @@ import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Analytic.ExtractZeros
 import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodPair
-import TauCeti.NumberTheory.ModularForms.DedekindEta
+import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 
 /-!
 # The inversion law of the theta product

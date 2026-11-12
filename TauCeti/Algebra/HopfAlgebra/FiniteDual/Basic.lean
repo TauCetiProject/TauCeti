@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RingTheory.HopfAlgebra.Basic
+import Mathlib.LinearAlgebra.TensorProduct.Projective
 import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.Algebra.Coalgebra.Convolution
 

@@ -99,7 +99,7 @@ theorem commutatorElement_chevalleyRootSubgroup_G2_of_long_sum {α β γ : Fin G
 /-- Short `G₂` root subgroups whose sum is long commute in characteristic three. -/
 theorem commute_chevalleyRootSubgroup_G2_of_short_add_short_eq_long_of_char_three
     {α β γ : Fin G2.numRoots}
-    (hα : g2Length α = 1) (hβ : g2Length β = 1) (hγ : g2Length γ = 3)
+    (hβ : g2Length β = 1) (hγ : g2Length γ = 3)
     (hadd : (G2.simplyConnectedRootDatum ht).root γ =
       (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β)
     (A : CommAlgCat ℤ) [CharP A 3] (u v : A) :
@@ -109,7 +109,7 @@ theorem commute_chevalleyRootSubgroup_G2_of_short_add_short_eq_long_of_char_thre
   rw [commutatorElement_chevalleyRootSubgroup_G2_of_long_sum ρ M hM hnil hγ hadd]
   have hzero : (G2.structureConstant ht α β : A) = 0 := by
     have hthree : (3 : A) = 0 := by exact_mod_cast CharP.cast_eq_zero A 3
-    rcases structureConstant_G2_eq_three_or_eq_neg_three hα hβ hγ hadd with h | h <;>
+    rcases structureConstant_G2_eq_three_or_eq_neg_three hβ hγ hadd with h | h <;>
       simp [h, hthree]
   simp [hzero]
 

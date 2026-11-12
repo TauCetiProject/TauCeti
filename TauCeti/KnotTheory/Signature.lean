@@ -152,7 +152,7 @@ theorem signature_trefoilSeifertMatrix :
       = !![-2, 1; 1, -2] := by
     rw [map_trefoilSeifertMatrix]
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.transpose_apply] <;> ring
+    fin_cases i <;> fin_cases j <;> simp <;> ring
   have hP : IsUnit (!![(1 : 𝕜), 0; 1 / 2, 1]).det := by
     rw [Matrix.det_fin_two_of, isUnit_iff_ne_zero]
     norm_num
@@ -175,7 +175,7 @@ theorem signature_figureEightSeifertMatrix :
       = !![2, 1; 1, -2] := by
     rw [map_figureEightSeifertMatrix]
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.transpose_apply] <;> ring
+    fin_cases i <;> fin_cases j <;> simp <;> ring
   have hP : IsUnit (!![(1 : 𝕜), 0; -(1 / 2), 1]).det := by
     rw [Matrix.det_fin_two_of, isUnit_iff_ne_zero]
     norm_num
