@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.Almost.Projective
+import TauCeti.RingTheory.Almost.Projective.Basic
 import TauCeti.RingTheory.Almost.ValuationRing
 import TauCeti.NumberTheory.Padics.Complex.MaximalIdeal
 
