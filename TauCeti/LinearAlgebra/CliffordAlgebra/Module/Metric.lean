@@ -18,16 +18,16 @@ a metric. Neither irreducibility nor faithfulness of the module is required.
 
 `AlgHom.exists_posDef_isSymm_isSkewAdjoint_map_cliffordAlgebraι` proves existence of a
 positive-definite symmetric form making every Clifford vector skew-adjoint, given a starting
-positive-definite symmetric form. It works over a partially ordered commutative ring with
+positive-definite quadratic form. It works over a partially ordered commutative ring with
 order-compatible addition and invertible `2`. Its proof uses
 `CliffordAlgebra.finite_monomialGroup` and `Representation.sumOfConjugatesForm` to sum the
-starting form over the signed monomial group.
+associated symmetric bilinear form over the signed monomial group.
 
-`AlgHom.bilinForm_apply_cliffordAlgebraι_apply_eq_neg_mul` says that applying the Clifford
-action of a vector `v` to both arguments scales any bilinear form by `-Q v`, provided that
-vector acts skew-adjointly. It works over any commutative ring. Over the reals, these are
-the metric ingredients for constructing orthonormal tangent fields on unit spheres from
-Clifford modules.
+`AlgHom.bilinForm_map_cliffordAlgebraι_apply_map_cliffordAlgebraι_apply` says that applying
+the Clifford action of a vector `v` to both arguments scales any bilinear form by `-Q v`,
+provided that vector acts skew-adjointly. It works over any commutative ring. Over the reals,
+these are the metric ingredients for constructing orthonormal tangent fields on unit spheres
+from Clifford modules.
 
 ## References
 
@@ -51,7 +51,7 @@ variable [CommRing K] [AddCommGroup M] [Module K M]
 /-- For a vector `v` whose Clifford action is skew-adjoint with respect to `B`, applying
 `ρ (ι Q v)` to both arguments scales `B` by `-Q v`.
 No symmetry or positivity assumption on the form is needed. -/
-theorem bilinForm_apply_cliffordAlgebraι_apply_eq_neg_mul
+theorem bilinForm_map_cliffordAlgebraι_apply_map_cliffordAlgebraι_apply
     (ρ : CliffordAlgebra Q →ₐ[K] Module.End K W) (B : BilinForm K W)
     (v : M) (hρ : B.IsSkewAdjoint (ρ (ι Q v))) (x y : W) :
     B (ρ (ι Q v) x) (ρ (ι Q v) y) = -Q v * B x y := by
@@ -67,17 +67,21 @@ section OrderedRing
 variable [CommRing K] [PartialOrder K] [IsOrderedAddMonoid K] [Invertible (2 : K)]
   [AddCommGroup M] [Module K M] [AddCommGroup W] [Module K W] {Q : QuadraticForm K M}
 
-/-- A Clifford module equipped with a positive-definite symmetric form, whose quadratic space
+/-- A Clifford module equipped with a positive-definite quadratic form, whose quadratic space
 has a finite orthogonal basis squaring to `-1`, admits a positive-definite symmetric form
 making every Clifford vector skew-adjoint. -/
 theorem exists_posDef_isSymm_isSkewAdjoint_map_cliffordAlgebraι
     (ρ : CliffordAlgebra Q →ₐ[K] Module.End K W)
     {I : Type*} [_root_.Finite I] (b : Module.Basis I K M)
     (hb : ∀ i j, i ≠ j → Q.IsOrtho (b i) (b j)) (hQ : ∀ i, Q (b i) = -1)
-    (B₀ : BilinForm K W) (hsymm : B₀.IsSymm) (hpos : B₀.toQuadraticMap.PosDef) :
+    {Q₀ : QuadraticForm K W} (hpos : Q₀.PosDef) :
     ∃ B : BilinForm K W, B.toQuadraticMap.PosDef ∧ B.IsSymm ∧
       ∀ v, B.IsSkewAdjoint (ρ (ι Q v)) := by
   classical
+  let B₀ : BilinForm K W := QuadraticMap.associated Q₀
+  have hpos₀ : B₀.toQuadraticMap.PosDef := by
+    simpa only [B₀, QuadraticMap.toQuadraticMap_associated] using hpos
+  have hsymm : B₀.IsSymm := BilinForm.isSymm_iff.mpr (Q₀.associated_isSymm K)
   have hortho : (QuadraticMap.associated Q).IsOrthoᵢ b :=
     fun i j hij ↦ QuadraticMap.associated_isOrtho.mpr (hb i j hij)
   have : _root_.Finite (monomialGroup Q b) :=
@@ -88,7 +92,7 @@ theorem exists_posDef_isSymm_isSkewAdjoint_map_cliffordAlgebraι
       (monomialGroup Q b).subtype)
   let B := Representation.sumOfConjugatesForm σ B₀
   have hinv := Representation.isInvariantForm_sumOfConjugatesForm σ B₀
-  refine ⟨B, Representation.posDef_toQuadraticMap_sumOfConjugatesForm hpos,
+  refine ⟨B, Representation.posDef_toQuadraticMap_sumOfConjugatesForm hpos₀,
     Representation.isSymm_sumOfConjugatesForm hsymm, ?_⟩
   -- Skew-adjoint endomorphisms form a submodule, so it suffices to check the chosen basis.
   have hspan : ⊤ ≤ B.skewAdjointSubmodule.comap (ρ.toLinearMap.comp (ι Q)) := by
