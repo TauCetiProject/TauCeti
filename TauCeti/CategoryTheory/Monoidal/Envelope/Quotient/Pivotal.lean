@@ -34,124 +34,6 @@ open CategoryTheory MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
 variable {C : Type u} [Category.{v} C] [Preadditive C] [MonoidalCategory C]
   [MonoidalPreadditive C] {I : MonoidalIdeal C}
 
-/-- The dual comparison for the quotient functor is the identity: its chosen duals are
-exactly the images of the source duals. -/
-@[simp]
-theorem mapRightDualIso_eq_refl (X : C) [HasRightDual X] :
-    (toMonoidalQuotient I).mapRightDualIso X = Iso.refl _ := by
-  apply Iso.ext
-  apply ExactPairing.rightHom_ext (X := (toMonoidalQuotient I).obj X)
-  simpa using Functor.mapRightDualIso_hom_whiskerRight_evaluation
-    (F := toMonoidalQuotient I) X
-
-section RightRigid
-
-variable [RightRigidCategory C]
-
-/-- The tensor comparison of the right dual descends to the quotient. -/
-@[simp]
-theorem rightDualTensorIso_hom (X Y : C) :
-    (rightDualTensorIso ((toMonoidalQuotient I).obj X)
-      ((toMonoidalQuotient I).obj Y)).hom =
-        (toMonoidalQuotient I).map (rightDualTensorIso X Y).hom := by
-  apply ExactPairing.rightHom_ext
-    (X := (toMonoidalQuotient I).obj X ⊗ (toMonoidalQuotient I).obj Y)
-  rw [TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation]
-  have h := congrArg (toMonoidalQuotient I).map
-    (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation (X := X) (Y := Y)).symm
-  simp only [ExactPairing.tensor_evaluation, evaluation_rightDual] at h ⊢
-  -- Rewriting the tensor or dual objects separately gives an ill-typed motive for the
-  -- mapped comparison. Identify the entire composite of classes with its source image.
-  change (toMonoidalQuotient I).map (ε_ (X ⊗ Y) (X ⊗ Y)ᘁ) =
-    (toMonoidalQuotient I).map ((rightDualTensorIso X Y).hom ▷ (X ⊗ Y) ≫
-      (𝟙 _ ⊗≫ Yᘁ ◁ (ε_ X Xᘁ ▷ Y) ⊗≫ ε_ Y Yᘁ))
-  exact h
-
-/-- The inverse tensor comparison of the right dual also descends. -/
-@[simp]
-theorem rightDualTensorIso_inv (X Y : C) :
-    (rightDualTensorIso ((toMonoidalQuotient I).obj X)
-      ((toMonoidalQuotient I).obj Y)).inv =
-        (toMonoidalQuotient I).map (rightDualTensorIso X Y).inv := by
-  have h : rightDualTensorIso ((toMonoidalQuotient I).obj X)
-      ((toMonoidalQuotient I).obj Y) =
-        (toMonoidalQuotient I).mapIso (rightDualTensorIso X Y) :=
-    Iso.ext (rightDualTensorIso_hom X Y)
-  exact congrArg Iso.inv h
-
-/-- The tensorator of the double right dual is the class of its original tensorator. -/
-@[simp]
-theorem doubleRightDualFunctor_μ (X Y : C) :
-    μ (doubleRightDualFunctor (MonoidalQuotient I))
-      ((toMonoidalQuotient I).obj X) ((toMonoidalQuotient I).obj Y) =
-        (toMonoidalQuotient I).map (μ (doubleRightDualFunctor C) X Y) := by
-  rw [TauCeti.doubleRightDualFunctor_μ, TauCeti.doubleRightDualFunctor_μ,
-    rightDualTensorIso_hom]
-  -- The dual endpoints are definitionally source images, but rewriting them separately
-  -- would abstract them away from the fixed endpoints of the mapped comparison.
-  change (rightDualTensorIso ((toMonoidalQuotient I).obj Yᘁ)
-    ((toMonoidalQuotient I).obj Xᘁ)).inv ≫
-      ((toMonoidalQuotient I).map (rightDualTensorIso X Y).hom)ᘁ = _
-  rw [rightDualTensorIso_inv, rightAdjointMate_map, ← Functor.map_comp]
-  rfl
-
-/-- The identification of the chosen right dual of the unit with the unit descends. The
-rigid category's choice is explicit, since the unit also has a canonical self-duality. -/
-@[simp]
-theorem rightDualUnitIso_hom :
-    (rightDualIso
-      (RightRigidCategory.rightDual (𝟙_ (MonoidalQuotient I))).exact
-      exactPairingUnit).hom =
-    (toMonoidalQuotient I).map (rightDualIso
-      (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom := by
-  apply ExactPairing.rightHom_ext (X := 𝟙_ (MonoidalQuotient I))
-  rw [ExactPairing.rightDualIso_hom_whiskerRight_evaluation]
-  rw [evaluation_rightDual]
-  have h := congrArg (toMonoidalQuotient I).map
-    (ExactPairing.rightDualIso_hom_whiskerRight_evaluation
-      (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).symm
-  -- The unit object is a class, but rewriting it alone would alter the dependent dual.
-  -- The unit pairing is defined by unitors, which are themselves classes of the unitors.
-  change (toMonoidalQuotient I).map (ε_ (𝟙_ C)
-      ((RightRigidCategory.rightDual (𝟙_ C)).rightDual)) =
-    (toMonoidalQuotient I).map ((rightDualIso
-      (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom ▷
-        (𝟙_ C) ≫ ε_ (𝟙_ C) (𝟙_ C))
-  exact h
-
-/-- The inverse identification of the chosen unit dual descends. -/
-@[simp]
-theorem rightDualUnitIso_inv :
-    (rightDualIso (RightRigidCategory.rightDual (𝟙_ (MonoidalQuotient I))).exact
-      exactPairingUnit).inv =
-    (toMonoidalQuotient I).map (rightDualIso
-      (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).inv := by
-  have h : rightDualIso (RightRigidCategory.rightDual (𝟙_ (MonoidalQuotient I))).exact
-      exactPairingUnit = (toMonoidalQuotient I).mapIso
-        (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit) :=
-    Iso.ext rightDualUnitIso_hom
-  exact congrArg Iso.inv h
-
-/-- The unit comparison of the double right dual descends, using the rigid structure's
-chosen dual of the unit on both sides. -/
-@[simp]
-theorem doubleRightDualFunctor_ε :
-    ε (doubleRightDualFunctor (MonoidalQuotient I)) =
-      (toMonoidalQuotient I).map (ε (doubleRightDualFunctor C)) := by
-  let : HasRightDual (𝟙_ C) := RightRigidCategory.rightDual _
-  rw [TauCeti.doubleRightDualFunctor_ε_eq_rightAdjointMate,
-    TauCeti.doubleRightDualFunctor_ε_eq_rightAdjointMate,
-    rightDualUnitIso_hom, rightDualUnitIso_inv]
-  -- The explicit rigid choices in the unit comparison are exactly the descended choices.
-  -- They must be identified together with the mate, rather than rewritten as separate objects.
-  change (toMonoidalQuotient I).map _ ≫
-    @rightAdjointMate _ _ _ _ _ (instRightRigidCategory.rightDual _)
-      (instRightRigidCategory.rightDual _) ((toMonoidalQuotient I).map _) = _
-  rw [rightAdjointMate_map, ← Functor.map_comp]
-  rfl
-
-end RightRigid
-
 variable [RigidCategory C] [PivotalCategory C]
 
 /-- A pivotal structure descends through any tensor ideal: its components are the classes
@@ -167,7 +49,7 @@ noncomputable instance instPivotalCategory : PivotalCategory (MonoidalQuotient I
     unit := by
       -- Expose the components together with their dependent bidual endpoints.
       change 𝟙 _ ≫ (toMonoidalQuotient I).map (pivotalIsoApp (𝟙_ C)).hom = _
-      rw [Category.id_comp, doubleRightDualFunctor_ε]
+      rw [Category.id_comp, doubleRightDualFunctor_ε_eq_map]
       exact congrArg (toMonoidalQuotient I).map (pivotalIsoApp_unit_hom (C := C))
     tensor := by
       rintro ⟨X⟩ ⟨Y⟩
@@ -177,7 +59,7 @@ noncomputable instance instPivotalCategory : PivotalCategory (MonoidalQuotient I
           (toMonoidalQuotient I).map (pivotalIsoApp Y).hom) ≫
             μ (doubleRightDualFunctor (MonoidalQuotient I))
               ((toMonoidalQuotient I).obj X) ((toMonoidalQuotient I).obj Y)
-      rw [Category.id_comp, doubleRightDualFunctor_μ,
+      rw [Category.id_comp, doubleRightDualFunctor_μ_obj,
         CategoryTheory.Quotient.map_tensorHom_map]
       exact (congrArg (toMonoidalQuotient I).map (pivotalIsoApp_tensor_hom X Y)).trans
         ((toMonoidalQuotient I).map_comp _ _) }

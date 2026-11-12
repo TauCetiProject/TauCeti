@@ -36,7 +36,7 @@ universe v u
 
 namespace TauCeti.MonoidalQuotient
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [MonoidalCategory C]
   [MonoidalPreadditive C] {I : MonoidalIdeal C}
@@ -191,5 +191,149 @@ theorem rightAdjointMate_map {X Y : C} [HasRightDual X] [HasRightDual Y] (f : X 
   -- The descended dual and whiskering are definitionally the source images, allowing `map`
   -- to identify the entire characteristic composite without transporting its evaluation.
   exact congrArg (toMonoidalQuotient I).map (rightAdjointMate_comp_evaluation f).symm
+
+/-- The dual comparison for the quotient functor is the identity: its chosen duals are
+exactly the images of the source duals. -/
+@[simp]
+theorem mapRightDualIso_eq_refl (X : C) [HasRightDual X] :
+    (toMonoidalQuotient I).mapRightDualIso X = Iso.refl _ := by
+  apply Iso.ext
+  apply ExactPairing.rightHom_ext (X := (toMonoidalQuotient I).obj X)
+  simpa using Functor.mapRightDualIso_hom_whiskerRight_evaluation
+    (F := toMonoidalQuotient I) X
+
+/-- A morphism from a descended right dual is determined by its composite with the
+image of any source evaluation. -/
+theorem eq_map_of_whiskerRight_evaluation {X Y : C} [HasRightDual X] [ExactPairing X Y]
+    (f : ((toMonoidalQuotient I).obj X)ᘁ ⟶ (toMonoidalQuotient I).obj Y)
+    (g : Xᘁ ⟶ Y)
+    (h : f ▷ (toMonoidalQuotient I).obj X ≫ (toMonoidalQuotient I).map (ε_ X Y) =
+      (toMonoidalQuotient I).map (g ▷ X ≫ ε_ X Y)) :
+    f = (toMonoidalQuotient I).map g := by
+  let := (toMonoidalQuotient I).mapExactPairing X Y
+  apply ExactPairing.rightHom_ext (X := (toMonoidalQuotient I).obj X)
+  simpa only [Functor.mapExactPairing_evaluation, CategoryTheory.Quotient.functor_μ,
+    CategoryTheory.Quotient.functor_η, Category.id_comp, Category.comp_id,
+    CategoryTheory.Quotient.map_whiskerRight, ← Functor.map_comp] using h
+
+section RightRigid
+
+variable [RightRigidCategory C]
+
+/-- Taking a mate commutes with the quotient functor for the global rigid choices too,
+including at the unit where instance search otherwise selects the canonical self-duality. -/
+theorem rightAdjointMate_map_rightRigid {X Y : C} (f : X ⟶ Y) :
+    @rightAdjointMate (MonoidalQuotient I) _ _
+      ((toMonoidalQuotient I).obj X) ((toMonoidalQuotient I).obj Y)
+      (RightRigidCategory.rightDual _) (RightRigidCategory.rightDual _)
+      ((toMonoidalQuotient I).map f) = (toMonoidalQuotient I).map (fᘁ) :=
+  rightAdjointMate_map f
+
+/-- The tensor comparison of the right dual descends to the quotient. -/
+@[simp]
+theorem rightDualTensorIso_obj_hom (X Y : C) :
+    (rightDualTensorIso ((toMonoidalQuotient I).obj X)
+      ((toMonoidalQuotient I).obj Y)).hom =
+        (toMonoidalQuotient I).map (rightDualTensorIso X Y).hom := by
+  apply eq_map_of_whiskerRight_evaluation (X := X ⊗ Y) (Y := Yᘁ ⊗ Xᘁ)
+  have h := TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation
+    (X := (toMonoidalQuotient I).obj X) (Y := (toMonoidalQuotient I).obj Y)
+  simp only [ExactPairing.tensor_evaluation, evaluation_rightDual] at h ⊢
+  -- With the descended evaluations explicit, the quotient's tensor and whiskering composites
+  -- are the source composites mapped as a whole, without transporting their dependent endpoints.
+  exact h.trans (congrArg (toMonoidalQuotient I).map
+    (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation (X := X) (Y := Y)).symm)
+
+/-- The inverse tensor comparison of the right dual also descends. -/
+@[simp]
+theorem rightDualTensorIso_obj_inv (X Y : C) :
+    (rightDualTensorIso ((toMonoidalQuotient I).obj X)
+      ((toMonoidalQuotient I).obj Y)).inv =
+        (toMonoidalQuotient I).map (rightDualTensorIso X Y).inv := by
+  have h : rightDualTensorIso ((toMonoidalQuotient I).obj X)
+      ((toMonoidalQuotient I).obj Y) =
+        (toMonoidalQuotient I).mapIso (rightDualTensorIso X Y) :=
+    Iso.ext (rightDualTensorIso_obj_hom X Y)
+  exact congrArg Iso.inv h
+
+/-- The tensorator of the double right dual is the class of its original tensorator. -/
+@[simp]
+theorem doubleRightDualFunctor_μ_obj (X Y : C) :
+    μ (doubleRightDualFunctor (MonoidalQuotient I))
+      ((toMonoidalQuotient I).obj X) ((toMonoidalQuotient I).obj Y) =
+        (toMonoidalQuotient I).map (μ (doubleRightDualFunctor C) X Y) := by
+  rw [doubleRightDualFunctor_μ, doubleRightDualFunctor_μ, rightDualTensorIso_obj_hom]
+  exact (congrArg₂ (· ≫ ·) (rightDualTensorIso_obj_inv Yᘁ Xᘁ)
+    (rightAdjointMate_map_rightRigid (rightDualTensorIso X Y).hom)).trans
+      ((toMonoidalQuotient I).map_comp _ _).symm
+
+/-- The inverse tensorator of the double right dual descends to the quotient. -/
+@[simp]
+theorem doubleRightDualFunctor_δ_obj (X Y : C) :
+    δ (doubleRightDualFunctor (MonoidalQuotient I))
+      ((toMonoidalQuotient I).obj X) ((toMonoidalQuotient I).obj Y) =
+        (toMonoidalQuotient I).map (δ (doubleRightDualFunctor C) X Y) := by
+  rw [doubleRightDualFunctor_δ, doubleRightDualFunctor_δ, rightDualTensorIso_obj_inv]
+  exact (congrArg₂ (· ≫ ·) (rightAdjointMate_map_rightRigid (rightDualTensorIso X Y).inv)
+    (rightDualTensorIso_obj_hom Yᘁ Xᘁ)).trans
+      ((toMonoidalQuotient I).map_comp _ _).symm
+
+/-- The identification of the chosen right dual of the unit with the unit descends. The
+rigid category's choice is explicit, since the unit also has a canonical self-duality. -/
+@[simp]
+theorem rightDualIso_exactPairingUnit_hom :
+    (rightDualIso
+      (RightRigidCategory.rightDual (𝟙_ (MonoidalQuotient I))).exact
+      exactPairingUnit).hom =
+    (toMonoidalQuotient I).map (rightDualIso
+      (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom := by
+  let : HasRightDual (𝟙_ C) := RightRigidCategory.rightDual _
+  apply eq_map_of_whiskerRight_evaluation (X := 𝟙_ C) (Y := 𝟙_ C)
+  refine (ExactPairing.rightDualIso_hom_whiskerRight_evaluation
+    (RightRigidCategory.rightDual (𝟙_ (MonoidalQuotient I))).exact exactPairingUnit).trans ?_
+  exact (evaluation_rightDual_obj (𝟙_ C)).trans
+    (congrArg (toMonoidalQuotient I).map
+      (ExactPairing.rightDualIso_hom_whiskerRight_evaluation
+        (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).symm)
+
+/-- The inverse identification of the chosen unit dual descends. -/
+@[simp]
+theorem rightDualIso_exactPairingUnit_inv :
+    (rightDualIso (RightRigidCategory.rightDual (𝟙_ (MonoidalQuotient I))).exact
+      exactPairingUnit).inv =
+    (toMonoidalQuotient I).map (rightDualIso
+      (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).inv := by
+  have h : rightDualIso (RightRigidCategory.rightDual (𝟙_ (MonoidalQuotient I))).exact
+      exactPairingUnit = (toMonoidalQuotient I).mapIso
+        (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit) :=
+    Iso.ext rightDualIso_exactPairingUnit_hom
+  exact congrArg Iso.inv h
+
+/-- The unit comparison of the double right dual descends, using the rigid structure's
+chosen dual of the unit on both sides. -/
+@[simp]
+theorem doubleRightDualFunctor_ε_eq_map :
+    ε (doubleRightDualFunctor (MonoidalQuotient I)) =
+      (toMonoidalQuotient I).map (ε (doubleRightDualFunctor C)) := by
+  rw [doubleRightDualFunctor_ε_eq_rightAdjointMate,
+    doubleRightDualFunctor_ε_eq_rightAdjointMate,
+    rightDualIso_exactPairingUnit_hom, rightDualIso_exactPairingUnit_inv]
+  exact (congrArg₂ (· ≫ ·) (Eq.refl _)
+    (rightAdjointMate_map_rightRigid (rightDualIso
+      (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom)).trans
+        ((toMonoidalQuotient I).map_comp _ _).symm
+
+/-- The inverse unit comparison of the double right dual descends to the quotient. -/
+@[simp]
+theorem doubleRightDualFunctor_η_eq_map :
+    η (doubleRightDualFunctor (MonoidalQuotient I)) =
+      (toMonoidalQuotient I).map (η (doubleRightDualFunctor C)) := by
+  apply (cancel_epi (ε (doubleRightDualFunctor (MonoidalQuotient I)))).mp
+  rw [Functor.Monoidal.ε_η, doubleRightDualFunctor_ε_eq_map]
+  exact ((toMonoidalQuotient I).map_comp _ _).symm.trans
+    (congrArg (toMonoidalQuotient I).map (Functor.Monoidal.ε_η (doubleRightDualFunctor C)))
+      |>.trans ((toMonoidalQuotient I).map_id _) |>.symm
+
+end RightRigid
 
 end TauCeti.MonoidalQuotient
