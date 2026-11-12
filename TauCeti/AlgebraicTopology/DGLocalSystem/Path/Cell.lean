@@ -42,13 +42,13 @@ the path fibration over the cell
 
 `N(Ω_b X) ⊗ k[m + 1] ⟶ N(f*P_b X, f*P_b X|_{∂Iᵐ⁺¹})`, `a ⊗ 1 ↦ [ω ⋆ τ] ∘ (a × [Iᵐ⁺¹])`
 
-(`TauCeti.MoorePathPullback.quasiIso_cubeBoundaryPair_cellChainMap`). It is the comparison along
-which a free generator over the loop chains `C_*(Ω_b X; k)` is attached for a cell in Brown's
-construction of a semi-free resolution of `k`. The loop factor is placed first so that the left
-action of the loops, by concatenation in front, only involves the first factor of
-`N(Ω_b X) ⊗ N(D, A)`, where it is the Pontryagin product, and the trivialization preserves it. The
-loop-module structures of these chain complexes, and the excision that assembles the cells of a
-CW complex, are not treated here.
+(`TauCeti.MoorePathPullback.quasiIso_whiskerLeft_cubeBoundaryPairSingleHom_comp_cellChainMap`).
+It is the comparison along which a free generator over the loop chains `C_*(Ω_b X; k)` is
+attached for a cell in Brown's construction of a semi-free resolution of `k`. The loop factor is
+placed first so that the left action of the loops, by concatenation in front, only involves the
+first factor of `N(Ω_b X) ⊗ N(D, A)`, where it is the Pontryagin product, and the trivialization
+preserves it. The loop-module structures of these chain complexes, and the excision that
+assembles the cells of a CW complex, are not treated here.
 
 ## Main definitions
 
@@ -72,8 +72,9 @@ CW complex, are not treated here.
 * `TauCeti.MoorePathPullback.quasiIso_whiskerLeft_comp_cellChainMap`: so is its composite with
   `N(Ω_b X) ⊗ K ⟶ N(Ω_b X) ⊗ N(D, A)` for a quasi-isomorphism `K ⟶ N(D, A)` of projective
   complexes with projective homology.
-* `TauCeti.MoorePathPullback.quasiIso_cubeBoundaryPair_cellChainMap`: the relative-cell
-  quasi-isomorphism `N(Ω_b X) ⊗ k[m + 1] ⟶ N(f*P_b X, f*P_b X|_{∂Iᵐ⁺¹})` of a cube.
+* `TauCeti.MoorePathPullback.quasiIso_whiskerLeft_cubeBoundaryPairSingleHom_comp_cellChainMap`:
+  the relative-cell quasi-isomorphism
+  `N(Ω_b X) ⊗ k[m + 1] ⟶ N(f*P_b X, f*P_b X|_{∂Iᵐ⁺¹})` of a cube.
 
 ## References
 
@@ -174,6 +175,8 @@ private theorem swapPairHom_comp_preimagePairMap :
       loopTrivializationPairHom P τ h₀ h₁ :=
   TopPair.hom_ext_of_fst _ (by
     rw [TopPair.Hom.fst_comp, FiberHomotopyEquiv.preimagePairMap_fst, fiberHomotopyEquiv_toFun]
+    -- both sides are `trivializationMap τ h₀ h₁ ∘ prodSwap`, by definition of
+    -- `loopTrivialization`
     rfl)
 
 /-- The trivialization `Ω_b X × (D, A) ⟶ (f*P_b X, f*P_b X|_A)` induces a quasi-isomorphism of
@@ -266,7 +269,7 @@ variable {X : Type} [TopologicalSpace X] {b : X} (m : ℕ)
 from `b` to `f d`, the chain map `N(Ω_b X) ⊗ k[m + 1] ⟶ N(f*P_b X, f*P_b X|_{∂Iᵐ⁺¹})` sending
 `a ⊗ 1` to the trivialization of the cross product `a × [Iᵐ⁺¹]` is a quasi-isomorphism, over every
 commutative ring `k`. -/
-theorem quasiIso_cubeBoundaryPair_cellChainMap :
+theorem quasiIso_whiskerLeft_cubeBoundaryPairSingleHom_comp_cellChainMap :
     QuasiIso ((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b)) ◁
       cubeBoundaryPairSingleHom k m ≫ cellChainMap (cubeBoundaryPair.{0} (m + 1)) τ h₀ h₁ k) := by
   have (p : ℕ) : Module.Projective k
