@@ -47,6 +47,9 @@ global one. It does extend after multiplication by a cutoff:
   to an open set on which `ψ = 1` recovers the restriction of the original symbol
   (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`).
 
+Conversely, `TauCeti.LocalSymbol.exists_coefficient_eq_of_forall_isCompact` recognizes a symbol on
+`U` from symbols on `ℝⁿ` that agree with it near each compact set of positions in `U`.
+
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 
 ## References
@@ -111,6 +114,29 @@ private theorem exists_contDiff_eventually_eq_coefficient (a : LocalSymbol U V W
   let ⟨g, hg, hga⟩ := a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ
     isCompact_singleton U.isOpen (singleton_subset_iff.2 hx)
   ⟨g, hg, hga x rfl⟩
+
+/-- A function vanishing at positions outside `U` is the coefficient of a symbol of order `m` on
+`U` as soon as, near every compact set of positions in `U`, it agrees with a symbol of order `m` on
+`ℝⁿ`. Near a compact set, a symbol on `U` typically agrees with its product with a cutoff equal to
+`1` there, so this is how statements about symbols on `ℝⁿ` are transferred to symbols on `U`. -/
+theorem exists_coefficient_eq_of_forall_isCompact
+    {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ∀ x ∉ U, ∀ ξ, f (x, ξ) = 0)
+    (h : ∀ K ⊆ (U : Set (CoordinateSpace n)), IsCompact K → ∃ b : Symbol n V W m,
+      ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ η, b.coefficient (y, η) = f (y, η)) :
+    ∃ a : LocalSymbol U V W m, a.coefficient = f := by
+  refine ⟨{ coefficient := f
+            contDiffOn_coefficient := ?_
+            coefficient_of_notMem := hf
+            exists_bound := ?_ }, rfl⟩
+  · rintro ⟨x, ξ⟩ ⟨hx, -⟩
+    obtain ⟨b, hb⟩ := h {x} (singleton_subset_iff.2 hx) isCompact_singleton
+    refine (b.contDiff_coefficient.contDiffAt.congr_of_eventuallyEq ?_).contDiffWithinAt
+    filter_upwards [(continuous_fst.tendsto (x, ξ)).eventually (hb x rfl)] with q hq
+    exact (hq q.2).symm
+  · intro K hKU hK α β
+    obtain ⟨b, hb⟩ := h K hKU hK
+    obtain ⟨C, hC, hbC⟩ := b.exists_bound K hK α β
+    exact ⟨C, hC, fun x hx ξ => mixedDeriv_congr_of_eventually (hb x hx) α β ξ ▸ hbC x hx ξ⟩
 
 section Module
 
