@@ -14,9 +14,11 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 This file computes the formal composition of two scalar series in an arbitrary algebra. The
 algebra need not be commutative: variables retain their original order inside every composition
-block. It also identifies the iterated derivatives at zero of a convergent scalar series over a
-complete nontrivially normed field, and computes the scalar series of `z ↦ f (z ^ m)` on a ball of
-radius at most `1` from that of `f`.
+block. It also evaluates the change-of-origin series of a scalar series on constant vectors, and
+uses this to express the iterated derivatives of a scalar power series over a complete nontrivially
+normed field, at any point of its ball of convergence, as the termwise differentiated series; at
+zero they recover the coefficients. Finally, it computes the scalar series of `z ↦ f (z ^ m)` on a
+ball of radius at most `1` from that of `f`, in any normed algebra with `‖1‖ = 1`.
 -/
 
 public section
@@ -57,10 +59,10 @@ theorem ofScalars_comp_ofScalars (c d : ℕ → 𝕜) :
           ((List.ofFn v).splitWrtComposition p).map List.prod := by
       refine List.ext_getElem (by simp) fun i hi₁ hi₂ ↦ ?_
       simp only [List.getElem_ofFn, List.getElem_map, List.getElem_splitWrtComposition]
-      refine congrArg List.prod (List.ext_getElem ?_ fun j hj₁ hj₂ ↦ by simp; rfl)
-      rw [List.length_ofFn, List.length_drop, List.length_take, List.length_ofFn,
-        Nat.min_eq_left (p.sizeUpTo_le _), p.sizeUpTo_succ' ⟨i, by simpa using hi₁⟩,
-        Nat.add_sub_cancel_left]
+      refine congrArg List.prod (List.ext_getElem ?_ fun j hj₁ hj₂ ↦ by
+        simpa using congrArg v (Fin.ext (p.coe_embedding _ _)))
+      simpa [p.sizeUpTo_le] using
+        (Nat.sub_eq_of_eq_add' (p.sizeUpTo_succ' ⟨i, by simpa using hi₁⟩)).symm
     rw [hblocks, ← List.prod_flatten, List.splitWrtComposition,
       List.flatten_splitWrtCompositionAux (by simp)]
   simp only [compAlongComposition_apply, ofScalars, _root_.smul_apply,
@@ -87,19 +89,6 @@ theorem changeOriginSeries_ofScalars_apply {𝕂 R : Type*} [NontriviallyNormedF
   simp_rw [hx]
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_finset_len, Fintype.card_fin]
 
-/-- The iterated derivatives at zero of the sum of a scalar formal multilinear series over a
-complete nontrivially normed field recover its coefficients, up to the factorial normalization. -/
-theorem iteratedDeriv_ofScalarsSum_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-    (c : ℕ → 𝕜) (hc : 0 < (ofScalars 𝕜 c).radius) (n : ℕ) :
-    iteratedDeriv n (ofScalarsSum (E := 𝕜) c) 0 = n.factorial * c n := by
-  have hseries := (ofScalars 𝕜 c).hasFPowerSeriesOnBall hc
-  have hfac := hseries.factorial_smul (1 : 𝕜)
-  simp only [apply_eq_prod_smul_coeff, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-    one_pow, one_mul, smul_eq_mul, coeff_ofScalars] at hfac
-  have h := hfac n
-  rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
-  simpa [ofScalarsSum, nsmul_eq_mul, mul_comm] using h.symm
-
 /-- Inside its ball of convergence, the iterated derivatives of a scalar power series are
 given by the termwise differentiated series. -/
 theorem _root_.HasFPowerSeriesOnBall.iteratedDeriv_eq_tsum_descFactorial_mul_pow
@@ -107,69 +96,54 @@ theorem _root_.HasFPowerSeriesOnBall.iteratedDeriv_eq_tsum_descFactorial_mul_pow
     {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
     (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) (n : ℕ) :
     iteratedDeriv n f y = ∑' k : ℕ, (k.descFactorial n : 𝕂) * c k * y ^ (k - n) := by
-  let p := ofScalars 𝕂 c
-  have hp_y := hf.changeOrigin (y := y) hy
-  have hderiv :
-      (n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂)) =
-        iteratedDeriv n f y := by
+  set p := ofScalars 𝕂 c
+  -- the `n`-th derivative at `y` is `n!` times the `n`-th coefficient of the series recentred
+  -- at `y`, and that coefficient is the sum of the change-of-origin series
+  have hderiv : iteratedDeriv n f y = (n.factorial : 𝕂) * p.changeOrigin y n fun _ ↦ 1 := by
     rw [iteratedDeriv_eq_iteratedFDeriv]
-    simpa only [p, zero_add, nsmul_eq_mul, Nat.cast_ofNat] using
-      hp_y.factorial_smul (1 : 𝕂) n
-  have h_radius : ‖y‖ₑ < p.radius := hy.trans_le hf.r_le
-  have hp_change := p.hasFPowerSeriesOnBall_changeOrigin n (hf.r_pos.trans_le hf.r_le)
-  have hsum_map := hp_change.hasSum (y := y) (by
-    rw [mem_eball_zero_iff]
-    exact h_radius)
-  have hsum_coeff :
-      HasSum (fun l : ℕ ↦ ((p.changeOriginSeries n l) (fun _ ↦ y))
-        (fun _ ↦ (1 : 𝕂))) ((p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) :=
-    by simpa only [zero_add] using
-      ContinuousMultilinearMap.hasSum_eval hsum_map (fun _ ↦ (1 : 𝕂))
-  have hsum_choose :
-      HasSum (fun l : ℕ ↦ (Nat.choose (n + l) l : 𝕂) * c (n + l) * y ^ l)
-        ((p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
-    convert hsum_coeff using 1
-    ext l
-    simpa only [p, nsmul_eq_mul, smul_eq_mul, one_pow, mul_one, mul_assoc] using
-      (changeOriginSeries_ofScalars_apply c y (1 : 𝕂) n l).symm
-  have hsum_tail :
-      HasSum (fun l : ℕ ↦ ((n + l).descFactorial n : 𝕂) * c (n + l) * y ^ l)
-        ((n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
-    convert hsum_choose.mul_left (n.factorial : 𝕂) using 1
-    ext l
-    rw [Nat.descFactorial_eq_factorial_mul_choose, Nat.choose_symm_add]
-    push_cast
+    simpa only [zero_add, nsmul_eq_mul] using ((hf.changeOrigin hy).factorial_smul 1 n).symm
+  have hsum := ContinuousMultilinearMap.hasSum_eval
+    ((p.hasFPowerSeriesOnBall_changeOrigin n (hf.r_pos.trans_le hf.r_le)).hasSum
+      (mem_eball_zero_iff.mpr (hy.trans_le hf.r_le))) fun _ ↦ (1 : 𝕂)
+  rw [zero_add] at hsum
+  -- reindex along `l ↦ l + n`: the terms with `k < n` vanish since `k.descFactorial n = 0`
+  rw [hderiv]
+  refine (((add_left_injective n).hasSum_iff fun k hk ↦ ?_).mp
+    ((hsum.mul_left _).congr_fun fun l ↦ ?_)).tsum_eq.symm
+  · simp [Nat.descFactorial_eq_zero_iff_lt.mpr (not_le.mp fun h ↦ hk ⟨k - n, Nat.sub_add_cancel h⟩)]
+  · simp only [Function.comp_apply, p, changeOriginSeries_ofScalars_apply, add_comm l n,
+      Nat.add_sub_cancel_left, Nat.descFactorial_eq_factorial_mul_choose, Nat.cast_mul,
+      nsmul_eq_mul, smul_eq_mul, one_pow, mul_one]
+    rw [Nat.choose_symm_add]
     ring
-  let g : ℕ → 𝕂 := fun k ↦ (k.descFactorial n : 𝕂) * c k * y ^ (k - n)
-  have hsum_tail' :
-      HasSum (fun l : ℕ ↦ g (l + n))
-        ((n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
-    simpa only [g, add_comm, Nat.add_sub_cancel_left] using hsum_tail
-  have hprefix : ∑ k ∈ Finset.range n, g k = 0 := by
-    apply Finset.sum_eq_zero
-    intro k hk
-    simp only [g, Nat.descFactorial_eq_zero_iff_lt.mpr (Finset.mem_range.mp hk), Nat.cast_zero,
-      zero_mul]
-  have hsum_desc :
-      HasSum g ((n.factorial : 𝕂) * (p.changeOrigin y n) (fun _ ↦ (1 : 𝕂))) := by
-    have h := (hasSum_nat_add_iff n).mp hsum_tail'
-    simpa only [hprefix, add_zero] using h
-  rw [← hderiv]
-  exact hsum_desc.tsum_eq.symm
 
-/-- **Substituting `z ^ m` into a scalar power series.** If `f` is the sum of the scalar power
-series `∑ c k • z ^ k` on the ball of radius `r ≤ 1` about `0`, then for `0 < m` the function
+/-- The iterated derivatives at zero of the sum of a scalar formal multilinear series over a
+complete nontrivially normed field recover its coefficients, up to the factorial normalization. -/
+theorem iteratedDeriv_ofScalarsSum_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    (c : ℕ → 𝕜) (hc : 0 < (ofScalars 𝕜 c).radius) (n : ℕ) :
+    iteratedDeriv n (ofScalarsSum (E := 𝕜) c) 0 = n.factorial * c n := by
+  have h := ((ofScalars 𝕜 c).hasFPowerSeriesOnBall hc).iteratedDeriv_eq_tsum_descFactorial_mul_pow
+    (y := 0) (by simpa using hc) n
+  rw [ofScalarsSum, h, tsum_eq_single n fun k hk ↦ ?_]
+  · simp [Nat.descFactorial_self]
+  · rcases hk.lt_or_gt with hk | hk
+    · simp [Nat.descFactorial_eq_zero_iff_lt.mpr hk]
+    · simp [zero_pow (Nat.sub_ne_zero_of_lt hk)]
+
+/-- **Substituting `z ^ m` into a scalar power series.** Let `A` be a normed algebra over `𝕂`
+with `‖1‖ = 1`, for instance `𝕂` itself. If `f` is the sum of the scalar power series
+`∑ c k • z ^ k` on the ball of radius `r ≤ 1` about `0` in `A`, then for `0 < m` the function
 `z ↦ f (z ^ m)` is the sum on the same ball of the scalar power series with coefficient `c k` at
 the exponent `m * k`, and coefficient `0` at the exponents not divisible by `m`. -/
-theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 : Type*} [NontriviallyNormedField 𝕂]
-    {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞} (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r)
-    (hr : r ≤ 1) {m : ℕ} (hm : 0 < m) :
+theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [NontriviallyNormedField 𝕂]
+    [NormedRing A] [NormOneClass A] [NormedAlgebra 𝕂 A] {f : A → A} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars A c) 0 r) (hr : r ≤ 1) {m : ℕ} (hm : 0 < m) :
     HasFPowerSeriesOnBall (fun z ↦ f (z ^ m))
-      (ofScalars 𝕂 fun n ↦ if m ∣ n then c (n / m) else 0) 0 r := by
+      (ofScalars A fun n ↦ if m ∣ n then c (n / m) else 0) 0 r := by
   have hinj : Function.Injective fun k : ℕ ↦ m * k := fun _ _ e ↦ Nat.eq_of_mul_eq_mul_left hm e
   refine ⟨ENNReal.le_of_forall_nnreal_lt fun ρ hρ ↦ ?_, hf.r_pos, fun {y} hy ↦ ?_⟩
   · -- the expanded series is dominated termwise by the original one, as `ρ < r ≤ 1`
-    obtain ⟨C, -, hC⟩ := (ofScalars 𝕂 c).norm_mul_pow_le_of_lt_radius (hρ.trans_le hf.r_le)
+    obtain ⟨C, -, hC⟩ := (ofScalars A c).norm_mul_pow_le_of_lt_radius (hρ.trans_le hf.r_le)
     have hρ1 : (ρ : ℝ) ≤ 1 := by exact_mod_cast (hρ.trans_le hr).le
     refine le_radius_of_bound _ C fun n ↦ ?_
     rw [ofScalars_norm]
@@ -183,9 +157,11 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 : Type*} [Nontrivi
     · simpa using (mul_nonneg (norm_nonneg _) (pow_nonneg ρ.2 0)).trans (hC 0)
   · -- the series of `f` at `y ^ m`, reindexed along the multiples of `m`
     have hy1 : ‖y‖ₑ ≤ 1 := (mem_eball_zero_iff.mp hy).le.trans hr
-    have hym : y ^ m ∈ Metric.eball (0 : 𝕂) r := by
-      rw [mem_eball_zero_iff, enorm_pow]
-      exact (pow_le_of_le_one zero_le hy1 hm.ne').trans_lt (mem_eball_zero_iff.mp hy)
+    have hym : y ^ m ∈ Metric.eball (0 : A) r := by
+      rw [mem_eball_zero_iff]
+      calc ‖y ^ m‖ₑ ≤ ‖y‖ₑ ^ m := by simpa [eNorm_eq_nnNorm] using mod_cast nnNorm_pow_le y m
+        _ ≤ ‖y‖ₑ := pow_le_of_le_one zero_le hy1 hm.ne'
+        _ < r := mem_eball_zero_iff.mp hy
     have hs := hf.hasSum hym
     simp only [ofScalars_apply_eq, zero_add] at hs ⊢
     refine (hinj.hasSum_iff fun n hn ↦ ?_).mp (hs.congr_fun fun k ↦ ?_)

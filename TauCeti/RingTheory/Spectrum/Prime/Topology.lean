@@ -28,6 +28,9 @@ generic properties, such as freeness of a module at the minimal primes of a redu
 turned into dense subsets of the spectrum. In particular the basic open set `D(a)` of a
 nonzerodivisor `a` is dense, since minimal primes consist of zero divisors.
 
+A bijection on minimal primes induces a bijection on irreducible components by taking closures
+of images under the spectral map.
+
 An open subset of the prime spectrum of a commutative ring containing the zero locus of an ideal
 contained in the Jacobson radical is the whole spectrum: every prime ideal is contained in a
 maximal ideal, which is a point of that zero locus, and an open set contains every point that
@@ -73,6 +76,30 @@ theorem connectedSpace_primeSpectrum_of_injective [CommSemiring R] [CommSemiring
   f.connectedSpace_primeSpectrum_of_ker_le_nilradical fun x hx ↦ by
     rw [hf ((RingHom.mem_ker.mp hx).trans f.map_zero.symm)]
     exact zero_mem _
+
+open PrimeSpectrum in
+/-- A bijection on minimal primes gives a bijection on irreducible components, sending each
+component to the closure of its image under the spectral map. -/
+theorem bijOn_closure_image_comap_irreducibleComponents
+    {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
+    (h : Set.BijOn (Ideal.comap f) (minimalPrimes S) (minimalPrimes R)) :
+    Set.BijOn (fun Z ↦ closure (comap f '' Z))
+      (irreducibleComponents (PrimeSpectrum S)) (irreducibleComponents (PrimeSpectrum R)) := by
+  rw [← zeroLocus_minimalPrimes, ← zeroLocus_minimalPrimes]
+  refine ⟨?_, ?_, ?_⟩
+  · rintro _ ⟨P, hP, rfl⟩
+    refine ⟨P.comap f, h.mapsTo hP, ?_⟩
+    exact (closure_image_comap_zeroLocus f P).symm
+  · rintro _ ⟨P, hP, rfl⟩ _ ⟨Q, hQ, rfl⟩ heq
+    have : P.IsPrime := hP.isPrime
+    have : Q.IsPrime := hQ.isPrime
+    simp only [Function.comp_apply, closure_image_comap_zeroLocus, zeroLocus_eq_iff,
+      Ideal.IsPrime.isRadical, Ideal.IsRadical.radical] at heq
+    rw [h.injOn hP hQ heq]
+  · rintro _ ⟨P, hP, rfl⟩
+    obtain ⟨Q, hQ, rfl⟩ := h.surjOn hP
+    refine ⟨zeroLocus Q, Set.mem_image_of_mem _ hQ, ?_⟩
+    exact closure_image_comap_zeroLocus f Q
 
 end RingHom
 

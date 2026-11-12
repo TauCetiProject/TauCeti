@@ -206,7 +206,7 @@ theorem norm_multiplicationOperator [SigmaFinite μ] [Nontrivial E] (a : Lp ℂ 
     ‖multiplicationOperator (E := E) a‖ = ‖a‖ := by
   apply le_antisymm (norm_multiplicationOperator_le a)
   by_contra hle
-  have hlt : ‖multiplicationOperator (E := E) a‖ < ‖a‖ := lt_of_not_ge hle
+  have _ : ‖multiplicationOperator (E := E) a‖ < ‖a‖ := lt_of_not_ge hle
   -- Test the operator on the indicator of the set where `‖a‖` exceeds a level `c` strictly
   -- between the operator norm and `‖a‖`.
   set c := (‖multiplicationOperator (E := E) a‖ + ‖a‖) / 2 with hc_def

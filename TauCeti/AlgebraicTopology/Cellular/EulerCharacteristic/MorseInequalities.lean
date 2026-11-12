@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
 public import TauCeti.Algebra.Homology.ModuleCat.Finrank
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
+public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 
 /-!
 # The Morse inequalities for CW complexes
@@ -81,8 +82,7 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_complexBasePair_le {n
     have := hfinite i hi
     finite_cellularChainComplex_X C M i).trans_eq ?_
   rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  let _ := hfinite i (Finset.mem_range_succ_iff.1 hi)
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [finrank_cellularChainComplex_X]
   push_cast
   ring
@@ -109,8 +109,7 @@ theorem sum_range_monomial_natCard_cell_mul_finrank_eq {n : ℕ}
       have := hfinite i hi
       finite_cellularChainComplex_X C M i)
     (hX.eq_of_src _ 0)]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  let _ := hfinite i (Finset.mem_range_succ_iff.1 hi)
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [finrank_cellularChainComplex_X]
 
 end Relative
@@ -156,6 +155,30 @@ theorem sum_range_monomial_natCard_cell_mul_finrank_eq_of_cwComplex {n : ℕ}
             (finrank k (LinearMap.range ((cellularChainComplex C M).d (i + 1) i).hom)) := by
   simp_rw [finrank_singularHomology_eq_complexBasePair]
   exact sum_range_monomial_natCard_cell_mul_finrank_eq C M hfinite hn
+
+/-- **The Morse polynomial identity for a CW complex, coefficientwise.**  If there are finitely
+many cells through degree `n` and none above it, then in every degree `j` the number `cⱼ` of
+`j`-cells is the Betti number `bⱼ` over `k` plus the coefficient of `Xʲ` in `(1 + X) Q`, where the
+coefficient of `Xⁱ` in `Q` is the rank of the cellular differential in degree `i + 1` for `i < n`,
+and zero otherwise.  Above `n` all three terms vanish. -/
+theorem natCard_cell_eq_bettiNumber_add_coeff_of_cwComplex {n : ℕ}
+    (hfinite : ∀ i ≤ n, Finite (cell C i)) (hn : ∀ i, n < i → IsEmpty (cell C i)) (j : ℕ) :
+    Nat.card (cell C j) = bettiNumber k C j +
+      ((1 + Polynomial.X) * ∑ i ∈ Finset.range n, monomial i (finrank k (LinearMap.range
+        ((cellularChainComplex C (ModuleCat.of k k)).d (i + 1) i).hom))).coeff j := by
+  have h := congrArg (fun p : Polynomial ℕ => p.coeff j)
+    (sum_range_monomial_natCard_cell_mul_finrank_eq_of_cwComplex C (ModuleCat.of k k) hfinite
+      (hn (n + 1) n.lt_succ_self))
+  simp only [Polynomial.coeff_add, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial_apply,
+    Finset.sum_ite_eq', Finset.mem_range, finrank_self, mul_one] at h
+  rw [bettiNumber_def]
+  split_ifs at h with hj
+  · exact h
+  · -- Above `n` there are no cells, so the weak inequality forces the homology to vanish.
+    have := hn j (by omega)
+    have hb := finrank_singularHomology_le_of_cwComplex C (ModuleCat.of k k) j
+    rw [Nat.card_of_isEmpty] at hb ⊢
+    omega
 
 end Absolute
 

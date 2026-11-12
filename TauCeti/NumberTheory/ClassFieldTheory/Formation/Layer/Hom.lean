@@ -285,10 +285,10 @@ theorem tateHZeroEquivNormQuotient_tateCohomologyMap_apply (x : L.TateH F 0) :
 attached to `a` and to the character `χ ∘ e^ab` of `U/V` is the class attached to the image of `a`
 and to `χ`. -/
 theorem cohomologyMap_artinCharacterCup (a : F.level L.ground)
-    (χ : Additive (Abelianization L'.Gal) →+ AddCircle (1 : ℚ)) :
+    (χ : Additive (Group.Abelianization L'.Gal) →+ AddCircle (1 : ℚ)) :
     E.cohomologyMap 2 (L.artinCharacterCup F a
         (χ.comp (E.galEquiv.abelianizationCongr :
-          Abelianization L.Gal →* Abelianization L'.Gal).toAdditive)) =
+          Group.Abelianization L.Gal →* Group.Abelianization L'.Gal).toAdditive)) =
       L'.artinCharacterCup F' (E.groundMap a) χ := by
   obtain ⟨x, rfl⟩ := (L.groundLevelEquiv F).surjective a
   rw [L.artinCharacterCup_groundLevelEquiv_eq_H2π, E.groundMap_groundLevelEquiv,
@@ -299,7 +299,7 @@ theorem cohomologyMap_artinCharacterCup (a : F.level L.ground)
   rw [TauCeti.groupCohomology.mapCocycles₂_apply]
   simp only [TauCeti.groupCohomology.characterCarryCocycles₂_apply,
     ContCohomology.characterCarry_comp, map_zsmul, MonoidHom.coe_ofClass,
-    abelianizationCongr_of, MulEquiv.apply_symm_apply]
+    Group.abelianizationCongr_of, MulEquiv.apply_symm_apply]
   congr 2
   rw [TateCohomology.mapInvariants_apply_coe]
   -- `ofRes` acts on vectors as the coefficient homomorphism.
@@ -382,7 +382,7 @@ theorem tateIso_layerHom
 /-- **The Nakayama map is carried along a layer morphism matching the fundamental classes.** -/
 theorem nakayamaNegTwo_layerHom
     (hu : E.cohomologyMap 2 (cf.fundamentalClass L) = cf'.fundamentalClass L')
-    (σ : Additive (Abelianization L.Gal)) :
+    (σ : Additive (Group.Abelianization L.Gal)) :
     cf'.nakayamaNegTwo L' (E.galEquiv.abelianizationCongr.toAdditive σ) =
       E.normQuotientMap (cf.nakayamaNegTwo L σ) := by
   obtain ⟨x, rfl⟩ := L.tateHMinusTwoEquivAbelianization.surjective σ

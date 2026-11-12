@@ -85,8 +85,7 @@ which matters here, because the ambient adic ring need not be.
 ## Provenance
 
 Adapted from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`, whose full expansion is
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at
 `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`),
 `EllipticCurves/WeierstrassFormalGroup/Eval.lean` — its pair-evaluation layer, declarations
 `slopeEval`, `interceptEval`, `thirdRootEval`, `addEval`, `hasEval_pairElim`, `eval_pair_rename`,

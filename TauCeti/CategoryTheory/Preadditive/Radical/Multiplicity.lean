@@ -42,8 +42,9 @@ object is needed to use them.
 * `TauCeti.finrank_quotient_jacobsonRadicalSubmodule_biprod`: additivity on binary biproducts in
   the source.
 * `TauCeti.finrank_quotient_jacobsonRadicalSubmodule_congr`: invariance under isomorphisms.
-* `TauCeti.finrank_quotient_jacobsonRadicalSubmodule_eq_zero`: vanishing between non-isomorphic
-  objects with local endomorphism rings.
+* `TauCeti.subsingleton_quotient_jacobsonRadicalSubmodule`,
+  `TauCeti.finrank_quotient_jacobsonRadicalSubmodule_eq_zero`: triviality, and so vanishing of the
+  dimension, of the quotient between non-isomorphic objects with local endomorphism rings.
 * `TauCeti.finrank_quotient_jacobsonRadicalSubmodule_self_pos`: positivity on an object with a
   local, finite-dimensional endomorphism ring.
 * `TauCeti.finrank_quotient_jacobsonRadicalSubmodule_biproduct`: additivity on finite biproducts
@@ -52,9 +53,13 @@ object is needed to use them.
   biproducts in the target, assuming finite-dimensional quotients for the summands.
 * `TauCeti.finrank_quotient_jacobsonRadicalSubmodule_comm`: symmetry between objects with local
   endomorphism rings.
+* `TauCeti.finiteDimensional_quotient_jacobsonRadicalSubmodule_symm`: finite-dimensionality of the
+  quotient carries over from one direction to the other, for objects with local endomorphism
+  rings.
 * `TauCeti.finrank_quotient_jacobsonRadicalSubmodule_comm_of_iso_biproduct`: symmetry when one
   object has a local endomorphism ring and the other has a finite biproduct decomposition into
-  objects with local endomorphism rings, assuming finite-dimensional quotients in both directions.
+  objects with local endomorphism rings, assuming the quotients `(P j ⟶ X) / rad(P j, X)` for the
+  summands are finite-dimensional.
 
 ## References
 
@@ -118,18 +123,24 @@ theorem finrank_quotient_jacobsonRadicalSubmodule_congr {X X' Y Y' : C} (e : X �
   (Submodule.Quotient.equiv _ _ (Linear.homCongr k e e')
     (jacobsonRadicalSubmodule_map_homCongr k e e')).finrank_eq
 
-/-- **Between non-isomorphic objects with local endomorphism rings nothing survives modulo the
-radical**: every morphism is radical (`TauCeti.jacobsonRadical_eq_top`). -/
-theorem finrank_quotient_jacobsonRadicalSubmodule_eq_zero {X Y : C} [IsLocalRing (End X)]
+/-- **Between non-isomorphic objects with local endomorphism rings the quotient by the radical is
+trivial**: every morphism is radical (`TauCeti.jacobsonRadical_eq_top`). -/
+theorem subsingleton_quotient_jacobsonRadicalSubmodule {X Y : C} [IsLocalRing (End X)]
     [IsLocalRing (End Y)] (h : IsEmpty (X ≅ Y)) :
-    Module.finrank k ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) = 0 := by
+    Subsingleton ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) := by
   have htop : jacobsonRadicalSubmodule k X Y = ⊤ := by
     refine Submodule.eq_top_iff'.2 fun f ↦ ?_
     rw [mem_jacobsonRadicalSubmodule, jacobsonRadical_eq_top h]
     exact AddSubgroup.mem_top f
-  have : Subsingleton ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) :=
-    Submodule.Quotient.subsingleton_iff.2 htop
-  exact Module.finrank_zero_of_subsingleton
+  exact Submodule.Quotient.subsingleton_iff.2 htop
+
+/-- **Between non-isomorphic objects with local endomorphism rings nothing survives modulo the
+radical**: the quotient is trivial, so it has dimension zero. -/
+theorem finrank_quotient_jacobsonRadicalSubmodule_eq_zero {X Y : C} [IsLocalRing (End X)]
+    [IsLocalRing (End Y)] (h : IsEmpty (X ≅ Y)) :
+    Module.finrank k ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) = 0 :=
+  have := subsingleton_quotient_jacobsonRadicalSubmodule k h
+  Module.finrank_zero_of_subsingleton
 
 /-- **An object with a local, finite-dimensional endomorphism ring survives modulo the radical**:
 the identity is invertible, hence not radical, so `(X ⟶ X) / rad(X, X)` is nonzero. -/
@@ -180,6 +191,20 @@ theorem finrank_quotient_jacobsonRadicalSubmodule_comm {X Y : C}
     rw [finrank_quotient_jacobsonRadicalSubmodule_eq_zero k hXY,
       finrank_quotient_jacobsonRadicalSubmodule_eq_zero k hYX]
 
+/-- Between objects with local endomorphism rings, finite-dimensionality of the morphism space
+modulo the radical in one direction gives it in the other. -/
+theorem finiteDimensional_quotient_jacobsonRadicalSubmodule_symm {X Y : C}
+    [IsLocalRing (End X)] [IsLocalRing (End Y)]
+    [FiniteDimensional k ((Y ⟶ X) ⧸ jacobsonRadicalSubmodule k Y X)] :
+    FiniteDimensional k ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) := by
+  by_cases h : Nonempty (X ≅ Y)
+  · obtain ⟨e⟩ := h
+    exact Module.Finite.equiv (Submodule.Quotient.equiv _ _ (Linear.homCongr k e e.symm)
+      (jacobsonRadicalSubmodule_map_homCongr k e e.symm)).symm
+  · have := subsingleton_quotient_jacobsonRadicalSubmodule k (X := X) (Y := Y)
+      ⟨fun e ↦ h ⟨e⟩⟩
+    infer_instance
+
 /-- Reversing source and target preserves dimension modulo the radical when one object has a
 local endomorphism ring and the other is a finite biproduct of objects with local endomorphism
 rings. -/
@@ -187,11 +212,12 @@ theorem finrank_quotient_jacobsonRadicalSubmodule_comm_of_iso_biproduct {J : Typ
     {X Y : C} [IsLocalRing (End X)] (P : J → C) [HasBiproduct P]
     [∀ j, IsLocalRing (End (P j))]
     [∀ j, FiniteDimensional k ((P j ⟶ X) ⧸ jacobsonRadicalSubmodule k (P j) X)]
-    [∀ j, FiniteDimensional k ((X ⟶ P j) ⧸ jacobsonRadicalSubmodule k X (P j))]
     (e : Y ≅ ⨁ P) :
     Module.finrank k ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) =
       Module.finrank k ((Y ⟶ X) ⧸ jacobsonRadicalSubmodule k Y X) := by
   let := Fintype.ofFinite J
+  have (j : J) : FiniteDimensional k ((X ⟶ P j) ⧸ jacobsonRadicalSubmodule k X (P j)) :=
+    finiteDimensional_quotient_jacobsonRadicalSubmodule_symm k
   rw [finrank_quotient_jacobsonRadicalSubmodule_congr k (Iso.refl X) e,
     finrank_quotient_jacobsonRadicalSubmodule_congr k e (Iso.refl X),
     finrank_quotient_jacobsonRadicalSubmodule_biproduct_right,

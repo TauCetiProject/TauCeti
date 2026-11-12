@@ -111,7 +111,6 @@ theorem hasSum_mul_sq_fourierCoeffOn_signedArea (hab : a < b)
     (hγ' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (γ' t) t) (hγab : γ a = γ b)
     (hL2 : MemLp γ' 2 (volume.restrict (Ioc a b))) :
     HasSum (fun n : ℤ ↦ π * n * ‖fourierCoeffOn hab γ n‖ ^ 2) (signedArea γ a b) := by
-  have hba : 0 < b - a := sub_pos.2 hab
   set k : ℝ := 2 * π / (b - a) with hk
   have hγL2 : MemLp γ 2 (volume.restrict (Ioc a b)) :=
     (hγ.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_uIcc measurableSet_Ioc
@@ -141,7 +140,6 @@ private theorem hasSum_energy_sub_signedArea (hab : a < b)
     (hL2 : MemLp γ' 2 (volume.restrict (Ioc a b))) (s : ℝ) :
     HasSum (fun n : ℤ ↦ 4 * π ^ 2 * ((n : ℝ) ^ 2 - s * n) * ‖fourierCoeffOn hab γ n‖ ^ 2)
       ((b - a) * (∫ t in a..b, ‖γ' t‖ ^ 2) - s * (4 * π * signedArea γ a b)) := by
-  have hba : 0 < b - a := sub_pos.2 hab
   have hE := (hasSum_sq_frequency_mul_sq_fourierCoeffOn hab hγ hγ' hγab hL2).mul_left
     ((b - a) ^ 2)
   have hA := (hasSum_mul_sq_fourierCoeffOn_signedArea hab hγ hγ' hγab hL2).mul_left (4 * π * s)
