@@ -36,7 +36,8 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 * `TauCeti.one_le_norm_fourier_sub_one`: `1 ≤ ‖e_n x - 1‖` for `T / (6 |n|) ≤ x ≤ T / (3 |n|)`.
 * `TauCeti.integral_fourier_mul_deriv_fourier_comp`: for a `C¹` lift `F` with
   `F (x + T) = F x + T`, `∫₀ᵀ e_{-n} (e_m ∘ F)' = (2πin/T) ∫₀ᵀ e_{-n} (e_m ∘ F)`.
-* `UnitAddTorus.mFourier_apply_add`, `TauCeti.UnitAddTorus.mFourier_coe_apply` and
+* `UnitAddTorus.mFourier_apply_add`, `UnitAddTorus.mFourier_neg_apply`,
+  `TauCeti.UnitAddTorus.mFourier_coe_apply` and
   `UnitAddTorus.norm_mFourier_apply`: the same pointwise facts for the multivariate
   monomials `mFourier n` on the torus `UnitAddTorus d`, whose value at the image of `x : d → ℝ`
   is `exp (2πi ∑ i, n i * x i)`.
@@ -197,6 +198,11 @@ theorem mFourier_apply_add (n : d → ℤ) (x y : UnitAddTorus d) :
     mFourier n (x + y) = mFourier n x * mFourier n y := by
   simp only [mFourier, ContinuousMap.coe_mk, Pi.add_apply, TauCeti.fourier_apply_add,
     Finset.prod_mul_distrib]
+
+/-- The Fourier monomial `mFourier n` at `-x` is the monomial of index `-n` at `x`. -/
+theorem mFourier_neg_apply (n : d → ℤ) (x : UnitAddTorus d) :
+    mFourier n (-x) = mFourier (-n) x := by
+  simp only [mFourier, ContinuousMap.coe_mk, Pi.neg_apply, fourier_apply, smul_neg, neg_smul]
 
 /-- Multivariate Fourier monomials take values in the unit circle. -/
 @[simp]
