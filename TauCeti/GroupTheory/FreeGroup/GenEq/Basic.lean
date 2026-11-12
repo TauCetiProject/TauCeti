@@ -748,11 +748,8 @@ end OfBases
 theorem eq_empty_of_numItems_eq_zero {Ω : GenEq A} (h : Ω.numItems = 0) : Ω = empty := by
   obtain ⟨ρ, n, left, right, hlr, sign, dual, _, C, BC, _, _⟩ := Ω
   obtain rfl : ρ = 0 := h
-  obtain rfl : n = 0 := by
-    by_contra hn
-    have h₁ := Fin.lt_def.1 (hlr ⟨0, Nat.pos_of_ne_zero hn⟩)
-    have h₂ := (right ⟨0, Nat.pos_of_ne_zero hn⟩).isLt
-    lia
+  obtain rfl : n = 0 :=
+    Nat.eq_zero_of_not_pos fun hn => (hlr ⟨0, hn⟩).ne (Fin.subsingleton_one.elim _ _)
   obtain rfl : C = ∅ := Finset.eq_empty_of_forall_notMem fun b _ => b.1.elim0
   obtain rfl : BC = ∅ := Finset.eq_empty_of_forall_notMem fun c _ => c.2.1.elim0
   obtain rfl : left = Fin.elim0 := funext fun μ => μ.elim0
