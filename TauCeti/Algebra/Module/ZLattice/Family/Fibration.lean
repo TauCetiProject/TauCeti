@@ -6,14 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
-public import TauCeti.Algebra.Module.ZLattice.Basic
-public import TauCeti.Algebra.Module.ZLattice.Family.BaseChange.Basic
 public import TauCeti.Algebra.Module.ZLattice.Family.Fiber
 public import TauCeti.Algebra.Module.ZLattice.Family.HomeomorphProd
 public import TauCeti.Topology.Algebra.Module.Quotient
-public import TauCeti.Topology.Category.TopCat.Fiber
 public import TauCeti.Topology.Homotopy.HurewiczFibration.Transport
-import Mathlib.Topology.Homeomorph.Quotient
 
 /-!
 # Parallel transport and Hurewicz fibration structure of a family of tori
@@ -35,19 +31,12 @@ Serre fibration, and under `TauCeti.torusFamilyFiberHomeomorph` its fiber transp
 from `y₀` to `y₁` is induced on translation quotients by
 `torusFamilyParallelTransport P hinj y₀ y₁`.
 
-Finally, we record the commutative squares of fibrations in `TopCat` attached to continuous base
-change (`TauCeti.torusFamilyBaseChangeCommSq`) and to re-marking the abstract lattice by a linear
-equivalence `α : Λ' ≃ₗ[ℤ] Λ` (`TauCeti.torusFamilyRemarkHomeomorph`,
-`TauCeti.torusFamilyRemarkCommSq`), together with their action on fibers.
-
 ## Main definitions
 
 * `TauCeti.torusFamilyParallelTransport`: the real-linear isomorphism `E ≃L[ℝ] E` sending
   `P y l` to `P y' l` for all `l : Λ`.
 * `TauCeti.torusFamilyLiftingFunction`: the canonical `LiftingFunction` for
   `torusFamilyProjection P`.
-* `TauCeti.torusFamilyRemarkHomeomorph`: the homeomorphism over `Y` comparing the period quotients
-  for `P` and `fun y ↦ (P y).comp α.toLinearMap`.
 
 ## Main results
 
@@ -61,15 +50,13 @@ equivalence `α : Λ' ≃ₗ[ℤ] Λ` (`TauCeti.torusFamilyRemarkHomeomorph`,
 * `TauCeti.isHurewiczFibration_torusFamilyProjection`,
   `TauCeti.mem_serreFibrations_torusFamilyProjection`: `(Y × E)/Λ → Y` is a Hurewicz and Serre
   fibration.
-* `TauCeti.torusFamilyBaseChangeCommSq`, `TauCeti.torusFamilyRemarkCommSq`: the commutative squares
-  in `TopCat` for base change along `f : C(Z, Y)` and re-marking by `α : Λ' ≃ₗ[ℤ] Λ`.
 -/
 
 public section
 
 noncomputable section
 
-open CategoryTheory Function Module Set unitInterval
+open Function Module unitInterval
 
 universe w u
 
@@ -307,217 +294,5 @@ theorem mem_serreFibrations_torusFamilyProjection {Y E : Type u} {Λ : Type*} [T
   (isHurewiczFibration_torusFamilyProjection.{0} P hcont hinj).mem_serreFibrations
 
 end Fibration
-
-/-! ### Base change and re-marking squares in `TopCat` -/
-
-section BaseChangeSquare
-
-variable {Y Z E : Type u} {Λ : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
-  [AddCommGroup Λ] [AddCommGroup E] [TopologicalSpace E]
-  (P : Y → Λ →ₗ[ℤ] E) (f : C(Z, Y))
-
-/-- The commutative square in `TopCat` comparing the pulled-back torus family `(Z × E)/Λ → Z` with
-`(Y × E)/Λ → Y` along `f : C(Z, Y)`. -/
-theorem torusFamilyBaseChangeCommSq :
-    letI := periodAddAction P
-    letI := periodAddAction (P ∘ f)
-    CommSq
-      (TopCat.ofHom
-        ⟨torusFamilyBaseChangeMap P f, continuous_torusFamilyBaseChangeMap P f f.continuous⟩)
-      (TopCat.ofHom ⟨torusFamilyProjection (P ∘ f), continuous_torusFamilyProjection (P ∘ f)⟩)
-      (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩)
-      (TopCat.ofHom f) where
-  w := by
-    let _ := periodAddAction P
-    let _ := periodAddAction (P ∘ f)
-    ext x
-    exact torusFamilyProjection_baseChangeMap P f x
-
-/-- On the fiber over `z`, `torusFamilyBaseChangeCommSq` intertwines the canonical fiber
-homeomorphisms of `P ∘ f` at `z` and of `P` at `f z`. -/
-theorem torusFamilyBaseChangeCommSq_fiberMap_fiberHomeomorph [ContinuousAdd E]
-    (hcont : ∀ l, Continuous fun y ↦ P y l) (z : Z)
-    (x : AddAction.orbitRel.Quotient (LinearMap.range ((P ∘ f) z)) E) :
-    (torusFamilyBaseChangeCommSq P f).fiberMap z
-        (torusFamilyFiberHomeomorph (P ∘ f) z (fun l ↦ (hcont l).comp f.continuous) x) =
-      torusFamilyFiberHomeomorph P (f z) hcont x := by
-  let _ := periodAddAction P
-  let _ := periodAddAction (P ∘ f)
-  induction x using Quotient.inductionOn with | h v =>
-  apply Subtype.ext
-  refine ((torusFamilyBaseChangeCommSq P f).fiberMap_apply_coe z _).trans ?_
-  -- Align `Subtype.val` on `(TopCat.ofHom _).fiber _` with `{w | torusFamilyProjection _ w = _}`.
-  change torusFamilyBaseChangeMap P f
-      (torusFamilyFiberHomeomorph (P ∘ f) z (fun l ↦ (hcont l).comp f.continuous)
-        (Quotient.mk _ v)).1 =
-    (torusFamilyFiberHomeomorph P (f z) hcont (Quotient.mk _ v)).1
-  rw [coe_torusFamilyFiberHomeomorph, coe_torusFamilyFiberHomeomorph,
-    torusFamilyFiberMap_mk, torusFamilyFiberMap_mk, torusFamilyBaseChangeMap_mk]
-
-/-- Read through `TauCeti.torusFamilyFiberHomeomorph`, the fiber map of
-`torusFamilyBaseChangeCommSq` over `z` is the identity map of `E / range (P (f z))`. -/
-theorem torusFamilyBaseChangeCommSq_fiberMap_comp_fiberHomeomorph [ContinuousAdd E]
-    (hcont : ∀ l, Continuous fun y ↦ P y l) (z : Z) :
-    (ContinuousMap.mk (fun x ↦ (torusFamilyFiberHomeomorph P (f z) hcont).symm x)
-        (torusFamilyFiberHomeomorph P (f z) hcont).continuous_symm).comp
-        (((torusFamilyBaseChangeCommSq P f).fiberMap z).hom.comp
-          ⟨fun x ↦ torusFamilyFiberHomeomorph (P ∘ f) z (fun l ↦ (hcont l).comp f.continuous) x,
-            (torusFamilyFiberHomeomorph (P ∘ f) z
-              (fun l ↦ (hcont l).comp f.continuous)).continuous⟩) =
-      ContinuousMap.id _ := by
-  ext x
-  exact (Homeomorph.symm_apply_eq (torusFamilyFiberHomeomorph P (f z) hcont)).mpr
-    (torusFamilyBaseChangeCommSq_fiberMap_fiberHomeomorph P f hcont z x)
-
-/-- Base change of a continuous period family induces an isomorphism on every fiber in `TopCat`. -/
-theorem isIso_torusFamilyBaseChangeCommSq_fiberMap [ContinuousAdd E]
-    (hcont : ∀ l, Continuous fun y ↦ P y l) (z : Z) :
-    IsIso ((torusFamilyBaseChangeCommSq P f).fiberMap z) := by
-  let _ := periodAddAction P
-  let _ := periodAddAction (P ∘ f)
-  let e := (torusFamilyFiberHomeomorph (P ∘ f) z (fun l ↦ (hcont l).comp f.continuous)).symm.trans
-    (torusFamilyFiberHomeomorph P (f z) hcont)
-  have heq : (torusFamilyBaseChangeCommSq P f).fiberMap z = (TopCat.isoOfHomeo e).hom := by
-    ext x
-    obtain ⟨w, rfl⟩ :=
-      (torusFamilyFiberHomeomorph (P ∘ f) z (fun l ↦ (hcont l).comp f.continuous)).surjective x
-    -- Compare the underlying elements in `AddAction.orbitRel.Quotient Λ (Y × E)`.
-    change ((torusFamilyBaseChangeCommSq P f).fiberMap z _ :
-        AddAction.orbitRel.Quotient Λ (Y × E)) =
-      (e _ : AddAction.orbitRel.Quotient Λ (Y × E))
-    rw [torusFamilyBaseChangeCommSq_fiberMap_fiberHomeomorph P f hcont z w]
-    simp [e]
-  rw [heq]
-  infer_instance
-
-end BaseChangeSquare
-
-section Remark
-
-variable {Y Λ Λ' E : Type*} [AddCommGroup Λ] [AddCommGroup Λ'] [AddCommGroup E]
-  (P : Y → Λ →ₗ[ℤ] E) (α : Λ' ≃ₗ[ℤ] Λ)
-
-private theorem mem_orbit_period_comp_equiv_iff {p q : Y × E} :
-    (letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap; q ∈ AddAction.orbit Λ' p) ↔
-      (letI := periodAddAction P; q ∈ AddAction.orbit Λ p) := by
-  rw [mem_orbit_periodAddAction_iff, mem_orbit_periodAddAction_iff, LinearEquiv.range_comp]
-
-/-- **Re-marking homeomorphism.** Precomposing every period map with a `ℤ`-linear equivalence
-`α : Λ' ≃ₗ[ℤ] Λ` leaves the orbits on `Y × E` unchanged, inducing the identity homeomorphism
-`[y, v] ↦ [y, v]` between the period quotients over `Y`. -/
-def torusFamilyRemarkHomeomorph [TopologicalSpace Y] [TopologicalSpace E] :
-    letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-    letI := periodAddAction P
-    AddAction.orbitRel.Quotient Λ' (Y × E) ≃ₜ AddAction.orbitRel.Quotient Λ (Y × E) :=
-  letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-  letI := periodAddAction P
-  Homeomorph.Quotient.congrRight fun _ _ ↦ mem_orbit_period_comp_equiv_iff P α
-
-@[simp]
-theorem torusFamilyRemarkHomeomorph_mk [TopologicalSpace Y] [TopologicalSpace E] (p : Y × E) :
-    torusFamilyRemarkHomeomorph P α (Quotient.mk _ p) = Quotient.mk _ p :=
-  (rfl)
-
-@[simp]
-theorem torusFamilyRemarkHomeomorph_symm_mk [TopologicalSpace Y] [TopologicalSpace E] (p : Y × E) :
-    (torusFamilyRemarkHomeomorph P α).symm (Quotient.mk _ p) = Quotient.mk _ p :=
-  (rfl)
-
-@[simp]
-theorem torusFamilyProjection_remarkHomeomorph [TopologicalSpace Y] [TopologicalSpace E]
-    (x : letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-      AddAction.orbitRel.Quotient Λ' (Y × E)) :
-    torusFamilyProjection P (torusFamilyRemarkHomeomorph P α x) =
-      torusFamilyProjection (fun y ↦ (P y).comp α.toLinearMap) x := by
-  induction x using Quotient.inductionOn
-  simp
-
-end Remark
-
-section RemarkSquare
-
-variable {Y E : Type u} {Λ Λ' : Type*} [TopologicalSpace Y] [AddCommGroup Λ] [AddCommGroup Λ']
-  [AddCommGroup E] [TopologicalSpace E] (P : Y → Λ →ₗ[ℤ] E) (α : Λ' ≃ₗ[ℤ] Λ)
-
-/-- The commutative square in `TopCat` over `𝟙 (TopCat.of Y)` induced by re-marking the lattice by
-`α : Λ' ≃ₗ[ℤ] Λ`. -/
-theorem torusFamilyRemarkCommSq :
-    letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-    letI := periodAddAction P
-    CommSq
-      (TopCat.ofHom (torusFamilyRemarkHomeomorph P α : C(_, _)))
-      (TopCat.ofHom ⟨torusFamilyProjection fun y ↦ (P y).comp α.toLinearMap,
-        continuous_torusFamilyProjection _⟩)
-      (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩)
-      (𝟙 (TopCat.of Y)) where
-  w := by
-    let _ := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-    let _ := periodAddAction P
-    ext x
-    exact torusFamilyProjection_remarkHomeomorph P α x
-
-/-- On the fiber over `y`, `torusFamilyRemarkCommSq` intertwines the canonical fiber homeomorphisms
-via the identity map of `E` between the equal period lattices. -/
-theorem torusFamilyRemarkCommSq_fiberMap_fiberHomeomorph [ContinuousAdd E]
-    (hcont : ∀ l, Continuous fun y ↦ P y l) (y : Y)
-    (x : AddAction.orbitRel.Quotient (LinearMap.range ((P y).comp α.toLinearMap)) E) :
-    (torusFamilyRemarkCommSq P α).fiberMap y
-        (torusFamilyFiberHomeomorph (fun y ↦ (P y).comp α.toLinearMap) y
-          (fun l' ↦ hcont (α l')) x) =
-      torusFamilyFiberHomeomorph P y hcont
-        ((LinearMap.range ((P y).comp α.toLinearMap)).orbitRelQuotientMap (LinearMap.range (P y))
-          LinearMap.id (by simp) x) := by
-  let _ := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-  let _ := periodAddAction P
-  induction x using Quotient.inductionOn with | h v =>
-  apply Subtype.ext
-  refine ((torusFamilyRemarkCommSq P α).fiberMap_apply_coe y _).trans ?_
-  -- Align `Subtype.val` on `(TopCat.ofHom _).fiber _` with `{w | torusFamilyProjection _ w = y}`.
-  change torusFamilyRemarkHomeomorph P α
-      (torusFamilyFiberHomeomorph (fun y ↦ (P y).comp α.toLinearMap) y
-        (fun l' ↦ hcont (α l')) (Quotient.mk _ v)).1 =
-    (torusFamilyFiberHomeomorph P y hcont _).1
-  simp
-
-/-- Read through `TauCeti.torusFamilyFiberHomeomorph`, the fiber map of `torusFamilyRemarkCommSq`
-over `y` is the `Submodule.orbitRelQuotientMap` induced by `LinearMap.id` between the equal period
-lattices. -/
-theorem torusFamilyRemarkCommSq_fiberMap_comp_fiberHomeomorph [ContinuousAdd E]
-    (hcont : ∀ l, Continuous fun y ↦ P y l) (y : Y) :
-    (ContinuousMap.mk (fun x ↦ (torusFamilyFiberHomeomorph P y hcont).symm x)
-        (torusFamilyFiberHomeomorph P y hcont).continuous_symm).comp
-        (((torusFamilyRemarkCommSq P α).fiberMap y).hom.comp
-          ⟨fun x ↦ torusFamilyFiberHomeomorph (fun y ↦ (P y).comp α.toLinearMap) y
-              (fun l' ↦ hcont (α l')) x,
-            (torusFamilyFiberHomeomorph (fun y ↦ (P y).comp α.toLinearMap) y
-              (fun l' ↦ hcont (α l'))).continuous⟩) =
-      ⟨(LinearMap.range ((P y).comp α.toLinearMap)).orbitRelQuotientMap (LinearMap.range (P y))
-          LinearMap.id (by simp),
-        (LinearMap.range ((P y).comp α.toLinearMap)).continuous_orbitRelQuotientMap
-          (LinearMap.range (P y)) (by simp) continuous_id⟩ := by
-  ext x
-  exact (Homeomorph.symm_apply_eq (torusFamilyFiberHomeomorph P y hcont)).mpr
-    (torusFamilyRemarkCommSq_fiberMap_fiberHomeomorph P α hcont y x)
-
-/-- Re-marking the lattice induces an isomorphism on every fiber in `TopCat`. -/
-instance isIso_torusFamilyRemarkCommSq_fiberMap (y : Y) :
-    IsIso ((torusFamilyRemarkCommSq P α).fiberMap y) := by
-  let _ := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-  let _ := periodAddAction P
-  let p' : TopCat.of (AddAction.orbitRel.Quotient Λ' (Y × E)) ⟶ TopCat.of Y :=
-    TopCat.ofHom ⟨torusFamilyProjection fun y ↦ (P y).comp α.toLinearMap,
-      continuous_torusFamilyProjection _⟩
-  let p : TopCat.of (AddAction.orbitRel.Quotient Λ (Y × E)) ⟶ TopCat.of Y :=
-    TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩
-  let e : p'.fiber y ≃ₜ p.fiber ((𝟙 (TopCat.of Y)) y) :=
-    (torusFamilyRemarkHomeomorph P α).subtype fun x ↦ by
-      simp [p', p, torusFamilyProjection_remarkHomeomorph]
-  have heq : (torusFamilyRemarkCommSq P α).fiberMap y = (TopCat.isoOfHomeo e).hom := by
-    ext x
-    exact (torusFamilyRemarkCommSq P α).fiberMap_apply_coe y x
-  rw [heq]
-  infer_instance
-
-end RemarkSquare
 
 end TauCeti

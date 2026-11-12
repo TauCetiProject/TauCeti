@@ -165,6 +165,8 @@ def trivializationEquivLinearEquiv {L : LocalCoefficientSystem.{u, v, w} R X}
     (L ≅ (constantFunctor (R := R) X).obj N) ≃ (M ≃ₗ[R] N) :=
   (Iso.isoCongrLeft e₀).trans <|
     (Functor.FullyFaithful.ofFullyFaithful (constantFunctor (R := R) X)).isoEquiv.symm.trans
+      -- `linearEquivIsoModuleIso` restricts carriers to the ring universe `u` of `R : Type u`,
+      -- whereas `M N : ModuleCat.{w} R` live in an independent universe `w`.
       { toFun := Iso.toLinearEquiv
         invFun := LinearEquiv.toModuleIso
         left_inv i := by ext; rfl
