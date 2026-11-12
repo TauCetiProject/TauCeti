@@ -160,6 +160,11 @@ theorem mdifferentiableAt_toChart {y : M} (hy : y ∈ φ.toChart.source) :
     MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y :=
   mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one hy
 
+include φ in
+/-- A space with a Morse chart is finite-dimensional. -/
+theorem finiteDimensional : FiniteDimensional ℝ E :=
+  Module.Finite.equiv φ.coord.symm
+
 /-- A coordinate of a Morse chart has weight different from `1` exactly when it has negative
 weight. -/
 theorem weight_ne_one_iff (i : Fin (Module.finrank ℝ E)) : ¬φ.weight i = 1 ↔ φ.weight i < 0 := by
@@ -318,26 +323,6 @@ theorem apply_lt_of_norm_snd_eq {ε : ℝ}
 
 end SplitBox
 
-variable [FiniteDimensional ℝ E]
-
-/-- The split coordinates of a Morse chart, as a continuous linear equivalence of the model. -/
-noncomputable def splitCoordL :
-    E ≃L[ℝ] WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
-  (φ.coord.trans φ.splitCoord).toContinuousLinearEquiv
-
-/-- The continuous split coordinates of a point of the model are the split coordinates of its
-coordinates. -/
-@[simp]
-theorem splitCoordL_apply (z : E) : φ.splitCoordL z = φ.splitCoord (φ.coord z) :=
-  (rfl)
-
-/-- The point of the model with given continuous split coordinates. -/
-@[simp]
-theorem splitCoordL_symm_apply
-    (w : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))) :
-    φ.splitCoordL.symm w = φ.coord.symm (φ.splitCoord.symm w) :=
-  (rfl)
-
 /-- A Morse chart for `f` at a nondegenerate critical point is a Morse chart for `-f`, with the
 opposite weights. -/
 noncomputable def neg (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
@@ -381,6 +366,26 @@ theorem neg_coord (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
 theorem neg_weight (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
     (φ.neg h).weight = -φ.weight := by
   rw [neg]
+
+variable [FiniteDimensional ℝ E]
+
+/-- The split coordinates of a Morse chart, as a continuous linear equivalence of the model. -/
+noncomputable def splitCoordL :
+    E ≃L[ℝ] WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
+  (φ.coord.trans φ.splitCoord).toContinuousLinearEquiv
+
+/-- The continuous split coordinates of a point of the model are the split coordinates of its
+coordinates. -/
+@[simp]
+theorem splitCoordL_apply (z : E) : φ.splitCoordL z = φ.splitCoord (φ.coord z) :=
+  (rfl)
+
+/-- The point of the model with given continuous split coordinates. -/
+@[simp]
+theorem splitCoordL_symm_apply
+    (w : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))) :
+    φ.splitCoordL.symm w = φ.coord.symm (φ.splitCoord.symm w) :=
+  (rfl)
 
 end MorseChart
 

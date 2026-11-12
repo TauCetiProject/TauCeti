@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NNNorm
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
@@ -19,6 +20,9 @@ Let `f : α → β` be almost everywhere measurable for `μ`. If `μ.map f ≤ C
 extended norm. For a normed vector space codomain, `C < ⊤`, and `1 ≤ p`, this estimate gives
 boundedness of precomposition from `Lᵖ(ν)` to `Lᵖ(μ)`, with norm at most `C ^ (1/p)`.
 
+For a measure-preserving measurable embedding the bound is an equality, also after restricting to
+the preimage of an arbitrary set (`MeasureTheory.MeasurePreserving.eLpNorm_comp_restrict_preimage`).
+
 For `p = ∞` no bound on the pushforward is needed: precomposition with a quasi-measure-preserving
 map, such as the projection `Prod.fst` from a product of σ-finite measures, preserves `L^∞`
 (`MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`).
@@ -26,10 +30,16 @@ map, such as the projection `Prod.fst` from a product of σ-finite measures, pre
 ## Main declarations
 
 * `MeasureTheory.eLpNorm_comp_le_of_map_le_smul`: the `eLpNorm` bound for precomposition.
+* `MeasureTheory.MeasurePreserving.eLpNorm_comp_restrict_preimage`,
+  `MeasureTheory.MeasurePreserving.memLp_comp_restrict_preimage_iff`: a measure-preserving
+  measurable embedding `f` identifies the `Lᵖ` seminorm of `g ∘ f` on `f ⁻¹' s` with that of `g`
+  on `s`.
 * `MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`: precomposition with a
   quasi-measure-preserving map preserves `L^∞`.
 * `MeasureTheory.eLpNorm_clm_comp_le`: postcomposition with a continuous linear map scales
   `eLpNorm` by at most its operator norm, with no measurability assumption.
+* `Homeomorph.memLp_comp_restrict_of_forall_isCompact`: precomposition with a measure-preserving
+  homeomorphism preserves `Lᵖ` integrability on compact subsets.
 -/
 
 public section
@@ -59,6 +69,22 @@ theorem eLpNorm_comp_le_of_map_le_smul {C : ℝ≥0∞} (hf : AEMeasurable f μ)
       ENNReal.toReal_nonneg).ne']
   exact le_top
 
+/-- **Measure-preserving change of variables on a preimage.** If `f` is a measurable embedding
+carrying `μ` to `ν`, then the `Lᵖ` seminorm of `g ∘ f` on `f ⁻¹' s` is that of `g` on `s`. Neither
+`g` nor `s` needs to be measurable. -/
+theorem MeasurePreserving.eLpNorm_comp_restrict_preimage (hf : MeasurePreserving f μ ν)
+    (he : MeasurableEmbedding f) (g : β → ε) (p : ℝ≥0∞) (s : Set β) :
+    eLpNorm (g ∘ f) p (μ.restrict (f ⁻¹' s)) = eLpNorm g p (ν.restrict s) := by
+  rw [← he.eLpNorm_map_measure, (hf.restrict_preimage_emb he s).map_eq]
+
+/-- **Measure-preserving change of variables in `Lᵖ` on a preimage.** If `f` is a measurable
+embedding carrying `μ` to `ν`, then `g ∘ f` is `Lᵖ` on `f ⁻¹' s` exactly when `g` is `Lᵖ` on
+`s`. -/
+theorem MeasurePreserving.memLp_comp_restrict_preimage_iff (hf : MeasurePreserving f μ ν)
+    (he : MeasurableEmbedding f) {g : β → ε} {p : ℝ≥0∞} {s : Set β} :
+    MemLp (g ∘ f) p (μ.restrict (f ⁻¹' s)) ↔ MemLp g p (ν.restrict s) := by
+  rw [← he.memLp_map_measure_iff, (hf.restrict_preimage_emb he s).map_eq]
+
 /-- **Precomposition preserves `L^∞`.** If `g ∈ L^∞(ν)` and `f` is quasi-measure-preserving
 from `μ` to `ν`, then `g ∘ f ∈ L^∞(μ)`. -/
 theorem MemLp.comp_quasiMeasurePreserving_top (hg : MemLp g ∞ ν)
@@ -86,3 +112,24 @@ theorem eLpNorm_clm_comp_le {F G : Type*} [NormedAddCommGroup F] [NormedSpace �
       exact le_top
 
 end MeasureTheory
+
+open MeasureTheory Set
+
+namespace Homeomorph
+
+variable {α β ε : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α]
+  [TopologicalSpace β] [MeasurableSpace β] [BorelSpace β] [TopologicalSpace ε] [ContinuousENorm ε]
+  {μ : Measure α} {ν : Measure β}
+
+/-- **Local `Lᵖ` integrability under a measure-preserving homeomorphism.** If `g` lies in `Lᵖ(ν)`
+on every compact subset of `U` and the homeomorphism `e` carries `μ` to `ν`, then `g ∘ e` lies in
+`Lᵖ(μ)` on every compact subset of `e⁻¹(U)`. -/
+theorem memLp_comp_restrict_of_forall_isCompact (e : α ≃ₜ β) (he : MeasurePreserving e μ ν)
+    {U : Set β} {g : β → ε} {p : ℝ≥0∞}
+    (hg : ∀ K, IsCompact K → K ⊆ U → MemLp g p (ν.restrict K)) {K : Set α} (hK : IsCompact K)
+    (hKU : K ⊆ e ⁻¹' U) : MemLp (g ∘ e) p (μ.restrict K) := by
+  rw [← e.preimage_image K]
+  exact (hg _ (hK.image e.continuous) (image_subset_iff.2 hKU)).comp_measurePreserving
+    (he.restrict_preimage_emb e.measurableEmbedding _)
+
+end Homeomorph

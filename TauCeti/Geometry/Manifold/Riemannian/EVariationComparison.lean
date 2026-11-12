@@ -177,7 +177,7 @@ private theorem norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo
     (hd : DifferentiableAt ℝ (variationOnFromTo γ (Icc a b) a) t) {r : ℝ}
     (hr : 1 < r) :
     ‖curveVelocityWithin I γ (Icc a b) t‖ ≤ r * deriv (variationOnFromTo γ (Icc a b) a) t := by
-  set V := variationOnFromTo γ (Icc a b) a with hVdef
+  set V := variationOnFromTo γ (Icc a b) a
   set x := γ t
   set w : TangentSpace I x := curveVelocityWithin I γ (Icc a b) t
   have hIcc : Icc a b ∈ 𝓝 t := Icc_mem_nhds ht.1 ht.2

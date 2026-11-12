@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Opposite
+public import Mathlib.LinearAlgebra.Basis.MulOpposite
 public import Mathlib.Order.Fin.Basic
-public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Basic
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Differential
 
 /-!
 # Orientation reversal of the strands algebra
@@ -22,7 +23,12 @@ the opposite algebra, and it sends the idempotent `I(s)` to the idempotent on th
 
 This file constructs the rotation on the strands algebra of an arbitrary finite linear order,
 together with the relabelling of a strands algebra along an order isomorphism, which identifies
-the reversed order of `{1, …, n}` with `{1, …, n}`.
+the reversed order of `{1, …, n}` with `{1, …, n}`. Both commute with the differential: the
+rotation carries the crossing of the strands from `x` to `a` and from `y` to `b` to the crossing of
+the rotated strands from `a` to `x` and from `b` to `y`, and resolving one crossing and rotating is
+resolving the other (`TauCeti.StrandDiagram.reverse_resolve`). The corresponding statements for the
+algebra `A(Z)` of a pointed matched circle are in
+`TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Opposite`.
 
 ## Main definitions
 
@@ -43,6 +49,12 @@ the reversed order of `{1, …, n}` with `{1, …, n}`.
   exactly when `φ` and `ψ` are.
 * `TauCeti.StrandsAlgebra.reverseAlgEquiv_of`, `TauCeti.StrandsAlgebra.reverseAlgEquiv_idem`: the
   rotation on basis elements and on the idempotents `I(s)`.
+* `TauCeti.StrandDiagram.map_resolve`, `TauCeti.StrandDiagram.reverse_resolve`: relabelling and
+  rotation commute with resolving a crossing.
+* `TauCeti.StrandsAlgebra.mapAlgEquiv_differential`,
+  `TauCeti.StrandsAlgebra.unop_reverseAlgEquiv_differential`,
+  `TauCeti.StrandsAlgebra.unop_revAlgEquiv_differential`: relabelling and rotation commute with the
+  differential.
 
 ## References
 
@@ -205,7 +217,7 @@ theorem reverse_apply (φ : StrandDiagram α) (i : αᵒᵈ) :
   ext j
   rw [← Option.mem_def, mem_reverse, ← Option.mem_def, Option.mem_map]
   simp only [PEquiv.mem_iff_mem, coe_toPEquiv]
-  exact ⟨fun h ↦ ⟨_, h, rfl⟩, fun ⟨k, hk, hj⟩ ↦ hj ▸ hk⟩
+  exact ⟨fun h ↦ ⟨_, h, rfl⟩, fun ⟨_, hk, hj⟩ ↦ hj ▸ hk⟩
 
 theorem toDual_mem_reverse_toDual {φ : StrandDiagram α} {i j : α} :
     toDual j ∈ φ.reverse (toDual i) ↔ i ∈ φ j :=
@@ -316,6 +328,81 @@ theorem composable_reverse_iff {φ ψ : StrandDiagram α} :
 
 end Finite
 
+/-! ### Resolving a crossing of a relabelled or rotated diagram -/
+
+section Resolve
+
+variable [Fintype α] [Fintype β] {φ : StrandDiagram α}
+
+/-- The strands of `φ` starting at `x` and `y` cross exactly when the relabelled strands starting at
+`e x` and `e y` cross. -/
+theorem mem_inversions_map_iff (e : α ≃o β) {x y : α} :
+    (e x, e y) ∈ (φ.map e).inversions ↔ (x, y) ∈ φ.inversions := by
+  rw [inversions_map, mem_map_equiv]
+  simp
+
+/-- Relabelling along an order isomorphism commutes with resolving a crossing. -/
+theorem map_resolve (e : α ≃o β) (φ : StrandDiagram α) (x y : α) :
+    (φ.resolve (x, y)).map e = (φ.map e).resolve (e x, e y) := by
+  by_cases h : (x, y) ∈ φ.inversions
+  · ext i j
+    have hs : Equiv.swap (e x) (e y) i = e (Equiv.swap x y (e.symm i)) := by
+      conv_lhs => rw [← e.apply_symm_apply i]
+      exact e.injective.swap_apply _ _ _
+    rw [map_apply, resolve_apply ((mem_inversions_map_iff e).2 h), resolve_apply h, map_apply, hs,
+      OrderIso.symm_apply_apply]
+  · rw [resolve_of_notMem h, resolve_of_notMem (mt (mem_inversions_map_iff e).1 h)]
+
+/-- The resolvable crossings of a relabelled diagram are the relabelled resolvable crossings. -/
+theorem resolvableInversions_map (e : α ≃o β) (φ : StrandDiagram α) :
+    (φ.map e).resolvableInversions =
+      φ.resolvableInversions.map (e.toEquiv.prodCongr e.toEquiv).toEmbedding := by
+  ext ⟨i, j⟩
+  obtain ⟨x, rfl⟩ := e.surjective i
+  obtain ⟨y, rfl⟩ := e.surjective j
+  rw [mem_map_equiv, mem_resolvableInversions, mem_inversions_map_iff, ← map_resolve,
+    inversionCount_map, inversionCount_map]
+  simp
+
+/-- The strands of `φ` from `x` to `a` and from `y` to `b` cross exactly when the rotated strands
+from `a` to `x` and from `b` to `y` cross. -/
+theorem toDual_mem_inversions_reverse_iff {x y a b : α} (ha : a ∈ φ x) (hb : b ∈ φ y) :
+    (toDual a, toDual b) ∈ φ.reverse.inversions ↔ (x, y) ∈ φ.inversions := by
+  rw [mem_inversions_iff_of_mem (toDual_mem_reverse_toDual.2 ha)
+    (toDual_mem_reverse_toDual.2 hb), mem_inversions_iff_of_mem ha hb, toDual_lt_toDual,
+    toDual_lt_toDual, and_comm]
+
+/-- Rotation by half a turn commutes with resolving a crossing: resolving the crossing of the
+strands of `φ` from `x` to `a` and from `y` to `b` and rotating is resolving the crossing of the
+rotated strands, which start at `a` and `b`. -/
+theorem reverse_resolve {x y a b : α} (ha : a ∈ φ x) (hb : b ∈ φ y) :
+    (φ.resolve (x, y)).reverse = φ.reverse.resolve (toDual a, toDual b) := by
+  by_cases h : (x, y) ∈ φ.inversions
+  · ext i j
+    obtain ⟨i, rfl⟩ := toDual.surjective i
+    obtain ⟨j, rfl⟩ := toDual.surjective j
+    rw [← Option.mem_def, ← Option.mem_def, toDual_mem_reverse_toDual,
+      resolve_apply ((toDual_mem_inversions_reverse_iff ha hb).2 h), toDual.injective.swap_apply,
+      toDual_mem_reverse_toDual, resolve_apply h]
+    -- Precomposing with the transposition of `x` and `y` is postcomposing with that of `a` and `b`.
+    have hs := congrArg (fun f : α ≃. α ↦ i ∈ f j) (swap_trans_eq_trans_swap (p := (x, y)) ha hb)
+    simp only [PEquiv.mem_trans, Equiv.toPEquiv_apply, Option.mem_some_iff, coe_toPEquiv,
+      exists_eq_left'] at hs
+    rw [hs]
+    exact ⟨fun ⟨c, hc, hci⟩ ↦ by rwa [← hci, Equiv.swap_apply_self],
+      fun hi ↦ ⟨_, hi, Equiv.swap_apply_self _ _ _⟩⟩
+  · rw [resolve_of_notMem h, resolve_of_notMem (mt (toDual_mem_inversions_reverse_iff ha hb).1 h)]
+
+/-- Rotation by half a turn preserves the resolvable crossings, in the form of
+`TauCeti.StrandDiagram.toDual_mem_inversions_reverse_iff`. -/
+theorem toDual_mem_resolvableInversions_reverse_iff {x y a b : α} (ha : a ∈ φ x)
+    (hb : b ∈ φ y) :
+    (toDual a, toDual b) ∈ φ.reverse.resolvableInversions ↔ (x, y) ∈ φ.resolvableInversions := by
+  rw [mem_resolvableInversions, mem_resolvableInversions, toDual_mem_inversions_reverse_iff ha hb,
+    ← reverse_resolve ha hb, inversionCount_reverse, inversionCount_reverse]
+
+end Resolve
+
 end StrandDiagram
 
 namespace StrandsAlgebra
@@ -346,6 +433,17 @@ theorem mapAlgEquiv_of (e : α ≃o β) (φ : StrandDiagram α) :
     mapAlgEquiv e (of φ : StrandsAlgebra R α) = of (φ.map e) := by
   rw [mapAlgEquiv, AlgEquiv.ofLinearEquiv_apply, ← basis_apply, Module.Basis.equiv_apply,
     basis_apply, StrandDiagram.mapEquiv_apply]
+
+/-- The coefficient of a relabelled diagram in a relabelled element. -/
+@[simp]
+theorem repr_mapAlgEquiv_apply_map (e : α ≃o β) (x : StrandsAlgebra R α) (φ : StrandDiagram α) :
+    (basis R β).repr (mapAlgEquiv e x) (φ.map e) = (basis R α).repr x φ := by
+  induction x using induction_on with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
+  | smul_of r ψ =>
+    simp only [map_smul, mapAlgEquiv_of, basis_repr_of, Finsupp.smul_apply, Finsupp.single_apply,
+      ← StrandDiagram.mapEquiv_apply, (StrandDiagram.mapEquiv e).injective.eq_iff]
 
 @[simp]
 theorem mapAlgEquiv_symm (e : α ≃o β) :
@@ -393,6 +491,19 @@ theorem reverseAlgEquiv_of (φ : StrandDiagram α) :
   rw [reverseAlgEquiv, AlgEquiv.ofLinearEquiv_apply, LinearEquiv.trans_apply, ← basis_apply,
     Module.Basis.equiv_apply, basis_apply, StrandDiagram.reverseEquiv_apply, coe_opLinearEquiv]
 
+/-- The coefficient of a rotated diagram in a rotated element. -/
+@[simp]
+theorem mulOpposite_repr_reverseAlgEquiv_apply_reverse (x : StrandsAlgebra R α)
+    (φ : StrandDiagram α) :
+    (basis R αᵒᵈ).mulOpposite.repr (reverseAlgEquiv x) φ.reverse = (basis R α).repr x φ := by
+  induction x using induction_on with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
+  | smul_of r ψ =>
+    simp only [← Module.Basis.repr_unop_eq_mulOpposite_repr, map_smul, reverseAlgEquiv_of, unop_op,
+      basis_repr_of, Finsupp.smul_apply, Finsupp.single_apply, ← StrandDiagram.reverseEquiv_apply,
+      StrandDiagram.reverseEquiv.injective.eq_iff]
+
 @[simp]
 theorem reverseAlgEquiv_symm_op_of (ψ : StrandDiagram αᵒᵈ) :
     reverseAlgEquiv.symm (op (of ψ : StrandsAlgebra R αᵒᵈ)) =
@@ -414,6 +525,69 @@ def revAlgEquiv (n : ℕ) : StrandsAlgebra R (Fin n) ≃ₐ[R] (StrandsAlgebra R
 theorem revAlgEquiv_of {n : ℕ} (φ : StrandDiagram (Fin n)) :
     revAlgEquiv n (of φ : StrandsAlgebra R (Fin n)) = op (of (φ.reverse.map Fin.revOrderIso)) := by
   simp [revAlgEquiv, AlgEquiv.op]
+
+/-- The anti-automorphism of the strands algebra on `{1, …, n}` is the rotation followed by the
+relabelling of the reversed order. -/
+theorem unop_revAlgEquiv_apply {n : ℕ} (x : StrandsAlgebra R (Fin n)) :
+    unop (revAlgEquiv n x) = mapAlgEquiv Fin.revOrderIso (unop (reverseAlgEquiv x)) :=
+  (rfl)
+
+/-! ### Compatibility with the differential -/
+
+/-- Relabelling along an order isomorphism commutes with the differential. -/
+theorem mapAlgEquiv_differential (e : α ≃o β) (x : StrandsAlgebra R α) :
+    mapAlgEquiv e (differential R α x) = differential R β (mapAlgEquiv e x) := by
+  refine LinearMap.congr_fun ((basis R α).ext fun φ ↦ ?_ :
+    (mapAlgEquiv e).toLinearMap ∘ₗ differential R α =
+      differential R β ∘ₗ (mapAlgEquiv e).toLinearMap) x
+  simp only [LinearMap.coe_comp, Function.comp_apply, AlgEquiv.toLinearMap_apply, basis_apply,
+    mapAlgEquiv_of, differential_of, map_sum, StrandDiagram.resolvableInversions_map, sum_map]
+  refine sum_congr rfl fun ⟨x, y⟩ _ ↦ ?_
+  rw [StrandDiagram.map_resolve, Equiv.coe_toEmbedding, Equiv.prodCongr_apply, Prod.map_apply,
+    OrderIso.coe_toEquiv]
+
+open StrandDiagram in
+/-- **Orientation reversal preserves the differential.** Rotating strand diagrams by half a turn
+commutes with the differential, which resolves crossings. -/
+theorem unop_reverseAlgEquiv_differential (x : StrandsAlgebra R α) :
+    unop (reverseAlgEquiv (differential R α x)) =
+      differential R αᵒᵈ (unop (reverseAlgEquiv x)) := by
+  induction x using induction_on with
+  | zero => simp
+  | add x y hx hy => simp only [map_add, unop_add, hx, hy]
+  | smul_of r φ =>
+    simp only [map_smul, unop_smul, reverseAlgEquiv_of, unop_op, differential_of, map_sum,
+      unop_sum]
+    congr 1
+    -- The two strands of a resolvable crossing of `φ`, or of its rotation, and their end points.
+    have hφ {x y : α} (h : (x, y) ∈ φ.resolvableInversions) :
+        φ.endpoint x ∈ φ x ∧ φ.endpoint y ∈ φ y :=
+      have h := resolvableInversions_subset_inversions φ h
+      ⟨endpoint_mem (fst_mem_source_of_mem_inversions h),
+        endpoint_mem (snd_mem_source_of_mem_inversions h)⟩
+    have hψ {c d : αᵒᵈ} (h : (c, d) ∈ φ.reverse.resolvableInversions) :
+        ofDual c ∈ φ (ofDual (φ.reverse.endpoint c)) ∧
+          ofDual d ∈ φ (ofDual (φ.reverse.endpoint d)) :=
+      have h := resolvableInversions_subset_inversions _ h
+      ⟨mem_reverse.1 (endpoint_mem (fst_mem_source_of_mem_inversions h)),
+        mem_reverse.1 (endpoint_mem (snd_mem_source_of_mem_inversions h))⟩
+    -- The crossing of the strands from `x` to `a` and from `y` to `b` corresponds to the crossing
+    -- of the rotated strands starting at `a` and `b`.
+    refine sum_nbij' (fun p ↦ (toDual (φ.endpoint p.1), toDual (φ.endpoint p.2)))
+      (fun q ↦ (ofDual (φ.reverse.endpoint q.1), ofDual (φ.reverse.endpoint q.2)))
+      (fun _ h ↦ (toDual_mem_resolvableInversions_reverse_iff (hφ h).1 (hφ h).2).2 h)
+      (fun _ h ↦ (toDual_mem_resolvableInversions_reverse_iff (hψ h).1 (hψ h).2).1 h)
+      (fun _ h ↦ ?_) (fun _ h ↦ ?_) fun _ h ↦ by rw [reverse_resolve (hφ h).1 (hφ h).2]
+    · simp [endpoint_eq_of_mem (toDual_mem_reverse_toDual.2 (hφ h).1),
+        endpoint_eq_of_mem (toDual_mem_reverse_toDual.2 (hφ h).2)]
+    · simp [endpoint_eq_of_mem (hψ h).1, endpoint_eq_of_mem (hψ h).2]
+
+/-- The anti-automorphism of the strands algebra on `{1, …, n}` commutes with the differential. -/
+theorem unop_revAlgEquiv_differential {n : ℕ} (x : StrandsAlgebra R (Fin n)) :
+    unop (revAlgEquiv n (differential R (Fin n) x)) =
+      differential R (Fin n) (unop (revAlgEquiv n x)) := by
+  rw [unop_revAlgEquiv_apply, unop_revAlgEquiv_apply, unop_reverseAlgEquiv_differential,
+    mapAlgEquiv_differential]
 
 end StrandsAlgebra
 

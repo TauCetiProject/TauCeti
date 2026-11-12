@@ -95,8 +95,6 @@ theorem coe_mem_target_of_norm_lt {r δ : ℝ}
   have hr : 0 < r := by linarith [norm_nonneg (φ.coord w), hδr w hw]
   simpa using hrT _ ((hδr w hw).trans (half_lt_self hr))
 
-variable [FiniteDimensional ℝ E]
-
 /-- The small cube of a Morse chart, where the coordinates and the chart value are small, is
 open. -/
 theorem isOpen_smallCube (ε δ : ℝ) :
@@ -287,7 +285,6 @@ theorem range_stableParam (hδ : 0 < δ) {ε : ℝ} (hε0 : 0 < ε)
 theorem isImmersionAt_stableParam_of_norm_lt {v : φ.stableSubspace}
     (hv : ‖v‖ < δ) : IsImmersionAt 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) ∞ (hX.stableParam φ δ) v := by
   -- Near `0` the parametrization is the inverse of the chart, restricted to the stable subspace.
-  have hδ : 0 < δ := (norm_nonneg v).trans_lt hv
   obtain ⟨N, hN⟩ := φ.stableSubspace.exists_isCompl
   have hball : IsOpen (ball (0 : φ.stableSubspace) δ) := isOpen_ball
   refine (IsImmersionAtOfComplement.mk_of_charts (F := N)
@@ -408,7 +405,6 @@ theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
   obtain ⟨ε, hε0, hε⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
   set A := ‖(φ.coordL : E →L[ℝ] Fin (Module.finrank ℝ E) → ℝ)‖
   set δ := min ε (r / 2) / (A + 1)
-  have hc : 0 < min ε (r / 2) := lt_min hε0 (half_pos hr)
   have hA : 0 < A + 1 := by positivity
   have hδ : 0 < δ := by positivity
   have hsmall (w : φ.stableSubspace) (hw : ‖w‖ < δ) : ‖φ.coord w‖ < min ε (r / 2) := by

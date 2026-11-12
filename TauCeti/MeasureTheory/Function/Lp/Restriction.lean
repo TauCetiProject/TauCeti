@@ -39,6 +39,8 @@ useful whenever an `Lᵖ` identity is tested against integrals on finite-measure
   positive linear functional on real `Lᵖ`.
 * `TauCeti.totallyBounded_restrict_of_forall_eqOn`: restricting a totally bounded family of `Lᵖ`
   classes to a measurable set on which they agree with given functions.
+* `TauCeti.setIntegral_norm_le_toReal_eLpNorm_restrict`: on a set of measure at most one, the
+  integral of the norm is at most the `Lᵖ` norm.
 -/
 
 public section
@@ -243,6 +245,23 @@ theorem tendsto_setLIntegral_enorm_sub_of_tendsto_Lp
   refine lintegral_congr_ae ?_
   filter_upwards [ae_restrict_of_ae (ha n), ha₀] with x h₁ h₂
   rw [Pi.sub_apply, h₁, h₂]
+
+/-- On a set of measure at most one, the integral of the norm is at most the `Lᵖ` norm, for
+`1 ≤ p`. -/
+theorem setIntegral_norm_le_toReal_eLpNorm_restrict (hp : 1 ≤ p) {s : Set α} (hs : mu s ≤ 1)
+    {g : α → F} (hg : MemLp g p (mu.restrict s)) :
+    ∫ x in s, ‖g x‖ ∂mu ≤ (eLpNorm g p (mu.restrict s)).toReal := by
+  have hr : 0 ≤ 1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal := by
+    rcases eq_or_ne p ∞ with rfl | hp_top
+    · simp
+    · rw [ENNReal.toReal_one, div_one, sub_nonneg]
+      exact div_le_one_of_le₀ (by simpa using ENNReal.toReal_mono hp_top hp) (by positivity)
+  rw [integral_norm_eq_lintegral_enorm hg.aestronglyMeasurable,
+    ← eLpNorm_one_eq_lintegral_enorm hg.aestronglyMeasurable]
+  refine ENNReal.toReal_mono hg.eLpNorm_ne_top <|
+    (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hg.aestronglyMeasurable).trans ?_
+  refine mul_le_of_le_one_right' (ENNReal.rpow_le_one ?_ hr)
+  rwa [Measure.restrict_apply_univ]
 
 end TauCeti
 
