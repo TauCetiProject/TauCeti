@@ -248,6 +248,13 @@ theorem homeomorph_symm_fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTot
       ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩ := by
   simp [fiberwiseMap]
 
+/-- The fibrewise map of the family of identities is the identity. -/
+@[simp]
+theorem fiberwiseMap_id : fiberwiseMap (F := F) (E := E) (fun _ ↦ id) = id := by
+  funext x
+  obtain ⟨p, rfl⟩ := (homeomorph F E).surjective x
+  simp
+
 /-- The fibrewise map of a family of composites is the composite of the fibrewise maps. -/
 theorem fiberwiseMap_comp {E'' : B → Type*} [TopologicalSpace (TotalSpace F E'')]
     (ψ : ∀ b, E' b → E'' b) (φ : ∀ b, E b → E' b) :
@@ -282,6 +289,15 @@ theorem homeomorph_symm_smul {α : Type*} [∀ b, SMul α (E b)] (a : α)
     (homeomorph F E).symm (a • x) =
       ⟨((homeomorph F E).symm x).proj, a • ((homeomorph F E).symm x).2⟩ :=
   homeomorph_symm_fiberwiseMap _ x
+
+/-- A fibrewise map of equivariant fibre maps commutes with fibrewise scalar multiplication. -/
+theorem fiberwiseMap_smul {α : Type*} {E' : B → Type*} [TopologicalSpace (TotalSpace F E')]
+    [∀ b, SMul α (E b)] [∀ b, SMul α (E' b)] (φ : ∀ b, E b → E' b)
+    (hφ : ∀ b (a : α) (v : E b), φ b (a • v) = a • φ b v) (a : α)
+    (x : ManifoldTotalSpace F E) :
+    fiberwiseMap φ (a • x) = a • fiberwiseMap φ x := by
+  obtain ⟨p, rfl⟩ := (homeomorph F E).surjective x
+  simp [hφ]
 
 /-- A family of monoid actions on the fibres of a bundle induces a fibrewise monoid action on the
 charted total space. -/

@@ -134,6 +134,17 @@ theorem Bundle.Pullback.trivializationAt_snd [∀ b, TopologicalSpace (E b)] [Fi
   simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
     Trivialization.pullback_apply]
 
+/-- The fibre coordinate in a chart of the iterated pullback `f *ᵖ (g *ᵖ E)` is the fibre
+coordinate in the corresponding chart of the composite pullback `(g ∘ f) *ᵖ E`. -/
+theorem Bundle.Pullback.trivializationAt_pullback_snd [∀ b, TopologicalSpace (E b)]
+    [FiberBundle F E] {B'' : Type*} [TopologicalSpace B''] {K' : Type*} [FunLike K' B'' B']
+    [ContinuousMapClass K' B'' B'] (g : K) (f : K') (x₀ : B'')
+    (z : TotalSpace F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E)) :
+    (trivializationAt F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) x₀ ⟨z.proj, z.2⟩).2 =
+      (trivializationAt F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E) x₀ z).2 := by
+  simp only [trivializationAt_snd, Pullback.lift, ContinuousMap.comp_apply,
+    ContinuousMap.coe_ofClass]
+
 /-- The coordinate change between the pullbacks of two trivializations, over a point `x` whose
 image `f x` lies in the base set of the first, is the coordinate change between the
 trivializations over `f x`. -/
