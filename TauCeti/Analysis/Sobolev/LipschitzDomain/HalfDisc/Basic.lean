@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Rotation
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.BallGraph
 
@@ -34,6 +36,7 @@ The frontier is compact, so a single Lipschitz bound serves all frontier points
 * `TauCeti.halfDisc`: the open half-disc of radius `r`.
 * `TauCeti.closure_halfDisc`, `TauCeti.frontier_halfDisc`: its closure is the closed half-disc and
   its frontier is the flat segment together with the closed arc.
+* `TauCeti.halfDiscFlatSegment`: the flat segment of the frontier of the half-disc.
 * `TauCeti.isLipschitzDomain_halfDisc`: the half-disc is a Lipschitz domain.
 * `TauCeti.exists_isLipschitzDomainWith_halfDisc`: the half-disc is a Lipschitz domain with a
   uniform Lipschitz bound.
@@ -118,6 +121,39 @@ theorem frontier_halfDisc {r : ℝ} (hr : 0 < r) :
   · rintro (⟨h₁, h₂⟩ | ⟨h₁, h₂⟩)
     · exact ⟨⟨h₁, h₂.ge⟩, Or.inr h₂.le⟩
     · exact ⟨⟨h₁.le, h₂⟩, Or.inl h₁.ge⟩
+
+/-- The flat segment `{x | ‖x‖ ≤ r ∧ x.fst = 0}` of the frontier of `TauCeti.halfDisc r`. In the
+complex coordinate `z = s + it` with `t = x.fst` it is the real interval `[-r, r]`. -/
+def halfDiscFlatSegment (r : ℝ) : Set (WithLp 2 (ℝ × ℝ)) :=
+  closedBall 0 r ∩ {x | x.fst = 0}
+
+theorem mem_halfDiscFlatSegment {r : ℝ} {x : WithLp 2 (ℝ × ℝ)} :
+    x ∈ halfDiscFlatSegment r ↔ ‖x‖ ≤ r ∧ x.fst = 0 := by
+  rw [halfDiscFlatSegment, mem_inter_iff, mem_closedBall_zero_iff, mem_ofPred_eq]
+
+theorem isClosed_halfDiscFlatSegment (r : ℝ) : IsClosed (halfDiscFlatSegment r) :=
+  isClosed_closedBall.inter
+    (isClosed_eq (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst continuous_const)
+
+theorem measurableSet_halfDiscFlatSegment (r : ℝ) : MeasurableSet (halfDiscFlatSegment r) :=
+  (isClosed_halfDiscFlatSegment r).measurableSet
+
+/-- For `0 < r` the flat segment lies in the frontier of the half-disc. -/
+theorem halfDiscFlatSegment_subset_frontier {r : ℝ} (hr : 0 < r) :
+    halfDiscFlatSegment r ⊆ frontier (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) := by
+  rw [frontier_halfDisc hr]
+  exact subset_union_left
+
+/-- For `0 < r` the flat segment lies in the closed half-disc. -/
+theorem halfDiscFlatSegment_subset_closure {r : ℝ} (hr : 0 < r) :
+    halfDiscFlatSegment r ⊆ closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) :=
+  (halfDiscFlatSegment_subset_frontier hr).trans frontier_subset_closure
+
+/-- The half-disc has finite Lebesgue measure. -/
+instance isFiniteMeasure_volume_restrict_halfDisc (r : ℝ) :
+    MeasureTheory.IsFiniteMeasure
+      (MeasureTheory.volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))) :=
+  MeasureTheory.isFiniteMeasure_restrict.2 (isBounded_halfDisc r).measure_lt_top.ne
 
 /-- A Lipschitz chart of the half-disc centred at a point `p` of the arc `‖p‖ = r` with
 `p.fst > 0`, whose normal direction points to the centre of the disc. -/

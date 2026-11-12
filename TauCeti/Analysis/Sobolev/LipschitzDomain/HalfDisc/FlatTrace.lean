@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.LocallyConvex.WeakSpace
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.HalfDisc.Basic
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Morrey
 
@@ -39,18 +40,20 @@ the image of Lebesgue measure on `[-r, r]` under the isometry `t ↦ (0, t)`
 (`TauCeti.euclideanHausdorffMeasure_restrict_halfDiscFlatSegment`), so a continuous function that
 vanishes almost everywhere on the segment vanishes everywhere on it.
 
-For `p = 2` the trace is genuinely needed: the function `log log (2 / |1 - z|)` of
+For `p = 2` the trace is genuinely needed: the function `log log (4 / |1 - z|)` of
 `TauCeti.Analysis.Sobolev.W1p.LogLogTraceExample` lies in `W^{1,2}` of the disc but has no
 continuous boundary value at `1`.
 
 ## Main declarations
 
-* `TauCeti.halfDiscFlatSegment`: the flat segment of the frontier of the half-disc.
 * `TauCeti.euclideanHausdorffMeasure_restrict_halfDiscFlatSegment`: surface measure on the flat
   segment is Lebesgue measure on `[-r, r]`.
 * `TauCeti.W1p.halfDiscFlatTraceL`: the trace on the flat segment, a bounded linear map.
+* `TauCeti.W1p.halfDiscFlatTraceL_ae_eq`, `TauCeti.W1p.halfDiscFlatTraceL_ae_eq_of_continuousOn`:
+  it is the restriction of the frontier trace, and of a representative continuous up to the
+  boundary.
 * `TauCeti.W1p.halfDiscFlatTraceZeroSubmodule`: its kernel, the functions of zero trace on the
-  flat segment.
+  flat segment (`TauCeti.W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTraceL_eq_zero`).
 * `TauCeti.W1p.mem_halfDiscFlatTraceZeroSubmodule_iff`: membership in terms of the trace operator
   of any Lipschitz constant of the half-disc.
 * `TauCeti.W1p.isClosed_halfDiscFlatTraceZeroSubmodule`,
@@ -79,37 +82,6 @@ open scoped ENNReal NNReal Gradient
 
 namespace TauCeti
 
-/-- The flat segment `{x | ‖x‖ ≤ r ∧ x.fst = 0}` of the frontier of `TauCeti.halfDisc r`. In the
-complex coordinate `z = s + it` with `t = x.fst` it is the real interval `[-r, r]`. -/
-def halfDiscFlatSegment (r : ℝ) : Set (WithLp 2 (ℝ × ℝ)) :=
-  closedBall 0 r ∩ {x | x.fst = 0}
-
-theorem mem_halfDiscFlatSegment {r : ℝ} {x : WithLp 2 (ℝ × ℝ)} :
-    x ∈ halfDiscFlatSegment r ↔ ‖x‖ ≤ r ∧ x.fst = 0 := by
-  rw [halfDiscFlatSegment, mem_inter_iff, mem_closedBall_zero_iff, mem_ofPred_eq]
-
-theorem isClosed_halfDiscFlatSegment (r : ℝ) : IsClosed (halfDiscFlatSegment r) :=
-  isClosed_closedBall.inter
-    (isClosed_eq (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst continuous_const)
-
-theorem measurableSet_halfDiscFlatSegment (r : ℝ) : MeasurableSet (halfDiscFlatSegment r) :=
-  (isClosed_halfDiscFlatSegment r).measurableSet
-
-/-- For `0 < r` the flat segment lies in the frontier of the half-disc. -/
-theorem halfDiscFlatSegment_subset_frontier {r : ℝ} (hr : 0 < r) :
-    halfDiscFlatSegment r ⊆ frontier (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) := by
-  rw [frontier_halfDisc hr]
-  exact subset_union_left
-
-/-- For `0 < r` the flat segment lies in the closed half-disc. -/
-theorem halfDiscFlatSegment_subset_closure {r : ℝ} (hr : 0 < r) :
-    halfDiscFlatSegment r ⊆ closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) :=
-  (halfDiscFlatSegment_subset_frontier hr).trans frontier_subset_closure
-
-/-- The map `t ↦ (0, t)` is an isometry onto the line containing the flat segment. -/
-private theorem isometry_toLp_zero_prod : Isometry fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t) :=
-  Isometry.of_dist_eq (WithLp.dist_toLp_snd 2 ℝ ℝ)
-
 /-- The flat segment is the image of `[-r, r]` under `t ↦ (0, t)`. -/
 private theorem image_Icc_toLp_zero_prod (r : ℝ) :
     (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) '' Icc (-r) r = halfDiscFlatSegment r := by
@@ -131,7 +103,7 @@ the isometry `t ↦ (0, t)`. -/
 theorem euclideanHausdorffMeasure_restrict_halfDiscFlatSegment (r : ℝ) :
     (μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r) =
       (volume.restrict (Icc (-r) r)).map fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t) := by
-  have hι := isometry_toLp_zero_prod
+  have hι := WithLp.isometry_toLp_zero_prod (p := 2) (α := ℝ) (β := ℝ)
   have hvol : (μHE[1] : Measure ℝ) = volume := by
     simpa using InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ)
   have hpre : (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) ⁻¹' halfDiscFlatSegment r = Icc (-r) r := by
@@ -145,8 +117,9 @@ theorem euclideanHausdorffMeasure_restrict_halfDiscFlatSegment (r : ℝ) :
 /-- The flat segment of the half-disc of radius `r` has length `2 r`. -/
 theorem euclideanHausdorffMeasure_halfDiscFlatSegment (r : ℝ) :
     (μHE[1] : Measure (WithLp 2 (ℝ × ℝ))) (halfDiscFlatSegment r) = ENNReal.ofReal (2 * r) := by
+  have hι := WithLp.isometry_toLp_zero_prod (p := 2) (α := ℝ) (β := ℝ)
   rw [← Measure.restrict_apply_univ, euclideanHausdorffMeasure_restrict_halfDiscFlatSegment,
-    Measure.map_apply isometry_toLp_zero_prod.continuous.measurable MeasurableSet.univ,
+    Measure.map_apply hι.continuous.measurable MeasurableSet.univ,
     preimage_univ, Measure.restrict_apply_univ, Real.volume_Icc]
   ring_nf
 
@@ -157,7 +130,7 @@ theorem eqOn_halfDiscFlatSegment_of_ae_eq {r : ℝ} (hr : 0 < r) {f g : WithLp 2
     (hf : ContinuousOn f (halfDiscFlatSegment r)) (hg : ContinuousOn g (halfDiscFlatSegment r))
     (hfg : f =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r)] g) :
     EqOn f g (halfDiscFlatSegment r) := by
-  have hι := isometry_toLp_zero_prod
+  have hι := WithLp.isometry_toLp_zero_prod (p := 2) (α := ℝ) (β := ℝ)
   have hmaps : MapsTo (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) (Icc (-r) r)
       (halfDiscFlatSegment r) := by
     rw [← image_Icc_toLp_zero_prod]
@@ -170,36 +143,16 @@ theorem eqOn_halfDiscFlatSegment_of_ae_eq {r : ℝ} (hr : 0 < r) {f g : WithLp 2
   rintro _ ⟨t, ht, rfl⟩
   exact hEq ht
 
-/-- The half-disc has finite Lebesgue measure. -/
-instance isFiniteMeasure_volume_restrict_halfDisc (r : ℝ) :
-    IsFiniteMeasure (volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))) :=
-  isFiniteMeasure_restrict.2 (isBounded_halfDisc r).measure_lt_top.ne
-
 /-! ### The trace condition on the flat segment -/
 
 section Trace
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {r : ℝ}
 
-/-- The trace operator of a bounded Lipschitz domain does not depend on the Lipschitz constant
-used to construct it. -/
-private theorem W1p.frontierTrace_halfDisc_eq (hp : p ≠ (∞ : ℝ≥0∞)) {L L' : ℝ≥0}
-    (hΩ : (halfDisc r : Set (WithLp 2 (ℝ × ℝ))).IsLipschitzDomainWith L)
-    (hΩ' : (halfDisc r : Set (WithLp 2 (ℝ × ℝ))).IsLipschitzDomainWith L') :
-    W1p.frontierTrace hp hΩ (isBounded_halfDisc r) =
-      W1p.frontierTrace hp hΩ' (isBounded_halfDisc r) :=
-  W1p.eq_frontierTrace hp hΩ' _ _ fun φ =>
-    W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ _ φ.continuous.continuousOn
-      (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)
-
-/-- Almost-everywhere statements transfer along an equality of measures. -/
-private theorem ae_iff_of_measure_eq {X : Type*} [MeasurableSpace X] {μ ν : Measure X}
-    (h : μ = ν) {P : X → Prop} : (∀ᵐ x ∂μ, P x) ↔ ∀ᵐ x ∂ν, P x :=
-  h ▸ Iff.rfl
-
 /-- Surface measure on the frontier of the half-disc, restricted to the flat segment, is surface
-measure on the flat segment. -/
-private theorem restrict_frontier_restrict_halfDiscFlatSegment (hr : 0 < r) :
+measure on the flat segment. This identifies the measure of the codomain of
+`TauCeti.W1p.halfDiscFlatTraceL`. -/
+theorem restrict_frontier_restrict_halfDiscFlatSegment (hr : 0 < r) :
     ((μHE[finrank ℝ ℝ] : Measure (WithLp 2 (ℝ × ℝ))).restrict
         (frontier (halfDisc r : Set (WithLp 2 (ℝ × ℝ))))).restrict (halfDiscFlatSegment r) =
       (μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r) := by
@@ -226,6 +179,42 @@ def W1p.halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ≥0∞)) (r : ℝ)
     Submodule ℝ (W1p volume (halfDisc r) p) :=
   LinearMap.ker (W1p.halfDiscFlatTraceL hp r).toLinearMap
 
+/-- **The flat trace is the restricted frontier trace.** For any Lipschitz constant of the
+half-disc, `TauCeti.W1p.halfDiscFlatTraceL` agrees almost everywhere on the flat segment, for
+surface measure, with the boundary trace `TauCeti.W1p.frontierTrace`. -/
+theorem W1p.halfDiscFlatTraceL_ae_eq (hp : p ≠ (∞ : ℝ≥0∞)) (hr : 0 < r) {L : ℝ≥0}
+    (hΩ : (halfDisc r : Set (WithLp 2 (ℝ × ℝ))).IsLipschitzDomainWith L)
+    (u : W1p volume (halfDisc r) p) :
+    W1p.halfDiscFlatTraceL hp r u =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict
+      (halfDiscFlatSegment r)] W1p.frontierTrace hp hΩ (isBounded_halfDisc r) u := by
+  rw [← congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment hr), W1p.halfDiscFlatTraceL,
+    ContinuousLinearMap.comp_apply,
+    W1p.frontierTrace_eq_of_isLipschitzDomainWith hp _ hΩ (isBounded_halfDisc r)]
+  exact LpToLpRestrictCLM_coeFn ℝ (halfDiscFlatSegment r) _
+
+/-- **The flat trace of a function continuous up to the boundary is its restriction.** If
+`u ∈ W^{1,p}(halfDisc r)` agrees almost everywhere with a function `f` continuous on the closed
+half-disc, then `TauCeti.W1p.halfDiscFlatTraceL` sends `u` to `f` almost everywhere on the flat
+segment for surface measure. -/
+theorem W1p.halfDiscFlatTraceL_ae_eq_of_continuousOn (hp : p ≠ (∞ : ℝ≥0∞)) (hr : 0 < r)
+    {u : W1p volume (halfDisc r) p} {f : WithLp 2 (ℝ × ℝ) → ℝ}
+    (hf : ContinuousOn f (closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))))
+    (hu : W1p.value u =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))] f) :
+    W1p.halfDiscFlatTraceL hp r u =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict
+      (halfDiscFlatSegment r)] f := by
+  obtain ⟨L, hΩ⟩ := exists_isLipschitzDomainWith_halfDisc r
+  refine (W1p.halfDiscFlatTraceL_ae_eq hp hr hΩ u).trans ?_
+  rw [Filter.EventuallyEq, ← congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment hr)]
+  exact ae_restrict_of_ae
+    (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ (isBounded_halfDisc r) hf hu)
+
+/-- A function lies in `TauCeti.W1p.halfDiscFlatTraceZeroSubmodule` exactly when its flat trace
+`TauCeti.W1p.halfDiscFlatTraceL` is zero. -/
+theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTraceL_eq_zero
+    (hp : p ≠ (∞ : ℝ≥0∞)) {u : W1p volume (halfDisc r) p} :
+    u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔ W1p.halfDiscFlatTraceL hp r u = 0 :=
+  LinearMap.mem_ker
+
 /-- A function lies in `TauCeti.W1p.halfDiscFlatTraceZeroSubmodule` exactly when its trace, for
 any Lipschitz constant of the half-disc, vanishes almost everywhere on the flat segment for
 surface measure. -/
@@ -235,18 +224,16 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff (hp : p ≠ (∞ : ℝ≥0∞
     u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔
       ∀ᵐ x ∂(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r),
         W1p.frontierTrace hp hΩ (isBounded_halfDisc r) u x = 0 := by
-  rw [W1p.halfDiscFlatTraceZeroSubmodule, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    W1p.halfDiscFlatTraceL, ContinuousLinearMap.comp_apply,
-    W1p.frontierTrace_halfDisc_eq hp _ hΩ, Lp.eq_zero_iff_ae_eq_zero,
-    ← ae_iff_of_measure_eq (restrict_frontier_restrict_halfDiscFlatSegment hr)]
-  have hcoe := LpToLpRestrictCLM_coeFn ℝ (halfDiscFlatSegment r)
-    (W1p.frontierTrace hp hΩ (isBounded_halfDisc r) u)
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTraceL_eq_zero,
+    Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
+    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment hr)]
+  have htr := W1p.halfDiscFlatTraceL_ae_eq hp hr hΩ u
   constructor
   · intro h
-    filter_upwards [hcoe, h] with x hx hx'
+    filter_upwards [htr, h] with x hx hx'
     rw [← hx, hx', Pi.zero_apply]
   · intro h
-    filter_upwards [hcoe, h] with x hx hx'
+    filter_upwards [htr, h] with x hx hx'
     rw [hx, hx', Pi.zero_apply]
 
 /-- **The zero-trace condition is closed** in `W^{1,p}(halfDisc r)`. -/
@@ -280,14 +267,10 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_of_continuousOn (hp : p ≠ (
     (hf : ContinuousOn f (closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))))
     (hu : W1p.value u =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))] f) :
     u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔ ∀ x ∈ halfDiscFlatSegment r, f x = 0 := by
-  obtain ⟨L, hΩ⟩ := exists_isLipschitzDomainWith_halfDisc r
-  have htr : W1p.frontierTrace hp hΩ (isBounded_halfDisc r) u
-      =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r)] f := by
-    rw [Filter.EventuallyEq,
-      ← ae_iff_of_measure_eq (restrict_frontier_restrict_halfDiscFlatSegment hr)]
-    exact ae_restrict_of_ae
-      (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ (isBounded_halfDisc r) hf hu)
-  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff hp hr hΩ]
+  have htr := W1p.halfDiscFlatTraceL_ae_eq_of_continuousOn hp hr hf hu
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTraceL_eq_zero,
+    Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
+    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment hr)]
   constructor
   · intro h
     refine eqOn_halfDiscFlatSegment_of_ae_eq (g := 0) hr
@@ -296,7 +279,7 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_of_continuousOn (hp : p ≠ (
     rw [← hx, hx', Pi.zero_apply]
   · intro h
     filter_upwards [htr, ae_restrict_mem (measurableSet_halfDiscFlatSegment r)] with x hx hxS
-    rw [hx, h x hxS]
+    rw [hx, h x hxS, Pi.zero_apply]
 
 /-- **The normal coordinate satisfies the boundary condition.** Every `u ∈ W^{1,p}(halfDisc r)`
 represented by the normal coordinate `x ↦ x.fst` (the function `t = Im z`) lies in
