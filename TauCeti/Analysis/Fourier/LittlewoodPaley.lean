@@ -14,6 +14,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
@@ -700,8 +701,7 @@ private theorem enorm_inner_le_mul_lintegral {L : ℕ}
             (2⁻¹ : ℝ) :=
   le_of_tendsto' ((continuous_eNorm.tendsto _).comp
     (((Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley φ
-      (fun j ↦ (symbol φ j).coeFn_toLp ∞ volume |>.mono fun ξ h ↦ by rw [h, symbol_apply])
-      f).comp (tendsto_add_atTop_nat 1)).inner tendsto_const_nhds))
+      (coeFn_toLp_symbol φ) f).comp (tendsto_add_atTop_nat 1)).inner tendsto_const_nhds))
     (enorm_inner_sum_fourierMultiplierCLM_le φ hL · f g)
 
 end LittlewoodPaleySquare

@@ -12,7 +12,11 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
+import TauCeti.MeasureTheory.Function.Lp.Star
 
 /-!
 # The inhomogeneous Littlewood–Paley decomposition of a tempered distribution
@@ -50,6 +54,14 @@ function, and for `j ≥ 1` it is the `L¹`-normalised dilate `2^{(j-1)n} 𝓕�
 first dyadic kernel, since `ψ_{j+1} = ψ₁ (2^{-j} ·)`; so all the kernels have `L¹` norm at most
 `max ‖𝓕⁻ ψ₀‖₁ ‖𝓕⁻ ψ₁‖₁`, and Young's inequality bounds the blocks.
 
+In `L²` the blocks are Fourier multipliers by the real symbols `ψⱼ`. The blocks of an `L²`
+function are square summable, `∑ⱼ ‖Δⱼ f‖₂² ≤ C ‖f‖₂²`, by the `L²` Littlewood–Paley inequality
+`TauCeti.exists_sum_norm_fourierMultiplierCLM_sq_le`. Conversely, if the blocks `gⱼ = Δⱼ v` of a
+tempered distribution are `L²` functions, each `gⱼ` is fixed by the multiplier by the enlarged
+cutoff `Ψⱼ` (`ContDiffBump.enlargedLittlewoodPaley`), which annihilates `gₖ` for `k` far above
+`j`. That multiplier is self-adjoint, so `gⱼ` and `gₖ` are orthogonal, and when `∑ⱼ ‖gⱼ‖₂² < ∞`
+the series `∑ⱼ gⱼ` converges in `L²`; by reconstruction its sum is `v`.
+
 This decomposition underlies the dyadic description of Besov spaces and of the Bessel-potential
 spaces `H^{s,p}`: the Besov norm of `u` is a weighted sequence norm of the `Lᵖ` norms of the
 blocks `Δⱼ u`.
@@ -86,6 +98,12 @@ blocks `Δⱼ u`.
   `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le_of_le`: Bernstein's inequality
   `‖Δⱼ u‖_r ≤ C 2^{j n (1/p - 1/r)} ‖Δⱼ u‖_p` for `p ≤ r`.
+* `TemperedDistribution.exists_sum_norm_sq_littlewoodPaleyBlock_le`: the blocks of an `L²`
+  function are square summable in `L²`.
+* `TemperedDistribution.exists_inner_eq_zero_of_littlewoodPaleyBlock_eq`: `L²` blocks with indices
+  far apart are orthogonal.
+* `TemperedDistribution.exists_eq_and_norm_sq_le_of_littlewoodPaleyBlock_eq`: a tempered
+  distribution whose blocks are square-summable `L²` functions is an `L²` function.
 
 ## References
 
@@ -441,6 +459,103 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_le [CompleteSpace F] {p r 
   rw [Real.mul_rpow (by positivity) φ.rOut_pos.le, ← Real.rpow_natCast,
     ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ) a]
   ring
+
+
+section L2
+
+open scoped InnerProductSpace
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+
+/-- **The Littlewood–Paley blocks of an `L²` function are square summable.** There is `C`,
+depending only on `φ`, such that the blocks `Δⱼ f` of every `f ∈ L²` are `L²` functions with
+`∑ⱼ ‖Δⱼ f‖² ≤ C ‖f‖²`. -/
+theorem exists_sum_norm_sq_littlewoodPaleyBlock_le :
+    ∃ C : ℝ, ∀ f : Lp H 2 (volume : Measure E), ∃ g : ℕ → Lp H 2 (volume : Measure E),
+      (∀ j, littlewoodPaleyBlock H φ j (f : 𝓢'(E, H)) = g j) ∧
+        ∀ t : Finset ℕ, ∑ j ∈ t, ‖g j‖ ^ 2 ≤ C * ‖f‖ ^ 2 := by
+  obtain ⟨C, -, hC⟩ := TauCeti.exists_sum_norm_fourierMultiplierCLM_sq_le (F := H) φ
+  have hm : ∀ j, MemLp (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) ∞
+      (volume : Measure E) := fun j ↦
+    ((φ.contDiff_inhomogeneousLittlewoodPaley j (n := 0)).continuous.memLp_top_of_hasCompactSupport
+      (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j) volume).ofReal
+  refine ⟨C, fun f ↦ ⟨fun j ↦ Lp.fourierMultiplierCLM H ((hm j).toLp _) f, fun j ↦ ?_,
+    hC _ (fun j ↦ (hm j).coeFn_toLp) f⟩⟩
+  rw [littlewoodPaleyBlock_apply]
+  exact Lp.fourierMultiplierCLM_toTemperedDistribution_eq f
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) (hm j)
+
+/-- **Almost orthogonality of `L²` blocks.** There is `L`, depending only on `φ`, such that if the
+blocks `Δᵢ v` and `Δₖ v` of a tempered distribution `v` are `L²` functions `gᵢ` and `gₖ`, then
+`⟪gᵢ, gₖ⟫ = 0` whenever `i + L ≤ k`. -/
+theorem exists_inner_eq_zero_of_littlewoodPaleyBlock_eq :
+    ∃ L : ℕ, ∀ (v : 𝓢'(E, H)) (g : ℕ → Lp H 2 (volume : Measure E)),
+      (∀ j, littlewoodPaleyBlock H φ j v = g j) → ∀ i k, i + L ≤ k → ⟪g i, g k⟫_ℂ = 0 := by
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
+  refine ⟨2 * L, fun v g hg ↦ ?_⟩
+  -- The enlarged cutoff `Ψᵢ` is `1` on the support of `ψᵢ` and vanishes on the support of `ψₖ`
+  -- for `k ≥ i + 2L`.
+  have hΨ : ∀ i k, i + 2 * L ≤ k → ∀ ξ,
+      φ.enlargedLittlewoodPaley L i ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0 := by
+    intro i k hik ξ
+    rw [φ.enlargedLittlewoodPaley_apply, Finset.sum_mul]
+    exact Finset.sum_eq_zero fun l hl ↦ hL l k (by rw [Finset.mem_Ico] at hl; omega) ξ
+  have hgrowth : ∀ i, (fun ξ ↦ (φ.enlargedLittlewoodPaley L i ξ : ℂ)).HasTemperateGrowth :=
+    fun i ↦ ((φ.hasCompactSupport_enlargedLittlewoodPaley L i).comp_left
+      Complex.ofReal_zero).hasTemperateGrowth
+        (Complex.ofRealCLM.contDiff.comp (φ.contDiff_enlargedLittlewoodPaley L i))
+  have hM : ∀ i, MemLp (fun ξ ↦ (φ.enlargedLittlewoodPaley L i ξ : ℂ)) ∞
+      (volume : Measure E) := fun i ↦
+    ((φ.contDiff_enlargedLittlewoodPaley L i (n := 0)).continuous.memLp_top_of_hasCompactSupport
+      (φ.hasCompactSupport_enlargedLittlewoodPaley L i) volume).ofReal
+  set T : ℕ → Lp H 2 (volume : Measure E) →L[ℂ] Lp H 2 (volume : Measure E) :=
+    fun i ↦ Lp.fourierMultiplierCLM H ((hM i).toLp _)
+  -- `Ψᵢ` is real, so `T i` is self-adjoint.
+  have hTs : ∀ i, IsSelfAdjoint (T i) := fun i ↦
+    Lp.isSelfAdjoint_fourierMultiplierCLM (Lp.star_eq_self_of_ae_eq_ofReal (hM i).coeFn_toLp)
+  -- `Ψᵢ gₖ` is the multiplier by `ψₖ Ψᵢ` applied to `v`.
+  have hT : ∀ i k, (T i (g k) : 𝓢'(E, H)) = fourierMultiplierCLM H (fun ξ ↦
+      ((φ.inhomogeneousLittlewoodPaley k ξ * φ.enlargedLittlewoodPaley L i ξ : ℝ) : ℂ)) v := by
+    intro i k
+    rw [← Lp.fourierMultiplierCLM_toTemperedDistribution_eq _ (hgrowth i) (hM i), ← hg,
+      littlewoodPaleyBlock_apply, fourierMultiplierCLM_fourierMultiplierCLM_apply
+        (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k) (hgrowth i)]
+    congr 2
+    funext ξ
+    simp
+  have hTg : ∀ i, T i (g i) = g i := fun i ↦ Lp.toTemperedDistribution_injective <| by
+    simp only [hT, ← hg, littlewoodPaleyBlock_apply]
+    congr 2
+    funext ξ
+    rw [mul_comm, φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL]
+  have hT0 : ∀ i k, i + 2 * L ≤ k → T i (g k) = 0 := fun i k hik ↦
+    Lp.toTemperedDistribution_injective <| by
+      simp only [hT, mul_comm _ (φ.enlargedLittlewoodPaley L i _), hΨ i k hik, Complex.ofReal_zero,
+        Lp.toTemperedDistribution_zero]
+      simp [fourierMultiplierCLM_const]
+  intro i k hik
+  rw [← hTg i, ← (hTs i).adjoint_eq, ContinuousLinearMap.adjoint_inner_left, hT0 i k hik,
+    inner_zero_right]
+
+/-- **A tempered distribution with square-summable `L²` blocks is an `L²` function.** There is
+`C`, depending only on `φ`, such that if every block `Δⱼ v` of `v ∈ 𝓢'` is an `L²` function `gⱼ`
+with `∑ⱼ ‖gⱼ‖² < ∞`, then `v = ∑ⱼ gⱼ` is an `L²` function `f` with `‖f‖² ≤ C ∑ⱼ ‖gⱼ‖²`. -/
+theorem exists_eq_and_norm_sq_le_of_littlewoodPaleyBlock_eq :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (v : 𝓢'(E, H)) (g : ℕ → Lp H 2 (volume : Measure E)),
+      (∀ j, littlewoodPaleyBlock H φ j v = g j) → Summable (fun j ↦ ‖g j‖ ^ 2) →
+        ∃ f : Lp H 2 (volume : Measure E), v = f ∧ ‖f‖ ^ 2 ≤ C * ∑' j, ‖g j‖ ^ 2 := by
+  obtain ⟨L, hL⟩ := exists_inner_eq_zero_of_littlewoodPaleyBlock_eq (H := H) φ
+  refine ⟨L, by positivity, fun v g hg hsq ↦ ⟨∑' j, g j, ?_,
+    TauCeti.norm_tsum_sq_le_mul_tsum_norm_sq_of_inner_eq_zero (hL v g hg) hsq⟩⟩
+  -- In `𝓢'`, the partial sums `∑_{j < N} gⱼ` tend both to `v` and to `∑' j, gⱼ`.
+  have h1 := tendsto_sum_littlewoodPaleyBlock φ v
+  simp_rw [hg] at h1
+  refine tendsto_nhds_unique h1 ?_
+  have h2 := ((Lp.toTemperedDistributionCLM H (volume : Measure E) 2).continuous.tendsto _).comp
+    (TauCeti.summable_of_inner_eq_zero (hL v g hg) hsq).hasSum.tendsto_sum_nat
+  simpa [Function.comp_def, map_sum] using h2
+
+end L2
 
 end Lp
 
