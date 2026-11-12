@@ -162,8 +162,8 @@ private theorem sq_sub_div_mul_le_div_sq {A B r c κ : ℝ} (hr₁ : 1 ≤ r) (h
       ((16 * κ * c + 128 * c ^ 2 + 132 * κ ^ 2 * c ^ 2) * (1 + 8 * c + c ^ 2) +
         κ * (8 * c + c ^ 2)) / r ^ 2 := by
   have hr : 0 < r := by linarith
-  set s := A ^ 2 with hs_def
-  set C₀ := 8 * c + c ^ 2 with hC₀_def
+  set s := A ^ 2
+  set C₀ := 8 * c + c ^ 2
   have hC₀ : 0 ≤ C₀ := by positivity
   set K₁ := κ * c / r + κ ^ 2 * c ^ 2 / (4 * r ^ 2) + 8 * c ^ 2 / r + 8 * κ ^ 2 * c ^ 2 / r ^ 3
     with hK₁_def
@@ -181,10 +181,8 @@ private theorem sq_sub_div_mul_le_div_sq {A B r c κ : ℝ} (hr₁ : 1 ≤ r) (h
   have hs' : s ≤ 1 + C₀ := hs.trans (by
     have : C₀ / r ≤ C₀ := div_le_self hC₀ hr₁
     linarith)
-  have hs0 : 0 ≤ s := sq_nonneg _
   -- `|β|² ≤ (16 / r²) (r K₁) s`, and `-(κ / r) (1 - s) ≤ κ C₀ / r²`.
   have hb' : B ^ 2 * r ^ 2 ≤ 16 * (κ * c + 33 / 4 * κ ^ 2 * c ^ 2 + 8 * c ^ 2) * (1 + C₀) := by
-    have hK₁ : 0 ≤ K₁ := by positivity
     calc B ^ 2 * r ^ 2 = 16 * (r / 16 * B ^ 2) * r := by ring
       _ ≤ 16 * (K₁ * s) * r := by gcongr
       _ = 16 * (K₁ * r) * s := by ring
@@ -221,8 +219,7 @@ theorem sq_le_div_mul_max_add_div_sq {A B Dα Dβ : M → ℝ} {r c κ : ℝ} (h
   have hr : 0 < r := by linarith
   have : Nonempty M := ⟨x⟩
   set C := (16 * κ * c + 128 * c ^ 2 + 132 * κ ^ 2 * c ^ 2) * (1 + 8 * c + c ^ 2) +
-    κ * (8 * c + c ^ 2) with hC_def
-  have hC : 0 ≤ C := by positivity
+    κ * (8 * c + c ^ 2)
   -- Apply the maximum principle to `f = |β|² - (κ / r) (1 - |α|²)`.
   have hAs : ContMDiff I 𝓘(ℝ) 2 ((κ / r) • fun y ↦ A y ^ 2) :=
     (contMDiff_const : ContMDiff I 𝓘(ℝ) 2 fun _ : M ↦ κ / r).smul hA
