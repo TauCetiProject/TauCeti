@@ -289,8 +289,10 @@ theorem fourierCoeff_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {f g : AddCircle T → E} (hf : Integrable f haarAddCircle) (hg : Integrable g haarAddCircle)
     (n : ℤ) :
     fourierCoeff (fun x ↦ f x - g x) n = fourierCoeff f n - fourierCoeff g n := by
-  rw [show (fun x ↦ f x - g x) = f + (-1 : ℂ) • g by ext; simp [sub_eq_add_neg],
-    fourierCoeff.add hf (hg.smul (-1 : ℂ)), Pi.add_apply, fourierCoeff.const_smul]
+  have hfg : (fun x ↦ f x - g x) = f + (-1 : ℂ) • g := by
+    ext
+    simp [sub_eq_add_neg]
+  rw [hfg, fourierCoeff.add hf (hg.smul (-1 : ℂ)), Pi.add_apply, fourierCoeff.const_smul]
   simp [sub_eq_add_neg]
 
 /-- Twisting by the monomial `fourier k` and conjugating reflects the Fourier coefficients about

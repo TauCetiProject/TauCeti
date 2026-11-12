@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
-public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 /-!
 # Circles in punctured discs, and powers of circle maps
@@ -36,11 +37,7 @@ theorem circleMap_mem_ball_diff_singleton {z₀ : ℂ} {r R : ℝ} (hr : 0 < r) 
 smooth. -/
 theorem contDiff_circleMap_zpow (R : ℝ) (k : ℤ) {n : WithTop ℕ∞} :
     ContDiff ℝ n fun θ ↦ circleMap 0 R θ ^ k := by
-  have : (fun θ : ℝ ↦ circleMap 0 R θ ^ k) = fun θ : ℝ ↦ (R : ℂ) ^ k * exp (k * ((θ : ℂ) * I)) := by
-    ext θ
-    simp [circleMap, mul_zpow, ← exp_int_mul]
-  rw [this]
-  exact contDiff_const.mul (contDiff_exp.comp (contDiff_const.mul (ofRealCLM.contDiff.mul
-    contDiff_const)))
+  simp_rw [circleMap_zero_zpow]
+  exact (contDiff_circleMap 0 (R ^ k)).comp (contDiff_const.mul contDiff_id)
 
 end TauCeti

@@ -9,14 +9,13 @@ public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.UnitDisc.RotatingLineBoundary
 import Mathlib.Analysis.Complex.LocallyUniformLimit
-import Mathlib.Analysis.PSeries
+import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
-import TauCeti.MeasureTheory.Integral.Circle.Haar
 
 /-!
 # The Riemann–Hilbert problem on the disc with boundary values on a rotating line
@@ -30,7 +29,7 @@ series computation of McDuff and Salamon, Theorem C.4.1.
 **The boundary problem.** For a function `φ` on the unit circle, the *Riemann–Hilbert problem*
 asks for `h` holomorphic on the open disc and continuous on the closed disc with
 `h w - w ^ k * conj (h w) = φ w` on the circle. The left side always satisfies
-`ψ w = -(w ^ k * conj (ψ w))`, so `φ` is required to take values on the line `i w ^ (k / 2) ℝ`.
+`ψ w = -(w ^ k * conj (ψ w))`, so `φ(e^{iθ})` is required to lie on the line `i e^{ikθ/2} ℝ`.
 Write `c n` for the `n`-th Fourier coefficient of `θ ↦ φ(e^{iθ})` on `[0, 2π]`. The condition
 on `φ` reads `c n = -conj (c (k - n))`, and for `h = ∑ aₙ zⁿ` the problem reads
 `aₙ - conj a_{k-n} = c n` for every integer `n`, with `aₙ = 0` for `n < 0`. If the Fourier
@@ -45,7 +44,9 @@ real conditions. For `k ≥ -1` there are none and the problem is always solvabl
 too (`TauCeti.exists_diffContOnCl_sub_zpow_mul_conj_eq_iff`), since a function holomorphic on the
 disc has vanishing negative Fourier coefficients on the circle. A function `φ` with
 `θ ↦ φ(e^{iθ})` of class `C²` has Fourier coefficients of size `O(n⁻²)`, which are summable
-(`TauCeti.summable_fourierCoeffOn_circleMap_of_contDiff`).
+(`TauCeti.summable_fourierCoeffOn_circleMap_of_contDiff`), and summable Fourier coefficients
+of a continuous `θ ↦ φ(e^{iθ})` sum to `φ` on the circle
+(`TauCeti.hasSum_fourierCoeffOn_circleMap_mul_zpow`).
 
 **Surjectivity.** For `k ≥ -1` the operator `∂/∂(conj z)` with this boundary condition is
 onto, on compactly supported `C²` data
@@ -66,21 +67,17 @@ cokernel on this class of data, and the index `k + 1` predicted by the Riemann�
 
 ## Main results
 
-* `TauCeti.hasSum_unitDiscRiemannHilbertSolution`: for summable Fourier coefficients the series
-  converges on the closed disc.
-* `TauCeti.hasSum_fourierCoeffOn_circleMap_mul_zpow`: summable Fourier coefficients of a continuous
-  `θ ↦ φ(e^{iθ})` sum to `φ` on the unit circle.
-* `TauCeti.diffContOnCl_unitDiscRiemannHilbertSolution`: for summable Fourier coefficients the
-  series is holomorphic on the open disc and continuous on the closed disc.
+* `TauCeti.hasSum_unitDiscRiemannHilbertSolution`: for summable nonnegative-index Fourier
+  coefficients the series converges on the closed disc.
+* `TauCeti.diffContOnCl_unitDiscRiemannHilbertSolution`: for summable nonnegative-index Fourier
+  coefficients the series is holomorphic on the open disc and continuous on the closed disc.
 * `TauCeti.unitDiscRiemannHilbertSolution_sub_zpow_mul_conj`: it solves the Riemann–Hilbert
   problem when `c n = 0` for `k < n < 0`.
 * `TauCeti.exists_diffContOnCl_sub_zpow_mul_conj_eq_iff`: the problem is solvable exactly when
   `c n = 0` for `k < n < 0`.
 * `TauCeti.exists_diffContOnCl_sub_zpow_mul_conj_eq`: for `k ≥ -1` it is always solvable.
-* `TauCeti.summable_fourierCoeffOn_circleMap_of_contDiff`: `C²` boundary data have summable
-  Fourier coefficients.
 * `TauCeti.exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj`: for `k ≥ -1`, `∂/∂(conj z)` with
-  boundary values on `w ^ (k / 2) ℝ` is onto on compactly supported `C²` data.
+  boundary values `u(e^{iθ}) ∈ e^{ikθ/2} ℝ` is onto on compactly supported `C²` data.
 * `TauCeti.domRestrict_sub_mem_unitDiscCauchyRiemannKernel`: two solutions differ by an element of
   the kernel `TauCeti.unitDiscCauchyRiemannKernel k`.
 
@@ -100,11 +97,12 @@ open scoped ComplexConjugate Real
 /-! ### The explicit solution -/
 
 /-- The explicit solution of the Riemann–Hilbert problem on the unit disc with boundary values on
-the rotating line `w ^ (k / 2) ℝ`: the power series `∑ aₙ zⁿ` whose coefficient `aₙ` is the `n`-th
-Fourier coefficient `c n` of `θ ↦ φ(e^{iθ})` on `[0, 2π]`, halved for `n ≤ k`. When the
-Fourier coefficients are summable, it is holomorphic on the open disc and continuous on the closed
-disc (`TauCeti.diffContOnCl_unitDiscRiemannHilbertSolution`). If moreover `θ ↦ φ(e^{iθ})` is
-continuous, `φ w = -(w ^ k * conj (φ w))` on the unit circle and `c n = 0` for `k < n < 0`, it
+the rotating lines `e^{ikθ/2} ℝ` at `w = e^{iθ}`: the power series `∑ aₙ zⁿ` whose coefficient
+`aₙ` is the `n`-th Fourier coefficient `c n` of `θ ↦ φ(e^{iθ})` on `[0, 2π]`, halved for `n ≤ k`.
+When the Fourier coefficients `c n` with `n ≥ 0` are summable, it is holomorphic on the open disc
+and continuous on the closed disc (`TauCeti.diffContOnCl_unitDiscRiemannHilbertSolution`). If
+moreover `θ ↦ φ(e^{iθ})` is continuous with summable Fourier coefficients over `ℤ`,
+`φ w = -(w ^ k * conj (φ w))` on the unit circle and `c n = 0` for `k < n < 0`, it
 satisfies `h w - w ^ k * conj (h w) = φ w` on the unit circle
 (`TauCeti.unitDiscRiemannHilbertSolution_sub_zpow_mul_conj`). -/
 noncomputable def unitDiscRiemannHilbertSolution (k : ℤ) (φ : ℂ → ℂ) (z : ℂ) : ℂ :=
@@ -123,44 +121,6 @@ attribute [local instance] fact_two_pi_pos
 private theorem coe_toCircle_mem_sphere (x : AddCircle (2 * π)) :
     (toCircle x : ℂ) ∈ sphere (0 : ℂ) 1 := by
   simp
-
-/-- The Fourier coefficients of `φ` restricted to the unit circle, as a function on
-`AddCircle (2 * π)`, are those of `θ ↦ φ(e^{iθ})` on `[0, 2π]`. -/
-private theorem fourierCoeff_comp_toCircle (φ : ℂ → ℂ) (n : ℤ) :
-    fourierCoeff (fun x : AddCircle (2 * π) ↦ φ (toCircle x)) n =
-      fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n := by
-  rw [fourierCoeff_eq_fourierCoeffOn 0]
-  simp only [coe_toCircle_coe_eq_circleMap, zero_add]
-
-/-- The boundary values of `φ` on the unit circle are continuous as a function on
-`AddCircle (2 * π)` when `θ ↦ φ(e^{iθ})` is continuous. -/
-private theorem continuous_comp_toCircle (hφ : Continuous fun θ ↦ φ (circleMap 0 1 θ)) :
-    Continuous fun x : AddCircle (2 * π) ↦ φ (toCircle x) := by
-  refine (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.mpr ?_
-  simpa [Function.comp_def, coe_toCircle_coe_eq_circleMap] using hφ
-
-/-- On the unit circle, `w ^ k * conj (w ^ m) = w ^ (k - m)`. -/
-private theorem zpow_mul_conj_zpow {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) (k m : ℤ) :
-    w ^ k * conj (w ^ m) = w ^ (k - m) := by
-  have hw1 : ‖w‖ = 1 := by simpa using hw
-  have hw0 : w ≠ 0 := by rintro rfl; simp at hw1
-  rw [map_zpow₀, ← inv_eq_conj hw1, inv_zpow', ← zpow_add₀ hw0, sub_eq_add_neg]
-
-/-- **Fourier series on the unit circle.** If `θ ↦ φ(e^{iθ})` is continuous with summable Fourier
-coefficients `c n` on `[0, 2π]`, then `∑ c n w ^ n = φ w` at every point `w` of the unit circle. -/
-theorem hasSum_fourierCoeffOn_circleMap_mul_zpow (hφ : Continuous fun θ ↦ φ (circleMap 0 1 θ))
-    (hs : Summable fun n : ℤ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n)
-    {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) :
-    HasSum (fun n : ℤ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * w ^ n)
-      (φ w) := by
-  have hs' : Summable (fourierCoeff fun x : AddCircle (2 * π) ↦ φ (toCircle x)) := by
-    convert hs using 1
-    exact funext (fourierCoeff_comp_toCircle φ)
-  have := has_pointwise_sum_fourier_series_of_summable
-    (f := ⟨fun x ↦ φ (toCircle x), continuous_comp_toCircle hφ⟩) hs'
-    ((arg w : ℝ) : AddCircle (2 * π))
-  simpa only [ContinuousMap.coe_mk, fourierCoeff_comp_toCircle,
-    fourier_apply_eq_coe_toCircle_zpow, toCircle_arg_of_mem_sphere hw, smul_eq_mul] using this
 
 /-- The boundary condition `φ w = -(w ^ k * conj (φ w))` in terms of Fourier coefficients:
 `c n = -conj (c (k - n))`. -/
@@ -206,27 +166,22 @@ private theorem norm_coeff_mul_pow_le {b : ℂ} (n : ℕ) {z : ℂ} (hz : ‖z�
   calc _ ≤ 1 * ‖b‖ * 1 := by gcongr; exact pow_le_one₀ (norm_nonneg _) hz
     _ = ‖b‖ := by ring
 
-/-- Summable Fourier coefficients on `ℤ` give norm-summable coefficients on `ℕ`. -/
-private theorem summable_norm_natCast {b : ℤ → ℂ} (hs : Summable b) :
-    Summable fun n : ℕ ↦ ‖b n‖ :=
-  (summable_norm_iff.mpr hs).comp_injective Nat.cast_injective
-
 /-- **The power series of the explicit solution** converges on the closed unit disc when the
-Fourier coefficients of `θ ↦ φ(e^{iθ})` are summable. -/
+Fourier coefficients `c n` of `θ ↦ φ(e^{iθ})` with `n ≥ 0` are summable. -/
 theorem hasSum_unitDiscRiemannHilbertSolution
-    (hs : Summable fun n : ℤ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n)
+    (hs : Summable fun n : ℕ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n)
     {z : ℂ} (hz : ‖z‖ ≤ 1) :
     HasSum (fun n : ℕ ↦ ((if (n : ℤ) ≤ k then 2⁻¹ else 1) *
       fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n) * z ^ n)
       (unitDiscRiemannHilbertSolution k φ z) :=
-  ((summable_norm_natCast hs).of_norm_bounded fun n ↦ norm_coeff_mul_pow_le n hz).hasSum
+  ((summable_norm_iff.mpr hs).of_norm_bounded fun n ↦ norm_coeff_mul_pow_le n hz).hasSum
 
 /-- **The explicit solution is holomorphic on the disc and continuous up to the boundary**, when
-the Fourier coefficients of `θ ↦ φ(e^{iθ})` are summable. -/
+the Fourier coefficients `c n` of `θ ↦ φ(e^{iθ})` with `n ≥ 0` are summable. -/
 theorem diffContOnCl_unitDiscRiemannHilbertSolution
-    (hs : Summable fun n : ℤ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n) :
+    (hs : Summable fun n : ℕ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n) :
     DiffContOnCl ℂ (unitDiscRiemannHilbertSolution k φ) (ball 0 1) := by
-  have hn := summable_norm_natCast hs
+  have hn := summable_norm_iff.mpr hs
   refine ⟨differentiableOn_tsum_of_summable_norm hn
     (fun n ↦ ((differentiable_const _).mul (differentiable_id.pow n)).differentiableOn)
     isOpen_ball fun n z hz ↦ norm_coeff_mul_pow_le n ?_, ?_⟩
@@ -253,7 +208,8 @@ theorem unitDiscRiemannHilbertSolution_sub_zpow_mul_conj
   have hw1 : ‖w‖ = 1 := by simpa using hw
   -- The power series of `h` at `w`, as a sum over `ℤ`.
   have hhw : HasSum (fun n : ℤ ↦ solutionCoeff k b n * w ^ n) h := by
-    have hN := hasSum_unitDiscRiemannHilbertSolution (k := k) hs hw1.le
+    have hN := hasSum_unitDiscRiemannHilbertSolution (k := k)
+      (hs.comp_injective Nat.cast_injective) hw1.le
     refine (Nat.cast_injective.hasSum_iff fun n hn ↦ ?_).mp ?_
     · have : n < 0 := by
         by_contra! h0
@@ -266,7 +222,7 @@ theorem unitDiscRiemannHilbertSolution_sub_zpow_mul_conj
     rw [← (Equiv.subLeft k).hasSum_iff] at this
     convert this using 2 with n
     simp only [Function.comp_apply, Equiv.subLeft_apply, map_mul]
-    rw [mul_left_comm, zpow_mul_conj_zpow hw, sub_sub_cancel]
+    rw [mul_left_comm, zpow_mul_conj_zpow_of_mem_sphere hw, sub_sub_cancel]
   refine (hhw.sub hchw).unique ?_
   convert hasSum_fourierCoeffOn_circleMap_mul_zpow hφ hs hw using 2 with n
   rw [← sub_mul, solutionCoeff_sub_conj (fun n ↦ fourierCoeffOn_eq_neg_conj hb n) hvan]
@@ -287,7 +243,7 @@ theorem exists_diffContOnCl_sub_zpow_mul_conj_eq_iff
       ∀ n : ℤ, k < n → n < 0 →
         fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n = 0 := by
   refine ⟨fun ⟨h, hh, hhb⟩ n hkn hn ↦ ?_, fun hvan ↦
-    ⟨_, diffContOnCl_unitDiscRiemannHilbertSolution hs,
+    ⟨_, diffContOnCl_unitDiscRiemannHilbertSolution (hs.comp_injective Nat.cast_injective),
       fun w hw ↦ unitDiscRiemannHilbertSolution_sub_zpow_mul_conj hφ hs hb hvan hw⟩⟩
   have hc : Continuous fun x : AddCircle (2 * π) ↦ h (toCircle x) := by
     refine hh.continuousOn.comp_continuous (continuous_subtype_val.comp continuous_toCircle)
@@ -298,13 +254,12 @@ theorem exists_diffContOnCl_sub_zpow_mul_conj_eq_iff
     (map_continuous (fourier k)).mul (continuous_conj.comp hc)
   have hi {g : AddCircle (2 * π) → ℂ} (hg : Continuous g) : Integrable g haarAddCircle :=
     hg.integrable_of_hasCompactSupport (.of_compactSpace _)
-  rw [← fourierCoeff_comp_toCircle,
-    show (fun x : AddCircle (2 * π) ↦ φ (toCircle x)) =
-      fun x ↦ h (toCircle x) - fourier k x * conj (h (toCircle x)) from
-      funext fun x ↦ by
-        rw [fourier_apply_eq_coe_toCircle_zpow, hhb _ (coe_toCircle_mem_sphere x)],
-    fourierCoeff_sub (hi hc) (hi hc'), fourierCoeff_fourier_mul_conj,
-    hh.fourierCoeff_comp_toCircle_eq_zero hn, hh.fourierCoeff_comp_toCircle_eq_zero (by omega)]
+  have hφh : (fun x : AddCircle (2 * π) ↦ φ (toCircle x)) =
+      fun x ↦ h (toCircle x) - fourier k x * conj (h (toCircle x)) := funext fun x ↦ by
+    rw [fourier_apply_eq_coe_toCircle_zpow, hhb _ (coe_toCircle_mem_sphere x)]
+  rw [← fourierCoeff_comp_toCircle, hφh, fourierCoeff_sub (hi hc) (hi hc'),
+    fourierCoeff_fourier_mul_conj, hh.fourierCoeff_comp_toCircle_eq_zero hn,
+    hh.fourierCoeff_comp_toCircle_eq_zero (by omega)]
   simp
 
 /-- **The Riemann–Hilbert problem is solvable for `k ≥ -1`.** If `θ ↦ φ(e^{iθ})` is continuous
@@ -319,30 +274,14 @@ theorem exists_diffContOnCl_sub_zpow_mul_conj_eq (hk : -1 ≤ k)
       ∀ w ∈ sphere (0 : ℂ) 1, h w - w ^ k * conj (h w) = φ w :=
   (exists_diffContOnCl_sub_zpow_mul_conj_eq_iff hφ hs hb).mpr fun n hkn hn ↦ by omega
 
-/-- **`C²` boundary data have summable Fourier coefficients.** If `θ ↦ φ(e^{iθ})` is of class
-`C²`, its Fourier coefficients on `[0, 2π]` are `O(n⁻²)`, hence summable. -/
-theorem summable_fourierCoeffOn_circleMap_of_contDiff
-    (hφ : ContDiff ℝ 2 fun θ ↦ φ (circleMap 0 1 θ)) :
-    Summable fun n : ℤ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n := by
-  obtain ⟨C, hC⟩ := exists_abs_pow_mul_norm_fourierCoeff_le (k := 2)
-    (f := fun x : AddCircle (2 * π) ↦ φ (toCircle x))
-    (by simpa [coe_toCircle_coe_eq_circleMap] using hφ)
-  refine ((Real.summable_one_div_int_pow.mpr one_lt_two).mul_left C).of_norm_bounded_eventually ?_
-  filter_upwards [Filter.eventually_cofinite_ne 0] with n hn
-  have hn2 : 0 < (n : ℝ) ^ 2 := by positivity
-  have := hC n
-  rw [fourierCoeff_comp_toCircle, pow_abs, abs_of_pos hn2] at this
-  rw [mul_one_div, le_div_iff₀ hn2, mul_comm]
-  exact this
-
 /-! ### Surjectivity of the Cauchy–Riemann operator for `k ≥ -1` -/
 
-/-- The boundary defect `w ^ k * conj (v w) - v w` of any function `v` takes values on the line
-`i w ^ (k / 2) ℝ`, the data side of the Riemann–Hilbert problem. -/
+/-- The boundary defect `w ^ k * conj (v w) - v w` of any function `v` lies, at `w = e^{iθ}`, on
+the line `i e^{ikθ/2} ℝ`, the data side of the Riemann–Hilbert problem. -/
 private theorem zpow_mul_conj_sub_eq_neg (v : ℂ → ℂ) {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) :
     w ^ k * conj (v w) - v w = -(w ^ k * conj (w ^ k * conj (v w) - v w)) := by
-  rw [map_sub, map_mul, conj_conj, mul_sub, ← mul_assoc, zpow_mul_conj_zpow hw, sub_self,
-    zpow_zero]
+  rw [map_sub, map_mul, conj_conj, mul_sub, ← mul_assoc, zpow_mul_conj_zpow_of_mem_sphere hw,
+    sub_self, zpow_zero]
   ring
 
 /-- **Correcting boundary values.** For `k ≥ -1` and a `C²` function `v`, there is `h`,
@@ -392,7 +331,7 @@ theorem exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj (hk : -1 ≤ k) {f : �
 
 /-- **Uniqueness modulo the kernel.** Two functions, continuous on the closed unit disc and real
 differentiable on the open disc, with the same `∂/∂(conj z)` on the open disc and boundary values
-on the line `w ^ (k / 2) ℝ`, differ on the closed disc by an element of the kernel
+at `w = e^{iθ}` on the line `e^{ikθ/2} ℝ`, differ on the closed disc by an element of the kernel
 `TauCeti.unitDiscCauchyRiemannKernel k`. -/
 theorem domRestrict_sub_mem_unitDiscCauchyRiemannKernel {u₁ u₂ : ℂ → ℂ}
     (hc₁ : ContinuousOn u₁ (closedBall 0 1)) (hc₂ : ContinuousOn u₂ (closedBall 0 1))
