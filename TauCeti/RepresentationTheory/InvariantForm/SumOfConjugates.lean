@@ -21,11 +21,11 @@ symmetric.
 
 Over an ordered field the construction also produces a *nonzero* invariant symmetric form on any
 nontrivial representation: sum the coordinate dot product read in a basis.
-Positivity is what makes the sum nonzero -- the sum of the nonnegative numbers
-`B₀ (σ g x) (σ g x)` is at least its term at `g = 1`, which is positive -- so it is the ordering of
-the field, not a division by `|G|`, that does the work.  For an irreducible complex representation
-of a finite group with a real form, this form on the real form, transported to the complex space,
-is the nonzero invariant symmetric form that gives Frobenius-Schur indicator `+1`
+Positivity is what makes the sum nonzero -- on the diagonal the sum of a nonnegative form dominates
+its term at `g = 1`, so the sum of a positive definite form is again positive definite -- so it is
+the ordering of the field, not a division by `|G|`, that does the work.  For an irreducible complex
+representation of a finite group with a real form, this form on the real form, transported to the
+complex space, is the nonzero invariant symmetric form that gives Frobenius-Schur indicator `+1`
 (`Representation.IsRealForm.frobeniusSchurIndicator_eq_one`).
 
 ## Main definitions
@@ -153,16 +153,15 @@ section OrderedField
 variable {k G W : Type*} [Field k] [LinearOrder k] [IsStrictOrderedRing k] [Group G] [Finite G]
   [AddCommGroup W] [Module k W]
 
-/-- **A representation of a finite group over an ordered field carries a nonzero invariant
-symmetric form.**  Take the dot product read in a basis and sum it over the conjugates; that sum
-preserves symmetry, and it dominates its term at `g = 1`, which is the value `B₀ x x` of the dot
-product itself and is positive for `x ≠ 0`.  So the sum does not vanish.  This is the input over
-`ℝ` to the orthogonality of a representation with a real form. -/
+/-- **A representation of a finite group on a nontrivial space over an ordered field carries a
+nonzero invariant symmetric form.**  The space need not be finite-dimensional.  This is the input
+over `ℝ` to the orthogonality of a representation with a real form. -/
 theorem exists_isInvariantForm_isSymm_ne_zero (σ : Representation k G W) [Nontrivial W] :
     ∃ B : BilinForm k W, IsInvariantForm σ B ∧ B.IsSymm ∧ B ≠ 0 := by
   classical
   have : Fintype G := Fintype.ofFinite G
-  -- The permutation form of the coordinate space, pulled back along the coordinates of a basis.
+  -- The permutation form of the coordinate space, pulled back along the coordinates of a basis, is
+  -- symmetric and positive definite, hence so is its sum over the conjugates, which is nonzero.
   let e : W ≃ₗ[k] MonoidAlgebra k (Module.Free.ChooseBasisIndex k W) :=
     (Module.Free.chooseBasis k W).repr.trans (MonoidAlgebra.coeffLinearEquiv k).symm
   set B₀ : BilinForm k W :=
