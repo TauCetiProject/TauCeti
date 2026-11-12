@@ -52,8 +52,8 @@ def toConjDiffeomorph :
     TotalSpace F E ≃ₘ^n⟮IB.prod 𝓘(ℝ, F), IB.prod 𝓘(ℝ, Conjugate F)⟯
       TotalSpace (Conjugate F) (ConjugateBundle E) where
   toEquiv := (toConjHomeomorph F E).toEquiv
-  contMDiff_toFun := contMDiff_id
-  contMDiff_invFun := contMDiff_id
+  contMDiff_toFun := contMDiff_id.congr toConjHomeomorph_apply
+  contMDiff_invFun := contMDiff_id.congr toConjHomeomorph_symm_apply
 
 @[simp] theorem toConjDiffeomorph_apply (p : TotalSpace F E) :
     toConjDiffeomorph IB n F E p = toConjHomeomorph F E p := (rfl)

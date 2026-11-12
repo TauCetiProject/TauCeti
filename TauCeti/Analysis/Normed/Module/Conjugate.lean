@@ -8,50 +8,24 @@ module
 public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.LinearAlgebra.Complex.Conjugate
 
 /-!
-# The complex conjugate of a complex vector space
+# Topology and norm on the complex conjugate of a complex vector space
 
-For a complex module `V`, `TauCeti.Conjugate V` is a type synonym for `V` carrying the same
-additive group, real module structure, topology and norm, and the conjugated complex action
-`c • v = conj c • v` (`Module.compHom V (starRingEnd ℂ)`). The identity `V → Conjugate V` is then
-a conjugate-linear equivalence (`TauCeti.Conjugate.toConjₗ`, `TauCeti.Conjugate.toConjL`), a
-conjugate-linear map `V → W` becomes a complex-linear map `V → Conjugate W`
-(`LinearMap.toConjugate`), conjugating twice gives back `V`, and conjugation commutes with
-products.
-
-A real subspace of `V` is read as a real subspace of `Conjugate V` (`Submodule.conjugate`); the
-totally real subspaces of `V` and `Conjugate V` correspond under it
-(`TauCeti.Analysis.Normed.Module.Conjugate.TotallyReal`).
-
-## Design
-
-Mathlib has no conjugate-module construction, only the semilinear-map conventions
-(`V →ₗ⋆[ℂ] W`, `starRingEnd ℂ`). There are two natural carriers for the conjugate: a type synonym
-with conjugated action, or keeping `V` as a real module and negating its complex structure
-(as `SmoothAlmostComplexStructure.neg` does for almost complex structures). We use the type
-synonym. It is a genuine `Module ℂ`, so every complex-linear construction (complex vector
-bundles, direct sums, characteristic classes of complex bundles) applies to it unchanged, while
-the negated-structure carrier would have to be re-equipped as a complex module before any of them
-can be used. The real-module structure is copied from `V` rather than restricted from the
-conjugated action, so that the real structures of `V` and `Conjugate V` agree definitionally; in
-particular a complex vector bundle and its conjugate share their real trivializations.
-
-The construction is specific to `ℂ`: a version over a general star ring would put two
-non-definitionally-equal real module structures on `Conjugate V` when the scalars are `ℝ`.
+The conjugate `TauCeti.Conjugate V` of a complex module `V`
+(`TauCeti.LinearAlgebra.Complex.Conjugate`) carries the topology and (semi)norm of `V`; with the
+conjugated complex action it is again a topological vector space and a normed space. The identity
+`V → Conjugate V` is a continuous conjugate-linear equivalence (`TauCeti.Conjugate.toConjL`),
+conjugating twice gives back `V`, and conjugation commutes with products.
 
 ## Main declarations
 
-* `TauCeti.Conjugate`: the conjugate complex vector space, with `TauCeti.Conjugate.toConj` and
-  `TauCeti.Conjugate.ofConj`.
-* `TauCeti.Conjugate.toConjₗ`, `TauCeti.Conjugate.toConjL`: the identity as a conjugate-linear
-  (continuous) equivalence; `TauCeti.Conjugate.toConjL'` is the identity as a real-linear one.
-* `LinearMap.toConjugate`: a conjugate-linear map as a complex-linear map into the conjugate.
+* `TauCeti.Conjugate.toConjL`: the identity as a continuous conjugate-linear equivalence;
+  `TauCeti.Conjugate.toConjL'` is the identity as a continuous real-linear one.
 * `ContinuousLinearMap.conjugate`: the conjugate of a continuous complex-linear map, an isometry.
 * `TauCeti.Conjugate.conjugateConjugateL`: `Conjugate (Conjugate V) ≃L[ℂ] V`.
 * `TauCeti.Conjugate.prodL`: `Conjugate (V × W) ≃L[ℂ] Conjugate V × Conjugate W`.
-* `Submodule.conjugate`: a real subspace of `V`, read as a real subspace of `Conjugate V`.
 * `TauCeti.Conjugate.complexConjL`: complex conjugation is a complex-linear isomorphism
   `ℂ ≃L[ℂ] Conjugate ℂ`; it agrees with the identity exactly on the real line.
 -/
@@ -64,95 +38,9 @@ open ComplexConjugate
 
 namespace TauCeti
 
-/-- The complex conjugate of a complex module `V`: the same additive group, real structure,
-topology and norm, with complex scalars acting through complex conjugation. -/
-@[expose] def Conjugate (V : Type*) : Type _ := V
-
 namespace Conjugate
 
 variable {V W : Type*}
-
-/-- The identity map from `V` to its conjugate. -/
-@[expose] def toConj : V ≃ Conjugate V := Equiv.refl _
-
-/-- The identity map from the conjugate of `V` to `V`. -/
-@[expose] def ofConj : Conjugate V ≃ V := Equiv.refl _
-
-@[simp] theorem toConj_symm : (toConj : V ≃ Conjugate V).symm = ofConj := rfl
-@[simp] theorem ofConj_symm : (ofConj : Conjugate V ≃ V).symm = toConj := rfl
-@[simp] theorem toConj_ofConj (v : Conjugate V) : toConj (ofConj v) = v := rfl
-@[simp] theorem ofConj_toConj (v : V) : ofConj (toConj v) = v := rfl
-theorem toConj_inj {v w : V} : toConj v = toConj w ↔ v = w := Iff.rfl
-theorem ofConj_inj {v w : Conjugate V} : ofConj v = ofConj w ↔ v = w := Iff.rfl
-
-/-! ### Algebraic structure -/
-
-instance instAddCommGroup [AddCommGroup V] : AddCommGroup (Conjugate V) := ‹AddCommGroup V›
-
-section AddCommGroup
-
-variable [AddCommGroup V]
-
-@[simp] theorem toConj_zero : toConj (0 : V) = 0 := rfl
-@[simp] theorem ofConj_zero : ofConj (0 : Conjugate V) = 0 := rfl
-@[simp] theorem toConj_add (v w : V) : toConj (v + w) = toConj v + toConj w := rfl
-@[simp] theorem ofConj_add (v w : Conjugate V) : ofConj (v + w) = ofConj v + ofConj w := rfl
-@[simp] theorem toConj_neg (v : V) : toConj (-v) = -toConj v := rfl
-@[simp] theorem ofConj_neg (v : Conjugate V) : ofConj (-v) = -ofConj v := rfl
-@[simp] theorem toConj_sub (v w : V) : toConj (v - w) = toConj v - toConj w := rfl
-@[simp] theorem ofConj_sub (v w : Conjugate V) : ofConj (v - w) = ofConj v - ofConj w := rfl
-
-/-- The real structure of the conjugate is that of `V`. -/
-instance instModuleReal [Module ℝ V] : Module ℝ (Conjugate V) := ‹Module ℝ V›
-
-/-- Complex scalars act on the conjugate through complex conjugation. -/
-instance instModuleComplex [Module ℂ V] : Module ℂ (Conjugate V) :=
-  Module.compHom V (starRingEnd ℂ)
-
-@[simp] theorem toConj_smul_real [Module ℝ V] (r : ℝ) (v : V) :
-    toConj (r • v) = r • toConj v := rfl
-
-@[simp] theorem ofConj_smul_real [Module ℝ V] (r : ℝ) (v : Conjugate V) :
-    ofConj (r • v) = r • ofConj v := rfl
-
-/-- The identity map `V → Conjugate V` as a real-linear equivalence. -/
-def toConjₗ' [Module ℝ V] : V ≃ₗ[ℝ] Conjugate V where
-  __ := toConj
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-@[simp] theorem coe_toConjₗ' [Module ℝ V] : ⇑(toConjₗ' : V ≃ₗ[ℝ] Conjugate V) = toConj := (rfl)
-@[simp] theorem coe_toConjₗ'_symm [Module ℝ V] :
-    ⇑(toConjₗ' : V ≃ₗ[ℝ] Conjugate V).symm = ofConj := (rfl)
-
-variable [Module ℂ V]
-
-theorem smul_toConj (c : ℂ) (v : V) : c • toConj v = toConj (conj c • v) := rfl
-
-@[simp] theorem ofConj_smul (c : ℂ) (v : Conjugate V) : ofConj (c • v) = conj c • ofConj v := rfl
-
-@[simp] theorem toConj_smul (c : ℂ) (v : V) : toConj (c • v) = conj c • toConj v := by
-  simp [smul_toConj]
-
-instance instIsScalarTower [Module ℝ V] [IsScalarTower ℝ ℂ V] :
-    IsScalarTower ℝ ℂ (Conjugate V) where
-  smul_assoc r c v := by
-    apply ofConj.injective
-    rw [ofConj_smul, ofConj_smul_real, ofConj_smul, ← smul_assoc]
-    congr 1
-    simp [Complex.real_smul]
-
-/-- The identity map `V → Conjugate V` as a conjugate-linear equivalence. -/
-def toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V where
-  __ := toConj
-  map_add' _ _ := rfl
-  map_smul' := toConj_smul
-
-@[simp] theorem coe_toConjₗ : ⇑(toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V) = toConj := (rfl)
-@[simp] theorem coe_toConjₗ_symm :
-    ⇑(toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V).symm = ofConj := (rfl)
-
-end AddCommGroup
 
 /-! ### Topological and normed structure -/
 
@@ -199,32 +87,37 @@ instance instContinuousConstSMulComplex [AddCommGroup V] [Module ℂ V] [Topolog
 
 instance instT2Space [TopologicalSpace V] [T2Space V] : T2Space (Conjugate V) := ‹T2Space V›
 
-instance instNormedAddCommGroup [NormedAddCommGroup V] : NormedAddCommGroup (Conjugate V) :=
-  ‹NormedAddCommGroup V›
+/-- The seminorm of the conjugate is that of `V`. It is built field by field, rather than as the
+instance of `V` itself, so that `instNormedAddCommGroup` restricts to it up to instance
+reducibility and the normed-space instances below apply to normed `V`. -/
+instance instSeminormedAddCommGroup [h : SeminormedAddCommGroup V] :
+    SeminormedAddCommGroup (Conjugate V) where
+  toNorm := h.toNorm
+  toAddCommGroup := h.toAddCommGroup
+  toPseudoMetricSpace := h.toPseudoMetricSpace
+  dist_eq := h.dist_eq
 
-@[simp] theorem norm_toConj [NormedAddCommGroup V] (v : V) : ‖toConj v‖ = ‖v‖ := rfl
-@[simp] theorem norm_ofConj [NormedAddCommGroup V] (v : Conjugate V) : ‖ofConj v‖ = ‖v‖ := rfl
+/-- The norm of the conjugate is that of `V`, extending `instSeminormedAddCommGroup`. -/
+instance instNormedAddCommGroup [NormedAddCommGroup V] : NormedAddCommGroup (Conjugate V) where
+  __ := instSeminormedAddCommGroup
+  eq_of_dist_eq_zero := eq_of_dist_eq_zero (γ := V)
 
-instance instNormedSpaceReal [NormedAddCommGroup V] [NormedSpace ℝ V] :
+@[simp] theorem norm_toConj [SeminormedAddCommGroup V] (v : V) : ‖toConj v‖ = ‖v‖ := rfl
+@[simp] theorem norm_ofConj [SeminormedAddCommGroup V] (v : Conjugate V) :
+    ‖ofConj v‖ = ‖v‖ := rfl
+
+instance instNormedSpaceReal [SeminormedAddCommGroup V] [NormedSpace ℝ V] :
     NormedSpace ℝ (Conjugate V) :=
   ‹NormedSpace ℝ V›
 
-instance instNormedSpaceComplex [NormedAddCommGroup V] [NormedSpace ℂ V] :
+instance instNormedSpaceComplex [SeminormedAddCommGroup V] [NormedSpace ℂ V] :
     NormedSpace ℂ (Conjugate V) where
   norm_smul_le c v := by
     rw [← norm_ofConj, ofConj_smul, norm_smul, Complex.norm_conj, norm_ofConj]
 
-instance instCompleteSpace [NormedAddCommGroup V] [CompleteSpace V] :
+instance instCompleteSpace [SeminormedAddCommGroup V] [CompleteSpace V] :
     CompleteSpace (Conjugate V) :=
   ‹CompleteSpace V›
-
-instance instFiniteReal [AddCommGroup V] [Module ℝ V] [Module.Finite ℝ V] :
-    Module.Finite ℝ (Conjugate V) :=
-  ‹Module.Finite ℝ V›
-
-instance instFiniteComplex [AddCommGroup V] [Module ℂ V] [Module.Finite ℂ V] :
-    Module.Finite ℂ (Conjugate V) :=
-  .of_surjective toConjₗ.toLinearMap toConjₗ.surjective
 
 section TopologicalModule
 
@@ -232,7 +125,9 @@ variable [AddCommGroup V] [TopologicalSpace V]
 
 /-- The identity map `V → Conjugate V` as a continuous conjugate-linear equivalence. -/
 def toConjL [Module ℂ V] : V ≃L⋆[ℂ] Conjugate V where
-  __ := toConjₗ
+  __ := toConj
+  map_add' _ _ := rfl
+  map_smul' := toConj_smul
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
@@ -242,7 +137,9 @@ def toConjL [Module ℂ V] : V ≃L⋆[ℂ] Conjugate V where
 
 /-- The identity map `V → Conjugate V` as a continuous real-linear equivalence. -/
 def toConjL' [Module ℝ V] : V ≃L[ℝ] Conjugate V where
-  __ := toConjₗ'
+  __ := toConj
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
@@ -257,23 +154,6 @@ end Conjugate
 end TauCeti
 
 open TauCeti TauCeti.Conjugate
-
-/-! ### Conjugate-linear maps as complex-linear maps into the conjugate -/
-
-namespace LinearMap
-
-variable {V W : Type*} [AddCommGroup V] [Module ℂ V] [AddCommGroup W] [Module ℂ W]
-
-/-- A conjugate-linear map `V → W` as a complex-linear map `V → Conjugate W`. -/
-def toConjugate (f : V →ₗ⋆[ℂ] W) : V →ₗ[ℂ] Conjugate W where
-  toFun v := toConj (f v)
-  map_add' v w := by simp
-  map_smul' c v := by simp
-
-@[simp] theorem toConjugate_apply (f : V →ₗ⋆[ℂ] W) (v : V) : f.toConjugate v = toConj (f v) :=
-  (rfl)
-
-end LinearMap
 
 namespace ContinuousLinearMap
 
@@ -311,8 +191,8 @@ end TopologicalModule
 
 section Normed
 
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-  [NormedAddCommGroup W] [NormedSpace ℂ W]
+variable {V W : Type*} [SeminormedAddCommGroup V] [NormedSpace ℂ V]
+  [SeminormedAddCommGroup W] [NormedSpace ℂ W]
 
 /-- Conjugation preserves operator norms. -/
 @[simp] theorem norm_conjugate (f : V →L[ℂ] W) : ‖f.conjugate‖ = ‖f‖ := by
@@ -376,25 +256,6 @@ def prodL : Conjugate (V × W) ≃L[ℂ] Conjugate V × Conjugate W where
     (prodL : Conjugate (V × W) ≃L[ℂ] _).symm v = toConj (ofConj v.1, ofConj v.2) := (rfl)
 
 end TauCeti.Conjugate
-
-/-! ### Real subspaces -/
-
-namespace Submodule
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V]
-
-/-- A real subspace of `V`, read as a real subspace of `Conjugate V`. -/
-@[expose] def conjugate (L : Submodule ℝ V) : Submodule ℝ (Conjugate V) :=
-  L.map (toConjₗ' : V ≃ₗ[ℝ] Conjugate V).toLinearMap
-
-@[simp] theorem mem_conjugate {L : Submodule ℝ V} {v : Conjugate V} :
-    v ∈ L.conjugate ↔ ofConj v ∈ L := by
-  simp [conjugate, Submodule.mem_map_equiv]
-
-theorem toConj_mem_conjugate {L : Submodule ℝ V} {v : V} : toConj v ∈ L.conjugate ↔ v ∈ L :=
-  mem_conjugate
-
-end Submodule
 
 /-! ### Check: the conjugate of `ℂ` -/
 

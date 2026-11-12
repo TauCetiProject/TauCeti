@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Conjugate
+public import TauCeti.LinearAlgebra.Complex.Conjugate
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 
 /-!
@@ -62,13 +62,15 @@ theorem conjugate_map_lsmul_I (L : Submodule ℝ V) :
           (-(LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ) := by
     ext v
     simp [← neg_smul]
-  rw [conjugate, conjugate, ← Submodule.map_comp, h, Submodule.map_comp, Submodule.map_neg]
+  rw [← map_toConjₗ', ← map_toConjₗ', ← Submodule.map_comp, h, Submodule.map_comp,
+    Submodule.map_neg]
 
 /-- A real subspace is totally real in `V` exactly when it is totally real in `Conjugate V`. -/
 theorem isTotallyReal_conjugate_iff {L : Submodule ℝ V} :
     IsTotallyReal ((LinearMap.lsmul ℂ (Conjugate V) Complex.I).restrictScalars ℝ) L.conjugate ↔
       IsTotallyReal ((LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ) L := by
   rw [isTotallyReal_iff, isTotallyReal_iff, conjugate_map_lsmul_I]
+  rw [← map_toConjₗ', ← map_toConjₗ']
   exact disjoint_map_orderIso_iff (Submodule.orderIsoMapComap toConjₗ')
 
 /-- A real subspace is maximal totally real in `V` exactly when it is maximal totally real in
@@ -78,6 +80,7 @@ theorem isMaximalTotallyReal_conjugate_iff {L : Submodule ℝ V} :
         L.conjugate ↔
       IsMaximalTotallyReal ((LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ) L := by
   rw [isMaximalTotallyReal_iff, isMaximalTotallyReal_iff, conjugate_map_lsmul_I]
+  rw [← map_toConjₗ', ← map_toConjₗ']
   exact ((Submodule.orderIsoMapComap toConjₗ').isCompl_iff).symm
 
 end Submodule

@@ -64,7 +64,7 @@ instance instTopologicalSpaceTotalSpace :
 
 /-- The identity of total spaces, `E → ConjugateBundle E`, as a homeomorphism covering the
 identity of the base. -/
-@[expose] def toConjHomeomorph :
+def toConjHomeomorph :
     TotalSpace F E ≃ₜ TotalSpace (Conjugate F) (ConjugateBundle E) where
   toFun p := ⟨p.proj, toConj p.2⟩
   invFun p := ⟨p.proj, ofConj p.2⟩
@@ -76,13 +76,13 @@ identity of the base. -/
 variable {F E}
 
 @[simp] theorem toConjHomeomorph_apply (p : TotalSpace F E) :
-    toConjHomeomorph F E p = ⟨p.proj, toConj p.2⟩ := rfl
+    toConjHomeomorph F E p = ⟨p.proj, toConj p.2⟩ := (rfl)
 
 @[simp] theorem toConjHomeomorph_symm_apply (p : TotalSpace (Conjugate F) (ConjugateBundle E)) :
-    (toConjHomeomorph F E).symm p = ⟨p.proj, ofConj p.2⟩ := rfl
+    (toConjHomeomorph F E).symm p = ⟨p.proj, ofConj p.2⟩ := (rfl)
 
-@[simp] theorem proj_toConjHomeomorph (p : TotalSpace F E) :
-    (toConjHomeomorph F E p).proj = p.proj := rfl
+theorem proj_toConjHomeomorph (p : TotalSpace F E) :
+    (toConjHomeomorph F E p).proj = p.proj := (rfl)
 
 /-- On each fibre, the identity `E → ConjugateBundle E` is the conjugate-linear equivalence
 `TauCeti.Conjugate.toConjL`. -/
@@ -102,7 +102,7 @@ variable [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E : B → Type*}
 
 /-- A trivialization of `E`, read as a trivialization of the conjugate bundle with model fibre
 `Conjugate F`. -/
-@[expose] def _root_.Bundle.Trivialization.conjugate (e : Trivialization F (π F E)) :
+def _root_.Bundle.Trivialization.conjugate (e : Trivialization F (π F E)) :
     Trivialization (Conjugate F) (π (Conjugate F) (ConjugateBundle E)) :=
   e
 
@@ -119,6 +119,14 @@ theorem _root_.Bundle.Trivialization.conjugate_apply (e : Trivialization F (π F
     (p : TotalSpace (Conjugate F) (ConjugateBundle E)) :
     e.conjugate p =
       ((e ((toConjHomeomorph F E).symm p)).1, toConj (e ((toConjHomeomorph F E).symm p)).2) :=
+  (rfl)
+
+/-- Evaluation of the inverse of a conjugated trivialization: read the fibre coordinate in `F`,
+apply the inverse of the trivialization of `E`, and read the result in the conjugate bundle. -/
+theorem _root_.Bundle.Trivialization.conjugate_symm_apply (e : Trivialization F (π F E))
+    (q : B × Conjugate F) :
+    e.conjugate.toOpenPartialHomeomorph.symm q =
+      toConjHomeomorph F E (e.toOpenPartialHomeomorph.symm (q.1, ofConj q.2)) :=
   (rfl)
 
 theorem _root_.Bundle.Trivialization.conjugate_injective :
