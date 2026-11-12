@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
@@ -22,6 +22,8 @@ by restriction from the full weight lattice. The latter can miss torus points, a
 adjoint type A₁ over ℚ. All results hold over every commutative ring. We call the generated
 subgroup `borelSubgroup`; we do not identify it with all points of a Borel subgroup scheme
 or assert maximal solvability here. No ordered-product normal form for `U` is assumed.
+The opposite-intersection theorem also shows that a negative root element in `B` must be
+the identity; this detects when a simple Weyl conjugate leaves `B`.
 
 ## References
 
@@ -30,6 +32,8 @@ or assert maximal solvability here. No ordered-product normal form for `U` is as
 -/
 
 public section
+
+open TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 
@@ -110,5 +114,34 @@ theorem map_borelSubgroup_le {B : Type w} [CommRing B] (f : A →+* B) :
     simpa only [Subgroup.mem_comap, D.map_torusPoints] using
       D.range_torusPoints_le_borelSubgroup B
         ⟨fun i => Units.map f.toMonoidHom (s i), rfl⟩
+
+/-- A negative root element belonging to the positive Borel-type subgroup is the identity.
+This does not assume that the root parameter is injective. -/
+theorem rootSubgroupPoints_eq_one_of_mem_borelSubgroup {γ : Fin t.numRoots}
+    (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (a : Multiplicative A) (ha : D.rootSubgroupPoints γ A a ∈ D.borelSubgroup A) :
+    D.rootSubgroupPoints γ A a = 1 := by
+  obtain ⟨u, hu, s, hs⟩ := (D.mem_borelSubgroup_iff A).mp ha
+  obtain ⟨v, hv, hvu⟩ := (D.mem_positivePoints_iff.mp hu)
+  let m := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
+  have hm : Function.Injective m :=
+    Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
+  let x := chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+    D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) a
+  have hx : x = v * kostantTorusPoints D.lattice D.basis D.coordinateWeight
+      (CommAlgCat.of ℤ A) s := by
+    apply hm
+    simpa only [m, x, MulEquiv.toMonoidHom_eq_coe, map_mul,
+      D.coe_rootSubgroupPoints, Subgroup.coe_mul,
+      basisMatrix_kostantTorusPoints, hvu, D.coe_torusPoints,
+      kostantTorusMatrix_apply] using congrArg Subtype.val hs.symm
+  have hxbot : x ∈ (⊥ : Subgroup _) := by
+    rw [← D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A]
+    refine ⟨D.chevalleyRootSubgroup_mem_negativeSubgroup (CommAlgCat.of ℤ A) hγ a, ?_⟩
+    rw [hx]
+    exact Subgroup.mul_mem _ (Subgroup.mem_sup_left hv) (Subgroup.mem_sup_right ⟨s, rfl⟩)
+  apply Subtype.ext
+  exact (D.coe_rootSubgroupPoints γ A a).trans
+    ((congrArg m (Subgroup.mem_bot.mp hxbot)).trans m.map_one)
 
 end TauCeti.DynkinType.ChevalleyDatum
