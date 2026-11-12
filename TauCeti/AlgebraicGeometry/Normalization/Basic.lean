@@ -39,6 +39,8 @@ part of `f.normalization` over the open image of `f` is the normalization of `Y`
   normalization of a scheme-theoretically dominant morphism is scheme-theoretically dominant.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_toNormalization`: over the image of an open immersion
   `f : Y ⟶ J`, the normalization of `J` in `Y` is `Y`.
+* `TauCeti.AlgebraicGeometry.overNormalization`: the normalization of an integral scheme `X` over
+  `S`, in its function field, lies over `S` through the normalization morphism.
 
 ## References
 
@@ -143,3 +145,26 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.isSchemeTheoreticallyDominant_fromN
   exact IsSchemeTheoreticallyDominant.of_comp f.toNormalization f.fromNormalization
 
 end TauCeti
+
+namespace TauCeti.AlgebraicGeometry
+
+open CategoryTheory _root_.AlgebraicGeometry
+
+universe u
+
+variable {S : Scheme.{u}} (X : Scheme.{u}) [X.Over S] [IsIntegral X]
+
+/-- The normalization of an integral scheme over `S` lies over `S` through the normalization
+morphism. -/
+noncomputable instance overNormalization :
+    (X.fromSpecStalk (genericPoint X)).normalization.Over S where
+  hom := (X.fromSpecStalk (genericPoint X)).fromNormalization ≫ X ↘ S
+
+/-- The structure morphism of the normalization is the normalization morphism followed by that of
+`X`. -/
+theorem normalization_over_hom :
+    (X.fromSpecStalk (genericPoint X)).normalization ↘ S =
+      (X.fromSpecStalk (genericPoint X)).fromNormalization ≫ X ↘ S :=
+  rfl
+
+end TauCeti.AlgebraicGeometry

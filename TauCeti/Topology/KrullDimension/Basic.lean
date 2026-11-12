@@ -38,6 +38,8 @@ closed, since a proper specialization of such a point would have codimension at 
   codimension one is closed.
 * `TauCeti.coheight_le_topologicalKrullDim`: the codimension of a point for the specialization
   preorder is at most the Krull dimension of the space.
+* `TauCeti.one_le_topologicalKrullDim_of_specializes`: a T₀ space with a proper specialization
+  has Krull dimension at least one.
 * `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober space, the Krull dimension is
   the supremum of the codimensions of the points for the specialization preorder.
 * `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober space, the height
@@ -103,6 +105,16 @@ theorem coheight_le_topologicalKrullDim {α : Type*} [TopologicalSpace α] (x : 
     lt_of_le_of_ne (specializes_iff_closure_subset.mp hyz.le) fun h ↦ hyz.not_ge
       (specializes_iff_closure_subset.mpr (congrArg SetLike.coe h).ge)
   exact (coheight_le_krullDim x).trans (krullDim_le_of_strictMono c hc)
+
+/-- In a T₀ space, a proper specialization gives a chain of two irreducible closed subsets, so the
+Krull dimension is at least one. -/
+theorem one_le_topologicalKrullDim_of_specializes {α : Type*} [TopologicalSpace α]
+    [T0Space α] {x y : α} (h : x ⤳ y) (hne : x ≠ y) : 1 ≤ topologicalKrullDim α := by
+  let a : IrreducibleCloseds α := ⟨closure {y}, isIrreducible_singleton.closure, isClosed_closure⟩
+  let b : IrreducibleCloseds α := ⟨closure {x}, isIrreducible_singleton.closure, isClosed_closure⟩
+  have hab : a < b := lt_of_le_of_ne (specializes_iff_closure_subset.mp h) fun e ↦
+    hne (h.antisymm (specializes_iff_closure_subset.mpr (congrArg SetLike.coe e).ge)).eq
+  exact Order.one_le_krullDim_iff.mpr ⟨a, b, hab⟩
 
 attribute [local instance] specializationPreorder in
 /-- On a quasi-sober topological space, the Krull dimension is the supremum of the codimensions of

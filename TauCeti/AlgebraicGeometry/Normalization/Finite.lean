@@ -9,6 +9,9 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Normalization
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.RingTheory.Japanese
+import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+import TauCeti.RingTheory.UniversallyJapanese
 
 /-!
 # Finiteness of the relative normalization
@@ -40,6 +43,10 @@ Japanese rings.
   every nonempty affine open of an integral scheme `Y` is Japanese, the normalization of `Y` in a
   finite extension of its function field is finite over `Y` (Stacks, Lemma 29.54.14 (0AVK), with
   the hypothesis on every affine open).
+* `TauCeti.AlgebraicGeometry.isFinite_fromNormalization_of_locallyOfFiniteType`: the normalization
+  of an integral scheme locally of finite type over a field, in its function field, is finite.
+* `TauCeti.AlgebraicGeometry.surjective_fromNormalization_of_locallyOfFiniteType`: this
+  normalization morphism is surjective, being dominant and closed.
 
 ## References
 
@@ -140,5 +147,39 @@ theorem isFinite_fromNormalization_of_isJapanese
   · -- Over an open missing the generic point, the sections of `Spec L` are the zero ring.
     have := Scheme.subsingleton_preimage_of_genericPoint_notMem f hη
     infer_instance
+
+section FiniteType
+
+variable (k : Type u) [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))]
+
+/-- **Finiteness of normalization over a field.** The normalization of an integral scheme locally of
+finite type over a field, in its function field, is finite: the rings of sections of its affine
+opens are domains of finite type over the field, hence Japanese. -/
+theorem isFinite_fromNormalization_of_locallyOfFiniteType [IsIntegral X]
+    [LocallyOfFiniteType (X ↘ Spec (.of k))] :
+    IsFinite (X.fromSpecStalk (genericPoint X)).fromNormalization := by
+  refine isFinite_fromNormalization_fromSpecStalk_genericPoint_iff.mpr fun U hU _ ↦ ?_
+  let φ := (Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appLE ⊤ U le_top
+  let := φ.hom.toAlgebra
+  have : Algebra.FiniteType k Γ(X, U) :=
+    (X ↘ Spec (.of k)).finiteType_ΓSpecIso_inv_comp_appLE hU
+  have := Ring.IsUniversallyJapanese.isJapanese k Γ(X, U)
+  infer_instance
+
+/-- The normalization morphism of an integral scheme locally of finite type over a field, in its
+function field, is surjective: it is dominant and closed. -/
+theorem surjective_fromNormalization_of_locallyOfFiniteType [IsIntegral X]
+    [LocallyOfFiniteType (X ↘ Spec (.of k))] :
+    Function.Surjective (X.fromSpecStalk (genericPoint X)).fromNormalization := by
+  set f := X.fromSpecStalk (genericPoint X)
+  have : IsFinite f.fromNormalization := isFinite_fromNormalization_of_locallyOfFiniteType k X
+  have : IsDominant (f.toNormalization ≫ f.fromNormalization) := by
+    rw [f.toNormalization_fromNormalization]
+    infer_instance
+  have : IsDominant f.fromNormalization := .of_comp f.toNormalization f.fromNormalization
+  exact (surjective_of_isDominant_of_isClosed_range _
+    (f.fromNormalization.isClosedMap.isClosed_range)).surj
+
+end FiniteType
 
 end TauCeti.AlgebraicGeometry
