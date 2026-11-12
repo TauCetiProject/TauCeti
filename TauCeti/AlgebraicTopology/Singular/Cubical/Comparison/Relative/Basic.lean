@@ -62,7 +62,9 @@ relative homotopy invariance of cubical homology is transported from the simplic
 
 ## Main results
 
-* The terms of `TopPair.cubicalChainComplex k P` are projective `k`-modules (an instance).
+* The terms of `TopPair.cubicalChainComplex k P` are projective `k`-modules (an instance), and in
+  each degree the chains of the subspace split off those of the ambient space
+  (`TopPair.isSplitMono_normalizedCubicalChainComplex_map_f`).
 * `TopPair.quasiIso_singularToCubicalRel`, `TopPair.quasiIso_cubicalToSingularRel`: the relative
   comparison maps are quasi-isomorphisms.
 * `TopPair.Homotopy.congr_homologyMap_cubicalChainComplexMap`: homotopic maps of pairs induce the
@@ -93,6 +95,14 @@ instance mono_normalizedCubicalChainComplex_map (P : TopPair.{u}) :
     Mono ((normalizedCubicalChainComplex k).map P.map) :=
   HomologicalComplex.mono_of_mono_f _ fun n ↦ (ModuleCat.mono_iff_injective _).2
     (NormalizedCubicalChain.map_injective k P.map.hom P.isEmbedding_map.injective n)
+
+/-- In each degree, the inclusion of the normalized cubical chains of the subspace of a pair into
+those of the ambient space is a split monomorphism
+(`TauCeti.NormalizedCubicalChain.exists_comp_map_eq_id`). -/
+instance isSplitMono_normalizedCubicalChainComplex_map_f (P : TopPair.{u}) (n : ℕ) :
+    IsSplitMono (((normalizedCubicalChainComplex k).map P.map).f n) := by
+  obtain ⟨r, hr⟩ := NormalizedCubicalChain.exists_comp_map_eq_id k P.isEmbedding_map.injective n
+  exact .mk' ⟨ModuleCat.ofHom r, ModuleCat.hom_ext hr⟩
 
 /-- The **relative normalized cubical chain complex** of a topological pair `(X, A)`: the
 cokernel of the map of normalized cubical chains induced by the inclusion `A → X`. -/

@@ -62,7 +62,6 @@ the lattice.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IV.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, §4.7.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 5, the `Dₙ` rows of the ADE table.
 -/
 
 public section

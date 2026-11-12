@@ -69,6 +69,9 @@ conjugation with the pullback of functions, pulls its principal symbol back by t
   `df_x ↦ (δ f)(x)`.
 * `TauCeti.smoothPrincipalSymbol_vectorFieldDerivation`, `TauCeti.smoothPrincipalSymbol_derivation`:
   differentiation along a vector field `X` has principal symbol `ξ ↦ ξ(X_x)`.
+* `TauCeti.smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators`,
+  `TauCeti.smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators`: an operator of order at
+  most `m`, viewed as one of order at most `m + 1`, has vanishing commutator and principal symbols.
 * `TauCeti.forall_smoothCommutatorSymbol_eq_zero_iff`: on a boundaryless manifold, an operator of
   order at most `m + 1` has vanishing commutator symbol at every point exactly when it has order at
   most `m`.
@@ -207,6 +210,18 @@ theorem mk_algebraMap_smoothCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ
     mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub, Pi.sub_apply,
     ContMDiffMap.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply, sub_self]
 
+/-- The commutator symbol of an operator of order at most `m + 1` vanishes at every interior point
+if the operator has order at most `m`. -/
+theorem smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators (hx : I.IsInteriorPoint x)
+    {m : ℕ} (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ (m + 1))
+    (hD : (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) :
+    smoothCommutatorSymbol I hx D = 0 := by
+  ext ξ
+  choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
+  obtain rfl : (fun i ↦ mvfderiv I (f i) x) = ξ := funext hf
+  simp [smoothCommutatorSymbol_mvfderiv, (commutatorSymbol_eq_zero_iff D).2 hD]
+
 /-- On a boundaryless manifold, an operator of order at most `m + 1` has vanishing commutator
 symbol at every point if and only if it has order at most `m`. -/
 theorem forall_smoothCommutatorSymbol_eq_zero_iff [BoundarylessManifold I M] {m : ℕ}
@@ -222,11 +237,8 @@ theorem forall_smoothCommutatorSymbol_eq_zero_iff [BoundarylessManifold I M] {m 
     refine MultilinearMap.ext fun f ↦ LinearMap.ext_ring <| ContMDiffMap.ext fun y ↦ ?_
     rw [← smoothCommutatorSymbol_mvfderiv BoundarylessManifold.isInteriorPoint, h y]
     simp
-  · intro h x
-    ext ξ
-    choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
-    obtain rfl : (fun i ↦ mvfderiv I (f i) x) = ξ := funext hf
-    simp [smoothCommutatorSymbol_mvfderiv, h]
+  · exact fun h x ↦ smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators _ D
+      ((commutatorSymbol_eq_zero_iff D).1 h)
 
 /-! ### The principal symbol -/
 
@@ -290,6 +302,17 @@ theorem smoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m : ℕ}
   simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at h
   rw [smoothPrincipalSymbol_def, smoothPrincipalSymbol_def, h]
   ring
+
+/-- The principal symbol of an operator of order at most `m + 1` vanishes if the operator has
+order at most `m`. -/
+theorem smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators (hx : I.IsInteriorPoint x)
+    {m : ℕ} (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ (m + 1))
+    (hD : (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol I hx D ξ = 0 := by
+  simp [smoothPrincipalSymbol_def,
+    smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators hx D hD]
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` of orders at most
 `m` and `k`, the principal symbol of `P ∘ Q`, as an operator of order at most `m + k`, is the

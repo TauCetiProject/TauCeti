@@ -140,20 +140,21 @@ theorem norm_siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im) :
 
 /-- With `A = |q| < 1/2`, `|g_{(0, 1/2)}(τ)¹²| ≤ 4096 A (1 + A / (1 - 2A))²⁴` on the upper
 half-plane. -/
-theorem norm_siegelFunction_zero_half_pow_twelve_le {τ : ℂ} (hτ : 0 < τ.im)
+theorem norm_siegelFunction_zero_half_pow_twelve_le {τ : ℂ}
     (hq : 2 * ‖cexp (2 * π * I * τ)‖ < 1) :
     ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ ≤ 4096 * ‖cexp (2 * π * I * τ)‖ *
       (1 + ‖cexp (2 * π * I * τ)‖ / (1 - 2 * ‖cexp (2 * π * I * τ)‖)) ^ 24 := by
   have h := norm_tprod_one_add_pow_sub_one_le hq
   have := norm_le_norm_add_norm_sub' (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))) 1
   rw [norm_one] at this
+  have hτ : 0 < τ.im := UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mp (by linarith)
   rw [norm_siegelFunction_zero_half_pow_twelve hτ]
   gcongr
   linarith
 
 /-- With `A = |q| < 1/3`, `4096 A (1 - A / (1 - 2A))²⁴ ≤ |g_{(0, 1/2)}(τ)¹²|` on the upper
 half-plane. -/
-theorem le_norm_siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im)
+theorem le_norm_siegelFunction_zero_half_pow_twelve {τ : ℂ}
     (hq : 3 * ‖cexp (2 * π * I * τ)‖ < 1) :
     4096 * ‖cexp (2 * π * I * τ)‖ *
       (1 - ‖cexp (2 * π * I * τ)‖ / (1 - 2 * ‖cexp (2 * π * I * τ)‖)) ^ 24 ≤
@@ -164,6 +165,7 @@ theorem le_norm_siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im)
     linarith
   have := norm_sub_norm_le (1 : ℂ) (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1)))
   rw [norm_one, norm_sub_rev] at this
+  have hτ : 0 < τ.im := UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mp (by linarith)
   rw [norm_siegelFunction_zero_half_pow_twelve hτ]
   gcongr
   linarith
