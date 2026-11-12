@@ -121,7 +121,7 @@ theorem ae_eq_initial_of_boundedVariationOn_of_bound (hM : Martingale M ℱ P) (
   have hmean : Tendsto (fun k ↦ ∫ ω, Q k ω ∂P) atTop (𝓝 0) := by
     have h := tendsto_integral_of_L1 (0 : Ω → ℝ) aestronglyMeasurable_zero
       (Eventually.of_forall fun k ↦ (hQ₂ k).integrable (by norm_num))
-      (by simpa only [sub_zero, Pi.zero_apply, eLpNorm_one_eq_lintegral_enorm (hm _)] using hL1)
+      (by simpa only [sub_zero, Pi.zero_apply, eLpNorm_one_eq_lintegral_eNorm (hm _)] using hL1)
     simpa only [Pi.zero_apply, integral_zero] using h
   -- Isometry makes every quadratic-sum expectation the same terminal second moment.
   have heq (k : ℕ) : ∫ ω, Q k ω ∂P = ∫ ω, (M T ω - M 0 ω) ^ 2 ∂P := by
