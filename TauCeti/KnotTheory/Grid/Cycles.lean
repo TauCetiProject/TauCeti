@@ -21,12 +21,6 @@ the already-proved zero-differential small-grid case.
   `TauCeti.GridDiagram.fullyBlockedBoundaries_eq_bot_of_le_two`: the small-grid computation.
 * `TauCeti.GridDiagram.natCard_fullyBlockedCycles_of_le_two` and
   `TauCeti.GridDiagram.natCard_fullyBlockedBoundaries_of_le_two`: the small-grid cardinalities.
-
-## References
-
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`,
-Lane G.3, "The complexes and `∂² = 0`", and for the standing convention that grid complexes
-compute on explicit small grids.
 -/
 
 public section

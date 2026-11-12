@@ -120,7 +120,7 @@ theorem support_powerSubstitution_subset (B : ℕ) (F : MvPolynomial (Fin 2) R) 
   apply Polynomial.mem_support_iff.mp hN
   conv_lhs => rw [F.as_sum]
   simp only [map_sum, powerSubstitution_monomial, Polynomial.finsetSum_coeff,
-    Polynomial.coeff_monomial]
+    Polynomial.coeff_monomial_apply]
   exact Finset.sum_eq_zero fun μ hμ ↦ ite_eq_right fun h ↦ hNim (Finset.mem_image.mpr ⟨μ, hμ, h⟩)
 
 /-- The degree of `F(X, X ^ B)` is at most `degreeOf 0 F + B * degreeOf 1 F`. -/

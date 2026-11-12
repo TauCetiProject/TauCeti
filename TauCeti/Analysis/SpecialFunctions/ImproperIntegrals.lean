@@ -330,7 +330,7 @@ theorem lintegral_Ioi_inv_sq {A : ℝ} (hA : 0 < A) :
   have hy : 0 < y := hA.trans hy
   rw [← ENNReal.ofReal_coe_nnreal]
   congr 1
-  simp [Real.rpow_neg hy.le, Real.nnnorm_of_nonneg hy.le]
+  simp [Real.rpow_neg hy.le, Real.nnNorm_of_nonneg hy.le]
 
 /-- `∫_{-∞}^0 e^{a s} ds = 1 / a` for `0 < a`, as a Lebesgue integral. -/
 theorem lintegral_Iic_ofReal_exp_mul {a : ℝ} (ha : 0 < a) :

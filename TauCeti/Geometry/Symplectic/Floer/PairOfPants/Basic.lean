@@ -163,7 +163,6 @@ theorem pairOfPantsPerturbation_endCenter (q : Puncture) (x : M) :
     pairOfPantsPerturbation H q.endCenter x = 0 := by
   refine pairOfPantsPerturbation_eq_zero_of_forall_le (fun r => ?_) x
   have h : 0 ≤ Real.log 2 / (2 * π) := by have := Real.log_nonneg one_le_two; positivity
-  have hπ := Real.pi_pos
   cases q <;> cases r <;> simp [re_endCoord, neg_div] <;> linarith
 
 /-- On the part `±s > 0` of the end `q`, the cutoff of every other end `r` vanishes, since the

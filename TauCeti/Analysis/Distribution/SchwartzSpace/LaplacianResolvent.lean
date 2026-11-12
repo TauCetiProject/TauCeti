@@ -114,8 +114,7 @@ theorem neg_laplacian_fourierMultiplierCLM_add_smul {c : ℝ} (hc : 0 < c) (f : 
 @[simp]
 theorem fourierMultiplierCLM_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢(E, F)) :
     fourierMultiplierCLM F (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹) (-Δ f + c • f) = f := by
-  rw [map_add, map_neg, map_smul, fourierMultiplierCLM_laplacian
-    (TauCeti.hasTemperateGrowth_inv_mul_norm_sq_add (by positivity) hc)]
+  rw [map_add, map_neg, map_smul, fourierMultiplierCLM_laplacian]
   exact neg_laplacian_fourierMultiplierCLM_add_smul hc f
 
 end Complex
@@ -160,12 +159,11 @@ theorem neg_laplacian_laplacianResolvent_add_smul {c : ℝ} (hc : 0 < c) (f : �
     map_smul, postcompCLM_postcompCLM, reCLM_comp_ofRealLI, postcompCLM_apply,
     ContinuousLinearMap.id_apply] using congrArg (fun u : 𝓢(E, G) ↦ u x) hreal
 
+omit [CompleteSpace G] in
 /-- The resolvent of the Laplacian commutes with the Laplacian. -/
-theorem laplacianResolvent_laplacian {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
+theorem laplacianResolvent_laplacian {c : ℝ} (f : 𝓢(E, G)) :
     laplacianResolvent c (Δ f) = Δ (laplacianResolvent c f) := by
-  have hcomplex := fourierMultiplierCLM_laplacian
-    (TauCeti.hasTemperateGrowth_inv_mul_norm_sq_add (E := E) (a := (2 * π) ^ 2)
-      (c := c) (by positivity) hc)
+  have hcomplex := fourierMultiplierCLM_laplacian (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹)
     (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
   have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
   simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM] using hreal
@@ -174,7 +172,7 @@ theorem laplacianResolvent_laplacian {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
 @[simp]
 theorem laplacianResolvent_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
     laplacianResolvent c (-Δ f + c • f) = f := by
-  rw [map_add, map_neg, map_smul, laplacianResolvent_laplacian hc]
+  rw [map_add, map_neg, map_smul, laplacianResolvent_laplacian]
   exact neg_laplacian_laplacianResolvent_add_smul hc f
 
 end Real
