@@ -107,8 +107,9 @@ theorem contMDiffWithinAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ T
       ContMDiffWithinAt IM IB n (fun x ↦ (f x).1) s x₀ ∧ ContMDiffWithinAt IM 𝓘(𝕜, PF₁F₂) n
         (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2)
         s x₀ := by
-  simpa only [tensorProduct_trivializationAt_apply] using contMDiffWithinAt_totalSpace (IB := IB)
-    (IM := IM) (n := n) (F := PF₁F₂) (E := TE₁E₂) (f := f) (s := s) (x₀ := x₀)
+  simpa only [tensorProduct_trivializationAt_apply] using
+    contMDiffWithinAt_totalSpace_iff (IB := IB) (IM := IM) (n := n) (F := PF₁F₂) (E := TE₁E₂)
+      (f := f) (s := s) (x₀ := x₀)
 
 /-- A map into the total space of `E₁ ⊗ E₂` is `C^n` at `x₀` if and only if its base projection
 and its coordinate expression `TensorProduct.inCoordinates` are `C^n` at `x₀`. -/
