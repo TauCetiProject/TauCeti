@@ -45,8 +45,8 @@ theorem Bundle.contMDiffWithinAt_totalSpace_prod_iff
         (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) s x ∧
       ContMDiffWithinAt J (I.prod 𝓘(𝕜, F₂)) n
         (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) s x := by
-  rw [Bundle.contMDiffWithinAt_totalSpace, Bundle.contMDiffWithinAt_totalSpace,
-    Bundle.contMDiffWithinAt_totalSpace]
+  rw [Bundle.contMDiffWithinAt_totalSpace_iff, Bundle.contMDiffWithinAt_totalSpace_iff,
+    Bundle.contMDiffWithinAt_totalSpace_iff]
   simp only [FiberBundle.prod_trivializationAt', contMDiffWithinAt_prod_module_iff]
   constructor
   · rintro ⟨hb, h₁, h₂⟩
