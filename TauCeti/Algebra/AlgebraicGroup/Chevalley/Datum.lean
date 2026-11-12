@@ -76,6 +76,8 @@ by finitely many weight vectors
   Weyl group, including when `Λ(D)` is a proper sublattice of the full weight lattice.
 * `TauCeti.DynkinType.ChevalleyDatum.isNilpotent_representation_rootGenerator`: the numbered root
   generators act nilpotently.
+* `TauCeti.DynkinType.ChevalleyDatum.torusPoints_injective`: the torus is injective on points
+  over every commutative ring.
 * `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_torus`: the torus is a closed subgroup of
   the group scheme.
 * `TauCeti.DynkinType.ChevalleyDatum.groupScheme_eq_kostantToralGroupScheme_weight` and
@@ -444,6 +446,19 @@ theorem map_torusPoints {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f 
   apply Subtype.ext
   rw [GeneralLinear.IntegralPointsPresentation.coe_map, coe_torusPoints, coe_torusPoints]
   exact UniversalEnvelopingAlgebra.map_kostantTorusMatrix D.lattice D.basis D.coordinateWeight f s
+
+/-- **The actual torus is injective on points.** Its coordinate weights span the character
+lattice, so distinct parameters act differently on the weight basis, over every commutative
+ring. -/
+theorem torusPoints_injective (A : Type v) [CommRing A] : Function.Injective (D.torusPoints A) := by
+  intro s s' h
+  have hmatrix := congrArg Subtype.val h
+  rw [coe_torusPoints, coe_torusPoints,
+    ← UniversalEnvelopingAlgebra.basisMatrix_kostantTorusPoints,
+    ← UniversalEnvelopingAlgebra.basisMatrix_kostantTorusPoints] at hmatrix
+  exact UniversalEnvelopingAlgebra.kostantTorusPoints_injective D.lattice D.basis
+    D.coordinateWeight D.span_range_coordinateWeight_eq_top
+    (Units.map_injective (MulEquiv.injective _) hmatrix)
 
 /-- **The torus of a Chevalley datum is a closed subgroup of its group scheme**, because its
 coordinate weights span the character lattice. -/

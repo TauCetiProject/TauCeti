@@ -24,10 +24,6 @@ that annihilate `Λ(D)`. If the units are divisible, restriction is surjective a
 agree. This applies in particular over an algebraically closed field, but not in general over
 `ℚ`.
 
-Over every commutative ring the actual torus is injective on points
-(`ChevalleyDatum.torusPoints_injective`), because the coordinate weights span the character
-lattice.
-
 The character evaluation and extension arguments use the general lattice-duality API
 `TauCeti.torusCharacter_torusPointMap` and `TauCeti.torusPointMap_surjective_of_injective`.
 
@@ -150,18 +146,6 @@ theorem range_kostantTorusMatrix_weight_eq [RootableBy Aˣ ℕ] :
   simpa only [weightLatticeEmbedding_coordinateWeight] using
     range_kostantTorusMatrix_eq_of_injective D.lattice D.basis D.coordinateWeight
       (A := A) D.weightLatticeEmbedding_injective
-
-/-- **The actual torus is injective on points.** Its coordinate weights span the character
-lattice, so distinct parameters act differently on the weight basis, over every commutative
-ring. -/
-theorem torusPoints_injective : Function.Injective (D.torusPoints A) := by
-  intro s s' h
-  have hmatrix := congrArg Subtype.val h
-  rw [coe_torusPoints, coe_torusPoints, ← basisMatrix_kostantTorusPoints,
-    ← basisMatrix_kostantTorusPoints] at hmatrix
-  exact kostantTorusPoints_injective D.lattice D.basis D.coordinateWeight
-    D.span_range_coordinateWeight_eq_top
-    (Units.map_injective (MulEquiv.injective _) hmatrix)
 
 end
 
