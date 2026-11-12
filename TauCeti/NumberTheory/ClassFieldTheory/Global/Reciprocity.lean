@@ -113,7 +113,7 @@ reciprocity isomorphism `ClassFormation.artinEquiv` of the global class formatio
 def globalArtinEquiv (ι : L →ₐ[K] SeparableClosure K) :
     Additive (IdeleClassGroup (𝓞 K) K ⧸ (GlobalNumberFields.ideleClassNormMap K L :
         IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range) ≃+
-      Additive (Abelianization Gal(L/K)) :=
+      Additive (Group.Abelianization Gal(L/K)) :=
   (globalLayerNormQuotientEquiv K L).trans <|
     ((globalClassFormation K).artinEquiv
         (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L))).trans
@@ -149,7 +149,7 @@ theorem globalArtinEquiv_eq_of_iota (ι ι' : L →ₐ[K] SeparableClosure K) :
 fields: the class modulo `N_{L/K}(C_L)` followed by finite global reciprocity
 `globalArtinEquiv K L ι`. -/
 def globalArtinMap (ι : L →ₐ[K] SeparableClosure K) :
-    Additive (IdeleClassGroup (𝓞 K) K) →+ Additive (Abelianization Gal(L/K)) :=
+    Additive (IdeleClassGroup (𝓞 K) K) →+ Additive (Group.Abelianization Gal(L/K)) :=
   (globalArtinEquiv K L ι).toAddMonoidHom.comp
     (MonoidHom.toAdditive (QuotientGroup.mk' (GlobalNumberFields.ideleClassNormMap K L :
       IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range))
@@ -213,7 +213,7 @@ theorem globalArtinMap_eq_of_mk_eq_absoluteArtinMap (ι : L →ₐ[K] SeparableC
     {c : IdeleClassGroup (𝓞 K) K} (g : AbsoluteGaloisGroup K)
     (hg : Additive.ofMul (g : TopologicalAbelianization (AbsoluteGaloisGroup K)) =
       (globalClassFormation K).absoluteArtinMap (globalGroundEquiv K (.ofMul c))) :
-    globalArtinMap K L ι (.ofMul c) = .ofMul (Abelianization.of (ι.restrictNormalHom g)) := by
+    globalArtinMap K L ι (.ofMul c) = .ofMul (Group.Abelianization.of (ι.restrictNormalHom g)) := by
   have hmem : g ∈ (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).ground := by simp
   -- The layer Artin map is the restriction of the absolute one, evaluated at the class of `g`.
   rw [globalArtinMap_apply, globalArtinEquiv_mk,
@@ -226,7 +226,7 @@ finite Galois extension `M/K` into `L`, restricting the global Artin symbol in `
 `M` along `f` gives the global Artin symbol in `Gal(M/K)^ab`. -/
 theorem globalArtinMap_comp {M : Type*} [Field M] [NumberField M] [Algebra K M] [IsGalois K M]
     (f : M →ₐ[K] L) (ι : L →ₐ[K] SeparableClosure K) :
-    (Abelianization.map f.restrictNormalHom).toAdditive.comp (globalArtinMap K L ι) =
+    (Group.Abelianization.map f.restrictNormalHom).toAdditive.comp (globalArtinMap K L ι) =
       globalArtinMap K M (ι.comp f) := by
   refine AddMonoidHom.ext fun c ↦ ?_
   obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
@@ -249,7 +249,7 @@ theorem card_ideleClassNormQuotient [IsAbelianGalois K L] :
     Nat.card (IdeleClassGroup (𝓞 K) K ⧸ (GlobalNumberFields.ideleClassNormMap K L :
         IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range) = Module.finrank K L := by
   rw [Nat.card_congr (MulEquiv.toAdditive.symm (globalArtinEquiv K L IsSepClosed.lift)).toEquiv,
-    ← Nat.card_congr (Abelianization.equivOfComm (H := Gal(L/K))).toEquiv,
+    ← Nat.card_congr (Group.Abelianization.equivOfComm (H := Gal(L/K))).toEquiv,
     IsGalois.card_aut_eq_finrank]
 
 /-! ### The global Artin map of an abelian extension -/
@@ -265,16 +265,17 @@ fields: the global Artin map `globalArtinMap`, read in `Gal(L/K)` itself, which 
 abelianization. It is characterized by `of_ideleClassArtinMap`, for every embedding of `L` into
 the separable closure. -/
 def ideleClassArtinMap : IdeleClassGroup (𝓞 K) K →* Gal(L/K) :=
-  Abelianization.equivOfComm.symm.toMonoidHom.comp
+  Group.Abelianization.equivOfComm.symm.toMonoidHom.comp
     (MonoidHom.toAdditive.symm (globalArtinMap K L IsSepClosed.lift))
 
 /-- **The global Artin map of an abelian extension is `globalArtinMap`**: the class in
 `Gal(L/K)^ab` of the Artin symbol of `c ∈ C_K` is the global Artin symbol of `c`, for every
 embedding `ι` of `L` into the separable closure. -/
 theorem of_ideleClassArtinMap (ι : L →ₐ[K] SeparableClosure K) (c : IdeleClassGroup (𝓞 K) K) :
-    Abelianization.of (ideleClassArtinMap K L c) = (globalArtinMap K L ι (.ofMul c)).toMul := by
+    Group.Abelianization.of (ideleClassArtinMap K L c) = (globalArtinMap K L ι (.ofMul
+        c)).toMul := by
   rw [globalArtinMap_eq_of_iota K L ι IsSepClosed.lift]
-  exact Abelianization.equivOfComm.apply_symm_apply _
+  exact Group.Abelianization.equivOfComm.apply_symm_apply _
 
 /-- **The kernel of the global Artin map of an abelian extension** is the idele-class norm group
 `N_{L/K}(C_L)`. -/
@@ -285,15 +286,17 @@ theorem ker_ideleClassArtinMap :
   ext c
   -- The Artin symbol of `c` is trivial exactly when its class in `Gal(L/K)^ab` is.
   have hc : ideleClassArtinMap K L c = 1 ↔ globalArtinMap K L IsSepClosed.lift (.ofMul c) = 0 := by
-    rw [← Abelianization.of_injective.eq_iff, of_ideleClassArtinMap K L IsSepClosed.lift, map_one,
+    rw [← Group.Abelianization.of_injective.eq_iff, of_ideleClassArtinMap K L IsSepClosed.lift,
+        map_one,
       toMul_eq_one]
   rw [MonoidHom.mem_ker, hc, globalArtinMap_eq_zero_iff]
 
 /-- **The global Artin map of an abelian extension is surjective.** -/
 theorem ideleClassArtinMap_surjective : Function.Surjective (ideleClassArtinMap K L) := by
   intro σ
-  obtain ⟨c, hc⟩ := surjective_globalArtinMap K L IsSepClosed.lift (.ofMul (Abelianization.of σ))
-  refine ⟨c.toMul, Abelianization.of_injective ?_⟩
+  obtain ⟨c, hc⟩ := surjective_globalArtinMap K L IsSepClosed.lift (.ofMul (Group.Abelianization.of
+      σ))
+  refine ⟨c.toMul, Group.Abelianization.of_injective ?_⟩
   rw [of_ideleClassArtinMap K L IsSepClosed.lift, ofMul_toMul, hc, toMul_ofMul]
 
 end Abelian

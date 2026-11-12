@@ -73,7 +73,8 @@ attribute [local instance] Comodule.cofree
 evaluates `F` after twisting the input in position `j` (the module input being in position `0`)
 by the Koszul twist of parameter `n - j`. -/
 noncomputable def unsuspend (G : InternalGrading R M) (GA : InternalGrading R A) (n : ℕ)
-    (F : M ⊗[R] TensorPower R n A →ₗ[R] N) : M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) N :=
+    (F : M ⊗[R] TensorPower R n A →ₗ[R] N) : M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦
+        A) N :=
   { toFun x :=
       ((F ∘ₗ TensorProduct.mk R M (TensorPower R n A) (G.koszulTwist n x)
         ).compMultilinearMap (PiTensorProduct.tprod R)).compLinearMap
@@ -104,7 +105,8 @@ theorem apply_tmul_tprod_eq_unsuspend (G : InternalGrading R M) (GA : InternalGr
 /-- On homogeneous inputs, the Koszul twists of the module-first unsuspension multiply to the
 Koszul sign of suspending the module input and all algebra inputs. -/
 theorem apply_koszulTwist_of_mem (G : InternalGrading R M) (GA : InternalGrading R A) {n : ℕ}
-    (φ : M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) N) {x : M} {e : ℤ} (hx : x ∈ G.piece e)
+    (φ : M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N) {x : M} {e : ℤ} (hx : x ∈
+        G.piece e)
     (d : ℕ → ℤ) (a : ℕ → A) (ha : ∀ i < n, a i ∈ GA.piece (d i)) :
     φ (G.koszulTwist n x) (fun i : Fin n ↦ GA.koszulTwist ((n : ℤ) - 1 - i) (a i)) =
       negOnePowCast R (n * e + suspExp n d) • evalNat (φ x) a := by
@@ -116,6 +118,7 @@ theorem apply_koszulTwist_of_mem (G : InternalGrading R M) (GA : InternalGrading
     MultilinearMap.map_smul_univ, smul_smul, evalNat_def, suspExp_def, negOnePowCast_add,
     negOnePowCast_sum,
     ← Fin.prod_univ_eq_prod_range (fun i ↦ negOnePowCast R (((n : ℤ) - 1 - i) * d i)) n]
+  simp only [RingHom.id_apply]
 
 /-- On homogeneous inputs, a map is its module-first unsuspension multiplied by the suspension
 Koszul sign. -/
@@ -160,8 +163,8 @@ theorem apply_comp_subword_of_mem
     {GA : InternalGrading R A} {GM : InternalGrading R M} {GN : InternalGrading R N}
     {F : (M ⊗[R] TensorWords R A) →ₗ[R] N}
     {H : (N ⊗[R] TensorWords R A) →ₗ[R] P}
-    {f : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) N}
-    {h : (n : ℕ) → N →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) P}
+    {f : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N}
+    {h : (n : ℕ) → N →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) P}
     {q : ℤ}
     (hFf : ∀ (n : ℕ) (x : M) (a : Fin n → A),
       F (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
@@ -259,7 +262,7 @@ algebra inputs, expressed through the unsuspended module-first component and alg
 theorem apply_algebra_splice_of_mem
     {G : InternalGrading R M}
     {F : (M ⊗[R] TensorWords R A) →ₗ[R] N}
-    {f : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) N}
+    {f : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N}
     (hFf : ∀ (n : ℕ) (x : M) (a : Fin n → A),
       F (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
         f n (G.koszulTwist n x)
