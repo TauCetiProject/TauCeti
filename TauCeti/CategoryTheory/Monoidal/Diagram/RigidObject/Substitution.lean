@@ -38,6 +38,9 @@ variable {α : Type u} {β : Type v} {γ : Type w}
 /-- Integer iteration of right duality. Negative powers use left duality, its inverse. -/
 def dualPow (n : ℤ) (L : WindingWord α) : WindingWord α := (rightDualEquiv ^ n) L
 
+theorem dualPow_def (n : ℤ) (L : WindingWord α) :
+    dualPow n L = (rightDualEquiv ^ n) L := by rfl
+
 @[simp] theorem dualPow_zero (L : WindingWord α) : dualPow 0 L = L := by
   simp [dualPow]
 
@@ -94,23 +97,56 @@ theorem dualPow_add (m n : ℤ) (L : WindingWord α) :
   induction n using Int.induction_on <;> simp_all
 
 /-- Dual iteration of a single port adds to its level, with no parity reduction. -/
-@[simp] theorem dualPow_singleton (n : ℤ) (a : α) (m : ℤ) :
-    dualPow n [(a, m)] = [(a, m + n)] := by
+@[simp] theorem dualPow_singleton (n : ℤ) (p : α × ℤ) :
+    dualPow n [p] = [(p.1, p.2 + n)] := by
   induction n using Int.induction_on <;> simp_all <;> simp [sub_eq_add_neg, add_assoc]
+
+@[simp] theorem mem_dualPow_iff (p : α × ℤ) (n : ℤ) (L : WindingWord α) :
+    p ∈ dualPow n L ↔ (p.1, p.2 - n) ∈ L := by
+  induction n using Int.induction_on generalizing p with
+  | zero => simp
+  | succ n ih =>
+    simp only [dualPow_add_one, mem_rightDual_iff, ih, sub_sub]
+    rw [add_comm 1]
+  | pred n ih =>
+    simp only [dualPow_sub_one, mem_leftDual_iff, ih]
+    have h : p.2 + 1 - -(n : ℤ) = p.2 - (-(n : ℤ) - 1) := by omega
+    rw [h]
 
 /-- Substitute a word for each generator, transporting it through the integer dual level
 of each occurrence. This may replace one port by many ports, or by no ports. -/
 def subst (f : α → WindingWord β) (L : WindingWord α) : WindingWord β :=
   L.flatMap fun p ↦ dualPow p.2 (f p.1)
 
+theorem subst_def (f : α → WindingWord β) (L : WindingWord α) :
+    subst f L = L.flatMap fun p ↦ dualPow p.2 (f p.1) := by rfl
+
+@[simp] theorem mem_subst_iff (q : β × ℤ) (f : α → WindingWord β) (L : WindingWord α) :
+    q ∈ subst f L ↔ ∃ p ∈ L, (q.1, q.2 - p.2) ∈ f p.1 := by
+  simp [subst_def]
+
 @[simp] theorem subst_nil (f : α → WindingWord β) : subst f [] = [] := by rfl
 
-@[simp] theorem subst_cons (f : α → WindingWord β) (a : α) (n : ℤ) (L : WindingWord α) :
-    subst f ((a, n) :: L) = dualPow n (f a) ++ subst f L := by rfl
+@[simp] theorem subst_cons (f : α → WindingWord β) (p : α × ℤ) (L : WindingWord α) :
+    subst f (p :: L) = dualPow p.2 (f p.1) ++ subst f L := by rfl
 
 @[simp] theorem subst_append (f : α → WindingWord β) (L M : WindingWord α) :
     subst f (L ++ M) = subst f L ++ subst f M := by
   simp [subst]
+
+/-- Shifting every replacing word shifts the substituted boundary without reversing ports. -/
+@[simp] theorem subst_shift_values (f : α → WindingWord β) (n : ℤ) (L : WindingWord α) :
+    subst (fun a ↦ shift n (f a)) L = shift n (subst f L) := by
+  induction L with
+  | nil => simp
+  | cons p L ih => simp [ih]
+
+/-- Shifting the input levels transports each replacing word by the same dual power. -/
+@[simp] theorem subst_shift (f : α → WindingWord β) (n : ℤ) (L : WindingWord α) :
+    subst f (shift n L) = subst (fun a ↦ dualPow n (f a)) L := by
+  induction L with
+  | nil => simp
+  | cons p L ih => simp [ih, dualPow_add]
 
 /-- Substitution respects right duality, including reversal of all replacing ports. -/
 @[simp] theorem subst_rightDual (f : α → WindingWord β) (L : WindingWord α) :
