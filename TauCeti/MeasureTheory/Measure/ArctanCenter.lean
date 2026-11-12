@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.WithDensity
 
 /-!
 # The arctan center of a finite measure on the line
@@ -26,10 +27,13 @@ M-estimator of location with the bounded monotone score function `arctan`.
 Unlike the mean, the center exists for every finite measure, with no moment condition. Unlike a
 median, it is unique and depends continuously on the measure: if finite measures `μᵢ` converge
 weakly to `μ ≠ 0`, their centers converge to that of `μ`
-(`MeasureTheory.FiniteMeasure.tendsto_arctanCenter`). It is equivariant under translations,
-`arctanCenter (μ.map (· + c)) = arctanCenter μ + c` (`MeasureTheory.Measure.arctanCenter_map_add`),
-and invariant under positive rescaling of the measure
-(`MeasureTheory.Measure.arctanCenter_smul`).
+(`MeasureTheory.FiniteMeasure.tendsto_arctanCenter`). In particular the centers of the
+pushforwards of measures with nonnegative densities `f i` converge when the densities converge
+almost everywhere without loss of mass
+(`MeasureTheory.Measure.tendsto_arctanCenter_map_withDensity`). It is equivariant under
+translations, `arctanCenter (μ.map (· + c)) = arctanCenter μ + c`
+(`MeasureTheory.Measure.arctanCenter_map_add`), and invariant under positive rescaling of the
+measure (`MeasureTheory.Measure.arctanCenter_smul`).
 
 These are the properties making the center a slice for an action of `ℝ` by translations: a family
 of objects carrying finite nonzero measures on `ℝ`, which translate along with the objects, is
@@ -50,11 +54,15 @@ the measure.
 * `MeasureTheory.Measure.arctanBalance_eq_zero_iff`: the zeros of the balance are the center.
 * `MeasureTheory.Measure.arctanCenter_map_add`: translation equivariance.
 * `MeasureTheory.FiniteMeasure.tendsto_arctanCenter`: continuity in the weak topology.
+* `MeasureTheory.Measure.tendsto_arctanCenter_map_withDensity`: continuity for pushforwards of
+  measures with densities converging almost everywhere without loss of mass.
 
 ## References
 
 * P. J. Huber, *Robust estimation of a location parameter*, Ann. Math. Statist. **35** (1964),
   73–101, on M-estimators of location defined by a monotone score function.
+* H. Scheffé, *A useful convergence theorem for probability distributions*, Ann. Math. Statist.
+  **18** (1947), 434–438.
 -/
 
 public section
@@ -263,5 +271,52 @@ theorem tendsto_arctanCenter {γ : Type*} {F : Filter γ} {μs : γ → FiniteMe
   · linarith [Measure.arctanCenter_lt_iff.2 hi₂]
 
 end FiniteMeasure
+
+namespace Measure
+
+/-- **Continuity of the arctan center for converging densities.** Let `p : α → ℝ` be continuous,
+and let `f i` be nonnegative integrable densities with respect to `μ` converging almost everywhere
+to an integrable `g`, with no loss of mass: `∫ f i → ∫ g`. If `∫ g ≠ 0`, the arctan centers of the
+pushforwards along `p` of the measures with densities `f i` converge to that of the measure with
+density `g`. By Scheffé's lemma the measures converge weakly
+(`MeasureTheory.FiniteMeasure.tendsto_of_ae_tendsto_of_tendsto_integral`), and so do their
+pushforwards. -/
+theorem tendsto_arctanCenter_map_withDensity {α : Type*} [MeasurableSpace α] [TopologicalSpace α]
+    [OpensMeasurableSpace α] {μ : Measure α} {p : α → ℝ} (hp : Continuous p) {ι : Type*}
+    {l : Filter ι} [l.IsCountablyGenerated] {f : ι → α → ℝ} {g : α → ℝ}
+    (hf : ∀ i, Integrable (f i) μ) (hg : Integrable g μ) (hf₀ : ∀ i, 0 ≤ᵐ[μ] f i)
+    (hlim : ∀ᵐ a ∂μ, Tendsto (fun i ↦ f i a) l (𝓝 (g a)))
+    (hint : Tendsto (fun i ↦ ∫ a, f i a ∂μ) l (𝓝 (∫ a, g a ∂μ))) (hg₀ : ∫ a, g a ∂μ ≠ 0) :
+    Tendsto (fun i ↦ ((μ.withDensity fun a ↦ ENNReal.ofReal (f i a)).map p).arctanCenter) l
+      (𝓝 ((μ.withDensity fun a ↦ ENNReal.ofReal (g a)).map p).arctanCenter) := by
+  rcases l.eq_or_neBot with rfl | _
+  · exact tendsto_bot
+  -- The measures with densities, as finite measures.
+  let ν (h : α → ℝ) (hh : Integrable h μ) : FiniteMeasure α :=
+    ⟨μ.withDensity fun a ↦ ENNReal.ofReal (h a),
+      isFiniteMeasure_withDensity_ofReal hh.hasFiniteIntegral⟩
+  have hν (h : α → ℝ) (hh : Integrable h μ) : ((ν h hh).map p : Measure ℝ) =
+      (μ.withDensity fun a ↦ ENNReal.ofReal (h a)).map p := by
+    rw [FiniteMeasure.toMeasure_map]
+    rfl
+  -- By Scheffé's lemma they converge weakly, and so do their pushforwards.
+  have h := FiniteMeasure.tendsto_map_of_tendsto_of_continuous _ _
+    (FiniteMeasure.tendsto_of_ae_tendsto_of_tendsto_integral (μs := fun i ↦ ν (f i) (hf i))
+      (ν := ν g hg) hf hg hf₀ (fun _ ↦ rfl) rfl hlim hint) hp
+  -- The limit is nonzero: otherwise `g` would be nonpositive almost everywhere, while its
+  -- integral is a limit of nonnegative integrals.
+  have hne : (ν g hg).map p ≠ 0 := by
+    intro h0
+    have h0' : μ.withDensity (fun a ↦ ENNReal.ofReal (g a)) = 0 := by
+      rw [← map_eq_zero_iff hp.measurable.aemeasurable]
+      rw [← hν g hg, h0, FiniteMeasure.toMeasure_zero]
+    have hle : g ≤ᵐ[μ] 0 := by
+      filter_upwards [(withDensity_eq_zero_iff hg.aemeasurable.ennreal_ofReal).1 h0'] with a ha
+      exact ENNReal.ofReal_eq_zero.1 ha
+    exact hg₀ (le_antisymm (integral_nonpos_of_ae hle)
+      (ge_of_tendsto' hint fun i ↦ integral_nonneg_of_ae (hf₀ i)))
+  simpa only [hν] using FiniteMeasure.tendsto_arctanCenter hne h
+
+end Measure
 
 end MeasureTheory

@@ -45,8 +45,9 @@ transversality is asserted.
 * `MDifferentiable.eq_zero_of_forall_mfderiv_apply_eq_zero_of_tendsto_atBot`: for a cylinder with
   a constant end which is not invariant under every time rotation, a direction in which the
   derivative vanishes everywhere is zero.
-* `TauCeti.SmoothTwoForm.perturbedMFDeriv_comp_add_right`: the perturbed derivative of a
-  translate is the translate of the perturbed derivative, for the translated data.
+* `TauCeti.SmoothTwoForm.perturbedMFDeriv_comp_add_right`,
+  `TauCeti.SmoothTwoForm.floerEnergyDensity_comp_add_right`: the perturbed derivative and the
+  energy density of a translate are the translates of those of `u`, for the translated data.
 * `TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_add_right`: translates of
   solutions are solutions where the data are invariant.
 * `TauCeti.SmoothTwoForm.isInvariant_translationFlow_setOf_autonomous`: the translation flows
@@ -110,6 +111,14 @@ theorem perturbedMFDeriv_comp_add_right (Ks Kt : ℝ × ℝ → M → ℝ) {u : 
   rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hu.mfderiv_comp_add_right]
   -- The two sides differ only in how the tangent spaces at `u (z + c)` are written.
   rfl
+
+/-- **The energy density of a translate.** The Floer energy density of `w ↦ u (w + c)` for the
+translated data `w ↦ K (w + c)` at `z` is the energy density of `u` for `K` at `z + c`. -/
+theorem floerEnergyDensity_comp_add_right (Ks Kt : ℝ × ℝ → M → ℝ) {u : ℝ × ℝ → M} {z c : ℝ × ℝ}
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (z + c)) :
+    ω.floerEnergyDensity (fun w ↦ Ks (w + c)) (fun w ↦ Kt (w + c)) (fun w ↦ u (w + c)) z =
+      ω.floerEnergyDensity Ks Kt u (z + c) := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, ω.perturbedMFDeriv_comp_add_right Ks Kt hu]
 
 /-- **Translations preserve Floer solutions.** If `u` solves the Floer equation at `z + c`, and the
 Hamiltonian one-form `K = Ks ds + Kt dt` takes the same value at `z + c` as at `z`, then the
