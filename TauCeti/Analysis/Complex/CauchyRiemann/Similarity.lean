@@ -370,15 +370,10 @@ theorem hasSimilarityFactorizationAt_of_contDiffOn (hΩ : IsOpen Ω) (hξ : Cont
   obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ :=
     exists_similarity_of_contDiffOn hΩ hξ hCm hCb heq hz₀
   obtain ⟨u, hu⟩ := hΦu z₀ (mem_ball_self hr)
-  -- restricting scalars to `ℝ` preserves products equal to the identity
-  have hres {a b : V →L[ℂ] V} (h : a * b = 1) :
-      a.restrictScalars ℝ * b.restrictScalars ℝ = 1 := by
-    ext v
-    simpa using DFunLike.congr_fun h v
+  -- restricting the scalars of the equivalence `Φ z₀` to `ℝ` keeps it invertible
   refine .of_eqOn_ball hr (Φ := fun z ↦ (Φ z).restrictScalars ℝ)
     ((ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℂ).continuous.comp_continuousOn hΦ)
-    ⟨⟨(Φ z₀).restrictScalars ℝ, (↑u⁻¹ : V →L[ℂ] V).restrictScalars ℝ,
-      hres (hu ▸ u.mul_inv), hres (hu ▸ u.inv_mul)⟩, rfl⟩ hσ hξσ
+    (hu ▸ ⟨((ContinuousLinearEquiv.unitsEquiv ℂ V u).restrictScalars ℝ).toUnit, rfl⟩) hσ hξσ
 
 /-- **Unique continuation** for classical solutions. On a connected open set `Ω`, a `C¹` solution
 of `∂ₛξ + i ∂ₜξ + C ξ = 0`, with measurable, locally bounded real-linear coefficient `C`, that

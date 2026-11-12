@@ -220,8 +220,7 @@ theorem integral_lineDeriv_smul_cauchyTransform_add_I_smul_eq_neg_two_smul_integ
       (2 : ℂ)⁻¹ * (((lineDeriv ℝ φ w 1 : ℝ) : ℂ) + I * ((lineDeriv ℝ φ w I : ℝ) : ℂ)) := by
     rw [conjWirtingerDeriv_ofReal_comp_apply_eq_lineDeriv (hφ.differentiable one_ne_zero w),
       smul_eq_mul, mul_one]
-  have hreal (r : ℝ) (v : F) : r • v = (r : ℂ) • v := RCLike.real_smul_eq_coe_smul (K := ℂ) r v
-  simp_rw [hreal]
+  simp_rw [← Complex.coe_smul]
   have hI : Integrable fun w ↦ I • ((lineDeriv ℝ φ w I : ℝ) : ℂ) • cauchyTransform f w :=
     (hi I).smul I
   rw [← integral_smul, ← integral_add (hi 1) hI]
@@ -291,9 +290,8 @@ private theorem lineDeriv_smul_add_I_smul_lineDeriv_smul_eq {Ω : Set ℂ} (hΩ 
     lineDeriv ℝ φ z 1 • A (ξ z) + I • lineDeriv ℝ φ z I • A (ξ z) =
       (2 : ℂ) • A (conjWirtingerDeriv (fun z ↦ (φ z : ℂ) • ξ z) z 1) -
         (2 : ℂ) • (φ z • A (conjWirtingerDeriv ξ z 1)) := by
-  have hreal (r : ℝ) (v : W) : r • v = (r : ℂ) • v := RCLike.real_smul_eq_coe_smul (K := ℂ) r v
-  rw [conjWirtingerDeriv_ofReal_smul_apply_one hΩ hφ hφΩ hξ z, map_add, map_smul, map_smul,
-    hreal, hreal, hreal]
+  rw [conjWirtingerDeriv_ofReal_smul_apply_one hΩ hφ hφΩ hξ z, map_add, map_smul, map_smul]
+  simp_rw [← Complex.coe_smul]
   module
 
 /-- **The Leibniz rule for a Cauchy transform applied to a `C¹` map.** For integrable `f` with
@@ -322,7 +320,6 @@ theorem hasWeakConjWirtingerDerivOn_cauchyTransform_apply [CompleteSpace V] [Com
     simpa only [hψ_def, Complex.coe_smul] using
       hξ.contDiff_smul_of_tsupport_subset Ω.isOpen hφ.contDiffOn φ.tsupport_subset
   have hψc : HasCompactSupport ψ := (φ.hasCompactSupport.comp_left ofReal_zero).smul_right
-  have hreal (r : ℝ) (v : W) : r • v = (r : ℂ) • v := RCLike.real_smul_eq_coe_smul (K := ℂ) r v
   have hi1 := integrable_lineDeriv_smul_of_locallyIntegrableOn hu φ 1
   have hiI := integrable_lineDeriv_smul_of_locallyIntegrableOn hu φ I
   have hiψ : Integrable fun z ↦ cauchyTransform f z (conjWirtingerDeriv ψ z 1) :=
@@ -334,7 +331,7 @@ theorem hasWeakConjWirtingerDerivOn_cauchyTransform_apply [CompleteSpace V] [Com
   have hiφ' := φ.integrable_smul hfξ
   have hfψ : ∫ z, f z (ψ z) = ∫ z, (φ : ℂ → ℝ) z • f z (ξ z) := by
     congr 1 with z
-    rw [hψ_def, map_smul, hreal]
+    rw [hψ_def, map_smul, ← Complex.coe_smul]
   calc (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z 1 • cauchyTransform f z (ξ z)) +
         I • ∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z I • cauchyTransform f z (ξ z)
       = ∫ z, ((2 : ℂ) • cauchyTransform f z (conjWirtingerDeriv ψ z 1) -
