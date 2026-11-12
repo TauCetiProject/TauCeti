@@ -66,7 +66,7 @@ median, and replacing the median by the mean costs a factor `2`
 
 ## Main declarations
 
-* `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_mul_enorm_gradient_of_convex`: the inequality on a
+* `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_mul_eNorm_gradient_of_convex`: the inequality on a
   bounded convex domain.
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_mul_eLpNorm_gradient_of_ball_subset`: the
   scale-invariant inequality on a ball inside the domain.
@@ -137,7 +137,7 @@ private theorem ofReal_mul_measure_le_of_convex (hp : p ≠ ∞) (hconv : Convex
       setLIntegral_const, mul_comm]
     have hx' : m + 2 * t ≤ W1p.value u x := hx.2
     simp only [hv_def, sub_zero]
-    rw [max_eq_left (by linarith), max_eq_left (by linarith), Real.enorm_eq_ofReal (by linarith)]
+    rw [max_eq_left (by linarith), max_eq_left (by linarith), Real.eNorm_eq_ofReal (by linarith)]
     ring_nf
   -- The variation of `v` is the `L¹` norm of `∇u` on the strip.
   have htv : totalVariationOn mu Omega v = ∫⁻ x in Omega,
@@ -264,7 +264,7 @@ private theorem lintegral_ofReal_min_rpow_le_of_convex (hp : p ≠ ∞) (hn : 2 
     ((hFd (t - m)).comp_sub_const t m).sub_const _
   have hGc : ContDiff ℝ 1 G := (hFc.comp (contDiff_id.sub contDiff_const)).sub contDiff_const
   have hGM : ∀ t, ‖deriv G t‖₊ ≤ (γ * K ^ (γ - 1)).toNNReal := fun t => by
-    rw [(hGd t).deriv, ← NNReal.coe_le_coe, coe_nnnorm,
+    rw [(hGd t).deriv, ← NNReal.coe_le_coe, coe_nnNorm,
       Real.norm_of_nonneg (mul_nonneg (by linarith) (Real.rpow_nonneg (hW0 _) _)),
       Real.coe_toNNReal _ (mul_nonneg (by linarith) (Real.rpow_nonneg hK.le _))]
     exact mul_le_mul_of_nonneg_left
@@ -297,8 +297,8 @@ private theorem lintegral_ofReal_min_rpow_le_of_convex (hp : p ≠ ∞) (hn : 2 
     rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
     refine lintegral_congr_ae ?_
     filter_upwards [W1p.gradient_contDiffComp_ae hp hGc hGM hG0 u] with x hx
-    rw [hx, (hGd _).deriv, enorm_smul,
-      Real.enorm_eq_ofReal (mul_nonneg (by linarith) (Real.rpow_nonneg (hW0 _) _)),
+    rw [hx, (hGd _).deriv, eNorm_smul,
+      Real.eNorm_eq_ofReal (mul_nonneg (by linarith) (Real.rpow_nonneg (hW0 _) _)),
       ENNReal.ofReal_mul (by linarith), ← mul_assoc,
       ENNReal.ofReal_rpow_of_nonneg (hW0 _) (by linarith)]
   rw [← hgradv]
@@ -348,7 +348,7 @@ private theorem rpow_lintegral_ofReal_min_rpow_le_of_convex (hpstar : pstar ≠ 
   set X := ∫⁻ x in Omega, ENNReal.ofReal (W x) ^ Q ∂mu
   have hholder : ∫⁻ x in Omega, ENNReal.ofReal (W x) ^ (γ - 1) * ‖W1p.gradient u x‖ₑ ∂mu ≤
       X ^ P'⁻¹ * Y :=
-    lintegral_ofReal_rpow_mul_enorm_le (((Lp.stronglyMeasurable _).measurable.sub_const m).max
+    lintegral_ofReal_rpow_mul_eNorm_le (((Lp.stronglyMeasurable _).measurable.sub_const m).max
       measurable_const |>.min measurable_const).aemeasurable (Lp.aestronglyMeasurable _) hconj hγP'
   have hXfin : X ≠ ∞ := by
     refine ne_top_of_le_ne_top (b := ∫⁻ _ in Omega, ENNReal.ofReal K ^ Q ∂mu) ?_
@@ -388,9 +388,9 @@ private theorem eLpNorm_max_sub_le_of_convex (hpstar : pstar ≠ ∞)
   have hreal := toReal_inv_add_inv_eq_inv hp0 hexp
   have hQ0 : 0 < pstar.toReal := ENNReal.toReal_pos hpstar0 hpstar
   have hmeas : Measurable (W1p.value u : E → ℝ) := (Lp.stronglyMeasurable _).measurable
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hpstar0 hpstar
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hpstar0 hpstar
     ((hmeas.sub_const m).max measurable_const).aestronglyMeasurable, one_div]
-  simp_rw [Real.enorm_eq_ofReal (le_max_right _ 0)]
+  simp_rw [Real.eNorm_eq_ofReal (le_max_right _ 0)]
   rcases (Fact.out : (1 : ℝ≥0∞) ≤ p).eq_or_lt with h1 | h1
   · -- `p = 1`: then `p⋆ = n/(n - 1)` and the factor `p⋆ (1 - 1/n)` is `1`.
     subst h1
@@ -402,7 +402,7 @@ private theorem eLpNorm_max_sub_le_of_convex (hpstar : pstar ≠ ∞)
       (two_le_of_inv_add_inv_eq_inv hpstar hexp) hconv hb hS hS0 u huS
     rw [← hQ] at hB
     rw [hQ, inv_mul_cancel₀ (sub_pos.2 hninv1).ne', ENNReal.ofReal_one, one_mul, ← hQ,
-      Lp.enorm_def, eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
+      Lp.eNorm_def, eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _),
       ENNReal.rpow_inv_le_iff hQ0]
     exact hB
   · -- `p > 1`: monotone convergence along the truncations at the heights `k + 1`.
@@ -422,7 +422,7 @@ private theorem eLpNorm_max_sub_le_of_convex (hpstar : pstar ≠ ∞)
         rw [min_eq_left]
         exact (Nat.le_ceil _).trans (by exact_mod_cast hk.trans (Nat.le_succ k))
     refine le_of_tendsto' ((ENNReal.continuous_rpow_const.tendsto _).comp hlim) fun k => ?_
-    rw [Lp.enorm_def]
+    rw [Lp.eNorm_def]
     exact rpow_lintegral_ofReal_min_rpow_le_of_convex hpstar hexp h1 hconv hb hS hS0 u huS
       (by positivity)
 
@@ -443,7 +443,7 @@ private theorem eLpNorm_max_const_sub_le_of_convex (hpstar : pstar ≠ ∞)
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hS (W1p.value_neg_ae u), huS] with x hx hxm
     rw [hx, Pi.neg_apply]
     exact neg_le_neg hxm)
-  rw [W1p.gradient_neg, enorm_neg] at h
+  rw [W1p.gradient_neg, eNorm_neg] at h
   refine (le_of_eq (eLpNorm_congr_ae ?_)).trans h
   filter_upwards [W1p.value_neg_ae u] with x hx
   rw [hx, Pi.neg_apply, sub_neg_eq_add, neg_add_eq_sub]
@@ -520,7 +520,7 @@ open subset of a finite-dimensional real inner product space of dimension `n`, a
 `‖u - ⨍_Ω u‖_{L^{p⋆}(Ω)} ≤ 32 p⋆ μ(B(0, 1)) ^ (1 - 1/n) (diam Ω) ^ n / μ(Ω) · ‖∇u‖_{Lᵖ(Ω)}`.
 
 The constant is invariant under dilations of `Ω`. -/
-theorem W1p.eLpNorm_value_sub_setAverage_le_mul_enorm_gradient_of_convex (hpstar : pstar ≠ ∞)
+theorem W1p.eLpNorm_value_sub_setAverage_le_mul_eNorm_gradient_of_convex (hpstar : pstar ≠ ∞)
     (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (hconv : Convex ℝ (Omega : Set E))
     (hb : Bornology.IsBounded (Omega : Set E)) (u : W1p mu Omega p) :
     eLpNorm (fun x ↦ W1p.value u x - ⨍ y in (Omega : Set E), W1p.value u y ∂mu) pstar
@@ -575,11 +575,11 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_mul_eLpNorm_gradient_of_ball_subset
   have hB : B ≤ Omega := hball
   set uB := W1p.restrictL hB u
   have hval := W1p.value_restrictL_ae hB u
-  have h := W1p.eLpNorm_value_sub_setAverage_le_mul_enorm_gradient_of_convex hpstar hexp
+  have h := W1p.eLpNorm_value_sub_setAverage_le_mul_eNorm_gradient_of_convex hpstar hexp
     (convex_ball c R) isBounded_ball uB
   have havg : ⨍ y in (B : Set E), W1p.value uB y ∂mu = ⨍ y in ball c R, W1p.value u y ∂mu :=
     average_congr hval
-  rw [havg, eLpNorm_congr_ae (hval.mono fun x hx => congrArg (· - _) hx), Lp.enorm_def,
+  rw [havg, eLpNorm_congr_ae (hval.mono fun x hx => congrArg (· - _) hx), Lp.eNorm_def,
     eLpNorm_congr_ae (W1p.gradient_restrictL_ae hB u)] at h
   refine h.trans (mul_le_mul' (ENNReal.ofReal_le_ofReal ?_) le_rfl)
   have hratio := mu.addHaar_real_ball_rpow_mul_diam_ball_pow_div_le c hR

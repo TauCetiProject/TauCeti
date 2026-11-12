@@ -48,7 +48,7 @@ divergence-form equations.
 ## Main declarations
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
-* `TauCeti.lintegral_ofReal_rpow_mul_enorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
+* `TauCeti.lintegral_ofReal_rpow_mul_eNorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
 
@@ -112,7 +112,7 @@ theorem lintegral_mul_le_of_inv_add_inv_eq {k g : β → ℝ≥0∞} (hk : AEMea
 
 /-- **Hölder's inequality for a power times a norm.** If `p'` and `p` are conjugate exponents and
 `(γ - 1) p' = q`, then `∫⁻ w ^ (γ - 1) ‖g‖ₑ ≤ (∫⁻ w ^ q) ^ (1/p') ‖g‖_{Lᵖ}`. -/
-theorem lintegral_ofReal_rpow_mul_enorm_le {F : Type*} [NormedAddCommGroup F] {w : β → ℝ}
+theorem lintegral_ofReal_rpow_mul_eNorm_le {F : Type*} [NormedAddCommGroup F] {w : β → ℝ}
     {g : β → F} (hw : AEMeasurable w ν) (hg : AEStronglyMeasurable g ν) {p : ℝ≥0∞} {γ p' q : ℝ}
     (hconj : p'.HolderConjugate p.toReal) (hγp' : (γ - 1) * p' = q) :
     ∫⁻ x, ENNReal.ofReal (w x) ^ (γ - 1) * ‖g x‖ₑ ∂ν ≤
@@ -120,8 +120,8 @@ theorem lintegral_ofReal_rpow_mul_enorm_le {F : Type*} [NormedAddCommGroup F] {w
   have hp : 0 < p.toReal := zero_lt_one.trans hconj.symm.lt
   have h := ENNReal.lintegral_mul_le_Lp_mul_Lq ν hconj
     (f := fun x => ENNReal.ofReal (w x) ^ (γ - 1)) (g := fun x => ‖g x‖ₑ)
-    ((ENNReal.measurable_ofReal.comp_aemeasurable hw).pow_const _) hg.enorm
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (ENNReal.toReal_pos_iff.1 hp).1.ne'
+    ((ENNReal.measurable_ofReal.comp_aemeasurable hw).pow_const _) hg.eNorm
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (ENNReal.toReal_pos_iff.1 hp).1.ne'
     (ENNReal.toReal_pos_iff.1 hp).2.ne hg]
   refine h.trans_eq ?_
   simp_rw [← ENNReal.rpow_mul, hγp', one_div]
