@@ -35,12 +35,14 @@ surface structure on the compactified quotient, are not part of this file.
 * `Subgroup.CompactifiedQuotient.cuspChart`: the cusp chart, with
   `Subgroup.CompactifiedQuotient.cuspChart_ofCusp` and
   `Subgroup.CompactifiedQuotient.cuspChart_ofQuotient_mk` computing it on its source, and
-  `Subgroup.CompactifiedQuotient.cuspChart_symm_zero`,
-  `Subgroup.CompactifiedQuotient.cuspChart_symm_coordinate` and
-  `Subgroup.CompactifiedQuotient.cuspChart_symm_of_ne_zero` computing its inverse on its target.
+  `Subgroup.CompactifiedQuotient.cuspChart_symm_zero` and
+  `Subgroup.CompactifiedQuotient.cuspChart_symm_coordinate` computing its inverse on its target,
+  and `Subgroup.CompactifiedQuotient.cuspChart_symm_of_ne_zero` giving the value of the inverse at
+  every nonzero `q`, including points outside the target.
 
-The underlying total maps of the chart and its inverse are implementation details: outside the
-source and target their values are junk, so they are private.
+The underlying total maps of the chart and its inverse are implementation details, so they are
+private: the chart takes junk values outside its source, and the inverse takes values outside its
+target that are given by the same formula but carry no geometric meaning.
 
 ## References
 
