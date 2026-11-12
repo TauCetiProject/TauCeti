@@ -11,12 +11,27 @@ public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 /-!
 # The real locus as a Lagrangian embedding
 
-The real locus `ι → ℝ` in complex coordinate space `ι → ℂ` is a Lagrangian embedding for the
-standard symplectic form `ω₀ = Σ_j ds_j ∧ dt_j` and for each of its nonzero multiples.
+For a finite index type `ι`, the real locus `ι → ℝ` in complex coordinate space `ι → ℂ` is a
+Lagrangian embedding for the standard symplectic form `ω₀ = Σ_j ds_j ∧ dt_j` and for each of its
+nonzero multiples `c ω₀`.
+
+`TauCeti.Geometry.Symplectic.Complex.CoordinateSpace` proves the linear statement, that the real
+subspace is Lagrangian for `ω₀`. This file lifts it to the manifold-level predicate
+`IsLagrangianEmbedding`, giving the flat coordinate model of an embedded Lagrangian submanifold.
+The nonzero rescalings are kept because the sign of `c` matters downstream: `c = 1` pairs with
+the complex structure `I`, which `ω₀` tames, while `c = -1` pairs with `-I`, which `-ω₀` tames,
+and both comparisons recover that the real locus is totally real.
+
+## Main results
+
+* `TauCeti.isLagrangianEmbedding_realLocus_rescale`: the real locus is a Lagrangian embedding for
+  every nonzero multiple `c ω₀`.
+* `TauCeti.isLagrangianEmbedding_realLocus`: the case `c = 1`.
 
 ## References
 
-* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, Section 2.1.
+* D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
+  Sections 2.1 and 3.4.
 -/
 
 public noncomputable section
