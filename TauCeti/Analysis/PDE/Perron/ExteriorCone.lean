@@ -96,7 +96,7 @@ private lemma zonal_bracket_nonneg {n t : ℝ} (hn : 1 ≤ n) (hμ0 : 0 < μ) (h
   have hq : n - 1 ≤ k * (1 - t ^ 2) - (n - 1) * t := by
     have h1 : 0 ≤ 1 + t := by linarith
     have h2 : n - 1 ≤ k * (1 - t) := hk.trans (mul_le_mul_of_nonneg_left (by linarith) hk0)
-    nlinarith
+    linarith [mul_le_mul_of_nonneg_right h2 h1]
   -- The radial term is at least `-(n - 1) μ A`, as `μ (μ + n - 2) ≤ μ (n - 1)` and `X ≤ A`.
   have hrad : -((n - 1) * (μ * A)) ≤ μ * (μ + n - 2) * (X - A) := by
     have h1 : μ * (μ + n - 2) * (A - X) ≤ μ * (n - 1) * (A - X) :=
