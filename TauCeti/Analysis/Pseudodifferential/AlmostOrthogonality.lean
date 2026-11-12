@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Lp
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Dyadic
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Littlewood–Paley pieces of a quantization on `L²`
