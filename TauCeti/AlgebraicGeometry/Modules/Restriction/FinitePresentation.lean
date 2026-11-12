@@ -43,6 +43,7 @@ instance isFinitePresentation_restrict
     (Scheme.Modules.isFinitePresentation_pullback j M)
 
 /-- Restriction along an isomorphism preserves and reflects finite presentation. -/
+@[simp]
 theorem isFinitePresentation_restrict_iff_of_isIso {X Y : Scheme.{u}} (M : X.Modules)
     (f : Y ⟶ X) [IsIso f] : (M.restrict f).IsFinitePresentation ↔ M.IsFinitePresentation := by
   refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
@@ -117,5 +118,15 @@ instance isFinitePresentation_cokernel {X : Scheme.{u}} {M N : X.Modules} (f : M
     (((restrictFunctorComp hU.isoSpec.hom hU.fromSpec).app _).symm ≪≫
       (restrictFunctorCongr hU.isoSpec_hom_fromSpec).app _)
     (isFinitePresentation_restrict hU.isoSpec.hom ((cokernel f).restrict hU.fromSpec))
+
+/-- Finitely presented sheaves are closed under ambient cokernels on every scheme. -/
+instance isFinitePresentation_isClosedUnderCokernels (X : Scheme.{u}) :
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderCokernels where
+  cokernels_le := by
+    rintro _ ⟨f, c, hc, hM, hN⟩
+    have := hM
+    have := hN
+    exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
+      (colimit.isoColimitCocone ⟨c, hc⟩) (isFinitePresentation_cokernel f)
 
 end AlgebraicGeometry.Scheme.Modules

@@ -57,4 +57,20 @@ instance isLocallyFree_biprod [M.IsLocallyFree]
     [N.IsLocallyFree] : (M ⊞ N).IsLocallyFree :=
   SheafOfModules.isLocallyFree_biprod (M := M) (N := N)
 
+-- These specializations pre-elaborate the ringed-site hypotheses: synthesizing the site-level
+-- instances directly for `X.ringCatSheaf` exceeds the default typeclass search size (128).
+/-- The zero module sheaf is finitely presented. -/
+instance isFinitePresentation_containsZero (X : Scheme.{u}) :
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).ContainsZero :=
+  TauCeti.SheafOfModules.isFinitePresentation_containsZero (R := X.ringCatSheaf)
+
+/-- Finitely presented sheaves are closed under binary products, computed as direct sums. -/
+instance isFinitePresentation_isClosedUnderBinaryProducts (X : Scheme.{u}) :
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderBinaryProducts :=
+  TauCeti.SheafOfModules.isFinitePresentation_isClosedUnderBinaryProducts (R := X.ringCatSheaf)
+
+/-- Finitely presented sheaves are closed under finite products. -/
+instance isFinitePresentation_isClosedUnderFiniteProducts (X : Scheme.{u}) :
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderFiniteProducts := .mk'
+
 end AlgebraicGeometry.Scheme.Modules

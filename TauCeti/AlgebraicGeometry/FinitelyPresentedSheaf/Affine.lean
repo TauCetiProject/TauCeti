@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
-public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 
 /-!

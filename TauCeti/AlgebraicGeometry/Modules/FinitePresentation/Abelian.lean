@@ -59,16 +59,6 @@ instance isFinitePresentation_kernel [IsLocallyNoetherian X] (f : M ⟶ N)
     (G.mapIso (PreservesKernel.iso F f) ≪≫ PreservesKernel.iso G (F.map f)).symm
     (isFinitePresentation_kernel_spec (G.map (F.map f)))
 
-/-- Finitely presented sheaves are closed under ambient cokernels on every scheme. -/
-instance isFinitePresentation_isClosedUnderCokernels (X : Scheme.{u}) :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderCokernels where
-  cokernels_le := by
-    rintro _ ⟨f, c, hc, hM, hN⟩
-    have := hM
-    have := hN
-    exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
-      (colimit.isoColimitCocone ⟨c, hc⟩) (isFinitePresentation_cokernel f)
-
 /-- Coherent sheaves on a locally Noetherian scheme are closed under ambient kernels. -/
 instance isFinitePresentation_isClosedUnderKernels (X : Scheme.{u}) [IsLocallyNoetherian X] :
     (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderKernels where
@@ -78,21 +68,5 @@ instance isFinitePresentation_isClosedUnderKernels (X : Scheme.{u}) [IsLocallyNo
     have := hN
     exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
       (limit.isoLimitCone ⟨k, hk⟩) (isFinitePresentation_kernel f)
-
--- These specializations pre-elaborate the ringed-site hypotheses: synthesizing the site-level
--- instances directly for `X.ringCatSheaf` exceeds the default typeclass search size (128).
-/-- The zero module sheaf is finitely presented. -/
-instance isFinitePresentation_containsZero (X : Scheme.{u}) :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).ContainsZero :=
-  TauCeti.SheafOfModules.isFinitePresentation_containsZero (R := X.ringCatSheaf)
-
-/-- Finitely presented sheaves are closed under binary products, computed as direct sums. -/
-instance isFinitePresentation_isClosedUnderBinaryProducts (X : Scheme.{u}) :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderBinaryProducts :=
-  TauCeti.SheafOfModules.isFinitePresentation_isClosedUnderBinaryProducts (R := X.ringCatSheaf)
-
-/-- Finitely presented sheaves are closed under finite products. -/
-instance isFinitePresentation_isClosedUnderFiniteProducts (X : Scheme.{u}) :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderFiniteProducts := .mk'
 
 end AlgebraicGeometry.Scheme.Modules
