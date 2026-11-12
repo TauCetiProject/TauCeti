@@ -79,7 +79,7 @@ theorem exists_eLpNorm_bilin_le_eLpNormWkp_one (hp : 2 < p) (hq : 1 ≤ q) (hqp 
     rw [eLpNorm_congr_ae h, eLpNorm_zero]
   refine ENNReal.le_mul_mul_of_ne_top_imp_le (fun hCB => hvanish (.of_forall fun z => ?_))
     (fun hf0 => hvanish ?_) (fun hg0 => hvanish ?_) fun _ hf hg => ?_
-  · -- `enorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
+  · -- `eNorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
     simp [B.opNorm_zero_iff.1 <| (norm_nonneg B).antisymm' <| by simpa [← ofReal_norm] using hCB]
   · filter_upwards [(eLpNorm_eq_zero_iff (by simpa using (zero_lt_two.trans hp).ne')).1 hf0]
       with z hz
@@ -95,7 +95,7 @@ theorem exists_eLpNorm_bilin_le_eLpNormWkp_one (hp : 2 < p) (hq : 1 ≤ q) (hqp 
   calc
     _ ≤ ‖B‖ₑ * eLpNorm f p (volume.restrict U) *
         eLpNorm g ((q : ℝ≥0∞)⁻¹ - (p : ℝ≥0∞)⁻¹)⁻¹ (volume.restrict U) :=
-      eLpNorm_le_enorm_mul_eLpNorm_mul_eLpNorm B hf (hgq.aestronglyMeasurable.mono_measure hUm)
+      eLpNorm_le_eNorm_mul_eLpNorm_mul_eLpNorm B hf (hgq.aestronglyMeasurable.mono_measure hUm)
     _ ≤ ‖B‖ₑ * eLpNorm f p (volume.restrict U) *
         (C * (eLpNorm g q (volume.restrict Ω) + eLpNorm Dg q (volume.restrict Ω))) := by
       gcongr
@@ -139,7 +139,7 @@ theorem exists_eLpNormWkp_one_bilin_le [FiniteDimensional ℝ F] [CompleteSpace 
     rw [eLpNormWkp_congr_ae (ae_mono hKm h), eLpNormWkp_zero_fun]
   refine ENNReal.le_mul_mul_of_ne_top_imp_le (fun hCB => hvanish (.of_forall fun z => ?_))
     (fun hf0 => hvanish ?_) (fun hg0 => hvanish ?_) fun _ hf hg => ?_
-  · -- `enorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
+  · -- `eNorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
     simp [B.opNorm_zero_iff.1 <| (norm_nonneg B).antisymm' <| by simpa [← ofReal_norm] using hCB]
   · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hp0 hf0] with z hz
     simp [hz]
