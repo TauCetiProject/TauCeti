@@ -350,7 +350,7 @@ theorem MemWkpLoc.of_succ (hf : MemWkpLoc p U (k + 1) f) : MemWkpLoc p U k f := 
 theorem MemWkpLoc.of_le (hf : MemWkpLoc p U k f) (hlk : l ≤ k) : MemWkpLoc p U l f := by
   induction hlk with
   | refl => exact hf
-  | step h ih => exact ih hf.of_succ
+  | step _ ih => exact ih hf.of_succ
 
 /-- The zero function lies in every local Sobolev class with complete codomain. -/
 @[simp]
