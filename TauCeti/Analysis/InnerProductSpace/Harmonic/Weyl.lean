@@ -74,8 +74,6 @@ result to each continuous coordinate functional and reconstruct by a finite sum.
   `TauCeti.WeaklyHarmonicOn.add`, …: weak harmonicity is local, depends only on the a.e. class of
   the function on `Ω`, and is closed under the linear operations.
 * `TauCeti.WeaklyHarmonicOn.clm_comp`: continuous linear maps preserve weak harmonicity.
-* `TauCeti.integrable_laplacian_smul_of_locallyIntegrableOn`: `Δφ • w` is integrable for a test
-  function `φ` and `w` locally integrable on `Ω`.
 * `TauCeti.weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq`: two functions with the same
   distributional Laplacian differ by a weakly harmonic function.
 * `TauCeti.HasWeakLineDerivOn.weaklyHarmonicOn`,
@@ -172,13 +170,6 @@ section OpensMeasurable
 
 variable [OpensMeasurableSpace E]
 
-/-- The Laplacian of a test function on `Ω` scales a function locally integrable on `Ω` to a
-globally integrable one. -/
-theorem integrable_laplacian_smul_of_locallyIntegrableOn (hw : LocallyIntegrableOn w Ω μ)
-    (φ : 𝓓(Ω, ℝ)) :
-    Integrable (fun x ↦ Δ (φ : E → ℝ) x • w x) μ :=
-  φ.integrable_laplacian_smul hw
-
 /-- The full weak Fréchet derivative of a weakly harmonic function is weakly harmonic.
 Each evaluation is a weak directional derivative, and evaluation commutes with integration. -/
 theorem HasWeakFDerivOn.weaklyHarmonicOn {W : E → E →L[ℝ] F}
@@ -228,8 +219,8 @@ theorem weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {w₁ w₂ : E → F}
     WeaklyHarmonicOn μ Ω (w₁ - w₂) := by
   refine ⟨h₁.sub h₂, fun φ ↦ ?_⟩
   simp only [Pi.sub_apply, smul_sub]
-  rw [integral_sub (integrable_laplacian_smul_of_locallyIntegrableOn h₁ φ)
-    (integrable_laplacian_smul_of_locallyIntegrableOn h₂ φ), h φ, sub_self]
+  rw [integral_sub (φ.integrable_laplacian_smul h₁) (φ.integrable_laplacian_smul h₂), h φ,
+    sub_self]
 
 /-- A continuous linear map of complete real normed spaces preserves weak harmonicity. -/
 theorem WeaklyHarmonicOn.clm_comp [CompleteSpace F] {G : Type*} [NormedAddCommGroup G]

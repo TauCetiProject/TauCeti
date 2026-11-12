@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Complex.Pompeiu.Lp
 import TauCeti.Analysis.Complex.Wirtinger.Laplacian
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.WeakInteriorLp
 
 /-!
@@ -236,7 +237,7 @@ theorem exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {V : 
       simpa only [hd] using (integrable_lineDeriv_smul_of_locallyIntegrableOn
         (hfi.mono_set hUΩ') φ 1).fun_add (integrable_lineDeriv_smul_of_locallyIntegrableOn
           (hgi.mono_set hUΩ') φ I)
-    have hL := integrable_laplacian_smul_of_locallyIntegrableOn hξ₀i φ
+    have hL := φ.integrable_laplacian_smul hξ₀i
     refine b.ext_elem fun i ↦ ?_
     have hci (x : V) : b.repr x i = c i x := by simp [c]
     rw [hci, hci, ← (c i).integral_comp_comm hL, map_neg, ← (c i).integral_comp_comm hR]

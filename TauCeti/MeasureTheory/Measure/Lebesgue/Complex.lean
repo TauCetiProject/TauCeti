@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Coordinates
 public import TauCeti.Analysis.Complex.Euclidean.Space
@@ -18,8 +18,6 @@ import Mathlib.Topology.Order.Compact
 The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and `t` are
 (`MeasurableSet.reProdIm`).
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure.
-Cutting off to the open upper half-plane a function locally integrable on `s` up to the real axis
-gives a function locally integrable on `s` (`Complex.locallyIntegrableOn_indicator_setOf_pos_im`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides, so a function of the
 imaginary part integrable on a rectangle of positive width is integrable on the vertical side,
@@ -33,7 +31,7 @@ Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 
 public section
 
-open MeasureTheory Set Filter
+open MeasureTheory Set
 open scoped ENNReal
 
 /-- The set `s ×ℂ t` is measurable when `s` and `t` are. -/
@@ -63,27 +61,6 @@ theorem volume_setOf_im_eq (c : ℝ) : volume {z : ℂ | z.im = c} = 0 := by
   ext z
   simp only [mem_preimage, measurableEquivRealProd_apply, mem_prod,
     mem_singleton_iff, mem_univ, true_and, mem_ofPred_eq]
-
-/-- A function locally integrable on `s` up to the real axis, cut off to the open upper
-half-plane, is locally integrable on `s`. -/
-theorem locallyIntegrableOn_indicator_setOf_pos_im {E : Type*} [NormedAddCommGroup E]
-    {μ : Measure ℂ} {s : Set ℂ} {f : ℂ → E}
-    (hf : LocallyIntegrableOn f (s ∩ {z | 0 ≤ z.im}) μ) :
-    LocallyIntegrableOn ({z : ℂ | 0 < z.im}.indicator f) s μ := by
-  have hm : NullMeasurableSet {z : ℂ | 0 < z.im} μ :=
-    (measurableSet_lt measurable_const measurable_im).nullMeasurableSet
-  intro x hx
-  rcases le_or_gt 0 x.im with h | h
-  · obtain ⟨t, ht, hft⟩ := hf x ⟨hx, h⟩
-    rw [nhdsWithin_inter', mem_inf_principal] at ht
-    refine ⟨_, ht, (integrableOn_indicator_iff hm).2 (hft.mono_set ?_)⟩
-    rintro z ⟨hz, hzt⟩
-    exact hzt (mem_ofPred.2 (mem_ofPred.1 hz).le)
-  · refine ⟨{z | z.im < 0}, mem_nhdsWithin_of_mem_nhds
-      ((isOpen_lt continuous_im continuous_const).mem_nhds h), ?_⟩
-    refine (integrableOn_indicator_iff hm).2 (integrableOn_empty.mono_set ?_)
-    rintro z ⟨hz, hz'⟩
-    exact (mem_ofPred.1 hz).not_gt (mem_ofPred.1 hz')
 
 /-- A continuous graph over a compact interval has zero planar area. -/
 theorem volume_setOf_re_mem_Icc_im_eq {a b : ℝ} {f : ℝ → ℝ} (hf : ContinuousOn f (Icc a b)) :

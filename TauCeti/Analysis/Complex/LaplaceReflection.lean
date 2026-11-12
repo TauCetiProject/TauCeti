@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Calculus.FDeriv.Comp
+import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
@@ -118,6 +119,63 @@ theorem twistedReflection_of_im_eq_zero (hz : z.im = 0) : twistedReflection R ξ
   have hz'' : conj z ∉ {w : ℂ | 0 < w.im} := by simp [hz]
   rw [twistedReflection, indicator_of_notMem hz', indicator_of_notMem hz'', map_zero, add_zero]
 
+/-- The defining formula of the twisted reflection. -/
+theorem twistedReflection_def (R : V →L[ℝ] V) (ξ : ℂ → V) (z : ℂ) :
+    twistedReflection R ξ z =
+      {w : ℂ | 0 < w.im}.indicator ξ z + R ({w : ℂ | 0 < w.im}.indicator ξ (conj z)) :=
+  (rfl)
+
+/-- The twisted reflection by `0` is the cutoff to the open upper half-plane. -/
+@[simp]
+theorem twistedReflection_zero_left (ξ : ℂ → V) :
+    twistedReflection 0 ξ = {w : ℂ | 0 < w.im}.indicator ξ := by
+  ext z
+  rw [twistedReflection_def, zero_apply, add_zero]
+
+/-- The twisted reflection of `0` is `0`. -/
+@[simp]
+theorem twistedReflection_zero_right (R : V →L[ℝ] V) : twistedReflection R (0 : ℂ → V) = 0 := by
+  ext z
+  simp only [twistedReflection_def, indicator_zero', Pi.zero_apply, map_zero, add_zero]
+
+/-- The twisted reflection is additive in the reflected function. -/
+theorem twistedReflection_add (R : V →L[ℝ] V) (ξ η : ℂ → V) :
+    twistedReflection R (ξ + η) = twistedReflection R ξ + twistedReflection R η := by
+  ext z
+  simp only [twistedReflection_def, indicator_add', Pi.add_apply, map_add]
+  abel
+
+/-- The twisted reflection commutes with negation. -/
+theorem twistedReflection_neg (R : V →L[ℝ] V) (ξ : ℂ → V) :
+    twistedReflection R (-ξ) = -twistedReflection R ξ := by
+  ext z
+  simp only [twistedReflection_def, indicator_neg', Pi.neg_apply, map_neg, neg_add]
+
+/-- The twisted reflection commutes with subtraction. -/
+theorem twistedReflection_sub (R : V →L[ℝ] V) (ξ η : ℂ → V) :
+    twistedReflection R (ξ - η) = twistedReflection R ξ - twistedReflection R η := by
+  rw [sub_eq_add_neg, twistedReflection_add, twistedReflection_neg, sub_eq_add_neg]
+
+/-- The twisted reflection commutes with real scalar multiplication. -/
+theorem twistedReflection_smul (R : V →L[ℝ] V) (c : ℝ) (ξ : ℂ → V) :
+    twistedReflection R (c • ξ) = c • twistedReflection R ξ := by
+  ext z
+  simp only [twistedReflection_def, Pi.smul_def, indicator_const_smul_apply, map_smul, smul_add]
+
+/-- For an involution `R`, the twisted reflection intertwines `conj` with `R`. -/
+theorem twistedReflection_conj (hR : Function.Involutive R) (ξ : ℂ → V) (z : ℂ) :
+    twistedReflection R ξ (conj z) = R (twistedReflection R ξ z) := by
+  rw [twistedReflection_def, twistedReflection_def, RCLike.conj_conj, map_add, hR, add_comm]
+
+/-- On the closed upper half-plane the twisted reflection of `ξ` agrees almost everywhere with
+`ξ`, since the real axis is a null set. -/
+theorem twistedReflection_ae_eq (R : V →L[ℝ] V) (ξ : ℂ → V) :
+    twistedReflection R ξ =ᵐ[volume.restrict {z : ℂ | 0 ≤ z.im}] ξ := by
+  have hm : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
+  have hne : ∀ᵐ z : ℂ, z.im ≠ 0 := measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
+  filter_upwards [ae_restrict_mem hm, ae_restrict_of_ae hne] with z hz hz'
+  exact twistedReflection_of_pos (lt_of_le_of_ne (mem_ofPred.1 hz) hz'.symm)
+
 /-! ### Local integrability -/
 
 /-- The open upper half-plane `{z | 0 < im z}`. -/
@@ -126,13 +184,22 @@ private abbrev upper : Set ℂ := {z : ℂ | 0 < z.im}
 private theorem measurableSet_upper : MeasurableSet upper :=
   measurableSet_lt measurable_const Complex.measurable_im
 
+omit [NormedSpace ℝ V] in
+/-- A function locally integrable on `s` up to the real axis, cut off to the open upper
+half-plane, is locally integrable on `s`. -/
+private theorem locallyIntegrableOn_indicator_upper {s : Set ℂ} {f : ℂ → V}
+    (hf : LocallyIntegrableOn f (s ∩ {z | 0 ≤ z.im})) :
+    LocallyIntegrableOn (upper.indicator f) s :=
+  LocallyIntegrableOn.indicator_of_closure (by rwa [closure_setOfPred_lt_im])
+    measurableSet_upper.nullMeasurableSet
+
 /-- **Local integrability of the twisted reflection.** If `ξ` is locally integrable on `s` up to
 the real axis, its twisted reflection is locally integrable on the conjugation-invariant set
 `s`. -/
 theorem locallyIntegrableOn_twistedReflection {s : Set ℂ} (hs : ∀ z ∈ s, conj z ∈ s)
     (R : V →L[ℝ] V) (hξ : LocallyIntegrableOn ξ (s ∩ {z | 0 ≤ z.im})) :
     LocallyIntegrableOn (twistedReflection R ξ) s := by
-  have h := locallyIntegrableOn_indicator_setOf_pos_im hξ
+  have h := locallyIntegrableOn_indicator_upper hξ
   have hc : LocallyIntegrableOn (fun z ↦ upper.indicator ξ (conj z)) s := by
     simpa only [conjCLE_apply] using h.comp_continuousLinearEquiv_of_mapsTo conjCLE
       (fun z hz ↦ by simpa only [conjCLE_apply] using hs z hz)
@@ -260,9 +327,9 @@ private theorem integral_lapIntegrand_twistedReflection (hΩ : ∀ z ∈ Ω, con
           (upper.indicator g) z) +
         ∫ z, lapIntegrand (conjTest hΩ φ : ℂ → ℝ) (fun w ↦ R (upper.indicator ξ w))
           (fun w ↦ R (upper.indicator f w)) (fun w ↦ R (upper.indicator g w)) z := by
-  have hξ' := locallyIntegrableOn_indicator_setOf_pos_im hξ
-  have hf' := locallyIntegrableOn_indicator_setOf_pos_im hf
-  have hg' := locallyIntegrableOn_indicator_setOf_pos_im hg
+  have hξ' := locallyIntegrableOn_indicator_upper hξ
+  have hf' := locallyIntegrableOn_indicator_upper hf
+  have hg' := locallyIntegrableOn_indicator_upper hg
   set J := lapIntegrand (conjTest hΩ φ : ℂ → ℝ) (fun w ↦ R (upper.indicator ξ w))
     (fun w ↦ R (upper.indicator f w)) (fun w ↦ R (upper.indicator g w))
   have hJ : Integrable J :=
@@ -305,9 +372,9 @@ theorem forall_integral_laplacian_smul_twistedReflection_eq_iff (hΩ : ∀ z ∈
       ∫ z in {z : ℂ | 0 < z.im}, Δ (φ : ℂ → ℝ) z • (ξ z - R (ξ z)) =
         -∫ z in {z : ℂ | 0 < z.im}, (fderiv ℝ (φ : ℂ → ℝ) z 1 • (f z - R (f z)) +
           fderiv ℝ (φ : ℂ → ℝ) z I • (g z - R (g z)))) := by
-  have hξ' := locallyIntegrableOn_indicator_setOf_pos_im hξ
-  have hf' := locallyIntegrableOn_indicator_setOf_pos_im hf
-  have hg' := locallyIntegrableOn_indicator_setOf_pos_im hg
+  have hξ' := locallyIntegrableOn_indicator_upper hξ
+  have hf' := locallyIntegrableOn_indicator_upper hf
+  have hg' := locallyIntegrableOn_indicator_upper hg
   have hRξ : LocallyIntegrableOn (fun z ↦ R (upper.indicator ξ z)) Ω :=
     R.locallyIntegrableOn_comp hξ'
   have hRf : LocallyIntegrableOn (fun z ↦ R (upper.indicator f z)) Ω :=
