@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Trajectory
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -24,7 +25,8 @@ regularity of the metric can be dropped from these statements.
   (`TauCeti.isMorse_id_real`), vacuously, since it has no critical points
   (`TauCeti.criticalPoints_id_real`). For the standard metric, `grad f = 1`
   (`TauCeti.mgradient_id_real`), so `t ↦ x₀ - t` is a trajectory of `-grad f`
-  (`TauCeti.isMIntegralCurve_sub_neg_mgradient_id`), and every forward trajectory has this form.
+  (`TauCeti.isMIntegralCurve_sub_neg_mgradient_id`), and every forward trajectory has this form
+  (`TauCeti.eqOn_sub_of_isMIntegralCurveOn_neg_mgradient_id`).
   No forward trajectory stays in a compact set
   (`TauCeti.not_mapsTo_of_isMIntegralCurveOn_neg_mgradient_id`), and none converges
   (`TauCeti.not_tendsto_of_isMIntegralCurveOn_neg_mgradient_id`).
@@ -37,7 +39,8 @@ regularity of the metric can be dropped from these statements.
   (`TauCeti.mgradient_id_singularLineMetric`). The trajectory of `-grad f` from `x₀ > 0` is
   `t ↦ x₀ / (1 + x₀ t)` (`TauCeti.isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`). For
   `x₀ = 1` it stays in the compact interval `[0, 1]` and converges to `0`, which is not a critical
-  point of `f` (`TauCeti.exists_isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`).
+  point of `f`
+  (`TauCeti.exists_isMIntegralCurveOn_mapsTo_notMem_criticalPoints_tendsto_id_singularLineMetric`).
 
 Neither example uses compactness of the manifold `ℝ`: the theorems recalled above replace it by
 the compact set containing the trajectory.
@@ -60,6 +63,7 @@ namespace TauCeti
 section Untrapped
 
 /-- **The function `f(x) = x` on `ℝ` has no critical points.** -/
+@[simp]
 theorem criticalPoints_id_real : criticalPoints 𝓘(ℝ, ℝ) (id : ℝ → ℝ) = ∅ := by
   ext x
   simp only [mem_criticalPoints_iff_fderiv_eq_zero, fderiv_id, mem_empty_iff_false, iff_false]
@@ -72,8 +76,8 @@ theorem isMorse_id_real : IsMorse 𝓘(ℝ, ℝ) (id : ℝ → ℝ) :=
   isMorseOn_univ.1 (isMorseOn_iff_criticalPoints.2
     ⟨contMDiff_id.contMDiffOn, fun x _ hx ↦ by simp [criticalPoints_id_real] at hx⟩)
 
-/-- For the standard metric on `ℝ`, the gradient of `f(x) = x` is `1`. -/
-@[simp]
+/-- For the standard metric on `ℝ`, the gradient of `f(x) = x` is `1`. Not `@[simp]`: it
+changes the type of the term from the tangent space to `ℝ`. -/
 theorem mgradient_id_real (x : ℝ) : mgradient 𝓘(ℝ, ℝ) (id : ℝ → ℝ) x = (1 : ℝ) := by
   rw [mgradient_eq_gradient_of_eq rfl, gradient_eq_deriv', deriv_id]
 
@@ -96,8 +100,8 @@ theorem isMIntegralCurve_sub_neg_mgradient_id (x₀ : ℝ) :
 variable {γ : ℝ → ℝ}
 
 /-- A forward trajectory of `-grad f`, for `f(x) = x` and the standard metric, moves at unit
-speed to the left. -/
-private theorem eqOn_sub_of_isMIntegralCurveOn_neg_mgradient_id
+speed to the left: it is `t ↦ γ 0 - t`. -/
+theorem eqOn_sub_of_isMIntegralCurveOn_neg_mgradient_id
     (hγ : IsMIntegralCurveOn γ (-mgradient 𝓘(ℝ, ℝ) (id : ℝ → ℝ)) (Ici 0)) :
     EqOn γ (fun t ↦ γ 0 - t) (Ici 0) := by
   rw [isMIntegralCurveOn_iff_isIntegralCurveOn] at hγ
@@ -142,6 +146,15 @@ section Singular
 noncomputable def singularLineWeight (x : ℝ) : ℝ :=
   if x = 0 then 1 else (x ^ 2)⁻¹
 
+/-- At `0` the weight `λ` of `singularLineMetric` is `1`. -/
+@[simp]
+theorem singularLineWeight_zero : singularLineWeight 0 = 1 := by
+  simp [singularLineWeight]
+
+/-- Away from `0` the weight `λ` of `singularLineMetric` is `x⁻²`. -/
+theorem singularLineWeight_of_ne_zero {x : ℝ} (hx : x ≠ 0) : singularLineWeight x = (x ^ 2)⁻¹ := by
+  simp [singularLineWeight, hx]
+
 /-- The weight `λ` of `singularLineMetric` is positive. -/
 theorem singularLineWeight_pos (x : ℝ) : 0 < singularLineWeight x := by
   rw [singularLineWeight]
@@ -172,8 +185,9 @@ noncomputable def singularLineMetric :
 
 /-- The inner products of `singularLineMetric`: `⟪v, w⟫ₓ = λ(x) v w`. -/
 @[simp]
-theorem singularLineMetric_inner (x v w : ℝ) :
-    singularLineMetric.inner x v w = singularLineWeight x * (v * w) := by
+theorem singularLineMetric_inner (x : ℝ) (v w : TangentSpace 𝓘(ℝ, ℝ) x) :
+    singularLineMetric.inner x v w = singularLineWeight x *
+      (NormedSpace.fromTangentSpace x v * NormedSpace.fromTangentSpace x w) := by
   rw [singularLineMetric]
   -- The bilinear form `λ(x) • mul ℝ ℝ` on `TangentSpace 𝓘(ℝ, ℝ) x = ℝ` evaluates by definition;
   -- the tangent-space typing of `v` and `w` blocks the `ContinuousLinearMap` simp lemmas.
@@ -186,34 +200,21 @@ theorem not_isContMDiffRiemannianBundle_singularLineMetric (n : WithTop ℕ∞) 
     let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) := ⟨singularLineMetric⟩
     ¬ IsContMDiffRiemannianBundle 𝓘(ℝ, ℝ) n ℝ (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) := by
   intro _ h
-  have h0 : IsContMDiffRiemannianBundle 𝓘(ℝ, ℝ) 0 ℝ (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
-    h.of_le zero_le
-  -- The constant unit vector field, as a continuous map into the tangent bundle.
-  have hv : ContMDiff 𝓘(ℝ, ℝ) (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)) 0
-      (fun x : ℝ ↦ (TotalSpace.mk' ℝ x (1 : TangentSpace 𝓘(ℝ, ℝ) x) :
-        TotalSpace ℝ (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x))) := by
-    rw [contMDiff_zero_iff]
-    exact (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, ℝ)).symm.continuous.comp
-      (continuous_id.prodMk continuous_const)
-  have hcont : Continuous fun x : ℝ ↦ singularLineMetric.inner x (1 : ℝ) (1 : ℝ) :=
-    (ContMDiff.inner_bundle hv hv).continuous
-  simp only [singularLineMetric_inner, singularLineWeight, mul_one] at hcont
-  -- Near `0` the weight `λ(x) = x⁻²` is large, while `λ(0) = 1`.
-  obtain ⟨δ, hδ, hball⟩ := Metric.continuousAt_iff.1 hcont.continuousAt 1 one_pos
-  set x : ℝ := min (δ / 2) (1 / 2)
-  have hx : 0 < x := lt_min (half_pos hδ) one_half_pos
-  have hxδ : dist x 0 < δ := by
-    rw [Real.dist_0_eq_abs, abs_of_pos hx]
-    exact (min_le_left _ _).trans_lt (half_lt_self hδ)
-  have hx2 : x ^ 2 ≤ 1 / 4 := by
-    have : x ≤ 1 / 2 := min_le_right _ _
-    nlinarith
-  have hlam : 4 ≤ (x ^ 2)⁻¹ := by
-    rw [le_inv_comm₀ (by norm_num) (by positivity)]
-    linarith
-  have := hball hxδ
-  simp only [hx.ne', ↓reduceIte, Real.dist_eq, abs_lt] at this
-  linarith [this.2]
+  -- The constant unit vector field, as a smooth section of the tangent bundle.
+  have hv : CMDiff n (T% fun x : ℝ ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).symm (1 : ℝ)) :=
+    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+  have hcont : Continuous singularLineWeight := by
+    convert (ContMDiff.inner_bundle hv hv).continuous using 2 with x
+    -- The inner product of the installed metric is `singularLineMetric.inner` by definition.
+    change _ = singularLineMetric.inner x _ _
+    rw [singularLineMetric_inner, ContinuousLinearEquiv.apply_symm_apply, mul_one, mul_one]
+  -- Near `0` the weight `λ(x) = x⁻²` tends to infinity, while `λ(0) = 1`.
+  have htop : Tendsto singularLineWeight (𝓝[>] 0) atTop := by
+    refine ((tendsto_pow_atTop two_ne_zero).comp tendsto_inv_nhdsGT_zero).congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with x (hx : 0 < x)
+    simp [singularLineWeight_of_ne_zero hx.ne']
+  exact not_tendsto_nhds_of_tendsto_atTop htop _
+    ((hcont.tendsto 0).mono_left nhdsWithin_le_nhds)
 
 /-- For the metric `singularLineMetric`, the gradient of `f(x) = x` is `λ⁻¹`: it is `x²` for
 `x ≠ 0` and `1` at `0`. -/
@@ -222,18 +223,20 @@ theorem mgradient_id_singularLineMetric (x : ℝ) :
     mgradient 𝓘(ℝ, ℝ) (id : ℝ → ℝ) x = (if x = 0 then 1 else x ^ 2 : ℝ) := by
   intro _
   have h := inner_mgradient_model_space (id : ℝ → ℝ) x 1
-  obtain ⟨m, hm⟩ : ∃ m : ℝ, mgradient 𝓘(ℝ, ℝ) (id : ℝ → ℝ) x = m := ⟨_, rfl⟩
-  rw [hm] at h ⊢
   rw [fderiv_id, ContinuousLinearMap.id_apply] at h
-  -- The inner product of the installed metric is `λ(x) v w`.
-  have h' : singularLineMetric.inner x m (1 : ℝ) = 1 := h
-  rw [singularLineMetric_inner, singularLineWeight, mul_one] at h'
-  clear h
-  split_ifs at h' ⊢ with hx
-  · exact (one_mul m).symm.trans h'
-  · have hx2 : x ^ 2 ≠ 0 := pow_ne_zero 2 hx
-    field_simp at h'
-    exact h'
+  -- The inner product of the installed metric is `singularLineMetric.inner`, and
+  -- `tangentSpaceCastModel 𝓘(ℝ, ℝ) x` is `NormedSpace.fromTangentSpace x`, by definition.
+  change singularLineMetric.inner x _ ((NormedSpace.fromTangentSpace x).symm 1) = 1 at h
+  rw [singularLineMetric_inner, ContinuousLinearEquiv.apply_symm_apply, mul_one] at h
+  apply (NormedSpace.fromTangentSpace x).injective
+  refine Eq.trans ?_ (NormedSpace.fromTangentSpace_apply x _).symm
+  set m := NormedSpace.fromTangentSpace x (mgradient 𝓘(ℝ, ℝ) (id : ℝ → ℝ) x)
+  rcases eq_or_ne x 0 with rfl | hx
+  · simpa using h
+  · rw [singularLineWeight_of_ne_zero hx] at h
+    simp only [hx, ↓reduceIte]
+    field_simp at h
+    exact h
 
 /-- For the metric `singularLineMetric`, the negative gradient of `f(x) = x` is `-x²` off `0`. -/
 private theorem neg_mgradient_id_singularLineMetric_apply {x : ℝ} (hx : x ≠ 0) :
@@ -271,7 +274,7 @@ metric is not `C¹`, the limit of a convergent forward trajectory need not be cr
 `IsMIntegralCurveOn.mem_criticalPoints_of_tendsto_neg_mgradient`), and a trapped trajectory need
 not converge to a critical point (compare
 `TauCeti.IsMorse.exists_tendsto_of_isMIntegralCurveOn_neg_mgradient`). -/
-theorem exists_isMIntegralCurveOn_neg_mgradient_id_singularLineMetric :
+theorem exists_isMIntegralCurveOn_mapsTo_notMem_criticalPoints_tendsto_id_singularLineMetric :
     let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) := ⟨singularLineMetric⟩
     ∃ γ : ℝ → ℝ, IsMIntegralCurveOn γ (-mgradient 𝓘(ℝ, ℝ) (id : ℝ → ℝ)) (Ici 0) ∧
       MapsTo γ (Ici 0) (Icc 0 1) ∧
