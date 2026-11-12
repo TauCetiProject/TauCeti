@@ -57,10 +57,8 @@ theorem sum_primesLE_log_div_le_sum_vonMangoldt_div (N : ℕ) :
   calc ∑ p ∈ Nat.primesLE N, log p / p = ∑ p ∈ Nat.primesLE N, Λ p / p :=
         sum_congr rfl fun p hp ↦ by rw [vonMangoldt_apply_prime (Nat.prime_of_mem_primesLE hp)]
     _ ≤ ∑ n ∈ Ioc 0 N, Λ n / n := by
-      refine sum_le_sum_of_subset_of_nonneg (fun p hp ↦ ?_) fun n _ _ ↦ by
-        positivity [vonMangoldt_nonneg (n := n)]
-      rw [Nat.mem_primesLE] at hp
-      exact mem_Ioc.mpr ⟨hp.2.pos, hp.1⟩
+      refine sum_le_sum_of_subset_of_nonneg (Nat.primesLE_eq_filter_Ioc_zero N ▸ filter_subset _ _)
+        fun n _ _ ↦ by positivity [vonMangoldt_nonneg (n := n)]
 
 /-- The prime powers `p ^ k` with `k ≥ 2` contribute a bounded amount to `∑_{n ≤ N} Λ(n) / n`:
 at most the convergent series `∑_{n not prime} Λ(n) / n`. -/
@@ -69,12 +67,8 @@ theorem sum_vonMangoldt_div_le_sum_primesLE_log_div_add_tsum (N : ℕ) :
       ∑ p ∈ Nat.primesLE N, log p / p + ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n := by
   have hprime : ∑ n ∈ Ioc 0 N, (if n.Prime then Λ n / n else 0) =
       ∑ p ∈ Nat.primesLE N, log p / p := by
-    rw [← sum_filter]
-    refine sum_congr ?_ fun p hp ↦ ?_
-    · ext p
-      simp only [mem_filter, mem_Ioc, Nat.mem_primesLE]
-      exact ⟨fun h ↦ ⟨h.1.2, h.2⟩, fun h ↦ ⟨⟨h.2.pos, h.1⟩, h.2⟩⟩
-    · rw [vonMangoldt_apply_prime (Nat.prime_of_mem_primesLE hp)]
+    rw [← sum_filter, ← Nat.primesLE_eq_filter_Ioc_zero]
+    exact sum_congr rfl fun p hp ↦ by rw [vonMangoldt_apply_prime (Nat.prime_of_mem_primesLE hp)]
   calc ∑ n ∈ Ioc 0 N, Λ n / n
       = ∑ n ∈ Ioc 0 N, ((if n.Prime then Λ n / n else 0) + (if n.Prime then 0 else Λ n) / n) :=
         sum_congr rfl fun n _ ↦ by split_ifs <;> simp
