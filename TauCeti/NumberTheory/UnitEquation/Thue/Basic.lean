@@ -205,7 +205,7 @@ theorem logHeight₁_div_le_of_eval_homogenize_eq {g : ℤ[X]} {n : ℕ} (hn : g
   have hθ₀ := Real.posLog_nonneg (x := NumberField.house (θ 0 : K))
   have hθ₂ := Real.posLog_nonneg (x := NumberField.house (θ 2 : K))
   have hlog2 := Real.log_pos one_lt_two
-  rcases eq_or_ne y 0 with rfl | hy
+  rcases eq_or_ne y 0 with rfl | _
   · rw [Int.cast_zero, div_zero, logHeight₁_zero]
     nlinarith
   -- With `t = (μ 0 / μ 2) (ε 0 / ε 2) = (x - θ 0 y) / (x - θ 2 y)`, `t` determines `x / y`.
@@ -225,7 +225,7 @@ theorem logHeight₁_div_le_of_eval_homogenize_eq {g : ℤ[X]} {n : ℕ} (hn : g
     rw [hεK 2, hεK 0, ht']
     field_simp [coe_ne_zero (ε 2)]
   have hK := logHeight₁_div_le_of_mul_sub_mul_eq
-    (fun h ↦ hθ₀₂ (RingOfIntegers.coe_injective h)) (Int.cast_ne_zero.mpr hy) ht
+    (fun h ↦ hθ₀₂ (RingOfIntegers.coe_injective h)) ht
   rw [totalWeight_eq_finrank] at hK
   -- Bound the heights over `K` of `t`, `θ 0` and `θ 2`.
   have hth : logHeight₁ t ≤ 2 * (D * (c₁ + Real.log |(m : ℝ)|)) + D * (B * L) := by

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 public import TauCeti.Topology.Algebra.Module.Quotient
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # Normal spaces of smooth embeddings
@@ -19,6 +20,10 @@ bundle, and eventually a tubular neighbourhood, must be constructed.
 The differential is injective for an immersion of positive smoothness. Consequently the normal
 space has the expected codimension in finite dimensions. The quotient map also characterizes
 exactly which ambient tangent vectors represent zero normal vectors.
+
+The inclusion of an open subset is the extreme case: it is tangent to every ambient direction
+(`TauCeti.SmoothEmbedding.tangentRange_ofOpens`), so its normal spaces are zero
+(`TauCeti.SmoothEmbedding.subsingleton_normalSpace_ofOpens`).
 
 For the tubular-neighbourhood application of normal bundles, see M. Hirsch,
 *Differential Topology*, Theorem 6.3.
@@ -95,6 +100,13 @@ instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
 instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     ContinuousSMul 𝕜 (f.NormalSpace x hn) :=
   inferInstanceAs (ContinuousSMul 𝕜 (TangentSpace J (f x) ⧸ f.tangentRange x hn))
+
+/-- A normal space into a finite-dimensional model is finite-dimensional. -/
+instance [FiniteDimensional 𝕜 F] (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    FiniteDimensional 𝕜 (f.NormalSpace x hn) :=
+  -- Tangent spaces are their model spaces.
+  haveI : FiniteDimensional 𝕜 (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional 𝕜 F)
+  inferInstanceAs (FiniteDimensional 𝕜 (TangentSpace J (f x) ⧸ f.tangentRange x hn))
 
 /-- Project an ambient tangent vector to its normal class. -/
 noncomputable def normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
@@ -319,5 +331,20 @@ theorem finrank_normalSpace (f : SmoothEmbedding I J n M N) (x : M)
       Module.finrank 𝕜 (TangentSpace J (f x)) - Module.finrank 𝕜 (TangentSpace I x) := by
   have h := f.finrank_normalSpace_add_finrank x hn
   omega
+
+/-- The inclusion of an open subset is tangent to every ambient direction: its tangent range is the
+whole tangent space, since the inclusion is a local diffeomorphism. -/
+@[simp]
+theorem tangentRange_ofOpens [IsManifold I n M] (s : TopologicalSpace.Opens M) (x : s)
+    (hn : n ≠ 0) : (ofOpens (I := I) (n := n) s).tangentRange x hn = ⊤ := by
+  obtain ⟨e, he⟩ := (isLocalDiffeomorph_subtype_val (I := I) (n := n) x).isInvertible_mfderiv hn
+  refine eq_top_iff.2 fun v _ ↦ (mem_tangentRange_iff _ x hn v).2 ?_
+  rw [coe_ofOpens, ← he]
+  exact e.surjective v
+
+/-- The normal spaces of the inclusion of an open subset are zero. -/
+instance subsingleton_normalSpace_ofOpens [IsManifold I n M] (s : TopologicalSpace.Opens M)
+    (x : s) (hn : n ≠ 0) : Subsingleton ((ofOpens (I := I) (n := n) s).NormalSpace x hn) :=
+  Submodule.Quotient.subsingleton_iff.2 (tangentRange_ofOpens s x hn)
 
 end TauCeti.SmoothEmbedding

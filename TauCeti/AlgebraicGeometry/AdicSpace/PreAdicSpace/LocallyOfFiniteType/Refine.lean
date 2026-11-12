@@ -133,7 +133,6 @@ theorem locallyOfFiniteType_ofRestrict_comp_presentationLimitPreAdicSpaceComap
           φ.map_mem_plus
           U.isRingOfIntegralElements.isPowerBounded_of_mem
           U'.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf) := by
-  have hU' := U'.isRingOfIntegralElements.isPowerBounded_of_mem
   -- every point of `W` lies in a rational subset `R(T/s)` contained in `W`
   refine LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le W fun y ↦ ?_
   obtain ⟨R, hR, hyR, hRW⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens U'.plus) y.2
@@ -157,13 +156,8 @@ theorem locallyOfFiniteType_ofRestrict_comp_presentationLimitPreAdicSpaceComap
       (P'.rationalLocalizationPair U' hP' T s _ hden).plus := by
     rw [rationalLocalizationPair_plus]
     exact P'.completionLocalization_ringOfDefinition_le_completedPlusSubring U'.plus hP' T s _ hden
-  have hsheafV : Presheaf.IsSheaf
-      (Opens.grothendieckTopology ↥(spa (P'.rationalLocalizationPair U' hP' T s _ hden).plus))
-      (presentationLimitPresheaf (P'.completionLocalization T s _ hden)
-        (P'.rationalLocalizationPair U' hP' T s _ hden).plus) := by
-    rw [rationalLocalizationPair_plus]
-    exact isSheaf_presentationLimitPresheaf_completionLocalization P' U'.plus hU' hP' T s _ hden hT
-      hsheaf
+  have hsheafV := isSheaf_presentationLimitPresheaf_rationalLocalizationPair P' U' hP' T s _ hden
+    hT hsheaf
   exact locallyOfFiniteType_ofRestrict_comp_of_toRingHom_eq P P' hP hP' φ hsheaf hT _ hden _
     (rationalLocalizationPair_plus ..) _
     (by rw [Pair.Hom.toRingHom_comp, toRingHom_toCompletionLocHom]) hPV hsheafV

@@ -11,7 +11,13 @@ public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
-public import TauCeti.Analysis.Calculus.FDeriv.Det
+import Mathlib.Order.Interval.Set.OrdConnected
+import TauCeti.Analysis.Normed.Algebra.Basic
+import TauCeti.Analysis.Normed.Algebra.Exponential
+import TauCeti.Analysis.RCLike.Basic
+public import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
+public import TauCeti.Analysis.Matrix.Normed
+public import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # The matrix exponential
@@ -42,8 +48,18 @@ velocity `A`, and the derivative of the determinant at the identity is the trace
 `f' = trace A • f`, and then `t ↦ f t * exp (-t • trace A)` has vanishing derivative and is the
 constant `1`. Evaluating at `t = 1` gives the identity.
 
+The rational exponential series converges entrywise over any complete normed rational-algebra
+coefficient ring. In particular, two matrices have the same indicated entry in their
+exponentials whenever all their powers agree at those entries.
+
 ## Main results
 
+* `Matrix.exp_series_hasSum_exp_apply`: the rational exponential series at a matrix entry.
+* `Matrix.IsUpperTriangular.exp_submatrix`: restriction to order-connected index sets.
+* `Matrix.exp_apply_eq_of_forall_pow_apply_eq`: comparison of exponential entries through powers.
+* `Matrix.IsUpperTriangular.exp_apply_diag`: diagonal entries of a triangular exponential.
+* `Matrix.IsUpperTriangular.exp_apply_diag_pos`: real diagonal entries exponentiate to positive
+  real diagonal entries.
 * `Matrix.det_exp`: `det (exp A) = exp (trace A)`.
 * `Matrix.exp_mul_exp_neg`, `Matrix.exp_neg_mul_exp`, `Matrix.exp_mul_exp_neg_mul`,
   `Matrix.exp_neg_mul_exp_mul`: the reciprocal laws for the exponential of an arbitrary matrix,
@@ -71,6 +87,86 @@ open NormedSpace
 open scoped ComplexOrder Matrix Matrix.Norms.Operator MatrixOrder
 
 namespace Matrix
+
+section EntrySeries
+
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℚ R] [CompleteSpace R]
+
+/-- The rational exponential series converges to each entry of the matrix exponential. -/
+theorem exp_series_hasSum_exp_apply {l : Type*} [Fintype l] [DecidableEq l]
+    (M : Matrix l l R) (i j : l) :
+    HasSum (fun k : ℕ ↦ (k.factorial⁻¹ : ℚ) • (M^k) i j) (exp M i j) := by
+  let e := Matrix.entryLinearMap ℚ R i j
+  have he : Continuous e := continuous_id.matrix_elem i j
+  have h := (NormedSpace.exp_series_hasSum_exp' (𝕂 := ℚ) M).map e.toAddMonoidHom he
+  refine h.congr (fun k ↦ ?_)
+  simp [e]
+
+/-- Equal entries in every power give equal entries in the matrix exponentials. -/
+theorem exp_apply_eq_of_forall_pow_apply_eq {p q : Type*}
+    [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q]
+    (M : Matrix p p R) (N : Matrix q q R) (i j : p) (u v : q)
+    (hp : ∀ k : ℕ, (M ^ k) i j = (N ^ k) u v) : exp M i j = exp N u v := by
+  have h := exp_series_hasSum_exp_apply M i j
+  simp only [hp] at h
+  exact h.unique (exp_series_hasSum_exp_apply N u v)
+
+/-- On the diagonal, exponentiating an upper-triangular matrix exponentiates each entry. -/
+@[simp]
+theorem IsUpperTriangular.exp_apply_diag {n : Type*} [Fintype n] [LinearOrder n]
+    {A : Matrix n n R} (hA : A.IsUpperTriangular) (i : n) : exp A i i = exp (A i i) := by
+  have h := exp_apply_eq_of_forall_pow_apply_eq A (diagonal (fun j ↦ A j j)) i i i i
+    (fun k ↦ by
+      simp only [pow_apply_diag_of_isUpperTriangular hA, diagonal_pow, diagonal_apply_eq,
+        Pi.pow_apply])
+  simpa only [exp_diagonal, diagonal_apply_eq, Pi.coe_exp] using h
+
+/-- The exponential of an upper-triangular matrix commutes with restriction to an
+order-connected set of indices. -/
+theorem IsUpperTriangular.exp_submatrix {ι κ : Type*} [LinearOrder ι]
+    [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+    {A : Matrix ι ι R} (hA : A.IsUpperTriangular)
+    (e : κ ↪ ι) (he : Set.OrdConnected (Set.range e)) :
+    (NormedSpace.exp A).submatrix e e = NormedSpace.exp (A.submatrix e e) := by
+  ext i j
+  exact Matrix.exp_apply_eq_of_forall_pow_apply_eq A (A.submatrix e e) (e i) (e j) i j
+    (fun n ↦ congrArg (fun M : Matrix κ κ R ↦ M i j) (hA.submatrix_pow e he n))
+
+/-- Taking the leading principal block of an upper-triangular matrix commutes
+with exponentiation. -/
+theorem IsUpperTriangular.exp_submatrix_castSucc {n : ℕ}
+    {X : Matrix (Fin (n + 1)) (Fin (n + 1)) R} (hX : X.IsUpperTriangular) :
+    (exp X).submatrix Fin.castSucc Fin.castSucc =
+      exp (X.submatrix Fin.castSucc Fin.castSucc) := by
+  have he : Set.OrdConnected (Set.range (Fin.castSuccEmb : Fin n → Fin (n + 1))) := by
+    rw [Fin.coe_castSuccEmb, Fin.range_castSucc]
+    -- The range of `castSucc` is the initial segment below the final index.
+    exact Set.ordConnected_Iio (a := Fin.last n)
+  simpa only [Fin.coe_castSuccEmb] using hX.exp_submatrix Fin.castSuccEmb he
+
+end EntrySeries
+
+section PositiveDiagonal
+
+open scoped ComplexOrder
+
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+attribute [local instance] Matrix.linftyOpTopologicalSpace
+attribute [local instance] TauCeti.normedAlgebraRatOfReal
+
+/-- A real diagonal entry of an upper-triangular matrix exponentiates to a positive real entry. -/
+theorem IsUpperTriangular.exp_apply_diag_pos {ι 𝕜 : Type*} [Fintype ι] [LinearOrder ι]
+    [RCLike 𝕜] {A : Matrix ι ι 𝕜} (hA : A.IsUpperTriangular) (i : ι)
+    (hreal : RCLike.im (A i i) = 0) : 0 < exp A i i := by
+  have hdiag := RCLike.re_eq_self_of_im_eq_zero hreal
+  -- The generic diagonal lemma uses the rational normed-algebra instance; the RCLike
+  -- operator-norm instance reaches the same exponential through a different instance path.
+  have hexp : exp A i i = exp (A i i) := by
+    simpa using! hA.exp_apply_diag i
+  rw [hexp, ← hdiag, RCLike.exp_ofReal]
+  exact RCLike.pos_iff.mpr ⟨by simpa using Real.exp_pos (RCLike.re (A i i)), by simp⟩
+
+end PositiveDiagonal
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {𝕂 : Type*} [RCLike 𝕂]
 

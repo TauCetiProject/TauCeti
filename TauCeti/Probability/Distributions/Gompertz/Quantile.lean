@@ -40,7 +40,7 @@ private theorem quantile_gompertzMeasure_eq (hη : 0 < η) (hb : 0 < b) (hu : u 
   let _ := isProbabilityMeasure_expMeasure one_pos
   rw [gompertzMeasure_of_pos hη hb]
   apply Measure.quantile_map_of_monotoneOn ordConnected_Ioi (ae_pos_expMeasure 1) _ _ hu.1 hu.2
-  · intro e he f hf hef
+  · intro e he f _ hef
     apply (div_le_div_iff_of_pos_right hb).2
     exact log_le_log (by have : 0 < e := he; positivity)
       (by linarith [(div_le_div_iff_of_pos_right hη).2 hef])
@@ -80,7 +80,7 @@ theorem tendsto_quantile_gompertzMeasure_nhdsGT_zero (hη : 0 < η) (hb : 0 < b)
   have hc : ContinuousAt (fun e : ℝ => log (1 + e / η) / b) 0 := by
     fun_prop (disch := first | exact hb.ne' | exact hη.ne' | norm_num)
   have hlim := hc.tendsto.comp
-    (EReal.tendsto_coe.1 (tendsto_quantile_expMeasure_nhdsGT_zero one_pos))
+    (EReal.tendsto_coe.1 (tendsto_quantile_expMeasure_nhdsGT_zero (r := 1)))
   simp only [zero_div, add_zero, log_one] at hlim
   apply hlim.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu

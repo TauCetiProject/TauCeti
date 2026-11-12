@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.WithDensity
 -- Proof-only: change of variables in set integrals along a measurable embedding.
 import Mathlib.MeasureTheory.Integral.Lebesgue.Map
+-- Proof-only: pushing a measure forward along a measurable embedding.
+import TauCeti.MeasureTheory.Measure.AEMeasurable
 
 /-!
 # Measures and the group operations
@@ -140,23 +142,22 @@ original measure along `f`. -/
 @[to_additive /-- Pushing a negated measure forward along `f` after negation gives the pushforward
 of the original measure along `f`. -/]
 theorem map_inv_comp {G H : Type*} [MeasurableSpace G] [MeasurableSpace H] [InvolutiveInv G]
-    [MeasurableInv G] (μ : Measure G) {f : G → H} (hf : AEMeasurable (f ∘ Inv.inv) μ.inv) :
+    [MeasurableInv G] (μ : Measure G) {f : G → H} :
     μ.inv.map (f ∘ Inv.inv) = μ.map f := by
-  rw [inv_def] at hf ⊢
-  rw [AEMeasurable.map_map_of_aemeasurable hf measurable_inv.aemeasurable]
-  congr 1
-  ext x
-  simp
+  have h : (μ.inv.map Inv.inv).map f = μ.inv.map (f ∘ Inv.inv) :=
+    measurableEmbedding_inv.map_map_measure μ.inv f
+  rw [← inv_def, Measure.inv_inv] at h
+  exact h.symm
 
 /-- A set of full measure reflects to a set of full measure for the inverted measure. -/
 @[to_additive /-- A set of full measure reflects to a set of full measure for the negated
 measure. -/]
 theorem ae_inv_mem_preimage {G : Type*} [MeasurableSpace G] [InvolutiveInv G] [MeasurableInv G]
-    (μ : Measure G) {s : Set G} (hs : MeasurableSet s) (hμs : ∀ᵐ x ∂μ, x ∈ s) :
+    (μ : Measure G) {s : Set G} (hμs : ∀ᵐ x ∂μ, x ∈ s) :
     ∀ᵐ x ∂μ.inv, x ∈ Inv.inv ⁻¹' s := by
-  simp only [Set.mem_preimage]
-  rw [inv_def, ae_map_iff measurable_inv.aemeasurable (measurable_inv hs)]
-  simpa only [inv_inv] using hμs
+  have he : MeasurableEmbedding (Inv.inv : G → G) := (MeasurableEquiv.inv G).measurableEmbedding
+  rw [inv_def, he.ae_map_iff]
+  simpa only [Set.mem_preimage, inv_inv] using hμs
 
 section InvolutiveInv
 

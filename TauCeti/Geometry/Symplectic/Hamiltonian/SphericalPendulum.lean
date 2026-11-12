@@ -9,6 +9,9 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import Mathlib.Analysis.Convex.Mul
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 public import Mathlib.Topology.Order.IntermediateValue
+public import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.Calculus.FDeriv.WithLp
 
 /-!
 # The spherical pendulum: energy, angular momentum and their joint values
@@ -29,7 +32,8 @@ Away from the poles this says `H = V_J(q₃) + p₃² / (2 (1 - q₃²))`, where
 `V_j(z) = j² / (2 (1 - z²)) + z` is the effective potential of the reduced one-degree-of-freedom
 system (`TauCeti.sphericalPendulumEffectivePotential`). Consequently the heights occurring in a
 fibre `F⁻¹(h, j)` are exactly the `z ∈ [-1, 1]` with `z ≤ h` and `j² ≤ 2 (h - z) (1 - z²)`, and
-the image of `F` is the set of `(h, j)` for which such a height exists.
+the image of `F` is the set of `(h, j)` for which such a height exists. Taking `z = 0` shows that
+the value `(1, 0)` of the unstable equilibrium lies in the interior of the image.
 
 For `j ≠ 0` the effective potential has a unique minimum on `(-1, 1)`, at the unique root
 `z_j ∈ (-1, 0)` of `j² z + (1 - z²)² = 0`, with minimum value `(3 z_j² - 1) / (2 z_j)`. The
@@ -54,12 +58,18 @@ pole.
 
 ## Main results
 
+* `TauCeti.contDiff_sphericalPendulumEnergyMomentum` and
+  `TauCeti.fderiv_sphericalPendulumEnergyMomentum_apply`: the energy–momentum map `F = (H, J)` is
+  smooth on `ℝ³ × ℝ³`, with differential `dH (a, b) = ⟪p, b⟫ + a₃`,
+  `dJ (a, b) = a₁ p₂ - a₂ p₁ + q₁ b₂ - q₂ b₁`.
 * `TauCeti.sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace`: `p₃² = 2 (H - q₃) (1 - q₃²) - J²`.
 * `TauCeti.fst_sphericalPendulumEnergyMomentum_eq`: `H = V_J(q₃) + p₃² / (2 (1 - q₃²))` away
   from the poles.
 * `TauCeti.image_apply_two_preimage_sphericalPendulumEnergyMomentum`: the heights occurring in a
   fibre of `F`.
 * `TauCeti.image_sphericalPendulumEnergyMomentum`: the image of the energy–momentum map.
+* `TauCeti.mem_interior_image_sphericalPendulumEnergyMomentum`: `(1, 0)` lies in the interior of
+  the image.
 * `TauCeti.fst_sphericalPendulumEnergyMomentum_eq_neg_one_iff`: the energy `-1` is attained only
   at the south pole at rest.
 * `TauCeti.isMinOn_sphericalPendulumEffectivePotential_iff` and
@@ -154,6 +164,44 @@ theorem continuous_sphericalPendulumEnergyMomentum :
   continuous_sphericalPendulumHamiltonian.prodMk <|
     continuous_iff_continuousAt.2 fun x ↦ (hasFDerivAt_angularMomentum _ _ x).continuousAt
 
+/-- The energy–momentum map, with the energy and the angular momentum unfolded. -/
+private theorem sphericalPendulumEnergyMomentum_eq_fun :
+    sphericalPendulumEnergyMomentum = fun y ↦ (‖y.2‖ ^ 2 * 2⁻¹ + y.1 2,
+      ⟪y.1, EuclideanSpace.single 0 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 1 1⟫_ℝ -
+        ⟪y.1, EuclideanSpace.single 1 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 0 1⟫_ℝ) := by
+  funext ⟨q, p⟩
+  rw [Prod.ext_iff, fst_sphericalPendulumEnergyMomentum, snd_sphericalPendulumEnergyMomentum,
+    sphericalPendulumHamiltonian_apply, angularMomentum_apply]
+  exact ⟨by ring, rfl⟩
+
+/-- The energy–momentum map of the spherical pendulum is smooth on `ℝ³ × ℝ³`. -/
+theorem contDiff_sphericalPendulumEnergyMomentum {n : WithTop ℕ∞} :
+    ContDiff ℝ n sphericalPendulumEnergyMomentum := by
+  rw [sphericalPendulumEnergyMomentum_eq_fun]
+  exact ((((contDiff_norm_sq ℝ).comp contDiff_snd).mul contDiff_const).add
+    ((contDiff_piLp_apply 2).comp contDiff_fst)).prodMk
+    (((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const)).sub
+      ((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const)))
+
+/-- The differential of the energy–momentum map: `dH (a, b) = ⟪p, b⟫ + a₃` and
+`dJ (a, b) = a₁ p₂ - a₂ p₁ + q₁ b₂ - q₂ b₁`. -/
+theorem fderiv_sphericalPendulumEnergyMomentum_apply
+    (x v : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) :
+    fderiv ℝ sphericalPendulumEnergyMomentum x v =
+      (⟪x.2, v.2⟫_ℝ + v.1 2, v.1 0 * x.2 1 - v.1 1 * x.2 0 + x.1 0 * v.2 1 - x.1 1 * v.2 0) := by
+  -- The angular momentum component is `TauCeti.hasFDerivAt_angularMomentum`.
+  have h : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) ↦
+      (‖y.2‖ ^ 2 * 2⁻¹ + y.1 2,
+        ⟪y.1, EuclideanSpace.single 0 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 1 1⟫_ℝ -
+          ⟪y.1, EuclideanSpace.single 1 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 0 1⟫_ℝ)) _ x :=
+    ((((hasStrictFDerivAt_norm_sq x.2).hasFDerivAt.comp x hasFDerivAt_snd).mul_const _).add
+      ((PiLp.hasFDerivAt_apply 2 x.1 2).comp x hasFDerivAt_fst)).prodMk
+      ((hasFDerivAt_angularMomentum _ _ x).congr_of_eventuallyEq
+        (.of_forall fun y ↦ (angularMomentum_apply _ _ y.1 y.2).symm))
+  rw [sphericalPendulumEnergyMomentum_eq_fun, h.fderiv]
+  simp [EuclideanSpace.inner_single_left, EuclideanSpace.inner_single_right]
+  ring
+
 /-- The effective potential `V_j(z) = j² / (2 (1 - z²)) + z` of the spherical pendulum at vertical
 angular momentum `j`, as a function of the height `z ∈ (-1, 1)`. On the phase space the energy is
 `V_J(q₃)` plus the nonnegative kinetic energy `p₃² / (2 (1 - q₃²))` of the vertical motion. -/
@@ -172,7 +220,9 @@ private theorem eq_zero_of_sq_le_of_sq_eq_one {j z h : ℝ} (hz : z ^ 2 = 1)
   rw [hz, sub_self, mul_zero] at hj
   exact pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm hj (sq_nonneg j))
 
-private theorem coords_of_mem {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
+/-- The constraints `‖q‖² = 1` and `⟪q, p⟫ = 0` of the phase space, in coordinates. -/
+theorem sum_sq_eq_one_and_sum_mul_eq_zero_of_mem_sphericalPendulumPhaseSpace
+    {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
     (hx : x ∈ sphericalPendulumPhaseSpace) :
     x.1 0 ^ 2 + x.1 1 ^ 2 + x.1 2 ^ 2 = 1 ∧
       x.1 0 * x.2 0 + x.1 1 * x.2 1 + x.1 2 * x.2 2 = 0 := by
@@ -191,7 +241,7 @@ theorem sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace
     (hx : x ∈ sphericalPendulumPhaseSpace) :
     x.2 2 ^ 2 = 2 * ((sphericalPendulumEnergyMomentum x).1 - x.1 2) * (1 - x.1 2 ^ 2) -
       (sphericalPendulumEnergyMomentum x).2 ^ 2 := by
-  obtain ⟨hq, hqp⟩ := coords_of_mem hx
+  obtain ⟨hq, hqp⟩ := sum_sq_eq_one_and_sum_mul_eq_zero_of_mem_sphericalPendulumPhaseSpace hx
   obtain ⟨q, p⟩ := x
   simp only [sphericalPendulumEnergyMomentum_apply, EuclideanSpace.real_norm_sq_eq,
     Fin.sum_univ_three] at hq hqp ⊢
@@ -203,7 +253,7 @@ theorem apply_two_mem_Icc_of_mem_sphericalPendulumPhaseSpace
     {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
     (hx : x ∈ sphericalPendulumPhaseSpace) :
     x.1 2 ∈ Icc (-1) 1 := by
-  obtain ⟨hq, -⟩ := coords_of_mem hx
+  obtain ⟨hq, -⟩ := sum_sq_eq_one_and_sum_mul_eq_zero_of_mem_sphericalPendulumPhaseSpace hx
   exact ⟨by nlinarith [sq_nonneg (x.1 0), sq_nonneg (x.1 1)],
     by nlinarith [sq_nonneg (x.1 0), sq_nonneg (x.1 1)]⟩
 
@@ -223,6 +273,17 @@ theorem snd_sphericalPendulumEnergyMomentum_eq_zero_of_sq_eq_one
   have h := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace hx
   rw [hz, sub_self, mul_zero, zero_sub] at h
   nlinarith [sq_nonneg (x.2 2), sq_nonneg (sphericalPendulumEnergyMomentum x).2]
+
+/-- Points of the phase space with nonzero vertical angular momentum are away from the poles: their
+height `q₃` lies in `(-1, 1)`. -/
+theorem apply_two_mem_Ioo_of_snd_sphericalPendulumEnergyMomentum_ne_zero
+    {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
+    (hx : x ∈ sphericalPendulumPhaseSpace) (hJ : (sphericalPendulumEnergyMomentum x).2 ≠ 0) :
+    x.1 2 ∈ Ioo (-1) 1 :=
+  ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).1 <| lt_of_le_of_ne
+    (by nlinarith [(apply_two_mem_Icc_of_mem_sphericalPendulumPhaseSpace hx).1,
+      (apply_two_mem_Icc_of_mem_sphericalPendulumPhaseSpace hx).2])
+    fun h1 ↦ hJ (snd_sphericalPendulumEnergyMomentum_eq_zero_of_sq_eq_one hx h1)
 
 /-- At the poles `q₃ = ±1` of the phase space the vertical momentum vanishes. -/
 theorem snd_two_eq_zero_of_mem_sphericalPendulumPhaseSpace_of_sq_eq_one
@@ -333,6 +394,17 @@ theorem image_sphericalPendulumEnergyMomentum :
   · exact ⟨fun ⟨x, hx, hxc⟩ ↦ ⟨x, hx, hxc⟩, fun ⟨x, hx, hxc⟩ ↦ ⟨x, hx, hxc⟩⟩
   · exact ⟨fun ⟨z, hz, hzh, hj⟩ ↦ ⟨z, hz, hzh, hj⟩, fun ⟨z, hz, hzh, hj⟩ ↦ ⟨z, hz, hzh, hj⟩⟩
 
+/-- The value `(1, 0)` of the unstable equilibrium lies in the interior of the image of the
+energy–momentum map. -/
+theorem mem_interior_image_sphericalPendulumEnergyMomentum :
+    ((1 : ℝ), (0 : ℝ)) ∈
+      interior (sphericalPendulumEnergyMomentum '' sphericalPendulumPhaseSpace) := by
+  rw [mem_interior_iff_mem_nhds, image_sphericalPendulumEnergyMomentum]
+  -- The height `z = 0` occurs in every fibre over `{j² < h}`.
+  filter_upwards [(isOpen_lt (f := fun c : ℝ × ℝ ↦ c.2 ^ 2) (by fun_prop)
+    continuous_fst).mem_nhds (by norm_num)] with c hc
+  exact ⟨0, by norm_num, by nlinarith, by nlinarith⟩
+
 /-- With vertical angular momentum zero, the values of the energy are the `h ≥ -1`. The bottom
 value is described by `TauCeti.fst_sphericalPendulumEnergyMomentum_eq_neg_one_iff`. -/
 theorem mk_zero_mem_image_sphericalPendulumEnergyMomentum_iff (h : ℝ) :
@@ -346,7 +418,7 @@ theorem fst_sphericalPendulumEnergyMomentum_eq_neg_one_iff
     {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
     (hx : x ∈ sphericalPendulumPhaseSpace) :
     (sphericalPendulumEnergyMomentum x).1 = -1 ↔ x = (!₂[0, 0, -1], 0) := by
-  obtain ⟨hq, -⟩ := coords_of_mem hx
+  obtain ⟨hq, -⟩ := sum_sq_eq_one_and_sum_mul_eq_zero_of_mem_sphericalPendulumPhaseSpace hx
   obtain ⟨q, p⟩ := x
   simp only [sphericalPendulumEnergyMomentum_apply] at hq ⊢
   constructor
@@ -428,7 +500,7 @@ theorem sphericalPendulumEffectivePotential_lt_of_eq_zero {j z₀ z : ℝ} (hz�
     (hcrit : j ^ 2 * z₀ + (1 - z₀ ^ 2) ^ 2 = 0) (hz : z ∈ Ioo (-1) 1) (hne : z ≠ z₀) :
     sphericalPendulumEffectivePotential j z₀ < sphericalPendulumEffectivePotential j z := by
   have h1z : 0 < 1 - z ^ 2 := sub_pos.2 (((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2 hz)
-  obtain ⟨hz₀₁, hz₀₂⟩ := hz₀
+  obtain ⟨_, hz₀₂⟩ := hz₀
   rw [← sub_pos, sphericalPendulumEffectivePotential_sub_eq hz₀₂.ne h1z.ne' hcrit]
   have hnum : 0 < 1 + z₀ ^ 2 + 2 * z₀ * z := by
     -- `1 + z₀² + 2 z₀ z = (1 + z₀ z)² + z₀² (1 - z²)`.
@@ -539,17 +611,16 @@ theorem sphericalPendulumEnergyMomentum_eq_iff_of_isMinOn {j z₀ : ℝ} (hj : j
     sphericalPendulumEnergyMomentum x = (sphericalPendulumEffectivePotential j z₀, j) ↔
       (sphericalPendulumEnergyMomentum x).2 = j ∧ x.1 2 = z₀ ∧ x.2 2 = 0 := by
   -- Points with `J = j ≠ 0` are away from the poles.
-  have hpole : (sphericalPendulumEnergyMomentum x).2 = j → x.1 2 ^ 2 < 1 := fun hJ ↦
-    lt_of_le_of_ne (by nlinarith [(apply_two_mem_Icc_of_mem_sphericalPendulumPhaseSpace hx).1,
-      (apply_two_mem_Icc_of_mem_sphericalPendulumPhaseSpace hx).2])
-      fun h1 ↦ hj (hJ ▸ snd_sphericalPendulumEnergyMomentum_eq_zero_of_sq_eq_one hx h1)
+  have hpole (hJ : (sphericalPendulumEnergyMomentum x).2 = j) : x.1 2 ^ 2 < 1 :=
+    ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2
+      (apply_two_mem_Ioo_of_snd_sphericalPendulumEnergyMomentum_ne_zero hx (hJ ▸ hj))
   constructor
   · intro hF
     have hJ : (sphericalPendulumEnergyMomentum x).2 = j := congrArg Prod.snd hF
     have hH : (sphericalPendulumEnergyMomentum x).1 = sphericalPendulumEffectivePotential j z₀ :=
       congrArg Prod.fst hF
+    have hzI := apply_two_mem_Ioo_of_snd_sphericalPendulumEnergyMomentum_ne_zero hx (hJ ▸ hj)
     have hz := hpole hJ
-    have hzI : x.1 2 ∈ Ioo (-1) 1 := ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).1 hz
     have hE := fst_sphericalPendulumEnergyMomentum_eq hx hz
     rw [hJ, hH] at hE
     have hd : 0 < 2 * (1 - x.1 2 ^ 2) := by linarith
@@ -832,7 +903,7 @@ private theorem exists_fibreSheet_eq {h j : ℝ} (hj : j ≠ 0)
   simp only [cylindricalPoint_fst_two, cylindricalPoint_snd_two] at hw2
   obtain ⟨hx1, hx2⟩ := mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff.1 hx
   rw [sphericalPendulumEnergyMomentum_cylindricalPoint, Prod.mk.injEq] at hF
-  obtain ⟨hF1, hF2⟩ := hF
+  obtain ⟨_, hF2⟩ := hF
   -- Since `r b = j ≠ 0`, the point is off the axis.
   have hr0 : 0 < r := hr.lt_of_ne fun h0 ↦ hj (by rw [← hF2, ← h0, zero_mul])
   have hz : z ∈ Ioo (-1 : ℝ) 1 := ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).1 (by nlinarith)

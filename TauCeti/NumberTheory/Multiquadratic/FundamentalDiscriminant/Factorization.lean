@@ -25,12 +25,14 @@ eight subsets have pairwise distinct products, so the even factors match as well
 This is the classical prime-discriminant factorization; see D. A. Cox, *Primes of the Form
 x² + ny²*, §3.B and §6.A, and F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenstein*, §2.2.
 
-This is a prerequisite for the genus-field layer, which attaches a *family* of prime discriminants
-to a quadratic field `ℚ(√d)`: the square-class independence and degree theorems of
+This is a prerequisite for the genus-field constructions, which attach a *family* of prime
+discriminants to a quadratic field `ℚ(√d)`: the square-class independence and degree theorems of
 `Multiquadratic/Prime/Discriminant/Independence.lean` apply to such a family, giving a
 degree-`2ᵗ` multiquadratic compositum. For negative radicands,
-`isGenusField_candidateGenusField` identifies that compositum with the genus field; the real case
-remains future work. This file only supplies the factorization the family comes from.
+`isGenusField_candidateGenusField` identifies that compositum with the genus field; for positive
+non-square radicands it is the narrow genus field (`isNarrowGenusField_candidateGenusField`) and
+its maximal totally real subfield is the genus field (`isGenusField_candidateGenusFieldReal`). This
+file only supplies the factorization the family comes from.
 
 The engine is `prod_oddPrimeDiscriminant_primeFactors_eq`: for an odd squarefree `x ≡ 1 (mod 4)`,
 the product of the odd prime discriminants `p*` over the prime factors `p` of `x` is `x` itself.
@@ -179,7 +181,7 @@ private theorem mem_of_not_isEvenPrimeDiscriminant_of_prod_eq {s t : Finset ℤ}
   have hp : p.Prime := prime_primeDiscriminantPrime (hs P hPs)
   have hp_prod : (p : ℤ) ∣ ∏ Q ∈ t, Q := by
     rw [← hprod]
-    exact (primeDiscriminantPrime_dvd (hs P hPs)).trans (Finset.dvd_prod_of_mem id hPs)
+    exact (primeDiscriminantPrime_dvd P).trans (Finset.dvd_prod_of_mem id hPs)
   obtain ⟨Q, hQt, hpQ⟩ : ∃ Q ∈ t, (p : ℤ) ∣ Q :=
     ((Nat.prime_iff_prime_int.mp hp).dvd_finsetProd_iff id).mp hp_prod
   have hp_eq : primeDiscriminantPrime P = primeDiscriminantPrime Q :=

@@ -207,6 +207,6 @@ theorem integral_twoParticleGaussianBetaGasWeight_pos {β : ℝ} (hβ : 0 < β) 
     0 < ∫ p : ℝ × ℝ, twoParticleGaussianBetaGasWeight β p ∂(volume.prod volume) := by
   rw [integral_twoParticleGaussianBetaGasWeight hβ]
   have hGamma : 0 < Gamma ((β + 1) / 2) := Gamma_pos_of_pos (by linarith)
-  positivity
+  exact mul_pos (by positivity) hGamma
 
 end TauCeti.Probability

@@ -25,10 +25,17 @@ are not themselves `C^n` manifolds. For a smooth complex manifold, it identifies
 complex tangent bundle with the tangent bundle of the underlying real manifold.
 
 We work with arbitrary compatible normed field extensions and self-modelled manifolds.
+The fibrewise linear comparison uses the native self-model over the smaller field.
 The comparison uses `TauCeti.tangentCoordChange_restrictScalars` on chart overlaps;
 no equality of the two tangent-bundle topologies is assumed. Both manifold instances are
 explicit so that both tangent-bundle topologies can be named. The smaller-field instance can
 always be installed locally using `IsManifold.restrictScalars`.
+
+## Main results
+
+* `TangentBundle.restrictScalarsHomeomorph` and `TangentBundle.restrictScalarsDiffeomorph`:
+  the topological and smooth total-space comparisons.
+* `TangentBundle.restrictScalarsHomeomorph_tangentMap`: compatibility with tangent maps.
 
 ## References
 
@@ -165,7 +172,7 @@ theorem contMDiff_restrictScalarsHomeomorph (n : ℕ∞ω) :
     ContMDiff (𝓘(𝕜, E).prod 𝓘(𝕜, E)) (𝓘(𝕜, E).prod 𝓘(𝕜, E)) n
       (restrictScalarsHomeomorph 𝕜 (𝕜' := 𝕜') (E := E) M) := by
   intro p
-  rw [contMDiffAt_totalSpace]
+  rw [contMDiffAt_totalSpace_iff]
   simp only [restrictScalarsHomeomorph_proj]
   refine ⟨contMDiffAt_proj (TangentSpace 𝓘(𝕜', E)), ?_⟩
   have h := Bundle.TotalSpace.contMDiffAt_trivializationAt_snd (IB := 𝓘(𝕜, E)) (n := n) p
@@ -179,7 +186,7 @@ theorem contMDiff_restrictScalarsHomeomorph_symm (n : ℕ∞ω) :
     ContMDiff (𝓘(𝕜, E).prod 𝓘(𝕜, E)) (𝓘(𝕜, E).prod 𝓘(𝕜, E)) n
       (restrictScalarsHomeomorph 𝕜 (𝕜' := 𝕜') (E := E) M).symm := by
   intro p
-  rw [contMDiffAt_totalSpace]
+  rw [contMDiffAt_totalSpace_iff]
   simp only [restrictScalarsHomeomorph_symm_proj]
   refine ⟨contMDiffAt_proj (TangentSpace 𝓘(𝕜, E)), ?_⟩
   have h := Bundle.TotalSpace.contMDiffAt_trivializationAt_snd (IB := 𝓘(𝕜, E)) (n := n) p
@@ -228,15 +235,14 @@ theorem restrictScalarsHomeomorph_tangentMap {f : M → N}
     (p : TangentBundle 𝓘(𝕜', E) M) (hf : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') f p.proj) :
     restrictScalarsHomeomorph 𝕜 N (tangentMap 𝓘(𝕜', E) 𝓘(𝕜', E') f p) =
       tangentMap 𝓘(𝕜, E) 𝓘(𝕜, E') f (restrictScalarsHomeomorph 𝕜 M p) := by
-  have h := congrArg (fun L : E →L[𝕜] E' ↦
-    L (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.2))
-    (hf.mfderiv_restrictScalars 𝕜)
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] at h
-  -- Repackage the coordinate equality as a tangent vector over f p.proj. The carrier
-  -- equivalence was defined with precisely these model casts.
-  convert congrArg (fun w : E' ↦ (⟨f p.proj,
-    (tangentSpaceCastModel 𝓘(𝕜, E') (f p.proj)).symm w⟩ : TangentBundle 𝓘(𝕜, E') N))
-    h.symm using 1 <;> rfl
+  obtain ⟨x, v⟩ := p
+  rw [restrictScalarsHomeomorph_apply 𝕜 M x v]
+  have h := hf.mfderiv_restrictScalarsSelf_apply 𝕜
+    ((RestrictScalars.addEquiv 𝕜 𝕜' _).symm v)
+  simp only [AddEquiv.apply_symm_apply,
+    TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply] at h
+  simpa only [tangentMap, restrictScalarsHomeomorph_apply] using
+    congrArg (fun w : TangentSpace 𝓘(𝕜, E') (f x) ↦
+      (⟨f x, w⟩ : TangentBundle 𝓘(𝕜, E') N)) h
 
 end TangentBundle

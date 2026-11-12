@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
 
@@ -70,10 +70,10 @@ theorem commute_rootSubgroup
       Set.range (t.simplyConnectedRootDatum ht).root)
     (h₀ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ≠ 0)
     (A : Type v) [CommRing A] (u v : A) :
-    Commute (D.rootSubgroup α A (Multiplicative.ofAdd u))
-      (D.rootSubgroup β A (Multiplicative.ofAdd v)) := by
+    Commute (D.rootSubgroupPoints α A (Multiplicative.ofAdd u))
+      (D.rootSubgroupPoints β A (Multiplicative.ofAdd v)) := by
   refine Commute.of_map (D.points A).subtype_injective ?_
-  simp only [Subgroup.coe_subtype, coe_rootSubgroup]
+  simp only [Subgroup.coe_subtype, coe_rootSubgroupPoints]
   exact (commute_chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator h h₀ (CommAlgCat.of ℤ A) u v).map _
 
@@ -88,11 +88,12 @@ theorem commutatorElement_rootSubgroup_of_root_eq_add
     (hβ : (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β ∉
       Set.range (t.simplyConnectedRootDatum ht).root)
     (A : Type v) [CommRing A] (u v : A) :
-    ⁅D.rootSubgroup α A (Multiplicative.ofAdd u), D.rootSubgroup β A (Multiplicative.ofAdd v)⁆ =
-      D.rootSubgroup γ A
+    ⁅D.rootSubgroupPoints α A (Multiplicative.ofAdd u),
+        D.rootSubgroupPoints β A (Multiplicative.ofAdd v)⁆ =
+      D.rootSubgroupPoints γ A
         (Multiplicative.ofAdd ((t.structureConstant ht α β : A) * (u * v))) := by
   apply (D.points A).subtype_injective
-  simp only [map_commutatorElement, Subgroup.coe_subtype, coe_rootSubgroup]
+  simp only [map_commutatorElement, Subgroup.coe_subtype, coe_rootSubgroupPoints]
   rw [← map_commutatorElement, commutatorElement_chevalleyRootSubgroup_of_root_eq_add
     D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator hγ hα hβ (CommAlgCat.of ℤ A) u v]
@@ -115,14 +116,15 @@ theorem commutatorElement_rootSubgroup_of_root_eq_two_nsmul_add
     (hβ : (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β ∉
       Set.range (t.simplyConnectedRootDatum ht).root)
     (A : Type v) [CommRing A] (u v : A) :
-    ⁅D.rootSubgroup α A (Multiplicative.ofAdd u), D.rootSubgroup β A (Multiplicative.ofAdd v)⁆ =
-      D.rootSubgroup γ A (Multiplicative.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
-        D.rootSubgroup δ A
+    ⁅D.rootSubgroupPoints α A (Multiplicative.ofAdd u),
+        D.rootSubgroupPoints β A (Multiplicative.ofAdd v)⁆ =
+      D.rootSubgroupPoints γ A (Multiplicative.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+        D.rootSubgroupPoints δ A
           (Multiplicative.ofAdd
             (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
               (u ^ 2 * v))) := by
   apply (D.points A).subtype_injective
-  simp only [map_commutatorElement, map_mul, Subgroup.coe_subtype, coe_rootSubgroup]
+  simp only [map_commutatorElement, map_mul, Subgroup.coe_subtype, coe_rootSubgroupPoints]
   rw [← map_commutatorElement, ← map_mul,
     commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator hγ hδ hα hβ
