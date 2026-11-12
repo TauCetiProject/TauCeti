@@ -21,10 +21,13 @@ smoothness of their three coordinate functions.
 
 ## Main declarations
 
-* `TauCeti.HeisenbergGroup.instChartedSpace`: the pulled-back coordinate charts.
+* `TauCeti.HeisenbergGroup.instChartedSpace`, `chartAt_eq`: the full coordinate charts.
 * `TauCeti.HeisenbergGroup.instIsManifold`: the coordinate manifold.
-* `TauCeti.HeisenbergGroup.diffeomorphProd`: the coordinate diffeomorphism.
-* `TauCeti.HeisenbergGroup.contMDiff_iff`: coordinate criterion for smooth maps.
+* `TauCeti.HeisenbergGroup.diffeomorphProd`, `diffeomorphProd_apply`,
+  `diffeomorphProd_symm_apply`, `diffeomorphProd_toHomeomorph`, `diffeomorphProd_toEquiv`:
+  the coordinate diffeomorphism and its computation rules.
+* `TauCeti.HeisenbergGroup.contMDiffWithinAt_iff`, `contMDiffAt_iff`, `contMDiffOn_iff`,
+  `contMDiff_iff`: local and global coordinate criteria for smooth maps.
 * `TauCeti.HeisenbergGroup.contMDiff_x`, `contMDiff_y`, `contMDiff_z`: smooth coordinates.
 * `TauCeti.HeisenbergGroup.instLieGroup`: the analytic group structure.
 
@@ -51,6 +54,13 @@ instance instChartedSpace (R : Type v) [TopologicalSpace R] :
     ChartedSpace (R × R × R) (HeisenbergGroup R) :=
   homeomorphProd.pullbackChartedSpace
 
+/-- Every Heisenberg chart is the full coordinate homeomorphism. -/
+@[simp high, mfld_simps]
+theorem chartAt_eq {R : Type v} [TopologicalSpace R] (g : HeisenbergGroup R) :
+    chartAt (R × R × R) g = homeomorphProd.toOpenPartialHomeomorph := by
+  rw [Homeomorph.pullbackChartedSpace_chartAt]
+  ext x <;> simp
+
 variable {𝕜 : Type u} [NontriviallyNormedField 𝕜]
 
 section Manifold
@@ -62,8 +72,9 @@ instance instIsManifold {n : ℕ∞ω} :
     IsManifold 𝓘(𝕜, R × R × R) n (HeisenbergGroup R) :=
   homeomorphProd.pullback_isManifold _ n
 
+variable (𝕜) in
 /-- The coordinate diffeomorphism of the canonical Heisenberg carrier. -/
-def diffeomorphProd {n : ℕ∞ω} :
+def diffeomorphProd (n : ℕ∞ω) :
     Diffeomorph 𝓘(𝕜, R × R × R) 𝓘(𝕜, R × R × R) (HeisenbergGroup R) (R × R × R) n :=
   homeomorphProd.pullbackDiffeomorph _ n
 
@@ -79,41 +90,82 @@ theorem diffeomorphProd_symm_apply {n : ℕ∞ω} (a : R × R × R) :
     (diffeomorphProd (𝕜 := 𝕜) (n := n)).symm a = ⟨a.1, a.2.1, a.2.2⟩ := by
   simp only [diffeomorphProd, Homeomorph.coe_pullbackDiffeomorph_symm, homeomorphProd_symm_apply]
 
+/-- The coordinate diffeomorphism has the original coordinate homeomorphism. -/
+@[simp]
+theorem diffeomorphProd_toHomeomorph {n : ℕ∞ω} :
+    (diffeomorphProd 𝕜 n (R := R)).toHomeomorph = homeomorphProd := by
+  apply Homeomorph.ext
+  intro g
+  simp only [Diffeomorph.coe_toHomeomorph, diffeomorphProd_apply, homeomorphProd_apply]
+
+/-- The coordinate diffeomorphism has the original coordinate equivalence. -/
+@[simp]
+theorem diffeomorphProd_toEquiv {n : ℕ∞ω} :
+    (diffeomorphProd 𝕜 n (R := R)).toEquiv = equivProd := by
+  apply Equiv.ext
+  intro g
+  simp only [Diffeomorph.coe_toEquiv, diffeomorphProd_apply, equivProd_apply]
+
+section CoordinateCriterion
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {n : ℕ∞ω} {f : M → HeisenbergGroup R}
+
+/-- A map into the Heisenberg manifold is smooth within a set at a point exactly when
+its coordinates are. -/
+theorem contMDiffWithinAt_iff {s : Set M} {a : M} :
+    ContMDiffWithinAt I 𝓘(𝕜, R × R × R) n f s a ↔
+      ContMDiffWithinAt I 𝓘(𝕜, R) n (fun x ↦ (f x).x) s a ∧
+        ContMDiffWithinAt I 𝓘(𝕜, R) n (fun x ↦ (f x).y) s a ∧
+          ContMDiffWithinAt I 𝓘(𝕜, R) n (fun x ↦ (f x).z) s a := by
+  rw [← (diffeomorphProd 𝕜 n (R := R)).contMDiffWithinAt_diffeomorph_comp_iff le_rfl]
+  simp only [Function.comp_def, diffeomorphProd_apply, contMDiffWithinAt_prod_module_iff]
+
+/-- A map into the Heisenberg manifold is smooth at a point exactly when its coordinates are. -/
+theorem contMDiffAt_iff {a : M} :
+    ContMDiffAt I 𝓘(𝕜, R × R × R) n f a ↔
+      ContMDiffAt I 𝓘(𝕜, R) n (fun x ↦ (f x).x) a ∧
+        ContMDiffAt I 𝓘(𝕜, R) n (fun x ↦ (f x).y) a ∧
+          ContMDiffAt I 𝓘(𝕜, R) n (fun x ↦ (f x).z) a := by
+  rw [← (diffeomorphProd 𝕜 n (R := R)).contMDiffAt_diffeomorph_comp_iff le_rfl]
+  simp only [Function.comp_def, diffeomorphProd_apply, contMDiffAt_prod_module_iff]
+
+/-- A map into the Heisenberg manifold is smooth on a set exactly when its coordinates are. -/
+theorem contMDiffOn_iff {s : Set M} :
+    ContMDiffOn I 𝓘(𝕜, R × R × R) n f s ↔
+      ContMDiffOn I 𝓘(𝕜, R) n (fun x ↦ (f x).x) s ∧
+        ContMDiffOn I 𝓘(𝕜, R) n (fun x ↦ (f x).y) s ∧
+          ContMDiffOn I 𝓘(𝕜, R) n (fun x ↦ (f x).z) s := by
+  rw [← (diffeomorphProd 𝕜 n (R := R)).contMDiffOn_diffeomorph_comp_iff le_rfl]
+  simp only [Function.comp_def, diffeomorphProd_apply, contMDiffOn_prod_module_iff]
+
+/-- A map into the Heisenberg manifold is smooth globally exactly when its coordinates are. -/
+theorem contMDiff_iff :
+    ContMDiff I 𝓘(𝕜, R × R × R) n f ↔
+      ContMDiff I 𝓘(𝕜, R) n (fun x ↦ (f x).x) ∧
+        ContMDiff I 𝓘(𝕜, R) n (fun x ↦ (f x).y) ∧
+          ContMDiff I 𝓘(𝕜, R) n (fun x ↦ (f x).z) := by
+  rw [← (diffeomorphProd 𝕜 n (R := R)).contMDiff_diffeomorph_comp_iff le_rfl]
+  simp only [Function.comp_def, diffeomorphProd_apply, contMDiff_prod_module_iff]
+
+end CoordinateCriterion
+
 /-- The first Heisenberg coordinate is smooth. -/
 theorem contMDiff_x {n : ℕ∞ω} :
-    ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (HeisenbergGroup.x : HeisenbergGroup R → R) := by
-  have hp : ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (fun a : R × R × R => a.1) :=
-    contDiff_fst.contMDiff
-  simpa only [Function.comp_def, diffeomorphProd_apply] using
-    hp.comp (diffeomorphProd (𝕜 := 𝕜) (R := R) (n := n)).contMDiff
+    ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (HeisenbergGroup.x : HeisenbergGroup R → R) :=
+  (contMDiff_iff (f := id).mp contMDiff_id).1
 
 /-- The second Heisenberg coordinate is smooth. -/
 theorem contMDiff_y {n : ℕ∞ω} :
-    ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (HeisenbergGroup.y : HeisenbergGroup R → R) := by
-  have hp : ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (fun a : R × R × R => a.2.1) :=
-    (contDiff_fst.comp contDiff_snd).contMDiff
-  simpa only [Function.comp_def, diffeomorphProd_apply] using
-    hp.comp (diffeomorphProd (𝕜 := 𝕜) (R := R) (n := n)).contMDiff
+    ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (HeisenbergGroup.y : HeisenbergGroup R → R) :=
+  (contMDiff_iff (f := id).mp contMDiff_id).2.1
 
 /-- The central Heisenberg coordinate is smooth. -/
 theorem contMDiff_z {n : ℕ∞ω} :
-    ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (HeisenbergGroup.z : HeisenbergGroup R → R) := by
-  have hp : ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (fun a : R × R × R => a.2.2) :=
-    (contDiff_snd.comp contDiff_snd).contMDiff
-  simpa only [Function.comp_def, diffeomorphProd_apply] using
-    hp.comp (diffeomorphProd (𝕜 := 𝕜) (R := R) (n := n)).contMDiff
-
-/-- A map into the Heisenberg manifold is smooth exactly when its three coordinates are. -/
-theorem contMDiff_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {n : ℕ∞ω} {f : M → HeisenbergGroup R} :
-    ContMDiff I 𝓘(𝕜, R × R × R) n f ↔
-      ContMDiff I 𝓘(𝕜, R) n (fun a ↦ (f a).x) ∧
-        ContMDiff I 𝓘(𝕜, R) n (fun a ↦ (f a).y) ∧
-          ContMDiff I 𝓘(𝕜, R) n (fun a ↦ (f a).z) := by
-  rw [← (diffeomorphProd (𝕜 := 𝕜) (R := R) (n := n)).contMDiff_diffeomorph_comp_iff le_rfl]
-  simp only [Function.comp_def, diffeomorphProd_apply, contMDiff_prod_module_iff]
+    ContMDiff 𝓘(𝕜, R × R × R) 𝓘(𝕜, R) n (HeisenbergGroup.z : HeisenbergGroup R → R) :=
+  (contMDiff_iff (f := id).mp contMDiff_id).2.2
 
 end Manifold
 
