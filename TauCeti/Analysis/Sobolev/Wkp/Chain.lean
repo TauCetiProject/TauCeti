@@ -64,7 +64,7 @@ theorem exists_iteratedGradient_chain (n : ℕ) (v : Wkp mu Omega p (n + 1)) :
     · obtain rfl := Nat.le_zero.1 hi
       simpa only [Function.update_self] using Lp.memLp (iteratedGradient 0 v)
     · obtain rfl := Nat.le_zero.1 hi
-      rw [Function.update_self, ← Lp.enorm_def, ← ofReal_norm]
+      rw [Function.update_self, ← Lp.eNorm_def, ← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal (norm_iteratedGradient_le 0 v)
     · simp only [Function.update_self, Filter.EventuallyEq.rfl]
   | succ n ih =>
@@ -89,7 +89,7 @@ theorem exists_iteratedGradient_chain (n : ℕ) (v : Wkp mu Omega p (n + 1)) :
     · rcases Nat.lt_or_eq_of_le hi with hi | rfl
       · rw [Function.update_of_ne (by omega)]
         exact (hGn i (by omega)).trans hlow
-      · rw [Function.update_self, ← Lp.enorm_def, ← ofReal_norm]
+      · rw [Function.update_self, ← Lp.eNorm_def, ← ofReal_norm]
         exact ENNReal.ofReal_le_ofReal (norm_iteratedGradient_le (n + 1) v)
     · simp only [Function.update_self, Filter.EventuallyEq.rfl]
 
@@ -125,9 +125,9 @@ theorem exists_value_iteratedGradient_ae_eq_of_chain (n : ℕ) {u : E → ℝ}
     refine ⟨v, hv, htop, ?_⟩
     have hlow : ENNReal.ofReal ‖lowerOrder 0 v‖ = eLpNorm u p (mu.restrict Omega) := by
       have hval : value 1 v = lowerOrder 0 v := by rw [value_succ, value_zero]
-      rw [← eLpNorm_congr_ae hv, ← Lp.enorm_def, ← ofReal_norm, hval]
+      rw [← eLpNorm_congr_ae hv, ← Lp.eNorm_def, ← ofReal_norm, hval]
     have hgrad : ENNReal.ofReal ‖iteratedGradient 0 v‖ = eLpNorm (G 0) p (mu.restrict Omega) := by
-      rw [← eLpNorm_congr_ae htop, ← Lp.enorm_def, ← ofReal_norm]
+      rw [← eLpNorm_congr_ae htop, ← Lp.eNorm_def, ← ofReal_norm]
     rw [Finset.sum_range_one, ← hlow, ← hgrad]
     exact (ENNReal.ofReal_le_ofReal (norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 _)).trans
       ENNReal.ofReal_add_le

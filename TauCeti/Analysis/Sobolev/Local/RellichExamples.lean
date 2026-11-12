@@ -428,9 +428,9 @@ theorem exists_wkp_halfSine_norm_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {W : Opens
     (eLpNorm_halfSine_le m p W).trans (mul_le_of_le_one_right' (ENNReal.ofReal_le_one.2
       (Nat.cast_inv_le_one m)))
   have hg : eLpNorm (∇ (halfSine m)) p (volume.restrict W) ≤ c := by
-    -- By definition, `∇ u` is `fderiv ℝ u` read through the inverse Riesz isometry.
-    change eLpNorm (fun z => (InnerProductSpace.toDual ℝ ℂ).symm (fderiv ℝ (halfSine m) z)) p _ ≤ c
-    rw [LinearIsometryEquiv.eLpNorm_comp]
+    -- The Riesz isometry `toDual` maps `∇ u` to `fderiv ℝ u` and preserves `eLpNorm`.
+    rw [← (InnerProductSpace.toDual ℝ ℂ).eLpNorm_comp]
+    simp only [toDual_gradient]
     exact eLpNorm_fderiv_halfSine_le m p W
   obtain ⟨v, hv, hvg⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn
     (contDiff_halfSine m).contDiffOn (memLp_iff.2 (hu.trans_lt (lt_top_iff_ne_top.2 hc)))

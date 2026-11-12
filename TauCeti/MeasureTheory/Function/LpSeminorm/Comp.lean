@@ -128,7 +128,7 @@ theorem Isometry.eLpNorm_comp_of_map_zero {α F G : Type*} [MeasurableSpace α]
   have hm : AEStronglyMeasurable (fun x => f (u x)) μ ↔ AEStronglyMeasurable u μ :=
     hf.isEmbedding.aestronglyMeasurable_comp_iff
   by_cases hu : AEStronglyMeasurable u μ
-  · refine eLpNorm_congr_enorm_ae (hm.2 hu) hu (ae_of_all _ fun x => ?_)
+  · refine eLpNorm_congr_eNorm_ae (hm.2 hu) hu (ae_of_all _ fun x => ?_)
     rw [← ofReal_norm, ← ofReal_norm, hf.norm_map_of_map_zero hf0]
   · rw [eLpNorm_of_not_aestronglyMeasurable hu, eLpNorm_of_not_aestronglyMeasurable (mt hm.1 hu)]
 
