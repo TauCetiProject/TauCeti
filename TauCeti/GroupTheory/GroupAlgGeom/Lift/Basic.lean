@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Commutator
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
 import TauCeti.GroupTheory.FreeGroup.Commuting
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
@@ -414,10 +413,7 @@ theorem not_isCompatible_empty_sq {α : Type*} [Nonempty α] :
       {(inr (of (Sum.inr ())) : GX (FreeGroup α) (Unit ⊕ Unit)) ^ 2 *
         (inr (of (Sum.inl ())))⁻¹} := by
   obtain ⟨a⟩ := ‹Nonempty α›
-  intro h
-  -- A free generator `a` is not a square.
-  obtain ⟨r, hr⟩ := (isSquare_iff_exists_sq _).1 ((isCompatible_empty_sq_iff _).1 h (of a))
-  exact not_isProperPower_of a (hr ▸ Group.isProperPower_pow r le_rfl)
+  exact fun h => not_isSquare_of a ((isCompatible_empty_sq_iff _).1 h (of a))
 
 /-- Over a nontrivial group, the system `y = x ∧ y ≠ 1` has the solution `y = x` at the generic
 point of the empty system. -/
@@ -450,8 +446,7 @@ theorem not_exists_genericPoint_eq_sq {α : Type*} [Nonempty α] :
       CoordGroup.genericPoint _ _ false = z ^ 2 ∨ CoordGroup.genericPoint _ _ true = z ^ 2 ∨
         CoordGroup.genericPoint _ _ false * CoordGroup.genericPoint _ _ true = z ^ 2 := by
   obtain ⟨a⟩ := ‹Nonempty α›
-  have hsq (z : FreeGroup α) : of a ≠ z ^ 2 := fun h =>
-    not_isProperPower_of a (h ▸ Group.isProperPower_pow z le_rfl)
+  have hsq (z : FreeGroup α) : of a ≠ z ^ 2 := fun h => not_isSquare_of a ⟨z, h.trans (sq z)⟩
   -- The points `(a, 1)` and `(1, a)` solve `[x, y] = 1`.
   have h₁ : (fun b => cond b 1 (of a)) ∈ V (.id (FreeGroup α))
       {⁅(inr (of false) : GX (FreeGroup α) Bool), inr (of true)⁆} :=
