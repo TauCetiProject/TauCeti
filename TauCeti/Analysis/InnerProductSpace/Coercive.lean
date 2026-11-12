@@ -100,7 +100,7 @@ theorem conj_add_star_of_lyapunov [CompleteSpace E]
   rw [hlyap, mul_add, add_mul] at hconj
   simpa only [star_mul, hR.star_eq, hRinv.star_eq, mul_assoc] using hconj.symm
 
-/-- If `C = R²`, `Rinv` is the two-sided inverse of the self-adjoint `R`, and
+/-- If `C = R²`, `Rinv` is a right inverse of the self-adjoint `R`, and
 `C W + W† C = 2 B`, a quadratic-form lower bound `δ` for `B` gives the lower bound
 `δ / (1 + ‖R‖²)` for `R W Rinv`. No positivity of `R` or nontriviality of the space
 is required, and `δ = 0` is allowed. -/

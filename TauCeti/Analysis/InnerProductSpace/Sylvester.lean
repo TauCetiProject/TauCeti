@@ -235,6 +235,47 @@ theorem sylvester_rankOne_of_apply_eq_smul [NormedSpace 𝕜 E] [InnerProductSpa
 
 end Eigenvectors
 
+section Uniqueness
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [FiniteDimensional 𝕜 F] {A : E →L[𝕜] E} {B : F →L[𝕜] F}
+
+/-- **Uniqueness for the Sylvester equation.** If `B` is symmetric on a finite-dimensional space
+and no real eigenvalue of `A` is an eigenvalue of `B`, the Sylvester operator `X ↦ A X - X B` is
+injective. -/
+theorem sylvester_injective (hB : (B : F →ₗ[𝕜] F).IsSymmetric)
+    (h : Disjoint (End.restrictedPointSpectrum (A : E →ₗ[𝕜] E) ⊤)
+      (End.restrictedPointSpectrum (B : F →ₗ[𝕜] F) ⊤)) :
+    Function.Injective (A.sylvester B) := by
+  set v := hB.eigenvectorBasis rfl
+  refine (injective_iff_map_eq_zero _).mpr fun X hX ↦ ?_
+  -- `X` kills every eigenvector of `B`, since the eigenvalue would otherwise be shared with `A`.
+  have hv (j) : X (v j) = 0 := by
+    by_contra hne
+    have hAX : A (X (v j)) = ((hB.eigenvalues rfl j : ℝ) : 𝕜) • X (v j) := by
+      have hBv : B (v j) = ((hB.eigenvalues rfl j : ℝ) : 𝕜) • v j :=
+        hB.apply_eigenvectorBasis rfl j
+      have := congr($hX (v j))
+      rw [sylvester_apply] at this
+      simpa [sub_eq_zero, hBv] using this
+    refine Set.disjoint_left.mp h (End.mem_restrictedPointSpectrum Submodule.mem_top hne hAX) ?_
+    rw [End.restrictedPointSpectrum_top]
+    exact hB.hasEigenvalue_eigenvalues rfl j
+  exact ContinuousLinearMap.coe_injective (v.toBasis.ext fun j ↦ by simpa using hv j)
+
+/-- **Bijectivity of the Sylvester operator.** In finite dimension, if `B` is symmetric
+and no real eigenvalue of `A` is an eigenvalue of `B`, then for every `C` the Sylvester equation
+`A X - X B = C` has exactly one solution. -/
+theorem sylvester_bijective [FiniteDimensional 𝕜 E] (hB : (B : F →ₗ[𝕜] F).IsSymmetric)
+    (h : Disjoint (End.restrictedPointSpectrum (A : E →ₗ[𝕜] E) ⊤)
+      (End.restrictedPointSpectrum (B : F →ₗ[𝕜] F) ⊤)) :
+    Function.Bijective (A.sylvester B) :=
+  ⟨sylvester_injective hB h, (LinearMap.injective_iff_surjective
+    (f := (A.sylvester B : (F →L[𝕜] E) →ₗ[𝕜] F →L[𝕜] E))).mp (sylvester_injective hB h)⟩
+
+end Uniqueness
+
 section FiniteDimensional
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
@@ -270,30 +311,6 @@ theorem inner_eigenvectorBasis_apply_eq_inv_mul_inner_sylvester_apply
   push_cast at hij' ⊢
   field_simp
 
-omit [FiniteDimensional 𝕜 E] in
-/-- **Uniqueness for the Sylvester equation.** If `B` is symmetric on a finite-dimensional space
-and no real eigenvalue of `A` is an eigenvalue of `B`, the Sylvester operator `X ↦ A X - X B` is
-injective. -/
-theorem sylvester_injective (hB : (B : F →ₗ[𝕜] F).IsSymmetric)
-    (h : Disjoint (End.restrictedPointSpectrum (A : E →ₗ[𝕜] E) ⊤)
-      (End.restrictedPointSpectrum (B : F →ₗ[𝕜] F) ⊤)) :
-    Function.Injective (A.sylvester B) := by
-  set v := hB.eigenvectorBasis rfl
-  refine (injective_iff_map_eq_zero _).mpr fun X hX ↦ ?_
-  -- `X` kills every eigenvector of `B`, since the eigenvalue would otherwise be shared with `A`.
-  have hv (j) : X (v j) = 0 := by
-    by_contra hne
-    have hAX : A (X (v j)) = ((hB.eigenvalues rfl j : ℝ) : 𝕜) • X (v j) := by
-      have hBv : B (v j) = ((hB.eigenvalues rfl j : ℝ) : 𝕜) • v j :=
-        hB.apply_eigenvectorBasis rfl j
-      have := congr($hX (v j))
-      rw [sylvester_apply] at this
-      simpa [sub_eq_zero, hBv] using this
-    refine Set.disjoint_left.mp h (End.mem_restrictedPointSpectrum Submodule.mem_top hne hAX) ?_
-    rw [End.restrictedPointSpectrum_top]
-    exact hB.hasEigenvalue_eigenvalues rfl j
-  exact ContinuousLinearMap.coe_injective (v.toBasis.ext fun j ↦ by simpa using hv j)
-
 /-- **The canonical solution of the Sylvester equation.** In finite dimension, let `A` and `B` be
 symmetric with ordered orthonormal eigenbases `(uᵢ)`, `(vⱼ)` and eigenvalues `(αᵢ)`, `(βⱼ)`, and
 suppose no real eigenvalue of `A` is an eigenvalue of `B`. Then the operator whose coefficients are
@@ -317,16 +334,6 @@ theorem sylvester_sum_eigenvectorBasis (hA : (A : E →ₗ[𝕜] E).IsSymmetric)
   congr 1
   push_cast
   field_simp
-
-/-- **Bijectivity of the Sylvester operator.** In finite dimension, if `B` is symmetric
-and no real eigenvalue of `A` is an eigenvalue of `B`, then for every `C` the Sylvester equation
-`A X - X B = C` has exactly one solution. -/
-theorem sylvester_bijective (hB : (B : F →ₗ[𝕜] F).IsSymmetric)
-    (h : Disjoint (End.restrictedPointSpectrum (A : E →ₗ[𝕜] E) ⊤)
-      (End.restrictedPointSpectrum (B : F →ₗ[𝕜] F) ⊤)) :
-    Function.Bijective (A.sylvester B) :=
-  ⟨sylvester_injective hB h, (LinearMap.injective_iff_surjective
-    (f := (A.sylvester B : (F →L[𝕜] E) →ₗ[𝕜] F →L[𝕜] E))).mp (sylvester_injective hB h)⟩
 
 /-- **The solution of the Sylvester equation.** In finite dimension, if `A` and `B` are symmetric
 and no real eigenvalue of `A` is an eigenvalue of `B`, then `X` solves `A X - X B = C` exactly when

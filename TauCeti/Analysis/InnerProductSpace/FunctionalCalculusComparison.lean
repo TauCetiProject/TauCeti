@@ -38,8 +38,9 @@ this order makes `E →L[𝕜] E` a star-ordered ring. At `𝕜 = ℂ` all of th
 on the complex `C⋆`-algebra `E →L[ℂ] E`, and at `𝕜 = ℝ` it is supplied by
 `ContinuousLinearMap.instContinuousFunctionalCalculusRealIsSelfAdjoint`. Completeness of `E`,
 automatic in finite dimension, is assumed because Mathlib's adjoint on `E →L[𝕜] E` requires it.
-The exception is `LinearMap.toContinuousLinearMap_operatorAbs_eq_modulus`, which needs none of
-these instances, only completeness of the target space.
+The exception is `LinearMap.toContinuousLinearMap_operatorAbs_eq_modulus`, which omits the
+real-algebra, functional-calculus and star-ordered-ring instances and needs only completeness of
+both `E` and `F`.
 
 ## Main results
 
@@ -139,7 +140,8 @@ bounded-operator modulus after converting the maps to continuous linear maps. -/
 theorem toContinuousLinearMap_operatorAbs_eq_modulus [CompleteSpace F]
     (A : E →ₗ[𝕜] F) :
     toContinuousLinearMap A.operatorAbs = (toContinuousLinearMap A).modulus := by
-  refine ContinuousLinearMap.eq_modulus_iff.2 ⟨A.isPositive_operatorAbs, ?_⟩
+  refine ContinuousLinearMap.eq_modulus_iff.2
+    ⟨(LinearMap.isPositive_toContinuousLinearMap_iff _).mpr A.isPositive_operatorAbs, ?_⟩
   ext x
   have h := congr($(A.operatorAbs_sq) x)
   rw [LinearMap.comp_apply, LinearMap.comp_apply] at h
