@@ -33,7 +33,8 @@ separation of the scalars.
 
 Without a basis, any linear equivalence between modules with the module topology is a continuous
 linear equivalence (`LinearEquiv.toContinuousLinearEquivOfIsModuleTopology`), and a tensor product
-`M ⊗[𝕜] N` carrying the `𝕜`-module topology is a topological additive group
+`M ⊗[𝕜] N` carrying the `𝕜`-module topology (equipped by default on opening
+`TauCeti.ModuleTopology`) is a topological additive group
 (`TauCeti.instIsTopologicalAddGroupTensorProductOfIsModuleTopology`). The module topology
 on `M` is the quotient topology along any linear surjection `q : F → M` from a module with its
 module topology (`LinearMap.quotKerContinuousLinearEquivOfSurjective`), so any two presentations of
@@ -350,3 +351,24 @@ instance instIsTopologicalAddGroupTensorProductOfIsModuleTopology
   IsModuleTopology.isTopologicalAddGroup 𝕜 (TensorProduct 𝕜 M N)
 
 end TauCeti
+
+section
+open scoped TensorProduct
+
+namespace TauCeti.ModuleTopology
+
+variable {𝕜 M N : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
+  [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+
+-- Scoped in `TauCeti.ModuleTopology` so `open scoped TensorProduct` stays unambiguous in `TauCeti`.
+/-- Scoped default topology on `M ⊗[𝕜] N`, given by `moduleTopology 𝕜 (M ⊗[𝕜] N)`. -/
+scoped instance instTopologicalSpaceTensorProduct : TopologicalSpace (M ⊗[𝕜] N) :=
+  moduleTopology 𝕜 (M ⊗[𝕜] N)
+
+/-- Under the scoped default topology `TauCeti.ModuleTopology`, `M ⊗[𝕜] N` carries the `𝕜`-module
+topology. -/
+scoped instance instIsModuleTopologyTensorProduct : IsModuleTopology 𝕜 (M ⊗[𝕜] N) := ⟨rfl⟩
+
+end TauCeti.ModuleTopology
+
+end

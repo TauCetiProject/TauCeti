@@ -14,7 +14,7 @@ public import TauCeti.Topology.VectorBundle.TensorProduct.Basic
 # Categorical operations and dual-tensor-hom isomorphism for tensor-product bundles
 
 For finite-rank topological vector bundles over a complete nontrivially normed field `𝕜`, this file
-constructs the universal property (`TauCeti.bundleTensorLift`,
+constructs the universal property (`TauCeti.bundleTensorLift`, `TauCeti.eq_bundleTensorLift_iff`,
 `TauCeti.continuous_bundleTensorLift_iff`) into any normed-fibre (not necessarily finite-rank)
 vector bundle, functoriality (`TauCeti.bundleTensorMap`, `TauCeti.bundleTensorCongrHomeomorph`),
 symmetry and associativity homeomorphisms, and the dual-tensor-Hom isomorphism
@@ -49,6 +49,13 @@ def bundleTensorLift (Φ : ∀ x, E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x) (x
   ⟨_root_.TensorProduct.lift (Φ x).toLinearMap₁₂, IsModuleTopology.continuous_of_linearMap _⟩
 @[simp] theorem bundleTensorLift_tmul (Φ : ∀ x, E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x) (x : B)
     (v : E₁ x) (w : E₂ x) : bundleTensorLift Φ x (v ⊗ₜ[𝕜] w) = Φ x v w := by simp [bundleTensorLift]
+/-- A continuous linear map out of `E₁ x ⊗[𝕜] E₂ x` equals `bundleTensorLift Φ x` if and only if
+it agrees with `Φ x` on pure tensors. -/
+theorem eq_bundleTensorLift_iff {Φ : ∀ x, E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x} {x : B}
+    {ψ : E₁ x ⊗[𝕜] E₂ x →L[𝕜] E₃ x} :
+    ψ = bundleTensorLift Φ x ↔ ∀ v w, ψ (v ⊗ₜ[𝕜] w) = Φ x v w :=
+  ⟨fun h v w ↦ by simp [h],
+    fun h ↦ ContinuousLinearMap.coe_injective (_root_.TensorProduct.lift.unique h)⟩
 end LiftFiber
 section DualTensorHomFiber
 variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]

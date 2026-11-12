@@ -22,7 +22,7 @@ trivializations (`Bundle.Trivialization.tensorProduct`), coordinate expressions
 (`TensorProduct.inCoordinates`), and continuity of `TauCeti.bundleTmul` and pure-tensor sections.
 
 Each fibre `E₁ x ⊗[𝕜] E₂ x` is assumed to carry `IsModuleTopology 𝕜 (E₁ x ⊗[𝕜] E₂ x)`; opening
-`TauCeti.TensorProduct` equips every `M ⊗[𝕜] N` with `moduleTopology 𝕜 (M ⊗[𝕜] N)` by default.
+`TauCeti.ModuleTopology` equips every `M ⊗[𝕜] N` with `moduleTopology 𝕜 (M ⊗[𝕜] N)` by default.
 
 The prebundle and coordinate-change construction follows Mathlib's
 `Mathlib.Topology.VectorBundle.Hom` by Floris van Doorn and Heather Macbeth.
@@ -37,21 +37,6 @@ noncomputable section
 
 open Bundle FiberBundle Set Topology
 open scoped Bundle TensorProduct Topology
-
-namespace TauCeti.TensorProduct
-
-variable {𝕜 M N : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
-  [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
-
-/-- Scoped default topology on `M ⊗[𝕜] N`, given by `moduleTopology 𝕜 (M ⊗[𝕜] N)`. -/
-scoped instance instTopologicalSpaceTensorProduct : TopologicalSpace (M ⊗[𝕜] N) :=
-  moduleTopology 𝕜 (M ⊗[𝕜] N)
-
-/-- Under the scoped default topology `TauCeti.TensorProduct`, `M ⊗[𝕜] N` carries the `𝕜`-module
-topology. -/
-scoped instance instIsModuleTopologyTensorProduct : IsModuleTopology 𝕜 (M ⊗[𝕜] N) := ⟨rfl⟩
-
-end TauCeti.TensorProduct
 
 namespace TensorProduct
 

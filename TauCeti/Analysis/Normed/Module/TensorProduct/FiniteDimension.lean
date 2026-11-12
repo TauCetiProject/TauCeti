@@ -16,9 +16,8 @@ public import TauCeti.Analysis.Normed.Module.TensorProduct.Approximable
 Over a complete nontrivially normed field `𝕜`, finite dimensionality of `E` makes
 `TensorProduct.contractStrongDual 𝕜 E F` a linear equivalence onto `StrongDual 𝕜 E →L[𝕜] F`
 (`TensorProduct.contractStrongDualEquiv`), so both the injective and projective tensor seminorms on
-`E ⊗[𝕜] F` are definite norms. Evaluating pure tensors as rank-one operators gives
-`TauCeti.ProjectiveTensor.toOperator 𝕜 E F` and, when `E` is finite-dimensional, the continuous
-linear equivalence `TauCeti.ProjectiveTensor.toOperatorEquiv`.
+`E ⊗[𝕜] F` are definite norms, and `TauCeti.ProjectiveTensor.toOperator 𝕜 E F` upgrades to a
+continuous linear equivalence `TauCeti.ProjectiveTensor.toOperatorEquiv`.
 
 ## References
 
@@ -66,6 +65,16 @@ theorem contractStrongDual_bijective_of_finiteDimensional :
     Function.Bijective (contractStrongDual 𝕜 E F) :=
   contractStrongDualEquiv_toLinearMap (𝕜 := 𝕜) (E := E) (F := F) ▸
     (contractStrongDualEquiv 𝕜 E F).bijective
+
+/-- Under the finite-dimensional identification `Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E`,
+`TensorProduct.toOperator` recovers the algebraic contraction `dualTensorHom 𝕜 E F`. -/
+theorem toLinearMap_toOperator_congr (v : Module.Dual 𝕜 E ⊗[𝕜] F) :
+    (toOperator (TensorProduct.congr
+      (LinearMap.toContinuousLinearMap : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E)
+      (LinearEquiv.refl 𝕜 F) v)).toLinearMap = dualTensorHom 𝕜 E F v := by
+  induction v with
+  | tmul φ y => ext x; simp
+  | add _ _ hv₁ hv₂ => simp [hv₁, hv₂]
 
 end SeminormedRight
 
@@ -125,32 +134,6 @@ end NormedFiniteDimensional
 
 namespace ProjectiveTensor
 
-section ToOperator
-
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-variable (𝕜 E F) in
-/-- Canonical contraction from the projective tensor product `StrongDual 𝕜 E ⊗π F` to bounded
-operators `E →L[𝕜] F`, sending `⟨f ⊗ₜ y⟩` to `x ↦ f x • y`. -/
-noncomputable def toOperator : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F →L[𝕜] E →L[𝕜] F :=
-  LinearMap.mkContinuous
-    (TensorProduct.toOperator ∘ₗ (linearEquiv 𝕜 (StrongDual 𝕜 E) F).toLinearMap) 1 fun u ↦ by
-      simpa [norm_def] using TensorProduct.apply_le_mul_projectiveSeminorm
-        (p := normSeminorm 𝕜 (E →L[𝕜] F)) (f := TensorProduct.toOperator) zero_le_one
-        (fun f y ↦ by simp) u.toTensorProduct
-
-@[simp] theorem toOperator_mk (u : StrongDual 𝕜 E ⊗[𝕜] F) :
-    toOperator 𝕜 E F ⟨u⟩ = TensorProduct.toOperator u := by simp [toOperator]
-
-theorem toOperator_tmul (f : StrongDual 𝕜 E) (y : F) :
-    toOperator 𝕜 E F ⟨f ⊗ₜ y⟩ = f.smulRight y := by simp
-
-theorem norm_toOperator_le : ‖toOperator 𝕜 E F‖ ≤ 1 :=
-  LinearMap.mkContinuous_norm_le _ zero_le_one _
-
-end ToOperator
-
 section ToOperatorEquiv
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
@@ -161,14 +144,6 @@ private noncomputable def toOperatorInvOfBasis {ι : Type*} [Fintype ι]
     (b : Module.Basis ι 𝕜 E) : (E →L[𝕜] F) →L[𝕜] ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F :=
   ∑ i, (tmulL 𝕜 (StrongDual 𝕜 E) F (LinearMap.toContinuousLinearMap (b.coord i))).comp
     (ContinuousLinearMap.apply 𝕜 F (b i))
-
-private theorem toLinearMap_toOperator_congr (v : Module.Dual 𝕜 E ⊗[𝕜] F) :
-    (TensorProduct.toOperator (_root_.TensorProduct.congr
-      (LinearMap.toContinuousLinearMap : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E)
-      (.refl 𝕜 F) v)).toLinearMap = dualTensorHom 𝕜 E F v := by
-  induction v with
-  | tmul φ y => ext x; simp
-  | add _ _ hv₁ hv₂ => simp [hv₁, hv₂]
 
 private theorem toTensorProduct_toOperatorInvOfBasis {ι : Type*} [DecidableEq ι] [Fintype ι]
     (b : Module.Basis ι 𝕜 E) (T : E →L[𝕜] F) :
@@ -191,14 +166,15 @@ noncomputable def toOperatorEquiv : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F 
     (fun ⟨u⟩ ↦ (linearEquiv 𝕜 (StrongDual 𝕜 E) F).injective <| by
       obtain ⟨v, rfl⟩ := c.surjective u
       rw [linearEquiv_apply, linearEquiv_apply, toTensorProduct_toOperatorInvOfBasis b,
-        toOperator_mk, toLinearMap_toOperator_congr, dualTensorHomEquivOfBasis_symm_cancel_left])
+        toOperator_mk, TensorProduct.toLinearMap_toOperator_congr,
+        dualTensorHomEquivOfBasis_symm_cancel_left])
     (fun T ↦ ContinuousLinearMap.coe_injective <| DFunLike.coe_injective <| by
       rcases hv : toOperatorInvOfBasis b T with ⟨w⟩
       have h : w = c ((dualTensorHomEquivOfBasis (N := F) b).symm T.toLinearMap) := by
         simpa [hv] using toTensorProduct_toOperatorInvOfBasis b T
       have hr := congrArg DFunLike.coe
         (dualTensorHomEquivOfBasis_symm_cancel_right b T.toLinearMap)
-      rwa [← toLinearMap_toOperator_congr, ← h, ← toOperator_mk] at hr)
+      rwa [← TensorProduct.toLinearMap_toOperator_congr, ← h, ← toOperator_mk] at hr)
 
 @[simp] theorem toOperatorEquiv_toContinuousLinearMap :
     (toOperatorEquiv 𝕜 E F).toContinuousLinearMap = toOperator 𝕜 E F := (rfl)
