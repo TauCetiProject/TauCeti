@@ -11,19 +11,26 @@ public import Mathlib.Topology.NoetherianSpace
 public import Mathlib.Topology.Sober
 
 /-!
-# Locally closed sets of closed points in Noetherian spaces
+# Sets of closed points in Noetherian spaces
 
-In a Noetherian quasi-sober space, a locally closed set `s = U ∩ Z` consisting of closed points is
-closed. Write the closed set `Z` as a finite union of irreducible closed sets. If one of them, `T`,
-meets the open set `U`, then its generic point lies in `U`, hence in `s`, so it is a closed point
-and `T` is that single point. Thus `s` is a finite union of closed points.
+In a Noetherian quasi-sober space, a closed set consisting of closed points is finite: it is a
+finite union of irreducible closed sets, and each of them is the closure of its generic point,
+which is a closed point.
+
+A locally closed set `s = U ∩ Z` consisting of closed points is closed. Write the closed set `Z`
+as a finite union of irreducible closed sets. If one of them, `T`, meets the open set `U`, then
+its generic point lies in `U`, hence in `s`, so it is a closed point and `T` is that single
+point. Thus `s` is a finite union of closed points.
 
 On a Noetherian integral scheme of dimension at most one every point other than the generic point
 is closed, so this applies to the zero locus of a nonzero function on an open subset: that zero
-locus is closed in the whole scheme, not only in the open subset.
+locus is closed in the whole scheme, not only in the open subset. Likewise a closed subset not
+containing the generic point is finite.
 
 ## Main results
 
+* `IsClosed.finite_of_subset_closedPoints`: a closed set of closed points of a Noetherian
+  quasi-sober space is finite.
 * `IsLocallyClosed.isClosed_of_subset_closedPoints`: a locally closed set of closed points of a
   Noetherian quasi-sober space is closed.
 
@@ -37,6 +44,18 @@ public section
 open Set TopologicalSpace
 
 variable {X : Type*} [TopologicalSpace X]
+
+/-- **Closed sets of closed points are finite** in a Noetherian quasi-sober space. -/
+theorem IsClosed.finite_of_subset_closedPoints [NoetherianSpace X] [QuasiSober X]
+    {s : Set X} (hs : IsClosed s) (hcl : s ⊆ closedPoints X) : s.Finite := by
+  obtain ⟨S, hSf, hSc, hSi, rfl⟩ := NoetherianSpace.exists_finite_set_isClosed_irreducible hs
+  refine hSf.sUnion fun T hT ↦ ?_
+  -- The generic point of the irreducible closed set `T` lies in `s`, so it is a closed point and
+  -- `T` is that single point.
+  obtain ⟨g, hg⟩ : ∃ g, IsGenericPoint g T :=
+    ⟨_, (hSc T hT).closure_eq ▸ (hSi T hT).isGenericPoint_genericPoint_closure⟩
+  rw [← hg.def, (hcl (subset_sUnion_of_mem hT hg.mem)).closure_eq]
+  exact finite_singleton g
 
 /-- **Locally closed sets of closed points are closed** in a Noetherian quasi-sober space. -/
 theorem IsLocallyClosed.isClosed_of_subset_closedPoints [NoetherianSpace X] [QuasiSober X]

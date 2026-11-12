@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 public import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Semilocal
 public import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
+import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+import TauCeti.AlgebraicGeometry.Modules.SchemeTheoreticSupport
 
 /-!
 # Twisting a sheaf supported on a semilocal scheme by a vector bundle
@@ -23,14 +25,21 @@ trivial. Consequently the truncated Euler characteristic over a field `k` is mul
 rank: `χ(X, E ⊗ f_* G) = r · χ(X, f_* G)`.
 
 Applied to the inclusion of a closed subscheme finite over `k`, this computes the Euler
-characteristic of a sheaf with finite support twisted by a vector bundle. On a curve it is the
-input showing that a modification of a vector bundle `E` with finitely supported cokernel changes
-the degree of `V ⊗ E` by `rank V` times the change in the degree of `E`.
+characteristic of a sheaf with finite support twisted by a vector bundle. Indeed, if `X` is
+locally of finite type over `k`, a quasi-coherent sheaf `M` of finite type with finite support is
+the pushforward of a module on its scheme-theoretic support `V(Ann M)`, which is finite over `k`
+(`AlgebraicGeometry.Scheme.Modules.isFinite_subschemeι_annihilator_comp`), so
+`χ(X, E ⊗ M) = r · χ(X, M)`. On a curve this is the input showing that a modification of a vector
+bundle `E` with finitely supported cokernel changes the degree of `V ⊗ E` by `rank V` times the
+change in the degree of `E`.
 
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.eulerCharBelow_tensor_pushforward`:
   `χ(X, E ⊗ f_* G) = r · χ(X, f_* G)` for every truncation degree, with no finiteness hypothesis.
+* `AlgebraicGeometry.Scheme.Modules.eulerCharBelow_tensor_of_finite_support`:
+  `χ(X, E ⊗ M) = r · χ(X, M)` for a coherent sheaf `M` with finite support on a scheme locally of
+  finite type over `k`.
 
 ## References
 
@@ -89,3 +98,32 @@ theorem eulerCharBelow_tensor_pushforward (k : Type u) [Field k] [X.Over (Spec (
   rw [eulerCharBelow_congr k e₃, eulerCharBelow_biproduct_const, Fintype.card_fin]
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+variable {X : Scheme.{u}}
+
+/-- **Twisting a finitely supported sheaf by a vector bundle multiplies the Euler characteristic
+by the rank.** Let `X` be a scheme locally of finite type over a field `k`, `E` a vector bundle of
+constant rank `r` on `X` and `M` a quasi-coherent sheaf of finite type whose support
+`{x | M_x ≠ 0}` is finite. Then `χ(X, E ⊗ M) = r · χ(X, M)` for every truncation degree. -/
+theorem eulerCharBelow_tensor_of_finite_support (k : Type u) [Field k] [X.Over (Spec (.of k))]
+    [LocallyOfFiniteType (X ↘ Spec (.of k))] {r : ℕ} (E : FiniteLocallyFreeSheaf.FixedRank X r)
+    (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType]
+    (hM : {x : X | Nontrivial (M.presheaf.stalk x)}.Finite) (n : ℕ) :
+    eulerCharBelow k X (E.obj.obj ⊗ M) n = r * eulerCharBelow k X M n := by
+  have hM' (U : X.affineOpens) : Module.Finite Γ(X, U) Γ(M, U) :=
+    finite_sections_of_isAffineOpen M U U.2
+  -- `M` is the pushforward of a module on its scheme-theoretic support `Z = V(Ann M)`, which is
+  -- finite over `k`, hence affine with Artinian ring of global functions.
+  obtain ⟨G, ⟨e⟩⟩ := exists_iso_pushforward_subschemeι_annihilator M hM'
+  have : IsLocallyArtinian (Spec (.of k)) := Scheme.isLocallyArtinianScheme_Spec.mpr inferInstance
+  have := isFinite_subschemeι_annihilator_comp M hM' (X ↘ Spec (.of k)) hM
+  have : IsLocallyArtinian (M.annihilator hM').subscheme :=
+    .of_locallyQuasiFinite ((M.annihilator hM').subschemeι ≫ X ↘ Spec (.of k))
+  have : IsAffine (M.annihilator hM').subscheme :=
+    isAffine_of_isAffineHom ((M.annihilator hM').subschemeι ≫ X ↘ Spec (.of k))
+  rw [eulerCharBelow_congr k (whiskerLeftIso E.obj.obj e), eulerCharBelow_congr k e,
+    Scheme.Hom.eulerCharBelow_tensor_pushforward]
+
+end AlgebraicGeometry.Scheme.Modules
