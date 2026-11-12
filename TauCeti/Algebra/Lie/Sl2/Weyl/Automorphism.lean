@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Weights.Killing
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
 public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.RingTheory.Nilpotent.Exp.Basic
+import Mathlib.Algebra.Ring.Action.ConjAct
 
 /-!
 # The Weyl automorphism of an `sl₂` triple
@@ -529,6 +530,22 @@ theorem coe_inv_weylUnit (hE : IsNilpotent E) (hF : IsNilpotent F) :
     (((weylUnit hE hF)⁻¹ : Aˣ) : A) =
       IsNilpotent.exp (-E) * IsNilpotent.exp F * IsNilpotent.exp (-E) := by
   simp [weylUnit, mul_inv_rev, mul_assoc]
+
+/-- Conjugating both nilpotent root operators conjugates their pinned Weyl unit.
+No `sl₂` relations or nonvanishing hypotheses are needed. -/
+theorem weylUnit_conj_eq_of_conj {E' F' : A}
+    (hE : IsNilpotent E) (hF : IsNilpotent F)
+    (hE' : IsNilpotent E') (hF' : IsNilpotent F') (u : Aˣ)
+    (he : (u : A) * E * ↑u⁻¹ = E') (hf : (u : A) * F * ↑u⁻¹ = F') :
+    u * weylUnit hE hF * u⁻¹ = weylUnit hE' hF' := by
+  let d := MulSemiringAction.toRingHom (ConjAct Aˣ) A (ConjAct.toConjAct u)
+  have hd (x : A) : d x = (u : A) * x * ↑u⁻¹ := by
+    simp only [d, MulSemiringAction.toRingHom_apply, ConjAct.units_smul_def,
+      ConjAct.ofConjAct_toConjAct]
+  have h : d (weylUnit hE hF : A) = (weylUnit hE' hF' : A) := by
+    simp only [coe_weylUnit, map_mul, hE.map_exp d, hF.neg.map_exp d, map_neg,
+      hd E, hd F, he, hf]
+  exact Units.ext (by simpa only [hd, Units.val_mul, Units.val_inv] using h)
 
 variable {K : Type*} [CommRing K] [Algebra K A]
 

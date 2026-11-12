@@ -125,17 +125,10 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
     simpa only [neg_lie, lie_neg, neg_neg, hji, neg_one_zsmul] using
       hs.lie_lie_F_F_E_of_ne hne
   -- Exponentiate this operator comparison, retaining the units rather than only their action.
-  let d := (c b).comp (c a)
-  have hdE : d (E j) = E i := hE
-  have hdF : d (F j) = F i := hF
-  have hd : d (b : A) = (a : A) := by
-    simp only [b, coe_weylUnit, map_mul, hEj.map_exp d, hFj.neg.map_exp d,
-      map_neg, hdE, hdF]
-    exact (coe_weylUnit hEi hFi).symm
-  have hu : b * a * b * (b * a)⁻¹ = a := by
-    apply Units.ext
-    simpa only [d, RingHom.comp_apply, hc, Units.val_mul, Units.val_inv, mul_inv_rev,
-      mul_assoc] using hd
+  have hu : b * a * b * (b * a)⁻¹ = a :=
+    weylUnit_conj_eq_of_conj hEj hFj hEi hFi (b * a)
+      (by simpa only [hc, Units.val_mul, mul_inv_rev, mul_assoc] using hE)
+      (by simpa only [hc, Units.val_mul, mul_inv_rev, mul_assoc] using hF)
   calc
     _ = (b * a * b * (b * a)⁻¹) * b * a := by rw [hu]
     _ = b * a * b := by group

@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.Algebra.Lie.Sl2.Weyl.Automorphism
 import TauCeti.Algebra.Lie.Sl2.Weyl.WeightOne
 import TauCeti.Algebra.Lie.Sl2.Weyl.WeightThree
-import Mathlib.Algebra.Ring.Action.ConjAct
 
 /-!
 # The triple-bond braid relation for Serre operators
@@ -24,8 +23,8 @@ word starting and ending at the short node fixes both long-node root operators.
 Functoriality of the nilpotent exponential then makes that word commute with the
 long-node Weyl unit. The signed exchange of a Serre system supplies the lowering case.
 No faithfulness, finite-dimensionality or nonvanishing assumption is imposed.
-The unit-level exponentiation step follows the single-bond argument in
-`TauCeti.Algebra.Lie.Presentation.Serre.SingleBond`.
+The unit-level exponentiation step shares `TauCeti.weylUnit_conj_eq_of_conj` with the
+single-bond argument in `TauCeti.Algebra.Lie.Presentation.Serre.SingleBond`.
 
 ## References
 
@@ -222,27 +221,18 @@ theorem weylUnit_braid_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
       hej.exists_pow_apply_eq_zero hfj.exists_pow_apply_eq_zero, map_neg, neg_inj] at hF
   let a := weylUnit hEi hFi
   let b := weylUnit hEj hFj
-  let c (u : Aˣ) : A →+* A :=
-    MulSemiringAction.toRingHom (ConjAct Aˣ) A (ConjAct.toConjAct u)
-  have hc (u : Aˣ) (x : A) : c u x = (u : A) * x * ↑u⁻¹ := by
-    simp only [c, MulSemiringAction.toRingHom_apply, ConjAct.units_smul_def,
-      ConjAct.ofConjAct_toConjAct]
   let w := a * b * a * b * a
-  have hwE : c w (E j) = E j := by
+  have hwE : (w : A) * E j * ↑w⁻¹ = E j := by
     simpa only [weylAut_apply_eq_weylUnit_conj (hs.isSl2Triple hii hi) hEi hFi,
       weylAut_apply_eq_weylUnit_conj (hs.isSl2Triple hjj hj) hEj hFj,
-      hc, w, a, b, Units.val_mul, mul_inv_rev, mul_assoc] using hE
-  have hwF : c w (F j) = F j := by
+      w, a, b, Units.val_mul, mul_inv_rev, mul_assoc] using hE
+  have hwF : (w : A) * F j * ↑w⁻¹ = F j := by
     simpa only [weylAut_apply_eq_weylUnit_conj (hs.isSl2Triple hii hi) hEi hFi,
       weylAut_apply_eq_weylUnit_conj (hs.isSl2Triple hjj hj) hEj hFj,
-      hc, w, a, b, Units.val_mul, mul_inv_rev, mul_assoc] using hF
+      w, a, b, Units.val_mul, mul_inv_rev, mul_assoc] using hF
   -- Exponentiation turns the operator equalities into commutation with the actual Weyl unit.
-  have hw : c w (b : A) = b := by
-    simp only [b, coe_weylUnit, map_mul, hEj.map_exp (c w), hFj.neg.map_exp (c w),
-      map_neg, hwE, hwF]
-  have hcomm : w * b * w⁻¹ = b := by
-    apply Units.ext
-    simpa only [hc, Units.val_mul, Units.val_inv] using hw
+  have hcomm : w * b * w⁻¹ = b :=
+    weylUnit_conj_eq_of_conj hEj hFj hEj hFj w hwE hwF
   have heq : w * b = b * w := (mul_inv_eq_iff_eq_mul).mp hcomm
   simpa only [w, mul_assoc] using heq
 
