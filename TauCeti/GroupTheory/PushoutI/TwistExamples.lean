@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.FreeGroup.Centralizer
 public import TauCeti.GroupTheory.PushoutI.DehnTwist
@@ -39,43 +40,32 @@ public section
 
 open Monoid.PushoutI
 
+open scoped commutatorElement
+
 namespace TauCeti
 
 namespace GenusTwoSplitting
-
-/-- The commutator `[x₀, x₁] = x₀ x₁ x₀⁻¹ x₁⁻¹` of the basis of the free group of rank two. -/
-def basisCommutator : FreeGroup (Fin 2) :=
-  FreeGroup.of 0 * FreeGroup.of 1 * (FreeGroup.of 0)⁻¹ * (FreeGroup.of 1)⁻¹
-
-theorem basisCommutator_def :
-    basisCommutator = FreeGroup.of 0 * FreeGroup.of 1 * (FreeGroup.of 0)⁻¹ * (FreeGroup.of 1)⁻¹ :=
-  (rfl)
-
-theorem basisCommutator_ne_one : basisCommutator ≠ 1 := by
-  rw [basisCommutator_def]
-  decide
 
 /-- The boundary maps of the splitting of the genus two surface group along a separating curve:
 the generator of the infinite cyclic edge group goes to the commutator `[a₁, b₁]` of the basis
 of the left factor and to the commutator `[b₂, a₂] = [a₂, b₂]⁻¹` of the basis of the right
 factor. -/
 def boundary : Bool → Multiplicative ℤ →* FreeGroup (Fin 2)
-  | false => zpowersHom _ basisCommutator
-  | true => zpowersHom _ basisCommutator⁻¹
+  | false => zpowersHom _ ⁅FreeGroup.of (0 : Fin 2), FreeGroup.of 1⁆
+  | true => zpowersHom _ ⁅FreeGroup.of (1 : Fin 2), FreeGroup.of 0⁆
 
 @[simp] theorem boundary_false (n : Multiplicative ℤ) :
-    boundary false n = basisCommutator ^ n.toAdd := (rfl)
+    boundary false n = ⁅FreeGroup.of (0 : Fin 2), FreeGroup.of 1⁆ ^ n.toAdd := (rfl)
 
 @[simp] theorem boundary_true (n : Multiplicative ℤ) :
-    boundary true n = basisCommutator⁻¹ ^ n.toAdd := (rfl)
+    boundary true n = ⁅FreeGroup.of (1 : Fin 2), FreeGroup.of 0⁆ ^ n.toAdd := (rfl)
 
 /-- Both boundary maps are injective: the amalgam is a splitting over an infinite cyclic
 group. -/
 theorem boundary_injective (i : Bool) : Function.Injective (boundary i) := by
-  have hc := basisCommutator_ne_one
   intro m n h
-  cases i <;> exact Multiplicative.toAdd.injective <|
-    IsMulTorsionFree.zpow_right_injective (by simpa using hc) (by simpa using h)
+  cases i <;> refine Multiplicative.toAdd.injective <|
+    IsMulTorsionFree.zpow_right_injective ?_ (by simpa using h) <;> decide
 
 /-- The separating curve: the image of the generator of the edge group in the amalgam. -/
 def curve : Monoid.PushoutI boundary := base boundary (Multiplicative.ofAdd 1)
@@ -83,19 +73,28 @@ def curve : Monoid.PushoutI boundary := base boundary (Multiplicative.ofAdd 1)
 theorem curve_def : curve = base boundary (Multiplicative.ofAdd 1) := (rfl)
 
 /-- The curve is the commutator `[a₁, b₁]` of the basis of the left factor. -/
-theorem of_false_basisCommutator : of (φ := boundary) false basisCommutator = curve := by
+theorem of_false_commutatorElement :
+    of (φ := boundary) false ⁅FreeGroup.of (0 : Fin 2), FreeGroup.of 1⁆ = curve := by
   simp [curve, ← of_apply_eq_base boundary false]
 
 /-- The curve is the commutator `[b₂, a₂]` of the basis of the right factor. -/
-theorem of_true_basisCommutator_inv : of (φ := boundary) true basisCommutator⁻¹ = curve := by
+theorem of_true_commutatorElement :
+    of (φ := boundary) true ⁅FreeGroup.of (1 : Fin 2), FreeGroup.of 0⁆ = curve := by
   simp [curve, ← of_apply_eq_base boundary true]
+
+/-- The commutator `[b₂, a₂]` centralizes the image of the edge group in the right factor, which
+consists of its own powers. -/
+theorem commutatorElement_mem_centralizer : ⁅FreeGroup.of (1 : Fin 2), FreeGroup.of 0⁆ ∈
+    Subgroup.centralizer (Set.range (boundary true)) := by
+  rintro _ ⟨n, rfl⟩
+  exact ((Commute.refl _).zpow_left n.toAdd).eq
 
 /-- The Dehn twist along the separating curve: the twist of the amalgam by the image
 `[b₂, a₂]` of the generator of the edge group in the right factor. -/
 def twist : MulAut (Monoid.PushoutI boundary) :=
-  dehnTwist boundary ⟨basisCommutator⁻¹, by
-    rintro _ ⟨n, rfl⟩
-    exact ((Commute.refl basisCommutator⁻¹).zpow_left n.toAdd).eq⟩
+  dehnTwist boundary ⟨_, commutatorElement_mem_centralizer⟩
+
+theorem twist_def : twist = dehnTwist boundary ⟨_, commutatorElement_mem_centralizer⟩ := (rfl)
 
 /-- The twist along the separating curve fixes the left factor `⟨a₁, b₁⟩`. -/
 @[simp] theorem twist_of_false (x : FreeGroup (Fin 2)) : twist (of false x) = of false x :=
@@ -105,13 +104,41 @@ def twist : MulAut (Monoid.PushoutI boundary) :=
 curve. -/
 @[simp] theorem twist_of_true (x : FreeGroup (Fin 2)) :
     twist (of true x) = curve * of true x * curve⁻¹ := by
-  rw [twist, dehnTwist_of_true, of_true_basisCommutator_inv]
+  rw [twist, dehnTwist_of_true, of_true_commutatorElement]
+
+/-- The twist along the separating curve fixes the edge group. -/
+@[simp] theorem twist_base (n : Multiplicative ℤ) : twist (base boundary n) = base boundary n :=
+  dehnTwist_base ..
+
+/-- The twist along the separating curve fixes the curve. -/
+@[simp] theorem twist_curve : twist curve = curve :=
+  twist_base _
+
+/-- The inverse twist along the separating curve fixes the left factor `⟨a₁, b₁⟩`. -/
+@[simp] theorem twist_symm_of_false (x : FreeGroup (Fin 2)) :
+    twist.symm (of false x) = of false x :=
+  dehnTwist_symm_of_false ..
+
+/-- The inverse twist along the separating curve conjugates the right factor `⟨a₂, b₂⟩` by the
+inverse of the curve. -/
+@[simp] theorem twist_symm_of_true (x : FreeGroup (Fin 2)) :
+    twist.symm (of true x) = curve⁻¹ * of true x * curve := by
+  rw [twist, dehnTwist_symm_of_true, of_true_commutatorElement]
+
+/-- The inverse twist along the separating curve fixes the edge group. -/
+@[simp] theorem twist_symm_base (n : Multiplicative ℤ) :
+    twist.symm (base boundary n) = base boundary n :=
+  dehnTwist_symm_base ..
+
+/-- The inverse twist along the separating curve fixes the curve. -/
+@[simp] theorem twist_symm_curve : twist.symm curve = curve :=
+  twist_symm_base _
 
 /-- The twist along the separating curve is not the identity. -/
 theorem twist_ne_one : twist ≠ 1 := by
   rw [twist, Ne, dehnTwist_eq_one_iff boundary boundary_injective,
     FreeGroup.center_eq_bot_of_nontrivial, Subgroup.mem_bot]
-  exact inv_ne_one.mpr basisCommutator_ne_one
+  decide
 
 /-- The basis element `a₂` of the right factor does not commute with the curve, so no
 endomorphism of the amalgam fixes the left factor and conjugates the right factor by `a₂`. -/
@@ -124,7 +151,7 @@ theorem not_exists_map_of_true_eq_conj_of_zero :
     Subgroup.mem_centralizer_iff]
   intro h
   have h' := h _ ⟨Multiplicative.ofAdd 1, rfl⟩
-  rw [boundary_true, toAdd_ofAdd, zpow_one, basisCommutator_def] at h'
+  rw [boundary_true, toAdd_ofAdd, zpow_one] at h'
   revert h'
   decide
 
@@ -136,16 +163,21 @@ namespace FreeSplitting
 group. -/
 def boundary (_ : Bool) : Unit →* FreeGroup (Fin 2) := 1
 
+@[simp] theorem boundary_eq_one (i : Bool) : boundary i = 1 := (rfl)
+
 /-- Every element of the left factor centralizes the trivial edge group. -/
 theorem mem_centralizer (z : FreeGroup (Fin 2)) :
     z ∈ Subgroup.centralizer (Set.range (boundary false)) := by
   rintro _ ⟨c, rfl⟩
-  simp [boundary]
+  simp
 
 /-- The twist of `F(a, b) ∗ F(c, d)` fixing the first factor and conjugating the second factor
 by an element `z` of the first factor. -/
 def twist (z : FreeGroup (Fin 2)) : MulAut (Monoid.PushoutI boundary) :=
   leftDehnTwist boundary ⟨z, mem_centralizer z⟩
+
+theorem twist_def (z : FreeGroup (Fin 2)) :
+    twist z = leftDehnTwist boundary ⟨z, mem_centralizer z⟩ := (rfl)
 
 /-- The twist by an element of the first factor fixes the first factor. -/
 @[simp] theorem twist_of_false (z x : FreeGroup (Fin 2)) : twist z (of false x) = of false x :=
@@ -156,10 +188,39 @@ def twist (z : FreeGroup (Fin 2)) : MulAut (Monoid.PushoutI boundary) :=
     twist z (of true x) = of false z * of true x * (of false z)⁻¹ :=
   leftDehnTwist_of_true ..
 
+/-- The twist by an element of the first factor fixes the trivial edge group. -/
+@[simp] theorem twist_base (z : FreeGroup (Fin 2)) (c : Unit) :
+    twist z (base boundary c) = base boundary c :=
+  leftDehnTwist_base ..
+
+/-- The twist by the identity is the identity. -/
+@[simp] theorem twist_one : twist 1 = 1 :=
+  leftDehnTwist_one boundary
+
 /-- The twists by elements of the first factor compose in the order opposite to multiplication
 of the parameters. -/
 @[simp] theorem twist_mul (z w : FreeGroup (Fin 2)) : twist (z * w) = twist w * twist z :=
   leftDehnTwist_mul boundary ⟨z, mem_centralizer z⟩ ⟨w, mem_centralizer w⟩
+
+/-- The twist by the inverse of an element is the inverse twist. -/
+@[simp] theorem twist_inv (z : FreeGroup (Fin 2)) : twist z⁻¹ = (twist z)⁻¹ :=
+  leftDehnTwist_inv boundary ⟨z, mem_centralizer z⟩
+
+/-- The inverse of the twist by an element of the first factor fixes the first factor. -/
+@[simp] theorem twist_symm_of_false (z x : FreeGroup (Fin 2)) :
+    (twist z).symm (of false x) = of false x :=
+  leftDehnTwist_symm_of_false ..
+
+/-- The inverse of the twist by an element `z` of the first factor conjugates the second factor
+by `z⁻¹`. -/
+@[simp] theorem twist_symm_of_true (z x : FreeGroup (Fin 2)) :
+    (twist z).symm (of true x) = (of false z)⁻¹ * of true x * of false z :=
+  leftDehnTwist_symm_of_true ..
+
+/-- The inverse of the twist by an element of the first factor fixes the trivial edge group. -/
+@[simp] theorem twist_symm_base (z : FreeGroup (Fin 2)) (c : Unit) :
+    (twist z).symm (base boundary c) = base boundary c :=
+  leftDehnTwist_symm_base ..
 
 /-- In `F(a, b) ∗ F(c, d)`, applying the twist by `b` and then the twist by `a` sends `c` to
 `b a c a⁻¹ b⁻¹`. -/
@@ -174,7 +235,7 @@ theorem twist_twist_of_true :
 private def toPerm : Monoid.PushoutI boundary →* Equiv.Perm (Fin 3) :=
   lift (fun _ => FreeGroup.lift ![Equiv.swap 0 1, Equiv.swap 1 2]) 1 fun _ => by
     ext
-    simp [boundary]
+    simp
 
 /-- The twists of `F(a, b) ∗ F(c, d)` by elements of the first factor are not multiplicative in
 the parameter: the twist by `a b` differs from the composite of the twists by `a` and `b`. -/

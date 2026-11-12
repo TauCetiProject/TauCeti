@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PushoutI
-public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
 # Basic facts about amalgamated products
@@ -22,9 +21,9 @@ This is the reason the boundary maps of a graph of groups are required to be inj
 data of an amalgam `A ∗_C B` with a non-injective map `C →* B` and an injective map `C →* A`, the
 vertex group `A` does not embed in the amalgam, and the normal form theorem fails.
 
-For a pushout of groups, an element of a factor `G i` that centralizes the image of `H` in `G i`
-commutes in the pushout with every element of the image `base φ h` of `H`, since that image is
-also the image of `φ i h` under the inclusion of `G i`.
+An element of a factor `G i` that centralizes the image of `H` in `G i` commutes in the pushout
+with every element of the image `base φ h` of `H`, since that image is also the image of `φ i h`
+under the inclusion of `G i`.
 
 ## Main results
 
@@ -63,20 +62,14 @@ theorem not_injective_of (hi : Function.Injective (φ i)) {j : ι}
     (hj : ¬ Function.Injective (φ j)) : ¬ Function.Injective (of (φ := φ) i) :=
   fun h => hj fun _ _ hxy => hi (apply_eq_apply_of_injective_of h hxy)
 
-end Monoid
-
-section Group
-
-variable [∀ i, Group (G i)] [Group H] {φ : ∀ i, H →* G i} {i : ι}
-
-/-- An element of a factor centralizing the image of the amalgamating group commutes in the
-pushout with every element of the image of the amalgamating group. -/
+/-- An element of a factor centralizing the image of the amalgamating monoid commutes in the
+pushout with every element of the image of the amalgamating monoid. -/
 theorem commute_of_base_of_mem_centralizer {z : G i}
-    (hz : z ∈ Subgroup.centralizer (Set.range (φ i))) (h : H) :
+    (hz : z ∈ Set.centralizer (Set.range (φ i))) (h : H) :
     Commute (of (φ := φ) i z) (base φ h) := by
   rw [← of_apply_eq_base φ i]
-  exact (Commute.map (Subgroup.mem_centralizer_iff.mp hz (φ i h) ⟨h, rfl⟩) (of i)).symm
+  exact (Commute.map (hz (φ i h) ⟨h, rfl⟩) (of i)).symm
 
-end Group
+end Monoid
 
 end Monoid.PushoutI

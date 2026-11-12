@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import TauCeti.GroupTheory.PushoutI.Basic
 
 /-!
@@ -29,8 +30,9 @@ endomorphism exactly when `z` centralizes the image of the amalgamating group
 A parameter in the *left* factor centralizing the image of the amalgamating group also defines
 an automorphism fixing the left factor and conjugating the right factor
 (`Monoid.PushoutI.leftDehnTwist`). These twists fix their own parameters, so they compose in the
-order opposite to multiplication of parameters. On the images of an element of the amalgamating
-group the two families agree; this is the twist of `A ∗_C B` by a central element of `C`.
+order opposite to multiplication of parameters. The two families agree on the two images of a
+central element of the amalgamating group `C`; this common automorphism is the twist of
+`A ∗_C B` by that central element of `C`.
 
 ## References
 
@@ -142,6 +144,30 @@ def dehnTwist (z : Subgroup.centralizer (Set.range (φ true))) :
   apply eq_inv_of_mul_eq_one_left
   rw [← dehnTwist_mul, inv_mul_cancel, dehnTwist_one]
 
+/-- The inverse of a twist is the twist by the inverse parameter. -/
+theorem dehnTwist_symm (z : Subgroup.centralizer (Set.range (φ true))) :
+    (dehnTwist φ z).symm = dehnTwist φ z⁻¹ :=
+  (dehnTwist_inv φ z).symm
+
+/-- The inverse twist fixes the left factor pointwise. -/
+@[simp] theorem dehnTwist_symm_of_false
+    (z : Subgroup.centralizer (Set.range (φ true))) (a : G false) :
+    (dehnTwist φ z).symm (of false a) = of false a := by
+  rw [dehnTwist_symm, dehnTwist_of_false]
+
+/-- The inverse twist conjugates the right factor by the inverse of the parameter. -/
+@[simp] theorem dehnTwist_symm_of_true
+    (z : Subgroup.centralizer (Set.range (φ true))) (b : G true) :
+    (dehnTwist φ z).symm (of true b) = (of true (z : G true))⁻¹ * of true b * of true z := by
+  rw [dehnTwist_symm, dehnTwist_of_true]
+  simp
+
+/-- The inverse twist fixes the amalgamating group pointwise. -/
+@[simp] theorem dehnTwist_symm_base
+    (z : Subgroup.centralizer (Set.range (φ true))) (c : C) :
+    (dehnTwist φ z).symm (base φ c) = base φ c := by
+  rw [dehnTwist_symm, dehnTwist_base]
+
 /-- A parameter central in the right factor gives the identity twist, even without
 injective boundary maps. -/
 theorem dehnTwist_eq_one_of_mem_center
@@ -189,12 +215,12 @@ exactly when its parameter is central in the right factor. -/
 
 /-! ### Necessity of the centralizer hypothesis -/
 
-/-- With injective boundary maps, an endomorphism of the amalgamated product that fixes the left
-factor and conjugates the right factor by an element `z` of the right factor can only exist when
-`z` centralizes the image of the amalgamating group: the prescription sends an amalgamated
-element `c` both to `c` and to `z * c * z⁻¹`. -/
+/-- With injective boundary maps, a self-map of the amalgamated product (in particular an
+endomorphism) that fixes the left factor and conjugates the right factor by an element `z` of the
+right factor can only exist when `z` centralizes the image of the amalgamating group: the
+prescription sends an amalgamated element `c` both to `c` and to `z * c * z⁻¹`. -/
 theorem mem_centralizer_range_of_map_of_true_eq (hφ : ∀ i, Function.Injective (φ i))
-    {z : G true} (f : PushoutI φ →* PushoutI φ) (hfalse : ∀ a, f (of false a) = of false a)
+    {z : G true} (f : PushoutI φ → PushoutI φ) (hfalse : ∀ a, f (of false a) = of false a)
     (htrue : ∀ b, f (of true b) = of true z * of true b * (of true z)⁻¹) :
     z ∈ Subgroup.centralizer (Set.range (φ true)) := by
   rintro _ ⟨c, rfl⟩
@@ -271,6 +297,31 @@ the parameters. -/
   apply eq_inv_of_mul_eq_one_left
   rw [← leftDehnTwist_mul, mul_inv_cancel, leftDehnTwist_one]
 
+/-- The inverse of a twist is the twist by the inverse parameter. -/
+theorem leftDehnTwist_symm (z : Subgroup.centralizer (Set.range (φ false))) :
+    (leftDehnTwist φ z).symm = leftDehnTwist φ z⁻¹ :=
+  (leftDehnTwist_inv φ z).symm
+
+/-- The inverse twist fixes the left factor pointwise. -/
+@[simp] theorem leftDehnTwist_symm_of_false
+    (z : Subgroup.centralizer (Set.range (φ false))) (a : G false) :
+    (leftDehnTwist φ z).symm (of false a) = of false a := by
+  rw [leftDehnTwist_symm, leftDehnTwist_of_false]
+
+/-- The inverse twist conjugates the right factor by the inverse of the image of the parameter in
+the left factor. -/
+@[simp] theorem leftDehnTwist_symm_of_true
+    (z : Subgroup.centralizer (Set.range (φ false))) (b : G true) :
+    (leftDehnTwist φ z).symm (of true b) = (of false (z : G false))⁻¹ * of true b * of false z := by
+  rw [leftDehnTwist_symm, leftDehnTwist_of_true]
+  simp
+
+/-- The inverse twist fixes the amalgamating group pointwise. -/
+@[simp] theorem leftDehnTwist_symm_base
+    (z : Subgroup.centralizer (Set.range (φ false))) (c : C) :
+    (leftDehnTwist φ z).symm (base φ c) = base φ c := by
+  rw [leftDehnTwist_symm, leftDehnTwist_base]
+
 /-- Every subgroup of the left factor is fixed. -/
 @[simp] theorem map_leftDehnTwist_map_of_false
     (z : Subgroup.centralizer (Set.range (φ false))) (K : Subgroup (G false)) :
@@ -288,8 +339,8 @@ the parameters. -/
   exact congrArg K.map (MonoidHom.ext fun b => by simp [MulAut.conj_apply])
 
 /-- A parameter of the left factor and a parameter of the right factor with the same image in
-the amalgamated product define the same twist. This applies to the two images of an element of
-the amalgamating group. -/
+the amalgamated product define the same twist. This applies to the two images of a central
+element of the amalgamating group. -/
 theorem leftDehnTwist_eq_dehnTwist (z : Subgroup.centralizer (Set.range (φ false)))
     (w : Subgroup.centralizer (Set.range (φ true)))
     (h : of (φ := φ) false (z : G false) = of true (w : G true)) :
