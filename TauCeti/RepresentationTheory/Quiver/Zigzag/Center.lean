@@ -214,9 +214,7 @@ theorem sum_smul_zigzagMk_vertexIdempotent_mem_center [Fintype V] (f : V → k)
       zigzagVolume_mul_sum_smul_vertexIdempotent]
 
 /-- **A combination of vertex idempotents is central exactly when its coefficients are constant
-along the edges.** The converse of `TauCeti.sum_smul_zigzagMk_vertexIdempotent_mem_center` reads
-the coefficients off the arrow classes, which are independent whatever the rest of the graph
-does. -/
+along the edges.** -/
 @[simp]
 theorem sum_smul_zigzagMk_vertexIdempotent_mem_center_iff [Fintype V] (f : V → k) :
     (∑ i, f i • zigzagMk k G (vertexIdempotent k (vertex G i)))
@@ -227,11 +225,7 @@ theorem sum_smul_zigzagMk_vertexIdempotent_mem_center_iff [Fintype V] (f : V →
     (zigzagMk k G (ofArrow (arrow G (⟨(i, j), hij⟩ : G.Dart).adj)))
   rw [sum_smul_vertexIdempotent_mul_ofArrow k G f ⟨(i, j), hij⟩,
     ofArrow_mul_sum_smul_vertexIdempotent k G f ⟨(i, j), hij⟩] at hcomm
-  have hzero : (f i - f j) • zigzagMk k G (ofArrow (arrow G (⟨(i, j), hij⟩ : G.Dart).adj)) = 0 := by
-    rw [sub_smul, sub_eq_zero]
-    exact hcomm
-  exact sub_eq_zero.mp (zigzagMk_ofArrow_smul_left_injective k G ⟨(i, j), hij⟩
-    (by simpa only [zero_smul] using hzero))
+  exact zigzagMk_ofArrow_smul_left_injective k G ⟨(i, j), hij⟩ hcomm
 
 /-! ### The diagonal corners of a central element -/
 
@@ -313,7 +307,7 @@ private theorem sum_corner_eq_self [Fintype V] {z : nonisolatedZigzagQuotient k 
 
 /-! ### The centre -/
 
-/-- **The centre of a zigzag algebra.** For a finite simple graph, an
+/-- **The centre of the zigzag relation quotient.** For a finite simple graph, an
 element is central exactly when it is the sum of a combination of vertex idempotents whose
 coefficients are constant along the edges and a combination of volume classes. -/
 theorem mem_center_nonisolatedZigzagQuotient_iff [Fintype V]
@@ -391,9 +385,8 @@ theorem zigzagCenterFun_mem_center (o : Option V) :
   | none => rw [zigzagCenterFun_none]; exact one_mem _
   | some i => rw [zigzagCenterFun_some]; exact zigzagVolume_mem_center k G i
 
-/-- **The unit and the volume classes span the centre of a connected zigzag algebra.** The
-coefficients of a central combination of vertex idempotents are constant along the edges, hence
-constant, so that combination is a multiple of `1 = ∑ i, e_i`. -/
+/-- **The unit and the volume classes span the centre of the zigzag relation quotient of a
+preconnected graph.** -/
 theorem span_range_zigzagCenterFun_eq_center (hconn : G.Preconnected) :
     Submodule.span k (Set.range (zigzagCenterFun k G))
       = Subalgebra.toSubmodule (Subalgebra.center k (nonisolatedZigzagQuotient k G)) := by
