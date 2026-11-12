@@ -130,15 +130,7 @@ private abbrev complexFin (hF : finrank ℂ F = r + 1) (E : B → Type w)
   letI : VectorBundle ℝ F E := VectorBundle.restrictScalars ℝ ℂ F E
   VectorBundleOrientation.reindex (finCongr (by omega)) (VectorBundleOrientation.complex F E)
 
-omit [FiniteDimensional ℂ F] in
-private theorem finrank_real_eq (hF : finrank ℂ F = r + 1) : finrank ℝ F = 2 * r + 1 + 1 := by
-  rw [finrank_real_eq_two_mul_finrank_complex, hF]; ring
-
 variable (hF : finrank ℂ F = r + 1)
-
-private theorem complexEulerClass_eq_eulerClass_complexFin :
-    complexEulerClass F E hF = (complexFin hF E).eulerClass (finrank_real_eq hF) :=
-  complexEulerClass_def F E hF
 
 section BaseMap
 
@@ -158,7 +150,7 @@ theorem complexEulerClass_eq_singularCohomologyMap_of_fiberwise {g : C(B', B)}
     (hφ : Continuous fun v : TotalSpace F E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2)) :
     complexEulerClass F E' hF =
       TopCat.singularCohomologyMap (TopCat.ofHom g) (2 * r + 2) (complexEulerClass F E hF) := by
-  rw [complexEulerClass_eq_eulerClass_complexFin, complexEulerClass_eq_eulerClass_complexFin]
+  rw [complexEulerClass_def, complexEulerClass_def]
   refine (complexFin hF E).eulerClass_eq_singularCohomologyMap_of_fiberwise _ (complexFin hF E')
     (φ := fun b' ↦
       { (φ b').toLinearEquiv.restrictScalars ℝ with
@@ -178,7 +170,7 @@ theorem complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugate
     complexEulerClass F E' hF =
       (-1 : ℤ) ^ (r + 1) •
         TopCat.singularCohomologyMap (TopCat.ofHom g) (2 * r + 2) (complexEulerClass F E hF) := by
-  rw [complexEulerClass_eq_eulerClass_complexFin, complexEulerClass_eq_eulerClass_complexFin]
+  rw [complexEulerClass_def, complexEulerClass_def]
   -- The real-linear continuous isomorphisms underlying the `φ b'`.
   let ψ : ∀ b', E' b' ≃L[ℝ] E (g b') := fun b' ↦
     { (φ b').toLinearEquiv.toRealLinearEquiv with
