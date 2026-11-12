@@ -37,6 +37,10 @@ from `R`, so the Krull intersection theorem applies to its powers.
 * `Ideal.smul_top_eq_restrictScalars_map`: **the extended ideal is `I • ⊤`**, the identity
   `I • (⊤ : Submodule R A) = Submodule.restrictScalars R (I.map (algebraMap R A))`.
 * `Ideal.instIsTwoSidedMapAlgebraMap`: the extended ideal is two-sided.
+* `Ideal.map_algebraMap_eq_top_iff`: in a nontrivial free `R`-algebra, the extension of `I` is the
+  unit ideal exactly when `I` is.
+* `Ideal.span_singleton_natCast_eq_top_iff`: in a nontrivial free `ℤ`-algebra, the ideal `(m)` is
+  the unit ideal exactly when `m = 1`.
 * `Ideal.map_algebraMap_mul` and `Ideal.map_algebraMap_pow`: extension along `algebraMap R A` is
   multiplicative, and therefore commutes with powers.
 * `Ideal.pow_smul_top_eq_restrictScalars_map_pow`: the combination of the two,
@@ -113,6 +117,23 @@ theorem mem_map_algebraMap_iff {x : A} :
     x ∈ I.map (algebraMap R A) ↔ x ∈ I • (⊤ : Submodule R A) := by
   rw [smul_top_eq_restrictScalars_map, Submodule.restrictScalars_mem]
 
+/-- **An extended ideal is the unit ideal only if the ideal is.** If `A` is a nontrivial
+free `R`-algebra, then `IA = A` exactly when `I = R`. The algebra need not be commutative. -/
+@[simp]
+theorem map_algebraMap_eq_top_iff [Module.Free R A] [Nontrivial A] {I : Ideal R} :
+    I.map (algebraMap R A) = ⊤ ↔ I = ⊤ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_top _⟩
+  -- The coordinate of a basis vector `bᵢ` at `i` is `1`, and coordinates carry `I • ⊤` into `I`.
+  let B := Module.Free.chooseBasis R A
+  obtain ⟨i⟩ := B.index_nonempty
+  have hmem : B i ∈ I • (⊤ : Submodule R A) :=
+    (mem_map_algebraMap_iff I).mp (h ▸ Submodule.mem_top)
+  have h1 : B.coord i (B i) ∈ (I • (⊤ : Submodule R A)).map (B.coord i) :=
+    Submodule.mem_map_of_mem hmem
+  rw [Submodule.map_smul''] at h1
+  simpa [Ideal.eq_top_iff_one] using
+    Submodule.smul_mono le_rfl le_top h1
+
 /-- **An extended ideal is two-sided**, because the image of `algebraMap R A` is central. -/
 instance instIsTwoSidedMapAlgebraMap : (I.map (algebraMap R A)).IsTwoSided :=
   -- `I.map (algebraMap R A)` is by definition the span of the image of `I`.
@@ -160,6 +181,20 @@ theorem span_pow_smul_top_eq_restrictScalars_span_image_pow (s : Set R) (n : ℕ
   rw [pow_smul_top_eq_restrictScalars_map_pow, map_span]
 
 end Semiring
+
+section IntRing
+
+variable {S : Type*} [Ring S]
+
+/-- **The ideal `(m)` is the unit ideal only for `m = 1`**, in a nontrivial ring that is free over
+`ℤ`. The ring need not be commutative. -/
+theorem span_singleton_natCast_eq_top_iff [Module.Free ℤ S] [Nontrivial S] {m : ℕ} :
+    span {(m : S)} = ⊤ ↔ m = 1 := by
+  rw [← map_natCast (algebraMap ℤ S), ← Set.image_singleton, ← map_span,
+    map_algebraMap_eq_top_iff, span_singleton_eq_top, Int.isUnit_iff_natAbs_eq,
+    Int.natAbs_natCast]
+
+end IntRing
 
 section Ring
 
