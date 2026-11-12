@@ -42,6 +42,8 @@ pairs by their finite algebras, and by their integral algebras.
   the maximal ideal, is the image of an idempotent.
 * `Ideal.henselianRing_map_of_isIntegral`: if `(R, I)` is Henselian and `S` is an integral
   `R`-algebra, then `(S, IS)` is Henselian.
+* `TauCeti.isLocalRing_of_finite_of_henselianRing`: a finite domain over a henselian local ring
+  is local.
 * `TauCeti.HenselianLocalRing.of_finite`: a finite local algebra over a henselian local ring
   is henselian.
 * `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem` and
@@ -176,6 +178,20 @@ instance henselianRing_map_of_isIntegral :
 end Ideal
 
 namespace TauCeti
+
+/-- A domain finite over a henselian local ring is local. In particular, this applies to the
+integral closure in a finite separable extension of the fraction field of a henselian DVR. -/
+theorem isLocalRing_of_finite_of_henselianRing (R S : Type*) [CommRing R] [IsLocalRing R]
+    [HenselianRing R (IsLocalRing.maximalIdeal R)] [CommRing S] [IsDomain S] [Algebra R S]
+    [Module.Finite R S] : IsLocalRing S := by
+  let J := (IsLocalRing.maximalIdeal R).map (algebraMap R S)
+  have : IsArtinianRing (S ⧸ J) := by
+    let := Ideal.Quotient.field (IsLocalRing.maximalIdeal R)
+    have : Module.Finite (R ⧸ IsLocalRing.maximalIdeal R) (S ⧸ J) :=
+      .of_restrictScalars_finite R _ _
+    exact IsArtinianRing.of_finite (R ⧸ IsLocalRing.maximalIdeal R) _
+  exact HenselianRing.isLocalRing_of_forall_isIdempotentElem J fun e he ↦
+    IsIdempotentElem.iff_eq_zero_or_one.mp he
 
 /-- A finite local algebra over a henselian local ring is henselian. -/
 theorem HenselianLocalRing.of_finite (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
