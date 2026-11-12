@@ -81,9 +81,6 @@ def compTime (hφ : ContDiff ℝ ∞ φ) :
         (TangentSpace (I.prod 𝓘(ℝ)) : M × ℝ → Type _) (p₀.1, φ p₀.2)).baseSet := by
       simp only [TangentBundle.trivializationAt_baseSet] at hq ⊢
       simpa using hq
-    have hq₁ : q.1 ∈ (chartAt H p₀.1).source := by
-      simp only [TangentBundle.trivializationAt_baseSet] at hq
-      simpa using hq
     have hsymm (u : E × ℝ) :
         (trivializationAt (E × ℝ) (TangentSpace (I.prod 𝓘(ℝ))) p₀).symm q u =
           (trivializationAt (E × ℝ) (TangentSpace (I.prod 𝓘(ℝ))) (p₀.1, φ p₀.2)).symm

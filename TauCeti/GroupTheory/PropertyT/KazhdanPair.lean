@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.PropertyT
+public import TauCeti.GroupTheory.PropertyT.Basic
 public import TauCeti.RepresentationTheory.Continuous.Unitary.HilbertSum
 
 /-!

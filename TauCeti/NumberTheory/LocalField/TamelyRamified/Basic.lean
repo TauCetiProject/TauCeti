@@ -76,11 +76,19 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 variable [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
   [Algebra K L] [ValuativeExtension K L]
 
+omit [ValuativeExtension K L] in
 /-- A degree-one extension of nonarchimedean local fields is tamely ramified. -/
 theorem isTamelyRamified_of_finrank_eq_one (h : Module.finrank K L = 1) :
     IsTamelyRamified K L := by
-  have hef := (ramificationIndex_mul_inertiaDegree K L).trans h
-  rw [isTamelyRamified_iff, (mul_eq_one.mp hef).1]
+  have hbij : Function.Bijective (algebraMap K L) :=
+    Algebra.finrank_eq_one_iff_bijective_algebraMap.1 h
+  have hsurj : Function.Surjective (Units.map (algebraMap K L : K →* L)) :=
+    (Units.mapEquiv (RingEquiv.ofBijective (algebraMap K L) hbij).toMulEquiv).surjective
+  -- The bundled composite `normalizedValuation L ∘ Units.map _` is surjective, being a composite
+  -- of surjections (the coercion of a composite of homomorphisms is the composite of coercions).
+  have hrange : ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))).range = ⊤ :=
+    MonoidHom.range_eq_top.2 ((normalizedValuation_surjective (K := L)).comp hsurj)
+  rw [isTamelyRamified_iff, ramificationIndex_def, hrange, Subgroup.index_top]
   exact (CharP.prime_ringChar 𝓀[K]).not_dvd_one
 
 namespace LocalFieldsRamification
@@ -116,9 +124,10 @@ open LocalFieldsRamification in
 `L/K` of nonarchimedean local fields, `e(L/K)` divides `#𝓀[L] - 1`: the inertia group `G_0`, of
 order `e(L/K)`, meets the wild inertia group `G_1` trivially, and `G_0 / G_1` embeds into `𝓀[L]ˣ`
 through the tame character. -/
-theorem IsTamelyRamified.ramificationIndex_dvd_card_residueField_sub_one [Module.Finite K L]
+theorem IsTamelyRamified.ramificationIndex_dvd_card_residueField_sub_one
     [IsGalois K L] (ht : IsTamelyRamified K L) :
     ramificationIndex K L ∣ Nat.card 𝓀[L] - 1 := by
+  have := finite_of_valuativeExtension K L
   have hG := card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one L (L ≃ₐ[K] L)
   have h1 : TauCeti.IsLocalRing.ramificationGroup (L ≃ₐ[K] L) 𝒪[L] (0 + 1) = ⊥ := by
     rw [zero_add, ← lowerRamificationGroup_def]
@@ -126,6 +135,15 @@ theorem IsTamelyRamified.ramificationIndex_dvd_card_residueField_sub_one [Module
   rwa [TauCeti.IsLocalRing.RamificationGroupGraded, h1, Subgroup.bot_subgroupOf,
     Nat.card_congr (QuotientGroup.quotientBot).toEquiv, ← lowerRamificationGroup_def,
     natCard_lowerRamificationGroup_zero] at hG
+
+/-- In a totally and tamely ramified Galois extension the degree divides `q - 1`, where `q` is the
+cardinality of the residue field of the base. -/
+theorem IsTotallyRamified.finrank_dvd_card_residueField_sub_one [IsGalois K L]
+    (h : IsTotallyRamified K L) (ht : IsTamelyRamified K L) :
+    Module.finrank K L ∣ Nat.card 𝓀[K] - 1 := by
+  have hdvd := ht.ramificationIndex_dvd_card_residueField_sub_one
+  rwa [(isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1 h, natCard_residueField K L,
+    h.inertiaDegree_eq_one, pow_one] at hdvd
 
 /-- **Totally and tamely ramified extensions are radical.** If `L/K` is a totally and tamely
 ramified extension of nonarchimedean local fields, of degree `e = e(L/K)`, then there are a
@@ -163,7 +181,8 @@ theorem IsTotallyRamified.exists_pow_eq_uniformizer_of_isTamelyRamified (h : IsT
   have hϖK0 : (ϖK : K) ≠ 0 := fun h0 ↦ hϖK.ne_zero (Subtype.ext h0)
   have hϖα0 : (ϖα : L) ≠ 0 := fun h0 ↦ hϖα.ne_zero (Subtype.ext h0)
   have hαpow : (ϖα : L) ^ e = algebraMap K L (ϖK : K) := by
-    rw [← coe_algebraMap_integerRing, ← hpow, SubmonoidClass.coe_pow]
+    rw [← Valuation.HasExtension.val_algebraMap (vA := valuation L), ← hpow,
+      SubmonoidClass.coe_pow]
   refine ⟨Units.mk0 (ϖK : K) hϖK0, Units.mk0 (ϖα : L) hϖα0,
     (isUniformizer_iff_exists_irreducible K _).2 ⟨ϖK, hϖK, rfl⟩,
     (isUniformizer_iff_exists_irreducible L _).2 ⟨ϖα, hϖα, rfl⟩, hαpow, ?_⟩

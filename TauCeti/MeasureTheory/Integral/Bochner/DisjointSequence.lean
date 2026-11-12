@@ -122,7 +122,6 @@ theorem tendsto_setIntegral_of_pairwise_disjoint {h : ℕ → α → E} (hh : �
     set n := σ k
     set H := ⋃ i ∈ Finset.range k, B (σ i)
     set T' := ⋃ i, ⋃ (_ : k < i), B (σ i)
-    have hHm : MeasurableSet H := Finset.measurableSet_biUnion _ fun i _ ↦ hBm _
     have hT'm : MeasurableSet T' := .iUnion fun i ↦ .iUnion fun _ ↦ hBm _
     have hDeq : D = H ∪ (B n ∪ T') := by
       ext x

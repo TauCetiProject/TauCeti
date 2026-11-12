@@ -99,10 +99,13 @@ theorem IsCSA.centralizer_isMulCommutative (hG : IsCSA G) {y : G} (hy : y ≠ 1)
     IsMulCommutative (Subgroup.centralizer {y}) :=
   (hG.centralizer_isMaximalAbelian hy).prop
 
-/-- The centralizer of a nonidentity element in a CSA group is malnormal. -/
-theorem IsCSA.centralizer_isTISubgroup (hG : IsCSA G) {y : G} (hy : y ≠ 1) :
-    TauCeti.IsTISubgroup (Subgroup.centralizer {y}) :=
-  hG _ (hG.centralizer_isMaximalAbelian hy)
+/-- The centralizer of an element in a CSA group is malnormal. -/
+theorem IsCSA.centralizer_isTISubgroup (hG : IsCSA G) (y : G) :
+    TauCeti.IsTISubgroup (Subgroup.centralizer {y}) := by
+  by_cases hy : y = 1
+  · rw [hy, Subgroup.centralizer_eq_top_iff_subset.2 (by simp)]
+    exact TauCeti.IsTISubgroup.top
+  · exact hG _ (hG.centralizer_isMaximalAbelian hy)
 
 /-- Commutation is transitive through a nonidentity element exactly when every nonidentity
 element has an abelian centralizer. -/
@@ -139,7 +142,7 @@ theorem isCSA_iff_isCommTransitive_and_commute_conj :
   · refine fun hG => ⟨hG.isCommTransitive, fun x g hx hxg => ?_⟩
     -- Both `x` and `g * x * g⁻¹` lie in the malnormal centralizer of `x`, so `g` does too.
     by_contra hg
-    exact (hG.centralizer_isTISubgroup hx).conj_notMem
+    exact (hG.centralizer_isTISubgroup x).conj_notMem
       (fun h => hg (Subgroup.mem_centralizer_singleton_iff.1 h).symm)
       (Subgroup.mem_centralizer_singleton_iff.2 rfl) hx
       (Subgroup.mem_centralizer_singleton_iff.2 hxg.eq.symm)
@@ -171,17 +174,19 @@ theorem IsCSA.mem_centralizer_of_commute_conj (hG : IsCSA G) {u x y g : G}
     Subgroup.mem_centralizer_singleton_iff.2 (hT y u x hu hy hx.symm).eq
   have hg : g ∈ Subgroup.centralizer {x} := by
     by_contra hg
-    exact (hG.centralizer_isTISubgroup hx1).conj_notMem hg hyx hy1
+    exact (hG.centralizer_isTISubgroup x).conj_notMem hg hyx hy1
       (Subgroup.mem_centralizer_singleton_iff.2 h.eq.symm)
   exact (hT g x u hx1 (Subgroup.mem_centralizer_singleton_iff.1 hg) hx).eq
 
-/-- In a torsion-free CSA group, conjugates of nonzero powers of `u ≠ 1` by `y` and `y'` do not
+/-- In a torsion-free CSA group, conjugates of nonzero powers of `u` by `y` and `y'` do not
 commute unless `y⁻¹ * y'` centralizes `u`. -/
 theorem IsCSA.not_commute_conj_zpow (hG : IsCSA G) [IsMulTorsionFree G] {u y y' : G}
-    (hu : u ≠ 1) {e e' : ℤ} (he : e ≠ 0) (he' : e' ≠ 0)
+    {e e' : ℤ} (he : e ≠ 0) (he' : e' ≠ 0)
     (hy : y⁻¹ * y' ∉ Subgroup.centralizer {u}) :
     ¬Commute (y * u ^ e * y⁻¹) (y' * u ^ e' * y'⁻¹) := by
   intro h
+  obtain rfl | hu := eq_or_ne u 1
+  · exact hy (Subgroup.mem_centralizer_singleton_iff.2 (by simp))
   have hu' : u ∈ Subgroup.centralizer {u} := Subgroup.mem_centralizer_singleton_iff.2 rfl
   refine hy (hG.mem_centralizer_of_commute_conj (zpow_mem hu' e)
     (fun h => he ((IsMulTorsionFree.zpow_eq_one_iff_right hu).1 h)) (zpow_mem hu' e')
@@ -204,7 +209,7 @@ theorem IsCSA.exists_inv_mul_notMem_centralizer (hG : IsCSA G) {u g : G} (hu : u
     -- `C_G(u)`.
     refine ⟨a * u * (a⁻¹ * b), fun h => hd ?_, fun h => ?_⟩
     · simpa [mul_assoc] using mul_mem (inv_mem hu') h
-    · exact (hG.centralizer_isTISubgroup hu).conj_notMem (g := (a⁻¹ * b)⁻¹)
+    · exact (hG.centralizer_isTISubgroup u).conj_notMem (g := (a⁻¹ * b)⁻¹)
         (fun h' => hd (by simpa using inv_mem h')) hu' hu (by simpa [mul_assoc] using h)
 
 /-- In a torsion-free CSA group, given `v` outside `C_G(u)`, one can choose powers of `v` whose
@@ -215,8 +220,7 @@ theorem IsCSA.exists_inv_pow_mul_mul_pow_notMem_centralizer (hG : IsCSA G) [IsMu
     (T : Set G) (hT : T.Finite) :
     ∃ n : ι → ℕ, ∀ x ∈ s, ∀ x' ∈ s, ∀ h : G, (h = 1 ∧ x ≠ x' ∨ h ∈ T ∧ h ≠ 1) →
       (v ^ n x)⁻¹ * h * v ^ n x' ∉ Subgroup.centralizer {u} := by
-  have hu : u ≠ 1 := by rintro rfl; exact hv (Subgroup.mem_centralizer_singleton_iff.2 (by simp))
-  exact (hG.centralizer_isTISubgroup hu).exists_inv_pow_mul_mul_pow_notMem hv s T hT
+  exact (hG.centralizer_isTISubgroup u).exists_inv_pow_mul_mul_pow_notMem hv s T hT
 
 /-- In a CSA group with two noncommuting elements `a` and `b`, an element `x` is trivial or `y`
 is trivial exactly when `x` commutes with `y`, `a * y * a⁻¹` and `b * y * b⁻¹`. This expresses

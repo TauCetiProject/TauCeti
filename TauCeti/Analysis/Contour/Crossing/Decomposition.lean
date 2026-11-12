@@ -41,10 +41,9 @@ proposition.
 
 ## Provenance
 
-Independently reconstructed; no formalization is vendored. The `ContourIntegration` roadmap
-designates the AINTLIB `LeanModularForms` development
-([github.com/CBirkbeck/AINTLIB](https://github.com/CBirkbeck/AINTLIB), Apache-2.0) as the existing
-source for this area. Its `ForMathlib/HungerbuhlerWasem/Crossing.lean` and
+Independently reconstructed; no formalization is vendored. The AINTLIB `LeanModularForms`
+development ([github.com/CBirkbeck/AINTLIB](https://github.com/CBirkbeck/AINTLIB), Apache-2.0) is
+the existing source for this area. Its `ForMathlib/HungerbuhlerWasem/Crossing.lean` and
 `ForMathlib/HungerbuhlerWasem/MultiCrossingCPV.lean` were consulted at revision `340875a`.
 The former supplies sector geometry and the latter a multi-crossing principal-value engine; neither
 contains this excise-and-cap winding-number accounting identity. The proof below instead composes

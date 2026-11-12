@@ -193,10 +193,11 @@ private def stepIso (s : W.LineExtension) (n : ℕ) :
       (isOpen_half q s.W' (-extension s)) (n + 1) n rfl) ≪≫
     asIso (TopPair.singularHomologyMap (interIso q s).hom R n)
 
+omit [FiniteDimensional ℝ F] in
 private lemma isZero_singularHomology_zero (s : W.LineExtension) :
     IsZero ((subspaceComplPair q W).singularHomology R 0) := by
-  have := TopCat.epi_relativeMayerVietorisFromBiprod_zero R (isOpen_half q s.W' (extension s))
-    (isOpen_half q s.W' (-extension s))
+  have := TopCat.epi_relativeMayerVietorisFromBiprod_zero R (U := half q s.W' (extension s))
+    (V := half q s.W' (-extension s))
   exact ((isZero_biprod R q hq s 0).of_epi
     (TopCat.relativeMayerVietorisFromBiprod R _ _ 0)).of_iso
       (asIso (TopPair.singularHomologyMap (unionIso q s).hom R 0))

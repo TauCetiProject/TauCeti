@@ -236,7 +236,7 @@ theorem level_sqrt_level_smul_dual_span_two :
   have hL : (span ℤ {2} : Submodule ℤ ℝ) = (2 : ℝ) • span ℤ (Set.range b) := by
     simp [b, smul_span]
   have hlevel : level (span ℤ {2} : Submodule ℤ ℝ) = 8 := by
-    simpa [hL, h4] using level_sqrt_smul_span_orthonormalBasis b (m := 4) (by norm_num)
+    simpa [hL, h4] using level_sqrt_smul_span_orthonormalBasis b (m := 4)
   rw [hlevel, hL, dual_smul _ two_ne_zero, dual_span_orthonormalBasis, smul_smul]
   push_cast
   rw [h8, show 2 * √2 * (2 : ℝ)⁻¹ = √2 by ring]

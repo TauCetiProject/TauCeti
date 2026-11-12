@@ -238,7 +238,7 @@ theorem isCompact_keplerBoundPhaseSpace_preimage_singleton [FiniteDimensional �
     IsCompact ((centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
       (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) ⁻¹'
       {centralForceEnergyMomentum b m (fun r ↦ -κ / r) x}) := by
-  obtain ⟨hq, hE, hℓ⟩ := x.2
+  obtain ⟨_, hE, hℓ⟩ := x.2
   rw [Subtype.isCompact_iff]
   convert isCompact_setOf_centralForceHamiltonian_kepler_eq b hm hκ hE hℓ using 1
   ext y
@@ -278,7 +278,6 @@ theorem isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   intro x
   refine maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
-    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt)
     (isCompact_keplerBoundPhaseSpace_preimage_singleton b hm hκ x) fun t ht ↦ funext fun j ↦ ?_
   -- Both integrals are first integrals of each other, so the curves stay in the level of `x`.
   have hfirst := SmoothTwoForm.isFirstIntegral_iff.2

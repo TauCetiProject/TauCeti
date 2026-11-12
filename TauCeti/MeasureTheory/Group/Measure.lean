@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.WithDensity
 -- Proof-only: change of variables in set integrals along a measurable embedding.
 import Mathlib.MeasureTheory.Integral.Lebesgue.Map
+-- Proof-only: pushing a measure forward along a measurable embedding.
+import TauCeti.MeasureTheory.Measure.AEMeasurable
 
 /-!
 # Measures and the group operations
@@ -142,21 +144,10 @@ of the original measure along `f`. -/]
 theorem map_inv_comp {G H : Type*} [MeasurableSpace G] [MeasurableSpace H] [InvolutiveInv G]
     [MeasurableInv G] (μ : Measure G) {f : G → H} :
     μ.inv.map (f ∘ Inv.inv) = μ.map f := by
-  have he : MeasurableEmbedding (Inv.inv : G → G) := (MeasurableEquiv.inv G).measurableEmbedding
-  have hiff : AEMeasurable (f ∘ Inv.inv) μ.inv ↔ AEMeasurable f μ := by
-    rw [inv_def, he.aemeasurable_map_iff]
-    simp [Function.comp_def]
-  by_cases hf : AEMeasurable f μ
-  · rw [inv_def, AEMeasurable.map_map_of_aemeasurable (inv_def μ ▸ hiff.2 hf)
-      measurable_inv.aemeasurable]
-    congr 1
-    ext x
-    simp
-  · obtain rfl | hμ := eq_or_ne μ 0
-    · simp [inv_def]
-    have hμ' : μ.inv ≠ 0 := fun h ↦ hμ (by rw [← Measure.inv_inv μ, h, inv_def, Measure.map_zero])
-    rw [Measure.map_of_not_aemeasurable_of_ne_zero (hiff.not.2 hf) hμ',
-      Measure.map_of_not_aemeasurable_of_ne_zero hf hμ]
+  have h : (μ.inv.map Inv.inv).map f = μ.inv.map (f ∘ Inv.inv) :=
+    measurableEmbedding_inv.map_map_measure μ.inv f
+  rw [← inv_def, Measure.inv_inv] at h
+  exact h.symm
 
 /-- A set of full measure reflects to a set of full measure for the inverted measure. -/
 @[to_additive /-- A set of full measure reflects to a set of full measure for the negated

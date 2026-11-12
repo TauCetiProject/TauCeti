@@ -19,6 +19,7 @@ import Mathlib.Topology.Instances.Matrix
 -- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Module.QuadraticMap
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
 /-!
 # Nondegeneracy of the bilinear form of a continuous linear map into the dual
@@ -43,6 +44,9 @@ almost complex structures over compact windows that energy estimates for pseudoh
 use.
 
 ## Main results
+
+* `LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap`: making a finite-dimensional
+  bilinear form continuous and then forgetting continuity returns the original form.
 
 * `ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective`: the bilinear form of a
   continuous linear map into the dual is left-separating if and only if the map is injective.
@@ -99,6 +103,17 @@ open scoped Matrix
 
 namespace TauCeti
 
+/-- Making a bilinear form on a finite-dimensional topological vector space continuous and
+then forgetting continuity returns the original form. -/
+@[simp]
+theorem _root_.LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap
+    {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+    [ContinuousSMul 𝕜 V] [FiniteDimensional 𝕜 V] [T2Space V]
+    (B : LinearMap.BilinForm 𝕜 V) : B.toContinuousBilinearMap.toBilinForm = B := by
+  ext v w
+  simp only [ContinuousLinearMap.toBilinForm_apply, LinearMap.toContinuousBilinearMap_apply]
+
 section
 
 variable {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
@@ -146,8 +161,8 @@ makes it a linear equivalence onto its range, and the dual has the same finite d
 space, so that range is everything. -/
 theorem _root_.ContinuousLinearMap.isInvertible_of_injective
     (hinj : Function.Injective L) : L.IsInvertible :=
-  ⟨((L : E →ₗ[𝕜] E →L[𝕜] 𝕜).linearEquivOfInjective hinj
-      ContinuousLinearMap.dual_finrank_eq.symm).toContinuousLinearEquiv, by ext v; simp⟩
+  ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq L
+    ContinuousLinearMap.dual_finrank_eq.symm hinj
 
 /-- In finite dimensions a surjective continuous linear map into the dual is invertible: the dual
 has the same finite dimension as the space, so surjectivity forces injectivity. -/
@@ -191,10 +206,8 @@ continuous linear map to the continuous dual exactly when the form is left-separ
 theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
     {b : LinearMap.BilinForm 𝕜 E} :
     b.toContinuousBilinearMap.IsInvertible ↔ b.SeparatingLeft := by
-  have hround : b.toContinuousBilinearMap.toBilinForm = b := by
-    ext v w
-    simp
-  rw [ContinuousLinearMap.isInvertible_iff_separatingLeft, hround]
+  rw [ContinuousLinearMap.isInvertible_iff_separatingLeft,
+    LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap]
 
 end FiniteDimensional
 

@@ -40,7 +40,7 @@ squares to `Frob_q`, by `TauCeti.SuzukiReeIndex.datumSteinberg_mul_self`. What i
 *some* positive power is a scaling by a positive power of the characteristic, which is
 `TauCeti.ValidLieTypeIndex.exists_pow_datumSteinberg_eq_smulId`. That is the defining property of a
 Steinberg endomorphism in Steinberg's sense, and on the group layer it is the reason the fixed
-groups of milestone L3 are finite at all; the two exponents and the two scalars are genuinely
+groups of the Steinberg maps are finite at all; the two exponents and the two scalars are genuinely
 different, which is why the uniform statement is an existential rather than one formula.
 
 Note that the scaling factors do not follow one rule either. The graph-twisted power is the
@@ -70,29 +70,28 @@ points, or a finite group.
   thirteen ordinary constructors it degenerates to the Frobenius exactly on the nine untwisted
   families.
 
-## Roadmap
+## Relation to the group layer
 
-This assembles the root-datum layer of milestones L1, "ordinary and graph Steinberg maps", and L2,
-"Suzuki--Ree Steinberg maps", of `TauCetiRoadmap/CFSGStatement/README.md` into a single map on every
-valid index. It is the root-datum shadow of the map named in L2's completion condition, "`steinberg`
-unfolds on every branch", and does not meet that condition: the condition is about the group-layer
-`TauCeti.ValidLieTypeIndex.steinberg`, an endomorphism of the points of a pinned
-Chevalley--Demazure group, together with its action on root subgroups, and both remain open. That
-group layer waits on the carriers of milestone L0.
+This assembles the root-datum layers of the ordinary and graph Steinberg maps and of the
+Suzuki--Ree Steinberg maps into a single map on every valid index. It is the root-datum shadow of
+the group-layer `TauCeti.ValidLieTypeIndex.steinberg`, an endomorphism of the ambient group of each
+valid index, which is assembled from the family carriers in
+`TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.LieType` together with its action on root
+subgroups.
 
 What this file contributes to it is not the group-level composite. On the ordinary branch that
 composite already exists in another form: `TauCeti.DynkinType.geckTwistedFrobenius` realizes
 `γ ∘ Frob_q` on the points of the pinned Geck carrier, for a diagram symmetry and a field order
-handed to it, and satisfies L1's simple-root-subgroup equation there. What is contributed is the
-branch split and the exponents. The split `TauCeti.LieTypeIndex.UsesHalfFrobenius` is decided here
-once and for every valid index, against the two subtypes that carry the two constructions, so a
-consumer of a total Steinberg map has one place to reason about which shape an index takes; and the
-order relations below fix the exponent and the scalar on each side, the twist order and `q ^ e` on
-the ordinary branch and `2` and `q` on the half-Frobenius one. Those are the root-datum readings of
-the "order relations" half of L1's completion evidence and of L2's
-`steinberg(m) ^ 2 = Frob_(p ^ (2 * m + 1))`. The half-Frobenius branch has no group-level
-counterpart at all yet, since the special isogeny of pinned group schemes it would compose is an
-upstream Layer 9 target.
+handed to it, and satisfies the simple-root-subgroup equation of an ordinary Steinberg map there.
+What is contributed is the branch split and the exponents. The split
+`TauCeti.LieTypeIndex.UsesHalfFrobenius` is decided here once and for every valid index, against
+the two subtypes that carry the two constructions, so a consumer of a total Steinberg map has one
+place to reason about which shape an index takes; and the order relations below fix the exponent
+and the scalar on each side, the twist order and `q ^ e` on the ordinary branch and `2` and `q` on
+the half-Frobenius one. Those are the root-datum readings of the order relations of the
+graph-twisted Steinberg maps and of the half-Frobenius relation
+`steinberg(m) ^ 2 = Frob_(p ^ (2 * m + 1))`. On the half-Frobenius branch the group-level maps are
+the explicit Suzuki, Ree and Tits endomorphisms of the family modules.
 
 The conventions follow R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80
 (1968), §11, and R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex

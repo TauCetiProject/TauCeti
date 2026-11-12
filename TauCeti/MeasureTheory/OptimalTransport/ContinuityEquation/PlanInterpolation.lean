@@ -162,7 +162,7 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn (π : Mea
   refine ⟨v, hce, hae', fun p ↦ ?_⟩
   have hvm (t : ℝ) : Measurable (v t) := hce.measurable_velocity.comp measurable_prodMk_left
   calc ∫⁻ t in Ioo 0 1, ∫⁻ w, ‖v t w‖ₑ ^ p ∂π.map (fun z ↦ (1 - t) • z.1 + t • z.2)
-      = ∫⁻ t in Ioo (0 : ℝ) 1, ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by
+      = ∫⁻ _ in Ioo (0 : ℝ) 1, ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by
         refine setLIntegral_congr_fun_ae measurableSet_Ioo ?_
         filter_upwards [hae'] with t ht hmem
         rw [lintegral_map ((hvm t).enorm.pow_const p) (by fun_prop)]
@@ -171,19 +171,23 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn (π : Mea
 
 /-- **The velocity along a displacement interpolation injective on a fixed set.** The special case
 of `exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn` in which, for almost every
-`t ∈ (0, 1)`, the map `(x, y) ↦ (1 - t) • x + t • y` is injective on one measurable set `S`
+`t ∈ (0, 1)`, the map `(x, y) ↦ (1 - t) • x + t • y` is injective on one set `S`
 carrying `π`: then `vₜ ((1 - t) • x + t • y) = y - x` for almost every `t ∈ (0, 1)` and `π`-almost
 every `(x, y)`, and for every exponent `p` the `p`-action of `v` is the `p`-th moment of the
 displacement. -/
 theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_ae_injOn (π : Measure (E × E))
     [IsFiniteMeasure π] (hint : ∫⁻ z, ‖z.2 - z.1‖ₑ ∂π < ∞) {S : Set (E × E)}
-    (hS : MeasurableSet S) (hSπ : ∀ᵐ z ∂π, z ∈ S)
+    (hSπ : ∀ᵐ z ∂π, z ∈ S)
     (hinj : ∀ᵐ t, t ∈ Ioo (0 : ℝ) 1 → InjOn (fun z : E × E ↦ (1 - t) • z.1 + t • z.2) S) :
     ∃ v : ℝ → E → E,
       IsContinuityEquation (fun t ↦ π.map fun z ↦ (1 - t) • z.1 + t • z.2) v 0 1 ∧
       (∀ᵐ t, t ∈ Ioo 0 1 → ∀ᵐ z ∂π, v t ((1 - t) • z.1 + t • z.2) = z.2 - z.1) ∧
       ∀ p : ℝ, ∫⁻ t in Ioo 0 1, ∫⁻ w, ‖v t w‖ₑ ^ p ∂π.map (fun z ↦ (1 - t) • z.1 + t • z.2) =
         ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by
+  -- replace `S` by a measurable subset of full measure
+  wlog hS : MeasurableSet S generalizing S
+  · obtain ⟨T, hTπ, hT, hTS⟩ := hSπ.exists_measurable_mem
+    exact this hTπ (hinj.mono fun t ht hmem ↦ (ht hmem).mono hTS) hT
   -- `U` is a measurable set of full measure in `(0, 1)` of times at which the interpolation is
   -- injective on `S`
   set N := toMeasurable volume
@@ -258,7 +262,7 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_isOptimalCoupli
     rw [← wassersteinEDist_rpow_eq_transportCost measurable_edist hp0 hp_top]
     exact ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg hfin
   obtain ⟨v, hce, hv, hact⟩ := exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_ae_injOn π
-    hint Measure.isClosed_support.measurableSet π.support_mem_ae
+    hint (S := π.support) π.support_mem_ae
     (.of_forall fun _ ht ↦ (hopt.isCyclicallyMonotone_support hc hcost).injOn_smul_add_smul hp₁ ht)
   exact ⟨v, hce, hv, (hact p.toReal).trans (hopt.lintegral_enorm_sub_rpow_eq hp0 hp_top)⟩
 

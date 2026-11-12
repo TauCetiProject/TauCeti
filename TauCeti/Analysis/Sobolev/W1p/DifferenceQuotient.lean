@@ -366,15 +366,15 @@ theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) 
 /-! ### Domains mapped onto themselves by the translation -/
 
 /-- **Difference quotients preserve zero boundary values.** If translation by `t • w` maps `Ω`
-onto itself, then for `p < ∞` the difference quotient of `u ∈ W^{1,p}_0(Ω)` in the direction `w`
+onto itself, then the difference quotient of `u ∈ W^{1,p}_0(Ω)` in the direction `w`
 with step `t` lies in `W^{1,p}_0(Ω)`. -/
-theorem W1p.differenceQuotient_mem_w1p0Submodule (hp : p ≠ ∞) {w : E} {t : ℝ}
+theorem W1p.differenceQuotient_mem_w1p0Submodule {w : E} {t : ℝ}
     (hVO : MapsTo (· + t • w) Omega Omega) (hΩ : ∀ x, x + t • w ∈ Omega → x ∈ Omega)
     {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
     W1p.differenceQuotient le_rfl w t hVO u ∈ w1p0Submodule mu Omega p := by
   rw [W1p.differenceQuotient_def, W1p.restrictL_self]
   exact (w1p0Submodule mu Omega p).toSubmodule.smul_mem _
-    (sub_mem (W1p.translate_mem_w1p0Submodule hp hVO hΩ hu) hu)
+    (sub_mem (W1p.translate_mem_w1p0Submodule hVO hΩ hu) hu)
 
 /-- **Difference quotients commute with extension by zero.** Let translation by `t • w` map `Ω`
 onto itself and `p < ∞`. If `g ∈ W^{1,p}_0(Ω)` is the difference quotient of `u ∈ W^{1,p}_0(Ω)`
@@ -420,7 +420,7 @@ theorem W1p0.norm_value_differenceQuotient_le (hp : p ≠ ∞) {w : E} {t : ℝ}
       ‖w‖ * ‖W1p.gradient (u : W1p mu Omega p)‖ := by
   have h := W1p.norm_value_differenceQuotient_le hp w t (W1p0.extendByZeroL le_top u : W1p mu ⊤ p)
   rwa [← W1p0.extendByZeroL_eq_differenceQuotient (g := ⟨_,
-      W1p.differenceQuotient_mem_w1p0Submodule hp hVO hΩ u.2⟩) hVO hΩ rfl,
+      W1p.differenceQuotient_mem_w1p0Submodule hVO hΩ u.2⟩) hVO hΩ rfl,
     W1p0.norm_value_extendByZeroL, W1p0.norm_gradient_extendByZeroL] at h
 
 end TauCeti
