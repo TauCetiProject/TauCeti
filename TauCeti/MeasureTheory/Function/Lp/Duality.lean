@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
@@ -44,7 +45,10 @@ For functions with values in an inner product space, paired by `∫ ⟪h, g⟫`,
 a version for `q < ∞` that does not assume `h ∈ L^q` in advance: the test functions are bounded
 and vanish off a set of finite measure, and the extremal function `|h| ^ (q - 2) h` is truncated
 where `h` is large and outside a spanning set of a σ-finite measure. This is the form needed to
-prove that an operator defined on `L²` maps `L² ∩ Lᵖ` into `L^q` by duality.
+prove that an operator defined on `L²` maps `L² ∩ Lᵖ` into `L^q` by duality. For `h ∈ L²` and
+every `1 ≤ q ≤ ∞`, the `L^q` norm of `h` is then the supremum of the real parts of the `L²`
+pairings `⟪h, g⟫` over the `g ∈ L²` in the unit ball of `L^{q'}`, the form used to norm mixed
+norms `L^p_t L^q_x`.
 
 The integral Hölder bounds apply to arbitrary functions, using the convention that `eLpNorm`
 is `∞` outside the almost everywhere strongly measurable functions.
@@ -67,6 +71,9 @@ is `∞` outside the almost everywhere strongly measurable functions.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q < ∞` for inner product space valued functions, against bounded test functions of
   finite-measure support, without assuming `h ∈ L^q`.
+* `MeasureTheory.Lp.exists_eLpNorm_le_one_and_lt_re_inner`: for `1 ≤ q ≤ ∞` on a σ-finite
+  measure space, the `L^q` norm of `h ∈ L²`, finite or not, is the supremum of `re ⟪h, g⟫` over the
+  `g ∈ L²` in the unit ball of `L^{q'}`.
 
 ## References
 
@@ -360,6 +367,113 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
     (fun N => (hh'.indicator (measurableSet_spanningSets_inter_norm_le hh' N)).aestronglyMeasurable)
     hh'.aestronglyMeasurable
     (ae_of_all _ fun x => tendsto_indicator_spanningSets_inter_norm_le h' x)
+
+/-- Under a bound `re ⟪h, g⟫ ≤ c` on the pairings of `h ∈ L²` with the functions `g ∈ L²` of
+`L^{q'}` norm at most one, every `g ∈ L²` of finite `L^{q'}` norm satisfies
+`‖⟪h, g⟫‖ ≤ c ‖g‖_{q'}`: rescale `g` to norm one and rotate the pairing onto the real axis. -/
+private theorem Lp.enorm_inner_le_of_forall_re_inner_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] {q' : ℝ≥0∞} (hq' : q' ≠ 0) {h : Lp E 2 μ} {c : ℝ} (hc : 0 ≤ c)
+    (H : ∀ g : Lp E 2 μ, eLpNorm g q' μ ≤ 1 → RCLike.re ⟪h, g⟫_𝕜 ≤ c) (g : Lp E 2 μ)
+    (hg : eLpNorm g q' μ ≠ ∞) :
+    ‖⟪h, g⟫_𝕜‖ₑ ≤ ENNReal.ofReal c * eLpNorm g q' μ := by
+  set a := eLpNorm g q' μ
+  rcases eq_or_ne a 0 with ha0 | ha0
+  · have hg0 : g = 0 := Lp.ext ((eLpNorm_eq_zero_iff hq').1 ha0
+      |>.trans (Lp.coeFn_zero E 2 μ).symm)
+    simp [hg0]
+  set z := ⟪h, g⟫_𝕜
+  rcases eq_or_ne z 0 with hz0 | hz0
+  · simp [hz0]
+  have hapos : 0 < a.toReal := ENNReal.toReal_pos ha0 hg
+  have hzpos : 0 < ‖z‖ := norm_pos_iff.2 hz0
+  -- The rescaled and rotated test function `k • g` has norm one and pairing `‖z‖ / ‖g‖_{q'}`.
+  set k : 𝕜 := ((a.toReal⁻¹ * ‖z‖⁻¹ : ℝ) : 𝕜) * (starRingEnd 𝕜) z
+  have hk : ‖k‖ = a.toReal⁻¹ := by
+    rw [norm_mul, RCLike.norm_ofReal, RCLike.norm_conj, abs_of_pos (by positivity), mul_assoc,
+      inv_mul_cancel₀ hzpos.ne', mul_one]
+  have hkg : eLpNorm (k • g) q' μ ≤ 1 := by
+    have ha : ENNReal.ofReal a.toReal = a := ENNReal.ofReal_toReal hg
+    rw [eLpNorm_congr_ae (Lp.coeFn_smul k g), eLpNorm_const_smul, ← ofReal_norm, hk]
+    calc ENNReal.ofReal a.toReal⁻¹ * a = ENNReal.ofReal a.toReal⁻¹ * ENNReal.ofReal a.toReal := by
+          rw [ha]
+      _ = 1 := by
+          rw [← ENNReal.ofReal_mul (by positivity), inv_mul_cancel₀ hapos.ne', ENNReal.ofReal_one]
+      _ ≤ 1 := le_rfl
+  have hre : RCLike.re ⟪h, k • g⟫_𝕜 = ‖z‖ / a.toReal := by
+    rw [inner_smul_right, mul_assoc, RCLike.conj_mul, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul,
+      RCLike.ofReal_re]
+    field_simp
+  have hle : ‖z‖ ≤ c * a.toReal := by
+    have := H _ hkg
+    rw [hre, div_le_iff₀ hapos] at this
+    exact this
+  calc ‖z‖ₑ = ENNReal.ofReal ‖z‖ := (ofReal_norm z).symm
+    _ ≤ ENNReal.ofReal (c * a.toReal) := ENNReal.ofReal_le_ofReal hle
+    _ = ENNReal.ofReal c * a := by rw [ENNReal.ofReal_mul hc, ENNReal.ofReal_toReal hg]
+
+/-- **Norming `Lᵠ` norms by square-integrable functions.** On a σ-finite measure space, let `q`
+and `q'` be Hölder conjugate, `1 ≤ q ≤ ∞`. For every `h ∈ L²`, the `L^q` norm of `h`, finite or
+not, is the supremum of `re ⟪h, g⟫` over the functions `g ∈ L²` in the unit ball of `L^{q'}`:
+below every `c` with `c < ‖h‖_q` there is such a `g` with `c < re ⟪h, g⟫`. The converse bound
+`re ⟪h, g⟫ ≤ ‖h‖_q ‖g‖_{q'}` is Hölder's inequality (`TauCeti.enorm_integral_inner_le`). -/
+theorem Lp.exists_eLpNorm_le_one_and_lt_re_inner [SigmaFinite μ] {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {q q' : ℝ≥0∞} [hqq : q.HolderConjugate q']
+    (h : Lp E 2 μ) {c : ℝ} (hc : ENNReal.ofReal c < eLpNorm h q μ) :
+    ∃ g : Lp E 2 μ, eLpNorm g q' μ ≤ 1 ∧ c < RCLike.re ⟪h, g⟫_𝕜 := by
+  rcases lt_or_ge c 0 with hc0 | hc0
+  · exact ⟨0, by rw [eLpNorm_congr_ae (Lp.coeFn_zero E 2 μ)]; simp, by simpa using hc0⟩
+  by_contra! H
+  have key := Lp.enorm_inner_le_of_forall_re_inner_le (𝕜 := 𝕜) hqq.symm.ne_zero hc0 H
+  -- The pairing of `h` with a bounded `g` of finite-measure support is the pairing in `L²`.
+  have hpair : ∀ (g : α → E) (s : Set α), μ s ≠ ∞ → (∀ x, x ∉ s → g x = 0) → MemLp g ∞ μ →
+      ∃ hg2 : MemLp g 2 μ, ⟪h, hg2.toLp g⟫_𝕜 = ∫ x, ⟪h x, g x⟫_𝕜 ∂μ ∧
+        eLpNorm (hg2.toLp g) q' μ = eLpNorm g q' μ ∧ eLpNorm g q' μ ≠ ∞ := by
+    intro g s hs hgs hg
+    have hg2 : MemLp g 2 μ := hg.mono_exponent_of_measure_support_ne_top hgs hs le_top
+    refine ⟨hg2, ?_, eLpNorm_congr_ae hg2.coeFn_toLp, ?_⟩
+    · rw [L2.inner_def]
+      exact integral_congr_ae (by filter_upwards [hg2.coeFn_toLp] with x hx; rw [hx])
+    · exact (hg.mono_exponent_of_measure_support_ne_top hgs hs le_top).eLpNorm_ne_top
+  refine hc.not_ge ?_
+  rcases eq_or_ne q ∞ with rfl | hq
+  · -- For `q = ∞`, test `‖h‖` against simple functions `g ∈ L¹` through `g • (h / ‖h‖)`.
+    obtain rfl : q' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ q').1 rfl
+    have hn : AEStronglyMeasurable (fun x ↦ ((‖h x‖ : ℝ) : 𝕜)) μ :=
+      (RCLike.continuous_ofReal.comp continuous_norm).comp_aestronglyMeasurable
+        (Lp.aestronglyMeasurable h)
+    rw [← eLpNorm_congr_norm_ae hn (Lp.aestronglyMeasurable h)
+      (ae_of_all _ fun x ↦ by simp)]
+    refine hn.eLpNorm_top_le_of_forall_enorm_integral_mul_le fun g hg ↦ ?_
+    set g₁ : α → E := fun x ↦ g x • ((‖h x‖⁻¹ : ℝ) : 𝕜) • h x
+    have hg₁ : ∀ x, ‖g₁ x‖ ≤ ‖g x‖ := fun x ↦ by
+      rcases eq_or_ne (h x) 0 with hx | hx
+      · simp [g₁, hx]
+      · rw [norm_smul, norm_smul, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 (norm_pos_iff.2 hx)),
+          inv_mul_cancel₀ (norm_ne_zero_iff.2 hx), mul_one]
+    have hinv : AEStronglyMeasurable (fun x ↦ ((‖h x‖⁻¹ : ℝ) : 𝕜)) μ :=
+      (RCLike.continuous_ofReal.measurable.comp_aemeasurable
+        (Lp.aestronglyMeasurable h).norm.aemeasurable.inv).aestronglyMeasurable
+    have hg₁m : AEStronglyMeasurable g₁ μ :=
+      g.aestronglyMeasurable.smul (hinv.smul (Lp.aestronglyMeasurable h))
+    obtain ⟨hg2, hinner, hnorm, hfin⟩ := hpair g₁ (Function.support g)
+      (g.measure_support_lt_top_of_memLp hg one_ne_zero ENNReal.one_ne_top).ne
+      (fun x hx ↦ by simp [g₁, Function.notMem_support.1 hx])
+      ((g.memLp_top μ).of_le hg₁m (ae_of_all _ hg₁))
+    have hint : ∫ x, ⟪h x, g₁ x⟫_𝕜 ∂μ = ∫ x, ((‖h x‖ : ℝ) : 𝕜) * g x ∂μ := by
+      congr 1 with x
+      rcases eq_or_ne (h x) 0 with hx | hx
+      · simp [g₁, hx]
+      · rw [inner_smul_right, inner_smul_right, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow,
+          ← mul_assoc, mul_assoc, ← RCLike.ofReal_mul, sq, ← mul_assoc,
+          inv_mul_cancel₀ (norm_ne_zero_iff.2 hx), one_mul, mul_comm]
+    calc ‖∫ x, ((‖h x‖ : ℝ) : 𝕜) * g x ∂μ‖ₑ = ‖⟪h, hg2.toLp g₁⟫_𝕜‖ₑ := by rw [hinner, hint]
+      _ ≤ ENNReal.ofReal c * eLpNorm g₁ 1 μ := by rw [← hnorm]; exact key _ (hnorm ▸ hfin)
+      _ ≤ ENNReal.ofReal c * eLpNorm g 1 μ := by gcongr; exact eLpNorm_mono hg₁m hg₁
+  · refine (Lp.aestronglyMeasurable h).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := 𝕜)
+      (q' := q') hq fun g s hs hgs hg ↦ ?_
+    obtain ⟨hg2, hinner, hnorm, hfin⟩ := hpair g s hs hgs hg
+    rw [← hinner, ← hnorm]
+    exact key _ (hnorm ▸ hfin)
 
 end MeasureTheory
 

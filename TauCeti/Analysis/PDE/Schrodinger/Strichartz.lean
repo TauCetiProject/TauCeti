@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 
 /-!
 # The Strichartz estimate for the Schrödinger equation on the line at `(4, ∞)`
@@ -21,13 +22,19 @@ dimension one with `r = ∞`, without any interpolation. It gives the dual Stric
 `‖∫ S(-s) F(s) ds‖₂ ≤ C ‖F‖_{L^{4/3}_t L¹_x}`
 
 and the Strichartz estimate `‖S(t) f‖_{L⁴_t L^∞_x} ≤ C ‖f‖₂` tested against
-`G ∈ L^{4/3}_t L¹_x`.
+`G ∈ L^{4/3}_t L¹_x`. Duality for mixed norms
+(`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le`) turns
+the tested form into the bound on the mixed norm itself,
+
+`‖S(t) f‖_{L⁴_t L^∞_x} ≤ C ‖f‖₂`.
 
 ## Main declarations
 
 * `TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le`: the dual estimate.
 * `TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le`: the homogeneous estimate in
   weak form.
+* `TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_le`: the homogeneous estimate
+  `‖S(t) f‖_{L⁴_t L^∞_x} ≤ C ‖f‖₂`.
 
 ## References
 
@@ -118,5 +125,38 @@ theorem exists_enorm_integral_inner_schrodingerPropagator_le (hE : Module.finran
   exact hC (schrodingerPropagator V) _
     (fun s t hst g => eLpNorm_schrodingerPropagator_adjoint_le hE hst g) f G hG
     (by simpa only [adjoint_phasePropagator] using hSG)
+
+/-- **The Strichartz estimate for the Schrödinger equation on the line**, at the admissible pair
+`(4, ∞)`. There is `C` such that for every `f ∈ L²(E, V)` on a one-dimensional space `E`,
+
+`‖S(t) f‖_{L⁴_t L^∞_x} ≤ C ‖f‖₂`.
+
+In particular `S(t) f` is bounded for almost every `t`. This follows from the weak form
+`TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le` by duality for mixed norms. -/
+theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le (hE : Module.finrank ℝ E = 1) :
+    ∃ C : ℝ≥0, ∀ f : Lp V 2 (volume : Measure E),
+      eLpNorm (fun t : ℝ ↦ eLpNorm (schrodingerPropagator V t f) ∞ (volume : Measure E)) 4
+        volume ≤ C * ‖f‖ₑ := by
+  obtain ⟨C, hC⟩ := exists_enorm_integral_inner_schrodingerPropagator_le (V := V) hE
+  refine ⟨C, fun f ↦ ?_⟩
+  have h4 : (4 : ℝ≥0∞).HolderConjugate ((4 / 3 : ℝ≥0) : ℝ≥0∞) := by
+    simpa using holderConjugate_four_div_three_four.symm.coe_ennreal
+  refine (continuous_phasePropagator_apply _ f).aestronglyMeasurable
+    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
+      (p' := ((4 / 3 : ℝ≥0) : ℝ≥0∞)) (q' := 1) (by simp)
+      fun G s hs hGs hG ↦ ?_
+  -- A bounded `G` vanishing off a set of finite measure is integrable, and so is `S(-t) G(t)`.
+  have hGint : Integrable G :=
+    memLp_one_iff_integrable.1 (hG.mono_exponent_of_measure_support_ne_top hGs hs le_top)
+  have hcont : Continuous fun y : ℝ × Lp V 2 (volume : Measure E) ↦
+      schrodingerPropagator V y.1 y.2 :=
+    continuous_iff_continuousAt.2 fun y ↦ by
+      simpa [ContinuousAt] using
+        (phaseGroup E V laplacianSymbol).tendsto_apply continuousAt_fst continuousAt_snd
+  have hSG : Integrable fun t ↦ schrodingerPropagator V (-t) (G t) :=
+    hGint.norm.mono' (hcont.comp_aestronglyMeasurable
+      (continuous_neg.aestronglyMeasurable.prodMk hG.aestronglyMeasurable))
+      (ae_of_all _ fun t ↦ (norm_phasePropagator_apply _ _ _).le)
+  exact hC f G hG.aestronglyMeasurable hSG
 
 end TauCeti
