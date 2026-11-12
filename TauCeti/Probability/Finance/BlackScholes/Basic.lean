@@ -49,6 +49,8 @@ exponential tilting `N(0, 1) ↦ N(σ √τ, 1)`
 * `TauCeti.BlackScholes.mul_gaussianPDFReal_dPlus` — the density identity
   `s φ(d₊) = K e^{-rτ} φ(d₋)`, where `φ` is the standard Gaussian density.
 * `TauCeti.BlackScholes.callPrice`, `TauCeti.BlackScholes.putPrice` — the closed-form prices.
+* `TauCeti.BlackScholes.callPrice_of_mul_sqrt_eq_zero` — the call price is `(s - K e^{-rτ}) / 2`
+  when `σ √τ = 0`.
 * `TauCeti.BlackScholes.riskNeutralPrice_id` — the discounted stock is priced at `s`.
 * `TauCeti.BlackScholes.callPrice_sub_putPrice` — put–call parity.
 * `TauCeti.BlackScholes.riskNeutralPrice_call` — the risk-neutral price of a call is `callPrice`.
@@ -254,6 +256,14 @@ theorem callPrice_def (s r σ K τ : ℝ) :
     callPrice s r σ K τ = s * cdf (gaussianReal 0 1) (dPlus s r σ K τ) -
       K * exp (-r * τ) * cdf (gaussianReal 0 1) (dMinus s r σ K τ) :=
   (rfl)
+
+/-- Without a diffusion term (`σ √τ = 0`) both `d₊` and `d₋` vanish, and the call price is the
+affine function `(s - K e^{-rτ}) / 2` of the spot. -/
+theorem callPrice_of_mul_sqrt_eq_zero (h : σ * √τ = 0) :
+    callPrice s r σ K τ = (s - K * exp (-r * τ)) / 2 := by
+  simp only [callPrice_def, dMinus_def, dPlus_def, h, div_zero, sub_zero,
+    TauCeti.Probability.cdf_gaussianReal_self 0 one_ne_zero]
+  ring
 
 /-- The closed-form Black–Scholes price `K e^{-rτ} Φ(-d₋) - s Φ(-d₊)` of a European put with
 strike `K` and remaining maturity `τ`, where `Φ = cdf (gaussianReal 0 1)`. -/

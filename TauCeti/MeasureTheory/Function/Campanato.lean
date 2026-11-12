@@ -840,7 +840,7 @@ theorem setAverage_norm_sub_le_of_campanatoSeminormPow_le {M : ℝ≥0} {α r : 
       (f := fun y ↦ ‖f y - a‖) hp
     -- `A` abbreviates the average in `h`, which `set` did not abstract there.
     change ‖A‖ₑ ^ p ≤ _ at h
-    simpa [Real.enorm_of_nonneg hA, enorm_norm] using h
+    simpa [Real.eNorm_of_nonneg hA, eNorm_norm] using h
   -- The Campanato seminorm bounds the integral.
   have h₂ : ∫⁻ y in closedBall x r, ‖f y - a‖ₑ ^ p ∂μ.restrict Ω ≤
       ENNReal.ofReal (r ^ (n + p * α)) * M := by
