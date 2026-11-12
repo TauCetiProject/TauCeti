@@ -7,13 +7,17 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
-# Smooth square-root regularization on manifolds
+# Square roots of real functions on manifolds
 
-For a `C^n` real function `u` and a positive constant `ε`, the positive regularization
-`x ↦ √(u x ^ 2 + ε)` is also `C^n`.
+The square root `x ↦ Real.sqrt (u x)` of a `C^n` real function `u` on a manifold is `C^n`
+wherever `u` does not vanish, since `Real.sqrt` is smooth away from `0`.
+
+## Main results
+
+* `ContMDiffWithinAt.sqrt`, `ContMDiffAt.sqrt`, `ContMDiffOn.sqrt`, `ContMDiff.sqrt`:
+  square-root composition preserves `C^n` regularity away from zeros.
 -/
 
 public section
@@ -23,9 +27,27 @@ open scoped Manifold ContDiff
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {n : ℕ∞ω} {u : M → ℝ} {s : Set M} {x : M}
 
-/-- Square-root regularization by a positive constant preserves `C^n` regularity. -/
-theorem ContMDiff.sqrt_sq_add_const {n : ℕ∞ω} {u : M → ℝ}
-    (hu : ContMDiff I 𝓘(ℝ) n u) {ε : ℝ} (hε : 0 < ε) :
-    ContMDiff I 𝓘(ℝ) n (fun x ↦ Real.sqrt (u x ^ 2 + ε)) := fun x ↦
-  (Real.contDiffAt_sqrt (by positivity)).comp_contMDiffAt ((hu.pow 2).add contMDiff_const x)
+/-- The square root of a real function that is `C^n` within a set at a point where it does not
+vanish is `C^n` within that set at that point. -/
+theorem ContMDiffWithinAt.sqrt (hu : ContMDiffWithinAt I 𝓘(ℝ) n u s x) (hx : u x ≠ 0) :
+    ContMDiffWithinAt I 𝓘(ℝ) n (fun y ↦ Real.sqrt (u y)) s x :=
+  (Real.contDiffAt_sqrt hx).comp_contMDiffWithinAt hu
+
+/-- The square root of a real function that is `C^n` at a point where it does not vanish is
+`C^n` there. -/
+theorem ContMDiffAt.sqrt (hu : ContMDiffAt I 𝓘(ℝ) n u x) (hx : u x ≠ 0) :
+    ContMDiffAt I 𝓘(ℝ) n (fun y ↦ Real.sqrt (u y)) x :=
+  (Real.contDiffAt_sqrt hx).comp_contMDiffAt hu
+
+/-- The square root of a `C^n` real function that does not vanish on a set is `C^n` on that
+set. -/
+theorem ContMDiffOn.sqrt (hu : ContMDiffOn I 𝓘(ℝ) n u s) (hs : ∀ x ∈ s, u x ≠ 0) :
+    ContMDiffOn I 𝓘(ℝ) n (fun y ↦ Real.sqrt (u y)) s :=
+  fun x hx ↦ (hu x hx).sqrt (hs x hx)
+
+/-- The square root of a nowhere-vanishing `C^n` real function is `C^n`. -/
+theorem ContMDiff.sqrt (hu : ContMDiff I 𝓘(ℝ) n u) (h : ∀ x, u x ≠ 0) :
+    ContMDiff I 𝓘(ℝ) n (fun y ↦ Real.sqrt (u y)) :=
+  fun x ↦ (hu x).sqrt (h x)

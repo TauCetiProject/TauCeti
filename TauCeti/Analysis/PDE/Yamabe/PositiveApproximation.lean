@@ -17,7 +17,7 @@ import TauCeti.MeasureTheory.Integral.ContinuousMap
 /-!
 # Positive smooth test functions for the Yamabe quotient
 
-On a nonempty closed Riemannian manifold of dimension greater than two, the infimum of the
+On a nonempty compact Riemannian manifold of dimension greater than two, the infimum of the
 Yamabe quotient over nonzero `C^n` real functions equals its infimum over strictly positive
 `C^n` functions, for every `n ≥ 1`. More precisely, every strict upper bound for the quotient of a
 signed test function is also realized by a positive test function of the same regularity.
@@ -68,7 +68,8 @@ private theorem regularized_energy_le (hn : 2 < finrank ℝ E) {u : M → ℝ}
   let S := (CovariantDerivative.leviCivitaConnection I M).scalarCurvature
   have hS : Continuous S :=
     (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
-  have hv := hu.sqrt_sq_add_const hε
+  have hv := ((hu.pow 2).add (contMDiff_const (c := ε))).sqrt
+    (fun x ↦ (by positivity : 0 < u x ^ 2 + ε).ne')
   have hgrad (x : M) : ‖mgradient I (fun y ↦ Real.sqrt (u y ^ 2 + ε)) x‖ ^ 2 ≤
       ‖mgradient I u x‖ ^ 2 := by
     have hx : 0 < u x ^ 2 + ε := by positivity
@@ -116,9 +117,9 @@ private theorem continuous_regularized_criticalMass (hn : 2 < finrank ℝ E) {u 
   exact (((hu.comp continuous_snd).pow 2 |>.add continuous_fst).sqrt.abs).rpow_const
     (fun _ ↦ Or.inr (criticalExponent_pos hn).le)
 
-/-- Every strict upper bound for the Yamabe quotient of a nonzero `C^n` real function, `n ≥ 1`,
-is realized by a strictly positive `C^n` function. No sign condition on scalar curvature is
-needed. -/
+/-- On a compact Riemannian manifold of dimension greater than two, every strict upper bound
+for the Yamabe quotient of a nonzero `C^n` real function, `n ≥ 1`, is realized by a strictly
+positive `C^n` function. No sign condition on scalar curvature is needed. -/
 theorem exists_contMDiff_pos_yamabeQuotient_lt (hn : 2 < finrank ℝ E) {n : ℕ∞ω}
     (hn1 : 1 ≤ n) {u : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) n u) (hu0 : u ≠ 0)
     {c : ℝ} (hc : yamabeQuotient I u < c) :
@@ -153,7 +154,8 @@ theorem exists_contMDiff_pos_yamabeQuotient_lt (hn : 2 < finrank ℝ E) {n : ℕ
     Filter.Eventually.and self_mem_nhdsWithin hev
   obtain ⟨ε, hε, hbound⟩ := hev'.exists
   refine ⟨fun x ↦ Real.sqrt (u x ^ 2 + ε), ?_, ?_, ?_⟩
-  · exact hu.sqrt_sq_add_const hε
+  · exact ((hu.pow 2).add (contMDiff_const (c := ε))).sqrt
+      (fun x ↦ (by positivity : 0 < u x ^ 2 + ε).ne')
   · intro x
     exact Real.sqrt_pos.2 (by positivity)
   · apply lt_of_le_of_lt _ hbound
@@ -161,8 +163,8 @@ theorem exists_contMDiff_pos_yamabeQuotient_lt (hn : 2 < finrank ℝ E) {n : ℕ
     exact div_le_div_of_nonneg_right (regularized_energy_le hn (hu.of_le hn1) hε)
       (Real.rpow_nonneg (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
 
-/-- On a nonempty closed manifold of dimension greater than two, the infimum of the Yamabe
-quotient over positive `C^n` functions is its infimum over all nonzero `C^n` real functions,
+/-- On a nonempty compact Riemannian manifold of dimension greater than two, the infimum of the
+Yamabe quotient over positive `C^n` functions is its infimum over all nonzero `C^n` real functions,
 for every `n ≥ 1`. -/
 theorem sInf_yamabeQuotient_pos_eq [Nonempty M] (hn : 2 < finrank ℝ E) {n : ℕ∞ω}
     (hn1 : 1 ≤ n) :
