@@ -119,17 +119,6 @@ private theorem stairSum_one (c t : ℕ) : stairSum c t (fun _ _ ↦ 1) = c ^ 2 
     simp only [sum_const, card_range, smul_eq_mul, mul_one]
     ring
 
-/-- Across a product of two finite index sets, the pairs on which two indicators differ are the
-true-false pairs together with the false-true pairs. -/
-private theorem sum_sum_ite_eq (s s' : Finset ℕ) (x y : ℕ → Bool) :
-    (∑ i ∈ s, ∑ j ∈ s', if x i = y j then 0 else 1) =
-      #{i ∈ s | x i} * #{j ∈ s' | ¬y j} + #{i ∈ s | ¬x i} * #{j ∈ s' | y j} := by
-  simp only [card_filter, sum_mul, ← sum_add_distrib]
-  refine sum_congr rfl fun i _ ↦ ?_
-  cases x i <;> simp only [Bool.false_eq_true, not_false_eq_true, not_true_eq_false, ite_true,
-    ite_false, one_mul, zero_mul, add_zero, zero_add] <;>
-    exact sum_congr rfl fun j _ ↦ by cases y j <;> rfl
-
 /-- The cut inequality for staircase sums: twice the number of edges `(i, j)` whose row and column
 indicators differ is at most the product of the two sides of the cut, where the isolated vertices
 contribute `m` and `m'`. -/
@@ -157,7 +146,7 @@ private theorem two_mul_stairSum_le {c m m' : ℕ} (hm : m + m' = c) (y : ℕ �
     have hR := card_filter_add_card_filter_not (s := range (c * t)) fun i ↦ x (c + i)
     have hK := card_filter_add_card_filter_not (s := range (c * t)) fun j ↦ y j
     rw [card_range] at hr hk hR hK
-    rw [stairSum_succ, sum_sum_ite_eq, hx (· = true), hx (¬· = true), hy (· = true),
+    rw [stairSum_succ, sum_sum_ite_eq_zero_one, hx (· = true), hx (¬· = true), hy (· = true),
       hy (¬· = true)]
     have hstep := two_mul_cross_le hr hk
       (M := #{i ∈ range (c * t) | x (c + i)} + m) (M' := #{i ∈ range (c * t) | ¬x (c + i)} + m')
@@ -176,45 +165,66 @@ def staircaseGraph (c t : ℕ) : SimpleGraph (Fin (c * t) ⊕ Fin (c * t) ⊕ Fi
 
 variable {c t : ℕ}
 
+/-- Two vertices are adjacent exactly when one is a row `i` and the other a column `j` with
+`i < c * (t - j / c)`. -/
+@[grind =]
+theorem staircaseGraph_adj {u v : Fin (c * t) ⊕ Fin (c * t) ⊕ Fin c} :
+    (staircaseGraph c t).Adj u v ↔ ∃ i j : Fin (c * t), (i : ℕ) < c * (t - j / c) ∧
+      (u = .inl i ∧ v = .inr (.inl j) ∨ u = .inr (.inl j) ∧ v = .inl i) := by
+  rcases u with _ | _ | _ <;> rcases v with _ | _ | _ <;> simp [staircaseGraph]
+
 /-- A row and a column are adjacent according to the staircase condition. -/
-@[simp]
-theorem staircaseGraph_adj_inl_inr (i j : Fin (c * t)) :
+@[simp, grind =]
+theorem staircaseGraph_adj_inl_inr_inl (i j : Fin (c * t)) :
     (staircaseGraph c t).Adj (.inl i) (.inr (.inl j)) ↔ (i : ℕ) < c * (t - j / c) := by
   simp [staircaseGraph]
 
 /-- A column and a row are adjacent according to the staircase condition. -/
-@[simp]
-theorem staircaseGraph_adj_inr_inl (i j : Fin (c * t)) :
+@[simp, grind =]
+theorem staircaseGraph_adj_inr_inl_inl (i j : Fin (c * t)) :
     (staircaseGraph c t).Adj (.inr (.inl j)) (.inl i) ↔ (i : ℕ) < c * (t - j / c) := by
   simp [staircaseGraph]
 
 /-- No two rows are adjacent. -/
-@[simp]
+@[simp, grind .]
 theorem not_staircaseGraph_adj_inl_inl (i i' : Fin (c * t)) :
     ¬(staircaseGraph c t).Adj (.inl i) (.inl i') := by
   simp [staircaseGraph]
 
 /-- No two columns are adjacent. -/
-@[simp]
+@[simp, grind .]
 theorem not_staircaseGraph_adj_inr_inl_inr_inl (j j' : Fin (c * t)) :
     ¬(staircaseGraph c t).Adj (.inr (.inl j)) (.inr (.inl j')) := by
   simp [staircaseGraph]
 
 /-- The vertices `inr (inr k)` are isolated. -/
-@[simp]
+@[simp, grind .]
 theorem not_staircaseGraph_adj_inr_inr_left (k : Fin c)
     (v : Fin (c * t) ⊕ Fin (c * t) ⊕ Fin c) : ¬(staircaseGraph c t).Adj (.inr (.inr k)) v := by
   rcases v with _ | _ | _ <;> simp [staircaseGraph]
 
 /-- The vertices `inr (inr k)` are isolated. -/
-@[simp]
+@[simp, grind .]
 theorem not_staircaseGraph_adj_inr_inr_right (k : Fin c)
     (v : Fin (c * t) ⊕ Fin (c * t) ⊕ Fin c) : ¬(staircaseGraph c t).Adj v (.inr (.inr k)) :=
   fun h ↦ not_staircaseGraph_adj_inr_inr_left k v h.symm
 
+/-- The staircase graph is bipartite with the rows on one side and the columns on the other. -/
+theorem isBipartiteWith_staircaseGraph :
+    (staircaseGraph c t).IsBipartiteWith (Set.range Sum.inl) (Set.range fun j ↦ .inr (.inl j)) where
+  disjoint := Set.disjoint_left.mpr <| by rintro _ ⟨i, rfl⟩ ⟨j, hj⟩; cases hj
+  mem_of_adj u v h := by
+    obtain ⟨i, j, -, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ := staircaseGraph_adj.mp h
+    · exact .inl ⟨⟨i, rfl⟩, ⟨j, rfl⟩⟩
+    · exact .inr ⟨⟨j, rfl⟩, ⟨i, rfl⟩⟩
+
+/-- The staircase graph is bipartite. -/
+theorem isBipartite_staircaseGraph : (staircaseGraph c t).IsBipartite :=
+  isBipartiteWith_staircaseGraph.isBipartite
+
 instance : DecidableRel (staircaseGraph c t).Adj
-  | .inl i, .inr (.inl j) => decidable_of_iff' _ (staircaseGraph_adj_inl_inr i j)
-  | .inr (.inl j), .inl i => decidable_of_iff' _ (staircaseGraph_adj_inr_inl i j)
+  | .inl i, .inr (.inl j) => decidable_of_iff' _ (staircaseGraph_adj_inl_inr_inl i j)
+  | .inr (.inl j), .inl i => decidable_of_iff' _ (staircaseGraph_adj_inr_inl_inl i j)
   | .inl _, .inl _ => isFalse (not_staircaseGraph_adj_inl_inl _ _)
   | .inr (.inl _), .inr (.inl _) => isFalse (not_staircaseGraph_adj_inr_inl_inr_inl _ _)
   | .inr (.inr _), _ => isFalse (not_staircaseGraph_adj_inr_inr_left _ _)
@@ -252,8 +262,8 @@ private theorem sum_card_adj_eq_stairSum (s : Finset (Fin (c * t) ⊕ Fin (c * t
       stairSum c t fun i j ↦ if rowInd s i = colInd s j then 0 else 1 := by
   rw [stairSum_eq_sum_fin, ← sum_ite_mem_eq]
   simp only [card_filter, ← sum_ite_mem_eq sᶜ, mem_compl]
-  simp only [Fintype.sum_sum_type, staircaseGraph_adj_inl_inr, staircaseGraph_adj_inr_inl,
-    rowInd_val, colInd_val, not_staircaseGraph_adj_inl_inl,
+  simp only [Fintype.sum_sum_type, staircaseGraph_adj_inl_inr_inl,
+    staircaseGraph_adj_inr_inl_inl, rowInd_val, colInd_val, not_staircaseGraph_adj_inl_inl,
     not_staircaseGraph_adj_inr_inl_inr_inl, not_staircaseGraph_adj_inr_inr_left,
     not_staircaseGraph_adj_inr_inr_right, ite_false, ite_self, sum_const_zero, add_zero,
     zero_add, ite_sum_zero]
@@ -301,6 +311,7 @@ theorem card_edgeFinset_staircaseGraph :
 
 /-- **Staircase graphs are cut-minimal**: every cut contains at most as many edges of
 `staircaseGraph c t` as non-edges. -/
+@[simp, grind .]
 theorem isCutMinimal_staircaseGraph : (staircaseGraph c t).IsCutMinimal := by
   rw [SimpleGraph.isCutMinimal_iff_two_mul_sum_card_le]
   intro s
