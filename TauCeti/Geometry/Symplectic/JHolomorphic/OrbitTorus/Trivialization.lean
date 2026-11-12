@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Complex.Inner
 
 /-!
 # The normal operator of an orbit torus in a unitary trivialization
@@ -647,17 +648,6 @@ private theorem exists_frame_transport [CompleteSpace V] (hK2 : ContDiff ℝ 2 K
     rw [eq_dysonSeriesLeft_apply hAc hY t, zero_add]
     simp only [Φ₁, Γ, coe_comp, Function.comp_apply, hΦ₀.self_apply_inverse]
 
-/-- A rotation `z ↦ e z` of `ℂ` by a unit complex number preserves the real inner product. -/
-private theorem inner_mul_mul_of_norm_eq_one {e : ℂ} (he : ‖e‖ = 1) (a b : ℂ) :
-    ⟪e * a, e * b⟫ = ⟪a, b⟫ := by
-  have h : e * (starRingEnd ℂ) e = 1 := by
-    rw [Complex.mul_conj, Complex.normSq_eq_norm_sq, he]
-    simp
-  rw [Complex.inner, Complex.inner, map_mul]
-  calc (e * b * ((starRingEnd ℂ) e * (starRingEnd ℂ) a)).re
-      = ((e * (starRingEnd ℂ) e) * (b * (starRingEnd ℂ) a)).re := by ring_nf
-    _ = (b * (starRingEnd ℂ) a).re := by rw [h, one_mul]
-
 /-- A real-linear map of `ℂ` commuting with multiplication by `i` and preserving `⟪i · , ·⟫` on
 the pair `(1, i)` is multiplication by a unit complex number `exp (i θ)`. -/
 private theorem exists_apply_eq_mul_exp {C : ℂ →L[ℝ] ℂ}
@@ -729,7 +719,7 @@ theorem exists_unitary_frame_of_finrank_eq_two [FiniteDimensional ℝ V]
     simp only [coe_comp, Function.comp_apply, lsmul_apply, smul_eq_mul] at h ⊢
     rw [h, mul_left_comm]
   · simp only [coe_comp, Function.comp_apply, lsmul_apply, smul_eq_mul, hσ₁]
-    rw [mul_left_comm, inner_mul_mul_of_norm_eq_one (he t)]
+    rw [mul_left_comm, Complex.inner_mul_mul_of_norm_eq_one (he t)]
   · ext z
     simp only [coe_comp, Function.comp_apply, lsmul_apply, smul_eq_mul]
     rw [hseam₁, hC, mul_assoc, mul_comm z, ← mul_assoc, ← Complex.exp_add]
