@@ -187,6 +187,23 @@ theorem integral_intervalDirichletSlope (hx : x₀ < x₁) (hlam : 0 < lam) (g�
     intervalDirichletFluxConst, mul_div_cancel₀ _ hc0]
   ring
 
+/-- The explicit solution takes the value `g₀` at `x₀`. -/
+theorem intervalDirichletSolution_left (hx : x₀ ≤ x₁) (g₀ g₁ : ℝ)
+    (hs : IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G a) (Ioo x₀ x₁)) :
+    intervalDirichletSolution hx g₀ g₁ hs ⟨x₀, left_mem_Icc.2 hx⟩ = g₀ := by
+  simp
+
+/-- For `λ ≤ a`, the explicit solution takes the value `g₁` at `x₁`. -/
+theorem intervalDirichletSolution_right (hx : x₀ < x₁) (hlam : 0 < lam) (g₀ g₁ : ℝ)
+    (ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
+    (hla : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t)
+    (hG : IntegrableOn G (Ioo x₀ x₁))
+    (hs : IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G a) (Ioo x₀ x₁)) :
+    intervalDirichletSolution hx.le g₀ g₁ hs ⟨x₁, right_mem_Icc.2 hx.le⟩ = g₁ := by
+  rw [intervalDirichletSolution_apply, intervalIntegral.integral_of_le hx.le,
+    integral_Ioc_eq_integral_Ioo, integral_intervalDirichletSlope hx hlam g₀ g₁ ha hla hG,
+    add_sub_cancel]
+
 /-- **Continuous dependence on the coefficient.** If `aₙ → a` almost everywhere with uniform
 bounds `λ ≤ aₙ ≤ M`, the derivatives of the solutions of the linear problems converge in `L¹`. -/
 theorem tendsto_integral_abs_intervalDirichletSlope_sub (hx : x₀ < x₁) (hlam : 0 < lam)
@@ -301,7 +318,7 @@ theorem exists_w1p_intervalRepresentativeL_eq (hx : x₀ < x₁) (hlam : 0 < lam
   have hsI : IntervalIntegrable s volume x₀ x₁ :=
     (intervalIntegrable_iff_integrableOn_Ioo_of_le hx.le).2 (hsp.integrable Fact.out)
   -- The candidate `P = g₀ + ∫_{x₀}^x s` is absolutely continuous with derivative `s`.
-  set P : ℝ → ℝ := fun y => g₀ + ∫ t in x₀..y, s t with hPdef
+  set P : ℝ → ℝ := fun y => g₀ + ∫ t in x₀..y, s t
   have hP : AbsolutelyContinuousOnInterval P x₀ x₁ :=
     (contDiffOn_const.absolutelyContinuousOnInterval).add
       (hsI.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc)
@@ -311,7 +328,7 @@ theorem exists_w1p_intervalRepresentativeL_eq (hx : x₀ < x₁) (hlam : 0 < lam
     exact ((ht (by rw [uIcc_of_le hx.le]; exact Ioo_subset_Icc_self htI) x₀
       left_mem_uIcc).const_add g₀).deriv
   obtain ⟨u, hu, hgu⟩ := hP.exists_w1p_value_gradient_ae_eq (hsp.ae_eq hdP.symm)
-  let w : C(Icc x₀ x₁, ℝ) := ⟨fun y => P y, (uIcc_of_le hx.le ▸ hP.continuousOn).domRestrict⟩
+  let w : C(Icc x₀ x₁, ℝ) := intervalDirichletSolution hx.le g₀ g₁ (hsp.integrable Fact.out)
   have hrep : W1p.intervalRepresentativeL hx u = w := by
     refine (W1p.intervalRepresentativeL_eq_iff hx u w).2 ?_
     filter_upwards [hu, ae_restrict_mem measurableSet_Ioo] with t ht hmem
@@ -319,9 +336,8 @@ theorem exists_w1p_intervalRepresentativeL_eq (hx : x₀ < x₁) (hlam : 0 < lam
     rfl
   refine ⟨u, fun y => by rw [hrep]; rfl, ?_, fun φ => ?_⟩
   · rw [W1p.intervalTraceL_apply, hrep]
-    simp only [w, ContinuousMap.coe_mk, hPdef, intervalIntegral.integral_same, add_zero,
-      intervalIntegral.integral_of_le hx.le, integral_Ioc_eq_integral_Ioo]
-    rw [hsdef, integral_intervalDirichletSlope hx hlam g₀ g₁ ha hla hG, add_sub_cancel]
+    exact Prod.ext (intervalDirichletSolution_left ..)
+      (intervalDirichletSolution_right hx hlam g₀ g₁ ha hla hG _)
   -- Weak form: the flux `a u' + F` is `k - Φ`, and `Φ` is a primitive of `f`.
   have hdφ : Continuous (deriv φ) := φ.contDiff.continuous_deriv (by simp)
   obtain ⟨C, hC⟩ := hdφ.bounded_above_of_compact_support φ.hasCompactSupport.deriv
