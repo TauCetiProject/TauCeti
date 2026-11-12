@@ -29,9 +29,11 @@ Morse–Smale pair on a compact surface vanishes as soon as `f` has at most one 
 index `2` and at most one of index `0`. The standard Morse function on the torus is such a function
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_sphereHeight_comp_fst_add_comp_snd`),
 with two trajectories from the maximum to each saddle and from each saddle to the minimum.
-Classically, so are the standard Morse functions on the closed orientable surfaces of higher genus
-and on the real projective plane; in each case the homology of the complex with zero differential
-is the mod-two homology of the surface.
+So is the moment function on the real projective plane
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_projectiveMomentFunction_real`), and
+classically so are the standard Morse functions on the closed orientable surfaces of higher genus;
+in each case the homology of the complex with zero differential is the mod-two homology of the
+surface.
 
 The two trajectories in `W^s(q) - {q}` are read off the parametrization `ι` of `W^s(q)` by its
 one-dimensional tangent space `L` at `q` (`TauCeti.IsAdaptedPseudoGradient.exists_stableParam`),

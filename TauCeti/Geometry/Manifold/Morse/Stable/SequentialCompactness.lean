@@ -25,9 +25,10 @@ trajectories from `x i` to `x (i + 1)`, which are the limits of the points of th
 subsequence at times `s i`. The time shifts are ordered, `s i' - s i` tending to `+∞` whenever
 `i < i'`, so the components appear in order and move apart. Convergence of these points gives
 convergence of the orbits on compact time windows, locally uniformly in time for any compatible
-uniform structure, by `Flow.tendstoLocallyUniformly_orbit`. When each trajectory is represented by
-its point on a level `c` containing no critical point, the representatives themselves converge to
-the point of the level `c` on the component crossing it.
+uniform structure, by `TauCeti.tendstoLocallyUniformly_of_forall_continuousAt` applied to the
+joint continuity of the flow. When each trajectory is represented by its point on a level `c`
+containing no critical point, the representatives themselves converge to the point of the level
+`c` on the component crossing it.
 
 When `ind p = ind r + 2`, the broken trajectories at a regular level are described more explicitly:
 the subsequence converges either to a trajectory from `p` to `r`, or to a trajectory broken once,
@@ -153,8 +154,9 @@ converges, after time shifts, to a trajectory broken along a chain of critical p
 `p = x 0, x 1, …, x k = r` of strictly decreasing Morse index. The component from `x i` to
 `x (i + 1)` passes through the point `z i`, which is the limit of the points of the orbits of the
 subsequence at the times `s i`, and the time shifts are ordered: `s i' - s i` tends to `+∞`
-whenever `i < i'`. By `Flow.tendstoLocallyUniformly_orbit`, the orbits of the shifted subsequence
-then converge to the components on compact time windows, for any compatible uniform structure.
+whenever `i < i'`. By `TauCeti.tendstoLocallyUniformly_of_forall_continuousAt`, the orbits of the
+shifted subsequence then converge to the components on compact time windows, for any compatible
+uniform structure.
 
 Since the chain runs from `p` to `r`, it has at least one component when `p ≠ r`, and the strict
 decrease of the index bounds the number `k` of components by `ind p - ind r`. -/

@@ -133,7 +133,7 @@ private theorem card_sum_mul_sq_fin_even_of_odd (hF : ringChar F ≠ 2) {m : ℕ
         quadraticChar F ((-1) ^ (m + 1) * ∏ i, w i) * (Fintype.card F : ℤ) ^ m *
           if c = 0 then (Fintype.card F : ℤ) - 1 else -1 := by
   rw [card_sum_mul_sq_fin_succ_eq hF w (hw 0)]
-  simp only [hodd (Fin.tail w) (fun i ↦ hw _), mul_add, sum_add_distrib, ← sum_mul,
+  simp only [hodd (Fin.tail w) (fun _ ↦ hw _), mul_add, sum_add_distrib, ← sum_mul,
     sum_quadraticChar_mul hF (hw 0), zero_mul, zero_add]
   have hu (u : F) : quadraticChar F (w 0 * u) *
       (quadraticChar F ((-1) ^ m * (∏ i, Fin.tail w i) * (c - u)) * (Fintype.card F : ℤ) ^ m) =

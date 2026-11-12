@@ -55,7 +55,8 @@ open subsets of `D² × S¹`, but separation and countability hypotheses are kep
 
 * `TauCeti.IsSeifertFibration.nonempty_homeomorph_circle`: every fibre of a Seifert fibration is
   homeomorphic to a circle.
-* `TauCeti.SolidTorus.isSeifertFibration_fiberSetoid`: the model `V(p, q)` is Seifert fibred.
+* `TauCeti.SolidTorus.isSeifertFibration_fiberSetoid`: the model `V(p, q)`, for `q ≠ 0`, is Seifert
+  fibred.
 * `TauCeti.isSeifertFibration_ker_fst`: for a boundaryless surface `F`, the circles `{x} × S¹`
   form a Seifert fibration of `F × S¹`.
 * `Homeomorph.isSeifertFibered_iff`: being Seifert fibred is invariant under homeomorphism.
@@ -129,10 +130,38 @@ theorem fiberSetoid_zero_one {a b : SolidTorus} : fiberSetoid 0 1 a b ↔ a.1 = 
   · simp [h]
   · rw [zpow_one, inv_mul_cancel_right]
 
+/-- Scaling both exponents by a nonzero integer does not change the fibres of `V(p, q)`: the
+`g`-th power map of the circle is onto. -/
+theorem fiberSetoid_mul_left {g : ℤ} (hg : g ≠ 0) (p q : ℤ) :
+    fiberSetoid (g * p) (g * q) = fiberSetoid p q := by
+  refine Setoid.ext fun a b ↦ ?_
+  simp only [fiberSetoid_iff]
+  constructor
+  · rintro ⟨t, h₁, h₂⟩
+    exact ⟨t ^ g, by rwa [← zpow_mul], by rwa [← zpow_mul]⟩
+  · rintro ⟨s, h₁, h₂⟩
+    have : NeZero g := ⟨hg⟩
+    obtain ⟨t, rfl⟩ := (Circle.isQuotientCoveringMap_zpow g).surjective s
+    exact ⟨t, by rwa [zpow_mul], by rwa [zpow_mul]⟩
+
+/-- For `q ≠ 0`, the fibres of `V(p, q)` are those of a model `V(p', q')` with `p'` coprime to `q'`
+and `q' > 0`, obtained by dividing out the greatest common divisor and, if `q < 0`, the sign. -/
+theorem exists_isCoprime_fiberSetoid_eq {p q : ℤ} (hq : q ≠ 0) :
+    ∃ p' q' : ℤ, 0 < q' ∧ IsCoprime p' q' ∧ fiberSetoid p q = fiberSetoid p' q' := by
+  obtain ⟨g, p', q', hg, hpq, rfl, rfl⟩ := Int.exists_gcd_one' (Int.gcd_pos_of_ne_zero_right p hq)
+  have hg' : (g : ℤ) ≠ 0 := by exact_mod_cast hg.ne'
+  have hcop : IsCoprime p' q' := Int.isCoprime_iff_gcd_eq_one.2 hpq
+  rw [mul_comm p', mul_comm q', fiberSetoid_mul_left hg']
+  rcases (left_ne_zero_of_mul hq).lt_or_gt with hneg | hpos
+  · refine ⟨-p', -q', neg_pos.2 hneg, hcop.neg_neg, ?_⟩
+    rw [← fiberSetoid_mul_left (g := -1) (by norm_num) p' q', neg_one_mul, neg_one_mul]
+  · exact ⟨p', q', hpos, hcop, rfl⟩
+
 /-- Every fibre of the model fibred solid torus `V(p, q)`, for `q ≠ 0` and `p` coprime to `q`, is
 homeomorphic to a circle. -/
-theorem nonempty_homeomorph_circle {p q : ℤ} (hq : q ≠ 0) (hpq : IsCoprime p q)
-    (a : SolidTorus) : Nonempty ({b | fiberSetoid p q a b} ≃ₜ Circle) := by
+private theorem nonempty_homeomorph_circle_of_isCoprime {p q : ℤ} (hq : q ≠ 0)
+    (hpq : IsCoprime p q) (a : SolidTorus) :
+    Nonempty ({b | fiberSetoid p q a b} ≃ₜ Circle) := by
   -- The core is the circle `{0} × S¹`; off the core the orbit map of the circle action is
   -- injective by coprimality.
   suffices ∃ f : Circle → SolidTorus, Continuous f ∧ Function.Injective f ∧
@@ -148,10 +177,9 @@ theorem nonempty_homeomorph_circle {p q : ℤ} (hq : q ≠ 0) (hpq : IsCoprime p
     constructor
     · rintro ⟨w, rfl⟩
       -- The core is a single fibre: `t ↦ t ^ q` is onto, as `q ≠ 0`.
-      obtain ⟨θ, hθ⟩ := Circle.exp_surjective (w * a.2⁻¹)
-      refine ⟨Circle.exp (θ / q), rfl, ?_⟩
-      rw [← Circle.exp_intCast_mul, mul_div_cancel₀ _ (Int.cast_ne_zero.2 hq), hθ,
-        inv_mul_cancel_right]
+      have : NeZero q := ⟨hq⟩
+      obtain ⟨t, ht⟩ := (Circle.isQuotientCoveringMap_zpow q).surjective (w * a.2⁻¹)
+      exact ⟨t, rfl, by simp only at ht; rw [ht, inv_mul_cancel_right]⟩
     · rintro ⟨-, h₁, -⟩
       exact ⟨b.2, Prod.ext (Subtype.ext h₁) rfl⟩
   · obtain ⟨u, v, huv⟩ := hpq
@@ -172,6 +200,14 @@ theorem nonempty_homeomorph_circle {p q : ℤ} (hq : q ≠ 0) (hpq : IsCoprime p
     · ext b
       exact ⟨fun ⟨t, ht⟩ ↦ ⟨t, by rw [← ht], by rw [← ht]⟩,
         fun ⟨t, h₁, h₂⟩ ↦ ⟨t, Prod.ext (Subtype.ext h₁) h₂⟩⟩
+
+/-- Every fibre of the model fibred solid torus `V(p, q)`, for `q ≠ 0`, is homeomorphic to a
+circle. -/
+theorem nonempty_homeomorph_circle {p q : ℤ} (hq : q ≠ 0) (a : SolidTorus) :
+    Nonempty ({b | fiberSetoid p q a b} ≃ₜ Circle) := by
+  obtain ⟨p', q', hq', hpq, h⟩ := exists_isCoprime_fiberSetoid_eq (p := p) hq
+  rw [h]
+  exact nonempty_homeomorph_circle_of_isCoprime hq'.ne' hpq a
 
 end SolidTorus
 
@@ -234,8 +270,8 @@ variable {r : Setoid M}
 /-- Every fibre of a Seifert fibration is homeomorphic to a circle. -/
 theorem nonempty_homeomorph_circle (h : IsSeifertFibration r) (x : M) :
     Nonempty ({y | r x y} ≃ₜ Circle) := by
-  obtain ⟨p, q, hq, hpq, e, hx, he⟩ := h x
-  obtain ⟨φ⟩ := SolidTorus.nonempty_homeomorph_circle hq.ne' hpq (e x)
+  obtain ⟨p, q, hq, _, e, hx, he⟩ := h x
+  obtain ⟨φ⟩ := SolidTorus.nonempty_homeomorph_circle hq.ne' (e x)
   exact ⟨(e.homeomorphOfImageSubsetSource (fun y hy ↦ he.source_saturated x hx y hy)
     (he.image_setOf_rel hx)).trans φ⟩
 
@@ -258,16 +294,16 @@ theorem _root_.Homeomorph.isSeifertFibered_iff (φ : N ≃ₜ M) :
 
 namespace SolidTorus
 
-/-- The model fibred solid torus `V(p, q)`, for `q > 0` and `p` coprime to `q`, is Seifert fibred.
--/
-theorem isSeifertFibration_fiberSetoid {p q : ℤ} (hq : 0 < q) (hpq : IsCoprime p q) :
-    IsSeifertFibration (fiberSetoid p q) := fun _ ↦
-  ⟨p, q, hq, hpq, OpenPartialHomeomorph.refl _, mem_univ _,
-    ⟨fun _ _ _ _ ↦ mem_univ _, fun _ _ _ _ ↦ mem_univ _, fun _ _ _ _ ↦ Iff.rfl⟩⟩
+/-- The model fibred solid torus `V(p, q)`, for `q ≠ 0`, is Seifert fibred. -/
+theorem isSeifertFibration_fiberSetoid {p q : ℤ} (hq : q ≠ 0) :
+    IsSeifertFibration (fiberSetoid p q) := fun _ ↦ by
+  obtain ⟨p', q', hq', hpq, h⟩ := exists_isCoprime_fiberSetoid_eq (p := p) hq
+  exact ⟨p', q', hq', hpq, OpenPartialHomeomorph.refl _, mem_univ _,
+    ⟨fun _ _ _ _ ↦ mem_univ _, fun _ _ _ _ ↦ mem_univ _, fun _ _ _ _ ↦ by rw [h]; rfl⟩⟩
 
 /-- The solid torus is Seifert fibred. -/
 theorem isSeifertFibered : IsSeifertFibered SolidTorus :=
-  ⟨_, isSeifertFibration_fiberSetoid (p := 0) one_pos isCoprime_one_right⟩
+  ⟨_, isSeifertFibration_fiberSetoid (p := 0) one_ne_zero⟩
 
 end SolidTorus
 

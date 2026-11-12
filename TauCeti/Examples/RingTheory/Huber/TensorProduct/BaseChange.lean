@@ -54,7 +54,7 @@ example (b : B) (d : D) :
     (cancelBaseChange A B C D).symm (toCompletion A B D (b ⊗ₜ[A] d)) =
       toCompletion C (CompletedTensor A B C) D
         (toCompletion A B C (b ⊗ₜ[A] (1 : C)) ⊗ₜ[C] d) := by
-  intro hAD
+  intro _
   exact cancelBaseChange_symm_tmul A B C D b d
 
 example [Subsingleton B] (x : CompletedTensor C (CompletedTensor A B C) D) :
