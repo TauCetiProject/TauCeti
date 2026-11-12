@@ -90,7 +90,8 @@ theorem tendsto_integral_clm_apply_of_ae_tendsto
     exact ((continuous_eval_const (v x)).tendsto (ω x)).comp hx
 
 /-- Pairing integrable functions converging in `L¹` with eventually bounded operator fields
-converging almost everywhere gives convergence of the Bochner integrals of the pairings. -/
+converging almost everywhere gives convergence of the Bochner integrals of the pairings, along a
+countably generated filter. -/
 theorem tendsto_integral_clm_apply_of_ae_tendsto_of_integral_norm_sub
     {ωn : ι → α → E →L[𝕜] F} {ω : α → E →L[𝕜] F}
     {vn : ι → α → E} {v : α → E} {C : ℝ}
