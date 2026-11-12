@@ -51,7 +51,7 @@ open TauCeti
 
 namespace IsPrimitiveRoot
 
-universe u
+universe u v
 
 section Stabilizer
 
@@ -84,7 +84,7 @@ end Stabilizer
 
 section Field
 
-variable {K L G : Type u} [Field K] [Field L] [Algebra K L] [CharZero K] [Algebra ℚ K]
+variable {K L : Type u} {G : Type v} [Field K] [Field L] [Algebra K L] [CharZero K] [Algebra ℚ K]
   [Group G] [Finite G] [IsAlgClosed L] {n : ℕ} [NeZero n] {ζ : K}
 
 /-- A virtual character is fixed by `σ` for the cyclotomic Galois action exactly when `σ` lies in
@@ -153,9 +153,9 @@ end IsPrimitiveRoot
 
 namespace FDRep
 
-universe u
+universe u v
 
-variable {K L G : Type u} [Field K] [Field L] [Algebra K L] [Algebra ℚ K]
+variable {K L : Type u} {G : Type v} [Field K] [Field L] [Algebra K L] [Algebra ℚ K]
   [Group G] [Finite G] [IsAlgClosed L] [Algebra ℚ L] [IsGalois ℚ K] {n : ℕ} [NeZero n] {ζ : K}
 
 /-- The field of values of a representation is the image of the fixed field of the power-map
