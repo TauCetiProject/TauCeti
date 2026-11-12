@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.Lift.BasicAut
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 import TauCeti.Data.List.ProdOfFn
+import TauCeti.Data.Sum.Basic
 import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.List.GetD
@@ -59,10 +60,12 @@ automorphism `γ_j^{p_j}` is applied first: `z^{φ_j} = (z^{γ_j^{p_j}})^{φ_{j-
 * `TauCeti.GroupAlgGeom.Lift.basicWordSeq`: the basic sequence of the word `S₀`.
 * `TauCeti.GroupAlgGeom.Lift.basicSeq`: the basic sequence of a standard orientable quadratic
   equation.
-* `TauCeti.GroupAlgGeom.Lift.phi`: the automorphisms `φ_{j,p}`.
+* `TauCeti.GroupAlgGeom.Lift.phi`: the products `φ_{j,p}` of powers of the terms of a sequence,
+  continued periodically.
 
 ## Main results
 
+* `TauCeti.GroupAlgGeom.Lift.mem_basicWordSeq_iff`: the members of the basic sequence.
 * `TauCeti.GroupAlgGeom.Lift.apply_basicWord_of_mem_basicWordSeq`: the automorphisms of the basic
   sequence fix `S₀`.
 * `TauCeti.GroupAlgGeom.Lift.length_basicWordSeq`: the basic sequence has `K(m, n)` terms.
@@ -134,31 +137,47 @@ theorem length_basicWordSeq :
     simp only [Function.comp_apply, List.length_append]
     split_ifs <;> rfl
 
-private theorem cases_of_mem_basicWordSeq {γ : MulAut (GX G X)} (hγ : γ ∈ basicWordSeq inj c) :
-    (∃ j j' : Fin m, (j : ℕ) + 1 = j' ∧ γ = basicCoeff inj c j j') ∨
-      (∃ (j : Fin m) (i : Fin n), (j : ℕ) + 1 = m ∧ (i : ℕ) = 0 ∧ γ = basicLink inj c j i) ∨
-      (∃ i, γ = basicY inj i) ∨ (∃ i, γ = basicX inj i) ∨
-      ∃ i i' : Fin n, (i : ℕ) + 1 = i' ∧ γ = basicComm inj i i' := by
-  simp only [basicWordSeq_def, List.mem_append, List.mem_ofFn, List.mem_flatten] at hγ
-  obtain (⟨j, rfl⟩ | hγ) | ⟨l, ⟨i, rfl⟩, hγ⟩ := hγ
-  · exact .inl ⟨_, _, rfl, rfl⟩
-  · split_ifs at hγ with h
-    · exact .inr (.inl ⟨_, _, by simp; omega, rfl, List.mem_singleton.1 hγ⟩)
-    · simp at hγ
-  · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hγ
-    obtain (rfl | rfl | rfl) | hγ := hγ
-    · exact .inr (.inr (.inl ⟨i, rfl⟩))
-    · exact .inr (.inr (.inr (.inl ⟨i, rfl⟩)))
-    · exact .inr (.inr (.inl ⟨i, rfl⟩))
+/-- The members of the basic sequence: the automorphisms of adjacent coefficient atoms, the
+automorphism of the last coefficient atom and the first commutator, the automorphisms
+`y_i ↦ x_i y_i` and `x_i ↦ y_i x_i`, and the automorphisms of adjacent commutators. -/
+theorem mem_basicWordSeq_iff {γ : MulAut (GX G X)} :
+    γ ∈ basicWordSeq inj c ↔
+      (∃ j j' : Fin m, (j : ℕ) + 1 = j' ∧ γ = basicCoeff inj c j j') ∨
+        (∃ (j : Fin m) (i : Fin n), (j : ℕ) + 1 = m ∧ (i : ℕ) = 0 ∧ γ = basicLink inj c j i) ∨
+        (∃ i, γ = basicY inj i) ∨ (∃ i, γ = basicX inj i) ∨
+        ∃ i i' : Fin n, (i : ℕ) + 1 = i' ∧ γ = basicComm inj i i' := by
+  refine ⟨fun hγ => ?_, ?_⟩
+  · simp only [basicWordSeq_def, List.mem_append, List.mem_ofFn, List.mem_flatten] at hγ
+    obtain (⟨j, rfl⟩ | hγ) | ⟨l, ⟨i, rfl⟩, hγ⟩ := hγ
+    · exact .inl ⟨_, _, rfl, rfl⟩
     · split_ifs at hγ with h
-      · exact .inr (.inr (.inr (.inr ⟨_, _, rfl, List.mem_singleton.1 hγ⟩)))
+      · exact .inr (.inl ⟨_, _, by simp; omega, rfl, List.mem_singleton.1 hγ⟩)
       · simp at hγ
+    · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hγ
+      obtain (rfl | rfl | rfl) | hγ := hγ
+      · exact .inr (.inr (.inl ⟨i, rfl⟩))
+      · exact .inr (.inr (.inr (.inl ⟨i, rfl⟩)))
+      · exact .inr (.inr (.inl ⟨i, rfl⟩))
+      · split_ifs at hγ with h
+        · exact .inr (.inr (.inr (.inr ⟨_, _, rfl, List.mem_singleton.1 hγ⟩)))
+        · simp at hγ
+  · rintro (⟨j, j', h, rfl⟩ | ⟨j, i, hj, hi, rfl⟩ | ⟨i, rfl⟩ | ⟨i, rfl⟩ | ⟨i, i', h, rfl⟩)
+    · refine List.mem_append_left _ (List.mem_append_left _ (List.mem_ofFn.2 ⟨⟨j, by omega⟩, ?_⟩))
+      exact congrArg (basicCoeff inj c j) (Fin.ext h)
+    · refine List.mem_append_left _ (List.mem_append_right _ ?_)
+      rw [dite_eq_left ⟨by omega, i.pos⟩, List.mem_singleton]
+      exact congrArg₂ (basicLink inj c) (Fin.ext (by simp; omega)) (Fin.ext hi)
+    · exact List.mem_append_right _ (List.mem_flatten.2 ⟨_, List.mem_ofFn.2 ⟨i, rfl⟩, by simp⟩)
+    · exact List.mem_append_right _ (List.mem_flatten.2 ⟨_, List.mem_ofFn.2 ⟨i, rfl⟩, by simp⟩)
+    · refine List.mem_append_right _ (List.mem_flatten.2 ⟨_, List.mem_ofFn.2 ⟨i, rfl⟩, ?_⟩)
+      rw [dite_eq_left (by omega : (i : ℕ) + 1 < n)]
+      exact List.mem_append_right _ (List.mem_singleton.2 (congrArg _ (Fin.ext h.symm)))
 
 /-- Every automorphism of the basic sequence fixes the word `S₀`. -/
 theorem apply_basicWord_of_mem_basicWordSeq {γ : MulAut (GX G X)} (hγ : γ ∈ basicWordSeq inj c) :
     γ (basicWord x y z c) = basicWord x y z c := by
   obtain ⟨j, j', h, rfl⟩ | ⟨j, i, hj, hi, rfl⟩ | ⟨i, rfl⟩ | ⟨i, rfl⟩ | ⟨i, i', h, rfl⟩ :=
-    cases_of_mem_basicWordSeq inj c hγ
+    (mem_basicWordSeq_iff inj c).1 hγ
   · exact basicCoeff_basicWord inj c j j' h
   · exact basicLink_basicWord inj c j i hj hi
   · exact basicY_basicWord inj c i
@@ -169,7 +188,7 @@ theorem apply_basicWord_of_mem_basicWordSeq {γ : MulAut (GX G X)} (hγ : γ ∈
 theorem apply_inl_of_mem_basicWordSeq {γ : MulAut (GX G X)} (hγ : γ ∈ basicWordSeq inj c)
     (g : G) : γ (inl g) = inl g := by
   obtain ⟨j, j', -, rfl⟩ | ⟨j, i, -, -, rfl⟩ | ⟨i, rfl⟩ | ⟨i, rfl⟩ | ⟨i, i', -, rfl⟩ :=
-    cases_of_mem_basicWordSeq inj c hγ
+    (mem_basicWordSeq_iff inj c).1 hγ
   · exact basicCoeff_inl inj c j j' g
   · exact basicLink_inl inj c j i g
   · exact basicY_inl inj i g
@@ -178,24 +197,26 @@ theorem apply_inl_of_mem_basicWordSeq {γ : MulAut (GX G X)} (hγ : γ ∈ basic
 
 end Seq
 
-/-! ### The automorphisms `φ_{j,p}` -/
+/-! ### The products `φ_{j,p}` -/
 
 section Phi
 
-/-- The automorphism `φ_{j,p}` of [IFT], §7.1, for a sequence `Γ = (γ₁, …, γ_K)` of automorphisms
-of `G[X]` and a tuple `p = (p₁, …, p_j)` of exponents: the product of the powers `γ_i ^ p_i` for
-`i = 1, …, j`, where the sequence is continued periodically, `γ_{i+K} = γ_i`. The automorphism
-`γ_j ^ p_j` is applied first and `γ₁ ^ p₁` last. -/
-def phi (Γ : List (MulAut (GX G X))) (p : List ℕ) : MulAut (GX G X) :=
+variable {M : Type*} [Monoid M]
+
+/-- The product `φ_{j,p}` of [IFT], §7.1, for a sequence `Γ = (γ₁, …, γ_K)` of elements of a
+monoid and a tuple `p = (p₁, …, p_j)` of exponents: the product `γ₁ ^ p₁ * ⋯ * γ_j ^ p_j`, where
+the sequence is continued periodically, `γ_{i+K} = γ_i`. For a sequence of automorphisms, the
+automorphism `γ_j ^ p_j` is applied first and `γ₁ ^ p₁` last. -/
+def phi (Γ : List M) (p : List ℕ) : M :=
   (p.zipIdx.map fun ei => Γ.getD (ei.2 % Γ.length) 1 ^ ei.1).prod
 
-variable (Γ : List (MulAut (GX G X)))
+variable (Γ : List M)
 
 @[simp]
 theorem phi_nil : phi Γ [] = 1 := by
   simp [phi]
 
-/-- `φ_{j+1,p} = φ_{j,p} ∘ γ_{j+1} ^ p_{j+1}`, the indices of `Γ` being read modulo its
+/-- `φ_{j+1,p} = φ_{j,p} * γ_{j+1} ^ p_{j+1}`, the indices of `Γ` being read modulo its
 length. -/
 theorem phi_concat (p : List ℕ) (e : ℕ) :
     phi Γ (p ++ [e]) = phi Γ p * Γ.getD (p.length % Γ.length) 1 ^ e := by
@@ -208,13 +229,13 @@ theorem phi_replicate_zero (j : ℕ) : phi Γ (List.replicate j 0) = 1 := by
   | zero => simp
   | succ j ih => rw [List.replicate_succ', phi_concat, ih, pow_zero, mul_one]
 
-variable {Γ}
+end Phi
 
-/-- The automorphisms `φ_{j,p}` fix every element fixed by all the automorphisms of the
-sequence. -/
-theorem phi_apply_of_forall_mem {w : GX G X} (h : ∀ γ ∈ Γ, γ w = w) (p : List ℕ) :
-    phi Γ p w = w := by
-  have hpow (γ : MulAut (GX G X)) (hγ : γ w = w) (e : ℕ) : (γ ^ e) w = w := by
+/-- For a sequence of automorphisms of `H`, the automorphisms `φ_{j,p}` fix every element fixed by
+all the automorphisms of the sequence. -/
+theorem phi_apply_of_forall_mem {H : Type*} [Mul H] {Γ : List (MulAut H)} {w : H}
+    (h : ∀ γ ∈ Γ, γ w = w) (p : List ℕ) : phi Γ p w = w := by
+  have hpow (γ : MulAut H) (hγ : γ w = w) (e : ℕ) : (γ ^ e) w = w := by
     induction e with
     | zero => simp
     | succ e ih => rw [pow_succ, MulAut.mul_apply, hγ, ih]
@@ -227,8 +248,6 @@ theorem phi_apply_of_forall_mem {w : GX G X} (h : ∀ γ ∈ Γ, γ w = w) (p : 
       exact h _ (List.getElem_mem hlt)
     · rw [List.getD_eq_default _ _ hle, MulAut.one_apply]
 
-end Phi
-
 /-! ### Standard orientable quadratic equations -/
 
 section Standard
@@ -236,23 +255,6 @@ section Standard
 open Quadratic Quadratic.Standard
 
 variable {x y : Fin n → X} {z : Fin m → X}
-
-private theorem injective_mirror (inj : (Sum.elim (Sum.elim x y) z).Injective) :
-    (Sum.elim (Sum.elim (y ∘ Fin.rev) (x ∘ Fin.rev)) (z ∘ Fin.rev)).Injective := by
-  have h : Sum.elim (Sum.elim (y ∘ Fin.rev) (x ∘ Fin.rev)) (z ∘ Fin.rev) =
-      Sum.elim (Sum.elim x y) z ∘ Sum.map (Sum.swap ∘ Sum.map Fin.rev Fin.rev) Fin.rev := by
-    ext ((i | i) | j) <;> rfl
-  rw [h]
-  exact inj.comp (Sum.map_injective.2 ⟨Sum.swap_leftInverse.injective.comp
-    (Sum.map_injective.2 ⟨Fin.rev_injective, Fin.rev_injective⟩), Fin.rev_injective⟩)
-
-private theorem injective_elim0 (inj : (Sum.elim x y).Injective) :
-    (Sum.elim (Sum.elim x y) (Fin.elim0 : Fin 0 → X)).Injective := by
-  rintro (a | a) (b | b) h
-  · exact congrArg Sum.inl (inj h)
-  · exact b.elim0
-  · exact a.elim0
-  · exact a.elim0
 
 variable {c : Fin m → G} {d : G}
 
@@ -291,9 +293,14 @@ product of its atoms is `∏ⱼ zⱼ'⁻¹ cⱼ' zⱼ' ∏ᵢ [xᵢ', yᵢ']` fo
 coefficients `xᵢ' = y_{n+1-i}`, `yᵢ' = x_{n+1-i}`, `zⱼ' = z_{m+1-j}`, `cⱼ' = c_{m+1-j}⁻¹`, and
 the sequence is `basicWordSeq` for these. -/
 noncomputable def basicSeq : (S : Standard G X) → S.IsOrientable → List (MulAut (GX G X))
-  | .orientable _ _ _ _ inj, _ => basicWordSeq (injective_elim0 inj) Fin.elim0
-  | .orientableCoeff _ m _ _ _ _ inj c _ _ _, _ =>
-    if m = 0 then basicWordSeq inj c else basicWordSeq (injective_mirror inj) fun j => (c j.rev)⁻¹
+  | .orientable _ _ _ _ inj, _ => basicWordSeq (inj.sumElim_of_isEmpty Fin.elim0) Fin.elim0
+  | .orientableCoeff _ m _ x y z inj c _ _ _, _ =>
+    if m = 0 then basicWordSeq inj c else
+      basicWordSeq (x := y ∘ Fin.rev) (y := x ∘ Fin.rev) (z := z ∘ Fin.rev)
+        (by simpa only [← Function.comp_assoc, Sum.elim_swap, Sum.elim_comp_map] using
+          inj.sumElim_comp (Sum.swap_leftInverse.injective.comp
+            (Fin.rev_injective.sumMap Fin.rev_injective)) Fin.rev_injective)
+        fun j => (c j.rev)⁻¹
   | .nonorientable _ hn _ inj, h => (not_isOrientable_nonorientable hn inj h).elim
   | .nonorientableCoeff _ _ hn _ _ inj _ hc _ hd, h =>
     (not_isOrientable_nonorientableCoeff hn inj hc hd h).elim
@@ -316,7 +323,7 @@ theorem basicSeq_orientableCoeff_of_eq_zero (hnm : 0 < n + m)
     (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) (hm : m = 0) :
     basicSeq (orientableCoeff n m hnm x y z inj c hc d hd)
         (isOrientable_orientableCoeff hnm inj hc hd) = basicWordSeq inj c := by
-  simp only [basicSeq_orientableCoeff hnm inj hc hd (injective_mirror inj), hm, ↓reduceIte]
+  rw [basicSeq, ite_eq_left hm]
 
 /-- With coefficient atoms, the basic sequence of `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` is the basic
 sequence of the word `S₀` of the mirrored variables and coefficients. -/
@@ -326,7 +333,7 @@ theorem basicSeq_orientableCoeff_of_ne_zero (hnm : 0 < n + m)
     basicSeq (orientableCoeff n m hnm x y z inj c hc d hd)
         (isOrientable_orientableCoeff hnm inj hc hd) =
       basicWordSeq inj' fun j => (c j.rev)⁻¹ := by
-  simp only [basicSeq_orientableCoeff hnm inj hc hd inj', hm, ↓reduceIte]
+  rw [basicSeq, ite_eq_right hm]
 
 variable {S : Standard G X} (hS : S.IsOrientable) {γ : MulAut (GX G X)}
 
@@ -335,7 +342,7 @@ theorem apply_inl_of_mem_basicSeq (hγ : γ ∈ basicSeq S hS) (g : G) : γ (inl
   cases S with
   | orientable n hn x y inj => exact apply_inl_of_mem_basicWordSeq _ _ hγ g
   | orientableCoeff n m hnm x y z inj c hc d hd =>
-    rw [basicSeq_orientableCoeff hnm inj hc hd (injective_mirror inj)] at hγ
+    rw [basicSeq] at hγ
     split_ifs at hγ <;> exact apply_inl_of_mem_basicWordSeq _ _ hγ g
   | nonorientable n hn x inj => exact (not_isOrientable_nonorientable hn inj hS).elim
   | nonorientableCoeff n m hn x z inj c hc d hd =>
@@ -349,7 +356,7 @@ theorem apply_prod_atoms_of_mem_basicSeq (hγ : γ ∈ basicSeq S hS) :
   | orientable n hn x y inj =>
     simpa only [basicWord_orientable hn inj] using apply_basicWord_of_mem_basicWordSeq _ _ hγ
   | orientableCoeff n m hnm x y z inj c hc d hd =>
-    rw [basicSeq_orientableCoeff hnm inj hc hd (injective_mirror inj)] at hγ
+    rw [basicSeq] at hγ
     split_ifs at hγ with hm
     · subst hm
       simpa only [basicWord_orientableCoeff hnm inj hc hd] using
@@ -380,7 +387,7 @@ theorem phi_basicSeq_inl (p : List ℕ) (g : G) : phi (basicSeq S hS) p (inl g) 
 theorem length_basicSeq_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
     (basicSeq (G := G) (orientable n hn x y inj) (isOrientable_orientable hn inj)).length =
       4 * n - 1 := by
-  rw [basicSeq_orientable hn inj (injective_elim0 inj), length_basicWordSeq]
+  rw [basicSeq_orientable hn inj (inj.sumElim_of_isEmpty _), length_basicWordSeq]
   simp
 
 /-- The basic sequence of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] ∏ⱼ₌₁ᵐ zⱼ⁻¹ cⱼ zⱼ d = 1` has `K(m, n)` terms:
@@ -390,7 +397,7 @@ theorem length_basicSeq_orientableCoeff (hnm : 0 < n + m)
     (basicSeq (orientableCoeff n m hnm x y z inj c hc d hd)
         (isOrientable_orientableCoeff hnm inj hc hd)).length =
       (m - 1) + (if 0 < m ∧ 0 < n then 1 else 0) + (4 * n - 1) := by
-  rw [basicSeq_orientableCoeff hnm inj hc hd (injective_mirror inj), apply_ite List.length,
+  rw [basicSeq, apply_ite List.length,
     length_basicWordSeq, length_basicWordSeq, ite_self]
 
 end Standard
@@ -420,7 +427,7 @@ theorem apply_genusTwo_of_mem_basicSeq {γ : MulAut (GX G X)}
   simpa [List.ofFn_succ] using apply_prod_atoms_of_mem_basicSeq _ hγ
 
 /-- The basic sequence of a standard equation `z₁⁻¹ c₁ z₁ · z₂⁻¹ c₂ z₂ · z₃⁻¹ c₃ z₃ · d = 1`
-without commutators consists of the two automorphisms of adjacent coefficient atoms. -/
+without commutators has `K(3, 0) = 2` terms. -/
 theorem length_basicSeq_conjugates {z : Fin 3 → X} {c : Fin 3 → G} {d : G}
     (inj : (Sum.elim (Sum.elim Fin.elim0 Fin.elim0) z).Injective) (hc : ∀ j, c j ≠ 1)
     (hd : d ≠ 1) :

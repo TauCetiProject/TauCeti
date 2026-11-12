@@ -27,7 +27,7 @@ that it fixes, and fixes the other variables. Writing `c^z = z⁻¹ c z`, they a
 * `basicLink`: `zⱼ ↦ zⱼ A`, `xᵢ ↦ A⁻¹ xᵢ A`, `yᵢ ↦ A⁻¹ yᵢ` with `A = cⱼ^{zⱼ} xᵢ⁻¹`;
 * `basicY`: `yᵢ ↦ xᵢ yᵢ`, and `basicX`: `xᵢ ↦ yᵢ xᵢ`;
 * `basicComm`: `xᵢ ↦ A⁻¹ xᵢ`, `yᵢ ↦ A⁻¹ yᵢ A`, `xᵢ' ↦ A⁻¹ xᵢ' A`, `yᵢ' ↦ A⁻¹ yᵢ'` with
-  `A = yᵢ xᵢ'⁻¹`.
+  `A = yᵢ xᵢ'⁻¹`, for `i ≠ i'` (for `i = i'` it conjugates `xᵢ` and `yᵢ` by `A`).
 
 They are automorphisms for all indices. The word `S₀` is fixed by `basicY` and `basicX`, and by
 the other three when the two atoms are adjacent in `S₀`: `j' = j + 1` for `basicCoeff`, the last
@@ -399,9 +399,10 @@ private theorem twistHom_commTerm {B : GX G X}
   calc _ = B⁻¹ * (inr (.of (y i)) * (inr (.of (x i')))⁻¹) * B := by group
     _ = _ := hB.inv_mul_cancel
 
-/-- The basic automorphism `x_i ↦ A⁻¹ x_i`, `y_i ↦ A⁻¹ y_i A`, `x_i' ↦ A⁻¹ x_i' A`,
-`y_i' ↦ A⁻¹ y_i'` of `G[X]`, where `A = y_i x_i'⁻¹`; the other variables are fixed. For
-`i' = i + 1` it is the automorphism `γ_{m+4i}` of [IFT], §7.1. -/
+/-- The basic automorphism of `G[X]` given, for `i ≠ i'`, by `x_i ↦ A⁻¹ x_i`, `y_i ↦ A⁻¹ y_i A`,
+`x_i' ↦ A⁻¹ x_i' A`, `y_i' ↦ A⁻¹ y_i'`, where `A = y_i x_i'⁻¹`; the other variables are fixed.
+For `i = i'` it is `x_i ↦ A⁻¹ x_i A`, `y_i ↦ A⁻¹ y_i A`. For `i' = i + 1` it is the automorphism
+`γ_{m+4i}` of [IFT], §7.1. -/
 noncomputable def basicComm : MulAut (GX G X) :=
   twist (inr (.of (y i)) * (inr (.of (x i')))⁻¹)
     (blockExp x y z (fun l => if l = i' then (-1, 1) else if l = i then (-1, 0) else 0)
