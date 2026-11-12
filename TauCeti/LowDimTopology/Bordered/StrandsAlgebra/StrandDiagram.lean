@@ -382,21 +382,20 @@ theorem trans_eq_idOn_iff_of_target_eq {φ ψ : StrandDiagram α} (h : φ.target
     obtain ⟨k, hk⟩ := mem_source.1 (h ▸ mem_target.2 ⟨i, hij⟩)
     obtain ⟨rfl, hi⟩ := hmem.1 (mem_trans.2 ⟨j, hij, hk⟩)
     exact ⟨le_antisymm (ψ.le_of_mem hk) (φ.le_of_mem hij), hi⟩
-  -- Every point of `s` carries a horizontal strand of `φ`, continued by one of `ψ`.
-  have hs {i : α} (hi : i ∈ s) : i ∈ φ i ∧ i ∈ ψ i := by
-    obtain ⟨j, hij, hj⟩ := mem_trans.1 (hmem.2 ⟨rfl, hi⟩)
+  -- Every point of `s` carries a horizontal strand of `φ`.
+  have hs {i : α} (hi : i ∈ s) : i ∈ φ i := by
+    obtain ⟨j, hij, -⟩ := mem_trans.1 (hmem.2 ⟨rfl, hi⟩)
     obtain ⟨rfl, -⟩ := hφ hij
-    exact ⟨hij, hj⟩
-  refine ⟨ext fun i ↦ Option.ext fun j ↦ ?_, ext fun j ↦ Option.ext fun k ↦ ?_⟩
-  · rw [← Option.mem_def, ← Option.mem_def, mem_idOn]
-    refine ⟨fun hij ↦ ?_, fun ⟨hij, hi⟩ ↦ hij ▸ (hs hi).1⟩
+    exact hij
+  have hφ' : φ = idOn s := by
+    refine ext fun i ↦ Option.ext fun j ↦ ?_
+    rw [← Option.mem_def, ← Option.mem_def, mem_idOn]
+    refine ⟨fun hij ↦ ?_, fun ⟨hij, hi⟩ ↦ hij ▸ hs hi⟩
     obtain ⟨rfl, hi⟩ := hφ hij
     exact ⟨rfl, hi⟩
-  · rw [← Option.mem_def, ← Option.mem_def, mem_idOn]
-    refine ⟨fun hjk ↦ ?_, fun ⟨hjk, hj⟩ ↦ hjk ▸ (hs hj).2⟩
-    obtain ⟨i, hij⟩ := mem_target.1 (h.symm ▸ mem_source.2 ⟨k, hjk⟩)
-    obtain ⟨rfl, hj⟩ := hφ hij
-    exact ⟨(hmem.1 (mem_trans.2 ⟨j, hij, hjk⟩)).1, hj⟩
+  -- So `ψ` is the composite `I(s) ψ = I(s)`.
+  refine ⟨hφ', ?_⟩
+  rwa [hφ', idOn_trans_of_eq_source (by rwa [hφ', target_idOn] at h)] at hφψ
 
 /-- The inversions of a strand diagram: the pairs `i < j` of starting points whose strands cross,
 `φ j < φ i`. These are the inversions (`Finset.inversions`) of the end-point map of `φ` on its

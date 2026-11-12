@@ -562,6 +562,7 @@ theorem mem_matchedChoices {h : Finset β} {U : Finset α} :
 omit [LinearOrder α] in
 /-- There is a choice of one point of each pair in `h` exactly when `h` consists of pairs of
 `M`. -/
+@[simp]
 theorem matchedChoices_nonempty_iff {h : Finset β} :
     (matchedChoices M h).Nonempty ↔ h ⊆ univ.image M := by
   refine ⟨fun ⟨U, hU⟩ ↦ (mem_matchedChoices.1 hU).1 ▸ image_subset_image (subset_univ U),

@@ -333,6 +333,7 @@ theorem exists_of_repr_mul_ne_zero {x y : StrandsAlgebra R α} {χ : StrandDiagr
 /-- **The coefficient on an identity diagram is multiplicative.** The only factorization of the
 identity diagram `I(s)` is `I(s) I(s)` (`TauCeti.StrandDiagram.trans_eq_idOn_iff_of_target_eq`),
 so its coefficient in a product is the product of its coefficients in the factors. -/
+@[simp]
 theorem repr_mul_idOn (x y : StrandsAlgebra R α) (s : Finset α) :
     (basis R α).repr (x * y) (StrandDiagram.idOn s) =
       (basis R α).repr x (StrandDiagram.idOn s) * (basis R α).repr y (StrandDiagram.idOn s) := by

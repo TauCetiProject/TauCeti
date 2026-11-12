@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Idempotents
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Matched
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
+import TauCeti.Order.Preorder.Finite
 
 /-!
 # The primitive idempotents of the strands algebra and of `A(Z)`
@@ -24,8 +25,8 @@ is primitive in `A(Z)`. So the `I(s)` form a complete set of primitive orthogona
 tensor products of bordered Floer theory are taken over the ring of idempotents spanned by these
 `I(s)`.
 
-The coefficient ring is any commutative semiring in which `1` is primitive, such as a field, a
-domain or a local ring (`TauCeti.isPrimitiveIdempotent_one`); bordered Floer theory uses `𝔽₂`.
+The coefficient ring is any commutative semiring in which `1` is primitive, such as a field or a
+local ring (`TauCeti.isPrimitiveIdempotent_one`); bordered Floer theory uses `𝔽₂`.
 
 ## The argument
 
@@ -54,6 +55,8 @@ the vanishing summand has no coefficient on any identity diagram, so it is zero.
   of the strands algebra with no coefficient on any identity diagram is zero.
 * `TauCeti.StrandsAlgebra.isPrimitiveIdempotent_idem`: the idempotents `I(S)` of the strands algebra
   are primitive.
+* `TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_idem`: the `I(S)`, over the subsets `S`
+  of the points, are a complete family of orthogonal idempotents of the strands algebra.
 * `TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem`: the idempotents `I(s)` of the matched
   subalgebra are primitive there.
 * `TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem`: the `I(s)`, over the sets `s`
@@ -90,21 +93,16 @@ private theorem rise_trans_of_target_eq {φ ψ : StrandDiagram α} (h : φ.targe
 /-- A diagram which is not an identity diagram has a strand that rises, so its rise is
 positive. -/
 private theorem rise_pos {φ : StrandDiagram α} (hφ : φ ≠ idOn φ.source) : 0 < φ.rise := by
-  have hrank {x y : α} (hxy : x ≤ y) : #{z | z < x} ≤ #{z | z < y} :=
-    card_le_card fun z ↦ by simpa using fun hz ↦ hz.trans_le hxy
+  have hrank : StrictMono fun x : α ↦ #{z | z < x} := fun _ _ ↦ card_filter_lt_lt_card_filter_lt
   rw [rise, target_eq_image, sum_image (injOn_getD φ), ← sum_sub_distrib]
-  refine sum_pos' (fun s hs ↦ sub_nonneg.2 (by exact_mod_cast hrank (le_getD hs))) ?_
+  refine sum_pos' (fun s hs ↦ sub_nonneg.2 (by exact_mod_cast hrank.monotone (le_getD hs))) ?_
   -- Some strand rises: otherwise every strand is horizontal and `φ` is an identity diagram.
   by_contra! hflat
   refine hφ (ext fun i ↦ ?_)
   by_cases hi : i ∈ φ.source
   · have hle : (φ i).getD i ≤ i := by
       by_contra! hlt
-      have hss : ({y | y < i} : Finset α) ⊂ ({y | y < (φ i).getD i} : Finset α) := by
-        refine (ssubset_iff_of_subset fun z hz ↦ ?_).2 ⟨i, by simpa using hlt, by simp⟩
-        simp only [mem_filter, mem_univ, true_and] at hz ⊢
-        exact hz.trans hlt
-      have hlt' := card_lt_card hss
+      have hlt' : #{y | y < i} < #{y | y < (φ i).getD i} := hrank hlt
       have := hflat i hi
       omega
     have hmem := getD_mem hi
@@ -187,6 +185,16 @@ theorem isPrimitiveIdempotent_idem (hR : IsPrimitiveIdempotent (1 : R)) (S : Fin
     exact (basis R α).ne_zero _
   · rw [idem_def, basis_repr_of, Finsupp.single_eq_same]
 
+/-- **The idempotents `I(S)` of the strands algebra are a complete family of orthogonal
+idempotents**, indexed by the subsets `S` of the points: they are orthogonal idempotents summing to
+the unit. With `TauCeti.StrandsAlgebra.isPrimitiveIdempotent_idem`, they are a complete set of
+primitive orthogonal idempotents of the strands algebra. -/
+theorem completeOrthogonalIdempotents_idem :
+    CompleteOrthogonalIdempotents (idem : Finset α → StrandsAlgebra R α) where
+  idem := isIdempotentElem_idem
+  ortho _ _ := idem_mul_idem_of_ne
+  complete := sum_idem
+
 section Matched
 
 variable {β : Type*} [DecidableEq β] {M : α → β}
@@ -200,10 +208,12 @@ theorem isPrimitiveIdempotent_matchedIdem (hR : IsPrimitiveIdempotent (1 : R)) {
       matchedSubalgebra R M) := by
   have := hR.nontrivial
   obtain ⟨S, hS⟩ := matchedChoices_nonempty_iff.2 hs
-  obtain ⟨hSim, hSinj⟩ := mem_matchedChoices.1 hS
-  have hcard : #S = #s := by rw [← hSim, card_image_of_injOn hSinj]
+  have hsum : (matchedIdem R M s : StrandsAlgebra R α) = matchedSum R M (idOn S) := by
+    rw [matchedIdem_eq_horizontalCompletion, horizontalCompletion_eq_matchedSum
+      (isMatchedGenerator_idOn_empty M s) hS, idOn_addHorizontal, empty_union]
   have he : (basis R α).repr (matchedIdem R M s) (idOn S) = 1 := by
-    simp [repr_matchedIdem_apply, hSim, hcard]
+    classical
+    rw [hsum, repr_matchedSum_apply, ite_eq_left ((matchedSetoid M).iseqv.refl _)]
   -- The identity diagrams with a nonzero coefficient in `I(s)` are related to `I(S)` by moving
   -- horizontal strands within matched pairs, so elements of the matched subalgebra have equal
   -- coefficients on them.
@@ -211,9 +221,6 @@ theorem isPrimitiveIdempotent_matchedIdem (hR : IsPrimitiveIdempotent (1 : R)) {
       (ht : (basis R α).repr (matchedIdem R M s) (idOn t) ≠ 0) :
       (basis R α).repr f (idOn t) = (basis R α).repr f (idOn S) := by
     classical
-    have hsum : (matchedIdem R M s : StrandsAlgebra R α) = matchedSum R M (idOn S) := by
-      rw [matchedIdem_eq_horizontalCompletion, horizontalCompletion_eq_matchedSum
-        (isMatchedGenerator_idOn_empty M s) hS, idOn_addHorizontal, empty_union]
     rw [hsum, repr_matchedSum_apply, ite_ne_right_iff] at ht
     exact repr_eq_of_matchedSetoid f.2 ((matchedSetoid M).iseqv.symm ht.1)
   refine ⟨Subtype.ext (isIdempotentElem_matchedIdem M s), fun h0 ↦ ?_,
