@@ -235,7 +235,6 @@ theorem CurvatureDimensionInfinity.exists_dist_sq_add_dist_sq_le
   set d := dist x₀ x₁
   -- Choose `r > 0` with `2 (d / 2 + 2 r)² ≤ d² / 2 + ε`.
   set r := min 1 (ε / (4 * d + 8))
-  have hd : 0 ≤ d := dist_nonneg
   have hr : 0 < r := lt_min one_pos (by positivity)
   have hrε : 4 * d * r + 8 * r ^ 2 ≤ ε := by
     have h1 : r ≤ 1 := min_le_left _ _
@@ -368,8 +367,8 @@ theorem CurvatureDimension.mono (h : M.CurvatureDimension K N) (hK : K' ≤ K) :
   refine ⟨hac, hb, fun N' hN' ↦ (hS N' hN').trans ?_⟩
   rw [EReal.neg_le_neg_iff, EReal.coe_ennreal_le_coe_ennreal_iff]
   refine lintegral_mono fun z ↦ add_le_add (mul_le_mul_left ?_ _) (mul_le_mul_left ?_ _)
-  · exact distortionTau_left_monotone (sub_nonneg.2 ht.2) (sub_le_self _ ht.1) hK
-  · exact distortionTau_left_monotone ht.1 ht.2 hK
+  · exact distortionTau_left_monotone (sub_le_self _ ht.1) hK
+  · exact distortionTau_left_monotone ht.2 hK
 
 /-- `CD(K, N)` implies `CD(K, N')` for every `N' ≥ N`: the defining inequality is required for
 every dimension bound above `N`. -/

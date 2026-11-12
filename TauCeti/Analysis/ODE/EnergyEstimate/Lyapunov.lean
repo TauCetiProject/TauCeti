@@ -65,9 +65,11 @@ only for the closed range.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`: `D_A` is Fredholm.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_forall_eq_zero`: the same conclusion
   when the limits `A±` are hyperbolic, with no purely imaginary eigenvalue.
-* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`: combined with the degenerate-limit
-  results of `TauCeti.Analysis.ODE.TrajectoryOperator.DegenerateLimit`, for a continuous family
-  with symmetric limits `D_A` is Fredholm exactly when `A⁻` and `A⁺` are injective.
+* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff_forall_eq_zero`: combined with the
+  nonhyperbolic-limit results of `TauCeti.Analysis.ODE.TrajectoryOperator.DegenerateLimit`, `D_A`
+  is Fredholm exactly when the limits `A±` are hyperbolic.
+* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`: for a continuous family with
+  symmetric limits, `D_A` is Fredholm exactly when `A⁻` and `A⁺` are injective.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_of_hasLyapunovForm`: its index is
   `dim ker D_A - dim ker D_{-A†}`.
 
@@ -221,6 +223,28 @@ theorem isFredholm_trajectoryOperator_of_forall_eq_zero
     (hasLyapunovForm_iff_forall_eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul.mpr hminus)
     (hasLyapunovForm_iff_forall_eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul.mpr hplus) hbot htop
     AL hAL
+
+/-- **The trajectory operator is Fredholm exactly when its limits are hyperbolic.** Let `A` be a
+continuous family of operators on a finite-dimensional real inner product space with limits `A±`
+at `±∞`. Then `u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm if and only if
+neither limit has a purely imaginary eigenvalue: there are no `ω` and `v, w`, not both zero, with
+`A± v = -ω • w` and `A± w = ω • v`. Neither `A` nor its limits need to be symmetric. The
+coefficient of the operator is any `L∞` class `AL` of `A`. -/
+theorem isFredholm_trajectoryOperator_iff_forall_eq_zero (hA : Continuous A)
+    {Aminus Aplus : E →L[ℝ] E} (hbot : Tendsto A atBot (𝓝 Aminus))
+    (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).IsFredholm ↔
+      (∀ (ω : ℝ) (v w : E), Aminus v = -ω • w → Aminus w = ω • v → v = 0 ∧ w = 0) ∧
+        ∀ (ω : ℝ) (v w : E), Aplus v = -ω • w → Aplus w = ω • v → v = 0 ∧ w = 0 :=
+  ⟨fun hF ↦ ⟨fun _ _ _ hv hw ↦ Classical.byContradiction fun h ↦
+      not_isFredholm_trajectoryOperator_of_apply_eq_neg_smul_of_tendsto_atBot AL hAL hbot hv hw h
+        hF,
+    fun _ _ _ hv hw ↦ Classical.byContradiction fun h ↦
+      not_isFredholm_trajectoryOperator_of_apply_eq_neg_smul_of_tendsto_atTop AL hAL htop hv hw h
+        hF⟩,
+    fun ⟨hm, hp⟩ ↦ isFredholm_trajectoryOperator_of_forall_eq_zero hA hm hp hbot htop AL hAL⟩
 
 /-- **The trajectory operator is Fredholm exactly when its limits are invertible.** Let `A` be a
 continuous family of operators on a finite-dimensional real inner product space with symmetric
