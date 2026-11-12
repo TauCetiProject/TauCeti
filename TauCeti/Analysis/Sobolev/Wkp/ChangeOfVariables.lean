@@ -252,7 +252,7 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
 `e† ∘ D²u(e ·) ∘ e`. If `u` solves `tr (A D²u) = f` on `W` and the Hessian of `v` is bounded by
 `C` times the norm of its trace, then `‖D²u‖ ≤ (C / λ) ‖f‖`. -/
 theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ] E} (e : E ≃L[ℝ] E)
-    (hee : (e : E →L[ℝ] E) ∘L (e : E →L[ℝ] E).adjoint = A) {lam : ℝ} (hlam : 0 < lam)
+    (hee : (e : E →L[ℝ] E) ∘L (e : E →L[ℝ] E).adjoint = A) {lam : ℝ}
     (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) (hUW : (U : Set E) = e ⁻¹' W)
     {u : Wkp mu W p 2} {v : Wkp mu U p 2}
     (hD : Wkp.iteratedGradient 1 v =ᵐ[mu.restrict U] fun x =>
@@ -263,6 +263,19 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       (traceCLM ℝ E).compLpL p _ (Wkp.iteratedGradient 1 v) = g →
         ‖Wkp.iteratedGradient 1 v‖ ≤ C * ‖g‖) :
     ‖Wkp.iteratedGradient 1 u‖ ≤ C / lam * ‖f‖ := by
+  -- If `lam ≤ 0` then `he` forces `E` to be trivial and both norms vanish.
+  by_cases hlam : 0 < lam
+  swap
+  · have hE : Subsingleton E := subsingleton_of_forall_eq 0 fun x => by
+      have h := he (e x)
+      rw [Real.sqrt_eq_zero_of_nonpos (not_lt.1 hlam), inv_zero, zero_mul] at h
+      simpa using h
+    have hu : Wkp.iteratedGradient 1 u = 0 := Lp.eq_zero_iff_ae_eq_zero.2
+      (Filter.Eventually.of_forall fun x => Subsingleton.elim _ _)
+    have hf0 : f = 0 := Lp.eq_zero_iff_ae_eq_zero.2 (by
+      filter_upwards [hf] with x hx
+      rw [← hx, Subsingleton.elim (A ∘L Wkp.iteratedGradient 1 u x) 0, map_zero, Pi.zero_apply])
+    simp [hu, hf0]
   have habs := abs_det_pos e
   have hmap : (mu.restrict U).map e ≤
       (ENNReal.ofReal |(e : E →L[ℝ] E).det|)⁻¹ • mu.restrict W :=
@@ -502,7 +515,7 @@ private theorem eLpNorm_iteratedFDeriv_comp_le (h : IsChangeOfVariables k U V Φ
           fun j hj1 hji => h.norm_iteratedFDeriv_le j hj1 (hji.trans hi) x hx
     _ = ENNReal.ofReal (max 1 L ^ i) * eLpNorm (∑ π : OrderedFinpartition i,
           fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
-        rw [← Real.enorm_of_nonneg (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _),
+        rw [← Real.eNorm_of_nonneg (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _),
           ← eLpNorm_const_smul]
         congr 1
         funext x

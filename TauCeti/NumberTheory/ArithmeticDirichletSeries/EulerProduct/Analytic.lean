@@ -314,7 +314,7 @@ theorem localPowerSeries_radius_data (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ}
   dsimp
   constructor
   · exact D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P hσ
-  · rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
+  · rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe]
     exact P.norm_absNorm_cpow_neg_lt (by simpa using hs)
 
 /-- **Convergence of the finite Euler product.** Where the local Euler factors over a finite set

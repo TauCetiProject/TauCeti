@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 
 /-!
@@ -29,24 +28,19 @@ open scoped Topology RealInnerProductSpace
 
 namespace TauCeti
 
-/-- Away from the origin, a vanishing totalized derivative of a radial function forces its
-one-dimensional profile derivative to vanish. The profile need not be differentiable. -/
-theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    {v : ℝ → ℝ} {x : E} (hx : x ≠ 0)
-    (hcrit : fderiv ℝ (fun y : E ↦ v ‖y‖) x = 0) : deriv v ‖x‖ = 0 := by
-  have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
-  by_contra hv
-  have hvd := differentiableAt_of_deriv_ne_zero hv
-  have hn : DifferentiableAt ℝ (fun y : E ↦ ‖y‖) x := differentiableAt_id.norm ℝ hx
-  have hd := hvd.hasDerivAt.comp_hasFDerivAt x hn.hasFDerivAt
-  have hz : deriv v ‖x‖ • fderiv ℝ (fun y : E ↦ ‖y‖) x = 0 := hd.fderiv.symm.trans hcrit
-  have hnorm := norm_fderiv_norm hn
-  rw [(smul_eq_zero.mp hz).resolve_left hv, norm_zero] at hnorm
-  exact zero_ne_one hnorm
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- Away from the origin, a vanishing totalized derivative of a radial function forces its
+one-dimensional profile derivative to vanish. The profile need not be differentiable. -/
+theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero {v : ℝ → E} {x : F} (hx : x ≠ 0)
+    (hcrit : fderiv ℝ (fun y : F ↦ v ‖y‖) x = 0) : deriv v ‖x‖ = 0 := by
+  by_contra hv
+  have hn : DifferentiableAt ℝ (‖·‖) x := differentiableAt_id.norm ℝ hx
+  -- The chain rule, evaluated at `x`: `‖x‖ • deriv v ‖x‖ = 0` since `fderiv ℝ (‖·‖) x x = ‖x‖`.
+  have h := congr($(((differentiableAt_of_deriv_ne_zero hv).hasDerivAt.hasFDerivAt.comp x
+    hn.hasFDerivAt).fderiv.symm.trans hcrit) x)
+  exact hv (by simpa [hn.fderiv_norm_self, hx] using h)
 
 /-- A map whose norm is constant near `w` has Fréchet derivative at `w` orthogonal to its
 value. In particular, the derivative of a map into a sphere is tangent to the sphere.
@@ -73,8 +67,8 @@ theorem hasFDerivAt_sqrt_sub_norm_sq {a : ℝ} {x : F} (hx : a - ‖x‖ ^ 2 ≠
   ring
 
 /-- The Fréchet derivative of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • innerSL ℝ (x - x₀)`. -/
-theorem hasFDerivAt_norm_sq_sub {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
-    (x₀ x : G) : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
+theorem hasFDerivAt_norm_sq_sub (x₀ x : F) :
+    HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
   simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
 
 end TauCeti
