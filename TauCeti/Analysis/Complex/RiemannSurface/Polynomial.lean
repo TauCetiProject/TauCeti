@@ -198,7 +198,7 @@ theorem localMultiplicity_onePointMap_eval_infty :
       rcases eq_or_ne w 0 with rfl | hw
       · simp
       · simp [hw, invChart_symm_of_ne_zero]
-    rw [hg, show chartAt ℂ (∞ : OnePoint ℂ) ∞ = 0 by simp, analyticOrderNatAt]
+    rw [hg, chartAt_infty, invChart_infty, analyticOrderNatAt]
     by_cases hc : c = 0
     · have : analyticOrderAt (fun w : ℂ ↦ if w = 0 then (0 : ℂ) else c⁻¹) 0 = ⊤ := by
         simp [hc, analyticOrderAt_eq_top]

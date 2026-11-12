@@ -86,8 +86,9 @@ theorem localMultiplicity_onePointMap_pow_zero :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ z ^ n) ((0 : ℂ) : OnePoint ℂ) = n := by
   simpa [localMultiplicity_onePointMap_pow_coe] using localMultiplicity_pow_zero n
 
-/-- The extension of `z ↦ z ^ n` to the Riemann sphere has local multiplicity `n` at `∞`, where
-it is `w ↦ w ^ n` in the inverted chart. -/
+/-- The extension of `z ↦ z ^ n` to the Riemann sphere has local multiplicity `n` at `∞`. For
+`n ≠ 0` it is `w ↦ w ^ n` in the inverted chart. For `n = 0` it is `0` at `0` and `1` elsewhere
+there, and the multiplicity is `0` by the convention for the analytic order. -/
 @[simp]
 theorem localMultiplicity_onePointMap_pow_infty :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ z ^ n) (∞ : OnePoint ℂ) = n := by
