@@ -34,7 +34,7 @@ example (H H' : Colored3Graph Bool (Fin 2)) : H.editDiscrepancy3 H' = 0 := by
 
 -- Recoloring the single triple of a three-vertex host has discrepancy `6 / 27`.
 example : (const true : Colored3Graph Bool (Fin 3)).editDiscrepancy3 (const false) = 2 / 9 := by
-  have : {s : Set.powersetCard (Fin 3) 3 | true ≠ false} = Set.univ := by simp
+  have : {_s : Set.powersetCard (Fin 3) 3 | true ≠ false} = Set.univ := by simp
   rw [editDiscrepancy3_def]
   simp only [color_const]
   rw [this, Set.ncard_univ, Set.powersetCard.card]

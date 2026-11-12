@@ -65,7 +65,7 @@ namespace Complex
 private theorem real_ne_neg_nat_of_pos {x : ℝ} (hx : 0 < x) :
     ∀ m : ℕ, x ≠ -(m : ℝ) := by
   intro m
-  linarith [Nat.cast_nonneg (α := ℝ) m]
+  linarith
 
 private theorem ofReal_ne_neg_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
     ∀ m : ℕ, (x : ℂ) ≠ -(m : ℂ) := by

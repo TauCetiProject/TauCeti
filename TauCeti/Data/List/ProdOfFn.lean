@@ -36,50 +36,50 @@ a fixed position. -/
 theorem exists_prod_ofFn_insertNth_insertNth {D M : Type*} [Monoid M] (β : D → M)
     {n : ℕ} (p : Fin (n + 1)) (u : Fin n → D) :
     ∃ L R : M, ∀ d e : D,
-      (List.ofFn fun t ↦
+      (ofFn fun t ↦
         β ((Fin.insertNth p.castSucc d (Fin.insertNth p e u) : Fin (n + 2) → D) t)).prod =
         L * β d * β e * R := by
   induction n with
   | zero =>
     obtain rfl : p = 0 := Fin.fin_one_eq_zero p
-    exact ⟨1, 1, fun d e ↦ by simp [List.ofFn_succ, Fin.insertNth_zero']⟩
+    exact ⟨1, 1, fun d e ↦ by simp [ofFn_succ, Fin.insertNth_zero']⟩
   | succ n ih =>
     rcases Fin.eq_zero_or_eq_succ p with rfl | ⟨q, rfl⟩
-    · exact ⟨1, (List.ofFn fun t ↦ β (u t)).prod, fun d e ↦ by
-        simp [List.ofFn_succ, Fin.insertNth_zero', mul_assoc]⟩
+    · exact ⟨1, (ofFn fun t ↦ β (u t)).prod, fun d e ↦ by
+        simp [ofFn_succ, Fin.insertNth_zero', mul_assoc]⟩
     · obtain ⟨L, R, h⟩ := ih q (Fin.tail u)
       refine ⟨β (u 0) * L, R, fun d e ↦ ?_⟩
       rw [← Fin.cons_self_tail u, Fin.insertNth_succ_cons, ← Fin.succ_castSucc,
-        Fin.insertNth_succ_cons, List.ofFn_succ, List.prod_cons]
+        Fin.insertNth_succ_cons, ofFn_succ, prod_cons]
       simp only [Fin.cons_zero, Fin.cons_succ, h, mul_assoc]
 
 /-- A nonempty product `f₀ f₁ ⋯ fₙ` is the left fold of `f₁, …, fₙ` starting from `f₀`. -/
 theorem prod_ofFn_eq_foldl {M : Type*} [Monoid M] {n : ℕ} (f : Fin (n + 1) → M) :
-    (List.ofFn f).prod = (List.ofFn fun i : Fin n ↦ f i.succ).foldl (· * ·) (f 0) := by
-  rw [List.ofFn_succ, List.prod_cons, List.prod_eq_foldl,
-    ← List.foldl_assoc (op := fun x y : M ↦ x * y), mul_one]
+    (ofFn f).prod = (ofFn fun i : Fin n ↦ f i.succ).foldl (· * ·) (f 0) := by
+  rw [ofFn_succ, prod_cons, prod_eq_foldl,
+    ← foldl_assoc (op := fun x y : M ↦ x * y), mul_one]
 
 /-- A multiplicative map, not necessarily unital, carries a left fold of products to the left
 fold of the images. -/
 theorem map_foldl_ofFn_mul {F R S : Type*} [Mul R] [Mul S] [FunLike F R S]
     [MulHomClass F R S] (g : F) {n : ℕ} (f : Fin n → R) (x : R) :
-    g ((List.ofFn f).foldl (· * ·) x) = (List.ofFn fun i ↦ g (f i)).foldl (· * ·) (g x) := by
-  rw [← Function.comp_def, ← List.map_ofFn, List.foldl_map,
-    List.foldl_hom g fun x y ↦ (map_mul g x y).symm]
+    g ((ofFn f).foldl (· * ·) x) = (ofFn fun i ↦ g (f i)).foldl (· * ·) (g x) := by
+  rw [← Function.comp_def, ← map_ofFn, foldl_map,
+    foldl_hom g fun x y ↦ (map_mul g x y).symm]
 
 /-- The product of a word of length `n + 1` whose letters all equal `c` except for the letter `a` in
 position `p` is `c ^ p * a * c ^ (n - p)`. -/
 theorem prod_ofFn_ite {M : Type*} [Monoid M] (a c : M) :
     ∀ (n : ℕ) (p : Fin (n + 1)),
-      (List.ofFn fun i : Fin (n + 1) ↦ if i = p then a else c).prod =
+      (ofFn fun i : Fin (n + 1) ↦ if i = p then a else c).prod =
         c ^ (p : ℕ) * a * c ^ (n - p)
   | 0, p => by
     obtain rfl : p = 0 := Fin.fin_one_eq_zero p
     simp
   | n + 1, p => by
-    rw [List.ofFn_succ, List.prod_cons]
+    rw [ofFn_succ, prod_cons]
     refine Fin.cases ?_ (fun q ↦ ?_) p
-    · simp [List.ofFn_const, pow_succ']
+    · simp [ofFn_const, pow_succ']
     · have h := prod_ofFn_ite a c n q
       have h0 : ¬ ((0 : Fin (n + 1 + 1)) = q.succ) := (Fin.succ_ne_zero q).symm
       simp only [Fin.succ_inj, h0, ite_false, Fin.val_succ] at h ⊢
