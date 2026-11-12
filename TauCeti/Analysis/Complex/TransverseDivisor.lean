@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.Analysis.Contour.Argument.PowerSum
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Convex.PathConnected
+import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.RingTheory.Polynomial.PrescribedPowerSums
 
 /-!
@@ -20,7 +21,7 @@ its divisor of zeros. Suppose the zeros are **confined**: `f (x, w) ≠ 0` whene
 one constant `K` and every `x`. Then the transverse divisor does not depend on the base point:
 there is a single multiset `s` of points of the open disc of radius `K` such that the order of
 vanishing of every slice `w ↦ f (x, w)` at every `w` is the multiplicity of `w` in `s`
-(`TauCeti.exists_forall_analyticOrderAt_eq_count`).
+(`Differentiable.exists_forall_analyticOrderAt_eq_count`).
 
 This is the classification step for the holomorphic zero divisors that arise as rescaled limits
 of Seiberg–Witten solutions along a pseudoholomorphic curve. In Taubes's analysis such a limit
@@ -29,9 +30,11 @@ disc, and the conclusion here says that the divisor is the product of `ℂ_base`
 divisor of `ℂ_normal`. A confined holomorphic divisor of `ℂ × ℂ` is therefore never a nontrivial
 holomorphic family of plane divisors.
 
-The proof is the classical one through symmetric functions. Choose `R > K`. For each `x`, the
-`k`-th power sum of the zeros of the slice in the disc of radius `R` is the contour integral
-`(2πi)⁻¹ ∮ ζᵏ ∂_w f (x, ζ) / f (x, ζ)`
+Restricting `f` to the complex line through `0` and `x` reduces the statement to a base `ℂ`, where
+a holomorphic function is analytic (`DifferentiableOn.analyticOnNhd_of_finiteDimensional`). For an
+analytic `f`, the proof is the classical one through symmetric functions. Choose `R > K`. For each
+`x`, the `k`-th power sum of the zeros of the slice in the disc of radius `R` is the contour
+integral `(2πi)⁻¹ ∮ ζᵏ ∂_w f (x, ζ) / f (x, ζ)`
 (`TauCeti.Contour.sum_map_pow_zeroMultiset_eq_circleIntegral_fderiv`), which is holomorphic in `x`
 (`TauCeti.Contour.differentiableOn_sum_map_pow_zeroMultiset`). For `k = 0` it is
 the number of zeros, which is therefore constant, say `N`. The `k`-th power sum is then bounded by
@@ -40,10 +43,10 @@ the multiset of zeros (`TauCeti.roots_newtonPolynomial_sum_map_pow`).
 
 ## Main results
 
-* `TauCeti.exists_forall_analyticOrderAt_eq_count`: a holomorphic function on `E × ℂ` whose zeros
-  are confined to `‖w‖ < K` has a base-independent transverse divisor, given by a multiset of
+* `Differentiable.exists_forall_analyticOrderAt_eq_count`: a holomorphic function on `E × ℂ` whose
+  zeros are confined to `‖w‖ < K` has a base-independent transverse divisor, given by a multiset of
   points of norm less than `K`.
-* `TauCeti.analyticOrderAt_eq_of_forall_le_norm_ne_zero`: the same conclusion, comparing the
+* `Differentiable.analyticOrderAt_eq_of_forall_le_norm_ne_zero`: the same conclusion, comparing the
   slices over two base points.
 
 ## References
@@ -62,11 +65,9 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- **Base-independence of a confined transverse divisor.** Let `f : E × ℂ → ℂ` be holomorphic,
-and suppose that `f (x, w) ≠ 0` whenever `K ≤ ‖w‖`. Then there is a multiset `s` of points of
-norm less than `K` such that for every base point `x` and every `w`, the order of vanishing of
-`w ↦ f (x, w)` at `w` is the multiplicity of `w` in `s`. -/
-theorem exists_forall_analyticOrderAt_eq_count {f : E × ℂ → ℂ} (hf : AnalyticOnNhd ℂ f univ)
+/-- The case of `Differentiable.exists_forall_analyticOrderAt_eq_count` where `f` is analytic. -/
+private theorem exists_forall_analyticOrderAt_eq_count_of_analyticOnNhd {f : E × ℂ → ℂ}
+    (hf : AnalyticOnNhd ℂ f univ)
     {K : ℝ} (hK : ∀ x w, K ≤ ‖w‖ → f (x, w) ≠ 0) :
     ∃ s : Multiset ℂ, (∀ a ∈ s, ‖a‖ < K) ∧
       ∀ x w, analyticOrderAt (fun w ↦ f (x, w)) w = s.count w := by
@@ -80,7 +81,7 @@ theorem exists_forall_analyticOrderAt_eq_count {f : E × ℂ → ℂ} (hf : Anal
     fun w _ ↦ (hf (x, w) trivial).curry_right
   have hsphere (x : E) : ∀ ζ ∈ sphere (0 : ℂ) R, f (x, ζ) ≠ 0 := fun ζ hζ ↦
     hK x ζ (by rw [mem_sphere_zero_iff_norm.1 hζ]; exact hKR.le)
-  set Z : E → Multiset ℂ := fun x ↦ Contour.zeroMultiset (hslice x)
+  set Z : E → Multiset ℂ := fun x ↦ (hslice x).zeroMultiset
   have hdiff (k : ℕ) : Differentiable ℂ fun x ↦ ((Z x).map (· ^ k)).sum :=
     differentiableOn_univ.1 <| Contour.differentiableOn_sum_map_pow_zeroMultiset isOpen_univ hR
       hf' (fun x _ ↦ hsphere x) (fun _ _ ↦ rfl) k
@@ -102,7 +103,7 @@ theorem exists_forall_analyticOrderAt_eq_count {f : E × ℂ → ℂ} (hf : Anal
     obtain ⟨a, ha, rfl⟩ := Multiset.mem_map.1 ht
     rw [Function.comp_apply, norm_pow]
     exact pow_le_pow_left₀ (norm_nonneg a)
-      (mem_ball_zero_iff.1 (Contour.mem_ball_of_mem_zeroMultiset (hslice y) ha)).le k
+      (mem_ball_zero_iff.1 ((hslice y).mem_ball_of_mem_zeroMultiset ha)).le k
   -- Newton's identities recover each multiset of zeros from its power sums.
   have hZ (x : E) : Z x = Z 0 := by
     rw [← roots_newtonPolynomial_sum_map_pow (Z x), ← roots_newtonPolynomial_sum_map_pow (Z 0),
@@ -110,24 +111,54 @@ theorem exists_forall_analyticOrderAt_eq_count {f : E × ℂ → ℂ} (hf : Anal
   have horder (x : E) {w : ℂ} (hw : w ∈ closedBall 0 R) :
       analyticOrderAt (fun w ↦ f (x, w)) w = (Z 0).count w := by
     rw [← hZ x]
-    exact Contour.analyticOrderAt_eq_count_zeroMultiset (hslice x) (hsphere x) hw
+    exact (hslice x).analyticOrderAt_eq_count_zeroMultiset (hsphere x) hw
   have hmem (a : ℂ) (ha : a ∈ Z 0) : ‖a‖ < K := by
     by_contra hKa
-    exact hK 0 a (not_lt.1 hKa) ((Contour.mem_zeroMultiset_iff (hslice 0) (hsphere 0)).1 ha).2
+    exact hK 0 a (not_lt.1 hKa) (((hslice 0).mem_zeroMultiset_iff (hsphere 0)).1 ha).2
   refine ⟨Z 0, hmem, fun x w ↦ ?_⟩
   by_cases hKw : K ≤ ‖w‖
   · rw [(hf (x, w) trivial).curry_right.analyticOrderAt_eq_zero.2 (hK x w hKw),
       Multiset.count_eq_zero.2 fun hw ↦ (hmem w hw).not_ge hKw, Nat.cast_zero]
   · exact horder x (mem_closedBall_zero_iff.2 (by grind))
 
+end TauCeti
+
+namespace Differentiable
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- **Base-independence of a confined transverse divisor.** Let `f : E × ℂ → ℂ` be holomorphic,
+and suppose that `f (x, w) ≠ 0` whenever `K ≤ ‖w‖`. Then there is a multiset `s` of points of
+norm less than `K` such that for every base point `x` and every `w`, the order of vanishing of
+`w ↦ f (x, w)` at `w` is the multiplicity of `w` in `s`. -/
+theorem exists_forall_analyticOrderAt_eq_count {f : E × ℂ → ℂ} (hf : Differentiable ℂ f)
+    {K : ℝ} (hK : ∀ x w, K ≤ ‖w‖ → f (x, w) ≠ 0) :
+    ∃ s : Multiset ℂ, (∀ a ∈ s, ‖a‖ < K) ∧
+      ∀ x w, analyticOrderAt (fun w ↦ f (x, w)) w = s.count w := by
+  -- On the complex line through `0` and `x`, `f` is a holomorphic function on `ℂ × ℂ`, hence
+  -- analytic.
+  have hline (x : E) : ∃ s : Multiset ℂ, (∀ a ∈ s, ‖a‖ < K) ∧
+      ∀ (t : ℂ) w, analyticOrderAt (fun w ↦ f (t • x, w)) w = s.count w :=
+    TauCeti.exists_forall_analyticOrderAt_eq_count_of_analyticOnNhd
+      (f := fun p : ℂ × ℂ ↦ f (p.1 • x, p.2))
+      ((hf.comp ((differentiable_fst.smul_const x).prodMk differentiable_snd)).differentiableOn
+        |>.analyticOnNhd_of_finiteDimensional isOpen_univ)
+      fun t w hw ↦ hK _ w hw
+  have hbase (x : E) (w : ℂ) :
+      analyticOrderAt (fun w ↦ f (x, w)) w = analyticOrderAt (fun w ↦ f (0, w)) w := by
+    obtain ⟨s, -, hs⟩ := hline x
+    simpa using (hs 1 w).trans (hs 0 w).symm
+  obtain ⟨s, hsK, hs⟩ := hline 0
+  exact ⟨s, hsK, fun x w ↦ (hbase x w).trans (by simpa using hs 0 w)⟩
+
 /-- **Base-independence of a confined transverse divisor, pairwise form.** If `f : E × ℂ → ℂ` is
 holomorphic and `f (x, w) ≠ 0` whenever `K ≤ ‖w‖`, then the slices `w ↦ f (x, w)` and
 `w ↦ f (y, w)` over any two base points have the same order of vanishing at every point. -/
 theorem analyticOrderAt_eq_of_forall_le_norm_ne_zero {f : E × ℂ → ℂ}
-    (hf : AnalyticOnNhd ℂ f univ) {K : ℝ} (hK : ∀ x w, K ≤ ‖w‖ → f (x, w) ≠ 0) (x y : E)
+    (hf : Differentiable ℂ f) {K : ℝ} (hK : ∀ x w, K ≤ ‖w‖ → f (x, w) ≠ 0) (x y : E)
     (w : ℂ) :
     analyticOrderAt (fun w ↦ f (x, w)) w = analyticOrderAt (fun w ↦ f (y, w)) w := by
-  obtain ⟨s, -, hs⟩ := exists_forall_analyticOrderAt_eq_count hf hK
+  obtain ⟨s, -, hs⟩ := hf.exists_forall_analyticOrderAt_eq_count hK
   rw [hs, hs]
 
-end TauCeti
+end Differentiable

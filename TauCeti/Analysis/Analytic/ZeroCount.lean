@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Meromorphic.Basic
+public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.Analysis.RCLike.Basic
-import Mathlib.Analysis.Meromorphic.Divisor
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Analytic.IsolatedZeros
+import TauCeti.Analysis.Meromorphic.Divisor
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # The zero count of an analytic function on a disc
@@ -24,6 +26,12 @@ The zero count of `f` on an open disc is the finitely supported sum
 four facts about that sum which those consumers need, none of which mentions either theorem.
 They are stated for a function `f : 𝕜 → E` into a normed space; the detection criterion needs the
 closed disc to be preconnected, so it is stated over `RCLike 𝕜`.
+
+The same zeros, listed with multiplicity rather than summed, form the finite multiset
+`AnalyticOnNhd.zeroMultiset`, read off from Mathlib's `MeromorphicOn.divisor`. When `f` has no
+zero on the bounding sphere, the multiplicity of each point of the closed disc is its order of
+vanishing. Symmetric functions of this multiset are what the weighted argument principle
+(`TauCeti.Contour.sum_map_zeroMultiset_eq_circleIntegral`) computes.
 
 Care is needed about points of *infinite* order, where `f` vanishes identically nearby:
 `analyticOrderNatAt` reads `0` there, exactly as it does where `f` does not vanish at all, so the
@@ -45,6 +53,13 @@ order there to every point.
 * `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff` — conversely, given a point of the
   closed disc where `f` does not vanish, a count of `0` means there is no zero in the open disc at
   all.
+* `AnalyticOnNhd.zeroMultiset` — the zeros in the open disc, counted with multiplicity
+  (`AnalyticOnNhd.natCast_count_zeroMultiset`).
+* `AnalyticOnNhd.mem_zeroMultiset_iff`, `AnalyticOnNhd.analyticOrderAt_eq_count_zeroMultiset` —
+  with no zero on the sphere, its members are the zeros in the open disc and its multiplicities are
+  the orders of vanishing.
+* `AnalyticOnNhd.zeroMultiset_eq_replicate` — a single zero of order `d` at the center gives `d`
+  copies of the center.
 
 ## References
 
@@ -131,5 +146,111 @@ theorem AnalyticOnNhd.exists_finset_finsum_analyticOrderNatAt_ball_eq_sum {g : �
   · exact (hfin.mem_toFinset (a := z)).2
       ⟨hz.1, apply_eq_zero_of_analyticOrderNatAt_ne_zero (Function.mem_support.1 hz.2)⟩
   · exact (Finset.mem_coe.1 hz |> hfin.mem_toFinset.1).1
+
+/-! ### The multiset of zeros in a disc -/
+
+namespace AnalyticOnNhd
+
+variable {g : 𝕜 → E}
+
+/-- The multiset of zeros in `ball c R` of a function `g` analytic on `closedBall c R`, counted with
+multiplicity via `MeromorphicOn.divisor` (see `AnalyticOnNhd.natCast_count_zeroMultiset`). -/
+noncomputable def zeroMultiset (hg : AnalyticOnNhd 𝕜 g (closedBall c R)) : Multiset 𝕜 :=
+  (Finsupp.ofSupportFinite (fun z ↦ (MeromorphicOn.divisor g (ball c R) z).toNat) <|
+    (MeromorphicOn.divisor_ball_support_finite hg.meromorphicOn).subset fun z hz ↦
+      Function.mem_support.2 fun h0 ↦ Function.mem_support.1 hz (by simp [h0])).toMultiset
+
+/-- The multiplicity of a point in `zeroMultiset` is the value of Mathlib's
+`MeromorphicOn.divisor` of `g` on `ball c R` there. -/
+@[simp]
+theorem natCast_count_zeroMultiset [DecidableEq 𝕜] (hg : AnalyticOnNhd 𝕜 g (closedBall c R))
+    (z : 𝕜) :
+    (Multiset.count z hg.zeroMultiset : ℤ) = MeromorphicOn.divisor g (ball c R) z := by
+  rw [zeroMultiset, Finsupp.count_toMultiset, Finsupp.ofSupportFinite_coe]
+  exact Int.toNat_of_nonneg
+    (MeromorphicOn.AnalyticOnNhd.divisor_nonneg (hg.mono ball_subset_closedBall) z)
+
+/-- The zeros counted by `zeroMultiset` lie in the open disc. -/
+theorem mem_ball_of_mem_zeroMultiset (hg : AnalyticOnNhd 𝕜 g (closedBall c R)) {a : 𝕜}
+    (ha : a ∈ hg.zeroMultiset) : a ∈ ball c R := by
+  classical
+  refine (MeromorphicOn.divisor g (ball c R)).supportWithinDomain
+    (Function.mem_support.2 fun h0 ↦ ?_)
+  have h := hg.natCast_count_zeroMultiset a
+  rw [h0, Nat.cast_eq_zero, Multiset.count_eq_zero] at h
+  exact h ha
+
+/-- If `g` has no zero on `sphere c R`, the multiplicity of a point of the closed disc in
+`zeroMultiset` is the meromorphic order of `g` there. -/
+theorem meromorphicOrderAt_eq_count_zeroMultiset [DecidableEq 𝕜]
+    (hg : AnalyticOnNhd 𝕜 g (closedBall c R)) (hsphere : ∀ ζ ∈ sphere c R, g ζ ≠ 0)
+    {z : 𝕜} (hz : z ∈ closedBall c R) :
+    meromorphicOrderAt g z = ((Multiset.count z hg.zeroMultiset : ℕ) : WithTop ℤ) := by
+  rcases (ball_union_sphere (x := c) (ε := R) ▸ hz) with hzb | hzs
+  · rw [← WithTop.coe_untop₀_of_ne_top
+        (hg.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero hsphere hz),
+      ← (hg.mono ball_subset_closedBall).meromorphicOn.divisor_apply hzb,
+      ← hg.natCast_count_zeroMultiset z]
+    norm_cast
+  · have hc0 : Multiset.count z hg.zeroMultiset = 0 := Multiset.count_eq_zero.2 fun hmem ↦
+      (mem_ball.1 (hg.mem_ball_of_mem_zeroMultiset hmem)).ne (mem_sphere.1 hzs)
+    rw [(hg z hz).meromorphicOrderAt_eq, (hg z hz).analyticOrderAt_eq_zero.2 (hsphere z hzs), hc0]
+    simp
+
+/-- If `g` has no zero on `sphere c R`, the multiplicity of a point of the closed disc in
+`zeroMultiset` is the order of vanishing of `g` there. -/
+theorem analyticOrderAt_eq_count_zeroMultiset [DecidableEq 𝕜]
+    (hg : AnalyticOnNhd 𝕜 g (closedBall c R)) (hsphere : ∀ ζ ∈ sphere c R, g ζ ≠ 0)
+    {z : 𝕜} (hz : z ∈ closedBall c R) :
+    analyticOrderAt g z = Multiset.count z hg.zeroMultiset := by
+  have h := hg.meromorphicOrderAt_eq_count_zeroMultiset hsphere hz
+  rw [(hg z hz).meromorphicOrderAt_eq] at h
+  exact ENat.map_natCast_injective (by simpa using h)
+
+/-- If `g` has no zero on `sphere c R`, the members of `zeroMultiset` are exactly the zeros of `g`
+in the open disc. -/
+@[simp]
+theorem mem_zeroMultiset_iff (hg : AnalyticOnNhd 𝕜 g (closedBall c R))
+    (hsphere : ∀ ζ ∈ sphere c R, g ζ ≠ 0) {a : 𝕜} :
+    a ∈ hg.zeroMultiset ↔ a ∈ ball c R ∧ g a = 0 := by
+  classical
+  refine ⟨fun ha ↦ ⟨hg.mem_ball_of_mem_zeroMultiset ha, ?_⟩, fun ⟨ha, h0⟩ ↦ ?_⟩
+  · have hac := ball_subset_closedBall (hg.mem_ball_of_mem_zeroMultiset ha)
+    have h := hg.analyticOrderAt_eq_count_zeroMultiset hsphere hac
+    by_contra hne
+    rw [(hg a hac).analyticOrderAt_eq_zero.2 hne] at h
+    exact Multiset.count_ne_zero.2 ha (by exact_mod_cast h.symm)
+  · have h := hg.analyticOrderAt_eq_count_zeroMultiset hsphere (ball_subset_closedBall ha)
+    refine Multiset.count_ne_zero.1 fun hc ↦ ?_
+    rw [hc, Nat.cast_zero, (hg a (ball_subset_closedBall ha)).analyticOrderAt_eq_zero] at h
+    exact h h0
+
+/-- If `c` is the only zero of `g` on `closedBall c R` and `g` vanishes there to order `d`, then
+`zeroMultiset` is `d` copies of `c`. -/
+theorem zeroMultiset_eq_replicate (hg : AnalyticOnNhd 𝕜 g (closedBall c R)) (hR : 0 < R)
+    {d : ℕ} (hd : analyticOrderAt g c = d) (honly : ∀ z ∈ closedBall c R, z ≠ c → g z ≠ 0) :
+    hg.zeroMultiset = Multiset.replicate d c := by
+  classical
+  have hgb : AnalyticOnNhd 𝕜 g (ball c R) := hg.mono ball_subset_closedBall
+  ext z
+  rw [Multiset.count_replicate]
+  have hcount := hg.natCast_count_zeroMultiset z
+  split_ifs with hcz
+  · subst hcz
+    rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hgb.meromorphicOn
+      (hg c (mem_closedBall_self hR.le)) (mem_ball_self hR), analyticOrderNatAt, hd,
+      ENat.toNat_natCast] at hcount
+    exact_mod_cast hcount
+  · by_cases hzb : z ∈ ball c R
+    · rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hgb.meromorphicOn
+        (hg z (ball_subset_closedBall hzb)) hzb, analyticOrderNatAt,
+        (hg z (ball_subset_closedBall hzb)).analyticOrderAt_eq_zero.2
+          (honly z (ball_subset_closedBall hzb) (Ne.symm hcz)),
+        ENat.toNat_zero, Nat.cast_zero] at hcount
+      exact_mod_cast hcount
+    · rw [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hzb] at hcount
+      exact_mod_cast hcount
+
+end AnalyticOnNhd
 
 end RCLike

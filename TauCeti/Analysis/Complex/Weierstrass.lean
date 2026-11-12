@@ -20,8 +20,6 @@ import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Analysis.Analytic.Multiset
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Contour.Argument.PowerSum
-import TauCeti.Analysis.Meromorphic.Divisor
-import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.Analysis.Polynomial.Order
 import TauCeti.Analysis.Polynomial.SimpleRoots.Basic
 
@@ -90,37 +88,12 @@ open Contour
 
 section Aux
 
-private theorem zeroMultiset_eq_replicate_zero {g : ℂ → ℂ} {R : ℝ} {d : ℕ} (hR : 0 < R)
-    (hg : AnalyticOnNhd ℂ g (closedBall 0 R)) (hd : analyticOrderAt g 0 = d)
-    (honly : ∀ z ∈ closedBall 0 R, z ≠ 0 → g z ≠ 0) :
-    zeroMultiset hg = Multiset.replicate d 0 := by
-  classical
-  have hgb : AnalyticOnNhd ℂ g (ball 0 R) := hg.mono ball_subset_closedBall
-  ext z
-  rw [Multiset.count_replicate]
-  have hcount := natCast_count_zeroMultiset hg z
-  split_ifs with hz0
-  · subst hz0
-    rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hgb.meromorphicOn
-      (hg 0 (mem_closedBall_self hR.le)) (mem_ball_self hR), analyticOrderNatAt, hd,
-      ENat.toNat_natCast] at hcount
-    exact_mod_cast hcount
-  · by_cases hzb : z ∈ ball 0 R
-    · rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hgb.meromorphicOn
-        (hg z (ball_subset_closedBall hzb)) hzb, analyticOrderNatAt,
-        (hg z (ball_subset_closedBall hzb)).analyticOrderAt_eq_zero.2
-          (honly z (ball_subset_closedBall hzb) (Ne.symm hz0)),
-        ENat.toNat_zero, Nat.cast_zero] at hcount
-      exact_mod_cast hcount
-    · rw [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hzb] at hcount
-      exact_mod_cast hcount
-
 /-- On a closed disc where `g` is analytic and boundary-nonvanishing, dividing `g` by the monic
 polynomial of its interior zeros produces a nonvanishing analytic factor represented in the open
 disc by Cauchy's integral formula. -/
 private theorem exists_slice_weierstrassFactor {g : ℂ → ℂ} {R : ℝ} (hR : 0 < R)
     (hg : AnalyticOnNhd ℂ g (closedBall 0 R)) (hsphere : ∀ ζ ∈ sphere 0 R, g ζ ≠ 0) :
-    let P : ℂ[X] := ((zeroMultiset hg).map (fun α ↦ X - C α)).prod
+    let P : ℂ[X] := (hg.zeroMultiset.map (fun α ↦ X - C α)).prod
     ∃ u₀ : ℂ → ℂ, AnalyticOnNhd ℂ u₀ (closedBall 0 R) ∧ (∀ z ∈ closedBall 0 R, u₀ z ≠ 0) ∧
       (∀ z ∈ closedBall 0 R, g z = P.eval z * u₀ z) ∧
       (∀ w ∈ ball 0 R, u₀ w = (2 * π * I)⁻¹ * ∮ ζ in C(0, R), (ζ - w)⁻¹ * (g ζ / P.eval ζ)) := by
@@ -128,21 +101,21 @@ private theorem exists_slice_weierstrassFactor {g : ℂ → ℂ} {R : ℝ} (hR :
   have hP_an (w : ℂ) : AnalyticAt ℂ (fun z ↦ P.eval z) w :=
     (AnalyticOnNhd.eval_polynomial P) w trivial
   have hp0 : P ≠ 0 := (monic_multiset_prod_of_monic _ _ fun α _ ↦ monic_X_sub_C α).ne_zero
-  have hr : P.roots = zeroMultiset hg := roots_multiset_prod_X_sub_C (zeroMultiset hg)
+  have hr : P.roots = hg.zeroMultiset := roots_multiset_prod_X_sub_C hg.zeroMultiset
   have hP_ord (z : ℂ) : meromorphicOrderAt (fun w ↦ P.eval w) z =
-      ((Multiset.count z (zeroMultiset hg) : ℕ) : WithTop ℤ) := by
+      ((Multiset.count z hg.zeroMultiset : ℕ) : WithTop ℤ) := by
     rw [(hP_an z).meromorphicOrderAt_eq, Polynomial.analyticOrderAt_eval hp0 z,
-      ← Polynomial.count_roots, hr]
-    simp
+      ← Polynomial.count_roots, hr, ENat.map_natCast]
+    rfl
   have hP_sphere {ζ : ℂ} (hζ : ζ ∈ sphere 0 R) : P.eval ζ ≠ 0 := fun h0 ↦
-    (mem_ball.1 (mem_ball_of_mem_zeroMultiset hg (by rwa [← hr, mem_roots hp0]))).ne
+    (mem_ball.1 (hg.mem_ball_of_mem_zeroMultiset (by rwa [← hr, mem_roots hp0]))).ne
       (mem_sphere.1 hζ)
   set q : ℂ → ℂ := g / fun w ↦ P.eval w
   have hq_mero : MeromorphicOn q (closedBall 0 R) :=
     hg.meromorphicOn.div (AnalyticOnNhd.meromorphicOn fun w _ ↦ hP_an w)
   have hq_ord {z : ℂ} (hz : z ∈ closedBall 0 R) : meromorphicOrderAt q z = 0 := by
     rw [meromorphicOrderAt_div (hg z hz).meromorphicAt (hP_an z).meromorphicAt,
-      meromorphicOrderAt_eq_count_zeroMultiset hg hsphere hz, hP_ord z]
+      hg.meromorphicOrderAt_eq_count_zeroMultiset hsphere hz, hP_ord z]
     simp
   set u₀ := toMeromorphicNFOn q (closedBall 0 R)
   have hu₀_nf : MeromorphicNFOn u₀ (closedBall 0 R) := meromorphicNFOn_toMeromorphicNFOn q _
@@ -189,18 +162,18 @@ private theorem exists_analyticOnNhd_zeroPolynomial
       (∀ i, AnalyticOnNhd ℂ (c i) U) ∧ (∀ i, c i x₀ = 0) ∧
       ∀ x (hx : x ∈ U),
         Polynomial.monicOfCoeff (fun i ↦ c i x) =
-          ((zeroMultiset (g := fun w ↦ F (x, w)) fun w hw ↦ (hF_an x hx w hw).curry_right).map
-            (fun α ↦ X - C α)).prod := by
+          ((AnalyticOnNhd.zeroMultiset (g := fun w ↦ F (x, w)) fun w hw ↦
+            (hF_an x hx w hw).curry_right).map (fun α ↦ X - C α)).prod := by
   classical
   have hFx_an {x : E} (hx : x ∈ U) : AnalyticOnNhd ℂ (fun w ↦ F (x, w)) (closedBall 0 R) :=
     fun w hw ↦ (hF_an x hx w hw).curry_right
-  let Z : E → Multiset ℂ := fun x ↦ if hx : x ∈ U then zeroMultiset (hFx_an hx) else 0
-  have hZ_eq {x : E} (hx : x ∈ U) : Z x = zeroMultiset (hFx_an hx) := dite_eq_left hx
+  let Z : E → Multiset ℂ := fun x ↦ if hx : x ∈ U then (hFx_an hx).zeroMultiset else 0
+  have hZ_eq {x : E} (hx : x ∈ U) : Z x = (hFx_an hx).zeroMultiset := dite_eq_left hx
   have hpow_an (k : ℕ) : AnalyticOnNhd ℂ (fun x ↦ ((Z x).map (· ^ k)).sum) U :=
     (differentiableOn_sum_map_pow_zeroMultiset hU hR hF_an hF_sphere (fun _ hx ↦ hZ_eq hx)
       k).analyticOnNhd_of_finiteDimensional hU
   have hZ0 : Z x₀ = Multiset.replicate d 0 :=
-    (hZ_eq hx₀).trans (zeroMultiset_eq_replicate_zero hR (hFx_an hx₀) hF_ord hF_only)
+    (hZ_eq hx₀).trans ((hFx_an hx₀).zeroMultiset_eq_replicate hR hF_ord hF_only)
   have hcard {x : E} (hx : x ∈ U) : (Z x).card = d := by
     simpa [hZ0] using card_zeroMultiset_eq_of_isPreconnected hU hU_conn hR hF_an hF_sphere
       (fun _ hx ↦ hZ_eq hx) hx hx₀
@@ -251,8 +224,8 @@ private theorem exists_analyticAt_weierstrassUnit
     (hc : ∀ i, AnalyticAt ℂ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0)
     (hmonic : ∀ x (hx : x ∈ U),
       Polynomial.monicOfCoeff (fun i ↦ c i x) =
-        ((zeroMultiset (g := fun w ↦ F (x, w)) fun w hw ↦ (hF_an x hx w hw).curry_right).map
-          (fun α ↦ X - C α)).prod) :
+        ((AnalyticOnNhd.zeroMultiset (g := fun w ↦ F (x, w)) fun w hw ↦
+          (hF_an x hx w hw).curry_right).map (fun α ↦ X - C α)).prod) :
     ∃ u : E × ℂ → ℂ, AnalyticAt ℂ u (x₀, 0) ∧ u (x₀, 0) ≠ 0 ∧
       ∀ x ∈ U, ∀ w ∈ ball 0 R,
         F (x, w) = (Polynomial.monicOfCoeff (fun i ↦ c i x)).eval w * u (x, w) := by
