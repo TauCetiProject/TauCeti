@@ -36,6 +36,8 @@ uniqueness mechanism for the curvature equation of conformal metrics on closed s
 * `TauCeti.Manifold.exists_forall_le_and_laplaceBeltrami_nonpos`: on a compact manifold a `C²`
   function attains its maximum at a point where `Δ` is nonpositive.
 * `TauCeti.Manifold.le_of_le_laplaceBeltrami_of_laplaceBeltrami_le`: the comparison principle.
+* `TauCeti.Manifold.le_one_add_mul_div_of_laplaceBeltrami_le`: the bound `u ≤ 1 + 4 k / r` for a
+  subsolution of `-Δu / 2 + (r / 4) (u - 1) u ≤ k u`.
 
 ## References
 
@@ -121,6 +123,25 @@ theorem le_of_le_laplaceBeltrami_of_laplaceBeltrami_le [CompactSpace M] {h : M �
   have hle : u x₀ ≤ v x₀ :=
     (hh x₀).le_iff_le.1 (by linarith [hsub x₀, hsuper x₀])
   have hy : u y - v y ≤ u x₀ - v x₀ := hx₀ y
+  linarith
+
+/-- **The maximum principle bound for a logistic subsolution.** On a compact boundaryless
+Riemannian manifold, a `C²` function `u` with `-Δu / 2 + (r / 4) (u - 1) u ≤ k u` satisfies
+`u ≤ 1 + 4 k / r`. For `u = |α|² + |β|²` this is Taubes's bound `|Ψ|² ≤ r (1 + C / r)` on a
+Seiberg–Witten spinor. -/
+theorem le_one_add_mul_div_of_laplaceBeltrami_le [CompactSpace M] {u : M → ℝ} {r k : ℝ}
+    (hr : 0 < r) (hk : 0 ≤ k) (hu : ContMDiff I 𝓘(ℝ) 2 u)
+    (h : ∀ x, -laplaceBeltrami I u x / 2 + r / 4 * (u x - 1) * u x ≤ k * u x) (x : M) :
+    u x ≤ 1 + 4 * k / r := by
+  have : Nonempty M := ⟨x⟩
+  obtain ⟨x₀, hx₀, hΔ⟩ := exists_forall_le_and_laplaceBeltrami_nonpos hu
+  refine (hx₀ x).trans ?_
+  have h₀ := h x₀
+  rcases le_or_gt (u x₀) 0 with hu₀ | hu₀
+  · exact hu₀.trans (by positivity)
+  -- At the maximum `Δu ≤ 0`, so `(r / 4) (u - 1) u ≤ k u`, and `u > 0` there.
+  have hle : r / 4 * (u x₀ - 1) ≤ k := le_of_mul_le_mul_right (by linarith) hu₀
+  rw [← sub_le_iff_le_add', le_div_iff₀ hr]
   linarith
 
 end TauCeti.Manifold

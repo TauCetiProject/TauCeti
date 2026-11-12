@@ -39,7 +39,7 @@ these inequalities by the maximum principle on a compact boundaryless Riemannian
 The constants depend only on `c` and `κ`, not on `r`, the manifold or the solution. The first bound
 comes from the sum of the two inequalities, which bounds the full spinor: a function `u`
 with `-Δu / 2 + (r / 4) (u - 1) u ≤ k u` is at most `1 + 4 k / r`
-(`TauCeti.SeibergWitten.le_one_add_mul_div_of_laplaceBeltrami_le`), because `Δu ≤ 0` at a maximum
+(`TauCeti.Manifold.le_one_add_mul_div_of_laplaceBeltrami_le`), because `Δu ≤ 0` at a maximum
 of `u`. The second applies the maximum principle to `|β|² - (κ / r) (1 - |α|²)`: at its maximum,
 if it is nonnegative, the damping `(r / 4) |α|² |β|²` of the `β` inequality cancels the term
 `(κ / 4) (1 - |α|²) |α|²` from the `α` inequality, and what is left forces `|β|² = O(r⁻²)` there.
@@ -51,8 +51,6 @@ needs the Weitzenböck formula for the `Spinᶜ` Dirac operator, which is not pa
 
 ## Main results
 
-* `TauCeti.SeibergWitten.le_one_add_mul_div_of_laplaceBeltrami_le`: the bound `u ≤ 1 + 4 k / r`
-  for a subsolution of `-Δu / 2 + (r / 4) (u - 1) u ≤ k u`.
 * `TauCeti.SeibergWitten.sq_add_sq_le_one_add_div`: `|α|² + |β|² ≤ 1 + (8 c + c²) / r`.
 * `TauCeti.SeibergWitten.sq_le_div_mul_max_add_div_sq`:
   `|β|² ≤ (κ / r) max (1 - |α|²) 0 + C / r²`.
@@ -79,24 +77,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] [CompactSpace M]
-
-/-- **The maximum principle bound for the full spinor.** On a compact boundaryless Riemannian
-manifold, a `C²` function `u` with `-Δu / 2 + (r / 4) (u - 1) u ≤ k u` satisfies
-`u ≤ 1 + 4 k / r`. For `u = |α|² + |β|²` this is Taubes's bound `|Ψ|² ≤ r (1 + C / r)`. -/
-theorem le_one_add_mul_div_of_laplaceBeltrami_le {u : M → ℝ} {r k : ℝ} (hr : 0 < r)
-    (hk : 0 ≤ k) (hu : ContMDiff I 𝓘(ℝ) 2 u)
-    (h : ∀ x, -laplaceBeltrami I u x / 2 + r / 4 * (u x - 1) * u x ≤ k * u x) (x : M) :
-    u x ≤ 1 + 4 * k / r := by
-  have : Nonempty M := ⟨x⟩
-  obtain ⟨x₀, hx₀, hΔ⟩ := exists_forall_le_and_laplaceBeltrami_nonpos hu
-  refine (hx₀ x).trans ?_
-  have h₀ := h x₀
-  rcases le_or_gt (u x₀) 0 with hu₀ | hu₀
-  · exact hu₀.trans (by positivity)
-  -- At the maximum `Δu ≤ 0`, so `(r / 4) (u - 1) u ≤ k u`, and `u > 0` there.
-  have hle : r / 4 * (u x₀ - 1) ≤ k := le_of_mul_le_mul_right (by linarith) hu₀
-  rw [← sub_le_iff_le_add', le_div_iff₀ hr]
-  linarith
 
 /-- **Taubes's bound on the full spinor.** On a compact boundaryless Riemannian manifold, let
 `A`, `B`, `Dα`, `Dβ` stand for `|α|`, `|β|`, `|∇_a α|` and `|∇_a β|`, with `A²` and `B²` of class
@@ -135,21 +115,19 @@ private theorem div_mul_sq_le_of_add_div_mul_nonpos {A B Dα Dβ LA LB r c κ : 
         A ^ 2 := by
   have hκr : 0 < κ / r := by positivity
   -- The four cross terms are split by the weighted arithmetic–geometric mean inequality
-  -- `c x y ≤ p x² + q y²` for `c² ≤ 4 p q`, `p > 0`.
-  have mul_mul_le_of_sq_le {p q c : ℝ} (hp : 0 < p) (hc : c ^ 2 ≤ 4 * p * q) (x y : ℝ) :
-      c * x * y ≤ p * x ^ 2 + q * y ^ 2 := by
-    have key : 0 ≤ 4 * p * (p * x ^ 2 + q * y ^ 2 - c * x * y) := by
-      nlinarith [sq_nonneg (2 * p * x - c * y), mul_nonneg (sub_nonneg.2 hc) (sq_nonneg y)]
-    have := (mul_nonneg_iff_of_pos_left (by positivity : (0 : ℝ) < 4 * p)).1 key
-    linarith
-  have h₁ : c * Dα * B ≤ κ / r * Dα ^ 2 + r / 16 * B ^ 2 :=
-    mul_mul_le_of_sq_le hκr (by field_simp; nlinarith) _ _
-  have h₂ : κ * c / r * Dβ * A ≤ 1 * Dβ ^ 2 + κ ^ 2 * c ^ 2 / (4 * r ^ 2) * A ^ 2 :=
-    mul_mul_le_of_sq_le one_pos (by field_simp; ring_nf; rfl) _ _
-  have h₃ : c * B * A ≤ r / 32 * B ^ 2 + 8 * c ^ 2 / r * A ^ 2 :=
-    mul_mul_le_of_sq_le (by positivity) (by field_simp; ring_nf; rfl) _ _
-  have h₄ : κ * c / r * B * A ≤ r / 32 * B ^ 2 + 8 * κ ^ 2 * c ^ 2 / r ^ 3 * A ^ 2 :=
-    mul_mul_le_of_sq_le (by positivity) (by field_simp; ring_nf; rfl) _ _
+  -- `2 a b ≤ ε a² + ε⁻¹ b²`; for the first, `4 c² ≤ κ` absorbs the coefficient of `|∇_a α|²`.
+  have h₁ : c * Dα * B ≤ κ / r * Dα ^ 2 + r / 16 * B ^ 2 := by
+    have hc : 4 * c ^ 2 / r * Dα ^ 2 ≤ κ / r * Dα ^ 2 := by gcongr
+    linear_combination two_mul_le_add_mul_sq (a := B) (b := c * Dα / 2)
+      (by positivity : 0 < r / 16) + hc
+  have h₂ : κ * c / r * Dβ * A ≤ Dβ ^ 2 + κ ^ 2 * c ^ 2 / (4 * r ^ 2) * A ^ 2 := by
+    linear_combination two_mul_le_add_mul_sq (a := Dβ) (b := κ * c / r * A / 2) one_pos
+  have h₃ : c * B * A ≤ r / 32 * B ^ 2 + 8 * c ^ 2 / r * A ^ 2 := by
+    linear_combination two_mul_le_add_mul_sq (a := B) (b := c * A / 2)
+      (by positivity : 0 < r / 32)
+  have h₄ : κ * c / r * B * A ≤ r / 32 * B ^ 2 + 8 * κ ^ 2 * c ^ 2 / r ^ 3 * A ^ 2 := by
+    linear_combination two_mul_le_add_mul_sq (a := B) (b := κ * c / r * A / 2)
+      (by positivity : 0 < r / 32)
   -- The `α` inequality, weighted by `κ / r`.
   have hα' : κ / r * (-LA / 2 + Dα ^ 2) + κ / 4 * (A ^ 2 + B ^ 2 - 1) * A ^ 2 ≤
       κ * c / r * A * Dβ + κ * c / r * A ^ 2 + κ * c / r * A * B := by
