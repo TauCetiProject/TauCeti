@@ -56,7 +56,7 @@ theorem IsRegularPoint.isLocalDiffeomorphAt
     (hx : IsRegularPoint I J f x) (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E')
     (hf : ContMDiff I J n f) (hn : 1 ≤ n) (hIx : I.IsInteriorPoint x) :
     IsLocalDiffeomorphAt I J n f x := by
-  let := FiniteDimensional.complete 𝕜 E
+  let := FiniteDimensional.completeSpace 𝕜 E
   obtain ⟨e, he⟩ := (isRegularPoint_iff_isInvertible_mfderiv hdim).mp hx
   exact isLocalDiffeomorphAt_of_mfderiv_eq hf.contMDiffOn isOpen_univ (mem_univ _)
     hIx hn he
