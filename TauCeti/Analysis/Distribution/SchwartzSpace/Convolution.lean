@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
 # Convolution and the Fourier transform on Schwartz space
@@ -217,19 +218,16 @@ theorem fourier_smulLeftCLM_sub_apply (χ : 𝓢(E, ℂ)) (u : 𝓢(E, F)) (x ζ
     𝓕 (smulLeftCLM F (fun y ↦ χ (x - y)) u) ζ =
       ∫ η, 𝓕 χ η • (𝐞 ⟪η, x⟫ : ℂ) • 𝓕 u (ζ + η) := by
   -- The cut-off `y ↦ χ(x - y)` as a Schwartz function; its Fourier transform is
-  -- `t ↦ exp(-2πi ⟪x, t⟫) 𝓕 χ(-t)`.
+  -- `t ↦ exp(-2πi ⟪x, t⟫) 𝓕 χ(-t)`, by translation and reflection.
   set ψ : 𝓢(E, ℂ) := compCLMOfAntilipschitz ℂ (g := fun y ↦ x - y) (K := 1) (by fun_prop)
     (fun _ _ ↦ by simp [edist_sub_left]) χ
   have hψx : (ψ : E → ℂ) = fun y ↦ χ (x - y) := rfl
   have hψ (t : E) : 𝓕 ψ t = (𝐞 (-⟪x, t⟫) : ℂ) * 𝓕 χ (-t) := by
-    rw [fourier_coe, fourier_coe, Real.fourier_eq, Real.fourier_eq, ← integral_const_mul,
-      ← integral_sub_left_eq_self _ volume x]
-    refine integral_congr_ae (.of_forall fun z ↦ ?_)
-    simp only [hψx, sub_sub_cancel, Circle.smul_def, smul_eq_mul, ← mul_assoc,
-      ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
-    congr 3
-    simp only [inner_sub_left, inner_neg_right]
-    ring
+    have hψx' : (ψ : E → ℂ) = fun y ↦ (χ ∘ LinearIsometryEquiv.neg ℝ) (y - x) := by
+      ext y
+      simp [hψx]
+    rw [fourier_coe, fourier_coe, hψx', TauCeti.fourier_comp_sub_const,
+      Real.fourier_comp_linearIsometry, LinearIsometryEquiv.coe_neg, Circle.smul_def, smul_eq_mul]
   rw [← hψx, fourier_smulLeftCLM_apply, ← integral_neg_eq_self]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
   dsimp only
