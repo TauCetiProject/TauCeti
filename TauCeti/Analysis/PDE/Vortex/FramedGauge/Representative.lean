@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.PDE.Vortex.Decay
-import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
