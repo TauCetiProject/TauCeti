@@ -232,7 +232,6 @@ theorem exists_convexSection_subset_convexSection :
     linarith
   -- The step `t = 2 λ / (C Λ)` along the chord from `z` through `y` stays in `G`.
   set Cr : ℝ := 2 ^ (n + 2) * C₁ + 1
-  have hCr : 0 < Cr := by positivity
   set t : ℝ := 2 * lam / (Cr * Lam)
   have ht : 0 < t := by positivity
   have hstep : (C₁ : ℝ) * Lam * (2 * h) ^ n * t < lam * h ^ n :=

@@ -68,7 +68,6 @@ theorem cauchySeq_of_antitone_convex_norm_sub_le {K : ℕ → Set E} (hanti : An
     pow_le_pow_left₀ (norm_nonneg _) (hp_min m (p n) (hanti hmn (hp_mem n))) 2
   have hd_bdd : BddAbove (range d) := by
     obtain ⟨C, hC⟩ := hbdd
-    have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC ⟨0, rfl⟩)
     exact ⟨C ^ 2, forall_mem_range.2 fun n ↦
       pow_le_pow_left₀ (norm_nonneg _) (hC ⟨n, rfl⟩) 2⟩
   have hd_cauchy : CauchySeq d := (tendsto_atTop_ciSup hd_mono hd_bdd).cauchySeq
