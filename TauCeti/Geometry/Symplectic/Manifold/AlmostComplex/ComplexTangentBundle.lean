@@ -55,4 +55,14 @@ def toContinuousComplexStructure (J : ContMDiffAlmostComplexStructure I n M) :
 theorem toContinuousComplexStructure_apply (J : ContMDiffAlmostComplexStructure I n M) (x : M)
     (v : TangentSpace I x) : J.toContinuousComplexStructure x v = J x v := (rfl)
 
+/-- The pointwise almost complex structures of `J.toContinuousComplexStructure`, which give the
+complex structures of its fibres, are those of `J`. -/
+@[simp]
+theorem toContinuousComplexStructure_almostComplexStructureAt
+    (J : ContMDiffAlmostComplexStructure I n M) (x : M) :
+    J.toContinuousComplexStructure.almostComplexStructureAt x = J.almostComplexStructureAt x := by
+  ext v
+  rw [Bundle.ContinuousComplexStructure.almostComplexStructureAt_apply,
+    toContinuousComplexStructure_apply, almostComplexStructureAt_apply]
+
 end TauCeti.ContMDiffAlmostComplexStructure

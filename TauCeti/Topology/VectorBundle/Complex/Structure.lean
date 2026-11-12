@@ -145,8 +145,20 @@ instance (b : B) : IsTopologicalAddGroup (J.Fiber b) :=
 
 instance (b : B) : Module ℂ (J.Fiber b) := (J.almostComplexStructureAt b).complexModule
 
-/-- The identification of the fibre `J.Fiber b` with `V b`, as an additive equivalence. -/
-def fiberEquiv (b : B) : J.Fiber b ≃+ V b := AddEquiv.refl _
+/-- The identification of the fibre `J.Fiber b` with `V b`, as a continuous real linear
+equivalence. Both sides are the same space, and the real scalar multiplication of `J.Fiber b`,
+restricted from `ℂ`, is that of `V b`. -/
+def fiberEquiv (b : B) : J.Fiber b ≃L[ℝ] V b where
+  toFun v := v
+  invFun v := v
+  map_add' _ _ := rfl
+  map_smul' r v :=
+    (Complex.coe_smul r v).symm.trans
+      (((J.almostComplexStructureAt b).complexModule_smul_def (r : ℂ) v).trans (by simp))
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := continuous_id
+  continuous_invFun := continuous_id
 
 theorem fiberEquiv_smul (b : B) (z : ℂ) (v : J.Fiber b) :
     J.fiberEquiv b (z • v) = z.re • J.fiberEquiv b v + z.im • J b (J.fiberEquiv b v) :=
@@ -156,12 +168,6 @@ theorem fiberEquiv_smul (b : B) (z : ℂ) (v : J.Fiber b) :
 theorem fiberEquiv_I_smul (b : B) (v : J.Fiber b) :
     J.fiberEquiv b (Complex.I • v) = J b (J.fiberEquiv b v) := by
   simp [fiberEquiv_smul]
-
-@[simp]
-theorem fiberEquiv_real_smul (b : B) (r : ℝ) (v : J.Fiber b) :
-    J.fiberEquiv b (r • v) = r • J.fiberEquiv b v := by
-  rw [← Complex.coe_smul, fiberEquiv_smul]
-  simp
 
 instance (b : B) : ContinuousSMul ℂ (J.Fiber b) where
   continuous_smul := by
@@ -341,11 +347,11 @@ def pretrivializationAt (b₀ : B) : Pretrivialization G (π G J.Fiber) where
       ContinuousLinearEquiv.apply_symm_apply,
       J.complexLinearPart_inverse_complexLinearPart_apply hb]
     rw [← Trivialization.symmL_apply (R := ℝ) _ hb',
-      Trivialization.symmL_continuousLinearMapAt _ hb', AddEquiv.symm_apply_apply]
+      Trivialization.symmL_continuousLinearMapAt _ hb', ContinuousLinearEquiv.symm_apply_apply]
   right_inv' := fun ⟨b, z⟩ hb ↦ by
     have hb' : b ∈ (trivializationAt F V b₀).baseSet := J.unitSet_subset b₀ hb.1
     simp only [fiberMap, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      AddEquiv.apply_symm_apply]
+      ContinuousLinearEquiv.apply_symm_apply]
     rw [← Trivialization.symmL_apply (R := ℝ) _ hb',
       Trivialization.continuousLinearMapAt_symmL _ hb',
       J.inverse_complexLinearPart_complexLinearPart_apply hb.1,
@@ -544,7 +550,7 @@ private theorem continuous_ofTotalSpace :
   filter_upwards [(FiberBundle.continuous_proj F V).continuousAt.preimage_mem_nhds hU] with q hq
   have hq' : q.1 ∈ (trivializationAt F V q₀.1).baseSet := J.unitSet_subset _ hq
   simp only [Function.comp_apply, trivializationAt_apply, fiberMap, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, AddEquiv.apply_symm_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
     Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hq']
 
 /-- The total space of the complex vector bundle `J.Fiber` is homeomorphic to that of `V`, by the
