@@ -129,7 +129,7 @@ theorem frechetRadius_sum_smul_dirac_le_add (hp : 1 ≤ p) (hw : ∑ j, w j = 1)
   rw [hR, hR, ← hconst]
   calc eLpNorm (fun j ↦ edist x (y j)) p ν ≤
         eLpNorm ((fun j ↦ edist x (y' j)) + fun _ ↦ edist y y') p ν :=
-      eLpNorm_mono_enorm measurable_from_top.aestronglyMeasurable fun j ↦ by
+      eLpNorm_mono_eNorm measurable_from_top.aestronglyMeasurable fun j ↦ by
         have h := edist_le_pi_edist y' y j
         rw [edist_comm y' y] at h
         simpa using (edist_triangle x (y' j) (y j)).trans (add_le_add_right h _)
@@ -193,7 +193,7 @@ theorem frechetRadius_sum_smul_dirac_ne_top {p : ℝ≥0∞}
     rw [ae_iff]
     simp [μ, hj]
   rw [frechetRadius_def]
-  refine ne_top_of_le_ne_top ?_ (eLpNorm_le_of_ae_enorm_bound
+  refine ne_top_of_le_ne_top ?_ (eLpNorm_le_of_ae_eNorm_bound
     (continuous_const.edist continuous_id).measurable.aestronglyMeasurable hae)
   rw [smul_eq_mul]
   exact ENNReal.mul_ne_top hC (ENNReal.rpow_ne_top_of_nonneg (by positivity) hμ)

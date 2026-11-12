@@ -364,7 +364,7 @@ theorem isMcCallumWellOriented_two (F : Finset (MvPolynomial (Fin 2) ℝ)) :
   refine ⟨B, hB.isSquarefreeBasis, fun b hb ↦ ?_, isMcCallumWellOriented_one polynomialGCD _⟩
   obtain ⟨i, hi⟩ : ∃ i, b.coeff i ≠ 0 := by
     by_contra! h
-    exact (hB.irreducible b hb).ne_zero (Polynomial.ext h)
+    exact (hB.irreducible b hb).ne_zero (AddMonoidAlgebra.ext (Finsupp.ext h))
   -- The zeros of the coefficient are the roots of the corresponding univariate polynomial.
   let p := uniqueAlgEquiv ℝ (Fin 1) (b.coeff i)
   have hp : p ≠ 0 := (map_ne_zero_iff _ (uniqueAlgEquiv ℝ (Fin 1)).injective).2 hi

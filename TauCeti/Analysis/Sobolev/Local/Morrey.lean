@@ -268,7 +268,7 @@ precise representative, which is then a continuous weak derivative of `u`. If `u
 continuous on `Ω`, it is therefore `C¹` there. -/
 theorem MemWkpLoc.contDiffOn_one_of_continuousOn (hp : 2 < p) (hv : MemWkpLoc p Ω 2 u)
     (hc : ContinuousOn u Ω) : ContDiffOn ℝ 1 u Ω := by
-  have : CompleteSpace F := FiniteDimensional.complete ℝ F
+  have : CompleteSpace F := FiniteDimensional.completeSpace ℝ F
   obtain ⟨D, hD, hD1⟩ := hv.exists_weakFDeriv_of_isOpen
   have hD' := hD.congr_ae_deriv (hD1.memLpLoc.ae_eq_preciseRepresentative (one_le_two.trans hp.le))
   simpa using hD'.contDiffOn_succ hc (n := 0)
