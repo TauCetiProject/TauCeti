@@ -154,10 +154,6 @@ lemma laurentEval_T (u : Aˣ) (n : ℤ) : laurentEval (R := R) u (T n) = ((u ^ n
   simp only [LaurentPolynomial.T, AddMonoidAlgebra.lift_single, one_smul]
   rfl
 
-lemma laurentEval_C (u : Aˣ) (r : R) : laurentEval u (C r) = algebraMap R A r := by
-  rw [C_eq_algebraMap]
-  exact (laurentEval u).commutes r
-
 /-- The generator `T` evaluates to the chosen unit. -/
 lemma laurentEval_T_one (u : Aˣ) : laurentEval (R := R) u (T 1) = (u : A) := by
   simp
@@ -483,7 +479,8 @@ theorem _root_.TauCeti.mul_laurentEval {B : Type*} [Semiring B] [Algebra A B] {u
   induction p using LaurentPolynomial.induction_on' with
   | add p r hp hr => rw [map_add, map_add, map_add, mul_add, add_mul, hp, hr]
   | C_mul_T n a =>
-    simp only [map_mul, rescale_C, rescale_T, laurentEval_C, laurentEval_T, ← Algebra.smul_def,
-      smul_mul_assoc, mul_smul_comm, hpow, smul_smul, mul_comm a]
+    simp only [map_mul, rescale_C, rescale_T]
+    simp only [AlgHom.apply_laurentPolynomial_C, laurentEval_T,
+      ← Algebra.smul_def, smul_mul_assoc, mul_smul_comm, hpow, smul_smul, mul_comm a]
 
 end LaurentPolynomial
