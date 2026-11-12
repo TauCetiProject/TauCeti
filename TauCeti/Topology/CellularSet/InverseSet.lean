@@ -356,7 +356,7 @@ private theorem exists_continuousOn_injOn_preimage_singleton [FiniteDimensional 
   -- compact.
   have hgP : g '' P = ({p, q} : Set (sphere (0 : F) 1))ᶜ := by
     ext y
-    refine ⟨fun ⟨x, hx, hxy⟩ ↦ hxy ▸ hx, fun hy ↦ ?_⟩
+    refine ⟨fun ⟨_, hx, hxy⟩ ↦ hxy ▸ hx, fun hy ↦ ?_⟩
     obtain ⟨x, rfl⟩ := hgs y
     exact ⟨x, hy, rfl⟩
   have hinv : ContinuousOn (invFunOn g P) (g '' P) :=
