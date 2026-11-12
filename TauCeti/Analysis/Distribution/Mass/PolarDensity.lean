@@ -154,7 +154,7 @@ private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
     exact enorm_le_localMass hφU hφ
   -- Normalize `g` by `k`.
   obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hgm hbound
-  refine ⟨σ, hσm, hσ1, fun φ => ?_⟩
+  refine ⟨σ, hσm, Filter.Eventually.of_forall hσ1, fun φ => ?_⟩
   rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
   refine integral_congr_ae ?_
   filter_upwards [hσg] with x hx

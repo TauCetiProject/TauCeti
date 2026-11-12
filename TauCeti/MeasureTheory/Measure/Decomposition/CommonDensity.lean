@@ -28,7 +28,7 @@ with respect to `ρ`, as in a polar decomposition.
 The file also contains the normalization step of a polar decomposition
 (`MeasureTheory.Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq`): a measurable field `g`
 dominated by the density `dλ/dρ` of `λ` with respect to `ρ` agrees `ρ`-almost everywhere with
-`(dλ/dρ).toReal • σ`, where `σ` is a measurable field of norm at most one `λ`-almost everywhere.
+`(dλ/dρ).toReal • σ`, where `σ` is a measurable field of norm at most one everywhere.
 This `σ` is the unit field of the polar decomposition.
 
 ## References
@@ -86,12 +86,12 @@ theorem exists_common_density_sub {X ι : Type*} [TopologicalSpace X] [SigmaComp
 /-- **Normalizing a density.** If a measurable field `g` has pointwise norm at most the density
 `dλ/dρ` of a measure `λ` with respect to `ρ` (up to a `ρ`-null set), then `g` agrees
 `ρ`-almost everywhere with `(dλ/dρ).toReal • σ` for a measurable field `σ` of norm at most one
-`λ`-almost everywhere. -/
+everywhere. -/
 theorem exists_norm_le_one_toReal_rnDeriv_smul_eq {X E : Type*} [MeasurableSpace X]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-    [SecondCountableTopology E] {lam ρ : Measure X} [SigmaFinite lam]
+    {lam ρ : Measure X} [SigmaFinite lam]
     {g : X → E} (hgm : Measurable g) (hbound : ∀ᵐ x ∂ρ, ‖g x‖ₑ ≤ lam.rnDeriv ρ x) :
-    ∃ σ : X → E, Measurable σ ∧ (∀ᵐ x ∂lam, ‖σ x‖ ≤ 1) ∧
+    ∃ σ : X → E, Measurable σ ∧ (∀ x, ‖σ x‖ ≤ 1) ∧
       ∀ᵐ x ∂ρ, (lam.rnDeriv ρ x).toReal • σ x = g x := by
   have hσm : Measurable fun x => (lam.rnDeriv ρ x).toReal⁻¹ • g x :=
     ((Measure.measurable_rnDeriv _ _).ennreal_toReal.inv).smul hgm
@@ -111,33 +111,12 @@ theorem exists_norm_le_one_toReal_rnDeriv_smul_eq {X E : Type*} [MeasurableSpace
         · exact absurd h0 hk.ne
       simp [h0, this]
     · rw [smul_inv_smul₀ h0]
-  by_cases hL : lam.HaveLebesgueDecomposition ρ
-  · classical
-    obtain ⟨S, hSm, hS0, hSc⟩ := Measure.mutuallySingular_singularPart lam ρ
-    refine ⟨S.piecewise (fun x => (lam.rnDeriv ρ x).toReal⁻¹ • g x) 0,
-      hσm.piecewise hSm measurable_const, ?_, ?_⟩
-    · suffices ∀ᵐ x ∂(lam.singularPart ρ + ρ.withDensity (lam.rnDeriv ρ)),
-          ‖S.piecewise (fun x => (lam.rnDeriv ρ x).toReal⁻¹ • g x) 0 x‖ ≤ 1 by
-        rwa [← Measure.haveLebesgueDecomposition_add lam ρ] at this
-      rw [ae_add_measure_iff]
-      refine ⟨?_, (withDensity_absolutelyContinuous _ _).ae_le ?_⟩
-      · rw [ae_iff]
-        refine measure_mono_null (fun x hx => ?_) hS0
-        by_contra hxS
-        simp [Set.piecewise, hxS] at hx
-        norm_num at hx
-      · filter_upwards [hle] with x hx
-        by_cases hxS : x ∈ S <;> simp [Set.piecewise, hxS, hx]
-    · have hSn : ∀ᵐ x ∂ρ, x ∈ S := by
-        rw [ae_iff]
-        exact hSc
-      filter_upwards [hSn, heq] with x hxS hx
-      simpa [Set.piecewise, hxS] using hx
-  · refine ⟨0, measurable_const, Filter.Eventually.of_forall fun x => by simp, ?_⟩
-    have hz : lam.rnDeriv ρ = 0 := Measure.rnDeriv_of_not_haveLebesgueDecomposition hL
-    filter_upwards [hbound] with x hx
-    rw [hz] at hx
-    simp only [Pi.zero_apply, nonpos_iff_eq_zero, enorm_eq_zero] at hx
-    simp [hz, hx]
+  classical
+  refine ⟨fun x => if ‖(lam.rnDeriv ρ x).toReal⁻¹ • g x‖ ≤ 1 then
+      (lam.rnDeriv ρ x).toReal⁻¹ • g x else 0,
+    hσm.ite (measurableSet_le hσm.norm measurable_const) measurable_const,
+    fun x => by dsimp only; split_ifs with h <;> simp [h], ?_⟩
+  filter_upwards [hle, heq] with x hx hq
+  simpa [hx] using hq
 
 end MeasureTheory.Measure
