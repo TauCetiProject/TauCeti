@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Support
 public import TauCeti.Probability.Renewal.Lattice.Blackwell
 public import TauCeti.Analysis.SpecificLimits.LatticeIncrements
 
