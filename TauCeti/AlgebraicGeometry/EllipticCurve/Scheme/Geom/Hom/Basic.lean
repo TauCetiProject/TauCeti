@@ -51,6 +51,12 @@ schemes over `S` is the homomorphism whose kernel is the `n`-torsion `E[n]`.
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.zero_hom_hom_hom_left` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.neg_hom_hom_hom_left`: the sum, zero and negative
   of homomorphisms on underlying schemes.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.zero_comp_hom_hom_hom_left`,
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.addition_comp_hom_hom_hom_left`,
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.neg_comp_hom_hom_hom_left`, and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_left_comp_hom_hom_hom_left`: homomorphisms
+  preserve the zero section, addition, negation, and multiplication by integers on underlying
+  schemes.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.homMk_mulBy`: multiplication by `n` is the integer
   `n` of the endomorphism ring.
 
@@ -61,7 +67,7 @@ schemes over `S` is the homomorphism whose kernel is the `n`-torsion `E[n]`.
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry MonObj
+open CategoryTheory Limits AlgebraicGeometry MonoidalCategory MonObj
 
 universe u
 
@@ -133,6 +139,51 @@ homomorphism followed by the negation morphism of the target. -/
 theorem neg_hom_hom_hom_left (f : E.toCommGrp ⟶ E'.toCommGrp) :
     (-f).hom.hom.hom.left = f.hom.hom.hom.left ≫ E'.neg := by
   rw [CommGrp.neg_hom_hom_hom, hom_inv_left]
+
+section Underlying
+
+variable {E}
+
+/-- A homomorphism of elliptic curves over `S` carries the zero section of the source to that of
+the target. -/
+@[reassoc (attr := simp)]
+theorem zero_comp_hom_hom_hom_left (F : E.toCommGrp ⟶ E'.toCommGrp) :
+    E.zero ≫ F.hom.hom.hom.left = E'.zero := by
+  have h := congrArg Over.Hom.left (IsMonHom.one_hom F.hom.hom.hom)
+  simpa only [Over.comp_left, one_left] using h
+
+/-- A homomorphism of elliptic curves over `S` intertwines the addition morphisms on underlying
+schemes. -/
+@[reassoc]
+theorem addition_comp_hom_hom_hom_left (F : E.toCommGrp ⟶ E'.toCommGrp) :
+    E.addition ≫ F.hom.hom.hom.left =
+      pullback.map E.structureMap E.structureMap E'.structureMap E'.structureMap
+        F.hom.hom.hom.left F.hom.hom.hom.left (𝟙 S)
+        (by simp [hom_hom_hom_left_comp_structureMap])
+        (by simp [hom_hom_hom_left_comp_structureMap]) ≫ E'.addition := by
+  have h := congrArg Over.Hom.left (IsMonHom.mul_hom F.hom.hom.hom)
+  simp only [Over.comp_left, mul_left] at h
+  rw [h, Over.tensorHom_left]
+  rfl
+
+/-- A homomorphism of elliptic curves over `S` intertwines the negation morphisms on underlying
+schemes. -/
+@[reassoc]
+theorem neg_comp_hom_hom_hom_left (F : E.toCommGrp ⟶ E'.toCommGrp) :
+    E.neg ≫ F.hom.hom.hom.left = F.hom.hom.hom.left ≫ E'.neg := by
+  have h := congrArg Over.Hom.left (GrpObj.inv_hom F.hom.hom.hom)
+  simpa only [Over.comp_left, inv_left] using h
+
+/-- A homomorphism of elliptic curves over `S` commutes with multiplication by any integer `n` on
+underlying schemes. -/
+@[reassoc]
+theorem mulBy_left_comp_hom_hom_hom_left (F : E.toCommGrp ⟶ E'.toCommGrp) (n : ℤ) :
+    (E.mulBy n).left ≫ F.hom.hom.hom.left = F.hom.hom.hom.left ≫ (E'.mulBy n).left := by
+  have h : E.mulBy n ≫ F.hom.hom.hom = F.hom.hom.hom ≫ E'.mulBy n := by
+    rw [mulBy_eq_zpow, GrpObj.zpow_comp, Category.id_comp, comp_mulBy]
+  exact congrArg Over.Hom.left h
+
+end Underlying
 
 /-! ### Multiplication by an integer in the endomorphism ring -/
 
