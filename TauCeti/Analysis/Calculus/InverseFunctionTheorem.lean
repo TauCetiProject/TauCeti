@@ -50,6 +50,8 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 * `OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv`: a `C^n` open partial
   homeomorphism from a complete normed space whose derivative is invertible on its source has a
   `C^n` inverse on its target.
+* `ApproximatesLinearOn.contDiffOn_toOpenPartialHomeomorph_symm`: the same for the homeomorphism
+  of a `C^n` map approximating `L` on an open set with a constant less than `‖L⁻¹‖⁻¹`.
 * `TauCeti.ContDiffOn.exists_openPartialHomeomorph`: a `C^n` map (`1 ≤ n`) on an open set with
   invertible derivative at a point restricts to an `OpenPartialHomeomorph` around that point whose
   inverse is `C^n` on the whole target.
@@ -92,7 +94,7 @@ since `ApproximatesLinearOn.injOn` only uses the approximation estimate. -/
 theorem exists_mem_nhds_injOn {f : E → F} {L : E ≃L[𝕜] F} {a : E}
     (hf : HasStrictFDerivAt f (L : E →L[𝕜] F) a) : ∃ s ∈ 𝓝 a, InjOn f s := by
   obtain ⟨s, has, hso, happ⟩ := hf.approximates_deriv_on_open_nhds
-  exact ⟨s, hso.mem_nhds has, happ.injOn (L.subsingleton_or_nnnorm_symm_pos.imp id
+  exact ⟨s, hso.mem_nhds has, happ.injOn (L.subsingleton_or_nnNorm_symm_pos.imp id
     fun h => NNReal.half_lt_self (inv_pos.2 h).ne')⟩
 
 variable [CompleteSpace E] {f : E → F} {L : E ≃L[𝕜] F} {a : E}
@@ -117,7 +119,7 @@ theorem isInvertible_of_mem_toOpenPartialHomeomorph_source
   refine ContinuousLinearMap.isInvertible_of_norm_sub_le_half L ?_
   have hbound := hf.approximatesLinearOn_toOpenPartialHomeomorph_source.norm_sub_le_of_hasFDerivAt
     ((hf.toOpenPartialHomeomorph f).open_source.mem_nhds hx) hA
-  rwa [← NNReal.coe_le_coe, coe_nnnorm]
+  rwa [← NNReal.coe_le_coe, coe_nnNorm]
 
 /-- **The local inverse of the inverse function theorem is `C^n` at every point of its target.**
 The original inverse-function hypotheses provide an invertible derivative only at the base point.
@@ -176,6 +178,28 @@ theorem OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv [CompleteSp
   refine (ψ.contDiffAt_symm hy (f₀' := e) ?_ hat).contDiffWithinAt
   rw [he]
   exact (hat.differentiableAt hn).hasFDerivAt
+
+/-- A map that is `C^n` on an open set `s` and approximates a continuous linear equivalence `L`
+there with a constant less than `‖L⁻¹‖⁻¹` restricts to an open partial homeomorphism with source
+`s` whose inverse is `C^n` on its target. -/
+theorem ApproximatesLinearOn.contDiffOn_toOpenPartialHomeomorph_symm [CompleteSpace E]
+    {n : ℕ∞ω} {f : E → F} {L : E ≃L[𝕜] F} {s : Set E} {c : ℝ≥0}
+    (hf : ApproximatesLinearOn f (L : E →L[𝕜] F) s c)
+    (hc : Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹) (hs : IsOpen s)
+    (hcont : ContDiffOn 𝕜 n f s) :
+    ContDiffOn 𝕜 n (hf.toOpenPartialHomeomorph f s hc hs).symm
+      (hf.toOpenPartialHomeomorph f s hc hs).target := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact contDiffOn_zero.2 (hf.toOpenPartialHomeomorph f s hc hs).continuousOn_symm
+  refine (hf.toOpenPartialHomeomorph f s hc hs).contDiffOn_symm_of_isInvertible_fderiv
+    (by simpa using hcont) fun x hx ↦ ?_
+  simp only [toOpenPartialHomeomorph_source, toOpenPartialHomeomorph_coe] at hx ⊢
+  rcases hc with hE | hc
+  · exact ⟨L, by ext x; simp [Subsingleton.elim x 0]⟩
+  refine ContinuousLinearMap.isInvertible_of_norm_sub_lt L (lt_of_le_of_lt ?_ hc)
+  have h := hf.norm_sub_le_of_hasFDerivAt (hs.mem_nhds hx)
+    ((hcont.contDiffAt (hs.mem_nhds hx)).differentiableAt hn).hasFDerivAt
+  rwa [← NNReal.coe_le_coe, coe_nnNorm]
 
 end ContDiffInverse
 

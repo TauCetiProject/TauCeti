@@ -25,6 +25,10 @@ subsequence of `F` converges locally uniformly on `s`
 continuous function by `m` gives a sequence tending to `0` locally uniformly
 (`TauCeti.tendstoLocallyUniformly_div_natCast`).
 
+On an open set on which the limit is continuous, locally uniform convergence is the same as
+continuous convergence at every point of the set
+(`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
+
 A family `Φ : α → δ → γ` that is jointly continuous at every point of `α × {q}` converges locally
 uniformly in its first argument as the second tends to `q`
 (`TauCeti.tendstoLocallyUniformly_of_forall_continuousAt`), with no local compactness assumption
@@ -34,7 +38,22 @@ initial points.
 
 public section
 
-open Filter Set Topology
+open Filter Set Topology Uniformity
+
+/-- **Locally uniform convergence to a continuous limit is continuous convergence.** On an open
+set on which the limit is continuous, `F i → f` locally uniformly exactly when `F i y → f x` as
+`i → l` and `y → x` jointly, for every `x` in the set. -/
+theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι α β : Type*}
+    [TopologicalSpace α] [UniformSpace β] {F : ι → α → β} {f : α → β} {l : Filter ι}
+    {s : Set α} (hs : IsOpen s) (hf : ContinuousOn f s) :
+    TendstoLocallyUniformlyOn F f l s ↔
+      ∀ x ∈ s, Tendsto (fun p : ι × α ↦ F p.1 p.2) (l ×ˢ 𝓝 x) (𝓝 (f x)) := by
+  rw [hs.tendstoLocallyUniformlyOn_iff_forall_tendsto]
+  refine forall₂_congr fun x hx ↦ ?_
+  have hfx : Tendsto (fun p : ι × α ↦ f p.2) (l ×ˢ 𝓝 x) (𝓝 (f x)) :=
+    ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
+  refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
+  exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
 
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}

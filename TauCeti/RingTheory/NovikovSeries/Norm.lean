@@ -248,7 +248,7 @@ theorem algebraNorm_exp [Algebra ℚ R] {a : nonnegSubring R N} (ha : a ∈ posI
   have hlog := log_normNonnegSubring K hu
   rw [hnil.log_exp] at hlog
   have hvnil := isTopologicallyNilpotent_of_mem_posIdeal' hv
-  rw [← coe_exp_of_mem_posIdeal ha, ← coe_normNonnegSubring, ← hvnil.exp_log, ← hlog,
-    coe_exp_of_mem_posIdeal (hvnil.log_mem hv)]
+  rw [← coe_exp_nonnegSubring _, ← coe_normNonnegSubring, ← hvnil.exp_log, ← hlog,
+    coe_exp_nonnegSubring _]
 
 end TauCeti.NovikovSeries

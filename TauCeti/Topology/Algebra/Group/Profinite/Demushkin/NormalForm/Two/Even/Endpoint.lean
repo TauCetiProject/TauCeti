@@ -98,7 +98,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq_zpower
     IsDemushkin.exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo
       hn hr hG
       (demushkinQ_eq_two_of_neg_one_mem_range_demushkinCharacter hG (hA ▸ mem_zpowers _))
-  rw [← demushkinWordTwoEvenPadic_eq_padicPow_mul_labuteComm_mul _ _ _ _ _ hn2] at he
+  rw [← demushkinWordTwoEvenPadic_eq_padicPow_mul_labuteComm_mul _ _ _ _ _] at he
   -- The image `{±1}` pins `α = 0`, and `q = 0` when the factor `x₃^q` is present.
   obtain ⟨rfl, hq₀⟩ := hG.eq_zero_and_eq_zero_of_range_demushkinCharacter_eq_zpowers_neg_one hα
     (fun _ ↦ hq) hn (by omega) (presentedProP.congrSingleton e he) hA
