@@ -466,9 +466,11 @@ theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace (hx : ContDiff ℝ ∞
   set R := max R₁ (max 1 f.rOut)
   have hR : 0 < R := lt_max_of_lt_right (lt_max_of_lt_left one_pos)
   let b : ContDiffBump (0 : ℂ) := ⟨R + 1, R + 2, by linarith, by linarith⟩
-  have hb (z : ℂ) (hz : b.rIn - 1 ≤ ‖z‖) : 1 / 2 ≤ 4 * (y z 2 ^ 2 + y z 3 ^ 2) :=
-    (hR₁ (show R₁ ≤ ‖z‖ by simp only [b, add_sub_cancel_right] at hz; exact
-      (le_max_left _ _).trans hz)).1
+  have hbIn : b.rIn = R + 1 := rfl
+  have hbOut : b.rOut = R + 2 := rfl
+  have hb (z : ℂ) (hz : b.rIn - 1 ≤ ‖z‖) : 1 / 2 ≤ 4 * (y z 2 ^ 2 + y z 3 ^ 2) := by
+    rw [hbIn, add_sub_cancel_right] at hz
+    exact (hR₁ ((le_max_left _ _).trans hz)).1
   set g := cutoffLogModulus b y
   have hg : ContDiff ℝ ∞ g := contDiff_cutoffLogModulus b hy hb
   have hgs := cutoffLogModulus_mem_realSobolevFunctions b hy hsol' hlim hb
@@ -480,14 +482,15 @@ theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace (hx : ContDiff ℝ ∞
     have hnhds : ∀ᶠ w in 𝓝 z, R₁ ≤ ‖w‖ :=
       Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds
         ((le_max_left _ _).trans_lt hzR)) fun w hw ↦ le_of_lt hw
-    have heq := cutoffLogModulus_eventuallyEq (x := y) b (show b.rOut < ‖z‖ from hz)
+    have heq := cutoffLogModulus_eventuallyEq (x := y) b (hbOut ▸ hz)
     have h := sub_referenceField_eq f (rOut_le_norm_sq f ((le_max_right _ _).trans_lt hzR)) hy
       (hsol' z) (hnhds.mono fun w hw ↦ (hR₁ hw).2)
       (hnhds.mono fun w hw h0 ↦ by have := (hR₁ hw).1; rw [h0] at this; norm_num at this)
     rw [Pi.sub_apply, Pi.sub_apply, h]
     simp only [modelField, g, heq.fderiv_eq, heq.self_of_nhds, sub_self]
-  rw [mem_framedFieldSpace, show y - referenceField f m =
-    (y - referenceField f m - modelField f m g) + modelField f m g by abel]
+  have hsplit : y - referenceField f m =
+      (y - referenceField f m - modelField f m g) + modelField f m g := by abel
+  rw [mem_framedFieldSpace, hsplit]
   obtain ⟨k, hk⟩ := exists_nat_ge s
   exact add_mem (mem_sobolevFields_of_hasCompactSupport
       ((hy.sub (contDiff_referenceField f m)).sub (contDiff_modelField f m hg)) hD s)
