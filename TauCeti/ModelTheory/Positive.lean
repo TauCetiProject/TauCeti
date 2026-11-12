@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Complexity
+public import TauCeti.ModelTheory.Equivalence
 
 /-!
 # Positive first-order formulas
@@ -51,69 +52,7 @@ open FirstOrder Fin
 
 variable {L : Language} {α β : Type*} {n : ℕ}
 
-namespace Theory.Iff
-
-variable {T : L.Theory} {φ ψ φ' ψ' : L.BoundedFormula α n}
-
-/-- Conjunctions of equivalent formulas are equivalent. -/
-protected theorem inf (h : φ ⇔[T] ψ) (h' : φ' ⇔[T] ψ') : (φ ⊓ φ') ⇔[T] (ψ ⊓ ψ') :=
-  fun M v xs => by
-    simp [BoundedFormula.realize_iff, h.realize_bd_iff (M := M), h'.realize_bd_iff (M := M)]
-
-/-- Disjunctions of equivalent formulas are equivalent. -/
-protected theorem sup (h : φ ⇔[T] ψ) (h' : φ' ⇔[T] ψ') : (φ ⊔ φ') ⇔[T] (ψ ⊔ ψ') :=
-  fun M v xs => by
-    simp [BoundedFormula.realize_iff, h.realize_bd_iff (M := M), h'.realize_bd_iff (M := M)]
-
-end Theory.Iff
-
 namespace BoundedFormula
-
-section Quantifiers
-
-variable {T : L.Theory}
-
-/-- A universal quantifier in the left conjunct can be moved in front of the conjunction. -/
-theorem all_inf_iff (φ : L.BoundedFormula α (n + 1)) (ψ : L.BoundedFormula α n) :
-    (φ.all ⊓ ψ) ⇔[T] (φ ⊓ ψ.liftAt 1 n).all :=
-  fun M v xs => by simp [forall_and]
-
-/-- An existential quantifier in the left conjunct can be moved in front of the conjunction. -/
-theorem ex_inf_iff (φ : L.BoundedFormula α (n + 1)) (ψ : L.BoundedFormula α n) :
-    (φ.ex ⊓ ψ) ⇔[T] (φ ⊓ ψ.liftAt 1 n).ex :=
-  fun M v xs => by simp
-
-/-- A universal quantifier in the right conjunct can be moved in front of the conjunction. -/
-theorem inf_all_iff (φ : L.BoundedFormula α n) (ψ : L.BoundedFormula α (n + 1)) :
-    (φ ⊓ ψ.all) ⇔[T] (φ.liftAt 1 n ⊓ ψ).all :=
-  fun M v xs => by simp [forall_and]
-
-/-- An existential quantifier in the right conjunct can be moved in front of the conjunction. -/
-theorem inf_ex_iff (φ : L.BoundedFormula α n) (ψ : L.BoundedFormula α (n + 1)) :
-    (φ ⊓ ψ.ex) ⇔[T] (φ.liftAt 1 n ⊓ ψ).ex :=
-  fun M v xs => by simp
-
-/-- A universal quantifier in the left disjunct can be moved in front of the disjunction. -/
-theorem all_sup_iff (φ : L.BoundedFormula α (n + 1)) (ψ : L.BoundedFormula α n) :
-    (φ.all ⊔ ψ) ⇔[T] (φ ⊔ ψ.liftAt 1 n).all :=
-  fun M v xs => by simp [forall_or_right]
-
-/-- An existential quantifier in the left disjunct can be moved in front of the disjunction. -/
-theorem ex_sup_iff (φ : L.BoundedFormula α (n + 1)) (ψ : L.BoundedFormula α n) :
-    (φ.ex ⊔ ψ) ⇔[T] (φ ⊔ ψ.liftAt 1 n).ex :=
-  fun M v xs => by simp [exists_or]
-
-/-- A universal quantifier in the right disjunct can be moved in front of the disjunction. -/
-theorem sup_all_iff (φ : L.BoundedFormula α n) (ψ : L.BoundedFormula α (n + 1)) :
-    (φ ⊔ ψ.all) ⇔[T] (φ.liftAt 1 n ⊔ ψ).all :=
-  fun M v xs => by simp [forall_or_left]
-
-/-- An existential quantifier in the right disjunct can be moved in front of the disjunction. -/
-theorem sup_ex_iff (φ : L.BoundedFormula α n) (ψ : L.BoundedFormula α (n + 1)) :
-    (φ ⊔ ψ.ex) ⇔[T] (φ.liftAt 1 n ⊔ ψ).ex :=
-  fun M v xs => by simp [exists_or]
-
-end Quantifiers
 
 /-- A positive formula is one built from atomic formulas by conjunction, disjunction and
 universal and existential quantification. Neither `⊥` nor `⊤` is positive in this convention. -/
@@ -254,17 +193,6 @@ section Preservation
 
 variable {M N F : Type*} [L.Structure M] [L.Structure N] [FunLike F M N] [L.HomClass F M N]
   {φ : L.BoundedFormula α n}
-
-/-- Atomic formulas are preserved by homomorphisms. -/
-theorem IsAtomic.realize_comp_hom (hφ : φ.IsAtomic) (f : F) {v : α → M} {xs : Fin n → M}
-    (h : φ.Realize v xs) : φ.Realize (f ∘ v) (f ∘ xs) := by
-  cases hφ with
-  | equal t₁ t₂ =>
-    simp only [realize_bdEqual, ← Sum.comp_elim, HomClass.realize_term] at h ⊢
-    exact congrArg f h
-  | rel R ts =>
-    simp only [realize_rel, ← Sum.comp_elim, HomClass.realize_term] at h ⊢
-    exact HomClass.map_rel f R _ h
 
 /-- Positive formulas are preserved by surjective homomorphisms: if a positive formula holds of
 a tuple in `M`, it holds of the image tuple in `N`. -/
