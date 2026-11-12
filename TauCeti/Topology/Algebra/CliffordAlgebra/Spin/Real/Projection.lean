@@ -232,11 +232,9 @@ theorem realCliffordSpinToSpecialOrthogonalRange_eq_one_iff (n : ℕ)
   obtain rfl | hn := n.eq_zero_or_pos
   · -- In dimension zero the Spin group is trivial.
     have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
-    have hx : x = 1 := by
-      obtain ⟨_, y, rfl⟩ := x
-      obtain rfl : y = 1 := Subsingleton.elim _ _
-      exact Subtype.ext (map_one _)
-    subst hx
+    have hX : Subsingleton (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 0 0))) :=
+      (Set.subsingleton_coe _).mpr (MonoidHom.subsingleton_coe_range _)
+    obtain rfl : x = 1 := Subsingleton.elim _ _
     simp
   have : NeZero n := ⟨hn.ne'⟩
   obtain ⟨_, y, rfl⟩ := x
@@ -257,22 +255,15 @@ theorem isCoveringMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
   obtain rfl | hn := n.eq_zero_or_pos
   · -- In dimension zero both carriers are points.
     have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
-    have hX : Subsingleton (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 0 0))) := by
-      refine ⟨fun a b ↦ ?_⟩
-      obtain ⟨_, y, rfl⟩ := a
-      obtain ⟨_, z, rfl⟩ := b
-      obtain rfl : y = z := Subsingleton.elim y z
-      rfl
+    have hX : Subsingleton (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 0 0))) :=
+      (Set.subsingleton_coe _).mpr (MonoidHom.subsingleton_coe_range _)
     have hY : Subsingleton (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (show QuadraticForm ℝ (Fin 0 → ℝ) from realCliffordForm 0 0))) := by
-      refine ⟨fun a b ↦ ?_⟩
-      obtain ⟨x, rfl⟩ := realCliffordSpinToSpecialOrthogonalRange_surjective 0 a
-      obtain ⟨y, rfl⟩ := realCliffordSpinToSpecialOrthogonalRange_surjective 0 b
-      rw [Subsingleton.elim x y]
+        (realCliffordForm 0 0))) :=
+      (realCliffordSpinToSpecialOrthogonalRange_surjective 0).subsingleton
     let _ : Unique (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 0 0))) :=
       ⟨⟨1⟩, fun _ ↦ Subsingleton.elim _ _⟩
     let _ : Unique (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (show QuadraticForm ℝ (Fin 0 → ℝ) from realCliffordForm 0 0))) :=
+        (realCliffordForm 0 0))) :=
       ⟨⟨1⟩, fun _ ↦ Subsingleton.elim _ _⟩
     have h : ⇑(realCliffordSpinToSpecialOrthogonalRange 0) = ⇑(Homeomorph.homeomorphOfUnique _ _) :=
       funext fun _ ↦ Subsingleton.elim _ _
