@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Types.Pushouts
 public import Mathlib.CategoryTheory.SmallObject.TransfiniteCompositionLifting
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
 public import Mathlib.Topology.Separation.Regular
+public import TauCeti.Topology.Homotopy.Extension.Basic
 
 /-!
 # Extending disjoint open sets along maps of `TopCat`
@@ -23,13 +24,18 @@ property with respect to the map from that space to a point, and the general the
 properties shows that they are stable under cobase change, coproducts and transfinite composition.
 In particular a relative cell complex in `TopCat` whose cells extend disjoint open sets extends
 disjoint open sets. A map with a continuous retraction on a neighbourhood of its range extends
-disjoint open sets (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`).
+disjoint open sets (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`), and so does an
+embedding whose range has the homotopy extension property
+(`TauCeti.TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty`).
 
 The application is to Hausdorffness of cell complexes: two points separated by open sets stay
 separated after a map which extends disjoint open sets.
 
 * `TauCeti.TopCat.t2Space_of_isColimit`: the colimit of a filtered diagram of Hausdorff spaces is
   Hausdorff if the maps to the colimit extend disjoint open sets.
+* `TauCeti.TopCat.t2Space_of_isColimit_of_extendsDisjointOpens_map`: the colimit of a sequence of
+  Hausdorff spaces is Hausdorff if the maps between consecutive spaces extend disjoint open sets.
+  In particular a sequence of closed cofibrations of Hausdorff spaces has a Hausdorff colimit.
 * `TauCeti.TopCat.t2Space_of_isPushout`: attaching a regular Hausdorff space `B` to a Hausdorff
   space along a map `m : A ⟶ B` with closed range which extends disjoint open sets gives a
   Hausdorff space.
@@ -181,6 +187,23 @@ theorem extendsDisjointOpens_of_continuousOn {X Y : TopCat.{u}} {Z : Type*} [Top
   · ext x
     simp [hmN, hρm]
 
+/-- **Cofibrations extend disjoint open sets.** An inducing map `m : X ⟶ Y` of `TopCat` whose
+range has the homotopy extension property extends disjoint open sets. A retraction `r` of the
+cylinder `I × Y` onto `{0} × Y ∪ I × range m` sends every point `(1, y)` of the open neighbourhood
+`{y | (r (1, y)).1 ≠ 0}` of the range of `m` into `I × range m`, so its second component is a
+continuous retraction of that neighbourhood onto the range. -/
+theorem extendsDisjointOpens_of_hasHomotopyExtensionProperty {X Y : TopCat.{u}} (m : X ⟶ Y)
+    (hm : IsInducing m) (h : HasHomotopyExtensionProperty (Set.range m)) :
+    extendsDisjointOpens m := by
+  obtain ⟨r, hr, hr'⟩ := h.exists_retraction
+  have hrm (x : X) : r (1, m x) = (1, m x) :=
+    hr' _ (mem_cylinderExtensionDomain_of_mem (Set.mem_range_self x))
+  refine extendsDisjointOpens_of_continuousOn m hm (N := {y | (r (1, y)).1 ≠ 0})
+    (isOpen_ne_fun (by fun_prop) continuous_const) (ρ := fun y ↦ (r (1, y)).2)
+    (by fun_prop : Continuous fun y ↦ (r (1, y)).2).continuousOn (fun x ↦ by simp [hrm])
+    (fun y hy ↦ (mem_cylinderExtensionDomain_iff.1 (hr (1, y))).resolve_left hy)
+    (fun x ↦ by simp [hrm])
+
 /-- If two points of a Hausdorff space `X` are mapped by `f : X ⟶ Y` to distinct points and `f`
 extends disjoint open sets, then their images are separated by disjoint open sets of `Y`. -/
 private lemma exists_disjoint_isOpen_apply {X Y : TopCat.{u}} [T2Space X] {f : X ⟶ Y}
@@ -207,6 +230,21 @@ theorem t2Space_of_isColimit {J : Type*} [Category J] [IsFilteredOrEmpty J] {F :
     exact hx'
   rw [← hy, ← hy'] at hyy' ⊢
   exact exists_disjoint_isOpen_apply (h _) hyy'
+
+/-- **Colimits of sequences of Hausdorff spaces.** If `F` is a sequence of Hausdorff spaces whose
+maps `F.obj n ⟶ F.obj (n + 1)` extend disjoint open sets, then the colimit of `F` is Hausdorff:
+the maps to the colimit extend disjoint open sets, as transfinite compositions of the maps of the
+sequence. -/
+theorem t2Space_of_isColimit_of_extendsDisjointOpens_map {F : ℕ ⥤ TopCat.{u}}
+    [∀ n, T2Space (F.obj n)] (hF : ∀ n : ℕ, extendsDisjointOpens (F.map (homOfLE n.le_succ)))
+    {c : Cocone F} (hc : IsColimit c) : T2Space c.pt := by
+  let h : extendsDisjointOpens.TransfiniteCompositionOfShape ℕ (c.ι.app ⊥) :=
+    { F := F
+      isoBot := Iso.refl _
+      incl := c.ι
+      isColimit := hc
+      map_mem n _ := hF n }
+  exact t2Space_of_isColimit hc h.mem_incl_app
 
 section Pushout
 

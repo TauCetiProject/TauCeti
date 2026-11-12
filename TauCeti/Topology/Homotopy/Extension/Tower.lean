@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Functor.OfSequence
+public import TauCeti.Topology.Category.TopCat.ClosedEmbedding
 public import TauCeti.Topology.Category.TopCat.Limits.Homotopy
 public import TauCeti.Topology.Coherent
 public import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
@@ -60,6 +61,9 @@ The proofs have three steps.
 * `TauCeti.cofibrationTowerHomotopyEquiv`: **a levelwise homotopy equivalence of sequences of
   cofibrations induces a homotopy equivalence of colimits**, whose underlying map is the induced
   map (`TauCeti.cofibrationTowerHomotopyEquiv_toFun`).
+* `TauCeti.exists_homotopyEquiv_of_isColimit_of_isCoherentWith`: **a colimit of a sequence of
+  closed cofibrations is homotopy equivalent to a space exhausted by a tower of cofibrations**, as
+  soon as the stages are, compatibly with the maps of the two towers.
 
 ## References
 
@@ -309,5 +313,78 @@ theorem cofibrationTowerHomotopyEquiv_toFun
   (rfl)
 
 end Colimit
+
+section ColimitCoherent
+
+open CategoryTheory Limits
+
+/-- **Colimits of towers of cofibrations compared with exhausted spaces.** Let `F` be a sequence of
+spaces whose maps `F.obj n ⟶ F.obj (n + 1)` are closed embeddings with images having the homotopy
+extension property, with colimit `c`. Let `Y` be the union of an increasing sequence of subsets
+`B n`, each with the homotopy extension property in the next, carrying the topology coherent with
+it. Then homotopy equivalences `e n : F.obj n ≃ₕ B n`, commuting with the maps of `F` and the
+inclusions `B n ⊆ B (n + 1)`, induce a homotopy equivalence `c.pt ≃ₕ Y` which is `e n` on the
+image of `F.obj n`.
+
+This compares the two forms of `TauCeti.exists_homotopyEquiv_of_isCoherentWith` and
+`TauCeti.cofibrationTowerHomotopyEquiv`: the colimit is the union of the images of the `F.obj n`,
+which are closed embeddings, and it carries the topology coherent with them. -/
+theorem exists_homotopyEquiv_of_isColimit_of_isCoherentWith {F : ℕ ⥤ TopCat.{u}}
+    (hF : ∀ n : ℕ, IsClosedEmbedding (F.map (homOfLE n.le_succ)))
+    (hFh : ∀ n : ℕ, HasHomotopyExtensionProperty (range (F.map (homOfLE n.le_succ))))
+    {c : Cocone F} (hc : IsColimit c) {Y : Type u} [TopologicalSpace Y] {B : ℕ → Set Y}
+    (hB : Monotone B) (hBY : ⋃ n, B n = univ) (hBc : IsCoherentWith (range B))
+    (hBH : ∀ n, HasHomotopyExtensionProperty ((↑) ⁻¹' B n : Set (B (n + 1))))
+    (e : ∀ n, F.obj n ≃ₕ B n)
+    (he : ∀ n x, (e (n + 1) (F.map (homOfLE n.le_succ) x) : Y) = e n x) :
+    ∃ h : c.pt ≃ₕ Y, ∀ n x, h (c.ι.app n x) = e n x := by
+  -- The maps to the colimit are closed embeddings, so the colimit is the union of their images,
+  -- each homeomorphic to its stage.
+  have hι (n : ℕ) : IsClosedEmbedding (c.ι.app n) :=
+    TopCat.isClosedEmbedding_ι_of_isColimit
+      (fun _ _ ↦ TopCat.isClosedEmbedding_map_of_isWellOrderContinuous F fun n _ ↦ hF n) hc n
+  have hw (n : ℕ) (x : F.obj n) : c.ι.app (n + 1) (F.map (homOfLE n.le_succ) x) = c.ι.app n x := by
+    rw [← ConcreteCategory.comp_apply, c.w]
+  let A (n : ℕ) : Set c.pt := range (c.ι.app n)
+  let φ (n : ℕ) : F.obj n ≃ₜ A n := (hι n).isEmbedding.toHomeomorph
+  have hA : Monotone A := monotone_nat_of_le_succ fun n ↦ by
+    rintro _ ⟨x, rfl⟩
+    exact ⟨_, hw n x⟩
+  have hAX : ⋃ n, A n = univ := eq_univ_of_forall fun y ↦ by
+    obtain ⟨n, x, hx⟩ :=
+      Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) y
+    exact mem_iUnion.2 ⟨n, x, hx⟩
+  have hAc : IsCoherentWith (range A) := IsCoherentWith.of_isClosed fun t ht ↦
+    (TopCat.isClosed_iff_of_isColimit _ hc t).2 fun n ↦
+      (ht _ (mem_range_self n)).preimage (φ n).continuous
+  have hAH (n : ℕ) : HasHomotopyExtensionProperty ((↑) ⁻¹' A n : Set (A (n + 1))) := by
+    have hrange : φ (n + 1) '' range (F.map (homOfLE n.le_succ)) = (↑) ⁻¹' A n := by
+      ext p
+      constructor
+      · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
+        exact ⟨x, (hw n x).symm⟩
+      · rintro ⟨x, hx⟩
+        exact ⟨_, mem_range_self x, Subtype.ext ((hw n x).trans hx)⟩
+    simpa only [hrange] using (hFh n).image (φ (n + 1))
+  -- The stagewise equivalences glue to a map from the colimit.
+  let s : Cocone F :=
+    { pt := TopCat.of Y
+      ι := NatTrans.ofSequence (fun n ↦ TopCat.ofHom ((subtypeVal (B n)).comp (e n).toFun))
+        fun n ↦ by
+          ext x
+          simpa using he n x }
+  have hfac (n : ℕ) (x : F.obj n) : hc.desc s (c.ι.app n x) = e n x :=
+    ConcreteCategory.congr_hom (hc.fac s n) x
+  let e' (n : ℕ) : A n ≃ₕ B n := (φ n).symm.toHomotopyEquiv.trans (e n)
+  have he' (n : ℕ) (a : A n) : (e' n a : Y) = (hc.desc s).hom a := by
+    obtain ⟨x, rfl⟩ := (φ n).surjective a
+    have h : e' n (φ n x) = e n x := congrArg (e n) ((φ n).symm_apply_apply x)
+    rw [h]
+    exact (hfac n x).symm
+  obtain ⟨h, hh, -⟩ :=
+    exists_homotopyEquiv_of_isCoherentWith hA hB hAX hBY hAc hBc hAH hBH (hc.desc s).hom e' he'
+  exact ⟨h, fun n x ↦ by rw [hh]; exact hfac n x⟩
+
+end ColimitCoherent
 
 end TauCeti
