@@ -43,6 +43,12 @@ noncomputable def upperIncompleteGamma (a z : ℂ) : ℂ :=
   _root_.Complex.exp (-z) *
     ∫ t in Ioi (0 : ℝ), (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ))
 
+/-- The defining horizontal-ray integral with its exponential prefactor. -/
+theorem upperIncompleteGamma_def (a z : ℂ) :
+    upperIncompleteGamma a z =
+      _root_.Complex.exp (-z) *
+        ∫ t in Ioi (0 : ℝ), (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ)) := (rfl)
+
 /-- Absolute convergence of the horizontal-ray integrand on the slit plane, for every
 complex parameter `a`. -/
 theorem integrableOn_upperIncompleteGamma_integrand (a : ℂ) {z : ℂ}
