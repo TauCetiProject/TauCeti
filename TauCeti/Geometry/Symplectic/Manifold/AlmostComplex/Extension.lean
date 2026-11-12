@@ -111,13 +111,14 @@ theorem cutoffInterp_of_eq_one {n : N} (hW : n ∈ W) (h : ρ n = 1) :
   simp only [h]
   exact (hK₀ n).cayleyInterp_one (V := E) (hK₁ n hW)
 
-/-- Where the prescribed structure is the background one, so is cutoff interpolation. -/
+/-- Where the prescribed structure is the background one, or outside `W`, cutoff interpolation is
+the background structure. -/
 @[simp]
-theorem cutoffInterp_of_eq {n : N} (h : K₁ n = K₀ n) :
+theorem cutoffInterp_of_eq {n : N} (h : n ∈ W → K₁ n = K₀ n) :
     cutoffInterp hσn hK₀ hK₁ ρ hρ n = K₀ n := by
   by_cases hW : n ∈ W
   · rw [cutoffInterp_of_mem hσn hK₀ hK₁ ρ hρ hW]
-    exact (hK₀ n).cayleyInterp_of_eq (V := E) (hK₁ n hW) h (hρ n)
+    exact (hK₀ n).cayleyInterp_of_eq (V := E) (hK₁ n hW) (h hW) (hρ n)
   · exact cutoffInterp_of_notMem hσn hK₀ hK₁ ρ hρ hW
 
 /-- Over `W`, cutoff interpolation is the Cayley path expression in the operators of `K₀` and
@@ -237,9 +238,7 @@ theorem exists_compatible_eq_of_cutoff (hU : IsOpen U)
     exact h₀.isNondegenerate.cutoffInterp_of_eq_zero (f := id) h₀.compatibleAt hK ρ hρ hx
   · intro x hx
     rw [hJ]
-    by_cases hxU : x ∈ U
-    · exact h₀.isNondegenerate.cutoffInterp_of_eq (f := id) h₀.compatibleAt hK ρ hρ (hx hxU)
-    · exact h₀.isNondegenerate.cutoffInterp_of_notMem (f := id) h₀.compatibleAt hK ρ hρ hxU
+    exact h₀.isNondegenerate.cutoffInterp_of_eq (f := id) h₀.compatibleAt hK ρ hρ hx
 
 include h₀ hK in
 /-- Extend a compatible field prescribed smoothly near a closed set, retaining a chosen

@@ -31,15 +31,18 @@ Prescribing a single family on a neighbourhood of all of `F` encodes the agreeme
 overlaps and face intersections. Then there is a family `K'_l` with all these properties for every
 `l ∈ Λ`, equal to `L_l` for `l ∈ F` and to `K_l` for `l ∉ W`
 (`TauCeti.SmoothMappingTorus.exists_verticalFamily_family_eqOn`). It also equals `K_l` at every
-point where `L_l` already does. With the seam-family background this is the compatibility with
-the fixed time-end collars: where the prescribed data restrict to the seam family on a collar
-`|t - k| ≤ 1/3`, for instance to `K₀ l` on `|t| ≤ 1/3`, so does the result.
+point where `L_l` already does. With the seam-family background
+(`TauCeti.SmoothMappingTorus.exists_verticalFamily_family_eqOn_seamFamily`) this is the
+compatibility with the fixed time-end collars: where the prescribed data restrict to the seam
+family on a collar `|t - k| ≤ 1/3`, for instance to `K₀ l` on `|t| ≤ 1/3`, so does the result.
 
 The family is the cutoff interpolation of
-`TauCeti.SmoothMappingTorus.exists_verticalFamily_eq_of_cutoff`, for the open set `W × X_φ` and
-a cutoff that depends only on the parameter: a smooth `ρ : Λ → [0, 1]` equal to one exactly on
-`F` and with topological support in `W`. Since the cutoff is built on `Λ` alone, no countability
-assumption on `M` is needed, unlike for the closed regions of
+`TauCeti.SmoothMappingTorus.exists_verticalFamily_eq_of_invariant_cutoff`, for the open set
+`W × ((ℝ × ℝ) × M)` and a cutoff that depends only on the parameter: a smooth `ρ : Λ → [0, 1]`
+equal to one exactly on `F` and with topological support in `W`. Both are invariant under the
+deck transformations, so the construction never passes to the mapping torus. Hence the seam
+identity may be that of a diffeomorphism `Φ l` varying with the parameter, and neither a
+separation nor a countability assumption on `M` is needed, unlike for the closed regions of
 `TauCeti.SmoothMappingTorus.exists_verticalFamily_eqOn`.
 
 The descended block structures `J_l` on `X_φ` are then jointly smooth in `(l, y)`, compatible
@@ -49,13 +52,16 @@ structures descended from `K_l` for `l ∉ W`, and agree with them wherever `L_l
 seam-family background these are the structures
 `TauCeti.SmoothMappingTorus.seamAlmostComplexStructure` built from `K₀ l`
 (`TauCeti.SmoothMappingTorus.exists_suspensionAlmostComplexStructure_family_eqOn_seamFamily`).
-Neither closedness of `σ` nor compactness of `M` or of `Λ` is used. The symplectomorphism `φ` is
-the same for every parameter, since the structures `J_l` live on the one manifold `X_φ`.
+Neither closedness of `σ` nor compactness of `M` or of `Λ` is used. For the descended structures
+the symplectomorphism `φ` is the same for every parameter, since the structures `J_l` live on the
+one manifold `X_φ`.
 
 ## Main results
 
 * `TauCeti.SmoothMappingTorus.exists_verticalFamily_family_eqOn`: relative extension of
   parametrized seam-compatible vertical families from a closed set of parameters.
+* `TauCeti.SmoothMappingTorus.exists_verticalFamily_family_eqOn_seamFamily`: the same with the
+  seam families as background.
 * `TauCeti.SmoothMappingTorus.exists_suspensionAlmostComplexStructure_family_eqOn`: the
   descended smooth family of `Ω`-compatible block structures on `X_φ`, with prescribed vertical
   part over the closed set of parameters, and the structures descended from the background away
@@ -82,11 +88,12 @@ namespace TauCeti.SmoothMappingTorus
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M] [T2Space M]
+  [IsManifold I ∞ M]
   {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothTwoForm I M} (hσn : σ.IsNondegenerate)
   {Λ : Type*} {EΛ HΛ : Type*} [NormedAddCommGroup EΛ] [NormedSpace ℝ EΛ] [TopologicalSpace HΛ]
   {IΛ : ModelWithCorners ℝ EΛ HΛ} [TopologicalSpace Λ] [ChartedSpace HΛ Λ]
   [IsManifold IΛ ∞ Λ] [FiniteDimensional ℝ EΛ] [T2Space Λ] [SigmaCompactSpace Λ]
+  {Φ : Λ → M ≃ₘ⟮I, I⟯ M}
   {K : Λ → ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I p.2)}
   (hK : ∀ l p, (hσn.symplecticFormAt p.2).Compatible (K l p))
   {W : Set Λ} (L : Λ → ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I p.2))
@@ -96,12 +103,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 include hK hL in
 /-- **Parametrized seam-compatible vertical families with values prescribed on a closed set of
-parameters.** Let `K l` be a family, over a Hausdorff σ-compact finite-dimensional manifold `Λ`,
-of `σ`-compatible vertical families on `(ℝ × ℝ) × M`, jointly smooth in `(l, ((s, t), x))`,
-periodic in `s` and satisfying the seam identity, and let `L l` be a family with these properties
-for the parameters `l` in an open set `W`. For every closed set `F ⊆ W`, for instance a union of
-closed faces of `Λ`, there is a family `K' l` with these properties for every `l`, which is `L l`
-for `l ∈ F`, is `K l` for `l ∉ W`, and agrees with `K l` at every point where `L l` does. -/
+parameters.** Let `Φ l` be diffeomorphisms of `M` and let `K l` be a family, over a Hausdorff
+σ-compact finite-dimensional manifold `Λ`, of `σ`-compatible vertical families on
+`(ℝ × ℝ) × M`, jointly smooth in `(l, ((s, t), x))`, periodic in `s` and satisfying the seam
+identity of `Φ l`, and let `L l` be a family with these properties for the parameters `l` in an
+open set `W`. For every closed set `F ⊆ W`, for instance a union of closed faces of `Λ`, there is a
+family `K' l` with these properties for every `l`, which is `L l` for `l ∈ F`, is `K l` for
+`l ∉ W`, and agrees with `K l` at every point where `L l` does. -/
 theorem exists_verticalFamily_family_eqOn
     (hKs : ContMDiff (IΛ.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
       (fun r : Λ × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
@@ -109,8 +117,62 @@ theorem exists_verticalFamily_family_eqOn
         r.2.2 (K r.1 r.2).toLinearMap.toContinuousLinearMap))
     (hKp : ∀ l p, K l (p.1 + (1, 0), p.2) = K l p)
     (hKt : ∀ l (p : (ℝ × ℝ) × M) (v : TangentSpace I p.2),
-      mfderiv I I φ.symm p.2 (K l p v) =
-        K l (p.1 + (0, 1), φ.symm p.2) (mfderiv I I φ.symm p.2 v))
+      mfderiv I I (Φ l).symm p.2 (K l p v) =
+        K l (p.1 + (0, 1), (Φ l).symm p.2) (mfderiv I I (Φ l).symm p.2 v))
+    (hW : IsOpen W) {F : Set Λ} (hF : IsClosed F) (hFW : F ⊆ W)
+    (hLs : ContMDiffOn (IΛ.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun r : Λ × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        r.2.2 (L r.1 r.2).toLinearMap.toContinuousLinearMap) (W ×ˢ univ))
+    (hLp : ∀ l ∈ W, ∀ p, L l (p.1 + (1, 0), p.2) = L l p)
+    (hLt : ∀ l ∈ W, ∀ (p : (ℝ × ℝ) × M) (v : TangentSpace I p.2),
+      mfderiv I I (Φ l).symm p.2 (L l p v) =
+        L l (p.1 + (0, 1), (Φ l).symm p.2) (mfderiv I I (Φ l).symm p.2 v)) :
+    ∃ K' : Λ → ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I p.2),
+      ContMDiff (IΛ.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+        (fun r : Λ × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+          (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+          r.2.2 (K' r.1 r.2).toLinearMap.toContinuousLinearMap) ∧
+      (∀ l p, K' l (p.1 + (1, 0), p.2) = K' l p) ∧
+      (∀ l (p : (ℝ × ℝ) × M) (v : TangentSpace I p.2),
+        mfderiv I I (Φ l).symm p.2 (K' l p v) =
+          K' l (p.1 + (0, 1), (Φ l).symm p.2) (mfderiv I I (Φ l).symm p.2 v)) ∧
+      (∀ l p, (hσn.symplecticFormAt p.2).Compatible (K' l p)) ∧
+      (∀ l ∈ F, K' l = L l) ∧
+      (∀ l ∉ W, K' l = K l) ∧
+      (∀ l p, (l ∈ W → L l p = K l p) → K' l p = K l p) := by
+  obtain ⟨ρ, hsρ, hrange, ht, hone⟩ :=
+    hF.exists_contMDiff_tsupport_subset_eq_one_iff (I := IΛ) hW hFW
+  -- Cut off over the open set `W × ((ℝ × ℝ) × M)`, with a weight depending only on the parameter;
+  -- both are invariant under the deck transformations.
+  obtain ⟨K', hK's, hK'p, hK't, hK'c, hlocal, -, hagree⟩ :=
+    exists_verticalFamily_eq_of_invariant_cutoff hσn (V := Prod.fst ⁻¹' W) hK
+      (fun l p hl ↦ hL l hl p) (fun r ↦ ρ r.1) (fun r ↦ hrange r.1) hKs hKp hKt
+      (hW.preimage continuous_fst) (fun _ _ ↦ Iff.rfl) (fun _ _ ↦ Iff.rfl)
+      (hLs.mono fun _ hr ↦ ⟨hr, mem_univ _⟩) (fun l p hl ↦ hLp l hl p) (fun l p hl ↦ hLt l hl p)
+      (hsρ.comp contMDiff_fst)
+      ((tsupport_comp_subset_preimage ρ continuous_fst).trans (preimage_mono ht))
+      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+  exact ⟨K', hK's, hK'p, hK't, hK'c, fun l hl ↦ funext fun p ↦ hlocal l p ((hone l).mp hl),
+    fun l hl ↦ funext fun p ↦ hagree l p fun h ↦ (hl h).elim, hagree⟩
+
+include hL in
+/-- **Parametrized seam-compatible vertical families with values prescribed on a closed set of
+parameters, around the seam families.** Let `φ` preserve the nondegenerate form `σ`, and let
+`K₀ l` be a smooth family of `σ`-compatible almost complex structures on `M`, over a Hausdorff
+σ-compact finite-dimensional manifold `Λ`. Let `L l` be a family of vertical families on
+`(ℝ × ℝ) × M` given for the parameters `l` in an open set `W`, jointly smooth there,
+`σ`-compatible, periodic in `s` and satisfying the seam identity of `φ`. For every closed set
+`F ⊆ W` there is a family `K' l` with these properties for every `l`, which is `L l` for `l ∈ F`,
+is the seam family of `K₀ l` (`TauCeti.SmoothMappingTorus.seamFamily`) for `l ∉ W`, and agrees
+with it at every point where `L l` does. -/
+theorem exists_verticalFamily_family_eqOn_seamFamily
+    (hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ)
+    {K₀ : Λ → SmoothAlmostComplexStructure I M} (hK₀ : ∀ l, σ.Compatible (K₀ l))
+    (hK₀s : ContMDiff (IΛ.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : Λ × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        ((K₀ q.1).toEndomorphism q.2)))
     (hW : IsOpen W) {F : Set Λ} (hF : IsClosed F) (hFW : F ⊆ W)
     (hLs : ContMDiffOn (IΛ.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
       (fun r : Λ × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
@@ -131,32 +193,18 @@ theorem exists_verticalFamily_family_eqOn
           K' l (p.1 + (0, 1), φ.symm p.2) (mfderiv I I φ.symm p.2 v)) ∧
       (∀ l p, (hσn.symplecticFormAt p.2).Compatible (K' l p)) ∧
       (∀ l ∈ F, K' l = L l) ∧
-      (∀ l ∉ W, K' l = K l) ∧
-      (∀ l p, (l ∈ W → L l p = K l p) → K' l p = K l p) := by
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-  obtain ⟨ρ, hsρ, hrange, ht, hone⟩ :=
-    hF.exists_contMDiff_tsupport_subset_eq_one_iff (I := IΛ) hW hFW
-  -- Cut off over the open set `W × X_φ`, with a weight depending only on the parameter.
-  obtain ⟨K', hK's, hK'p, hK't, hK'c, hlocal, hbase, hagree⟩ :=
-    exists_verticalFamily_eq_of_cutoff hσn (U := Prod.fst ⁻¹' W) hKs hKp hKt hK
-      (hW.preimage continuous_fst) (hLs.mono fun _ hr ↦ ⟨hr, mem_univ _⟩)
-      (fun l p hl ↦ hLp l hl p) (fun l p hl ↦ hLt l hl p) (fun l p hl ↦ hL l hl p)
-      (fun y ↦ ρ y.1) (fun y ↦ hrange y.1) (hsρ.comp contMDiff_fst)
-      ((tsupport_comp_subset_preimage ρ continuous_fst).trans (preimage_mono ht))
-  have hout (l : Λ) (hl : l ∉ W) : K' l = K l :=
-    funext fun p ↦ hbase l p (Function.notMem_support.mp fun h ↦ hl (ht (subset_tsupport ρ h)))
-  refine ⟨K', hK's, hK'p, hK't, hK'c, fun l hl ↦ funext fun p ↦ hlocal l p ((hone l).mp hl),
-    hout, fun l p h ↦ ?_⟩
-  by_cases hl : l ∈ W
-  · exact hagree l p fun _ ↦ h hl
-  · exact congrFun (hout l hl) p
+      (∀ l ∉ W, K' l = seamFamily hσ (hK₀ l)) ∧
+      (∀ l p, (l ∈ W → L l p = seamFamily hσ (hK₀ l) p) → K' l p = seamFamily hσ (hK₀ l) p) :=
+  exists_verticalFamily_family_eqOn hσn (fun l ↦ compatible_seamFamily hσ (hK₀ l) hσn) L hL
+    (Φ := fun _ ↦ φ) (contMDiff_seamFamily_family hσ hK₀ hK₀s)
+    (fun l ↦ seamFamily_add_fst hσ (hK₀ l)) (fun l ↦ mfderiv_symm_seamFamily hσ (hK₀ l)) hW hF hFW
+    hLs hLp hLt
 
 /-! ### Descended families of block structures -/
 
 section Descended
 
-variable [LocallyCompactSpace M]
+variable [T2Space M] [LocallyCompactSpace M]
 
 include hK hL in
 /-- **Families of compatible block structures on a symplectic suspension with values prescribed on
@@ -220,7 +268,8 @@ theorem exists_suspensionAlmostComplexStructure_family_eqOn
             (hKs.comp ((contMDiff_const (c := l)).prodMk contMDiff_id)) (hKp l) (hKt l)
             ((s : UnitAddCircle), mk φ t x)) := by
   obtain ⟨K', hK's, hK'p, hK't, hK'c, hlocal, hbase, hagree⟩ :=
-    exists_verticalFamily_family_eqOn hσn hK L hL hKs hKp hKt hW hF hFW hLs hLp hLt
+    exists_verticalFamily_family_eqOn hσn hK L hL (Φ := fun _ ↦ φ) hKs hKp hKt hW hF hFW hLs hLp
+      hLt
   refine ⟨fun l ↦ suspensionAlmostComplexStructure φ
       (hK's.comp (contMDiff_const.prodMk contMDiff_id)) (hK'p l) (hK't l),
     contMDiff_suspensionAlmostComplexStructure_family φ hK's hK'p hK't,
