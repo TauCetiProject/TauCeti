@@ -86,6 +86,12 @@ def starSchwarzReflectionCoeff (C : ℂ → F →L[ℝ] F) (z : ℂ) : F →L[�
 
 variable {C : ℂ → F →L[ℝ] F}
 
+/-- The reflected coefficient is the explicit upper/lower half-plane witness. -/
+theorem starSchwarzReflectionCoeff_def (C : ℂ → F →L[ℝ] F) (z : ℂ) :
+    starSchwarzReflectionCoeff C z =
+      if 0 ≤ z.im then C z else (starL' ℝ : F ≃L[ℝ] F).arrowCongr (starL' ℝ) (C (conj z)) := by
+  rw [starSchwarzReflectionCoeff]
+
 @[simp]
 theorem starSchwarzReflectionCoeff_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) :
     starSchwarzReflectionCoeff C z = C z := ite_eq_left_iff.2 fun h ↦ (h hz).elim
@@ -109,8 +115,10 @@ theorem starSchwarzReflection_clm_apply (C : ℂ → F →L[ℝ] F) (ξ : ℂ �
 doubled domain. -/
 theorem MemLpLoc.starSchwarzReflectionCoeff {p : ℝ≥0∞} {Ω : Set ℂ}
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hC : MemLpLoc p (Ω ∩ {z | 0 ≤ z.im}) C) :
-    MemLpLoc p Ω (starSchwarzReflectionCoeff C) :=
-  (hC.ite_conj hΩ ((starL' ℝ : F ≃L[ℝ] F).arrowCongr (starL' ℝ)).toContinuousLinearMap :)
+    MemLpLoc p Ω (starSchwarzReflectionCoeff C) := by
+  rw [funext (starSchwarzReflectionCoeff_def C)]
+  simpa only [ContinuousLinearEquiv.coe_coe] using
+    hC.ite_conj hΩ ((starL' ℝ : F ≃L[ℝ] F).arrowCongr (starL' ℝ)).toContinuousLinearMap
 
 end Real
 
