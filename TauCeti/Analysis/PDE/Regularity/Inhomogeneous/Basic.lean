@@ -519,7 +519,7 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
         D * (R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) +
           R ^ (2 - (Fintype.card ι : ℝ) / r) *
             (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam) := by
-  obtain ⟨K, hK, hsplit⟩ :=
+  obtain ⟨K, -, hsplit⟩ :=
     exists_forall_energyFormH1_eq_zero_ae_abs_sub_le (mu := mu) hr hrn
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le (mu := mu) (lam := lam) (Lam := Lam)
@@ -598,7 +598,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
         (R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) +
           R ^ (2 - (Fintype.card ι : ℝ) / r) *
             (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam)) := by
-  obtain ⟨K, hK, hcmp⟩ := exists_forall_exists_ae_abs_sub_le_of_memLp (mu := mu) hr hrn
+  obtain ⟨K, -, hcmp⟩ := exists_forall_exists_ae_abs_sub_le_of_memLp (mu := mu) hr hrn
   obtain ⟨α, C, hα, hα1, hC, hosc⟩ :=
     exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
       (Lam := Lam) (two_sub_card_div_pos hrn)
@@ -652,7 +652,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
             R ^ (2 - (Fintype.card ι : ℝ) / r) *
               (eLpNorm f r (mu.restrict Omega)).toReal / lam)).toNNReal α
           (preciseRepresentative mu (W1p.value u)) K := by
-  obtain ⟨Ks, hKs, hcmp⟩ := exists_forall_exists_ae_abs_sub_le_of_memLp (mu := mu) hr hrn
+  obtain ⟨Ks, -, hcmp⟩ := exists_forall_exists_ae_abs_sub_le_of_memLp (mu := mu) hr hrn
   obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
     exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
       (Lam := Lam) (two_sub_card_div_pos hrn)
