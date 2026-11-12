@@ -11,21 +11,22 @@ public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
 /-!
 # The asymptotic orbit at the end of a finite-energy PSS plane
 
-Let `K` be the perturbation `TauCeti.Floer.PSSPlane.perturbation` of a PSS plane `p`, built from
+Let `𝔎` be the perturbation `TauCeti.Floer.PSSPlane.perturbation` of a PSS plane `p`, built from
 a period-one `C¹` Hamiltonian `H` on a symplectic vector space `(V, ω)`, and let `ε = ±1` be the
-sign of the end of `p` at `∞`. Let `u` be a solution of the Floer equation `(du - X_K)^{0,1} = 0`
-on the part `‖w‖ > exp (4π)` of the end, where `K` is `H(t) dt` in end coordinates, for uniformly
-tame almost complex structures `J(z)`, with image in a compact set and with finite energy there.
+sign of the end of `p` at `∞`. Let `u` be a `C²` solution of the Floer equation
+`(du - X_𝔎)^{0,1} = 0` on the part `‖w‖ > exp (4π)` of the end, where `𝔎` is `H(t) dt` in end
+coordinates, for uniformly tame almost complex structures `J(z)`, with image in a compact set and
+with finite energy there.
 For `R ∈ ℝ` write `ℓ_R(t) = u(φ(ε R + i t))` for the loop of `u` along the circle
 `‖w‖ = exp (2πR)`, where `φ(z) = exp (2π ε z)` is the end lift. This file shows that `u` breaks
 off a one-periodic orbit at its end:
 
 * there are a one-periodic orbit `x` of the Hamiltonian vector field, `x' = X_{H_t}(x)`, and
-  radii `R_n → ∞` such that the loops `ℓ_{R_n}` converge uniformly to `x`, and if `u` is `C²`
-  the actions `A_H(ℓ_R)` tend to `A_H(x)` as `R → ∞`
+  radii `R_n → ∞` such that the loops `ℓ_{R_n}` converge uniformly to `x`, and the actions
+  `A_H(ℓ_R)` tend to `A_H(x)` as `R → ∞`
   (`SymplecticForm.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbation`);
 * hence, for a `C²` solution on the whole plane with finite energy, the energy is
-  `E(u) = ε A_H(x) - ∫_ℂ R_K(u)`
+  `E(u) = ε A_H(x) - ∫_ℂ R_𝔎(u)`
   (`exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_pssPlanePerturbation_eq` in
   `TauCeti.SymplecticForm`).
 
@@ -176,7 +177,7 @@ private theorem lintegral_floerEnergyDensity_comp_realChart_positive_ne_top
     (fun z _ ↦ (contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable
       one_ne_zero z) fun z hz ↦ by
       rw [floerEnergyDensity_comp_realChart_positive ω hH hHs hz.1 (hu z hz.1),
-        abs_of_pos (positive.det_fderiv_realChart_pos z)]]
+        abs_of_pos (positive.det_fderiv_realChart_cylindricalEndLift_pos z)]]
   refine ((lintegral_mono_set ?_).trans_lt hE.lt_top).ne
   rintro _ ⟨z, hz, rfl⟩
   exact exp_lt_norm_realChart_positive hz.1
@@ -243,10 +244,10 @@ private theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_positive
   simp only [comp_apply, ψ, realChart_positive_mk] at hux hA
   exact ⟨x, hxper, hx, ⟨φ, hφ, hux⟩, hA⟩
 
-/-- **The asymptotic orbit at the end of a finite-energy PSS plane.** Let `K` be the perturbation of
+/-- **The asymptotic orbit at the end of a finite-energy PSS plane.** Let `𝔎` be the perturbation of
 a PSS plane `p` given by a period-one `C¹` Hamiltonian `H`, equal to `H(t) dt` in end coordinates
 on the part `‖w‖ > exp (4π)` of the end. Let `u` be `C²` there, with image in a compact set `K`,
-solving the Floer equation `(du - X_K)^{0,1} = 0` for almost complex structures `J(z)` with
+solving the Floer equation `(du - X_𝔎)^{0,1} = 0` for almost complex structures `J(z)` with
 `c ‖v‖² ≤ ω(v, J(z) v)` and `‖J(z) v‖ ≤ M ‖v‖`, `c > 0`, and with finite energy there. Then there
 is a one-periodic orbit `x` of the Hamiltonian vector field such that the loops
 `ℓ_R(t) = u(φ(ε R + i t))` converge uniformly to `x` along some `R_n → ∞`, and their actions
@@ -323,15 +324,15 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbatio
     simp only [hloop]
     exact (hrev (hper R)).symm
 
-/-- **The energy of a finite-energy PSS plane.** Let `K` be the perturbation of a PSS plane `p`
+/-- **The energy of a finite-energy PSS plane.** Let `𝔎` be the perturbation of a PSS plane `p`
 given by a period-one `C¹` Hamiltonian `H`, and let `u` be a `C²` solution of the Floer equation
-`(du - X_K)^{0,1} = 0` on the whole plane, for almost complex structures `J(z)` tamed by `ω`, with
+`(du - X_𝔎)^{0,1} = 0` on the whole plane, for almost complex structures `J(z)` tamed by `ω`, with
 finite energy. Suppose that on the part `‖w‖ > exp (4π)` of the end the image of `u` lies in a
 compact set `K` and `c ‖v‖² ≤ ω(v, J(z) v)` and `‖J(z) v‖ ≤ M ‖v‖` with `c > 0`. Then there is a
 one-periodic orbit `x` of the Hamiltonian vector field, the uniform limit of the loops
 `ℓ_R(t) = u(φ(ε R + i t))` along some `R_n → ∞`, such that
 
-`E(u) = ε A_H(x) - ∫_ℂ R_K(u)`. -/
+`E(u) = ε A_H(x) - ∫_ℂ R_𝔎(u)`. -/
 theorem exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_pssPlanePerturbation_eq
     (p : PSSPlane) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) (hu : ContDiff ℝ 2 u)
     (hK : IsCompact K)

@@ -166,7 +166,7 @@ theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag {X 
 
 /-- The end lift preserves orientation in real coordinates: its Jacobian determinant is
 positive. -/
-theorem det_fderiv_realChart_pos (p : PSSPlane) (z : ℝ × ℝ) :
+theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × ℝ) :
     0 < (fderiv ℝ (realChart p.cylindricalEndLift) z).det := by
   rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
   simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
@@ -487,7 +487,7 @@ private theorem integrableOn_image_endPiece_hamiltonianCurvature (ω : SmoothTwo
       (by fun_prop))).mul (hHs.continuous.comp (continuous_snd.prodMk (hu.comp hφ.continuous)))
   refine ((hc.continuousOn.integrableOn_compact hK).mono_set hPK).congr_fun (fun w _ ↦ ?_)
     (measurableSet_endPiece p R)
-  simp only [smul_eq_mul, abs_of_pos (det_fderiv_realChart_pos p w),
+  simp only [smul_eq_mul, abs_of_pos (det_fderiv_realChart_cylindricalEndLift_pos p w),
     det_mul_hamiltonianCurvature_realChart ω hH hHs]
 
 /-- **The curvature vanishes far out on the end.** On the part `ε s > 2` of the end of a PSS
@@ -518,7 +518,7 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Smooth
     perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineReal,
     equivRealProdCLM_symm_stdComplexLineImag,
     ω.hamiltonianCurvature_pssPlaneEndComponent_eq_zero hH (Or.inr hw)] at key
-  exact (mul_eq_zero.1 key.symm).resolve_left (det_fderiv_realChart_pos p w).ne'
+  exact (mul_eq_zero.1 key.symm).resolve_left (det_fderiv_realChart_cylindricalEndLift_pos p w).ne'
 
 /-- **The curvature is supported in the disc `‖w‖ ≤ exp (4π)`.** For `R ≥ 2`, the integral of the
 curvature `R_K(u)` of the perturbation of a PSS plane over the disc `‖w‖ ≤ exp (2πR)` is its
@@ -624,7 +624,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_realChart
   have hφ : ContDiff ℝ 2 φ := contDiff_realChart p.contDiff_cylindricalEndLift
   have hφd (w : ℝ × ℝ) : DifferentiableAt ℝ φ w := hφ.differentiable (by norm_num) w
   have hdet (w : ℝ × ℝ) : 0 ≤ (fderiv ℝ φ w).det :=
-    (det_fderiv_realChart_pos p w).le
+    (det_fderiv_realChart_cylindricalEndLift_pos p w).le
   have hud (w : ℝ × ℝ) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w) :=
     (hu (φ w)).mdifferentiableAt one_ne_zero
   have htgt (w : ℝ × ℝ) (v : ℂ) := mdifferentiableAt_perturbation_target (p := p) hH hHs
