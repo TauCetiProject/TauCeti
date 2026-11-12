@@ -26,7 +26,9 @@ spaces. It lets an evaluation `T i (g i)` pass to the limit when the operators `
 uniformly bounded, their values at the limiting argument converge, and the arguments `g i` converge.
 In particular, it supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
-`StronglyContinuousGroup.tendsto_apply`.
+`StronglyContinuousGroup.tendsto_apply`. Operators whose norms tend to zero eventually map any
+ball about `0` into any neighbourhood of `0`
+(`ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
@@ -154,6 +156,19 @@ theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
       exact (T i).le_of_opNorm_le hi _
     · simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hg).const_mul C
   simpa only [map_sub, sub_add_cancel, zero_add] using hmove.add hz
+
+/-- If the operator norms `‖T i‖` tend to zero, then eventually `T i` maps the ball of radius `R`
+about `0` into any prescribed neighbourhood of `0`. -/
+theorem eventually_mapsTo_ball_of_tendsto_opNorm {ι : Type*} {l : Filter ι} {T : ι → X →L[𝕜] Y}
+    (hT : Tendsto (fun i ↦ ‖T i‖) l (𝓝 0)) {V : Set Y} (hV : V ∈ 𝓝 0) (R : ℝ) :
+    ∀ᶠ i in l, Set.MapsTo (T i) (Metric.ball 0 R) V := by
+  obtain ⟨ρ, hρ, hρV⟩ := Metric.mem_nhds_iff.1 hV
+  have hR : Tendsto (fun i ↦ ‖T i‖ * R) l (𝓝 0) := by simpa using hT.mul_const R
+  filter_upwards [hR.eventually (gt_mem_nhds hρ)] with i hi x hx
+  refine hρV (mem_ball_zero_iff.2 ?_)
+  calc ‖T i x‖ ≤ ‖T i‖ * ‖x‖ := (T i).le_opNorm x
+    _ ≤ ‖T i‖ * R := by gcongr; exact (mem_ball_zero_iff.1 hx).le
+    _ < ρ := hi
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error

@@ -11,6 +11,7 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # The λ-lemma for linear hyperbolic maps
@@ -82,21 +83,6 @@ variable {ι F Eₛ Eᵤ : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup Eₛ] [NormedSpace ℝ Eₛ] [NormedAddCommGroup Eᵤ] [NormedSpace ℝ Eᵤ]
   {l : Filter ι} {S : ι → Eₛ →L[ℝ] Eₛ} {T : ι → Eᵤ ≃L[ℝ] Eᵤ} {g : Eᵤ → Eₛ} {n : ℕ∞ω}
 
-/-- If the inverses `T⁻¹` tend to zero in norm, they eventually map the ball of radius `R` into any
-prescribed neighbourhood of `0`. -/
-private theorem eventually_forall_symm_mem
-    (hT : Tendsto (fun t ↦ ‖((T t).symm : Eᵤ →L[ℝ] Eᵤ)‖) l (𝓝 0)) {V : Set Eᵤ} (hV : V ∈ 𝓝 0)
-    (R : ℝ) : ∀ᶠ t in l, ∀ v ∈ ball (0 : Eᵤ) R, (T t).symm v ∈ V := by
-  obtain ⟨ρ, hρ, hρV⟩ := Metric.mem_nhds_iff.1 hV
-  have hR : Tendsto (fun t ↦ ‖((T t).symm : Eᵤ →L[ℝ] Eᵤ)‖ * R) l (𝓝 0) := by
-    simpa using hT.mul_const R
-  filter_upwards [hR.eventually (gt_mem_nhds hρ)] with t ht v hv
-  refine hρV (mem_ball_zero_iff.2 ?_)
-  calc ‖(T t).symm v‖ ≤ ‖((T t).symm : Eᵤ →L[ℝ] Eᵤ)‖ * ‖v‖ :=
-        ((T t).symm : Eᵤ →L[ℝ] Eᵤ).le_opNorm v
-    _ ≤ ‖((T t).symm : Eᵤ →L[ℝ] Eᵤ)‖ * R := by gcongr; exact (mem_ball_zero_iff.1 hv).le
-    _ < ρ := ht
-
 /-- **Smoothness of the transformed graphs.** If `g` is `C^n` at `0` and `‖(T t)⁻¹‖ → 0`, then for
 every `k ≤ n` the maps `v ↦ S t (g ((T t)⁻¹ v))`, whose graphs are the images of the graph of `g`
 under `S t × T t`, are eventually `C^k` on the ball of radius `R`. -/
@@ -104,10 +90,10 @@ theorem eventually_contDiffOn_comp_comp_symm
     (hT : Tendsto (fun t ↦ ‖((T t).symm : Eᵤ →L[ℝ] Eᵤ)‖) l (𝓝 0)) (hg : ContDiffAt ℝ n g 0)
     {k : ℕ} (hk : k ≤ n) (R : ℝ) :
     ∀ᶠ t in l, ContDiffOn ℝ k (fun v ↦ S t (g ((T t).symm v))) (ball 0 R) := by
-  filter_upwards [eventually_forall_symm_mem hT ((hg.of_le hk).eventually (by simp)) R]
-    with t ht v hv
+  filter_upwards [ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm hT
+    ((hg.of_le hk).eventually (by simp)) R] with t ht v hv
   exact ((S t).contDiff.contDiffAt.comp v
-    ((ht v hv).comp v (T t).symm.contDiff.contDiffAt)).contDiffWithinAt
+    ((ht hv).comp v (T t).symm.contDiff.contDiffAt)).contDiffWithinAt
 
 /-- **The graph transform converges to zero in `C^n`.** Let `‖S t‖ → 0` and `‖(T t)⁻¹‖ → 0`
 along `l`, and let `g` be `C^n` at `0`. For every `i ≤ n`, the `i`-th derivatives of the maps
@@ -132,9 +118,10 @@ theorem tendstoUniformlyOn_iteratedFDeriv_comp_comp_symm
     simpa using (hS.mul (hT.pow i)).mul_const C
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
-  filter_upwards [eventually_forall_symm_mem hT hnear R, hbound.eventually (gt_mem_nhds hε)]
-    with t ht htε v hv
-  obtain ⟨hgv, hgvC⟩ := ht v hv
+  filter_upwards [ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm hT hnear R,
+    hbound.eventually (gt_mem_nhds hε)] with t ht htε v hv
+  obtain ⟨hgv, hgvC⟩ := ht hv
+  rw [ContinuousLinearEquiv.coe_coe] at hgv hgvC
   rw [Pi.zero_apply, dist_zero_left]
   calc ‖iteratedFDeriv ℝ i (fun v ↦ S t (g ((T t).symm v))) v‖
       ≤ ‖S t‖ * ‖iteratedFDeriv ℝ i (g ∘ (T t).symm) v‖ :=
@@ -158,11 +145,12 @@ theorem tendstoUniformlyOn_comp_comp_symm
   have hbound : Tendsto (fun t ↦ ‖S t‖ * C) l (𝓝 0) := by simpa using hS.mul_const C
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
-  filter_upwards [eventually_forall_symm_mem hT (hg.norm.eventually (gt_mem_nhds (lt_add_one _))) R,
+  filter_upwards [ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm hT
+    (hg.norm.eventually (gt_mem_nhds (lt_add_one _))) R,
     hbound.eventually (gt_mem_nhds hε)] with t ht htε v hv
   rw [Pi.zero_apply, dist_zero_left]
   calc ‖S t (g ((T t).symm v))‖ ≤ ‖S t‖ * ‖g ((T t).symm v)‖ := (S t).le_opNorm _
-    _ ≤ ‖S t‖ * C := by gcongr; exact (ht v hv).le
+    _ ≤ ‖S t‖ * C := by gcongr; exact (ht hv).le
     _ < ε := htε
 
 /-- **The derivatives of the graph transform converge to zero uniformly.** If `‖S t‖ → 0`,
@@ -228,8 +216,10 @@ theorem exists_graph_tendstoUniformlyOn_iteratedFDeriv [CompleteSpace F]
   obtain ⟨g, hg, hg₀, hgraph⟩ := exists_contDiffAt_graph_of_isInvertible ha hb hb' hb'i hn hU
   rw [hb₀] at hg hg₀ hgraph
   refine ⟨g, hg, hg₀, ?_, fun i hi ↦ tendstoUniformlyOn_iteratedFDeriv_comp_comp_symm hS hT hg hi R⟩
-  filter_upwards [eventually_forall_symm_mem hT hgraph R] with t ht v hv
-  obtain ⟨z, hzU, haz, hbz⟩ := ht v hv
+  filter_upwards [ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm hT hgraph R]
+    with t ht v hv
+  obtain ⟨z, hzU, haz, hbz⟩ := ht hv
+  rw [ContinuousLinearEquiv.coe_coe] at haz hbz
   exact ⟨z, hzU, by rw [haz], by rw [hbz, ContinuousLinearEquiv.apply_symm_apply]⟩
 
 end TauCeti

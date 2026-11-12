@@ -70,20 +70,20 @@ private theorem tendsto_norm_exp_neg_smul_id (E : Type*) [NormedAddCommGroup E] 
   rw [Real.norm_of_nonneg (Real.exp_pos _).le, Function.comp_apply]
   exact mul_le_of_le_one_right (Real.exp_pos _).le ContinuousLinearMap.norm_id_le
 
-/-- The expansion `e^t • id` as a continuous linear automorphism. -/
+/-- The expansion `e^t • id` as a continuous linear automorphism, with inverse `e^{-t} • id`. -/
 private noncomputable def expSMul (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] (t : ℝ) :
     E ≃L[ℝ] E :=
-  ContinuousLinearEquiv.smulLeft (Units.mk0 (Real.exp t) (Real.exp_pos t).ne')
+  .equivOfInverse (Real.exp t • ContinuousLinearMap.id ℝ E)
+    (Real.exp (-t) • ContinuousLinearMap.id ℝ E)
+    (fun v ↦ by simp [smul_smul, ← Real.exp_add]) (fun v ↦ by simp [smul_smul, ← Real.exp_add])
 
 private theorem expSMul_apply (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] (t : ℝ)
-    (v : E) : expSMul E t v = Real.exp t • v :=
-  (rfl)
+    (v : E) : expSMul E t v = Real.exp t • v := by
+  simp [expSMul]
 
 private theorem coe_expSMul_symm (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] (t : ℝ) :
     ((expSMul E t).symm : E →L[ℝ] E) = Real.exp (-t) • ContinuousLinearMap.id ℝ E := by
-  ext v
-  rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_eq, expSMul_apply]
-  simp [smul_smul, ← Real.exp_add]
+  simp [expSMul]
 
 /-- **The λ-lemma for the split hyperbolic flow.** Let `ψ` be a `C^n` disc, `n ≥ 1`, through a
 point `ψ z₀` of the stable set `y = 0`, transverse to it: the derivative of its expanding
