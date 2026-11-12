@@ -84,14 +84,6 @@ abbrev FourTensor (V : Type*) [NormedAddCommGroup V] [NormedSpace ℝ V] :=
 
 namespace FourTensor
 
-/-- Replacing the `i`-th entry of `![a, b, c, d]`, written out for the four positions. -/
-private theorem update_vecCons {α : Type*} (a b c d x : α) :
-    Function.update ![a, b, c, d] 0 x = ![x, b, c, d] ∧
-      Function.update ![a, b, c, d] 1 x = ![a, x, c, d] ∧
-      Function.update ![a, b, c, d] 2 x = ![a, b, x, d] ∧
-      Function.update ![a, b, c, d] 3 x = ![a, b, c, x] := by
-  refine ⟨?_, ?_, ?_, ?_⟩ <;> funext i <;> fin_cases i <;> rfl
-
 variable {V W X : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedAddCommGroup X] [NormedSpace ℝ X]
 
@@ -101,33 +93,41 @@ section Linearity
 
 variable (r : FourTensor V) (a b c d x y : V) (t : ℝ)
 
-private theorem apply_add_first : r ![x + y, b, c, d] = r ![x, b, c, d] + r ![y, b, c, d] := by
-  simpa only [(update_vecCons x b c d _).1] using r.map_update_add ![x, b, c, d] 0 x y
+/-- A four-tensor is additive in its first argument. -/
+theorem apply_add_first : r ![x + y, b, c, d] = r ![x, b, c, d] + r ![y, b, c, d] := by
+  convert r.map_update_add ![x, b, c, d] 0 x y using 3 <;> ext i <;> fin_cases i <;> rfl
 
-private theorem apply_add_second : r ![a, x + y, c, d] = r ![a, x, c, d] + r ![a, y, c, d] := by
-  simpa only [(update_vecCons a x c d _).2.1] using r.map_update_add ![a, x, c, d] 1 x y
+/-- A four-tensor is additive in its second argument. -/
+theorem apply_add_second : r ![a, x + y, c, d] = r ![a, x, c, d] + r ![a, y, c, d] := by
+  convert r.map_update_add ![a, x, c, d] 1 x y using 3 <;> ext i <;> fin_cases i <;> rfl
 
-private theorem apply_add_third : r ![a, b, x + y, d] = r ![a, b, x, d] + r ![a, b, y, d] := by
-  simpa only [(update_vecCons a b x d _).2.2.1] using r.map_update_add ![a, b, x, d] 2 x y
+/-- A four-tensor is additive in its third argument. -/
+theorem apply_add_third : r ![a, b, x + y, d] = r ![a, b, x, d] + r ![a, b, y, d] := by
+  convert r.map_update_add ![a, b, x, d] 2 x y using 3 <;> ext i <;> fin_cases i <;> rfl
 
-private theorem apply_add_fourth : r ![a, b, c, x + y] = r ![a, b, c, x] + r ![a, b, c, y] := by
-  simpa only [(update_vecCons a b c x _).2.2.2] using r.map_update_add ![a, b, c, x] 3 x y
+/-- A four-tensor is additive in its fourth argument. -/
+theorem apply_add_fourth : r ![a, b, c, x + y] = r ![a, b, c, x] + r ![a, b, c, y] := by
+  convert r.map_update_add ![a, b, c, x] 3 x y using 3 <;> ext i <;> fin_cases i <;> rfl
 
-private theorem apply_smul_first : r ![t • x, b, c, d] = t * r ![x, b, c, d] := by
-  simpa only [(update_vecCons x b c d _).1, smul_eq_mul] using
-    r.map_update_smul ![x, b, c, d] 0 t x
+/-- A four-tensor is homogeneous in its first argument. -/
+theorem apply_smul_first : r ![t • x, b, c, d] = t * r ![x, b, c, d] := by
+  rw [← smul_eq_mul]
+  convert r.map_update_smul ![x, b, c, d] 0 t x using 3 <;> ext i <;> fin_cases i <;> rfl
 
-private theorem apply_smul_second : r ![a, t • x, c, d] = t * r ![a, x, c, d] := by
-  simpa only [(update_vecCons a x c d _).2.1, smul_eq_mul] using
-    r.map_update_smul ![a, x, c, d] 1 t x
+/-- A four-tensor is homogeneous in its second argument. -/
+theorem apply_smul_second : r ![a, t • x, c, d] = t * r ![a, x, c, d] := by
+  rw [← smul_eq_mul]
+  convert r.map_update_smul ![a, x, c, d] 1 t x using 3 <;> ext i <;> fin_cases i <;> rfl
 
-private theorem apply_smul_third : r ![a, b, t • x, d] = t * r ![a, b, x, d] := by
-  simpa only [(update_vecCons a b x d _).2.2.1, smul_eq_mul] using
-    r.map_update_smul ![a, b, x, d] 2 t x
+/-- A four-tensor is homogeneous in its third argument. -/
+theorem apply_smul_third : r ![a, b, t • x, d] = t * r ![a, b, x, d] := by
+  rw [← smul_eq_mul]
+  convert r.map_update_smul ![a, b, x, d] 2 t x using 3 <;> ext i <;> fin_cases i <;> rfl
 
-private theorem apply_smul_fourth : r ![a, b, c, t • x] = t * r ![a, b, c, x] := by
-  simpa only [(update_vecCons a b c x _).2.2.2, smul_eq_mul] using
-    r.map_update_smul ![a, b, c, x] 3 t x
+/-- A four-tensor is homogeneous in its fourth argument. -/
+theorem apply_smul_fourth : r ![a, b, c, t • x] = t * r ![a, b, c, x] := by
+  rw [← smul_eq_mul]
+  convert r.map_update_smul ![a, b, c, x] 3 t x using 3 <;> ext i <;> fin_cases i <;> rfl
 
 end Linearity
 
@@ -417,11 +417,15 @@ Ricci contraction. -/
 def scalarCurvature : FourTensor V →ₗ[ℝ] ℝ :=
   bilinFormTrace ∘ₗ ricciTensor
 
+/-- The scalar contraction is the metric trace of the Ricci contraction. -/
+theorem scalarCurvature_apply (r : FourTensor V) :
+    scalarCurvature r = bilinFormTrace (ricciTensor r) := by
+  rw [scalarCurvature, LinearMap.comp_apply]
+
 /-- The scalar contraction in an arbitrary orthonormal basis. -/
 theorem scalarCurvature_eq_sum {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
     (r : FourTensor V) : scalarCurvature r = ∑ i, ∑ j, r ![b i, b j, b i, b j] := by
-  simp only [scalarCurvature, LinearMap.comp_apply, bilinFormTrace_eq_sum _ b,
-    ricciTensor_apply b]
+  simp only [scalarCurvature_apply, bilinFormTrace_eq_sum _ b, ricciTensor_apply b]
   exact Finset.sum_comm
 
 /-- The scalar contraction is invariant under linear isometries. -/
@@ -447,7 +451,7 @@ theorem ricciTensor_constCurvature :
 /-- The scalar contraction of the constant-curvature tensor in dimension `n` is `n (n - 1)`. -/
 theorem scalarCurvature_constCurvature :
     scalarCurvature (constCurvature V) = Module.finrank ℝ V * (Module.finrank ℝ V - 1) := by
-  rw [scalarCurvature, LinearMap.comp_apply, ricciTensor_constCurvature, map_smul,
+  rw [scalarCurvature_apply, ricciTensor_constCurvature, map_smul,
     bilinFormTrace_inner, smul_eq_mul, mul_comm]
 
 end Contraction
