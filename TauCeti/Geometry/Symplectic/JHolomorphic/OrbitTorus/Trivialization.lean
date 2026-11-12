@@ -13,8 +13,9 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Complex.Inner
+import TauCeti.Geometry.Symplectic.Complex.Line
 
 /-!
 # The normal operator of an orbit torus in a unitary trivialization
@@ -228,13 +229,14 @@ theorem comp_dysonSeriesLeft_frameConnection [CompleteSpace W] (hΦd : Different
     fun s => (hd s).deriv
   simpa [Ψ, one_def] using hconst t 0
 
-/-- Differentiating the seam identity `P Φ(t + d) = Φ(t)` gives `P Φ'(t + d) = Φ'(t)`. -/
-private theorem comp_deriv_add_eq {P : V →L[ℝ] V} {d : ℝ} (hΦd : Differentiable ℝ Φ)
-    (hseam : ∀ t, P ∘L Φ (t + d) = Φ t) (t : ℝ) : P ∘L deriv Φ (t + d) = deriv Φ t := by
+/-- Differentiating a seam identity `P Φ(t + d) = G(t)` gives `P Φ'(t + d) = G'(t)`. -/
+private theorem comp_deriv_add_eq {P : V →L[ℝ] V} {d : ℝ} {G : ℝ → W →L[ℝ] V} {G' : W →L[ℝ] V}
+    (hΦd : DifferentiableAt ℝ Φ (t + d)) (hG : HasDerivAt G G' t)
+    (hseam : ∀ t, P ∘L Φ (t + d) = G t) : P ∘L deriv Φ (t + d) = G' := by
   have h : HasDerivAt (fun s => P ∘L Φ (s + d)) (P ∘L deriv Φ (t + d)) t := by
-    simpa using (hasDerivAt_const t P).clm_comp ((hΦd (t + d)).hasDerivAt.comp_add_const t d)
+    simpa using (hasDerivAt_const t P).clm_comp (hΦd.hasDerivAt.comp_add_const t d)
   rw [funext hseam] at h
-  exact h.unique (hΦd t).hasDerivAt
+  exact h.unique hG
 
 /-- **Periodicity of the connection.** If the frame is compatible with the seam,
 `P Φ(t + d) = Φ(t)`, then its connection is `d`-periodic. -/
@@ -246,8 +248,8 @@ theorem frameConnection_periodic {P : V →L[ℝ] V} {d : ℝ} (hΦd : Different
   rw [frameConnection_apply, frameConnection_apply]
   congr 1
   refine (hΦ t).injective ?_
-  rw [(hΦ t).self_apply_inverse, ← comp_deriv_add_eq hΦd hseam t, ← hseam t, coe_comp,
-    Function.comp_apply, (hΦ (t + d)).self_apply_inverse, coe_comp, Function.comp_apply]
+  rw [(hΦ t).self_apply_inverse, ← comp_deriv_add_eq (hΦd _) (hΦd t).hasDerivAt hseam, ← hseam t,
+    coe_comp, Function.comp_apply, (hΦ (t + d)).self_apply_inverse, coe_comp, Function.comp_apply]
 
 /-- Iterating the seam identity: `P ^ n Φ(t + n d) = Φ(t)`. -/
 private theorem pow_comp_add_natCast_mul {P : V →L[ℝ] V} {d : ℝ}
@@ -292,16 +294,10 @@ theorem isSymmetric_frameConnection (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J
     (hω : ∀ t x y, ω (Φ t x) (Φ t y) = ⟪J₀ x, y⟫) :
     (frameConnection J₀ Φ t : W →ₗ[ℝ] W).IsSymmetric := by
   intro x y
-  have hd : HasDerivAt (fun s => ω (Φ s x) (Φ s y))
-      (ω (deriv Φ t x) (Φ t y) + ω (Φ t x) (deriv Φ t y)) t := by
-    have hx := hΦd.hasDerivAt.clm_apply (hasDerivAt_const t x)
-    have hy := hΦd.hasDerivAt.clm_apply (hasDerivAt_const t y)
-    simp only [map_zero, add_zero] at hx hy
-    exact (ω.hasFDerivAt.comp_hasDerivAt t hx).clm_apply hy
-  have h0 : ω (deriv Φ t x) (Φ t y) + ω (Φ t x) (deriv Φ t y) = 0 := by
-    have hconst : (fun s => ω (Φ s x) (Φ s y)) = fun _ => ⟪J₀ x, y⟫ := funext fun s => hω s x y
-    rw [hconst] at hd
-    exact hd.unique (hasDerivAt_const t _)
+  have hx := hΦd.hasDerivAt.clm_apply (hasDerivAt_const t x)
+  have hy := hΦd.hasDerivAt.clm_apply (hasDerivAt_const t y)
+  simp only [map_zero, add_zero] at hx hy
+  have h0 := ω.apply_add_apply_eq_zero_of_const hx hy (hω · x y)
   rw [← hΦ.self_apply_inverse (deriv Φ t x), ← hΦ.self_apply_inverse (deriv Φ t y), hω, hω,
     hJ₀ x] at h0
   rw [coe_coe, frameConnection_apply, frameConnection_apply]
@@ -479,66 +475,24 @@ section FrameExistence
 /-! ### Unitary frames along an orbit of a surface map
 
 For a two-dimensional fibre `V` the model space is `ℂ` with `J₀ z = i z`. A unitary frame is
-built in three steps: an initial complex-linear symplectic frame at `t = 0`; its transport by the
-equation `Φ' = A Φ` with `A = -K' K / 2`, which preserves `K Φ = Φ J₀` and `σ`; and a rotation
-`z ↦ exp(-i θ t / d) z` removing the monodromy `exp(i θ)` of the transported frame across the
-seam. -/
+built in three steps: an initial complex-linear symplectic frame at `t = 0`
+(`TauCeti.exists_frame_of_tame_of_finrank_eq_two`); its transport by the equation `Φ' = A Φ`
+with `A = -K' K / 2`, which preserves `K Φ = Φ J₀` and `σ`; and a rotation `z ↦ exp(-i θ t / d) z`
+removing the monodromy `exp(i θ)` of the transported frame across the seam
+(`Complex.exists_apply_eq_mul_exp`). -/
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {K : ℝ → V →L[ℝ] V}
   {σ : V →L[ℝ] V →L[ℝ] ℝ}
-
-/-- An initial unitary frame: a complex structure on a plane, tamed by an antisymmetric form,
-admits a complex-linear isomorphism from `ℂ` pulling the form back to `⟪i x, y⟫`. -/
-private theorem exists_frame_initial [FiniteDimensional ℝ V] (hV : Module.finrank ℝ V = 2)
-    {K₀ : V →L[ℝ] V} (hK₀sq : ∀ x, K₀ (K₀ x) = -x) (hσ : ∀ x y, σ x y = -σ y x)
-    (htame : ∀ x, x ≠ 0 → 0 < σ x (K₀ x)) :
-    ∃ Φ₀ : ℂ →L[ℝ] V, Φ₀.IsInvertible ∧ K₀ ∘L Φ₀ = Φ₀ ∘L lsmul ℝ ℂ Complex.I ∧
-      ∀ x y, σ (Φ₀ x) (Φ₀ y) = ⟪lsmul ℝ ℂ Complex.I x, y⟫ := by
-  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ hV
-  obtain ⟨x, hx⟩ := exists_ne (0 : V)
-  have hc : 0 < σ x (K₀ x) := htame x hx
-  set v := (√(σ x (K₀ x)))⁻¹ • x
-  have hv : σ v (K₀ v) = 1 := by
-    simp only [v, map_smul, smul_apply, smul_eq_mul]
-    have := Real.mul_self_sqrt hc.le
-    field_simp
-    linarith
-  have hσ0 (y : V) : σ y y = 0 := by linarith [hσ y y]
-  have hvK : σ (K₀ v) v = -1 := by rw [hσ, hv]
-  set Φ₀ : ℂ →L[ℝ] V := Complex.reCLM.smulRight v + Complex.imCLM.smulRight (K₀ v)
-  have hΦ₀ (z : ℂ) : Φ₀ z = z.re • v + z.im • K₀ v := by simp [Φ₀]
-  have hinj : Function.Injective Φ₀ := by
-    refine (injective_iff_map_eq_zero Φ₀).2 fun z hz => ?_
-    have h1 := congrArg (σ v) hz
-    have h2 := congrArg (σ (K₀ v)) hz
-    simp only [hΦ₀, map_add, map_smul, smul_eq_mul, hσ0, hv, hvK, map_zero] at h1 h2
-    apply Complex.ext <;> simp <;> linarith
-  let e : ℂ ≃L[ℝ] V := (LinearMap.linearEquivOfInjective (Φ₀ : ℂ →ₗ[ℝ] V) hinj
-    (by rw [Complex.finrank_real_complex, hV])).toContinuousLinearEquiv
-  refine ⟨Φ₀, ⟨e, by ext z; rfl⟩, ?_, fun x y => ?_⟩
-  · ext z
-    simp only [coe_comp, Function.comp_apply, hΦ₀, map_add, map_smul, hK₀sq, lsmul_apply,
-      smul_eq_mul, Complex.I_mul_re, Complex.I_mul_im, neg_smul, smul_neg]
-    abel
-  · simp only [hΦ₀, map_add, map_smul, add_apply, smul_apply, smul_eq_mul, hσ0, hv, hvK,
-      lsmul_apply, Complex.inner, Complex.mul_re, Complex.mul_im, Complex.conj_re,
-      Complex.conj_im, Complex.I_re, Complex.I_im]
-    ring
-
-/-- Differentiating `K ∘ K = -1`: `K' K + K K' = 0`. -/
-private theorem deriv_comp_add_comp_deriv (hKd : Differentiable ℝ K)
-    (hKsq : ∀ t x, K t (K t x) = -x) (t : ℝ) : deriv K t ∘L K t + K t ∘L deriv K t = 0 := by
-  have h := (hKd t).hasDerivAt.clm_comp (hKd t).hasDerivAt
-  have hconst : (fun s => K s ∘L K s) = fun _ => -1 := funext fun s => by ext x; simp [hKsq]
-  rw [hconst] at h
-  exact h.unique (hasDerivAt_const t _)
 
 /-- The transport generator `A = -K' K / 2` satisfies `A K - K A = K'`. -/
 private theorem comp_sub_comp_eq_deriv (hKd : Differentiable ℝ K)
     (hKsq : ∀ t x, K t (K t x) = -x) (t : ℝ) :
     (-(1 / 2 : ℝ) • (deriv K t ∘L K t)) ∘L K t - K t ∘L (-(1 / 2 : ℝ) • (deriv K t ∘L K t)) =
       deriv K t := by
-  have h := deriv_comp_add_comp_deriv hKd hKsq t
+  -- Differentiating `K ∘ K = -1` gives `K' K + K K' = 0`.
+  have h : deriv K t ∘L K t + K t ∘L deriv K t = 0 := by
+    simpa using (compL ℝ V V V).apply_add_apply_eq_zero_of_const (hKd t).hasDerivAt
+      (hKd t).hasDerivAt (c := -1) fun s => by ext x; simp [hKsq]
   have hKD (x : V) : K t (deriv K t x) = -deriv K t (K t x) := by
     have := congrArg (· x) h
     simp only [add_apply, coe_comp, Function.comp_apply, zero_apply] at this
@@ -559,12 +513,7 @@ private theorem apply_comp_add_apply_comp (hKd : Differentiable ℝ K)
     have ha := (hKd t).hasDerivAt.clm_apply (hasDerivAt_const t a)
     have hb := (hKd t).hasDerivAt.clm_apply (hasDerivAt_const t b)
     simp only [map_zero, add_zero] at ha hb
-    have h : HasDerivAt (fun s => σ (K s a) (K s b))
-        (σ (deriv K t a) (K t b) + σ (K t a) (deriv K t b)) t :=
-      (σ.hasFDerivAt.comp_hasDerivAt t ha).clm_apply hb
-    have hconst : (fun s => σ (K s a) (K s b)) = fun _ => σ a b := funext fun s => hσK s a b
-    rw [hconst] at h
-    exact h.unique (hasDerivAt_const t _)
+    exact σ.apply_add_apply_eq_zero_of_const ha hb (hσK · a b)
   have h := hd (K t u) (-K t w)
   simp only [map_neg, hKsq, neg_neg, neg_apply] at h
   simp only [smul_apply, coe_comp, Function.comp_apply, map_smul, smul_apply, smul_eq_mul]
@@ -576,13 +525,9 @@ private theorem comp_transportGenerator_add (hKd : Differentiable ℝ K) {P : V 
     (hPK : ∀ t, P ∘L K (t + d) = K t ∘L P) (t : ℝ) :
     P ∘L (-(1 / 2 : ℝ) • (deriv K (t + d) ∘L K (t + d))) =
       (-(1 / 2 : ℝ) • (deriv K t ∘L K t)) ∘L P := by
-  have hD : P ∘L deriv K (t + d) = deriv K t ∘L P := by
-    have h1 : HasDerivAt (fun s => P ∘L K (s + d)) (P ∘L deriv K (t + d)) t := by
-      simpa using (hasDerivAt_const t P).clm_comp ((hKd (t + d)).hasDerivAt.comp_add_const t d)
-    have h2 : HasDerivAt (fun s => K s ∘L P) (deriv K t ∘L P) t := by
-      simpa using (hKd t).hasDerivAt.clm_comp (hasDerivAt_const t P)
-    rw [funext hPK] at h1
-    exact h1.unique h2
+  have hD : P ∘L deriv K (t + d) = deriv K t ∘L P :=
+    comp_deriv_add_eq (hKd _) (by simpa using (hKd t).hasDerivAt.clm_comp (hasDerivAt_const t P))
+      hPK
   rw [comp_smul, smul_comp, ← comp_assoc, hD, comp_assoc, hPK, comp_assoc]
 
 /-- The transported frame `Φ₁(t) = Γ(t) Φ₀`, `Γ` the propagator of `A = -K' K / 2`, is a `C²`
@@ -648,27 +593,6 @@ private theorem exists_frame_transport [CompleteSpace V] (hK2 : ContDiff ℝ 2 K
     rw [eq_dysonSeriesLeft_apply hAc hY t, zero_add]
     simp only [Φ₁, Γ, coe_comp, Function.comp_apply, hΦ₀.self_apply_inverse]
 
-/-- A real-linear map of `ℂ` commuting with multiplication by `i` and preserving `⟪i · , ·⟫` on
-the pair `(1, i)` is multiplication by a unit complex number `exp (i θ)`. -/
-private theorem exists_apply_eq_mul_exp {C : ℂ →L[ℝ] ℂ}
-    (hCI : ∀ z, C (Complex.I * z) = Complex.I * C z)
-    (hCω : ⟪Complex.I * C 1, C Complex.I⟫ = ⟪Complex.I, Complex.I⟫) :
-    ∃ θ : ℝ, ∀ z, C z = z * Complex.exp (θ * Complex.I) := by
-  have hC (z : ℂ) : C z = z * C 1 :=
-    calc C z = C (z.re • (1 : ℂ) + z.im • (Complex.I * 1)) := by
-          congr 1
-          apply Complex.ext <;> simp
-      _ = z.re • C 1 + z.im • (Complex.I * C 1) := by rw [map_add, map_smul, map_smul, hCI]
-      _ = z * C 1 := by apply Complex.ext <;> simp [sub_eq_add_neg]
-  have hnorm : ‖C 1‖ = 1 := by
-    rw [hC Complex.I, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, norm_mul,
-      Complex.norm_I, one_mul] at hCω
-    nlinarith [norm_nonneg (C 1)]
-  refine ⟨Complex.arg (C 1), fun z => ?_⟩
-  rw [hC z]
-  congr 1
-  simpa [hnorm] using (Complex.norm_mul_exp_arg_mul_I (C 1)).symm
-
 /-- **Unitary frames along an orbit of a surface map.** Let `V` be a real plane with a `C²` path
 of complex structures `K(t)` preserving an antisymmetric form `σ`, which tames `K(0)`, and let `P`
 preserve `σ` and satisfy the seam identity `P K(t + d) = K(t) P`, with `d ≠ 0`. Then there is a
@@ -683,7 +607,7 @@ theorem exists_unitary_frame_of_finrank_eq_two [FiniteDimensional ℝ V]
       (∀ t, K t ∘L Φ t = Φ t ∘L lsmul ℝ ℂ Complex.I) ∧
       (∀ t x y, σ (Φ t x) (Φ t y) = ⟪lsmul ℝ ℂ Complex.I x, y⟫) ∧
       ∀ t, P ∘L Φ (t + d) = Φ t := by
-  obtain ⟨Φ₀, hΦ₀, hK₀, hσ₀⟩ := exists_frame_initial hV (hKsq 0) hσ htame
+  obtain ⟨Φ₀, hΦ₀, hK₀, hσ₀⟩ := exists_frame_of_tame_of_finrank_eq_two hV (hKsq 0) hσ htame
   obtain ⟨Φ₁, hΦ₁2, hΦ₁, hK₁, hσ₁, hseam₁⟩ := exists_frame_transport hK2 hKsq hσK hΦ₀ hK₀ hσ₀ hPK
   -- The monodromy `C = Φ₀⁻¹ P Φ₁(d)` is complex linear and unitary, so it is a rotation.
   set C : ℂ →L[ℝ] ℂ := Φ₀.inverse ∘L P ∘L Φ₁ d
@@ -699,8 +623,10 @@ theorem exists_unitary_frame_of_finrank_eq_two [FiniteDimensional ℝ V]
     have h := hσ₁ d 1 Complex.I
     rw [← hPσ, ← hΦ₀C, ← hΦ₀C, hσ₀] at h
     simpa using h
-  obtain ⟨θ, hθ⟩ := exists_apply_eq_mul_exp hCI hCω
-  have hC (w : ℂ) : Φ₀.inverse (P (Φ₁ d w)) = w * Complex.exp (θ * Complex.I) := hθ w
+  obtain ⟨θ, hθ⟩ := Complex.exists_apply_eq_mul_exp (C := (C : ℂ →ₗ[ℝ] ℂ)) (by simpa using hCI)
+    (by simpa using hCω)
+  have hC (w : ℂ) : Φ₀.inverse (P (Φ₁ d w)) = w * Complex.exp (θ * Complex.I) := by
+    simpa [C] using hθ w
   -- Correct the monodromy by the rotation `R(t) z = exp(-i θ t / d) z`.
   set e : ℝ → ℂ := fun t => Complex.exp (↑(-(θ / d) * t) * Complex.I)
   have he (t : ℝ) : ‖e t‖ = 1 := Complex.norm_exp_ofReal_mul_I _
@@ -741,18 +667,6 @@ operators are determined by the return map alone. -/
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {K : ℝ → V →L[ℝ] V} {σ : V →L[ℝ] V →L[ℝ] ℝ} {P : V →L[ℝ] V} {ℓ d ε₁ ε₂ : ℝ}
 
-/-- Multiplication by `i` is skew-adjoint for the real inner product of `ℂ`. -/
-private theorem inner_lsmul_I_apply (x y : ℂ) :
-    ⟪lsmul ℝ ℂ Complex.I x, y⟫ = -⟪x, lsmul ℝ ℂ Complex.I y⟫ := by
-  simp only [lsmul_apply, smul_eq_mul, Complex.inner, Complex.mul_re, Complex.mul_im,
-    Complex.conj_re, Complex.conj_im, Complex.I_re, Complex.I_im]
-  ring
-
-/-- Multiplication by `i` squares to `-1`. -/
-private theorem lsmul_I_lsmul_I_apply (x : ℂ) :
-    lsmul ℝ ℂ Complex.I (lsmul ℝ ℂ Complex.I x) = -x := by
-  simp [← mul_assoc]
-
 /-- **Kernels of the twisted normal operators of an orbit torus of a surface map.** Let `V` be a
 real plane with a `C²` path of complex structures `K(t)` preserving an antisymmetric form `σ`,
 which tames `K(0)`, and let the return map `P` preserve `σ` and satisfy the seam identity
@@ -773,7 +687,8 @@ theorem exists_ne_zero_orbitTorusVerticalOperator_eq_zero_iff_of_finrank_eq_two
   obtain ⟨Φ, hΦ2, hΦ, hKΦ, hσΦ, hseam⟩ :=
     exists_unitary_frame_of_finrank_eq_two hV hK2 hKsq hσ hσK htame hd.ne' hPσ hPK
   exact exists_ne_zero_orbitTorusVerticalOperator_eq_zero_iff_eq_one_and_det_eq_zero hℓ hd
-    inner_lsmul_I_apply lsmul_I_lsmul_I_apply hΦ2 hΦ hKΦ hσΦ hseam hε₁ hε₂ hk hn a
+    (fun x y => by simpa using Complex.real_inner_I_mul_left x y) (fun x => by simp) hΦ2 hΦ hKΦ
+    hσΦ hseam hε₁ hε₂ hk hn a
 
 /-- **Nondegeneracy of the orbit tori of a surface map through twice the period.** Under the
 hypotheses of `exists_ne_zero_orbitTorusVerticalOperator_eq_zero_iff_of_finrank_eq_two`, the
@@ -794,7 +709,8 @@ theorem forall_eq_zero_of_orbitTorusVerticalOperator_eq_zero_iff_of_finrank_eq_t
   obtain ⟨Φ, hΦ2, hΦ, hKΦ, hσΦ, hseam⟩ :=
     exists_unitary_frame_of_finrank_eq_two hV hK2 hKsq hσ hσK htame hd.ne' hPσ hPK
   exact forall_eq_zero_of_orbitTorusVerticalOperator_eq_zero_iff_det_ne_zero hℓ hd
-    inner_lsmul_I_apply lsmul_I_lsmul_I_apply hΦ2 hΦ hKΦ hσΦ hseam hk hn a
+    (fun x y => by simpa using Complex.real_inner_I_mul_left x y) (fun x => by simp) hΦ2 hΦ hKΦ
+    hσΦ hseam hk hn a
 
 end Plane
 
