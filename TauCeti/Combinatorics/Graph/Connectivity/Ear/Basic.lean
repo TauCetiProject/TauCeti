@@ -711,7 +711,7 @@ theorem walkAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1)) (j : F
   rw [walkAt_eq, walkAt_eq, earAt_prefix]
 
 /-- Prefixing retains the initial vertex or cycle. -/
-theorem start_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
+theorem start_prefix_heq (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
     (d.prefix i).start ≍ d.start := by
   simp only [EarDecomposition.prefix]
   exact .rfl

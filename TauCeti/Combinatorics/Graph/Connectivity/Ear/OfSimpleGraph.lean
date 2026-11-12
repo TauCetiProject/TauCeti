@@ -9,6 +9,9 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Ear.Basic
 public import TauCeti.Combinatorics.Graph.OfSimpleGraph
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Ear.Basic
 
+import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
+import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
+
 /-!
 # Ear decompositions of simple graphs as multigraph ear decompositions
 
@@ -46,6 +49,20 @@ universe u
 variable {α : Type u} {G : SimpleGraph α}
 
 namespace SimpleGraph
+
+/-- The graph traced by the edge-labelled walk corresponding to a walk is the multigraph of the
+subgraph traced by that walk. -/
+@[simp]
+theorem Walk.walkGraph_toGraph {x y : α} (p : G.Walk x y) :
+    (Graph.ofSimpleGraph G).walkGraph p.toGraph = p.toSubgraph.toGraph :=
+  Graph.ext (by simp) fun e a b ↦ by
+    simp only [Graph.Walk.walkGraph_isLink, Graph.ofSimpleGraph_isLink, Walk.edges_toGraph,
+      Subgraph.toGraph_isLink, Walk.adj_toSubgraph_iff_mem_edges]
+    constructor
+    · rintro ⟨⟨rfl, -⟩, h⟩
+      exact ⟨rfl, h⟩
+    · rintro ⟨rfl, h⟩
+      exact ⟨⟨rfl, p.edges_subset_edgeSet h⟩, h⟩
 
 namespace Ear
 
@@ -429,7 +446,7 @@ theorem prefix_toSimpleGraph (d : (ofSimpleGraph G).EarDecomposition K) (h : H.t
     rw [toGraph_initial_toSimpleGraph, SimpleGraph.EarDecomposition.initial_prefix,
       toGraph_initial_toSimpleGraph, initial_eq_graphAfter, initial_eq_graphAfter,
       graphAfter_prefix_zero]
-  · exact EarStart.toSimpleGraph_heq_of_heq (d.graphAfter_prefix_zero k) (d.start_prefix k) _ _
+  · exact EarStart.toSimpleGraph_heq_of_heq (d.graphAfter_prefix_zero k) (d.start_prefix_heq k) _ _
   · refine (walkAt_toSimpleGraph _ _ i).trans (Eq.trans ?_
       ((SimpleGraph.EarDecomposition.walkAt_prefix _ k _).trans (walkAt_toSimpleGraph d h _)).symm)
     have hi := d.walkAt_prefix k (i.cast (d.length_prefix k))
@@ -445,7 +462,7 @@ private theorem toSimpleGraph_prefix_toGraph (d : G.EarDecomposition H) (k : Fin
       initial_eq_graphAfter, graphAfter_prefix_zero, ← initial_eq_graphAfter,
       SimpleGraph.EarDecomposition.initial_toGraph]
   · exact (EarStart.toSimpleGraph_heq_of_heq (d.toGraph.graphAfter_prefix_zero k)
-      (d.toGraph.start_prefix k) _ rfl).trans (EarStart.toSimpleGraph_toGraph_heq d.start _)
+      (d.toGraph.start_prefix_heq k) _ rfl).trans (EarStart.toSimpleGraph_toGraph_heq d.start _)
   · refine (walkAt_toSimpleGraph _ _ i).trans
       (Eq.trans ?_ (SimpleGraph.EarDecomposition.walkAt_prefix d k _).symm)
     have hi := d.toGraph.walkAt_prefix k (i.cast (d.toGraph.length_prefix k))

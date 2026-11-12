@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
+public import Mathlib.Combinatorics.Graph.Simple
+public import Mathlib.Combinatorics.SimpleGraph.Subgraph
+public import TauCeti.Combinatorics.Graph.Union
 
 /-!
 # Subgraphs of graphs built from simple graphs
@@ -141,19 +141,5 @@ theorem toGraphOrderIso_symm_apply_adj (K : Set.Iic (Graph.ofSimpleGraph G)) :
   rw [← toGraph_adj, toGraph_toGraphOrderIso_symm_apply]
 
 end Subgraph
-
-/-- The graph traced by the edge-labelled walk corresponding to a walk is the multigraph of the
-subgraph traced by that walk. -/
-@[simp]
-theorem Walk.walkGraph_toGraph {x y : α} (p : G.Walk x y) :
-    (Graph.ofSimpleGraph G).walkGraph p.toGraph = p.toSubgraph.toGraph :=
-  Graph.ext (by simp) fun e a b ↦ by
-    simp only [Graph.Walk.walkGraph_isLink, Graph.ofSimpleGraph_isLink, Walk.edges_toGraph,
-      Subgraph.toGraph_isLink, Walk.adj_toSubgraph_iff_mem_edges]
-    constructor
-    · rintro ⟨⟨rfl, -⟩, h⟩
-      exact ⟨rfl, h⟩
-    · rintro ⟨rfl, h⟩
-      exact ⟨⟨rfl, p.edges_subset_edgeSet h⟩, h⟩
 
 end SimpleGraph
