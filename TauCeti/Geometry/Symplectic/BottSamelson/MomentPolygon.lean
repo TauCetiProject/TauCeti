@@ -44,20 +44,21 @@ and their moment values are the rows of `TauCeti.BottSamelson.fixedMoment`:
 | `(e₁, 12, e₁)` | `(0, a + b + c, b)` |
 | `(e₁, 12, e₂)` | `(0, a + b, b + c)` |
 
-For positive weights their convex hull is the hexagon (`TauCeti.BottSamelson.momentPolygon`)
+For `0 ≤ a` and `0 < b, c` their convex hull is the hexagon (`TauCeti.BottSamelson.momentPolygon`)
 
 `x + y + z = a + 2b + c,  0 ≤ x, y, z,  x ≤ a + b + c,  y ≤ a + b + c,  z ≤ b + c`
 
 in the trace plane (`TauCeti.BottSamelson.convexHull_range_fixedMoment`). Its vertices are the
 rows `0, 2, 3, 7, 6, 5` in cyclic order (`TauCeti.BottSamelson.extremePoints_momentPolygon`); the
 rows `1` and `4` lie in the interior of the edge `z = 0` joining the rows `0` and `5`
-(`TauCeti.BottSamelson.fixedMoment_one`, `TauCeti.BottSamelson.fixedMoment_four`). So, unlike for
+(`TauCeti.BottSamelson.fixedMoment_one_eq_div_smul_add_div_smul`,
+`TauCeti.BottSamelson.fixedMoment_four_eq_div_smul_add_div_smul`). So, unlike for
 a symplectic toric manifold, fixed points do not correspond to vertices; the effective torus is
 two-dimensional, while `X` has real dimension six.
 
 Every value of `μ` lies in the hexagon (`TauCeti.BottSamelson.moment_mem_convexHull`). The
 diagonal entries of a projector lie in `[0, 1]` and sum to its rank, which gives the trace and the
-first four bounds, and the third diagonal entry of `Π_{L₁}` vanishes because `L₁ ⊆ P₀`, which gives
+first five bounds, and the third diagonal entry of `Π_{L₁}` vanishes because `L₁ ⊆ P₀`, which gives
 `z ≤ b + c`. This is one inclusion of the description of the image of `μ` as the hexagon; the other
 one, that every point of the hexagon is a moment value, is the content of the convexity theorem for
 torus actions.
@@ -171,9 +172,44 @@ def fixedMoment (a b c : ℝ) : Fin 8 → Fin 3 → ℝ :=
   ![![a + b + c, b, 0], ![a + b, b + c, 0], ![a + b + c, 0, b], ![a + b, 0, b + c],
     ![b + c, a + b, 0], ![b, a + b + c, 0], ![0, a + b + c, b], ![0, a + b, b + c]]
 
+section FixedMoment
+
+variable (a b c : ℝ)
+
+/-! The rows of `fixedMoment`, in the order of the table above. -/
+
+@[simp] theorem fixedMoment_zero : fixedMoment a b c 0 = ![a + b + c, b, 0] := (rfl)
+
+@[simp] theorem fixedMoment_one : fixedMoment a b c 1 = ![a + b, b + c, 0] := (rfl)
+
+@[simp] theorem fixedMoment_two : fixedMoment a b c 2 = ![a + b + c, 0, b] := (rfl)
+
+@[simp] theorem fixedMoment_three : fixedMoment a b c 3 = ![a + b, 0, b + c] := (rfl)
+
+@[simp] theorem fixedMoment_four : fixedMoment a b c 4 = ![b + c, a + b, 0] := (rfl)
+
+@[simp] theorem fixedMoment_five : fixedMoment a b c 5 = ![b, a + b + c, 0] := (rfl)
+
+@[simp] theorem fixedMoment_six : fixedMoment a b c 6 = ![0, a + b + c, b] := (rfl)
+
+@[simp] theorem fixedMoment_seven : fixedMoment a b c 7 = ![0, a + b, b + c] := (rfl)
+
+/-- Each fixed value has trace `a + 2b + c`. -/
+theorem sum_fixedMoment (k : Fin 8) : ∑ i, fixedMoment a b c k i = a + 2 * b + c := by
+  fin_cases k <;> simp [Fin.sum_univ_three] <;> ring
+
+/-- Swapping the first two coordinates exchanges the fixed values of the rows `0 ↔ 5`, `1 ↔ 4`,
+`2 ↔ 6` and `3 ↔ 7`, the moment values of the triples obtained by swapping `e₀` and `e₁`. -/
+theorem fixedMoment_comp_swap (k : Fin 8) :
+    fixedMoment a b c k ∘ Equiv.swap 0 1 = fixedMoment a b c (![5, 4, 6, 7, 1, 0, 2, 3] k) := by
+  ext i
+  fin_cases k <;> fin_cases i <;> simp [Equiv.swap_apply_of_ne_of_ne]
+
+end FixedMoment
+
 /-- The hexagon `x + y + z = a + 2b + c`, `0 ≤ x, y, z`, `x ≤ a + b + c`, `y ≤ a + b + c`,
-`z ≤ b + c` in the trace plane of `ℝ³`; for positive weights it is the convex hull of the eight
-fixed values (`TauCeti.BottSamelson.convexHull_range_fixedMoment`). -/
+`z ≤ b + c` in the trace plane of `ℝ³`; for `0 ≤ a` and `0 < b, c` it is the convex hull of the
+eight fixed values (`TauCeti.BottSamelson.convexHull_range_fixedMoment`). -/
 def momentPolygon (a b c : ℝ) : Set (Fin 3 → ℝ) :=
   {x | x 0 + x 1 + x 2 = a + 2 * b + c ∧ (∀ i, 0 ≤ x i) ∧ x 0 ≤ a + b + c ∧ x 1 ≤ a + b + c ∧
     x 2 ≤ b + c}
@@ -201,16 +237,16 @@ theorem convex_momentPolygon (a b c : ℝ) : Convex ℝ (momentPolygon a b c) :=
 theorem fixedMoment_mem_momentPolygon {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c)
     (k : Fin 8) : fixedMoment a b c k ∈ momentPolygon a b c := by
   fin_cases k <;>
-  · refine ⟨?_, fun i ↦ ?_, ?_, ?_, ?_⟩ <;> (try fin_cases i) <;> simp [fixedMoment] <;> linarith
+  · refine ⟨?_, fun i ↦ ?_, ?_, ?_, ?_⟩ <;> (try fin_cases i) <;> simp <;> linarith
 
-/-- **The moment polygon of the word `121` Bott–Samelson variety.** For positive weights, the
-convex hull of the moment values of the eight torus-fixed points is the hexagon
+/-- **The moment polygon of the word `121` Bott–Samelson variety.** For `0 ≤ a` and `0 < b, c`,
+the convex hull of the moment values of the eight torus-fixed points is the hexagon
 `momentPolygon a b c`. -/
-theorem convexHull_range_fixedMoment {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc : 0 < c) :
+theorem convexHull_range_fixedMoment {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 < b) (hc : 0 < c) :
     convexHull ℝ (range (fixedMoment a b c)) = momentPolygon a b c := by
   refine (convexHull_min ?_ (convex_momentPolygon a b c)).antisymm fun x hx ↦ ?_
   · rintro _ ⟨k, rfl⟩
-    exact fixedMoment_mem_momentPolygon ha.le hb.le hc.le k
+    exact fixedMoment_mem_momentPolygon ha hb.le hc.le k
   -- Slice the hexagon at `z = b` into two trapezoids, and in each write `x` as a convex
   -- combination of the four corners: first along the `z`-direction between the two parallel
   -- sides, then proportionally along those sides.
@@ -235,7 +271,7 @@ theorem convexHull_range_fixedMoment {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc
     have htb : t * b = x 2 := div_mul_cancel₀ _ hb.ne'
     have hl : l * (a + c + x 2) = x 0 - b + x 2 := div_mul_cancel₀ _ (by linarith)
     funext i
-    fin_cases i <;> simp [Fin.sum_univ_eight, fixedMoment]
+    fin_cases i <;> simp [Fin.sum_univ_eight]
     · linear_combination hl - (1 - l) * htb
     · linear_combination -hsum - hl - l * htb
     · linear_combination htb
@@ -249,7 +285,7 @@ theorem convexHull_range_fixedMoment {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc
     refine key ![0, 0, (1 - s) * m, s * m, 0, 0, (1 - s) * (1 - m), s * (1 - m)]
       (fun k ↦ by fin_cases k <;> simp <;> nlinarith) (by simp [Fin.sum_univ_eight]; ring) ?_
     funext i
-    fin_cases i <;> simp [Fin.sum_univ_eight, fixedMoment]
+    fin_cases i <;> simp [Fin.sum_univ_eight]
     · linear_combination hm - m * hsc
     · linear_combination -hsum - hm - (1 - m) * hsc
     · linear_combination hsc
@@ -257,86 +293,102 @@ theorem convexHull_range_fixedMoment {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc
 /-- The fixed value `(a + b, b + c, 0)` of `(e₀, 01, e₁)` lies on the edge `z = 0` of the hexagon,
 between the vertices `(a + b + c, b, 0)` and `(b, a + b + c, 0)`, with barycentric coordinates
 `a / (a + c)` and `c / (a + c)`. -/
-theorem fixedMoment_one {a b c : ℝ} (h : a + c ≠ 0) :
+theorem fixedMoment_one_eq_div_smul_add_div_smul {a b c : ℝ} (h : a + c ≠ 0) :
     fixedMoment a b c 1 =
       (a / (a + c)) • fixedMoment a b c 0 + (c / (a + c)) • fixedMoment a b c 5 := by
   ext i
-  fin_cases i <;> simp [fixedMoment] <;> field_simp <;> ring
+  fin_cases i <;> simp <;> field_simp <;> ring
 
 /-- The fixed value `(b + c, a + b, 0)` of `(e₁, 01, e₀)` lies on the edge `z = 0` of the hexagon,
 between the vertices `(a + b + c, b, 0)` and `(b, a + b + c, 0)`, with barycentric coordinates
 `c / (a + c)` and `a / (a + c)`. -/
-theorem fixedMoment_four {a b c : ℝ} (h : a + c ≠ 0) :
+theorem fixedMoment_four_eq_div_smul_add_div_smul {a b c : ℝ} (h : a + c ≠ 0) :
     fixedMoment a b c 4 =
       (c / (a + c)) • fixedMoment a b c 0 + (a / (a + c)) • fixedMoment a b c 5 := by
   ext i
-  fin_cases i <;> simp [fixedMoment] <;> field_simp <;> ring
+  fin_cases i <;> simp <;> field_simp <;> ring
+
+/-- A bound attained by a proper convex combination of two values is attained by both. -/
+private theorem eq_of_le_of_le_of_combo_eq {θ φ u v M : ℝ} (hθ : 0 < θ) (hφ : 0 < φ)
+    (hθφ : θ + φ = 1) (hu : u ≤ M) (hv : v ≤ M) (h : θ * u + φ * v = M) : u = M := by
+  have h₁ : θ * (M - u) + φ * (M - v) = 0 := by linear_combination M * hθφ - h
+  have h₂ := mul_nonneg hθ.le (sub_nonneg.2 hu)
+  have h₃ := mul_nonneg hφ.le (sub_nonneg.2 hv)
+  have h₄ : θ * (M - u) = 0 := by linarith
+  linarith [(mul_eq_zero.1 h₄).resolve_left hθ.ne']
+
+/-- For nonnegative weights, the fixed values of the rows `0, 2, 3, 7, 6, 5` are extreme points of
+the hexagon: at each of them two of the six inequalities are equalities. -/
+theorem fixedMoment_mem_extremePoints {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c)
+    {k : Fin 8} (hk : k ∈ ({0, 2, 3, 7, 6, 5} : Set (Fin 8))) :
+    fixedMoment a b c k ∈ (momentPolygon a b c).extremePoints ℝ := by
+  refine mem_extremePoints_iff_left.2 ⟨fixedMoment_mem_momentPolygon ha hb hc k,
+    fun p hp q hq ⟨θ, φ, hθ, hφ, hθφ, hv⟩ ↦ ?_⟩
+  have tight {u v M : ℝ} := @eq_of_le_of_le_of_combo_eq θ φ u v M hθ hφ hθφ
+  obtain ⟨hp₁, hp₂, hp₃, hp₄, hp₅⟩ := hp
+  obtain ⟨-, hq₂, hq₃, hq₄, hq₅⟩ := hq
+  have e₀ := congrFun hv 0
+  have e₁ := congrFun hv 1
+  have e₂ := congrFun hv 2
+  simp only [mem_insert_iff, mem_singleton_iff] at hk
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, fixedMoment_zero, fixedMoment_two,
+      fixedMoment_three, fixedMoment_five, fixedMoment_six, fixedMoment_seven, Matrix.cons_val]
+      at e₀ e₁ e₂
+  · have h₀ := tight hp₃ hq₃ e₀
+    have h₂ := tight (neg_nonpos.2 (hp₂ 2)) (neg_nonpos.2 (hq₂ 2)) (by linarith)
+    funext i; fin_cases i <;> simp <;> linarith
+  · have h₀ := tight hp₃ hq₃ e₀
+    have h₁ := tight (neg_nonpos.2 (hp₂ 1)) (neg_nonpos.2 (hq₂ 1)) (by linarith)
+    funext i; fin_cases i <;> simp <;> linarith
+  · have h₁ := tight (neg_nonpos.2 (hp₂ 1)) (neg_nonpos.2 (hq₂ 1)) (by linarith)
+    have h₂ := tight hp₅ hq₅ e₂
+    funext i; fin_cases i <;> simp <;> linarith
+  · have h₀ := tight (neg_nonpos.2 (hp₂ 0)) (neg_nonpos.2 (hq₂ 0)) (by linarith)
+    have h₂ := tight hp₅ hq₅ e₂
+    funext i; fin_cases i <;> simp <;> linarith
+  · have h₀ := tight (neg_nonpos.2 (hp₂ 0)) (neg_nonpos.2 (hq₂ 0)) (by linarith)
+    have h₁ := tight hp₄ hq₄ e₁
+    funext i; fin_cases i <;> simp <;> linarith
+  · have h₁ := tight hp₄ hq₄ e₁
+    have h₂ := tight (neg_nonpos.2 (hp₂ 2)) (neg_nonpos.2 (hq₂ 2)) (by linarith)
+    funext i; fin_cases i <;> simp <;> linarith
 
 /-- **The vertices of the moment polygon.** For positive weights, the extreme points of the
 hexagon are the six fixed values of the rows `0, 2, 3, 7, 6, 5`, in cyclic order. The fixed values
 of the rows `1` and `4` lie in the interior of an edge and are not extreme. -/
 theorem extremePoints_momentPolygon {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc : 0 < c) :
     (momentPolygon a b c).extremePoints ℝ = fixedMoment a b c '' {0, 2, 3, 7, 6, 5} := by
-  have hmem := fixedMoment_mem_momentPolygon ha.le hb.le hc.le
   refine Subset.antisymm (fun x hx ↦ ?_) ?_
   · obtain ⟨k, rfl⟩ : x ∈ range (fixedMoment a b c) := by
-      rw [← convexHull_range_fixedMoment ha hb hc] at hx
+      rw [← convexHull_range_fixedMoment ha.le hb hc] at hx
       exact extremePoints_convexHull_subset hx
     refine mem_image_of_mem _ ?_
     have hD : a + c ≠ 0 := by positivity
+    have hmem := fixedMoment_mem_momentPolygon ha.le hb.le hc.le
     -- an extreme point lying in the open segment between the rows `0` and `5` equals the row `0`
     have hseg : ∀ u v : ℝ, 0 < u → 0 < v → u + v = 1 →
         fixedMoment a b c k = u • fixedMoment a b c 0 + v • fixedMoment a b c 5 →
           fixedMoment a b c 0 = fixedMoment a b c k := fun u v hu hv huv h ↦
       (mem_extremePoints_iff_left.1 hx).2 _ (hmem 0) _ (hmem 5) ⟨u, v, hu, hv, huv, h.symm⟩
+    -- the rows `1` and `4` are proper convex combinations of the rows `0` and `5`, but differ
+    -- from the row `0` in the first coordinate
+    have h₁ : k ≠ 1 := by
+      rintro rfl
+      have := congrFun (hseg _ _ (by positivity) (by positivity) (by field_simp)
+        (fixedMoment_one_eq_div_smul_add_div_smul hD)) 0
+      simp at this
+      linarith
+    have h₄ : k ≠ 4 := by
+      rintro rfl
+      have := congrFun (hseg _ _ (by positivity) (by positivity) (by field_simp; ring)
+        (fixedMoment_four_eq_div_smul_add_div_smul hD)) 0
+      simp at this
+      linarith
+    revert h₁ h₄
     fin_cases k <;> simp
-    · have := congrFun (hseg _ _ (by positivity) (by positivity) (by field_simp)
-        (fixedMoment_one hD)) 0
-      simp [fixedMoment] at this
-      linarith
-    · have := congrFun (hseg _ _ (by positivity) (by positivity) (by field_simp; ring)
-        (fixedMoment_four hD)) 0
-      simp [fixedMoment] at this
-      linarith
   · rintro _ ⟨k, hk, rfl⟩
-    refine mem_extremePoints_iff_left.2 ⟨hmem k, fun p hp q hq ⟨θ, φ, hθ, hφ, hθφ, hv⟩ ↦ ?_⟩
-    -- a bound attained by a proper convex combination is attained by both points
-    have tight : ∀ {u v M : ℝ}, u ≤ M → v ≤ M → θ * u + φ * v = M → u = M := by
-      intro u v M hu hv h
-      have h₁ : θ * (M - u) + φ * (M - v) = 0 := by linear_combination M * hθφ - h
-      have h₂ := mul_nonneg hθ.le (sub_nonneg.2 hu)
-      have h₃ := mul_nonneg hφ.le (sub_nonneg.2 hv)
-      have h₄ : θ * (M - u) = 0 := by linarith
-      linarith [(mul_eq_zero.1 h₄).resolve_left hθ.ne']
-    obtain ⟨hp₁, hp₂, hp₃, hp₄, hp₅⟩ := hp
-    obtain ⟨-, hq₂, hq₃, hq₄, hq₅⟩ := hq
-    have e₀ := congrFun hv 0
-    have e₁ := congrFun hv 1
-    have e₂ := congrFun hv 2
-    simp only [mem_insert_iff, mem_singleton_iff] at hk
-    -- at each vertex two of the six inequalities are equalities
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [Fin.isValue, Pi.add_apply, Pi.smul_apply, smul_eq_mul, fixedMoment,
-        Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_fin_one, Matrix.cons_val_one,
-        Matrix.cons_val] at e₀ e₁ e₂
-    · have h₀ := tight hp₃ hq₃ e₀
-      have h₂ := tight (neg_nonpos.2 (hp₂ 2)) (neg_nonpos.2 (hq₂ 2)) (by linarith)
-      funext i; fin_cases i <;> simp [fixedMoment] <;> linarith
-    · have h₀ := tight hp₃ hq₃ e₀
-      have h₁ := tight (neg_nonpos.2 (hp₂ 1)) (neg_nonpos.2 (hq₂ 1)) (by linarith)
-      funext i; fin_cases i <;> simp [fixedMoment] <;> linarith
-    · have h₁ := tight (neg_nonpos.2 (hp₂ 1)) (neg_nonpos.2 (hq₂ 1)) (by linarith)
-      have h₂ := tight hp₅ hq₅ e₂
-      funext i; fin_cases i <;> simp [fixedMoment] <;> linarith
-    · have h₀ := tight (neg_nonpos.2 (hp₂ 0)) (neg_nonpos.2 (hq₂ 0)) (by linarith)
-      have h₂ := tight hp₅ hq₅ e₂
-      funext i; fin_cases i <;> simp [fixedMoment] <;> linarith
-    · have h₀ := tight (neg_nonpos.2 (hp₂ 0)) (neg_nonpos.2 (hq₂ 0)) (by linarith)
-      have h₁ := tight hp₄ hq₄ e₁
-      funext i; fin_cases i <;> simp [fixedMoment] <;> linarith
-    · have h₁ := tight hp₄ hq₄ e₁
-      have h₂ := tight (neg_nonpos.2 (hp₂ 2)) (neg_nonpos.2 (hq₂ 2)) (by linarith)
-      funext i; fin_cases i <;> simp [fixedMoment] <;> linarith
+    exact fixedMoment_mem_extremePoints ha.le hb.le hc.le hk
 
 /-! ### Moment values -/
 
@@ -374,7 +426,7 @@ theorem exists_moment_eq_fixedMoment (a b c : ℝ) (k : Fin 8) :
     (by fin_cases k <;> decide) (by fin_cases k <;> decide) ?_
   rw [hμ]
   ext i
-  fin_cases k <;> fin_cases i <;> simp [f, fixedMoment]
+  fin_cases k <;> fin_cases i <;> simp [f]
 
 /-- Every moment value of the Bott–Samelson variety of the word `121` lies in the hexagon, for
 nonnegative weights. The incidences `L₁ ⊆ P` and `L ⊆ P` are not needed. -/
@@ -386,7 +438,7 @@ theorem moment_mem_momentPolygon {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hc
   have h₂ : L₁.projectorDiagonal 2 = 0 := by
     refine (projectorDiagonal_eq_zero_iff _).2 (orthogonal_le h ?_)
     rw [← projectorDiagonal_eq_zero_iff, projectorDiagonal_initialPlane]
-    rfl
+    simp
   have hsum := sum_moment a b c hL₁ hP hL
   rw [Fin.sum_univ_three] at hsum
   have h0 := fun i ↦ L₁.projectorDiagonal_nonneg i
@@ -404,13 +456,13 @@ theorem moment_mem_momentPolygon {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hc
   · rw [h₂, mul_zero, zero_add]
     nlinarith [mul_le_mul_of_nonneg_left (h4 2) hb, mul_le_mul_of_nonneg_left (h5 2) hc]
 
-/-- For positive weights, every moment value of the Bott–Samelson variety of the word `121` lies in
-the convex hull of the moment values of its eight torus-fixed points. -/
-theorem moment_mem_convexHull {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc : 0 < c)
+/-- For `0 ≤ a` and `0 < b, c`, every moment value of the Bott–Samelson variety of the word `121`
+lies in the convex hull of the moment values of its eight torus-fixed points. -/
+theorem moment_mem_convexHull {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 < b) (hc : 0 < c)
     {L₁ P L : Submodule ℂ (EuclideanSpace ℂ (Fin 3))} (hL₁ : finrank ℂ L₁ = 1)
     (hP : finrank ℂ P = 2) (hL : finrank ℂ L = 1) (h : L₁ ≤ initialPlane) :
     moment a b c L₁ P L ∈ convexHull ℝ (range (fixedMoment a b c)) := by
   rw [convexHull_range_fixedMoment ha hb hc]
-  exact moment_mem_momentPolygon ha.le hb.le hc.le hL₁ hP hL h
+  exact moment_mem_momentPolygon ha hb.le hc.le hL₁ hP hL h
 
 end TauCeti.BottSamelson

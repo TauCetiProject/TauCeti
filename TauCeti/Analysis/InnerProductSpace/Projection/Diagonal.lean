@@ -150,6 +150,7 @@ theorem projectorDiagonal_top : (⊤ : Submodule 𝕜 (EuclideanSpace 𝕜 ι)).
 
 /-- The diagonal of the projector onto the coordinate subspace spanned by the basis vectors `eᵢ`
 with `i ∈ s` is the indicator function of `s`. -/
+@[simp]
 theorem projectorDiagonal_span_single (s : Set ι) :
     (span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) '' s)).projectorDiagonal =
       s.indicator 1 := by
@@ -187,6 +188,7 @@ theorem projectorDiagonal_map_piLpCongrRight (e : ι → 𝕜 ≃ₗᵢ[𝕜] �
 omit [Fintype ι] in
 /-- The coordinate subspace spanned by the basis vectors `eᵢ` with `i ∈ s` has dimension the
 cardinality of `s`. -/
+@[simp]
 theorem finrank_span_image_single [Finite ι] (s : Finset ι) :
     finrank 𝕜 (span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) '' (s : Set ι))) = s.card := by
   have := Fintype.ofFinite ι
