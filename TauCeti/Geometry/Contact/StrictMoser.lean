@@ -41,10 +41,11 @@ The contact flat map `v ↦ ι_v dα + α(v) α` (`TauCeti.SmoothForm.contactFla
   (`TauCeti.SmoothForm.IsContactForm.mlieDerivForm_strictContactMoserVectorField`), and every
   differentiable `X` with `L_X α = β` arises in this way from `h = α(X)`
   (`TauCeti.SmoothForm.IsContactForm.mlieDerivForm_eq_iff_eq_strictContactMoserVectorField`);
-* the strict field is the horizontal contact-Moser vector field of `-β` plus the contact
-  Hamiltonian vector field of `h`
+* where `h` solves the Reeb-direction equation, the strict field is the horizontal
+  contact-Moser vector field of `-β` plus the contact Hamiltonian vector field of `h`
   (`TauCeti.SmoothForm.IsContactForm.strictContactMoserVectorField_eq_add`);
-* it vanishes at a point exactly when `h` and `β - dh` vanish there
+* where `h` solves the Reeb-direction equation, it vanishes at a point exactly when `h` and
+  `β - dh` vanish there
   (`TauCeti.SmoothForm.IsContactForm.strictContactMoserVectorField_eq_zero_iff`);
 * it is `C^n` for a `C^(n+1)` function `h`, and depends smoothly on parameters
   (`TauCeti.SmoothForm.contMDiffAt_sectionAlong_strictContactMoserVectorField`).
@@ -539,28 +540,25 @@ theorem isStrictContactomorphism_strictMoserDiffeomorph (s t : ℝ) :
       TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
           (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1) +
         mlieDerivForm (α.strictMoserVectorField h t)
-          (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1) =
-      fun y ↦ (0 : ℝ) • TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1 y := by
+          (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1) = 0 := by
     funext y
     ext v
     have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
     have hv0 := mlieDerivForm_strictMoserVectorField_add hc hh hR t y (v 0)
     rw [hv]
     simp only [coe_mpullback, coe_timeDeriv] at hv0
-    simp only [Pi.add_apply, ContinuousAlternatingMap.add_apply, zero_smul,
+    simp only [Pi.add_apply, ContinuousAlternatingMap.add_apply,
       ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
     rw [add_comm, hv0]
   rw [Diffeomorph.isStrictContactomorphism_def]
-  refine Subtype.ext (funext fun x ↦ ?_)
-  have hflow := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul
-    (hX.of_le (by simp))
-    (isCompleteVectorField_timeDependentSuspensionField_strictMoserVectorField hc hh)
-    continuous_const (α.contMDiff.of_le (by simp)) hL s t x
   have hφ : ⇑(strictMoserDiffeomorph hc hh s t) =
       timeDependentFlowOf (α.strictMoserVectorField h) s t :=
     funext (strictMoserDiffeomorph_apply hc hh s t)
-  simpa only [coe_mpullback, hφ, intervalIntegral.integral_zero, Real.exp_zero, one_smul]
-    using hflow
+  refine Subtype.ext ?_
+  simpa only [coe_mpullback, hφ] using mpullback_timeDependentFlowOf_mpullback_prodMk_eq
+    (hX.of_le (by simp))
+    (isCompleteVectorField_timeDependentSuspensionField_strictMoserVectorField hc hh)
+    (α.contMDiff.of_le (by simp)) hL s t
 
 end Family
 
