@@ -19,8 +19,8 @@ import TauCeti.LinearAlgebra.Determinant.Prod
 /-!
 # Generating functions of area-preserving maps of the strip
 
-Let `F = (X, Y)` be a map of the plane `ℝ × ℝ`, with coordinates `(x, y)`, which is `C²` on an
-open set `U`, for instance a lift of an area-preserving diffeomorphism of the annulus
+Let `F = (X, Y)` be a map of the plane `ℝ × ℝ`, with coordinates `(x, y)`, which is `C²` near
+the region of interest, for instance a lift of an area-preserving diffeomorphism of the annulus
 `(ℝ / ℤ) × [0, 1]` to a neighbourhood of the strip `ℝ × [0, 1]`. This file constructs its
 generating function in the mixed coordinates `(x, y)`,
 
@@ -30,14 +30,16 @@ generating function in the mixed coordinates `(x, y)`,
 coordinates `(x, X)`.
 
 * `S` vanishes on the lower boundary line `y = 0`
-  (`TauCeti.stripGeneratingFunction_mk_zero`), and it is invariant under the translation
-  `(x, y) ↦ (x + 1, y)` when `F` commutes with it
-  (`TauCeti.stripGeneratingFunction_add_one_fst`).
-* `S` is `C^n` at `(x, y)` when `F` is `C^(n + 1)` on an open set containing the segment from
-  `(x, 0)` to `(x, y)` (`TauCeti.contDiffAt_stripGeneratingFunction`), so `S` is `C^n` when `F`
-  is (`TauCeti.contDiff_stripGeneratingFunction`).
-* If moreover `F` is `C²` there, maps `(x, 0)` into the lower boundary line, `Y(x, 0) = 0`, and
-  preserves the area form `dx ∧ dy` along that segment, then
+  (`TauCeti.stripGeneratingFunction_mk_zero`). It is invariant under a translation
+  `(x, y) ↦ (x + a, y)`, such as the deck translation `a = 1`, when `F` commutes with it
+  (`TauCeti.stripGeneratingFunction_add_fst`); it suffices that `F` commutes with the translation
+  near the segment from `(x, 0)` to `(x, y)`
+  (`TauCeti.stripGeneratingFunction_add_fst_of_eventuallyEq`).
+* `S` is `C^n` at `(x, y)` when `F` is `C^(n + 1)` at every point of the segment from `(x, 0)` to
+  `(x, y)` (`TauCeti.contDiffAt_stripGeneratingFunction`), so `S` is `C^n` when `F` is `C^(n + 1)`
+  (`TauCeti.contDiff_stripGeneratingFunction`).
+* If `F` is `C²` at every point of that segment, maps `(x, 0)` into the lower boundary line,
+  `Y(x, 0) = 0`, and preserves the area form `dx ∧ dy` along the segment, then
   `dS = Y dX - y dx` at `(x, y)`, that is `∂ₓ S = Y ∂ₓ X - y` and `∂_y S = Y ∂_y X`
   (`TauCeti.hasFDerivAt_stripGeneratingFunction`). The proof differentiates under the integral:
   the `x`-derivative of the integrand differs from the `t`-derivative of `Y ∂ₓ X` by minus the
@@ -62,7 +64,7 @@ generating-function proof of the Poincaré–Birkhoff theorem.
 * C. Conley and E. Zehnder, *The Birkhoff–Lewis fixed point theorem and a conjecture of
   V. I. Arnold*, Invent. Math. 73 (1983), 33–49.
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
-  Springer, 2001, Chapter 5 (generating functions).
+  Springer, 2001, Section 4 (generating functions).
 -/
 
 public section
@@ -75,8 +77,8 @@ open scoped Topology Interval
 namespace TauCeti
 
 /-- The **generating function** of a map `F = (X, Y)` of the plane, in the mixed coordinates
-`(x, y)`: `S(x, y) = ∫₀ʸ Y(x, t) ∂_y X(x, t) dt`. When `F` preserves area and maps the line
-`y = 0` into itself, `dS = Y dX - y dx` (`TauCeti.hasFDerivAt_stripGeneratingFunction`). -/
+`(x, y)`: `S(x, y) = ∫₀ʸ Y(x, t) ∂_y X(x, t) dt`. When `F` is `C²`, preserves area and maps the
+line `y = 0` into itself, `dS = Y dX - y dx` (`TauCeti.hasFDerivAt_stripGeneratingFunction`). -/
 def stripGeneratingFunction (F : ℝ × ℝ → ℝ × ℝ) (p : ℝ × ℝ) : ℝ :=
   ∫ t in (0 : ℝ)..p.2, (F (p.1, t)).2 * (fderiv ℝ F (p.1, t) (0, 1)).1
 
@@ -92,18 +94,25 @@ theorem stripGeneratingFunction_def (p : ℝ × ℝ) :
 theorem stripGeneratingFunction_mk_zero (x : ℝ) : stripGeneratingFunction F (x, 0) = 0 := by
   simp [stripGeneratingFunction_def]
 
-/-- If `F` commutes with the translation `(x, y) ↦ (x + 1, y)`, its generating function is
-invariant under that translation. -/
-theorem stripGeneratingFunction_add_one_fst (hF : ∀ p, F (p + (1, 0)) = F p + (1, 0))
-    (p : ℝ × ℝ) : stripGeneratingFunction F (p + (1, 0)) = stripGeneratingFunction F p := by
-  -- Commuting with the translation makes the derivative of `F` invariant under it.
-  have hD (q : ℝ × ℝ) : fderiv ℝ F (q + (1, 0)) = fderiv ℝ F q := by
-    have h := congrArg (fun G : ℝ × ℝ → ℝ × ℝ ↦ fderiv ℝ G q) (funext hF)
-    simpa only [fderiv_comp_add_right, fderiv_add_const] using h
+/-- If `F` commutes with the translation `(x, y) ↦ (x + a, y)` near the segment from `(p.1, 0)`
+to `p`, its generating function takes the same value at `p` and at `p + (a, 0)`. -/
+theorem stripGeneratingFunction_add_fst_of_eventuallyEq {a : ℝ} {p : ℝ × ℝ}
+    (hF : ∀ t ∈ [[0, p.2]], (fun q ↦ F (q + (a, 0))) =ᶠ[𝓝 (p.1, t)] fun q ↦ F q + (a, 0)) :
+    stripGeneratingFunction F (p + (a, 0)) = stripGeneratingFunction F p := by
   simp only [stripGeneratingFunction_def, Prod.fst_add, Prod.snd_add, add_zero]
-  refine intervalIntegral.integral_congr fun t _ ↦ ?_
-  have hq : ((p.1 + 1, t) : ℝ × ℝ) = (p.1, t) + (1, 0) := by simp
-  simp only [hq, hF, hD, Prod.snd_add, add_zero]
+  refine intervalIntegral.integral_congr fun t ht ↦ ?_
+  have hq : ((p.1 + a, t) : ℝ × ℝ) = (p.1, t) + (a, 0) := by simp
+  -- Commuting with the translation near `(p.1, t)` makes the derivative of `F` invariant under it.
+  have hD : fderiv ℝ F ((p.1, t) + (a, 0)) = fderiv ℝ F (p.1, t) := by
+    simpa only [fderiv_comp_add_right, fderiv_add_const] using (hF t ht).fderiv_eq (𝕜 := ℝ)
+  have hv : F ((p.1, t) + (a, 0)) = F (p.1, t) + (a, 0) := (hF t ht).self_of_nhds
+  simp only [hq, hv, hD, Prod.snd_add, add_zero]
+
+/-- If `F` commutes with the translation `(x, y) ↦ (x + a, y)`, its generating function is
+invariant under that translation. -/
+theorem stripGeneratingFunction_add_fst {a : ℝ} (hF : ∀ q, F (q + (a, 0)) = F q + (a, 0))
+    (p : ℝ × ℝ) : stripGeneratingFunction F (p + (a, 0)) = stripGeneratingFunction F p :=
+  stripGeneratingFunction_add_fst_of_eventuallyEq fun _ _ ↦ .of_forall hF
 
 /-! ### Regularity -/
 
@@ -117,11 +126,29 @@ private theorem contDiffOn_snd_mul_fst_fderiv {n : ℕ∞} (hU : IsOpen U)
   (contDiff_snd.comp_contDiffOn (hF.of_le le_self_add)).mul
     (contDiff_fst.comp_contDiffOn ((hF.fderiv_of_isOpen hU le_rfl).clm_apply contDiffOn_const))
 
-/-- The generating function is `C^n` at `p` when `F` is `C^(n + 1)` on an open set containing the
+/-- The generating function is `C^n` at `p` when `F` is `C^(n + 1)` at every point of the
 segment from `(p.1, 0)` to `p`. -/
-theorem contDiffAt_stripGeneratingFunction {n : ℕ∞} (hU : IsOpen U)
-    (hF : ContDiffOn ℝ (n + 1) F U) {p : ℝ × ℝ} (hp : {p.1} ×ˢ [[0, p.2]] ⊆ U) :
+theorem contDiffAt_stripGeneratingFunction {n : ℕ∞} {p : ℝ × ℝ}
+    (hF : ∀ t ∈ [[0, p.2]], ContDiffAt ℝ (n + 1) F (p.1, t)) :
     ContDiffAt ℝ n (stripGeneratingFunction F) p := by
+  -- `C^∞` is `C^m` for every finite `m`, so it suffices to treat finite `n`.
+  suffices H : ∀ m : ℕ∞, m ≠ ⊤ → (∀ t ∈ [[0, p.2]], ContDiffAt ℝ (m + 1) F (p.1, t)) →
+      ContDiffAt ℝ m (stripGeneratingFunction F) p by
+    rcases eq_or_ne n ⊤ with rfl | hn
+    · exact contDiffAt_infty.2 fun m ↦
+        H m (ENat.natCast_ne_top m) fun t ht ↦ (hF t ht).of_le (by simp)
+    · exact H n hn hF
+  intro n hn hF
+  -- For finite `n`, the points at which `F` is `C^(n + 1)` form an open set `U` containing the
+  -- segment.
+  set U : Set (ℝ × ℝ) := {q | ContDiffAt ℝ (n + 1) F q}
+  have hU : IsOpen U := isOpen_iff_mem_nhds.2 fun q hq ↦ hq.eventually (by simpa using hn)
+  have hFU : ContDiffOn ℝ (n + 1) F U := fun _ hq ↦ hq.contDiffWithinAt
+  have hp : {p.1} ×ˢ [[0, p.2]] ⊆ U := by
+    rintro ⟨x, t⟩ ⟨hx, ht⟩
+    rw [mem_singleton_iff] at hx
+    subst hx
+    exact hF t ht
   set g : ℝ × ℝ → ℝ := fun q ↦ (F q).2 * (fderiv ℝ F q (0, 1)).1
   -- Rescale the variable interval `[0, y]` to `[0, 1]`.
   have h : stripGeneratingFunction F = fun p ↦ p.2 * ∫ s in (0 : ℝ)..1, g (p.1, p.2 * s) := by
@@ -134,7 +161,7 @@ theorem contDiffAt_stripGeneratingFunction {n : ℕ∞} (hU : IsOpen U)
   -- a product `u × [0, 1]` with `u` an open neighbourhood of `p`.
   set W : Set ((ℝ × ℝ) × ℝ) := (fun z ↦ (z.1.1, z.1.2 * z.2)) ⁻¹' U
   have hg : ContDiffOn ℝ n (fun z : (ℝ × ℝ) × ℝ ↦ g (z.1.1, z.1.2 * z.2)) W :=
-    (contDiffOn_snd_mul_fst_fderiv hU hF (0, 1)).comp (by fun_prop) fun _ hz ↦ hz
+    (contDiffOn_snd_mul_fst_fderiv hU hFU (0, 1)).comp (by fun_prop) fun _ hz ↦ hz
   have hpW : {p} ×ˢ [[(0 : ℝ), 1]] ⊆ W := by
     rintro ⟨q, s⟩ ⟨hq, hs⟩
     rw [mem_singleton_iff] at hq
@@ -153,8 +180,7 @@ theorem contDiffAt_stripGeneratingFunction {n : ℕ∞} (hU : IsOpen U)
 /-- The generating function of a `C^(n + 1)` map is `C^n`. -/
 theorem contDiff_stripGeneratingFunction {n : ℕ∞} (hF : ContDiff ℝ (n + 1) F) :
     ContDiff ℝ n (stripGeneratingFunction F) :=
-  contDiff_iff_contDiffAt.2 fun _ ↦
-    contDiffAt_stripGeneratingFunction isOpen_univ hF.contDiffOn (subset_univ _)
+  contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_stripGeneratingFunction fun _ _ ↦ hF.contDiffAt
 
 /-! ### The derivative of the generating function -/
 
@@ -232,20 +258,29 @@ private theorem hasDerivAt_stripGeneratingFunction_fst (hU : IsOpen U) (hF : Con
   rw [← hval]
   exact hd
 
-/-- **The generating function of an area-preserving map.** If `F = (X, Y)` is `C²` on an open set
-containing the segment from `(x, 0)` to `p = (x, y)`, maps `(x, 0)` to the line `y = 0` and
-preserves the area form `dx ∧ dy` along that segment, then its generating function `S` satisfies
+/-- **The generating function of an area-preserving map.** If `F = (X, Y)` is `C²` at every point
+of the segment from `(x, 0)` to `p = (x, y)`, maps `(x, 0)` to the line `y = 0` and preserves the
+area form `dx ∧ dy` along that segment, then its generating function `S` satisfies
 `dS = Y dX - y dx` at `p`: `∂ₓ S = Y ∂ₓ X - y` and `∂_y S = Y ∂_y X`. -/
-theorem hasFDerivAt_stripGeneratingFunction (hU : IsOpen U) (hF : ContDiffOn ℝ 2 F U)
-    {p : ℝ × ℝ} (hp : {p.1} ×ˢ [[0, p.2]] ⊆ U) (hY : (F (p.1, 0)).2 = 0)
+theorem hasFDerivAt_stripGeneratingFunction {p : ℝ × ℝ}
+    (hF : ∀ t ∈ [[0, p.2]], ContDiffAt ℝ 2 F (p.1, t)) (hY : (F (p.1, 0)).2 = 0)
     (hdet : ∀ t ∈ [[0, p.2]], (fderiv ℝ F (p.1, t)).det = 1) :
     HasFDerivAt (stripGeneratingFunction F)
       ((F p).2 • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ F p) -
         p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) p := by
   obtain ⟨x, y⟩ := p
   have hS : DifferentiableAt ℝ (stripGeneratingFunction F) (x, y) :=
-    (contDiffAt_stripGeneratingFunction (n := 1) hU (hF.of_le (by norm_num)) hp).differentiableAt
-      one_ne_zero
+    (contDiffAt_stripGeneratingFunction (n := 1) fun t ht ↦
+      (hF t ht).of_le (by norm_num)).differentiableAt one_ne_zero
+  -- The points at which `F` is `C²` form an open set `U` containing the segment.
+  set U : Set (ℝ × ℝ) := {q | ContDiffAt ℝ 2 F q}
+  have hU : IsOpen U := isOpen_iff_mem_nhds.2 fun q hq ↦ hq.eventually (by simp)
+  have hFU : ContDiffOn ℝ 2 F U := fun _ hq ↦ hq.contDiffWithinAt
+  have hp : {x} ×ˢ [[0, y]] ⊆ U := by
+    rintro ⟨x', t⟩ ⟨hx, ht⟩
+    rw [mem_singleton_iff] at hx
+    subst hx
+    exact hF t ht
   convert hS.hasFDerivAt using 1
   -- Compare the two partial derivatives.
   have hfst : HasDerivAt (fun s ↦ stripGeneratingFunction F (s, y))
@@ -264,7 +299,7 @@ theorem hasFDerivAt_stripGeneratingFunction (hU : IsOpen U) (hF : ContDiffOn ℝ
   have hyV : y ∈ (fun t : ℝ ↦ (x, t)) ⁻¹' U := hsegV right_mem_uIcc
   have hc : ContinuousOn (fun t ↦ (F (x, t)).2 * (fderiv ℝ F (x, t) (0, 1)).1)
       ((fun t : ℝ ↦ (x, t)) ⁻¹' U) :=
-    (contDiffOn_snd_mul_fst_fderiv (n := 0) hU (hF.of_le (by norm_num)) (0, 1)).continuousOn.comp
+    (contDiffOn_snd_mul_fst_fderiv (n := 0) hU (hFU.of_le (by norm_num)) (0, 1)).continuousOn.comp
       (by fun_prop) fun _ ht ↦ ht
   have hsnd' : HasDerivAt (fun t ↦ stripGeneratingFunction F (x, t))
       ((F (x, y)).2 * (fderiv ℝ F (x, y) (0, 1)).1) y :=
@@ -272,35 +307,32 @@ theorem hasFDerivAt_stripGeneratingFunction (hU : IsOpen U) (hF : ContDiffOn ℝ
       (hc.stronglyMeasurableAtFilter hV y hyV) (hc.continuousAt (hV.mem_nhds hyV))
   refine ContinuousLinearMap.prod_ext (ContinuousLinearMap.ext_ring ?_)
     (ContinuousLinearMap.ext_ring ?_)
-  · simpa using (hfst.unique (hasDerivAt_stripGeneratingFunction_fst hU hF hp hY hdet)).symm
+  · simpa using (hfst.unique (hasDerivAt_stripGeneratingFunction_fst hU hFU hp hY hdet)).symm
   · simpa using (hsnd.unique hsnd').symm
 
-/-- **The generating equations.** Let `F = (X, Y)` be `C²` on an open set containing the segment
-from `(x, 0)` to `p = (x, y)`, map `(x, 0)` to the line `y = 0`, preserve area along that segment,
-and twist at `p`: `∂_y X(p) ≠ 0`. If a function `S'` of `(x, X)` agrees near `p` with the
+/-- **The generating equations.** Let `F = (X, Y)` be `C²` at every point of the segment from
+`(x, 0)` to `p = (x, y)`, map `(x, 0)` to the line `y = 0`, preserve area along that segment, and
+twist at `p`: `∂_y X(p) ≠ 0`. If a function `S'` of `(x, X)` agrees near `p` with the
 generating function of `F` through `(x, y) ↦ (x, X(x, y))`, then at `(x, X(p))` it has derivative
 `Y(p) dX - y dx`. That is, `∂₁ S'(x, X) = -y` and `∂₂ S'(x, X) = Y`. -/
-theorem hasFDerivAt_of_eventuallyEq_stripGeneratingFunction (hU : IsOpen U)
-    (hF : ContDiffOn ℝ 2 F U) {p : ℝ × ℝ} (hp : {p.1} ×ˢ [[0, p.2]] ⊆ U)
+theorem hasFDerivAt_of_eventuallyEq_stripGeneratingFunction {p : ℝ × ℝ}
+    (hF : ∀ t ∈ [[0, p.2]], ContDiffAt ℝ 2 F (p.1, t))
     (hY : (F (p.1, 0)).2 = 0) (hdet : ∀ t ∈ [[0, p.2]], (fderiv ℝ F (p.1, t)).det = 1)
     (htwist : (fderiv ℝ F p (0, 1)).1 ≠ 0) {S' : ℝ × ℝ → ℝ}
     (hS' : (fun q ↦ S' (q.1, (F q).1)) =ᶠ[𝓝 p] stripGeneratingFunction F) :
     HasFDerivAt S' ((F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ -
       p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) (p.1, (F p).1) := by
-  have hFp : ContDiffAt ℝ 2 F p :=
-    hF.contDiffAt (hU.mem_nhds (hp (show p ∈ {p.1} ×ˢ [[0, p.2]] from ⟨rfl, right_mem_uIcc⟩)))
+  have hFp : ContDiffAt ℝ 2 F p := hF p.2 right_mem_uIcc
   set G : ℝ × ℝ → ℝ × ℝ := fun q ↦ (q.1, (F q).1)
   set G' : (ℝ × ℝ) →L[ℝ] ℝ × ℝ :=
     (ContinuousLinearMap.fst ℝ ℝ ℝ).prod ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ F p))
   set Λ : (ℝ × ℝ) →L[ℝ] ℝ :=
     (F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ - p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ
   -- The coordinate change `G` has invertible derivative, since its determinant is the twist.
-  have hdetG : LinearMap.det (G' : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ) ≠ 0 := by
-    simpa [G', LinearMap.det_finTwoProd] using htwist
-  set e : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ :=
-    (LinearMap.equivOfDetNeZero (G' : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ) hdetG).toContinuousLinearEquiv
-  have he : (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) = G' := by
-    ext <;> rfl
+  have hdetG : G'.det ≠ 0 := by
+    simpa [G', ContinuousLinearMap.det, LinearMap.det_finTwoProd] using htwist
+  set e : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ := G'.toContinuousLinearEquivOfDetNeZero hdetG
+  have he : (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) = G' := G'.coe_toContinuousLinearEquivOfDetNeZero hdetG
   have hG : HasStrictFDerivAt G (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) p := by
     rw [he]
     exact hasStrictFDerivAt_fst.prodMk (hasStrictFDerivAt_fst.comp p
@@ -324,7 +356,7 @@ theorem hasFDerivAt_of_eventuallyEq_stripGeneratingFunction (hU : IsOpen U)
         p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) (k (G p)) := by
     have hkp : k (G p) = p := hG.eventually_left_inverse.self_of_nhds
     rw [hkp]
-    exact hasFDerivAt_stripGeneratingFunction hU hF hp hY hdet
+    exact hasFDerivAt_stripGeneratingFunction hF hY hdet
   have hSk := hS.comp (G p) hG.to_localInverse.hasFDerivAt
   rw [hΛ, ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_comp_coe_symm,
     ContinuousLinearMap.comp_id] at hSk
@@ -363,8 +395,8 @@ theorem hasFDerivAt_affineShear_generatingFunction {a c : ℝ} (hc : c ≠ 0) (x
     simp
   have htwist : (fderiv ℝ (fun q : ℝ × ℝ ↦ (q.1 + a + c * q.2, q.2)) (x, y) (0, 1)).1 ≠ 0 := by
     simpa [(hasFDerivAt_affineShear a c _).fderiv] using hc
-  refine hasFDerivAt_of_eventuallyEq_stripGeneratingFunction isOpen_univ hF.contDiffOn
-    (subset_univ _) rfl (fun t _ ↦ hdet _) htwist
+  refine hasFDerivAt_of_eventuallyEq_stripGeneratingFunction (fun _ _ ↦ hF.contDiffAt) rfl
+    (fun t _ ↦ hdet _) htwist
     (Eventually.of_forall fun q ↦ ?_)
   rw [stripGeneratingFunction_affineShear]
   field_simp
