@@ -442,7 +442,8 @@ theorem restrictToConvex_mul_inv_le_one (v : Valuation R Γ₀) (H : ConvexSubgr
   simpa using mul_inv_le_one_of_le₀ hle zero_le
 
 /-- **A restricted value strictly dominating a kept value stays strictly above `1` after
-dividing by it.** As with the `≤` form, only the comparison and the divisor's membership matter. -/
+dividing by it.** Unlike the `≤` form, this needs the divisor to be kept: only the comparison
+and the divisor's membership in `H` matter. -/
 theorem one_lt_restrictToConvex_mul_inv (v : Valuation R Γ₀) (H : ConvexSubgroup Γ₀ˣ)
     (hH : ∀ a : R, ∀ ha : v a ≠ 0, 1 ≤ v a → Units.mk0 (v a) ha ∈ H) {a b : R}
     (hb : v b ≠ 0) (hmem : Units.mk0 (v b) hb ∈ H) (hlt : v b < v a) :
