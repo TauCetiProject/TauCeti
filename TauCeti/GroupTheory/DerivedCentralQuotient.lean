@@ -63,11 +63,8 @@ depends only on the isomorphism class of `G`.
 
 ## References
 
-This is the derived-subgroup-modulo-centre half of milestone L3 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which fixes the recipe `H = fixedSubgroup F` and
-`Group = [H, H] / Z([H, H])` and the reading of the centre as the centre of the derived subgroup
-rather than of `H`. The construction is standard; see R. W. Carter, *Simple Groups of Lie Type*,
-and D. Gorenstein, R. Lyons and R. Solomon, *The Classification of the Finite Simple Groups*.
+The construction is standard; see R. W. Carter, *Simple Groups of Lie Type*, and D. Gorenstein,
+R. Lyons and R. Solomon, *The Classification of the Finite Simple Groups*.
 -/
 
 public section

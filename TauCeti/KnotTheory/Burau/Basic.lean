@@ -54,9 +54,6 @@ are constructed in `TauCeti.KnotTheory.Burau.Reduced.Basic`; its comparison with
 Alexander polynomial of `TauCeti/KnotTheory/Alexander.lean` still needs the closure of a braid to
 a link.
 
-This is the Burau route of the "knot polynomials, each a project in itself, with several algorithms
-apiece" bullet of Layer 4 ("knot theory, done properly") of the GeometricTopology roadmap.
-
 ## Main definitions
 
 * `TauCeti.KnotTheory.burauCol` and `TauCeti.KnotTheory.burauRow`: the column and row vector whose
