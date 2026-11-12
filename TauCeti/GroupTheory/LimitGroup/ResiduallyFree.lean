@@ -40,10 +40,11 @@ nontrivial, and the CSA property is witnessed by pairs of elements. Consequently
 fully residually free group is a domain in the sense of algebraic geometry over groups.
 Residual freeness passes to arbitrary products, so `FreeGroup (Fin 2) × Multiplicative ℤ` is
 residually free; like every product of a nonabelian group and a nontrivial group it is not
-commutative transitive, hence not fully residually free. Thus the two notions differ. Fully
-residually free groups also inherit the big powers property from free groups, since one
-homomorphism to a free group can keep every entry of a tuple and every commutator of consecutive
-entries nontrivial.
+commutative transitive, hence not fully residually free. Thus the two notions differ. For the
+same reason `FreeGroup (Fin 2) × FreeGroup (Fin 2)`, a product of two fully residually free
+groups, is residually free but not fully residually free. Fully residually free groups also
+inherit the big powers property from free groups, since one homomorphism to a free group can keep
+every entry of a tuple and every commutator of consecutive entries nontrivial.
 
 ## Main definitions
 
@@ -78,6 +79,8 @@ entries nontrivial.
   powers property.
 * `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_int`: `F₂ × ℤ` is residually free
   but not fully residually free.
+* `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_freeGroup`: `F₂ × F₂` is
+  residually free but not fully residually free.
 
 ## References
 
@@ -330,6 +333,19 @@ theorem isResiduallyFree_freeGroup_prod_int :
 `isResiduallyFree_freeGroup_prod_int` this separates the two notions. -/
 theorem not_isFullyResiduallyFree_freeGroup_prod_int :
     ¬IsFullyResiduallyFree (FreeGroup (Fin 2) × Multiplicative ℤ) :=
+  not_isFullyResiduallyFree_prod_of_nontrivial fun hcomm =>
+    not_subsingleton (Fin 2) (FreeGroup.isMulCommutative_iff_subsingleton.mp hcomm)
+
+/-- `F₂ × F₂` is residually free, through its projections to the factors. -/
+theorem isResiduallyFree_freeGroup_prod_freeGroup :
+    IsResiduallyFree (FreeGroup (Fin 2) × FreeGroup (Fin 2)) :=
+  isFullyResiduallyFree_of_isFreeGroup.isResiduallyFree.prod
+    isFullyResiduallyFree_of_isFreeGroup.isResiduallyFree
+
+/-- `F₂ × F₂` is not fully residually free, although both factors are: a product of two fully
+residually free groups need not be fully residually free. -/
+theorem not_isFullyResiduallyFree_freeGroup_prod_freeGroup :
+    ¬IsFullyResiduallyFree (FreeGroup (Fin 2) × FreeGroup (Fin 2)) :=
   not_isFullyResiduallyFree_prod_of_nontrivial fun hcomm =>
     not_subsingleton (Fin 2) (FreeGroup.isMulCommutative_iff_subsingleton.mp hcomm)
 

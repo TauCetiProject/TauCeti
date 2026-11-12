@@ -31,7 +31,8 @@ is a free factor of the coordinate group `F ∗ G`; here the coefficients are tr
 is the coordinate group.
 
 The product `F₂ × F₂` shows that the factors cannot be dispensed with: it is residually free and a
-product of two limit groups, but it is not fully residually free.
+product of two limit groups, but it is not fully residually free
+(`TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_freeGroup`).
 
 ## Main results
 
@@ -43,8 +44,6 @@ product of two limit groups, but it is not fully residually free.
 * `TauCeti.LimitGroup.isResiduallyFree_iff_exists_injective_monoidHom_pi_isLimitGroup`: a finitely
   generated group is residually free if and only if it embeds in a finite direct product of limit
   groups.
-* `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_freeGroup`: `F₂ × F₂` is
-  residually free but not fully residually free.
 
 ## References
 
@@ -116,18 +115,5 @@ theorem isResiduallyFree_iff_exists_injective_monoidHom_pi_isLimitGroup [Group.F
         (∀ i, IsLimitGroup (L i)) ∧ Function.Injective f :=
   ⟨fun h => h.exists_injective_monoidHom_pi_isLimitGroup, fun ⟨_, _, _, _, hL, hf⟩ =>
     (IsResiduallyFree.pi fun i => (hL i).isFullyResiduallyFree.isResiduallyFree).of_injective hf⟩
-
-/-- `F₂ × F₂` is residually free, through its projections to the factors. -/
-theorem isResiduallyFree_freeGroup_prod_freeGroup :
-    IsResiduallyFree (FreeGroup (Fin 2) × FreeGroup (Fin 2)) :=
-  isFullyResiduallyFree_of_isFreeGroup.isResiduallyFree.prod
-    isFullyResiduallyFree_of_isFreeGroup.isResiduallyFree
-
-/-- `F₂ × F₂` is not fully residually free, although it is a product of two limit groups: a
-finitely generated residually free group need not be a limit group. -/
-theorem not_isFullyResiduallyFree_freeGroup_prod_freeGroup :
-    ¬IsFullyResiduallyFree (FreeGroup (Fin 2) × FreeGroup (Fin 2)) :=
-  not_isFullyResiduallyFree_prod_of_nontrivial fun hcomm =>
-    not_subsingleton (Fin 2) (FreeGroup.isMulCommutative_iff_subsingleton.mp hcomm)
 
 end TauCeti.LimitGroup
