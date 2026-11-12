@@ -30,33 +30,31 @@ public section
 
 namespace TauCeti.TypeTrialityD4LieIndex
 
-variable (d : TypeTrialityD4LieIndex) (i : Fin d.1.rank) (u : Multiplicative d.1.Closure)
+variable (d : TypeTrialityD4LieIndex) (j : Fin 4) (u : Multiplicative d.1.Closure)
 
 /-- Triality permutes the negative simple roots by the selected forward node cycle, with no
 sign or change of additive parameter. -/
--- Match the indexed node before simp expands its dependent rank transport.
-@[simp↓]
+@[simp]
 theorem graphAut_rootSubgroupPoints_inr :
-    d.graphAut (D4Tripled.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i)) d.1.Closure u) =
+    d.graphAut (D4Tripled.rootSubgroupPoints (.inr j) d.1.Closure u) =
       D4Tripled.rootSubgroupPoints
         (.inr (finCongr d.rank_eq_four
-          (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i))) d.1.Closure u := by
+          (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm
+            (finCongr d.rank_eq_four.symm j)))) d.1.Closure u := by
   rw [graphAut_def, D4Tripled.trialityPoints_rootSubgroupPoints,
     MinusculeWeightTable.Symmetry.rootPerm_inr, D4Tripled.trialitySymmetry_nodePerm,
     diagramPerm_toGraphTwistedIndex]
-  -- The rank transports are inverse even though their equality proofs are written separately.
-  have hcast (j : Fin 4) : finCongr d.rank_eq_four (finCongr d.rank_eq_four.symm j) = j :=
-    Fin.ext rfl
-  rw [hcast]
+  simp only [finCongr, Equiv.coe_fn_mk, Fin.cast_cast, Fin.cast_eq_self]
 
 /-- The `³D₄(q)` Steinberg map applies the selected forward triality cycle to negative simple
 roots and raises their additive parameters to the small-field order `q`. -/
-@[simp↓]
+@[simp]
 theorem steinberg_rootSubgroupPoints_inr :
-    d.steinberg (D4Tripled.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i)) d.1.Closure u) =
+    d.steinberg (D4Tripled.rootSubgroupPoints (.inr j) d.1.Closure u) =
       D4Tripled.rootSubgroupPoints
         (.inr (finCongr d.rank_eq_four
-          (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i))) d.1.Closure
+          (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm
+            (finCongr d.rank_eq_four.symm j)))) d.1.Closure
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [steinberg_def, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     frobenius_def, D4Tripled.frobenius_rootSubgroupPoints,

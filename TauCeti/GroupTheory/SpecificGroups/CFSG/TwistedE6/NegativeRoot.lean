@@ -29,32 +29,29 @@ public section
 
 namespace TauCeti.TypeTwistedE6LieIndex
 
-variable (d : TypeTwistedE6LieIndex) (i : Fin d.1.rank) (u : Multiplicative d.1.Closure)
+variable (d : TypeTwistedE6LieIndex) (j : Fin 6) (u : Multiplicative d.1.Closure)
 
 /-- The doubled E₆ graph factor sends each lowering subgroup to the selected diagram image,
 with no sign or change of additive parameter. -/
--- Match the indexed node before simp expands its dependent rank transport.
-@[simp↓]
+@[simp]
 theorem graphAut_rootSubgroupPoints_inr :
-    d.graphAut (E6DoubledMinuscule.rootSubgroupPoints (.inr (finCongr d.rank_eq_six i))
-      d.1.Closure u) =
+    d.graphAut (E6DoubledMinuscule.rootSubgroupPoints (.inr j) d.1.Closure u) =
       E6DoubledMinuscule.rootSubgroupPoints
-        (.inr (finCongr d.rank_eq_six (d.toGraphTwistedIndex.diagramPerm i))) d.1.Closure u := by
+        (.inr (finCongr d.rank_eq_six
+          (d.toGraphTwistedIndex.diagramPerm (finCongr d.rank_eq_six.symm j))))
+        d.1.Closure u := by
   rw [graphAut_def, E6DoubledMinuscule.graphAutomorphismPoints_rootSubgroupPoints,
     E6DoubledMinuscule.graphRootPerm_inr, diagramPerm_toGraphTwistedIndex]
-  -- The rank transports are inverse even though their equality proofs are written separately.
-  have hcast (j : Fin 6) : finCongr d.rank_eq_six (finCongr d.rank_eq_six.symm j) = j :=
-    Fin.ext rfl
-  rw [hcast]
+  simp only [finCongr, Equiv.coe_fn_mk, Fin.cast_cast, Fin.cast_eq_self]
 
 /-- The `²E₆(q)` Steinberg map applies the selected diagram permutation to negative simple
 roots and raises their additive parameters to the small-field order `q`. -/
-@[simp↓]
+@[simp]
 theorem steinberg_rootSubgroupPoints_inr :
-    d.steinberg (E6DoubledMinuscule.rootSubgroupPoints (.inr (finCongr d.rank_eq_six i))
-      d.1.Closure u) =
+    d.steinberg (E6DoubledMinuscule.rootSubgroupPoints (.inr j) d.1.Closure u) =
       E6DoubledMinuscule.rootSubgroupPoints
-        (.inr (finCongr d.rank_eq_six (d.toGraphTwistedIndex.diagramPerm i))) d.1.Closure
+        (.inr (finCongr d.rank_eq_six
+          (d.toGraphTwistedIndex.diagramPerm (finCongr d.rank_eq_six.symm j)))) d.1.Closure
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [steinberg_def, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     frobenius_def, E6DoubledMinuscule.frobenius_rootSubgroupPoints,
