@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Automorphism
+public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
+public import Mathlib.Algebra.Group.Commutator
 
 /-!
 # The rewriting rules of the standard form
@@ -23,8 +24,6 @@ compact surfaces, with the coefficients in the role of boundary edges.
 * `GX.transvection_rotate`: the rotation rule `x U V x⁻¹ W ↦ x V U x⁻¹ W`.
 * `GX.exists_mem_elementaryAut_handle`: the handle rule, carrying `x U y V x⁻¹ W y⁻¹ Z`, up to
   conjugation, to `x⁻¹ y⁻¹ x y Z W V U`.
-* `Quadratic.exists_standard_toWord_eq_commutator`: the commutator `x⁻¹ y⁻¹ x y` is already a
-  standard quadratic word.
 
 ## References
 
@@ -38,20 +37,12 @@ compact surfaces, with the coefficients in the role of boundary edges.
 
 public section
 
-open Monoid.Coprod Function Subgroup
+open Monoid.Coprod Subgroup
 open scoped commutatorElement
 
-namespace TauCeti.GroupAlgGeom
+namespace TauCeti.GroupAlgGeom.GX
 
-variable {G X : Type*} [Group G]
-
-namespace GX
-
-/-! ### The rewriting rules -/
-
-section Rules
-
-variable [DecidableEq X] {x y : X} {U V W Z : GX G X}
+variable {G X : Type*} [Group G] [DecidableEq X] {x y : X} {U V W Z : GX G X}
 
 /-- The cross-cap rule: `x ↦ x U⁻¹` turns `x U x V` into `x² U⁻¹ V`. -/
 theorem transvection_crossCap (hU : U ∈ avoiding x) (hV : V ∈ avoiding x) :
@@ -86,21 +77,4 @@ theorem exists_mem_elementaryAut_handle (hxy : x ≠ y) (hU : U ∈ avoiding x �
   · simp [hU.1, hU.2, hV.1, hV.2, hW.1, hW.2, hZ.1, hZ.2, hxy, hxy.symm, commutatorElement_def,
       mul_assoc]
 
-end Rules
-
-end GX
-
-namespace Quadratic
-
-/-! ### Examples -/
-
-/-- The commutator `x⁻¹ y⁻¹ x y` is a standard quadratic word. -/
-theorem exists_standard_toWord_eq_commutator : ∃ S : Standard G (Fin 2),
-    S.toWord = (inr (.of 0))⁻¹ * (inr (.of 1))⁻¹ * inr (.of 0) * inr (.of 1) :=
-  ⟨.orientable 1 one_pos ![0] ![1] ((injective_of_subsingleton _).sumElim
-      (injective_of_subsingleton _) (by simp)), by
-    simp [Standard.toWord_def, commutatorElement_def, mul_assoc]⟩
-
-end Quadratic
-
-end TauCeti.GroupAlgGeom
+end TauCeti.GroupAlgGeom.GX
