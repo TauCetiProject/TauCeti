@@ -229,7 +229,7 @@ private theorem fderiv_flowBox_zero (hP : ∀ i, P (u i) = Pi.single i 1)
       have h' : HasDerivAt (fun r : ℝ ↦ a + r • k) k 0 := by
         simpa using ((hasDerivAt_id (0 : ℝ)).smul_const k).const_add a
       refine h'.congr_of_eventuallyEq (Eventually.of_forall fun r ↦ ?_)
-      change flowBox Φ a u P (0 + r • k) = a + r • k
+      dsimp only
       rw [zero_add, flowBox_of_apply_eq_zero Φ a u (by rw [map_smul, hPk, smul_zero])]
     rw [← hd.lineDeriv_eq_fderiv, hline.lineDeriv]
   rw [ContinuousLinearMap.id_apply]
@@ -317,7 +317,7 @@ theorem exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero {n : 
     ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq hψs.contDiffOn
       (hUo.inter (hSo.preimage hψs.continuous)) ⟨h0U, show ψ 0 ∈ S from hψ0 ▸ haS⟩
       (by exact_mod_cast hn) (e := ContinuousLinearEquiv.refl ℝ E)
-      (by rw [hD]; rfl) (v := w) (u := u)
+      (by rw [ContinuousLinearEquiv.coe_refl, hD]) (v := w) (u := u)
       fun z hz i ↦ by rw [hU z hz.1 i, hSg _ hz.2 i]
   refine ⟨Θ.symm, hψ0 ▸ hΘ ▸ Θ.map_source h0Θ,
     fun y hy ↦ hΘs.contDiffAt (Θ.open_target.mem_nhds hy), fun z _ ↦ ?_, fun y hy i ↦ ?_⟩

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -32,8 +33,8 @@ constant field `u i`, with the `u i` linearly independent
 (`TauCeti.exists_chart_mfderiv_eq_const_of_mlieBracket_eq_zero`); a single nonvanishing field is
 the case of a one-element index set. The fields read in the extended chart at `x` are `C^m` vector
 fields on an open subset of the model space, and by naturality of the bracket under the inverse
-extended chart (`VectorField.mpullback_mlieBracket`) they have vanishing flat brackets. So the
-simultaneous flat straightening theorem
+extended chart (`VectorField.lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero`) they have
+vanishing flat brackets. So the simultaneous flat straightening theorem
 `TauCeti.exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero` produces a change of
 coordinates there; read back through the extended chart, it is a chart of the manifold
 (`TauCeti.conj_chartAt_mem_maximalAtlas`).
@@ -109,31 +110,17 @@ theorem exists_chart_mfderiv_eq_const_of_mlieBracket_eq_zero {ι : Type*} [Finit
     mpullback_extChartAt_symm_apply_eq_mfderiv (V i) hy
   have hwx (i : ι) : w i (e₀ x) = V i x := by
     rw [hwe i x (mem_extChartAt_source x), he₀, mfderiv_extChartAt_eq_id]
-    rfl
+    exact ContinuousLinearMap.id_apply _
   have hli' : LinearIndependent ℝ fun i ↦ w i (e₀ x) := by
     rw [show (fun i ↦ w i (e₀ x)) = fun i ↦ V i x from funext hwx]
     exact hli
   -- The coordinate fields have vanishing brackets near `e₀ x`, by naturality of the bracket.
-  have hbr' : Pairwise fun i j ↦ lieBracket ℝ (w i) (w j) =ᶠ[𝓝 (e₀ x)] 0 := by
-    intro i j hij
-    have hc : Tendsto e₀.symm (𝓝 (e₀ x)) (𝓝 x) := by
-      have h := continuousAt_extChartAt_symm (I := I) x
-      rwa [ContinuousAt, extChartAt_to_inv] at h
-    filter_upwards [hc.eventually (isOpen_interior.eventually_mem
-        (mem_interior_iff_mem_nhds.2 hU)), hc.eventually (hbr hij),
-      (isOpen_extChartAt_target x).mem_nhds (mem_extChartAt_target x)] with z hzU hz0 hzt
-    have hdiff (k : ι) : MDifferentiableAt I I.tangent
-        (fun y ↦ (⟨y, V k y⟩ : TangentBundle I M)) (e₀.symm z) :=
-      ((hV k).contMDiffAt (mem_interior_iff_mem_nhds.1 hzU)).mdifferentiableAt
-        (lt_of_lt_of_le zero_lt_one hm1).ne'
-    have hf : ContMDiffAt 𝓘(ℝ, E) I 2 e₀.symm z :=
-      ((contMDiffOn_extChartAt_symm x) z hzt).contMDiffAt
-        ((isOpen_extChartAt_target x).mem_nhds hzt)
-    have h := mpullback_mlieBracket (hdiff i) (hdiff j) hf (by simp)
-    rw [mpullback_apply, hz0, map_zero, ← mlieBracketWithin_univ,
-      mlieBracketWithin_eq_lieBracketWithin] at h
-    rw [Pi.zero_apply, ← lieBracketWithin_univ]
-    exact h.symm
+  have hdiff (k : ι) : ∀ᶠ y in 𝓝 x,
+      MDifferentiableAt I I.tangent (fun y ↦ (⟨y, V k y⟩ : TangentBundle I M)) y :=
+    (eventually_mem_nhds_iff.2 hU).mono fun y hy ↦
+      ((hV k).contMDiffAt hy).mdifferentiableAt (lt_of_lt_of_le zero_lt_one hm1).ne'
+  have hbr' : Pairwise fun i j ↦ lieBracket ℝ (w i) (w j) =ᶠ[𝓝 (e₀ x)] 0 := fun i j hij ↦
+    lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero (hdiff i) (hdiff j) (hbr hij)
   -- Straighten the coordinate fields and read the new coordinates through the chart.
   obtain ⟨φ, hxφ, hφ, hφs, hφw⟩ :=
     exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero hm hwS

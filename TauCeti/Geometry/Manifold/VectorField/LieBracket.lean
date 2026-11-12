@@ -36,6 +36,9 @@ The chart argument follows the pullback idiom used for the manifold bracket in
   this identity characterises the manifold bracket at that point.
 * `VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm`: at the chart centre, the flat
   bracket of the coordinate expressions of two fields is their manifold bracket.
+* `VectorField.lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero`: if the manifold bracket of
+  two fields vanishes near a point, the flat bracket of their coordinate expressions vanishes near
+  its chart image.
 * `VectorField.lieBracketWithin_neg_right` and `VectorField.mlieBracket_neg_right`: the flat and
   manifold brackets are odd in their second argument.
 * `VectorField.mlieBracket_neg_left`: the manifold bracket is odd in its first argument.
@@ -252,6 +255,33 @@ theorem eq_mlieBracket_of_mvfderiv_extChartAt {V W : ∀ y : M, TangentSpace I y
   exact hinj hv
 
 end TauCeti
+
+namespace VectorField
+
+/-- If two vector fields are differentiable near `x` and their manifold Lie bracket vanishes near
+`x`, then the flat Lie bracket of their pullbacks along the inverse extended chart at `x` vanishes
+near the chart image of `x`. This is naturality of the bracket (`VectorField.mpullback_mlieBracket`)
+under the inverse chart. -/
+theorem lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero [I.Boundaryless]
+    {V W : ∀ y : M, TangentSpace I y} {x : M}
+    (hV : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) y)
+    (hW : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, W y⟩ : TangentBundle I M)) y)
+    (hVW : ∀ᶠ y in 𝓝 x, mlieBracket I V W y = 0) :
+    lieBracket 𝕜 (mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V)
+      (mpullback 𝓘(𝕜, E) I (extChartAt I x).symm W) =ᶠ[𝓝 (extChartAt I x x)] 0 := by
+  have hc : Tendsto (extChartAt I x).symm (𝓝 (extChartAt I x x)) (𝓝 x) := by
+    have h := continuousAt_extChartAt_symm (I := I) x
+    rwa [ContinuousAt, extChartAt_to_inv] at h
+  filter_upwards [hc.eventually hV, hc.eventually hW, hc.eventually hVW,
+    (isOpen_extChartAt_target x).mem_nhds (mem_extChartAt_target x)] with z hzV hzW hz0 hzt
+  have hf : ContMDiffAt 𝓘(𝕜, E) I (minSmoothness 𝕜 2) (extChartAt I x).symm z :=
+    ((contMDiffOn_extChartAt_symm x) z hzt).contMDiffAt ((isOpen_extChartAt_target x).mem_nhds hzt)
+  have h := mpullback_mlieBracket hzV hzW hf le_rfl
+  rw [mpullback_apply, hz0, map_zero, ← mlieBracketWithin_univ,
+    mlieBracketWithin_eq_lieBracketWithin] at h
+  exact (congrFun lieBracketWithin_univ z).symm.trans h.symm
+
+end VectorField
 
 end
 
