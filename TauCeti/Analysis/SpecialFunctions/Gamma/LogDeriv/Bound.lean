@@ -125,9 +125,9 @@ theorem re_logDeriv_Gammaℝ_ofReal_mem_Icc {s : ℝ} (hs : s ∈ Icc 1 3) :
 theorem re_logDeriv_Gammaℝ_ofReal_neg {s : ℝ} (hs0 : 0 < s) (hs3 : s ≤ 3) :
     (logDeriv Gammaℝ (s : ℂ)).re < 0 := by
   rw [logDeriv_Gammaℝ_ofReal hs0, ofReal_re]
-  have hm := Real.monotoneOn_digamma (half_pos hs0) (show (3 / 2 : ℝ) ∈ Ioi 0 by norm_num)
-    (by linarith)
-  have hψ := (Real.digamma_le_log_le (show (0 : ℝ) < 3 / 2 by norm_num)).1
+  have h32 : (0 : ℝ) < 3 / 2 := by norm_num
+  have hm := Real.monotoneOn_digamma (half_pos hs0) h32 (by linarith)
+  have hψ := (Real.digamma_le_log_le h32).1
   have hlog : Real.log (3 / 2) < Real.log π :=
     Real.log_lt_log (by norm_num) (by linarith [two_le_pi])
   linarith
@@ -173,7 +173,7 @@ theorem norm_logDeriv_Gammaℝ_three :
   have h := re_logDeriv_Gammaℝ_ofReal_neg (s := 3) three_pos le_rfl
   rw [logDeriv_Gammaℝ_ofReal (s := 3) (by norm_num), ofReal_re] at h
   have h' := logDeriv_Gammaℝ_ofReal (s := 3) (by norm_num)
-  rw [show ((3 : ℝ) : ℂ) = 3 by norm_num] at h'
+  rw [ofReal_ofNat] at h'
   rw [h', norm_real, Real.norm_eq_abs, abs_of_neg h]
   ring
 

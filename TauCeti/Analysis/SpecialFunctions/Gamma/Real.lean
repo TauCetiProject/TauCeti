@@ -186,8 +186,8 @@ theorem digamma_one_half_neg : digamma (1 / 2) < 0 := by
 
 /-- The value `ψ(3/2) = 2 - γ - 2 log 2`, from `ψ(1/2)` and the recurrence. -/
 theorem digamma_three_halves : digamma (3 / 2) = 2 - eulerMascheroniConstant - 2 * log 2 := by
-  rw [show (3 / 2 : ℝ) = 1 / 2 + 1 by norm_num,
-    digamma_apply_add_one (Complex.real_ne_neg_nat_of_pos one_half_pos), digamma_one_half]
+  have h : (3 / 2 : ℝ) = 1 / 2 + 1 := by norm_num
+  rw [h, digamma_apply_add_one (Complex.real_ne_neg_nat_of_pos one_half_pos), digamma_one_half]
   ring
 
 /-- Euler's constant satisfies `γ + 2 log 2 < 2`. With `γ ≈ 0.57722` the gap is about
@@ -196,7 +196,8 @@ theorem eulerMascheroniConstant_add_two_mul_log_two_lt_two :
     eulerMascheroniConstant + 2 * log 2 < 2 := by
   have h := eulerMascheroniConstant_lt_eulerMascheroniSeq' 16
   have h16 : eulerMascheroniSeq' 16 = (harmonic 16 : ℝ) - 4 * log 2 := by
-    rw [eulerMascheroniSeq', show ((16 : ℕ) : ℝ) = 2 ^ 4 by norm_num, log_pow]
+    have h24 : ((16 : ℕ) : ℝ) = 2 ^ 4 := by norm_num
+    rw [eulerMascheroniSeq', h24, log_pow]
     norm_num
   have hH : (harmonic 16 : ℝ) = 2436559 / 720720 := by
     rw [harmonic]
