@@ -61,6 +61,9 @@ bijective.
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
+* `TauCeti.tendsto_intervalBaseTimeCoordinate_nhdsGT_zero` and
+  `TauCeti.tendsto_intervalBaseTimeCoordinate_nhdsLT_one`: `U` tends to `-∞` at `0` and to `+∞`
+  at `1`.
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
   `TauCeti.intervalBaseFlow_add`: the flow.
 * `TauCeti.intervalBaseTimeCoordinate_intervalBaseFlow`, `TauCeti.strictMonoOn_intervalBaseFlow`,
@@ -579,6 +582,33 @@ theorem tendsto_nhds_one_of_tendsto_intervalBaseTimeCoordinate_atTop {α : Type*
     (h : Tendsto (fun i ↦ intervalBaseTimeCoordinate (x i)) l atTop) : Tendsto x l (𝓝 1) :=
   ((tendsto_intervalBaseOrbit_atTop one_pos).comp h).congr' <| hx.mono fun _ hi ↦
     intervalBaseOrbit_one_intervalBaseTimeCoordinate hi
+
+/-- The time coordinate tends to `-∞` at the source end `t = 0` of `(0, 1)`. -/
+theorem tendsto_intervalBaseTimeCoordinate_nhdsGT_zero :
+    Tendsto intervalBaseTimeCoordinate (𝓝[>] 0) atBot := by
+  have h : Tendsto (fun t : ℝ ↦ Real.log (1 - t ^ 2) / 2) (𝓝[>] 0) (𝓝 0) := by
+    have hc : ContinuousAt (fun t : ℝ ↦ Real.log (1 - t ^ 2) / 2) 0 :=
+      ((continuousAt_const.sub (continuousAt_id.pow 2)).log (by norm_num)).div_const 2
+    simpa using hc.tendsto.mono_left nhdsWithin_le_nhds
+  exact Real.tendsto_log_nhdsGT_zero.atBot_add h.neg |>.congr fun t ↦ by
+    rw [intervalBaseTimeCoordinate_apply, ← sub_eq_add_neg]
+
+/-- The time coordinate tends to `+∞` at the target end `t = 1` of `(0, 1)`. -/
+theorem tendsto_intervalBaseTimeCoordinate_nhdsLT_one :
+    Tendsto intervalBaseTimeCoordinate (𝓝[<] 1) atTop := by
+  have h₀ : Tendsto (fun t : ℝ ↦ 1 - t ^ 2) (𝓝[<] 1) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+    · have hc : ContinuousAt (fun t : ℝ ↦ 1 - t ^ 2) 1 := by fun_prop
+      simpa using hc.tendsto.mono_left nhdsWithin_le_nhds
+    · filter_upwards [Ioo_mem_nhdsLT (by norm_num : (0 : ℝ) < 1)] with t ht
+      exact sub_pos.2 (by nlinarith [ht.1, ht.2])
+  have hlog : Tendsto (fun t : ℝ ↦ -(Real.log (1 - t ^ 2) / 2)) (𝓝[<] 1) atTop := by
+    refine tendsto_neg_atBot_atTop.comp ?_
+    exact (Real.tendsto_log_nhdsGT_zero.comp h₀).atBot_div_const two_pos
+  have h₁ : Tendsto Real.log (𝓝[<] 1) (𝓝 0) := by
+    simpa using (Real.continuousAt_log one_ne_zero).tendsto.mono_left nhdsWithin_le_nhds
+  exact (h₁.add_atTop hlog).congr fun t ↦ by
+    rw [intervalBaseTimeCoordinate_apply, ← sub_eq_add_neg]
 
 /-! ### The flow and the time coordinate -/
 

@@ -13,6 +13,8 @@ public import Mathlib.Topology.Piecewise
 
 The piecewise function on the nonnegative and negative half-lines preserves derivatives when
 the two branches match at zero. Matching jets yield finite-order continuous differentiability.
+Within a set, one-sided derivatives of two branches which match at the gluing point glue to a
+derivative of the piecewise function (`TauCeti.hasDerivWithinAt_if_le`).
 -/
 
 public section
@@ -51,6 +53,33 @@ theorem TauCeti.hasDerivAt_if_nonneg {f g f' g' : ℝ → F}
     exact (hf t).congr_of_eventuallyEq (by
       filter_upwards [eventually_gt_nhds ht] with x hx
       exact ite_eq_left hx.le)
+
+/-- **Gluing one-sided derivatives within a set.** Let `f` and `g` agree, with their derivatives
+`f'` and `g'`, at `c`. If `f` has derivative `f' t` within `s ∩ Iic c` at `t ≤ c` and `g` has
+derivative `g' t` within `s ∩ Ici c` at `t ≥ c`, then the function equal to `f` on `Iic c` and to
+`g` elsewhere has the glued derivative within `s` at every `t ∈ s`. -/
+theorem TauCeti.hasDerivWithinAt_if_le {f g f' g' : ℝ → F} {s : Set ℝ} {c t : ℝ} (ht : t ∈ s)
+    (hf : t ≤ c → HasDerivWithinAt f (f' t) (s ∩ Iic c) t)
+    (hg : c ≤ t → HasDerivWithinAt g (g' t) (s ∩ Ici c) t) (h₀ : f c = g c) (h₁ : f' c = g' c) :
+    HasDerivWithinAt (fun t ↦ if t ≤ c then f t else g t) (if t ≤ c then f' t else g' t) s t := by
+  have hhf : EqOn (fun t ↦ if t ≤ c then f t else g t) f (s ∩ Iic c) := fun y hy ↦
+    ite_eq_left hy.2
+  have hhg : EqOn (fun t ↦ if t ≤ c then f t else g t) g (s ∩ Ici c) := fun y hy ↦ by
+    rcases hy.2.eq_or_lt with rfl | hlt
+    · simpa using h₀
+    · exact ite_eq_right hlt.not_ge
+  rcases lt_trichotomy t c with htc | rfl | htc
+  · rw [ite_eq_left htc.le]
+    exact ((hf htc.le).congr hhf (hhf ⟨ht, htc.le⟩)).mono_of_mem_nhdsWithin
+      (inter_mem_nhdsWithin s (Iic_mem_nhds htc))
+  · rw [ite_eq_left le_rfl,
+      show s = s ∩ Iic t ∪ s ∩ Ici t by rw [← inter_union_distrib_left, Iic_union_Ici, inter_univ]]
+    refine ((hf le_rfl).congr hhf (hhf ⟨ht, le_rfl⟩)).union ?_
+    rw [h₁]
+    exact (hg le_rfl).congr hhg (hhg ⟨ht, le_rfl⟩)
+  · rw [ite_eq_right htc.not_ge]
+    exact ((hg htc.le).congr hhg (hhg ⟨ht, htc.le⟩)).mono_of_mem_nhdsWithin
+      (inter_mem_nhdsWithin s (Ici_mem_nhds htc))
 
 /-- Gluing `Cⁿ` functions with matching jets through order `n`. -/
 theorem ContDiff.if_nonneg {n : ℕ} {f g : ℝ → F}
