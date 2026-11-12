@@ -60,6 +60,8 @@ elementary transformations of the process act on generalised equations.
 * `TauCeti.GenEq.coordGroup`: the coordinate group `F_{R(Ω)}` of `Ω*` over `F(A)`.
 * `TauCeti.GenEq.Solution.toHom`: the `F(A)`-homomorphism `F_{R(Ω)} → F(A)` of a solution.
 * `TauCeti.GenEq.Solution.prefixLength`: the position of a boundary in the words of a solution.
+* `TauCeti.GenEq.ofBases`: the generalised equation without boundary connections whose variable
+  bases are indexed by a finite type with an involution.
 
 ## Main results
 
@@ -139,16 +141,32 @@ theorem segment_true (i j : ℕ) : Ω.segment i j true =
 theorem segment_false (i j : ℕ) : Ω.segment i j false = FreeGroup.invRev (Ω.segment i j true) := by
   simp [segment]
 
+/-- A homomorphism out of the free group on the items and constants evaluates `h[i, j] ^ ±1` as
+its value on `h[i, j]`, or the inverse of that value. -/
+theorem lift_mk_segment {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) (i j : ℕ) (s : Bool) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment i j s)) =
+      cond s (FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)))
+        (FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)))⁻¹ := by
+  cases s
+  · rw [segment_false, ← FreeGroup.inv_mk, map_inv]
+    rfl
+  · rfl
+
 /-- The word `h[i, j] ^ ±1` has one letter for each item between the boundaries `i` and `j`. -/
 @[simp]
 theorem length_segment (i j : ℕ) (s : Bool) :
     (Ω.segment i j s).length = min j Ω.numItems - i := by
   cases s <;> simp [segment, FreeGroup.invRev_length]
 
-/-- The word of a single item: `h[k, k + 1] = hₖ`. -/
+/-- The word of a single item: `h[k, k + 1] ^ ±1 = hₖ ^ ±1`. -/
 @[simp]
-theorem segment_succ (k : Fin Ω.numItems) : Ω.segment k (k + 1) true = [(Sum.inl k, true)] := by
-  apply List.ext_getElem <;> simp [segment] <;> grind
+theorem segment_succ (k : Fin Ω.numItems) (s : Bool) :
+    Ω.segment k (k + 1) s = [(Sum.inl k, s)] := by
+  have h : Ω.segment k (k + 1) true = [(Sum.inl k, true)] := by
+    apply List.ext_getElem <;> simp [segment] <;> grind
+  cases s
+  · simp [segment_false, h, FreeGroup.invRev]
+  · exact h
 
 /-- Concatenation of segments: `h[i, j] h[j, k] = h[i, k]` for `i ≤ j ≤ k ≤ ρ`. -/
 theorem segment_append {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (hk : k ≤ Ω.numItems) :
@@ -659,6 +677,56 @@ theorem isFormallyConsistent : Ω.IsFormallyConsistent :=
 
 end Solution
 
+/-! ### Generalised equations with bases indexed by a finite type -/
+
+section OfBases
+
+variable {β : Type*} [Finite β] (ρ : ℕ) (left right : β → Fin (ρ + 1))
+  (left_lt_right : ∀ b, left b < right b) (sign : β → Bool) (dual : β → β)
+  (dual_involutive : Function.Involutive dual) (constBases : Finset (Fin ρ × (A × Bool)))
+
+/-- The generalised equation with `ρ` items whose variable bases are indexed by a finite type `β`:
+the base `b` spans the items between the boundaries `left b < right b`, has sign `sign b` and
+dual `dual b`, for an involution `dual` of `β`. Its constant bases are `constBases`, and it has
+no boundary connections. The bases are numbered by an arbitrary enumeration of `β`. -/
+noncomputable abbrev ofBases : GenEq A :=
+  letI := Fintype.ofFinite β
+  { numItems := ρ
+    numBases := Fintype.card β
+    left μ := left ((Fintype.equivFin β).symm μ)
+    right μ := right ((Fintype.equivFin β).symm μ)
+    left_lt_right _ := left_lt_right _
+    sign μ := sign ((Fintype.equivFin β).symm μ)
+    dual μ := Fintype.equivFin β (dual ((Fintype.equivFin β).symm μ))
+    dual_involutive μ := by simp [dual_involutive _]
+    constBases := constBases
+    connections := ∅
+    bounds_of_mem_connections := by simp
+    dual_mem_connections := by simp }
+
+/-- The equations of `ofBases` are the basic equations
+`h[left b, right b] ^ sign b = h[left (dual b), right (dual b)] ^ sign (dual b)` of the bases
+indexed by `β` and the coefficient equations of the constant bases. -/
+theorem mem_equations_ofBases_iff {e : List ((Fin ρ ⊕ A) × Bool) × List ((Fin ρ ⊕ A) × Bool)} :
+    e ∈ (ofBases ρ left right left_lt_right sign dual dual_involutive constBases).equations ↔
+      (∃ b, ((ofBases ρ left right left_lt_right sign dual dual_involutive constBases).segment
+          (left b) (right b) (sign b),
+        (ofBases ρ left right left_lt_right sign dual dual_involutive constBases).segment
+          (left (dual b)) (right (dual b)) (sign (dual b))) = e) ∨
+      ∃ c ∈ constBases,
+        (ofBases ρ left right left_lt_right sign dual dual_involutive constBases).coeffEquation
+          c = e := by
+  let := Fintype.ofFinite β
+  rw [mem_equations_iff]
+  simp only [Finset.notMem_empty, false_and, exists_false, or_false]
+  refine or_congr_left ⟨?_, ?_⟩
+  · rintro ⟨μ, rfl⟩
+    exact ⟨(Fintype.equivFin β).symm μ, by simp [basicEquation]⟩
+  · rintro ⟨b, rfl⟩
+    exact ⟨Fintype.equivFin β b, by simp [basicEquation]⟩
+
+end OfBases
+
 /-! ### Examples -/
 
 /-- The generalised equation with no items and no bases. -/
@@ -675,6 +743,20 @@ end Solution
   connections := ∅
   bounds_of_mem_connections := by simp
   dual_mem_connections := by simp
+
+/-- A generalised equation without items is the empty one: a base spans at least one item. -/
+theorem eq_empty_of_numItems_eq_zero {Ω : GenEq A} (h : Ω.numItems = 0) : Ω = empty := by
+  obtain ⟨ρ, n, left, right, hlr, sign, dual, _, C, BC, _, _⟩ := Ω
+  obtain rfl : ρ = 0 := h
+  obtain rfl : n = 0 :=
+    Nat.eq_zero_of_not_pos fun hn => (hlr ⟨0, hn⟩).ne (Fin.subsingleton_one.elim _ _)
+  obtain rfl : C = ∅ := Finset.eq_empty_of_forall_notMem fun b _ => b.1.elim0
+  obtain rfl : BC = ∅ := Finset.eq_empty_of_forall_notMem fun c _ => c.2.1.elim0
+  obtain rfl : left = Fin.elim0 := funext fun μ => μ.elim0
+  obtain rfl : right = Fin.elim0 := funext fun μ => μ.elim0
+  obtain rfl : sign = Fin.elim0 := funext fun μ => μ.elim0
+  obtain rfl : dual = Fin.elim0 := funext fun μ => μ.elim0
+  rfl
 
 /-- The generalised equation with no items and no bases has exactly one solution, the empty
 tuple. -/
