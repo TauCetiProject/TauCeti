@@ -221,8 +221,7 @@ variable {M E : Type} [TopologicalSpace M] [T2Space M]
 local orientation there, which generates the local homology. -/
 theorem isFundamentalClass_fundamentalClass : IsFundamentalClass (o.fundamentalClass hn) :=
   (isFundamentalClass_iff_forall_isLocalOrientation _).2 fun x ↦ by
-    rw [singularHomologyToLocalHomology_apply,
-      o.localHomologyRestriction_singularHomologyπ_fundamentalClass hn x]
+    rw [o.singularHomologyToLocalHomology_fundamentalClass hn x]
     exact (o x).property
 
 /-- **Multiples of the fundamental class.** On a nonempty compact oriented manifold, `c • [M]` is
