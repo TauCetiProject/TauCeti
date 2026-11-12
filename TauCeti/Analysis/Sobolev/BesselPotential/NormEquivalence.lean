@@ -42,7 +42,7 @@ its graph is closed and the closed graph theorem makes it continuous
 (`BesselPotentialSpace.continuous_of_continuous_toDistr`).
 It is injective, since an `Lᵖ` function is determined by its tempered distribution. Its range is
 closed: the inclusion `H^{k,p} ⊆ H^{0,p} = Lᵖ` is continuous
-(`BesselPotentialSpace.inclusionOfOneLt`), so a limit of complexified real functions is again a
+(`BesselPotentialSpace.inclusionLp`), so a limit of complexified real functions is again a
 complexified real function, which lies in the range by Calderón's theorem. The open mapping
 theorem then bounds the inverse on the range
 (`ContinuousLinearMap.antilipschitz_of_injective_of_isClosed_range`).
@@ -215,18 +215,6 @@ theorem exists_toBesselPotentialSpace_eq_iff (k : ℕ) (h : H^{k, p}(E, ℂ)) :
     exact ⟨u, BesselPotentialSpace.ext (by rw [toDistr_toBesselPotentialSpace_of_ae_eq hp hp_top hu,
       hg])⟩
 
-/-- The `Lᵖ` function underlying an element of `H^{k,p}(E, ℂ)`, through the continuous inclusion
-`H^{k,p} ⊆ H^{0,p} = Lᵖ`. -/
-private def toLpOfNat (k : ℕ) : H^{k, p}(E, ℂ) →L[ℂ] Lp ℂ p (volume : Measure E) :=
-  (BesselPotentialSpace.toLpₗᵢ E ℂ 0 p).toContinuousLinearEquiv.toContinuousLinearMap.comp
-    (BesselPotentialSpace.inclusionOfOneLt hp hp_top (Nat.cast_nonneg k))
-
-private theorem toTemperedDistribution_toLpOfNat (k : ℕ) (h : H^{k, p}(E, ℂ)) :
-    (toLpOfNat hp hp_top k h : 𝓢'(E, ℂ)) = h.toDistr := by
-  have := BesselPotentialSpace.besselPotential_neg_toLp_eq
-    (f := BesselPotentialSpace.inclusionOfOneLt hp hp_top (Nat.cast_nonneg k) h)
-  simpa [toLpOfNat] using this
-
 /-- The range of the identification `W^{k,p}(E) → H^{k,p}(E, ℂ)` is closed. -/
 theorem isClosed_range_toBesselPotentialSpace (k : ℕ) :
     IsClosed (Set.range (toBesselPotentialSpace (E := E) hp hp_top k)) := by
@@ -235,17 +223,19 @@ theorem isClosed_range_toBesselPotentialSpace (k : ℕ) :
   choose u hu using hw
   set g : ℕ → Lp ℝ p (volume : Measure E) := fun n ↦ realValue k (u n)
   -- Through the continuous inclusion into `Lᵖ`, the approximants are complexified real functions.
-  have hT (n : ℕ) : toLpOfNat hp hp_top k (w n) = Complex.ofRealCLM.compLp (g n) := by
+  have hT (n : ℕ) : BesselPotentialSpace.inclusionLp hp hp_top (Nat.cast_nonneg k) (w n) =
+      Complex.ofRealCLM.compLp (g n) := by
     refine LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot ?_
     simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
-      toTemperedDistribution_toLpOfNat, ← hu n]
+      BesselPotentialSpace.toTemperedDistribution_inclusionLp, ← hu n]
     exact toDistr_toBesselPotentialSpace_of_ae_eq hp hp_top (value_ae_eq_realValue k (u n))
   have hT' : Tendsto (fun n ↦ Complex.ofRealCLM.compLpL p volume (g n)) atTop
-      (𝓝 (toLpOfNat hp hp_top k h)) :=
-    (((toLpOfNat hp hp_top k).continuous.tendsto h).comp hlim).congr fun n ↦ hT n
+      (𝓝 (BesselPotentialSpace.inclusionLp hp hp_top (Nat.cast_nonneg k) h)) :=
+    (((BesselPotentialSpace.inclusionLp hp hp_top (Nat.cast_nonneg k)).continuous.tendsto h).comp
+      hlim).congr fun n ↦ hT n
   -- Taking real parts, the real functions converge, and their limit represents `h`.
-  have hre : Tendsto g atTop
-      (𝓝 (Complex.reCLM.compLpL p volume (toLpOfNat hp hp_top k h))) := by
+  have hre : Tendsto g atTop (𝓝 (Complex.reCLM.compLpL p volume
+      (BesselPotentialSpace.inclusionLp hp hp_top (Nat.cast_nonneg k) h))) := by
     refine (((Complex.reCLM.compLpL p volume).continuous.tendsto _).comp hT').congr fun n ↦ ?_
     refine Lp.ext ?_
     filter_upwards [Complex.reCLM.coeFn_compLp (p := p) (μ := volume)
@@ -254,9 +244,10 @@ theorem isClosed_range_toBesselPotentialSpace (k : ℕ) :
     simp [h₁, h₂]
   have hlim' := tendsto_nhds_unique
     (((Complex.ofRealCLM.compLpL p volume).continuous.tendsto _).comp hre) hT'
-  refine (exists_toBesselPotentialSpace_eq_iff hp hp_top k h).2
-    ⟨Complex.reCLM.compLpL p volume (toLpOfNat hp hp_top k h), ?_⟩
-  rw [← ContinuousLinearMap.compLpL_apply, hlim', toTemperedDistribution_toLpOfNat]
+  refine (exists_toBesselPotentialSpace_eq_iff hp hp_top k h).2 ⟨Complex.reCLM.compLpL p volume
+    (BesselPotentialSpace.inclusionLp hp hp_top (Nat.cast_nonneg k) h), ?_⟩
+  rw [← ContinuousLinearMap.compLpL_apply, hlim',
+    BesselPotentialSpace.toTemperedDistribution_inclusionLp]
 
 /-- **The `W^{k,p}` and `H^{k,p}` norms are equivalent.** For `1 < p < ∞` there is `C` such that
 `‖u‖_{W^{k,p}} ≤ C ‖u‖_{H^{k,p}}` for every `u ∈ W^{k,p}(E)`; the reverse bound

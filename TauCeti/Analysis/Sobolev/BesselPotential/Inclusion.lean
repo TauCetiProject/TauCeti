@@ -54,6 +54,8 @@ Banach space is continuous as soon as its composite with this embedding is
   `BesselPotentialSpace.inclusionOfOneLt_toBesselPotentialSpaceCLM`: as for `p = 2`, the inclusion
   of a space into itself is the identity, inclusions compose, and it is the identity on Schwartz
   functions.
+* `BesselPotentialSpace.inclusionLp`: the inclusion `H^{s,p}(E, F) →L[ℂ] Lᵖ(E, F)` for `0 ≤ s`
+  and `1 < p < ∞`, with `BesselPotentialSpace.toTemperedDistribution_inclusionLp`.
 -/
 
 public section
@@ -219,6 +221,20 @@ theorem inclusionOfOneLt_toBesselPotentialSpaceCLM (hp : 1 < p) (hp_top : p ≠ 
     inclusionOfOneLt hp hp_top h (SchwartzMap.toBesselPotentialSpaceCLM s p u) =
       SchwartzMap.toBesselPotentialSpaceCLM r p u :=
   ext (by simp)
+
+/-- The continuous inclusion `H^{s,p}(E, F) ⊆ H^{0,p}(E, F) = Lᵖ(E, F)` for `0 ≤ s` and
+`1 < p < ∞`. It sends `u` to the `Lᵖ` function whose tempered distribution is `u.toDistr`
+(`BesselPotentialSpace.toTemperedDistribution_inclusionLp`), unlike `BesselPotentialSpace.toLp`,
+which sends `u` to its Bessel potential of order `s`. -/
+def inclusionLp (hp : 1 < p) (hp_top : p ≠ ∞) (hs : 0 ≤ s) :
+    H^{s, p}(E, F) →L[ℂ] Lp F p (volume : Measure E) :=
+  (toLpₗᵢ E F 0 p).toContinuousLinearEquiv.toContinuousLinearMap.comp
+    (inclusionOfOneLt hp hp_top hs)
+
+@[simp]
+theorem toTemperedDistribution_inclusionLp (hp : 1 < p) (hp_top : p ≠ ∞) (hs : 0 ≤ s)
+    (u : H^{s, p}(E, F)) : (inclusionLp hp hp_top hs u : 𝓢'(E, F)) = u.toDistr := by
+  simpa [inclusionLp] using besselPotential_neg_toLp_eq (f := inclusionOfOneLt hp hp_top hs u)
 
 end Lp
 
