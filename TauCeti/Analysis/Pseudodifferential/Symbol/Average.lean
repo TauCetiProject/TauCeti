@@ -80,8 +80,8 @@ private def conj (a : Symbol n V W m) (g : G) : Symbol n V W m :=
 
 private theorem coefficient_conj (a : Symbol n V W m) (g : G)
     (p : CoordinateSpace n × CoordinateSpace n) :
-    (conj σV σW a g).coefficient p = σW g ∘L a.coefficient p ∘L σV g⁻¹ :=
-  coefficient_map _ a p
+    (conj σV σW a g).coefficient p = σW g ∘L a.coefficient p ∘L σV g⁻¹ := by
+  rw [conj, coefficient_map, ContinuousLinearMap.coe_restrictScalars', conjCLM_apply]
 
 private theorem coefficient_conj_eq_comp (a : Symbol n V W m) (g : G) :
     (conj σV σW a g).coefficient = (conjCLM (σW g) (σV g⁻¹)).restrictScalars ℝ ∘ a.coefficient :=
@@ -114,8 +114,8 @@ private theorem norm_mixedDeriv_conj_le (a : Symbol n V W m) (g : G) (α β : Li
   calc ‖mixedDeriv α β (conj σV σW a g).coefficient x ξ‖
       = ‖σW g ∘L mixedDeriv α β a.coefficient x ξ ∘L σV g⁻¹‖ := by
         rw [coefficient_conj_eq_comp, ContinuousLinearMap.mixedDeriv_comp_left _
-          a.contDiff_coefficient]
-        rfl
+          a.contDiff_coefficient, ContinuousLinearMap.coe_restrictScalars',
+          conjCLM_apply]
     _ ≤ ‖σW g‖ * (‖mixedDeriv α β a.coefficient x ξ‖ * ‖σV g⁻¹‖) :=
         (ContinuousLinearMap.opNorm_comp_le _ _).trans
           (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
@@ -136,7 +136,7 @@ private theorem exists_bound_conj [IsTopologicalGroup G] [CompactSpace G] (a : S
         norm_mixedDeriv_conj_le σV σW a g α β x ξ
     _ ≤ max A 0 * (C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) := by
         gcongr
-        · exact (le_abs_self _).trans ((hA g (mem_univ g)).trans (le_max_left _ _))
+        · exact (Real.le_norm_self _).trans ((hA g (mem_univ g)).trans (le_max_left _ _))
         · exact hC x hx ξ
     _ = _ := by ring
 
