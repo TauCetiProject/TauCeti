@@ -43,7 +43,9 @@ needed for the statements below.
   `M` is moreover connected, the classes of `Hₙ(M)` that live over the fundamental class are
   exactly the nonzero ones (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_id_iff`).
   This is the remark following the source's Definition 2.3: for trivial coefficients these are
-  the nonzero multiples of the fundamental class.
+  the nonzero multiples of the fundamental class. For any coefficients, the localization of the
+  identity is injective on the top homology of a compact connected manifold
+  (`TauCeti.fiberLocalization_id_injective`).
 * **Classes of nonzero degree.** If `α ∈ Hₙ(E; ℤ)` satisfies `p_* α = d • [M]` with `d ≠ 0`, then
   `α` lives over the fundamental class at every point
   (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_of_homologyMap_eq_zsmul`). In
@@ -182,6 +184,22 @@ theorem LivesOverFundamentalClass.of_homologyMap_proj [TopologicalSpace M] (p : 
       ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) :
     LivesOverFundamentalClass R p b α :=
   hα.of_homologyMap R p (Function.id_comp _)
+
+/-- **Localization is injective on the top homology of a compact connected manifold.** For a
+compact connected Hausdorff space modelled on a real normed space of finite dimension `n`, the
+localization `Hₙ(M) → Hₙ(M, M ∖ {b})` of the identity at a point is injective: a class of the top
+homology is determined by its local class at any single point. -/
+theorem fiberLocalization_id_injective {V : Type w} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [FiniteDimensional ℝ V] [TopologicalSpace M] [T2Space M] [CompactSpace M] [ConnectedSpace M]
+    [ChartedSpace V M] {n : ℕ} (hn : Module.finrank ℝ V = n) (b : M) :
+    Function.Injective (fiberLocalization R (id : M → M) b n).hom := by
+  have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).snd :=
+    ⟨fun x ↦ x.2 (mem_univ _)⟩
+  have hπ : IsIso ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ R n) :=
+    inferInstance
+  rw [fiberLocalization_id]
+  exact (localHomologySystemCone_π_app_injective R hn (FundamentalGroupoid.mk b)).comp
+    ((ConcreteCategory.isIso_iff_bijective _).1 hπ).1
 
 end LivesOver
 
