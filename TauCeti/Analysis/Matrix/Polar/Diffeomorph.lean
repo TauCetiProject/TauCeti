@@ -31,8 +31,13 @@ exponential of the Hermitian coordinate of the Cartan diffeomorphism
 (`Matrix.GeneralLinearGroup.exp_cartanDiffeomorph_symm_apply_snd`).
 
 The coordinates are equivariant under unitary multiplication on both sides: for unitary `V` and
-`W`, the polar coordinates of `V A W` are `(V P Vᴴ, V U W)`. In particular, right multiplication by
-a unitary matrix only moves the unitary coordinate.
+`W`, the polar coordinates of `V A W` are `(V P Vᴴ, V U W)`. After unfolding the coordinates with
+`Matrix.GeneralLinearGroup.coe_polarDiffeomorph_apply_fst` and
+`Matrix.GeneralLinearGroup.polarDiffeomorph_apply_snd`, this is exactly the equivariance of the
+polar factors, `Units.sqrt_unitary_mul_mul_unitary` and
+`Units.polarUnitary_unitary_mul_mul_unitary`.
+In particular, right multiplication by a unitary matrix only moves the unitary coordinate
+(`Matrix.GeneralLinearGroup.polarDiffeomorph_mul_toUnits`).
 
 They also restrict to determinant one: `det A = 1` exactly when `det P = 1` and `det U = 1`, because
 `det P = ‖det A‖` is positive. Hence the polar coordinates restrict to a homeomorphism
@@ -47,8 +52,7 @@ To state or use the smooth structures, `open scoped Matrix.Norms.L2Operator` and
 
 * `Matrix.GeneralLinearGroup.polarDiffeomorph`: the polar-coordinate diffeomorphism
   `A ↦ (√(A Aᴴ), U)`.
-* `Matrix.GeneralLinearGroup.polarDiffeomorph_unitary_mul_mul_unitary_fst`,
-  `Matrix.GeneralLinearGroup.polarDiffeomorph_unitary_mul_mul_unitary_snd`: unitary equivariance.
+* `Matrix.GeneralLinearGroup.polarDiffeomorph_mul_toUnits`: right unitary equivariance.
 * `Matrix.GeneralLinearGroup.exp_cartanDiffeomorph_symm_apply_snd`: the comparison with the
   Cartan coordinates `A = U exp X`, namely `exp X = Uᴴ P U`.
 * `Matrix.GeneralLinearGroup.det_eq_one_iff_polarDiffeomorph`: the determinant-one condition in
@@ -148,23 +152,6 @@ theorem polarDiffeomorph_eq_iff (A : GL n 𝕜) (p : posDefOpens n 𝕜 × unita
     exact (polarDiffeomorph n 𝕜).apply_symm_apply p
 
 /-! ### Unitary equivariance -/
-
-/-- **Unitary equivariance of the positive polar coordinate**: for unitary `V` and `W`, the
-positive coordinate of `V A W` is the conjugate `V P Vᴴ` of the positive coordinate `P` of `A`. -/
-theorem polarDiffeomorph_unitary_mul_mul_unitary_fst (A : GL n 𝕜) (V W : unitaryGroup n 𝕜) :
-    (((polarDiffeomorph n 𝕜 (Unitary.toUnits V * A * Unitary.toUnits W)).1 :
-        selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) =
-      V * (((polarDiffeomorph n 𝕜 A).1 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) *
-        star (V : Matrix n n 𝕜) := by
-  simp only [coe_polarDiffeomorph_apply_fst]
-  exact Units.sqrt_unitary_mul_mul_unitary A V W
-
-/-- **Unitary equivariance of the unitary polar coordinate**: for unitary `V` and `W`, the unitary
-coordinate of `V A W` is `V U W`, where `U` is the unitary coordinate of `A`. -/
-theorem polarDiffeomorph_unitary_mul_mul_unitary_snd (A : GL n 𝕜) (V W : unitaryGroup n 𝕜) :
-    (polarDiffeomorph n 𝕜 (Unitary.toUnits V * A * Unitary.toUnits W)).2 =
-      V * (polarDiffeomorph n 𝕜 A).2 * W :=
-  Units.polarUnitary_unitary_mul_mul_unitary A V W
 
 /-- Right multiplication by a unitary matrix fixes the positive polar coordinate and multiplies
 the unitary polar coordinate on the right. -/
