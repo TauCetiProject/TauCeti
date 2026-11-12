@@ -258,7 +258,6 @@ private theorem mem_littleBesov_of_toDistr_eq {v : BesovSpace F φ s p ∞}
   rw [littleBesov, ← SetLike.mem_coe, Submodule.topologicalClosure_coe]
   refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
   set A := 2 ^ (|s| * ((M + L : ℕ) : ℝ)) * C * K
-  have hA : 0 ≤ A := by positivity
   obtain ⟨_, ⟨g, rfl⟩, hg⟩ := Metric.mem_closure_iff.1 hw (ε / (A + 1)) (by positivity)
   rw [dist_eq_norm] at hg
   -- The truncation `h = S_M g` is a Schwartz function, and `w - h = S_M (w - g)`.
