@@ -180,8 +180,9 @@ theorem im_logDeriv_deriv_eq_zero (hΩopen : IsOpen Ω)
 section LineReflection
 
 /-- The reflection identity of the Schwarz-reflection extension across the real axis, rewritten in
-the affine form `w ↦ c + u * conj w` demanded by the lemmas above. The reflection in the line
-through `q` with direction `b` has `u = b / conj b` and `c = q - u * conj q`. -/
+the affine form `w ↦ c + u * conj w` demanded by the lemmas above. For `b ≠ 0` the reflection in
+the line through `q` with direction `b` has `u = b / conj b` and `c = q - u * conj q`. For `b = 0`
+the extension is the constant `q`, and the identity holds trivially. -/
 private theorem lineSchwarzReflection_conj_eq
     (hline : ∀ z ∈ Ω, z.im = 0 → ((f z - q) / b).im = 0) {z : ℂ} (hz : z ∈ Ω) :
     lineSchwarzReflection 0 1 q b f ((starRingEnd ℂ) z) =
@@ -197,9 +198,10 @@ private theorem lineSchwarzReflection_conj_eq
   field_simp
   ring
 
-/-- **On the real axis the reflected extension moves along the target line.** For boundary values
-on the line through `q` with direction `b`, the derivative of the extension at a real point is a
-real multiple of `b`. -/
+/-- **On the real axis the reflected extension moves along the target line.** For `b ≠ 0` and
+boundary values on the line through `q` with direction `b`, the derivative of the extension at a
+real point is a real multiple of `b`. For `b = 0` the hypothesis `hline` is vacuous, the extension
+is the constant `q`, and the derivative is `0`. -/
 theorem im_div_deriv_lineSchwarzReflection_eq_zero (hΩopen : IsOpen Ω)
     (hline : ∀ z ∈ Ω, z.im = 0 → ((f z - q) / b).im = 0)
     {x : ℂ} (hx : x ∈ Ω) (hx0 : x.im = 0) :
@@ -215,8 +217,9 @@ theorem im_div_deriv_lineSchwarzReflection_eq_zero (hΩopen : IsOpen Ω)
   field_simp
 
 /-- **The pre-Schwarzian derivative of the reflected extension is real on the real axis.** The
-hypotheses are that `Ω` is open and that the boundary values of `f` on the real axis lie on the
-line through `q` with direction `b`; no symmetry of `Ω` is needed. -/
+hypotheses are that `Ω` is open and, for `b ≠ 0`, that the boundary values of `f` on the real axis
+lie on the line through `q` with direction `b`; no symmetry of `Ω` is needed. For `b = 0` the
+hypothesis `hline` is vacuous and the extension is the constant `q`. -/
 theorem im_logDeriv_deriv_lineSchwarzReflection_eq_zero (hΩopen : IsOpen Ω)
     (hline : ∀ z ∈ Ω, z.im = 0 → ((f z - q) / b).im = 0)
     {x : ℂ} (hx : x ∈ Ω) (hx0 : x.im = 0) :
@@ -237,8 +240,9 @@ theorem eqOn_logDeriv_deriv_lineSchwarzReflection (hb : b ≠ 0) :
   exact (logDeriv_congr_nhds h0.deriv).eq_of_nhds
 
 /-- **The pre-Schwarzian derivative of the reflected extension is conjugation-symmetric.** For
-boundary values on the line through `q` with direction `b`, the pre-Schwarzian derivative of the
-extension intertwines conjugation with conjugation on the symmetric domain. -/
+boundary values on the line through `q` with direction `b ≠ 0`, the pre-Schwarzian derivative of
+the extension intertwines conjugation with conjugation on the symmetric domain. (For `b = 0` the
+extension is the constant `q` and the statement is trivial.) -/
 theorem logDeriv_deriv_lineSchwarzReflection_conj (hΩopen : IsOpen Ω)
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hline : ∀ z ∈ Ω, z.im = 0 → ((f z - q) / b).im = 0) {z : ℂ} (hz : z ∈ Ω) :
@@ -250,7 +254,8 @@ theorem logDeriv_deriv_lineSchwarzReflection_conj (hΩopen : IsOpen Ω)
 /-- **The pre-Schwarzian derivative of a reflected conformal map is holomorphic across the
 axis.** Let `f` be continuous and injective on the closed upper part of a conjugation-symmetric
 open set `Ω` and holomorphic on its open upper part, with boundary values on the line through `q`
-with direction `b` and with the open upper part mapped strictly to the left of that line. Then the
+with direction `b ≠ 0` and with the open upper part mapped strictly to the left of that line. (For
+`b = 0` the extension is the constant `q`, whose pre-Schwarzian derivative vanishes.) Then the
 reflected extension is injective with nonvanishing derivative on `Ω`, so its pre-Schwarzian
 derivative is holomorphic on all of `Ω`, the real points included. -/
 theorem differentiableOn_logDeriv_deriv_lineSchwarzReflection (hΩopen : IsOpen Ω)
