@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.ZLattice.Family.AffineAction
 public import TauCeti.Algebra.Module.ZLattice.Family.Fiber
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.Torus.Lattice
+import Mathlib.Tactic.DSimpPercent
 
 /-!
 # The canonical marking of the fibres of a family of tori
@@ -56,6 +57,16 @@ identified back with the fibre over `y₀ = g • y₁` by the action of `g`, ha
 transformed by `ρ g` (`TauCeti.torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy`).
 For a group action and a free homotopy ending at a loop over `h • y₀`, this transport is `ρ h⁻¹`.
 
+Other markings of the family are described by automorphisms of `Λ`. Call a family of markings
+`μ y : H₁(T_y; ℤ) ≃ₗ[ℤ] Λ` *flat* if freely homotopic loops in two fibres have the same marking
+(`TauCeti.IsFlatTorusFamilyMarking`). Every `l : Λ` is the marking of the period loop
+`t ↦ [y, t • P y l]` (`TauCeti.torusFamilyMarking_periodLoop`), and the period loops over the
+points of a path in the base form a free homotopy. Hence over a path-connected base the flat
+markings are exactly the canonical marking followed by an automorphism `e` of `Λ`, which is unique
+(`TauCeti.isFlatTorusFamilyMarking_iff`): they form a torsor under `Aut(Λ)`. Changing the marking
+of a fibre by `e` conjugates the monodromy `ρ g` to `e ∘ ρ g ∘ e⁻¹`
+(`TauCeti.apply_singularHomologyMap_loopClass_of_homotopy_eq_conj`).
+
 Singular chains with integer coefficients are defined on spaces in the lowest universe, so `Y`
 and `E` are types in `Type`.
 
@@ -73,6 +84,12 @@ and `E` are types in `Type`.
   an affine action, which acts on it through `ρ`.
 * `TauCeti.torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy`: the monodromy of an
   affine action on the marking.
+* `TauCeti.torusFamilyPeriodLoop`: the loop `t ↦ [y, t • P y l]`, marked by `l`.
+* `TauCeti.IsFlatTorusFamilyMarking`: markings which agree on freely homotopic loops.
+* `TauCeti.isFlatTorusFamilyMarking_iff`: over a path-connected base, the flat markings are the
+  canonical marking followed by a unique automorphism of `Λ`.
+* `TauCeti.apply_singularHomologyMap_loopClass_of_homotopy_eq_conj`: changing the marking by an
+  automorphism of `Λ` conjugates the monodromy.
 
 ## References
 
@@ -237,9 +254,11 @@ private theorem exists_loopClass_eq (y : Y)
   obtain ⟨a, ha⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E))
     x).surjective (ContinuousMap.singularHomologyMap ℤ 1 (h.symm : C(_, _)) c)
   obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a
-  -- `Abelianization G` is the quotient of `G` by its commutator subgroup and `Abelianization.of`
-  -- is `QuotientGroup.mk'`; Mathlib states no surjectivity lemma for `Abelianization.of` itself.
-  obtain ⟨a, rfl⟩ : ∃ a', Abelianization.of a' = a := QuotientGroup.mk'_surjective _ a
+  -- `Group.Abelianization G` is the quotient of `G` by its commutator subgroup and
+  -- `Group.Abelianization.of`
+  -- is `QuotientGroup.mk'`; Mathlib states no surjectivity lemma for `Group.Abelianization.of`
+  -- itself.
+  obtain ⟨a, rfl⟩ : ∃ a', Group.Abelianization.of a' = a := QuotientGroup.mk'_surjective _ a
   obtain ⟨a, rfl⟩ : ∃ p, FundamentalGroup.fromPath p = a := ⟨a.toPath, rfl⟩
   induction a using Path.Homotopic.Quotient.ind with | mk γ =>
   rw [hurewiczHomologyAddEquiv_ofMul_of_mk] at ha
@@ -440,5 +459,220 @@ theorem torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy {g : Γ} {y
     torusFamilyMarking_loopClass_eq_of_homotopy P hcont hinj γ₀ γ₁ H hH h₀ h₁]
 
 end Monodromy
+
+section PeriodLoop
+
+variable {Y E : Type} [TopologicalSpace Y] [AddCommGroup E] [TopologicalSpace E] [Module ℝ E]
+  [ContinuousSMul ℝ E] {Λ : Type*} [AddCommGroup Λ] (P : Y → Λ →ₗ[ℤ] E)
+
+/-- The **period loop** of `l : Λ` in the fibre over `y`: the loop `t ↦ [y, t • P y l]`, based
+at `[y, 0]`, which closes up because `P y l` is a period at `y`. Its marking is `l`
+(`TauCeti.torusFamilyMarking_periodLoop`). -/
+def torusFamilyPeriodLoop (y : Y) (l : Λ) :
+    letI := periodAddAction P
+    Path (⟨Quotient.mk _ (y, 0), torusFamilyProjection_mk P (y, 0)⟩ :
+        {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y})
+      ⟨Quotient.mk _ (y, 0), torusFamilyProjection_mk P (y, 0)⟩ :=
+  letI := periodAddAction P
+  { toFun t := ⟨Quotient.mk _ (y, (t : ℝ) • P y l), torusFamilyProjection_mk P _⟩
+    continuous_toFun := (continuous_quotient_mk'.comp (continuous_const.prodMk
+      (continuous_subtype_val.smul continuous_const))).subtype_mk _
+    source' := by simp
+    target' := by
+      ext
+      rw [Set.Icc.coe_one, one_smul, Quotient.eq, AddAction.orbitRel_apply,
+        mem_orbit_periodAddAction_iff]
+      exact ⟨rfl, by simp⟩ }
+
+/-- The period loop at time `t` is the class of `(y, t • P y l)`. -/
+theorem coe_torusFamilyPeriodLoop_apply (y : Y) (l : Λ) (t : I) :
+    letI := periodAddAction P
+    (torusFamilyPeriodLoop P y l t : AddAction.orbitRel.Quotient Λ (Y × E)) =
+      Quotient.mk _ (y, (t : ℝ) • P y l) := (rfl)
+
+variable [IsTopologicalAddGroup E] [SimplyConnectedSpace E]
+  [∀ y, DiscreteTopology (LinearMap.range (P y))]
+  (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y))
+
+/-- The period loop of `l` is marked by `l`: its period displacement is `P y l`. -/
+@[simp]
+theorem torusFamilyMarking_periodLoop (y : Y) (l : Λ) :
+    dsimp% (torusFamilyMarking P hcont hinj y
+      (H₁AddEquivHomology _ (loopClass (torusFamilyPeriodLoop P y l)))) = l := by
+  -- Normalize the homology carrier in the statement so this simp rule matches after simplification.
+  change torusFamilyMarking P hcont hinj y
+    (H₁AddEquivHomology _ (loopClass (torusFamilyPeriodLoop P y l))) = l
+  refine hinj y ?_
+  rw [torusFamilyMarking_loopClass P hcont hinj y _
+    ⟨fun t ↦ (t : ℝ) • P y l, continuous_subtype_val.smul continuous_const⟩
+    (coe_torusFamilyPeriodLoop_apply P y l)]
+  simp
+
+/-- The inverse of the canonical marking sends `l` to the class of its period loop. -/
+theorem torusFamilyMarking_symm_apply_eq_loopClass (y : Y) (l : Λ) :
+    (torusFamilyMarking P hcont hinj y).symm l =
+      H₁AddEquivHomology _ (loopClass (torusFamilyPeriodLoop P y l)) :=
+  (LinearEquiv.symm_apply_eq _).2 (torusFamilyMarking_periodLoop P hcont hinj y l).symm
+
+end PeriodLoop
+
+section FlatMarking
+
+variable {Y E : Type} [TopologicalSpace Y] [AddCommGroup E] [TopologicalSpace E]
+  {Λ : Type*} [AddCommGroup Λ] (P : Y → Λ →ₗ[ℤ] E)
+
+/-- A family of markings `μ y : H₁(T_y; ℤ) ≃ₗ[ℤ] Λ` of the fibres of a period family is **flat**
+if loops in two fibres which are freely homotopic in the total space have the same marking: for
+loops `γ₀` over `y₀` and `γ₁` over `y₁` and a map `H : I × I → (Y × E)/Λ` with
+`H (·, 0) = γ₀`, `H (·, 1) = γ₁` and each `H (·, s)` a loop, `μ y₀ [γ₀] = μ y₁ [γ₁]`.
+
+The canonical marking is flat (`TauCeti.isFlatTorusFamilyMarking_torusFamilyMarking`), and over
+a path-connected base the flat markings are exactly its composites with automorphisms of `Λ`
+(`TauCeti.isFlatTorusFamilyMarking_iff`). -/
+def IsFlatTorusFamilyMarking
+    (μ : ∀ y : Y, letI := periodAddAction P
+      ((singularChains ℤ).obj (TopCat.of
+        {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y})).homology 1
+        ≃ₗ[ℤ] Λ) : Prop :=
+  letI := periodAddAction P
+  ∀ ⦃y₀ y₁ : Y⦄
+    ⦃z₀ : {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₀}⦄
+    ⦃z₁ : {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₁}⦄
+    (γ₀ : Path z₀ z₀) (γ₁ : Path z₁ z₁) (H : C(I × I, AddAction.orbitRel.Quotient Λ (Y × E))),
+    (∀ s, H (0, s) = H (1, s)) → (∀ t, (γ₀ t : _) = H (t, 0)) → (∀ t, (γ₁ t : _) = H (t, 1)) →
+      μ y₀ (H₁AddEquivHomology _ (loopClass γ₀)) = μ y₁ (H₁AddEquivHomology _ (loopClass γ₁))
+
+variable {P}
+
+/-- Composing a flat family of markings with an isomorphism `Λ ≃ₗ[ℤ] Λ` gives a flat family. -/
+theorem IsFlatTorusFamilyMarking.trans
+    {μ : ∀ y : Y, letI := periodAddAction P
+      ((singularChains ℤ).obj (TopCat.of
+        {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y})).homology 1
+        ≃ₗ[ℤ] Λ}
+    (hμ : IsFlatTorusFamilyMarking P μ) (e : Λ ≃ₗ[ℤ] Λ) :
+    IsFlatTorusFamilyMarking P fun y ↦ (μ y).trans e :=
+  fun _ _ _ _ γ₀ γ₁ H hH h₀ h₁ ↦ by
+    simp only [LinearEquiv.trans_apply, hμ γ₀ γ₁ H hH h₀ h₁]
+
+variable [IsTopologicalAddGroup E] [SimplyConnectedSpace E] [Module ℝ E] [ContinuousSMul ℝ E]
+  [∀ y, DiscreteTopology (LinearMap.range (P y))]
+  (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y))
+
+/-- **A flat marking differs from the canonical one by an automorphism that is constant on each
+path component.** For a flat family of markings `μ` and two points `y₀` and `y₁` joined by a path
+in the base, the automorphisms `μ y ∘ (torusFamilyMarking y)⁻¹` of `Λ` at `y₀` and `y₁` agree. -/
+theorem IsFlatTorusFamilyMarking.torusFamilyMarking_symm_trans_eq
+    {μ : ∀ y : Y, letI := periodAddAction P
+      ((singularChains ℤ).obj (TopCat.of
+        {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y})).homology 1
+        ≃ₗ[ℤ] Λ}
+    (hμ : IsFlatTorusFamilyMarking P μ) {y₀ y₁ : Y} (h : Joined y₀ y₁) :
+    (torusFamilyMarking P hcont hinj y₀).symm.trans (μ y₀) =
+      (torusFamilyMarking P hcont hinj y₁).symm.trans (μ y₁) := by
+  let _ := periodAddAction P
+  let p := h.somePath
+  ext l
+  -- The period loops of `l` over the points `p s` of the path.
+  let H : C(I × I, AddAction.orbitRel.Quotient Λ (Y × E)) :=
+    ⟨fun x ↦ Quotient.mk _ (p x.2, (x.1 : ℝ) • P (p x.2) l),
+      continuous_quotient_mk'.comp ((p.continuous.comp continuous_snd).prodMk
+        ((continuous_subtype_val.comp continuous_fst).smul
+          ((hcont l).comp (p.continuous.comp continuous_snd))))⟩
+  have hH : ∀ s, H (0, s) = H (1, s) := fun s ↦ by
+    simp only [H, ContinuousMap.coe_mk, Set.Icc.coe_zero, Set.Icc.coe_one, zero_smul, one_smul]
+    rw [Quotient.eq, AddAction.orbitRel_apply, mem_orbit_periodAddAction_iff]
+    exact ⟨rfl, by simp⟩
+  simp only [LinearEquiv.trans_apply, torusFamilyMarking_symm_apply_eq_loopClass]
+  exact hμ _ _ H hH (fun t ↦ by simp [H, p, coe_torusFamilyPeriodLoop_apply])
+    (fun t ↦ by simp [H, p, coe_torusFamilyPeriodLoop_apply])
+
+end FlatMarking
+
+section MarkingChange
+
+variable {Y E : Type} [TopologicalSpace Y] [LocallyCompactSpace Y] [T2Space Y]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {Λ : Type*} [AddCommGroup Λ]
+  (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
+  [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
+  (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y))
+
+/-- The canonical marking is flat: this restates its trivial monodromy
+(`TauCeti.torusFamilyMarking_loopClass_eq_of_homotopy`). -/
+theorem isFlatTorusFamilyMarking_torusFamilyMarking :
+    IsFlatTorusFamilyMarking P (torusFamilyMarking P hcont hinj) :=
+  fun _ _ _ _ γ₀ γ₁ H hH h₀ h₁ ↦
+    torusFamilyMarking_loopClass_eq_of_homotopy P hcont hinj γ₀ γ₁ H hH h₀ h₁
+
+/-- **Change of marking by `Aut(Λ)`.** Over a path-connected base, a family of markings
+`μ y : H₁(T_y; ℤ) ≃ₗ[ℤ] Λ` of the fibres is flat exactly when it is the canonical marking followed
+by a single automorphism `e` of `Λ`, and then `e` is unique. Thus the flat markings form a torsor
+under `Aut(Λ)`, with the canonical marking as base point. -/
+theorem isFlatTorusFamilyMarking_iff [PathConnectedSpace Y]
+    {μ : ∀ y : Y, letI := periodAddAction P
+      ((singularChains ℤ).obj (TopCat.of
+        {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y})).homology 1
+        ≃ₗ[ℤ] Λ} :
+    IsFlatTorusFamilyMarking P μ ↔
+      ∃! e : Λ ≃ₗ[ℤ] Λ, ∀ y, μ y = (torusFamilyMarking P hcont hinj y).trans e := by
+  have hμe : ∀ (y : Y) (e : Λ ≃ₗ[ℤ] Λ), μ y = (torusFamilyMarking P hcont hinj y).trans e ↔
+      e = (torusFamilyMarking P hcont hinj y).symm.trans (μ y) := fun y e ↦ by
+    constructor
+    · rintro h
+      ext
+      simp [h]
+    · rintro rfl
+      ext
+      simp
+  constructor
+  · intro hμ
+    let y₀ : Y := Classical.arbitrary Y
+    refine ⟨(torusFamilyMarking P hcont hinj y₀).symm.trans (μ y₀), fun y ↦ ?_, fun e he ↦ ?_⟩
+    · rw [hμe, hμ.torusFamilyMarking_symm_trans_eq hcont hinj (PathConnectedSpace.joined y₀ y)]
+    · exact (hμe y₀ e).1 (he y₀)
+  · rintro ⟨e, he, -⟩
+    have hμ : μ = fun y ↦ (torusFamilyMarking P hcont hinj y).trans e := funext he
+    exact hμ ▸ (isFlatTorusFamilyMarking_torusFamilyMarking P hcont hinj).trans e
+
+variable {Γ : Type*} [Monoid Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
+  (ρ : Representation ℤ Γ Λ) (hP : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
+  (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
+  (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
+
+/-- **Monodromy in an arbitrary marking.** In the setting of
+`TauCeti.torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy`, mark the fibre over `y₀`
+by an arbitrary `ν : H₁(T_{y₀}; ℤ) ≃ₗ[ℤ] Λ` instead of the canonical marking. Writing `ν` as the
+canonical marking followed by the automorphism `e` of `Λ`, the monodromy `ρ g` is replaced by its
+conjugate `e ∘ ρ g ∘ e⁻¹`. -/
+theorem apply_singularHomologyMap_loopClass_of_homotopy_eq_conj {g : Γ} {y₀ y₁ : Y}
+    {z₀ : letI := periodAddAction P
+      {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₀}}
+    {z₁ : letI := periodAddAction P
+      {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₁}}
+    (γ₀ : Path z₀ z₀) (γ₁ : Path z₁ z₁)
+    (H : letI := periodAddAction P; C(I × I, AddAction.orbitRel.Quotient Λ (Y × E)))
+    (hH : ∀ s, H (0, s) = H (1, s)) (h₀ : ∀ t, (γ₀ t : _) = H (t, 0))
+    (h₁ : ∀ t, (γ₁ t : _) = H (t, 1))
+    (φ : letI := periodAddAction P
+      C({z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₁},
+        {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₀}))
+    (hφ : letI := periodAddAction P
+      ∀ x : {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₁},
+        (φ x : AddAction.orbitRel.Quotient Λ (Y × E)) = torusFamilyAffineMap R P ρ hP b hb g x)
+    (hR : Continuous (R g y₁))
+    (ν : letI := periodAddAction P
+      ((singularChains ℤ).obj (TopCat.of
+        {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₀})).homology 1
+        ≃ₗ[ℤ] Λ) :
+    ν (ContinuousMap.singularHomologyMap ℤ 1 φ (H₁AddEquivHomology _ (loopClass γ₁))) =
+      ((torusFamilyMarking P hcont hinj y₀).symm.trans ν).conj (ρ g)
+        (ν (H₁AddEquivHomology _ (loopClass γ₀))) := by
+  have h := torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy P hcont hinj R ρ hP b hb
+    γ₀ γ₁ H hH h₀ h₁ φ hφ hR
+  rw [LinearEquiv.conj_apply_apply, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply,
+    LinearEquiv.symm_symm, LinearEquiv.symm_apply_apply, ← h, LinearEquiv.symm_apply_apply]
+
+end MarkingChange
 
 end TauCeti
