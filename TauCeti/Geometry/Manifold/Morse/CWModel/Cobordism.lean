@@ -126,7 +126,7 @@ theorem IsMorse.exists_relCWComplex_homotopyEquiv_band (hf : IsMorse I f) {a b :
   obtain ⟨h₀, hh₀⟩ := φ.exists_homotopyEquiv_level_sublevel hfc has hφ V hV
   obtain ⟨k, hk⟩ := φ.exists_homotopyEquiv_sublevel_band hfc has hsb hφ V hV
   let := relCWComplexSelf (univ : Set (f ⁻¹' {a})) isClosed_univ
-  obtain ⟨X, _, _, ι, D', _, h', hD', hι, hh, e, -⟩ :=
+  obtain ⟨X, _, _, ι, D', _, h', hD', hι, -, hh, e, -⟩ :=
     hfV.exists_relCWComplex_extension_homotopyEquiv_sublevel hsb hKV (hs.restrict V)
       (hb.restrict V) (f ⁻¹' {a}) univ h₀
   rw [image_univ] at hD'
