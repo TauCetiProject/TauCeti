@@ -43,6 +43,7 @@ exactly one element, is Lebesgue measure.
 
 The `Fintype ι` instance is a separate argument, rather than the one derived from `Unique ι`, so
 that the lemma rewrites `addHaar` whatever finiteness instance it carries (e.g. `Fin.fintype 1`). -/
+@[simp]
 theorem addHaar_singleton {ι : Type*} [Fintype ι] [Unique ι] :
     (Basis.singleton ι ℝ).addHaar = volume := by
   -- `addHaar` depends on the `Fintype` instance only up to `Subsingleton (Fintype ι)`.
