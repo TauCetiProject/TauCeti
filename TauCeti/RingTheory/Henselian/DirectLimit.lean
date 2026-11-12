@@ -12,16 +12,17 @@ public import TauCeti.Algebra.Colimit.Ring
 # Henselian pairs under directed colimits
 
 Let `(G i, I i)` be a directed system of pairs of a commutative ring and an ideal, indexed by a
-nonempty directed preorder, whose transition maps `f i j` carry `I i` into `I j`. The main
+directed preorder, whose transition maps `f i j` carry `I i` into `I j`. The main
 result, `Ring.DirectLimit.henselianRing`, is that if every `(G i, I i)` is Henselian, then
 `Ring.DirectLimit G f` is Henselian along the colimit ideal `⨆ i, (I i).map (of G f i)`.
 
-A monic polynomial over the colimit with a simple root modulo the colimit ideal comes, together
-with its approximate root and the witnesses for both conditions, from a single stage (using the
-descent lemmas of `TauCeti.Algebra.Colimit.Ring`); the root found there maps to the required root
-in the colimit. This is the filtered-colimit case of the permanence properties of Henselian
-pairs. Directedness is essential: the coproduct of two copies of `(ℤ_[p], (p))`, which is not a
-directed colimit, is not Henselian along `p`.
+For a nonempty index type, a monic polynomial over the colimit with a simple root modulo the
+colimit ideal comes, together with its approximate root and the witnesses for both conditions,
+from a single stage (using the descent lemmas of `TauCeti.Algebra.Colimit.Ring`); the root found
+there maps to the required root in the colimit. For an empty index type the colimit ideal is `⊥`,
+and every ring is Henselian along `⊥`. This is the filtered-colimit case of the permanence
+properties of Henselian pairs. Directedness is essential: the coproduct of two copies of
+`(ℤ_[p], (p))`, which is not a directed colimit, is not Henselian along `p`.
 
 ## Main results
 
@@ -90,7 +91,7 @@ theorem henselianRing [IsDirectedOrder ι] [DirectedSystem G (f · · ·)]
     HenselianRing (DirectLimit G (f · · ·)) (⨆ i, (I i).map (of G (f · · ·) i)) := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · rw [iSup_of_empty]
-    exact ⟨bot_le, fun _ _ a₀ h _ ↦ ⟨a₀, by simpa using h, by simp⟩⟩
+    infer_instance
   · exact henselianRing_of_nonempty hI
 
 end Ring.DirectLimit
