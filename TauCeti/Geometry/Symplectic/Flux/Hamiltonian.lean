@@ -257,12 +257,8 @@ private theorem homotopyOperator_hamiltonianTimeForm
       (H (Φ.cylinderMap (x, projIcc 0 1 zero_le_one t), projIcc 0 1 zero_le_one t)))
     fun t _ ↦ ?_).trans ?_
   · refine ContinuousAlternatingMap.ext fun v ↦ ?_
-    -- The tangent spaces of the cylinder are the model spaces by definition, so the currying and
-    -- composition operators unfold to an evaluation of `τ` on the unit time vector.
-    change (Φ.hamiltonianTimeForm H).1 (x, projIcc 0 1 zero_le_one t)
-      (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))
-        fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1)))) = _
-    rw [coe_hamiltonianTimeForm, ContinuousAlternatingMap.smul_apply, cylinderTimeForm_apply]
+    rw [curryLeft_compContinuousLinearMap_inl_apply, coe_hamiltonianTimeForm,
+      ContinuousAlternatingMap.smul_apply, cylinderTimeForm_apply]
     -- The first vector is `∂ₜ`, on which `dt` is `1`.
     exact (congrArg (_ • ·) (mfderiv_subtypeVal_Icc_one _)).trans (mul_one _)
   · exact (ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E ℝ
@@ -295,12 +291,7 @@ theorem HasHamiltonian.fluxForm_eq {σ : SmoothTwoForm J M}
   -- Pointwise in time, the integrand of the flux form is minus the integrand of `h (d τ)`.
   refine intervalIntegral.integral_congr (E := E [⋀^Fin 1]→L[ℝ] ℝ)
     fun t _ ↦ ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [curryLeft_mfderiv_cylinderMap_apply]
-  -- The tangent spaces of the cylinder are the model spaces by definition, so the currying and
-  -- composition operators unfold to an evaluation of `-d τ` on `∂ₜ` and a spatial vector.
-  change _ = ((-1 : ℝ) • mextDeriv (Φ.hamiltonianTimeForm H).1) (x, projIcc 0 1 zero_le_one t)
-    (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))
-      fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1))))
+  rw [curryLeft_mfderiv_cylinderMap_apply, curryLeft_compContinuousLinearMap_inl_apply]
   refine Eq.trans ?_ (neg_one_smul ℝ _).symm
   refine Eq.trans ?_ (congrArg Neg.neg (Φ.mextDeriv_hamiltonianTimeForm_apply H _ _ _
     (cylinderTimeForm_apply_time _) rfl)).symm

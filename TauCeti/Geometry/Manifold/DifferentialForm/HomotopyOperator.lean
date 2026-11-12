@@ -53,6 +53,8 @@ the unit tangent vector at every time.
 ## Main declarations
 
 * `TauCeti.homotopyOperator`: the homotopy operator `h`.
+* `TauCeti.curryLeft_compContinuousLinearMap_inl_apply`: its integrand, evaluated on tangent
+  vectors of `M`.
 * `TauCeti.IsSmoothForm.homotopyOperator`: `h` preserves `C^r` regularity.
 * `TauCeti.homotopyOperator_add`: `h` is additive on continuous forms.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id`: `h` commutes with pullback along `g × id` for
@@ -115,6 +117,21 @@ theorem homotopyOperator_apply (φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0
           (.inl ℝ E (EuclideanSpace ℝ (Fin 1)))) 0 1 volume :=
   (rfl)
 
+/-- **The integrand of the homotopy operator, evaluated.** On tangent vectors `v` of `M`, the
+integrand of `TauCeti.homotopyOperator_apply` at `(x, t)` is `φ (x, t)` applied to the unit time
+vector `∂ₜ = (0, 1)` followed by the included vectors `(v i, 0)`. -/
+theorem curryLeft_compContinuousLinearMap_inl_apply
+    (φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)) (x : M) (t : Icc (0 : ℝ) 1)
+    (v : Fin k → E) :
+    (ContinuousAlternatingMap.curryLeft (E := E × EuclideanSpace ℝ (Fin 1)) (φ (x, t))
+        ((0 : E), (1 : TangentSpace (𝓡∂ 1) t))).compContinuousLinearMap
+        (.inl ℝ E (EuclideanSpace ℝ (Fin 1))) v =
+      φ (x, t) (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) t))
+        fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1)))) :=
+  -- `curryLeft_apply_apply` does not fire: the tangent spaces of the cylinder are the model
+  -- spaces only by definition. The currying and composition operators unfold definitionally.
+  (rfl)
+
 /-- The homotopy operator vanishes at `x` when, at every time `t`, the form `φ (x, t)` vanishes on
 every family whose first vector is the unit time vector `∂ₜ = (0, 1)`. -/
 theorem homotopyOperator_apply_eq_zero
@@ -127,12 +144,7 @@ theorem homotopyOperator_apply_eq_zero
   refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : E [⋀^Fin k]→L[ℝ] F))
     fun t _ ↦ ?_).trans (intervalIntegral.integral_zero (E := E [⋀^Fin k]→L[ℝ] F))
   refine ContinuousAlternatingMap.ext fun w ↦ ?_
-  -- `curryLeft_apply_apply` does not fire: the tangent spaces of the cylinder are the model
-  -- spaces only by definition. So state the evaluation of the curried form on `∂ₜ` followed by
-  -- the included vectors explicitly.
-  change φ (x, projIcc 0 1 zero_le_one t)
-    (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))
-      fun i ↦ ((w i : E), (0 : EuclideanSpace ℝ (Fin 1)))) = 0
+  rw [curryLeft_compContinuousLinearMap_inl_apply]
   exact h _ _
 
 /-- The homotopy operator of the zero form is zero. -/
