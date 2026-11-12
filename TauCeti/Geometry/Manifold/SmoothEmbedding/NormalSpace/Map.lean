@@ -22,8 +22,8 @@ The square need only commute near the chosen base point. This local formulation 
 construction to be applied to coordinate maps and to their restrictions.
 
 A globally commuting square whose base map is differentiable also induces a map of intrinsic
-normal total spaces, acting on each fibre by the normal map; these maps respect identities and
-composition.
+normal total spaces, acting on each fibre by the normal map; these maps respect identities, and
+respect composition of squares whose ambient maps are differentiable as well.
 
 ## References
 
