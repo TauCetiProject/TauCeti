@@ -531,20 +531,17 @@ theorem squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_span_
     squareIntegrableSolutions (fun s ↦ hessianOperator (triangleBasePotential C) (γ s)) =
       ℝ ∙ WithLp.toLp 2 (1, 0) := by
   obtain ⟨hu, hv⟩ := isIntegralCurve_triangleBasePotential_iff.1 hγ
-  have hubot := ((WithLp.continuous_fst 2 ℝ ℝ).tendsto' _ 0 rfl).comp hbot
-  have hutop := ((WithLp.continuous_fst 2 ℝ ℝ).tendsto' _ 1 rfl).comp htop
-  have hvbot := ((WithLp.continuous_snd 2 ℝ ℝ).tendsto' _ 0 rfl).comp hbot
-  have hvtop := ((WithLp.continuous_snd 2 ℝ ℝ).tendsto' _ 0 rfl).comp htop
-  -- The second coordinate runs from `0` to `0`, so it stays at `0`.
-  have hv0 : (fun s ↦ hessianOperator (intervalBasePotential C) (γ s).snd) =
-      fun _ ↦ hessianOperator (intervalBasePotential C) 0 := funext fun s ↦ by
-    rw [eq_of_tendsto_intervalBasePotential hv hvbot hvtop s]
   ext x
-  rw [mem_squareIntegrableSolutions_triangleBasePotential, hv0,
+  -- The second coordinate runs from `0` to `0`, so no solution decays in it.
+  rw [mem_squareIntegrableSolutions_triangleBasePotential,
     hu.squareIntegrableSolutions_hessianOperator_eq_top (Module.finrank_self ℝ)
-      (contDiff_intervalBasePotential C) hubot hutop zero_ne_one,
-    IsNondegenerateCriticalPoint.squareIntegrableSolutions_hessianOperator_eq_bot
-      (isNondegenerateCriticalPoint_intervalBasePotential_zero hC),
+      (contDiff_intervalBasePotential C) (((WithLp.continuous_fst 2 ℝ ℝ).tendsto _).comp hbot)
+      (((WithLp.continuous_fst 2 ℝ ℝ).tendsto _).comp htop) zero_ne_one,
+    hv.squareIntegrableSolutions_hessianOperator_eq_bot
+      ((contDiff_intervalBasePotential C (n := 1)).differentiable one_ne_zero)
+      (isNondegenerateCriticalPoint_intervalBasePotential_zero hC)
+      (((WithLp.continuous_snd 2 ℝ ℝ).tendsto _).comp hbot)
+      (((WithLp.continuous_snd 2 ℝ ℝ).tendsto _).comp htop),
     Submodule.mem_span_singleton]
   refine ⟨fun h ↦ ⟨x.fst, ?_⟩, ?_⟩
   · refine (WithLp.ext_iff 2).2 (Prod.ext ?_ ?_) <;> simp [(Submodule.mem_bot ℝ).1 h.2]
@@ -562,20 +559,17 @@ theorem squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_span_
     squareIntegrableSolutions (fun s ↦ hessianOperator (triangleBasePotential C) (γ s)) =
       ℝ ∙ WithLp.toLp 2 (0, 1) := by
   obtain ⟨hu, hv⟩ := isIntegralCurve_triangleBasePotential_iff.1 hγ
-  have hubot := ((WithLp.continuous_fst 2 ℝ ℝ).tendsto' _ 1 rfl).comp hbot
-  have hutop := ((WithLp.continuous_fst 2 ℝ ℝ).tendsto' _ 1 rfl).comp htop
-  have hvbot := ((WithLp.continuous_snd 2 ℝ ℝ).tendsto' _ 0 rfl).comp hbot
-  have hvtop := ((WithLp.continuous_snd 2 ℝ ℝ).tendsto' _ 1 rfl).comp htop
-  -- The first coordinate runs from `1` to `1`, so it stays at `1`.
-  have hu1 : (fun s ↦ hessianOperator (intervalBasePotential C) (γ s).fst) =
-      fun _ ↦ hessianOperator (intervalBasePotential C) 1 := funext fun s ↦ by
-    rw [eq_of_tendsto_intervalBasePotential hu hubot hutop s]
   ext x
-  rw [mem_squareIntegrableSolutions_triangleBasePotential, hu1,
+  -- The first coordinate runs from `1` to `1`, so no solution decays in it.
+  rw [mem_squareIntegrableSolutions_triangleBasePotential,
+    hu.squareIntegrableSolutions_hessianOperator_eq_bot
+      ((contDiff_intervalBasePotential C (n := 1)).differentiable one_ne_zero)
+      (isNondegenerateCriticalPoint_intervalBasePotential_one hC)
+      (((WithLp.continuous_fst 2 ℝ ℝ).tendsto _).comp hbot)
+      (((WithLp.continuous_fst 2 ℝ ℝ).tendsto _).comp htop),
     hv.squareIntegrableSolutions_hessianOperator_eq_top (Module.finrank_self ℝ)
-      (contDiff_intervalBasePotential C) hvbot hvtop zero_ne_one,
-    IsNondegenerateCriticalPoint.squareIntegrableSolutions_hessianOperator_eq_bot
-      (isNondegenerateCriticalPoint_intervalBasePotential_one hC),
+      (contDiff_intervalBasePotential C) (((WithLp.continuous_snd 2 ℝ ℝ).tendsto _).comp hbot)
+      (((WithLp.continuous_snd 2 ℝ ℝ).tendsto _).comp htop) zero_ne_one,
     Submodule.mem_span_singleton]
   refine ⟨fun h ↦ ⟨x.snd, ?_⟩, ?_⟩
   · refine (WithLp.ext_iff 2).2 (Prod.ext ?_ ?_) <;> simp [(Submodule.mem_bot ℝ).1 h.1]

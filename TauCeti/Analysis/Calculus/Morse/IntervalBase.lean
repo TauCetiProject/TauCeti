@@ -71,8 +71,6 @@ bijective.
   from every point of `[-1, 1]`.
 * `TauCeti.eq_intervalBaseFlow_of_isIntegralCurve`: the negative gradient trajectories staying in
   `[-1, 1]` are the flow lines, since the field is Lipschitz there.
-* `TauCeti.eq_of_tendsto_intervalBasePotential`: a trajectory with the same limit at both ends is
-  constant.
 * `TauCeti.intervalBaseOrbit_sq_eq_sigmoid`, `TauCeti.one_sub_intervalBaseOrbit_sq` and
   `TauCeti.intervalBaseFlow_eq_intervalBaseOrbit`: the trajectory `q` through the sigmoid, and
   every flow line through `(0, 1)` as a reparametrization of `q`.
@@ -354,15 +352,6 @@ theorem eq_intervalBaseFlow_of_isIntegralCurve {γ : ℝ → ℝ}
     (fun s ↦ ⟨hγ s, hmem s⟩)
     (fun s ↦ ⟨isIntegralCurve_intervalBaseFlow C (hmem 0) s, intervalBaseFlow_mem_Icc C s (hmem 0)⟩)
     (t₀ := 0) (by simp)
-
-/-- A negative gradient trajectory of the base potential with the same limit at both ends is
-constant. -/
-theorem eq_of_tendsto_intervalBasePotential {u : ℝ → ℝ}
-    (hu : IsIntegralCurve u (fun _ t ↦ -∇ (intervalBasePotential C) t)) {c : ℝ}
-    (hbot : Tendsto u atBot (𝓝 c)) (htop : Tendsto u atTop (𝓝 c)) (s : ℝ) : u s = c :=
-  hu.eq_of_tendsto_atBot_of_tendsto_atTop
-    (fun _ ↦ (contDiff_intervalBasePotential C (n := 1)).differentiable one_ne_zero _)
-    (contDiff_intervalBasePotential C (n := 0)).continuous.continuousAt hbot htop s
 
 /-- For `C > 0`, the flow line through a point of `(0, 1]` tends to the minimum `1` at `+∞`. -/
 theorem tendsto_intervalBaseFlow_atTop (hC : 0 < C) {t : ℝ} (ht : t ∈ Ioc 0 1) :

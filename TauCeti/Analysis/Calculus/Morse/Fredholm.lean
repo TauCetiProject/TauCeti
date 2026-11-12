@@ -83,6 +83,8 @@ surjective exactly when the Morse index drops by one.
   constant trajectory at a nondegenerate critical point the linearized operator is bijective.
 * `TauCeti.IsNondegenerateCriticalPoint.squareIntegrableSolutions_hessianOperator_eq_bot`: there
   the linearized equation has no nonzero square-integrable solution.
+* `IsIntegralCurve.squareIntegrableSolutions_hessianOperator_eq_bot`: neither does it along a
+  trajectory with the same nondegenerate limit at both ends, which stays at that limit.
 
 ## References
 
@@ -441,4 +443,25 @@ theorem squareIntegrableSolutions_hessianOperator_eq_bot (hp : IsNondegenerateCr
   exact (hp.bijective_trajectoryOperator_hessianOperator hAL).injective
 
 end TauCeti.IsNondegenerateCriticalPoint
+
+namespace IsIntegralCurve
+
+open TauCeti
+
+/-- **No linearized solution decays along a trajectory with the same limit at both ends.** For a
+differentiable `f`, a negative gradient trajectory `γ` with the same limit `p` at both ends stays
+at `p`. If `p` is a nondegenerate critical point, the linearized equation
+`v' + Hess f(γ) v = 0` has no nonzero square-integrable solution. -/
+theorem squareIntegrableSolutions_hessianOperator_eq_bot
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : Differentiable ℝ f)
+    (hp : IsNondegenerateCriticalPoint f p) (hbot : Tendsto γ atBot (𝓝 p))
+    (htop : Tendsto γ atTop (𝓝 p)) :
+    squareIntegrableSolutions (fun s ↦ hessianOperator f (γ s)) = ⊥ := by
+  have hγp : (fun s ↦ hessianOperator f (γ s)) = fun _ ↦ hessianOperator f p := funext fun s ↦ by
+    rw [hγ.eq_of_tendsto_atBot_of_tendsto_atTop (fun _ ↦ hf _) hf.continuous.continuousAt hbot
+      htop s]
+  rw [hγp]
+  exact hp.squareIntegrableSolutions_hessianOperator_eq_bot
+
+end IsIntegralCurve
 
