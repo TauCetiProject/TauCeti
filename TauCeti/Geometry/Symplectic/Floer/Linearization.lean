@@ -20,9 +20,12 @@ allowed; the derivative is at a fixed domain point. Along a line `J + q Y` of en
 the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
 `floerLinearization` is the map-direction operator with coefficients fixed. Conjugated by an
-exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`).
-For `C¹` coefficients `J` and `C²` Hamiltonians it is continuous wherever the map and the direction
-are `C¹` (`continuousAt_floerLinearization`), so its `L²` norms over compact sets are finite.
+exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`),
+and on a direction multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ`
+(`floerLinearization_smul_fst`). Its value at a point depends only on the germ of the direction
+there (`floerLinearization_congr_of_eventuallyEq`). For `C¹` coefficients `J` and `C²`
+Hamiltonians it is continuous wherever the map and the direction are `C¹`
+(`continuousAt_floerLinearization`), so its `L²` norms over compact sets are finite.
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`).
@@ -163,6 +166,30 @@ theorem floerLinearization_exp_smul (ω : SymplecticForm V)
     ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
     smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul, add_zero, map_sub]
   module
+
+/-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
+`z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`
+direction, where the operator has the leading term `∂s`. -/
+theorem floerLinearization_smul_fst (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
+    (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ β w.1 • ξ w) z =
+      β z.1 • ω.floerLinearization J Ks Kt u ξ z + β' • ξ z := by
+  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
+    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
+  rw [floerLinearization_def, hd.fderiv, floerLinearization_def]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, comp_apply,
+    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
+    Function.comp_apply, toSpanSingleton_apply, one_smul, zero_smul, add_zero, map_sub]
+  module
+
+/-- The linearization at `z` depends only on the germ of the direction at `z`. -/
+theorem floerLinearization_congr_of_eventuallyEq (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u : ℝ × ℝ → V) {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ} (h : ξ =ᶠ[nhds z] η) :
+    ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J Ks Kt u η z := by
+  rw [floerLinearization_def, floerLinearization_def, h.fderiv_eq, h.eq_of_nhds]
 
 /-- The zeroth-order part `ξ ↦ (dJ(u) ξ)(∂t u - X_Kt(u)) - dX_Ks(u) ξ - J(u) dX_Kt(u) ξ` of the
 linearized Floer operator at the domain point `z`. -/
