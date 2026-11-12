@@ -126,7 +126,7 @@ theorem range_subset_range_iff_forall_rationalPoint (g : Z ⟶ Y)
       IsLocallyConstructible.univ).isConstructible_of_subset_of_isCompact
         (Set.image_univ ▸ subset_rfl) (Set.image_univ ▸ isCompact_univ.image g.continuous)
   rw [hf.subset_iff_forall_rationalPoint π hg]
-  exact forall_congr' fun p ↦ forall_congr' fun hp ↦ by
+  exact forall_congr' fun p ↦ forall_congr' fun _ ↦ by
     rw [f.exists_comp_eq_iff_mem_range p, g.exists_comp_eq_iff_mem_range p]
 
 variable [CompactSpace Y] in
@@ -136,7 +136,7 @@ theorem surjective_iff_forall_rationalPoint :
     Function.Surjective f ↔ ∀ (p : Spec (.of k) ⟶ Y), p ≫ π = 𝟙 _ →
       ∃ q : Spec (.of k) ⟶ X, q ≫ f = p := by
   constructor
-  · intro hf p hp
+  · intro hf p _
     let : LocallyOfFiniteType f := locallyOfFiniteType_of_comp f π
     exact (f.exists_comp_eq_iff_mem_range p).mpr (hf _)
   · intro h y
