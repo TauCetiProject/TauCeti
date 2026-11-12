@@ -130,7 +130,7 @@ namespace ContinuousLinearMap
 
 variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι] {m : MeasurableSpace Ω}
     {ℱ : Filtration ι m} [(atTop : Filter ι).IsCountablyGenerated]
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace E] [AddCommMonoid E] [Module ℝ E] [T2Space E]
 
 /-- Continuous linear maps on predictable L² agree if they agree on rectangle indicators,
 provided the measure is finite on rectangles and has no mass at the initial time. -/
