@@ -132,6 +132,11 @@ theorem IsOrientation.rev_notMem_of_mem {O : Set Γ.E} (hO : Γ.IsOrientation O)
     (e : Γ.E) (he : e ∈ O) : Γ.rev e ∉ O :=
   (hO e).mp he
 
+/-- An orientation contains a dart of every geometric edge. -/
+theorem IsOrientation.mem_or_rev_mem {O : Set Γ.E} (hO : Γ.IsOrientation O) (e : Γ.E) :
+    e ∈ O ∨ Γ.rev e ∈ O :=
+  or_iff_not_imp_right.2 (hO e).2
+
 /-- The quiver whose arrows are the actual darts from their source to their target. -/
 @[expose, instance_reducible] def toQuiver : Quiver Γ.V where
   Hom a b := {e : Γ.E // Γ.src e = a ∧ Γ.tgt e = b}
