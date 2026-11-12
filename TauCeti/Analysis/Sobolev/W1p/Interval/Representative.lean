@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 public import Mathlib.Topology.ContinuousMap.Compact
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Continuous representatives and endpoint traces on an interval
@@ -141,6 +142,12 @@ theorem value_ae_eq_intervalRepresentativeL (hab : a < b)
       fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t) :=
   intervalRepresentative_ae hab u
 
+/-- The representative, extended to `ℝ` by projection onto `[a,b]`, is continuous. -/
+theorem continuous_intervalRepresentativeL_projIcc (hab : a < b)
+    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    Continuous fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t) :=
+  (intervalRepresentativeL hab u).continuous.comp continuous_projIcc
+
 /-- Characterization and uniqueness of the continuous representative, including its endpoint
 values: it is the unique continuous function agreeing almost everywhere with the class. -/
 theorem intervalRepresentativeL_eq_iff (hab : a < b)
@@ -151,7 +158,7 @@ theorem intervalRepresentativeL_eq_iff (hab : a < b)
   have hae := (value_ae_eq_intervalRepresentativeL hab u).symm.trans h
   rw [restrict_Ioo_eq_restrict_Icc] at hae
   have heq := Measure.eqOn_Icc_of_ae_eq volume hab.ne hae
-    ((intervalRepresentativeL hab u).continuous.comp continuous_projIcc).continuousOn
+    (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
     (w.continuous.comp continuous_projIcc).continuousOn
   ext t
   simpa only [projIcc_of_mem hab.le t.property] using heq t.property
@@ -195,7 +202,7 @@ theorem absolutelyContinuousOnInterval_intervalRepresentativeL (hab : a < b)
   have hw : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (value u) (gradient u) 1 := by
     simpa using (hasWeakFDerivOn u).hasWeakLineDerivOn (1 : ℝ)
   exact hw.absolutelyContinuousOnInterval ((Lp.memLp _).integrable (by exact Fact.out))
-    ((intervalRepresentativeL hab u).continuous.comp continuous_projIcc).continuousOn
+    (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
     (value_ae_eq_intervalRepresentativeL hab u) hab.le
 
 /-- The fundamental theorem of calculus for the interval representative, with both endpoints
@@ -209,8 +216,13 @@ theorem integral_gradient_eq_intervalRepresentativeL_sub (hab : a < b)
   simpa only [Function.comp_apply, projIcc_of_mem hab.le s.property,
     projIcc_of_mem hab.le t.property] using
     hw.integral_eq_sub ((Lp.memLp _).integrable (by exact Fact.out))
-      ((intervalRepresentativeL hab u).continuous.comp continuous_projIcc).continuousOn
+      (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
       (value_ae_eq_intervalRepresentativeL hab u) s.property t.property
+
+/-- The weak gradient is interval integrable between any two points of `[a,b]`. -/
+theorem intervalIntegrable_gradient (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : ℝ}
+    (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) : IntervalIntegrable (gradient u) volume s t :=
+  IntegrableOn.intervalIntegrable_of_mem_Icc ((Lp.memLp _).integrable (by exact Fact.out)) hs ht
 
 /-- In the open interval the classical derivative of the representative agrees almost
 everywhere with the recorded weak gradient. -/
@@ -221,7 +233,7 @@ theorem ae_hasDerivAt_intervalRepresentativeL (hab : a < b)
   have hw : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (value u) (gradient u) 1 := by
     simpa using (hasWeakFDerivOn u).hasWeakLineDerivOn (1 : ℝ)
   exact hw.ae_hasDerivAt ((Lp.memLp _).integrable (by exact Fact.out))
-    ((intervalRepresentativeL hab u).continuous.comp continuous_projIcc).continuousOn
+    (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
     (value_ae_eq_intervalRepresentativeL hab u) hab.le
 
 /-- The pair of endpoint values of a Sobolev class as a bounded linear trace. -/
