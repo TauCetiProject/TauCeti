@@ -25,13 +25,14 @@ directions `𝔤 · g p` are null directions of `g^* σ`. When the vertical vect
 them, `g^* σ` is basic for `π` (`TauCeti.SmoothTwoForm.IsMomentMap.isBasic_mpullback`): it is
 invariant under `K` because `σ` is and `g` is equivariant, and it vanishes on vertical vectors.
 
-Now let `σ` be symplectic, that is closed and nondegenerate, let the tangent image of `g` be
-exactly the kernel of `dμ`, as for a regular level, and let the cocycle of `μ` vanish at the
-points `g p`. Then the null directions of `g^* σ` at `p` are the vectors that `dg_p` sends into
-the stabilizer directions `𝔤_{μ(g p)} · g p`
-(`TauCeti.SmoothTwoForm.IsMomentMap.ker_bilinFormAt_mpullback`). When `π` is moreover a surjective
-smooth submersion whose vertical vectors are exactly these null directions, `g^* σ` descends to a
-unique symplectic form `ω_red` on `Q` with `π^* ω_red = g^* σ`
+Now let `M` be finite-dimensional and `σ` symplectic, that is closed and nondegenerate, let the
+tangent image of `g` be exactly the kernel of `dμ`, as for a regular level, and let the cocycle of
+`μ` vanish at the points `g p`. Then the null directions of `g^* σ` at `p` are the vectors that
+`dg_p` sends into the stabilizer directions `𝔤_{μ(g p)} · g p`
+(`TauCeti.SmoothTwoForm.IsMomentMap.ker_bilinFormAt_mpullback`). When `N` is moreover modelled
+without boundary and `π` is a surjective smooth submersion whose vertical vectors are exactly these
+null directions, `g^* σ` descends to a unique symplectic form `ω_red` on `Q` with
+`π^* ω_red = g^* σ`
 (`TauCeti.SmoothTwoForm.IsMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback`). This is
 the reduced symplectic form of the Marsden–Weinstein–Meyer theorem, here for any quotient
 submersion with these properties.
@@ -103,13 +104,14 @@ theorem isBasic_mpullback
     rw [SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback]
     exact hw
 
-/-- **The reduced symplectic form.** Let `σ` be symplectic, and let `g : N → M` be a smooth map
-whose tangent image at every `p` is the kernel of `dμ` at `g p`, where the cocycle of the moment
-map vanishes, such as the inclusion of a regular level `μ⁻¹(c)`. Let `π : N → Q` be a surjective
-smooth submersion out of a manifold whose model has no boundary, whose fibres are the orbits of
-`K`, where `g` is `K`-equivariant and `σ` is `K`-invariant. If the vertical vectors of `π` at `p`
-are exactly the vectors that `dg_p` sends into the stabilizer directions `𝔤_{μ(g p)} · g p`, then
-there is exactly one symplectic form `ω_red` on `Q` with `π^* ω_red = g^* σ`. -/
+/-- **The reduced symplectic form.** Let `M` be finite-dimensional and `σ` symplectic, and let
+`g : N → M` be a smooth map whose tangent image at every `p` is the kernel of `dμ` at `g p`, where
+the cocycle of the moment map vanishes, such as the inclusion of a regular level `μ⁻¹(c)`. Let
+`π : N → Q` be a surjective smooth submersion out of a manifold whose model has no boundary, whose
+fibres are the orbits of `K`, where `g` is `K`-equivariant and `σ` is `K`-invariant. If the
+vertical vectors of `π` at `p` are exactly the vectors that `dg_p` sends into the stabilizer
+directions `𝔤_{μ(g p)} · g p`, then there is exactly one symplectic form `ω_red` on `Q` with
+`π^* ω_red = g^* σ`. -/
 theorem existsUnique_isSymplectic_mpullback_eq_mpullback [FiniteDimensional ℝ E]
     [IsManifold J' ∞ Q] [J.Boundaryless] (hσ : σ.IsSymplectic)
     (hc : ∀ p, σ.momentCocycle a μ (g p) = 0)
