@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GraphOfGroups.Path
 public import TauCeti.Combinatorics.Graph.Serre.Path.SpanningTree
+public import TauCeti.Combinatorics.Quiver.Symmetric
 
 /-!
 # The fundamental group of a graph of groups via a spanning tree

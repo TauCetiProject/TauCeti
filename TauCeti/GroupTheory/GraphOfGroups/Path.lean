@@ -8,7 +8,6 @@ module
 public import TauCeti.GroupTheory.GraphOfGroups.Presentation
 public import TauCeti.Combinatorics.Graph.Serre.Path.Group
 public import TauCeti.Combinatorics.Quiver.PathWeight
-public import TauCeti.Combinatorics.Quiver.Symmetric
 
 /-!
 # Paths in a graph of groups and the fundamental group at a vertex
@@ -597,6 +596,22 @@ def edgePath : ∀ {x y : 𝔸.LetterVertex}, 𝔸.Path x y → Γ.Path x.as y.a
   | nil => exact edgePath_nil
   | cons p e ih => simp [ih]
 
+/-- The underlying edge path of a concatenation is the concatenation of the underlying edge
+paths. -/
+@[simp] theorem edgePath_comp {x y z : 𝔸.LetterVertex} (p : 𝔸.Path x y) (q : 𝔸.Path y z) :
+    edgePath (p.comp q) = (edgePath p).comp (edgePath q) := by
+  induction q with
+  | nil => simp
+  | cons q l ih => cases l <;> simp [ih]
+
+/-- The underlying edge path of the reverse of an `𝔸`-path is the reverse of its underlying edge
+path. -/
+@[simp] theorem edgePath_reverse {x y : 𝔸.LetterVertex} (p : 𝔸.Path x y) :
+    edgePath p.reverse = (edgePath p).reverse := by
+  induction p with
+  | nil => simp
+  | cons p l ih => cases l <;> simp [Quiver.Path.reverse, Quiver.Hom.toPath, ih]
+
 /-- Homotopic `𝔸`-paths have backtrack homotopic underlying edge paths. -/
 theorem Homotopic.edgePath {x y : 𝔸.LetterVertex} {p q : 𝔸.Path x y} (h : p.Homotopic q) :
     SerreGraph.Path.Homotopic Γ p.edgePath q.edgePath := by
@@ -664,6 +679,13 @@ noncomputable def pathGroupEquiv : SerreGraph.PathGroup Γ a ≃* π₁ 𝔸 a :
 @[simp] theorem pathGroupEquiv_apply (g : SerreGraph.PathGroup Γ a) :
     pathGroupEquiv 𝔸 a g = ofPathGroup 𝔸 a g :=
   (rfl)
+
+/-- With trivial vertex groups, the class of a closed `𝔸`-path corresponds to the reduction of
+its underlying edge path. -/
+@[simp] theorem pathGroupEquiv_symm_mk (p : 𝔸.Path ⟨a⟩ ⟨a⟩) :
+    (pathGroupEquiv 𝔸 a).symm (mk p) = SerreGraph.PathGroup.ofPath p.edgePath := by
+  rw [MulEquiv.symm_apply_eq, pathGroupEquiv_apply, ofPathGroup_ofPath, mk_eq_mk_iff]
+  exact Path.homotopic_mapPath_edgePath p
 
 end π₁
 
