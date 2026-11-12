@@ -127,25 +127,26 @@ theorem toFormula_ex (φ : L.BoundedFormulaInf ι α (n + 1)) :
         (toFormula φ)).ex := by
   simp [BoundedFormulaInf.ex]
 
-/-- Opening the bound positions preserves realization: the left and right parts of the new
-free-variable assignment supply the old free-variable and bound-position assignments. -/
+/-- Opening the bound positions preserves bounded realization for any assignment to the empty
+bound context of the resulting formula. -/
 @[simp]
-theorem realize_toFormula {M : Type w} [L.Structure M] (φ : L.BoundedFormulaInf ι α n)
-    (v : α ⊕ Fin n → M) :
-    FormulaInf.Realize (toFormula φ) v ↔ φ.Realize (v ∘ Sum.inl) (v ∘ Sum.inr) := by
+theorem realize_toFormula_bounded {M : Type w} [L.Structure M] (φ : L.BoundedFormulaInf ι α n)
+    (v : α ⊕ Fin n → M) (xs : Fin 0 → M) :
+    BoundedFormulaInf.Realize (toFormula φ) v xs ↔
+      φ.Realize (v ∘ Sum.inl) (v ∘ Sum.inr) := by
   induction φ with
-  | falsum => simp [FormulaInf.realize_def]
-  | equal t₁ t₂ => simp [FormulaInf.realize_def, Sum.elim_comp_inl_inr]
-  | rel R ts => simp [FormulaInf.realize_def, Sum.elim_comp_inl_inr]
+  | falsum => simp
+  | equal t₁ t₂ => simp [Sum.elim_comp_inl_inr]
+  | rel R ts => simp [Sum.elim_comp_inl_inr]
   | imp φ ψ ihφ ihψ =>
-    simpa only [toFormula_imp, FormulaInf.realize_def, realize_imp] using
+    simpa only [toFormula_imp, realize_imp] using
       imp_congr (ihφ v) (ihψ v)
   | all φ ih =>
-    simp only [toFormula_all, FormulaInf.realize_def, realize_all]
+    simp only [toFormula_all, realize_all]
     refine forall_congr' fun a => ?_
     have h := ih (Sum.elim (v ∘ Sum.inl) (Fin.snoc (v ∘ Sum.inr) a))
     simp only [Sum.elim_comp_inl, Sum.elim_comp_inr] at h
-    rw [← h, TauCeti.BoundedFormulaInf.realize_relabel, FormulaInf.realize_def, iff_iff_eq]
+    rw [← h, TauCeti.BoundedFormulaInf.realize_relabel, iff_iff_eq]
     -- Compare the free-variable assignments and the empty bound assignments of type Fin 0 → M.
     congr 1
     · funext x
@@ -156,11 +157,20 @@ theorem realize_toFormula {M : Type w} [L.Structure M] (φ : L.BoundedFormulaInf
         | cast x => simp [Function.comp_def]
     · exact Subsingleton.elim _ _
   | iSup φs ih =>
-    simpa only [toFormula_iSup, FormulaInf.realize_def, realize_iSup] using
+    simpa only [toFormula_iSup, realize_iSup] using
       exists_congr (fun i => ih i v)
   | iInf φs ih =>
-    simpa only [toFormula_iInf, FormulaInf.realize_def, realize_iInf] using
+    simpa only [toFormula_iInf, realize_iInf] using
       forall_congr' (fun i => ih i v)
+
+/-- Opening the bound positions preserves realization: the left and right parts of the new
+free-variable assignment supply the old free-variable and bound-position assignments. -/
+@[simp]
+theorem realize_toFormula {M : Type w} [L.Structure M] (φ : L.BoundedFormulaInf ι α n)
+    (v : α ⊕ Fin n → M) :
+    FormulaInf.Realize (toFormula φ) v ↔ φ.Realize (v ∘ Sum.inl) (v ∘ Sum.inr) := by
+  rw [FormulaInf.realize_def]
+  exact realize_toFormula_bounded φ v default
 
 /-- Opening bound positions commutes with embedding a first-order formula. -/
 @[simp]
