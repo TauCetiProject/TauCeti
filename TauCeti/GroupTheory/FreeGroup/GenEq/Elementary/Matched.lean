@@ -178,16 +178,6 @@ private theorem isReduced_subst_of_removePair (U : (Ω.removePair μ).Solution)
     exact h.infix (List.prefix_append _ _).isInfix
 
 include hΩ hl hr in
-/-- A solution of `Ω` with a matched pair removed satisfies every equation of `Ω` graphically. -/
-private theorem subst_eq_of_removePair (U : (Ω.removePair μ).Solution) :
-    ∀ e ∈ Ω.equations, substituteVars U.word e.1 = substituteVars U.word e.2 := by
-  intro e he
-  rcases equations_subset_union_removeBases _ he with he | ⟨ν, hν, rfl⟩ | ⟨c, ⟨hc, hν⟩, rfl⟩
-  · exact U.subst_eq e he
-  · rw [basicEquation_fst_eq_snd hΩ hl hr hν]
-  · rw [boundaryEquation_fst_eq_snd hΩ hl hc hν]
-
-include hΩ hl hr in
 /-- **ET3 on solutions.** If `Ω` is formally consistent and `μ, Δ(μ)` is a matched pair with
 `β(μ) = β(Δμ)`, the solutions of `Ω` are the solutions of `Ω` with that pair removed for which the
 word `U[α(μ), β(μ)]` is reduced as written. The words of the items are unchanged. -/
@@ -196,14 +186,12 @@ def solutionEquivRemovePair : Ω.Solution ≃ {U : (Ω.removePair μ).Solution /
   toFun U := ⟨U.removePair μ, by
     rw [Solution.removeBases_word]
     exact U.isReduced_substituteVars_segment μ⟩
-  invFun U :=
-    { word := U.1.word
-      isReduced_word := U.1.isReduced_word
-      word_ne_nil := U.1.word_ne_nil
-      isReduced_subst := isReduced_subst_of_removePair hΩ hl hr U.1 U.2
-      subst_eq := subst_eq_of_removePair hΩ hl hr U.1 }
-  left_inv U := Solution.ext (U.removeBases_word _)
-  right_inv U := Subtype.ext (Solution.ext (Solution.removeBases_word _ _))
+  invFun U := Solution.ofMemV U.1.word U.1.isReduced_word U.1.word_ne_nil
+    (isReduced_subst_of_removePair hΩ hl hr U.1 U.2)
+    (funext U.1.point_apply ▸ (V_toSystem_removePair hΩ hl hr _).le U.1.point_mem_V)
+  left_inv U := Solution.ext ((Solution.ofMemV_word ..).trans (U.removeBases_word _))
+  right_inv U := Subtype.ext (Solution.ext ((Solution.removeBases_word _ _).trans
+    (Solution.ofMemV_word ..)))
 
 /-- ET3 sends a solution `U` of `Ω` to `U` viewed as a solution of `Ω` with the pair removed. -/
 @[simp]
@@ -218,7 +206,7 @@ variable (U : {U : (Ω.removePair μ).Solution //
 @[simp]
 theorem solutionEquivRemovePair_symm_apply_word :
     ((solutionEquivRemovePair hΩ hl hr).symm U).word = U.1.word :=
-  (rfl)
+  Solution.ofMemV_word ..
 
 /-- The inverse of ET3 on solutions keeps the point of a solution. -/
 @[simp]
