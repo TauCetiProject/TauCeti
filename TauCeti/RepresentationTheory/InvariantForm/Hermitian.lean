@@ -23,11 +23,14 @@ the invariant forms are a submodule of all sesquilinear forms, and summing an ar
 the group makes it invariant, exactly as
 `TauCeti/RepresentationTheory/InvariantForm/SumOfConjugates.lean` does for a bilinear form.
 
-Positivity is what asks for more, and the second half of the file is over `ℂ`.  Here the sum does
-more work than it does over `ℝ`: there the sum of the coordinate dot products is merely *nonzero*,
-while over `ℂ` the sum of the coordinate Hermitian forms is still **positive definite**, because
-each summand is, and a sum of nonnegative complex numbers vanishes only when every summand does.
-So the construction gives an invariant inner product outright, not just a nonzero invariant form.
+Positivity is what asks for more, and the second half of the file is over `ℂ`.  There a positive
+invariant form has to be Hermitian rather than bilinear: a `ℂ`-bilinear form satisfies
+`B (I • x) (I • x) = -B x x`, so it is never positive on the diagonal unless it vanishes there.
+The sum of the coordinate Hermitian forms over the conjugates is **positive definite**, because each
+summand is nonnegative and a sum of nonnegative complex numbers vanishes only when every summand
+does -- the Hermitian counterpart of the positive definiteness of a conjugate sum over an ordered
+field, `Representation.posDef_toQuadraticMap_sumOfConjugatesForm`.  So the construction gives an
+invariant inner product outright.
 
 Positive semidefiniteness is Mathlib's `LinearMap.IsPosSemidef` for the complex order (activate it
 with `open scoped ComplexOrder`), which packages Hermitian symmetry `conj (H x y) = H y x`
@@ -242,20 +245,21 @@ section Existence
 variable {G V : Type*} [Group G] [Finite G] [AddCommGroup V] [Module ℂ V]
 
 /-- **A complex representation of a finite group carries a positive definite invariant Hermitian
-form.**  Take the coordinate Hermitian form of a basis -- the sesquilinear form
-`∑ i, conj (b.repr x i) * b.repr y i` -- and sum it over the conjugates.
-The sum stays Hermitian and nonnegative, and it stays definite because a vanishing sum of
-nonnegative complex numbers has vanishing summands, in particular the one at `g = 1`.
+form**: some `ρ`-invariant sesquilinear form on `V` is positive semidefinite and nonzero at every
+nonzero vector.  The space `V` need not be finite-dimensional.
 
-This is the unitarian trick for a finite group, with the undivided sum in place of the average, so
-no invertibility of the group order is needed.  Over `ℝ` the same recipe gives only a *nonzero*
-invariant form (`TauCeti.Representation.exists_isInvariantForm_isSymm_ne_zero`); it is the
-definiteness of the Hermitian form that makes this statement stronger. -/
+This is the unitarian trick for a finite group, with the undivided sum over the group in place of
+the average, so no invertibility of the group order is needed.  Its bilinear counterpart over an
+ordered field is `Representation.exists_isInvariantForm_isSymm_ne_zero`; over `ℂ` the form has to be
+Hermitian, since a `ℂ`-bilinear form satisfies `B (I • x) (I • x) = -B x x` and so cannot be
+positive on the diagonal. -/
 theorem exists_isInvariantSesqForm_isPosSemidef_apply_self_ne_zero (ρ : Representation ℂ G V) :
     ∃ H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ,
       IsInvariantSesqForm ρ H ∧ H.IsPosSemidef ∧ ∀ x : V, x ≠ 0 → H x x ≠ 0 := by
   classical
   have : Fintype G := Fintype.ofFinite G
+  -- Sum the coordinate Hermitian form `H₀ x y = ∑ i, conj (b.repr x i) * b.repr y i` of a basis
+  -- over the conjugates; the sum stays nonnegative, and definite by its summand at `g = 1`.
   set b := Module.Free.chooseBasis ℂ V with _
   set H₀ : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ := LinearMap.mk₂'ₛₗ (starRingEnd ℂ) (RingHom.id ℂ)
     (fun x y => (b.repr x).sum fun i a => (starRingEnd ℂ) a * b.repr y i)
