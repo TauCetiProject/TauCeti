@@ -30,10 +30,11 @@ the output datum translated by `c`. For `0 ≤ c ≤ 1`:
 * near the capped puncture `0` it is the capping datum at `0`
   (`TauCeti.Floer.cappedExchangePerturbation_of_lt_re_endCoord`), and it vanishes on the image of
   the pole disc of the plane (`TauCeti.Floer.cappedExchangePerturbation_eq_zero`); elsewhere it is
-  the input-exchange datum (`TauCeti.Floer.cappedExchangePerturbation_of_re_endCoord_le`), which
-  outside the truncation `TauCeti.ThricePuncturedSphere.exchangeTruncation c R` with `R ≥ L - 1`
-  is the input-exchange datum with `H_0` replaced by `0`
-  (`TauCeti.Floer.cappedExchangePerturbation_eq_of_notMem`). The
+  the input-exchange datum (`TauCeti.Floer.cappedExchangePerturbation_of_re_endCoord_le`). For
+  `L > 2` and `R ≥ L - 1`, outside the truncation
+  `TauCeti.ThricePuncturedSphere.exchangeTruncation c R` the capped datum is the input-exchange
+  datum with `H_0` replaced by `0`
+  (`TauCeti.Floer.cappedExchangePerturbation_of_notMem_exchangeTruncation`). The
   translated output datum and the capped part have disjoint supports: the datum is the capped part
   near `c` (`TauCeti.Floer.cappedExchangePerturbation_of_norm_sub_le`) and the translated output
   datum away from it (`TauCeti.Floer.cappedExchangePerturbation_of_le_norm_sub`);
@@ -253,11 +254,10 @@ theorem cappedExchangePerturbation_eq_zero (hL : 2 < L) (hc₀ : 0 ≤ c) (hc₁
     plumbedPerturbation_single_inf_eq_zero (by decide) hL (by simpa using hw),
     negativePlanePerturbation_sub_eq_zero_of_norm_le hc₀ hc₁ hn, add_zero]
 
-/-- Away from the disc of radius `1/2` about `0`, the capped datum is the input-exchange datum of
-the Hamiltonians with `H_0` replaced by `0`: the component of the input-exchange datum on the end
-at `0` is switched off there. -/
-theorem cappedExchangePerturbation_eq_of_le_norm (hL : 2 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖)
-    (x : M) :
+/-- For `L ≥ 2`, away from the disc of radius `1/2` about `0`, the capped datum is the
+input-exchange datum of the Hamiltonians with `H_0` replaced by `0`: the component of the
+input-exchange datum on the end at `0` is switched off there. -/
+theorem cappedExchangePerturbation_of_le_norm (hL : 2 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖) (x : M) :
     cappedExchangePerturbation H L c w x = exchangePerturbation (update H zero 0) c w x := by
   have hre : (zero.endCoord w).re ≤ 0 :=
     re_endCoord_nonpos_of_le_norm_sub_endCenter (by decide) (by rwa [endCenter_zero, sub_zero])
@@ -268,12 +268,12 @@ theorem cappedExchangePerturbation_eq_of_le_norm (hL : 2 ≤ L) {w : ℂ} (hw : 
     exchangePerturbation_def, update_of_ne hinf]
   simp [pairOfPantsPerturbation_def, Puncture.sum_univ, hcut]
 
-/-- **Off the truncation the capped datum is an input-exchange datum.** For `L > 4`,
+/-- **Off the truncation the capped datum is an input-exchange datum.** For `L > 2`,
 `0 ≤ c ≤ 1` and `R ≥ L - 1`, outside the truncation with recentred output end the capped datum is
 the input-exchange datum of the Hamiltonians with `H_0` replaced by `0`: near the capped puncture
 both vanish, and away from it the plumbed plane does not reach. -/
-theorem cappedExchangePerturbation_eq_of_notMem (hL : 4 < L) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
-    {R : ℝ} (hR : L - 1 ≤ R) {w : ℂ} (hw : w ∉ exchangeTruncation c R) (x : M) :
+theorem cappedExchangePerturbation_of_notMem_exchangeTruncation (hL : 2 < L) (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {R : ℝ} (hR : L - 1 ≤ R) {w : ℂ} (hw : w ∉ exchangeTruncation c R) (x : M) :
     cappedExchangePerturbation H L c w x = exchangePerturbation (update H zero 0) c w x := by
   have hρ : Real.exp (-(2 * π * R)) ≤ Real.exp (-(2 * π * (L - 1))) :=
     Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
@@ -286,7 +286,7 @@ theorem cappedExchangePerturbation_eq_of_notMem (hL : 4 < L) (hc₀ : 0 ≤ c) (
   · rw [cappedExchangePerturbation_eq_zero (by linarith) hc₀ hc₁ (by linarith),
       exchangePerturbation_update_zero_eq_zero hc₀ hc₁ (by linarith)]
   -- Elsewhere off the truncation the point is at distance at least `1/2` from `0`.
-  · refine cappedExchangePerturbation_eq_of_le_norm (by linarith) ?_ x
+  · refine cappedExchangePerturbation_of_le_norm (by linarith) ?_ x
     rcases hw with hw | hw | hw
     · exact absurd hw hw₀
     · have h := norm_sub_norm_le (1 : ℂ) w
@@ -346,8 +346,8 @@ theorem contDiffAt_uncurry_cappedExchangePerturbation (hH : ∀ q, Periodic (H q
     · exact Or.inr ⟨h, hz⟩
   -- The capped part, which does not depend on `c`.
   have hin := contDiffAt_uncurry_plumbedPerturbation_single_inf (q := zero)
-    (Hb := update H inf 0) (by decide) (periodic_update_zero hH inf) (contDiff_update_zero hHs inf)
-    hL hz' x v
+    (Hb := update H inf 0) (by decide) (periodic_update_zero hH inf)
+    (contDiff_uncurry_update_zero hHs inf) hL hz' x v
   rw [update_inf_zero] at hin
   -- The output part, the negative plane datum translated by `c`.
   have hpl :=

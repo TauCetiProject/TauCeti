@@ -41,10 +41,11 @@ bounded by the circles at `0` and `∞`. The annulus formula for `uc` and for `u
 about `1` then removes the contribution of the disc about `1`. No extension of `u` itself across
 the punctures is needed.
 
-The disc about `0` cut out by the circle `s = R` of the end at `0` has symplectic area minus the
-loop area of its boundary loop (`SymplecticForm.integral_preimage_ball_eq_neg_loopArea`); this is
-the Stokes formula on the disc `TauCeti.SymplecticForm.integral_fderiv_apply_preimage_closedBall`
-in the end coordinate.
+For a map `u` which is `C²` on the closed disc about `0` cut out by the circle `s = R` of the end
+at `0`, the symplectic area of `u` over that disc is minus the loop area of its boundary loop
+(`SymplecticForm.integral_fderiv_apply_preimage_ball_eq_neg_loopArea`); this is the Stokes formula
+on the disc `TauCeti.SymplecticForm.integral_fderiv_apply_preimage_closedBall` in the end
+coordinate.
 
 In the energy identity of the pair-of-pants product, adding the Hamiltonian terms turns these loop
 areas into the Hamiltonian actions of the end loops; see
@@ -367,10 +368,11 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
   linarith [integral_cutoff_sdiff ω hr₀ hr hρ huc huc_eq huc_near_eq,
     integral_ball_cutoff ω huc huc_eq huc_zero huc_near_zero]
 
-/-- The symplectic area over the disc of radius `exp (-2πR) / 2` about `0`, cut out by the circle
-`s = R` of the end at `0`, is minus the loop area of the boundary loop `t ↦ u(φ_0(R + i t))`: the
-end coordinate `t` runs clockwise around the circle. -/
-theorem integral_preimage_ball_eq_neg_loopArea (ω : SymplecticForm V) {u : ℝ × ℝ → V}
+/-- For a map `u` which is `C²` at every point of the closed disc of radius `exp (-2πR) / 2` about
+`0`, cut out by the circle `s = R` of the end at `0`, the symplectic area of `u` over that disc is
+minus the loop area of the boundary loop `t ↦ u(φ_0(R + i t))`: the end coordinate `t` runs
+clockwise around the circle. -/
+theorem integral_fderiv_apply_preimage_ball_eq_neg_loopArea (ω : SymplecticForm V) {u : ℝ × ℝ → V}
     (R : ℝ) (hu : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹'
       Metric.closedBall 0 (Real.exp (-(2 * π * R)) / 2), ContDiffAt ℝ 2 u z) :
     ∫ z in Complex.equivRealProdCLM.symm ⁻¹' Metric.ball 0 (Real.exp (-(2 * π * R)) / 2),
@@ -383,20 +385,13 @@ theorem integral_preimage_ball_eq_neg_loopArea (ω : SymplecticForm V) {u : ℝ 
   have hae : e.symm ⁻¹' Metric.ball (0 : ℂ) ρ =ᵐ[volume] e.symm ⁻¹' Metric.closedBall 0 ρ :=
     (Complex.measurePreserving_equivRealProdCLM_symm.quasiMeasurePreserving.preimage_ae_eq
       (volume.addHaar_closedBall_ae_eq_ball (0 : ℂ) ρ)).symm
+  -- The boundary loop runs clockwise around the circle of radius `ρ` about `0`.
+  have hρ : ‖zero.endScale‖ * Real.exp (-(2 * π * R)) = ρ := by
+    rw [norm_endScale (by decide)]
+    ring
   -- Stokes' formula on the closed disc.
-  have hg : Function.Periodic (fun θ ↦ u (e (circleMap 0 ρ θ))) (2 * π) := fun θ ↦ by
-    simp only [periodic_circleMap 0 ρ θ]
-  have hloop := ω.loopArea_comp_sub_mul hg 0
-  have hℓ : (fun t : ℝ ↦ u (e (zero.cylindricalEndLift (R + t * Complex.I)))) =
-      fun t ↦ u (e (circleMap 0 ρ (0 - 2 * π * t))) :=
-    funext fun t ↦ by
-      rw [cylindricalEndLift_ofReal_add_ofReal_mul_I, endCenter_zero, endScale_zero]
-      congr 3
-      · rw [norm_div, norm_one, Complex.norm_ofNat]
-        ring
-      · have hhalf : ((1 : ℂ) / 2) = ((1 / 2 : ℝ) : ℂ) := by push_cast; ring
-        rw [hhalf, Complex.arg_ofReal_of_nonneg (by norm_num)]
   rw [setIntegral_congr_set hae, integral_fderiv_apply_preimage_closedBall ω 0 (by positivity) hu,
-    hℓ, hloop, neg_neg]
+    loopArea_cylindricalEndLift ω (fun w ↦ u (e w)) zero R, endCenter_zero, hρ, circleArea,
+    neg_neg]
 
 end TauCeti.SymplecticForm

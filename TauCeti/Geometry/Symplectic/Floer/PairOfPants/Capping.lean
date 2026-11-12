@@ -187,7 +187,7 @@ theorem negativePlanePerturbation_neg (hH : Periodic H 1) (w : ℂ) (x : M) :
 
 /-- Families indexed by the ends that are `H` at the end `p` and zero at the other two ends
 inherit any property shared by `H` and `0`. -/
-theorem forall_single (p : Puncture) {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0) (hH : P H)
+private theorem forall_single (p : Puncture) {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0) (hH : P H)
     (q : Puncture) : P ((Pi.single p H : Puncture → ℝ → M → ℝ) q) := by
   rcases eq_or_ne q p with rfl | hq
   · simpa using hH
