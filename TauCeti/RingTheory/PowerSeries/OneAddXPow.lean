@@ -27,8 +27,8 @@ an ideal `I` of `O` containing `p`, `ω_n` lies in the `(n + 1)`-st power of the
 `I.comap constantCoeff` of series with constant coefficient in `I` (over a local ring in which `p`
 is not a unit, the maximal ideal of `O⟦X⟧`), so when `O` is `I`-adically Hausdorff, for instance
 when `O` is a complete local ring or, by Krull's intersection theorem, a noetherian local ring and
-`I` its maximal ideal, the principal ideals `(ω_n)` meet in zero. Over a local domain with a prime `ϖ`, every
-`(1 + X) ^ N - 1` with `N ≠ 0` acts injectively on `O⟦X⟧ ⧸ (ϖ ^ m)`.
+`I` its maximal ideal, the principal ideals `(ω_n)` meet in zero. Over a local domain with a prime
+`ϖ`, every `(1 + X) ^ N - 1` with `N ≠ 0` acts injectively on `O⟦X⟧ ⧸ (ϖ ^ m)`.
 
 The polynomial counterparts, in particular that `(1 + X) ^ pⁿ - 1` is distinguished at every ideal
 containing `p`, are in `TauCeti.RingTheory.Polynomial.Distinguished`.
