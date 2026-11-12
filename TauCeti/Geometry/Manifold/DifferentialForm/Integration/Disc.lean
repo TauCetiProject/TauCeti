@@ -108,19 +108,16 @@ theorem apply_fract (hD : IsSmoothDisc I γ D) (s t : ℝ) : D (s, Int.fract t) 
   simpa using Function.Periodic.sub_int_mul_eq (f := fun t ↦ D (s, t)) (c := 1) (x := t)
     (fun t ↦ hD.apply_add_one (s, t)) ⌊t⌋
 
-private theorem fract_mem (t : ℝ) : Int.fract t ∈ unitInterval :=
-  ⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
-
 /-- A disc is the constant loop at `x` along the whole line `s = 0`. -/
 theorem apply_zero_eq (hD : IsSmoothDisc I γ D) (t : ℝ) : D (0, t) = x := by
-  rw [← hD.apply_fract, hD.apply_zero ⟨_, fract_mem t⟩]
+  rw [← hD.apply_fract, hD.apply_zero ⟨_, unitInterval.fract_mem t⟩]
 
 /-- Two discs bounding the same loop agree along the whole line `s = 1`: both are `γ` on the unit
 interval and `1`-periodic. -/
 theorem apply_one_eq (hD : IsSmoothDisc I γ D) (hD' : IsSmoothDisc I γ D') (t : ℝ) :
     D (1, t) = D' (1, t) := by
-  rw [← hD.apply_fract, ← hD'.apply_fract, hD.apply_one ⟨_, fract_mem t⟩,
-    hD'.apply_one ⟨_, fract_mem t⟩]
+  rw [← hD.apply_fract, ← hD'.apply_fract, hD.apply_one ⟨_, unitInterval.fract_mem t⟩,
+    hD'.apply_one ⟨_, unitInterval.fract_mem t⟩]
 
 /-- A smooth disc as a path in the loop space `Ω M x`: at time `s` it is the loop
 `t ↦ D (1 - s, t)`, running from the loop `γ` that `D` bounds to the constant loop at its
