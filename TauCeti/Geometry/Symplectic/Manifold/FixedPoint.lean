@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints
+public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 
@@ -27,6 +30,20 @@ periodic orbit of a symplectomorphism has determinant one
 diffeomorphism of a surface the return maps are therefore `2 × 2` matrices of determinant one,
 whose fixed-point indices `sgn det (1 - P)` are governed by the trace alone.
 
+For a family of maps preserving both `σ` and a Riemannian metric, the common fixed points are
+symplectic in the following sense. Let `Φ i` be Riemannian isometries of `M` pulling a
+nondegenerate `σ` back to itself, and let `p` be a common fixed point. The polar normalization `J`
+of `σ` for the metric (`TauCeti.SmoothTwoForm.IsNondegenerate.polarComplexStructure`) commutes with
+every differential `dΦ_i` at `p`, since these are linear isometric symplectomorphisms of `T_p M`.
+So `J` preserves the fixed tangent subspace `TauCeti.RiemannianIsometry.fixedTangentSubspace Φ p`,
+and since `σ(v, J v) > 0` for `v ≠ 0`, the form `σ_p` is nondegenerate on it
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectic_fixedTangentSubspace`). Normal coordinates at
+`p` flatten the common fixed set onto this subspace
+(`TauCeti.RiemannianIsometry.mem_iInter_fixedPoints_iff_riemannianLog_mem`), so it is the
+infinitesimal model of the fixed set at `p`. Averaging a metric over a finite group or a compact
+group acting by symplectomorphisms (`TauCeti.averageRiemannianMetric`,
+`TauCeti.measureAverageRiemannianMetric`) makes the action isometric.
+
 ## Main results
 
 * `TauCeti.SmoothTwoForm.isIsometry_fixedPointDerivative`: the fixed-point derivative of a map
@@ -35,11 +52,16 @@ whose fixed-point indices `sgn det (1 - P)` are governed by the trace alone.
   determinant one.
 * `TauCeti.SmoothTwoForm.det_fixedPointDerivative_iterate_eq_one`: the return map of a periodic
   orbit of a map preserving a nondegenerate `σ` has determinant one.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectic_fixedTangentSubspace`: the fixed tangent
+  subspace of a family of symplectic isometries at a common fixed point is a symplectic subspace.
 
 ## References
 
 * D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
   Section 11.1.
+* A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
+  Springer, 2001, Proposition 12.6 (polar normalization) and Homework 21, exercise 2 (fixed sets
+  of symplectic group actions are symplectic submanifolds).
 -/
 
 public section
@@ -89,5 +111,37 @@ theorem det_fixedPointDerivative_iterate_eq_one (hσnd : σ.IsNondegenerate)
     LinearMap.det (fixedPointDerivative I f^[d] ⟨x, hx.eq⟩) = 1 :=
   det_fixedPointDerivative_eq_one hσnd (hf.iterate d)
     (SmoothForm.mpullback_iterate_eq_self hf hσ d) ⟨x, hx.eq⟩
+
+section Isometry
+
+open Bundle Set
+
+variable [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  {ι : Type*} {Φ : ι → RiemannianIsometry I I M M}
+
+/-- **Fixed loci of symplectic isometries are symplectic.** Let `Φ i` be Riemannian isometries
+pulling a nondegenerate two-form `σ` back to itself. At a common fixed point `p`, the fixed tangent
+subspace of the `Φ i`, onto which normal coordinates at `p` flatten their common fixed set, is a
+symplectic subspace of `(T_p M, σ_p)`: it is preserved by the polar normalization of `σ`, which is
+tamed by `σ`. -/
+theorem IsNondegenerate.isSymplectic_fixedTangentSubspace (h : σ.IsNondegenerate)
+    (hΦ : ∀ i, SmoothForm.mpullback (Φ i) (Φ i).toDiffeomorph.contMDiff σ = σ) {p : M}
+    (hp : p ∈ ⋂ i, fixedPoints (Φ i)) :
+    (h.symplecticFormAt p).IsSymplectic (RiemannianIsometry.fixedTangentSubspace Φ p) := by
+  refine (h.symplecticFormAt p).compatible_polarComplexStructure.tames
+    |>.isSymplectic_of_mem_invtSubmodule <| (Module.End.mem_invtSubmodule _).2 fun v hv ↦
+      RiemannianIsometry.mem_fixedTangentSubspace.2 fun i ↦ ?_
+  -- `dΦ_i` is a linear isometric symplectomorphism of `T_p M`, so it commutes with the polar
+  -- normalization of `σ_p`, and it fixes `v`.
+  have hJ := h.mfderiv_polarComplexStructure_apply h rfl (f := Φ i) (x := p)
+    ((Φ i).inner_mfderiv p) (fun u w ↦ by
+      rw [← SmoothForm.eval₂_mpullback (Φ i) (Φ i).toDiffeomorph.contMDiff σ, hΦ i]) v
+  rw [polarComplexStructure_apply, polarComplexStructure_apply,
+    RiemannianIsometry.mem_fixedTangentSubspace.1 hv i,
+    (mem_fixedPoints.1 (mem_iInter.1 hp i) : Φ i p = p)] at hJ
+  exact hJ
+
+end Isometry
 
 end TauCeti.SmoothTwoForm
