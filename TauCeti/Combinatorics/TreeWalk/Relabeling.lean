@@ -101,11 +101,12 @@ noncomputable def canonicalWalkRelabelingEquiv (w : Fin (k + 1) → β) :
 /-- A canonical walk shape with `r` distinct vertices has `n.descFactorial r` realizations on an
 `n`-element vertex set. This includes the zero count when `n < r` and the one-vertex, zero-step
 path. -/
-theorem card_canonicalWalk_eq [Fintype α] (w : Fin (k + 1) → β) :
+theorem card_canonicalWalk_eq [Finite α] (w : Fin (k + 1) → β) :
     Nat.card {v : Fin (k + 1) → α // canonicalWalk v = canonicalWalk w} =
-      (Fintype.card α).descFactorial #(univ.image w) := by
+      (Nat.card α).descFactorial #(univ.image w) := by
   classical
+  let := Fintype.ofFinite α
   rw [← Nat.card_congr (canonicalWalkRelabelingEquiv (α := α) w), Nat.card_eq_fintype_card,
-    Fintype.card_embedding_eq, Fintype.card_coe]
+    Nat.card_eq_fintype_card, Fintype.card_embedding_eq, Fintype.card_coe]
 
 end TauCeti.TreeWalk
