@@ -112,7 +112,7 @@ theorem comap_presentationLimitGlobalGerm (x : spa Aplus) :
     -- Generalize the membership proof before transporting its open to the whole space.
     revert hx
     erw [hR]
-    intro hx
+    intro _
     rfl
   rw [e]
   exact comap_presentationLimitStalkValuation hAplus hP p hp x hx
