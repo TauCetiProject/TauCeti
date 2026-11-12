@@ -29,8 +29,8 @@ discriminant algebra is a quadratic field or a split quadratic algebra. They det
 base over which the canonical involution is linear in the low-dimensional unitary groups.
 
 The centre is supplied by `CliffordAlgebra.mem_center_even_iff_exists_eq_add_smul_volume` and, in
-odd dimension, `CliffordAlgebra.isCentral_even_of_odd_finrank`; the invertibility of the volume
-element is supplied by `CliffordAlgebra.isUnit_prod_map_ι` and the reversal sign by
+odd dimension, `TauCeti.CliffordAlgebra.isCentral_even_of_odd_finrank`; the invertibility of the
+volume element is supplied by `CliffordAlgebra.isUnit_prod_map_ι` and the reversal sign by
 `CliffordAlgebra.reverse_prod_map_ι_of_pairwise_isOrtho`.
 
 ## Main results
@@ -134,8 +134,9 @@ theorem reverse_add_smul_volume_eq_self_iff
   · rintro rfl
     simp
 
-/-- In the centre of the even Clifford algebra of a regular quadratic space, an element is fixed
-by reversal exactly when the volume sign is positive or it is a scalar. In odd dimension the centre
+/-- In the centre of the even Clifford algebra of a regular finite-dimensional quadratic space, an
+element is fixed by reversal exactly when `(finrank K V).choose 2` is even (the sign by which
+reversal multiplies the volume element is positive) or it is a scalar. In odd dimension the centre
 consists of scalars, so both sides hold. -/
 theorem reverseEven_eq_self_iff_of_mem_center [FiniteDimensional K V] (hQ : Q.Nondegenerate)
     {x : even Q}
