@@ -88,6 +88,13 @@ theorem stereographicHeight_apply (w : F) :
     stereographicHeight w = (4 - ‖w‖ ^ 2) / (‖w‖ ^ 2 + 4) :=
   (rfl)
 
+/-- The chart height function decreases with the norm of the chart coordinate. -/
+theorem stereographicHeight_le_stereographicHeight {u w : F} (h : ‖u‖ ≤ ‖w‖) :
+    stereographicHeight w ≤ stereographicHeight u := by
+  rw [stereographicHeight_apply, stereographicHeight_apply,
+    div_le_div_iff₀ (by positivity) (by positivity)]
+  nlinarith [pow_le_pow_left₀ (norm_nonneg u) h 2]
+
 variable [InnerProductSpace ℝ F]
 
 /-- The chart height function is smooth. -/
@@ -338,6 +345,23 @@ theorem sphereHeight_comp_chartAt_symm (v : sphere (0 : E) 1) :
 theorem sphereHeight_comp_extChartAt_symm (v : sphere (0 : E) 1) :
     sphereHeight v ∘ (extChartAt (𝓡 n) v).symm = stereographicHeight := by
   rw [extChartAt_coe_symm, modelWithCornersSelf_coe_symm, comp_id, sphereHeight_comp_chartAt_symm]
+
+omit [Fact (finrank ℝ E = n + 1)] in
+/-- Under the stereographic projection from the north pole `v`, the height function in the
+direction `v` is `-stereographicHeight`. -/
+theorem sphereHeight_stereographic_symm_apply (v : sphere (0 : E) 1) (w : (ℝ ∙ (v : E))ᗮ) :
+    sphereHeight v ((stereographic (norm_eq_of_mem_sphere v)).symm w) = -stereographicHeight w := by
+  have hw : ⟪(w : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 w.2
+  have hv : ⟪(v : E), (v : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
+  have h4 : ‖w‖ ^ 2 + 4 ≠ 0 := by positivity
+  rw [sphereHeight_apply, stereographicHeight_apply]
+  -- The inverse of `stereographic` is `stereoInvFun` by definition.
+  change ⟪(stereoInvFun (norm_eq_of_mem_sphere v) w : E), (v : E)⟫ = _
+  rw [stereoInvFun_apply, inner_smul_left, inner_add_left, inner_smul_left, inner_smul_left, hw,
+    hv]
+  simp only [RCLike.conj_to_real]
+  field_simp
+  ring
 
 /-- The north pole is a nondegenerate critical point of the height function. -/
 theorem isManifoldNondegenerateCriticalPoint_sphereHeight_self (v : sphere (0 : E) 1) :
