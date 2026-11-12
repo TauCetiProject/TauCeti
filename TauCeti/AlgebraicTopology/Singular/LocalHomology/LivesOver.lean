@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Kunneth.Relative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
 # Classes living over the fundamental class
@@ -35,6 +37,13 @@ needed for the statements below.
   (`TauCeti.LivesOverFundamentalClass.of_homologyMap`). With `σ = p` and `p' = id`, a class lives
   over the fundamental class as soon as its image in `Hₖ(M)` does
   (`TauCeti.LivesOverFundamentalClass.of_homologyMap_proj`).
+* **Products with a second factor.** For a space `Y`, the map `p ∘ fst : E × Y → M` has fibre
+  `p⁻¹(b) × Y`, and localizing a cross product `α × β` at it is the relative cross product of the
+  localization of `α` with `β` (`TauCeti.fiberLocalization_singularHomologyCross_tmul`). So if
+  `α × β` lives over the fundamental class, so does `α`
+  (`TauCeti.LivesOverFundamentalClass.of_singularHomologyCross`). Over a field the converse holds
+  as soon as `β ≠ 0`, by the relative Künneth theorem
+  (`TauCeti.livesOverFundamentalClass_singularHomologyCross_iff`).
 * **The trivial fibration.** For the identity of a compact oriented `n`-manifold `M` and integer
   coefficients, the localization of `Hₙ(M)` at a point is the map to the local homology
   `Hₙ(M, M ∖ {b})`, and the multiple `d • [M]` of the fundamental class lives over the
@@ -68,7 +77,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Set
+open CategoryTheory Limits Set MonoidalCategory
 
 universe w v u
 
@@ -184,6 +193,78 @@ theorem LivesOverFundamentalClass.of_homologyMap_proj [TopologicalSpace M] (p : 
   hα.of_homologyMap R p (Function.id_comp _)
 
 end LivesOver
+
+section Cross
+
+variable {k : Type w} [CommRing k] (R S : ModuleCat.{w} k) {E Y M : Type w} [TopologicalSpace E]
+  [TopologicalSpace Y]
+
+/-- **Localization of a cross product at the fibre.** For `p : E → M` and a space `Y`, the fibre
+of `p ∘ fst : E × Y → M` over `b` is `p⁻¹(b) × Y`. Localizing the cross product of
+`α ∈ Hᵢ(E; R)` and `β ∈ Hⱼ(Y; S)` at this fibre gives the relative cross product of the
+localization of `α` at `p⁻¹(b)` with `β`. -/
+@[reassoc]
+theorem singularHomologyCross_comp_fiberLocalization (p : E → M) (b : M) (i j n : ℕ)
+    (h : i + j = n) :
+    TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h ≫
+        fiberLocalization (R ⊗ S) (p ∘ Prod.fst) b n =
+      (fiberLocalization R p b i ▷ (TopCat.toSSet.obj (TopCat.of Y)).homology S j) ≫
+        TopCat.singularHomologyCrossRel (TopCat.of E) (TopCat.of Y) (p ⁻¹' {b})ᶜ R S i j n h :=
+  TopCat.singularHomologyCross_comp_singularHomologyπ (TopCat.of E) (TopCat.of Y) (p ⁻¹' {b})ᶜ R S
+    i j n h
+
+/-- The localization of `α × β` at the fibre of `p ∘ fst : E × Y → M` over `b` is the relative
+cross product of the localization of `α` at the fibre of `p` with `β`. -/
+theorem fiberLocalization_singularHomologyCross_tmul (p : E → M) (b : M) {i j n : ℕ}
+    (h : i + j = n) (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R i : ModuleCat.{w} k))
+    (β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)) :
+    (fiberLocalization (R ⊗ S) (p ∘ Prod.fst) b n).hom
+        ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) =
+      (TopCat.singularHomologyCrossRel (TopCat.of E) (TopCat.of Y) (p ⁻¹' {b})ᶜ R S i j n h).hom
+        ((fiberLocalization R p b i).hom α ⊗ₜ β) :=
+  ConcreteCategory.congr_hom (singularHomologyCross_comp_fiberLocalization R S p b i j n h) (α ⊗ₜ β)
+
+/-- If the cross product `α × β ∈ Hₙ(E × Y; R ⊗ S)` lives over the fundamental class at `b` for
+`p ∘ fst : E × Y → M`, then `α` lives over the fundamental class at `b` for `p`. -/
+theorem LivesOverFundamentalClass.of_singularHomologyCross {p : E → M} {b : M} {i j n : ℕ}
+    (h : i + j = n) {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R i : ModuleCat.{w} k)}
+    {β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)}
+    (hαβ : LivesOverFundamentalClass (R ⊗ S) (p ∘ Prod.fst) b
+      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β))) :
+    LivesOverFundamentalClass R p b α := by
+  intro hα
+  exact hαβ ((fiberLocalization_singularHomologyCross_tmul R S p b h α β).trans <|
+    (congrArg (fun x ↦ (TopCat.singularHomologyCrossRel (TopCat.of E) (TopCat.of Y) (p ⁻¹' {b})ᶜ
+      R S i j n h).hom (x ⊗ₜ β)) hα).trans <|
+    (congrArg _ (TensorProduct.zero_tmul _ _)).trans (map_zero _))
+
+/-- **Cross products living over the fundamental class.** With coefficients in modules over a
+field, the cross product `α × β ∈ Hₙ(E × Y; R ⊗ S)` lives over the fundamental class at `b` for
+`p ∘ fst : E × Y → M` if and only if `α` lives over the fundamental class at `b` for `p` and
+`β ≠ 0`. -/
+theorem livesOverFundamentalClass_singularHomologyCross_iff {k : Type w} [Field k]
+    (R S : ModuleCat.{w} k) {p : E → M} {b : M} {i j n : ℕ}
+    (h : i + j = n) {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R i : ModuleCat.{w} k)}
+    {β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)} :
+    LivesOverFundamentalClass (R ⊗ S) (p ∘ Prod.fst) b
+      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) ↔
+      LivesOverFundamentalClass R p b α ∧ β ≠ 0 := by
+  refine ⟨fun hαβ ↦ ⟨hαβ.of_singularHomologyCross R S h, ?_⟩, fun ⟨hα, hβ⟩ ↦ ?_⟩
+  · rintro rfl
+    exact hαβ ((fiberLocalization_singularHomologyCross_tmul R S p b h α 0).trans <|
+      (congrArg _ (TensorProduct.tmul_zero _ _)).trans (map_zero _))
+  · -- Over a field all chain modules are semisimple, so the relative cross product is injective.
+    have hinj := (ModuleCat.mono_iff_injective
+      (TopCat.singularHomologyCrossRel (TopCat.of E) (TopCat.of Y) (p ⁻¹' {b})ᶜ R S i j n h)).1
+        (@TopCat.mono_singularHomologyCrossRel k _ (TopCat.of E) (TopCat.of Y) (p ⁻¹' {b})ᶜ R S
+          (fun _ ↦ HomologicalComplex.isSplitMono_iCycles_of_isSemisimpleModule _ _)
+          (fun _ ↦ HomologicalComplex.isSplitEpi_homologyπ_of_isSemisimpleModule _ _)
+          (fun _ ↦ HomologicalComplex.isSplitMono_iCycles_of_isSemisimpleModule _ _)
+          (fun _ ↦ HomologicalComplex.isSplitEpi_homologyπ_of_isSemisimpleModule _ _) i j n h)
+    exact fun h₀ ↦ (map_ne_zero_iff _ hinj).2 (tmul_ne_zero hα hβ)
+      ((fiberLocalization_singularHomologyCross_tmul R S p b h α β).symm.trans h₀)
+
+end Cross
 
 namespace HomologicalOrientation
 
