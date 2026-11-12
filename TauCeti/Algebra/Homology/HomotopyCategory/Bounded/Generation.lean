@@ -105,7 +105,7 @@ theorem nonempty_iso_quotient_obj_mappingCone_ιTop (K : CochainComplex C ℤ) (
   have key : ∀ (S : ShortComplex (CochainComplex C ℤ))
       (_ : S = ShortComplex.mk (K.ιTop (b + 1))
         (K.πStupidTrunc (ComplexShape.embeddingUpIntLE b)) (K.ιTop_comp_πStupidTruncLE b))
-      (σ : ∀ n, (S.map (HomologicalComplex.eval C _ n)).Splitting),
+      (_ : ∀ n, (S.map (HomologicalComplex.eval C _ n)).Splitting),
       Nonempty ((_root_.HomotopyCategory.quotient C (.up ℤ)).obj
         (CochainComplex.mappingCone (K.ιTop (b + 1))) ≅
           (_root_.HomotopyCategory.quotient C (.up ℤ)).obj
