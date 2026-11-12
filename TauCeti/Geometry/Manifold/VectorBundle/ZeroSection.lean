@@ -154,7 +154,7 @@ omit [∀ b, Module 𝕜 (V b)] [VectorBundle 𝕜 F V] in
 theorem contMDiff_mk_trivializationAt_symm {n : WithTop ℕ∞} (b : B) :
     ContMDiff 𝓘(𝕜, F) (I.prod 𝓘(𝕜, F)) n
       (fun w : F ↦ (⟨b, (trivializationAt F V b).symm b w⟩ : TotalSpace F V)) := fun _ ↦
-  contMDiffAt_totalSpace.mpr ⟨contMDiffAt_const, contMDiffAt_id.congr_of_eventuallyEq
+  contMDiffAt_totalSpace_iff.mpr ⟨contMDiffAt_const, contMDiffAt_id.congr_of_eventuallyEq
     (Eventually.of_forall fun w ↦ congrArg Prod.snd
       ((trivializationAt F V b).apply_mk_symm (mem_baseSet_trivializationAt F V b) w))⟩
 
