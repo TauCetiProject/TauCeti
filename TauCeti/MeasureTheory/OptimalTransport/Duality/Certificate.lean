@@ -18,8 +18,8 @@ A pair of integrable potentials `φ`, `ψ` satisfying the Kantorovich dual const
 `φ x + ψ y ≤ c (x, y)` bounds the cost of every transport plan from below. When a plan is
 concentrated on the *contact set* where that constraint is an equality, the two bounds meet:
 the plan is optimal, the pair is a dual optimizer, and there is no duality gap. This is
-complementary slackness, and the resulting data is the standard optimality certificate that the
-Monge and barycentre layers verify instead of re-solving a transport problem.
+complementary slackness, and the resulting data is the standard optimality certificate: checking
+it proves a plan optimal without re-solving a transport problem.
 
 This file builds that certificate for the raw extended-nonnegative interface — an arbitrary cost
 `c : X × Y → ℝ≥0∞` on arbitrary measurable spaces — and shows that it is exact: in the
@@ -104,8 +104,6 @@ above, with both spaces a point, is such a pair.
 * W. Schachermayer and J. Teichmann, *Characterization of optimal transport plans for the
   Monge--Kantorovich problem*, Proc. Amer. Math. Soc. 137 (2009), 519--529, for optimality of
   strongly `c`-monotone plans.
-
-This is Layer 2, items 7 and 8 of the optimal-transport roadmap.
 -/
 
 public section
@@ -468,8 +466,7 @@ section Monge
 variable [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y} {T : X → Y}
 
 /-- A transport map whose graph lies almost everywhere in the contact set of an integrable dual
-feasible pair is certified: its graph plan is an optimality certificate. This is the form in
-which the Brenier and polar-factorisation layers verify optimality of a map. -/
+feasible pair is certified: its graph plan is an optimality certificate. -/
 theorem isDualCertificate_graphPlan (hc : AEMeasurable c (graphPlan T μ))
     (hT : HasLaw T ν μ) (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hφ : Integrable φ μ)
     (hψ : Integrable ψ ν) (hae : ∀ᵐ x ∂μ, (x, T x) ∈ dualContactSet c φ ψ) :
