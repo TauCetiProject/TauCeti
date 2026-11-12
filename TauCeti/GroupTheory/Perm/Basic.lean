@@ -34,11 +34,12 @@ permutations transported along injections with disjoint ranges, a fiber-preservi
 carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
-types, transport of cycle quotients along conjugating equivalences, and the factorization of an
-invariant function through a map on whose fibres the permutation is a single cycle, also stated
-for the difference `x ↦ c (σ⁻¹ x) - c x` (`Equiv.Perm.forall_comp_symm_sub_eq_zero_iff`), and a
-correction by a power of a cycle for a permutation commuting with it. The set of points on the
-cycle through `x` has `Function.minimalPeriod σ x` elements, counted by `Set.ncard`
+types and to `Option α` by fixing `none`, transport of cycle quotients along conjugating
+equivalences, and the factorization of an invariant function through a map on whose fibres the
+permutation is a single cycle, also stated for the difference `x ↦ c (σ⁻¹ x) - c x`
+(`Equiv.Perm.forall_comp_symm_sub_eq_zero_iff`), and a correction by a power of a cycle for a
+permutation commuting with it. The set of points on the cycle through `x` has
+`Function.minimalPeriod σ x` elements, counted by `Set.ncard`
 (`Equiv.Perm.ncard_setOf_sameCycle`, and `Equiv.Perm.minimalPeriod_eq_natCard_of_forall_sameCycle`
 for a single cycle through every point). Points over distinct classes of the cycle quotient are
 distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
@@ -332,6 +333,19 @@ theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set
     exact ⟨e y, ⟨y, hy, rfl⟩, by simp⟩
   · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
     exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
+
+/-- Extending a permutation to `Option α` by fixing `none` keeps its cycles: a single cycle on `s`
+becomes a single cycle on the image of `s` under `some`. -/
+theorem IsCycleOn.optionCongr {σ : Perm α} {s : Set α} (h : σ.IsCycleOn s) :
+    IsCycleOn (Equiv.optionCongr σ) (some '' s) := by
+  refine ⟨⟨?_, σ.optionCongr.injective.injOn, ?_⟩, ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    exact ⟨σ x, h.1.mapsTo hx, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    obtain ⟨y, hy, rfl⟩ := h.1.surjOn hx
+    exact ⟨some y, ⟨y, hy, rfl⟩, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    exact (h.2 hx hy).map fun z ↦ by simp
 
 open _root_.Finset in
 /-- A permutation of a finite type sends as many points from outside `p` into `p` as from
