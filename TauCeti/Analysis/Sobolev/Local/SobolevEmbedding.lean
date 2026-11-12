@@ -37,8 +37,8 @@ Iterating this, a member of `W^{k,p}_loc(Ω, F)` with `1 ≤ p` and `kp > 2` lie
 This covers the exponents `p ≤ 2` of the Morrey statement for `kp > 2`.
 
 The scalar estimate is the interior Sobolev embedding of `TauCeti.W1p` on a relatively compact
-open subset, through `TauCeti.MemWkpLoc.exists_w1p`; the vector-valued estimate follows in a basis
-of `F`.
+open subset (`TauCeti.W1p.exists_eLpNorm_value_le_of_gain_le`), through
+`TauCeti.MemWkpLoc.exists_w1p`; the vector-valued estimate follows in a basis of `F`.
 
 ## Main declarations
 
@@ -74,27 +74,6 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {q s : ℝ≥0}
   [Fact (1 ≤ (q : ℝ≥0∞))] {Ω W : Opens ℂ} {V : Set ℂ} {k : ℕ} {u : ℂ → F}
-
-/-- The interior Sobolev inequality on `ℂ` for `W1p`, for every target exponent with
-`q ≤ s` and `1/q - 1/s ≤ 1/2`, including the critical one. -/
-private theorem exists_eLpNorm_value_le (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ 2⁻¹)
-    (hVc : IsCompact (closure V)) (hVW : closure V ⊆ W) :
-    ∃ C : ℝ≥0, ∀ v : W1p volume W (q : ℝ≥0∞),
-      eLpNorm (W1p.value v) s (volume.restrict V) ≤ C * ‖v‖ₑ := by
-  rcases hgap.lt_or_eq with hlt | heq
-  · exact W1p.exists_eLpNorm_value_le_of_subcritical_gain (μ := volume) hqs
-      (by rwa [Complex.finrank_real_complex, Nat.cast_ofNat]) hVc hVW
-  · have hq0 : q ≠ 0 := by
-      rintro rfl
-      exact absurd (Fact.out : (1 : ℝ≥0∞) ≤ ((0 : ℝ≥0) : ℝ≥0∞)) (by simp)
-    have hs0 : s ≠ 0 := by
-      rintro rfl
-      exact hq0 (nonpos_iff_eq_zero.1 hqs)
-    have h : s⁻¹ + 2⁻¹ = q⁻¹ := NNReal.coe_injective (by push_cast; linarith)
-    have hexp : (s : ℝ≥0∞)⁻¹ + (finrank ℝ ℂ : ℝ≥0∞)⁻¹ = (q : ℝ≥0∞)⁻¹ := by
-      rw [Complex.finrank_real_complex, ← ENNReal.coe_inv hs0, ← ENNReal.coe_inv hq0, ← h]
-      simp [ENNReal.coe_inv two_ne_zero]
-    exact W1p.exists_eLpNorm_value_le_of_isCompact_closure ENNReal.coe_ne_top hexp hVc hVW le_rfl
 
 /-- A bound for the values of `W1p volume W q` in `L^t(V)` passes to real members of
 `W^{1,q}_loc(W)`, with their `W^{1,q}(W)` norm on the right. -/
@@ -181,7 +160,8 @@ theorem exists_eLpNorm_le_mul_eLpNormWkp_one (hqs : q ≤ s)
       eLpNorm u s (volume.restrict V) ≤ C * eLpNormWkp q W 1 u :=
   exists_eLpNorm_le_mul_eLpNormWkp_one_of_w1p
     ((Fact.out : (1 : ℝ≥0∞) ≤ q).trans (ENNReal.coe_le_coe.2 hqs)) hVW
-    (exists_eLpNorm_value_le hqs hgap hVc hVW)
+    (W1p.exists_eLpNorm_value_le_of_gain_le (μ := volume) hqs
+      (by rwa [Complex.finrank_real_complex, Nat.cast_ofNat]) hVc hVW)
 
 /-- **The local `L^∞` bound for `q > 2`.** Let `2 < q < ∞`, and let `V` have compact closure
 inside the open set `W ⊆ ℂ`. There is a constant `C` such that every `u ∈ W^{1,q}_loc(W, F)`
@@ -243,11 +223,8 @@ theorem exists_eLpNormWkp_le_mul_eLpNormWkp_succ (hqs : q ≤ s)
     have hDV : HasWeakFDerivOn volume (Opens.interior (V : Set ℂ)) u D := by
       rw [Opens.interior_coe]
       exact hD.mono (SetLike.coe_subset_coe.1 (subset_closure.trans hVW))
-    have h1 : eLpNormWkp q W 1 u ≤ eLpNormWkp q W (k + 1 + 1) u := by
-      rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD, eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD,
-        eLpNormWkp_zero]
-      gcongr
-      exact eLpNorm_le_eLpNormWkp
+    have h1 : eLpNormWkp q W 1 u ≤ eLpNormWkp q W (k + 1 + 1) u :=
+      eLpNormWkp_mono_order (by omega)
     have h2 : eLpNormWkp q W (k + 1) D ≤ eLpNormWkp q W (k + 1 + 1) u := by
       rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD (k := k + 1)]
       exact le_add_self
