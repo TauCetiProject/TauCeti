@@ -128,19 +128,12 @@ abbrev thomPairOver (W : Set B) : TopPair.{w} :=
   TopPair.ofInclusion (X := TopCat.of (TotalSpace F E))
     (inter_subset_left : π F E ⁻¹' W ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' W)
 
-/-- The map of pairs `(E|_B, E₀|_B) ⟶ (E, E₀)` forgetting that every vector lies over the base. -/
-private def thomPairOverUnivHom : thomPairOver F E univ ⟶ thomPair F E :=
-  TopPair.ofHom (TopCat.isoOfHomeo ((Homeomorph.setCongr preimage_univ).trans
-      (Homeomorph.Set.univ (TotalSpace F E)))).hom
-    (TopCat.ofHom ⟨fun v ↦ ⟨v.1, v.2.2⟩, by fun_prop⟩) (by ext; rfl)
-
 /-- Over the whole base, the Thom pair `(E|_B, E₀|_B)` of the restriction is the Thom pair
 `(E, E₀)`. -/
 def thomPairOverUnivIso : thomPairOver F E univ ≅ thomPair F E :=
-  have : IsIso (TopPair.Hom.fst (thomPairOverUnivHom F E)) := (TopCat.isoOfHomeo _).isIso_hom
-  have := TopPair.isIso_of_isIso_fst_of_surjective_snd (thomPairOverUnivHom F E) fun v ↦
-    ⟨⟨v.1, trivial, v.2⟩, rfl⟩
-  asIso (thomPairOverUnivHom F E)
+  have := TopCat.isIso_restrictPreimagePairMap (X := TopCat.of (TotalSpace F E)) (π F E)
+    (zeroSectionCompl F E) (S := univ) fun _ ↦ trivial
+  asIso (TopCat.restrictPreimagePairMap _ _ univ)
 
 @[simp]
 theorem thomPairOverUnivIso_hom_fst_apply (v : π F E ⁻¹' univ) :

@@ -47,8 +47,13 @@ in the union when `A`, respectively `B`, is open
 (`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
 them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`).
 
-For a map `π : X ⟶ Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` over
-`S` includes into `(X, Z)` (`TopCat.restrictPreimagePairMap`).
+For a map `π : X → Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` over
+`S` includes into `(X, Z)` (`TopCat.restrictPreimagePairMap`), isomorphically when `S` contains
+the image of `π` (`TopCat.isIso_restrictPreimagePairMap`). For subsets `U` and `V` of `Y`, the
+union and the intersection of the pairs over `U` and over `V` are the pairs over `U ∪ V`
+(`TopCat.restrictPreimagePairUnionIso`) and over `U ∩ V` (`TopCat.restrictPreimagePairInterIso`).
+For `S ⊆ W`, restricting over `W` and then over `S` is restricting over `S`
+(`TopCat.restrictPreimagePairRestrictPreimageIso`).
 -/
 
 public section
@@ -476,11 +481,11 @@ end Preimage
 
 section RestrictPreimage
 
-variable {X Y : TopCat.{u}} (π : X ⟶ Y) (Z : Set X)
+variable {X : TopCat.{u}} {Y : Type*} (π : X → Y) (Z : Set X)
 
 /-- The inclusion `(π⁻¹ S, π⁻¹ S ∩ Z) ⟶ (X, Z)` of the restriction of the pair `(X, Z)` over a
-subset `S` of the base of a map `π : X ⟶ Y`. -/
-def restrictPreimagePairMap (S : Set Y) :
+subset `S` of the base of a map `π : X → Y`. -/
+@[expose] def restrictPreimagePairMap (S : Set Y) :
     TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) ⟶ TopPair.ofSubset Z :=
   TopPair.ofHom (ofHom (ContinuousMap.subtypeVal _)) (ofHom ⟨fun x ↦ ⟨x.1, x.2.2⟩, by fun_prop⟩)
     (by ext; rfl)
@@ -494,6 +499,101 @@ lemma restrictPreimagePairMap_fst (S : Set Y) :
     TopPair.Hom.fst (restrictPreimagePairMap π Z S) = ofHom (ContinuousMap.subtypeVal _) :=
   (rfl)
 
+/-- Over a set `S` containing the image of `π`, the pair over `S` is `(X, Z)`. -/
+lemma isIso_restrictPreimagePairMap {S : Set Y} (hS : ∀ x, π x ∈ S) :
+    IsIso (restrictPreimagePairMap π Z S) := by
+  have : IsIso (TopPair.Hom.fst (restrictPreimagePairMap π Z S)) := by
+    have he : TopPair.Hom.fst (restrictPreimagePairMap π Z S) = (isoOfHomeo (X := of ↥(π ⁻¹' S))
+        (Y := X) ((Homeomorph.setCongr (Set.eq_univ_of_forall hS)).trans
+          (Homeomorph.Set.univ X))).hom :=
+      TopCat.ext fun _ ↦ rfl
+    rw [he]
+    exact Iso.isIso_hom _
+  exact TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun z ↦ ⟨⟨z.1, hS z.1, z.2⟩, rfl⟩
+
+/-- For subsets `U` and `V` of the base, the union `(π⁻¹ U ∪ π⁻¹ V, π⁻¹ U ∩ Z ∪ π⁻¹ V ∩ Z)` of
+the pairs over `U` and over `V` is the pair over `U ∪ V`. -/
+@[expose] def restrictPreimagePairUnionIso (U V : Set Y) :
+    TopPair.ofInclusion (Set.union_subset_union
+      (Set.inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
+      (Set.inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V)) ≅
+      TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' (U ∪ V) ∩ Z ⊆ π ⁻¹' (U ∪ V)) where
+  hom := TopPair.ofHom (ofHom (ContinuousMap.inclusion fun _ h ↦ h))
+    (ofHom (ContinuousMap.inclusion fun _ h ↦
+      h.elim (fun h ↦ ⟨Or.inl h.1, h.2⟩) fun h ↦ ⟨Or.inr h.1, h.2⟩)) (by ext; rfl)
+  inv := TopPair.ofHom (ofHom (ContinuousMap.inclusion fun _ h ↦ h))
+    (ofHom (ContinuousMap.inclusion fun _ h ↦
+      h.1.elim (fun h' ↦ Or.inl ⟨h', h.2⟩) fun h' ↦ Or.inr ⟨h', h.2⟩)) (by ext; rfl)
+  hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+  inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+
+@[simp]
+lemma restrictPreimagePairUnionIso_hom_fst_apply (U V : Set Y) (x : ↥(π ⁻¹' U ∪ π ⁻¹' V)) :
+    (TopPair.Hom.fst (restrictPreimagePairUnionIso π Z U V).hom x).1 = x.1 :=
+  (rfl)
+
+@[simp]
+lemma restrictPreimagePairUnionIso_inv_fst_apply (U V : Set Y) (x : ↥(π ⁻¹' (U ∪ V))) :
+    (TopPair.Hom.fst (restrictPreimagePairUnionIso π Z U V).inv x).1 = x.1 :=
+  (rfl)
+
+/-- For subsets `U` and `V` of the base, the intersection
+`(π⁻¹ U ∩ π⁻¹ V, (π⁻¹ U ∩ Z) ∩ (π⁻¹ V ∩ Z))` of the pairs over `U` and over `V` is the pair over
+`U ∩ V`. -/
+@[expose] def restrictPreimagePairInterIso (U V : Set Y) :
+    TopPair.ofInclusion (Set.inter_subset_inter
+      (Set.inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
+      (Set.inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V)) ≅
+      TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' (U ∩ V) ∩ Z ⊆ π ⁻¹' (U ∩ V)) where
+  hom := TopPair.ofHom (ofHom (ContinuousMap.inclusion fun _ h ↦ h))
+    (ofHom (ContinuousMap.inclusion fun _ h ↦ ⟨⟨h.1.1, h.2.1⟩, h.1.2⟩)) (by ext; rfl)
+  inv := TopPair.ofHom (ofHom (ContinuousMap.inclusion fun _ h ↦ h))
+    (ofHom (ContinuousMap.inclusion fun _ h ↦ ⟨⟨h.1.1, h.2⟩, h.1.2, h.2⟩)) (by ext; rfl)
+  hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+  inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+
+@[simp]
+lemma restrictPreimagePairInterIso_hom_fst_apply (U V : Set Y) (x : ↥(π ⁻¹' U ∩ π ⁻¹' V)) :
+    (TopPair.Hom.fst (restrictPreimagePairInterIso π Z U V).hom x).1 = x.1 :=
+  (rfl)
+
+@[simp]
+lemma restrictPreimagePairInterIso_inv_fst_apply (U V : Set Y) (x : ↥(π ⁻¹' (U ∩ V))) :
+    (TopPair.Hom.fst (restrictPreimagePairInterIso π Z U V).inv x).1 = x.1 :=
+  (rfl)
+
 end RestrictPreimage
+
+section RestrictPreimageRestrictPreimage
+
+variable {X Y : TopCat.{u}} (π : X ⟶ Y) (Z : Set X) {S W : Set Y}
+
+/-- For `S ⊆ W`, restricting the pair `(X, Z)` over `W` along `π`, and then the resulting pair over
+the preimage of `S` in `W` along the restriction `π⁻¹ W ⟶ W` of `π`, is restricting `(X, Z)` over
+`S`. -/
+@[expose] def restrictPreimagePairRestrictPreimageIso (hSW : S ⊆ W) :
+    TopPair.ofInclusion (Set.inter_subset_left :
+      ofHom (π.hom.restrictPreimage W) ⁻¹' ((↑) ⁻¹' S) ∩ ((↑) ⁻¹' (π ⁻¹' W ∩ Z)) ⊆
+        ofHom (π.hom.restrictPreimage W) ⁻¹' ((↑) ⁻¹' S)) ≅
+      TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) where
+  hom := TopPair.ofHom (ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩, by fun_prop⟩)
+    (ofHom ⟨fun x ↦ ⟨x.1.1, x.2.1, x.2.2.2⟩, by fun_prop⟩) (by ext; rfl)
+  inv := TopPair.ofHom (ofHom ⟨fun x ↦ ⟨⟨x.1, hSW x.2⟩, x.2⟩, by fun_prop⟩)
+    (ofHom ⟨fun x ↦ ⟨⟨x.1, hSW x.2.1⟩, x.2.1, hSW x.2.1, x.2.2⟩, by fun_prop⟩) (by ext; rfl)
+  hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+  inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+
+@[simp]
+lemma restrictPreimagePairRestrictPreimageIso_hom_fst_apply (hSW : S ⊆ W)
+    (x : ↥(ofHom (π.hom.restrictPreimage W) ⁻¹' (((↑) : W → Y) ⁻¹' S))) :
+    (TopPair.Hom.fst (restrictPreimagePairRestrictPreimageIso π Z hSW).hom x).1 = x.1.1 :=
+  (rfl)
+
+@[simp]
+lemma restrictPreimagePairRestrictPreimageIso_inv_fst_apply (hSW : S ⊆ W) (x : ↥(π ⁻¹' S)) :
+    ((TopPair.Hom.fst (restrictPreimagePairRestrictPreimageIso π Z hSW).inv x).1).1 = x.1 :=
+  (rfl)
+
+end RestrictPreimageRestrictPreimage
 
 end TopCat
