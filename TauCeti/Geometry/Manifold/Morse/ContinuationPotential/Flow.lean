@@ -176,7 +176,7 @@ theorem maximalIntegralCurveInterval_eq_univ_of_snd_mem_Icc
   -- The model space is complete: a nonempty compact manifold is finite-dimensional.
   have : Nonempty M := ⟨z.1⟩
   have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have h0 := zero_mem_maximalIntegralCurveInterval (v := V) (x := z) hv.contMDiffAt
   refine maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
     (isCompact_univ.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1))) fun t ht ↦ ⟨mem_univ _, ?_⟩
@@ -344,7 +344,7 @@ theorem exists_tendsto_maximalIntegralCurve_atTop_of_snd_mem_Icc
       Tendsto (maximalIntegralCurve V z) atTop (𝓝 w) := by
   have : Nonempty M := ⟨z.1⟩
   have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have : CompactSpace (univ ×ˢ Icc (0 : ℝ) 1 : Set (M × ℝ)) :=
     isCompact_iff_compactSpace.1 (isCompact_univ.prod isCompact_Icc)
   obtain ⟨hanti, hrest, hfin⟩ := slabFlow_lyapunov hv hf hV hδ hf₀ hf₁ hlt hVF h₀ h₁
@@ -377,7 +377,7 @@ theorem exists_tendsto_maximalIntegralCurve_atBot_of_snd_mem_Icc
       Tendsto (maximalIntegralCurve V z) atBot (𝓝 w) := by
   have : Nonempty M := ⟨z.1⟩
   have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have : CompactSpace (univ ×ˢ Icc (0 : ℝ) 1 : Set (M × ℝ)) :=
     isCompact_iff_compactSpace.1 (isCompact_univ.prod isCompact_Icc)
   obtain ⟨hanti, hrest, hfin⟩ := slabFlow_lyapunov hv hf hV hδ hf₀ hf₁ hlt hVF h₀ h₁
