@@ -20,12 +20,14 @@ two binomial moments give an exponential-moment bound with an explicit error of 
 Products of these bounds count multidegree monomials for which the sum of these normalized
 exponents is smaller than its mean. No passage to a continuous distribution is necessary.
 
-`Finset.card_filter_sum_apply_div_le_exp` is the finite-degree Chernoff bound, and
-`Finset.card_filter_sum_apply_div_le_exp_neg` chooses its quadratic optimum. The block degrees
-may differ, and their error is measured by the sum of their reciprocals.
-`Finset.exists_bound_card_filter_sum_apply_div_le_exp_neg` absorbs that error into any positive
-slack in the exponential rate. Such bounds count the linear vanishing conditions in the
-construction of multihomogeneous auxiliary polynomials.
+`Finset.card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_le_mul_exp` is the finite-degree
+Chernoff bound. `Finset.card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le`
+evaluates it at `l = #s * (#s + 1) * η / 2`, the minimizer of the leading,
+degree-independent quadratic term. The block degrees may differ, and their error is measured
+by the sum of their reciprocals.
+`Finset.exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le`
+absorbs that error into any positive slack in the exponent of the upper bound. Such bounds count
+the linear vanishing conditions in the construction of multihomogeneous auxiliary polynomials.
 
 ## References
 
@@ -44,7 +46,7 @@ variable {ι κ : Type*} [DecidableEq ι]
 
 /-- The exponential moment of a normalized exponent of a uniformly counted degree-`N`
 monomial. The last term is a finite-degree correction; there is no upper bound on `l`. -/
-theorem sum_exp_neg_mul_finsuppAntidiag_le (s : Finset ι) {i : ι} (hi : i ∈ s)
+theorem sum_finsuppAntidiag_exp_neg_mul_div_le (s : Finset ι) {i : ι} (hi : i ∈ s)
     {N : ℕ} (hN : 0 < N) {l : ℝ} (hl : 0 ≤ l) :
     ∑ f ∈ finsuppAntidiag s N, Real.exp (-l * (f i : ℝ) / N) ≤
       (finsuppAntidiag s N).card *
@@ -103,7 +105,7 @@ theorem sum_exp_neg_mul_finsuppAntidiag_le (s : Finset ι) {i : ι} (hi : i ∈ 
 
 /-- The exponential moment of the sum of normalized exponents in independent blocks factors
 into the one-block bounds. The blocks can have different positive degrees. -/
-theorem sum_exp_neg_mul_sum_finsuppAntidiag_le [Fintype κ] [DecidableEq κ]
+theorem sum_piFinset_finsuppAntidiag_exp_neg_mul_sum_div_le [Fintype κ] [DecidableEq κ]
     (s : Finset ι) {i : ι} (hi : i ∈ s) (d : κ → ℕ) (hd : ∀ h, 0 < d h)
     {l : ℝ} (hl : 0 ≤ l) :
     ∑ f ∈ Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h)),
@@ -121,7 +123,7 @@ theorem sum_exp_neg_mul_sum_finsuppAntidiag_le [Fintype κ] [DecidableEq κ]
       (fun h g ↦ Real.exp (-l * ((g i : ℝ) / d h)))).symm
   rw [hfactor]
   refine (prod_le_prod₀ (fun _ _ ↦ sum_nonneg fun _ _ ↦ (Real.exp_pos _).le)
-    (fun h _ ↦ sum_exp_neg_mul_finsuppAntidiag_le s hi (hd h) hl)).trans_eq ?_
+    (fun h _ ↦ sum_finsuppAntidiag_exp_neg_mul_div_le s hi (hd h) hl)).trans_eq ?_
   rw [prod_mul_distrib, ← Real.exp_sum]
   congr 2
   have hcorr (h : κ) : l ^ 2 / (2 * (d h : ℝ) * s.card) =
@@ -133,7 +135,8 @@ theorem sum_exp_neg_mul_sum_finsuppAntidiag_le [Fintype κ] [DecidableEq κ]
 /-- A finite-degree lower-tail bound for multidegree monomials. At a fixed variable `i`,
 count the block exponent families with normalized sum at most `t`, by exponential Markov.
 The estimate is valid for every nonnegative exponential parameter `l`. -/
-theorem card_filter_sum_apply_div_le_exp [Fintype κ] [DecidableEq κ]
+theorem card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_le_mul_exp
+    [Fintype κ] [DecidableEq κ]
     (s : Finset ι) {i : ι} (hi : i ∈ s) (d : κ → ℕ) (hd : ∀ h, 0 < d h)
     {l : ℝ} (hl : 0 ≤ l) (t : ℝ) :
     ((Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h))).filter
@@ -156,17 +159,19 @@ theorem card_filter_sum_apply_div_le_exp [Fintype κ] [DecidableEq κ]
         exact Real.exp_le_exp.mpr (mul_le_mul_of_nonpos_left (mem_filter.mp hf).2 (by linarith))
       _ ≤ _ := sum_le_sum_of_subset_of_nonneg (filter_subset _ _)
         (fun _ _ _ ↦ (Real.exp_pos _).le)
-  have h := hmarkov.trans (sum_exp_neg_mul_sum_finsuppAntidiag_le s hi d hd hl)
+  have h := hmarkov.trans (sum_piFinset_finsuppAntidiag_exp_neg_mul_sum_div_le s hi d hd hl)
   apply (mul_le_mul_iff_left₀ (Real.exp_pos (-l * t))).mp
   convert h using 1
   rw [mul_assoc, ← Real.exp_add]
   congr 2
   ring
 
-/-- The lower-tail estimate at the quadratic optimum. Writing `q = #s` and `m = card κ`,
-the leading exponent is `-q * (q + 1) * η² * m / 4`; the displayed reciprocal-degree term is
-the finite-degree correction. -/
-theorem card_filter_sum_apply_div_le_exp_neg [Fintype κ] [DecidableEq κ]
+/-- The lower-tail estimate with `l = #s * (#s + 1) * η / 2`, the optimum of the leading,
+degree-independent quadratic, not of the full finite-degree bound. Writing `q = #s` and
+`m = card κ`, the leading exponent is `-q * (q + 1) * η² * m / 4`; the displayed
+reciprocal-degree term is the finite-degree correction. -/
+theorem card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le
+    [Fintype κ] [DecidableEq κ]
     (s : Finset ι) {i : ι} (hi : i ∈ s) (d : κ → ℕ) (hd : ∀ h, 0 < d h)
     {η : ℝ} (hη : 0 ≤ η) :
     ((Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h))).filter
@@ -175,7 +180,7 @@ theorem card_filter_sum_apply_div_le_exp_neg [Fintype κ] [DecidableEq κ]
         Real.exp (-(s.card * (s.card + 1) * η ^ 2 * Fintype.card κ / 4) +
           s.card * (s.card + 1) ^ 2 * η ^ 2 / 8 * ∑ h, (d h : ℝ)⁻¹) := by
   have hq : (0 : ℝ) < s.card := Nat.cast_pos.mpr (card_pos.mpr ⟨i, hi⟩)
-  convert card_filter_sum_apply_div_le_exp s hi d hd
+  convert card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_le_mul_exp s hi d hd
     (l := s.card * (s.card + 1) * η / 2) (by positivity)
     (Fintype.card κ / s.card - Fintype.card κ * η) using 1
   congr 2
@@ -183,11 +188,13 @@ theorem card_filter_sum_apply_div_le_exp_neg [Fintype κ] [DecidableEq κ]
   ring
 
 /-- The reciprocal-degree error in the monomial lower-tail estimate can be made arbitrarily
-small by a lower bound on every block degree. This is the limiting tail rate, stated without
-a limit or a requirement that all blocks have the same degree. -/
-theorem exists_bound_card_filter_sum_apply_div_le_exp_neg [Fintype κ] [DecidableEq κ]
-    (s : Finset ι) {i : ι} (hi : i ∈ s) {η ε : ℝ} (hη : 0 ≤ η) (hε : 0 < ε) :
-    ∃ D : ℕ, 0 < D ∧ ∀ d : κ → ℕ, (∀ h, D ≤ d h) →
+small by a lower bound on every block degree, uniform in the coordinate and block index type.
+The exponent per block approaches `-s.card * (s.card + 1) * η ^ 2 / 4`, the large-degree
+exponent of the quadratic upper bound, without requiring all blocks to have the same degree. -/
+theorem exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le
+    (s : Finset ι) {η ε : ℝ} (hη : 0 ≤ η) (hε : 0 < ε) :
+    ∃ D : ℕ, 0 < D ∧ ∀ {κ : Type*} [Fintype κ] [DecidableEq κ] (d : κ → ℕ),
+      (∀ h, D ≤ d h) → ∀ ⦃i : ι⦄, i ∈ s →
       ((Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h))).filter
         (fun f ↦ ∑ h, (f h i : ℝ) / d h ≤ Fintype.card κ / s.card - Fintype.card κ * η)).card ≤
         (∏ h, (finsuppAntidiag s (d h)).card : ℝ) *
@@ -200,7 +207,8 @@ theorem exists_bound_card_filter_sum_apply_div_le_exp_neg [Fintype κ] [Decidabl
   have hC : C ≤ ε * D := by
     have := (div_lt_iff₀ hε).mp ((le_max_right _ _).trans_lt hD)
     simpa only [mul_comm] using this.le
-  refine ⟨D, hDpos, fun d hd ↦ ?_⟩
+  refine ⟨D, hDpos, ?_⟩
+  intro κ _ _ d hd i hi
   have hdpos (h : κ) : 0 < d h := hDpos.trans_le (hd h)
   have herror : C * ∑ h, (d h : ℝ)⁻¹ ≤ ε * Fintype.card κ := by
     calc
@@ -211,7 +219,8 @@ theorem exists_bound_card_filter_sum_apply_div_le_exp_neg [Fintype κ] [Decidabl
         apply (div_le_iff₀ (Nat.cast_pos.mpr (hdpos h))).mpr
         exact hC.trans (mul_le_mul_of_nonneg_left (Nat.cast_le.mpr (hd h)) hε.le)
       _ = _ := by rw [sum_const, nsmul_eq_mul, card_univ, mul_comm]
-  refine (card_filter_sum_apply_div_le_exp_neg s hi d hdpos hη).trans ?_
+  refine (card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le
+    s hi d hdpos hη).trans ?_
   refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_)
     (prod_nonneg fun _ _ ↦ Nat.cast_nonneg _)
   dsimp [C] at herror
@@ -231,7 +240,7 @@ example (d : Fin 3 → ℕ) (hd : ∀ h, 0 < d h) :
       (fun f ↦ ∑ h, (f h 0 : ℝ) / d h ≤ 3 / 4)).card ≤
       (∏ h, (finsuppAntidiag (univ : Finset (Fin 2)) (d h)).card : ℝ) *
         Real.exp (-9 / 32 + 9 / 64 * ∑ h, (d h : ℝ)⁻¹) := by
-  have h := card_filter_sum_apply_div_le_exp_neg
+  have h := card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le
     (univ : Finset (Fin 2)) (mem_univ 0) d hd (η := 1 / 4) (by norm_num)
   norm_num only [card_univ, Fintype.card_fin] at h
   simpa only [neg_div] using h
