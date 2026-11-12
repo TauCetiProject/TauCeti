@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
-/-! # Convergence in measure from a vanishing high-probability rate
+/-! # Convergence in measure: high-probability rates and continuous transformations
 
 A standard way to consume concentration inequalities: if for each index `i` the
 deviation `edist (f i x) (g x)` exceeds some deterministic `rate i` only on a
@@ -18,6 +18,9 @@ statements are converted into `MeasureTheory.TendstoInMeasure`.
 No measurability is required of the exceptional sets, since the squeeze only
 uses monotonicity of the (outer) measure; the index runs along an arbitrary
 filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
+
+On finite measure spaces, continuous binary transformations preserve sequential convergence
+in measure whenever the transformed functions are almost everywhere strongly measurable.
 
 ## Main results
 
@@ -33,7 +36,7 @@ filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 
 ## Source
 
-Adapted from the Davis--Kahan/DKPS formalization,
+The high-probability rate lemmas are adapted from the Davis--Kahan/DKPS formalization,
 `ForMathlib/MeasureTheory/Function/ConvergenceInMeasure.lean` at `fc38eb4`,
 by Claude Fable 5 (Kitware, Inc., Apache-2.0).
 -/
@@ -107,3 +110,32 @@ theorem tendstoInMeasure_of_tendsto_measure_dist_le_rate [PseudoMetricSpace E]
   simp_rw [not_le]
 
 end TauCeti
+
+namespace MeasureTheory.TendstoInMeasure
+
+open Filter
+open scoped Topology
+
+/-- A continuous binary transformation preserves convergence in measure of two sequences on
+a finite measure space, provided the transformed functions are almost everywhere strongly
+measurable. The transformation need not be uniformly continuous or bounded. -/
+theorem continuous_comp₂ {α E₁ E₂ E₃ : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] [PseudoEMetricSpace E₁] [PseudoEMetricSpace E₂]
+    [PseudoEMetricSpace E₃] {f₁ : ℕ → α → E₁} {f₂ : ℕ → α → E₂}
+    {g₁ : α → E₁} {g₂ : α → E₂}
+    (h₁ : TendstoInMeasure μ f₁ atTop g₁) (h₂ : TendstoInMeasure μ f₂ atTop g₂)
+    {φ : E₁ → E₂ → E₃} (hφ : Continuous (Function.uncurry φ))
+    (hf : ∀ n, AEStronglyMeasurable (fun x ↦ φ (f₁ n x) (f₂ n x)) μ) :
+    TendstoInMeasure μ (fun n x ↦ φ (f₁ n x) (f₂ n x)) atTop
+      (fun x ↦ φ (g₁ x) (g₂ x)) := by
+  apply (exists_seq_tendstoInMeasure_atTop_iff hf).2
+  intro ns hns
+  obtain ⟨ns₁, hns₁, hlim₁⟩ := (h₁.comp hns.tendsto_atTop).exists_seq_tendsto_ae
+  obtain ⟨ns₂, hns₂, hlim₂⟩ :=
+    (h₂.comp (hns.tendsto_atTop.comp hns₁.tendsto_atTop)).exists_seq_tendsto_ae
+  refine ⟨ns₁ ∘ ns₂, hns₁.comp hns₂, ?_⟩
+  filter_upwards [hlim₁, hlim₂] with x hx₁ hx₂
+  exact (hφ.tendsto (g₁ x, g₂ x)).comp
+    ((hx₁.comp hns₂.tendsto_atTop).prodMk_nhds hx₂)
+
+end MeasureTheory.TendstoInMeasure
