@@ -52,14 +52,13 @@ time coordinates `u` is `TauCeti.quarticSliceGluing p q j c A ρ`, at the gluing
 smooth in `ρ` on all of `ℝ^ι` (`TauCeti.contDiff_quarticSliceGluing`). At `ρ = 0` it is the slice
 point of the broken trajectory whose coordinates in `A` have already moved and whose other moving
 coordinates have not: a point on the trajectory from the critical point `A.piecewise q p` to
-`(insert j A).piecewise q p` (`TauCeti.tendsto_quarticWellSumFlow_quarticSliceGluing_zero`). When
-the time separations tend to infinity with these signs, the slice points converge to it
-(`TauCeti.tendsto_quarticSliceGluing_zero`).
+`(insert j A).piecewise q p`
+(`TauCeti.tendsto_quarticWellSumFlow_quarticSliceGluing_zero_atBot_atTop`). When the time
+separations tend to infinity with these signs, the slice points converge to it
+(`TauCeti.tendsto_quarticWellSumFlow_quarticTrajectoryPoint_nhds_quarticSliceGluing_zero`).
 
 ## Main definitions
 
-* `TauCeti.intervalBaseSourceGluing`, `TauCeti.intervalBaseTargetGluing`: the unit-rate trajectory
-  in the gluing parameter at its two ends.
 * `TauCeti.quarticTimeCoordinate`: the time coordinates of a point of the cube.
 * `TauCeti.quarticTrajectoryPoint`: the point with prescribed time coordinates on the trajectories
   between two critical points.
@@ -67,17 +66,13 @@ the time separations tend to infinity with these signs, the slice points converg
 
 ## Main results
 
-* `TauCeti.intervalBaseOrbit_one_add_log`, `TauCeti.intervalBaseOrbit_one_sub_log`,
-  `TauCeti.contDiff_intervalBaseSourceGluing`, `TauCeti.contDiff_intervalBaseTargetGluing`,
-  `TauCeti.hasDerivAt_intervalBaseSourceGluing_zero`,
-  `TauCeti.hasDerivAt_intervalBaseTargetGluing_zero`: smoothness in the gluing parameter at both
-  ends, to first order at the maximum and to second order at the minimum.
 * `TauCeti.setOf_tendsto_quarticWellSumFlow_eq_range`,
   `TauCeti.exists_quarticWellSumFlow_quarticTrajectoryPoint_eq_iff`: the trajectory spaces.
 * `TauCeti.contDiff_quarticSliceGluing`,
   `TauCeti.quarticWellSumFlow_quarticTrajectoryPoint_eq_quarticSliceGluing`,
-  `TauCeti.tendsto_quarticWellSumFlow_quarticSliceGluing_zero`,
-  `TauCeti.tendsto_quarticSliceGluing_zero`: smooth slice evaluation up to the broken trajectories.
+  `TauCeti.tendsto_quarticWellSumFlow_quarticSliceGluing_zero_atBot_atTop`,
+  `TauCeti.tendsto_quarticWellSumFlow_quarticTrajectoryPoint_nhds_quarticSliceGluing_zero`: smooth
+  slice evaluation up to the broken trajectories.
 
 ## References
 
@@ -97,97 +92,6 @@ noncomputable section
 open Real Set Filter Topology
 
 namespace TauCeti
-
-/-! ### The unit-rate trajectory in the gluing parameter -/
-
-/-- The unit-rate trajectory `q = TauCeti.intervalBaseOrbit 1` near its source `0`, read in the
-gluing parameter `ρ = e^{s - a}`: `q (a + log ρ) = ρ / √(ρ² + e^{-2a})` for `ρ > 0`
-(`TauCeti.intervalBaseOrbit_one_add_log`). The right side is defined and smooth for every real
-`ρ`, and vanishes at `ρ = 0`, the critical point `0`, to first order. -/
-def intervalBaseSourceGluing (a ρ : ℝ) : ℝ := ρ / √(ρ ^ 2 + exp (-(2 * a)))
-
-theorem intervalBaseSourceGluing_apply (a ρ : ℝ) :
-    intervalBaseSourceGluing a ρ = ρ / √(ρ ^ 2 + exp (-(2 * a))) := (rfl)
-
-/-- The unit-rate trajectory `q = TauCeti.intervalBaseOrbit 1` near its target `1`, read in the
-gluing parameter `ρ = e^{a - s}`: `q (a - log ρ) = 1 / √(1 + e^{-2a} ρ²)` for `ρ > 0`
-(`TauCeti.intervalBaseOrbit_one_sub_log`). The right side is defined and smooth for every real
-`ρ`, and equals the critical point `1` at `ρ = 0`, which it approaches to second order. -/
-def intervalBaseTargetGluing (a ρ : ℝ) : ℝ := (√(1 + exp (-(2 * a)) * ρ ^ 2))⁻¹
-
-theorem intervalBaseTargetGluing_apply (a ρ : ℝ) :
-    intervalBaseTargetGluing a ρ = (√(1 + exp (-(2 * a)) * ρ ^ 2))⁻¹ := (rfl)
-
-private theorem exp_two_mul_log {ρ : ℝ} (hρ : 0 < ρ) : exp (2 * log ρ) = ρ ^ 2 := by
-  rw [← exp_log (pow_pos hρ 2), log_pow]
-  norm_num
-
-/-- **The source end in the gluing parameter**: `q (a + log ρ) = ρ / √(ρ² + e^{-2a})`. -/
-theorem intervalBaseOrbit_one_add_log (a : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
-    intervalBaseOrbit 1 (a + log ρ) = intervalBaseSourceGluing a ρ := by
-  have hρ2 : 0 < ρ ^ 2 := pow_pos hρ 2
-  have he : exp (-(2 * 1 * (a + log ρ))) = exp (-(2 * a)) / ρ ^ 2 := by
-    rw [show -(2 * 1 * (a + log ρ)) = -(2 * a) - 2 * log ρ by ring, exp_sub, exp_two_mul_log hρ]
-  rw [intervalBaseOrbit_apply, he, intervalBaseSourceGluing_apply,
-    show 1 + exp (-(2 * a)) / ρ ^ 2 = (ρ ^ 2 + exp (-(2 * a))) / ρ ^ 2 by field_simp,
-    sqrt_div' _ hρ2.le, sqrt_sq hρ.le, inv_div]
-
-/-- **The target end in the gluing parameter**: `q (a - log ρ) = 1 / √(1 + e^{-2a} ρ²)`. -/
-theorem intervalBaseOrbit_one_sub_log (a : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
-    intervalBaseOrbit 1 (a - log ρ) = intervalBaseTargetGluing a ρ := by
-  rw [intervalBaseOrbit_apply, intervalBaseTargetGluing_apply,
-    show -(2 * 1 * (a - log ρ)) = -(2 * a) + 2 * log ρ by ring, exp_add, exp_two_mul_log hρ]
-
-@[simp]
-theorem intervalBaseSourceGluing_zero (a : ℝ) : intervalBaseSourceGluing a 0 = 0 := by
-  simp [intervalBaseSourceGluing_apply]
-
-@[simp]
-theorem intervalBaseTargetGluing_zero (a : ℝ) : intervalBaseTargetGluing a 0 = 1 := by
-  simp [intervalBaseTargetGluing_apply]
-
-/-- The target end is an even function of the gluing parameter. -/
-@[simp]
-theorem intervalBaseTargetGluing_neg (a ρ : ℝ) :
-    intervalBaseTargetGluing a (-ρ) = intervalBaseTargetGluing a ρ := by
-  simp [intervalBaseTargetGluing_apply]
-
-theorem contDiff_intervalBaseSourceGluing (a : ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (intervalBaseSourceGluing a) := by
-  rw [funext (intervalBaseSourceGluing_apply a)]
-  exact contDiff_id.div (((contDiff_id.pow 2).add contDiff_const).sqrt fun _ ↦ by positivity)
-    fun _ ↦ by positivity
-
-theorem contDiff_intervalBaseTargetGluing (a : ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (intervalBaseTargetGluing a) := by
-  rw [funext (intervalBaseTargetGluing_apply a)]
-  exact (contDiff_const.add (contDiff_const.mul (contDiff_id.pow 2))).sqrt
-    (fun _ ↦ by positivity) |>.inv fun _ ↦ by positivity
-
-/-- **Rate `1` at the source**: the source end leaves `0` with derivative `e^a` in the gluing
-parameter. -/
-theorem hasDerivAt_intervalBaseSourceGluing_zero (a : ℝ) :
-    HasDerivAt (intervalBaseSourceGluing a) (exp a) 0 := by
-  have hD : HasDerivAt (fun ρ : ℝ ↦ ρ ^ 2 + exp (-(2 * a))) 0 0 := by
-    simpa using (hasDerivAt_pow 2 (0 : ℝ)).add_const (exp (-(2 * a)))
-  have hs : √(exp (-(2 * a))) = exp (-a) := by
-    rw [← exp_half]
-    congr 1
-    ring
-  rw [funext (intervalBaseSourceGluing_apply a)]
-  refine ((hasDerivAt_id (0 : ℝ)).div (hD.sqrt (by positivity)) (by positivity)).congr_deriv ?_
-  simp only [id, zero_pow two_ne_zero, zero_add, hs, zero_div, zero_mul, sub_zero, one_mul]
-  rw [sq, div_mul_cancel_left₀ (exp_pos _).ne', ← exp_neg, neg_neg]
-
-/-- **Rate `2` at the target**: the target end reaches `1` with vanishing derivative in the
-gluing parameter. -/
-theorem hasDerivAt_intervalBaseTargetGluing_zero (a : ℝ) :
-    HasDerivAt (intervalBaseTargetGluing a) 0 0 := by
-  have hD : HasDerivAt (fun ρ : ℝ ↦ 1 + exp (-(2 * a)) * ρ ^ 2) 0 0 := by
-    simpa using ((hasDerivAt_pow 2 (0 : ℝ)).const_mul (exp (-(2 * a)))).const_add 1
-  rw [funext (intervalBaseTargetGluing_apply a)]
-  refine ((hD.sqrt (by positivity)).inv (by positivity)).congr_deriv ?_
-  simp
 
 /-! ### Trajectory spaces of the quartic on the cube -/
 
@@ -244,18 +148,24 @@ private theorem eq_neg_one_or_eq_one_of_ne (hq : ∀ i, q i = -1 ∨ q i = 0 ∨
   · exact absurd (hpq i h ▸ hi.symm) h
   · exact .inr hi
 
-/-- The moving coordinate `±q(t)` of a trajectory point lies in `(-1, 1)`, does not vanish, and has
-absolute value `q(t)` and sign `±1`. -/
-private theorem mem_Ioo_and_abs_eq {σ : ℝ} (hσ : σ = -1 ∨ σ = 1) (t : ℝ) :
-    σ * intervalBaseOrbit 1 t ∈ Ioo (-1) 1 ∧ σ * intervalBaseOrbit 1 t ≠ 0 ∧
-      |σ * intervalBaseOrbit 1 t| = intervalBaseOrbit 1 t ∧
-        (SignType.sign (σ * intervalBaseOrbit 1 t) : ℝ) = σ := by
+/-- The moving coordinate `±q(t)` of a trajectory point lies in `(-1, 1)`. -/
+private theorem mul_intervalBaseOrbit_mem_Ioo {σ : ℝ} (hσ : σ = -1 ∨ σ = 1) (t : ℝ) :
+    σ * intervalBaseOrbit 1 t ∈ Ioo (-1) 1 := by
   obtain ⟨h0, h1⟩ := intervalBaseOrbit_mem_Ioo 1 t
+  rcases hσ with rfl | rfl <;> constructor <;> linarith
+
+/-- The moving coordinate `±q(t)` of a trajectory point has absolute value `q(t)`. -/
+private theorem abs_mul_intervalBaseOrbit {σ : ℝ} (hσ : σ = -1 ∨ σ = 1) (t : ℝ) :
+    |σ * intervalBaseOrbit 1 t| = intervalBaseOrbit 1 t := by
+  rcases hσ with rfl | rfl <;> simp [abs_of_pos (intervalBaseOrbit_mem_Ioo 1 t).1]
+
+/-- The moving coordinate `±q(t)` of a trajectory point has sign `±1`. -/
+private theorem sign_mul_intervalBaseOrbit {σ : ℝ} (hσ : σ = -1 ∨ σ = 1) (t : ℝ) :
+    (SignType.sign (σ * intervalBaseOrbit 1 t) : ℝ) = σ := by
+  have h0 := (intervalBaseOrbit_mem_Ioo 1 t).1
   rcases hσ with rfl | rfl
-  · refine ⟨⟨by linarith, by linarith⟩, by simp [h0.ne'], by simp [abs_of_pos h0], ?_⟩
-    simp [sign_neg (neg_neg_of_pos h0 : -intervalBaseOrbit 1 t < 0)]
-  · refine ⟨⟨by linarith, by linarith⟩, by simp [h0.ne'], by simp [abs_of_pos h0], ?_⟩
-    simp [sign_pos h0]
+  · simp [sign_neg (neg_neg_of_pos h0 : -intervalBaseOrbit 1 t < 0)]
+  · simp [sign_pos h0]
 
 /-- A critical point of the quartic is fixed by its flow. -/
 private theorem intervalBaseFlow_of_mem {t : ℝ} (ht : t = -1 ∨ t = 0 ∨ t = 1) (s : ℝ) :
@@ -293,8 +203,9 @@ theorem quarticWellSumFlow_quarticTrajectoryPoint (hp : ∀ i, p i = -1 ∨ p i 
     · rw [one_mul, one_mul, intervalBaseFlow_intervalBaseOrbit]
 
 /-- **The trajectory points lie on trajectories from `p` to `q`.** -/
-theorem tendsto_quarticWellSumFlow_quarticTrajectoryPoint (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1)
-    (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (hpq : ∀ i, p i ≠ q i → p i = 0) (u : ι → ℝ) :
+theorem tendsto_quarticWellSumFlow_quarticTrajectoryPoint_atBot_atTop
+    (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1) (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1)
+    (hpq : ∀ i, p i ≠ q i → p i = 0) (u : ι → ℝ) :
     Tendsto (fun s ↦ quarticWellSumFlow s (quarticTrajectoryPoint p q u)) atBot (𝓝 p) ∧
       Tendsto (fun s ↦ quarticWellSumFlow s (quarticTrajectoryPoint p q u)) atTop (𝓝 q) := by
   refine (tendsto_quarticWellSumFlow_atBot_atTop_iff (quarticTrajectoryPoint_mem_Icc hp hq u)).2
@@ -306,8 +217,9 @@ theorem tendsto_quarticWellSumFlow_quarticTrajectoryPoint (hp : ∀ i, p i = -1 
     · exact .inl ⟨by rw [hi]; norm_num, hi, by rw [← h, hi]; simp⟩
     · exact .inr ⟨.inr hi, rfl, h ▸ rfl⟩
   · rw [quarticTrajectoryPoint_apply_of_ne u h]
-    obtain ⟨hI, -, -, hs⟩ := mem_Ioo_and_abs_eq (eq_neg_one_or_eq_one_of_ne hq hpq h) (u i)
-    exact .inl ⟨hI, hpq i h, hs.symm⟩
+    have hσ := eq_neg_one_or_eq_one_of_ne hq hpq h
+    exact .inl ⟨mul_intervalBaseOrbit_mem_Ioo hσ (u i), hpq i h,
+      (sign_mul_intervalBaseOrbit hσ (u i)).symm⟩
 
 /-- **Every point on a trajectory from `p` to `q` is a trajectory point**, with its own time
 coordinates. -/
@@ -339,7 +251,7 @@ theorem setOf_tendsto_quarticWellSumFlow_eq_range (hp : ∀ i, p i = -1 ∨ p i 
   Subset.antisymm
     (fun _ ⟨hy, hp', hq'⟩ ↦ ⟨_, quarticTrajectoryPoint_quarticTimeCoordinate hy hp' hq'⟩)
     (range_subset_iff.2 fun u ↦ ⟨quarticTrajectoryPoint_mem_Icc hp hq u,
-      tendsto_quarticWellSumFlow_quarticTrajectoryPoint hp hq hpq u⟩)
+      tendsto_quarticWellSumFlow_quarticTrajectoryPoint_atBot_atTop hp hq hpq u⟩)
 
 /-- The time coordinates of a trajectory point, in its moving coordinates, are the prescribed
 ones. -/
@@ -347,7 +259,7 @@ theorem quarticTimeCoordinate_quarticTrajectoryPoint (hq : ∀ i, q i = -1 ∨ q
     (hpq : ∀ i, p i ≠ q i → p i = 0) (u : ι → ℝ) {i : ι} (hi : p i ≠ q i) :
     quarticTimeCoordinate (quarticTrajectoryPoint p q u) i = u i := by
   rw [quarticTimeCoordinate_apply, quarticTrajectoryPoint_apply_of_ne u hi,
-    (mem_Ioo_and_abs_eq (eq_neg_one_or_eq_one_of_ne hq hpq hi) (u i)).2.2.1,
+    abs_mul_intervalBaseOrbit (eq_neg_one_or_eq_one_of_ne hq hpq hi) (u i),
     intervalBaseTimeCoordinate_intervalBaseOrbit, one_mul]
 
 /-- **The time coordinates of the moving coordinates determine a trajectory point.** -/
@@ -446,10 +358,10 @@ theorem quarticWellSumFlow_quarticTrajectoryPoint_eq_quarticSliceGluing
   · rw [ite_eq_left hij, hij, sub_add_cancel, intervalBaseOrbit_one_intervalBaseTimeCoordinate hc]
   rw [ite_eq_right hij]
   by_cases hA : i ∈ A
-  · rw [ite_eq_left hA, ite_eq_left hA, ← intervalBaseOrbit_one_sub_log _ (exp_pos _), log_exp,
-      sub_neg_eq_add, add_sub, sub_add_eq_add_sub]
-  · rw [ite_eq_right hA, ite_eq_right hA, ← intervalBaseOrbit_one_add_log _ (exp_pos _), log_exp,
-      add_sub, sub_add_eq_add_sub]
+  · rw [ite_eq_left hA, ite_eq_left hA, ← intervalBaseOrbit_one_sub_log _ (exp_pos _), log_exp]
+    ring_nf
+  · rw [ite_eq_right hA, ite_eq_right hA, ← intervalBaseOrbit_one_add_log _ (exp_pos _), log_exp]
+    ring_nf
 
 /-- **Positive gluing parameters give trajectory points.** At gluing parameters which are positive
 on the moving coordinates other than `j`, the slice evaluation is the trajectory point with time
@@ -503,7 +415,7 @@ theorem quarticSliceGluing_zero (hpq : ∀ i, p i ≠ q i → p i = 0) {j : ι} 
 the slice evaluation lies on a trajectory from the critical point `A.piecewise q p` to
 `(insert j A).piecewise q p`: the piece through the slice of the broken trajectory from `p` to `q`
 on which the coordinates in `A` move before `j`, and the other moving coordinates after it. -/
-theorem tendsto_quarticWellSumFlow_quarticSliceGluing_zero
+theorem tendsto_quarticWellSumFlow_quarticSliceGluing_zero_atBot_atTop
     (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1) (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1)
     (hpq : ∀ i, p i ≠ q i → p i = 0) {j : ι} {c : ℝ} (hc : c ∈ Ioo 0 1) {A : Finset ι}
     (hjA : j ∉ A) :
@@ -512,8 +424,8 @@ theorem tendsto_quarticWellSumFlow_quarticSliceGluing_zero
       Tendsto (fun s ↦ quarticWellSumFlow s (quarticSliceGluing p q j c A 0)) atTop
         (𝓝 ((insert j A).piecewise q p)) := by
   rw [quarticSliceGluing_zero hpq hc hjA]
-  refine tendsto_quarticWellSumFlow_quarticTrajectoryPoint (fun i ↦ ?_) (fun i ↦ ?_)
-    (fun i hi ↦ ?_) _
+  refine tendsto_quarticWellSumFlow_quarticTrajectoryPoint_atBot_atTop (fun i ↦ ?_)
+    (fun i ↦ ?_) (fun i hi ↦ ?_) _
   · exact Finset.piecewise_cases _ _ _ (fun t ↦ t = -1 ∨ t = 0 ∨ t = 1) (hq i) (hp i)
   · exact Finset.piecewise_cases _ _ _ (fun t ↦ t = -1 ∨ t = 0 ∨ t = 1) (hq i) (hp i)
   · -- Only `j` changes between the two critical points, and it has not moved in the first.
@@ -528,10 +440,11 @@ theorem tendsto_quarticWellSumFlow_quarticSliceGluing_zero
 separations `uᵢ - uⱼ` tending to `+∞` for the moving coordinates `i ∈ A` and to `-∞` for the other
 moving coordinates `i ≠ j`. Then their slice points on `{|yⱼ| = c}` converge to the slice evaluation
 at zero gluing parameters, a point of the broken trajectory
-(`TauCeti.tendsto_quarticWellSumFlow_quarticSliceGluing_zero`). -/
-theorem tendsto_quarticSliceGluing_zero {α : Type*} {l : Filter α}
-    (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1) (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) {j : ι}
-    {c : ℝ} (hc : c ∈ Ioo 0 1) {A : Finset ι} {u : α → ι → ℝ}
+(`TauCeti.tendsto_quarticWellSumFlow_quarticSliceGluing_zero_atBot_atTop`). -/
+theorem tendsto_quarticWellSumFlow_quarticTrajectoryPoint_nhds_quarticSliceGluing_zero
+    {α : Type*} {l : Filter α} (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1)
+    (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) {j : ι} {c : ℝ} (hc : c ∈ Ioo 0 1) {A : Finset ι}
+    {u : α → ι → ℝ}
     (hA : ∀ i ∈ A, p i ≠ q i → i ≠ j → Tendsto (fun n ↦ u n i - u n j) l atTop)
     (hA' : ∀ i ∉ A, p i ≠ q i → i ≠ j → Tendsto (fun n ↦ u n i - u n j) l atBot) :
     Tendsto (fun n ↦ quarticWellSumFlow (intervalBaseTimeCoordinate c - u n j)
