@@ -94,6 +94,8 @@ theorem exact_homologyMap_homologyLift [PathConnectedSpace Y]
     (hRange : (FundamentalGroup.mapOfEq f.hom h).range = φ.ker) :
     Function.Exact (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
       (homologyLift y φ) := by
+  -- The evaluation theorem is stated for raw types. Both rewrites below use `(X := Y)`
+  -- to match its `TopCat.of ↑Y` homology carrier with bundled `Y` by definitional equality.
   intro a
   obtain ⟨b, rfl⟩ := (hurewiczHomologyAddEquiv y).surjective a
   obtain ⟨g, rfl⟩ := Abelianization.exists_eq_ofMul_of b
