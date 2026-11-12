@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContDiff.Matrix
 public import TauCeti.Analysis.Sobolev.Wkp.SmoothMultiplication
 
 /-!
@@ -22,12 +23,11 @@ the same way on the components of `F`-valued Sobolev maps in a basis `b` of `F`,
 `g` in the bases `b` and `b'` (`TauCeti.Wkp.contDiffOnOperatorSMulL`): the components of the
 product are the components in `b'` of `g x` applied to the vector with components `u l x`
 (`TauCeti.Wkp.value_contDiffOnOperatorSMulL_ae`). These are the multiplications by the coordinate
-changes of a vector bundle that relate the chart data of a Sobolev section in two charts.
+changes of a vector bundle that relate the chart data of a Sobolev section in two charts. The
+smoothness of the matrix entries of `g` is `Module.Basis.contDiffOn_repr_apply`.
 
 ## Main declarations
 
-* `Module.Basis.contDiffOn_repr_apply`: the matrix entries of a smooth operator-valued function
-  are smooth.
 * `TauCeti.Wkp.contDiffOnMatrixSMulL`: multiplication by a smooth matrix of functions.
 * `TauCeti.Wkp.value_contDiffOnMatrixSMulL_ae`: its components are the pointwise matrix products.
 * `TauCeti.Wkp.contDiffOnOperatorSMulL`: multiplication by a smooth operator-valued coefficient in
@@ -41,22 +41,6 @@ noncomputable section
 
 open MeasureTheory Module TopologicalSpace
 open scoped ContDiff
-
-namespace Module.Basis
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {U : Set E} {ι κ : Type*}
-  {F F' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup F']
-  [NormedSpace ℝ F'] {g : E → F →L[ℝ] F'}
-
-/-- The entries of the matrix of a smooth operator-valued function in bases of the source and
-target spaces are smooth. -/
-theorem contDiffOn_repr_apply (b : Basis ι ℝ F) (b' : Basis κ ℝ F') [FiniteDimensional ℝ F']
-    (hg : ContDiffOn ℝ ∞ g U) (m : κ) (l : ι) :
-    ContDiffOn ℝ ∞ (fun x ↦ b'.repr (g x (b l)) m) U :=
-  ((b'.coord m).toContinuousLinearMap.contDiff.comp_contDiffOn
-    (hg.clm_apply (contDiffOn_const (c := b l)))).congr fun _ _ ↦ by simp
-
-end Module.Basis
 
 namespace TauCeti
 
