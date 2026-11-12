@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
+public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.OrbitLog
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Zeta
 public import TauCeti.Geometry.Symplectic.Manifold.FixedPoint
 import TauCeti.LinearAlgebra.Matrix.ToLin
@@ -51,6 +52,14 @@ local Lefschetz indices of the periodic points `x i` of `φ^[d i * n]`
 Identifying these labels with the determinant signs of the twisted normal operators of the orbit
 tori is not done here.
 
+When `x` consists of one point on each periodic orbit, with least periods `d i`, the orbit zeta
+function is also the exponential of a sum over the fixed points of the iterates of `φ`
+(`TauCeti.SmoothMappingTorus.orbitZeta_eq_exp_tsum`). So the product of the orbit-torus series is
+`exp (∑_{n ≥ 1} ∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y) e^[γ_(n, y)] / n)`, where `[γ_(n, y)]` is
+the class of the closed orbit of period `n` through `y`
+(`SmoothMappingTorus.exp_tsum_eq_mapRingHom_tprod_fixedPointDerivative`). For each `n` the inner
+coefficients are the local Lefschetz indices of the fixed points of `φ^[n]`.
+
 ## Main results
 
 * `TauCeti.SmoothMappingTorus.hasProd_ofPowerSeries_torusWeightSeries_closedOrbitHomologyClass`:
@@ -62,6 +71,9 @@ tori is not done here.
   `SmoothMappingTorus.orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative`:
   the same statements for an area-preserving map of a surface, with the orbit tori labelled by the
   linearized return maps of the orbits.
+* `TauCeti.SmoothMappingTorus.exp_tsum_eq_mapRingHom_tprod_fixedPointDerivative`: for one point on
+  each periodic orbit, the product of the orbit-torus series is the exponential of the signed sum
+  over the fixed points of the iterates.
 
 ## References
 
@@ -248,5 +260,47 @@ theorem orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivat
   simp only [hit]
   -- As above, `key` and the goal differ only in how the tangent space is written.
   exact key
+
+
+section FixedPoints
+
+/-! ### The orbit-torus series from the fixed points of the iterates -/
+
+include hφ in
+/-- **The orbit-torus series from the fixed points of the iterates.** Let `φ` be a diffeomorphism
+of a compact surface preserving a nondegenerate two-form `σ`, nondegenerate up to every period,
+and let `x` be a family of orbit representatives of its periodic points: every periodic point lies
+on the orbit of exactly one `x i`. Label the orbit torus of `x i` by its linearized return map
+`D i = d(φ^[d i])_(x i)`, `d i` the least period of `x i`. Then, over any `ℚ`-algebra `K`, the
+product of the substituted orbit-torus series is
+`exp (∑_{n ≥ 1} ∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y) / n · e^[γ_(n, y)])` in
+`Nov(K, H₁(Y_φ; ℤ), N)`, where `[γ_(n, y)]` is the class of the closed orbit of period `n` through
+`y`. -/
+theorem exp_tsum_eq_mapRingHom_tprod_fixedPointDerivative (hE : Module.finrank ℝ E = 2)
+    (hσ : σ.IsNondegenerate) (hφσ : SmoothForm.mpullback φ φ.contMDiff σ = σ)
+    (hx : ∀ i, x i ∈ periodicPts φ) (hrep : ∀ y ∈ periodicPts φ, ∃! i, ∃ j, (⇑φ)^[j] (x i) = y)
+    (K : Type*) [CommRing K] [Algebra ℚ K] :
+    NormedSpace.exp (∑' q : {q : ℕ × M // 0 < q.1 ∧ IsPeriodicPt φ q.1 q.2},
+        (single (closedOrbitHomologyClass q.2.2) (algebraMap ℚ K
+          ((SignType.sign (LinearMap.det (LinearMap.id -
+            fixedPointDerivative I (⇑φ)^[q.1.1] ⟨q.1.2, q.2.2.eq⟩)) : ℤ) / q.1.1)) :
+          NovikovSeries K _ (timePeriodHom φ))) =
+      mapRingHom (Int.castRingHom K) (AddMonoidHom.id _) ⟨1, one_pos, by simp⟩
+        (∏' i, ofPowerSeries (closedOrbitHomologyClass (isPeriodicPt_minimalPeriod φ (x i)))
+          (timePeriodHom_closedOrbitHomologyClass_pos _
+            (minimalPeriod_pos_of_mem_periodicPts (hx i)))
+          (torusWeightSeries
+            (decide (0 < LinearMap.det (LinearMap.id - fixedPointDerivative I
+              (⇑φ)^[minimalPeriod φ (x i)] ⟨x i, (isPeriodicPt_minimalPeriod φ (x i)).eq⟩)))
+            (if LinearMap.det (LinearMap.id + fixedPointDerivative I
+                (⇑φ)^[minimalPeriod φ (x i)] ⟨x i, (isPeriodicPt_minimalPeriod φ (x i)).eq⟩) < 0
+              then 1 else 0))) := by
+  rw [← orbitZeta_eq_exp_tsum (fun n hn ↦ (hφ n).finite_ptsOfPeriod φ.continuous hn le_rfl) hx
+    hrep K]
+  exact orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative hφ
+    (injective_of_existsUnique_iterate_eq hx hrep) (fun i ↦ isPeriodicPt_minimalPeriod φ (x i))
+    (fun i ↦ minimalPeriod_pos_of_mem_periodicPts (hx i)) hE hσ hφσ K
+
+end FixedPoints
 
 end TauCeti.SmoothMappingTorus
