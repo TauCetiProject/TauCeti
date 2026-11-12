@@ -23,7 +23,8 @@ coefficients, and choose a positive root `β = ∑ mⱼ αⱼ` with `mⱼ ≤ n�
 exist because some `nⱼ` is nonzero and the corresponding simple root qualifies. At a simple index
 `k`, either `mₖ < nₖ`, and then maximality says `β + αₖ` is not a root, so `⟨β, αₖ^∨⟩ ≥ 0`; or
 `mₖ = nₖ`, and then `lam + β` is `mu` minus a natural combination of the *other* simple roots,
-each of which pairs nonpositively with `αₖ^∨`. Either way `lam + β` is nonnegative on `αₖ^∨`.
+each of which pairs nonpositively with `αₖ^∨` (`RootPairing.coroot'_sum_nsmul_root_nonpos`).
+Either way `lam + β` is nonnegative on `αₖ^∨`.
 
 Only signs of simple-coroot values are used: neither endpoint needs to be integral, the root
 pairing need not span its weight space, and central directions are kept. For coweights apply the
@@ -31,8 +32,6 @@ statement to `P.flip` and `b.flip`.
 
 ## Main results
 
-* `RootPairing.coroot'_sum_nsmul_root_nonpos`: a natural combination of the simple roots other
-  than `αₖ` pairs nonpositively with `αₖ^∨`.
 * `RootPairing.stembridge_step`: **Stembridge's lemma**, the existence of a positive root `β`
   with `lam + β` dominant and `mu - (lam + β) ∈ Q⁺`.
 
@@ -52,19 +51,6 @@ open TauCeti
 variable {ι R M N : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   (P : RootPairing ι R M N) [Finite ι] [P.IsCrystallographic] (b : P.Base)
-
-/-- A natural combination of simple roots in which `αₖ` does not occur pairs nonpositively with
-the simple coroot `αₖ^∨`, since distinct simple roots have nonpositive Cartan integers. -/
-theorem coroot'_sum_nsmul_root_nonpos {k : ι} (hk : k ∈ b.support) {c : ι → ℕ} (hck : c k = 0) :
-    P.coroot' k (∑ j ∈ b.support, c j • P.root j) ≤ 0 := by
-  rw [map_sum]
-  refine Finset.sum_nonpos fun j hj => ?_
-  rw [map_nsmul, root_coroot'_eq_pairing]
-  rcases eq_or_ne j k with rfl | hjk
-  · simp [hck]
-  · refine nsmul_nonpos ?_ _
-    rw [← P.algebraMap_pairingIn ℤ, algebraMap_int_eq, eq_intCast, Int.cast_nonpos]
-    exact b.pairingIn_le_zero_of_ne hjk hj hk
 
 /-- **Stembridge's lemma.** Let `lam` and `mu` be distinct dominant weights with `mu - lam` in
 the positive root cone `Q⁺`. Then there is a positive root `β` such that `lam + β` is dominant
