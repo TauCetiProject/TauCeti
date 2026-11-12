@@ -67,7 +67,6 @@ theorem integrable_inv_semicircleReal {a : ℝ} {v : ℝ≥0} (h : 2 * √v ≤ 
 theorem integral_inv_semicircleReal {a : ℝ} {v : ℝ≥0} (hv : 0 < v) (h : 2 * √v ≤ a) :
     ∫ x, x⁻¹ ∂semicircleReal a v = (a - √(a ^ 2 - 4 * v)) / (2 * v) := by
   have hr : 0 < 2 * √v := by positivity
-  have hv' : (0 : ℝ) < v := by exact_mod_cast hv
   rw [semicircleReal_def, integral_map (by fun_prop) measurable_inv.aestronglyMeasurable,
     integral_semicircleMeasure_eq_intervalIntegral]
   simp only [smul_eq_mul]

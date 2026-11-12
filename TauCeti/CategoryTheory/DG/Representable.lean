@@ -402,7 +402,7 @@ private theorem dgApp_v_dgId_mem_ker (α : DGNatTrans (dgRepresentable R X) F) :
   Cochain.v_apply_mem_ker_of_δ_eq_zero _
     ((dgDifferential_linearHomComplex R 0 _).symm.trans
       ((mem_dgCycles R).1 (α.dgApp_mem_dgCycles _)))
-    rfl (dgDifferential_dgId R X)
+    (dgDifferential_dgId R X)
 
 /-- **A DG natural transformation out of `Hom(-, X)` is determined by its value at the
 identity**: its component at `Y` sends `g` to `F(g)` applied to that value. -/

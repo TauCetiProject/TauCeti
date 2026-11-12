@@ -77,11 +77,10 @@ theorem singularCup_fst_snd_singularCup_fst_snd {p q p' q' m m' r s n : ℕ} (hm
   -- reassociate, move `pr₂^* c` past `pr₁^* a'` by left commutativity, and reassociate back; the
   -- pairing `λ_ (𝟙_ _)` is associative and commutative, as the multiplication of the monoid `𝟙_ _`
   rw [← singularCup_naturality, ← singularCup_naturality,
-    singularCup_assoc_tensorUnit _ k (μ := (λ_ _).hom) (MonObj.mul_assoc _) hm hn rfl (by omega),
+    singularCup_assoc_unit _ k hm hn rfl (by omega),
     singularCup_left_comm_tensorUnit _ k (μ := (λ_ _).hom) (IsCommMonObj.mul_comm _)
       (MonObj.mul_assoc _) hs (by omega) hm' rfl, map_zsmul,
-    ← singularCup_assoc_tensorUnit _ k (μ := (λ_ _).hom) (MonObj.mul_assoc _) hr hrs (by omega)
-      (by omega), mul_comm]
+    ← singularCup_assoc_unit _ k hr hrs (by omega) (by omega), mul_comm]
 
 variable {X Y}
 
@@ -122,8 +121,7 @@ theorem singularCup_singularCohomologyMap_snd_add_singularCup {p q q' m m' n s :
     (rfl : q + q' = q + q') (by omega) a c a c'
   rw [ha, map_zero, LinearMap.map_zero₂, smul_zero] at h₁
   -- `(pr₁^* a ⌣ pr₂^* c) ⌣ pr₂^* b' = pr₁^* a ⌣ pr₂^* (c ⌣ b')`
-  have h₂ := (X ⊗ Y).singularCup_assoc_tensorUnit k (μ := (λ_ _).hom) (MonObj.mul_assoc _) hm hn
-    (by omega : q + m' = s) hs
+  have h₂ := (X ⊗ Y).singularCup_assoc_unit k hm hn (by omega : q + m' = s) hs
     (TopCat.singularCohomologyMap (fst X Y) p a) (TopCat.singularCohomologyMap (snd X Y) q c)
     (TopCat.singularCohomologyMap (snd X Y) m' b')
   rw [singularCup_naturality] at h₂

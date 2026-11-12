@@ -125,7 +125,7 @@ private theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_mul_ta
   obtain ⟨e₁, a, ha, he₁⟩ :=
     exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_mul_padicPow hn ⟨e₀ r, hmem⟩ h
   set t : Fin n → freeProP 2 (Fin n) :=
-    fun i ↦ (isProP_freeProP 2 (Fin n)).padicPow (of i) (a i) with ht_def
+    fun i ↦ (isProP_freeProP 2 (Fin n)).padicPow (of i) (a i)
   have ht : ∀ i, t i ∈ (Subgroup.closure {of i}).topologicalClosure := fun i ↦ by
     simpa only [closedZpowers_def, Subgroup.zpowers_eq_closure] using
       (isProP_freeProP 2 (Fin n)).padicPow_mem_closedZpowers (of i) (a i)

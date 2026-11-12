@@ -123,16 +123,16 @@ theorem linearIndependent_mk_iff (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ �
   refine ⟨fun hli ↦ isOrthonormalFamily_def.2 fun s a ↦ le_antisymm ?_ ?_,
     linearIndependent_mk_of_isOrthonormalFamily⟩
   · -- The ultrametric upper bound.
-    refine (Finset.nnnorm_sum_le_sup_nnnorm _ _).trans (Finset.sup_mono_fun fun i _ ↦ ?_)
-    refine (nnnorm_smul_le _ _).trans (mul_le_of_le_one_right' ?_)
-    rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]
+    refine (Finset.nnNorm_sum_le_sup_nnNorm _ _).trans (Finset.sup_mono_fun fun i _ ↦ ?_)
+    refine (nnNorm_smul_le _ _).trans (mul_le_of_le_one_right' ?_)
+    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
     exact mem_unitClosedBallSubmodule.mp (e i).2
   -- For the lower bound, rescale the coefficients so that their largest norm is one.
   classical
   rcases s.eq_empty_or_nonempty with rfl | hs
   · simp
   obtain ⟨j, hj, hjsup⟩ := Finset.exists_mem_eq_sup s hs fun i ↦ ‖a i‖₊
-  rw [hjsup, ← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm]
+  rw [hjsup, ← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
   rcases (norm_nonneg (a j)).eq_or_lt with h0 | hpos
   · rw [← h0]
     exact norm_nonneg _
@@ -144,7 +144,7 @@ theorem linearIndependent_mk_iff (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ �
     rw [← smul_eq_mul, ϖ.norm_zpow_smul]
   have hb (i : I) (hi : i ∈ s) : ‖((ϖ.unit ^ (-n) : Rˣ) : R) * a i‖ ≤ 1 := by
     have hai : ‖a i‖ ≤ c ^ n := by
-      rw [hn, ← coe_nnnorm, ← coe_nnnorm, NNReal.coe_le_coe, ← hjsup]
+      rw [hn, ← coe_nnNorm, ← coe_nnNorm, NNReal.coe_le_coe, ← hjsup]
       exact Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi
     rw [hnorm_b, zpow_neg]
     exact inv_mul_le_one_of_le₀ hai (zpow_nonneg ϖ.norm_pos.le n)

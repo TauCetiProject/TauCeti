@@ -140,6 +140,12 @@ theorem nonUnitalJacobson_eq_toTwoSided_jacobson :
     rw [isQuasiregular_iff_isUnit]
     simpa only [add_mul, Algebra.smul_def] using h (algebraMap R B r + b)
 
+variable {R B} in
+/-- An algebra that already has an identity has zero radical in the external-unitization sense
+exactly when its ordinary Jacobson radical is zero. -/
+theorem nonUnitalJacobson_eq_bot_iff : nonUnitalJacobson R B = ⊥ ↔ Ring.jacobson B = ⊥ := by
+  simp [TwoSidedIdeal.ext_iff, Ideal.mem_toTwoSided, Submodule.ext_iff]
+
 end Unital
 
 end TauCeti

@@ -21,12 +21,14 @@ same class. Hence restriction descends to an isometric identification of the quo
 continuous dual of `E` by the annihilator of `S` with the continuous dual of `S`. This is the
 counterpart of the identification of the dual of `E ⧸ S` with the annihilator of `S`.
 
-The annihilator is Mathlib's `Submodule.orthogonalBilin` for `topDualPairing`. No completeness or
-closedness assumption is needed, and `E` may be seminormed. The kernel computation holds over any
-nontrivially normed field; surjectivity and the isometry use the Hahn–Banach theorem
-`exists_extension_norm_eq`, so they are stated over fields satisfying `IsRCLikeNormedField`.
-Over such fields, a vector outside a closed submodule is also separated from it by a continuous
-linear functional vanishing on the submodule.
+The annihilator is Mathlib's `Submodule.orthogonalBilin` for `topDualPairing`, and the duals carry
+the topology of bounded convergence. The kernel computation holds over any normed field, for any
+topology on `E`. Surjectivity uses the Hahn–Banach theorem `StrongDual.exists_extension`, so it is
+stated for polynormable spaces (including all seminormed spaces) over fields satisfying
+`IsRCLikeNormedField`. The isometry is stated for seminormed spaces over such fields and uses the
+norm-preserving Hahn–Banach theorem `exists_extension_norm_eq`; no completeness or closedness
+assumption is needed. Over such fields, a vector outside a closed submodule of a seminormed space
+is also sent to `1` by a continuous linear functional vanishing on the submodule.
 
 This is the standard subspace-duality theorem; see Megginson, *An Introduction to Banach Space
 Theory*, §2.6. It is the continuous analogue of Mathlib's algebraic
@@ -37,9 +39,9 @@ public section
 
 namespace Submodule
 
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+section Topological
+
+variable {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
 
 /-- Restriction to a submodule kills exactly the annihilator of that submodule. -/
 theorem ker_precomp_subtypeL (S : Submodule 𝕜 E) :
@@ -48,29 +50,39 @@ theorem ker_precomp_subtypeL (S : Submodule 𝕜 E) :
   ext f
   simp [ContinuousLinearMap.ext_iff]
 
-section HahnBanach
+end Topological
 
-variable [IsRCLikeNormedField 𝕜]
+section Polynormable
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E] [PolynormableSpace 𝕜 E]
 
 /-- Every continuous linear functional on a submodule is the restriction of a continuous linear
 functional on the whole space. -/
 theorem surjective_precomp_subtypeL (S : Submodule 𝕜 E) :
     Function.Surjective
-      (ContinuousLinearMap.precomp 𝕜 S.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S) := by
-  intro g
-  obtain ⟨f, hf, -⟩ := exists_extension_norm_eq S g
-  exact ⟨f, ContinuousLinearMap.ext hf⟩
+      (ContinuousLinearMap.precomp 𝕜 S.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S) :=
+  fun g ↦ (StrongDual.exists_extension S g).imp fun _ ↦ ContinuousLinearMap.ext
 
-/-- A vector outside a closed submodule is detected by a continuous linear functional vanishing on
-the submodule. -/
-theorem exists_dual_forall_mem_eq_zero_ne_zero {S : Submodule 𝕜 E} (hS : IsClosed (S : Set E))
-    {x : E} (hx : x ∉ S) : ∃ f : StrongDual 𝕜 E, (∀ y ∈ S, f y = 0) ∧ f x ≠ 0 := by
+end Polynormable
+
+section HahnBanach
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A vector outside a closed submodule is sent to `1` by a continuous linear functional vanishing
+on the submodule. -/
+theorem exists_dual_forall_mem_eq_zero_eq_one {S : Submodule 𝕜 E} (hS : IsClosed (S : Set E))
+    {x : E} (hx : x ∉ S) : ∃ f : StrongDual 𝕜 E, (∀ y ∈ S, f y = 0) ∧ f x = 1 := by
+  -- As `S` is closed, `E ⧸ S` is a normed space, so it has a separating dual over the `RCLike`
+  -- structure of `𝕜`; a functional on it sending the class of `x` to `1` pulls back to `E`.
   let := IsRCLikeNormedField.rclike 𝕜
-  let := hS
-  by_contra! h
-  refine hx ((Submodule.Quotient.mk_eq_zero S).1
-    (SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun f ↦ ?_))
-  exact h (f.comp S.mkQL) fun y hy ↦ by simp [(Submodule.Quotient.mk_eq_zero S).2 hy]
+  obtain ⟨f, hf⟩ := SeparatingDual.exists_eq_one (R := 𝕜)
+    (mt (Submodule.Quotient.mk_eq_zero S).1 hx)
+  refine ⟨f.comp S.mkQL, fun y hy ↦ by simp [(Submodule.Quotient.mk_eq_zero S).2 hy], ?_⟩
+  rwa [ContinuousLinearMap.comp_apply, mkQL_apply, mkQ_apply]
 
 /-- The continuous dual of a submodule is isometrically the quotient of the continuous dual of
 the whole space by the annihilator of the submodule. The map sends the class of a functional to
@@ -95,7 +107,8 @@ noncomputable def quotientAnnihilatorEquivDual (S : Submodule 𝕜 E) :
         simpa [sub_eq_zero] using (mem_orthogonalBilin.mp hfg) x x.2
       calc
         ‖f.comp S.subtypeL‖ = ‖g.comp S.subtypeL‖ := by rw [hres]
-        _ ≤ ‖g‖ := ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg g) fun x ↦ g.le_opNorm x
+        _ ≤ ‖g‖ * ‖S.subtypeL‖ := g.opNorm_comp_le _
+        _ ≤ ‖g‖ := mul_le_of_le_one_right (norm_nonneg g) S.norm_subtypeL_le
         _ < _ := hlt
     · -- A norm-preserving extension of the restriction represents the same class.
       obtain ⟨g, hg, hnorm⟩ := exists_extension_norm_eq S (f.comp S.subtypeL)
