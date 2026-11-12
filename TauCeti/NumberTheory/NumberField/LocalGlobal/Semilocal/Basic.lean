@@ -153,7 +153,7 @@ theorem semilocalHom_surjective : Function.Surjective (semilocalHom L v) := by
     rintro _ ⟨x, rfl⟩
     exact ⟨1 ⊗ₜ x, funext fun w ↦ by simp⟩
   intro y
-  exact s.closed_of_finiteDimensional.closure_subset_iff.mpr hs
+  exact s.isClosed_of_finiteDimensional.closure_subset_iff.mpr hs
     (denseRange_algebraMap_pi_liesOver L v y)
 
 attribute [local instance] Fintype.ofFinite in
