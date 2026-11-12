@@ -70,6 +70,29 @@ variable (X F : TopCat.{w}) (n : ℕ) {ι : ℕ → Type u} [∀ p, DecidableEq 
   (b : ∀ p, Module.Basis (ι p) k
     (F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p))
 
+/-- **The Leray–Hirsch map of the product** `X × F` in degree `n`,
+`⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ⟶ Hⁿ(X × F; k)`, sending `a` in the summand indexed by
+`p + q = n` and `i : ι p` to `pr₁^* a ⌣ pr₂^* (b p i)`: the Leray–Hirsch map `TopCat.lerayHirsch`
+of the projection `X × F ⟶ X` and the pullbacks of the classes `b p i` along `X × F ⟶ F`. -/
+abbrev lerayHirschProd :
+    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) →ₗ[k]
+      (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n :=
+  lerayHirsch (fst X F) n fun p i ↦ TopCat.singularCohomologyMap (snd X F) p (b p i)
+
+/-- The Leray–Hirsch map of `X × F` sends `a` in the summand indexed by `p + q = n` and `i : ι p`
+to `pr₁^* a ⌣ pr₂^* (b p i)`. -/
+lemma lerayHirschProd_lof (p q : ℕ) (h : p + q = n) (i : ι p)
+    (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
+    lerayHirschProd X F n b (DirectSum.lof k _ (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n},
+        ι pq.1.1 ↦
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
+        ⟨⟨(p, q), h⟩, i⟩ a) =
+      (X ⊗ F).singularCup k (λ_ _).inv (λ_ _).hom q p n (by omega)
+        (TopCat.singularCohomologyMap (fst X F) q a)
+        (TopCat.singularCohomologyMap (snd X F) p (b p i)) :=
+  lerayHirsch_lof _ n _ p q h i a
+
 section Bijective
 
 variable {X F n}
@@ -276,6 +299,13 @@ lemma lerayHirschProdEquiv_apply
     lerayHirschProdEquiv X b hF a =
       lerayHirsch (fst X F) n (fun p i ↦ TopCat.singularCohomologyMap (snd X F) p (b p i)) a :=
   (rfl)
+
+/-- **The Leray–Hirsch theorem for a product**, stated with `TopCat.lerayHirschProd`. -/
+theorem lerayHirschProd_bijective
+    (hF : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
+      (𝟙_ (ModuleCat.{w} k))).obj F)) :
+    Function.Bijective (lerayHirschProd X F n b) :=
+  lerayHirsch_fst_bijective X b hF
 
 end Bijective
 
