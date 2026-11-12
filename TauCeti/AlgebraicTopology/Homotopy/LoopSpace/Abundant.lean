@@ -5,10 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Quaternion
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Compact
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LivesOver
 public import TauCeti.Topology.MappingSpace.Evaluation
 public import TauCeti.Topology.Sphere.Suspension
+
+import Mathlib.Geometry.Manifold.Instances.Sphere
+import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FirstHomology
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
+import TauCeti.AlgebraicTopology.Singular.ProdThomPair
+import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
+import TauCeti.AlgebraicTopology.Sphere.Puncture
+import TauCeti.Topology.MappingSpace.Sphere.Group
 
 /-!
 # Spaces abundant with 2-spheres
@@ -54,6 +63,13 @@ that lives over the fundamental class keeps doing so after subtracting any `σ_*
 of the localization along `σ` and `ev`. So abundance is exactly the existence of such a class
 (`TauCeti.isAbundantWithTwoSpheres_iff_exists_homologyMap_eq_zero`).
 
+The unit sphere `S³ ⊆ ℍ` is abundant with 2-spheres. As `S³` is a topological group,
+`Map(S², S³) ≃ₜ S³ × Ω²S³` over `S³` (`TauCeti.sphereGroupHomeomorphIteratedLoopSpace`). Excising
+to a stereographic chart identifies `H₄(S³ × Ω²S³, (S³ ∖ {1}) × Ω²S³)` with
+`H₁(Ω²S³; ℤ) ≅ π₃(S³) ≅ ℤ` (`TauCeti.prodThomPairSingularHomologyIso`), and the localization
+`H₄(S³ × Ω²S³) → H₄(S³ × Ω²S³, (S³ ∖ {1}) × Ω²S³)` is onto because `S³ ∖ {1}` is contractible.
+So some class of degree `4 > 3` lives over the fundamental class.
+
 ## Main definitions
 
 * `TauCeti.IsAbundantWithTwoSpheres R b`: some class of `Hₖ(Map(S², Q); R)` lives over the
@@ -70,6 +86,8 @@ of the localization along `σ` and `ev`. So abundance is exactly the existence o
 * `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub_zsmul`:
   for a compact oriented `n`-manifold, a class of degree `n` makes it abundant when it
   lives over the fundamental class modulo the multiples of the class `σ_*[Q]` of constant spheres.
+* `TauCeti.isAbundantWithTwoSpheres_sphere_quaternion`: the unit sphere `S³` of the quaternions is
+  abundant with 2-spheres at `1`, in degree `4`.
 
 ## References
 
@@ -196,5 +214,167 @@ theorem isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub_zsmul {b : Q}
     α).2 hα⟩
 
 end HomologicalOrientation
+
+section Sphere3
+
+/-! ### The three-sphere -/
+
+open Metric Topology AlgebraicTopology Quaternion
+open scoped Topology.Homotopy
+
+local instance : Fact (Module.finrank ℝ ℍ = 3 + 1) := ⟨Quaternion.finrank_eq_four⟩
+
+/-- The double loop space `Ω²S³` of the unit sphere of the quaternions, at `1`. -/
+private abbrev DoubleLoopSphere3 : Type := Ω (Ω (sphere (0 : ℍ) 1) 1) (Path.refl 1)
+
+/-- `H₁(Ω²S³; ℤ) ≅ π₃(S³) ≅ ℤ` is nontrivial. -/
+private theorem nontrivial_homology_doubleLoopSphere3 :
+    Nontrivial (((singularChains ℤ).obj (TopCat.of DoubleLoopSphere3)).homology 1) := by
+  have : Subsingleton (π_ 2 (sphere (0 : ℍ) 1) 1) :=
+    subsingleton_homotopyGroup_sphere_of_lt (n := 3) (by simp [Quaternion.finrank_eq_four])
+      (by simp) 1
+  have := (pathConnectedSpace_doubleLoopSpace_iff (1 : sphere (0 : ℍ) 1)).2 this
+  let b : OrthonormalBasis (Fin 4) ℝ ℍ :=
+    (stdOrthonormalBasis ℝ ℍ).reindex (finCongr (Quaternion.finrank_eq_four (R := ℝ)))
+  exact ((pathLoopSpaceFirstHomologyAddEquiv (Path.refl (1 : sphere (0 : ℍ) 1))).symm.trans
+    ((HomotopyGroup.pathLoopSpaceMulEquiv 1).toAdditive.trans
+      (homotopyGroupSphereAddEquiv (n := 1) b 1))).toEquiv.nontrivial
+
+/-- `1 ∈ S³` lies in the stereographic chart from `-1`. -/
+private theorem one_mem_stereographic'_neg_one_source :
+    (1 : sphere (0 : ℍ) 1) ∈ (stereographic' 3 (-1 : sphere (0 : ℍ) 1)).source := by
+  rw [stereographic'_source, Set.mem_compl_singleton_iff, Ne, Subtype.ext_iff]
+  intro h
+  have := congrArg QuaternionAlgebra.re h
+  norm_num at this
+
+/-- The open embedding `Ω²S³ × ℝ³ → S³ × Ω²S³`, `(ω, v) ↦ (φ⁻¹(v + φ(1)), ω)`, for the
+stereographic chart `φ` from `-1`; it sends `Ω²S³ × {0}` onto the fibre `{1} × Ω²S³`. -/
+private def chartEmbedding :
+    C(DoubleLoopSphere3 × EuclideanSpace ℝ (Fin 3), sphere (0 : ℍ) 1 × DoubleLoopSphere3) :=
+  ⟨fun p ↦ ((stereographic' 3 (-1 : sphere (0 : ℍ) 1)).symm
+    (p.2 + stereographic' 3 (-1 : sphere (0 : ℍ) 1) 1), p.1), by
+    have : Continuous (stereographic' 3 (-1 : sphere (0 : ℍ) 1)).symm :=
+      continuousOn_univ.1
+        (by simpa using (stereographic' 3 (-1 : sphere (0 : ℍ) 1)).continuousOn_symm)
+    fun_prop⟩
+
+private theorem isOpenEmbedding_chartEmbedding : IsOpenEmbedding chartEmbedding := by
+  have he : IsOpenEmbedding (stereographic' 3 (-1 : sphere (0 : ℍ) 1)).symm :=
+    (stereographic' 3 (-1 : sphere (0 : ℍ) 1)).symm.isOpenEmbedding (by simp)
+  have ht : IsOpenEmbedding fun p : DoubleLoopSphere3 × EuclideanSpace ℝ (Fin 3) ↦
+      (p.2 + stereographic' 3 (-1 : sphere (0 : ℍ) 1) 1, p.1) :=
+    ((Homeomorph.addRight (stereographic' 3 (-1 : sphere (0 : ℍ) 1) 1)).prodCongr
+      (Homeomorph.refl _)).isOpenEmbedding.comp (Homeomorph.prodComm _ _).isOpenEmbedding
+  -- `chartEmbedding` is the inverse chart on the first factor after the translation and swap.
+  have hj : ⇑chartEmbedding = Prod.map (stereographic' 3 (-1 : sphere (0 : ℍ) 1)).symm id ∘
+      fun p : DoubleLoopSphere3 × EuclideanSpace ℝ (Fin 3) ↦
+        (p.2 + stereographic' 3 (-1 : sphere (0 : ℍ) 1) 1, p.1) := rfl
+  rw [hj]
+  exact (he.prodMap IsOpenEmbedding.id).comp ht
+
+private theorem preimage_chartEmbedding :
+    chartEmbedding ⁻¹' (Prod.fst ⁻¹' {(1 : sphere (0 : ℍ) 1)}) = Prod.snd ⁻¹' {0} := by
+  ext ⟨ω, v⟩
+  simp only [chartEmbedding, Set.mem_preimage, ContinuousMap.coe_mk, Set.mem_singleton_iff]
+  rw [eq_comm, (stereographic' 3 (-1 : sphere (0 : ℍ) 1)).eq_symm_apply
+    one_mem_stereographic'_neg_one_source (by simp), eq_comm, add_eq_right]
+
+/-- Excision along `chartEmbedding`: its map of local homology is an isomorphism. -/
+private theorem isIso_localHomologyMap_chartEmbedding :
+    IsIso (localHomologyMap (ModuleCat.of ℤ ℤ) chartEmbedding
+      preimage_chartEmbedding.subset 4) := by
+  refine isIso_localHomologyMap _ _ isOpenEmbedding_chartEmbedding preimage_chartEmbedding
+    (isClosed_singleton.preimage continuous_fst) ?_ 4
+  rintro ⟨g, ω⟩ (rfl : g = 1)
+  refine ⟨(ω, 0), Prod.ext ?_ rfl⟩
+  change (stereographic' 3 (-1 : sphere (0 : ℍ) 1)).symm
+    (0 + stereographic' 3 (-1 : sphere (0 : ℍ) 1) 1) = 1
+  rw [zero_add, (stereographic' 3 (-1 : sphere (0 : ℍ) 1)).left_inv
+    one_mem_stereographic'_neg_one_source]
+
+/-- `H₄(S³ × Ω²S³, (S³ ∖ {1}) × Ω²S³) ≅ H₁(Ω²S³)` is nontrivial. -/
+private theorem nontrivial_localHomology_sphere3 :
+    Nontrivial (localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ ℤ)
+      (Prod.fst ⁻¹' {(1 : sphere (0 : ℍ) 1)} : Set (sphere (0 : ℍ) 1 × DoubleLoopSphere3)) 4) := by
+  let e := (prodThomPairSingularHomologyIso (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ ℤ)
+    DoubleLoopSphere3 (EuclideanSpace ℝ (Fin 3)) 1 4 (by simp)).symm ≪≫
+      @asIso _ _ _ _ _ isIso_localHomologyMap_chartEmbedding
+  have : Nontrivial (((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
+      (ModuleCat.of ℤ ℤ)).obj (TopCat.of DoubleLoopSphere3)) :=
+    nontrivial_homology_doubleLoopSphere3
+  exact e.symm.toLinearEquiv.toEquiv.nontrivial
+
+/-- The complement `(S³ ∖ {1}) × Ω²S³` of the fibre over `1` is homotopy equivalent to `Ω²S³`
+through the projection, since `S³ ∖ {1}` is contractible. -/
+private def complFiberHomotopyEquiv :
+    ContinuousMap.HomotopyEquiv
+      ((Prod.fst ⁻¹' {(1 : sphere (0 : ℍ) 1)})ᶜ : Set (sphere (0 : ℍ) 1 × DoubleLoopSphere3))
+      DoubleLoopSphere3 :=
+  have : ContractibleSpace ({1}ᶜ : Set (sphere (0 : ℍ) 1)) :=
+    contractibleSpace_sphere_compl_singleton 1
+  let h : ((Prod.fst ⁻¹' {(1 : sphere (0 : ℍ) 1)})ᶜ :
+      Set (sphere (0 : ℍ) 1 × DoubleLoopSphere3)) ≃ₜ
+        ({1}ᶜ : Set (sphere (0 : ℍ) 1)) × DoubleLoopSphere3 :=
+    { toFun := fun x ↦ (⟨x.1.1, x.2⟩, x.1.2)
+      invFun := fun y ↦ ⟨(y.1.1, y.2), y.1.2⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      continuous_toFun := by fun_prop
+      continuous_invFun := by fun_prop }
+  h.toHomotopyEquiv.trans
+    (((ContractibleSpace.hequiv_unit' (X := ({1}ᶜ : Set (sphere (0 : ℍ) 1)))).some.prodCongr
+      (ContinuousMap.HomotopyEquiv.refl _)).trans (Homeomorph.punitProd _).toHomotopyEquiv)
+
+/-- The localization `H₄(S³ × Ω²S³) → H₄(S³ × Ω²S³, (S³ ∖ {1}) × Ω²S³)` is onto: the next map
+`H₃((S³ ∖ {1}) × Ω²S³) → H₃(S³ × Ω²S³)` of the pair sequence is injective, as its composite with
+the projection to `Ω²S³` is an isomorphism. -/
+private theorem epi_fiberLocalization_sphere3 :
+    Epi (fiberLocalization (ModuleCat.of ℤ ℤ)
+      (Prod.fst : sphere (0 : ℍ) 1 × DoubleLoopSphere3 → sphere (0 : ℍ) 1) 1 4) := by
+  let P : TopPair := TopPair.ofSubset ((Prod.fst ⁻¹' {(1 : sphere (0 : ℍ) 1)})ᶜ :
+    Set (TopCat.of (sphere (0 : ℍ) 1 × DoubleLoopSphere3)))
+  let snd : P.fst ⟶ TopCat.of DoubleLoopSphere3 := TopCat.ofHom ContinuousMap.snd
+  have : IsIso (SSet.homologyMap (TopCat.toSSet.map P.map) (ModuleCat.of ℤ ℤ) 3 ≫
+      SSet.homologyMap (TopCat.toSSet.map snd) (ModuleCat.of ℤ ℤ) 3) := by
+    have := (complFiberHomotopyEquiv.singularHomologyIso (ModuleCat.of ℤ ℤ) 3).isIso_hom
+    rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom, singularHomologyFunctor_obj_map]
+      at this
+    rw [← SSet.homologyMap_comp, ← CategoryTheory.Functor.map_comp]
+    exact this
+  have hmono : Mono (SSet.homologyMap (TopCat.toSSet.map P.map) (ModuleCat.of ℤ ℤ) 3) :=
+    mono_of_mono _ (SSet.homologyMap (TopCat.toSSet.map snd) (ModuleCat.of ℤ ℤ) 3)
+  have hδ := (P.singularHomology_exact_subspace (ModuleCat.of ℤ ℤ) 4 3).mono_g_iff.1 hmono
+  exact (P.singularHomology_exact_relative (ModuleCat.of ℤ ℤ) 4 3).epi_f_iff.2 hδ
+
+/-- **The three-sphere is abundant with 2-spheres.** For the unit sphere `S³` of the quaternions,
+some class of `H₄(Map(S², S³); ℤ)` lives over the fundamental class at `1`; as `4 > 3`, this makes
+`S³` abundant with 2-spheres at `1`. -/
+theorem isAbundantWithTwoSpheres_sphere_quaternion :
+    IsAbundantWithTwoSpheres (ModuleCat.of ℤ ℤ) (1 : sphere (0 : ℍ) 1) := by
+  have := nontrivial_localHomology_sphere3
+  obtain ⟨y, hy⟩ := exists_ne (0 : (localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ ℤ)
+    (Prod.fst ⁻¹' {(1 : sphere (0 : ℍ) 1)} : Set (sphere (0 : ℍ) 1 × DoubleLoopSphere3)) 4 :
+      ModuleCat.{0} ℤ))
+  obtain ⟨α, rfl⟩ := (ModuleCat.epi_iff_surjective _).1 epi_fiberLocalization_sphere3 y
+  -- Transport `α` along `S³ × Ω²S³ ≃ₜ Map(S², S³)`, whose inverse is evaluation at the north pole
+  -- on the first factor.
+  let h : sphere (0 : ℍ) 1 × DoubleLoopSphere3 ≃ₜ C(Sphere2, sphere (0 : ℍ) 1) :=
+    sphereGroupHomeomorphIteratedLoopSpace 2 _ Sphere2.north
+  have hfst : Prod.fst ∘ ⇑(h.symm : C(C(Sphere2, sphere (0 : ℍ) 1),
+      sphere (0 : ℍ) 1 × DoubleLoopSphere3)) = mappingSpaceEval Sphere2.north :=
+    funext fun f ↦ (sphereGroupHomeomorphIteratedLoopSpace_symm_fst (k := 2)
+      (s₀ := Sphere2.north) f).trans (mappingSpaceEval_apply _ f).symm
+  refine isAbundantWithTwoSpheres_of_livesOverFundamentalClass_of_lt
+    (E := EuclideanSpace ℝ (Fin 3)) (n := 3) (by simp) (by norm_num)
+    (α := (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+      (h : C(sphere (0 : ℍ) 1 × DoubleLoopSphere3, C(Sphere2, sphere (0 : ℍ) 1)))))
+        (ModuleCat.of ℤ ℤ) 4).hom α) ?_
+  refine LivesOverFundamentalClass.of_homologyMap _ _ hfst ?_
+  rw [homologyMap_comp_homologyMap_of_comp_eq_id_apply _ _ _
+    (ContinuousMap.ext h.symm_apply_apply) 4]
+  exact (livesOverFundamentalClass_iff _ _ _ _).2 hy
+
+end Sphere3
 
 end TauCeti
