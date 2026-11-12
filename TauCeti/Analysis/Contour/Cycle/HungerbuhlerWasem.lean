@@ -22,9 +22,9 @@ immersions rooted off `S` and satisfy the regularity conditions (A′) and (B),
 `PV ∮_C f = 2πi · ∑_{s ∈ S} n_s(C) · Res_s f`,
 
 each singularity weighted by the **generalized, non-integer** winding number of the cycle about
-it — so the singularities may lie **on** `C`. This removes the first of the narrowings the
-roadmap records for the pinned single-curve form
-(`TauCeti.Contour.hungerbuhlerWasem_residueTheorem`), which the paper states for a cycle.
+it — so the singularities may lie **on** `C`. This extends the single-curve form
+(`TauCeti.Contour.hungerbuhlerWasem_residueTheorem`) to a cycle, the setting in which the paper
+states it.
 
 Just as for the classical residue theorem for cycles
 (`TauCeti.Contour.Cycle.classicalResidueTheorem_nullHomologous`), this is not the single-curve
