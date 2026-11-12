@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Basic facts about monoid algebras
@@ -36,6 +37,8 @@ none of the further theory built on it.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
+* `MonoidAlgebra.isRightRegular_single_sub_one`: in a group algebra over a ring, right
+  multiplication by `single g 1 - 1` is injective when `g` has infinite order.
 
 ## References
 
@@ -215,5 +218,42 @@ omit [CommSemiring R] in
 theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebra R G) :
     (single g (1 : R) * x * single g⁻¹ 1).coeff h = x.coeff (g⁻¹ * h * g) := by
   simp [mul_assoc]
+
+section InfiniteOrder
+
+variable {R : Type*} [Ring R] {G : Type*} [Group G]
+
+/-- In a group algebra over a ring, right multiplication by `single g 1 - 1` is injective when `g`
+has infinite order. An element `x` with `x * single g 1 = x` has the same coefficient at `h` and
+at `h * g⁻¹`, hence along the infinite orbit `h * g⁻ⁿ`, so its finite support is empty. For the
+group algebra of the integers this says that `t - 1` is not a zero divisor in `R[t, t⁻¹]`. -/
+theorem isRightRegular_single_sub_one {g : G} (hg : ¬IsOfFinOrder g) :
+    IsRightRegular (single g (1 : R) - 1) := by
+  intro x y hxy
+  simp only at hxy
+  rw [← sub_eq_zero]
+  set z := x - y
+  have hz : z * single g 1 = z := by
+    rw [← sub_eq_zero, ← mul_sub_one]
+    exact (sub_mul x y _).trans (sub_eq_zero.mpr hxy)
+  -- The coefficients of `z` are constant along the right translates by powers of `g⁻¹`.
+  have hcoeff (h : G) (n : ℕ) : z.coeff (h * g⁻¹ ^ n) = z.coeff h := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have := congrArg (fun w ↦ w.coeff (h * g⁻¹ ^ n)) hz
+      simp only [coeff_mul_single_apply, mul_one] at this
+      rw [pow_succ, ← mul_assoc, this, ih]
+  ext h
+  by_contra hne
+  have hinj : Function.Injective fun n : ℕ ↦ h * g⁻¹ ^ n :=
+    (mul_right_injective h).comp
+      (injective_pow_iff_not_isOfFinOrder.mpr (by rwa [isOfFinOrder_inv_iff]))
+  refine Set.infinite_of_injective_forall_mem hinj (s := (z.coeff.support : Set G))
+    (fun n ↦ ?_) z.coeff.support.finite_toSet
+  rw [Finset.mem_coe, Finsupp.mem_support_iff, hcoeff h n]
+  simpa using hne
+
+end InfiniteOrder
 
 end MonoidAlgebra

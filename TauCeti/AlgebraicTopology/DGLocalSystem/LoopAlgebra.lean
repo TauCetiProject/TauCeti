@@ -11,6 +11,7 @@ public import TauCeti.Topology.PathSpace.Moore
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
 public import TauCeti.Algebra.Homology.DG.Algebra.Cohomology
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Cohomology
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 
 /-!
 # The augmented DG algebra of chains on the Moore loop space
@@ -52,6 +53,7 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChainToGroupAlgebra_loopChainMap`: naturality in based maps.
 * `TauCeti.loopChainToGroupAlgebra_apply`, `TauCeti.loopChainToGroupAlgebra_surjective`: it only
   sees the component of dimension zero, and it is surjective.
+* `TauCeti.augmentation_loopChainToGroupAlgebra`: it is compatible with the augmentations.
 * `TauCeti.groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom`: the basis element of the
   class of a Moore loop goes to the cohomology class of its point chain.
 * `TauCeti.groupAlgebraToLoopChainCohomology_mem_cohomologyGrading_zero`: the group ring lands in
@@ -246,6 +248,30 @@ theorem loopChainToGroupAlgebra_surjective :
     Function.Surjective (loopChainToGroupAlgebra B b R) := fun y ↦ by
   obtain ⟨c, rfl⟩ := loopZeroChainToGroupAlgebra_surjective (X := B) (x := b) (R := R) y
   exact ⟨_, loopChainToGroupAlgebra_lof_zero c⟩
+
+/-- The degree-zero ring map is compatible with the augmentations: the coefficient sum of the
+image of a chain in the group ring is its augmentation. -/
+@[simp]
+theorem augmentation_loopChainToGroupAlgebra (a : loopChainAlgebra B b R) :
+    MonoidAlgebra.augmentation R (FundamentalGroup B b) (loopChainToGroupAlgebra B b R a) =
+      loopChainAugmentation B b R a := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    rw [← DirectSum.lof_eq_of R]
+    cases n with
+    | zero =>
+      rw [loopChainToGroupAlgebra_lof_zero, loopChainAugmentation_lof_zero]
+      induction y using NormalizedCubicalChain.induction_on with
+      | zero => simp
+      | add y y' hy hy' => simp only [map_add, hy, hy']
+      | smul r y hy =>
+        rw [LinearMap.map_smul, LinearMap.map_smul,
+          ← _root_.MonoidAlgebra.augmentationLinearMap_apply, LinearMap.map_smul,
+          _root_.MonoidAlgebra.augmentationLinearMap_apply, hy, smul_eq_mul]
+      | ofCube c => simp
+    | succ k => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The degree-zero ring map kills boundaries. -/
 @[simp]
