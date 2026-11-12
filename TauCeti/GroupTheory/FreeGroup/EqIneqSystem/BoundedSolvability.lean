@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.FreeGroup.EqIneqSystem.SubBasisConstraint
 public import TauCeti.GroupTheory.FreeGroup.Substitution
 import Mathlib.Algebra.Order.BigOperators.Group.List
 import Mathlib.Data.List.GetD
+import TauCeti.Computability.Primrec.Basic
 import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
@@ -97,18 +98,6 @@ theorem primrecRel_isSolution_mk_getD [Primcodable A] :
   exact ((h.forall_mem_list.comp (Primrec.fst.comp Primrec.snd) Primrec.fst).and
     (h.not.forall_mem_list.comp (Primrec.snd.comp Primrec.snd) Primrec.fst)).of_eq
       fun q => (isSolution_mk_getD_iff q.2 q.1).symm
-
-/-- Renaming the variable letters of a list of words along a primitive-recursive map is
-primitive recursive. -/
-private theorem primrec_map_map_sumMap {X Y : Type*} [Primcodable X] [Primcodable Y]
-    [Primcodable A] {f : X → Y} (hf : Primrec f) :
-    Primrec fun l : List (List ((X ⊕ A) × Bool)) =>
-      l.map (List.map fun y => (Sum.map f id y.1, y.2)) := by
-  have hy : Primrec fun y : (X ⊕ A) × Bool => (Sum.map f id y.1, y.2) :=
-    Primrec.pair ((Primrec.sumCasesOn Primrec.fst
-      (Primrec.sumInl.comp (hf.comp Primrec.snd)).to₂
-      (Primrec.sumInr.comp Primrec.snd).to₂).of_eq fun y => by cases y.1 <;> rfl) Primrec.snd
-  exact Primrec.list_map Primrec.id (Primrec.list_map Primrec.snd (hy.comp Primrec.snd).to₂).to₂
 
 section Constrained
 
@@ -248,9 +237,12 @@ theorem primrecRel_exists_norm_le_isConstrainedSolution {X : Type*} [Primcodable
       ∃ v : X → FreeGroup A, (∀ x, (v x).norm ≤ N) ∧
         (ofWords q.2).IsConstrainedSolution (constraintOfList q.1) v of := by
   have hl : Primrec fun l : List (X × A) => l.map (Prod.map Encodable.encode id) :=
-    Primrec.list_map Primrec.id ((Primrec.encode.comp (Primrec.fst.comp Primrec.snd)).pair
-      (Primrec.snd.comp Primrec.snd)).to₂
-  have hr := primrec_map_map_sumMap (A := A) (Primrec.encode (α := X))
+    Primrec.list_map .id ((Primrec.prodMap .encode .id).comp .snd).to₂
+  have hy : Primrec fun y : (X ⊕ A) × Bool => (Sum.map Encodable.encode id y.1, y.2) :=
+    ((Primrec.sumMap .encode .id).comp .fst).pair .snd
+  have hr : Primrec fun l : List (List ((X ⊕ A) × Bool)) =>
+      l.map (List.map fun y => (Sum.map Encodable.encode id y.1, y.2)) :=
+    Primrec.list_map .id (Primrec.list_map .snd (hy.comp .snd).to₂).to₂
   refine (primrecRel_exists_norm_le_isConstrainedSolution_nat.comp
     ((hl.comp Primrec.fst).pair ((hr.comp (Primrec.fst.comp Primrec.snd)).pair
       (hr.comp (Primrec.snd.comp Primrec.snd))) |>.comp Primrec.fst) Primrec.snd).of_eq
