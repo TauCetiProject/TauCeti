@@ -43,6 +43,11 @@ exact formula
 convergence. Peetre's inequality bounds the integrand by a multiple of
 `⟨2π η⟩ ^ |m| ‖𝓕 φ η‖` for `|ε| ≤ 1`, and `∫ 𝓕 φ = φ(0)` by Fourier inversion.
 
+For `ε = 1` the cut-off exponential is the wave packet `y ↦ exp(i ⟪y, ξ⟫) φ(y) v`, and removing
+its phase gives the identity `exp(-i ⟪x, ξ⟫) Op(a) (φ.cutoffExponential 1 ξ v) (x) =
+∫ exp(2πi ⟪η, x⟫) a(x, ξ + 2πη) (𝓕 φ η) v dη`
+(`TauCeti.exp_smul_quantizeSchwartzValue_cutoffExponential_one`).
+
 ## References
 
 * R. Melrose, *Pseudodifferential operators on Euclidean space*, Chapter 2, MIT 18.199 (2008),
@@ -93,6 +98,21 @@ theorem quantizeSchwartzValue_cutoffExponential [CompleteSpace V] (a : E × E �
         simp only [F, SchwartzMap.fourier_cutoffExponential φ hε, hc, h2π,
           ContinuousLinearMap.map_smul_of_tower, Circle.smul_def]
         rw [smul_comm (|ε ^ finrank ℝ E|) ((𝐞 _ : ℂ)), smul_smul, hscale, one_smul]
+
+/-- **Quantization of a wave packet.** For the wave packet `y ↦ exp(i ⟪y, ζ⟫) φ(y) v`, the
+quantization with the phase `exp(i ⟪x, ζ⟫)` removed is the integral
+`∫ exp(2πi ⟪η, x⟫) a(x, ζ + 2πη) (𝓕 φ η) v dη`. -/
+theorem exp_smul_quantizeSchwartzValue_cutoffExponential_one [CompleteSpace V]
+    (a : E × E → V →L[ℂ] W) (φ : 𝓢(E, ℂ)) (ζ : E) (v : V) (x : E) :
+    Complex.exp (-(⟪x, ζ⟫ * Complex.I)) • quantizeSchwartzValue a (φ.cutoffExponential 1 ζ v) x =
+      ∫ η, 𝐞 ⟪η, x⟫ • a (x, ζ + (2 * π) • η) (𝓕 φ η • v) := by
+  have hphase : Complex.exp (-(⟪x, ζ⟫ * Complex.I)) * 𝐞 ⟪(2 * π)⁻¹ • ζ, x⟫ = 1 := by
+    rw [real_inner_comm x, ← exp_inner_mul_I_eq_fourierChar, ← Complex.exp_add]
+    simp
+  rw [quantizeSchwartzValue_cutoffExponential a φ one_ne_zero, ← integral_smul]
+  congr 1 with η
+  simp [inner_add_left, AddChar.map_add_eq_mul, Circle.smul_def, smul_smul, ← mul_assoc, hphase,
+    -mul_inv_rev]
 
 /-! ### Recovery of the symbol -/
 

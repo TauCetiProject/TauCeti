@@ -10,7 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Analysis.Pseudodifferential.Recovery
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 import TauCeti.Analysis.Distribution.AELeOfIntegral
-import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
@@ -65,29 +64,6 @@ noncomputable section
 
 namespace TauCeti
 
-section WavePacket
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-  {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
-
-/-- **Quantization of a wave packet.** For the wave packet `y ↦ exp(i ⟪y, ζ⟫) φ(y) v`, the
-quantization with the phase `exp(i ⟪x, ζ⟫)` removed is the integral
-`∫ exp(2πi ⟪η, x⟫) a(x, ζ + 2πη) (𝓕 φ η) v dη`. -/
-theorem exp_smul_quantizeSchwartzValue_cutoffExponential_one [CompleteSpace V]
-    (a : E × E → V →L[ℂ] W) (φ : 𝓢(E, ℂ)) (ζ : E) (v : V) (x : E) :
-    Complex.exp (-(⟪x, ζ⟫ * Complex.I)) • quantizeSchwartzValue a (φ.cutoffExponential 1 ζ v) x =
-      ∫ η, 𝐞 ⟪η, x⟫ • a (x, ζ + (2 * π) • η) (𝓕 φ η • v) := by
-  have hphase : Complex.exp (-(⟪x, ζ⟫ * Complex.I)) * 𝐞 ⟪(2 * π)⁻¹ • ζ, x⟫ = 1 := by
-    rw [real_inner_comm x, ← exp_inner_mul_I_eq_fourierChar, ← Complex.exp_add]
-    simp
-  rw [quantizeSchwartzValue_cutoffExponential a φ one_ne_zero, ← integral_smul]
-  congr 1 with η
-  rw [one_smul, mul_one, inner_add_left, AddChar.map_add_eq_mul, Circle.smul_def,
-    Circle.smul_def, smul_smul, Circle.coe_mul, ← mul_assoc, hphase, one_mul]
-
-end WavePacket
-
 namespace ClassicalSymbol
 
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
@@ -104,11 +80,8 @@ private lemma exists_norm_rpow_neg_smul_coefficient_le (a : Symbol n V W m)
   set M := max ((‖ξ‖ ^ 2) ^ (m / 2)) ((1 + ‖ξ‖ ^ 2) ^ (m / 2))
   refine ⟨C * 2 ^ (|m| / 2) * M, fun y hy t ht η ↦ ?_⟩
   have ht0 : 0 < t := one_pos.trans_le ht
-  have htξ : ‖t • ξ‖ = t * ‖ξ‖ := by rw [norm_smul, Real.norm_of_nonneg ht0.le]
-  have ht2 : 1 ≤ t ^ 2 := one_le_pow₀ ht
   have hbr : (1 + ‖t • ξ‖ ^ 2) ^ (m / 2) ≤ M * t ^ m :=
-    one_add_norm_sq_rpow_half_le (by positivity) ht0
-      ⟨by rw [htξ]; nlinarith, by rw [htξ]; nlinarith⟩ m
+    one_add_norm_smul_sq_rpow_half_le (norm_pos_iff.2 hξ) ht ⟨le_rfl, le_rfl⟩ m
   have hle := hC y hy (t • ξ + (2 * π) • η)
   have hC0 : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hle) (by positivity)
   have htm : t ^ (-m) * t ^ m = 1 := by rw [← Real.rpow_add ht0]; simp
@@ -320,12 +293,11 @@ theorem isStrictlyPositive_coefficient_principal (a : ClassicalSymbol n H H m)
       0 ≤ ∫ x, ⟪quantizeSchwartzValue a.toSymbol.coefficient u x, u x⟫_ℂ)
     {x : CoordinateSpace n} (hx : x ∈ U) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
     IsStrictlyPositive (a.principal.coefficient (x, ξ)) := by
-  obtain ⟨e, he⟩ := isElliptic_iff.1 he x ξ hξ
+  obtain ⟨e, hee⟩ := isElliptic_iff.1 he x ξ hξ
   refine IsUnit.isStrictlyPositive ?_ (ContinuousLinearMap.nonneg_iff_isPositive.2
     (a.isPositive_coefficient_principal hU ha hx ξ))
-  rw [← he]
-  exact isUnit_iff_exists.2 ⟨e.symm, by ext; simp [ContinuousLinearMap.mul_def],
-    by ext; simp [ContinuousLinearMap.mul_def]⟩
+  rw [← hee]
+  exact e.toUnit.isUnit
 
 end Inner
 

@@ -390,16 +390,12 @@ theorem tendsto_rpow_neg_smul_coefficient_smul {x ξ : CoordinateSpace n} (hξ :
     have hζ2 : ‖ζ‖ ≤ 3 * r / 2 := by
       have := norm_le_norm_add_norm_sub' ζ ξ
       linarith
-    have htζ : ‖t • ζ‖ = t * ‖ζ‖ := by rw [norm_smul, Real.norm_of_nonneg ht0.le]
     have h2 : 2 ≤ ‖t • ζ‖ := by
-      rw [htζ]
+      rw [norm_smul, Real.norm_of_nonneg ht0.le]
       have : 4 ≤ t * r := by rwa [div_le_iff₀ hr] at ht4
       nlinarith
-    have hlo : t * (r / 2) ≤ t * ‖ζ‖ := mul_le_mul_of_nonneg_left hζ1 ht0.le
-    have hhi : t * ‖ζ‖ ≤ t * (3 * r / 2) := mul_le_mul_of_nonneg_left hζ2 ht0.le
     have hbr : (1 + ‖t • ζ‖ ^ 2) ^ ((m - 1) / 2) ≤ M * t ^ (m - 1) :=
-      one_add_norm_sq_rpow_half_le (by positivity) ht0
-        ⟨by rw [htζ]; nlinarith, by rw [htζ]; nlinarith⟩ _
+      one_add_norm_smul_sq_rpow_half_le (by positivity) ht1 ⟨hζ1, hζ2⟩ _
     have hle := hC y hy (t • ζ) h2
     have hC0 : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hle) (by positivity)
     calc ‖t ^ (-m) • (a.toSymbol.coefficient (y, t • ζ) - σ (y, t • ζ))‖
@@ -409,8 +405,8 @@ theorem tendsto_rpow_neg_smul_coefficient_smul {x ξ : CoordinateSpace n} (hξ :
           gcongr
           exact hle.trans (mul_le_mul_of_nonneg_left hbr hC0)
       _ = C * M * t⁻¹ := by
-          rw [← Real.rpow_neg_one, mul_left_comm, mul_left_comm (t ^ (-m)), ← Real.rpow_add ht0]
-          ring_nf
+          rw [Real.rpow_sub ht0, Real.rpow_neg ht0.le, Real.rpow_one]
+          field_simp
   -- By homogeneity, `t ^ (-m) σ(y, t ζ) = σ(y, ζ)`, which tends to `σ(x, ξ)`.
   have heq : ∀ᶠ p : ℝ × (CoordinateSpace n × CoordinateSpace n) in atTop ×ˢ 𝓝 (x, ξ),
       σ p.2 + p.1 ^ (-m) • (a.toSymbol.coefficient (p.2.1, p.1 • p.2.2) - σ (p.2.1, p.1 • p.2.2)) =
@@ -418,8 +414,8 @@ theorem tendsto_rpow_neg_smul_coefficient_smul {x ξ : CoordinateSpace n} (hξ :
     filter_upwards [prod_mem_prod (eventually_gt_atTop (0 : ℝ)) (univ_mem (f := 𝓝 (x, ξ)))]
     rintro ⟨t, y, ζ⟩ ⟨ht, -⟩
     dsimp only at ht ⊢
-    rw [smul_sub, show σ (y, t • ζ) = t ^ m • σ (y, ζ) from a.principal.homogeneous _ _ _ ht,
-      smul_smul, ← Real.rpow_add ht, neg_add_cancel, Real.rpow_zero, one_smul, add_sub_cancel]
+    rw [show σ (y, t • ζ) = t ^ m • σ (y, ζ) from a.principal.homogeneous _ _ _ ht]
+    simp [smul_sub, smul_smul, ← Real.rpow_add ht]
   simpa using ((hσ.tendsto.comp tendsto_snd).add herr).congr' heq
 
 @[simp]
