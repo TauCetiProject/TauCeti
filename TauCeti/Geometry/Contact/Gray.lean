@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Contact.Family
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
 
 /-!
-# Gray stability for families of contact forms on compact manifolds
+# Gray stability for families of contact forms
 
 A smooth time-dependent family of one-forms `α_t` on a manifold `M` is represented by a single
 smooth one-form `α` on `ℝ × M`, whose slices `α_t = ι_t^* α` are the forms of the family, and
@@ -22,6 +22,21 @@ contact hyperplanes `ker α_t` with `(ι_{Y_t} dα_t + ∂_t α_t)|ker α_t = 0`
 time and point, and satisfies Gray's equation
 `L_{Y_t} α_t + ∂_t α_t = μ_t α_t` with `μ_t = (∂_t α_t)(R_{α_t})`, where `R_{α_t}` is the Reeb
 field.
+
+On any manifold without boundary, compact or not, the time-dependent flow `φ_{s,t}` of the Gray
+vector field rescales the forms wherever it is defined:
+`(φ_{s,t}^* α_t)ₓ = exp (∫ₛᵗ μ_u (φ_{s,u} x) du) (α_s)ₓ`
+(`TauCeti.SmoothForm.mpullback_timeDependentFlowOf_grayVectorField_apply`). At a point where the
+contact hyperplane `ker α_t` does not move with `t`, the Gray vector field vanishes, so the flow
+is defined for all times and fixes the point. Since the domain of the flow is open, this gives
+**relative Gray stability**: if the hyperplanes are stationary at every point of a set `K`, the
+Gray flow from time `s` to time `t` is a partial diffeomorphism between open neighbourhoods of `K`
+which fixes `K` and pulls `α_t` back to a positive multiple of `α_s` at every point of its source
+(`TauCeti.SmoothForm.exists_partialDiffeomorph_fix_mpullback_eq_smul`), so it carries `ker α_s` to
+`ker α_t` with their coorientations. For a compact set of times, such as `[0, 1]`, these flows are
+all defined on one open neighbourhood of `K`
+(`TauCeti.SmoothForm.exists_isOpen_superset_forall_mpullback_eq_smul`). No compactness of `M` or
+of `K` is needed.
 
 On a compact manifold without boundary, the time-dependent flow `φ_{s,t}` of the Gray vector field
 is defined for all times. **Gray's stability theorem** says that it carries the contact
@@ -46,6 +61,14 @@ hyperplane `ker α_t` does not move with `t`, because the Gray vector field vani
 * `TauCeti.SmoothForm.contMDiff_grayVectorField`: the Gray vector field is jointly smooth.
 * `TauCeti.SmoothForm.grayVectorField_eq_zero`: the Gray vector field vanishes at points where the
   contact hyperplane is stationary.
+* `TauCeti.SmoothForm.mpullback_timeDependentFlowOf_grayVectorField_apply`: Gray's stability
+  theorem along the local flow, on a possibly noncompact manifold.
+* `TauCeti.SmoothForm.mem_timeDependentFlowDomain_grayVectorField`,
+  `TauCeti.SmoothForm.timeDependentFlowOf_grayVectorField_eq_self`: the flow is defined for all
+  times at, and fixes, the points where the contact hyperplane is stationary.
+* `TauCeti.SmoothForm.exists_partialDiffeomorph_fix_mpullback_eq_smul`,
+  `TauCeti.SmoothForm.exists_isOpen_superset_forall_mpullback_eq_smul`: relative Gray stability
+  along a set of points where the contact hyperplane is stationary.
 * `TauCeti.SmoothForm.mpullback_grayDiffeomorph_apply`: Gray's stability theorem, in the explicit
   form `φ_{s,t}^* α_t = exp (∫ₛᵗ μ_u ∘ φ_{s,u} du) α_s`.
 * `TauCeti.SmoothForm.preservesCoorientation_grayDiffeomorph`,
@@ -192,9 +215,117 @@ on time and point. -/
 theorem contMDiff_grayRate : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate :=
   contMDiff_apply_reebVectorField_mpullback_prodMk α α.timeDeriv hc
 
+/-- Gray's equation for the slices, in the shape consumed by Moser's principle for families of
+forms: `ι_t^* L_{∂_t} α + L_{Y_t} α_t = μ_t α_t`. -/
+private theorem mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField (t : ℝ) :
+    TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
+        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1) +
+      mlieDerivForm (α.grayVectorField t) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1) =
+    fun y ↦ α.grayRate (t, y) • TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1 y := by
+  funext y
+  ext v
+  have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
+  have h := mlieDerivForm_grayVectorField_add (hc t) y (v 0)
+  rw [hv]
+  simp only [coe_mpullback, coe_timeDeriv, Pi.add_apply, ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h ⊢
+  rw [add_comm, h]
+
+/-! ### Gray's stability theorem along the local flow -/
+
+variable [I.Boundaryless]
+
+/-- The Gray flow is defined for all times at every point at which the contact hyperplane
+`ker α_t` is the same for all times. -/
+theorem mem_timeDependentFlowDomain_grayVectorField {x : M}
+    (hx : ∀ u, (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x =
+      (mpullback (Prod.mk 0) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x)
+    (s t : ℝ) : ((s, t), x) ∈ timeDependentFlowDomain α.grayVectorField :=
+  mem_timeDependentFlowDomain_of_forall_eq_zero
+    (fun u ↦ grayVectorField_eq_zero (hc u) fun v ↦ (hx v).trans (hx u).symm) s t
+
+variable [T2Space M]
+
+/-- **Gray's stability theorem along the local flow.** On a manifold without boundary, not
+necessarily compact, the time-dependent flow `φ_{s,t}` of the Gray vector field of a smooth family
+of contact forms `α_t` rescales the forms wherever it is defined: if the flow from `(s, x)` is
+defined up to time `t`, then `(φ_{s,t}^* α_t)ₓ = exp (∫ₛᵗ μ_u (φ_{s,u} x) du) (α_s)ₓ`, where
+`μ_u = (∂_t α_u)(R_{α_u})`. -/
+theorem mpullback_timeDependentFlowOf_grayVectorField_apply {s t : ℝ} {x : M}
+    (h : ((s, t), x) ∈ timeDependentFlowDomain α.grayVectorField) :
+    TauCeti.mpullback I I (timeDependentFlowOf α.grayVectorField s t)
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
+      Real.exp (∫ u in s..t, α.grayRate (u, timeDependentFlowOf α.grayVectorField s u x)) •
+        (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
+  simpa only [coe_mpullback] using
+    mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul
+      ((contMDiff_grayVectorField hc).of_le (by simp)) (contMDiff_grayRate hc).continuous
+      (α.contMDiff.of_le (by simp))
+      (mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField hc) h
+
+/-- The Gray flow fixes every point at which the contact hyperplane `ker α_t` is the same for all
+times. -/
+theorem timeDependentFlowOf_grayVectorField_eq_self {x : M}
+    (hx : ∀ u, (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x =
+      (mpullback (Prod.mk 0) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x)
+    (s t : ℝ) : timeDependentFlowOf α.grayVectorField s t x = x :=
+  timeDependentFlowOf_eq_self_of_forall_eq_zero ((contMDiff_grayVectorField hc).of_le (by simp))
+    (fun u ↦ grayVectorField_eq_zero (hc u) fun v ↦ (hx v).trans (hx u).symm) s t
+
+/-- **Relative Gray stability**, at a single time. Let `α_t` be a smooth family of contact forms
+on a manifold without boundary, not necessarily compact, and let `K` be a set of points at which
+the contact hyperplane `ker α_t` is the same for all times. For all times `s` and `t`, there is a
+smooth partial diffeomorphism `φ` whose source and target are open neighbourhoods of `K`, which
+fixes every point of `K`, and which pulls `α_t` back to a positive multiple of `α_s` at every point
+of its source. It is the Gray flow from time `s` to time `t`, with inverse the Gray flow back. -/
+theorem exists_partialDiffeomorph_fix_mpullback_eq_smul {K : Set M}
+    (hK : ∀ x ∈ K, ∀ u,
+      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x =
+        (mpullback (Prod.mk 0) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x)
+    (s t : ℝ) :
+    ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
+      ∀ x ∈ φ.source, ∃ c : ℝ, 0 < c ∧
+        TauCeti.mpullback I I φ
+            (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
+          c • (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
+  refine ⟨timeDependentFlowPartialDiffeomorph le_top (contMDiff_grayVectorField hc) s t,
+    fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · rw [timeDependentFlowPartialDiffeomorph_source]
+    exact mem_timeDependentFlowDomain_grayVectorField hc (hK x hx) s t
+  · rw [timeDependentFlowPartialDiffeomorph_target]
+    exact mem_timeDependentFlowDomain_grayVectorField hc (hK x hx) t s
+  · rw [coe_timeDependentFlowPartialDiffeomorph]
+    exact timeDependentFlowOf_grayVectorField_eq_self hc (hK x hx) s t
+  · rw [timeDependentFlowPartialDiffeomorph_source] at hx
+    rw [coe_timeDependentFlowPartialDiffeomorph]
+    exact ⟨_, Real.exp_pos _, mpullback_timeDependentFlowOf_grayVectorField_apply hc hx⟩
+
+/-- **Relative Gray stability.** Let `α_t` be a smooth family of contact forms on a manifold without
+boundary, not necessarily compact, and let `K` be a set of points at which the contact hyperplane
+`ker α_t` is the same for all times. For an initial time `s` and a compact set of times `T`, such as
+`[0, 1]`, there is an open neighbourhood `V` of `K` on which the Gray flow `φ_{s,t}` is defined for
+every `t ∈ T` and pulls `α_t` back to a positive multiple of `α_s`. The flow fixes every point of
+`K` (`TauCeti.SmoothForm.timeDependentFlowOf_grayVectorField_eq_self`), so this is an isotopy of
+germs of coorientation-preserving contactomorphisms along `K`, from `ker α_s` to `ker α_t`. -/
+theorem exists_isOpen_superset_forall_mpullback_eq_smul {K : Set M}
+    (hK : ∀ x ∈ K, ∀ u,
+      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x =
+        (mpullback (Prod.mk 0) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x)
+    {T : Set ℝ} (hT : IsCompact T) (s : ℝ) :
+    ∃ V : Set M, IsOpen V ∧ K ⊆ V ∧ ∀ t ∈ T, ∀ x ∈ V,
+      ((s, t), x) ∈ timeDependentFlowDomain α.grayVectorField ∧ ∃ c : ℝ, 0 < c ∧
+        TauCeti.mpullback I I (timeDependentFlowOf α.grayVectorField s t)
+            (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
+          c • (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x :=
+  ⟨_, isOpen_setOf_forall_mem_timeDependentFlowDomain
+      ((contMDiff_grayVectorField hc).of_le (by simp)) hT s,
+    fun x hx t _ ↦ mem_timeDependentFlowDomain_grayVectorField hc (hK x hx) s t,
+    fun t ht _ hx ↦ ⟨hx t ht, _, Real.exp_pos _,
+      mpullback_timeDependentFlowOf_grayVectorField_apply hc (hx t ht)⟩⟩
+
 /-! ### Gray's stability theorem on compact manifolds -/
 
-variable [I.Boundaryless] [T2Space M] [CompactSpace M]
+variable [CompactSpace M]
 
 /-- On a compact manifold, the Gray vector field has a complete suspension: its time-dependent flow
 is defined for all times. -/
@@ -254,27 +385,11 @@ theorem mpullback_grayDiffeomorph_apply (s t : ℝ) (x : M) :
         (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α)).1 x =
       Real.exp (∫ u in s..t, α.grayRate (u, grayDiffeomorph hc s u x)) •
         (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
-  have hX := contMDiff_grayVectorField hc
-  -- Gray's equation says that the rate `∂_t α_t + L_{Y_t} α_t` is `μ_t α_t`.
-  have hL (t : ℝ) :
-      TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1) +
-        mlieDerivForm (α.grayVectorField t) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1) =
-      fun y ↦ α.grayRate (t, y) • TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1 y := by
-    funext y
-    ext v
-    have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
-    have h := mlieDerivForm_grayVectorField_add (hc t) y (v 0)
-    rw [hv]
-    simp only [coe_mpullback, coe_timeDeriv, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-      ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h ⊢
-    rw [add_comm, h]
-  have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul
-    (hX.of_le (by simp)) (isCompleteVectorField_timeDependentSuspensionField_grayVectorField hc)
-    (contMDiff_grayRate hc).continuous (α.contMDiff.of_le (by simp)) hL s t x
   have hφ : ⇑(grayDiffeomorph hc s t) = timeDependentFlowOf α.grayVectorField s t :=
     funext (grayDiffeomorph_apply hc s t)
-  simpa only [coe_mpullback, grayDiffeomorph_apply, hφ] using h
+  simpa only [coe_mpullback, grayDiffeomorph_apply, hφ] using
+    mpullback_timeDependentFlowOf_grayVectorField_apply hc (mem_timeDependentFlowDomain.2
+      ((isCompleteVectorField_timeDependentSuspensionField_grayVectorField hc).mem_flowDomain _ _))
 
 /-- **Gray's stability theorem**, coorientation form: Gray's isotopy from `s` to `t` is a
 contactomorphism from `ker α_s` to `ker α_t` carrying the coorientation given by `α_s` to that
@@ -301,8 +416,6 @@ theorem grayDiffeomorph_apply_eq_self {x : M}
       (mpullback (Prod.mk 0) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x)
     (s t : ℝ) : grayDiffeomorph hc s t x = x := by
   rw [grayDiffeomorph_apply]
-  exact timeDependentFlowOf_eq_self_of_forall_eq_zero
-    ((contMDiff_grayVectorField hc).of_le (by simp))
-    (fun u ↦ grayVectorField_eq_zero (hc u) fun v ↦ (hx v).trans (hx u).symm) s t
+  exact timeDependentFlowOf_grayVectorField_eq_self hc hx s t
 
 end TauCeti.SmoothForm
