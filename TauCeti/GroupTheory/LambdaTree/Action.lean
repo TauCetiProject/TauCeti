@@ -41,7 +41,6 @@ element is elliptic, so only the trivial group acts freely there.
 * `TauCeti.LambdaMetric.IsElliptic`, `TauCeti.LambdaMetric.IsInversion`,
   `TauCeti.LambdaMetric.IsHyperbolic`: elliptic elements, inversions and hyperbolic elements.
 * `TauCeti.LambdaMetric.IsFreeAction`: every nontrivial element acts hyperbolically.
-* `TauCeti.LambdaMetric.IsIsometricAction`: the action preserves a `Λ`-metric.
 * `TauCeti.LambdaMetric.IsTree.basedLength`: the based length function `g ↦ d x (g • x)`.
 
 ## Main results
@@ -152,32 +151,7 @@ theorem isInversion_subLeft_one : IsInversion ℤ (Equiv.subLeft (1 : ℤ)) := b
   rw [Equiv.Perm.smul_def, Equiv.subLeft_apply] at hn
   omega
 
-/-! ### Isometric actions and based length functions -/
-
-/-- `G` acts on `X` by isometries of the `Λ`-metric `d`. -/
-def IsIsometricAction (d : LambdaMetric Λ X) (G : Type*) [SMul G X] : Prop :=
-  ∀ (g : G) (x y : X), d (g • x) (g • y) = d x y
-
-namespace IsIsometricAction
-
-variable [Group G] [MulAction G X] {d : LambdaMetric Λ X}
-
-theorem dist_smul_smul (hG : d.IsIsometricAction G) (g : G) (x y : X) :
-    d (g • x) (g • y) = d x y :=
-  hG g x y
-
-/-- An isometry and its inverse move a point by the same distance. -/
-theorem dist_inv_smul (hG : d.IsIsometricAction G) (g : G) (x : X) :
-    d x (g⁻¹ • x) = d x (g • x) := by
-  rw [← hG.dist_smul_smul g x (g⁻¹ • x), smul_inv_smul, d.symm]
-
-/-- The distance `d x ((g⁻¹ * f) • x)` is the distance between the translates `g • x` and
-`f • x`. -/
-theorem dist_inv_mul_smul (hG : d.IsIsometricAction G) (g f : G) (x : X) :
-    d x ((g⁻¹ * f) • x) = d (g • x) (f • x) := by
-  rw [← hG.dist_smul_smul g x, mul_smul, smul_inv_smul]
-
-end IsIsometricAction
+/-! ### Based length functions -/
 
 namespace IsTree
 
@@ -299,12 +273,6 @@ theorem isFree_basedLength_iff (x : X) : (hd.basedLength hG x).IsFree ↔ IsFree
 end IsTree
 
 /-! ### The translation action of `Λ` on itself -/
-
-/-- `Λ` acts on the `Λ`-tree `Λ` by translations, which are isometries. -/
-theorem isIsometricAction_self : (self Λ).IsIsometricAction (Multiplicative Λ) := by
-  intro a x y
-  obtain ⟨a, rfl⟩ := Multiplicative.ofAdd.surjective a
-  simp [self_apply]
 
 /-- The based length function of the translation action of `Λ` on itself, at `0`, is the absolute
 value. -/
