@@ -49,24 +49,6 @@ variable {R H M A : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H]
   [AddCommMonoid M] [Module R M] [Comodule R H M]
   [Module.Finite R M] [Module.Projective R M] [CommRing A] [Algebra R A]
 
-/-- Over a local value ring, algebra-valued orbit maps with the same image agree on which
-evaluated matrix coefficients are units: both conditions say that the closed point maps into
-the same standard chart. -/
-private theorem isUnit_of_SpecMap_projectiveOrbitMap_eq [IsLocalRing A] (m : M)
-    (hm : Module.IsUnimodular R m) {g h : H →ₐ[R] A}
-    (heq : Spec.map (CommRingCat.ofHom g.toRingHom) ≫ projectiveOrbitMap (H := H) m hm =
-      Spec.map (CommRingCat.ofHom h.toRingHom) ≫ projectiveOrbitMap (H := H) m hm)
-    {φ : Module.Dual R M} (hg : IsUnit (g (matrixCoefficient (C := H) φ m))) :
-    IsUnit (h (matrixCoefficient (C := H) φ m)) := by
-  have hopen := SpecMap_projectiveOrbitMap_preimage_basicOpen_ι m hm h φ
-  rw [← heq, SpecMap_projectiveOrbitMap_preimage_basicOpen_ι, basicOpen_eq_of_affine,
-    basicOpen_eq_of_affine] at hopen
-  have hmem : IsLocalRing.closedPoint A ∈ PrimeSpectrum.basicOpen
-      (g (matrixCoefficient (C := H) φ m)) :=
-    (PrimeSpectrum.mem_basicOpen _ _).mpr ((IsLocalRing.notMem_maximalIdeal).mpr hg)
-  rw [hopen, PrimeSpectrum.mem_basicOpen] at hmem
-  exact IsLocalRing.notMem_maximalIdeal.mp hmem
-
 /-- **Fibers of algebra-valued orbit maps.** Two algebra-valued group points have the same
 image in projective space exactly when their matrix coefficients at the chosen vector differ
 by one global unit of the value algebra. The value algebra may be nonreduced. -/
@@ -107,8 +89,7 @@ theorem projectiveOrbitMap_SpecMap_eq_iff_exists_units_matrixCoefficient (m : M)
       rw [← hspan (ι.comp g), Ideal.span_le]
       rintro _ ⟨t, rfl⟩
       exact (IsLocalRing.mem_maximalIdeal _).mpr (hne t)
-    obtain ⟨c, hc⟩ := (projectiveOrbitMap_SpecMap_eq_iff_exists_unit m hm _ _ t
-      (isUnit_of_SpecMap_projectiveOrbitMap_eq m hm heqL ht)).mp heqL
+    obtain ⟨c, hc⟩ := (projectiveOrbitMap_SpecMap_eq_iff_exists_unit m hm _ _ t ht).mp heqL.symm
     have hφ := hc φ
     have hψ := hc ψ
     simp only [AlgHom.comp_apply, ι, IsScalarTower.coe_toAlgHom'] at hφ hψ

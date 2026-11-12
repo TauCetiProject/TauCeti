@@ -128,15 +128,8 @@ theorem projectiveOrbitMap_SpecMap_eq_iff_exists_unit (m : M)
     have hopen := SpecMap_projectiveOrbitMap_preimage_basicOpen_ι m hm g φ
     rw [heq, SpecMap_projectiveOrbitMap_preimage_basicOpen_ι, basicOpen_eq_of_affine,
       basicOpen_eq_of_affine] at hopen
-    by_contra hne
-    obtain ⟨I, hI, hle⟩ := Ideal.exists_le_maximal (Ideal.span {g (matrixCoefficient (C := H) φ m)})
-      (by rwa [Ne, Ideal.span_singleton_eq_top])
-    have hmem : (⟨I, hI.isPrime⟩ : PrimeSpectrum A) ∈
-        PrimeSpectrum.basicOpen (h (matrixCoefficient (C := H) φ m)) :=
-      (PrimeSpectrum.mem_basicOpen _ _).mpr fun hmemI ↦
-        hI.ne_top (Ideal.eq_top_of_isUnit_mem I hmemI hh)
-    rw [hopen, PrimeSpectrum.mem_basicOpen] at hmem
-    exact hmem (hle (Ideal.mem_span_singleton_self _))
+    obtain ⟨n, hn⟩ := (PrimeSpectrum.basicOpen_le_basicOpen_iff _ _).mp hopen.le
+    exact isUnit_of_dvd_unit (Ideal.mem_span_singleton.mp hn) (hh.pow n)
   · rintro ⟨c, hc⟩
     refine (hmain ?_).mpr ⟨c, hc⟩
     have := hc φ
