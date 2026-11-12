@@ -7,14 +7,11 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.Topology.Algebra.Algebra.Basic
 public import TauCeti.Topology.Algebra.Ring.Ideal
-
-import TauCeti.Topology.Algebra.Ring.MaximalIdeals
 
 /-!
 # Quotients of normed rings by two-sided ideals
@@ -41,11 +38,6 @@ of Banach algebras induces an isomorphism `A ⧸ ker f ≃ B` of topological alg
 bounded by the open mapping theorem, but it is in general not an isometry: the quotient norm of
 `a` is the distance from `a` to `ker f`, which need not be `‖f a‖`.
 
-An isometric dense ring homomorphism does preserve quotient norms on extension of ideals in
-seminormed commutative rings. The extended ideal and the image of the original ideal have the
-same closure, so their distances from a point agree. This needs neither completeness nor
-closedness of either ideal.
-
 ## Main definitions
 
 * `Ideal.Quotient.seminormedRing`, `Ideal.Quotient.normedRing`,
@@ -60,9 +52,6 @@ closedness of either ideal.
 * `Ideal.Quotient.norm_one_le` and `Ideal.Quotient.one_le_norm_one`: bounds for the norm of the
   identity of a quotient.
 * `Ideal.Quotient.norm_liftA_apply_le`: a norm bound for an induced homomorphism.
-* `Ideal.norm_mk_map_of_isometry_of_denseRange` and
-  `Ideal.isometry_quotientMap_map_of_isometry_of_denseRange`: extension along a dense isometric
-  homomorphism of seminormed commutative rings preserves quotient norms.
 
 Kernels of continuous algebra homomorphisms into normed algebras are closed
 (`ContinuousAlgHom.isClosed_ker`), so the quotient by such a kernel is a normed algebra.
@@ -76,37 +65,6 @@ Kernels of continuous algebra homomorphisms into normed algebras are closed
 public section
 
 open Topology
-
-namespace Ideal
-
-variable {R S : Type*} [SeminormedCommRing R] [SeminormedCommRing S]
-
-/-- Extension along an isometric ring homomorphism with dense range preserves quotient norms. -/
-theorem norm_mk_map_of_isometry_of_denseRange (I : Ideal R) {f : R →+* S}
-    (hf : Isometry f) (hd : DenseRange f) (x : R) :
-    ‖Quotient.mk (I.map f) (f x)‖ = ‖Quotient.mk I x‖ := by
-  have hc : closure (I.map f : Set S) = closure (f '' (I : Set R)) := by
-    apply le_antisymm
-    · exact closure_minimal (map_subset_closure_image_of_denseRange hd I) isClosed_closure
-    · exact closure_mono (by rintro _ ⟨a, ha, rfl⟩; exact mem_map_of_mem f ha)
-  -- The norm formula is stated on the additive quotient, so identify that carrier explicitly.
-  change ‖((f x : S) : S ⧸ (I.map f).toAddSubgroup)‖ =
-    ‖(x : R ⧸ I.toAddSubgroup)‖
-  rw [QuotientAddGroup.norm_mk, QuotientAddGroup.norm_mk]
-  -- The closure comparison uses ideal sets rather than their underlying additive subgroup sets.
-  change Metric.infDist (f x) (I.map f : Set S) = Metric.infDist x (I : Set R)
-  rw [← Metric.infDist_closure, hc, Metric.infDist_closure, Metric.infDist_image hf]
-
-/-- The induced quotient map along an isometric dense ring homomorphism is an isometry. -/
-theorem isometry_quotientMap_map_of_isometry_of_denseRange (I : Ideal R) {f : R →+* S}
-    (hf : Isometry f) (hd : DenseRange f) :
-    Isometry (quotientMap (I.map f) f le_comap_map) := by
-  apply AddMonoidHomClass.isometry_of_norm
-  intro x
-  obtain ⟨a, rfl⟩ := Quotient.mk_surjective x
-  exact norm_mk_map_of_isometry_of_denseRange I hf hd a
-
-end Ideal
 
 namespace Ideal.Quotient
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Dagger.FaithfullyFlat
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 
-import TauCeti.Analysis.Normed.Ring.Quotient
+import TauCeti.Analysis.Normed.Ring.Quotient.Isometry
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 import TauCeti.Topology.Algebra.Ring.MaximalIdeals
 
@@ -49,8 +49,18 @@ Monsky–Washnitzer series. No completeness or finite-variable hypothesis is nee
 @[simp] theorem _root_.Ideal.norm_mk_map_toTate (I : Ideal (washnitzerAlgebra σ R))
     (f : washnitzerAlgebra σ R) :
     ‖Ideal.Quotient.mk (I.map (toTate σ R)) (toTate σ R f)‖ =
-      ‖Ideal.Quotient.mk I f‖ :=
-  I.norm_mk_map_of_isometry_of_denseRange isometry_toTate denseRange_toTate f
+      ‖Ideal.Quotient.mk I f‖ := by
+  have hi : Isometry (Ideal.quotientMapₐ (I.map (toTate σ R)) (toTate σ R)
+      Ideal.le_comap_map) :=
+    RingHom.isometry_quotientMap (toTate σ R).toRingHom isometry_toTate denseRange_toTate I
+  have hnorm :
+      ‖Ideal.quotientMapₐ (I.map (toTate σ R)) (toTate σ R) Ideal.le_comap_map
+        (Ideal.Quotient.mk I f)‖ = ‖Ideal.Quotient.mk I f‖ :=
+    Isometry.norm_map_of_map_zero
+      (f := Ideal.quotientMapₐ (I.map (toTate σ R)) (toTate σ R) Ideal.le_comap_map)
+      hi (Ideal.quotientMapₐ (I.map (toTate σ R)) (toTate σ R)
+        Ideal.le_comap_map).toRingHom.map_zero' (Ideal.Quotient.mk I f)
+  simpa only [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk] using hnorm
 
 /-- The algebra homomorphism induced by the Tate inclusion preserves quotient Gauss seminorms. -/
 @[simp] theorem _root_.Ideal.norm_quotientMap_map_toTate (I : Ideal (washnitzerAlgebra σ R))
@@ -58,12 +68,6 @@ Monsky–Washnitzer series. No completeness or finite-variable hypothesis is nee
     ‖Ideal.quotientMapₐ (I.map (toTate σ R)) (toTate σ R) Ideal.le_comap_map q‖ = ‖q‖ := by
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective q
   exact I.norm_mk_map_toTate f
-
-/-- The algebra homomorphism induced by the Tate inclusion is an isometry for quotient Gauss
-seminorms. -/
-theorem _root_.Ideal.isometry_quotientMap_map_toTate (I : Ideal (washnitzerAlgebra σ R)) :
-    Isometry (Ideal.quotientMapₐ (I.map (toTate σ R)) (toTate σ R) Ideal.le_comap_map) :=
-  I.isometry_quotientMap_map_of_isometry_of_denseRange isometry_toTate denseRange_toTate
 
 end QuotientNorm
 
