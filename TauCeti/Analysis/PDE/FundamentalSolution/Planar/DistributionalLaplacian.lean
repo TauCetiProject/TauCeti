@@ -14,7 +14,7 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
-import TauCeti.Analysis.SpecialFunctions.Integrability.Log.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 

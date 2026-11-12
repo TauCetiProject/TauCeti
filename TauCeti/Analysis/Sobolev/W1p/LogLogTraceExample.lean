@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.SpecialFunctions.Integrability.Log.LogLog
+import TauCeti.Analysis.SpecialFunctions.Integrability.Log
+import TauCeti.Analysis.SpecialFunctions.Log.InvLog
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
@@ -51,7 +53,10 @@ simplest choice.
 
 All integrability statements are reduced to one-variable integrals by
 `TauCeti.integrableOn_fun_norm_sub_addHaar`, Mathlib's polar formula
-`integrableOn_fun_norm_addHaar` translated to the singularity `1`.
+`integrableOn_fun_norm_addHaar` translated to the singularity `1`. The radial calculus of
+`log log (4 / r)` on `(0, 2)` is shared with the interior example `TauCeti.logLogInterior`:
+`Real.hasDerivAt_log_log_div`, `Real.tendsto_log_log_div`,
+`TauCeti.integrableOn_mul_log_log_div_sq` and `TauCeti.integrableOn_mul_inv_mul_log_div_sq`.
 
 ## References
 
@@ -109,7 +114,7 @@ theorem contDiffOn_logLogTraceExample : ContDiffOn ℝ ∞ logLogTraceExample (b
     contDiffAt_const.div hn (by rw [hr]; exact h0.ne')
   have hl : ContDiffAt ℝ ∞ (fun w : ℂ => Real.log (4 / ‖1 - w‖)) z :=
     hd.log (by rw [hr]; positivity)
-  exact (hl.log (by rw [hr]; exact (log_four_div_pos h0 (by linarith)).ne')).contDiffWithinAt
+  exact (hl.log (by rw [hr]; exact (Real.log_div_pos h0 (by linarith)).ne')).contDiffWithinAt
 
 /-- The classical gradient of `f` has size at most `(r log (4 / r))⁻¹`, `r = ‖z - 1‖`. -/
 private theorem norm_gradient_logLogTraceExample_le {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
@@ -117,17 +122,15 @@ private theorem norm_gradient_logLogTraceExample_le {z : ℂ} (hz : z ∈ ball (
   obtain ⟨h0, h2⟩ := norm_sub_one_mem hz
   have hg : HasFDerivAt (fun w : ℂ => ‖w - 1‖) (fderiv ℝ (fun w : ℂ => ‖w - 1‖) z) z :=
     ((differentiableAt_id.sub_const 1).norm ℝ (norm_pos_iff.1 h0)).hasFDerivAt
-  have hcomp := (hasDerivAt_log_log_four_div h0 (by linarith)).comp_hasFDerivAt z hg
+  have hcomp := (Real.hasDerivAt_log_log_div four_ne_zero h0.ne' (by linarith)
+    (by linarith)).comp_hasFDerivAt z hg
   have hf : logLogTraceExample =
       (fun s : ℝ => Real.log (Real.log (4 / s))) ∘ fun w : ℂ => ‖w - 1‖ :=
     funext logLogTraceExample_eq
-  have hlip : LipschitzWith 1 (fun w : ℂ => ‖w - 1‖) :=
-    LipschitzWith.of_dist_le_mul fun x y => by
-      simpa [Real.dist_eq, dist_eq_norm] using abs_norm_sub_norm_le (x - 1) (y - 1)
-  have hD : ‖fderiv ℝ (fun w : ℂ => ‖w - 1‖) z‖ ≤ 1 := by
-    simpa using norm_fderiv_le_of_lipschitz ℝ hlip
+  have hD : ‖fderiv ℝ (fun w : ℂ => ‖w - 1‖) z‖ ≤ 1 :=
+    fderiv_comp_sub (𝕜 := ℝ) (f := fun w : ℂ => ‖w‖) (x := z) (1 : ℂ) ▸ norm_fderiv_norm_le (z - 1)
   have hpos : 0 < ‖z - 1‖ * Real.log (4 / ‖z - 1‖) :=
-    mul_pos h0 (log_four_div_pos h0 (by linarith))
+    mul_pos h0 (Real.log_div_pos h0 (by linarith))
   rw [norm_gradient_eq_norm_fderiv, hf, hcomp.fderiv, norm_smul, norm_neg,
     Real.norm_of_nonneg (inv_nonneg.2 hpos.le)]
   calc (‖z - 1‖ * Real.log (4 / ‖z - 1‖))⁻¹ * ‖fderiv ℝ (fun w : ℂ => ‖w - 1‖) z‖
@@ -144,7 +147,8 @@ theorem memLp_logLogTraceExample :
   rw [e]
   have h : IntegrableOn (fun z : ℂ => profile ‖z - 1‖ ^ 2) (ball 1 2) := by
     refine (integrableOn_fun_norm_sub_addHaar (f := fun r => profile r ^ 2)).2 ?_
-    simpa [Complex.finrank_real_complex, profile] using integrableOn_mul_log_log_four_div_sq
+    simpa [Complex.finrank_real_complex, profile] using
+      integrableOn_mul_log_log_div_sq (by norm_num : (2 : ℝ) < 4)
   exact h.mono_set (ball_subset_ball' (by norm_num))
 
 /-- The classical gradient of `f(z) = log log (4 / ‖1 - z‖)` is square integrable on the unit
@@ -159,7 +163,8 @@ theorem memLp_gradient_logLogTraceExample :
   have h : IntegrableOn (fun z : ℂ => ((‖z - 1‖ * Real.log (4 / ‖z - 1‖))⁻¹) ^ 2) (ball 1 2) := by
     refine (integrableOn_fun_norm_sub_addHaar
       (f := fun r => ((r * Real.log (4 / r))⁻¹) ^ 2)).2 ?_
-    simpa [Complex.finrank_real_complex] using integrableOn_mul_inv_mul_log_four_div_sq
+    simpa [Complex.finrank_real_complex] using
+      integrableOn_mul_inv_mul_log_div_sq (by norm_num : (2 : ℝ) < 4)
   refine Integrable.mono' (h.mono_set (ball_subset_ball' (by norm_num))) (hm.norm.pow 2)
     (ae_restrict_of_forall_mem measurableSet_ball fun z hz => ?_)
   rw [Real.norm_of_nonneg (sq_nonneg _)]
@@ -173,7 +178,8 @@ theorem tendsto_logLogTraceExample :
     tendsto_nhdsWithin_iff.2 ⟨((continuous_id.sub continuous_const).norm.tendsto' 1 0
       (by simp)).mono_left nhdsWithin_le_nhds,
       eventually_nhdsWithin_of_forall fun z hz => (norm_sub_one_mem hz).1⟩
-  refine (tendsto_log_log_four_div.comp hr).congr fun z => ?_
+  refine ((Real.tendsto_log_log_div four_ne_zero).comp
+    (hr.mono_right (nhdsGT_le_nhdsNE 0))).congr fun z => ?_
   rw [logLogTraceExample_eq]
   rfl
 
