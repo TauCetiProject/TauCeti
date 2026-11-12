@@ -45,6 +45,8 @@ This file collects facts used to compare power series to a finite order `m`:
   a ring homomorphism to power series.
 * `PowerSeries.coeff_coe_mul_eq_sum`: `coeff n (p * g) = ∑_{i < N} pᵢ coeff n (Xⁱ g)` for a
   polynomial `p` of degree less than `N`.
+* `Polynomial.exists_natDegree_le_forall_coeff_eq`: every polynomial agrees up to index `m` with
+  one of degree at most `m`.
 * `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
   the truncation below `n` evaluates like any polynomial with the same coefficients below `n`.
 -/
@@ -275,3 +277,14 @@ theorem trunc_map_sum_mul_eq (Φ : S →+* K⟦X⟧) {x : A}
 end Expansion
 
 end PowerSeries
+
+namespace Polynomial
+
+/-- Every polynomial agrees up to index `m` with one of degree at most `m`. -/
+theorem exists_natDegree_le_forall_coeff_eq {R : Type*} [Semiring R] (B : R[X]) (m : ℕ) :
+    ∃ B' : R[X], B'.natDegree ≤ m ∧ ∀ i ≤ m, B.coeff i = B'.coeff i :=
+  ⟨PowerSeries.trunc (m + 1) (B : PowerSeries R),
+    Nat.lt_succ_iff.1 (PowerSeries.natDegree_trunc_lt _ _), fun i hi ↦ by
+      simp [PowerSeries.coeff_trunc, Nat.lt_succ_of_le hi]⟩
+
+end Polynomial

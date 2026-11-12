@@ -317,7 +317,7 @@ theorem norm_rpow_le_one_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P)
   -- isometric calculus on complex operators, whereas the real calculus is only bundled
   -- as a continuous calculus.
   have hself := (nonneg_iff_isPositive.mp hP₀).isSelfAdjoint
-  have hcont : ContinuousOn (fun r : ℝ ↦ r ^ s) (spectrum ℝ P) :=
+  have _ : ContinuousOn (fun r : ℝ ↦ r ^ s) (spectrum ℝ P) :=
     continuousOn_id.rpow_const fun r hr ↦ Or.inl
       (ne_of_gt (zero_lt_one.trans_le ((CFC.one_le_iff (R := ℝ) P).mp hP r hr)))
   rw [← norm_complexifyL2, complexifyL2_cfc (fun r : ℝ ↦ r ^ s) P]

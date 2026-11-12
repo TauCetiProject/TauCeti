@@ -17,10 +17,18 @@ Let `M` be a manifold modelled on `E` and `V → M` a fibre bundle with model fi
 `TauCeti.FiniteBundleAtlas E M F V` is a finite cover of `M` by open sets `dom i`, each with compact
 closure inside the source of the preferred manifold chart and the base set of the preferred bundle
 trivialization at a point `center i`. Every compact Hausdorff manifold modelled on a locally
-compact space has one (`TauCeti.FiniteBundleAtlas.nonempty`), and the chart domains of a finite
-bundle atlas of a Hausdorff manifold have a shrinking
-(`TauCeti.FiniteBundleAtlas.exists_shrinking`). Such atlases are the finite chart data from which
-function spaces of sections, such as Sobolev spaces, are built chartwise.
+compact space has one (`TauCeti.FiniteBundleAtlas.nonempty`), even one whose chart domains have
+closures inside any prescribed open neighbourhoods of their centres
+(`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset`), and the chart domains of a finite bundle
+atlas of a Hausdorff manifold have a shrinking (`TauCeti.FiniteBundleAtlas.exists_shrinking`).
+Such atlases are the finite chart data from which function spaces of sections, such as Sobolev
+spaces, are built chartwise.
+
+The same chart domains serve as a finite bundle atlas of any other fibre bundle `V'` over `M` as
+soon as their closures also lie in the base sets of the preferred trivializations of `V'`
+(`TauCeti.FiniteBundleAtlas.ofBaseSet`); such joint atlases exist on every compact Hausdorff
+manifold modelled on a locally compact space
+(`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`).
 
 In chart `i` a section `s` is read as the `F`-valued function `A.coord i s` on the open set
 `A.image i = chart i '' dom i` of the model space. On the overlap `A.overlap i i'` of two charts,
@@ -42,10 +50,14 @@ closed upper half-plane are read in `ℂ` in
   domains and of their pairwise intersections.
 * `TauCeti.FiniteBundleAtlas.transition`: the chart transition between two charts.
 * `TauCeti.FiniteBundleAtlas.coord`: a section read in a chart.
+* `TauCeti.FiniteBundleAtlas.ofBaseSet`: the charts of an atlas of `V` as an atlas of `V'`.
 
 ## Main results
 
 * `TauCeti.FiniteBundleAtlas.nonempty`: compact Hausdorff manifolds have finite bundle atlases.
+* `TauCeti.FiniteBundleAtlas.exists_closure_dom_subset`,
+  `TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`: existence of atlases subordinate
+  to given neighbourhoods, and of joint atlases.
 * `TauCeti.FiniteBundleAtlas.exists_shrinking`: the chart domains of a finite bundle atlas of a
   Hausdorff manifold have a shrinking.
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
@@ -95,29 +107,54 @@ structure FiniteBundleAtlas where
   iUnion_dom : ⋃ i, dom i = univ
 
 variable {E M F V}
+  {F' : Type*} [TopologicalSpace F'] {V' : M → Type*} [TopologicalSpace (TotalSpace F' V')]
+  [∀ x, TopologicalSpace (V' x)] [FiberBundle F' V']
 
 namespace FiniteBundleAtlas
 
-/-- A compact Hausdorff manifold modelled on a locally compact space has a finite bundle atlas. -/
-theorem nonempty [LocallyCompactSpace E] [CompactSpace M] [T2Space M] :
-    Nonempty (FiniteBundleAtlas E M F V) := by
+/-- **Atlases subordinate to given neighbourhoods.** On a compact Hausdorff manifold modelled on a
+locally compact space, for every family of open neighbourhoods `U x ∋ x` there is a finite bundle
+atlas whose chart domains have closures inside the neighbourhood of their centre. -/
+theorem exists_closure_dom_subset [LocallyCompactSpace E] [CompactSpace M] [T2Space M]
+    (U : M → Set M) (hU : ∀ x, IsOpen (U x)) (hxU : ∀ x, x ∈ U x) :
+    ∃ A : FiniteBundleAtlas E M F V, ∀ i, closure (A.dom i) ⊆ U (A.center i) := by
   have := ChartedSpace.locallyCompactSpace E M
-  let U : M → Set M := fun x ↦ (chartAt E x).source ∩ (trivializationAt F V x).baseSet
-  have hU (x : M) : IsOpen (U x) :=
-    (chartAt E x).open_source.inter (trivializationAt F V x).open_baseSet
-  have hxU (x : M) : x ∈ U x := ⟨mem_chart_source E x, mem_baseSet_trivializationAt F V x⟩
-  -- Shrink each `U x` to the interior of a compact neighbourhood of `x` inside it.
-  choose K hK hxK hKU using fun x ↦ exists_compact_subset (hU x) (hxU x)
-  have hcl (x : M) : closure (interior (K x)) ⊆ U x :=
-    (closure_mono interior_subset).trans ((hK x).isClosed.closure_subset.trans (hKU x))
+  let W : M → Set M := fun x ↦ U x ∩ ((chartAt E x).source ∩ (trivializationAt F V x).baseSet)
+  have hW (x : M) : IsOpen (W x) :=
+    (hU x).inter ((chartAt E x).open_source.inter (trivializationAt F V x).open_baseSet)
+  have hxW (x : M) : x ∈ W x :=
+    ⟨hxU x, mem_chart_source E x, mem_baseSet_trivializationAt F V x⟩
+  -- Shrink each `W x` to the interior of a compact neighbourhood of `x` inside it.
+  choose K hK hxK hKW using fun x ↦ exists_compact_subset (hW x) (hxW x)
+  have hcl (x : M) : closure (interior (K x)) ⊆ W x :=
+    (closure_mono interior_subset).trans ((hK x).isClosed.closure_subset.trans (hKW x))
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover (fun x ↦ interior (K x))
     (fun x ↦ isOpen_interior) fun x _ ↦ mem_iUnion.2 ⟨x, hxK x⟩
   let c : Fin t.card → M := fun i ↦ (t.equivFin.symm i).1
   refine ⟨⟨t.card, c, fun i ↦ interior (K (c i)), fun i ↦ isOpen_interior,
-    fun i ↦ (hK _).closure_of_subset interior_subset, fun i ↦ (hcl _).trans inter_subset_left,
-    fun i ↦ (hcl _).trans inter_subset_right, eq_univ_of_forall fun x ↦ ?_⟩⟩
+    fun i ↦ (hK _).closure_of_subset interior_subset,
+    fun i ↦ (hcl _).trans (inter_subset_right.trans inter_subset_left),
+    fun i ↦ (hcl _).trans (inter_subset_right.trans inter_subset_right),
+    eq_univ_of_forall fun x ↦ ?_⟩, fun i ↦ (hcl _).trans inter_subset_left⟩
   obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 (ht (mem_univ x))
   exact mem_iUnion.2 ⟨t.equivFin ⟨y, hy⟩, by simpa [c] using hxy⟩
+
+/-- A compact Hausdorff manifold modelled on a locally compact space has a finite bundle atlas. -/
+theorem nonempty [LocallyCompactSpace E] [CompactSpace M] [T2Space M] :
+    Nonempty (FiniteBundleAtlas E M F V) :=
+  (exists_closure_dom_subset (fun _ ↦ univ) (fun _ ↦ isOpen_univ) fun _ ↦ mem_univ _).elim
+    fun A _ ↦ ⟨A⟩
+
+variable (F' V') in
+/-- **Joint atlases.** A compact Hausdorff manifold modelled on a locally compact space has a
+finite bundle atlas of `V` whose chart domains have closures inside the base sets of the preferred
+trivializations of a second fibre bundle `V'`, so that the same charts form an atlas of `V'`
+(`TauCeti.FiniteBundleAtlas.ofBaseSet`). -/
+theorem exists_closure_dom_subset_baseSet [LocallyCompactSpace E] [CompactSpace M] [T2Space M] :
+    ∃ A : FiniteBundleAtlas E M F V,
+      ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet :=
+  exists_closure_dom_subset _ (fun x ↦ (trivializationAt F' V' x).open_baseSet)
+    fun x ↦ mem_baseSet_trivializationAt F' V' x
 
 variable (A : FiniteBundleAtlas E M F V)
 
@@ -256,6 +293,36 @@ theorem closure_image_subset_target [T2Space E] (i : Fin A.n) :
     closure (A.image i : Set E) ⊆ (A.chart i).target :=
   (A.closure_image_subset_chart_image_closure_dom i).trans
     ((A.chart_image_closure_dom_subset i).trans inter_subset_left)
+
+/-- The charts of a finite bundle atlas of `V` as a finite bundle atlas of a second fibre bundle
+`V'`, when the closures of the chart domains lie in the base sets of the preferred trivializations
+of `V'`: the number of charts, the centres and the chart domains are unchanged. -/
+@[expose, simps n center dom]
+def ofBaseSet (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet) :
+    FiniteBundleAtlas E M F' V' where
+  n := A.n
+  center := A.center
+  dom := A.dom
+  isOpen_dom := A.isOpen_dom
+  isCompact_closure_dom := A.isCompact_closure_dom
+  closure_dom_subset_source := A.closure_dom_subset_source
+  closure_dom_subset_baseSet := h
+  iUnion_dom := A.iUnion_dom
+
+section OfBaseSet
+
+variable {A} {h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet}
+
+@[simp]
+theorem image_ofBaseSet (i : Fin A.n) : (A.ofBaseSet h).image i = A.image i :=
+  SetLike.ext fun _ ↦ (mem_image (A := A.ofBaseSet h) (i := i)).trans (mem_image (A := A)).symm
+
+@[simp]
+theorem overlap_ofBaseSet (i i' : Fin A.n) : (A.ofBaseSet h).overlap i i' = A.overlap i i' :=
+  Set.ext fun _ ↦ (mem_overlap (A := A.ofBaseSet h) (i := i) (i' := i')).trans
+    (mem_overlap (A := A)).symm
+
+end OfBaseSet
 
 end FiniteBundleAtlas
 
