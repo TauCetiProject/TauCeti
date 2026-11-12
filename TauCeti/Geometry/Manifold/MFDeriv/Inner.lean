@@ -19,10 +19,14 @@ differentiable at `x`, the derivative of `y ↦ ⟪g y, g' y⟫` obeys the produ
 
 On an open subset of a real inner product space, the derivative of the squared distance
 `y ↦ ‖y - a‖ ^ 2` vanishes exactly at the centre `a`.
+More generally, at a zero of a differentiable vector-valued map, its squared norm has
+vanishing differential.
 
 ## Main results
 
 * `TauCeti.mvfderiv_inner_apply`: the product rule for the inner product.
+* `TauCeti.Manifold.mvfderiv_norm_sq_comp_of_eq_zero`: the squared norm of a differentiable
+  vector-valued map has vanishing differential at a zero.
 * `TauCeti.mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff`: along the inclusion of an open subset,
   the only critical point of squared distance is the centre.
 -/
@@ -63,6 +67,24 @@ theorem mvfderiv_inner_apply {g g' : M → F} {x : M} (hg : MDiffAt g x) (hg' : 
     hinner.differentiableAt hpair.mdifferentiableAt, hinner.fderiv,
     hpair']
   simp only [fderivInnerCLM_apply, ContinuousLinearMap.prod_apply, add_comm]
+
+namespace Manifold
+
+variable {p : M}
+
+/-- At a zero of a differentiable vector-valued map, its squared norm has vanishing
+differential. -/
+theorem mvfderiv_norm_sq_comp_of_eq_zero
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    {f : M → F} (hf : MDifferentiableAt I 𝓘(ℝ, F) f p) (hzero : f p = 0) :
+    mvfderiv I (fun q ↦ ‖f q‖ ^ 2) p = 0 := by
+  ext a
+  simpa only [Function.comp_def, fderiv_norm_sq_apply, hzero, map_zero, smul_zero,
+    zero_apply] using
+    mvfderiv_comp_apply_of_differentiableAt (φ := fun z : F ↦ ‖z‖ ^ 2)
+      ((contDiff_norm_sq ℝ (n := 2)).differentiable (by norm_num)).differentiableAt hf a
+
+end Manifold
 
 section Real
 
