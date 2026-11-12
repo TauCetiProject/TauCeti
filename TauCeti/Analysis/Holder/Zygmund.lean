@@ -254,10 +254,10 @@ theorem exists_toLpTop_eq_and_norm_le_and_holderWith (hα0 : 0 < α) (hα1 : α 
   set D : ℝ := (eLpNorm (fderiv ℝ (𝓕⁻ (lowPass φ 0) : 𝓢(E, ℂ))) 1 volume).toReal
   set q : ℝ := ((2 : ℝ) ^ (α : ℝ))⁻¹ with hq_def
   have hA : 0 ≤ A := integral_nonneg fun _ ↦ norm_nonneg _
-  have hD : 0 ≤ D := ENNReal.toReal_nonneg
+  have _ : 0 ≤ D := ENNReal.toReal_nonneg
   have hq0 : 0 ≤ q := by positivity
   have hq1 : q < 1 := inv_lt_one_of_one_lt₀ (Real.one_lt_rpow one_lt_two hα0)
-  have hq1' : 0 < 1 - q := sub_pos.2 hq1
+  have _ : 0 < 1 - q := sub_pos.2 hq1
   set C : ℝ≥0 := C₀ * (A.toNNReal + (D * 2 ^ n₀).toNNReal) + (A * (1 - q)⁻¹).toNNReal
   refine ⟨C, fun u ↦ ?_⟩
   -- The smoothed blocks `Gⱼ` represent the blocks `Δⱼ u`, which have `‖Δⱼ u‖_∞ ≤ ‖u‖ q^j`.
