@@ -9,8 +9,6 @@ public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
 public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 public import TauCeti.Geometry.Manifold.IsManifold.Ambient
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
-import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 
 /-!
@@ -252,31 +250,12 @@ section Smooth
 
 variable {k : WithTop ℕ∞}
 
-/-- The inverse of `interiorEmbedding` read in the ambient Euclidean space, the logarithm of the
-zeroth coordinate through the boundary-normal splitting. -/
-private def interiorCoord (w : EuclideanSpace ℝ (Fin (n + 1))) : EuclideanSpace ℝ (Fin (n + 1)) :=
-  euclideanHalfSpaceBoundaryNormalEquiv n
-    (((euclideanHalfSpaceBoundaryNormalEquiv n).symm w).1, Real.log (w 0))
-
-private theorem interiorCoord_coe_interiorEmbedding (v : EuclideanSpace ℝ (Fin (n + 1))) :
-    interiorCoord (EuclideanHalfSpace.interiorEmbedding n v).1 = v := by
-  rw [interiorCoord, EuclideanHalfSpace.interiorEmbedding_coe_apply_zero, Real.log_exp,
-    EuclideanHalfSpace.coe_interiorEmbedding, ContinuousLinearEquiv.symm_apply_apply,
-    ← euclideanHalfSpaceBoundaryNormalEquiv_symm_apply_snd]
-  exact (euclideanHalfSpaceBoundaryNormalEquiv n).apply_symm_apply v
-
-private theorem contDiffOn_interiorCoord :
-    ContDiffOn ℝ k (interiorCoord (n := n)) {w | 0 < w 0} :=
-  (euclideanHalfSpaceBoundaryNormalEquiv n).contDiff.comp_contDiffOn
-    ((euclideanHalfSpaceBoundaryNormalEquiv n).symm.contDiff.fst.contDiffOn.prodMk
-      (Real.contDiffOn_log.comp (contDiff_piLp_apply (p := 2) (i := 0)).contDiffOn
-        fun _ hw => ne_of_gt hw))
-
 variable [IsManifold (𝓡 (n + 1)) k M]
 
 omit [TopologicalSpace N] [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] in
 /-- An interior chart of a side is read smoothly through the inclusion into `M`: by
-`interiorEmbedding` after the chart of `M`, and back by `interiorCoord` before its inverse. -/
+`interiorEmbedding` after the chart of `M`, and back by `EuclideanHalfSpace.interiorCoord` before
+its inverse. -/
 private theorem interiorChart_exists_contMDiffOn (hCo : IsOpen (C \ range f)) (x : C)
     (hx : (x : M) ∉ range f) :
     ∃ (F : M → EuclideanSpace ℝ (Fin (n + 1))) (G : EuclideanSpace ℝ (Fin (n + 1)) → M)
@@ -290,10 +269,12 @@ private theorem interiorChart_exists_contMDiffOn (hCo : IsOpen (C \ range f)) (x
   have : Nonempty ↥(C \ range f) := ⟨⟨x, x.2, hx⟩⟩
   set c := chartAt (EuclideanSpace ℝ (Fin (n + 1))) (x : M)
   refine ⟨fun m => (EuclideanHalfSpace.interiorEmbedding n (c m)).1,
-    fun w => c.symm (interiorCoord w), c.source, {w | 0 < w 0 ∧ interiorCoord w ∈ c.target},
+    fun w => c.symm (EuclideanHalfSpace.interiorCoord w), c.source,
+    {w | 0 < w 0 ∧ EuclideanHalfSpace.interiorCoord w ∈ c.target},
     (EuclideanHalfSpace.contDiff_coe_interiorEmbedding n).contMDiff.comp_contMDiffOn
       contMDiffOn_chart,
-    contMDiffOn_chart_symm.comp (contDiffOn_interiorCoord.contMDiffOn.mono fun _ hw => hw.1)
+    contMDiffOn_chart_symm.comp
+      (EuclideanHalfSpace.contDiffOn_interiorCoord.contMDiffOn.mono fun _ hw => hw.1)
       fun _ hw => hw.2, fun z hz => ?_⟩
   -- A point of the source is the inclusion of a point of `C \ range f` lying in the source of `c`,
   -- and the chart sends it to `interiorEmbedding` of its coordinates in `c`.
@@ -311,7 +292,7 @@ private theorem interiorChart_exists_contMDiffOn (hCo : IsOpen (C \ range f)) (x
     simp only [interiorChart, OpenPartialHomeomorph.coe_trans, Function.comp_apply, hsymm,
       IsOpenEmbedding.toOpenPartialHomeomorph_apply, c]
   rw [happ, modelWithCornersEuclideanHalfSpace_apply, coe_inclusion]
-  simp only [mem_ofPred_eq, interiorCoord_coe_interiorEmbedding, c.left_inv hw,
+  simp only [mem_ofPred_eq, EuclideanHalfSpace.interiorCoord_coe_interiorEmbedding, c.left_inv hw,
     EuclideanHalfSpace.interiorEmbedding_coe_apply_zero, Real.exp_pos, c.map_source hw, and_self,
     and_true]
   exact hw

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Chart
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Local collars of a manifold with boundary
@@ -279,6 +280,29 @@ theorem contDiff_coe_interiorEmbedding (n : ℕ) {k : WithTop ℕ∞} :
   exact (euclideanHalfSpaceBoundaryNormalEquiv n).contDiff.comp
     ((euclideanHalfSpaceBoundaryNormalEquiv n).symm.contDiff.fst.prodMk
       (Real.contDiff_exp.comp (contDiff_piLp_apply (p := 2) (i := (0 : Fin (n + 1))))))
+
+/-- The inverse of `interiorEmbedding` read in the ambient Euclidean space, the logarithm of the
+zeroth coordinate through the boundary-normal splitting. -/
+def interiorCoord {n : ℕ} (w : EuclideanSpace ℝ (Fin (n + 1))) : EuclideanSpace ℝ (Fin (n + 1)) :=
+  euclideanHalfSpaceBoundaryNormalEquiv n
+    (((euclideanHalfSpaceBoundaryNormalEquiv n).symm w).1, Real.log (w 0))
+
+/-- The ambient inverse coordinates undo `interiorEmbedding`. -/
+@[simp]
+theorem interiorCoord_coe_interiorEmbedding {n : ℕ} (v : EuclideanSpace ℝ (Fin (n + 1))) :
+    interiorCoord (EuclideanHalfSpace.interiorEmbedding n v).1 = v := by
+  rw [interiorCoord, EuclideanHalfSpace.interiorEmbedding_coe_apply_zero, Real.log_exp,
+    EuclideanHalfSpace.coe_interiorEmbedding, ContinuousLinearEquiv.symm_apply_apply,
+    ← euclideanHalfSpaceBoundaryNormalEquiv_symm_apply_snd]
+  exact (euclideanHalfSpaceBoundaryNormalEquiv n).apply_symm_apply v
+
+/-- The ambient inverse coordinates are smooth, indeed analytic, on the open half-space. -/
+theorem contDiffOn_interiorCoord {n : ℕ} {k : WithTop ℕ∞} :
+    ContDiffOn ℝ k (interiorCoord (n := n)) {w | 0 < w 0} :=
+  (euclideanHalfSpaceBoundaryNormalEquiv n).contDiff.comp_contDiffOn
+    ((euclideanHalfSpaceBoundaryNormalEquiv n).symm.contDiff.fst.contDiffOn.prodMk
+      (Real.contDiffOn_log.comp (contDiff_piLp_apply (p := 2) (i := 0)).contDiffOn
+        fun _ hw => ne_of_gt hw))
 
 /-- `interiorEmbedding` is an open embedding, with image the open half-space
 (`TauCeti.EuclideanHalfSpace.range_interiorEmbedding`). -/
