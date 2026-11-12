@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.NNNorm
@@ -37,7 +38,9 @@ compositions obeys the three-term estimate
 (`ContinuousLinearMap.enorm_comp_sub_comp_le`).
 
 Finally, an operator bounded below is injective
-(`ContinuousLinearMap.injective_of_forall_norm_le`), its lower and upper bounds satisfy
+(`ContinuousLinearMap.injective_of_forall_norm_le`), and on a finite-dimensional space the
+converse holds (`ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_injective`); its
+lower and upper bounds satisfy
 `1 ≤ ‖f‖ M` on a nontrivial space (`ContinuousLinearMap.one_le_opNorm_mul_of_forall_norm_le`),
 it stays nonzero under a sufficiently small perturbation
 (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and it is invertible if it is also
@@ -195,6 +198,16 @@ theorem injective_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F] [Norm
     {f : E →L[𝕜] F} {M : ℝ} (h : ∀ x, ‖x‖ ≤ M * ‖f x‖) : Function.Injective f := by
   refine (injective_iff_map_eq_zero f).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
   simpa [hx] using h x
+
+/-- Conversely, an injective operator on a finite-dimensional space over a complete field is
+bounded below: `α ‖x‖ ≤ ‖f x‖` for some `α > 0`. -/
+theorem exists_pos_forall_mul_norm_le_norm_apply_of_injective [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E →L[𝕜] F}
+    (hf : Function.Injective f) : ∃ α > 0, ∀ x, α * ‖x‖ ≤ ‖f x‖ := by
+  obtain ⟨K, hK, hKf⟩ := (f : E →ₗ[𝕜] F).exists_antilipschitzWith (LinearMap.ker_eq_bot.2 hf)
+  refine ⟨(K : ℝ)⁻¹, inv_pos.2 (by exact_mod_cast hK), fun x ↦ ?_⟩
+  rw [inv_mul_le_iff₀ (by exact_mod_cast hK)]
+  exact hKf.le_mul_norm (map_zero _) x
 
 /-- An operator bounded below, `‖x‖ ≤ M ‖f x‖`, stays nonzero at `x ≠ 0` under a perturbation `w`
 with `‖w‖ ≤ ε ‖x‖`, provided `M ε < 1`. -/

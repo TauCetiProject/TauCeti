@@ -42,6 +42,13 @@ difference of dimensions of spaces of square-integrable solutions is
 * `TauCeti.squareIntegrableSolutions_sub_smul_id_le`: for a bounded-below weight `w`, the
   square-integrable solutions of `u' + (A - w') u = 0` have initial values among those of
   `v' + A v = 0`.
+* `TauCeti.weightedSquareIntegrableSolutions A w`: the initial values of the solutions of
+  `u' + A u = 0` with `e^w u` square integrable.
+* `TauCeti.squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions`:
+  multiplication by `e^w` identifies them with the square-integrable solutions of
+  `v' + (A - w') v = 0`.
+* `TauCeti.weightedSquareIntegrableSolutions_le_of_le_add`: a larger weight gives fewer
+  solutions.
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_of_trajectoryOperator_eq_zero`: an element of the
   kernel of `D_A` has a classical solution of `v' = -A v` as representative.
 * `TauCeti.WeakDerivStep.exists_trajectoryOperator_ae_eq_of_hasDerivAt`: an `Lᵖ` classical
@@ -156,6 +163,110 @@ theorem squareIntegrableSolutions_sub_smul_id_le {A : ℝ → F →L[ℝ] F} {w 
       Real.norm_of_nonneg (Real.exp_pos _).le]
     gcongr
     exact hm ⟨s, rfl⟩
+
+/-- The initial values at time `0` of the solutions `u : ℝ → F` of `u' + A(s) u = 0` on the whole
+line for which `e^{w(s)} u(s)` is square integrable. For a weight `w` with derivative `w'`, this is
+a model of the kernel of the trajectory operator `D_A` on `e^w`-weighted spaces
+(`TauCeti.squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions`). -/
+def weightedSquareIntegrableSolutions (A : ℝ → F →L[ℝ] F) (w : ℝ → ℝ) : Submodule ℝ F where
+  carrier := {x | ∃ u : ℝ → F, u 0 = x ∧ (∀ s, HasDerivAt u (-A s (u s)) s) ∧
+    MemLp (fun s ↦ Real.exp (w s) • u s) 2}
+  zero_mem' := ⟨0, rfl, fun s ↦ by simp, by simp⟩
+  add_mem' := by
+    rintro _ _ ⟨u, rfl, hu, hu2⟩ ⟨v, rfl, hv, hv2⟩
+    refine ⟨u + v, rfl, fun s ↦ by simpa [add_comm] using (hu s).add (hv s), ?_⟩
+    convert hu2.add hv2 using 1
+    ext s
+    simp [smul_add]
+  smul_mem' := by
+    rintro c _ ⟨u, rfl, hu, hu2⟩
+    refine ⟨c • u, rfl, fun s ↦ by simpa using (hu s).const_smul c, ?_⟩
+    convert hu2.const_smul c using 1
+    ext s
+    exact smul_comm _ _ _
+
+section Weighted
+
+variable {A : ℝ → F →L[ℝ] F}
+
+/-- A vector lies in `TauCeti.weightedSquareIntegrableSolutions A w` when it is the value at time
+`0` of a solution `u` of `u' + A u = 0` with `e^w u` square integrable. -/
+theorem mem_weightedSquareIntegrableSolutions {w : ℝ → ℝ} {x : F} :
+    x ∈ weightedSquareIntegrableSolutions A w ↔
+      ∃ u : ℝ → F, u 0 = x ∧ (∀ s, HasDerivAt u (-A s (u s)) s) ∧
+        MemLp (fun s ↦ Real.exp (w s) • u s) 2 :=
+  Iff.rfl
+
+/-- With the zero weight, the weighted solutions are the square-integrable solutions. -/
+@[simp]
+theorem weightedSquareIntegrableSolutions_zero :
+    weightedSquareIntegrableSolutions A 0 = squareIntegrableSolutions A := by
+  ext x
+  simp [mem_weightedSquareIntegrableSolutions, mem_squareIntegrableSolutions]
+
+/-- **A larger weight gives fewer solutions.** If `w₁ ≤ w₂ + C`, a solution with `e^{w₂} u`
+square integrable also has `e^{w₁} u` square integrable. -/
+theorem weightedSquareIntegrableSolutions_le_of_le_add {w₁ w₂ : ℝ → ℝ} (hw₁ : Measurable w₁)
+    {C : ℝ} (h : ∀ s, w₁ s ≤ w₂ s + C) :
+    weightedSquareIntegrableSolutions A w₂ ≤ weightedSquareIntegrableSolutions A w₁ := by
+  rintro _ ⟨u, rfl, hu, hu2⟩
+  have hc : Continuous u := continuous_iff_continuousAt.2 fun s ↦ (hu s).continuousAt
+  refine ⟨u, rfl, hu, (hu2.const_smul (Real.exp C)).of_le
+    (hw₁.exp.aestronglyMeasurable.smul hc.aestronglyMeasurable) (.of_forall fun s ↦ ?_)⟩
+  simp only [Pi.smul_apply, norm_smul, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+  rw [← mul_assoc, ← Real.exp_add]
+  gcongr
+  linarith [h s]
+
+/-- For a weight bounded below, every weighted solution is square integrable. -/
+theorem weightedSquareIntegrableSolutions_le_squareIntegrableSolutions {w : ℝ → ℝ}
+    (hw : BddBelow (range w)) :
+    weightedSquareIntegrableSolutions A w ≤ squareIntegrableSolutions A := by
+  obtain ⟨c, hc⟩ := hw
+  rw [← weightedSquareIntegrableSolutions_zero]
+  exact weightedSquareIntegrableSolutions_le_of_le_add measurable_const (C := -c)
+    fun s ↦ by simpa using hc (mem_range_self s)
+
+/-- For a weight bounded above, every square-integrable solution is a weighted solution. -/
+theorem squareIntegrableSolutions_le_weightedSquareIntegrableSolutions {w : ℝ → ℝ}
+    (hwm : Measurable w) (hw : BddAbove (range w)) :
+    squareIntegrableSolutions A ≤ weightedSquareIntegrableSolutions A w := by
+  obtain ⟨c, hc⟩ := hw
+  rw [← weightedSquareIntegrableSolutions_zero]
+  exact weightedSquareIntegrableSolutions_le_of_le_add hwm (C := c)
+    fun s ↦ by simpa using hc (mem_range_self s)
+
+/-- **Weighted solutions are solutions of the conjugate equation.** For a weight `w` with
+derivative `w'`, multiplication by `e^w` carries the solutions `u` of `u' + A u = 0` with `e^w u`
+square integrable onto the square-integrable solutions of `v' + (A - w') v = 0`. So the kernel of
+the trajectory operator with coefficient `A - w'`, which is `D_A` conjugated from the
+`e^w`-weighted spaces, consists of the weighted solutions of `u' + A u = 0`. -/
+theorem squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions
+    {w w' : ℝ → ℝ} (hw : ∀ s, HasDerivAt w (w' s) s) :
+    squareIntegrableSolutions (fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) =
+      weightedSquareIntegrableSolutions A w := by
+  ext x
+  constructor
+  · intro hx
+    obtain ⟨v, rfl, hv, hv2⟩ := mem_squareIntegrableSolutions.1 hx
+    have hu (s : ℝ) : HasDerivAt (fun s ↦ Real.exp (-w s) • v s)
+        (-A s (Real.exp (-w s) • v s)) s := by
+      convert hasDerivAt_exp_smul_sub_smul_id (hw s).neg (hv s) using 3
+      ext y
+      simp
+    have hx : Real.exp (-w 0) • v 0 ∈ weightedSquareIntegrableSolutions A w :=
+      ⟨_, rfl, hu, by simpa [smul_smul, ← Real.exp_add] using hv2⟩
+    simpa [smul_smul, ← Real.exp_add] using
+      (weightedSquareIntegrableSolutions A w).smul_mem (Real.exp (w 0)) hx
+  · rintro ⟨u, rfl, hu, hu2⟩
+    have hx : Real.exp (w 0) • u 0 ∈
+        squareIntegrableSolutions (fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) :=
+      mem_squareIntegrableSolutions.2
+        ⟨_, rfl, fun s ↦ hasDerivAt_exp_smul_sub_smul_id (hw s) (hu s), hu2⟩
+    simpa [smul_smul, ← Real.exp_add] using
+      (squareIntegrableSolutions _).smul_mem (Real.exp (-w 0)) hx
+
+end Weighted
 
 end TauCeti
 

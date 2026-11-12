@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Hyperbolic
 public import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 public import TauCeti.Analysis.ODE.EnergyEstimate.Cokernel
 public import TauCeti.Analysis.ODE.EnergyEstimate.Global
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.ODE.TrajectoryOperator.DegenerateLimit
 import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 
@@ -243,12 +244,9 @@ theorem isFredholm_trajectoryOperator_iff (hA : Continuous A) {Aminus Aplus : E 
   -- bounded below has a Lyapunov form.
   have hlyap {B : E →L[ℝ] E} (hBsym : (B : E →ₗ[ℝ] E).IsSymmetric)
       (hB : Function.Injective B) : B.HasLyapunovForm := by
-    obtain ⟨K, -, hK⟩ := (B : E →ₗ[ℝ] E).injective_iff_antilipschitz.1 hB
-    refine ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hBsym
-      (α := ((K : ℝ) + 1)⁻¹) (by positivity) fun v ↦ ?_
-    rw [inv_mul_le_iff₀ (by positivity)]
-    calc ‖v‖ ≤ K * ‖B v‖ := ZeroHomClass.bound_of_antilipschitz (B : E →ₗ[ℝ] E) hK v
-      _ ≤ ((K : ℝ) + 1) * ‖B v‖ := by gcongr; linarith
+    obtain ⟨α, hα, hgap⟩ :=
+      ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_injective hB
+    exact ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hBsym hα hgap
   exact isFredholm_trajectoryOperator_of_hasLyapunovForm hA (hlyap hminus hm) (hlyap hplus hp) hbot
     htop AL hAL
 
