@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Enumeration.Domain
-public import TauCeti.Computability.RE
 import Mathlib.Data.Set.Finite.Basic
 
 /-!
