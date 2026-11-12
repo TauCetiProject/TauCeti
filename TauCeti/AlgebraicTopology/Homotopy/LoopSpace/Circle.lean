@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.AB
-public import Mathlib.Algebra.Category.ModuleCat.Products
-public import Mathlib.Algebra.DirectSum.Finsupp
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
+public import TauCeti.Algebra.Category.ModuleCat.Products
 public import TauCeti.AlgebraicTopology.Singular.Additivity
 public import TauCeti.AlgebraicTopology.Singular.Circle
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
@@ -148,36 +147,19 @@ section ModuleCat
 
 variable {k : Type u} [CommRing k] (M : ModuleCat.{u} k)
 
-/-- An isomorphism onto `∐_ℤ M` in `ModuleCat`, read as a linear equivalence with `ℤ →₀ M`. -/
-private def coprodLinearEquiv {X : ModuleCat.{u} k} (e : X ≅ ∐ fun _ : ℤ ↦ M) :
-    X ≃ₗ[k] (ℤ →₀ M) :=
-  (e ≪≫ ModuleCat.coprodIsoDirectSum _).toLinearEquiv.trans (finsuppLEquivDirectSum k M ℤ).symm
-
-/-- If `f ≫ e.hom` is `g` into the summand of index `m`, then `coprodLinearEquiv M e` sends `f y`
-to `g y` placed at `m`. -/
-private theorem coprodLinearEquiv_apply {X Y : ModuleCat.{u} k} (e : X ≅ ∐ fun _ : ℤ ↦ M)
-    {f : Y ⟶ X} {g : Y ⟶ M} {m : ℤ} (h : f ≫ e.hom = g ≫ Sigma.ι (fun _ : ℤ ↦ M) m) (y : Y) :
-    coprodLinearEquiv M e (f y) = Finsupp.single m (g y) := by
-  have h' := congr(($h ≫ (ModuleCat.coprodIsoDirectSum _).hom).hom y)
-  simp only [Category.assoc, ModuleCat.ι_coprodIsoDirectSum_hom, ModuleCat.hom_comp,
-    LinearMap.comp_apply, ModuleCat.hom_ofHom] at h'
-  simp only [coprodLinearEquiv, LinearEquiv.trans_apply]
-  -- the linear equivalence of a composite isomorphism applies the two isomorphisms in turn
-  exact (congrArg _ h').trans (finsuppLEquivDirectSum_symm_lof k M (ι := ℤ) m _)
-
 /-- `H₀(𝓛S¹; M)` is the module `ℤ →₀ M` of finitely supported families indexed by the degree; for
 `M = k` this is the group algebra `k[ℤ]`. -/
 def singularHomologyZeroFreeLoopLinearEquiv :
     ((singularHomologyFunctor (ModuleCat.{u} k) 0).obj M).obj (TopCat.of C(Circle, Circle)) ≃ₗ[k]
       (ℤ →₀ M) :=
-  coprodLinearEquiv M (singularHomologyZeroFreeLoopIso M)
+  (singularHomologyZeroFreeLoopIso M).toLinearEquiv.trans (coprodLinearEquivFinsupp M ℤ)
 
 /-- `H₁(𝓛S¹; M)` is the module `ℤ →₀ M` of finitely supported families indexed by the degree; for
 `M = k` this is the group algebra `k[ℤ]`. -/
 def singularHomologyOneFreeLoopLinearEquiv :
     ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj M).obj (TopCat.of C(Circle, Circle)) ≃ₗ[k]
       (ℤ →₀ M) :=
-  coprodLinearEquiv M (singularHomologyOneFreeLoopIso M)
+  (singularHomologyOneFreeLoopIso M).toLinearEquiv.trans (coprodLinearEquivFinsupp M ℤ)
 
 /-- On the component of degree `m`, `Circle.singularHomologyZeroFreeLoopLinearEquiv` sends a class
 to its augmentation placed at `m`. -/
@@ -187,9 +169,10 @@ theorem singularHomologyZeroFreeLoopLinearEquiv_map (m : ℤ)
     singularHomologyZeroFreeLoopLinearEquiv M
         (((singularHomologyFunctor (ModuleCat.{u} k) 0).obj M).map
           (TopCat.ofHom (freeLoopComponentInclusion m)) x) =
-      Finsupp.single m ((TopCat.of Circle).singularHomology₀ε M x) :=
-  coprodLinearEquiv_apply M _
-    (map_freeLoopComponentInclusion_singularHomologyZeroFreeLoopIso_hom M m) x
+      Finsupp.single m ((TopCat.of Circle).singularHomology₀ε M x) := by
+  rw [singularHomologyZeroFreeLoopLinearEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
+    ← ModuleCat.comp_apply, map_freeLoopComponentInclusion_singularHomologyZeroFreeLoopIso_hom,
+    ModuleCat.comp_apply, coprodLinearEquivFinsupp_ι_apply]
 
 /-- On the component of degree `m`, `Circle.singularHomologyOneFreeLoopLinearEquiv` sends a class
 to its image under `Circle.singularHomologyOneIso` placed at `m`. -/
@@ -199,9 +182,10 @@ theorem singularHomologyOneFreeLoopLinearEquiv_map (m : ℤ)
     singularHomologyOneFreeLoopLinearEquiv M
         (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj M).map
           (TopCat.ofHom (freeLoopComponentInclusion m)) x) =
-      Finsupp.single m ((singularHomologyOneIso M).hom x) :=
-  coprodLinearEquiv_apply M _
-    (map_freeLoopComponentInclusion_singularHomologyOneFreeLoopIso_hom M m) x
+      Finsupp.single m ((singularHomologyOneIso M).hom x) := by
+  rw [singularHomologyOneFreeLoopLinearEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
+    ← ModuleCat.comp_apply, map_freeLoopComponentInclusion_singularHomologyOneFreeLoopIso_hom,
+    ModuleCat.comp_apply, coprodLinearEquivFinsupp_ι_apply]
 
 end ModuleCat
 

@@ -26,7 +26,8 @@ through the standard generator of the homology of `TopCat.sphere 1`.
 * `TauCeti.circleLoopPairHom`: the standard loop as a map of pairs `(I¹, ∂I¹) ⟶ (S¹, {(1, 0)})`.
 * `TauCeti.circleFundamentalClass`: the fundamental class `A ⟶ H₁(S¹; A)` of the unit circle in
   `ℝ²`, the class of the standard loop.
-* `Circle.singularHomologyOneIso`: `H₁(S¹; A) ≅ A` for the complex unit circle `Circle`.
+* `Circle.singularHomologyOneIso`: `H₁(S¹; A) ≅ A` for the complex unit circle `Circle`;
+  `Circle.singularHomologyOneIso_inv`: its inverse is the standard generator of the sphere.
 -/
 
 public section
@@ -94,5 +95,17 @@ def singularHomologyOneIso :
     ((singularHomologyFunctor C 1).obj A).obj (TopCat.of Circle) ≅ A :=
   ((singularHomologyFunctor C 1).obj A).mapIso sphereOneIsoCircleUnlifted.symm ≪≫
     ((reducedSingularHomologySuccIso A 0).app _).symm ≪≫ reducedSingularHomologyTopCatSphereIso A 1
+
+/-- **Characteristic equation of `Circle.singularHomologyOneIso`**: its inverse is the standard
+generator of the reduced homology of `TopCat.sphere 1`
+(`TauCeti.reducedSingularHomologyTopCatSphereIso`), read in unreduced homology and pushed to
+`Circle` along `TauCeti.sphereOneIsoCircleUnlifted`. -/
+theorem singularHomologyOneIso_inv :
+    (singularHomologyOneIso A).inv =
+      (reducedSingularHomologyTopCatSphereIso A 1).inv ≫ (reducedSingularHomologyι A 1).app _ ≫
+        ((singularHomologyFunctor C 1).obj A).map sphereOneIsoCircleUnlifted.hom := by
+  rw [singularHomologyOneIso]
+  simp only [Iso.trans_inv, Iso.symm_inv, Functor.mapIso_inv, Iso.app_hom,
+    reducedSingularHomologySuccIso_hom, Category.assoc]
 
 end Circle
