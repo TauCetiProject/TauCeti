@@ -185,6 +185,79 @@ theorem comap {K : Type*} [Group K] (hH : IsTISubgroup H) (f : K →* G)
     simpa only [Subgroup.mem_comap, map_mul, map_inv] using hgx
   simpa only [map_one] using hH hfg hfx hfgx
 
+/-- If two elements conjugate the same nonidentity element into a malnormal subgroup, they
+lie in the same left coset of that subgroup. -/
+theorem inv_mul_mem_of_inv_mul_mul_mem (hH : IsTISubgroup H) {h y y' : G} (hh : h ≠ 1)
+    (hy : y⁻¹ * h * y ∈ H) (hy' : y'⁻¹ * h * y' ∈ H) : y⁻¹ * y' ∈ H := by
+  by_contra hnot
+  refine hH.conj_notMem hnot hy' (fun h1 => hh ?_) ?_
+  · simpa [mul_assoc] using congrArg (fun z => y' * z * y'⁻¹) h1
+  · convert hy using 1; group
+
+/-- In a torsion-free group, distinct integer powers of an element outside a malnormal subgroup
+lie in distinct left cosets of that subgroup. -/
+theorem eq_of_inv_zpow_mul_zpow_mem (hH : IsTISubgroup H) [IsMulTorsionFree G]
+    {v : G} (hv : v ∉ H) {n n' : ℤ} (h : (v ^ n)⁻¹ * v ^ n' ∈ H) : n = n' := by
+  by_contra hne
+  rw [← zpow_neg, ← zpow_add, neg_add_eq_sub] at h
+  have hv1 : v ≠ 1 := by rintro rfl; exact hv H.one_mem
+  have hd : v ^ (n' - n) ≠ 1 :=
+    (IsMulTorsionFree.zpow_eq_one_iff_right hv1).not.2 (sub_ne_zero.2 (Ne.symm hne))
+  exact hv (hH.centralizer_singleton_le h hd
+    (Subgroup.mem_centralizer_singleton_iff.2 (Commute.self_zpow v _).eq))
+
+/-- In a torsion-free group, powers of an element outside a malnormal subgroup can be chosen
+so that their mixed products with prescribed nonidentity elements avoid the subgroup. Distinct
+indices also give distinct left cosets, by taking the middle element to be `1`. -/
+theorem exists_inv_pow_mul_mul_pow_notMem (hH : IsTISubgroup H) [IsMulTorsionFree G]
+    {ι : Type*} {v : G}
+    (hv : v ∉ H) (s : Finset ι) (T : Set G) (hT : T.Finite) :
+    ∃ m : ι → ℕ, ∀ x ∈ s, ∀ x' ∈ s, ∀ h : G, (h = 1 ∧ x ≠ x' ∨ h ∈ T ∧ h ≠ 1) →
+      (v ^ m x)⁻¹ * h * v ^ m x' ∉ H := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact ⟨0, by simp⟩
+  | @insert a s ha ih =>
+    obtain ⟨m, hm⟩ := ih
+    -- Each condition on the new conjugator `v ^ n` excludes at most one `n`.
+    have hsub : ∀ P : ℕ → Prop,
+        (∀ n n', P n → P n' → (v ^ n)⁻¹ * v ^ n' ∈ H) → {n | P n}.Finite :=
+      fun P hP => Set.Subsingleton.finite fun n hn n' hn' => by
+        have heq := hH.eq_of_inv_zpow_mul_zpow_mem hv
+          (n := (n : ℤ)) (n' := (n' : ℤ)) (by simpa only [zpow_natCast] using hP n n' hn hn')
+        exact_mod_cast heq
+    have hT1 : (insert 1 T).Finite := hT.insert 1
+    have hfin : ((⋃ x' ∈ (s : Set ι), ⋃ h ∈ insert 1 T,
+          {n | (v ^ n)⁻¹ * h * v ^ m x' ∈ H}) ∪
+        (⋃ x' ∈ (s : Set ι), ⋃ h ∈ insert 1 T,
+          {n | (v ^ m x')⁻¹ * h * v ^ n ∈ H}) ∪
+        ⋃ h ∈ T \ {1}, {n | (v ^ n)⁻¹ * h * v ^ n ∈ H}).Finite := by
+      refine .union (.union ?_ ?_) ?_
+      · refine s.finite_toSet.biUnion fun x' _ => hT1.biUnion fun h _ =>
+          hsub _ fun n n' hn hn' => ?_
+        convert H.mul_mem hn (H.inv_mem hn') using 1
+        group
+      · refine s.finite_toSet.biUnion fun x' _ => hT1.biUnion fun h _ =>
+          hsub _ fun n n' hn hn' => ?_
+        convert H.mul_mem (H.inv_mem hn) hn' using 1
+        group
+      · exact hT.sdiff.biUnion fun h hh =>
+          hsub _ fun n n' hn hn' => hH.inv_mul_mem_of_inv_mul_mul_mem hh.2 hn hn'
+    obtain ⟨n, hn⟩ := hfin.exists_notMem
+    simp only [Set.mem_union, Set.mem_iUnion, Set.mem_insert_iff, Finset.mem_coe,
+      Set.mem_sdiff, Set.mem_singleton_iff, not_or, not_exists] at hn
+    obtain ⟨⟨hn₁, hn₂⟩, hn₃⟩ := hn
+    refine ⟨Function.update m a n, fun x hx x' hx' h hh => ?_⟩
+    have hT' : h = 1 ∨ h ∈ T := hh.imp And.left And.left
+    rw [Finset.mem_insert] at hx hx'
+    have hxa : ∀ y ∈ s, y ≠ a := fun y hy hya => ha (hya ▸ hy)
+    rcases hx with rfl | hx <;> rcases hx' with rfl | hx'
+    · obtain ⟨hh, h1⟩ := hh.resolve_left fun h => h.2 rfl
+      simpa using hn₃ h ⟨hh, h1⟩
+    · simpa [hxa x' hx'] using hn₁ x' hx' h hT'
+    · simpa [hxa x hx] using hn₂ x hx h hT'
+    · simpa [hxa x hx, hxa x' hx'] using hm x hx x' hx' h hh
+
 end IsTISubgroup
 
 /-- **The lattice form of the trivial-intersection condition**: `H` meets each conjugate
