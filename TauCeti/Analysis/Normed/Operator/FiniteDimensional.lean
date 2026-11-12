@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -54,7 +55,7 @@ variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 `S` of scalars acting compatibly, for instance over `ℝ` for an operator on a complex space. -/
 theorem finite_spectrum (S : Type*) [Field S] [Algebra S 𝕜] [Algebra S (V →L[𝕜] V)]
     [IsScalarTower S 𝕜 (V →L[𝕜] V)] (T : V →L[𝕜] V) : (spectrum S T).Finite := by
-  have := FiniteDimensional.complete 𝕜 V
+  have := FiniteDimensional.completeSpace 𝕜 V
   rw [← spectrum.preimage_algebraMap 𝕜, spectrum_eq]
   exact (Module.End.finite_spectrum _).preimage (algebraMap S 𝕜).injective.injOn
 
@@ -62,7 +63,7 @@ theorem finite_spectrum (S : Type*) [Field S] [Algebra S 𝕜] [Algebra S (V →
 eigenvector of eigenvalue `c`. -/
 theorem isUnit_smul_one_sub {T : V →L[𝕜] V} {c : 𝕜} (h : ∀ v, T v = c • v → v = 0) :
     IsUnit (c • 1 - T) := by
-  have := FiniteDimensional.complete 𝕜 V
+  have := FiniteDimensional.completeSpace 𝕜 V
   refine isUnit_iff_isUnit_toLinearMap.2
     ((LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun v hv ↦ h v ?_))
   have hv' : c • v - T v = 0 := by simpa using hv
@@ -131,6 +132,21 @@ theorem finiteDimensional_of_isScalarTower : FiniteDimensional 𝕜' (E →L[�
   exact Module.Finite.of_restrictScalars_finite 𝕜 𝕜' (E →L[𝕜] F)
 
 end ScalarExtension
+
+section Invertible
+
+variable {𝕜 U G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup U] [NormedSpace 𝕜 U] [FiniteDimensional 𝕜 U]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+
+/-- An injective continuous linear map between finite-dimensional spaces of the same dimension is
+invertible. -/
+theorem isInvertible_of_injective_of_finrank_eq (A : U →L[𝕜] G)
+    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) (hinj : Function.Injective A) :
+    A.IsInvertible := by
+  exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, rfl⟩
+
+end Invertible
 
 end ContinuousLinearMap
 

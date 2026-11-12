@@ -192,7 +192,7 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 /-- The operations of the opposite, assembled from their values on homogeneous pieces: on inputs
 of degrees `d` the arity-`n` operation is `(-1) ^ opExp n d` times `m n` on the reversed inputs. -/
 private noncomputable def opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ A) A :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A :=
   InternalGrading.multilinearFromPieces (fun _ : Fin n ↦ 𝒜.grading) fun d ↦
     negOnePowCast R (AInfinity.opExp n fun i ↦ if h : i < n then d ⟨i, h⟩ else 0) •
       ((𝒜.m n).domDomCongr Fin.revPerm).compLinearMap
