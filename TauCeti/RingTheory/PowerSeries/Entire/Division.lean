@@ -175,6 +175,24 @@ theorem zero_divByMonic (p : Polynomial R) : (0 : R⟦X⟧).divByMonic p = 0 := 
 theorem zero_modByMonic (p : Polynomial R) : (0 : R⟦X⟧).modByMonic p = 0 := by
   simp [modByMonic]
 
+/-- A polynomial of degree less than `p` has quotient `0` on division by `p`: every term of the
+sums defining the quotient vanishes. -/
+theorem divByMonic_coe_of_degree_lt {g : Polynomial R} (hg : g.degree < p.degree) :
+    (g : R⟦X⟧).divByMonic p = 0 := by
+  ext n
+  rw [coeff_divByMonic, map_zero]
+  refine (tsum_congr fun k ↦ ?_).trans tsum_zero
+  rw [Polynomial.coeff_coe, Polynomial.coeff_eq_zero_of_degree_lt, zero_mul]
+  exact hg.trans_le (Polynomial.degree_le_natDegree.trans (by exact_mod_cast by omega))
+
+/-- A polynomial of degree less than `p` is its own remainder on division by `p`. -/
+theorem modByMonic_coe_of_degree_lt {g : Polynomial R} (hg : g.degree < p.degree) :
+    (g : R⟦X⟧).modByMonic p = g := by
+  rw [modByMonic, divByMonic_coe_of_degree_lt hg, mul_zero, sub_zero]
+  rcases eq_or_ne g 0 with rfl | hg0
+  · simp
+  · exact trunc_coe_eq_self (Polynomial.natDegree_lt_natDegree hg0 hg)
+
 end TopologicalRing
 
 section HasSum
@@ -273,17 +291,6 @@ theorem divByMonic_coe (g : Polynomial R) (hp : p.Monic) :
 theorem modByMonic_coe (g : Polynomial R) (hp : p.Monic) :
     (g : R⟦X⟧).modByMonic p = g %ₘ p :=
   (divByMonic_coe_and_modByMonic_coe g hp).2
-
-/-- A polynomial of degree less than `p` has quotient `0` on division by `p`. -/
-theorem divByMonic_coe_of_degree_lt {g : Polynomial R} (hp : p.Monic)
-    (hg : g.degree < p.degree) : (g : R⟦X⟧).divByMonic p = 0 := by
-  rw [divByMonic_coe g hp, (Polynomial.div_modByMonic_unique 0 g hp ⟨by simp, hg⟩).1,
-    Polynomial.coe_zero]
-
-/-- A polynomial of degree less than `p` is its own remainder on division by `p`. -/
-theorem modByMonic_coe_of_degree_lt {g : Polynomial R} (hp : p.Monic)
-    (hg : g.degree < p.degree) : (g : R⟦X⟧).modByMonic p = g := by
-  rw [modByMonic_coe g hp, (Polynomial.div_modByMonic_unique 0 g hp ⟨by simp, hg⟩).2]
 
 end HasSum
 
