@@ -45,6 +45,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 ## Main results
 
 * `TauCeti.wirtingerDeriv_add_conjWirtingerDeriv`: `∂g + \bar∂g = Dg`.
+* `TauCeti.fderiv_apply_one_add_I_smul_fderiv_apply_I`: in one variable,
+  `∂ₛ g + i ∂ₜ g = 2 \bar∂g`.
 * `TauCeti.norm_wirtingerDeriv_apply_le`, `TauCeti.norm_conjWirtingerDeriv_apply_le`: both
   Wirtinger derivatives are bounded by the real derivative, `‖∂g(x) v‖ ≤ ‖Dg(x)‖ ‖v‖`.
 * `TauCeti.coe_wirtingerDeriv_eq_complexLinearPart`,
@@ -146,6 +148,14 @@ theorem conjWirtingerDeriv_apply (v : V) :
   rw [conjWirtingerDeriv_eq_complexAntilinearPart,
     ContinuousLinearMap.complexAntilinearPart_apply, ← ofReal_ofNat, ← ofReal_inv,
     Complex.coe_smul]
+
+/-- In one variable the operator `D = ∂ₛ + i ∂ₜ` of the Cauchy–Pompeiu formula is twice the
+conjugate Wirtinger derivative. This holds for the totalized derivative, with no differentiability
+assumption. -/
+theorem fderiv_apply_one_add_I_smul_fderiv_apply_I (u : ℂ → W) (z : ℂ) :
+    fderiv ℝ u z 1 + I • fderiv ℝ u z I = (2 : ℂ) • conjWirtingerDeriv u z 1 := by
+  rw [conjWirtingerDeriv_apply, smul_smul, mul_inv_cancel₀ two_ne_zero, one_smul, smul_eq_mul,
+    mul_one]
 
 /-- The two Wirtinger derivatives add up to the real derivative. -/
 @[simp]
