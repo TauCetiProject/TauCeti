@@ -14,7 +14,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Exponent
 On a domain `Ω` of finite measure, `L^q(Ω) ⊆ Lᵖ(Ω)` continuously for `1 ≤ p ≤ q ≤ ∞`, with
 `‖f‖_p ≤ μ(Ω) ^ (1/p - 1/q) ‖f‖_q`
 (Mathlib's `MeasureTheory.eLpNorm_le_eLpNorm_mul_rpow_measure_univ`, bundled as
-`TauCeti.Lp.ofExponentLEL`). Applying this inclusion to the value and to every weak derivative
+`MeasureTheory.Lp.ofExponentLEL`). Applying this inclusion to the value and to every weak derivative
 gives continuous linear maps `W^{k,q}(Ω) → W^{k,p}(Ω)` for every natural order `k`. They do not
 change the value or any weak derivative, so they are injective, commute with forgetting the
 highest derivative and with restriction to an open subdomain, and compose transitively.

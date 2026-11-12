@@ -19,11 +19,11 @@ continuous linear map, which does not change the underlying almost everywhere eq
 
 ## Main definitions
 
-* `TauCeti.Lp.ofExponentLEL`: the continuous inclusion `L^q(ν) → Lᵖ(ν)` for `p ≤ q`.
+* `MeasureTheory.Lp.ofExponentLEL`: the continuous inclusion `L^q(ν) → Lᵖ(ν)` for `p ≤ q`.
 
 ## Main results
 
-* `TauCeti.Lp.coeFn_ofExponentLEL`: the inclusion does not change the underlying function.
+* `MeasureTheory.Lp.coeFn_ofExponentLEL`: the inclusion does not change the underlying function.
 
 ## References
 
@@ -34,9 +34,8 @@ public section
 
 noncomputable section
 
-namespace TauCeti.Lp
+namespace MeasureTheory.Lp
 
-open MeasureTheory
 open scoped ENNReal
 
 variable {α F : Type*} [MeasurableSpace α] {ν : Measure α} [IsFiniteMeasure ν]
@@ -71,4 +70,4 @@ theorem ofExponentLEL_apply (hpq : p ≤ q) (f : Lp F q ν) :
 theorem coeFn_ofExponentLEL (hpq : p ≤ q) (f : Lp F q ν) : ⇑(ofExponentLEL F hpq f) = ⇑f :=
   (rfl)
 
-end TauCeti.Lp
+end MeasureTheory.Lp
