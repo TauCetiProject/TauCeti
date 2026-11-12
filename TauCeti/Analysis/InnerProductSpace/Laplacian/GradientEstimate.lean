@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Comparison
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Commute
-import Mathlib.Analysis.Calculus.Gradient.Basic
+import TauCeti.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 
 /-!
@@ -55,31 +55,9 @@ public section
 namespace TauCeti
 
 open InnerProductSpace Laplacian Metric Filter Topology Set
-open scoped RealInnerProductSpace Gradient ContDiff
+open scoped RealInnerProductSpace ContDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-- If `q 0 = 0`, `q` has derivative `a` at `0` and `|q s| ≤ s (A + C s)` for `0 < s < d`, then
-`|a| ≤ A`. -/
-private theorem abs_le_of_hasDerivAt_of_abs_le {q : ℝ → ℝ} {a A C d : ℝ} (hd : 0 < d)
-    (hq : HasDerivAt q a 0) (hq₀ : q 0 = 0) (hb : ∀ s ∈ Ioo 0 d, |q s| ≤ s * (A + C * s)) :
-    |a| ≤ A := by
-  have hslope : Tendsto (fun s ↦ |s⁻¹ * q s|) (𝓝[>] 0) (𝓝 |a|) := by
-    have := hq.tendsto_slope_zero_right
-    simp only [zero_add, hq₀, sub_zero, smul_eq_mul] at this
-    exact this.abs
-  have hlim : Tendsto (fun s : ℝ ↦ A + |C| * s) (𝓝[>] 0) (𝓝 A) := by
-    have : Tendsto (fun s : ℝ ↦ A + |C| * s) (𝓝 0) (𝓝 (A + |C| * 0)) :=
-      (continuous_const.add (continuous_const.mul continuous_id)).tendsto 0
-    rw [mul_zero, add_zero] at this
-    exact this.mono_left nhdsWithin_le_nhds
-  refine le_of_tendsto_of_tendsto hslope hlim
-    (Filter.eventually_of_mem (Ioo_mem_nhdsGT hd) fun s hs ↦ ?_)
-  dsimp only
-  rw [abs_mul, abs_inv, abs_of_pos hs.1, inv_mul_le_iff₀ hs.1]
-  have hCs : s * (C * s) ≤ s * (|C| * s) :=
-    mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right (le_abs_self C) hs.1.le) hs.1.le
-  linarith [hb s hs, mul_add s A (C * s), mul_add s A (|C| * s)]
 
 /-- The Laplacian of the barrier `a ‖x - x₀‖² + A t - B t²`, `t = ⟪e, x - x₀⟫`, for a unit
 vector `e` is the constant `2 n a - 2 B`. -/
@@ -88,28 +66,72 @@ private theorem laplacian_barrier {e : E} (he : ‖e‖ = 1) (x₀ : E) (a A B :
       2 * Module.finrank ℝ E * a - 2 * B := by
   have hns : ContDiff ℝ 2 fun y : E ↦ ‖y - x₀‖ ^ 2 := (contDiff_id.sub contDiff_const).norm_sq ℝ
   have hg : ContDiff ℝ 2 fun s : ℝ ↦ A * s - B * s ^ 2 := by fun_prop
+  have hd₁ : ∀ s : ℝ, HasDerivAt (fun s : ℝ ↦ A * s - B * s ^ 2) (A - 2 * B * s) s := fun s ↦ by
+    convert ((hasDerivAt_id' s).const_mul A).fun_sub ((hasDerivAt_pow 2 s).const_mul B) using 1
+    ring
+  have hd₂ : ∀ s : ℝ, HasDerivAt (fun s : ℝ ↦ A - 2 * B * s) (-(2 * B)) s := fun s ↦ by
+    simpa using ((hasDerivAt_id' s).const_mul (2 * B)).const_sub A
   have hg'' : deriv (deriv fun s : ℝ ↦ A * s - B * s ^ 2) = fun _ ↦ -(2 * B) := by
-    have h1 : deriv (fun s : ℝ ↦ A * s - B * s ^ 2) = fun s ↦ A - B * (2 * s) := by
-      funext s
-      rw [deriv_fun_sub (by fun_prop) (by fun_prop), deriv_const_mul _ (by fun_prop),
-        deriv_const_mul _ (by fun_prop)]
-      simp
     funext s
-    rw [h1, deriv_fun_sub (by fun_prop) (by fun_prop), deriv_const_mul _ (by fun_prop),
-      deriv_const_mul _ (by fun_prop)]
-    simp [mul_comm]
+    rw [funext fun s ↦ (hd₁ s).deriv, (hd₂ s).deriv]
   have hn : Δ (fun y : E ↦ ‖y - x₀‖ ^ 2) x = 2 * Module.finrank ℝ E := by
     have h := congrFun (laplacian_comp_add_right (fun y : E ↦ ‖y‖ ^ 2) (-x₀)) x
     simp only [← sub_eq_add_neg] at h
     rw [h, laplacian_norm_sq]
   have hsplit : (fun y ↦ a * ‖y - x₀‖ ^ 2 + (A * ⟪e, y - x₀⟫ - B * ⟪e, y - x₀⟫ ^ 2)) =
-      a • (fun y : E ↦ ‖y - x₀‖ ^ 2) + fun y ↦ (fun s ↦ A * s - B * s ^ 2) ⟪e, y - x₀⟫ := rfl
+      a • (fun y : E ↦ ‖y - x₀‖ ^ 2) + fun y ↦ (fun s ↦ A * s - B * s ^ 2) ⟪e, y - x₀⟫ := by
+    funext y
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
   have h₁ : ContDiffAt ℝ 2 (a • fun y : E ↦ ‖y - x₀‖ ^ 2) x := hns.contDiffAt.const_smul a
   have h₂ : ContDiffAt ℝ 2 (fun y ↦ (fun s ↦ A * s - B * s ^ 2) ⟪e, y - x₀⟫) x :=
     (hg.comp ((innerSL ℝ e).contDiff.comp (contDiff_id.sub contDiff_const))).contDiffAt
   rw [hsplit, h₁.laplacian_add h₂, laplacian_smul _ hns.contDiffAt, hn,
     hg.laplacian_comp_inner_sub, hg'', he, smul_eq_mul]
   ring
+
+omit [FiniteDimensional ℝ E] in
+/-- The reflection in the hyperplane orthogonal to a unit vector `e` is `y ↦ y - 2 ⟪e, y⟫ e`. -/
+private theorem reflection_orthogonal_singleton_apply_of_norm_eq_one {e : E} (he : ‖e‖ = 1)
+    (y : E) : (ℝ ∙ e)ᗮ.reflection y = y - (2 * ⟪e, y⟫) • e := by
+  rw [Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply, he]
+  simp only [neg_sub]
+  norm_num
+  module
+
+omit [FiniteDimensional ℝ E] in
+/-- The affine isometry `y ↦ R (y - x₀) + x₀` fixes the distance to `x₀`. -/
+private theorem dist_linearIsometryEquiv_sub_add (R : E ≃ₗᵢ[ℝ] E) (x₀ x : E) :
+    dist (R (x - x₀) + x₀) x₀ = dist x x₀ := by
+  simp only [dist_eq_norm, add_sub_cancel_right, R.norm_map]
+
+/-- The Laplacian commutes with the affine isometry `y ↦ R (y - x₀) + x₀`. -/
+private theorem laplacian_comp_linearIsometryEquiv_sub_add (R : E ≃ₗᵢ[ℝ] E) (x₀ : E)
+    (u : E → ℝ) (x : E) :
+    Δ (fun y ↦ u (R (y - x₀) + x₀)) x = Δ u (R (x - x₀) + x₀) := by
+  have h : (fun y ↦ u (R (y - x₀) + x₀)) = fun y ↦ ((fun w ↦ u (w + x₀)) ∘ R) (y + -x₀) := by
+    funext y
+    simp [sub_eq_add_neg]
+  rw [h, laplacian_comp_add_right, laplacian_comp_linearIsometryEquiv_right,
+    laplacian_comp_add_right]
+  simp [sub_eq_add_neg]
+
+/-- A frontier point of the half-ball `closedBall x₀ d ∩ {x | 0 ≤ t x}`, for a continuous `t`,
+lies in the half-ball and either on the hyperplane `t x = 0` or on the sphere. -/
+private theorem mem_and_eq_zero_or_dist_eq_of_mem_frontier_closedBall_inter {X : Type*}
+    [PseudoMetricSpace X] {t : X → ℝ} (ht : Continuous t) {x₀ x : X} {d : ℝ}
+    (hx : x ∈ frontier (closedBall x₀ d ∩ {x | 0 ≤ t x})) :
+    x ∈ closedBall x₀ d ∩ {x | 0 ≤ t x} ∧ (t x = 0 ∨ dist x x₀ = d) := by
+  have hxK : x ∈ closedBall x₀ d ∩ {x | 0 ≤ t x} :=
+    (isClosed_closedBall.inter (isClosed_le continuous_const ht)).frontier_subset hx
+  refine ⟨hxK, ?_⟩
+  by_contra! h
+  have hU : IsOpen (ball x₀ d ∩ {y | 0 < t y}) :=
+    isOpen_ball.inter (isOpen_lt continuous_const ht)
+  have hxU : x ∈ ball x₀ d ∩ {y | 0 < t y} :=
+    ⟨lt_of_le_of_ne hxK.1 h.2, lt_of_le_of_ne hxK.2 (Ne.symm h.1)⟩
+  have hsub : ball x₀ d ∩ {y | 0 < t y} ⊆ closedBall x₀ d ∩ {x | 0 ≤ t x} := fun y hy ↦
+    ⟨ball_subset_closedBall hy.1, mem_ofPred_eq.mpr (mem_ofPred_eq.mp hy.2).le⟩
+  exact hx.2 (interior_maximal hsub hU hxU)
 
 /-- **The interior gradient estimate for Poisson's equation**, along a unit vector. Let `u` be
 continuous on the closed ball `closedBall x₀ d` and `C²` on the open ball, with `|u| ≤ M` on the
@@ -133,16 +155,11 @@ theorem abs_fderiv_apply_le_of_abs_laplacian_le {u : E → ℝ} {x₀ e : E} {d 
   have hB₀ : 0 ≤ B := by positivity
   -- The reflection `σ` in the hyperplane through `x₀` orthogonal to `e`.
   set R := (ℝ ∙ e)ᗮ.reflection
-  have hR : ∀ y, R y = y - (2 * ⟪e, y⟫) • e := by
-    intro y
-    rw [Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply, he]
-    simp only [neg_sub]
-    norm_num
-    module
+  have hR : ∀ y, R y = y - (2 * ⟪e, y⟫) • e :=
+    reflection_orthogonal_singleton_apply_of_norm_eq_one he
   set σ : E → E := fun x ↦ R (x - x₀) + x₀ with hσ
   set t : E → ℝ := fun x ↦ ⟪e, x - x₀⟫ with ht
-  have hσdist : ∀ x, dist (σ x) x₀ = dist x x₀ := fun x ↦ by
-    simp only [hσ, dist_eq_norm, add_sub_cancel_right, R.norm_map]
+  have hσdist : ∀ x, dist (σ x) x₀ = dist x x₀ := dist_linearIsometryEquiv_sub_add R x₀
   have hσcont : Continuous σ := (R.continuous.comp (continuous_id.sub continuous_const)).add
     continuous_const
   have hσsmooth : ContDiff ℝ 2 σ :=
@@ -157,14 +174,8 @@ theorem abs_fderiv_apply_le_of_abs_laplacian_le {u : E → ℝ} {x₀ e : E} {d 
       one_pow, mul_one]
     module
   -- The Laplacian of `u ∘ σ` is `(Δ u) ∘ σ`.
-  have hΔσ : ∀ x, Δ (fun y ↦ u (σ y)) x = Δ u (σ x) := by
-    intro x
-    have h : (fun y ↦ u (σ y)) = fun y ↦ ((fun w ↦ u (w + x₀)) ∘ R) (y + -x₀) := by
-      funext y
-      simp [hσ, sub_eq_add_neg]
-    rw [h, laplacian_comp_add_right, laplacian_comp_linearIsometryEquiv_right,
-      laplacian_comp_add_right]
-    simp [hσ, sub_eq_add_neg]
+  have hΔσ : ∀ x, Δ (fun y ↦ u (σ y)) x = Δ u (σ x) :=
+    laplacian_comp_linearIsometryEquiv_sub_add R x₀ u
   -- The odd part `ψ` and the barrier `φ`.
   set ψ : E → ℝ := fun x ↦ (1 / 2 : ℝ) * (u x - u (σ x)) with hψ
   set g : ℝ → ℝ := fun s ↦ A * s - B * s ^ 2 with hg
@@ -187,18 +198,8 @@ theorem abs_fderiv_apply_le_of_abs_laplacian_le {u : E → ℝ} {x₀ e : E} {d 
   have hint : ∀ x ∈ interior K, x ∈ ball x₀ d := fun x hx ↦ by
     have := interior_mono inter_subset_left hx
     rwa [interior_closedBall x₀ hd.ne'] at this
-  have hfront : ∀ x ∈ frontier K, x ∈ K ∧ (t x = 0 ∨ dist x x₀ = d) := by
-    intro x hx
-    have hxK : x ∈ K := hKc.isClosed.frontier_subset hx
-    refine ⟨hxK, ?_⟩
-    by_contra! h
-    have hU : IsOpen (ball x₀ d ∩ {y | 0 < t y}) :=
-      isOpen_ball.inter (isOpen_lt continuous_const htcont)
-    have hxU : x ∈ ball x₀ d ∩ {y | 0 < t y} :=
-      ⟨lt_of_le_of_ne hxK.1 h.2, lt_of_le_of_ne hxK.2 (Ne.symm h.1)⟩
-    have hsub : ball x₀ d ∩ {y | 0 < t y} ⊆ K := fun y hy ↦
-      ⟨ball_subset_closedBall hy.1, show 0 ≤ t y from (show 0 < t y from hy.2).le⟩
-    exact hx.2 (interior_maximal hsub hU hxU)
+  have hfront : ∀ x ∈ frontier K, x ∈ K ∧ (t x = 0 ∨ dist x x₀ = d) := fun x hx ↦
+    mem_and_eq_zero_or_dist_eq_of_mem_frontier_closedBall_inter htcont hx
   -- Regularity of `ψ` on the half-ball.
   have hψcont : ContinuousOn ψ K := by
     refine continuousOn_const.mul ((hcont.mono inter_subset_left).sub ?_)
@@ -215,7 +216,9 @@ theorem abs_fderiv_apply_le_of_abs_laplacian_le {u : E → ℝ} {x₀ e : E} {d 
     have hσb : σ x ∈ ball x₀ d := by rw [mem_ball, hσdist]; exact hxb
     have hu₁ := hcd x hxb
     have hu₂ : ContDiffAt ℝ 2 (fun y ↦ u (σ y)) x := (hcd (σ x) hσb).comp x hσsmooth.contDiffAt
-    have hsmul : ψ = (1 / 2 : ℝ) • (u - fun y ↦ u (σ y)) := rfl
+    have hsmul : ψ = (1 / 2 : ℝ) • (u - fun y ↦ u (σ y)) := by
+      funext y
+      simp only [hψ, Pi.smul_apply, Pi.sub_apply, smul_eq_mul]
     have hsub : ContDiffAt ℝ 2 (u - fun y ↦ u (σ y)) x := hu₁.sub hu₂
     rw [hsmul, laplacian_smul _ hsub, hu₁.laplacian_sub hu₂, hΔσ, smul_eq_mul]
     have h₁ := hF x hxb
@@ -267,7 +270,7 @@ theorem abs_fderiv_apply_le_of_abs_laplacian_le {u : E → ℝ} {x₀ e : E} {d 
       simp [ht, inner_smul_right, he]
     have hxK : x₀ + s • e ∈ K :=
       ⟨by rw [mem_closedBall, dist_eq_norm, hnx]; exact hs.2.le,
-        show 0 ≤ t (x₀ + s • e) by rw [htx]; exact hs.1.le⟩
+        by rw [mem_ofPred_eq, htx]; exact hs.1.le⟩
     have hqψ : q s = 2 * ψ (x₀ + s • e) := by
       simp only [hq, hψ, hσray]
       ring
@@ -295,7 +298,7 @@ theorem abs_fderiv_apply_le_of_abs_laplacian_le {u : E → ℝ} {x₀ e : E} {d 
     convert hu₁.sub hu₂ using 1
     rw [map_neg]
     ring
-  have h := abs_le_of_hasDerivAt_of_abs_le hd hderiv (by simp [hq]) hq_bound
+  have h := hderiv.abs_le_of_abs_le_mul_add (by simp [hq]) hd hq_bound
   rw [abs_mul, abs_two] at h
   linarith
 

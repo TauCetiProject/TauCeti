@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.InnerProductSpace.Laplacian.GradientEstimate
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
 /-!
 # Exponential decay of all derivatives of exterior solutions of `Δu = G(u)`
@@ -55,17 +56,6 @@ open InnerProductSpace Laplacian Metric Filter Topology
 open scoped ContDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- On the unit ball around `z`, the weight `exp(-c ‖y‖)` is at most `exp c` times its value at
-`z`. -/
-private theorem exp_neg_mul_norm_le_of_mem_closedBall {c : ℝ} (hc : 0 ≤ c) {y z : E}
-    (hy : y ∈ closedBall z 1) :
-    Real.exp (-(c * ‖y‖)) ≤ Real.exp c * Real.exp (-(c * ‖z‖)) := by
-  rw [← Real.exp_add, Real.exp_le_exp]
-  have h₁ : ‖z‖ - ‖y‖ ≤ ‖z - y‖ := norm_sub_norm_le z y
-  have h₂ : ‖z - y‖ ≤ 1 := by rw [← dist_eq_norm, dist_comm]; exact hy
-  nlinarith
 
 /-- **Exponential decay of all derivatives of exterior solutions of `Δ L = G(L)`.** Let `L` be a
 smooth function which, outside the ball of radius `R`, solves `Δ L = G(L)` for a smooth `G` with
@@ -115,22 +105,21 @@ theorem exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp {L : E → �
     -- `exp(-c ‖z‖)`, so the interior estimate bounds `Dⁿ⁺¹ L(z)`.
     have hfar : ∀ y ∈ closedBall z 1, R + n < ‖y‖ := by
       intro y hy
-      have h₁ : ‖z‖ - ‖y‖ ≤ ‖z - y‖ := norm_sub_norm_le z y
-      have h₂ : ‖z - y‖ ≤ 1 := by rw [← dist_eq_norm, dist_comm]; exact hy
+      have := norm_le_norm_add_const_of_dist_le (mem_closedBall'.1 hy)
       push_cast at hz
       linarith
+    have hw : ∀ y ∈ closedBall z 1, Real.exp (-(c * ‖y‖)) ≤ Real.exp c * Real.exp (-(c * ‖z‖)) :=
+      fun y hy ↦ (exp_neg_mul_norm_le_of_mem_closedBall hc hy).trans_eq (by rw [mul_one])
     have hM : ∀ y ∈ closedBall z 1,
         ‖iteratedFDeriv ℝ n L y‖ ≤ K₀ * Real.exp c * Real.exp (-(c * ‖z‖)) := fun y hy ↦
       (hP y (hfar y hy) n le_rfl).trans (by
         rw [mul_assoc]
-        exact mul_le_mul_of_nonneg_left (exp_neg_mul_norm_le_of_mem_closedBall hc hy) hK₀)
+        exact mul_le_mul_of_nonneg_left (hw y hy) hK₀)
     have hF : ∀ y ∈ ball z 1,
         ‖iteratedFDeriv ℝ n (Δ L) y‖ ≤ K₂ * Real.exp c * Real.exp (-(c * ‖z‖)) := fun y hy ↦
       (hΔ y (hfar y (ball_subset_closedBall hy))).trans (by
         rw [mul_assoc]
-        exact mul_le_mul_of_nonneg_left
-          (exp_neg_mul_norm_le_of_mem_closedBall hc (ball_subset_closedBall hy))
-          (le_max_right _ _))
+        exact mul_le_mul_of_nonneg_left (hw y (ball_subset_closedBall hy)) (le_max_right _ _))
     refine (norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le hL (by simp)
       one_pos hM hF).trans (le_of_eq ?_)
     ring

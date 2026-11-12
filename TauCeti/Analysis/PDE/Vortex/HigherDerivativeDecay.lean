@@ -20,9 +20,9 @@ at infinity, the modulus defect `1 - |α|²` decays like `exp (-c |z|)` for ever
 derivatives of every order of the two gauge-invariant scalars of the vortex:
 
 * `ℓ = log |α|²`: `‖Dⁿ ℓ(z)‖ ≤ K exp (-c |z|)` outside a compact set
-  (`TauCeti.Vortex.exists_norm_iteratedFDeriv_log_normSq_le_mul_exp`);
+  (`TauCeti.Vortex.exists_eventually_norm_iteratedFDeriv_log_normSq_le_mul_exp`);
 * `|α|² - 1`: `‖Dⁿ (|α|² - 1)(z)‖ ≤ K exp (-c |z|)` outside a compact set
-  (`TauCeti.Vortex.exists_norm_iteratedFDeriv_normSq_sub_one_le_mul_exp`).
+  (`TauCeti.Vortex.exists_eventually_norm_iteratedFDeriv_normSq_sub_one_le_mul_exp`).
 
 By the curvature row of the vortex equations the curvature is `(1 - |α|²) / 8`, so all its
 derivatives decay as well.
@@ -37,10 +37,10 @@ exponential rate. The decay of `|α|² - 1 = exp ℓ - 1` then follows from the 
 
 ## Main results
 
-* `TauCeti.Vortex.exists_norm_iteratedFDeriv_log_normSq_le_mul_exp`: every derivative of
-  `log |α|²` decays at every rate `c < 1 / 2`.
-* `TauCeti.Vortex.exists_norm_iteratedFDeriv_normSq_sub_one_le_mul_exp`: every derivative of
-  `|α|² - 1` decays at every rate `c < 1 / 2`.
+* `TauCeti.Vortex.exists_eventually_norm_iteratedFDeriv_log_normSq_le_mul_exp`: every derivative
+  of `log |α|²` decays at every rate `c < 1 / 2`.
+* `TauCeti.Vortex.exists_eventually_norm_iteratedFDeriv_normSq_sub_one_le_mul_exp`: every
+  derivative of `|α|² - 1` decays at every rate `c < 1 / 2`.
 
 ## References
 
@@ -140,7 +140,7 @@ private theorem exists_log_normSq_decay (hx : ContDiff ℝ ∞ x) (hsol : ∀ z,
 whose section satisfies `|α| → 1` at infinity, every derivative of `log |α|²` decays like
 `exp (-c |z|)` for every rate `c < 1 / 2`: outside a compact set,
 `‖Dⁿ log |α|² (z)‖ ≤ K exp (-c |z|)`. -/
-theorem exists_norm_iteratedFDeriv_log_normSq_le_mul_exp (hx : ContDiff ℝ ∞ x)
+theorem exists_eventually_norm_iteratedFDeriv_log_normSq_le_mul_exp (hx : ContDiff ℝ ∞ x)
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
     (hc : c < 1 / 2) (n : ℕ) :
@@ -161,7 +161,7 @@ theorem exists_norm_iteratedFDeriv_log_normSq_le_mul_exp (hx : ContDiff ℝ ∞ 
 whole plane whose section satisfies `|α| → 1` at infinity, every derivative of `|α|² - 1` decays
 like `exp (-c |z|)` for every rate `c < 1 / 2`: outside a compact set,
 `‖Dⁿ (|α|² - 1) (z)‖ ≤ K exp (-c |z|)`. -/
-theorem exists_norm_iteratedFDeriv_normSq_sub_one_le_mul_exp (hx : ContDiff ℝ ∞ x)
+theorem exists_eventually_norm_iteratedFDeriv_normSq_sub_one_le_mul_exp (hx : ContDiff ℝ ∞ x)
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
     (hc : c < 1 / 2) (n : ℕ) :

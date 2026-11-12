@@ -17,13 +17,16 @@ The decay profile `exp (-c (t - R))`, normalised to equal `1` at `t = R`, is the
 estimates past a radius `R` are converted into bounds of the form `K exp (-c t)`. Conversely, a
 bound `K exp (-c ‖x‖)` outside a compact set extends to the whole space for a continuous
 function, after enlarging the constant. The analogous statement on a closed forward ray absorbs
-an initial compact time interval into the constant.
+an initial compact time interval into the constant. Locally, on the closed ball of radius `r`
+around `z`, the weight `exp (-c ‖y‖)` is at most `exp (c r)` times its value at `z`.
 
 ## Main declarations
 
 * `TauCeti.exp_neg_mul_sub`: `exp (-c (t - R)) = exp (c R) exp (-c t)`.
 * `TauCeti.exists_forall_le_mul_exp_of_eventually_le`: an exponential bound outside a compact set
   extends to the whole space for a continuous function, with a larger constant.
+* `TauCeti.exp_neg_mul_norm_le_of_mem_closedBall`: `exp (-c ‖y‖) ≤ exp (c r) exp (-c ‖z‖)` for
+  `y` in the closed ball of radius `r` around `z` and `0 ≤ c`.
 * `TauCeti.abs_exp_mul_sub_le_exp`: a bound `|f x| ≤ M` bounds `|exp (t * (f x - I))|` by
   `exp (|t| * (M + |I|))`.
 * `ContinuousOn.exists_forall_le_mul_exp_Ici_of_eventually_le`: an eventual exponential bound
@@ -61,6 +64,14 @@ theorem exists_forall_le_mul_exp_of_eventually_le {E : Type*} [NormedAddCommGrou
       _ ≤ max K M * Real.exp (-(c * ‖x‖)) :=
           mul_le_mul_of_nonneg_right (((le_abs_self _).trans hb).trans (le_max_right _ _)) he.le
   · exact (hR hx).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) he.le)
+
+/-- On the closed ball of radius `r` around `z`, the weight `exp (-c ‖y‖)` is at most
+`exp (c r)` times its value at `z`. -/
+theorem exp_neg_mul_norm_le_of_mem_closedBall {E : Type*} [SeminormedAddCommGroup E] {c r : ℝ}
+    (hc : 0 ≤ c) {y z : E} (hy : y ∈ Metric.closedBall z r) :
+    Real.exp (-(c * ‖y‖)) ≤ Real.exp (c * r) * Real.exp (-(c * ‖z‖)) := by
+  rw [← Real.exp_add, Real.exp_le_exp]
+  nlinarith [norm_le_norm_add_const_of_dist_le (Metric.mem_closedBall'.1 hy)]
 
 /-- A bound on `f` bounds the shifted exponential `exp (t * (f x - I))` for any shift `I`. -/
 theorem abs_exp_mul_sub_le_exp {α : Type*} {f : α → ℝ} {M : ℝ} (hMf : ∀ x, |f x| ≤ M)

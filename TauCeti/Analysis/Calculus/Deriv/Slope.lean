@@ -35,6 +35,9 @@ that they do not separate linearly: their distance is `o(s - t)` at parameter `s
 
 A negative right derivative at `x` forces nearby values to the right to lie strictly below `f x`.
 
+A function vanishing at `0` whose absolute value is bounded by `s (A + C s)` for small `s > 0` has
+derivative at most `A` in absolute value at `0`.
+
 ## Main results
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
@@ -45,6 +48,8 @@ A negative right derivative at `x` forces nearby values to the right to lie stri
 * `HasDerivWithinAt.nonpos_of_mul_le_norm_sub`: two curves with the same right derivative at a
   common point do not separate linearly.
 * `HasDerivWithinAt.eventually_lt_of_neg`: `f t < f x` eventually for `t` to the right of `x`.
+* `HasDerivAt.abs_le_of_abs_le_mul_add`: `|q s| ≤ s (A + C s)` on `(0, d)` and `q 0 = 0` give
+  `|q'(0)| ≤ A`.
 -/
 
 public section
@@ -122,3 +127,25 @@ theorem HasDerivWithinAt.eventually_lt_of_neg {f : ℝ → ℝ} {a x : ℝ}
     with t ht hxt
   rw [slope_def_field, div_lt_iff₀ (sub_pos.mpr hxt), zero_mul] at ht
   exact sub_neg.mp ht
+
+/-- If `q 0 = 0`, `q` has derivative `a` at `0` and `|q s| ≤ s (A + C s)` for `0 < s < d`, then
+`|a| ≤ A`. -/
+theorem HasDerivAt.abs_le_of_abs_le_mul_add {q : ℝ → ℝ} {a A C d : ℝ} (hq : HasDerivAt q a 0)
+    (hq₀ : q 0 = 0) (hd : 0 < d) (hb : ∀ s ∈ Ioo 0 d, |q s| ≤ s * (A + C * s)) :
+    |a| ≤ A := by
+  have hslope : Tendsto (fun s ↦ |s⁻¹ * q s|) (𝓝[>] 0) (𝓝 |a|) := by
+    have := hq.tendsto_slope_zero_right
+    simp only [zero_add, hq₀, sub_zero, smul_eq_mul] at this
+    exact this.abs
+  have hlim : Tendsto (fun s : ℝ ↦ A + |C| * s) (𝓝[>] 0) (𝓝 A) := by
+    have : Tendsto (fun s : ℝ ↦ A + |C| * s) (𝓝 0) (𝓝 (A + |C| * 0)) :=
+      (continuous_const.add (continuous_const.mul continuous_id)).tendsto 0
+    rw [mul_zero, add_zero] at this
+    exact this.mono_left nhdsWithin_le_nhds
+  refine le_of_tendsto_of_tendsto hslope hlim
+    (Filter.eventually_of_mem (Ioo_mem_nhdsGT hd) fun s hs ↦ ?_)
+  dsimp only
+  rw [abs_mul, abs_inv, abs_of_pos hs.1, inv_mul_le_iff₀ hs.1]
+  have hCs : s * (C * s) ≤ s * (|C| * s) :=
+    mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right (le_abs_self C) hs.1.le) hs.1.le
+  linarith [hb s hs, mul_add s A (C * s), mul_add s A (|C| * s)]
