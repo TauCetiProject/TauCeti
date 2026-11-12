@@ -55,7 +55,7 @@ applies the smooth rule to `ψₙ = ρₙ ⋆ ψ`. The factors `ψₙ` converge 
 `∂_v ψₙ = ρₙ ⋆ ∂_v ψ` stays bounded by the Lipschitz constant and converges to `∂_v ψ` almost
 everywhere by the Lebesgue differentiation theorem. Dominated convergence then passes the
 identity tested against a fixed `φ` to the limit
-(`LipschitzWith.tendsto_integral_normed_convolution_smul` and
+(`ContDiffBump.tendsto_integral_normed_convolution_smul` and
 `LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`). For a factor that is also
 bounded, an `Lᵖ` weak derivative of `u` gives one of `ψ u`
 (`TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`).
@@ -305,8 +305,10 @@ private theorem integral_lineDeriv_smul_lipschitzWith_smul_eq
       (fun x hx => by simp [w₂, image_eq_zero_of_notMem_tsupport hx]) hf.continuousOn
   -- Pass to the limit on both sides by dominated convergence.
   have hlimit := tendsto_nhds_unique
-    (hψ.tendsto_integral_normed_convolution_smul hρ hw₁ (hw₁c ψ hψ.continuous))
-    (((hψ.tendsto_integral_normed_convolution_smul hρ hw₂ (hw₂c ψ hψ.continuous)).add
+    (ContDiffBump.tendsto_integral_normed_convolution_smul hψ.uniformContinuous hρ hw₁
+      (hw₁c ψ hψ.continuous))
+    (((ContDiffBump.tendsto_integral_normed_convolution_smul hψ.uniformContinuous hρ hw₂
+      (hw₂c ψ hψ.continuous)).add
       (hψ.tendsto_integral_fderiv_normed_convolution_apply_smul hρ h'ρ v hw₃)).neg.congr
         fun n => (integral_lineDeriv_smul_normed_convolution_eq h hψ (ρ n) φ).symm)
   rw [← integral_add (hw₂c ψ hψ.continuous) (hψ.integrable_lineDeriv_smul hw₃)]

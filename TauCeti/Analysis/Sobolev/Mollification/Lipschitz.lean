@@ -22,9 +22,11 @@ centred at `0`. The derivative in a direction `v` of the mollification `ρ.norme
 mollification of the directional derivative `∂_v ψ`, which exists almost everywhere by
 Rademacher's theorem and is the weak derivative of `ψ`. Hence these derivatives are bounded by
 `K ‖v‖`. When the radii shrink to zero with a bounded ratio of outer to inner radius, they converge
-to `∂_v ψ` almost everywhere, by the Lebesgue differentiation theorem. By dominated convergence,
-integrals against the mollifications and against their directional derivatives then converge to
-the integrals against `ψ` and `∂_v ψ`.
+to `∂_v ψ` almost everywhere, by the Lebesgue differentiation theorem. Integrals against the
+mollifications converge to the integral against `ψ` along any filter, because the mollifications
+converge uniformly (this needs only uniform continuity of `ψ`). Integrals against their
+directional derivatives converge to the integral against `∂_v ψ` by dominated convergence along
+countably generated filters.
 
 These are the estimates that pass an identity proved for smooth factors to Lipschitz ones by
 dominated convergence, as in the Leibniz rule `TauCeti.HasWeakLineDerivOn.lipschitzWith_smul`.
@@ -37,9 +39,12 @@ dominated convergence, as in the Leibniz rule `TauCeti.HasWeakLineDerivOn.lipsch
   `K ‖v‖`.
 * `LipschitzWith.ae_tendsto_fderiv_normed_convolution_apply`: they converge almost everywhere to
   the directional derivative as the bumps shrink.
-* `LipschitzWith.tendsto_integral_normed_convolution_smul` and
-  `LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`: integrals against the
-  mollifications and against their directional derivatives converge as the bumps shrink.
+* `TendstoUniformly.tendsto_integral_smul_of_integrable`: integrals against a fixed integrable
+  weight converge along a uniformly convergent family.
+* `ContDiffBump.tendsto_integral_normed_convolution_smul`: integrals against the mollifications of
+  a uniformly continuous function converge as the bumps shrink.
+* `LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`: integrals against the
+  directional derivatives of the mollifications converge as the bumps shrink.
 
 ## References
 
@@ -51,6 +56,70 @@ public section
 
 open ContinuousLinearMap Filter Metric MeasureTheory
 open scoped NNReal Convolution ContDiff Topology
+
+section UniformConvergence
+
+variable {α ι G : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup G]
+  [NormedSpace ℝ G]
+
+/-- If real-valued functions `fᵢ` converge uniformly to `f` along any filter, then
+`∫ fᵢ w → ∫ f w` for every integrable `w` such that `f w` is integrable and each `fᵢ w` is almost
+everywhere strongly measurable. -/
+theorem TendstoUniformly.tendsto_integral_smul_of_integrable {l : Filter ι} {fs : ι → α → ℝ}
+    {f : α → ℝ} {w : α → G} (hu : TendstoUniformly fs f l)
+    (hmeas : ∀ i, AEStronglyMeasurable (fun x => fs i x • w x) μ) (hw : Integrable w μ)
+    (hfw : Integrable (fun x => f x • w x) μ) :
+    Tendsto (fun i => ∫ x, fs i x • w x ∂μ) l (𝓝 (∫ x, f x • w x ∂μ)) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  set I : ℝ := ∫ x, ‖w x‖ ∂μ
+  have hI0 : 0 ≤ I := integral_nonneg fun _ => norm_nonneg _
+  have hδ0 : 0 < ε / (I + 1) := by positivity
+  filter_upwards [tendstoUniformly_iff.1 hu (ε / (I + 1)) hδ0] with i hi
+  have hi' : ∀ x, ‖fs i x - f x‖ ≤ ε / (I + 1) := fun x => by
+    have := hi x
+    rw [dist_comm, dist_eq_norm] at this
+    exact this.le
+  have hbound : ∀ x, ‖f x • w x - fs i x • w x‖ ≤ ε / (I + 1) * ‖w x‖ := fun x => by
+    rw [← sub_smul, norm_smul, norm_sub_rev]
+    exact mul_le_mul_of_nonneg_right (hi' x) (norm_nonneg _)
+  have hint : Integrable (fun x => fs i x • w x) μ :=
+    integrable_of_norm_sub_le (hmeas i) hfw (hw.norm.const_mul _) (Eventually.of_forall hbound)
+  rw [dist_eq_norm, ← integral_sub hint hfw]
+  calc ‖∫ x, (fs i x • w x - f x • w x) ∂μ‖
+      ≤ ∫ x, ε / (I + 1) * ‖w x‖ ∂μ :=
+        norm_integral_le_of_norm_le (hw.norm.const_mul _) (Eventually.of_forall fun x => by
+          rw [norm_sub_rev]
+          exact hbound x)
+    _ = ε / (I + 1) * I := integral_const_mul _ _
+    _ < ε := by
+        rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+        nlinarith
+
+end UniformConvergence
+
+namespace ContDiffBump
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {ψ : E → ℝ}
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- As normalized bumps shrink to `0`, integrals against the mollifications of a uniformly
+continuous function `ψ` converge to the integral against `ψ`: `∫ (ρᵢ ⋆ ψ) w → ∫ ψ w` whenever `w`
+and `ψ w` are integrable. -/
+theorem tendsto_integral_normed_convolution_smul (hψ : UniformContinuous ψ) {ι : Type*}
+    {l : Filter ι} {ρ : ι → ContDiffBump (0 : E)}
+    (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0)) {w : E → G} (hw : Integrable w μ)
+    (hψw : Integrable (fun x => ψ x • w x) μ) :
+    Tendsto (fun i => ∫ x, ((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x • w x ∂μ) l
+      (𝓝 (∫ x, ψ x • w x ∂μ)) :=
+  (tendstoUniformly_normed_convolution (μ := μ) hρ hψ).tendsto_integral_smul_of_integrable
+    (fun i =>
+      ((ρ i).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) (ρ i).contDiff_normed
+        hψ.continuous.locallyIntegrable (n := ⊤)).continuous.aestronglyMeasurable.smul hw.1)
+    hw hψw
+
+end ContDiffBump
 
 namespace LipschitzWith
 
@@ -99,53 +168,6 @@ theorem ae_tendsto_fderiv_normed_convolution_apply (hψ : LipschitzWith K ψ) {�
   simpa only [hψ.fderiv_normed_convolution_apply] using hx
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-
-/-- As normalized bumps shrink to `0`, integrals against the mollifications of a Lipschitz
-function `ψ` converge to the integral against `ψ`: `∫ (ρᵢ ⋆ ψ) w → ∫ ψ w` whenever `w` and `ψ w`
-are integrable. -/
-theorem tendsto_integral_normed_convolution_smul (hψ : LipschitzWith K ψ) {ι : Type*}
-    {l : Filter ι} {ρ : ι → ContDiffBump (0 : E)}
-    (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0)) {w : E → G} (hw : Integrable w μ)
-    (hψw : Integrable (fun x => ψ x • w x) μ) :
-    Tendsto (fun i => ∫ x, ((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x • w x ∂μ) l
-      (𝓝 (∫ x, ψ x • w x ∂μ)) := by
-  have hunif := ContDiffBump.tendstoUniformly_normed_convolution (μ := μ) hρ hψ.uniformContinuous
-  have hmeas : ∀ i, AEStronglyMeasurable
-      (fun x => ((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x • w x) μ := fun i =>
-    ((ρ i).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) (ρ i).contDiff_normed
-      hψ.continuous.locallyIntegrable (n := ⊤)).continuous.aestronglyMeasurable.smul hw.1
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  set I : ℝ := ∫ x, ‖w x‖ ∂μ with hI
-  have hI0 : 0 ≤ I := integral_nonneg fun _ => norm_nonneg _
-  set δ : ℝ := min 1 (ε / (I + 1)) with hδ
-  have hδ0 : 0 < δ := lt_min one_pos (by positivity)
-  filter_upwards [tendstoUniformly_iff.1 hunif δ hδ0] with i hi
-  have hi' : ∀ x, ‖((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x - ψ x‖ ≤ δ := fun x => by
-    have := hi x
-    rw [dist_comm, dist_eq_norm] at this
-    exact this.le
-  -- The mollification is within `δ ≤ 1` of `ψ`, so `‖ψ w‖ + ‖w‖` dominates the integrand.
-  have hint : Integrable (fun x => ((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x • w x) μ := by
-    refine (hψw.norm.add hw.norm).mono' (hmeas i) (Eventually.of_forall fun x => ?_)
-    have hx : ‖((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x‖ ≤ ‖ψ x‖ + 1 :=
-      (norm_le_norm_add_norm_sub' _ (ψ x)).trans (add_le_add le_rfl
-        ((hi' x).trans (min_le_left _ _)))
-    simp only [Pi.add_apply, norm_smul]
-    nlinarith [norm_nonneg (w x)]
-  rw [dist_eq_norm, ← integral_sub hint hψw]
-  calc ‖∫ x, (((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x • w x - ψ x • w x) ∂μ‖
-      ≤ ∫ x, δ * ‖w x‖ ∂μ :=
-        norm_integral_le_of_norm_le (hw.norm.const_mul δ) (Eventually.of_forall fun x => by
-          rw [← sub_smul, norm_smul]
-          exact mul_le_mul_of_nonneg_right (hi' x) (norm_nonneg _))
-    _ = δ * I := integral_const_mul _ _
-    _ < ε := by
-        calc δ * I ≤ ε / (I + 1) * I :=
-              mul_le_mul_of_nonneg_right (min_le_right _ _) hI0
-          _ < ε := by
-              rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
-              nlinarith
 
 /-- As normalized bumps shrink to `0` with a bounded ratio of outer to inner radius, integrals
 against the directional derivatives of the mollifications of a Lipschitz function `ψ` converge to
