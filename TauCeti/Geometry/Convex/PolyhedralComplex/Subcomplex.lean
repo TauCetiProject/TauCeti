@@ -18,7 +18,6 @@ transport; unbounded cells and lineality are allowed.
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Subcomplex.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0).
-Reuse the existing complex, subcomplex relation and affine transport APIs.
 -/
 
 public section
@@ -52,7 +51,7 @@ noncomputable def generatedSubcomplex (C : FinitePolyhedralComplex h)
 
 /-- Generated cells are precisely ambient cells contained in a chosen ambient cell. -/
 @[simp]
-theorem mem_generatedSubcomplex_cells {C : FinitePolyhedralComplex h}
+theorem mem_cells_generatedSubcomplex {C : FinitePolyhedralComplex h}
     {S : Set (Set V)} {P : Set V} :
     P ∈ (C.generatedSubcomplex S).cells ↔
       P ∈ C.cells ∧ ∃ Q ∈ C.cells, Q ∈ S ∧ P ⊆ Q := by
@@ -62,13 +61,13 @@ theorem mem_generatedSubcomplex_cells {C : FinitePolyhedralComplex h}
 /-- Generation produces a subcomplex of the ambient complex. -/
 theorem generatedSubcomplex_isSubcomplex (C : FinitePolyhedralComplex h)
     (S : Set (Set V)) : (C.generatedSubcomplex S).IsSubcomplex C :=
-  isSubcomplex_iff.mpr fun _ hP => (mem_generatedSubcomplex_cells.mp hP).1
+  isSubcomplex_iff.mpr fun _ hP => (mem_cells_generatedSubcomplex.mp hP).1
 
 /-- Every chosen ambient cell is retained by generation. -/
-theorem mem_generatedSubcomplex_of_mem {C : FinitePolyhedralComplex h}
+theorem mem_cells_generatedSubcomplex_of_mem {C : FinitePolyhedralComplex h}
     {S : Set (Set V)} {P : Set V} (hP : P ∈ C.cells) (hPS : P ∈ S) :
     P ∈ (C.generatedSubcomplex S).cells :=
-  mem_generatedSubcomplex_cells.mpr ⟨hP, P, hP, hPS, Set.Subset.rfl⟩
+  mem_cells_generatedSubcomplex.mpr ⟨hP, P, hP, hPS, Set.Subset.rfl⟩
 
 /-- The generated subcomplex is the smallest complex retaining the chosen ambient cells.
 The comparison complex need not itself be a subcomplex of the ambient one. -/
@@ -79,9 +78,9 @@ theorem generatedSubcomplex_isSubcomplex_iff {C D : FinitePolyhedralComplex h}
   rw [isSubcomplex_iff]
   constructor
   · intro hCD P hP hPS
-    exact hCD (mem_generatedSubcomplex_of_mem hP hPS)
+    exact hCD (mem_cells_generatedSubcomplex_of_mem hP hPS)
   · intro hD P hP
-    obtain ⟨hPC, Q, hQ, hQS, hPQ⟩ := mem_generatedSubcomplex_cells.mp hP
+    obtain ⟨hPC, Q, hQ, hQS, hPQ⟩ := mem_cells_generatedSubcomplex.mp hP
     exact D.face_closed Q (hD Q hQ hQS) P (C.isPolyhedralFace_of_subset hPC hQ hPQ)
 
 /-- No additional points are introduced by adjoining the faces of chosen cells. -/
@@ -92,10 +91,10 @@ theorem support_generatedSubcomplex (C : FinitePolyhedralComplex h) (S : Set (Se
   simp only [mem_support, Set.mem_iUnion]
   constructor
   · rintro ⟨P, hP, hx⟩
-    obtain ⟨_, Q, hQ, hQS, hPQ⟩ := mem_generatedSubcomplex_cells.mp hP
+    obtain ⟨_, Q, hQ, hQS, hPQ⟩ := mem_cells_generatedSubcomplex.mp hP
     exact ⟨Q, hQ, hQS, hPQ hx⟩
   · rintro ⟨P, hP, hPS, hx⟩
-    exact ⟨P, mem_generatedSubcomplex_of_mem hP hPS, hx⟩
+    exact ⟨P, mem_cells_generatedSubcomplex_of_mem hP hPS, hx⟩
 
 /-- Enlarging the chosen family enlarges the generated subcomplex. -/
 theorem generatedSubcomplex_mono (C : FinitePolyhedralComplex h)
@@ -103,7 +102,7 @@ theorem generatedSubcomplex_mono (C : FinitePolyhedralComplex h)
     (C.generatedSubcomplex S).IsSubcomplex (C.generatedSubcomplex T) := by
   apply generatedSubcomplex_isSubcomplex_iff.mpr
   intro P hP hPS
-  exact mem_generatedSubcomplex_of_mem hP (hST hPS)
+  exact mem_cells_generatedSubcomplex_of_mem hP (hST hPS)
 
 /-- Choosing all ambient cells recovers the original complex. -/
 @[simp]
@@ -112,7 +111,7 @@ theorem generatedSubcomplex_univ (C : FinitePolyhedralComplex h) :
   apply (C.generatedSubcomplex_isSubcomplex Set.univ).antisymm
   rw [isSubcomplex_iff]
   intro P hP
-  exact mem_generatedSubcomplex_of_mem hP (Set.mem_univ P)
+  exact mem_cells_generatedSubcomplex_of_mem hP (Set.mem_univ P)
 
 /-- Generating by the cells of an existing subcomplex recovers that subcomplex. -/
 theorem IsSubcomplex.generatedSubcomplex_eq {C D : FinitePolyhedralComplex h}
@@ -121,7 +120,7 @@ theorem IsSubcomplex.generatedSubcomplex_eq {C D : FinitePolyhedralComplex h}
   · exact generatedSubcomplex_isSubcomplex_iff.mpr (fun _ _ hP => hP)
   · rw [isSubcomplex_iff]
     intro P hP
-    exact mem_generatedSubcomplex_of_mem (isSubcomplex_iff.mp hDC hP) hP
+    exact mem_cells_generatedSubcomplex_of_mem (isSubcomplex_iff.mp hDC hP) hP
 
 /-- An empty chosen family generates the empty cell collection. -/
 @[simp]
@@ -142,8 +141,8 @@ theorem image_generatedSubcomplex (C : FinitePolyhedralComplex h) (S : Set (Set 
   · rw [isSubcomplex_iff]
     intro P hP
     obtain ⟨P₀, hP₀, rfl⟩ := mem_cells_image.mp hP
-    obtain ⟨hPC, Q, hQ, hQS, hPQ⟩ := mem_generatedSubcomplex_cells.mp hP₀
-    exact mem_generatedSubcomplex_cells.mpr
+    obtain ⟨hPC, Q, hQ, hQS, hPQ⟩ := mem_cells_generatedSubcomplex.mp hP₀
+    exact mem_cells_generatedSubcomplex.mpr
       ⟨mem_cells_image.mpr ⟨P₀, hPC, rfl⟩,
         e '' Q, mem_cells_image.mpr ⟨Q, hQ, rfl⟩,
         ⟨Q, hQS, rfl⟩, Set.image_mono hPQ⟩
@@ -153,6 +152,6 @@ theorem image_generatedSubcomplex (C : FinitePolyhedralComplex h) (S : Set (Set 
     obtain ⟨R, hRS, heq⟩ := hPS
     have hRQ : R = Q := Set.image_injective.mpr e.toAffineEquiv.injective heq
     subst R
-    exact mem_cells_image.mpr ⟨Q, mem_generatedSubcomplex_of_mem hQ hRS, rfl⟩
+    exact mem_cells_image.mpr ⟨Q, mem_cells_generatedSubcomplex_of_mem hQ hRS, rfl⟩
 
 end TauCeti.FinitePolyhedralComplex
