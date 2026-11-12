@@ -92,11 +92,11 @@ theorem exists_iterate_leftInvariantDerivation_eq_zero (hX : IsNilpotent (tangen
     simpa only [trace_tangentMatrix, Bialgebra.CounitAlgebra.algEquivSelf_apply] using
       Matrix.isNilpotent_trace_of_isNilpotent hX
 
-variable [Algebra ℚ R] [Algebra ℚ (coordinateHopfAlgebra R n)]
+variable [Algebra ℚ (coordinateHopfAlgebra R n)]
 
 /-- **The exponential curve of a nilpotent tangent vector to `GLₙ` is the matrix curve
 `t ↦ exp(tX)`.** The coefficients of the abstract curve are `ε(Dᵐ x) / m! = Xᵐ / m!`. -/
-theorem expPointPolynomial_eq_nilpotentOneParameterCoordinateMap
+theorem expPointPolynomial_eq_nilpotentOneParameterCoordinateMap [Algebra ℚ R]
     (hd : ∀ h, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0)
     (hX : IsNilpotent (tangentMatrix n d)) :
     Bialgebra.expPointPolynomial d hd = nilpotentOneParameterCoordinateMap n hX := by
@@ -115,6 +115,10 @@ theorem pointsMulEquiv_expPointAt
     {A : Type v} [CommRing A] [Algebra R A] [Algebra ℚ A] (t : A) :
     pointsMulEquiv n (Bialgebra.expPointAt d hd t) =
       expSMulHom A (hX.map (algebraMap R A).mapMatrix) (Multiplicative.ofAdd t) := by
+  -- The base ring is a retract of the coordinate algebra, so it inherits its `ℚ`-structure.
+  let : Algebra ℚ R :=
+    ((Bialgebra.counitAlgHom R (coordinateHopfAlgebra R n)).toRingHom.comp
+      (algebraMap ℚ (coordinateHopfAlgebra R n))).toAlgebra
   rw [← Matrix.GeneralLinearGroup.map_aeval_expSMulHom hX t]
   ext i j
   rw [pointsMulEquiv_apply, pointToGeneralLinear_apply, Bialgebra.expPointAt_apply,
@@ -124,7 +128,7 @@ theorem pointsMulEquiv_expPointAt
 
 /-- The exponential of a nilpotent tangent vector to `GLₙ` is the matrix exponential of its
 tangent matrix. -/
-theorem pointsMulEquiv_expPoint
+theorem pointsMulEquiv_expPoint [Algebra ℚ R]
     (hd : ∀ h, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0)
     (hX : IsNilpotent (tangentMatrix n d)) :
     pointsMulEquiv n (toConv (Bialgebra.expPoint d hd)) = nilpotentExpUnit hX := by
