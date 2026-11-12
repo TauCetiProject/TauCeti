@@ -23,10 +23,14 @@ diag(a, a⁻¹) = x₊(a) x₋(-a⁻¹) x₊(a) x₊(-1) x₋(1) x₊(-1)
 ```
 
 expresses the corresponding diagonal Levi element as a product of long-root elements. Every
-point of the diagonal torus is a product of these coordinate elements. With the difference roots
-this gives the whole general-linear Levi subgroup, and the block Gaussian elimination of
-`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.GaussianGeneration` then proves
-generation by the root subgroups, and by the type-`C` simple roots alone.
+point of the diagonal torus is a product of these coordinate elements. The open-cell block
+factorization of
+`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.GaussianGeneration` is combined here
+with the symmetric pivot (`Matrix.Pivot`), unipotent generation
+(`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.UnipotentGeneration`) and the Weyl and
+Chevalley root reduction
+(`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.RootGeneration`) to prove generation
+by the root subgroups, and by the type-`C` simple roots alone.
 
 ## Main results
 
@@ -142,8 +146,7 @@ section Field
 variable {K : Type u} [Field K]
 
 /-- **The standard symplectic root subgroups generate the full symplectic group over a field.**
-The long roots generate the diagonal Levi subgroup, and with the difference roots the whole
-general-linear Levi subgroup. -/
+A subgroup containing every standard root subgroup is the whole group. -/
 theorem eq_top_of_root_subgroups
     (H : Subgroup (GLSymplecticFin m K))
     (hroot : ∀ (root : RootSubgroupIndex m) (c : Multiplicative K), root.hom c ∈ H) :
