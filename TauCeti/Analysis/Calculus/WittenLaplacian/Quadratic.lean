@@ -170,7 +170,7 @@ theorem euclideanWittenLaplacian_diagonalQuadraticWittenEigenform (a : ι → �
     (k : ι → ℕ) (s : Finset ι) :
     euclideanWittenLaplacian (diagonalQuadratic a) t (diagonalQuadraticWittenEigenform a t k s) =
       diagonalQuadraticWittenEigenvalue a t k s • diagonalQuadraticWittenEigenform a t k s := by
-  set c : ι → ℝ := fun i ↦ √(t * |a i|) with hc_def
+  set c : ι → ℝ := fun i ↦ √(t * |a i|)
   have hc : ∀ i, c i ^ 2 = t * |a i| := fun i ↦ Real.sq_sqrt (mul_nonneg ht (abs_nonneg _))
   set P : (ι → ℝ) → ℝ := fun x ↦ ∏ i, hermiteFunction (k i) (c i * x i) with hP_def
   have hP : ContDiff ℝ 2 P := contDiff_prod_hermiteFunction_comp_mul c k

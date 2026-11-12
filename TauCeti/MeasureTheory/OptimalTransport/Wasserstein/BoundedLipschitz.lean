@@ -135,7 +135,7 @@ theorem tendsto_probabilityMeasure_iff_iSup_abs_integral_sub_integral_boundedLip
         ENNReal.ofReal |∫ x, f x ∂(μs i : Measure X) - ∫ x, f x ∂(μ : Measure X)|)
         l (𝓝 0) := by
   have heq (i : ι) := transportCost_truncated_dist_eq_iSup_abs
-    (μ := (μs i : Measure X)) (ν := (μ : Measure X)) hR.le (by simp)
+    (μ := (μs i : Measure X)) (ν := (μ : Measure X)) (R := R) (by simp)
   simp_rw [← heq]
   exact tendsto_probabilityMeasure_iff_transportCost_truncated_dist hR
 

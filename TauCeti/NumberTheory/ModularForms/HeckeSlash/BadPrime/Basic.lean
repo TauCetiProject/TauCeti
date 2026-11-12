@@ -16,9 +16,8 @@ file introduces `heckeUNat` and `heckeUCuspNat` as aliases of `heckeTNat` and
 `heckeTCuspNat`, with the hypotheses `p.Prime` and `p ∣ N` making the bad-prime convention
 explicit in their types.
 
-The theorem `heckeUNat_eq_heckeTNat` records the normalization promised by the ModularForms
-roadmap. All operational properties of `U_p` are inherited directly from the existing `T_p`
-API through this equality.
+The theorem `heckeUNat_eq_heckeTNat` records this identification. All operational properties of
+`U_p` are inherited directly from the existing `T_p` API through this equality.
 
 ## Main definitions
 

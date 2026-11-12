@@ -289,7 +289,7 @@ private theorem hasDerivAt_scaledLeft (ha : a.HasCompactInputSupport) {t₀ : �
       (∑ j, (-Complex.I) • scaledLeft (spatialDerivSnd j (frequencyDeriv j a)) t₀ x ξ) t₀ := by
   have hb (j : Fin n) : (spatialDerivSnd j (frequencyDeriv j a)).HasCompactInputSupport :=
     (ha.frequencyDeriv j).spatialDerivSnd j
-  choose C hC0 hC using fun j ↦ (hb j).exists_norm_leftIntegrand_le
+  choose C _ hC using fun j ↦ (hb j).exists_norm_leftIntegrand_le
     (isCompact_singleton (x := x)) (R := 4 * π) (by linarith [Real.two_le_pi])
   have hball : ∀ t ∈ Metric.ball t₀ 1, |t * (2 * π)| ≤ 4 * π := fun t ht ↦ by
     rw [Metric.mem_ball, Real.dist_eq] at ht
