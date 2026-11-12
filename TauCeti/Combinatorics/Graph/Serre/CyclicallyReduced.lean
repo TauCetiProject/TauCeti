@@ -34,17 +34,26 @@ The main results are:
 * `SerreGraph.Path.IsCyclicallyReduced.mem_coreDarts`: a cyclically reduced closed path whose
   base vertex is reachable from `v` lies in the based core at `v`;
 * `SerreGraph.mem_cyclicDarts_core_iff` and `SerreGraph.mem_cyclicVertices_core_iff`: passing to
-  a based core does not change the darts and vertices on cyclically reduced closed paths.
+  a based core does not change the darts and vertices on cyclically reduced closed paths;
+* `SerreGraph.mem_coreDarts_or_mem_darts`: moving the base vertex of a based core back along a
+  path keeps every dart of the core that the path does not traverse in either direction;
+* `SerreGraph.Preconnected.exists_isReduced_path_to_cyclicVertices`,
+  `SerreGraph.IsCore.notMem_cyclicDarts_iff` and `SerreGraph.IsCore.notMem_cyclicVertices_iff`:
+  in a core that is not acyclic, the darts and vertices on no cyclically reduced closed path are
+  those of a path hanging from the base vertex, which meets the cyclically reduced closed paths
+  only at its end.
 
 This is the graph-theoretic content of the type of a core graph, obtained from a based core by
 deleting the path that hangs from the base vertex: for a core graph with at least one dart, the
 type consists of the darts and vertices on cyclically reduced closed paths. The type of the
 one-vertex graph is that vertex, which lies on no nonempty cyclically reduced closed path.
+Kapovich and Myasnikov locate the end of the hanging path as the first vertex of degree at
+least three; here it is the first vertex on a cyclically reduced closed path.
 
 ## References
 
 * I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free groups*,
-  Section 7, Definition 7.3 and Remark 7.4.
+  Section 7, Definition 7.3, Remark 7.4 and Lemma 7.5.
 -/
 
 public section
@@ -509,6 +518,131 @@ theorem IsCore.mem_cyclicVertices_of_ne {v : Γ.V} (hΓ : Γ.IsCore v) {e f : Γ
     obtain rfl : Γ.rev f = x := by simpa using hx
     obtain rfl : e = y := by simpa using hy
     simpa using hef
+
+/-! ### The hanging path of a core -/
+
+/-- Appending a dart to a reduced path and cancelling it against the last dart, if that is its
+reverse, gives a reduced path that keeps every other dart. -/
+private theorem Path.IsReduced.exists_cons {a b c : Γ.V} {p : Γ.Path a b} (hp : Path.IsReduced Γ p)
+    (d : Quiver.Hom b c) :
+    ∃ q : Γ.Path a c, Path.IsReduced Γ q ∧
+      ∀ e ∈ Path.darts Γ p, e ≠ Γ.rev d.1 → e ∈ Path.darts Γ q := by
+  cases p with
+  | nil => exact ⟨d.toPath, Path.isReduced_toPath Γ d, by simp⟩
+  | @cons x _ q f =>
+    by_cases h : d.1 = Γ.rev f.1
+    · have hc : x = c := by rw [← d.2.2, h, Γ.tgt_rev, f.2.1]
+      refine ⟨q.cast rfl hc, by simpa using hp.of_cons Γ, fun e he hne => ?_⟩
+      have hef : e ≠ f.1 := by rintro rfl; exact hne (by rw [h, Γ.rev_rev])
+      simpa [hef] using he
+    · exact ⟨(q.cons f).cons d, (Path.isReduced_cons_cons Γ q f d).mpr ⟨hp, h⟩,
+        fun e he _ => by
+          simp only [Path.darts_cons, List.mem_append, List.mem_singleton] at he ⊢
+          tauto⟩
+
+/-- A dart in the based core at the terminus of a dart `d`, other than `d` and its reverse, is
+in the based core at the origin of `d`. -/
+private theorem mem_coreDarts_src {d e : Γ.E} (he : e ∈ Γ.coreDarts (Γ.tgt d)) (hd : e ≠ d)
+    (hd' : e ≠ Γ.rev d) : e ∈ Γ.coreDarts (Γ.src d) := by
+  obtain ⟨c, hc, he⟩ := (Γ.mem_coreDarts_iff _ e).mp he
+  let r : Quiver.Hom (Γ.tgt d) (Γ.src d) := ⟨Γ.rev d, Γ.src_rev d, Γ.tgt_rev d⟩
+  obtain ⟨c₁, hc₁, h₁⟩ := hc.exists_cons r
+  obtain ⟨c₂, hc₂, h₂⟩ := ((Path.isReduced_reverse Γ c₁).mpr hc₁).exists_cons r
+  rw [← Γ.rev_mem_coreDarts_iff, Γ.mem_coreDarts_iff]
+  refine ⟨c₂, hc₂, h₂ _ ?_ fun h => hd' (Γ.rev_injective h)⟩
+  simpa using ⟨e, h₁ e he (by simpa [r] using hd), rfl⟩
+
+/-- Moving the base vertex of a based core back along a path keeps every dart of the core other
+than the darts of the path and their reverses. -/
+theorem mem_coreDarts_or_mem_darts {v w : Γ.V} (p : Γ.Path v w) {e : Γ.E} (he : e ∈ Γ.coreDarts w) :
+    e ∈ Γ.coreDarts v ∨ e ∈ Path.darts Γ p ∨ Γ.rev e ∈ Path.darts Γ p := by
+  induction p with
+  | nil => exact Or.inl he
+  | cons p d ih =>
+    obtain ⟨d, rfl, rfl⟩ := d
+    by_cases h₁ : e = d
+    · simp [h₁]
+    by_cases h₂ : e = Γ.rev d
+    · simp [h₂]
+    rcases ih (mem_coreDarts_src he h₁ h₂) with h | h | h <;> simp [h]
+
+/-- A path ending in a vertex set `R` has a prefix ending in `R` whose darts all start outside
+`R`. -/
+private theorem exists_path_forall_src_notMem (R : Set Γ.V) {v a : Γ.V} (q : Γ.Path v a)
+    (ha : a ∈ R) : ∃ w ∈ R, ∃ p : Γ.Path v w, ∀ e ∈ Path.darts Γ p, Γ.src e ∉ R := by
+  suffices h : ∀ {b} (q : Γ.Path v b), (b ∈ R ∨ ∃ e ∈ Path.darts Γ q, Γ.src e ∈ R) →
+      ∃ w ∈ R, ∃ p : Γ.Path v w, ∀ e ∈ Path.darts Γ p, Γ.src e ∉ R from h q (Or.inl ha)
+  intro b q
+  induction q with
+  | nil => rintro (h | ⟨e, he, -⟩); exacts [⟨_, h, .nil, by simp⟩, by simp at he]
+  | @cons b c q d ih =>
+    intro h
+    by_cases h' : b ∈ R ∨ ∃ e ∈ Path.darts Γ q, Γ.src e ∈ R
+    · exact ih h'
+    push Not at h'
+    have hsrc : ∀ e ∈ Path.darts Γ (q.cons d), Γ.src e ∉ R := by
+      intro e he
+      rcases (by simpa using he : e ∈ Path.darts Γ q ∨ e = d.1) with he | rfl
+      exacts [h'.2 e he, by rw [d.2.1]; exact h'.1]
+    refine ⟨c, h.resolve_right fun ⟨e, he, hR⟩ => hsrc e he hR, q.cons d, hsrc⟩
+
+/-- **The hanging path.** In a preconnected graph that is not acyclic, every vertex `v` is
+joined to a vertex on a cyclically reduced closed path by a reduced path whose darts all start at
+vertices on no such path. For a core based at `v` this is the path hanging from `v`. -/
+theorem Preconnected.exists_isReduced_path_to_cyclicVertices (hΓ : Γ.Preconnected) (v : Γ.V)
+    (h : ¬ Γ.IsAcyclic) :
+    ∃ (w : Γ.V) (p : Γ.Path v w), w ∈ Γ.cyclicVertices ∧ Path.IsReduced Γ p ∧
+      ∀ e ∈ Path.darts Γ p, Γ.src e ∉ Γ.cyclicVertices := by
+  obtain ⟨a, ha⟩ := Set.nonempty_iff_ne_empty.mpr (mt Γ.cyclicVertices_eq_empty_iff.mp h)
+  obtain ⟨q⟩ := Γ.preconnected_iff.mp hΓ v a
+  obtain ⟨w, hw, p, hp⟩ := exists_path_forall_src_notMem _ q ha
+  exact ⟨w, Path.reduce Γ p, hw, Path.isReduced_reduce Γ p,
+    fun e he => hp e ((Path.darts_reduce_sublist Γ p).subset he)⟩
+
+/-- Let `p` be a path from the base vertex of a core to a vertex on a cyclically reduced closed
+path, all of whose darts start at vertices on no such path: the path hanging from the base vertex.
+The darts on no cyclically reduced closed path are exactly the darts of `p` and their reverses. -/
+theorem IsCore.notMem_cyclicDarts_iff {v w : Γ.V} (hΓ : Γ.IsCore v) {p : Γ.Path v w}
+    (hw : w ∈ Γ.cyclicVertices) (hp : ∀ e ∈ Path.darts Γ p, Γ.src e ∉ Γ.cyclicVertices) (e : Γ.E) :
+    e ∉ Γ.cyclicDarts ↔ e ∈ Path.darts Γ p ∨ Γ.rev e ∈ Path.darts Γ p := by
+  refine ⟨fun he => ?_, ?_⟩
+  · have hcore : e ∈ Γ.coreDarts v := (Γ.mem_coreDarts_iff v e).mpr (((Γ.isCore_iff v).mp hΓ).2 e)
+    rcases mem_coreDarts_or_mem_darts p.reverse hcore with h | h | h
+    · rw [(Γ.connected_iff.mp hΓ.connected).2.coreDarts_eq_cyclicDarts hw] at h
+      exact absurd h he
+    · obtain ⟨a, ha, rfl⟩ : ∃ a ∈ Path.darts Γ p, Γ.rev a = e := by simpa using h
+      exact Or.inr (by simpa using ha)
+    · obtain ⟨a, ha, hae⟩ : ∃ a ∈ Path.darts Γ p, Γ.rev a = Γ.rev e := by simpa using h
+      exact Or.inl (Γ.rev_injective hae ▸ ha)
+  · rintro (h | h) hc
+    · exact hp e h (Γ.src_mem_cyclicVertices hc)
+    · exact hp _ h (Γ.src_mem_cyclicVertices ((Γ.rev_mem_cyclicDarts_iff e).mpr hc))
+
+/-- Let `p` be a path from the base vertex of a core to a vertex on a cyclically reduced closed
+path, all of whose darts start at vertices on no such path: the path hanging from the base vertex.
+The vertices on no cyclically reduced closed path are exactly the vertices of `p` other than its
+end, that is, the origins of its darts. -/
+theorem IsCore.notMem_cyclicVertices_iff {v w : Γ.V} (hΓ : Γ.IsCore v) {p : Γ.Path v w}
+    (hw : w ∈ Γ.cyclicVertices) (hp : ∀ e ∈ Path.darts Γ p, Γ.src e ∉ Γ.cyclicVertices) (a : Γ.V) :
+    a ∉ Γ.cyclicVertices ↔ ∃ e ∈ Path.darts Γ p, Γ.src e = a := by
+  refine ⟨fun ha => ?_, fun ⟨e, he, hea⟩ => hea ▸ hp e he⟩
+  -- Every vertex of `p` other than its end is the origin of a dart of `p`.
+  have key : ∀ {b} (r : Γ.Path b w), (∀ e ∈ Path.darts Γ r, e ∈ Path.darts Γ p) → b ≠ w →
+      ∃ e ∈ Path.darts Γ p, Γ.src e = b := fun r hr hb => by
+    obtain ⟨e, l, hl⟩ := List.exists_cons_of_ne_nil (Path.darts_ne_nil Γ
+      (Nat.pos_of_ne_zero fun h0 => hb (r.eq_of_length_zero h0)))
+    exact ⟨e, hr e (by simp [hl]), Path.src_eq_of_mem_head?_darts Γ r (by simp [hl])⟩
+  have hne : a ≠ w := fun h => ha (h ▸ hw)
+  obtain ⟨q⟩ := ((Γ.isCore_iff v).mp hΓ).1 a
+  cases q with
+  | nil => exact key p (fun _ => id) hne
+  | cons q f =>
+    obtain ⟨g, -, rfl⟩ := f
+    have hg : Γ.rev g ∉ Γ.cyclicDarts := fun h => ha (by simpa using Γ.src_mem_cyclicVertices h)
+    rcases (IsCore.notMem_cyclicDarts_iff hΓ hw hp _).mp hg with h | h
+    · exact ⟨_, h, Γ.src_rev g⟩
+    · obtain ⟨q', r, hpr⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p (by simpa using h)
+      exact key r (fun e he => by simp [hpr, he]) hne
 
 /-- A rose petal is cyclically reduced: going around it twice does not backtrack. -/
 theorem rosePetal_isCyclicallyReduced {α : Type*} (a : α) :
