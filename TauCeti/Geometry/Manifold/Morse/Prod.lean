@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Calculus.Morse.Prod
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Morse functions on a product manifold
@@ -45,9 +45,10 @@ of the set.
 * `TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_comp_snd`: the
   Morse index of the separated sum is the sum of the indices.
-* `TauCeti.criticalPoints_comp_snd` and `TauCeti.manifoldMorseIndex_comp_snd`: for a function `q`
-  on a normed space `V`, the critical points of `(x, v) ↦ q v` on `M × V` are the points over
-  critical points of `q`, and its Morse index at `(x, v)` is that of `q` at `v`.
+* `TauCeti.criticalPoints_comp_snd` and `TauCeti.manifoldMorseIndex_comp_snd`: the critical
+  points of `(x, y) ↦ g y` on `M × N` are the points over critical points of `g`, and for a
+  function `q` on a normed space `V` the Morse index of `(x, v) ↦ q v` at `(x, v)` is that of `q`
+  at `v`.
 
 ## References
 
@@ -186,49 +187,26 @@ section CompSnd
 
 /-! ### Functions of the second factor
 
-A function `q` on a normed space `V` pulls back to the function `(x, v) ↦ q v` on `M × V`, which is
-constant along the slices `M × {v}`. Its critical points and Morse indices are those of `q`. -/
+A function `g` on `N` pulls back to the function `(x, y) ↦ g y` on `M × N`, which is constant along
+the slices `M × {y}`. Its critical points are the points over critical points of `g`, and when `N`
+is a normed space its Morse indices are those of `g`. -/
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {q : V → ℝ}
+/-- **Critical points of a function of the second factor.** A point `p` of `M × N` is a critical
+point of `(x, y) ↦ g y` exactly when `p.2` is a critical point of `g`. -/
+theorem mem_criticalPoints_comp_snd_iff {p : M × N} :
+    p ∈ criticalPoints (I.prod I') (g ∘ Prod.snd) ↔ p.2 ∈ criticalPoints I' g := by
+  simp only [mem_criticalPoints, ContinuousLinearMap.ext_iff, mvfderiv_comp_snd_apply, zero_apply]
+  exact ⟨fun h w ↦ h ((0 : E), w), fun h v ↦ h v.2⟩
 
-/-- **Critical points of a function of the second factor.** A point `p` of `M × V` is a critical
-point of `(x, v) ↦ q v` exactly when `p.2` is a critical point of `q`. -/
-theorem mem_criticalPoints_comp_snd_iff {p : M × V} :
-    p ∈ criticalPoints (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) ↔ p.2 ∈ criticalPoints 𝓘(ℝ, V) q := by
-  by_cases hq : DifferentiableAt ℝ q p.2
-  swap
-  -- Both derivatives vanish by convention: on the slice `{p.1} × V` the function `q ∘ Prod.snd`
-  -- restricts to `q`, so it is not differentiable at `p` either.
-  · have hq' : ¬MDifferentiableAt (I.prod 𝓘(ℝ, V)) 𝓘(ℝ) (q ∘ Prod.snd) p := fun h ↦
-      hq (mdifferentiableAt_iff_differentiableAt.1
-        (h.comp_of_eq p.2 (mdifferentiableAt_const.prodMk mdifferentiableAt_id) rfl))
-    rw [mem_criticalPoints_iff_mfderiv_eq_zero, mfderiv_zero_of_not_mdifferentiableAt hq',
-      mem_criticalPoints_iff_fderiv_eq_zero, fderiv_zero_of_not_differentiableAt hq]
-    simp
-  have hd (w : TangentSpace (I.prod 𝓘(ℝ, V)) p) :
-      mvfderiv (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) p w = fderiv ℝ q p.2 w.2 := by
-    rw [mvfderiv_comp_apply p hq.mdifferentiableAt mdifferentiableAt_snd, mfderiv_snd,
-      mvfderiv_eq_fderiv_apply]
-    -- The tangent space of `M × V` at `p` is by definition the product of the tangent spaces, so
-    -- `ContinuousLinearMap.snd` applied to `w` is `w.2` by `ContinuousLinearMap.snd_apply`, which
-    -- is proved by `rfl`; `rw` cannot see through the `TangentSpace` wrapper.
-    rfl
-  rw [mem_criticalPoints, mem_criticalPoints_iff_fderiv_eq_zero]
-  constructor
-  · intro h
-    ext w
-    simpa using (hd ((0 : E), w)).symm.trans (congr($h ((0 : E), w)).trans (zero_apply _))
-  · intro h
-    ext w
-    rw [hd, h, zero_apply, zero_apply]
-
-/-- The critical set of `(x, v) ↦ q v` on `M × V` is `M` times the critical set of `q`. -/
+/-- The critical set of `(x, y) ↦ g y` on `M × N` is `M` times the critical set of `g`. -/
+@[simp]
 theorem criticalPoints_comp_snd :
-    criticalPoints (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) =
-      (univ : Set M) ×ˢ criticalPoints 𝓘(ℝ, V) q := by
+    criticalPoints (I.prod I') (g ∘ Prod.snd) = (univ : Set M) ×ˢ criticalPoints I' g := by
   ext p
   rw [mem_criticalPoints_comp_snd_iff]
   simp
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {q : V → ℝ}
 
 /-- **The Morse index of a function of the second factor** at `(x, v)` is the Morse index of `q`
 at `v`: the slice directions contribute nothing to the Hessian. -/

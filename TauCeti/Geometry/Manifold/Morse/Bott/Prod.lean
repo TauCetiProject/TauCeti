@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.Family
-public import TauCeti.Geometry.Manifold.Morse.Bott.Splitting
 public import TauCeti.Geometry.Manifold.Morse.Prod
 
 /-!
@@ -56,10 +55,10 @@ namespace SmoothEmbedding
 variable {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
 
-/-- **A Morse–Bott submanifold of a function of the second factor lies over a nondegenerate
-critical point.** If `i` is a Morse–Bott critical submanifold of `(x, v) ↦ q v` on `M × V` whose
-second component is constant near `s`, then that component is a nondegenerate critical point
-of `q`. -/
+/-- **A Morse–Bott submanifold of a function of the second factor whose second component is
+locally constant lies over a nondegenerate critical point.** If `i` is a Morse–Bott critical
+submanifold of `(x, v) ↦ q v` on `M × V` whose second component is constant near `s`, then that
+component is a nondegenerate critical point of `q`. -/
 theorem IsNondegenerateCriticalSubmanifold.isNondegenerateCriticalPoint_snd
     [FiniteDimensional ℝ V] {i : SmoothEmbedding J (I.prod 𝓘(ℝ, V)) n S (M × V)} (hn : n ≠ 0)
     (h : i.IsNondegenerateCriticalSubmanifold (q ∘ Prod.snd)) {s : S}
@@ -130,10 +129,11 @@ theorem isMorseBottFamily_comp_snd [BoundarylessManifold I M] [ConnectedSpace M]
   · rw [hcrit']
     exact subset_iUnion_of_subset () hrange.ge
 
-/-- **A degenerate isolated critical point is not Morse–Bott on a product.** Let `M` be nonempty
+/-- **A unique degenerate critical point is not Morse–Bott on a product.** Let `M` be nonempty
 and let `0` be the only critical point of `q`, a degenerate one. Then no family of embeddings
 exhibits `(x, v) ↦ q v` on `M × V` as a Morse–Bott function: its critical set is the slice
-`M × {0}`, along which the critical Hessian has vertical kernel. -/
+`M × {0}`, and along it the kernel of the critical Hessian contains nonzero vertical vectors,
+which are not tangent to the slice. -/
 theorem not_isMorseBottFamily_comp_snd [Nonempty M] [FiniteDimensional ℝ V]
     {ι : Type*} {E' : ι → Type*} [∀ a, NormedAddCommGroup (E' a)] [∀ a, NormedSpace ℝ (E' a)]
     {H' : ι → Type*} [∀ a, TopologicalSpace (H' a)] {J : ∀ a, ModelWithCorners ℝ (E' a) (H' a)}
