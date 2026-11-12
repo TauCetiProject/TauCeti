@@ -7,8 +7,8 @@ module
 
 public import TauCeti.GroupTheory.LimitGroup.NTQ.Basic
 public import TauCeti.GroupTheory.FreeGroup.Coprod
+import TauCeti.Algebra.Group.Subgroup.Closure
 import TauCeti.GroupTheory.Coprod.Finiteness
-import TauCeti.GroupTheory.FreeGroup.Centralizer
 
 /-!
 # Normalized towers
@@ -41,8 +41,9 @@ general.
 * `TauCeti.LimitGroup.NTQ.TowerLevel.retraction_comp_inclusion`,
   `TauCeti.LimitGroup.NTQ.TowerLevel.inclusion_injective`: the level maps are injective, with the
   specified retractions.
-* `TauCeti.LimitGroup.NTQ.Tower.retraction_comp`, `TauCeti.LimitGroup.NTQ.Tower.injective`: the
-  coefficient homomorphism of a tower is injective, with a retraction.
+* `TauCeti.LimitGroup.NTQ.Tower.retraction_comp`,
+  `TauCeti.LimitGroup.NTQ.Tower.retraction_apply_coeff`, `TauCeti.LimitGroup.NTQ.Tower.injective`:
+  the coefficient homomorphism of a tower is injective, with a retraction.
 * `TauCeti.LimitGroup.NTQ.Tower.exists_surjective_gHom`: the top carrier is finitely generated
   over `G`.
 * `TauCeti.LimitGroup.NTQ.TowerLevel.inclusion_bijective_sq_iff`: the quadratic level `x² = 1`
@@ -58,7 +59,12 @@ general.
 
 * [VAR-I] O. Kharlampovich, A. Myasnikov, *Irreducible affine varieties over a free group. I:
   Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §1,
-  Theorem 1, and §3.
+  Theorem 1 (the coordinate groups of quadratic equations over a fixed coefficient group), and
+  §3, Form 2 (the full-centralizer relations in the radical of `z⁻¹ c z = d`) and Form 3 (the
+  radical of `x² = d`).
+* [VAR-II] O. Kharlampovich, A. Myasnikov, *Irreducible affine varieties over a free group. II:
+  Systems in triangular quasi-quadratic form and description of residually free groups*,
+  J. Algebra 200 (1998), §0, Definition 8.
 * [IFT] O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra
   290 (2005), §7.6, Definition 43.
 -/
@@ -208,10 +214,8 @@ theorem exists_finite_closure_eq_top (L : TowerLevel H) :
     obtain ⟨s, hs, hcl⟩ := exists_finite_closure_range_inl_union (G := H) (H := FreeGroup X)
     have h : closure (Set.range (CoordGroup.coeff (MonoidHom.id H) {Q.toWord}) ∪
         QuotientGroup.mk' _ '' s) = ⊤ := by
-      rw [CoordGroup.coeff_def, GX.quotientCoeff_def, MonoidHom.coe_comp, Set.range_comp,
-        ← Set.image_union, ← MonoidHom.map_closure, hcl, ← MonoidHom.range_eq_map,
-        MonoidHom.range_eq_top]
-      exact QuotientGroup.mk'_surjective _
+      rw [CoordGroup.coeff_def, GX.quotientCoeff_def, MonoidHom.closure_range_comp_union_image,
+        hcl, map_top_of_surjective _ (QuotientGroup.mk'_surjective _)]
     exact ⟨_, hs.image _, h⟩
   | centralizer u U n h =>
     exact ⟨_, Set.finite_range _, CentralizerExt.closure_range_of_union_range_t⟩
@@ -290,10 +294,15 @@ theorem retraction_comp (t : Tower G T ι) : t.retraction.comp ι = MonoidHom.id
     ext x
     simpa using DFunLike.congr_fun ih x
 
+/-- The retraction of a tower fixes the coefficients. -/
+@[simp]
+theorem retraction_apply_coeff (t : Tower G T ι) (g : G) : t.retraction (ι g) = g :=
+  DFunLike.congr_fun t.retraction_comp g
+
 /-- The retraction of a tower, as a homomorphism over `G`. -/
 def retractionGHom (t : Tower G T ι) : GHom ι (MonoidHom.id G) where
   toMonoidHom := t.retraction
-  map_coeff' g := DFunLike.congr_fun t.retraction_comp g
+  map_coeff' := t.retraction_apply_coeff
 
 @[simp]
 theorem coe_retractionGHom (t : Tower G T ι) : ⇑t.retractionGHom = t.retraction := (rfl)
@@ -311,13 +320,13 @@ private theorem exists_finite_closure_eq_top (t : Tower G T ι) :
       subset_closure))
     rintro _ ⟨h, rfl⟩
     have hh : L.inclusion h ∈ closure (Set.range (L.inclusion.comp ι) ∪ L.inclusion '' s₀) := by
-      rw [MonoidHom.coe_comp, Set.range_comp, ← Set.image_union, ← MonoidHom.map_closure, h₀]
+      rw [MonoidHom.closure_range_comp_union_image, h₀]
       exact mem_map_of_mem _ (mem_top h)
     exact closure_mono (Set.union_subset_union_right _ Set.subset_union_left) hh
 
 /-- The coefficient homomorphism of a tower is injective. -/
 theorem injective (t : Tower G T ι) : Function.Injective ι :=
-  Function.LeftInverse.injective (g := t.retraction) (DFunLike.congr_fun t.retraction_comp)
+  Function.LeftInverse.injective t.retraction_apply_coeff
 
 /-- The top carrier of a tower over `G` is finitely generated over `G`: it is a quotient of
 `G[Y]`, over `G`, for a finite set `Y` of variables. -/
@@ -348,10 +357,9 @@ variable {G : Type u} [Group G]
 admissible centralizer data in every positive rank: `G[X]` is free and `x` is primitive. -/
 theorem isAdmissibleCentralizerLevel_inr_of [IsFreeGroup G] {X : Type*} (x : X) {n : ℕ}
     (hn : 0 < n) :
-    IsAdmissibleCentralizerLevel (inr (FreeGroup.of x) : GX G X) {inr (FreeGroup.of x)} n := by
-  have h : IsAdmissibleCentralizerStep (inr (FreeGroup.of x) : GX G X) n :=
-    isAdmissibleCentralizerStep_iff.2 ⟨(isPrimitive_inr (by simp)).not_isProperPower, hn⟩
-  exact isAdmissibleCentralizerLevel_singleton_iff.2 ⟨h, IsFreeGroup.isCyclic_centralizer h.ne_one⟩
+    IsAdmissibleCentralizerLevel (inr (FreeGroup.of x) : GX G X) {inr (FreeGroup.of x)} n :=
+  isAdmissibleCentralizerLevel_singleton_iff_of_isFreeGroup.2
+    ⟨(isPrimitive_inr (by simp)).not_isProperPower, hn⟩
 
 /-! ### A tower with several homomorphisms to its base -/
 

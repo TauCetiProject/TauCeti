@@ -71,6 +71,9 @@ and the added rank `n` is positive. A raw level of type (2) carries no such cond
 * `TauCeti.LimitGroup.NTQ.isAdmissibleCentralizerLevel_singleton_iff`: `u` with `U = {u}` is
   admissible centralizer data exactly when `u` is not a proper power, `n > 0` and the centralizer
   of `u` is cyclic.
+* `TauCeti.LimitGroup.NTQ.isAdmissibleCentralizerLevel_singleton_iff_of_isFreeGroup`: in a free
+  group, `u` with `U = {u}` is admissible centralizer data exactly when `u` is not a proper power
+  and `n > 0`.
 * `TauCeti.LimitGroup.NTQ.isAdmissibleCentralizerLevel_freeGroup_of`: a basis element of a free
   group, with its own singleton, is admissible centralizer data in every positive rank.
 
@@ -342,12 +345,18 @@ theorem isAdmissibleCentralizerLevel_singleton_iff {u : H} {n : ℕ} :
   refine ⟨h, hu ▸ inferInstance, ?_⟩
   rw [Finset.coe_singleton, ← zpowers_eq_closure, hu]
 
+/-- In a free group, `u` with `U = {u}` is admissible centralizer data exactly when `u` is not a
+proper power and `n > 0`: the centralizer of a nontrivial element of a free group is cyclic. -/
+theorem isAdmissibleCentralizerLevel_singleton_iff_of_isFreeGroup [IsFreeGroup H] {u : H}
+    {n : ℕ} : IsAdmissibleCentralizerLevel u {u} n ↔ ¬Group.IsProperPower u ∧ 0 < n := by
+  rw [isAdmissibleCentralizerLevel_singleton_iff, ← isAdmissibleCentralizerStep_iff]
+  exact and_iff_left_of_imp fun h ↦ IsFreeGroup.isCyclic_centralizer h.ne_one
+
 /-- In a free group, a basis element `a` with `U = {a}` is admissible centralizer data in every
 positive rank: its centralizer is the cyclic group it generates. -/
 theorem isAdmissibleCentralizerLevel_freeGroup_of {α : Type*} (a : α) {n : ℕ} (hn : 0 < n) :
     IsAdmissibleCentralizerLevel (FreeGroup.of a) {FreeGroup.of a} n :=
-  isAdmissibleCentralizerLevel_singleton_iff.2 ⟨isAdmissibleCentralizerStep_freeGroup_of a hn,
-    IsFreeGroup.isCyclic_centralizer (FreeGroup.of_ne_one a)⟩
+  isAdmissibleCentralizerLevel_singleton_iff_of_isFreeGroup.2 ⟨FreeGroup.not_isProperPower_of a, hn⟩
 
 end Admissible
 
