@@ -559,6 +559,19 @@ theorem mem_matchedChoices {h : Finset β} {U : Finset α} :
   refine and_congr_right fun hU ↦ ?_
   rw [← card_image_iff, hU, eq_comm]
 
+omit [LinearOrder α] in
+/-- There is a choice of one point of each pair in `h` exactly when `h` consists of pairs of
+`M`. -/
+theorem matchedChoices_nonempty_iff {h : Finset β} :
+    (matchedChoices M h).Nonempty ↔ h ⊆ univ.image M := by
+  refine ⟨fun ⟨U, hU⟩ ↦ (mem_matchedChoices.1 hU).1 ▸ image_subset_image (subset_univ U),
+    fun hh ↦ ?_⟩
+  classical
+  obtain ⟨u, -, hu, hus⟩ := Set.SurjOn.exists_subset_injOn_image_eq (s := Set.univ) (f := M)
+    (t := (h : Set β)) fun b hb ↦ by simpa using hh hb
+  refine ⟨u.toFinset, mem_matchedChoices.2 ⟨coe_injective ?_, by simpa using hu⟩⟩
+  simpa using hus
+
 variable (M) in
 /-- The element `a(ρ, h)` of the algebra of the matching `M`: the sum of the diagrams obtained from
 `ρ` by adding a horizontal strand at one point of each pair in `h`, over all such choices `U`. When
