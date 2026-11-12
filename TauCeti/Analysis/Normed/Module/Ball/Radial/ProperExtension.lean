@@ -50,7 +50,7 @@ theorem ContinuousOn.exists_isProperMap_eqOn_closedBall {f : E → F} {x₀ : E}
     (hfδ : ∀ x ∈ sphere x₀ r, δ ≤ ‖f x - f x₀‖) :
     ∃ g : C(E, F), IsProperMap g ∧ EqOn g f (closedBall x₀ r) ∧
       ∀ x, r ≤ dist x x₀ → δ ≤ ‖g x - f x₀‖ := by
-  set s : E → ℝ := fun x ↦ max 1 (dist x x₀ / r) with hs
+  set s : E → ℝ := fun x ↦ max 1 (dist x x₀ / r)
   have hs1 (x : E) : 1 ≤ s x := le_max_left _ _
   have hsc : Continuous s :=
     continuous_const.max ((continuous_id.dist continuous_const).div_const r)
