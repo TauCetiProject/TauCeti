@@ -31,6 +31,29 @@ section CommSemiring
 
 variable [CommSemiring A] [AddCommMonoid V] [Module A V]
 
+/-- The coordinate of the image of a vector at a rotated index is the weight times the coordinate
+of the vector at the original index. -/
+theorem repr_apply_rotate (b : Module.Basis ι A V)
+    (e : (Σ j, Fin (n j + 1)) ≃ ι) (a : ∀ j, Fin (n j + 1) → A) (f : V →ₗ[A] V)
+    (h : ∀ j i, f (b (e ⟨j, i⟩)) = a j i • b (e ⟨j, finRotate (n j + 1) i⟩))
+    (x : V) (j : J) (i : Fin (n j + 1)) :
+    b.repr (f x) (e ⟨j, finRotate (n j + 1) i⟩) = a j i * b.repr x (e ⟨j, i⟩) := by
+  classical
+  have key : (b.coord (e ⟨j, finRotate (n j + 1) i⟩)) ∘ₗ f = a j i • b.coord (e ⟨j, i⟩) := by
+    apply b.ext
+    rintro k
+    obtain ⟨⟨j', i'⟩, rfl⟩ := e.surjective k
+    simp only [LinearMap.comp_apply, h, map_smul, Module.Basis.coord_apply,
+      Module.Basis.repr_self, Finsupp.single_apply, e.injective.eq_iff, LinearMap.smul_apply,
+      smul_eq_mul, Sigma.mk.injEq]
+    by_cases hj : j = j'
+    · subst hj
+      by_cases hi : i = i'
+      · simp [hi]
+      · simp [Ne.symm hi]
+    · simp [Ne.symm hj]
+  simpa using LinearMap.congr_fun key x
+
 /-- Curried basis coordinates intertwine the given family action with its componentwise
 weighted shifts. The enumeration exhausts the whole basis. -/
 theorem equivFun_comp_eq_piMap_comp [Finite J] (b : Module.Basis ι A V)
@@ -41,25 +64,9 @@ theorem equivFun_comp_eq_piMap_comp [Finite J] (b : Module.Basis ι A V)
       (LinearMap.piMap fun j ↦ TauCeti.WeightedCycle.linearMap (a j)) ∘ₗ
         ((b.reindex e.symm).equivFun.trans
           (LinearEquiv.piCurry A fun j (_ : Fin (n j + 1)) ↦ A)).toLinearMap := by
-  classical
-  apply (b.reindex e.symm).ext
-  rintro ⟨j, i⟩
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply]
-  have hi : f ((b.reindex e.symm) ⟨j, i⟩) = a j i •
-      (b.reindex e.symm) ⟨j, finRotate (n j + 1) i⟩ := by
-    simpa using h j i
-  rw [hi, map_smul, map_smul]
-  funext k l
+  ext x k l
   obtain ⟨r, rfl⟩ := (finRotate (n k + 1)).surjective l
-  simp only [LinearEquiv.piCurry_apply, Sigma.curry, Pi.smul_apply, smul_eq_mul,
-    LinearMap.coe_piMap, Pi.map]
-  rw [linearMap_apply_rotate]
-  simp only [Sigma.curry]
-  by_cases hj : j = k
-  · subst k
-    simp only [equivFun_self, smul_eq_mul]
-    by_cases hir : i = r <;> simp [hir]
-  · simp [hj]
+  simpa [Sigma.curry, linearMap_apply_rotate] using repr_apply_rotate b e a f h x k r
 
 /-- Fixed vectors in the original module give one native fixed tuple per cycle. -/
 noncomputable def fixedFamilyEquiv [Finite J] (b : Module.Basis ι A V)
@@ -100,16 +107,28 @@ theorem fixedFamilyEquiv_symm_apply [Fintype J] (b : Module.Basis ι A V)
       ∑ j, ∑ i, (w j).val i • b (e ⟨j, i⟩) := by
   simp [fixedFamilyEquiv, Module.Basis.equivFun_symm_apply, Fintype.sum_sigma, Sigma.uncurry]
 
+/-- The coefficients of a fixed vector along one cycle form a fixed tuple of that cycle's
+weighted shift. -/
+theorem repr_mem_fixedSubmodule (b : Module.Basis ι A V)
+    (e : (Σ j, Fin (n j + 1)) ≃ ι) (a : ∀ j, Fin (n j + 1) → A) (f : V →ₗ[A] V)
+    (h : ∀ j i, f (b (e ⟨j, i⟩)) = a j i • b (e ⟨j, finRotate (n j + 1) i⟩))
+    (v : f.fixedSubmodule) (j : J) :
+    (fun i ↦ b.repr v.val (e ⟨j, i⟩)) ∈
+      (TauCeti.WeightedCycle.linearMap (a j) (M := A)).fixedSubmodule := by
+  rw [mem_fixedSubmodule_iff]
+  intro i
+  have hv : f v.val = v.val := (LinearMap.mem_fixedSubmodule_iff).mp v.property
+  simpa [hv] using repr_apply_rotate b e a f h v.val j i
+
 /-- All coefficients in a fixed vector are prefix products times their cycle's initial
 coefficient. -/
-theorem repr_eq_family_partialProd_mul [Finite J] (b : Module.Basis ι A V)
+theorem repr_eq_family_partialProd_mul (b : Module.Basis ι A V)
     (e : (Σ j, Fin (n j + 1)) ≃ ι) (a : ∀ j, Fin (n j + 1) → A) (f : V →ₗ[A] V)
     (h : ∀ j i, f (b (e ⟨j, i⟩)) = a j i • b (e ⟨j, finRotate (n j + 1) i⟩))
     (v : f.fixedSubmodule) (j : J) (i : Fin (n j + 1)) :
     b.repr v.val (e ⟨j, i⟩) =
-      Fin.partialProd (Fin.init (a j)) i * b.repr v.val (e ⟨j, 0⟩) := by
-  simpa only [fixedFamilyEquiv_apply, smul_eq_mul] using
-    coeff_eq_partialProd_smul (a j) (fixedFamilyEquiv b e a f h v j) i
+      Fin.partialProd (Fin.init (a j)) i * b.repr v.val (e ⟨j, 0⟩) :=
+  coeff_eq_partialProd_smul (a j) ⟨_, repr_mem_fixedSubmodule b e a f h v j⟩ i
 
 end CommSemiring
 
