@@ -75,7 +75,7 @@ self-adjoint partial map preserves self-adjointness and its domain. -/
 theorem isSelfAdjoint_perturb_bounded {A : H →ₗ.[𝕜] H} (hA : IsSelfAdjoint A)
     {T : H →L[𝕜] H} (hT : IsSelfAdjoint T) :
     IsSelfAdjoint (T.toLinearMap +ᵥ A) := by
-  set B := T.toLinearMap +ᵥ A with hB
+  set B := T.toLinearMap +ᵥ A
   have hB_apply (x : A.domain) : B x = T (x : H) + A x := by
     -- The argument type depends on the partial map's domain. Rewriting `hB`
     -- under the application is not well-typed; unfold the local abbreviation
