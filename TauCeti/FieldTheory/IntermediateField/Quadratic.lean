@@ -162,6 +162,19 @@ theorem finrank_adjoin_simple_eq_two_of_not_isSquare {a : K} {x : L}
   have h := (⊥ : IntermediateField K L).finrank_sup_adjoin_simple_eq_mul_two hx2 hxb
   rwa [bot_sup_eq, IntermediateField.finrank_bot, one_mul] at h
 
+/-- **A square root of a square radicand lies in the base field.** If `x ^ 2 = a` for some `a ∈ K`
+that is a square `r ^ 2` in `K`, then `K(x) = K`, since `x = r` or `x = -r`. This is the
+counterpart of `finrank_adjoin_simple_eq_two_of_not_isSquare`. -/
+theorem adjoin_simple_eq_bot_of_isSquare {a : K} {x : L}
+    (hx : x ^ 2 = algebraMap K L a) (ha : IsSquare a) :
+    IntermediateField.adjoin K {x} = ⊥ := by
+  obtain ⟨r, rfl⟩ := ha
+  refine IntermediateField.adjoin_simple_eq_bot_iff.mpr (IntermediateField.mem_bot.mpr ?_)
+  have hxr : x ^ 2 = algebraMap K L r ^ 2 := by rw [hx, sq, map_mul]
+  rcases sq_eq_sq_iff_eq_or_eq_neg.mp hxr with h | h
+  · exact ⟨r, h.symm⟩
+  · exact ⟨-r, by rw [map_neg, h]⟩
+
 /-- **Same square class from a shared simple quadratic field.** Let `x` and `y` be square roots of
 `a` and `c` in a field extension `L / K` with `2 ≠ 0`. If the simple extensions `K(x)` and `K(y)`
 coincide, then `a · c` is a square in `K`: two square roots generate the same quadratic subfield
