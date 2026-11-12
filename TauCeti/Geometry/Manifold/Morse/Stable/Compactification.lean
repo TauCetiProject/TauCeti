@@ -253,23 +253,20 @@ variable {hX : IsAdaptedPseudoGradient f X}
 /-- **The Morse index drops along a broken trajectory.** Under the Morse–Smale condition, the Morse
 indices of the critical points of a broken trajectory decrease strictly. -/
 theorem strictAnti_manifoldMorseIndex_of_chain (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-    {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
-    (hxc : ∀ j, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (x j) = 0) (hxne : ∀ j : Fin k, x j.castSucc ≠ x j.succ)
+    {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M} (hxne : ∀ j : Fin k, x j.castSucc ≠ x j.succ)
     (hz : ∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ)) :
     StrictAnti fun j ↦ manifoldMorseIndex 𝓘(ℝ, E) f (x j) :=
-  Fin.strictAnti_iff_succ_lt.2 fun j ↦
-    h.manifoldMorseIndex_lt hf (hxc _) (hxc _) (hxne j) ⟨z j, hz j⟩
+  Fin.strictAnti_iff_succ_lt.2 fun j ↦ h.manifoldMorseIndex_lt hf (hxne j) ⟨z j, hz j⟩
 
 /-- **A broken trajectory has at most `ind p - ind r` components.** Under the Morse–Smale
 condition, a broken trajectory from `p` to `r` with `k` components has `k + ind r ≤ ind p`. -/
 theorem add_manifoldMorseIndex_le_of_chain (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     {p r : M} {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M} (hx0 : x 0 = p)
-    (hxk : x (Fin.last k) = r) (hxc : ∀ j, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (x j) = 0)
-    (hxne : ∀ j : Fin k, x j.castSucc ≠ x j.succ)
+    (hxk : x (Fin.last k) = r) (hxne : ∀ j : Fin k, x j.castSucc ≠ x j.succ)
     (hz : ∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ)) :
     k + manifoldMorseIndex 𝓘(ℝ, E) f r ≤ manifoldMorseIndex 𝓘(ℝ, E) f p := by
   have hlt :=
-    Fin.strictAnti_iff_succ_lt.1 (h.strictAnti_manifoldMorseIndex_of_chain hf hxc hxne hz)
+    Fin.strictAnti_iff_succ_lt.1 (h.strictAnti_manifoldMorseIndex_of_chain hf hxne hz)
   -- Each step of the chain lowers the index by at least one.
   have key : ∀ j : Fin (k + 1),
       (j : ℕ) + manifoldMorseIndex 𝓘(ℝ, E) f (x j) ≤ manifoldMorseIndex 𝓘(ℝ, E) f (x 0) := by
@@ -290,8 +287,7 @@ indices along its chain of critical points decrease strictly
 (`IsMorseSmale.strictAnti_manifoldMorseIndex_of_chain`), so a limit with `k` components has
 `k + ind r ≤ ind p` (`IsMorseSmale.add_manifoldMorseIndex_le_of_chain`). -/
 theorem closure_morseTrajectoryRecords_subset [Countable ι] (h : hX.IsMorseSmale)
-    (hf : IsMorse 𝓘(ℝ, E) f) {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0) {c : ι → ℝ}
+    (hf : IsMorse 𝓘(ℝ, E) f) {p r : M} {c : ι → ℝ}
     (hreg : ∀ i y, f y = c i → mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0)
     (hc : ∀ i, c i ∈ Ioo (f r) (f p)) :
     closure (hX.morseTrajectoryRecords p r c) ⊆ hX.morseBrokenTrajectoryRecords p r c := by
@@ -303,7 +299,7 @@ theorem closure_morseTrajectoryRecords_subset [Countable ι] (h : hX.IsMorseSmal
   -- A subsequence of the trajectories converges to a broken trajectory, along which the records
   -- converge.
   obtain ⟨k, x, z, s, n, hn, hx0, hxk, hxc, hxi, hz, -, hzlim⟩ :=
-    h.exists_subseq_tendsto_broken hf hp hr y hy
+    h.exists_subseq_tendsto_broken hf y hy
   obtain ⟨w₀, hw₀, hlim⟩ :=
     hX.exists_tendsto_mem_morseBrokenTrajectoryRecords hdf hreg hc hx0 hxk hxc
     (fun j he ↦ (hxi (Fin.castSucc_lt_succ (i := j))).ne (congrArg _ he.symm)) hz hzlim
