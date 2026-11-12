@@ -82,7 +82,7 @@ theorem integral_laplacian_smul_re_cauchyTransform {h : ℂ → ℂ} (hh : Integ
     (hc : HasCompactSupport φ) (hφ : ContDiff ℝ 2 φ) :
     ∫ w, Δ φ w • (cauchyTransform h w).re =
       -(2 : ℝ) * ∫ z, (fderiv ℝ φ z 1 • (h z).re + fderiv ℝ φ z I • (h z).im) := by
-  set ψ : ℂ → ℂ := fun z ↦ (fderiv ℝ φ z 1 : ℂ) - I * (fderiv ℝ φ z I : ℂ) with hψ_def
+  set ψ : ℂ → ℂ := fun z ↦ (fderiv ℝ φ z 1 : ℂ) - I * (fderiv ℝ φ z I : ℂ)
   have hφ1 : ContDiff ℝ 1 (fderiv ℝ φ) := hφ.fderiv_right (m := 1) (by norm_num)
   have hline (v : ℂ) : ContDiff ℝ 1 fun z ↦ ((fderiv ℝ φ z v : ℝ) : ℂ) :=
     ofRealCLM.contDiff.comp (hφ1.clm_apply contDiff_const)
