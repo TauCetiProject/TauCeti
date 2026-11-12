@@ -23,7 +23,9 @@ derivatives are unique almost everywhere, so the minimum is attained by every we
 This is the quantity in which interior estimates of elliptic equations are stated. The file
 supplies its unfolding, its value through a given weak derivative on an open set, monotonicity
 in the set, invariance under almost-everywhere change, the triangle inequality and the
-operator-norm bound under a continuous linear map of the codomain.
+operator-norm bound under a continuous linear map of the codomain. A finite `W^{k+1,p}(U)` size
+supplies a weak derivative of finite `W^{k,p}(U)` size, and a member of `W^{k,p}_loc(U)` has
+finite `W^{k,p}(K)` size on every compact `K ⊆ U`.
 
 ## References
 
@@ -74,6 +76,27 @@ theorem eLpNormWkp_succ_le {D : ℂ → ℂ →L[ℝ] F}
   rw [eLpNormWkp_succ]
   gcongr
   exact iInf₂_le D hD
+
+/-- A finite `W^{k+1,p}(U)` norm supplies a weak derivative on `interior U` of finite
+`W^{k,p}(U)` norm. -/
+theorem exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (h : eLpNormWkp p U (k + 1) f ≠ ∞) :
+    ∃ D : ℂ → ℂ →L[ℝ] F,
+      HasWeakFDerivOn volume (Opens.interior U) f D ∧ eLpNormWkp p U k D ≠ ∞ := by
+  rw [eLpNormWkp_succ] at h
+  obtain ⟨D, hD⟩ := iInf_lt_iff.1 (lt_top_iff_ne_top.2 (ENNReal.add_ne_top.1 h).2)
+  obtain ⟨hD, hlt⟩ := iInf_lt_iff.1 hD
+  exact ⟨D, hD, hlt.ne⟩
+
+/-- A member of `W^{k,p}_loc(U)` has finite `W^{k,p}(V)` norm on every compact `V ⊆ U`. -/
+theorem MemWkpLoc.eLpNormWkp_ne_top_of_isCompact (hf : MemWkpLoc p U k f) (hVU : V ⊆ U)
+    (hV : IsCompact V) : eLpNormWkp p V k f ≠ ∞ := by
+  induction k generalizing F with
+  | zero => simpa using (memLpLoc_iff.1 (memWkpLoc_zero_iff.1 hf) V hVU hV).eLpNorm_ne_top
+  | succ k ih =>
+    obtain ⟨D, hD, hDp⟩ := hf.exists_weakFDeriv
+    refine ((eLpNormWkp_succ_le (hD.mono (interior_mono hVU))).trans_lt ?_).ne
+    exact ENNReal.add_lt_top.2
+      ⟨(memLpLoc_iff.1 hf.memLpLoc V hVU hV).eLpNorm_lt_top, (ih hDp).lt_top⟩
 
 /-- The `W^{k,p}` norm increases with the set. -/
 theorem eLpNormWkp_mono_set (hVU : V ⊆ U) : eLpNormWkp p V k f ≤ eLpNormWkp p U k f := by
