@@ -55,16 +55,15 @@ covector `a` and a two-form `b` on `V` (`Module.Dual.symplectizationForm`), as a
 bilinear map. -/
 noncomputable def symplectizationFormCLM (a : V [⋀^Fin 1]→L[𝕜] 𝕜)
     (b : V [⋀^Fin 2]→L[𝕜] 𝕜) : 𝕜 × V →L[𝕜] 𝕜 × V →L[𝕜] 𝕜 :=
-  (Module.Dual.symplectizationForm
-    ((ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm a : V →L[𝕜] 𝕜).toLinearMap
-    (ContinuousAlternatingMap.flatL 𝕜 V 𝕜 b).toBilinForm).toContinuousBilinearMap
+  (Module.Dual.symplectizationForm (toDual a : V →ₗ[𝕜] 𝕜)
+    (flatL 𝕜 V 𝕜 b).toLinearMap₁₂).toContinuousBilinearMap
 
 /-- The symplectization form evaluates by `((s, v), (s', w)) ↦ s a(w) - s' a(v) + b(v, w)`. -/
 @[simp]
 theorem symplectizationFormCLM_apply (a : V [⋀^Fin 1]→L[𝕜] 𝕜) (b : V [⋀^Fin 2]→L[𝕜] 𝕜)
     (p q : 𝕜 × V) :
     a.symplectizationFormCLM b p q = p.1 * a ![q.2] - q.1 * a ![p.2] + b ![p.2, q.2] := by
-  simp [symplectizationFormCLM, ← Matrix.vec_single_eq_const]
+  simp [symplectizationFormCLM, ← flatL_apply_apply]
 
 end ContinuousAlternatingMap
 

@@ -134,7 +134,7 @@ theorem existsUnique_gluing (hU : ⨆ i, U i = Ω)
   -- Every compact subset of `Ω` carries finitely many smooth cutoffs subordinate to the cover and
   -- summing to one on it.
   have hcut (K : Set E) (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ (s : Finset ι) (χ : ι → E → ℝ)
-      (hχ : ∀ i, ContDiff ℝ n (χ i)), (∀ i, tsupport (χ i) ∩ Ω ⊆ U i) ∧
+      (_ : ∀ i, ContDiff ℝ n (χ i)), (∀ i, tsupport (χ i) ∩ Ω ⊆ U i) ∧
         ∀ x ∈ K, ∑ i ∈ s, χ i x = 1 := by
     have hKU : K ⊆ ⋃ i, (U i : Set E) := by rwa [← Opens.coe_iSup, hU]
     obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, E) hK.isClosed

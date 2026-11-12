@@ -287,22 +287,7 @@ theorem SeparatelyExchangeable.exists_common_visibleCells_coding
               fun p : F => g (cellContext e f p.1.1.1 p.1.1.2 q.1) (q.2 p))) =
           ρ.map fun x => (H.domRestrict x, fun p : F => x p.1.1) := by
   intro H V
-  rcases Set.eq_empty_or_nonempty V with hV | ⟨⟨i₀, j₀⟩, hi₀, hj₀⟩
-  · -- If the hidden rows or the hidden columns exhaust their index set, there is no visible cell:
-    -- every finite family is then empty and the claim only compares the law of the crossing
-    -- strips with itself, so any measurable constant coding serves.
-    have : IsEmpty V := Set.isEmpty_coe_sort.2 hV
-    refine ⟨fun _ _ => Classical.arbitrary α, measurable_const, fun F => ?_⟩
-    have : IsEmpty F := ⟨fun p => isEmptyElim p.1⟩
-    have hstrips : Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : F => x p.1.1) :=
-      (Set.measurable_restrict H).prodMk (Measurable.of_eval fun p => measurable_pi_apply p.1.1)
-    have hfactor : (fun q : (ℕ × ℕ → α) × (F → I) =>
-          (H.domRestrict q.1, fun _ : F => Classical.arbitrary α)) =
-        (fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : F => x p.1.1)) ∘ Prod.fst :=
-      funext fun q => Prod.ext rfl (Subsingleton.elim _ _)
-    rw [hfactor, ← Measure.map_map hstrips measurable_fst, Measure.map_fst_prod]
-    simp
-  obtain ⟨g, hg, hgmap⟩ := hρ.exists_common_cell_coding e f hi₀ hj₀
+  obtain ⟨g, hg, hgmap⟩ := hρ.exists_common_cell_coding e f
   refine ⟨g, hg, fun F => ?_⟩
   have hZ : Measurable (H.domRestrict (π := fun _ : ℕ × ℕ => α)) := Set.measurable_restrict H
   -- Distinct visible cells are conditionally independent given the crossing strips.

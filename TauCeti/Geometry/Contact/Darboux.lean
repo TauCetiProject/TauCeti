@@ -16,6 +16,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Flow
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.Moser
+import TauCeti.Analysis.Normed.Module.Alternating.ContactNormalForm
 import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Dynamics.Flow.RestPoint
 import TauCeti.Geometry.Contact.Symplectization.Linear
@@ -49,16 +50,6 @@ coordinates in which `α(x₀)` and `dα(x₀)` are the standard covector `dz` a
 symplectic form `Σᵢ dqᵢ ∧ dpᵢ` (`Module.Dual.IsContact.exists_linearEquiv_eq_stdContact`), the
 model is `dz + ½ Σᵢ (qᵢ dpᵢ - pᵢ dqᵢ)`.
 
-The same linear coordinates `L : V ≃ ℝⁿ × ℝⁿ × ℝ` also match `α` at `x₀` with the standard contact
-form `dz - Σᵢ pᵢ dqᵢ` (`TauCeti.innerProductContactForm`), whose value and exterior derivative at
-the origin are `dz` and `Σᵢ dqᵢ ∧ dpᵢ`. The contact Moser lemma then gives **Darboux's theorem in
-standard coordinates**
-(`TauCeti.exists_diffeomorph_eventually_mpullback_innerProductContactForm_eq_smul`): some `C^r`
-diffeomorphism `Φ` from `V` to `ℝⁿ × ℝⁿ × ℝ` with `Φ x₀ = 0` pulls the standard contact form back
-to a positive multiple of `α` near `x₀`. Restricted to a neighbourhood of `x₀`, `Φ` is a contact
-chart which sends `ker α` to the standard contact structure and preserves the coorientation. Its
-pullback is the manifold pullback `TauCeti.mpullback` of the smooth standard form.
-
 The proof is Moser's deformation argument along the straight-line family
 `αₜ = (1 - t) α₀ + t α₁`, which is contact near `x₀` for all `t ∈ [0, 1]`. The contact Moser field
 `Yₜ` and the conformal factor `σₜ` are determined by
@@ -77,14 +68,23 @@ Cartan's formula gives `∂ₜ αₜ + L_{Yₜ} αₜ = -σₜ αₜ`, so the pu
 `x` satisfy the linear equation `∂ₜ Pₜ = -σₜ(ψₜ x) Pₜ`. Integrating,
 `ψ₁^* α₁ = exp (-∫₀¹ σₜ(ψₜ x) dt) • α₀` at `x`.
 
+Taking for `α₀` instead the standard contact form `dz - Σᵢ pᵢ dqᵢ`
+(`TauCeti.innerProductContactForm`), pulled back along affine coordinates centred at `x₀` in which
+`α(x₀)` and `dα(x₀)` are standard
+(`ContinuousAlternatingMap.exists_continuousLinearEquiv_stdContact`), gives a **Darboux chart**
+(`TauCeti.exists_diffeomorph_eventually_innerProductContactForm_apply_fderiv_eq_mul`): a `C^r`
+diffeomorphism `Φ : V ≃ ℝⁿ × ℝⁿ × ℝ` with `Φ x₀ = 0` pulling the standard contact form back to a
+positive multiple of `α` near `x₀`. So near `x₀` the contact structure `ker α` is the standard one
+in the coordinates `Φ`, with matching coorientations.
+
 ## Main results
 
 * `TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_extDeriv_eq`:
   the contact Moser lemma.
 * `TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul`: Darboux's
   theorem, conformal to the osculating model form.
-* `TauCeti.exists_diffeomorph_eventually_mpullback_innerProductContactForm_eq_smul`: Darboux's
-  theorem in standard coordinates, conformal to the standard contact form.
+* `TauCeti.exists_diffeomorph_eventually_innerProductContactForm_apply_fderiv_eq_mul`: a Darboux
+  chart to the standard contact form, up to a positive factor.
 
 ## References
 
@@ -97,7 +97,7 @@ Cartan's formula gives `∂ₜ αₜ + L_{Yₜ} αₜ = -σₜ αₜ`, so the pu
 public section
 
 open Set Filter Topology
-open scoped Manifold InnerProductSpace
+open scoped Manifold
 
 namespace TauCeti
 
@@ -126,10 +126,6 @@ private theorem hasDerivAt_compContinuousLinearMap_fderiv_contactMoser
   have h₀ := hα₀ z hmem
   have h₁ := hα₁ z hmem
   have hω : DifferentiableAt ℝ (fun p : ℝ × V ↦ (1 - p.1) • α₀ p.2 + p.1 • α₁ p.2) (t, z) := by
-    have h₀' : DifferentiableAt ℝ (fun p : ℝ × V ↦ α₀ p.2) (t, z) :=
-      h₀.comp (t, z) differentiableAt_snd
-    have h₁' : DifferentiableAt ℝ (fun p : ℝ × V ↦ α₁ p.2) (t, z) :=
-      h₁.comp (t, z) differentiableAt_snd
     fun_prop
   have h := hasDerivAt_compContinuousLinearMap_fderiv
     (ω := fun s y ↦ (1 - s) • α₀ y + s • α₁ y) hω hψ hDψ
@@ -170,7 +166,7 @@ has, on an open time neighbourhood `T` of `[0, 1]` and an open neighbourhood `U`
 `C^r` field `Yₜ` and a continuous factor `σₜ` with `αₜ(Yₜ) = 0` and
 `ι_{Yₜ} dαₜ = -(α₁ - α₀) - σₜ αₜ`. The field vanishes wherever `α₀` and `α₁` agree. -/
 private theorem exists_contDiffOn_contactMoserField
-    {α₀ α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} (hr : 1 ≤ r)
+    {α₀ α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞}
     (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hα₀ : ContDiffOn ℝ (r + 1) α₀ W)
     (hα₁ : ContDiffOn ℝ (r + 1) α₁ W) (heq : α₁ x₀ = α₀ x₀)
     (hdeq : extDeriv α₁ x₀ = extDeriv α₀ x₀) (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α₁ x₀) :
@@ -181,7 +177,6 @@ private theorem exists_contDiffOn_contactMoserField
       (∀ t ∈ T, ∀ y ∈ U, ((1 - t) • extDeriv α₀ y + t • extDeriv α₁ y).curryLeft (Y t y) =
         -(α₁ y - α₀ y) - σ t y • ((1 - t) • α₀ y + t • α₁ y)) ∧
       (∀ t ∈ T, ∀ y ∈ U, α₁ y = α₀ y → Y t y = 0) := by
-  have hr' : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
   have hrle : (r : WithTop ℕ∞) ≤ r + 1 := le_self_add
   -- The symplectization forms of `α₀` and `α₁`, on `ℝ × V`, and the right-hand side `α₁ - α₀`.
   let B₀ : ℝ × V → ℝ × V →L[ℝ] ℝ × V →L[ℝ] ℝ :=
@@ -268,7 +263,7 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_
       ∀ᶠ x in 𝓝 x₀, 0 < g x ∧
         (α₁ (ψ x)).compContinuousLinearMap (fderiv ℝ ψ x) = g x • α₀ x := by
   obtain ⟨T, U, σ, Y, hT, hU, hTI, hxU, hUW, hY, hσ, hker, hYd, hY₀⟩ :=
-    exists_contDiffOn_contactMoserField hr hW hx₀ hα₀ hα₁ heq hdeq hc
+    exists_contDiffOn_contactMoserField hW hx₀ hα₀ hα₁ heq hdeq hc
   have hr0 : (r : WithTop ℕ∞) ≠ 0 :=
     (lt_of_lt_of_le zero_lt_one (by exact_mod_cast hr : (1 : WithTop ℕ∞) ≤ r)).ne'
   have hdiff {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} (hα : ContDiffOn ℝ (r + 1) α W) (y : V) (hy : y ∈ U) :
@@ -342,136 +337,120 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul
       hlin.contDiffOn hα (by simp) hdeq.symm hc
   exact ⟨ψ, g, hfix.self_of_nhds (by simp), hψ⟩
 
-/-! ### Darboux's theorem in standard coordinates -/
+/-! ### Darboux charts to the standard contact form -/
 
-omit [FiniteDimensional ℝ V] in
-/-- **Value and exterior derivative of a pullback.** Let `g` be `C²` at `x₀` with derivative `L`
-there. If a form `σ`, differentiable at `g x₀`, and its exterior derivative there evaluate on
-vectors `L v` as `α(x₀)` and `dα(x₀)` evaluate on `v`, then the pullback `α₁` of `σ` along `g`
-has the same value and exterior derivative as `α` at `x₀`. -/
-private theorem eq_and_extDeriv_eq_of_eq_pullback {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {σ : E → E [⋀^Fin 1]→L[ℝ] ℝ} {α α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {g : V → E}
-    {L : V →L[ℝ] E} {x₀ : V} (hσ : DifferentiableAt ℝ σ (g x₀)) (hg : ContDiffAt ℝ 2 g x₀)
-    (hgd : HasFDerivAt g L x₀)
-    (hα₁ : α₁ = fun y ↦ (σ (g y)).compContinuousLinearMap (fderiv ℝ g y))
-    (h₀ : ∀ v, σ (g x₀) ![L v] = α x₀ ![v])
-    (h₁ : ∀ v w, extDeriv σ (g x₀) ![L v, L w] = extDeriv α x₀ ![v, w]) :
-    α₁ x₀ = α x₀ ∧ extDeriv α₁ x₀ = extDeriv α x₀ := by
-  subst hα₁
-  refine ⟨?_, ?_⟩
-  · ext m
-    have hLm : ⇑L ∘ ![m 0] = ![L (m 0)] := (FinVec.map_eq _ _).symm
-    have hm : m = ![m 0] := (FinVec.etaExpand_eq m).symm
-    rw [hm, ← h₀]
-    simp [hgd.fderiv, hLm]
-  · rw [extDeriv_pullback hσ hg (by simp)]
-    ext m
-    have hLm : ⇑L ∘ ![m 0, m 1] = ![L (m 0), L (m 1)] := (FinVec.map_eq _ _).symm
-    have hm : m = ![m 0, m 1] := (FinVec.etaExpand_eq m).symm
-    rw [hm, ← h₁]
-    simp [hgd.fderiv, hLm]
-
-/-- **The model contact form in normal-form coordinates.** For a one-form `α` which is a contact
-form at `x₀`, there are linear coordinates `L : V ≃ ℝⁿ × ℝⁿ × ℝ` such that the pullback `α₁` of the
-standard contact form along `y ↦ L (y - x₀)` is smooth and has the same value and exterior
-derivative as `α` at `x₀`. -/
-private theorem exists_continuousLinearEquiv_pullback_innerProductContactForm
-    {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {x₀ : V} (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x₀) :
-    ∃ (n : ℕ) (L : V ≃L[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)
-      (α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ),
-      (∀ y, α₁ y = ((innerProductContactForm (EuclideanSpace ℝ (Fin n))).1
-        (L (y - x₀))).compContinuousLinearMap
-          (L : V →L[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)) ∧
-      ContDiff ℝ (⊤ : ℕ∞) α₁ ∧ α₁ x₀ = α x₀ ∧ extDeriv α₁ x₀ = extDeriv α x₀ := by
-  -- The linear normal form of `(α(x₀), dα(x₀))`, in the coordinates `(q, p, z)` of `ℝⁿ × ℝⁿ × ℝ`.
-  obtain ⟨n, e₀, hae, hBe⟩ :=
-    (isContactFormAt_modelSpace_iff_isContact.1 hc).exists_linearEquiv_eq_stdContact
-      (ContinuousAlternatingMap.isAlt_toBilinForm_flatL _)
-  have hae' (v : V) : (e₀ v).2.2 = α x₀ ![v] := by
-    simpa [Matrix.vec_single_eq_const] using LinearMap.congr_fun hae v
-  have hBe' (v w : V) :
-      (e₀ v).1 ⬝ᵥ (e₀ w).2.1 - (e₀ v).2.1 ⬝ᵥ (e₀ w).1 = extDeriv α x₀ ![v, w] := by
-    simpa using LinearMap.congr_fun₂ hBe v w
-  -- The same coordinates, landing in `ℝⁿ × ℝⁿ × ℝ` with Euclidean factors.
-  set E := EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ
-  let c : (Fin n → ℝ) ≃ₗ[ℝ] EuclideanSpace ℝ (Fin n) := (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).symm
-  let L : V ≃L[ℝ] E :=
-    (e₀.trans (c.prodCongr (c.prodCongr (LinearEquiv.refl ℝ ℝ)))).toContinuousLinearEquiv
-  -- The pullback `α₁` of the standard contact form along `g = L (· - x₀)` agrees with `α` to first
-  -- order at `x₀`.
-  let g : V → E := fun y ↦ L (y - x₀)
-  have hg : ContDiff ℝ ⊤ g := L.contDiff.comp (contDiff_id.sub contDiff_const)
-  have hgd (y : V) : HasFDerivAt g (L : V →L[ℝ] E) y :=
-    (L.hasFDerivAt.comp y ((hasFDerivAt_id y).sub_const x₀)).congr_fderiv
-      (ContinuousLinearMap.comp_id _)
-  have hgx₀ : g x₀ = 0 := by simp [g]
-  let σ : E → E [⋀^Fin 1]→L[ℝ] ℝ := (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1
-  let α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ := fun y ↦ (σ (g y)).compContinuousLinearMap (fderiv ℝ g y)
-  have hσ : ContDiff ℝ (⊤ : ℕ∞) σ :=
+open _root_.ContinuousAlternatingMap in
+/-- **The contact Darboux theorem**, local form. Let `α` be a `C^(r+1)` one-form (`r ≥ 1`) on an
+open subset `W` of a finite-dimensional real normed space, which is a contact form at `x₀ ∈ W`:
+`α(x₀) ≠ 0` and `dα(x₀)` is nondegenerate on `ker α(x₀)`. Then there are `n` and a `C^r`
+diffeomorphism `Φ` of the space onto `ℝⁿ × ℝⁿ × ℝ` with `Φ x₀ = 0` which, near `x₀`, pulls the
+standard contact form `dz - Σᵢ pᵢ dqᵢ` back to a positive multiple `g α` of `α`. So `Φ` is a chart
+near `x₀` carrying the contact structure `ker α` to the standard one and preserving
+coorientations. -/
+theorem exists_diffeomorph_eventually_innerProductContactForm_apply_fderiv_eq_mul
+    {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} (hr : 1 ≤ r) (hW : IsOpen W)
+    (hx₀ : x₀ ∈ W) (hα : ContDiffOn ℝ (r + 1) α W) (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x₀) :
+    ∃ (n : ℕ) (Φ : V ≃ₘ^r⟮𝓘(ℝ, V),
+        𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)⟯
+        EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) (g : V → ℝ), Φ x₀ = 0 ∧
+      ∀ᶠ x in 𝓝 x₀, 0 < g x ∧ ∀ v : V,
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (Φ x) ![fderiv ℝ Φ x v] =
+          g x * α x ![v] := by
+  obtain ⟨n, e, hae, hωe⟩ := exists_continuousLinearEquiv_stdContact hc.ne_zero
+    fun v hv hvw ↦ hc.nondegenerate v (RoughForm.mem_ker.2 hv) fun (w : V) hw ↦
+      (congrArg (fun A ↦ A ![v, w]) (mextDeriv_eq_extDeriv (E := V) (F := ℝ) (k := 1) α x₀)).trans
+        (hvw w (RoughForm.mem_ker.1 hw))
+  set P := EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ
+  set σ : P → P [⋀^Fin 1]→L[ℝ] ℝ := (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1
+  have hσ : ContDiff ℝ ((⊤ : ℕ∞) : WithTop ℕ∞) σ :=
     isSmoothForm_modelSpace_iff.1 (innerProductContactForm (EuclideanSpace ℝ (Fin n))).isSmoothForm
-  have hσ₀ (z v : E) : σ z ![v] = v.2.2 - ⟪z.2.1, v.1⟫_ℝ := innerProductContactForm_apply _ z v
-  have hdσ (z v w : E) : extDeriv σ z ![v, w] = ∑ i, (v.1 i * w.2.1 i - v.2.1 i * w.1 i) := by
-    rw [← mextDeriv_eq_extDeriv]
-    exact mextDeriv_innerProductContactForm_euclideanSpace_apply z v w
-  obtain ⟨heq, hdeq⟩ := eq_and_extDeriv_eq_of_eq_pullback (α := α) (α₁ := α₁)
-    (hσ.differentiable (by simp) _) (hg.contDiffAt.of_le (by exact_mod_cast le_top)) (hgd x₀) rfl
-    (fun v ↦ by simpa [hgx₀, hσ₀, L, c] using hae' v)
-    fun v w ↦ by simpa [hdσ, L, c, dotProduct, Finset.sum_sub_distrib] using hBe' v w
-  have hα₁ : ContDiff ℝ (⊤ : ℕ∞) α₁ := contDiff_iff_contDiffAt.2 fun _ ↦
-    (hg.contDiffAt.of_le le_top).differentialForm_pullback hσ.contDiffAt fun _ ↦ by simp
-  exact ⟨n, L, α₁, fun y ↦ by simp only [α₁, (hgd y).fderiv]; rfl, hα₁, heq, hdeq⟩
-
-/-- **The contact Darboux theorem.** Let `α` be a `C^(r+1)` one-form (`r ≥ 1`) on an open subset
-`W` of a finite-dimensional real normed space `V`, which is a contact form at `x₀ ∈ W`
-(`TauCeti.IsContactFormAt`): `α(x₀) ≠ 0` and `dα(x₀)` is nondegenerate on `ker α(x₀)`. Then
-there are `n` and a `C^r` diffeomorphism `Φ` from `V` to `ℝⁿ × ℝⁿ × ℝ` with `Φ x₀ = 0` which
-pulls the standard contact form `dz - Σᵢ pᵢ dqᵢ` (`TauCeti.innerProductContactForm`) back to a
-positive multiple of `α` near `x₀`. Thus `Φ` restricts to a contact chart around `x₀`, sending
-the contact hyperplanes of `α` to the standard ones and preserving their coorientations. -/
-theorem exists_diffeomorph_eventually_mpullback_innerProductContactForm_eq_smul
-    {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} (hr : 1 ≤ r)
-    (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hα : ContDiffOn ℝ (r + 1) α W)
-    (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x₀) :
-    ∃ (n : ℕ) (Φ : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)⟯
-        EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) (f : V → ℝ),
-      Φ x₀ = 0 ∧ ∀ᶠ y in 𝓝 x₀, 0 < f y ∧
-        mpullback 𝓘(ℝ, V) 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) Φ
-          (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 y = f y • α y := by
-  -- Linear coordinates `L` put `(α(x₀), dα(x₀))` in normal form; the standard form pulled back
-  -- along `y ↦ L (y - x₀)` then has the same value and exterior derivative as `α` at `x₀`, and
-  -- the contact Moser lemma deforms `α` into it.
-  obtain ⟨n, L, α₁, hα₁def, hα₁, heq, hdeq⟩ :=
-    exists_continuousLinearEquiv_pullback_innerProductContactForm hc
-  set E := EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ
-  -- The pointwise contact condition only sees the value and exterior derivative at `x₀`.
-  have hc₁ : IsContactFormAt (I := 𝓘(ℝ, V)) α₁ x₀ := by
-    rw [isContactFormAt_modelSpace_iff_isContact, heq, hdeq]
-    exact isContactFormAt_modelSpace_iff_isContact.1 hc
-  obtain ⟨ψ, f, hfix, hψ⟩ :=
+  -- The standard form and its exterior derivative, read on the model space itself.
+  have hσapp (x v : P) : σ x ![v] = v.2.2 - inner ℝ x.2.1 v.1 :=
+    innerProductContactForm_apply _ x v
+  have hdσ (u w : P) : extDeriv σ 0 ![u, w] = ∑ i, (u.1 i * w.2.1 i - u.2.1 i * w.1 i) := by
+    have h := mextDeriv_innerProductContactForm_euclideanSpace_apply (0 : P) u w
+    rw [mextDeriv_eq_extDeriv] at h
+    exact h
+  have hr0 : (r : WithTop ℕ∞) ≠ 0 := by
+    have : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
+    exact (lt_of_lt_of_le zero_lt_one this).ne'
+  -- The linear coordinates centred at `x₀`, and the pullback `α₀` of the standard form.
+  set f : V → P := fun x ↦ e (x - x₀) with hf_def
+  have hfd (x : V) : HasFDerivAt f (e : V →L[ℝ] P) x := by
+    simpa [hf_def, Function.comp_def] using
+      (e : V →L[ℝ] P).hasFDerivAt.comp x ((hasFDerivAt_id x).sub_const x₀)
+  have htop (k : ℕ∞) : (k : WithTop ℕ∞) ≤ ((⊤ : ℕ∞) : WithTop ℕ∞) := WithTop.coe_le_coe.2 le_top
+  have hfs {k : WithTop ℕ∞} : ContDiff ℝ k f := e.contDiff.comp (contDiff_id.sub contDiff_const)
+  set α₀ : V → V [⋀^Fin 1]→L[ℝ] ℝ :=
+    fun x ↦ (σ (f x)).compContinuousLinearMap (fderiv ℝ f x) with hα₀_def
+  have hα₀e : α₀ = fun x ↦ compContinuousLinearMapCLM (e : V →L[ℝ] P) (σ (f x)) := by
+    funext x
+    simp only [hα₀_def, (hfd x).fderiv, compContinuousLinearMapCLM_apply]
+  have hle : (r : WithTop ℕ∞) + 1 ≤ ((⊤ : ℕ∞) : WithTop ℕ∞) := by exact_mod_cast htop (r + 1)
+  have hα₀s : ContDiffOn ℝ (r + 1) α₀ W := by
+    rw [hα₀e]
+    exact ((compContinuousLinearMapCLM (e : V →L[ℝ] P)).contDiff.comp
+      (hσ.comp hfs)).contDiffOn.of_le hle
+  have hfx₀ : f x₀ = 0 := by simp [hf_def]
+  -- `α₀` has the same value and exterior derivative as `α` at `x₀`.
+  have hm1 (m : Fin 1 → V) : m = ![m 0] := by
+    funext i
+    rw [Subsingleton.elim i 0]
+    rfl
+  have hm2 (m : Fin 2 → V) : m = ![m 0, m 1] := by
+    funext i
+    fin_cases i <;> rfl
+  have hvec1 (v : V) : ⇑(e : V →L[ℝ] P) ∘ ![v] = ![e v] := by
+    funext i
+    fin_cases i
+    rfl
+  have hvec2 (v w : V) : ⇑(e : V →L[ℝ] P) ∘ ![v, w] = ![e v, e w] := by
+    funext i
+    fin_cases i <;> rfl
+  have hα₀x₀ : α₀ x₀ = α x₀ := by
+    ext m
+    simp only [hα₀_def]
+    rw [hm1 m, compContinuousLinearMap_apply, (hfd x₀).fderiv, hfx₀, hae, hvec1, hσapp]
+    simp
+  have hdα₀x₀ : extDeriv α₀ x₀ = extDeriv α x₀ := by
+    rw [hα₀_def, extDeriv_pullback (hσ.differentiable (by simp)).differentiableAt
+      (hfs.contDiffAt : ContDiffAt ℝ 2 f x₀) (by simp)]
+    ext m
+    rw [hm2 m, compContinuousLinearMap_apply, (hfd x₀).fderiv, hvec2, hfx₀, hωe, hdσ]
+  -- The contact Moser lemma deforms `α₀` into a positive multiple of `α`.
+  obtain ⟨ψ, g, hfix, hev⟩ :=
     exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_extDeriv_eq hr hW hx₀
-      hα (hα₁.contDiffOn.of_le (by exact_mod_cast le_top)) heq hdeq hc₁
-  have hψx₀ : ψ x₀ = x₀ := hfix.self_of_nhds heq
-  -- Follow the contact Moser diffeomorphism by the coordinates `y ↦ L (y - x₀)`.
-  let A : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, E)⟯ E :=
-    (Diffeomorph.smulAdd r (1 : ℝ) (-x₀) one_ne_zero).trans (L.toContDiffDiffeomorph r)
-  have hA (y : V) : A y = L (y - x₀) := by
-    simp [A, Diffeomorph.smulAdd_apply, sub_eq_add_neg]
-  have hr0 : (r : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hr).ne'
-  refine ⟨n, ψ.trans A, f, by simp [hA, hψx₀], ?_⟩
-  filter_upwards [hψ] with y ⟨hfy, hy⟩
-  refine ⟨hfy, ?_⟩
-  have hψd : HasFDerivAt ψ (fderiv ℝ ψ y) y :=
-    ((contMDiff_iff_contDiff.1 ψ.contMDiff).differentiable hr0 y).hasFDerivAt
-  have hΦ : HasFDerivAt (ψ.trans A) ((L : V →L[ℝ] E).comp (fderiv ℝ ψ y)) y := by
-    have hAd : HasFDerivAt A (L : V →L[ℝ] E) (ψ y) := by
-      rw [funext hA]
-      exact (L.hasFDerivAt.comp _ ((hasFDerivAt_id _).sub_const x₀)).congr_fderiv
-        (ContinuousLinearMap.comp_id _)
-    exact hAd.comp y hψd
-  ext m
-  rw [mpullback_apply, mfderiv_eq_fderiv, hΦ.fderiv, ← hy, hα₁def, Diffeomorph.coe_trans,
-    Function.comp_apply, hA]
-  -- Both sides evaluate the standard form at `L (ψ y - x₀)` on the vectors `L (Dψ (m i))`.
-  rfl
+      hα₀s hα hα₀x₀.symm hdα₀x₀.symm hc
+  have hψx₀ : ψ x₀ = x₀ := hfix.self_of_nhds hα₀x₀.symm
+  obtain ⟨Φ, hΦ⟩ : ∃ Φ : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, P)⟯ P, ⇑Φ = f ∘ ψ.symm :=
+    ⟨ψ.symm.trans ((Diffeomorph.smulAdd r (1 : ℝ) (-x₀) one_ne_zero).trans
+      (e.toContDiffDiffeomorph r)), by funext y; simp [hf_def, sub_eq_add_neg]⟩
+  have hψsymm : ψ.symm x₀ = x₀ := ψ.symm_apply_eq.2 hψx₀.symm
+  refine ⟨n, Φ, fun y ↦ (g (ψ.symm y))⁻¹, by rw [hΦ, Function.comp_apply, hψsymm, hfx₀], ?_⟩
+  have hev' : ∀ᶠ y in 𝓝 x₀, 0 < g (ψ.symm y) ∧
+      (α (ψ (ψ.symm y))).compContinuousLinearMap (fderiv ℝ ψ (ψ.symm y)) =
+        g (ψ.symm y) • α₀ (ψ.symm y) := by
+    have hc : Tendsto ψ.symm (𝓝 x₀) (𝓝 x₀) := by
+      simpa [hψsymm] using ψ.symm.continuous.tendsto x₀
+    exact hc.eventually hev
+  filter_upwards [hev'] with y ⟨hg, hy⟩
+  refine ⟨inv_pos.2 hg, fun v ↦ ?_⟩
+  rw [ψ.apply_symm_apply] at hy
+  -- Unwind `Φ^* σ = (ψ⁻¹)^* α₀ = (g ∘ ψ⁻¹)⁻¹ α`, evaluated on `v`.
+  have hΦd : fderiv ℝ Φ y = (e : V →L[ℝ] P) ∘L fderiv ℝ ψ.symm y := by
+    rw [hΦ, fderiv_comp y (hfd _).differentiableAt
+      ((ψ.symm.differentiable hr0) y), (hfd _).fderiv]
+  have hcomp (F : V → V) (z : V) : F ∘ ![z] = ![F z] := by
+    funext i
+    fin_cases i
+    rfl
+  have h := congrArg (fun β ↦ β ![fderiv ℝ ψ.symm y v]) hy
+  simp only [hα₀_def, compContinuousLinearMap_apply, ContinuousAlternatingMap.smul_apply, hcomp,
+    (hfd _).fderiv, hvec1, ψ.fderiv_apply_fderiv_symm_apply hr0, smul_eq_mul] at h
+  have key : σ (Φ y) ![fderiv ℝ Φ y v] = (g (ψ.symm y))⁻¹ * α y ![v] := by
+    rw [hΦd, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hΦ,
+      Function.comp_apply, h, ← mul_assoc,
+      inv_mul_cancel₀ hg.ne', one_mul]
+  exact key
 
 end TauCeti
