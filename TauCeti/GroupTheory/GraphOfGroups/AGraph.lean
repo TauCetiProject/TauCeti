@@ -274,8 +274,8 @@ theorem letterPath_reverse (l : B.toGraphOfGroups.Letter x y) :
       (B.letterPath l).reverse := by
   cases l with
   | vertex g =>
-    rw [Letter.reverse_vertex, letterPath_vertex, letterPath_vertex, Path.reverse_ofVertex]
-    rfl
+    rw [Letter.reverse_vertex, letterPath_vertex, letterPath_vertex, Path.reverse_ofVertex,
+      Subgroup.coe_inv]
   | dart f =>
     rw [Letter.reverse_dart, letterPath, letterPath, cast_labelα_reverse, cast_labelω_reverse,
       Prefunctor.map_reverse]
@@ -346,17 +346,27 @@ def π₁Hom : π₁ B.toGraphOfGroups B.base →* π₁ 𝔸 v₀ :=
       map_mul' x y := π₁.induction_on x fun p => π₁.induction_on y fun q => by
         rw [← π₁.mk_comp, π₁.lift_mk, π₁.lift_mk, π₁.lift_mk, pathMap_comp, π₁.mk_comp] }
 
-theorem π₁Hom_mk (p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨B.base⟩) :
+@[simp] theorem π₁Hom_mk (p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨B.base⟩) :
     B.π₁Hom (π₁.mk p) = MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.mk (B.pathMap p)) :=
   congrArg (MulEquiv.cast (M := π₁ 𝔸) B.typ_base) (π₁.lift_mk ..)
 
 /-- The homomorphism `ν` sends the conjugate `p b p⁻¹` of `b ∈ B_u` to the conjugate of `b ∈ A_[u]`
 by the path read along `p`. -/
-theorem π₁Hom_vertexHom {u : B.graph.V} (p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨u⟩)
+@[simp] theorem π₁Hom_vertexHom {u : B.graph.V} (p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨u⟩)
     (g : B.grp u) : B.π₁Hom (π₁.vertexHom p g) =
       MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.vertexHom (B.pathMap p) (g : 𝔸.vertexGroup _)) := by
   rw [π₁.vertexHom_apply, π₁Hom_mk, pathMap_comp, pathMap_comp, pathMap_reverse, pathMap_ofVertex,
     π₁.vertexHom_apply]
+
+/-- The image under `ν` of the conjugates `p B_u p⁻¹` of a vertex group by a `𝔹`-path `p`: the
+conjugates of `B_u ≤ A_[u]` by the path read along `p`, read through `[u₀] = v₀`. -/
+theorem range_π₁Hom_comp_vertexHom {u : B.graph.V} (p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨u⟩) :
+    (B.π₁Hom.comp (π₁.vertexHom p)).range =
+      (B.grp u).map ((MulEquiv.cast (M := π₁ 𝔸) B.typ_base).toMonoidHom.comp
+        (π₁.vertexHom (B.pathMap p))) := by
+  rw [show B.π₁Hom.comp (π₁.vertexHom p) = ((MulEquiv.cast (M := π₁ 𝔸) B.typ_base).toMonoidHom.comp
+      (π₁.vertexHom (B.pathMap p))).comp (B.grp u).subtype from
+    MonoidHom.ext fun c => B.π₁Hom_vertexHom p c, MonoidHom.range_comp, Subgroup.range_subtype]
 
 /-- The subgroup `L(B, u₀)` of `π₁(𝔸, v₀)` represented by an `𝔸`-graph: the image of `ν`, which
 consists of the elements read along the closed `𝔹`-paths at the base vertex. -/
@@ -366,6 +376,9 @@ def subgroup : Subgroup (π₁ 𝔸 v₀) :=
 theorem subgroup_def : B.subgroup = B.π₁Hom.range :=
   (rfl)
 
+/-- An element of `π₁(𝔸, v₀)` lies in `L(B, u₀)` exactly when it is the class of the `𝔸`-path read
+along some closed `𝔹`-path at the base vertex `u₀` (Kapovich, Weidmann and Myasnikov,
+Definition 3.6), transported along `[u₀] = v₀`. -/
 theorem mem_subgroup_iff {g : π₁ 𝔸 v₀} : g ∈ B.subgroup ↔
     ∃ p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨B.base⟩,
       MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.mk (B.pathMap p)) = g := by
@@ -375,16 +388,6 @@ theorem mem_subgroup_iff {g : π₁ 𝔸 v₀} : g ∈ B.subgroup ↔
     exact π₁.induction_on x fun p => ⟨p, (B.π₁Hom_mk p).symm⟩
   · rintro ⟨p, rfl⟩
     exact ⟨π₁.mk p, B.π₁Hom_mk p⟩
-
-/-- Splitting a path `q r t⁻¹` through an intermediate path `s` with the same ends as `q`: in
-`π₁(𝔹, a)`, `q r t⁻¹ = (q s⁻¹) (s r t⁻¹)`. -/
-private theorem mk_comp_comp_reverse {a b c : B.graph.V} (q s : B.toGraphOfGroups.Path ⟨a⟩ ⟨b⟩)
-    (r : B.toGraphOfGroups.Path ⟨b⟩ ⟨c⟩) (t : B.toGraphOfGroups.Path ⟨a⟩ ⟨c⟩) :
-    π₁.mk ((q.comp r).comp t.reverse) =
-      π₁.mk (q.comp s.reverse) * π₁.mk ((s.comp r).comp t.reverse) := by
-  rw [← π₁.mk_comp, π₁.mk_eq_mk_iff]
-  simpa only [Quiver.Path.comp_assoc] using
-    (Path.Homotopic.comp_reverse_comp_comp q s (r.comp t.reverse)).symm
 
 /-- The induction behind `subgroup_eq_sup`: for a `𝔹`-path `p` from `u₀` to `x`, the element
 `γ_{u₀} p γ_x⁻¹` of `π₁(𝔹, u₀)` lies in every subgroup containing the generators. -/
@@ -401,13 +404,13 @@ private theorem mk_conj_mem (γ : ∀ u : B.graph.V, B.toGraphOfGroups.Path ⟨B
   | cons p l ih =>
     cases l with
     | vertex g =>
-      rw [← Path.comp_ofVertex, ← Quiver.Path.comp_assoc, B.mk_comp_comp_reverse _ (γ _)]
+      rw [← Path.comp_ofVertex, ← Quiver.Path.comp_assoc, π₁.mk_comp_comp_reverse _ (γ _)]
       exact H.mul_mem ih (hV _ ⟨g, π₁.vertexHom_apply _ _⟩)
     | dart f =>
       obtain ⟨e, rfl, rfl⟩ := f
       rw [(Subtype.ext (B.graph.dart_val e).symm :
           (⟨e, rfl, rfl⟩ : B.graph.src e ⟶ B.graph.tgt e) = B.graph.dart e),
-        ← Path.comp_ofDart, ← Quiver.Path.comp_assoc, B.mk_comp_comp_reverse _ (γ _)]
+        ← Path.comp_ofDart, ← Quiver.Path.comp_assoc, π₁.mk_comp_comp_reverse _ (γ _)]
       exact H.mul_mem ih (hE e)
 
 /-- Every element of `π₁(𝔹, u₀)` lies in a subgroup containing the generators of
@@ -514,11 +517,18 @@ noncomputable def rankGrp (z : B.graph.V) : ℕ :=
 theorem rankGrp_eq (z : B.graph.V) [Group.FG (B.grp z)] : B.rankGrp z = Group.rank (B.grp z) := by
   simp [rankGrp, (Group.fg_iff_subgroup_fg _).1 ‹_›]
 
+theorem rankGrp_of_not_fg {z : B.graph.V} (h : ¬ (B.grp z).FG) : B.rankGrp z = 0 := by
+  simp [rankGrp, h]
+
 /-- The complexity of an `𝔸`-graph: the rank `#E - #V + 1` of its underlying graph, for a finite
 connected graph with `#E` geometric edges and `#V` vertices, plus the sum of the ranks of its vertex
 groups. -/
 noncomputable def complexity : ℕ :=
   (Nat.card B.graph.GeomEdge + 1 - Nat.card B.graph.V) + ∑ᶠ z, B.rankGrp z
+
+theorem complexity_def :
+    B.complexity = (Nat.card B.graph.GeomEdge + 1 - Nat.card B.graph.V) + ∑ᶠ z, B.rankGrp z :=
+  (rfl)
 
 /-! ### A single edge over an amalgamated product -/
 
@@ -532,7 +542,8 @@ variable {P Q : Type w} {C : Type x} [Group P] [Group Q] [Group C] (f : C →* P
 amalgamated product `P ∗_C Q`: its vertices `false` and `true` have the types of the vertices of
 `P` and `Q` and the groups `P₀ ≤ P` and `Q₀ ≤ Q`, its base vertex is `false`, of type `o(e)`, and
 its dart `false` has type the dart `e` from the vertex of `P` to the vertex of `Q`, with `f_α = a`
-and `f_ω = b`. -/
+and `f_ω = b`. The body is exposed, so that the Booleans are accepted as the vertices and the darts
+of its graph. -/
 @[expose] def segment :
     AGraph.{0, 0, w, x, 0, 0} (GraphOfGroups.segment f g hf hg) (SerreGraph.segment.src false) where
   graph := SerreGraph.segment
@@ -550,23 +561,63 @@ and `f_ω = b`. -/
     | false => a
     | true => (b⁻¹ : Q)
 
+@[simp] theorem segment_graph : (segment f g hf hg P₀ Q₀ a b).graph = SerreGraph.segment :=
+  rfl
+
+@[simp] theorem segment_typ_mapV (u : (segment f g hf hg P₀ Q₀ a b).graph.V) :
+    (segment f g hf hg P₀ Q₀ a b).typ.mapV u = u :=
+  rfl
+
+@[simp] theorem segment_typ_mapE (e : (segment f g hf hg P₀ Q₀ a b).graph.E) :
+    (segment f g hf hg P₀ Q₀ a b).typ.mapE e = e :=
+  rfl
+
+@[simp] theorem segment_base : (segment f g hf hg P₀ Q₀ a b).base = false :=
+  rfl
+
+@[simp] theorem segment_grp_false : (segment f g hf hg P₀ Q₀ a b).grp false = P₀ :=
+  rfl
+
+@[simp] theorem segment_grp_true : (segment f g hf hg P₀ Q₀ a b).grp true = Q₀ :=
+  rfl
+
+@[simp] theorem segment_labelα_false : (segment f g hf hg P₀ Q₀ a b).labelα false = a :=
+  rfl
+
+@[simp] theorem segment_labelα_true : (segment f g hf hg P₀ Q₀ a b).labelα true = b⁻¹ :=
+  rfl
+
+@[simp] theorem segment_labelω_false : (segment f g hf hg P₀ Q₀ a b).labelω false = b :=
+  inv_inv b
+
+@[simp] theorem segment_labelω_true : (segment f g hf hg P₀ Q₀ a b).labelω true = a⁻¹ :=
+  (rfl)
+
 /-- The `𝔹`-paths from the base vertex of the single edge: empty to `false`, and the dart `false`
 to `true`. -/
-private def segmentPath (u : (segment f g hf hg P₀ Q₀ a b).graph.V) :
-    (segment f g hf hg P₀ Q₀ a b).toGraphOfGroups.Path
-      ⟨(segment f g hf hg P₀ Q₀ a b).base⟩ ⟨u⟩ :=
-  Bool.rec (motive := fun u => (segment f g hf hg P₀ Q₀ a b).toGraphOfGroups.Path ⟨false⟩ ⟨u⟩)
-    .nil (Path.ofDart ((segment f g hf hg P₀ Q₀ a b).graph.dart false)) u
+private def segmentPath : ∀ u : (segment f g hf hg P₀ Q₀ a b).graph.V,
+    (segment f g hf hg P₀ Q₀ a b).toGraphOfGroups.Path ⟨(segment f g hf hg P₀ Q₀ a b).base⟩ ⟨u⟩
+  | false => .nil
+  | true => Path.ofDart ((segment f g hf hg P₀ Q₀ a b).graph.dart false)
 
-/-- A path followed by a path and its reverse is homotopic to the first path. -/
-private theorem homotopic_comp_comp_reverse {B : AGraph.{u, v, w, x, u', v'} 𝔸 v₀}
-    {x y z : B.toGraphOfGroups.LetterVertex} (q : B.toGraphOfGroups.Path x y)
-    (p : B.toGraphOfGroups.Path y z) : Path.Homotopic ((q.comp p).comp p.reverse) q := by
-  simpa only [Quiver.Path.comp_assoc, Quiver.Path.comp_nil] using
-    (Path.Homotopic.comp_reverse p).comp_left q
+private theorem segmentPath_false : segmentPath f g hf hg P₀ Q₀ a b false = .nil :=
+  rfl
 
--- The vertices and darts of `SerreGraph.segment` are Booleans only up to unfolding, so the
--- arguments about the single edge use definitional unfolding (`exact`) rather than rewriting.
+private theorem segmentPath_true : segmentPath f g hf hg P₀ Q₀ a b true =
+    Path.ofDart ((segment f g hf hg P₀ Q₀ a b).graph.dart false) :=
+  rfl
+
+/-- The reverse of the dart `false` of the single edge is its dart `true`. -/
+private theorem segment_reverse_ofDart :
+    (Path.ofDart (𝔸 := (segment f g hf hg P₀ Q₀ a b).toGraphOfGroups)
+      ((segment f g hf hg P₀ Q₀ a b).graph.dart false)).reverse =
+        Path.ofDart ((segment f g hf hg P₀ Q₀ a b).graph.dart true) := by
+  rw [Path.reverse_ofDart]
+  refine congrArg Path.ofDart (Subtype.ext ?_)
+  rw [SerreGraph.reverse_val, SerreGraph.dart_val (segment f g hf hg P₀ Q₀ a b).graph false,
+    SerreGraph.dart_val (segment f g hf hg P₀ Q₀ a b).graph true]
+  exact SerreGraph.segment_rev false
+
 /-- Both dart loops `γ_{o(e)} e γ_{t(e)}⁻¹` of the single edge are homotopic to the empty
 path. -/
 private theorem segmentPath_loop (e : (segment f g hf hg P₀ Q₀ a b).graph.E) :
@@ -576,16 +627,13 @@ private theorem segmentPath_loop (e : (segment f g hf hg P₀ Q₀ a b).graph.E)
           (segmentPath f g hf hg P₀ Q₀ a b ((segment f g hf hg P₀ Q₀ a b).graph.tgt e)).reverse)
       .nil := by
   cases e
-  · exact homotopic_comp_comp_reverse .nil _
-  · have key : ∀ r : (segment f g hf hg P₀ Q₀ a b).toGraphOfGroups.Path ⟨true⟩ ⟨false⟩,
-        (Path.ofDart ((segment f g hf hg P₀ Q₀ a b).graph.dart false)).reverse = r →
-          Path.Homotopic (((Path.ofDart ((segment f g hf hg P₀ Q₀ a b).graph.dart false)).comp
-            r).comp .nil) .nil := by
-      rintro r rfl
-      exact Path.Homotopic.comp_reverse _
-    exact key _ ((Path.reverse_ofDart _).trans (congrArg Path.ofDart (Subtype.ext
-      ((SerreGraph.reverse_val _ _).trans ((congrArg SerreGraph.segment.rev
-        (SerreGraph.dart_val _ _)).trans (SerreGraph.dart_val _ _).symm)))))
+  · dsimp only [segment_graph, SerreGraph.segment_src, SerreGraph.segment_tgt, Bool.not_false,
+      segmentPath_false, segmentPath_true]
+    exact Path.Homotopic.comp_comp_reverse .nil _
+  · rw [← segment_reverse_ofDart]
+    dsimp only [segment_graph, SerreGraph.segment_src, SerreGraph.segment_tgt, Bool.not_true,
+      segmentPath_false, segmentPath_true]
+    exact Path.Homotopic.comp_reverse _
 
 /-- The dart of the single edge reads its label `(a, e, b)`. -/
 private theorem segment_pathMap_ofDart :
@@ -601,15 +649,6 @@ private theorem segment_pathMap_ofDart :
             (a := SerreGraph.segment.tgt false) y))
     (Subtype.ext rfl) (inv_inv b)
 
-/-- The image under `ν` of the conjugates of a vertex group of an `𝔸`-graph by a `𝔹`-path. -/
-private theorem range_π₁Hom_comp_vertexHom {B : AGraph.{u, v, w, x, u', v'} 𝔸 v₀} {u : B.graph.V}
-    (p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨u⟩) : (B.π₁Hom.comp (π₁.vertexHom p)).range =
-      (B.grp u).map ((MulEquiv.cast (M := π₁ 𝔸) B.typ_base).toMonoidHom.comp
-        (π₁.vertexHom (B.pathMap p))) := by
-  rw [show B.π₁Hom.comp (π₁.vertexHom p) = ((MulEquiv.cast (M := π₁ 𝔸) B.typ_base).toMonoidHom.comp
-      (π₁.vertexHom (B.pathMap p))).comp (B.grp u).subtype from
-    MonoidHom.ext fun c => B.π₁Hom_vertexHom p c, MonoidHom.range_comp, Subgroup.range_subtype]
-
 /-- The single edge `(a, e, b)` between vertices with groups `P₀ ≤ P` and `Q₀ ≤ Q` represents the
 subgroup `⟨P₀, (a e b) Q₀ (a e b)⁻¹⟩` of `π₁(𝔸, v₀)`, the fundamental group (in the path model) of
 the graph of groups of the amalgamated product `P ∗_C Q`, based at the vertex of `P`. -/
@@ -617,15 +656,19 @@ theorem segment_subgroup : (segment f g hf hg P₀ Q₀ a b).subgroup =
     P₀.map (π₁.vertexHom Quiver.Path.nil) ⊔
       Q₀.map (π₁.vertexHom (((Path.ofVertex a).comp
         (Path.ofDart (SerreGraph.segment.dart false))).comp (Path.ofVertex b))) := by
+  -- By `range_π₁Hom_comp_vertexHom`: by definition `B_{false} = P₀`, `segmentPath false` is empty
+  -- and so is its image under the path map, and `typ_base` is `rfl`. A vertex of
+  -- `SerreGraph.segment` is a Boolean only after unfolding, so the two sides are compared by
+  -- unfolding rather than by rewriting at the vertex `false`.
   have hP : ((segment f g hf hg P₀ Q₀ a b).π₁Hom.comp
       (π₁.vertexHom (segmentPath f g hf hg P₀ Q₀ a b false))).range =
         P₀.map (π₁.vertexHom Quiver.Path.nil) :=
-    range_π₁Hom_comp_vertexHom _
+    range_π₁Hom_comp_vertexHom _ _
   have hQ : ((segment f g hf hg P₀ Q₀ a b).π₁Hom.comp
       (π₁.vertexHom (segmentPath f g hf hg P₀ Q₀ a b true))).range =
         Q₀.map (π₁.vertexHom (((Path.ofVertex a).comp
           (Path.ofDart (SerreGraph.segment.dart false))).comp (Path.ofVertex b))) :=
-    (range_π₁Hom_comp_vertexHom _).trans (congrArg (fun p : (GraphOfGroups.segment f g hf hg).Path
+    (range_π₁Hom_comp_vertexHom _ _).trans (congrArg (fun p : (GraphOfGroups.segment f g hf hg).Path
       ⟨SerreGraph.segment.src false⟩ ⟨SerreGraph.segment.tgt false⟩ => Q₀.map (π₁.vertexHom p))
         (segment_pathMap_ofDart f g hf hg P₀ Q₀ a b))
   rw [subgroup_eq_sup (segment f g hf hg P₀ Q₀ a b) (segmentPath f g hf hg P₀ Q₀ a b)]
@@ -636,9 +679,9 @@ theorem segment_subgroup : (segment f g hf hg P₀ Q₀ a b).subgroup =
     · exact hP.le.trans le_sup_left
     · exact hQ.le.trans le_sup_right
   · rintro _ ⟨e, rfl⟩
-    exact (congrArg (· ∈ _) ((congrArg (segment f g hf hg P₀ Q₀ a b).π₁Hom
-      ((π₁.mk_eq_mk_iff.2 (segmentPath_loop f g hf hg P₀ Q₀ a b e)).trans π₁.mk_nil)).trans
-        (map_one _))).mpr (one_mem _)
+    beta_reduce
+    rw [π₁.mk_eq_mk_iff.2 (segmentPath_loop f g hf hg P₀ Q₀ a b e), π₁.mk_nil, map_one]
+    exact one_mem _
 
 /-- The single edge `(a, e, b)` is folded exactly when its vertex groups cut out the same subgroup
 `f⁻¹(a⁻¹ P₀ a) = g⁻¹(b Q₀ b⁻¹)` of the edge group `C` (Kapovich, Weidmann and Myasnikov,
@@ -647,40 +690,49 @@ the mirror image of the condition at `e`. -/
 theorem segment_isFolded_iff : (segment f g hf hg P₀ Q₀ a b).IsFolded ↔
     (P₀.map (MulAut.conj a⁻¹).toMonoidHom).comap f =
       (Q₀.map (MulAut.conj b).toMonoidHom).comap g := by
-  -- The conditions at the darts `false` and `true`, with the labels and groups unfolded.
+  -- The conditions at the darts `false` and `true`. By definition, the dart `false` has the
+  -- groups `P₀`, `Q₀` at its ends and the labels `a`, `b⁻¹⁻¹`, and the dart `true` the groups
+  -- `Q₀`, `P₀` and the labels `b⁻¹`, `a⁻¹`; the darts are their own types.
   have key : (segment f g hf hg P₀ Q₀ a b).IsFolded ↔
       (P₀.map (MulAut.conj a⁻¹).toMonoidHom).comap ((GraphOfGroups.segment f g hf hg).α false) =
-        (Q₀.map (MulAut.conj b⁻¹⁻¹).toMonoidHom).comap ((GraphOfGroups.segment f g hf hg).ω false) ∧
-      (Q₀.map (MulAut.conj b⁻¹⁻¹).toMonoidHom).comap ((GraphOfGroups.segment f g hf hg).α true) =
-        (P₀.map (MulAut.conj a⁻¹).toMonoidHom).comap ((GraphOfGroups.segment f g hf hg).ω true) :=
-    ⟨fun h => ⟨h.comap_eq false, h.comap_eq true⟩, fun h =>
-      ⟨fun _ _ hs _ _ => hs, fun e => Bool.rec (motive := fun e =>
-        (((segment f g hf hg P₀ Q₀ a b).grpSrc e).map (MulAut.conj
-          ((segment f g hf hg P₀ Q₀ a b).labelα e)⁻¹).toMonoidHom).comap
-            ((GraphOfGroups.segment f g hf hg).α ((segment f g hf hg P₀ Q₀ a b).typ.mapE e)) =
-        (((segment f g hf hg P₀ Q₀ a b).grpTgt e).map (MulAut.conj
-          ((segment f g hf hg P₀ Q₀ a b).labelω e)).toMonoidHom).comap
-            ((GraphOfGroups.segment f g hf hg).ω ((segment f g hf hg P₀ Q₀ a b).typ.mapE e)))
-        h.1 h.2 e⟩⟩
+          (Q₀.map (MulAut.conj b⁻¹⁻¹).toMonoidHom).comap
+            ((GraphOfGroups.segment f g hf hg).ω false) ∧
+        (Q₀.map (MulAut.conj b⁻¹⁻¹).toMonoidHom).comap ((GraphOfGroups.segment f g hf hg).α true) =
+          (P₀.map (MulAut.conj a⁻¹).toMonoidHom).comap
+            ((GraphOfGroups.segment f g hf hg).ω true) := by
+    refine ⟨fun h => ⟨h.comap_eq false, h.comap_eq true⟩, fun h => ⟨?_, fun e => ?_⟩⟩
+    · -- Distinct darts issue from distinct vertices: the source of the dart `e` is `e`.
+      intro f₁ f₂ hs _ _
+      exact (SerreGraph.segment_src f₁).symm.trans (hs.trans (SerreGraph.segment_src f₂))
+    · cases e
+      exacts [h.1, h.2]
   rw [key, segment_α_false, segment_ω_false, segment_α_true, segment_ω_true, inv_inv]
   exact ⟨And.left, fun h => ⟨h, h.symm⟩⟩
 
 /-- The single edge is a finite `𝔸`-graph exactly when its vertex groups are finitely
 generated. -/
-theorem segment_isFinite_iff : (segment f g hf hg P₀ Q₀ a b).IsFinite ↔ P₀.FG ∧ Q₀.FG :=
-  ⟨fun h => ⟨h.fg false, h.fg true⟩, fun h =>
-    { finite_E := inferInstanceAs (Finite Bool)
-      connected := SerreGraph.IsTree.connected _ SerreGraph.segment_isTree
-      fg := fun u => Bool.rec h.1 h.2 u }⟩
+theorem segment_isFinite_iff : (segment f g hf hg P₀ Q₀ a b).IsFinite ↔ P₀.FG ∧ Q₀.FG := by
+  -- The vertex groups `B_{false} = P₀` and `B_{true} = Q₀` are subgroups of the vertex groups `P`
+  -- and `Q` of `𝔸` only after unfolding, so finite generation is transported by `exact`.
+  refine ⟨fun h => ⟨h.fg false, h.fg true⟩, fun h => ⟨?_, ?_, ?_⟩⟩
+  · rw [segment_graph]
+    exact inferInstanceAs (Finite Bool)
+  · rw [segment_graph]
+    exact SerreGraph.IsTree.connected _ SerreGraph.segment_isTree
+  · rintro (_ | _)
+    exacts [h.1, h.2]
 
 /-- The complexity of the single edge is `rank P₀ + rank Q₀`: its underlying graph is a tree. -/
 theorem segment_complexity [Group.FG P₀] [Group.FG Q₀] :
     (segment f g hf hg P₀ Q₀ a b).complexity = Group.rank P₀ + Group.rank Q₀ := by
   -- The underlying graph is `SerreGraph.segment`: one geometric edge and the two vertices `Bool`.
-  have hE : Nat.card (segment f g hf hg P₀ Q₀ a b).graph.GeomEdge = 1 :=
-    Nat.card_unique (α := SerreGraph.segment.GeomEdge)
-  have hV : Nat.card (segment f g hf hg P₀ Q₀ a b).graph.V = 2 :=
-    (Nat.card_eq_fintype_card (α := Bool)).trans Fintype.card_bool
+  have hE : Nat.card (segment f g hf hg P₀ Q₀ a b).graph.GeomEdge = 1 := by
+    rw [segment_graph]
+    exact Nat.card_unique
+  have hV : Nat.card (segment f g hf hg P₀ Q₀ a b).graph.V = 2 := by
+    rw [segment_graph, Nat.card_congr SerreGraph.segmentVEquiv, Nat.card_eq_fintype_card,
+      Fintype.card_bool]
+  -- The vertex groups are `P₀` and `Q₀`, and the vertices are the Booleans, by definition.
   have : Group.FG ((segment f g hf hg P₀ Q₀ a b).grp false) := ‹Group.FG P₀›
   have : Group.FG ((segment f g hf hg P₀ Q₀ a b).grp true) := ‹Group.FG Q₀›
   let _ : Fintype (segment f g hf hg P₀ Q₀ a b).graph.V := inferInstanceAs (Fintype Bool)
@@ -688,7 +740,7 @@ theorem segment_complexity [Group.FG P₀] [Group.FG Q₀] :
     (finsum_eq_sum_of_fintype _).trans ((Fintype.sum_bool _).trans
       ((add_comm _ _).trans (congrArg₂ (· + ·) (rankGrp_eq (segment f g hf hg P₀ Q₀ a b) false)
         (rankGrp_eq (segment f g hf hg P₀ Q₀ a b) true))))
-  rw [complexity, hE, hV, hR]
+  rw [complexity_def, hE, hV, hR]
   omega
 
 end segment
