@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
+import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
@@ -155,9 +156,37 @@ theorem exists_hasSum_localFourier_of_eq_mul (T : 𝓓'(Ω, ℂ)) {φ ψ : 𝓓(
       (∀ j : ℕ, Summable fun m : L ↦ (1 + ‖(m : E)‖) ^ j * ‖a m‖) ∧
         ∀ η, HasSum (fun m : L ↦ a m * T.localFourier φ (η - m)) (T.localFourier ψ η) := by
   borelize E
-  -- The function `χ₁ g`, expanded in the modulations of a cutoff `χ` with `φ = φ χ`.
-  obtain ⟨K, hKΩ, L, _, _, χ₁, χ, -, hχ₁φ, hφχ, hexp⟩ := φ.exists_hasSum_fourier_smul_modulate
-  obtain ⟨f, hf, hexp⟩ := hexp g hg
+  -- Nested compact sets `tsupport φ ⊆ K₁ ⊆ K₂ ⊆ Ω` and cutoffs `χ₁, χ₂` adapted to them.
+  obtain ⟨K₁, hK₁, hφK₁, hK₁Ω⟩ :=
+    exists_compact_between φ.hasCompactSupport Ω.isOpen φ.tsupport_subset
+  obtain ⟨K₂, hK₂, hK₁K₂, hK₂Ω⟩ := exists_compact_between hK₁ Ω.isOpen hK₁Ω
+  obtain ⟨χ₁, hχ₁, -, hχ₁1, -, hχ₁s⟩ :=
+    φ.hasCompactSupport.exists_contDiff_cutoff isOpen_interior hφK₁
+  obtain ⟨χ₂, hχ₂, -, hχ₂1, -, hχ₂s⟩ := hK₁.exists_contDiff_cutoff isOpen_interior hK₁K₂
+  let K : Compacts E := ⟨K₂, hK₂⟩
+  have hKΩ : (K : Set E) ⊆ Ω := hK₂Ω
+  have hχ₁φ {x : E} (hx : φ x ≠ 0) : χ₁ x = 1 := interior_subset (hχ₁1 (subset_tsupport _ hx))
+  have hχ₂K₁ {x : E} (hx : x ∈ K₁) : χ₂ x = 1 := interior_subset (hχ₂1 hx)
+  have hχ₁K₁ : tsupport χ₁ ⊆ K₁ := hχ₁s.trans interior_subset
+  -- The function `χ₁ g`, expanded in the modulations of the cutoff `χ₂`.
+  have hχ₁g : ContDiff ℝ ∞ fun x ↦ (χ₁ x : ℂ) * g x := by
+    simpa [Complex.real_smul] using
+      hg.contDiff_smul_of_tsupport_subset Ω.isOpen hχ₁.contDiffOn (hχ₁K₁.trans hK₁Ω)
+  have hχ₂c : ContDiff ℝ ∞ fun x ↦ (χ₂ x : ℂ) := ofRealCLM.contDiff.comp hχ₂
+  have hfK : support (fun x ↦ (χ₁ x : ℂ) * g x) ⊆ K₂ := fun x hx ↦
+    interior_subset (hK₁K₂ (hχ₁K₁ (subset_tsupport _ (by simpa using left_ne_zero_of_mul hx))))
+  have hχK : support (fun x ↦ (χ₂ x : ℂ)) ⊆ K₂ := fun x hx ↦
+    interior_subset (hχ₂s (subset_tsupport _ (by simpa using hx)))
+  let f : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset hχ₁g hfK
+  let χ : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset hχ₂c hχK
+  have hχ : EqOn χ 1 (support f) := fun x hx ↦ by
+    have hx' : χ₁ x ≠ 0 := by
+      simpa [f, ContDiffMapSupportedIn.coe_of_support_subset] using left_ne_zero_of_mul hx
+    simp [χ, ContDiffMapSupportedIn.coe_of_support_subset, hχ₂K₁ (hχ₁K₁ (subset_tsupport _ hx'))]
+  -- A lattice none of whose nonzero translates of `K` meet `K`.
+  obtain ⟨L, _, _, hL⟩ := ZLattice.exists_forall_add_mem_eq_zero_of_isBounded hK₂.isBounded
+  have hexp := ContDiffMapSupportedIn.hasSum_fourier_smul_modulate L f χ
+    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.2 h)) hχ
   refine ⟨ZLattice.dual L, fun m ↦ (ZLattice.covolume L : ℂ)⁻¹ * 𝓕 (f : E → ℂ) m,
     fun j ↦ ?_, fun η ↦ ?_⟩
   · have hdecay := ContDiffMapSupportedIn.summable_one_add_norm_pow_mul_norm_fourier
@@ -178,12 +207,16 @@ theorem exists_hasSum_localFourier_of_eq_mul (T : 𝓓'(Ω, ℂ)) {φ ψ : 𝓓(
       rw [hΛ, localFourier_eq_complexPairing_mul_modulate T hKΩ (φ := φ) (f := f) fun x ↦ ?_]
       by_cases hx : φ x = 0
       · simp [hψ, hx]
-      · simp [hf, hψ, hχ₁φ x hx]
+      · simp [f, ContDiffMapSupportedIn.coe_of_support_subset, hψ, hχ₁φ hx]
     have h2 (m : ZLattice.dual L) (a : ℂ) :
         Λ (a • χ.modulate m) = a * T.localFourier φ (η - m) := by
       rw [map_smul, smul_eq_mul, hΛ, ContDiffMapSupportedIn.modulate_modulate,
-        localFourier_eq_complexPairing_mul_modulate T hKΩ (φ := φ) (f := χ) hφχ, neg_sub,
+        localFourier_eq_complexPairing_mul_modulate T hKΩ (φ := φ) (f := χ) fun x ↦ ?_, neg_sub,
         sub_eq_add_neg]
+      by_cases hx : φ x = 0
+      · simp [hx]
+      · simp [χ, ContDiffMapSupportedIn.coe_of_support_subset,
+          hχ₂K₁ (hφK₁.trans interior_subset (subset_tsupport _ hx))]
     have hmap := hexp.map Λ Λ.continuous
     rw [h1] at hmap
     convert hmap using 1

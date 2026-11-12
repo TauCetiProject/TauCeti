@@ -11,11 +11,9 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Analysis.Fourier.FourierTransform
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.SmoothSeries
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
@@ -35,11 +33,8 @@ It uses Mathlib's `2π` Fourier convention.
   the spatial variable.
 * `TauCeti.norm_iteratedFDeriv_fourierAtom_le`: the `k`-th derivative of the Fourier atom at
   frequency `q` has norm at most `(2π ‖q‖) ^ k`.
-* `TauCeti.contDiff_tsum_mul_fourierAtom`: a series of Fourier atoms whose coefficients decay
+* `TauCeti.contDiff_tsum_smul_fourierAtom`: a series of Fourier atoms with coefficients decaying
   faster than every power of the frequency is smooth.
-* `TauCeti.integral_mul_tsum_mul_fourierAtom`: a compactly supported continuous function is
-  integrated against an absolutely convergent series of Fourier atoms term by term, giving values
-  of its Fourier transform.
 * `TauCeti.continuous_and_isPositiveDefiniteSub_fourierAtom`: the Fourier atom
   `v ↦ fourierAtom v ξ` is continuous and positive definite.
 * `TauCeti.norm_fourierAtom`: Fourier atoms have unit norm.
@@ -151,82 +146,54 @@ theorem contDiff_uncurry_fourierAtom : ContDiff ℝ n (Function.uncurry (fourier
 theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) :=
   contDiff_uncurry_fourierAtom.comp (contDiff_const.prodMk contDiff_id)
 
-/-- The `k`-th derivative of the Fourier atom at frequency `q` has norm at most
-`(2π ‖q‖) ^ k`. -/
-theorem norm_iteratedFDeriv_fourierAtom_le (q x : W) (k : ℕ) :
-    ‖iteratedFDeriv ℝ k (fourierAtom q) x‖ ≤ (2 * Real.pi * ‖q‖) ^ k := by
-  -- The atom is `exp ∘ ℓ` for the purely imaginary linear phase `ℓ y = -2πi ⟪y, q⟫`.
-  let ℓ : W →L[ℝ] ℂ := (-2 * Real.pi * Complex.I) • (Complex.ofRealCLM.comp (innerSL ℝ q))
-  have hℓ (y : W) : ℓ y = -2 * Real.pi * Complex.I * ((inner ℝ y q : ℝ) : ℂ) := by
+/-- The `k`-th derivative of the Fourier atom at frequency `q` has norm at most `(2π ‖q‖) ^ k`. -/
+theorem norm_iteratedFDeriv_fourierAtom_le (q v : W) (k : ℕ) :
+    ‖iteratedFDeriv ℝ k (fourierAtom q) v‖ ≤ (2 * Real.pi * ‖q‖) ^ k := by
+  -- The atom is `exp ∘ ℓ` for the real-linear phase `ℓ y = -2πi ⟪q, y⟫`.
+  let ℓ : W →L[ℝ] ℂ := (-(2 * Real.pi * I)) • (ofRealCLM.comp (innerSL ℝ q))
+  have hℓ (y : W) : ℓ y = -2 * ((Real.pi : ℝ) : ℂ) * I * ((inner ℝ y q : ℝ) : ℂ) := by
     simp [ℓ, real_inner_comm]
-  have hfun : fourierAtom q = fun y ↦ Complex.exp (ℓ y) := by
+  have hatom : fourierAtom q = fun y ↦ Complex.exp (ℓ y) := by
     ext y
     rw [fourierAtom_apply, hℓ]
   have hnorm : ‖ℓ‖ ≤ 2 * Real.pi * ‖q‖ := by
     refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun y ↦ ?_
-    rw [hℓ]
-    simp only [norm_mul, norm_neg, Complex.norm_ofNat, Complex.norm_real, Real.norm_eq_abs,
-      Complex.norm_I, mul_one, abs_of_pos Real.pi_pos]
-    have := abs_real_inner_le_norm y q
-    nlinarith [Real.pi_pos, norm_nonneg y, norm_nonneg q, abs_nonneg (inner ℝ y q)]
-  rw [hfun]
-  refine (ℓ.norm_iteratedFDeriv_cexp_comp_le k x).trans ?_
-  rw [show Complex.exp (ℓ x) = fourierAtom q x by rw [hfun], norm_fourierAtom, one_mul]
+    have h : ‖ℓ y‖ = 2 * Real.pi * |inner ℝ y q| := by
+      rw [hℓ]
+      simp [abs_of_pos Real.pi_pos]
+    calc ‖ℓ y‖ ≤ 2 * Real.pi * (‖q‖ * ‖y‖) := by
+          rw [h]
+          gcongr
+          exact abs_real_inner_le_norm y q |>.trans_eq (mul_comm _ _)
+      _ = 2 * Real.pi * ‖q‖ * ‖y‖ := by ring
+  have hv : ‖Complex.exp (ℓ v)‖ = 1 := by
+    rw [← norm_fourierAtom q v, hatom]
+  rw [hatom]
+  refine (ℓ.norm_iteratedFDeriv_cexp_comp_le k v).trans ?_
+  rw [hv, one_mul]
   gcongr
 
 open scoped ContDiff in
-/-- A series `x ↦ ∑' i, c i * fourierAtom (q i) x` of Fourier atoms is smooth when its coefficients
-decay faster than every power of the frequencies: `∑ ‖c i‖ ‖q i‖ ^ k < ∞` for every `k`. -/
-theorem contDiff_tsum_mul_fourierAtom {ι : Type*} (q : ι → W) (c : ι → ℂ)
-    (h : ∀ k : ℕ, Summable fun i ↦ ‖c i‖ * ‖q i‖ ^ k) :
-    ContDiff ℝ ∞ fun x ↦ ∑' i, c i * fourierAtom (q i) x := by
-  refine contDiff_tsum (N := ⊤) (v := fun k i ↦ (2 * Real.pi) ^ k * (‖c i‖ * ‖q i‖ ^ k))
-    (fun i ↦ contDiff_const.mul (contDiff_fourierAtom _)) (fun k _ ↦ (h k).mul_left _)
-    fun k i x _ ↦ ?_
-  have hi : (fun x ↦ c i * fourierAtom (q i) x) = c i • fourierAtom (q i) := by
-    ext x
-    simp only [Pi.smul_apply, smul_eq_mul]
-  rw [hi, iteratedFDeriv_const_smul_apply (contDiff_fourierAtom _).contDiffAt, norm_smul]
-  calc ‖c i‖ * ‖iteratedFDeriv ℝ k (fourierAtom (q i)) x‖
-      ≤ ‖c i‖ * (2 * Real.pi * ‖q i‖) ^ k := by
+/-- A series `v ↦ ∑ i, b i • fourierAtom (q i) v` of Fourier atoms is smooth when its coefficients
+decay faster than every power of the frequency: `∑ i, (1 + ‖q i‖) ^ k ‖b i‖ < ∞` for every `k`. -/
+theorem contDiff_tsum_smul_fourierAtom {ι : Type*} {b : ι → ℂ} {q : ι → W}
+    (hb : ∀ k : ℕ, Summable fun i ↦ (1 + ‖q i‖) ^ k * ‖b i‖) :
+    ContDiff ℝ ∞ fun v ↦ ∑' i, b i • fourierAtom (q i) v := by
+  refine contDiff_tsum (fun i ↦ (contDiff_fourierAtom (q i)).const_smul (b i))
+    (v := fun k i ↦ (2 * Real.pi) ^ k * ((1 + ‖q i‖) ^ k * ‖b i‖))
+    (fun k _ ↦ (hb k).mul_left _) fun k i v _ ↦ ?_
+  rw [iteratedFDeriv_const_smul_apply' (contDiff_fourierAtom _).contDiffAt, norm_smul]
+  calc ‖b i‖ * ‖iteratedFDeriv ℝ k (fourierAtom (q i)) v‖
+      ≤ ‖b i‖ * (2 * Real.pi * ‖q i‖) ^ k := by
         gcongr
         exact norm_iteratedFDeriv_fourierAtom_le _ _ _
-    _ = (2 * Real.pi) ^ k * (‖c i‖ * ‖q i‖ ^ k) := by ring
+    _ ≤ ‖b i‖ * ((2 * Real.pi) ^ k * (1 + ‖q i‖) ^ k) := by
+        rw [mul_pow]
+        gcongr
+        linarith
+    _ = _ := by ring
 
 end ContDiff
-
-section Integral
-
-open MeasureTheory
-open scoped FourierTransform
-
-variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
-  [MeasurableSpace W] [BorelSpace W]
-
-/-- **Term-by-term integration against a series of Fourier atoms.** For a compactly supported
-continuous function `u` and absolutely summable coefficients `c`,
-`∫ u x ∑' i, c i fourierAtom (q i) x = ∑' i, c i 𝓕 u (q i)`. -/
-theorem integral_mul_tsum_mul_fourierAtom {ι : Type*} [Countable ι] (q : ι → W) {c : ι → ℂ}
-    (hc : Summable fun i ↦ ‖c i‖) {u : W → ℂ} (hu : Continuous u) (hus : HasCompactSupport u) :
-    ∫ x, u x * ∑' i, c i * fourierAtom (q i) x = ∑' i, c i * 𝓕 u (q i) := by
-  have hG (i : ι) : Integrable fun x ↦ u x * (c i * fourierAtom (q i) x) :=
-    (hu.mul (continuous_const.mul (continuous_fourierAtom _))).integrable_of_hasCompactSupport
-      hus.mul_right
-  have hnorm (i : ι) : ∫ x, ‖u x * (c i * fourierAtom (q i) x)‖ = ‖c i‖ * ∫ x, ‖u x‖ := by
-    rw [← integral_const_mul]
-    congr 1
-    ext x
-    rw [norm_mul, norm_mul, norm_fourierAtom, mul_one, mul_comm]
-  simp_rw [← tsum_mul_left (a := u _)]
-  rw [← integral_tsum_of_summable_integral_norm hG (by simpa only [hnorm] using hc.mul_right _)]
-  refine tsum_congr fun i ↦ ?_
-  rw [Real.fourier_eq, ← integral_const_mul]
-  congr 1
-  ext x
-  rw [fourierAtom_eq_fourierChar, Circle.smul_def, smul_eq_mul]
-  ring
-
-end Integral
 
 /-- The Fourier atom `v ↦ fourierAtom v ξ` is continuous and positive definite: by symmetry of
 the real inner product it is the atom `fourierAtom ξ`, whose subtraction kernel is positive
