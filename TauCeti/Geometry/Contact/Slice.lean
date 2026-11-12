@@ -285,15 +285,9 @@ theorem IsContactForm.isLocalDiffeomorphAt_flowOf_reebVectorField_comp [FiniteDi
     (hp : (p.2, ι p.1) ∈ flowDomain α.reebVectorField) :
     IsLocalDiffeomorphAt (J.prod 𝓘(ℝ)) I ∞
       (fun q : S × ℝ ↦ flowOf α.reebVectorField q.2 (ι q.1)) p := by
-  -- The second Reeb equation as an identity of one-forms: `ι_(R_α) dα = 0`.
-  have hRα : (mextDeriv α.1).interior α.reebVectorField = 0 := by
-    funext x
-    refine ContinuousAlternatingMap.ext fun v ↦ ?_
-    obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
-    simpa using hα.mextDeriv_reebVectorField_left x w
   exact isLocalDiffeomorphAt_flowOf_comp_of_nondegenerate hα.contMDiff_reebVectorField hι hdim
-    hα.apply_reebVectorField hRα (hα.nondegenerate_bilinFormAt_mextDerivₗ_mpullback hι hdim hιs hR)
-    hp
+    hα.apply_reebVectorField hα.interior_mextDeriv_reebVectorField
+    (hα.nondegenerate_bilinFormAt_mextDerivₗ_mpullback hι hdim hιs hR) hp
 
 end SmoothForm
 
