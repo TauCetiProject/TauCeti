@@ -116,12 +116,21 @@ theorem algAutCongr_apply (e : K ≃+* K') (eL : L ≃+* L')
     algAutCongr e eL heL σ x' = eL (σ (eL.symm x')) :=
   (rfl)
 
-/-- Conjugation along `(e, eL)` intertwines `σ` and its image along `eL`. -/
-theorem algAutCongr_apply_eL (e : K ≃+* K') (eL : L ≃+* L')
+/-- The underlying ring equivalence of `algAutCongr e eL heL σ` is `eL.symm.trans (σ.trans eL)`. -/
+@[simp]
+theorem toRingEquiv_algAutCongr (e : K ≃+* K') (eL : L ≃+* L')
     (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
-    (σ : L ≃ₐ[K] L) (x : L) :
-    algAutCongr e eL heL σ (eL x) = eL (σ x) := by
-  rw [algAutCongr_apply, eL.symm_apply_apply]
+    (σ : L ≃ₐ[K] L) :
+    ((algAutCongr e eL heL σ : L' ≃ₐ[K'] L') : L' ≃+* L') =
+      eL.symm.trans ((σ : L ≃+* L).trans eL) :=
+  (rfl)
+
+/-- Conjugation along identity ring equivalences is the identity automorphism of `L ≃ₐ[K] L`. -/
+@[simp]
+theorem algAutCongr_refl
+    (h : ∀ c : K, RingEquiv.refl L (algebraMap K L c) = algebraMap K L (RingEquiv.refl K c)) :
+    algAutCongr (RingEquiv.refl K) (RingEquiv.refl L) h = MulEquiv.refl (L ≃ₐ[K] L) := by
+  ext; rfl
 
 /-- The inverse of `algAutCongr e eL heL` is `algAutCongr e.symm eL.symm _`. -/
 @[simp]
@@ -130,5 +139,26 @@ theorem algAutCongr_symm (e : K ≃+* K') (eL : L ≃+* L')
     (algAutCongr e eL heL).symm = algAutCongr e.symm eL.symm
       (fun c' ↦ eL.symm_apply_eq.2 (by rw [heL, e.apply_symm_apply])) :=
   (rfl)
+
+/-- Conjugating along `(e, eL)` and then `(e', eL')` is conjugating along
+`(e.trans e', eL.trans eL')`. -/
+@[simp]
+theorem algAutCongr_trans {K'' L'' : Type*} [CommSemiring K''] [Semiring L''] [Algebra K'' L'']
+    (e : K ≃+* K') (eL : L ≃+* L')
+    (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c))
+    (e' : K' ≃+* K'') (eL' : L' ≃+* L'')
+    (heL' : ∀ c' : K', eL' (algebraMap K' L' c') = algebraMap K'' L'' (e' c')) :
+    (algAutCongr e eL heL).trans (algAutCongr e' eL' heL') =
+      algAutCongr (e.trans e') (eL.trans eL') (fun c ↦ by simp [heL, heL']) := by
+  ext; simp
+
+omit [CommSemiring K'] [Algebra K' L'] in
+/-- Over a fixed base ring `K`, conjugating along `(RingEquiv.refl K, φ)` for an algebra
+equivalence `φ : L ≃ₐ[K] L'` recovers `AlgEquiv.autCongr φ`. -/
+@[simp]
+theorem algAutCongr_refl_toRingEquiv [Algebra K L'] (φ : L ≃ₐ[K] L')
+    (h : ∀ c : K, (φ : L ≃+* L') (algebraMap K L c) = algebraMap K L' (RingEquiv.refl K c)) :
+    algAutCongr (RingEquiv.refl K) (φ : L ≃+* L') h = AlgEquiv.autCongr φ := by
+  ext; rfl
 
 end RingEquiv

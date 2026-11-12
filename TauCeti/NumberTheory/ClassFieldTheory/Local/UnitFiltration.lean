@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Galois.Abelian.Maximal
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
 public import TauCeti.NumberTheory.LocalField.Herbrand.AbsoluteFiltration
 
 import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor.UpperNumbering
 import TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient
-import TauCeti.RingTheory.Norm.Equiv
 
 /-!
 # Reciprocity on the unit filtration and the upper ramification filtration
@@ -36,7 +34,9 @@ of Galois groups in the upper numbering:
   `artinMap K` is the image of the absolute upper ramification group
   `TauCeti.localAbsoluteUpperRamificationGroup K n` in `G_K^ab` modulo the closed commutator
   subgroup of `G_K`. Neither side requires taking a topological closure, because `U(K, n)` and
-  `G_K^n` are compact and their images in the Hausdorff group `G_K^ab` are already closed.
+  `G_K^n` are compact and their images in the Hausdorff group `G_K^ab` are already closed
+  (`isClosed_map_artinMap_unitFiltration`,
+  `TauCeti.isClosed_map_mk'_localAbsoluteUpperRamificationGroup`).
 
 At `n = 0`, `U(K, 0) = 𝒪[K]ˣ` and `G_K^0 = inertiaSubgroup K`, recovering
 `map_artinMap_unitFiltration_zero`.
@@ -49,16 +49,13 @@ At `n = 0`, `U(K, 0) = 𝒪[K]ˣ` and `G_K^0 = inertiaSubgroup K`, recovering
   pulling back along `Abelianization.of` recovers `Gal(L/K)^n`.
 * `normResidue_mk_mem_map_upperRamificationGroup_iff`: the norm residue symbol of `x ∈ Kˣ` lies in
   the image of `Gal(L/K)^n` exactly when `x ∈ U(K, n) ⊔ N_{L/K}(Lˣ)`.
-* `abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap`: on every finite Galois
-  intermediate field `M` of `K^{ab}/K`, restricting `artinMap K x` computes `normResidue K M x`.
 * `map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitFiltration`: in
   `Gal(K^{ab}/K)`, the Artin image of `U(K, n)` is the intersection of the preimages of
   `Gal(M/K)^n` over all finite Galois subextensions `M` of `K^{ab}/K`.
 * `map_artinMap_unitFiltration_eq_upper`: in `G_K^ab`, the Artin image of `U(K, n)` equals the
   image of `localAbsoluteUpperRamificationGroup K n`.
-* `isClosed_map_artinMap_unitFiltration` and
-  `isClosed_map_mk'_localAbsoluteUpperRamificationGroup`: both sides of the absolute reciprocity
-  identity are closed subgroups of `G_K^ab`.
+* `isClosed_map_artinMap_unitFiltration`: the Artin image of `U(K, n)` is a closed subgroup of
+  `G_K^ab`.
 
 ## References
 
@@ -76,34 +73,6 @@ namespace TauCeti.ClassFieldTheory
 /-! ### Finite unit-filtration reciprocity -/
 
 section Finite
-
-/-- Universe-polymorphic form of `unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot`,
-obtained by embedding `M` into `AlgebraicClosure K : Type`. -/
-private theorem unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot'
-    (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-    (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
-    [Algebra K M] [ValuativeExtension K M] [Module.Finite K M] [IsAbelianGalois K M] (v : ℕ) :
-    unitFiltration K v ≤ normGroup K M ↔
-      upperRamificationGroup K M ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩ = ⊥ := by
-  let ι : M →ₐ[K] AlgebraicClosure K := IsAlgClosed.lift
-  let M₀ : IntermediateField K (AlgebraicClosure K) := ι.fieldRange
-  let eM : M ≃ₐ[K] M₀ := ι.equivFieldRange
-  have : Module.Finite K M₀ := Module.Finite.equiv eM.toLinearEquiv
-  have : IsAbelianGalois K M₀ := .of_algHom eM.symm.toAlgHom
-  let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) M₀
-  let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) M₀
-  have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) M₀
-  have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) M₀
-  have hnorm : normGroup K M = normGroup K M₀ := eM.normGroup_eq
-  have hram :
-      (upperRamificationGroup K M ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩).map
-          ((RingEquiv.refl K).algAutCongr eM.toRingEquiv (fun c ↦ eM.commutes c) :
-            Gal(M/K) →* Gal(M₀/K)) =
-        upperRamificationGroup K M₀ ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩ :=
-    map_algAutCongr_upperRamificationGroup (RingEquiv.refl K) continuous_id eM.toRingEquiv
-      (fun c ↦ eM.commutes c) ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩
-  rw [hnorm, unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot K M₀ v, ← hram,
-    Subgroup.map_eq_bot_iff_of_injective _ (MulEquiv.injective _)]
 
 /-- Every subgroup `N` of `Gal(L/K)^ab` cuts out an abelian Galois subextension `F = L^H` (where
 `H = N.comap Abelianization.of`), and `N` contains the norm-residue image of `U(K, n)` precisely
@@ -152,7 +121,7 @@ private theorem map_normResidue_unitFiltration_le_iff
       ← abelianization_of_restrictNormalHom_fixedField_eq_one_iff H σ,
       ← IntermediateField.restrictNormalHom_val, AlgHom.restrictNormalHom_restrictNormalHom,
       ← ofMul_eq_zero, ← artinMap_restrict K F (ι.comp F.val) u τ hτ, localArtinMap_eq_zero_iff]
-  rw [hunit, unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot' K F n,
+  rw [hunit, unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot K F n,
     ← map_restrictNormalHom_upperRamificationGroup K F L, Subgroup.map_eq_bot_iff,
     IntermediateField.restrictNormalHom_ker, IntermediateField.fixingSubgroup_fixedField,
     Subgroup.map_le_iff_le_comap]
@@ -216,60 +185,6 @@ section Absolute
 
 variable (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
-/-- **Finite restrictions of `artinMap K` on `K^{ab}/K`.** Let `M` be a finite Galois intermediate
-field of `maximalAbelianExtension K (AlgebraicClosure K) / K`. Reading `artinMap K x` as an
-automorphism of `K^{ab}` via `topologicalAbelianizationEquivMaximalAbelianExtension` and
-restricting to `M` computes `normResidue K M x`. -/
-theorem abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap
-    (M : FiniteGaloisIntermediateField K (maximalAbelianExtension K (AlgebraicClosure K)))
-    (x : Kˣ) :
-    Abelianization.of
-        (AlgEquiv.restrictNormalHom M.toIntermediateField
-          (topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
-            (artinMap K x))) =
-      normResidue K M.toIntermediateField (x : Kˣ ⧸ normGroup K M.toIntermediateField) := by
-  let ιSep : maximalAbelianExtension K (AlgebraicClosure K) →ₐ[K] SeparableClosure K :=
-    IntermediateField.inclusion (maximalAbelianExtension_le_separableClosure K (AlgebraicClosure K))
-  let ι : M.toIntermediateField →ₐ[K] SeparableClosure K := ιSep.comp M.toIntermediateField.val
-  obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (artinMap K x)
-  let σ₀ : Gal(AlgebraicClosure K/K) := σ
-  have hmk :
-      topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K) (artinMap K x) =
-        AlgEquiv.restrictNormalHom (maximalAbelianExtension K (AlgebraicClosure K)) σ₀ := by
-    rw [← hσ]
-    exact AlgEquiv.topologicalAbelianizationEquivMaximalAbelianExtension_mk σ₀
-  have hres :
-      AlgEquiv.restrictNormalHom M.toIntermediateField
-          (topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
-            (artinMap K x)) =
-        ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) := by
-    rw [hmk]
-    refine AlgEquiv.ext fun y ↦ Subtype.ext (Subtype.ext ?_)
-    have h₁ :
-        (((AlgEquiv.restrictNormalHom M.toIntermediateField
-              (AlgEquiv.restrictNormalHom (maximalAbelianExtension K (AlgebraicClosure K)) σ₀) y :
-            M.toIntermediateField) : maximalAbelianExtension K (AlgebraicClosure K)) :
-          AlgebraicClosure K) =
-          σ₀ ((y : maximalAbelianExtension K (AlgebraicClosure K)) : AlgebraicClosure K) :=
-      (congrArg Subtype.val
-        (AlgEquiv.restrictNormal_commutes
-          (AlgEquiv.restrictNormal σ₀ (maximalAbelianExtension K (AlgebraicClosure K)))
-          M.toIntermediateField y)).trans
-        (AlgEquiv.restrictNormal_commutes σ₀
-          (maximalAbelianExtension K (AlgebraicClosure K))
-          (y : maximalAbelianExtension K (AlgebraicClosure K)))
-    have h₂ :
-        (((ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) y :
-            M.toIntermediateField) : maximalAbelianExtension K (AlgebraicClosure K)) :
-          AlgebraicClosure K) =
-          σ₀ ((y : maximalAbelianExtension K (AlgebraicClosure K)) : AlgebraicClosure K) := by
-      have hcomm := congrArg (fun z : SeparableClosure K ↦ (z : AlgebraicClosure K))
-        (ι.restrictNormalHom_commutes (absoluteGaloisGroupRestrictEquiv K σ) y)
-      exact hcomm.trans (coe_absoluteGaloisGroupRestrictEquiv_apply K σ (ι y))
-    exact h₁.trans h₂.symm
-  rw [hres, normResidue_mk K M.toIntermediateField ι x,
-    artinMap_restrict K M.toIntermediateField ι x σ hσ, toMul_ofMul]
-
 private theorem exists_mem_unitFiltration_restrictNormalHom_eq (n : ℕ)
     (M : FiniteGaloisIntermediateField K (maximalAbelianExtension K (AlgebraicClosure K)))
     {τ : Gal(maximalAbelianExtension K (AlgebraicClosure K)/K)}
@@ -286,7 +201,6 @@ private theorem exists_mem_unitFiltration_restrictNormalHom_eq (n : ℕ)
   let _ := finiteIntermediateFieldTopology K Kab M.toIntermediateField
   have := finiteIntermediateField_isNonarchimedeanLocalField K Kab M.toIntermediateField
   have := finiteIntermediateField_valuativeExtension K Kab M.toIntermediateField
-  have : IsAbelianGalois K M.toIntermediateField := .tower_bot K M.toIntermediateField Kab
   have hmem :
       Abelianization.of (AlgEquiv.restrictNormalHom M.toIntermediateField τ) ∈
         (upperRamificationGroup K M.toIntermediateField
@@ -296,7 +210,8 @@ private theorem exists_mem_unitFiltration_restrictNormalHom_eq (n : ℕ)
   rw [← normResidue_map_unitFiltration K M.toIntermediateField n] at hmem
   obtain ⟨u, hu, hu_eq⟩ := hmem
   exact ⟨u, hu, Abelianization.of_injective
-    ((abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap K M u).trans hu_eq)⟩
+    ((abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap K
+      M.toIntermediateField u).trans hu_eq)⟩
 
 /-- **Unit-filtration reciprocity on the maximal abelian extension.** Reading `artinMap K` in
 `Gal(K^{ab}/K)` via `topologicalAbelianizationEquivMaximalAbelianExtension` maps `U(K, n)` onto the
@@ -322,11 +237,12 @@ theorem map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitF
     let _ := finiteIntermediateFieldTopology K Kab M.toIntermediateField
     have := finiteIntermediateField_isNonarchimedeanLocalField K Kab M.toIntermediateField
     have := finiteIntermediateField_valuativeExtension K Kab M.toIntermediateField
-    have : IsAbelianGalois K M.toIntermediateField := .tower_bot K M.toIntermediateField Kab
     rw [Subgroup.mem_comap, finiteGaloisUpperRamificationGroup_def,
       ← Subgroup.mem_map_iff_mem Abelianization.of_injective,
       ← normResidue_map_unitFiltration K M.toIntermediateField n]
-    exact ⟨u, hu, (abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap K M u).symm⟩
+    exact ⟨u, hu,
+      (abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap K
+        M.toIntermediateField u).symm⟩
   · -- Intersect the closed fibers `{u ∈ U(K, n) | φ(u)|_M = τ|_M}` inside the compact space
     -- `U(K, n)`; finite reciprocity makes every fiber nonempty.
     have : CompactSpace ↥(unitFiltration K n) :=
@@ -392,39 +308,22 @@ theorem map_artinMap_unitFiltration_eq_upper (n : ℕ) :
         (QuotientGroup.mk' (commutator (Field.absoluteGaloisGroup K)).topologicalClosure)).trans
       (congrArg (fun f ↦ (localAbsoluteUpperRamificationGroup K
         ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩).map f) hcomp)).trans
-      (map_restrictNormalHom_localAbsoluteUpperRamificationGroup_of_isGalois
+      (map_restrictNormalHom_localAbsoluteUpperRamificationGroup_eq_iInf
         (maximalAbelianExtension K (AlgebraicClosure K))
         ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩)
   exact (map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitFiltration K
     n).trans hrhs.symm
 
 /-- The image of `U(K, n)` under the absolute local Artin map is a closed subgroup of `G_K^ab`,
-since `U(K, n)` is compact and `artinMap K` is continuous into the Hausdorff group `G_K^ab`. -/
+since it equals the image of the closed subgroup `localAbsoluteUpperRamificationGroup K n` of the
+compact group `G_K`. -/
 theorem isClosed_map_artinMap_unitFiltration (n : ℕ) :
     IsClosed
       (((unitFiltration K n).map (artinMap K) :
           Subgroup (Field.absoluteGaloisGroupAbelianization K)) :
         Set (Field.absoluteGaloisGroupAbelianization K)) := by
-  let e := topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
-  have : T2Space (Field.absoluteGaloisGroupAbelianization K) :=
-    @T2Space.of_injective_continuous _ _ _ _ krullTopology_t2 e e.injective e.continuous
-  rw [Subgroup.coe_map]
-  exact ((isCompact_unitFiltration (K := K) n).image (continuous_artinMap K)).isClosed
-
-/-- The image of `localAbsoluteUpperRamificationGroup K v` in `G_K^ab` is closed, as the continuous
-image of a closed subgroup of the compact group `G_K`. -/
-theorem isClosed_map_mk'_localAbsoluteUpperRamificationGroup (v : RamificationIndexDomain) :
-    IsClosed
-      (((localAbsoluteUpperRamificationGroup K v).map
-          (QuotientGroup.mk' (commutator (Field.absoluteGaloisGroup K)).topologicalClosure) :
-            Subgroup (Field.absoluteGaloisGroupAbelianization K)) :
-        Set (Field.absoluteGaloisGroupAbelianization K)) := by
-  let e := topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
-  have : T2Space (Field.absoluteGaloisGroupAbelianization K) :=
-    @T2Space.of_injective_continuous _ _ _ _ krullTopology_t2 e e.injective e.continuous
-  rw [Subgroup.coe_map]
-  exact ((isClosed_localAbsoluteUpperRamificationGroup K v).isCompact.image
-    QuotientGroup.continuous_mk).isClosed
+  rw [map_artinMap_unitFiltration_eq_upper]
+  exact isClosed_map_mk'_localAbsoluteUpperRamificationGroup K _
 
 end Absolute
 
