@@ -16,6 +16,9 @@ A closed subscheme is reduced exactly when its defining ideal sheaf is radical. 
 its ideal on every affine open is radical. This permits reducedness of a divisor to be checked
 on its local equations, rather than on the local rings of the closed subscheme.
 
+The reduction `X.nilradical.subscheme` is reduced, and every morphism from a reduced scheme
+kills the nilradical, so it factors through the reduction.
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Chapter II, §3, reduced induced subscheme structures.
@@ -90,5 +93,18 @@ theorem isReduced_subscheme_ofIdealTop_span_singleton_iff (f : Γ(X, ⊤)) :
     intro x hxU
     rw [I.map_radical_ideal_germ U x hxU, hmap U x hxU]
     exact Ideal.radical_eq_iff.mpr (isRadical_iff_span_singleton.mp (h x))
+
+/-- The reduction `X.nilradical.subscheme` of a scheme is reduced. -/
+instance _root_.AlgebraicGeometry.Scheme.isReduced_nilradical_subscheme (X : Scheme) :
+    IsReduced X.nilradical.subscheme := by
+  rw [← vanishingIdeal_top]
+  infer_instance
+
+/-- A morphism from a reduced scheme kills the nilradical of its target, so it factors
+through the reduction `X.nilradical.subscheme` (`IsClosedImmersion.lift` along `subschemeι`). -/
+theorem _root_.AlgebraicGeometry.Scheme.nilradical_le_ker {X Y : Scheme} [IsReduced Y]
+    (f : Y ⟶ X) : X.nilradical ≤ f.ker := by
+  rw [← vanishingIdeal_top]
+  exact vanishingIdeal_le_ker_of_range_subset f (by simp)
 
 end AlgebraicGeometry.Scheme.IdealSheafData
