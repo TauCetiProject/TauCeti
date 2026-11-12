@@ -130,8 +130,9 @@ theorem floerOperator_add_sub_floerOperator_sub_floerLinearization (w ξ : ℝ �
 /-- **The difference of two remainders.** At a base point `y` with slice velocity `v`, the
 difference of the remainders at `(e₁, d₁)` and `(e₂, d₂)` is the sum of
 
-* the Taylor remainders of `X_Ks`, of `J` (applied to the slice defect `v - X_Kt(y)`) and of
-  `X_Kt` (after `J(y)`) between `y + e₂` and `y + e₁`;
+* minus the Taylor remainder of `X_Ks`, plus the Taylor remainder of `J` (applied to the slice
+  defect `v - X_Kt(y)`), and minus `J(y)` applied to the Taylor remainder of `X_Kt`, all between
+  `y + e₂` and `y + e₁`;
 * `J(y + e₁) - J(y + e₂)` applied to `d₁ - (X_Kt(y + e₁) - X_Kt(y))`;
 * `J(y + e₂) - J(y)` applied to `d₁ - d₂ - (X_Kt(y + e₁) - X_Kt(y + e₂))`.
 
@@ -210,21 +211,26 @@ private theorem norm_floerRemainder_sub_le_of_bounds {z : ℝ × ℝ} {y v e₁ 
         fderiv ℝ (ω.hamiltonianVectorField (Ks z)) y (e₁ - e₂))‖ ≤ L * (m * δe) := by
     rw [norm_neg, ← mul_assoc]
     exact hs
-  refine (norm_sub_le_of_le (norm_add_le_of_le (norm_add_le_of_le (norm_add_le_of_le h₁ h₂) h₃)
-    h₄) h₅).trans ?_
-  -- Collect the terms; every product of norms is nonnegative.
-  have he₂d : 0 ≤ ‖e₂‖ * ‖d₁ - d₂‖ := by positivity
-  have hd₁ : 0 ≤ δe * ‖d₁‖ := by positivity
-  have hmda : 0 ≤ m * δe * a := mul_nonneg hmd ha
-  have hΛe₂ : Λ * ‖e₂‖ * δe ≤ Λ * (m * δe) := by
-    rw [mul_assoc]; exact mul_le_mul_of_nonneg_left (by nlinarith [norm_nonneg (e₁ - e₂)]) hΛ
-  nlinarith [mul_nonneg hΛ hmd, mul_nonneg (mul_nonneg hΛ hΛ) hmd, mul_nonneg hL hmda,
-    mul_nonneg (mul_nonneg hL hM0) hmda, mul_nonneg (mul_nonneg hΛ hΛ) hmda,
-    mul_nonneg hΛ hmda, mul_nonneg (mul_nonneg hL hM0) hd₁, mul_nonneg hL hd₁,
-    mul_nonneg (mul_nonneg hΛ hΛ) hd₁, mul_nonneg hL he₂d, mul_nonneg (mul_nonneg hL hM0) he₂d,
-    mul_nonneg (mul_nonneg hΛ hΛ) he₂d, mul_le_mul_of_nonneg_left hΛe₂ hΛ, mul_nonneg hΛ he₂d]
+  -- Compare each term with its piece of the target, using `‖e₂‖ ≤ m` and `0 ≤ a`.
+  have hX : m * δe ≤ m * (1 + a) * δe := by nlinarith [mul_nonneg hmd ha]
+  have he₂X : ‖e₂‖ * δe ≤ m * (1 + a) * δe :=
+    (mul_le_mul_of_nonneg_right hm₂ (norm_nonneg _)).trans hX
+  have hpos : 0 ≤ Λ * (m * (1 + a) * δe) +
+      (L * (1 + M) + 2 * Λ ^ 2) * (δe * ‖d₁‖ + ‖e₂‖ * ‖d₁ - d₂‖) :=
+    add_nonneg (mul_nonneg hΛ (hmd.trans hX))
+      (mul_nonneg (by positivity) (by positivity))
+  calc _ ≤ L * (m * δe) + L * (m * δe) * a + Λ * δe * (‖d₁‖ + Λ * m) +
+        Λ * ‖e₂‖ * (‖d₁ - d₂‖ + Λ * δe) + M * (L * (m * δe)) :=
+      norm_sub_le_of_le (norm_add_le_of_le (norm_add_le_of_le (norm_add_le_of_le h₁ h₂) h₃) h₄) h₅
+    _ = L * (m * (1 + a) * δe) + M * L * (m * δe) + Λ * (δe * ‖d₁‖) + Λ ^ 2 * (m * δe) +
+        Λ * (‖e₂‖ * ‖d₁ - d₂‖) + Λ ^ 2 * (‖e₂‖ * δe) := by ring
+    _ ≤ L * (m * (1 + a) * δe) + M * L * (m * (1 + a) * δe) + Λ * (δe * ‖d₁‖) +
+        Λ ^ 2 * (m * (1 + a) * δe) + Λ * (‖e₂‖ * ‖d₁ - d₂‖) + Λ ^ 2 * (m * (1 + a) * δe) := by
+      gcongr
+    _ ≤ (L * (1 + M) + 2 * Λ ^ 2 + Λ) * (m * (1 + a) * δe + δe * ‖d₁‖ + ‖e₂‖ * ‖d₁ - d₂‖) := by
+      linear_combination hpos
 
-variable {ω J Ks Kt}
+variable {J Ks Kt}
 
 /-- **The quadratic estimate for the Floer remainder.** Let `J` be jointly `C²` and the
 Hamiltonians `Ks`, `Kt` jointly `C³`, and let `K` be a compact set of pairs `(z, y)` of a domain
@@ -321,7 +327,7 @@ theorem exists_pos_forall_norm_floerOperator_sub_floerOperator_sub_floerLineariz
             ‖ξ₁ z - ξ₂ z‖ +
           ‖ξ₁ z - ξ₂ z‖ * ‖fderiv ℝ ξ₁ z stdComplexLineImag‖ +
           ‖ξ₂ z‖ * ‖fderiv ℝ ξ₁ z stdComplexLineImag - fderiv ℝ ξ₂ z stdComplexLineImag‖) := by
-  obtain ⟨δ, hδ, C, hC⟩ := exists_pos_forall_norm_floerRemainder_sub_le (ω := ω) hJ hKs hKt hK
+  obtain ⟨δ, hδ, C, hC⟩ := ω.exists_pos_forall_norm_floerRemainder_sub_le hJ hKs hKt hK
   refine ⟨δ, hδ, C, fun w ξ₁ ξ₂ z hw hξ₁ hξ₂ hzw hξ₁δ hξ₂δ => ?_⟩
   have h₁ := ω.floerOperator_add_sub_floerOperator_sub_floerLinearization J Ks Kt w ξ₁ hw hξ₁
   have h₂ := ω.floerOperator_add_sub_floerOperator_sub_floerLinearization J Ks Kt w ξ₂ hw hξ₂
@@ -346,7 +352,7 @@ theorem exists_pos_forall_norm_floerOperator_add_sub_floerOperator_sub_floerLine
         C * (‖ξ z‖ ^ 2 *
             (1 + ‖fderiv ℝ w z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (w z)‖) +
           ‖ξ z‖ * ‖fderiv ℝ ξ z stdComplexLineImag‖) := by
-  obtain ⟨δ, hδ, C, hC⟩ := exists_pos_forall_norm_floerRemainder_sub_le (ω := ω) hJ hKs hKt hK
+  obtain ⟨δ, hδ, C, hC⟩ := ω.exists_pos_forall_norm_floerRemainder_sub_le hJ hKs hKt hK
   refine ⟨δ, hδ, C, fun w ξ z hw hξ hzw hξδ => ?_⟩
   have h := hC z (w z) hzw (fderiv ℝ w z stdComplexLineImag) (ξ z) 0
     (fderiv ℝ ξ z stdComplexLineImag) 0 hξδ (by simpa using hδ.le)
