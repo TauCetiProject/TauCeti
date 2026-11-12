@@ -152,7 +152,7 @@ private noncomputable def tV (i k : ι) : V f g j i k ⟶ V f g j k i :=
     (liftP f g j (isAdic_V f g j i k) (pullback.snd _ _) (pullback.fst _ _ ≫ q f g j i) (by
       rw [← pullback.condition_assoc, Category.assoc, p_comp]))
     (pullback.fst _ _ ≫ (pullback.fst (j i ≫ f) g).hom) (by
-      rw [liftP_p, ← fV_p, fV_eq, Category.assoc]; rfl)
+      rw [liftP_p, ← fV_p, fV_eq, Category.assoc, ← p_eq])
 
 @[reassoc (attr := simp)]
 private theorem tV_fV_p (i k : ι) :
@@ -217,6 +217,9 @@ private noncomputable abbrev G : PreAdicSpace.{u} := (glueData f g j).toGlueData
 /-- The chart `U i ×_S Y ⟶ G` of the glued space. -/
 private noncomputable def ιP (i : ι) : P f g j i ⟶ G f g j := (glueData f g j).toGlueData.ι i
 
+private theorem ιP_eq (i : ι) :
+    ιP f g j i = Multicoequalizer.π (glueData f g j).toGlueData.diagram i := rfl
+
 private instance (i : ι) : IsOpenImmersion (ιP f g j i) :=
   (glueData f g j).ι_isOpenImmersion i
 
@@ -240,18 +243,20 @@ private noncomputable def πY : G f g j ⟶ Y.obj :=
     (tV_fV_q f g j ik.1 ik.2).symm
 
 @[reassoc (attr := simp)]
-private theorem ιP_πX (i : ι) : ιP f g j i ≫ πX f g j = p f g j i :=
-  Multicoequalizer.π_desc _ _ _ _ _
+private theorem ιP_πX (i : ι) : ιP f g j i ≫ πX f g j = p f g j i := by
+  rw [ιP_eq]
+  exact Multicoequalizer.π_desc _ _ _ _ _
 
 @[reassoc (attr := simp)]
-private theorem ιP_πY (i : ι) : ιP f g j i ≫ πY f g j = q f g j i :=
-  Multicoequalizer.π_desc _ _ _ _ _
+private theorem ιP_πY (i : ι) : ιP f g j i ≫ πY f g j = q f g j i := by
+  rw [ιP_eq]
+  exact Multicoequalizer.π_desc _ _ _ _ _
 
 private theorem πX_comp : πX f g j ≫ f.hom = πY f g j ≫ g.hom :=
   Multicoequalizer.hom_ext _ _ _ fun (i : ι) ↦ by
-    have h : ιP f g j i ≫ πX f g j ≫ f.hom = ιP f g j i ≫ πY f g j ≫ g.hom := by
-      rw [ιP_πX_assoc, ιP_πY_assoc, p_comp]
-    exact h
+    rw [← ιP_eq f g j i]
+    exact (ιP_πX_assoc f g j i f.hom).trans
+      ((p_comp f g j i).trans (ιP_πY_assoc f g j i g.hom).symm)
 
 /-- Morphisms from an adic space into `U i ×_S Y` and `U k ×_S Y` with the same projections to
 `X` and `Y` have the same image in the glued space: they factor through the overlap `V i k`. -/
