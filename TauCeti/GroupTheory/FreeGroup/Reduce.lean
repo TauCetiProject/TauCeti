@@ -14,9 +14,10 @@ import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 # Reduced words in free groups
 
 Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGroup.Reduce`:
-the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
-formal inverses, powers of a letter, and reducedness of words `w u w⁻¹` in which no letter
-cancels at either join.
+the formal inverse of a one-letter word, the word of a power of a letter, uniqueness of reduced
+representatives, reducedness of formal inverses and of words of constant sign, compatibility of
+formal inversion with subwords, and reducedness of words `w u w⁻¹` in which no letter cancels at
+either join.
 
 The last section controls cancellation under left multiplication: if the reduced word of `g` does
 not begin with the formal inverse of `x₂`, then the reduced word of `(x₁ ++ x₂) * g` still begins
@@ -46,10 +47,6 @@ theorem inv_mk_singleton (w : α × Bool) : (mk [w])⁻¹ = mk [(w.1, !w.2)] := 
 theorem mk_replicate (n : ℕ) (y : α × Bool) : mk (List.replicate n y) = mk [y] ^ n := by
   simpa only [List.flatten_replicate_singleton] using (pow_mk (L := [y]) n).symm
 
-/-- A word made of copies of a single letter is reduced. -/
-@[simp] theorem isReduced_replicate (n : ℕ) (y : α × Bool) : IsReduced (List.replicate n y) :=
-  List.isChain_replicate_of_rel n fun _ => rfl
-
 /-- Reduced words representing the same element of a free group are equal. -/
 theorem IsReduced.eq_of_mk_eq {u v : List (α × Bool)} (hu : IsReduced u) (hv : IsReduced v)
     (h : mk u = mk v) : u = v := by
@@ -67,6 +64,27 @@ theorem IsReduced.invRev {w : List (α × Bool)} (hw : IsReduced w) :
 @[simp]
 theorem isReduced_invRev {w : List (α × Bool)} : IsReduced (invRev w) ↔ IsReduced w :=
   ⟨fun h => by simpa using IsReduced.invRev h, IsReduced.invRev⟩
+
+/-- A word all of whose letters have the same sign is reduced. -/
+theorem isReduced_of_forall_snd_eq :
+    ∀ {w : List (α × Bool)} {e : Bool}, (∀ x ∈ w, x.2 = e) → IsReduced w
+  | [], _, _ => .nil
+  | [_], _, _ => .singleton
+  | a :: b :: w, _, h =>
+    isReduced_cons_cons.2 ⟨fun _ ↦ (h a (by simp)).trans (h b (by simp)).symm,
+      isReduced_of_forall_snd_eq fun x hx ↦ h x (List.mem_cons_of_mem _ hx)⟩
+
+/-- A word made of copies of a single letter is reduced. -/
+@[simp] theorem isReduced_replicate (n : ℕ) (y : α × Bool) : IsReduced (List.replicate n y) :=
+  isReduced_of_forall_snd_eq fun _ hx ↦ by rw [List.eq_of_mem_replicate hx]
+
+/-- A word is a subword of another exactly when their formal inverses are. -/
+@[simp]
+theorem invRev_isInfix_invRev {u v : List (α × Bool)} : invRev u <:+: invRev v ↔ u <:+: v := by
+  suffices h : ∀ {u v : List (α × Bool)}, u <:+: v → invRev u <:+: invRev v from
+    ⟨fun huv ↦ by simpa using h huv, h⟩
+  rintro u v ⟨s, t, rfl⟩
+  exact ⟨invRev t, invRev s, by simp [List.append_assoc]⟩
 
 /-- If `w` and the nonempty word `u` are reduced, the last letter of `w` does not cancel against
 the first letter of `u`, and the last letter of `u` does not cancel against the first letter of

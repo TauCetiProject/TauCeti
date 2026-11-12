@@ -143,9 +143,8 @@ theorem IsMorseSmale.exists_stableSet_level_param {hX : IsAdaptedPseudoGradient 
       ∀ V ∈ 𝓝 (0 : F), ∀ᶠ w in 𝓝 y, w ∈ hX.flow.stableSet r → f w = f y →
         ∃ z ∈ V, ι z = w := by
   have hxr : x ≠ r := by rintro rfl; omega
-  have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   obtain ⟨L, q, -, hyq, hq, hs⟩ :=
-    hX.exists_isSliceChart_stableSet hfd (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
+    hX.exists_isSliceChart_stableSet (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
   set P := WithLp.fstL 2 ℝ ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ) ∘L
     (φ.splitCoordL : E →L[ℝ] _)
   have hPs : Function.Surjective P := fun b ↦ by
@@ -157,7 +156,7 @@ theorem IsMorseSmale.exists_stableSet_level_param {hX : IsAdaptedPseudoGradient 
   have hX0' : X y ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) y) :=
     Submodule.subset_span (hX.mem_mtangentConeAt_of_isInvariant
       (hX.flow.isInvariant_unstableSet x) hy.1)
-  have hdim := hX.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hfd hy.2
+  have hdim := hX.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hy.2
   have hdimφ := φ.finrank_fst_splitCoord_add_manifoldMorseIndex
   obtain ⟨F, ι, ι', hι0, hι, hιs, hd, hinv, hexh⟩ :=
     exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top (by simp) hq hs hyq hy.2 hy.1
