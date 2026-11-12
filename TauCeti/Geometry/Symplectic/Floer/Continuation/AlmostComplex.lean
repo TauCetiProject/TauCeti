@@ -148,16 +148,6 @@ section Smooth
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
 
-/-- The Cayley transform of the continuation homotopy, as a continuous endomorphism, is the
-`β`-weighted combination of the Cayley transforms of the two families. -/
-theorem toContinuousLinearMap_cayley_continuationAlmostComplex (h₀ : ω.Compatible J₀)
-    {J₁ J₂ : ℝ → M → AlmostComplexStructure V} {hJ₁ : ∀ t x, ω.Tames (J₁ t x)}
-    {hJ₂ : ∀ t x, ω.Tames (J₂ t x)} (z : ℝ × ℝ) (x : M) :
-    LinearMap.toContinuousLinearMap (J₀.cayley (continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ z x)) =
-      (1 - smoothTransition z.1) • LinearMap.toContinuousLinearMap (J₀.cayley (J₁ z.2 x)) +
-        smoothTransition z.1 • LinearMap.toContinuousLinearMap (J₀.cayley (J₂ z.2 x)) := by
-  rw [cayley_continuationAlmostComplex, map_add, map_smul, map_smul]
-
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
@@ -176,7 +166,7 @@ theorem contMDiff_continuationAlmostComplex (h₀ : ω.Compatible J₀)
         LinearMap.toContinuousLinearMap
           (continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ p.1 p.2).toLinearMap) := by
   refine h₀.contMDiff_of_contMDiff_cayley (fun _ => tames_continuationAlmostComplex h₀ _ _) ?_
-  simp only [toContinuousLinearMap_cayley_continuationAlmostComplex]
+  simp only [cayley_continuationAlmostComplex, map_add, map_smul]
   -- Each Cayley transform is smooth in `(t, x)`, and the weights are smooth in `s`.
   have hst : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℝ).prod I) n
       (fun p : (ℝ × ℝ) × M => (p.1.2, p.2)) :=

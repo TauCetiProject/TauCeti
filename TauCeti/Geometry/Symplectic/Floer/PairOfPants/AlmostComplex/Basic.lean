@@ -302,6 +302,26 @@ theorem contMDiffAt_endWeightedAlmostComplex (h₀ : ω.Compatible J₀)
   h₀.contMDiffAt_of_contMDiffAt_cayley (fun _ => tames_endWeightedAlmostComplex h₀ _ _)
     (by simpa only [cayley_endWeightedAlmostComplex, map_sum, map_smul] using hCs)
 
+/-- **The Cayley transform of an end family is smooth along the end.** For a family `K t x` of
+`ω`-tame structures which has period one in `t` and is `C^n` on `ℝ × M`, the Cayley transform of
+`K (t_q(w)) x`, read at the angular coordinate `t_q` of the end `q`, is `C^n` in `(w, x)` away from
+the center of the end. -/
+theorem contMDiffAt_cayley_comp_im_endCoord (h₀ : ω.Tames J₀) (q : Puncture)
+    {K : ℝ → M → AlmostComplexStructure V} {n : ℕ∞} (hK : ∀ t x, ω.Tames (K t x))
+    (hKp : Function.Periodic K 1)
+    (hKs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, V →L[ℝ] V) n
+      (fun p : ℝ × M => (K p.1 p.2).toLinearMap.toContinuousLinearMap))
+    {w : ℂ} (hw : w ≠ q.endCenter) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, V →L[ℝ] V) n
+      (fun p : ℂ × M =>
+        LinearMap.toContinuousLinearMap (J₀.cayley (K (q.endCoord p.1).im p.2)))
+      (w, x) := by
+  have hFp : Function.Periodic
+      (fun t y => LinearMap.toContinuousLinearMap (J₀.cayley (K t y))) 1 := fun t => by
+    simp only [hKp t]
+  exact q.contMDiffAt_comp_im_endCoord hFp
+    (h₀.contMDiff_cayley (J := fun p : ℝ × M => K p.1 p.2) (fun p => hK p.1 p.2) hKs) hw x
+
 /-- **The structure is smooth.** For families `J q t x` of `ω`-tame structures which have period
 one in `t` and are `C^n` on `ℝ × M`, the pair-of-pants structure is `C^n` on `S × M`, where
 `S = ℂ ∖ {0, 1}` is the thrice-punctured sphere. -/
@@ -319,12 +339,8 @@ theorem contMDiffAt_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀) {n : �
   -- transforms of the end structures smooth functions of the angular coordinate.
   refine contMDiffAt_finsetSum fun q _ => ?_
   have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
-  have hFp : Function.Periodic
-      (fun t y => LinearMap.toContinuousLinearMap (J₀.cayley (J q t y))) 1 := fun t => by
-    simp only [hJp q t]
-  exact (contMDiffAt_smoothTransition_endCoord q 1 hw x).smul (q.contMDiffAt_comp_im_endCoord hFp
-    (h₀.tames.contMDiff_cayley (J := fun p : ℝ × M => J q p.1 p.2) (fun p => hJ q p.1 p.2)
-      (hJs q)) hw x)
+  exact (contMDiffAt_smoothTransition_endCoord q 1 hw x).smul
+    (contMDiffAt_cayley_comp_im_endCoord h₀.tames q (hJ q) (hJp q) (hJs q) hw x)
 
 end Smooth
 

@@ -287,8 +287,8 @@ theorem contMDiffAt_pairOfPantsContinuationAlmostComplex (h₀ : ω.Compatible J
       (L, (w : ℂ), x) := by
   refine h₀.contMDiffAt_of_contMDiffAt_cayley
     (fun _ => tames_pairOfPantsContinuationAlmostComplex h₀ _ _) ?_
-  simp only [cayley_pairOfPantsContinuationAlmostComplex, map_sum, map_smul,
-    toContinuousLinearMap_cayley_continuationAlmostComplex]
+  simp only [cayley_pairOfPantsContinuationAlmostComplex, cayley_continuationAlmostComplex,
+    map_sum, map_add, map_smul]
   refine contMDiffAt_finsetSum fun q _ => ?_
   have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
   have hf : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
@@ -308,25 +308,15 @@ theorem contMDiffAt_pairOfPantsContinuationAlmostComplex (h₀ : ω.Compatible J
         smoothTransition (q.endSign * (q.endCoord p.2.1).re - p.1 q)) (L, (w : ℂ), x) :=
     smoothTransition.contDiff.contMDiff.contMDiffAt.comp (L, (w : ℂ), x) (hre.sub hL)
   -- Periodicity makes the Cayley transforms of the end families smooth in the angular coordinate.
-  have hend (J : Puncture → ℝ → M → AlmostComplexStructure V) (hJ : ∀ q t x, ω.Tames (J q t x))
-      (hJp : ∀ q, Periodic (J q) 1)
-      (hJs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, V →L[ℝ] V) n
-        (fun p : ℝ × M => (J q p.1 p.2).toLinearMap.toContinuousLinearMap)) :
-      ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, V →L[ℝ] V) n
-        (fun p : (Puncture → ℝ) × ℂ × M =>
-          LinearMap.toContinuousLinearMap (J₀.cayley (J q (q.endCoord p.2.1).im p.2.2)))
-        (L, (w : ℂ), x) := by
-    have hFp : Periodic
-        (fun t y => LinearMap.toContinuousLinearMap (J₀.cayley (J q t y))) 1 := fun t => by
-      simp only [hJp q t]
-    exact ContMDiffAt.comp (L, (w : ℂ), x) (g := fun p : ℂ × M =>
-        LinearMap.toContinuousLinearMap (J₀.cayley (J q (q.endCoord p.1).im p.2)))
-      (q.contMDiffAt_comp_im_endCoord hFp
-        (h₀.tames.contMDiff_cayley (J := fun p : ℝ × M => J q p.1 p.2) (fun p => hJ q p.1 p.2)
-          (hJs q)) hw x) contMDiffAt_snd
+  have hx : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) (𝓘(ℝ, ℂ).prod I) n
+      (fun p : (Puncture → ℝ) × ℂ × M => p.2) (L, (w : ℂ), x) :=
+    contMDiffAt_snd
+  have h₁ := (contMDiffAt_cayley_comp_im_endCoord h₀.tames q (hJ₁ q) (hJ₁p q) (hJ₁s q) hw
+    x).comp (L, (w : ℂ), x) hx
+  have h₂ := (contMDiffAt_cayley_comp_im_endCoord h₀.tames q (hJ₂ q) (hJ₂p q) (hJ₂s q) hw
+    x).comp (L, (w : ℂ), x) hx
   exact (contMDiffAt_smoothTransition_endCoord_comp q 1 hf hw).smul
-    (((ContMDiffAt.sub contMDiffAt_const hσ).smul (hend J₁ hJ₁ hJ₁p hJ₁s)).add
-      (hσ.smul (hend J₂ hJ₂ hJ₂p hJ₂s)))
+    (((ContMDiffAt.sub contMDiffAt_const hσ).smul h₁).add (hσ.smul h₂))
 
 end Smooth
 

@@ -378,17 +378,11 @@ private theorem contMDiffAt_cappedWeight_smul_cayley (h₀ : ω.Compatible J₀)
   have hpar : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ × ℝ) n
       (fun p : ℂ × ((ℝ × ℝ) × M) => p.2.1) (w, (r, L), x) :=
     contMDiffAt_fst.comp _ contMDiffAt_snd
-  have hFp : Function.Periodic
-      (fun t (p : (ℝ × ℝ) × M) => LinearMap.toContinuousLinearMap (J₀.cayley (J q t p.2))) 1 :=
-    fun t => by simp only [hJp q t]
-  have hK : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, V →L[ℝ] V) n
-      (fun p : ℂ × ((ℝ × ℝ) × M) =>
-        LinearMap.toContinuousLinearMap (J₀.cayley (J q (q.endCoord p.1).im p.2.2)))
-      (w, (r, L), x) :=
-    q.contMDiffAt_comp_im_endCoord hFp
-      ((h₀.tames.contMDiff_cayley (J := fun p : ℝ × M => J q p.1 p.2)
-        (fun p => hJ q p.1 p.2) (hJs q)).comp
-        (contMDiff_fst.prodMk (contMDiff_snd.comp contMDiff_snd))) hw ((r, L), x)
+  have hwx : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) (𝓘(ℝ, ℂ).prod I) n
+      (fun p : ℂ × ((ℝ × ℝ) × M) => (p.1, p.2.2)) (w, (r, L), x) :=
+    contMDiffAt_fst.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd)
+  have hK := (contMDiffAt_cayley_comp_im_endCoord h₀.tames q (hJ q) (hJp q) (hJs q) hw x).comp
+    (w, (r, L), x) hwx
   exact (contMDiffAt_cappedWeight (contDiff_fst.contMDiff.contMDiffAt.comp _ hpar)
     (contDiff_snd.contMDiff.contMDiffAt.comp _ hpar) contMDiffAt_fst q hw).smul hK
 
