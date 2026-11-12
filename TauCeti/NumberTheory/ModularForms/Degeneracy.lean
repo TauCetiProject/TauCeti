@@ -69,7 +69,8 @@ the lower level. The `q`-expansion results go up only.
   can be raised back from `N / l` to `N` at the cost of two translations — together with the
   bookkeeping `γ 1 1 = γ' 1 1 - γ' 1 0 * j` that pins the lower-right entry of `γ`, which is what
   a nebentypus of level `N` reads off it.
-* `TauCeti.ModularForm.slash_levelRaise_eq_smul`, `TauCeti.CuspForm.slash_levelRaise_eq_smul`:
+* `ModularForm.coe_levelRaise_slash_eq_smul`,
+  `CuspForm.coe_levelRaise_slash_eq_smul`:
   the eigenvalue transport. Slashing `V_d f` by `γ` produces the same scalar that slashing `f`
   by the conjugate matrix `conjScale d γ` does.
 * `TauCeti.CuspForm.diamondOpCusp_levelRaise`: `V_d` intertwines diamond operators between a
@@ -130,7 +131,7 @@ The old subspace is spanned by the images of the `V_d`.
   the level-lowering block of `conductor_theorem_dichotomy_cuspForm_strong`. Half of that block
   is deliberately not ported: `ModularGroup_T_mem_Gamma1`, `conductor_slash_levelRaise_eq` and
   `smul_levelRaiseFun` already exist here in more general form (`T_zpow_mem_Gamma1`,
-  `ModularForm.slash_levelRaise_eq_smul` with `mem_modFormCharSpace_iff_nebentypus`, and the
+  `ModularForm.coe_levelRaise_slash_eq_smul` with `mem_modFormCharSpace_iff_nebentypus`, and the
   `ℂ`-linearity of `levelRaiseₗ`), and AINTLIB's two `fun_eq_..._inv_smul` lemmas are not
   needed, mathlib's `mdifferentiable_smul` reaching the holomorphy descent directly.
 * `ModularForm.isSupportedOnDvd_qExpansion_levelRaise` and its cusp-form counterpart are adapted
@@ -860,26 +861,28 @@ lemma CuspForm.coe_levelRaise_slash [𝒢'.HasDetOne] [NeZero d]
 eigenvalue `z`, then `V_d f` is an eigenvector of the slash by `γ` with the same eigenvalue.
 Applied to `γ ∈ Γ₀(dM)` this is what transports the nebentypus, in
 `levelRaise_mem_modFormCharSpace`. -/
-lemma ModularForm.slash_levelRaise_eq_smul [𝒢'.HasDetOne] [NeZero d]
+lemma _root_.ModularForm.coe_levelRaise_slash_eq_smul [𝒢'.HasDetOne] [NeZero d]
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k)
     (γ : SL(2, ℤ)) {c : ℤ} (hc : γ 1 0 = d * c) {z : ℂ}
     (hf : ⇑f ∣[k] mapGL ℝ (conjScale d γ c hc) = z • ⇑f) :
-    ⇑(levelRaise d hle f) ∣[k] mapGL ℝ γ = z • ⇑(levelRaise d hle f) := by
-  rw [coe_levelRaise_slash hle f γ hc, hf, _root_.ModularForm.smul_slash, coe_levelRaise,
-    smul_comm]
+    ⇑(ModularForm.levelRaise d hle f) ∣[k] mapGL ℝ γ =
+      z • ⇑(ModularForm.levelRaise d hle f) := by
+  rw [ModularForm.coe_levelRaise_slash hle f γ hc, hf, _root_.ModularForm.smul_slash,
+    ModularForm.coe_levelRaise, smul_comm]
   congr 1
   rw [σ_eq_refl_of_det_pos val_det_scaleGL_pos, ContinuousAlgEquiv.refl_apply]
 
 /-- **Eigenvalue transport (cusp forms).** If `f` is an eigenvector of the slash by
 `conjScale d γ` with eigenvalue `z`, then `V_d f` is an eigenvector of the slash by `γ` with
 the same eigenvalue. -/
-lemma CuspForm.slash_levelRaise_eq_smul [𝒢'.HasDetOne] [NeZero d]
+lemma _root_.CuspForm.coe_levelRaise_slash_eq_smul [𝒢'.HasDetOne] [NeZero d]
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k)
     (γ : SL(2, ℤ)) {c : ℤ} (hc : γ 1 0 = d * c) {z : ℂ}
     (hf : ⇑f ∣[k] mapGL ℝ (conjScale d γ c hc) = z • ⇑f) :
-    ⇑(levelRaise d hle f) ∣[k] mapGL ℝ γ = z • ⇑(levelRaise d hle f) := by
-  rw [coe_levelRaise_slash hle f γ hc, hf, _root_.ModularForm.smul_slash, coe_levelRaise,
-    smul_comm]
+    ⇑(CuspForm.levelRaise d hle f) ∣[k] mapGL ℝ γ =
+      z • ⇑(CuspForm.levelRaise d hle f) := by
+  rw [CuspForm.coe_levelRaise_slash hle f γ hc, hf, _root_.ModularForm.smul_slash,
+    CuspForm.coe_levelRaise, smul_comm]
   congr 1
   rw [σ_eq_refl_of_det_pos val_det_scaleGL_pos, ContinuousAlgEquiv.refl_apply]
 
@@ -895,7 +898,7 @@ private lemma slash_left_cancel (k : ℤ) (A : GL (Fin 2) ℝ) {f g : ℍ → �
     (h : f ∣[k] A = g ∣[k] A) : f = g := by
   simpa [← SlashAction.slash_mul] using congrArg (· ∣[k] A⁻¹) h
 
-/-- **Eigenvalue descent**, the converse of `ModularForm.slash_levelRaise_eq_smul`. If the
+/-- **Eigenvalue descent**, the converse of `ModularForm.coe_levelRaise_slash_eq_smul`. If the
 level-raise of `f` is an eigenvector of the slash by `γ` with eigenvalue `z`, then `f` itself is
 an eigenvector of the slash by the conjugate matrix `conjScale d γ`, with the same eigenvalue.
 
@@ -960,7 +963,7 @@ theorem ModularForm.levelRaise_mem_modFormCharSpace_of_dvd {M d N : ℕ} [NeZero
   intro γ
   obtain ⟨c, hc, hm, heq⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N hdvd γ
   rw [MonoidHom.comp_apply, ← heq]
-  exact slash_levelRaise_eq_smul _ f γ hc (hf ⟨_, hm⟩)
+  exact ModularForm.coe_levelRaise_slash_eq_smul _ f γ hc (hf ⟨_, hm⟩)
 
 /-- **The nebentypus of a level-raise at the exact level.** The `N = d * M` case of
 `TauCeti.ModularForm.levelRaise_mem_modFormCharSpace_of_dvd`. -/
@@ -987,7 +990,7 @@ theorem CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd {M d N : ℕ} [NeZero d
   intro γ
   obtain ⟨c, hc, hm, heq⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N hdvd γ
   rw [MonoidHom.comp_apply, ← heq]
-  exact slash_levelRaise_eq_smul _ f γ hc (hf ⟨_, hm⟩)
+  exact CuspForm.coe_levelRaise_slash_eq_smul _ f γ hc (hf ⟨_, hm⟩)
 
 /-- **The nebentypus of a level-raise at the exact level (cusp forms).** The `N = d * M` case of
 `TauCeti.CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd`. -/
