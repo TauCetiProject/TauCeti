@@ -144,6 +144,18 @@ theorem stablePDFReal_zero_scale (α β m x : ℝ) : stablePDFReal α β 0 m x =
   · exact stablePDFReal_of_invalid
       (by simpa only [mem_Ioc, not_and_or, not_lt, not_le, or_assoc] using hv) 0 m x
 
+/-- At scale zero the stable density vanishes. -/
+@[simp]
+theorem stablePDF_zero_scale (α β m : ℝ) : stablePDF α β 0 m = 0 := by
+  ext x
+  simp [stablePDF_eq_ofReal]
+
+/-- For invalid shapes the stable density vanishes. -/
+theorem stablePDF_of_invalid (h : α ≤ 0 ∨ 2 < α ∨ 1 < |β|) (s : ℝ≥0) (m : ℝ) :
+    stablePDF α β s m = 0 := by
+  ext x
+  simp [stablePDF_eq_ofReal, stablePDFReal_of_invalid h]
+
 /-- The stable density is nonnegative. -/
 theorem stablePDFReal_nonneg (α β : ℝ) (s : ℝ≥0) (m x : ℝ) : 0 ≤ stablePDFReal α β s m x :=
   Measure.charFunDensity_nonneg x
@@ -171,7 +183,7 @@ theorem measurable_stablePDF (α β : ℝ) (s : ℝ≥0) (m : ℝ) : Measurable 
 /-- **The stable density is bounded.** For `0 < α ≤ 2` it is at most `Γ(1/α) / (π α s)`, which is
 `(2π)⁻¹ ∫ |φ|` for valid skewness and positive scale. For invalid skewness and at scale zero the
 density vanishes and the bound holds by the division-by-zero convention. -/
-theorem stablePDFReal_le (hα : α ∈ Ioc 0 2) (s : ℝ≥0) (m x : ℝ) :
+theorem stablePDFReal_le (hα : α ∈ Ioc 0 2) (β : ℝ) (s : ℝ≥0) (m x : ℝ) :
     stablePDFReal α β s m x ≤ Real.Gamma α⁻¹ / (π * α * s) := by
   by_cases hβ : |β| ≤ 1
   · rcases eq_zero_or_pos s with rfl | hs
@@ -188,10 +200,10 @@ theorem stablePDFReal_le (hα : α ∈ Ioc 0 2) (s : ℝ≥0) (m x : ℝ) :
     positivity
 
 /-- For `0 < α ≤ 2`, the norm of the stable density is at most `Γ(1/α) / (π α s)`. -/
-theorem norm_stablePDFReal_le (hα : α ∈ Ioc 0 2) (s : ℝ≥0) (m x : ℝ) :
+theorem norm_stablePDFReal_le (hα : α ∈ Ioc 0 2) (β : ℝ) (s : ℝ≥0) (m x : ℝ) :
     ‖stablePDFReal α β s m x‖ ≤ Real.Gamma α⁻¹ / (π * α * s) := by
   rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β s m x)]
-  exact stablePDFReal_le hα s m x
+  exact stablePDFReal_le hα β s m x
 
 /-! ### The law as a measure with density -/
 
@@ -242,19 +254,23 @@ theorem hasPDF_of_hasLaw_stableMeasure (hs : 0 < s) (hX : HasLaw X (stableMeasur
   hasPDF_of_hasLaw_withDensity (measurable_stablePDF α β s m).aemeasurable
     (by rwa [stableMeasure_eq_withDensity α β hs] at hX)
 
+/-- Every zero-scale stable measure is singular with respect to Lebesgue measure. For invalid
+shape or skewness parameters, this is the singularity of the zero measure. -/
+theorem mutuallySingular_stableMeasure_zero_scale (m : ℝ) :
+    stableMeasure α β 0 m ⟂ₘ volume := by
+  by_cases h : α ∈ Ioc 0 2 ∧ |β| ≤ 1
+  · rw [stableMeasure_zero_scale h.1 h.2]
+    exact mutuallySingular_dirac m volume
+  · rw [stableMeasure_of_not_valid h]
+    exact Measure.MutuallySingular.zero_left
+
 /-- The Radon–Nikodym derivative of a stable law against Lebesgue measure is `stablePDF`. At
 scale zero the law is a Dirac mass or zero, so both sides vanish almost everywhere. -/
-theorem rnDeriv_stableMeasure (α β : ℝ) (m : ℝ) :
+theorem rnDeriv_stableMeasure (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
     (stableMeasure α β s m).rnDeriv volume =ᵐ[volume] stablePDF α β s m := by
   rcases eq_zero_or_pos s with rfl | hs
-  · have h0 : stablePDF α β 0 m = 0 := by ext x; simp [stablePDF]
-    by_cases hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1
-    · rw [stableMeasure_zero_scale hv.1 hv.2, h0]
-      exact Measure.rnDeriv_eq_zero_of_mutuallySingular (mutuallySingular_dirac m volume)
-        Measure.AbsolutelyContinuous.rfl
-    · rw [stableMeasure_of_invalid (by simpa only [mem_Ioc, not_and_or, not_lt, not_le,
-        or_assoc] using hv), h0]
-      exact Measure.rnDeriv_zero _
+  · rw [stablePDF_zero_scale]
+    exact (mutuallySingular_stableMeasure_zero_scale m).rnDeriv_ae_eq_zero
   · rw [stableMeasure_eq_withDensity α β hs]
     exact Measure.rnDeriv_withDensity volume (measurable_stablePDF α β s m)
 
@@ -263,6 +279,6 @@ singular, so both sides vanish almost everywhere. -/
 theorem pdf_eq_stablePDF_of_hasLaw_stableMeasure (hX : HasLaw X (stableMeasure α β s m) P) :
     pdf X P volume =ᵐ[volume] stablePDF α β s m := by
   rw [pdf_def, hX.map_eq]
-  exact rnDeriv_stableMeasure α β m
+  exact rnDeriv_stableMeasure α β s m
 
 end TauCeti.Probability
