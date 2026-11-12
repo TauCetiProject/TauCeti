@@ -37,7 +37,7 @@ lie in a single degree, which gives the sharper
 `TopCat.mem_range_singularCohomologyMap_snd_sphere_of_injective`.
 
 Applied to the coefficient map `r • 𝟙 : M ⟶ M`, which acts on cohomology as multiplication by `r`
-(`ChainComplex.linearYonedaObjMap_smul_id`), the descent says that in degrees `n ≤ 2` a class
+(`ChainComplex.linearYonedaObjMap_smul`), the descent says that in degrees `n ≤ 2` a class
 `φ` with `r • φ` pulled back from `Y` is pulled back from `Y`, as soon as `r` is `M`-regular
 (`TopCat.mem_range_singularCohomologyMap_snd_of_smul_mem`). Hence if `ψ` is pulled back from
 `Y` and the image of `ψ + r • φ` under an injective coefficient map is pulled back from `Y`, so
@@ -159,8 +159,8 @@ theorem mem_range_singularCohomologyMap_snd_of_smul_mem {n : ℕ} (hn : n ≤ 2)
         (M := M) (CartesianMonoidalCategory.snd X Y) n).hom := by
   refine mem_range_singularCohomologyMap_snd_of_le_two X Y hn (r • 𝟙 M) hr φ ?_
   -- the coefficient map `r • 𝟙` acts on cohomology as multiplication by `r`
-  rwa [ChainComplex.linearYonedaObjMap_smul_id, HomologicalComplex.homologyMap_smul,
-    HomologicalComplex.homologyMap_id]
+  rwa [ChainComplex.linearYonedaObjMap_smul, ChainComplex.linearYonedaObjMap_id,
+    HomologicalComplex.homologyMap_smul, HomologicalComplex.homologyMap_id]
 
 /-- **A class is pulled back if a pulled-back class plus a multiple of it is pulled back after a
 change of coefficients**: let `X` be path-connected with projective singular homology
