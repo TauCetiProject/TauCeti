@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.Polyhedron.Extreme
 
-import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Dual.Lemmas
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -31,7 +31,7 @@ from `x` in direction `w` stays in `P` for small positive times exactly when `0 
 constraint `j` active at `x` (`TauCeti.exists_pos_add_smul_mem_polyhedron_iff`). At a point where
 only `j` is active, the directions entering `P` therefore form the half-space `{w | 0 ≤ f j w}`.
 Every constraint `k` of `(g, d)` active there is nonnegative on this half-space, hence a
-nonnegative multiple of `f j` (`TauCeti.exists_nonneg_smul_eq_of_forall_nonneg`), and since the
+nonnegative multiple of `f j` (`Module.Dual.apply_eq_mul_apply_of_nonneg`), and since the
 half-space is proper one of these multiples is positive
 (`TauCeti.exists_pos_smul_eq_of_activeSet_eq_singleton`). Two constraints that are positive
 multiples of each other are active at the same points, so irredundancy of both presentations
@@ -42,8 +42,6 @@ The hypothesis that the functionals are nonzero cannot be dropped: the single co
 
 ## Main results
 
-* `TauCeti.exists_nonneg_smul_eq_of_forall_nonneg`: a functional that is nonnegative on the
-  half-space `{f ≥ 0}` of a nonzero functional `f` is a nonnegative multiple of `f`.
 * `TauCeti.exists_pos_add_smul_mem_polyhedron_iff`: the directions entering a polyhedron at a
   point are those on which the active functionals are nonnegative.
 * `TauCeti.exists_pos_smul_eq_of_activeSet_eq_singleton`: at a point of a facet of an
@@ -66,21 +64,6 @@ namespace TauCeti
 
 variable {𝕜 E ι κ : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup E] [Module 𝕜 E]
-
-/-- A functional that is nonnegative on the half-space `{w | 0 ≤ f w}` of a nonzero functional
-`f` is a nonnegative multiple of `f`. -/
-theorem exists_nonneg_smul_eq_of_forall_nonneg {f g : Module.Dual 𝕜 E} (hf : f ≠ 0)
-    (hfg : ∀ w, 0 ≤ f w → 0 ≤ g w) : ∃ r : 𝕜, 0 ≤ r ∧ g = r • f := by
-  obtain ⟨v, hv⟩ : ∃ v, f v = 1 := by
-    obtain ⟨v, hv⟩ := DFunLike.ne_iff.1 hf
-    exact ⟨(f v)⁻¹ • v, by simp [inv_mul_cancel₀ (by simpa using hv)]⟩
-  -- `g` is nonnegative on the subspace `ker f`, so it vanishes there and is a multiple of `f`.
-  have hker : LinearMap.ker f ≤ LinearMap.ker g := fun w hw ↦ by
-    rw [LinearMap.mem_ker] at hw ⊢
-    exact le_antisymm (by simpa using hfg (-w) (by simp [hw])) (hfg w hw.ge)
-  obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.1 <| by
-    simpa using mem_span_of_iInf_ker_le_ker (L := fun _ : Unit ↦ f) (by simpa using hker)
-  exact ⟨r, by simpa [hv] using hfg v (by simp [hv]), rfl⟩
 
 variable {f : ι → Module.Dual 𝕜 E} {c : ι → 𝕜} {x w : E} {j : ι}
 
@@ -117,13 +100,14 @@ theorem exists_pos_smul_eq_of_activeSet_eq_singleton [Finite ι] [Finite κ]
     rw [← exists_pos_add_smul_mem_polyhedron_iff hx', ← hP,
       exists_pos_add_smul_mem_polyhedron_iff hx, hxj]
     simp
-  -- So each constraint of `(g, d)` active at `x` is a nonnegative multiple of `f j`.
-  have hmul (k : κ) (hk : k ∈ activeSet g d x) : ∃ r : 𝕜, 0 ≤ r ∧ g k = r • f j :=
-    exists_nonneg_smul_eq_of_forall_nonneg hfj fun w hw ↦ (hdir w).2 hw k hk
-  -- A direction leaving the half-space `0 ≤ f j` is excluded by one of them.
   obtain ⟨v, hv⟩ : ∃ v, f j v = -1 := by
     obtain ⟨v, hv⟩ := DFunLike.ne_iff.1 hfj
     exact ⟨-(f j v)⁻¹ • v, by simp [inv_mul_cancel₀ (by simpa using hv)]⟩
+  -- So each constraint of `(g, d)` active at `x` is a nonnegative multiple of `f j`.
+  have hmul (k : κ) (hk : k ∈ activeSet g d x) : ∃ r : 𝕜, 0 ≤ r ∧ g k = r • f j :=
+    ⟨g k (-v), (hdir (-v)).2 (by simp [hv]) k hk, LinearMap.ext fun w ↦
+      (f j).apply_eq_mul_apply_of_nonneg (g k) (by simp [hv]) (fun w hw ↦ (hdir w).2 hw k hk) w⟩
+  -- The direction `v` leaves the half-space `0 ≤ f j`, so one of them excludes it.
   obtain ⟨k, hk, hkv⟩ : ∃ k ∈ activeSet g d x, g k v < 0 := by
     by_contra! h
     have := (hdir v).1 h
