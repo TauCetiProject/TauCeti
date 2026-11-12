@@ -10,6 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import TauCeti.Analysis.Complex.RealChart
+public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.SpecialFunctions.Log.DivLeIff
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -52,6 +54,14 @@ taken. In the real coordinates `ℝ × ℝ ≃ ℂ` the longitudinal coordinates
 increase with `R` and exhaust `S` (`TauCeti.ThricePuncturedSphere.truncation_mono`,
 `TauCeti.ThricePuncturedSphere.iUnion_truncation`), so integrals over `S` are their limits as
 `R → ∞`.
+
+The end retraction `Puncture.endRetraction r a` is a smooth map of `ℂ` off the center of the end
+`r` (`Puncture.contDiffAt_endRetraction`) which is the identity up to the signed height `a` of the
+end (`Puncture.endRetraction_eventuallyEq`) and pushes the rest of the end into the heights
+between `a` and `a + 1` (`Puncture.signedHeight_endRetraction_le`), keeping the angular coordinate
+and the thrice-punctured sphere (`Puncture.endRetraction_ne_zero_and_ne_one`). Composing with it
+replaces a map on `S` deep in an end by a map that is defined on all of `S` and agrees with the
+original near `S_a`, where cutting off by a function is not available, as for maps into a manifold.
 
 These coordinates are what is needed to install data prescribed on the ends, such as the
 Hamiltonian terms `H(t) dt` of Floer perturbation data, as smooth data on the punctured sphere.
@@ -770,3 +780,149 @@ theorem iUnion_truncation : ⋃ R, truncation R = {w : ℂ | w ≠ 0 ∧ w ≠ 1
     exact ⟨R, h₀, h₁, fun q => hR ⟨q, rfl⟩⟩
 
 end TauCeti.ThricePuncturedSphere
+
+namespace TauCeti.ThricePuncturedSphere.Puncture
+
+/-! ### Pushing the deep part of an end inwards -/
+
+open TauCeti.Complex (realChart realChart_apply)
+
+/-- The amount `β(x) (1 - x)` by which the end retraction raises the signed height `a + x` of a
+point beyond the height `a`. -/
+private def pushIn (x : ℝ) : ℝ :=
+  smoothTransition x * (1 - x)
+
+private theorem pushIn_of_nonpos {x : ℝ} (hx : x ≤ 0) : pushIn x = 0 := by
+  rw [pushIn, smoothTransition.zero_of_nonpos hx, zero_mul]
+
+/-- After the push, the signed height `a + x` becomes at most `a + 1`. -/
+private theorem add_pushIn_le_one (x : ℝ) : x + pushIn x ≤ 1 := by
+  rcases le_or_gt x 1 with hx | hx
+  · have := smoothTransition.le_one x
+    have : smoothTransition x * (1 - x) ≤ 1 - x := mul_le_of_le_one_left (by linarith) this
+    rw [pushIn]
+    linarith
+  · rw [pushIn, smoothTransition.one_of_one_le hx.le]
+    linarith
+
+/-- A point beyond the height `a` stays beyond it. -/
+private theorem pos_add_pushIn {x : ℝ} (hx : 0 < x) : 0 < x + pushIn x := by
+  rcases le_or_gt x 1 with hx₁ | hx₁
+  · have : 0 ≤ pushIn x := mul_nonneg (smoothTransition.nonneg x) (by linarith)
+    linarith
+  · rw [pushIn, smoothTransition.one_of_one_le hx₁.le]
+    linarith
+
+private theorem contDiff_pushIn {n : ℕ∞} : ContDiff ℝ n pushIn :=
+  smoothTransition.contDiff.mul (contDiff_const.sub contDiff_id)
+
+/-- **The end retraction.** The map `w ↦ c_r + (w - c_r) exp (-2π ε_r β(x) (1 - x))`, with
+`x = ε_r s_r(w) - a` the signed height of `w` on the end `r` above `a`. It is the identity up to
+the height `a`, and pushes the rest of the end into the heights between `a` and `a + 1`
+(`signedHeight_endRetraction_le`), preserving the angular coordinate. -/
+def endRetraction (r : Puncture) (a : ℝ) (w : ℂ) : ℂ :=
+  r.endCenter + (w - r.endCenter) *
+    (Real.exp (-(2 * π * r.endSign * pushIn (r.endSign * (r.endCoord w).re - a))) : ℂ)
+
+theorem endRetraction_of_le {r : Puncture} {a : ℝ} {w : ℂ}
+    (hw : r.endSign * (r.endCoord w).re ≤ a) : endRetraction r a w = w := by
+  rw [endRetraction, pushIn_of_nonpos (by linarith)]
+  simp
+
+/-- The end retraction adds `ε_r β(x) (1 - x)` to the longitudinal coordinate. -/
+private theorem re_endCoord_endRetraction (r : Puncture) (a : ℝ) {w : ℂ}
+    (hw : w ≠ r.endCenter) :
+    (r.endCoord (endRetraction r a w)).re =
+      (r.endCoord w).re + r.endSign * pushIn (r.endSign * (r.endCoord w).re - a) := by
+  have hn : 0 < ‖(w - r.endCenter) / r.endScale‖ :=
+    norm_pos_iff.2 (div_ne_zero (sub_ne_zero.2 hw) r.endScale_ne_zero)
+  have heq : (endRetraction r a w - r.endCenter) / r.endScale =
+      (w - r.endCenter) / r.endScale *
+        (Real.exp (-(2 * π * r.endSign * pushIn (r.endSign * (r.endCoord w).re - a))) : ℂ) := by
+    rw [endRetraction, add_sub_cancel_left]
+    ring
+  generalize pushIn (r.endSign * (r.endCoord w).re - a) = p at heq ⊢
+  rw [re_endCoord, re_endCoord, heq, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos (Real.exp_pos _), Real.log_mul hn.ne' (Real.exp_pos _).ne', Real.log_exp]
+  field_simp
+  ring
+
+/-- After the end retraction, the signed height on the end `r` is at most `a + 1`. -/
+theorem signedHeight_endRetraction_le (r : Puncture) (a : ℝ) {w : ℂ}
+    (hw : w ≠ r.endCenter) :
+    r.endSign * (r.endCoord (endRetraction r a w)).re ≤ a + 1 := by
+  have hε : r.endSign * r.endSign = 1 := by
+    rcases endSign_eq_one_or_eq_neg_one r with h | h <;> rw [h] <;> norm_num
+  have h := add_pushIn_le_one (r.endSign * (r.endCoord w).re - a)
+  rw [re_endCoord_endRetraction r a hw, mul_add, ← mul_assoc, hε, one_mul]
+  linarith
+
+/-- A point beyond the height `a` of the end `r` is pushed to a point beyond the height `a`. -/
+theorem lt_signedHeight_endRetraction (r : Puncture) {a : ℝ} {w : ℂ}
+    (hw : w ≠ r.endCenter) (h : a < r.endSign * (r.endCoord w).re) :
+    a < r.endSign * (r.endCoord (endRetraction r a w)).re := by
+  have hε : r.endSign * r.endSign = 1 := by
+    rcases endSign_eq_one_or_eq_neg_one r with h | h <;> rw [h] <;> norm_num
+  have h' := pos_add_pushIn (sub_pos.2 h)
+  rw [re_endCoord_endRetraction r a hw, mul_add, ← mul_assoc, hε, one_mul]
+  linarith
+
+/-- The end retraction keeps the thrice-punctured sphere, for `a ≥ 0`. -/
+theorem endRetraction_ne_zero_and_ne_one (r : Puncture) {a : ℝ} (ha : 0 ≤ a) {w : ℂ}
+    (hw : w ≠ 0 ∧ w ≠ 1) : endRetraction r a w ≠ 0 ∧ endRetraction r a w ≠ 1 := by
+  rcases le_or_gt (r.endSign * (r.endCoord w).re) a with h | h
+  · rwa [endRetraction_of_le h]
+  · exact r.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos
+      (ha.trans_lt (lt_signedHeight_endRetraction r (ne_endCenter hw r) h))
+
+/-- The end retraction is smooth away from the center of its end. -/
+theorem contDiffAt_endRetraction (r : Puncture) (a : ℝ) {w : ℂ} (hw : w ≠ r.endCenter)
+    {n : ℕ∞} : ContDiffAt ℝ n (endRetraction r a) w := by
+  have hh : ContDiffAt ℝ n (fun w ↦ pushIn (r.endSign * (r.endCoord w).re - a)) w :=
+    contDiff_pushIn.contDiffAt.comp w
+      ((contDiffAt_const.mul (r.contDiffAt_re_endCoord hw)).sub contDiffAt_const)
+  have he : ContDiffAt ℝ n (fun w : ℂ ↦
+      ((Real.exp (-(2 * π * r.endSign * pushIn (r.endSign * (r.endCoord w).re - a))) : ℝ) : ℂ))
+      w :=
+    Complex.ofRealCLM.contDiff.contDiffAt.comp w
+      (Real.contDiff_exp.contDiffAt.comp w (contDiffAt_const.mul hh).neg)
+  exact contDiffAt_const.add ((contDiffAt_id.sub contDiffAt_const).mul he)
+
+/-- Near a point below the height `a`, the end retraction is the identity. -/
+theorem endRetraction_eventuallyEq {r : Puncture} {a : ℝ} {w : ℂ} (hw : w ≠ r.endCenter)
+    (h : r.endSign * (r.endCoord w).re < a) : endRetraction r a =ᶠ[𝓝 w] id := by
+  have hc : ContinuousAt (fun w ↦ r.endSign * (r.endCoord w).re) w :=
+    continuousAt_const.mul (r.contDiffAt_re_endCoord hw (n := 0)).continuousAt
+  filter_upwards [hc.eventually (gt_mem_nhds h)] with w' hw'
+  exact endRetraction_of_le hw'.le
+
+/-- The end retraction in real coordinates is smooth away from the center of its end. -/
+theorem contDiffAt_realChart_endRetraction (r : Puncture) (a : ℝ) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter) {n : ℕ∞} :
+    ContDiffAt ℝ n (realChart (endRetraction r a)) z := by
+  have h : realChart (endRetraction r a) =
+      Complex.equivRealProdCLM ∘ endRetraction r a ∘ Complex.equivRealProdCLM.symm :=
+    funext (realChart_apply _)
+  rw [h]
+  exact Complex.equivRealProdCLM.contDiff.contDiffAt.comp z
+    ((contDiffAt_endRetraction r a hz).comp z Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
+
+/-- Near a point below the height `a`, the end retraction in real coordinates is the identity. -/
+theorem realChart_endRetraction_eventuallyEq {r : Puncture} {a : ℝ} {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter)
+    (h : r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re < a) :
+    realChart (endRetraction r a) =ᶠ[𝓝 z] id := by
+  filter_upwards [(Complex.equivRealProdCLM.symm.continuous.tendsto z).eventually
+    (endRetraction_eventuallyEq hz h)] with z' hz'
+  rw [realChart_apply, hz', id, id, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The end retraction fixes the boundary circles `±s = R` of the truncation `S_R`, for
+`a ≥ R > 0`. -/
+theorem endRetraction_cylindricalEndLift (r r' : Puncture) {a R : ℝ} (hR : 0 < R)
+    (ha : R ≤ a) (t : ℝ) :
+    endRetraction r' a (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)) =
+      r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I) :=
+  endRetraction_of_le ((mem_truncation.1
+    (cylindricalEndLift_mem_truncation r hR t)).2.2 r' |>.trans ha)
+
+end TauCeti.ThricePuncturedSphere.Puncture

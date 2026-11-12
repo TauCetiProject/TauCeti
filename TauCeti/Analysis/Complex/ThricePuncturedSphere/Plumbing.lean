@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import TauCeti.Analysis.Complex.RealChart
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
 
@@ -61,7 +62,12 @@ maps on the plumbed sphere is computed.
   exactly in the image of the neck `-L < Re z < 0`.
 * `TauCeti.ThricePuncturedSphere.Puncture.aedisjoint_truncation_image`: in real coordinates, the
   truncation `S_{L/2}` of `S` and its image under the plumbing map meet only in the null circle
-  `s_q = L/2`.
+  `s_q = L/2`, so integrals over their union split
+  (`TauCeti.ThricePuncturedSphere.Puncture.setIntegral_truncation_union_image`).
+* `TauCeti.ThricePuncturedSphere.Puncture.endRetraction_mem_plumbedSphere`,
+  `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_endRetraction_mem_plumbedSphere`: the end
+  retractions of the end `q` of `S` and of the end at `∞` of `S'` at the height `L/2 + 1/2`, the
+  latter followed by the plumbing map, carry `S` into the plumbed four-punctured sphere.
 
 * `TauCeti.ThricePuncturedSphere.Puncture.contDiff_plumbingMap`,
   `TauCeti.ThricePuncturedSphere.Puncture.contDiff_realChart_plumbingMap`: the plumbing map is
@@ -489,6 +495,29 @@ theorem plumbingMap_mem_plumbedSphere_of_mem_truncation (hq : q ≠ inf) (hL : 4
   rw [endSign_eq_one hq, one_mul]
   linarith [le_re_endCoord_plumbingMap (q := q) hw]
 
+/-- The receiving retraction keeps the thrice-punctured sphere away from the new puncture
+`ψ(1)`. -/
+theorem endRetraction_mem_plumbedSphere (hq : q ≠ inf) (hL : 4 < L) {w : ℂ}
+    (hw : w ≠ 0 ∧ w ≠ 1) :
+    (endRetraction q (L / 2 + 1 / 2) w ≠ 0 ∧ endRetraction q (L / 2 + 1 / 2) w ≠ 1) ∧
+      endRetraction q (L / 2 + 1 / 2) w ≠ q.plumbingMap L 1 := by
+  refine ⟨endRetraction_ne_zero_and_ne_one q (by linarith) hw, fun h ↦ ?_⟩
+  have h₁ := signedHeight_endRetraction_le q (L / 2 + 1 / 2) (ne_endCenter hw q)
+  rw [h, endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L one_ne_zero] at h₁
+  linarith [re_endCoord_inf_one_pos]
+
+/-- The inserted retraction followed by the plumbing map lands in the plumbed four-punctured
+sphere. -/
+theorem plumbingMap_endRetraction_mem_plumbedSphere (hq : q ≠ inf) (hL : 4 < L) {w : ℂ}
+    (hw : w ≠ 0 ∧ w ≠ 1) :
+    (q.plumbingMap L (endRetraction inf (L / 2 + 1 / 2) w) ≠ 0 ∧
+        q.plumbingMap L (endRetraction inf (L / 2 + 1 / 2) w) ≠ 1) ∧
+      q.plumbingMap L (endRetraction inf (L / 2 + 1 / 2) w) ≠ q.plumbingMap L 1 := by
+  have h₁ := signedHeight_endRetraction_le inf (L / 2 + 1 / 2) (ne_endCenter hw inf)
+  rw [endSign_inf, neg_one_mul] at h₁
+  exact mapsTo_plumbingMap hq (by linarith)
+    ⟨endRetraction_ne_zero_and_ne_one inf (by linarith) hw, by linarith⟩
+
 /-- The receiving and inserted truncations meet only on the circle `s_q = L/2`, a null set. -/
 theorem aedisjoint_truncation_image (hq : q ≠ inf) :
     AEDisjoint volume (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2))
@@ -521,6 +550,25 @@ theorem aedisjoint_truncation_image (hq : q ≠ inf) :
   rw [hsymm, (Complex.volume_preserving_equiv_real_prod.symm _).measure_preimage
     Metric.isClosed_sphere.measurableSet.nullMeasurableSet]
   exact Measure.addHaar_sphere volume _ _
+
+/-- A function integrable over the receiving truncation `S_{L/2}` and over the image under the
+plumbing map of the inserted one integrates over the plumbed truncation `S_{L/2} ∪ ψ(S_{L/2})`,
+in real coordinates, as the sum of its integrals over the two pieces. -/
+theorem setIntegral_truncation_union_image {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (hq : q ≠ inf) {f : ℝ × ℝ → F}
+    (h₁ : IntegrableOn f (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)))
+    (h₂ : IntegrableOn f
+      (realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)))) :
+    ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), f z =
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2), f z) +
+        ∫ z in realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹'
+          truncation (L / 2)), f z := by
+  rw [preimage_union, preimage_image_plumbingMap]
+  exact setIntegral_union₀ (aedisjoint_truncation_image hq)
+    ((Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+      (isCompact_truncation _)).image (contDiff_realChart_plumbingMap q L (n := 0)).continuous
+        |>.isClosed.measurableSet.nullMeasurableSet) h₁ h₂
 
 /-- The plumbing map carries the circle `s = -L/2` of the end at `∞` of the inserted pair of pants
 to the circle `s = L/2` of the end `q` of the receiving one. -/

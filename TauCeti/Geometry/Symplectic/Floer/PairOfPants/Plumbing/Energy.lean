@@ -446,9 +446,7 @@ private theorem setIntegral_plumbedTruncation (hq : q ≠ inf) (hL : 4 < L) {f :
     rintro _ ⟨w, hw, rfl⟩
     rw [mem_ofPred_eq, realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
     exact plumbingMap_mem_plumbedSphere_of_mem_truncation hq hL hw
-  rw [preimage_union, preimage_image_plumbingMap]
-  exact setIntegral_union₀ (aedisjoint_truncation_image hq)
-    hA.isClosed.measurableSet.nullMeasurableSet
+  exact setIntegral_truncation_union_image hq
     ((hf.mono fun z hz ↦ mem_plumbedSphere_of_mem_truncation hq hL hz).integrableOn_compact hT)
     ((hf.mono hAP).integrableOn_compact hA)
 

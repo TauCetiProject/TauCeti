@@ -78,8 +78,9 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SmoothTwoForm.hamiltonianCurvature_continuation`: the curvature is local in the domain, and a
   continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`.
-* `SmoothTwoForm.floerEnergyDensity_congr_of_eventuallyEq`: the energy density at a point only
-  depends on the germ of the map there.
+* `SmoothTwoForm.floerEnergyDensity_congr_of_eventuallyEq`,
+  `SmoothTwoForm.eval₂_mfderiv_congr_of_eventuallyEq`: the energy density and the symplectic area
+  density at a point only depend on the germ of the map there.
 * `SmoothTwoForm.hamiltonianCurvature_eq_zero_of_cylindrical`: the curvature vanishes along a line
   near which the perturbation is cylindrical; the vector-space case is
   `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`.
@@ -262,6 +263,16 @@ theorem floerEnergyDensity_congr_of_eventuallyEq (ω : SmoothTwoForm I M) (Ks Kt
   -- `u z = u' z`, which is the identity.
   rfl
 
+/-- The symplectic area density `ω(∂_s u, ∂_t u)` at `z` only depends on the germ of the map at
+`z`. -/
+theorem eval₂_mfderiv_congr_of_eventuallyEq (ω : SmoothTwoForm I M) {u u' : ℝ × ℝ → M}
+    {z : ℝ × ℝ} (h : u =ᶠ[𝓝 z] u') :
+    SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) =
+      SmoothBundleForm.eval₂ ω (u' z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u' z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u' z stdComplexLineImag) := by
+  rw [← floerEnergyDensity_zero, ← floerEnergyDensity_zero,
+    ω.floerEnergyDensity_congr_of_eventuallyEq _ _ h]
 
 /-- **Convergence of perturbed derivatives.** Let the derivatives of maps `u i` at points
 `z i → z₀` converge in the tangent bundle, `du_i(z i) e → L e` over `x₀`, and let the Hamiltonian

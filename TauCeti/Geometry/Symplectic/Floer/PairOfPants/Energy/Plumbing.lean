@@ -44,7 +44,8 @@ The proof applies the energy identity of the truncated pair of pants on a manifo
 each of the two pieces. That identity needs a map which is `C¹` on all of `S = ℂ ∖ {0, 1}`, while
 `u` is not defined at the puncture `ψ(1)` deep in the end `q` of `S`, and `u ∘ ψ` is not defined
 deep in the end at `∞` of `S'`. A map into a manifold cannot be cut off by a function, so instead
-it is composed with an *end retraction* of the domain: a smooth map of `ℂ` off the center of the
+it is composed with an *end retraction* of the domain
+(`TauCeti.ThricePuncturedSphere.Puncture.endRetraction`): a smooth map of `ℂ` off the center of the
 end, which is the identity up to the height `a = L/2 + 1/2` of the end and pushes the rest of the
 end into the heights between `a` and `a + 1`, keeping the angular coordinate. The receiving piece
 `u ∘ ρ_q` and the inserted piece `u ∘ ψ ∘ ρ_∞` are `C¹` on `S`, and agree with `u` and `u ∘ ψ` near
@@ -78,174 +79,11 @@ namespace TauCeti.SmoothTwoForm
 
 open Floer
 
-/-! ### Pushing the deep part of an end inwards -/
-
-/-- The amount `β(x) (1 - x)` by which the end retraction raises the signed height `a + x` of a
-point beyond the height `a`. -/
-private def pushIn (x : ℝ) : ℝ :=
-  smoothTransition x * (1 - x)
-
-private theorem pushIn_of_nonpos {x : ℝ} (hx : x ≤ 0) : pushIn x = 0 := by
-  rw [pushIn, smoothTransition.zero_of_nonpos hx, zero_mul]
-
-/-- After the push, the signed height `a + x` becomes at most `a + 1`. -/
-private theorem add_pushIn_le_one (x : ℝ) : x + pushIn x ≤ 1 := by
-  rcases le_or_gt x 1 with hx | hx
-  · have := smoothTransition.le_one x
-    have : smoothTransition x * (1 - x) ≤ 1 - x := mul_le_of_le_one_left (by linarith) this
-    rw [pushIn]
-    linarith
-  · rw [pushIn, smoothTransition.one_of_one_le hx.le]
-    linarith
-
-/-- A point beyond the height `a` stays beyond it. -/
-private theorem pos_add_pushIn {x : ℝ} (hx : 0 < x) : 0 < x + pushIn x := by
-  rcases le_or_gt x 1 with hx₁ | hx₁
-  · have : 0 ≤ pushIn x := mul_nonneg (smoothTransition.nonneg x) (by linarith)
-    linarith
-  · rw [pushIn, smoothTransition.one_of_one_le hx₁.le]
-    linarith
-
-private theorem contDiff_pushIn {n : ℕ∞} : ContDiff ℝ n pushIn :=
-  smoothTransition.contDiff.mul (contDiff_const.sub contDiff_id)
-
-/-- **The end retraction.** The map `w ↦ c_r + (w - c_r) exp (-2π ε_r β(x) (1 - x))`, with
-`x = ε_r s_r(w) - a` the signed height of `w` on the end `r` above `a`. It is the identity up to
-the height `a`, and pushes the rest of the end into the heights between `a` and `a + 1`
-(`signedHeight_endRetraction_le`), preserving the angular coordinate. -/
-private def endRetraction (r : Puncture) (a : ℝ) (w : ℂ) : ℂ :=
-  r.endCenter + (w - r.endCenter) *
-    (Real.exp (-(2 * π * r.endSign * pushIn (r.endSign * (r.endCoord w).re - a))) : ℂ)
-
-private theorem endRetraction_of_le {r : Puncture} {a : ℝ} {w : ℂ}
-    (hw : r.endSign * (r.endCoord w).re ≤ a) : endRetraction r a w = w := by
-  rw [endRetraction, pushIn_of_nonpos (by linarith)]
-  simp
-
-/-- The end retraction adds `ε_r β(x) (1 - x)` to the longitudinal coordinate. -/
-private theorem re_endCoord_endRetraction (r : Puncture) (a : ℝ) {w : ℂ}
-    (hw : w ≠ r.endCenter) :
-    (r.endCoord (endRetraction r a w)).re =
-      (r.endCoord w).re + r.endSign * pushIn (r.endSign * (r.endCoord w).re - a) := by
-  have hn : 0 < ‖(w - r.endCenter) / r.endScale‖ :=
-    norm_pos_iff.2 (div_ne_zero (sub_ne_zero.2 hw) r.endScale_ne_zero)
-  have heq : (endRetraction r a w - r.endCenter) / r.endScale =
-      (w - r.endCenter) / r.endScale *
-        (Real.exp (-(2 * π * r.endSign * pushIn (r.endSign * (r.endCoord w).re - a))) : ℂ) := by
-    rw [endRetraction, add_sub_cancel_left]
-    ring
-  generalize pushIn (r.endSign * (r.endCoord w).re - a) = p at heq ⊢
-  rw [re_endCoord, re_endCoord, heq, norm_mul, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_pos (Real.exp_pos _), Real.log_mul hn.ne' (Real.exp_pos _).ne', Real.log_exp]
-  field_simp
-  ring
-
-/-- After the end retraction, the signed height on the end `r` is at most `a + 1`. -/
-private theorem signedHeight_endRetraction_le (r : Puncture) (a : ℝ) {w : ℂ}
-    (hw : w ≠ r.endCenter) :
-    r.endSign * (r.endCoord (endRetraction r a w)).re ≤ a + 1 := by
-  have hε : r.endSign * r.endSign = 1 := by
-    rcases endSign_eq_one_or_eq_neg_one r with h | h <;> rw [h] <;> norm_num
-  have h := add_pushIn_le_one (r.endSign * (r.endCoord w).re - a)
-  rw [re_endCoord_endRetraction r a hw, mul_add, ← mul_assoc, hε, one_mul]
-  linarith
-
-/-- A point beyond the height `a` of the end `r` is pushed to a point beyond the height `a`. -/
-private theorem lt_signedHeight_endRetraction (r : Puncture) {a : ℝ} {w : ℂ}
-    (hw : w ≠ r.endCenter) (h : a < r.endSign * (r.endCoord w).re) :
-    a < r.endSign * (r.endCoord (endRetraction r a w)).re := by
-  have hε : r.endSign * r.endSign = 1 := by
-    rcases endSign_eq_one_or_eq_neg_one r with h | h <;> rw [h] <;> norm_num
-  have h' := pos_add_pushIn (sub_pos.2 h)
-  rw [re_endCoord_endRetraction r a hw, mul_add, ← mul_assoc, hε, one_mul]
-  linarith
-
-/-- The end retraction keeps the thrice-punctured sphere, for `a ≥ 0`. -/
-private theorem endRetraction_ne_zero_and_ne_one (r : Puncture) {a : ℝ} (ha : 0 ≤ a) {w : ℂ}
-    (hw : w ≠ 0 ∧ w ≠ 1) : endRetraction r a w ≠ 0 ∧ endRetraction r a w ≠ 1 := by
-  rcases le_or_gt (r.endSign * (r.endCoord w).re) a with h | h
-  · rwa [endRetraction_of_le h]
-  · exact r.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos
-      (ha.trans_lt (lt_signedHeight_endRetraction r (ne_endCenter hw r) h))
-
-/-- The end retraction is smooth away from the center of its end. -/
-private theorem contDiffAt_endRetraction (r : Puncture) (a : ℝ) {w : ℂ} (hw : w ≠ r.endCenter)
-    {n : ℕ∞} : ContDiffAt ℝ n (endRetraction r a) w := by
-  have hh : ContDiffAt ℝ n (fun w ↦ pushIn (r.endSign * (r.endCoord w).re - a)) w :=
-    contDiff_pushIn.contDiffAt.comp w
-      ((contDiffAt_const.mul (r.contDiffAt_re_endCoord hw)).sub contDiffAt_const)
-  have he : ContDiffAt ℝ n (fun w : ℂ ↦
-      ((Real.exp (-(2 * π * r.endSign * pushIn (r.endSign * (r.endCoord w).re - a))) : ℝ) : ℂ))
-      w :=
-    Complex.ofRealCLM.contDiff.contDiffAt.comp w
-      (Real.contDiff_exp.contDiffAt.comp w (contDiffAt_const.mul hh).neg)
-  exact contDiffAt_const.add ((contDiffAt_id.sub contDiffAt_const).mul he)
-
-/-- Near a point below the height `a`, the end retraction is the identity. -/
-private theorem endRetraction_eventuallyEq {r : Puncture} {a : ℝ} {w : ℂ} (hw : w ≠ r.endCenter)
-    (h : r.endSign * (r.endCoord w).re < a) : endRetraction r a =ᶠ[𝓝 w] id := by
-  have hc : ContinuousAt (fun w ↦ r.endSign * (r.endCoord w).re) w :=
-    continuousAt_const.mul (r.contDiffAt_re_endCoord hw (n := 0)).continuousAt
-  filter_upwards [hc.eventually (gt_mem_nhds h)] with w' hw'
-  exact endRetraction_of_le hw'.le
-
 /-! ### The receiving and inserted pieces of a map -/
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
-
-/-- The end retraction in real coordinates is smooth away from the center of its end. -/
-private theorem contDiffAt_realChart_endRetraction (r : Puncture) (a : ℝ) {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter) {n : ℕ∞} :
-    ContDiffAt ℝ n (realChart (endRetraction r a)) z := by
-  have h : realChart (endRetraction r a) =
-      Complex.equivRealProdCLM ∘ endRetraction r a ∘ Complex.equivRealProdCLM.symm :=
-    funext (realChart_apply _)
-  rw [h]
-  exact Complex.equivRealProdCLM.contDiff.contDiffAt.comp z
-    ((contDiffAt_endRetraction r a hz).comp z Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
-
-/-- Near a point below the height `a`, the end retraction in real coordinates is the identity. -/
-private theorem realChart_endRetraction_eventuallyEq {r : Puncture} {a : ℝ} {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter)
-    (h : r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re < a) :
-    realChart (endRetraction r a) =ᶠ[𝓝 z] id := by
-  filter_upwards [(Complex.equivRealProdCLM.symm.continuous.tendsto z).eventually
-    (endRetraction_eventuallyEq hz h)] with z' hz'
-  rw [realChart_apply, hz', id, id, ContinuousLinearEquiv.apply_symm_apply]
-
-/-- The end retraction fixes the boundary circles `±s = L/2` of the truncation `S_{L/2}`, for
-`a ≥ L/2`. -/
-private theorem endRetraction_cylindricalEndLift (r r' : Puncture) {a : ℝ} (hL : 0 < L)
-    (ha : L / 2 ≤ a) (t : ℝ) :
-    endRetraction r' a (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I)) =
-      r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I) :=
-  endRetraction_of_le ((mem_truncation.1
-    (cylindricalEndLift_mem_truncation r (R := L / 2) (by linarith) t)).2.2 r' |>.trans ha)
-
-/-- The receiving retraction keeps the thrice-punctured sphere away from the new puncture
-`ψ(1)`. -/
-private theorem endRetraction_mem_plumbedSphere (hq : q ≠ inf) (hL : 4 < L) {w : ℂ}
-    (hw : w ≠ 0 ∧ w ≠ 1) :
-    (endRetraction q (L / 2 + 1 / 2) w ≠ 0 ∧ endRetraction q (L / 2 + 1 / 2) w ≠ 1) ∧
-      endRetraction q (L / 2 + 1 / 2) w ≠ q.plumbingMap L 1 := by
-  refine ⟨endRetraction_ne_zero_and_ne_one q (by linarith) hw, fun h ↦ ?_⟩
-  have h₁ := signedHeight_endRetraction_le q (L / 2 + 1 / 2) (ne_endCenter hw q)
-  rw [h, endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L one_ne_zero] at h₁
-  linarith [re_endCoord_inf_one_pos]
-
-/-- The inserted retraction followed by the plumbing map lands in the plumbed four-punctured
-sphere. -/
-private theorem plumbingMap_endRetraction_mem_plumbedSphere (hq : q ≠ inf) (hL : 4 < L) {w : ℂ}
-    (hw : w ≠ 0 ∧ w ≠ 1) :
-    (q.plumbingMap L (endRetraction inf (L / 2 + 1 / 2) w) ≠ 0 ∧
-        q.plumbingMap L (endRetraction inf (L / 2 + 1 / 2) w) ≠ 1) ∧
-      q.plumbingMap L (endRetraction inf (L / 2 + 1 / 2) w) ≠ q.plumbingMap L 1 := by
-  have h₁ := signedHeight_endRetraction_le inf (L / 2 + 1 / 2) (ne_endCenter hw inf)
-  rw [endSign_inf, neg_one_mul] at h₁
-  exact mapsTo_plumbingMap hq (by linarith)
-    ⟨endRetraction_ne_zero_and_ne_one inf (by linarith) hw, by linarith⟩
 
 /-- The receiving piece `u ∘ ρ_q` of a map `u` that is `C¹` on the plumbed four-punctured sphere
 is `C¹` on `S`. -/
@@ -322,16 +160,6 @@ private theorem contMDiffOn_uncurry_plumbedPerturbation (hq : q ≠ inf)
 
 variable [IsManifold I ⊤ M]
 
-/-- The symplectic area density only depends on the germ of the map. -/
-private theorem eval₂_mfderiv_congr_of_eventuallyEq (ω : SmoothTwoForm I M) {u u' : ℝ × ℝ → M}
-    {z : ℝ × ℝ} (h : u =ᶠ[𝓝 z] u') :
-    SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) =
-      SmoothBundleForm.eval₂ ω (u' z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u' z stdComplexLineReal)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u' z stdComplexLineImag) := by
-  rw [← floerEnergyDensity_zero, ← floerEnergyDensity_zero,
-    ω.floerEnergyDensity_congr_of_eventuallyEq _ _ h]
-
 /-- Over the receiving truncation `S_{L/2}`, the Floer energy of `u` for the plumbed perturbation
 is that of the receiving piece of `u` for the perturbation of the receiving pair of pants. -/
 private theorem setIntegral_floerEnergyDensity_receiving (ω : SmoothTwoForm I M) (hq : q ≠ inf)
@@ -364,7 +192,7 @@ private theorem setIntegral_area_receiving (ω : SmoothTwoForm I M) (u : ℝ × 
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ realChart (endRetraction q (L / 2 + 1 / 2))) z
             stdComplexLineImag) : ℝ) :=
   setIntegral_congr_fun (measurableSet_preimage_truncation _) fun _ hz ↦
-    eval₂_mfderiv_congr_of_eventuallyEq ω (receivingPiece_eventuallyEq u hz).symm
+    ω.eval₂_mfderiv_congr_of_eventuallyEq (receivingPiece_eventuallyEq u hz).symm
 
 /-- On the receiving truncation `S_{L/2}`, the curvature of the plumbed perturbation along `u` is
 the curvature of the receiving perturbation along the receiving piece of `u`. -/
@@ -484,7 +312,7 @@ private theorem setIntegral_area_inserted (ω : SmoothTwoForm I M) (hq : q ≠ i
     (fun w hw ↦ ((hu.contMDiffAt ((isOpen_plumbedSphere q L).mem_nhds
       (realChart_plumbingMap_mem_plumbedSphere hq hL hw))).mdifferentiableAt one_ne_zero))]
   exact setIntegral_congr_fun (measurableSet_preimage_truncation _) fun _ hw ↦
-    eval₂_mfderiv_congr_of_eventuallyEq ω (insertedPiece_eventuallyEq u hw).symm
+    ω.eval₂_mfderiv_congr_of_eventuallyEq (insertedPiece_eventuallyEq u hw).symm
 
 /-- At a point `w` of the inserted truncation `S_{L/2}`, the Jacobian of the plumbing chart times
 the curvature of the plumbed perturbation along `u` at `ψ(w)` is the curvature of the inserted
@@ -592,25 +420,6 @@ private theorem integrableOn_hamiltonianCurvature_inserted (ω : SmoothTwoForm I
   rw [abs_of_nonneg (det_fderiv_realChart_plumbingMap_nonneg q L w), smul_eq_mul,
     det_mul_hamiltonianCurvature_inserted ω hq hHa hHb hHas hHbs hab hL u hw]
 
-omit [IsManifold I ⊤ M] in
-/-- A function integrable over the receiving truncation `S_{L/2}` and over the image under the
-plumbing chart of the inserted one integrates over the plumbed truncation `S_{L/2} ∪ ψ(S_{L/2})`
-as the sum of its integrals over the two pieces. -/
-private theorem setIntegral_plumbedTruncation (hq : q ≠ inf) {f : ℝ × ℝ → ℝ}
-    (h₁ : IntegrableOn f (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)))
-    (h₂ : IntegrableOn f
-      (realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)))) :
-    ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
-        (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), f z =
-      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2), f z) +
-        ∫ z in realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹'
-          truncation (L / 2)), f z := by
-  rw [preimage_union, preimage_image_plumbingMap]
-  exact setIntegral_union₀ (aedisjoint_truncation_image hq)
-    ((isCompact_preimage_truncation _).image
-      (contDiff_realChart_plumbingMap q L (n := 0)).continuous
-        |>.isClosed.measurableSet.nullMeasurableSet) h₁ h₂
-
 /-! ### The energy identity -/
 
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
@@ -687,10 +496,10 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_truncati
         z (u z)) D) :=
     hω.integrableOn_floerEnergyDensity (isOpen_plumbedSphere q L) hu (hKp 1) (hKp Complex.I) hD
       hDP hR
-  rw [setIntegral_plumbedTruncation hq (hE T hT hTP hRb) (hE _ hψT hψTP hRa),
-    setIntegral_plumbedTruncation hq ((harea.mono hTP).integrableOn_compact hT)
+  rw [setIntegral_truncation_union_image hq (hE T hT hTP hRb) (hE _ hψT hψTP hRa),
+    setIntegral_truncation_union_image hq ((harea.mono hTP).integrableOn_compact hT)
       ((harea.mono hψTP).integrableOn_compact hψT),
-    setIntegral_plumbedTruncation hq hRb hRa,
+    setIntegral_truncation_union_image hq hRb hRa,
     setIntegral_floerEnergyDensity_receiving ω hq hab hL u,
     setIntegral_floerEnergyDensity_inserted ω hq hHa hHb hHas hHbs hab hL hu,
     setIntegral_area_receiving (q := q) ω u, setIntegral_area_inserted ω hq hL hu,
@@ -705,7 +514,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_truncati
     ← Finset.add_sum_erase _ _ (Finset.mem_univ inf)]
   -- On the boundary circles the two pieces of `u` are `u` and `u ∘ ψ`.
   simp only [comp_apply, TauCeti.Complex.realChart_equivRealProdCLM,
-    endRetraction_cylindricalEndLift _ _ (by linarith : 0 < L)
+    endRetraction_cylindricalEndLift _ _ (by linarith : 0 < L / 2)
       (by linarith : L / 2 ≤ L / 2 + 1 / 2)]
   -- The inputs of the inserted pair of pants have sign `+`.
   have hinputs : ∑ r ∈ Finset.univ.erase inf, r.endSign * ∫ t in (0 : ℝ)..1, Ha r t
