@@ -492,13 +492,12 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
   have hD' := sub_sq_le_sq_sub_sq hr hrR.le
   have hRD := div_sq_sub_sq_le_one_div_sub hr hrR
   have hRD2 := sq_div_sq_sub_sq_sq_le_one_div_sub_sq hr hrR
-  have hRr : 0 < R - r := sub_pos.2 hrR
   have hR : 0 < R := hr.trans_lt hrR
   obtain ⟨hψ1, hψ2, hψ3, hψ4⟩ := smoothTransition_radial_cutoff hr hrR x₀
-  set D := R ^ 2 - r ^ 2 with hD_def
+  set D := R ^ 2 - r ^ 2
   -- The gradient of the cutoff is `c (‖x - x₀‖ ^ 2) • (x - x₀)`; `c'` is the derivative of `c`.
-  set c : ℝ → ℝ := fun τ => -(2 / D) * deriv S ((R ^ 2 - τ) / D) with hc
-  set c' : ℝ → ℝ := fun τ => 2 / D ^ 2 * deriv (deriv S) ((R ^ 2 - τ) / D) with hc'
+  set c : ℝ → ℝ := fun τ => -(2 / D) * deriv S ((R ^ 2 - τ) / D)
+  set c' : ℝ → ℝ := fun τ => 2 / D ^ 2 * deriv (deriv S) ((R ^ 2 - τ) / D)
   have hcd : ∀ τ, HasDerivAt c (c' τ) τ := fun τ =>
     ((((hS1.differentiable (by simp)) _).hasDerivAt.comp_sub_div (A := R ^ 2) (D := D)
       (τ := τ)).const_mul (-(2 / D))).congr_deriv (by simp only [c']; field_simp)

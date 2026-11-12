@@ -129,7 +129,7 @@ theorem denseRange_toLpTop : DenseRange (toLpTop μ ℝ : SimpleFunc α ℝ →�
   set C := ‖φ‖
   -- A measurable representative of `φ`, truncated to `[-C, C]` where it exceeds the bound.
   have hφ := Lp.aestronglyMeasurable φ
-  set f : α → ℝ := fun x => max (-C) (min C (hφ.mk φ x)) with hf_def
+  set f : α → ℝ := fun x => max (-C) (min C (hφ.mk φ x))
   have hf : Measurable f :=
     measurable_const.max (measurable_const.min hφ.stronglyMeasurable_mk.measurable)
   have hfC (x : α) : f x ∈ Metric.closedBall (0 : ℝ) C := by

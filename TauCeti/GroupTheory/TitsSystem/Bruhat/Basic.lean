@@ -56,9 +56,6 @@ simple cells are developed in `TauCeti.GroupTheory.TitsSystem.Bruhat.Subword`.
 
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 29.1--29.2.
 * T. A. Springer, *Linear Algebraic Groups*, second edition (1998), Section 8.3.
-
-This supplies the abstract Bruhat decomposition in Layer 7, "Bruhat decomposition and BN-pairs /
-Tits systems", of the ReductiveGroups roadmap.
 -/
 
 public section
