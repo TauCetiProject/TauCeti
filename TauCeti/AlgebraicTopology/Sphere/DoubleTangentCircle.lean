@@ -136,19 +136,12 @@ private theorem genLoopLoopHomeomorph_map_tangentCircleDoubleLoop (hu : ‖u‖ 
           (tangentCircleGenLoop hv c))) := by
   set e : Fin (k + 3) ≃ Fin (k + 3) := (Equiv.swap 0 1).trans
     ((Fin.last (k + 2)).cycleRange.symm.trans (Fin.last (k + 2)).cycleRange.symm)
-  have he₀ : e 0 = Fin.last _ := by
-    rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.swap_apply_left, ← Fin.succ_zero_eq_one,
-      Fin.cycleRange_symm_succ, Fin.succAbove_last_apply, Fin.castSucc_zero,
-      Fin.cycleRange_symm_zero]
+  have he₀ : e 0 = Fin.last _ := by simp [e, Fin.ext_iff]
   have he₁ : e (0 : Fin (k + 2)).succ = (Fin.last _).castSucc := by
-    rw [Equiv.trans_apply, Equiv.trans_apply, Fin.succ_zero_eq_one, Equiv.swap_apply_right,
-      Fin.cycleRange_symm_zero, Equiv.symm_apply_eq, Fin.cycleRange_last, finRotate_apply,
-      Fin.coeSucc_eq_succ, Fin.succ_last]
+    simp [e, Fin.ext_iff, Fin.coe_sub_one]
   have he₂ (j : Fin (k + 1)) : e j.succ.succ = j.castSucc.castSucc := by
-    rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero _)
-        (by rw [← Fin.succ_zero_eq_one]; exact (Fin.succ_injective _).ne (Fin.succ_ne_zero j)),
-      Fin.cycleRange_symm_succ, Fin.succAbove_last_apply, ← Fin.succ_castSucc,
-      Fin.cycleRange_symm_succ, Fin.succAbove_last_apply]
+    simp [e, Equiv.swap_apply_of_ne_of_ne, Fin.succ_succ_ne_one, sub_eq_iff_eq_add]
+    grind [Fin.succ_castSucc, Fin.coeSucc_eq_succ]
   refine GenLoop.ext _ _ fun w => ?_
   rw [GenLoop.genLoopLoopHomeomorph_apply, GenLoop.genLoopLoopHomeomorph_apply,
     GenLoop.map_apply, tangentCircleDoubleLoop_apply, GenLoop.congr_apply,
