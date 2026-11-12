@@ -211,7 +211,6 @@ theorem exists_pos_lt_disjoint_spectrum_Ico (h : IsFiniteSpectralCutoff T c) :
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hF.isOpen_compl 0 (fun h0 ↦ lt_irrefl _ h0.2)
   refine ⟨min ε c / 2, by have := h.pos; positivity, by
     have := h.pos; have := min_le_right ε c; linarith, disjoint_left.2 fun x hx hxI ↦ ?_⟩
-  have hmin : 0 < min ε c := lt_min hε h.pos
   have hxF : x ∈ F := ⟨⟨hx, by
     constructor <;> linarith [hxI.1, hxI.2, min_le_right ε c]⟩, hxI.2⟩
   refine hball ?_ hxF
@@ -222,7 +221,7 @@ theorem exists_pos_lt_disjoint_spectrum_Ico (h : IsFiniteSpectralCutoff T c) :
 its functional calculus is a genuine spectral projection. -/
 theorem continuousOn_indicator_Ico (h : IsFiniteSpectralCutoff T c) :
     ContinuousOn ((Ico 0 c).indicator (1 : ℝ → ℝ)) (spectrum ℝ T) := by
-  obtain ⟨δ, hδ, hδc, hdisj⟩ := h.exists_pos_lt_disjoint_spectrum_Ico
+  obtain ⟨δ, hδ, -, hdisj⟩ := h.exists_pos_lt_disjoint_spectrum_Ico
   have hfr : Disjoint (spectrum ℝ T) (frontier (Ioo (-δ) c)) :=
     disjoint_frontier_of_Ioo_subset_of_subset_Icc subset_rfl Ioo_subset_Icc_self
       (fun hx ↦ disjoint_left.1 hdisj hx ⟨le_rfl, by linarith⟩) h.notMem_spectrum
