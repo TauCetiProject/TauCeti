@@ -80,12 +80,14 @@ theorem setOf_isMedian_eq_Icc [IsProbabilityMeasure μ] :
 
 /-- **The quantile at level `1 / 2` is a median.** This holds for every probability measure on
 `ℝ`, including laws with atoms. -/
+@[simp]
 theorem isMedian_quantile_half (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     μ.IsMedian (μ.quantile 2⁻¹) :=
   isMedian_iff_mem_Icc.2
     ⟨le_rfl, quantile_le_upperQuantile μ (by norm_num) (by norm_num)⟩
 
 /-- The upper quantile at level `1 / 2` is a median. -/
+@[simp]
 theorem isMedian_upperQuantile_half (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     μ.IsMedian (μ.upperQuantile 2⁻¹) :=
   isMedian_iff_mem_Icc.2
