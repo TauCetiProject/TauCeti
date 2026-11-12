@@ -20,7 +20,10 @@ allowed; the derivative is at a fixed domain point. Along a line `J + q Y` of en
 the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
 `floerLinearization` is the map-direction operator with coefficients fixed. Conjugated by an
-exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`).
+exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`),
+and a cutoff `β(s)` contributes the zeroth-order term `β' ξ` (`floerLinearization_smul_fst`).
+It differs from its Cauchy–Riemann part `∂s ξ + J ∂t ξ` by terms of order zero in `ξ`, with a
+pointwise bound by the coefficients at `u` (`norm_floerLinearization_sub_le`).
 For `C¹` coefficients `J` and `C²` Hamiltonians it is continuous wherever the map and the direction
 are `C¹` (`continuousAt_floerLinearization`), so its `L²` norms over compact sets are finite.
 The universal variation theorem identifies its direction field with the actual parameter derivative
@@ -160,6 +163,55 @@ theorem floerLinearization_exp_smul (ω : SymplecticForm V)
     ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
     smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul, add_zero, map_sub]
   module
+
+/-- **The Leibniz rule for a cutoff in `s`.** Multiplying a direction `ξ` by a function `β(s)` of
+the first coordinate multiplies its linearized Floer operator by `β` and adds `β'(s) ξ`:
+`D_u (β ξ) = β D_u ξ + β' ξ`. -/
+theorem floerLinearization_smul_fst (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) {β : ℝ → ℝ} {z : ℝ × ℝ}
+    (hβ : DifferentiableAt ℝ β z.1) (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ β w.1 • ξ w) z =
+      β z.1 • ω.floerLinearization J Ks Kt u ξ z + deriv β z.1 • ξ z := by
+  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
+      (deriv β z.1 • ContinuousLinearMap.fst ℝ ℝ ℝ) z :=
+    hβ.hasDerivAt.comp_hasFDerivAt z (hasFDerivAt_fst (p := z))
+  have hd : HasFDerivAt (fun w ↦ β w.1 • ξ w) _ z := hc.smul hξ.hasFDerivAt
+  rw [floerLinearization_def, hd.fderiv, floerLinearization_def]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
+    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
+    smul_eq_mul, mul_zero, mul_one, zero_smul, add_zero, map_sub]
+  module
+
+/-- **The zeroth-order part of the linearization.** At `z`, the linearized Floer operator `D_u ξ`
+differs from its Cauchy–Riemann part `∂s ξ + J(z, u) ∂t ξ` by at most
+`(‖dX_{Ks}‖ + ‖dJ‖ ‖∂t u - X_{Kt}(u)‖ + ‖J‖ ‖dX_{Kt}‖) ‖ξ‖`, with all coefficients at `u(z)`. -/
+theorem norm_floerLinearization_sub_le (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ‖ω.floerLinearization J Ks Kt u ξ z -
+        (fderiv ℝ ξ z stdComplexLineReal + J z (u z) (fderiv ℝ ξ z stdComplexLineImag))‖ ≤
+      (‖fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z)‖ +
+          ‖fderiv ℝ (J z) (u z)‖ *
+            ‖fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)‖ +
+          ‖J z (u z)‖ * ‖fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z)‖) * ‖ξ z‖ := by
+  set A := fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z)
+  set dJ := fderiv ℝ (J z) (u z)
+  set δ := fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)
+  set B := fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z)
+  have hdiff : ω.floerLinearization J Ks Kt u ξ z -
+      (fderiv ℝ ξ z stdComplexLineReal + J z (u z) (fderiv ℝ ξ z stdComplexLineImag)) =
+      -A (ξ z) + dJ (ξ z) δ - J z (u z) (B (ξ z)) := by
+    rw [floerLinearization_def, (J z (u z)).map_sub]
+    abel
+  rw [hdiff]
+  calc ‖-A (ξ z) + dJ (ξ z) δ - J z (u z) (B (ξ z))‖
+      ≤ ‖A (ξ z)‖ + ‖dJ (ξ z) δ‖ + ‖J z (u z) (B (ξ z))‖ :=
+        (norm_sub_le _ _).trans (by gcongr; exact (norm_add_le _ _).trans (by rw [norm_neg]))
+    _ ≤ ‖A‖ * ‖ξ z‖ + ‖dJ‖ * ‖ξ z‖ * ‖δ‖ + ‖J z (u z)‖ * (‖B‖ * ‖ξ z‖) := by
+        gcongr
+        · exact le_opNorm _ _
+        · exact le_opNorm₂ _ _ _
+        · exact (le_opNorm _ _).trans (by gcongr; exact le_opNorm _ _)
+    _ = _ := by ring
 
 /-- **Continuity of the linearization.** Let `u` and `ξ` be `C¹` at `z`, and let the
 coefficients `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at `(z, u z)`, jointly in the
