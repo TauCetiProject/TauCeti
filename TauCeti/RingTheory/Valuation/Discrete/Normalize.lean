@@ -15,7 +15,8 @@ of `ℤ`, so they are the multiples of a single natural number, the *index* `Val
 it is zero exactly when `v` is trivial. Dividing the order by the index produces the *normalization*
 `Valuation.normalization v`: the valuation equivalent to `v` whose value group is all of `ℤᵐ⁰`
 (the trivial valuation, when `v` is trivial). The index construction, its invariance under
-surjective restriction, and its value on surjective valuations are available for any ring.
+surjective restriction, its value on surjective valuations, and its multiplicativity under a
+natural-number rescaling of the order function are available for any ring.
 
 This is the operation that turns the restriction of a discrete valuation along a field extension
 back into a normalized one, and the index it divides by is the ramification index of that
@@ -83,56 +84,53 @@ theorem ordIndex_comap_of_surjective {K : Type*} [Ring K] {f : K →+* F}
     (hf : Function.Surjective f) : ordIndex (v.comap f) = ordIndex v := by
   simp only [ordIndex, ord_comap, hf.exists]
 
+/-- A valuation attaining a positive order has positive index. -/
+theorem ordIndex_pos_of_ord_pos {f : F} (hf : 0 < ord v f) : 0 < ordIndex v :=
+  (Nat.sInf_mem (s := {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n})
+    ⟨(ord v f).toNat, by omega, f, by omega⟩).1
+
 /-- A surjective valuation has index `1`, the least positive integer order. -/
 @[simp]
 theorem ordIndex_eq_one_of_surjective (hv : Function.Surjective v) : ordIndex v = 1 := by
   obtain ⟨f, hf⟩ := ord_surjective v hv 1
-  have hS : {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n}.Nonempty := ⟨1, Nat.one_pos, f, hf⟩
-  exact Nat.le_antisymm (ordIndex_le v Nat.one_pos hf) (Nat.sInf_mem hS).1
+  exact Nat.le_antisymm (ordIndex_le v Nat.one_pos hf)
+    (ordIndex_pos_of_ord_pos v (f := f) (by rw [hf]; norm_num))
 
 /-- If one order function is a natural-number multiple of another, their indices differ
 by the same factor. This includes a zero factor and trivial valuations. -/
 theorem ordIndex_eq_mul_of_forall_ord_eq (w : _root_.Valuation F ℤᵐ⁰) {e : ℕ}
     (hord : ∀ f : F, ord v f = e * ord w f) : ordIndex v = e * ordIndex w := by
-  have hpos : ∀ (u : _root_.Valuation F ℤᵐ⁰) {f : F}, 0 < ord u f → 0 < ordIndex u :=
-    fun u {f} hf ↦
-      (Nat.sInf_mem (s := {n : ℕ | 0 < n ∧ ∃ g : F, ord u g = n})
-        ⟨(ord u f).toNat, by omega, f, by omega⟩).1
+  obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex v
+  obtain ⟨g, hg⟩ := exists_ord_eq_ordIndex w
   obtain rfl | he := eq_or_ne e 0
   · rw [zero_mul]
     by_contra h
-    obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex v
-    rw [hord f] at hf
-    simp only [Nat.cast_zero, zero_mul] at hf
+    rw [hord f, Nat.cast_zero, zero_mul] at hf
     omega
-  have _ : (0 : ℤ) < e := by exact_mod_cast Nat.pos_of_ne_zero he
+  have he' : (0 : ℤ) < e := by exact_mod_cast Nat.pos_of_ne_zero he
   by_cases hb : ordIndex w = 0
   · rw [hb, mul_zero]
     by_contra ha
-    obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex v
     have hm : 0 < ord w f := by
       by_contra hle
       have := hord f
-      nlinarith [Nat.pos_of_ne_zero ha]
-    have := hpos w hm
+      nlinarith [he', Nat.pos_of_ne_zero ha]
+    have := ordIndex_pos_of_ord_pos w hm
     omega
-  obtain ⟨g, hg⟩ := exists_ord_eq_ordIndex w
-  obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex v
   have hbpos : 0 < ordIndex w := Nat.pos_of_ne_zero hb
-  have h1 : ord v g = ((e * ordIndex w : ℕ) : ℤ) := by rw [hord g, hg]; push_cast; rfl
+  have h1 : ord v g = ((e * ordIndex w : ℕ) : ℤ) := by rw [hord g, hg, Nat.cast_mul]
   have hebpos : 0 < e * ordIndex w := Nat.mul_pos (Nat.pos_of_ne_zero he) hbpos
   refine le_antisymm (ordIndex_le v hebpos h1) ?_
-  have hapos : 0 < ordIndex v := hpos v (f := g) (by rw [h1]; exact_mod_cast hebpos)
-  have h2 : (ordIndex v : ℤ) = e * ord w f := by rw [← hf, hord f]
+  have hapos : 0 < ordIndex v :=
+    ordIndex_pos_of_ord_pos v (f := g) (by rw [h1]; exact_mod_cast hebpos)
   have hm : 0 < ord w f := by
     by_contra hle
+    have h2 := hord f
     have : (0 : ℤ) < ordIndex v := by exact_mod_cast hapos
-    nlinarith
+    nlinarith [he']
   have h3 := ordIndex_le w (n := (ord w f).toNat) (by omega) (f := f) (by omega)
   have h4 : ((e * (ord w f).toNat : ℕ) : ℤ) = ordIndex v := by
-    push_cast
-    rw [Int.toNat_of_nonneg hm.le]
-    exact h2.symm
+    rw [Nat.cast_mul, Int.toNat_of_nonneg hm.le, ← hord f, hf]
   exact (Nat.mul_le_mul_left e h3).trans (by exact_mod_cast h4.le)
 
 end Ring
@@ -141,15 +139,11 @@ section DivisionRing
 
 variable {F : Type*} [DivisionRing F] (v : _root_.Valuation F ℤᵐ⁰)
 
-private theorem ordSet_nonempty {f : F} (hf : ord v f ≠ 0) :
-    {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n}.Nonempty := by
-  rcases lt_or_gt_of_ne hf with h | h
-  · exact ⟨(-ord v f).toNat, by omega, f⁻¹, by rw [ord_inv]; omega⟩
-  · exact ⟨(ord v f).toNat, by omega, f, by omega⟩
-
 /-- A valuation attaining a nonzero order has positive index. -/
-theorem ordIndex_pos {f : F} (hf : ord v f ≠ 0) : 0 < ordIndex v :=
-  (Nat.sInf_mem (ordSet_nonempty v hf)).1
+theorem ordIndex_pos {f : F} (hf : ord v f ≠ 0) : 0 < ordIndex v := by
+  rcases lt_or_gt_of_ne hf with h | h
+  · exact ordIndex_pos_of_ord_pos v (f := f⁻¹) (by rw [ord_inv]; omega)
+  · exact ordIndex_pos_of_ord_pos v h
 
 /-- The index vanishes exactly for the trivial valuations. -/
 theorem ordIndex_eq_zero_iff : ordIndex v = 0 ↔ ∀ f : F, ord v f = 0 := by

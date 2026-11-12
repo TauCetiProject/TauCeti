@@ -164,7 +164,8 @@ theorem ord_sub_pow_sub_self_neg_and_dvd {n : ℕ} {u : R} (hu : v.ord u < 0)
     (hdvd : (n : ℤ) ∣ v.ord u) (w : R) (hroot : v.ord (u - w ^ n) ≤ v.ord u) :
     v.ord (u - (w ^ n - w)) < 0 ∧ (n : ℤ) ∣ v.ord (u - (w ^ n - w)) := by
   obtain rfl | rfl | hn : n = 0 ∨ n = 1 ∨ 1 < n := by omega
-  · exact absurd (zero_dvd_iff.mp hdvd) hu.ne
+  · rw [Nat.cast_zero] at hdvd
+    exact absurd (zero_dvd_iff.mp hdvd) hu.ne
   · simpa only [pow_one, sub_self, sub_zero, Nat.cast_one, one_dvd, and_true] using hu
   rw [ord_sub_pow_sub_self_eq_min hn hu w hroot]
   refine ⟨(min_le_left _ _).trans_lt hu, ?_⟩
