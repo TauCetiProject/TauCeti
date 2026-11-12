@@ -25,6 +25,8 @@ Over a real or complex normed field, locally uniform limits of the coefficients 
 derivative series are again Taylor derivative series, provided the underlying functions converge
 pointwise. This is the derivative-compatibility step in completeness of smooth function spaces.
 The limit argument uses Mathlib's `hasFDerivAt_of_tendstoLocallyUniformlyOn`.
+`TauCeti.exists_smooth_of_locallyUniform_jet_limits` specializes this to canonical iterated
+derivatives on an open set, recovering a smooth limit with those derivatives.
 
 Taylor series with matching coefficients glue across two closed sets on their union.
 For a closed cover of the whole space this gives a global piecewise Cᵏ criterion.
@@ -110,6 +112,37 @@ theorem HasFTaylorSeriesUpTo.of_tendstoLocallyUniformly [IsRCLikeNormedField �
     (HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn isOpen_univ
       (fun i ↦ (h i).hasFTaylorSeriesUpToOn univ)
       (fun m hm ↦ (hq m hm).tendstoLocallyUniformlyOn) (fun x _ ↦ hf x))
+
+
+namespace TauCeti
+
+/-- Locally uniform limits of all derivatives of smooth maps are the derivatives of one
+smooth limit on an open set. The index filter is arbitrary and the target need not be complete. -/
+theorem exists_smooth_of_locallyUniform_jet_limits [IsRCLikeNormedField 𝕜]
+    {ι : Type*} {l : Filter ι} [l.NeBot] {Ω : Set D} (hΩ : IsOpen Ω)
+    (f : ι → D → F) (hf : ∀ i, ContDiffOn 𝕜 ∞ (f i) Ω)
+    (g : (m : ℕ) → D → D [×m]→L[𝕜] F)
+    (hg : ∀ m, TendstoLocallyUniformlyOn
+      (fun i ↦ iteratedFDeriv 𝕜 m (f i)) (g m) l Ω) :
+    ∃ u : D → F, ContDiffOn 𝕜 ∞ u Ω ∧ ∀ m, EqOn (iteratedFDeriv 𝕜 m u) (g m) Ω := by
+  let u : D → F := fun x ↦ (g 0 x).curry0
+  have hlim (m : ℕ) : TendstoLocallyUniformlyOn
+      (fun i x ↦ ftaylorSeriesWithin 𝕜 (f i) Ω x m) (g m) l Ω := by
+    apply (hg m).congr
+    exact fun i x hx ↦ (iteratedFDerivWithin_of_isOpen (f := f i) m hΩ hx).symm
+  have hT : HasFTaylorSeriesUpToOn ∞ u (fun x m ↦ g m x) Ω :=
+    HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn hΩ
+      (fun i ↦ (hf i).ftaylorSeriesWithin hΩ.uniqueDiffOn) (fun m _ ↦ hlim m) fun x hx ↦ by
+        have ht := ((continuousMultilinearCurryFin0 𝕜 D F).continuous.tendsto (g 0 x)).comp
+          ((hg 0).tendsto_at hx)
+        simpa only [u, Function.comp_def, iteratedFDeriv_zero_eq_comp,
+          continuousMultilinearCurryFin0_apply, ContinuousMultilinearMap.curry0_apply,
+          continuousMultilinearCurryFin0_symm_apply_apply] using ht
+  refine ⟨u, hT.contDiffOn, fun m x hx ↦ ?_⟩
+  exact (iteratedFDerivWithin_of_isOpen m hΩ hx).symm.trans
+    (hT.eq_iteratedFDerivWithin_of_uniqueDiffOn (by simp) hΩ.uniqueDiffOn hx).symm
+
+end TauCeti
 
 noncomputable section
 
