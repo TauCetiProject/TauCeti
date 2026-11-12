@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed
+public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
@@ -68,6 +69,7 @@ while it vanishes on `Λ` and nowhere else. A point `(x, y)` of the curve with `
 
 ## Main results
 
+* `PeriodPair.isShortNF_weierstrassCurve`: the curve is in short normal form.
 * `PeriodPair.weierstrassCurve_smul`: rescaling the lattice by `c` changes the curve by the
   variable change with `u = c`.
 * `UpperHalfPlane.G_periodPair`: `G k (ℤ τ + ℤ) = 2 ζ(k) E_k(τ)` for `k ≥ 3`.
@@ -171,9 +173,13 @@ def weierstrassCurve : WeierstrassCurve ℂ where
   a₄ := -(L.g₂ / 4)
   a₆ := -(L.g₃ / 4)
 
-@[simp] lemma weierstrassCurve_a₁ : L.weierstrassCurve.a₁ = 0 := by unfold weierstrassCurve; rfl
-@[simp] lemma weierstrassCurve_a₂ : L.weierstrassCurve.a₂ = 0 := by unfold weierstrassCurve; rfl
-@[simp] lemma weierstrassCurve_a₃ : L.weierstrassCurve.a₃ = 0 := by unfold weierstrassCurve; rfl
+lemma weierstrassCurve_a₁ : L.weierstrassCurve.a₁ = 0 := by unfold weierstrassCurve; rfl
+lemma weierstrassCurve_a₂ : L.weierstrassCurve.a₂ = 0 := by unfold weierstrassCurve; rfl
+lemma weierstrassCurve_a₃ : L.weierstrassCurve.a₃ = 0 := by unfold weierstrassCurve; rfl
+
+/-- The Weierstrass curve of a lattice is in short normal form. -/
+instance isShortNF_weierstrassCurve : L.weierstrassCurve.IsShortNF :=
+  ⟨L.weierstrassCurve_a₁, L.weierstrassCurve_a₂, L.weierstrassCurve_a₃⟩
 
 @[simp] lemma weierstrassCurve_a₄ : L.weierstrassCurve.a₄ = -(L.g₂ / 4) := by
   unfold weierstrassCurve; rfl

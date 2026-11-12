@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.LatticeClassification
-import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.GammaSet
 
@@ -51,6 +50,8 @@ input that identifies `Γ₁(N) \ ℍ` with the complex points of the modular cu
 ## Main results
 
 * `UpperHalfPlane.addOrderOf_weierstrassPoint_one_div`: `1 / N` has exact order `N` on `E_z`.
+* `UpperHalfPlane.smul_mk_weierstrassPoint_denom_div`: rescaling by `(c z + d)⁻¹` carries `E_z`
+  with the point of `(c z + d) / N` to `(E_{γ z}, P_{γ z})`.
 * `UpperHalfPlane.exists_smul_pointedWeierstrassCurve_eq`: every complex elliptic curve with a
   point of exact order `N` is isomorphic to some `(E_z, P_z)`.
 * `UpperHalfPlane.exists_smul_pointedWeierstrassCurve_eq_iff`: `(E_z, P_z)` and `(E_{z'}, P_{z'})`
@@ -76,18 +77,19 @@ variable (N) in
 /-- The complex elliptic curve `E_z = ℂ / (ℤ z + ℤ)`, in its Weierstrass model
 `y² = x³ - (g₂ / 4) x - g₃ / 4`, with the point given by `1 / N`. For `N ≠ 0` this point has exact
 order `N` (`UpperHalfPlane.addOrderOf_weierstrassPoint_one_div`). -/
-@[expose] noncomputable def pointedWeierstrassCurve (z : ℍ) : PointedWeierstrassCurve ℂ :=
+noncomputable def pointedWeierstrassCurve (z : ℍ) : PointedWeierstrassCurve ℂ :=
   ⟨z.periodPair.weierstrassCurve, z.periodPair.weierstrassPoint (1 / N)⟩
+
+/-- The defining equation of `UpperHalfPlane.pointedWeierstrassCurve`. -/
+theorem pointedWeierstrassCurve_def (z : ℍ) :
+    z.pointedWeierstrassCurve N =
+      ⟨z.periodPair.weierstrassCurve, z.periodPair.weierstrassPoint (1 / N)⟩ :=
+  (rfl)
 
 @[simp]
 theorem pointedWeierstrassCurve_curve (z : ℍ) :
     (z.pointedWeierstrassCurve N).curve = z.periodPair.weierstrassCurve :=
-  rfl
-
-@[simp]
-theorem pointedWeierstrassCurve_point (z : ℍ) :
-    (z.pointedWeierstrassCurve N).point = z.periodPair.weierstrassPoint (1 / N) :=
-  rfl
+  (rfl)
 
 /-- The point of `1 / N` on `E_z` has exact order `N`. -/
 theorem addOrderOf_weierstrassPoint_one_div [NeZero N] (z : ℍ) :
@@ -111,6 +113,19 @@ theorem pointedWeierstrassCurve_mem_exactOrder [NeZero N] (z : ℍ) :
   (PointedWeierstrassCurve.mem_exactOrder_iff _).mpr
     ⟨inferInstanceAs z.periodPair.weierstrassCurve.IsElliptic,
       addOrderOf_weierstrassPoint_one_div z⟩
+
+variable (N) in
+/-- **Rescaling by `(c z + d)⁻¹` gives `(E_{γ z}, P_{γ z})`**: the change of variables with
+`u = (c z + d)⁻¹` carries `E_z` with the point of `(c z + d) / N` to `E_{γ z}` with the point of
+`1 / N`. -/
+theorem smul_mk_weierstrassPoint_denom_div (γ : SL(2, ℤ)) (z : ℍ) :
+    (⟨(Units.mk0 _ (denom_ne_zero γ z))⁻¹, 0, 0, 0⟩ : VariableChange ℂ) •
+        (⟨z.periodPair.weierstrassCurve, z.periodPair.weierstrassPoint (denom γ z / N)⟩ :
+          PointedWeierstrassCurve ℂ) =
+      (γ • z).pointedWeierstrassCurve N := by
+  rw [PeriodPair.smul_mk_weierstrassPoint (lattice_periodPair_smul γ z),
+    pointedWeierstrassCurve_def, Units.val_inv_eq_inv_val, Units.val_mk0, inv_mul_eq_div,
+    div_div_cancel_left' (denom_ne_zero γ z), one_div]
 
 /-- If the point of `(m τ + n) / N` on `E_τ` has exact order `N`, then `gcd(m, n)` is prime to `N`:
 for `d = gcd(m, n, N)` the multiple `(N / d) • P` is the point of the period `(m / d) τ + n / d`. -/
@@ -166,51 +181,32 @@ theorem exists_smul_pointedWeierstrassCurve_eq [NeZero N] {X : PointedWeierstras
   obtain ⟨γ, hγ₀, hγ₁⟩ := (Int.isCoprime_iff_gcd_eq_one.mpr hy₁).exists_SL2_row 1
   replace hγ₀ : ((γ 1 0 : ℤ) : ZMod N) = m := by simpa [hγ₀] using congrFun hy 0
   replace hγ₁ : ((γ 1 1 : ℤ) : ZMod N) = n := by simpa [hγ₁] using congrFun hy 1
-  -- Rescaling `ℤ τ + ℤ` by `(c τ + d)⁻¹` carries `w` to `1 / N` modulo `ℤ γτ + ℤ`.
-  have hD := denom_ne_zero γ τ
-  refine ⟨γ • τ, (⟨(Units.mk0 _ hD)⁻¹, 0, 0, 0⟩ * C⁻¹)⁻¹, ?_⟩
-  rw [inv_smul_eq_iff, mul_smul, hQ,
-    PeriodPair.smul_mk_weierstrassPoint (lattice_periodPair_smul γ τ) w]
-  refine (PointedWeierstrassCurve.mk_inj).mpr ?_
-  rw [PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff, Units.val_inv_eq_inv_val,
-    Units.val_mk0, hw]
-  have hmem := div_mem_lattice_periodPair_of_intCast_comp_eq_zero (N := N)
-    (b := ![γ 1 0 - m, γ 1 1 - n]) τ (by
-      ext i
-      fin_cases i <;> simp [hγ₀, hγ₁])
-  rw [← div_denom_mem_lattice_periodPair_smul_iff γ τ] at hmem
-  convert hmem using 1
-  simp only [ModularGroup.denom_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one] at hD ⊢
-  field_simp
-  push_cast
-  ring
+  -- `w = (m τ + n) / N` is `(c τ + d) / N` modulo `ℤ τ + ℤ`; rescale by `(c τ + d)⁻¹`.
+  have hwD : τ.periodPair.weierstrassPoint w = τ.periodPair.weierstrassPoint (denom γ τ / N) := by
+    rw [PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff, hw]
+    convert div_mem_lattice_periodPair_of_intCast_comp_eq_zero (N := N)
+      (b := ![m - γ 1 0, n - γ 1 1]) τ (by ext i; fin_cases i <;> simp [hγ₀, hγ₁]) using 1
+    simp only [ModularGroup.denom_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_fin_one]
+    push_cast
+    ring
+  refine ⟨γ • τ, (⟨(Units.mk0 _ (denom_ne_zero γ τ))⁻¹, 0, 0, 0⟩ * C⁻¹)⁻¹, ?_⟩
+  rw [inv_smul_eq_iff, mul_smul, hQ, hwD, smul_mk_weierstrassPoint_denom_div]
 
 /-- **Isomorphic pairs `(E_z, P_z)` are `Γ₁(N)`-equivalent**: `(E_z, P_z)` and `(E_{z'}, P_{z'})`
 are isomorphic by a change of variables exactly when `z' = γ z` for some `γ ∈ Γ₁(N)`. -/
 theorem exists_smul_pointedWeierstrassCurve_eq_iff [NeZero N] {z z' : ℍ} :
     (∃ C : VariableChange ℂ, C • z.pointedWeierstrassCurve N = z'.pointedWeierstrassCurve N) ↔
       ∃ γ ∈ Gamma1 N, γ • z = z' := by
-  have hN₀ : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
   constructor
   · rintro ⟨C, hC⟩
     -- The change of variables is a rescaling `u` of the lattices, with `u = c z' + d`.
     have hcurve : C • z.periodPair.weierstrassCurve = z'.periodPair.weierstrassCurve :=
       congrArg PointedWeierstrassCurve.curve hC
     have hlat := PeriodPair.lattice_eq_smul_of_variableChange_smul_eq hcurve
-    have : z.periodPair.weierstrassCurve.IsShortNF := ⟨by simp, by simp, by simp⟩
-    have : (C • z.periodPair.weierstrassCurve).IsShortNF := by
-      rw [hcurve]; exact ⟨by simp, by simp, by simp⟩
-    have h2 : IsRegular (2 : ℂ) := .of_ne_zero two_ne_zero
-    have h3 : IsRegular (3 : ℂ) := .of_ne_zero three_ne_zero
-    have hCu : C = ⟨C.u, 0, 0, 0⟩ := by
-      ext
-      · rfl
-      · exact C.r_eq_zero_of_isShortNF z.periodPair.weierstrassCurve h2 h3
-      · exact C.s_eq_zero_of_isShortNF z.periodPair.weierstrassCurve h2
-      · exact C.t_eq_zero_of_isShortNF z.periodPair.weierstrassCurve h2
-    rw [hCu, pointedWeierstrassCurve, pointedWeierstrassCurve,
-      PeriodPair.smul_mk_weierstrassPoint hlat, PointedWeierstrassCurve.mk_inj,
+    rw [PeriodPair.variableChange_eq_mk_of_smul_eq hcurve, pointedWeierstrassCurve_def,
+      pointedWeierstrassCurve_def, PeriodPair.smul_mk_weierstrassPoint hlat,
+      PointedWeierstrassCurve.mk_inj,
       PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff] at hC
     obtain ⟨σ, hσ, hden⟩ := exists_smul_eq_and_denom_eq_of_lattice_periodPair_eq hlat
     -- `u / N - 1 / N = (c z' + (d - 1)) / N` is a period, so `c ≡ 0` and `d ≡ 1 mod N`.
@@ -230,24 +226,19 @@ theorem exists_smul_pointedWeierstrassCurve_eq_iff [NeZero N] {z z' : ℍ} :
         (R := ZMod N) σ
     exact ⟨σ⁻¹, inv_mem hσ₁, by rw [← hσ, inv_smul_smul]⟩
   · rintro ⟨γ, hγ, rfl⟩
-    -- Rescaling `ℤ z + ℤ` by `(c z + d)⁻¹` fixes `1 / N` modulo `ℤ γz + ℤ` when `γ ∈ Γ₁(N)`.
+    -- For `γ ∈ Γ₁(N)`, `1 / N` is `(c z + d) / N` modulo `ℤ z + ℤ`; rescale by `(c z + d)⁻¹`.
     obtain ⟨-, h₁, h₀⟩ := (Gamma1_mem N γ).mp hγ
-    have hD := denom_ne_zero γ z
-    refine ⟨⟨(Units.mk0 _ hD)⁻¹, 0, 0, 0⟩, ?_⟩
-    rw [pointedWeierstrassCurve, pointedWeierstrassCurve,
-      PeriodPair.smul_mk_weierstrassPoint (lattice_periodPair_smul γ z),
-      PointedWeierstrassCurve.mk_inj, PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff]
-    have hmem := div_mem_lattice_periodPair_of_intCast_comp_eq_zero (N := N)
-      (b := ![-γ 1 0, 1 - γ 1 1]) z (by
-        ext i
-        fin_cases i <;> simp [h₀, h₁])
-    rw [← div_denom_mem_lattice_periodPair_smul_iff γ z] at hmem
-    convert hmem using 1
-    simp only [Units.val_inv_eq_inv_val, Units.val_mk0, ModularGroup.denom_apply,
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at hD ⊢
-    field_simp
-    push_cast
-    ring
+    have hD : z.periodPair.weierstrassPoint (1 / N) =
+        z.periodPair.weierstrassPoint (denom γ z / N) := by
+      rw [PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff]
+      convert div_mem_lattice_periodPair_of_intCast_comp_eq_zero (N := N)
+        (b := ![-γ 1 0, 1 - γ 1 1]) z (by ext i; fin_cases i <;> simp [h₀, h₁]) using 1
+      simp only [ModularGroup.denom_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+        Matrix.cons_val_fin_one]
+      push_cast
+      ring
+    refine ⟨⟨(Units.mk0 _ (denom_ne_zero γ z))⁻¹, 0, 0, 0⟩, ?_⟩
+    rw [pointedWeierstrassCurve_def z, hD, smul_mk_weierstrassPoint_denom_div]
 
 end UpperHalfPlane
 

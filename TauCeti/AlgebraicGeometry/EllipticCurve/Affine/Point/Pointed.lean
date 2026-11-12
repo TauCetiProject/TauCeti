@@ -20,11 +20,12 @@ element of its point group `W⟮R⟯`, a nonsingular affine point or the point a
 sense that an isomorphism of Weierstrass curves carries one marked point to the other, exactly when
 they lie in the same orbit, so the orbits are the isomorphism classes of pointed curves.
 
-Over a field the change of variables is a group isomorphism of point groups, so it preserves
-ellipticity and the order of the marked point. The pointed elliptic curves whose marked point has
-exact order `N` therefore form a sub-action (`TauCeti.PointedWeierstrassCurve.exactOrder`); its
-orbits are the isomorphism classes of elliptic curves with a point of exact order `N`, the moduli
-problem of the congruence subgroup `Γ₁(N)`.
+Changes of variables preserve ellipticity over any commutative ring
+(`WeierstrassCurve.isElliptic_smul_iff`). Over a field the bijection of point groups is a group
+isomorphism, so they also preserve the order of the marked point. The pointed elliptic curves whose
+marked point has exact order `N` therefore form a sub-action
+(`TauCeti.PointedWeierstrassCurve.exactOrder`); its orbits are the isomorphism classes of elliptic
+curves with a point of exact order `N`, the moduli problem of the congruence subgroup `Γ₁(N)`.
 
 ## Main definitions
 
@@ -111,12 +112,6 @@ instance instMulActionVariableChange :
     exact (equivVariableChange_mul X.curve C C' _).symm.trans
       (equivVariableChange_smul_point _ _))
 
-/-- Changes of variables preserve ellipticity of the underlying curve. -/
-theorem isElliptic_smul_curve_iff : (C • X).curve.IsElliptic ↔ X.curve.IsElliptic := by
-  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstanceAs (C • X.curve).IsElliptic⟩
-  have : (C⁻¹ • C • X.curve).IsElliptic := inferInstance
-  rwa [inv_smul_smul] at this
-
 section Field
 
 variable {F : Type*} [Field F] [DecidableEq F] (C : VariableChange F)
@@ -133,7 +128,7 @@ pointed Weierstrass curves. Its orbits under changes of variables are the isomor
 such pairs. -/
 def exactOrder (N : ℕ) : SubMulAction (VariableChange F) (PointedWeierstrassCurve F) where
   carrier := {X | X.curve.IsElliptic ∧ addOrderOf X.point = N}
-  smul_mem' C X hX := ⟨(isElliptic_smul_curve_iff C X).mpr hX.1,
+  smul_mem' C X hX := ⟨(isElliptic_smul_iff C X.curve).mpr hX.1,
     (addOrderOf_smul_point C X).trans hX.2⟩
 
 @[simp]

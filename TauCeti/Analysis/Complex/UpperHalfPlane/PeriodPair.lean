@@ -88,6 +88,8 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
   the lattice.
 * `UpperHalfPlane.lattice_periodPair_smul`: the lattice of `γ z` is `(c z + d)⁻¹ (ℤ z + ℤ)`, as a
   rescaled period pair.
+* `UpperHalfPlane.intCast_mul_add_intCast_eq_zero_iff`: `z` and `1` are linearly independent
+  over `ℤ`.
 * `PeriodPair.exists_lattice_eq_smul_periodPair`: every lattice is homothetic to `ℤ τ + ℤ`.
 * `PeriodPair.lattice_smul_eq_self_of_pow_eq_one`: if a primitive `n`-th root of unity preserves a
   lattice, so does every `n`-th root of unity.
@@ -772,8 +774,9 @@ lemma lattice_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) :
   simp [u, mul_div_cancel_left₀ _ (denom_ne_zero γ z)]
 
 /-- An integer combination `m z + n` of `z ∈ ℍ` and `1` vanishes only if `m = n = 0`. -/
-private lemma eq_zero_of_intCast_mul_add_intCast_eq_zero {z : ℍ} {m n : ℤ}
-    (h : (m : ℂ) * z + n = 0) : m = 0 ∧ n = 0 := by
+lemma intCast_mul_add_intCast_eq_zero_iff {z : ℍ} {m n : ℤ} :
+    (m : ℂ) * z + n = 0 ↔ m = 0 ∧ n = 0 := by
+  refine ⟨fun h ↦ ?_, fun ⟨hm, hn⟩ ↦ by simp [hm, hn]⟩
   have := LinearIndependent.pair_iff.mp z.periodPair.indep m n (by
     simpa [Complex.real_smul] using h)
   exact_mod_cast this
@@ -793,11 +796,11 @@ theorem exists_smul_eq_and_denom_eq_of_lattice_periodPair_eq {z z' : ℍ} {c : �
   simp only [periodPair_ω₁, periodPair_ω₂, PeriodPair.smul_ω₁, PeriodPair.smul_ω₂, mul_one]
     at hab hcd hef hgk
   -- The two integer matrices are mutually inverse, so `a d - b c' = ± 1`.
-  obtain ⟨h₁, h₂⟩ := eq_zero_of_intCast_mul_add_intCast_eq_zero (z := z')
-    (m := e * a + f * c' - 1) (n := e * b + f * d) (by
+  obtain ⟨h₁, h₂⟩ := (intCast_mul_add_intCast_eq_zero_iff (z := z')
+    (m := e * a + f * c' - 1) (n := e * b + f * d)).mp (by
       push_cast; linear_combination e * hab + f * hcd + hef)
-  obtain ⟨-, h₄⟩ := eq_zero_of_intCast_mul_add_intCast_eq_zero (z := z')
-    (m := g * a + k * c') (n := g * b + k * d - 1) (by
+  obtain ⟨-, h₄⟩ := (intCast_mul_add_intCast_eq_zero_iff (z := z')
+    (m := g * a + k * c') (n := g * b + k * d - 1)).mp (by
       push_cast; linear_combination g * hab + k * hcd + hgk)
   have hdet : (a * d - b * c') * (e * k - f * g) = 1 := by
     linear_combination (g * b + k * d) * h₁ + h₄ - (g * a + k * c') * h₂
