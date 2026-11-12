@@ -229,27 +229,48 @@ theorem IsDiagonalScaling.sum_col_pos [Nonempty ι] {P K : Matrix ι κ ℝ} {u 
   Finset.sum_pos (fun i _ ↦ h.pos hK hu hv i j) Finset.univ_nonempty
 
 omit [Fintype ι] in
-/-- The row factors of a diagonal scaling of a strictly positive kernel by strictly positive column
-factors are strictly positive when its row sums are. -/
-theorem IsDiagonalScaling.pos_left [Nonempty κ] {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ}
-    (hP : IsDiagonalScaling P K u v) {a : ι → ℝ} (hPa : ∀ i, ∑ j, P i j = a i)
-    (hK : ∀ i j, 0 < K i j) (ha : ∀ i, 0 < a i) (hv : ∀ j, 0 < v j) (i : ι) : 0 < u i := by
-  have hS : 0 < ∑ j, K i j * v j :=
-    Finset.sum_pos (fun j _ ↦ mul_pos (hK i j) (hv j)) Finset.univ_nonempty
-  have h : a i = u i * ∑ j, K i j * v j := by
-    rw [← hPa i, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun j _ ↦ by rw [(isDiagonalScaling_def _ _ _ _).1 hP i j, mul_assoc]
-  exact (mul_pos_iff_of_pos_right hS).1 (h ▸ ha i)
+/-- A row factor of a diagonal scaling is strictly positive when its row of the kernel and the
+column factors are nonnegative and its row sum is strictly positive. -/
+theorem IsDiagonalScaling.pos_left {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ}
+    (hP : IsDiagonalScaling P K u v) {i : ι} (hK : ∀ j, 0 ≤ K i j) (hv : ∀ j, 0 ≤ v j)
+    (hsum : 0 < ∑ j, P i j) : 0 < u i := by
+  have h : ∑ j, P i j = u i * ∑ j, K i j * v j := by
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by rw [hP i j, mul_assoc]
+  exact pos_of_mul_pos_left (h ▸ hsum) (Finset.sum_nonneg fun j _ ↦ mul_nonneg (hK j) (hv j))
+
+omit [Fintype κ] in
+/-- A column factor of a diagonal scaling is strictly positive when its column of the kernel and
+the row factors are nonnegative and its column sum is strictly positive. -/
+theorem IsDiagonalScaling.pos_right {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ}
+    (hP : IsDiagonalScaling P K u v) {j : κ} (hK : ∀ i, 0 ≤ K i j) (hu : ∀ i, 0 ≤ u i)
+    (hsum : 0 < ∑ i, P i j) : 0 < v j := by
+  have h : ∑ i, P i j = (∑ i, u i * K i j) * v j := by
+    rw [Finset.sum_mul]
+    exact Finset.sum_congr rfl fun i _ ↦ hP i j
+  exact pos_of_mul_pos_right (h ▸ hsum) (Finset.sum_nonneg fun i _ ↦ mul_nonneg (hu i) (hK i))
 
 /-- The column sums of a diagonal scaling of a strictly positive kernel by strictly positive column
-factors are strictly positive when its row sums are: the row factors are positive by
-`IsDiagonalScaling.pos_left`. -/
-theorem IsDiagonalScaling.pos_col_marginal [Nonempty ι] [Nonempty κ] {P K : Matrix ι κ ℝ}
-    {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) {a : ι → ℝ} {b : κ → ℝ}
+factors are strictly positive when its row sums are. -/
+theorem IsDiagonalScaling.col_marginal_pos [Nonempty ι] {P K : Matrix ι κ ℝ} {u : ι → ℝ}
+    {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) {a : ι → ℝ} {b : κ → ℝ}
     (hPm : HasMarginals P a b) (hK : ∀ i j, 0 < K i j) (ha : ∀ i, 0 < a i)
-    (hv : ∀ j, 0 < v j) (j : κ) : 0 < b j :=
-  ((hasMarginals_def P a b).1 hPm).2 j ▸
-    hP.sum_col_pos hK (hP.pos_left ((hasMarginals_def P a b).1 hPm).1 hK ha hv) hv j
+    (hv : ∀ j, 0 < v j) (j : κ) : 0 < b j := by
+  rw [hasMarginals_def] at hPm
+  rw [← hPm.2 j]
+  exact hP.sum_col_pos hK (fun i ↦ hP.pos_left (fun j ↦ (hK i j).le) (fun j ↦ (hv j).le)
+    ((hPm.1 i).symm ▸ ha i)) hv j
+
+/-- The row sums of a diagonal scaling of a strictly positive kernel by strictly positive row
+factors are strictly positive when its column sums are. -/
+theorem IsDiagonalScaling.row_marginal_pos [Nonempty κ] {P K : Matrix ι κ ℝ} {u : ι → ℝ}
+    {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) {a : ι → ℝ} {b : κ → ℝ}
+    (hPm : HasMarginals P a b) (hK : ∀ i j, 0 < K i j) (hb : ∀ j, 0 < b j)
+    (hu : ∀ i, 0 < u i) (i : ι) : 0 < a i := by
+  rw [hasMarginals_def] at hPm
+  rw [← hPm.1 i]
+  exact hP.sum_row_pos hK hu (fun j ↦ hP.pos_right (fun i ↦ (hK i j).le) (fun i ↦ (hu i).le)
+    ((hPm.2 j).symm ▸ hb j)) i
 
 omit [Fintype ι] [Fintype κ] in
 /-- Transposing a diagonal scaling exchanges the roles of the row and the column factors: if `P` is
