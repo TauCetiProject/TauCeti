@@ -22,7 +22,7 @@ open Polynomial
 namespace Polynomial
 
 /-- If `D[X]` has an irreducible element then `D` is not the zero ring. -/
-theorem nontrivial_of_irreducible {D : Type*} [CommRing D] {q : D[X]} (hq : Irreducible q) :
+theorem nontrivial_of_irreducible {D : Type*} [Semiring D] {q : D[X]} (hq : Irreducible q) :
     Nontrivial D := by
   by_contra h
   rw [not_nontrivial_iff_subsingleton] at h

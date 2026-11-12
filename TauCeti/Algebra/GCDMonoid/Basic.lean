@@ -10,7 +10,7 @@ public import Mathlib.Algebra.GCDMonoid.Basic
 /-!
 # Nontrivial rings with GCDs
 
-A nontrivial commutative ring with a GCD monoid structure is a domain, since a GCD monoid is
+A nontrivial commutative semiring with a GCD monoid structure is a domain, since a GCD monoid is
 cancellative.
 -/
 
@@ -18,8 +18,8 @@ public section
 
 namespace IsGCDMonoid
 
-/-- A nontrivial commutative ring with GCDs is a domain. -/
-theorem isDomain_of_nontrivial {D : Type*} [CommRing D] [IsGCDMonoid D] [Nontrivial D] :
+/-- A nontrivial commutative semiring with GCDs is a domain. -/
+theorem isDomain_of_nontrivial {D : Type*} [CommSemiring D] [IsGCDMonoid D] [Nontrivial D] :
     IsDomain D :=
   { IsGCDMonoid.isCancelMulZero (α := D) with }
 
