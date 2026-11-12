@@ -87,7 +87,7 @@ include k in
 /-- Every nonzero morphism has a partner with which its composite has nonzero right trace. -/
 theorem exists_rightTrace_comp_ne_zero {X Y : C} {f : X ⟶ Y} (hf : f ≠ 0) :
     ∃ g : Y ⟶ X, rightTrace (f ≫ g) ≠ 0 := by
-  obtain ⟨ι, hι, S, hS, hB, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
+  obtain ⟨ι, _, S, hS, hB, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
   -- A nonzero component of `f` has simple source, so it admits a retraction.
   obtain ⟨i, hi⟩ : ∃ i, biproduct.ι S i ≫ e.inv ≫ f ≠ 0 := by
     by_contra! h

@@ -38,7 +38,7 @@ the target is not reduced, although its only local ring is a principal ideal rin
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.stalkMap_injective_of_isDominant`: the stalk maps of a dominant
-  morphism from an integral scheme to a reduced scheme are injective.
+  morphism from an integral scheme to a scheme with reduced local rings are injective.
 * `AlgebraicGeometry.Scheme.Hom.flat_of_isDominant_of_valuationRing`: a dominant morphism from an
   integral scheme to a scheme whose local rings are valuation rings is flat.
 * `AlgebraicGeometry.Scheme.Hom.flat_of_isDominant_of_smooth`: a dominant morphism from an integral
@@ -62,19 +62,22 @@ variable {X Y : Scheme.{u}}
 
 namespace Scheme.Hom
 
-/-- The stalk maps of a dominant morphism from an integral scheme to a reduced scheme are
-injective. -/
-theorem stalkMap_injective_of_isDominant (f : X ⟶ Y) [IsIntegral X] [IsReduced Y] [IsDominant f]
-    (x : X) : Function.Injective (f.stalkMap x) := by
+/-- The stalk maps of a dominant morphism from an integral scheme to a scheme with reduced
+local rings (for instance a reduced scheme) are injective. -/
+theorem stalkMap_injective_of_isDominant (f : X ⟶ Y) [IsIntegral X] [IsDominant f] (x : X)
+    [_root_.IsReduced (Y.presheaf.stalk (f x))] : Function.Injective (f.stalkMap x) := by
   obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (Opens.mem_top (f x))
   refine hU.stalkMap_injective f x hxU fun g hg ↦ ?_
   rw [Scheme.Hom.germ_stalkMap_apply] at hg
   -- `f` kills `g`, since the stalks of the integral scheme `X` see every nonzero section.
   have hfg : f.app U g = 0 :=
     germ_injective_of_isIntegral X (U := f ⁻¹ᵁ U) x hxU (hg.trans (map_zero _).symm)
-  -- So no point of the dense image of `f` lies where `g` is nonzero, and `g` vanishes.
-  suffices g = 0 by rw [this, map_zero]
-  rw [← basicOpen_eq_bot_iff, ← Opens.not_nonempty_iff_eq_bot]
+  -- So no point of the dense image of `f` lies where `g` is nonzero, and `g` is nilpotent, hence
+  -- zero in the reduced local ring.
+  suffices IsNilpotent g from
+    (this.map (Y.presheaf.germ U (f x) hxU).hom).eq_zero
+  rw [Scheme.isNilpotent_iff_basicOpen_eq_bot_of_isCompact hU.isCompact,
+    ← Opens.not_nonempty_iff_eq_bot]
   intro hne
   obtain ⟨x', hx'⟩ := f.denseRange.exists_mem_open (Y.basicOpen g).isOpen hne
   have := f.mem_preimage.mpr hx'
@@ -82,8 +85,8 @@ theorem stalkMap_injective_of_isDominant (f : X ⟶ Y) [IsIntegral X] [IsReduced
   exact this
 
 /-- At a point where the target has a valuation ring as local ring, the stalk map of a dominant
-morphism from an integral scheme to a reduced scheme is flat. -/
-theorem flat_stalkMap_of_isDominant (f : X ⟶ Y) [IsIntegral X] [IsReduced Y] [IsDominant f]
+morphism from an integral scheme is flat. -/
+theorem flat_stalkMap_of_isDominant (f : X ⟶ Y) [IsIntegral X] [IsDominant f]
     (x : X) [IsDomain (Y.presheaf.stalk (f x))] [ValuationRing (Y.presheaf.stalk (f x))] :
     (f.stalkMap x).hom.Flat := by
   algebraize [(f.stalkMap x).hom]
@@ -97,7 +100,6 @@ dominant morphism `X ⟶ Y` is flat. -/
 theorem flat_of_isDominant_of_valuationRing (f : X ⟶ Y) [IsIntegral X] [IsDominant f]
     [∀ y : Y, IsDomain (Y.presheaf.stalk y)] [∀ y : Y, ValuationRing (Y.presheaf.stalk y)] :
     Flat f :=
-  have : IsReduced Y := isReduced_of_isReduced_stalk Y
   .of_stalkMap f fun x ↦ f.flat_stalkMap_of_isDominant x
 
 /-- **A dominant morphism to a smooth curve over a field is flat.** If `Y` is smooth over a field

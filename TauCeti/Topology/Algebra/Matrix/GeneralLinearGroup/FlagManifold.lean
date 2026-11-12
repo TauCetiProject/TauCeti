@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Ba
 import Mathlib.Topology.Homeomorph.Quotient
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.QR
-import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
@@ -44,7 +44,7 @@ equivariant for the left actions of `U(n)`. It rests on two facts.
 
 The quotient `U(n) ⧸ T` is compact and `GL n 𝕜 ⧸ B` is Hausdorff because `B` is closed
 (`TauCeti.isClosed_upperTriangularGroup`, from
-`TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular`), so the continuous
+`TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic`), so the continuous
 bijection between them is a homeomorphism.
 
 ## Main definitions
