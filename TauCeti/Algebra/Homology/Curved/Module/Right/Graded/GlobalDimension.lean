@@ -36,8 +36,12 @@ category to both the coderived and contraderived categories are equivalences of 
   `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_eq_coacyclic_of_hasProjectiveDimensionLE`,
   `TauCeti.CurvedDGRightModuleCat.coacyclic_eq_contraacyclic_of_hasProjectiveDimensionLE`:
   coincidence of the curved acyclic classes under finite graded global dimension.
-* `TauCeti.CurvedDGRightModuleCat.AbsoluteDerivedCategory.toContraderived`,
-  `TauCeti.CurvedDGRightModuleCat.AbsoluteDerivedCategory.toCoderived`: proved to be equivalences of
+* `isEquivalence_toContraderived_of_hasProjectiveDimensionLE`,
+  `isEquivalence_toCoderived_of_hasInjectiveDimensionLE`, and
+  `isEquivalence_toCoderived_of_hasProjectiveDimensionLE` (in
+  `TauCeti.CurvedDGRightModuleCat.AbsoluteDerivedCategory`): the comparison functors
+  `TauCeti.CurvedDGRightModuleCat.AbsoluteDerivedCategory.toContraderived` and
+  `TauCeti.CurvedDGRightModuleCat.AbsoluteDerivedCategory.toCoderived` are equivalences of
   categories under finite graded global dimension.
 
 ## References

@@ -163,10 +163,8 @@ theorem shortExact_coinducedInr_coinducedFst (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
     (ShortComplex.mk (coinducedInr h N) (coinducedFst h N)
       (coinducedInr_comp_coinducedFst h N)).ShortExact where
-  mono_f := (GradedModuleCat.mono_iff_injective _).2 fun y₁ y₂ hy ↦
-    (congrArg Prod.snd (coinducedEquiv_coinducedInr_apply h N y₁)).symm.trans
-      ((congrArg (fun z ↦ (coinducedEquiv h N z).2) hy).trans
-        (congrArg Prod.snd (coinducedEquiv_coinducedInr_apply h N y₂)))
+  mono_f := (GradedModuleCat.mono_iff_injective _).2 fun _ _ hy ↦ by
+    simpa using congrArg (fun z : coinducedObj h N ↦ (coinducedEquiv h N z).2) hy
   epi_g := (GradedModuleCat.epi_iff_surjective _).2 fun x ↦
     ⟨(coinducedEquiv h N).symm (x, 0), by simp⟩
   exact := GradedModuleCat.exact_iff.2 fun z ↦ by
@@ -212,13 +210,12 @@ noncomputable def coinduced (h : IsCurvedDGAlgebra 𝒜 d w) :
         (f.hom (coinducedEquiv h N₁ z).1, f.hom (coinducedEquiv h N₁ z).2)
       map_add' _ _ := (coinducedEquiv h N₂).injective (by simp)
       map_smul' a z := (coinducedEquiv h N₂).injective <| by
-        have hf : LinearMap.IsHomogeneous (f.hom.restrictScalars R) N₁.grading.piece
-            N₂.grading.piece 0 :=
-          LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ f.isHomogeneous.map_mem hx
-        have htw := hf.koszulTwist_apply 1 (coinducedEquiv h N₁ z).1
-        simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-          LinearMap.restrictScalars_apply] at htw
-        simp [← htw] }
+        have htw : N₂.grading.koszulTwist 1 (f.hom (coinducedEquiv h N₁ z).1) =
+            f.hom (N₁.grading.koszulTwist 1 (coinducedEquiv h N₁ z).1) := by
+          simpa using (LinearMap.isHomogeneous_def.2 fun _ _ hx ↦
+            f.isHomogeneous.map_mem hx : LinearMap.IsHomogeneous (f.hom.restrictScalars R)
+              N₁.grading.piece N₂.grading.piece 0).koszulTwist_apply 1 _
+        simp [htw] }
     (fun p z hz ↦ by
       rw [mem_coinducedObj_grading_iff] at hz ⊢
       simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearEquiv.apply_symm_apply]
@@ -263,14 +260,14 @@ noncomputable def coinducedLift {h : IsCurvedDGAlgebra 𝒜 d w}
     { toFun m := (coinducedEquiv h N).symm (f.hom m, f.hom (M.differential m))
       map_add' _ _ := (coinducedEquiv h N).injective (by simp)
       map_smul' a m := (coinducedEquiv h N).injective <| by
-        have hf : LinearMap.IsHomogeneous (f.hom.restrictScalars R)
-            (InternalGrading.ofDecomposition M.grading).piece N.grading.piece 0 :=
-          LinearMap.isHomogeneous_def.2 fun _ _ hx ↦
-            f.isHomogeneous.map_mem (by simpa [toGradedModuleCat_piece] using hx)
-        have htw := hf.koszulTwist_apply 1 m
-        simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-          LinearMap.restrictScalars_apply] at htw
-        simp [M.differential_smul, ← htw] }
+        have htw : N.grading.koszulTwist 1 (f.hom m) =
+            f.hom ((InternalGrading.ofDecomposition M.grading).koszulTwist 1 m) := by
+          have hf : LinearMap.IsHomogeneous (f.hom.restrictScalars R)
+              (InternalGrading.ofDecomposition M.grading).piece N.grading.piece 0 :=
+            LinearMap.isHomogeneous_def.2 fun _ _ hx ↦
+              f.isHomogeneous.map_mem (by simpa [toGradedModuleCat_piece] using hx)
+          simpa using hf.koszulTwist_apply 1 m
+        simp [M.differential_smul, htw] }
     (fun p m hm ↦ by
       rw [mem_coinducedObj_grading_iff]
       simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearEquiv.apply_symm_apply]
@@ -299,8 +296,8 @@ theorem forgetDifferential_map_coinducedLift_comp_coinducedFst {h : IsCurvedDGAl
     (f : toGradedModuleCat M ⟶ N) :
     (forgetDifferential (h := h)).map (coinducedLift f) ≫ coinducedFst h N = f := by
   ext m
-  simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply, forgetDifferential_map_hom]
-  rw [coinducedFst_apply]
+  rw [GradedModuleCat.hom_comp, LinearMap.comp_apply, forgetDifferential_map_hom,
+    coinducedFst_apply]
   exact congrArg Prod.fst (coinducedEquiv_closedHom_coinducedLift_apply f m)
 
 /-- Forming `coinducedLift` from the projection of `g : M ⟶ G⁻ N` along `coinducedFst` recovers `g`.
@@ -313,9 +310,8 @@ theorem coinducedLift_forgetDifferential_map_comp_coinducedFst {h : IsCurvedDGAl
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h N)) :
     coinducedLift ((forgetDifferential (h := h)).map g ≫ coinducedFst h N) = g := by
   refine closedHom_ext fun m ↦ (coinducedEquiv h N).injective <| ?_
-  rw [coinducedEquiv_closedHom_coinducedLift_apply]
-  simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply, forgetDifferential_map_hom]
-  rw [coinducedFst_apply, coinducedFst_apply]
+  simp only [coinducedEquiv_closedHom_coinducedLift_apply, GradedModuleCat.hom_comp,
+    LinearMap.comp_apply, forgetDifferential_map_hom]
   have hd := congrArg (fun z ↦ (coinducedEquiv h N z).1) (differential_closedHom g m)
   rw [coinducedEquiv_differential] at hd; exact Prod.ext rfl hd.symm
 
@@ -332,16 +328,11 @@ noncomputable def forgetDifferentialCoinducedAdj (h : IsCurvedDGAlgebra 𝒜 d w
             (M := ForgetEnrichment.to _ M) f
           right_inv g := coinducedLift_forgetDifferential_map_comp_coinducedFst
             (M := ForgetEnrichment.to _ M) g }
-      homEquiv_naturality_left_symm _ _ := by
-        rw [Equiv.coe_fn_symm_mk, Equiv.coe_fn_symm_mk, CategoryTheory.Functor.map_comp,
-          Category.assoc]
+      homEquiv_naturality_left_symm _ _ := by simp
       homEquiv_naturality_right {M _ N₂} _ _ := by
-        rw [Equiv.coe_fn_mk, Equiv.coe_fn_mk]
-        refine closedHom_ext fun m ↦ (coinducedEquiv h N₂).injective ?_
-        rw [closedHom_comp, LinearMap.comp_apply, coinducedEquiv_closedHom_coinduced_map_apply,
-          coinducedEquiv_closedHom_coinducedLift_apply (M := ForgetEnrichment.to _ M),
-          coinducedEquiv_closedHom_coinducedLift_apply (M := ForgetEnrichment.to _ M)]
-        simp }
+        dsimp only [coinduced]
+        exact closedHom_ext (M := ForgetEnrichment.to _ M) fun m ↦
+          (coinducedEquiv h N₂).injective (by simp) }
 
 /-- The forward adjunct of `forgetDifferentialCoinducedAdj` is `coinducedLift`. -/
 @[simp]

@@ -32,10 +32,11 @@ universe `max uA v` at least that of `A`, embedding each homogeneous piece into 
 
 * `TauCeti.GradedModuleCat.coinducedSingle` and `TauCeti.GradedModuleCat.coinducedSingleApply`:
   the degree-zero coinduced graded `A`-module and its underlying `k`-linear evaluation map.
-* `TauCeti.GradedModuleCat.coinducedSingleShiftHomEquiv`,
+* `TauCeti.GradedModuleCat.coinducedSingleShiftLift`,
+  `TauCeti.GradedModuleCat.coinducedSingleShiftHomEquiv`,
   `TauCeti.GradedModuleCat.coinducedSingleHomEquiv`, `TauCeti.GradedModuleCat.coinduced`, and
-  `TauCeti.GradedModuleCat.coinducedHomEquiv`: universal properties of single and family coinduced
-  graded modules.
+  `TauCeti.GradedModuleCat.coinducedHomEquiv`: lifts and universal properties of single and family
+  coinduced graded modules.
 
 ## Main results
 

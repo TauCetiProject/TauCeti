@@ -398,13 +398,12 @@ noncomputable def induced (h : IsCurvedDGAlgebra 𝒜 d w) :
         (inducedEquiv h N₂).symm (f.hom (inducedEquiv h N₁ z).1, f.hom (inducedEquiv h N₁ z).2)
       map_add' _ _ := (inducedEquiv h N₂).injective (by simp)
       map_smul' a z := (inducedEquiv h N₂).injective <| by
-        have hf : LinearMap.IsHomogeneous (f.hom.restrictScalars R) N₁.grading.piece
-            N₂.grading.piece 0 :=
-          LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ f.isHomogeneous.map_mem hx
-        have htw := hf.koszulTwist_apply 1 (inducedEquiv h N₁ z).2
-        simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-          LinearMap.restrictScalars_apply] at htw
-        simp [← htw] }
+        have htw : N₂.grading.koszulTwist 1 (f.hom (inducedEquiv h N₁ z).2) =
+            f.hom (N₁.grading.koszulTwist 1 (inducedEquiv h N₁ z).2) := by
+          simpa using (LinearMap.isHomogeneous_def.2 fun _ _ hx ↦
+            f.isHomogeneous.map_mem hx : LinearMap.IsHomogeneous (f.hom.restrictScalars R)
+              N₁.grading.piece N₂.grading.piece 0).koszulTwist_apply 1 _
+        simp [htw] }
     (fun p z hz ↦ by
       rw [mem_inducedObj_grading_iff] at hz ⊢
       simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearEquiv.apply_symm_apply]
@@ -448,15 +447,15 @@ noncomputable def inducedDesc {h : IsCurvedDGAlgebra 𝒜 d w}
         (M.differential (f.hom (inducedEquiv h N z).2))
       map_add' _ _ := by simp only [map_add, Prod.fst_add, Prod.snd_add]; abel
       map_smul' a z := by
-        have hf : LinearMap.IsHomogeneous (f.hom.restrictScalars R) N.grading.piece
-            (InternalGrading.ofDecomposition M.grading).piece 0 :=
-          LinearMap.isHomogeneous_def.2 fun _ _ hx ↦
-            by simpa [toGradedModuleCat_piece] using f.isHomogeneous.map_mem hx
-        have htw := hf.koszulTwist_apply 1 (inducedEquiv h N z).2
-        simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-          LinearMap.restrictScalars_apply] at htw
+        have htw : (InternalGrading.ofDecomposition M.grading).koszulTwist 1
+            (f.hom (inducedEquiv h N z).2) =
+              f.hom (N.grading.koszulTwist 1 (inducedEquiv h N z).2) := by
+          simpa using (LinearMap.isHomogeneous_def.2 fun _ _ hx ↦
+            by simpa [toGradedModuleCat_piece] using f.isHomogeneous.map_mem hx :
+              LinearMap.IsHomogeneous (f.hom.restrictScalars R) N.grading.piece
+                (InternalGrading.ofDecomposition M.grading).piece 0).koszulTwist_apply 1 _
         simp only [RingHom.id_apply, inducedEquiv_smul, map_sub, LinearMap.map_smul,
-          M.differential_smul, ← htw, smul_add]
+          M.differential_smul, htw, smul_add]
         abel }
     (fun p z hz ↦ by
       rw [mem_inducedObj_grading_iff] at hz
@@ -486,7 +485,7 @@ theorem inducedInl_comp_forgetDifferential_map_inducedDesc {h : IsCurvedDGAlgebr
     {M : CurvedDGRightModuleCat.{u, u, u} h} (f : N ⟶ toGradedModuleCat M) :
     inducedInl h N ≫ (forgetDifferential (h := h)).map (inducedDesc f) = f := by
   ext x
-  simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply, forgetDifferential_map_hom]
+  rw [GradedModuleCat.hom_comp, LinearMap.comp_apply, forgetDifferential_map_hom]
   exact (closedHom_inducedDesc_apply f ((inducedInl h N).hom x)).trans (by simp)
 
 /-- Forming `inducedDesc` from the restriction of `g : G⁺ N ⟶ M` along `inducedInl` recovers `g`.
@@ -521,15 +520,8 @@ noncomputable def inducedForgetDifferentialAdj (h : IsCurvedDGAlgebra 𝒜 d w) 
           right_inv f :=
             inducedInl_comp_forgetDifferential_map_inducedDesc (M := ForgetEnrichment.to _ M) f }
       homEquiv_naturality_left_symm {_ _ M} _ _ := by
-        rw [Equiv.coe_fn_symm_mk, Equiv.coe_fn_symm_mk]; refine closedHom_ext fun z ↦ ?_
-        rw [closedHom_comp, LinearMap.comp_apply,
-          closedHom_inducedDesc_apply (M := ForgetEnrichment.to _ M),
-          closedHom_inducedDesc_apply (M := ForgetEnrichment.to _ M),
-          inducedEquiv_closedHom_induced_map_apply]
-        simp
-      homEquiv_naturality_right g k :=
-        (congrArg (inducedInl h _ ≫ ·) ((forgetDifferential (h := h)).map_comp g k)).trans
-          (Category.assoc _ _ _).symm }
+        dsimp only [induced]; exact closedHom_ext (N := ForgetEnrichment.to _ M) fun z ↦ by simp
+      homEquiv_naturality_right _ _ := by simp }
 
 /-- The forward adjunct of `inducedForgetDifferentialAdj` restricts along `inducedInl`. -/
 @[simp]

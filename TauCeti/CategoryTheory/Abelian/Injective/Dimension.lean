@@ -17,6 +17,10 @@ objects of `C` therefore identifies uniform bounds on projective and injective d
 
 ## Main results
 
+* `CategoryTheory.hasInjectiveDimensionLE_of_forall_hasProjectiveDimensionLE` and
+  `CategoryTheory.hasProjectiveDimensionLE_of_forall_hasInjectiveDimensionLE`: a uniform
+  projective (resp. injective) dimension bound on all objects implies the same injective
+  (resp. projective) dimension bound.
 * `CategoryTheory.forall_hasProjectiveDimensionLT_iff_forall_hasInjectiveDimensionLT` and
   `CategoryTheory.forall_hasProjectiveDimensionLE_iff_forall_hasInjectiveDimensionLE`: uniform
   projective and injective dimension bounds on all objects of `C` are equivalent.
@@ -33,16 +37,14 @@ injective dimension `< n`. -/
 theorem hasInjectiveDimensionLT_of_forall_hasProjectiveDimensionLT {n : ℕ}
     (hn : ∀ X : C, HasProjectiveDimensionLT X n) (Y : C) : HasInjectiveDimensionLT Y n := by
   let := HasExt.standard C
-  exact ⟨fun i hi X ↦ subsingleton_of_forall_eq 0 fun e ↦
-    have := hn X; e.eq_zero_of_hasProjectiveDimensionLT n hi⟩
+  exact .mk fun i hi X e ↦ have := hn X; e.eq_zero_of_hasProjectiveDimensionLT n hi
 
 /-- If every object of an abelian category has injective dimension `< n`, then every object has
 projective dimension `< n`. -/
 theorem hasProjectiveDimensionLT_of_forall_hasInjectiveDimensionLT {n : ℕ}
     (hn : ∀ Y : C, HasInjectiveDimensionLT Y n) (X : C) : HasProjectiveDimensionLT X n := by
   let := HasExt.standard C
-  exact ⟨fun i hi Y ↦ subsingleton_of_forall_eq 0 fun e ↦
-    have := hn Y; e.eq_zero_of_hasInjectiveDimensionLT n hi⟩
+  exact .mk fun i hi Y e ↦ have := hn Y; e.eq_zero_of_hasInjectiveDimensionLT n hi
 
 /-- Every object of an abelian category has projective dimension `< n` iff every object has
 injective dimension `< n`. -/

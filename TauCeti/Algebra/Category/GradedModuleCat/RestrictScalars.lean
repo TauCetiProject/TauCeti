@@ -303,6 +303,7 @@ instance (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] : (extendBase.{
 
 /-- **Base-ring independence of graded modules.** When `1 ∈ 𝒜₀`, restricting the base ring of `𝒜`
 along a scalar tower `k₀ → k → A` is an equivalence of graded module categories. -/
+@[expose]
 def restrictBaseEquivalence (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
     GradedModuleCat.{v} 𝒜 ≌ GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀) where
   functor := restrictBase k₀ 𝒜
