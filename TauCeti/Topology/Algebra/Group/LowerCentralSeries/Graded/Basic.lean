@@ -327,8 +327,8 @@ theorem gradedPieceInclusion_gradedMk {k : ℕ} (x : pLowerCentralSeries p G k) 
 theorem gradedPieceInclusion_injective (k : ℕ) :
     Function.Injective (gradedPieceInclusion p G k) := by
   rw [gradedPieceInclusion, MonoidHom.coe_toAdditive]
-  exact (Additive.ofMul.injective.comp ((TauCeti.QuotientGroup.map_injective_iff _ _ _).mpr
-    (comap_subtype _ _).symm)).comp Additive.toMul.injective
+  exact (Additive.ofMul.injective.comp ((_root_.QuotientGroup.map_injective_iff _ _ _ _).mpr
+    (comap_subtype _ _).le)).comp Additive.toMul.injective
 
 theorem gradedPieceInclusion_zero_surjective :
     Function.Surjective (gradedPieceInclusion p G 0) := by
