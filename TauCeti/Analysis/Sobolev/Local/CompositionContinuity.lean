@@ -61,12 +61,6 @@ section Helpers
 variable {α E E' : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup E]
   [NormedAddCommGroup E'] {p : ℝ≥0∞}
 
-/-- A pointwise bound `‖f‖ ≤ c ‖b‖` bounds the `Lᵖ` norms, as a product in `ℝ≥0∞`. -/
-private theorem eLpNorm_le_mul_of_ae_nnnorm_le_mul {f : α → E} {b : α → E'} {c : ℝ≥0}
-    (hf : AEStronglyMeasurable f μ) (h : ∀ᵐ x ∂μ, ‖f x‖₊ ≤ c * ‖b x‖₊) :
-    eLpNorm f p μ ≤ c * eLpNorm b p μ := by
-  simpa [ENNReal.smul_def, smul_eq_mul] using eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul hf h p
-
 /-- If `f i` is eventually bounded by `δ ‖b‖` for every `δ > 0`, and `b` has finite `Lᵖ` norm, then
 the `Lᵖ` norm of `f i` tends to `0`. -/
 private theorem tendsto_eLpNorm_zero_of_eventually_le_mul {ι : Type*} {l : Filter ι}
@@ -77,7 +71,7 @@ private theorem tendsto_eLpNorm_zero_of_eventually_le_mul {ι : Type*} {l : Filt
   refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
   obtain ⟨δ, hδ, hδε⟩ := ENNReal.exists_nnreal_pos_mul_lt hb hε.ne'
   filter_upwards [hf, h δ hδ] with i hfi hi
-  exact (eLpNorm_le_mul_of_ae_nnnorm_le_mul hfi hi).trans hδε.le
+  exact (eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul hfi hi p).trans hδε.le
 
 end Helpers
 
@@ -155,10 +149,10 @@ theorem eLpNormWkp_one_comp_le {u : ℂ → F} {g : F → G} {W : Set F} {C₀ C
       ((hg.continuousOn.comp huc huW).aestronglyMeasurable hK)
       ((ae_restrict_mem hK).mono fun z hz => hC₀ z hz)
     simpa [Measure.restrict_apply_univ, ENNReal.smul_def, smul_eq_mul, Function.comp_def] using this
-  · refine eLpNorm_le_mul_of_ae_nnnorm_le_mul
+  · refine eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
       ((ContinuousLinearMap.compL ℝ ℂ F G).aestronglyMeasurable_comp₂
         (((hg.continuousOn_fderiv_of_isOpen hW le_rfl).comp huc huW).aestronglyMeasurable hK) hDm)
-      ((ae_restrict_mem hK).mono fun z hz => ?_)
+      ((ae_restrict_mem hK).mono fun z hz => ?_) p
     exact (ContinuousLinearMap.opNNNorm_comp_le _ _).trans (by gcongr; exact hC₁ z hz)
 
 /-- **A uniform `W^{1,p}` bound for composition with a `C¹` map.** Let `g` be `C¹` on an open set
@@ -260,10 +254,10 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
       abel
     rw [hsplit]
     refine (eLpNorm_add_le' p).trans (mul_le_mul' le_rfl (add_le_add le_rfl ?_))
-    refine eLpNorm_le_mul_of_ae_nnnorm_le_mul
+    refine eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
       ((ContinuousLinearMap.compL ℝ ℂ F G).aestronglyMeasurable_comp₂
         ((hDgc.comp hnc hnW).aestronglyMeasurable hKm) hDm)
-      ((ae_restrict_mem hKm).mono fun z hz => ?_)
+      ((ae_restrict_mem hKm).mono fun z hz => ?_) p
     exact (ContinuousLinearMap.opNNNorm_comp_le _ _).trans (by gcongr; exact hnC z hz)
   -- The three terms tend to `0`.
   have h1 : Tendsto (fun n => eLpNorm (g ∘ u n - g ∘ u₀) p (volume.restrict K)) l (𝓝 0) := by
