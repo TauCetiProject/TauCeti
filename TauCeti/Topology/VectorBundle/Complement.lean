@@ -19,7 +19,7 @@ projections. The ranges of the complementary projections therefore form a vector
 bundle, with the subspace topology inherited from the ambient trivial bundle.
 
 Use `bundleComplementProjection` for the complementary projections, whose continuity
-also holds in complete, possibly infinite-dimensional ambient spaces. In finite dimension,
+also holds in possibly infinite-dimensional ambient spaces. In finite dimension,
 install `bundleComplementFiberBundle` and `bundleComplementVectorBundle` locally to
 work with the complementary bundle. The total-space homeomorphism
 `bundleComplementHomeomorph` identifies its sum with the original bundle with the
@@ -53,11 +53,9 @@ variable (j : ∀ x, E x →L[𝕜] V)
 
 section Projections
 
-variable [CompleteSpace V]
-
 include hj hinj in
-/-- The range projection of a continuous fibrewise embedding into a complete
-inner product space varies continuously, without a metric on the source bundle. -/
+/-- The range projection of a continuous fibrewise embedding into an inner product space varies
+continuously, without a metric on the source bundle. -/
 theorem continuous_bundle_range_starProjection :
     letI := fun x ↦ VectorBundle.finiteDimensional 𝕜 F E x
     Continuous (fun x ↦ (j x).range.starProjection) := by
@@ -95,7 +93,6 @@ def bundleComplementProjection (x : B) : V →L[𝕜] V :=
   letI := VectorBundle.finiteDimensional 𝕜 F E x
   1 - (j x).range.starProjection
 
-omit [CompleteSpace V] in
 /-- Complementary projection is orthogonal projection onto the complementary subspace. -/
 theorem bundleComplementProjection_eq (x : B) :
     letI := VectorBundle.finiteDimensional 𝕜 F E x
@@ -110,14 +107,12 @@ theorem continuous_bundleComplementProjection :
   let := fun x ↦ VectorBundle.finiteDimensional 𝕜 F E x
   exact continuous_const.sub (continuous_bundle_range_starProjection j hj hinj)
 
-omit [CompleteSpace V] in
 /-- Each complementary projection is idempotent. -/
 theorem isIdempotentElem_bundleComplementProjection (x : B) :
     IsIdempotentElem (bundleComplementProjection (F := F) j x) := by
   let := VectorBundle.finiteDimensional 𝕜 F E x
   exact ((j x).range.isIdempotentElem_starProjection).one_sub
 
-omit [CompleteSpace V] in
 /-- The complementary projection has precisely the orthogonal complement as range. -/
 @[simp]
 theorem range_bundleComplementProjection (x : B) :

@@ -144,8 +144,8 @@ theorem exists_isOpen_eLpNorm_restrict_sub_le_mul_eLpNorm_mgradient [LindelofSpa
     _ ≤ ENNReal.ofReal (2 * ρ c) *
           (ENNReal.ofReal (K ^ q) * ∫⁻ y in B, ‖fderiv ℝ (fun y ↦ u (φ.symm y)) y‖ₑ ^ q ∂μ) := by
         gcongr
-        exact lintegral_enorm_sub_setAverage_rpow_le_of_convex isOpen_ball (convex_ball _ _)
-          isBounded_ball hv subset_rfl (measure_ball_pos μ _ hr).ne' hq
+        exact lintegral_enorm_sub_setAverage_rpow_le_of_convex (convex_ball _ _) isBounded_ball
+          hv subset_rfl (measure_ball_pos μ _ hr).ne' hq
     _ ≤ ENNReal.ofReal (2 * ρ c) * (ENNReal.ofReal (K ^ q) *
           ∫⁻ y in B, ENNReal.ofReal C₁ ^ q * ‖mgradient I u (φ.symm y)‖ₑ ^ q ∂μ) := by
         gcongr ENNReal.ofReal (2 * ρ c) * (ENNReal.ofReal (K ^ q) * ?_)
