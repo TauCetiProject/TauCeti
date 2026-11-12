@@ -25,8 +25,8 @@ as existential and universal respectively, and computes their truth values in an
 The existential and universal theories of a group in the language with coefficients are studied by
 Kharlampovich and Myasnikov, *Implicit function theorem over free groups*, §2.3 and §3.2, and
 *Algebraic geometry over free groups: lifting solutions into generic points*, Definition 9, where
-the existential theory is the set of true sentences `∃ x̄, ⋀ uᵢ = 1 ∧ ⋀ vⱼ ≠ 1`; the
-nontrivial-centralizer sentence has this form, with one equation and one inequation.
+the existential theory is the set of true sentences `∃ x₁ … xₙ, ⋀ uᵢ = 1 ∧ ⋀ vⱼ ≠ 1`;
+the nontrivial-centralizer sentence has this form, with one equation and one inequation.
 -/
 
 public section
