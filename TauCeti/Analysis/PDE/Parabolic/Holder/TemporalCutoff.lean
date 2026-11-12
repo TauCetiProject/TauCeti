@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
 public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Temporal cutoffs in the order-two parabolic Hölder space
@@ -120,7 +121,10 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
           s + δ ≤ (p : ParabolicSpaceTime E).time → χ p = 1) ∧
         spatialFDerivL χ = 0 ∧ spatialSecondFDerivL χ = 0 ∧
         ‖χ‖ ≤ 1 + M / δ + M * δ ^ (-1 - (α : ℝ) / 2) := by
-  obtain ⟨M, hM, hhol⟩ := smoothTransition.exists_holderWith_deriv
+  have hd : ContDiff ℝ 1 (deriv smoothTransition) :=
+    (smoothTransition.contDiff (n := 2)).deriv'
+  obtain ⟨M, hhol, hM⟩ := hd.exists_holderWith_and_norm_le_of_hasCompactSupport
+    smoothTransition.hasCompactSupport_deriv
     ((div_le_iff₀ (by norm_num : (0 : ℝ≥0) < 2)).2 (by simpa using hα))
   refine ⟨M, M.coe_nonneg, fun {δ} hδ s a b hab ↦ ?_⟩
   let f : ℝ → ℝ := fun t ↦ smoothTransition ((t - s) / δ)

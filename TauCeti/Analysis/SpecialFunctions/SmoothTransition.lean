@@ -12,7 +12,6 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Topology.EMetricSpace.Lipschitz
-public import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
@@ -61,8 +60,6 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
   half-line.
 * `Real.smoothTransition.exists_forall_norm_deriv_le` and
   `Real.smoothTransition.exists_forall_norm_deriv_deriv_le`: the first two derivatives are bounded.
-* `Real.smoothTransition.exists_holderWith_deriv`: the derivative is bounded and Hölder for
-  every exponent at most one.
 * `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`,
   `a ≥ 0` and `|y| ≤ C |t|`.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
@@ -166,36 +163,6 @@ theorem deriv_deriv_of_neg {x : ℝ} (hx : x < 0) : deriv (deriv smoothTransitio
 theorem exists_forall_norm_deriv_le : ∃ L : ℝ, ∀ τ, ‖deriv smoothTransition τ‖ ≤ L :=
   (Real.smoothTransition.contDiff.iterate_deriv 1).continuous.bounded_above_of_compact_support
     hasCompactSupport_deriv
-
-/-- The derivative of the smooth transition function is bounded and globally Hölder for every
-exponent at most one, with a common bound for its norm and Hölder constant. -/
-theorem exists_holderWith_deriv {β : ℝ≥0} (hβ : β ≤ 1) :
-    ∃ M : ℝ≥0, (∀ t, ‖deriv smoothTransition t‖ ≤ M) ∧
-      HolderWith M β (deriv smoothTransition) := by
-  have hd : ContDiff ℝ 1 (deriv smoothTransition) :=
-    (smoothTransition.contDiff (n := 2)).deriv'
-  obtain ⟨K, hK⟩ := hd.lipschitzWith_of_hasCompactSupport
-    hasCompactSupport_deriv (by simp)
-  obtain ⟨B, hB⟩ := exists_forall_norm_deriv_le
-  let M : ℝ≥0 := ⟨(K : ℝ) + 2 * |B|, by positivity⟩
-  have hMcoe : (M : ℝ) = K + 2 * |B| := (rfl)
-  have hBM : B ≤ M := by
-    rw [hMcoe]
-    nlinarith [le_abs_self B, abs_nonneg B, K.coe_nonneg]
-  have hbnn (x : ℝ) : ‖deriv smoothTransition x‖₊ ≤ |B|.toNNReal := by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal _ (abs_nonneg B)]
-    exact (hB x).trans (le_abs_self B)
-  have hzero : HolderWith M 0 (deriv smoothTransition) :=
-    (holderWith_zero_of_nnnorm_le hbnn).mono (by
-      rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_ofNat,
-        Real.coe_toNNReal _ (abs_nonneg B), hMcoe]
-      exact le_add_of_nonneg_left K.coe_nonneg)
-  refine ⟨M, fun t ↦ (hB t).trans hBM, ?_⟩
-  have hKM : K ≤ M := by
-    rw [← NNReal.coe_le_coe, hMcoe]
-    exact le_add_of_nonneg_right (by positivity)
-  simpa only [max_self] using hzero.of_le_of_le (hK.weaken hKM).holderWith
-    (by positivity) hβ
 
 /-- The second derivative of the smooth transition function is bounded. -/
 theorem exists_forall_norm_deriv_deriv_le :
