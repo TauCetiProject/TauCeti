@@ -172,7 +172,7 @@ theorem exists_norm_le_of_liouvilleEnergy_le (hE : Module.finrank ℝ E = 2)
   set S := -∫ x, K x ∂riemannianVolume I M
   set V := (riemannianVolume I M).real univ
   have hS : 0 < S := neg_pos.mpr hK
-  have hB : 0 ≤ B := le_max_right _ _
+  have _ : 0 ≤ B := le_max_right _ _
   refine ⟨Real.sqrt ((P + 1) * (4 * B) + V⁻¹ * (V * (B / S)) ^ 2), fun w hw ↦ ?_⟩
   have hDw := dirichletForm_self_nonneg w
   have htotal := hC w

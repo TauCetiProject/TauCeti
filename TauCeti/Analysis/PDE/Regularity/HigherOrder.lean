@@ -219,7 +219,7 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
       ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 d (v : W1p mu Omega 2) =
         ∫ x in Omega, Wkp.value k G x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
   obtain ⟨w, hw⟩ := hw
-  set b := EuclideanSpace.basisFun ι ℝ with hb
+  set b := EuclideanSpace.basisFun ι ℝ
   have haΩ : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega := fun i j =>
     (ha i j).mono (subset_closure.trans hΩU)
   -- The energy integrand of `a` is bounded on `Ω`, so the equation may be tested on test functions.

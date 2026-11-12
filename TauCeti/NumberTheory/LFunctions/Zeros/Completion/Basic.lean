@@ -67,7 +67,7 @@ theorem meromorphicOrderAt_polarPolynomial (s : ℂ) :
   rw [meromorphicOrderAt_fun_prod (fun p _ ↦ by fun_prop)]
   rw [Finset.sum_eq_single s]
   · exact meromorphicOrderAt_pow_id_sub_const
-  · intro p hp hps
+  · intro p _ hps
     have ha : AnalyticAt ℂ (fun z : ℂ ↦ (z - p) ^ d.polarOrder p) s := by fun_prop
     exact ha.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr
       (pow_ne_zero _ (sub_ne_zero.mpr (Ne.symm hps)))

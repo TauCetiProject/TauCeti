@@ -415,7 +415,7 @@ theorem unramifiedCoordinate_artinMap (x : Kˣ) :
   apply AlgEquiv.ext
   intro y
   apply Subtype.ext
-  obtain ⟨f, hf, hy⟩ := mem_maximalUnramifiedExtension_iff.1 y.2
+  obtain ⟨f, _, hy⟩ := mem_maximalUnramifiedExtension_iff.1 y.2
   let L := unramifiedExtension K (AlgebraicClosure K) f
   let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L
   let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L
