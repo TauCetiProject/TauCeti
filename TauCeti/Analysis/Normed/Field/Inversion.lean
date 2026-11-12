@@ -155,7 +155,6 @@ theorem norm_inv_sub_sub_inv_sub_le_of_mem_closedBall {c w z : 𝕜} {r : ℝ}
     (hz : z ∈ closedBall c r) (hw : r < ‖w - c‖) :
     ‖(w - z)⁻¹ - (w - c)⁻¹‖ ≤ r / ((‖w - c‖ - r) * ‖w - c‖) := by
   have hzc := mem_closedBall_iff_norm.mp hz
-  have hδ : 0 < ‖w - c‖ - r := sub_pos.mpr hw
   have hρ : 0 < ‖w - c‖ := ((norm_nonneg _).trans hzc).trans_lt hw
   have hwz : 0 < ‖w - z‖ := by linarith [norm_sub_le_norm_sub_add_norm_sub w z c]
   rw [inv_sub_inv' (norm_pos_iff.mp hwz) (norm_pos_iff.mp hρ), sub_sub_sub_cancel_left,
