@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
+public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
@@ -38,9 +39,14 @@ glued at their endpoints `±1`.
 * `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
   `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
   identity for a point of `sphere (0 : ℂ) 1`.
+* `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
+  of `sphere (0 : ℂ) 1`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
+* `Circle.exp_pow_eq_one_iff`: `exp (i θ)` is an `n`-th root of unity exactly when `θ` is an
+  integer multiple of `2π / n`.
+* `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
 * `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
@@ -81,6 +87,14 @@ theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 :
 theorem _root_.Complex.re_sq_add_im_sq_of_mem_sphere {z : ℂ} (hz : z ∈ sphere (0 : ℂ) 1) :
     z.re ^ 2 + z.im ^ 2 = 1 := by
   simpa using re_sq_add_im_sq (homeomorphSphere.symm ⟨z, hz⟩)
+
+/-- On the unit sphere of `ℂ`, conjugation inverts integer powers:
+`z ^ k * conj (z ^ m) = z ^ (k - m)`. -/
+theorem _root_.Complex.zpow_mul_conj_zpow_of_mem_sphere {z : ℂ} (hz : z ∈ sphere (0 : ℂ) 1)
+    (k m : ℤ) : z ^ k * conj (z ^ m) = z ^ (k - m) := by
+  have hz1 : ‖z‖ = 1 := by simpa using hz
+  have hz0 : z ≠ 0 := by rintro rfl; simp at hz1
+  rw [map_zpow₀, ← Complex.inv_eq_conj hz1, inv_zpow', ← zpow_add₀ hz0, sub_eq_add_neg]
 
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
@@ -135,6 +149,23 @@ theorem mixed_power_rotation_factor {p q : ℕ} (hpq : p ≠ q) :
 theorem exists_pow_nat_eq (z : Circle) {n : ℕ} (hn : n ≠ 0) : ∃ y : Circle, y ^ n = z :=
   ⟨exp (Complex.arg z / n), by
     rw [← exp_nsmul, nsmul_eq_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn), exp_arg]⟩
+
+/-- **The `n`-th roots of unity among the exponentials.** For `n ≠ 0`, `exp (i θ) ^ n = 1` exactly
+when `θ` is an integer multiple of `2π / n`. -/
+theorem exp_pow_eq_one_iff {n : ℕ} (hn : n ≠ 0) {θ : ℝ} :
+    exp θ ^ n = 1 ↔ ∃ m : ℤ, θ = m * (2 * Real.pi / n) := by
+  have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn
+  rw [← exp_natCast_mul, exp_eq_one]
+  refine exists_congr fun m ↦ ?_
+  rw [mul_div_assoc', eq_div_iff hn', mul_comm θ]
+
+/-- Rotating a complex number by minus its argument puts it on the nonnegative real axis. -/
+theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x‖ := by
+  rw [coe_exp]
+  nth_rewrite 2 [← Complex.norm_mul_exp_arg_mul_I x]
+  rw [mul_left_comm, ← Complex.exp_add]
+  push_cast
+  rw [neg_mul, neg_add_cancel, Complex.exp_zero, mul_one]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/

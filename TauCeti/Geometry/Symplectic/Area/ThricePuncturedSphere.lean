@@ -274,7 +274,7 @@ private theorem integral_truncation_eq (ω : SymplecticForm V) {u : ℂ → V} {
         ∫ z in {z : ℂ | r ≤ ‖z - 1‖ ∧ ‖z - 1‖ ≤ 3 / 4}, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) := by
   set A : Set ℂ := {z : ℂ | r ≤ ‖z - 0‖ ∧ ‖z - 0‖ ≤ ρ} \ ball 1 (3 / 4)
   set B : Set ℂ := {z : ℂ | r ≤ ‖z - 1‖ ∧ ‖z - 1‖ ≤ 3 / 4}
-  have hA : IsCompact A :=
+  have _ : IsCompact A :=
     (isCompact_setOf_le_norm_sub_le 0 r ρ).diff isOpen_ball
   have hB : IsCompact B := isCompact_setOf_le_norm_sub_le 1 r (3 / 4)
   rw [truncation_eq_union hr_def hρ_def (by linarith) (by linarith),
