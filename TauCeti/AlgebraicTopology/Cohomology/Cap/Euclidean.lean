@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.Analysis.Convex.Contractible
-public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
-public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Local.Orientation
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
@@ -45,8 +44,6 @@ one in `H₀(F; ℤ)` (`Orientation.singularCap_localCohomologyClass_localOrient
 
 ## Main results
 
-* `TopPair.singularCap_comp_singularHomology₀ε`: `ε (x ⌢ α) = ⟨α, x⟩` for a relative class `α` of
-  degree `n` and a relative class `x` of degree `n`, with the cap product along the right unitors.
 * `Orientation.singularCap_localCohomologyClass_localOrientation`: `ε (μ₀ ⌢ u₀) = 1` for the local
   orientation `μ₀` and the local cohomology generator `u₀` selected by an orientation.
 * `TauCeti.HomologicalOrientation.bijective_singularCap_fundamentalClassOn_of_starConvex`: capping
@@ -57,12 +54,9 @@ one in `H₀(F; ℤ)` (`Orientation.singularCap_localCohomologyClass_localOrient
 The coefficient conventions are those of `TauCeti.HomologicalOrientation.fundamentalClassOn`:
 singular chains have the integral coefficients `ModuleCat.of ℤ (ULift ℤ)`, `Hᵖ(-; L)` is computed
 from cochains on them with values in `L`, and the cap product pairs the two along the right
-unitors `ℤ ⟶ ℤ ⊗ 𝟙` and `L ⊗ 𝟙 ⟶ L`.
-
-Instance search finds the `ℤ`-linear structure of `ModuleCat ℤ` as a preadditive category, for
-which Mathlib's `MonoidalLinear ℤ` instance does not apply; the file-local instance
-`TauCeti.EuclideanCap.monoidalLinearInt` supplies it, as in
-`TauCeti/AlgebraicTopology/Cohomology/IntegralCup.lean`.
+unitors `ℤ ⟶ ℤ ⊗ 𝟙` and `L ⊗ 𝟙 ⟶ L`. Instance search finds the `ℤ`-linear structure of
+`ModuleCat ℤ` as a preadditive category, which is monoidal linear by the local instance
+`CategoryTheory.MonoidalPreadditive.monoidalLinearInt`.
 
 ## References
 
@@ -76,102 +70,7 @@ noncomputable section
 
 open CategoryTheory Limits MonoidalCategory AlgebraicTopology Module Simplicial
 
-universe w v u
-
-namespace TopPair
-
-section Vertex
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] {M : C}
-
-/-- A vertex of `X`, viewed as a degree-zero chain, has augmentation the identity. -/
-private lemma ιChainComplex_cycles₀Iso_inv_homologyπ_homology₀ε (X : SSet.{w})
-    (x : X _⦋0⦌) :
-    X.ιChainComplex (R := M) x ≫ (X.chainComplex M).cycles₀Iso.inv ≫
-        (X.chainComplex M).homologyπ 0 ≫ X.homology₀ε M = 𝟙 M := by
-  have hx : X.ιChainComplex x ≫ (X.chainComplex M).cycles₀Iso.inv =
-      (X.chainComplex M).liftCycles (X.ιChainComplex x) 0 (by simp) (by simp) := by
-    apply (cancel_mono ((X.chainComplex M).iCycles 0)).1
-    simp
-  rw [reassoc_of% hx]
-  exact SSet.liftCycles_ιChainComplex_homologyπ_homology₀ε _ M x
-
-end Vertex
-
-section Augmentation
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
-  [MonoidalPreadditive C] {R M : C}
-  [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
-
-/-- On chains, capping a chain of degree `n` with a cochain of degree `n` and taking the
-augmentation of the resulting degree-zero chain is evaluating the cochain. -/
-private lemma _root_.TopCat.capChain_comp_homology₀ε (X : TopCat.{w}) (k : Type*) [Ring k]
-    [Linear k C] [MonoidalLinear k C] (n : ℕ) (h : n + 0 = n)
-    (φ : ((TopCat.toSSet.obj X).chainComplex R).X n ⟶ M) :
-    TauCeti.ChainComplex.capChain k (X.alexanderWhitneyDiagonal (ρ_ R).inv)
-        ((TopCat.toSSet.obj X).chainComplexPairing (ρ_ M).hom) n 0 n h φ ≫
-      ((TopCat.toSSet.obj X).chainComplex M).cycles₀Iso.inv ≫
-        ((TopCat.toSSet.obj X).chainComplex M).homologyπ 0 ≫ (TopCat.toSSet.obj X).homology₀ε M =
-      φ := by
-  refine SSet.chainComplex_hom_ext fun σ ↦ ?_
-  -- The front `n`-face of an `n`-simplex is the simplex itself, and its back `0`-face is a vertex,
-  -- whose augmentation is the identity.
-  rw [reassoc_of% (TopCat.ιChainComplex_capChain_alexanderWhitneyDiagonal X (k := k) (ρ_ R).inv
-    (ρ_ M).hom n 0 n h φ σ), ιChainComplex_cycles₀Iso_inv_homologyπ_homology₀ε,
-    TauCeti.SimplexCategory.subinterval_zero_eq_id, op_id, CategoryTheory.Functor.map_id,
-    types_id_apply, ← rightUnitor_inv_naturality_assoc, Category.comp_id, Iso.inv_hom_id,
-    Category.comp_id]
-
-/-- On chains, capping a relative chain of degree `n` with a relative cochain of degree `n` and
-taking the augmentation of the resulting degree-zero chain is evaluating the cochain. -/
-private lemma capChain_comp_homology₀ε (P : TopPair.{w}) (k : Type*) [Ring k]
-    [Linear k C] [MonoidalLinear k C] (n : ℕ) (h : n + 0 = n)
-    (φ : (P.singularChainComplex R).X n ⟶ M) :
-    TauCeti.ChainComplex.capChain k (P.alexanderWhitneyDiagonal (ρ_ R).inv)
-        ((TopCat.toSSet.obj P.fst).chainComplexPairing (ρ_ M).hom) n 0 n h φ ≫
-      ((TopCat.toSSet.obj P.fst).chainComplex M).cycles₀Iso.inv ≫
-        ((TopCat.toSSet.obj P.fst).chainComplex M).homologyπ 0 ≫
-          (TopCat.toSSet.obj P.fst).homology₀ε M =
-      φ := by
-  have : Epi ((P.singularChainComplexπ R).f n) :=
-    inferInstanceAs (Epi (((TopPair.toSSetPair.obj P).chainComplexπ R).f n))
-  refine (cancel_epi ((P.singularChainComplexπ R).f n)).1 ?_
-  rw [singularChainComplexπ_capChain_alexanderWhitneyDiagonal_assoc]
-  exact TopCat.capChain_comp_homology₀ε P.fst k n h _
-
-/-- **The augmentation of a relative cap product into degree zero**, `ε (x ⌢ α) = ⟨α, x⟩`: capping
-a relative class `x ∈ Hₙ(X, A; R)` with a relative class `α ∈ Hⁿ(X, A; R, M)`, along the right
-unitors `R ⟶ R ⊗ 𝟙` and `M ⊗ 𝟙 ⟶ M`, and then applying the augmentation `H₀(X; M) ⟶ M` is the
-Kronecker pairing of `α` with `x`. -/
-theorem singularCap_comp_singularHomology₀ε (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C]
-    [MonoidalLinear k C] (n : ℕ) (h : n + 0 = n) (α : P.singularCohomology R k M n) :
-    P.singularCap k (ρ_ R).inv (ρ_ M).hom n 0 n h α ≫ P.fst.singularHomology₀ε M =
-      P.singularKronecker k n α := by
-  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ n α
-  refine (cancel_epi ((P.singularChainComplex R).homologyπ n)).1 ?_
-  rw [singularCap_homologyπ_assoc, singularKronecker_homologyπ,
-    ← capChain_comp_homology₀ε P k n h ((P.singularCochainComplex R k M).iCycles n φ),
-    ← TauCeti.ChainComplex.capCycles_i_assoc]
-  -- In degree zero every chain is a cycle.
-  simp only [HomologicalComplex.iCyclesIso_hom_inv_id_assoc]
-  exact Category.assoc _ _ _
-
-end Augmentation
-
-end TopPair
-
-namespace TauCeti.EuclideanCap
-
-/-- Whiskering in `ModuleCat ℤ` commutes with the integer multiples of its preadditive structure,
-the `ℤ`-linear structure found by instance search. -/
-abbrev monoidalLinearInt : MonoidalLinear ℤ (ModuleCat.{0} ℤ) where
-  whiskerLeft_smul X _ _ r f := whiskerLeft_zsmul r X f
-  smul_whiskerRight r _ _ f X := zsmul_whiskerRight r f X
-
-end TauCeti.EuclideanCap
-
-attribute [local instance] TauCeti.EuclideanCap.monoidalLinearInt
+attribute [local instance] MonoidalPreadditive.monoidalLinearInt
 
 namespace Orientation
 
