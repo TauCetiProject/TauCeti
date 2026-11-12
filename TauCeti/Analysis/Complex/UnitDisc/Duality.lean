@@ -28,19 +28,16 @@ image, is the solvability of the Riemann–Hilbert problem and is not treated he
 
 ## Main results
 
-* `TauCeti.adjoint_boundary_iff_forall_re_mul_eq_zero`: at a point `w` of the unit circle, `c`
-  satisfies the adjoint boundary condition exactly when `Re (w c v) = 0` for every `v` on the line
-  `v = w ^ k conj v`.
 * `TauCeti.integral_ball_re_mul_conjWirtingerDeriv_eq_zero_of_mem_unitDiscAdjointKernel`: the
   orthogonality `∫_{|z| < 1} Re (g \bar∂ξ) = 0` for adjoint solutions `g` and `ξ` with boundary
   values on the rotating line.
 
 ## Checks
 
-* `TauCeti.unitDiscAdjointKernel_neg_two`: for `k = -2` the adjoint solutions are the real
-  multiples of the constant `-I`, and
-  `TauCeti.integral_ball_im_conjWirtingerDeriv_eq_zero_of_eq_zpow_neg_two_mul_conj` is the
-  resulting orthogonality `∫ Im (\bar∂ξ) = 0`.
+* `TauCeti.integral_ball_im_conjWirtingerDeriv_eq_zero_of_eq_zpow_neg_two_mul_conj`: for `k = -2`
+  the adjoint solutions are the real multiples of the constant `-I`
+  (`TauCeti.unitDiscAdjointKernel_neg_two`), and the resulting orthogonality is
+  `∫ Im (\bar∂ξ) = 0`.
 * `TauCeti.exists_mem_unitDiscCauchyRiemannKernel_integral_ball_re_mul_ne_zero`: the unshifted
   condition `g ∈ unitDiscCauchyRiemannKernel k` is not the dual one. For `k = 0`, `g = 1` and
   `ξ z = Re z`, real on the circle with `\bar∂ξ = ½`, the pairing is `π / 2`
@@ -60,71 +57,6 @@ open Complex Metric MeasureTheory Set Filter Topology
 open scoped ComplexConjugate Real
 
 variable {ξ : ℂ → ℂ}
-
-/-! ### The dual boundary condition on the unit circle -/
-
-section Boundary
-
-variable {k : ℤ} {w : ℂ}
-
-private theorem conj_zpow_mul_zpow (hw : ‖w‖ = 1) : conj (w ^ k) * w ^ k = 1 := by
-  rw [conj_mul', norm_zpow, hw, one_zpow]
-  norm_num
-
-/-- The adjoint boundary condition, solved for `conj w * conj c`. -/
-private theorem adjoint_boundary_iff' (c : ℂ) :
-    -I * conj w * conj c = w ^ k * conj (-I * conj w * conj c) ↔
-      conj w * conj c = -(w ^ k * w * c) := by
-  simp only [map_mul, map_neg, conj_I, conj_conj]
-  constructor
-  · intro h
-    linear_combination I * h + (conj w * conj c + w ^ k * w * c) * I_sq
-  · intro h
-    linear_combination (-I) * h
-
-/-- **The boundary term vanishes.** At a point `w` of the unit circle, if `c` satisfies the
-adjoint boundary condition of index `k` and `v` lies on the line `v = w ^ k * conj v`, then
-`w c v` is purely imaginary. -/
-theorem re_mul_mul_eq_zero_of_adjoint_boundary (hw : ‖w‖ = 1) {c v : ℂ}
-    (hc : -I * conj w * conj c = w ^ k * conj (-I * conj w * conj c))
-    (hv : v = w ^ k * conj v) : (w * c * v).re = 0 := by
-  rw [adjoint_boundary_iff'] at hc
-  have ep := conj_zpow_mul_zpow (k := k) hw
-  have hv' : conj v = conj (w ^ k) * v := by
-    conv_lhs => rw [hv]
-    rw [map_mul, conj_conj]
-  have h : w * c * v + conj (w * c * v) = 0 := by
-    simp only [map_mul]
-    linear_combination conj v * hc - (w ^ k * w * c) * hv' - (w * c * v) * ep
-  rw [add_conj, ofReal_eq_zero] at h
-  linarith
-
-/-- **The dual boundary condition is forced.** At a point `w` of the unit circle, `c` satisfies
-the adjoint boundary condition of index `k` exactly when `Re (w c v) = 0` for every `v` on the line
-`v = w ^ k * conj v`. So the adjoint condition of `TauCeti.unitDiscAdjointKernel` is the boundary
-condition that makes the boundary term of Green's formula vanish for every admissible `ξ`; this
-is the disc analogue of the half-plane condition `η(∂_s) ∈ ℝⁿ`. -/
-theorem adjoint_boundary_iff_forall_re_mul_eq_zero (hw : ‖w‖ = 1) (c : ℂ) :
-    -I * conj w * conj c = w ^ k * conj (-I * conj w * conj c) ↔
-      ∀ v, v = w ^ k * conj v → (w * c * v).re = 0 := by
-  refine ⟨fun hc v hv ↦ re_mul_mul_eq_zero_of_adjoint_boundary hw hc hv, fun H ↦ ?_⟩
-  have ep := conj_zpow_mul_zpow (k := k) hw
-  rw [adjoint_boundary_iff']
-  -- `D = w ^ k * (w * c) + conj (w * c)` lies on the line, and `D * conj D = 2 Re (w c D)`.
-  set D := w ^ k * (w * c) + conj (w * c) with hD
-  have hDl : D = w ^ k * conj D := by
-    simp only [hD, map_add, map_mul, conj_conj]
-    linear_combination (-(conj w * conj c)) * ep
-  have h0 := H D hDl
-  have h2 : D * conj D = w * c * D + conj (w * c * D) := by
-    simp only [hD, map_add, map_mul, conj_conj]
-    linear_combination (w * c * conj w * conj c) * ep
-  rw [add_conj, h0, mul_zero, mul_conj] at h2
-  have hD0 : D = 0 := normSq_eq_zero.1 (by exact_mod_cast h2)
-  simp only [hD, map_mul] at hD0
-  linear_combination hD0
-
-end Boundary
 
 /-! ### Orthogonality of the adjoint solutions to the image of `\bar∂` -/
 
@@ -158,9 +90,8 @@ theorem integral_ball_re_mul_conjWirtingerDeriv_eq_zero_of_mem_unitDiscAdjointKe
       ξ (circleMap 0 1 θ))) =
         ((2⁻¹ * (circleMap 0 1 θ * u' (circleMap 0 1 θ) * ξ (circleMap 0 1 θ)).im : ℝ) : ℂ) *
           I := by
-    have hw : ‖circleMap 0 1 θ‖ = 1 := by simp
-    have hre := re_mul_mul_eq_zero_of_adjoint_boundary hw
-      (hbu' _ (by simp)) (hb _ (by simp))
+    have hre := re_mul_mul_eq_zero_of_adjoint_boundary (hbu' (circleMap 0 1 θ) (by simp))
+      (hb _ (by simp))
     set x := circleMap 0 1 θ * u' (circleMap 0 1 θ) * ξ (circleMap 0 1 θ) with hx
     have hx' : x = (x.im : ℂ) * I := by
       conv_lhs => rw [← re_add_im x, hre]
@@ -177,28 +108,6 @@ theorem integral_ball_re_mul_conjWirtingerDeriv_eq_zero_of_mem_unitDiscAdjointKe
   simp
 
 /-! ### Checks -/
-
-/-- **Check: the adjoint solutions for `k = -2`.** For the boundary condition of index `-2` the
-adjoint problem is the problem of index `0` for `I g`, whose solutions are the real constants, so
-the adjoint solutions are the real multiples of the constant `-I`. -/
-theorem unitDiscAdjointKernel_neg_two :
-    unitDiscAdjointKernel (-2) = ℝ ∙ (fun _ : closedBall (0 : ℂ) 1 ↦ -I) := by
-  have hmem : (fun _ : closedBall (0 : ℂ) 1 ↦ -I) ∈ unitDiscAdjointKernel (-2) := by
-    refine mem_unitDiscAdjointKernel_iff.2 ⟨fun _ ↦ -I, diffContOnCl_const, fun w hw ↦ ?_, rfl⟩
-    have hw : ‖w‖ = 1 := by simpa using hw
-    have hw0 : w ≠ 0 := by rintro rfl; simp at hw
-    have e : conj w * w = 1 := by
-      rw [conj_mul', hw]
-      norm_num
-    simp only [map_mul, map_neg, conj_I, conj_conj, zpow_neg, zpow_ofNat]
-    field_simp
-    linear_combination -e
-  have hne : (fun _ : closedBall (0 : ℂ) 1 ↦ -I) ≠ 0 := fun h ↦ by
-    simpa using congrFun h ⟨0, by simp⟩
-  refine (Submodule.eq_of_le_of_finrank_eq ((Submodule.span_singleton_le_iff_mem _ _).2 hmem)
-    ?_).symm
-  rw [finrank_span_singleton hne, finrank_unitDiscAdjointKernel]
-  rfl
 
 /-- **Check: orthogonality for `k = -2`.** For `ξ` real `C¹` near the closed unit disc with
 `ξ w = w ^ (-2) * conj (ξ w)` on the circle, `∫_{|z| < 1} Im (\bar∂ξ) dA = 0`: the pairing of
