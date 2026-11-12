@@ -281,7 +281,7 @@ variable [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)]
 fibre `F`. -/
 private theorem exists_isPullbackTrivialization (γ : Ω^ (Fin 2) X x) :
     ∃ Φ : ∀ y, E (γ y) ≃L[ℂ] E x, IsPullbackTrivialization F γ x Φ :=
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   exists_isPullbackTrivialization_genLoop γ
 
 variable (F E) in
@@ -313,7 +313,7 @@ square have the same clutching Chern number. -/
 theorem clutchingChernNumber_eq_of_homotopic {γ₀ γ₁ : Ω^ (Fin 2) X x}
     (h : GenLoop.Homotopic γ₀ γ₁) : clutchingChernNumber F E γ₀ = clutchingChernNumber F E γ₁ := by
   obtain ⟨H⟩ := h
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   set f : C(I × I^Fin 2, X) := H.toContinuousMap
   have hf (s : I) : ∀ y ∈ Cube.boundary (Fin 2), f (s, y) = x := fun y hy ↦
     (H.eq_fst s hy).trans (GenLoop.boundary γ₀ y hy)

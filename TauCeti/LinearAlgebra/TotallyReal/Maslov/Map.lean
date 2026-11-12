@@ -115,13 +115,15 @@ theorem maslovIndex_map_sub_maslovIndex (Γ : TotallyRealLoop E) (B : I → E �
     (hB : Continuous fun t => (B t : E →L[ℂ] E)) (hB01 : B 0 = B 1) :
     (Λ.map B hB hB01).maslovIndex - Λ.maslovIndex =
       (Γ.map B hB hB01).maslovIndex - Γ.maslovIndex := by
-  let δ : Path (B 0).normalizedDet (B 0).normalizedDet :=
-    { toFun := fun t => (B t).normalizedDet
-      continuous_toFun := hB.normalizedDet
+  let δ : Path (B 0 : E →L[ℂ] E).detPhase (B 0 : E →L[ℂ] E).detPhase :=
+    { toFun := fun t => (B t : E →L[ℂ] E).detPhase
+      continuous_toFun := ContinuousLinearMap.continuous_detPhase hB fun t => by
+        rw [ContinuousLinearMap.det, (B t).toLinearMap_toContinuousLinearMap]
+        exact (B t).toLinearEquiv.isUnit_det'.ne_zero
       source' := rfl
       target' := by simp only [hB01] }
-  rw [Λ.maslovIndex_map _ _ _ δ fun t => (B t).det_eq_norm_mul_normalizedDet,
-    Γ.maslovIndex_map _ _ _ δ fun t => (B t).det_eq_norm_mul_normalizedDet]
+  rw [Λ.maslovIndex_map _ _ _ δ fun t => det_eq_norm_mul_detPhase (B t),
+    Γ.maslovIndex_map _ _ _ δ fun t => det_eq_norm_mul_detPhase (B t)]
   ring
 
 /-- **Homotopy invariance in the frame.** If `B` is a free homotopy of loops of complex-linear
