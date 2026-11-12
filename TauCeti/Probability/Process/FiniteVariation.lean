@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.Variation
-public import TauCeti.Probability.Process.Stieltjes
 public import TauCeti.MeasureTheory.VectorMeasure.FiniteHorizon
 import TauCeti.Topology.EMetricSpace.VariationOnFromTo
 
@@ -19,8 +18,8 @@ difference is the original process minus its initial value. In particular the pa
 predictable on the original filtration; no moment bounds or usual conditions are needed.
 
 This decomposition identifies the finite-horizon derivative signed measure with the difference
-of two measurable random Stieltjes measures. Its evaluation on any Borel set is therefore
-measurable in the sigma algebra at the horizon. This supplies signed finite-variation
+of two random Stieltjes measures. Fixed-set evaluations are measurable in the sigma algebra at
+the horizon by the deterministic measurable-family theorem. This supplies signed finite-variation
 integrators without assuming that the original path is increasing or globally BV.
 The open initial endpoint excludes an initial atom.
 
@@ -107,36 +106,19 @@ theorem exists_stieltjesFunction_sub (hX : StronglyAdapted ℱ X)
     dsimp [p, q]
     ring
 
-/-- Every Borel-set evaluation of the finite-horizon signed Stieltjes measure of an adapted
+/-- Every fixed-set evaluation of the finite-horizon signed Stieltjes measure of an adapted
 process with continuous BV paths on that horizon is measurable at the horizon. No moments or
 path regularity outside the horizon are required. -/
-theorem measurable_vectorMeasureIcc (hX : StronglyAdapted ℱ X)
-    (T : ℝ≥0) (hc : ∀ ω, ContinuousOn (fun t => X t ω) (Icc 0 T))
-    (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc 0 T))
-    {s : Set ℝ≥0} (hs : MeasurableSet s) :
-    Measurable[ℱ T] (fun ω => (hv ω).vectorMeasureIcc bot_le s) := by
-  -- Extend constantly after T so that the decomposition uses no future path regularity.
-  let Y := fun t ω => X (min t T) ω
-  have hY : StronglyAdapted ℱ Y := fun t => (hX (min t T)).mono (ℱ.mono (min_le_left _ _))
-  have hYc (ω) : Continuous (fun t => Y t ω) :=
-    (hc ω).comp_continuous (continuous_id.min continuous_const)
-      (fun t => ⟨bot_le, min_le_right t T⟩)
-  have hYv (ω) : LocallyBoundedVariationOn (fun t => Y t ω) univ := by
-    have hext : IccExtend (bot_le : 0 ≤ T) ((fun t => X t ω) ∘ Subtype.val) =
-        (fun t => Y t ω) := by
-      ext t
-      simp [IccExtend_apply, Y, min_comm]
-    exact (hext ▸ (hv ω).IccExtend bot_le).locallyBoundedVariationOn
-  obtain ⟨p, q, _, _, hp, hq, hzero, hsub, _⟩ := hY.exists_stieltjesFunction_sub hYc hYv
-  have hpM := hp.isStronglyProgressive.stronglyAdapted.adapted.measurable_restrict_measure_Ioc 0 T
-  have hqM := hq.isStronglyProgressive.stronglyAdapted.adapted.measurable_restrict_measure_Ioc 0 T
-  have heq (ω) :=
-    (hv ω).vectorMeasureIcc_eq_sub_toSignedMeasure bot_le (p ω) (q ω)
-      (fun t ht => by
-        simpa [Y, min_eq_left ht.2, (hzero ω).1, (hzero ω).2] using hsub t ω)
-  simp_rw [heq, _root_.sub_apply, Measure.toSignedMeasure_apply_measurable hs,
-    measureReal_def]
-  exact ((Measure.measurable_coe hs).comp hpM).ennreal_toReal.sub
-    ((Measure.measurable_coe hs).comp hqM).ennreal_toReal
+theorem measurable_vectorMeasureIcc_apply
+    {R : Type*} [LinearOrder R] [TopologicalSpace R] [OrderTopology R]
+    [CompactIccSpace R] [MeasurableSpace R] [BorelSpace R]
+    [SecondCountableTopology R] [DenselyOrdered R]
+    {ℱ : Filtration R m} {X : R → Ω → ℝ} (hX : StronglyAdapted ℱ X)
+    {a b : R} (hab : a ≤ b) (hc : ∀ ω, ContinuousOn (fun t => X t ω) (Icc a b))
+    (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set R) :
+    Measurable[ℱ b] (fun ω => (hv ω).vectorMeasureIcc hab s) := by
+  let : MeasurableSpace Ω := ℱ b
+  exact BoundedVariationOn.measurable_vectorMeasureIcc_apply hab
+    (fun _ ht => (hX.stronglyMeasurable_le ht.2).measurable) hc hv s
 
 end MeasureTheory.StronglyAdapted

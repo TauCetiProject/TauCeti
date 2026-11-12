@@ -24,6 +24,8 @@ increment formulas. These are the endpoint conventions for pathwise finite-varia
 
 An increasing-part decomposition identifies this signed measure with the difference of the
 parts' restricted Stieltjes measures, even if the parts have infinite mass on the whole line.
+For continuous real BV paths depending measurably on a parameter at each time in the horizon,
+evaluation of the finite-horizon measure on any fixed set is measurable.
 
 The construction uses Mathlib's `BoundedVariationOn.vectorMeasure` and `Set.IccExtend`.
 
@@ -225,7 +227,7 @@ theorem vectorMeasureIcc_congr (hf : BoundedVariationOn f (Icc a b))
 /-- A decomposition of the path's increments into two increasing right-continuous parts
 identifies its finite-horizon signed measure with the difference of their Stieltjes measures.
 Neither increasing part needs finite mass outside the horizon. -/
-theorem vectorMeasureIcc_eq_sub_toSignedMeasure
+theorem vectorMeasureIcc_eq_toSignedMeasure_sub
     {f : α → ℝ} (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b)
     (p q : StieltjesFunction α)
     (hpq : ∀ x ∈ Icc a b, f x - f a = (p x - p a) - (q x - q a)) :
@@ -253,5 +255,50 @@ theorem vectorMeasureIcc_eq_sub_toSignedMeasure
       StieltjesFunction.measure_Ioc,
       ENNReal.toReal_ofReal (sub_nonneg.mpr (p.mono hx.1)),
       ENNReal.toReal_ofReal (sub_nonneg.mpr (q.mono hx.1))] using hpq x hx
+
+/-- Fixed-set evaluations of the finite-horizon signed Stieltjes measures form measurable
+families when the continuous BV paths have measurable evaluations within the horizon.
+No measurability or regularity outside the horizon is required. -/
+theorem measurable_vectorMeasureIcc_apply {Ω : Type*} [MeasurableSpace Ω]
+    {X : α → Ω → ℝ} (hab : a ≤ b)
+    (hX : ∀ t ∈ Icc a b, Measurable (X t))
+    (hc : ∀ ω, ContinuousOn (fun t => X t ω) (Icc a b))
+    (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set α) :
+    Measurable (fun ω => (hv ω).vectorMeasureIcc hab s) := by
+  have hfr (ω) (x) (hx : x ∈ Icc a b) :
+      ContinuousWithinAt (fun t => X t ω) (Icc x b) x :=
+    (hc ω x hx).mono (Icc_subset_Icc_left hx.1)
+  have huniv : Measurable (fun ω => (hv ω).vectorMeasureIcc hab univ) := by
+    simpa only [vectorMeasureIcc_univ _ hab (hfr _ a (left_mem_Icc.mpr hab))] using
+      (hX b (right_mem_Icc.mpr hab)).fun_sub (hX a (left_mem_Icc.mpr hab))
+  by_cases hs : MeasurableSet s
+  · induction s, hs using MeasurableSpace.induction_on_inter
+      (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic α)) isPiSystem_Iic with
+    | empty => simp
+    | basic s hs =>
+      obtain ⟨x, rfl⟩ := hs
+      have heval (ω) : (hv ω).vectorMeasureIcc hab (Iic x) =
+          (hv ω).vectorMeasureIcc hab (Ioc a (min b x)) := by
+        rw [← vectorMeasureIcc_restrict _ hab,
+          VectorMeasure.restrict_apply _ measurableSet_Ioc measurableSet_Iic,
+          inter_comm (Iic x), Ioc_inter_Iic, vectorMeasureIcc_restrict]
+      simp_rw [heval]
+      by_cases hax : a ≤ min b x
+      · simp_rw [vectorMeasureIcc_Ioc _ hab (hfr _ a (left_mem_Icc.mpr hab))
+          (hfr _ _ ⟨hax, min_le_left _ _⟩) (left_mem_Icc.mpr hab)
+          ⟨hax, min_le_left _ _⟩ hax]
+        exact (hX _ ⟨hax, min_le_left _ _⟩).fun_sub (hX a (left_mem_Icc.mpr hab))
+      · simp only [Ioc_eq_empty (not_lt.mpr (le_of_not_ge hax)), VectorMeasure.empty]
+        exact measurable_const
+    | compl s hs ih =>
+      simp_rw [VectorMeasure.of_compl hs]
+      exact huniv.fun_sub ih
+    | iUnion f hfd hfm ih =>
+      exact measurable_of_tendsto_metrizable
+        (fun n => (Finset.measurable_sum _ fun i _ => ih i))
+        (tendsto_pi_nhds.mpr fun ω =>
+          ((hv ω).vectorMeasureIcc hab |>.hasSum_of_disjoint_iUnion hfm hfd).tendsto_sum_nat)
+  · simp only [VectorMeasure.not_measurable _ hs]
+    exact measurable_const
 
 end BoundedVariationOn
