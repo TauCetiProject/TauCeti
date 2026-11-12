@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
-public import TauCeti.Analysis.Pseudodifferential.RightQuantization
+public import TauCeti.Analysis.Pseudodifferential.RightQuantization.Basic
 import TauCeti.Analysis.Fourier.Adjoint
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre

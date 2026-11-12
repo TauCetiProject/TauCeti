@@ -30,7 +30,8 @@ that it is a symbol of order `m` whose quantization is the right quantization of
 * `TauCeti.Symbol.ofRight`: the left symbol `b` of the right quantization of `c`, a symbol of
   order `m` with estimates uniform in the position (`TauCeti.Symbol.isUniform_ofRight`), whose
   position and frequency derivatives are the left symbols of the derivatives of `c`
-  (`TauCeti.Symbol.spatialDeriv_ofRight`, `TauCeti.Symbol.frequencyDeriv_ofRight`).
+  (`TauCeti.Symbol.spatialDeriv_ofRight`, `TauCeti.Symbol.frequencyDeriv_ofRight`), and which is
+  additive in `c` (`TauCeti.Symbol.ofRight_add`).
 * `TauCeti.Symbol.quantizeSchwartzValue_ofRight`: `Op(b) v (x)` is the right quantization
   `∫ exp(2πi ⟪ζ, x⟫) 𝓕 (y ↦ c(y, 2πζ) v(y)) (ζ) dζ` of `c`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_fourier_slice_add_smul_le`,
@@ -558,6 +559,17 @@ theorem frequencyDeriv_ofRight (hc : c.HasCompactSpatialSupport) (j : Fin n) :
   Symbol.ext (funext fun ⟨x, ξ⟩ ↦ by
     rw [coefficient_frequencyDeriv]
     exact hc.coordinateDeriv_snd_rightCoeff j x ξ)
+
+/-- Passing to the left symbol is additive. -/
+theorem ofRight_add {c₁ c₂ : Symbol n V W m} (h₁ : c₁.HasCompactSpatialSupport)
+    (h₂ : c₂.HasCompactSpatialSupport) :
+    (c₁ + c₂).ofRight (h₁.add h₂) = c₁.ofRight h₁ + c₂.ofRight h₂ :=
+  Symbol.ext (funext fun ⟨x, ξ⟩ ↦ by
+    rw [coefficient_add, Pi.add_apply, coefficient_ofRight, coefficient_ofRight,
+      coefficient_ofRight, ← integral_add
+        (h₁.integrable_fourierChar_smul_fourier_slice_add_smul (2 * π) x ξ)
+        (h₂.integrable_fourierChar_smul_fourier_slice_add_smul (2 * π) x ξ)]
+    simp_rw [h₁.fourier_slice_add h₂, smul_add])
 
 end OfRight
 
