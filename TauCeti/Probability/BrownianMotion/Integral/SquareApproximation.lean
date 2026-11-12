@@ -20,7 +20,7 @@ For pre-Brownian motion `B`, the mean-square increment of `B²` is
 cell `[a,b]` gives `2a(b-a)² + (b-a)³`. Summing over a deterministic partition therefore
 computes the exact time-integrated mean-square error of its left-step approximation.
 For the equal `n`-grid of `[0,T]` the error is `T³/n`; for arbitrary nondecreasing grids
-it is bounded by a constant times the mesh and tends to zero with the mesh on a fixed interval.
+it is bounded by a constant times the mesh and tends to zero with the mesh on a bounded horizon.
 
 These estimates supply the integrand-convergence part of the polynomial stochastic-integral
 construction for `B²`. The time integrals here are iterated integrals, with expectation taken
@@ -189,26 +189,32 @@ theorem sum_integral_integral_sq_sq_sub_sq_uniform (hB : IsPreBrownianReal B P)
     zero_pow two_ne_zero, sub_zero, NNReal.coe_div, NNReal.coe_mul, NNReal.coe_natCast]
   field_simp [hn']
 
-/-- Along any deterministic family of nondecreasing grids of a fixed interval `[a,b]`
+/-- Along any deterministic family of nondecreasing grids on a bounded time horizon
 whose step sizes are bounded by `δ k → 0`, the time-integrated mean-square error of the
 left-step approximation to `B²` tends to zero. The grids may vary in length and need not
-be nested. -/
+be nested or share endpoints. -/
 theorem tendsto_sum_integral_integral_sq_sq_sub_sq (hB : IsPreBrownianReal B P)
     {ι : Type*} {l : Filter ι} {N : ι → ℕ} {grid : ∀ k, Fin (N k + 1) → ℝ≥0}
-    {a b : ℝ≥0} (hτ : ∀ k, Monotone (grid k)) (ha : ∀ k, grid k 0 = a)
-    (hb : ∀ k, grid k (Fin.last (N k)) = b) {δ : ι → ℝ}
+    (hτ : ∀ k, Monotone (grid k)) {T : ℝ≥0}
+    (hT : ∀ k, grid k (Fin.last (N k)) ≤ T) {δ : ι → ℝ}
     (hmesh : ∀ k (i : Fin (N k)), (grid k i.succ : ℝ) - grid k i.castSucc ≤ δ k)
     (hδ : Tendsto δ l (𝓝 0)) :
     Tendsto (fun k ↦ ∑ i : Fin (N k), ∫ u in (grid k i.castSucc : ℝ)..grid k i.succ,
       ∫ ω, (B u.toNNReal ω ^ 2 - B (grid k i.castSucc) ω ^ 2) ^ 2 ∂P) l (𝓝 0) := by
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using hδ.mul_const ((b : ℝ) ^ 2 - (a : ℝ) ^ 2)) ?_ ?_
+    (by simpa using hδ.abs.mul_const ((T : ℝ) ^ 2)) ?_ ?_
   · intro k
     apply sum_nonneg
     intro i _
     exact intervalIntegral.integral_nonneg
       (hτ k (Fin.castSucc_le_succ i)) (fun _ _ ↦ integral_nonneg fun _ ↦ sq_nonneg _)
   · intro k
-    simpa only [ha k, hb k] using hB.sum_integral_integral_sq_sq_sub_sq_le (hτ k) (hmesh k)
+    calc
+      _ ≤ |δ k| * ((grid k (Fin.last (N k)) : ℝ) ^ 2 - (grid k 0 : ℝ) ^ 2) :=
+        hB.sum_integral_integral_sq_sq_sub_sq_le (hτ k)
+          (fun i ↦ (hmesh k i).trans (le_abs_self _))
+      _ ≤ |δ k| * (T : ℝ) ^ 2 := by
+        gcongr
+        exact (sub_le_self _ (sq_nonneg _)).trans (by gcongr; exact hT k)
 
 end ProbabilityTheory.IsPreBrownianReal
