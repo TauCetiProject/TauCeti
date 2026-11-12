@@ -7,15 +7,13 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.EulerLagrange
 public import TauCeti.Analysis.PDE.Vortex.Reduced.Regularity
-import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Polynomial.SublevelVolume
 import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.Analysis.Sobolev.Poincare.Planar
 import TauCeti.Analysis.Sobolev.W1p.Density
-import TauCeti.Analysis.Sobolev.W1p.Exponential
 
 /-!
 # Uniqueness and continuous dependence of the minimizer of Taubes's functional
@@ -28,8 +26,8 @@ minimizer `w ∈ H¹(ℂ)` of the functional
 
 (`TauCeti.Vortex.sobolevReducedFunctional`), which exists by
 `TauCeti.Vortex.exists_forall_sobolevReducedFunctional_le`. This file proves that the minimizer is
-unique and that it depends continuously on the zeros of `P` in `H¹(ℂ)`. Families of vortices over
-compact sets of divisors are built from this dependence.
+unique and that it depends continuously on the zeros of `P` in `H¹(ℂ)`. This dependence is the
+input for constructing continuous families of vortices over compact sets of divisors.
 
 The functional is finite on all of `H¹(ℂ)` (`TauCeti.Vortex.sobolevReducedFunctional_ne_top`),
 because `exp (2w) - 1 ∈ L²(ℂ)` for `w ∈ H¹(ℂ)`. By density of test functions the weak
@@ -51,7 +49,7 @@ For `Q = P` the right side vanishes, so two minimizers agree
 (`TauCeti.Vortex.eq_of_forall_sobolevReducedFunctional_le`). For `Q` close to `P` the right side
 is at most `‖S_Q(w) - S_P(w)‖₂ ‖d‖₂`. The left side controls `‖d‖₂` through the planar estimate
 `TauCeti.W1p.exists_norm_value_sq_le_of_finrank_eq_two`, applied off the set where `‖Q‖` is small
-or `w` is very negative; there the weight `h_Q exp (2w)` is bounded below. For
+or `|w|` is large; there the weight `h_Q exp (2w)` is bounded below. For
 `P = ∏ i, (X - a i)` the sources converge in `L²` as the roots converge, and the sets where `‖P‖`
 is small have small measure uniformly in the roots. Hence the minimizer is a continuous function of
 the roots (`TauCeti.Vortex.continuous_of_forall_sobolevReducedFunctional_le`).
@@ -60,12 +58,13 @@ the roots (`TauCeti.Vortex.continuous_of_forall_sobolevReducedFunctional_le`).
 
 All in the namespace `TauCeti.Vortex`:
 
-* `integrable_exp_two_mul_value_sub_one_sub`, `sobolevReducedFunctional_ne_top`: the potential of
-  an `H¹` function is integrable, so Taubes's functional is finite on `H¹(ℂ)`.
 * `inner_gradient_add_integral_reducedSource_mul_eq_zero`: the weak Euler–Lagrange equation of a
   minimizer, tested against `H¹(ℂ)`.
 * `norm_gradient_sub_sq_div_two_add_integral_div_sixteen_le`: the stability inequality.
 * `eq_of_forall_sobolevReducedFunctional_le`: the minimizer is unique.
+* `tendsto_of_forall_sobolevReducedFunctional_le`: minimizers for polynomials `Q x` converge in
+  `H¹(ℂ)` along a filter when the sources converge in `L²` and the small sublevel sets of `Q x`
+  have uniformly small measure.
 * `continuous_of_forall_sobolevReducedFunctional_le`: the minimizer for the zeros `a : ι → ℂ`
   depends continuously on `a` in `H¹(ℂ)`.
 
@@ -85,42 +84,6 @@ namespace TauCeti.Vortex
 
 open Filter MeasureTheory Metric Set Topology
 open scoped ENNReal RealInnerProductSpace
-
-/-- **The potential of an `H¹` function is integrable.** For `u ∈ H¹(ℂ)` the potential
-`exp (2u) - 1 - 2u` of Taubes's functional is integrable, because `exp (2u) - 1` is square
-integrable (`TauCeti.Vortex.memLp_exp_two_mul_value_sub_one`) and
-`exp (2t) - 1 - 2t ≤ t² + (exp (2t) - 1)²` (`Real.exp_two_mul_sub_one_sub_two_mul_le`). -/
-theorem integrable_exp_two_mul_value_sub_one_sub (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    Integrable fun z ↦ Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z := by
-  have hexp := memLp_exp_two_mul_value_sub_one u
-  have hsq : Integrable fun z ↦ W1p.value u z ^ 2 + (Real.exp (2 * W1p.value u z) - 1) ^ 2 :=
-    ((memLp_two_iff_integrable_sq (W1p.memLp_value u).aestronglyMeasurable).1
-      (W1p.memLp_value u)).add
-      ((memLp_two_iff_integrable_sq hexp.aestronglyMeasurable).1 hexp)
-  refine hsq.mono' ?_ (ae_of_all _ fun z ↦ ?_)
-  · exact ((by fun_prop : Continuous fun t : ℝ ↦ Real.exp (2 * t) - 1 - 2 * t)
-      |>.comp_aestronglyMeasurable (W1p.memLp_value u).aestronglyMeasurable)
-  · rw [Real.norm_of_nonneg (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)]
-    exact Real.exp_two_mul_sub_one_sub_two_mul_le _
-
-/-- **Taubes's functional is finite on `H¹(ℂ)`.** Its potential `(1 / 16) ∫ h (exp (2u) - 1 - 2u)`
-is finite for every `u ∈ H¹(ℂ)`, by `TauCeti.Vortex.integrable_exp_two_mul_value_sub_one_sub` and
-`0 ≤ h ≤ 1`. -/
-theorem sobolevReducedFunctional_ne_top (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    sobolevReducedFunctional P u ≠ ⊤ := by
-  refine sobolevReducedFunctional_ne_top_iff.2 ((integrable_exp_two_mul_value_sub_one_sub u).mono'
-    ?_ (ae_of_all _ fun z ↦ ?_))
-  · have hh : Continuous fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by
-      fun_prop (disch := intro z; positivity)
-    exact hh.aestronglyMeasurable.mul ((by fun_prop : Continuous fun t : ℝ ↦
-      Real.exp (2 * t) - 1 - 2 * t).comp_aestronglyMeasurable
-        (W1p.memLp_value u).aestronglyMeasurable)
-  · have hψ := Real.exp_two_mul_sub_one_sub_two_mul_nonneg (W1p.value u z)
-    have hh0 : 0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by positivity
-    have hh1 : ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ≤ 1 :=
-      div_le_one_of_le₀ (by linarith) (by positivity)
-    rw [norm_mul, Real.norm_of_nonneg hh0, Real.norm_of_nonneg hψ]
-    exact mul_le_of_le_one_left hψ hh1
 
 variable {P : Polynomial ℂ}
 
@@ -184,17 +147,12 @@ theorem inner_gradient_add_integral_reducedSource_mul_eq_zero (hm : 0 < P.natDeg
     simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
   · exact integral_congr_ae (ae_of_all _ fun z ↦ by simp only [reducedSource_eq])
 
-/-- The source of the reduced equation is `h (exp (2w) - 1) / 8` plus the coefficient
-`g - (1 + ‖P‖²)⁻¹ / 8` of the linear term of Taubes's functional. -/
-private theorem reducedSource_eq_add (w : ℂ → ℝ) (z : ℂ) :
-    reducedSource P w z =
-      backgroundWeight (P.eval ·) z * (Real.exp (2 * w z) - 1) / 8 +
-        (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-          (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) := by
-  have h1 : (1 + ‖P.eval z‖ ^ 2) ≠ 0 := by positivity
-  rw [reducedSource_def, backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
-  field_simp
-  ring
+/-- The integrand `h_Q exp (2w) (exp (2d) - 1 - 2d)` of the stability inequality is
+nonnegative. -/
+private theorem stability_integrand_nonneg (Q : Polynomial ℂ) (W D : ℂ → ℝ) (z : ℂ) :
+    0 ≤ backgroundWeight (Q.eval ·) z * Real.exp (2 * W z) * (Real.exp (2 * D z) - 1 - 2 * D z) :=
+  mul_nonneg (mul_nonneg (backgroundWeight_nonneg _ z) (Real.exp_pos _).le)
+    (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
 
 /-- The stability inequality with the integrability of its potential term. -/
 private theorem integrable_and_stability {Q : Polynomial ℂ} (hP : 0 < P.natDegree)
@@ -341,9 +299,7 @@ theorem eq_of_forall_sobolevReducedFunctional_le (hm : 0 < P.natDegree)
   set d := u - w
   set F : ℂ → ℝ := fun z ↦ backgroundWeight (P.eval ·) z * Real.exp (2 * W1p.value w z) *
     (Real.exp (2 * W1p.value d z) - 1 - 2 * W1p.value d z)
-  have hF0 (z : ℂ) : 0 ≤ F z :=
-    mul_nonneg (mul_nonneg (backgroundWeight_nonneg _ z) (Real.exp_pos _).le)
-      (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
+  have hF0 (z : ℂ) : 0 ≤ F z := stability_integrand_nonneg _ _ _ z
   simp only [sub_self, zero_mul, integral_zero, neg_zero] at hle
   have hIF : 0 ≤ ∫ z, F z := integral_nonneg hF0
   have hgrad : ‖W1p.gradient d‖ ^ 2 = 0 := by nlinarith [sq_nonneg ‖W1p.gradient d‖]
@@ -384,6 +340,13 @@ section Roots
 open Polynomial
 
 variable {ι : Type*} [Fintype ι]
+
+/-- A product `∏ i, (X - a i)` over a nonempty finite type has positive degree. -/
+private theorem natDegree_prod_X_sub_C_pos [Nonempty ι] (a : ι → ℂ) :
+    0 < (∏ i, (X - C (a i))).natDegree := by
+  classical
+  rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_univ]
+  exact Fintype.card_pos
 
 /-- **Uniform decay of the linear coefficient.** For roots in a fixed disc, the coefficient
 `2 ‖P'‖² / (1 + ‖P‖²)² - (1 + ‖P‖²)⁻¹ / 8` of the linear term of Taubes's functional of
@@ -509,44 +472,6 @@ private theorem abs_sub_add_sub_le {x y e c c' B : ℝ} (hx0 : 0 ≤ x) (hx1 : x
     _ ≤ |(x - y) * e / 8| + |c| + |c'| := by gcongr; exact abs_add_le _ _
     _ ≤ |e| / 8 + 2 * B := by linarith
 
-/-- **Small sublevel sets.** The set where `‖∏ i, (z - a i)‖ < δ` has measure at most `η` for
-`δ` small enough, uniformly in the roots: it lies in the union of the discs of radius `δ ^ (1/n)`
-about the roots. -/
-private theorem exists_volume_setOf_norm_eval_prod_lt_le [Nonempty ι] {η : ℝ} (hη : 0 < η) :
-    ∃ δ > 0, ∀ a : ι → ℂ,
-      volume {z | ‖(∏ i, (X - C (a i))).eval z‖ < δ} ≤ ENNReal.ofReal η := by
-  set n := Fintype.card ι
-  have hn : (0 : ℝ) < n := by exact_mod_cast Fintype.card_pos
-  set ρ := √(η / (4 * n))
-  have hρ : 0 < ρ := Real.sqrt_pos.2 (by positivity)
-  refine ⟨ρ ^ n, by positivity, fun a ↦ ?_⟩
-  have hsub : {z | ‖(∏ i, (X - C (a i))).eval z‖ < ρ ^ n} ⊆ ⋃ i, ball (a i) ρ := by
-    intro z hz
-    simp only [mem_ofPred_eq, eval_prod, eval_sub, eval_X, eval_C, norm_prod] at hz
-    by_contra hzU
-    simp only [mem_iUnion, mem_ball, not_exists, not_lt, dist_eq_norm] at hzU
-    have : ρ ^ n ≤ ∏ i, ‖z - a i‖ := by
-      calc ρ ^ n = ∏ _i : ι, ρ := by rw [Finset.prod_const, Finset.card_univ]
-        _ ≤ ∏ i, ‖z - a i‖ := Finset.prod_le_prod₀ (fun _ _ ↦ hρ.le) fun i _ ↦ hzU i
-    linarith
-  have hball (i : ι) : volume (ball (a i) ρ) = ENNReal.ofReal (ρ ^ 2 * Real.pi) := by
-    rw [Complex.volume_ball, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hρ.le,
-      ← ENNReal.ofReal_coe_nnreal, NNReal.coe_real_pi]
-  calc volume {z | ‖(∏ i, (X - C (a i))).eval z‖ < ρ ^ n}
-      ≤ volume (⋃ i, ball (a i) ρ) := measure_mono hsub
-    _ ≤ ∑ i, volume (ball (a i) ρ) := measure_iUnion_fintype_le _ _
-    _ = ENNReal.ofReal (n * (ρ ^ 2 * Real.pi)) := by
-      simp only [hball, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-      rw [ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ n), ENNReal.ofReal_natCast,
-        ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ ρ ^ 2)]
-    _ ≤ ENNReal.ofReal η := by
-      refine ENNReal.ofReal_le_ofReal ?_
-      rw [Real.sq_sqrt (by positivity)]
-      have := Real.pi_lt_four
-      have hn' : (n : ℝ) ≠ 0 := hn.ne'
-      field_simp
-      nlinarith
-
 /-- **Convergence of the sources.** For a fixed `w ∈ H¹(ℂ)`, the source of the reduced equation of
 `∏ i, (X - a i)` at `w` converges in `L²` as the roots `a` converge: the coefficients converge
 pointwise, and they are dominated uniformly by `TauCeti.Vortex.exists_abs_linearCoeff_le`. -/
@@ -556,9 +481,6 @@ private theorem tendsto_integral_reducedSource_sub_sq [Nonempty ι]
       reducedSource (∏ i, (X - C (a₀ i))) (W1p.value w) z) ^ 2) (𝓝 a₀) (𝓝 0) := by
   classical
   set W : ℂ → ℝ := ⇑(W1p.value w)
-  have hdeg (a : ι → ℂ) : 0 < (∏ i, (X - C (a i))).natDegree := by
-    rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_univ]
-    exact Fintype.card_pos
   obtain ⟨K, -, hKb⟩ := exists_abs_linearCoeff_le (ι := ι) (‖a₀‖ + 1) (by positivity)
   have hexp := memLp_exp_two_mul_value_sub_one w
   set bound : ℂ → ℝ := fun z ↦
@@ -569,12 +491,13 @@ private theorem tendsto_integral_reducedSource_sub_sq [Nonempty ι]
       (((integrable_one_add_norm ?_).const_mul (4 * K ^ 2)).const_mul 2)
     simp [Complex.finrank_real_complex]
     norm_num
-  have hlim0 : (0 : ℝ) = ∫ _z : ℂ, (0 : ℝ) := by simp
-  rw [hlim0]
+  suffices h : Tendsto (fun a : ι → ℂ ↦ ∫ z, (reducedSource (∏ i, (X - C (a i))) W z -
+      reducedSource (∏ i, (X - C (a₀ i))) W z) ^ 2) (𝓝 a₀) (𝓝 (∫ _z : ℂ, (0 : ℝ))) by
+    simpa only [integral_zero] using h
   refine tendsto_integral_filter_of_dominated_convergence bound
-    (Eventually.of_forall fun a ↦ (((memLp_reducedSource (hdeg a) w).sub
-      (memLp_reducedSource (hdeg a₀) w)).aestronglyMeasurable.pow 2)) ?_ hbound
-    (ae_of_all _ fun z ↦ ?_)
+    (Eventually.of_forall fun a ↦ (((memLp_reducedSource (natDegree_prod_X_sub_C_pos a) w).sub
+      (memLp_reducedSource (natDegree_prod_X_sub_C_pos a₀) w)).aestronglyMeasurable.pow 2))
+    ?_ hbound (ae_of_all _ fun z ↦ ?_)
   · -- The uniform bound, for roots within distance one of `a₀`.
     filter_upwards [Metric.ball_mem_nhds a₀ one_pos] with a ha
     refine ae_of_all _ fun z ↦ ?_
@@ -716,9 +639,7 @@ private theorem stability_le_mul_norm {Q : Polynomial ℂ} (hP : 0 < P.natDegree
   set W : ℂ → ℝ := ⇑(W1p.value w)
   set F : ℂ → ℝ := fun z ↦ backgroundWeight (Q.eval ·) z * Real.exp (2 * W z) *
     (Real.exp (2 * W1p.value (u - w) z) - 1 - 2 * W1p.value (u - w) z)
-  have hF0 (z : ℂ) : 0 ≤ F z :=
-    mul_nonneg (mul_nonneg (backgroundWeight_nonneg _ z) (Real.exp_pos _).le)
-      (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
+  have hF0 (z : ℂ) : 0 ≤ F z := stability_integrand_nonneg _ _ _ z
   have hE0 : 0 ≤ ∫ z, F z := integral_nonneg hF0
   have hle := (integrable_and_stability hP hQ hw hu).2
   have hr : MemLp (fun z ↦ reducedSource Q W z - reducedSource P W z) 2 :=
@@ -760,9 +681,7 @@ private theorem norm_value_sub_sq_le {Q : Polynomial ℂ} (hP : 0 < P.natDegree)
   set W : ℂ → ℝ := ⇑(W1p.value w)
   set F : ℂ → ℝ := fun z ↦ backgroundWeight (Q.eval ·) z * Real.exp (2 * W z) *
     (Real.exp (2 * W1p.value (u - w) z) - 1 - 2 * W1p.value (u - w) z)
-  have hF0 (z : ℂ) : 0 ≤ F z :=
-    mul_nonneg (mul_nonneg (backgroundWeight_nonneg _ z) (Real.exp_pos _).le)
-      (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
+  have hF0 (z : ℂ) : 0 ≤ F z := stability_integrand_nonneg _ _ _ z
   have hWsq : ∫ z, W z ^ 2 = ‖W1p.value w‖ ^ 2 := by
     rw [← W1p.integral_value_sq_eq_norm_value_sq]
     simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ, W]
@@ -842,10 +761,10 @@ uniformly in `x`, then `u x → w` in `H¹(ℂ)`.
 By `TauCeti.Vortex.norm_gradient_sub_sq_div_two_add_integral_div_sixteen_le` and the
 Cauchy–Schwarz inequality, `d = u x - w` satisfies `‖∇d‖₂² / 2 + E / 16 ≤ τ ‖d‖₂`, where `τ` is
 the `L²` distance of the sources and `E = ∫ h exp (2w) (exp (2d) - 1 - 2d)`. Off the set `s` where
-`‖Q x‖ < δ` or `w < -M`, the weight `h exp (2w)` is at least `κ > 0`, so the planar estimate
+`‖Q x‖ < δ` or `|w| ≥ M`, the weight `h exp (2w)` is at least `κ > 0`, so the planar estimate
 `TauCeti.W1p.exists_norm_value_sq_le_of_finrank_eq_two` bounds `‖d‖₂²` by `E / κ` and the
 measure of `s`. This first bounds `‖d‖₂`, and then makes it small. -/
-private theorem tendsto_of_tendsto_integral_reducedSource_sub_sq {X : Type*} {l : Filter X}
+theorem tendsto_of_forall_sobolevReducedFunctional_le {X : Type*} {l : Filter X}
     (hP : 0 < P.natDegree) {w : W1p (volume : Measure ℂ) ⊤ 2}
     (hw : ∀ v, sobolevReducedFunctional P w ≤ sobolevReducedFunctional P v)
     {Q : X → Polynomial ℂ} {u : X → W1p (volume : Measure ℂ) ⊤ 2}
@@ -860,9 +779,7 @@ private theorem tendsto_of_tendsto_integral_reducedSource_sub_sq {X : Type*} {l 
   set W : ℂ → ℝ := ⇑(W1p.value w)
   set F : X → ℂ → ℝ := fun x z ↦ backgroundWeight ((Q x).eval ·) z * Real.exp (2 * W z) *
     (Real.exp (2 * W1p.value (u x - w) z) - 1 - 2 * W1p.value (u x - w) z)
-  have hF0 (x : X) (z : ℂ) : 0 ≤ F x z :=
-    mul_nonneg (mul_nonneg (backgroundWeight_nonneg _ z) (Real.exp_pos _).le)
-      (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
+  have hF0 (x : X) (z : ℂ) : 0 ≤ F x z := stability_integrand_nonneg _ _ _ z
   have hE0 (x : X) : 0 ≤ ∫ z, F x z := integral_nonneg (hF0 x)
   -- Stage one: `‖u x - w‖` is eventually bounded.
   obtain ⟨δ₁, hδ₁, hδ₁b⟩ := hlev 1 one_pos
@@ -917,11 +834,9 @@ theorem continuous_of_forall_sobolevReducedFunctional_le {ι : Type*} [Fintype �
       sobolevReducedFunctional (∏ i, (Polynomial.X - Polynomial.C (a i))) v) :
     Continuous u := by
   classical
-  have hdeg (a : ι → ℂ) : 0 < (∏ i, (Polynomial.X - Polynomial.C (a i))).natDegree := by
-    rw [Polynomial.natDegree_finsetProd_X_sub_C_eq_card, Finset.card_univ]
-    exact Fintype.card_pos
   refine continuous_iff_continuousAt.2 fun a₀ ↦ ?_
-  exact tendsto_of_tendsto_integral_reducedSource_sub_sq (hdeg a₀) (hu a₀) hdeg
+  exact tendsto_of_forall_sobolevReducedFunctional_le (natDegree_prod_X_sub_C_pos a₀) (hu a₀)
+    natDegree_prod_X_sub_C_pos
     (fun a ↦ hu a (u a₀)) (tendsto_integral_reducedSource_sub_sq (u a₀) a₀)
     fun _ hη ↦ exists_volume_setOf_norm_eval_prod_lt_le hη
 
