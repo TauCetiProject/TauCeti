@@ -347,24 +347,13 @@ theorem weightedG2_single_slash (a : Fin 2 → ZMod N) (γ : SL(2, ℤ)) :
       weightedG2 (Pi.single (a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)))
         (1 : ℂ)) := by
   classical
-  have h₁ : (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) *
-      ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) = 1 := by
-    rw [← Matrix.SpecialLinearGroup.coe_mul, ← map_mul, inv_mul_cancel, map_one,
-      Matrix.SpecialLinearGroup.coe_one]
-  have h₂ : ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) *
-      (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) = 1 := by
-    rw [← Matrix.SpecialLinearGroup.coe_mul, ← map_mul, mul_inv_cancel, map_one,
-      Matrix.SpecialLinearGroup.coe_one]
   rw [weightedG2_slash_apply]
   congr 1
   ext b
   simp only [Pi.single_apply]
   -- `b γ⁻¹ = a` exactly when `b = a γ`
-  refine if_congr ⟨?_, ?_⟩ rfl rfl
-  · rintro rfl
-    rw [vecMul_vecMul, h₁, vecMul_one]
-  · rintro rfl
-    rw [vecMul_vecMul, h₂, vecMul_one]
+  refine if_congr ?_ rfl rfl
+  rw [Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv, ← map_inv, inv_inv]
 
 /-! ### Holomorphy -/
 
