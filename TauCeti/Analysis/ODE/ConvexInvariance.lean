@@ -8,8 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.LocalExtr.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
-public import Mathlib.Analysis.ODE.ExistUnique
 public import Mathlib.Analysis.ODE.Gronwall
+public import TauCeti.Analysis.Calculus.TangentCone.Basic
+public import TauCeti.Analysis.ODE.UniformTime
 
 /-!
 # Invariance of closed convex sets under ODEs: Nagumo's criterion
@@ -40,15 +41,11 @@ systems: invariance of a closed convex set of curvature operators under the reac
 
 * `TauCeti.real_inner_le_zero_of_mem_posTangentConeAt`: an outward normal of a set pairs
   nonpositively with its positive tangent vectors.
-* `HasDerivWithinAt.mem_posTangentConeAt`: the right derivative of a curve which frequently lies
-  in a set, just after the base time, is a positive tangent vector of that set.
 * `Convex.mapsTo_Icc_of_inner_le_zero`: a solution of a time-dependent locally Lipschitz ODE
   whose field satisfies the supporting half-space inequalities of a complete convex set `K` and
   which starts in `K` stays in `K`.
 * `Convex.mapsTo_Icc_of_mem_posTangentConeAt`: the same conclusion when the field is tangent to
   `K` in the positive sense.
-* `LocallyLipschitz.exists_eq_forall_mem_Icc_hasDerivWithinAt`: local existence of solutions for
-  an autonomous locally Lipschitz field, used for the necessity half of the criterion.
 * `Convex.forall_mem_posTangentConeAt_iff_forall_mapsTo_Icc`: Nagumo's criterion for an
   autonomous locally Lipschitz field and a closed convex set in a complete space.
 
@@ -79,24 +76,6 @@ theorem real_inner_le_zero_of_mem_posTangentConeAt {s : Set E} {y n w : E}
     eventually_nhdsWithin_of_forall fun k hk ↦ by
       simpa [innerSL_apply_apply, inner_sub_right] using hn k hk
   simpa using hmax.hasFDerivWithinAt_nonpos (innerSL ℝ n).hasFDerivWithinAt hw
-
-end TauCeti
-
-/-- If a curve `x` has right derivative `w` at `t` and lies in `s` at times arbitrarily close to
-`t` from the right, then `w` is a positive tangent vector of `s` at `x t`. -/
-theorem HasDerivWithinAt.mem_posTangentConeAt {x : ℝ → E} {w : E} {t : ℝ} {s : Set E}
-    (hx : HasDerivWithinAt x w (Ici t) t) (hs : ∃ᶠ τ in 𝓝[>] t, x τ ∈ s) :
-    w ∈ posTangentConeAt s (x t) := by
-  have hslope : Tendsto (slope x t) (𝓝[>] t) (𝓝 w) :=
-    (hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl t)).1 hx.Ioi_of_Ici
-  refine mem_tangentConeAt_of_frequently (𝓝[>] t) (fun τ ↦ (τ - t)⁻¹.toNNReal)
-    (fun τ ↦ x τ - x t) ?_ (hs.mono fun τ hτ ↦ by simpa using hτ) (hslope.congr' ?_)
-  · exact tendsto_sub_nhds_zero_iff.2 (hx.continuousWithinAt.mono Ioi_subset_Ici_self)
-  · filter_upwards [self_mem_nhdsWithin] with τ hτ
-    rw [slope_def_module, NNReal.smul_def,
-      Real.coe_toNNReal _ (inv_nonneg.2 (sub_nonneg.2 (mem_Ioi.1 hτ).le))]
-
-namespace TauCeti
 
 variable {K : Set E} {v : ℝ → E → E} {x : ℝ → E} {a b : ℝ}
 
@@ -209,38 +188,6 @@ theorem Convex.mapsTo_Icc_of_mem_posTangentConeAt {K : Set E} (hKc : Convex ℝ 
     (ha : x a ∈ K) : MapsTo x (Icc a b) K :=
   hKc.mapsTo_Icc_of_inner_le_zero hK hx hx' hv
     (fun t ht y hy _ hn ↦ real_inner_le_zero_of_mem_posTangentConeAt hn (hvK t ht y hy)) ha
-
-/-- **Picard–Lindelöf for a locally Lipschitz field.** An autonomous locally Lipschitz field
-on a complete space has, from every initial point and at every initial time `t₀`, a solution on
-`[t₀ - ε, t₀ + ε]`, where `ε > 0` depends only on the initial point.
-
-The construction of the Picard–Lindelöf data follows Mathlib's
-`IsPicardLindelof.of_contDiffAt_one`, whose proof uses only the local Lipschitz continuity of
-the `C¹` field. -/
-theorem LocallyLipschitz.exists_eq_forall_mem_Icc_hasDerivWithinAt [CompleteSpace E]
-    {v : E → E} (hv : LocallyLipschitz v) (y : E) :
-    ∃ ε > (0 : ℝ), ∀ t₀ : ℝ, ∃ α : ℝ → E, α t₀ = y ∧ ∀ t ∈ Icc (t₀ - ε) (t₀ + ε),
-      HasDerivWithinAt α (v (α t)) (Icc (t₀ - ε) (t₀ + ε)) t := by
-  obtain ⟨C, U, hU, hC⟩ := hv y
-  obtain ⟨ρ, hρ, hρU⟩ := Metric.mem_nhds_iff.1 hU
-  -- On the closed ball of radius `a = ρ / 2` the field is `C`-Lipschitz and bounded by `B`.
-  set a : ℝ≥0 := ⟨ρ / 2, by positivity⟩
-  have ha : (0 : ℝ) < a := half_pos hρ
-  have hball : closedBall y a ⊆ U := (closedBall_subset_ball (half_lt_self hρ)).trans hρU
-  set B : ℝ≥0 := C * a + ‖v y‖₊ + 1
-  have hB : (0 : ℝ) < B := by positivity
-  have hbound (z : E) (hz : z ∈ closedBall y a) : ‖v z‖ ≤ B := by
-    have h := (hC.norm_sub_le (hball hz) (hball (mem_closedBall_self a.2))).trans
-      (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hz) C.2)
-    calc ‖v z‖ ≤ ‖v z - v y‖ + ‖v y‖ := norm_le_norm_sub_add _ _
-      _ ≤ B := by
-        simp only [B, NNReal.coe_add, NNReal.coe_mul, NNReal.coe_one, coe_nnNorm]
-        linarith
-  refine ⟨a / B, div_pos ha hB, fun t₀ ↦ ?_⟩
-  have hPL : IsPicardLindelof (fun _ ↦ v) (tmin := t₀ - a / B) (tmax := t₀ + a / B)
-      ⟨t₀, by simp [(div_pos ha hB).le]⟩ y a 0 B C :=
-    IsPicardLindelof.of_time_independent hbound (hC.mono hball) (by simp [field])
-  exact hPL.exists_eq_forall_mem_Icc_hasDerivWithinAt₀
 
 open TauCeti in
 /-- **Nagumo's criterion.** For a closed convex set `K` in a real Hilbert space and an autonomous
