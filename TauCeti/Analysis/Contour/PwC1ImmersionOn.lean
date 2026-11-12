@@ -228,7 +228,7 @@ private theorem derivWithin_Icc_left_endpoint_congr {γ : ℝ → ℂ} {t d d' :
       simp only [mem_Icc]
       exact ⟨fun ⟨h1, _⟩ => ⟨h1, by linarith [min_le_right d d']⟩,
         fun ⟨h1, _⟩ => ⟨h1, by linarith [min_le_left d d']⟩⟩
-    exact propext h_iff)
+    exact h_iff)
 
 /-- **The mirror of `derivWithin_Icc_left_endpoint_congr`, at a shared right endpoint.** -/
 private theorem derivWithin_Icc_right_endpoint_congr {γ : ℝ → ℂ} {c c' t : ℝ} (hc : c < t)
@@ -240,7 +240,7 @@ private theorem derivWithin_Icc_right_endpoint_congr {γ : ℝ → ℂ} {c c' t 
       simp only [mem_Icc]
       exact ⟨fun ⟨_, h2⟩ => ⟨by linarith [le_max_right c c'], h2⟩,
         fun ⟨_, h2⟩ => ⟨by linarith [le_max_left c c'], h2⟩⟩
-    exact propext h_iff)
+    exact h_iff)
 
 /-- **A crossing's one-sided velocity is non-zero, from the immersion alone.** No need to assume
 this alongside a `C^{1,1}` window at a crossing: `IsPwC1ImmersionOn` already forces a non-zero
