@@ -9,8 +9,7 @@ public import TauCeti.Analysis.Complex.BranchLogRoot
 public import TauCeti.Analysis.Meromorphic.Order
 public import TauCeti.Analysis.Meromorphic.Divisor
 public import Mathlib.Analysis.Meromorphic.NormalForm
-public import Mathlib.Analysis.Calculus.LogDeriv
-import Mathlib.Analysis.Meromorphic.FactorizedRational
+public import TauCeti.Analysis.Meromorphic.FactorizedRational
 
 /-!
 # Holomorphic functions with equal divisors differ by an exponential factor
@@ -30,12 +29,9 @@ an infinite-order germ, so the divisor of an identically zero function is zero.
 
 On a closed disc, `AnalyticOnNhd.exists_eq_finprod_zpow_mul` divides out the zeros lying in a
 smaller concentric closed disc: `f = (∏ᶠ ρ, (· - ρ) ^ m_ρ) * G` with `G` zero-free on the smaller
-disc and `m_ρ` the divisor of `f` there. For a finitely supported exponent `d`, the value of
-`∏ᶠ u, (· - u) ^ d u` at a point is a finite product
-(`Function.FactorizedRational.finprod_apply_eq_prod`), and its logarithmic derivative at a point
-`z` with `d z = 0` is `∑ᶠ u, d u / (z - u)` (`Function.FactorizedRational.logDeriv_eq_finsum`).
-For `0 ≤ d' ≤ d` the product splits into the products for `d'` and `d - d'`
-(`Function.FactorizedRational.finprod_eq_finprod_mul_finprod_sub`).
+disc and `m_ρ` the divisor of `f` there. The product is stated as a function, in the normal form
+of Mathlib's `Function.FactorizedRational`, so the API of
+`TauCeti.Analysis.Meromorphic.FactorizedRational` applies to it directly.
 -/
 
 public section
@@ -93,68 +89,6 @@ theorem exists_differentiableOn_eqOn_mul_exp_of_divisor_eq {U : Set ℂ} {f g : 
 
 end TauCeti
 
-namespace Function.FactorizedRational
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {d : 𝕜 → ℤ}
-
-/-- The value at `y` of the finitely supported product `∏ᶠ u, (· - u) ^ d u`, as a finite
-product over the support of `d`. -/
-theorem finprod_apply_eq_prod (hd : d.support.Finite) (y : 𝕜) :
-    (∏ᶠ u, (· - u) ^ d u) y = ∏ u ∈ hd.toFinset, (y - u) ^ d u :=
-  (congrFun (finprod_eq_fun hd) y).trans <|
-    finprod_eq_prod_of_mulSupport_subset _ fun u hu ↦
-      hd.mem_toFinset.2 fun h ↦ hu (by simp [h])
-
-/-- **Logarithmic derivative of a factorized rational function.** At a point `z` with `d z = 0`,
-the logarithmic derivative of `∏ᶠ u, (· - u) ^ d u` is `∑ᶠ u, d u / (z - u)`. -/
-theorem logDeriv_eq_finsum (hd : d.support.Finite) {z : 𝕜} (hz : d z = 0) :
-    logDeriv (∏ᶠ u, (· - u) ^ d u) z = ∑ᶠ u, (d u : 𝕜) / (z - u) := by
-  classical
-  have hzu (u : 𝕜) (hu : u ∈ hd.toFinset) : z - u ≠ 0 :=
-    sub_ne_zero.2 fun h ↦ hd.mem_toFinset.1 hu (h ▸ hz)
-  rw [finprod_eq_prod_of_mulSupport_subset _ (s := hd.toFinset)
-      (by rw [mulSupport d, hd.coe_toFinset])]
-  simp only [Pi.pow_def]
-  rw [logDeriv_prod (f := fun u w ↦ (w - u) ^ d u) (fun u hu ↦ zpow_ne_zero _ (hzu u hu))
-      fun u hu ↦ (differentiableAt_id.sub_const u).zpow (.inl (hzu u hu)),
-    finsum_eq_sum_of_support_subset (s := hd.toFinset)]
-  · refine Finset.sum_congr rfl fun u _ ↦ ?_
-    rw [logDeriv_fun_zpow (f := fun w ↦ w - u) (by fun_prop)]
-    simp [logDeriv_apply, div_eq_mul_inv]
-  · exact fun u hu ↦ hd.mem_toFinset.2 fun h ↦ hu (by simp [h])
-
-/-- **Splitting a factorized rational function.** If `0 ≤ d' ≤ d` pointwise and `d` has finite
-support, then `∏ᶠ u, (· - u) ^ d u` is the product of the factorized rational functions with
-exponents `d'` and `d - d'`. -/
-theorem finprod_eq_finprod_mul_finprod_sub {d' : 𝕜 → ℤ} (hd : d.support.Finite)
-    (h₀ : ∀ u, 0 ≤ d' u) (h : ∀ u, d' u ≤ d u) :
-    (∏ᶠ u, (· - u) ^ d u) = (∏ᶠ u, (· - u) ^ d' u) * ∏ᶠ u, (· - u) ^ (d u - d' u) := by
-  have hfin {e : 𝕜 → ℤ} (he : e.support.Finite) :
-      (fun u ↦ (· - u) ^ e u : 𝕜 → 𝕜 → 𝕜).HasFiniteMulSupport := by
-    rw [Function.HasFiniteMulSupport, mulSupport]
-    exact he
-  have hd' : d'.support.Finite := hd.subset fun u hu h' ↦ hu <| by
-    have := h₀ u
-    have := h u
-    omega
-  have hsub : (fun u ↦ d u - d' u).support.Finite := hd.subset fun u hu h' ↦ hu <| by
-    have := h₀ u
-    have := h u
-    beta_reduce
-    omega
-  rw [← finprod_mul_distrib (hfin hd') (hfin hsub)]
-  refine finprod_congr fun u ↦ funext fun x ↦ ?_
-  simp only [Pi.mul_apply, Pi.pow_apply]
-  rw [← zpow_add']
-  · simp
-  · have := h₀ u
-    have := h u
-    rcases eq_or_ne (d u) 0 with h' | h'
-    · exact .inr (.inr (by omega))
-    · exact .inr (.inl (by omega))
-
-end Function.FactorizedRational
-
 namespace AnalyticOnNhd
 
 open Metric MeromorphicOn
@@ -162,14 +96,14 @@ open Metric MeromorphicOn
 variable {f : ℂ → ℂ} {z₀ : ℂ} {r R : ℝ}
 
 /-- **Dividing out the zeros in a smaller disc.** If `f` is analytic on `closedBall z₀ R` and not
-identically zero there, and `r ≤ R`, then `f = (∏ᶠ ρ, (· - ρ) ^ m_ρ) * G` on `closedBall z₀ R`,
-where `m_ρ` is the divisor of `f` on `closedBall z₀ r` and `G` is analytic on `closedBall z₀ R`
-without zeros in `closedBall z₀ r`. -/
+identically zero there, and `0 < R` and `r ≤ R`, then `f = (∏ᶠ ρ, (· - ρ) ^ m_ρ) * G` on
+`closedBall z₀ R`, where `m_ρ` is the divisor of `f` on `closedBall z₀ r` and `G` is analytic on
+`closedBall z₀ R` without zeros in `closedBall z₀ r`. -/
 theorem exists_eq_finprod_zpow_mul (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
     (hR : 0 < R) (hrR : r ≤ R) (h₀ : ∃ u ∈ closedBall z₀ R, f u ≠ 0) :
     ∃ G : ℂ → ℂ, AnalyticOnNhd ℂ G (closedBall z₀ R) ∧ (∀ z ∈ closedBall z₀ r, G z ≠ 0) ∧
       ∀ z ∈ closedBall z₀ R,
-        f z = (∏ᶠ ρ, (z - ρ) ^ divisor f (closedBall z₀ r) ρ) * G z := by
+        f z = (∏ᶠ ρ, (· - ρ) ^ divisor f (closedBall z₀ r) ρ) z * G z := by
   classical
   set D := divisor f (closedBall z₀ R)
   set D' := divisor f (closedBall z₀ r) with hD'_def
@@ -206,8 +140,7 @@ theorem exists_eq_finprod_zpow_mul (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)
       refine Eventually.frequently ?_
       filter_upwards [this, nhdsWithin_le_nhds (closedBall_mem_nhds z₀ hR)] with x hx hxU
       exact hx.resolve_right (not_not_intro hxU)
-    rw [hf.eqOn_of_preconnected_of_frequently_eq hQ hconn.isPreconnected hz₀R hfreq hz, hsplit,
-      Function.FactorizedRational.finprod_eq_fun (D'.finiteSupport (isCompact_closedBall _ _))]
+    rw [hf.eqOn_of_preconnected_of_frequently_eq hQ hconn.isPreconnected hz₀R hfreq hz, hsplit]
     simp only [Pi.mul_apply, smul_eq_mul, mul_assoc]
 
 end AnalyticOnNhd

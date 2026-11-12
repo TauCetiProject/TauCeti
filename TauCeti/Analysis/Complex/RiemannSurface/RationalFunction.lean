@@ -7,9 +7,8 @@ module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
-import Mathlib.Analysis.Meromorphic.FactorizedRational
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
-import TauCeti.Analysis.Complex.DivisorFactorization
+import TauCeti.Analysis.Meromorphic.FactorizedRational
 import TauCeti.Topology.Compactification.OnePoint.Nhds
 
 /-!
