@@ -12,10 +12,9 @@ import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.Morse.ZeroSectionChart
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Section
-import TauCeti.Geometry.Manifold.VectorBundle.Submersion
+import TauCeti.Geometry.Manifold.VectorBundle.Basic
 import TauCeti.Topology.FiberBundle.Countable
 import TauCeti.Topology.FiberBundle.Separation
 import TauCeti.Topology.LocallyFinite.Basic
@@ -229,7 +228,7 @@ private theorem exists_partialDiffeomorph_localCoord (a : B) (hW : IsOpen W)
   let D := (e₀.trans Θ).trans e₀.symm
   have hsrc {x : TotalSpace F E} (hx : x ∈ D.source) : x ∈ τ.source ∧ x.proj ∈ e.baseSet ∧
       x.proj ∈ (extChartAt IB a).source ∧ τ x ∈ U₀ ×ˢ Metric.ball 0 r := by
-    obtain ⟨h1, h2, -⟩ := (mem_extChartPartialDiffeomorph_trans_trans_symm_source _ _ Θ).1 hx
+    obtain ⟨h1, h2, -⟩ := (mem_extChartPartialDiffeomorph_trans_trans_symm_source _ _ _ _ Θ).1 hx
     have h1 : x ∈ τ.source := ((extChartPartialDiffeomorph_source _ _ _).subset h1).1
     have h3 := (Bundle.mem_extChartAt_source_iff _ _).1 h1
     exact ⟨h1, h3.1, h3.2, hΘsource ▸ h2⟩
@@ -242,7 +241,7 @@ private theorem exists_partialDiffeomorph_localCoord (a : B) (hW : IsOpen W)
   · have h0 : τ (zeroSection F E a) ∈ U₀ ×ˢ Metric.ball 0 r := hτa ▸ ⟨haU₀, Metric.mem_ball_self hr⟩
     have hΘa : Θ (τ (zeroSection F E a)) = τ (zeroSection F E a) := by
       rw [hΘeq _ h0, hτa, parametricMorseCoord_mk_zero]
-    refine (mem_extChartPartialDiffeomorph_trans_trans_symm_source _ _ Θ).2
+    refine (mem_extChartPartialDiffeomorph_trans_trans_symm_source _ _ _ _ Θ).2
       ⟨(mem_extChartPartialDiffeomorph_source _ _ _).2 BoundarylessManifold.isInteriorPoint,
         hΘsource ▸ h0, ?_⟩
     rw [hΘa, (isOpen_extChartAt_target _).interior_eq]
