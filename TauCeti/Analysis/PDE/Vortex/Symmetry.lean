@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Topology.Algebra.Field
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Complex.AtInfinity
@@ -40,8 +41,9 @@ preserve the limit, while a rotation by `u` multiplies it by `u^m`. The constant
 the end framing. This constant gauge does not tend to one at infinity, so it is a change of the
 frame of the line at infinity rather than an element of the framed gauge group.
 
-These are identities of smooth differential expressions; their Sobolev completions, and the
-induced action on the divisor of a vortex, are not treated here.
+These are identities of smooth differential expressions; their Sobolev completions are not
+treated here. The induced action on smooth framed vortices, their divisors and their moduli is in
+`TauCeti.Analysis.PDE.Vortex.ModuliSymmetry`.
 
 ## Main results
 
@@ -53,6 +55,8 @@ induced action on the divisor of a vortex, are not treated here.
   `TauCeti.Vortex.gaugeFixedOperator_translateField` and
   `TauCeti.Vortex.gaugeFixedAdjoint_translateField`.
 * `TauCeti.Vortex.rotateField_translateField`: the semidirect product law of the two actions.
+* `TauCeti.Vortex.contDiff_translateField`, `TauCeti.Vortex.contDiff_rotateField`: both actions
+  preserve smoothness.
 * `TauCeti.Vortex.tendsto_sectionValue_translateField`,
   `TauCeti.Vortex.tendsto_sectionValue_rotateField` and
   `TauCeti.Vortex.tendsto_sectionValue_gaugeTransform_rotateField`: the end framing laws.
@@ -93,6 +97,12 @@ theorem translateField_translateField (a b : ℂ) (x : ℂ → EuclideanSpace �
     translateField a (translateField b x) = translateField (a + b) x := by
   funext z
   simp [add_assoc]
+
+/-- Translations preserve the smoothness of fields. -/
+theorem contDiff_translateField {n : WithTop ℕ∞} (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (translateField a x) := by
+  rw [show translateField a x = fun z ↦ x (z + a) from funext (translateField_apply a x)]
+  exact hx.comp (contDiff_id.add contDiff_const)
 
 /-- A spatial derivative of a translated component is the translated derivative. No
 differentiability is needed. -/
@@ -264,6 +274,20 @@ theorem rotateField_rotateField (u v : Circle) (x : ℂ → EuclideanSpace ℝ (
     rotateField u (rotateField v x) = rotateField (u * v) x := by
   ext z i
   fin_cases i <;> simp [mul_comm (v : ℂ), mul_assoc] <;> ring
+
+/-- Rotations preserve the smoothness of fields. -/
+theorem contDiff_rotateField {n : WithTop ℕ∞} (u : Circle) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (rotateField u x) := by
+  have hc (i : Fin 4) : ContDiff ℝ n fun z ↦ x ((u : ℂ) * z) i :=
+    ((contDiff_piLp 2).1 hx i).comp (contDiff_const.mul contDiff_id)
+  refine (contDiff_piLp 2).2 fun i ↦ ?_
+  fin_cases i
+  · simpa only [Fin.zero_eta, rotateField_apply_zero] using
+      (contDiff_const.mul (hc 0)).add (contDiff_const.mul (hc 1))
+  · simpa only [Fin.mk_one, rotateField_apply_one] using
+      (contDiff_const.mul (hc 1)).sub (contDiff_const.mul (hc 0))
+  · simpa only [Fin.reduceFinMk, rotateField_apply_two] using hc 2
+  · simpa only [Fin.reduceFinMk, rotateField_apply_three] using hc 3
 
 /-- The semidirect product law of the orientation-preserving isometries of the plane: rotating
 by `u` a field translated by `a` is translating the rotated field by `u⁻¹ a`. -/
