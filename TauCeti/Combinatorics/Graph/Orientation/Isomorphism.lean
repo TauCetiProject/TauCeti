@@ -63,30 +63,26 @@ theorem orientationEquiv_symm (f : Iso G H) :
     f.orientationEquiv.symm = f.symm.orientationEquiv := by
   apply Equiv.ext
   intro o
-  apply Orientation.ext_of_head
-  intro e
-  have hE : f.symm.edgeEquiv = f.edgeEquiv.symm := Equiv.ext f.symm_edgeEquiv_apply
-  simp [orientationEquiv, hE]
+  rw [Equiv.symm_apply_eq]
+  exact Orientation.ext_of_head fun _ ↦ by simp
 
 /-- The identity graph isomorphism acts trivially on orientations. -/
 @[simp]
 theorem orientationEquiv_refl (G : Graph V E) :
     (Iso.refl G).orientationEquiv = Equiv.refl G.Orientation := by
-  have hE : (Iso.refl G).edgeEquiv = Equiv.refl G.edgeSet := Equiv.ext fun _ ↦ by simp
   apply Equiv.ext
   intro o
-  exact Orientation.ext_of_head fun _ ↦ by simp [hE]
+  exact Orientation.ext_of_head fun _ ↦ by simp
 
 /-- Transport of orientations respects composition of graph isomorphisms. -/
+@[simp]
 theorem orientationEquiv_trans (f : Iso G H) (g : Iso H K) :
     (f.trans g).orientationEquiv = f.orientationEquiv.trans g.orientationEquiv := by
   apply Equiv.ext
   intro o
   apply Orientation.ext_of_head
   intro e
-  have hE : (f.trans g).edgeEquiv = f.edgeEquiv.trans g.edgeEquiv :=
-    Equiv.ext fun _ ↦ by simp
-  simp [hE]
+  simp
 
 /-- Reversing every edge commutes with transporting an orientation. -/
 @[simp]
@@ -114,34 +110,29 @@ theorem outdegree_orientationEquiv (f : Iso G H) (o : G.Orientation) (x : H.vert
     (f.orientationEquiv o).outdegree x = o.outdegree (f.vertexEquiv.symm x) := by
   simpa using f.indegree_orientationEquiv o.reverse x
 
+/-- Existence of an orientation satisfying any predicate on its indegree function is invariant
+under graph isomorphisms, with target indegrees indexed by the original vertices. -/
+theorem exists_orientation_indegree_congr (f : Iso G H) (P : (G.vertexSet → ℕ) → Prop) :
+    (∃ o : H.Orientation, P (fun x ↦ o.indegree (f.vertexEquiv x))) ↔
+      ∃ o : G.Orientation, P o.indegree := by
+  exact (f.orientationEquiv.exists_congr fun o ↦ by simp).symm
+
 /-- Prescribed indegrees are realizable exactly when the transported prescription is realizable.
 The vertex and edge equivalences, rather than the ambient types, determine the transport. -/
-theorem exists_orientation_indegree_eq_iff (f : Iso G H) (d : G.vertexSet → ℕ) :
+theorem exists_orientation_indegree_eq_congr (f : Iso G H) (d : G.vertexSet → ℕ) :
     (∃ o : H.Orientation, ∀ x, o.indegree x = d (f.vertexEquiv.symm x)) ↔
       ∃ o : G.Orientation, ∀ x, o.indegree x = d x := by
-  have hf : f.symm.vertexEquiv = f.vertexEquiv.symm := Equiv.ext f.symm_vertexEquiv_apply
-  constructor
-  · rintro ⟨o, ho⟩
-    refine ⟨f.symm.orientationEquiv o, fun x ↦ ?_⟩
-    simpa [hf] using ho (f.vertexEquiv x)
-  · rintro ⟨o, ho⟩
-    refine ⟨f.orientationEquiv o, fun x ↦ ?_⟩
-    simpa using ho (f.vertexEquiv.symm x)
+  simpa only [f.vertexEquiv.forall_congr_left, Equiv.apply_symm_apply] using
+    f.exists_orientation_indegree_congr (fun d' ↦ ∀ x, d' x = d x)
 
 /-- Lower and upper indegree constraints are invariant under graph isomorphisms. No consistency
 hypothesis on the bounds is necessary for this equivalence. -/
-theorem exists_orientation_indegree_mem_Icc_iff (f : Iso G H) (a b : G.vertexSet → ℕ) :
+theorem exists_orientation_indegree_mem_Icc_congr (f : Iso G H) (a b : G.vertexSet → ℕ) :
     (∃ o : H.Orientation, ∀ x,
       o.indegree x ∈ Set.Icc (a (f.vertexEquiv.symm x)) (b (f.vertexEquiv.symm x))) ↔
       ∃ o : G.Orientation, ∀ x, o.indegree x ∈ Set.Icc (a x) (b x) := by
-  have hf : f.symm.vertexEquiv = f.vertexEquiv.symm := Equiv.ext f.symm_vertexEquiv_apply
-  constructor
-  · rintro ⟨o, ho⟩
-    refine ⟨f.symm.orientationEquiv o, fun x ↦ ?_⟩
-    simpa [hf] using ho (f.vertexEquiv x)
-  · rintro ⟨o, ho⟩
-    refine ⟨f.orientationEquiv o, fun x ↦ ?_⟩
-    simpa using ho (f.vertexEquiv.symm x)
+  simpa only [f.vertexEquiv.forall_congr_left, Equiv.apply_symm_apply] using
+    f.exists_orientation_indegree_congr (fun d ↦ ∀ x, d x ∈ Set.Icc (a x) (b x))
 
 end Degree
 
