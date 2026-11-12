@@ -18,13 +18,10 @@ import TauCeti.Probability.Exchangeability.MixedIID.Implications
 /-!
 # A stationary process that is not exchangeable: the deterministic 3-cycle
 
-This file discharges a worked example of the Exchangeability roadmap
-(`TauCetiRoadmap/Exchangeability/README.md`, "Worked examples"):
-
-> A stationary non-reversible finite-state Markov chain — for instance the deterministic
-> 3-cycle with uniform stationary law — is shift-invariant but not exchangeable, since the law
-> of `(X₀, X₁)` differs from that of `(X₁, X₀)`. This keeps stationarity, shift-invariance, and
-> exchangeability distinct.
+A stationary non-reversible finite-state Markov chain — for instance the deterministic 3-cycle
+with uniform stationary law — is shift-invariant but not exchangeable, since the law of
+`(X₀, X₁)` differs from that of `(X₁, X₀)`. This file works out that example, which keeps
+stationarity, shift-invariance, and exchangeability distinct.
 
 Take the base space `Ω = ZMod 3` with its uniform probability law `threeCycleMeasure =
 ProbabilityTheory.uniformOn Set.univ`, and the deterministic rotation process `threeCycle n ω =
@@ -43,10 +40,10 @@ It is, however, neither exchangeable (`threeCycle_not_exchangeable`) nor contrac
 (`threeCycle_not_contractable`): the pair `(X₀, X₁) = (ω, ω + 1)` lands in
 `{(0, 1), (1, 2), (2, 0)}`, so swapping the two coordinates — or reading off the pair `(X₀, X₂)`
 instead — produces a different two-dimensional law. This separates stationarity and
-shift-invariance from the symmetry notions, as the roadmap example asks.
+shift-invariance from the symmetry notions.
 
-The example uses the Layer 0 API (`Exchangeable`, `Contractable`, `pathLaw`, `blockLaw`, `shift`)
-together with the Layer 8 `MarkovExchangeable` / `MixedMarkovChain` interface and `MixedIID`, and
+The example uses the basic API (`Exchangeable`, `Contractable`, `pathLaw`, `blockLaw`, `shift`)
+together with the `MarkovExchangeable` / `MixedMarkovChain` interface and `MixedIID`, and
 Mathlib's translation invariance of the counting measure on a group
 (`MeasureTheory.map_add_right_eq_self`) and its `MeasureTheory.diracProba`; it needs no material
 from `cameronfreer/exchangeability`.

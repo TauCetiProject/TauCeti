@@ -53,7 +53,7 @@ theorem map_integral_comp_eq_integral_mapRangeL [CompleteSpace G] [CompleteSpace
   rw [ENNReal.smul_def] at hvar
   -- Both sides are `setToFun` of the same set function, against comparable reference measures.
   have hT : μ.transpose (compL ℝ F G G' L ∘L (B ∘L ψ)) = (mapRangeL φ μ).transpose B' := by
-    ext s x
+    ext s _
     simp [transpose_eq_cbmApplyMeasure, h]
   rw [integral_continuousLinearMap_comp hf, continuousLinearMap_apply_integral hf,
     integral_eq_setToFun, integral_eq_setToFun,

@@ -109,7 +109,7 @@ theorem lipschitzOnWith_ofWithMetric_maximalGeodesic
           ← ofReal_norm, ← ofReal_norm, hv]
       _ = ‖v‖₊ * edist s t := by
         rw [edist_dist, Real.dist_eq, abs_sub_comm,
-          abs_of_nonneg (by linarith : (0 : ℝ) ≤ t - s), enorm_eq_nnnorm]
+          abs_of_nonneg (by linarith : (0 : ℝ) ≤ t - s), eNorm_eq_nnNorm]
   intro s hs t ht
   rcases le_total s t with h | h
   · exact key s hs t ht h
