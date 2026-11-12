@@ -6,14 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Basic
-public import TauCeti.Combinatorics.Graph.Serre.Basic
-public import Mathlib.Data.Fintype.Sigma
-public import Mathlib.Data.Fintype.Basic
-public import Mathlib.Data.Fintype.Option
-public import Mathlib.Data.List.TakeDrop
-public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Algebra.BigOperators.Fin
-public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!

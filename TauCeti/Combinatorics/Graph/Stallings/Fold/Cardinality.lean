@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Fold.Basic
-public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Data.Set.Card
 
 /-!

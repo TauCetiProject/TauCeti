@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Fold.Cardinality
 public import TauCeti.Combinatorics.Graph.Stallings.Fold.Subgroup
-public import TauCeti.Combinatorics.Graph.Stallings.Folded
-public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Finite Stallings folding

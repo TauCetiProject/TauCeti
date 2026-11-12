@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Stallings.Basic
 public import TauCeti.Combinatorics.Graph.Stallings.Folded
 
 /-!
