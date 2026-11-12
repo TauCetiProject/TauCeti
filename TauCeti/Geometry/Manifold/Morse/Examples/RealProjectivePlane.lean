@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Int
-public import TauCeti.Algebra.Category.ModuleCat.OrzechProperty
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
@@ -30,18 +29,22 @@ that the band of `[eₖ]` sits at `(-2k, k)`.
   (`TauCeti.isZero_filteredSpaceSpectralSequence_page_two_X_projectiveMomentFunction`).
 * **First differentials.** With integer coefficients, the differential from the band of the
   maximum to the band of the saddle, `ℤ ⟶ ℤ` from `(-4, 2)` to `(-2, 1)`, is injective with
-  cokernel `ℤ/2`, so it is multiplication by `±2`
-  (`TauCeti.mono_filteredSpaceSpectralSequence_page_two_d_projectiveMomentFunction`,
+  cokernel `ℤ/2`, so it is multiplication by `±2`; these are
+  `TauCeti.mono_filteredSpaceSpectralSequence_page_two_d_projectiveMomentFunction`,
   `TauCeti.nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_projectiveMomentFunction`
-  and `TauCeti.filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_two_smul`). The
-  differential from the band of the saddle to the band of the minimum vanishes
+  and
+  `TauCeti.filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_projectiveMomentFunction`
+  respectively. For any coefficients, the differential from the band of the saddle to the band of
+  the minimum vanishes
   (`TauCeti.filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction`).
-* **Second page.** With integer coefficients, the objects at `(0, 0)`, `(-2, 1)` and `(-4, 2)` of
-  the second page (numbered `3`) are `ℤ`, `ℤ/2` and `0`
-  (`TauCeti.nonempty_filteredSpaceSpectralSequence_page_three_X_iso_int_projectiveMomentFunction`,
-  `TauCeti.nonempty_filteredSpaceSpectralSequence_page_three_X_iso_zmod_projectiveMomentFunction`
-  and `TauCeti.isZero_filteredSpaceSpectralSequence_page_three_X_projectiveMomentFunction`), the
-  integral homology groups of `ℝℙ²`.
+* **Second page.** For any coefficients, the object at `(0, 0)` of the second page (numbered `3`)
+  is one copy of the coefficients
+  (`TauCeti.nonempty_filteredSpaceSpectralSequence_page_three_X_zero_iso_projectiveMomentFunction`).
+  With integer coefficients, the object at `(-2, 1)` is `ℤ/2`
+  (`TauCeti.nonempty_filteredSpaceSpectralSequence_page_three_X_iso_zmod_projectiveMomentFunction`)
+  and every other object is zero
+  (`TauCeti.isZero_filteredSpaceSpectralSequence_page_three_X_projectiveMomentFunction`), so the
+  second page consists of the integral homology groups `ℤ`, `ℤ/2`, `0` of `ℝℙ²`.
 
 So the first page is the relative homology of the bands, free on the critical points, but it is not
 yet the second page: its differential can be nonzero, and the critical counts `1, 1, 1` exceed the
@@ -52,9 +55,11 @@ The differentials are the connecting maps of triples of sublevels
 sequences of those triples. The inputs are the relative homology of a band with one critical point
 (`TauCeti.IsMorse.nonempty_singularHomology_sublevelPair_iso_sigma`), the integral homology of
 `ℝℙ²`, `H₁ = ℤ/2` and `H₂ = 0`, computed from its cellular chain complex
-(`TauCeti.RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd`), and the injectivity of the
-zeroth homology of the bottom sublevel, a copy of `ℤ` split by the augmentation, into that of every
-larger sublevel.
+(`TauCeti.RealProjectiveSpace.singularHomologyProjectivizationIntLinearEquivOfOdd`), and the
+injectivity of the zeroth homology of the bottom sublevel into that of every larger sublevel. The
+bottom sublevel is path-connected
+(`TauCeti.isPathConnected_setOf_projectiveMomentFunction_le`), so its augmentation is an
+isomorphism, and it factors through that map.
 
 ## References
 
@@ -77,51 +82,6 @@ namespace TauCeti
 
 variable {w : Fin 3 → ℝ}
 
-/-- The moment function on `ℝℙ²` takes its values between the extreme weights. -/
-private theorem projectiveMomentFunction_mem_Icc (hw : Monotone w) (x : ℙ ℝ (Fin 3 → ℝ)) :
-    projectiveMomentFunction ℝ w x ∈ Icc (w 0) (w 2) := by
-  induction x using Projectivization.ind with
-  | h v hv =>
-    rw [projectiveMomentFunction_mk]
-    have hpos : 0 < ∑ i, ‖v i‖ ^ 2 := by
-      obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
-      exact Finset.sum_pos' (fun _ _ ↦ by positivity)
-        ⟨i, Finset.mem_univ _, pow_pos (norm_pos_iff.2 hi) 2⟩
-    constructor
-    · rw [le_div_iff₀ hpos, Finset.mul_sum]
-      exact Finset.sum_le_sum fun i _ ↦
-        mul_le_mul_of_nonneg_right (hw (Fin.zero_le i)) (by positivity)
-    · rw [div_le_iff₀ hpos, Finset.mul_sum]
-      exact Finset.sum_le_sum fun i _ ↦
-        mul_le_mul_of_nonneg_right (hw (Fin.le_last i)) (by positivity)
-
-private theorem ncard_setOf_lt (hw : StrictMono w) (k : Fin 3) : {i | w i < w k}.ncard = k := by
-  simp_rw [hw.lt_iff_lt]
-  have : {i : Fin 3 | i < k} = ↑(Finset.Iio k) := by ext; simp
-  rw [this, ncard_coe_finset, Fin.card_Iio]
-
-/-- For increasing weights the coordinate point `[eₖ]` has Morse index `k`. -/
-private theorem manifoldMorseIndex_mk_single (hw : StrictMono w) (k : Fin 3) :
-    manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w)
-      (mk ℝ (Pi.single k 1) (by simp)) = k := by
-  rw [manifoldMorseIndex_projectiveMomentFunction, Module.finrank_self, one_mul,
-    ncard_setOf_lt hw]
-
-/-- For distinct weights, the coordinate point `[eₖ]` is the only critical point of the moment
-function at the level `w k`. -/
-private theorem criticalPoints_inter_preimage_singleton (hw : StrictMono w) (k : Fin 3) :
-    criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) ∩
-        projectiveMomentFunction ℝ w ⁻¹' {w k} = {mk ℝ (Pi.single k 1) (by simp)} := by
-  ext x
-  rw [criticalPoints_projectiveMomentFunction hw.injective]
-  constructor
-  · rintro ⟨⟨j, rfl⟩, hj⟩
-    rw [mem_preimage, projectiveMomentFunction_mk_single, mem_singleton_iff] at hj
-    rw [hw.injective hj]
-    rfl
-  · rintro rfl
-    exact ⟨⟨k, rfl⟩, projectiveMomentFunction_mk_single w k⟩
-
 variable {A : Type*} [Category A] [Abelian A] [HasCoproducts.{0} A] (R : A)
 
 /-- The relative homology across a band of the moment function on `ℝℙ²` whose only critical value
@@ -134,8 +94,8 @@ private theorem nonempty_singularHomology_sublevelPair_iso_sigma (hw : StrictMon
           projectiveMomentFunction ℝ w ⁻¹' {w k}) //
           manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = n} ↦ R) := by
   refine IsMorse.nonempty_singularHomology_sublevelPair_iso_sigma
-    (isMorse_projectiveMomentFunction hw.injective) hs ht (isClosed_Icc.preimage
-      (contMDiff_projectiveMomentFunction (r := 0) w).continuous).isCompact ?_ R n
+    (isMorse_projectiveMomentFunction hw.injective) hs ht
+      (isClosed_Icc.preimage (continuous_projectiveMomentFunction w)).isCompact ?_ R n
   intro x hx hxst
   rw [criticalPoints_projectiveMomentFunction hw.injective] at hx
   obtain ⟨j, rfl⟩ := hx
@@ -149,14 +109,15 @@ private theorem nonempty_singularHomology_sublevelPair_iso (hw : StrictMono w) {
     Nonempty ((sublevelPair (projectiveMomentFunction ℝ w) (hs.trans ht).le).singularHomology
       R k ≅ R) := by
   obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso_sigma R hw k hs ht hcrit k
+  have hk := criticalPoints_projectiveMomentFunction_inter_preimage_singleton (𝕜 := ℝ)
+    hw.injective k
   have : Unique {p : ↥(criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) ∩
       projectiveMomentFunction ℝ w ⁻¹' {w k}) //
       manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = k} :=
-    { default := ⟨⟨_, (Set.ext_iff.1 (criticalPoints_inter_preimage_singleton hw k) _).2 rfl⟩,
-        manifoldMorseIndex_mk_single hw k⟩
-      uniq := fun p ↦ by
-        have hp := (Set.ext_iff.1 (criticalPoints_inter_preimage_singleton hw k) p.1.1).1 p.1.2
-        exact Subtype.ext (Subtype.ext hp) }
+    { default := ⟨⟨_, (Set.ext_iff.1 hk _).2 rfl⟩,
+        by rw [manifoldMorseIndex_projectiveMomentFunction_of_strictMono hw k,
+          Module.finrank_self, one_mul]⟩
+      uniq := fun p ↦ Subtype.ext (Subtype.ext ((Set.ext_iff.1 hk p.1.1).1 p.1.2)) }
   exact ⟨e ≪≫ coproductUniqueIso _⟩
 
 /-- Across a band of the moment function on `ℝℙ²` whose only critical value is `w k`, the relative
@@ -171,8 +132,10 @@ private theorem isZero_singularHomology_sublevelPair (hw : StrictMono w) {s t : 
       projectiveMomentFunction ℝ w ⁻¹' {w k}) //
       manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = n} := by
     refine ⟨fun p ↦ hn ?_⟩
-    have hp := (Set.ext_iff.1 (criticalPoints_inter_preimage_singleton hw k) p.1.1).1 p.1.2
-    rw [← p.2, mem_singleton_iff.1 hp, manifoldMorseIndex_mk_single hw k]
+    have hp := (Set.ext_iff.1 (criticalPoints_projectiveMomentFunction_inter_preimage_singleton
+      hw.injective k) p.1.1).1 p.1.2
+    rw [← p.2, mem_singleton_iff.1 hp,
+      manifoldMorseIndex_projectiveMomentFunction_of_strictMono hw k, Module.finrank_self, one_mul]
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso e
 
 variable {a : ℤ → ℝ}
@@ -193,10 +156,6 @@ private theorem mem_Icc_iff (ha : Monotone a)
   rcases lt_or_gt_of_ne hne with hlt | hlt
   · exact (h.2.trans_lt (lt_of_le_of_lt (ha (by omega)) (hcut k).1)).false
   · exact ((hcut k).2.trans_le (ha (by omega)) |>.trans_le h.1).false
-
-private theorem continuous_projectiveMomentFunction :
-    Continuous (projectiveMomentFunction ℝ w) :=
-  (contMDiff_projectiveMomentFunction (r := 0) w).continuous
 
 private theorem eq_of_mem_Icc (ha : Monotone a)
     (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) (k : Fin 3) :
@@ -245,75 +204,20 @@ theorem isZero_filteredSpaceSpectralSequence_page_two_X_projectiveMomentFunction
   · push Not at hq
     refine isZero_filteredSpaceSpectralSequence_page_two_X_of_forall_notMem R
       (contMDiff_projectiveMomentFunction w) ha (p, q)
-      (isClosed_Icc.preimage continuous_projectiveMomentFunction).isCompact fun x hx hfx ↦ ?_
+      (isClosed_Icc.preimage (continuous_projectiveMomentFunction w)).isCompact fun x hx hfx ↦ ?_
     rw [criticalPoints_projectiveMomentFunction (strictMono_of_mem_Ioo hcut).injective] at hx
     obtain ⟨k, rfl⟩ := hx
     rw [projectiveMomentFunction_mk_single] at hfx
     exact hq k ((mem_Icc_iff ha hcut k q).1 hfx).symm
 
-/-! ### Integral coefficients -/
+/-! ### Sublevel triples -/
 
-/-- `H₁(ℝℙ²; ℤ) ≅ ℤ/2`, on the projectivization carrier. -/
-private def singularHomologyOneIsoZMod :
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
-      (ModuleCat.of ℤ ℤ)).obj (TopCat.of (ℙ ℝ (Fin 3 → ℝ))) ≅ ModuleCat.of ℤ (ZMod 2) :=
-  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
-    (ModuleCat.of ℤ ℤ)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace 2))
-      (RealProjectiveSpace.homeomorphProjectivization 2))).symm ≪≫
-    (RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd (N := 2) odd_one
-      (by norm_num)).toModuleIso
-
-/-- `H₂(ℝℙ²; ℤ) = 0`, on the projectivization carrier. -/
-private theorem isZero_singularHomology_two :
-    IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj
-      (ModuleCat.of ℤ ℤ)).obj (TopCat.of (ℙ ℝ (Fin 3 → ℝ)))) :=
-  RealProjectiveSpace.isZero_singularHomology_projectivization_of_even (N := 2) ℤ
-    (isRegular_iff_ne_zero.2 two_ne_zero).right even_two two_ne_zero
-
-/-- Below the second critical value, the zeroth homology of the sublevel injects into that of
-every larger sublevel, relative to an empty sublevel. -/
-private theorem mono_singularHomologyMap_innerToTotal_zero (hw : StrictMono w) {s₀ s₁ t : ℝ}
-    (h₀ : s₀ < w 0) (h₁ : w 0 < s₁) (h₁' : s₁ < w 1) (h₁t : s₁ ≤ t) :
-    Mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app
-      (TopTriple.ofInclusions (X := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
-        (sublevel_mono (projectiveMomentFunction ℝ w) (h₀.trans h₁).le)
-        (sublevel_mono (projectiveMomentFunction ℝ w) h₁t))) (ModuleCat.of ℤ ℤ) 0) := by
-  set T := TopTriple.ofInclusions (X := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
-    (sublevel_mono (projectiveMomentFunction ℝ w) (h₀.trans h₁).le)
-    (sublevel_mono (projectiveMomentFunction ℝ w) h₁t)
-  -- The common subspace `{f ≤ s₀}` is empty, so both relative groups are absolute ones.
-  have hempty : ∀ x, ¬ projectiveMomentFunction ℝ w x ≤ s₀ := fun x hx ↦
-    ((projectiveMomentFunction_mem_Icc hw.monotone x).1.trans hx).not_gt h₀
-  have : IsEmpty (TopTriple.innerPair.obj T).snd := ⟨fun x ↦ hempty x.1 x.2⟩
-  have : IsEmpty (TopTriple.totalPair.obj T).snd := ⟨fun x ↦ hempty x.1 x.2⟩
-  have : IsIso ((TopTriple.innerPair.obj T).singularHomologyπ (ModuleCat.of ℤ ℤ) 0) :=
-    inferInstance
-  have hπ : IsIso ((TopTriple.totalPair.obj T).singularHomologyπ (ModuleCat.of ℤ ℤ) 0) :=
-    inferInstance
-  -- On absolute homology, the augmentation of the smaller sublevel factors through the map,
-  -- and that augmentation is split by the class of the minimum `[e₀]`, with source `ℤ`.
-  obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso (ModuleCat.of ℤ ℤ) hw 0
-    (h₀.trans_le le_rfl) h₁ fun i hi ↦ by
-      by_contra hne
-      exact (hi.2.trans_lt h₁').not_ge (hw.monotone (Fin.pos_iff_ne_zero.2 hne))
-  -- The carrier of `(TopTriple.innerPair.obj T).fst` is the subtype `{x | f x ≤ s₁}`; `show`
-  -- unfolds the membership to the inequality.
-  let x₀ : (TopTriple.innerPair.obj T).fst := ⟨mk ℝ (Pi.single 0 1) (by simp),
-    show projectiveMomentFunction ℝ w _ ≤ s₁ by
-      rw [projectiveMomentFunction_mk_single]; exact h₁.le⟩
-  have hε₁ : Mono (SSet.homology₀ε (TopCat.toSSet.obj (TopTriple.innerPair.obj T).fst)
-      (ModuleCat.of ℤ ℤ)) :=
-    @ModuleCat.mono_of_epi_of_iso _ _ _ _ _ _ (asIso ((TopTriple.innerPair.obj T).singularHomologyπ
-      (ModuleCat.of ℤ ℤ) 0) ≪≫ e) _
-      (@IsSplitEpi.epi _ _ _ _ _
-        (IsSplitEpi.mk' ⟨_, singularHomology₀Section_singularHomology₀ε _ x₀⟩))
-  rw [← SSet.homologyMap_homology₀ε (ModuleCat.of ℤ ℤ)
-    (TopCat.toSSet.map (TopPair.Hom.fst (TopTriple.innerToTotal.app T)))] at hε₁
-  have hA := @mono_of_mono _ _ _ _ _ _ _ hε₁
-  rw [(IsIso.eq_inv_comp _).2 (TopPair.singularHomologyπ_naturality
-    (TopTriple.innerToTotal.app T) (ModuleCat.of ℤ ℤ) 0).symm]
-  exact @mono_comp _ _ _ _ _ _ inferInstance _
-    (@mono_comp _ _ _ _ _ _ hA _ (@IsIso.mono_of_iso _ _ _ _ _ hπ))
+/-- The sublevel triple `({f ≤ u}, {f ≤ t}, {f ≤ s})` of the moment function on `ℝℙ²`. -/
+private abbrev sublevelTriple (w : Fin 3 → ℝ) {s t u : ℝ} (hst : s ≤ t) (htu : t ≤ u) :
+    TopTriple :=
+  TopTriple.ofInclusions (X := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
+    (sublevel_mono (projectiveMomentFunction ℝ w) hst)
+    (sublevel_mono (projectiveMomentFunction ℝ w) htu)
 
 /-- A sublevel pair covering `ℝℙ²` has the homology of `ℝℙ²`. -/
 private def singularHomologySublevelPairIsoOfLT (hw : Monotone w) {s₀ s₃ : ℝ} (h₀ : s₀ < w 0)
@@ -324,13 +228,6 @@ private def singularHomologySublevelPairIsoOfLT (hw : Monotone w) {s₀ s₃ : �
   (singularHomologyIsoSublevelPair _
     (fun x ↦ h₀.trans_le (projectiveMomentFunction_mem_Icc hw x).1)
     (fun x ↦ ((projectiveMomentFunction_mem_Icc hw x).2.trans h₃.le)) _ n).symm
-
-/-- The sublevel triple `({f ≤ u}, {f ≤ t}, {f ≤ s})` of the moment function on `ℝℙ²`. -/
-private abbrev sublevelTriple (w : Fin 3 → ℝ) {s t u : ℝ} (hst : s ≤ t) (htu : t ≤ u) :
-    TopTriple :=
-  TopTriple.ofInclusions (X := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
-    (sublevel_mono (projectiveMomentFunction ℝ w) hst)
-    (sublevel_mono (projectiveMomentFunction ℝ w) htu)
 
 section Sublevels
 
@@ -343,20 +240,53 @@ private theorem eq_zero_of_mem_Icc : ∀ i, w i ∈ Icc s₀ s₁ → i = 0 := f
   by_contra hne
   exact (hi.2.trans_lt h₁').not_ge (hw.monotone (Fin.pos_iff_ne_zero.2 hne))
 
-omit hw in
-include h₁ h₂' in
-private theorem eq_one_of_mem_Icc : ∀ i, w i ∈ Icc s₁ s₂ → i = 1 := fun i hi ↦ by
-  fin_cases i
-  · exact absurd (hi.1.trans_lt h₁) (lt_irrefl _)
-  · rfl
-  · exact absurd (h₂'.trans_le hi.2) (lt_irrefl _)
-
 include h₂ in
 private theorem eq_two_of_mem_Icc : ∀ i, w i ∈ Icc s₂ s₃ → i = 2 := fun i hi ↦ by
   fin_cases i
   · exact absurd (h₂.trans_le hi.1) (hw.monotone (Fin.zero_le 1)).not_gt
   · exact absurd (h₂.trans_le hi.1) (lt_irrefl _)
   · rfl
+
+include h₀ h₁ h₁' in
+/-- Below the second critical value, the zeroth homology of the sublevel `{f ≤ s₁}` injects into
+that of every larger sublevel, relative to the empty sublevel `{f ≤ s₀}`. -/
+private theorem mono_singularHomologyMap_innerToTotal_zero {t : ℝ} (h : s₁ ≤ t) :
+    Mono (TopPair.singularHomologyMap
+      (TopTriple.innerToTotal.app (sublevelTriple w (h₀.trans h₁).le h)) R 0) := by
+  set T := sublevelTriple w (h₀.trans h₁).le h
+  -- The common subspace `{f ≤ s₀}` is empty, so both relative groups are absolute ones.
+  have hempty : ∀ x, ¬ projectiveMomentFunction ℝ w x ≤ s₀ := fun x hx ↦
+    ((projectiveMomentFunction_mem_Icc hw.monotone x).1.trans hx).not_gt h₀
+  have : IsEmpty (TopTriple.innerPair.obj T).snd := ⟨fun x ↦ hempty x.1 x.2⟩
+  have : IsEmpty (TopTriple.totalPair.obj T).snd := ⟨fun x ↦ hempty x.1 x.2⟩
+  -- On absolute homology, the augmentation of `{f ≤ s₁}` factors through the map, and it is an
+  -- isomorphism since `{f ≤ s₁}` is path-connected.
+  have : PathConnectedSpace (TopTriple.innerPair.obj T).fst :=
+    isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_setOf_projectiveMomentFunction_le
+      h₁.le fun i hi ↦ h₁'.trans_le (hw.monotone (Fin.pos_iff_ne_zero.2 hi)))
+  have : IsIso (SSet.homology₀ε (TopCat.toSSet.obj (TopTriple.innerPair.obj T).fst) R) :=
+    inferInstanceAs (IsIso ((TopTriple.innerPair.obj T).fst.singularHomology₀ε R))
+  have : Mono (SSet.homologyMap (TopCat.toSSet.map
+      (TopPair.Hom.fst (TopTriple.innerToTotal.app T))) R 0) :=
+    mono_of_mono_fac (SSet.homologyMap_homology₀ε R _)
+  have hπ : IsIso ((TopTriple.totalPair.obj T).singularHomologyπ R 0) := inferInstance
+  rw [(IsIso.eq_inv_comp _).2 (TopPair.singularHomologyπ_naturality
+    (TopTriple.innerToTotal.app T) R 0).symm]
+  -- The source of `singularHomologyπ` is the homology of `(TopPair.toSSetPair.obj _).right`, which
+  -- is that of `TopCat.toSSet.obj _` only up to unfolding, so instance search cannot match the
+  -- composite and the instances are supplied as terms.
+  exact @mono_comp _ _ _ _ _ _ inferInstance _
+    (@mono_comp _ _ _ _ _ _ this _ (@IsIso.mono_of_iso _ _ _ _ _ hπ))
+
+include h₀ h₁ h₁' in
+/-- Below the second critical value, the connecting map
+`H₁({f ≤ t}, {f ≤ s₁}) ⟶ H₀({f ≤ s₁}, {f ≤ s₀})` vanishes. -/
+private theorem singularHomologyδ_one_eq_zero {t : ℝ} (h : s₁ ≤ t) :
+    (sublevelTriple w (h₀.trans h₁).le h).singularHomologyδ R 1 0 = 0 := by
+  have := mono_singularHomologyMap_innerToTotal_zero R hw h₀ h₁ h₁' h
+  rw [← cancel_mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app
+    (sublevelTriple w (h₀.trans h₁).le h)) R 0), TopTriple.singularHomologyδ_comp _ _ 1 0,
+    zero_comp]
 
 include h₀ h₁ h₁' h₃ in
 /-- Below the second critical value, `H₂(ℝℙ², {f ≤ s₁}; ℤ) = 0`. -/
@@ -365,7 +295,8 @@ private theorem isZero_singularHomology_two_sublevelPair (h : s₁ ≤ s₃) :
       (ModuleCat.of ℤ ℤ) 2) :=
   ((sublevelTriple w (h₀.trans h₁).le h).singularHomology_exact_outer (ModuleCat.of ℤ ℤ)
     2 1).isZero_of_both_isZero
-    (isZero_singularHomology_two.of_iso
+    ((RealProjectiveSpace.isZero_singularHomology_projectivization_of_even (N := 2) ℤ
+      (isRegular_iff_ne_zero.2 two_ne_zero).right even_two two_ne_zero).of_iso
       (singularHomologySublevelPairIsoOfLT hw.monotone h₀ h₃ ((h₀.trans h₁).le.trans h) 2))
     (isZero_singularHomology_sublevelPair _ hw 0 h₀ h₁ (eq_zero_of_mem_Icc hw h₁') (by simp))
 
@@ -381,20 +312,18 @@ private theorem nonempty_singularHomology_one_sublevelPair_iso (h : s₁ ≤ s�
     (T.singularHomology_exact_total (ModuleCat.of ℤ ℤ) 1).mono_g
       ((isZero_singularHomology_sublevelPair _ hw 0 h₀ h₁ (eq_zero_of_mem_Icc hw h₁')
         (by simp)).eq_of_src _ _)
-  -- `H₀(f ≤ s₁) ⟶ H₀(ℝℙ²)` is injective, so the map is also surjective.
-  have hδ : T.singularHomologyδ (ModuleCat.of ℤ ℤ) 1 0 = 0 := by
-    have := mono_singularHomologyMap_innerToTotal_zero hw h₀ h₁ h₁' h
-    rw [← cancel_mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T)
-      (ModuleCat.of ℤ ℤ) 0), TopTriple.singularHomologyδ_comp _ _ 1 0, zero_comp]
+  -- The connecting map to `H₀(f ≤ s₁, ∅)` vanishes, so the map is also surjective.
   have : Epi (TopPair.singularHomologyMap (TopTriple.totalToOuter.app T)
       (ModuleCat.of ℤ ℤ) 1) :=
-    (T.singularHomology_exact_outer (ModuleCat.of ℤ ℤ) 1 0).epi_f hδ
+    (T.singularHomology_exact_outer (ModuleCat.of ℤ ℤ) 1 0).epi_f
+      (singularHomologyδ_one_eq_zero _ hw h₀ h₁ h₁' h)
   have : IsIso (TopPair.singularHomologyMap (TopTriple.totalToOuter.app T)
       (ModuleCat.of ℤ ℤ) 1) := isIso_of_mono_of_epi _
   exact ⟨(asIso (TopPair.singularHomologyMap (TopTriple.totalToOuter.app T)
     (ModuleCat.of ℤ ℤ) 1)).symm ≪≫
       singularHomologySublevelPairIsoOfLT hw.monotone h₀ h₃ ((h₀.trans h₁).le.trans h) 1 ≪≫
-        singularHomologyOneIsoZMod⟩
+        (RealProjectiveSpace.singularHomologyProjectivizationIntLinearEquivOfOdd (N := 2) odd_one
+          (by norm_num)).toModuleIso⟩
 
 include h₀ h₁ h₁' h₂ h₂' h₃ in
 /-- Across the critical level of index two, the connecting map
@@ -425,17 +354,6 @@ private theorem nonempty_cokernel_singularHomologyδ_two_iso :
   exact ⟨(cokernelIsCokernel _).coconePointUniqueUpToIso
     ((T.singularHomology_exact_inner (ModuleCat.of ℤ ℤ) 2 1).gIsCokernel) ≪≫ e⟩
 
-include h₀ h₁ h₁' h₂ in
-/-- Across the critical level of index one, the connecting map
-`H₁({f ≤ s₂}, {f ≤ s₁}) ⟶ H₀({f ≤ s₁}, {f ≤ s₀})` vanishes. -/
-private theorem singularHomologyδ_one_eq_zero :
-    (sublevelTriple w (h₀.trans h₁).le (h₁'.trans h₂).le).singularHomologyδ
-      (ModuleCat.of ℤ ℤ) 1 0 = 0 := by
-  have := mono_singularHomologyMap_innerToTotal_zero hw h₀ h₁ h₁' (h₁'.trans h₂).le
-  rw [← cancel_mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app
-    (sublevelTriple w (h₀.trans h₁).le (h₁'.trans h₂).le)) (ModuleCat.of ℤ ℤ) 0),
-    TopTriple.singularHomologyδ_comp _ _ 1 0, zero_comp]
-
 end Sublevels
 
 /-! ### The differentials and the second page -/
@@ -449,6 +367,30 @@ private theorem lt_of_mem_Ioo (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : 
   norm_num at h0 h1 h2
   exact ⟨h0.1, h0.2, h1.1, h1.2, h2.1, h2.2⟩
 
+/-- On the first page, the differential from `(p, q)` to `pq' = (p + 2, q - 1)`, with
+`p + q = -n'` and `n' = n + 1`, is the connecting map
+`Hₙ'({f ≤ a q₂}, {f ≤ a q}) ⟶ Hₙ({f ≤ a q}, {f ≤ a q₀})` of the sublevel triple with
+`q₀ = q - 1` and `q₂ = q + 1`, up to isomorphisms of its source and target. The indices `pq'`,
+`q₀`, `q₂` and `n'` are arguments, so that they can be given as literals in normal form. -/
+private theorem exists_page_two_d_eq (ha : Monotone a) {p q q₀ q₂ : ℤ} {n n' : ℕ}
+    {pq' : ℤ × ℤ} (hn : p + q = -(n' : ℤ)) (hn' : n' = n + 1) (hpq' : pq' = (p + 2, q - 1))
+    (hq₀ : q₀ = q - 1) (hq₂ : q₂ = q + 1) :
+    ∃ (e₁ : ((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ))) R
+        ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).X (p, q) ≅
+          (TopTriple.outerPair.obj (sublevelTriple w (ha (by lia : q₀ ≤ q))
+            (ha (by lia : q ≤ q₂)))).singularHomology R n')
+      (e₂ : ((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ))) R
+        ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).X pq' ≅
+          (TopTriple.innerPair.obj (sublevelTriple w (ha (by lia : q₀ ≤ q))
+            (ha (by lia : q ≤ q₂)))).singularHomology R n),
+      ((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ))) R
+        ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).d (p, q) pq' =
+        e₁.hom ≫ (sublevelTriple w (ha (by lia : q₀ ≤ q)) (ha (by lia : q ≤ q₂))).singularHomologyδ
+          R n' n ≫ e₂.inv := by
+  subst hn' hpq' hq₀ hq₂
+  exact ⟨_, _, filteredSpaceSpectralSequence_first_page_d_eq (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
+    R ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha) q p n hn⟩
+
 /-- **The differential of index two on the first page of `ℝℙ²` is injective.** Under the
 hypotheses of
 `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, with
@@ -460,18 +402,12 @@ theorem mono_filteredSpaceSpectralSequence_page_two_d_projectiveMomentFunction
       (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).d
         (-4, 2) (-2, 1)) := by
   obtain ⟨h₀, h₁, h₁', h₂, h₂', h₃⟩ := lt_of_mem_Ioo hcut
-  have hd := filteredSpaceSpectralSequence_first_page_d_eq (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
-    (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha) 2 (-4) 1
-    (by norm_num)
-  have hδ := mono_singularHomologyδ_two (strictMono_of_mem_Ioo hcut) h₀ (s₁ := a (2 - 1))
-    (s₂ := a 2) (s₃ := a (2 + 1)) (by norm_num; exact h₁) (by norm_num; exact h₁') h₂ h₂'
-    (by norm_num; exact h₃)
-  -- `hd` states the differential with target `(-4 + 2, 2 - 1)`. That index also appears in the
-  -- types of the isomorphisms on its right-hand side, so `hd` cannot be normalized; instead the
-  -- target `(-2, 1)` of the goal is rewritten into the same unnormalized form.
-  rw [show ((-2, 1) : ℤ × ℤ) = (-4 + 2, 2 - 1) by norm_num, hd]
-  exact @mono_comp _ _ _ _ _ _ inferInstance _
-    (@mono_comp _ _ _ _ _ _ hδ _ (@IsIso.mono_of_iso _ _ _ _ _ (Iso.isIso_inv _)))
+  obtain ⟨e₁, e₂, hd⟩ := exists_page_two_d_eq (ModuleCat.of ℤ ℤ) ha (p := -4) (q := 2)
+    (q₀ := 1) (q₂ := 3) (n := 1) (n' := 2) (pq' := (-2, 1)) (by norm_num) rfl (by norm_num)
+    (by norm_num) (by norm_num)
+  have := mono_singularHomologyδ_two (strictMono_of_mem_Ioo hcut) h₀ h₁ h₁' h₂ h₂' h₃
+  rw [hd]
+  infer_instance
 
 /-- **The differential of index two on the first page of `ℝℙ²` has cokernel `ℤ/2`.** Under the
 hypotheses of
@@ -486,18 +422,13 @@ theorem nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_projectiv
       (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).d
         (-4, 2) (-2, 1)) ≅ ModuleCat.of ℤ (ZMod 2)) := by
   obtain ⟨h₀, h₁, h₁', h₂, h₂', h₃⟩ := lt_of_mem_Ioo hcut
-  have hd := filteredSpaceSpectralSequence_first_page_d_eq (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
-    (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha) 2 (-4) 1
-    (by norm_num)
-  obtain ⟨e⟩ := nonempty_cokernel_singularHomologyδ_two_iso (strictMono_of_mem_Ioo hcut) h₀
-    (s₁ := a (2 - 1)) (s₂ := a 2) (s₃ := a (2 + 1)) (by norm_num; exact h₁)
-    (by norm_num; exact h₁') h₂ h₂' (by norm_num; exact h₃)
-  -- `hd` states the differential with target `(-4 + 2, 2 - 1)`. That index also appears in the
-  -- types of the isomorphisms on its right-hand side, so `hd` cannot be normalized; instead the
-  -- target `(-2, 1)` of the goal is rewritten into the same unnormalized form.
-  rw [show ((-2, 1) : ℤ × ℤ) = (-4 + 2, 2 - 1) by norm_num, hd]
-  exact ⟨cokernelEpiComp _ _ ≪≫
-    @cokernelCompIsIso _ _ _ _ _ _ _ _ _ (Iso.isIso_inv _) ≪≫ e⟩
+  obtain ⟨e₁, e₂, hd⟩ := exists_page_two_d_eq (ModuleCat.of ℤ ℤ) ha (p := -4) (q := 2)
+    (q₀ := 1) (q₂ := 3) (n := 1) (n' := 2) (pq' := (-2, 1)) (by norm_num) rfl (by norm_num)
+    (by norm_num) (by norm_num)
+  obtain ⟨e⟩ := nonempty_cokernel_singularHomologyδ_two_iso (strictMono_of_mem_Ioo hcut) h₀ h₁
+    h₁' h₂ h₂' h₃
+  rw [hd]
+  exact ⟨cokernelEpiComp _ _ ≪≫ cokernelCompIsIso _ _ ≪≫ e⟩
 
 /-- **The differential of index two on the first page of `ℝℙ²` is multiplication by `±2`.**
 Under the hypotheses of
@@ -505,7 +436,7 @@ Under the hypotheses of
 integer coefficients, read through any identifications of the objects at `(-4, 2)` and `(-2, 1)` of
 the first page with `ℤ`, the differential between them is multiplication by `2` or by `-2`; the
 sign depends on the identifications. -/
-theorem filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_two_smul
+theorem filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_projectiveMomentFunction
     (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1)))
     (e₂ : ((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
       (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).X
@@ -525,47 +456,52 @@ theorem filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_two_smul
     (cokernelEpiComp _ _ ≪≫ cokernelCompIsIso _ _ ≪≫ e)
 
 /-- **The differential of index one on the first page of `ℝℙ²` vanishes.** Under the hypotheses
-of `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, with
-integer coefficients, the differential from `(-2, 1)` to `(0, 0)` on the first page, the
-connecting map from the band of the saddle to the band of the minimum, is zero. -/
+of `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, for
+any coefficients, the differential from `(-2, 1)` to `(0, 0)` on the first page, the connecting
+map from the band of the saddle to the band of the minimum, is zero. -/
 theorem filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction
     (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) :
-    ((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
-      (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).d
-        (-2, 1) (0, 0) = 0 := by
+    ((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ))) R
+      ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).d (-2, 1) (0, 0) = 0 := by
   obtain ⟨h₀, h₁, h₁', h₂, -, -⟩ := lt_of_mem_Ioo hcut
-  have hd := filteredSpaceSpectralSequence_first_page_d_eq (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
-    (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha) 1 (-2) 0
-    (by norm_num)
-  have hδ := singularHomologyδ_one_eq_zero (strictMono_of_mem_Ioo hcut) (s₀ := a (1 - 1))
-    (s₁ := a 1) (s₂ := a (1 + 1)) (by norm_num; exact h₀) h₁ h₁' (by norm_num; exact h₂)
-  -- As above, `hd` has target `(-2 + 2, 1 - 1)`, which also indexes its right-hand side, so the
-  -- target `(0, 0)` of the goal is rewritten into that form.
-  rw [show ((0, 0) : ℤ × ℤ) = (-2 + 2, 1 - 1) by norm_num, hd]
-  -- The middle factor is the connecting map of `sublevelTriple`, up to unfolding the filtration
-  -- `(fun s ↦ {f ≤ s}) ∘ a` and the degree `0 + 1`; `erw` matches it up to that unfolding.
-  erw [hδ, zero_comp, comp_zero]
+  obtain ⟨e₁, e₂, hd⟩ := exists_page_two_d_eq R ha (p := -2) (q := 1) (q₀ := 0) (q₂ := 2)
+    (n := 0) (n' := 1) (pq' := (0, 0)) (by norm_num) rfl (by norm_num) (by norm_num) (by norm_num)
+  rw [hd, singularHomologyδ_one_eq_zero R (strictMono_of_mem_Ioo hcut) h₀ h₁ h₁'
+    (h₁'.trans h₂).le, zero_comp, comp_zero]
 
-/-- **The second page of `ℝℙ²` vanishes in total degree `-2`.** Under the hypotheses of
+/-- **The second page of `ℝℙ²` vanishes away from total degrees `0` and `-1`.** Under the
+hypotheses of
 `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, with
-integer coefficients, the object at `(-4, 2)` on the second page (numbered `3`) is zero: the
-differential out of it on the first page is injective. -/
+integer coefficients, every object of the second page (numbered `3`) other than those at `(0, 0)`
+and `(-2, 1)` is zero. At `(-4, 2)` this is because the differential out of it on the first page
+is injective. -/
 theorem isZero_filteredSpaceSpectralSequence_page_three_X_projectiveMomentFunction
-    (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) :
+    (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) (pq : ℤ × ℤ)
+    (hpq₀ : pq ≠ (0, 0)) (hpq₁ : pq ≠ (-2, 1)) :
     IsZero (((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
       (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 3).X
-        (-4, 2)) := by
+        pq) := by
   set E := filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
     (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)
-  refine IsZero.of_iso ?_ (E.iso 2 3 (-4, 2)).symm
-  refine HomologicalComplex.ExactAt.isZero_homology (((E.page 2).exactAt_iff' (-6, 3) (-4, 2)
-    (-2, 1) ((ComplexShape.up' _).prev_eq' (by norm_num))
-    ((ComplexShape.up' _).next_eq' (by norm_num))).2 ?_)
-  -- The object at `(-6, 3)` vanishes, since no critical point lies in the band `3`.
-  have h₀ := isZero_filteredSpaceSpectralSequence_page_two_X_projectiveMomentFunction
-    (ModuleCat.of ℤ ℤ) ha hcut (-6, 3) (by intro k; fin_cases k <;> simp)
-  rw [ShortComplex.exact_iff_mono _ (h₀.eq_of_src _ _)]
-  exact mono_filteredSpaceSpectralSequence_page_two_d_projectiveMomentFunction ha hcut
+  by_cases hpq₂ : pq = (-4, 2)
+  · subst hpq₂
+    refine IsZero.of_iso ?_ (E.iso 2 3 (-4, 2)).symm
+    refine HomologicalComplex.ExactAt.isZero_homology (((E.page 2).exactAt_iff' (-6, 3) (-4, 2)
+      (-2, 1) ((ComplexShape.up' _).prev_eq' (by norm_num))
+      ((ComplexShape.up' _).next_eq' (by norm_num))).2 ?_)
+    -- The object at `(-6, 3)` vanishes, since no critical point lies in the band `3`.
+    have h₀ := isZero_filteredSpaceSpectralSequence_page_two_X_projectiveMomentFunction
+      (ModuleCat.of ℤ ℤ) ha hcut (-6, 3) (by intro k; fin_cases k <;> simp)
+    rw [ShortComplex.exact_iff_mono _ (h₀.eq_of_src _ _)]
+    exact mono_filteredSpaceSpectralSequence_page_two_d_projectiveMomentFunction ha hcut
+  · refine E.isZero_page_X_of_le (r := 2) (by norm_num)
+      (isZero_filteredSpaceSpectralSequence_page_two_X_projectiveMomentFunction _ ha hcut pq ?_)
+      3 (by norm_num)
+    intro k
+    fin_cases k
+    · simpa using hpq₀
+    · simpa using hpq₁
+    · simpa using hpq₂
 
 /-- **The second page of `ℝℙ²` in total degree `-1` is `ℤ/2`.** Under the hypotheses of
 `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, with
@@ -582,27 +518,27 @@ theorem nonempty_filteredSpaceSpectralSequence_page_three_X_iso_zmod_projectiveM
     nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_projectiveMomentFunction ha hcut
   exact ⟨(E.iso 2 3 (-2, 1)).symm ≪≫
     (E.page 2).isoHomologyι (-2, 1) (0, 0) ((ComplexShape.up' _).next_eq' (by norm_num))
-      (filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction ha hcut) ≪≫
+      (filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction _ ha hcut) ≪≫
     (E.page 2).opcyclesIsoSc' (-4, 2) (-2, 1) (0, 0) ((ComplexShape.up' _).prev_eq' (by norm_num))
       ((ComplexShape.up' _).next_eq' (by norm_num)) ≪≫
     ((E.page 2).sc' (-4, 2) (-2, 1) (0, 0)).opcyclesIsoCokernel ≪≫ e⟩
 
-/-- **The second page of `ℝℙ²` in total degree `0` is `ℤ`.** Under the hypotheses of
-`TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, with
-integer coefficients, the object at `(0, 0)` on the second page (numbered `3`) is `ℤ`: both
-differentials at the band of the minimum vanish on the first page. -/
-theorem nonempty_filteredSpaceSpectralSequence_page_three_X_iso_int_projectiveMomentFunction
+/-- **The second page of `ℝℙ²` in total degree `0` is one copy of the coefficients.** Under the
+hypotheses of
+`TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, for any
+coefficients, the object at `(0, 0)` on the second page (numbered `3`) is one copy of the
+coefficients: both differentials at the band of the minimum vanish on the first page. -/
+theorem nonempty_filteredSpaceSpectralSequence_page_three_X_zero_iso_projectiveMomentFunction
     (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) :
-    Nonempty (((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
-      (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 3).X
-        (0, 0) ≅ ModuleCat.of ℤ ℤ) := by
-  set E := filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
-    (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)
+    Nonempty (((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ))) R
+      ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 3).X (0, 0) ≅ R) := by
+  set E := filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ))) R
+    ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)
   obtain ⟨e⟩ := nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction
-    (ModuleCat.of ℤ ℤ) ha hcut 0
+    R ha hcut 0
   exact ⟨(E.iso 2 3 (0, 0)).symm ≪≫
     ((E.page 2).isoHomologyπ (-2, 1) (0, 0) ((ComplexShape.up' _).prev_eq' (by norm_num))
-      (filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction ha hcut)).symm ≪≫
+      (filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction R ha hcut)).symm ≪≫
     (E.page 2).iCyclesIso (0, 0) (2, -1) ((ComplexShape.up' _).next_eq' (by norm_num))
       ((isZero_filteredSpaceSpectralSequence_page_two_X _ _ (2, -1) (by norm_num)).eq_of_tgt
         _ _) ≪≫

@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Set.Card
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Data.Set.Finite.Lattice
+import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Order.Interval.Finset.Nat
 
 /-!
@@ -34,7 +35,8 @@ indices as on `ι` (`Set.ncard_setOf_sumElim`).
 For an injective map `f` from a finite type into a linear order, the number of indices whose value
 lies below `f a` determines `a` (`Set.injective_ncard_setOf_lt`): it is the rank of `f a` among
 the values of `f`. Each `j < Nat.card ι` is the rank of exactly one index
-(`Set.encard_setOf_ncard_setOf_lt_eq`).
+(`Set.encard_setOf_ncard_setOf_lt_eq`). For a strictly monotone map on `Fin n`, the rank of `f k`
+is `k` (`Set.ncard_setOf_lt_of_strictMono`).
 
 A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
 (`Set.finite_and_ncard_le_sum_of_subset_biUnion`).
@@ -173,6 +175,12 @@ theorem encard_setOf_ncard_setOf_lt_eq {ι α : Type*} [Finite ι] [LinearOrder 
   · rw [encard_eq_zero, eq_empty_iff_forall_notMem]
     rintro k rfl
     exact hj (hlt k)
+
+/-- For a strictly monotone map `f` on `Fin n`, exactly `k` indices have value below `f k`. -/
+theorem ncard_setOf_lt_of_strictMono {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α}
+    (hf : StrictMono f) (k : Fin n) : {i | f i < f k}.ncard = k := by
+  simp_rw [hf.lt_iff_lt]
+  rw [show {i : Fin n | i < k} = ↑(Finset.Iio k) by ext; simp, ncard_coe_finset, Fin.card_Iio]
 
 /-- A property of the doubled index set `ι ⊕ ι`, read off the same function on both copies of `ι`,
 holds on twice as many indices as on `ι`. Both sides are `0` when the set on `ι` is infinite. -/
