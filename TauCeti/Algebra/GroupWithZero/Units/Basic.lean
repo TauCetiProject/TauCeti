@@ -29,7 +29,9 @@ point.
 
 Mathlib splits an integer power as a quotient (`zpow_sub₀`, `zpow_natCast_sub_natCast₀`) and
 subtracts natural-number exponents (`pow_sub₀`, `inv_pow_sub₀`); this is the corresponding
-statement for the exponents `i` and `n - i` of `a` and `a⁻¹`.
+statement for the exponents `i` and `n - i` of `a` and `a⁻¹`. In a commutative group with zero,
+`(a * b) ^ k * b⁻¹ ^ (k - 1) = b * a ^ k` for `k ≠ 0`, including when `b = 0`: rescaling by `b`
+and then dividing out all but one factor of `b` leaves a single factor of `b`.
 
 A group with zero with two elements has a trivial unit group: by `Nat.card_units` the units are
 one fewer than the elements, so there is exactly one of them.  This is why a field with two
@@ -49,6 +51,7 @@ interval of length `d`; this is the companion of Mathlib's `div_mul_cancel_of_im
 ## Main results
 
 * `TauCeti.pow_mul_inv_pow_eq_zpow₀`: `a ^ i * a⁻¹ ^ (n - i) = a ^ (2 * i - n)` for `i ≤ n`.
+* `TauCeti.mul_pow_mul_inv_pow_sub_one₀`: `(a * b) ^ k * b⁻¹ ^ (k - 1) = b * a ^ k` for `k ≠ 0`.
 * `TauCeti.zpow_neg_two_pow_eq_zpow₀`: `(a ^ (-2)) ^ r = a ^ k` when `a ^ (2 * r + k) = 1`.
 * `TauCeti.subsingleton_units_of_natCard_eq_two`: a group with zero with two elements has a
   trivial unit group.
@@ -77,6 +80,16 @@ theorem pow_mul_inv_pow_eq_zpow₀ {G₀ : Type*} [GroupWithZero G₀] {a : G₀
   -- the exponent `2 * i - n` is the exponent of `a` minus the exponent of `a⁻¹`
   have hexp : 2 * (i : ℤ) - n = (i : ℤ) - ((n - i : ℕ) : ℤ) := by omega
   rw [hexp, zpow_sub₀ ha, zpow_natCast, zpow_natCast, inv_pow, div_eq_mul_inv]
+
+/-- **All but one factor of `b` cancel**: for `k ≠ 0`, `(a * b) ^ k * b⁻¹ ^ (k - 1) = b * a ^ k`.
+This holds also for `b = 0`, where both sides vanish. -/
+theorem mul_pow_mul_inv_pow_sub_one₀ {G₀ : Type*} [CommGroupWithZero G₀] (a b : G₀) {k : ℕ}
+    (hk : k ≠ 0) : (a * b) ^ k * b⁻¹ ^ (k - 1) = b * a ^ k := by
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp
+  · rw [Nat.add_sub_cancel, mul_pow, inv_pow, pow_succ' b, mul_assoc, mul_assoc,
+      mul_inv_cancel₀ (pow_ne_zero j hb), mul_one, mul_comm]
 
 /-- If `a ^ (2 * r + k) = 1`, then the `r`-th power of `a ^ (-2)` is `a ^ k`. -/
 theorem zpow_neg_two_pow_eq_zpow₀ {G₀ : Type*} [GroupWithZero G₀] {a : G₀} {r : ℕ}

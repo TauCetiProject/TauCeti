@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.MarchenkoPastur.Moments
 public import TauCeti.Probability.Distributions.Semicircle.Moments
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Moments.CompactDeterminacy
 
@@ -256,16 +257,6 @@ theorem integrable_pow_freePoissonReal (r : ℝ≥0) (c : ℝ) (n : ℕ) :
   simpa [Function.comp_def, mul_pow] using (integrable_pow_marchenkoPastur r⁻¹ n).const_mul
     ((c * r) ^ n)
 
-/-- A part of size `k ≥ 1` contributes `r c ^ k` to the dilated Marchenko–Pastur moments. -/
-private theorem mul_pow_mul_inv_pow_sub_one (r : ℝ≥0) (c : ℝ) {k : ℕ} (hk : k ≠ 0) :
-    (c * r) ^ k * ((r : ℝ)⁻¹) ^ (k - 1) = r * c ^ k := by
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
-  rcases eq_or_ne (r : ℝ) 0 with h | h
-  · simp [h]
-  · rw [Nat.add_sub_cancel, mul_pow, inv_pow]
-    field_simp
-    ring
-
 /-- **The moments of the free Poisson law.** The `n`-th moment of the free Poisson law of rate `r`
 and jump size `c` is `c ^ n ∑_{π ∈ NC(n)} r ^ |π|`: each part of `π` contributes the free cumulant
 `r c ^ |B|`. -/
@@ -285,7 +276,9 @@ theorem integral_pow_freePoissonReal (r : ℝ≥0) (c : ℝ) (n : ℕ) :
     rw [Finset.prod_pow_eq_pow_sum, P.1.sum_card_parts, Finset.card_univ, Fintype.card_fin]
   rw [hsplit, ← Finset.prod_mul_distrib]
   exact Finset.prod_congr rfl fun B hB ↦ by
-    rw [NNReal.coe_inv, mul_pow_mul_inv_pow_sub_one r c (P.1.nonempty_of_mem_parts hB).card_pos.ne']
+    -- A part of size `k ≥ 1` contributes `r c ^ k`.
+    rw [NNReal.coe_inv,
+      mul_pow_mul_inv_pow_sub_one₀ c (r : ℝ) (P.1.nonempty_of_mem_parts hB).card_pos.ne']
 
 /-- **Moment determinacy of the free Poisson law.** A finite measure on `ℝ` concentrated on a
 compact set is the free Poisson law of rate `r` and jump size `c` as soon as its moments are
