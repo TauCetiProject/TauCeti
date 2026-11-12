@@ -45,6 +45,8 @@ of the matrix (`Subring.mul_waldschmidtInterpolationMatrix_mem`).
 
 ## Main results
 
+* `Subring.pow_mul_eval_hasseDeriv_map_mem`: transfer a rational Hasse-derivative denominator
+  bound to any subring of a characteristic-zero field, allowing a larger denominator exponent.
 * `Subring.mul_waldschmidtOperatorEntry_mem`: `c d ^ T e γ_P ∈ A`, for denominators `c` of the
   operator, `d` of the coefficients `βᵢ` and `e` of the exponential factor.
 * `Subring.mul_waldschmidtEntry_mem`: for the iterated derivatives, `d ^ T e γ ∈ A`.
@@ -151,6 +153,21 @@ theorem mul_waldschmidtOperatorEntry_prod_aeval_X_mem {α b : Fin (n + 1) → K}
       mul_zero]
     exact zero_mem A
 
+/-- Transfer a rational Hasse-derivative denominator bound to a subring of a field of
+characteristic zero. If `L ^ κ P^{[κ]}(t)` is an integer and `κ ≤ T`, then
+`L ^ T (P.map (algebraMap ℚ K))^{[κ]}(t)` belongs to every subring of `K`. -/
+theorem pow_mul_eval_hasseDeriv_map_mem [CharZero K] {P : Polynomial ℚ} {L t : ℤ} {κ T : ℕ}
+    (hP : (L : ℚ) ^ κ * (Polynomial.hasseDeriv κ P).eval (t : ℚ) ∈
+      Set.range (Int.cast : ℤ → ℚ)) (hκ : κ ≤ T) :
+    (L : K) ^ T * (Polynomial.hasseDeriv κ (P.map (algebraMap ℚ K))).eval (t : K) ∈ A := by
+  obtain ⟨z, hz⟩ := hP
+  have hz' : (L : K) ^ κ * algebraMap ℚ K
+      ((Polynomial.hasseDeriv κ P).eval (t : ℚ)) = z := by
+    rw [← map_intCast (algebraMap ℚ K) z, hz, map_mul, map_pow, map_intCast]
+  rw [Polynomial.hasseDeriv_map, Polynomial.eval_map, ← map_intCast (algebraMap ℚ K) t,
+    Polynomial.eval₂_at_apply, ← Nat.sub_add_cancel hκ, pow_add, mul_assoc, hz']
+  exact mul_mem (pow_mem (intCast_mem A _) _) (intCast_mem A _)
+
 /-- **Denominators of Baker's operator entries.** Let `L` be an integer divisible by each of
 `1, …, k`. For the operator `Δ(∂/∂z₀; k) ^ l`, the `l`-th power of Baker's binomial polynomial
 `Δ(X; k) = (X + 1) ⋯ (X + k) / k!`, the number `L ^ T` clears the denominators of the operator,
@@ -164,13 +181,8 @@ theorem pow_mul_waldschmidtOperatorEntry_multichoose_mem [CharZero K] {α b : Fi
     (L : K) ^ T * d ^ T * e * waldschmidtOperatorEntry α b t s F
       ((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) k ^ l).map (algebraMap ℚ K)) ∈ A := by
   refine mul_waldschmidtOperatorEntry_mem A hF hFT hd hb (fun κ hκ ↦ ?_) he
-  obtain ⟨z, hz⟩ := pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast hL l κ t
-  have hz' : (L : K) ^ κ * algebraMap ℚ K ((Polynomial.hasseDeriv κ
-      (Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) k ^ l)).eval (t : ℚ)) = z := by
-    rw [← map_intCast (algebraMap ℚ K) z, hz, map_mul, (algebraMap ℚ K).map_pow, map_intCast]
-  rw [Polynomial.hasseDeriv_map, Polynomial.eval_map, ← map_intCast (algebraMap ℚ K) t,
-    Polynomial.eval₂_at_apply, ← Nat.sub_add_cancel hκ, pow_add, mul_assoc, hz']
-  exact mul_mem (pow_mem (intCast_mem A _) _) (intCast_mem A _)
+  exact pow_mul_eval_hasseDeriv_map_mem A
+    (pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast hL l κ t) hκ
 
 /-- **A common denominator of the interpolation matrix.** Let the rows have polynomials `F r`
 with coefficients in `A` and total degree at most `T` and exponents `|t r| ≤ T₁`, let the columns

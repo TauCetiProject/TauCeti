@@ -50,6 +50,7 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
 ## Main results
 
 * `TauCeti.degree_multichoose_X_add_one`: `Δ(X; k)` has degree `k`.
+* `TauCeti.multichoose_X_add_one_ne_zero`: Baker's binomial polynomials are nonzero.
 * `TauCeti.multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts`: `Δ(a + L X; k)` has integral
   coefficients.
 * `TauCeti.pow_mul_eval_hasseDeriv_mem_range_intCast_of_comp_mem_lifts`: if `P(x + L X)` has
@@ -105,6 +106,10 @@ theorem degree_multichoose_X_add_one (k : ℕ) :
     rw [multichoose_X_add_one_succ, degree_mul, ih, ← C_1,
       degree_linear (inv_ne_zero (by positivity))]
     norm_cast
+
+/-- Baker's binomial polynomials are nonzero. -/
+theorem multichoose_X_add_one_ne_zero (k : ℕ) : Ring.multichoose (X + 1 : ℚ[X]) k ≠ 0 :=
+  fun h ↦ by simpa [h] using degree_multichoose_X_add_one k
 
 /-- Baker's binomial polynomial `Δ(X; k)` has natural degree `k`. -/
 @[simp]

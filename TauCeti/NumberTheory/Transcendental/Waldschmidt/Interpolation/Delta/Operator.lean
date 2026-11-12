@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Delta
+public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Delta.Basic
 
 /-!
 # The delta operators of Waldschmidt's interpolation matrix
@@ -96,19 +96,17 @@ theorem waldschmidtDeltaOperator_of_lt {k σ : ℕ} (h : σ < k) :
 theorem waldschmidtDeltaOperator_zero (k : ℕ) : waldschmidtDeltaOperator k 0 = 1 := by
   simp [waldschmidtDeltaOperator_def]
 
-/-- **The recursion of the delta polynomials.** For `k > 0`,
-`δ_k(X; σ + k) = Δ(X; k) δ_k(X; σ)`. Together with `TauCeti.waldschmidtDeltaOperator_of_lt` this
-determines `δ_k(X; σ)` for all `σ`. -/
-theorem waldschmidtDeltaOperator_add {k : ℕ} (hk : 0 < k) (σ : ℕ) :
+/-- **The recursion of the delta polynomials.**
+`δ_k(X; σ + k) = Δ(X; k) δ_k(X; σ)`. For `k > 0`, together with
+`TauCeti.waldschmidtDeltaOperator_of_lt` this determines `δ_k(X; σ)` for all `σ`. -/
+theorem waldschmidtDeltaOperator_add (k σ : ℕ) :
     waldschmidtDeltaOperator k (σ + k) =
       Ring.multichoose (X + 1 : ℚ[X]) k * waldschmidtDeltaOperator k σ := by
+  rcases k.eq_zero_or_pos with rfl | hk
+  · simp
   rw [waldschmidtDeltaOperator_def, waldschmidtDeltaOperator_def, Nat.add_div_right _ hk,
     Nat.add_mod_right, pow_succ']
   ring
-
-/-- Baker's binomial polynomials are nonzero. -/
-private theorem multichoose_X_add_one_ne_zero (k : ℕ) : Ring.multichoose (X + 1 : ℚ[X]) k ≠ 0 :=
-  fun h ↦ by simpa [h] using degree_multichoose_X_add_one k
 
 /-- The delta polynomial `δ_k(X; σ)` has natural degree `σ`. -/
 @[simp]
@@ -153,8 +151,9 @@ theorem span_image_waldschmidtOperatorEntry_waldschmidtDeltaOperator {n : ℕ} {
     (F : ι → MvPolynomial (Fin (n + 1)) K) (t : ι → ℤ) (s : Fin (n + 1) → ℤ) (k N : ℕ) :
     Submodule.span K ((fun σ r ↦ waldschmidtOperatorEntry α b (t r) s (F r)
         ((waldschmidtDeltaOperator k σ).map (algebraMap ℚ K))) '' Set.Iio N) =
-      Submodule.span K ((fun σ r ↦ waldschmidtEntry α b (F r) (t r) σ s) '' Set.Iio N) :=
-  span_image_waldschmidtOperatorEntry_sequence α b F t s (waldschmidtDeltaSequence K k) N
+      Submodule.span K ((fun σ r ↦ waldschmidtEntry α b (F r) (t r) σ s) '' Set.Iio N) := by
+  simpa only [waldschmidtDeltaSequence_apply] using
+    span_image_waldschmidtOperatorEntry_sequence α b F t s (waldschmidtDeltaSequence K k) N
 
 /-- **The denominator bound for the delta polynomials.** Let `k > 0` and let `L` be an integer
 divisible by each of `1, …, k`. Then for every integer `x` and every `κ`,
@@ -198,21 +197,6 @@ open TauCeti
 
 variable {n : ℕ} {K : Type*} [Field K] [CharZero K] (A : Subring K)
 
-/-- The denominator bound for the delta polynomials, read in a subring `A` of a field of
-characteristic zero: `L ^ T (1 / κ!) (d / dt) ^ κ δ_k(t; σ) ∈ A` for an integer `t` and
-`κ ≤ T`. -/
-private theorem pow_mul_eval_hasseDeriv_map_waldschmidtDeltaOperator_mem {k : ℕ} (hk : 0 < k)
-    {L : ℤ} (hL : ∀ j ∈ Icc 1 k, (j : ℤ) ∣ L) (σ : ℕ) (t : ℤ) {κ T : ℕ} (hκ : κ ≤ T) :
-    (L : K) ^ T * (hasseDeriv κ ((waldschmidtDeltaOperator k σ).map (algebraMap ℚ K))).eval
-      (t : K) ∈ A := by
-  obtain ⟨z, hz⟩ := pow_mul_eval_hasseDeriv_waldschmidtDeltaOperator_mem_range_intCast hk hL σ κ t
-  have hz' : (L : K) ^ κ * algebraMap ℚ K
-      ((hasseDeriv κ (waldschmidtDeltaOperator k σ)).eval (t : ℚ)) = z := by
-    rw [← map_intCast (algebraMap ℚ K) z, hz, map_mul, map_pow, map_intCast]
-  rw [hasseDeriv_map, eval_map, ← map_intCast (algebraMap ℚ K) t, eval₂_at_apply,
-    ← Nat.sub_add_cancel hκ, pow_add, mul_assoc, hz']
-  exact mul_mem (pow_mem (intCast_mem A _) _) (intCast_mem A _)
-
 /-- **A common denominator of the interpolation matrix with delta-operator columns.** Let the
 rows have polynomials `F r` with coefficients in `A` and total degree at most `T` and exponents
 `|t r| ≤ T₁`, and let the columns be the operators `δ_k(∂/∂z₀; σ c)` at grid points with
@@ -230,7 +214,8 @@ theorem pow_mul_waldschmidtInterpolationMatrix_waldschmidtDeltaOperator_mem {ι 
     (L : K) ^ T * d ^ T * (∏ j, a j ^ (T₁ * S j)) * waldschmidtInterpolationMatrix α b F t
       (fun c ↦ (waldschmidtDeltaOperator k (σ c)).map (algebraMap ℚ K)) s r c ∈ A :=
   mul_waldschmidtInterpolationMatrix_mem A hF hFT ht hs hd hb
-    (fun r c _ hκ ↦ pow_mul_eval_hasseDeriv_map_waldschmidtDeltaOperator_mem A hk hL (σ c) (t r)
+    (fun r c _ hκ ↦ pow_mul_eval_hasseDeriv_map_mem A
+      (pow_mul_eval_hasseDeriv_waldschmidtDeltaOperator_mem_range_intCast hk hL (σ c) _ (t r))
       hκ) ha hα hα' r c
 
 /-- **A common denominator of the interpolation matrix with delta rows and delta-operator
@@ -256,6 +241,7 @@ theorem pow_mul_waldschmidtInterpolationMatrix_waldschmidtDelta_waldschmidtDelta
   -- The `j`-th derivative is `j!` times the `j`-th Hasse derivative.
   rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, nsmul_eq_mul, mul_left_comm]
   exact mul_mem (natCast_mem A _)
-    (pow_mul_eval_hasseDeriv_map_waldschmidtDeltaOperator_mem A hk hL' (σ c) (t r) hj)
+    (pow_mul_eval_hasseDeriv_map_mem A
+      (pow_mul_eval_hasseDeriv_waldschmidtDeltaOperator_mem_range_intCast hk hL' (σ c) _ (t r)) hj)
 
 end Subring
