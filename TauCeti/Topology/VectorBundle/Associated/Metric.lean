@@ -42,8 +42,10 @@ variable {𝕜 B G F : Type*}
 
 /-- The normed additive structure of an associated fibre is the model's structure, with
 precisely the original fibre topology and addition. -/
-instance instNormedAddCommGroup (b : B) : NormedAddCommGroup (AssociatedBundle G P F b) :=
-  inferInstanceAs (NormedAddCommGroup F)
+instance instNormedAddCommGroup (b : B) : NormedAddCommGroup (AssociatedBundle G P F b) := by
+  let k : NormedAddCommGroup (AssociatedBundle G P F b) := inferInstanceAs (NormedAddCommGroup F)
+  -- Preserve the existing fibre topology through the normed-group parent projection.
+  exact { k with toMetricSpace := k.toMetricSpace.replaceTopology rfl }
 
 variable [hiso : IsIsometricSMul G F]
 
@@ -51,6 +53,7 @@ variable [hiso : IsIsometricSMul G F]
 @[simp]
 theorem norm_mk {b : B} (p : P b) (v : F) : ‖mk G p v‖ = ‖v‖ := by
   rw [mk_def]
+  -- The fibre synonym carries the model norm by construction, so this is a norm identity in F.
   exact (isometry_smul F _).norm_map_of_map_zero (smul_zero _) v
 
 /-- Associated chart coordinates preserve the fibre norm on their domain. -/
@@ -96,6 +99,16 @@ theorem mkLinearIsometryEquiv_apply [NormedSpace 𝕜 F] [SMulCommClass G 𝕜 F
     mkLinearIsometryEquiv 𝕜 G p v = mk G p v := by
   simp only [mkLinearIsometryEquiv, LinearIsometryEquiv.coe_mk,
     ContinuousLinearEquiv.coe_toLinearEquiv, mkContinuousLinearEquiv_apply]
+
+/-- Forgetting the metric recovers the existing continuous linear frame identification. -/
+@[simp]
+theorem toContinuousLinearEquiv_mkLinearIsometryEquiv [NormedSpace 𝕜 F]
+    [SMulCommClass G 𝕜 F] {b : B} (p : P b) :
+    (mkLinearIsometryEquiv (F := F) 𝕜 G p).toContinuousLinearEquiv =
+      mkContinuousLinearEquiv 𝕜 G p := by
+  ext v
+  simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv, mkLinearIsometryEquiv_apply]
+  exact (mkContinuousLinearEquiv_apply (𝕜 := 𝕜) (G := G) p v).symm
 
 /-- Reading a class in a principal frame acts by the principal division element. -/
 @[simp]

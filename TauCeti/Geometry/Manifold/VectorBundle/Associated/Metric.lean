@@ -18,8 +18,9 @@ chart. Consequently its real Riemannian metric and its Hermitian pairings are sm
 the existing associated vector bundle is smooth. No additional choice of metric, partition
 of unity, or smooth structure on the base is made.
 
-The real metric uses the native `Bundle.ContMDiffRiemannianMetric` carrier. Complex inner
-products are smooth as maps over the real field, over an arbitrary real base manifold.
+The real metric is registered through the native `IsContMDiffRiemannianBundle` class,
+preserving the associated fibres' inner products. Complex inner products are smooth as maps
+over the real field, over an arbitrary real base manifold.
 
 The local-constant metric argument follows the trivial-bundle construction of
 `IsContMDiffRiemannianBundle` in Mathlib's
@@ -81,28 +82,15 @@ private theorem contMDiff_innerSL :
   rw [inCoordinates_apply_eq₂ hyA hyA (by simp)]
   let e := trivializationAt F (AssociatedBundle G P F) x
   have h := inner_trivializationAt (𝕜' := ℝ) hy (e.symm y v) (e.symm y w)
-  simpa [C, innerForm_apply, e, Trivialization.apply_mk_symm _ hyA,
-    innerSL_apply_apply ℝ (E := AssociatedBundle G P F y), innerSL_apply_apply ℝ (E := F)]
+  simpa only [C, innerForm_apply, e, Trivialization.apply_mk_symm _ hyA,
+    innerSL_apply_apply ℝ (E := AssociatedBundle G P F y), innerSL_apply_apply ℝ (E := F),
+    Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization, LinearMap.id_apply]
     using h.symm
 
-/-- The canonical real metric of an associated bundle with an isometric linear action. -/
-def contMDiffRiemannianMetric : ContMDiffRiemannianMetric IB n F (AssociatedBundle G P F) where
-  inner := innerForm
-  symm _ v w := real_inner_comm w v
-  pos _ _ hv := real_inner_self_pos.mpr hv
-  isVonNBounded b := by
-    apply (NormedSpace.isVonNBounded_ball ℝ (AssociatedBundle G P F b) 1).subset
-    intro v hv
-    have hv' : ⟪v, v⟫_ℝ < 1 := hv
-    rw [real_inner_self_eq_norm_sq] at hv'
-    exact mem_ball_zero_iff.mpr ((sq_lt_one_iff₀ (norm_nonneg v)).mp hv')
-  contMDiff := contMDiff_innerSL (G := G) (P := P) (F := F)
-
-/-- The canonical real metric evaluates to the associated fibre's native inner product. -/
-@[simp]
-theorem contMDiffRiemannianMetric_inner (b : B) (v w : AssociatedBundle G P F b) :
-    (contMDiffRiemannianMetric (G := G) (P := P) (F := F) (IB := IB) (n := n)).inner b
-      v w = ⟪v, w⟫_ℝ := (rfl)
+/-- The native real inner products on an associated bundle vary smoothly. -/
+instance instIsContMDiffRiemannianBundle :
+    IsContMDiffRiemannianBundle IB n F (AssociatedBundle G P F) where
+  exists_contMDiff := ⟨innerForm, contMDiff_innerSL, fun _ _ _ ↦ rfl⟩
 
 end Real
 
@@ -133,6 +121,25 @@ theorem _root_.ContMDiffWithinAt.inner_associatedBundle
   · filter_upwards [hmem] with y hy
     exact (inner_trivializationAt hy (v y) (w y)).symm
   · exact (inner_trivializationAt hx (v x) (w x)).symm
+
+/-- Hermitian pairings of associated-bundle-valued maps smooth at a point are smooth there. -/
+theorem _root_.ContMDiffAt.inner_associatedBundle
+    (hv : ContMDiffAt IM (IB.prod 𝓘(ℝ, F)) n
+      (fun m ↦ (⟨b m, v m⟩ : TotalSpace F (AssociatedBundle G P F))) x)
+    (hw : ContMDiffAt IM (IB.prod 𝓘(ℝ, F)) n
+      (fun m ↦ (⟨b m, w m⟩ : TotalSpace F (AssociatedBundle G P F))) x) :
+    ContMDiffAt IM 𝓘(ℝ, 𝕜) n (fun m ↦ ⟪v m, w m⟫_𝕜) x := by
+  rw [← contMDiffWithinAt_univ] at *
+  exact hv.inner_associatedBundle hw
+
+/-- Hermitian pairings of associated-bundle-valued maps smooth on a set are smooth there. -/
+theorem _root_.ContMDiffOn.inner_associatedBundle
+    (hv : ContMDiffOn IM (IB.prod 𝓘(ℝ, F)) n
+      (fun m ↦ (⟨b m, v m⟩ : TotalSpace F (AssociatedBundle G P F))) s)
+    (hw : ContMDiffOn IM (IB.prod 𝓘(ℝ, F)) n
+      (fun m ↦ (⟨b m, w m⟩ : TotalSpace F (AssociatedBundle G P F))) s) :
+    ContMDiffOn IM 𝓘(ℝ, 𝕜) n (fun m ↦ ⟪v m, w m⟫_𝕜) s :=
+  fun x hx ↦ (hv x hx).inner_associatedBundle (hw x hx)
 
 /-- The Hermitian pairing of two smooth maps into an associated bundle is smooth. -/
 theorem _root_.ContMDiff.inner_associatedBundle
