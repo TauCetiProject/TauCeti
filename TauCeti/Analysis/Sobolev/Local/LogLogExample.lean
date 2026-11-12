@@ -178,16 +178,13 @@ private theorem norm_regDeriv_le {z : ℂ} {ε : ℝ} (hz : z ∈ ball (0 : ℂ)
     _ ≤ |profileDeriv ‖z‖| := by rw [mul_one]; exact hb
 
 /-- The regularisations are dominated by `u` on the punctured disc. -/
-private theorem abs_reg_sub_le {z : ℂ} {ε : ℝ} (hz : z ∈ ball (0 : ℂ) (1 / 2)) (hz0 : z ≠ 0)
-    (hε0 : 0 ≤ ε) (hε : ε < 1 / 2) : |reg ε z - logLogInterior z| ≤ |logLogInterior z| := by
+private theorem norm_reg_le {z : ℂ} {ε : ℝ} (hz : z ∈ ball (0 : ℂ) (1 / 2)) (hz0 : z ≠ 0)
+    (hε0 : 0 ≤ ε) (hε : ε < 1 / 2) : ‖reg ε z‖ ≤ logLogInterior z := by
   obtain ⟨hle, hlt⟩ := norm_mem hz hε0 hε
   have h0 := norm_pos_iff.2 hz0
-  have hp := log_log_four_div_pos (h0.trans_le hle) (lt_four_div_exp_one hlt)
-  have hm : Real.log (Real.log (4 / (‖z‖ + ε))) ≤ Real.log (Real.log (4 / ‖z‖)) :=
-    antitoneOn_log_log_four_div ⟨h0, by linarith⟩ ⟨h0.trans_le hle, by linarith⟩ hle
-  rw [← reg_zero, reg, reg, add_zero, abs_of_nonpos (by linarith),
-    abs_of_pos (log_log_four_div_pos h0 (lt_four_div_exp_one (hle.trans_lt hlt)))]
-  linarith
+  rw [← reg_zero, reg, reg, add_zero, Real.norm_of_nonneg
+    (log_log_four_div_pos (h0.trans_le hle) (lt_four_div_exp_one hlt)).le]
+  exact antitoneOn_log_log_four_div ⟨h0, by linarith⟩ ⟨h0.trans_le hle, by linarith⟩ hle
 
 private theorem ae_mem_ne (R : ℝ) : ∀ᵐ z ∂volume.restrict (ball (0 : ℂ) R),
     z ∈ ball (0 : ℂ) R ∧ z ≠ 0 := by
@@ -309,58 +306,43 @@ private theorem continuousAt_regDeriv_zero {z : ℂ} (hz : z ∈ ball (0 : ℂ) 
     fun_prop (disch := assumption)
   exact (hp.comp (continuousAt_const.add continuousAt_id)).smul continuousAt_const
 
-/-- `u_ε → u` in `L¹` of the disc, dominated by `|u|`. -/
+/-- `u_ε → u` in `L¹` of the disc, dominated by `u`. -/
 private theorem tendsto_lintegral_enorm_reg_sub {ε : ℕ → ℝ} (hε0 : ∀ n, 0 ≤ ε n)
     (hε : ∀ n, ε n < 1 / 2) (hεt : Tendsto ε atTop (𝓝 0)) :
     Tendsto (fun n => ∫⁻ z in ball (0 : ℂ) (1 / 2), ‖reg (ε n) z - logLogInterior z‖ₑ) atTop
       (𝓝 0) := by
   have hint := (memLp_logLogInterior.mono_measure restrict_ball_le).integrable one_le_two
-  have h := tendsto_lintegral_filter_of_dominated_convergence (l := atTop)
-    (μ := volume.restrict (ball (0 : ℂ) (1 / 2)))
-    (F := fun n z => ‖reg (ε n) z - logLogInterior z‖ₑ) (f := fun _ => 0)
-    (fun z => ‖logLogInterior z‖ₑ)
-    (Eventually.of_forall fun n => ((measurable_reg _).sub measurable_logLogInterior).enorm)
-    (Eventually.of_forall fun n => by
+  have hlim : ∀ᵐ z ∂volume.restrict (ball (0 : ℂ) (1 / 2)),
+      Tendsto (fun n => reg (ε n) z) atTop (𝓝 (logLogInterior z)) := by
+    filter_upwards [ae_mem_ne _] with z hz
+    have h := (continuousAt_reg_zero hz.1 hz.2).tendsto.comp hεt
+    rwa [reg_zero] at h
+  simpa only [ofReal_norm] using tendsto_lintegral_norm_of_dominated_convergence
+    (fun n => (measurable_reg (ε n)).aestronglyMeasurable) hint.hasFiniteIntegral
+    (fun n => by
       filter_upwards [ae_mem_ne _] with z hz
-      exact enorm_le_iff_norm_le.2 (abs_reg_sub_le hz.1 hz.2 (hε0 n) (hε n)))
-    hint.2.ne ?_
-  · simpa using h
-  filter_upwards [ae_mem_ne _] with z hz
-  have hlim := ((continuousAt_reg_zero hz.1 hz.2).tendsto.comp hεt).sub_const (reg 0 z)
-  rw [sub_self, reg_zero] at hlim
-  exact (continuous_enorm.tendsto' _ 0 (by simp)).comp hlim
+      exact norm_reg_le hz.1 hz.2 (hε0 n) (hε n)) hlim
 
-/-- `∇u_ε → ∇u` in `L¹` of the disc, dominated by `2 (r log (4 / r))⁻¹`. -/
+/-- `∇u_ε → ∇u` in `L¹` of the disc, dominated by `(r log (4 / r))⁻¹`. -/
 private theorem tendsto_lintegral_enorm_regDeriv_sub {ε : ℕ → ℝ} (hε0 : ∀ n, 0 ≤ ε n)
     (hε : ∀ n, ε n < 1 / 2) (hεt : Tendsto ε atTop (𝓝 0)) :
     Tendsto (fun n => ∫⁻ z in ball (0 : ℂ) (1 / 2),
       ‖regDeriv (ε n) z - fderiv ℝ logLogInterior z‖ₑ) atTop (𝓝 0) := by
-  have h := tendsto_lintegral_filter_of_dominated_convergence (l := atTop)
-    (μ := volume.restrict (ball (0 : ℂ) (1 / 2)))
-    (F := fun n z => ‖regDeriv (ε n) z - fderiv ℝ logLogInterior z‖ₑ) (f := fun _ => 0)
-    (fun z => ‖2 * gradBound z‖ₑ)
-    (Eventually.of_forall fun n =>
-      ((measurable_regDeriv _).sub (measurable_fderiv ℝ _)).enorm)
-    (Eventually.of_forall fun n => by
+  have hlim : ∀ᵐ z ∂volume.restrict (ball (0 : ℂ) (1 / 2)),
+      Tendsto (fun n => regDeriv (ε n) z) atTop (𝓝 (fderiv ℝ logLogInterior z)) := by
+    filter_upwards [ae_mem_ne _] with z hz
+    have hd : regDeriv 0 z = fderiv ℝ logLogInterior z := by
+      have h := hasFDerivAt_reg hz.2 le_rfl (by linarith [(norm_mem hz.1 le_rfl (by norm_num)).2])
+      rw [reg_zero] at h
+      exact h.fderiv.symm
+    have h := (continuousAt_regDeriv_zero hz.1 hz.2).tendsto.comp hεt
+    rwa [hd] at h
+  simpa only [ofReal_norm] using tendsto_lintegral_norm_of_dominated_convergence
+    (fun n => (measurable_regDeriv (ε n)).aestronglyMeasurable)
+    integrableOn_gradBound.hasFiniteIntegral
+    (fun n => by
       filter_upwards [ae_mem_ne _] with z hz
-      refine enorm_le_iff_norm_le.2 ?_
-      have h1 := norm_regDeriv_le hz.1 hz.2 (hε0 n) (hε n)
-      have h2 := (norm_fderiv_logLogInterior (ball_subset_ball (by norm_num) hz.1) hz.2).le
-      have h0 : 0 ≤ gradBound z := (norm_nonneg _).trans h1
-      rw [Real.norm_of_nonneg (by positivity)]
-      calc ‖regDeriv (ε n) z - fderiv ℝ logLogInterior z‖
-          ≤ ‖regDeriv (ε n) z‖ + ‖fderiv ℝ logLogInterior z‖ := norm_sub_le _ _
-        _ ≤ 2 * gradBound z := by rw [gradBound] at h1 ⊢; linarith)
-    (integrableOn_gradBound.const_mul 2).2.ne ?_
-  · simpa using h
-  filter_upwards [ae_mem_ne _] with z hz
-  have hd : regDeriv 0 z = fderiv ℝ logLogInterior z := by
-    have h := hasFDerivAt_reg hz.2 le_rfl (by linarith [(norm_mem hz.1 le_rfl (by norm_num)).2])
-    rw [reg_zero] at h
-    exact h.fderiv.symm
-  have hlim := ((continuousAt_regDeriv_zero hz.1 hz.2).tendsto.comp hεt).sub_const (regDeriv 0 z)
-  rw [sub_self, hd] at hlim
-  exact (continuous_enorm.tendsto' (0 : ℂ →L[ℝ] ℝ) 0 (by simp [enorm_eq_nnnorm])).comp hlim
+      exact norm_regDeriv_le hz.1 hz.2 (hε0 n) (hε n)) hlim
 
 end LogLogInterior
 
@@ -370,26 +352,15 @@ unbounded at the origin, has its classical derivative as weak derivative. -/
 theorem hasWeakFDerivOn_logLogInterior :
     HasWeakFDerivOn volume ⟨ball (0 : ℂ) (1 / 2), isOpen_ball⟩ logLogInterior
       (fderiv ℝ logLogInterior) := by
-  set ε : ℕ → ℝ := fun n => 1 / ((n : ℝ) + 1) / 4 with hεdef
-  have hε0 : ∀ n, 0 < ε n := fun n => by positivity
-  have hε : ∀ n, ε n < 1 / 2 := fun n => by
-    have : 1 / ((n : ℝ) + 1) ≤ 1 := by
-      rw [div_le_one (by positivity)]
-      linarith [n.cast_nonneg (α := ℝ)]
-    simp only [hεdef]
-    linarith
-  have hεt : Tendsto ε atTop (𝓝 0) := by
-    have h := tendsto_one_div_add_atTop_nhds_zero_nat.div_const (4 : ℝ) (α := ℕ) (G₀ := ℝ)
-    rw [zero_div] at h
-    exact h
+  obtain ⟨ε, -, hε, hεt⟩ := exists_seq_strictAnti_tendsto' (by norm_num : (0 : ℝ) < 1 / 2)
   have hint := (memLp_logLogInterior.mono_measure restrict_ball_le).integrable one_le_two
   have hDint := (memLp_fderiv_logLogInterior.mono_measure restrict_ball_le).integrable one_le_two
   exact hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub (l := atTop) (u := fun n => reg (ε n))
     (U := fun n => regDeriv (ε n)) (IntegrableOn.locallyIntegrableOn hint)
     (fun v => IntegrableOn.locallyIntegrableOn (hDint.apply_continuousLinearMap v))
-    (fun n => hasWeakFDerivOn_reg (hε0 n) (hε n))
-    (tendsto_lintegral_enorm_reg_sub (fun n => (hε0 n).le) hε hεt)
-    (tendsto_lintegral_enorm_regDeriv_sub (fun n => (hε0 n).le) hε hεt)
+    (fun n => hasWeakFDerivOn_reg (hε n).1 (hε n).2)
+    (tendsto_lintegral_enorm_reg_sub (fun n => (hε n).1.le) (fun n => (hε n).2) hεt)
+    (tendsto_lintegral_enorm_regDeriv_sub (fun n => (hε n).1.le) (fun n => (hε n).2) hεt)
 
 /-- **`log log (4 / ‖z‖)` is in the local class `W^{1,p}` for `p ≤ 2`.** On the disc
 `ball 0 (1 / 2)` the function `u(z) = log log (4 / ‖z‖)`, unbounded at the origin, lies in the
