@@ -28,9 +28,10 @@ whose identity, inverse and composition are those of natural isomorphisms (`Iso.
 The fundamental group `π₁(S, y)` acts on the paths from `x` to `y` by composition, and this
 action is simply transitive (`CategoryTheory.Aut.existsUnique_smul_eq`, applied to paths). Over a
 connected base any two geometric points are joined by a path
-(`TauCeti.FiniteEtaleScheme.nonempty_fiber_iso`), so the paths from `x` to `y` form a torsor
-under `π₁(S, y)` (`CategoryTheory.Aut.instTorsorIso`). Over a disconnected base, paths exist
-exactly between geometric points of the same connected component when that component is open
+(the instance `TauCeti.FiniteEtaleScheme.nonempty_fiber_iso`), so the paths from `x` to `y`
+form a torsor under `π₁(S, y)` (`CategoryTheory.Aut.instTorsorIso`). Over a disconnected base,
+paths exist exactly between geometric points of the same connected component when that component
+is open
 (`TauCeti.FiniteEtaleScheme.nonempty_fiber_iso_iff_mem_connectedComponent_of_isOpen`). A path
 `γ` from `x` to `y` changes the base point by conjugation, `π₁(S, x) ≃ₜ* π₁(S, y)`
 (`CategoryTheory.Iso.continuousConjAut`), and conjugation is compatible with the action on `γ`
@@ -40,11 +41,6 @@ exactly between geometric points of the same connected component when that compo
 
 * `TauCeti.FiniteEtaleScheme.EtaleFundamentalGroup x`: the étale fundamental group `π₁(S, x)`.
 * `TauCeti.FiniteEtaleScheme.EtalePath x y`: étale paths from `x` to `y`.
-
-## Main results
-
-* `TauCeti.FiniteEtaleScheme.instNonemptyEtalePath`: over a connected base, the étale paths from
-  `x` to `y` are nonempty, so they form a torsor under `π₁(S, y)`.
 
 ## References
 
@@ -73,10 +69,5 @@ abbrev EtaleFundamentalGroup (x : Spec (.of Ω) ⟶ S) :=
 natural isomorphisms between their geometric fibre functors on finite étale `S`-schemes. -/
 abbrev EtalePath (x : Spec (.of Ω) ⟶ S) (y : Spec (.of Ω') ⟶ S) :=
   fiber x ≅ fiber y
-
-/-- **Any two geometric points of a connected scheme are joined by an étale path.** -/
-instance instNonemptyEtalePath [ConnectedSpace S] (x : Spec (.of Ω) ⟶ S)
-    (y : Spec (.of Ω') ⟶ S) : Nonempty (EtalePath x y) :=
-  nonempty_fiber_iso x y
 
 end TauCeti.FiniteEtaleScheme
