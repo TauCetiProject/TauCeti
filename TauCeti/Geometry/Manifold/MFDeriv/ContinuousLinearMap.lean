@@ -96,22 +96,16 @@ to a vector-valued function on a manifold. -/
 theorem mvfderiv_clm_apply {A : M → F →L[𝕜] F'} {p : M → F} {x : M} (hA : MDiffAt A x)
     (hp : MDiffAt p x) (v : TangentSpace I x) :
     mvfderiv I (fun y ↦ A y (p y)) x v = mvfderiv I A x v (p x) + A x (mvfderiv I p x v) := by
-  have hpair : HasMFDerivAt I 𝓘(𝕜, (F →L[𝕜] F') × F) (fun y ↦ (A y, p y)) x
-      ((mvfderiv I A x).prod (mvfderiv I p x)) :=
-    hA.hasMFDerivAt.prodMk hp.hasMFDerivAt
-  have happ : HasFDerivAt (fun q : (F →L[𝕜] F') × F ↦ q.1 q.2)
-      (isBoundedBilinearMap_apply.deriv (A x, p x)) (A x, p x) :=
-    isBoundedBilinearMap_apply.hasFDerivAt (A x, p x)
-  have hpair' : mvfderiv I (fun y ↦ (A y, p y)) x = (mvfderiv I A x).prod (mvfderiv I p x) := by
-    apply ContinuousLinearMap.ext
-    intro w
-    rw [mvfderiv_apply_eq_mfderiv_apply (fun y ↦ (A y, p y)) x w, hpair.mfderiv]
-    exact ContinuousLinearMap.prod_apply _ _ _
+  have hpair := hA.prodMk_space hp
+  have hfst := (ContinuousLinearMap.fst 𝕜 (F →L[𝕜] F') F).mvfderiv_comp_apply hpair v
+  have hsnd := (ContinuousLinearMap.snd 𝕜 (F →L[𝕜] F') F).mvfderiv_comp_apply hpair v
+  simp only [Function.comp_def, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd']
+    at hfst hsnd
   rw [← Function.comp_def (fun q : (F →L[𝕜] F') × F ↦ q.1 q.2) fun y ↦ (A y, p y),
     mvfderiv_comp_apply_of_differentiableAt (g := fun y ↦ (A y, p y))
-      (φ := fun q : (F →L[𝕜] F') × F ↦ q.1 q.2) happ.differentiableAt hpair.mdifferentiableAt,
-    happ.fderiv, hpair']
-  simp [IsBoundedBilinearMap.deriv_apply, add_comm]
+      (φ := fun q : (F →L[𝕜] F') × F ↦ q.1 q.2)
+      (isBoundedBilinearMap_apply.differentiableAt (A x, p x)) hpair,
+    isBoundedBilinearMap_apply.fderiv, IsBoundedBilinearMap.deriv_apply, ← hfst, ← hsnd, add_comm]
 
 /-- On a normed space, the vector-valued manifold derivative applied to model-space vectors
 `L v`, viewed as tangent vectors via `NormedSpace.fromTangentSpace`, is the Fréchet derivative
