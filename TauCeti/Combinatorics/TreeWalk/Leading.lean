@@ -34,7 +34,50 @@ open Finset
 
 namespace TauCeti.TreeWalk
 
-variable {α : Type*} [DecidableEq α] {m : ℕ}
+variable {α : Type*} {m : ℕ}
+
+/-- A cyclic word viewed as a path, with its initial vertex repeated at the endpoint. -/
+def cyclicPath {k : ℕ} [NeZero k] (w : Fin k → α) : Fin (k + 1) → α :=
+  fun i ↦ w (Fin.ofNat k i.val)
+
+@[simp] theorem cyclicPath_castSucc {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin k) :
+    cyclicPath w i.castSucc = w i := by
+  simp [cyclicPath]
+
+@[simp] theorem cyclicPath_succ {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin k) :
+    cyclicPath w i.succ = w (finRotate k i) := by
+  apply congrArg w
+  simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
+
+@[simp] theorem cyclicPath_zero {k : ℕ} [NeZero k] (w : Fin k → α) :
+    cyclicPath w 0 = w 0 := by
+  simp [cyclicPath]
+
+@[simp] theorem cyclicPath_last {k : ℕ} [NeZero k] (w : Fin k → α) :
+    cyclicPath w (Fin.last k) = w 0 := by
+  simp [cyclicPath]
+
+variable [DecidableEq α]
+
+@[simp] theorem image_cyclicPath {k : ℕ} [NeZero k] (w : Fin k → α) :
+    univ.image (cyclicPath w) = univ.image w := by
+  ext x
+  simp only [mem_image, mem_univ, true_and]
+  constructor
+  · rintro ⟨i, rfl⟩
+    exact ⟨Fin.ofNat k i.val, by simp [cyclicPath]⟩
+  · rintro ⟨i, rfl⟩
+    exact ⟨i.castSucc, cyclicPath_castSucc w i⟩
+
+/-- A leading cyclic word has two occurrences of every edge when viewed as a path. -/
+theorem card_edge_fiber_cyclicPath [NeZero m] (w : Fin (2 * m) → α)
+    (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))
+    (hv : #(univ.image w) = m + 1) (i : Fin (2 * m)) :
+    #{j : Fin (2 * m) |
+      s(cyclicPath w j.castSucc, cyclicPath w j.succ) =
+        s(cyclicPath w i.castSucc, cyclicPath w i.succ)} = 2 := by
+  simpa only [cyclicPath_castSucc, cyclicPath_succ] using
+    (ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq w h hv).2 i
 
 /-- A closed path with `m + 1` vertices and each unordered edge traversed twice becomes a tree
 walk after first-visit relabeling. No order on the original vertex type is needed. -/
@@ -76,28 +119,8 @@ has positive length; the path theorem also covers the zero-step walk. -/
 theorem isTreeWalk_canonicalWalk_cyclic [NeZero m] (w : Fin (2 * m) → α)
     (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))
     (hv : #(univ.image w) = m + 1) :
-    IsTreeWalk m (canonicalWalk (fun i : Fin (2 * m + 1) =>
-      w (Fin.ofNat (2 * m) i.val))) := by
-  let v : Fin (2 * m + 1) → α := fun i => w (Fin.ofNat (2 * m) i.val)
-  have hcast (i : Fin (2 * m)) : v i.castSucc = w i := by simp [v]
-  have hsucc (i : Fin (2 * m)) : v i.succ = w (finRotate (2 * m) i) := by
-    apply congrArg w
-    rw [finRotate_apply]
-    apply Fin.ext
-    simp [Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
-  have himage : univ.image v = univ.image w := by
-    ext x
-    simp only [mem_image, mem_univ, true_and]
-    constructor
-    · rintro ⟨i, rfl⟩
-      exact ⟨_, rfl⟩
-    · rintro ⟨i, rfl⟩
-      exact ⟨i.castSucc, hcast i⟩
-  apply isTreeWalk_canonicalWalk v
-  · simp [v]
-  · rw [himage, hv]
-  · have he := ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq w h hv
-    intro i
-    simpa only [hcast, hsucc] using he.2 i
+    IsTreeWalk m (canonicalWalk (cyclicPath w)) :=
+  isTreeWalk_canonicalWalk (cyclicPath w) (by simp) (by simpa using hv)
+    (card_edge_fiber_cyclicPath w h hv)
 
 end TauCeti.TreeWalk

@@ -29,28 +29,32 @@ open MeasureTheory
 
 namespace ProbabilityTheory.iIndepFun
 
-/-- A finite product of independent integrable random variables is integrable. -/
-theorem integrable_fun_prod {Ω ι E : Type*} [MeasurableSpace Ω] [Fintype ι]
-    [NormedCommRing E] [MeasurableSpace E] [BorelSpace E] [MeasurableMul₂ E]
+/-- A product over a finite subset of an independent family of integrable variables is
+integrable. The index type need not be finite. -/
+theorem integrable_finsetProd {Ω ι E : Type*} [MeasurableSpace Ω]
+    [NormedCommRing E] [MeasurableSpace E] [BorelSpace E]
     {P : Measure Ω} {X : ι → Ω → E}
-    (h : iIndepFun X P) (hX : ∀ i, Integrable (X i) P) :
-    Integrable (fun ω ↦ ∏ i, X i ω) P := by
+    (h : iIndepFun X P) (s : Finset ι) (hX : ∀ i ∈ s, Integrable (X i) P) :
+    Integrable (fun ω ↦ ∏ i ∈ s, X i ω) P := by
   classical
   have := h.isProbabilityMeasure
-  have hprod (s : Finset ι) : Integrable (fun ω ↦ ∏ i ∈ s, X i ω) P := by
-    induction s using Finset.induction_on with
-    | empty => simp
-    | @insert i s hi ih =>
-      have hind : IndepFun (X i) (fun ω ↦ ∏ j ∈ s, X j ω) P := by
-        simpa only [Finset.prod_fn] using
-          (h.indepFun_finsetProd_of_notMem₀ (fun i ↦ (hX i).aemeasurable) hi).symm
-      have hint := hind.integrable_op (hX i) ih (· * ·) (by fun_prop) 1
-        (by
-          intro x y
-          simpa only [ENNReal.coe_one, one_mul, smul_eq_mul] using
-            eNorm_smul_le (r := x) (x := y))
-      simpa only [Finset.prod_insert hi, Finset.prod_apply] using hint
-  exact hprod Finset.univ
+  have hm (i : s) : AEMeasurable (X i) P := (hX i i.property).aemeasurable
+  have hint : Integrable (fun x : s → E ↦ ∏ i, x i)
+      (Measure.pi fun i : s ↦ P.map (X i)) :=
+    Integrable.fintype_prod fun (i : s) ↦
+      (integrable_map_measure (hX i i.property).aestronglyMeasurable.aestronglyMeasurable_id_map
+        (hm i)).2 (hX i i.property)
+  rw [← (h.restrict s).map_fun_eq_pi_map hm] at hint
+  have hp := hint.comp_aemeasurable (aemeasurable_pi_iff.2 hm)
+  exact hp.congr (.of_forall fun ω ↦ Finset.prod_coe_sort s (fun i ↦ X i ω))
+
+/-- A finite product of independent integrable random variables is integrable. -/
+theorem integrable_fun_prod {Ω ι E : Type*} [MeasurableSpace Ω] [Fintype ι]
+    [NormedCommRing E] [MeasurableSpace E] [BorelSpace E]
+    {P : Measure Ω} {X : ι → Ω → E}
+    (h : iIndepFun X P) (hX : ∀ i, Integrable (X i) P) :
+    Integrable (fun ω ↦ ∏ i, X i ω) P :=
+  h.integrable_finsetProd Finset.univ (fun i _ ↦ hX i)
 
 end ProbabilityTheory.iIndepFun
 

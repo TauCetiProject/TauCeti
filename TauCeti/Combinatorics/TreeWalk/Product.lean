@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Combinatorics.TreeWalk.Leading
-public import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
 # Products along double-traversal tree walks
@@ -31,40 +30,6 @@ namespace TauCeti.TreeWalk.IsTreeWalk
 variable {k : ℕ} {w : ℕ → ℕ} (hw : IsTreeWalk k w)
 include hw
 
-private theorem reverse_step_of_edge_eq {i j : ℕ} (hi : i < 2 * k) (hj : j < 2 * k)
-    (hup : w (i + 1) = i + 1) (hne : j ≠ i)
-    (he : s(w j, w (j + 1)) = s(w i, w (i + 1))) :
-    w j = i + 1 ∧ w (j + 1) = w i := by
-  rcases Sym2.eq_iff.mp he with h | h
-  · by_cases hjup : w (j + 1) = j + 1
-    · omega
-    · have hd := hw.step_down hj hjup
-      have hu := depth_succ_of_le (hw.le_self i hi.le)
-      rw [h.1, h.2, hup] at hd
-      omega
-  · exact ⟨h.1.trans hup, h.2⟩
-
-/-- An edge discovered at step `i` has precisely two occurrences: step `i` and a unique
-return step, with the opposite orientation. -/
-theorem edge_fiber_eq_pair {i : ℕ} (hi : i < 2 * k) (hup : w (i + 1) = i + 1) :
-    ∃ j < 2 * k, w j = i + 1 ∧ w (j + 1) = w i ∧
-      {t ∈ range (2 * k) | s(w t, w (t + 1)) = s(w i, w (i + 1))} = {i, j} := by
-  let S := {t ∈ range (2 * k) | s(w t, w (t + 1)) = s(w i, w (i + 1))}
-  have hiS : i ∈ S := by simp [S, hi]
-  obtain ⟨a, b, hab, hS⟩ := card_eq_two.mp (hw.card_edge i hi)
-  have hS' : S = {a, b} := hS
-  have hj : ∃ j, j ≠ i ∧ S = {i, j} := by
-    rw [hS'] at hiS
-    simp only [mem_insert, mem_singleton] at hiS
-    rcases hiS with rfl | rfl
-    · exact ⟨b, hab.symm, hS'⟩
-    · exact ⟨a, hab, hS'.trans (pair_comm _ _)⟩
-  obtain ⟨j, hji, hpair⟩ := hj
-  have hjS : j ∈ S := by rw [hpair]; simp
-  obtain ⟨hj, he⟩ := mem_filter.mp hjS
-  obtain ⟨h₁, h₂⟩ := hw.reverse_step_of_edge_eq hi (mem_range.mp hj) hup hji he
-  exact ⟨j, mem_range.mp hj, h₁, h₂, hpair⟩
-
 /-- A commutative product along a tree walk is the product over discovery steps of the
 forward and backward factors for that edge. This includes the empty walk. -/
 theorem prod_eq_prod_up_mul_reverse {M : Type*} [CommMonoid M] (a : ℕ → ℕ → M) :
@@ -81,21 +46,14 @@ theorem prod_eq_prod_up_mul_reverse {M : Type*} [CommMonoid M] (a : ℕ → ℕ 
   refine prod_bij (fun i _ ↦ e i) ?_ ?_ ?_ ?_
   · intro i hi
     exact mem_image_of_mem e (mem_filter.mp hi).1
-  · intro i hi j hj he
-    have hi' := mem_filter.mp hi
-    have hj' := mem_filter.mp hj
-    have hli := hw.le_self i (mem_range.mp hi'.1).le
-    have hlj := hw.le_self j (mem_range.mp hj'.1).le
-    have h := Sym2.eq_iff.mp he
-    simp only [hi'.2, hj'.2] at h
-    omega
+  · exact fun i hi j hj he ↦ hw.injOn_edge_up hi hj he
   · intro x hx
     obtain ⟨j, hj, rfl⟩ := mem_image.mp hx
     obtain ⟨i, hi, hup, he⟩ := hw.exists_up_edge (mem_range.mp hj)
     exact ⟨i, mem_filter.mpr ⟨mem_range.mpr hi, hup⟩, by simpa [e, hup] using he.symm⟩
   · intro i hi
     obtain ⟨hi, hup⟩ := mem_filter.mp hi
-    obtain ⟨j, hj, h₁, h₂, hpair⟩ := hw.edge_fiber_eq_pair (mem_range.mp hi) hup
+    obtain ⟨j, hj, h₁, h₂, hpair⟩ := hw.exists_edge_fiber_eq_pair (mem_range.mp hi) hup
     have hne : i ≠ j := by
       intro hij
       subst j

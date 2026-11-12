@@ -36,8 +36,9 @@ and resolvent methods:
   the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`); the same holds for
   the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`), and the
   law of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`);
-* squared absolute values at distinct off-diagonal unordered positions are independent
-  (`iIndepFun_norm_wignerMatrix_apply_sq`);
+* entries at distinct off-diagonal unordered positions, and their squared absolute values, are
+  independent (`iIndepFun_wignerMatrix_apply_of_ne`,
+  `iIndepFun_norm_wignerMatrix_apply_sq`);
 * centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries
   give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is
   integrable when the entries of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
@@ -99,6 +100,20 @@ theorem wignerMatrix_apply_of_gt {i j : Fin n} (h : j.val < i.val) :
 theorem wignerMatrix_apply_self (i : Fin n) :
     wignerMatrix ξ η n ω i i = (Real.sqrt n : ℂ)⁻¹ * η i.val ω := by
   simp [wignerMatrix]
+
+/-- The squared absolute value of an off-diagonal entry is the corresponding upper
+coordinate's squared absolute value divided by the matrix size. -/
+theorem norm_wignerMatrix_apply_sq_of_ne {i j : Fin n} (h : i ≠ j) :
+    ‖wignerMatrix ξ η n ω i j‖ ^ 2 = (n : ℝ)⁻¹ *
+      ‖ξ ⟨(min i.val j.val, max i.val j.val), min_lt_max.mpr (Fin.val_ne_of_ne h)⟩ ω‖ ^ 2 := by
+  have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ ^ 2 = (n : ℝ)⁻¹ := by
+    rw [norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
+      inv_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
+  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne h) with hij | hij
+  · simp only [wignerMatrix_apply_of_lt _ _ _ hij, norm_mul, mul_pow, hn,
+      min_eq_left hij.le, max_eq_right hij.le]
+  · simp only [wignerMatrix_apply_of_gt _ _ _ hij, norm_mul, mul_pow, norm_star, hn,
+      min_eq_right hij.le, max_eq_left hij.le]
 
 /-- The normalised Wigner matrix is Hermitian for every sample point. -/
 theorem wignerMatrix_isHermitian (n : ℕ) : (wignerMatrix ξ η n ω).IsHermitian := by
@@ -303,18 +318,15 @@ section IndependentEdges
 
 variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
-/-- Squared absolute values of entries at distinct unordered off-diagonal positions are
-independent whenever the upper-triangular coordinates are independent. No condition is needed
-on the diagonal entries. -/
-theorem iIndepFun_norm_wignerMatrix_apply_sq {ι : Type*} {n : ℕ} (u v : ι → Fin n)
+/-- Entries at distinct unordered off-diagonal positions are independent whenever the
+upper-triangular coordinates are independent. No condition is needed on the diagonal entries. -/
+theorem iIndepFun_wignerMatrix_apply_of_ne {ι : Type*} {n : ℕ} (u v : ι → Fin n)
     (hne : ∀ i, u i ≠ v i) (hinj : Function.Injective fun i ↦ s(u i, v i))
     (hindep : iIndepFun ξ P) :
-    iIndepFun (fun i ω ↦ ‖wignerMatrix ξ η n ω (u i) (v i)‖ ^ 2) P := by
+    iIndepFun (fun i ω ↦ wignerMatrix ξ η n ω (u i) (v i)) P := by
   let e : ι → StrictUpper := fun i ↦
-    ⟨(min (u i).val (v i).val, max (u i).val (v i).val), by
-      have h := hne i
-      have hh : (u i).val ≠ (v i).val := fun hval ↦ h (Fin.ext hval)
-      omega⟩
+    ⟨(min (u i).val (v i).val, max (u i).val (v i).val),
+      min_lt_max.mpr (Fin.val_ne_of_ne (hne i))⟩
   have he : Function.Injective e := by
     intro i j hij
     apply hinj
@@ -324,23 +336,27 @@ theorem iIndepFun_norm_wignerMatrix_apply_sq {ι : Type*} {n : ℕ} (u v : ι �
     rw [Sym2.eq_iff]
     simp only [Fin.ext_iff]
     omega
-  have hnorm (i : ι) (ω : Ω) :
-      ‖wignerMatrix ξ η n ω (u i) (v i)‖ ^ 2 = (n : ℝ)⁻¹ * ‖ξ (e i) ω‖ ^ 2 := by
-    have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ ^ 2 = (n : ℝ)⁻¹ := by
-      rw [norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
-        inv_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
-    rcases lt_or_gt_of_ne (fun hval ↦ hne i (Fin.ext hval)) with h | h
-    · have hei : e i = ⟨((u i).val, (v i).val), h⟩ := by
-        apply Subtype.ext
-        simp [e, min_eq_left h.le, max_eq_right h.le]
-      rw [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow, hn, hei]
-    · have hei : e i = ⟨((v i).val, (u i).val), h⟩ := by
-        apply Subtype.ext
-        simp [e, min_eq_right h.le, max_eq_left h.le]
-      rw [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, mul_pow, norm_star, hn, hei]
-  exact ((iIndepFun.precomp he hindep).comp
-    (fun _ z ↦ (n : ℝ)⁻¹ * ‖z‖ ^ 2) (fun _ ↦ by fun_prop)).congr
-      (fun i ↦ .of_forall fun ω ↦ (hnorm i ω).symm)
+  let f (i : ι) (z : ℂ) :=
+    (Real.sqrt n : ℂ)⁻¹ * if (u i).val < (v i).val then z else star z
+  have hf (i : ι) : Measurable (f i) := by
+    dsimp only [f]
+    split_ifs <;> fun_prop
+  refine ((iIndepFun.precomp he hindep).comp f hf).congr (fun i ↦ .of_forall fun ω ↦ ?_)
+  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne (hne i)) with hij | hij
+  · simp only [Function.comp_apply, f, ite_eq_left hij, e, min_eq_left hij.le,
+      max_eq_right hij.le, wignerMatrix_apply_of_lt _ _ _ hij]
+  · simp only [Function.comp_apply, f, ite_eq_right hij.not_gt, e, min_eq_right hij.le,
+      max_eq_left hij.le, wignerMatrix_apply_of_gt _ _ _ hij]
+
+/-- Squared absolute values of entries at distinct unordered off-diagonal positions are
+independent whenever the upper-triangular coordinates are independent. No condition is needed
+on the diagonal entries. -/
+theorem iIndepFun_norm_wignerMatrix_apply_sq {ι : Type*} {n : ℕ} (u v : ι → Fin n)
+    (hne : ∀ i, u i ≠ v i) (hinj : Function.Injective fun i ↦ s(u i, v i))
+    (hindep : iIndepFun ξ P) :
+    iIndepFun (fun i ω ↦ ‖wignerMatrix ξ η n ω (u i) (v i)‖ ^ 2) P :=
+  (iIndepFun_wignerMatrix_apply_of_ne u v hne hinj hindep).comp
+    (fun _ z ↦ ‖z‖ ^ 2) (fun _ ↦ by fun_prop)
 
 end IndependentEdges
 
@@ -403,26 +419,22 @@ private theorem integral_norm_wignerMatrix_apply_sq {σ2 s : ℝ}
   have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ ^ 2 = (n : ℝ)⁻¹ := by
     rw [norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
       inv_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow, hn, integral_const_mul,
-      hξ, Fin.ne_of_lt h, ↓reduceIte]
-  · obtain rfl := Fin.ext h
+  by_cases hij : i = j
+  · subst j
     simp only [wignerMatrix_apply_self, norm_mul, mul_pow, hn, integral_const_mul,
       Complex.norm_real, Real.norm_eq_abs, sq_abs, hη, ↓reduceIte]
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, norm_star, mul_pow, hn,
-      integral_const_mul, hξ, Fin.ne_of_gt h, ↓reduceIte]
+  · simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hij, integral_const_mul,
+      hξ, hij, ↓reduceIte]
 
 private theorem integrable_norm_wignerMatrix_apply_sq
     (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hη : ∀ i, Integrable (fun ω ↦ η i ω ^ 2) P)
     {n : ℕ} (i j : Fin n) : Integrable (fun ω ↦ ‖wignerMatrix ξ η n ω i j‖ ^ 2) P := by
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow]
-    exact (hξ _).const_mul _
-  · obtain rfl := Fin.ext h
+  by_cases hij : i = j
+  · subst j
     simp only [wignerMatrix_apply_self, norm_mul, mul_pow, Complex.norm_real, Real.norm_eq_abs,
       sq_abs]
     exact (hη _).const_mul _
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, norm_star, mul_pow]
+  · simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hij]
     exact (hξ _).const_mul _
 
 /-- **Normalisation of Wigner matrices.** If the diagonal entries have second moment `σ²` and

@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Sym.Sym2
 public import TauCeti.Data.List.FindIdx
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 
 /-!
 # First-visit canonical labeling of walks
@@ -199,7 +201,7 @@ theorem ne_of_canonicalWalk_succ_eq (v : Fin (n + 1) → α) (i : Fin n)
   omega
 
 /-- Distinct steps which discover new vertices traverse distinct unordered edges. -/
-theorem injOn_edge_of_canonicalWalk_succ_eq (v : Fin (n + 1) → α) :
+theorem injOn_edge_setOf_canonicalWalk_succ_eq (v : Fin (n + 1) → α) :
     Set.InjOn (fun i : Fin n ↦ s(v i.castSucc, v i.succ))
       {i | canonicalWalk v i.succ = i.succ} := by
   intro i hi j hj hij
@@ -253,5 +255,14 @@ theorem card_fixed_canonicalWalk (w : Fin (n + 1) → α) :
   intro x hx y _ hxy
   obtain ⟨i, -, rfl⟩ := mem_image.mp hx
   exact (List.idxOf_inj (List.mem_ofFn.mpr ⟨i, rfl⟩)).1 hxy
+
+/-- The discovery steps of a path count its distinct vertices other than the initial vertex. -/
+theorem card_filter_canonicalWalk_succ_eq (v : Fin (n + 1) → α) :
+    #{i : Fin n | canonicalWalk v i.succ = i.succ} = #(univ.image v) - 1 := by
+  have h := card_fixed_canonicalWalk v
+  rw [card_filter, sum_range_succ', ← Fin.sum_univ_eq_sum_range] at h
+  simp only [canonicalWalk_zero, ite_true] at h
+  simp only [card_filter, Fin.val_succ]
+  omega
 
 end TauCeti.TreeWalk

@@ -193,7 +193,7 @@ private theorem indep_discoveryFactor (v : Fin (2 * m + 1) → Fin n)
     iIndepFun (discoveryFactor (ξ := ξ) (η := η) v) P :=
   iIndepFun_norm_wignerMatrix_apply_sq _ _
     (fun i ↦ ne_of_canonicalWalk_succ_eq v i.val (mem_filter.mp i.property).2)
-    (fun i j hij ↦ Subtype.ext (injOn_edge_of_canonicalWalk_succ_eq v
+    (fun i j hij ↦ Subtype.ext (injOn_edge_setOf_canonicalWalk_succ_eq v
       (mem_filter.mp i.property).2 (mem_filter.mp j.property).2 hij)) hindep
 
 private theorem integrable_discoveryFactor (v : Fin (2 * m + 1) → Fin n)
@@ -201,11 +201,8 @@ private theorem integrable_discoveryFactor (v : Fin (2 * m + 1) → Fin n)
     Integrable (discoveryFactor (ξ := ξ) (η := η) v i) P := by
   unfold discoveryFactor
   have hne := ne_of_canonicalWalk_succ_eq v i.val (mem_filter.mp i.property).2
-  rcases lt_or_gt_of_ne (fun hval ↦ hne (Fin.ext hval)) with h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow]
-    exact (hξ _).const_mul _
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, mul_pow, norm_star]
-    exact (hξ _).const_mul _
+  simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hne]
+  exact (hξ _).const_mul _
 
 omit [MeasurableSpace Ω] in
 private theorem prod_path_eq_prod_discoveryFactor (v : Fin (2 * m + 1) → Fin n)
@@ -253,12 +250,8 @@ theorem integral_prod_wignerMatrix_apply_path
     ∫ ω, ∏ i : Fin (2 * m), wignerMatrix ξ η n ω (v i.castSucc) (v i.succ) ∂P =
       ((∏ i : Fin (2 * m) with canonicalWalk v i.succ = i.succ,
         ∫ ω, ‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P : ℝ) : ℂ) := by
-  have hint := (indep_discoveryFactor (η := η) v hindep).integrable_fun_prod
-    (integrable_discoveryFactor v hξ)
-  rw [integral_congr_ae (.of_forall (prod_path_eq_prod_discoveryFactor v hclosed hv he))]
-  have hcast := Complex.ofRealCLM.integral_comp_comm hint
-  simp only [Complex.ofRealCLM_apply] at hcast
-  rw [hcast]
+  rw [integral_congr_ae (.of_forall (prod_path_eq_prod_discoveryFactor v hclosed hv he)),
+    integral_complex_ofReal]
   rw [(indep_discoveryFactor (η := η) v hindep).integral_fun_prod_eq_prod_integral
     (fun i ↦ (integrable_discoveryFactor v hξ i).aestronglyMeasurable)]
   unfold discoveryFactor DiscoverySteps
@@ -278,33 +271,16 @@ theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
       (n : ℂ)⁻¹ ^ m := by
   have hξ (ij : StrictUpper) : Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P :=
     integrable_of_integral_eq_one (hsecond ij)
-  have hw := isTreeWalk_canonicalWalk v hclosed hv he
-  have hcard : Fintype.card (DiscoverySteps v) = m := by
-    simp only [DiscoverySteps, Fintype.card_coe, card_filter]
-    have h := hw.card_up
-    rw [card_filter, ← Fin.sum_univ_eq_sum_range] at h
-    exact h
-  have hterm (i : DiscoverySteps v) :
-      ∫ ω, discoveryFactor (ξ := ξ) (η := η) v i ω ∂P = (n : ℝ)⁻¹ := by
-    have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ ^ 2 = (n : ℝ)⁻¹ := by
-      rw [norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
-        inv_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
-    have hne := ne_of_canonicalWalk_succ_eq v i.val (mem_filter.mp i.property).2
-    rcases lt_or_gt_of_ne (fun hval ↦ hne (Fin.ext hval)) with h | h
-    · simp only [discoveryFactor, wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow,
-        hn, integral_const_mul, hsecond, mul_one]
-    · simp only [discoveryFactor, wignerMatrix_apply_of_gt _ _ _ h, norm_mul, mul_pow,
-        norm_star, hn, integral_const_mul, hsecond, mul_one]
-  have hprod : (∏ i : DiscoverySteps v,
-      ∫ ω, discoveryFactor (ξ := ξ) (η := η) v i ω ∂P) = (n : ℝ)⁻¹ ^ m := by
-    simp only [hterm, prod_const, card_univ, hcard]
   rw [integral_prod_wignerMatrix_apply_path hξ hindep v hclosed hv he]
-  have hprod' := congrArg Complex.ofReal hprod
-  -- Expand only the private factor and finite-index representations.
-  unfold discoveryFactor DiscoverySteps at hprod'
-  rw [Finset.prod_coe_sort _ (fun i : Fin (2 * m) ↦
-    ∫ ω, ‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P)] at hprod'
-  simpa only [Complex.ofReal_pow, Complex.ofReal_inv, Complex.ofReal_natCast] using hprod'
+  have hterm (i : Fin (2 * m)) (hi : i ∈
+      ({i : Fin (2 * m) | canonicalWalk v i.succ = i.succ} : Finset _)) :
+      ∫ ω, ‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P = (n : ℝ)⁻¹ := by
+    have hne := ne_of_canonicalWalk_succ_eq v i (mem_filter.mp hi).2
+    simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hne, integral_const_mul,
+      hsecond, mul_one]
+  rw [prod_congr rfl hterm, prod_const, card_filter_canonicalWalk_succ_eq, hv,
+    Nat.add_sub_cancel]
+  simp only [Complex.ofReal_pow, Complex.ofReal_inv, Complex.ofReal_natCast]
 
 /-- **Leading Wigner words.** A cyclic word of length `2 * m`, with no singleton unordered
 edge and `m + 1` distinct vertices, contributes exactly `n⁻ᵐ` to the expected trace.
@@ -322,23 +298,9 @@ theorem integral_prod_wignerMatrix_apply_leading
     rintro rfl
     simp at hv
   have := NeZero.mk hm
-  let v : Fin (2 * m + 1) → Fin n := fun i ↦ w (Fin.ofNat (2 * m) i.val)
-  have hcast (i : Fin (2 * m)) : v i.castSucc = w i := by simp [v]
-  have hsucc (i : Fin (2 * m)) : v i.succ = w (finRotate (2 * m) i) := by
-    apply congrArg w
-    rw [finRotate_apply]
-    apply Fin.ext
-    simp [Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
-  have hsurj : Function.Surjective (fun i : Fin (2 * m + 1) ↦
-      Fin.ofNat (2 * m) i.val) := fun i ↦ ⟨i.castSucc, by simp⟩
-  have himage : univ.image v = univ.image w := by
-    have hmap := congrArg (Finset.image w) (Finset.image_univ_of_surjective hsurj)
-    rw [image_image] at hmap
-    exact hmap
-  have he := ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq w h hv
   have hp := integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
-    (η := η) hindep hsecond v (by simp [v]) (by rw [himage]; exact hv)
-    (fun i ↦ by simpa only [hcast, hsucc] using he.2 i)
-  simpa only [hcast, hsucc] using hp
+    (η := η) hindep hsecond (cyclicPath w) (by simp) (by simpa using hv)
+    (card_edge_fiber_cyclicPath w h hv)
+  simpa only [cyclicPath_castSucc, cyclicPath_succ] using hp
 
 end TauCeti
