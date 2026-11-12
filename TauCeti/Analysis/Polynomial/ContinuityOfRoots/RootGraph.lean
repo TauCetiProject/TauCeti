@@ -9,6 +9,8 @@ public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
 import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Data.Multiset.Rel
+import TauCeti.Topology.Algebra.Polynomial.Basic
+import TauCeti.Topology.MetricSpace.HausdorffDistance
 
 /-!
 # Root graphs of families of monic polynomials
@@ -31,14 +33,16 @@ continuity of roots of `Polynomial.Monic.exists_rel_roots_norm_sub_lt`, obtained
 compactness. Matched roots lie over the same parameter, so the root graphs converge in the
 Hausdorff extended distance of `X × K` (`Polynomial.tendsto_hausdorffEDist_rootGraph`).
 
-Consequently, sets `A i` that are Hausdorff-close to the root graphs of `p i`, such as the zero
-sets of fields whose Newton polynomials are `p i`, converge to the root graph of `q`
-(`Polynomial.tendsto_hausdorffEDist_rootGraph_of_tendsto`), and every limit of points of the
-`A i` lies on that root graph (`Polynomial.mem_rootGraph_of_tendsto`). In Taubes's analysis of
-Seiberg–Witten solutions near a pseudoholomorphic curve, `p i x` are the Newton polynomials of the
-normal moments of the curvature currents over the base point `x` of the curve, and these
-statements give the convergence of the rescaled zero sets to the root multigraph of the limiting
-coefficients, with every marked zero retained in the limit.
+Consequently, sets `A i` that are Hausdorff-close to the root graphs of `p i` converge to the root
+graph of `q` (`Polynomial.tendsto_hausdorffEDist_rootGraph_of_tendsto`), and every limit of points
+of the `A i` lies on that root graph (`Polynomial.mem_rootGraph_of_tendsto`). Such sets could be
+the zero sets of fields whose Newton polynomials are `p i`, once a support estimate shows that they
+are Hausdorff-close to the root graphs of `p i`; that estimate is not proved here but assumed. In
+Taubes's analysis of Seiberg–Witten solutions near a pseudoholomorphic curve, `p i x` are the
+Newton polynomials of the normal moments of the curvature currents over the base point `x` of the
+curve. Given such a support estimate, these statements give the convergence of the rescaled zero
+sets to the root multigraph of the limiting coefficients, with every marked zero retained in the
+limit.
 
 ## Main results
 
@@ -128,17 +132,6 @@ end Roots
 variable {K : Type*} [NormedField K] [IsAlgClosed K] [ProperSpace K] {ι : Type*} {l : Filter ι}
   {p : ι → X → K[X]} {q : X → K[X]} {s : Set X} {n : ℕ}
 
-omit [IsAlgClosed K] [ProperSpace K] in
-/-- For monic polynomials of degree `n`, continuity of the lower coefficients gives continuity of
-all coefficients of index at most `n`, the leading one being `1`. -/
-private theorem continuousOn_coeff_of_monic [TopologicalSpace X]
-    (hq : ∀ x ∈ s, (q x).Monic ∧ (q x).natDegree = n)
-    (hqc : ∀ k < n, ContinuousOn (fun x ↦ (q x).coeff k) s) :
-    ∀ k ≤ n, ContinuousOn (fun x ↦ (q x).coeff k) s := fun k hk ↦ by
-  rcases hk.lt_or_eq with hk | rfl
-  · exact hqc k hk
-  · exact continuousOn_const.congr fun x hx ↦ by rw [← (hq x hx).2, (hq x hx).1.coeff_natDegree]
-
 omit [IsAlgClosed K] in
 /-- **The root graph is compact.** If `s` is compact, the polynomials `q x` are monic of degree
 `n` and their lower coefficients are continuous on `s`, then the root graph of `q` over `s` is
@@ -164,7 +157,8 @@ theorem isCompact_rootGraph [TopologicalSpace X] [T2Space X] (hs : IsCompact s)
       (fun k hk ↦ by rw [(hq y.1 hy.1).2] at hk ⊢; exact hcoeff y.1 hy.1 k hk) hy.2⟩
   exact (hs.prod (isCompact_closedBall 0 (2 * c))).of_isClosed_subset
     (isClosed_rootGraph hs.isClosed (fun x hx ↦ (hq x hx).2.le)
-      (continuousOn_coeff_of_monic hq hqc)) hsub
+      fun _ ↦ continuousOn_coeff_of_monic (fun x hx ↦ (hq x hx).1) (fun x hx ↦ (hq x hx).2) hqc)
+    hsub
 
 /-- Locally near each parameter `x₀ ∈ s`, there is a single `δ > 0` such that every monic
 polynomial of degree `n` whose lower coefficients are `δ`-close to those of `q x` has its roots
@@ -267,10 +261,9 @@ theorem tendsto_hausdorffEDist_rootGraph_of_tendsto [PseudoEMetricSpace X] (hs :
     (hpq : ∀ k < n, TendstoUniformlyOn (fun i x ↦ (p i x).coeff k) (fun x ↦ (q x).coeff k) l s)
     {A : ι → Set (X × K)}
     (hA : Tendsto (fun i ↦ hausdorffEDist (A i) (rootGraph (p i) s)) l (𝓝 0)) :
-    Tendsto (fun i ↦ hausdorffEDist (A i) (rootGraph q s)) l (𝓝 0) := by
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using hA.add (tendsto_hausdorffEDist_rootGraph hs hq hp hqc hpq))
-    (fun _ ↦ zero_le) fun _ ↦ hausdorffEDist_triangle
+    Tendsto (fun i ↦ hausdorffEDist (A i) (rootGraph q s)) l (𝓝 0) :=
+  tendsto_hausdorffEDist_of_tendsto_of_tendsto hA
+    (tendsto_hausdorffEDist_rootGraph hs hq hp hqc hpq)
 
 /-- **Retention of limit points.** Under the hypotheses of
 `Polynomial.eventually_forall_rel_roots_norm_sub_lt` with `s` closed, if sets `A i ⊆ X × K`
@@ -284,18 +277,9 @@ theorem mem_rootGraph_of_tendsto [PseudoEMetricSpace X] [l.NeBot] (hs : IsCompac
     {A : ι → Set (X × K)}
     (hA : Tendsto (fun i ↦ hausdorffEDist (A i) (rootGraph (p i) s)) l (𝓝 0))
     {y : ι → X × K} (hy : ∀ᶠ i in l, y i ∈ A i) {y₀ : X × K} (hy₀ : Tendsto y l (𝓝 y₀)) :
-    y₀ ∈ rootGraph q s := by
-  have hclosed : IsClosed (rootGraph q s) := isClosed_rootGraph (n := n) hs'
-    (fun x hx ↦ (hq x hx).2.le) (continuousOn_coeff_of_monic hq hqc)
-  -- `infEDist y₀ Z ≤ edist y₀ (y i) + hausdorffEDist (A i) Z`, and both terms tend to zero.
-  have hlim :
-      Tendsto (fun i ↦ edist y₀ (y i) + hausdorffEDist (A i) (rootGraph q s)) l (𝓝 0) := by
-    simpa using ((tendsto_const_nhds (x := y₀)).edist hy₀).add
-      (tendsto_hausdorffEDist_rootGraph_of_tendsto hs hq hp hqc hpq hA)
-  rw [mem_iff_infEDist_zero_of_closed hclosed, ← nonpos_iff_eq_zero]
-  refine ge_of_tendsto hlim ?_
-  filter_upwards [hy] with i hi
-  exact infEDist_le_edist_add_infEDist.trans
-    (add_le_add le_rfl (infEDist_le_hausdorffEDist_of_mem hi))
+    y₀ ∈ rootGraph q s :=
+  mem_of_tendsto_hausdorffEDist (isClosed_rootGraph (n := n) hs' (fun x hx ↦ (hq x hx).2.le)
+    fun _ ↦ continuousOn_coeff_of_monic (fun x hx ↦ (hq x hx).1) (fun x hx ↦ (hq x hx).2) hqc)
+    (tendsto_hausdorffEDist_rootGraph_of_tendsto hs hq hp hqc hpq hA) hy hy₀
 
 end Polynomial
