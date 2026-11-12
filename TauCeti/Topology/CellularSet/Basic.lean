@@ -59,8 +59,6 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
 ## Main results
 
 * `TauCeti.isCellularSet_iff`: the witnesses of cellularity.
-* `TauCeti.IsCellularSet.image`: the image of a cellular set under a continuous injection is
-  cellular.
 * `TauCeti.IsCellularSet.isCompact`, `TauCeti.IsCellularSet.nonempty`: in a Hausdorff space, a
   cellular set is a nonempty compact set.
 * `TauCeti.IsCellularSet.image`: the image of a cellular set under a map continuous and injective
@@ -222,19 +220,6 @@ theorem isCellularSet_iff (E : Type*) [NormedAddCommGroup E] {M : Type*} [Topolo
       (∀ i, InjOn (e i) (closedBall 0 1)) ∧
       (∀ i, e (i + 1) '' closedBall 0 1 ⊆ e i '' ball 0 1) ∧ ⋂ i, e i '' closedBall 0 1 = X :=
   Iff.rfl
-
-/-- The image of a cellular set under a continuous injection is cellular: the images of the cells
-are cells. -/
-theorem IsCellularSet.image {E : Type*} [NormedAddCommGroup E] {M N : Type*} [TopologicalSpace M]
-    [TopologicalSpace N] {X : Set M} (hX : IsCellularSet E X) {φ : M → N} (hφ : Continuous φ)
-    (hφi : Injective φ) : IsCellularSet E (φ '' X) := by
-  obtain ⟨e, hec, hei, hsub, rfl⟩ := (isCellularSet_iff E).1 hX
-  refine (isCellularSet_iff E).2 ⟨fun i ↦ φ ∘ e i, fun i ↦ hφ.comp_continuousOn (hec i),
-    fun i ↦ hφi.injOn.comp (hei i) (mapsTo_univ _ _), fun i ↦ ?_, ?_⟩
-  · simp only [image_comp]
-    exact image_mono (hsub i)
-  · simp only [image_comp]
-    exact ((injOn_of_injective hφi).image_iInter_eq).symm
 
 /-- A cellular set in a Hausdorff space, modelled on a proper space, is closed. -/
 theorem IsCellularSet.isClosed {E : Type*} [NormedAddCommGroup E] [ProperSpace E] {M : Type*}

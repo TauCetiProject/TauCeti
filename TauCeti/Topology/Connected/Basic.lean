@@ -41,9 +41,6 @@ from a neighbourhood of a maximum point to the whole domain.
 In a `T₁` space, the connected component `connectedComponentIn s x` of a point isolated in `s` is
 the point itself (`TauCeti.connectedComponentIn_eq_singleton`): the component is covered by the
 open sets `{x}ᶜ` and a neighbourhood of `x` meeting `s` only at `x`, whose intersection misses `s`.
-A continuous surjection of a preconnected space onto a `T₁` space with two distinct points `a`
-and `b` does not map everything into `{a, b}` (`TauCeti.exists_notMem_preimage_pair`): otherwise
-the open sets `f⁻¹(a)ᶜ` and `f⁻¹(b)ᶜ` would disconnect the space.
 -/
 
 public section
@@ -140,22 +137,6 @@ theorem connectedComponentIn_eq_singleton [T1Space α] {s : Set α} {x : α} (hx
     (fun y _ ↦ (eq_or_ne y x).elim (fun hyx ↦ Or.inl (hyx ▸ hxU)) Or.inr)
     ⟨x, mem_connectedComponentIn hx, hxU⟩ ⟨z, hz, hzx⟩
   exact hyx (hUx y hyU (connectedComponentIn_subset _ _ hy))
-
-/-- If `f` maps a preconnected space continuously onto a `T₁` space and `a ≠ b`, some point lies
-off `f⁻¹{a, b}`: otherwise the open sets `f⁻¹(a)ᶜ` and `f⁻¹(b)ᶜ` would disconnect the space. -/
-theorem exists_notMem_preimage_pair {β : Type*} [TopologicalSpace β] [PreconnectedSpace α]
-    [T1Space β] {f : α → β} (hf : Continuous f) (hfs : Surjective f) {a b : β} (hab : a ≠ b) :
-    ∃ x, x ∉ f ⁻¹' {a, b} := by
-  by_contra! h
-  obtain ⟨xa, rfl⟩ := hfs a
-  obtain ⟨xb, rfl⟩ := hfs b
-  -- The open sets `f⁻¹(b)ᶜ` and `f⁻¹(a)ᶜ` would cover the space disjointly.
-  have hsub := isPreconnected_univ.subset_left_of_subset_union
-    (isClosed_singleton.preimage hf).isOpen_compl (isClosed_singleton.preimage hf).isOpen_compl
-    (disjoint_left.2 fun x hxb hxa ↦ (h x).elim hxa hxb)
-    (fun x _ ↦ (eq_or_ne (f x) (f xb)).elim (fun hx ↦ .inr fun hx' ↦ hab (hx'.symm.trans hx)) .inl)
-    ⟨xa, mem_univ _, hab⟩
-  exact hsub (mem_univ xb) rfl
 
 end TauCeti
 
