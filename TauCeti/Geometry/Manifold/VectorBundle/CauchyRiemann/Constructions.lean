@@ -96,7 +96,7 @@ components. -/
 theorem dbarSMulRight_prod (g : M → ℝ) (σ : Π x : M, V x × W x) (x : M) :
     j.dbarSMulRight (V := V ×ᵇ W) g σ x =
       (j.dbarSMulRight g (fun y ↦ (σ y).1) x).prod (j.dbarSMulRight g (fun y ↦ (σ y).2) x) := by
-  ext v <;> simp [dbarSMulRight_apply]
+  ext v <;> simp [dbarSMulRight_apply, -mvfderiv_apply_eq_mfderiv_apply]
 
 variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (W x)]
 
@@ -114,7 +114,7 @@ theorem restrictScalars_comp_dbarSMulRight (L : Π x : M, V x →L[ℂ] W x) (g 
     ((L x).restrictScalars ℝ).comp (j.dbarSMulRight g σ x) =
       j.dbarSMulRight g (fun y ↦ L y (σ y)) x := by
   ext v
-  simp [dbarSMulRight_apply]
+  simp [dbarSMulRight_apply, -mvfderiv_apply_eq_mfderiv_apply]
 
 end SmoothAlmostComplexStructure
 
