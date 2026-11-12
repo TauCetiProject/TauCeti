@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Distributions.BetaGas.Basic
 import Mathlib.MeasureTheory.Integral.Asymptotics
 
-import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Topology.Algebra.Order.LiminfLimsup
 
@@ -291,24 +290,6 @@ theorem integrable_betaGasWeight_of_log_growth (n : ℕ) {β β' : ℝ} (hβ : 0
     filter_upwards [hratioE] with x hx
     exact EReal.coe_lt_coe_iff.mp hx
   exact integrable_betaGasWeight_of_eventual_log_growth n hβ hβ' hββ' hV hRatio
-
-private lemma betaGasPartitionFunction_pos_of_integrable (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
-    {V : ℝ → ℝ} (hV : Continuous V)
-    (hint : Integrable (betaGasWeight n β V)
-      (Measure.pi fun _ : Fin n => (volume : Measure ℝ))) :
-    0 < betaGasPartitionFunction n β V := by
-  let x₀ : Fin n → ℝ := fun i => (i : ℝ)
-  have hx₀ : 0 < betaGasWeight n β V x₀ := by
-    apply betaGasWeight_pos
-    intro i j hij
-    dsimp [x₀] at hij
-    exact Fin.ext (by exact_mod_cast hij)
-  rw [betaGasPartitionFunction_def]
-  exact integral_pos_of_integrable_nonneg_ne_zero
-    (continuous_betaGasWeight n hβ hV)
-    hint
-    (betaGasWeight_nonneg n β V) hx₀.ne'
-
 
 /-- Under the same logarithmic-growth condition, the beta-gas partition function is finite and
 strictly positive. -/

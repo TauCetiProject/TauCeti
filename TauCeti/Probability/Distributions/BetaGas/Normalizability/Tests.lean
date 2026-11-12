@@ -26,6 +26,11 @@ variable (hliminf :
     Filter.liminf (fun x : ℝ => ((V x / log |x| : ℝ) : EReal))
       (Filter.comap (fun x : ℝ => |x|) Filter.atTop))
 
+example (hint : Integrable (betaGasWeight n β V)
+    (Measure.pi fun _ : Fin n => (volume : Measure ℝ))) :
+    0 < betaGasPartitionFunction n β V :=
+  betaGasPartitionFunction_pos_of_integrable n hβ.le hV hint
+
 example : Integrable (betaGasWeight n β V)
     (Measure.pi fun _ : Fin n => (volume : Measure ℝ)) :=
   integrable_betaGasWeight_of_log_growth n hβ hβ' hββ' hV hliminf

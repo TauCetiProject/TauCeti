@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The finite beta gas
@@ -96,6 +97,25 @@ theorem betaGasPartitionFunction_def (n : ℕ) (β : ℝ) (V : ℝ → ℝ) :
 theorem betaGasPartitionFunction_nonneg (n : ℕ) (β : ℝ) (V : ℝ → ℝ) :
     0 ≤ betaGasPartitionFunction n β V :=
   integral_nonneg (betaGasWeight_nonneg n β V)
+
+/-- An integrable beta-gas weight for a continuous potential has positive
+partition function. -/
+theorem betaGasPartitionFunction_pos_of_integrable (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
+    {V : ℝ → ℝ} (hV : Continuous V)
+    (hint : Integrable (betaGasWeight n β V)
+      (Measure.pi fun _ : Fin n => (volume : Measure ℝ))) :
+    0 < betaGasPartitionFunction n β V := by
+  let x₀ : Fin n → ℝ := fun i => (i : ℝ)
+  have hx₀ : 0 < betaGasWeight n β V x₀ := by
+    apply betaGasWeight_pos
+    intro i j hij
+    dsimp [x₀] at hij
+    exact Fin.ext (by exact_mod_cast hij)
+  rw [betaGasPartitionFunction_def]
+  exact integral_pos_of_integrable_nonneg_ne_zero
+    (continuous_betaGasWeight n hβ hV)
+    hint
+    (betaGasWeight_nonneg n β V) hx₀.ne'
 
 /-- The beta-gas weight divided by its partition function. It integrates to one when the weight
 is integrable and the partition function is positive. -/
