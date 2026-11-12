@@ -48,9 +48,10 @@ that is only smooth after restricting scalars to `ℝ` gives the real statement 
 * `TauCeti.isSubmersionOfComplement_orbitRelQuotientMap`: the map of orbit spaces induced by an
   equivariant `C^n` submersion with complement `F` is a `C^n` submersion with complement `F`;
   `TauCeti.isSubmersion_orbitRelQuotientMap` is the version without a fixed complement.
-* `TauCeti.smoothQuotientMk`: the orbit projection, as a `C^n` map.
+* `TauCeti.smoothQuotientMk`: the orbit projection, as a `C^n` map; `TauCeti.smoothAddQuotientMk`
+  is the additive version.
 * `ContMDiffMap.orbitRelQuotientLift`: a `G`-invariant `C^n` map into any manifold, as a `C^n`
-  map on the orbit space.
+  map on the orbit space; `ContMDiffMap.addOrbitRelQuotientLift` is the additive version.
 
 ## References
 
@@ -151,10 +152,19 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable (I M n G) in
 /-- The orbit projection `M → M ⧸ G` of a free, properly discontinuous action by `C^n` maps, as a
 `C^n` map. -/
+@[to_additive smoothAddQuotientMk /-- The orbit projection of a free, properly discontinuous
+additive action by `C^n` maps, as a `C^n` map. -/]
 def smoothQuotientMk : C^n⟮I, M; I, MulAction.orbitRel.Quotient G M⟯ :=
   ⟨Quotient.mk _, isLocalDiffeomorph_quotientMk.contMDiff⟩
 
-@[simp]
+/-- The underlying function of `TauCeti.smoothQuotientMk` is the orbit projection. -/
+@[to_additive coe_smoothAddQuotientMk /-- The underlying function of
+`TauCeti.smoothAddQuotientMk` is the orbit projection. -/]
+theorem coe_smoothQuotientMk :
+    ⇑(smoothQuotientMk I M n G) = Quotient.mk (MulAction.orbitRel G M) :=
+  (rfl)
+
+@[to_additive (attr := simp) smoothAddQuotientMk_apply]
 theorem smoothQuotientMk_apply (x : M) :
     smoothQuotientMk I M n G x = Quotient.mk (MulAction.orbitRel G M) x :=
   (rfl)
@@ -178,37 +188,43 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A `C^n` map constant on the orbits of a free, properly discontinuous action by `C^n` maps
 descends to a `C^n` map on the orbit space. -/
+@[to_additive addOrbitRelQuotientLift /-- A `C^n` map constant on the orbits of a free, properly
+discontinuous additive action by `C^n` maps descends to a `C^n` map on the orbit space. -/]
 def orbitRelQuotientLift (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
     C^n⟮I, MulAction.orbitRel.Quotient G M; I', N⟯ :=
   ⟨MulAction.orbitRelQuotientLift f hf, (contMDiff_orbitRelQuotientLift_iff le_rfl).2 f.contMDiff⟩
 
 /-- The underlying function of `ContMDiffMap.orbitRelQuotientLift` is the descent
 `TauCeti.MulAction.orbitRelQuotientLift` of the underlying function. -/
+@[to_additive coe_addOrbitRelQuotientLift /-- The underlying function of
+`ContMDiffMap.addOrbitRelQuotientLift` is the descent `TauCeti.AddAction.orbitRelQuotientLift` of
+the underlying function. -/]
 theorem coe_orbitRelQuotientLift (f : C^n⟮I, M; I', N⟯)
     (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
     ⇑(f.orbitRelQuotientLift hf) = MulAction.orbitRelQuotientLift f hf :=
   (rfl)
 
-@[simp]
+@[to_additive (attr := simp) addOrbitRelQuotientLift_apply_mk]
 theorem orbitRelQuotientLift_apply_mk (f : C^n⟮I, M; I', N⟯)
     (hf : ∀ (g : G) (x : M), f (g • x) = f x) (x : M) :
     f.orbitRelQuotientLift hf (Quotient.mk (MulAction.orbitRel G M) x) = f x :=
   MulAction.orbitRelQuotientLift_mk x
 
-@[simp]
+@[to_additive (attr := simp) addOrbitRelQuotientLift_comp_smoothAddQuotientMk]
 theorem orbitRelQuotientLift_comp_smoothQuotientMk (f : C^n⟮I, M; I', N⟯)
     (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
     (f.orbitRelQuotientLift hf).comp (smoothQuotientMk I M n G) = f :=
   ContMDiffMap.ext fun x ↦ by simp
 
 /-- The descent of `f` is the unique map on the orbit space whose pullback is `f`. -/
+@[to_additive eq_addOrbitRelQuotientLift_iff /-- The descent of `f` is the unique map on the
+orbit space whose pullback is `f`. -/]
 theorem eq_orbitRelQuotientLift_iff (f : C^n⟮I, M; I', N⟯)
     (hf : ∀ (g : G) (x : M), f (g • x) = f x)
     {u : C^n⟮I, MulAction.orbitRel.Quotient G M; I', N⟯} :
     u = f.orbitRelQuotientLift hf ↔ u.comp (smoothQuotientMk I M n G) = f := by
-  refine ⟨fun h ↦ h ▸ orbitRelQuotientLift_comp_smoothQuotientMk f hf,
-    fun h ↦ ContMDiffMap.ext fun y ↦ ?_⟩
-  induction y using Quotient.inductionOn with
-  | h x => simpa using DFunLike.congr_fun h x
+  rw [← DFunLike.coe_fn_eq (f := u), coe_orbitRelQuotientLift,
+    MulAction.eq_orbitRelQuotientLift_iff, ← DFunLike.coe_fn_eq (f := u.comp _)]
+  rfl
 
 end ContMDiffMap

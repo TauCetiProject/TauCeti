@@ -7,43 +7,18 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.Algebra.SMul
-public import TauCeti.Geometry.Manifold.Quotient.Descent
 public import TauCeti.RepresentationTheory.FunLeft
-public import TauCeti.RepresentationTheory.Induction.AlmostConjugate
-import TauCeti.LinearAlgebra.Eigenspace.Transport
 
 /-!
-# Smooth functions on the orbit space of a group action
+# The representation of a group on smooth functions
 
 Let a group `G` act on a manifold `M` by `C^n` maps. Then `G` acts linearly on the `C^n` maps
 `f : M → F` into a normed space by translating the argument, `(g • f) x = f (g⁻¹ • x)`; this is
 the representation `TauCeti.smoothFunctionRep`, the restriction to `C^n` maps of the translation
 representation `Representation.funLeft` on all functions. Its invariant vectors are the `C^n` maps
-constant on orbits.
-
-If the action is moreover free and properly discontinuous, the orbit space `M ⧸ G` is a `C^n`
-manifold and the orbit projection `π : M → M ⧸ G` is a surjective `C^n` local diffeomorphism
-(`TauCeti.isLocalDiffeomorph_quotientMk`). Pullback along `π` then identifies the `C^n` maps on
-`M ⧸ G` with the `G`-invariant `C^n` maps on `M` (`TauCeti.smoothQuotientEquivInvariants`): a
-`G`-invariant `C^n` map descends to a map on the orbit space
-(`ContMDiffMap.orbitRelQuotientLift`), which is again `C^n` because `π` is a local diffeomorphism.
-
-This is how spectral problems on a quotient are lifted to its cover. If an operator `T` on the
-functions on `M` and an operator `S` on the functions on `M ⧸ G` are intertwined by pullback,
-`T (f ∘ π) = S f ∘ π`, then pullback identifies each eigenspace of `S` with the `G`-invariant
-vectors of the corresponding eigenspace of `T`
-(`TauCeti.eigenspaceEquivInvariantsInfEigenspace`). For a finite group `Q` acting freely and two
-almost-conjugate subgroups `K₁`, `K₂` (subgroups meeting every conjugacy class of `Q` in the same
-number of elements), Sunada's argument then shows that operators on `M ⧸ K₁` and on `M ⧸ K₂`
-intertwined by pullback with one operator `T` commuting with `Q` have eigenspaces of the same
-`finrank` (`Subgroup.AlmostConjugate.finrank_eigenspace_eq_of_intertwine`), which is their common
-dimension when they are finite-dimensional; `finrank` is `0` on an infinite-dimensional space, so
-the statement says nothing about infinite-dimensional eigenspaces. The representation
-theory, through Frobenius reciprocity, is
-`Subgroup.AlmostConjugate.finrank_invariants_inf_eigenspace_eq`. In Sunada's construction of
-isospectral manifolds, `T` and `S₁`, `S₂` are the Laplacians of a `Q`-invariant Riemannian metric on
-`M` and of the quotient metrics; neither those operators nor their intertwining is constructed
-here.
+constant on orbits, and restricting it to a subgroup gives the representation of the subgroup.
+The smooth functions on an orbit space are identified with its invariant vectors in
+`TauCeti.Geometry.Manifold.Quotient.SmoothFunctions`.
 
 ## Main definitions and results
 
@@ -51,28 +26,14 @@ here.
   maps `M → F`.
 * `TauCeti.mem_invariants_smoothFunctionRep_iff`: its invariant vectors are the maps with
   `f (g • x) = f x`.
-* `TauCeti.smoothQuotientEquivInvariants`: pullback along the orbit projection is a linear
-  equivalence from the `C^n` maps on `M ⧸ G` onto the `G`-invariant `C^n` maps on `M`.
-* `TauCeti.eigenspaceEquivInvariantsInfEigenspace`: for operators intertwined by pullback, each
-  eigenspace on the orbit space is the space of invariant eigenvectors on `M`.
-* `Subgroup.AlmostConjugate.finrank_eigenspace_eq_of_intertwine`: **Sunada's theorem** for
-  operators on smooth functions intertwined by pullback.
-
-## References
-
-* T. Sunada, *Riemannian coverings and isospectral manifolds*, Ann. of Math. **121** (1985),
-  169–186.
-* P. Bérard, *Transplantation et isospectralité I*, Séminaire de Théorie spectrale et
-  géométrie **9** (1990–1991), §II, Theorem 17, p. 159.
-* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Graduate Texts in
-  Mathematics 218, Springer, 2013, Chapter 21 (quotients by discrete group actions).
+* `TauCeti.smoothFunctionRep_comp_subtype`: its restriction to a subgroup `K` is the
+  representation of `K`.
 -/
 
 public section
 
 noncomputable section
 
-open Module
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -83,8 +44,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω}
   {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I n G M]
-
-/-! ### The representation on smooth functions -/
 
 variable (𝕜 I M F n G) in
 /-- The representation of `G` on the `C^n` maps `f : M → F` by translation of the argument,
@@ -121,126 +80,11 @@ theorem mem_invariants_smoothFunctionRep_iff {f : C^n⟮I, M; 𝓘(𝕜, F), F�
   · simpa using DFunLike.congr_fun (h g⁻¹) x
   · simpa using h g⁻¹ x
 
-/-- Restricting `TauCeti.smoothFunctionRep` to a subgroup `K` has the same invariant vectors as
-the representation of `K` acting on `M` by restriction. -/
-theorem invariants_smoothFunctionRep_comp_subtype (K : Subgroup G) :
-    Representation.invariants ((smoothFunctionRep 𝕜 I M F n G).comp K.subtype) =
-      (smoothFunctionRep 𝕜 I M F n K).invariants := by
-  ext f
-  rw [mem_invariants_smoothFunctionRep_iff, Representation.mem_invariants]
-  refine ⟨fun h k x ↦ ?_, fun h k ↦ ContMDiffMap.ext fun x ↦ ?_⟩
-  · simpa [Subgroup.smul_def] using DFunLike.congr_fun (h k⁻¹) x
-  · simpa [Subgroup.smul_def] using h k⁻¹ x
-
-/-! ### Functions on the orbit space -/
-
-variable [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M]
-  [T2Space M] [LocallyCompactSpace M] [IsManifold I n M]
-
-variable (𝕜 I M F n G) in
-/-- **Smooth functions on an orbit space are invariant smooth functions.** For a free, properly
-discontinuous action by `C^n` maps, pullback `f ↦ f ∘ π` along the orbit projection
-`π : M → M ⧸ G` is a linear equivalence from the `C^n` maps `M ⧸ G → F` onto the `G`-invariant
-`C^n` maps `M → F`. -/
-def smoothQuotientEquivInvariants :
-    C^n⟮I, MulAction.orbitRel.Quotient G M; 𝓘(𝕜, F), F⟯ ≃ₗ[𝕜]
-      (smoothFunctionRep 𝕜 I M F n G).invariants where
-  toFun u := ⟨u.comp (smoothQuotientMk I M n G),
-    mem_invariants_smoothFunctionRep_iff.2 fun _ _ ↦ by simp⟩
-  invFun f :=
-    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯).orbitRelQuotientLift (mem_invariants_smoothFunctionRep_iff.1 f.2)
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv u := ((u.comp (smoothQuotientMk I M n G)).eq_orbitRelQuotientLift_iff _).2 rfl |>.symm
-  right_inv f := Subtype.ext (ContMDiffMap.orbitRelQuotientLift_comp_smoothQuotientMk _ _)
-
+/-- Restricting `TauCeti.smoothFunctionRep` to a subgroup `K` gives the representation of `K`
+acting on `M` by restriction. -/
 @[simp]
-theorem coe_smoothQuotientEquivInvariants_apply
-    (u : C^n⟮I, MulAction.orbitRel.Quotient G M; 𝓘(𝕜, F), F⟯) :
-    (smoothQuotientEquivInvariants 𝕜 I M F n G u : C^n⟮I, M; 𝓘(𝕜, F), F⟯) =
-      u.comp (smoothQuotientMk I M n G) :=
-  (rfl)
-
-@[simp]
-theorem smoothQuotientEquivInvariants_symm_apply
-    (f : (smoothFunctionRep 𝕜 I M F n G).invariants) :
-    (smoothQuotientEquivInvariants 𝕜 I M F n G).symm f =
-      (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯).orbitRelQuotientLift
-        (mem_invariants_smoothFunctionRep_iff.1 f.2) :=
-  (rfl)
-
-/-- Pullback along the orbit projection, as a linear map into the `C^n` maps on `M`, has range the
-`G`-invariant maps. -/
-private theorem range_subtype_comp_smoothQuotientEquivInvariants :
-    LinearMap.range ((smoothFunctionRep 𝕜 I M F n G).invariants.subtype ∘ₗ
-        (smoothQuotientEquivInvariants 𝕜 I M F n G).toLinearMap) =
-      (smoothFunctionRep 𝕜 I M F n G).invariants := by
-  rw [LinearMap.range_comp, LinearEquiv.range, Submodule.map_top, Submodule.range_subtype]
-
-/-- **Eigenfunctions on an orbit space are invariant eigenfunctions.** If an operator `T` on the
-`C^n` maps `M → F` and an operator `S` on the `C^n` maps `M ⧸ G → F` are intertwined by pullback
-along the orbit projection, `T (u ∘ π) = S u ∘ π`, then pullback is a linear equivalence from each
-eigenspace of `S` onto the `G`-invariant vectors of the eigenspace of `T` for the same
-eigenvalue. -/
-def eigenspaceEquivInvariantsInfEigenspace {T : End 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯}
-    {S : End 𝕜 C^n⟮I, MulAction.orbitRel.Quotient G M; 𝓘(𝕜, F), F⟯}
-    (hTS : ∀ u, T (u.comp (smoothQuotientMk I M n G)) = (S u).comp (smoothQuotientMk I M n G))
-    (μ : 𝕜) :
-    S.eigenspace μ ≃ₗ[𝕜] ↥((smoothFunctionRep 𝕜 I M F n G).invariants ⊓ T.eigenspace μ) :=
-  let π := (smoothFunctionRep 𝕜 I M F n G).invariants.subtype ∘ₗ
-    (smoothQuotientEquivInvariants 𝕜 I M F n G).toLinearMap
-  have hπ : Function.Injective π :=
-    Subtype.val_injective.comp (smoothQuotientEquivInvariants 𝕜 I M F n G).injective
-  (S.eigenspace μ).equivMapOfInjective π hπ ≪≫ₗ LinearEquiv.ofEq _ _ (by
-    rw [map_eigenspace_eq_of_intertwine hπ (fun u ↦ (hTS u).symm) μ,
-      range_subtype_comp_smoothQuotientEquivInvariants])
-
-@[simp]
-theorem coe_eigenspaceEquivInvariantsInfEigenspace_apply {T : End 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯}
-    {S : End 𝕜 C^n⟮I, MulAction.orbitRel.Quotient G M; 𝓘(𝕜, F), F⟯}
-    (hTS : ∀ u, T (u.comp (smoothQuotientMk I M n G)) = (S u).comp (smoothQuotientMk I M n G))
-    (μ : 𝕜) (u : S.eigenspace μ) :
-    (eigenspaceEquivInvariantsInfEigenspace hTS μ u : C^n⟮I, M; 𝓘(𝕜, F), F⟯) =
-      (u : C^n⟮I, MulAction.orbitRel.Quotient G M; 𝓘(𝕜, F), F⟯).comp (smoothQuotientMk I M n G) :=
-  (rfl)
+theorem smoothFunctionRep_comp_subtype (K : Subgroup G) :
+    (smoothFunctionRep 𝕜 I M F n G).comp K.subtype = smoothFunctionRep 𝕜 I M F n K :=
+  MonoidHom.ext fun k ↦ LinearMap.ext fun f ↦ ContMDiffMap.ext fun x ↦ by simp [Subgroup.smul_def]
 
 end TauCeti
-
-/-! ### Sunada's theorem -/
-
-namespace Subgroup.AlmostConjugate
-
-open TauCeti
-
-universe u
-
-variable {𝕜 : Type u} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type u} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω}
-  {Q : Type u} [Group Q] [Finite Q] [MulAction Q M] [ContMDiffConstSMul I n Q M]
-  [ContinuousConstSMul Q M] [IsCancelSMul Q M] [T2Space M] [LocallyCompactSpace M]
-  [IsManifold I n M] {K₁ K₂ : Subgroup Q}
-
-/-- **Sunada's theorem for smooth functions.** Let a finite group `Q` act freely on `M` by `C^n`
-maps, and let `K₁`, `K₂` be almost-conjugate subgroups of `Q`. Let `T` be an operator on the
-`C^n` maps `M → F` commuting with the action of `Q`, and `S₁`, `S₂` operators on the `C^n` maps
-on `M ⧸ K₁` and `M ⧸ K₂` intertwined with `T` by pullback along the orbit projections. Then for
-every `μ`, the `μ`-eigenspaces of `S₁` and `S₂` have the same `finrank`. This is their common
-dimension when they are finite-dimensional, as for Laplacian eigenspaces on compact quotients;
-since `finrank` is `0` on an infinite-dimensional space, it does not compare infinite-dimensional
-eigenspaces. -/
-theorem finrank_eigenspace_eq_of_intertwine (h : K₁.AlmostConjugate K₂)
-    {T : End 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯} (hT : ∀ q, Commute T (smoothFunctionRep 𝕜 I M F n Q q))
-    {S₁ : End 𝕜 C^n⟮I, MulAction.orbitRel.Quotient K₁ M; 𝓘(𝕜, F), F⟯}
-    {S₂ : End 𝕜 C^n⟮I, MulAction.orbitRel.Quotient K₂ M; 𝓘(𝕜, F), F⟯}
-    (hS₁ : ∀ u, T (u.comp (smoothQuotientMk I M n K₁)) = (S₁ u).comp (smoothQuotientMk I M n K₁))
-    (hS₂ : ∀ u, T (u.comp (smoothQuotientMk I M n K₂)) = (S₂ u).comp (smoothQuotientMk I M n K₂))
-    (μ : 𝕜) : finrank 𝕜 (S₁.eigenspace μ) = finrank 𝕜 (S₂.eigenspace μ) := by
-  rw [(eigenspaceEquivInvariantsInfEigenspace hS₁ μ).finrank_eq,
-    (eigenspaceEquivInvariantsInfEigenspace hS₂ μ).finrank_eq,
-    ← invariants_smoothFunctionRep_comp_subtype, ← invariants_smoothFunctionRep_comp_subtype]
-  exact h.finrank_invariants_inf_eigenspace_eq _ hT μ
-
-end Subgroup.AlmostConjugate
