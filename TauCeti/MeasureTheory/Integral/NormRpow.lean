@@ -40,6 +40,8 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.integrableOn_norm_rpow_ball`: integrability on a centred ball, and
   `TauCeti.integrableOn_norm_rpow_ball_iff`: its converse on a nontrivial space.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
+* `MeasureTheory.Measure.not_integrable_norm_sub_rpow`: a power of the distance to a point is
+  never integrable over the whole space, for an additive Haar measure on a nontrivial space.
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
@@ -374,3 +376,26 @@ theorem memLp_div_pow_compl_closedBall_iff {a : ℂ} (ha : a ≠ 0) {R : ℝ} (h
       (s := -((m : ℝ)*p.toReal)) hR)
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open Metric Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- A power of the distance to a point is not integrable for an additive Haar measure on a
+nontrivial finite-dimensional space, for every real exponent: integrability near the point needs
+`-finrank < p` and integrability away from it needs `p < -finrank`. -/
+theorem not_integrable_norm_sub_rpow [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    (p : ℝ) (b : E) : ¬ Integrable (fun x ↦ ‖x - b‖ ^ p) μ := fun hint ↦ by
+  have h0 : Integrable (fun x : E ↦ ‖x‖ ^ p) μ :=
+    ((measurePreserving_sub_right μ b).integrable_comp_emb
+      (MeasurableEquiv.subRight b).measurableEmbedding).1 hint
+  have h1 := (TauCeti.integrableOn_norm_rpow_ball_iff (E := E) (mu := μ) (s := p)
+    (R := 1) one_pos).1 h0.integrableOn
+  have h2 := (TauCeti.integrableOn_norm_rpow_compl_closedBall_iff (E := E) (mu := μ) (s := p)
+    (R := 1) one_pos).1 h0.integrableOn
+  linarith
+
+end MeasureTheory.Measure
