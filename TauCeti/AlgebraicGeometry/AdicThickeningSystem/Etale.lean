@@ -55,10 +55,9 @@ theorem hom_ext_of_formallyUnramified (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
 adic thickening system. The resulting morphism commutes with the structure maps to the base
 and restricts to the prescribed morphism on level zero. -/
 theorem existsUnique_hom_of_etale (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
-    (hq : ∀ n, Etale (q.app n)) (a₀ : 𝔜.X 0 ⟶ Z.X 0)
+    [∀ n, Etale (q.app n)] (a₀ : 𝔜.X 0 ⟶ Z.X 0)
     (ha₀ : a₀ ≫ q.app 0 = p.app 0) :
     ∃! a : 𝔜 ⟶ Z, a ≫ q = p ∧ a.app 0 = a₀ := by
-  have : ∀ n, Etale (q.app n) := hq
   have lifts (n : ℕ) : ∃ a : 𝔜.X n ⟶ Z.X n,
       𝔜.levelMap n ≫ a = a₀ ≫ Z.levelMap n ∧ a ≫ q.app n = p.app n := by
     have sq : CommSq (a₀ ≫ Z.levelMap n) (𝔜.levelMap n) (q.app n) (p.app n) :=
@@ -80,13 +79,11 @@ theorem existsUnique_hom_of_etale (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
 /-- An isomorphism on the initial level between two levelwise étale systems over the same base
 extends uniquely to an isomorphism of systems over that base. -/
 theorem existsUnique_iso_of_etale (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
-    (hp : ∀ n, Etale (p.app n)) (hq : ∀ n, Etale (q.app n))
+    [∀ n, Etale (p.app n)] [∀ n, Etale (q.app n)]
     (e₀ : 𝔜.X 0 ≅ Z.X 0) (he₀ : e₀.hom ≫ q.app 0 = p.app 0) :
     ∃! e : 𝔜 ≅ Z, e.hom ≫ q = p ∧ e.hom.app 0 = e₀.hom := by
-  have : ∀ n, Etale (p.app n) := hp
-  have : ∀ n, Etale (q.app n) := hq
-  obtain ⟨a, ha, -⟩ := existsUnique_hom_of_etale p q hq e₀.hom he₀
-  obtain ⟨b, hb, -⟩ := existsUnique_hom_of_etale q p hp e₀.inv
+  obtain ⟨a, ha, -⟩ := existsUnique_hom_of_etale p q e₀.hom he₀
+  obtain ⟨b, hb, -⟩ := existsUnique_hom_of_etale q p e₀.inv
     (by rw [← he₀, Iso.inv_hom_id_assoc])
   have hab : a ≫ b = 𝟙 𝔜 := by
     apply hom_ext_of_formallyUnramified p p (by simp [ha.1, hb.1]) (by simp)
@@ -96,5 +93,73 @@ theorem existsUnique_iso_of_etale (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
     simp [ha.2, hb.2]
   refine ⟨⟨a, b, hab, hba⟩, ha, fun e he ↦ ?_⟩
   exact Iso.ext (hom_ext_of_formallyUnramified p q he.1 ha.1 (he.2.trans ha.2.symm))
+
+/-- The unique lift of an initial morphism into a levelwise étale target over the base. -/
+noncomputable def liftOfEtale (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
+    [∀ n, Etale (q.app n)] (a₀ : 𝔜.X 0 ⟶ Z.X 0)
+    (ha₀ : a₀ ≫ q.app 0 = p.app 0) : 𝔜 ⟶ Z :=
+  (existsUnique_hom_of_etale p q a₀ ha₀).exists.choose
+
+@[reassoc (attr := simp)]
+theorem liftOfEtale_comp (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
+    [∀ n, Etale (q.app n)] (a₀ : 𝔜.X 0 ⟶ Z.X 0)
+    (ha₀ : a₀ ≫ q.app 0 = p.app 0) : liftOfEtale p q a₀ ha₀ ≫ q = p :=
+  (existsUnique_hom_of_etale p q a₀ ha₀).exists.choose_spec.1
+
+@[simp]
+theorem liftOfEtale_app_zero (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
+    [∀ n, Etale (q.app n)] (a₀ : 𝔜.X 0 ⟶ Z.X 0)
+    (ha₀ : a₀ ≫ q.app 0 = p.app 0) : (liftOfEtale p q a₀ ha₀).app 0 = a₀ :=
+  (existsUnique_hom_of_etale p q a₀ ha₀).exists.choose_spec.2
+
+/-- Any morphism over the base with the prescribed initial component is the étale lift. -/
+theorem eq_liftOfEtale (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
+    [∀ n, Etale (q.app n)] (a₀ : 𝔜.X 0 ⟶ Z.X 0)
+    (ha₀ : a₀ ≫ q.app 0 = p.app 0) {a : 𝔜 ⟶ Z}
+    (ha : a ≫ q = p) (h₀ : a.app 0 = a₀) : a = liftOfEtale p q a₀ ha₀ :=
+  hom_ext_of_formallyUnramified p q ha (liftOfEtale_comp p q a₀ ha₀)
+    (h₀.trans (liftOfEtale_app_zero p q a₀ ha₀).symm)
+
+/-- The unique lift of an initial isomorphism between levelwise étale systems over the base. -/
+noncomputable def isoOfEtale (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
+    [∀ n, Etale (p.app n)] [∀ n, Etale (q.app n)]
+    (e₀ : 𝔜.X 0 ≅ Z.X 0) (he₀ : e₀.hom ≫ q.app 0 = p.app 0) : 𝔜 ≅ Z :=
+  (existsUnique_iso_of_etale p q e₀ he₀).exists.choose
+
+@[simp]
+theorem isoOfEtale_hom_app_zero (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
+    [∀ n, Etale (p.app n)] [∀ n, Etale (q.app n)]
+    (e₀ : 𝔜.X 0 ≅ Z.X 0) (he₀ : e₀.hom ≫ q.app 0 = p.app 0) :
+    (isoOfEtale p q e₀ he₀).hom.app 0 = e₀.hom :=
+  (existsUnique_iso_of_etale p q e₀ he₀).exists.choose_spec.2
+
+@[reassoc (attr := simp)]
+theorem isoOfEtale_hom_comp (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
+    [∀ n, Etale (p.app n)] [∀ n, Etale (q.app n)]
+    (e₀ : 𝔜.X 0 ≅ Z.X 0) (he₀ : e₀.hom ≫ q.app 0 = p.app 0) :
+    (isoOfEtale p q e₀ he₀).hom ≫ q = p :=
+  (existsUnique_iso_of_etale p q e₀ he₀).exists.choose_spec.1
+
+@[simp]
+theorem isoOfEtale_inv_app_zero (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
+    [∀ n, Etale (p.app n)] [∀ n, Etale (q.app n)]
+    (e₀ : 𝔜.X 0 ≅ Z.X 0) (he₀ : e₀.hom ≫ q.app 0 = p.app 0) :
+    (isoOfEtale p q e₀ he₀).inv.app 0 = e₀.inv := by
+  apply (cancel_mono e₀.hom).mp
+  calc
+    _ = (isoOfEtale p q e₀ he₀).inv.app 0 ≫ (isoOfEtale p q e₀ he₀).hom.app 0 := by
+      rw [isoOfEtale_hom_app_zero]
+    _ = 𝟙 _ := by rw [← comp_app, Iso.inv_hom_id, id_app]
+    _ = e₀.inv ≫ e₀.hom := e₀.inv_hom_id.symm
+
+@[reassoc (attr := simp)]
+theorem isoOfEtale_inv_comp (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
+    [∀ n, Etale (p.app n)] [∀ n, Etale (q.app n)]
+    (e₀ : 𝔜.X 0 ≅ Z.X 0) (he₀ : e₀.hom ≫ q.app 0 = p.app 0) :
+    (isoOfEtale p q e₀ he₀).inv ≫ p = q := by
+  calc
+    _ = (isoOfEtale p q e₀ he₀).inv ≫ ((isoOfEtale p q e₀ he₀).hom ≫ q) := by
+      rw [isoOfEtale_hom_comp]
+    _ = q := Iso.inv_hom_id_assoc _ _
 
 end TauCeti.AlgebraicGeometry.AdicThickeningSystem
