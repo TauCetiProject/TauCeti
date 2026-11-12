@@ -125,10 +125,9 @@ theorem intrinsicMultiplicity_congr {W : Type w'} [AddCommGroup W] [Module k W]
     {σ : Representation k G W} (e : ρ.Equiv σ) :
     ρ.intrinsicMultiplicity = σ.intrinsicMultiplicity := by
   funext i
-  exact (LinearEquiv.ofLinearMap (IntertwiningMap.llcomp _ ρ σ e.toIntertwiningMap)
-    (IntertwiningMap.llcomp _ σ ρ e.symm.toIntertwiningMap)
-    (by ext f v; simp [← IntertwiningMap.comp_def])
-    (by ext f v; simp [← IntertwiningMap.comp_def])).finrank_eq
+  exact (IntertwiningMap.equivLinearMapAsModule _ ρ ≪≫ₗ
+    LinearEquiv.homCongrRight k (TauCeti.Representation.asModuleLinearEquivOfEquiv e) ≪≫ₗ
+    (IntertwiningMap.equivLinearMapAsModule _ σ).symm).finrank_eq
 
 /-- **The intrinsic multiplicities are additive on binary products** (`Representation.prod`) of
 finite-dimensional representations. -/
@@ -141,12 +140,8 @@ theorem intrinsicMultiplicity_prod [FiniteDimensional k V] {W : Type w'} [AddCom
   rw [intrinsicMultiplicity_def, intrinsicMultiplicity_def, intrinsicMultiplicity_def,
     ← finrank_prod]
   -- `Hom(Zᵢ, ρ × σ)` is `Hom(Zᵢ, ρ) × Hom(Zᵢ, σ)`, computed on the `k[G]`-modules.
-  let e := prodAsModuleEquiv ρ σ
   exact (IntertwiningMap.equivLinearMapAsModule _ _ ≪≫ₗ
-    LinearEquiv.ofLinearMap (e.toLinearMap.compRight k) (e.symm.toLinearMap.compRight k)
-      (LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp)
-      (LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp) ≪≫ₗ
-    (LinearMap.prodEquiv k).symm ≪≫ₗ
+    LinearEquiv.homCongrRight k (prodAsModuleEquiv ρ σ) ≪≫ₗ (LinearMap.prodEquiv k).symm ≪≫ₗ
     (IntertwiningMap.equivLinearMapAsModule _ _).symm.prodCongr
       (IntertwiningMap.equivLinearMapAsModule _ _).symm).finrank_eq
 
