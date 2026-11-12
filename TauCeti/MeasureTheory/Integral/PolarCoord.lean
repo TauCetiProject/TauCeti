@@ -61,18 +61,6 @@ theorem add_polarCoord_symm_mem_annulus (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
   simpa only [mem_Icc, mem_ofPred_eq, add_sub_cancel_left, Complex.norm_polarCoord_symm,
     abs_of_nonneg (ha.trans hp.1)] using hp
 
-/-- A point of a circle of radius `r ∈ [a, b]`, `a ≥ 0`, about `z₀` at an angle `θ ∈ [0, π]` lies in
-the closed upper half-annulus of radii `a` and `b` about `z₀`. -/
-theorem circleMap_mem_halfAnnulus (z₀ : ℂ) {a b r θ : ℝ} (ha : 0 ≤ a) (hr : r ∈ Icc a b)
-    (hθ : θ ∈ Icc 0 π) :
-    circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ 0 ≤ (z - z₀).im} := by
-  have hr0 : 0 ≤ r := ha.trans hr.1
-  refine ⟨?_, ?_, ?_⟩
-  · simpa [abs_of_nonneg hr0] using hr.1
-  · simpa [abs_of_nonneg hr0] using hr.2
-  · simpa [circleMap, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin] using
-      mul_nonneg hr0 (Real.sin_nonneg_of_nonneg_of_le_pi hθ.1 hθ.2)
-
 /-- A closed annular sector, the points `z` with `a ≤ ‖z - z₀‖ ≤ b` whose argument about `z₀`
 lies in `[c, d]`, is measurable. -/
 theorem measurableSet_annularSector (z₀ : ℂ) (a b c d : ℝ) :

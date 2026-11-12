@@ -382,10 +382,10 @@ theorem integral_fderiv_apply_halfAnnulus [FiniteDimensional ℝ V]
   have hπ : (0 : ℝ) ≤ π := Real.pi_pos.le
   have hright : ∫ r in a..b, B (u (circleMap z₀ r 0))
       (fderiv ℝ u (circleMap z₀ r 0) (exp ((0 : ℝ) * I))) = 0 :=
-    hedge 0 ⟨le_rfl, hπ⟩ fun s hs ↦ by simpa [circleMap_zero_angle] using (huL s hs).1
+    hedge 0 ⟨le_rfl, hπ⟩ fun s hs ↦ by simpa using (huL s hs).1
   have hleft : ∫ r in a..b, B (u (circleMap z₀ r π))
       (fderiv ℝ u (circleMap z₀ r π) (exp (π * I))) = 0 :=
-    hedge π ⟨hπ, le_rfl⟩ fun s hs ↦ by simpa [circleMap_pi] using (huL s hs).2
+    hedge π ⟨hπ, le_rfl⟩ fun s hs ↦ by simpa using (huL s hs).2
   have hgreen := B.integral_bilinear_fderiv_sub_annularSector z₀ ha hab
     (by linarith [Real.pi_pos]) hπ le_rfl hu'
   have hset : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc 0 π} =
