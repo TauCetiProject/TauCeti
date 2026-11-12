@@ -28,6 +28,10 @@ the module `k` and `u` the inverse left unitor, this is the identity
 `⟨ψ, x ⌢ φ⟩ = ⟨φ ⌣ ψ, x⟩` of Hatcher, Section 3.3, which makes the cap product the adjoint of
 the cup product under the Kronecker pairing.
 
+Pairing with the unit class of degree zero, the augmentation of a cap product into degree zero
+is the Kronecker pairing: `ε (x ⌢ α) = ⟨α, x⟩` for `x` and `α` of the same degree
+(`TopCat.singularCap_comp_singularHomology₀ε`).
+
 The key chain-level input is `SSet.chainComplexPairing_leftUnitor_hom_f`, from
 `TauCeti.AlgebraicTopology.SimplicialSet.Homology.Pairing`: the action of the tensor unit on
 singular chains is the left unitor.
@@ -66,5 +70,20 @@ theorem singularCap_comp_singularKronecker (X : TopCat.{w}) (k : Type*) [CommRin
   refine TauCeti.ChainComplex.cap_comp_kronecker _ _ _ p q n h φ ψ ψ ?_
   rw [SSet.chainComplexPairing_leftUnitor_hom_f]
   exact (leftUnitor_naturality _).symm
+
+/-- **The augmentation of a cap product into degree zero**, `ε (x ⌢ α) = ⟨α, x⟩`: capping a class
+of degree `n` with a class `α` of the same degree, along the unitors of the tensor unit, and then
+applying the augmentation of zeroth homology is the Kronecker pairing with `α`. -/
+theorem singularCap_comp_singularHomology₀ε (X : TopCat.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] (n : ℕ) (h : n + 0 = n)
+    (α : X.singularCohomology (𝟙_ C) k (𝟙_ C) n) :
+    X.singularCap k (λ_ (𝟙_ C)).inv (λ_ (𝟙_ C)).hom n 0 n h α ≫
+        X.singularHomology₀ε (𝟙_ C) =
+      X.singularKronecker k n α := by
+  have hε := X.singularKronecker_constSingularCocycle k (𝟙 (𝟙_ C))
+  rw [Category.comp_id] at hε
+  rw [← hε, singularCap_comp_singularKronecker,
+    singularCup_constSingularCocycle_right X k (η := 𝟙 (𝟙_ C)) (by simp [unitors_inv_equal])
+      (by simp [unitors_equal])]
 
 end TopCat

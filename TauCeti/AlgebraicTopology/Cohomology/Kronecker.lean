@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
+public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 
 /-!
 # The Kronecker map of singular cohomology
@@ -37,6 +38,8 @@ the case where its `Ext¹`-term vanishes.
   `k`-linear equivalence.
 * `TopCat.singularKronecker_bijective_zero`: in degree zero the Kronecker map is bijective for
   every coefficient object.
+* `TopCat.singularKronecker_constSingularCocycle`: the class of the constant `0`-cocycle with
+  value `e : R ⟶ M` evaluates on zeroth homology as the augmentation followed by `e`.
 * `TopPair.singularKronecker`: the Kronecker map `Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` of
   relative singular cohomology, the Kronecker map of the relative singular chain complex, with
   `TopPair.singularKronecker_homologyπ` and `TopPair.singularKronecker_naturality`;
@@ -124,6 +127,29 @@ lemma singularKroneckerEquiv_apply (X : TopCat.{w}) (k : Type*) [Ring k] [Linear
     [Injective M] (n : ℕ) (α : X.singularCohomology R k M n) :
     X.singularKroneckerEquiv k n α = X.singularKronecker k n α :=
   TauCeti.ChainComplex.kroneckerEquiv_apply n α
+
+/-- **The Kronecker pairing of a constant `0`-cocycle**: evaluating the class of the constant
+`0`-cocycle with value `e : R ⟶ M` on zeroth homology is the augmentation followed by `e`. For `e`
+the identity, the unit class of `H⁰(X; R)` pairs with zeroth homology as the augmentation. -/
+lemma singularKronecker_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    (e : R ⟶ M) :
+    X.singularKronecker k 0
+        ((X.singularCochainComplex R k M).homologyπ 0 (X.constSingularCocycle k e)) =
+      X.singularHomology₀ε R ≫ e := by
+  apply (cancel_epi (((toSSet.obj X).chainComplex R).homologyπ 0)).1
+  apply (cancel_epi (((toSSet.obj X).chainComplex R).cycles₀Iso.inv)).1
+  refine SSet.chainComplex_hom_ext fun x ↦ ?_
+  -- A vertex, viewed as a cycle, is evaluated by the constant cochain to `e`, and its class is
+  -- sent by the augmentation to the identity.
+  have hx : (toSSet.obj X).ιChainComplex x ≫ ((toSSet.obj X).chainComplex R).cycles₀Iso.inv =
+      ((toSSet.obj X).chainComplex R).liftCycles ((toSSet.obj X).ιChainComplex x) 0
+        (by simp) (by simp) := by
+    apply (cancel_mono (((toSSet.obj X).chainComplex R).iCycles 0)).1
+    simp
+  simp only [reassoc_of% hx, singularHomology₀ε, singularKronecker_homologyπ,
+    HomologicalComplex.liftCycles_i_assoc, iCycles_constSingularCocycle,
+    SSet.ιChainComplex_constCochain]
+  exact (SSet.liftCycles_ιChainComplex_homologyπ_homology₀ε_assoc (X := toSSet.obj X) R x e).symm
 
 end TopCat
 

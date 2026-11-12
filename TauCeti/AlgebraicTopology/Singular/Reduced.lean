@@ -51,7 +51,9 @@ generated when the reduced homology in degree `q` is and `M` is, and that for no
 rank is that of the reduced homology, plus the rank of `M` in degree zero
 (`ModuleCat.finrank_singularHomology_eq_finrank_reducedSingularHomology_add`). The zeroth
 homology `H₀(X; M)` itself is a direct sum of copies of `M`, so it is free whenever `M` is
-(`ModuleCat.free_singularHomology_zero`), with no assumption on `X`.
+(`ModuleCat.free_singularHomology_zero`), with no assumption on `X`. For path-connected `X` the
+augmentation identifies `H₀(X; M)` with `M`, so both have the same rank
+(`ModuleCat.finrank_singularHomology_zero_of_pathConnectedSpace`).
 
 This follows Hatcher, *Algebraic Topology*, Section 2.1, using Mathlib's singular homology and
 augmentation and `ShortComplex.Splitting.isoBinaryBiproduct`.
@@ -513,6 +515,13 @@ theorem finite_singularHomology_of_finite_reducedSingularHomology (q : ℕ)
       infer_instance
     · exact .equiv (singularHomology₀LinearEquiv M (Classical.arbitrary X)).symm
   | succ q => exact .equiv ((reducedSingularHomologySuccIso M q).app X).toLinearEquiv
+
+/-- The zeroth singular homology of a path-connected space with coefficients in a module has the
+rank of the coefficient module, the augmentation being an isomorphism. -/
+theorem finrank_singularHomology_zero_of_pathConnectedSpace [PathConnectedSpace X] :
+    Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X) =
+      Module.finrank k M :=
+  (asIso (X.singularHomology₀ε M)).toLinearEquiv.finrank_eq
 
 variable [Nonempty X]
 
