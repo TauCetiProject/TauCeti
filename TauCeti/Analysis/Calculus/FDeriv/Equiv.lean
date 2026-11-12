@@ -47,7 +47,9 @@ locus, with no differentiability premise. This follows the totalized derivative 
 A point where a map has an antilipschitz derivative, such as an invertible derivative between
 finite-dimensional spaces, is isolated in its fibre (`HasFDerivAt.eventually_ne`). Hence a compact
 fibre consisting of such points is finite (`IsCompact.finite_of_hasFDerivAt`); this is the
-finiteness of the preimage of a regular value under a proper map.
+finiteness of the preimage of a regular value under a proper map. The same holds for a compact
+part `s ∩ f⁻¹(y)` of a fibre (`IsCompact.finite_inter_preimage_of_hasFDerivAt`), as for the
+fibre of a map defined on an open subset `s`.
 -/
 
 public section
@@ -146,6 +148,18 @@ theorem ContinuousLinearEquiv.image_vanishingFDeriv_comp {𝕜 : Type*}
     have := congrArg (fun L : E →L[𝕜] G ↦ L (e.symm v)) hzero
     simpa using this
 
+/-- **A compact part of a fibre of regular points is finite.** If every point of `s ∩ f⁻¹(y)` is a
+point where `f` has an antilipschitz derivative, for instance an invertible derivative between
+spaces of the same finite dimension, then each of these points is isolated in the fibre, so
+`s ∩ f⁻¹(y)` is finite as soon as it is compact. -/
+theorem IsCompact.finite_inter_preimage_of_hasFDerivAt {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : E → F} {f' : E → E →L[𝕜] F} {s : Set E} {y : F}
+    (hK : IsCompact (s ∩ f ⁻¹' {y})) (hf : ∀ x ∈ s ∩ f ⁻¹' {y}, HasFDerivAt f (f' x) x)
+    (hf' : ∀ x ∈ s ∩ f ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (s ∩ f ⁻¹' {y}).Finite :=
+  hK.finite (isDiscrete_iff_nhdsNE.2 fun x hx ↦ inf_principal_eq_bot.2
+    (((hf x hx).eventually_ne (hf' x hx)).mono fun _ hz hzK ↦ hz (hzK.2.trans hx.2.symm)))
+
 /-- **A compact fibre of regular points is finite.** If every point of the fibre of `f` over `y`
 is a point where `f` has an antilipschitz derivative, for instance an invertible derivative between
 spaces of the same finite dimension, then each of these points is isolated in the fibre, so a
@@ -154,6 +168,6 @@ theorem IsCompact.finite_of_hasFDerivAt {𝕜 : Type*} [NontriviallyNormedField 
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {f : E → F} {f' : E → E →L[𝕜] F} {y : F} (hK : IsCompact (f ⁻¹' {y}))
     (hf : ∀ x ∈ f ⁻¹' {y}, HasFDerivAt f (f' x) x)
-    (hf' : ∀ x ∈ f ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (f ⁻¹' {y}).Finite :=
-  hK.finite (isDiscrete_iff_nhdsNE.2 fun x hx ↦
-    inf_principal_eq_bot.2 ((hf x hx).eventually_ne (hf' x hx)))
+    (hf' : ∀ x ∈ f ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (f ⁻¹' {y}).Finite := by
+  simpa using IsCompact.finite_inter_preimage_of_hasFDerivAt (s := univ) (by simpa using hK)
+    (by simpa using hf) (by simpa using hf')
