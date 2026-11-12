@@ -57,6 +57,8 @@ constant symplectic form on a vector space is its constant linear symplectic ori
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.orientationAt_orientation`: its tangent orientation at
   `x` is the symplectic orientation of the tangent space at `x`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.orientation_eq_of_tames`: forms taming a common almost
+  complex structure have the same symplectic orientation.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isOrientationPreservingAt_orientation`: smooth maps
   between manifolds of the same dimension pulling one nondegenerate form back to another preserve
   the symplectic orientations.
@@ -163,6 +165,16 @@ theorem orientationAt_orientation (x : M) :
     (hσ.orientation hk).orientationAt x = (hσ.symplecticFormAt x).orientation hk := by
   rw [orientation, Manifold.Orientation.orientationAt_ofVectorBundleOrientation,
     VectorBundleOrientation.coe_mk]
+
+/-- **Forms taming a common almost complex structure have the same symplectic orientation.** If
+the nondegenerate two-forms `σ` and `σ'` both tame `J`, their symplectic orientations agree: both
+are the orientation in which the `J`-adapted bases `(v₁, J v₁, …, vₙ, J vₙ)` are positive. -/
+theorem orientation_eq_of_tames {σ' : SmoothTwoForm I M} (hσ' : σ'.IsNondegenerate)
+    {J : SmoothAlmostComplexStructure I M} (hJ : σ.Tames J) (hJ' : σ'.Tames J) :
+    hσ.orientation hk = hσ'.orientation hk :=
+  Manifold.Orientation.ext fun x ↦ by
+    rw [orientationAt_orientation, orientationAt_orientation]
+    exact SymplecticForm.Tames.orientation_eq ((hσ.tames_iff).1 hJ x) ((hσ'.tames_iff).1 hJ' x) hk
 
 section Transport
 
