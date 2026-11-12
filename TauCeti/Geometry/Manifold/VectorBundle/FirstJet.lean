@@ -579,9 +579,9 @@ theorem contMDiffOn_jet {n : ℕ∞ω} [IsManifold I (n + 1) M] [ContMDiffVector
   intro x₀ hx₀
   have hsx₀ := hs.contMDiffAt (hU.mem_nhds hx₀)
   have hx₀' : x₀ ∈ (extChartAt I x₀).source := mem_extChartAt_source x₀
-  refine ContMDiffAt.contMDiffWithinAt ((contMDiffAt_section x₀).2 ?_)
+  refine ContMDiffAt.contMDiffWithinAt ((contMDiffAt_section_iff x₀).2 ?_)
   -- The value coordinate.
-  have hval := (contMDiffAt_section x₀).1 hsx₀
+  have hval := (contMDiffAt_section_iff x₀).1 hsx₀
   -- The derivative coordinate: the chart derivative of the local representative.
   have hrep := contDiffWithinAt_localRep I F hsx₀ (mem_baseSet_self (H := H) F V x₀)
   have hderiv : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] F) n

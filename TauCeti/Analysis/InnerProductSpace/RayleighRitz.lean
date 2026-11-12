@@ -176,8 +176,8 @@ Kitware, Apache-2.0); the proof here uses the accepted continuous-map theorem. -
 theorem adjoint_comp_ritzResidual_eq_zero (A : E →ₗ[𝕜] E)
     (X : F →ₗᵢ[𝕜] E) : X.toLinearMap.adjoint ∘ₗ (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ
       (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)) = 0 := by
-  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  let : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  let : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   have h := ContinuousLinearMap.adjoint_comp_sylvester_compression
     A.toContinuousLinearMap (X := X.toContinuousLinearMap) X.isometry
   simpa only [ContinuousLinearMap.compression_def, ContinuousLinearMap.sylvester_apply,

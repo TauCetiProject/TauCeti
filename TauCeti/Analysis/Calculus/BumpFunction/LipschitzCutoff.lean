@@ -114,8 +114,8 @@ theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ}
     simp only [hG_def]
     rw [intervalIntegral.integral_eq_integral_of_support_subset
       (hρ_supp.trans (Ioo_subset_Ioc_self.trans (Ioc_subset_Ioc_right hs))), f.integral_normed]
-  have hGlip : LipschitzWith K G := lipschitzWith_of_nnnorm_deriv_le hGd fun s => by
-    rw [hGderiv, ← NNReal.coe_le_coe, coe_nnnorm, Real.norm_of_nonneg (f.nonneg_normed s)]
+  have hGlip : LipschitzWith K G := lipschitzWith_of_nnNorm_deriv_le hGd fun s => by
+    rw [hGderiv, ← NNReal.coe_le_coe, coe_nnNorm, Real.norm_of_nonneg (f.nonneg_normed s)]
     exact hρ_le s
   refine ⟨fun x => 1 - G ‖x - x₀‖, ?_, ?_, ?_, ?_, ?_⟩
   · refine contDiff_iff_contDiffAt.2 fun x => ?_
@@ -191,11 +191,11 @@ theorem enorm_fderiv_mul_indicator_le_indicator {F : Type*} [NormedAddCommGroup 
   swap
   · simp [hys]
   by_cases hyA : y ∈ ball x₀ R \ ball x₀ r
-  · rw [indicator_of_mem (mem_inter hys hyA), indicator_of_mem hys, Pi.one_apply, enorm_one,
+  · rw [indicator_of_mem (mem_inter hys hyA), indicator_of_mem hys, Pi.one_apply, eNorm_one,
       mul_one, ← ofReal_norm]
     exact (ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ hψK)).trans_eq
       ENNReal.ofReal_coe_nnreal
   simp [notMem_support.1 fun h => hyA (support_fderiv_subset_ball_sdiff_ball hψ01 hψ1 hψR h),
-    enorm_eq_nnnorm]
+    eNorm_eq_nnNorm]
 
 end TauCeti
