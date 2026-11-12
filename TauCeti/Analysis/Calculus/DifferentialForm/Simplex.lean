@@ -157,6 +157,7 @@ private lemma eval_face_succ {p : ℕ}
     funext fun k ↦ contLinear_simplexMapAmbient_succAbove_succ j k
   rw [h, simplexMapAmbient_succAbove_succ]
 
+omit [CompleteSpace F] in
 /-- **Stokes' theorem on the standard simplex.** For a `p`-form `ω` that is `C¹` on the standard
 simplex `Δᵖ⁺¹`, the integral of its exterior derivative over `Δᵖ⁺¹` is the alternating sum over
 `i` of the integrals over `Δᵖ` of its pullbacks along the face maps `simplexMapAmbient i.succAbove`,
@@ -169,6 +170,9 @@ theorem _root_.ContDiffOn.integral_extDerivWithin_fullSimplex {p : ℕ}
       ∑ i : Fin (p + 2), (-1 : ℝ) ^ (i : ℕ) • ∫ y in fullSimplex p,
         ω (simplexMapAmbient i.succAbove y)
           (fun k ↦ (simplexMapAmbient i.succAbove).contLinear (EuclideanSpace.single k 1)) := by
+  by_cases hF : CompleteSpace F
+  swap
+  · simp [integral_of_not_completeSpace hF]
   set Δ := fullSimplex (p + 1)
   have hzero (j : Fin (p + 1)) : IntegrableOn (fun y ↦ ω (simplexMapAmbient (Fin.succAbove 0) y)
       (j.removeNth fun i ↦ EuclideanSpace.single i 1)) (fullSimplex p) :=

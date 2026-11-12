@@ -1,7 +1,8 @@
 name: Update Dependencies
 
 # Pick a recent fully cached master commit, then keep it fixed while workers repair
-# TauCeti. downstream-reports remains external reporting, never a target selector.
+# TauCeti. Once that target is two days old, retarget the bump from its repaired head.
+# downstream-reports remains external reporting, never a target selector.
 on:
   schedule:
     - cron: "23 * * * *"
@@ -35,10 +36,10 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@658d1a42cd5917ae3604c27bb7ab194e7529d6b3
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+          tools-ref: 658d1a42cd5917ae3604c27bb7ab194e7529d6b3
           project-directory: .
       - name: Recover maintenance PRs abandoned without a build status
         env:
@@ -58,10 +59,10 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@658d1a42cd5917ae3604c27bb7ab194e7529d6b3
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+          tools-ref: 658d1a42cd5917ae3604c27bb7ab194e7529d6b3
           project-directory: .
       - name: Install checksum-verified elan
         env:
@@ -105,10 +106,10 @@ jobs:
           ref: main
           fetch-depth: 0
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@658d1a42cd5917ae3604c27bb7ab194e7529d6b3
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+          tools-ref: 658d1a42cd5917ae3604c27bb7ab194e7529d6b3
           project-directory: .
       - name: Publish the fixed-target bump
         env:

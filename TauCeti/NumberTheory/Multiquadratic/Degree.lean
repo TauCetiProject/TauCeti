@@ -20,7 +20,9 @@ square-class descent shows the new root is genuinely outside the previous stage.
 
 * `TauCeti.Multiquadratic.finrank_sqrtTower`: `[K(root₀,…,rootₙ₋₁) : K] = 2ⁿ`.
 * `TauCeti.Multiquadratic.finrank_adjoin_range`: the same over a finite index type,
-  `[K(rootᵢ : i) : K] = 2^|ι|` — the multiquadratic degree target.
+  `[K(rootᵢ : i) : K] = 2^|ι|` — the multiquadratic degree theorem.
+* `TauCeti.Multiquadratic.finite_of_forall_not_isSquare_prod`: a square-class independent family
+  of square roots in a finite extension is finite.
 * `TauCeti.Multiquadratic.finrank_adjoin_range_ne`: omitting one root from the generating family
   gives `[K(rootⱼ : j ≠ i) : K] = 2^(|ι| - 1)`.
 
@@ -114,6 +116,28 @@ theorem finrank_adjoin_range {ι : Type*} [Finite ι] {d : ι → K} {root : ι 
       simpa [toι, e.symm.injective.eq_iff, Fin.mk.injEq] using hab
   rw [hprod]
   exact hindep S' hS'ne
+
+/-- **Square-class independent radicands are finitely many.** Let `L` be a finite extension of `K`
+in which `2 ≠ 0` over `K`. A family of square roots `root i` of elements `d i` of `K` such that no
+nonempty subfamily product is a square in `K` is finite: every finite subfamily of size `n` spans a
+subfield of degree `2 ^ n`, which is bounded by `[L : K]`. -/
+theorem finite_of_forall_not_isSquare_prod {ι : Type*} {d : ι → K} {root : ι → L}
+    [FiniteDimensional K L] [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) : Finite ι := by
+  by_contra hinf
+  have := not_finite_iff_infinite.mp hinf
+  obtain ⟨S, hS⟩ := Infinite.exists_subset_card_eq ι (Module.finrank K L + 1)
+  have hindep' (T : Finset S) (hT : T.Nonempty) : ¬ IsSquare (∏ i ∈ T, d i) := by
+    simpa [Finset.prod_map] using hindep (T.map (Function.Embedding.subtype _)) (hT.map)
+  have hdeg := finrank_adjoin_range (K := K) (L := L) (d := fun i : S => d i)
+    (root := fun i : S => root i) (fun i => hroot i) hindep'
+  have hle : Module.finrank K (IntermediateField.adjoin K (Set.range fun i : S => root i)) ≤
+      Module.finrank K L :=
+    Submodule.finrank_le
+      (IntermediateField.adjoin K (Set.range fun i : S => root i)).toSubmodule
+  rw [hdeg, Nat.card_eq_fintype_card, Fintype.card_coe, hS] at hle
+  have := Nat.lt_two_pow_self (n := Module.finrank K L + 1)
+  omega
 
 /-- **Degree of the compositum of all but one of the roots.** If no nonempty subset product of the
 radicands `d i` is a square in `K`, then omitting the root indexed by `i` from the generating family

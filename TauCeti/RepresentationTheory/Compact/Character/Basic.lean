@@ -143,10 +143,8 @@ section Orthogonality
 
 variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
-  [FiniteDimensional 𝕜 V]
-  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
-  [FiniteDimensional 𝕜 W]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W]
 
 local instance instCompleteSpaceCharacterDomain : CompleteSpace V :=
   FiniteDimensional.complete 𝕜 V
@@ -166,6 +164,7 @@ theorem character_orthonormal_self [IsAlgClosed 𝕜] (hunitary : IsUnitary π)
     (hirr : Representation.IsIrreducible π.toRepresentation) :
     ⟪characterLp π hπ, characterLp π hπ⟫_𝕜 = 1 := by
   classical
+  let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   let : Representation.IsIrreducible π.toRepresentation := hirr
   have hd : (Module.finrank 𝕜 V : 𝕜) ≠ 0 :=
     Representation.IsIrreducible.natCast_finrank_ne_zero hirr
@@ -180,7 +179,6 @@ theorem character_orthonormal_self [IsAlgClosed 𝕜] (hunitary : IsUnitary π)
   rw [inner_characterLp_eq_sum π hπ π hπ e e, Finset.sum_congr rfl fun i _ ↦ hrow i,
     Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_inv_cancel₀ hd]
 
-omit [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
 /-- **Second character orthogonality.** If there is no nonzero continuous intertwiner `ρ → π`, the
 characters of `π` and `ρ` are orthogonal in `L²(G)`.
 
@@ -191,6 +189,7 @@ theorem character_orthonormal_distinct (ρ : ContRepresentation 𝕜 G W) (hρ :
     (hunitary : IsUnitary π)
     (hdistinct : ∀ f : ContIntertwiningMap ρ π, f.toContinuousLinearMap = 0) :
     ⟪characterLp π hπ, characterLp ρ hρ⟫_𝕜 = 0 := by
+  let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   rw [inner_characterLp_eq_sum π hπ ρ hρ (stdOrthonormalBasis 𝕜 V) (stdOrthonormalBasis 𝕜 W)]
   simp [schur_orthogonality_distinct ρ hρ π hπ hunitary hdistinct]
 

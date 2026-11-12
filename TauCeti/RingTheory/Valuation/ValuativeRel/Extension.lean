@@ -23,7 +23,9 @@ states the relation intrinsically, without choosing value groups, while
 
 This file supplies the canonical bridge for the valuations attached to valuative relations. It
 allows Mathlib's valuation-extension API, including its algebra maps between valuation rings and
-residue fields, to be used directly from a `ValuativeExtension` hypothesis.
+residue fields, to be used directly from a `ValuativeExtension` hypothesis: through it, Mathlib's
+instance `Valuation.HasExtension.instAlgebraInteger` provides the algebra structure on the
+valuation rings.
 
 In an algebraic field extension, the nonzero values of the base field are coinitial among the
 nonzero values of the extension. This provides the small base-field elements needed to compare
@@ -31,12 +33,13 @@ the two valuative topologies.
 
 ## Main results
 
-* `TauCeti.ValuativeExtension.trans`: compatibility of valuative relations in an algebra tower.
+* `ValuativeExtension.trans`: compatibility of valuative relations in an algebra tower.
+* `ValuativeExtension.of_tower_top`: compatibility of the bottom step of a tower whose
+  top step and composite are compatible.
 * `ValuativeExtension.valuationHasExtension`: the canonical valuation on `B` extends the
   canonical valuation on `A`.
 * `ValuativeRel.IsNontrivial.of_valuativeExtension`: a compatible extension of a nontrivial
   valuative relation is nontrivial.
-* `TauCeti.integerRingAlgebra`: the induced algebra structure on the valuation rings.
 * `TauCeti.residueFieldAlgebra`: the induced algebra structure on the residue fields.
 * `TauCeti.algebraMap_comp_algebraMap_integerRing`: the structure maps of the valuation rings and
   of the fields form a commuting square.
@@ -54,6 +57,26 @@ public section
 open ValuativeRel
 
 namespace ValuativeExtension
+
+/-- Compatibility of valuative relations composes along an algebra tower. -/
+theorem trans (A B C : Type*) [CommSemiring A] [CommSemiring B] [Semiring C]
+    [ValuativeRel A] [ValuativeRel B] [ValuativeRel C]
+    [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+    [ValuativeExtension A B] [ValuativeExtension B C] : ValuativeExtension A C where
+  vle_iff_vle := by
+    intro a b
+    simp only [IsScalarTower.algebraMap_apply A B C, ValuativeExtension.vle_iff_vle]
+
+/-- Compatibility of valuative relations descends to the bottom step of an algebra tower whose
+top step and composite are compatible. -/
+theorem of_tower_top (A B C : Type*) [CommSemiring A] [CommSemiring B]
+    [Semiring C] [ValuativeRel A] [ValuativeRel B] [ValuativeRel C]
+    [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+    [ValuativeExtension A C] [ValuativeExtension B C] : ValuativeExtension A B where
+  vle_iff_vle := by
+    intro a b
+    rw [← ValuativeExtension.vle_iff_vle (A := B) (B := C), ← IsScalarTower.algebraMap_apply,
+      ← IsScalarTower.algebraMap_apply, ValuativeExtension.vle_iff_vle]
 
 variable {A B : Type*} [CommRing A] [Ring B] [ValuativeRel A] [ValuativeRel B]
   [Algebra A B] [ValuativeExtension A B]
@@ -81,33 +104,21 @@ end ValuativeExtension
 
 namespace TauCeti
 
-/-- Compatibility of valuative relations composes along an algebra tower. -/
-theorem ValuativeExtension.trans (A B C : Type*) [CommSemiring A] [CommSemiring B] [Semiring C]
-    [ValuativeRel A] [ValuativeRel B] [ValuativeRel C]
-    [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
-    [ValuativeExtension A B] [ValuativeExtension B C] : ValuativeExtension A C where
-  vle_iff_vle := by
-    intro a b
-    simp only [IsScalarTower.algebraMap_apply A B C, ValuativeExtension.vle_iff_vle]
-
 variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
   [Algebra K L] [ValuativeExtension K L]
 
 local notation "𝒪ᵥ[" K "]" => Valuation.integer (valuation K)
 local notation "𝓀ᵥ[" K "]" => IsLocalRing.ResidueField ↥𝒪ᵥ[K]
 
-/-- The structure map of a compatible extension restricts to its rings of integers. -/
-noncomputable instance integerRingAlgebra : Algebra 𝒪ᵥ[K] 𝒪ᵥ[L] :=
-  Valuation.HasExtension.instAlgebra_valuationSubring (valuation K) (valuation L)
+/-- The local map on rings of integers induces the residue-field extension.
 
-/-- The local map on rings of integers induces the residue-field extension. -/
+This is Mathlib's `IsLocalRing.ResidueField.instAlgebra`, which would also be found directly.
+Declaring it here fixes its `IsLocalHom` witness once, in a context with no further hypotheses,
+so the residue-field algebra elaborates to the same term whatever else is in context (an
+`IsGalois K L` hypothesis, for instance, would otherwise enter the proof that the map of rings of
+integers is local). -/
 noncomputable instance residueFieldAlgebra : Algebra 𝓀ᵥ[K] 𝓀ᵥ[L] :=
   IsLocalRing.ResidueField.instAlgebra
-
-/-- Coercing the integer-ring structure map to `L` gives the field structure map. -/
-theorem coe_algebraMap_integerRing (x : 𝒪ᵥ[K]) :
-    ((algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x : 𝒪ᵥ[L]) : L) = algebraMap K L (x : K) :=
-  Valuation.HasExtension.coe_algebraMap_valuationSubring_eq (valuation K) (valuation L) x
 
 /-- The square from `𝒪ᵥ[K]` to `L` through `𝒪ᵥ[L]` and through `K` commutes. -/
 theorem algebraMap_comp_algebraMap_integerRing :
