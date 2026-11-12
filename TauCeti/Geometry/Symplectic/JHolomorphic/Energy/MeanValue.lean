@@ -57,7 +57,8 @@ derivatives of `J` vanish on `e₀`, and in the formula for `Δ ∂ₛu` every t
 
 `Δ ‖ζ‖² ≥ -A m² ‖ζ‖²`
 
-wherever `m` bounds `‖∂ₛu‖` and `‖ζ‖`, with the same `A = 4ac + 2b² + 8a²b²`. By
+wherever `m` bounds `‖∂ₛu‖` and `‖ζ‖`, with the same `A = 4ac + 2b² + 8a²b²`. Every `J` is
+invariant along `e₀ = 0`, and with `m = ‖∂ₛu‖` this specializes to `Δ ‖∂ₛu‖² ≥ -A ‖∂ₛu‖⁴`. By
 `TauCeti.mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian`, on discs of radius
 `r` with `16 A m² r² ≤ 1` this gives `π r² ‖ζ(z₀)‖² ≤ 15 ∫_{B_r(z₀)} ‖ζ‖²`, with no smallness
 condition on the integral. The typical case is the graph `z ↦ (z, u z)` of a solution `u` of an
@@ -96,7 +97,7 @@ open InnerProductSpace Laplacian Filter Topology Complex Metric MeasureTheory Re
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-variable {u : ℂ → V} {J : V → V →L[ℝ] V} {z : ℂ}
+variable {u : ℂ → V} {J : V → V →L[ℝ] V} {z : ℂ} {e₀ : V}
 
 /-- A curve that is `J'`-holomorphic at `z` for the standard complex structure of `ℂ` satisfies
 the Cauchy--Riemann equation in the form `∂ₜu = J'(u) ∂ₛu` used in this file. -/
@@ -187,159 +188,6 @@ private theorem laplacian_fderiv_one_eq (hu : ContDiffAt ℝ 3 u z) (hJ : ContDi
   rw [fderiv_fderiv_fderiv_apply hu, fderiv_fderiv_fderiv_apply hu, hsymm₃, h₁]
   simp only [map_add, hJsq]
   module
-
-/-- The Laplacian of `∂ₛu` is bounded by `‖∂ₛu‖³` and by `‖∂ₛu‖` times the second derivatives
-`∂ₛ∂ₛu` and `∂ₛ∂ₜu`, with constants from bounds on `J` and its first two derivatives. -/
-private theorem norm_laplacian_fderiv_one_le {a b c : ℝ} (hu : ContDiffAt ℝ 3 u z)
-    (hJ : ContDiffAt ℝ 2 J (u z)) (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
-    (hJsq : ∀ v, J (u z) (J (u z) v) = -v) (ha : ‖J (u z)‖ ≤ a)
-    (hb : ‖fderiv ℝ J (u z)‖ ≤ b) (hc : ‖iteratedFDeriv ℝ 2 J (u z)‖ ≤ c) :
-    ‖Δ (fun y ↦ fderiv ℝ u y 1) z‖ ≤
-      2 * a * c * ‖fderiv ℝ u z 1‖ ^ 3 +
-        2 * b * ‖fderiv ℝ u z 1‖ * ‖fderiv ℝ (fderiv ℝ u) z 1 I‖ +
-        4 * a * b * ‖fderiv ℝ u z 1‖ * ‖fderiv ℝ (fderiv ℝ u) z 1 1‖ := by
-  have hJu₁ : ∀ w, fderiv ℝ (fun y ↦ J (u y)) z w = fderiv ℝ J (u z) (fderiv ℝ u z w) := fun w ↦ by
-    rw [fderiv_fun_comp z (hJ.differentiableAt (by norm_num)) (hu.differentiableAt (by norm_num)),
-      ContinuousLinearMap.comp_apply]
-  have hJu₂ : ∀ a w, fderiv ℝ (fderiv ℝ fun y ↦ J (u y)) z a w =
-      fderiv ℝ (fderiv ℝ J) (u z) (fderiv ℝ u z a) (fderiv ℝ u z w) +
-        fderiv ℝ J (u z) (fderiv ℝ (fderiv ℝ u) z a w) :=
-    fderiv_fderiv_comp_apply hJ (hu.of_le (by norm_num))
-  rw [laplacian_fderiv_one_eq hu hJ hCR hJsq]
-  simp only [hJu₁, hJu₂]
-  rw [hCR.self_of_nhds]
-  set ξ := fderiv ℝ u z 1
-  set ξs := fderiv ℝ (fderiv ℝ u) z 1 1
-  set ξt := fderiv ℝ (fderiv ℝ u) z 1 I
-  set J₀ := J (u z)
-  set J₁ := fderiv ℝ J (u z)
-  have ha₀ : 0 ≤ a := (norm_nonneg _).trans ha
-  have hb₀ : 0 ≤ b := J₁.opNorm_nonneg.trans hb
-  have hc₀ : 0 ≤ c := (norm_nonneg _).trans hc
-  have hJ₀ : ∀ v, ‖J₀ v‖ ≤ a * ‖v‖ := fun v ↦ (J₀.le_opNorm v).trans (by gcongr)
-  have hJ₁ : ∀ x v, ‖J₁ x v‖ ≤ b * ‖x‖ * ‖v‖ := fun x v ↦ (J₁.le_opNorm₂ x v).trans (by gcongr)
-  have hJ₂ : ∀ x y v, ‖fderiv ℝ (fderiv ℝ J) (u z) x y v‖ ≤ c * ‖x‖ * ‖y‖ * ‖v‖ := by
-    rw [← norm_iteratedFDeriv_fderiv, norm_iteratedFDeriv_one] at hc
-    exact fun x y v ↦ (ContinuousLinearMap.le_opNorm _ v).trans
-      (by gcongr; exact (ContinuousLinearMap.le_opNorm₂ _ x y).trans (by gcongr))
-  -- Bound the five terms one by one.
-  have h₁ : ‖(2 : ℝ) • J₀ (J₁ ξ ξs)‖ ≤ 2 * (a * (b * ‖ξ‖ * ‖ξs‖)) := by
-    rw [norm_smul, Real.norm_two]
-    gcongr
-    exact (hJ₀ _).trans (by gcongr; exact hJ₁ _ _)
-  have h₂ : ‖J₀ ((fderiv ℝ (fderiv ℝ J) (u z) ξ ξ + J₁ ξs) ξ)‖ ≤
-      a * (c * ‖ξ‖ * ‖ξ‖ * ‖ξ‖ + b * ‖ξs‖ * ‖ξ‖) := by
-    refine (hJ₀ _).trans ?_
-    gcongr
-    rw [add_apply]
-    exact norm_add_le_of_le (hJ₂ _ _ _) (hJ₁ _ _)
-  have h₄ : ‖(fderiv ℝ (fderiv ℝ J) (u z) ξ (J₀ ξ) + J₁ ξt) ξ‖ ≤
-      c * ‖ξ‖ * (a * ‖ξ‖) * ‖ξ‖ + b * ‖ξt‖ * ‖ξ‖ := by
-    rw [add_apply]
-    refine norm_add_le_of_le ((hJ₂ _ _ _).trans ?_) (hJ₁ _ _)
-    gcongr
-    exact hJ₀ ξ
-  have h₅ : ‖J₁ (J₀ ξ) ξs‖ ≤ b * (a * ‖ξ‖) * ‖ξs‖ :=
-    (hJ₁ _ _).trans (by gcongr; exact hJ₀ ξ)
-  refine (norm_add_le_of_le (norm_add_le_of_le (norm_add_le_of_le (norm_add_le_of_le h₁ h₂)
-    (hJ₁ ξ ξt)) h₄) h₅).trans_eq ?_
-  ring
-
-/-- **The energy density of a `J`-holomorphic curve is almost subharmonic.** Let `u : ℂ → V` be
-`C³` at `z` and solve the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` near `z`, where `J` is `C²` at
-`u z` with `J(u z)² = -1`. If `a`, `b` and `c` bound the norms of `J`, of its derivative and of its
-second derivative at `u z`, then
-
-`Δ ‖∂ₛu‖² ≥ -(4ac + 2b² + 8a²b²) ‖∂ₛu‖⁴` at `z`. -/
-theorem neg_mul_norm_fderiv_one_pow_four_le_laplacian {a b c : ℝ}
-    (hu : ContDiffAt ℝ 3 u z) (hJ : ContDiffAt ℝ 2 J (u z))
-    (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
-    (hJsq : ∀ v, J (u z) (J (u z) v) = -v) (ha : ‖J (u z)‖ ≤ a)
-    (hb : ‖fderiv ℝ J (u z)‖ ≤ b) (hc : ‖iteratedFDeriv ℝ 2 J (u z)‖ ≤ c) :
-    -((4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) * ‖fderiv ℝ u z 1‖ ^ 4) ≤
-      Δ (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) z := by
-  have hDu : ContDiffAt ℝ 2 (fderiv ℝ u) z := hu.fderiv_right (m := 2) (by norm_num)
-  have hξ : ContDiffAt ℝ 2 (fun y ↦ fderiv ℝ u y 1) z := hDu.clm_apply contDiffAt_const
-  have hD : ∀ w, fderiv ℝ (fun y ↦ fderiv ℝ u y 1) z w = fderiv ℝ (fderiv ℝ u) z w 1 :=
-    fderiv_clm_apply_const_apply (hDu.differentiableAt (by norm_num)) 1
-  have hsymm : fderiv ℝ (fderiv ℝ u) z I 1 = fderiv ℝ (fderiv ℝ u) z 1 I :=
-    hu.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1
-  have hL := norm_laplacian_fderiv_one_le hu hJ hCR hJsq ha hb hc
-  have hinner := neg_le_of_abs_le
-    (abs_real_inner_le_norm (fderiv ℝ u z 1) (Δ (fun y ↦ fderiv ℝ u y 1) z))
-  rw [hξ.laplacian_norm_sq Complex.orthonormalBasisOneI]
-  simp only [Complex.coe_orthonormalBasisOneI, Fin.sum_univ_two, Fin.isValue,
-    Matrix.cons_val_zero, Matrix.cons_val_one, hD, hsymm]
-  have hX := norm_nonneg (fderiv ℝ u z 1)
-  nlinarith [mul_le_mul_of_nonneg_left hL hX,
-    sq_nonneg (‖fderiv ℝ (fderiv ℝ u) z 1 I‖ - b * ‖fderiv ℝ u z 1‖ ^ 2),
-    sq_nonneg (‖fderiv ℝ (fderiv ℝ u) z 1 1‖ - 2 * a * b * ‖fderiv ℝ u z 1‖ ^ 2)]
-
-/-- **The mean-value inequality for `J`-holomorphic curves.** Let `u : ℂ → V` be `C³` on the open
-disk `ball z₀ r`, with `∂ₛu` continuous on its closure, and solve the Cauchy--Riemann equation
-`∂ₜu = J(u) ∂ₛu` on the disk. Suppose that on the disk `J` is `C²` along `u`, squares to `-1`, and
-`a`, `b`, `c` bound the norms of `J`, of its derivative and of its second derivative along `u`. If
-the energy `∫ ‖∂ₛu‖²` over the disk is small, `8 (4ac + 2b² + 8a²b²) ∫ ‖∂ₛu‖² < π`, then
-`‖∂ₛu(z₀)‖²` is at most eight times its average over the disk:
-
-`π r² ‖∂ₛu(z₀)‖² ≤ 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
-theorem pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball {z₀ : ℂ} {r a b c : ℝ}
-    (hr : 0 ≤ r) (hu : ContDiffOn ℝ 3 u (ball z₀ r))
-    (hu' : ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r))
-    (hCR : ∀ y ∈ ball z₀ r, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
-    (hJ : ∀ y ∈ ball z₀ r, ContDiffAt ℝ 2 J (u y))
-    (hJsq : ∀ y ∈ ball z₀ r, ∀ v, J (u y) (J (u y) v) = -v)
-    (ha : ∀ y ∈ ball z₀ r, ‖J (u y)‖ ≤ a) (hb : ∀ y ∈ ball z₀ r, ‖fderiv ℝ J (u y)‖ ≤ b)
-    (hc : ∀ y ∈ ball z₀ r, ‖iteratedFDeriv ℝ 2 J (u y)‖ ≤ c)
-    (hsmall : 8 * (4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) *
-      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < π) :
-    π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-  have hDu : ContDiffOn ℝ 2 (fderiv ℝ u) (ball z₀ r) :=
-    hu.fderiv_of_isOpen isOpen_ball (by norm_num)
-  have h := mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian (μ := volume)
-    (by simp) (w := fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) (x₀ := z₀) (r := r)
-    (A := 4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) ((hDu.clm_apply contDiffOn_const).norm_sq ℝ)
-    (hu'.norm.pow 2) (fun _ _ ↦ by positivity)
-    (fun y hy ↦ by
-      rw [← pow_mul]
-      exact neg_mul_norm_fderiv_one_pow_four_le_laplacian
-        (hu.contDiffAt (isOpen_ball.mem_nhds hy)) (hJ y hy)
-        (eventually_of_mem (isOpen_ball.mem_nhds hy) hCR) (hJsq y hy) (ha y hy) (hb y hy)
-        (hc y hy))
-    (by simpa [measureReal_def, NNReal.coe_real_pi] using hsmall)
-  simpa [measureReal_def, hr, mul_comm, mul_left_comm, mul_assoc] using h
-
-/-- **The mean-value inequality for `J`-holomorphic curves in a compact set.** Let `J` be `C²` on an
-open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`. There is an energy threshold
-`δ > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` that is `C³` on the open disk
-`ball z₀ r`, has `∂ₛu` continuous on its closure, maps the disk into `K` and has energy
-`∫ ‖∂ₛu‖² < δ` over it, satisfies `π r² ‖∂ₛu(z₀)‖² ≤ 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
-theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
-    {W K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
-    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
-    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, 0 ≤ r → ContDiffOn ℝ 3 u (ball z₀ r) →
-      ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) →
-      (∀ y ∈ ball z₀ r, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1)) →
-      (∀ y ∈ ball z₀ r, u y ∈ K) →
-      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
-      π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-  -- One nonnegative bound `C` for `J` and its first two derivatives on `K`.
-  obtain ⟨C, hC0, hC⟩ := hJ.exists_nonneg_bound_iteratedFDeriv_of_isOpen (n := 2) hW hK hKW
-  set A := 4 * C * C + 2 * C ^ 2 + 8 * C ^ 2 * C ^ 2
-  refine ⟨π / (8 * (A + 1)), by positivity, fun u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
-  have hI : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by positivity
-  refine pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball hr hu hu' hCR
-    (fun y hy ↦ hJ.contDiffAt (hW.mem_nhds (hKW (huK y hy))))
-    (fun y hy ↦ hJsq _ (huK y hy))
-    (fun y hy ↦ by simpa using hC 0 (by norm_num) _ (huK y hy))
-    (fun y hy ↦ by simpa [norm_iteratedFDeriv_one] using hC 1 (by norm_num) _ (huK y hy))
-    (fun y hy ↦ hC 2 le_rfl _ (huK y hy)) ?_
-  rw [lt_div_iff₀ (by positivity)] at hE
-  nlinarith
-
-section Translation
-
-variable {e₀ : V}
 
 /-- The Laplacian of `∂ₛu` for a solution of `∂ₜu = J(u) ∂ₛu`, when `J` is invariant under the
 translations along `e₀`: it is bounded by `‖∂ₛu - e₀‖` and the second derivatives `∂ₛ∂ₛu` and
@@ -465,6 +313,88 @@ theorem neg_mul_norm_fderiv_one_sub_sq_le_laplacian {a b c m : ℝ}
     sq_nonneg (‖fderiv ℝ (fderiv ℝ u) z 1 I‖ - b * m * ‖fderiv ℝ u z 1 - e₀‖),
     sq_nonneg (‖fderiv ℝ (fderiv ℝ u) z 1 1‖ - 2 * a * b * m * ‖fderiv ℝ u z 1 - e₀‖)]
 
+/-- **The energy density of a `J`-holomorphic curve is almost subharmonic.** Let `u : ℂ → V` be
+`C³` at `z` and solve the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` near `z`, where `J` is `C²` at
+`u z` with `J(u z)² = -1`. If `a`, `b` and `c` bound the norms of `J`, of its derivative and of its
+second derivative at `u z`, then
+
+`Δ ‖∂ₛu‖² ≥ -(4ac + 2b² + 8a²b²) ‖∂ₛu‖⁴` at `z`. -/
+theorem neg_mul_norm_fderiv_one_pow_four_le_laplacian {a b c : ℝ}
+    (hu : ContDiffAt ℝ 3 u z) (hJ : ContDiffAt ℝ 2 J (u z))
+    (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
+    (hJsq : ∀ v, J (u z) (J (u z) v) = -v) (ha : ‖J (u z)‖ ≤ a)
+    (hb : ‖fderiv ℝ J (u z)‖ ≤ b) (hc : ‖iteratedFDeriv ℝ 2 J (u z)‖ ≤ c) :
+    -((4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) * ‖fderiv ℝ u z 1‖ ^ 4) ≤
+      Δ (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) z := by
+  -- The case `e₀ = 0`, `m = ‖∂ₛu‖` of the translation-invariant inequality.
+  have h := neg_mul_norm_fderiv_one_sub_sq_le_laplacian (e₀ := 0) (fun τ x ↦ by simp) hu hJ hCR
+    hJsq ha hb hc le_rfl (by rw [sub_zero])
+  simp only [sub_zero] at h
+  convert h using 2
+  ring
+
+/-- **The mean-value inequality for `J`-holomorphic curves.** Let `u : ℂ → V` be `C³` on the open
+disk `ball z₀ r`, with `∂ₛu` continuous on its closure, and solve the Cauchy--Riemann equation
+`∂ₜu = J(u) ∂ₛu` on the disk. Suppose that on the disk `J` is `C²` along `u`, squares to `-1`, and
+`a`, `b`, `c` bound the norms of `J`, of its derivative and of its second derivative along `u`. If
+the energy `∫ ‖∂ₛu‖²` over the disk is small, `8 (4ac + 2b² + 8a²b²) ∫ ‖∂ₛu‖² < π`, then
+`‖∂ₛu(z₀)‖²` is at most eight times its average over the disk:
+
+`π r² ‖∂ₛu(z₀)‖² ≤ 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
+theorem pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball {z₀ : ℂ} {r a b c : ℝ}
+    (hr : 0 ≤ r) (hu : ContDiffOn ℝ 3 u (ball z₀ r))
+    (hu' : ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r))
+    (hCR : ∀ y ∈ ball z₀ r, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
+    (hJ : ∀ y ∈ ball z₀ r, ContDiffAt ℝ 2 J (u y))
+    (hJsq : ∀ y ∈ ball z₀ r, ∀ v, J (u y) (J (u y) v) = -v)
+    (ha : ∀ y ∈ ball z₀ r, ‖J (u y)‖ ≤ a) (hb : ∀ y ∈ ball z₀ r, ‖fderiv ℝ J (u y)‖ ≤ b)
+    (hc : ∀ y ∈ ball z₀ r, ‖iteratedFDeriv ℝ 2 J (u y)‖ ≤ c)
+    (hsmall : 8 * (4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) *
+      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < π) :
+    π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+  have hDu : ContDiffOn ℝ 2 (fderiv ℝ u) (ball z₀ r) :=
+    hu.fderiv_of_isOpen isOpen_ball (by norm_num)
+  have h := mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian (μ := volume)
+    (by simp) (w := fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) (x₀ := z₀) (r := r)
+    (A := 4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) ((hDu.clm_apply contDiffOn_const).norm_sq ℝ)
+    (hu'.norm.pow 2) (fun _ _ ↦ by positivity)
+    (fun y hy ↦ by
+      rw [← pow_mul]
+      exact neg_mul_norm_fderiv_one_pow_four_le_laplacian
+        (hu.contDiffAt (isOpen_ball.mem_nhds hy)) (hJ y hy)
+        (eventually_of_mem (isOpen_ball.mem_nhds hy) hCR) (hJsq y hy) (ha y hy) (hb y hy)
+        (hc y hy))
+    (by simpa [measureReal_def, NNReal.coe_real_pi] using hsmall)
+  simpa [measureReal_def, hr, mul_comm, mul_left_comm, mul_assoc] using h
+
+/-- **The mean-value inequality for `J`-holomorphic curves in a compact set.** Let `J` be `C²` on an
+open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`. There is an energy threshold
+`δ > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` that is `C³` on the open disk
+`ball z₀ r`, has `∂ₛu` continuous on its closure, maps the disk into `K` and has energy
+`∫ ‖∂ₛu‖² < δ` over it, satisfies `π r² ‖∂ₛu(z₀)‖² ≤ 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
+theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
+    {W K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
+    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
+    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, 0 ≤ r → ContDiffOn ℝ 3 u (ball z₀ r) →
+      ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) →
+      (∀ y ∈ ball z₀ r, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1)) →
+      (∀ y ∈ ball z₀ r, u y ∈ K) →
+      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
+      π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+  -- One nonnegative bound `C` for `J` and its first two derivatives on `K`.
+  obtain ⟨C, hC0, hC⟩ := hJ.exists_nonneg_bound_iteratedFDeriv_of_isOpen (n := 2) hW hK hKW
+  set A := 4 * C * C + 2 * C ^ 2 + 8 * C ^ 2 * C ^ 2
+  refine ⟨π / (8 * (A + 1)), by positivity, fun u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
+  have hI : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by positivity
+  refine pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball hr hu hu' hCR
+    (fun y hy ↦ hJ.contDiffAt (hW.mem_nhds (hKW (huK y hy))))
+    (fun y hy ↦ hJsq _ (huK y hy))
+    (fun y hy ↦ by simpa using hC 0 (by norm_num) _ (huK y hy))
+    (fun y hy ↦ by simpa [norm_iteratedFDeriv_one] using hC 1 (by norm_num) _ (huK y hy))
+    (fun y hy ↦ hC 2 le_rfl _ (huK y hy)) ?_
+  rw [lt_div_iff₀ (by positivity)] at hE
+  nlinarith
+
 /-- **The mean-value inequality for `∂ₛu - e₀`.** Let `J` be invariant under the translations
 along a vector `e₀`, and let `u : ℂ → V` be `C³` on the open disk `ball z₀ r`, with `∂ₛu`
 continuous on its closure, solving `∂ₜu = J(u) ∂ₛu` on the disk. Suppose that on the disk `J` is
@@ -531,7 +461,5 @@ theorem exists_nonneg_forall_pi_mul_sq_mul_norm_fderiv_one_sub_sq_le_fifteen_mul
     (fun y hy ↦ by simpa using hC 0 (by norm_num) _ (huK y hy))
     (fun y hy ↦ by simpa [norm_iteratedFDeriv_one] using hC 1 (by norm_num) _ (huK y hy))
     (fun y hy ↦ hC 2 le_rfl _ (huK y hy)) hm hm' hsmall
-
-end Translation
 
 end TauCeti
