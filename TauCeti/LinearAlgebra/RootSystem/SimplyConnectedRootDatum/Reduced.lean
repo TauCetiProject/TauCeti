@@ -30,6 +30,8 @@ collects all the cases uniformly.
   `e7SimplyConnectedRootDatum`, and `e8SimplyConnectedRootDatum`.
 * `DynkinType.isReduced_simplyConnectedRootDatum`: the uniform reducedness theorem for every
   valid Dynkin type.
+* `DynkinType.ne_zero_of_eq_nsmul_root_add_nsmul_root`: if `α + β` is a root, then `a α + b β`
+  with natural coefficients and `a ≠ 0` does not vanish.
 
 ## References
 
@@ -97,5 +99,23 @@ theorem isReduced_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid) :
   | G2 =>
       rw [simplyConnectedRootDatum_G2]
       exact instIsReducedG2SimplyConnectedRootDatum
+
+/-- A root sum `γ = α + β` makes the roots `α` and `β` linearly independent, so a combination
+`a α + b β` with natural coefficients and `a ≠ 0` does not vanish. -/
+theorem ne_zero_of_eq_nsmul_root_add_nsmul_root {t : DynkinType} {ht : t.Valid}
+    {α β γ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    {a b : ℕ} (ha : a ≠ 0) {w : Fin t.rank → ℤ}
+    (hw : w = a • (t.simplyConnectedRootDatum ht).root α +
+      b • (t.simplyConnectedRootDatum ht).root β) :
+    w ≠ 0 := by
+  have := t.isReduced_simplyConnectedRootDatum ht
+  rintro rfl
+  rw [← natCast_zsmul, ← natCast_zsmul] at hw
+  have h := (LinearIndependent.pair_iff.1
+    ((t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩) _ _
+      hw.symm).1
+  omega
 
 end TauCeti.DynkinType

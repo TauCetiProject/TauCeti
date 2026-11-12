@@ -75,23 +75,6 @@ noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid} {α β γ δ : Fin t.numRoots}
 
-/-- A root sum `γ = α + β` makes the roots `α` and `β` linearly independent, so a combination
-`a α + b β` with natural coefficients and `a ≠ 0` does not vanish. -/
-theorem ne_zero_of_eq_nsmul_root_add_nsmul_root
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    {a b : ℕ} (ha : a ≠ 0) {w : Fin t.rank → ℤ}
-    (hw : w = a • (t.simplyConnectedRootDatum ht).root α +
-      b • (t.simplyConnectedRootDatum ht).root β) :
-    w ≠ 0 := by
-  have := t.isReduced_simplyConnectedRootDatum ht
-  rintro rfl
-  rw [← natCast_zsmul, ← natCast_zsmul] at hw
-  have h := (LinearIndependent.pair_iff.1
-    ((t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩) _ _
-      hw.symm).1
-  omega
-
 /-- The root sums met in the two-factor commutator formula: for `γ = α + β` and `δ = 2α + β`,
 none of `α + δ`, `β + γ` and `β + δ` is a root or zero, provided `3α + β` and `α + 2β` are not
 roots. -/
