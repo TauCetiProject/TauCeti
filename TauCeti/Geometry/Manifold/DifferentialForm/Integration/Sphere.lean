@@ -596,7 +596,7 @@ theorem sphereIntegral_mk_of_contMDiff (hφ : IsSmoothForm I 1 φ) (hdφ : mextD
       ⟨1, Or.inl (Subtype.ext h)⟩, ⟨1, Or.inr (Subtype.ext h)⟩]
   -- Flatten `w` near the boundary by the reparametrization `ρ` in both coordinates; `ρ` is `0`
   -- below `1/4`, `1` above `3/4` and fixes `0` and `1`.
-  set ρ : ℝ → ℝ := fun s ↦ Real.smoothTransition (2 * s - 1 / 2) with hρ_def
+  set ρ : ℝ → ℝ := fun s ↦ Real.smoothTransition (2 * s - 1 / 2)
   have hρ : ContDiff ℝ ∞ ρ := Real.smoothTransition.contDiff.comp (by fun_prop)
   have hρI (s : ℝ) : ρ s ∈ Icc (0 : ℝ) 1 :=
     ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
