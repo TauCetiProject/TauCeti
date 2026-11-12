@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.IntegerValued.Enumeration.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.Probability.Kernel.Basic
 public import Mathlib.Topology.Compactness.SigmaCompact
 
 /-!
@@ -45,11 +46,8 @@ theorem Measurable.exists_occurrence_enumeration_of_cover
     (hfinite : ∀ a n, μ a (s n) ≠ ∞) :
     ∃ e : α → ℕ → Option X, Measurable e ∧
       ∀ a, μ a = Measure.sum (fun n => (e a n).elim 0 Measure.dirac) := by
-  have hpiece (n : ℕ) : Measurable fun a => (μ a).restrict (disjointed s n) := by
-    apply Measure.measurable_of_measurable_coe
-    intro t ht
-    simp_rw [Measure.restrict_apply ht]
-    exact (Measure.measurable_coe (ht.inter (MeasurableSet.disjointed hs n))).comp hm
+  have hpiece (n : ℕ) : Measurable fun a => (μ a).restrict (disjointed s n) :=
+    (ProbabilityTheory.Kernel.restrict ⟨μ, hm⟩ (MeasurableSet.disjointed hs n)).measurable
   have hfin (a : α) (n : ℕ) : IsFiniteMeasure ((μ a).restrict (disjointed s n)) :=
     isFiniteMeasure_restrict.mpr (ne_top_of_le_ne_top (hfinite a n)
       (measure_mono (disjointed_le s n)))
@@ -68,9 +66,9 @@ theorem Measurable.exists_occurrence_enumeration_of_cover
       rw [Measure.sum_sum]
       exact (Measure.sum_comp_equiv Nat.pairEquiv.symm _).symm
 
-/-- A measurable family of measures finite on compact sets on a sigma-compact standard
-Borel space can be enumerated measurably, with multiplicities retained and no finite-total-mass
-assumption. Missing entries may be interspersed with actual occurrences. -/
+/-- A measurable family of integer-valued measures finite on compact sets on a sigma-compact
+Hausdorff standard Borel space can be enumerated measurably, with multiplicities retained and no
+finite-total-mass assumption. Missing entries may be interspersed with actual occurrences. -/
 theorem Measurable.exists_occurrence_enumeration_of_isFiniteMeasureOnCompacts
     {α X : Type*} [MeasurableSpace α] [TopologicalSpace X] [T2Space X]
     [SigmaCompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] [StandardBorelSpace X]
