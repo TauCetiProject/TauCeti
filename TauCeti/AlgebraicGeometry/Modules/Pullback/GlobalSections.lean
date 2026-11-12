@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!
 # Affine base change of global sections
@@ -19,6 +20,11 @@ This is the affine section calculation underlying cohomology and base change. Th
 defined for arbitrary coefficient sheaves; quasicoherence is used only for its invertibility.
 It also supplies the section-module comparison used to transport invariants of modules,
 such as Fitting ideals, under scheme pullback.
+
+For a surjective ring map `φ : R ⟶ S` with kernel `I`, i.e. a closed immersion
+`Spec S ⟶ Spec R`, it follows that restricting global sections of a quasicoherent module `M` is
+surjective with kernel `I Γ(M)` (`moduleSpecΓFunctor_map_unit_surjective`,
+`ker_moduleSpecΓFunctor_map_unit`), as `S ⊗_R Γ(M) = Γ(M) ⧸ I Γ(M)`.
 
 The construction uses `tildeFunctorCompPullbackIso`, the tilde/global-sections adjunction,
 and the extension/restriction-of-scalars adjunction. The characteristic equation identifies
@@ -158,6 +164,38 @@ def moduleSpecΓPullbackIso (M : (Spec R).Modules) [M.IsQuasicoherent] :
 lemma moduleSpecΓPullbackIso_hom (M : (Spec R).Modules) [M.IsQuasicoherent] :
     (moduleSpecΓPullbackIso φ M).hom = (moduleSpecΓPullback φ).app M :=
   (rfl)
+
+variable {φ}
+
+/-- **Restriction of sections to a closed subscheme of an affine scheme is surjective.** For a
+surjective ring map `φ : R ⟶ S`, every global section of the pullback of a quasicoherent module
+`M` along the closed immersion `Spec S ⟶ Spec R` is the pullback of a global section of `M`. -/
+lemma moduleSpecΓFunctor_map_unit_surjective (hφ : Function.Surjective φ.hom)
+    (M : (Spec R).Modules) [M.IsQuasicoherent] :
+    Function.Surjective
+      (moduleSpecΓFunctor.map ((pullbackPushforwardAdjunction (Spec.map φ)).unit.app M)) := by
+  let := φ.hom.toAlgebra
+  have := isIso_moduleSpecΓPullback_app φ M
+  intro y
+  obtain ⟨z, hz⟩ := (ConcreteCategory.bijective_of_isIso ((moduleSpecΓPullback φ).app M)).2 y
+  obtain ⟨m, rfl⟩ := TensorProduct.mk_surjective R (moduleSpecΓFunctor.obj M) S hφ z
+  exact ⟨m, (moduleSpecΓPullback_app_one_tmul φ M m).symm.trans hz⟩
+
+/-- **The kernel of restricting sections to a closed subscheme of an affine scheme.** For a
+surjective ring map `φ : R ⟶ S` with kernel `I`, a global section of a quasicoherent module `M`
+pulls back to zero along the closed immersion `Spec S ⟶ Spec R` exactly when it lies in
+`I Γ(M)`. -/
+lemma ker_moduleSpecΓFunctor_map_unit (hφ : Function.Surjective φ.hom)
+    (M : (Spec R).Modules) [M.IsQuasicoherent] :
+    LinearMap.ker
+        (moduleSpecΓFunctor.map ((pullbackPushforwardAdjunction (Spec.map φ)).unit.app M)).hom =
+      RingHom.ker φ.hom • ⊤ := by
+  let := φ.hom.toAlgebra
+  have := isIso_moduleSpecΓPullback_app φ M
+  refine Eq.trans ?_ (TensorProduct.ker_mk_one_of_surjective (M := moduleSpecΓFunctor.obj M) hφ)
+  ext m
+  rw [LinearMap.mem_ker, LinearMap.mem_ker, ← moduleSpecΓPullback_app_one_tmul φ M m]
+  exact (ConcreteCategory.bijective_of_isIso ((moduleSpecΓPullback φ).app M)).1.eq_iff' (map_zero _)
 
 end
 
