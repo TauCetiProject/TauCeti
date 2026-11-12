@@ -51,7 +51,9 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function, with
   `TauCeti.BesovSpace.norm_eq_tsum_rpow` (`q < ∞`) and `TauCeti.BesovSpace.norm_eq_ciSup`
   (`q = ∞`) expressing the norm through the blocks, and the single-block bound
-  `TauCeti.BesovSpace.rpow_mul_norm_block_le`.
+  `TauCeti.BesovSpace.rpow_mul_norm_block_le`; conversely
+  `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq` bounds the norm of a
+  distribution by any `ℓ^q` majorant of its weighted block norms.
 * `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
   tempered distributions, and the instance `CompleteSpace (TauCeti.BesovSpace F φ s p q)`:
   `B^s_{p,q}` is a Banach space.
@@ -475,6 +477,25 @@ theorem norm_eq_ciSup (u : BesovSpace F φ s p ∞) :
     ‖u‖ = ⨆ j : ℕ, 2 ^ (s * j) * ‖u.block j‖ := by
   rw [← norm_weightedBlocks, lp.norm_eq_ciSup]
   simp_rw [norm_weightedBlocks_apply]
+
+/-- **Membership from a bound on the blocks.** If the blocks `Δⱼ u` of a tempered distribution
+are `Lᵖ` functions `gⱼ` with `2^{js} ‖gⱼ‖_p ≤ bⱼ` for a sequence `b ∈ ℓ^q`, then `u` is an element
+of `B^s_{p,q}` of norm at most `‖b‖`. -/
+theorem exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq {u : 𝓢'(E, F)}
+    (g : ℕ → Lp F p (volume : Measure E)) (b : lp (fun _ : ℕ ↦ ℝ) q)
+    (hg : ∀ j, littlewoodPaleyBlock F φ j u = g j) (hb : ∀ j : ℕ, 2 ^ (s * j) * ‖g j‖ ≤ b j) :
+    ∃ v : BesovSpace F φ s p q, v.toDistr = u ∧ ‖v‖ ≤ ‖b‖ := by
+  have hu : u.MemBesov φ s p q := memBesov_iff.2 ⟨g, hg, (lp.memℓp b).mono fun j ↦
+    (Real.norm_of_nonneg (by positivity)).trans_le (hb j)⟩
+  refine ⟨hu.toBesovSpace, hu.toDistr_toBesovSpace, ?_⟩
+  rw [← norm_weightedBlocks]
+  refine lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ ?_
+  have hj : hu.toBesovSpace.block j = g j :=
+    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block,
+        MemBesov.toDistr_toBesovSpace, hg j]
+  rw [norm_weightedBlocks_apply, hj]
+  exact (hb j).trans (Real.le_norm_self _)
 
 end Normed
 
