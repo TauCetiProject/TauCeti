@@ -81,30 +81,14 @@ theorem groupScheme_eq_generated :
   exact congrArg (CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra ℤ D.dim))
     D.toralDefiningIdeal_eq_generated
 
-private theorem generatedToToral_eq_eqToHom :
-    kostantGeneratedToToral (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-        D.representation D.lattice D.representation_mem_lattice
-        D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight =
-      eqToHom D.groupScheme_eq_generated.symm := by
-  have hgroup : D.groupScheme_eq_generated.symm =
-      congrArg (CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra ℤ D.dim))
-        D.toralDefiningIdeal_eq_generated.symm := Subsingleton.elim _ _
-  apply (cancel_mono (kostantToralGroupSchemeι (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-    D.representation D.lattice D.representation_mem_lattice
-    D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight)).1
-  rw [kostantGeneratedToToral_comp_ι, kostantGeneratedGroupSchemeι_def,
-    kostantToralGroupSchemeι_def, hgroup, ← Category.assoc,
-    CommHopfAlgCat.eqToHom_comp_quotientSpecι]
-  exact D.toralDefiningIdeal_eq_generated.symm
-
 /-- The canonical inclusion of the simple-root-generated scheme in the datum's group scheme
 is an isomorphism, also for a proper weight lattice. -/
 instance isIso_generatedToToral :
     IsIso (kostantGeneratedToToral (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
       D.representation D.lattice D.representation_mem_lattice
-      D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight) := by
-  rw [D.generatedToToral_eq_eqToHom]
-  infer_instance
+      D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight) :=
+  isIso_kostantGeneratedToToral_of_definingIdeal_eq _ _ _ _ _ _ _ _
+    D.toralDefiningIdeal_eq_generated
 
 /-- Morphisms from a Chevalley datum's group scheme to an affine group scheme are equal
 if they agree on both signs of the simple roots. No torus equation is required. -/
