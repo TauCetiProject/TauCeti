@@ -13,9 +13,9 @@ public import Mathlib.LinearAlgebra.Projection
 
 This file supplies the linear-algebra notion of a (maximal) totally real subspace with respect to
 a linear endomorphism `J` over an arbitrary scalar semiring.  This is the algebraic pointwise
-model for totally real boundary conditions in the analytic Heegaard Floer roadmap: a boundary
-tangent space `L` is totally real when it is disjoint from its `J`-image, and maximal totally
-real when the two are moreover complementary.  The terminology is borrowed from the usual
+model for totally real boundary conditions in analytic Heegaard Floer theory: a boundary tangent
+space `L` is totally real when it is disjoint from its `J`-image, and maximal totally real when
+the two are moreover complementary.  The terminology is borrowed from the usual
 real-linear situation, but the complement API itself is purely module-theoretic.
 
 No integrability, topology, or symplectic form is bundled here.
