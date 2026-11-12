@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
 public import TauCeti.Analysis.PDE.HeatKernel.TemperedDistribution
-import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.PDE.HeatKernel.FrequencyLocalized
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
@@ -48,7 +47,6 @@ vanishing near the origin. The kernel of that multiplier has `L¹` norm `O(exp(-
 
 ## Main declarations
 
-* `TemperedDistribution.littlewoodPaleyBlock_heatSemigroup_comm`: `Δⱼ e^{tΔ} = e^{tΔ} Δⱼ`.
 * `TauCeti.BesovSpace.heatSemigroup`: `e^{tΔ}` as a contraction of `B^s_{p,q}`, with
   `TauCeti.BesovSpace.heatSemigroup_zero` and the semigroup law
   `TauCeti.BesovSpace.heatSemigroup_heatSemigroup_apply`.
@@ -71,57 +69,6 @@ open scoped ContDiff ENNReal NNReal SchwartzMap Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-namespace TemperedDistribution
-
-open TauCeti
-
-variable (φ : ContDiffBump (0 : E))
-
-/-- The Littlewood–Paley blocks commute with the heat semigroup. -/
-theorem littlewoodPaleyBlock_heatSemigroup_comm (j : ℕ) (t : ℝ≥0) (u : 𝓢'(E, F)) :
-    littlewoodPaleyBlock F φ j (heatSemigroup E F t u) =
-      heatSemigroup E F t (littlewoodPaleyBlock F φ j u) := by
-  rw [heatSemigroup_eq_fourierMultiplierCLM]
-  exact littlewoodPaleyBlock_fourierMultiplierCLM_comm φ
-    (Function.hasTemperateGrowth_ofReal_exp_neg_mul_norm_sq (by positivity)) j u
-
-variable [CompleteSpace F]
-
-/-- **The heat flow of every Littlewood–Paley block.** There are constants `C ≥ 1` and `c > 0`,
-depending only on `φ` and `E`, such that for every `1 ≤ p ≤ ∞`, every `j`, every `t ≥ 0` and
-every tempered distribution `u` whose block `Δⱼ u` is an `Lᵖ` function `f`, the block
-`Δⱼ e^{tΔ} u` is an `Lᵖ` function `g` with `‖g‖_p ≤ C exp(-c (4^j - 1) t) ‖f‖_p`. The factor
-`exp(-c (4^j - 1) t)` is `1` for the low-frequency block `j = 0`. -/
-private theorem exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le :
-    ∃ C c, 1 ≤ C ∧ 0 < c ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (t : ℝ≥0) (u : 𝓢'(E, F))
-      (f : Lp F p (volume : Measure E)), littlewoodPaleyBlock F φ j u = f →
-      ∃ g : Lp F p (volume : Measure E),
-        littlewoodPaleyBlock F φ j (heatSemigroup E F t u) = g ∧
-          ‖g‖ ≤ C * rexp (-(c * ((4 ^ j - 1) * t))) * ‖f‖ := by
-  obtain ⟨C, hC⟩ := TauCeti.exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le (F := F) φ
-  have hc : 0 < π ^ 2 * φ.rIn ^ 2 / 16 := by have := φ.rIn_pos; positivity
-  refine ⟨max C 1, π ^ 2 * φ.rIn ^ 2 / 16, le_max_right _ _, hc,
-    fun {p} _ j t u f hf ↦ ?_⟩
-  rw [littlewoodPaleyBlock_heatSemigroup_comm]
-  cases j with
-  | zero =>
-    obtain ⟨g, hg, hgn⟩ := exists_heatSemigroup_eq_and_norm_le t f
-    refine ⟨g, hf ▸ hg, hgn.trans ?_⟩
-    simp only [pow_zero, sub_self, zero_mul, mul_zero, neg_zero, Real.exp_zero, mul_one]
-    exact le_mul_of_one_le_left (norm_nonneg _) (le_max_right _ _)
-  | succ j =>
-    obtain ⟨g, hg, hgn⟩ := hC j t u f hf
-    refine ⟨g, hg, hgn.trans (mul_le_mul_of_nonneg_right
-      (mul_le_mul (le_max_left _ _) (exp_le_exp.2 ?_) (exp_pos _).le
-        ((le_max_right _ _).trans' zero_le_one)) (norm_nonneg _))⟩
-    -- `(4^{j+1} - 1) / 16 ≤ 4^j / 4`.
-    have h : π ^ 2 * φ.rIn ^ 2 / 4 * (4 ^ j * t) =
-        π ^ 2 * φ.rIn ^ 2 / 16 * ((4 ^ (j + 1) - 1) * t) + π ^ 2 * φ.rIn ^ 2 / 16 * t := by
-      ring
-    linarith [mul_nonneg hc.le t.coe_nonneg]
-
-end TemperedDistribution
 
 namespace TauCeti
 
