@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.HomotopyInva
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Retraction
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Comparison.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Compression
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 
 /-!
@@ -60,8 +61,10 @@ coefficients in any module. With coefficients in a projective module, or local c
 system with projective fibres, the chain modules are projective, and a quasi-isomorphism of
 `ℕ`-graded complexes of projectives is a chain homotopy equivalence (Mathlib's
 `ChainComplex.quasiIso_iff_of_projective`). The five lemma gives the relative version for a map of
-pairs which is a weak homotopy equivalence on the ambient spaces and on the subspaces. These chain
-homotopy equivalences are what the dual statements for singular cohomology are deduced from, in
+pairs which is a weak homotopy equivalence on the ambient spaces and on the subspaces, both with
+constant and with local coefficients; the relative twisted chains of a pair are projective when
+the fibres are (`TopPair.projective_twistedChainComplex_X`). These chain homotopy equivalences
+are what the dual statements for singular cohomology are deduced from, in
 `TauCeti.AlgebraicTopology.Cohomology.WeakHomotopyEquivalence`.
 
 ## Main results
@@ -85,6 +88,10 @@ homotopy equivalences are what the dual statements for singular cohomology are d
   `TopPair.isIso_singularHomologyMap_of_isWeakHomotopyEquivalence`,
   `TopPair.homotopyEquivalences_singularChainComplexMap_of_isWeakHomotopyEquivalence`: the
   relative versions for maps of pairs.
+* `TopPair.quasiIso_twistedChainComplexMap_of_isWeakHomotopyEquivalence`,
+  `TopPair.isIso_twistedHomologyMap_of_isWeakHomotopyEquivalence`,
+  `TopPair.homotopyEquivalences_twistedChainComplexMap_of_isWeakHomotopyEquivalence`: the
+  relative versions with local coefficients.
 
 ## References
 
@@ -294,5 +301,56 @@ theorem homotopyEquivalences_singularChainComplexMap_of_isWeakHomotopyEquivalenc
     HomologicalComplex.homotopyEquivalences _ _ (singularChainComplexMap f R) :=
   have := quasiIso_singularChainComplexMap_of_isWeakHomotopyEquivalence f hfst hsnd R
   (ChainComplex.quasiIso_iff_of_projective _).1 this
+
+/-- **A map of pairs which is a weak homotopy equivalence on the ambient spaces and on the
+subspaces induces a quasi-isomorphism of relative singular chains with local coefficients**: for
+every local coefficient system `L` on the ambient space of the target, the map from the relative
+twisted chains of `P` with coefficients in the pullback of `L` to those of `P'` with coefficients
+in `L` is a quasi-isomorphism. -/
+theorem quasiIso_twistedChainComplexMap_of_isWeakHomotopyEquivalence
+    (hfst : (Hom.fst f).hom.IsWeakHomotopyEquivalence)
+    (hsnd : (Hom.snd f).hom.IsWeakHomotopyEquivalence)
+    (L : LocalCoefficientSystem.{u, v, v} A P'.fst) :
+    QuasiIso (TopPair.twistedChainComplexMap f L) := by
+  -- The absolute statements are about `TopCat.ofHom (Hom.snd f).hom` and systems on
+  -- `TopCat.of P'.snd`; the ascriptions restate them for `Hom.snd f` and `P'.snd`.
+  have hsnd₀ : QuasiIso (LocalCoefficientSystem.twistedChainComplexMap (Hom.snd f)
+      (P'.subspaceSystem L)) := hsnd.quasiIso_twistedChainComplexMap (P'.subspaceSystem L)
+  have hfst' : QuasiIso (LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L) :=
+    hfst.quasiIso_twistedChainComplexMap L
+  have hsnd' : QuasiIso (twistedSubspaceChainComplexMap f L) := by
+    rw [twistedSubspaceChainComplexMap_def]
+    infer_instance
+  have := HomologicalComplex.HomologySequence.quasiIso_τ₃
+    (twistedChainComplexShortComplexMap f L) (P.shortExact_twistedChainComplexShortComplex _)
+    (P'.shortExact_twistedChainComplexShortComplex L)
+    (by rwa [twistedChainComplexShortComplexMap_τ₁])
+    (by rwa [twistedChainComplexShortComplexMap_τ₂])
+  rwa [twistedChainComplexShortComplexMap_τ₃] at this
+
+/-- **A map of pairs which is a weak homotopy equivalence on the ambient spaces and on the
+subspaces induces isomorphisms on relative singular homology with local coefficients**: for every
+local coefficient system `L` on the ambient space of the target,
+`H_n(X, A; f⁎L) ⟶ H_n(X', A'; L)` is an isomorphism. -/
+theorem isIso_twistedHomologyMap_of_isWeakHomotopyEquivalence
+    (hfst : (Hom.fst f).hom.IsWeakHomotopyEquivalence)
+    (hsnd : (Hom.snd f).hom.IsWeakHomotopyEquivalence)
+    (L : LocalCoefficientSystem.{u, v, v} A P'.fst) (n : ℕ) :
+    IsIso (TopPair.twistedHomologyMap f L n) :=
+  have := quasiIso_twistedChainComplexMap_of_isWeakHomotopyEquivalence f hfst hsnd L
+  inferInstance
+
+/-- **A map of pairs which is a weak homotopy equivalence on the ambient spaces and on the
+subspaces induces a chain homotopy equivalence of relative singular chains with local
+coefficients** in a local coefficient system `L` whose fibres are projective. -/
+theorem homotopyEquivalences_twistedChainComplexMap_of_isWeakHomotopyEquivalence
+    (hfst : (Hom.fst f).hom.IsWeakHomotopyEquivalence)
+    (hsnd : (Hom.snd f).hom.IsWeakHomotopyEquivalence)
+    (L : LocalCoefficientSystem.{u, v, v} A P'.fst) [∀ y, Projective (L.obj y)] :
+    HomologicalComplex.homotopyEquivalences _ _ (TopPair.twistedChainComplexMap f L) :=
+  have : ∀ x, Projective (((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L).obj x) :=
+    fun _ ↦ inferInstanceAs (Projective (L.obj _))
+  (ChainComplex.quasiIso_iff_of_projective _).1
+    (quasiIso_twistedChainComplexMap_of_isWeakHomotopyEquivalence f hfst hsnd L)
 
 end TopPair
