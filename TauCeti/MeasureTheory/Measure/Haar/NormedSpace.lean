@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Measure.Real
@@ -93,6 +95,9 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
   of a ball of radius `R > 0` written through that of the unit ball (for `R ≤ 0` the ball is
   empty).
+* `MeasureTheory.MemLp.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow`: Hölder's inequality
+  bounding the integral of `‖g‖²` over a ball `B(x, r) ⊆ t` by
+  `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -149,6 +154,23 @@ theorem eLpNorm_ball_le_mul_rpow
   have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (ENNReal.ofReal_le_ofReal hp₀p) hf
   rwa [hvol, ENNReal.toReal_ofReal hp₀0.le, ENNReal.toReal_ofReal (hp₀0.le.trans hp₀p),
     ENNReal.ofReal_rpow_of_nonneg (by positivity) he] at h
+
+/-- Hölder's inequality for the `L²` mass on a ball: for `2 ≤ q` and a function `g` in `L^q(t)`,
+the integral of `‖g‖²` over a ball `B(x, r) ⊆ t` of radius `r > 0` is at most
+`‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}`, where `n` is the dimension. -/
+theorem _root_.MeasureTheory.MemLp.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {g : E → F} {t : Set E} {q : ENNReal}
+    (hg : MemLp g q (mu.restrict t)) (hq : 2 ≤ q) {x : E} {r : ℝ} (hr : 0 < r)
+    (hsub : ball x r ⊆ t) :
+    ∫ y in ball x r, ‖g y‖ ^ 2 ∂mu ≤ (eLpNorm g q (mu.restrict t)).toReal ^ 2 *
+      (mu.real (ball (0 : E) 1) ^ (1 - 2 / q.toReal) *
+        r ^ ((finrank ℝ E : ℝ) * (1 - 2 / q.toReal))) := by
+  have h := hg.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow hq hsub
+    measure_ball_lt_top.ne
+  rwa [addHaar_real_ball_of_pos mu x hr, Real.mul_rpow (by positivity) measureReal_nonneg,
+    ← Real.rpow_natCast r, ← Real.rpow_mul hr.le, mul_comm (r ^ _)] at h
 
 /-- For a ball of radius `r > 0` in dimension `n`, `n / r` times its real measure is
 `n rⁿ⁻¹` times the real measure of the unit ball, the derivative in `r` of its measure. -/

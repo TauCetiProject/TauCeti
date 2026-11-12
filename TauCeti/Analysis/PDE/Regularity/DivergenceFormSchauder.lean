@@ -829,18 +829,10 @@ private theorem mul_setIntegral_sq_le {f : EuclideanSpace ℝ (Fin (n + 1)) → 
         (r ^ (2 * (1 - ((n : ℝ) + 1) / q)) *
           ((eLpNorm f q (volume.restrict T)).toReal ^ 2 * r ^ ((n : ℝ) + 1))) := by
   set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
-  have hω : 0 < ω := measureReal_ball_pos volume _ one_pos
-  have hBr : volume.real (ball z r) = ω * r ^ ((n : ℝ) + 1) := by
-    rw [Measure.addHaar_real_ball_of_pos _ z hr, finrank_euclideanSpace_fin, mul_comm,
-      ← Real.rpow_natCast]
-    push_cast
-    rfl
-  -- Hölder's inequality on `B_r`: `∫_{B_r} f² ≤ ‖f‖²_{L^q(T)} |B_r|^{1-2/q}`.
-  have h2 := hf.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow (by exact_mod_cast hq)
-    hsub measure_ball_lt_top.ne
-  simp only [Real.norm_eq_abs, sq_abs, ENNReal.coe_toReal] at h2
-  rw [hBr, Real.mul_rpow hω.le (by positivity), ← Real.rpow_mul hr.le] at h2
-  have hr2 : r ^ 2 * r ^ (((n : ℝ) + 1) * (1 - 2 / (q : ℝ))) =
+  -- Hölder's inequality on `B_r`: `∫_{B_r} f² ≤ ‖f‖²_{L^q(T)} ω^{1-2/q} r^{(n+1)(1-2/q)}`.
+  have h2 := hf.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow (by exact_mod_cast hq) hr hsub
+  simp only [Real.norm_eq_abs, sq_abs, ENNReal.coe_toReal, finrank_euclideanSpace_fin] at h2
+  have hr2 : r ^ 2 * r ^ (((n + 1 : ℕ) : ℝ) * (1 - 2 / (q : ℝ))) =
       r ^ (2 * (1 - ((n : ℝ) + 1) / q)) * r ^ ((n : ℝ) + 1) := by
     rw [← Real.rpow_natCast r 2, ← Real.rpow_add hr, ← Real.rpow_add hr]
     congr 1
@@ -848,9 +840,9 @@ private theorem mul_setIntegral_sq_le {f : EuclideanSpace ℝ (Fin (n + 1)) → 
     ring
   calc 4 * r ^ 2 * ∫ x in ball z r, f x ^ 2
       ≤ 4 * r ^ 2 * ((eLpNorm f q (volume.restrict T)).toReal ^ 2 *
-          (ω ^ (1 - 2 / (q : ℝ)) * r ^ (((n : ℝ) + 1) * (1 - 2 / (q : ℝ))))) := by gcongr
+          (ω ^ (1 - 2 / (q : ℝ)) * r ^ (((n + 1 : ℕ) : ℝ) * (1 - 2 / (q : ℝ))))) := by gcongr
     _ = 4 * ω ^ (1 - 2 / (q : ℝ)) * ((eLpNorm f q (volume.restrict T)).toReal ^ 2 *
-          (r ^ 2 * r ^ (((n : ℝ) + 1) * (1 - 2 / (q : ℝ))))) := by ring
+          (r ^ 2 * r ^ (((n + 1 : ℕ) : ℝ) * (1 - 2 / (q : ℝ))))) := by ring
     _ = _ := by rw [hr2]; ring
 
 /-- **Interior Schauder estimate for divergence-form equations with a scalar datum.** Let
