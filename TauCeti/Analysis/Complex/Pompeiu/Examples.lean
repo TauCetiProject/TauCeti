@@ -19,8 +19,9 @@ the two normalisations, `TauCeti.fderiv_apply_one_add_I_smul_fderiv_apply_I` and
 for the transposed kernel `(z - w)⁻¹`, live beside the underlying APIs. This file checks the
 consequences.
 
-* The doubled operator: on compactly supported `C¹` maps the transform of `D u = 2 \bar∂ u` is
-  `2 u`, so the transform inverts `D` only up to the factor `2` absorbed by `(2π)⁻¹`.
+* The doubled operator: on compactly supported `C¹` maps the transform of `2 \bar∂ u` is `2 u`.
+  Since `2 \bar∂ u = D u` by `TauCeti.fderiv_apply_one_add_I_smul_fderiv_apply_I`, the transform
+  inverts `D` only up to the factor `2` absorbed by `(2π)⁻¹`.
 * The transposed kernel is not a right inverse of `\bar∂`, as witnessed by a smooth bump function.
 
 ## Main results
@@ -38,19 +39,21 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- On compactly supported `C¹` maps the Cauchy transform of `D u = 2 \bar∂ u` is `2 u`: the
-transform inverts `\bar∂`, so it inverts `D` only up to the factor `2`, which the Cauchy–Pompeiu
-formula absorbs in its constant `(2π)⁻¹`. -/
+/-- On compactly supported `C¹` maps the Cauchy transform of `2 \bar∂ u` is `2 u`. Since
+`2 \bar∂ u = D u` by `fderiv_apply_one_add_I_smul_fderiv_apply_I`, the transform inverts `D` only
+up to the factor `2`, which the Cauchy–Pompeiu formula absorbs in its constant `(2π)⁻¹`. -/
 example [CompleteSpace F] {u : ℂ → F} (hc : HasCompactSupport u) (hu : ContDiff ℝ 1 u) :
     cauchyTransform ((2 : ℂ) • fun z ↦ conjWirtingerDeriv u z 1) = (2 : ℂ) • u := by
   rw [cauchyTransform_smul, funext (hc.cauchyTransform_conjWirtingerDeriv hu)]
 
 /-- **The transposed kernel is not a right inverse of `\bar∂`.** There is a smooth compactly
-supported `f : ℂ → ℂ`, a bump function equal to `1` at the origin, for which `\bar∂` of
-`π⁻¹ ∫ (z - w)⁻¹ • f z` differs from `f` at the origin. -/
+supported `f : ℂ → ℂ` for which `\bar∂` of `π⁻¹ ∫ (z - w)⁻¹ • f z` differs from `f` at the
+origin. -/
 theorem exists_conjWirtingerDeriv_pi_inv_smul_integral_swap_sub_inv_smul_ne :
     ∃ f : ℂ → ℂ, HasCompactSupport f ∧ ContDiff ℝ ∞ f ∧
       conjWirtingerDeriv (fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (z - w)⁻¹ • f z) 0 1 ≠ f 0 := by
+  -- The witness is a bump function equal to `1` at the origin, where `\bar∂` of the transposed
+  -- integral is `-1`.
   let b : ContDiffBump (0 : ℂ) := ⟨1, 2, one_pos, one_lt_two⟩
   have hc : HasCompactSupport fun z ↦ (b z : ℂ) := b.hasCompactSupport.comp_left ofReal_zero
   have hs : ContDiff ℝ ∞ fun z ↦ (b z : ℂ) := ofRealCLM.contDiff.comp b.contDiff
