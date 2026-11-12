@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
 public import TauCeti.Probability.Process.QuadraticVariation
-import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Moments.Chebyshev
 import TauCeti.Algebra.BigOperators.Fin
 
@@ -44,32 +43,6 @@ open TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
   {n : ℕ} {t : Fin (n + 1) → ℝ≥0}
-
-/-- The square of every Brownian increment is square integrable, in either time order. -/
-theorem memLp_sq_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
-    MemLp (fun ω ↦ (B s ω - B t ω) ^ 2) 2 P := by
-  let : ENNReal.HolderTriple 4 4 2 := .of_toReal (by
-    norm_num [Real.holderTriple_iff])
-  have h := (hB.hasLaw_sub s t).memLp (memLp_id_gaussianReal' 4 (by norm_num))
-  simpa only [pow_two, Pi.mul_def, Pi.sub_def] using
-    (h.mul h : MemLp ((B s - B t) * (B s - B t)) 2 P)
-
-/-- The second moment of a Brownian increment is the elapsed time. -/
-theorem integral_sq_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
-    ∫ ω, (B t ω - B s ω) ^ 2 ∂P = (t : ℝ) - s := by
-  have h := (hB.hasLaw_sub_of_le hst).integral_comp
-    (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
-  simpa only [Function.comp_apply, Pi.sub_apply, integral_sq_gaussianReal,
-    zero_pow two_ne_zero, add_zero, NNReal.coe_sub hst] using h
-
-/-- The fourth moment of a Brownian increment is three times the squared elapsed time. -/
-theorem integral_pow_four_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0}
-    (hst : s ≤ t) : ∫ ω, (B t ω - B s ω) ^ 4 ∂P = 3 * ((t : ℝ) - s) ^ 2 := by
-  have hm : ∫ x : ℝ, x ^ 4 ∂gaussianReal 0 (t - s) = 3 * ((t : ℝ) - s) ^ 2 := by
-    simpa only [sub_zero, NNReal.coe_sub hst] using
-      integral_sub_pow_four_gaussianReal 0 (t - s)
-  simpa only [Function.comp_apply, Pi.sub_apply] using
-    ((hB.hasLaw_sub_of_le hst).integral_comp (f := fun x : ℝ ↦ x ^ 4) (by fun_prop)).trans hm
 
 /-- Every Brownian quadratic sum is square integrable, even on an unordered grid. -/
 theorem memLp_quadraticSum (hB : IsPreBrownianReal B P) (t : Fin (n + 1) → ℝ≥0) :

@@ -23,6 +23,7 @@ and supporting receiver notation on the ideal and the homomorphism.
 
 ## Main definitions
 
+* `LieIdeal.quotEquivOfEq`: the Lie equivalence between quotients by equal ideals.
 * `LieIdeal.liftQ`: the homomorphism `L ⧸ I →ₗ⁅R⁆ L'` induced by a homomorphism
   `L →ₗ⁅R⁆ L'` whose kernel contains `I`.
 * `LieIdeal.factor`: the transition `L ⧸ I →ₗ⁅R⁆ L ⧸ J` between the quotients by nested ideals
@@ -37,8 +38,9 @@ and supporting receiver notation on the ideal and the homomorphism.
 * `LieIdeal.liftQ_mkQ`: the lifted homomorphism restricts to the original one along the quotient
   map.
 * `LieIdeal.coe_liftQ`: the lifted homomorphism is `Submodule.liftQ` of the underlying linear map.
-* `LieIdeal.liftQ_injective` and `LieIdeal.liftQ_surjective`: the lifted homomorphism is injective
-  when the ideal exhausts the kernel, and surjective when the original homomorphism is.
+* `LieIdeal.liftQ_injective_iff` and `LieIdeal.liftQ_surjective`: the lifted homomorphism is
+  injective exactly when the ideal exhausts the kernel, and surjective when the original
+  homomorphism is.
 * `LieIdeal.lieHom_qext`: two homomorphisms from the quotient are equal when they agree after the
   quotient map.
 * `LieIdeal.eq_liftQ`: the lifted homomorphism is the unique such factorization.
@@ -65,6 +67,30 @@ namespace LieIdeal
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
 variable (I : LieIdeal R L)
 
+/-- Quotienting by equal Lie ideals gives equivalent Lie algebras, refining
+`Submodule.quotEquivOfEq` by retaining the Lie bracket. -/
+def quotEquivOfEq (J : LieIdeal R L) (h : I = J) : (L ⧸ I) ≃ₗ⁅R⁆ L ⧸ J where
+  __ := Submodule.quotEquivOfEq I.toSubmodule J.toSubmodule (congrArg LieSubmodule.toSubmodule h)
+  map_lie' {x y} := by
+    induction x using Submodule.Quotient.induction_on
+    induction y using Submodule.Quotient.induction_on
+    -- The underlying quotient equivalence preserves representatives definitionally.
+    rfl
+
+/-- The equivalence between quotients by equal ideals preserves representatives. -/
+@[simp]
+theorem quotEquivOfEq_mk (J : LieIdeal R L) (h : I = J) (x : L) :
+    I.quotEquivOfEq J h (LieSubmodule.Quotient.mk x) = LieSubmodule.Quotient.mk x :=
+  Submodule.quotEquivOfEq_mk _ _ (congrArg LieSubmodule.toSubmodule h) x
+
+/-- The inverse equivalence between quotients by equal ideals preserves representatives. -/
+@[simp]
+theorem quotEquivOfEq_symm_mk (J : LieIdeal R L) (h : I = J) (x : L) :
+    (I.quotEquivOfEq J h).symm (LieSubmodule.Quotient.mk x) =
+      LieSubmodule.Quotient.mk x := by
+  apply (I.quotEquivOfEq J h).injective
+  simp
+
 /-- The homomorphism `L ⧸ I →ₗ⁅R⁆ L'` induced by a homomorphism `f : L →ₗ⁅R⁆ L'` whose kernel
 contains the ideal `I`. -/
 def liftQ (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) : L ⧸ I →ₗ⁅R⁆ L' where
@@ -88,10 +114,11 @@ theorem coe_liftQ (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
           (LieHom.ker_toSubmodule f).le) :=
   (rfl)
 
-/-- The homomorphism induced on the quotient is injective as soon as the ideal quotiented by
+/-- The homomorphism induced on the quotient is injective exactly when the ideal quotiented by
 exhausts the kernel. -/
-theorem liftQ_injective (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) (h' : f.ker ≤ I) :
-    Function.Injective (I.liftQ f h) := by
+theorem liftQ_injective_iff (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
+    Function.Injective (I.liftQ f h) ↔ f.ker ≤ I := by
+  refine ⟨fun hf x hx => I.mkQ_eq_zero.1 (hf (by simpa using hx)), fun h' => ?_⟩
   rw [← LieHom.coe_toLinearMap, ← LinearMap.ker_eq_bot, coe_liftQ]
   exact Submodule.ker_liftQ_eq_bot _ (f : L →ₗ[R] L') _ <| by
     rw [← LieHom.ker_toSubmodule, LieSubmodule.toSubmodule_le_toSubmodule]; exact h'
@@ -245,7 +272,7 @@ by its kernel is isomorphic to the target. -/
 noncomputable def quotKerEquivOfSurjective (f : L →ₗ⁅R⁆ L') (hf : Function.Surjective f) :
     (L ⧸ f.ker) ≃ₗ⁅R⁆ L' :=
   LieEquiv.ofBijective (f.ker.liftQ f le_rfl)
-    ⟨f.ker.liftQ_injective f le_rfl le_rfl, f.ker.liftQ_surjective f le_rfl hf⟩
+    ⟨(f.ker.liftQ_injective_iff f le_rfl).2 le_rfl, f.ker.liftQ_surjective f le_rfl hf⟩
 
 /-- The first isomorphism theorem sends the class of `x` to `f x`. -/
 @[simp]
