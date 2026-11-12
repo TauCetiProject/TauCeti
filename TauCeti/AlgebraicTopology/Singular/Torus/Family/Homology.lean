@@ -13,32 +13,27 @@ public import TauCeti.AlgebraicTopology.Singular.Torus.ZLattice
 /-!
 # Canonical homology markings of the fibers of a family of tori
 
-Let `P : Y → Λ →ₗ[ℤ] E` be a continuous family of full lattices in a finite-dimensional real normed
-space `E`. This file extends the canonical degree-one fiberwise marking `H₁(T_y; ℤ) ≃ₗ[ℤ] Λ` of
-`TauCeti.torusFamilyMarking` to all degrees via `Submodule.orbitRelQuotientHomologyEquiv`, without
-any basis choice or fibration machinery:
+For a continuous family `P : Y → Λ →ₗ[ℤ] E` of full lattices in a finite-dimensional real normed
+space `E`, this file extends `TauCeti.torusFamilyMarking : H₁(T_y; ℤ) ≃ₗ[ℤ] Λ` to all degrees via
+`Submodule.orbitRelQuotientHomologyEquiv`, without any basis choice or fibration machinery:
 
 * `TauCeti.torusFamilyHomologyMarking`: the canonical marking `Hₙ(T_y; ℤ) ≃ₗ[ℤ] ⋀[ℤ]^n Λ` of the
   fiber over `y`, agreeing with `TauCeti.torusFamilyMarking` in degree `1`
   (`TauCeti.oneEquiv_torusFamilyHomologyMarking`).
-* `TauCeti.torusFamilyHomologyMarking_map`: fiberwise naturality under continuous maps between torus
-  fibers induced by continuous additive maps `φ : E₀ →ₗ[ℤ] E₁` intertwining the period maps with a
-  lattice homomorphism `α : Λ₀ →ₗ[ℤ] Λ₁`.
-* `TauCeti.torusFamilyHomologyMarking_baseChange` and `TauCeti.torusFamilyMarking_baseChange`:
-  invariance of the fiberwise markings under continuous base change `f : C(Z, Y)`.
-* `TauCeti.torusFamilyHomologyMarking_comp_equiv` and `TauCeti.torusFamilyMarking_comp_equiv`:
-  transformation of the fiberwise markings under re-marking the lattice by `α : Λ' ≃ₗ[ℤ] Λ`.
+* `TauCeti.torusFamilyHomologyMarking_map`: fiberwise naturality along continuous additive maps
+  `φ : E₀ →ₗ[ℤ] E₁` intertwining the period maps with `α : Λ₀ →ₗ[ℤ] Λ₁`.
+* `TauCeti.torusFamilyHomologyMarking_baseChange`, `TauCeti.torusFamilyMarking_baseChange`:
+  invariance under continuous base change `f : C(Z, Y)`.
+* `TauCeti.torusFamilyHomologyMarking_comp_equiv`, `TauCeti.torusFamilyMarking_comp_equiv`:
+  transformation under lattice re-marking by `α : Λ' ≃ₗ[ℤ] Λ`.
 
 As in `TauCeti.AlgebraicTopology.Singular.Torus.Family.Basic`, spaces carrying integer singular
 chains live in `Type`.
 
 ## References
 
-* Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
-  Grundlehren der mathematischen Wissenschaften 302, Springer, 2004, Chapter 1, Sections 1.1 and
-  1.3, and Chapter 8.
-* Claire Voisin, *Hodge Theory and Complex Algebraic Geometry I*, Cambridge Studies in Advanced
-  Mathematics 76, Cambridge University Press, 2002, Chapter 9, Section 9.1.
+* C. Birkenhake and H. Lange, *Complex Abelian Varieties*, 2nd ed., Springer, 2004, §§1.1, 1.3, 8.
+* C. Voisin, *Hodge Theory and Complex Algebraic Geometry I*, CUP, 2002, §9.1.
 -/
 
 public section
@@ -106,10 +101,9 @@ theorem torusFamilyHomologyMarking_symm_apply (n : ℕ) (w : ⋀[ℤ]^n Λ) :
           (((LinearEquiv.ofInjective (P y) (hinj y)).exteriorPower n) w)) := by
   rw [torusFamilyHomologyMarking, LinearEquiv.symm_trans_apply, LinearEquiv.exteriorPower_symm,
     LinearEquiv.symm_symm]
-  refine (LinearEquiv.symm_trans_apply _).trans ?_
-  exact congrArg (fun f ↦ ModuleCat.Hom.hom f _)
+  refine (LinearEquiv.symm_trans_apply _).trans (congrArg (fun f ↦ ModuleCat.Hom.hom f _)
     ((torusFamilyFiberHomeomorph P y hcont).toHomotopyEquiv.singularHomologyIso_hom
-      (ModuleCat.of ℤ ℤ) n)
+      (ModuleCat.of ℤ ℤ) n))
 
 /-- **Compatibility with the fiber homeomorphism.** On a class carried from
 `E / LinearMap.range (P y)` by `TauCeti.torusFamilyFiberHomeomorph`, pushing the marking forward by

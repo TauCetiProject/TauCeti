@@ -12,30 +12,17 @@ public import TauCeti.Topology.Category.TopCat.Fiber
 /-!
 # Categorical base-change square and fiber isomorphism of period quotients
 
-For any period family `P : Y → Λ →ₗ[ℤ] E` and continuous map `f : C(Z, Y)`, the base-change map
-`TauCeti.torusFamilyBaseChangeMap P f` fits into a commutative square
-`TauCeti.torusFamilyBaseChangeCommSq` in `TopCat` from `(Z × E)/Λ → Z` to `(Y × E)/Λ → Y` over `f`.
-
-When addition on `E` and the periods of `P` are continuous, the induced morphism
-`CategoryTheory.CommSq.fiberMap` over `z : Z` intertwines the canonical fiber homeomorphisms
-`TauCeti.torusFamilyFiberHomeomorph` of `P ∘ f` at `z` and of `P` at `f z` via the identity of
-`E / LinearMap.range (P (f z))`, and is therefore an isomorphism in `TopCat`
-(`TauCeti.isIso_torusFamilyBaseChangeCommSq_fiberMap`).
-
-## Main results
-
-* `TauCeti.torusFamilyBaseChangeCommSq`: the commutative square in `TopCat` for base change along
-  `f : C(Z, Y)`.
-* `TauCeti.torusFamilyBaseChangeCommSq_fiberMap_fiberHomeomorph`,
-  `TauCeti.torusFamilyBaseChangeCommSq_fiberMap_comp_fiberHomeomorph`: compatibility of the induced
-  fiber map with `TauCeti.torusFamilyFiberHomeomorph`.
-* `TauCeti.isIso_torusFamilyBaseChangeCommSq_fiberMap`: base change induces an isomorphism on every
-  fiber in `TopCat`.
+For a period family `P : Y → Λ →ₗ[ℤ] E` and `f : C(Z, Y)`, `TauCeti.torusFamilyBaseChangeMap P f`
+forms a commutative square `TauCeti.torusFamilyBaseChangeCommSq` in `TopCat` over `f`. When addition
+on `E` and the periods of `P` are continuous, `CategoryTheory.CommSq.fiberMap` over `z : Z`
+intertwines `TauCeti.torusFamilyFiberHomeomorph` of `P ∘ f` at `z` and of `P` at `f z`
+(`TauCeti.torusFamilyBaseChangeCommSq_fiberMap_fiberHomeomorph`,
+`TauCeti.torusFamilyBaseChangeCommSq_fiberMap_comp_fiberHomeomorph`) and is an isomorphism in
+`TopCat` (`TauCeti.isIso_torusFamilyBaseChangeCommSq_fiberMap`).
 
 ## References
 
-* Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
-  Chapter 8 (families of complex tori given by period matrices).
+* C. Birkenhake and H. Lange, *Complex Abelian Varieties*, 2nd ed., Springer, 2004, Chapter 8.
 -/
 
 public section

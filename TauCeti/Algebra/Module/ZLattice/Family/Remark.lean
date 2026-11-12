@@ -15,36 +15,20 @@ import Mathlib.Topology.Homeomorph.Quotient
 # Lattice re-marking of period quotients
 
 Precomposing a period family `P : Y → Λ →ₗ[ℤ] E` with a `ℤ`-linear equivalence `α : Λ' ≃ₗ[ℤ] Λ`
-leaves the period subgroups `LinearMap.range (P y)` and hence the `Λ'`- and `Λ`-orbits on `Y × E`
-unchanged. This file packages the resulting homeomorphism
-`TauCeti.torusFamilyRemarkHomeomorph : (Y × E)/Λ' ≃ₜ (Y × E)/Λ` over `Y` and its commutative square
-`TauCeti.torusFamilyRemarkCommSq` in `TopCat` over `𝟙 (TopCat.of Y)`, together with its action on
-fibers through `TauCeti.torusFamilyFiberHomeomorph`
-(`TauCeti.isIso_torusFamilyRemarkCommSq_fiberMap`).
+leaves `LinearMap.range (P y)` and the orbits on `Y × E` unchanged, without requiring any basis,
+injectivity, discreteness, or fullness hypothesis:
 
-No choice of basis, injectivity, discreteness, or fullness of the periods is required.
-
-## Main definitions
-
-* `TauCeti.torusFamilyRemarkHomeomorph`: the homeomorphism over `Y` comparing the period quotients
-  for `fun y ↦ (P y).comp α.toLinearMap` and `P`.
-
-## Main results
-
+* `TauCeti.torusFamilyRemarkHomeomorph`: the homeomorphism `(Y × E)/Λ' ≃ₜ (Y × E)/Λ` over `Y`.
 * `TauCeti.torusFamilyProjection_remarkHomeomorph`, `TauCeti.torusFamilyRemarkCommSq`:
-  `torusFamilyRemarkHomeomorph` commutes with `torusFamilyProjection`, forming a commutative square
-  over `𝟙 (TopCat.of Y)` in `TopCat`.
+  compatibility with `torusFamilyProjection` and commutative square over `𝟙 (TopCat.of Y)`.
 * `TauCeti.torusFamilyRemarkCommSq_fiberMap_fiberHomeomorph`,
-  `TauCeti.torusFamilyRemarkCommSq_fiberMap_comp_fiberHomeomorph`: on the fiber over `y`,
-  `torusFamilyRemarkCommSq` intertwines `TauCeti.torusFamilyFiberHomeomorph` via `LinearMap.id`
-  between the equal period subgroups.
-* `TauCeti.isIso_torusFamilyRemarkCommSq_fiberMap`: re-marking induces an isomorphism on every
-  fiber in `TopCat`.
+  `TauCeti.torusFamilyRemarkCommSq_fiberMap_comp_fiberHomeomorph`,
+  `TauCeti.isIso_torusFamilyRemarkCommSq_fiberMap`: compatibility with
+  `TauCeti.torusFamilyFiberHomeomorph` and fiber isomorphism in `TopCat`.
 
 ## References
 
-* Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
-  Chapter 8 (families of complex tori given by period matrices).
+* C. Birkenhake and H. Lange, *Complex Abelian Varieties*, 2nd ed., Springer, 2004, Chapter 8.
 -/
 
 public section

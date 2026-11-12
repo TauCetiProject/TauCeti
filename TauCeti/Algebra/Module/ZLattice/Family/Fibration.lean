@@ -15,41 +15,32 @@ public import TauCeti.Topology.Homotopy.HurewiczFibration.Transport
 # Parallel transport and Hurewicz fibration structure of a family of tori
 
 Let `P : Y → (Λ →ₗ[ℤ] E)` be a continuous family of full lattices in a finite-dimensional real
-normed space `E`, with `Λ` a finite free `ℤ`-module. At each `y : Y` the periods of any `ℤ`-basis
-`b` of `Λ` form a real basis `TauCeti.periodBasis P b hinj y` of `E`. Composing its coordinate map
-at `y` with the inverse coordinate map at `y'` defines the **period parallel transport**
+normed space `E`, with `Λ` finite free over `ℤ`. For any `ℤ`-basis `b` of `Λ`, composing the
+coordinate map of `TauCeti.periodBasis P b hinj y` with the inverse coordinate map at `y'` defines
 `TauCeti.torusFamilyParallelTransport P hinj y y' : E ≃L[ℝ] E`, the unique real-linear isomorphism
-carrying `P y l` to `P y' l` for every `l : Λ`; in particular it does not depend on the chosen
-`ℤ`-basis of `Λ`.
+carrying `P y l` to `P y' l` for all `l : Λ` (independent of `b`).
 
-Transferring the canonical lifting function of the product projection through the global
-trivialization `TauCeti.torusFamilyHomeomorphProd` equips `(Y × E)/Λ → Y` with a canonical
-Hurewicz lifting function `TauCeti.torusFamilyLiftingFunction`, lifting `[y, v]` along a path `γ`
-with `γ 0 = y` to `t ↦ [γ t, torusFamilyParallelTransport P hinj y (γ t) v]`. Consequently,
-`TauCeti.torusFamilyProjection` is a Hurewicz fibration (for test spaces in every universe) and a
-Serre fibration, and under `TauCeti.torusFamilyFiberHomeomorph` its fiber transport along any path
-from `y₀` to `y₁` is induced on translation quotients by
-`torusFamilyParallelTransport P hinj y₀ y₁`.
+Transferring `LiftingFunction.fst` along `TauCeti.torusFamilyHomeomorphProd` equips
+`(Y × E)/Λ → Y` with `TauCeti.torusFamilyLiftingFunction`, lifting `[y, v]` along `γ` with `γ 0 = y`
+to `t ↦ [γ t, torusFamilyParallelTransport P hinj y (γ t) v]`. Hence `TauCeti.torusFamilyProjection`
+is a Hurewicz and Serre fibration, and under `TauCeti.torusFamilyFiberHomeomorph` its fiber
+transport along any path is `Submodule.orbitRelQuotientMap` of `torusFamilyParallelTransport`.
 
 ## Main definitions
 
-* `TauCeti.torusFamilyParallelTransport`: the real-linear isomorphism `E ≃L[ℝ] E` sending
-  `P y l` to `P y' l` for all `l : Λ`.
-* `TauCeti.torusFamilyLiftingFunction`: the canonical `LiftingFunction` for
-  `torusFamilyProjection P`.
+* `TauCeti.torusFamilyParallelTransport`: the isomorphism `E ≃L[ℝ] E` sending `P y l` to `P y' l`.
+* `TauCeti.torusFamilyLiftingFunction`: canonical `LiftingFunction` for `torusFamilyProjection P`.
 
 ## Main results
 
 * `TauCeti.torusFamilyParallelTransport_period`, `TauCeti.eq_torusFamilyParallelTransport`,
-  `TauCeti.torusFamilyParallelTransport_eq_of_basis`: `torusFamilyParallelTransport` is the unique
-  real-linear map carrying periods at `y` to periods at `y'`, independent of the `ℤ`-basis of `Λ`.
-* `TauCeti.torusFamilyLiftingFunction_transport_comp_fiberHomeomorph`,
-  `TauCeti.torusFamilyLiftingFunction_transport_fiberHomeomorph`: transport along any path from `y₀`
-  to `y₁` acts on `E / range (P y₀) → E / range (P y₁)` as `Submodule.orbitRelQuotientMap` of
+  `TauCeti.torusFamilyParallelTransport_eq_of_basis`: uniqueness and basis independence of
   `torusFamilyParallelTransport`.
+* `TauCeti.torusFamilyLiftingFunction_transport_comp_fiberHomeomorph`,
+  `TauCeti.torusFamilyLiftingFunction_transport_fiberHomeomorph`: path transport acts on translation
+  quotients as `Submodule.orbitRelQuotientMap` of `torusFamilyParallelTransport`.
 * `TauCeti.isHurewiczFibration_torusFamilyProjection`,
-  `TauCeti.mem_serreFibrations_torusFamilyProjection`: `(Y × E)/Λ → Y` is a Hurewicz and Serre
-  fibration.
+  `TauCeti.mem_serreFibrations_torusFamilyProjection`: Hurewicz and Serre fibration properties.
 -/
 
 public section
@@ -111,37 +102,32 @@ theorem eq_torusFamilyParallelTransport {y y' : Y} (f : E →ₗ[ℝ] E)
 theorem torusFamilyParallelTransport_eq_of_basis {ι : Type*} [Finite ι]
     (b : Basis ι ℤ Λ) (y y' : Y) :
     torusFamilyParallelTransport P hinj y y' =
-      (periodBasis P b hinj y).equivFunL.trans (periodBasis P b hinj y').equivFunL.symm := by
-  apply ContinuousLinearEquiv.toLinearEquiv_injective
-  apply LinearEquiv.toLinearMap_injective
-  exact (eq_torusFamilyParallelTransport P hinj _
-    (periodBasis_equivFunL_trans_symm_period P hinj b y y')).symm
+      (periodBasis P b hinj y).equivFunL.trans (periodBasis P b hinj y').equivFunL.symm :=
+  ContinuousLinearEquiv.toLinearEquiv_injective <| LinearEquiv.toLinearMap_injective
+    (eq_torusFamilyParallelTransport P hinj _
+      (periodBasis_equivFunL_trans_symm_period P hinj b y y')).symm
 
 @[simp]
 theorem torusFamilyParallelTransport_self (y : Y) :
-    torusFamilyParallelTransport P hinj y y = ContinuousLinearEquiv.refl ℝ E := by
-  apply ContinuousLinearEquiv.toLinearEquiv_injective
-  apply LinearEquiv.toLinearMap_injective
-  exact (eq_torusFamilyParallelTransport P hinj LinearMap.id fun _ ↦ rfl).symm
+    torusFamilyParallelTransport P hinj y y = ContinuousLinearEquiv.refl ℝ E :=
+  ContinuousLinearEquiv.toLinearEquiv_injective <| LinearEquiv.toLinearMap_injective
+    (eq_torusFamilyParallelTransport P hinj LinearMap.id fun _ ↦ rfl).symm
 
 @[simp]
 theorem torusFamilyParallelTransport_symm (y y' : Y) :
-    (torusFamilyParallelTransport P hinj y y').symm = torusFamilyParallelTransport P hinj y' y := by
-  apply ContinuousLinearEquiv.toLinearEquiv_injective
-  apply LinearEquiv.toLinearMap_injective
-  refine eq_torusFamilyParallelTransport P hinj _ fun l ↦ ?_
-  exact (torusFamilyParallelTransport P hinj y y').symm_apply_eq.mpr
-    (torusFamilyParallelTransport_period P hinj y y' l).symm
+    (torusFamilyParallelTransport P hinj y y').symm = torusFamilyParallelTransport P hinj y' y :=
+  ContinuousLinearEquiv.toLinearEquiv_injective <| LinearEquiv.toLinearMap_injective <|
+    eq_torusFamilyParallelTransport P hinj _ fun l ↦
+      (torusFamilyParallelTransport P hinj y y').symm_apply_eq.mpr
+        (torusFamilyParallelTransport_period P hinj y y' l).symm
 
 @[simp]
 theorem torusFamilyParallelTransport_trans (y y' y'' : Y) :
     (torusFamilyParallelTransport P hinj y y').trans
         (torusFamilyParallelTransport P hinj y' y'') =
-      torusFamilyParallelTransport P hinj y y'' := by
-  apply ContinuousLinearEquiv.toLinearEquiv_injective
-  apply LinearEquiv.toLinearMap_injective
-  refine eq_torusFamilyParallelTransport P hinj _ fun l ↦ ?_
-  simp
+      torusFamilyParallelTransport P hinj y y'' :=
+  ContinuousLinearEquiv.toLinearEquiv_injective <| LinearEquiv.toLinearMap_injective <|
+    eq_torusFamilyParallelTransport P hinj _ fun l ↦ by simp
 
 /-- Period parallel transport maps the period lattice at `y` into the period lattice at `y'`. -/
 theorem torusFamilyParallelTransport_le_comap_range (y y' : Y) :
@@ -157,13 +143,7 @@ theorem continuous_torusFamilyParallelTransport [TopologicalSpace Y]
     (hcont : ∀ l, Continuous fun y ↦ P y l) :
     Continuous fun q : (Y × Y) × E ↦ torusFamilyParallelTransport P hinj q.1.1 q.1.2 q.2 := by
   let b := Module.Free.chooseBasis ℤ Λ
-  have heq : (fun q : (Y × Y) × E ↦ torusFamilyParallelTransport P hinj q.1.1 q.1.2 q.2) =
-      fun q : (Y × Y) × E ↦
-        (periodBasis P b hinj q.1.2).equivFunL.symm
-          ((periodBasis P b hinj q.1.1).equivFunL q.2) := by
-    ext q
-    rw [torusFamilyParallelTransport_eq_of_basis P hinj b, ContinuousLinearEquiv.trans_apply]
-  rw [heq]
+  simp_rw [torusFamilyParallelTransport_eq_of_basis P hinj b, ContinuousLinearEquiv.trans_apply]
   exact ((continuous_periodBasis_equivFunL_symm P b hinj hcont).comp
     continuous_fst.snd).clm_apply
     (((continuous_periodBasis_equivFunL P b hinj hcont).comp continuous_fst.fst).clm_apply

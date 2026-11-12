@@ -13,43 +13,34 @@ public import TauCeti.AlgebraicTopology.Singular.Torus.Family.Homology
 /-!
 # Trivialization of the fiber homology local system of a torus family
 
-Let `P : Y → Λ →ₗ[ℤ] E` be a continuous family of full lattices in a finite-dimensional real normed
-space `E`, with `Λ` finite free over `ℤ`. By `TauCeti.isHurewiczFibration_torusFamilyProjection`,
-the projection `π : (Y × E)/Λ → Y` is a Hurewicz fibration; for any Hurewicz lifting function `L` of
-`π`, the integral singular homology of its fibers forms the local coefficient system
-`TauCeti.fiberLocalSystem L ℤ n` over `Y`.
+For a continuous family `P : Y → Λ →ₗ[ℤ] E` of full lattices in a finite-dimensional real normed
+space `E` with `Λ` finite free over `ℤ`, `TauCeti.isHurewiczFibration_torusFamilyProjection` shows
+that `π : (Y × E)/Λ → Y` is a Hurewicz fibration. For any lifting function `L` of `π`, this file
+promotes `TauCeti.torusFamilyHomologyMarking` and `TauCeti.torusFamilyMarking` to global
+trivializations of `TauCeti.fiberLocalSystem L ℤ n`:
 
-This file promotes the fiberwise canonical markings `TauCeti.torusFamilyHomologyMarking` and
-`TauCeti.torusFamilyMarking` to global trivializations of the fiber homology local systems:
-
-* `TauCeti.torusFamilyHomologyMarking_transport` and `TauCeti.torusFamilyMarking_transport`:
-  Hurewicz transport along any path `γ : Path y₀ y₁` and any lifting function `L` preserves the
-  canonical markings.
-* `TauCeti.torusFamilyHomologyLocalSystemIso` and `TauCeti.torusFamilyFirstHomologyLocalSystemIso`:
-  the resulting canonical trivializations of `TauCeti.fiberLocalSystem L ℤ n` by `⋀[ℤ]^n Λ` and of
-  `TauCeti.fiberLocalSystem L ℤ 1` by `Λ`, together with triviality of the monodromy representation
+* `TauCeti.torusFamilyHomologyMarking_transport`, `TauCeti.torusFamilyMarking_transport`: Hurewicz
+  transport along any path preserves the canonical markings.
+* `TauCeti.torusFamilyHomologyLocalSystemIso`, `TauCeti.torusFamilyFirstHomologyLocalSystemIso`:
+  canonical trivializations by `⋀[ℤ]^n Λ` and `Λ`, with trivial monodromy
   (`TauCeti.isTrivial_monodromyRepresentation_torusFamilyFiberLocalSystem`,
   `TauCeti.torusFamilyHomologyMonodromyIsoTrivial`,
   `TauCeti.torusFamilyFirstHomologyMonodromyIsoTrivial`).
-* Naturality of the local-system trivializations under continuous base change `f : C(Z, Y)`
-  (`TauCeti.torusFamilyBaseChange_fiberLocalSystemMap_comp_iso`,
+* Naturality under base change (`TauCeti.torusFamilyBaseChange_fiberLocalSystemMap_comp_iso`,
   `TauCeti.torusFamilyBaseChange_fiberLocalSystemMap_comp_firstHomologyIso`,
-  `TauCeti.isIso_torusFamilyBaseChangeCommSq_fiberLocalSystemMap`) and under re-marking by
-  `α : Λ' ≃ₗ[ℤ] Λ` (`TauCeti.torusFamilyRemark_fiberLocalSystemMap_comp_iso`,
+  `TauCeti.isIso_torusFamilyBaseChangeCommSq_fiberLocalSystemMap`) and lattice re-marking
+  (`TauCeti.torusFamilyRemark_fiberLocalSystemMap_comp_iso`,
   `TauCeti.torusFamilyRemark_fiberLocalSystemMap_comp_firstHomologyIso`).
-* `TauCeti.torusFamilyMarkingIsoEquivAut`: over a path-connected base `Y`, global markings of
-  `TauCeti.fiberLocalSystem L ℤ 1` by `Λ` correspond bijectively to automorphisms `Λ ≃ₗ[ℤ] Λ`.
+* `TauCeti.torusFamilyMarkingIsoEquivAut`: over path-connected `Y`, global markings of
+  `TauCeti.fiberLocalSystem L ℤ 1` by `Λ` correspond bijectively to `Λ ≃ₗ[ℤ] Λ`.
 
 As in `TauCeti.AlgebraicTopology.Singular.Torus.Family.Basic`, spaces carrying integer singular
 chains live in `Type`.
 
 ## References
 
-* Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
-  Grundlehren der mathematischen Wissenschaften 302, Springer, 2004, Chapter 1, Sections 1.1 and
-  1.3, and Chapter 8.
-* Claire Voisin, *Hodge Theory and Complex Algebraic Geometry I*, Cambridge Studies in Advanced
-  Mathematics 76, Cambridge University Press, 2002, Chapter 9, Section 9.1.
+* C. Birkenhake and H. Lange, *Complex Abelian Varieties*, 2nd ed., Springer, 2004, §§1.1, 1.3, 8.
+* C. Voisin, *Hodge Theory and Complex Algebraic Geometry I*, CUP, 2002, §9.1.
 -/
 
 public section
@@ -60,24 +51,25 @@ open CategoryTheory Function TauCeti.LocalCoefficientSystem
 
 namespace TauCeti
 
-/-- `torusFamilyHomologyMarking` typed directly on `(TopCat.ofHom ...).fiber y`, which is
-definitionally `TopCat.of {z | torusFamilyProjection P z = y}` at semireducible transparency. -/
-private def torusFamilyFiberHomologyMarking {Y E : Type} [TopologicalSpace Y]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {Λ : Type*} [AddCommGroup Λ]
-    (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
-    [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
-    (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y)) (y : Y) (n : ℕ) :
+/-! ### Invariance under Hurewicz transport and trivialization of the fiber local system -/
+
+section LocalSystem
+
+variable {Y Λ E : Type} [TopologicalSpace Y] [AddCommGroup Λ]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
+  [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
+  (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y))
+
+/-- `torusFamilyHomologyMarking` typed on `(TopCat.ofHom ...).fiber y`. -/
+private def torusFamilyFiberHomologyMarking (y : Y) (n : ℕ) :
     letI := periodAddAction P
     ((singularChains ℤ).obj ((TopCat.ofHom ⟨torusFamilyProjection P,
       continuous_torusFamilyProjection P⟩).fiber y)).homology n ≃ₗ[ℤ] ⋀[ℤ]^n Λ :=
   torusFamilyHomologyMarking P hcont hinj y n
 
 @[simp]
-private theorem torusFamilyFiberHomologyMarking_apply {Y E : Type} [TopologicalSpace Y]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {Λ : Type*} [AddCommGroup Λ]
-    (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
-    [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
-    (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y)) (y : Y) (n : ℕ)
+private theorem torusFamilyFiberHomologyMarking_apply (y : Y) (n : ℕ)
     (c : letI := periodAddAction P; ((singularChains ℤ).obj ((TopCat.ofHom
       ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).fiber y)).homology n) :
     letI := periodAddAction P
@@ -85,16 +77,7 @@ private theorem torusFamilyFiberHomologyMarking_apply {Y E : Type} [TopologicalS
       torusFamilyHomologyMarking P hcont hinj y n c :=
   rfl
 
-/-! ### Invariance under Hurewicz transport and trivialization of the fiber local system -/
-
-section LocalSystem
-
-variable {Y Λ E : Type} [TopologicalSpace Y]
-  [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
-  [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
-  (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y))
+variable [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
 
 /-- **Hurewicz transport preserves the canonical homology marking.** For any Hurewicz lifting
 function `L` of `torusFamilyProjection P` and any path `γ : Path y₀ y₁`, the map induced on `Hₙ` by
@@ -178,14 +161,12 @@ theorem torusFamilyHomologyLocalSystemIso_hom_app_apply
         ((fiberLocalSystemSingularObjIso L ℤ n b).hom x) := by
   let _ := periodAddAction P
   -- `(NatIso.ofComponents app _).hom.app b` is definitionally `(app b).hom`, and typing its
-  -- codomain as `ModuleCat.of ℤ _` crosses the semireducible equality
-  -- `((constantFunctor _).obj M).obj b = M` where `rw`/`simp` fail at `implicit` transparency.
+  -- codomain as `ModuleCat.of ℤ _` crosses `((constantFunctor _).obj M).obj b = M`.
   let f : (fiberLocalSystem L ℤ n).obj b ⟶ ModuleCat.of ℤ (⋀[ℤ]^n Λ) :=
     (fiberLocalSystemSingularObjIso L ℤ n b ≪≫
       (torusFamilyFiberHomologyMarking P hcont hinj b.as n).toModuleIso).hom
-  have hf : f x = torusFamilyHomologyMarking P hcont hinj b.as n
-      ((fiberLocalSystemSingularObjIso L ℤ n b).hom x) := by simp [f]
-  exact hf
+  change f x = _
+  simp [f]
 
 theorem torusFamilyHomologyLocalSystemIso_inv_app_apply
     (n : ℕ) (b : FundamentalGroupoid (TopCat.of Y)) (w : ⋀[ℤ]^n Λ) :
@@ -194,21 +175,16 @@ theorem torusFamilyHomologyLocalSystemIso_inv_app_apply
       (fiberLocalSystemSingularObjIso L ℤ n b).inv
         ((torusFamilyHomologyMarking P hcont hinj b.as n).symm w) := by
   let _ := periodAddAction P
-  -- Typing the component isomorphism with codomain `ModuleCat.of ℤ _` avoids unfolding `⋀[ℤ]^n Λ`
-  -- across `((constantFunctor _).obj M).obj b = M`.
+  -- Type the component isomorphism with codomain `ModuleCat.of ℤ _` across `constantFunctor`.
   let e : (fiberLocalSystem L ℤ n).obj b ≅ ModuleCat.of ℤ (⋀[ℤ]^n Λ) :=
     (torusFamilyHomologyLocalSystemIso P hcont hinj L n).app b
-  have h : e.inv w =
-      (fiberLocalSystemSingularObjIso L ℤ n b).inv
-        ((torusFamilyHomologyMarking P hcont hinj b.as n).symm w) := by
-    apply (ConcreteCategory.bijective_of_isIso e.hom).1
-    rw [e.inv_hom_id_apply]
-    exact
-      ((LinearEquiv.apply_symm_apply (torusFamilyHomologyMarking P hcont hinj b.as n) w).symm.trans
-        (congrArg (torusFamilyHomologyMarking P hcont hinj b.as n)
-          ((fiberLocalSystemSingularObjIso L ℤ n b).inv_hom_id_apply _)).symm).trans
-        (torusFamilyHomologyLocalSystemIso_hom_app_apply P hcont hinj L n b _).symm
-  exact h
+  change e.inv w = _
+  apply (ConcreteCategory.bijective_of_isIso e.hom).1
+  rw [e.inv_hom_id_apply]
+  exact (((torusFamilyHomologyMarking P hcont hinj b.as n).apply_symm_apply w).symm.trans
+    (congrArg (torusFamilyHomologyMarking P hcont hinj b.as n)
+      ((fiberLocalSystemSingularObjIso L ℤ n b).inv_hom_id_apply _)).symm).trans
+    (torusFamilyHomologyLocalSystemIso_hom_app_apply P hcont hinj L n b _).symm
 
 /-- **Canonical trivialization of the first fiber homology local system** of a torus family,
 identifying `TauCeti.fiberLocalSystem L ℤ 1` with the constant local system `Λ` over `Y`. -/
@@ -241,16 +217,13 @@ theorem torusFamilyFirstHomologyLocalSystemIso_inv_app_apply
   -- As above, type the component isomorphism with codomain `ModuleCat.of ℤ Λ`.
   let e : (fiberLocalSystem L ℤ 1).obj b ≅ ModuleCat.of ℤ Λ :=
     (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L).app b
-  have h : e.inv l =
-      (fiberLocalSystemSingularObjIso L ℤ 1 b).inv
-        ((torusFamilyMarking P hcont hinj b.as).symm l) := by
-    apply (ConcreteCategory.bijective_of_isIso e.hom).1
-    rw [e.inv_hom_id_apply]
-    exact ((LinearEquiv.apply_symm_apply (torusFamilyMarking P hcont hinj b.as) l).symm.trans
-      (congrArg (torusFamilyMarking P hcont hinj b.as)
-        ((fiberLocalSystemSingularObjIso L ℤ 1 b).inv_hom_id_apply _)).symm).trans
-      (torusFamilyFirstHomologyLocalSystemIso_hom_app_apply P hcont hinj L b _).symm
-  exact h
+  change e.inv l = _
+  apply (ConcreteCategory.bijective_of_isIso e.hom).1
+  rw [e.inv_hom_id_apply]
+  exact ((LinearEquiv.apply_symm_apply (torusFamilyMarking P hcont hinj b.as) l).symm.trans
+    (congrArg (torusFamilyMarking P hcont hinj b.as)
+      ((fiberLocalSystemSingularObjIso L ℤ 1 b).inv_hom_id_apply _)).symm).trans
+    (torusFamilyFirstHomologyLocalSystemIso_hom_app_apply P hcont hinj L b _).symm
 
 include hcont hinj in
 /-- **Trivial monodromy.** In every degree `n`, the monodromy representation of the fiber homology
