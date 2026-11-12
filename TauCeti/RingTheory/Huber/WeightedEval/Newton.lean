@@ -23,7 +23,7 @@ by `TauCeti.Huber.weightedEval`. This file proves the multivariable Newton–Hen
 series, with a Jacobian matrix that is only invertible up to a power of `ϖ`.
 
 The values of `F` at points of `A₀^N` lie in `A₀`
-(`TauCeti.Huber.weightedEval_mem_ringOfDefinition`). More precisely, Taylor's estimate holds
+(`TauCeti.Huber.weightedEval_mem`). More precisely, Taylor's estimate holds
 termwise: if
 `x ≡ t mod ϖᵃ` and `x' ≡ x mod ϖᵇ` with `a ≤ b`, then
 `F(x') - F(x) - ∑ⱼ ∂ⱼF(t) (x'ⱼ - xⱼ)` lies in `ϖ^(a + b) A₀`. Each term of this sum is a
@@ -124,7 +124,7 @@ private noncomputable def evalOD
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
     (x : Fin N → P.ringOfDefinition) (i : Fin N) : P.ringOfDefinition :=
   ⟨weightedEval (RingHom.id C) (fun l ↦ (x l : C)) (F i),
-    weightedEval_mem_ringOfDefinition P (hF₀ i) x⟩
+    weightedEval_mem P.isClosed_ringOfDefinition (hF₀ i) fun l ↦ (x l).2⟩
 
 omit [IsUniformAddGroup C] [CompleteSpace C] in
 /-- `F` vanishes at `u ∈ A₀^N` exactly when its evaluation on `A₀^N` does. -/
@@ -140,7 +140,8 @@ private noncomputable def jacobianOD
     (t : Fin N → P.ringOfDefinition) : Matrix (Fin N) (Fin N) P.ringOfDefinition :=
   Matrix.of fun i j ↦ ⟨weightedEval (RingHom.id C) (fun l ↦ (t l : C))
     (MvPowerSeries.pderiv j (F i)),
-    weightedEval_mem_ringOfDefinition P (MvPowerSeries.coeff_pderiv_mem (hF₀ i) j) t⟩
+    weightedEval_mem P.isClosed_ringOfDefinition (MvPowerSeries.coeff_pderiv_mem (hF₀ i) j)
+      fun l ↦ (t l).2⟩
 
 /-- Taylor's estimate on `A₀^N`, in the form of the linearisation hypothesis of the quantitative
 Newton method. -/
