@@ -88,7 +88,7 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_two (i j : Fin t.rank)
     apply Units.ext
     have h := congrArg (fun e : D.lattice ≃ₗ[ℤ] D.lattice =>
       (e : Module.End ℤ D.lattice).baseChange A) (D.weylRestrict_braid_doubleBond i j
-        (t.cartanMatrix_eq_neg_one_of_cartanMatrix_eq_neg_two i j hji) hji)
+        (t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two i j (by omega)) hji)
     simpa only [LinearEquiv.coe_toLinearMap_mul, LinearMap.baseChange_mul,
       Units.val_mul, n, kostantWeylGL_val, kostantWeylPoints_toLinearMap] using h
   let f := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom

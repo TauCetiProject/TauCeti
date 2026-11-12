@@ -324,9 +324,9 @@ lemma cartanMatrix_apply_eq_zero_iff_symm (t : DynkinType) (i j : Fin t.rank) :
   case F4 => fin_cases i <;> fin_cases j <;> decide
   case G2 => fin_cases i <;> fin_cases j <;> decide
 
-/-- The entry opposite a double-bond Cartan entry is `-1`. -/
-theorem cartanMatrix_eq_neg_one_of_cartanMatrix_eq_neg_two (t : DynkinType)
-    (i j : Fin t.rank) (hji : t.cartanMatrix j i = -2) : t.cartanMatrix i j = -1 := by
+/-- The entry opposite a double- or triple-bond Cartan entry is `-1`. -/
+theorem cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two (t : DynkinType)
+    (i j : Fin t.rank) (hji : t.cartanMatrix j i ≤ -2) : t.cartanMatrix i j = -1 := by
   have hne : j ≠ i := by
     rintro rfl
     simp at hji
@@ -359,8 +359,8 @@ theorem cartanMatrix_eq_neg_one_of_cartanMatrix_eq_neg_two (t : DynkinType)
   | G2 =>
       -- The transposed finite matrix likewise needs the concrete index type.
       change Fin 2 at i j
-      simp only [cartanMatrix_G2, Matrix.transpose_apply] at hji
-      fin_cases i <;> fin_cases j <;> norm_num [CartanMatrix.G₂] at hji
+      simp only [cartanMatrix_G2, Matrix.transpose_apply] at hji ⊢
+      fin_cases i <;> fin_cases j <;> norm_num [CartanMatrix.G₂] at *
 
 /-- The double edge of type `Bₙ`: with at least two simple roots, the last two are joined by an
 entry `-2`. -/
