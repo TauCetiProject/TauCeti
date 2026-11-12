@@ -44,7 +44,9 @@ of `L_x` and its index are not treated here either.
 
 ## Main declarations
 
-* `TauCeti.Vortex.covariantTranslation x v`: the variation `(ι_v F_a, ∇_v α)`.
+* `TauCeti.Vortex.covariantTranslation x v`: the variation `(ι_v F_a, ∇_v α)`, and
+  `TauCeti.Vortex.covariantTranslationLinearMap x`: the real-linear map `v ↦ y_v`.
+* `TauCeti.Vortex.contDiff_covariantTranslation`: `y_v` is `Cⁿ` when `x` is `Cⁿ⁺¹`.
 * `TauCeti.Vortex.sectionValue_covariantTranslation`: its section part is `∇_v α`.
 * `TauCeti.Vortex.gaugeAdjoint_covariantTranslation_of_equation_eq_zero` and
   `TauCeti.Vortex.linearizedEquation_covariantTranslation_of_equation_eq_zero`: `d₀* y_v = 0`
@@ -126,6 +128,39 @@ theorem covariantTranslation_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (c : 
     covariantTranslation x (c • v) = c • covariantTranslation x v := by
   ext z i
   fin_cases i <;> simp [-Complex.real_smul, map_smul, Complex.smul_re, Complex.smul_im] <;> ring
+
+/-- The covariant translation `v ↦ y_v`, as a real-linear map from tangent vectors to
+variations. -/
+def covariantTranslationLinearMap (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    ℂ →ₗ[ℝ] ℂ → EuclideanSpace ℝ (Fin 4) where
+  toFun := covariantTranslation x
+  map_add' := covariantTranslation_add x
+  map_smul' := covariantTranslation_smul x
+
+/-- The real-linear map `covariantTranslationLinearMap x` is the covariant translation. -/
+@[simp]
+theorem coe_covariantTranslationLinearMap (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    ⇑(covariantTranslationLinearMap x) = covariantTranslation x :=
+  (rfl)
+
+/-- The covariant translation of a `Cⁿ⁺¹` field is `Cⁿ`. -/
+theorem contDiff_covariantTranslation {n : WithTop ℕ∞} (hx : ContDiff ℝ (n + 1) x) (v : ℂ) :
+    ContDiff ℝ n (covariantTranslation x v) := by
+  have hxi (i : Fin 4) : ContDiff ℝ (n + 1) (fun z ↦ x z i) := contDiff_euclidean.mp hx i
+  have hd (i : Fin 4) (u : ℂ) : ContDiff ℝ n (fun z ↦ fderiv ℝ (fun w ↦ x w i) z u) :=
+    ((hxi i).fderiv_right le_rfl).clm_apply contDiff_const
+  have hv (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) := (hxi i).of_le le_self_add
+  have h₀ : ContDiff ℝ n (fun z ↦ covariantTranslation x v z 0) := by
+    simp only [covariantTranslation_apply_zero, curvature_apply]; fun_prop
+  have h₁ : ContDiff ℝ n (fun z ↦ covariantTranslation x v z 1) := by
+    simp only [covariantTranslation_apply_one, curvature_apply]; fun_prop
+  have h₂ : ContDiff ℝ n (fun z ↦ covariantTranslation x v z 2) := by
+    simp only [covariantTranslation_apply_two]; fun_prop
+  have h₃ : ContDiff ℝ n (fun z ↦ covariantTranslation x v z 3) := by
+    simp only [covariantTranslation_apply_three]; fun_prop
+  refine contDiff_euclidean.mpr fun i ↦ ?_
+  fin_cases i
+  exacts [h₀, h₁, h₂, h₃]
 
 /-- The section part of the covariant translation along `v` is the covariant derivative
 `∇_v α`. -/

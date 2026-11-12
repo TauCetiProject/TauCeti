@@ -26,9 +26,11 @@ multiplicity function of the section (`TauCeti.IsZeroMultiplicity`). The topolog
 principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows that the end framing forces the
 multiplicities to add up to `m`. Hence the zeros of a framed degree-`m` vortex section, counted
 with multiplicity, form an effective divisor of degree `m`, a point of `Sym ℂ m`
-(`TauCeti.Vortex.exists_sym_sectionValue_eq_pow_count_mul`). Only the holomorphicity rows are
-used; the curvature equation is not needed. The divisor is determined by the section, since zero
-multiplicities are unique (`TauCeti.IsZeroMultiplicity.unique`).
+(`TauCeti.Vortex.exists_sym_sectionValue_eq_pow_count_mul`); in particular the section of a
+framed field of positive degree has a zero (`TauCeti.Vortex.exists_sectionValue_eq_zero`). Only
+the holomorphicity rows are used; the curvature equation is not needed. The divisor is
+determined by the section, since zero multiplicities are unique
+(`TauCeti.IsZeroMultiplicity.unique`).
 
 The second part of the file proves how the divisor transforms, which is the action of the
 symmetries of the vortex equations on `Sym^m ℂ`:
@@ -92,6 +94,19 @@ theorem exists_sym_sectionValue_eq_pow_count_mul {m : ℕ}
     isZeroMultiplicity_iff.2 fun z ↦ ⟨v z, (hvc z).continuousAt, hv₀ z, hvf z⟩
   obtain ⟨D, rfl⟩ := hmult.exists_eq_count htail
   exact ⟨⟨D, hmult.card_eq_of_tendsto_mul_inv_pow hframe⟩, fun z ↦ ⟨v z, hvc z, hv₀ z, hvf z⟩⟩
+
+/-- **A framed vortex of positive degree has a zero.** Under the hypotheses of
+`exists_sym_sectionValue_eq_pow_count_mul`, if `m ≠ 0` then the section vanishes somewhere: its
+zero divisor has `m` points. -/
+theorem exists_sectionValue_eq_zero {m : ℕ} (hm : m ≠ 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
+    ∃ z, sectionValue x z = 0 := by
+  obtain ⟨D, hD⟩ := exists_sym_sectionValue_eq_pow_count_mul hn hb₁ hb₂ hp hq hhol hframe
+  obtain ⟨a, ha⟩ := Multiset.card_pos_iff_exists_mem.1
+    (by rw [Sym.card_coe]; exact Nat.pos_of_ne_zero hm : 0 < Multiset.card (D : Multiset ℂ))
+  obtain ⟨v, -, -, hv⟩ := hD a
+  refine ⟨a, ?_⟩
+  rw [hv.self_of_nhds, sub_self, zero_pow (Multiset.count_ne_zero.2 ha), zero_mul]
 
 omit hn hb₁ hb₂ hp hq hhol
 
