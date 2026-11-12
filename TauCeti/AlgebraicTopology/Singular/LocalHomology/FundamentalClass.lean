@@ -78,6 +78,8 @@ homology isomorphism directly, without requiring Poincaré duality.
   in `Hₙ(X, X ∖ X; ℤ)` is the image of the fundamental class along `M` under the map of pairs `f`.
 * `TauCeti.HomologicalOrientation.mapFundamentalClass_comap`: a homeomorphism carries the
   fundamental class of the pulled-back orientation to the fundamental class.
+* `TauCeti.HomologicalOrientation.mapFundamentalClass_comap_comp`: pushing the fundamental class
+  of the pulled-back orientation forward along `f ∘ e` is pushing that of `o` forward along `f`.
 * `TauCeti.HomologicalOrientation.exists_eq_zsmul_fundamentalClass`: on a compact connected
   oriented manifold, every top-dimensional class is a multiple of the fundamental class.
 
@@ -460,6 +462,16 @@ theorem mapFundamentalClass_comap {N : Type} [TopologicalSpace N] [T2Space N] [C
     ConcreteCategory.comp_apply, localHomologyRestriction_fundamentalClassOn (hx := mem_univ x),
     comap_apply]
   exact e.isOpenEmbedding.localHomologyMap_localOrientationEquiv_symm x (o (e x)) hx
+
+/-- The image of the fundamental class of the pulled-back orientation `o.comap` under a composite
+`f ∘ e`, for a homeomorphism `e : N ≃ₜ M`, is the image of the fundamental class of `o` under
+`f`. -/
+@[simp]
+theorem mapFundamentalClass_comap_comp {N : Type} [TopologicalSpace N] [T2Space N]
+    [ChartedSpace E N] [CompactSpace N] (e : N ≃ₜ M) (f : C(M, X)) :
+    (o.comap e.isOpenEmbedding).mapFundamentalClass hn (f.comp (e : C(N, M))) =
+      o.mapFundamentalClass hn f := by
+  rw [mapFundamentalClass_comp, mapFundamentalClass_comap, mapFundamentalClass_def]
 
 end Map
 
