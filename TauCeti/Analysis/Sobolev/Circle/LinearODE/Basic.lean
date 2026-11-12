@@ -55,6 +55,8 @@ comparing weak and classical derivatives
 * `TauCeti.CircleSobolev.mulLoop_sub`, `TauCeti.CircleSobolev.mulLoop_smul`,
   `TauCeti.CircleSobolev.loopOperator_sub`: the zero-order term and `L_S` depend linearly on the
   coefficient loop `S`.
+* `TauCeti.CircleSobolev.mulLoop_const_smul_id`: multiplication by a constant complex scalar loop
+  is multiplication by that scalar.
 * `TauCeti.CircleSobolev.isCompactOperator_mulLoop`: the zero-order term is compact.
 * `TauCeti.CircleSobolev.isFredholm_loopOperator`, `TauCeti.CircleSobolev.index_loopOperator`:
   `L_S` is a Fredholm operator of index zero.
@@ -124,6 +126,16 @@ theorem mulLoop_smul (hs : 1 / 2 < s) (c : ℝ) (S : C(AddCircle T, E →L[ℝ] 
   ext a : 1
   simp only [mulLoop_apply, map_smul, smul_apply]
   exact (ofContinuousMap T).map_smul_of_tower c _
+
+/-- Multiplication by the constant loop `z • id`, for a complex scalar `z`, is multiplication by
+`z` after the inclusion `H^s ⊆ H⁰`. -/
+theorem mulLoop_const_smul_id (hs : 1 / 2 < s) (z : ℂ) (a : CircleSobolev s E) :
+    mulLoop T hs (ContinuousMap.const _ (z • ContinuousLinearMap.id ℝ E)) a =
+      z • inclusion (by linarith) a := by
+  rw [← ofContinuousMap_toContinuousMap T hs, ← map_smul, mulLoop_apply]
+  congr 1
+  ext x
+  simp
 
 /-- **The zero-order term is compact.** For `s > 1/2`, multiplication by a continuous loop `S` is
 a compact operator `H^s(E) → H⁰(E)`: it factors through the compact inclusion into `H^t` for any
