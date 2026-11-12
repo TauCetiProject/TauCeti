@@ -347,7 +347,6 @@ theorem norm_plumbingFactor_mul_exp_div_two_le_norm_sub_endCenter {q : Puncture}
     ‖q.plumbingFactor L‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - q.endCenter‖ := by
   have hu₀ : 0 < Real.exp (-(2 * π * (L / 2))) := Real.exp_pos _
   have hu₁ : Real.exp (-(2 * π * (L / 2))) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
-  have he₀ : 0 < Real.exp (-(2 * π)) := Real.exp_pos _
   have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [pi_pos])
   have hge := (re_endCoord_le_iff hq hc).1 h
   rw [norm_plumbingFactor_of_ne_inf_eq_sq hq]
@@ -360,7 +359,6 @@ plumbing factor. -/
 theorem norm_plumbingFactor_mul_exp_div_two_le_norm_sub_plumbingMap_one {q : Puncture}
     (hq : q ≠ inf) {L : ℝ} (hL : 0 ≤ L) {w : ℂ} (h : (q.endCoord w).re ≤ L / 2) :
     ‖q.plumbingFactor L‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - q.plumbingMap L 1‖ := by
-  have he₀ : 0 < Real.exp (-(2 * π)) := Real.exp_pos _
   have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [pi_pos])
   have hψ := q.plumbingMap_one_sub_endCenter L
   rcases eq_or_ne w q.endCenter with rfl | hc
