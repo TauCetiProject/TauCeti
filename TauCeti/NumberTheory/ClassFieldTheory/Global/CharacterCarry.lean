@@ -734,7 +734,8 @@ theorem forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff
           (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) (σ a v))))) +
         ∑ w, χ (.ofMul (AlgEquiv.restrictNormalHom E (absoluteGaloisGroupMap (τ' w)
           (absoluteGaloisGroupRestrictEquiv w.Completion (σ' a w))))) = 0 := by
-  have hg := forall_mem_zpowers_of_map_ofMul_eq_one_div_finrank E hχ
+  have hg := AddCircle.forall_mem_zpowers_of_apply_ofMul_eq_coe_period_div (1 : ℚ)
+    (IsGalois.card_aut_eq_finrank K E).le hχ
   -- The sum of the local invariants of the carry class of `a` is the sum in the statement.
   have hsum (a : Kˣ) := sumLocalInv_brLocalization_characterCarryCocycle_eq_finsum
     (χ.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure K) E).toAdditive)
@@ -743,7 +744,7 @@ theorem forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff
   refine ⟨fun h a ↦ ?_, fun h y ↦ ?_⟩
   · rw [← hsum, ← relBrInfl_cyclicClass E hg hχ]
     exact h _
-  · obtain ⟨a, ha⟩ := exists_characterCarryCocycle_eq_relBrInfl E hg hχ y
+  · obtain ⟨a, ha⟩ := exists_characterCarryCocycle_eq_relBrInfl E hχ y
     rw [← ha, hsum]
     exact h a
 
