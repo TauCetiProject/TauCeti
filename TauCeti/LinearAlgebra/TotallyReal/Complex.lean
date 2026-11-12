@@ -363,13 +363,13 @@ theorem det_eq_det_restrict (f : E →ₗ[ℂ] E) (hf : ∀ x ∈ L, f x ∈ L) 
     rw [LinearMap.det_eq_one_of_not_module_finite h2,
       LinearMap.det_eq_one_of_not_module_finite h1, Complex.ofReal_one]
 
-/-- The complex-linear automorphisms act transitively on the maximal totally real subspaces of a
-complex module: real bases of two maximal totally real subspaces are complex bases of the ambient
-module, so they are indexed by equivalent types, and the automorphism matching them carries one
-subspace onto the other. -/
+/-- The complex-linear automorphisms of a complex module act transitively on its maximal totally
+real subspaces; no finite-dimensionality is needed. -/
 theorem exists_linearEquiv_map_eq {L' : Submodule ℝ E}
     (hL' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L') :
     ∃ A : E ≃ₗ[ℂ] E, L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ) = L' := by
+  -- real bases of the two subspaces are complex bases of `E`, so they are indexed by equivalent
+  -- types, and the automorphism matching them carries one subspace onto the other
   let b := Basis.ofVectorSpace ℝ L
   let b' := Basis.ofVectorSpace ℝ L'
   let e := (hL.complexBasis b).indexEquiv (hL'.complexBasis b')
