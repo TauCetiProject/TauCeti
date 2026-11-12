@@ -149,8 +149,6 @@ theorem powerResidueSymbol_eq_iff (hP : (absNorm P).Coprime n) {x : 𝓞 K ⧸ P
 theorem powerResidueSymbol_mk_of_pow_eq_one (hP : (absNorm P).Coprime n) {ζ : 𝓞 K}
     (hζ : ζ ^ n = 1) :
     powerResidueSymbol P n (Ideal.Quotient.mk P ζ) = ζ ^ ((absNorm P - 1) / n) := by
-  have hx : Ideal.Quotient.mk P ζ ≠ 0 :=
-    ((IsUnit.of_pow_eq_one hζ (NeZero.ne n)).map (Ideal.Quotient.mk P)).ne_zero
   rw [powerResidueSymbol_eq_iff hP (by rw [← pow_mul, mul_comm, pow_mul, hζ, one_pow]),
     map_pow]
 
