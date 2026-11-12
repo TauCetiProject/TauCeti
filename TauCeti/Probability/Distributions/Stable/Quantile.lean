@@ -83,15 +83,47 @@ theorem strictMono_cdf_stableMeasure_of_abs_lt_one (hα : α ∈ Ioc 0 2) (hβ :
     ordConnected_univ (by rw [support_stableMeasure_of_abs_lt_one hα hβ hs m])
   exact fun _ _ hxy ↦ hmono (mem_univ _) (mem_univ _) hxy
 
-/-- For positive scale and strict interior skewness, the stable quantile is characterized as
-the unique real root of its cdf equation at each interior probability level. -/
-theorem quantile_stableMeasure_eq_iff_of_abs_lt_one (hα : α ∈ Ioc 0 2) (hβ : |β| < 1)
+private theorem strictMonoOn_cdf_stableMeasure_preimage_Ioo (hα : α ∈ Ioc 0 2)
+    (hβ : |β| ≤ 1) (hs : 0 < s) (m : ℝ) :
+    StrictMonoOn (cdf (stableMeasure α β s m))
+      (cdf (stableMeasure α β s m) ⁻¹' Ioo 0 1) := by
+  let μ := stableMeasure α β s m
+  let := isProbabilityMeasure_stableMeasure hα hβ s m
+  have hsupport : μ.support.OrdConnected := by
+    rcases lt_or_ge α 1 with hα1 | hα1
+    · rcases hβ.lt_or_eq with hβ | hβ
+      · rw [support_stableMeasure_of_abs_lt_one hα hβ hs]
+        exact ordConnected_univ
+      · rcases (abs_eq zero_le_one).1 hβ with rfl | rfl
+        · rw [support_stableMeasure_one_of_lt_one ⟨hα.1, hα1⟩ hs]
+          exact ordConnected_Ici
+        · rw [support_stableMeasure_neg_one_of_lt_one ⟨hα.1, hα1⟩ hs]
+          exact ordConnected_Iic
+    · rw [support_stableMeasure_of_one_le ⟨hα1, hα.2⟩ hβ hs]
+      exact ordConnected_univ
+  have hsubset : cdf μ ⁻¹' Ioo 0 1 ⊆ μ.support := by
+    intro y hy
+    apply hsupport.mem_of_measureReal_Iio_le_of_le_cdf μ.support_mem_ae
+        (t := cdf μ y) (q := y)
+    · rw [cdf_eq_real]
+      exact measureReal_mono Iio_subset_Iic_self
+    · exact le_rfl
+    · exact hy.1
+    · exact hy.2
+  exact (Measure.strictMonoOn_cdf_of_subset_support μ hsupport Subset.rfl).mono hsubset
+
+/-- Every valid positive-scale stable quantile is characterized as the unique real root of its
+cdf equation at each interior probability level. -/
+theorem quantile_stableMeasure_eq_iff (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
     (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
     (stableMeasure α β s m).quantile u = x ↔ cdf (stableMeasure α β s m) x = u := by
-  let := isProbabilityMeasure_stableMeasure hα hβ.le s m
-  simpa using Measure.quantile_eq_iff_of_ae_mem_of_strictMonoOn _ ordConnected_univ
-    (ae_of_all _ mem_univ) (continuous_cdf_stableMeasure hα hβ.le hs)
-    ((strictMono_cdf_stableMeasure_of_abs_lt_one hα hβ hs m).strictMonoOn _) hu
+  let := isProbabilityMeasure_stableMeasure hα hβ s m
+  constructor
+  · rintro rfl
+    exact Measure.cdf_quantile _ (continuous_cdf_stableMeasure hα hβ hs) hu.1 hu.2
+  · intro hx
+    exact Measure.quantile_eq_of_cdf_eq _
+      (strictMonoOn_cdf_stableMeasure_preimage_Ioo hα hβ hs m) hx hu
 
 /-- For every valid skewness, a positive-scale stable quantile is strictly increasing on
 interior levels, even when the distribution is supported on a half-line. -/
@@ -100,15 +132,22 @@ theorem strictMonoOn_quantile_stableMeasure (hα : α ∈ Ioc 0 2) (hβ : |β| �
   let := isProbabilityMeasure_stableMeasure hα hβ s m
   exact Measure.strictMonoOn_quantile _ (continuous_cdf_stableMeasure hα hβ hs)
 
-/-- Two-sided positive-scale stable quantiles vary continuously with interior probability
-levels. -/
-theorem continuousOn_quantile_stableMeasure_of_abs_lt_one (hα : α ∈ Ioc 0 2)
-    (hβ : |β| < 1) (hs : 0 < s) (m : ℝ) :
+/-- Stable quantiles vary continuously with the interior probability level for all parameters. -/
+theorem continuousOn_quantile_stableMeasure (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
     ContinuousOn (stableMeasure α β s m).quantile (Ioo 0 1) := by
-  let := isProbabilityMeasure_stableMeasure hα hβ.le s m
-  exact Measure.continuousOn_quantile_of_strictMonoOn _ ordConnected_univ
-    ((strictMono_cdf_stableMeasure_of_abs_lt_one hα hβ hs m).strictMonoOn _)
-    (mapsTo_univ _ _)
+  by_cases hvalid : α ∈ Ioc 0 2 ∧ |β| ≤ 1
+  swap
+  · rw [stableMeasure_of_not_valid hvalid]
+    refine (continuousOn_const : ContinuousOn (fun _ : ℝ ↦ (0 : ℝ)) (Ioo 0 1)).congr
+      fun u _ ↦ ?_
+    exact Measure.quantile_zero u
+  rcases hvalid with ⟨hα, hβ⟩
+  by_cases hs : s = 0
+  · subst s
+    refine (continuousOn_const : ContinuousOn (fun _ : ℝ ↦ m) (Ioo 0 1)).congr fun u hu ↦ ?_
+    exact quantile_stableMeasure_zero_scale hα hβ ⟨hu.1, hu.2.le⟩
+  · exact Measure.continuousOn_quantile _
+      (strictMonoOn_cdf_stableMeasure_preimage_Ioo hα hβ (pos_iff_ne_zero.2 hs) m)
 
 /-- Two-sided positive-scale stable quantiles tend to minus infinity as the level decreases
 to zero. This is a one-sided limit, not a value of the totalized quantile at zero. -/
@@ -131,26 +170,6 @@ theorem tendsto_quantile_stableMeasure_nhdsLT_one_of_abs_lt_one (hα : α ∈ Io
     (strictMono_cdf_stableMeasure_of_abs_lt_one hα hβ hs m)
 
 /-! ### Shapes from one onward -/
-
-/-- From shape one onward, a positive-scale stable quantile is characterized as the unique real
-root of its cdf equation at each interior probability level, including at full skewness. -/
-theorem quantile_stableMeasure_eq_iff_of_one_le (hα : α ∈ Icc 1 2) (hβ : |β| ≤ 1)
-    (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
-    (stableMeasure α β s m).quantile u = x ↔ cdf (stableMeasure α β s m) x = u := by
-  let := isProbabilityMeasure_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ s m
-  simpa using Measure.quantile_eq_iff_of_ae_mem_of_strictMonoOn _ ordConnected_univ
-    (ae_of_all _ mem_univ) (continuous_cdf_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ hs)
-    ((strictMono_cdf_stableMeasure_of_one_le hα hβ hs m).strictMonoOn _) hu
-
-/-- From shape one onward, positive-scale stable quantiles vary continuously with the interior
-probability level, including at full skewness. -/
-theorem continuousOn_quantile_stableMeasure_of_one_le (hα : α ∈ Icc 1 2)
-    (hβ : |β| ≤ 1) (hs : 0 < s) (m : ℝ) :
-    ContinuousOn (stableMeasure α β s m).quantile (Ioo 0 1) := by
-  let := isProbabilityMeasure_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ s m
-  exact Measure.continuousOn_quantile_of_strictMonoOn _ ordConnected_univ
-    ((strictMono_cdf_stableMeasure_of_one_le hα hβ hs m).strictMonoOn _)
-    (mapsTo_univ _ _)
 
 /-- From shape one onward, positive-scale stable quantiles tend to minus infinity as the level
 decreases to zero, including at full skewness. -/
@@ -209,21 +228,6 @@ theorem quantile_stableMeasure_one_eq_iff_of_lt_one (hα : α ∈ Ioo 0 1) (hs :
     exact hu.1.ne hxu
   · rintro ⟨hx, hxu⟩
     exact ⟨hx.le, hxu⟩
-
-/-- Below shape one at full positive skewness, stable quantiles vary continuously with the
-interior probability level. -/
-theorem continuousOn_quantile_stableMeasure_one_of_lt_one (hα : α ∈ Ioo 0 1)
-    (hs : 0 < s) (m : ℝ) :
-    ContinuousOn (stableMeasure α 1 s m).quantile (Ioo 0 1) := by
-  let μ := stableMeasure α 1 s m
-  let d := stableS1Location α 1 s m
-  let := isProbabilityMeasure_stableMeasure
-    ⟨hα.1, hα.2.le.trans (by norm_num)⟩
-    (by norm_num : |(1 : ℝ)| ≤ 1) s m
-  apply Measure.continuousOn_quantile_of_strictMonoOn μ ordConnected_Ici
-    (by simpa [μ, d] using strictMonoOn_cdf_stableMeasure_one_of_lt_one hα hs m)
-  intro u hu
-  exact ((quantile_stableMeasure_one_eq_iff_of_lt_one hα hs hu).1 rfl).1.le
 
 /-- Below shape one at full positive skewness, stable quantiles tend to the finite lower support
 endpoint as the level decreases to zero. -/
@@ -294,21 +298,6 @@ theorem quantile_stableMeasure_neg_one_eq_iff_of_lt_one (hα : α ∈ Ioo 0 1)
     exact hu.2.ne' hxu
   · rintro ⟨hx, hxu⟩
     exact ⟨hx.le, hxu⟩
-
-/-- Below shape one at full negative skewness, stable quantiles vary continuously with the
-interior probability level. -/
-theorem continuousOn_quantile_stableMeasure_neg_one_of_lt_one (hα : α ∈ Ioo 0 1)
-    (hs : 0 < s) (m : ℝ) :
-    ContinuousOn (stableMeasure α (-1) s m).quantile (Ioo 0 1) := by
-  let μ := stableMeasure α (-1) s m
-  let d := stableS1Location α (-1) s m
-  let := isProbabilityMeasure_stableMeasure
-    ⟨hα.1, hα.2.le.trans (by norm_num)⟩
-    (by norm_num : |(-1 : ℝ)| ≤ 1) s m
-  apply Measure.continuousOn_quantile_of_strictMonoOn μ ordConnected_Iic
-    (by simpa [μ, d] using strictMonoOn_cdf_stableMeasure_neg_one_of_lt_one hα hs m)
-  intro u hu
-  exact ((quantile_stableMeasure_neg_one_eq_iff_of_lt_one hα hs hu).1 rfl).1.le
 
 /-- Below shape one at full negative skewness, stable quantiles tend to minus infinity as the
 level decreases to zero. -/
