@@ -60,16 +60,15 @@ noncomputable def smoothTensorInducedMackeyResolutionContraction :
     (TopRep.ResolutionContraction.res.{u, v, max u w}
       (ContinuousMonoidHom.subgroupSubtype V)
       (smoothTensorInducedGradedResolutionContraction U hU s A hA))
-    (smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA)
+    (smoothTensorInducedMackeyResolutionResIso U V hU r hr t s A hA)
 
--- Keep this structural equation out of simp so the computed augmentation formula below can fire.
 /-- The augmentation of the orbitwise contraction is the restricted ambient augmentation
 followed by the inverse Mackey chain comparison. -/
 theorem smoothTensorInducedMackeyResolutionContraction_ι :
     (smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).ι =
       (TopRep.resFunctor V.subtype).map
         (smoothTensorInducedGradedResolutionContraction U hU s A hA).ι ≫
-          (smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).inv.f 0 := by
+          (smoothTensorInducedMackeyResolutionResIso U V hU r hr t s A hA).inv.f 0 := by
   unfold smoothTensorInducedMackeyResolutionContraction
   refine (TopRep.ResolutionContraction.ofIso_ι _ _).trans ?_
   rw [TopRep.ResolutionContraction.res_ι]
@@ -79,9 +78,9 @@ theorem smoothTensorInducedMackeyResolutionContraction_ι :
 /-- Applying the Mackey chain comparison to the orbitwise augmentation recovers the
 restricted ambient augmentation. -/
 @[reassoc]
-theorem smoothTensorInducedMackeyResolutionContraction_ι_comp_hom :
+theorem smoothTensorInducedMackeyResolutionContraction_ι_comp_resolutionResIso_hom_f_zero :
     (smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).ι ≫
-        (smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).hom.f 0 =
+        (smoothTensorInducedMackeyResolutionResIso U V hU r hr t s A hA).hom.f 0 =
       (TopRep.resFunctor V.subtype).map
         (smoothTensorInducedGradedResolutionContraction U hU s A hA).ι := by
   rw [smoothTensorInducedMackeyResolutionContraction_ι, Category.assoc,
@@ -104,10 +103,11 @@ theorem smoothTensorInducedMackeyResolutionContraction_ι_apply_smoothTensorIndu
     (smoothTensorInducedMackeyIso U V hU r hr t s (smoothGradedResolutionFunctor.obj A))
   apply (ConcreteCategory.bijective_of_isIso e.hom).injective
   have hc := congrArg Subtype.val (ConcreteCategory.congr_hom
-    (smoothTensorInducedMackeyResolutionContraction_ι_comp_hom U V hU r hr t s A hA)
+    (smoothTensorInducedMackeyResolutionContraction_ι_comp_resolutionResIso_hom_f_zero
+      U V hU r hr t s A hA)
     ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom x))
   -- Use the restricted application formula to identify the homogeneous carriers explicitly.
-  have hm := smoothTensorInducedMackeyRestrictedResolutionIso_hom_f_apply
+  have hm := smoothTensorInducedMackeyResolutionResIso_hom_f_apply
     U V hU r hr t s A hA 0
     ((smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).ι.hom
       ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom x))
@@ -154,7 +154,7 @@ theorem smoothTensorInducedMackeyResolutionContraction_proj_apply
   -- Restriction keeps the native homogeneous carrier and the ambient projection.
   exact (smoothTensorInducedGradedResolutionContraction_proj_apply U hU s A hA _).trans
     (congrArg _
-      (smoothTensorInducedMackeyRestrictedResolutionIso_hom_f_apply U V hU r hr t s A hA 0 z))
+      (smoothTensorInducedMackeyResolutionResIso_hom_f_apply U V hU r hr t s A hA 0 z))
 
 /-- The orbitwise homotopy is the conjugate of the ambient tensor homotopy by the Mackey
 comparison. -/
@@ -168,12 +168,12 @@ comparison. -/
             (smoothGradedResolutionFunctor.obj A)).hom.hom.hom z.1)) := by
   unfold smoothTensorInducedMackeyResolutionContraction
   refine (congrArg Subtype.val (TopRep.ResolutionContraction.ofIso_hom_apply _ _ n z)).trans ?_
-  refine (smoothTensorInducedMackeyRestrictedResolutionIso_inv_f_apply
+  refine (smoothTensorInducedMackeyResolutionResIso_inv_f_apply
     U V hU r hr t s A hA n _).trans ?_
   rw [TopRep.ResolutionContraction.res_hom]
   -- Restriction keeps the native homogeneous carriers and the ambient homotopy.
   exact congrArg _ ((smoothTensorInducedGradedResolutionContraction_hom_apply U hU s A hA n
-    _).trans (congrArg _ (smoothTensorInducedMackeyRestrictedResolutionIso_hom_f_apply
+    _).trans (congrArg _ (smoothTensorInducedMackeyResolutionResIso_hom_f_apply
       U V hU r hr t s A hA (n + 1) z)))
 
 /-- Restriction of a class computed on the ambient tensor resolution is computed on the
@@ -192,12 +192,12 @@ theorem res_cohomologyClass_smoothTensorInducedGradedResolutionContraction_macke
     ContinuousCohomology.res V _ n
         ((smoothTensorInducedGradedResolutionContraction U hU s A hA).cohomologyClass z hz) =
       (smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).cohomologyClass
-        (((smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).inv.f n).hom
+        (((smoothTensorInducedMackeyResolutionResIso U V hU r hr t s A hA).inv.f n).hom
           |>.mapInvariants
             (Submodule.inclusion (ContRepresentation.invariants_le_invariants_restrict _
               V.subtype) z))
         (TopRep.d_mapInvariants_f_apply
-          (smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).inv
+          (smoothTensorInducedMackeyResolutionResIso U V hU r hr t s A hA).inv
           (Submodule.inclusion (ContRepresentation.invariants_le_invariants_restrict _
             V.subtype) z) hz) := by
   rw [TopRep.ResolutionContraction.res_cohomologyClass]
@@ -207,7 +207,7 @@ theorem res_cohomologyClass_smoothTensorInducedGradedResolutionContraction_macke
       (ContinuousMonoidHom.subgroupSubtype V)
       (smoothTensorInducedGradedResolutionContraction U hU s A hA))
     (smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA)
-    (smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).inv
+    (smoothTensorInducedMackeyResolutionResIso U V hU r hr t s A hA).inv
     (by
       rw [TopRep.ResolutionContraction.res_ι]
       exact (smoothTensorInducedMackeyResolutionContraction_ι U V hU r hr t s A hA).symm) _ _
@@ -232,8 +232,9 @@ theorem res_gradedCohomologyClass_smoothTensorInducedGradedResolutionContraction
             U V hU r hr t s (smoothGradedResolutionFunctor.obj A)).inv
           exact (TopRep.hom_comm_apply F g z).symm.trans (congrArg F.hom (hinv g.val)))
         (by
-          refine (smoothTensorInducedMackeyResolutionDifferential_inv_apply
-            U V hU r hr t s A z).trans ?_
+          refine
+            (smoothTensorInducedMackeyResolutionDifferential_apply_smoothTensorInducedMackeyIso_inv
+              U V hU r hr t s A z).trans ?_
           exact (congrArg (smoothTensorInducedMackeyIso U V hU r hr t s
             (smoothGradedResolutionFunctor.obj A)).inv.hom.hom hdz).trans (map_zero _)) := by
   rw [TopRep.ResolutionContraction.gradedCohomologyClass_def,
@@ -245,7 +246,7 @@ theorem res_gradedCohomologyClass_smoothTensorInducedGradedResolutionContraction
   apply Subtype.ext
   apply Subtype.ext
   rw [ContIntertwiningMap.mapInvariants_apply,
-    smoothTensorInducedMackeyRestrictedResolutionIso_inv_f_apply,
+    smoothTensorInducedMackeyResolutionResIso_inv_f_apply,
     Submodule.coe_inclusion, TopRep.gradedCochainComplexInvariant_val,
     TopRep.gradedCochainComplexInvariant_val]
 

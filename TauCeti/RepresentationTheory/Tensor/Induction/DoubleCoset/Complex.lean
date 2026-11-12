@@ -163,7 +163,7 @@ theorem smoothTensorInducedMackeyResolutionDifferential_apply
 omit [Fintype (DoubleCoset.Quotient (V : Set G) (U : Set G))]
   [∀ D, Fintype (V ⧸ (mackeySubgroup (r D) U V).subgroupOf V)] in
 /-- The orbitwise differential commutes with inverse Mackey regrouping on total modules. -/
-theorem smoothTensorInducedMackeyResolutionDifferential_inv_apply
+theorem smoothTensorInducedMackeyResolutionDifferential_apply_smoothTensorInducedMackeyIso_inv
     (z : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V) :
     (smoothTensorInducedMackeyResolutionDifferential U V hU r hr t s A).hom.hom
         ((smoothTensorInducedMackeyIso U V hU r hr t s
@@ -174,6 +174,10 @@ theorem smoothTensorInducedMackeyResolutionDifferential_inv_apply
   let e := smoothTensorInducedMackeyIso U V hU r hr t s (smoothGradedResolutionFunctor.obj A)
   have he : e.hom.hom.hom (e.inv.hom.hom z) = z :=
     congrArg (fun f ↦ f.hom.hom z) e.inv_hom_id
+  -- Unfold the conjugated differential on vectors. The smooth/discrete restriction functors
+  -- preserve the underlying maps, but their carrier dictionaries agree only at semireducible
+  -- transparency; `change` normalizes both compositions and the restricted differential so that
+  -- the inverse/hom cancellation can be rewritten without exposing those functor bodies.
   change e.inv.hom.hom ((smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom
     (e.hom.hom.hom (e.inv.hom.hom z))) = _
   rw [he]
@@ -341,7 +345,7 @@ variable (hA : ∀ a : A.obj.V, a + a = 0)
 /-- The Mackey chain comparison with the categorical restriction of the ambient complex.
 This includes the identity comparison between restricting homogeneous terms and taking the
 homogeneous terms of the restricted representation. -/
-noncomputable def smoothTensorInducedMackeyRestrictedResolutionIso :
+noncomputable def smoothTensorInducedMackeyResolutionResIso :
     let J := ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.gradedCochainComplex
       (smoothTensorInducedGradedResolutionPiece U hU s A)
       (smoothTensorInducedGradedResolutionPiece_ρ_mem U hU s A)
@@ -356,9 +360,9 @@ noncomputable def smoothTensorInducedMackeyRestrictedResolutionIso :
 -- The two application lemmas are not simp lemmas: simplifying their indexed terms changes
 -- the source or target through Functor.mapHomologicalComplex_obj_X.
 /-- The restricted chain comparison applies the original Mackey regrouping in each degree. -/
-theorem smoothTensorInducedMackeyRestrictedResolutionIso_hom_f_apply (n : ℕ)
+theorem smoothTensorInducedMackeyResolutionResIso_hom_f_apply (n : ℕ)
     (z : ((smoothTensorInducedMackeyResolution U V hU r hr t s A hA).X n).V) :
-    (((smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).hom.f n).hom z).1 =
+    (((smoothTensorInducedMackeyResolutionResIso U V hU r hr t s A hA).hom.f n).hom z).1 =
       (smoothTensorInducedMackeyIso U V hU r hr t s
         (smoothGradedResolutionFunctor.obj A)).hom.hom.hom z.1 := by
   -- The restriction comparison identifies the homogeneous carriers without changing vectors.
@@ -366,8 +370,8 @@ theorem smoothTensorInducedMackeyRestrictedResolutionIso_hom_f_apply (n : ℕ)
     (smoothTensorInducedMackeyResolutionIso_hom_f_apply U V hU r hr t s A hA n z)
 
 /-- The inverse restricted chain comparison applies the inverse Mackey regrouping. -/
-theorem smoothTensorInducedMackeyRestrictedResolutionIso_inv_f_apply (n : ℕ) (z) :
-    (((smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).inv.f n).hom z).1 =
+theorem smoothTensorInducedMackeyResolutionResIso_inv_f_apply (n : ℕ) (z) :
+    (((smoothTensorInducedMackeyResolutionResIso U V hU r hr t s A hA).inv.f n).hom z).1 =
       (smoothTensorInducedMackeyIso U V hU r hr t s
         (smoothGradedResolutionFunctor.obj A)).inv.hom.hom z.1 := by
   -- Apply the inverse Mackey map after the vector-preserving restriction comparison.

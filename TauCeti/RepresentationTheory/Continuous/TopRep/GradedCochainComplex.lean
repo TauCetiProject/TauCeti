@@ -418,7 +418,9 @@ noncomputable def resGradedCochainComplexIso (φ : H →* G) :
           isIntertwining' := fun g ↦ by
             ext z
             apply Subtype.ext
-            -- The native homogeneous term and its restriction have the same subtype carrier.
+            -- The native homogeneous term and its restriction have the same subtype carrier
+            -- only at semireducible transparency. Thus id_comp/comp_id cannot match the two
+            -- carrier presentations; normalize their vector applications before rewriting.
             change (((res φ M).ρ.subrepresentation (ℳ n)
               (fun g x hx ↦ hρ n (φ g) x hx)) g z).1 =
                 (((M.gradedCochainComplex ℳ hρ d hd hdd).X n).ρ (φ g) z).1
