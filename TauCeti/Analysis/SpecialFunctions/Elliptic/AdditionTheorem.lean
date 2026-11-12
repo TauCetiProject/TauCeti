@@ -426,10 +426,29 @@ theorem weierstrassPoint_nsmul (n : ℕ) (z : ℂ) :
     L.weierstrassPoint (n • z) = n • L.weierstrassPoint z := by
   simpa only [weierstrassPointHom_apply] using L.weierstrassPointHom.map_nsmul n z
 
+/-- Integer multiplication of the argument multiplies the corresponding elliptic-curve point. -/
+theorem weierstrassPoint_zsmul (n : ℤ) (z : ℂ) :
+    L.weierstrassPoint (n • z) = n • L.weierstrassPoint z := by
+  simpa only [weierstrassPointHom_apply] using L.weierstrassPointHom.map_zsmul n z
+
 /-- The kernel of the point map is the period lattice. -/
 lemma ker_weierstrassPointHom : L.weierstrassPointHom.ker = L.lattice.toAddSubgroup := by
   ext z
   simp
+
+/-- The lattice inclusion and the point map form an exact sequence of `ℤ`-modules. -/
+theorem exact_lattice_weierstrassPoint :
+    Function.Exact L.lattice.subtype L.weierstrassPointHom.toIntLinearMap := by
+  intro z
+  constructor
+  · intro hz
+    have hz' : L.weierstrassPoint z = 0 := by
+      simpa only [AddMonoidHom.coe_toIntLinearMap, weierstrassPointHom_apply] using hz
+    exact ⟨⟨z, L.weierstrassPoint_eq_zero_iff.mp hz'⟩, rfl⟩
+  · rintro ⟨l, rfl⟩
+    simpa only [AddMonoidHom.coe_toIntLinearMap, weierstrassPointHom_apply,
+      Submodule.subtype_apply] using
+      L.weierstrassPoint_coe l
 
 /-- **The complex uniformization** `ℂ / Λ ≃+ E_Λ(ℂ)`, induced by the point map
 `z ↦ (℘(z), ℘'(z) / 2)` (`PeriodPair.weierstrassPoint`), which is a surjective group homomorphism
