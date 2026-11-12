@@ -17,6 +17,8 @@ import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGroup.Reduce`:
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
 formal inverses, and reducedness of words `w u w⁻¹` in which no letter cancels at either join.
+The reduced word of a product `of a * of b` of two generators is `[(a, true), (b, true)]`
+(`FreeGroup.toWord_of_mul_of`).
 
 The last section controls cancellation under left multiplication: if the reduced word of `g` does
 not begin with the formal inverse of `x₂`, then the reduced word of `(x₁ ++ x₂) * g` still begins
@@ -125,6 +127,12 @@ theorem toWord_mk_singleton_mul_of_head?_ne {a : α × Bool} {g : FreeGroup α}
     (h : g.toWord.head? ≠ some (a.1, !a.2)) : (mk [a] * g).toWord = a :: g.toWord := by
   obtain ⟨a₁, a₂⟩ := a
   simp [toWord_mk_mul_eq, h]
+
+/-- The reduced word of a product of two generators is the two-letter word: no letter cancels. -/
+@[simp]
+theorem toWord_of_mul_of (a b : α) : (of a * of b).toWord = [(a, true), (b, true)] := by
+  rw [toWord_mul, toWord_of, toWord_of, singleton_append, ← isReduced_iff_reduce_eq]
+  simp
 
 /-- If `x` is reduced and the reduced word of `g` does not begin with the formal inverse of `x`,
 then the first letter of `x` survives in the reduced word of `x * g`. -/
