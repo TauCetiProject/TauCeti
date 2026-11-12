@@ -102,6 +102,51 @@ theorem eventually_energyTruncation_eqOn {μ : Measure ℝ≥0} {H : ℝ≥0 →
 
 end MeasureTheory.Measure
 
+namespace MeasureTheory.AEStronglyMeasurable
+
+/-- Under a finite sample measure, finite-budget truncations of an a.e. strongly measurable
+process are square integrable for the entire time-product measure. Neither a filtration nor
+atomlessness of the time measure is needed. -/
+theorem memLp_energyTruncation {Ω E : Type*} [NormedAddCommGroup E] [MeasurableSpace Ω]
+    {μ : Measure ℝ≥0} [SFinite μ] {P : Measure Ω} [IsFiniteMeasure P]
+    {H : ℝ≥0 → Ω → E} (hH : AEStronglyMeasurable (Function.uncurry H) (μ.prod P))
+    (C : ℝ≥0) : MemLp (Function.uncurry (μ.energyTruncation H C)) 2 (μ.prod P) := by
+  classical
+  let G := hH.mk (Function.uncurry H)
+  have hG : StronglyMeasurable G := hH.stronglyMeasurable_mk
+  have hA : Measurable (fun p : ℝ≥0 × Ω ↦ μ.accumulatedEnergy (Function.curry G) p.1 p.2) := by
+    have hm : Measurable (fun q : (ℝ≥0 × Ω) × ℝ≥0 ↦
+        if q.2 ≤ q.1.1 then ‖G (q.2, q.1.2)‖ₑ ^ 2 else 0) :=
+      Measurable.ite (measurableSet_le measurable_snd measurable_fst.fst)
+        ((hG.comp_measurable (measurable_snd.prodMk measurable_fst.snd)).eNorm.pow_const 2)
+        measurable_const
+    simpa only [Measure.accumulatedEnergy_def, ← lintegral_indicator measurableSet_Iic,
+      Set.indicator_apply, mem_Iic, Function.curry] using hm.lintegral_prod_right' (ν := μ)
+  have hAe : ∀ᵐ ω ∂P, ∀ t, μ.accumulatedEnergy H t ω =
+      μ.accumulatedEnergy (Function.curry G) t ω := by
+    filter_upwards [Measure.ae_ae_of_ae_prod
+      (Measure.measurePreserving_swap.quasiMeasurePreserving.ae hH.ae_eq_mk)] with ω hω t
+    simp only [Measure.accumulatedEnergy_def]
+    exact lintegral_congr_ae (ae_restrict_of_ae
+      (hω.mono fun s hs ↦ congrArg (fun x : E ↦ ‖x‖ₑ ^ 2) hs))
+  have hmG : StronglyMeasurable (fun p : ℝ≥0 × Ω ↦
+      if μ.accumulatedEnergy (Function.curry G) p.1 p.2 ≤ C then G p else 0) :=
+    hG.ite (measurableSet_le hA measurable_const) stronglyMeasurable_zero
+  have hm : AEStronglyMeasurable (Function.uncurry (μ.energyTruncation H C)) (μ.prod P) := by
+    refine hmG.aestronglyMeasurable.congr ?_
+    filter_upwards [hH.ae_eq_mk, Measure.quasiMeasurePreserving_snd.ae hAe] with p hp hAp
+    simp only [Function.uncurry] at hp
+    simp only [Function.uncurry, Measure.energyTruncation_def, hAp, hp, G]
+  rw [hm.memLp_two_iff_lintegral_enorm_sq_lt_top]
+  calc
+    _ = ∫⁻ ω, ∫⁻ t, ‖μ.energyTruncation H C t ω‖ₑ ^ 2 ∂μ ∂P :=
+      lintegral_prod_symm _ (hm.eNorm.pow_const 2)
+    _ ≤ ∫⁻ _ : Ω, (C : ℝ≥0∞) ∂P :=
+      lintegral_mono (μ.lintegral_enorm_sq_energyTruncation_le H C)
+    _ < ∞ := by simp [ENNReal.mul_lt_top, measure_lt_top]
+
+end MeasureTheory.AEStronglyMeasurable
+
 namespace MeasureTheory.IsStronglyPredictable
 
 variable {Ω E : Type*} [NormedAddCommGroup E] {mΩ : MeasurableSpace Ω}
@@ -116,18 +161,13 @@ theorem energyTruncation (hH : IsStronglyPredictable ℱ H) (C : ℝ≥0∞) :
     (hH.isStronglyProgressive.isStronglyPredictable_accumulatedEnergy μ).measurable
       measurable_const) stronglyMeasurable_zero
 
+omit [NullSingletonClass μ] in
 /-- Under a finite sample measure, finite-budget truncations are square integrable for the
-entire time-product measure, not just separately on each finite horizon. -/
+entire time-product measure, not just separately on each finite horizon. Atomlessness of the
+time measure is not required. -/
 theorem memLp_energyTruncation {P : Measure Ω} [IsFiniteMeasure P]
     (hH : IsStronglyPredictable ℱ H) (C : ℝ≥0) :
-    MemLp (Function.uncurry (μ.energyTruncation H C)) 2 (μ.prod P) := by
-  have hm := (hH.energyTruncation μ C).mono ℱ.predictable_le_prod
-  rw [hm.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top]
-  calc
-    _ = ∫⁻ ω, ∫⁻ t, ‖μ.energyTruncation H C t ω‖ₑ ^ 2 ∂μ ∂P :=
-      lintegral_prod_symm _ (hm.eNorm.pow_const 2).aemeasurable
-    _ ≤ ∫⁻ _ : Ω, (C : ℝ≥0∞) ∂P :=
-      lintegral_mono (μ.lintegral_enorm_sq_energyTruncation_le H C)
-    _ < ∞ := by simp [ENNReal.mul_lt_top, measure_lt_top]
+    MemLp (Function.uncurry (μ.energyTruncation H C)) 2 (μ.prod P) :=
+  ((hH.mono ℱ.predictable_le_prod).aestronglyMeasurable).memLp_energyTruncation C
 
 end MeasureTheory.IsStronglyPredictable
