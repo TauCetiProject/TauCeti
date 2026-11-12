@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+public import TauCeti.Analysis.ODE.Wronskian
 
 /-!
 # Airy's equation
@@ -26,11 +26,13 @@ solution satisfies the Riccati equation `W' = z − W²`.
   `π (w(0) Bi′(0) − w′(0) Bi(0)) Ai + π (w′(0) Ai(0) − w(0) Ai′(0)) Bi`;
 * `TauCeti.eq_of_airy_ode`: two entire solutions with the same value and derivative at one point
   are equal;
-* `TauCeti.hasDerivAt_deriv_div_of_airy_ode`: the Riccati form (DLMF 9.2.16).
+* `TauCeti.hasDerivAt_deriv_div_of_airy_ode_at`, `TauCeti.hasDerivAt_deriv_div_of_airy_ode`: the
+  Riccati form (DLMF 9.2.16), pointwise and for entire solutions.
 
 ## Implementation notes
 
-Uniqueness is proved with Wronskians: the Wronskian of two entire solutions is constant, and
+Uniqueness is proved with Wronskians: the Wronskian of two entire solutions is constant
+(`TauCeti.wronskian_eq_of_hasDerivAt`), and
 `𝒲{Ai, Bi} ≠ 0`, so no general existence and uniqueness theorem for linear ODEs is needed.
 
 ## References
@@ -50,20 +52,6 @@ open scoped Real
 
 namespace TauCeti
 
-/-- Differentiating `₀F₁(; b; ·)` raises its parameter by one. -/
-private theorem hasDerivAt_regularizedHGFun_zero_singleton (b w : ℂ) :
-    HasDerivAt (regularizedHGFun 0 {b}) (regularizedHGFun 0 {b + 1} w) w := by
-  have hd := (analyticAt_regularizedHGFun_zero (b := {b}) w).differentiableAt.hasDerivAt
-  convert hd using 1
-  refine (hasSum_regularizedHGFun (a := 0) (b := {b + 1}) (by simp) w).unique ?_
-  convert hasSum_deriv_regularizedHGFun (a := 0) (b := {b}) (by simp) w using 1
-  funext n
-  simp only [regularizedHGFunCoeff_zero_singleton, Nat.factorial_succ, Nat.cast_mul,
-    Nat.cast_succ, mul_inv_rev]
-  have hn : (n + 1 : ℂ) ≠ 0 := by exact_mod_cast n.succ_ne_zero
-  rw [show b + (n + 1) = b + 1 + n by ring]
-  field_simp
-
 /-- The chain rule for `z ↦ ₀F₁(; b; z³/9)`. -/
 private theorem hasDerivAt_airy_hypergeometric (b z : ℂ) :
     HasDerivAt (fun z : ℂ => regularizedHGFun 0 {b} (z ^ 3 / 9))
@@ -73,10 +61,6 @@ private theorem hasDerivAt_airy_hypergeometric (b z : ℂ) :
   refine h.congr_deriv ?_
   push_cast
   ring
-
-/-- `3 ^ (a + 1) = 3 ^ a * 3` for complex `a`. -/
-private theorem three_cpow_add_one (a : ℂ) : (3 : ℂ) ^ (a + 1) = (3 : ℂ) ^ a * 3 := by
-  rw [cpow_add _ _ (by norm_num), cpow_one]
 
 /-- The derivative of `Ai` as a combination of regularized `₀F₁` series. -/
 theorem hasDerivAt_airyAi (z : ℂ) :
@@ -91,7 +75,8 @@ theorem hasDerivAt_airyAi (z : ℂ) :
   · ext w
     ring
   · rw [regularizedHGFun_zero_singleton_eq_mul_add_mul (1 / 3 : ℂ),
-      show (-1 / 3 : ℂ) = -4 / 3 + 1 by norm_num, three_cpow_add_one]
+      show (-1 / 3 : ℂ) = -4 / 3 + 1 by norm_num,
+      cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
     norm_num
     ring
 
@@ -108,7 +93,8 @@ theorem hasDerivAt_airyBi (z : ℂ) :
   · ext w
     ring
   · rw [regularizedHGFun_zero_singleton_eq_mul_add_mul (1 / 3 : ℂ),
-      show (1 / 6 : ℂ) = -5 / 6 + 1 by norm_num, three_cpow_add_one]
+      show (1 / 6 : ℂ) = -5 / 6 + 1 by norm_num,
+      cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
     norm_num
     ring
 
@@ -145,7 +131,8 @@ theorem airyAi_ode (z : ℂ) : deriv^[2] airyAi z = z * airyAi z := by
     funext fun x => by rw [deriv_airyAi]; ring
   simp only [Pi.add_def] at h
   rw [Function.iterate_succ_apply', Function.iterate_one, hfun, h.deriv]
-  · rw [airyAi_def, show (-1 / 3 : ℂ) = -4 / 3 + 1 by norm_num, three_cpow_add_one]
+  · rw [airyAi_def, show (-1 / 3 : ℂ) = -4 / 3 + 1 by norm_num,
+      cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
     norm_num
     ring
 
@@ -159,7 +146,8 @@ theorem airyBi_ode (z : ℂ) : deriv^[2] airyBi z = z * airyBi z := by
     funext fun x => by rw [deriv_airyBi]; ring
   simp only [Pi.add_def] at h
   rw [Function.iterate_succ_apply', Function.iterate_one, hfun, h.deriv]
-  · rw [airyBi_def, show (1 / 6 : ℂ) = -5 / 6 + 1 by norm_num, three_cpow_add_one]
+  · rw [airyBi_def, show (1 / 6 : ℂ) = -5 / 6 + 1 by norm_num,
+      cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
     norm_num
     ring
 
@@ -168,37 +156,26 @@ theorem wronskian_eq_of_airy_ode {f g : ℂ → ℂ} (hf : Differentiable ℂ f)
     (hg : Differentiable ℂ g) (hf' : ∀ z, deriv^[2] f z = z * f z)
     (hg' : ∀ z, deriv^[2] g z = z * g z) (z w : ℂ) :
     f z * deriv g z - deriv f z * g z = f w * deriv g w - deriv f w * g w := by
-  have hd : ∀ u, HasDerivAt (fun u => f u * deriv g u - deriv f u * g u) 0 u := by
-    intro u
-    have h2f : HasDerivAt (deriv f) (u * f u) u := by
-      rw [← hf' u]
-      exact (hf.deriv u).hasDerivAt
-    have h2g : HasDerivAt (deriv g) (u * g u) u := by
-      rw [← hg' u]
-      exact (hg.deriv u).hasDerivAt
-    exact (((hf u).hasDerivAt.mul h2g).sub (h2f.mul (hg u).hasDerivAt)).congr_deriv (by ring)
-  exact is_const_of_deriv_eq_zero (fun u => (hd u).differentiableAt) (fun u => (hd u).deriv) z w
-
-/-- `Γ(1/3) Γ(2/3) = 2π/√3`, in the form `Γ(1/3) Γ(2/3) 3^{1/2} = 2π`. -/
-private theorem Gamma_one_third_mul_Gamma_two_thirds :
-    Gamma (1 / 3) * Gamma (2 / 3) * (3 : ℂ) ^ (1 / 2 : ℂ) = 2 * π := by
-  have h := Complex.Gamma_mul_Gamma_one_sub (1 / 3)
-  rw [show (1 : ℂ) - 1 / 3 = 2 / 3 by norm_num] at h
-  have hs : Complex.sin (π * (1 / 3)) = (3 : ℂ) ^ (1 / 2 : ℂ) / 2 := by
-    rw [show (π : ℂ) * (1 / 3) = ((π / 3 : ℝ) : ℂ) by push_cast; ring, ← ofReal_sin,
-      Real.sin_pi_div_three, Real.sqrt_eq_rpow, ofReal_div,
-      ofReal_cpow (by norm_num : (0 : ℝ) ≤ 3)]
-    norm_num
-  have h3 : (3 : ℂ) ^ (1 / 2 : ℂ) ≠ 0 := by simp
-  rw [h, hs]
-  field_simp
+  have h2 {u : ℂ → ℂ} (hu : Differentiable ℂ u) (hu' : ∀ z, deriv^[2] u z = z * u z) (t : ℂ) :
+      HasDerivAt (deriv u) (id t * u t) t := by
+    rw [id, ← hu' t]
+    exact (hu.deriv t).hasDerivAt
+  have h := wronskian_eq_of_hasDerivAt (q := id) (fun t => (hg t).hasDerivAt) (h2 hg hg')
+    (fun t => (hf t).hasDerivAt) (h2 hf hf') z w
+  linear_combination h
 
 /-- **The Wronskian** `𝒲{Ai, Bi} = 1/π` (DLMF 9.2.7). -/
 theorem wronskian_airyAi_airyBi (z : ℂ) :
     airyAi z * deriv airyBi z - deriv airyAi z * airyBi z = (π : ℂ)⁻¹ := by
   rw [wronskian_eq_of_airy_ode differentiable_airyAi differentiable_airyBi airyAi_ode airyBi_ode
     z 0, airyAi_zero, airyBi_zero, deriv_airyAi_zero, deriv_airyBi_zero]
-  have hG := Gamma_one_third_mul_Gamma_two_thirds
+  have hG : Gamma (1 / 3) * Gamma (2 / 3) * (3 : ℂ) ^ (1 / 2 : ℂ) = 2 * π := by
+    have h3 : (3 : ℂ) ^ (1 / 2 : ℂ) = (Real.sqrt 3 : ℂ) := by
+      rw [Real.sqrt_eq_rpow, ofReal_cpow (by norm_num : (0 : ℝ) ≤ 3)]
+      norm_num
+    have h30 : (Real.sqrt 3 : ℂ) ≠ 0 := by simp
+    rw [Complex.Gamma_one_third_mul_Gamma_two_thirds, h3]
+    field_simp
   have h1 : Gamma (1 / 3 : ℂ) ≠ 0 := Gamma_ne_zero_of_re_pos (by norm_num)
   have h2 : Gamma (2 / 3 : ℂ) ≠ 0 := Gamma_ne_zero_of_re_pos (by norm_num)
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
@@ -251,15 +228,22 @@ theorem eq_of_airy_ode {f g : ℂ → ℂ} (hf : Differentiable ℂ f) (hg : Dif
   rw [eq_airy_combination_of_wronskian hf hf' w z, eq_airy_combination_of_wronskian hg hg' w z,
     h0, h1]
 
+/-- **The Riccati form** (DLMF 9.2.16), pointwise: if `w` and `w′` are differentiable at `z`,
+`w″(z) = z w(z)` and `w(z) ≠ 0`, then `W = w′/w` has derivative `z − W(z)²` at `z`. -/
+theorem hasDerivAt_deriv_div_of_airy_ode_at {w : ℂ → ℂ} {z : ℂ} (hw : DifferentiableAt ℂ w z)
+    (hw' : DifferentiableAt ℂ (deriv w) z) (hode : deriv^[2] w z = z * w z) (hz : w z ≠ 0) :
+    HasDerivAt (fun u => deriv w u / w u) (z - (deriv w z / w z) ^ 2) z := by
+  have h2 : HasDerivAt (deriv w) (z * w z) z := by
+    rw [← hode]
+    exact hw'.hasDerivAt
+  refine (h2.div hw.hasDerivAt hz).congr_deriv ?_
+  field_simp
+
 /-- **The Riccati form** (DLMF 9.2.16): if `w` is an entire solution of Airy's equation and
 `w(z) ≠ 0`, then `W = w′/w` has derivative `z − W(z)²` at `z`. -/
 theorem hasDerivAt_deriv_div_of_airy_ode {w : ℂ → ℂ} (hw : Differentiable ℂ w)
     (hode : ∀ z, deriv^[2] w z = z * w z) {z : ℂ} (hz : w z ≠ 0) :
-    HasDerivAt (fun u => deriv w u / w u) (z - (deriv w z / w z) ^ 2) z := by
-  have h2 : HasDerivAt (deriv w) (z * w z) z := by
-    rw [← hode z]
-    exact (hw.deriv z).hasDerivAt
-  refine (h2.div (hw z).hasDerivAt hz).congr_deriv ?_
-  field_simp
+    HasDerivAt (fun u => deriv w u / w u) (z - (deriv w z / w z) ^ 2) z :=
+  hasDerivAt_deriv_div_of_airy_ode_at (hw z) (hw.deriv z) (hode z) hz
 
 end TauCeti
