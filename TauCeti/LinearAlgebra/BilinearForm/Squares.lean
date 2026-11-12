@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import Mathlib.LinearAlgebra.TensorPower.Symmetric
 public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
+import TauCeti.LinearAlgebra.SymmetricPower.Lift
 
 /-!
 # Bilinear forms from functionals on the second symmetric and exterior powers
@@ -37,17 +38,20 @@ semiring, the exterior side over a commutative ring, which is where Mathlib's ex
 * `TauCeti.BilinForm.ofSymmetricSquareDual_injective` and
   `TauCeti.BilinForm.ofExteriorSquareDual_injective`: a functional on either square is determined
   by the form it gives.
+* `TauCeti.BilinForm.exists_ofSymmetricSquareDual_eq_of_isSymm` and
+  `TauCeti.BilinForm.exists_ofExteriorSquareDual_eq_of_isAlt`: every symmetric, respectively
+  alternating, form is the form of a functional on the corresponding square.
 
 ## Implementation notes
 
 The two maps are built as plain linear maps rather than as equivalences onto the symmetric and the
-alternating forms.  On the exterior side that equivalence is available: `ofExteriorSquareDual` is
-`exteriorPower.alternatingMapLinearEquiv`, the universal property of the exterior power, followed
-by `MultilinearMap.toBilinMap`, and its injectivity is the injectivity of that
-equivalence.  On the symmetric side Mathlib has no universal property of the symmetric power -- it
-is an explicit TODO of `Mathlib/LinearAlgebra/TensorPower/Symmetric.lean` -- so surjectivity onto
-the symmetric forms is not proved here; injectivity is read off the pure tensors spanning instead,
-and is all the downstream counting needs.
+alternating forms; the surjectivity statements are existence results.  On the exterior side the
+equivalence is available: `ofExteriorSquareDual` is `exteriorPower.alternatingMapLinearEquiv`, the
+universal property of the exterior power, followed by `MultilinearMap.toBilinMap`, and both its
+injectivity and its surjectivity onto the alternating forms come from that equivalence.  On the
+symmetric side Mathlib has no universal property of the symmetric power -- it is an explicit TODO of
+`Mathlib/LinearAlgebra/TensorPower/Symmetric.lean` -- so surjectivity onto the symmetric forms uses
+`SymmetricPower.lift` from this repository, and injectivity is read off the pure tensors spanning.
 -/
 
 public section
@@ -104,6 +108,22 @@ theorem ofSymmetricSquareDual_injective :
   rintro _ ⟨f, rfl⟩
   simpa using DFunLike.congr_fun h f
 
+/-- **Every symmetric form comes from a functional on the symmetric square.** The form is a
+permutation-invariant multilinear map on `Fin 2 → V`, and the universal property of the symmetric
+power, `SymmetricPower.lift`, turns it into the functional. -/
+theorem exists_ofSymmetricSquareDual_eq_of_isSymm {B : BilinForm k V} (hB : B.IsSymm) :
+    ∃ ψ : Module.Dual k (Sym[k]^2V), ofSymmetricSquareDual ψ = B := by
+  let f : (Fin 2 → V) →ₘₗ[k] k :=
+    { toFun v := B (v 0) (v 1)
+      map_update_add' v i x y := by fin_cases i <;> simp
+      map_update_smul' v i c x := by fin_cases i <;> simp }
+  have hf (e : Equiv.Perm (Fin 2)) : f.domDomCongr e = f := by
+    ext v
+    have key (a b : Fin 2) (hab : a ≠ b) : B (v a) (v b) = B (v 0) (v 1) := by
+      fin_cases a <;> fin_cases b <;> simp_all [hB.eq (v 1)]
+    exact key (e 0) (e 1) (e.injective.ne (by decide))
+  exact ⟨SymmetricPower.lift f hf, by ext x y; simp [f]⟩
+
 end CommSemiring
 
 section CommRing
@@ -137,6 +157,15 @@ theorem ofExteriorSquareDual_injective :
     Function.Injective (ofExteriorSquareDual (k := k) (V := V)) := fun _ _ hψφ =>
   exteriorPower.alternatingMapLinearEquiv.symm.injective
     (AlternatingMap.coe_multilinearMap_injective (MultilinearMap.toBilinMap_injective hψφ))
+
+/-- **Every alternating form comes from a functional on the exterior square.** The universal
+property of the exterior power turns the form, as an alternating map, into the functional. -/
+theorem exists_ofExteriorSquareDual_eq_of_isAlt {B : BilinForm k V} (hB : B.IsAlt) :
+    ∃ ψ : Module.Dual k (⋀[k]^2 V), ofExteriorSquareDual ψ = B :=
+  ⟨exteriorPower.alternatingMapLinearEquiv (LinearMap.IsAlt.toAlternatingMap hB), by
+    ext x y
+    simp only [ofExteriorSquareDual_apply, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
+    exact LinearMap.IsAlt.toAlternatingMap_apply hB ![x, y]⟩
 
 end CommRing
 

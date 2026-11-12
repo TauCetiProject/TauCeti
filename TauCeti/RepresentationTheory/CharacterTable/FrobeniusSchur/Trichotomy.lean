@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.BilinearForm.Squares
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.InvariantForm
-import TauCeti.LinearAlgebra.SymmetricPower.Lift
 import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
@@ -24,12 +23,13 @@ The dictionary is elementary.  A functional on `Sym²V` becomes a bilinear form 
 with the universal multilinear map, and the form it produces is symmetric because the symmetric
 square does not see the order of its two arguments; a functional on `Λ²V` becomes a form in the
 same way, and the form it produces is alternating because a repeated argument wedges to zero.
-Both assignments are injective.  So the
-invariant functionals on the two squares inject into the invariant symmetric and the invariant
-alternating forms, which meet only in `0`.  Counting on the other side, the invariant forms are the
-intertwiners from `ρ` to its dual, and the character sum that counts those is the character sum that
-counts the invariants of the tensor square, read along `g⁻¹` instead of `g`; so the two injections
-account for every invariant form, and
+Both assignments are injective, and the universal property of each square makes them surjective
+onto the symmetric, respectively alternating, forms.  The assignments carry invariant functionals
+to invariant forms, and every invariant symmetric, respectively alternating, form arises this way.
+So whenever `|G|` is invertible the two `finrank` equalities
+`dim {invariant symmetric forms} = dim (Sym²V)ᴳ` and
+`dim {invariant alternating forms} = dim (Λ²V)ᴳ` hold, and the signed count of the invariants of
+the two squares becomes a signed count of invariant forms:
 
 `ν₂(ρ) = dim {invariant symmetric forms} - dim {invariant alternating forms}`.
 
@@ -152,25 +152,16 @@ theorem map_ofSymmetricSquareDual_eq_symmetricInvariantForms (ρ : Representatio
   refine le_antisymm (Submodule.map_le_iff_le_comap.mpr fun _ hψ =>
     ofSymmetricSquareDual_mem_symmetricInvariantForms ρ hψ) fun B hB' => ?_
   obtain ⟨hB, hsymm⟩ := mem_symmetricInvariantForms.mp hB'
-  let f : MultilinearMap k (fun _ : Fin 2 => V) k :=
-    { toFun v := B (v 0) (v 1)
-      map_update_add' v i x y := by fin_cases i <;> simp
-      map_update_smul' v i c x := by fin_cases i <;> simp }
-  have hf (e : Equiv.Perm (Fin 2)) : f.domDomCongr e = f := by
-    ext v
-    have key (a b : Fin 2) (hab : a ≠ b) : B (v a) (v b) = B (v 0) (v 1) := by
-      fin_cases a <;> fin_cases b <;> simp_all [hsymm.eq (v 1)]
-    exact key (e 0) (e 1) (e.injective.ne (by decide))
-  let ψ : Module.Dual k (Sym[k]^2 V) := SymmetricPower.lift f hf
-  have hψ : BilinForm.ofSymmetricSquareDual ψ = B := by
-    ext x y
-    simp [ψ, f]
-  refine ⟨ψ, mem_invariants_dual_iff.mpr fun g u => ?_, hψ⟩
+  obtain ⟨ψ, rfl⟩ := BilinForm.exists_ofSymmetricSquareDual_eq_of_isSymm hsymm
+  refine ⟨ψ, mem_invariants_dual_iff.mpr fun g u => ?_, rfl⟩
   have hext : ψ ∘ₗ (ρ.symmetricPower 2 g) = ψ := by
-    refine SymmetricPower.ext fun v => ?_
-    simp only [LinearMap.comp_apply, ρ.symmetricPower_apply_tprod 2 g v, ψ,
-      SymmetricPower.lift_tprod]
-    exact hB.apply g (v 0) (v 1)
+    apply BilinForm.ofSymmetricSquareDual_injective
+    ext x y
+    have hvec : (fun i => ρ g (![x, y] i)) = ![ρ g x, ρ g y] := (FinVec.map_eq _ _).symm
+    simp only [BilinForm.ofSymmetricSquareDual_apply, LinearMap.comp_apply,
+      ρ.symmetricPower_apply_tprod 2 g ![x, y], hvec]
+    simp only [← BilinForm.ofSymmetricSquareDual_apply]
+    exact hB.apply g x y
   exact LinearMap.congr_fun hext u
 
 end SymmetricSquare
@@ -199,21 +190,16 @@ theorem map_ofExteriorSquareDual_eq_alternatingInvariantForms (ρ : Representati
   refine le_antisymm (Submodule.map_le_iff_le_comap.mpr fun _ hψ =>
     ofExteriorSquareDual_mem_alternatingInvariantForms ρ hψ) fun B hB' => ?_
   obtain ⟨hB, halt⟩ := mem_alternatingInvariantForms.mp hB'
-  let ψ : Module.Dual k (⋀[k]^2 V) :=
-    exteriorPower.alternatingMapLinearEquiv (LinearMap.IsAlt.toAlternatingMap halt)
-  have hψ : BilinForm.ofExteriorSquareDual ψ = B := by
-    ext x y
-    simp only [ψ, BilinForm.ofExteriorSquareDual_apply,
-      exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
-    exact LinearMap.IsAlt.toAlternatingMap_apply halt ![x, y]
-  refine ⟨ψ, mem_invariants_dual_iff.mpr fun g u => ?_, hψ⟩
+  obtain ⟨ψ, rfl⟩ := BilinForm.exists_ofExteriorSquareDual_eq_of_isAlt halt
+  refine ⟨ψ, mem_invariants_dual_iff.mpr fun g u => ?_, rfl⟩
   have hext : ψ ∘ₗ (ρ.exteriorPower 2 g) = ψ := by
-    apply exteriorPower.linearMap_ext
-    ext v
-    simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply,
-      ρ.exteriorPower_apply_ιMulti 2 g v, ψ, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
-    rw [LinearMap.IsAlt.toAlternatingMap_apply halt, LinearMap.IsAlt.toAlternatingMap_apply halt]
-    exact hB.apply g (v 0) (v 1)
+    apply BilinForm.ofExteriorSquareDual_injective
+    ext x y
+    have hvec : (ρ g ∘ ![x, y]) = ![ρ g x, ρ g y] := (FinVec.map_eq _ _).symm
+    simp only [BilinForm.ofExteriorSquareDual_apply, LinearMap.comp_apply,
+      ρ.exteriorPower_apply_ιMulti 2 g ![x, y], hvec]
+    simp only [← BilinForm.ofExteriorSquareDual_apply]
+    exact hB.apply g x y
   exact LinearMap.congr_fun hext u
 
 end ExteriorSquare
