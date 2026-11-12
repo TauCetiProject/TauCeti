@@ -220,7 +220,7 @@ variable {k : Type u} {A : Type u'} {M : Type v}
 variable [Semiring k] [Semiring A] [Module k A]
 variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable (𝒜 : ℤ → Submodule k A) [DirectSum.Decomposition 𝒜]
-variable {G : InternalGrading k M} [SetLike.GradedSMul 𝒜 G.piece] {d : ℤ}
+variable {G : InternalGrading k M ℤ} [SetLike.GradedSMul 𝒜 G.piece] {d : ℤ}
 
 include 𝒜 in
 omit [IsScalarTower k A M] in
@@ -286,7 +286,7 @@ The source has no homogeneous elements below degree `d'`, so every nonzero homog
 has degree strictly above `d`. -/
 theorem apply_mem_smul_top_of_isGeneratedInDegree (h𝒜 : ∀ i < 0, 𝒜 i = ⊥)
     {M' : Type w} [AddCommMonoid M'] [Module k M'] [Module A M']
-    {G' : InternalGrading k M'} [SetLike.GradedSMul 𝒜 G'.piece] {d' δ : ℤ}
+    {G' : InternalGrading k M' ℤ} [SetLike.GradedSMul 𝒜 G'.piece] {d' δ : ℤ}
     (hG' : G'.IsGeneratedInDegree A d') (hG : G.IsGeneratedInDegree A d) (hd : d < d' + δ)
     {f : M' →ₗ[A] M} (hf : LinearMap.IsHomogeneous f G'.piece G.piece δ) (x : M') :
     f x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
