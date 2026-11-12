@@ -90,6 +90,7 @@ open TauCeti.Group
 variable {A X : Type*}
 
 /-- The multiplication symbol alone, without its two arguments, does not spell a group term. -/
+@[simp]
 theorem listEncode_ne_singleton_mul (t : Language.group[[A]].Term X) :
     t.listEncode ≠ [Sum.inr ⟨2, Sum.inl mulFunc⟩] :=
   Term.listEncode_ne_singleton_inr _ t

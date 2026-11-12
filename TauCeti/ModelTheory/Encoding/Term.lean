@@ -49,6 +49,7 @@ open Encodable
 variable {L : Language.{u, v}} {α : Type w}
 
 /-- The spelling of a term is not empty. -/
+@[simp]
 theorem listEncode_ne_nil (t : L.Term α) : t.listEncode ≠ [] := by
   cases t <;> simp [listEncode]
 
@@ -67,14 +68,16 @@ theorem exists_listEncode_eq_iff {l : List (α ⊕ Σ i, L.Functions i)} :
     exact ⟨t, ht⟩
 
 /-- A function symbol of positive arity without arguments decodes to no term. -/
+@[simp]
 theorem listDecode_singleton_inr {n : ℕ} (f : L.Functions (n + 1)) :
     listDecode [Sum.inr ⟨n + 1, f⟩] = ([] : List (L.Term α)) := by
   simp [listDecode]
 
 /-- A function symbol of positive arity without arguments does not spell a term. -/
+@[simp]
 theorem listEncode_ne_singleton_inr {n : ℕ} (f : L.Functions (n + 1)) (t : L.Term α) :
     t.listEncode ≠ [Sum.inr ⟨n + 1, f⟩] := fun h => by
-  simpa [h, listDecode_singleton_inr] using listDecode_listEncode t
+  simpa [h] using listDecode_listEncode t
 
 /-- Spelling the terms `l[0], …, l[n - 1]` of a list one after the other. -/
 private theorem flatMap_finRange_listEncode_getElem (l : List (L.Term α)) {n : ℕ}
