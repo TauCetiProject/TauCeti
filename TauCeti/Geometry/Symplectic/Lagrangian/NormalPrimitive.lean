@@ -8,9 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
-public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
-public import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 public import TauCeti.Geometry.Symplectic.Lagrangian.TotallyReal
+public import TauCeti.Geometry.Symplectic.Liouville.Linear
 public import TauCeti.LinearAlgebra.TotallyReal.CompatibleForm
 
 /-!
@@ -30,9 +29,10 @@ derivative is the constant two-form
 `σ(v, w) = β_v(w) - β_w(v)`.
 
 This form tames `J`, since `σ(v, J v) = g(P v, P v) + g(P (J v), P (J v))`, and `L` is Lagrangian
-for it. When `g` is symmetric, `σ` is moreover `J`-invariant and its metric `σ(·, J ·)` is the
-`J`-invariant extension of `g` constructed in `TauCeti.LinearAlgebra.TotallyReal.CompatibleForm`,
-for which `J L` is the orthogonal complement of `L`. With respect to that metric `β` is bounded by
+for it. When `g` is symmetric on `L`, `σ` is moreover `J`-invariant and its metric `σ(·, J ·)` is
+the `J`-invariant extension of `g` constructed in
+`TauCeti.LinearAlgebra.TotallyReal.CompatibleForm`, for which `J L` is the orthogonal complement
+of `L`. With respect to that metric `β` is bounded by
 the distance to `L`: `β_x(ζ)² ≤ |x - a|² |ζ|²` for every `a ∈ L`.
 
 So a maximal totally real subspace is Lagrangian for a symplectic form compatible with `J`, and on
@@ -65,7 +65,8 @@ advance.
   `TauCeti.IsMaximalTotallyReal.symplecticForm_compatible`,
   `TauCeti.IsMaximalTotallyReal.isLagrangian_symplecticForm` and
   `TauCeti.IsMaximalTotallyReal.associatedBilinForm_symplecticForm`: `σ` tames `J`, is compatible
-  with `J` when `g` is symmetric, makes `L` Lagrangian, and has metric the compatible form of `g`.
+  with `J` when `g` is symmetric on `L`, makes `L` Lagrangian, and has metric the compatible form
+  of `g`.
 * `TauCeti.isMaximalTotallyReal_iff_exists_compatible_isLagrangian`: on a finite-dimensional space,
   `L` is maximal totally real exactly when it is Lagrangian for some symplectic form compatible
   with `J`.
@@ -109,15 +110,12 @@ theorem normalPrimitive_apply (x ζ : V) :
 /-- The normal primitive vanishes along `L`. -/
 theorem normalPrimitive_apply_of_mem {x : V} (hx : x ∈ L) (ζ : V) :
     hL.normalPrimitive g x ζ = 0 := by
-  rw [normalPrimitive_apply,
-    Submodule.projection_apply_of_mem_right hL.isCompl (Submodule.mem_map_of_mem hx), map_zero,
-    LinearMap.zero_apply]
+  rw [normalPrimitive_apply, hL.projection_map_of_mem hx, map_zero, LinearMap.zero_apply]
 
 /-- The normal primitive vanishes on the normal directions `J L`. -/
 theorem normalPrimitive_apply_map_of_mem (x : V) {b : V} (hb : b ∈ L) :
     hL.normalPrimitive g x (J b) = 0 := by
-  rw [normalPrimitive_apply,
-    Submodule.projection_apply_of_mem_right hL.isCompl (Submodule.mem_map_of_mem hb), map_zero]
+  rw [normalPrimitive_apply, hL.projection_map_of_mem hb, map_zero]
 
 /-- The normal primitive is the pairing of `J ν` with `ζ` for the compatible form of `g`, where
 `ν = x - P x` is the normal component of `x`. Since `J ν = -J⁻¹ ν`, this is the formula
@@ -126,20 +124,17 @@ theorem normalPrimitive_eq_compatibleForm (x ζ : V) :
     hL.normalPrimitive g x ζ =
       hL.compatibleForm g (J (x - L.projection (L.map J.toLinearMap) hL.isCompl x)) ζ := by
   set P := L.projection (L.map J.toLinearMap) hL.isCompl
-  obtain ⟨b, hb, hbx⟩ := Submodule.sub_projection_mem hL.isCompl x
-  have hbx : J b = x - P x := hbx
-  have hJ : J (x - P x) = -b := by rw [← hbx, AlmostComplexStructure.apply_apply]
-  have hPJ : P (J x) = -b := by
-    conv_lhs => rw [← sub_add_cancel x (P x), ← hbx]
-    rw [AlmostComplexStructure.apply_add, AlmostComplexStructure.apply_apply, map_add,
-      Submodule.projection_apply_of_mem_right hL.isCompl
-        (Submodule.mem_map_of_mem (L.projection_apply_mem hL.isCompl x)), add_zero, map_neg,
-      Submodule.projection_apply_of_mem_left hL.isCompl hb]
-  rw [hJ, hL.compatibleForm_apply_of_mem g (L.neg_mem hb), normalPrimitive_apply, hPJ]
+  -- `x - P x = -J (P (J x))`, so `J (x - P x) = P (J x)`.
+  have hx : x - P x = -J (P (J x)) := by
+    nth_rw 1 [← hL.sub_map_projection_map J.square_neg x]
+    exact sub_sub_cancel_left _ _
+  rw [hx, map_neg, AlmostComplexStructure.apply_apply, neg_neg,
+    hL.compatibleForm_apply_of_mem g (L.projection_apply_mem hL.isCompl _), normalPrimitive_apply]
 
 /-- The normal primitive is bounded by the distance to `L` for the compatible form of `g`:
 `β_x(ζ)² ≤ |x - a|² |ζ|²` for every `a ∈ L`. -/
-theorem sq_normalPrimitive_apply_le (hg : ∀ a ∈ L, 0 ≤ g a a) (hsymm : g.IsSymm) {a : V}
+theorem sq_normalPrimitive_apply_le (hg : ∀ a ∈ L, 0 ≤ g a a)
+    (hsymm : ∀ a ∈ L, ∀ b ∈ L, g a b = g b a) {a : V}
     (ha : a ∈ L) (x ζ : V) :
     hL.normalPrimitive g x ζ ^ 2 ≤
       hL.compatibleForm g (x - a) (x - a) * hL.compatibleForm g ζ ζ := by
@@ -155,8 +150,7 @@ theorem sq_normalPrimitive_apply_le (hg : ∀ a ∈ L, 0 ≤ g a a) (hsymm : g.I
     hL.compatibleForm_apply_of_mem_of_mem g (hPmem _) (hPmem _),
     hL.compatibleForm_apply_of_mem_of_mem g (hPmem _) (hPmem _)] at hCS
   have hPJa : P (J (x - a)) = P (J x) := by
-    rw [AlmostComplexStructure.apply_sub, map_sub,
-      Submodule.projection_apply_of_mem_right hL.isCompl (Submodule.mem_map_of_mem ha), sub_zero]
+    rw [AlmostComplexStructure.apply_sub, map_sub, hL.projection_map_of_mem ha, sub_zero]
   have h₁ : g (P (J x)) (P (J x)) ≤ hL.compatibleForm g (x - a) (x - a) := by
     rw [compatibleForm_apply, hPJa]
     exact le_add_of_nonneg_left (hg _ (hPmem _))
@@ -202,13 +196,13 @@ theorem symplecticForm_apply (v w : V) :
   simp [symplecticForm]
 
 /-- The symplectic form of `L` evaluates on `(v, J v)` to the compatible form of `g`. -/
-theorem symplecticForm_apply_apply_self (v : V) :
+theorem symplecticForm_apply_map_self (v : V) :
     hL.symplecticForm hg v (J v) = hL.compatibleForm g v v := by
   rw [symplecticForm_apply, normalPrimitive_apply_sub_normalPrimitive_apply]
 
 /-- The symplectic form of `L` tames `J`. -/
 theorem symplecticForm_tames : (hL.symplecticForm hg).Tames J := fun v hv ↦ by
-  rw [symplecticForm_apply_apply_self]
+  rw [symplecticForm_apply_map_self]
   exact hL.compatibleForm_pos J.square_neg hg hv
 
 /-- `L` is Lagrangian for its symplectic form. -/
@@ -230,28 +224,30 @@ theorem isLagrangian_symplecticForm : (hL.symplecticForm hg).IsLagrangian L := b
 
 variable {hg}
 
-/-- When `g` is symmetric, the metric `σ(·, J ·)` of the symplectic form of `L` is the compatible
-form of `g`, the `J`-invariant extension of `g` for which `J L` is orthogonal to `L`. -/
-theorem associatedBilinForm_symplecticForm (hsymm : g.IsSymm) :
+/-- When `g` is symmetric on `L`, the metric `σ(·, J ·)` of the symplectic form of `L` is the
+compatible form of `g`, the `J`-invariant extension of `g` for which `J L` is orthogonal to `L`. -/
+theorem associatedBilinForm_symplecticForm (hsymm : ∀ a ∈ L, ∀ b ∈ L, g a b = g b a) :
     (hL.symplecticForm hg).associatedBilinForm J = hL.compatibleForm g := by
   ext v w
   simp only [SymplecticForm.associatedBilinForm_apply, symplecticForm_apply, normalPrimitive_apply,
     compatibleForm_apply, AlmostComplexStructure.apply_apply, map_neg, LinearMap.neg_apply,
-    sub_neg_eq_add, LinearMap.BilinForm.isSymm_def.1 hsymm
-      (L.projection (L.map J.toLinearMap) hL.isCompl w)]
+    sub_neg_eq_add]
+  rw [hsymm _ (L.projection_apply_mem hL.isCompl w) _ (L.projection_apply_mem hL.isCompl v)]
   exact add_comm _ _
 
-/-- When `g` is symmetric, the symplectic form of `L` is `J`-invariant. -/
-theorem symplecticForm_invariant (hsymm : g.IsSymm) : (hL.symplecticForm hg).Invariant J := by
+/-- When `g` is symmetric on `L`, the symplectic form of `L` is `J`-invariant. -/
+theorem symplecticForm_invariant (hsymm : ∀ a ∈ L, ∀ b ∈ L, g a b = g b a) :
+    (hL.symplecticForm hg).Invariant J := by
   refine (SymplecticForm.invariant_iff _ _).2 fun v w ↦ ?_
   simp only [symplecticForm_apply, normalPrimitive_apply, AlmostComplexStructure.apply_apply,
-    map_neg, LinearMap.neg_apply, LinearMap.BilinForm.isSymm_def.1 hsymm
-      (L.projection (L.map J.toLinearMap) hL.isCompl v),
-    LinearMap.BilinForm.isSymm_def.1 hsymm (L.projection (L.map J.toLinearMap) hL.isCompl w)]
+    map_neg, LinearMap.neg_apply]
+  rw [hsymm _ (L.projection_apply_mem hL.isCompl v) _ (L.projection_apply_mem hL.isCompl (J w)),
+    hsymm _ (L.projection_apply_mem hL.isCompl w) _ (L.projection_apply_mem hL.isCompl (J v))]
   ring
 
-/-- When `g` is symmetric, the symplectic form of `L` is compatible with `J`. -/
-theorem symplecticForm_compatible (hsymm : g.IsSymm) : (hL.symplecticForm hg).Compatible J :=
+/-- When `g` is symmetric on `L`, the symplectic form of `L` is compatible with `J`. -/
+theorem symplecticForm_compatible (hsymm : ∀ a ∈ L, ∀ b ∈ L, g a b = g b a) :
+    (hL.symplecticForm hg).Compatible J :=
   .of_tames (hL.symplecticForm_invariant hsymm) (hL.symplecticForm_tames hg)
 
 include hL in
@@ -263,7 +259,7 @@ theorem exists_compatible_isLagrangian [FiniteDimensional ℝ V] :
   let e := (Module.finBasis ℝ V).equivFun
   let g : LinearMap.BilinForm ℝ V := (Matrix.toBilin' 1).compl₁₂ e.toLinearMap e.toLinearMap
   have hge (v w : V) : g v w = e v ⬝ᵥ e w := by simp [g, Matrix.toBilin'_apply']
-  have hsymm : g.IsSymm := LinearMap.BilinForm.isSymm_def.2 fun v w ↦ by
+  have hsymm (v : V) (_ : v ∈ L) (w : V) (_ : w ∈ L) : g v w = g w v := by
     rw [hge, hge, dotProduct_comm]
   have hpos : ∀ a ∈ L, a ≠ 0 → 0 < g a a := fun a _ ha ↦ by
     rw [hge]
@@ -284,9 +280,8 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 finite-dimensional normed space, as a differential one-form: a continuous linear function of the
 base point with values in continuous alternating one-forms. -/
 def normalPrimitiveForm : V →L[ℝ] V [⋀^Fin 1]→L[ℝ] ℝ :=
-  (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
-    (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap.comp
-      (hL.normalPrimitive g).toContinuousBilinearMap
+  -- The radial one-form `x ↦ B(x, ·) / 2` of `B = 2 β` is `β`.
+  ContinuousLinearMap.liouvilleFormCLM ((2 : ℝ) • (hL.normalPrimitive g).toContinuousBilinearMap)
 
 /-- Evaluation of the normal primitive as a differential one-form. -/
 @[simp]
@@ -300,10 +295,8 @@ variable {g} in
 theorem extDeriv_normalPrimitiveForm_apply
     (hg : ∀ a ∈ L, a ≠ 0 → 0 < g a a) (x : V) (v : Fin 2 → V) :
     extDeriv (hL.normalPrimitiveForm g) x v = hL.symplecticForm hg (v 0) (v 1) := by
-  rw [ContinuousLinearMap.extDeriv_eq, normalPrimitiveForm,
-    ContinuousAlternatingMap.alternatizeUncurryFin_ofSubsingletonLIE_comp,
-    ContinuousAlternatingMap.alternatizeBilinCLM_apply]
-  simp
+  rw [normalPrimitiveForm, ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply]
+  simp [← mul_sub]
 
 end Normed
 
