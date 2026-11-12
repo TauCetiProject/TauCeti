@@ -92,8 +92,9 @@ private theorem exists_eq_tmul_one_of_isIdempotentElem_of_finiteType
   · rw [RingHom.mem_ker, map_sub, hcb, sub_eq_zero]
     simp [G, ← hcq]
 
-/-- An idempotent in a family over any parameter algebra is scalar when the other factor has
-preconnected spectrum and the ground field is algebraically closed. -/
+/-- In the tensor product `B ⊗[k] A` of commutative algebras over an algebraically closed field `k`
+with `PrimeSpectrum A` preconnected, every idempotent has the form `c ⊗ₜ 1` for an idempotent
+`c : B`. -/
 theorem _root_.IsIdempotentElem.exists_isIdempotentElem_eq_tmul_one
     {k A B : Type*} [Field k] [IsAlgClosed k]
     [CommRing A] [Algebra k A] [PreconnectedSpace (PrimeSpectrum A)]
