@@ -129,6 +129,26 @@ theorem isFilteredPreBrownianReal_natural (hB : IsPreBrownianReal B P)
     rw [this, ← MeasurableSpace.comap_comp]
     exact MeasurableSpace.comap_mono (measurable_pi_apply _).comap_le
 
+/-- Every natural power of a pre-Brownian value is integrable. -/
+theorem integrable_pow_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) (n : ℕ) :
+    Integrable (fun ω ↦ B t ω ^ n) P :=
+  (hB.hasLaw_eval t).integrable_comp (TauCeti.integrable_pow_gaussianReal 0 t n)
+
+/-- The second moment of a pre-Brownian value is its time. -/
+theorem integral_sq_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
+    ∫ ω, B t ω ^ 2 ∂P = (t : ℝ) := by
+  have h := (hB.hasLaw_eval t).integral_comp (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
+  simpa only [Function.comp_apply, integral_sq_gaussianReal, zero_pow two_ne_zero,
+    add_zero] using h
+
+/-- The square of every pre-Brownian value is square integrable. -/
+theorem memLp_sq_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
+    MemLp (fun ω ↦ B t ω ^ 2) 2 P := by
+  let : ENNReal.HolderTriple 4 4 2 := .of_toReal (by
+    norm_num [Real.holderTriple_iff])
+  have h := (hB.hasLaw_eval t).memLp (memLp_id_gaussianReal' 4 (by norm_num))
+  simpa only [pow_two, Pi.mul_def] using (h.mul h : MemLp (B t * B t) 2 P)
+
 /-- For `s ≤ t`, the increment `B t - B s` of a pre-Brownian motion has law `N(0, t - s)`. -/
 theorem hasLaw_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
     HasLaw (B t - B s) (gaussianReal 0 (t - s)) P := by

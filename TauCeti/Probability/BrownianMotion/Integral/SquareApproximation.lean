@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
-import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
-import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Algebra.BigOperators.Fin
 import Mathlib.Probability.Independence.Integration
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
@@ -43,6 +41,11 @@ namespace ProbabilityTheory.IsPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
 
+/-- The increment of squared Brownian motion is square integrable, in either time order. -/
+theorem memLp_sq_sub_sq (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
+    MemLp (fun ω ↦ B t ω ^ 2 - B s ω ^ 2) 2 P :=
+  (hB.memLp_sq_eval t).sub (hB.memLp_sq_eval s)
+
 /-- The mean-square increment of squared Brownian motion, for `s ≤ t`. This is distinct
 from the fourth moment of the Brownian increment. -/
 theorem integral_sq_sq_sub_sq (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
@@ -53,21 +56,14 @@ theorem integral_sq_sq_sub_sq (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst 
     have h := (hB.indepFun_shift s).symm.comp
       (measurable_pi_apply (⟨s, self_mem_Iic⟩ : Iic s)) (measurable_pi_apply (t - s))
     simpa only [Function.comp_def, add_tsub_cancel_of_le hst, Pi.sub_apply] using h
-  have hp (u : ℝ≥0) (k : ℕ) : Integrable (fun ω ↦ B u ω ^ k) P :=
-    (hB.hasLaw_eval u).integrable_comp (TauCeti.integrable_pow_gaussianReal 0 u k)
   have h2 : IndepFun (fun ω ↦ B s ω ^ 2) (fun ω ↦ (B t ω - B s ω) ^ 2) P :=
     hi.comp (measurable_id.pow_const 2) (measurable_id.pow_const 2)
   have h3 : IndepFun (B s) (fun ω ↦ (B t ω - B s ω) ^ 3) P :=
     hi.comp measurable_id (measurable_id.pow_const 3)
   have h2i : Integrable (fun ω ↦ B s ω ^ 2 * (B t ω - B s ω) ^ 2) P :=
-    h2.integrable_mul (hp s 2) (hB.integrable_pow_sub s t 2)
+    h2.integrable_mul (hB.integrable_pow_eval s 2) (hB.integrable_pow_sub s t 2)
   have h3i : Integrable (fun ω ↦ B s ω * (B t ω - B s ω) ^ 3) P :=
     h3.integrable_mul (hB.integrable_eval s) (hB.integrable_pow_sub s t 3)
-  have h2v : ∫ ω, B s ω ^ 2 ∂P = (s : ℝ) := by
-    calc
-      _ = ∫ x : ℝ, x ^ 2 ∂gaussianReal 0 s :=
-        (hB.hasLaw_eval s).integral_comp (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
-      _ = _ := by rw [integral_sq_gaussianReal]; simp
   calc
     _ = ∫ ω, 4 * (B s ω ^ 2 * (B t ω - B s ω) ^ 2) +
         4 * (B s ω * (B t ω - B s ω) ^ 3) + (B t ω - B s ω) ^ 4 ∂P := by
@@ -80,14 +76,32 @@ theorem integral_sq_sq_sub_sq (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst 
             4 * (B s ω * (B t ω - B s ω) ^ 3))
           ((h2i.const_mul 4).add (h3i.const_mul 4)) (hB.integrable_pow_sub s t 4),
         integral_add (h2i.const_mul 4) (h3i.const_mul 4), integral_const_mul,
-        integral_const_mul, h2.integral_fun_mul_eq_mul_integral (hp s 2).aestronglyMeasurable
+        integral_const_mul, h2.integral_fun_mul_eq_mul_integral
+          (hB.integrable_pow_eval s 2).aestronglyMeasurable
           (hB.integrable_pow_sub s t 2).aestronglyMeasurable,
         h3.integral_fun_mul_eq_mul_integral (hB.integrable_eval s).aestronglyMeasurable
           (hB.integrable_pow_sub s t 3).aestronglyMeasurable]
     _ = _ := by
-      rw [h2v, hB.integral_sq_sub_of_le hst, hB.integral_eval,
+      rw [hB.integral_sq_eval, hB.integral_sq_sub_of_le hst, hB.integral_eval,
         hB.integral_pow_four_sub_of_le hst]
       ring
+
+/-- The mean-square increment from the left endpoint is integrable in time on each cell. -/
+theorem intervalIntegrable_integral_sq_sq_sub_sq (hB : IsPreBrownianReal B P) {a b : ℝ≥0}
+    (hab : a ≤ b) :
+    IntervalIntegrable (fun u : ℝ ↦ ∫ ω, (B u.toNNReal ω ^ 2 - B a ω ^ 2) ^ 2 ∂P)
+      volume (a : ℝ) b := by
+  have hab' : (a : ℝ) ≤ b := hab
+  have hc : Continuous (fun u : ℝ ↦ 4 * (a : ℝ) * (u - a) + 3 * (u - a) ^ 2) := by
+    fun_prop
+  refine (hc.intervalIntegrable _ _).congr ?_
+  intro u hu
+  rw [uIoc_of_le hab'] at hu
+  have hu0 : 0 ≤ u := a.coe_nonneg.trans hu.1.le
+  have hau : a ≤ u.toNNReal := by
+    exact_mod_cast hu.1.le.trans_eq (Real.coe_toNNReal u hu0).symm
+  dsimp only
+  rw [hB.integral_sq_sq_sub_sq hau, Real.coe_toNNReal u hu0]
 
 /-- The exact time-integrated mean-square error on one left-step cell.
 Time is integrated on the real line; `toNNReal` only extends evaluation outside its domain. -/
