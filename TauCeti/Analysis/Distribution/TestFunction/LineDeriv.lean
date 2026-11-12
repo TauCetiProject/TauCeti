@@ -27,6 +27,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
 * `TestFunction.lineDerivOp_apply_eq_fderiv`: `∂_{v} φ x = Dφ(x) v`.
 * `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
+* `TestFunction.integrable_fderiv_smul`: `x ↦ Dφ(x) v • u x` is integrable when `u` is locally
+  integrable on `Ω`.
 * `TestFunction.lineDerivOp_one_apply_eq_deriv`: on the real line, `∂_{1} φ` is the derivative
   of `φ`.
 * `TestFunction.coe_iterate_lineDerivOp_one`: repeated derivatives on the real line agree with
@@ -43,6 +45,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   product rule.
 * `TestFunction.laplacianCLM_apply`: the test-function Laplacian agrees pointwise with the
   classical Laplacian.
+* `TestFunction.integrable_laplacian_smul`: `x ↦ Δφ(x) • u x` is integrable when `u` is locally
+  integrable on `Ω`.
 -/
 
 public section
@@ -70,6 +74,14 @@ theorem tsupport_lineDerivOp_subset (φ : 𝓓(Ω, F)) (v : E) :
     tsupport (∂_{v} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
   rw [funext (lineDerivOp_apply_eq_fderiv φ v)]
   exact tsupport_fderiv_apply_subset ℝ v
+
+open MeasureTheory in
+/-- A directional derivative `Dφ(x) v` of a test function on `Ω` scales a function locally
+integrable on `Ω` to a globally integrable one. -/
+theorem integrable_fderiv_smul [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
+    (φ : 𝓓(Ω, ℝ)) (v : E) {u : E → F} (hu : LocallyIntegrableOn u Ω μ) :
+    Integrable (fun x ↦ fderiv ℝ (φ : E → ℝ) x v • u x) μ := by
+  simpa only [lineDerivOp_apply_eq_fderiv] using (∂_{v} φ).integrable_smul hu
 
 /-- On the real line, the directional derivative of a test function in the direction `1` is its
 derivative. -/
@@ -221,5 +233,13 @@ theorem laplacianCLM_apply (φ : 𝓓(Ω, F)) (x : E) :
     fderiv_clm_apply ((φ.contDiff.fderiv_right (by simp)).differentiable one_ne_zero x)
       (differentiableAt_const _)]
   simp
+
+open MeasureTheory InnerProductSpace Laplacian in
+/-- The Laplacian of a test function on `Ω` scales a function locally integrable on `Ω` to a
+globally integrable one. -/
+theorem integrable_laplacian_smul [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
+    (φ : 𝓓(Ω, ℝ)) {u : E → F} (hu : LocallyIntegrableOn u Ω μ) :
+    Integrable (fun x ↦ Δ (φ : E → ℝ) x • u x) μ := by
+  simpa only [laplacianCLM_apply] using (laplacianCLM ℝ E 𝓓(Ω, ℝ) φ).integrable_smul hu
 
 end TestFunction

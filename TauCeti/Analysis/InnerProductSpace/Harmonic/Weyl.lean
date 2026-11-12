@@ -168,13 +168,6 @@ section OpensMeasurable
 
 variable [OpensMeasurableSpace E]
 
-/-- The Laplacian of a test function on `Ω` scales a function locally integrable on `Ω` to a
-globally integrable one. -/
-theorem integrable_laplacian_smul (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, ℝ)) :
-    Integrable (fun x ↦ Δ (φ : E → ℝ) x • w x) μ := by
-  simpa only [TestFunction.laplacianCLM_apply] using
-    TestFunction.integrable_smul (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ) hw
-
 /-- The full weak Fréchet derivative of a weakly harmonic function is weakly harmonic.
 Each evaluation is a weak directional derivative, and evaluation commutes with integration. -/
 theorem HasWeakFDerivOn.weaklyHarmonicOn {W : E → E →L[ℝ] F}
@@ -183,8 +176,8 @@ theorem HasWeakFDerivOn.weaklyHarmonicOn {W : E → E →L[ℝ] F}
   have := h.completeSpace
   refine ⟨h.locallyIntegrableOn_deriv, fun φ => ?_⟩
   ext v
-  rw [ContinuousLinearMap.integral_apply (integrable_laplacian_smul
-    h.locallyIntegrableOn_deriv φ) v]
+  rw [ContinuousLinearMap.integral_apply (φ.integrable_laplacian_smul
+    h.locallyIntegrableOn_deriv) v]
   exact (h.hasWeakLineDerivOn v).weaklyHarmonicOn hw |>.integral_laplacian_smul_eq_zero φ
 
 omit [OpensMeasurableSpace E] in
@@ -207,8 +200,8 @@ theorem WeaklyHarmonicOn.add {w₁ w₂ : E → F} (h₁ : WeaklyHarmonicOn μ �
     (h₂ : WeaklyHarmonicOn μ Ω w₂) : WeaklyHarmonicOn μ Ω (w₁ + w₂) := by
   refine ⟨h₁.locallyIntegrableOn.add h₂.locallyIntegrableOn, fun φ ↦ ?_⟩
   simp only [Pi.add_apply, smul_add]
-  rw [integral_add (integrable_laplacian_smul h₁.locallyIntegrableOn φ)
-    (integrable_laplacian_smul h₂.locallyIntegrableOn φ), h₁.integral_laplacian_smul_eq_zero φ,
+  rw [integral_add (φ.integrable_laplacian_smul h₁.locallyIntegrableOn)
+    (φ.integrable_laplacian_smul h₂.locallyIntegrableOn), h₁.integral_laplacian_smul_eq_zero φ,
     h₂.integral_laplacian_smul_eq_zero φ, add_zero]
 
 /-- Weak harmonicity is preserved by subtraction. -/
@@ -222,7 +215,7 @@ theorem WeaklyHarmonicOn.clm_comp [CompleteSpace F] {G : Type*} [NormedAddCommGr
     WeaklyHarmonicOn μ Ω (fun x ↦ L (w x)) := by
   refine ⟨L.locallyIntegrableOn_comp h.locallyIntegrableOn, fun φ ↦ ?_⟩
   simpa only [map_smul, h.integral_laplacian_smul_eq_zero φ, map_zero] using
-    L.integral_comp_comm (integrable_laplacian_smul h.locallyIntegrableOn φ)
+    L.integral_comp_comm (φ.integrable_laplacian_smul h.locallyIntegrableOn)
 
 end OpensMeasurable
 

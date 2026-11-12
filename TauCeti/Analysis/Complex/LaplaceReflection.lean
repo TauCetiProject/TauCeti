@@ -157,19 +157,15 @@ variable {Ω : Opens ℂ}
 private def lapIntegrand (φ : ℂ → ℝ) (a b c : ℂ → V) (z : ℂ) : V :=
   Δ φ z • a z + (fderiv ℝ φ z 1 • b z + fderiv ℝ φ z I • c z)
 
-private theorem integrable_fderiv_smul (φ : 𝓓(Ω, ℝ)) (v : ℂ) {u : ℂ → V}
-    (hu : LocallyIntegrableOn u Ω) : Integrable fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z v • u z := by
-  simpa [TestFunction.lineDerivOp_apply_eq_fderiv] using (∂_{v} φ).integrable_smul hu
-
 private theorem integrable_rhs (φ : 𝓓(Ω, ℝ)) {b c : ℂ → V} (hb : LocallyIntegrableOn b Ω)
     (hc : LocallyIntegrableOn c Ω) :
     Integrable fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • b z + fderiv ℝ (φ : ℂ → ℝ) z I • c z :=
-  (integrable_fderiv_smul φ 1 hb).add (integrable_fderiv_smul φ I hc)
+  (φ.integrable_fderiv_smul 1 hb).add (φ.integrable_fderiv_smul I hc)
 
 private theorem integrable_lapIntegrand (φ : 𝓓(Ω, ℝ)) {a b c : ℂ → V}
     (ha : LocallyIntegrableOn a Ω) (hb : LocallyIntegrableOn b Ω)
     (hc : LocallyIntegrableOn c Ω) : Integrable (lapIntegrand (φ : ℂ → ℝ) a b c) :=
-  (integrable_laplacian_smul ha φ).add (integrable_rhs φ hb hc)
+  (φ.integrable_laplacian_smul ha).add (integrable_rhs φ hb hc)
 
 /-- The weak identity `∫ Δφ • a = -∫ (∂ₛφ • b + ∂ₜφ • c)` says that the integrand `lapIntegrand`
 has integral zero. -/
@@ -180,7 +176,7 @@ private theorem integral_eq_neg_iff (φ : 𝓓(Ω, ℝ)) {a b c : ℂ → V}
       -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • b z + fderiv ℝ (φ : ℂ → ℝ) z I • c z)) ↔
       ∫ z, lapIntegrand (φ : ℂ → ℝ) a b c z = 0 := by
   unfold lapIntegrand
-  rw [integral_add (integrable_laplacian_smul ha φ) (integrable_rhs φ hb hc),
+  rw [integral_add (φ.integrable_laplacian_smul ha) (integrable_rhs φ hb hc),
     eq_neg_iff_add_eq_zero]
 
 /-- The weak identity on the upper half-plane is the whole-plane identity for the data cut off to
@@ -191,16 +187,8 @@ private theorem setIntegral_eq_neg_iff (φ : 𝓓(Ω, ℝ)) (a b c : ℂ → V) 
     ∫ z, Δ (φ : ℂ → ℝ) z • upper.indicator a z =
       -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • upper.indicator b z +
         fderiv ℝ (φ : ℂ → ℝ) z I • upper.indicator c z) := by
-  rw [← integral_indicator measurableSet_upper, ← integral_indicator measurableSet_upper]
-  have h1 : upper.indicator (fun z ↦ Δ (φ : ℂ → ℝ) z • a z) =
-      fun z ↦ Δ (φ : ℂ → ℝ) z • upper.indicator a z := by
-    ext z; by_cases hz : z ∈ upper <;> simp [hz]
-  have h2 : upper.indicator
-      (fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • b z + fderiv ℝ (φ : ℂ → ℝ) z I • c z) =
-      fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • upper.indicator b z +
-        fderiv ℝ (φ : ℂ → ℝ) z I • upper.indicator c z := by
-    ext z; by_cases hz : z ∈ upper <;> simp [hz]
-  rw [h1, h2]
+  rw [← integral_indicator measurableSet_upper, ← integral_indicator measurableSet_upper,
+    indicator_smul, indicator_add, indicator_smul, indicator_smul]
 
 /-- The integral of `lapIntegrand` is additive in the test function. -/
 private theorem integral_lapIntegrand_add (φ ψ : 𝓓(Ω, ℝ)) {a b c : ℂ → V}
@@ -334,7 +322,10 @@ theorem forall_integral_laplacian_smul_twistedReflection_eq_iff (hΩ : ∀ z ∈
   -- The indicator of `ξ ± Rξ` is `ξ⁺ ± Rξ⁺`, where `ξ⁺` is `ξ` cut off to the upper half-plane.
   have hind (s : ℝ) (u : ℂ → V) : upper.indicator (fun z ↦ u z + s • R (u z)) =
       upper.indicator u + s • fun z ↦ R (upper.indicator u z) := by
-    ext z; by_cases hz : z ∈ upper <;> simp [hz]
+    rw [indicator_add, indicator_const_smul, ← Function.comp_def R u,
+      indicator_comp_of_zero (map_zero R)]
+    ext z
+    simp only [Pi.add_apply, Pi.smul_apply, Function.comp_apply]
   have hplus (u : ℂ → V) : upper.indicator (fun z ↦ u z + R (u z)) =
       upper.indicator u + fun z ↦ R (upper.indicator u z) := by
     simpa using hind 1 u
