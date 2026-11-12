@@ -41,7 +41,7 @@ these maps is in `TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Thom`.
   Section 4.D.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -137,6 +137,10 @@ def restrictPreimagePairMap (S : Set Y) :
 @[simp]
 theorem restrictPreimagePairMap_fst_apply (S : Set Y) (x : ↥(π ⁻¹' S)) :
     TopPair.Hom.fst (restrictPreimagePairMap π Z S) x = x.1 :=
+  (rfl)
+
+theorem restrictPreimagePairMap_fst (S : Set Y) :
+    TopPair.Hom.fst (restrictPreimagePairMap π Z S) = ofHom (ContinuousMap.subtypeVal _) :=
   (rfl)
 
 variable (M : ModuleCat.{w} K)

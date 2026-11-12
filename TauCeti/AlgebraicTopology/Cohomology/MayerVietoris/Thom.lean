@@ -159,7 +159,8 @@ private theorem thomMapUnion_restrict {S : Set Y} (hS : π ⁻¹' S ⊆ π ⁻¹
         (ContinuousMap.inclusion hS) fun _ hx ↦ hSZ hx) ≫
       unionPairMap π Z U V = restrictPreimagePairMap π Z S :=
     TopPair.hom_ext_of_fst _ (by
-      simp only [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst]
+      simp only [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
+        restrictPreimagePairMap_fst]
       exact TopCat.ext fun _ ↦ rfl)
   have hφπ : TopPair.Hom.fst (TopPair.ofInclusionMap
         (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)
@@ -195,7 +196,8 @@ private theorem thomMapRestrict_restrict_inter {S : Set Y} (hS : U ∩ V ⊆ S)
       interToUnionMap (Set.inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
         (Set.inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V) ≫ unionPairMap π Z U V :=
     TopPair.hom_ext_of_fst _ (by
-      simp only [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst]
+      simp only [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
+        restrictPreimagePairMap_fst]
       exact TopCat.ext fun _ ↦ rfl)
   have hφπ : TopPair.Hom.fst (TopPair.ofInclusionMap
         (Set.inter_subset_inter (Set.inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
@@ -226,9 +228,10 @@ private theorem bijective_thomMapInter_iff {n p m : ℕ} (h : p + n = m)
     rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply]
     exact congrArg (fun f ↦ TopPair.singularCohomologyMap f n u)
       (TopPair.hom_ext_of_fst _ (by
-        simp only [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst]
+        simp only [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
+        restrictPreimagePairMap_fst]
         exact TopCat.ext fun _ ↦ rfl))
-  rw [thomMapInter, hu]
+  rw [thomMapInter, hu, LinearMap.ext (thomMapRestrict_apply π Z (U ∩ V) h u)]
   exact TopPair.bijective_thomMap_iff_of_isIso (π := ofHom (π.hom.restrictPreimage (U ∩ V)))
     (π' := ofHom ⟨((Set.mapsTo_preimage π U).inter_inter (Set.mapsTo_preimage π V)).restrict,
       π.hom.continuous.restrict _⟩) (interPairIso π Z U V).hom (𝟙 (of ↥(U ∩ V)))
@@ -287,7 +290,7 @@ private theorem pairMayerVietorisδ_thomMapInter {n l m' m : ℕ} (h : l + n = m
       ⟨((Set.mapsTo_preimage π U).inter_inter (Set.mapsTo_preimage π V)).restrict,
         π.hom.continuous.restrict _⟩) l a)
     (TopPair.singularCohomologyMap (unionPairMap π Z U V) n u)
-  refine key.trans ?_
+  refine (congrArg _ (TopPair.thomMap_apply _ _ h _ a)).trans (key.trans ?_)
   rw [← hδ, ← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp]
   exact (TopPair.thomMap_apply _ _ h' _ _).symm
 
@@ -563,7 +566,8 @@ private theorem bijective_thomMapRestrict_restrict_iff (hSW : S ⊆ W) {n p m : 
       ← TopPair.singularCohomologyMap_comp_apply]
     exact congrArg (fun f ↦ TopPair.singularCohomologyMap f n u)
       (TopPair.hom_ext_of_fst _ (by
-        simp only [TopPair.Hom.fst_comp, TopPair.ofSubsetPreimageValIso_hom_fst]
+        simp only [TopPair.Hom.fst_comp, TopPair.ofSubsetPreimageValIso_hom_fst,
+          restrictPreimagePairMap_fst]
         exact TopCat.ext fun _ ↦ rfl))
   rw [show thomMapRestrict (ofHom (π.hom.restrictPreimage W)) ((↑) ⁻¹' (π ⁻¹' W ∩ Z)) M
       ((↑) ⁻¹' S) n p m h (restrictClass π Z W u) = _ from
