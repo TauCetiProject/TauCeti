@@ -115,7 +115,6 @@ theorem skewNormalPDF_of_nonpos (hs : s ≤ 0) (m α x : ℝ) : skewNormalPDF m 
 
 /-- The `ℝ≥0∞`-valued density is the coercion of `2 / s * φ(y) * Φ(α * y)` with
 `y = (x - m) / s`. For `s ≤ 0` both sides vanish, since the factor `2 / s` is nonpositive. -/
-@[simp]
 theorem skewNormalPDF_apply (m s α x : ℝ) :
     skewNormalPDF m s α x = ENNReal.ofReal
       (2 / s * gaussianPDFReal 0 1 ((x - m) / s) * cdf (gaussianReal 0 1) (α * ((x - m) / s))) := by
