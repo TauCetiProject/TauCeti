@@ -82,8 +82,7 @@ private lemma injective_singularCohomologyMap_subtypeVal_union {R M : C} (n : �
   have hσ : σ ≫ ofHom (ContinuousMap.subtypeVal (U ∪ V)) = 𝟙 X := rfl
   refine Function.LeftInverse.injective (g := TopCat.singularCohomologyMap σ n) fun x ↦ ?_
   rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hσ,
-    TopCat.singularCohomologyMap_id]
-  rfl
+    TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
 
 /-- **The Mayer–Vietoris connecting morphism and the cup product.** Let `U` and `V` be open
 subsets covering `X`. For `a ∈ Hᵖ(U ∩ V)` and `b ∈ H^q(X)`, the connecting morphism of the
@@ -104,22 +103,21 @@ theorem singularCohomologyMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (μ : 
   let ι := interToUnionMap hAU hBV
   -- The class `b` restricted to `U ∪ V`, as a class of the pair `(U ∪ V, ∅)`.
   let b' := inv πU (TopCat.singularCohomologyMap j q b)
-  have hb' : πU b' = TopCat.singularCohomologyMap j q b :=
-    (ConcreteCategory.comp_apply (inv πU) πU _).symm.trans
-      (by rw [IsIso.inv_hom_id]; rfl)
+  have hb' : πU b' = TopCat.singularCohomologyMap j q b := IsIso.inv_hom_id_apply πU _
   have hfst : TopPair.Hom.fst ι ≫ j = ofHom (ContinuousMap.subtypeVal (U ∩ V)) := by
     ext x
     exact congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)
   -- Its restriction to `(U ∩ V, ∅)` maps to the restriction of `b` to `U ∩ V`.
   have hι : (TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)).singularCohomologyπ S k N q
       (TopPair.singularCohomologyMap ι q b') =
-      TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (U ∩ V))) q b :=
-    (ConcreteCategory.congr_hom (TopPair.singularCohomologyπ_naturality ι q) b').symm.trans <|
-      (congrArg (TopCat.singularCohomologyMap (TopPair.Hom.fst ι) q) hb').trans <|
-        (ConcreteCategory.comp_apply _ _ _).symm.trans
-          (ConcreteCategory.congr_hom
-            ((TopCat.singularCohomologyMap_comp (TopPair.Hom.fst ι) j q).symm.trans
-              (congrArg (TopCat.singularCohomologyMap · q) hfst)) b)
+      TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (U ∩ V))) q b := by
+    rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyπ_naturality,
+      ConcreteCategory.comp_apply, hb']
+    -- The domain of `TopPair.Hom.fst ι` is `U ∪ V` only after unfolding `TopPair.ofInclusion`, so
+    -- the composite with `j` is formed by `singularCohomologyMap_comp` rather than by `rw`.
+    exact (ConcreteCategory.comp_apply _ _ _).symm.trans (ConcreteCategory.congr_hom
+      ((TopCat.singularCohomologyMap_comp _ j q).symm.trans
+        (congrArg (TopCat.singularCohomologyMap · q) hfst)) b)
   apply injective_singularCohomologyMap_subtypeVal_union k hUV
   -- Both sides are the images of the two sides of the corresponding identity for the pairs.
   have hpair := singularCohomologyPairMayerVietorisδ_singularCup (A := ∅) (B := ∅) k hU hV hUV
@@ -130,6 +128,10 @@ theorem singularCohomologyMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (μ : 
       isOpen_preimage_empty isOpen_preimage_empty hU hV hUV n m hm)
     ((TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)).singularCup k u μ p q n h a
       (TopPair.singularCohomologyMap ι q b'))
+  -- The steps below rewrite by `hι`, pass to the pairs, apply `hpair` and return to absolute
+  -- classes. The absolute cup products live on `U ∩ V` and `U ∪ V`, while the lemmas relating them
+  -- to the pairs are stated on `TopPair.fst` of the pairs, which agree only after unfolding
+  -- `TopPair.ofInclusion`; so `rw` cannot match them and each step is an explicit `Eq.trans`.
   refine (congrArg (fun z ↦ TopCat.singularCohomologyMap j m
     (singularCohomologyMayerVietorisδ T k L hU hV hUV n m hm
       ((of ↥(U ∩ V)).singularCup k u μ p q n h a z))) hι.symm).trans ?_

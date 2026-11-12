@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
 public import TauCeti.AlgebraicTopology.Cohomology.Kunneth
+public import TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.Defs
 
 /-!
 # The Leray–Hirsch theorem for a product
@@ -22,7 +23,8 @@ of the graded cohomology of `F`. For any space
 
 `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ⟶ Hⁿ(X × F; k)`, `(a_{p,i}) ↦ ∑ pr₁^* a_{p,i} ⌣ pr₂^* b_{p,i}`,
 
-(`TopCat.lerayHirschProd`) is bijective (`TopCat.lerayHirschProd_bijective`). This is the
+(`TopCat.lerayHirsch` of the projection `X × F ⟶ X` and the pullbacks of the classes `b p i`
+along the projection `X × F ⟶ F`) is bijective (`TopCat.lerayHirschProd_bijective`). This is the
 parameterized trivial-fibre case of the Leray–Hirsch theorem in degree `n`: every class in
 `Hⁿ(X × F; k)` is uniquely a sum `∑ pr₁^* a_{p,i} ⌣ pr₂^* b_{p,i}` with `a_{p,i}` in `H^q(X; k)`
 for `p + q = n`. When `Hₚ(F; k)` is finitely generated in every degree, this holds in all degrees,
@@ -41,8 +43,6 @@ Künneth theorem computes cohomology from chains with coefficients in `k ⊗ k`,
 
 ## Main definitions and results
 
-* `TopCat.lerayHirschProd`: the Leray–Hirsch map of `X × F` in degree `n`, characterized on
-  summands by `TopCat.lerayHirschProd_lof`.
 * `TopCat.lerayHirschProd_bijective`, `TopCat.lerayHirschProdEquiv`: the Leray–Hirsch theorem for
   the product `X × F`.
 
@@ -69,33 +69,6 @@ variable {k : Type w} [CommRing k]
 variable (X F : TopCat.{w}) (n : ℕ) {ι : ℕ → Type w} [∀ p, DecidableEq (ι p)]
   (b : ∀ p, Module.Basis (ι p) k
     (F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p))
-
-/-- **The Leray–Hirsch map of the product** `X × F` in degree `n`,
-`⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ⟶ Hⁿ(X × F; k)`, sending `a` in the summand indexed by
-`p + q = n` and `i : ι p` to `pr₁^* a ⌣ pr₂^* (b p i)`. -/
-def lerayHirschProd :
-    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) →ₗ[k]
-      (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n :=
-  DirectSum.toModule k _ _ fun j ↦
-    ((X ⊗ F).singularCup k (λ_ _).inv (λ_ _).hom j.1.1.2 j.1.1.1 n
-        (by rw [add_comm]; exact j.1.2)).flip
-      (TopCat.singularCohomologyMap (snd X F) j.1.1.1 (b j.1.1.1 j.2)) ∘ₗ
-      (TopCat.singularCohomologyMap (fst X F) j.1.1.2).hom
-
-/-- The Leray–Hirsch map of `X × F` sends `a` in the summand indexed by `p + q = n` and `i : ι p`
-to `pr₁^* a ⌣ pr₂^* (b p i)`. -/
-@[simp]
-lemma lerayHirschProd_lof (p q : ℕ) (h : p + q = n) (i : ι p)
-    (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    lerayHirschProd X F n b (DirectSum.lof k _ (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n},
-        ι pq.1.1 ↦
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
-        ⟨⟨(p, q), h⟩, i⟩ a) =
-      (X ⊗ F).singularCup k (λ_ _).inv (λ_ _).hom q p n (by omega)
-        (TopCat.singularCohomologyMap (fst X F) q a)
-        (TopCat.singularCohomologyMap (snd X F) p (b p i)) := by
-  simp [lerayHirschProd]
 
 section Bijective
 
@@ -204,7 +177,7 @@ private def toKunnethSourceEquiv :
 identification `toKunnethSource` and followed by the swap `X × F ≅ F × X` and the coefficient
 isomorphism `k ⊗ k ≅ k`. -/
 private lemma lerayHirschProd_eq :
-    lerayHirschProd X F n b =
+    lerayHirsch (fst X F) n (fun p i ↦ TopCat.singularCohomologyMap (snd X F) p (b p i)) =
       ((X ⊗ F).singularCohomologyChainCoefficientIso k (𝟙_ (ModuleCat.{w} k))
           (λ_ (𝟙_ (ModuleCat.{w} k))).symm n).hom.hom ∘ₗ
         (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k) ⊗ 𝟙_ (ModuleCat.{w} k)) (k := k)
@@ -246,7 +219,7 @@ private lemma lerayHirschProd_eq :
     (TopCat.singularCohomologyMap (snd X F) p (b p i))
   rw [Category.comp_id] at hcoeff
   simp only [LinearMap.comp_apply, singularCohomologyChainCoefficientIso_hom, Iso.symm_hom]
-  rw [lerayHirschProd_lof, toKunnethSource_lof, hcross, hcomm, hcoeff]
+  rw [lerayHirsch_lof, toKunnethSource_lof, hcross, hcomm, hcoeff]
   simp [smul_smul, ← mul_pow, mul_comm q p]
 
 variable (X) [∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
@@ -261,7 +234,8 @@ is bijective. -/
 theorem lerayHirschProd_bijective
     (hF : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj F)) :
-    Function.Bijective (lerayHirschProd X F n b) := by
+    Function.Bijective
+      (lerayHirsch (fst X F) n fun p i ↦ TopCat.singularCohomologyMap (snd X F) p (b p i)) := by
   have hσ : Function.Bijective (TopCat.singularCohomologyMap
       (R := 𝟙_ (ModuleCat.{w} k) ⊗ 𝟙_ (ModuleCat.{w} k)) (k := k) (M := 𝟙_ (ModuleCat.{w} k))
       (β_ X F).hom n) :=
@@ -273,14 +247,16 @@ theorem lerayHirschProd_bijective
 
 /-- **The Leray–Hirsch isomorphism for a product**
 `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ≃ Hⁿ(X × F; k)`, the linear equivalence given by the
-Leray–Hirsch map `TopCat.lerayHirschProd`. -/
+Leray–Hirsch map `TopCat.lerayHirsch` of the projection `X × F ⟶ X`. -/
 def lerayHirschProdEquiv
     (hF : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj F)) :
     (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
         X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) ≃ₗ[k]
       (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n :=
-  LinearEquiv.ofBijective (lerayHirschProd X F n b) (lerayHirschProd_bijective X b hF)
+  LinearEquiv.ofBijective
+    (lerayHirsch (fst X F) n fun p i ↦ TopCat.singularCohomologyMap (snd X F) p (b p i))
+    (lerayHirschProd_bijective X b hF)
 
 @[simp]
 lemma lerayHirschProdEquiv_apply
@@ -288,7 +264,8 @@ lemma lerayHirschProdEquiv_apply
       (𝟙_ (ModuleCat.{w} k))).obj F))
     (a : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
         X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
-    lerayHirschProdEquiv X b hF a = lerayHirschProd X F n b a :=
+    lerayHirschProdEquiv X b hF a =
+      lerayHirsch (fst X F) n (fun p i ↦ TopCat.singularCohomologyMap (snd X F) p (b p i)) a :=
   (rfl)
 
 end Bijective

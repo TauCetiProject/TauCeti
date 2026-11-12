@@ -19,6 +19,8 @@ of Mayer–Vietoris sequences, whose middle terms are products, is compared with
 
 * `DirectSum.lequivProd`: the linear equivalence `⨁ᵢ (Mᵢ × Nᵢ) ≃ₗ (⨁ᵢ Mᵢ) × (⨁ᵢ Nᵢ)`.
 * `DirectSum.lequivProd_lof`: it sends the summand `(y, z)` at `i` to the pair of summands at `i`.
+* `DirectSum.lequivProd_symm_apply`, `DirectSum.lequivProd_symm_lof`: its inverse pairs up the
+  summands of two direct sums.
 -/
 
 public section
@@ -61,5 +63,19 @@ at `i`. -/
 lemma lequivProd_lof [DecidableEq ι] (i : ι) (y : M i) (z : N i) :
     lequivProd R M N (lof R ι (fun i ↦ M i × N i) i (y, z)) = (lof R ι M i y, lof R ι N i z) := by
   simp [lequivProd]
+
+/-- The inverse of `DirectSum.lequivProd` pairs up the summands of `x` and `y` at every `i`. -/
+@[simp]
+lemma lequivProd_symm_apply (x : ⨁ i, M i) (y : ⨁ i, N i) (i : ι) :
+    (lequivProd R M N).symm (x, y) i = (x i, y i) := by
+  simp [lequivProd]
+
+/-- The inverse of `DirectSum.lequivProd` sends the pair of summands `y` and `z` at `i` to the
+summand `(y, z)` at `i`. -/
+@[simp]
+lemma lequivProd_symm_lof [DecidableEq ι] (i : ι) (y : M i) (z : N i) :
+    (lequivProd R M N).symm (lof R ι M i y, lof R ι N i z) =
+      lof R ι (fun i ↦ M i × N i) i (y, z) := by
+  rw [LinearEquiv.symm_apply_eq, lequivProd_lof]
 
 end DirectSum

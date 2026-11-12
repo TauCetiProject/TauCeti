@@ -70,6 +70,8 @@ cochains (`SSetPair.quasiIso_cochainComplexMap`).
   `TopCat.isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion`: for `U` and `V`
   open in `U ∪ V`, the cochains of `X` relative to its singular simplices lying in `U` or in `V`
   compute the cohomology of `(X, U ∪ V)`.
+* `SSetPair.cochainComplexπ_naturality`: the maps from relative to ambient cochains of a pair of
+  simplicial sets are natural.
 * `SSetPair.mayerVietorisCochainδ_comp_homologyMap_chainComplexπ`: the quotient maps from ambient
   to relative chains carry the relative cochain Mayer–Vietoris connecting morphism of a square of
   pairs of simplicial sets to the absolute one of its square of ambient simplicial sets.
@@ -313,6 +315,16 @@ abbrev cochainComplexπ (P : SSetPair.{w}) :
     (P.chainComplex R).linearYonedaObj k M ⟶ (P.right.chainComplex R).linearYonedaObj k M :=
   (linearYonedaFunctor k M).map (P.chainComplexπ R).op
 
+/-- The maps `cochainComplexπ` from relative to ambient cochains are natural in maps of pairs of
+simplicial sets. -/
+@[reassoc]
+lemma cochainComplexπ_naturality {P Q : SSetPair.{w}} (f : P ⟶ Q) :
+    cochainComplexπ R k M Q ≫ SSet.cochainComplexMap f.right =
+      cochainComplexMap f ≫ cochainComplexπ R k M P := by
+  have h := congrArg (fun φ ↦ (linearYonedaFunctor k M).map φ.op) (chainComplexπ_naturality R f)
+  simp only [op_comp, Functor.map_comp] at h
+  exact h
+
 /-- **The relative and absolute cochain Mayer–Vietoris connecting morphisms.** For a square of
 pairs of simplicial sets whose squares of subobjects and of ambient simplicial sets are pushouts
 with monomorphic top maps, the maps from relative to absolute cohomology induced by the quotient
@@ -324,34 +336,13 @@ lemma mayerVietorisCochainδ_comp_homologyMap_chainComplexπ (n m : ℕ) (h : n 
         HomologicalComplex.homologyMap (cochainComplexπ R k M P₄) m =
       HomologicalComplex.homologyMap (cochainComplexπ R k M P₁) n ≫
         SSet.mayerVietorisCochainδ R k M sqR n m h := by
-  -- The quotient maps from ambient to relative chains, on cochains.
-  have hπ {P Q : SSetPair.{w}} (f : P ⟶ Q) :
-      cochainComplexπ R k M Q ≫ SSet.cochainComplexMap f.right =
-        cochainComplexMap f ≫ cochainComplexπ R k M P := by
-    have h := congrArg (fun φ ↦ (linearYonedaFunctor k M).map φ.op)
-      (chainComplexπ_naturality R f)
-    simp only [op_comp, Functor.map_comp] at h
-    exact h
   let ψ : mayerVietorisCochainShortComplex R k M (MorphismProperty.Arrow.Hom.ext sqL.w sqR.w) ⟶
       SSet.mayerVietorisCochainShortComplex R k M sqR.toCommSq :=
     { τ₁ := cochainComplexπ R k M P₄
       τ₂ := biprod.map (cochainComplexπ R k M P₂) (cochainComplexπ R k M P₃)
       τ₃ := cochainComplexπ R k M P₁
-      comm₁₂ := by
-        apply biprod.hom_ext
-        · erw [Category.assoc, biprod.lift_fst, Category.assoc, biprod.map_fst,
-            biprod.lift_fst_assoc]
-          exact hπ r
-        · erw [Category.assoc, biprod.lift_snd, Category.assoc, biprod.map_snd,
-            biprod.lift_snd_assoc]
-          exact hπ b
-      comm₂₃ := by
-        apply biprod.hom_ext'
-        · erw [biprod.inl_map_assoc, biprod.inl_desc, biprod.inl_desc_assoc]
-          exact hπ t
-        · erw [biprod.inr_map_assoc, biprod.inr_desc, biprod.inr_desc_assoc, Preadditive.neg_comp,
-            Preadditive.comp_neg]
-          exact congrArg Neg.neg (hπ l) }
+      comm₁₂ := by apply biprod.hom_ext <;> simp [cochainComplexπ_naturality]
+      comm₂₃ := by apply biprod.hom_ext' <;> simp [cochainComplexπ_naturality] }
   rw [mayerVietorisCochainδ_def R k M sqL sqR n m h, SSet.mayerVietorisCochainδ_def R k M sqR n m h]
   exact HomologicalComplex.HomologySequence.δ_naturality ψ _ _ n m (by simpa)
 
@@ -778,11 +769,8 @@ lemma singularCohomologyPairMayerVietorisδ_comp_singularCohomologyπ (hAX : IsO
           (smallSingularSubcomplexToUnion A B) =
         SSetPair.cochainComplexMap (R := R) (k := k) (M := M) (smallSingularPairToUnion hCA hDB) ≫
           SSetPair.cochainComplexπ R k M (smallSingularPair hCA hDB) := by
-      have h := congrArg (fun φ ↦ (linearYonedaFunctor k M).map φ.op)
-        (SSetPair.chainComplexπ_naturality R (smallSingularPairToUnion hCA hDB))
-      simp only [op_comp, Functor.map_comp] at h
       rw [TopPair.singularCochainComplexShortComplex_f_eq]
-      exact h
+      exact SSetPair.cochainComplexπ_naturality R k M (smallSingularPairToUnion hCA hDB)
     exact (HomologicalComplex.homologyMap_comp _ _ m).symm.trans
       ((congrArg (HomologicalComplex.homologyMap · m) hc).trans
         (HomologicalComplex.homologyMap_comp _ _ m))
@@ -796,6 +784,9 @@ lemma singularCohomologyPairMayerVietorisδ_comp_singularCohomologyπ (hAX : IsO
         (SSet.cochainComplexMap (X.smallSingularSubcomplex ![A, B]).ι) m := by
     rw [TopCat.singularCohomologyMap, ← HomologicalComplex.homologyMap_comp,
       ← SSet.cochainComplexMap_comp, smallSingularSubcomplexToUnion_comp]
+  -- The intermediate cohomology objects agree with each other only up to unfolding
+  -- `TopPair.ofInclusion` and `TopPair.toSSetPair`, which `rw` and `simp` do not do, so the two
+  -- sides are connected by explicit `Eq.trans` steps.
   have h₁ := singularCohomologyPairMayerVietorisδ_comp_homologyMap R k M hCA hDB
     (hAX.preimage continuous_subtype_val) (hBX.preimage continuous_subtype_val) hC hD n m h
   have h₂ := SSetPair.mayerVietorisCochainδ_comp_homologyMap_chainComplexπ R k M
@@ -816,6 +807,8 @@ lemma singularCohomologyPairMayerVietorisδ_comp_singularCohomologyπ (hAX : IsO
     (singularCohomologyMayerVietorisδ_comp_homologyMap R k M hAX hBX hAB n m h).symm).trans ?_
   refine (congrArg (fun φ ↦ _ ≫ _ ≫ φ) hres.symm).trans ?_
   simp only [Category.assoc]
+  -- `TopPair.singularCohomologyπ` is by definition the map induced by `SSetPair.cochainComplexπ`
+  -- of the pair of simplicial sets of `(A ∩ B, C ∩ D)`.
   rfl
 
 end TopCat
