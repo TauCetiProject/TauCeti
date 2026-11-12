@@ -388,13 +388,8 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 /-- The interval `(-1 / s, 1 / s)` is nonempty only for a positive scale `s`: it is empty for
 `s = 0` by the convention `1 / 0 = 0`, and for `s < 0` its endpoints are reversed. -/
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-    {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s := by
-  by_contra h
-  rcases (not_lt.1 h).lt_or_eq with hs | rfl
-  · have h1 : 1 / s < 0 := one_div_neg.2 hs
-    have h2 : -1 / s = -(1 / s) := neg_div s 1
-    linarith [ht.1, ht.2]
-  · simp at ht
+    {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
+  one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
 
 end TauCeti
 
