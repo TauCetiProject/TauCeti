@@ -390,7 +390,7 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Smo
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       z x = 0 := by
-  obtain ⟨w, hw, rfl⟩ := mem_image_endChart hz (q := q) (by linarith)
+  obtain ⟨w, _, rfl⟩ := mem_image_endChart hz (q := q) (by linarith)
   have hw₂ : 2 < q.endSign * w.1 := by rwa [re_endCoord_endChart] at hq
   -- In the coordinates of the end the curvature is `±β'(±s - 1) H_q(t)`, and `β' = 0` there.
   have key := det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart ω hH hHs
@@ -509,7 +509,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_endChart_rect
   have hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
       (uncurry (pairOfPantsEndComponent H q 1)) (U ×ˢ univ) :=
     (contMDiffOn_const (c := (0 : ℝ))).congr fun p hp =>
-      pairOfPantsEndComponent_one_of_pos (hH q) (hpos hp.1) p.2
+      pairOfPantsEndComponent_one_of_pos (hpos hp.1) p.2
   have hβH : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 fun p : (ℝ × ℝ) × M =>
       smoothTransition (q.endSign * p.1.1 - 1) * H q p.1.2 p.2 :=
     ((smoothTransition.contDiff.comp (f := fun z : ℝ × ℝ => q.endSign * z.1 - 1)
@@ -535,7 +535,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_endChart_rect
     rw [intervalIntegral.integral_congr (g := fun _ => 0) fun s hs => ?_,
       intervalIntegral.integral_zero]
     rw [uIcc_of_le hab] at hs
-    exact pairOfPantsEndComponent_one_of_pos (hH q) (hpos (hU₁ (z := (s, c)) hs)) _
+    exact pairOfPantsEndComponent_one_of_pos (hpos (hU₁ (z := (s, c)) hs)) _
   have ht {c : ℝ} (hc : c ∈ Icc a₁ b₁) :
       ∫ t in (-1 / 2 : ℝ)..1 / 2,
           pairOfPantsEndComponent H q Complex.I (c, t) ((u ∘ endChart q) (c, t)) =

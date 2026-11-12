@@ -95,6 +95,15 @@ theorem composition_target : composition ≫ target = second ≫ target := by
   simp only [composition_def, second_def, target_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
     coproduct_comp_rightUnit]
 
+/-- Compute a parametrized composite using any pair with the specified projections. -/
+theorem composition_lift_eq {X : Scheme} (f g : X ⟶ Spec (.of ArrowRing))
+    (hfg : f ≫ target = g ≫ source) (p : X ⟶ ComposablePairs)
+    (hf : p ≫ first = f) (hg : p ≫ second = g) :
+    isPullback_first_second.lift f g hfg ≫ composition = p ≫ composition := by
+  have hp : isPullback_first_second.lift f g hfg = p :=
+    isPullback_first_second.hom_ext (by simpa using hf.symm) (by simpa using hg.symm)
+  rw [hp]
+
 /-- Pair an identity arrow with the arrow following it. -/
 def identityFirst : Spec (.of ArrowRing) ⟶ ComposablePairs :=
   isPullback_first_second.lift (source ≫ identity) (𝟙 _) (by simp)
@@ -295,5 +304,30 @@ theorem composition_assoc : composePrefix ≫ composition = composeSuffix ≫ co
   rw [h₁, h₂, composition_def, ← Spec.map_comp, ← Spec.map_comp,
     ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
   exact congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f)) coproduct_coassoc
+
+/-- Associativity on arrows parametrized by any test scheme. The pullback lifts encode
+composability, so this statement retains arbitrary scheme-valued points. -/
+theorem composition_lift_assoc {X : Scheme} (f g h : X ⟶ Spec (.of ArrowRing))
+    (hfg : f ≫ target = g ≫ source) (hgh : g ≫ target = h ≫ source) :
+    isPullback_first_second.lift
+        (isPullback_first_second.lift f g hfg ≫ composition) h
+        (by simp [hgh]) ≫ composition =
+      isPullback_first_second.lift f
+        (isPullback_first_second.lift g h hgh ≫ composition)
+        (by simp [hfg]) ≫ composition := by
+  let t := isPullback_initialPair_last.lift (isPullback_first_second.lift f g hfg) h (by
+    simp only [isPullback_first_second.lift_snd_assoc]
+    exact hgh)
+  have hp : t ≫ composePrefix = isPullback_first_second.lift
+      (isPullback_first_second.lift f g hfg ≫ composition) h
+      (by simp [hgh]) := by
+    apply isPullback_first_second.hom_ext <;> simp [t, Category.assoc]
+  have hs : t ≫ composeSuffix = isPullback_first_second.lift f
+      (isPullback_first_second.lift g h hgh ≫ composition)
+      (by simp [hfg]) := by
+    have hts : t ≫ suffix = isPullback_first_second.lift g h hgh := by
+      apply isPullback_first_second.hom_ext <;> simp [t, Category.assoc]
+    apply isPullback_first_second.hom_ext <;> simp [Category.assoc, ← hts, t]
+  simpa only [← Category.assoc, hp, hs] using congrArg (t ≫ ·) composition_assoc
 
 end TauCeti.WeierstrassHopfAlgebroid

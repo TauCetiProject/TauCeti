@@ -49,12 +49,16 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
 * `Polynomial.resultant_one_sub_C_mul_X_right`: `Res_(n,1)(f, 1 - t X) = (reflect n f)(t)`.
 * `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity in the left argument at
   arbitrary degree bounds.
+* `Polynomial.resultant_prod_left_of_monic`: multiplicativity in a finite product of monic left
+  arguments, at the actual degrees.
 * `Polynomial.resultant_reflect`: reversing both arguments at their degree bounds multiplies the
   resultant by `(-1) ^ (m * n)`.
 * `Polynomial.resultant_map_of_natDegree_eq`: resultants at the actual degrees commute with a
   coefficient map that preserves both degrees.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
   the valid degree bound supplied for the right argument.
+* `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
+  the coefficients of index at most `m` and `n`.
 * `Polynomial.isCoprime_X_sub_C_of_isUnit_eval`: `X - C a` is coprime to any polynomial whose value
   at `a` is a unit.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
@@ -158,6 +162,16 @@ theorem resultant_mul_left_of_natDegree_le {f₁ f₂ g : R[X]} {m₁ m₂ n : �
     resultant_mul_left _ _ _ _ hg, resultant_add_left_deg _ _ _ _ _ le_rfl,
     resultant_add_left_deg _ _ _ _ _ le_rfl]
   ring
+
+/-- `Res(∏ fᵢ, g) = ∏ Res(fᵢ, g)` for a finite product of monic polynomials, the resultants being
+taken at the actual degrees. -/
+theorem resultant_prod_left_of_monic {ι : Type*} (s : Finset ι) {f : ι → R[X]}
+    (hf : ∀ i ∈ s, (f i).Monic) (g : R[X]) :
+    (∏ i ∈ s, f i).resultant g = ∏ i ∈ s, (f i).resultant g := by
+  nontriviality R
+  refine resultant_prod_left s f g _ ?_ le_rfl
+  rw [Finset.prod_congr rfl fun i hi ↦ (hf i hi).leadingCoeff, Finset.prod_const_one]
+  exact one_ne_zero
 
 /-- The resultant of `f` with the linear polynomial `1 - t X`, at the degree bound `n` for `f`, is
 the value at `t` of the reversal of `f` in degree `n`. When `f = ∏ (X - αᵢ)` has degree `n`, both
@@ -288,5 +302,25 @@ theorem isCoprime_of_isCoprime_map {I : Ideal R} (hI : I ≤ Ring.jacobson R) {g
     rwa [← isUnit_resultant_iff_isCoprime (hg.map _),
       ← (hg.map _).resultant_of_le (natDegree_map_le (f := Ideal.Quotient.mk I) (p := h)),
       hg.natDegree_map, resultant_map_map] at hgh
+
+/-- The resultant with degree bounds `m` and `n` only involves the coefficients of index at most
+`m` of the first polynomial and at most `n` of the second. -/
+theorem resultant_congr_of_coeff_eq {f f' g g' : R[X]} {m n : ℕ}
+    (hf : ∀ i ≤ m, f.coeff i = f'.coeff i) (hg : ∀ i ≤ n, g.coeff i = g'.coeff i) :
+    resultant f g m n = resultant f' g' m n := by
+  rw [resultant, resultant]
+  congr 1
+  ext i j
+  induction j using Fin.addCases with
+  | left j =>
+    simp only [sylvester, Matrix.of_apply, Fin.addCases_left]
+    split_ifs with h
+    · exact hg _ (by simp only [Set.mem_Icc] at h; omega)
+    · rfl
+  | right j =>
+    simp only [sylvester, Matrix.of_apply, Fin.addCases_right]
+    split_ifs with h
+    · exact hf _ (by simp only [Set.mem_Icc] at h; omega)
+    · rfl
 
 end Polynomial

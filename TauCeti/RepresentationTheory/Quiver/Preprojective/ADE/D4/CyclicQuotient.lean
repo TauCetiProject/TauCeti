@@ -54,7 +54,7 @@ variable [CommRing k]
 to one, over every commutative coefficient ring. -/
 private theorem signlessPreprojectiveD4FrobeniusFunctional_cyclicWord :
     φ (W [1, 2, 1, 0, 1]) = 1 := by
-  rw [signlessPreprojectiveD4FrobeniusFunctional_signlessWord k _ (by decide) (by decide)]
+  rw [signlessPreprojectiveD4FrobeniusFunctional_signlessWord k _]
   norm_num [List.reverse_cons]
 
 /-- The detecting closed walk is homogeneous of path degree four. -/

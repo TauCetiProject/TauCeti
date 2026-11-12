@@ -232,7 +232,7 @@ private theorem abs_idealSummatory_log_absNorm_sub_le {C : ℝ} (hC0 : 0 ≤ C)
     nlinarith [mul_le_mul_of_nonneg_left hpow hC0]
   have hint : IntervalIntegrable (fun t ↦ t⁻¹ * S t) volume 1 x :=
     (intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr
-      (integrableOn_mul_summatory _ _ zero_le_one hinv.integrableOn_Icc)
+      (integrableOn_mul_summatory _ _ hinv.integrableOn_Icc)
   have hI0 : 0 ≤ ∫ t in (1 : ℝ)..x, t⁻¹ * S t :=
     intervalIntegral.integral_nonneg hx fun t ht ↦
       mul_nonneg (inv_nonneg.mpr (zero_le_one.trans ht.1)) (by rw [hScard]; positivity)
@@ -421,7 +421,7 @@ theorem isBigO_primeSummatory_log_absNorm_div_sub_log :
       =O[atTop] fun _ ↦ (1 : ℝ) := by
   obtain ⟨B, hB⟩ := exists_primePowerSummatory_higherPrimePowerWeight_div_le K
   set R : ℝ → ℝ := primePowerSummatory K
-    (fun A ↦ higherPrimePowerWeight A / Ideal.absNorm (A : Ideal (𝓞 K))) with hR
+    (fun A ↦ higherPrimePowerWeight A / Ideal.absNorm (A : Ideal (𝓞 K)))
   -- Splitting off the higher prime powers leaves exactly the primes.
   have hsplit (x : ℝ) : primePowerSummatory K
       (fun A ↦ primePowerWeight A / Ideal.absNorm (A : Ideal (𝓞 K))) x =
@@ -521,7 +521,7 @@ private theorem primeSummatory_inv_absNorm_eq {x : ℝ} (hx : 2 ≤ x) :
   have hint₂ : IntegrableOn (fun t ↦ (S t - Real.log t) * (t⁻¹ / Real.log t ^ 2))
       (Set.Ioc 2 x) := by
     have hS' : IntegrableOn (fun t ↦ t⁻¹ / Real.log t ^ 2 * S t) (Set.Icc 2 x) :=
-      integrableOn_mul_summatory _ _ zero_le_two (hcont.integrableOn_Icc)
+      integrableOn_mul_summatory _ _ (hcont.integrableOn_Icc)
     have hlog' : IntegrableOn (fun t ↦ t⁻¹ / Real.log t ^ 2 * Real.log t) (Set.Icc 2 x) :=
       (hcont.mul (Real.continuousOn_log.mono fun t ht ↦
         (by linarith [ht.1] : (0 : ℝ) < t).ne')).integrableOn_Icc
