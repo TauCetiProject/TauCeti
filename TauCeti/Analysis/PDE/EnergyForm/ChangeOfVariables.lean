@@ -366,7 +366,6 @@ theorem exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal {t : Set (Eu
   -- with `J = |det DΦ|`, `B = a ∘ Φ` and `S` the adjoint of the inverse Jacobian map. Each factor
   -- is bounded and Lipschitz on `s`, and the product of such factors is Lipschitz.
   set L₁ := max L' 0
-  have hL₁0 : 0 ≤ L₁ := le_max_right _ _
   obtain ⟨hTb, hTL⟩ := norm_le_and_lipschitzOnWith_toEuclideanCLM_inv_fderiv hDΦ hL'
   set S := fun x =>
     (toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹).adjoint with hS
@@ -394,7 +393,6 @@ theorem exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal {t : Set (Eu
     rw [Real.norm_eq_abs, abs_abs]
     exact (fderiv ℝ Φ x).abs_det_le_opNorm_pow.trans
       (pow_le_pow_left₀ (norm_nonneg _) ((hL x hx).trans (le_max_left _ _)) _)
-  have hJb0 : 0 ≤ Jb := by positivity
   set C : ℝ := (1 * (Kdet * KD) : ℝ≥0) * M₀ * L₁ ^ 2 + Jb * (Ka * KΦ : ℝ≥0) * L₁ ^ 2 +
     2 * Jb * M₀ * (1 * (L₁.toNNReal ^ 2 * KD) : ℝ≥0) * L₁
   have hC : 0 ≤ C := by positivity

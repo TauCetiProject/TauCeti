@@ -394,10 +394,10 @@ theorem norm_fderiv_le (h : IsChangeOfVariables (k + 1) U V Φ L c) :
 /-- On a convex set, a change of variables of order at least one is `L`-Lipschitz. -/
 theorem lipschitzOnWith (h : IsChangeOfVariables (k + 1) U V Φ L c)
     (hU : Convex ℝ (U : Set E)) : LipschitzOnWith L.toNNReal Φ U :=
-  hU.lipschitzOnWith_of_nnnorm_fderiv_le
+  hU.lipschitzOnWith_of_nnNorm_fderiv_le
     (fun x hx => (h.differentiableOn x hx).differentiableAt (U.isOpen.mem_nhds hx))
     fun x hx => by
-      rw [← NNReal.coe_le_coe, coe_nnnorm]
+      rw [← NNReal.coe_le_coe, coe_nnNorm]
       exact (h.norm_fderiv_le x hx).trans (Real.le_coe_toNNReal _)
 
 /-- On a convex set, the derivative of a change of variables of order at least two is
@@ -406,10 +406,10 @@ theorem lipschitzOnWith_fderiv (h : IsChangeOfVariables (k + 2) U V Φ L c)
     (hU : Convex ℝ (U : Set E)) : LipschitzOnWith L.toNNReal (fderiv ℝ Φ) U := by
   have hD : ContDiffOn ℝ 1 (fderiv ℝ Φ) U :=
     h.contDiffOn.fderiv_of_isOpen U.isOpen (by exact_mod_cast (by omega : 2 ≤ k + 2))
-  refine hU.lipschitzOnWith_of_nnnorm_fderiv_le
+  refine hU.lipschitzOnWith_of_nnNorm_fderiv_le
     (fun x hx => (hD.differentiableOn one_ne_zero x hx).differentiableAt
       (U.isOpen.mem_nhds hx)) fun x hx => ?_
-  rw [← NNReal.coe_le_coe, coe_nnnorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+  rw [← NNReal.coe_le_coe, coe_nnNorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
   exact (h.norm_iteratedFDeriv_le 2 (by norm_num) (by omega) x hx).trans
     (Real.le_coe_toNNReal _)
 
