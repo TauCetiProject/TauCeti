@@ -43,8 +43,6 @@ fixes the chosen copy of `K`.
 
 ## References
 
-This proves the “unique division-algebra representative” target in Layer 6 of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See P. Gille and T. Szamuely, *Central Simple Algebras and Galois Cohomology*, §2.4, and
 R. S. Pierce, *Associative Algebras*, Chapter 12.
 -/

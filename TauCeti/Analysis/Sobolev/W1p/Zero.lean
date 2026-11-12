@@ -17,9 +17,8 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 # The Sobolev space `W^{1,p}_0(Ω)`
 
 This file builds `W^{1,p}_0(Ω)`, the closure of the test functions `C_c^∞(Ω)` inside the weak
-Sobolev space `W^{1,p}(Ω)` of `TauCeti/Analysis/Sobolev/W1p/Basic.lean`. This is the
-`C_c^∞(Ω)`-closure half of Lane A.2 of `TauCetiRoadmap/PDE/README.md`; Meyers--Serrin density is
-not proved here.
+Sobolev space `W^{1,p}(Ω)` of `TauCeti/Analysis/Sobolev/W1p/Basic.lean`. Meyers--Serrin density
+is not proved here.
 
 ## Test functions as Sobolev functions
 
@@ -58,8 +57,7 @@ subspace under a suitable geometric hypothesis but not on all of `W^{1,p}(Ω)`.
 
 ## References
 
-The `C_c^∞(Ω)`-closure half of Lane A.2 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans,
-*Partial Differential Equations*, Section 5.2.
+L. C. Evans, *Partial Differential Equations*, Section 5.2.
 -/
 
 public section

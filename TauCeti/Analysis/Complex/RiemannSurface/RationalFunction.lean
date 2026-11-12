@@ -7,8 +7,8 @@ module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
-import Mathlib.Analysis.Meromorphic.FactorizedRational
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.Analysis.Meromorphic.FactorizedRational
 import TauCeti.Topology.Compactification.OnePoint.Nhds
 
 /-!
@@ -177,14 +177,6 @@ private theorem meromorphicOrderAt_finitePartCoe_ne_top {f : MeromorphicFunction
     (meromorphicOrderAt_eq_top_iff.1 h)).exists
   exact hy.1 hy.2
 
-/-- The value at `y` of the finitely supported product `∏ᶠ u, (· - u) ^ d u`, as a finite
-product. -/
-private theorem finprod_sub_zpow_apply {d : ℂ → ℤ} (hd : d.support.Finite) (y : ℂ) :
-    (∏ᶠ u, (· - u) ^ d u) y = ∏ u ∈ hd.toFinset, (y - u) ^ d u :=
-  (congrFun (Function.FactorizedRational.finprod_eq_fun hd) y).trans <|
-    finprod_eq_prod_of_mulSupport_subset _ fun u hu ↦
-      hd.mem_toFinset.2 fun h ↦ hu (by simp [h])
-
 /-- At a point `y` outside a finite set `s`, the product of the `(y - u) ^ n u` over `u ∈ s` does
 not vanish. -/
 private theorem prod_sub_zpow_ne_zero {s : Finset ℂ} (n : ℂ → ℤ) {y : ℂ} (hy : y ∉ s) :
@@ -212,7 +204,7 @@ private theorem mul_inv_prod_coordinate_sub_zpow_apply {f : MeromorphicFunction 
       (inv_apply_of_eq_coe hφy (prod_sub_zpow_ne_zero d hy))]
     congr 1
     simp only [finitePartCoe] at hFy
-    rw [hFy, Pi.smul_apply', smul_eq_mul, finprod_sub_zpow_apply hd, ← hs]
+    rw [hFy, Pi.smul_apply', smul_eq_mul, FactorizedRational.finprod_apply_eq_prod hd, ← hs]
     field_simp [prod_sub_zpow_ne_zero d hy]
   refine apply_eq_of_tendsto (φ := fun y ↦ ↑(g (affineChart y))) ?_ ?_
   · rw [OnePoint.nhdsNE_coe_eq, tendsto_map'_iff]
