@@ -258,6 +258,14 @@ lemma coe_diskCenter_down (n : ℕ) :
         EuclideanSpace ℝ (Fin n)) = 0 :=
   (rfl)
 
+/-- A point of the disk is its centre exactly when its underlying vector is `0`. -/
+lemma eq_diskCenter_iff {n : ℕ} (z : TopCat.disk.{u} n) :
+    z = diskCenter.{u} n ↔
+      ((z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)) = 0 :=
+  ⟨fun h ↦ h ▸ coe_diskCenter_down.{u} n,
+    fun h ↦ ULift.ext (Subtype.ext (h.trans (coe_diskCenter_down.{u} n).symm))⟩
+
 /-- The centre of the disk does not lie on its boundary sphere. -/
 lemma diskCenter_notMem_range_diskBoundaryInclusion (n : ℕ) :
     diskCenter.{u} n ∉ Set.range (TopCat.diskBoundaryInclusion.{u} n) := by

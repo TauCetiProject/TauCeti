@@ -93,11 +93,6 @@ theorem mem_handleCoreUnionAttachingRegion {x : TopCat.disk.{u} k × TopCat.disk
     x ∈ handleCoreUnionAttachingRegion k l ↔ ‖x.1.down.1‖ = 1 ∨ x.2 = diskCenter l :=
   Iff.rfl
 
-private theorem eq_diskCenter_iff {n : ℕ} (x : TopCat.disk.{u} n) :
-    x = diskCenter n ↔ x.down.1 = 0 :=
-  ⟨fun h ↦ h ▸ coe_diskCenter_down n,
-    fun h ↦ ULift.ext (Subtype.ext (h.trans (coe_diskCenter_down n).symm))⟩
-
 /-- The point `(‖v‖, u)` of the cylinder `I × 𝔻 k` read off from a point `(u, v)` of the handle:
 the height is the radial coordinate of `v`. -/
 private def handleCylinderPoint (x : TopCat.disk.{u} k × TopCat.disk.{u} l) :
@@ -260,6 +255,36 @@ variable {ι : Type u} {k l : ι → ℕ} {X P Q : TopCat.{u}}
   {j : X ⟶ P} {χ : ∐ (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i))) ⟶ P}
   {j' : X ⟶ Q} {χ' : ∐ (fun i ↦ TopCat.disk.{u} (k i)) ⟶ Q}
 
+section Pushouts
+
+variable
+  (sq : IsPushout φ (Limits.Sigma.map fun i ↦ TopCat.ofHom
+    ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap (ContinuousMap.id _))) j χ)
+  (sq' : IsPushout (Limits.Sigma.map (fun i ↦ handleCoreBoundaryInclusion (k i) (l i)) ≫ φ)
+    (Limits.Sigma.map fun i ↦ TopCat.diskBoundaryInclusion (k i)) j' χ')
+
+include sq in
+/-- The square attaching the handles, read pointwise on the summand `i`. -/
+private theorem handle_w_apply (i : ι) (s : TopCat.diskBoundary.{u} (k i))
+    (v : TopCat.disk.{u} (l i)) :
+    j (φ (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) ×
+      TopCat.disk.{u} (l i))) i (s, v))) =
+      χ (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i))) i
+        (TopCat.diskBoundaryInclusion (k i) s, v)) := by
+  rw [sq.w_apply, Sigma.ι_map_apply, TopCat.ofHom_apply, ContinuousMap.prodMap_apply,
+    Prod.map_apply, ContinuousMap.id_apply]
+
+include sq' in
+/-- The square attaching the cores, read pointwise on the summand `i`: the attaching map of the
+cores is `s ↦ φ (s, 0)`. -/
+private theorem handleCore_w_apply (i : ι) (s : TopCat.diskBoundary.{u} (k i)) :
+    j' (φ (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) ×
+      TopCat.disk.{u} (l i))) i (s, diskCenter (l i)))) =
+      χ' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i (TopCat.diskBoundaryInclusion (k i) s)) := by
+  have h := sq'.w_apply (Sigma.ι (fun i ↦ TopCat.diskBoundary.{u} (k i)) i s)
+  rwa [ConcreteCategory.comp_apply, Sigma.ι_map_apply, Sigma.ι_map_apply,
+    handleCoreBoundaryInclusion_apply] at h
+
 /-- The map of a handle into the space `Q` obtained by attaching the cores: a point `(s, v)` of the
 attaching region goes to `φ (s, v)`, and every other point `(u, v)` to the point `u` of the attached
 core. It is continuous on the core and the attaching region
@@ -279,26 +304,18 @@ private theorem handleCoreFun_diskBoundaryInclusion (i : ι) (s : TopCat.diskBou
         TopCat.disk.{u} (l i))) i (s, v))) :=
   dite_eq_left (norm_diskBoundaryInclusion s)
 
-/-- The attaching map of the cores is `s ↦ φ (s, 0)`, so on the boundary sphere of a core the
-two descriptions of `TauCeti.TopCat.handleCoreFun` agree. -/
-private theorem handleCoreFun_of_snd_eq
-    (hcore : ∀ i (s : TopCat.diskBoundary.{u} (k i)),
-      j' (φ (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) ×
-        TopCat.disk.{u} (l i))) i (s, diskCenter (l i)))) =
-        χ' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i (TopCat.diskBoundaryInclusion (k i) s)))
-    (i : ι) {x : TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)} (hx : x.2 = diskCenter (l i)) :
+include sq' in
+/-- On the core, the two descriptions of `TauCeti.TopCat.handleCoreFun` agree. -/
+private theorem handleCoreFun_of_snd_eq (i : ι) {x : TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)}
+    (hx : x.2 = diskCenter (l i)) :
     handleCoreFun φ j' χ' i x = χ' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i x.1) := by
   by_cases h : ‖x.1.down.1‖ = 1
   · rw [handleCoreFun, dite_eq_left h, hx]
-    exact hcore i (ULift.up ⟨x.1.down.1, mem_sphere_zero_iff_norm.2 h⟩)
+    exact handleCore_w_apply sq' i (ULift.up ⟨x.1.down.1, mem_sphere_zero_iff_norm.2 h⟩)
   · exact dite_eq_right h
 
-private theorem continuousOn_handleCoreFun
-    (hcore : ∀ i (s : TopCat.diskBoundary.{u} (k i)),
-      j' (φ (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) ×
-        TopCat.disk.{u} (l i))) i (s, diskCenter (l i)))) =
-        χ' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i (TopCat.diskBoundaryInclusion (k i) s)))
-    (i : ι) :
+include sq' in
+private theorem continuousOn_handleCoreFun (i : ι) :
     ContinuousOn (handleCoreFun φ j' χ' i) (handleCoreUnionAttachingRegion (k i) (l i)) := by
   have hn : Continuous fun x : TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i) ↦ ‖x.1.down.1‖ := by
     fun_prop
@@ -323,7 +340,7 @@ private theorem continuousOn_handleCoreFun
   have h₂ : ContinuousOn (handleCoreFun φ j' χ' i) {x | x.2 = diskCenter (l i)} :=
     ((χ'.hom.continuous.comp ((Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i).hom.continuous.comp
       continuous_fst)).continuousOn).congr
-      fun x hx ↦ handleCoreFun_of_snd_eq hcore i hx
+      fun x hx ↦ handleCoreFun_of_snd_eq sq' i hx
   have hA : handleCoreUnionAttachingRegion (k i) (l i) =
       {x | ‖x.1.down.1‖ = 1} ∪ {x | x.2 = diskCenter (l i)} := (rfl)
   rw [hA]
@@ -332,24 +349,82 @@ private theorem continuousOn_handleCoreFun
 
 /-- The retraction of a handle onto its core and its attaching region, followed by
 `TauCeti.TopCat.handleCoreFun`: the map of the handle `i` into the space with the cores attached. -/
-private def handleCoreMap
-    (hcore : ∀ i (s : TopCat.diskBoundary.{u} (k i)),
-      j' (φ (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) ×
-        TopCat.disk.{u} (l i))) i (s, diskCenter (l i)))) =
-        χ' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i (TopCat.diskBoundaryInclusion (k i) s)))
-    (i : ι) : C(TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i), Q) where
+private def handleCoreMap (i : ι) : C(TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i), Q) where
   toFun x := handleCoreFun φ j' χ' i (handleCoreRetraction (k i) (l i) x)
-  continuous_toFun := (continuousOn_handleCoreFun hcore i).comp_continuous
+  continuous_toFun := (continuousOn_handleCoreFun sq' i).comp_continuous
     (handleCoreRetraction (k i) (l i)).continuous handleCoreRetraction_mem
 
-private theorem handleCoreMap_apply
-    (hcore : ∀ i (s : TopCat.diskBoundary.{u} (k i)),
-      j' (φ (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) ×
-        TopCat.disk.{u} (l i))) i (s, diskCenter (l i)))) =
-        χ' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i (TopCat.diskBoundaryInclusion (k i) s)))
-    (i : ι) (x : TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)) :
-    handleCoreMap hcore i x = handleCoreFun φ j' χ' i (handleCoreRetraction (k i) (l i) x) :=
+private theorem handleCoreMap_apply (i : ι) (x : TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)) :
+    handleCoreMap sq' i x = handleCoreFun φ j' χ' i (handleCoreRetraction (k i) (l i) x) :=
   (rfl)
+
+/-- The map `Q ⟶ P` which is the identity on `X` and sends each cell to the core of its handle. -/
+private def handleCoreToHandles : Q ⟶ P :=
+  sq'.desc j (Limits.Sigma.map (fun i ↦ handleCoreInclusion (k i) (l i)) ≫ χ) <|
+    Sigma.hom_ext _ _ fun i ↦ by
+      ext s
+      simp only [ConcreteCategory.comp_apply, Sigma.ι_map_apply]
+      exact handle_w_apply sq i s _
+
+private theorem handleCoreToHandles_inl_apply (x : X) :
+    handleCoreToHandles sq sq' (j' x) = j x :=
+  ConcreteCategory.congr_hom (sq'.inl_desc _ _ _) x
+
+private theorem handleCoreToHandles_inr_apply (i : ι) (u : TopCat.disk.{u} (k i)) :
+    handleCoreToHandles sq sq' (χ' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i u)) =
+      χ (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i))) i
+        (u, diskCenter (l i))) := by
+  rw [← ConcreteCategory.comp_apply, handleCoreToHandles, sq'.inr_desc,
+    ConcreteCategory.comp_apply, Sigma.ι_map_apply, handleCoreInclusion_apply]
+
+/-- On the core and the attaching region, the map of a handle into `Q` followed by
+`TauCeti.TopCat.handleCoreToHandles` is the handle itself. -/
+private theorem handleCoreToHandles_handleCoreFun (i : ι)
+    {y : TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)}
+    (hy : y ∈ handleCoreUnionAttachingRegion (k i) (l i)) :
+    handleCoreToHandles sq sq' (handleCoreFun φ j' χ' i y) =
+      χ (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i))) i y) := by
+  rcases hy with hy | hy
+  · rw [handleCoreFun, dite_eq_left hy, handleCoreToHandles_inl_apply]
+    exact handle_w_apply sq i (ULift.up ⟨y.1.down.1, mem_sphere_zero_iff_norm.2 hy⟩) y.2
+  · rw [handleCoreFun_of_snd_eq sq' i hy, handleCoreToHandles_inr_apply, ← hy]
+
+/-- The map `P ⟶ Q` which is the identity on `X` and reads the retraction of each handle in `Q`. -/
+private def handlesToHandleCore : P ⟶ Q :=
+  sq.desc j' (Sigma.desc fun i ↦ (TopCat.ofHom (handleCoreMap sq' i) :
+      TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)) ⟶ Q)) <|
+    Sigma.hom_ext _ _ fun i ↦ by
+      rw [Sigma.ι_map_assoc, Sigma.ι_comp_desc]
+      ext ⟨s, v⟩
+      simp only [ConcreteCategory.comp_apply, TopCat.hom_ofHom]
+      rw [ContinuousMap.prodMap_apply, Prod.map_apply, handleCoreMap_apply,
+        ContinuousMap.id_apply]
+      have hr : handleCoreRetraction (k i) (l i) (TopCat.diskBoundaryInclusion (k i) s, v) =
+          (TopCat.diskBoundaryInclusion (k i) s, v) :=
+        handleCoreRetraction_eq_self_iff.2 (Or.inl (norm_diskBoundaryInclusion s))
+      exact ((congrArg (handleCoreFun φ j' χ' i) hr).trans
+        (handleCoreFun_diskBoundaryInclusion i s v)).symm
+
+private theorem handlesToHandleCore_inl_apply (x : X) :
+    handlesToHandleCore sq sq' (j x) = j' x :=
+  ConcreteCategory.congr_hom (sq.inl_desc _ _ _) x
+
+private theorem handlesToHandleCore_inr_apply (i : ι)
+    (y : TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)) :
+    handlesToHandleCore sq sq'
+        (χ (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i))) i y)) =
+      handleCoreFun φ j' χ' i (handleCoreRetraction (k i) (l i) y) := by
+  rw [← ConcreteCategory.comp_apply, handlesToHandleCore, sq.inr_desc, Sigma.ι_comp_desc_apply,
+    TopCat.ofHom_apply, handleCoreMap_apply]
+
+private theorem leftInverse_handlesToHandleCore :
+    Function.LeftInverse (handlesToHandleCore sq sq') (handleCoreToHandles sq sq') := fun q ↦ by
+  obtain ⟨x, rfl⟩ | ⟨i, u, rfl⟩ := exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma sq' q
+  · rw [handleCoreToHandles_inl_apply, handlesToHandleCore_inl_apply]
+  · rw [handleCoreToHandles_inr_apply, handlesToHandleCore_inr_apply,
+      handleCoreRetraction_eq_self_iff.2 (Or.inr rfl), handleCoreFun_of_snd_eq sq' i rfl]
+
+end Pushouts
 
 /-- **Attached handles deformation retract onto their cores.** Let `P` be obtained from `X` by
 attaching handles `𝔻 (k i) × 𝔻 (l i)` along their attaching regions `∂𝔻 (k i) × 𝔻 (l i)` by a map
@@ -368,74 +443,10 @@ theorem exists_leftInverse_homotopicRel_of_isPushout_handles
       χ' ≫ c = Limits.Sigma.map (fun i ↦ handleCoreInclusion (k i) (l i)) ≫ χ ∧
       ∃ g : P ⟶ Q, j ≫ g = j' ∧ Function.LeftInverse g c ∧
         (ContinuousMap.id P).HomotopicRel (c.hom.comp g.hom) (range c) := by
-  -- The two squares, read pointwise on the summand `i`.
-  have hhandle (i : ι) (s : TopCat.diskBoundary.{u} (k i)) (v : TopCat.disk.{u} (l i)) :
-      j (φ (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) ×
-        TopCat.disk.{u} (l i))) i (s, v))) =
-        χ (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i))) i
-          (TopCat.diskBoundaryInclusion (k i) s, v)) := by
-    rw [sq.w_apply, Sigma.ι_map_apply]
-    rfl
-  have hcore (i : ι) (s : TopCat.diskBoundary.{u} (k i)) :
-      j' (φ (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) ×
-        TopCat.disk.{u} (l i))) i (s, diskCenter (l i)))) =
-        χ' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i (TopCat.diskBoundaryInclusion (k i) s)) := by
-    have h := sq'.w_apply (Sigma.ι (fun i ↦ TopCat.diskBoundary.{u} (k i)) i s)
-    rw [ConcreteCategory.comp_apply, Sigma.ι_map_apply, Sigma.ι_map_apply] at h
-    exact h
-  -- The inclusion of the cores.
-  let c : Q ⟶ P := sq'.desc j (Limits.Sigma.map (fun i ↦ handleCoreInclusion (k i) (l i)) ≫ χ) <|
-    Sigma.hom_ext _ _ fun i ↦ by
-      ext s
-      simp only [ConcreteCategory.comp_apply, Sigma.ι_map_apply]
-      exact hhandle i s _
-  have hcj (x : X) : c (j' x) = j x := ConcreteCategory.congr_hom (sq'.inl_desc _ _ _) x
-  have hcχ (i : ι) (u : TopCat.disk.{u} (k i)) :
-      c (χ' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i u)) =
-        χ (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i))) i
-          (u, diskCenter (l i))) := by
-    rw [← ConcreteCategory.comp_apply, sq'.inr_desc, ConcreteCategory.comp_apply,
-      Sigma.ι_map_apply]
-    rfl
-  -- On the core and the attaching region, the map into `Q` followed by `c` is the handle itself.
-  have hcF (i : ι) {y : TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)}
-      (hy : y ∈ handleCoreUnionAttachingRegion (k i) (l i)) :
-      c (handleCoreFun φ j' χ' i y) =
-        χ (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i))) i y) := by
-    rcases hy with hy | hy
-    · rw [handleCoreFun, dite_eq_left hy, hcj]
-      exact hhandle i (ULift.up ⟨y.1.down.1, mem_sphere_zero_iff_norm.2 hy⟩) y.2
-    · rw [handleCoreFun_of_snd_eq hcore i hy, hcχ, ← hy]
-  -- The retraction of the handles, read in `Q`.
-  let g : P ⟶ Q := sq.desc j' (Sigma.desc fun i ↦ (TopCat.ofHom (handleCoreMap hcore i) :
-      TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)) ⟶ Q)) <|
-    Sigma.hom_ext _ _ fun i ↦ by
-      rw [Sigma.ι_map_assoc, Sigma.ι_comp_desc]
-      ext ⟨s, v⟩
-      simp only [ConcreteCategory.comp_apply, TopCat.hom_ofHom]
-      rw [ContinuousMap.prodMap_apply, Prod.map_apply, handleCoreMap_apply,
-        ContinuousMap.id_apply]
-      have hr : handleCoreRetraction (k i) (l i) (TopCat.diskBoundaryInclusion (k i) s, v) =
-          (TopCat.diskBoundaryInclusion (k i) s, v) :=
-        handleCoreRetraction_eq_self_iff.2 (Or.inl (norm_diskBoundaryInclusion s))
-      exact ((congrArg (handleCoreFun φ j' χ' i) hr).trans
-        (handleCoreFun_diskBoundaryInclusion i s v)).symm
-  have hgj (x : X) : g (j x) = j' x := ConcreteCategory.congr_hom (sq.inl_desc _ _ _) x
-  have hgχ (i : ι) (y : TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)) :
-      g (χ (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i))) i y)) =
-        handleCoreFun φ j' χ' i (handleCoreRetraction (k i) (l i) y) := by
-    rw [← ConcreteCategory.comp_apply, sq.inr_desc, Sigma.ι_comp_desc_apply]
-    rfl
-  -- Every point of `Q` comes from `X` or from a cell.
-  have hQ (q : Q) : (∃ x, j' x = q) ∨
-      ∃ i u, χ' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i u) = q :=
-    exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma sq' q
-  have hgc : Function.LeftInverse g c := fun q ↦ by
-    obtain ⟨x, rfl⟩ | ⟨i, u, rfl⟩ := hQ q
-    · rw [hcj, hgj]
-    · rw [hcχ, hgχ, handleCoreRetraction_eq_self_iff.2 (Or.inr rfl),
-        handleCoreFun_of_snd_eq hcore i rfl]
-  refine ⟨c, sq'.inl_desc _ _ _, sq'.inr_desc _ _ _, g, sq.inl_desc _ _ _, hgc, ⟨?_⟩⟩
+  set c := handleCoreToHandles sq sq'
+  set g := handlesToHandleCore sq sq'
+  refine ⟨c, sq'.inl_desc _ _ _, sq'.inr_desc _ _ _, g, sq.inl_desc _ _ _,
+    leftInverse_handlesToHandleCore sq sq', ⟨?_⟩⟩
   -- The deformations of the handles from the identity to their retractions, read in `P`.
   let K : C(I × (∐ fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)) :
       TopCat.{u}), P) :=
@@ -459,35 +470,34 @@ theorem exists_leftInverse_homotopicRel_of_isPushout_handles
     { toContinuousMap := K
       map_zero_left z := by
         obtain ⟨i, y, rfl⟩ := TopCat.exists_sigma_ι_eq _ z
-        rw [ContinuousMap.toFun_eq_coe, hK, ContinuousMap.HomotopyWith.apply_zero,
-          ContinuousMap.id_apply, ContinuousMap.comp_apply, ContinuousMap.id_apply]
+        simp [hK]
       map_one_left z := by
         obtain ⟨i, y, rfl⟩ := TopCat.exists_sigma_ι_eq _ z
-        rw [ContinuousMap.toFun_eq_coe, hK, ContinuousMap.HomotopyWith.apply_one,
-          ContinuousMap.comp_apply, ContinuousMap.comp_apply]
-        exact ((congrArg c (hgχ i y)).trans (hcF i (handleCoreRetraction_mem y))).symm }
+        simp only [ContinuousMap.toFun_eq_coe, hK, ContinuousMap.HomotopyWith.apply_one,
+          ContinuousMap.comp_apply]
+        exact ((congrArg c (handlesToHandleCore_inr_apply sq sq' i y)).trans
+          (handleCoreToHandles_handleCoreFun sq sq' i (handleCoreRetraction_mem y))).symm }
   let HY : ((ContinuousMap.id P).comp j.hom).Homotopy ((c.hom.comp g.hom).comp j.hom) :=
     (ContinuousMap.Homotopy.refl _).cast rfl <| ContinuousMap.ext fun x ↦ by
-      rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, ContinuousMap.comp_apply,
-        ContinuousMap.id_apply]
-      exact ((congrArg c (hgj x)).trans (hcj x)).symm
-  have hY (t : I) (x : X) : HY (t, x) = j x := (rfl)
+      simp only [ContinuousMap.comp_apply, ContinuousMap.id_apply]
+      exact ((congrArg c (handlesToHandleCore_inl_apply sq sq' x)).trans
+        (handleCoreToHandles_inl_apply sq sq' x)).symm
+  have hY (t : I) (x : X) : HY (t, x) = j x := by simp [HY]
   have hZ (t : I) (z : (∐ fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)) :
       TopCat.{u})) : HZ (t, z) = K (t, z) := (rfl)
   let H := sq.homotopyDesc HY HZ fun t b ↦ by
     obtain ⟨i, x, rfl⟩ := TopCat.exists_sigma_ι_eq _ b
-    rw [hY, Sigma.ι_map_apply, hZ, TopCat.ofHom_apply, ContinuousMap.prodMap_apply,
-      Prod.map_apply, ContinuousMap.id_apply]
-    exact (hhandle i x.1 x.2).trans
+    simp only [hY, Sigma.ι_map_apply, hZ]
+    exact (handle_w_apply sq i x.1 x.2).trans
       (hKA t i (y := (TopCat.diskBoundaryInclusion (k i) x.1, x.2))
         (Or.inl (norm_diskBoundaryInclusion x.1))).symm
   refine { toHomotopy := H, prop' := fun t x hx ↦ ?_ }
   obtain ⟨q, rfl⟩ := hx
   -- The goal is stated for the slice of `H` at time `t`; read it pointwise.
   change H (t, c q) = c q
-  obtain ⟨x, rfl⟩ | ⟨i, u, rfl⟩ := hQ q
-  · rw [hcj, sq.homotopyDesc_apply_inl, hY]
-  · rw [hcχ, sq.homotopyDesc_apply_inr]
+  obtain ⟨x, rfl⟩ | ⟨i, u, rfl⟩ := exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma sq' q
+  · rw [handleCoreToHandles_inl_apply, sq.homotopyDesc_apply_inl, hY]
+  · rw [handleCoreToHandles_inr_apply, sq.homotopyDesc_apply_inr]
     exact hKA t i (Or.inr rfl)
 
 end Attachment
