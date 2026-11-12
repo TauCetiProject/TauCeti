@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Support
 
 /-!
 # Integrability of products of smooth functions
@@ -49,7 +49,7 @@ theorem integrable_apply_mul_of_tsupport_subset (hD : ∀ f, tsupport (D f) ⊆ 
     {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
     Integrable (fun x ↦ D f x * g x) μ :=
   integrable_mul_of_hasCompactSupport
-    (hfg.imp (·.of_isClosed_subset (isClosed_tsupport _) (hD f)) _root_.id)
+    (hfg.imp (·.apply_of_tsupport_subset hD) _root_.id)
 
 /-- If `D` does not enlarge supports, then `f (D g)` is integrable whenever `f` or `g` has compact
 support. -/
@@ -57,6 +57,6 @@ theorem integrable_mul_apply_of_tsupport_subset (hD : ∀ f, tsupport (D f) ⊆ 
     {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
     Integrable (fun x ↦ f x * D g x) μ :=
   integrable_mul_of_hasCompactSupport
-    (hfg.imp _root_.id (·.of_isClosed_subset (isClosed_tsupport _) (hD g)))
+    (hfg.imp _root_.id (·.apply_of_tsupport_subset hD))
 
 end ContMDiffMap

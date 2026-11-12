@@ -224,7 +224,7 @@ theorem IsFormalTranspose.unique (h₁ : D.IsFormalTranspose D₁ μ) (h₂ : D.
     refine ae_eq_of_integral_contDiff_smul_eq (D₁ g).contMDiff.continuous.locallyIntegrable
       (D₂ g).contMDiff.continuous.locallyIntegrable fun φ hφ hφc ↦ ?_
     let f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ := ⟨φ, hφ.contMDiff⟩
-    have hf : HasCompactSupport f := hφc
+    have hf : HasCompactSupport f := by rwa [ContMDiffMap.coeFn_mk]
     simpa [f, smul_eq_mul] using (h₁ f g (.inl hf)).symm.trans (h₂ f g (.inl hf))
   exact congrFun ((Continuous.ae_eq_iff_eq μ (D₁ g).contMDiff.continuous
     (D₂ g).contMDiff.continuous).1 key) x
