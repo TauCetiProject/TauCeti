@@ -26,6 +26,11 @@ interior products (`AlternatingMap.curryLeft_injective`) and that interior produ
 with `x` in some slot (`AlternatingMap.map_eq_zero_of_curryLeft_eq_zero`) and does not see the
 components of its arguments along `x` (`AlternatingMap.map_add_smul_of_curryLeft_eq_zero`): this
 is how a form whose contraction with a vector field vanishes descends along that field.
+
+Fixing the arguments of an alternating map `f` on `ι ⊕ κ` indexed by `ι` leaves an alternating map
+of the arguments indexed by `κ`, and this depends alternatingly on the fixed arguments:
+`AlternatingMap.currySum f` is the resulting alternating map with values in alternating maps, with
+`f.currySum x v = f (Sum.elim x v)`.
 -/
 
 public section
@@ -139,6 +144,28 @@ theorem map_add_smul_of_curryLeft_eq_zero {f : M [⋀^Fin (n + 1)]→ₗ[R] N} {
     _ = f v := by
       rw [Finset.sum_eq_single Finset.univ (fun s _ hs ↦ hterm s hs) (by simp)]
       simp
+
+/-- An alternating map on `ι ⊕ κ` as an alternating map of the arguments indexed by `ι`, with
+values in alternating maps of the arguments indexed by `κ`. -/
+def currySum {ι κ : Type*} (f : M [⋀^ι ⊕ κ]→ₗ[R] N) : M [⋀^ι]→ₗ[R] M [⋀^κ]→ₗ[R] N where
+  toFun x :=
+    { f.toMultilinearMap.currySum x with
+      map_eq_zero_of_eq' v i j hv hij :=
+        f.map_eq_zero_of_eq _ (i := .inr i) (j := .inr j) (by simpa using hv) (by simpa using hij) }
+  map_update_add' x i a b := by
+    ext v
+    exact congr($(f.toMultilinearMap.currySum.map_update_add x i a b) v)
+  map_update_smul' x i a b := by
+    ext v
+    exact congr($(f.toMultilinearMap.currySum.map_update_smul x i a b) v)
+  map_eq_zero_of_eq' x i j hx hij := by
+    ext v
+    exact f.map_eq_zero_of_eq _ (i := .inl i) (j := .inl j) (by simpa using hx) (by simpa using hij)
+
+/-- `f.currySum x v` evaluates `f` on the arguments `x` followed by the arguments `v`. -/
+@[simp]
+theorem currySum_apply {ι κ : Type*} (f : M [⋀^ι ⊕ κ]→ₗ[R] N) (x : ι → M) (v : κ → M) :
+    f.currySum x v = f (Sum.elim x v) := (rfl)
 
 end CommSemiring
 
