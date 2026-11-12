@@ -255,7 +255,6 @@ theorem norm_iteratedFDeriv_pow_smul_clm_apply_lineMap_le
   rw [Finset.sum_mul]
   refine Finset.sum_le_sum fun j hj ↦ ?_
   have hjm : j ≤ m := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
-  have hMj : 0 ≤ M (m - j) := (norm_nonneg _).trans (hM (m - j) (Nat.sub_le m j))
   calc (m.choose j : ℝ) * ‖iteratedFDeriv ℝ j (fun z ↦ L (f (lineMap x₀ z t))) y‖ *
         ‖iteratedFDeriv ℝ (m - j) V y‖
       ≤ (m.choose j : ℝ) * (‖L‖ * D) * M (m - j) := by
