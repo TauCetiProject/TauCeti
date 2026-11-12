@@ -148,7 +148,7 @@ theorem IsNPositive.eq_zero_of_map_one (hφ : IsNPositive 2 φ) (h1 : φ 1 = 0) 
 `φ(a)⋆ φ(a) ≤ ‖φ 1‖ • φ(a⋆a)`. -/
 theorem IsNPositive.star_map_mul_map_le (hφ : IsNPositive 2 φ) (a : A) :
     star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a) := by
-  set c := ‖φ 1‖ with hc
+  set c := ‖φ 1‖
   rcases (norm_nonneg (φ 1)).eq_or_lt with h0 | hpos
   · rw [hφ.eq_zero_of_map_one (norm_eq_zero.mp h0.symm)]
     simp
