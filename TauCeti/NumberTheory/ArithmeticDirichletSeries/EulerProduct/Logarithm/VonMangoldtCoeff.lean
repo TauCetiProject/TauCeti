@@ -413,7 +413,8 @@ theorem hasSum_idealTerm_vonMangoldt_of_zeroFree
   convert hsum.hasSum using 1
   rw [tsum_eq_tsum_idealPrimePower_of_support_subset hsum hsupp,
     tsum_congr fun P ↦ (hfib P).tsum_eq, tsum_neg,
-    (D.hasSum_tsum_coeff_localLogDerivSeries_of_zeroFree hσ hne hs).tsum_eq]
+    (D.hasSum_tsum_coeff_localLogDerivSeries_of_zeroFree
+      (hσ.trans (by exact_mod_cast hs)) hne hs).tsum_eq]
 
 /-- The norm-regrouped form of
 `TauCeti.EulerProductData.hasSum_idealTerm_vonMangoldt_of_zeroFree`: the Mathlib `LSeries` of the

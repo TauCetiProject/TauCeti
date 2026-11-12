@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Data
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 
 /-!
@@ -38,6 +39,8 @@ product of the Dedekind zeta function.
   ideal-indexed Dirichlet series converges absolutely at `s`.
 * `TauCeti.EulerProductData.norm_absNorm_cpow_neg_le_radius_localPowerSeries`: a lower bound for
   the convergence radius of a local power series from absolute convergence at a real point.
+* `TauCeti.EulerProductData.abscissaOfAbsConv_localArithmeticFactor_le_of_zeroFree`: a zero-free
+  disk of the local power series bounds the abscissa of absolute convergence of the local factor.
 * `TauCeti.MultiplicativeIdealWeight.hasProd_eulerFactor`: the same product, with the local factors
   in the closed geometric form available for a completely multiplicative weight.
 * `TauCeti.MultiplicativeIdealWeight.LSeries_ne_zero_of_summable_idealTerm`: the `L`-series is
@@ -302,6 +305,34 @@ theorem norm_absNorm_cpow_neg_le_radius_localPowerSeries
     ring
   apply FormalMultilinearSeries.le_radius_of_summable
   simpa [q, FormalMultilinearSeries.ofScalars_norm] using hlocal.norm
+
+/-- **Zero-freeness bounds the abscissa of a local Euler factor.** If the local power series at
+`P` has no zero in the disk of radius `‖N(P) ^ (-σ)‖` for a real point `σ`, then the local factor
+converges absolutely at every real point to the right of `σ`, so its abscissa of absolute
+convergence is at most `σ`. -/
+theorem abscissaOfAbsConv_localArithmeticFactor_le_of_zeroFree
+    (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ}
+    (hne : ∀ z : ℂ,
+      ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
+        FormalMultilinearSeries.ofScalarsSum (E := ℂ)
+          (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P)) z ≠ 0) :
+    LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) ≤ σ := by
+  -- Zero-freeness puts the disk of radius `‖N(P) ^ (-σ)‖` inside the disk of convergence of the
+  -- local power series.
+  have hr := FormalMultilinearSeries.le_radius_ofScalars_of_ofScalarsSum_ne_zero _
+    (r := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ₑ)
+    fun z hz ↦ hne z ((lt_iff_lt_of_le_iff_le eNorm_le_iff_norm_le).1 hz)
+  refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦ ?_
+  have hlt : (‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(y : ℂ))‖₊ : ENNReal) <
+      ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ₑ := by
+    rw [coe_lt_eNorm, ← NNReal.coe_lt_coe, coe_nnNorm, coe_nnNorm]
+    exact P.norm_absNorm_cpow_neg_lt (by simpa using hy)
+  have hsum := FormalMultilinearSeries.summable_norm_mul_pow _ (hlt.trans_le hr)
+  rw [D.localArithmeticFactor_eq,
+    LSeriesSummable_localArithmeticFactor_iff_summable_idealTerm_primeIdealPow]
+  refine Summable.of_norm (hsum.congr fun e ↦ ?_)
+  rw [idealTerm_primeIdealPow_eq_mul_cpow_neg, norm_mul, norm_pow,
+    FormalMultilinearSeries.ofScalars_norm, D.coeff_localPowerSeries, coe_nnNorm]
 
 /-- **Convergence of the finite Euler product.** Where the local Euler factors over a finite set
 `S` of primes are absolutely convergent `LSeries`, so are the norm coefficients of the restriction
