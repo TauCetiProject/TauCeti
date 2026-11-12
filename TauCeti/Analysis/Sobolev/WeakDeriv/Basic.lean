@@ -155,6 +155,8 @@ weaken them for no gain.
 * `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and
   `TauCeti.hasWeakFDerivOn_of_differentiableOn`: classical derivatives that are locally integrable
   on `Ω` are weak derivatives.
+* `ContDiffOn.hasWeakFDerivOn_fderiv`: a `C¹` function on `Ω` has its classical derivative as
+  weak derivative.
 * `TauCeti.hasWeakLineDerivOn_const`: against a Haar measure, a constant has weak derivative `0`.
 * `TauCeti.hasWeakFDerivOn_gradient_of_contDiffOn`: a `C¹` function on `Ω` has weak derivative
   the linear functional represented by its gradient.
@@ -769,6 +771,15 @@ theorem hasWeakFDerivOn_of_differentiableOn
         (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp hu')
     fun x hx => (h x hx).hasFDerivAt.hasLineDerivAt v
 
+/-- **A `C¹` function is weakly differentiable**, with weak derivative its classical one. Only
+differentiability inside the open set `Ω` is used. -/
+theorem _root_.ContDiffOn.hasWeakFDerivOn_fderiv (hu : ContDiffOn ℝ 1 u Ω) :
+    HasWeakFDerivOn μ Ω u (fderiv ℝ u) :=
+  hasWeakFDerivOn_of_differentiableOn
+    ((hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
+      Ω.isOpen.measurableSet)
+    fun _ hx => (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hx)
+
 end Classical
 
 /-! ### `C¹` functions and test functions are weakly differentiable
@@ -804,10 +815,7 @@ is used. -/
 theorem hasWeakFDerivOn_gradient_of_contDiffOn {u : E → ℝ} (hu : ContDiffOn ℝ 1 u Ω) :
     HasWeakFDerivOn μ Ω u fun x => innerSL ℝ (∇ u x) := by
   rw [show (fun x => innerSL ℝ (∇ u x)) = fderiv ℝ u from funext fun _ => toDual_gradient]
-  exact hasWeakFDerivOn_of_differentiableOn
-    ((hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
-      Ω.isOpen.measurableSet)
-    fun x hx => (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hx)
+  exact hu.hasWeakFDerivOn_fderiv
 
 /-- **A test function is weakly differentiable**, with weak derivative the continuous linear
 functional represented by its gradient. -/
