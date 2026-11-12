@@ -210,82 +210,6 @@ private theorem isChain_pairs {L : List (Letter G X)} (hL : L.IsChain fun l l' =
     · simpa [lead, nextConj] using hc x x' m m' 1 List.mem_cons_self (by simp)
         (Or.inl ⟨rfl, fun h => (List.isChain_cons_cons.1 hL).1 (by rw [h])⟩)
 
-/-! ### Choosing the conjugators -/
-
-/-- Distinct powers of an element outside `C_G(u)` lie in distinct left cosets of `C_G(u)`. -/
-private theorem eq_of_inv_pow_mul_pow_mem (hG : IsCSA G) [IsMulTorsionFree G] {u v : G}
-    (hv : v ∉ centralizer {u}) {n n' : ℕ} (h : (v ^ n)⁻¹ * v ^ n' ∈ centralizer {u}) :
-    n = n' := by
-  by_contra hne
-  have hd : ((n' : ℤ) - n) ≠ 0 := sub_ne_zero.2 (by exact_mod_cast Ne.symm hne)
-  rw [← zpow_natCast, ← zpow_natCast, ← zpow_neg, ← zpow_add, neg_add_eq_sub] at h
-  have hv1 : v ≠ 1 := by rintro rfl; exact hv (one_mem _)
-  refine hv (mem_centralizer_singleton_iff.2 ?_)
-  have hvd : v ^ ((n' : ℤ) - n) ≠ 1 := (IsMulTorsionFree.zpow_eq_one_iff_right hv1).not.2 hd
-  exact ((isCommTransitive_iff G).1 hG.isCommTransitive u (v ^ ((n' : ℤ) - n)) v hvd
-    (mem_centralizer_singleton_iff.1 h).symm (Commute.zpow_self v _)).eq.symm
-
-/-- If `y` and `y'` both conjugate `h ≠ 1` into the centralizer `C_G(u)`, they lie in one left
-coset of `C_G(u)`. -/
-private theorem inv_mul_mem_of_conj_mem (hG : IsCSA G) {u h y y' : G} (hh : h ≠ 1)
-    (hy : y⁻¹ * h * y ∈ centralizer {u}) (hy' : y'⁻¹ * h * y' ∈ centralizer {u}) :
-    y⁻¹ * y' ∈ centralizer {u} := by
-  have hconj : ∀ z : G, z⁻¹ * h * z ≠ 1 := fun z h1 => hh (by
-    rw [← conj_eq_one_iff (a := z⁻¹), inv_inv]
-    exact h1)
-  -- Conjugation by `y⁻¹ * y'` carries `y'⁻¹ * h * y'` to `y⁻¹ * h * y`.
-  exact hG.mem_centralizer_of_commute_conj hy (hconj y) hy' (hconj y') (g := y⁻¹ * y')
-    (by convert Commute.refl (y⁻¹ * h * y) using 1; group)
-
-/-- One can choose conjugators `c x`, for the variables `x` in a finite set `s`, such that
-`(c x)⁻¹ * h * c x'` lies outside `C_G(u)` whenever `h = 1` and `x ≠ x'`, and whenever `h` is a
-nonidentity element of the finite set `T`. -/
-private theorem exists_conj_notMem (hG : IsCSA G) [IsMulTorsionFree G] {u v : G}
-    (hv : v ∉ centralizer {u}) (s : Finset X) (T : Set G) (hT : T.Finite) :
-    ∃ c : X → G, ∀ x ∈ s, ∀ x' ∈ s, ∀ h : G, (h = 1 ∧ x ≠ x' ∨ h ∈ T ∧ h ≠ 1) →
-      (c x)⁻¹ * h * c x' ∉ centralizer {u} := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => exact ⟨1, by simp⟩
-  | @insert a s ha ih =>
-    obtain ⟨c, hc⟩ := ih
-    -- Each condition on the new conjugator `v ^ n` excludes at most one `n`.
-    have hsub : ∀ P : ℕ → Prop,
-        (∀ n n', P n → P n' → (v ^ n)⁻¹ * v ^ n' ∈ centralizer {u}) → {n | P n}.Finite :=
-      fun P hP => Set.Subsingleton.finite fun n hn n' hn' =>
-        eq_of_inv_pow_mul_pow_mem hG hv (hP n n' hn hn')
-    have hT1 : (insert 1 T).Finite := hT.insert 1
-    have hfin : ((⋃ x' ∈ (s : Set X), ⋃ h ∈ insert 1 T,
-          {n | (v ^ n)⁻¹ * h * c x' ∈ centralizer {u}}) ∪
-        (⋃ x' ∈ (s : Set X), ⋃ h ∈ insert 1 T,
-          {n | (c x')⁻¹ * h * v ^ n ∈ centralizer {u}}) ∪
-        ⋃ h ∈ T \ {1}, {n | (v ^ n)⁻¹ * h * v ^ n ∈ centralizer {u}}).Finite := by
-      refine .union (.union ?_ ?_) ?_
-      · refine s.finite_toSet.biUnion fun x' _ => hT1.biUnion fun h _ =>
-          hsub _ fun n n' hn hn' => ?_
-        convert mul_mem hn (inv_mem hn') using 1
-        group
-      · refine s.finite_toSet.biUnion fun x' _ => hT1.biUnion fun h _ =>
-          hsub _ fun n n' hn hn' => ?_
-        convert mul_mem (inv_mem hn) hn' using 1
-        group
-      · exact hT.sdiff.biUnion fun h hh =>
-          hsub _ fun n n' hn hn' => inv_mul_mem_of_conj_mem hG hh.2 hn hn'
-    obtain ⟨n, hn⟩ := hfin.exists_notMem
-    simp only [Set.mem_union, Set.mem_iUnion, Set.mem_insert_iff, Finset.mem_coe,
-      Set.mem_sdiff, Set.mem_singleton_iff, not_or, not_exists] at hn
-    obtain ⟨⟨hn₁, hn₂⟩, hn₃⟩ := hn
-    refine ⟨Function.update c a (v ^ n), fun x hx x' hx' h hh => ?_⟩
-    have hT' : h = 1 ∨ h ∈ T := hh.imp And.left And.left
-    rw [Finset.mem_insert] at hx hx'
-    have hxa : ∀ y ∈ s, y ≠ a := fun y hy hya => ha (hya ▸ hy)
-    rcases hx with rfl | hx <;> rcases hx' with rfl | hx'
-    · obtain ⟨hh, h1⟩ := hh.resolve_left fun h => h.2 rfl
-      simpa using hn₃ h ⟨hh, h1⟩
-    · simpa [hxa x' hx'] using hn₁ x' hx' h hT'
-    · simpa [hxa x hx] using hn₂ x hx h hT'
-    · simpa [hxa x hx, hxa x' hx'] using hc x hx x' hx' h hh
-
 /-! ### Discrimination -/
 
 open scoped Classical in
@@ -341,7 +265,7 @@ theorem isDiscriminatedBy (hBP : IsBP G) (hG : IsCSA G) (hab : ¬IsMulCommutativ
   have hv : v ∉ centralizer {u} := fun h => huv (mem_centralizer_singleton_iff.1 h).symm
   refine (isDiscriminatedBy_def _ _).2 fun S hS => ?_
   -- Choose conjugators for the variables and coefficient letters of the reduced words of `S`.
-  obtain ⟨c, hc⟩ := exists_conj_notMem hG hv
+  obtain ⟨c, hc⟩ := hG.exists_conj_notMem hv
     (S.biUnion fun w => ((word w).toList.filterMap Sigma.fst).toFinset)
     (⋃ w ∈ (S : Set (GX G X)), {g | (⟨none, g⟩ : Letter G X) ∈ (word w).toList})
     (S.finite_toSet.biUnion fun w _ => (word w).toList.finite_toSet.preimage
