@@ -206,9 +206,9 @@ private theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_positive
         (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z) ≠ ⊤) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
-      (∃ φ : ℕ → ℝ, Tendsto φ atTop atTop ∧
+      (∃ R : ℕ → ℝ, Tendsto R atTop atTop ∧
         TendstoUniformly (fun n t ↦ u (Complex.equivRealProdCLM
-          (positive.cylindricalEndLift (↑(positive.endSign * φ n) + ↑t * Complex.I)))) x atTop) ∧
+          (positive.cylindricalEndLift (↑(positive.endSign * R n) + ↑t * Complex.I)))) x atTop) ∧
       Tendsto (fun R ↦ ω.hamiltonianAction H (fun t ↦ u (Complex.equivRealProdCLM
           (positive.cylindricalEndLift (↑(positive.endSign * R) + ↑t * Complex.I))))) atTop
         (𝓝 (ω.hamiltonianAction H x)) := by
@@ -250,8 +250,9 @@ on the part `‖w‖ > exp (4π)` of the end. Let `u` be `C²` there, with image
 solving the Floer equation `(du - X_𝔎)^{0,1} = 0` for almost complex structures `J(z)` with
 `c ‖v‖² ≤ ω(v, J(z) v)` and `‖J(z) v‖ ≤ M ‖v‖`, `c > 0`, and with finite energy there. Then there
 is a one-periodic orbit `x` of the Hamiltonian vector field such that the loops
-`ℓ_R(t) = u(φ(ε R + i t))` converge uniformly to `x` along some `R_n → ∞`, and their actions
-`A_H(ℓ_R)` tend to the action `A_H(x)` as `R → ∞`. -/
+`ℓ_R(t) = u(φ(ε R + i t))`, where `φ` is the end lift `p.cylindricalEndLift` and `ε = p.endSign`,
+converge uniformly to `x` along some `R_n → ∞`, and their actions `A_H(ℓ_R)` tend to the action
+`A_H(x)` as `R → ∞`. -/
 theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbation (p : PSSPlane)
     (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H))
     (hu : ContDiffOn ℝ 2 u {z | Real.exp (4 * π) < ‖Complex.equivRealProdCLM.symm z‖})
@@ -273,9 +274,9 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbatio
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z) ≠ ⊤) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
-      (∃ φ : ℕ → ℝ, Tendsto φ atTop atTop ∧
+      (∃ R : ℕ → ℝ, Tendsto R atTop atTop ∧
         TendstoUniformly (fun n t ↦ u (Complex.equivRealProdCLM
-          (p.cylindricalEndLift (↑(p.endSign * φ n) + ↑t * Complex.I)))) x atTop) ∧
+          (p.cylindricalEndLift (↑(p.endSign * R n) + ↑t * Complex.I)))) x atTop) ∧
       Tendsto (fun R ↦ ω.hamiltonianAction H (fun t ↦ u (Complex.equivRealProdCLM
           (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I))))) atTop
         (𝓝 (ω.hamiltonianAction H x)) := by
@@ -330,7 +331,8 @@ given by a period-one `C¹` Hamiltonian `H`, and let `u` be a `C²` solution of 
 finite energy. Suppose that on the part `‖w‖ > exp (4π)` of the end the image of `u` lies in a
 compact set `K` and `c ‖v‖² ≤ ω(v, J(z) v)` and `‖J(z) v‖ ≤ M ‖v‖` with `c > 0`. Then there is a
 one-periodic orbit `x` of the Hamiltonian vector field, the uniform limit of the loops
-`ℓ_R(t) = u(φ(ε R + i t))` along some `R_n → ∞`, such that
+`ℓ_R(t) = u(φ(ε R + i t))` along some `R_n → ∞`, where `φ` is the end lift `p.cylindricalEndLift`
+and `ε = p.endSign`, such that
 
 `E(u) = ε A_H(x) - ∫_ℂ R_𝔎(u)`. -/
 theorem exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_pssPlanePerturbation_eq
@@ -351,9 +353,9 @@ theorem exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_pssPlanePerturba
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
-      (∃ φ : ℕ → ℝ, Tendsto φ atTop atTop ∧
+      (∃ R : ℕ → ℝ, Tendsto R atTop atTop ∧
         TendstoUniformly (fun n t ↦ u (Complex.equivRealProdCLM
-          (p.cylindricalEndLift (↑(p.endSign * φ n) + ↑t * Complex.I)))) x atTop) ∧
+          (p.cylindricalEndLift (↑(p.endSign * R n) + ↑t * Complex.I)))) x atTop) ∧
       ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z) =
