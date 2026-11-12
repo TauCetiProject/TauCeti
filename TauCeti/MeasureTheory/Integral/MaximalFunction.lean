@@ -134,6 +134,8 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   everywhere.
 * `TauCeti.lintegral_rpow_maximalFunction_le`, `TauCeti.eLpNorm_maximalFunction_le`: the
   **strong type `(p, p)` maximal inequality** for `1 < p < ∞`, with an explicit constant.
+* `TauCeti.lintegral_rpow_le_of_sq_le_maximalFunction`: integrating a pointwise bound of `g²` by
+  three maximal functions, as in the sharp function method.
 * `TauCeti.mul_setLIntegral_lt_maximalFunction_le`,
   `TauCeti.lintegral_rpow_maximalFunction_mul_le`: the **weighted maximal inequality** of
   Fefferman and Stein, of weak type `(1, 1)` and of strong type `(p, p)` for `1 < p < ∞`.
@@ -544,6 +546,72 @@ theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsA
           4 ^ finrank ℝ E) ^ (1 / p.toReal) * (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
         ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
     _ ≤ _ := by gcongr
+
+/-- Integrating a pointwise bound of `g²` by three maximal functions: if
+`g² ≤ α₁ M h₁ + α₂ M h₂ + α₃ (M h₃)^(1/q)` and `2q < s`, then the strong-type maximal inequality
+with the exponents `s / 2` and `s / (2q)` bounds `∫ g^s` by the integrals of `h₁^(s/2)`, `h₂^(s/2)`
+and `h₃^(s/(2q))`. This is the integration step of Krylov's sharp function method; it follows the
+corresponding helper of https://github.com/TauCetiProject/TauCeti/pull/33788. -/
+theorem lintegral_rpow_le_of_sq_le_maximalFunction (μ : Measure E) [μ.IsAddHaarMeasure]
+    {g h₁ h₂ h₃ : E → ℝ≥0∞} (h₁m : AEMeasurable h₁ μ) (h₂m : AEMeasurable h₂ μ)
+    (h₃m : AEMeasurable h₃ μ) {α₁ α₂ α₃ : ℝ≥0∞} {q s : ℝ} (hq : 1 < q) (hqs : 2 * q < s)
+    (hg : ∀ x, g x ^ 2 ≤ α₁ * maximalFunction μ h₁ x + α₂ * maximalFunction μ h₂ x +
+      α₃ * maximalFunction μ h₃ x ^ q⁻¹) :
+    ∫⁻ x, g x ^ s ∂μ ≤ 2 ^ (s / 2 - 1) * (2 ^ (s / 2 - 1) *
+        (α₁ ^ (s / 2) * (ENNReal.ofReal (2 * (s / 2) * 2 ^ (s / 2 - 1) / (s / 2 - 1)) *
+            4 ^ finrank ℝ E * ∫⁻ x, h₁ x ^ (s / 2) ∂μ) +
+          α₂ ^ (s / 2) * (ENNReal.ofReal (2 * (s / 2) * 2 ^ (s / 2 - 1) / (s / 2 - 1)) *
+            4 ^ finrank ℝ E * ∫⁻ x, h₂ x ^ (s / 2) ∂μ)) +
+        α₃ ^ (s / 2) * (ENNReal.ofReal (2 * (s / 2 / q) * 2 ^ (s / 2 / q - 1) / (s / 2 / q - 1)) *
+            4 ^ finrank ℝ E * ∫⁻ x, h₃ x ^ (s / 2 / q) ∂μ)) := by
+  set r := s / 2
+  have hr : 1 < r := by simp only [r]; linarith
+  have hrq : 1 < r / q := by rw [one_lt_div (by linarith)]; simp only [r]; linarith
+  have hr0 : 0 ≤ r := by linarith
+  set M₁ := maximalFunction μ h₁
+  set M₂ := maximalFunction μ h₂
+  set M₃ := maximalFunction μ h₃
+  have hM₁ : Measurable M₁ := measurable_maximalFunction μ h₁
+  have hM₂ : Measurable M₂ := measurable_maximalFunction μ h₂
+  have hM₃ : Measurable M₃ := measurable_maximalFunction μ h₃
+  -- The maximal inequality; the `‖·‖ₑ` of `ℝ≥0∞` is the identity.
+  have hmax : ∀ {h : E → ℝ≥0∞}, AEMeasurable h μ → ∀ {e : ℝ}, 1 < e →
+      ∫⁻ x, maximalFunction μ h x ^ e ∂μ ≤
+        ENNReal.ofReal (2 * e * 2 ^ (e - 1) / (e - 1)) * 4 ^ finrank ℝ E *
+          ∫⁻ x, h x ^ e ∂μ := fun {h} hh {e} he => by
+    simpa only [enorm_eq_self] using lintegral_rpow_maximalFunction_le μ (f := h) hh he
+  -- Pointwise: `g^s = (g²)^r ≤ 2^(r-1) (2^(r-1) ((α₁ M₁)^r + (α₂ M₂)^r) + (α₃ M₃^(1/q))^r)`.
+  have hpt : ∀ x, g x ^ s ≤ 2 ^ (r - 1) * (2 ^ (r - 1) *
+      (α₁ ^ r * M₁ x ^ r + α₂ ^ r * M₂ x ^ r) + α₃ ^ r * M₃ x ^ (r / q)) := fun x => by
+    have hgs : g x ^ s = (g x ^ 2) ^ r := by
+      rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]; congr 1; simp only [r]; push_cast; ring
+    rw [hgs]
+    refine (ENNReal.rpow_le_rpow (hg x) hr0).trans ?_
+    refine (ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ hr.le).trans ?_
+    gcongr
+    · refine (ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ hr.le).trans_eq ?_
+      rw [ENNReal.mul_rpow_of_nonneg _ _ hr0, ENNReal.mul_rpow_of_nonneg _ _ hr0]
+    · rw [ENNReal.mul_rpow_of_nonneg _ _ hr0, ← ENNReal.rpow_mul, inv_mul_eq_div]
+  have m₁ : Measurable fun x => α₁ ^ r * M₁ x ^ r := (hM₁.pow_const r).const_mul _
+  have m₂ : Measurable fun x => α₂ ^ r * M₂ x ^ r := (hM₂.pow_const r).const_mul _
+  have m₃ : Measurable fun x => α₃ ^ r * M₃ x ^ (r / q) := (hM₃.pow_const _).const_mul _
+  have m₁₂ : Measurable fun x => α₁ ^ r * M₁ x ^ r + α₂ ^ r * M₂ x ^ r := m₁.add m₂
+  have m : Measurable fun x => 2 ^ (r - 1) * (α₁ ^ r * M₁ x ^ r + α₂ ^ r * M₂ x ^ r) +
+      α₃ ^ r * M₃ x ^ (r / q) := (m₁₂.const_mul _).add m₃
+  calc ∫⁻ x, g x ^ s ∂μ
+      ≤ ∫⁻ x, 2 ^ (r - 1) * (2 ^ (r - 1) *
+          (α₁ ^ r * M₁ x ^ r + α₂ ^ r * M₂ x ^ r) + α₃ ^ r * M₃ x ^ (r / q)) ∂μ :=
+        lintegral_mono hpt
+    _ = 2 ^ (r - 1) * (2 ^ (r - 1) * (α₁ ^ r * ∫⁻ x, M₁ x ^ r ∂μ +
+          α₂ ^ r * ∫⁻ x, M₂ x ^ r ∂μ) + α₃ ^ r * ∫⁻ x, M₃ x ^ (r / q) ∂μ) := by
+        rw [lintegral_const_mul _ m, lintegral_add_right _ m₃, lintegral_const_mul _ m₁₂,
+          lintegral_add_right _ m₂, lintegral_const_mul _ (hM₁.pow_const r),
+          lintegral_const_mul _ (hM₂.pow_const r), lintegral_const_mul _ (hM₃.pow_const _)]
+    _ ≤ _ := by
+        gcongr
+        · exact hmax h₁m hr
+        · exact hmax h₂m hr
+        · exact hmax h₃m hrq
 
 end StrongType
 

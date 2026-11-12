@@ -82,6 +82,7 @@ applied to an integrable function that is almost everywhere at least `a`.
   average over it is at most the integral of the extended norm over it.
 * `TauCeti.setLAverage_enorm_eq_ofReal_setAverage_norm`: the mean of the extended norm of an
   integrable function over a set is the `ENNReal.ofReal` of the mean of its norm.
+* `TauCeti.ofReal_setAverage_norm_rpow`: the same for the power `‖h‖ ^ k`, `k ≥ 0`.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
   average is at most twice its mean oscillation about any constant.
 * `TauCeti.eLpNorm_sub_setAverage_le`: the same factor-`2` comparison for the `Lᵖ` deviation on a
@@ -202,6 +203,17 @@ theorem setLAverage_enorm_eq_ofReal_setAverage_norm {μ : Measure α} {s : Set �
     ⨍⁻ x in s, ‖g x‖ₑ ∂μ = ENNReal.ofReal (⨍ x in s, ‖g x‖ ∂μ) := by
   rw [setLAverage_eq, ofReal_setAverage hg.norm (ae_of_all _ fun _ => norm_nonneg _)]
   simp only [ofReal_norm]
+
+omit [NormedSpace ℝ E] in
+/-- The `ENNReal.ofReal` of the mean of `‖h‖ ^ k` over a set, for `k ≥ 0` and `‖h‖ ^ k`
+integrable there, is the mean of `‖h‖ₑ ^ k`. -/
+theorem ofReal_setAverage_norm_rpow {μ : Measure α} {s : Set α} {h : α → E} {k : ℝ} (hk : 0 ≤ k)
+    (hi : IntegrableOn (fun x => ‖h x‖ ^ k) s μ) :
+    ENNReal.ofReal (⨍ x in s, ‖h x‖ ^ k ∂μ) = ⨍⁻ x in s, ‖h x‖ₑ ^ k ∂μ := by
+  rw [ofReal_setAverage hi (ae_of_all _ fun x => by positivity), setLAverage_eq]
+  congr 1
+  refine lintegral_congr fun x => ?_
+  rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hk, ofReal_norm]
 
 end ENorm
 

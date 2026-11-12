@@ -664,7 +664,9 @@ private theorem sharpMaximalFunction_comp_toLp_le {f : EuclideanSpace ℝ ι →
 
 `∫ ‖f‖^p ≤ C ∫ (f^#)^p`,
 
-where `f^#` is the sharp maximal function for the balls of the Euclidean distance. -/
+where `f^#` is the sharp maximal function for the balls of the Euclidean distance. This transport
+from the sup-distance version is shared with
+https://github.com/TauCetiProject/TauCeti/pull/33788, which adds the same declaration. -/
 theorem exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow {p : ℝ}
     (hp : 1 < p) :
     ∃ C : ℝ≥0, ∀ f : EuclideanSpace ℝ ι → F, Integrable f →
