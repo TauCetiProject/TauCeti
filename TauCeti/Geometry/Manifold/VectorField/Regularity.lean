@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
-public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -484,27 +483,14 @@ theorem fderivWithin_chart_apply_mpullbackWithin
     have hsrc : (extChartAt I x).symm z ∈ (extChartAt I x).source :=
       (extChartAt I x).map_target hz
     have hnd : ¬ DifferentiableWithinAt 𝕜 (p ∘ (extChartAt I x).symm) (Set.range I) z := by
-      intro hd
-      apply hpz
-      rw [mdifferentiableAt_iff_of_mem_source (y := p ((extChartAt I x).symm z))
-        (by simpa only [extChartAt_source] using hsrc) (mem_chart_source _ _)]
-      refine ⟨?_, ?_⟩
-      swap
-      · rw [(extChartAt I x).right_inv hz]
-        simpa only [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp]
-          using hd
-      have hc := hd.continuousWithinAt.comp_of_eq
-        (continuousAt_extChartAt' (I := I) (x := x) hsrc).continuousWithinAt
-        (s := univ) (fun y _ ↦ by simp) ((extChartAt I x).right_inv hz)
-      rw [continuousWithinAt_univ] at hc
-      refine hc.congr ?_
-      filter_upwards [extChartAt_source_mem_nhds' (I := I) hsrc] with y hy
-      simp only [Function.comp_apply, (extChartAt I x).left_inv hy]
+      rwa [mdifferentiableAt_iff_source_of_mem_source (x := x)
+        (by simpa only [extChartAt_source] using hsrc), (extChartAt I x).right_inv hz,
+        mdifferentiableWithinAt_iff_differentiableWithinAt] at hpz
     have h0 : mfderiv% p ((extChartAt I x).symm z) = 0 :=
       mfderiv_zero_of_not_mdifferentiableAt hpz
     rw [fderivWithin_zero_of_not_differentiableWithinAt hnd, mvfderiv, h0,
       ContinuousLinearMap.comp_zero]
-    rfl
+    exact zero_apply _
   -- `TangentSpace I _` is definitionally the model space `E`; no public rewrite lemma exposes the
   -- coordinate composition in the form needed by the chain rule.
   suffices h : (mfderiv[Set.range I] (p ∘ (extChartAt I x).symm) z)
@@ -563,18 +549,8 @@ theorem mdifferentiableAt_mvfderiv_apply
     (hf : CMDiffAt n f x) (hn : 2 ≤ n)
     (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
     MDiffAt (fun y ↦ mvfderiv I f y (U y)) x := by
-  have htangent : MDiffAt (fun y ↦ tangentMap I 𝓘(𝕜, F) f
-      (U y : TangentBundle I M)) x :=
-    ((hf.contMDiffAt_tangentMap (m := 1) (by norm_num; exact hn)).mdifferentiableAt
-      (by norm_num)).comp x hU
-  have hsnd : MDiffAt (fun p : TangentBundle 𝓘(𝕜, F) F ↦ @id F p.2)
-      (tangentMap I 𝓘(𝕜, F) f (U x : TangentBundle I M)) :=
-    (contMDiff_snd_tangentBundle_modelSpace F 𝓘(𝕜, F)
-      (n := 1)).mdifferentiable (by norm_num) |>.mdifferentiableAt
-  apply (hsnd.comp x htangent).congr_of_eventuallyEq
-  filter_upwards with y
-  rw [Function.comp_apply, tangentMap_snd, mvfderiv_apply_eq_mfderiv_apply]
-  rfl
+  exact ((ContMDiffAt.contMDiffAt_mvfderiv_apply (p := (U x : TangentBundle I M)) (m := 1) hf
+    (by norm_num; exact hn)).mdifferentiableAt one_ne_zero).comp x hU
 
 open VectorField in
 /-- The chart derivative of the directional derivative `y ↦ mvfderiv I f y (U y)`, applied to the
