@@ -133,7 +133,7 @@ private theorem substitution_hypotheses (φ : Isogeny W₁ W₂) {c : ℝ}
     rw [oddPart]
     field_simp
   · rw [oddPart, div_pow, div_mul_eq_mul_div,
-      eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD]
+      eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc x]
     field_simp
 
 /-- **The real period integral under an isogeny, counting fibres.** Let `φ : W₁ → W₂` be an
@@ -148,7 +148,7 @@ theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard (φ : Isogeny 
             (fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) ⁻¹' {y}).encard *
           ENNReal.ofReal (√(W₂.Ψ₂Sq.eval y))⁻¹ := by
   refine W₁.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard
-    (ne_zero_of_pullbackDifferential_eq_smul φ hc) (countable_exceptional φ hc)
+    (countable_exceptional φ hc)
     (s := oddPart φ c)
     (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) <;>
   · simp only [mem_union, mem_ofPred_eq, IsRoot.def, not_or] at hx
@@ -164,8 +164,7 @@ theorem abs_mul_realPeriod_eq_of_ae_encard_eq (φ : Isogeny W₁ W₂) {c : ℝ}
     {n : ℕ} (hn : ∀ᵐ y, 0 < W₂.Ψ₂Sq.eval y → ({x | 0 < W₁.Ψ₂Sq.eval x} ∩
       (fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) ⁻¹' {y}).encard = n) :
     |c| * W₁.realPeriod = n * W₂.realPeriod := by
-  refine W₁.abs_mul_realPeriod_eq_of_ae_encard_eq (ne_zero_of_pullbackDifferential_eq_smul φ hc)
-    (countable_exceptional φ hc)
+  refine W₁.abs_mul_realPeriod_eq_of_ae_encard_eq (countable_exceptional φ hc)
     (s := oddPart φ c)
     (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) hn <;>
   · simp only [mem_union, mem_ofPred_eq, IsRoot.def, not_or] at hx
@@ -249,14 +248,16 @@ theorem encard_setOf_eval_div_eq_xCoord_of_mem_range (φ : Isogeny W₁ W₂) {P
   exact ENat.card_congr ((Hom.ofIsogeny φ).pointMapHom.fiberEquivKer Q)
 
 /-- **Off the image of `φ`, the fibre of `x ↦ N(x) / D(x)` is empty.** For a real point `P` of
-`W₂` not of order two and not in `φ(W₁(ℝ))`, no `x` has `Ψ₂Sq₁(x) > 0`, `D(x) ≠ 0` and
+`W₂` not in `φ(W₁(ℝ))`, no `x` has `Ψ₂Sq₁(x) > 0`, `D(x) ≠ 0` and
 `N(x) / D(x) = x(P)`, where `N / D = φ.xRatFunc`. -/
 theorem setOf_eval_div_eq_xCoord_eq_empty_of_notMem_range (φ : Isogeny W₁ W₂) {P : W₂.Point}
-    (hP : -P ≠ P) (hφ : P ∉ (Hom.ofIsogeny φ).pointMapHom.range) :
+    (hφ : P ∉ (Hom.ofIsogeny φ).pointMapHom.range) :
     {x | 0 < W₁.Ψ₂Sq.eval x ∧ φ.xRatFunc.denom.eval x ≠ 0 ∧
         φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x = P.xCoord} = ∅ := by
-  rw [← xCoord_image_preimage_pointMap φ hP, image_eq_empty, eq_empty_iff_forall_notMem]
-  exact fun Q hQ ↦ hφ ⟨Q, (Hom.pointMapHom_apply _ Q).trans hQ⟩
+  refine eq_empty_iff_forall_notMem.2 fun x ⟨hx, hD, hr⟩ ↦ hφ ?_
+  obtain ⟨Q, -, hQ⟩ := exists_pointMap_eq_of_mem_fibre φ
+    (fun h ↦ hφ (by rw [h]; exact zero_mem _)) hx hD hr
+  exact ⟨Q, (Hom.pointMapHom_apply _ Q).trans hQ⟩
 
 /-- Over `x' ≠ 0` the poles of `N / D`, where Lean's `N(x) / 0 = 0`, lie in no fibre. -/
 private theorem inter_preimage_eq_setOf (φ : Isogeny W₁ W₂) {y : ℝ} (hy : y ≠ 0) :
@@ -320,7 +321,7 @@ private theorem encard_inter_preimage_eq_indicator (φ : Isogeny W₁ W₂) {y :
     rw [Point.xCoord_some] at he
     rw [he, indicator_of_mem]
     exact ⟨hy, _, hφ, Point.some_ne_zero h, Point.xCoord_some h⟩
-  · have he := setOf_eval_div_eq_xCoord_eq_empty_of_notMem_range φ hP hφ
+  · have he := setOf_eval_div_eq_xCoord_eq_empty_of_notMem_range φ hφ
     rw [Point.xCoord_some] at he
     rw [he, encard_empty, indicator_of_notMem]
     -- the only other point with abscissa `x'` is `-P`, which is not in the image either
@@ -391,7 +392,7 @@ private theorem nonneg_eval_Ψ₂Sq_div
     (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
     {x : ℝ} (hD : φ.xRatFunc.denom.eval x ≠ 0) (hx : 0 ≤ W₁.Ψ₂Sq.eval x) :
     0 ≤ W₂.Ψ₂Sq.eval (φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) := by
-  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD
+  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc x
   have hc0 := ne_zero_of_pullbackDifferential_eq_smul φ hc
   have hpos : 0 < c ^ 2 * φ.xRatFunc.denom.eval x ^ 4 := by positivity
   exact (mul_nonneg_iff_of_pos_left hpos).mp (h ▸ mul_nonneg (sq_nonneg _) hx)
@@ -402,7 +403,7 @@ private theorem eval_Ψ₂Sq_div_eq_zero
     {x : ℝ} (hD : φ.xRatFunc.denom.eval x ≠ 0)
     (hx : (wronskian φ.xRatFunc.denom φ.xRatFunc.num).eval x * W₁.Ψ₂Sq.eval x = 0) :
     W₂.Ψ₂Sq.eval (φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) = 0 := by
-  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD
+  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc x
   have hc0 := ne_zero_of_pullbackDifferential_eq_smul φ hc
   rw [sq, mul_assoc, hx, mul_zero] at h
   simpa [hc0, hD] using h.symm
@@ -433,7 +434,7 @@ private theorem exists_forall_lt_eval_denom_ne_zero_and_pos :
   set Z := {x | φ.xRatFunc.denom.eval x = 0 ∨ W₁.Ψ₂Sq.eval x ≤ 0}
   obtain ⟨e, he, hpos⟩ := exists_isRoot_Ψ₂Sq_and_forall_lt_pos_eval W₁
   obtain ⟨M, hM⟩ := eventually_atTop.mp
-    (Polynomial.eventually_atTop_not_isRoot _ φ.xRatFunc.denom_ne_zero)
+    (Polynomial.eventually_atTop_not_isRoot φ.xRatFunc.denom_ne_zero)
   have heZ : e ∈ Z := Or.inr he.eq_zero.le
   have hZb : BddAbove Z := ⟨max e M, fun x hx ↦ le_of_not_gt fun h ↦ by
     rcases hx with hx | hx
@@ -460,7 +461,7 @@ private theorem tendsto_eval_div_atTop
     Tendsto (fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) atTop atTop := by
   obtain ⟨p, -, -, hgt⟩ := exists_forall_lt_eval_denom_ne_zero_and_pos φ
   refine tendsto_eval_div_atTop_of_tendsto_abs hc
-    (abs_div_tendsto_atTop_atTop_of_degree_gt _ _
+    (abs_div_tendsto_atTop_atTop_of_degree_gt
       (degree_lt_degree (natDegree_denom_lt_natDegree_num_xRatFunc φ)) φ.xRatFunc.denom_ne_zero)
     ((eventually_gt_atTop p).mono fun x hx ↦ ⟨(hgt hx).1, (hgt hx).2.le⟩)
 
@@ -545,7 +546,9 @@ variable (φ) in
 `Ψ₂Sq₂ > 0` on `(e, ∞)`, every affine real point `P` of `W₂` with `x(P) ≥ e` is the image under
 `φ` of a real point of `W₁`. -/
 theorem mem_range_pointMapHom_of_le_xCoord {e : ℝ} (hpos : ∀ ⦃y⦄, e < y → 0 < W₂.Ψ₂Sq.eval y)
-    {P : W₂.Point} (hP : P ≠ 0) (he : e ≤ P.xCoord) : P ∈ (Hom.ofIsogeny φ).pointMapHom.range := by
+    {P : W₂.Point} (he : e ≤ P.xCoord) : P ∈ (Hom.ofIsogeny φ).pointMapHom.range := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · exact zero_mem _
   obtain ⟨c, hc, -⟩ := φ.existsUnique_pullbackDifferential_invariantDifferential_eq_smul
   obtain ⟨x, hx, hD, hr⟩ := exists_eval_div_eq hc hpos he
   obtain ⟨y, h⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq hx
@@ -587,12 +590,8 @@ private theorem add_mem_range_pointMapHom_of_xCoord_lt {e₁ e₂ e : ℝ} (h₁
     (by rwa [WeierstrassCurve.ψ₂])
   have key := Point.xCoord_add_sub_mul_sub hT hψ h hne
   rw [hc] at key
-  refine mem_range_pointMapHom_of_le_xCoord φ hpos (fun h0 ↦ hne ?_) ?_
-  · -- `P + T = 0` would make `P = -T = T`
-    rw [add_eq_zero_iff_eq_neg, ← (neg_eq_iff_add_eq_zero.mpr
-      ((Point.some_add_self_eq_zero_iff hT).mpr hψ))] at h0
-    simpa using congrArg Point.xCoord h0
-  · nlinarith [mul_pos (sub_pos.2 h₁) (by linarith : (0 : ℝ) < e - e₁)]
+  refine mem_range_pointMapHom_of_le_xCoord φ hpos ?_
+  nlinarith [mul_pos (sub_pos.2 h₁) (by linarith : (0 : ℝ) < e - e₁)]
 
 end Image
 
@@ -626,7 +625,7 @@ private theorem setOf_xCoord_mem_range_eq_Ioi (φ : Isogeny W₁ W₂) {e₁ e�
       exact (hy.trans_eq (by simp [hfac])).false
     simpa using sub_mem (add_mem_range_pointMapHom_of_xCoord_lt φ h₁₂ h₂ hfac hT hψ hP hlt) hPH
   · obtain ⟨y', h⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq (hpos hy).le
-    refine ⟨hpos hy, _, mem_range_pointMapHom_of_le_xCoord φ hpos (Point.some_ne_zero h) ?_,
+    refine ⟨hpos hy, _, mem_range_pointMapHom_of_le_xCoord φ hpos ?_,
       Point.some_ne_zero h, Point.xCoord_some h⟩
     rw [Point.xCoord_some]
     exact (mem_Ioi.mp hy).le
@@ -640,8 +639,8 @@ theorem abs_mul_realPeriod_mul_index_eq_card_ker_mul (φ : Isogeny W₁ W₂) {c
       Nat.card (Hom.ofIsogeny φ).pointMapHom.ker * W₂.realPeriod := by
   set H := (Hom.ofIsogeny φ).pointMapHom.range
   obtain ⟨e, he, hpos⟩ := exists_isRoot_Ψ₂Sq_and_forall_lt_pos_eval W₂
-  have hH (P : W₂.Point) (hP : P ≠ 0) (hle : e ≤ P.xCoord) : P ∈ H :=
-    mem_range_pointMapHom_of_le_xCoord φ hpos hP hle
+  have hH (P : W₂.Point) (hle : e ≤ P.xCoord) : P ∈ H :=
+    mem_range_pointMapHom_of_le_xCoord φ hpos hle
   by_cases hx : ∃ x₀ < e, 0 ≤ W₂.Ψ₂Sq.eval x₀
   swap
   · -- every real point other than `O` lies over `[e, ∞)`
@@ -649,7 +648,7 @@ theorem abs_mul_realPeriod_mul_index_eq_card_ker_mul (φ : Isogeny W₁ W₂) {c
     rcases eq_or_ne P 0 with rfl | hP
     · exact zero_mem H
     obtain ⟨x, y, h, rfl⟩ := Point.exists_eq_some_of_ne_zero hP
-    refine hH _ hP (le_of_not_gt fun hlt ↦ hx ⟨x, ?_,
+    refine hH _ (le_of_not_gt fun hlt ↦ hx ⟨x, ?_,
       exists_equation_iff_nonneg_eval_Ψ₂Sq.mp ⟨y, h.1⟩⟩)
     rwa [Point.xCoord_some] at hlt
   obtain ⟨x₀, hx₀, h₀⟩ := hx
@@ -661,7 +660,7 @@ theorem abs_mul_realPeriod_mul_index_eq_card_ker_mul (φ : Isogeny W₁ W₂) {c
   have hnot (P : W₂.Point) (hP : P ∉ H) : P + .some e₁ t hT ∈ H := by
     have hP0 : P ≠ 0 := fun h ↦ hP (h ▸ zero_mem H)
     exact add_mem_range_pointMapHom_of_xCoord_lt φ h₁₂ h₂ hfac hT hψ hP0
-      (lt_of_not_ge fun hle ↦ hP (hH P hP0 hle))
+      (lt_of_not_ge fun hle ↦ hP (hH P hle))
   by_cases hTH : .some e₁ t hT ∈ H
   · refine abs_mul_realPeriod_mul_index_eq_of_forall_mem φ hc fun P ↦ by_contra fun hP ↦ hP ?_
     simpa only [add_sub_cancel_right] using sub_mem (hnot P hP) hTH

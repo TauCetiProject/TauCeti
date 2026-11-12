@@ -274,7 +274,7 @@ private theorem stellarSubdivision_face_relabel
 
 /-- The stellar coordinate map is injective on any union of the geometric simplices spanned by
 faces of the stellar subdivision. -/
-private theorem injOn_stellarSubdivisionCoordinateMap [Finite ι] {T : Type*} (hvσ : v ∉ σ)
+private theorem injOn_stellarSubdivisionCoordinateMap [Finite ι] {T : Type*}
     (f : T → Finset ι) (hf : ∀ t, f t ∈ (K.stellarSubdivision σ v).faces) :
     InjOn (stellarSubdivisionCoordinateMap σ v)
       (⋃ t, convexHull ℝ ((Pi.single · (1 : ℝ)) '' (f t : Set ι))) := by
@@ -292,7 +292,7 @@ private theorem injOn_stellarSubdivisionCoordinateMap [Finite ι] {T : Type*} (h
       stellarSubdivisionLinearMap σ v (Finsupp.equivFunOnFinite.symm y) := by
     rw [key, key, hxy]
   exact congrArg Finsupp.equivFunOnFinite
-    (injOn_stellarSubdivisionLinearMap (K := K) (σ := σ) (v := v) hvσ hxf hyf hxy_map)
+    (injOn_stellarSubdivisionLinearMap (K := K) (σ := σ) (v := v) hxf hyf hxy_map)
 
 /-- The images of the vertices of a face of the stellar subdivision under the stellar coordinate
 map are affinely independent. -/
@@ -326,7 +326,7 @@ private theorem exists_isPLOn_leftInverse_stellarSubdivisionCoordinateMap [Finit
   have := Fintype.ofFinite ι
   let S := stellarSubdivisionCoordinateMap σ v
   let U : Set (ι → ℝ) := ⋃ t, convexHull ℝ ((Pi.single · (1 : ℝ)) '' (f t : Set ι))
-  have hSinj : InjOn S U := injOn_stellarSubdivisionCoordinateMap hvσ f hf
+  have hSinj : InjOn S U := injOn_stellarSubdivisionCoordinateMap f hf
   let g := Function.invFunOn S U
   have hgf : ∀ x ∈ U, g (S x) = x := hSinj.leftInvOn_invFunOn
   exact ⟨g, (TauCeti.isPiecewiseAffineOn_inverse_of_finite_simplex_cover (f := S) (g := g)

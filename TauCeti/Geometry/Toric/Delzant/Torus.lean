@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.AddCircle.Defs
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import TauCeti.Geometry.Toric.Delzant.Basic
 
 import Mathlib.Analysis.Convex.PathConnected
+import Mathlib.Analysis.Real.Cardinality
 import Mathlib.LinearAlgebra.Dimension.RankNullity
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
@@ -57,6 +59,8 @@ points.
 
 * `TauCeti.Toric.facetTorusHom i u p`: the homomorphism `(ℝ / pℤ)^ι → V / p i(N)`,
   `[t] ↦ [∑ j, t j • i (u j)]`, a homomorphism of tori when `p ≠ 0`.
+* `TauCeti.Toric.faceSubtorus i u p s`: the image in `V / p i(N)` of the real span of the normals
+  of the facets in `s`.
 
 ## Main results
 
@@ -68,8 +72,17 @@ points.
   `TauCeti.Toric.IsDelzant.isConnected_ker_facetTorusHom`: the kernel of `π` is connected.
 * `TauCeti.Toric.surjective_facetTorusHom`, `TauCeti.Toric.IsDelzant.surjective_facetTorusHom`:
   `π` is surjective.
+* `TauCeti.Toric.exists_facetTorusHom_eq`: every element of `V / p i(N)` is the image under `π`
+  of the classes of real angles.
 * `TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`: the kernel of `π` meets the coordinate
   subtorus of a lattice basis of normals trivially.
+* `TauCeti.Toric.IsIntegralLattice.isClosed_ker_facetTorusHom`: for an integral lattice, the
+  kernel of `π` is closed.
+* `TauCeti.Toric.mem_faceSubtorus_iff_exists_facetTorusHom_eq`: the face subtorus of `s` is the
+  image under `π` of the angles supported on `s`.
+* `TauCeti.Toric.faceSubtorus_eq_bot_iff`, `TauCeti.Toric.faceSubtorus_eq_top_iff`: for a
+  countable lattice, the face subtorus is trivial exactly when its normals vanish, and is the
+  whole torus exactly when they span `V`.
 
 ## References
 
@@ -184,15 +197,26 @@ theorem isConnected_ker_facetTorusHom
   exact ((Submodule.convex _).isConnected ⟨0, Submodule.zero_mem _⟩).image _
     (continuous_pi fun j ↦ (AddCircle.continuous_mk' p).comp (continuous_apply j)).continuousOn
 
+/-- If the normals span `V` over `ℝ`, every element of `V / p i(N)` is the class
+`facetTorusHom [θ]` of some real angles `θ`. -/
+theorem exists_facetTorusHom_eq (hu : Submodule.span ℝ (Set.range fun j ↦ i (u j)) = ⊤)
+    (q : V ⧸ (p • i).range) :
+    ∃ θ : ι → ℝ, facetTorusHom i u p (fun j ↦ (θ j : AddCircle p)) = q := by
+  obtain ⟨v, rfl⟩ := QuotientAddGroup.mk_surjective q
+  obtain ⟨t, rfl⟩ : v ∈ LinearMap.range (Fintype.linearCombination ℝ fun j ↦ i (u j)) := by
+    rw [Fintype.range_linearCombination, hu]
+    exact Submodule.mem_top
+  exact ⟨t, facetTorusHom_coe i u p t⟩
+
 /-- If the normals generate the lattice and the lattice spans `V`, the homomorphism
 `(ℝ / pℤ)^ι → V / p i(N)` is surjective. -/
 theorem surjective_facetTorusHom (hi : Submodule.span ℝ (Set.range i) = ⊤)
     (hu : Function.Surjective (Fintype.linearCombination ℤ u)) :
     Function.Surjective (facetTorusHom i u p) := by
-  intro q
-  obtain ⟨v, rfl⟩ := QuotientAddGroup.mk_surjective q
-  obtain ⟨t, rfl⟩ := surjective_linearCombination_real hi hu v
-  exact ⟨_, facetTorusHom_coe i u p t⟩
+  have hspan : Submodule.span ℝ (Set.range fun j ↦ i (u j)) = ⊤ := by
+    rw [← Fintype.range_linearCombination, LinearMap.range_eq_top]
+    exact surjective_linearCombination_real hi hu
+  exact fun q ↦ let ⟨_, h⟩ := exists_facetTorusHom_eq hspan q; ⟨_, h⟩
 
 /-- **The kernel torus meets a coordinate subtorus of a lattice basis trivially.** Suppose that
 the normals `u j` with `j ∈ s` form a basis of the integral lattice `N`. An element of the kernel
@@ -234,6 +258,121 @@ theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {s : Set ι}
   · rw [Pi.zero_apply, ← ht, hcoeff ⟨j, hj⟩, AddCircle.coe_eq_zero_iff]
     exact ⟨b.repr n ⟨j, hj⟩, by simp [mul_comm]⟩
   · exact hθs j hj
+
+/-! ### Closedness of the kernel -/
+
+section Closed
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V}
+
+/-- **The kernel torus is closed.** For an integral lattice `i`, the kernel of the homomorphism
+`(ℝ / pℤ)^ι → V / p i(N)` is a closed subgroup; for `p ≠ 0` it is therefore a compact subgroup of
+the torus `(ℝ / pℤ)^ι`. -/
+theorem IsIntegralLattice.isClosed_ker_facetTorusHom (hi : IsIntegralLattice i) (u : ι → N)
+    (p : ℝ) : IsClosed ((facetTorusHom i u p).ker : Set (ι → AddCircle p)) := by
+  have h0 : IsClosed ({0} : Set (V ⧸ (p • i).range)) := by
+    rw [← (QuotientAddGroup.isQuotientMap_mk _).isClosed_preimage]
+    convert hi.isClosed_range_smul p using 1
+    ext v
+    simp [QuotientAddGroup.eq_zero_iff]
+  exact h0.preimage (continuous_facetTorusHom i u p)
+
+end Closed
+
+/-! ### Face subtori -/
+
+section FaceSubtorus
+
+omit [Fintype ι]
+
+variable (i u p) in
+/-- The *face subtorus* of a set `s` of facets: the image in `V / p i(N)` of the real span of the
+normals `i (u j)`, `j ∈ s`. For `p ≠ 0` and an integral lattice `i`, these normals are lattice
+vectors, so this is the subtorus of the torus `V / p i(N)` whose Lie algebra is their span. -/
+def faceSubtorus (s : Set ι) : AddSubgroup (V ⧸ (p • i).range) :=
+  (Submodule.span ℝ ((fun j ↦ i (u j)) '' s)).toAddSubgroup.map (QuotientAddGroup.mk' _)
+
+/-- A class lies in the face subtorus of `s` exactly when it is the class of a vector in the span
+of the normals `i (u j)`, `j ∈ s`. -/
+@[simp]
+theorem mem_faceSubtorus {s : Set ι} {q : V ⧸ (p • i).range} :
+    q ∈ faceSubtorus i u p s ↔
+      ∃ v ∈ Submodule.span ℝ ((fun j ↦ i (u j)) '' s), (v : V ⧸ (p • i).range) = q := by
+  simp [faceSubtorus]
+
+variable [Fintype ι] in
+/-- The face subtorus of `s` is the image, under the homomorphism `facetTorusHom`, of the angles
+supported on `s`. -/
+theorem mem_faceSubtorus_iff_exists_facetTorusHom_eq {s : Set ι} {q : V ⧸ (p • i).range} :
+    q ∈ faceSubtorus i u p s ↔
+      ∃ t : ι → ℝ, (∀ j ∉ s, t j = 0) ∧ facetTorusHom i u p (fun j ↦ (t j : AddCircle p)) = q := by
+  simp only [mem_faceSubtorus, Finsupp.mem_span_image_iff_linearCombination, facetTorusHom_coe]
+  constructor
+  · rintro ⟨_, ⟨l, hl, rfl⟩, rfl⟩
+    refine ⟨l, fun j hj ↦ Finsupp.notMem_support_iff.1 fun h ↦ hj (hl h), ?_⟩
+    rw [← Finsupp.linearCombination_eq_fintype_linearCombination_apply]
+    simp
+  · rintro ⟨t, ht, rfl⟩
+    refine ⟨_, ⟨(Finsupp.linearEquivFunOnFinite ℝ ℝ ι).symm t, fun j hj ↦ ?_, rfl⟩,
+      congrArg _ (Finsupp.linearCombination_eq_fintype_linearCombination_apply ℝ _ t)⟩
+    by_contra h
+    exact (Finsupp.mem_support_iff.1 hj) (by simpa using ht j h)
+
+variable (i u p) in
+/-- Face subtori grow with the set of facets. -/
+theorem faceSubtorus_mono : Monotone (faceSubtorus i u p) :=
+  fun _ _ h ↦ AddSubgroup.map_mono (Submodule.toAddSubgroup_mono
+    (Submodule.span_mono (image_mono h)))
+
+variable (i u p) in
+@[simp]
+theorem faceSubtorus_empty : faceSubtorus i u p ∅ = ⊥ := by
+  simp [faceSubtorus]
+
+/-- **Trivial face subtori.** For a countable lattice, the face subtorus of `s` is trivial exactly
+when the normals `i (u j)`, `j ∈ s`, vanish. -/
+theorem faceSubtorus_eq_bot_iff [Countable N] {s : Set ι} :
+    faceSubtorus i u p s = ⊥ ↔ ∀ j ∈ s, i (u j) = 0 := by
+  refine ⟨fun h j hj ↦ ?_, fun h ↦ ?_⟩
+  · by_contra hne
+    -- Every multiple `r • i (u j)` lies in `p i(N)`, so `r ↦ r • i (u j)` injects `ℝ` into it.
+    have hmem (r : ℝ) : r • i (u j) ∈ (p • i).range := by
+      have hq : ((r • i (u j) : V) : V ⧸ (p • i).range) ∈ faceSubtorus i u p s :=
+        mem_faceSubtorus.2 ⟨_, Submodule.smul_mem _ r (Submodule.subset_span ⟨j, hj, rfl⟩), rfl⟩
+      rwa [h, AddSubgroup.mem_bot, QuotientAddGroup.eq_zero_iff] at hq
+    choose n hn using hmem
+    have hinj : Function.Injective n := fun r r' hr ↦
+      smul_left_injective ℝ hne (by simpa only [← hn] using congrArg (p • i) hr)
+    have := hinj.countable
+    exact Cardinal.not_countable_real countable_univ
+  · rw [faceSubtorus, Submodule.span_eq_bot.2 (by rintro _ ⟨j, hj, rfl⟩; exact h j hj)]
+    simp
+
+/-- **Face subtori filling the torus.** For a countable lattice, the face subtorus of `s` is the
+whole of `V / p i(N)` exactly when the normals `i (u j)`, `j ∈ s`, span `V`. -/
+theorem faceSubtorus_eq_top_iff [Countable N] {s : Set ι} :
+    faceSubtorus i u p s = ⊤ ↔ Submodule.span ℝ ((fun j ↦ i (u j)) '' s) = ⊤ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · by_contra hne
+    -- A nonzero functional `f` vanishing on the span takes each of its values on the countable
+    -- group `p i(N)`, which is impossible.
+    obtain ⟨f, hf, hfW⟩ :=
+      Submodule.exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.2 hne) inferInstance
+    have hsub : range f ⊆ range fun n ↦ f ((p • i) n) := by
+      rintro _ ⟨v, rfl⟩
+      obtain ⟨w, hw, hwv⟩ := mem_faceSubtorus.1 (h ▸ AddSubgroup.mem_top (v : V ⧸ (p • i).range))
+      obtain ⟨n, hn⟩ := QuotientAddGroup.eq.1 hwv
+      have hfw : f w = 0 := LinearMap.le_ker_iff_map.2 hfW hw
+      exact ⟨n, by simp only [hn, map_add, map_neg, hfw, neg_zero, zero_add]⟩
+    refine Cardinal.not_countable_real ?_
+    rw [← range_eq_univ.2 (LinearMap.surjective hf)]
+    exact (countable_range _).mono hsub
+  · rw [eq_top_iff]
+    rintro q -
+    obtain ⟨v, rfl⟩ := QuotientAddGroup.mk_surjective q
+    exact mem_faceSubtorus.2 ⟨v, h ▸ Submodule.mem_top, rfl⟩
+
+end FaceSubtorus
 
 /-! ### Delzant polytopes -/
 

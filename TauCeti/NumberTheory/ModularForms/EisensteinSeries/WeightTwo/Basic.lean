@@ -134,7 +134,7 @@ theorem hasSum_correctedE2 (z : ℍ) :
       refine hE'.congr_fun fun n ↦ ?_
       simp only [Function.comp_apply, b, dvd_mul_right, ite_true,
         Nat.mul_div_right _ (Nat.pos_of_ne_zero (NeZero.ne t)), pow_mul,
-        qParam_one_scaleGL_smul]
+        qParam_scaleGL_smul]
   rw [correctedE2_apply]
   convert hE.sub (hscale.const_smul (t : ℂ)) using 1
   ext n
