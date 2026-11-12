@@ -324,9 +324,9 @@ private theorem ae_sqFun_eq_integral (n : ℕ) (f : Lp F 2 (volume : Measure V))
   · refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [hjx j]
     exact ((lp.singleContinuousLinearMap ℝ (fun _ : ℕ ↦ F) 2 j).integral_comp_comm
-      ((symbol φ j).integrable_fourierInv_sub_smul f x)).symm
+      ((𝓕⁻ (symbol φ j)).integrable_sub_smul one_le_two (Lp.memLp f) x)).symm
   · exact (lp.singleContinuousLinearMap ℝ (fun _ : ℕ ↦ F) 2 j).integrable_comp
-      ((symbol φ j).integrable_fourierInv_sub_smul f x)
+      ((𝓕⁻ (symbol φ j)).integrable_sub_smul one_le_two (Lp.memLp f) x)
 
 private theorem ae_sqFunAdj_eq_integral (n : ℕ)
     (g : Lp (lp (fun _ : ℕ ↦ F) 2) 2 (volume : Measure V)) :
@@ -336,7 +336,7 @@ private theorem ae_sqFunAdj_eq_integral (n : ℕ)
   have hu : ∀ j, (u j : V → F) =ᵐ[volume] fun z ↦ g z j := fun j ↦
     (lp.evalCLM ℝ (fun _ : ℕ ↦ F) 2 j).coeFn_compLpL g
   have hint : ∀ j x, Integrable (fun z ↦ 𝓕⁻ (symbol φ j) (x - z) • g z j) := fun j x ↦
-    ((symbol φ j).integrable_fourierInv_sub_smul (u j) x).congr
+    ((𝓕⁻ (symbol φ j)).integrable_sub_smul one_le_two (Lp.memLp (u j)) x).congr
       ((hu j).mono fun z hz ↦ by simp [hz])
   filter_upwards [Lp.coeFn_fun_finsetSum (Finset.range (n + 1)) fun j ↦ block φ j (u j),
     ae_all_iff.2 fun j ↦ coeFn_block φ j (u j)] with x hx hjx
@@ -676,7 +676,7 @@ theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow [N
     exact Real.HolderConjugate.conjExponent hP
   obtain ⟨C, hC⟩ := exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le (F := F) φ hq
     ENNReal.ofReal_ne_top
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   refine ⟨2 * L * C, fun m hm f ↦ ?_⟩
   have hm' : ∀ j, m j = (symbol φ j).toLp ∞ volume := fun j ↦ Lp.ext <| by
     filter_upwards [hm j, (symbol φ j).coeFn_toLp ∞ (volume : Measure V)] with ξ h₁ h₂

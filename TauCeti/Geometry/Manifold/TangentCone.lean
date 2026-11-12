@@ -285,6 +285,36 @@ theorem IsSliceChart.finrank_span_mtangentConeAt (hn : n ≠ 0)
   rw [mtangentConeAt_eq_tangentConeAt_chartAt]
   exact he.finrank_span_tangentConeAt hL hy' (chartAt_self_mem_preimage hys) hA
 
+/-- **Sets flattened by one chart onto spanning subspaces are transverse.** If a single chart `q`
+of the maximal atlas flattens `s₁` onto a closed subspace `L₁` and `s₂` onto a closed subspace
+`L₂` near a common point `y`, and `L₁` and `L₂` span the model space, then the tangent spaces of
+`s₁` and `s₂` at `y` span the model space. -/
+theorem IsSliceChart.span_mtangentConeAt_sup_eq_top (hn : n ≠ 0)
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) {L₁ L₂ : Submodule 𝕜 E} {s₁ s₂ : Set M}
+    (h₁ : IsSliceChart q (L₁ : Set E) s₁) (h₂ : IsSliceChart q (L₂ : Set E) s₂)
+    (hL₁ : IsClosed (L₁ : Set E)) (hL₂ : IsClosed (L₂ : Set E)) (hy : y ∈ q.source)
+    (hy₁ : y ∈ s₁) (hy₂ : y ∈ s₂) (hL : L₁ ⊔ L₂ = ⊤) :
+    Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊔
+      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) = ⊤ := by
+  have hy' : chartAt E y y ∈ ((chartAt E y).symm.trans q).source := by
+    simp [hy, mem_chart_source]
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn (IsManifold.chart_mem_maximalAtlas y) hq hy'
+  -- The inverse of the derivative of the transition map carries each `Lᵢ` onto the tangent cone.
+  have key {L : Submodule 𝕜 E} {s : Set M} (hs : IsSliceChart q (L : Set E) s)
+      (hLc : IsClosed (L : Set E)) (hys : y ∈ s) :
+      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y) =
+        L.map (A.symm : E →ₗ[𝕜] E) := by
+    have himg := image_mtangentConeAt_eq_tangentConeAt (s := s) hy hA
+    rw [tangentConeAt_preimage_symm_eq hs hLc hy hys] at himg
+    have hT : mtangentConeAt 𝓘(𝕜, E) s y = ((L.map (A.symm : E →ₗ[𝕜] E) : Submodule 𝕜 E) :
+        Set E) := by
+      rw [Submodule.map_coe, ← himg]
+      exact (A.symm_image_image _).symm
+    rw [hT, Submodule.span_eq]
+  rw [key h₁ hL₁ hy₁, key h₂ hL₂ hy₂, ← Submodule.map_sup, hL, Submodule.map_top,
+    LinearMap.range_eq_top]
+  exact A.symm.surjective
+
 end SliceChart
 
 section Transverse
@@ -410,8 +440,6 @@ private theorem level_chartAt_symm (hn : n ≠ 0) (hU : IsOpen U) (hyU : y ∈ U
     (hg.comp (contMDiffOn_chart_symm.mono inter_subset_left) fun z hz ↦ hz.2).contDiffOn
   have hC : ∀ z ∈ e.target ∩ e.symm ⁻¹' U, ContDiffAt 𝕜 n (fun z ↦ g (e.symm z) - c) z :=
     fun z hz ↦ ((hgc.contDiffAt (hU'.mem_nhds hz)).sub contDiffAt_const)
-  have hd : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) g y :=
-    (hg.contMDiffAt (hU.mem_nhds hyU)).mdifferentiableAt hn
   have hstrict := (hC _ hyU').hasStrictFDerivAt_fderiv hn
   rw [fderiv_sub_const] at hstrict
   refine ⟨?_, by simp [hyy, hgy], hU', hyU', hC, ?_⟩

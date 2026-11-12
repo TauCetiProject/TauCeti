@@ -161,7 +161,6 @@ theorem exists_lintegral_renewalCount_pow_le (hT : ∀ n, Measurable (T n)) (hin
       summable_pow_mul_geometric_of_norm_lt_one p
       (by rwa [Real.norm_of_nonneg hρ0])
   set S := ∑' j : ℕ, ((j + 1 : ℕ) : ℝ) ^ p * ρ ^ (j + 1)
-  have hS : 0 ≤ S := tsum_nonneg fun j ↦ by positivity
   have hC : 0 ≤ (1 + S) * (L + 1) ^ p := by positivity
   refine ⟨NNReal.mk _ hC, fun t ↦ ?_⟩
   set k := ⌈t⌉₊
