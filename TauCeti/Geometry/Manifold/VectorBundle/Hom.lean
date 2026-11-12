@@ -8,11 +8,11 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Topology.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.Diffeomorph
-import Mathlib.Geometry.Manifold.BumpFunction
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Topology.VectorBundle.Coordinates
 import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
+import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 
 /-!
 # Testing smooth bundle homomorphisms on sections
@@ -21,7 +21,9 @@ A section of a hom bundle with finite-dimensional source fibres is smooth if and
 it sends every globally smooth section to a smooth section. This turns smoothness of
 tensorial operations on sections into smoothness of the associated tensor field, by
 applying the criterion once for each argument. Its sufficient direction also holds for `C^n`
-smoothness on a set (`TauCeti.Manifold.contMDiffOn_hom_of_forall_contMDiff`).
+smoothness on a set (`TauCeti.Manifold.contMDiffOn_hom_of_forall_contMDiff`). In particular,
+multiplying a `C^n` hom-bundle section by a constant scalar acting on the target fibres gives a
+`C^n` section (`TauCeti.Manifold.contMDiffOn_hom_const_smul`).
 
 The criterion applies over arbitrary smooth finite-dimensional manifolds, including
 noncompact manifolds and manifolds with boundary, and places no finite-dimensionality
@@ -124,39 +126,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
   [FiberBundle G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
 
-/-- A hom-bundle section with finite-dimensional source fibres is smooth exactly when
-its evaluation on every globally smooth section is smooth. The target fibres need not
-be finite-dimensional, and the base need not be compact or boundaryless. -/
-theorem contMDiff_hom_iff (A : Π x : M, V x →L[ℝ] W x) :
-    ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) ∞
-      (fun x ↦ TotalSpace.mk' (F →L[ℝ] G) x (A x)) ↔
-      ∀ s : Π x : M, V x, CMDiff ∞ (T% s) →
-        ContMDiff I (I.prod 𝓘(ℝ, G)) ∞ (fun x ↦ TotalSpace.mk' G x (A x (s x))) := by
-  constructor
-  · intro hA s hs
-    exact hA.clm_bundle_apply hs
-  · intro hA x
-    let e := trivializationAt F V x
-    let e' := trivializationAt G W x
-    have hx : x ∈ e.baseSet ∩ e'.baseSet :=
-      ⟨mem_baseSet_trivializationAt F V x, mem_baseSet_trivializationAt G W x⟩
-    have hopen := e.open_baseSet.inter e'.open_baseSet
-    obtain ⟨ρ, hρ, -⟩ :=
-      (SmoothBumpFunction.nhds_basis_support (I := I) (hopen.mem_nhds hx)).mem_iff.mp
-        (hopen.mem_nhds hx)
-    obtain ⟨u, hu, huopen, hxu⟩ := mem_nhds_iff.mp
-      (ρ.eventuallyEq_one.and (hopen.mem_nhds hx))
-    let b := Module.Basis.ofVectorSpace ℝ F
-    have htest (j) : CMDiff ∞ (T% ((ρ : M → ℝ) • e.localFrame b j)) :=
-      ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet
-        (hρ.trans inter_subset_left) (e.contMDiffOn_localFrame_baseSet ∞ b j)
-    have hlocal := contMDiffOn_hom_of_localFrame (I := I) (e := e) (e' := e') b
-      (f := fun y ↦ y) contMDiffOn_id (fun y hy ↦ (hu hy).2) (A := A) (fun j ↦
-        ((hA _ (htest j)).contMDiffOn).congr (fun y hy ↦ by
-          dsimp only [Pi.smul_apply']
-          simp only [(hu hy).1, Pi.one_apply, one_smul]))
-    exact hlocal.contMDiffAt (huopen.mem_nhds hxu)
-
 omit [ContMDiffVectorBundle ∞ G W I] in
 /-- A hom-bundle section with finite-dimensional source fibres is `C^n` on a set as soon as its
 evaluation on every globally smooth section is `C^n` there. -/
@@ -182,6 +151,34 @@ theorem contMDiffOn_hom_of_forall_contMDiff {n : ℕ∞ω} (hn : n ≤ ∞)
     (contMDiffOn_id (I := I)) (fun y hy ↦ hy.2.2) fun i ↦ ?_
   refine ((hA (s i) (hs i)).mono inter_subset_left).congr fun y hy ↦ ?_
   simp [ht y hy.2.1 i]
+
+/-- A hom-bundle section with finite-dimensional source fibres is smooth exactly when
+its evaluation on every globally smooth section is smooth. The target fibres need not
+be finite-dimensional, and the base need not be compact or boundaryless. -/
+theorem contMDiff_hom_iff (A : Π x : M, V x →L[ℝ] W x) :
+    ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) ∞
+      (fun x ↦ TotalSpace.mk' (F →L[ℝ] G) x (A x)) ↔
+      ∀ s : Π x : M, V x, CMDiff ∞ (T% s) →
+        ContMDiff I (I.prod 𝓘(ℝ, G)) ∞ (fun x ↦ TotalSpace.mk' G x (A x (s x))) :=
+  ⟨fun hA _ hs ↦ hA.clm_bundle_apply hs, fun hA ↦ contMDiffOn_univ.1
+    (contMDiffOn_hom_of_forall_contMDiff le_rfl fun s hs ↦ (hA s hs).contMDiffOn)⟩
+
+omit [ContMDiffVectorBundle ∞ G W I] in
+/-- Multiplying a `C^n` hom-bundle section with finite-dimensional source fibres by a constant
+of a normed field extension `𝕜` of `ℝ` acting on the target fibres gives a `C^n` section. -/
+theorem contMDiffOn_hom_const_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G] [∀ x, Module 𝕜 (W x)]
+    [∀ x, IsScalarTower ℝ 𝕜 (W x)] [∀ x, ContinuousConstSMul 𝕜 (W x)] [VectorBundle 𝕜 G W]
+    {n : ℕ∞ω} (hn : n ≤ ∞) [ContMDiffVectorBundle n G W I] {u : Set M}
+    {A : Π x : M, V x →L[ℝ] W x} (c : 𝕜)
+    (hA : ContMDiffOn I (I.prod 𝓘(ℝ, F →L[ℝ] G)) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] G) y (A y)) u) :
+    ContMDiffOn I (I.prod 𝓘(ℝ, F →L[ℝ] G)) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] G) y ((c • A) y)) u := by
+  have : ContMDiffVectorBundle n F V I := .of_le hn
+  refine contMDiffOn_hom_of_forall_contMDiff hn fun s hs ↦ ?_
+  exact ContMDiffOn.smul_totalSpace (a := fun _ ↦ c) contMDiffOn_const
+    (hA.clm_bundle_apply ((hs.of_le hn).contMDiffOn))
 
 section PullbackForm
 

@@ -356,12 +356,12 @@ theorem apply_sum [VectorBundle ℝ F V] (hD : IsRealCauchyRiemannOperator F j D
 /-! ### Locality -/
 
 /-- **Locality.** If two sections differentiable at `x` agree on a neighbourhood of `x`, then a
-real Cauchy–Riemann operator takes the same value on them at `x`. The proof follows Mathlib's
-`IsCovariantDerivativeOn.congr_of_eqOn`. -/
+real Cauchy–Riemann operator takes the same value on them at `x`. -/
 theorem apply_eq_of_eqOn (hD : IsRealCauchyRiemannOperator F j D) {σ σ' : Π x : M, V x} {x : M}
     {s : Set M} (hσ : MDiffAt (T% σ) x) (hσ' : MDiffAt (T% σ') x) (hs : s ∈ 𝓝 x)
     (h : ∀ y ∈ s, σ y = σ' y) :
     D σ x = D σ' x := by
+  -- The proof follows Mathlib's `IsCovariantDerivativeOn.congr_of_eqOn`.
   classical
   -- Multiply by the indicator `ψ` of `s`: it is locally constant at `x`, so `D (ψ • σ) x = D σ x`.
   let ψ : M → ℝ := s.indicator 1
