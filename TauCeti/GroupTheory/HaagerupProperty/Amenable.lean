@@ -32,8 +32,7 @@ namespace TauCeti
 
 variable {G : Type*} [Group G]
 
-/-- Groups with Følner sets have the Haagerup property. The approximating positive-definite
-functions can be taken to have finite support, namely inside `FF⁻¹` for a Følner set `F`. -/
+/-- Groups with Følner sets have the Haagerup property. -/
 theorem hasHaagerupProperty_of_hasFoelnerSets (hG : HasFoelnerSets G) :
     HasHaagerupProperty G := by
   classical
