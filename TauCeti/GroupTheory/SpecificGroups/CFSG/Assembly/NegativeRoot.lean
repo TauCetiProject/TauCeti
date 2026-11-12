@@ -212,6 +212,95 @@ theorem negativeSimpleRootSubgroup_tits (hv : LieTypeIndex.tits.Valid)
 
 end Branches
 
+/-- Prime-field Frobenius raises every negative simple root parameter to the characteristic. -/
+@[simp]
+theorem primeFrobenius_negativeSimpleRootSubgroup (d : ValidLieTypeIndex) (i : Fin d.rank)
+    (u : Multiplicative d.Closure) :
+    d.primeFrobenius (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.characteristic)) := by
+  -- The branch equations identify the maps and the ambient group instances with the native
+  -- carriers. Their signed-root equations already cover negative roots, so no separate
+  -- family-level negative-root lemmas are needed. The carrier rewrites use erw because the
+  -- dispatched group instances must reduce to the carriers' instances. The final rfl steps
+  -- only reduce projections from the family-index subtypes; no carrier definition is unfolded.
+  obtain ⟨d, hv⟩ := d
+  cases d
+  · rw [primeFrobenius_A, negativeSimpleRootSubgroup_A, GraphTwistedIndex.primeFrobenius_A,
+      TypeALieIndex.primeFrobenius_def]
+    erw [SlStd.frobenius_rootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_twistedA, negativeSimpleRootSubgroup_twistedA,
+      GraphTwistedIndex.primeFrobenius_twistedA, TypeALieIndex.primeFrobenius_def]
+    erw [SlStd.frobenius_rootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_B, negativeSimpleRootSubgroup_B, GraphTwistedIndex.primeFrobenius_B,
+      TypeBLieIndex.primeFrobenius_def]
+    erw [TypeBSpinCarrier.frobenius_rootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_C, negativeSimpleRootSubgroup_C, GraphTwistedIndex.primeFrobenius_C,
+      TypeCLieIndex.primeFrobenius_def]
+    erw [SpStd.frobenius_rootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_D, negativeSimpleRootSubgroup_D, GraphTwistedIndex.primeFrobenius_D,
+      TypeDDiagramLieIndex.primeFrobenius_def]
+    erw [TypeDSpinCarrier.frobenius_rootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_twistedD, negativeSimpleRootSubgroup_twistedD,
+      GraphTwistedIndex.primeFrobenius_twistedD, TypeDDiagramLieIndex.primeFrobenius_def]
+    erw [TypeDSpinCarrier.frobenius_rootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_E6, negativeSimpleRootSubgroup_E6, GraphTwistedIndex.primeFrobenius_E6,
+      TypeE6LieIndex.primeFrobenius_def]
+    erw [E6Minuscule.frobenius_rootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_E7, negativeSimpleRootSubgroup_E7, GraphTwistedIndex.primeFrobenius_E7,
+      TypeE7LieIndex.primeFrobenius_def]
+    erw [E7Minuscule.frobenius_rootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_E8, negativeSimpleRootSubgroup_E8, GraphTwistedIndex.primeFrobenius_E8]
+    rw [UnimodularExceptionalIndex.primeFrobenius_eq_geckPrimeFrobenius,
+      geckPrimeFrobenius_def]
+    erw [DynkinType.geckFrobenius_geckRootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_F4, negativeSimpleRootSubgroup_F4, GraphTwistedIndex.primeFrobenius_F4]
+    rw [UnimodularExceptionalIndex.primeFrobenius_eq_geckPrimeFrobenius,
+      geckPrimeFrobenius_def]
+    erw [DynkinType.geckFrobenius_geckRootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_G2, negativeSimpleRootSubgroup_G2, GraphTwistedIndex.primeFrobenius_G2]
+    rw [UnimodularExceptionalIndex.primeFrobenius_eq_geckPrimeFrobenius,
+      geckPrimeFrobenius_def]
+    erw [DynkinType.geckFrobenius_geckRootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_twistedE6, negativeSimpleRootSubgroup_twistedE6,
+      GraphTwistedIndex.primeFrobenius_twistedE6, TypeTwistedE6LieIndex.primeFrobenius_def]
+    erw [E6DoubledMinuscule.frobenius_rootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_trialityD4, negativeSimpleRootSubgroup_trialityD4,
+      GraphTwistedIndex.primeFrobenius_trialityD4, TypeTrialityD4LieIndex.primeFrobenius_def]
+    erw [D4Tripled.frobenius_rootSubgroupPoints, pow_one]
+    rfl
+  · rw [primeFrobenius_suzuki, negativeSimpleRootSubgroup_suzuki,
+      RankTwoBLieIndex.primeFrobenius_def]
+    erw [SpStd.frobenius_rootSubgroupPoints, pow_one]
+    rfl
+  case reeG2 m =>
+    rw [primeFrobenius_reeG2, negativeSimpleRootSubgroup_reeG2, ReeG2LieIndex.primeFrobenius_def]
+    erw [G2ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one,
+      ← (ReeG2LieIndex.of m hv).characteristic_eq_three]
+    rfl
+  case reeF4 m =>
+    rw [primeFrobenius_reeF4, negativeSimpleRootSubgroup_reeF4, ReeF4LieIndex.primeFrobenius_def]
+    erw [F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one,
+      ← (ReeF4LieIndex.of m hv).characteristic_eq_two]
+    rfl
+  case tits =>
+    rw [primeFrobenius_tits, negativeSimpleRootSubgroup_tits, TitsLieIndex.frobenius_def]
+    erw [F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one,
+      ← TitsLieIndex.of.characteristic_eq_two]
+    rfl
+
 /-- Field Frobenius raises every negative simple root parameter to the indexed field order. -/
 @[simp]
 theorem frobenius_negativeSimpleRootSubgroup (d : ValidLieTypeIndex) (i : Fin d.rank)
@@ -219,83 +308,17 @@ theorem frobenius_negativeSimpleRootSubgroup (d : ValidLieTypeIndex) (i : Fin d.
     d.frobenius (d.negativeSimpleRootSubgroup i u) =
       d.negativeSimpleRootSubgroup i
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.fieldOrder)) := by
-  obtain ⟨d, hv⟩ := d
-  cases d
-  all_goals dsimp only [negativeSimpleRootSubgroup]
-  -- Each branch is the carrier's signed-root Frobenius equation. The application retains
-  -- the dispatched group instance when the branch equations rewrite its maps: erw reduces
-  -- that instance to the carrier's instance, and rfl removes the index-subtype wrappers.
-  · erw [frobenius_A, GraphTwistedIndex.frobenius_A,
-      TypeALieIndex.frobenius_def, SlStd.frobenius_rootSubgroupPoints,
-      ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_twistedA, GraphTwistedIndex.frobenius_twistedA,
-      TypeALieIndex.frobenius_def,
-      SlStd.frobenius_rootSubgroupPoints, ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_B, GraphTwistedIndex.frobenius_B,
-      TypeBLieIndex.frobenius_def, TypeBSpinCarrier.frobenius_rootSubgroupPoints,
-      ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_C, GraphTwistedIndex.frobenius_C,
-      TypeCLieIndex.frobenius_def, SpStd.frobenius_rootSubgroupPoints,
-      ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_D, GraphTwistedIndex.frobenius_D,
-      TypeDDiagramLieIndex.frobenius_def, TypeDSpinCarrier.frobenius_rootSubgroupPoints,
-      ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_twistedD, GraphTwistedIndex.frobenius_twistedD,
-      TypeDDiagramLieIndex.frobenius_def,
-      TypeDSpinCarrier.frobenius_rootSubgroupPoints, ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_E6, GraphTwistedIndex.frobenius_E6,
-      TypeE6LieIndex.steinberg_def, E6Minuscule.frobenius_rootSubgroupPoints,
-      ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_E7, GraphTwistedIndex.frobenius_E7,
-      TypeE7LieIndex.steinberg_def, E7Minuscule.frobenius_rootSubgroupPoints,
-      ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_E8, GraphTwistedIndex.frobenius_E8,
-      UnimodularExceptionalIndex.steinberg_eq_geckFrobenius, geckFrobenius_def,
-      DynkinType.geckFrobenius_geckRootSubgroupPoints, ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_F4, GraphTwistedIndex.frobenius_F4,
-      UnimodularExceptionalIndex.steinberg_eq_geckFrobenius, geckFrobenius_def,
-      DynkinType.geckFrobenius_geckRootSubgroupPoints, ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_G2, GraphTwistedIndex.frobenius_G2,
-      UnimodularExceptionalIndex.steinberg_eq_geckFrobenius, geckFrobenius_def,
-      DynkinType.geckFrobenius_geckRootSubgroupPoints, ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_twistedE6, GraphTwistedIndex.frobenius_twistedE6,
-      TypeTwistedE6LieIndex.frobenius_def,
-      E6DoubledMinuscule.frobenius_rootSubgroupPoints, ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_trialityD4, GraphTwistedIndex.frobenius_trialityD4,
-      TypeTrialityD4LieIndex.frobenius_def,
-      D4Tripled.frobenius_rootSubgroupPoints, ← fieldOrder_eq_characteristic_pow]
-    rfl
-  · erw [frobenius_suzuki,
-      RankTwoBLieIndex.frobenius_def, SpStd.frobenius_rootSubgroupPoints,
-      ← fieldOrder_eq_characteristic_pow]
-    rfl
-  case reeG2 m =>
-    erw [frobenius_reeG2, ReeG2LieIndex.frobenius_def,
-      G2ShortRoot.PrimeField.frobenius_rootSubgroupPoints,
-      ← ReeG2LieIndex.fieldOrder_eq_three_pow (ReeG2LieIndex.of m hv)]
-    rfl
-  case reeF4 m =>
-    erw [frobenius_reeF4, ReeF4LieIndex.frobenius_def,
-      F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints,
-      ← ReeF4LieIndex.fieldOrder_eq_two_pow (ReeF4LieIndex.of m hv)]
-    rfl
-  case tits =>
-    erw [frobenius_tits, TitsLieIndex.frobenius_def,
-      F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one,
-      ← TitsLieIndex.fieldOrder_eq_two TitsLieIndex.of]
-    rfl
+  have iterate (k : ℕ) :
+      (d.primeFrobenius : d.AmbientGroup → d.AmbientGroup)^[k]
+        (d.negativeSimpleRootSubgroup i u) =
+        d.negativeSimpleRootSubgroup i
+          (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.characteristic ^ k)) := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+        simp [Function.iterate_succ_apply', ih, ← pow_mul, pow_succ]
+  erw [frobenius_eq_primeFrobenius_pow, fieldOrder_eq_characteristic_pow]
+  exact iterate d.fieldExponent
 
 end
 
