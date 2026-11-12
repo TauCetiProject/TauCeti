@@ -440,12 +440,12 @@ private theorem le_mul_add_of_cutoff_mul_le {lam Lam R M : ℝ} {c x₀ : Euclid
       lam⁻¹ * ((eLpNorm (fun y ↦ (f y)⁻) N (volume.restrict B)).toReal +
         K' * (eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal (2 * n / (m + 2)))
           (volume.restrict B)).toReal ^ q) := by
-    rw [hGfun, eLpNorm_const_smul, ENNReal.toReal_mul, toReal_enorm,
+    rw [hGfun, eLpNorm_const_smul, ENNReal.toReal_mul, toReal_eNorm,
       Real.norm_of_nonneg (inv_nonneg.2 hlam.le), ← hq']
     refine mul_le_mul_of_nonneg_left ?_ (inv_nonneg.2 hlam.le)
     refine (ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hf.eLpNorm_ne_top, hfin⟩) hadd).trans_eq ?_
     rw [ENNReal.toReal_add hf.eLpNorm_ne_top hfin, hKu, eLpNorm_const_smul, ENNReal.toReal_mul,
-      toReal_enorm, Real.norm_of_nonneg hK', eLpNorm_norm_rpow _ hupos hq, ENNReal.toReal_rpow]
+      toReal_eNorm, Real.norm_of_nonneg hK', eLpNorm_norm_rpow _ hupos hq, ENNReal.toReal_rpow]
   calc M ≤ 2 * R / (n * (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal ^ (n : ℝ)⁻¹) *
         (eLpNorm (fun y ↦ lam⁻¹ * G y) N (volume.restrict B)).toReal := habp
     _ ≤ _ := by
