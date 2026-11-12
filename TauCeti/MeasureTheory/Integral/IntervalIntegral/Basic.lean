@@ -33,7 +33,7 @@ not belong to any particular application.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
 * `MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub`: for `f` integrable on `(a, b)`, the
-  integral over a subinterval `(s, t)` is a difference of primitives based at `a`.
+  integral over a subinterval `(s, t)` is a difference of primitives based at any `c ∈ [a, b]`.
 * `MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm`: an interval integral of an
   integrable function is bounded in norm by the integral of its norm over the whole space.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
@@ -202,16 +202,17 @@ theorem MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc {E : Type*}
   ((integrableOn_Icc_iff_integrableOn_Ioo (f := f)).2 hf |>.mono_set
     (uIcc_subset_Icc hs ht)).intervalIntegrable
 
-/-- For `f` integrable on `(a, b)` and `a ≤ s ≤ t ≤ b`, the integral of `f` over `(s, t)` is the
-difference of the primitives `∫ x in a..t, f x` and `∫ x in a..s, f x` based at `a`. -/
+/-- For `f` integrable on `(a, b)`, `c ∈ [a, b]` and `a ≤ s ≤ t ≤ b`, the integral of `f` over
+`(s, t)` is the difference of the primitives `∫ x in c..t, f x` and `∫ x in c..s, f x` based at
+`c`. -/
 theorem MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {f : ℝ → E} {μ : Measure ℝ} [NullSingletonClass μ] {a b s t : ℝ}
-    (hf : IntegrableOn f (Ioo a b) μ) (has : a ≤ s) (hst : s ≤ t) (htb : t ≤ b) :
-    ∫ x in Ioo s t, f x ∂μ = (∫ x in a..t, f x ∂μ) - ∫ x in a..s, f x ∂μ := by
-  have ha : a ∈ Icc a b := left_mem_Icc.2 (has.trans (hst.trans htb))
+    [NormedSpace ℝ E] {f : ℝ → E} {μ : Measure ℝ} [NullSingletonClass μ] {a b c s t : ℝ}
+    (hf : IntegrableOn f (Ioo a b) μ) (hc : c ∈ Icc a b) (has : a ≤ s) (hst : s ≤ t)
+    (htb : t ≤ b) :
+    ∫ x in Ioo s t, f x ∂μ = (∫ x in c..t, f x ∂μ) - ∫ x in c..s, f x ∂μ := by
   rw [intervalIntegral.integral_interval_sub_left
-      (hf.intervalIntegrable_of_mem_Icc ha ⟨has.trans hst, htb⟩)
-      (hf.intervalIntegrable_of_mem_Icc ha ⟨has, hst.trans htb⟩),
+      (hf.intervalIntegrable_of_mem_Icc hc ⟨has.trans hst, htb⟩)
+      (hf.intervalIntegrable_of_mem_Icc hc ⟨has, hst.trans htb⟩),
     intervalIntegral.integral_of_le hst, integral_Ioc_eq_integral_Ioo]
 
 /-- The norm of an interval integral of an integrable function is at most the integral of its

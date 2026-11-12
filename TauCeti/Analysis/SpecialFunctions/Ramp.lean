@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # The piecewise linear ramp
@@ -26,14 +27,21 @@ one-sided approximations and as test functions.
 * `TauCeti.ramp`: the projection of `(x - s) / δ` onto `[0, 1]`; for `δ > 0`, the ramp from `0`
   at `s` to `1` at `s + δ`.
 * `TauCeti.ramp_eq_div`: for `δ > 0` the ramp equals `(x - s) / δ` on `[s, s + δ]`.
+* `TauCeti.ramp_eq_zero_iff`, `TauCeti.ramp_eq_one_iff`: for `δ > 0` the ramp vanishes exactly on
+  `(-∞, s]` and equals `1` exactly on `[s + δ, ∞)`.
+* `TauCeti.monotone_ramp`, `TauCeti.ramp_left_antitone`: for `δ ≥ 0` the ramp is monotone in `x`
+  and antitone in its start `s`.
 * `TauCeti.lipschitzWith_ramp`: for `δ > 0` the ramp is `δ⁻¹`-Lipschitz.
 * `TauCeti.hasDerivAt_ramp`: for `δ > 0`, away from its two corners the ramp has derivative `δ⁻¹`
   on `(s, s + δ)` and `0` elsewhere.
 * `TauCeti.deriv_ramp_ae_eq`, `TauCeti.memLp_deriv_ramp`: for `δ > 0` the derivative of the ramp
   is almost everywhere `δ⁻¹` times the indicator of `(s, s + δ)`, so it lies in every `Lᵖ`.
-* `TauCeti.ramp_sub_ramp_mem_Icc`, `TauCeti.ramp_sub_ramp_eq_zero_of_notMem`: for `s ≤ t`, the
-  difference `ramp s δ - ramp t δ` takes values in `[0, 1]`, and for `δ > 0` it vanishes off
-  `(s, t + δ)`.
+* `TauCeti.ramp_sub_ramp_mem_Icc`, `TauCeti.ramp_sub_ramp_eq_zero_of_notMem`: for `δ ≥ 0` and
+  `s ≤ t`, the difference `ramp s δ - ramp t δ` takes values in `[0, 1]`, and for `δ > 0` it
+  vanishes off `(s, t + δ)`.
+* `TauCeti.deriv_ramp_sub_ramp_ae_eq`, `TauCeti.memLp_deriv_ramp_sub_ramp`: for `δ > 0` the
+  derivative of `ramp s δ - ramp t δ` is almost everywhere the difference of the two normalized
+  indicators, so it lies in every `Lᵖ`.
 -/
 
 public section
@@ -53,6 +61,7 @@ theorem ramp_eq_projIcc (s δ x : ℝ) :
     ramp s δ x = (projIcc 0 1 zero_le_one ((x - s) / δ) : ℝ) := by
   rw [ramp_def, coe_projIcc]
 
+@[fun_prop]
 theorem continuous_ramp (s δ : ℝ) : Continuous (ramp s δ) :=
   continuous_const.max (continuous_const.min ((continuous_id.sub continuous_const).div_const δ))
 
@@ -73,7 +82,40 @@ theorem ramp_eq_div {s δ x : ℝ} (hδ : 0 < δ) (hx : x ∈ Icc s (s + δ)) :
   rw [ramp_def, min_eq_right ((div_le_iff₀ hδ).2 (by linarith [hx.2])),
     max_eq_right (div_nonneg (by linarith [hx.1]) hδ.le)]
 
-/-- Moving the start of the ramp to the right lowers it. -/
+@[simp]
+theorem ramp_self (s δ : ℝ) : ramp s δ s = 0 := by
+  simp [ramp_def]
+
+/-- A ramp of width zero vanishes identically. -/
+@[simp]
+theorem ramp_zero_width (s x : ℝ) : ramp s 0 x = 0 := by
+  simp [ramp_def]
+
+@[simp]
+theorem ramp_self_add {s δ : ℝ} (hδ : δ ≠ 0) : ramp s δ (s + δ) = 1 := by
+  simp [ramp_def, hδ]
+
+/-- For `δ > 0` the ramp vanishes exactly on `(-∞, s]`. -/
+theorem ramp_eq_zero_iff {s δ x : ℝ} (hδ : 0 < δ) : ramp s δ x = 0 ↔ x ≤ s := by
+  refine ⟨fun h ↦ not_lt.1 fun hx ↦ ?_, ramp_eq_zero hδ.le⟩
+  have hpos : 0 < min 1 ((x - s) / δ) := lt_min one_pos (div_pos (sub_pos.2 hx) hδ)
+  rw [ramp_def, max_eq_right hpos.le] at h
+  exact hpos.ne' h
+
+/-- For `δ > 0` the ramp equals `1` exactly on `[s + δ, ∞)`. -/
+theorem ramp_eq_one_iff {s δ x : ℝ} (hδ : 0 < δ) : ramp s δ x = 1 ↔ s + δ ≤ x := by
+  refine ⟨fun h ↦ not_lt.1 fun hx ↦ ?_, ramp_eq_one hδ⟩
+  rcases le_or_gt x s with hxs | hxs
+  · rw [ramp_eq_zero hδ.le hxs] at h
+    exact zero_ne_one h
+  · rw [ramp_eq_div hδ ⟨hxs.le, hx.le⟩, div_eq_one_iff_eq hδ.ne'] at h
+    linarith
+
+/-- For `δ ≥ 0` the ramp is monotone. -/
+theorem monotone_ramp (s : ℝ) {δ : ℝ} (hδ : 0 ≤ δ) : Monotone (ramp s δ) :=
+  fun _ _ h ↦ max_le_max le_rfl (min_le_min le_rfl (div_le_div_of_nonneg_right (by linarith) hδ))
+
+/-- For `δ ≥ 0`, moving the start of the ramp to the right lowers it. -/
 theorem ramp_left_antitone {δ : ℝ} (hδ : 0 ≤ δ) (x : ℝ) : Antitone fun s ↦ ramp s δ x :=
   fun _ _ h ↦ max_le_max le_rfl (min_le_min le_rfl (div_le_div_of_nonneg_right (by linarith) hδ))
 
@@ -144,5 +186,21 @@ theorem memLp_deriv_ramp {s δ : ℝ} (hδ : 0 < δ) (p : ENNReal) :
     MemLp (deriv (ramp s δ)) p :=
   (memLp_indicator_const p measurableSet_Ioo.nullMeasurableSet δ⁻¹
     (Or.inr measure_Ioo_lt_top.ne)).ae_eq (deriv_ramp_ae_eq hδ).symm
+
+/-- For `δ > 0` the derivative of `ramp s δ - ramp t δ` is almost everywhere the difference of
+the normalized indicators of `(s, s + δ)` and `(t, t + δ)`. -/
+theorem deriv_ramp_sub_ramp_ae_eq {s t δ : ℝ} (hδ : 0 < δ) :
+    deriv (ramp s δ - ramp t δ) =ᵐ[volume] fun y ↦
+      (Ioo s (s + δ)).indicator (fun _ ↦ δ⁻¹) y - (Ioo t (t + δ)).indicator (fun _ ↦ δ⁻¹) y := by
+  filter_upwards [ae_hasDerivAt_ramp (s := s) hδ, ae_hasDerivAt_ramp (s := t) hδ] with y h₁ h₂
+  exact (h₁.sub h₂).deriv
+
+/-- For `δ > 0` the derivative of `ramp s δ - ramp t δ` lies in every `Lᵖ`. -/
+theorem memLp_deriv_ramp_sub_ramp {s t δ : ℝ} (hδ : 0 < δ) (p : ENNReal) :
+    MemLp (deriv (ramp s δ - ramp t δ)) p :=
+  ((memLp_deriv_ramp (s := s) hδ p).sub (memLp_deriv_ramp (s := t) hδ p)).ae_eq (by
+    filter_upwards [deriv_ramp_sub_ramp_ae_eq (s := s) (t := t) hδ, deriv_ramp_ae_eq (s := s) hδ,
+      deriv_ramp_ae_eq (s := t) hδ] with y h h₁ h₂
+    rw [h, Pi.sub_apply, h₁, h₂])
 
 end TauCeti

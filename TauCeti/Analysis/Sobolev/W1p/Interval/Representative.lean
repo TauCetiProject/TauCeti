@@ -23,7 +23,8 @@ evaluating it at the two endpoints defines the bounded trace `W1p.intervalTraceL
 
 The construction uses the weak fundamental theorem of calculus in
 `TauCeti.Analysis.Sobolev.WeakDeriv.Interval`, not smooth density, so it also applies at
-`p = ∞`. Integration by parts is stated for two Sobolev representatives.
+`p = ∞`. Bounds on the weak gradient give mean-value bounds on the representative, and
+integration by parts is stated for two Sobolev representatives.
 
 ## References
 
@@ -223,6 +224,33 @@ theorem integral_gradient_eq_intervalRepresentativeL_sub (hab : a < b)
 theorem intervalIntegrable_gradient (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : ℝ}
     (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) : IntervalIntegrable (gradient u) volume s t :=
   IntegrableOn.intervalIntegrable_of_mem_Icc ((Lp.memLp _).integrable (by exact Fact.out)) hs ht
+
+/-- **Mean-value lower bound.** If the weak gradient is at least `σ` almost everywhere on
+`(s, t)`, then the representative increases by at least `(t - s) σ` from `s` to `t`. -/
+theorem mul_le_intervalRepresentativeL_sub_of_le_gradient (hab : a < b)
+    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : Icc a b} (hst : (s : ℝ) ≤ t) {σ : ℝ}
+    (hσ : ∀ᵐ r, r ∈ Ioo (s : ℝ) t → σ ≤ gradient u r) :
+    ((t : ℝ) - s) * σ ≤ intervalRepresentativeL hab u t - intervalRepresentativeL hab u s := by
+  have h := intervalIntegral.integral_mono_ae_restrict hst intervalIntegrable_const
+    (intervalIntegrable_gradient u s.property t.property) (f := fun _ ↦ σ) (by
+      rw [← Measure.restrict_congr_set Ioo_ae_eq_Icc]
+      exact (ae_restrict_iff' measurableSet_Ioo).2 hσ)
+  rwa [intervalIntegral.integral_const, smul_eq_mul,
+    integral_gradient_eq_intervalRepresentativeL_sub hab u s t] at h
+
+/-- **Mean-value upper bound.** If the weak gradient is at most `σ` almost everywhere on
+`(s, t)`, then the representative increases by at most `(t - s) σ` from `s` to `t`. -/
+theorem intervalRepresentativeL_sub_le_mul_of_gradient_le (hab : a < b)
+    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : Icc a b} (hst : (s : ℝ) ≤ t) {σ : ℝ}
+    (hσ : ∀ᵐ r, r ∈ Ioo (s : ℝ) t → gradient u r ≤ σ) :
+    intervalRepresentativeL hab u t - intervalRepresentativeL hab u s ≤ ((t : ℝ) - s) * σ := by
+  have h := intervalIntegral.integral_mono_ae_restrict hst
+    (intervalIntegrable_gradient u s.property t.property) intervalIntegrable_const
+    (g := fun _ ↦ σ) (by
+      rw [← Measure.restrict_congr_set Ioo_ae_eq_Icc]
+      exact (ae_restrict_iff' measurableSet_Ioo).2 hσ)
+  rwa [intervalIntegral.integral_const, smul_eq_mul,
+    integral_gradient_eq_intervalRepresentativeL_sub hab u s t] at h
 
 /-- In the open interval the classical derivative of the representative agrees almost
 everywhere with the recorded weak gradient. -/

@@ -71,15 +71,19 @@ theorem exists_w1p_value_gradient_ae_eq (hf : AbsolutelyContinuousOnInterval f a
 derivative in `Lᵖ(a,b)`, represents a class in `W^{1,p}_0(a,b)`; the recorded weak gradient is
 its classical derivative almost everywhere. -/
 theorem exists_mem_w1p0Submodule_value_gradient_ae_eq (hf : AbsolutelyContinuousOnInterval f a b)
-    (hdf : MemLp (deriv f) p (volume.restrict (Ioo a b))) (hab : a < b) (hp : p ≠ ∞)
+    (hdf : MemLp (deriv f) p (volume.restrict (Ioo a b))) (hp : p ≠ ∞)
     (ha : f a = 0) (hb : f b = 0) :
     ∃ u ∈ TauCeti.w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ p,
       TauCeti.W1p.value u =ᵐ[volume.restrict (Ioo a b)] f ∧
       TauCeti.W1p.gradient u =ᵐ[volume.restrict (Ioo a b)] deriv f := by
   obtain ⟨u, hv, hg⟩ := hf.exists_w1p_value_gradient_ae_eq hdf
   refine ⟨u, TauCeti.W1p.mem_w1p0Submodule_of_continuousOn_closure hp
-    (by simpa using Metric.isBounded_Ioo a b) ?_ ?_ hv, hv, hg⟩
+    (by simpa using Metric.isBounded_Ioo a b) ?_ ?_ hv, hv, hg⟩ <;>
+    rcases le_or_gt b a with hab | hab
+  -- On an empty interval the closure and the frontier are empty.
+  · simp [Ioo_eq_empty_of_le hab]
   · simpa [closure_Ioo hab.ne, uIcc_of_le hab.le] using hf.continuousOn
+  · simp [Ioo_eq_empty_of_le hab]
   · intro t ht
     simp only [Opens.coe_mk, frontier_Ioo hab, mem_insert_iff, mem_singleton_iff] at ht
     rcases ht with rfl | rfl
