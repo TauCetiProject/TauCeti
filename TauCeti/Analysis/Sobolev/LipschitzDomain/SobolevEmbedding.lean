@@ -73,14 +73,12 @@ theorem W1p.exists_sobolevEmbeddingL_of_isLipschitzDomainWith (hpstar : pstar �
     exact Measure.restrict_mono_set volume (by simp)
   refine ⟨(Lp.LpToLpOfMeasureLeSMul ENNReal.one_ne_top hle).comp
     ((W1p.sobolevEmbeddingTopL hpstar hexp).comp T), fun u => ?_⟩
-  have hu : W1p.restrictL le_top (T u) = u := by
-    simpa using congrArg (· u) hT
   filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul ENNReal.one_ne_top hle
       (W1p.sobolevEmbeddingTopL hpstar hexp (T u)),
     ae_restrict_of_ae_restrict_of_subset (by simp)
       (W1p.coeFn_sobolevEmbeddingTopL hpstar hexp (T u)),
-    W1p.value_restrictL_ae le_top (T u)] with x h1 h2 h3
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h1, h2, ← h3, hu]
+    W1p.value_ae_eq_of_restrictL_comp_eq_id le_top hT u] with x h1 h2 h3
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h1, h2, h3]
 
 /-- **The Sobolev inequality on bounded Lipschitz domains.** If `Ω ⊆ ℝ × E` is a bounded Lipschitz
 domain of dimension `n`, `1 ≤ p` and `1/p⋆ + 1/n = 1/p` with `p⋆ < ∞`, then for every `q ≤ p⋆`
