@@ -137,10 +137,8 @@ theorem tsum_neg_log_one_sub_sub_absNorm_rpow_nonneg {s : ℝ} :
     · refine ⟨⌈(2 : ℝ) ^ (-s)⁻¹⌉₊, fun 𝔭 hlt' ↦ ?_⟩
       have hN : (2 : ℝ) ^ (-s)⁻¹ ≤ Ideal.absNorm 𝔭.asIdeal :=
         (Nat.le_ceil _).trans (by exact_mod_cast hlt'.le)
-      have hy : 2 ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) := by
-        calc (2 : ℝ) = ((2 : ℝ) ^ (-s)⁻¹) ^ (-s) := by
-              rw [← Real.rpow_mul zero_le_two, inv_mul_cancel₀ (neg_pos.2 hlt).ne', Real.rpow_one]
-          _ ≤ _ := Real.rpow_le_rpow (by positivity) hN (neg_pos.2 hlt).le
+      have hy : 2 ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) :=
+        (Real.rpow_inv_le_iff_of_pos (by positivity) (by positivity) (neg_pos.mpr hlt)).mp hN
       have hlog : 0 ≤ Real.log (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) := by
         rw [← neg_sub, Real.log_neg_eq_log]
         exact Real.log_nonneg (by linarith)
