@@ -114,14 +114,11 @@ end GX
 radical over `H`. -/
 theorem IsSeparatedBy.Rad_ker_eq (h : IsSeparatedBy κ ι) (π : GHom (inl : G →* GX G X) κ) :
     Rad ι ((π : GX G X →* K).ker : Set (GX G X)) = (π : GX G X →* K).ker := by
-  refine le_antisymm (fun w hw => ?_) (subset_Rad _)
-  -- A separating homomorphism composed with `π` is a solution of `ker π` at which `w` survives.
-  by_contra hwπ
-  obtain ⟨φ, hφ⟩ := (isSeparatedBy_def _ _).1 h (π w) hwπ
-  have he (s : GX G X) : eval ι (fun x => φ (π (inr (FreeGroup.of x)))) s = φ (π s) := by
-    simpa using DFunLike.congr_fun (eval_eq_of_comp_inl (φ.comp π).comp_coeff) s
-  exact hφ ((he w).symm.trans (mem_Rad.1 hw _ (mem_V.2 fun s hs =>
-    (he s).trans (by rw [show π s = 1 from hs, map_one]))))
+  -- `π` induces an injective `G`-homomorphism `G[X] ⧸ ker π → K`.
+  let ψ : GHom (GX.quotientCoeff (π : GX G X →* K).ker) κ :=
+    ⟨QuotientGroup.kerLift (π : GX G X →* K), fun g => by simp⟩
+  rw [← GX.isSeparatedBy_quotientCoeff_iff]
+  exact h.of_injective ψ (QuotientGroup.kerLift_injective _)
 
 /-- A group `K` generated over `G` by the images of the variables, through a surjective
 `G`-homomorphism `π : G[X] →* K`, is separated by `H` if and only if the kernel of `π` is its own
@@ -145,7 +142,8 @@ theorem IsEquationallyNoetherian.exists_forall_ge_ker_eq [Finite X]
     ∃ m, ∀ k, m ≤ k → (π k : GX G X →* K k).ker = (π m : GX G X →* K m).ker := by
   -- The radicals of the kernels stabilise, and each kernel is its own radical.
   obtain ⟨m, hm⟩ := hH.exists_forall_ge_Rad_eq
-    (S := fun k => ((π k : GX G X →* K k).ker : Set (GX G X))) fun _ _ hij => hker hij
+    (S := fun k => ((π k : GX G X →* K k).ker : Set (GX G X))) fun _ _ hij =>
+      Rad_monotone ι (SetLike.coe_subset_coe.2 (hker hij))
   have hrad k := (hsep k).Rad_ker_eq (π k)
   exact ⟨m, fun k hk => (hrad k).symm.trans ((hm k hk).trans (hrad m))⟩
 
@@ -173,7 +171,8 @@ theorem IsEquationallyNoetherian.exists_forall_ge_injective [Finite X]
   obtain ⟨w, rfl⟩ := hps k x
   have hw : w ∈ (p (k + 1) : GX G X →* K (k + 1)).ker := by
     simpa [MonoidHom.mem_ker, hp, GHom.coe_comp] using hx
-  rwa [hm (k + 1) (hk.trans k.le_succ), ← hm k hk] at hw
+  rw [hm (k + 1) (hk.trans k.le_succ), ← hm k hk, MonoidHom.mem_ker] at hw
+  simpa using hw
 
 /-- The coordinate group `G_{R(S)}` is separated by `H`. -/
 theorem CoordGroup.isSeparatedBy_coeff (S : Set (GX G X)) :
