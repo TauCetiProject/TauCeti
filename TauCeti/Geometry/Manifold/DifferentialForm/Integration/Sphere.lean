@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
-public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
+public import TauCeti.Topology.Homotopy.HomotopyGroup.FundamentalGroupAction
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 import TauCeti.Geometry.Manifold.SmoothApprox
 import TauCeti.Topology.Homotopy.Homotopic.Rel
@@ -59,9 +59,9 @@ The integral does not depend on the base point: transporting a class along a pat
 smooth path (`Path.exists_homotopic_contMDiff_extend`), along which a smooth sphere is slid by a
 smooth homotopy that sends the boundary of the square to the moving base point. The side faces
 of this homotopy collapse to the path, so they contribute nothing to the integral. In particular
-the integral is invariant under the action of the fundamental group on `π₂(M, x)`. This is the
-form in which the area of a sphere glued to a cap is compatible with moving the base point of a
-capped loop.
+the integral is invariant under the action of the fundamental group on `π₂(M, x)`
+(`TauCeti.sphereIntegral_fundamentalGroup_smul`). This is the form in which the area of a sphere
+glued to a cap is compatible with moving the base point of a capped loop.
 
 ## Main definitions
 
@@ -79,6 +79,8 @@ capped loop.
 * `TauCeti.sphereIntegral_mul`, `TauCeti.sphereIntegral_one`: additivity.
 * `TauCeti.sphereIntegral_mpullback`: naturality under smooth maps.
 * `TauCeti.sphereIntegral_homotopyGroupTransport`: invariance under change of base point.
+* `TauCeti.sphereIntegral_fundamentalGroup_smul`: invariance under the action of the fundamental
+  group.
 * `TauCeti.VanishesOnSpheres.sphereIntegral_eq_zero`, `TauCeti.sphereIntegral_mextDeriv`: forms
   vanishing on spheres, such as exact forms, have zero integral over every class.
 
@@ -761,6 +763,14 @@ theorem sphereIntegral_homotopyGroupTransport (hφ : IsSmoothForm I 1 φ) (hdφ 
     ← Quotient.sound H.homotopic_transport, sphereIntegral_mk hφ hdφ hw, hrect,
     sphereIntegral_mk hφ hdφ hv]
   exact rectangleIntegral_congr fun z _ ↦ hΦ₀ z
+
+/-- The integral of a closed `C¹` two-form over a class of `π₂(M, x)` is invariant under the action
+of the fundamental group at `x`. -/
+theorem sphereIntegral_fundamentalGroup_smul (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
+    (g : FundamentalGroup M x) (a : π_ 2 M x) :
+    sphereIntegral φ x (g • a) = sphereIntegral φ x a := by
+  obtain ⟨p, hp⟩ := Path.Homotopic.Quotient.mk_surjective g.toPath
+  rw [fundamentalGroup_smul_eq_transport hp.symm, sphereIntegral_homotopyGroupTransport hφ hdφ]
 
 end Transport
 

@@ -332,7 +332,12 @@ theorem exists_homotopic_contMDiff_extend (n : ℕ∞) (γ : Path x y) :
   have hfx : f 0 = x := hf₀ (by norm_num)
   have hfy : f 1 = y := hf₁ (by norm_num)
   let γ₀ : Path x y := ⟨f.comp ι, hfx, hfy⟩
-  have hfγ : γ.reparam ρ ρ.continuous hρ₀ hρ₁ = γ₀ := Path.ext rfl
+  have hfγ : γ.reparam ρ ρ.continuous hρ₀ hρ₁ = γ₀ :=
+    -- `Path.extend` is defined as `IccExtend zero_le_one γ`, which `IccExtend_apply` rewrites as
+    -- `γ ∘ projIcc 0 1 zero_le_one`; Mathlib proves `Path.extend_apply` in the same way.
+    Path.ext (funext fun t ↦ by
+      change γ (ρ t) = γ.extend (3 * t - 1)
+      exact (IccExtend_apply zero_le_one γ _).symm)
   -- A homotopy of paths is by definition a homotopy relative to the endpoints `{0, 1}`.
   have hpath : γ₀.Homotopic γ' :=
     (hfg.precomp ι).mono fun t ht ↦ by
