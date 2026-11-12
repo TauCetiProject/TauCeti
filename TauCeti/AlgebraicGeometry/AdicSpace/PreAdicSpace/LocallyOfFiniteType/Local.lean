@@ -42,7 +42,7 @@ theorem LocallyOfFiniteType.ofRestrict_comp {f : X ⟶ Y} (hf : LocallyOfFiniteT
     (W : Opens X) : LocallyOfFiniteType (X.ofRestrict W.isOpenEmbedding ≫ f) := by
   rw [locallyOfFiniteType_iff, chartLocally_iff] at hf
   refine LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le W fun x ↦ ?_
-  obtain ⟨U, hx, V, hUV, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
+  obtain ⟨U, hx, V, _, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
     hsheaf, eU, eV, hfac⟩ := hf x.1
   let C := presentationLimitPreAdicSpace P' T.plus
     T.isRingOfIntegralElements.isPowerBounded_of_mem hP'

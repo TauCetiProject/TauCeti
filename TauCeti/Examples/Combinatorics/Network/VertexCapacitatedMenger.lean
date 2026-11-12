@@ -161,8 +161,8 @@ private theorem overlapPacking (m : ℕ) :
   dsimp only
   refine ⟨?_, ?_, overlapPath_isPath, overlapPath_interior, ?_,
     fun a ha b _ ↦ overlapSeparator a b ha, ?_⟩
-  · rintro (i | i) <;> simp [overlapSource]
-  · rintro (i | i) <;> simp [overlapTarget]
+  · rintro (_ | _) <;> simp [overlapSource]
+  · rintro (_ | _) <;> simp [overlapTarget]
   · exact overlapPath_usage m
   · simp [overlapCapacity]
 
