@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
+public import TauCeti.Analysis.ODE.Gluing
 
 /-!
 # The parameter field of a continuation of `δ cos (2 (θ - r))` on the circle
@@ -31,12 +32,13 @@ slices are Morse–Smale need not give a transverse parameter field.
 Since `t` increases along `W`, its trajectories in `0 < t < 1` are graphs of functions `Θ` of `t`
 solving `Θ' = 2 δ sin (2 (Θ - r t)) / (t (1 - t²))` (`TauCeti.circleContinuationSlope`). This
 file works with these graphs, and `TauCeti.hasDerivAt_circleContinuationField` turns such a graph
-back into a trajectory of `W`. On every window `[a, b] ⊆ (0, 1)` on which `r` is continuous
-the slope satisfies the hypotheses of the Picard–Lindelöf theorem
+back into a trajectory of `W`. On every window `[a, b] ⊆ (0, 1)` the slope is Lipschitz in
+the angle (`TauCeti.lipschitzWith_circleContinuationSlope`), and where `r` is continuous it
+satisfies the hypotheses of the Picard–Lindelöf theorem
 (`TauCeti.isPicardLindelof_circleContinuationSlope`), two solutions agreeing at one parameter
 agree on `0 < t < 1` (`TauCeti.eqOn_Ioo_of_hasDerivAt_circleContinuationSlope`), and solutions on
 the two sides of a window glue with a solution on the window
-(`TauCeti.exists_hasDerivAt_circleContinuationSlope_of_window`). The file proves the three
+(`TauCeti.exists_hasDerivAt_of_hasDerivWithinAt_Icc_glue`). The file proves the three
 dynamical facts about this equation used by the counterexamples.
 
 * **Drift bound.** Along any trajectory, between the levels `a` and `b` of `t` the angle moves by
@@ -328,6 +330,24 @@ theorem abs_sub_le_gronwallBound_of_hasDerivWithinAt_circleContinuationSlope
   rw [Real.dist_eq, add_zero] at h
   exact h
 
+/-- On a window `[a, b] ⊆ (0, 1)` the slope is `4 |δ| / (a (1 - b²))`-Lipschitz in the angle at
+every parameter of the window, since `a (1 - b²)` bounds `t (1 - t²)` from below there. -/
+theorem lipschitzWith_circleContinuationSlope (δ : ℝ) (r : ℝ → ℝ) {a b : ℝ} (ha : 0 < a)
+    (hab : a ≤ b) (hb : b < 1) :
+    ∀ t ∈ Icc a b, LipschitzWith
+      ⟨4 * |δ| / (a * (1 - b ^ 2)), div_nonneg (by positivity) (mul_pos ha (by nlinarith)).le⟩
+      (circleContinuationSlope δ r t) := by
+  intro t ht
+  have hm : 0 < a * (1 - b ^ 2) := mul_pos ha (by nlinarith)
+  refine LipschitzWith.of_dist_le_mul fun θ θ' ↦ ?_
+  refine (dist_circleContinuationSlope_le δ r (ha.trans_le ht.1) (ht.2.trans_lt hb) θ θ').trans ?_
+  -- Unfold the coercion of the `ℝ≥0` Lipschitz constant.
+  change _ ≤ (4 * |δ| / (a * (1 - b ^ 2))) * dist θ θ'
+  rw [div_eq_mul_inv]
+  gcongr 4 * |δ| * ?_ * _
+  gcongr
+  all_goals nlinarith [ht.1, ht.2]
+
 /-- On a window `[a, b] ⊆ (0, 1)` the slope satisfies the Picard–Lindelöf hypotheses with initial
 point `(t₀, θ₀)`, for a path continuous on the window. With `m = a (1 - b²)`, a lower bound for
 `t (1 - t²)` on the window, the slope is bounded by `2 |δ| / m` and `4 |δ| / m`-Lipschitz. -/
@@ -346,13 +366,7 @@ theorem isPicardLindelof_circleContinuationSlope (δ : ℝ) {r : ℝ → ℝ} {a
     gcongr
     all_goals nlinarith [ht.1, ht.2]
   refine ⟨fun t ht ↦ ?_, fun θ _ ↦ ?_, fun t ht θ _ ↦ ?_, ?_⟩
-  · refine (LipschitzWith.of_dist_le_mul fun θ θ' ↦ ?_).lipschitzOnWith
-    refine (dist_circleContinuationSlope_le δ r (hmem t ht).1 (hmem t ht).2 θ θ').trans ?_
-    -- Unfold the coercion of the `ℝ≥0` Lipschitz constant.
-    change _ ≤ (4 * |δ| / (a * (1 - b ^ 2))) * dist θ θ'
-    rw [div_eq_mul_inv]
-    gcongr 4 * |δ| * ?_ * _
-    exact hinv t ht
+  · exact (lipschitzWith_circleContinuationSlope δ r ha hab hb t ht).lipschitzOnWith
   · simp only [circleContinuationSlope_def]
     refine ContinuousOn.div (continuousOn_const.mul
       (continuous_sin.comp_continuousOn (continuousOn_const.mul
@@ -379,19 +393,8 @@ theorem eqOn_Icc_of_hasDerivAt_circleContinuationSlope {δ : ℝ} {r Θ₁ Θ₂
     (h₁ : ∀ t ∈ Icc a b, HasDerivAt Θ₁ (circleContinuationSlope δ r t (Θ₁ t)) t)
     (h₂ : ∀ t ∈ Icc a b, HasDerivAt Θ₂ (circleContinuationSlope δ r t (Θ₂ t)) t)
     (h : Θ₁ t₀ = Θ₂ t₀) : EqOn Θ₁ Θ₂ (Icc a b) := by
-  have hab : a ≤ b := ht₀.1.trans ht₀.2
-  have hm : 0 < a * (1 - b ^ 2) := mul_pos ha (by nlinarith)
-  set K : ℝ≥0 := ⟨4 * |δ| / (a * (1 - b ^ 2)), by positivity⟩
-  have hK : ∀ t ∈ Icc a b, LipschitzOnWith K (circleContinuationSlope δ r t) univ := by
-    intro t ht
-    have ht₀ : 0 < t := ha.trans_le ht.1
-    refine (LipschitzWith.of_dist_le_mul fun θ θ' ↦ ?_).lipschitzOnWith
-    refine (dist_circleContinuationSlope_le δ r ht₀ (ht.2.trans_lt hb) θ θ').trans ?_
-    -- Unfold the coercion of the `ℝ≥0` Lipschitz constant.
-    change _ ≤ (4 * |δ| / (a * (1 - b ^ 2))) * dist θ θ'
-    rw [div_eq_mul_inv]
-    gcongr
-    all_goals nlinarith [ht.1, ht.2]
+  have hK := fun t ht ↦ (lipschitzWith_circleContinuationSlope δ r ha (ht₀.1.trans ht₀.2) hb t
+    ht).lipschitzOnWith (s := univ)
   have hc₁ : ContinuousOn Θ₁ (Icc a b) := fun t ht ↦ (h₁ t ht).continuousAt.continuousWithinAt
   have hc₂ : ContinuousOn Θ₂ (Icc a b) := fun t ht ↦ (h₂ t ht).continuousAt.continuousWithinAt
   rw [← Icc_union_Icc_eq_Icc ht₀.1 ht₀.2]
@@ -422,55 +425,6 @@ theorem eqOn_Ioo_of_hasDerivAt_circleContinuationSlope {δ : ℝ} {r Θ₁ Θ₂
   exact eqOn_Icc_of_hasDerivAt_circleContinuationSlope (lt_min ht.1 ht₀.1) (max_lt ht.2 ht₀.2)
     ⟨min_le_right _ _, le_max_right _ _⟩ (fun s hs' ↦ h₁ s (hs hs'))
     (fun s hs' ↦ h₂ s (hs hs')) h ⟨min_le_left _ _, le_max_left _ _⟩
-
-/-- **Gluing trajectories across a window.** Let `a < b`, let `W` solve
-`Θ' = circleContinuationSlope δ r t (Θ t)` on the window `[a, b]`, and let `E₀` and `E₁` solve it
-at the parameters `t ∈ I` with `t ≤ a`, respectively `t ≥ b`, with `E₀ a = W a` and `W b = E₁ b`.
-Then the function equal to `E₀` for `t ≤ a`, to `W` on the window and to `E₁` for `t ≥ b` solves
-the equation at every parameter in `I`: the one-sided derivatives match at the junctions. -/
-theorem exists_hasDerivAt_circleContinuationSlope_of_window {δ a b : ℝ} {r E₀ W E₁ : ℝ → ℝ}
-    {I : Set ℝ} (hab : a < b) (ha : E₀ a = W a) (hb : W b = E₁ b)
-    (hE₀ : ∀ t ∈ I, t ≤ a → HasDerivAt E₀ (circleContinuationSlope δ r t (E₀ t)) t)
-    (hW : ∀ t ∈ Icc a b, HasDerivWithinAt W (circleContinuationSlope δ r t (W t)) (Icc a b) t)
-    (hE₁ : ∀ t ∈ I, b ≤ t → HasDerivAt E₁ (circleContinuationSlope δ r t (E₁ t)) t) :
-    ∃ Θ : ℝ → ℝ, (∀ t ≤ a, Θ t = E₀ t) ∧ (∀ t ∈ Icc a b, Θ t = W t) ∧
-      (∀ t, b ≤ t → Θ t = E₁ t) ∧
-      ∀ t ∈ I, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t := by
-  set Θ : ℝ → ℝ := fun t ↦ if t ≤ a then E₀ t else if t ≤ b then W t else E₁ t
-  have hΘ₀ : ∀ t ≤ a, Θ t = E₀ t := fun t ht ↦ by simp only [Θ, ht, ↓reduceIte]
-  have hΘW : ∀ t ∈ Icc a b, Θ t = W t := fun t ht ↦ by
-    rcases ht.1.eq_or_lt with rfl | h
-    · rw [hΘ₀ _ le_rfl, ha]
-    · simp only [Θ, not_le.2 h, ht.2, ↓reduceIte]
-  have hΘ₁ : ∀ t, b ≤ t → Θ t = E₁ t := fun t ht ↦ by
-    rcases ht.eq_or_lt with rfl | h
-    · rw [hΘW _ ⟨hab.le, le_rfl⟩, hb]
-    · simp only [Θ, not_le.2 (hab.trans h), not_le.2 h, ↓reduceIte]
-  -- The derivatives of the three pieces, as derivatives of `Θ` within their intervals.
-  have hleft : ∀ t ∈ I, t ≤ a →
-      HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Iic a) t := fun t ht hta ↦ by
-    rw [hΘ₀ t hta]
-    exact (hE₀ t ht hta).hasDerivWithinAt.congr (fun y hy ↦ hΘ₀ y hy) (hΘ₀ t hta)
-  have hmid : ∀ t ∈ Icc a b,
-      HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Icc a b) t := fun t ht ↦ by
-    rw [hΘW t ht]
-    exact (hW t ht).congr (fun y hy ↦ hΘW y hy) (hΘW t ht)
-  have hright : ∀ t ∈ I, b ≤ t →
-      HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Ici b) t := fun t ht htb ↦ by
-    rw [hΘ₁ t htb]
-    exact (hE₁ t ht htb).hasDerivWithinAt.congr (fun y hy ↦ hΘ₁ y hy) (hΘ₁ t htb)
-  refine ⟨Θ, hΘ₀, hΘW, hΘ₁, fun t ht ↦ ?_⟩
-  rcases lt_trichotomy t a with h | rfl | h
-  · exact (hleft t ht h.le).hasDerivAt (Iic_mem_nhds h)
-  · rw [← hasDerivWithinAt_univ, ← Iic_union_Ici]
-    exact (hleft t ht le_rfl).union
-      ((hmid t ⟨le_rfl, hab.le⟩).mono_of_mem_nhdsWithin (Icc_mem_nhdsGE hab))
-  rcases lt_trichotomy t b with h' | rfl | h'
-  · exact (hmid t ⟨h.le, h'.le⟩).hasDerivAt (Icc_mem_nhds h h')
-  · rw [← hasDerivWithinAt_univ, ← Iic_union_Ici]
-    exact ((hmid t ⟨hab.le, le_rfl⟩).mono_of_mem_nhdsWithin
-      (Icc_mem_nhdsLE hab)).union (hright t ht le_rfl)
-  · exact (hright t ht h'.le).hasDerivAt (Ici_mem_nhds h')
 
 /-- The trajectory of the half-turn continuation leaving the source minimum, on the window
 `[1/3, 5/6]`: a solution starting at the angle `π / 2`. -/
@@ -614,7 +568,7 @@ theorem exists_circleContinuationField_connection {ρ : ℝ → ℝ} (hρ : Cont
   have hzero₁ : ∀ t, 2 / 3 ≤ t → circleContinuationSlope δ (fun t ↦ π * ρ t) t π = 0 :=
     fun t ht ↦ circleContinuationSlope_eq_zero (by
       rw [h1 t ht, mul_one, sub_self, mul_zero, sin_zero])
-  obtain ⟨Θg, hΘg₀, -, hΘg₁, hΘg⟩ := exists_hasDerivAt_circleContinuationSlope_of_window
+  obtain ⟨Θg, hΘg₀, -, hΘg₁, hΘg⟩ := exists_hasDerivAt_of_hasDerivWithinAt_Icc_glue
     (I := univ) (E₀ := fun _ ↦ π / 2) (E₁ := fun _ ↦ π) (by norm_num) hΘa.symm hΘb
     (fun t _ ht ↦ (hasDerivAt_const t _).congr_deriv (hzero₀ t ht).symm) hΘ
     (fun t _ ht ↦ (hasDerivAt_const t _).congr_deriv (hzero₁ t (by linarith)).symm)

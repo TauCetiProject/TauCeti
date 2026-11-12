@@ -222,7 +222,7 @@ theorem exists_hasDerivAt_circleContinuationSlope {δ r₀ r₁ a b : ℝ} {r : 
     ⟨t₀, ht₀⟩ θ₀).exists_eq_forall_mem_Icc_hasDerivWithinAt₀
   obtain ⟨E₀, hE₀, hE₀'⟩ := exists_endSolution δ r₀ (W a) a
   obtain ⟨E₁, hE₁, hE₁'⟩ := exists_endSolution δ r₁ (W b) b
-  obtain ⟨Θ, -, hΘW, -, hΘ⟩ := exists_hasDerivAt_circleContinuationSlope_of_window
+  obtain ⟨Θ, -, hΘW, -, hΘ⟩ := exists_hasDerivAt_of_hasDerivWithinAt_Icc_glue
     (I := Ioo 0 1) hab hE₀ hE₁.symm
     (fun t ht hta ↦ by rw [circleContinuationSlope_of_eq (hr₀ t hta)]; exact hE₀' t ht) hW
     (fun t ht htb ↦ by rw [circleContinuationSlope_of_eq (hr₁ t htb)]; exact hE₁' t ht)
@@ -295,6 +295,16 @@ private theorem hasDerivAt_const_circleContinuationSlope {δ r₀ m t : ℝ} {r 
   rw [circleContinuationSlope_eq_zero (by rw [hr]; exact hm)]
   exact hasDerivAt_const t m
 
+/-- On an interval `[s, u] ⊆ (0, 1)` where the path is constant, `r = r₀`, a solution taking the
+value of a critical point `m` of `δ cos (2 (θ - r₀))` at one parameter is constantly `m`. -/
+private theorem eqOn_const_of_hasDerivAt_circleContinuationSlope {δ r₀ m s u t₁ : ℝ}
+    {r Θ : ℝ → ℝ} (hs : 0 < s) (hu : u < 1) (ht₁ : t₁ ∈ Icc s u) (hr : ∀ t ∈ Icc s u, r t = r₀)
+    (hm : sin (2 * (m - r₀)) = 0)
+    (hΘ : ∀ t ∈ Icc s u, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t)
+    (hΘm : Θ t₁ = m) : EqOn Θ (fun _ ↦ m) (Icc s u) :=
+  eqOn_Icc_of_hasDerivAt_circleContinuationSlope hs hu ht₁ hΘ
+    (fun t ht ↦ hasDerivAt_const_circleContinuationSlope (hr t ht) hm) hΘm
+
 /-- **Only the constant trajectory leaves a source minimum.** On an interval `0 < t ≤ b₀` where
 the path is constant, `r = r₀`, a solution converging as `t → 0` to a minimum `m` of
 `δ cos (2 (θ - r₀))`, `δ > 0`, is constantly `m`. Indeed, a solution which differs from `m` close
@@ -329,9 +339,9 @@ theorem eq_of_tendsto_nhdsGT_zero_circleContinuationSlope {δ r₀ m b₀ : ℝ}
       · rw [abs_lt]; constructor <;> linarith [hsm.2]
   have hsq : sin (2 * (m - r₀)) = 0 := sin_eq_zero_iff_cos_eq.2 (.inr hm)
   have hIcc : Icc s t ⊆ Ioc 0 b₀ := fun u hu ↦ ⟨hs.1.trans_le hu.1, hu.2.trans ht.2⟩
-  exact eqOn_Icc_of_hasDerivAt_circleContinuationSlope hs.1 (ht.2.trans_lt hb₀')
-    ⟨le_rfl, hs.2⟩ (fun u hu ↦ hΘ u (hIcc hu))
-    (fun u hu ↦ hasDerivAt_const_circleContinuationSlope (hr u (hIcc hu)) hsq) hΘs ⟨hs.2, le_rfl⟩
+  exact eqOn_const_of_hasDerivAt_circleContinuationSlope hs.1 (ht.2.trans_lt hb₀')
+    ⟨le_rfl, hs.2⟩ (fun u hu ↦ hr u (hIcc hu)) hsq (fun u hu ↦ hΘ u (hIcc hu)) hΘs
+    ⟨hs.2, le_rfl⟩
 
 /-- **Only the constant trajectory enters a target maximum.** On an interval `a₀ ≤ t < 1` where
 the path is constant, `r = r₁`, a solution converging as `t → 1` to a maximum `m` of
@@ -365,9 +375,9 @@ theorem eq_of_tendsto_nhdsLT_one_circleContinuationSlope {δ r₁ m a₀ : ℝ} 
       · rw [abs_lt]; constructor <;> linarith [hsm.2]
   have hsq : sin (2 * (m - r₁)) = 0 := sin_eq_zero_iff_cos_eq.2 (.inl hm)
   have hIcc : Icc t s ⊆ Ico a₀ 1 := fun u hu ↦ ⟨ht.1.trans hu.1, hu.2.trans_lt hs.2⟩
-  exact eqOn_Icc_of_hasDerivAt_circleContinuationSlope (ha₀.trans_le ht.1) hs.2
-    ⟨hs.1, le_rfl⟩ (fun u hu ↦ hΘ u (hIcc hu))
-    (fun u hu ↦ hasDerivAt_const_circleContinuationSlope (hr u (hIcc hu)) hsq) hΘs ⟨le_rfl, hs.1⟩
+  exact eqOn_const_of_hasDerivAt_circleContinuationSlope (ha₀.trans_le ht.1) hs.2
+    ⟨hs.1, le_rfl⟩ (fun u hu ↦ hr u (hIcc hu)) hsq (fun u hu ↦ hΘ u (hIcc hu)) hΘs
+    ⟨le_rfl, hs.1⟩
 
 /-! ### The trajectories preserving the Morse index -/
 
@@ -475,12 +485,10 @@ theorem exists_tendsto_nhdsGT_tendsto_nhdsLT_circleContinuationSlope_of_cos_eq_o
     exists_hasDerivAt_circleContinuationSlope ha hab hb hr hr₀ hr₁ ⟨hab.le, le_rfl⟩ m₁
   have hsq : sin (2 * (m₁ - r₁)) = 0 := sin_eq_zero_iff_cos_eq.2 (.inl hm₁)
   -- On `t ≥ b` the trajectory through `m₁` at `t = b` is constantly `m₁`.
-  have hconst : ∀ t ∈ Ico b 1, Θ t = m₁ := fun t ht ↦ by
-    have hIcc : Icc b t ⊆ Ico b 1 := fun u hu ↦ ⟨hu.1, hu.2.trans_lt ht.2⟩
-    exact eqOn_Icc_of_hasDerivAt_circleContinuationSlope (ha.trans hab) ht.2 ⟨le_rfl, ht.1⟩
-      (fun u hu ↦ hΘ u ⟨(ha.trans hab).trans_le (hIcc hu).1, (hIcc hu).2⟩)
-      (fun u hu ↦ hasDerivAt_const_circleContinuationSlope (δ := δ) (hr₁ u (hIcc hu).1) hsq) hΘ₀
-      ⟨ht.1, le_rfl⟩
+  have hconst : ∀ t ∈ Ico b 1, Θ t = m₁ := fun t ht ↦
+    eqOn_const_of_hasDerivAt_circleContinuationSlope (ha.trans hab) ht.2 ⟨le_rfl, ht.1⟩
+      (fun u hu ↦ hr₁ u hu.1) hsq
+      (fun u hu ↦ hΘ u ⟨(ha.trans hab).trans_le hu.1, hu.2.trans_lt ht.2⟩) hΘ₀ ⟨ht.1, le_rfl⟩
   have hlim : Tendsto Θ (𝓝[<] 1) (𝓝 m₁) := tendsto_const_nhds.congr' <| by
     filter_upwards [Ico_mem_nhdsLT hb] with t ht
     exact (hconst t ht).symm
@@ -505,12 +513,10 @@ theorem exists_tendsto_nhdsGT_tendsto_nhdsLT_circleContinuationSlope_of_cos_eq_n
     exists_hasDerivAt_circleContinuationSlope ha hab hb hr hr₀ hr₁ ⟨le_rfl, hab.le⟩ m₀
   have hsq : sin (2 * (m₀ - r₀)) = 0 := sin_eq_zero_iff_cos_eq.2 (.inr hm₀)
   -- On `t ≤ a` the trajectory through `m₀` at `t = a` is constantly `m₀`.
-  have hconst : ∀ t ∈ Ioc 0 a, Θ t = m₀ := fun t ht ↦ by
-    have hIcc : Icc t a ⊆ Ioc 0 a := fun u hu ↦ ⟨ht.1.trans_le hu.1, hu.2⟩
-    exact eqOn_Icc_of_hasDerivAt_circleContinuationSlope ht.1 (hab.trans hb) ⟨ht.2, le_rfl⟩
-      (fun u hu ↦ hΘ u ⟨(hIcc hu).1, (hIcc hu).2.trans_lt (hab.trans hb)⟩)
-      (fun u hu ↦ hasDerivAt_const_circleContinuationSlope (δ := δ) (hr₀ u (hIcc hu).2) hsq) hΘ₀
-      ⟨le_rfl, ht.2⟩
+  have hconst : ∀ t ∈ Ioc 0 a, Θ t = m₀ := fun t ht ↦
+    eqOn_const_of_hasDerivAt_circleContinuationSlope ht.1 (hab.trans hb) ⟨ht.2, le_rfl⟩
+      (fun u hu ↦ hr₀ u hu.2) hsq
+      (fun u hu ↦ hΘ u ⟨ht.1.trans_le hu.1, hu.2.trans_lt (hab.trans hb)⟩) hΘ₀ ⟨le_rfl, ht.2⟩
   have hlim : Tendsto Θ (𝓝[>] 0) (𝓝 m₀) := tendsto_const_nhds.congr' <| by
     filter_upwards [Ioc_mem_nhdsGT ha] with t ht
     exact (hconst t ht).symm
