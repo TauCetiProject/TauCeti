@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
 
+import TauCeti.Geometry.Symplectic.Area.Basic
+
 /-!
 # The `L²` estimate of the linearized Floer operator on compact parts of the domain
 
@@ -22,15 +24,19 @@ that is, `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term in `ξ` with coe
 `z` (`TauCeti.SymplecticForm.floerLinearization_eq_add`). When `J(z, u z)` is `ω`-compatible,
 the `L²` estimate for Cauchy--Riemann operators with domain-dependent compatible structures applies
 (`TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure`): on a compact set `K` of the
-domain there is a constant `C`, depending only on the data, the map `u` and `K`, such that
+domain there is a constant `C`, depending only on the data, the map `u` and `K` and not on the
+measure, such that
 
 `∫_K (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫_K (‖D_u ξ‖² + ‖ξ‖²)`
 
-for every `C²` section `ξ` with support in `K`, which is
+for every section `ξ` that is `C¹` at the points of `K` and whose symplectic area over `K`
+vanishes (`exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization`). In
+particular this holds for every section with support in `K` that is `C²` at the points of `K`,
+which is
 `exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_tsupport_subset`,
-and on a finite cylinder `[a, b] × [0, 1]` for every `C²` section closing up in `t`,
-`ξ(s, 1) = ξ(s, 0)` for `s ∈ [a, b]`, and vanishing on the slices `s = a` and `s = b`
-(`exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_periodic`).
+and on a finite cylinder `[a, b] × [0, 1]` for every section `C²` near it, closing up in `t`,
+`ξ(s, 1) = ξ(s, 0)` for `s ∈ [a, b]`, and vanishing on the edges `{a} × [0, 1]` and `{b} × [0, 1]`
+(`exists_forall_setIntegral_Icc_prod_Icc_norm_fderiv_sq_le_mul_setIntegral_floerLinearization`).
 
 No nondegeneracy, no Floer equation for `u` and no smallness of the data is assumed: the regularity
 needed is only at the points of `K`. The estimate controls the derivative of `ξ` and not `ξ`
@@ -58,7 +64,7 @@ open ContinuousLinearMap Function Set MeasureTheory
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- The structures `J(z, u z)` along the graph of `u` are continuous on `K` when `J` is `C¹` at
-the points `(z, u z)` and `u` is `C¹` on `K`. -/
+the points `(z, u z)` and `u` is `C¹` at every point of `K`. -/
 private theorem continuousOn_toContinuousLinearMap_comp_graph
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)}
     (hJ : ∀ z ∈ K, ContDiffAt ℝ 1
@@ -68,43 +74,72 @@ private theorem continuousOn_toContinuousLinearMap_comp_graph
   fun z hz ↦ ((hJ z hz).continuousAt.comp₂ continuousAt_id
     (hu z hz).continuousAt).continuousWithinAt
 
-/-- **The `L²` estimate of the linearized Floer operator on compactly supported sections.** Let
+/-- **The `L²` estimate of the linearized Floer operator on compact parts of the domain.** Let
 `K ⊆ ℝ × ℝ` be compact, and suppose that at every `z ∈ K` the structure `J(z, u z)` is
 `ω`-compatible, `J` is `C¹` and the Hamiltonians `Ks`, `Kt` are `C²` at `(z, u z)`, and `u` is
-`C¹` at `z`. Then there is a constant `C ≥ 0` such that every `C²` section `ξ` with support in
-`K` satisfies `∫_K (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫_K (‖D_u ξ‖² + ‖ξ‖²)` for the linearized Floer
-operator `D_u`, with respect to an additive Haar measure. -/
-theorem
-  exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_tsupport_subset
+`C¹` at `z`. Then there is a constant `C ≥ 0` such that, for every measure `μ` that is finite on
+compact sets, every section `ξ` that is `C¹` at every point of `K` and whose symplectic area over
+`K` vanishes satisfies `∫_K (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫_K (‖D_u ξ‖² + ‖ξ‖²)` with respect to `μ`,
+for the linearized Floer operator `D_u`. -/
+theorem exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization
     (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
-    {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)} {μ : Measure (ℝ × ℝ)} [μ.IsAddHaarMeasure]
-    (hK : IsCompact K)
+    {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)} (hK : IsCompact K)
     (hJ : ∀ z ∈ K, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
     (hKs : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
     (hKt : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ K, ContDiffAt ℝ 1 u z) (hc : ∀ z ∈ K, ω.Compatible (J z (u z))) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → tsupport ξ ⊆ K →
+    ∃ C, 0 ≤ C ∧ ∀ (μ : Measure (ℝ × ℝ)) [IsFiniteMeasureOnCompacts μ] ⦃ξ : ℝ × ℝ → V⦄,
+      (∀ z ∈ K, ContDiffAt ℝ 1 ξ z) →
+      ∫ z in K, ω (fderiv ℝ ξ z stdComplexLineReal) (fderiv ℝ ξ z stdComplexLineImag) ∂μ = 0 →
       ∫ z in K, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
           ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ∂μ ≤
         C * ∫ z in K, (‖ω.floerLinearization
             (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 +
           ‖ξ z‖ ^ 2) ∂μ := by
-  obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset (μ := μ) hK
-    hc (continuousOn_toContinuousLinearMap_comp_graph hJ hu)
-    (ω.continuousOn_floerLinearizationCoeff
-      (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu)
-  refine ⟨C, hC, fun ξ hξ hξK ↦ (h hξ hξK).trans_eq ?_⟩
+  obtain ⟨C, hC, h⟩ :=
+    exists_forall_setIntegral_norm_fderiv_sq_le_of_setIntegral_symplecticForm_eq_zero hK hc
+      (continuousOn_toContinuousLinearMap_comp_graph hJ hu)
+      (ω.continuousOn_floerLinearizationCoeff
+        (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu)
+  refine ⟨C, hC, fun μ _ ξ hξ hzero ↦ (h μ hξ hzero).trans_eq ?_⟩
   simp only [floerLinearization_eq_add, LinearMap.coe_toContinuousLinearMap']
 
-/-- **The `L²` estimate of the linearized Floer operator on a finite cylinder.** Under the
-hypotheses of
-`exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_tsupport_subset`
-on the rectangle `[a, b] × [0, 1]`, there is a constant `C ≥ 0` such that every `C²` section `ξ`
-with `ξ(s, 1) = ξ(s, 0)` for `s ∈ [a, b]` that vanishes on the slices `s = a` and `s = b` satisfies
-`∫ (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫ (‖D_u ξ‖² + ‖ξ‖²)` over the rectangle. -/
+/-- **The `L²` estimate of the linearized Floer operator on compactly supported sections.** Under
+the hypotheses of
+`exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization`, there is a
+constant `C ≥ 0` such that, for every additive Haar measure, every section `ξ` with support in
+`K` that is `C²` at every point of `K` satisfies
+`∫_K (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫_K (‖D_u ξ‖² + ‖ξ‖²)`. -/
 theorem
-  exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_periodic
+  exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_tsupport_subset
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)} (hK : IsCompact K)
+    (hJ : ∀ z ∈ K, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ K, ContDiffAt ℝ 1 u z) (hc : ∀ z ∈ K, ω.Compatible (J z (u z))) :
+    ∃ C, 0 ≤ C ∧ ∀ (μ : Measure (ℝ × ℝ)) [μ.IsAddHaarMeasure] ⦃ξ : ℝ × ℝ → V⦄,
+      (∀ z ∈ K, ContDiffAt ℝ 2 ξ z) → tsupport ξ ⊆ K →
+      ∫ z in K, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ∂μ ≤
+        C * ∫ z in K, (‖ω.floerLinearization
+            (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 +
+          ‖ξ z‖ ^ 2) ∂μ := by
+  obtain ⟨C, hC, h⟩ :=
+    ω.exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization hK hJ hKs hKt
+      hu hc
+  exact ⟨C, hC, fun μ _ ξ hξ hξK ↦ h μ (fun z hz ↦ (hξ z hz).of_le one_le_two)
+    (setIntegral_symplecticForm_fderiv_eq_zero ω hK hξ hξK)⟩
+
+/-- **The `L²` estimate of the linearized Floer operator on a finite cylinder.** Under the
+hypotheses of `exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization`
+on the rectangle `[a, b] × [0, 1]`, there is a constant `C ≥ 0` such that every section `ξ` that
+is `C²` at every point of the rectangle, with `ξ(s, 1) = ξ(s, 0)` for `s ∈ [a, b]` and vanishing
+on the edges `{a} × [0, 1]` and `{b} × [0, 1]`, satisfies
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫ (‖D_u ξ‖² + ‖ξ‖²)` over the rectangle. -/
+theorem exists_forall_setIntegral_Icc_prod_Icc_norm_fderiv_sq_le_mul_setIntegral_floerLinearization
     (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {u : ℝ × ℝ → V} {a b : ℝ} (hab : a ≤ b)
     (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 1
@@ -113,18 +148,18 @@ theorem
     (hKt : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 1 u z)
     (hc : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ω.Compatible (J z (u z))) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s ∈ Icc a b, ξ (s, 1) = ξ (s, 0)) →
-      (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, (∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 2 ξ z) →
+      (∀ s ∈ Icc a b, ξ (s, 1) = ξ (s, 0)) → (∀ t ∈ Icc 0 1, ξ (a, t) = 0) →
+      (∀ t ∈ Icc 0 1, ξ (b, t) = 0) →
       ∫ z in Icc a b ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
           ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ≤
         C * ∫ z in Icc a b ×ˢ Icc 0 1, (‖ω.floerLinearization
             (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 +
           ‖ξ z‖ ^ 2) := by
-  obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_periodic hab hc
-    (continuousOn_toContinuousLinearMap_comp_graph hJ hu)
-    (ω.continuousOn_floerLinearizationCoeff
-      (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu)
-  refine ⟨C, hC, fun ξ hξ hper ha hb ↦ (h hξ hper ha hb).trans_eq ?_⟩
-  simp only [floerLinearization_eq_add, LinearMap.coe_toContinuousLinearMap']
+  obtain ⟨C, hC, h⟩ :=
+    ω.exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization
+      (isCompact_Icc.prod isCompact_Icc) hJ hKs hKt hu hc
+  exact ⟨C, hC, fun ξ hξ hper ha hb ↦ h volume (fun z hz ↦ (hξ z hz).of_le one_le_two)
+    (ω.integral_symplecticForm_fderiv_Icc_prod_Icc_eq_zero hab hξ hper ha hb)⟩
 
 end TauCeti.SymplecticForm

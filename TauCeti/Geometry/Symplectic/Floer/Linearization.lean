@@ -24,8 +24,9 @@ exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinear
 For `C¹` coefficients `J` and `C²` Hamiltonians it is continuous wherever the map and the direction
 are `C¹` (`continuousAt_floerLinearization`), so its `L²` norms over compact sets are finite.
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
-(`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
-(`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`).
+(`floerLinearization_eq_add`), whose coefficient is continuous in `z` where `J` and `u` are `C¹`
+and the Hamiltonians are `C²` (`continuousAt_floerLinearizationCoeff`,
+`continuousOn_floerLinearizationCoeff`).
 The universal variation theorem identifies its direction field with the actual parameter derivative
 of the map, using equality of mixed derivatives rather than assuming it. The endomorphism field need
 not square to minus one for differentiation. For an almost complex structure the zero equation
@@ -223,7 +224,8 @@ theorem continuousAt_floerLinearizationCoeff (ω : SymplecticForm V)
   exact ((hflip.clm_apply (hut.sub hXtu)).sub hdXs).sub (hJu.clm_comp hdXt)
 
 /-- The zeroth-order part of the linearized Floer operator is continuous on `K` when the data are
-`C¹` (and the Hamiltonians `C²`) at the points `(z, u z)` with `z ∈ K`, and `u` is `C¹` on `K`. -/
+`C¹` (and the Hamiltonians `C²`) at the points `(z, u z)` with `z ∈ K`, and `u` is `C¹` at every
+point of `K`. -/
 theorem continuousOn_floerLinearizationCoeff (ω : SymplecticForm V)
     {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)}
     (hJ : ∀ z ∈ K, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))

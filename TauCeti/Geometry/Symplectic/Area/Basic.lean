@@ -36,8 +36,8 @@ formula says that the symplectic area of `u` is `a(u(b, ·)) - a(u(a, ·))`
 (`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_eq_loopArea_sub`). In particular the loop
 area of a closed loop is the symplectic area of the cone `r x(t)` bounding it
 (`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_smul_eq_loopArea`), and the area of `u`
-vanishes when `u` vanishes on the slices `s = a` and `s = b`, which is
-`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic`.
+vanishes when `u` vanishes on the edges `s = a` and `s = b` of the rectangle, which is
+`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_Icc_prod_Icc_eq_zero`.
 Reparametrizing one period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its
 area over `[-π, π]` (`TauCeti.SymplecticForm.loopArea_comp_sub_mul`).
 
@@ -262,16 +262,20 @@ theorem integral_symplecticForm_fderiv_eq_loopArea_sub (ω : SymplecticForm V) (
   ring
 
 /-- **The symplectic area of a cylinder with vanishing ends.** Let `u` be `C²` near
-`[a, b] × [0, 1]`, with `u(s, 1) = u(s, 0)` for `s ∈ [a, b]`, and let `u` vanish on the slices
-`s = a` and `s = b`. Then the symplectic area of `u` over the rectangle is zero. -/
-theorem integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic (ω : SymplecticForm V)
+`[a, b] × [0, 1]`, with `u(s, 1) = u(s, 0)` for `s ∈ [a, b]`, and let `u` vanish on the edges
+`{a} × [0, 1]` and `{b} × [0, 1]`. Then the symplectic area of `u` over the rectangle is zero. -/
+theorem integral_symplecticForm_fderiv_Icc_prod_Icc_eq_zero (ω : SymplecticForm V)
     (hab : a ≤ b) (hu : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 2 u z)
-    (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0)) (ha : ∀ t, u (a, t) = 0)
-    (hb : ∀ t, u (b, t) = 0) :
+    (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0)) (ha : ∀ t ∈ Icc 0 1, u (a, t) = 0)
+    (hb : ∀ t ∈ Icc 0 1, u (b, t) = 0) :
     ∫ z in Icc a b ×ˢ Icc 0 1,
       ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) = 0 := by
-  rw [ω.integral_symplecticForm_fderiv_eq_loopArea_sub hab hu hper]
-  simp only [ha, hb, loopArea_const, sub_self]
+  -- The loop area only sees the values of the loop on `[0, 1]`.
+  have hzero {x : ℝ → V} (hx : ∀ t ∈ Icc 0 1, x t = 0) : ω.loopArea x = 0 := by
+    rw [loopArea_def, intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ by
+      simp [hx t (by rwa [uIcc_of_le zero_le_one] at ht)]]
+    simp
+  rw [ω.integral_symplecticForm_fderiv_eq_loopArea_sub hab hu hper, hzero ha, hzero hb, sub_self]
 
 /-- **The loop area is the area of a cap.** For a loop `x` that is `C²` near `[0, 1]` with
 `x 1 = x 0`, the symplectic area of the cone `D(r, t) = r x(t)` over `[0, 1] × [0, 1]`, a disc

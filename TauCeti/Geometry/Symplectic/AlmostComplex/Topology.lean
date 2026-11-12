@@ -34,8 +34,8 @@ equivalent, it does not depend on the choice of the norm of `V`.
 * `TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_associatedBilinForm`: along a family
   of tame structures continuous on a compact set, the forms `ω(·, J ·)` are uniformly equivalent
   to the square of the norm.
-* `TauCeti.SymplecticForm.continuousOn_associatedBilinForm_apply_self`: the forms `ω(·, J ·)` of
-  a continuous family of structures, evaluated along a continuous map, vary continuously.
+* `TauCeti.SymplecticForm.continuousOn_associatedBilinForm_apply`: the forms `ω(·, J ·)` of a
+  continuous family of structures, evaluated along continuous maps, vary continuously.
 -/
 
 public noncomputable section
@@ -126,14 +126,14 @@ theorem exists_pos_forall_mul_norm_sq_le_associatedBilinForm (ω : SymplecticFor
           (mul_le_mul_of_nonneg_right ((hM x hx).trans (le_max_left _ _)) (norm_nonneg _))
     _ = ‖ωc‖ * max M 0 * ‖v‖ ^ 2 := by ring
 
-/-- The map `x ↦ g_x(f x, f x)` for `g_x = ω(·, J(x) ·)` is continuous on a set when `J` and `f`
-are. -/
-theorem continuousOn_associatedBilinForm_apply_self {ω : SymplecticForm V} {X : Type*}
+/-- The map `x ↦ g_x(f x, g x)` for `g_x = ω(·, J(x) ·)` is continuous on a set when `J`, `f`
+and `g` are. -/
+theorem continuousOn_associatedBilinForm_apply {ω : SymplecticForm V} {X : Type*}
     [TopologicalSpace X] {J : X → AlmostComplexStructure V} {s : Set X}
-    (hJc : ContinuousOn (fun x ↦ (J x).toLinearMap.toContinuousLinearMap) s) {f : X → V}
-    (hf : ContinuousOn f s) :
-    ContinuousOn (fun x ↦ ω.associatedBilinForm (J x) (f x) (f x)) s := by
-  simpa using ω.continuousOn_apply_comp hf (hJc.clm_apply hf)
+    (hJc : ContinuousOn (fun x ↦ (J x).toLinearMap.toContinuousLinearMap) s) {f g : X → V}
+    (hf : ContinuousOn f s) (hg : ContinuousOn g s) :
+    ContinuousOn (fun x ↦ ω.associatedBilinForm (J x) (f x) (g x)) s := by
+  simpa using ω.continuousOn_apply_comp hf (hJc.clm_apply hg)
 
 end SymplecticForm
 

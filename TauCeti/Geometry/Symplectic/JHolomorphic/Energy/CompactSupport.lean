@@ -144,13 +144,20 @@ theorem integral_symplecticForm_fderiv_eq_zero (ω : SymplecticForm V) (hu : Con
     ∫ z, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) ∂μ = 0 :=
   integral_bilinForm_fderiv_apply_eq_zero_of_isAlt ω.isAlt hu hsupp _ _
 
-/-- A `C²` map with support in a compact set `K` has symplectic area zero over `K`. -/
+/-- A map with support in a compact set `K` that is `C²` at every point of `K` has symplectic area
+zero over `K`. -/
 theorem setIntegral_symplecticForm_fderiv_eq_zero (ω : SymplecticForm V) {K : Set (ℝ × ℝ)}
-    (hK : IsCompact K) (hu : ContDiff ℝ 2 u) (huK : tsupport u ⊆ K) :
+    (hK : IsCompact K) (hu : ∀ z ∈ K, ContDiffAt ℝ 2 u z) (huK : tsupport u ⊆ K) :
     ∫ z in K, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) ∂μ = 0 := by
+  -- Off `K`, the map vanishes near every point.
+  have hu' : ContDiff ℝ 2 u := contDiff_iff_contDiffAt.2 fun z ↦ by
+    by_cases hz : z ∈ K
+    · exact hu z hz
+    · exact contDiffAt_const.congr_of_eventuallyEq
+        (notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz (huK h))
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
     simp [fderiv_of_notMem_tsupport ℝ fun h ↦ hz (huK h)]]
-  exact integral_symplecticForm_fderiv_eq_zero ω hu
+  exact integral_symplecticForm_fderiv_eq_zero ω hu'
     (hK.of_isClosed_subset (isClosed_tsupport u) huK : HasCompactSupport u)
 
 /-- **The energy identity for a compactly supported map.** The integrated standard energy density
