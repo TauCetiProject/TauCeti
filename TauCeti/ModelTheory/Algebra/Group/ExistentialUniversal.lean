@@ -97,11 +97,11 @@ theorem existential_iff_systems
         φ.Realize v xs ↔
           ∃ ys : Fin k → G, ∃ S ∈ systems, S.IsSolution (Sum.elim v (Sum.elim xs ys)) c := by
   induction hφ with
-  | of_isQF h =>
-    obtain ⟨systems, hsys⟩ := quantifierFree_iff_systems h
-    refine ⟨0, systems.map (EqIneqSystem.relabel (Sum.map id Sum.inl)), fun G _ v c xs => ?_⟩
+  | @of_isQF _ φ h =>
+    refine ⟨0, φ.eqIneqSystems.map (EqIneqSystem.relabel (Sum.map id Sum.inl)),
+      fun G _ v c xs => ?_⟩
     rw [exists_solution_relabel_inl_iff]
-    exact hsys G v c xs
+    exact quantifierFree_iff_systems h v c xs
   | ex _ ih =>
     obtain ⟨k, systems, hsys⟩ := ih
     refine ⟨k + 1, systems.map (EqIneqSystem.relabel (Sum.map id (snocWitness _ k))),
@@ -124,12 +124,13 @@ theorem universal_iff_systems
         φ.Realize v xs ↔
           ¬∃ ys : Fin k → G, ∃ S ∈ systems, S.IsSolution (Sum.elim v (Sum.elim xs ys)) c := by
   induction hφ with
-  | of_isQF h =>
-    obtain ⟨systems, hsys⟩ := quantifierFree_iff_systems h.not
-    refine ⟨0, systems.map (EqIneqSystem.relabel (Sum.map id Sum.inl)), fun G _ v c xs => ?_⟩
+  | @of_isQF _ φ h =>
+    refine ⟨0, φ.not.eqIneqSystems.map (EqIneqSystem.relabel (Sum.map id Sum.inl)),
+      fun G _ v c xs => ?_⟩
     let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
     let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-    rw [exists_solution_relabel_inl_iff, ← hsys G v c xs, BoundedFormula.realize_not, not_not]
+    rw [exists_solution_relabel_inl_iff, ← quantifierFree_iff_systems h.not v c xs,
+      BoundedFormula.realize_not, not_not]
   | all _ ih =>
     obtain ⟨k, systems, hsys⟩ := ih
     refine ⟨k + 1, systems.map (EqIneqSystem.relabel (Sum.map id (snocWitness _ k))),
@@ -255,6 +256,23 @@ and the inequations `I`. -/
     G ⊨ noSolutionSentence E I ↔
       ¬∃ x : Fin n → G, (∀ e ∈ E, FreeGroup.lift x e = 1) ∧ ∀ i ∈ I, FreeGroup.lift x i ≠ 1 := by
   simp [noSolutionSentence, wordEqOne, Sentence.Realize]
+
+/-- With a single inequation `w ≠ 1`, the sentence `noSolutionSentence E {w}` is the universal
+implication `∀ x, (⋀ e ∈ E, e(x) = 1) → w(x) = 1`: a group satisfies it exactly when `w` vanishes
+at every tuple at which all words of `E` vanish. -/
+theorem realize_noSolutionSentence_singleton {G : Type*} [Group G]
+    (E : Finset (FreeGroup (Fin n))) (w : FreeGroup (Fin n)) : G ⊨ noSolutionSentence E {w} ↔
+      ∀ x : Fin n → G, (∀ e ∈ E, FreeGroup.lift x e = 1) → FreeGroup.lift x w = 1 := by
+  simp
+
+/-- A consequence `w` of the relators `E`, that is an element of their normal closure, vanishes
+wherever `E` does, in every group: every group satisfies `∀ x, E(x) = 1 → w(x) = 1`. -/
+theorem realize_noSolutionSentence_singleton_of_mem_normalClosure {G : Type*} [Group G]
+    {E : Finset (FreeGroup (Fin n))} {w : FreeGroup (Fin n)}
+    (hw : w ∈ Subgroup.normalClosure (E : Set (FreeGroup (Fin n)))) :
+    G ⊨ noSolutionSentence E {w} :=
+  (realize_noSolutionSentence_singleton E w).2 fun x hx =>
+    Subgroup.normalClosure_le_normal (N := (FreeGroup.lift x).ker) hx hw
 
 end NoSolution
 

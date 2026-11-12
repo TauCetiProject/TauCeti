@@ -40,12 +40,10 @@ an embedding that is locally bicollared. The embedding hypothesis cannot be drop
 figure-eight immersion of a line into the plane is locally bicollared and is not an embedding,
 since bicollars only see the domain locally.
 
-This is the codimension-one collaring bullet of layer 2 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`). What remains of that bullet is its global sphere
-conclusion: a locally flat `(n-1)`-sphere in `Sⁿ` is bicollared. That conclusion needs a genuinely
-global collaring argument and is not proved here. Positive-codimension normal bundles, the
-companion notion, are flagged by the roadmap as a dependency to be taken from elsewhere rather
-than built in this layer.
+The global statement for spheres, Brown's theorem that a locally flat `(n-1)`-sphere in `Sⁿ` is
+bicollared, needs a genuinely global collaring argument and is not proved here; it is stated in
+`TauCeti.Geometry.Manifold.LocallyFlat.Sphere`. Positive-codimension normal bundles, the
+companion notion, are not treated here.
 
 ## Main definitions
 

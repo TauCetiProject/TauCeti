@@ -304,14 +304,14 @@ theorem evenPeriodPolynomials_sup_oddPeriodPolynomials [Invertible (2 : R)] :
 theorem isCompl_evenPeriodPolynomials_oddPeriodPolynomials [Invertible (2 : R)] (w : ℕ) :
     IsCompl ((evenPeriodPolynomials R w).comap (periodPolynomials R w).subtype)
       ((oddPeriodPolynomials R w).comap (periodPolynomials R w).subtype) :=
-  Submodule.isCompl_comap_subtype
-    (disjoint_evenPeriodPolynomials_oddPeriodPolynomials
-      (isUnit_of_invertible (2 : R)).mul_right_injective)
-    (le_of_eq <| by
+  Submodule.isCompl_comap_subtype_iff.2
+    ⟨(disjoint_evenPeriodPolynomials_oddPeriodPolynomials
+      (isUnit_of_invertible (2 : R)).mul_right_injective).mono inf_le_right inf_le_right,
+    le_of_eq <| by
       have heven : evenPeriodPolynomials R w ≤ periodPolynomials R w := inf_le_left
       have hodd : oddPeriodPolynomials R w ≤ periodPolynomials R w := inf_le_left
       rw [inf_of_le_right heven, inf_of_le_right hodd,
-        evenPeriodPolynomials_sup_oddPeriodPolynomials])
+        evenPeriodPolynomials_sup_oddPeriodPolynomials]⟩
 
 /-! ### The Eisenstein polynomial -/
 

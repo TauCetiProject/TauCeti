@@ -30,8 +30,8 @@ reindexing: on both sides the summands are indexed by a cut position together wi
 block, and a cut never splits a block nor the letter that replaced one.
 
 This is the encoding in which an `A∞` algebra is a square-zero coderivation of the bar coalgebra of
-a suspended graded module, and its Taylor components are the operations `m_n`; that use is
-downstream, in the `DGAInfinity` roadmap.
+a suspended graded module, and its Taylor components are the operations `m_n`
+(`TauCeti.AInfinityAlgebra`).
 
 ## Main definitions
 

@@ -210,6 +210,17 @@ theorem measurable_empiricalFiniteMeasure :
   simp_rw [← empiricalFiniteMeasure_toMeasure, empiricalFiniteMeasure_apply hs]
   fun_prop
 
+/-- Empirical finite measures depend continuously on the family for the weak topology. Colliding
+values retain their multiplicities. -/
+@[fun_prop]
+theorem continuous_empiricalFiniteMeasure [TopologicalSpace α] [OpensMeasurableSpace α] :
+    Continuous (empiricalFiniteMeasure : (κ → α) → FiniteMeasure α) := by
+  apply FiniteMeasure.continuous_iff_forall_continuous_integral.mpr
+  intro f
+  simp_rw [integral_empiricalFiniteMeasure f.continuous.stronglyMeasurable]
+  exact (continuous_finsetSum _ fun i _ => f.continuous.comp (continuous_apply i)).const_smul
+    ((Fintype.card κ : ℝ)⁻¹)
+
 end FiniteFamily
 
 section FinitePopulation
@@ -325,11 +336,10 @@ topology. Colliding values retain their multiplicities. -/
 @[fun_prop]
 theorem continuous_empiricalMeasureOfFintype [TopologicalSpace α] [OpensMeasurableSpace α] :
     Continuous (empiricalMeasureOfFintype : (κ → α) → ProbabilityMeasure α) := by
-  apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.mpr
-  intro f
-  simp_rw [integral_empiricalMeasureOfFintype f.continuous.stronglyMeasurable]
-  exact (continuous_finsetSum _ fun i _ => f.continuous.comp (continuous_apply i)).const_smul
-    ((Fintype.card κ : ℝ)⁻¹)
+  -- The weak topology on probability measures is induced from the one on finite measures.
+  refine (ProbabilityMeasure.toFiniteMeasure_isEmbedding α).continuous_iff.mpr ?_
+  simpa only [Function.comp_def, toFiniteMeasure_empiricalMeasureOfFintype] using
+    continuous_empiricalFiniteMeasure
 
 /-- Finite empirical distributions depend measurably on the population. -/
 theorem measurable_empiricalMeasureOfFintype :
