@@ -123,7 +123,7 @@ theorem natDegree_geom_sum₂ {S : Type*} [Semiring S] [CharZero S]
   · have hc : (∑ i ∈ range n, p ^ i * q ^ (n - 1 - i)).coeff
         ((n - 1) * p.natDegree) = (n : S) := by
       rw [finsetSum_coeff]
-      trans ∑ i ∈ range n, (1 : S)
+      trans ∑ _ ∈ range n, (1 : S)
       · apply sum_congr rfl
         intro i hi
         rw [← hd i hi]

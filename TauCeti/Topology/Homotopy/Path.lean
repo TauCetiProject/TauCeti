@@ -101,7 +101,7 @@ theorem map_codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val) (hmem : �
 /-- Mapping a constant path gives the constant path at the image point. -/
 @[simp]
 theorem map_refl {Y : Type*} [TopologicalSpace Y] {f : X → Y} (hf : Continuous f) (a : X) :
-    (Path.refl a).map hf = Path.refl (f a) :=
+    (refl a).map hf = refl (f a) :=
   rfl
 
 /-- The value of `γ.trans δ` at `u` is the value of `γ` at any `v` with `v = 2 * u`. -/
@@ -161,7 +161,7 @@ theorem cast_subpath_eq_codRestrict {x y : X} {S : Set X} (γ : Path x y) {lo hi
   apply Path.ext
   funext t
   apply Subtype.ext
-  simp only [Path.cast_coe, Path.codRestrict_coe, coe_subpath, Function.comp_apply]
+  simp only [cast_coe, codRestrict_coe, coe_subpath, Function.comp_apply]
   rw [hp]
   exact (subpath_subpath_apply γ lo hi r s t).symm
 
@@ -204,12 +204,12 @@ theorem continuous_initialSegmentFamily_uncurry {a b : X} (γ : Path a b) :
 
 @[simp] theorem initialSegmentFamily_apply {a b : X} (γ : Path a b) (t s : I) :
     initialSegmentFamily γ t s = γ.extend (min (s : ℝ) t) := by
-  simp [initialSegmentFamily, Path.truncate, max_eq_left s.2.1]
+  simp [initialSegmentFamily, truncate, max_eq_left s.2.1]
 
 @[simp] theorem initialSegmentFamily_zero {a b : X} (γ : Path a b) :
-    initialSegmentFamily γ 0 = (Path.refl a).cast rfl (by simp) := by
+    initialSegmentFamily γ 0 = (refl a).cast rfl (by simp) := by
   ext s
-  simp [initialSegmentFamily_apply, γ.extend_zero, Path.refl, min_eq_right s.2.1]
+  simp [initialSegmentFamily_apply, γ.extend_zero, refl, min_eq_right s.2.1]
   -- `simp` unfolds `Path.refl` to its structure literal; applying that literal to `s` returns
   -- `a` by definition.
   rfl
@@ -233,12 +233,12 @@ theorem exists_homotopy_forall_mem_of_isSimplyConnected {V : Set X} (hV : IsSimp
   have haV : a ∈ V := p.source ▸ hp 0
   have hbV : b ∈ V := p.target ▸ hp 1
   obtain ⟨h⟩ := SimplyConnectedSpace.paths_homotopic
-    (Path.codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) p hp)
-    (Path.codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) q hq)
+    (codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) p hp)
+    (codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) q hq)
   -- map the subspace homotopy back down, and read its endpoints through `map_codRestrict`
   refine ⟨(h.map (⟨Subtype.val, continuous_subtype_val⟩ : C(V, X))).cast
-    (Path.map_codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) p hp)
-    (Path.map_codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) q hq), fun t x => ?_⟩
+    (map_codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) p hp)
+    (map_codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) q hq), fun t x => ?_⟩
   simp
 
 /-- **A square with prescribed edges is a path homotopy.** A continuous map on `I × I` that
@@ -335,13 +335,13 @@ variable {X : Type*} [TopologicalSpace X] {x y : X}
 /-- The constant path followed by `p` is a reparametrization of `p`, the counterpart of
 `Path.Homotopy.trans_refl_reparam`. -/
 theorem refl_trans_eq_reparam {y z : X} (p : Path y z) :
-    (Path.refl y).trans p =
+    (refl y).trans p =
       p.reparam (fun t => Set.projIcc 0 1 zero_le_one (2 * (t : ℝ) - 1)) (by fun_prop)
         (Subtype.ext (by norm_num)) (Subtype.ext (by norm_num)) := by
   ext t
-  rw [Path.trans_apply, Path.coe_reparam, Function.comp_apply]
+  rw [trans_apply, coe_reparam, Function.comp_apply]
   split_ifs with h
-  · rw [Path.refl_apply, Set.projIcc_of_le_left _ (by linarith)]
+  · rw [refl_apply, Set.projIcc_of_le_left _ (by linarith)]
     exact p.source.symm
   · exact congrArg p (Set.projIcc_of_mem _ ⟨by linarith, by linarith [t.2.2]⟩).symm
 
@@ -368,7 +368,7 @@ instance instTopologicalSpace (x₀ x : X) :
 /-- A set of path-homotopy classes is open exactly when its preimage under quotient
 construction is open. -/
 theorem isOpen_iff_preimage_mk {x₀ x₁ : X} {S : Set (Path.Homotopic.Quotient x₀ x₁)} :
-    IsOpen S ↔ IsOpen ((Path.Homotopic.Quotient.mk : Path x₀ x₁ →
+    IsOpen S ↔ IsOpen ((mk : Path x₀ x₁ →
       Path.Homotopic.Quotient x₀ x₁) ⁻¹' S) :=
   -- `Iff.rfl` is valid because `instTopologicalSpace` above is by definition the quotient
   -- topology (`inferInstanceAs`), so `IsOpen S` unfolds to openness of the `mk`-preimage.
@@ -456,11 +456,11 @@ theorem map_nullhomotopic_of_nullhomotopic {Y : Type*} [TopologicalSpace Y] {f :
     (hf : f.Nullhomotopic) {a : X} (γ : Path a a) :
     (γ.map (map_continuous f)).Homotopic (Path.refl (f a)) := by
   obtain ⟨c, ⟨F⟩⟩ := hf
-  have key := Path.Homotopic.map_trans_evalAt F γ
+  have key := map_trans_evalAt F γ
   have hconst : γ.map (map_continuous (ContinuousMap.const X c)) = Path.refl c := by ext t; rfl
   rw [hconst] at key
-  exact Path.Homotopic.trans_right_cancel
-    ((key.trans (Path.Homotopic.trans_refl _)).trans (Path.Homotopic.refl_trans _).symm)
+  exact trans_right_cancel
+    ((key.trans (trans_refl _)).trans (refl_trans _).symm)
 
 /-- A loop that stays in a set whose inclusion is null-homotopic is itself null-homotopic in the
 ambient space. -/

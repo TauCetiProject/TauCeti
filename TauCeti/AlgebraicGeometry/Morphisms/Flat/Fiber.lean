@@ -58,7 +58,7 @@ variable {X Y S : Scheme.{u}}
 
 /-- Precomposition with an isomorphism keeps a morphism flat. Inside the main proof below, instance
 search for this times out, so it is stated separately. -/
-private lemma flat_iso_hom_comp {X' Z : Scheme.{u}} (e : X' ≅ X) (k : X ⟶ Z) (h : Flat k) :
+private lemma flat_iso_hom_comp {X' Z : Scheme.{u}} (e : X' ≅ X) (k : X ⟶ Z) (_ : Flat k) :
     Flat (e.hom ≫ k) :=
   inferInstance
 

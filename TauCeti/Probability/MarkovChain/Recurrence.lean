@@ -200,7 +200,7 @@ theorem IsRecurrent.reaches_of_reaches (hx : κ.IsRecurrent x) (hxy : κ.Reaches
   have havoid : ∀ᵐ ω ∂markovChainLaw (Measure.dirac y) κ, ∀ n, ω n ≠ x :=
     ae_all_iff.mpr fun n => ae_iff.mpr (by simpa using hzero n)
   have hhit := hx.ae_hittingAfter_ne_top_of_reaches hxy
-  have : ∀ᵐ ω ∂markovChainLaw (Measure.dirac y) κ, False := by
+  have : ∀ᵐ _ ∂markovChainLaw (Measure.dirac y) κ, False := by
     filter_upwards [havoid, hhit] with ω hω hH
     exact hH (hittingAfter_eq_top_iff.mpr fun n _ => hω n)
   exact (Filter.Eventually.exists this).elim fun _ h => h
