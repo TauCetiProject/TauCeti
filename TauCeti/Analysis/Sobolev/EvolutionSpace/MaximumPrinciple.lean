@@ -85,7 +85,7 @@ theorem HasWeakLineDerivOn.nonpos_of_gelfandDual (hP : Continuous P) (hPb : ∀ 
     (memLp_one_iff_integrable.1 ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1 hu'
       hPu)).const_mul 2
   -- The function `y s = ‖(w s)⁺‖²` is continuous and vanishes at `a`.
-  set y : ℝ → ℝ := fun s ↦ ‖Lp.posPart (w s)‖ ^ 2 with hy_def
+  set y : ℝ → ℝ := fun s ↦ ‖Lp.posPart (w s)‖ ^ 2
   have hy : ContinuousOn y (Icc a b) := ((Lp.continuous_posPart.comp_continuousOn hw).norm).pow 2
   have hyae : (fun s ↦ ‖Lp.posPart (ι (u s))‖ ^ 2) =ᵐ[volume.restrict (Ioo a b)] y :=
     hae.fun_comp fun f ↦ ‖Lp.posPart f‖ ^ 2

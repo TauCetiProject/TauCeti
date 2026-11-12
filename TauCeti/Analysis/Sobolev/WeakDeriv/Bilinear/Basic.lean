@@ -80,7 +80,7 @@ private theorem hasLineDerivAt_bilin_self_convolution {B : V →L[ℝ] V →L[�
       (2 * (ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U') x
         ((ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U) x)) x v := by
   have hkx := hind.convolution_eq_apply_fderiv_convolution hU hρ hρc hx
-  set g := ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U with hg_def
+  set g := ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U
   have hgd : HasFDerivAt g (fderiv ℝ g x) x :=
     ((hρc.contDiff_convolution_left _ (hρ.of_le (by simp)) hU :
       ContDiff ℝ 1 g).differentiable one_ne_zero x).hasFDerivAt
