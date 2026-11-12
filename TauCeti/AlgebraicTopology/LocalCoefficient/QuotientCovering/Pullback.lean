@@ -293,6 +293,9 @@ theorem associatedLocalSystemBaseChangeIso_inv_app_comp_fiberIso_hom
         (hG.associatedLocalSystemFiberIso k (Rep.res φ D) e).hom =
       (hH.associatedLocalSystemFiberIso k D e').hom := by
   apply (cancel_epi ((hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).hom.app x)).1
+  -- As in `associatedLocalSystemMapOver_app_comp_fiberIso_hom`, the pulled-back fibre over `x` and
+  -- the fibre over `b.hom x.as` agree by definition of `pullback`, so the cancelation is pasted in
+  -- term mode.
   have h1 := (hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).hom_inv_id_app x
   have h2 := (congrArg (fun t ↦ t.app x ≫ (hH.associatedLocalSystemFiberIso k D e').hom)
       (hG.associatedLocalSystemBaseChangeIso_hom k hH f hf b hb D)).trans <|
@@ -318,6 +321,8 @@ theorem associatedLocalSystemBaseChangeIso_inv_comp_map_app_comp_fiberIso_hom
         (hG.associatedLocalSystemFiberIso k A e).hom =
       (hH.associatedLocalSystemFiberIso k D e').hom ≫
         ModuleCat.ofHom ξ.hom.toLinearMap := by
+  -- `(Rep.res φ D).V` is `D.V` by definition, so the forgotten `k`-module of `Rep.res φ D` agrees
+  -- with `ModuleCat.of k D` when rewriting by the inverse sheet-coordinate identity.
   rw [NatTrans.comp_app, Category.assoc, hG.associatedLocalSystemFiberIso_hom_naturality k ξ e,
     hG.associatedLocalSystemBaseChangeIso_inv_app_comp_fiberIso_hom_assoc k hH f hf b hb D
       e e' he,
