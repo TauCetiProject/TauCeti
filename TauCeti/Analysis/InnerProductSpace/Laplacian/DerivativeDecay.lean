@@ -11,7 +11,9 @@ import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
 /-!
 # Exponential decay of all derivatives of solutions of screened equations
@@ -217,34 +219,31 @@ theorem isBigO_fderiv_of_laplacian_eq_smul_add {g Φ : E → G} {V : E → ℝ} 
   obtain ⟨Kg, hKg⟩ := hgd.bound
   obtain ⟨L, hL⟩ := hVL.bound
   obtain ⟨KΦ, hKΦ⟩ := hΦ.bound
-  have hglim : Tendsto g (cocompact E) (𝓝 0) := hgd.trans_tendsto
-    (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-      ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))
+  have hglim : Tendsto g (cocompact E) (𝓝 0) :=
+    hgd.trans_tendsto (tendsto_exp_neg_mul_norm_cocompact hc)
   obtain ⟨R₀, -, hR₀⟩ := hasBasis_cobounded_norm.eventually_iff.mp
     (cobounded_eq_cocompact (α := E) ▸
       (hg.and (hVd.and (hVa.and (hL.and (hΦd.and (hKΦ.and (heq.and hKg))))))))
   set R := max R₀ 1
-  have hRR₀ : ∀ y : E, R ≤ ‖y‖ → y ∈ {x : E | R₀ ≤ ‖x‖} := fun y hy ↦
-    Set.mem_ofPred.mpr ((le_max_left _ _).trans hy)
-  simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), abs_one, mul_one] at hR₀
+  -- Split the hypotheses, which hold outside the ball of radius `R`, into named statements.
+  have hfar := fun (y : E) (hy : R ≤ ‖y‖) ↦
+    hR₀ (Set.mem_ofPred.mpr ((le_max_left R₀ 1).trans hy))
+  simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), abs_one, mul_one, forall_and] at hfar
+  obtain ⟨hgR, hVdR, hVaR, hLR, hΦdR, hKΦR, heqR, hKgR⟩ := hfar
   obtain ⟨K, hK₀, hK⟩ := exists_norm_sub_le_mul_exp_of_laplacian_eq_smul_add
     (L := max L 0) (Kg := max Kg 0) (KΦ := max KΦ 0) hc hca (le_max_right R₀ 1)
-    (le_max_right _ _) (le_max_right _ _) (le_max_right _ _)
-    (fun y hy ↦ (hR₀ (hRR₀ y hy)).1) (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.1)
-    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.1)
-    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.2.1.trans (le_max_left _ _))
-    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.2.2.1)
-    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.2.2.2.1.trans
+    (le_max_right _ _) (le_max_right _ _) (le_max_right _ _) hgR hVdR hVaR
+    (fun y hy ↦ (hLR y hy).trans (le_max_left _ _)) hΦdR
+    (fun y hy ↦ (hKΦR y hy).trans
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le))
-    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.2.2.2.2.1)
-    (fun y hy ↦ (hR₀ (hRR₀ y hy)).2.2.2.2.2.2.2.trans
+    heqR
+    (fun y hy ↦ (hKgR y hy).trans
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)) hglim
   refine IsBigO.of_bound K ?_
   filter_upwards [(tendsto_norm_cocompact_atTop (E := E)).eventually_gt_atTop (R + 1)] with x hx
   rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
   -- The difference bound makes `g` Lipschitz at `x` with constant `K exp (-c ‖x‖)`.
-  have hdx : DifferentiableAt ℝ g x :=
-    (hR₀ (hRR₀ x (by linarith))).1.differentiableAt (by norm_num)
+  have hdx : DifferentiableAt ℝ g x := (hgR x (by linarith)).differentiableAt (by norm_num)
   refine hdx.hasFDerivAt.le_of_lip' (by positivity) ?_
   filter_upwards [ball_mem_nhds x one_pos] with y hy
   have hy' : ‖y - x‖ ≤ 1 := by rw [← dist_eq_norm]; exact (mem_ball.mp hy).le
@@ -414,12 +413,9 @@ private theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff {�
         Left.neg_nonpos_iff]
       positivity
   have he1 : (fun x ↦ e x - 1) =O[cocompact E] ρ :=
-    Real.isBigO_exp_comp_sub_one (hℓd.trans_tendsto (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-      ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))) hℓd
+    Real.isBigO_exp_comp_sub_one (hℓd.trans_tendsto (tendsto_exp_neg_mul_norm_cocompact hc)) hℓd
   have helim : Tendsto e (cocompact E) (𝓝 1) := by
-    have h := (he1.trans_tendsto (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-      ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))).add_const 1
-    simpa using h
+    simpa using (he1.trans_tendsto (tendsto_exp_neg_mul_norm_cocompact hc)).add_const 1
   have he0 : e =O[cocompact E] fun _ ↦ (1 : ℝ) := by
     simpa using (he1.trans hρ1).add (isBigO_refl (fun _ : E ↦ (1 : ℝ)) (cocompact E))
   -- A rate `a` between `c` and `√κ`.
@@ -471,6 +467,26 @@ private theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff {�
     · exact ((hℓ.of_le (by simp)).isBigO_iteratedFDeriv_succ_exp (fun i _ hi ↦ hℓall i hi)
         ih.2).trans hρ1
 
+/-- **Passing to a globally smooth solution.** A solution of `Δ ℓ = κ (exp ℓ - 1)` that is smooth
+outside a compact set agrees near every point outside a compact set with a globally smooth `ℓ'`,
+which solves the same equation there and inherits the decay of `ℓ` and the bound on its
+derivative. -/
+private theorem exists_contDiff_of_laplacian_eq_exp_sub_one {ℓ : E → ℝ} {κ c : ℝ}
+    (hℓ : ∀ᶠ x in cocompact E, ContDiffAt ℝ ∞ ℓ x)
+    (heq : ∀ᶠ x in cocompact E, Δ ℓ x = κ * (Real.exp (ℓ x) - 1))
+    (hℓd : ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)))
+    (hℓ' : fderiv ℝ ℓ =O[cocompact E] fun _ ↦ (1 : ℝ)) :
+    ∃ ℓ' : E → ℝ, ContDiff ℝ ∞ ℓ' ∧ (∀ᶠ x in cocompact E, ℓ' =ᶠ[𝓝 x] ℓ) ∧
+      (∀ᶠ x in cocompact E, Δ ℓ' x = κ * (Real.exp (ℓ' x) - 1)) ∧
+      (ℓ' =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖))) ∧
+      fderiv ℝ ℓ' =O[cocompact E] fun _ ↦ (1 : ℝ) := by
+  obtain ⟨ℓ', hℓ'c, hagree⟩ := exists_contDiff_eventually_eventuallyEq hℓ
+  have hfar : ℓ' =ᶠ[cocompact E] ℓ := hagree.mono fun x hx ↦ hx.eq_of_nhds
+  refine ⟨ℓ', hℓ'c, hagree, ?_, hℓd.congr' hfar.symm EventuallyEq.rfl,
+    hℓ'.congr' (hagree.mono fun x hx ↦ hx.fderiv_eq.symm) EventuallyEq.rfl⟩
+  filter_upwards [hagree, heq] with x hx hx'
+  rw [(laplacian_congr_nhds hx).eq_of_nhds, hx', hx.eq_of_nhds]
+
 /-- **Exponential decay of all derivatives of solutions of `Δ ℓ = κ (exp ℓ - 1)`.** Let `ℓ` be
 smooth outside a compact set and solve `Δ ℓ = κ (exp ℓ - 1)` there. If `ℓ` is `O(exp (-c ‖x‖))`
 at infinity with `0 < c` and `c² < κ`, and its derivative is bounded at infinity, then every
@@ -481,14 +497,10 @@ theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one {ℓ : E → ℝ} {κ 
     (hℓd : ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)))
     (hℓ' : fderiv ℝ ℓ =O[cocompact E] fun _ ↦ (1 : ℝ)) (n : ℕ) :
     iteratedFDeriv ℝ n ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)) := by
-  obtain ⟨ℓ', hℓ'c, hagree⟩ := exists_contDiff_eventually_eventuallyEq hℓ
-  have hfar : ℓ' =ᶠ[cocompact E] ℓ := hagree.mono fun x hx ↦ hx.eq_of_nhds
-  have heq' : ∀ᶠ x in cocompact E, Δ ℓ' x = κ * (Real.exp (ℓ' x) - 1) := by
-    filter_upwards [hagree, heq] with x hx hx'
-    rw [(laplacian_congr_nhds hx).eq_of_nhds, hx', hx.eq_of_nhds]
-  have h := (isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff hc hcκ hℓ'c heq'
-    (hℓd.congr' hfar.symm EventuallyEq.rfl)
-    (hℓ'.congr' (hagree.mono fun x hx ↦ hx.fderiv_eq.symm) EventuallyEq.rfl) n).1 n le_rfl
+  obtain ⟨ℓ', hℓ'c, hagree, heq', hℓd', hℓ'd⟩ :=
+    exists_contDiff_of_laplacian_eq_exp_sub_one hℓ heq hℓd hℓ'
+  have h := (isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff hc hcκ hℓ'c heq' hℓd'
+    hℓ'd n).1 n le_rfl
   exact h.congr' (hagree.mono fun x hx ↦ (hx.iteratedFDeriv ℝ n).eq_of_nhds) EventuallyEq.rfl
 
 /-- **Exponential decay of all derivatives of `exp ℓ - 1`** for a solution of
@@ -501,21 +513,16 @@ theorem isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one {ℓ : E �
     (hℓ' : fderiv ℝ ℓ =O[cocompact E] fun _ ↦ (1 : ℝ)) (n : ℕ) :
     iteratedFDeriv ℝ n (fun x ↦ Real.exp (ℓ x) - 1) =O[cocompact E]
       fun x ↦ Real.exp (-(c * ‖x‖)) := by
-  obtain ⟨ℓ', hℓ'c, hagree⟩ := exists_contDiff_eventually_eventuallyEq hℓ
-  have hfar : ℓ' =ᶠ[cocompact E] ℓ := hagree.mono fun x hx ↦ hx.eq_of_nhds
-  have heq' : ∀ᶠ x in cocompact E, Δ ℓ' x = κ * (Real.exp (ℓ' x) - 1) := by
-    filter_upwards [hagree, heq] with x hx hx'
-    rw [(laplacian_congr_nhds hx).eq_of_nhds, hx', hx.eq_of_nhds]
-  have hℓd' : ℓ' =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)) :=
-    hℓd.congr' hfar.symm EventuallyEq.rfl
+  obtain ⟨ℓ', hℓ'c, hagree, heq', hℓd', hℓ'd⟩ :=
+    exists_contDiff_of_laplacian_eq_exp_sub_one hℓ heq hℓd hℓ'
   have hP := isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff hc hcκ hℓ'c heq' hℓd'
-    (hℓ'.congr' (hagree.mono fun x hx ↦ hx.fderiv_eq.symm) EventuallyEq.rfl)
+    hℓ'd
   have h : iteratedFDeriv ℝ n (fun x ↦ Real.exp (ℓ' x) - 1) =O[cocompact E]
       fun x ↦ Real.exp (-(c * ‖x‖)) := by
     rcases n with _ | n
     · refine (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.le).trans
-        (Real.isBigO_exp_comp_sub_one (hℓd'.trans_tendsto (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-          ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))) hℓd')
+        (Real.isBigO_exp_comp_sub_one
+          (hℓd'.trans_tendsto (tendsto_exp_neg_mul_norm_cocompact hc)) hℓd')
     · have he : ContDiff ℝ ∞ (fun x ↦ Real.exp (ℓ' x)) := Real.contDiff_exp.comp hℓ'c
       refine (isBigO_of_le _ fun y ↦ le_of_eq ?_).trans
         ((hℓ'c.of_le (by simp)).isBigO_iteratedFDeriv_succ_exp

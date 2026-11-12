@@ -185,7 +185,7 @@ theorem le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R 
   set A := B / (a ^ 2 - c ^ 2) with hA
   have hA₀ : 0 ≤ A := div_nonneg hB hgap.le
   -- Subtract the barrier `A exp (-c ‖x‖)`; the difference is an unforced subsolution.
-  set b : E → ℝ := fun y ↦ A * Real.exp (-(c * ‖y‖)) + 0 with hb
+  set b : E → ℝ := fun y ↦ A * Real.exp (-(c * ‖y‖)) with hb
   have hbcd : ∀ y : E, R < ‖y‖ → ContDiffAt ℝ 2 b y := fun y hy ↦ by
     have hy₀ : y ≠ 0 := norm_pos_iff.mp (hR.trans hy)
     have := (contDiffAt_norm ℝ hy₀ (n := 2))
@@ -197,26 +197,24 @@ theorem le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R 
       have : 0 ≤ b y := by positivity
       simp only [Pi.sub_apply]
       linarith [hbdry y hy]) ?_ hx
-  · simp only [hb, Pi.sub_apply, add_zero] at hle
+  · simp only [hb, Pi.sub_apply] at hle
     linarith
   · intro y hy
     have hy₀ : y ≠ 0 := norm_pos_iff.mp (hR.trans hy)
     rw [(hcd y hy).laplacian_sub (hbcd y hy)]
-    have hΔb := laplacian_exp_barrier_le hA₀ hc.le le_rfl hy₀
+    have hΔb : Δ b y ≤ c ^ 2 * b y := by
+      simpa [hb] using laplacian_exp_barrier_le (ε := 0) hA₀ hc.le le_rfl hy₀
     have hcoef : B = A * (a ^ 2 - c ^ 2) := by
       rw [hA, div_mul_cancel₀ _ hgap.ne']
     have he : 0 ≤ Real.exp (-(c * ‖y‖)) := (Real.exp_pos _).le
     have hVy := hV y hy
     have hsuby := hsub y hy
-    simp only [hb, Pi.sub_apply, add_zero] at hΔb ⊢
+    simp only [hb, Pi.sub_apply] at hΔb ⊢
     rw [hcoef] at hsuby
     nlinarith [mul_nonneg (mul_nonneg hA₀ he) (sub_nonneg.mpr hVy)]
   · have hexp : Tendsto b (cocompact E) (𝓝 0) := by
-      have h := (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-        ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc)).const_mul A
-      simpa [hb, Function.comp_def] using h
+      simpa [hb] using (tendsto_exp_neg_mul_norm_cocompact (E := E) hc).const_mul A
     rw [Pi.sub_def]
     simpa only [sub_zero] using hlim.sub hexp
-
 
 end TauCeti
