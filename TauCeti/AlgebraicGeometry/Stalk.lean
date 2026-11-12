@@ -143,7 +143,7 @@ instance : (toOpenNhds X x).Initial := by
 end AffineOpenNhds
 
 /-- The diagram of affine open subschemes containing `x`, with open-inclusion transition maps. -/
-@[expose, simps]
+@[expose, simps, implicit_reducible]
 def affineOpenNhdsDiagram : X.AffineOpenNhds x ⥤ Scheme.{u} where
   obj W := W.opens.toScheme
   map f := X.homOfLE (AffineOpenNhds.mk_le_mk.mp (leOfHom f))
@@ -178,7 +178,7 @@ theorem affineOpenNhdsDiagramIsoSpec_inv_app (W : X.AffineOpenNhds x) :
   NatIso.ofComponents_inv_app _ _ W
 
 /-- The cone with vertex `Spec 𝒪_{X,x}` over the diagram of affine open neighbourhoods of `x`. -/
-@[expose]
+@[expose, implicit_reducible]
 def specStalkCone : Cone (X.affineOpenNhdsDiagram x) where
   pt := Spec (X.presheaf.stalk x)
   π :=

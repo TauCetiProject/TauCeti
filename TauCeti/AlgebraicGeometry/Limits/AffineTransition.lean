@@ -28,8 +28,17 @@ Two points with the same images agree, and the topology is the one induced by th
 because the preimages of affine opens of the members form a basis of the limit
 (`isBasis_preimage_isAffineOpen`).
 
+For any diagram `D : I ⥤ Scheme` and open `U` of `D.obj i`, `opensDiagramObjIso` and
+`opensConePtIso` identify the stages of `opensDiagram D i U` and the vertex of `opensCone D c i U`
+with the corresponding preimage open subschemes `(D.map j.hom ⁻¹ᵁ U).toScheme` and
+`(c.π.app i ⁻¹ᵁ U).toScheme`, compatibly with `opensDiagramι`, transition maps, and cone
+projections.
+
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.opensDiagramObjIso` and `TauCeti.AlgebraicGeometry.opensConePtIso`:
+  identifications of the stages of `opensDiagram` and the vertex of `opensCone` with preimage open
+  subschemes, together with transition-map and cone-projection compatibility lemmas.
 * `TauCeti.AlgebraicGeometry.Scheme.residueFieldDiagram`: the residue fields of a compatible
   family of points of a diagram of schemes, as a diagram in `CommRingCatᵒᵖ`.
 * `TauCeti.AlgebraicGeometry.Scheme.fromSpecResidueFieldDiagram`: the morphisms `Spec κ(xᵢ) ⟶ Dᵢ`,
@@ -56,7 +65,73 @@ universe u
 
 open CategoryTheory Limits AlgebraicGeometry Opposite
 
-namespace TauCeti.AlgebraicGeometry.Scheme
+namespace TauCeti.AlgebraicGeometry
+
+section OpensDiagram
+
+variable {I : Type u} [Category.{u} I] (D : I ⥤ Scheme.{u}) (c : Cone D) (i : I)
+  (U : (D.obj i).Opens)
+
+/-- Identification of stage `j` of `opensDiagram D i U` with the open subscheme
+`(D.map j.hom ⁻¹ᵁ U).toScheme`. -/
+noncomputable def opensDiagramObjIso (j : Over i) :
+    (opensDiagram D i U).obj j ≅ (D.map j.hom ⁻¹ᵁ U).toScheme :=
+  eqToIso (opensDiagram_obj D i U j)
+
+/-- Identification of the vertex of `opensCone D c i U` with the open subscheme
+`(c.π.app i ⁻¹ᵁ U).toScheme`. -/
+noncomputable def opensConePtIso :
+    (opensCone D c i U).pt ≅ (c.π.app i ⁻¹ᵁ U).toScheme :=
+  eqToIso (opensCone_pt D c i U)
+
+/-- Composing `(opensDiagramObjIso D i U j).hom` with the open inclusion `(D.map j.hom ⁻¹ᵁ U).ι`
+gives the `j`-component of `opensDiagramι D i U`. -/
+@[reassoc (attr := simp)]
+theorem opensDiagramObjIso_hom_ι (j : Over i) :
+    (opensDiagramObjIso D i U j).hom ≫ (D.map j.hom ⁻¹ᵁ U).ι = (opensDiagramι D i U).app j :=
+  (Category.id_comp _).trans (opensDiagramι_app D i U j).symm
+
+/-- Composing `(opensDiagramObjIso D i U j).inv` with `(opensDiagramι D i U).app j` recovers the
+open inclusion `(D.map j.hom ⁻¹ᵁ U).ι`. -/
+@[reassoc]
+theorem opensDiagramObjIso_inv_app (j : Over i) :
+    (opensDiagramObjIso D i U j).inv ≫ (opensDiagramι D i U).app j = (D.map j.hom ⁻¹ᵁ U).ι := by
+  rw [← opensDiagramObjIso_hom_ι, Iso.inv_hom_id_assoc]
+
+/-- Under `opensDiagramObjIso`, a transition morphism of `opensDiagram D i U` corresponds to
+`Scheme.Hom.resLE` along `D.map f.left`. -/
+@[reassoc]
+theorem opensDiagram_map_comp_objIso_hom {j k : Over i} (f : j ⟶ k) :
+    (opensDiagram D i U).map f ≫ (opensDiagramObjIso D i U k).hom =
+      (opensDiagramObjIso D i U j).hom ≫
+        (D.map f.left).resLE (D.map k.hom ⁻¹ᵁ U) (D.map j.hom ⁻¹ᵁ U)
+          (by rw [← Scheme.Hom.comp_preimage, ← D.map_comp, Over.w f]) := by
+  rw [← cancel_mono (D.map k.hom ⁻¹ᵁ U).ι, Category.assoc, opensDiagramObjIso_hom_ι,
+    (opensDiagramι D i U).naturality f, Functor.comp_map, Over.forget_map,
+    Category.assoc, Scheme.Hom.resLE_comp_ι, opensDiagramObjIso_hom_ι_assoc]
+
+/-- Under `opensConePtIso` and `opensDiagramObjIso`, the `j`-projection of `opensCone D c i U`
+corresponds to `Scheme.Hom.resLE` along `c.π.app j.left`. -/
+@[reassoc]
+theorem opensCone_π_app_comp_objIso_hom (j : Over i) :
+    (opensCone D c i U).π.app j ≫ (opensDiagramObjIso D i U j).hom =
+      (opensConePtIso D c i U).hom ≫
+        (c.π.app j.left).resLE (D.map j.hom ⁻¹ᵁ U) (c.π.app i ⁻¹ᵁ U)
+          (by rw [← Scheme.Hom.comp_preimage, c.w]) :=
+  (Category.comp_id _).trans ((opensCone_π_app D c i U j).trans (Category.id_comp _).symm)
+
+/-- Composing the `j`-projection of `opensCone D c i U` with `(opensDiagramι D i U).app j` factors
+through `opensConePtIso`, `(c.π.app i ⁻¹ᵁ U).ι`, and `c.π.app j.left`. -/
+@[reassoc]
+theorem opensCone_π_app_comp_opensDiagramι_app (j : Over i) :
+    (opensCone D c i U).π.app j ≫ (opensDiagramι D i U).app j =
+      (opensConePtIso D c i U).hom ≫ (c.π.app i ⁻¹ᵁ U).ι ≫ c.π.app j.left := by
+  rw [← opensDiagramObjIso_hom_ι, ← Category.assoc, opensCone_π_app_comp_objIso_hom,
+    Category.assoc, Scheme.Hom.resLE_comp_ι]
+
+end OpensDiagram
+
+namespace Scheme
 
 section Points
 
@@ -208,4 +283,6 @@ instance preservesLimit_forgetToTop : PreservesLimit D Scheme.forgetToTop where
     rw [TopCat.nonempty_isLimit_iff_eq_induced _ h.some]
     exact topologicalSpace_eq_iInf_induced_of_isLimit hc
 
-end TauCeti.AlgebraicGeometry.Scheme
+end Scheme
+
+end TauCeti.AlgebraicGeometry

@@ -20,16 +20,9 @@ every point `s ∉ U`. Then pullback of finite étale schemes along `U.ι : U.to
 essentially surjective: every finite étale scheme over `U` extends to a finite étale scheme over `X`
 (Stacks Project, Lemma 58.21.6 (0EY7)).
 
-By Noetherian induction on `U` (`wellFounded_gt` on `X.Opens`), it suffices to strictly enlarge any
-proper open `U' ≠ ⊤` containing `U`. Because schemes are quasi-sober, `X \ U'` contains the generic
-point `s` of an irreducible component
-(`AlgebraicGeometry.Scheme.Opens.exists_notMem_specializes_imp_mem`), so `s ∉ U'` while all strict
-generizations of `s` lie in `U'`. Consequently the preimage of `U'` in `Spec 𝒪_{X,s}` is the
-punctured spectrum of `𝒪_{X,s}`
-(`TauCeti.fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes`). Local purity at `s` extends
-the pulled-back cover across `Spec 𝒪_{X,s}`, and stalk spreading and binary open gluing
-(`TauCeti.FiniteEtaleScheme.exists_spread_fromSpecStalk`) extend the cover to
-`(U' ⊔ W.opens).toScheme` for some affine open neighbourhood `W` of `s`.
+This reduces global extension of finite étale covers—such as Zariski–Nagata purity across closed
+subsets of codimension at least `2` on regular Noetherian schemes—to local purity of the stalk local
+rings `𝒪_{X,s}` at points outside `U`.
 
 ## Main results
 
@@ -63,6 +56,9 @@ theorem exists_extend_of_purity_at_point {X : Scheme.{u}} {U : X.Opens} [QuasiCo
     (V : FiniteEtaleScheme U.toScheme) :
     ∃ (W : X.AffineOpenNhds s) (V' : FiniteEtaleScheme (U ⊔ W.opens).toScheme),
       Nonempty ((pullback (X.homOfLE le_sup_left)).obj V' ≅ V) := by
+  -- Since `s ∉ U` and all strict generizations of `s` lie in `U`, the preimage of `U` in
+  -- `Spec 𝒪_{X,s}` is the punctured spectrum; local purity extends the pulled-back cover across
+  -- `Spec 𝒪_{X,s}`, and stalk spreading glues it onto `U ⊔ W.opens`.
   have hpunc :
       X.fromSpecStalk s ⁻¹ᵁ U = IsLocalRing.puncturedSpectrum (X.presheaf.stalk s) :=
     fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes hsU hgen
@@ -104,6 +100,9 @@ along `U.ι : U.toScheme ⟶ X` is essentially surjective. -/
 theorem finiteEtale_extend_of_purity {X : Scheme.{u}} [NoetherianSpace X] (U : X.Opens)
     (hpurity : ∀ s : X, s ∉ U → TauCeti.IsLocalRing.PurityHolds (X.presheaf.stalk s)) :
     (TauCeti.FiniteEtaleScheme.pullback U.ι).EssSurj := by
+  -- Induct on `U'` with respect to `wellFounded_gt` on `X.Opens`: any proper open `U' ≠ ⊤`
+  -- misses the generic point `s` of an irreducible component of `X \ U'`, so all strict
+  -- generizations of `s` lie in `U'` and `exists_extend_of_purity_at_point` strictly enlarges `U'`.
   suffices h :
       ∀ (U' : X.Opens), U ≤ U' →
         ∀ V' : TauCeti.FiniteEtaleScheme U'.toScheme,
