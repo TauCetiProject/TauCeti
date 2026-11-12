@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.MeasureTheory.Integral.Prod
@@ -705,12 +706,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   have hAT (q : Puncture) : A q ⊆ T := image_endPiece_subset q R
   have hAd : Pairwise (Disjoint on A) := fun q r hqr => disjoint_image_endPiece hqr
   have hsplit (f : ℝ × ℝ → ℝ) (hf : IntegrableOn f T) :
-      ∫ z in T, f z = (∫ z in C, f z) + ∑ q, ∫ z in A q, f z := by
-    have hTC : T = C ∪ ⋃ q, A q := (sdiff_union_of_subset (iUnion_subset hAT)).symm
-    conv_lhs => rw [hTC]
-    rw [setIntegral_union disjoint_sdiff_left (MeasurableSet.iUnion hAm)
-      (hf.mono_set sdiff_subset) (hf.mono_set (iUnion_subset hAT)),
-      integral_iUnion_fintype hAm hAd fun q => hf.mono_set (hAT q)]
+      ∫ z in T, f z = (∫ z in C, f z) + ∑ q, ∫ z in A q, f z :=
+    setIntegral_eq_setIntegral_diff_iUnion_add_sum hAm hAd hAT hf
   -- On the core the perturbation vanishes nearby, so the energy is the area and the curvature
   -- vanishes.
   have hcore {z : ℝ × ℝ} (hz : z ∈ C) :
@@ -727,7 +724,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
     refine setIntegral_congr_fun hCm fun z hz => ?_
     have hK : pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) = fun _ => 0 :=
       funext (pairOfPantsPerturbation_eq_zero_of_forall_le fun q ↦ (hcore hz q).le)
-    simp [floerEnergyDensity_def, hK, hamiltonianVectorField_const]
+    exact ω.floerEnergyDensity_of_eq_zero u (funext fun x ↦ by simp [hK])
+      (funext fun x ↦ by simp [hK])
   have hCR : ∫ z in C, ω.hamiltonianCurvature
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)

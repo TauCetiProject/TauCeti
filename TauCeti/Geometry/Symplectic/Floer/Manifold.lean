@@ -259,14 +259,23 @@ theorem floerEnergyDensity_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → 
         (ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
 
+/-- At a point where the perturbation vanishes, the Floer energy density is the symplectic area
+density `ω(∂_s u, ∂_t u)`. -/
+theorem floerEnergyDensity_of_eq_zero (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ → M → ℝ}
+    (u : ℝ × ℝ → M) {z : ℝ × ℝ} (hs : Ks z = fun _ ↦ 0) (ht : Kt z = fun _ ↦ 0) :
+    ω.floerEnergyDensity Ks Kt u z =
+      SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
+  simp [floerEnergyDensity_def, hs, ht, hamiltonianVectorField_const]
+
 /-- For the zero perturbation the Floer energy density is the symplectic area density
 `ω(∂_s u, ∂_t u)`. -/
 @[simp]
 theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
     ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z =
       SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
-  simp [floerEnergyDensity_def]
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) :=
+  ω.floerEnergyDensity_of_eq_zero u rfl rfl
 
 /-- Translating a map and its perturbation data by `v` translates the Floer energy density by
 `v`. -/

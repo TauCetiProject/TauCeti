@@ -18,7 +18,8 @@ a set. This file records its global form: a jointly continuous integrand which v
 integration variable lies in a fixed compact set has a continuous parametric integral, against any
 measure which is finite on compact sets. It also records that the indicator function of a
 bounded interval `[a, b)` is integrable against a locally finite measure, that the integral of
-`|f|` over a set splits along the sign of `f`, and that a continuous
+`|f|` over a set splits along the sign of `f`, that an integral over a set splits along finitely
+many disjoint measurable subsets, and that a continuous
 square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
 on nonempty open sets.
 
@@ -32,6 +33,8 @@ on nonempty open sets.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
   `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
   exponential `exp (t x I)` are integrable on a set of finite measure.
+* `MeasureTheory.setIntegral_eq_setIntegral_diff_iUnion_add_sum`: an integral over `T` splits along
+  finitely many pairwise disjoint measurable subsets of `T` and the rest of `T`.
 * `MeasureTheory.setIntegral_mul_le_mul_setIntegral_abs`: the pairing of an integrable `f` on `Ω`
   with a function `g` bounded by `S` on `V ⊆ Ω` is at most `S ∫_Ω |f|`.
 * `MeasureTheory.setLIntegral_enorm_sq_eq_ofReal_setIntegral`: the Lebesgue integral of `‖f‖ₑ ^ 2`
@@ -163,6 +166,18 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
   exact hpos.ne' h0
 
 namespace MeasureTheory
+
+/-- An integral over `T` splits along finitely many pairwise disjoint measurable sets `A i ⊆ T`
+into the integral over the rest `T \ ⋃ i, A i` plus the sum of the integrals over the `A i`. -/
+theorem setIntegral_eq_setIntegral_diff_iUnion_add_sum {α E ι : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [Fintype ι] {ν : Measure α} {T : Set α}
+    {A : ι → Set α} (hAm : ∀ i, MeasurableSet (A i)) (hAd : Pairwise (Disjoint on A))
+    (hAT : ∀ i, A i ⊆ T) {f : α → E} (hf : IntegrableOn f T ν) :
+    ∫ x in T, f x ∂ν = (∫ x in T \ ⋃ i, A i, f x ∂ν) + ∑ i, ∫ x in A i, f x ∂ν := by
+  conv_lhs => rw [← sdiff_union_of_subset (iUnion_subset hAT)]
+  rw [setIntegral_union disjoint_sdiff_left (MeasurableSet.iUnion hAm)
+    (hf.mono_set sdiff_subset) (hf.mono_set (iUnion_subset hAT)),
+    integral_iUnion_fintype hAm hAd fun i ↦ hf.mono_set (hAT i)]
 
 /-- The pairing of an integrable function `f` on `Ω` with a function `g` bounded by `S` on
 `V ⊆ Ω` is at most `S ∫_Ω |f|`. -/
