@@ -29,6 +29,8 @@ the transposed diagonal by `TauCeti.NatChainComplex.cup_koszulBraidingHom`.
 * `TopCat.singularCup_gradedComm`: graded commutativity for braided coefficient data.
 * `TopCat.singularCup_gradedComm_tensorUnit`: graded commutativity for a commutative pairing on
   cohomology with unit coefficient object.
+* `TopCat.singularCup_self_eq_zero_of_odd`: over a field `k` with `2 ≠ 0`, `α ⌣ α = 0` for `α`
+  of odd degree.
 
 ## References
 
@@ -84,5 +86,24 @@ theorem singularCup_gradedComm_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing
       ((-1 : ℤ) ^ (p * q)) • X.singularCup k (λ_ _).inv μ p q n h a b :=
   singularCup_gradedComm X k (by
     rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, unitors_inv_equal]) hμ h a b
+
+/-- **Cup squares of odd classes vanish** when `2 ≠ 0` in the field `k`: by graded commutativity,
+`α ⌣ α = -(α ⌣ α)` for `α` of odd degree. -/
+theorem singularCup_self_eq_zero_of_odd {k : Type w} [Field k] (X : TopCat.{w})
+    (h2 : (2 : k) ≠ 0) {p n : ℕ} (hp : Odd p) (h : p + p = n)
+    (α : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :
+    X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ (𝟙_ (ModuleCat.{w} k))).hom
+      p p n h α α = 0 := by
+  have hμ : (β_ (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k))).hom ≫
+      (λ_ (𝟙_ (ModuleCat.{w} k))).hom = (λ_ (𝟙_ (ModuleCat.{w} k))).hom := by
+    simp [unitors_inv_equal]
+  have hcomm := X.singularCup_gradedComm_tensorUnit k hμ h α α
+  rw [(hp.mul hp).neg_one_pow, neg_one_smul] at hcomm
+  have h2' : (2 : k) • X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
+      (λ_ (𝟙_ (ModuleCat.{w} k))).hom p p n h α α = 0 := by
+    rw [two_smul]
+    nth_rw 1 [hcomm]
+    exact neg_add_cancel _
+  exact (smul_eq_zero.1 h2').resolve_left h2
 
 end TopCat

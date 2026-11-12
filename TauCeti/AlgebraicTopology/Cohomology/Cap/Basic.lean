@@ -41,6 +41,8 @@ Section 3.3.
   `TopCat.singularCap_def` exhibiting it as a cap product of chains and cochains,
   `TopCat.singularCap_homologyπ` computing it on classes of cycles and cocycles and
   `TopCat.singularCap_naturality` its naturality.
+* `TopCat.singularCapLinearMap`: capping with a fixed class `μ ∈ Hₙ(X; k)`, as a `k`-linear map
+  `Hᵖ(X; k) → H_q(X; k)`.
 
 ## References
 
@@ -142,5 +144,33 @@ lemma singularCap_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (k : Type*) [Ring 
     (SSet.chainComplexPairing_naturality (toSSet.map f) μ).symm p q n h α
 
 end Homology
+
+section ModuleCat
+
+variable {k : Type w} [CommRing k] (X : TopCat.{w})
+
+/-- **Capping with a homology class**: for `μ ∈ Hₙ(X; k)` and `p + q = n`, the `k`-linear map
+`Hᵖ(X; k) → H_q(X; k)`, `α ↦ μ ⌢ α`, with the cap product taken along the unitors of
+`𝟙_ (ModuleCat k)`. -/
+def singularCapLinearMap {p q n : ℕ} (h : p + q = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
+    X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p →ₗ[k]
+      ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ (ModuleCat.{w} k))).obj X where
+  toFun α := (X.singularCap k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ (𝟙_ (ModuleCat.{w} k))).hom
+    p q n h α).hom μ
+  map_add' α β := by simp
+  map_smul' c α := by simp
+
+/-- `TopCat.singularCapLinearMap h μ α` is the cap product `μ ⌢ α`. -/
+@[simp]
+theorem singularCapLinearMap_apply {p q n : ℕ} (h : p + q = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X)
+    (α : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :
+    X.singularCapLinearMap h μ α =
+      (X.singularCap k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ (𝟙_ (ModuleCat.{w} k))).hom
+        p q n h α).hom μ :=
+  (rfl)
+
+end ModuleCat
 
 end TopCat

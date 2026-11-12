@@ -28,6 +28,10 @@ the module `k` and `u` the inverse left unitor, this is the identity
 `⟨ψ, x ⌢ φ⟩ = ⟨φ ⌣ ψ, x⟩` of Hatcher, Section 3.3, which makes the cap product the adjoint of
 the cup product under the Kronecker pairing.
 
+For a class `μ ∈ Hₙ(X; k)`, evaluating cup products on `μ` is the bilinear cup pairing
+`TopCat.singularCupPairing`, `(α, β) ↦ ⟨α ⌣ β, μ⟩`, and the identity above says that it is
+`⟨β, μ ⌢ α⟩` (`TopCat.singularCupPairing_eq_singularKronecker_singularCapLinearMap`).
+
 The key chain-level input is `SSet.chainComplexPairing_leftUnitor_hom_f`, from
 `TauCeti.AlgebraicTopology.SimplicialSet.Homology.Pairing`: the action of the tensor unit on
 singular chains is the left unitor.
@@ -66,5 +70,47 @@ theorem singularCap_comp_singularKronecker (X : TopCat.{w}) (k : Type*) [CommRin
   refine TauCeti.ChainComplex.cap_comp_kronecker _ _ _ p q n h φ ψ ψ ?_
   rw [SSet.chainComplexPairing_leftUnitor_hom_f]
   exact (leftUnitor_naturality _).symm
+
+section ModuleCat
+
+variable {k : Type w} [CommRing k] (X : TopCat.{w})
+
+/-- **The cup pairing on a homology class**: for `μ ∈ Hₙ(X; k)` and `p + q = n`, the bilinear form
+`(α, β) ↦ ⟨α ⌣ β, μ⟩` on `Hᵖ(X; k) × H^q(X; k)`, with the cup product taken along the unitors of
+`𝟙_ (ModuleCat k)`. -/
+def singularCupPairing {p q n : ℕ} (h : p + q = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
+    X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p →ₗ[k]
+      X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q →ₗ[k] k :=
+  LinearMap.mk₂ k
+    (fun α β ↦ (X.singularKronecker k n (X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
+      (λ_ (𝟙_ (ModuleCat.{w} k))).hom p q n h α β)).hom μ)
+    (fun α α' β ↦ by simp) (fun c α β ↦ by simp) (fun α β β' ↦ by simp) (fun c α β ↦ by simp)
+
+/-- The cup pairing of `α` and `β` on `μ` is the Kronecker pairing `⟨α ⌣ β, μ⟩`. -/
+@[simp]
+theorem singularCupPairing_apply {p q n : ℕ} (h : p + q = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X)
+    (α : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
+    (β : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
+    X.singularCupPairing h μ α β =
+      (X.singularKronecker k n (X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
+        (λ_ (𝟙_ (ModuleCat.{w} k))).hom p q n h α β)).hom μ :=
+  (rfl)
+
+/-- The cup pairing of `α` and `β` on `μ` is the Kronecker pairing `⟨β, μ ⌢ α⟩` of `β` with the
+cap product of `μ` and `α`. -/
+theorem singularCupPairing_eq_singularKronecker_singularCapLinearMap {p q n : ℕ}
+    (h : p + q = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X)
+    (α : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
+    (β : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
+    X.singularCupPairing h μ α β =
+      (X.singularKronecker k q β).hom (X.singularCapLinearMap h μ α) := by
+  rw [singularCupPairing_apply, singularCapLinearMap_apply,
+    ← singularCap_comp_singularKronecker]
+  rfl
+
+end ModuleCat
 
 end TopCat
