@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Bilinear
-public import TauCeti.Analysis.Normed.Operator.Bilinear
+public import TauCeti.Analysis.Normed.Operator.Bilinear.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
