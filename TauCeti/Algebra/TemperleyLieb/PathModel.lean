@@ -101,6 +101,22 @@ instance [DecidableEq V] [DecidableRel G.Adj] {m : ℕ} (s : Fin (m + 1) → V) 
 
 variable {G v₀}
 
+/-- A vertex sequence is a walk from `v₀` exactly when it starts at `v₀` and consecutive vertices
+are adjacent. -/
+theorem isWalkFrom_iff {m : ℕ} (s : Fin (m + 1) → V) :
+    IsWalkFrom G v₀ s ↔ s 0 = v₀ ∧ ∀ i : Fin m, G.Adj (s i.castSucc) (s i.succ) :=
+  (Iff.rfl)
+
+/-- A walk with no steps is just its starting vertex. -/
+@[simp]
+theorem isWalkFrom_zero (s : Fin 1 → V) : IsWalkFrom G v₀ s ↔ s 0 = v₀ := by
+  simp [isWalkFrom_iff]
+
+/-- A walk from `v₀` starts at `v₀`. -/
+theorem IsWalkFrom.apply_zero {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s) :
+    s 0 = v₀ :=
+  ((isWalkFrom_iff s).1 hs).1
+
 /-- A walk extended by one vertex is a walk exactly when the new vertex is adjacent to the old
 endpoint. -/
 theorem isWalkFrom_snoc {m : ℕ} (s : Fin (m + 1) → V) (y : V) :
@@ -394,8 +410,9 @@ variable (hr : ∀ v, r v ≠ 0) {δ : K} (hδ : ∀ v, ∑ u ∈ G.neighborFins
 variable (G v₀) in
 /-- The **path representation** of the Temperley–Lieb algebra on `n` strands with loop value `δ`,
 on functions of the vertex sequences of length `n + 1`: the generator `e i` acts by the generator
-matrix at position `i + 1`. It is supported on the walks in `G` starting at `v₀`; on the other
-vertex sequences every generator acts by `0`. -/
+matrix at position `i + 1`. The generator matrices are supported on the walks in `G` starting at
+`v₀`, so on the functions supported on the other vertex sequences the representation acts through
+the character sending every generator to `0`. -/
 def pathRep : TemperleyLieb K δ n →ₐ[K] Matrix (Fin (n + 1) → V) (Fin (n + 1) → V) K :=
   lift (fun i ↦ pathGenerator G v₀ r ⟨i, by omega⟩ ⟨i + 1, by omega⟩ ⟨i + 2, by omega⟩)
     (fun _ ↦ pathGenerator_mul_self hr hδ rfl rfl)
