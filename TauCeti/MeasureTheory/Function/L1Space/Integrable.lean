@@ -28,7 +28,8 @@ seminormed group, and on the real line positive-order `Lᵖ` membership is equiv
 integrability of the corresponding absolute power.
 
 The pointwise supremum of finitely many integrable lattice-valued functions is integrable
-(`MeasureTheory.integrable_finset_sup'`).
+(`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
+integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`).
 -/
 
 public section
@@ -74,8 +75,8 @@ theorem Integrable.isFiniteMeasure_of_one_le_norm {X F : Type*} [MeasurableSpace
     [SeminormedAddGroup F] {f : X → F} {μ : Measure X} (hf : Integrable f μ)
     (h_one : ∀ᵐ x ∂μ, 1 ≤ ‖f x‖) : IsFiniteMeasure μ :=
   (hasFiniteIntegral_const_iff_isFiniteMeasure (one_ne_zero (α := ℝ))).1 <|
-    hf.hasFiniteIntegral.mono_enorm <| h_one.mono fun _ hx ↦ by
-      rwa [enorm_le_iff_norm_le, norm_one]
+    hf.hasFiniteIntegral.mono_eNorm <| h_one.mono fun _ hx ↦ by
+      rwa [eNorm_le_iff_norm_le, norm_one]
 
 /-- The pointwise supremum over a nonempty finset of integrable functions with values in a normed
 lattice is integrable. -/
@@ -85,6 +86,13 @@ theorem integrable_finset_sup' {X β κ : Type*} [MeasurableSpace X] [NormedAddC
     Integrable (fun x ↦ s.sup' hs fun i ↦ f i x) μ := by
   simpa only [← Finset.sup'_apply] using
     Finset.sup'_induction (p := fun h ↦ Integrable h μ) hs f (fun _ h₁ _ h₂ ↦ h₁.sup h₂) hf
+
+/-- A function that is nonzero at an atom of infinite mass is not integrable. -/
+theorem not_integrable_of_measure_singleton_eq_top {α E : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] [NormedAddCommGroup E] {ν : Measure α} {f : α → E} {x : α}
+    (hx : ν {x} = ⊤) (hf : f x ≠ 0) : ¬ Integrable f ν := fun hint ↦ by
+  have h := (integrableOn_singleton_iff (μ := ν)).1 hint.integrableOn
+  simp [hx, hf] at h
 
 /-- For a positive real order `p`, if `g` lies in `Lᵖ` then `g ^ p` is integrable. -/
 theorem MemLp.integrable_rpow {X : Type*} [MeasurableSpace X] {μ : Measure X} {g : X → ℝ}
@@ -109,7 +117,7 @@ theorem integrable_norm_rpow_of_memLp_id_ofReal {E : Type*} [SeminormedAddCommGr
     (hν : MemLp id (ENNReal.ofReal p) ν) : Integrable (fun x : E ↦ ‖x‖ ^ p) ν := by
   -- Apply the normed-target moment lemma to the real-valued norm.
   simpa only [ENNReal.toReal_ofReal hp, id_eq, norm_norm] using
-    (hν.of_le_enorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
+    (hν.of_le_eNorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
 
 /-- For a positive real order, `Lᵖ` membership of the identity on the real line is
 equivalent to integrability of the absolute power. -/

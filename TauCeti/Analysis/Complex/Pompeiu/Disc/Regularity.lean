@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Complex.Pompeiu.Disc.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
+import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Normed.Field.Lipschitz
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.ContDiff.Comp
@@ -127,45 +129,6 @@ theorem norm_pi_inv_mul_integral_sub_inv_ball_le {r : ℝ} (hr : 0 ≤ r) (c w :
 A convenient constant `3` follows directly from the two exact formulas. -/
 theorem lipschitzWith_pi_inv_mul_integral_sub_inv_ball {r : ℝ} (hr : 0 ≤ r) (c : ℂ) :
     LipschitzWith 3 (fun w => (π : ℂ)⁻¹ * ∫ z in ball c r, (w - z)⁻¹) := by
-  have hcross (x y : ℂ) (hx : ‖x‖ ≤ r) (hy : r < ‖y‖) :
-      ‖conj x - (r : ℂ)^2/y‖ ≤ 3*‖x - y‖ := by
-    have hy0 : 0 < ‖y‖ := hr.trans_lt hy
-    have hyne : y ≠ 0 := norm_pos_iff.mp hy0
-    have hconj : conj y * y = (‖y‖ : ℂ)^2 := by
-      rw [← Complex.normSq_eq_conj_mul_self, Complex.normSq_eq_norm_sq, Complex.ofReal_pow]
-    have heq : conj y - (r : ℂ)^2/y = (((‖y‖^2 - r^2 : ℝ) : ℂ))/y := by
-      apply (eq_div_iff hyne).mpr
-      rw [sub_mul, div_mul_cancel₀ _ hyne, hconj]
-      push_cast
-      rfl
-    have hgap : ‖y‖-r ≤ ‖x - y‖ := by
-      have h := norm_le_norm_add_norm_sub x y
-      linarith
-    have htail : ‖conj y - (r : ℂ)^2/y‖ ≤ 2 * (‖y‖-r) := by
-      rw [heq, norm_div, norm_real, Real.norm_eq_abs,
-        abs_of_nonneg (by nlinarith : 0 ≤ ‖y‖^2 - r^2)]
-      apply (div_le_iff₀ hy0).mpr
-      nlinarith
-    calc
-      _ ≤ ‖conj x - conj y‖ + ‖conj y - (r : ℂ)^2/y‖ := by
-        simpa only [dist_eq_norm] using dist_triangle (conj x) (conj y) ((r : ℂ)^2/y)
-      _ ≤ ‖x - y‖ + 2 * (‖y‖-r) := by
-        rw [← map_sub, norm_conj]
-        exact add_le_add le_rfl htail
-      _ ≤ _ := by linarith
-  have hout (x y : ℂ) (hx : r < ‖x‖) (hy : r < ‖y‖) :
-      ‖(r : ℂ)^2/x - (r : ℂ)^2/y‖ ≤ ‖x - y‖ := by
-    have hx0 : 0 < ‖x‖ := hr.trans_lt hx
-    have hy0 : 0 < ‖y‖ := hr.trans_lt hy
-    have hxn : x ≠ 0 := norm_pos_iff.mp hx0
-    have hyn : y ≠ 0 := norm_pos_iff.mp hy0
-    have heq : (r : ℂ)^2/x - (r : ℂ)^2/y = (r : ℂ)^2 * (y - x)/(x * y) := by
-      field_simp
-    rw [heq, norm_div, norm_mul, norm_mul, norm_pow, norm_real, Real.norm_eq_abs,
-      abs_of_nonneg hr, norm_sub_rev y x]
-    apply (div_le_iff₀ (mul_pos hx0 hy0)).mpr
-    have hb : r^2 ≤ ‖x‖*‖y‖ := by nlinarith
-    nlinarith [norm_nonneg (x - y)]
   apply LipschitzWith.of_dist_le_mul
   intro x y
   rw [dist_eq_norm, pi_inv_mul_integral_sub_inv_ball hr, pi_inv_mul_integral_sub_inv_ball hr]
@@ -175,11 +138,14 @@ theorem lipschitzWith_pi_inv_mul_integral_sub_inv_ball {r : ℝ} (hr : 0 ≤ r) 
   · simp only [← map_sub, norm_conj, sub_sub_sub_cancel_right]
     rw [dist_eq_norm]
     nlinarith [norm_nonneg (x - y)]
-  · exact (hcross (x - c) (y - c) hx (not_le.mp hy)).trans_eq (by rw [hd])
+  · exact (Complex.norm_conj_sub_sq_div_le (x - c) (y - c) hx (not_le.mp hy).le).trans_eq
+      (by rw [hd])
   · rw [norm_sub_rev]
-    exact (hcross (y - c) (x - c) hy (not_le.mp hx)).trans_eq (by
-      rw [norm_sub_rev (y - c) (x - c), hd])
-  · exact (hout (x - c) (y - c) (not_le.mp hx) (not_le.mp hy)).trans (by
+    exact (Complex.norm_conj_sub_sq_div_le (y - c) (x - c) hy (not_le.mp hx).le).trans_eq
+      (by rw [norm_sub_rev (y - c) (x - c), hd])
+  · exact (norm_sq_div_sub_sq_div_le (c := (r : ℂ)) (x := x - c) (y := y - c)
+      ((Complex.norm_of_nonneg hr).le.trans (not_le.mp hx).le)
+      ((Complex.norm_of_nonneg hr).le.trans (not_le.mp hy).le)).trans (by
       rw [hd]
       nlinarith [dist_nonneg (x := x) (y := y)])
 

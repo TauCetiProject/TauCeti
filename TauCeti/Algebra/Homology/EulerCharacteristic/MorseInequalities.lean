@@ -124,10 +124,10 @@ theorem exists_sum_range_monomial_eq_add_mul {b c : ℕ → ℕ} {n : ℕ}
         ∑ i ∈ Finset.range n, monomial i (s i).toNat := by
       rw [Finset.sum_range_succ, hsn, Int.toNat_zero, map_zero, add_zero]
     simpa only [hsn, Int.toNat_zero, map_zero, add_zero, e] using h
-  · simp only [finsetSum_coeff, coeff_monomial, Finset.sum_ite_eq', Finset.mem_range, hi,
+  · simp only [finsetSum_coeff, coeff_monomial_apply, Finset.sum_ite_eq', Finset.mem_range, hi,
       ↓reduceIte]
     rw [hq i hi.le, hs_def, strongGap]
-  · simp only [finsetSum_coeff, coeff_monomial, Finset.sum_ite_eq', Finset.mem_range,
+  · simp only [finsetSum_coeff, coeff_monomial_apply, Finset.sum_ite_eq', Finset.mem_range,
       hi.not_gt, ↓reduceIte]
 
 /-- **The lacunary principle.**  Let `b` and `c` be sequences of natural numbers satisfying the
