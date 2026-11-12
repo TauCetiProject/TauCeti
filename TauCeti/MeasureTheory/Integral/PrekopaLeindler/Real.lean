@@ -60,8 +60,8 @@ theorem HasPrekopaLeindler.integral {μ : Measure E} {θ : ℝ}
     exact (mul_nonneg (Real.rpow_nonneg (hf₀ x) _) (Real.rpow_nonneg (hg₀ x) _)).trans hx
   have hofReal {u : E → ℝ} (hu : ∀ x, 0 ≤ u x) :
       ENNReal.ofReal (∫ x, u x ∂μ) ≤ ∫⁻ x, ENNReal.ofReal (u x) ∂μ := by
-    simpa only [Real.enorm_of_nonneg (integral_nonneg hu), Real.enorm_of_nonneg (hu _)] using
-      enorm_integral_le_lintegral_enorm u
+    simpa only [Real.eNorm_of_nonneg (integral_nonneg hu), Real.eNorm_of_nonneg (hu _)] using
+      eNorm_integral_le_lintegral_eNorm u
   have hbound := hμ.lintegral hθ₀ hθ₁ hh.aemeasurable.ennreal_ofReal
     (f := fun x => ENNReal.ofReal (f x)) (g := fun x => ENNReal.ofReal (g x))
     (fun x y => by
