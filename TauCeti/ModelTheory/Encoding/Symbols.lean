@@ -43,7 +43,7 @@ instance instPrimcodableSigmaFunctionsWithConstants : Primcodable (Σ n, L[[A]].
 symbol of `L` or a constant from `A`. -/
 theorem encode_sigmaFunctionsWithConstants (s : Σ n, L[[A]].Functions n) :
     encode s = encode (sigmaFunctionsWithConstantsEquiv A s) :=
-  (rfl)
+  encode_ofEquiv _ s
 
 instance [L.PrimrecFunctionArity] : L[[A]].PrimrecFunctionArity where
   primrec_fst := by

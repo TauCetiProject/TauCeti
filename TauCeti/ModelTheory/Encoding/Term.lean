@@ -116,12 +116,13 @@ variable [Encodable α] [Encodable (Σ i, L.Functions i)]
 
 /-- The code of a term is the code of its spelling. -/
 theorem encode_eq_encode_listEncode (t : L.Term α) : encode t = encode t.listEncode :=
+  -- Mathlib's instance is `Encodable.ofLeftInjection listEncode _ _`, which encodes by spelling.
   (rfl)
 
 /-- The code of a variable term is the code of the one-letter list. -/
 theorem encode_var (a : α) :
     encode (var a : L.Term α) = encode ([Sum.inl a] : List (α ⊕ Σ i, L.Functions i)) :=
-  (rfl)
+  encode_eq_encode_listEncode _
 
 /-- Mathlib's decoder of terms reads the first term of the list coded by a number. -/
 theorem decode_eq_decode_bind_listDecode (n : ℕ) :

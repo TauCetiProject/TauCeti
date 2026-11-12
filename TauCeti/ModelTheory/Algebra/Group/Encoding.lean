@@ -75,8 +75,7 @@ instance : Primcodable (Σ n, Language.group.Functions n) :=
 @[simp]
 theorem encode_sigmaFunctions (s : Σ n, Language.group.Functions n) :
     Encodable.encode s = s.1 := by
-  rw [← val_sigmaFunctionsEquiv]
-  rfl
+  simp [Encodable.encode_ofEquiv, Encodable.Subtype.encode_eq]
 
 instance : Language.group.PrimrecFunctionArity where
   primrec_fst := (Primrec.fin_val.comp Primrec.of_equiv).of_eq val_sigmaFunctionsEquiv
