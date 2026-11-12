@@ -38,8 +38,8 @@ as `(-1)^k` times the truncation `∑ u_g g` of `m x y`, that is as `(-1)^k ∑ 
 
 ## Main results
 
-* `TauCeti.loopChainCohomologyClass_eq_groupAlgebraToLoopChainCohomology`: the class of a cycle of
-  degree zero is the class of its truncation in the group ring.
+* `TauCeti.TwistingCocycle.indexClassicalClass_eq_groupAlgebraToLoopChainCohomology`: the class of
+  an entry of index difference one is the class of its truncation in the group ring.
 * `TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalEntry_loop`: the entries
   of the classical complex are the actions of the truncated entries of the cocycle on `H^k(𝓕)`.
 * `TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalD_π_loop`: the
@@ -64,23 +64,6 @@ namespace TauCeti
 universe u uM uP
 
 variable {B : Type u} [TopologicalSpace B] {b : B} {R : Type u} [CommRing R]
-
-/-- **The class of a cycle of degree zero of the loop chain algebra is the class of its
-truncation**: a cycle `a` of degree zero of `C_*(Ω_b B; R)` is a zero chain, and its class in the
-cohomology of the chain algebra is the image under `groupAlgebraToLoopChainCohomology` of its
-degree-zero truncation `loopChainToGroupAlgebra a` in the group ring. -/
-theorem loopChainCohomologyClass_eq_groupAlgebraToLoopChainCohomology
-    {a : loopChainAlgebra B b R} (ha : a ∈ cubicalChainGrading (MooreLoopSpace B b) R 0)
-    (hda : cubicalChainDifferential (MooreLoopSpace B b) R a = 0) :
-    Ideal.Quotient.mk (loopChain_isDGAlgebra B b R).boundaries.asIdeal
-        ⟨a, (loopChain_isDGAlgebra B b R).mem_cycles.mpr hda⟩ =
-      groupAlgebraToLoopChainCohomology B b R (loopChainToGroupAlgebra B b R a) := by
-  rcases (mem_cubicalChainGrading_iff _ R).1 ha with rfl | ⟨n, y, hn, rfl⟩
-  · simp only [map_zero]
-    exact map_zero _
-  · obtain rfl : n = 0 := by omega
-    rw [loopChainToGroupAlgebra_lof_zero,
-      groupAlgebraToLoopChainCohomology_loopZeroChainToGroupAlgebra]
 
 namespace TwistingCocycle
 

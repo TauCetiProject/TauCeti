@@ -16,13 +16,21 @@ A cycle `a` of degree zero of the algebra acts on a differential graded right mo
 morphism of complexes from `shiftedModuleComplex hM (q + 1)` to the shift by one of
 `shiftedModuleComplex hM q` (`TauCeti.shiftedModuleComplexAct`), hence induces a map on cohomology
 (`TauCeti.shiftedModuleComplexActHomology`), which sends the class of `α` to the class of
-`op a • ε α`, with `ε` the Koszul sign.
+`op a • ε α`, with `ε` the Koszul sign. Under the identifications
+`TauCeti.shiftedModuleComplexHomologyEquiv` of these cohomologies with the intrinsic cohomology
+`H(ℳ)`, this map is the action of the class of `a` in `H(A)`, with the sign `(-1)^j` on `H^j(ℳ)`
+(`TauCeti.shiftedModuleComplexHomologyEquiv_shiftedModuleComplexActHomology`).
 
 ## Main definitions
 
 * `TauCeti.shiftedModuleComplexAct`: the action of a cycle of degree zero, as a morphism of
   complexes.
 * `TauCeti.shiftedModuleComplexActHomology`: the induced map on cohomology.
+
+## Main results
+
+* `TauCeti.shiftedModuleComplexHomologyEquiv_shiftedModuleComplexActHomology`: the action of a
+  cycle of degree zero is the action of its class on `H(ℳ)`, up to the Koszul sign.
 
 ## References
 
@@ -164,6 +172,63 @@ theorem exists_shiftedModuleComplexActHomology_homologyπ {a : A} (ha : a ∈ �
       smul_zero] at h
     exact neg_eq_zero.1 h.symm
   exact ⟨_, hβ', hβ, shiftedModuleComplexActHomology_homologyπ hM ha hda q n n' hn α hα _ hβ hβ'⟩
+
+/-- A map between the cohomologies of `shiftedModuleComplex hM (q + 1)` and
+`shiftedModuleComplex hM q` which acts on classes as the action of a cycle `a` of degree zero
+twisted by the Koszul sign is, under the identifications `shiftedModuleComplexHomologyEquiv`, the
+action of the class of `a` multiplied by the Koszul sign. -/
+private theorem shiftedModuleComplexHomologyEquiv_apply_of_homologyπ {a : A} (ha : a ∈ 𝒜 0)
+    (hda : d a = 0) (q n n' : ℤ) (hn : 1 + n = n')
+    (f : (shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).homology n ⟶
+      (shiftedModuleComplex.{uR, uA, uM, uP} hM q).homology n')
+    (hf : ∀ (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).X n)
+      (hα : ((shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).d n (n + 1)).hom α = 0)
+      (β : (shiftedModuleComplex.{uR, uA, uM, uP} hM q).X n'),
+      (shiftedModuleComplexXEquiv hM q n' β : M) =
+        op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
+          (shiftedModuleComplexXEquiv hM (q + 1) n α : M) →
+      ∀ (hβ' : ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).d n' (n' + 1)).hom β = 0),
+      f.hom (((shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).homologyπ n).hom
+          ((shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).moduleCatCyclesMk α (n + 1)
+            (by simp) hα)) =
+        ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).homologyπ n').hom
+          ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).moduleCatCyclesMk β (n' + 1)
+            (by simp) hβ'))
+    (c : (shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).homology n) :
+    (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM q n' (f.hom c) : hM.Cohomology) =
+      (n + (q + 1)).negOnePow • (hM.cohomologyAction
+        (Ideal.Quotient.mk h.boundaries.asIdeal ⟨a, h.mem_cycles.mpr hda⟩)).unop
+          (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM (q + 1) n c) := by
+  obtain ⟨α, hα, rfl⟩ := (shiftedModuleComplex.{uR, uA, uM, uP} hM
+    (q + 1)).exists_homologyπ_moduleCatCyclesMk_eq (n + 1) (by simp) c
+  obtain ⟨β, hβ', hβ, -⟩ :=
+    exists_shiftedModuleComplexActHomology_homologyπ hM ha hda q n n' hn α hα
+  rw [hf α hα β hβ hβ', shiftedModuleComplexHomologyEquiv_homologyπ,
+    shiftedModuleComplexHomologyEquiv_homologyπ, hM.cohomologyAction_mk,
+    ← Submodule.Quotient.mk_smul, ← Submodule.Quotient.mk_smul]
+  congr 1
+  ext
+  rw [hβ, InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _
+      (shiftedModuleComplexXEquiv hM (q + 1) n α).2, one_mul, Int.cast_smul_eq_zsmul,
+    Submodule.coe_smul_of_tower, Submodule.coe_smul_of_tower, Units.smul_def, smul_comm]
+  -- The opposite cycle `op ⟨a, _⟩` acts on `ℳ` as `op a` does, by definition of the action.
+  rfl
+
+/-- **The action of a cycle of degree zero on cohomology is the action of its class**: under the
+identifications `shiftedModuleComplexHomologyEquiv`, the map
+`shiftedModuleComplexActHomology` induced by a cycle `a` of degree zero, from the cohomology of
+`shiftedModuleComplex hM (q + 1)` in degree `n`, which is `H^{n + q + 1}(ℳ)`, is the action of
+the class of `a` in `H(A)`, multiplied by the Koszul sign `(-1)^(n + q + 1)`. -/
+theorem shiftedModuleComplexHomologyEquiv_shiftedModuleComplexActHomology {a : A} (ha : a ∈ 𝒜 0)
+    (hda : d a = 0) (q n n' : ℤ) (hn : 1 + n = n')
+    (c : (shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).homology n) :
+    (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM q n'
+        ((shiftedModuleComplexActHomology hM ha hda q n n' hn).hom c) : hM.Cohomology) =
+      (n + (q + 1)).negOnePow • (hM.cohomologyAction
+        (Ideal.Quotient.mk h.boundaries.asIdeal ⟨a, h.mem_cycles.mpr hda⟩)).unop
+          (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM (q + 1) n c) :=
+  shiftedModuleComplexHomologyEquiv_apply_of_homologyπ hM ha hda q n n' hn _
+    (shiftedModuleComplexActHomology_homologyπ hM ha hda q n n' hn) c
 
 end Action
 

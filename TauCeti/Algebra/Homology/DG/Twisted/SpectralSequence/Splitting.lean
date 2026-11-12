@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.Algebra.Homology.DG.Module.Right.Cohomology
 
 /-!
 # The cohomology of a graded piece of the index filtration
@@ -23,6 +24,12 @@ evaluating a family at a generator (`TauCeti.indexGradedPieceEval`) and insertin
 generator (`TauCeti.indexGradedPieceSingle`), which are inverse to each other up to the sum over
 the generators.
 
+The cohomology of `shiftedModuleComplex hM p` in degree `n` is the piece `H^{n + p}(ℳ)` of the
+intrinsic cohomology `H(ℳ)` (`TauCeti.shiftedModuleComplexHomologyEquiv`), the class of a cycle
+going to its class in `H(ℳ)`. Both are the quotient of the homogeneous cycles of degree `n + p` by
+those that are boundaries; a homogeneous cycle that is the differential of some element is the
+differential of the homogeneous component of that element one degree lower.
+
 ## Main definitions
 
 * `TauCeti.shiftedModuleComplex hM p`: the complex `ℳ`, reindexed so that its degree-`n` term is
@@ -31,6 +38,13 @@ the generators.
   generators of index `p`.
 * `TauCeti.indexGradedPieceHomologyIso`: the cohomology of the `p`-th graded piece is the product
   over the generators of index `p` of the cohomology of `shiftedModuleComplex hM p`.
+* `TauCeti.shiftedModuleComplexHomologyEquiv`: the cohomology of `shiftedModuleComplex hM p` in
+  degree `n` is `H^{n + p}(ℳ)`.
+
+## Main results
+
+* `TauCeti.shiftedModuleComplexHomologyEquiv_homologyπ`: the identification sends the class of a
+  cycle to its class in `H(ℳ)`.
 
 ## References
 
@@ -340,5 +354,138 @@ theorem indexGradedPieceHomologyIso_inv (n : ℤ) :
   (rfl)
 
 end Complex
+
+section Cohomology
+
+variable {R : Type uR} {A : Type uA} {M : Type uM}
+  [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
+  [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M}
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {h : IsDGAlgebra 𝒜 d}
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+  (hM : IsDGRightModule h ℳ dM)
+
+/-- The value in `ℳ` of a cycle of `shiftedModuleComplex hM p` is a cycle of `ℳ`. -/
+private theorem dM_shiftedModuleComplexXEquiv_iCycles (p n : ℤ)
+    (z : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).cycles n) :
+    dM (shiftedModuleComplexXEquiv hM p n
+      ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).iCycles n z)) = 0 :=
+  (shiftedModuleComplexXEquiv_d_eq_zero_iff hM p n _).1
+    ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_d_iCycles_apply n (n + 1) z)
+
+/-- The class in `H^{n + p}(ℳ)` of the value in `ℳ` of a cycle of `shiftedModuleComplex hM p` of
+degree `n`. -/
+private noncomputable def cyclesToCohomologyGrading (p n : ℤ) :
+    (shiftedModuleComplex.{uR, uA, uM, uP} hM p).cycles n →ₗ[R] hM.cohomologyGrading (n + p) where
+  toFun z := ⟨Submodule.Quotient.mk ⟨shiftedModuleComplexXEquiv hM p n
+      ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).iCycles n z),
+        hM.mem_cycles.mpr (dM_shiftedModuleComplexXEquiv_iCycles hM p n z)⟩,
+    hM.quotientMk_mem_cohomologyGrading (shiftedModuleComplexXEquiv hM p n _).2⟩
+  map_add' z w := by
+    apply Subtype.ext
+    rw [Submodule.coe_add, ← Submodule.Quotient.mk_add]
+    refine congrArg Submodule.Quotient.mk (Subtype.ext ?_)
+    simp only [map_add, Submodule.coe_add]
+  map_smul' r z := by
+    apply Subtype.ext
+    rw [Submodule.coe_smul_of_tower, RingHom.id_apply, ← Submodule.Quotient.mk_smul]
+    refine congrArg Submodule.Quotient.mk (Subtype.ext ?_)
+    simp only [map_smul, Submodule.coe_smul_of_tower]
+
+private theorem cyclesToCohomologyGrading_apply (p n : ℤ)
+    (z : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).cycles n) :
+    (cyclesToCohomologyGrading.{uR, uA, uM, uP} hM p n z : hM.Cohomology) =
+      Submodule.Quotient.mk ⟨shiftedModuleComplexXEquiv hM p n
+        ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).iCycles n z),
+          hM.mem_cycles.mpr (dM_shiftedModuleComplexXEquiv_iCycles hM p n z)⟩ :=
+  (rfl)
+
+private theorem cyclesToCohomologyGrading_surjective (p n : ℤ) :
+    Function.Surjective (cyclesToCohomologyGrading.{uR, uA, uM, uP} hM p n) := by
+  rintro ⟨x, hx⟩
+  obtain ⟨z, hz, rfl⟩ := hM.mem_cohomologyGrading.mp hx
+  set α := (shiftedModuleComplexXEquiv hM p n).symm ⟨z, hz⟩
+  have hα : ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).d n (n + 1)).hom α = 0 := by
+    rw [shiftedModuleComplexXEquiv_d_eq_zero_iff, LinearEquiv.apply_symm_apply]
+    exact hM.mem_cycles.mp z.2
+  refine ⟨(shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk α (n + 1) (by simp) hα,
+    Subtype.ext ?_⟩
+  rw [cyclesToCohomologyGrading_apply]
+  congr 1
+  ext
+  simp [α]
+
+/-- A cycle of `shiftedModuleComplex hM p` has zero class exactly when its value in `ℳ` is a
+boundary: a homogeneous boundary is the differential of an element one degree lower. -/
+private theorem ker_homologyπ_shiftedModuleComplex (p n : ℤ) :
+    LinearMap.ker ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).homologyπ n).hom =
+      LinearMap.ker (cyclesToCohomologyGrading.{uR, uA, uM, uP} hM p n) := by
+  ext z
+  rw [LinearMap.mem_ker, LinearMap.mem_ker,
+    (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_homologyπ_eq_zero_iff
+      (m := n - 1) (by simp),
+    ← Subtype.coe_inj, cyclesToCohomologyGrading_apply, Submodule.coe_zero,
+    hM.quotientMk_eq_zero_iff, hM.mem_boundaries]
+  constructor
+  · rintro ⟨y, rfl⟩
+    refine ⟨shiftedModuleComplexXEquiv hM p (n - 1) y, ?_⟩
+    have hd := shiftedModuleComplexXEquiv_d hM p (n - 1) y
+    rw [sub_add_cancel] at hd
+    rw [← hd]
+    simp
+  · rintro ⟨x, hx⟩
+    have hmem : (DirectSum.decompose ℳ x (n - 1 + p) : M) ∈ ℳ (n - 1 + p) :=
+      Submodule.coe_mem _
+    refine ⟨(shiftedModuleComplexXEquiv hM p (n - 1)).symm ⟨_, hmem⟩, ?_⟩
+    apply (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_iCycles_injective n
+    apply (shiftedModuleComplexXEquiv hM p n).injective
+    ext
+    have hd := shiftedModuleComplexXEquiv_d hM p (n - 1)
+      ((shiftedModuleComplexXEquiv hM p (n - 1)).symm ⟨_, hmem⟩)
+    rw [sub_add_cancel] at hd
+    rw [HomologicalComplex.moduleCat_iCycles_toCycles_apply, hd, LinearEquiv.apply_symm_apply,
+      hM.map_decompose, hx]
+    have hdeg : n - 1 + p + 1 = n + p := by ring
+    rw [hdeg]
+    exact DirectSum.decompose_of_mem_same ℳ (shiftedModuleComplexXEquiv hM p n _).2
+
+/-- **The cohomology of the shifted complex of a DG module is its intrinsic cohomology**: the
+cohomology of `shiftedModuleComplex hM p` in degree `n` is the piece `H^{n + p}(ℳ)` of the
+cohomology `H(ℳ)`, the class of a cycle going to its class in `H(ℳ)`
+(`shiftedModuleComplexHomologyEquiv_homologyπ`). -/
+noncomputable def shiftedModuleComplexHomologyEquiv (p n : ℤ) :
+    (shiftedModuleComplex.{uR, uA, uM, uP} hM p).homology n ≃ₗ[R]
+      hM.cohomologyGrading (n + p) :=
+  (LinearMap.quotKerEquivOfSurjective _
+      ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_homologyπ_surjective n)).symm ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (ker_homologyπ_shiftedModuleComplex hM p n) ≪≫ₗ
+    (cyclesToCohomologyGrading.{uR, uA, uM, uP} hM p n).quotKerEquivOfSurjective
+      (cyclesToCohomologyGrading_surjective hM p n)
+
+private theorem shiftedModuleComplexHomologyEquiv_homologyπ_apply (p n : ℤ)
+    (z : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).cycles n) :
+    shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM p n
+        (((shiftedModuleComplex.{uR, uA, uM, uP} hM p).homologyπ n).hom z) =
+      cyclesToCohomologyGrading.{uR, uA, uM, uP} hM p n z := by
+  rw [shiftedModuleComplexHomologyEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    (LinearEquiv.symm_apply_eq _).2 (LinearMap.quotKerEquivOfSurjective_apply_mk _ _ z).symm,
+    Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
+
+/-- The identification of `shiftedModuleComplexHomologyEquiv` sends the class of a cycle `α` of
+`shiftedModuleComplex hM p` to the class in `H(ℳ)` of its value in `ℳ`. -/
+theorem shiftedModuleComplexHomologyEquiv_homologyπ (p n : ℤ)
+    (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n)
+    (hα : ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).d n (n + 1)).hom α = 0) :
+    (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM p n
+        (((shiftedModuleComplex.{uR, uA, uM, uP} hM p).homologyπ n).hom
+          ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk α (n + 1)
+            (by simp) hα)) : hM.Cohomology) =
+      Submodule.Quotient.mk (⟨shiftedModuleComplexXEquiv hM p n α,
+        hM.mem_cycles.mpr ((shiftedModuleComplexXEquiv_d_eq_zero_iff hM p n α).1 hα)⟩ :
+          hM.cycles) := by
+  rw [shiftedModuleComplexHomologyEquiv_homologyπ_apply, cyclesToCohomologyGrading_apply]
+  simp only [HomologicalComplex.iCycles_moduleCatCyclesMk]
+
+end Cohomology
 
 end TauCeti
