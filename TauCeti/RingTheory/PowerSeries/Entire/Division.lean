@@ -175,8 +175,25 @@ theorem zero_divByMonic (p : Polynomial R) : (0 : R⟦X⟧).divByMonic p = 0 := 
 theorem zero_modByMonic (p : Polynomial R) : (0 : R⟦X⟧).modByMonic p = 0 := by
   simp [modByMonic]
 
-/-- A polynomial of degree less than `p` has quotient `0` on division by `p`: every term of the
-sums defining the quotient vanishes. -/
+omit [TopologicalSpace R] in
+/-- On a polynomial `g`, the terms of the sums defining the quotient vanish beyond the degree of
+`g`. -/
+private theorem coeff_mul_invOfUnit_eq_zero_of_natDegree_lt (g p : Polynomial R) (n : ℕ) {k : ℕ}
+    (hk : k ∉ range (g.natDegree + 1)) :
+    coeff (n + p.natDegree + k) (g : R⟦X⟧) * coeff k (invOfUnit (p.reverse : R⟦X⟧) 1) = 0 := by
+  rw [Polynomial.coeff_coe,
+    Polynomial.coeff_eq_zero_of_natDegree_lt (by rw [mem_range] at hk; omega), zero_mul]
+
+/-- On a polynomial, the sums defining the quotient of entire division are finite, so they do not
+depend on the topology. -/
+private theorem divByMonic_coe_eq_mk (g : Polynomial R) (p : Polynomial R) :
+    (g : R⟦X⟧).divByMonic p = mk fun n ↦ ∑ k ∈ range (g.natDegree + 1),
+      coeff (n + p.natDegree + k) (g : R⟦X⟧) * coeff k (invOfUnit (p.reverse : R⟦X⟧) 1) := by
+  ext n
+  rw [coeff_divByMonic, coeff_mk]
+  exact tsum_eq_sum fun k hk ↦ coeff_mul_invOfUnit_eq_zero_of_natDegree_lt g p n hk
+
+/-- A polynomial of degree less than `p` has quotient `0` on division by `p`. -/
 theorem divByMonic_coe_of_degree_lt {g : Polynomial R} (hg : g.degree < p.degree) :
     (g : R⟦X⟧).divByMonic p = 0 := by
   ext n
@@ -251,12 +268,12 @@ private theorem modByMonic_add_divByMonic_of_hasSum
   · rw [map_sub, sub_add_cancel]
   · rw [zero_add, coeff_coe_mul_divByMonic_of_hasSum hsum hp (not_lt.mp hm)]
 
-/-- On a polynomial, entire division is polynomial division: the quotient vanishes past the
-degree of the polynomial, so the division identity is one of polynomials. -/
-private theorem divByMonic_coe_and_modByMonic_coe (g : Polynomial R) (hp : p.Monic) :
-    (g : R⟦X⟧).divByMonic p = (g /ₘ p : Polynomial R) ∧ (g : R⟦X⟧).modByMonic p = g %ₘ p := by
+/-- On a polynomial, the quotient of entire division is the quotient of polynomial division. -/
+private theorem divByMonic_coe_of_hasSum (g : Polynomial R) (hp : p.Monic) :
+    (g : R⟦X⟧).divByMonic p = (g /ₘ p : Polynomial R) := by
   nontriviality R
-  set q := (g : R⟦X⟧).divByMonic p
+  set q := (g : R⟦X⟧).divByMonic p with hqdef
+  -- The quotient vanishes past the degree of `g`, so the division identity is one of polynomials.
   have hq : q = (trunc (g.natDegree + 1) q : R⟦X⟧) := by
     ext n
     rw [Polynomial.coeff_coe, coeff_trunc]
@@ -267,18 +284,15 @@ private theorem divByMonic_coe_and_modByMonic_coe (g : Polynomial R) (hp : p.Mon
     rw [Polynomial.coeff_coe, Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_mul]
   have hsum (n : ℕ) : HasSum (fun k ↦ coeff (n + p.natDegree + k) (g : R⟦X⟧) *
       coeff k (invOfUnit (p.reverse : R⟦X⟧) 1)) (coeff n q) := by
-    have hz : ∀ k ∉ range (g.natDegree + 1), coeff (n + p.natDegree + k) (g : R⟦X⟧) *
-        coeff k (invOfUnit (p.reverse : R⟦X⟧) 1) = 0 := fun k hk ↦ by
-      rw [Polynomial.coeff_coe,
-        Polynomial.coeff_eq_zero_of_natDegree_lt (by rw [mem_range] at hk; omega), zero_mul]
-    rw [coeff_divByMonic, tsum_eq_sum hz]
-    exact hasSum_sum_of_ne_finset_zero hz
+    rw [hqdef, divByMonic_coe_eq_mk, coeff_mk]
+    exact hasSum_sum_of_ne_finset_zero fun k hk ↦
+      coeff_mul_invOfUnit_eq_zero_of_natDegree_lt g p n hk
   have hdiv : ((g : R⟦X⟧).modByMonic p : R⟦X⟧) + p * q = g :=
     modByMonic_add_divByMonic_of_hasSum hsum hp
   rw [hq, ← Polynomial.coe_mul, ← Polynomial.coe_add, Polynomial.coe_inj] at hdiv
-  obtain ⟨h₁, h₂⟩ := Polynomial.div_modByMonic_unique _ _ hp
+  obtain ⟨h₁, -⟩ := Polynomial.div_modByMonic_unique _ _ hp
     ⟨hdiv, degree_modByMonic_lt _ hp.ne_zero⟩
-  exact ⟨hq.trans (by rw [h₁]), h₂.symm⟩
+  exact hq.trans (by rw [h₁])
 
 end HasSum
 
@@ -286,28 +300,17 @@ section TopologicalRingCoe
 
 variable {R : Type*} [CommRing R] [TopologicalSpace R] {p : Polynomial R}
 
-/-- On a polynomial, the sums defining the quotient of entire division are finite, so they do not
-depend on the topology. -/
-private theorem divByMonic_coe_eq_mk (g : Polynomial R) (p : Polynomial R) :
-    (g : R⟦X⟧).divByMonic p = mk fun n ↦ ∑ k ∈ range (g.natDegree + 1),
-      coeff (n + p.natDegree + k) (g : R⟦X⟧) * coeff k (invOfUnit (p.reverse : R⟦X⟧) 1) := by
-  ext n
-  rw [coeff_divByMonic, coeff_mk]
-  refine tsum_eq_sum fun k hk ↦ ?_
-  rw [Polynomial.coeff_coe,
-    Polynomial.coeff_eq_zero_of_natDegree_lt (by rw [mem_range] at hk; omega), zero_mul]
-
 /-- On a polynomial, the quotient of entire division is the quotient of polynomial division. The
-sums defining the quotient are finite, so this holds in every topology; it is proved by comparing
-with the discrete topology. -/
+sums defining the quotient are finite, so this holds in every topology. -/
 @[simp]
 theorem divByMonic_coe (g : Polynomial R) (hp : p.Monic) :
     (g : R⟦X⟧).divByMonic p = (g /ₘ p : Polynomial R) := by
+  -- Compare with the discrete topology, where the division identity is available.
   have e := divByMonic_coe_eq_mk (R := R) g p
   let _ : TopologicalSpace R := ⊥
   have : DiscreteTopology R := ⟨rfl⟩
   exact e.trans ((divByMonic_coe_eq_mk (R := R) g p).symm.trans
-    (divByMonic_coe_and_modByMonic_coe g hp).1)
+    (divByMonic_coe_of_hasSum g hp))
 
 /-- On a polynomial, the remainder of entire division is the remainder of polynomial division. -/
 @[simp]
