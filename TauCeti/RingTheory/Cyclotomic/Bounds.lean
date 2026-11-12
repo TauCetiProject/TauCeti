@@ -37,11 +37,18 @@ theorem rootCoeffBound_def (e : ℕ) : rootCoeffBound e =
     (Finset.range e).sup (fun k ↦
       (Finset.range e.totient).sup fun j ↦ ((zeta e ^ k).coeff j).natAbs) := (rfl)
 
-/-- Every coefficient of a power with exponent below `e` satisfies the root coefficient bound. -/
-theorem coeff_pow_natAbs_le_rootCoeffBound {k : ℕ} (hk : k < e) (j : ℕ) :
+/-- Every coefficient of a power of `ζ` satisfies the root coefficient bound. -/
+theorem coeff_pow_natAbs_le_rootCoeffBound {k : ℕ} (j : ℕ) :
     ((zeta e ^ k).coeff j).natAbs ≤ rootCoeffBound e := by
   by_cases hj : j < e.totient
-  · exact (Finset.le_sup (f := fun j ↦ ((zeta e ^ k).coeff j).natAbs)
+  · have : NeZero e := ⟨by rintro rfl; simp at hj⟩
+    have hk : k % e < e := Nat.mod_lt _ (NeZero.pos e)
+    have hpow : zeta e ^ k = zeta e ^ (k % e) := by
+      apply complexEmbedding_injective
+      rw [map_pow, map_pow, complexEmbedding_zeta]
+      exact pow_eq_pow_mod k isPrimitiveRoot_complexRoot.pow_eq_one
+    rw [hpow]
+    exact (Finset.le_sup (f := fun j ↦ ((zeta e ^ (k % e)).coeff j).natAbs)
       (Finset.mem_range.mpr hj)).trans
         (Finset.le_sup (f := fun k ↦ (Finset.range e.totient).sup
           fun j ↦ ((zeta e ^ k).coeff j).natAbs) (Finset.mem_range.mpr hk))
@@ -50,7 +57,7 @@ theorem coeff_pow_natAbs_le_rootCoeffBound {k : ℕ} (hk : k < e) (j : ℕ) :
 /-- For a nonzero conductor the root coefficient bound is positive, since the constant
 coefficient of `ζ ^ 0 = 1` is `1`. -/
 theorem one_le_rootCoeffBound [NeZero e] : 1 ≤ rootCoeffBound e := by
-  have h := coeff_pow_natAbs_le_rootCoeffBound (e := e) (NeZero.pos e) 0
+  have h := coeff_pow_natAbs_le_rootCoeffBound (e := e) (k := 0) 0
   rw [pow_zero, ← Int.cast_one, coeff_intCast] at h
   simpa using h
 
@@ -63,7 +70,7 @@ theorem exists_complexEmbedding_eq_sum_and_coeff_natAbs_le [NeZero e] (s : Multi
   induction s using Multiset.induction_on with
   | empty => exact ⟨0, by simp, fun j ↦ by simp⟩
   | @cons μ s ih =>
-    obtain ⟨k, hk, hμ⟩ := isPrimitiveRoot_complexRoot.eq_pow_of_pow_eq_one
+    obtain ⟨k, -, hμ⟩ := isPrimitiveRoot_complexRoot.eq_pow_of_pow_eq_one
       (hs μ (Multiset.mem_cons_self _ _))
     obtain ⟨x, hx, hbound⟩ := ih fun ν hν ↦ hs ν (Multiset.mem_cons_of_mem hν)
     refine ⟨zeta e ^ k + x, ?_, fun j ↦ ?_⟩
@@ -72,7 +79,7 @@ theorem exists_complexEmbedding_eq_sum_and_coeff_natAbs_le [NeZero e] (s : Multi
       calc
         _ ≤ ((zeta e ^ k).coeff j).natAbs + (x.coeff j).natAbs := Int.natAbs_add_le _ _
         _ ≤ rootCoeffBound e + s.card * rootCoeffBound e :=
-          Nat.add_le_add (coeff_pow_natAbs_le_rootCoeffBound hk j) (hbound j)
+          Nat.add_le_add (coeff_pow_natAbs_le_rootCoeffBound j) (hbound j)
         _ = (μ ::ₘ s).card * rootCoeffBound e := by simp [Nat.add_mul, Nat.add_comm]
 
 end TauCeti.Cyclotomic

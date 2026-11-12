@@ -54,11 +54,9 @@ it is why no sign condition on the off-diagonal entries of `LieAlgebra.Basis.A` 
 * [J.P. Serre, *Complex Semisimple Lie Algebras*][serre1965], chapter VI
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972], §18.1
 
-## Roadmap
+## Applications
 
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md` asks for the split reductive group scheme
-over `ℤ` to be constructed "via a Chevalley basis and the Kostant `ℤ`-form of the enveloping
-algebra". `RootPairing.GeckConstruction.basis` produces a `LieAlgebra.Basis` for the explicit
+`RootPairing.GeckConstruction.basis` produces a `LieAlgebra.Basis` for the explicit
 matrix Lie algebra of a root system over any field of characteristic zero, whereas that algebra is
 known to have a nondegenerate Killing form only over an algebraically closed one. So a form of
 these relations that does not assume `LieAlgebra.IsKilling` is what a pinned construction over `ℚ`
