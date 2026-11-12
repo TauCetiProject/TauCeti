@@ -13,8 +13,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 
 The Hessian of a pulled-back scalar function is the pullback of its Hessian under a local
 Riemannian isometry. This allows Hessians to be compared on distinct manifold carriers without
-identifying their metric instances. The result uses the native Levi-Civita connection and its
-naturality under local Riemannian isometries.
+identifying their metric instances. Taking an orthonormal trace also shows that local
+Riemannian isometries commute with the Laplace–Beltrami operator. These results use the native
+Levi-Civita connection and its naturality under local Riemannian isometries.
 
 ## References
 
@@ -79,5 +80,17 @@ theorem hessian_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
   rw [hsource, htarget]
   congr 1
   exact congrArg (fun L ↦ L v) hdirectional
+
+/-- A local Riemannian isometry commutes with the Laplace–Beltrami operator. -/
+theorem laplaceBeltrami_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
+    {u : N → ℝ} {x : M} (hu : ContMDiffAt J 𝓘(ℝ) 2 u (f x)) :
+    laplaceBeltrami I (u ∘ f) x = laplaceBeltrami J u (f x) := by
+  obtain ⟨e, he⟩ := hf.exists_linearIsometryEquiv_eq_mfderiv x
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [laplaceBeltrami_eq_sum_hessian I _ _ b,
+    laplaceBeltrami_eq_sum_hessian J _ _ (b.map e)]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [hf.hessian_comp hu, OrthonormalBasis.map_apply, he]
 
 end TauCeti.IsLocalRiemannianIsometry
