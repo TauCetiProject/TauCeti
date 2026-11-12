@@ -45,6 +45,18 @@ def raySubmodule (w : SupportedRay d) (m : Λ →+ ℤ) : Submodule R L :=
 theorem raySubmodule_def (w : SupportedRay d) (m : Λ →+ ℤ) :
     H.raySubmodule w m = ⨆ n : w.rayDegrees, H.wall n m := (rfl)
 
+/-- A ray sum lies in a submodule exactly when every selected wall space does. -/
+theorem raySubmodule_le_iff (w : SupportedRay d) (m : Λ →+ ℤ) (K : Submodule R L) :
+    H.raySubmodule w m ≤ K ↔ ∀ n ∈ w.rayDegrees, H.wall n m ≤ K := by
+  simp only [raySubmodule_def, iSup_le_iff, Subtype.forall]
+
+/-- Relabeling tangent directions pulls back the normal of a supported-ray sum. -/
+@[simp]
+theorem mapTangent_raySubmodule {Λ' : Type*} [AddCommMonoid Λ']
+    (T : Λ →+ Λ') (w : SupportedRay d) (m : Λ' →+ ℤ) :
+    (H.mapTangent T).raySubmodule w m = H.raySubmodule w (m.comp T) := by
+  simp only [raySubmodule_def, mapTangent_wall]
+
 /-- Taking the image of wall spaces commutes with forming their supported-ray sum. -/
 @[simp]
 theorem map_raySubmodule {L' : Type*} [LieRing L'] [LieAlgebra R L']
@@ -67,7 +79,7 @@ theorem wall_le_raySubmodule (w : SupportedRay d) (m : Λ →+ ℤ)
   le_iSup (fun n : w.rayDegrees => H.wall n m) ⟨n, hn⟩
 
 /-- Rescaling the normal by a nonzero integer preserves the ray submodule. -/
-@[simp]
+@[simp↓]
 theorem raySubmodule_rescale (w : SupportedRay d) (m : Λ →+ ℤ)
     (c : ℤ) (hc : c ≠ 0) : H.raySubmodule w (c • m) = H.raySubmodule w m := by
   simp only [raySubmodule_def, H.rescale _ _ c hc]
@@ -84,6 +96,27 @@ theorem raySubmodule_eq_of_ker_eq {Λ : Type*} [AddCommGroup Λ]
 theorem raySubmodule_zero (w : SupportedRay d) : H.raySubmodule w 0 = ⊥ := by
   simp only [raySubmodule_def, H.zero_normal, iSup_bot]
 
+/-- A nonzero wall element at an actual ray degree has normal tangent to the generator. -/
+theorem normal_apply_generator_eq_zero {w : SupportedRay d} {n : Γ} {m : Λ →+ ℤ}
+    {x : L} (hn : n ∈ w.rayDegrees) (hx : x ∈ H.wall n m) (hx0 : x ≠ 0) :
+    m (ρ w.generator) = 0 := by
+  obtain ⟨-, a, ha, rfl⟩ := SupportedRay.mem_rayDegrees.mp hn
+  have h := H.normal_apply_eq_zero hx hx0
+  have hmul : a * m (ρ w.generator) = 0 := by
+    simpa only [AddMonoidHom.comp_apply, h, zsmul_eq_mul, Int.cast_id] using
+      ((m.comp ρ).map_zsmul a w.generator).symm
+  exact (mul_eq_zero.mp hmul).resolve_left (ne_of_gt ha)
+
+/-- A normal not tangent to the generator has zero supported-ray wall sum. -/
+@[simp]
+theorem raySubmodule_nontangent (w : SupportedRay d) (m : Λ →+ ℤ)
+    (hm : m (ρ w.generator) ≠ 0) : H.raySubmodule w m = ⊥ := by
+  apply le_antisymm _ bot_le
+  refine (H.raySubmodule_le_iff w m ⊥).mpr fun n hn x hx => ?_
+  exact (Submodule.mem_bot R).mpr (by
+    by_contra hx0
+    exact hm (H.normal_apply_generator_eq_zero hn hx hx0))
+
 /-- Two ray sums commute as soon as their homogeneous wall elements at the allowed degrees of
 the two rays commute. -/
 theorem lie_eq_zero_of_mem_raySubmodule_of_forall {w v : SupportedRay d} {m m' : Λ →+ ℤ}
@@ -91,13 +124,9 @@ theorem lie_eq_zero_of_mem_raySubmodule_of_forall {w v : SupportedRay d} {m m' :
       ⁅x, y⁆ = 0)
     {x y : L} (hx : x ∈ H.raySubmodule w m) (hy : y ∈ H.raySubmodule v m') : ⁅x, y⁆ = 0 := by
   rw [raySubmodule_def] at hx hy
-  let : LieRing (Module.End R L) := LieRing.ofAssociativeRing
-  suffices hle : Submodule.map₂ (LieModule.toEnd R L L).toLinearMap
-      (⨆ n : w.rayDegrees, H.wall n m) (⨆ n : v.rayDegrees, H.wall n m') ≤ ⊥ from
-    (Submodule.mem_bot R).mp (hle (Submodule.apply_mem_map₂ _ hx hy))
-  simp_rw [Submodule.map₂_iSup_left, Submodule.map₂_iSup_right]
-  exact iSup_le fun n => iSup_le fun n' => Submodule.map₂_le.mpr
-    (fun x hx y hy => (Submodule.mem_bot R).mpr (hwall n n.property n' n'.property x hx y hy))
+  exact Submodule.lie_eq_zero_of_mem_iSup
+    (fun n : w.rayDegrees => H.wall n m) (fun n : v.rayDegrees => H.wall n m')
+    (fun n n' => hwall n n.property n' n'.property) hx hy
 
 /-- Sums of wall elements with rationally proportional normals commute, even
 when their supported rays differ. -/
@@ -137,6 +166,24 @@ theorem wallRayLieSubalgebra_toSubmodule (w : SupportedRay d) (m : Λ →+ ℤ) 
 theorem mem_wallRayLieSubalgebra (w : SupportedRay d) (m : Λ →+ ℤ) (x : L) :
     x ∈ H.wallRayLieSubalgebra w m ↔ x ∈ H.raySubmodule w m := Iff.rfl
 
+/-- A wall ray Lie subalgebra lies in the ambient supported-ray Lie subalgebra. -/
+theorem wallRayLieSubalgebra_le_rayLieSubalgebra [SetLike.GradedBracket ℒ ℒ]
+    (w : SupportedRay d) (m : Λ →+ ℤ) :
+    H.wallRayLieSubalgebra w m ≤ TauCeti.rayLieSubalgebra ℒ w := by
+  rw [← LieSubalgebra.toSubmodule_le_toSubmodule, wallRayLieSubalgebra_toSubmodule]
+  exact H.raySubmodule_le_rayLieSubalgebra w m
+
+/-- Taking images commutes with forming the wall ray Lie subalgebra. -/
+@[simp]
+theorem map_wallRayLieSubalgebra {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : L →ₗ⁅R⁆ L') (ℳ : Γ → Submodule R L')
+    (hf : ∀ n, (ℒ n).map f.toLinearMap ≤ ℳ n)
+    (w : SupportedRay d) (m : Λ →+ ℤ) :
+    (H.map f ℳ hf).wallRayLieSubalgebra w m = (H.wallRayLieSubalgebra w m).map f := by
+  apply LieSubalgebra.toSubmodule_injective
+  rw [LieSubalgebra.map_toSubmodule, wallRayLieSubalgebra_toSubmodule,
+    wallRayLieSubalgebra_toSubmodule, map_raySubmodule]
+
 /-- Every supported-ray wall Lie algebra is abelian. -/
 instance wallRayLieSubalgebra_isLieAbelian (w : SupportedRay d) (m : Λ →+ ℤ) :
     IsLieAbelian (H.wallRayLieSubalgebra w m) where
@@ -170,7 +217,7 @@ theorem decompose_eq_zero_of_notMem_rayDegrees {w : SupportedRay d} {m : Λ →+
   exact (TauCeti.DirectSum.mem_iSup_iff_decompose_eq_zero ℒ w.rayDegrees).mp (hle hx) n hn
 
 /-- Supported-ray wall sums are stable under homogeneous projections. -/
-theorem raySubmodule_isHomogeneous (w : SupportedRay d) (m : Λ →+ ℤ) :
+theorem isHomogeneous_raySubmodule (w : SupportedRay d) (m : Λ →+ ℤ) :
     DirectSum.SetLike.IsHomogeneous ℒ (H.raySubmodule w m) := by
   intro n x hx
   by_cases hn : n ∈ w.rayDegrees
@@ -180,7 +227,6 @@ theorem raySubmodule_isHomogeneous (w : SupportedRay d) (m : Λ →+ ℤ) :
 
 /-- Membership in a ray sum is equivalent to the wall-space condition on every
 component and vanishing of all components off the actual allowed ray degrees. -/
-@[simp]
 theorem mem_raySubmodule_iff (w : SupportedRay d) (m : Λ →+ ℤ) (x : L) :
     x ∈ H.raySubmodule w m ↔
       (∀ n, (DirectSum.decompose ℒ x n : L) ∈ H.wall n m) ∧
@@ -190,7 +236,7 @@ theorem mem_raySubmodule_iff (w : SupportedRay d) (m : Λ →+ ℤ) (x : L) :
     fun _ hn => H.decompose_eq_zero_of_notMem_rayDegrees hx hn⟩, ?_⟩
   rintro ⟨hwall, hzero⟩
   apply (DirectSum.AddSubmonoidClass.IsHomogeneous.mem_iff ℒ _
-    (H.raySubmodule_isHomogeneous w m)).mpr
+    (H.isHomogeneous_raySubmodule w m)).mpr
   intro n
   by_cases hn : n ∈ w.rayDegrees
   · exact H.wall_le_raySubmodule w m hn (hwall n)
@@ -201,25 +247,26 @@ end TauCeti.DirectedWallSpaces
 
 namespace TauCeti.DirectedWallSpaces
 
-variable {Γ Γ' Λ Λ' R L L' : Type*}
+variable {Γ Γ' Λ Λ' R R' L L' F : Type*}
   [AddCommGroup Γ] [AddCommGroup Γ'] [AddCommMonoid Λ] [AddCommMonoid Λ']
-  [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+  [CommRing R] [CommRing R'] [LieRing L] [LieAlgebra R L]
+  [LieRing L'] [LieAlgebra R' L'] [FunLike F L L'] [AddMonoidHomClass F L L']
   {ρ : Γ →+ Λ} {ρ' : Γ' →+ Λ'}
-  {ℒ : Γ → Submodule R L} {ℳ : Γ' → Submodule R L'}
+  {ℒ : Γ → Submodule R L} {ℳ : Γ' → Submodule R' L'}
   {d : PositiveDegrees Γ} {e : PositiveDegrees Γ'}
 
-/-- A linear map preserving the homogeneous wall spaces on a ray preserves their
+/-- An additive map preserving the homogeneous wall spaces on a ray preserves their
 sum. The target ray condition concerns actual allowed degrees only. -/
 theorem map_mem_raySubmodule (H : DirectedWallSpaces ρ ℒ) (H' : DirectedWallSpaces ρ' ℳ)
-    (f : L →ₗ[R] L') (T : Γ → Γ') {w : SupportedRay d} {v : SupportedRay e}
+    (f : F) (T : Γ → Γ') {w : SupportedRay d} {v : SupportedRay e}
     {m : Λ →+ ℤ} {m' : Λ' →+ ℤ}
     (hdegree : ∀ n ∈ w.rayDegrees, T n ∈ v.rayDegrees)
     (hwall : ∀ n ∈ w.rayDegrees, ∀ x ∈ H.wall n m, f x ∈ H'.wall (T n) m')
     {x : L} (hx : x ∈ H.raySubmodule w m) : f x ∈ H'.raySubmodule v m' := by
-  have hle : H.raySubmodule w m ≤ (H'.raySubmodule v m').comap f := by
-    rw [H.raySubmodule_def]
-    exact iSup_le fun n x hx => H'.wall_le_raySubmodule v m' (hdegree n n.property)
-      (hwall n n.property x hx)
-  exact hle hx
+  rw [raySubmodule_def] at hx
+  exact Submodule.iSup_induction _ (motive := fun x => f x ∈ H'.raySubmodule v m') hx
+    (fun n x hx => H'.wall_le_raySubmodule v m' (hdegree n n.property)
+      (hwall n n.property x hx))
+    (by simp) (fun x y hx hy => by simpa using (H'.raySubmodule v m').add_mem hx hy)
 
 end TauCeti.DirectedWallSpaces

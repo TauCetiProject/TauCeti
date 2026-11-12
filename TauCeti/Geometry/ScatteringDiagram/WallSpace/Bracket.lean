@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Geometry.ScatteringDiagram.WallSpace.Ray
+import TauCeti.Algebra.DirectSum.Component
 
 /-!
 # Brackets between supported-ray wall sums
@@ -17,8 +18,8 @@ For an internal decomposition, the degree-`n` component uses only pairs adding
 to `n`. This locates the homogeneous contributions of a wall interaction without
 assuming that primitive generators belong to the positive monoid.
 
-The proofs use Mathlib's submodule image API and homogeneous projections
-`DirectSum.decompose_of_mem_same` and `DirectSum.decompose_of_mem_ne`.
+The proofs use submodule suprema and `TauCeti.homogeneousComponent`
+to select the contributions at each degree.
 The contracted-normal rule is the directed-wall law of Leung, Ma and Young,
 *Refined scattering diagrams and theta functions from asymptotic analysis of
 Maurer-Cartan equations*, Definition 1.2.
@@ -47,14 +48,9 @@ theorem lie_mem_iSup_wall_of_mem_raySubmodule
     ⁅x, y⁆ ∈ ⨆ a : w.rayDegrees, ⨆ b : v.rayDegrees,
       H.wall (a.val + b.val) (wallBracketNormal ρ a.val b.val m m') := by
   rw [raySubmodule_def] at hx hy
-  let : LieRing (Module.End R L) := LieRing.ofAssociativeRing
-  suffices hle : Submodule.map₂ (LieModule.toEnd R L L).toLinearMap
-      (⨆ a : w.rayDegrees, H.wall a m) (⨆ b : v.rayDegrees, H.wall b m') ≤
-        ⨆ a : w.rayDegrees, ⨆ b : v.rayDegrees,
-          H.wall (a.val + b.val) (wallBracketNormal ρ a.val b.val m m') from
-    hle (Submodule.apply_mem_map₂ _ hx hy)
-  simp_rw [Submodule.map₂_iSup_left, Submodule.map₂_iSup_right]
-  refine iSup_le fun a => iSup_le fun b => Submodule.map₂_le.mpr fun x hx y hy => ?_
+  refine Submodule.lie_mem_of_mem_iSup
+    (fun a : w.rayDegrees => H.wall a m) (fun b : v.rayDegrees => H.wall b m') _
+    (fun a b x hx y hy => ?_) hx hy
   exact Submodule.mem_iSup_of_mem a (Submodule.mem_iSup_of_mem b (H.bracket_mem hx hy))
 
 /-- The supported-ray bracket formula indexed by positive integer multipliers.
@@ -91,26 +87,25 @@ theorem decompose_lie_mem_iSup_wall_of_mem_raySubmodule
   have hxy := H.lie_mem_iSup_wall_of_mem_raySubmodule hx hy
   let S := ⨆ a : w.rayDegrees, ⨆ b : v.rayDegrees, ⨆ (_ : a.val + b.val = n),
     H.wall n (wallBracketNormal ρ a.val b.val m m')
-  let p : L →ₗ[R] L := (ℒ n).subtype ∘ₗ
-    DirectSum.component R Γ (fun i => ℒ i) n ∘ₗ (DirectSum.decomposeLinearEquiv ℒ).toLinearMap
+  let p := homogeneousComponent ℒ n
   suffices hle : (⨆ a : w.rayDegrees, ⨆ b : v.rayDegrees,
       H.wall (a.val + b.val) (wallBracketNormal ρ a.val b.val m m')).map p ≤ S from
-    hle (Submodule.mem_map.mpr ⟨⁅x, y⁆, hxy, rfl⟩)
+    by simpa only [p, homogeneousComponent_apply] using
+      hle (Submodule.mem_map.mpr ⟨⁅x, y⁆, hxy, rfl⟩)
   simp only [Submodule.map_iSup]
   refine iSup_le fun a => iSup_le fun b => Submodule.map_le_iff_le_comap.mpr ?_
   intro z hz
-  simp only [Submodule.mem_comap, p, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    DirectSum.decomposeLinearEquiv_apply, ← DirectSum.apply_eq_component, Submodule.subtype_apply]
+  simp only [Submodule.mem_comap, p]
   by_cases hab : a.val + b.val = n
-  · rw [DirectSum.decompose_of_mem_same ℒ (hab ▸ H.wall_le_piece _ _ hz)]
+  · rw [homogeneousComponent_apply_of_mem ℒ (hab ▸ H.wall_le_piece _ _ hz)]
     exact Submodule.mem_iSup_of_mem a
       (Submodule.mem_iSup_of_mem b (Submodule.mem_iSup_of_mem hab (hab ▸ hz)))
-  · rw [DirectSum.decompose_of_mem_ne ℒ (H.wall_le_piece _ _ hz) hab]
+  · rw [homogeneousComponent_apply_of_mem_ne ℒ (H.wall_le_piece _ _ hz) hab]
     exact S.zero_mem
 
 /-- A ray interaction has no component at a degree which is not a sum of an
 actual degree on each input ray. -/
-theorem decompose_lie_eq_zero_of_no_ray_decomposition
+theorem decompose_lie_eq_zero_of_mem_raySubmodule_of_forall_add_ne
     {w v : SupportedRay d} {m m' : Λ →+ ℤ} {x y : L}
     (hx : x ∈ H.raySubmodule w m) (hy : y ∈ H.raySubmodule v m')
     {n : Γ} (hn : ∀ a ∈ w.rayDegrees, ∀ b ∈ v.rayDegrees, a + b ≠ n) :

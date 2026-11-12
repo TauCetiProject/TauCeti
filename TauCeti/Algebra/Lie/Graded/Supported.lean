@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Graded.Hom
 public import TauCeti.Algebra.DirectSum.Supported
-public import Mathlib.Algebra.Module.Submodule.Bilinear
+public import TauCeti.Algebra.Lie.Basic
 
 /-!
 # Lie subalgebras supported on additive sets of degrees
@@ -32,7 +32,7 @@ public section
 
 namespace TauCeti
 
-variable {N R L L' : Type*} [AddCommMonoid N] [CommRing R]
+variable {N R L L' : Type*} [Add N] [CommRing R]
   [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
   (ℒ : N → Submodule R L) [SetLike.GradedBracket ℒ ℒ]
 
@@ -41,12 +41,7 @@ The degree set need not contain zero. -/
 def supportedLieSubalgebra (S : AddSubsemigroup N) : LieSubalgebra R L where
   toSubmodule := ⨆ n : S, ℒ n
   lie_mem' {x y} hx hy := by
-    let : LieRing (Module.End R L) := LieRing.ofAssociativeRing
-    suffices hle : Submodule.map₂ (LieModule.toEnd R L L).toLinearMap
-        (⨆ n : S, ℒ n) (⨆ n : S, ℒ n) ≤ ⨆ n : S, ℒ n from
-      hle (Submodule.apply_mem_map₂ _ hx hy)
-    simp_rw [Submodule.map₂_iSup_left, Submodule.map₂_iSup_right]
-    refine iSup_le fun n => iSup_le fun m => Submodule.map₂_le.mpr fun x hx y hy => ?_
+    refine Submodule.lie_mem_of_mem_iSup _ _ _ (fun n m x hx y hy => ?_) hx hy
     exact (le_iSup (fun n : S => ℒ n) ⟨n + m, S.add_mem n.property m.property⟩)
       (SetLike.GradedBracket.bracket_mem hx hy)
 
@@ -81,12 +76,46 @@ theorem map_supportedLieSubalgebra (S : AddSubsemigroup N) (f : L →ₗ⁅R⁆ 
       supportedLieSubalgebra (fun n => (ℒ n).map f.toLinearMap) S := by
   let := f.gradedBracket_map ℒ
   apply LieSubalgebra.toSubmodule_injective
-  exact Submodule.map_iSup _ _
+  rw [LieSubalgebra.map_toSubmodule, supportedLieSubalgebra_toSubmodule,
+    supportedLieSubalgebra_toSubmodule, Submodule.map_iSup]
+
+/-- Selecting no degrees gives the zero Lie subalgebra. -/
+@[simp]
+theorem supportedLieSubalgebra_bot : supportedLieSubalgebra ℒ ⊥ = ⊥ := by
+  apply le_antisymm _ bot_le
+  exact (supportedLieSubalgebra_le_iff ℒ ⊥ ⊥).mpr fun n hn =>
+    (AddSubsemigroup.notMem_bot hn).elim
+
+/-- If all other selected pieces vanish, the supported subalgebra is a single piece. -/
+theorem supportedLieSubalgebra_toSubmodule_eq_of_forall_ne_eq_bot
+    (S : AddSubsemigroup N) (n : N) (hn : n ∈ S)
+    (hvan : ∀ m ∈ S, m ≠ n → ℒ m = ⊥) :
+    (supportedLieSubalgebra ℒ S).toSubmodule = ℒ n := by
+  rw [supportedLieSubalgebra_toSubmodule]
+  apply le_antisymm
+  · refine iSup_le fun m => ?_
+    by_cases hm : (m : N) = n
+    · simpa only [hm] using (le_refl (ℒ n))
+    · rw [hvan m m.property hm]
+      exact bot_le
+  · exact le_iSup_of_le ⟨n, hn⟩ le_rfl
+
+/-- A supported Lie subalgebra is abelian exactly when its homogeneous pieces commute. -/
+theorem isLieAbelian_supportedLieSubalgebra_iff (S : AddSubsemigroup N) :
+    IsLieAbelian (supportedLieSubalgebra ℒ S) ↔
+      ∀ n ∈ S, ∀ m ∈ S, ∀ x ∈ ℒ n, ∀ y ∈ ℒ m, ⁅x, y⁆ = 0 := by
+  constructor
+  · intro h n hn m hm x hx y hy
+    exact LieSubalgebra.lie_eq_zero_of_mem
+      (le_supportedLieSubalgebra ℒ hn hx) (le_supportedLieSubalgebra ℒ hm hy)
+  · intro h
+    refine ⟨fun x y => Subtype.ext ?_⟩
+    exact Submodule.lie_eq_zero_of_mem_iSup (fun n : S => ℒ n) (fun n : S => ℒ n)
+      (fun n m => h n n.property m m.property) x.property y.property
 
 variable [DecidableEq N] [DirectSum.Decomposition ℒ]
 
 /-- Membership is detected by the vanishing of the excluded homogeneous components. -/
-@[simp]
 theorem mem_supportedLieSubalgebra_iff (S : AddSubsemigroup N) (x : L) :
     x ∈ supportedLieSubalgebra ℒ S ↔
       ∀ n, n ∉ S → (DirectSum.decompose ℒ x n : L) = 0 := by
@@ -94,11 +123,11 @@ theorem mem_supportedLieSubalgebra_iff (S : AddSubsemigroup N) (x : L) :
   exact TauCeti.DirectSum.mem_iSup_iff_decompose_eq_zero ℒ (S : Set N)
 
 /-- Supported Lie subalgebras are stable under all homogeneous projections. -/
-theorem supportedLieSubalgebra_isHomogeneous (S : AddSubsemigroup N) :
+theorem isHomogeneous_supportedLieSubalgebra (S : AddSubsemigroup N) :
     DirectSum.SetLike.IsHomogeneous ℒ (supportedLieSubalgebra ℒ S) := by
   simpa only [DirectSum.SetLike.IsHomogeneous, ← LieSubalgebra.mem_toSubmodule,
     supportedLieSubalgebra_toSubmodule, iSup_subtype, SetLike.mem_coe] using
-    TauCeti.DirectSum.iSup_isHomogeneous ℒ (S : Set N)
+    TauCeti.DirectSum.isHomogeneous_iSup ℒ (S : Set N)
 
 /-- Selecting every degree recovers the entire Lie algebra. -/
 @[simp]
@@ -115,5 +144,11 @@ theorem supportedLieSubalgebra_inf (S T : AddSubsemigroup N) :
   simp only [LieSubalgebra.mem_inf, mem_supportedLieSubalgebra_iff,
     AddSubsemigroup.mem_inf]
   grind
+
+/-- Disjoint degree sets have disjoint supported Lie subalgebras. -/
+theorem disjoint_supportedLieSubalgebra {S T : AddSubsemigroup N} (h : Disjoint S T) :
+    Disjoint (supportedLieSubalgebra ℒ S) (supportedLieSubalgebra ℒ T) := by
+  rw [disjoint_iff, ← supportedLieSubalgebra_inf, disjoint_iff.mp h,
+    supportedLieSubalgebra_bot]
 
 end TauCeti

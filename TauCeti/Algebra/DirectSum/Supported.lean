@@ -56,7 +56,7 @@ theorem mem_iSup_iff_decompose_eq_zero {x : M} :
       exact Submodule.zero_mem _
 
 /-- A sum of selected homogeneous pieces is stable under homogeneous projections. -/
-theorem iSup_isHomogeneous :
+theorem isHomogeneous_iSup :
     _root_.DirectSum.SetLike.IsHomogeneous ℳ (⨆ i : S, ℳ i) := by
   classical
   intro i x hx

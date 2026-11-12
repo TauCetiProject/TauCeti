@@ -37,7 +37,7 @@ variable {Γ : Type} {Λ R L : Type*} [AddCommMonoid Γ] [AddCommMonoid Λ]
 /-- Wall spaces at order `k` are the actual quotient images of the original spaces. -/
 def truncated (k : ℕ) : DirectedWallSpaces ρ (d.truncatedGrading ℒ k) :=
   H.map (d.degreeIdeal ℒ k).mkQ (d.truncatedGrading ℒ k)
-    (by intro n; rw [PositiveDegrees.truncatedGrading_eq]; exact le_rfl)
+    (by intro n; rw [LieIdeal.coe_mkQ, PositiveDegrees.truncatedGrading_eq])
 
 /-- Truncation takes each wall space to its image in the Lie quotient. -/
 @[simp]
@@ -86,5 +86,21 @@ theorem map_truncationMap_raySubmodule {k l : ℕ} (h : k ≤ l)
     ((H.truncated d l).raySubmodule w m).map (d.truncationMap ℒ h).toLinearMap =
       (H.truncated d k).raySubmodule w m := by
   simp only [raySubmodule_def, Submodule.map_iSup, map_truncationMap_wall]
+
+/-- Finite-order wall ray Lie subalgebras are quotient images of the original ones. -/
+@[simp]
+theorem truncated_wallRayLieSubalgebra (k : ℕ) (w : SupportedRay d) (m : Λ →+ ℤ) :
+    (H.truncated d k).wallRayLieSubalgebra w m =
+      (H.wallRayLieSubalgebra w m).map (d.degreeIdeal ℒ k).mkQ := by
+  simp only [truncated, map_wallRayLieSubalgebra]
+
+/-- Lowering the cutoff maps a wall ray Lie subalgebra onto its lower-order counterpart. -/
+theorem map_truncationMap_wallRayLieSubalgebra {k l : ℕ} (h : k ≤ l)
+    (w : SupportedRay d) (m : Λ →+ ℤ) :
+    ((H.truncated d l).wallRayLieSubalgebra w m).map (d.truncationMap ℒ h) =
+      (H.truncated d k).wallRayLieSubalgebra w m := by
+  apply LieSubalgebra.toSubmodule_injective
+  rw [LieSubalgebra.map_toSubmodule, wallRayLieSubalgebra_toSubmodule,
+    wallRayLieSubalgebra_toSubmodule, map_truncationMap_raySubmodule]
 
 end TauCeti.DirectedWallSpaces

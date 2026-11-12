@@ -140,7 +140,7 @@ theorem mem_signSubalgebra_iff {s : SignType} {x : L} :
 theorem isHomogeneous_signSubalgebra (s : SignType) :
     DirectSum.SetLike.IsHomogeneous ℒ (signSubalgebra ℒ θ s) := by
   unfold signSubalgebra
-  exact supportedLieSubalgebra_isHomogeneous ℒ _
+  exact isHomogeneous_supportedLieSubalgebra ℒ _
 
 /-- Collecting homogeneous pieces by sign gives an internal module decomposition. -/
 theorem isInternal_signSubalgebra :
