@@ -210,7 +210,7 @@ theorem semicircleReal_le_smul_volume (a : ℝ) {v : ℝ≥0} (hv : 0 < v) :
     (2 * Real.pi * (v : ℝ))⁻¹ * Real.sqrt (4 * (v : ℝ) - (y - a) ^ 2)
         ≤ (2 * Real.pi * (v : ℝ))⁻¹ * (2 * Real.sqrt v) := by gcongr
     _ = (Real.pi * Real.sqrt v)⁻¹ := by
-      field_simp
+      field_simp [ne_of_gt hs]
       nlinarith
 
 /-- A semicircle law carried by `[0, ∞)` with positive centre gives no mass to `(-∞, 0]`. -/
