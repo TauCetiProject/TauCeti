@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Complex.Angle
 public import TauCeti.Topology.ClusterSet
 
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Logic.Function.Update
 
 /-!
 # Frontiers of local half-planes and sectors
@@ -22,12 +24,15 @@ an open half-strip, its frontier far out lies on the two bounding rays, and agai
 outside its closure; the same holds when far out it misses an open half-strip. The exponential
 coordinate `exp (π * I - ζ)` is injective on the closed strip `0 ≤ im ζ ≤ π`, real on its bounding
 lines and in the upper half-plane inside it, and on the closed half-strip it tends to `0` at
-infinity. These facts supply the boundary conditions for polygonal conformal maps.
+infinity. Composed with `f (-w⁻¹)` and filled in by `0` at the origin, this coordinate is
+continuous and injective on a half-ball (`TauCeti.continuousOn_update_exp_pi_mul_I_sub`,
+`TauCeti.injOn_update_exp_pi_mul_I_sub`). These facts supply the boundary conditions for polygonal
+conformal maps.
 -/
 
 public section
 
-open Complex Metric Set Topology
+open Bornology Complex Filter Metric Set Topology
 
 namespace TauCeti
 
@@ -371,6 +376,44 @@ theorem exists_notMem_closure_of_forall_mem_notMem_halfStrip {c b : ℂ} {ρ : �
     (continuous_im.comp hζc).continuousAt.eventually (isOpen_Ioo.mem_nhds him)]
     with z hzρ hzre hzim hzU
   exact hU z hzρ hzU ⟨hzre, hzim⟩
+
+/-- For `b ≠ 0`, the map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin,
+is continuous on the part of the closed upper half-plane in `ball 0 r`, when `f` is continuous on
+the closed upper half-plane and tends to infinity at infinity there, and `(f (-w⁻¹) - c) / b` lies
+in the closed half-strip at every nonzero `w` of that half-ball. -/
+theorem continuousOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hζ : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
+      0 ≤ ((f (-w⁻¹) - c) / b).re ∧ ((f (-w⁻¹) - c) / b).im ∈ Icc 0 Real.pi) :
+    ContinuousOn (Function.update (fun w => exp (Real.pi * Complex.I - (f (-w⁻¹) - c) / b)) 0 0)
+      (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
+  · -- continuity away from `0` by continuity of `f` up to the axis
+    exact (continuousWithinAt_const.sub ((((continuousOn_comp_neg_inv hfc).mono
+      (sdiff_subset_sdiff_left inter_subset_right) w hw).sub_const c).div_const b)).cexp
+  · -- in the closed half-strip `exp (π * I - ζ)` tends to `0` as `ζ` tends to infinity
+    refine tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded ?_
+      (eventually_nhdsWithin_of_forall fun w hw => hζ w hw.1.1 hw.1.2 hw.2)
+    exact tendsto_sub_div_of_tendsto_cobounded hb ((tendsto_comp_neg_inv_cobounded hp).mono_left
+      (nhdsWithin_mono _ (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r)))))
+
+/-- For `b ≠ 0`, the map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin,
+is injective on the part of the closed upper half-plane in `ball 0 r`, when `f` is injective on
+the closed upper half-plane and `im ((f (-w⁻¹) - c) / b)` lies in `[0, π]` at every nonzero `w` of
+that half-ball. -/
+theorem injOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
+    (hζ : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
+      ((f (-w⁻¹) - c) / b).im ∈ Icc 0 Real.pi) :
+    InjOn (Function.update (fun w => exp (Real.pi * Complex.I - (f (-w⁻¹) - c) / b)) 0 0)
+      (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  refine Set.injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w _ _ => exp_ne_zero _
+  have hζeq : (f (-w₁⁻¹) - c) / b = (f (-w₂⁻¹) - c) / b :=
+    injOn_exp_pi_mul_I_sub (hζ w₁ hw₁.1.1 hw₁.1.2 hw₁.2) (hζ w₂ hw₂.1.1 hw₂.1.2 hw₂.2)
+      (by simpa using h)
+  rw [div_left_inj' hb, sub_left_inj] at hζeq
+  simpa using hfi (im_neg_inv_nonneg.mpr hw₁.1.2) (im_neg_inv_nonneg.mpr hw₂.1.2) hζeq
 
 end TauCeti
 

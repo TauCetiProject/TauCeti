@@ -76,7 +76,11 @@ open PathAlgebra DoubledQuiver
 
 universe u w
 
-variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
+variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
+
+section Criterion
+
+variable [Finite V]
 
 /-! ### A criterion for centrality -/
 
@@ -200,6 +204,8 @@ private theorem zigzagVolume_mul_sum_smul_vertexIdempotent [Fintype V] (f : V �
   · intro hj
     exact absurd (Finset.mem_univ j) hj
 
+end Criterion
+
 /-- **A combination of vertex idempotents whose coefficients are constant along the edges is
 central.** An arrow sees the coefficient at its head on one side and the coefficient at its tail on
 the other, and an idempotent or a volume class sees the coefficient at its own vertex on both
@@ -252,7 +258,7 @@ private theorem one_eq_sum_zigzagMk_vertexIdempotent [Fintype V] :
 /-- **A diagonal corner is spanned by the idempotent and the volume class of its vertex.** An
 arrow has distinct endpoints, so it does not survive a corner, and the idempotents away from the
 corner vertex are killed on one side or the other. -/
-private theorem corner_mem_span (i : V) (y : nonisolatedZigzagQuotient k G) :
+private theorem corner_mem_span [Finite V] (i : V) (y : nonisolatedZigzagQuotient k G) :
     zigzagMk k G (vertexIdempotent k (vertex G i)) * y
         * zigzagMk k G (vertexIdempotent k (vertex G i))
       ∈ Submodule.span k
@@ -353,6 +359,10 @@ theorem mem_center_nonisolatedZigzagQuotient_iff [Fintype V] (hns : ∀ i : V, �
       (sum_mem fun i _ => Subalgebra.smul_mem _ (zigzagVolume_mem_center k G i) _)
 
 /-! ### The centre of a connected zigzag algebra -/
+
+section Connected
+
+variable [Finite V]
 
 omit [Finite V] in
 /-- A preconnected graph with at least two vertices has no isolated vertex. -/
@@ -482,6 +492,8 @@ theorem zigzagCenterBasis_apply [Nontrivial V] (hconn : G.Preconnected) (o : Opt
   rw [zigzagCenterBasis, Module.Basis.map_apply, Module.Basis.span_apply]
   rfl
 
+end Connected
+
 /-- **The dimension of the centre of a zigzag algebra.** A preconnected finite simple graph with
 at least two vertices has centre of dimension `|V| + 1`: the unit, together with one volume class
 at each vertex. -/
@@ -492,6 +504,10 @@ theorem finrank_center_nonisolatedZigzagQuotient [Nontrivial k] [Fintype V] [Non
   rw [Module.finrank_eq_card_basis (zigzagCenterBasis k G hconn), Fintype.card_option]
 
 /-! ### The centre of the public algebra -/
+
+section Public
+
+variable [Finite V]
 
 -- The centre of a singleton component factor is the whole factor, since the dual numbers are
 -- commutative, and Mathlib exposes `DualNumber k` as `TrivSqZeroExt k k`, whose carrier is `k × k`
@@ -610,5 +626,7 @@ theorem finrank_center_zigzagAlgebra_of_connected [Nontrivial k]
   let _ : Subsingleton G.ConnectedComponent := hconn.preconnected.subsingleton_connectedComponent
   rw [finrank_center_zigzagAlgebra k G,
     Nat.card_unique (α := G.ConnectedComponent)]
+
+end Public
 
 end TauCeti

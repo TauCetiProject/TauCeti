@@ -51,6 +51,7 @@ variable {E V P H G M N : Type*}
 variable {m : ℕ∞ω} [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]
 
+omit [FiniteDimensional ℝ E] in
 /-- Orthogonal normal projection is `C^m` on the pulled-back ambient tangent bundle for a
 `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. Both the base point and the
 ambient tangent vector may vary. -/
@@ -61,6 +62,12 @@ theorem contMDiff_normalRepresentative_normalClass
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
         (⟨f p.proj, f.normalRepresentative p.proj hn (f.normalClass p.proj hn p.2)⟩ :
           TangentBundle J N)) := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · exact fun p ↦ isEmptyElim p.proj
+  -- the differential of an immersion embeds `E` in the finite-dimensional space `V`
+  have : FiniteDimensional ℝ E :=
+    Module.Finite.of_injective (mfderiv I J f x₀ : E →L[ℝ] V).toLinearMap
+      (f.isImmersion.mfderiv_injective hn x₀)
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le (le_self_add.trans hm)⟩
   let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)

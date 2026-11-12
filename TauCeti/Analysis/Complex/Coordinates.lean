@@ -19,6 +19,11 @@ the reversal of orientation. Any `v` has real coordinates in the real basis `u`,
 (`Complex.eq_re_mul_add_im_div_mul`). The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is
 linearly independent. A point `c + t * I` of a vertical line with `c ≠ 0` is nonzero.
 
+In the frame of a nonzero direction `v`, the point `v (s ± h i)` on either side of the line through
+`v s` with direction `v` has imaginary coordinate `±h`
+(`TauCeti.mul_add_mul_I_sub_mul_div_im`) and lies at distance `‖v‖ * |h|` from `v s`
+(`Complex.dist_mul_add_mul_I`).
+
 A rank-one map `L.smulRight w` built from a real functional `L` on `ℂ` splits along the real
 basis `1, I` as `L 1 • re ⊗ w + L I • im ⊗ w`
 (`ContinuousLinearMap.smulRight_eq_re_add_im`).
@@ -82,7 +87,53 @@ theorem linearIndependent_one_zero_I_zero_zero_one :
 theorem ofReal_add_mul_I_ne_zero {c : ℝ} (hc : c ≠ 0) (t : ℝ) : (c : ℂ) + t * I ≠ 0 :=
   fun h ↦ hc (by simpa using congrArg Complex.re h)
 
+/-- The point `h` units off the line `s ↦ v * s` in the direction `v * I` is at distance
+`‖v‖ * |h|` from the line point. -/
+@[simp]
+theorem dist_mul_add_mul_I (v : ℂ) (s h : ℝ) : dist (v * (s + h * I)) (v * s) = ‖v‖ * |h| := by
+  rw [dist_eq_norm]
+  have : v * (s + h * I) - v * s = v * (h * I) := by ring
+  rw [this, norm_mul, norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs]
+
+/-- The point `h` units off the line `s ↦ v * s` in the direction `-(v * I)` is at distance
+`‖v‖ * |h|` from the line point. -/
+@[simp]
+theorem dist_mul_sub_mul_I (v : ℂ) (s h : ℝ) : dist (v * (s - h * I)) (v * s) = ‖v‖ * |h| := by
+  have := dist_mul_add_mul_I v s (-h)
+  rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg, abs_neg] at this
+
 end Complex
+
+namespace TauCeti
+
+section LineThrough
+
+open Complex
+
+variable {v : ℂ} {s : ℝ}
+
+/-- The imaginary part of the coordinate, in the frame of `v`, of the point `v * (s + h * I)`
+relative to the line point `v * s` is `h`. -/
+@[simp]
+theorem mul_add_mul_I_sub_mul_div_im (hv : v ≠ 0) (h : ℝ) :
+    ((v * (s + h * I) - v * s) / v).im = h := by
+  have : (v * (s + h * I) - v * s) / v = h * I := by
+    field_simp
+    ring
+  rw [this]
+  simp only [mul_im, ofReal_re, I_re, mul_zero, ofReal_im, I_im, mul_one, add_zero]
+
+/-- The imaginary part of the coordinate, in the frame of `v`, of the point `v * (s - h * I)`
+relative to the line point `v * s` is `-h`. -/
+@[simp]
+theorem mul_sub_mul_I_sub_mul_div_im (hv : v ≠ 0) (h : ℝ) :
+    ((v * (s - h * I) - v * s) / v).im = -h := by
+  have := mul_add_mul_I_sub_mul_div_im (v := v) (s := s) hv (-h)
+  rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg] at this
+
+end LineThrough
+
+end TauCeti
 
 namespace ContinuousLinearMap
 

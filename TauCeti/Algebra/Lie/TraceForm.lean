@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.TraceForm
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.LinearAlgebra.Trace.Nilpotent
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Identities for the trace form of a Lie module
@@ -110,18 +111,20 @@ theorem traceForm_eq_zero_of_isNilpotent_of_lie_eq_zero {x y : L}
   rw [traceForm_comm, traceForm_apply_apply,
     LinearMap.trace_comp_eq_mul_of_commute_of_isNilpotent 0 hcomm (by simpa using hx), zero_mul]
 
-/-- **An element acting nilpotently is orthogonal, for the trace form of any finite-dimensional
-representation in characteristic zero, to everything it brackets to zero twice.** If
-`⁅x, ⁅x, y⁆⁆ = 0`, the action of `x` commutes with the commutator of the actions of `x` and `y`,
-so the trace of their composite vanishes by
-`LinearMap.trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero`. -/
+/-- **An element acting nilpotently is orthogonal, for the trace form of any representation in
+characteristic zero, to everything it brackets to zero twice.** If `⁅x, ⁅x, y⁆⁆ = 0`, the action
+of `x` commutes with the commutator of the actions of `x` and `y`, so the trace of their composite
+vanishes by `LinearMap.trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero`. On a representation
+that is not finite over `K` the trace is the junk value `0`. -/
 theorem traceForm_eq_zero_of_isNilpotent_of_lie_lie_eq_zero {K : Type*} [Field K] [CharZero K]
-    [LieAlgebra K L] [Module K M] [LieModule K L M] [FiniteDimensional K M] {x y : L}
+    [LieAlgebra K L] [Module K M] [LieModule K L M] {x y : L}
     (hx : IsNilpotent (toEnd K L M x)) (hxy : ⁅x, ⁅x, y⁆⁆ = 0) :
     traceForm K L M x y = 0 := by
   rw [traceForm_apply_apply]
-  exact LinearMap.trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero hx <| by
-    rw [← LieHom.map_lie, ← LieHom.map_lie, hxy, map_zero]
+  by_cases hM : Module.Finite K M
+  · exact LinearMap.trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero hx <| by
+      rw [← LieHom.map_lie, ← LieHom.map_lie, hxy, map_zero]
+  · simp [LinearMap.trace_eq_zero_of_not_finite hM]
 
 end Nilpotent
 

@@ -121,7 +121,7 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_mul_rp
     calc _ = D * c₀ := by rw [Real.one_rpow, mul_one]; ring
       _ ≤ |D| * c₀ := mul_le_mul_of_nonneg_right (le_abs_self D) c₀.coe_nonneg
       _ ≤ lam := by nlinarith [c₀.coe_nonneg]
-  obtain ⟨C₁, hC₁⟩ := hball (L := c₀) (M := Lam.toNNReal) hlam one_pos hc₀ (ρ := 1 / 2)
+  obtain ⟨C₁, hC₁⟩ := hball (L := c₀) (M := Lam.toNNReal) hlam hc₀ (ρ := 1 / 2)
     (by norm_num)
   refine ⟨c₀, by rw [← NNReal.coe_pos]; exact div_pos hlam (by positivity), C₁, ?_⟩
   intro a x₀ δ Ka hδ hKa hlo hup hhol hent u N₀ N₁ N₂ K V hu hN₀ hN₁ hN₂ hV hK
