@@ -27,10 +27,7 @@ In a pseudometric space, the closed `δ`-thickening of a nonempty set, for `δ �
 points at distance at most `δ` from it (`TauCeti.mem_cthickening_iff_infDist_le`). This is the
 closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and describes closed
 thickenings as sublevel sets of the distance function, and their complements as strict
-superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). For `s > 0`, the points at
-distance at least `s` from the complement of a set `Ω` lie in `Ω`
-(`TauCeti.setOf_le_infDist_compl_subset`), and form a compact set when `Ω` is bounded in a proper
-space (`Bornology.IsBounded.isCompact_setOf_le_infDist_compl`).
+superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`).
 
 A closed set in a pseudometric space is the intersection of an antitone sequence of open sets
 inside any set whose interior contains it, namely the intersections of that interior with
@@ -89,20 +86,6 @@ theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] 
     (hs : s.Nonempty) {δ : ℝ} (hδ : 0 ≤ δ) : (cthickening δ s)ᶜ = {x | δ < infDist x s} := by
   ext x
   simp [mem_cthickening_iff_infDist_le hs hδ]
-
-/-- For `s > 0`, the points at distance at least `s` from `Ωᶜ` lie in `Ω`. -/
-theorem setOf_le_infDist_compl_subset {X : Type*} [PseudoMetricSpace X] {Ω : Set X} {s : ℝ}
-    (hs : 0 < s) : {y | s ≤ infDist y Ωᶜ} ⊆ Ω := fun y hy => by
-  by_contra h
-  exact (hs.trans_le hy).ne' (infDist_zero_of_mem h)
-
-/-- For `s > 0`, the points at distance at least `s` from the complement of a bounded set in a
-proper space form a compact set. -/
-theorem _root_.Bornology.IsBounded.isCompact_setOf_le_infDist_compl {X : Type*}
-    [PseudoMetricSpace X] [ProperSpace X] {Ω : Set X} (hΩ : Bornology.IsBounded Ω) {s : ℝ}
-    (hs : 0 < s) : IsCompact {y | s ≤ infDist y Ωᶜ} :=
-  isCompact_of_isClosed_isBounded (isClosed_le continuous_const (continuous_infDist_pt _))
-    (hΩ.subset (setOf_le_infDist_compl_subset hs))
 
 /-- Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
 `R`-thickening. -/

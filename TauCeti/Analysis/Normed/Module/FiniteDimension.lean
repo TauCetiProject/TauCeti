@@ -36,11 +36,6 @@ that depend continuously on the parameter in the operator norm. Conversely, near
 continuous family of vectors in subspaces of constant dimension is linearly independent, the
 vectors span those subspaces.
 
-Near the frontier of a bounded proper subset `Ω`, a function continuous on `closure Ω` stays below
-any bound for its frontier values, up to an arbitrarily small error, on a whole boundary layer
-`{y ∈ Ω : dist(y, Ωᶜ) < ρ}`. This is how boundary values enter maximum principles proved on inner
-subdomains.
-
 ## Main results
 
 * `ContinuousLinearMap.dual_finrank_eq`: in finite dimensions the continuous dual has the same
@@ -64,8 +59,6 @@ subdomains.
   identification of maps out of a coordinate space with their values on the standard basis.
 * `IsCompact.exists_continuousLinearEquiv_mapsTo_ball`: linear coordinates sending a compact set
   into a given ball around the origin.
-* `TauCeti.exists_pos_forall_infDist_compl_lt_le_add`: a function continuous on the closure of a
-  bounded proper subset is almost bounded by its frontier bound on a boundary layer.
 -/
 
 public section
@@ -207,31 +200,6 @@ theorem _root_.IsCompact.exists_continuousLinearEquiv_mapsTo_ball {X : Type*}
     _ < r := by
       rw [ht, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
       nlinarith [abs_nonneg R]
-
-section BoundaryLayer
-
-open Metric Set
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {Ω : Set V} {v : V → ℝ} {m η : ℝ}
-
-/-- **Boundary layers.** Let `Ω` be a bounded proper subset of a finite-dimensional real normed
-space, and let `v` be continuous on `closure Ω` and at most `m` on `frontier Ω`. For every `η > 0`
-there is `ρ > 0` such that `v ≤ m + η` at the points of `Ω` at distance less than `ρ` from `Ωᶜ`.
--/
-theorem exists_pos_forall_infDist_compl_lt_le_add (hΩb : Bornology.IsBounded Ω) (hΩ : Ω ≠ univ)
-    (hv : ContinuousOn v (closure Ω)) (hm : ∀ z ∈ frontier Ω, v z ≤ m) (hη : 0 < η) :
-    ∃ ρ > 0, ∀ y ∈ Ω, infDist y Ωᶜ < ρ → v y ≤ m + η := by
-  obtain ⟨ρ, hρ, hvρ⟩ := Metric.uniformContinuousOn_iff.1
-    (hΩb.isCompact_closure.uniformContinuousOn_of_continuous hv) η hη
-  refine ⟨ρ, hρ, fun y hy hyρ => ?_⟩
-  -- The distance to the complement is attained at a frontier point `z`, where `v z ≤ m`.
-  obtain ⟨z, hz, hyz⟩ := exists_mem_frontier_infDist_compl_eq_dist hy hΩ
-  have h := hvρ y (subset_closure hy) z (frontier_subset_closure hz) (hyz ▸ hyρ)
-  rw [Real.dist_eq] at h
-  linarith [hm z hz, (abs_lt.1 h).2]
-
-end BoundaryLayer
 
 end TauCeti
 

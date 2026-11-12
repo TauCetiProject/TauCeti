@@ -96,8 +96,11 @@ private theorem localAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace 
     [CompleteSpace F] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (f : Lp F p (mu.restrict Omega)) :
     localAverage (U := U) hp phi f =ᵐ[mu.restrict U] smoothField phi f := by
-  rw [smoothField_def]
-  exact normedBumpLp_extendByZero_restrict_ae_eq_convolution hp phi Omega.isOpen.measurableSet U f
+  have he := normedBumpLp_extendByZero_ae_eq_convolution hp phi Omega.isOpen.measurableSet f
+  have he' := he.filter_mono
+    (ae_mono (Measure.restrict_mono_set mu (subset_univ (U : Set E))))
+  exact (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans (by
+    simpa only [Measure.restrict_univ, smoothField_def] using he')
 
 /-- As the bump radii tend to zero, the mollifications of a zero-extended field
 `f ∈ Lᵖ(Ω; F)`, `p < ∞`, converge to `f` in `Lᵖ(Ω; F)`. -/
