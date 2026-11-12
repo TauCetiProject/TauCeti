@@ -73,8 +73,8 @@ theorem specialUnitaryMatrixLieAlgebra_self_eq_so [TrivialStar R]
     [IsAddTorsionFree R] :
     specialUnitaryMatrixLieAlgebra R n R = LieAlgebra.Orthogonal.so n R := by
   ext A
-  change (Aᴴ = -A ∧ A.trace = 0) ↔ A ∈ LieAlgebra.Orthogonal.so n R
-  rw [LieAlgebra.Orthogonal.mem_so, Matrix.conjTranspose_eq_transpose_of_trivial,
+  rw [mem_specialUnitaryMatrixLieAlgebra_iff, LieAlgebra.Orthogonal.mem_so,
+    Matrix.conjTranspose_eq_transpose_of_trivial,
     and_iff_left_iff_imp]
   intro hA
   have h := congrArg Matrix.trace hA
