@@ -439,7 +439,7 @@ theorem holedDisc_eq_empty_iff {a c : K} (ha : ‖a‖ ≤ 1) (hc : ‖c‖ ≤ 
     rw [discPoint_mem_holedDisc_iff]
     exact ⟨⟨by simp, le_rfl⟩, hne.2⟩
   · rintro (rfl | ⟨i, hi⟩)
-    · exact Set.subset_eq_empty (holedDisc_subset_closedSubdisc a 0 b d)
+    · exact Set.eq_empty_of_subset (holedDisc_subset_closedSubdisc a 0 b d)
         (closedSubdisc_zero_right a)
     · exact holedDisc_eq_empty_of_lt i hi
 
