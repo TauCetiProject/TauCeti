@@ -32,11 +32,14 @@ integrals of `β` are action functions for the period family:
 
 (`hasFDerivAt_inv_two_pi_mul_pathIntegral_hamiltonianFlowAction`, in the namespace
 `TauCeti.SmoothTwoForm.IsSymplectic`).
-These are the action variables of the Liouville–Arnold theorem
-(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLocalDiffeomorphAt_action_of_isCompact`), which are
-characterized by exactly this differential and are unique up to integral affine changes
-(`TauCeti.exists_eq_mulVec_add_of_forall_eq_transposeLattice`). So in an exact neighbourhood of a
-Liouville torus the classical formula `Iᵢ = (2π)⁻¹ ∮_{γᵢ} p dq` gives the actions.
+This holds for any family of periods, including zero or non-primitive ones. When the periods
+`λ⁽¹⁾, …, λ⁽ⁿ⁾` form a basis of the full period lattice at each `c`, the corresponding loop
+integrals are action variables of the Liouville–Arnold theorem
+(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLocalDiffeomorphAt_action_of_isCompact`): such
+action variables are characterized by this differential and are locally unique up to integral
+affine changes (`TauCeti.exists_eq_mulVec_add_of_forall_eq_transposeLattice`). So in an exact
+neighbourhood of a Liouville torus the classical formula `Iᵢ = (2π)⁻¹ ∮_{γᵢ} p dq`, over loops
+`γᵢ` whose periods form a lattice basis, gives the actions.
 
 The computation sweeps the loops over a `C²` curve `κ` of values: the map
 `u(r, τ) = (τ λ(κ r)) • s(κ r)` is a cylinder between the loops over `κ 0` and `κ 1`. Its two other
@@ -212,15 +215,17 @@ theorem pathIntegral_sub_pathIntegral_hamiltonianFlowAction_eq_integral
           intervalIntegral.integral_congr fun t _ ↦ hneg (r, t)
     _ = _ := by simp
 
-/-- **Loop integrals of a primitive are action variables.** Let `s` be a `C²` section of `F` over
+/-- **Loop integrals of a primitive are action functions.** Let `s` be a `C²` section of `F` over
 an open set `D`, let `λ` be a `C²` family of periods along it, and let `β` be a `C¹` one-form with
 `dβ = -σ` on the orbits of the points `s c`. Then the function
 
 `c ↦ (2π)⁻¹ ∮_{γ_c} β`, `γ_c(τ) = (τ λ(c)) • s(c)`, `τ ∈ [0, 1]`,
 
 has differential `(2π)⁻¹ ∑ⱼ λⱼ(c) dcⱼ` at every `c ∈ D`: it is an action function for the period
-family `λ`. For the Liouville form `β = p dq` of a cotangent bundle this is the formula
-`I = (2π)⁻¹ ∮ p dq` for the action variables. -/
+family `λ`, which may be any family of periods. When the families `λ⁽¹⁾, …, λ⁽ⁿ⁾` form a basis of
+the full period lattice, the corresponding functions are Liouville–Arnold action coordinates,
+locally unique up to integral affine changes. For the Liouville form `β = p dq` of a cotangent
+bundle this is the formula `Iᵢ = (2π)⁻¹ ∮_{γᵢ} p dq` for the action variables. -/
 theorem hasFDerivAt_inv_two_pi_mul_pathIntegral_hamiltonianFlowAction (hD : IsOpen D)
     (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I 2 s D) (hFs : ∀ c ∈ D, F (s c) = c)
     (hp : ContDiffOn ℝ 2 p D)
