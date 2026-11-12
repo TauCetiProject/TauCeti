@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import Mathlib.Topology.ShrinkingLemma
 public import Mathlib.Topology.VectorBundle.Basic
 
 /-!
@@ -16,8 +17,10 @@ Let `M` be a manifold modelled on `E` and `V → M` a fibre bundle with model fi
 `TauCeti.FiniteBundleAtlas E M F V` is a finite cover of `M` by open sets `dom i`, each with compact
 closure inside the source of the preferred manifold chart and the base set of the preferred bundle
 trivialization at a point `center i`. Every compact Hausdorff manifold modelled on a locally
-compact space has one (`TauCeti.FiniteBundleAtlas.nonempty`). Such atlases are the finite chart
-data from which function spaces of sections, such as Sobolev spaces, are built chartwise.
+compact space has one (`TauCeti.FiniteBundleAtlas.nonempty`), and the chart domains of a finite
+bundle atlas of a Hausdorff manifold have a shrinking
+(`TauCeti.FiniteBundleAtlas.exists_shrinking`). Such atlases are the finite chart data from which
+function spaces of sections, such as Sobolev spaces, are built chartwise.
 
 In chart `i` a section `s` is read as the `F`-valued function `A.coord i s` on the open set
 `A.image i = chart i '' dom i` of the model space. On the overlap `A.overlap i i'` of two charts,
@@ -25,7 +28,9 @@ read in chart `i'`, the coordinates in chart `i'` are the coordinate change of t
 to the coordinates in chart `i` composed with the chart transition `A.transition i i'`
 (`TauCeti.FiniteBundleAtlas.coord_eq_coordChange`). For a `C¹` manifold without boundary modelled
 on a real normed space, chart transitions are differentiable on the overlaps
-(`TauCeti.FiniteBundleAtlas.differentiableOn_transition`). Charts of manifolds modelled on the
+(`TauCeti.FiniteBundleAtlas.differentiableOn_transition`); for a smooth one, the chart coordinate
+change `(A.chart i).symm ≫ₕ A.chart j` is smooth on its source, with invertible derivative there.
+Charts of manifolds modelled on the
 closed upper half-plane are read in `ℂ` in
 `TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.HalfPlane`.
 
@@ -41,9 +46,14 @@ closed upper half-plane are read in `ℂ` in
 ## Main results
 
 * `TauCeti.FiniteBundleAtlas.nonempty`: compact Hausdorff manifolds have finite bundle atlases.
+* `TauCeti.FiniteBundleAtlas.exists_shrinking`: the chart domains of a finite bundle atlas of a
+  Hausdorff manifold have a shrinking.
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
   coordinate change of the bundle.
 * `TauCeti.FiniteBundleAtlas.differentiableOn_transition`: chart transitions are differentiable.
+* `TauCeti.FiniteBundleAtlas.contDiffOn_chart_coordChange`: chart coordinate changes are smooth.
+* `TauCeti.FiniteBundleAtlas.det_fderiv_chart_coordChange_ne_zero`: chart coordinate changes have
+  invertible derivative.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coord`: the chart coordinates of a `Cᵏ` section of a `Cᵏ`
   vector bundle are `Cᵏ`, on an open set containing the compact image of the closure of the chart
   domain (`TauCeti.FiniteBundleAtlas.chart_image_closure_dom_subset`).
@@ -54,7 +64,7 @@ public section
 noncomputable section
 
 open Bundle Set TopologicalSpace
-open scoped Manifold Topology
+open scoped Manifold ContDiff Topology
 
 universe u
 
@@ -110,6 +120,22 @@ theorem nonempty [LocallyCompactSpace E] [CompactSpace M] [T2Space M] :
   exact mem_iUnion.2 ⟨t.equivFin ⟨y, hy⟩, by simpa [c] using hxy⟩
 
 variable (A : FiniteBundleAtlas E M F V)
+
+/-- A finite bundle atlas of a Hausdorff manifold has a shrinking: open sets `D j` with
+`closure (D j) ⊆ A.dom j` still covering `M`. The manifold is compact, being covered by the
+finitely many compact sets `closure (A.dom j)`, hence normal. -/
+theorem exists_shrinking [T2Space M] :
+    ∃ D : Fin A.n → Set M, (∀ j, IsOpen (D j)) ∧ (∀ j, closure (D j) ⊆ A.dom j) ∧
+      ∀ x, ∃ j, x ∈ D j := by
+  have hcpt : CompactSpace M := by
+    refine ⟨?_⟩
+    have huniv : (univ : Set M) = ⋃ i, closure (A.dom i) :=
+      (eq_univ_of_univ_subset (A.iUnion_dom ▸ iUnion_mono fun i ↦ subset_closure)).symm
+    rw [huniv]
+    exact isCompact_iUnion fun i ↦ A.isCompact_closure_dom i
+  obtain ⟨D, hcov, hDo, hD⟩ := exists_subset_iUnion_closure_subset isClosed_univ A.isOpen_dom
+    (fun _ _ ↦ toFinite _) (A.iUnion_dom ▸ subset_rfl)
+  exact ⟨D, hDo, hD, fun x ↦ mem_iUnion.1 (hcov (mem_univ x))⟩
 
 /-- The manifold chart of the `i`th bundle chart. -/
 abbrev chart (i : Fin A.n) : OpenPartialHomeomorph M E :=
@@ -258,6 +284,56 @@ theorem differentiableOn_transition [IsManifold 𝓘(ℝ, E) 1 M] (i i' : Fin A.
     preimage_id_eq]
   exact ⟨(A.chart i').map_source hx', by
     rw [(A.chart i').left_inv hx']; exact A.dom_subset_chart_source i hx.1⟩
+
+/-! ### Chart coordinate changes
+
+The coordinate change from chart `i` to chart `j` is `(A.chart i).symm ≫ₕ A.chart j`. Its source
+consists of the chart-`i` coordinates whose preimage lies in the source of chart `j`; on the overlap
+of the chart domains it agrees with `A.transition j i`. -/
+
+/-- Chart coordinate changes are smooth on their source. -/
+theorem contDiffOn_chart_coordChange [IsManifold 𝓘(ℝ, E) ∞ M] (i j : Fin A.n) :
+    ContDiffOn ℝ ∞ ((A.chart i).symm ≫ₕ A.chart j) ((A.chart i).symm ≫ₕ A.chart j).source := by
+  refine ((contDiffOn_ext_coord_change (I := 𝓘(ℝ, E)) (n := ∞) (A.center j)
+    (A.center i))).congr_mono (fun y _ ↦ by simp) ?_
+  intro y hy
+  rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hy
+  obtain ⟨hy, hy'⟩ := hy
+  simp only [PartialEquiv.trans_source, PartialEquiv.symm_source, mem_inter_iff, mem_preimage,
+    extChartAt_target, extChartAt_source, extChartAt_coe_symm, modelWithCornersSelf_coe,
+    modelWithCornersSelf_coe_symm, Function.comp_apply, id_eq, range_id, inter_univ,
+    preimage_id_eq]
+  exact ⟨hy, hy'⟩
+
+/-- Chart coordinate changes are differentiable at every point of their source. -/
+theorem differentiableAt_chart_coordChange [IsManifold 𝓘(ℝ, E) ∞ M] {i j : Fin A.n} {y : E}
+    (hy : y ∈ ((A.chart i).symm ≫ₕ A.chart j).source) :
+    DifferentiableAt ℝ ((A.chart i).symm ≫ₕ A.chart j) y :=
+  ((contDiffOn_chart_coordChange A i j).differentiableOn (by simp)).differentiableAt
+    (((A.chart i).symm ≫ₕ A.chart j).open_source.mem_nhds hy)
+
+/-- The Jacobian determinant of a chart coordinate change does not vanish: the reverse coordinate
+change is a differentiable left inverse near every point. -/
+theorem det_fderiv_chart_coordChange_ne_zero [IsManifold 𝓘(ℝ, E) ∞ M] {i j : Fin A.n} {y : E}
+    (hy : y ∈ ((A.chart i).symm ≫ₕ A.chart j).source) :
+    (fderiv ℝ ((A.chart i).symm ≫ₕ A.chart j) y).det ≠ 0 := by
+  set e := (A.chart i).symm ≫ₕ A.chart j with he_def
+  have he : e.symm = (A.chart j).symm ≫ₕ A.chart i := by
+    rw [he_def, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
+      OpenPartialHomeomorph.symm_symm]
+  have hz : e y ∈ ((A.chart j).symm ≫ₕ A.chart i).source := by
+    rw [← he, OpenPartialHomeomorph.symm_source]
+    exact e.map_source hy
+  have hd : DifferentiableAt ℝ e.symm (e y) := by
+    rw [he]
+    exact differentiableAt_chart_coordChange A hz
+  have hid : e.symm ∘ e =ᶠ[𝓝 y] id := e.eventually_left_inverse hy
+  have hcomp : (fderiv ℝ e.symm (e y)).comp (fderiv ℝ e y) = ContinuousLinearMap.id ℝ E := by
+    rw [← fderiv_comp y hd (differentiableAt_chart_coordChange A hy), hid.fderiv_eq, fderiv_id]
+  have hdet := congrArg ContinuousLinearMap.det hcomp
+  rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp,
+    ContinuousLinearMap.coe_id, LinearMap.det_comp, LinearMap.det_id] at hdet
+  exact right_ne_zero_of_mul_eq_one hdet
 
 /-- A `Cⁿ` function on `M`, read in chart `i`, is `Cⁿ` on the chart target. -/
 theorem contDiffOn_comp_chart_symm {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
