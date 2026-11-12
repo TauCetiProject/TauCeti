@@ -61,13 +61,12 @@ centres that divides it in the ratio of the two radii, at distance `r * dist c �
 
 ## The intended consumer
 
-Layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md`, Carathéodory's boundary
-correspondence, cuts a disc `ball c r` in the plane by the circle `sphere ζ ρ` about a point `ζ`
-of its boundary — the *circular crosscut* of
+Carathéodory's boundary correspondence cuts a disc `ball c r` in the plane by the circle
+`sphere ζ ρ` about a point `ζ` of its boundary — the *circular crosscut* of
 `TauCeti/Analysis/Complex/Conformal/Crosscut/Basic.lean` — and reads the boundary behaviour of a
-conformal map along the near side. There `dist ζ c = r`, so
-the overlap condition `dist c ζ < r + ρ` holds for every `ρ > 0`, and the frontier bound is what
-the maximum modulus principle is applied against. None of that is used here.
+conformal map along the near side. There `dist ζ c = r`, so the overlap condition
+`dist c ζ < r + ρ` holds for every `ρ > 0`, and the frontier bound is what the maximum modulus
+principle is applied against. None of that is used here.
 
 ## Main results
 
