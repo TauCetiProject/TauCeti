@@ -215,11 +215,21 @@ theorem continuousOn_complexLinearPart (b₀ : B) :
   (continuousOn_const.sub ((J.continuousOn_coord b₀).clm_comp continuousOn_const)).const_smul
     (2⁻¹ : ℝ)
 
+theorem complexLinearPart_apply (b₀ b : B) (w : F) :
+    J.complexLinearPart b₀ b w = (2⁻¹ : ℝ) • (w - J.coord b₀ b (J.coord b₀ b₀ w)) :=
+  (rfl)
+
+/-- As a linear map, `J.complexLinearPart b₀ b` is the complex-linear part of the identity of `F`
+from `J' b₀` to `J' b`. -/
+theorem coe_complexLinearPart (b₀ b : B) :
+    (J.complexLinearPart b₀ b : F →ₗ[ℝ] F) =
+      TauCeti.complexLinearPart (J.coord b₀ b₀ : F →ₗ[ℝ] F) (J.coord b₀ b) LinearMap.id :=
+  LinearMap.ext fun w ↦ by simp [complexLinearPart_apply]
+
 @[simp]
 theorem complexLinearPart_self (b₀ : B) : J.complexLinearPart b₀ b₀ = 1 := by
   ext w
-  simp only [complexLinearPart, smul_apply, sub_apply,
-    ContinuousLinearMap.id_apply, ContinuousLinearMap.comp_apply,
+  simp only [complexLinearPart_apply,
     J.coord_coord_apply (mem_baseSet_trivializationAt F V b₀), one_apply_eq_self]
   module
 
@@ -230,16 +240,19 @@ theorem coord_complexLinearPart_apply {b₀ b : B} (hb : b ∈ (trivializationAt
   have hJ {b' : B} (hb' : b' ∈ (trivializationAt F V b₀).baseSet) :
       (J.coord b₀ b' : F →ₗ[ℝ] F) ∘ₗ (J.coord b₀ b' : F →ₗ[ℝ] F) = -LinearMap.id :=
     LinearMap.ext fun w ↦ by simp [J.coord_coord_apply hb']
-  have hA (u : F) : TauCeti.complexLinearPart (J.coord b₀ b₀ : F →ₗ[ℝ] F)
-      (J.coord b₀ b : F →ₗ[ℝ] F) LinearMap.id u = J.complexLinearPart b₀ b u := by
-    simp [complexLinearPart]
-  simpa only [hA, ContinuousLinearMap.coe_coe] using ((TauCeti.complexLinearPart_isComplexLinear
-    (hJ (mem_baseSet_trivializationAt F V b₀)) (hJ hb) LinearMap.id).apply w).symm
+  simpa only [← coe_complexLinearPart, ContinuousLinearMap.coe_coe] using
+    ((TauCeti.complexLinearPart_isComplexLinear
+      (hJ (mem_baseSet_trivializationAt F V b₀)) (hJ hb) LinearMap.id).apply w).symm
 
 /-- The neighbourhood of `b₀` on which `J.complexLinearPart b₀` is invertible: the base set of the
 complex trivialization at `b₀`. -/
 def unitSet (b₀ : B) : Set B :=
   (trivializationAt F V b₀).baseSet ∩ J.complexLinearPart b₀ ⁻¹' {T | IsUnit T}
+
+theorem mem_unitSet_iff {b₀ b : B} :
+    b ∈ J.unitSet b₀ ↔
+      b ∈ (trivializationAt F V b₀).baseSet ∧ IsUnit (J.complexLinearPart b₀ b) :=
+  Iff.rfl
 
 theorem isOpen_unitSet [CompleteSpace F] (b₀ : B) : IsOpen (J.unitSet b₀) :=
   (J.continuousOn_complexLinearPart b₀).isOpen_inter_preimage
@@ -254,8 +267,7 @@ theorem unitSet_subset (b₀ : B) : J.unitSet b₀ ⊆ (trivializationAt F V b�
 theorem continuousOn_inverse_complexLinearPart [CompleteSpace F] (b₀ : B) :
     ContinuousOn (fun b ↦ Ring.inverse (J.complexLinearPart b₀ b)) (J.unitSet b₀) := by
   intro b hb
-  have hunit : IsUnit (J.complexLinearPart b₀ b) := hb.2
-  obtain ⟨u, hu⟩ := hunit
+  obtain ⟨u, hu⟩ := (J.mem_unitSet_iff.1 hb).2
   have hc : ContinuousAt Ring.inverse (J.complexLinearPart b₀ b) :=
     hu ▸ NormedRing.inverse_continuousAt u
   exact hc.comp_continuousWithinAt
@@ -263,11 +275,11 @@ theorem continuousOn_inverse_complexLinearPart [CompleteSpace F] (b₀ : B) :
 
 theorem inverse_complexLinearPart_mul {b₀ b : B} (hb : b ∈ J.unitSet b₀) :
     Ring.inverse (J.complexLinearPart b₀ b) * J.complexLinearPart b₀ b = 1 :=
-  Ring.inverse_mul_cancel _ hb.2
+  Ring.inverse_mul_cancel _ (J.mem_unitSet_iff.1 hb).2
 
 theorem complexLinearPart_mul_inverse {b₀ b : B} (hb : b ∈ J.unitSet b₀) :
     J.complexLinearPart b₀ b * Ring.inverse (J.complexLinearPart b₀ b) = 1 :=
-  Ring.mul_inverse_cancel _ hb.2
+  Ring.mul_inverse_cancel _ (J.mem_unitSet_iff.1 hb).2
 
 @[simp]
 theorem inverse_complexLinearPart_complexLinearPart_apply {b₀ b : B} (hb : b ∈ J.unitSet b₀)
@@ -286,7 +298,8 @@ theorem inverse_complexLinearPart_coord {b₀ b : B} (hb : b ∈ J.unitSet b₀)
     Ring.inverse (J.complexLinearPart b₀ b) (J.coord b₀ b w) =
       J.coord b₀ b₀ (Ring.inverse (J.complexLinearPart b₀ b) w) := by
   conv_lhs => rw [← J.complexLinearPart_inverse_complexLinearPart_apply hb w,
-    J.coord_complexLinearPart_apply hb.1, J.inverse_complexLinearPart_complexLinearPart_apply hb]
+    J.coord_complexLinearPart_apply (J.unitSet_subset b₀ hb),
+    J.inverse_complexLinearPart_complexLinearPart_apply hb]
 
 /-- `J' b₀ = J.coord b₀ b₀`, as an almost complex structure on the model fibre `F`. -/
 private def coordAt (b₀ : B) : TauCeti.AlmostComplexStructure F where
