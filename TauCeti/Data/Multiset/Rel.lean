@@ -18,7 +18,8 @@ corresponding statement in terms of enumerations: `Multiset.Rel r s t` holds exa
 This is the form in which a matching of two multisets of roots is usually produced, by
 enumerating the roots of two polynomials in parallel. When each element of `t` is related to at
 most one element of `s`, the file also characterizes `Multiset.Rel r s t` by counting, for each
-element of `s`, the elements of `t` related to it.
+element of `s`, the elements of `t` related to it. Lifted relations compose
+(`Multiset.Rel.comp`), as matchings do.
 -/
 
 public section
@@ -76,5 +77,16 @@ theorem rel_iff_forall_countP_eq_count [DecidableEq α] [∀ a, DecidablePred (r
           exact hφ b hb]
     rw [hs]
     exact rel_map_left.2 (rel_refl_of_refl_on hφr)
+
+/-- **Lifted relations compose.** If `s` and `t` are paired off by `r`, and `t` and `u` by `r'`,
+then `s` and `u` are paired off by the composite relation `Relation.Comp r r'`. -/
+theorem Rel.comp {γ : Type*} {r' : β → γ → Prop} {s : Multiset α} {t : Multiset β}
+    {u : Multiset γ} (h₁ : Rel r s t) (h₂ : Rel r' t u) : Rel (Relation.Comp r r') s u := by
+  induction t using Multiset.induction_on generalizing s u with
+  | empty => rw [rel_zero_right.1 h₁, rel_zero_left.1 h₂, rel_zero_left]
+  | cons x t ih =>
+    obtain ⟨a, as, ha, has, rfl⟩ := rel_cons_right.1 h₁
+    obtain ⟨b, bs, hb, hbs, rfl⟩ := rel_cons_left.1 h₂
+    exact (ih has hbs).cons ⟨x, ha, hb⟩
 
 end Multiset
