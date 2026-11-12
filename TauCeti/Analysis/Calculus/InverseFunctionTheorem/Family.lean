@@ -162,29 +162,6 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {ι : Type*} {l : Filter ι} {n : ℕ}
 
-/-- For the maps approximating `L` on `ball x₀ r` with a constant `c` below `‖L⁻¹‖⁻¹`, there is
-one radius `ρ > 0` such that the target of each of their partial homeomorphisms contains
-`ball y₀ ρ` as soon as its value at `x₀` lies in that ball. -/
-private theorem exists_ball_subset_toOpenPartialHomeomorph_target {L : E ≃L[𝕜] F} {x₀ : E}
-    {r : ℝ} (hr : 0 < r) {c : ℝ≥0} (hc : Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹)
-    (y₀ : F) :
-    ∃ ρ > 0, ∀ (g : E → F) (hga : ApproximatesLinearOn g (L : E →L[𝕜] F) (ball x₀ r) c),
-      dist (g x₀) y₀ < ρ →
-        ball y₀ ρ ⊆ (hga.toOpenPartialHomeomorph g (ball x₀ r) hc isOpen_ball).target := by
-  by_cases hE : Subsingleton E
-  · have hF : Subsingleton F := L.symm.toEquiv.subsingleton
-    refine ⟨1, one_pos, fun g hga _ y _ ↦ ?_⟩
-    rw [Subsingleton.elim y (g x₀), ApproximatesLinearOn.toOpenPartialHomeomorph_target]
-    exact mem_image_of_mem g (mem_ball_self hr)
-  have hpos : (0 : ℝ) < ((‖(L.symm : F →L[𝕜] E)‖₊⁻¹ : ℝ≥0) : ℝ) - c :=
-    sub_pos.2 (NNReal.coe_lt_coe.2 (hc.resolve_left hE))
-  refine ⟨(((‖(L.symm : F →L[𝕜] E)‖₊⁻¹ : ℝ≥0) : ℝ) - c) * (r / 2) / 2, by positivity,
-    fun g hga hg y hy ↦ ?_⟩
-  refine hga.closedBall_subset_target hc isOpen_ball (b := x₀) (ε := r / 2) (by positivity)
-    (closedBall_subset_ball (by linarith)) (mem_closedBall.2 ?_)
-  rw [mem_ball] at hy
-  linarith [dist_triangle_right y (g x₀) y₀]
-
 omit [CompleteSpace E] in
 /-- If `Φ i → Φ₀` in `C^n` at `x₀ ∈ s`, with `1 ≤ n`, the maps `C^n` on the open set `s`, and
 `D Φ₀ (x₀) = L` invertible, then there are one constant `c` below `‖L⁻¹‖⁻¹` and one ball around
