@@ -59,6 +59,9 @@ This file records general-purpose facts about open subsets of schemes.
   closed under intersections, and for `U` affine, a basic open covered by a basic open `A` and
   finitely many basic opens `V i` is covered by `A` and one basic open inside the union of the
   `V i`.
+* `AlgebraicGeometry.Scheme.exists_basicOpen_eq_of_isCompl`: an open and closed subset of a
+  scheme is the basic open of a global function, namely the one that is `1` on it and `0` on its
+  complement.
 * `AlgebraicGeometry.IsAffineOpen.finset_inf`: on a scheme with affine diagonal, nonempty finite
   intersections of affine opens are affine.
 * `AlgebraicGeometry.Scheme.OpenCover.dense_of_forall_dense_subset`: a subset of a scheme is dense
@@ -334,6 +337,28 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.exists_mem_range_basicOpen_le_sup
       exact hxs (Finset.le_sup (f := V) hi hxi.2)
     rw [← Scheme.zeroLocus_span, Scheme.mem_zeroLocus_iff] at hxT
     exact hxT z hz hx
+
+/-- A clopen piece of a scheme is a basic open: if `U` and `V` are complementary opens of `X`,
+the global function that is `1` on `U` and `0` on `V` has basic open `U`. -/
+theorem _root_.AlgebraicGeometry.Scheme.exists_basicOpen_eq_of_isCompl {V W : X.Opens}
+    (h : IsCompl V W) : ∃ e : Γ(X, ⊤), X.basicOpen e = V := by
+  -- The sections over `V ⊔ W` are the product of the sections over `V` and over `W`.
+  obtain ⟨a, hV, hW⟩ : ∃ a : Γ(X, V ⊔ W),
+      X.presheaf.map (homOfLE le_sup_left : V ⟶ V ⊔ W).op a = 1 ∧
+      X.presheaf.map (homOfLE le_sup_right : W ⟶ V ⊔ W).op a = 0 := by
+    let hlim := X.sheaf.isProductOfDisjoint V W h.inf_eq_bot
+    let hprod := CommRingCat.prodFanIsLimit Γ(X, V) Γ(X, W)
+    exact ⟨(hlim.conePointUniqueUpToIso hprod).inv (1, 0),
+      (ConcreteCategory.congr_hom (hlim.conePointUniqueUpToIso_inv_comp hprod ⟨.left⟩) (1, 0) :),
+      (ConcreteCategory.congr_hom (hlim.conePointUniqueUpToIso_inv_comp hprod ⟨.right⟩) (1, 0) :)⟩
+  refine ⟨X.presheaf.map (homOfLE h.sup_eq_top.ge).op a, ?_⟩
+  have h1 := congrArg X.basicOpen hV
+  have h0 := congrArg X.basicOpen hW
+  rw [Scheme.basicOpen_res, Scheme.basicOpen_one] at h1
+  rw [Scheme.basicOpen_res, Scheme.basicOpen_zero] at h0
+  rw [Scheme.basicOpen_res, top_inf_eq]
+  calc X.basicOpen a = (V ⊔ W) ⊓ X.basicOpen a := (inf_eq_right.mpr (X.basicOpen_le a)).symm
+    _ = V := by rw [inf_sup_right, h1, h0, sup_bot_eq]
 
 /-- Global sections of an affine chart `f : Spec R ⟶ Y` are natural in `R`: precomposing `f` with
 `Spec.map φ` turns the induced map `Γ(Y, V) ⟶ R` into its composite with `φ`. -/
