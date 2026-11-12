@@ -26,7 +26,8 @@ Let `A` be an algebra over a commutative ring `R` and `E` an injective `R`-modul
 
 Defining `τ` as the composite of these functors makes it a functor without choices beyond the
 presentations defining `Tr`; changing them gives an isomorphic functor. Over a field, with
-`E = k`, this is the translate of `TauCeti.AuslanderReitenTranslate`, in the stable category.
+`E = k`, this is the translate of `TauCeti.AuslanderReitenTranslate`, in the stable category
+(`TauCeti.AuslanderReitenTranslate.linearEquivMatlisDual`).
 
 ## Main definitions
 
@@ -41,8 +42,6 @@ presentations defining `Tr`; changing them gives an isomorphic functor. Over a f
 * `TauCeti.stableTranslate_def`: the translate is `stableTranslateOf` for the presentations of
   `TauCeti.stableTranspose`.
 * `TauCeti.isZero_stableTranslateOf_obj`: the translate of a projective module vanishes.
-* `TauCeti.AuslanderReitenTranslate.linearEquivMatlisDual`: the translate of a presentation over a
-  base `k` is the case `E = k`.
 
 ## References
 
@@ -66,17 +65,6 @@ attribute [local instance] ModuleCat.moduleOfAlgebra ModuleCat.isScalarTower_mod
 
 variable (R : Type*) [CommRing R] {A : Type u} [Ring A] [Algebra R A] (E : Type v)
   [AddCommGroup E] [Module R E] [Module.Injective R E] [Small.{v} R]
-
-/-- **The translate of a presentation is a Matlis dual with values in the base.** For a
-`k`-algebra `A` and a map `p₁ : P₁ → P₀`, `TauCeti.AuslanderReitenTranslate k p₁` is the Matlis
-dual `Hom_k(Tr p₁, k)`, with the same action of `A`. -/
-def AuslanderReitenTranslate.linearEquivMatlisDual {k : Type*} [CommRing k] [Algebra k A]
-    {P₀ P₁ : Type*} [AddCommGroup P₀] [Module A P₀] [AddCommGroup P₁] [Module A P₁]
-    (p₁ : P₁ →ₗ[A] P₀) :
-    AuslanderReitenTranslate k p₁ ≃ₗ[A] MatlisDual k k (AuslanderReitenTranspose p₁) :=
-  { (MatlisDual.equivLinearMap k k (AuslanderReitenTranspose p₁)).symm with
-    map_smul' := fun a φ ↦ MatlisDual.ext fun x ↦ by
-      simp [MatlisDual.smul_apply, AuslanderReitenTranslate.smul_apply] }
 
 variable {R E}
 

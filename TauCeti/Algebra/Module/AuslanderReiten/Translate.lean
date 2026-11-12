@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.RightAction
 public import TauCeti.Algebra.Module.Dual.Indecomposable
+public import TauCeti.RingTheory.MatlisDuality.Basic
 
 /-!
 # The Auslander--Reiten translate
@@ -33,6 +34,8 @@ that statement, and it is what licenses the notation `τ M`.
   linear map `p₁ : P₁ → P₀`, carrying the resulting `A`-module structure.  It is the
   Auslander--Reiten translate of `M` when `p₁` is the first map of a minimal projective presentation
   of `M`.
+* `TauCeti.AuslanderReitenTranslate.linearEquivMatlisDual`: the translate is the Matlis dual
+  `MatlisDual k k (Tr p₁)` with values in the base, with the same action of `A`.
 * `TauCeti.AuslanderReitenTranslate.linearEquiv`: the transport of the translate along an
   isomorphism of transposes, contravariant by
   `TauCeti.AuslanderReitenTranslate.linearEquiv_trans`.
@@ -269,5 +272,20 @@ theorem isIndecomposableModule_iff (K : Type*) [CommRing K] [Algebra K A]
     (LinearEquiv.refl K _) (fun a φ x ↦ smul_apply a φ x)
 
 end AuslanderReitenTranslate
+
+section MatlisDual
+
+/-- **The translate of a presentation is a Matlis dual with values in the base.** For a
+`k`-algebra `A` and a map `p₁ : P₁ → P₀`, `TauCeti.AuslanderReitenTranslate k p₁` is the Matlis
+dual `Hom_k(Tr p₁, k)`, with the same action of `A`. -/
+def AuslanderReitenTranslate.linearEquivMatlisDual {k : Type*} [CommRing k] [Algebra k A]
+    {P₀ P₁ : Type*} [AddCommGroup P₀] [Module A P₀] [AddCommGroup P₁] [Module A P₁]
+    (p₁ : P₁ →ₗ[A] P₀) :
+    AuslanderReitenTranslate k p₁ ≃ₗ[A] MatlisDual k k (AuslanderReitenTranspose p₁) :=
+  { (MatlisDual.equivLinearMap k k (AuslanderReitenTranspose p₁)).symm with
+    map_smul' := fun a φ ↦ MatlisDual.ext fun x ↦ by
+      simp [MatlisDual.smul_apply, AuslanderReitenTranslate.smul_apply] }
+
+end MatlisDual
 
 end TauCeti
