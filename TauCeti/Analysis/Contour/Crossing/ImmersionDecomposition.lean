@@ -41,10 +41,9 @@ the canonical equal-radius windows and their local principal-value calculation f
 ## Provenance
 
 Independently reconstructed from Tau Ceti's exit-window and finite-excision APIs.  No external
-formalization is vendored.  The `ContourIntegration` roadmap designates the AINTLIB
-`LeanModularForms` development (Apache-2.0) as the existing source for this area; its
-`ForMathlib/HungerbuhlerWasem/Crossing.lean` was consulted at revision `340875a` for the
-mathematical decomposition statement.
+formalization is vendored.  The AINTLIB `LeanModularForms` development (Apache-2.0) is the existing
+source for this area; its `ForMathlib/HungerbuhlerWasem/Crossing.lean` was consulted at revision
+`340875a` for the mathematical decomposition statement.
 -/
 
 public section
