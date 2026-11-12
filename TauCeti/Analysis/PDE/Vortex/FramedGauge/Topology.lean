@@ -47,6 +47,8 @@ converges exactly when both `u - 1` and `conj (u - 1)` converge in `H^s`.
   `(u v) - 1 = (u - 1) + (v - 1) + (u - 1) (v - 1)` in `H^s(ℂ)`.
 * `TauCeti.Vortex.SobolevGaugeGroup.coeFn_toLp_inclusion_subOne_inv`: the `L²` function of
   `u⁻¹ - 1` is `conj u - 1`.
+* `TauCeti.Vortex.SobolevGaugeGroup.isEmbedding_subOne_prod`: the topology of `G_s` is induced by
+  the injective map `u ↦ (u - 1, u⁻¹ - 1)` into `H^s(ℂ) × H^s(ℂ)`.
 * `TauCeti.Vortex.SobolevGaugeGroup.continuous_iff`: a map into `G_s` is continuous exactly when
   `u - 1` and `u⁻¹ - 1` depend continuously on the parameter in `H^s(ℂ)`.
 * `TauCeti.Vortex.SobolevGaugeGroup.instIsTopologicalGroup`,
@@ -84,6 +86,8 @@ namespace SobolevGaugeGroup
 
 variable {hs : 1 < s}
 
+private theorem nonneg (hs : 1 < s) : 0 ≤ s := zero_le_one.trans hs.le
+
 instance : Group (SobolevGaugeGroup hs) := inferInstanceAs (Group (sobolevGaugeGroup hs))
 
 variable (hs) in
@@ -103,11 +107,8 @@ theorem coeFn_toLp_inclusion_subOne (h : 0 ≤ s) (u : SobolevGaugeGroup hs) :
       fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) - 1 := by
   obtain ⟨hae, -⟩ :=
     (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup (toSubgroup hs u).2).choose_spec
-  refine EventuallyEq.trans ?_ hae
-  refine EventuallyEq.of_eq (congrArg (fun f : Lp ℂ 2 (volume : Measure ℂ) ↦ (f : ℂ → ℂ)) ?_)
-  refine LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot ?_
-  simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, toLp_inclusion_zero,
-    subOne, MemSobolev.toBesselPotentialSpace_toDistr]
+  rw [subOne, toLp_inclusion_toBesselPotentialSpace h _ rfl]
+  exact hae
 
 /-- The `L²` function of `subOne u⁻¹` is `conj u - 1`. -/
 theorem coeFn_toLp_inclusion_subOne_inv (h : 0 ≤ s) (u : SobolevGaugeGroup hs) :
@@ -120,7 +121,7 @@ theorem coeFn_toLp_inclusion_subOne_inv (h : 0 ≤ s) (u : SobolevGaugeGroup hs)
 /-- A Sobolev gauge is determined by its element `u - 1` of `H^s(ℂ)`. -/
 theorem subOne_injective : Function.Injective (subOne : SobolevGaugeGroup hs → H^{s}(ℂ)) := by
   intro u v huv
-  have h : (0 : ℝ) ≤ s := by linarith
+  have h := nonneg hs
   have hae := (coeFn_toLp_inclusion_subOne h u).symm.trans
     ((congrArg (fun a ↦ ⇑(inclusion h a).toLp) huv).eventuallyEq.trans
       (coeFn_toLp_inclusion_subOne h v))
@@ -137,7 +138,7 @@ theorem subOne_injective : Function.Injective (subOne : SobolevGaugeGroup hs →
 /-- The identity gauge has `u - 1 = 0`. -/
 @[simp]
 theorem subOne_one : subOne (1 : SobolevGaugeGroup hs) = 0 := by
-  have h : (0 : ℝ) ≤ s := by linarith
+  have h := nonneg hs
   refine toLp_inclusion_injective h (Lp.ext ?_)
   filter_upwards [coeFn_toLp_inclusion_subOne h (1 : SobolevGaugeGroup hs),
     Lp.coeFn_zero ℂ 2 (volume : Measure ℂ)] with z h₁ h₂
@@ -148,19 +149,16 @@ theorem subOne_one : subOne (1 : SobolevGaugeGroup hs) = 0 := by
 theorem subOne_mul (u v : SobolevGaugeGroup hs) :
     subOne (u * v) = subOne u + subOne v +
       mulCLM (finrank_real_complex_lt_two_mul hs) (subOne u) (subOne v) := by
-  have h : (0 : ℝ) ≤ s := by linarith
+  have h := nonneg hs
   refine toLp_inclusion_injective h (Lp.ext ?_)
-  have hadd (a b : H^{s}(ℂ)) : ⇑(inclusion h (a + b)).toLp =ᵐ[volume]
-      fun z ↦ (inclusion h a).toLp z + (inclusion h b).toLp z := by
-    rw [map_add, toLp_add]
-    exact Lp.coeFn_add _ _
   have hs' := finrank_real_complex_lt_two_mul hs
   filter_upwards [coeFn_toLp_inclusion_subOne h (u * v),
-    hadd (subOne u + subOne v) (mulCLM hs' (subOne u) (subOne v)),
-    hadd (subOne u) (subOne v), coeFn_toLp_inclusion_mulCLM hs' h (subOne u) (subOne v),
+    coeFn_toLp_inclusion_add h (subOne u + subOne v) (mulCLM hs' (subOne u) (subOne v)),
+    coeFn_toLp_inclusion_add h (subOne u) (subOne v),
+    coeFn_toLp_inclusion_mulCLM hs' h (subOne u) (subOne v),
     coeFn_toLp_inclusion_subOne h u, coeFn_toLp_inclusion_subOne h v]
     with z h₁ h₂ h₃ h₄ h₅ h₆
-  rw [h₁, h₂, h₃, h₄, h₅, h₆, map_mul]
+  rw [h₁, h₂, Pi.add_apply, h₃, Pi.add_apply, h₄, h₅, h₆, map_mul]
   simp only [Subgroup.coe_mul, Pi.mul_apply, Circle.coe_mul]
   ring
 
@@ -168,12 +166,18 @@ theorem subOne_mul (u v : SobolevGaugeGroup hs) :
 instance : TopologicalSpace (SobolevGaugeGroup hs) :=
   .induced (fun u ↦ (subOne u, subOne u⁻¹)) inferInstance
 
+/-- **The defining embedding of `G_s`**: its Sobolev topology is that of
+`u ↦ (u - 1, u⁻¹ - 1) ∈ H^s(ℂ) × H^s(ℂ)`, which is injective since `u ↦ u - 1` is. -/
+theorem isEmbedding_subOne_prod :
+    IsEmbedding fun u : SobolevGaugeGroup hs ↦ (subOne u, subOne u⁻¹) :=
+  ⟨⟨rfl⟩, fun _ _ h ↦ subOne_injective (congrArg Prod.fst h)⟩
+
 /-- **Continuity into `G_s`.** A map into `G_s` is continuous exactly when `u - 1` and `u⁻¹ - 1`
 depend continuously on the parameter in `H^s(ℂ)`. -/
 theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → SobolevGaugeGroup hs} :
     Continuous f ↔
       Continuous (fun x ↦ subOne (f x)) ∧ Continuous (fun x ↦ subOne (f x)⁻¹) :=
-  continuous_induced_rng.trans continuous_prodMk
+  isEmbedding_subOne_prod.continuous_iff.trans continuous_prodMk
 
 /-- `u ↦ u - 1` is continuous from `G_s` to `H^s(ℂ)`. -/
 @[fun_prop, continuity]
@@ -202,8 +206,7 @@ instance instIsTopologicalGroup : IsTopologicalGroup (SobolevGaugeGroup hs) wher
 
 /-- `G_s` is Hausdorff for its Sobolev topology, since `u ↦ u - 1` is injective. -/
 instance instT2Space : T2Space (SobolevGaugeGroup hs) :=
-  (Topology.IsEmbedding.mk ⟨rfl⟩ fun _ _ h ↦ subOne_injective (congrArg Prod.fst h) :
-    Topology.IsEmbedding fun u : SobolevGaugeGroup hs ↦ (subOne u, subOne u⁻¹)).t2Space
+  isEmbedding_subOne_prod.t2Space
 
 end SobolevGaugeGroup
 
