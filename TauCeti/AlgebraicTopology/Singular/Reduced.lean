@@ -38,8 +38,9 @@ coefficient object indexed by the path components other than that of the point
 An identification of the path components with a type `ι` reindexes this coproduct by the elements
 of `ι` other than the one of the point (`TauCeti.reducedSingularHomology₀IsoOfEquiv`).
 A morphism out of zeroth homology is determined by its values on the classes of points
-(`TauCeti.singularHomology₀_hom_ext`). On a path-connected space the class of a point does not
-depend on the point, and with coefficients in a ring it spans zeroth homology
+(`TauCeti.singularHomology₀_hom_ext`). Points joined by a path have the same class
+(`TauCeti.singularHomology₀Section_eq_of_joined`); on a path-connected space the class of a point
+therefore does not depend on the point, and with coefficients in a ring it spans zeroth homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`).
 With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
 the number of path components other than that of the point
@@ -143,6 +144,14 @@ lemma singularHomology₀Section_singularHomology₀Iso_hom {X : TopCat.{w}} (x 
     ((TopCat.toSSet.obj X).homology₀Iso R ≪≫
       (sigmaConst.obj R).mapIso TopCat.zerothHomotopyEquiv.toIso.symm).hom = _
   simp [sigmaConst]
+
+/-- Points joined by a path have the same class in zeroth homology. -/
+lemma singularHomology₀Section_eq_of_joined {X : TopCat.{w}} {x y : X} (h : Joined x y) :
+    singularHomology₀Section R x = singularHomology₀Section R y := by
+  rw [← cancel_mono (X.singularHomology₀Iso R).hom,
+    singularHomology₀Section_singularHomology₀Iso_hom,
+    singularHomology₀Section_singularHomology₀Iso_hom]
+  exact congrArg (Sigma.ι _) (Quotient.sound h)
 
 /-- Morphisms out of zeroth singular homology are determined by their values on the classes of
 points: the singular counterpart of `SSet.homology₀_hom_ext`. -/
