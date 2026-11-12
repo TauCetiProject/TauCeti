@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Free.Grading
 public import TauCeti.Geometry.ScatteringDiagram.WallSpace.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 
 /-!
 # Vanishing of tangent-degree wall Lie words

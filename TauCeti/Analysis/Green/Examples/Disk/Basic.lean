@@ -48,7 +48,7 @@ theorem green_unitDisk (P Q : ℂ → ℝ) (hP : ContDiff ℝ 1 P) (hQ : ContDif
   classical
   let o := Manifold.Orientation.closedBall (n := 2) Complex.basisOneI.orientation
   have hparam (z : E₁) : ∃ e : E₁ ≃L[ℝ] TangentSpace (𝓡 1)
-      (unitDiskBoundaryLoop.extend (z 0)), ∀ hz : z 0 ∈ Ioo (0 : ℝ) 1,
+      (unitDiskBoundaryLoop.extend (z 0)), ∀ _ : z 0 ∈ Ioo (0 : ℝ) 1,
       HasMFDerivAt (𝓡 1) (𝓡 1) (fun w : E₁ ↦ unitDiskBoundaryLoop.extend (w 0)) z
         (e.toContinuousLinearMap.comp (NormedSpace.fromTangentSpace z).toContinuousLinearMap) ∧
       Orientation.map (Fin 1) e.toLinearEquiv
