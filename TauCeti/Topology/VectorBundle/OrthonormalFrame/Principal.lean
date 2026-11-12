@@ -133,9 +133,7 @@ section TotalSpace
 variable [CompleteSpace V]
 
 /-- The total space of `Fiber 𝕜 F E V` is the type `OrthonormalFrameBundle 𝕜 F E V` of pairs of a
-base point and a frame. Its body is exposed because the statement of `frame_totalSpaceEquiv`
-type-checks only when `(totalSpaceEquiv p).proj` unfolds to `p.proj`. -/
-@[expose]
+base point and a frame. -/
 def totalSpaceEquiv :
     TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) ≃ OrthonormalFrameBundle 𝕜 F E V where
   toFun p := ⟨p.proj, p.2.frame⟩
@@ -143,28 +141,29 @@ def totalSpaceEquiv :
   left_inv _ := rfl
   right_inv _ := rfl
 
+/-- The identification of the total space with the frame bundle sends a point of the fibre over
+`b` to the pair of `b` and its frame. -/
 @[simp]
+theorem totalSpaceEquiv_apply (p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :
+    totalSpaceEquiv p = ⟨p.proj, p.2.frame⟩ :=
+  (rfl)
+
 theorem proj_totalSpaceEquiv (p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :
     (totalSpaceEquiv p).proj = p.proj :=
-  rfl
-
-@[simp]
-theorem frame_totalSpaceEquiv (p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :
-    (totalSpaceEquiv p).frame = p.2.frame :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem totalSpaceEquiv_symm_apply (p : OrthonormalFrameBundle 𝕜 F E V) :
     totalSpaceEquiv.symm p =
       (⟨p.proj, .ofFrame p.frame⟩ : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :=
-  rfl
+  (rfl)
 
 /-- The identification of the total space with the frame bundle intertwines the right actions of
 the unitary group. -/
 theorem totalSpaceEquiv_smul (g : (unitary (V →L[𝕜] V))ᵐᵒᵖ) {b : B} (φ : Fiber 𝕜 F E V b) :
     totalSpaceEquiv (⟨b, g • φ⟩ : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) =
       g • totalSpaceEquiv ⟨b, φ⟩ :=
-  rfl
+  (rfl)
 
 variable [TopologicalSpace (TotalSpace F E)]
 
