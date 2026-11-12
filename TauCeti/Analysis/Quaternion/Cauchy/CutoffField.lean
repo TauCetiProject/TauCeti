@@ -12,16 +12,11 @@ public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Box
 # The cut-off flux and the box Cauchy–Fueter formulas
 
 Multiplying a field `F` by the radial cutoff `ψ(‖q - q₀‖ / ε)` gives the cut-off field
-`cauchyFueterCutoffField`, defined with its elementary API in
-`TauCeti.Analysis.Quaternion.Cutoff`; it removes any singularity of `F` at the pole `q₀`.
-
-For the left kernel-weighted field `G(q - q₀) * eᵢ * f q` with `f` left Fueter regular away
-from the pole, and for the right field `f q * eᵢ * G(q - q₀)` with `f` right Fueter regular
-away from the pole, the divergence of the cut-off field is exactly
-`cauchyFueterCutoffDensity ε q q₀ • f q`. Both identities are instances of the two-sided
-`sum_fderiv_cauchyFueterCutoffField_mul_mul` for `g * eᵢ * f` with `g` right regular and
-`f` left regular. Neither differentiability of `f` at the pole nor continuity of its
-derivative is needed.
+`cauchyFueterCutoffField`, defined in `TauCeti.Analysis.Quaternion.Cutoff`; it removes any
+singularity of `F` at the pole `q₀`. That file also proves that for the left
+kernel-weighted field `G(q - q₀) * eᵢ * f q` and the right field `f q * eᵢ * G(q - q₀)`,
+with `f` left, respectively right, Fueter regular away from the pole, the divergence of the
+cut-off field is exactly `cauchyFueterCutoffDensity ε q q₀ • f q`.
 
 The integral identities apply the Bochner divergence theorem to these fields. Concentration
 of the cutoff density and eventual agreement with the uncut field on every boundary face
@@ -44,57 +39,6 @@ open scoped Quaternion Topology
 namespace TauCeti
 
 open TauCeti.Quaternion _root_.Quaternion
-
-/-! ### Divergence of the cut-off fields -/
-
-/-- The divergence of the cut-off two-sided field `g * eᵢ * f` is `g * (∑ᵢ (∂ᵢψ) eᵢ) * f`
-when `g` is right and `f` is left Fueter regular away from the pole: the cutoff times
-the divergence of the uncut field vanishes. -/
-theorem sum_fderiv_cauchyFueterCutoffField_mul_mul {ε : ℝ} (hε : 0 < ε)
-    {q q₀ : ℍ} {g f : ℍ → ℍ} (hg : q ≠ q₀ → RightFueterAt g q)
-    (hf : q ≠ q₀ → LeftFueterAt f q) :
-    ∑ i : Fin 4, fderiv ℝ (cauchyFueterCutoffField ε q₀
-        (fun p ↦ g p * dq (Pi.single i 1) * f p)) q (dq (Pi.single i 1)) =
-      g q * (∑ i : Fin 4,
-        fderiv ℝ (fun p ↦ cauchyFueterCutoff (‖p - q₀‖ / ε)) q (dq (Pi.single i 1)) •
-          dq (Pi.single i 1)) * f q := by
-  by_cases hp : q = q₀
-  · subst q
-    have hz (i : Fin 4) := ((hasFDerivAt_const (𝕜 := ℝ) (0 : ℍ) q₀).congr_of_eventuallyEq
-      (cauchyFueterCutoffField_eventuallyEq_zero hε q₀
-        (fun p ↦ g p * dq (Pi.single i 1) * f p))).fderiv
-    simp only [hz, zero_apply, Finset.sum_const_zero]
-    simp [(hasFDerivAt_cauchyFueterCutoff_norm_sub_div q₀ q₀ ε).fderiv]
-  · have hzero := (hg hp).sum_fderiv_mul_leftFueterAt (hf hp)
-    have he (i : Fin 4) : dq (Pi.single i 1) =
-        QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i := by simp
-    simp only [← he] at hzero
-    have hd (i : Fin 4) := fderiv_cauchyFueterCutoffField ε (q₀ := q₀)
-      (F := fun p ↦ g p * dq (Pi.single i 1) * f p)
-      (((hg hp).differentiableAt.mul_const _).mul (hf hp).differentiableAt)
-    simp only [hd, add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
-      Finset.sum_add_distrib, ← Finset.smul_sum, hzero, smul_zero, zero_add, Finset.mul_sum,
-      Finset.sum_mul, mul_smul_comm, smul_mul_assoc]
-
-/-- The divergence of the cut-off left kernel-weighted field is the radial density times
-the coefficient. Only pointwise left Fueter regularity away from the pole is assumed. -/
-theorem sum_fderiv_cauchyFueterCutoffField_left {ε : ℝ} (hε : 0 < ε)
-    {q q₀ : ℍ} {f : ℍ → ℍ} (hf : q ≠ q₀ → LeftFueterAt f q) :
-    ∑ i : Fin 4, fderiv ℝ (cauchyFueterCutoffField ε q₀
-        (fun p ↦ cauchyFueterKernel p q₀ * dq (Pi.single i 1) * f p)) q (dq (Pi.single i 1)) =
-      cauchyFueterCutoffDensity ε q q₀ • f q := by
-  rw [sum_fderiv_cauchyFueterCutoffField_mul_mul hε rightFueterAt_cauchyFueterKernel hf,
-    cauchyFueterKernel_mul_sum_fderiv_cauchyFueterCutoff, coe_mul_eq_smul]
-
-/-- The divergence of the cut-off right kernel-weighted field is the radial density times
-the coefficient. Only pointwise right Fueter regularity away from the pole is assumed. -/
-theorem sum_fderiv_cauchyFueterCutoffField_right {ε : ℝ} (hε : 0 < ε)
-    {q q₀ : ℍ} {f : ℍ → ℍ} (hf : q ≠ q₀ → RightFueterAt f q) :
-    ∑ i : Fin 4, fderiv ℝ (cauchyFueterCutoffField ε q₀
-        (fun p ↦ f p * dq (Pi.single i 1) * cauchyFueterKernel p q₀)) q (dq (Pi.single i 1)) =
-      cauchyFueterCutoffDensity ε q q₀ • f q := by
-  rw [sum_fderiv_cauchyFueterCutoffField_mul_mul hε hf leftFueterAt_cauchyFueterKernel,
-    mul_assoc, sum_fderiv_cauchyFueterCutoff_mul_cauchyFueterKernel, mul_coe_eq_smul]
 
 /-! ### The box formulas -/
 
@@ -124,10 +68,10 @@ private theorem boxBoundarySum_cauchyFueterCutoffField {ε : ℝ} (hε : 0 < ε)
       (hc.comp dq.continuous.continuousOn (fun _ hx ↦ mem_image_of_mem _ hx)) isCompact_Icc
   have h := integral_divergence_of_hasFDerivAt_off_countable' a b hab
     (fun i x ↦ cauchyFueterCutoffField ε q₀ (F i) (dq x)) D ∅ countable_empty
-    (fun i ↦ (continuousOn_cauchyFueterCutoffField hε (hF i)).comp
+    (fun i ↦ (continuousOn_cauchyFueterCutoffField ε (hF i)).comp
       dq.continuous.continuousOn (fun _ hx ↦ mem_image_of_mem _ hx))
     (fun x hx i ↦
-      (differentiableAt_cauchyFueterCutoffField hε
+      (differentiableAt_cauchyFueterCutoffField ε
         (fun hp ↦ hFd _ (mem_image_of_mem _ hx.1) hp i)).hasFDerivAt.comp x dq.hasFDerivAt)
     (hi.congr hae.symm)
   rw [integral_congr_ae hae] at h
@@ -150,7 +94,7 @@ theorem boxBoundarySum_cauchyFueterCutoffField_left {ε : ℝ} (hε : 0 < ε)
       continuousOn_const).mul (hc.mono sdiff_subset))
     (fun q hq hp _ ↦ (((contDiffAt_cauchyFueterKernel (n := 1) hp).differentiableAt
       one_ne_zero).mul_const _).mul (hf q ⟨hq, hp⟩).differentiableAt)
-    (fun q hq ↦ sum_fderiv_cauchyFueterCutoffField_left hε (fun hp ↦ hf q ⟨hq, hp⟩)) hc
+    (fun q hq ↦ sum_fderiv_cauchyFueterCutoffField_left (fun hp ↦ hf q ⟨hq, hp⟩)) hc
 
 /-- The divergence theorem for the cut-off right Cauchy–Fueter field on a coordinate box,
 with the coefficients ordered `f * eᵢ * G`. Regularity is required only in the punctured
@@ -168,7 +112,7 @@ theorem boxBoundarySum_cauchyFueterCutoffField_right {ε : ℝ} (hε : 0 < ε)
       (continuousOn_cauchyFueterKernel (notMem_sdiff_of_mem rfl)))
     (fun q hq hp _ ↦ ((hf q ⟨hq, hp⟩).differentiableAt.mul_const _).mul
       ((contDiffAt_cauchyFueterKernel (n := 1) hp).differentiableAt one_ne_zero))
-    (fun q hq ↦ sum_fderiv_cauchyFueterCutoffField_right hε (fun hp ↦ hf q ⟨hq, hp⟩)) hc
+    (fun q hq ↦ sum_fderiv_cauchyFueterCutoffField_right (fun hp ↦ hf q ⟨hq, hp⟩)) hc
 
 /-- As the excised ball shrinks to an interior pole, the boundary flux of the cut-off
 left field tends to `2π²` times the value of the coefficient at that pole. -/
