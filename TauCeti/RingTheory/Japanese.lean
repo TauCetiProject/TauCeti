@@ -17,9 +17,11 @@ import Mathlib.FieldTheory.Normal.Closure
 import Mathlib.RingTheory.Etale.Field
 import Mathlib.RingTheory.FractionalIdeal.Operations
 import Mathlib.RingTheory.Finiteness.Small
+import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
 import TauCeti.FieldTheory.AlgebraicClosure
 import TauCeti.FieldTheory.Normal.FixedField
+import TauCeti.RingTheory.IntegralClosure.Map
 import TauCeti.RingTheory.IntegralClosure.Transfer
 import TauCeti.RingTheory.Localization.Away.FractionRing
 import TauCeti.RingTheory.Localization.FractionRing
@@ -81,6 +83,8 @@ need to be tested.
 * `TauCeti.Ring.finite_integralClosure_of_etale`: the integral closure of a Noetherian N-1 domain
   in a finite étale algebra over its fraction field, a finite product of finite separable
   extensions, is finite.
+* `TauCeti.Ring.finite_integralClosure_of_isTorsionFree_of_etale`: the integral closure of a
+  Noetherian N-1 domain in a torsion-free algebra whose generic fibre is finite étale is finite.
 * `TauCeti.Ring.isJapanese_iff_isN1`: a Noetherian domain with perfect fraction field is Japanese
   if and only if it is N-1 (Stacks, Lemma 10.161.11 (032M), in characteristic zero).
 * `TauCeti.Ring.isJapanese_iff_isPurelyInseparable`: a Noetherian domain is Japanese if and only
@@ -333,6 +337,24 @@ theorem finite_integralClosure_of_etale [IsNoetherianRing R] [IsN1 R]
   refine Module.Finite.of_injective φ.toLinearMap fun x y h ↦ Subtype.ext (e.injective ?_)
   funext i
   exact congrArg Subtype.val (congrFun h i)
+
+open scoped TensorProduct in
+/-- **Finiteness of the integral closure with étale generic fibre.** Let `R` be a Noetherian N-1
+domain with fraction field `K`, and let `B` be a torsion-free `R`-algebra whose generic fibre
+`K ⊗[R] B` is a finite étale `K`-algebra. Then the integral closure of `R` in `B` is a finite
+`R`-module. -/
+theorem finite_integralClosure_of_isTorsionFree_of_etale [IsDomain R] [IsNoetherianRing R]
+    [IsN1 R] (K : Type*) (B : Type*) [Field K] [Algebra R K] [IsFractionRing R K] [CommRing B]
+    [Algebra R B] [Module.IsTorsionFree R B] [Algebra.Etale K (K ⊗[R] B)] :
+    Module.Finite R (integralClosure R B) := by
+  -- The integral closure in `B` embeds into the integral closure in the generic fibre, which is
+  -- finite, since `B` is torsion-free and so embeds into its localization `K ⊗[R] B`.
+  have := finite_integralClosure_of_etale (R := R) K (K ⊗[R] B)
+  let ι : B →ₐ[R] K ⊗[R] B := Algebra.TensorProduct.includeRight
+  have hι : Function.Injective ι :=
+    (IsLocalizedModule.injective_iff_isRegular (nonZeroDivisors R)
+      (TensorProduct.mk R K B 1)).mpr fun c ↦ IsSMulRegular.of_ne_zero (nonZeroDivisors.ne_zero c.2)
+  exact .of_injective ι.mapIntegralClosure.toLinearMap (AlgHom.mapIntegralClosure_injective hι)
 
 /-- A Noetherian domain whose fraction field is perfect, for instance of characteristic zero, is
 Japanese if and only if it is N-1. Stacks, Lemma 10.161.11 (032M), stated there in characteristic

@@ -81,7 +81,7 @@ theorem isRegularLocalRing_localization_of_derivation_notMem {f : A}
   have hsub : Algebra.algebraMapSubmonoid (A ⧸ span {f}) Q.primeCompl = P.primeCompl := by
     ext a
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
-    exact ⟨fun ⟨b, hb, hba⟩ ↦ hba ▸ hb, fun ha ↦ ⟨a, ha, rfl⟩⟩
+    exact ⟨fun ⟨_, hb, hba⟩ ↦ hba ▸ hb, fun ha ↦ ⟨a, ha, rfl⟩⟩
   have hloc : IsLocalization P.primeCompl (B ⧸ (span {f}).map (algebraMap A B)) :=
     hsub ▸ inferInstance
   exact .of_ringEquiv ((quotientEquivAlgOfEq A hspan).toRingEquiv.symm.trans

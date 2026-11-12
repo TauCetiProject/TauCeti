@@ -43,6 +43,9 @@ the class number is `1` by the determinant classification
   genus of `L` exactly when `M` has the same genus as `L`.
 * `TauCeti.IntegralLattice.SameGenus.classNumber_eq`: lattices of the same genus, in possibly
   different ambient spaces, have the same class number.
+* `TauCeti.IntegralLattice.genusClasses_smul` and `TauCeti.IntegralLattice.classNumber_smul`:
+  scaling the form by a nonzero integer scales the classes of the genus and keeps the class
+  number.
 * `TauCeti.IntegralLattice.IsPosDef.finite_genusClasses` and
   `TauCeti.IntegralLattice.IsNegDef.finite_genusClasses`: a definite genus contains finitely many
   classes.
@@ -135,6 +138,22 @@ theorem SameGenus.exists_isometry {L : IntegralLattice V} {M : IntegralLattice W
   obtain ⟨f⟩ := h.symm.nonempty_linearEquiv
   exact ⟨M.transport f, h.trans (M.transportIsometry f).sameGenus, ⟨M.transportIsometry f⟩⟩
 
+open scoped Pointwise in
+/-- The classes in the genus of the scaling `n • L` by a nonzero integer are the scalings of the
+classes in the genus of `L`. -/
+theorem genusClasses_smul {n : ℤ} (hn : n ≠ 0) (L : IntegralLattice V) :
+    (n • L).genusClasses = n • L.genusClasses := by
+  ext d
+  obtain ⟨M, rfl⟩ := isometryClass_surjective d
+  rw [isometryClass_mem_genusClasses_iff, Set.mem_smul_set]
+  refine ⟨fun h ↦ ?_, fun ⟨c, hc, hcM⟩ ↦ ?_⟩
+  · obtain ⟨M', rfl, hM'⟩ := h.exists_eq_smul hn
+    exact ⟨M'.isometryClass, isometryClass_mem_genusClasses_iff.mpr hM', smul_isometryClass n M'⟩
+  · obtain ⟨M', rfl⟩ := isometryClass_surjective c
+    rw [smul_isometryClass, isometryClass_eq_isometryClass_iff] at hcM
+    obtain ⟨e⟩ := hcM
+    exact ((isometryClass_mem_genusClasses_iff.mp hc).smul hn).trans e.sameGenus
+
 end GenusClasses
 
 section ClassNumber
@@ -166,6 +185,14 @@ theorem SameGenus.classNumber_eq {L : IntegralLattice V} {M : IntegralLattice W}
 theorem Isometry.classNumber_eq {L : IntegralLattice V} {M : IntegralLattice W}
     (e : Isometry L M) : L.classNumber = M.classNumber :=
   e.sameGenus.classNumber_eq
+
+open scoped Pointwise in
+/-- Scaling the form by a nonzero integer does not change the class number. -/
+@[simp]
+theorem classNumber_smul {n : ℤ} (hn : n ≠ 0) (L : IntegralLattice V) :
+    (n • L).classNumber = L.classNumber := by
+  rw [classNumber_def, classNumber_def, genusClasses_smul hn, ← Set.image_smul]
+  exact Nat.card_image_of_injective (smul_isometryQuotient_injective hn) _
 
 /-- **A positive definite genus contains finitely many classes.** The lattices of the genus all
 have the rank and determinant of `L`, so this is the finiteness of positive definite classes of
