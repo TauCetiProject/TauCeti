@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
-public import TauCeti.Analysis.Complex.Wirtinger.Similarity
+public import TauCeti.Analysis.Complex.Wirtinger.Similarity.Basic
 
 /-!
 # The scalar similarity principle as a similarity factorization
 
-The scalar similarity principle (`TauCeti.Analysis.Complex.Wirtinger.Similarity`) makes a
+The scalar similarity principle (`TauCeti.Analysis.Complex.Wirtinger.Similarity.Basic`) makes a
 real-differentiable solution `f : ℂ → ℂ` of `bar∂ f = a f`, with `a` of class `Cᵏ` for some `k ≥ 1`,
 holomorphic near each point `z` after multiplication by `exp (-g)` for a `Cᵏ` integrating factor
 `g`. This file compares it with the vector similarity principle in the case `n = 1`: the identity
