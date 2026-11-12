@@ -111,8 +111,8 @@ layer deferred above.
   Corollary 7.53.
 * AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
   `2baa76f742bdb4fb8ee323fabba41203bd390e08`,
-  `projects/AdicSpaces/Adic spaces/RationalSubsets.lean`, is the roadmap's designated prior
-  formalisation of this material and was consulted. It develops the same statements around a
+  `projects/AdicSpaces/Adic spaces/RationalSubsets.lean`, is a prior formalisation of this
+  material and was consulted. It develops the same statements around a
   standalone `rationalOpen` and an existential `IsRationalSubset` predicate, with the
   intersection identity conditioned on each denominator lying in its numerator set and the
   same insert-absorption discharging that condition. Here the rational subset is instead the
