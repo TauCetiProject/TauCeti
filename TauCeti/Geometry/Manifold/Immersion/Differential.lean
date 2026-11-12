@@ -325,7 +325,7 @@ theorem ContMDiff.isImmersion_of_isImmersion_comp [FiniteDimensional 𝕜 E'] {E
     (hf : ContMDiff I J n f) (hn : 1 ≤ n) (hg : ∀ x, MDifferentiableAt J IP g (f x))
     (hgf : IsImmersion I IP n (g ∘ f)) : IsImmersion I J n f := by
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
+  have : CompleteSpace E' := FiniteDimensional.completeSpace 𝕜 E'
   exact TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun x ↦
     hf.contMDiffOn.isImmersionAt_of_hasLeftInverse_mfderiv isOpen_univ (mem_univ x) hn
       (isDiffImmersionAt_iff.mp ((hgf.isDiffImmersionAt hn0 x).of_comp
