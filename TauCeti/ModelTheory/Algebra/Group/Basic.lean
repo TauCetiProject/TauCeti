@@ -476,6 +476,17 @@ homomorphism. -/
 /-- The canonical language homomorphism acts as the original group homomorphism. -/
 theorem groupLanguageHom_apply (φ : G →* H) (x : G) : groupLanguageHom φ x = φ x := (rfl)
 
+/-- The canonical language homomorphism of the identity is the identity homomorphism. -/
+@[simp] theorem groupLanguageHom_id :
+    groupLanguageHom (MonoidHom.id G) = Language.Hom.id Language.group G :=
+  Language.Hom.ext fun _ => rfl
+
+/-- The canonical language homomorphism of a composite is the composite of the canonical
+language homomorphisms. -/
+@[simp] theorem groupLanguageHom_comp {K : Type*} [Group K] (ψ : H →* K) (φ : G →* H) :
+    groupLanguageHom (ψ.comp φ) = (groupLanguageHom ψ).comp (groupLanguageHom φ) :=
+  Language.Hom.ext fun _ => rfl
+
 /-- The coefficient language homomorphism has the underlying function of the original group
 homomorphism. -/
 @[simp] theorem coe_coeffGroupLanguageHom (φ : G →* H) (c : A → G) (d : A → H)
@@ -515,12 +526,12 @@ canonical language homomorphism of `φ`. -/
       Language.Embedding.refl Language.group G :=
   Language.Embedding.ext fun _ => rfl
 
-/-- The canonical language embedding of a composite is the composite of the canonical language
-embeddings. -/
-@[simp] theorem groupLanguageEmbedding_comp {K : Type*} [Group K] (ψ : H →* K) (φ : G →* H)
-    (hψ : Function.Injective ψ) (hφ : Function.Injective φ) :
-    groupLanguageEmbedding (ψ.comp φ) (hψ.comp hφ) =
-      (groupLanguageEmbedding ψ hψ).comp (groupLanguageEmbedding φ hφ) :=
+/-- The composite of the canonical language embeddings of two injective group homomorphisms is
+the canonical language embedding of their composite. -/
+@[simp] theorem groupLanguageEmbedding_comp_groupLanguageEmbedding {K : Type*} [Group K]
+    (ψ : H →* K) (φ : G →* H) (hψ : Function.Injective ψ) (hφ : Function.Injective φ) :
+    (groupLanguageEmbedding ψ hψ).comp (groupLanguageEmbedding φ hφ) =
+      groupLanguageEmbedding (ψ.comp φ) (hψ.comp hφ) :=
   Language.Embedding.ext fun _ => rfl
 
 /-- An injective group homomorphism carrying the coefficient map `c` to `d` is an embedding of

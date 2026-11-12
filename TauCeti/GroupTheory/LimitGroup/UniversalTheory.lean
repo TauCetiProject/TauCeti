@@ -8,7 +8,6 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.UniversalTheory
 public import TauCeti.GroupTheory.LimitGroup.Characterization
 public import TauCeti.ModelTheory.Algebra.Group.ExistentialUniversal
-public import TauCeti.ModelTheory.Complexity
 import TauCeti.GroupTheory.LimitGroup.TwoGenerator
 
 /-!
@@ -41,7 +40,7 @@ three cases:
 Hence a fully residually free group has the universal theory of a free group of rank at most two.
 A finitely generated group is therefore fully residually free, or equivalently a limit group, if
 and only if it has the universal theory of a free group of finite rank: these are the
-equivalences of conditions (5), respectively (1), with (3) in Theorem 1.1 of Champetier and
+equivalences of conditions (5), respectively (2), with (3) in Theorem 1.1 of Champetier and
 Guirardel. The three cases are their Theorem 5.1.
 
 ## Main results
