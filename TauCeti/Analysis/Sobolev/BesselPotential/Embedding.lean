@@ -49,8 +49,9 @@ functions (`MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`). Quantit
 
 If moreover `2s > n + 2k`, Cauchy–Schwarz pairs `(1 + |ξ|²)^{s/2} 𝓕u ∈ L²` with
 `(1 + |ξ|²)^{-(s-k)/2} ∈ L²`, so `|ξ|^j v ∈ L¹` for every `j ≤ k`. Differentiation under the
-integral sign (`Real.contDiff_fourier`) then makes `𝓕⁻ v` a `C^k` function, giving the embedding
-`H^s(ℝⁿ) ⊆ C^k(ℝⁿ)` for `s > n / 2 + k`.
+integral sign (`Real.contDiff_fourier`) then makes `𝓕⁻ v` a `C^k` function, and its `j`-th
+derivative is bounded by `(2π)^j ∫ |ξ|^j |v(ξ)| dξ`. This gives the embedding
+`H^s(ℝⁿ) ⊆ C^k_b(ℝⁿ)` for `s > n / 2 + k`.
 
 On the whole space the weak-derivative space `W^{k,2}` is the Bessel-potential space `H^{k,2}`
 (`MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`), so every `u ∈ W^{k,2}(ℝⁿ)` has a
@@ -78,9 +79,13 @@ spaces.
 * `TemperedDistribution.tendsto_cocompact_of_mem_realSobolevFunctions`: a continuous real
   function in `H^s`, `2s > n`, tends to zero at infinity.
 * `TemperedDistribution.MemSobolev.exists_contDiff_ae_eq`: an `L²` function in `H^s`,
-  `2s > n + 2k`, agrees almost everywhere with a `C^k` function.
-* `TemperedDistribution.contDiff_of_mem_realSobolevFunctions`: a continuous real function in
-  `H^s`, `2s > n + 2k`, is `C^k`.
+  `2s > n + 2k`, agrees almost everywhere with a `C^k` function with bounded derivatives of order
+  at most `k`.
+* `TemperedDistribution.exists_contDiff_ae_eq_of_mem_realSobolevFunctions`: the same for a real
+  function in `H^s`.
+* `TemperedDistribution.contDiff_of_mem_realSobolevFunctions`,
+  `TemperedDistribution.exists_norm_iteratedFDeriv_le_of_mem_realSobolevFunctions`: a continuous
+  real function in `H^s`, `2s > n + 2k`, is `C^k`, and its `k`-th derivative is bounded.
 * `TauCeti.Wkp.toZeroAtInfty`: the Sobolev embedding `W^{k,2}(ℝⁿ) →L[ℝ] C₀(ℝⁿ)` for `2k > n`.
 * `TauCeti.Wkp.value_ae_eq_toZeroAtInfty`, `TauCeti.Wkp.toZeroAtInfty_eq_iff`: the embedding sends
   a Sobolev function to its unique continuous representative.
@@ -245,11 +250,13 @@ theorem tendsto_cocompact_of_mem_realSobolevFunctions {s : ℝ} (hs : finrank �
   have hg0 : Tendsto (fun x ↦ (f x : ℂ)) (cocompact E) (𝓝 0) := heq ▸ g.zero_at_infty'
   simpa [Function.comp_def] using (Complex.continuous_re.tendsto 0).comp hg0
 
-/-- **Sobolev embedding into `C^k`.** An `L²` function on `E` lying in the Bessel-potential space
-`H^s` with `s > dim E / 2 + k` agrees almost everywhere with a `C^k` function. -/
+/-- **Sobolev embedding into `C^k_b`.** An `L²` function on `E` lying in the Bessel-potential
+space `H^s` with `s > dim E / 2 + k` agrees almost everywhere with a `C^k` function whose
+derivatives of order at most `k` are bounded. -/
 theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
     {u : Lp F 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, F))) :
-    ∃ g : E → F, ContDiff ℝ k g ∧ u =ᵐ[volume] g := by
+    ∃ g : E → F, ContDiff ℝ k g ∧ (∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) ∧
+      u =ᵐ[volume] g := by
   obtain ⟨v, hv⟩ := hu.fourier_memL1 (by linarith [k.cast_nonneg (α := ℝ)])
   have hL2 := hu.memLp_one_add_norm_sq_rpow_smul hv
   -- The weight `(1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2)` is square integrable since `2 (s - k) > dim E`.
@@ -270,10 +277,56 @@ theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E
       Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2)),
       Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖ξ‖ ^ 2) ^ (s / 2)), ← mul_assoc]
     gcongr
-  refine ⟨𝓕⁻ (v : E → F), ?_, Lp.ae_eq_fourierInv_of_fourier_eq hv⟩
-  rw [Real.fourierInv_eq_fourier_comp_neg]
-  refine Real.contDiff_fourier (N := k) fun n hn ↦ ?_
-  simpa only [norm_neg] using (hmom n (by exact_mod_cast hn)).comp_neg
+  -- The inverse Fourier transform of `v` is the Fourier transform of `w = v ∘ (-·)`, whose
+  -- moments of order at most `k` are integrable.
+  set w : E → F := fun ξ ↦ (v : E → F) (-ξ)
+  have hwmom (n : ℕ) (hn : (n : ℕ∞) ≤ k) : Integrable (fun ξ ↦ ‖ξ‖ ^ n * ‖w ξ‖) := by
+    simpa only [w, norm_neg] using (hmom n (by exact_mod_cast hn)).comp_neg
+  have hwm : AEStronglyMeasurable w := (L1.integrable_coeFn v).comp_neg.1
+  refine ⟨𝓕⁻ (v : E → F), ?_, fun n hn ↦ ?_, Lp.ae_eq_fourierInv_of_fourier_eq hv⟩
+  · rw [Real.fourierInv_eq_fourier_comp_neg]
+    exact Real.contDiff_fourier hwmom
+  -- The `n`-th derivative of `𝓕 w` is the Fourier transform of `(-2πi ⟪ξ, ·⟫) ^ n w(ξ)`, which is
+  -- bounded by the `L¹` norm `(2π) ^ n ∫ ‖ξ‖ ^ n ‖w ξ‖` of the latter.
+  refine ⟨(2 * Real.pi) ^ n * ∫ ξ, ‖ξ‖ ^ n * ‖w ξ‖, fun x ↦ ?_⟩
+  rw [Real.fourierInv_eq_fourier_comp_neg,
+    Real.iteratedFDeriv_fourier hwmom hwm (by exact_mod_cast hn), ← integral_const_mul]
+  refine (Real.norm_fourier_le_integral_norm _ x).trans (integral_mono_of_nonneg
+    (Eventually.of_forall fun ξ ↦ norm_nonneg _) ((hwmom n (by exact_mod_cast hn)).const_mul _)
+    (Eventually.of_forall fun ξ ↦ ?_))
+  refine (VectorFourier.norm_fourierPowSMulRight_le _ w ξ n).trans ?_
+  have h : 2 * Real.pi * ‖innerSL ℝ (E := E)‖ ≤ 2 * Real.pi := by
+    simpa using mul_le_mul_of_nonneg_left (norm_innerSL_le (E := E) ℝ) Real.two_pi_pos.le
+  rw [mul_assoc]
+  exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (by positivity) h n) (by positivity)
+
+/-- **Sobolev embedding into `C^k_b` for real functions.** A real function in `H^s`,
+`s > dim E / 2 + k`, agrees almost everywhere with a `C^k` function whose derivatives of order at
+most `k` are bounded: the real part of the representative of `MemSobolev.exists_contDiff_ae_eq`. -/
+theorem exists_contDiff_ae_eq_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ}
+    (hs : finrank ℝ E + 2 * k < 2 * s) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) :
+    ∃ g : E → ℝ, ContDiff ℝ k g ∧ (∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) ∧
+      f =ᵐ[volume] g := by
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨g, hg, hgb, hug⟩ := hS.exists_contDiff_ae_eq hs
+  refine ⟨fun x ↦ (g x).re, Complex.reCLM.contDiff.comp hg, fun n hn ↦ ?_, ?_⟩
+  · obtain ⟨C, hC⟩ := hgb n hn
+    refine ⟨‖Complex.reCLM‖ * C, fun x ↦ ?_⟩
+    refine (Complex.reCLM.norm_iteratedFDeriv_comp_left hg.contDiffAt
+      (by exact_mod_cast hn)).trans ?_
+    gcongr
+    exact hC x
+  · filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hug] with x h₁ h₂ h₃
+    rw [← h₂, ← Complex.ofReal_re (u x), ← Complex.ofRealCLM_apply, ← h₁, h₃]
+
+/-- A continuous real function in `H^s`, `s > dim E / 2 + k`, equals its `C^k` representative of
+`exists_contDiff_ae_eq_of_mem_realSobolevFunctions`. -/
+private theorem exists_contDiff_eq_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ}
+    (hs : finrank ℝ E + 2 * k < 2 * s) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2)
+    (hcont : Continuous f) :
+    ∃ g : E → ℝ, ContDiff ℝ k g ∧ (∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) ∧ f = g := by
+  obtain ⟨g, hg, hgb, hfg⟩ := exists_contDiff_ae_eq_of_mem_realSobolevFunctions hs hf
+  exact ⟨g, hg, hgb, (hcont.ae_eq_iff_eq volume hg.continuous).1 hfg⟩
 
 /-- **Continuous Sobolev functions are `C^k`.** A continuous real function in `H^s`,
 `s > dim E / 2 + k`, is of class `C^k`: it agrees almost everywhere, hence everywhere, with the
@@ -281,14 +334,17 @@ theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E
 theorem contDiff_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
     {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) (hcont : Continuous f) :
     ContDiff ℝ k f := by
-  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
-  obtain ⟨g, hg, hug⟩ := hS.exists_contDiff_ae_eq hs
-  have hae : (fun x ↦ (f x : ℂ)) =ᵐ[volume] g := by
-    filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hug] with x h₁ h₂ h₃
-    rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply]
-  have heq := ((Complex.continuous_ofReal.comp hcont).ae_eq_iff_eq volume hg.continuous).1 hae
-  have hf : f = fun x ↦ (g x).re := funext fun x ↦ by simp [← congrFun heq x]
-  exact hf ▸ Complex.reCLM.contDiff.comp hg
+  obtain ⟨g, hg, -, rfl⟩ := exists_contDiff_eq_of_mem_realSobolevFunctions hs hf hcont
+  exact hg
+
+/-- **Continuous Sobolev functions have bounded derivatives.** The `k`-th derivative of a
+continuous real function in `H^s`, `s > dim E / 2 + k`, is bounded on `E`. -/
+theorem exists_norm_iteratedFDeriv_le_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ}
+    (hs : finrank ℝ E + 2 * k < 2 * s) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2)
+    (hcont : Continuous f) :
+    ∃ C, ∀ x, ‖iteratedFDeriv ℝ k f x‖ ≤ C := by
+  obtain ⟨g, -, hgb, rfl⟩ := exists_contDiff_eq_of_mem_realSobolevFunctions hs hf hcont
+  exact hgb k le_rfl
 
 end TemperedDistribution
 
