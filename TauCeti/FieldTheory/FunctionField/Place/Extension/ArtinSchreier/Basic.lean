@@ -244,4 +244,22 @@ theorem ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
   (finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p
     hgen hy hpole).2
 
+/-- At a reduced Artin--Schreier pole, `p` divides the ramification index: comparing orders in
+`(y - w) ^ p - (y - w) = u - (w ^ p - w)` gives `p · ord (y - w) = e · ord (u - (w ^ p - w))`,
+and `p` does not divide the second order. -/
+theorem dvd_ramificationIdx_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hy : y ^ p - y = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    p ∣ ramificationIdx F P' := by
+  obtain ⟨w, hwneg, hwdvd⟩ := hpole
+  have : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
+  have hkey := natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_sub_self_eq k F
+    (Fact.out : p.Prime).one_lt (y := y - algebraMap F F' w) (P' := P')
+    (by rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]) hwneg
+  exact Int.natCast_dvd_natCast.mp
+    (((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).dvd_or_dvd ⟨_, hkey.symm⟩).resolve_right
+      hwdvd)
+
 end TauCeti.Place

@@ -147,24 +147,6 @@ theorem ramificationIdx_eq_one_of_pow_sub_self_eq_of_mem_integers
   ramificationIdx_eq_one_of_exists_sub_pow_sub_self_mem_integers k F p hgen hy
     ⟨1, by simpa using ha⟩
 
-/-- At a reduced Artin--Schreier pole, `p` divides the ramification index: comparing orders in
-`(y - w) ^ p - (y - w) = u - (w ^ p - w)` gives `p · ord (y - w) = e · ord (u - (w ^ p - w))`,
-and `p` does not divide the second order. -/
-private theorem dvd_ramificationIdx_of_exists_reduced_artinSchreier_pole
-    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
-    (hy : y ^ p - y = algebraMap F F' u)
-    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
-      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
-    p ∣ ramificationIdx F P' := by
-  obtain ⟨w, hwneg, hwdvd⟩ := hpole
-  have : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
-  have hkey := natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_sub_self_eq k F
-    (Fact.out : p.Prime).one_lt (y := y - algebraMap F F' w) (P' := P')
-    (by rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]) hwneg
-  exact Int.natCast_dvd_natCast.mp
-    (((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).dvd_or_dvd ⟨_, hkey.symm⟩).resolve_right
-      hwdvd)
-
 end Ramification
 
 section Pole
@@ -279,9 +261,9 @@ theorem isWild_of_exists_reduced_artinSchreier_pole
   exact (CharP.cast_eq_zero_iff _ p _).mpr
     (dvd_ramificationIdx_of_exists_reduced_artinSchreier_pole k F p hy hpole)
 
-/-- At a reduced Artin--Schreier pole the different exponent is at least `p`.  This is the wild
-lower bound; the exact exponent additionally requires the upper bound
-`d(P' | P) ≤ (p - 1) * (m + 1)`. -/
+/-- At a reduced Artin--Schreier pole the different exponent is at least `p`.  For prime `p` this
+is the wild lower bound `p ≤ e(P' | P) ≤ d(P' | P)`, which holds without `F⟮y⟯ = ⊤`, unlike the
+exact exponent `differentExponent_eq_of_pow_sub_self_eq_of_ord_eq_neg`. -/
 theorem p_le_differentExponent_of_exists_reduced_artinSchreier_pole
     (p : ℕ) [CharP F p] {y : F'} {u : F}
     (hy : y ^ p - y = algebraMap F F' u)
