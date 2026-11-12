@@ -155,7 +155,7 @@ theorem integral_renewalCountNat_of_bernoulliMeasure (hT : ∀ n, Measurable (T 
   have hcast : HasLaw (Nat.cast : ℕ → ℝ) (ν.map (Nat.cast : ℕ → ℝ)) ν :=
     ⟨Measurable.of_discrete.aemeasurable, rfl⟩
   have hi : Integrable (fun j : ℕ ↦ (j : ℝ)) ν :=
-    hcast.integrable ((memLp_id_map_cast_negativeBinomialMeasure hk hq q.2.2 1).integrable
+    hcast.integrable ((memLp_id_map_cast_negativeBinomialMeasure 1).integrable
       (by simp))
   have hshift : HasLaw (fun j : ℕ ↦ k + j) (ν.map (fun j ↦ k + j)) ν :=
     ⟨Measurable.of_discrete.aemeasurable, rfl⟩

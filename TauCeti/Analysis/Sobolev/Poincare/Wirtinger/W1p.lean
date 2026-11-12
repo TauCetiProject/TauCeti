@@ -112,7 +112,7 @@ private theorem norm_value_sub_setAverage_restrictL_ofTestFunctionₗ_le (hp : p
   have havg : (⨍ y in S, W1p.value w y ∂mu) = ⨍ y in S, phi y ∂mu :=
     average_congr (haeU.filter_mono (ae_mono (Measure.restrict_mono hSU le_rfl)))
   have hmain := eLpNorm_sub_setAverage_le_of_convex (μ := mu) (u := fun x ↦ (phi : E → ℝ) x)
-    U.isOpen hUc hUb (phi.contDiff.of_le (by simp)).contDiffOn hSU hS0
+    hUc hUb (phi.contDiff.of_le (by simp)).contDiffOn hSU hS0
     (Fact.out : (1 : ℝ≥0∞) ≤ p) hp
   have hkey : ‖W1p.value w - Lp.const p (mu.restrict (U : Set E))
       (⨍ y in S, W1p.value w y ∂mu)‖ₑ ≤ ENNReal.ofReal C * ‖W1p.gradient w‖ₑ := by
@@ -443,7 +443,8 @@ on `Ω` with a constant. -/
 theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
     (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
     ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c := by
-  refine hconn.exists_ae_eq_const_of_forall_nhds fun x hx => ?_
+  refine hconn.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)
+    fun x hx => ?_
   obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
   obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
   exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩

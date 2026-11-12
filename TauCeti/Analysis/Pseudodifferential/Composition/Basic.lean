@@ -510,11 +510,9 @@ private theorem continuous_fderiv_compIntegrand_apply (hb : b.HasCompactSpatialS
       (continuous_const.prodMk continuous_id)
   simp only [fderiv_compIntegrand_apply hb]
   refine (continuous_finsetSum _ fun j _ ↦ ?_).add (continuous_finsetSum _ fun j _ ↦ ?_)
-  · have h₁ := hc (Symbol.spatialDeriv j a) hb
-    have h₂ := hc a (hb.spatialDeriv j)
+  · have h₂ := hc a (hb.spatialDeriv j)
     fun_prop
-  · have h₁ := hc (Symbol.frequencyDeriv j a) hb
-    have h₂ := hc a (hb.frequencyDeriv j)
+  · have h₂ := hc a (hb.frequencyDeriv j)
     fun_prop
 
 
@@ -526,13 +524,13 @@ private theorem exists_norm_fderiv_compIntegrand_le (hb : b.HasCompactSpatialSup
       p.2 ∈ Metric.closedBall p₀.2 1 → ∀ η,
         ‖fderiv ℝ (fun p ↦ compIntegrand a b p η) p‖ ≤
           D * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-  choose C₁ hC₁0 hC₁ using fun j ↦
+  choose C₁ _ hC₁ using fun j ↦
     exists_norm_compIntegrand_le_weight (a := Symbol.spatialDeriv j a) hb p₀
-  choose C₂ hC₂0 hC₂ using fun j ↦
+  choose C₂ _ hC₂ using fun j ↦
     exists_norm_compIntegrand_le_weight (a := a) (hb.spatialDeriv j) p₀
-  choose C₃ hC₃0 hC₃ using fun j ↦
+  choose C₃ _ hC₃ using fun j ↦
     exists_norm_compIntegrand_le_weight (a := Symbol.frequencyDeriv j a) hb p₀
-  choose C₄ hC₄0 hC₄ using fun j ↦
+  choose C₄ _ hC₄ using fun j ↦
     exists_norm_compIntegrand_le_weight (a := a) (hb.frequencyDeriv j) p₀
   refine ⟨∑ j, (C₁ j + C₂ j) + ∑ j, (C₃ j + C₄ j), fun p hp₁ hp₂ η ↦ ?_⟩
   refine ((fderiv ℝ (fun p ↦ compIntegrand a b p η) p).opNorm_le_of_apply_eq_sum _ _
@@ -907,7 +905,7 @@ integrable. -/
 private theorem integrable_fourier_slice_apply (hb : b.HasCompactSpatialSupport)
     (u : 𝓢(CoordinateSpace n, V)) (ζ' : CoordinateSpace n) :
     Integrable fun ζ ↦ 𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) (ζ' - ζ) (𝓕 u ζ) := by
-  obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le 0
+  obtain ⟨Cb, _, hCb⟩ := hb.exists_norm_fourier_slice_le 0
   have hB : Continuous fun ζ : CoordinateSpace n ↦
       𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) (ζ' - ζ) := by
     have h := hb.continuous_fourier_slice.comp (by fun_prop :
