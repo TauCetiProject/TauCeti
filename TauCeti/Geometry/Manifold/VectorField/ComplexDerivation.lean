@@ -385,6 +385,19 @@ theorem complexDerivationEquivComplexifiedVectorField_symm_apply_apply
         ((mvfderiv I f.re x (Y x) + mvfderiv I f.im x (X x) : ℝ) : ℂ) * Complex.I := by
   apply Complex.ext <;> simp <;> ring
 
+/-- The complexified vector field `1 ⊗ X + i ⊗ Y` differentiates a complex smooth function `f` as
+`df(X) + i df(Y)`, where `df` is the complex-valued differential of `f`. -/
+theorem complexDerivationEquivComplexifiedVectorField_symm_apply_eq_mvfderiv
+    (X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
+    complexDerivationEquivComplexifiedVectorField.symm (1 ⊗ₜ X + Complex.I ⊗ₜ Y) f x =
+      mvfderiv I f x (X x) + Complex.I * mvfderiv I f x (Y x) := by
+  have key (a b : ℂ) :
+      ((a.re - b.im : ℝ) : ℂ) + ((b.re + a.im : ℝ) : ℂ) * Complex.I = a + Complex.I * b := by
+    apply Complex.ext <;> simp [add_comm, sub_eq_add_neg]
+  rw [complexDerivationEquivComplexifiedVectorField_symm_apply_apply,
+    ContMDiffMap.mvfderiv_re f (by simp), ContMDiffMap.mvfderiv_im f (by simp)]
+  exact key _ _
+
 /-- A complex derivation `δ` corresponds to `1 ⊗ X + i ⊗ Y` exactly when it differentiates every
 real smooth function `u` as `δ u = X u + i Y u`. -/
 theorem complexDerivationEquivComplexifiedVectorField_eq_iff
