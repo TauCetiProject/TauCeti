@@ -13,8 +13,9 @@ import Mathlib.Data.ZMod.Basic
 /-!
 # Hasse derivatives of expanded polynomials in prime characteristic
 
-In characteristic `p`, the positive Hasse derivatives of `g(X^(p^e))` of order below
-`p^e` vanish. Consequently Hasse differentiation of order below `p^e` commutes with
+In exponential characteristic `p`, the Hasse derivatives of `g(X^(p^e))` vanish
+at every order not divisible by `p^e`. Consequently Hasse differentiation of order below
+`p^e` commutes with
 multiplication by an expanded polynomial. This is the linearity over polynomials in
 `X^(p^e)` used when differentiating restrictions to Frobenius graphs.
 
@@ -31,23 +32,22 @@ public section
 
 namespace Polynomial
 
-variable {R : Type*} [CommSemiring R] {p : ℕ} [Fact p.Prime] [CharP R p]
+variable {R : Type*} [CommSemiring R] {p : ℕ} [ExpChar R p]
 
-/-- A positive Hasse derivative of order below `p^e` annihilates every polynomial in
-`X^(p^e)`, over any commutative semiring of characteristic `p`. -/
-theorem hasseDeriv_expand_eq_zero {e k : ℕ} (hk : 0 < k) (hke : k < p ^ e)
+/-- A Hasse derivative of order not divisible by `p^e` annihilates every polynomial in
+`X^(p^e)`, over any commutative semiring of exponential characteristic `p`. -/
+theorem hasseDeriv_expand_eq_zero {e k : ℕ} (hk : ¬p ^ e ∣ k)
     (g : R[X]) : hasseDeriv k (expand R (p ^ e) g) = 0 := by
-  have hq : 0 < p ^ e := pow_pos (Fact.out : p.Prime).pos e
-  have hndvd : ¬p ^ e ∣ k := Nat.not_dvd_of_pos_of_lt hk hke
+  have hq : 0 < p ^ e := expChar_pow_pos R p e
   induction g using Polynomial.induction_on' with
   | add f g hf hg => simp only [map_add, hf, hg, add_zero]
   | monomial n r =>
     have hpoly : (X + 1 : R[X]) ^ (n * p ^ e) =
         expand R (p ^ e) ((X + 1) ^ n) := by
-      rw [Nat.mul_comm n, pow_mul, add_pow_char_pow, one_pow]
+      rw [Nat.mul_comm n, pow_mul, add_pow_expChar_pow, one_pow]
       simp
     have hchoose : (Nat.choose (n * p ^ e) k : R) = 0 := by
-      rw [← coeff_X_add_one_pow R, hpoly, coeff_expand hq, ite_eq_right hndvd]
+      rw [← coeff_X_add_one_pow R, hpoly, coeff_expand hq, ite_eq_right hk]
     simp only [expand_monomial, hasseDeriv_monomial, hchoose, zero_mul,
       monomial_zero_right]
 
@@ -65,7 +65,7 @@ theorem hasseDeriv_expand_mul {e k : ℕ} (hk : k < p ^ e) (g f : R[X]) :
       by_contra! h
       have : ij = (0, k) := by ext <;> omega
       exact hne this
-    rw [hasseDeriv_expand_eq_zero hi (by omega), zero_mul]
+    rw [hasseDeriv_expand_eq_zero (Nat.not_dvd_of_pos_of_lt hi (by omega)), zero_mul]
   · simp
 
 /-- At exponent zero the multiplication identity is the identity for the zeroth derivative. -/
