@@ -6,11 +6,12 @@ Authors: Bastiaan J Braams
 module
 
 public import TauCeti.Analysis.Contour.Residue.Cycle
+public import TauCeti.Analysis.Contour.Residue.SimplePole
 public import TauCeti.Analysis.Contour.Winding.Number.Rectangle
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
-# Shifting a vertical line of integration past simple poles
+# Shifting a vertical line of integration past poles
 
 Let `F` be holomorphic on a neighbourhood of the closed strip `d ≤ Re t ≤ c` except at a finite
 set `P` of poles inside the open strip, integrable on both boundary lines, and such that
@@ -26,13 +27,11 @@ of the residue theorem.
 
 ## Main results
 
-* `TauCeti.Contour.residue_eq_of_eventuallyEq_div_sub`: if `F(t) = φ(t)/(t - p)` near `p` with
-  `φ` analytic at `p`, the residue of `F` at `p` is `φ(p)`.
 * `TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue`: the line shift past simple
   poles, and `TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue_of_meromorphicAt`
   past meromorphic singularities of any order.
 * `TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_range_residue`: its iteration across a
-  decreasing sequence of lines with one simple pole between consecutive lines, and
+  decreasing sequence of lines with one singularity between consecutive lines, and
   `TauCeti.Contour.tendsto_sum_range_residue`, `TauCeti.Contour.hasSum_residue`: the resulting
   residue series.
 
@@ -42,26 +41,12 @@ The statements follow the lean-DLMF project (<https://github.com/bjbraams/lean-D
 Ceti's rectangle residue theorem instead of lean-DLMF's own contour machinery.
 -/
 
-@[expose] public section
+public section
 
 open Complex Set Filter MeasureTheory
 open scoped Topology Real
 
 namespace TauCeti.Contour
-
-/-- At a simple pole written as `F(t) = φ(t)/(t - p)` with `φ` analytic at `p`, the residue of
-`F` is `φ(p)`. Removable singularities are included, with `φ(p) = 0`. -/
-theorem residue_eq_of_eventuallyEq_div_sub {F φ : ℂ → ℂ} {p : ℂ} (hφ : AnalyticAt ℂ φ p)
-    (hF : ∀ᶠ t in 𝓝[≠] p, F t = φ t / (t - p)) : residue F p = φ p := by
-  rw [residue_congr_nhdsNE hF]
-  simpa using residue_div_sub_pow_of_analyticAt hφ 0
-
-/-- A function of the form `φ(t)/(t - p)` near `p`, with `φ` analytic at `p`, is meromorphic
-at `p`. -/
-theorem meromorphicAt_of_eventuallyEq_div_sub {F φ : ℂ → ℂ} {p : ℂ} (hφ : AnalyticAt ℂ φ p)
-    (hF : ∀ᶠ t in 𝓝[≠] p, F t = φ t / (t - p)) : MeromorphicAt F p :=
-  (hφ.meromorphicAt.div (analyticAt_id.sub analyticAt_const).meromorphicAt).congr
-    (hF.mono fun _ ht => ht.symm)
 
 /-- The residue theorem on the rectangle `[d, c] × [-T, T]`, written edge by edge. -/
 private theorem rectangle_edges_eq {F : ℂ → ℂ} {c d T : ℝ} (hdc : d < c) (hT : 0 < T)
@@ -74,7 +59,7 @@ private theorem rectangle_edges_eq {F : ℂ → ℂ} {c d T : ℝ} (hdc : d < c)
   set z : ℂ := ⟨d, -T⟩
   set w : ℂ := ⟨c, T⟩
   have hre : z.re ≤ w.re := hdc.le
-  have him : z.im ≤ w.im := by change -T ≤ T; linarith
+  have him : z.im ≤ w.im := by simp only [z, w]; linarith
   have hrect : Rectangle z w ⊆ U := fun t ht => by
     rw [Rectangle, mem_reProdIm, uIcc_of_le hre, uIcc_of_le him] at ht
     exact hstrip ⟨ht.1.1, ht.1.2⟩
@@ -156,17 +141,17 @@ theorem integral_vertical_sub_eq_two_pi_mul_sum_residue (F : ℂ → ℂ) {c d :
       obtain ⟨g, hg, hFg⟩ := hpole p hp
       exact meromorphicAt_of_eventuallyEq_div_sub hg hFg) hc hd htop hbot
 
-/-- **Iterated line shifts.** Let `c₀ > c₁ > ⋯` be lines with exactly one simple pole `p n` of
-`F` in each strip `c (n + 1) < Re t < c n`, each strip satisfying the hypotheses of
-`integral_vertical_sub_eq_two_pi_mul_sum_residue`. Then
+/-- **Iterated line shifts.** Let `c₀ > c₁ > ⋯` be lines with exactly one singularity `p n` of
+`F`, at which `F` is meromorphic, in each strip `c (n + 1) < Re t < c n`, each strip satisfying the
+hypotheses of `integral_vertical_sub_eq_two_pi_mul_sum_residue_of_meromorphicAt`. The poles may
+have any order. Then
 `∫_ℝ F(c₀ + iy) dy - ∫_ℝ F(c_N + iy) dy = 2π ∑_{n < N} Res(F, p n)`. -/
 theorem integral_vertical_sub_eq_two_pi_mul_sum_range_residue (F : ℂ → ℂ) {c : ℕ → ℝ}
     {p : ℕ → ℂ} (hc : ∀ n, c (n + 1) < c n) {U : ℕ → Set ℂ} (hU : ∀ n, IsOpen (U n))
     (hstrip : ∀ n, {t : ℂ | c (n + 1) ≤ t.re ∧ t.re ≤ c n} ⊆ U n)
     (hp : ∀ n, c (n + 1) < (p n).re ∧ (p n).re < c n)
     (hF : ∀ n, DifferentiableOn ℂ F (U n \ {p n}))
-    (hpole : ∀ n, ∃ g : ℂ → ℂ, AnalyticAt ℂ g (p n) ∧
-      ∀ᶠ t in 𝓝[≠] p n, F t = g t / (t - p n))
+    (hmero : ∀ n, MeromorphicAt F (p n))
     (hint : ∀ n, Integrable fun y : ℝ => F (c n + y * I))
     (htop : ∀ n, Tendsto (fun T : ℝ => ∫ x in c (n + 1)..c n, F (x + T * I)) atTop (𝓝 0))
     (hbot : ∀ n, Tendsto (fun T : ℝ => ∫ x in c (n + 1)..c n, F (x + T * I)) atBot (𝓝 0))
@@ -175,9 +160,9 @@ theorem integral_vertical_sub_eq_two_pi_mul_sum_range_residue (F : ℂ → ℂ) 
       2 * π * ∑ n ∈ Finset.range N, residue F (p n) := by
   have hstep : ∀ n, (∫ y : ℝ, F (c n + y * I)) - ∫ y : ℝ, F (c (n + 1) + y * I) =
       2 * π * residue F (p n) := fun n => by
-    have h := integral_vertical_sub_eq_two_pi_mul_sum_residue F (hc n) (hU n) (hstrip n) {p n}
-      (by simpa using hp n) (by simpa using hF n) (by simpa using hpole n) (hint n)
-      (hint (n + 1)) (htop n) (hbot n)
+    have h := integral_vertical_sub_eq_two_pi_mul_sum_residue_of_meromorphicAt F (hc n) (hU n)
+      (hstrip n) {p n} (by simpa using hp n) (by simpa using hF n) (by simpa using hmero n)
+      (hint n) (hint (n + 1)) (htop n) (hbot n)
     simpa using h
   induction N with
   | zero => simp
