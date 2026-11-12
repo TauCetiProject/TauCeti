@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
+public import TauCeti.Algebra.MvPolynomial.Variables
 public import TauCeti.Data.Finsupp.MonomialOrder.Refinement
 
 /-!
@@ -514,11 +515,7 @@ theorem exists_rename_eq_of_coe_support_degree_subset
   have hvars : ↑g.vars ⊆ Set.range e := fun i hi ↦ by
     obtain ⟨d, hd, hid⟩ := (mem_vars_iff_mem_support i).1 hi
     exact helim d _ (m.le_degree hd) hg hid
-  rw [coe_vars_subset_iff, AlgHom.mem_range] at hvars
-  obtain ⟨q, hq⟩ := hvars
-  refine ⟨rename (fun x : Set.range e ↦ x.2.choose) q, ?_⟩
-  rw [rename_rename, ← hq]
-  exact congrArg (fun f ↦ rename f q) (funext fun x ↦ x.2.choose_spec)
+  exact exists_rename_eq_of_vars_subset_range' g e hvars
 
 end Rename
 
