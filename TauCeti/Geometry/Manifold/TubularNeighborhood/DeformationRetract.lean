@@ -74,9 +74,7 @@ def retraction (T : IsTubularNeighborhood f U φ) : C(range φ, B) where
 @[simp]
 theorem retraction_apply_mk (T : IsTubularNeighborhood f U φ) (u : U) :
     T.retraction ⟨φ u, mem_range_self u⟩ = (u : TotalSpace F E).proj := by
-  have h : T.isOpenEmbedding.isEmbedding.toHomeomorph.symm ⟨φ u, mem_range_self u⟩ = u :=
-    T.isOpenEmbedding.isEmbedding.toHomeomorph.symm_apply_eq.2 rfl
-  simp only [retraction, ContinuousMap.coe_mk, h]
+  simp only [retraction, ContinuousMap.coe_mk, Topology.IsEmbedding.toHomeomorph_symm_apply]
 
 /-- The retraction is a left inverse of the core embedding. -/
 @[simp]
@@ -121,9 +119,7 @@ private def deformationFun (T : IsTubularNeighborhood f U φ) (p : I × range φ
 private theorem deformationFun_apply_mk (T : IsTubularNeighborhood f U φ) (t : I) (u : U) :
     T.deformationFun (t, ⟨φ u, mem_range_self u⟩) =
       ⟨φ (T.radialContraction ⟨t, u⟩), mem_range_self _⟩ := by
-  have h : T.isOpenEmbedding.isEmbedding.toHomeomorph.symm ⟨φ u, mem_range_self u⟩ = u :=
-    T.isOpenEmbedding.isEmbedding.toHomeomorph.symm_apply_eq.2 rfl
-  simp only [deformationFun, h]
+  simp only [deformationFun, Topology.IsEmbedding.toHomeomorph_symm_apply]
 
 private theorem deformationFun_apply_f (T : IsTubularNeighborhood f U φ) (t : I) (x : B) :
     T.deformationFun (t, ⟨f x, T.f_mem_range x⟩) = ⟨f x, T.f_mem_range x⟩ := by
