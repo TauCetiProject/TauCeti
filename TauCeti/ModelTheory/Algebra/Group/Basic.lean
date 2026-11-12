@@ -5,19 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.LanguageMap
 public import Mathlib.ModelTheory.Semantics
 public import Mathlib.Algebra.Group.MinimalAxioms
 public import Mathlib.Algebra.Group.Pi.Basic
 public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.GroupTheory.FreeGroup.Basic
 import Mathlib.GroupTheory.FreeGroup.Reduce
+import TauCeti.ModelTheory.Complexity
 import Mathlib.Tactic.FinCases
 
 /-!
 # The first-order language of groups
 
 The language has a constant for the identity, a unary inverse symbol and a binary
-multiplication symbol. Adding named coefficients uses Mathlib's `Language.withConstants`.
+multiplication symbol, and no relation symbols: it is an algebraic language, and so are its
+extensions by named coefficients, which use Mathlib's `Language.withConstants`. In particular
+every atomic formula holds in a trivial group.
 The interpretation in a group, and the three left-hand group axioms, give the semantic
 interface needed to turn group formulas into equations in words.
 A model of the group theory yields a group whose operations recover the symbol interpretations.
@@ -60,6 +64,10 @@ namespace FirstOrder
 @[expose] def Language.group : Language where
   Functions := TauCeti.groupFunc
   Relations := fun _ => Empty
+
+/-- The language of groups has no relation symbols. -/
+instance : Language.group.IsAlgebraic :=
+  fun _ => inferInstanceAs (IsEmpty Empty)
 
 end FirstOrder
 
@@ -182,6 +190,26 @@ attribute [local instance] structureOfGroup
   rfl
 
 end Coefficients
+
+section Subsingleton
+
+variable {G A α : Type*} [One G] [Inv G] [Mul G] [Subsingleton G] {n : ℕ}
+
+attribute [local instance] structureOfGroup
+
+-- In a trivial group every atomic formula of the group language holds.
+example {φ : Language.group.BoundedFormula α n} (hφ : φ.IsAtomic) (v : α → G)
+    (xs : Fin n → G) : φ.Realize v xs :=
+  BoundedFormula.realize_of_isAtomic_subsingleton hφ v xs
+
+-- In a trivial group every atomic sentence with named coefficients holds.
+example (c : A → G) {φ : Language.group[[A]].Sentence} (hφ : φ.IsAtomic) :
+    letI := Language.constantsOn.structure c
+    G ⊨ φ :=
+  letI := Language.constantsOn.structure c
+  BoundedFormula.realize_of_isAtomic_subsingleton hφ _ _
+
+end Subsingleton
 
 end Group
 
@@ -436,10 +464,7 @@ def coeffGroupLanguageHom (φ : G →* H) (c : A → G) (d : A → H)
         change φ (c f) = d f
         exact hc f
       | succ n => exact isEmptyElim f
-  · intro n r
-    cases r with
-    | inl r => cases r
-    | inr r => cases r
+  · exact fun r => isEmptyElim r
 
 /-- The canonical language homomorphism acts as the original group homomorphism. -/
 @[simp] theorem groupLanguageHom_apply (φ : G →* H) (x : G) :
