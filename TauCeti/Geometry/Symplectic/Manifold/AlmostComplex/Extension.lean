@@ -113,6 +113,7 @@ theorem cutoffInterp_of_eq_one {n : N} (hW : n ∈ W) (h : ρ n = 1) :
 
 /-- Where the prescribed structure is the background one, so is cutoff interpolation, whatever
 the weight: the Cayley coordinate of a structure relative to itself is zero. -/
+@[simp]
 theorem cutoffInterp_of_eq {n : N} (h : K₁ n = K₀ n) :
     cutoffInterp hσn hK₀ hK₁ ρ hρ n = K₀ n := by
   by_cases hW : n ∈ W
