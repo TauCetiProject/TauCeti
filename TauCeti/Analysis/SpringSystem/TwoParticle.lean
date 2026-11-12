@@ -91,7 +91,8 @@ not solutions of the spring equation.
 * `TauCeti.TwoParticleSpring.hasFDerivAt_exactForce_zero`,
   `TauCeti.TwoParticleSpring.hasFDerivAt_inv_smul_exactForce_zero`: the exact force linearizes to
   `κ H` at the rest configuration, and the acceleration of particles of mass `m` to `(κ / m) H`.
-* `TauCeti.TwoParticleSpring.forceMatrix_mulVec_symmetryRep`: `H` is equivariant.
+* `TauCeti.TwoParticleSpring.forceMatrix_mulVec_symmetryRep`: `H` is equivariant, and
+  `TauCeti.TwoParticleSpring.dotProduct_symmetryRep`: the action is orthogonal.
 * `TauCeti.TwoParticleSpring.symmetryRep_stretch` and its three companions: the symmetry type of
   each eigenvector of `H`.
 * `TauCeti.TwoParticleSpring.isotypicProjector_one_apply` and its three companions: the
@@ -100,6 +101,9 @@ not solutions of the spring equation.
 * `TauCeti.TwoParticleSpring.isotypicProjector_mul_self`,
   `TauCeti.TwoParticleSpring.isotypicProjector_mul_isotypicProjector_of_ne`: the projectors are
   idempotent and those of distinct characters annihilate each other.
+* `TauCeti.TwoParticleSpring.range_isotypicProjector`: the image of each projector is its isotypic
+  component, and `TauCeti.TwoParticleSpring.iInf_eigenspace_symmetryRep_one` and its three
+  companions: the four isotypic components are exactly the eigenvector lines.
 * `TauCeti.TwoParticleSpring.toLin'_forceMatrix`: `H = -2 P`, with `P` the projector of the
   trivial character.
 * `TauCeti.TwoParticleSpring.springPotential_transverse`,
@@ -645,6 +649,16 @@ theorem forceMatrix_mulVec_symmetryRep (g : Multiplicative (ZMod 2) × Multiplic
       fin_cases i <;>
         simp [forceMatrix, mulVec, dotProduct, Fin.sum_univ_four, Prod.mk_one_one]
 
+/-- **The action is orthogonal**: every symmetry preserves the standard dot product of
+displacements. -/
+theorem dotProduct_symmetryRep (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2))
+    (u v : Fin 4 → ℝ) :
+    symmetryRep g u ⬝ᵥ symmetryRep g v = u ⬝ᵥ v := by
+  obtain ⟨a, b⟩ := g
+  rcases a.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    simp [dotProduct, Fin.sum_univ_four, Prod.mk_one_one] <;> ring
+
 /-! ### The four symmetry types of displacement -/
 
 /-- The stretching mode `(1, 0, -1, 0)` is fixed by both reflections: it spans a copy of the
@@ -820,6 +834,79 @@ theorem isotypicProjector_add_add_add_eq_one :
   simp only [LinearMap.add_apply, isotypicProjector_one_apply, isotypicProjector_comp_fst_apply,
     isotypicProjector_comp_snd_apply, isotypicProjector_mul_apply, one_apply_eq_self]
   fin_cases i <;> simp [dotProduct, Fin.sum_univ_four, vecHead, vecTail] <;> ring
+
+/-! ### The isotypic components -/
+
+/-- The image of the isotypic projector of `χ` is the `χ`-isotypic component, the joint eigenspace
+on which every symmetry `g` acts by the scalar `χ g`. -/
+theorem range_isotypicProjector (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) :
+    LinearMap.range (isotypicProjector χ) = ⨅ g, Module.End.eigenspace (symmetryRep g) (χ g) :=
+  symmetryRep.range_asAlgebraHom_charIdempotent (Nat.cast_ne_zero.2 Nat.card_pos.ne').isUnit
+    χ.toHomUnits
+
+/-- The **trivial isotypic component**, on which both reflections act trivially, is the stretching
+line through `(1, 0, -1, 0)`. -/
+theorem iInf_eigenspace_symmetryRep_one :
+    ⨅ g, Module.End.eigenspace (symmetryRep g)
+        ((1 : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) g) =
+      ℝ ∙ ![1, 0, -1, 0] := by
+  have hP : isotypicProjector 1 =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![1, 0, -1, 0]).smulRight ![1, 0, -1, 0] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_one_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![1, 0, -1, 0]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
+
+/-- The isotypic component of the sign of the first factor, reversed by the axis reflection and
+fixed by the bisector reflection, is the line of vertical translations through `(0, 1, 0, 1)`. -/
+theorem iInf_eigenspace_symmetryRep_comp_fst :
+    ⨅ g, Module.End.eigenspace (symmetryRep g)
+        ((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) g) = ℝ ∙ ![0, 1, 0, 1] := by
+  have hP : isotypicProjector ((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _)) =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![0, 1, 0, 1]).smulRight ![0, 1, 0, 1] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_comp_fst_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![0, 1, 0, 1]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
+
+/-- The isotypic component of the sign of the second factor, fixed by the axis reflection and
+reversed by the bisector reflection, is the line of horizontal translations through
+`(1, 0, 1, 0)`. -/
+theorem iInf_eigenspace_symmetryRep_comp_snd :
+    ⨅ g, Module.End.eigenspace (symmetryRep g)
+        ((cyclicTwoSign ℝ).comp (MonoidHom.snd _ _) g) = ℝ ∙ ![1, 0, 1, 0] := by
+  have hP : isotypicProjector ((cyclicTwoSign ℝ).comp (MonoidHom.snd _ _)) =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![1, 0, 1, 0]).smulRight ![1, 0, 1, 0] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_comp_snd_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![1, 0, 1, 0]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
+
+/-- The isotypic component of the product of the two signs, reversed by both reflections, is the
+line of the transverse mode `(0, 1, 0, -1)`. -/
+theorem iInf_eigenspace_symmetryRep_mul :
+    ⨅ g, Module.End.eigenspace (symmetryRep g)
+        (((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) * (cyclicTwoSign ℝ).comp (MonoidHom.snd _ _) :
+          Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) g) = ℝ ∙ ![0, 1, 0, -1] := by
+  have hP : isotypicProjector ((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) *
+        (cyclicTwoSign ℝ).comp (MonoidHom.snd _ _)) =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![0, 1, 0, -1]).smulRight ![0, 1, 0, -1] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_mul_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![0, 1, 0, -1]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
 
 /-- **The spectral decomposition of `H`**: the force matrix is `-2` times the projector of the
 trivial character, so its eigenvalue is `-2` on the stretching mode and `0` on the other three
