@@ -13,7 +13,6 @@ import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 import TauCeti.Analysis.Sobolev.Wkp.Classical
-import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.Topology.Frontier
 
@@ -79,9 +78,9 @@ applies to every class of functions for which that estimate is available, with t
 * For strong supersolutions, functions `u ∈ W^{2,n}(B(c, R))` with a representative continuous on
   `closedBall c R` satisfying `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere for the weak Hessian, it is
   `TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet_of_wkp`, applied on `Ω'` to the
-  restriction of `u` minus the Sobolev function represented by the smooth barrier term. Here `a` is
-  taken symmetric, as in the non-divergence theory of strong solutions; again no measurability of
-  `a` is needed.
+  restriction of `u` minus the Sobolev function represented by the smooth barrier term
+  (`TauCeti.Wkp.exists_value_ae_eq_sub_of_contDiffOn`). Here `a` is taken symmetric, as in the
+  non-divergence theory of strong solutions; again no measurability of `a` is needed.
 
 ## Main declarations
 
@@ -260,38 +259,6 @@ private theorem contDiff_barrier {R θ β : ℝ} (hθ : 0 < θ) (c : EuclideanSp
     ContDiff ℝ k fun z : EuclideanSpace ℝ ι ↦ ((R ^ 2)⁻¹ * ‖z - c‖ ^ 2 + θ ^ 2) ^ (-β) :=
   contDiff_iff_contDiffAt.2 fun _ ↦
     contDiffAt_rpow_mul_norm_sq_sub_add (by positivity) (by positivity) _
-
-/-- **A smooth function minus a strong function.** Let `u ∈ W^{2,p}(U)` have the representative
-`ū`, let `w` be `C²` and let `Ω ⊆ U` be open and bounded. Then `w - ū` represents an element `V` of
-`W^{2,p}(Ω)`, the restriction of `u` subtracted from the Sobolev function represented by `w`, whose
-weak Hessian is `∇²w - ∇²u` almost everywhere on `Ω`. -/
-private theorem exists_wkp_value_ae_eq_sub {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {U Ω : Opens (EuclideanSpace ℝ ι)} (hΩU : Ω ≤ U)
-    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (u : Wkp volume U p 2)
-    {ū w : EuclideanSpace ℝ ι → ℝ}
-    (hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict U] ū)
-    (hw : ContDiff ℝ 2 w) :
-    ∃ V : Wkp volume Ω p 2,
-      (Wkp.value 2 V : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] (fun y ↦ w y - ū y) ∧
-      ∀ᵐ y ∂volume.restrict Ω, ∀ i j : ι,
-        Wkp.iteratedGradient 1 V y (EuclideanSpace.single j 1) i =
-          fderiv ℝ (fderiv ℝ w) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) -
-            Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i := by
-  obtain ⟨W, hW⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := volume) (p := p)
-    (Omega := Ω) 2 isOpen_univ hw.contDiffOn hΩ.isCompact_closure subset_closure (subset_univ _)
-  refine ⟨W - Wkp.restrictL hΩU 2 u, ?_, ?_⟩
-  · rw [← Wkp.valueL_apply, map_sub, Wkp.valueL_apply, Wkp.valueL_apply]
-    filter_upwards [Lp.coeFn_sub (Wkp.value 2 W) (Wkp.value 2 (Wkp.restrictL hΩU 2 u)), hW,
-      Wkp.value_restrictL_ae hΩU 2 u, ae_restrict_of_ae_restrict_of_subset hΩU hū]
-      with y h1 h2 h3 h4
-    rw [h1, Pi.sub_apply, h2, h3, h4]
-  · rw [← Wkp.iteratedGradientL_apply, map_sub, Wkp.iteratedGradientL_apply,
-      Wkp.iteratedGradientL_apply]
-    filter_upwards [Lp.coeFn_sub (Wkp.iteratedGradient 1 W)
-        (Wkp.iteratedGradient 1 (Wkp.restrictL hΩU 2 u)),
-      Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn W hw.contDiffOn hW,
-      Wkp.iteratedGradient_restrictL_ae hΩU 1 u] with y h1 h2 h3 i j
-    rw [h1, Pi.sub_apply, sub_apply, PiLp.sub_apply, h2, h3]
 
 variable [Nonempty ι]
 
@@ -652,8 +619,9 @@ theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball_of_wkp {p : ℝ≥0
       rw [Pi.smul_apply, fderiv_sub_const, fderiv_const_mul (hg.differentiable (by norm_num) z)]
     rw [hfd, fderiv_const_smul ((hg.fderiv_right (m := 1) (by norm_num)).differentiable
       (by norm_num) y)]
-  obtain ⟨V, hV, hHess⟩ := exists_wkp_value_ae_eq_sub (U := ⟨ball c R, isOpen_ball⟩)
-    (Ω := ⟨Ω, hΩ⟩) hΩR (isBounded_ball.subset hΩR) u hū hw
+  obtain ⟨V, hV, hHess⟩ := Wkp.exists_value_ae_eq_sub_of_contDiffOn (U := ⟨ball c R, isOpen_ball⟩)
+    (Omega := ⟨Ω, hΩ⟩) hΩR (isBounded_ball.subset hΩR) u hū isOpen_univ hw.contDiffOn
+    (subset_univ _)
   have hΩu : ∀ᵐ y ∂volume.restrict Ω, y ∈ ball c R :=
     ae_restrict_of_forall_mem hΩ.measurableSet hΩR
   refine volume_ball_le_setLIntegral_upperContactSet_of_wkp (Ω := ⟨Ω, hΩ⟩)

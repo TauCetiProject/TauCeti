@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Calculus.Morse.Linearization
+import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -22,7 +23,10 @@ Conversely, a function that is `Cᵏ` on the domain and whose classical derivati
 whose norm is at most the sum of the `Lᵖ` seminorms of these derivatives
 (`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`). On a domain in `ℝⁿ`, the weak
 Hessian of a `W^{2,p}` function with a `C²` representative `f` has entries `∂ᵢ∂ⱼf` almost
-everywhere (`TauCeti.Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn`).
+everywhere (`TauCeti.Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn`). Consequently,
+for `u ∈ W^{2,p}(U)` and a function `w` that is `C²` near the closure of a bounded open `Ω ⊆ U`,
+`w - u` is an element of `W^{2,p}(Ω)` with weak Hessian `∇²w - ∇²u`
+(`TauCeti.Wkp.exists_value_ae_eq_sub_of_contDiffOn`).
 
 The weak-to-classical identification uses `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`; the norm
 comparison uses Mathlib's `norm_iteratedFDeriv_fderiv` and the Riesz isometry. These are the
@@ -338,6 +342,39 @@ theorem Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn (u : Wkp mu Om
     ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ i j
   rw [hx, iteratedGradientChain_succ, iteratedGradientChain_zero, fderiv_gradient,
     hessianOperator_single_apply (hf.contDiffAt (Omega.isOpen.mem_nhds hxΩ))]
+
+/-- **A `C²` function minus a strong function.** Let `u ∈ W^{2,p}(U)` have the representative
+`ū`, let `Ω ⊆ U` be open and bounded, and let `w` be `C²` on an open set containing the closure of
+`Ω`. Then `w - ū` represents an element `V` of `W^{2,p}(Ω)`, the restriction of `u` subtracted from
+the Sobolev function represented by `w`, whose weak Hessian is `∇²w - ∇²u` almost everywhere on
+`Ω`. -/
+theorem Wkp.exists_value_ae_eq_sub_of_contDiffOn {U : Opens (EuclideanSpace ℝ ι)}
+    (hΩU : Omega ≤ U) (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
+    (u : Wkp mu U p 2) {ū w : EuclideanSpace ℝ ι → ℝ}
+    (hū : (value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict U] ū)
+    {W : Set (EuclideanSpace ℝ ι)} (hW : IsOpen W) (hw : ContDiffOn ℝ 2 w W)
+    (hΩW : closure (Omega : Set (EuclideanSpace ℝ ι)) ⊆ W) :
+    ∃ V : Wkp mu Omega p 2,
+      (value 2 V : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] (fun y ↦ w y - ū y) ∧
+      ∀ᵐ y ∂mu.restrict Omega, ∀ i j : ι,
+        iteratedGradient 1 V y (EuclideanSpace.single j 1) i =
+          fderiv ℝ (fderiv ℝ w) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) -
+            iteratedGradient 1 u y (EuclideanSpace.single j 1) i := by
+  obtain ⟨V, hV⟩ := exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (p := p)
+    (Omega := Omega) 2 hW hw hΩ.isCompact_closure subset_closure hΩW
+  refine ⟨V - restrictL hΩU 2 u, ?_, ?_⟩
+  · rw [← valueL_apply, map_sub, valueL_apply, valueL_apply]
+    filter_upwards [Lp.coeFn_sub (value 2 V) (value 2 (restrictL hΩU 2 u)), hV,
+      value_restrictL_ae hΩU 2 u, ae_restrict_of_ae_restrict_of_subset hΩU hū]
+      with y h1 h2 h3 h4
+    rw [h1, Pi.sub_apply, h2, h3, h4]
+  · rw [← iteratedGradientL_apply, map_sub, iteratedGradientL_apply, iteratedGradientL_apply]
+    filter_upwards [Lp.coeFn_sub (iteratedGradient 1 V)
+        (iteratedGradient 1 (restrictL hΩU 2 u)),
+      iteratedGradient_one_single_apply_ae_eq_of_contDiffOn V (hw.mono (subset_closure.trans hΩW))
+        hV,
+      iteratedGradient_restrictL_ae hΩU 1 u] with y h1 h2 h3 i j
+    rw [h1, Pi.sub_apply, sub_apply, PiLp.sub_apply, h2, h3]
 
 end Euclidean
 
