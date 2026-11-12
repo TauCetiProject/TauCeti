@@ -84,7 +84,7 @@ theorem mem_weakSignCell_iff_rows {g : ι → (V →ᴬ[ℝ] ℝ)} {σ : ι → 
   rw [mem_weakSignCell]
   constructor
   · intro hx ⟨j, b⟩
-    have hxj := hx j
+    specialize hx j
     cases h : σ j <;> cases b <;> simp_all [weakSignCellRows]
   · intro hx j
     have h₁ := hx (j, true)
@@ -512,7 +512,7 @@ theorem isConvexPolyhedron_of_mem_realizedSignCellClosures
     [ContinuousAdd V] [ContinuousSMul ℝ V] [Finite ι]
     {g : ι → (V →ᴬ[ℝ] ℝ)} {P : Set V} (hP : P ∈ realizedSignCellClosures g) :
     TauCeti.IsConvexPolyhedron P := by
-  obtain ⟨σ, hσ, rfl⟩ := hP
+  obtain ⟨σ, -, rfl⟩ := hP
   exact isConvexPolyhedron_closure_signCell
 
 /-- Intersections of realized closed cells are extreme subsets of each cell;
@@ -522,8 +522,8 @@ theorem isExtreme_inter_of_mem_realizedSignCellClosures
     {g : ι → (V →ᴬ[ℝ] ℝ)} {P Q : Set V}
     (hP : P ∈ realizedSignCellClosures g) (hQ : Q ∈ realizedSignCellClosures g) :
     IsExtreme ℝ P (P ∩ Q) := by
-  obtain ⟨σ, hσ, rfl⟩ := hP
-  obtain ⟨τ, hτ, rfl⟩ := hQ
+  obtain ⟨σ, -, rfl⟩ := hP
+  obtain ⟨τ, -, rfl⟩ := hQ
   exact isExtreme_closure_signCell_inter
 
 end TauCeti.Convex
