@@ -10,7 +10,7 @@ public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 import Mathlib.Data.Int.Cast.Basic
 
 /-!
-# Positive Laurent polynomials with group-ring coefficients
+# Positive Laurent polynomials with integral monoid-algebra coefficients
 
 For a commutative monoid `P`, the natural-coefficient Laurent polynomials form a
 subsemiring of `LaurentRing (MonoidAlgebra ℤ P) K`. Its elements have nonnegative integer
@@ -38,16 +38,20 @@ namespace TauCeti.LaurentRing
 
 variable (P K : Type*) [CommMonoid P]
 
-/-- Include natural-coefficient Laurent polynomials in their integer-coefficient group ring. -/
+/-- Include natural-coefficient Laurent polynomials in those with integral monoid-algebra
+coefficients. -/
 noncomputable def natCoeffMap :
     LaurentRing (MonoidAlgebra ℕ P) K →+* LaurentRing (MonoidAlgebra ℤ P) K :=
   AddMonoidAlgebra.mapRingHom (K →₀ ℤ)
     (MonoidAlgebra.mapRingHom P (Nat.castRingHom ℤ))
 
 /-- The positive Laurent subsemiring over the integral monoid algebra is the image of
-the corresponding natural-coefficient Laurent ring. -/
+the corresponding natural-coefficient Laurent semiring. -/
 noncomputable def positive : Subsemiring (LaurentRing (MonoidAlgebra ℤ P) K) :=
   (natCoeffMap P K).rangeS
+
+/-- The positive subsemiring is the image of the natural-coefficient inclusion. -/
+theorem positive_def : positive P K = (natCoeffMap P K).rangeS := by rfl
 
 variable {P K}
 
@@ -63,6 +67,17 @@ theorem natCoeffMap_injective : Function.Injective (natCoeffMap P K) := by
   ext m a
   have hc := congrArg (fun r : LaurentRing (MonoidAlgebra ℤ P) K ↦ (r.coeff m).coeff a) h
   simpa only [coeff_natCoeffMap, Nat.cast_inj] using hc
+
+/-- A Laurent polynomial is positive exactly when it has a unique natural-coefficient
+representative. -/
+theorem mem_positive_iff_existsUnique (p : LaurentRing (MonoidAlgebra ℤ P) K) :
+    p ∈ positive P K ↔ ∃! q, natCoeffMap P K q = p := by
+  rw [positive_def, RingHom.mem_rangeS]
+  constructor
+  · rintro ⟨q, hq⟩
+    exact ⟨q, hq, fun y hy ↦ natCoeffMap_injective (hy.trans hq.symm)⟩
+  · rintro ⟨q, hq, _⟩
+    exact ⟨q, hq⟩
 
 /-- Positivity is exactly nonnegativity at every Laurent and coefficient-monoid exponent. -/
 theorem mem_positive_iff (p : LaurentRing (MonoidAlgebra ℤ P) K) :

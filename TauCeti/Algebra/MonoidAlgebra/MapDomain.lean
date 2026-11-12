@@ -65,6 +65,8 @@ coefficient does. No injectivity or surjectivity assumption on the coefficient m
 theorem mem_rangeS_mapRingHom_iff {S : Type*} [Semiring S] [Monoid M] (f : R →+* S)
     (p : MonoidAlgebra S M) :
     p ∈ (mapRingHom M f).rangeS ↔ ∀ m, p.coeff m ∈ f.rangeS := by
+  -- Expose the underlying set of the subsemiring so `RingHom.coe_rangeS` can rewrite
+  -- image membership into the set-theoretic range used by `MonoidAlgebra.range_map`.
   change p ∈ ((MonoidAlgebra.mapRingHom M f).rangeS : Set _) ↔ _
   rw [RingHom.coe_rangeS, MonoidAlgebra.coe_mapRingHom, MonoidAlgebra.range_map]
   rfl
