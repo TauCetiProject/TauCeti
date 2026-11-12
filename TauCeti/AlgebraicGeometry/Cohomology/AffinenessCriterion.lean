@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
 public import TauCeti.AlgebraicGeometry.Modules.LinearCombination
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
