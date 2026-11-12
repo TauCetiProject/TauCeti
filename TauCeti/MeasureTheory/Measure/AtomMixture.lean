@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
+public import TauCeti.MeasureTheory.Measure.Support
+import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Mixtures with one atom
@@ -19,7 +21,8 @@ the added Dirac component.
 The main results give the characteristic measure identities: evaluation on measurable sets,
 singleton masses, probability preservation, measurability in all three parameters, decomposition
 of a mixture with an absolutely continuous component, pushforward along measurable maps, and
-integration against the mixture.
+integration against the mixture. Its topological support is the union of the supports of the
+components with positive weight, including the two pure-component boundaries.
 -/
 
 public section
@@ -82,6 +85,24 @@ theorem atomMixture_zero {α : Type*} [MeasurableSpace α]
 theorem atomMixture_one {α : Type*} [MeasurableSpace α]
     (μ : Measure α) (c : α) : atomMixture μ c 1 = Measure.dirac c := by
   simp [atomMixture]
+
+/-- The support of an atom mixture contains exactly the supports of its positive-weight
+components. In a non-T₁ space the support of the atom is the closure of its singleton. -/
+theorem support_atomMixture {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [OpensMeasurableSpace α] (μ : Measure α) (c : α) (w : unitInterval) :
+    (μ.atomMixture c w).support =
+      if w = 0 then μ.support else if w = 1 then closure {c} else closure {c} ∪ μ.support := by
+  by_cases hw0 : w = 0
+  · simp [hw0]
+  by_cases hw1 : w = 1
+  · simp [hw1]
+  have hrest : ENNReal.ofReal (1 - (w : ℝ)) ≠ 0 :=
+    ENNReal.ofReal_ne_zero_iff.mpr (sub_pos.mpr
+      (unitInterval.coe_lt_one.mpr (unitInterval.lt_one_iff_ne_one.mpr hw1)))
+  rw [ite_eq_right hw0, ite_eq_right hw1, atomMixture_def, support_add,
+    support_smul_measure _ _ (ENNReal.ofReal_ne_zero_iff.mpr
+      (unitInterval.pos_iff_ne_zero.mpr hw0)),
+    support_smul_measure _ _ hrest, support_dirac]
 
 /-- An atom mixture of a probability measure is a probability measure. -/
 instance isProbabilityMeasure_atomMixture {α : Type*} [MeasurableSpace α]

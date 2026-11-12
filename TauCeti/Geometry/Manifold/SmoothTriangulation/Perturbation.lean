@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.StarImmersion
 
+import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.ContDiff
+import TauCeti.Geometry.Manifold.SmoothTriangulation.Lipschitz.Basic
+
 /-!
 # Small perturbations of embeddings of complexes
 
@@ -29,8 +32,12 @@ barycentric coordinates. The bound on `δ` depends only on `f`, not on `φ`. For
 of the edgewise subdivisions of `K` this gives one `δ` for all of them
 (`TauCeti.IsStarImmersion.exists_pos_forall_isStarImmersion_and_injective_edgewiseSubdivision`).
 The secant maps of `f` on fine edgewise subdivisions are such approximations, and so are their
-interpolations with `f` by a smooth cut-off function, which are rectilinear on one part of the
-complex and agree with `f` on another.
+interpolations with `f` by a cut-off function `φ` which is `Cᵐ` on every closed simplex:
+`AffineMap.lineMap (f (π x)) (s x) (φ (π x))`, with `s` the secant map and `π` the canonical map
+onto `|K|`. Such an interpolation is rectilinear on the simplices of the subdivision where
+`φ = 1` and agrees with `f` where `φ = 0`, and it is again an injective star immersion on every
+fine enough edgewise subdivision. This is how an embedding is made rectilinear near a compact set
+while it is kept fixed away from it, when local rectilinear triangulations are fitted together.
 
 ## Main results
 
@@ -39,6 +46,9 @@ complex and agree with `f` on another.
   a small constant are injective star immersions.
 * `TauCeti.IsStarImmersion.exists_pos_forall_isStarImmersion_and_injective_edgewiseSubdivision`:
   the same on all edgewise subdivisions, with a constant independent of the subdivision.
+* `TauCeti.IsStarImmersion.eventually_isStarImmersion_and_injective_lineMap_secantMap`:
+  the interpolation of an injective star immersion with its secant map by a cut-off function is
+  an injective star immersion on all sufficiently fine edgewise subdivisions.
 
 ## References
 
@@ -150,6 +160,67 @@ theorem exists_pos_forall_isStarImmersion_and_injective_edgewiseSubdivision [Lin
     exact isStarImmersion_secantMap (hp.symm ▸ hpinj)
   exact hpert edgewiseSubdivisionRealizationMap_injective
     (hps.exists_pos_mul_norm_sub_le_norm_sub le_rfl) hm hg hlip
+
+omit [Fintype ι] in
+/-- **Making an embedding rectilinear where a cut-off is one.** Let `f` be an injective `Cⁿ` star
+immersion, `1 ≤ n`, of a complex `K` on a finite vertex type into a normed space, and let
+`φ : |K| → ℝ` be `Cᵐ` on every closed simplex, `1 ≤ m`. For all sufficiently large `k`, the
+interpolation `AffineMap.lineMap (f (π x)) (s x) (φ (π x))` on the `k`-th edgewise subdivision is
+an injective `C^(min n m)` star immersion, where `s` is the secant map of `f` on the subdivision
+and `π` is the canonical map onto `|K|`. It is linear on every closed simplex of the subdivision
+on which `φ = 1`, and agrees with `f ∘ π` where `φ = 0`. -/
+theorem eventually_isStarImmersion_and_injective_lineMap_secantMap
+    [Finite ι] [LinearOrder ι] {m : WithTop ℕ∞} {φ : Realization K → ℝ} (h : IsStarImmersion n f)
+    (hn : 1 ≤ n) (hf : Injective f) (hm : 1 ≤ m)
+    (hφ : ∀ σ : Face K, ∃ Φ : (σ.1 → ℝ) → ℝ,
+      (∀ x : StandardSimplex σ.1, Φ (fun a => x.1 a) = φ (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ m Φ (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights)) :
+    ∀ᶠ k in atTop,
+      IsStarImmersion (min n m) (fun x : Realization (K.edgewiseSubdivision k) =>
+        AffineMap.lineMap (f (edgewiseSubdivisionRealizationMap K k x))
+          ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x)
+          (φ (edgewiseSubdivisionRealizationMap K k x))) ∧
+      Injective (fun x : Realization (K.edgewiseSubdivision k) =>
+        AffineMap.lineMap (f (edgewiseSubdivisionRealizationMap K k x))
+          ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x)
+          (φ (edgewiseSubdivisionRealizationMap K k x))) := by
+  have := Fintype.ofFinite ι
+  obtain ⟨δ, hδ, hpert⟩ := h.exists_pos_forall_isStarImmersion_and_injective_edgewiseSubdivision
+    hn hf
+  -- On every closed simplex, `f` is the restriction of a `Cⁿ` map in barycentric coordinates.
+  have hCn (σ : Face K) : ∃ F : (σ.1 → ℝ) → E,
+      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ n F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) := by
+    obtain ⟨F, hFg, hF, -⟩ := isSimplexImmersion_iff.mp (h.isSimplexImmersion σ)
+    exact ⟨F, hFg, contMDiffOn_iff_contDiffOn.mp hF⟩
+  have hC1 (σ : Face K) : ∃ F : (σ.1 → ℝ) → E,
+      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) :=
+    (hCn σ).imp fun _ hF => ⟨hF.1, hF.2.of_le hn⟩
+  have hφ1 (σ : Face K) : ∃ Φ : (σ.1 → ℝ) → ℝ,
+      (∀ x : StandardSimplex σ.1, Φ (fun a => x.1 a) = φ (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 Φ (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) :=
+    (hφ σ).imp fun _ hΦ => ⟨hΦ.1, hΦ.2.of_le hm⟩
+  filter_upwards [eventually_norm_lineMap_secantMap_sub_sub_le_edgewiseSubdivision hC1 hφ1 hδ]
+    with k hk
+  refine hpert (le_min hn hm) (fun ρ => ?_) hk
+  -- On a closed simplex of the subdivision, `f ∘ π` and `φ ∘ π` are smooth and the secant map is
+  -- linear, so their interpolation is smooth.
+  obtain ⟨Gf, hGf, hGfc⟩ := exists_contDiffOn_edgewiseSubdivisionRealizationMap_faceInclusion hCn ρ
+  obtain ⟨Gφ, hGφ, hGφc⟩ := exists_contDiffOn_edgewiseSubdivisionRealizationMap_faceInclusion hφ ρ
+  let Gs : (ρ.1 → ℝ) →L[ℝ] E := (Fintype.linearCombination ℝ fun a : ρ.1 =>
+    f (edgewiseSubdivisionRealizationMap K k (vertex _ a))).toContinuousLinearMap
+  have hGs (x : StandardSimplex ρ.1) : Gs (fun a => x.1 a) =
+      (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)
+        (faceInclusion _ ρ x) := by
+    rw [secantMap_faceInclusion]
+    simp [Gs, Fintype.linearCombination_apply]
+  refine ⟨fun w => AffineMap.lineMap (Gf w) (Gs w) (Gφ w), fun x => by
+    simp only [hGf, hGs, hGφ], ?_⟩
+  simp_rw [AffineMap.lineMap_apply_module']
+  exact ((hGφc.of_le (min_le_right _ _)).smul
+    (Gs.contDiff.contDiffOn.sub (hGfc.of_le (min_le_left _ _)))).add
+    (hGfc.of_le (min_le_left _ _))
 
 end IsStarImmersion
 

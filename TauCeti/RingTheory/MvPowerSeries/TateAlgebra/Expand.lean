@@ -120,8 +120,8 @@ variable [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < t i)]
 @[simp]
 theorem norm_restrictedExpand (f : IsRestricted.subring (R := R) t) :
     ‖restrictedExpand p hp ht f‖ = ‖f‖ := by
-  refine le_antisymm ((norm_le_iff (norm_nonneg f)).2 fun α ↦ ?_)
-    ((norm_le_iff (norm_nonneg _)).2 fun μ ↦ ?_)
+  refine le_antisymm (norm_le_iff.2 fun α ↦ ?_)
+    (norm_le_iff.2 fun μ ↦ ?_)
   · rw [coe_restrictedExpand]
     by_cases hα0 : coeff α (expand p hp (f : MvPowerSeries σ R)) = 0
     · simp [hα0]
@@ -186,8 +186,7 @@ most the Gauss norm of `f`. -/
 theorem norm_restrictedExpandComponent_mul_prod_le (ν : σ →₀ ℕ)
     (f : IsRestricted.subring (R := R) r) :
     ‖restrictedExpandComponent hp ht ν f‖ * ν.prod (r · ^ ·) ≤ ‖f‖ := by
-  rw [← le_div_iff₀ (prod_pow_pos ν), norm_le_iff (div_nonneg (norm_nonneg f)
-    (prod_pow_pos ν).le)]
+  rw [← le_div_iff₀ (prod_pow_pos ν), norm_le_iff]
   intro μ
   rw [le_div_iff₀ (prod_pow_pos ν), coeff_restrictedExpandComponent, mul_assoc,
     ← prod_pow_nsmul p ht, ← prod_pow_add]
@@ -200,7 +199,7 @@ theorem exists_norm_restrictedExpandComponent_mul_prod_eq
     (f : IsRestricted.subring (R := R) r) :
     ∃ ν : σ →₀ ℕ, (∀ i, ν i < p) ∧
       ‖restrictedExpandComponent hp ht ν f‖ * ν.prod (r · ^ ·) = ‖f‖ := by
-  obtain ⟨α, hα⟩ := exists_achievesGaussNorm f
+  obtain ⟨α, hα⟩ := f.2.exists_achievesGaussNorm
   set ν := α.mapRange (· % p) (Nat.zero_mod p)
   set μ := α.mapRange (· / p) (Nat.zero_div p)
   refine ⟨ν, fun i ↦ Nat.mod_lt _ (Nat.pos_of_ne_zero hp),
