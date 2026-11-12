@@ -18,7 +18,8 @@ a Serre graph keeps those directed edge identities, so its paths can be used for
 graph groups, and labelled-graph arguments.
 
 The geometric edges of a Serre graph are the reversal pairs `{e, rev e}`; data attached to an
-unoriented edge, such as the edge groups of a graph of groups, is indexed by them.
+unoriented edge, such as the edge groups of a graph of groups, is indexed by them, and
+`GeomEdge.out` chooses a dart representing each of them.
 
 For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps every vertex of `Γ`
 and the darts in `S`.
@@ -117,6 +118,19 @@ def GeomEdge.lift {β : Sort*} (f : Γ.E → β) (hf : ∀ e, f (Γ.rev e) = f e
 @[simp] theorem GeomEdge.lift_toGeomEdge {β : Sort*} (f : Γ.E → β)
     (hf : ∀ e, f (Γ.rev e) = f e) (e : Γ.E) : GeomEdge.lift Γ f hf (Γ.toGeomEdge e) = f e :=
   (rfl)
+
+/-- A chosen dart representing a geometric edge. -/
+noncomputable def GeomEdge.out (y : Γ.GeomEdge) : Γ.E :=
+  Quot.out y
+
+/-- The chosen dart of a geometric edge lies on it. -/
+@[simp] theorem toGeomEdge_out (y : Γ.GeomEdge) : Γ.toGeomEdge (GeomEdge.out Γ y) = y :=
+  Quot.out_eq y
+
+/-- The dart representing the geometric edge of a dart `e` is `e` or its reverse. -/
+theorem GeomEdge.out_toGeomEdge_eq_or_eq_rev (e : Γ.E) :
+    GeomEdge.out Γ (Γ.toGeomEdge e) = e ∨ GeomEdge.out Γ (Γ.toGeomEdge e) = Γ.rev e :=
+  Γ.toGeomEdge_eq_toGeomEdge_iff.mp (Γ.toGeomEdge_out _).symm
 
 /-- An orientation chooses one dart from each reverse pair. -/
 def IsOrientation (O : Set Γ.E) : Prop := ∀ e, e ∈ O ↔ Γ.rev e ∉ O
