@@ -41,10 +41,6 @@ character, depend only on the shape of `t`.
 ## References
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 4.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layers 2 and 3: the Layer 3 Specht module `spechtModule μ` is indexed by the shape `μ` alone,
-  while the Layer 2 Young symmetrizer and its left ideal are built from a tableau, so the
-  tableau-independence proved here is what makes the Layer 3 indexing legitimate.
 -/
 
 public section

@@ -85,20 +85,19 @@ section Relator
 
 variable {n : ℕ}
 
-/-- **Labute's Theorem 2 for `q ≠ 2`.** Let `r, r' ∈ Φ(F)` be relators of the free pro-`p` group
+/-- **Labute's Theorem 2 for `q ≠ 2`.** Let `r, r'` be relators of the free pro-`p` group
 on `n` generators whose presented groups are Demushkin groups with the same `q`-invariant `q ≠ 2`.
 Then a continuous automorphism of `F` carries `r` to `r'`; in particular the closed normal
 closures of `r` and `r'` are carried to each other. -/
 theorem freeProP.exists_continuousMulEquiv_apply_eq_of_demushkinQ_eq
-    {r r' : freeProP p (Fin n)} (hr : r ∈ proPFrattini p (freeProP p (Fin n)))
-    (hr' : r' ∈ proPFrattini p (freeProP p (Fin n)))
+    {r r' : freeProP p (Fin n)}
     (hG : IsDemushkin p (presentedProP p (Fin n) {r}))
     (hG' : IsDemushkin p (presentedProP p (Fin n) {r'}))
     (hq : demushkinQ hG = demushkinQ hG') (hq2 : demushkinQ hG ≠ 2) :
     ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n), e r = r' := by
   obtain ⟨e, he⟩ :=
-    exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two hr hG hq2
-  obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two hr'
+    exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two hG hq2
+  obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two
     hG' fun h ↦ hq2 (hq.trans h)
   rw [← hq] at he'
   exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
@@ -142,7 +141,7 @@ theorem freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_
   have hr' := hG'.mem_proPFrattini_of_presentedProP_singleton
   by_cases hq : demushkinQ hG = 2
   swap
-  · exact exists_continuousMulEquiv_apply_eq_of_demushkinQ_eq hr hr' hG hG'
+  · exact exists_continuousMulEquiv_apply_eq_of_demushkinQ_eq hG hG'
       (demushkinQ_eq_of_range_demushkinCharacter_eq hG hG' h) hq
   -- `q(G) = 2` forces `p = 2`, since `p ∣ q(G)`.
   obtain rfl : p = 2 :=
