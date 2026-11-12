@@ -59,6 +59,9 @@ the points of imaginary part less than one.
   derivative of a member is complex linear, also at boundary points.
 * `TauCeti.ClosedUpperHalfPlane.tangentCoordChange_smul`: the tangent coordinate changes of a
   Riemann surface with boundary are complex linear.
+* `TauCeti.ClosedUpperHalfPlane.mem_borderedHolomorphicGroupoid_of_contDiffAt`: an open partial
+  homeomorphism given, in both directions, by functions complex analytic on its source and target
+  is a member.
 * `TauCeti.ClosedUpperHalfPlane.toOpenPartialHomeomorph_mem_borderedHolomorphicGroupoid`: a
   homeomorphism given by entire functions in both directions is a member.
 
@@ -294,6 +297,50 @@ theorem tangentCoordChange_smul {x y z : M}
   exact fderivWithin_apply_smul_of_mem_borderedHolomorphicGroupoid he hz c v
 
 
+/-! ### A criterion by ambient analytic representatives -/
+
+/-- A self-map of the closed upper half-plane that agrees at each point of a set with a function
+complex analytic there in the ambient coordinate is smooth on that set up to the boundary, and
+complex differentiable at its points of positive imaginary part. -/
+private theorem contDiffOn_and_differentiableOn_of_contDiffAt
+    {f : ClosedUpperHalfPlane → ClosedUpperHalfPlane} {s : Set ClosedUpperHalfPlane} {F : ℂ → ℂ}
+    (hF : ∀ x ∈ s, ContDiffAt ℂ ∞ F (x : ℂ) ∧ (f x : ℂ) = F x) :
+    ContDiffOn ℝ ∞ (closedUpperHalfPlaneModel ∘ f ∘ closedUpperHalfPlaneModel.symm)
+        (closedUpperHalfPlaneModel.symm ⁻¹' s ∩ range closedUpperHalfPlaneModel) ∧
+      DifferentiableOn ℂ (closedUpperHalfPlaneModel ∘ f ∘ closedUpperHalfPlaneModel.symm)
+        (closedUpperHalfPlaneModel.symm ⁻¹' s ∩ {z | 0 < z.im}) := by
+  have heq : ∀ {z : ℂ}, 0 ≤ z.im → closedUpperHalfPlaneModel.symm z ∈ s →
+      (closedUpperHalfPlaneModel ∘ f ∘ closedUpperHalfPlaneModel.symm) z = F z := by
+    intro z hz hs
+    simpa [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz] using (hF _ hs).2
+  have hat : ∀ {z : ℂ}, 0 ≤ z.im → closedUpperHalfPlaneModel.symm z ∈ s → ContDiffAt ℂ ∞ F z := by
+    intro z hz hs
+    simpa [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz] using (hF _ hs).1
+  refine ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · have him : 0 ≤ z.im := by simpa using hz.2
+    refine ((hat him hz.1).restrict_scalars ℝ).contDiffWithinAt.congr (fun y hy ↦ ?_) ?_
+    · exact heq (by simpa using hy.2) hy.1
+    · exact heq him hz.1
+  · have him : 0 ≤ z.im := le_of_lt hz.2
+    refine ((hat him hz.1).differentiableAt (by simp)).differentiableWithinAt.congr
+      (fun y hy ↦ ?_) ?_
+    · exact heq (le_of_lt hy.2) hy.1
+    · exact heq him hz.1
+
+/-- An open partial homeomorphism of the closed upper half-plane belongs to the bordered
+holomorphic groupoid when, in the ambient coordinate, it agrees on its source with a function
+complex analytic at each point of the source, and its inverse agrees on its target with a
+function complex analytic at each point of the target. -/
+theorem mem_borderedHolomorphicGroupoid_of_contDiffAt
+    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane} {F G : ℂ → ℂ}
+    (hF : ∀ x ∈ e.source, ContDiffAt ℂ ∞ F (x : ℂ) ∧ (e x : ℂ) = F x)
+    (hG : ∀ x ∈ e.target, ContDiffAt ℂ ∞ G (x : ℂ) ∧ (e.symm x : ℂ) = G x) :
+    e ∈ borderedHolomorphicGroupoid := by
+  obtain ⟨hFc, hFd⟩ := contDiffOn_and_differentiableOn_of_contDiffAt hF
+  obtain ⟨hGc, hGd⟩ := contDiffOn_and_differentiableOn_of_contDiffAt hG
+  rw [mem_borderedHolomorphicGroupoid_iff, contDiffGroupoid, mem_groupoid_of_pregroupoid]
+  exact ⟨⟨hFc, hGc⟩, hFd, hGd⟩
+
 /-! ### Examples -/
 
 /-- A homeomorphism of the closed upper half-plane given in the ambient coordinate by an entire
@@ -303,31 +350,10 @@ theorem toOpenPartialHomeomorph_mem_borderedHolomorphicGroupoid
     {h : ClosedUpperHalfPlane ≃ₜ ClosedUpperHalfPlane} {F G : ℂ → ℂ}
     (hF : Differentiable ℂ F) (hG : Differentiable ℂ G)
     (hhF : ∀ z, (h z : ℂ) = F z) (hhG : ∀ z, (h.symm z : ℂ) = G z) :
-    h.toOpenPartialHomeomorph ∈ borderedHolomorphicGroupoid := by
-  have hcoord : ∀ {k : ClosedUpperHalfPlane → ClosedUpperHalfPlane} {K : ℂ → ℂ},
-      (∀ z, (k z : ℂ) = K z) → ∀ {z : ℂ}, 0 ≤ z.im →
-        (closedUpperHalfPlaneModel ∘ k ∘ closedUpperHalfPlaneModel.symm) z = K z := by
-    intro k K hk z hz
-    simp only [Function.comp_apply, closedUpperHalfPlaneModel_apply, hk]
-    rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz]
-  have hsmooth : ∀ {k : ClosedUpperHalfPlane → ClosedUpperHalfPlane} {K : ℂ → ℂ},
-      Differentiable ℂ K → (∀ z, (k z : ℂ) = K z) →
-        ContDiffOn ℝ ∞ (closedUpperHalfPlaneModel ∘ k ∘ closedUpperHalfPlaneModel.symm)
-          (closedUpperHalfPlaneModel.symm ⁻¹' univ ∩ range closedUpperHalfPlaneModel) := by
-    intro k K hK hk
-    refine ((hK.contDiff (n := ∞)).restrict_scalars ℝ).contDiffOn.congr fun z hz ↦ ?_
-    exact hcoord hk (by simpa using hz.2)
-  have hholo : ∀ {k : ClosedUpperHalfPlane → ClosedUpperHalfPlane} {K : ℂ → ℂ},
-      Differentiable ℂ K → (∀ z, (k z : ℂ) = K z) →
-        DifferentiableOn ℂ (closedUpperHalfPlaneModel ∘ k ∘ closedUpperHalfPlaneModel.symm)
-          (closedUpperHalfPlaneModel.symm ⁻¹' univ ∩ {z | 0 < z.im}) := by
-    intro k K hK hk
-    exact hK.differentiableOn.congr fun z hz ↦ hcoord hk (le_of_lt hz.2)
-  refine mem_borderedHolomorphicGroupoid_iff.2 ⟨⟨?_, ?_⟩, ?_, ?_⟩
-  · simpa [contDiffPregroupoid] using hsmooth hF hhF
-  · simpa [contDiffPregroupoid] using hsmooth hG hhG
-  · simpa using hholo hF hhF
-  · simpa using hholo hG hhG
+    h.toOpenPartialHomeomorph ∈ borderedHolomorphicGroupoid :=
+  mem_borderedHolomorphicGroupoid_of_contDiffAt
+    (fun z _ ↦ ⟨(hF.contDiff (n := ∞)).contDiffAt, hhF z⟩)
+    (fun z _ ↦ ⟨(hG.contDiff (n := ∞)).contDiffAt, hhG z⟩)
 
 /-- Translation by one, as a homeomorphism of the closed upper half-plane. -/
 def addOne : ClosedUpperHalfPlane ≃ₜ ClosedUpperHalfPlane :=

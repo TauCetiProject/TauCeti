@@ -12,267 +12,193 @@ public import TauCeti.Topology.Constructions.DoubleAlong.Disc
 /-!
 # The closed unit disc as a Riemann surface with boundary
 
-The closed unit disc is a Riemann surface with boundary, modelled on the closed upper half-plane.
-For a point `ζ` of the unit circle, the Cayley chart `TauCeti.ClosedUnitDisc.cayleyChart ζ` is
-`z ↦ I (ζ - z) / (ζ + z)`. It is defined on the closed disc minus `-ζ`, its image is the whole
-closed upper half-plane, and its inverse is `w ↦ ζ (I - w) / (I + w)`: the imaginary part of
-`I (ζ - z) / (ζ + z)` is `(1 - ‖z‖²) / ‖ζ + z‖²`, so `‖z‖ ≤ 1` exactly when the image has
-nonnegative imaginary part, and the image is real exactly when `‖z‖ = 1`. The atlas consists of
+The closed unit disc `Complex.UnitClosedDisc` is a Riemann surface with boundary, modelled on the
+closed upper half-plane. For a point `ζ` of the unit circle, the Cayley chart
+`Complex.UnitClosedDisc.cayleyChart ζ` is `z ↦ I (ζ - z) / (ζ + z)`. It is defined on the closed
+disc minus `-ζ`, its image is the whole closed upper half-plane, and its inverse is
+`w ↦ ζ (I - w) / (w + I)`: the imaginary part of `I (ζ - z) / (ζ + z)` is
+`(1 - ‖z‖²) / ‖ζ + z‖²`, so the image of `z` is real exactly when `‖z‖ = 1`. The atlas consists of
 the Cayley charts for all `ζ`; the chart at `z` uses `ζ = 1` when `0 ≤ re z` and `ζ = -1`
 otherwise. The transition maps are Möbius maps preserving the closed upper half-plane, with their
 pole on the real axis, so they are holomorphic on their domains, up to the boundary, and lie in
 the bordered holomorphic groupoid.
 
-The manifold interior is the open unit disc, and the manifold boundary is the unit circle
-`TauCeti.DoubleAlong.discBoundary`, the boundary along which `TauCeti.DoubleAlong` doubles the
-disc to the Riemann sphere. The induced complex structure on the interior is the standard one:
-the inclusion of the interior into `ℂ` is analytic.
+The manifold interior is the open unit disc, and the manifold boundary is the unit circle, which
+`Complex.UnitClosedDisc.homeomorphClosedBall` identifies with `TauCeti.DoubleAlong.discBoundary`,
+the boundary along which `TauCeti.DoubleAlong` doubles the disc to the Riemann sphere. The
+inclusion of the closed disc into `ℂ` is smooth up to the boundary, and the inclusion of the
+interior into `ℂ` is analytic for the complex structure induced on the interior.
 
-The carrier `TauCeti.ClosedUnitDisc` is a type synonym for `closedBall (0 : ℂ) 1`, the carrier of
-`TauCeti.DoubleAlong.discBoundary`. It is a synonym, not the subtype itself, because the subtype
-already carries the half-space atlas `TauCeti.instChartedSpaceClosedBallComplex` modelled on
-`EuclideanHalfSpace 2`, and the model of a charted space is an `outParam`: a second
-`ChartedSpace` instance on the same type would make chart lookups ambiguous.
+Mathlib's `closedBall (0 : ℂ) 1` already carries the half-space atlas
+`TauCeti.instChartedSpaceClosedBallComplex` modelled on `EuclideanHalfSpace 2`, and the model of a
+charted space is an `outParam`, so the Cayley atlas is put on the type synonym
+`Complex.UnitClosedDisc` instead.
 
 ## Main declarations
 
-* `TauCeti.ClosedUnitDisc`: the closed unit disc, as a type synonym of `closedBall (0 : ℂ) 1`.
-* `TauCeti.ClosedUnitDisc.cayleyChart`: the Cayley chart attached to a point of the unit circle.
-* `TauCeti.ClosedUnitDisc.instChartedSpace`: the atlas of Cayley charts.
-* `TauCeti.ClosedUnitDisc.instHasGroupoid`: the Cayley charts have bordered holomorphic
+* `Complex.UnitClosedDisc.cayleyChart`: the Cayley chart attached to a point of the unit circle.
+* `Complex.UnitClosedDisc.instChartedSpace`: the atlas of Cayley charts.
+* `Complex.UnitClosedDisc.instHasGroupoid`: the Cayley charts have bordered holomorphic
   transition maps, so the closed disc is a Riemann surface with boundary.
-* `TauCeti.ClosedUnitDisc.mem_borderedInterior_iff` and
-  `TauCeti.ClosedUnitDisc.compl_borderedInterior`: the interior is the open disc and its
-  complement is the boundary circle `TauCeti.DoubleAlong.discBoundary`.
-* `TauCeti.ClosedUnitDisc.contMDiff_coe_borderedInterior`: the inclusion of the interior into
-  `ℂ` is analytic, so the interior carries the standard complex structure.
+* `Complex.UnitClosedDisc.mem_borderedInterior_iff` and
+  `Complex.UnitClosedDisc.compl_borderedInterior`: the interior is the open disc and its
+  complement is the unit circle, which `Complex.UnitClosedDisc.image_compl_borderedInterior`
+  identifies with `TauCeti.DoubleAlong.discBoundary`.
+* `Complex.UnitClosedDisc.contMDiff_coe`: the inclusion of the closed disc into `ℂ` is smooth up
+  to the boundary.
+* `Complex.UnitClosedDisc.contMDiff_coe_borderedInterior`: the inclusion of the interior into
+  `ℂ` is analytic for the induced complex structure.
 
 ## References
 
-* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
-  Colloquium Publications **52**, 2012, Section 2.4, for Riemann surfaces with boundary.
+* L. V. Ahlfors and L. Sario, *Riemann Surfaces*, Princeton University Press, 1960, Ch. II, for
+  bordered Riemann surfaces.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
-open Set Complex Metric Filter
-open scoped Manifold ContDiff Topology
+open Set Metric Filter TauCeti
+open scoped Manifold ContDiff Topology Complex.UnitDisc
 
-namespace TauCeti
+namespace Complex.UnitClosedDisc
 
-/-- The closed unit disc in `ℂ`, as a type synonym of `closedBall (0 : ℂ) 1`. It carries the
-atlas of Cayley charts modelled on the closed upper half-plane. The synonym keeps this atlas
-apart from the half-space atlas `TauCeti.instChartedSpaceClosedBallComplex` of the subtype. -/
-def ClosedUnitDisc : Type := closedBall (0 : ℂ) 1
-
-namespace ClosedUnitDisc
-
-/-- The closed unit disc carries the subspace topology of `ℂ`. -/
-instance instTopologicalSpace : TopologicalSpace ClosedUnitDisc :=
-  inferInstanceAs (TopologicalSpace (closedBall (0 : ℂ) 1))
-
-/-- A point of the closed unit disc is a complex number. -/
-instance instCoeOut : CoeOut ClosedUnitDisc ℂ :=
-  ⟨fun z : closedBall (0 : ℂ) 1 ↦ (z : ℂ)⟩
-
-/-- The inclusion of the closed unit disc into `ℂ` is continuous. -/
-theorem continuous_coe : Continuous ((↑) : ClosedUnitDisc → ℂ) :=
-  continuous_subtype_val
-
-/-- A point of the closed unit disc is determined by its value in `ℂ`. -/
-theorem coe_injective : Function.Injective ((↑) : ClosedUnitDisc → ℂ) :=
-  Subtype.val_injective
-
-/-- The closed unit disc carries the topology induced from `ℂ`. -/
-theorem isInducing_coe : Topology.IsInducing ((↑) : ClosedUnitDisc → ℂ) :=
-  Topology.IsInducing.subtypeVal
-
-/-- A point of the closed unit disc has norm at most one. -/
-theorem norm_coe_le_one (z : ClosedUnitDisc) : ‖(z : ℂ)‖ ≤ 1 :=
-  mem_closedBall_zero_iff.1 (z : closedBall (0 : ℂ) 1).2
-
-/-- The identity, from the closed unit disc to the subtype `closedBall (0 : ℂ) 1` it is a synonym
-of. -/
-def homeomorphClosedBall : ClosedUnitDisc ≃ₜ closedBall (0 : ℂ) 1 :=
+/-- The identity, from the closed unit disc to the subtype `closedBall (0 : ℂ) 1` it is a type
+synonym of. -/
+def homeomorphClosedBall : 𝕔𝔻 ≃ₜ closedBall (0 : ℂ) 1 :=
   Homeomorph.refl _
 
 @[simp]
-theorem coe_homeomorphClosedBall (z : ClosedUnitDisc) : (homeomorphClosedBall z : ℂ) = z :=
-  rfl
+theorem coe_homeomorphClosedBall (z : 𝕔𝔻) : (homeomorphClosedBall z : ℂ) = z :=
+  (rfl)
 
 @[simp]
 theorem coe_homeomorphClosedBall_symm (z : closedBall (0 : ℂ) 1) :
     (homeomorphClosedBall.symm z : ℂ) = z :=
-  rfl
-
-/-- A complex number of norm at most one, as a point of the closed unit disc. -/
-def mk (z : ℂ) (hz : ‖z‖ ≤ 1) : ClosedUnitDisc :=
-  (⟨z, mem_closedBall_zero_iff.2 hz⟩ : closedBall (0 : ℂ) 1)
-
-@[simp]
-theorem coe_mk (z : ℂ) (hz : ‖z‖ ≤ 1) : (mk z hz : ℂ) = z :=
-  rfl
-
-/-! ### Algebra of the Cayley transform -/
-
-private theorem normSq_of_norm_eq_one {ζ : ℂ} (hζ : ‖ζ‖ = 1) : normSq ζ = 1 := by
-  rw [normSq_eq_norm_sq, hζ, one_pow]
-
-private theorem ne_zero_of_norm_eq_one {ζ : ℂ} (hζ : ‖ζ‖ = 1) : ζ ≠ 0 := by
-  rintro rfl
-  simp at hζ
-
-/-- The imaginary part of the Cayley transform is `(1 - ‖z‖²) / ‖ζ + z‖²`. -/
-theorem im_cayley {ζ : ℂ} (hζ : ‖ζ‖ = 1) (z : ℂ) :
-    (I * (ζ - z) / (ζ + z)).im = (1 - normSq z) / normSq (ζ + z) := by
-  have h1 := normSq_of_norm_eq_one hζ
-  rw [normSq_apply] at h1
-  rw [div_im, ← sub_div, normSq_apply, normSq_apply]
-  congr 1
-  simp only [mul_re, mul_im, I_re, I_im, sub_re, sub_im, add_re, add_im]
-  linear_combination h1
-
-private theorem norm_cayleyInv {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : ℂ) :
-    ‖ζ * (I - w) / (I + w)‖ = ‖I - w‖ / ‖I + w‖ := by
-  rw [norm_div, norm_mul, hζ, one_mul]
-
-/-- The inverse Cayley transform of a point of the closed upper half-plane lies in the closed unit
-disc. -/
-theorem norm_cayleyInv_le_one {ζ : ℂ} (hζ : ‖ζ‖ = 1) {w : ℂ} (hw : 0 ≤ w.im) :
-    ‖ζ * (I - w) / (I + w)‖ ≤ 1 := by
-  rw [norm_cayleyInv hζ, norm_sub_rev, add_comm]
-  exact (norm_sub_I_div_norm_add_I_le_one_iff (add_I_ne_zero_of_im_nonneg hw)).2 hw
-
-/-- The inverse Cayley transform with center `ζ` never takes the value `-ζ`. -/
-theorem cayleyInv_ne_neg {ζ : ℂ} (hζ : ‖ζ‖ = 1) {w : ℂ} (hw : 0 ≤ w.im) :
-    ζ * (I - w) / (I + w) ≠ -ζ := by
-  intro h
-  have hζ0 := ne_zero_of_norm_eq_one hζ
-  have hw0 := add_comm I w ▸ add_I_ne_zero_of_im_nonneg hw
-  rw [div_eq_iff hw0] at h
-  have : ζ * (2 * I) = 0 := by linear_combination h
-  simp [hζ0, I_ne_zero] at this
-
-/-- The inverse Cayley transform undoes the Cayley transform away from `-ζ`. -/
-theorem cayleyInv_cayley {ζ z : ℂ} (hζ : ‖ζ‖ = 1) (hz : z ≠ -ζ) :
-    ζ * (I - I * (ζ - z) / (ζ + z)) / (I + I * (ζ - z) / (ζ + z)) = z := by
-  have hζ0 := ne_zero_of_norm_eq_one hζ
-  have hz0 : ζ + z ≠ 0 := fun h ↦ hz (by linear_combination h)
-  have h2 : I + I * (ζ - z) / (ζ + z) = 2 * I * ζ / (ζ + z) := by
-    field_simp
-    ring
-  rw [h2, div_eq_iff (by simp [hζ0, hz0, I_ne_zero])]
-  field_simp
-  ring
-
-/-- The Cayley transform undoes the inverse Cayley transform on the closed upper half-plane. -/
-theorem cayley_cayleyInv {ζ w : ℂ} (hζ : ‖ζ‖ = 1) (hw : 0 ≤ w.im) :
-    I * (ζ - ζ * (I - w) / (I + w)) / (ζ + ζ * (I - w) / (I + w)) = w := by
-  have hζ0 := ne_zero_of_norm_eq_one hζ
-  have hw0 := add_comm I w ▸ add_I_ne_zero_of_im_nonneg hw
-  have h2 : ζ + ζ * (I - w) / (I + w) = 2 * I * ζ / (I + w) := by
-    field_simp
-    ring
-  rw [h2, div_eq_iff (by simp [hζ0, hw0, I_ne_zero])]
-  field_simp
-  ring_nf
+  (rfl)
 
 /-! ### Cayley charts -/
 
-/-- The Cayley transform of a point of the closed unit disc has nonnegative imaginary part. -/
-theorem im_cayley_nonneg {ζ : ℂ} (hζ : ‖ζ‖ = 1) (z : ClosedUnitDisc) :
-    0 ≤ (I * (ζ - z) / (ζ + z)).im := by
-  rw [im_cayley hζ]
-  refine div_nonneg ?_ (normSq_nonneg _)
-  rw [sub_nonneg, normSq_eq_norm_sq]
-  exact pow_le_one₀ (norm_nonneg _) (norm_coe_le_one z)
+private theorem ne_zero_of_norm_eq_one {ζ : ℂ} (hζ : ‖ζ‖ = 1) : ζ ≠ 0 :=
+  ne_zero_of_norm_ne_zero (hζ ▸ one_ne_zero)
+
+private theorem add_ne_zero_of_ne_neg {ζ z : ℂ} (hz : z ≠ -ζ) : ζ + z ≠ 0 :=
+  fun h ↦ hz (eq_neg_of_add_eq_zero_right h)
+
+/-- The map `z ↦ I (ζ - z) / (ζ + z)` is analytic away from its pole `-ζ`. -/
+private theorem contDiffAt_I_mul_sub_div_add {n : ℕ∞ω} (ζ : ℂ) {z : ℂ} (hz : ζ + z ≠ 0) :
+    ContDiffAt ℂ n (fun z : ℂ ↦ I * (ζ - z) / (ζ + z)) z :=
+  (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
+    (contDiffAt_const.add contDiffAt_id) hz
+
+/-- The map `w ↦ ζ (I - w) / (w + I)` is analytic away from its pole `-I`. -/
+private theorem contDiffAt_mul_I_sub_div_add_I {n : ℕ∞ω} (ζ : ℂ) {w : ℂ} (hw : w + I ≠ 0) :
+    ContDiffAt ℂ n (fun w : ℂ ↦ ζ * (I - w) / (w + I)) w :=
+  (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
+    (contDiffAt_id.add contDiffAt_const) hw
 
 /-- The Cayley chart attached to a point `ζ` of the unit circle: the map
 `z ↦ I (ζ - z) / (ζ + z)` from the closed unit disc minus `-ζ` onto the closed upper half-plane,
-with inverse `w ↦ ζ (I - w) / (I + w)`. It sends `ζ` to `0` and `0` to `I`. -/
-def cayleyChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
-    OpenPartialHomeomorph ClosedUnitDisc ClosedUpperHalfPlane where
-  toFun z := ⟨I * (ζ - z) / (ζ + z), im_cayley_nonneg hζ z⟩
-  invFun w := mk (ζ * (I - w) / (I + w)) (norm_cayleyInv_le_one hζ w.2)
-  source := {z : ClosedUnitDisc | (z : ℂ) ≠ -ζ}
+with inverse `w ↦ ζ (I - w) / (w + I)`. It sends `ζ` to `0` and `0` to `I`. -/
+def cayleyChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) : OpenPartialHomeomorph 𝕔𝔻 ClosedUpperHalfPlane where
+  toFun z := ⟨I * (ζ - z) / (ζ + z), im_I_mul_sub_div_add_nonneg (hζ ▸ z.norm_le_one)⟩
+  invFun w := mk (ζ * (I - w) / (w + I)) (norm_mul_I_sub_div_add_I_le_one hζ.le w.2)
+  source := {z : 𝕔𝔻 | (z : ℂ) ≠ -ζ}
   target := univ
   map_source' _ _ := mem_univ _
-  map_target' w _ := cayleyInv_ne_neg hζ w.2
-  left_inv' z hz := coe_injective (cayleyInv_cayley hζ hz)
-  right_inv' w _ := Subtype.ext (cayley_cayleyInv hζ w.2)
+  map_target' w _ := by
+    rw [mem_ofPred_eq, coe_mk]
+    exact mul_I_sub_div_add_I_ne_neg (ne_zero_of_norm_eq_one hζ) _
+  left_inv' z hz := coe_injective <| by
+    rw [coe_mk]
+    exact mul_I_sub_I_mul_sub_div_add_div_add_I (ne_zero_of_norm_eq_one hζ)
+      (add_ne_zero_of_ne_neg hz)
+  right_inv' w _ := Subtype.ext <| by
+    simp only [coe_mk]
+    exact I_mul_sub_mul_I_sub_div_add_I_div_add (ne_zero_of_norm_eq_one hζ)
+      (add_I_ne_zero_of_im_nonneg w.2)
   open_source := isOpen_ne_fun continuous_coe continuous_const
   open_target := isOpen_univ
   continuousOn_toFun := by
-    refine ((Topology.IsEmbedding.subtypeVal
-      (p := fun w : ℂ ↦ 0 ≤ w.im)).isInducing.continuousOn_iff).2 fun z hz ↦ ?_
-    have hz' : ζ + (z : ℂ) ≠ 0 := fun h ↦ hz (by linear_combination h)
-    exact ((continuousAt_const.mul (continuousAt_const.sub continuous_coe.continuousAt)).div
-      (continuousAt_const.add continuous_coe.continuousAt) hz').continuousWithinAt
+    refine (Topology.IsEmbedding.subtypeVal.isInducing.continuousOn_iff).2 fun z hz ↦ ?_
+    exact ((contDiffAt_I_mul_sub_div_add (n := 0) ζ (add_ne_zero_of_ne_neg hz)).continuousAt.comp
+      continuous_coe.continuousAt).continuousWithinAt
   continuousOn_invFun := by
-    refine (isInducing_coe.continuousOn_iff).2 ?_
+    refine (isEmbedding_coe.isInducing.continuousOn_iff).2 ?_
     refine Continuous.continuousOn (continuous_iff_continuousAt.2 fun w ↦ ?_)
-    exact (continuousAt_const.mul (continuousAt_const.sub continuous_subtype_val.continuousAt)).div
-      (continuousAt_const.add continuous_subtype_val.continuousAt)
-      (add_comm I (w : ℂ) ▸ add_I_ne_zero_of_im_nonneg w.2)
+    simp only [Function.comp_def, coe_mk]
+    exact (contDiffAt_mul_I_sub_div_add_I (n := 0) ζ
+      (add_I_ne_zero_of_im_nonneg w.2)).continuousAt.comp continuous_subtype_val.continuousAt
 
 variable {ζ : ℂ} {hζ : ‖ζ‖ = 1}
 
 /-- A Cayley chart is `z ↦ I (ζ - z) / (ζ + z)`. -/
 @[simp]
-theorem coe_cayleyChart_apply (z : ClosedUnitDisc) :
+theorem coe_cayleyChart_apply (z : 𝕔𝔻) :
     (cayleyChart ζ hζ z : ℂ) = I * (ζ - z) / (ζ + z) :=
-  rfl
+  (rfl)
 
-/-- The inverse of a Cayley chart is `w ↦ ζ (I - w) / (I + w)`. -/
+/-- The inverse of a Cayley chart is `w ↦ ζ (I - w) / (w + I)`. -/
 @[simp]
 theorem coe_cayleyChart_symm_apply (w : ClosedUpperHalfPlane) :
-    ((cayleyChart ζ hζ).symm w : ℂ) = ζ * (I - w) / (I + w) :=
-  rfl
+    ((cayleyChart ζ hζ).symm w : ℂ) = ζ * (I - w) / (w + I) :=
+  (rfl)
 
 /-- A Cayley chart is defined on the closed unit disc minus `-ζ`. -/
 @[simp]
-theorem cayleyChart_source :
-    (cayleyChart ζ hζ).source = {z : ClosedUnitDisc | (z : ℂ) ≠ -ζ} :=
-  rfl
+theorem cayleyChart_source : (cayleyChart ζ hζ).source = {z : 𝕔𝔻 | (z : ℂ) ≠ -ζ} :=
+  (rfl)
 
 /-- A Cayley chart takes values in the whole closed upper half-plane. -/
 @[simp]
 theorem cayleyChart_target : (cayleyChart ζ hζ).target = univ :=
-  rfl
+  (rfl)
 
 /-- The imaginary part of a Cayley chart is `(1 - ‖z‖²) / ‖ζ + z‖²`. -/
-theorem im_cayleyChart_apply (z : ClosedUnitDisc) :
+theorem im_cayleyChart_apply (z : 𝕔𝔻) :
     (cayleyChart ζ hζ z : ℂ).im = (1 - ‖(z : ℂ)‖ ^ 2) / ‖ζ + z‖ ^ 2 := by
-  rw [coe_cayleyChart_apply, im_cayley hζ, Complex.sq_norm, Complex.sq_norm]
+  rw [coe_cayleyChart_apply, im_I_mul_sub_div_add, normSq_eq_norm_sq, normSq_eq_norm_sq,
+    normSq_eq_norm_sq, hζ, one_pow]
 
 /-- A point of the source of a Cayley chart has image of positive imaginary part exactly when it
 lies in the open unit disc. -/
-theorem im_cayleyChart_pos_iff {z : ClosedUnitDisc} (hz : z ∈ (cayleyChart ζ hζ).source) :
+theorem im_cayleyChart_pos_iff {z : 𝕔𝔻} (hz : z ∈ (cayleyChart ζ hζ).source) :
     0 < (cayleyChart ζ hζ z : ℂ).im ↔ ‖(z : ℂ)‖ < 1 := by
-  have hz0 : ‖ζ + z‖ ≠ 0 := norm_ne_zero_iff.2 fun h ↦ hz (by linear_combination h)
+  rw [cayleyChart_source] at hz
+  have hz0 : ‖ζ + z‖ ≠ 0 := norm_ne_zero_iff.2 (add_ne_zero_of_ne_neg hz)
   rw [im_cayleyChart_apply, div_pos_iff_of_pos_right (by positivity), sub_pos,
     sq_lt_one_iff₀ (norm_nonneg _)]
+
+/-- A point of the source of a Cayley chart has real image exactly when it lies on the unit
+circle. -/
+theorem im_cayleyChart_eq_zero_iff {z : 𝕔𝔻} (hz : z ∈ (cayleyChart ζ hζ).source) :
+    (cayleyChart ζ hζ z : ℂ).im = 0 ↔ ‖(z : ℂ)‖ = 1 := by
+  rw [cayleyChart_source] at hz
+  have hz0 : ‖ζ + z‖ ^ 2 ≠ 0 := pow_ne_zero _ (norm_ne_zero_iff.2 (add_ne_zero_of_ne_neg hz))
+  rw [im_cayleyChart_apply, div_eq_zero_iff, or_iff_left hz0, sub_eq_zero, eq_comm,
+    pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero]
 
 /-! ### The atlas -/
 
 /-- The center of the preferred chart at `z`: `1` if `0 ≤ re z`, and `-1` otherwise. -/
-def chartCenter (z : ClosedUnitDisc) : ℂ :=
+def chartCenter (z : 𝕔𝔻) : ℂ :=
   if 0 ≤ (z : ℂ).re then 1 else -1
 
+/-- The defining formula of `chartCenter`. -/
+theorem chartCenter_def (z : 𝕔𝔻) : chartCenter z = if 0 ≤ (z : ℂ).re then 1 else -1 :=
+  (rfl)
+
 /-- The center of the preferred chart lies on the unit circle. -/
-theorem norm_chartCenter (z : ClosedUnitDisc) : ‖chartCenter z‖ = 1 := by
-  unfold chartCenter
+@[simp]
+theorem norm_chartCenter (z : 𝕔𝔻) : ‖chartCenter z‖ = 1 := by
+  rw [chartCenter_def]
   split_ifs <;> simp
 
 /-- A point lies in the source of its preferred chart. -/
-theorem coe_ne_neg_chartCenter (z : ClosedUnitDisc) : (z : ℂ) ≠ -chartCenter z := by
-  unfold chartCenter
-  split_ifs with h
-  · intro hz
-    rw [hz] at h
-    norm_num at h
+theorem coe_ne_neg_chartCenter (z : 𝕔𝔻) : (z : ℂ) ≠ -chartCenter z := by
+  rw [chartCenter_def]
+  split_ifs with h <;>
   · intro hz
     rw [hz] at h
     norm_num at h
@@ -280,98 +206,63 @@ theorem coe_ne_neg_chartCenter (z : ClosedUnitDisc) : (z : ℂ) ≠ -chartCenter
 /-- The closed unit disc is a charted space modelled on the closed upper half-plane: the atlas
 consists of the Cayley charts, and the chart at `z` has center `1` if `0 ≤ re z` and `-1`
 otherwise. -/
-instance instChartedSpace : ChartedSpace ClosedUpperHalfPlane ClosedUnitDisc where
+instance instChartedSpace : ChartedSpace ClosedUpperHalfPlane 𝕔𝔻 where
   atlas := {e | ∃ (ζ : ℂ) (hζ : ‖ζ‖ = 1), e = cayleyChart ζ hζ}
   chartAt z := cayleyChart (chartCenter z) (norm_chartCenter z)
-  mem_chart_source z := coe_ne_neg_chartCenter z
+  mem_chart_source z := by
+    rw [cayleyChart_source]
+    exact coe_ne_neg_chartCenter z
   chart_mem_atlas _ := ⟨_, _, rfl⟩
 
 /-- The chart at `z` is the Cayley chart centered at `chartCenter z`. -/
-theorem chartAt_eq (z : ClosedUnitDisc) :
+theorem chartAt_eq (z : 𝕔𝔻) :
     chartAt ClosedUpperHalfPlane z = cayleyChart (chartCenter z) (norm_chartCenter z) :=
-  rfl
+  (rfl)
 
 /-- The charts of the atlas are the Cayley charts. -/
-theorem mem_atlas_iff {e : OpenPartialHomeomorph ClosedUnitDisc ClosedUpperHalfPlane} :
-    e ∈ atlas ClosedUpperHalfPlane ClosedUnitDisc ↔
-      ∃ (ζ : ℂ) (hζ : ‖ζ‖ = 1), e = cayleyChart ζ hζ :=
+theorem mem_atlas_iff {e : OpenPartialHomeomorph 𝕔𝔻 ClosedUpperHalfPlane} :
+    e ∈ atlas ClosedUpperHalfPlane 𝕔𝔻 ↔ ∃ (ζ : ℂ) (hζ : ‖ζ‖ = 1), e = cayleyChart ζ hζ :=
   Iff.rfl
+
+/-- Every Cayley chart belongs to the atlas. -/
+@[simp]
+theorem cayleyChart_mem_atlas (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
+    cayleyChart ζ hζ ∈ atlas ClosedUpperHalfPlane 𝕔𝔻 :=
+  mem_atlas_iff.2 ⟨ζ, hζ, rfl⟩
 
 /-! ### Transition maps -/
 
-/-- A map of the closed upper half-plane that agrees, on an open set, with a function that is
-complex analytic at each of its points in the ambient coordinate, is smooth up to the boundary
-there and complex differentiable at the interior points. -/
-private theorem contDiffOn_and_differentiableOn_of_contDiffAt
-    {f : ClosedUpperHalfPlane → ClosedUpperHalfPlane} {s : Set ClosedUpperHalfPlane} {F : ℂ → ℂ}
-    (hF : ∀ x ∈ s, ContDiffAt ℂ ∞ F x ∧ (f x : ℂ) = F x) :
-    ContDiffOn ℝ ∞ (closedUpperHalfPlaneModel ∘ f ∘ closedUpperHalfPlaneModel.symm)
-        (closedUpperHalfPlaneModel.symm ⁻¹' s ∩ range closedUpperHalfPlaneModel) ∧
-      DifferentiableOn ℂ (closedUpperHalfPlaneModel ∘ f ∘ closedUpperHalfPlaneModel.symm)
-        (closedUpperHalfPlaneModel.symm ⁻¹' s ∩ {z | 0 < z.im}) := by
-  have hcoe : ∀ {z : ℂ}, 0 ≤ z.im → ((closedUpperHalfPlaneModel.symm z : ClosedUpperHalfPlane) : ℂ)
-      = z := fun hz ↦ coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz
-  have heq : ∀ {z : ℂ}, 0 ≤ z.im → closedUpperHalfPlaneModel.symm z ∈ s →
-      (closedUpperHalfPlaneModel ∘ f ∘ closedUpperHalfPlaneModel.symm) z = F z := by
-    intro z hz hs
-    simpa [hcoe hz] using (hF _ hs).2
-  have hat : ∀ {z : ℂ}, 0 ≤ z.im → closedUpperHalfPlaneModel.symm z ∈ s → ContDiffAt ℂ ∞ F z := by
-    intro z hz hs
-    simpa [hcoe hz] using (hF _ hs).1
-  refine ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · have him : 0 ≤ z.im := by simpa using hz.2
-    refine ((hat him hz.1).restrict_scalars ℝ).contDiffWithinAt.congr (fun y hy ↦ ?_) ?_
-    · exact heq (by simpa using hy.2) hy.1
-    · exact heq him hz.1
-  · have him : 0 ≤ z.im := le_of_lt hz.2
-    refine ((hat him hz.1).differentiableAt (by simp)).differentiableWithinAt.congr
-      (fun y hy ↦ ?_) ?_
-    · exact heq (le_of_lt hy.2) hy.1
-    · exact heq him hz.1
-
-/-- The transition map between two Cayley charts is the Möbius map
-`w ↦ I (ζ' - u) / (ζ' + u)` with `u = ζ (I - w) / (I + w)`, which is analytic on the domain of
-the transition. -/
-private theorem transition_property (ζ ζ' : ℂ) (hζ : ‖ζ‖ = 1) (hζ' : ‖ζ'‖ = 1) :
-    ContDiffOn ℝ ∞ (closedUpperHalfPlaneModel ∘ ((cayleyChart ζ hζ).symm ≫ₕ cayleyChart ζ' hζ') ∘
-          closedUpperHalfPlaneModel.symm)
-        (closedUpperHalfPlaneModel.symm ⁻¹' ((cayleyChart ζ hζ).symm ≫ₕ cayleyChart ζ' hζ').source ∩
-          range closedUpperHalfPlaneModel) ∧
-      DifferentiableOn ℂ (closedUpperHalfPlaneModel ∘
-          ((cayleyChart ζ hζ).symm ≫ₕ cayleyChart ζ' hζ') ∘ closedUpperHalfPlaneModel.symm)
-        (closedUpperHalfPlaneModel.symm ⁻¹' ((cayleyChart ζ hζ).symm ≫ₕ cayleyChart ζ' hζ').source ∩
-          {z | 0 < z.im}) := by
-  refine contDiffOn_and_differentiableOn_of_contDiffAt
-    (F := fun w ↦ I * (ζ' - ζ * (I - w) / (I + w)) / (ζ' + ζ * (I - w) / (I + w))) ?_
+/-- The transition map between two Cayley charts is, on its source, the Möbius map
+`w ↦ I (ζ' - u) / (ζ' + u)` with `u = ζ (I - w) / (w + I)`, which is analytic there. -/
+private theorem cayleyChart_symm_trans_apply (ζ ζ' : ℂ) (hζ : ‖ζ‖ = 1) (hζ' : ‖ζ'‖ = 1) :
+    ∀ w ∈ ((cayleyChart ζ hζ).symm ≫ₕ cayleyChart ζ' hζ').source,
+      ContDiffAt ℂ ∞ (fun w : ℂ ↦ I * (ζ' - ζ * (I - w) / (w + I)) / (ζ' + ζ * (I - w) / (w + I)))
+          (w : ℂ) ∧
+        (((cayleyChart ζ hζ).symm ≫ₕ cayleyChart ζ' hζ') w : ℂ) =
+          I * (ζ' - ζ * (I - w) / (w + I)) / (ζ' + ζ * (I - w) / (w + I)) := by
   intro w hw
   simp only [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
     cayleyChart_target, univ_inter, mem_preimage, cayleyChart_source, mem_ofPred_eq,
     coe_cayleyChart_symm_apply] at hw
-  refine ⟨?_, rfl⟩
-  have hw0 := add_comm I (w : ℂ) ▸ add_I_ne_zero_of_im_nonneg w.2
-  have hu : ContDiffAt ℂ ∞ (fun w : ℂ ↦ ζ * (I - w) / (I + w)) w :=
-    (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
-      (contDiffAt_const.add contDiffAt_id) hw0
-  exact (contDiffAt_const.mul (contDiffAt_const.sub hu)).div (contDiffAt_const.add hu)
-    fun h ↦ hw (by linear_combination h)
+  refine ⟨?_, by simp⟩
+  exact (contDiffAt_I_mul_sub_div_add ζ' (add_ne_zero_of_ne_neg hw)).comp (w : ℂ)
+    (contDiffAt_mul_I_sub_div_add_I ζ (add_I_ne_zero_of_im_nonneg w.2))
 
 /-- The transition map between two Cayley charts lies in the bordered holomorphic groupoid. -/
 theorem cayleyChart_symm_trans_mem_borderedHolomorphicGroupoid (ζ ζ' : ℂ) (hζ : ‖ζ‖ = 1)
     (hζ' : ‖ζ'‖ = 1) :
     (cayleyChart ζ hζ).symm ≫ₕ cayleyChart ζ' hζ' ∈ borderedHolomorphicGroupoid := by
-  have h₁ := transition_property ζ ζ' hζ hζ'
-  have h₂ := transition_property ζ' ζ hζ' hζ
   have hsymm : ((cayleyChart ζ hζ).symm ≫ₕ cayleyChart ζ' hζ').symm =
       (cayleyChart ζ' hζ').symm ≫ₕ cayleyChart ζ hζ := by
     rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
-  refine mem_borderedHolomorphicGroupoid_iff.2 ⟨⟨h₁.1, ?_⟩, h₁.2, ?_⟩
-  · rw [hsymm, ← OpenPartialHomeomorph.symm_source, hsymm]
-    exact h₂.1
-  · rw [hsymm, ← OpenPartialHomeomorph.symm_source, hsymm]
-    exact h₂.2
+  refine ClosedUpperHalfPlane.mem_borderedHolomorphicGroupoid_of_contDiffAt
+    (G := fun w ↦ I * (ζ - ζ' * (I - w) / (w + I)) / (ζ + ζ' * (I - w) / (w + I)))
+    (cayleyChart_symm_trans_apply ζ ζ' hζ hζ') ?_
+  rw [← OpenPartialHomeomorph.symm_source, hsymm]
+  exact cayleyChart_symm_trans_apply ζ' ζ hζ' hζ
 
 /-- The closed unit disc, with its Cayley charts, is a Riemann surface with boundary. -/
-instance instHasGroupoid : HasGroupoid ClosedUnitDisc borderedHolomorphicGroupoid where
+instance instHasGroupoid : HasGroupoid 𝕔𝔻 borderedHolomorphicGroupoid where
   compatible := by
     rintro _ _ ⟨ζ, hζ, rfl⟩ ⟨ζ', hζ', rfl⟩
     exact cayleyChart_symm_trans_mem_borderedHolomorphicGroupoid ζ ζ' hζ hζ'
@@ -379,52 +270,65 @@ instance instHasGroupoid : HasGroupoid ClosedUnitDisc borderedHolomorphicGroupoi
 /-! ### Interior and boundary -/
 
 /-- The interior of the closed unit disc is the open unit disc. -/
-theorem mem_borderedInterior_iff {z : ClosedUnitDisc} :
-    z ∈ borderedInterior ClosedUnitDisc ↔ ‖(z : ℂ)‖ < 1 := by
+@[simp]
+theorem mem_borderedInterior_iff {z : 𝕔𝔻} : z ∈ borderedInterior 𝕔𝔻 ↔ ‖(z : ℂ)‖ < 1 := by
   rw [mem_borderedInterior_iff_im_chartAt_pos, chartAt_eq,
-    im_cayleyChart_pos_iff (coe_ne_neg_chartCenter z)]
+    im_cayleyChart_pos_iff (by rw [cayleyChart_source]; exact coe_ne_neg_chartCenter z)]
 
 /-- The interior of the closed unit disc is the open unit disc. -/
 theorem coe_borderedInterior :
-    (borderedInterior ClosedUnitDisc : Set ClosedUnitDisc) = {z : ClosedUnitDisc | ‖(z : ℂ)‖ < 1} :=
+    (borderedInterior 𝕔𝔻 : Set 𝕔𝔻) = {z : 𝕔𝔻 | ‖(z : ℂ)‖ < 1} :=
   Set.ext fun _ ↦ mem_borderedInterior_iff
 
-/-- The complement of the interior of the closed unit disc is its boundary circle, the boundary
-along which `TauCeti.DoubleAlong` doubles the disc to the Riemann sphere. -/
+/-- The complement of the interior of the closed unit disc is the unit circle. -/
 theorem compl_borderedInterior :
-    (borderedInterior ClosedUnitDisc : Set ClosedUnitDisc)ᶜ = DoubleAlong.discBoundary := by
+    (borderedInterior 𝕔𝔻 : Set 𝕔𝔻)ᶜ = {z : 𝕔𝔻 | ‖(z : ℂ)‖ = 1} := by
   ext z
-  refine Iff.trans ?_ (DoubleAlong.mem_discBoundary (z := z)).symm
-  rw [mem_compl_iff, SetLike.mem_coe, mem_borderedInterior_iff, not_lt]
-  exact ⟨fun h ↦ le_antisymm (norm_coe_le_one z) h, fun h ↦ h.ge⟩
+  rw [mem_compl_iff, SetLike.mem_coe, mem_borderedInterior_iff, not_lt, mem_ofPred_eq]
+  exact ⟨fun h ↦ le_antisymm z.norm_le_one h, fun h ↦ h.ge⟩
+
+/-- The complement of the interior of the closed unit disc is the boundary circle
+`TauCeti.DoubleAlong.discBoundary` along which `TauCeti.DoubleAlong` doubles the disc to the
+Riemann sphere. -/
+theorem image_compl_borderedInterior :
+    homeomorphClosedBall '' (borderedInterior 𝕔𝔻 : Set 𝕔𝔻)ᶜ = DoubleAlong.discBoundary := by
+  rw [compl_borderedInterior, homeomorphClosedBall.image_eq_preimage_symm]
+  ext z
+  rw [mem_preimage, mem_ofPred_eq, coe_homeomorphClosedBall_symm, DoubleAlong.mem_discBoundary]
+
+/-- The inclusion of the closed unit disc into `ℂ` is smooth up to the boundary. -/
+theorem contMDiff_coe {n : ℕ∞ω} : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) n ((↑) : 𝕔𝔻 → ℂ) := by
+  intro x
+  refine contMDiffAt_iff.2 ⟨continuous_coe.continuousAt, ?_⟩
+  simp only [mfld_simps]
+  rw [range_closedUpperHalfPlaneModel, chartAt_eq]
+  have hcoe : ∀ v : ℂ, 0 ≤ v.im →
+      (((↑) : 𝕔𝔻 → ℂ) ∘ (cayleyChart (chartCenter x) (norm_chartCenter x)).symm ∘
+        closedUpperHalfPlaneModel.symm) v = chartCenter x * (I - v) / (v + I) := fun v hv ↦ by
+    rw [Function.comp_apply, Function.comp_apply, coe_cayleyChart_symm_apply,
+      coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hv]
+  have hx := (cayleyChart (chartCenter x) (norm_chartCenter x) x).2
+  exact ((contDiffAt_mul_I_sub_div_add_I _ (add_I_ne_zero_of_im_nonneg hx)).restrict_scalars
+    ℝ).contDiffWithinAt.congr hcoe (hcoe _ hx)
 
 /-- The inclusion of the interior of the closed unit disc into `ℂ` is analytic for the complex
-structure induced by the Cayley charts. So the induced complex structure on the open disc is the
-standard one. -/
-theorem contMDiff_coe_borderedInterior :
-    ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω
-      (fun z : borderedInterior ClosedUnitDisc ↦ ((z : ClosedUnitDisc) : ℂ)) := by
-  intro x
+structure induced on the interior by the Cayley charts. -/
+theorem contMDiff_coe_borderedInterior {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (fun z : borderedInterior 𝕔𝔻 ↦ ((z : 𝕔𝔻) : ℂ)) := by
+  refine ContMDiff.of_le (fun x ↦ ?_) le_top
   refine contMDiffAt_iff.2 ⟨(continuous_coe.comp continuous_subtype_val).continuousAt, ?_⟩
   simp only [mfld_simps]
   refine ContDiffAt.contDiffWithinAt ?_
   set w := chartAt ℂ x x
   have hw : w ∈ (chartAt ℂ x).target := mem_chart_target ℂ x
-  have himw : 0 < w.im := by
-    rw [chartAt_borderedInterior_target] at hw
-    exact hw.2
-  have hev : (fun v ↦ (((chartAt ℂ x).symm v : ClosedUnitDisc) : ℂ)) =ᶠ[𝓝 w]
-      fun v ↦ chartCenter (x : ClosedUnitDisc) * (I - v) / (I + v) := by
-    filter_upwards [(chartAt ℂ x).open_target.mem_nhds hw] with v hv
+  rw [chartAt_borderedInterior_target] at hw
+  have hev : (fun v ↦ (((chartAt ℂ x).symm v : 𝕔𝔻) : ℂ)) =ᶠ[𝓝 w]
+      fun v ↦ chartCenter (x : 𝕔𝔻) * (I - v) / (v + I) := by
+    filter_upwards [(chartAt ℂ x).open_target.mem_nhds (mem_chart_target ℂ x)] with v hv
     rw [chartAt_borderedInterior_symm_apply x hv, chartAt_eq, coe_cayleyChart_symm_apply]
-    have hvim : 0 ≤ v.im := by
-      rw [chartAt_borderedInterior_target] at hv
-      exact hv.2.le
-    rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hvim]
-  refine ContDiffAt.congr_of_eventuallyEq ?_ hev
-  exact (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
-    (contDiffAt_const.add contDiffAt_id) (add_comm I w ▸ add_I_ne_zero_of_im_nonneg himw.le)
+    rw [chartAt_borderedInterior_target] at hv
+    rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hv.2.le]
+  exact (contDiffAt_mul_I_sub_div_add_I _
+    (add_I_ne_zero_of_im_nonneg hw.2.le)).congr_of_eventuallyEq hev
 
-end ClosedUnitDisc
-
-end TauCeti
+end Complex.UnitClosedDisc

@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Complex.UnitDisc.Basic
 /-!
 # Basic API for the complex unit disc
 
-This file collects small API lemmas for Mathlib's `Complex.UnitDisc`.
+This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
+`Complex.UnitClosedDisc`.
 
 * The `Circle` action on the disc: it fixes the origin and preserves nonzero points
   (`Complex.UnitDisc.circle_smul_zero`, `Complex.UnitDisc.circle_smul_eq_zero`), it is jointly
@@ -19,6 +20,7 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc`.
   disc, which is nontrivial.
 * Compactness of the disc points of Euclidean norm at most `ρ < 1`
   (`Complex.UnitDisc.isCompact_setOf_norm_le`).
+* The closed unit disc `Complex.UnitClosedDisc` is a compact, second countable Hausdorff space.
 * Transport between a self-map of the bundled disc and a scalar representative `ℂ → ℂ` of it:
   such a representative maps `Metric.ball 0 1` into itself
   (`TauCeti.mapsTo_ball_of_forall_unitDisc_coe_eq`), and bijectively onto itself when the bundled
@@ -78,6 +80,23 @@ instance instFaithfulSMulCircle : FaithfulSMul Circle 𝔻 where
     exact circle_smul_left_injective hz (h z)
 
 end Complex.UnitDisc
+
+namespace Complex.UnitClosedDisc
+
+/-- The closed unit disc is Hausdorff. -/
+instance instT2Space : T2Space 𝕔𝔻 :=
+  inferInstanceAs <| T2Space (closedBall (0 : ℂ) 1)
+
+/-- The closed unit disc is second countable. -/
+instance instSecondCountableTopology : SecondCountableTopology 𝕔𝔻 :=
+  inferInstanceAs <| SecondCountableTopology (closedBall (0 : ℂ) 1)
+
+/-- The closed unit disc is compact. -/
+instance instCompactSpace : CompactSpace 𝕔𝔻 :=
+  haveI := isCompact_iff_compactSpace.1 (isCompact_closedBall (0 : ℂ) 1)
+  inferInstanceAs <| CompactSpace (closedBall (0 : ℂ) 1)
+
+end Complex.UnitClosedDisc
 
 namespace TauCeti
 
